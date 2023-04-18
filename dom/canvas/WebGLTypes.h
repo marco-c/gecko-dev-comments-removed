@@ -253,49 +253,29 @@ enum class WebGLExtensionID : uint8_t {
   Max
 };
 
-class UniqueBuffer {
+class UniqueBuffer final {
   
-  void* mBuffer;
-
-  void reset() {
-  
-  
-  
-    if (mBuffer) {
-      free(mBuffer);
-      mBuffer = nullptr;
-    }
-  }
-
+  void* mBuffer = nullptr;
 
  public:
-  static inline UniqueBuffer Alloc(const size_t byteSize) {
-    return {malloc(byteSize)};
+  static inline UniqueBuffer Take(void* buffer) {
+    UniqueBuffer ret;
+    ret.mBuffer = buffer;
+    return ret;
   }
 
-  UniqueBuffer() : mBuffer(nullptr) {}
-
-  MOZ_IMPLICIT UniqueBuffer(void* buffer) : mBuffer(buffer) {}
+  UniqueBuffer() = default;
 
   ~UniqueBuffer() {
     reset();
   }
 
-  UniqueBuffer(UniqueBuffer&& other) {
-    this->mBuffer = other.mBuffer;
-    other.mBuffer = nullptr;
-  }
+  UniqueBuffer(UniqueBuffer&& rhs) { *this = std::move(rhs); }
 
-  UniqueBuffer& operator=(UniqueBuffer&& other) {
+  UniqueBuffer& operator=(UniqueBuffer&& rhs) {
     reset();
-    this->mBuffer = other.mBuffer;
-    other.mBuffer = nullptr;
-    return *this;
-  }
-
-  UniqueBuffer& operator=(void* newBuffer) {
-    reset();
-    this->mBuffer = newBuffer;
+    this->mBuffer = rhs.mBuffer;
+    rhs.mBuffer = nullptr;
     return *this;
   }
 
@@ -303,10 +283,15 @@ class UniqueBuffer {
 
   void* get() const { return mBuffer; }
 
-  explicit UniqueBuffer(const UniqueBuffer& other) =
-      delete;  
-  UniqueBuffer& operator=(const UniqueBuffer& other) =
-      delete;  
+  void reset() {
+    
+    
+    
+    if (mBuffer) {
+      free(mBuffer);
+      mBuffer = nullptr;
+    }
+  }
 };
 
 namespace webgl {
