@@ -298,6 +298,10 @@ struct DIGroup {
   
   
   LayerIntRect mPreservedRect;
+  
+  
+  
+  LayerIntRect mHitTestBounds;
   LayerIntRect mActualBounds;
   int32_t mAppUnitsPerDevPixel;
   gfx::Size mScale;
@@ -539,6 +543,8 @@ struct DIGroup {
         }
       }
     }
+
+    mHitTestBounds.OrWith(aData->mRect);
     if (!aData->mInvisible) {
       mActualBounds.OrWith(aData->mRect);
     }
@@ -555,6 +561,16 @@ struct DIGroup {
                 nsDisplayItem* aStartItem, nsDisplayItem* aEndItem) {
     GP("\n\n");
     GP("Begin EndGroup\n");
+
+    LayoutDeviceToLayerScale2D scale(mScale.width, mScale.height);
+
+    auto hitTestRect = mVisibleRect.Intersect(ViewAs<LayerPixel>(
+        mHitTestBounds, PixelCastJustification::LayerIsImage));
+    if (!hitTestRect.IsEmpty()) {
+      auto deviceHitTestRect =
+          (LayerRect(hitTestRect) - mResidualOffset) / scale;
+      PushHitTest(aBuilder, deviceHitTestRect);
+    }
 
     mVisibleRect = mVisibleRect.Intersect(ViewAs<LayerPixel>(
         mActualBounds, PixelCastJustification::LayerIsImage));
@@ -581,7 +597,6 @@ struct DIGroup {
     IntSize dtSize = mVisibleRect.Size().ToUnknownSize();
     
     
-    LayoutDeviceToLayerScale2D scale(mScale.width, mScale.height);
     LayoutDeviceRect itemBounds =
         (LayerRect(mVisibleRect) - mResidualOffset) / scale;
 
@@ -730,20 +745,28 @@ struct DIGroup {
     
     
     
+
+    aBuilder.PushImage(dest, dest, !backfaceHidden, rendering,
+                       wr::AsImageKey(*mKey));
+  }
+
+  void PushHitTest(wr::DisplayListBuilder& aBuilder,
+                   const LayoutDeviceRect& bounds) {
+    wr::LayoutRect dest = wr::ToLayoutRect(bounds);
+    GP("PushHitTest: %f %f %f %f\n", dest.min.x, dest.min.y, dest.max.x,
+       dest.max.y);
+
+    
+    
+    
     CompositorHitTestInfo hitInfo = mHitInfo;
     if (hitInfo.contains(CompositorHitTestFlags::eVisibleToHitTest)) {
       hitInfo += CompositorHitTestFlags::eIrregularArea;
     }
 
-    
-    
-    
-
+    bool backfaceHidden = false;
     aBuilder.PushHitTest(dest, dest, !backfaceHidden, mScrollId, hitInfo,
                          SideBits::eNone);
-
-    aBuilder.PushImage(dest, dest, !backfaceHidden, rendering,
-                       wr::AsImageKey(*mKey));
   }
 
   void PaintItemRange(Grouper* aGrouper, nsDisplayList::Iterator aIter,
@@ -1223,6 +1246,7 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
           groupData->mFollowingGroup.mVisibleRect.Intersect(
               groupData->mFollowingGroup.mLastVisibleRect);
       groupData->mFollowingGroup.mActualBounds = LayerIntRect();
+      groupData->mFollowingGroup.mHitTestBounds = LayerIntRect();
 
       currentGroup->EndGroup(aCommandBuilder->mManager, aDisplayListBuilder,
                              aBuilder, aResources, this, startOfCurrentGroup,
@@ -1502,6 +1526,7 @@ void WebRenderCommandBuilder::DoGroupingForDisplayList(
   group.mLayerBounds = layerBounds;
   group.mVisibleRect = visibleRect;
   group.mActualBounds = LayerIntRect();
+  group.mHitTestBounds = LayerIntRect();
   group.mPreservedRect = group.mVisibleRect.Intersect(group.mLastVisibleRect);
   group.mAppUnitsPerDevPixel = appUnitsPerDevPixel;
   group.mClippedImageBounds = layerBounds;
