@@ -7,6 +7,10 @@ const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 
+const { ContentTaskUtils } = ChromeUtils.import(
+  "resource://testing-common/ContentTaskUtils.jsm"
+);
+
 add_setup(
   
   { skip_if: () => !runningInParent || AppConstants.platform == "android" },
@@ -34,9 +38,10 @@ add_task(
   async function test_fog_ipc_limit() {
     await run_test_in_child("test_FOGIPCLimit.js");
 
-    
-    
-    
+    await ContentTaskUtils.waitForCondition(() => {
+      return !!Glean.testOnly.badCode.testGetValue();
+    }, "Waiting for IPC.");
+
     
     Assert.greater(
       Glean.testOnly.badCode.testGetValue(),
