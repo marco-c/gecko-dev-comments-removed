@@ -271,7 +271,7 @@ FetchStreamReader::OnOutputStreamReady(nsIAsyncOutputStream* aStream) {
   AutoEntryScript aes(mGlobal, "ReadableStreamReader.read", !mWorkerRef);
 
 #ifdef MOZ_DOM_STREAMS
-  ErrorResult rv;
+  IgnoredErrorResult rv;
 
   
   
@@ -291,10 +291,6 @@ FetchStreamReader::OnOutputStreamReady(nsIAsyncOutputStream* aStream) {
 
   ReadableStreamDefaultReaderRead(aes.cx(), MOZ_KnownLive(mReader), readRequest,
                                   rv);
-
-  
-  
-  rv.WouldReportJSException();
 
   if (NS_WARN_IF(rv.Failed())) {
     
