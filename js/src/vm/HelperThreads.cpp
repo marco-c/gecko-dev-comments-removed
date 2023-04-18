@@ -2108,7 +2108,7 @@ UniquePtr<ParseTask> GlobalHelperThreadState::finishParseTaskCommon(
   }
 
   
-  for (UniquePtr<CompileError>& error: parseTask->errors.errors) {
+  for (UniquePtr<CompileError>& error : parseTask->errors.errors) {
     error->throwError(cx);
   }
   if (parseTask->errors.overRecursed) {

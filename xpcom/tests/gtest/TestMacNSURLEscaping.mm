@@ -60,9 +60,8 @@ TEST(NSURLEscaping, NSURLEscapingTests)
   
   nsTArray<std::pair<nsCString, nsCString>> pairs{
       {
-          
-         "https://chat.mozilla.org/#/room/#macdev:mozilla.org"_ns,
-         "https://chat.mozilla.org/#/room/%23macdev:mozilla.org"_ns},
+       "https://chat.mozilla.org/#/room/#macdev:mozilla.org"_ns,
+       "https://chat.mozilla.org/#/room/%23macdev:mozilla.org"_ns},
       {
           
           "https://example.com/path#ref_with_#_and\""_ns,

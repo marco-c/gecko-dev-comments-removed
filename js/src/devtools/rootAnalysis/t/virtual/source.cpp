@@ -18,7 +18,7 @@ void GC() {
 
 namespace js {
 void RunScript() { GC(); }
-}
+}  
 
 struct Cell {
   int f;
@@ -138,7 +138,7 @@ class nsISupports {
 
 class nsIPrincipal : public nsISupports {
  public:
-  ~nsIPrincipal() override {};
+  ~nsIPrincipal() override{};
 };
 
 struct JSPrincipals {
@@ -263,7 +263,7 @@ void f() {
   {
     nsJSPrincipals* princ = new nsJSPrincipals();
     Cell* c18 = &cell;
-    delete princ; 
+    delete princ;  
     use(c18);
   }
 
@@ -271,14 +271,14 @@ void f() {
     nsJSPrincipals* princ = new nsJSPrincipals();
     nsISupports* supp = static_cast<nsISupports*>(princ);
     Cell* c19 = &cell;
-    delete supp; 
+    delete supp;  
     use(c19);
   }
 
   {
     auto* safe = new SafePrincipals();
     Cell* c20 = &cell;
-    delete safe; 
+    delete safe;  
     use(c20);
   }
 
@@ -286,7 +286,7 @@ void f() {
     auto* safe = new SafePrincipals();
     nsISupports* supp = static_cast<nsISupports*>(safe);
     Cell* c21 = &cell;
-    delete supp; 
+    delete supp;  
     use(c21);
   }
 }

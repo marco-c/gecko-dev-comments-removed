@@ -114,8 +114,8 @@ static inline const char* CCReasonToString(CCReason aReason) {
     break;
     FOR_EACH_CCREASON(SET_REASON_STR)
 #undef SET_REASON_STR
-  default:
-    return "<unknown-reason>";
+    default:
+      return "<unknown-reason>";
   }
 }
 

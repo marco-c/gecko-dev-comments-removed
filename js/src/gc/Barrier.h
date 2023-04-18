@@ -15,7 +15,7 @@
 
 #include "gc/Cell.h"
 #include "gc/StoreBuffer.h"
-#include "js/ComparisonOperators.h"  
+#include "js/ComparisonOperators.h"     
 #include "js/experimental/TypedData.h"  
 #include "js/HeapAPI.h"
 #include "js/Id.h"

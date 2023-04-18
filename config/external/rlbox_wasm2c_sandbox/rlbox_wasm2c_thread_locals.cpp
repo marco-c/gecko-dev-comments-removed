@@ -34,7 +34,7 @@ void moz_wasm2c_trap_handler(const char* msg) {
 
 void moz_wasm2c_malloc_failed(uint32_t size) {
   
-  (void) size;
+  (void)size;
 
   CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::WasmLibrarySandboxMallocFailed, true);

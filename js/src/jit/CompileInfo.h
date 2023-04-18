@@ -16,13 +16,13 @@
 #include "jit/CompileWrappers.h"  
 #include "jit/JitFrames.h"        
 #include "jit/shared/Assembler-shared.h"
-#include "js/TypeDecls.h"         
-#include "vm/BindingKind.h"       
-#include "vm/BytecodeUtil.h"      
-#include "vm/JSAtomState.h"       
-#include "vm/JSFunction.h"        
-#include "vm/JSScript.h"          
-#include "vm/Scope.h"             
+#include "js/TypeDecls.h"     
+#include "vm/BindingKind.h"   
+#include "vm/BytecodeUtil.h"  
+#include "vm/JSAtomState.h"   
+#include "vm/JSFunction.h"    
+#include "vm/JSScript.h"      
+#include "vm/Scope.h"         
 
 namespace js {
 

@@ -200,12 +200,14 @@ TEST(IntlString, ComposePairNFC)
   
   ASSERT_EQ(String::ComposePairNFC(U'ä', U'\u0304'), U'ǟ');
   
+  
   ASSERT_EQ(String::ComposePairNFC(U'ä', U'\u0301'), U'\0');
   
   
   ASSERT_EQ(String::ComposePairNFC(U'\u0308', U'\u0301'), U'\0');
   
-  ASSERT_EQ(String::ComposePairNFC(U'\U00011099', U'\U000110BA'), U'\U0001109A');
+  ASSERT_EQ(String::ComposePairNFC(U'\U00011099', U'\U000110BA'),
+            U'\U0001109A');
 }
 
 TEST(IntlString, DecomposeRawNFD)
