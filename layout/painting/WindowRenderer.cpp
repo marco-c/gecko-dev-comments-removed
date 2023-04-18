@@ -6,8 +6,15 @@
 
 #include "WindowRenderer.h"
 
+#include "gfxPlatform.h"
 #include "mozilla/dom/Animation.h"  
+#include "mozilla/dom/AnimationEffect.h"
+#include "mozilla/EffectSet.h"
 #include "mozilla/layers/PersistentBufferProvider.h"  
+#include "nsDisplayList.h"
+
+using namespace mozilla::gfx;
+using namespace mozilla::layers;
 
 namespace mozilla {
 
