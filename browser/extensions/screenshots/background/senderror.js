@@ -9,8 +9,6 @@
 this.senderror = (function() {
   const exports = {};
 
-  const manifest = browser.runtime.getManifest();
-
   
   const ERROR_TIME_LIMIT = 3000;
 
@@ -101,13 +99,6 @@ this.senderror = (function() {
       log.error("Telemetry disabled. Not sending critical error:", e);
       return;
     }
-    const dsn = auth.getSentryPublicDSN();
-    if (!dsn) {
-      return;
-    }
-    if (!Raven.isSetup()) {
-      Raven.config(dsn, { allowSecretKey: true }).install();
-    }
     const exception = new Error(e.message);
     exception.stack = e.multilineStack || e.stack || undefined;
 
@@ -138,13 +129,6 @@ this.senderror = (function() {
       }
     }
     rest.stack = exception.stack;
-    Raven.captureException(exception, {
-      logger: "addon",
-      tags: { category: e.popupMessage },
-      release: manifest.version,
-      message: exception.message,
-      extra: rest,
-    });
   };
 
   catcher.registerHandler(errorObj => {

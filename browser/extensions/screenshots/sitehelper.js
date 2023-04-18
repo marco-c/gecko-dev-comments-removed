@@ -9,10 +9,6 @@
 "use strict";
 
 this.sitehelper = (function() {
-  
-  
-  const ContentXMLHttpRequest = content.XMLHttpRequest;
-
   catcher.registerHandler(errorObj => {
     callBackground("reportError", errorObj);
   });
@@ -32,64 +28,11 @@ this.sitehelper = (function() {
     document.dispatchEvent(new CustomEvent(name, { detail }));
   }
 
-  
-
-  function sendBackupCookieRequest(authHeaders) {
-    
-    
-    
-
-    
-    
-    if (
-      Object.toString.apply(ContentXMLHttpRequest) !==
-      "function XMLHttpRequest() {\n    [native code]\n}"
-    ) {
-      console.warn("Insecure copy of XMLHttpRequest");
-      return;
-    }
-    const req = new ContentXMLHttpRequest();
-    req.open("POST", "/api/set-login-cookie");
-    for (const name in authHeaders) {
-      req.setRequestHeader(name, authHeaders[name]);
-    }
-    req.send("");
-    req.onload = () => {
-      if (req.status !== 200) {
-        console.warn(
-          "Attempt to set Screenshots cookie via /api/set-login-cookie failed:",
-          req.status,
-          req.statusText,
-          req.responseText
-        );
-      }
-    };
-  }
-
   registerListener(
     "delete-everything",
     catcher.watchFunction(event => {
       
     }, false)
-  );
-
-  registerListener(
-    "request-login",
-    catcher.watchFunction(event => {
-      const shotId = event.detail;
-      catcher.watchPromise(
-        callBackground("getAuthInfo", shotId || null).then(info => {
-          if (info) {
-            sendBackupCookieRequest(info.authHeaders);
-            sendCustomEvent("login-successful", {
-              accountId: info.accountId,
-              isOwner: info.isOwner,
-              backupCookieRequest: true,
-            });
-          }
-        })
-      );
-    })
   );
 
   registerListener(
