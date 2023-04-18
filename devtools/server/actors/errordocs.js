@@ -12,9 +12,25 @@
 
 
 const Services = require("Services");
-const supportBaseURL = !isWorker
-  ? Services.urlFormatter.formatURLPref("app.support.baseURL")
-  : "https://support.mozilla.org/kb/";
+
+loader.lazyGetter(this, "supportBaseURL", () => {
+  
+  
+  let url = "https://support.mozilla.org/kb/";
+
+  if (!isWorker) {
+    try {
+      
+      
+      url = Services.urlFormatter.formatURLPref("app.support.baseURL");
+    } catch (e) {
+      console.warn(
+        `Failed to format app.support.baseURL, falling back to ${url} (${e.message})`
+      );
+    }
+  }
+  return url;
+});
 
 const baseErrorURL =
   "https://developer.mozilla.org/docs/Web/JavaScript/Reference/Errors/";
