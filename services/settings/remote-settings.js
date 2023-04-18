@@ -21,6 +21,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UptakeTelemetry: "resource://services-common/uptake-telemetry.js",
   pushBroadcastService: "resource://gre/modules/PushBroadcastService.jsm",
   RemoteSettingsClient: "resource://services-settings/RemoteSettingsClient.jsm",
+  SyncHistory: "resource://services-settings/SyncHistory.jsm",
   Utils: "resource://services-settings/Utils.jsm",
   FilterExpressions:
     "resource://gre/modules/components-utils/FilterExpressions.jsm",
@@ -36,6 +37,9 @@ const PREF_SETTINGS_SERVER_BACKOFF = "server.backoff";
 const PREF_SETTINGS_LAST_UPDATE = "last_update_seconds";
 const PREF_SETTINGS_LAST_ETAG = "last_etag";
 const PREF_SETTINGS_CLOCK_SKEW_SECONDS = "clock_skew_seconds";
+const PREF_SETTINGS_SYNC_HISTORY_SIZE = "sync_history_size";
+const PREF_SETTINGS_SYNC_HISTORY_ERROR_THRESHOLD =
+  "sync_history_error_threshold";
 
 
 const TELEMETRY_COMPONENT = "remotesettings";
@@ -52,6 +56,19 @@ XPCOMUtils.defineLazyGetter(this, "gPrefs", () => {
   return Services.prefs.getBranch(PREF_SETTINGS_BRANCH);
 });
 XPCOMUtils.defineLazyGetter(this, "console", () => Utils.log);
+
+XPCOMUtils.defineLazyGetter(this, "gSyncHistory", () => {
+  const prefSize = gPrefs.getIntPref(PREF_SETTINGS_SYNC_HISTORY_SIZE, 100);
+  const size = Math.min(Math.max(prefSize, 1000), 10);
+  return new SyncHistory(TELEMETRY_SOURCE_SYNC, { size });
+});
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gPrefBrokenSyncThreshold",
+  PREF_SETTINGS_BRANCH + PREF_SETTINGS_SYNC_HISTORY_ERROR_THRESHOLD,
+  10
+);
 
 
 
@@ -146,6 +163,27 @@ function remoteSettingsFunction() {
     
     console.debug(`No known client for ${bucketName}/${collectionName}`);
     return null;
+  }
+
+  
+
+
+
+
+  async function isSynchronizationBroken() {
+    
+    const threshold = Math.min(gPrefBrokenSyncThreshold, 20);
+    
+    const pastEntries = await gSyncHistory.list();
+    const lastSuccessIdx = pastEntries.findIndex(
+      e => e.status == UptakeTelemetry.STATUS_SUCCESS
+    );
+    return (
+      
+      lastSuccessIdx >= threshold ||
+      
+      (lastSuccessIdx < 0 && pastEntries.length >= threshold)
+    );
   }
 
   
@@ -337,31 +375,59 @@ function remoteSettingsFunction() {
 
     if (firstError) {
       
+      const status = UptakeTelemetry.STATUS.SYNC_ERROR;
       await UptakeTelemetry.report(
         TELEMETRY_COMPONENT,
-        UptakeTelemetry.STATUS.SYNC_ERROR,
+        status,
         syncTelemetryArgs
       );
+      
+      await gSyncHistory
+        .store(currentEtag, status, {
+          expectedTimestamp,
+          errorName: firstError.name,
+        })
+        .catch(error => Cu.reportError(error));
       
       Services.obs.notifyObservers(
         { wrappedJSObject: { error: firstError } },
         "remote-settings:sync-error"
       );
+
+      
+      
+      
+      if (await isSynchronizationBroken()) {
+        await UptakeTelemetry.report(
+          TELEMETRY_COMPONENT,
+          UptakeTelemetry.STATUS.SYNC_BROKEN_ERROR,
+          syncTelemetryArgs
+        );
+
+        Services.obs.notifyObservers(
+          { wrappedJSObject: { error: firstError } },
+          "remote-settings:broken-sync-error"
+        );
+      }
+
       
       throw firstError;
     }
 
     
-    if (currentEtag) {
-      gPrefs.setCharPref(PREF_SETTINGS_LAST_ETAG, currentEtag);
-    }
+    gPrefs.setCharPref(PREF_SETTINGS_LAST_ETAG, currentEtag);
 
     
+    const status = UptakeTelemetry.STATUS.SUCCESS;
     await UptakeTelemetry.report(
       TELEMETRY_COMPONENT,
-      UptakeTelemetry.STATUS.SUCCESS,
+      status,
       syncTelemetryArgs
     );
+    
+    await gSyncHistory
+      .store(currentEtag, status)
+      .catch(error => Cu.reportError(error));
 
     console.info("Polling for changes done");
     Services.obs.notifyObservers(null, "remote-settings:changes-poll-end");
@@ -409,6 +475,9 @@ function remoteSettingsFunction() {
       mainBucket: Services.prefs.getCharPref(PREF_SETTINGS_DEFAULT_BUCKET),
       defaultSigner: DEFAULT_SIGNER,
       collections: collections.filter(c => !!c),
+      history: {
+        [TELEMETRY_SOURCE_SYNC]: await gSyncHistory.list(),
+      },
     };
   };
 

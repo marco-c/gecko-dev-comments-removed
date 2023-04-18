@@ -123,6 +123,7 @@ class UptakeTelemetry {
 
 
 
+
   static get STATUS() {
     return {
       UP_TO_DATE: "up_to_date",
@@ -146,6 +147,7 @@ class UptakeTelemetry {
       SHUTDOWN_ERROR: "shutdown_error",
       UNKNOWN_ERROR: "unknown_error",
       CLEANUP_ERROR: "cleanup_error",
+      SYNC_BROKEN_ERROR: "sync_broken_error",
       CUSTOM_1_ERROR: "custom_1_error",
       CUSTOM_2_ERROR: "custom_2_error",
       CUSTOM_3_ERROR: "custom_3_error",
