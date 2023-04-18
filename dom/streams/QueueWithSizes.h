@@ -27,7 +27,16 @@ struct ValueWithSize : LinkedListElement<ValueWithSize> {
   double mSize = 0.0f;
 };
 
-using QueueWithSizes = LinkedList<ValueWithSize>;
+
+
+
+
+
+
+
+
+
+using QueueWithSizes = AutoCleanLinkedList<ValueWithSize>;
 
 
 inline bool IsNonNegativeNumber(double v) {
@@ -59,6 +68,7 @@ inline void EnqueueValueWithSize(QueueContainingClass aContainer,
     return;
   }
 
+  
   
   ValueWithSize* valueWithSize = new ValueWithSize(aValue, aSize);
   aContainer->Queue().insertBack(valueWithSize);
