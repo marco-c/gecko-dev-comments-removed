@@ -17,12 +17,6 @@
 class nsICookieJarSettings;
 class nsWindow;
 
-#ifdef MOZ_WAYLAND
-class DataOffer;
-#else
-typedef nsISupports DataOffer;
-#endif
-
 namespace mozilla {
 namespace gfx {
 class SourceSurface;
@@ -80,12 +74,10 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
                           guint aInfo, guint32 aTime);
 
   gboolean ScheduleMotionEvent(nsWindow* aWindow, GdkDragContext* aDragContext,
-                               RefPtr<DataOffer> aPendingWaylandDataOffer,
                                mozilla::LayoutDeviceIntPoint aWindowPoint,
                                guint aTime);
   void ScheduleLeaveEvent();
   gboolean ScheduleDropEvent(nsWindow* aWindow, GdkDragContext* aDragContext,
-                             RefPtr<DataOffer> aPendingWaylandDataOffer,
                              mozilla::LayoutDeviceIntPoint aWindowPoint,
                              guint aTime);
 
@@ -153,9 +145,6 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   uintptr_t mCachedDragContext;
 
-#ifdef MOZ_WAYLAND
-  RefPtr<DataOffer> mPendingWaylandDataOffer;
-#endif
   guint mPendingTime;
 
   
@@ -167,9 +156,6 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   RefPtr<GtkWidget> mTargetWidget;
   RefPtr<GdkDragContext> mTargetDragContext;
-#ifdef MOZ_WAYLAND
-  RefPtr<DataOffer> mTargetWaylandDataOffer;
-#endif
 
   
   
@@ -180,9 +166,6 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   
   RefPtr<GdkDragContext> mTargetDragContextForRemote;
-#ifdef MOZ_WAYLAND
-  RefPtr<DataOffer> mTargetWaylandDataOfferForRemote;
-#endif
   guint mTargetTime;
 
   
@@ -222,7 +205,6 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
 
   gboolean Schedule(DragTask aTask, nsWindow* aWindow,
                     GdkDragContext* aDragContext,
-                    RefPtr<DataOffer> aPendingWaylandDataOffer,
                     mozilla::LayoutDeviceIntPoint aWindowPoint, guint aTime);
 
   
@@ -231,9 +213,6 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   void UpdateDragAction();
   MOZ_CAN_RUN_SCRIPT void DispatchMotionEvents();
   void ReplyToDragMotion(GdkDragContext* aDragContext);
-#ifdef MOZ_WAYLAND
-  void ReplyToDragMotion(RefPtr<DataOffer> aDragContext);
-#endif
 #ifdef MOZ_LOGGING
   const char* GetDragServiceTaskName(nsDragService::DragTask aTask);
 #endif
