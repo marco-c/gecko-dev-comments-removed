@@ -17,7 +17,6 @@
 #include "frontend/SharedContext.h"
 #include "js/friend/ErrorMessages.h"  
 #include "vm/GeneratorAndAsyncKind.h"  
-#include "vm/GeneratorObject.h"  
 #include "vm/WellKnownAtom.h"    
 
 namespace js {
@@ -197,12 +196,23 @@ class ParseContext : public Nestable<ParseContext> {
     
     
     
+    
+    
+    
+    
+    
+    
+    static constexpr uint32_t FixedSlotLimit = 256;
+
+    
+    
+    
     void setOwnStackSlotCount(uint32_t ownSlotCount) {
       
       
       
       uint32_t slotCount = ownSlotCount + sizeBits_;
-      if (slotCount > AbstractGeneratorObject::FixedSlotLimit) {
+      if (slotCount > FixedSlotLimit) {
         slotCount = sizeBits_;
         sizeBits_ = UINT32_MAX;
       } else {

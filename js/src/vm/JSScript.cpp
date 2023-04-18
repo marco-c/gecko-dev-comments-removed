@@ -35,6 +35,7 @@
 #include "frontend/BytecodeCompiler.h"
 #include "frontend/BytecodeEmitter.h"
 #include "frontend/CompilationStencil.h"  
+#include "frontend/ParseContext.h"
 #include "frontend/SharedContext.h"
 #include "frontend/SourceNotes.h"  
 #include "frontend/StencilXdr.h"  
@@ -2916,7 +2917,12 @@ bool JSScript::fullyInitFromStencil(
     }
   }
 
-  script->initSharedData(stencil.sharedData.get(scriptIndex));
+  auto* scriptData = stencil.sharedData.get(scriptIndex);
+  MOZ_ASSERT_IF(
+      script->isGenerator() || script->isAsync(),
+      scriptData->nfixed() <= frontend::ParseContext::Scope::FixedSlotLimit);
+
+  script->initSharedData(scriptData);
 
   
   rollbackGuard.release();
