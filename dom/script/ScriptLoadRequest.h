@@ -65,8 +65,6 @@ class ScriptFetchOptions {
 
   const mozilla::CORSMode mCORSMode;
   const enum ReferrerPolicy mReferrerPolicy;
-  bool mIsPreload;
-  nsCOMPtr<Element> mElement;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   
   
@@ -363,10 +361,7 @@ class DOMScriptLoadContext : public PreloaderBase {
     scriptElement->ScriptEvaluated(aResult, scriptElement, mIsInline);
   }
 
-  bool IsPreload() const {
-    MOZ_ASSERT_IF(mRequest->mFetchOptions->mIsPreload, !GetScriptElement());
-    return mRequest->mFetchOptions->mIsPreload;
-  }
+  bool IsPreload() const;
 
   bool CompileStarted() const {
     return mRequest->InCompilingStage() ||
@@ -413,7 +408,7 @@ class DOMScriptLoadContext : public PreloaderBase {
   void SetIsPreloadRequest() {
     MOZ_ASSERT(!GetScriptElement());
     MOZ_ASSERT(!IsPreload());
-    mRequest->mFetchOptions->mIsPreload = true;
+    mIsPreload = true;
   }
 
   
@@ -457,6 +452,8 @@ class DOMScriptLoadContext : public PreloaderBase {
                                 
                                 
 
+  
+  bool mIsPreload;
   nsCOMPtr<Element> mElement;
 
   RefPtr<ScriptLoadRequest> mRequest;
