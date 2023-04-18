@@ -105,14 +105,6 @@ const ContentBlockingAllowList = {
   
 
 
-  removeByPrincipal(principal) {
-    Services.perms.removeFromPrincipal(principal, "trackingprotection");
-    Services.perms.removeFromPrincipal(principal, "trackingprotection-pb");
-  },
-
-  
-
-
 
   includes(browser) {
     let prin = this._basePrincipalForAntiTrackingCommon(browser);
@@ -121,42 +113,5 @@ const ContentBlockingAllowList = {
       Services.perms.testExactPermissionFromPrincipal(prin, type) ==
       Services.perms.ALLOW_ACTION
     );
-  },
-
-  
-
-
-
-  getAllowListedPrincipals() {
-    const exceptions = Services.perms
-      .getAllWithTypePrefix("trackingprotection")
-      .filter(
-        
-        p => p.type == "trackingprotection"
-      );
-    return exceptions.map(e => e.principal);
-  },
-
-  
-
-
-
-  addAllowListPrincipals(principals) {
-    principals.forEach(p =>
-      Services.perms.addFromPrincipal(
-        p,
-        "trackingprotection",
-        Services.perms.ALLOW_ACTION,
-        Ci.nsIPermissionManager.EXPIRE_NEVER
-      )
-    );
-  },
-
-  
-
-
-  wipeLists() {
-    Services.perms.removeByType("trackingprotection");
-    Services.perms.removeByType("trackingprotection-pb");
   },
 };
