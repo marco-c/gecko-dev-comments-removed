@@ -38,11 +38,8 @@ class StackingContextHelper;
 
 class nsDisplayTableItem : public nsPaintedDisplayItem {
  public:
-  nsDisplayTableItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                     bool aDrawsBackground = true)
-      : nsPaintedDisplayItem(aBuilder, aFrame),
-        mPartHasFixedBackground(false),
-        mDrawsBackground(aDrawsBackground) {}
+  nsDisplayTableItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
+      : nsPaintedDisplayItem(aBuilder, aFrame) {}
 
   
   
@@ -56,12 +53,6 @@ class nsDisplayTableItem : public nsPaintedDisplayItem {
   virtual void ComputeInvalidationRegion(
       nsDisplayListBuilder* aBuilder, const nsDisplayItemGeometry* aGeometry,
       nsRegion* aInvalidRegion) const override;
-
-  void UpdateForFrameBackground(nsIFrame* aFrame);
-
- private:
-  bool mPartHasFixedBackground;
-  bool mDrawsBackground;
 };
 
 class nsDisplayTableBackgroundSet {
