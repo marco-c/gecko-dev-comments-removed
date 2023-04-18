@@ -600,7 +600,15 @@ class Preferences {
 
     try {
       this._updatingFirefoxSuggestScenario = true;
+
+      
+      
+      
+      
+      
       await Region.init();
+      await NimbusFeatures.urlbar.ready();
+
       this._updateFirefoxSuggestScenarioHelper(isStartup, scenarioOverride);
     } finally {
       this._updatingFirefoxSuggestScenario = false;
