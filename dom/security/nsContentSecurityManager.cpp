@@ -996,7 +996,14 @@ void nsContentSecurityManager::MeasureUnexpectedPrivilegedLoads(
 nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
     nsIChannel* aChannel) {
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-
+  nsCOMPtr<nsIPrincipal> inspectedPrincipal = loadInfo->GetLoadingPrincipal();
+  if (!inspectedPrincipal) {
+    return NS_OK;
+  }
+  
+  if (!inspectedPrincipal->IsSystemPrincipal()) {
+    return NS_OK;
+  }
   
   
   if (loadInfo->GetAllowDeprecatedSystemRequests()) {
@@ -1004,23 +1011,8 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
   }
   ExtContentPolicyType contentPolicyType =
       loadInfo->GetExternalContentPolicyType();
-
   
   if (contentPolicyType == ExtContentPolicy::TYPE_DOCUMENT) {
-    return NS_OK;
-  }
-
-  
-  
-  nsCOMPtr<nsIPrincipal> inspectedPrincipal;
-  if (contentPolicyType != ExtContentPolicy::TYPE_DOCUMENT) {
-    inspectedPrincipal = loadInfo->GetLoadingPrincipal();
-  } else {
-    inspectedPrincipal = loadInfo->TriggeringPrincipal();
-  }
-
-  
-  if (!inspectedPrincipal || !inspectedPrincipal->IsSystemPrincipal()) {
     return NS_OK;
   }
 
@@ -1046,12 +1038,7 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
   }
   
   
-  while (finalURI && finalURI->SchemeIs("view-source")) {
-    nsCOMPtr<nsINestedURI> nested = do_QueryInterface(finalURI);
-    if (nested) {
-      nested->GetInnerURI(getter_AddRefs(finalURI));
-    }
-  }
+  nsCOMPtr<nsIURI> innerURI = NS_GetInnermostURI(finalURI);
 
   nsAutoCString remoteType;
   if (XRE_IsParentProcess()) {
@@ -1066,20 +1053,16 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
   }
 
   
-  
-  bool cancelNonLocalSystemPrincipal = StaticPrefs::
-      security_cancel_non_local_loads_triggered_by_systemprincipal();
-
-  
-  if (!finalURI) {
-    MeasureUnexpectedPrivilegedLoads(loadInfo, finalURI, remoteType);
-    if (cancelNonLocalSystemPrincipal) {
+  if (!innerURI) {
+    MeasureUnexpectedPrivilegedLoads(loadInfo, innerURI, remoteType);
+    if (StaticPrefs::security_disallow_privileged_no_finaluri_loads()) {
       aChannel->Cancel(NS_ERROR_CONTENT_BLOCKED);
       return NS_ERROR_CONTENT_BLOCKED;
     }
+    return NS_OK;
   }
   
-  if (finalURI->SchemeIs("file")) {
+  if (innerURI->SchemeIs("file")) {
     if ((contentPolicyType == ExtContentPolicy::TYPE_STYLESHEET) ||
         (contentPolicyType == ExtContentPolicy::TYPE_OTHER)) {
       return NS_OK;
@@ -1089,13 +1072,26 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
   
   
   
-  if (finalURI->SchemeIs("jar") || finalURI->SchemeIs("about") ||
-      finalURI->SchemeIs("moz-extension")) {
+  if (innerURI->SchemeIs("jar") || innerURI->SchemeIs("about") ||
+      innerURI->SchemeIs("moz-extension")) {
     return NS_OK;
   }
+
+  nsAutoCString requestedURL;
+  innerURI->GetAsciiSpec(requestedURL);
+  MOZ_LOG(sCSMLog, LogLevel::Warning,
+          ("SystemPrincipal should not load remote resources. URL: %s, type %d",
+           requestedURL.get(), int(contentPolicyType)));
+
   
   
-  MeasureUnexpectedPrivilegedLoads(loadInfo, finalURI, remoteType);
+  
+  
+  
+
+  
+  
+  MeasureUnexpectedPrivilegedLoads(loadInfo, innerURI, remoteType);
 
   
   
@@ -1116,61 +1112,41 @@ nsresult nsContentSecurityManager::CheckAllowLoadInSystemPrivilegedContext(
     return NS_OK;
   }
 
-  nsAutoCString requestedURL;
-  finalURI->GetAsciiSpec(requestedURL);
-  MOZ_LOG(sCSMLog, LogLevel::Warning,
-          ("SystemPrincipal should not load remote resources. URL: %s, type %d",
-           requestedURL.get(), int(contentPolicyType)));
-
-  
-  
-  
-  
-  
   if (contentPolicyType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
     if (StaticPrefs::security_disallow_privileged_https_subdocuments_loads() &&
-        (finalURI->SchemeIs("http") || finalURI->SchemeIs("https"))) {
-#ifdef DEBUG
-      MOZ_CRASH("Disallowing SystemPrincipal load of subdocuments on HTTP(S).");
-#endif
+        (innerURI->SchemeIs("http") || innerURI->SchemeIs("https"))) {
+      MOZ_ASSERT(
+          false,
+          "Disallowing SystemPrincipal load of subdocuments on HTTP(S).");
       aChannel->Cancel(NS_ERROR_CONTENT_BLOCKED);
       return NS_ERROR_CONTENT_BLOCKED;
     }
     if ((StaticPrefs::security_disallow_privileged_data_subdocuments_loads()) &&
-        (finalURI->SchemeIs("data"))) {
-#ifdef DEBUG
-      MOZ_CRASH(
+        (innerURI->SchemeIs("data"))) {
+      MOZ_ASSERT(
+          false,
           "Disallowing SystemPrincipal load of subdocuments on data URL.");
-#endif
       aChannel->Cancel(NS_ERROR_CONTENT_BLOCKED);
       return NS_ERROR_CONTENT_BLOCKED;
     }
   }
   if (contentPolicyType == ExtContentPolicy::TYPE_SCRIPT) {
     if ((StaticPrefs::security_disallow_privileged_https_script_loads()) &&
-        (finalURI->SchemeIs("http") || finalURI->SchemeIs("https"))) {
-#ifdef DEBUG
-      MOZ_CRASH("Disallowing SystemPrincipal load of scripts on HTTP(S).");
-#endif
+        (innerURI->SchemeIs("http") || innerURI->SchemeIs("https"))) {
+      MOZ_ASSERT(false,
+                 "Disallowing SystemPrincipal load of scripts on HTTP(S).");
       aChannel->Cancel(NS_ERROR_CONTENT_BLOCKED);
       return NS_ERROR_CONTENT_BLOCKED;
     }
   }
   if (contentPolicyType == ExtContentPolicy::TYPE_STYLESHEET) {
     if (StaticPrefs::security_disallow_privileged_https_stylesheet_loads() &&
-        (finalURI->SchemeIs("http") || finalURI->SchemeIs("https"))) {
-#ifdef DEBUG
-      MOZ_CRASH("Disallowing SystemPrincipal load of stylesheets on HTTP(S).");
-#endif
+        (innerURI->SchemeIs("http") || innerURI->SchemeIs("https"))) {
+      MOZ_ASSERT(false,
+                 "Disallowing SystemPrincipal load of stylesheets on HTTP(S).");
       aChannel->Cancel(NS_ERROR_CONTENT_BLOCKED);
       return NS_ERROR_CONTENT_BLOCKED;
     }
-  }
-
-  if (cancelNonLocalSystemPrincipal) {
-    MOZ_ASSERT(false, "SystemPrincipal must not load remote documents.");
-    aChannel->Cancel(NS_ERROR_CONTENT_BLOCKED);
-    return NS_ERROR_CONTENT_BLOCKED;
   }
   return NS_OK;
 }
