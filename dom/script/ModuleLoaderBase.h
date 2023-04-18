@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_ModuleLoader_h
-#define mozilla_dom_ModuleLoader_h
+#ifndef mozilla_dom_ModuleLoaderBase_h
+#define mozilla_dom_ModuleLoaderBase_h
 
 #include "js/TypeDecls.h"  
 #include "nsRefPtrHashtable.h"
@@ -40,7 +40,7 @@ union Utf8Unit;
 
 namespace dom {
 
-class ModuleLoader;
+class ModuleLoaderBase;
 class ModuleLoadRequest;
 class ModuleScript;
 
@@ -62,11 +62,30 @@ class ScriptLoaderInterface : public nsISupports {
       JSContext* cx, ScriptLoadRequest* aRequest,
       JS::Handle<JSObject*> aScopeChain, JS::CompileOptions* aOptions,
       JS::MutableHandle<JSScript*> aIntroductionScript) = 0;
+};
 
-  virtual nsresult ProcessRequest(ScriptLoadRequest* aRequest) = 0;
+class ModuleLoaderBase : public nsISupports {
+ private:
+  
+  nsRefPtrHashtable<ModuleMapKey, mozilla::GenericNonExclusivePromise::Private>
+      mFetchingModules;
+  nsRefPtrHashtable<ModuleMapKey, ModuleScript> mFetchedModules;
 
-  virtual void RunScriptWhenSafe(ScriptLoadRequest* aRequest) = 0;
+ protected:
+  virtual ~ModuleLoaderBase();
+  RefPtr<ScriptLoaderInterface> mLoader;
 
+ public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS(ModuleLoaderBase)
+  explicit ModuleLoaderBase(ScriptLoaderInterface* aLoader);
+
+  ScriptLoadRequestList mDynamicImportRequests;
+
+  using MaybeSourceText =
+      mozilla::MaybeOneOf<JS::SourceText<char16_t>, JS::SourceText<Utf8Unit>>;
+
+  
   virtual void EnsureModuleHooksInitialized() = 0;
   virtual nsresult StartModuleLoad(ScriptLoadRequest* aRequest) = 0;
   virtual void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest) = 0;
@@ -74,27 +93,10 @@ class ScriptLoaderInterface : public nsISupports {
       JSContext* aCx, JS::Handle<JSObject*> aGlobal,
       JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
       JS::MutableHandle<JSObject*> aModuleScript) = 0;
-};
-
-class ModuleLoader : public nsISupports {
- private:
-  virtual ~ModuleLoader();
 
   
-  nsRefPtrHashtable<ModuleMapKey, mozilla::GenericNonExclusivePromise::Private>
-      mFetchingModules;
-  nsRefPtrHashtable<ModuleMapKey, ModuleScript> mFetchedModules;
-  RefPtr<ScriptLoaderInterface> mLoader;
-
- public:
-  ScriptLoadRequestList mDynamicImportRequests;
-
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(ModuleLoader)
-  explicit ModuleLoader(ScriptLoaderInterface* aLoader);
-
-  using MaybeSourceText =
-      mozilla::MaybeOneOf<JS::SourceText<char16_t>, JS::SourceText<Utf8Unit>>;
+  virtual already_AddRefed<ModuleLoadRequest> CreateStaticImport(
+      nsIURI* aURI, ModuleLoadRequest* aParent) = 0;
 
   
   nsresult EvaluateModule(ScriptLoadRequest* aRequest);
@@ -172,8 +174,6 @@ class ModuleLoader : public nsISupports {
                                   nsresult aResult,
                                   JS::Handle<JSObject*> aEvaluationPromise);
 
-  void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest);
-
   nsresult CreateModuleScript(ModuleLoadRequest* aRequest);
   nsresult ProcessFetchedModuleSource(ModuleLoadRequest* aRequest);
   void ProcessDynamicImport(ModuleLoadRequest* aRequest);
@@ -181,7 +181,7 @@ class ModuleLoader : public nsISupports {
 
  public:
   static LazyLogModule gCspPRLog;
-  static LazyLogModule gModuleLoaderLog;
+  static LazyLogModule gModuleLoaderBaseLog;
 };
 
 }  
