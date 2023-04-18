@@ -1268,11 +1268,8 @@ layers::LayersBackend HTMLCanvasElement::GetCompositorBackendType() const {
 }
 
 void HTMLCanvasElement::OnMemoryPressure() {
-  if (mOffscreenCanvas) {
-    MOZ_CRASH("todo");
-    
-    return;
-  }
+  
+  
 
   if (mCurrentContext) {
     mCurrentContext->OnMemoryPressure();
