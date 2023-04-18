@@ -15,6 +15,7 @@
 #include <cstring>
 #include "mozilla/Assertions.h"
 #include "mozilla/Unused.h"
+#include "FdPrintf.h"
 
 
 template <typename T>
