@@ -208,8 +208,15 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
 
   ReentrantMonitor mReentrantMonitor{"nsHttpConnectionMgr.mReentrantMonitor"};
+  
+  
   nsCOMPtr<nsIEventTarget> mSocketThreadTarget;
 
+  Atomic<bool, mozilla::Relaxed> mIsShuttingDown{false};
+
+  
+  
+  
   
   uint16_t mMaxUrgentExcessiveConns{0};
   uint16_t mMaxConns{0};
@@ -225,11 +232,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   uint32_t mThrottleHoldTime{0};
   TimeDuration mThrottleMaxTime;
   bool mBeConservativeForProxy{true};
-  Atomic<bool, mozilla::Relaxed> mIsShuttingDown{false};
-
-  
-  
-  
 
   [[nodiscard]] bool ProcessPendingQForEntry(ConnectionEntry*,
                                              bool considerAll);
