@@ -791,7 +791,7 @@ class AddonInternal {
     
     
     if (
-      this.type === "extension" &&
+      (this.type === "extension" || this.type == "sitepermission") &&
       this.incognito !== "not_allowed" &&
       this.signedState !== AddonManager.SIGNEDSTATE_PRIVILEGED &&
       this.signedState !== AddonManager.SIGNEDSTATE_SYSTEM &&
