@@ -23,8 +23,8 @@ use crate::stylesheets::stylesheet::Namespaces;
 use crate::stylesheets::supports_rule::SupportsCondition;
 use crate::stylesheets::{
     viewport_rule, AllowImportRules, CorsMode, CssRule, CssRuleType, CssRules, DocumentRule,
-    FontFeatureValuesRule, KeyframesRule, MediaRule, NamespaceRule, PageRule, RulesMutateError,
-    ScrollTimelineRule, StyleRule, StylesheetLoader, SupportsRule, ViewportRule,
+    FontFeatureValuesRule, KeyframesRule, MediaRule, NamespaceRule, PageRule, PageSelectors,
+    RulesMutateError, ScrollTimelineRule, StyleRule, StylesheetLoader, SupportsRule, ViewportRule,
 };
 use crate::values::computed::font::FamilyName;
 use crate::values::{CssUrl, CustomIdent, KeyframesName, TimelineName};
@@ -169,7 +169,7 @@ pub enum AtRulePrelude {
     
     Keyframes(KeyframesName, Option<VendorPrefix>),
     
-    Page,
+    Page(PageSelectors),
     
     Document(DocumentCondition),
     
@@ -464,7 +464,11 @@ impl<'a, 'b, 'i> AtRuleParser<'i> for NestedRuleParser<'a, 'b> {
                 AtRulePrelude::Keyframes(name, prefix)
             },
             "page" if cfg!(feature = "gecko") => {
-                AtRulePrelude::Page
+                AtRulePrelude::Page(if static_prefs::pref!("layout.css.named-pages.enabled") {
+                    input.try_parse(|i| PageSelectors::parse(self.context, i)).unwrap_or_default()
+                } else {
+                    PageSelectors::default()
+                })
             },
             "-moz-document" if cfg!(feature = "gecko") => {
                 let cond = DocumentCondition::parse(self.context, input)?;
@@ -577,7 +581,7 @@ impl<'a, 'b, 'i> AtRuleParser<'i> for NestedRuleParser<'a, 'b> {
                     },
                 ))))
             },
-            AtRulePrelude::Page => {
+            AtRulePrelude::Page(selectors) => {
                 let context = ParserContext::new_with_rule_type(
                     self.context,
                     CssRuleType::Page,
@@ -586,6 +590,7 @@ impl<'a, 'b, 'i> AtRuleParser<'i> for NestedRuleParser<'a, 'b> {
 
                 let declarations = parse_property_declaration_list(&context, input, None);
                 Ok(CssRule::Page(Arc::new(self.shared_lock.wrap(PageRule {
+                    selectors,
                     block: Arc::new(self.shared_lock.wrap(declarations)),
                     source_location: start.source_location(),
                 }))))

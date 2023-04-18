@@ -1636,6 +1636,52 @@ impl<T: 'static> LayerOrderedMap<T> {
 
 
 
+
+#[derive(Clone, Debug, MallocSizeOf)]
+pub struct PageRuleData {
+    
+    pub layer: LayerId,
+    
+    #[ignore_malloc_size_of = "Arc, stylesheet measures as primary ref"]
+    pub rule: Arc<Locked<PageRule>>,
+}
+
+
+
+
+
+
+#[derive(Clone, Debug, Deref, MallocSizeOf)]
+pub struct PageRuleDataNoLayer(
+    #[ignore_malloc_size_of = "Arc, stylesheet measures as primary ref"]
+    pub Arc<Locked<PageRule>>,
+);
+
+
+#[derive(Clone, Debug, Default, MallocSizeOf)]
+pub struct PageRuleMap {
+    
+    pub global: LayerOrderedVec<PageRuleDataNoLayer>,
+    
+    pub named: PrecomputedHashMap<Atom, SmallVec<[PageRuleData; 1]>>,
+}
+
+impl PageRuleMap {
+    #[inline]
+    fn clear(&mut self) {
+        self.global.clear();
+        self.named.clear();
+    }
+}
+
+impl MallocShallowSizeOf for PageRuleMap {
+    fn shallow_size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
+        self.global.size_of(ops) + self.named.shallow_size_of(ops)
+    }
+}
+
+
+
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "servo", derive(MallocSizeOf))]
 pub struct ExtraStyleData {
@@ -1653,7 +1699,7 @@ pub struct ExtraStyleData {
 
     
     #[cfg(feature = "gecko")]
-    pub pages: LayerOrderedVec<Arc<Locked<PageRule>>>,
+    pub pages: PageRuleMap,
 
     
     #[cfg(feature = "gecko")]
@@ -1688,8 +1734,25 @@ impl ExtraStyleData {
     }
 
     
-    fn add_page(&mut self, rule: &Arc<Locked<PageRule>>, layer: LayerId) {
-        self.pages.push(rule.clone(), layer);
+    fn add_page(
+        &mut self,
+        guard: &SharedRwLockReadGuard,
+        rule: &Arc<Locked<PageRule>>,
+        layer: LayerId,
+    ) -> Result<(), AllocErr> {
+        let page_rule = rule.read_with(guard);
+        if page_rule.selectors.0.is_empty() {
+            self.pages.global.push(PageRuleDataNoLayer(rule.clone()), layer);
+        } else {
+            
+            self.pages.named.try_reserve(page_rule.selectors.0.len())?;
+            for name in page_rule.selectors.as_slice() {
+                let vec = self.pages.named.entry(name.0.0.clone()).or_default();
+                vec.try_reserve(1)?;
+                vec.push(PageRuleData{layer, rule: rule.clone()});
+            }
+        }
+        Ok(())
     }
 
     
@@ -1707,7 +1770,7 @@ impl ExtraStyleData {
         self.font_faces.sort(layers);
         self.font_feature_values.sort(layers);
         self.counter_styles.sort(layers);
-        self.pages.sort(layers);
+        self.pages.global.sort(layers);
         self.scroll_timelines.sort(layers);
     }
 
@@ -2537,7 +2600,7 @@ impl CascadeData {
                 },
                 #[cfg(feature = "gecko")]
                 CssRule::Page(ref rule) => {
-                    self.extra_data.add_page(rule, current_layer_id);
+                    self.extra_data.add_page(guard, rule, current_layer_id)?;
                 },
                 CssRule::Viewport(..) => {},
                 _ => {
