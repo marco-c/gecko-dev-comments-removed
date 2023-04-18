@@ -36,7 +36,7 @@ class ImageBitmap;
 struct ImageEncodeOptions;
 
 using OwningOffscreenRenderingContext = class
-    OwningImageBitmapRenderingContextOrWebGLRenderingContextOrWebGL2RenderingContextOrGPUCanvasContext;
+    OwningOffscreenCanvasRenderingContext2DOrImageBitmapRenderingContextOrWebGLRenderingContextOrWebGL2RenderingContextOrGPUCanvasContext;
 
 
 
@@ -150,6 +150,8 @@ class OffscreenCanvas final : public DOMEventTargetHelper,
   }
 
   bool ShouldResistFingerprinting() const;
+
+  bool IsTransferredFromElement() const { return !!mDisplay; }
 
  private:
   ~OffscreenCanvas();
