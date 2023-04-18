@@ -1533,7 +1533,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   }
 
   bool IsContainPaint() const {
-    return (mContain & mozilla::StyleContain::PAINT) &&
+    return (mContain & mozilla::StyleContain::PAINT ||
+            !IsContentVisibilityVisible()) &&
            !IsInternalRubyDisplayType() && !IsInternalTableStyleExceptCell();
   }
 
@@ -1545,7 +1546,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
     
     
     
-    return (mContain & mozilla::StyleContain::LAYOUT) &&
+    return (mContain & mozilla::StyleContain::LAYOUT ||
+            !IsContentVisibilityVisible()) &&
            !IsInternalRubyDisplayType() && !IsInternalTableStyleExceptCell();
   }
 
@@ -1557,10 +1559,15 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
     
     
     
-    return (mContain & mozilla::StyleContain::SIZE) &&
+    return (mContain & mozilla::StyleContain::SIZE ||
+            mContentVisibility == mozilla::StyleContentVisibility::Hidden) &&
            !IsInternalRubyDisplayType() &&
            DisplayInside() != mozilla::StyleDisplayInside::Table &&
            !IsInnerTableStyle();
+  }
+
+  bool IsContentVisibilityVisible() const {
+    return mContentVisibility == mozilla::StyleContentVisibility::Visible;
   }
 
   bool IsContentVisibilityHidden() const {
