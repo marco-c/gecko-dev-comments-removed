@@ -49,6 +49,7 @@ constexpr nsLiteralCString kTRRDomains[] = {
     "firefox.dns.nextdns.io"_ns,
     "private.canadianshield.cira.ca"_ns,
     "doh.xfinity.com"_ns,  
+    "dns.shaw.ca"_ns, 
     
 };
 
