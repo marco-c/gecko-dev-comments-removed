@@ -3245,7 +3245,10 @@ class nsDisplayList {
     }
 
     nsDisplayItem* bottom = mBottom->mValue;
-    mBottom = mBottom->mNext;
+
+    auto next = mBottom->mNext;
+    Deallocate(mBottom);
+    mBottom = next;
 
     if (!mBottom) {
       
