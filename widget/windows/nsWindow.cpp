@@ -7361,6 +7361,13 @@ bool nsWindow::ShouldUseOffMainThreadCompositing() {
     return false;
   }
 
+  
+  
+  if (mWindowType == eWindowType_popup && !mIsChildWindow) {
+    MOZ_ASSERT(!mParent);
+    return false;
+  }
+
   return nsBaseWidget::ShouldUseOffMainThreadCompositing();
 }
 
