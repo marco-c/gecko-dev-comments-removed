@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "AppearanceOverride.h"
 #include "mozilla/widget/ThemeChangeKind.h"
@@ -24,7 +24,7 @@
 #import <Cocoa/Cocoa.h>
 #import <AppKit/NSColor.h>
 
-
+// This must be included last:
 #include "nsObjCExceptions.h"
 
 using namespace mozilla;
@@ -61,24 +61,24 @@ static nscolor GetColorFromNSColorWithCustomAlpha(NSColor* aColor, float alpha) 
                  (unsigned int)(deviceColor.blueComponent * 255.0), (unsigned int)(alpha * 255.0));
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+// Turns an opaque selection color into a partially transparent selection color,
+// which usually leads to better contrast with the text color and which should
+// look more visually appealing in most contexts.
+// The idea is that the text and its regular, non-selected background are
+// usually chosen in such a way that they contrast well. Making the selection
+// color partially transparent causes the selection color to mix with the text's
+// regular background, so the end result will often have better contrast with
+// the text than an arbitrary opaque selection color.
+// The motivating example for this is the light selection color on dark web
+// pages: White text on a light blue selection color has very bad contrast,
+// whereas white text on dark blue (which what you get if you mix
+// partially-transparent light blue with the black textbox background) has much
+// better contrast.
 nscolor nsLookAndFeel::ProcessSelectionBackground(nscolor aColor, ColorScheme aScheme) {
   if (aScheme == ColorScheme::Dark) {
-    
-    
-    
+    // When we use a dark selection color, we do not change alpha because we do
+    // not use dark selection in content. The dark system color is appropriate for
+    // Firefox UI without needing to adjust its alpha.
     return aColor;
   }
   uint16_t hue, sat, value;
@@ -88,12 +88,12 @@ nscolor nsLookAndFeel::ProcessSelectionBackground(nscolor aColor, ColorScheme aS
   int factor = 2;
   alpha = alpha / factor;
   if (sat > 0) {
-    
-    
+    // The color is not a shade of grey, restore the saturation taken away by
+    // the transparency.
     sat = mozilla::clamped(sat * factor, 0, 255);
   } else {
-    
-    
+    // The color is a shade of grey, find the value that looks equivalent
+    // on a white background with the given opacity.
     value = mozilla::clamped(255 - (255 - value) * factor, 0, 255);
   }
   NS_HSV2RGB(resultColor, hue, sat, value, alpha);
@@ -104,10 +104,10 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK
 
   if (@available(macOS 10.14, *)) {
-    
-    
+    // No-op. macOS 10.14+ supports dark mode, so currentAppearance can be set
+    // to either Light or Dark.
   } else {
-    
+    // System colors before 10.14 are always Light.
     aScheme = ColorScheme::Light;
   }
 
@@ -122,8 +122,8 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
       color = ProcessSelectionBackground(GetColorFromNSColor(NSColor.selectedTextBackgroundColor),
                                          aScheme);
       break;
-    
-    
+    // This is used to gray out the selection when it's not focused. Used with
+    // nsISelectionController::SELECTION_DISABLED.
     case ColorID::TextSelectDisabledBackground:
       color = ProcessSelectionBackground(GetColorFromNSColor(NSColor.secondarySelectedControlColor),
                                          aScheme);
@@ -162,24 +162,24 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
       color = NS_RGB(0xff, 0, 0);
       break;
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+      //
+      // css2 system colors http://www.w3.org/TR/REC-CSS2/ui.html#system-colors
+      //
+      // It's really hard to effectively map these to the Appearance Manager properly,
+      // since they are modeled word for word after the win32 system colors and don't have any
+      // real counterparts in the Mac world. I'm sure we'll be tweaking these for
+      // years to come.
+      //
+      // Thanks to mpt26@student.canterbury.ac.nz for the hardcoded values that form the defaults
+      //  if querying the Appearance Manager fails ;)
+      //
     case ColorID::MozMacDefaultbuttontext:
       color = NS_RGB(0xFF, 0xFF, 0xFF);
       break;
     case ColorID::MozButtonactivetext:
-      
-      
-      
+      // Pre-macOS 12, pressed buttons were filled with the highlight color and the text was white.
+      // Starting with macOS 12, pressed (non-default) buttons are filled with medium gray and the
+      // text color is the same as in the non-pressed state.
       color = nsCocoaFeatures::OnMontereyOrLater() ? GetColorFromNSColor(NSColor.controlTextColor)
                                                    : NS_RGB(0xFF, 0xFF, 0xFF);
       break;
@@ -216,30 +216,28 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
     case ColorID::Buttonhighlight:
       color = GetColorFromNSColor(NSColor.selectedControlColor);
       break;
-    case ColorID::Buttonshadow:
-      color = NS_RGB(0xDC, 0xDC, 0xDC);
-      break;
     case ColorID::Inactivecaptiontext:
       color = NS_RGB(0x45, 0x45, 0x45);
       break;
     case ColorID::Scrollbar:
       color = GetColorFromNSColor(NSColor.scrollBarColor);
       break;
-    case ColorID::Threeddarkshadow:
-      color = NS_RGB(0xDC, 0xDC, 0xDC);
-      break;
-    case ColorID::Threedshadow:
-      color = NS_RGB(0xE0, 0xE0, 0xE0);
-      break;
-    case ColorID::Threedface:
-      color = NS_RGB(0xF0, 0xF0, 0xF0);
-      break;
     case ColorID::Threedhighlight:
       color = GetColorFromNSColor(NSColor.highlightColor);
       break;
+    case ColorID::Buttonshadow:
+    case ColorID::Threeddarkshadow:
+      color = aScheme == ColorScheme::Dark ? *GenericDarkColor(aID) : NS_RGB(0xDC, 0xDC, 0xDC);
+      break;
+    case ColorID::Threedshadow:
+      color = aScheme == ColorScheme::Dark ? *GenericDarkColor(aID) : NS_RGB(0xE0, 0xE0, 0xE0);
+      break;
+    case ColorID::Threedface:
+      color = aScheme == ColorScheme::Dark ? *GenericDarkColor(aID) : NS_RGB(0xF0, 0xF0, 0xF0);
+      break;
     case ColorID::Threedlightshadow:
     case ColorID::MozDisabledfield:
-      color = NS_RGB(0xDA, 0xDA, 0xDA);
+      color = aScheme == ColorScheme::Dark ? *GenericDarkColor(aID) : NS_RGB(0xDA, 0xDA, 0xDA);
       break;
     case ColorID::Menu:
       color = GetColorFromNSColor(NSColor.textBackgroundColor);
@@ -251,8 +249,8 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
       if (@available(macOS 10.14, *)) {
         color = GetColorFromNSColor(NSColor.windowBackgroundColor);
       } else {
-        
-        
+        // On 10.13 and below, NSColor.windowBackgroundColor is transparent black.
+        // Use a light grey instead (taken from macOS 11.5).
         color = NS_RGB(0xF6, 0xF6, 0xF6);
       }
       break;
@@ -311,15 +309,15 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
       break;
     case ColorID::MozCellhighlight:
     case ColorID::MozMacSecondaryhighlight:
-      
+      // For inactive list selection
       color = GetColorFromNSColor(NSColor.secondarySelectedControlColor);
       break;
     case ColorID::MozEventreerow:
-      
+      // Background color of even list rows.
       color = GetColorFromNSColor(NSColor.controlAlternatingRowBackgroundColors[0]);
       break;
     case ColorID::MozOddtreerow:
-      
+      // Background color of odd list rows.
       color = GetColorFromNSColor(NSColor.controlAlternatingRowBackgroundColors[1]);
       break;
     case ColorID::MozNativehyperlinktext:
@@ -328,14 +326,14 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
     case ColorID::MozNativevisitedhyperlinktext:
       color = GetColorFromNSColor(NSColor.systemPurpleColor);
       break;
-    
-    
-    
-    
-    
-    
-    
-    
+    // The following colors are supposed to be used as font-smoothing background
+    // colors, in the chrome-only -moz-font-smoothing-background-color property.
+    // This property is used for text on "vibrant" -moz-appearances.
+    // The colors have been obtained from the system on 10.14 using the
+    // program at https://bugzilla.mozilla.org/attachment.cgi?id=9208594 .
+    // We could obtain them at runtime, but doing so may be expensive and
+    // requires the use of the private API
+    // -[NSVisualEffectView fontSmoothingBackgroundColor].
     case ColorID::MozMacVibrantTitlebarLight:
       color = NS_RGB(0xe6, 0xe6, 0xe6);
       break;
@@ -392,8 +390,8 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       aResult = 0;
       break;
     case IntID::SelectTextfieldsOnKeyFocus:
-      
-      
+      // Select textfield content when focused by kbd
+      // used by EventStateManager::sTextfieldSelectModel
       aResult = 1;
       break;
     case IntID::SubmenuDelay:
@@ -403,7 +401,7 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       aResult = 500;
       break;
     case IntID::MenusCanOverlapOSBar:
-      
+      // xul popups are not allowed to overlap the menubar.
       aResult = 0;
       break;
     case IntID::SkipNavigatingDisabledMenuItem:
@@ -527,7 +525,7 @@ nsresult nsLookAndFeel::NativeGetFloat(FloatID aID, float& aResult) {
       id uaDefaults = [[NSUserDefaults alloc] initWithSuiteName:@"com.apple.universalaccess"];
       float f = [uaDefaults floatForKey:@"mouseDriverCursorSize"];
       [uaDefaults release];
-      aResult = f > 0.0 ? f : 1.0;  
+      aResult = f > 0.0 ? f : 1.0;  // default to 1.0 if value not available
       break;
     }
     default:
@@ -541,8 +539,8 @@ nsresult nsLookAndFeel::NativeGetFloat(FloatID aID, float& aResult) {
 }
 
 bool nsLookAndFeel::SystemWantsDarkTheme() {
-  
-  
+  // This returns true if the macOS system appearance is set to dark mode on
+  // 10.14+, false otherwise.
   if (@available(macOS 10.14, *)) {
     NSAppearanceName aquaOrDarkAqua = [NSApp.effectiveAppearance
         bestMatchFromAppearancesWithNames:@[ NSAppearanceNameAqua, NSAppearanceNameDarkAqua ]];
@@ -551,7 +549,7 @@ bool nsLookAndFeel::SystemWantsDarkTheme() {
   return false;
 }
 
-
+/*static*/
 bool nsLookAndFeel::IsSystemOrientationRTL() {
   NSWindow* window = [[NSWindow alloc] initWithContentRect:NSZeroRect
                                                  styleMask:NSWindowStyleMaskBorderless
@@ -565,7 +563,7 @@ bool nsLookAndFeel::IsSystemOrientationRTL() {
 bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName, gfxFontStyle& aFontStyle) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  
+  // hack for now
   if (aID == FontID::MozWindow || aID == FontID::MozDocument) {
     aFontStyle.style = mozilla::FontSlantStyle::Normal();
     aFontStyle.weight = mozilla::FontWeight::Normal();
@@ -577,7 +575,7 @@ bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName, gfxFontStyle&
     return true;
   }
 
-  
+  // TODO: Add caching? Note that it needs to be thread-safe for stylo use.
 
   nsAutoCString name;
   gfxPlatformMac::LookupSystemFont(aID, name, aFontStyle);
@@ -593,7 +591,7 @@ bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName, gfxFontStyle&
 + (void)startObserving {
   static MOZLookAndFeelDynamicChangeObserver* gInstance = nil;
   if (!gInstance) {
-    gInstance = [[MOZLookAndFeelDynamicChangeObserver alloc] init];  
+    gInstance = [[MOZLookAndFeelDynamicChangeObserver alloc] init];  // leaked
   }
 }
 
@@ -683,9 +681,9 @@ bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName, gfxFontStyle&
 }
 
 - (void)cachedValuesChanged {
-  
-  
-  
+  // We only need to re-cache (and broadcast) updated LookAndFeel values, so that they're up-to-date
+  // the next time they're queried. No further change handling is needed.
+  // TODO: Add a change hint for this which avoids the unnecessary media query invalidation.
   LookAndFeel::NotifyChangedAllWindows(widget::ThemeChangeKind::MediaQueriesOnly);
 }
 @end
