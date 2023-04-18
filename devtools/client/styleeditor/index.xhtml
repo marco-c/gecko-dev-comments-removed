@@ -5,8 +5,6 @@
 <!DOCTYPE window [
 <!ENTITY % editMenuStrings SYSTEM "chrome://global/locale/editMenuOverlay.dtd">
  %editMenuStrings;
-<!ENTITY % sourceEditorStrings SYSTEM "chrome://devtools/locale/sourceeditor.dtd">
- %sourceEditorStrings;
 ]>
 
 <?xml-stylesheet href="chrome://global/skin/global.css" type="text/css"?>
@@ -69,9 +67,7 @@
                 accesskey="&findAgainCmd.accesskey;" command="cmd_findAgain"/>
       <menuseparator/>
       <menuitem id="se-menu-gotoLine"
-          label="&gotoLineCmd.label;"
-          accesskey="&gotoLineCmd.accesskey;"
-          key="key_gotoLine"
+          data-l10n-id="styleeditor-go-to-line"
           command="cmd_gotoLine"/>
     </menupopup>
     <menupopup id="sidebar-context" incontentshell="false">
@@ -123,7 +119,7 @@
     <splitter class="devtools-side-splitter devtools-invisible-splitter"/>
     <box class="splitview-side-details devtools-main-content"/>
 
-    <html:div id="splitview-templates" hidden="true">
+    <html:div id="splitview-templates" hidden="">
       <html:li id="splitview-tpl-summary-stylesheet" tabindex="0">
         <label class="stylesheet-enabled" tabindex="0"
           data-l10n-id="styleeditor-visibility-toggle"></label>
