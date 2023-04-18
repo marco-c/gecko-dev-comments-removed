@@ -49,7 +49,7 @@ class TenuredCell;
 
 
 template <typename T>
-bool IsMarkedInternal(JSRuntime* rt, T** thing);
+bool IsMarkedInternal(JSRuntime* rt, T* thing);
 
 template <typename T>
 bool IsAboutToBeFinalizedInternal(T* thing);
@@ -60,16 +60,12 @@ bool IsAboutToBeFinalizedInternal(const T& thing);
 
 
 template <typename T>
-inline bool IsMarkedUnbarriered(JSRuntime* rt, T* thingp) {
-  return IsMarkedInternal(rt, ConvertToBase(thingp));
+inline bool IsMarked(JSRuntime* rt, const BarrieredBase<T>& thing) {
+  return IsMarkedInternal(rt, *ConvertToBase(thing.unbarrieredAddress()));
 }
-
-
-
-
 template <typename T>
-inline bool IsMarked(JSRuntime* rt, BarrieredBase<T>* thingp) {
-  return IsMarkedInternal(rt, ConvertToBase(thingp->unbarrieredAddress()));
+inline bool IsMarkedUnbarriered(JSRuntime* rt, T thing) {
+  return IsMarkedInternal(rt, *ConvertToBase(&thing));
 }
 
 
