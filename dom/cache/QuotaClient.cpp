@@ -65,7 +65,7 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
         if (dirEntryKind != nsIFileKind::ExistsAsDirectory) {
           if (dirEntryKind == nsIFileKind::ExistsAsFile) {
             const DebugOnly<nsresult> result =
-                RemoveNsIFile(Nothing(), *bodyDir,  false);
+                RemoveNsIFile(QuotaInfo{}, *bodyDir,  false);
             
             
             
@@ -108,7 +108,7 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
         
         QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
             
-            MOZ_TO_RESULT(BodyTraverseFiles(Nothing(), *bodyDir, getUsage,
+            MOZ_TO_RESULT(BodyTraverseFiles(QuotaInfo{}, *bodyDir, getUsage,
                                              true,
                                              false)),
             
@@ -122,15 +122,15 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
 
 Result<int64_t, nsresult> GetPaddingSizeFromDB(
     nsIFile& aDir, nsIFile& aDBFile, const OriginMetadata& aOriginMetadata) {
-  CacheDirectoryMetadata directoryMetadata(aOriginMetadata);
+  QuotaInfo quotaInfo;
+  static_cast<OriginMetadata&>(quotaInfo) = aOriginMetadata;
   
   
   
   
   
   
-  
-  MOZ_DIAGNOSTIC_ASSERT(directoryMetadata.mDirectoryLockId == -1);
+  MOZ_DIAGNOSTIC_ASSERT(quotaInfo.mDirectoryLockId == -1);
 
 #ifdef DEBUG
   {
@@ -139,8 +139,7 @@ Result<int64_t, nsresult> GetPaddingSizeFromDB(
   }
 #endif
 
-  QM_TRY_INSPECT(const auto& conn,
-                 OpenDBConnection(directoryMetadata, aDBFile));
+  QM_TRY_INSPECT(const auto& conn, OpenDBConnection(quotaInfo, aDBFile));
 
   
   
@@ -216,8 +215,9 @@ Result<UsageInfo, nsresult> CacheQuotaClient::InitOrigin(
           QM_TRY_INSPECT(const auto& morgueDir,
                          CloneFileAndAppend(*dir, kMorgueDirectoryFilename));
 
+          QuotaInfo dummy;
           QM_TRY(MOZ_TO_RESULT(mozilla::dom::cache::RemoveNsIFileRecursively(
-              Nothing(), *morgueDir,
+              dummy, *morgueDir,
                false)));
 
           return nsCOMPtr<nsIFile>{nullptr};
@@ -434,8 +434,8 @@ nsresult CacheQuotaClient::RestorePaddingFileInternal(
   return NS_OK;
 }
 
-nsresult CacheQuotaClient::WipePaddingFileInternal(
-    const CacheDirectoryMetadata& aDirectoryMetadata, nsIFile* aBaseDir) {
+nsresult CacheQuotaClient::WipePaddingFileInternal(const QuotaInfo& aQuotaInfo,
+                                                   nsIFile* aBaseDir) {
   MOZ_ASSERT(!NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(aBaseDir);
 
@@ -468,7 +468,7 @@ nsresult CacheQuotaClient::WipePaddingFileInternal(
       }()));
 
   if (paddingSize > 0) {
-    DecreaseUsageForDirectoryMetadata(aDirectoryMetadata, paddingSize);
+    DecreaseUsageForQuotaInfo(aQuotaInfo, paddingSize);
   }
 
   QM_TRY(MOZ_TO_RESULT(
@@ -517,8 +517,7 @@ nsresult RestorePaddingFile(nsIFile* aBaseDir, mozIStorageConnection* aConn) {
 }
 
 
-nsresult WipePaddingFile(const CacheDirectoryMetadata& aDirectoryMetadata,
-                         nsIFile* aBaseDir) {
+nsresult WipePaddingFile(const QuotaInfo& aQuotaInfo, nsIFile* aBaseDir) {
   MOZ_ASSERT(!NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(aBaseDir);
 
@@ -526,7 +525,7 @@ nsresult WipePaddingFile(const CacheDirectoryMetadata& aDirectoryMetadata,
   MOZ_DIAGNOSTIC_ASSERT(cacheQuotaClient);
 
   QM_TRY(MOZ_TO_RESULT(
-      cacheQuotaClient->WipePaddingFileInternal(aDirectoryMetadata, aBaseDir)));
+      cacheQuotaClient->WipePaddingFileInternal(aQuotaInfo, aBaseDir)));
 
   return NS_OK;
 }

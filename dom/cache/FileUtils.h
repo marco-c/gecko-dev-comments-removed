@@ -31,88 +31,60 @@ nsresult BodyCreateDir(nsIFile& aBaseDir);
 
 
 
-nsresult BodyDeleteDir(const CacheDirectoryMetadata& aDirectoryMetadata,
-                       nsIFile& aBaseDir);
+nsresult BodyDeleteDir(const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir);
 
 
 
 Result<std::pair<nsID, nsCOMPtr<nsISupports>>, nsresult> BodyStartWriteStream(
-    const CacheDirectoryMetadata& aDirectoryMetadata, nsIFile& aBaseDir,
-    nsIInputStream& aSource, void* aClosure, nsAsyncCopyCallbackFun aCallback);
+    const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir, nsIInputStream& aSource,
+    void* aClosure, nsAsyncCopyCallbackFun aCallback);
 
 void BodyCancelWrite(nsISupports& aCopyContext);
 
 nsresult BodyFinalizeWrite(nsIFile& aBaseDir, const nsID& aId);
 
 Result<NotNull<nsCOMPtr<nsIInputStream>>, nsresult> BodyOpen(
-    const CacheDirectoryMetadata& aDirectoryMetadata, nsIFile& aBaseDir,
-    const nsID& aId);
+    const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir, const nsID& aId);
 
-nsresult BodyMaybeUpdatePaddingSize(
-    const CacheDirectoryMetadata& aDirectoryMetadata, nsIFile& aBaseDir,
-    const nsID& aId, uint32_t aPaddingInfo, int64_t* aPaddingSizeInOut);
+nsresult BodyMaybeUpdatePaddingSize(const QuotaInfo& aQuotaInfo,
+                                    nsIFile& aBaseDir, const nsID& aId,
+                                    uint32_t aPaddingInfo,
+                                    int64_t* aPaddingSizeInOut);
 
-nsresult BodyDeleteFiles(const CacheDirectoryMetadata& aDirectoryMetadata,
-                         nsIFile& aBaseDir, const nsTArray<nsID>& aIdList);
+nsresult BodyDeleteFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir,
+                         const nsTArray<nsID>& aIdList);
 
-nsresult BodyDeleteOrphanedFiles(
-    const CacheDirectoryMetadata& aDirectoryMetadata, nsIFile& aBaseDir,
-    const nsTArray<nsID>& aKnownBodyIdList);
+nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir,
+                                 const nsTArray<nsID>& aKnownBodyIdList);
 
-
-
-
-
-
-template <typename Func>
-nsresult BodyTraverseFiles(
-    const Maybe<CacheDirectoryMetadata>& aDirectoryMetadata, nsIFile& aBodyDir,
-    const Func& aHandleFileFunc, bool aCanRemoveFiles, bool aTrackQuota = true);
-
-
-
-template <typename Func>
-nsresult BodyTraverseFiles(const CacheDirectoryMetadata& aDirectoryMetadata,
-                           nsIFile& aBodyDir, const Func& aHandleFileFunc,
-                           bool aCanRemoveFiles, bool aTrackQuota = true) {
-  return BodyTraverseFiles(Some(aDirectoryMetadata), aBodyDir, aHandleFileFunc,
-                           aCanRemoveFiles, aTrackQuota);
-}
-
-nsresult CreateMarkerFile(const CacheDirectoryMetadata& aDirectoryMetadata);
-
-nsresult DeleteMarkerFile(const CacheDirectoryMetadata& aDirectoryMetadata);
-
-bool MarkerFileExists(const CacheDirectoryMetadata& aDirectoryMetadata);
-
-nsresult RemoveNsIFileRecursively(
-    const Maybe<CacheDirectoryMetadata>& aDirectoryMetadata, nsIFile& aFile,
-    bool aTrackQuota = true);
-
-
-
-nsresult RemoveNsIFileRecursively(
-    const CacheDirectoryMetadata& aDirectoryMetadata, nsIFile& aFile,
-    bool aTrackQuota = true) {
-  return RemoveNsIFileRecursively(Some(aDirectoryMetadata), aFile, aTrackQuota);
-}
 
 
 
 
 
-nsresult RemoveNsIFile(const Maybe<CacheDirectoryMetadata>& aDirectoryMetadata,
-                       nsIFile& aFile, bool aTrackQuota = true);
+template <typename Func>
+nsresult BodyTraverseFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBodyDir,
+                           const Func& aHandleFileFunc, bool aCanRemoveFiles,
+                           bool aTrackQuota = true);
+
+nsresult CreateMarkerFile(const QuotaInfo& aQuotaInfo);
+
+nsresult DeleteMarkerFile(const QuotaInfo& aQuotaInfo);
+
+bool MarkerFileExists(const QuotaInfo& aQuotaInfo);
+
+nsresult RemoveNsIFileRecursively(const QuotaInfo& aQuotaInfo, nsIFile& aFile,
+                                  bool aTrackQuota = true);
 
 
 
-nsresult RemoveNsIFile(const CacheDirectoryMetadata& aDirectoryMetadata,
-                       nsIFile& aFile, bool aTrackQuota = true) {
-  return RemoveNsIFile(Some(aDirectoryMetadata), aFile, aTrackQuota);
-}
 
-void DecreaseUsageForDirectoryMetadata(
-    const CacheDirectoryMetadata& aDirectoryMetadata, int64_t aUpdatingSize);
+
+nsresult RemoveNsIFile(const QuotaInfo& aQuotaInfo, nsIFile& aFile,
+                       bool aTrackQuota = true);
+
+void DecreaseUsageForQuotaInfo(const QuotaInfo& aQuotaInfo,
+                               int64_t aUpdatingSize);
 
 
 
