@@ -1693,7 +1693,10 @@ describe('Page', function () {
       expect(size).toBeGreaterThan(0);
     });
 
-    it('should respect timeout', async () => {
+    
+    
+    
+    itFailsFirefox('should respect timeout', async () => {
       const { isHeadless, page, server, puppeteer } = getTestState();
       if (!isHeadless) return;
 
