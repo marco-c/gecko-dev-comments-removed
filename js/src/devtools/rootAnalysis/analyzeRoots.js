@@ -571,195 +571,295 @@ function edgeCanGC(edge)
 
 
 
-function findGCBeforeValueUse(start_body, start_point, suppressed, variable)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function findGCBeforeValueUse(start_body, start_point, suppressed_bits, variable)
 {
+    const isGCSuppressed = Boolean(suppressed_bits & ATTR_GC_SUPPRESSED);
+
     
     
     
     
+    
 
-    var bodies_visited = new Map();
+    class Path {
+        get ProgressProperties() { return ["informativeUse", "anyUse", "gcInfo"]; }
 
-    let worklist = [{body: start_body, ppoint: start_point, preGCLive: false, gcInfo: null, why: null}];
-    while (worklist.length) {
-        
-        
-        
-        
-
-        var entry = worklist.pop();
-        var { body, ppoint, gcInfo, preGCLive } = entry;
-
-        
-        
-        var visited = bodies_visited.get(body);
-        if (!visited)
-            bodies_visited.set(body, visited = new Map());
-        if (visited.has(ppoint)) {
-            var seenEntry = visited.get(ppoint);
-
-            
-            
-            
-            if (seenEntry.gcInfo)
-                continue;
-
-            
-            
-            
-            
-            
-            
-            
-            
-            if (!gcInfo)
-                continue;
-        }
-        visited.set(ppoint, {body: body, gcInfo: gcInfo});
-
-        
-        
-        if (ppoint == body.Index[0]) {
-            if (body.BlockId.Kind == "Loop") {
-                
-                if ("BlockPPoint" in body) {
-                    for (var parent of body.BlockPPoint) {
-                        var found = false;
-                        for (var xbody of functionBodies) {
-                            if (sameBlockId(xbody.BlockId, parent.BlockId)) {
-                                assert(!found);
-                                found = true;
-                                worklist.push({body: xbody, ppoint: parent.Index,
-                                               gcInfo: gcInfo, why: entry});
-                            }
-                        }
-                        assert(found);
+        constructor(successor_path, body, ppoint) {
+            Object.assign(this, {body, ppoint});
+            if (successor_path !== undefined) {
+                this.successor = successor_path;
+                for (const prop of this.ProgressProperties) {
+                    if (prop in successor_path) {
+                        this[prop] = successor_path[prop];
                     }
                 }
-
-                
-                
-                worklist.push({body: body, ppoint: body.Index[1],
-                               gcInfo: gcInfo, why: entry});
-            } else if ((variable.Kind == "Arg" || variable.Kind == "This") && gcInfo) {
-                
-                
-                return entry;
-            } else if (entry.preGCLive) {
-                
-                
-                
-                
-                return entry;
             }
         }
 
-        var predecessors = getPredecessors(body);
-        if (!(ppoint in predecessors))
-            continue;
+        toString() {
+            const trail = [];
+            for (let path = this; path.ppoint; path = path.successor) {
+                trail.push(path.ppoint);
+            }
+            return trail.join();
+        }
 
-        for (var edge of predecessors[ppoint]) {
-            var source = edge.Index[0];
+        
+        
+        compare(other) {
+            for (const prop of this.ProgressProperties) {
+                const a = this.hasOwnProperty(prop);
+                const b = other.hasOwnProperty(prop);
+                if (a != b) {
+                    return a - b;
+                }
+            }
+            return 0;
+        }
+    };
+
+    
+    
+    let bestPathWithAnyUse = null;
+
+    const visitor = new class extends Visitor {
+        constructor() {
+            super(functionBodies);
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        next_action(prev, current) {
+            
+            
+            
+
+            if (!current) {
+                
+                return "prune";
+            }
+
+            if (current.informativeUse) {
+                
+                
+                assert(current.gcInfo);
+                return "done";
+            }
+
+            if (prev === undefined) {
+                
+                return "continue";
+            }
+
+            if (!prev.gcInfo && current.gcInfo) {
+                
+                return "continue";
+            } else {
+                return "prune";
+            }
+        }
+
+        merge_info(prev, current) {
+            
+
+            if (!prev || !current) {
+                return prev || current;
+            }
+
+            
+            return prev.compare(current) >= 0 ? prev : current;
+        }
+
+        extend_path(edge, body, ppoint, successor_path) {
+            
+            
+            
+            const path = new Path(successor_path, body, ppoint);
+            if (edge === null) {
+                
+                
+                return path;
+            }
+
+            assert(ppoint == edge.Index[0]);
 
             if (edgeEndsValueLiveRange(edge, variable, body)) {
                 
-                
-                
-                continue;
+                return null;
             }
 
-            var edge_kills = edgeStartsValueLiveRange(edge, variable);
-            var edge_uses = edgeUsesVariable(edge, variable, body);
+            const edge_starts = edgeStartsValueLiveRange(edge, variable);
+            const edge_uses = edgeUsesVariable(edge, variable, body);
 
-            if (edge_kills || edge_uses) {
-                if (!body.minimumUse || source < body.minimumUse)
-                    body.minimumUse = source;
+            if (edge_starts || edge_uses) {
+                if (!body.minimumUse || ppoint < body.minimumUse)
+                    body.minimumUse = ppoint;
             }
 
-            if (edge_kills) {
+            if (edge_starts) {
                 
                 
                 
                 
                 
-                if (gcInfo)
-                    return {body: body, ppoint: source, gcInfo: gcInfo, why: entry };
-
-                
-                
-                continue;
-            }
-
-            var src_gcInfo = gcInfo;
-            var src_preGCLive = preGCLive;
-            if (!gcInfo && !(body.attrs[source] & ATTR_GC_SUPPRESSED) && !(suppressed & ATTR_GC_SUPPRESSED)) {
-                var gcName = edgeCanGC(edge, body);
-                if (gcName)
-                    src_gcInfo = {name:gcName, body:body, ppoint:source};
-            }
-
-            if (edge_uses) {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-
-                if (src_gcInfo) {
-                    src_preGCLive = true;
-                    if (edge.Kind == 'Assign')
-                        return {body:body, ppoint:source, gcInfo:src_gcInfo, why:entry};
+                if (path.gcInfo) {
+                    path.anyUse = path.anyUse || edge;
+                    path.informativeUse = path.informativeUse || edge;
+                    return path;
                 }
-            }
 
-            if (edge.Kind == "Loop") {
-                
-                
-                var found = false;
-                for (var xbody of functionBodies) {
-                    if (sameBlockId(xbody.BlockId, edge.BlockId)) {
-                        assert(!found);
-                        found = true;
-                        worklist.push({body:xbody, ppoint:xbody.Index[1],
-                                       preGCLive: src_preGCLive, gcInfo:src_gcInfo,
-                                       why:entry});
-                    }
-                }
-                assert(found);
                 
                 
                 
-                break;
+                return null;
             }
 
             
-            worklist.push({body:body, ppoint:source,
-                           preGCLive: src_preGCLive, gcInfo:src_gcInfo,
-                           why:entry});
-        }
-    }
+            if (!path.gcInfo && !(body.attrs[ppoint] & ATTR_GC_SUPPRESSED) && !isGCSuppressed) {
+                var gcName = edgeCanGC(edge, body);
+                if (gcName) {
+                    path.gcInfo = {name:gcName, body, ppoint};
+                }
+            }
 
-    return null;
+            
+            if (ppoint == body.Index[0] && body.BlockId.Kind != "Loop") {
+                if (path.gcInfo && (variable.Kind == "Arg" || variable.Kind == "This")) {
+                    
+                    
+                    path.anyUse = path.informativeUse = true;
+                }
+
+                if (path.anyUse) {
+                    
+                    
+                    
+                    
+                    
+                    return path;
+                }
+            }
+
+            if (!path.gcInfo) {
+                
+                return path;
+            }
+
+            if (!edge_uses) {
+                
+                
+                return path;
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            path.anyUse = path.anyUse || edge;
+            bestPathWithAnyUse = bestPathWithAnyUse || path;
+            if (edge.Kind == 'Assign') {
+                path.informativeUse = edge; 
+            }
+
+            return path;
+        };
+    };
+
+    return BFS_upwards(start_body, start_point, functionBodies, visitor, new Path()) || bestPathWithAnyUse;
 }
 
 function variableLiveAcrossGC(suppressed, variable)
@@ -906,14 +1006,15 @@ function printEntryTrace(functionName, entry)
     if (!functionBodies[0].lines)
         loadPrintedLines(functionName);
 
-    while (entry) {
+    while (entry.successor) {
         var ppoint = entry.ppoint;
         var lineText = findLocation(entry.body, ppoint, {"brief": true});
 
         var edgeText = "";
-        if (entry.why && entry.why.body == entry.body) {
+        if (entry.successor && entry.successor.body == entry.body) {
             
-            var next = entry.why.ppoint;
+            
+            var next = entry.successor.ppoint;
 
             if (!entry.body.edgeTable) {
                 var table = {};
@@ -947,7 +1048,7 @@ function printEntryTrace(functionName, entry)
         }
 
         print("    " + lineText + (edgeText.length ? ": " + edgeText : ""));
-        entry = entry.why;
+        entry = entry.successor;
     }
 }
 
@@ -1062,6 +1163,7 @@ function processBodies(functionName, wholeBodyAttrs)
         } else if (isUnrootedType(variable.Type)) {
             var result = variableLiveAcrossGC(suppressed, variable.Variable);
             if (result) {
+                assert(result.gcInfo);
                 var lineText = findLocation(result.gcInfo.body, result.gcInfo.ppoint);
                 if (annotations.has('Expect Hazards')) {
                     print("\nThis is expected, but '" + functionName + "'" +
