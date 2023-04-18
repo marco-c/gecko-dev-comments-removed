@@ -432,7 +432,8 @@ void Animation::UpdatePlaybackRate(double aPlaybackRate) {
   AutoMutationBatchForAnimation mb(*this);
 
   if (playState == AnimationPlayState::Idle ||
-      playState == AnimationPlayState::Paused) {
+      playState == AnimationPlayState::Paused ||
+      GetCurrentTimeAsDuration().IsNull()) {
     
     
     ApplyPendingPlaybackRate();
@@ -1354,28 +1355,30 @@ void Animation::NotifyGeometricAnimationsStartingThisFrame() {
 void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   AutoMutationBatchForAnimation mb(*this);
 
-  bool abortedPause = mPendingState == PendingState::PausePending;
+  const bool isAutoRewind = aLimitBehavior == LimitBehavior::AutoRewind;
+  const bool abortedPause = mPendingState == PendingState::PausePending;
   double effectivePlaybackRate = CurrentOrPendingPlaybackRate();
 
   Nullable<TimeDuration> currentTime = GetCurrentTimeAsDuration();
   Nullable<TimeDuration> seekTime;
-  if (effectivePlaybackRate > 0.0 &&
-      (currentTime.IsNull() || (aLimitBehavior == LimitBehavior::AutoRewind &&
-                                (currentTime.Value() < TimeDuration() ||
-                                 currentTime.Value() >= EffectEnd())))) {
-    seekTime.SetValue(TimeDuration(0));
-  } else if (effectivePlaybackRate < 0.0 &&
-             (currentTime.IsNull() ||
-              (aLimitBehavior == LimitBehavior::AutoRewind &&
-               (currentTime.Value() <= TimeDuration() ||
-                currentTime.Value() > EffectEnd())))) {
-    if (EffectEnd() == TimeDuration::Forever()) {
-      return aRv.ThrowInvalidStateError(
-          "Can't rewind animation with infinite effect end");
+  if (isAutoRewind) {
+    if (effectivePlaybackRate >= 0.0 &&
+        (currentTime.IsNull() || currentTime.Value() < TimeDuration() ||
+         currentTime.Value() >= EffectEnd())) {
+      seekTime.SetValue(TimeDuration());
+    } else if (effectivePlaybackRate < 0.0 &&
+               (currentTime.IsNull() || currentTime.Value() <= TimeDuration() ||
+                currentTime.Value() > EffectEnd())) {
+      if (EffectEnd() == TimeDuration::Forever()) {
+        return aRv.ThrowInvalidStateError(
+            "Can't rewind animation with infinite effect end");
+      }
+      seekTime.SetValue(TimeDuration(EffectEnd()));
     }
-    seekTime.SetValue(TimeDuration(EffectEnd()));
-  } else if (effectivePlaybackRate == 0.0 && currentTime.IsNull()) {
-    seekTime.SetValue(TimeDuration(0));
+  }
+
+  if (seekTime.IsNull() && mStartTime.IsNull() && currentTime.IsNull()) {
+    seekTime.SetValue(TimeDuration());
   }
 
   if (!seekTime.IsNull()) {
