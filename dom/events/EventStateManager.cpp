@@ -3186,6 +3186,8 @@ void EventStateManager::PostHandleKeyboardEvent(
     return;
   }
 
+  RefPtr<nsPresContext> presContext = mPresContext;
+
   if (!aKeyboardEvent->HasBeenPostedToRemoteProcess()) {
     if (aKeyboardEvent->IsWaitingReplyFromRemoteProcess()) {
       RefPtr<BrowserParent> remote =
@@ -3210,8 +3212,8 @@ void EventStateManager::PostHandleKeyboardEvent(
         
         WidgetKeyboardEvent keyEvent(*aKeyboardEvent);
         aKeyboardEvent->MarkAsHandledInRemoteProcess();
-        EventDispatcher::Dispatch(remote->GetOwnerElement(), mPresContext,
-                                  &keyEvent);
+        RefPtr<Element> ownerElement = remote->GetOwnerElement();
+        EventDispatcher::Dispatch(ownerElement, presContext, &keyEvent);
         if (keyEvent.DefaultPrevented()) {
           aKeyboardEvent->PreventDefault(!keyEvent.DefaultPreventedByContent());
           aStatus = nsEventStatus_eConsumeNoDefault;
@@ -3249,7 +3251,7 @@ void EventStateManager::PostHandleKeyboardEvent(
           break;
         }
 
-        EnsureDocument(mPresContext);
+        EnsureDocument(presContext);
         nsFocusManager* fm = nsFocusManager::GetFocusManager();
         if (fm && mDocument) {
           
