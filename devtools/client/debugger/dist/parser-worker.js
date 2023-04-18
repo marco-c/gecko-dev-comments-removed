@@ -7930,6 +7930,12 @@ exports.compareByGeneratedPositionsInflated = compareByGeneratedPositionsInflate
 
 
 function networkRequest(url, opts) {
+  const UNSUPPORTED_PROTOCOLS = ["chrome://", "resource://"];
+
+  if (UNSUPPORTED_PROTOCOLS.some(protocol => url.startsWith(protocol))) {
+    return Promise.reject(`unsupported protocol for sourcemap request ${url}`);
+  }
+
   return fetch(url, {
     cache: opts.loadFromCache ? "default" : "no-cache"
   }).then(res => {
