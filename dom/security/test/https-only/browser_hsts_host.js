@@ -75,6 +75,11 @@ function observer(subject, topic, state) {
 
 function onExamineResponse(subject) {
   let channel = subject.QueryInterface(Ci.nsIHttpChannel);
+  
+  
+  if (!channel.URI.spec.includes("example.com") || readMessage) {
+    return;
+  }
   info("onExamineResponse with " + channel.URI.spec);
   if (channel.URI.spec.includes("reset")) {
     try {
