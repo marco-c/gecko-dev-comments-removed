@@ -147,9 +147,12 @@ bool BytecodeAnalysis::init(TempAllocator& alloc) {
         
         
         
+        
+        
+        
         uint32_t resumeOffset = script_->resumeOffsets()[(it.getResumeIndex())];
         infos_[resumeOffset].init(stackDepth - 1);
-        infos_[resumeOffset].setJumpTarget(normallyReachable);
+        infos_[resumeOffset].setJumpTarget(false );
         break;
       }
 
