@@ -7,10 +7,7 @@
 #ifndef mozilla_dom_StorageDBUpdater_h
 #define mozilla_dom_StorageDBUpdater_h
 
-namespace mozilla {
-namespace dom {
-
-namespace StorageDBUpdater {
+namespace mozilla::dom::StorageDBUpdater {
 
 
 nsresult CreateCurrentSchema(mozIStorageConnection* aWorkerConnection);
@@ -18,9 +15,6 @@ nsresult CreateCurrentSchema(mozIStorageConnection* aWorkerConnection);
 
 nsresult Update(mozIStorageConnection* aWorkerConnection);
 
-}  
-
-}  
 }  
 
 #endif  

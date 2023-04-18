@@ -27,8 +27,7 @@
 
 class mozIStorageConnection;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class LocalStorageCacheBridge;
 class StorageUsageBridge;
@@ -490,6 +489,5 @@ class StorageDBThread final {
 };
 
 }  
-}  
 
-#endif
+#endif  

@@ -19,8 +19,7 @@
 
 #define CURRENT_SCHEMA_VERSION 2
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 using namespace StorageUtils;
 
@@ -521,6 +520,5 @@ nsresult Update(mozIStorageConnection* aWorkerConnection) {
   return NS_OK;
 }
 
-}  
 }  
 }  

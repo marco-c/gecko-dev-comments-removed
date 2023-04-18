@@ -15,8 +15,7 @@
 #include "nsTObserverArray.h"
 #include "nsString.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class StorageObserver;
 
@@ -75,7 +74,6 @@ class StorageObserver : public nsIObserver,
   nsCOMPtr<nsITimer> mDBThreadStartDelayTimer;
 };
 
-}  
 }  
 
 #endif  
