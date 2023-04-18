@@ -8,6 +8,7 @@
 #define gc_FinalizationRegistry_h
 
 #include "gc/Barrier.h"
+#include "gc/WeakMap.h"
 #include "gc/ZoneAllocator.h"
 #include "js/GCHashTable.h"
 #include "js/GCVector.h"
@@ -43,9 +44,9 @@ class FinalizationRegistryZone {
 
   
   
-  using ZoneCountMap =
-      HashMap<Zone*, size_t, DefaultHasher<Zone*>, ZoneAllocPolicy>;
-  ZoneCountMap crossZoneCount;
+  
+  using WrapperWeakSet = ObjectValueWeakMap;
+  WrapperWeakSet crossZoneWrappers;
 
  public:
   explicit FinalizationRegistryZone(Zone* zone);
@@ -56,15 +57,15 @@ class FinalizationRegistryZone {
 
   void clearRecords();
 
+  void traceRoots(JSTracer* trc);
   void traceWeakEdges(JSTracer* trc);
-  bool findSweepGroupEdges();
 
   void updateForRemovedRecord(JSObject* wrapper,
                               FinalizationRecordObject* record);
 
  private:
-  bool incCrossZoneCount(Zone* otherZone);
-  void decCrossZoneCount(Zone* otherZone);
+  bool addCrossZoneWrapper(JSObject* wrapper);
+  void removeCrossZoneWrapper(JSObject* wrapper);
 
   static bool shouldRemoveRecord(FinalizationRecordObject* record);
 };
@@ -80,10 +81,10 @@ class FinalizationRegistryGlobalData {
  public:
   explicit FinalizationRegistryGlobalData(Zone* zone);
 
-  bool addRecord(JSObject* record);
-  void removeRecord(JSObject* record);
+  bool addRecord(FinalizationRecordObject* record);
+  void removeRecord(FinalizationRecordObject* record);
 
-  void trace(JSTracer* trc, GlobalObject* global);
+  void trace(JSTracer* trc);
 };
 
 }  

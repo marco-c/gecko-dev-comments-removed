@@ -198,6 +198,7 @@ Zone::~Zone() {
   MOZ_ASSERT_IF(regExps_.ref(), regExps().empty());
 
   DebugAPI::deleteDebugScriptMap(debugScriptMap);
+  js_delete(finalizationRegistryZone_.ref().release());
 
   MOZ_ASSERT(gcWeakMapList().isEmpty());
 
@@ -760,6 +761,20 @@ JS_PUBLIC_API void JS::shadow::RegisterWeakCache(
   zone->registerWeakCache(cachep);
 }
 
+void Zone::traceRootsInMajorGC(JSTracer* trc) {
+  if (trc->isMarkingTracer() && !isGCMarking()) {
+    return;
+  }
+
+  
+  
+  traceScriptTableRoots(trc);
+
+  if (FinalizationRegistryZone* frzone = finalizationRegistryZone()) {
+    frzone->traceRoots(trc);
+  }
+}
+
 void Zone::traceScriptTableRoots(JSTracer* trc) {
   static_assert(std::is_convertible_v<BaseScript*, gc::TenuredCell*>,
                 "BaseScript must not be nursery-allocated for script-table "
@@ -768,9 +783,7 @@ void Zone::traceScriptTableRoots(JSTracer* trc) {
   
   
   
-  if (JS::RuntimeHeapIsMinorCollecting()) {
-    return;
-  }
+  MOZ_ASSERT(!JS::RuntimeHeapIsMinorCollecting());
 
   
   

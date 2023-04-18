@@ -339,13 +339,10 @@ void js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc,
     r->traceRoots(trc, traceOrMark);
   }
 
-  
-  
-  
   if (!JS::RuntimeHeapIsMinorCollecting()) {
     for (ZonesIter zone(this, ZoneSelector::SkipAtoms); !zone.done();
          zone.next()) {
-      zone->traceScriptTableRoots(trc);
+      zone->traceRootsInMajorGC(trc);
     }
   }
 
