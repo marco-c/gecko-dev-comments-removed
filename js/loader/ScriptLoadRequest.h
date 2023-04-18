@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_ScriptLoadRequest_h
-#define mozilla_dom_ScriptLoadRequest_h
+#ifndef js_loader_ScriptLoadRequest_h
+#define js_loader_ScriptLoadRequest_h
 
 #include "js/AllocPolicy.h"
 #include "js/RootingAPI.h"
@@ -27,22 +27,25 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIGlobalObject.h"
-#include "nsIScriptElement.h"
 #include "ScriptKind.h"
 
 class nsICacheInfoChannel;
 
+namespace mozilla::dom {
+
+class ScriptLoadContext;
+
+}  
+
 namespace JS {
 class OffThreadToken;
-}
 
-namespace mozilla {
-namespace dom {
+namespace loader {
 
-class Element;
+using Utf8Unit = mozilla::Utf8Unit;
+
 class ModuleLoadRequest;
 class ScriptLoadRequestList;
-class ScriptLoadContext;
 
 
 
@@ -73,7 +76,7 @@ class ScriptFetchOptions {
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ScriptFetchOptions)
 
   ScriptFetchOptions(mozilla::CORSMode aCORSMode,
-                     enum ReferrerPolicy aReferrerPolicy,
+                     enum mozilla::dom::ReferrerPolicy aReferrerPolicy,
                      nsIPrincipal* aTriggeringPrincipal);
 
   
@@ -87,7 +90,7 @@ class ScriptFetchOptions {
 
 
 
-  const enum ReferrerPolicy mReferrerPolicy;
+  const enum mozilla::dom::ReferrerPolicy mReferrerPolicy;
 
   
 
@@ -137,16 +140,27 @@ class ScriptLoadRequest
   virtual ~ScriptLoadRequest();
 
  public:
+  using SRIMetadata = mozilla::dom::SRIMetadata;
   ScriptLoadRequest(ScriptKind aKind, nsIURI* aURI,
                     ScriptFetchOptions* aFetchOptions,
                     const SRIMetadata& aIntegrity, nsIURI* aReferrer,
-                    ScriptLoadContext* aContext);
+                    mozilla::dom::ScriptLoadContext* aContext);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ScriptLoadRequest)
 
   using super::getNext;
   using super::isInList;
+
+  template <typename T>
+  using VariantType = mozilla::VariantType<T>;
+
+  template <typename... Ts>
+  using Variant = mozilla::Variant<Ts...>;
+
+  template <typename T, typename D = JS::DeletePolicy<T>>
+  using UniquePtr = mozilla::UniquePtr<T, D>;
+
   using MaybeSourceText =
       mozilla::MaybeOneOf<JS::SourceText<char16_t>, JS::SourceText<Utf8Unit>>;
 
@@ -196,7 +210,7 @@ class ScriptLoadRequest
   void SetTextSource() {
     MOZ_ASSERT(IsUnknownDataType());
     mDataType = DataType::eTextSource;
-    if (StaticPrefs::
+    if (mozilla::StaticPrefs::
             dom_script_loader_external_scripts_utf8_parsing_enabled()) {
       mScriptData.emplace(VariantType<ScriptTextBuffer<Utf8Unit>>());
     } else {
@@ -208,7 +222,7 @@ class ScriptLoadRequest
   
   
   template <typename Unit>
-  using ScriptTextBuffer = Vector<Unit, 0, js::MallocAllocPolicy>;
+  using ScriptTextBuffer = mozilla::Vector<Unit, 0, js::MallocAllocPolicy>;
 
   bool IsUTF16Text() const {
     return mScriptData->is<ScriptTextBuffer<char16_t>>();
@@ -244,7 +258,7 @@ class ScriptLoadRequest
                          : ScriptText<Utf8Unit>().clearAndFree();
   }
 
-  enum ReferrerPolicy ReferrerPolicy() const {
+  enum mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
     return mFetchOptions->mReferrerPolicy;
   }
 
@@ -266,7 +280,7 @@ class ScriptLoadRequest
 
   bool HasLoadContext() { return mLoadContext; }
 
-  ScriptLoadContext* GetLoadContext() {
+  mozilla::dom::ScriptLoadContext* GetLoadContext() {
     MOZ_ASSERT(mLoadContext);
     return mLoadContext;
   }
@@ -280,10 +294,12 @@ class ScriptLoadRequest
   RefPtr<ScriptFetchOptions> mFetchOptions;
   const SRIMetadata mIntegrity;
   const nsCOMPtr<nsIURI> mReferrer;
-  Maybe<nsString> mSourceMapURL;  
+  mozilla::Maybe<nsString>
+      mSourceMapURL;  
 
   
-  Maybe<Variant<ScriptTextBuffer<char16_t>, ScriptTextBuffer<Utf8Unit>>>
+  mozilla::Maybe<
+      Variant<ScriptTextBuffer<char16_t>, ScriptTextBuffer<Utf8Unit>>>
       mScriptData;
 
   
@@ -313,7 +329,7 @@ class ScriptLoadRequest
 
   
   
-  RefPtr<ScriptLoadContext> mLoadContext;
+  RefPtr<mozilla::dom::ScriptLoadContext> mLoadContext;
 };
 
 class ScriptLoadRequestList : private mozilla::LinkedList<ScriptLoadRequest> {
