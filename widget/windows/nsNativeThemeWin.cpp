@@ -1935,6 +1935,23 @@ bool nsNativeThemeWin::GetWidgetPadding(nsDeviceContext* aContext,
   if (aAppearance == StyleAppearance::MozWindowTitlebar ||
       aAppearance == StyleAppearance::MozWindowTitlebarMaximized) {
     aResult->SizeTo(0, 0, 0, 0);
+    
+    
+    
+    if (aAppearance == StyleAppearance::MozWindowTitlebarMaximized) {
+      nsCOMPtr<nsIWidget> rootWidget;
+      if (WinUtils::HasSystemMetricsForDpi()) {
+        rootWidget = aFrame->PresContext()->GetRootWidget();
+      }
+      if (rootWidget) {
+        double dpi = rootWidget->GetDPI();
+        aResult->top = WinUtils::GetSystemMetricsForDpi(SM_CXFRAME, dpi) +
+                       WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi);
+      } else {
+        aResult->top =
+            GetSystemMetrics(SM_CXFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER);
+      }
+    }
     return ok;
   }
 

@@ -2891,11 +2891,13 @@ bool nsWindow::UpdateNonClientMargins(int32_t aSizeMode, bool aReflowWindow) {
   } else if (aSizeMode == nsSizeMode_Maximized) {
     
     
-    auto verticalResize =
-        WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
-        (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
-                    : 0);
-    mNonClientOffset.top = mCaptionHeight - verticalResize;
+    
+    
+    
+    
+    
+    
+    mNonClientOffset.top = mCaptionHeight;
     mNonClientOffset.bottom = 0;
     mNonClientOffset.left = 0;
     mNonClientOffset.right = 0;
@@ -3055,8 +3057,8 @@ void nsWindow::InvalidateNonClientRegion() {
   GetWindowRect(mWnd, &rect);
   rect.top += mCaptionHeight;
   rect.right -= mHorResizeMargin;
-  rect.bottom -= mVertResizeMargin;
-  rect.left += mHorResizeMargin;
+  rect.bottom -= mHorResizeMargin;
+  rect.left += mVertResizeMargin;
   MapWindowPoints(nullptr, mWnd, (LPPOINT)&rect, 2);
   HRGN clientRgn = CreateRectRgnIndirect(&rect);
   CombineRgn(winRgn, winRgn, clientRgn, RGN_DIFF);
