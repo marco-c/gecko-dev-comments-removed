@@ -726,14 +726,14 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
                          "Do not call after a call to Shutdown()");
 
       RecordTelemetryProbes(aVsyncTimestamp);
-      mLastTickStart = TimeStamp::Now();
-      mLastProcessedTick = aVsyncTimestamp;
+
+      TimeStamp tickStart = TimeStamp::Now();
 
       
       
       
 #if !defined(_WIN32)
-      MOZ_ASSERT(aVsyncTimestamp <= TimeStamp::Now());
+      MOZ_ASSERT(aVsyncTimestamp <= tickStart);
 #endif
 
       
@@ -754,7 +754,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         
         
         
-        timeForOutsideTick = TimeStamp::Now() - mLastTickEnd;
+        timeForOutsideTick = tickStart - mLastTickEnd;
         TimeDuration maxOutsideTick = TimeDuration::FromMilliseconds(4 * rate);
         if (timeForOutsideTick > maxOutsideTick) {
           timeForOutsideTick = maxOutsideTick;
@@ -768,15 +768,20 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         }
       }
 
+      
+      
+      mLastTickStart = tickStart;
+      mLastProcessedTick = aVsyncTimestamp;
+
       RefPtr<VsyncRefreshDriverTimer> timer = mVsyncRefreshDriverTimer;
       timer->RunRefreshDrivers(aId, aVsyncTimestamp);
       
 
-      mLastIdleTaskCount =
-          TaskController::Get()->GetIdleTaskManager()->ProcessedTaskCount();
-      mLastRunOutOfMTTasksCount = TaskController::Get()->RunOutOfMTTasksCount();
+      TimeStamp tickEnd = TimeStamp::Now();
 
-      mLastTickEnd = TimeStamp::Now();
+      
+      
+      TimeStamp mostRecentTickStart = mLastTickStart;
 
       
       
@@ -786,9 +791,14 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       
       mSuspendVsyncPriorityTicksUntil = aVsyncTimestamp + timeForOutsideTick;
       if (shouldGiveNonVSyncTasksMoreTime) {
-        TimeDuration tickDuration = mLastTickEnd - mLastTickStart;
+        TimeDuration tickDuration = tickEnd - mostRecentTickStart;
         mSuspendVsyncPriorityTicksUntil += tickDuration;
       }
+
+      mLastIdleTaskCount =
+          TaskController::Get()->GetIdleTaskManager()->ProcessedTaskCount();
+      mLastRunOutOfMTTasksCount = TaskController::Get()->RunOutOfMTTasksCount();
+      mLastTickEnd = tickEnd;
     }
 
     
