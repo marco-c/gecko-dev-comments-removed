@@ -408,16 +408,22 @@ def repackage_msix(
     
     
     
-    lines = [
-        line
-        for line in open(mozpath.join(branding, "configure.sh")).readlines()
-        if "MOZ_IGECKOBACKCHANNEL_IID" in line
-    ]
-    MOZ_IGECKOBACKCHANNEL_IID = lines[-1]
-    _, _, MOZ_IGECKOBACKCHANNEL_IID = MOZ_IGECKOBACKCHANNEL_IID.partition("=")
-    MOZ_IGECKOBACKCHANNEL_IID = MOZ_IGECKOBACKCHANNEL_IID.strip()
-    if MOZ_IGECKOBACKCHANNEL_IID.startswith(('"', "'")):
-        MOZ_IGECKOBACKCHANNEL_IID = MOZ_IGECKOBACKCHANNEL_IID[1:-1]
+    brandingUuids = {}
+    lines = open(mozpath.join(branding, "configure.sh")).readlines()
+    for key in (
+        "MOZ_IGECKOBACKCHANNEL_IID",
+        "MOZ_IHANDLERCONTROL_IID",
+        "MOZ_ASYNCIHANDLERCONTROL_IID",
+    ):
+        for line in reversed(lines):
+            if key not in line:
+                continue
+            _, _, uuid = line.partition("=")
+            uuid = uuid.strip()
+            if uuid.startswith(('"', "'")):
+                uuid = uuid[1:-1]
+            brandingUuids[key] = uuid
+            break
 
     
     output_dir = mozpath.normsep(
@@ -618,8 +624,8 @@ def repackage_msix(
         "APPX_VERSION": version,
         "MOZ_APP_DISPLAYNAME": displayname,
         "MOZ_APP_NAME": app_name,
-        "MOZ_IGECKOBACKCHANNEL_IID": MOZ_IGECKOBACKCHANNEL_IID,
     }
+    defines.update(brandingUuids)
 
     m.add_preprocess(
         mozpath.join(template, "AppxManifest.xml.in"),
