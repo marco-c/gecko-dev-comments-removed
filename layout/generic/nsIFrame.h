@@ -4462,11 +4462,6 @@ class nsIFrame : public nsQueryFrame {
   
 
 
-  bool DidPaintPresShell(mozilla::PresShell* aPresShell);
-
-  
-
-
   bool IsAbsoluteContainer() const {
     return !!(mState & NS_FRAME_HAS_ABSPOS_CHILDREN);
   }
