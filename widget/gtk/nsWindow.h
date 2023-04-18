@@ -203,8 +203,6 @@ class nsWindow final : public nsBaseWidget {
   
   gint ConvertBorderStyles(nsBorderStyle aStyle);
 
-  GdkRectangle DevicePixelsToGdkRectRoundOut(LayoutDeviceIntRect aRect);
-
   mozilla::widget::IMContextWrapper* GetIMContext() const { return mIMContext; }
 
   bool DispatchCommandEvent(nsAtom* aCommand);
@@ -266,12 +264,9 @@ class nsWindow final : public nsBaseWidget {
 
   MozContainer* GetMozContainer() { return mContainer; }
   LayoutDeviceIntSize GetMozContainerSize();
-  
-  
-  GtkWidget* GetMozContainerWidget();
-  GdkWindow* GetGdkWindow() { return mGdkWindow; };
-  GdkWindow* GetToplevelGdkWindow();
-  GtkWidget* GetGtkWidget() { return mShell; }
+  GdkWindow* GetGdkWindow() const { return mGdkWindow; };
+  GdkWindow* GetToplevelGdkWindow() const;
+  GtkWidget* GetGtkWidget() const { return mShell; }
   nsIFrame* GetFrame() const;
   bool IsDestroyed() const { return mIsDestroyed; }
   bool IsPopup() const;
@@ -358,20 +353,21 @@ class nsWindow final : public nsBaseWidget {
 
   
   gint GdkCeiledScaleFactor();
-  bool UseFractionalScale();
+  bool UseFractionalScale() const;
   double FractionalScaleFactor();
 
   
-  gint DevicePixelsToGdkCoordRoundUp(int pixels);
-  gint DevicePixelsToGdkCoordRoundDown(int pixels);
-  GdkPoint DevicePixelsToGdkPointRoundDown(LayoutDeviceIntPoint point);
-  GdkRectangle DevicePixelsToGdkSizeRoundUp(LayoutDeviceIntSize pixelSize);
+  gint DevicePixelsToGdkCoordRoundUp(int);
+  gint DevicePixelsToGdkCoordRoundDown(int);
+  GdkPoint DevicePixelsToGdkPointRoundDown(const LayoutDeviceIntPoint&);
+  GdkRectangle DevicePixelsToGdkSizeRoundUp(const LayoutDeviceIntSize&);
+  GdkRectangle DevicePixelsToGdkRectRoundOut(const LayoutDeviceIntRect&);
 
   
-  int GdkCoordToDevicePixels(gint coord);
-  LayoutDeviceIntPoint GdkPointToDevicePixels(GdkPoint point);
-  LayoutDeviceIntPoint GdkEventCoordsToDevicePixels(gdouble x, gdouble y);
-  LayoutDeviceIntRect GdkRectToDevicePixels(GdkRectangle rect);
+  int GdkCoordToDevicePixels(gint);
+  LayoutDeviceIntPoint GdkPointToDevicePixels(const GdkPoint&);
+  LayoutDeviceIntPoint GdkEventCoordsToDevicePixels(gdouble aX, gdouble aY);
+  LayoutDeviceIntRect GdkRectToDevicePixels(const GdkRectangle&);
 
   bool WidgetTypeSupportsAcceleration() override;
 
@@ -482,8 +478,8 @@ class nsWindow final : public nsBaseWidget {
   void WaylandStartVsync();
   void WaylandStopVsync();
   void DestroyChildWindows();
-  GtkWidget* GetToplevelWidget();
-  nsWindow* GetContainerWindow();
+  GtkWidget* GetToplevelWidget() const;
+  nsWindow* GetContainerWindow() const;
   Window GetX11Window();
   bool GetShapedState();
   void EnsureGdkWindow();
@@ -765,7 +761,7 @@ class nsWindow final : public nsBaseWidget {
 
   void SetPopupWindowDecoration(bool aShowOnTaskbar);
 
-  void ApplySizeConstraints(void);
+  void ApplySizeConstraints();
 
   
   GdkPoint WaylandGetParentPosition();
@@ -806,7 +802,7 @@ class nsWindow final : public nsBaseWidget {
   const WaylandPopupMoveToRectParams WaylandPopupGetPositionFromLayout();
   void WaylandPopupPropagateChangesToLayout(bool aMove, bool aResize);
   nsWindow* WaylandPopupFindLast(nsWindow* aPopup);
-  GtkWindow* GetCurrentTopmostWindow();
+  GtkWindow* GetCurrentTopmostWindow() const;
   nsAutoCString GetFrameTag() const;
   nsCString GetPopupTypeName();
   bool IsPopupDirectionRTL();
