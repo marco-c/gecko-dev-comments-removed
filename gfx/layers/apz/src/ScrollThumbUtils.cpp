@@ -121,6 +121,15 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
   
   
   
+  
+  
+  
+  translation /= (mMetrics.GetCumulativeResolution().scale /
+                  mMetrics.GetPresShellResolution());
+
+  
+  
+  
   ScaleThumbBy(aAxis, scale, ScrollThumbExtent::Start);
 
   
