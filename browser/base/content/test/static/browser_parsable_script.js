@@ -25,6 +25,7 @@ const kESModuleList = new Set([
   /browser\/content\/browser\/tabs-pickup\.js$/,
   /toolkit\/content\/global\/certviewer\/components\/.*\.js$/,
   /toolkit\/content\/global\/certviewer\/.*\.js$/,
+  /chrome\/pdfjs\/content\/web\/.*\.js$/,
 ]);
 
 
