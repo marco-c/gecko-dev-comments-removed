@@ -942,6 +942,10 @@ class gfxFontGroup final : public gfxTextRunFactory {
   const gfxFontStyle* GetStyle() const { return &mStyle; }
 
   
+  
+  nsPresContext* GetPresContext() const { return mPresContext; }
+
+  
 
 
 
