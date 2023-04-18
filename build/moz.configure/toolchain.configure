@@ -1904,10 +1904,8 @@ def security_hardening_cflags(
         
         
         if compiler_is_gccish and optimize and not asan:
-            
-            if target.os != "Android":
-                flags.append("-U_FORTIFY_SOURCE")
-                flags.append("-D_FORTIFY_SOURCE=2")
+            flags.append("-U_FORTIFY_SOURCE")
+            flags.append("-D_FORTIFY_SOURCE=2")
             js_flags.append("-U_FORTIFY_SOURCE")
             js_flags.append("-D_FORTIFY_SOURCE=2")
             if mingw_clang:
