@@ -2680,11 +2680,6 @@ class nsDisplayItem {
   const nsRect& GetBuildingRect() const { return mBuildingRect; }
 
   void SetBuildingRect(const nsRect& aBuildingRect) {
-    if (aBuildingRect == mBuildingRect) {
-      
-      
-      return;
-    }
     mBuildingRect = aBuildingRect;
   }
 
