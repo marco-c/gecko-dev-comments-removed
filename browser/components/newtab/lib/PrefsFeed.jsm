@@ -172,6 +172,16 @@ this.PrefsFeed = class PrefsFeed {
     });
 
     
+    
+    let colorwayClosetPrefValue = Services.prefs.getBoolPref(
+      "browser.newtabpage.activity-stream.colorway-closet.enabled"
+    );
+    values["colorway-closet.enabled"] = colorwayClosetPrefValue;
+    this._prefMap.set("colorway-closet.enabled", {
+      value: colorwayClosetPrefValue,
+    });
+
+    
     values.featureConfig = NimbusFeatures.newtab.getAllVariables() || {};
     values.pocketConfig = NimbusFeatures.pocketNewtab.getAllVariables() || {};
     this._setBoolPref(values, "logowordmark.alwaysVisible", false);

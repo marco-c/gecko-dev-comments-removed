@@ -716,6 +716,7 @@ class BaseContent extends react__WEBPACK_IMPORTED_MODULE_8___default.a.PureCompo
     const noSectionsEnabled = !prefs["feeds.topsites"] && !pocketEnabled && filteredSections.filter(section => section.enabled).length === 0;
     const searchHandoffEnabled = prefs["improvesearch.handoffToAwesomebar"];
     const showCustomizationMenu = this.state.customizeMenuVisible;
+    const showColorwayCloset = prefs["colorway-closet.enabled"];
     const enabledSections = {
       topSitesEnabled: prefs["feeds.topsites"],
       pocketEnabled: prefs["feeds.section.topstories"],
@@ -738,7 +739,8 @@ class BaseContent extends react__WEBPACK_IMPORTED_MODULE_8___default.a.PureCompo
       enabledSections: enabledSections,
       pocketRegion: pocketRegion,
       mayHaveSponsoredTopSites: mayHaveSponsoredTopSites,
-      showing: showCustomizationMenu
+      showing: showCustomizationMenu,
+      showColorwayCloset: showColorwayCloset
     }), react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement("div", {
       className: outerClassName,
       onClick: this.closeCustomizationMenu
@@ -13959,17 +13961,6 @@ var external_React_default = __webpack_require__.n(external_React_);
 
 
 
-class ThemesSection_ThemesSection extends external_React_default.a.PureComponent {
-  render() {
-    return external_React_default.a.createElement("div", null);
-  }
-
-}
-
-
-
-
-
 class BackgroundsSection_BackgroundsSection extends external_React_default.a.PureComponent {
   render() {
     return external_React_default.a.createElement("div", null);
@@ -14196,6 +14187,16 @@ var external_ReactRedux_ = __webpack_require__(7);
 var external_ReactTransitionGroup_ = __webpack_require__(25);
 
 
+
+
+
+
+const ColorwayCloset = ({
+  dispatch
+}) => external_React_default.a.createElement("div", {
+  id: "colorway-closet"
+}, "Colorway Closet Placeholder");
+
  __webpack_require__.d(__webpack_exports__, "_CustomizeMenu", function() { return CustomizeMenu_CustomizeMenu; });
  __webpack_require__.d(__webpack_exports__, "CustomizeMenu", function() { return CustomizeMenu; });
 
@@ -14253,7 +14254,9 @@ class CustomizeMenu_CustomizeMenu extends external_React_default.a.PureComponent
       className: "close-button",
       "data-l10n-id": "newtab-custom-close-button",
       ref: c => this.closeButton = c
-    }), external_React_default.a.createElement(ThemesSection_ThemesSection, null), external_React_default.a.createElement(BackgroundsSection_BackgroundsSection, null), external_React_default.a.createElement(ContentSection_ContentSection, {
+    }), this.props.showColorwayCloset ? external_React_default.a.createElement(ColorwayCloset, {
+      dispatch: this.props.dispatch
+    }) : external_React_default.a.createElement(external_React_default.a.Fragment, null), external_React_default.a.createElement(BackgroundsSection_BackgroundsSection, null), external_React_default.a.createElement(ContentSection_ContentSection, {
       openPreferences: this.props.openPreferences,
       setPref: this.props.setPref,
       enabledSections: this.props.enabledSections,
