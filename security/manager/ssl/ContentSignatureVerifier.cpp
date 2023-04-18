@@ -6,6 +6,7 @@
 
 #include "ContentSignatureVerifier.h"
 
+#include "BRNameMatchingPolicy.h"
 #include "CryptoTask.h"
 #include "CSTrustDomain.h"
 #include "ScopedNSSTypes.h"
@@ -278,7 +279,8 @@ static nsresult VerifyContentSignatureInternal(
     return NS_ERROR_FAILURE;
   }
 
-  result = CheckCertHostname(certInput, hostnameInput);
+  BRNameMatchingPolicy nameMatchingPolicy(BRNameMatchingPolicy::Mode::Enforce);
+  result = CheckCertHostname(certInput, hostnameInput, nameMatchingPolicy);
   if (result != Success) {
     
     aErrorLabel = Telemetry::LABELS_CONTENT_SIGNATURE_VERIFICATION_ERRORS::err7;
