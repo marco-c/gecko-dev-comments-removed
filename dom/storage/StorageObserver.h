@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_StorageObserver_h
 #define mozilla_dom_StorageObserver_h
 
+#include "mozilla/dom/quota/CheckedUnsafePtr.h"
 #include "nsINamed.h"
 #include "nsIObserver.h"
 #include "nsITimer.h"
@@ -23,7 +24,8 @@ class StorageObserver;
 
 
 
-class StorageObserverSink {
+class StorageObserverSink
+    : public SupportsCheckedUnsafePtr<CheckIf<DiagnosticAssertEnabled>> {
  public:
   virtual ~StorageObserverSink() = default;
 
@@ -69,7 +71,7 @@ class StorageObserver : public nsIObserver,
   nsCOMPtr<nsIEventTarget> mBackgroundThread[2];
 
   
-  nsTObserverArray<StorageObserverSink*> mSinks;
+  nsTObserverArray<CheckedUnsafePtr<StorageObserverSink>> mSinks;
   nsCOMPtr<nsITimer> mDBThreadStartDelayTimer;
 };
 
