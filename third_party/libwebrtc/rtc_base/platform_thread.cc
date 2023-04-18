@@ -142,7 +142,7 @@ bool PlatformThread::SetPriority(ThreadPriority priority) {
   RTC_DCHECK(spawned_thread_checker_.IsCurrent());
 
 #if defined(WEBRTC_WIN)
-  return SetThreadPriority(thread_, priority) != FALSE;
+  return SetThreadPriority(GetCurrentThread(), priority) != FALSE;
 #elif defined(__native_client__) || defined(WEBRTC_FUCHSIA)
   
   return true;
@@ -184,7 +184,7 @@ bool PlatformThread::SetPriority(ThreadPriority priority) {
       param.sched_priority = top_prio;
       break;
   }
-  return pthread_setschedparam(thread_, policy, &param) == 0;
+  return pthread_setschedparam(pthread_self(), policy, &param) == 0;
 #endif  
 }
 
