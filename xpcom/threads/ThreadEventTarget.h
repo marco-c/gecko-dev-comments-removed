@@ -10,7 +10,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/SynchronizedEventQueue.h"  
-#include "nsIDelayedRunnableObserver.h"
 #include "nsISerialEventTarget.h"
 
 namespace mozilla {
@@ -18,22 +17,12 @@ class DelayedRunnable;
 
 
 
-class ThreadEventTarget final : public nsISerialEventTarget,
-                                public nsIDelayedRunnableObserver {
+class ThreadEventTarget final : public nsISerialEventTarget {
  public:
   ThreadEventTarget(ThreadTargetSink* aSink, bool aIsMainThread);
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIEVENTTARGET_FULL
-
-  
-  void OnDelayedRunnableCreated(DelayedRunnable* aRunnable) override;
-  void OnDelayedRunnableScheduled(DelayedRunnable* aRunnable) override;
-  void OnDelayedRunnableRan(DelayedRunnable* aRunnable) override;
-
-  
-  
-  void NotifyShutdown();
 
   
   void Disconnect(const MutexAutoLock& aProofOfLock) {
@@ -59,10 +48,6 @@ class ThreadEventTarget final : public nsISerialEventTarget,
 
   RefPtr<ThreadTargetSink> mSink;
   bool mIsMainThread;
-
-  
-  
-  nsTArray<RefPtr<mozilla::DelayedRunnable>> mScheduledDelayedRunnables;
 };
 
 }  

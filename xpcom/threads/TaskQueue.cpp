@@ -8,6 +8,8 @@
 
 #include "mozilla/DelayedRunnable.h"
 #include "mozilla/ProfilerRunnable.h"
+#include "nsIEventTarget.h"
+#include "nsITargetShutdownTask.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -25,11 +27,10 @@ TaskQueue::TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
 TaskQueue::~TaskQueue() {
   
   
-  MOZ_ASSERT(mScheduledDelayedRunnables.IsEmpty());
+  MOZ_ASSERT(mShutdownTasks.IsEmpty());
 }
 
-NS_IMPL_ISUPPORTS_INHERITED(TaskQueue, AbstractThread, nsIDirectTaskDispatcher,
-                            nsIDelayedRunnableObserver);
+NS_IMPL_ISUPPORTS_INHERITED(TaskQueue, AbstractThread, nsIDirectTaskDispatcher);
 
 TaskDispatcher& TaskQueue::TailDispatcher() {
   MOZ_ASSERT(IsCurrentThreadIn());
@@ -75,6 +76,30 @@ nsresult TaskQueue::DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable,
   return NS_OK;
 }
 
+nsresult TaskQueue::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
+  NS_ENSURE_ARG(aTask);
+
+  MonitorAutoLock mon(mQueueMonitor);
+  if (mIsShutdown) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  MOZ_ASSERT(!mShutdownTasks.Contains(aTask));
+  mShutdownTasks.AppendElement(aTask);
+  return NS_OK;
+}
+
+nsresult TaskQueue::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
+  NS_ENSURE_ARG(aTask);
+
+  MonitorAutoLock mon(mQueueMonitor);
+  if (mIsShutdown) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  return mShutdownTasks.RemoveElement(aTask) ? NS_OK : NS_ERROR_UNEXPECTED;
+}
+
 void TaskQueue::AwaitIdle() {
   MonitorAutoLock mon(mQueueMonitor);
   AwaitIdleLocked();
@@ -106,62 +131,24 @@ void TaskQueue::AwaitShutdownAndIdle() {
   }
   AwaitIdleLocked();
 }
-
-void TaskQueue::OnDelayedRunnableCreated(DelayedRunnable* aRunnable) {
-#ifdef DEBUG
-  MonitorAutoLock mon(mQueueMonitor);
-  MOZ_ASSERT(!mDelayedRunnablesCancelPromise);
-#endif
-}
-
-void TaskQueue::OnDelayedRunnableScheduled(DelayedRunnable* aRunnable) {
-  MOZ_ASSERT(IsOnCurrentThread());
-  mScheduledDelayedRunnables.AppendElement(aRunnable);
-}
-
-void TaskQueue::OnDelayedRunnableRan(DelayedRunnable* aRunnable) {
-  MOZ_ASSERT(IsOnCurrentThread());
-  Unused << mScheduledDelayedRunnables.RemoveElement(aRunnable);
-}
-
-auto TaskQueue::CancelDelayedRunnables() -> RefPtr<CancelPromise> {
-  MonitorAutoLock mon(mQueueMonitor);
-  return CancelDelayedRunnablesLocked();
-}
-
-auto TaskQueue::CancelDelayedRunnablesLocked() -> RefPtr<CancelPromise> {
-  mQueueMonitor.AssertCurrentThreadOwns();
-  if (mDelayedRunnablesCancelPromise) {
-    return mDelayedRunnablesCancelPromise;
-  }
-  mDelayedRunnablesCancelPromise =
-      mDelayedRunnablesCancelHolder.Ensure(__func__);
-  nsCOMPtr<nsIRunnable> cancelRunnable =
-      NewRunnableMethod("TaskQueue::CancelDelayedRunnablesImpl", this,
-                        &TaskQueue::CancelDelayedRunnablesImpl);
-  MOZ_ALWAYS_SUCCEEDS(DispatchLocked( cancelRunnable,
-                                     NS_DISPATCH_NORMAL, TailDispatch));
-  return mDelayedRunnablesCancelPromise;
-}
-
-void TaskQueue::CancelDelayedRunnablesImpl() {
-  MOZ_ASSERT(IsOnCurrentThread());
-  for (const auto& runnable : mScheduledDelayedRunnables) {
-    runnable->CancelTimer();
-  }
-  mScheduledDelayedRunnables.Clear();
-  mDelayedRunnablesCancelHolder.Resolve(true, __func__);
-}
-
 RefPtr<ShutdownPromise> TaskQueue::BeginShutdown() {
   
   
   if (AbstractThread* currentThread = AbstractThread::GetCurrent()) {
     currentThread->TailDispatchTasksFor(this);
   }
+
   MonitorAutoLock mon(mQueueMonitor);
-  Unused << CancelDelayedRunnablesLocked();
+  
+  
+  for (auto& task : mShutdownTasks) {
+    nsCOMPtr runnable{task->AsRunnable()};
+    MOZ_ALWAYS_SUCCEEDS(
+        DispatchLocked(runnable, NS_DISPATCH_NORMAL, TailDispatch));
+  }
+  mShutdownTasks.Clear();
   mIsShutdown = true;
+
   RefPtr<ShutdownPromise> p = mShutdownPromise.Ensure(__func__);
   MaybeResolveShutdown();
   mon.NotifyAll();

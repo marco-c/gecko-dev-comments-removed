@@ -45,6 +45,9 @@ class ThreadTargetSink {
   
   virtual void Disconnect(const MutexAutoLock& aProofOfLock) = 0;
 
+  virtual nsresult RegisterShutdownTask(nsITargetShutdownTask* aTask) = 0;
+  virtual nsresult UnregisterShutdownTask(nsITargetShutdownTask* aTask) = 0;
+
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
@@ -109,6 +112,12 @@ class SynchronizedEventQueue : public ThreadTargetSink {
 
 
   virtual void PopEventQueue(nsIEventTarget* aTarget) = 0;
+
+  
+
+
+
+  virtual void RunShutdownTasks() = 0;
 
  protected:
   virtual ~SynchronizedEventQueue() = default;

@@ -30,7 +30,7 @@ class MessagePump : public base::MessagePumpDefault {
   friend class DoWorkRunnable;
 
  public:
-  explicit MessagePump(nsIEventTarget* aEventTarget);
+  explicit MessagePump(nsISerialEventTarget* aEventTarget);
 
   
   virtual void Run(base::MessagePump::Delegate* aDelegate) override;
@@ -45,7 +45,7 @@ class MessagePump : public base::MessagePumpDefault {
   virtual void ScheduleDelayedWork(
       const base::TimeTicks& aDelayedWorkTime) override;
 
-  virtual nsIEventTarget* GetXPCOMThread() override;
+  virtual nsISerialEventTarget* GetXPCOMThread() override;
 
  protected:
   virtual ~MessagePump();
@@ -55,7 +55,7 @@ class MessagePump : public base::MessagePumpDefault {
   void DoDelayedWork(base::MessagePump::Delegate* aDelegate);
 
  protected:
-  nsIEventTarget* mEventTarget;
+  nsISerialEventTarget* mEventTarget;
 
   
   
@@ -80,7 +80,7 @@ class MessagePumpForChildProcess final : public MessagePump {
 
 class MessagePumpForNonMainThreads final : public MessagePump {
  public:
-  explicit MessagePumpForNonMainThreads(nsIEventTarget* aEventTarget)
+  explicit MessagePumpForNonMainThreads(nsISerialEventTarget* aEventTarget)
       : MessagePump(aEventTarget) {}
 
   virtual void Run(base::MessagePump::Delegate* aDelegate) override;
@@ -110,7 +110,7 @@ class MessagePumpForNonMainUIThreads final : public base::MessagePumpForUI,
   
   virtual void DoRunLoop() override;
 
-  virtual nsIEventTarget* GetXPCOMThread() override {
+  virtual nsISerialEventTarget* GetXPCOMThread() override {
     return nullptr;  
   }
 
@@ -151,20 +151,20 @@ class MessagePumpForNonMainUIThreads final : public base::MessagePumpForUI,
 
 class MessagePumpForAndroidUI : public base::MessagePump {
  public:
-  explicit MessagePumpForAndroidUI(nsIEventTarget* aEventTarget)
+  explicit MessagePumpForAndroidUI(nsISerialEventTarget* aEventTarget)
       : mEventTarget(aEventTarget) {}
 
   virtual void Run(Delegate* delegate);
   virtual void Quit();
   virtual void ScheduleWork();
   virtual void ScheduleDelayedWork(const base::TimeTicks& delayed_work_time);
-  virtual nsIEventTarget* GetXPCOMThread() { return mEventTarget; }
+  virtual nsISerialEventTarget* GetXPCOMThread() { return mEventTarget; }
 
  private:
   ~MessagePumpForAndroidUI() {}
   MessagePumpForAndroidUI() {}
 
-  nsIEventTarget* mEventTarget;
+  nsISerialEventTarget* mEventTarget;
 };
 #endif  
 

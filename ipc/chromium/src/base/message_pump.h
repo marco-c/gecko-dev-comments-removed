@@ -9,7 +9,7 @@
 
 #include "nsISupportsImpl.h"
 
-class nsIEventTarget;
+class nsISerialEventTarget;
 
 namespace base {
 
@@ -129,7 +129,7 @@ class MessagePump {
   virtual void ScheduleDelayedWork(const TimeTicks& delayed_work_time) = 0;
 
   
-  virtual nsIEventTarget* GetXPCOMThread() { return nullptr; }
+  virtual nsISerialEventTarget* GetXPCOMThread() { return nullptr; }
 
  protected:
   virtual ~MessagePump(){};

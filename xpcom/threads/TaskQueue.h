@@ -14,7 +14,6 @@
 #include "mozilla/Queue.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TaskDispatcher.h"
-#include "nsIDelayedRunnableObserver.h"
 #include "nsIDirectTaskDispatcher.h"
 #include "nsThreadUtils.h"
 
@@ -47,9 +46,7 @@ typedef MozPromise<bool, bool, false> ShutdownPromise;
 
 
 
-class TaskQueue : public AbstractThread,
-                  public nsIDirectTaskDispatcher,
-                  public nsIDelayedRunnableObserver {
+class TaskQueue : public AbstractThread, public nsIDirectTaskDispatcher {
   class EventTargetWrapper;
 
  public:
@@ -92,10 +89,8 @@ class TaskQueue : public AbstractThread,
   
   using nsIEventTarget::Dispatch;
 
-  
-  void OnDelayedRunnableCreated(DelayedRunnable* aRunnable) override;
-  void OnDelayedRunnableScheduled(DelayedRunnable* aRunnable) override;
-  void OnDelayedRunnableRan(DelayedRunnable* aRunnable) override;
+  NS_IMETHOD RegisterShutdownTask(nsITargetShutdownTask* aTask) override;
+  NS_IMETHOD UnregisterShutdownTask(nsITargetShutdownTask* aTask) override;
 
   using CancelPromise = MozPromise<bool, bool, false>;
 
@@ -137,11 +132,6 @@ class TaskQueue : public AbstractThread,
   nsresult DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable, uint32_t aFlags,
                           DispatchReason aReason = NormalDispatch);
 
-  RefPtr<CancelPromise> CancelDelayedRunnablesLocked();
-
-  
-  void CancelDelayedRunnablesImpl();
-
   void MaybeResolveShutdown() {
     mQueueMonitor.AssertCurrentThreadOwns();
     if (mIsShutdown && !mIsRunning) {
@@ -165,16 +155,7 @@ class TaskQueue : public AbstractThread,
   Queue<TaskStruct> mTasks;
 
   
-  
-  
-  nsTArray<RefPtr<DelayedRunnable>> mScheduledDelayedRunnables;
-
-  
-  MozPromiseHolder<CancelPromise> mDelayedRunnablesCancelHolder;
-
-  
-  
-  RefPtr<CancelPromise> mDelayedRunnablesCancelPromise;
+  nsTArray<nsCOMPtr<nsITargetShutdownTask>> mShutdownTasks;
 
   
   

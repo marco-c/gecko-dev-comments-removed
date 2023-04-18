@@ -9,14 +9,16 @@
 
 #include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
-#include "nsIDelayedRunnableObserver.h"
 #include "nsIRunnable.h"
+#include "nsITargetShutdownTask.h"
 #include "nsITimer.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
 
-class DelayedRunnable : public Runnable, public nsITimerCallback {
+class DelayedRunnable : public Runnable,
+                        public nsITimerCallback,
+                        public nsITargetShutdownTask {
  public:
   DelayedRunnable(already_AddRefed<nsISerialEventTarget> aTarget,
                   already_AddRefed<nsIRunnable> aRunnable, uint32_t aDelay);
@@ -31,18 +33,19 @@ class DelayedRunnable : public Runnable, public nsITimerCallback {
 
 
 
-  void CancelTimer();
+  void TargetShutdown() override;
 
  private:
   ~DelayedRunnable() = default;
   nsresult DoRun();
 
   const nsCOMPtr<nsISerialEventTarget> mTarget;
-  const nsCOMPtr<nsIDelayedRunnableObserver> mObserver;
+  const TimeStamp mDelayedFrom;
+  const uint32_t mDelay;
+
+  mozilla::Mutex mMutex{"DelayedRunnable"};
   nsCOMPtr<nsIRunnable> mWrappedRunnable;
   nsCOMPtr<nsITimer> mTimer;
-  const TimeStamp mDelayedFrom;
-  uint32_t mDelay;
 };
 
 }  
