@@ -82,7 +82,7 @@ const STATUSES = new Map([
 ]);
 
 
-this.error = {
+const error = {
   MessageHandlerError,
   UnsupportedCommandError,
 };

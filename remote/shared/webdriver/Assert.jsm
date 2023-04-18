@@ -21,7 +21,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 
-this.assert = {};
+const assert = {};
 
 
 

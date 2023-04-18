@@ -56,7 +56,7 @@ const BUILTIN_ERRORS = new Set([
 ]);
 
 
-this.error = {
+const error = {
   
 
 
