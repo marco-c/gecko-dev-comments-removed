@@ -3378,7 +3378,13 @@
 
 
 
-    removeAllTabsBut(aTab) {
+
+
+
+
+
+
+    removeAllTabsBut(aTab, aParams) {
       let tabsToRemove = [];
       if (aTab && aTab.multiselected) {
         tabsToRemove = this.visibleTabs.filter(
@@ -3399,7 +3405,7 @@
         return;
       }
 
-      this.removeTabs(tabsToRemove);
+      this.removeTabs(tabsToRemove, aParams);
     },
 
     removeMultiSelectedTabs() {
@@ -3416,9 +3422,194 @@
       this.removeTabs(selectedTabs);
     },
 
+    
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    _startRemoveTabs(
+      tabs,
+      { animate, suppressWarnAboutClosingWindow, skipPermitUnload, skipRemoves }
+    ) {
+      
+      
+      let tabsWithBeforeUnloadPrompt = [];
+      let tabsWithoutBeforeUnload = [];
+      let beforeUnloadPromises = [];
+      let lastToClose;
+
+      for (let tab of tabs) {
+        if (!skipRemoves) {
+          tab._closedInGroup = true;
+        }
+        if (!skipRemoves && tab.selected) {
+          lastToClose = tab;
+          let toBlurTo = this._findTabToBlurTo(lastToClose, tabs);
+          if (toBlurTo) {
+            this._getSwitcher().warmupTab(toBlurTo);
+          }
+        } else if (!skipPermitUnload && this._hasBeforeUnload(tab)) {
+          TelemetryStopwatch.start("FX_TAB_CLOSE_PERMIT_UNLOAD_TIME_MS", tab);
+          
+          
+          
+          tab._pendingPermitUnload = true;
+          beforeUnloadPromises.push(
+            
+            
+            
+            tab.linkedBrowser.asyncPermitUnload("dontUnload").then(
+              ({ permitUnload }) => {
+                tab._pendingPermitUnload = false;
+                TelemetryStopwatch.finish(
+                  "FX_TAB_CLOSE_PERMIT_UNLOAD_TIME_MS",
+                  tab
+                );
+                if (tab.closing) {
+                  
+                  
+                } else if (permitUnload) {
+                  if (!skipRemoves) {
+                    
+                    this.removeTab(tab, {
+                      animate,
+                      prewarmed: true,
+                      skipPermitUnload: true,
+                    });
+                  }
+                } else {
+                  
+                  tabsWithBeforeUnloadPrompt.push(tab);
+                }
+              },
+              err => {
+                console.error("error while calling asyncPermitUnload", err);
+                tab._pendingPermitUnload = false;
+                TelemetryStopwatch.finish(
+                  "FX_TAB_CLOSE_PERMIT_UNLOAD_TIME_MS",
+                  tab
+                );
+              }
+            )
+          );
+        } else {
+          tabsWithoutBeforeUnload.push(tab);
+        }
+      }
+
+      
+      
+      
+      
+      if (!skipRemoves) {
+        for (let tab of tabsWithoutBeforeUnload) {
+          this.removeTab(tab, {
+            animate,
+            prewarmed: true,
+            skipPermitUnload,
+          });
+        }
+      }
+
+      return {
+        beforeUnloadComplete: Promise.all(beforeUnloadPromises),
+        tabsWithBeforeUnloadPrompt,
+        lastToClose,
+      };
+    },
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    async runBeforeUnloadForTabs(tabs) {
+      try {
+        let {
+          beforeUnloadComplete,
+          tabsWithBeforeUnloadPrompt,
+        } = this._startRemoveTabs(tabs, {
+          animate: false,
+          suppressWarnAboutClosingWindow: false,
+          skipPermitUnload: false,
+          skipRemoves: true,
+        });
+
+        await beforeUnloadComplete;
+
+        
+        for (let tab of tabsWithBeforeUnloadPrompt) {
+          tab._pendingPermitUnload = true;
+          let { permitUnload } = this.getBrowserForTab(tab).permitUnload();
+          tab._pendingPermitUnload = false;
+          if (!permitUnload) {
+            return true;
+          }
+        }
+      } catch (e) {
+        Cu.reportError(e);
+      }
+      return false;
+    },
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
     removeTabs(
       tabs,
-      { animate = true, suppressWarnAboutClosingWindow = false } = {}
+      {
+        animate = true,
+        suppressWarnAboutClosingWindow = false,
+        skipPermitUnload = false,
+      } = {}
     ) {
       
       
@@ -3439,80 +3630,23 @@
 
       
       try {
-        let tabsWithBeforeUnloadPrompt = [];
-        let tabsWithoutBeforeUnload = [];
-        let beforeUnloadPromises = [];
-        let lastToClose;
-        let aParams = { animate, prewarmed: true };
-
-        for (let tab of tabs) {
-          tab._closedInGroup = true;
-          if (tab.selected) {
-            lastToClose = tab;
-            let toBlurTo = this._findTabToBlurTo(lastToClose, tabs);
-            if (toBlurTo) {
-              this._getSwitcher().warmupTab(toBlurTo);
-            }
-          } else if (this._hasBeforeUnload(tab)) {
-            TelemetryStopwatch.start("FX_TAB_CLOSE_PERMIT_UNLOAD_TIME_MS", tab);
-            
-            
-            
-            tab._pendingPermitUnload = true;
-            beforeUnloadPromises.push(
-              
-              
-              
-              tab.linkedBrowser.asyncPermitUnload("dontUnload").then(
-                ({ permitUnload }) => {
-                  tab._pendingPermitUnload = false;
-                  TelemetryStopwatch.finish(
-                    "FX_TAB_CLOSE_PERMIT_UNLOAD_TIME_MS",
-                    tab
-                  );
-                  if (tab.closing) {
-                    
-                    
-                  } else if (permitUnload) {
-                    
-                    this.removeTab(tab, {
-                      animate,
-                      prewarmed: true,
-                      skipPermitUnload: true,
-                    });
-                  } else {
-                    
-                    tabsWithBeforeUnloadPrompt.push(tab);
-                  }
-                },
-                err => {
-                  console.log("error while calling asyncPermitUnload", err);
-                  tab._pendingPermitUnload = false;
-                  TelemetryStopwatch.finish(
-                    "FX_TAB_CLOSE_PERMIT_UNLOAD_TIME_MS",
-                    tab
-                  );
-                }
-              )
-            );
-          } else {
-            tabsWithoutBeforeUnload.push(tab);
-          }
-        }
-        
-        
-        
-        
-        for (let tab of tabsWithoutBeforeUnload) {
-          this.removeTab(tab, aParams);
-        }
+        let {
+          beforeUnloadComplete,
+          tabsWithBeforeUnloadPrompt,
+          lastToClose,
+        } = this._startRemoveTabs(tabs, {
+          animate,
+          suppressWarnAboutClosingWindow,
+          skipPermitUnload,
+          skipRemoves: false,
+        });
 
         
         
         
         
         let done = false;
-        Promise.all(beforeUnloadPromises).then(() => {
+        beforeUnloadComplete.then(() => {
           done = true;
         });
         Services.tm.spinEventLoopUntilOrQuit(
@@ -3522,6 +3656,12 @@
         if (!done) {
           return;
         }
+
+        let aParams = {
+          animate,
+          prewarmed: true,
+          skipPermitUnload,
+        };
 
         
         for (let tab of tabsWithBeforeUnloadPrompt) {
