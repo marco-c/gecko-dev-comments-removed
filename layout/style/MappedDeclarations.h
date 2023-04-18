@@ -102,8 +102,9 @@ class MappedDeclarations final {
   }
 
   
-  void SetCounterResetListItem(int32_t aValue) {
-    Servo_DeclarationBlock_SetCounterResetListItem(mDecl, aValue);
+  
+  void SetCounterResetListItem(int32_t aValue, bool aIsReversed) {
+    Servo_DeclarationBlock_SetCounterResetListItem(mDecl, aValue, aIsReversed);
   }
 
   

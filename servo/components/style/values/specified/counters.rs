@@ -21,6 +21,18 @@ use cssparser::{Parser, Token};
 use selectors::parser::SelectorParseErrorKind;
 use style_traits::{KeywordsCollectFn, ParseError, SpecifiedValueInfo, StyleParseErrorKind};
 
+#[derive(PartialEq)]
+enum CounterType { Increment, Set, Reset, }
+
+impl CounterType {
+    fn default_value(&self) -> i32 {
+        match *self {
+            Self::Increment => 1,
+            Self::Reset | Self::Set => 0,
+        }
+    }
+}
+
 
 pub type CounterIncrement = generics::GenericCounterIncrement<Integer>;
 
@@ -29,26 +41,38 @@ impl Parse for CounterIncrement {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        Ok(Self::new(parse_counters(context, input, 1)?))
+        Ok(Self::new(parse_counters(context, input, CounterType::Increment)?))
     }
 }
 
 
-pub type CounterSetOrReset = generics::GenericCounterSetOrReset<Integer>;
+pub type CounterSet = generics::GenericCounterSet<Integer>;
 
-impl Parse for CounterSetOrReset {
+impl Parse for CounterSet {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        Ok(Self::new(parse_counters(context, input, 0)?))
+        Ok(Self::new(parse_counters(context, input, CounterType::Set)?))
+    }
+}
+
+
+pub type CounterReset = generics::GenericCounterReset<Integer>;
+
+impl Parse for CounterReset {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        Ok(Self::new(parse_counters(context, input, CounterType::Reset)?))
     }
 }
 
 fn parse_counters<'i, 't>(
     context: &ParserContext,
     input: &mut Parser<'i, 't>,
-    default_value: i32,
+    counter_type: CounterType,
 ) -> Result<Vec<CounterPair<Integer>>, ParseError<'i>> {
     if input
         .try_parse(|input| input.expect_ident_matching("none"))
@@ -60,8 +84,14 @@ fn parse_counters<'i, 't>(
     let mut counters = Vec::new();
     loop {
         let location = input.current_source_location();
-        let name = match input.next() {
-            Ok(&Token::Ident(ref ident)) => CustomIdent::from_ident(location, ident, &["none"])?,
+        let (name, is_reversed) = match input.next() {
+            Ok(&Token::Ident(ref ident)) => (CustomIdent::from_ident(location, ident, &["none"])?, false),
+            Ok(&Token::Function(ref name)) if counter_type == CounterType::Reset && name.eq_ignore_ascii_case("reversed") => {
+                input.parse_nested_block(|input| {
+                    let location = input.current_source_location();
+                    Ok((CustomIdent::from_ident(location, input.expect_ident()?, &["none"])?, true))
+                })?
+            }
             Ok(t) => {
                 let t = t.clone();
                 return Err(location.new_unexpected_token_error(t));
@@ -69,10 +99,19 @@ fn parse_counters<'i, 't>(
             Err(_) => break,
         };
 
-        let value = input
-            .try_parse(|input| Integer::parse(context, input))
-            .unwrap_or(Integer::new(default_value));
-        counters.push(CounterPair { name, value });
+        let value = match input.try_parse(|input| Integer::parse(context, input)) {
+            Ok(start) =>
+                if start.value == i32::min_value() {
+                    
+                    
+                    
+                    Integer::new(i32::min_value() + 1)
+                } else {
+                    start
+                },
+            _ => Integer::new(if is_reversed { i32::min_value() } else { counter_type.default_value() }),
+        };
+        counters.push(CounterPair { name, value, is_reversed });
     }
 
     if !counters.is_empty() {

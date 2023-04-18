@@ -12,6 +12,8 @@ use crate::values::generics::CounterStyle;
 use crate::values::specified::Attr;
 use crate::values::CustomIdent;
 use std::ops::Deref;
+use std::fmt::{self, Write};
+use style_traits::{CssWriter, ToCss};
 
 
 #[derive(
@@ -21,7 +23,6 @@ use std::ops::Deref;
     PartialEq,
     SpecifiedValueInfo,
     ToComputedValue,
-    ToCss,
     ToResolvedValue,
     ToShmem,
 )]
@@ -31,8 +32,34 @@ pub struct GenericCounterPair<Integer> {
     pub name: CustomIdent,
     
     pub value: Integer,
+    
+    
+    pub is_reversed: bool,
 }
 pub use self::GenericCounterPair as CounterPair;
+
+impl<Integer> ToCss for CounterPair<Integer>
+where
+    Integer: ToCss + PartialEq<i32>,
+{
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        if self.is_reversed {
+            dest.write_str("reversed(")?;
+        }
+        self.name.to_css(dest)?;
+        if self.is_reversed {
+            dest.write_str(")")?;
+            if self.value == i32::min_value() {
+                return Ok(());
+            }
+        }
+        dest.write_str(" ")?;
+        self.value.to_css(dest)
+    }
+}
 
 
 #[derive(
@@ -48,7 +75,7 @@ pub use self::GenericCounterPair as CounterPair;
     ToShmem,
 )]
 #[repr(transparent)]
-pub struct GenericCounterIncrement<I>(pub GenericCounters<I>);
+pub struct GenericCounterIncrement<I>(#[css(field_bound)] pub GenericCounters<I>);
 pub use self::GenericCounterIncrement as CounterIncrement;
 
 impl<I> CounterIncrement<I> {
@@ -82,18 +109,52 @@ impl<I> Deref for CounterIncrement<I> {
     ToShmem,
 )]
 #[repr(transparent)]
-pub struct GenericCounterSetOrReset<I>(pub GenericCounters<I>);
-pub use self::GenericCounterSetOrReset as CounterSetOrReset;
+pub struct GenericCounterSet<I>(#[css(field_bound)] pub GenericCounters<I>);
+pub use self::GenericCounterSet as CounterSet;
 
-impl<I> CounterSetOrReset<I> {
+impl<I> CounterSet<I> {
     
     #[inline]
     pub fn new(counters: Vec<CounterPair<I>>) -> Self {
-        CounterSetOrReset(Counters(counters.into()))
+        CounterSet(Counters(counters.into()))
     }
 }
 
-impl<I> Deref for CounterSetOrReset<I> {
+impl<I> Deref for CounterSet<I> {
+    type Target = [CounterPair<I>];
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &(self.0).0
+    }
+}
+
+
+#[derive(
+    Clone,
+    Debug,
+    Default,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(transparent)]
+pub struct GenericCounterReset<I>(#[css(field_bound)] pub GenericCounters<I>);
+pub use self::GenericCounterReset as CounterReset;
+
+impl<I> CounterReset<I> {
+    
+    #[inline]
+    pub fn new(counters: Vec<CounterPair<I>>) -> Self {
+        CounterReset(Counters(counters.into()))
+    }
+}
+
+impl<I> Deref for CounterReset<I> {
     type Target = [CounterPair<I>];
 
     #[inline]
@@ -119,7 +180,9 @@ impl<I> Deref for CounterSetOrReset<I> {
 )]
 #[repr(transparent)]
 pub struct GenericCounters<I>(
-    #[css(iterable, if_empty = "none")] crate::OwnedSlice<GenericCounterPair<I>>,
+    #[css(field_bound)]
+    #[css(iterable, if_empty = "none")]
+    crate::OwnedSlice<GenericCounterPair<I>>,
 );
 pub use self::GenericCounters as Counters;
 
