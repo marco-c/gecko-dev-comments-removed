@@ -421,8 +421,13 @@ class MOZ_NON_PARAM Val : public LitVal {
     return cell_.ref_.asJSObjectAddress();
   }
 
+  
   void readFromRootedLocation(const void* loc);
+  
   void writeToRootedLocation(void* loc, bool mustWrite64) const;
+
+  
+  void writeToHeapLocation(void* loc) const;
 
   
   static bool fromJSValue(JSContext* cx, ValType targetType, HandleValue val,

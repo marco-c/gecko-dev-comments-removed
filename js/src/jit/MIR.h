@@ -10423,50 +10423,19 @@ class MIonToWasmCall final : public MVariadicInstruction,
 
 
 
-
-class MWasmExceptionDataPointer : public MUnaryInstruction,
-                                  public NoTypePolicy::Data {
-  explicit MWasmExceptionDataPointer(MDefinition* exn)
-      : MUnaryInstruction(classOpcode, exn) {
-    MOZ_ASSERT(exn != nullptr);
-    MOZ_ASSERT(exn->type() == MIRType::RefOrNull);
-    setResultType(MIRType::Pointer);
-    
-    
-    
-    setGuard();  
-  }
-
- public:
-  INSTRUCTION_HEADER(WasmExceptionDataPointer)
-  TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, exn))
-
-  AliasSet getAliasSet() const override {
-    return AliasSet::Load(AliasSet::Any);
-  }
-};
-
-
-class MWasmLoadExceptionDataValue : public MUnaryInstruction,
-                                    public NoTypePolicy::Data {
+class MWasmLoadObjectField : public MUnaryInstruction,
+                             public NoTypePolicy::Data {
   uint32_t offset_;
 
-  MWasmLoadExceptionDataValue(MDefinition* exnDataPtr, uint32_t offset,
-                              MIRType type)
-      : MUnaryInstruction(classOpcode, exnDataPtr), offset_(offset) {
-    MOZ_ASSERT(IsNumberType(type) || type == MIRType::Simd128);
+  MWasmLoadObjectField(MDefinition* obj, uint32_t offset, MIRType type)
+      : MUnaryInstruction(classOpcode, obj), offset_(offset) {
     setResultType(type);
-    
-    
-    
-    setGuard();  
   }
 
  public:
-  INSTRUCTION_HEADER(WasmLoadExceptionDataValue)
+  INSTRUCTION_HEADER(WasmLoadObjectField)
   TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, exnDataPtr))
+  NAMED_OPERANDS((0, obj))
 
   uint32_t offset() const { return offset_; }
 
@@ -10476,77 +10445,29 @@ class MWasmLoadExceptionDataValue : public MUnaryInstruction,
 };
 
 
-class MWasmStoreExceptionDataValue : public MBinaryInstruction,
-                                     public NoTypePolicy::Data {
+
+
+
+
+
+
+
+class MWasmLoadObjectDataField : public MBinaryInstruction,
+                                 public NoTypePolicy::Data {
   uint32_t offset_;
 
-  MWasmStoreExceptionDataValue(MDefinition* exnDataPtr, uint32_t offset,
-                               MDefinition* value)
-      : MBinaryInstruction(classOpcode, exnDataPtr, value), offset_(offset) {
-    
-    
-    
-    setGuard();  
+  MWasmLoadObjectDataField(MDefinition* obj, MDefinition* data, uint32_t offset,
+                           MIRType type)
+      : MBinaryInstruction(classOpcode, obj, data), offset_(offset) {
+    setResultType(type);
   }
 
  public:
-  INSTRUCTION_HEADER(WasmStoreExceptionDataValue)
+  INSTRUCTION_HEADER(WasmLoadObjectDataField)
   TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, exnDataPtr), (1, value))
+  NAMED_OPERANDS((0, obj), (1, data))
 
   uint32_t offset() const { return offset_; }
-
-  
-  
-  AliasSet getAliasSet() const override {
-    return AliasSet::Store(AliasSet::Any);
-  }
-};
-
-
-class MWasmExceptionRefsPointer : public MUnaryInstruction,
-                                  public NoTypePolicy::Data {
-  uint32_t refCount_ = 0;
-
-  MWasmExceptionRefsPointer(MDefinition* exn, uint32_t refCount)
-      : MUnaryInstruction(classOpcode, exn), refCount_(refCount) {
-    setResultType(MIRType::Pointer);
-    
-    
-    setGuard();  
-  }
-
- public:
-  INSTRUCTION_HEADER(WasmExceptionRefsPointer)
-  TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, exn))
-
-  uint32_t refCount() const { return refCount_; }
-  AliasSet getAliasSet() const override {
-    return AliasSet::Store(AliasSet::Any);
-  }
-};
-
-
-class MWasmLoadExceptionRefsValue : public MUnaryInstruction,
-                                    public NoTypePolicy::Data {
-  int32_t offset_;
-
-  MWasmLoadExceptionRefsValue(MDefinition* exnRefsPtr, int32_t offset)
-      : MUnaryInstruction(classOpcode, exnRefsPtr), offset_(offset) {
-    setResultType(MIRType::RefOrNull);
-    
-    
-    
-    setGuard();  
-  }
-
- public:
-  INSTRUCTION_HEADER(WasmLoadExceptionRefsValue)
-  TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, exnRefsPtr))
-
-  int32_t offset() const { return offset_; }
 
   AliasSet getAliasSet() const override {
     return AliasSet::Load(AliasSet::Any);
@@ -10554,6 +10475,65 @@ class MWasmLoadExceptionRefsValue : public MUnaryInstruction,
 };
 
 
+
+
+
+
+
+
+
+class MWasmStoreObjectDataField : public MTernaryInstruction,
+                                  public NoTypePolicy::Data {
+  uint32_t offset_;
+
+  MWasmStoreObjectDataField(MDefinition* obj, MDefinition* data,
+                            uint32_t offset, MDefinition* value)
+      : MTernaryInstruction(classOpcode, obj, data, value), offset_(offset) {
+    MOZ_ASSERT(value->type() != MIRType::RefOrNull);
+  }
+
+ public:
+  INSTRUCTION_HEADER(WasmStoreObjectDataField)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, obj), (1, data), (2, value))
+
+  uint32_t offset() const { return offset_; }
+
+  AliasSet getAliasSet() const override {
+    return AliasSet::Store(AliasSet::Any);
+  }
+};
+
+
+
+
+
+
+
+
+
+class MWasmStoreObjectDataRefField : public MAryInstruction<4>,
+                                     public NoTypePolicy::Data {
+  MWasmStoreObjectDataRefField(MDefinition* tls, MDefinition* obj,
+                               MDefinition* valueAddr, MDefinition* value)
+      : MAryInstruction<4>(classOpcode) {
+    MOZ_ASSERT(valueAddr->type() == MIRType::Pointer);
+    MOZ_ASSERT(value->type() == MIRType::RefOrNull);
+    initOperand(0, tls);
+    initOperand(1, obj);
+    initOperand(2, valueAddr);
+    initOperand(3, value);
+  }
+
+ public:
+  INSTRUCTION_HEADER(WasmStoreObjectDataRefField)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, tls), (1, obj), (2, valueAddr), (3, value))
+
+  AliasSet getAliasSet() const override {
+    return AliasSet::Store(AliasSet::Any);
+  }
+};
 
 #undef INSTRUCTION_HEADER
 

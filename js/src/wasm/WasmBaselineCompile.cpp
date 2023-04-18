@@ -3645,12 +3645,9 @@ bool BaseCompiler::emitCatch() {
   masm.bind(&tryCatch.catchInfos.back().label);
 
   
-  const TagType& tagType = moduleEnv_.tags[tagIndex].type;
-  const ValTypeVector& params = tagType.argTypes;
-  const TagOffsetVector& offsets = tagType.argOffsets;
-
-  const uint32_t dataOffset =
-      NativeObject::getFixedSlotOffset(ArrayBufferObject::DATA_SLOT);
+  const SharedTagType& tagType = moduleEnv_.tags[tagIndex].type;
+  const ValTypeVector& params = tagType->argTypes_;
+  const TagOffsetVector& offsets = tagType->argOffsets_;
 
   
   
@@ -3660,61 +3657,46 @@ bool BaseCompiler::emitCatch() {
     return false;
   }
   RegRef exn = popRef();
-  RegRef values = needRef();
-  RegRef refs = needRef();
+  RegPtr data = needPtr();
 
-  masm.unboxObject(Address(exn, WasmExceptionObject::offsetOfValues()), values);
-  masm.unboxObject(Address(exn, WasmExceptionObject::offsetOfRefs()), refs);
-
-#  ifdef DEBUG
-  Label ok;
-  RegI32 scratch = needI32();
-  masm.load32(Address(refs, NativeObject::offsetOfFixedElements() +
-                                ObjectElements::offsetOfLength()),
-              scratch);
-  masm.branch32(Assembler::Equal, scratch, Imm32(tagType.refCount), &ok);
-  masm.assumeUnreachable("Array length should be equal to exn ref count.");
-  masm.bind(&ok);
-  freeI32(scratch);
-#  endif
-  masm.loadPtr(Address(refs, NativeObject::offsetOfElements()), refs);
+  masm.loadPtr(Address(exn, (int32_t)WasmExceptionObject::offsetOfData()),
+               data);
 
   
   
   pushRef(exn);
 
-  masm.loadPtr(Address(values, dataOffset), values);
   for (uint32_t i = 0; i < params.length(); i++) {
     int32_t offset = offsets[i];
     switch (params[i].kind()) {
       case ValType::I32: {
         RegI32 reg = needI32();
-        masm.load32(Address(values, offset), reg);
+        masm.load32(Address(data, offset), reg);
         pushI32(reg);
         break;
       }
       case ValType::I64: {
         RegI64 reg = needI64();
-        masm.load64(Address(values, offset), reg);
+        masm.load64(Address(data, offset), reg);
         pushI64(reg);
         break;
       }
       case ValType::F32: {
         RegF32 reg = needF32();
-        masm.loadFloat32(Address(values, offset), reg);
+        masm.loadFloat32(Address(data, offset), reg);
         pushF32(reg);
         break;
       }
       case ValType::F64: {
         RegF64 reg = needF64();
-        masm.loadDouble(Address(values, offset), reg);
+        masm.loadDouble(Address(data, offset), reg);
         pushF64(reg);
         break;
       }
       case ValType::V128: {
 #  ifdef ENABLE_WASM_SIMD
         RegV128 reg = needV128();
-        masm.loadUnalignedSimd128(Address(values, offset), reg);
+        masm.loadUnalignedSimd128(Address(data, offset), reg);
         pushV128(reg);
         break;
 #  else
@@ -3727,14 +3709,13 @@ bool BaseCompiler::emitCatch() {
         
         ASSERT_ANYREF_IS_JSOBJECT;
         RegRef reg = needRef();
-        masm.unboxObjectOrNull(Address(refs, offset), reg);
+        masm.loadPtr(Address(data, offset), reg);
         pushRef(reg);
         break;
       }
     }
   }
-  freeRef(values);
-  freeRef(refs);
+  freePtr(data);
 
   return true;
 }
@@ -4005,8 +3986,8 @@ bool BaseCompiler::emitThrow() {
   }
 
   const TagDesc& tagDesc = moduleEnv_.tags[tagIndex];
-  const ResultType& params = tagDesc.type.resultType();
-  const TagOffsetVector& offsets = tagDesc.type.argOffsets;
+  const ResultType& params = tagDesc.type->resultType();
+  const TagOffsetVector& offsets = tagDesc.type->argOffsets_;
 
   
   RegPtr tls = needPtr();
@@ -4017,52 +3998,49 @@ bool BaseCompiler::emitThrow() {
 
   
   pushRef(tag);
-  pushPtr(tagDesc.type.bufferSize);
   if (!emitInstanceCall(lineOrBytecode, SASigExceptionNew)) {
     return false;
   }
 
-  RegRef exn = popRef();
   
-  RegRef scratch = needRef();
-  const uint32_t dataOffset =
-      NativeObject::getFixedSlotOffset(ArrayBufferObject::DATA_SLOT);
+  needPtr(RegPtr(PreBarrierReg));
+  RegRef exn = popRef();
+  RegPtr data = needPtr();
+  freePtr(RegPtr(PreBarrierReg));
 
-  Address exnValuesAddress(exn, WasmExceptionObject::offsetOfValues());
-  masm.unboxObject(exnValuesAddress, scratch);
-  masm.loadPtr(Address(scratch, dataOffset), scratch);
+  masm.loadPtr(Address(exn, WasmExceptionObject::offsetOfData()), data);
 
   for (int32_t i = params.length() - 1; i >= 0; i--) {
-    int32_t offset = offsets[i];
+    uint32_t offset = offsets[i];
     switch (params[i].kind()) {
       case ValType::I32: {
         RegI32 reg = popI32();
-        masm.store32(reg, Address(scratch, offset));
+        masm.store32(reg, Address(data, offset));
         freeI32(reg);
         break;
       }
       case ValType::I64: {
         RegI64 reg = popI64();
-        masm.store64(reg, Address(scratch, offset));
+        masm.store64(reg, Address(data, offset));
         freeI64(reg);
         break;
       }
       case ValType::F32: {
         RegF32 reg = popF32();
-        masm.storeFloat32(reg, Address(scratch, offset));
+        masm.storeFloat32(reg, Address(data, offset));
         freeF32(reg);
         break;
       }
       case ValType::F64: {
         RegF64 reg = popF64();
-        masm.storeDouble(reg, Address(scratch, offset));
+        masm.storeDouble(reg, Address(data, offset));
         freeF64(reg);
         break;
       }
       case ValType::V128: {
 #  ifdef ENABLE_WASM_SIMD
         RegV128 reg = popV128();
-        masm.storeUnalignedSimd128(reg, Address(scratch, offset));
+        masm.storeUnalignedSimd128(reg, Address(data, offset));
         freeV128(reg);
         break;
 #  else
@@ -4071,31 +4049,22 @@ bool BaseCompiler::emitThrow() {
       }
       case ValType::Rtt:
       case ValType::Ref: {
-        RegRef refArg = popRef();
-
+        RegPtr valueAddr(PreBarrierReg);
+        needPtr(valueAddr);
+        masm.computeEffectiveAddress(Address(data, offset), valueAddr);
+        RegRef rv = popRef();
+        pushPtr(data);
         
-        RegRef tmp = needRef();
-        moveRef(exn, tmp);
-        pushRef(tmp);
-
-        
-        pushRef(exn);
-        pushRef(refArg);
-
-        if (!emitInstanceCall(lineOrBytecode, SASigPushRefIntoExn)) {
+        if (!emitBarrieredStore(Some(exn), valueAddr, rv)) {
           return false;
         }
-
-        exn = popRef();
-
-        
-        masm.unboxObject(exnValuesAddress, scratch);
-        masm.loadPtr(Address(scratch, dataOffset), scratch);
+        popPtr(data);
+        freeRef(rv);
         break;
       }
     }
   }
-  freeRef(scratch);
+  freePtr(data);
 
   deadCode_ = true;
 

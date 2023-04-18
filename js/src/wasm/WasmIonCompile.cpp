@@ -1759,6 +1759,23 @@ class FunctionCompiler {
         MWasmInterruptCheck::New(alloc(), tlsPointer_, bytecodeOffset()));
   }
 
+  bool postBarrierFilteringCall(uint32_t lineOrBytecode,
+                                MDefinition* barrierAddr) {
+    const SymbolicAddressSignature& callee = SASigPostBarrierFiltering;
+    CallCompileState args;
+    if (!passInstance(callee.argTypes[0], &args)) {
+      return false;
+    }
+    if (!passArg(barrierAddr, callee.argTypes[1], &args)) {
+      return false;
+    }
+    finishCall(&args);
+    if (!builtinInstanceMethodCall(callee, lineOrBytecode, args)) {
+      return false;
+    }
+    return true;
+  }
+
   
 
   
@@ -3015,46 +3032,29 @@ class FunctionCompiler {
 
   bool loadExceptionValues(MDefinition* exception, uint32_t tagIndex,
                            DefVector* values) {
-    const TagType& tagType = moduleEnv().tags[tagIndex].type;
-    const ValTypeVector& tagParams = tagType.argTypes;
-    const TagOffsetVector& offsets = tagType.argOffsets;
+    SharedTagType tagType = moduleEnv().tags[tagIndex].type;
+    const ValTypeVector& params = tagType->argTypes_;
+    const TagOffsetVector& offsets = tagType->argOffsets_;
 
-    MWasmExceptionDataPointer* exnDataPtr =
-        MWasmExceptionDataPointer::New(alloc(), exception);
-    curBlock_->add(exnDataPtr);
-    MWasmExceptionRefsPointer* exnRefsPtr =
-        MWasmExceptionRefsPointer::New(alloc(), exception, tagType.refCount);
-    curBlock_->add(exnRefsPtr);
-
-    MIRType type;
-    size_t count = tagParams.length();
     
-    if (!values->reserve(count)) {
+    auto* data = MWasmLoadObjectField::New(alloc(), exception,
+                                           WasmExceptionObject::offsetOfData(),
+                                           MIRType::Pointer);
+    curBlock_->add(data);
+
+    
+    if (!values->reserve(params.length())) {
       return false;
     }
 
-    for (size_t i = 0; i < count; i++) {
-      int32_t offset = offsets[i];
-      type = ToMIRType(tagParams[i]);
-      if (IsNumberType(type) || tagParams[i].kind() == ValType::V128) {
-        auto* load =
-            MWasmLoadExceptionDataValue::New(alloc(), exnDataPtr, offset, type);
-        if (!load || !values->append(load)) {
-          return false;
-        }
-        MOZ_ASSERT(load->type() != MIRType::None);
-        curBlock_->add(load);
-      } else {
-        MOZ_ASSERT(tagParams[i].kind() == ValType::Rtt ||
-                   tagParams[i].kind() == ValType::Ref);
-        auto* load =
-            MWasmLoadExceptionRefsValue::New(alloc(), exnRefsPtr, offset);
-        if (!load || !values->append(load)) {
-          return false;
-        }
-        MOZ_ASSERT(load->type() != MIRType::None);
-        curBlock_->add(load);
+    
+    for (size_t i = 0; i < params.length(); i++) {
+      auto* load = MWasmLoadObjectDataField::New(
+          alloc(), exception, data, offsets[i], ToMIRType(params[i]));
+      if (!load || !values->append(load)) {
+        return false;
       }
+      curBlock_->add(load);
     }
     return true;
   }
@@ -3124,77 +3124,85 @@ class FunctionCompiler {
     return true;
   }
 
-  bool emitThrow(uint32_t tagIndex, const DefVector& argValues) {
-    if (inDeadCode()) {
-      return true;
-    }
-
+  bool emitNewException(MDefinition* tag, MDefinition** exception) {
     uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
-    const TagType& tagType = moduleEnv_.tags[tagIndex].type;
-    const ResultType& tagParams = tagType.resultType();
-
-    
-    MDefinition* tagDef = loadTag(tagIndex);
-    MDefinition* exnSize =
-        constant(Int32Value(tagType.bufferSize), MIRType::Int32);
-    MDefinition* exn = nullptr;
     const SymbolicAddressSignature& callee = SASigExceptionNew;
     CallCompileState args;
     if (!passInstance(callee.argTypes[0], &args)) {
       return false;
     }
-    if (!passArg(tagDef, callee.argTypes[1], &args)) {
-      return false;
-    }
-    if (!passArg(exnSize, callee.argTypes[2], &args)) {
+    if (!passArg(tag, callee.argTypes[1], &args)) {
       return false;
     }
     if (!finishCall(&args)) {
       return false;
     }
-    if (!builtinInstanceMethodCall(callee, lineOrBytecode, args, &exn)) {
-      return false;
+    return builtinInstanceMethodCall(callee, lineOrBytecode, args, exception);
+  }
+
+  bool emitThrow(uint32_t tagIndex, const DefVector& argValues) {
+    if (inDeadCode()) {
+      return true;
     }
-    MOZ_ASSERT(exn);
+    uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
 
     
-    MWasmExceptionDataPointer* exnDataPtr =
-        MWasmExceptionDataPointer::New(alloc(), exn);
-    curBlock_->add(exnDataPtr);
+    MDefinition* tag = loadTag(tagIndex);
+    if (!tag) {
+      return false;
+    }
 
-    for (int32_t i = (int32_t)tagParams.length() - 1; i >= 0; i--) {
-      int32_t offset = tagType.argOffsets[i];
-      if (IsNumberType(tagParams[i]) || tagParams[i].kind() == ValType::V128) {
-        MWasmStoreExceptionDataValue* store = MWasmStoreExceptionDataValue::New(
-            alloc(), exnDataPtr, offset, argValues[i]);
+    
+    MDefinition* exception;
+    if (!emitNewException(tag, &exception)) {
+      return false;
+    }
+
+    
+    auto* data = MWasmLoadObjectField::New(alloc(), exception,
+                                           WasmExceptionObject::offsetOfData(),
+                                           MIRType::Pointer);
+    if (!data) {
+      return false;
+    }
+    curBlock_->add(data);
+
+    
+    SharedTagType tagType = moduleEnv_.tags[tagIndex].type;
+    for (size_t i = 0; i < tagType->argOffsets_.length(); i++) {
+      ValType type = tagType->argTypes_[i];
+      uint32_t offset = tagType->argOffsets_[i];
+
+      if (!type.isRefRepr()) {
+        auto* store = MWasmStoreObjectDataField::New(alloc(), exception, data,
+                                                     offset, argValues[i]);
+        if (!store) {
+          return false;
+        }
         curBlock_->add(store);
-      } else {
-        MOZ_ASSERT(tagParams[i].kind() == ValType::Ref ||
-                   tagParams[i].kind() == ValType::Rtt);
-        MOZ_ASSERT(argValues[i]->type() != MIRType::None);
+        continue;
+      }
 
-        const SymbolicAddressSignature& callee = SASigPushRefIntoExn;
-        CallCompileState args;
-        if (!passInstance(callee.argTypes[0], &args)) {
-          return false;
-        }
-        if (!passArg(exn, callee.argTypes[1], &args)) {
-          return false;
-        }
-        if (!passArg(argValues[i], callee.argTypes[2], &args)) {
-          return false;
-        }
-        if (!finishCall(&args)) {
-          return false;
-        }
-        if (!builtinInstanceMethodCall(callee, lineOrBytecode, args)) {
-          return false;
-        }
+      auto* fieldAddr = MWasmDerivedPointer::New(alloc(), data, offset);
+      if (!fieldAddr) {
+        return false;
+      }
+      curBlock_->add(fieldAddr);
+
+      auto* store = MWasmStoreObjectDataRefField::New(
+          alloc(), tlsPointer_, exception, fieldAddr, argValues[i]);
+      if (!store) {
+        return false;
+      }
+      curBlock_->add(store);
+
+      if (!postBarrierFilteringCall(lineOrBytecode, fieldAddr)) {
+        return false;
       }
     }
 
     
-    return throwFrom(exn, tagDef);
+    return throwFrom(exception, tag);
   }
 
   bool throwFrom(MDefinition* exn, MDefinition* tag) {
@@ -3989,25 +3997,12 @@ static bool EmitSetGlobal(FunctionCompiler& f) {
   MInstruction* barrierAddr =
       f.storeGlobalVar(global.offset(), global.isIndirect(), value);
 
-  
-  
-  
-
   if (barrierAddr) {
-    const SymbolicAddressSignature& callee = SASigPostBarrierFiltering;
-    CallCompileState args;
-    if (!f.passInstance(callee.argTypes[0], &args)) {
-      return false;
-    }
-    if (!f.passArg(barrierAddr, callee.argTypes[1], &args)) {
-      return false;
-    }
-    f.finishCall(&args);
-    if (!f.builtinInstanceMethodCall(callee, lineOrBytecode, args)) {
-      return false;
-    }
+    
+    
+    
+    return f.postBarrierFilteringCall(lineOrBytecode, barrierAddr);
   }
-
   return true;
 }
 

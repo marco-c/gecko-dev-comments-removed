@@ -73,6 +73,16 @@ void Val::writeToRootedLocation(void* loc, bool mustWrite64) const {
   }
 }
 
+void Val::writeToHeapLocation(void* loc) const {
+  if (type_.isRefRepr()) {
+    
+    
+    *((GCPtrObject*)loc) = cell_.ref_.asJSObject();
+    return;
+  }
+  memcpy(loc, &cell_, type_.size());
+}
+
 bool Val::fromJSValue(JSContext* cx, ValType targetType, HandleValue val,
                       MutableHandleVal rval) {
   rval.get().type_ = targetType;
