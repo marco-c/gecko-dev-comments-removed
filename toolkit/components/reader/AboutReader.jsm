@@ -1490,17 +1490,19 @@ AboutReader.prototype = {
       );
 
       
-      this._doc.querySelectorAll(`.pocket-sign-up, .pocket-discover-more`).forEach(el => {
-        el.addEventListener(`click`, e => {
-          Services.telemetry.recordEvent(
-            "readermode",
-            "pocket_cta",
-            "sign_up_click",
-            null,
-            {}
-          );
+      this._doc
+        .querySelectorAll(`.pocket-sign-up, .pocket-discover-more`)
+        .forEach(el => {
+          el.addEventListener(`click`, e => {
+            Services.telemetry.recordEvent(
+              "readermode",
+              "pocket_cta",
+              "sign_up_click",
+              null,
+              {}
+            );
+          });
         });
-      });
 
       
       this._ctaIntersectionObserver.observe(
