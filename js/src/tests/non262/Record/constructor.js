@@ -7,8 +7,13 @@ assertThrowsInstanceOf(
 );
 
 assertEq(typeof Record(), "record");
-
+assertEq(typeof Object(Record()), "object");
 assertEq(Record() instanceof Record, false);
+
+
+
+
+
 
 
 if (typeof reportCompare === "function") reportCompare(0, 0);
