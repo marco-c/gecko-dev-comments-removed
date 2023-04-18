@@ -23,6 +23,10 @@ const { OSKeyStoreTestUtils } = ChromeUtils.import(
   "resource://testing-common/OSKeyStoreTestUtils.jsm"
 );
 
+const { FormAutofillParent } = ChromeUtils.import(
+  "resource://autofill/FormAutofillParent.jsm"
+);
+
 const MANAGE_ADDRESSES_DIALOG_URL =
   "chrome://formautofill/content/manageAddresses.xhtml";
 const MANAGE_CREDIT_CARDS_DIALOG_URL =
@@ -202,13 +206,83 @@ async function sleep(ms = 500) {
   await new Promise(resolve => setTimeout(resolve, ms));
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function focusUpdateSubmitForm(
+  focusSelector,
+  target,
+  args,
+  task,
+  submit = true
+) {
+  let fieldsIdentifiedPromiseResolver;
+  let fieldsIdentifiedObserver = {
+    fieldsIdentified() {
+      FormAutofillParent.removeMessageObserver(fieldsIdentifiedObserver);
+      fieldsIdentifiedPromiseResolver();
+    },
+  };
+
+  let fieldsIdentifiedPromise = new Promise(resolve => {
+    fieldsIdentifiedPromiseResolver = resolve;
+    FormAutofillParent.addMessageObserver(fieldsIdentifiedObserver);
+  });
+
+  let alreadyFocused = await SpecialPowers.spawn(
+    target,
+    [focusSelector],
+    function(selector) {
+      let form = content.document.getElementById("form");
+      let element = form.querySelector(selector);
+      if (element == content.document.activeElement) {
+        return true;
+      }
+      element.focus();
+      return false;
+    }
+  );
+
+  await SpecialPowers.spawn(target, args, task);
+
+  if (alreadyFocused) {
+    
+    
+    fieldsIdentifiedPromiseResolver();
+  }
+
+  await fieldsIdentifiedPromise;
+
+  if (submit) {
+    await SpecialPowers.spawn(target, [], async function() {
+      let form = content.document.getElementById("form");
+      form.querySelector("input[type=submit]").click();
+    });
+  }
+}
+
 async function focusAndWaitForFieldsIdentified(browserOrContext, selector) {
   info("expecting the target input being focused and identified");
   
-
-  const { FormAutofillParent } = ChromeUtils.import(
-    "resource://autofill/FormAutofillParent.jsm"
-  );
 
   
   
