@@ -214,7 +214,7 @@ export function getProjectDirectoryRootName(state) {
   return state.sources.projectDirectoryRootName;
 }
 
-const getDisplayedSourceIDs = createSelector(
+const getSourcesTreeList = createSelector(
   getSourcesMap,
   state => state.sources.sourcesWithUrls,
   state => state.sources.projectDirectoryRoot,
@@ -233,11 +233,12 @@ const getDisplayedSourceIDs = createSelector(
       projectDirectoryRoot,
       threads
     );
-    const sourceIDsByThread = {};
+    const list = [];
 
     for (const id of sourcesWithUrls) {
       const source = sourcesMap.get(id);
 
+      
       const displayed =
         isDescendantOfRoot(source, rootWithoutThreadActor) &&
         (!source.isExtension ||
@@ -248,62 +249,70 @@ const getDisplayedSourceIDs = createSelector(
         continue;
       }
 
-      const thread = source.thread;
-      if (!sourceIDsByThread[thread]) {
-        sourceIDsByThread[thread] = new Set();
-      }
-      sourceIDsByThread[thread].add(id);
+      list.push(source);
     }
-    return sourceIDsByThread;
-  }
+    return list;
+  },
+  
+  
+  { memoizeOptions: { resultEqualityCheck: shallowEqual } }
 );
 
 export const getDisplayedSources = createSelector(
-  getSourcesMap,
-  getDisplayedSourceIDs,
+  getSourcesTreeList,
   getMainThreadHost,
-  (sourcesMap, idsByThread, mainThreadHost) => {
+  (list, mainThreadHost) => {
     const result = {};
+    const entriesByNoQueryURL = {};
+    for (const source of list) {
+      const displayURL = getDisplayURL(source.url, mainThreadHost);
 
-    for (const thread of Object.keys(idsByThread)) {
-      const entriesByNoQueryURL = Object.create(null);
-
-      for (const id of idsByThread[thread]) {
-        const source = sourcesMap.get(id);
-        const displayURL = getDisplayURL(source.url, mainThreadHost);
-
-        
-        
-        if (!displayURL.group) {
-          continue;
-        }
-
-        const entry = {
-          ...source,
-          displayURL,
-          parts: getPathParts(displayURL, thread, mainThreadHost),
-        };
-
-        if (!result[thread]) {
-          result[thread] = {};
-        }
-        result[thread][id] = entry;
-
-        const noQueryURL = stripQuery(entry.url);
-        if (!entriesByNoQueryURL[noQueryURL]) {
-          entriesByNoQueryURL[noQueryURL] = [];
-        }
-        entriesByNoQueryURL[noQueryURL].push(entry);
+      
+      
+      if (!displayURL.group) {
+        continue;
       }
 
       
       
+      const displayedSource = {
+        thread: source.thread,
+        isPrettyPrinted: source.isPrettyPrinted,
+        isBlackBoxed: source.isBlackBoxed,
+        isOriginal: source.isOriginal,
+        url: source.url,
+        
+        relativeUrl: source.relativeUrl,
+        id: source.id,
+        displayURL,
+        parts: getPathParts(displayURL, source.thread, mainThreadHost),
+      };
+      const thread = displayedSource.thread;
+
+      if (!result[thread]) {
+        result[thread] = {};
+      }
+      result[thread][displayedSource.id] = displayedSource;
+
       
-      for (const noQueryURL in entriesByNoQueryURL) {
-        const entries = entriesByNoQueryURL[noQueryURL];
-        if (entries.length === 1) {
-          entries[0].displayURL = getDisplayURL(noQueryURL, mainThreadHost);
+      
+      const noQueryURL = stripQuery(displayedSource.url);
+      
+      if (noQueryURL != displayedSource.url) {
+        if (!entriesByNoQueryURL[noQueryURL]) {
+          entriesByNoQueryURL[noQueryURL] = [];
         }
+        entriesByNoQueryURL[noQueryURL].push(displayedSource);
+      }
+    }
+
+    
+    
+    
+    for (const noQueryURL in entriesByNoQueryURL) {
+      const entries = entriesByNoQueryURL[noQueryURL];
+      if (entries.length === 1) {
+        entries[0].displayURL = getDisplayURL(noQueryURL, mainThreadHost);
       }
     }
 
