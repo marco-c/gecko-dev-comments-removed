@@ -174,7 +174,7 @@ class TypeData(TypeDataType):
         
         count = 0
 
-        stack = [self._data]
+        stack = [self._data]  
         while stack:
             v = stack.pop()
             if isinstance(v, set):
@@ -182,13 +182,13 @@ class TypeData(TypeDataType):
             else:
                 stack.extend(v.values())
 
-        stack = [self._json_data]
-        while stack:
-            v = stack.pop()
-            if isinstance(v, list):
+        json_stack = [self._json_data]  
+        while json_stack:
+            json_v = json_stack.pop()
+            if isinstance(json_v, list):
                 count += 1
             else:
-                stack.extend(v.values())
+                json_stack.extend(json_v.values())
 
         return count
 

@@ -27,7 +27,7 @@ end_space = re.compile(r"([^\\]\s)*$")
 def fnmatch_translate(pat):
     
     parts = []
-    seq = None
+    seq = None  
     i = 0
     any_char = b"[^/]"
     if pat[0:1] == b"/":
@@ -60,10 +60,10 @@ def fnmatch_translate(pat):
             
             if c == b"]":
                 seq = None
-                if parts[-1:] == b"[":
+                if parts[-1] == b"[":
                     parts = parts[:-1]
-                elif parts[-1:] == b"^" and parts[-2:-1] == b"[":
-                    parts = parts[:-2]
+                elif parts[-1] == b"^" and parts[-2] == b"[":
+                    raise ValueError
                 else:
                     parts.append(c)
             elif c == b"-":

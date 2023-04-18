@@ -174,7 +174,9 @@ def _parse_html(f):
     doc = html5lib.parse(f, treebuilder="etree", useChardet=False)
     if MYPY:
         return cast(ElementTree.Element, doc)
-    return doc
+    else:
+        
+        return doc
 
 def _parse_xml(f):
     
