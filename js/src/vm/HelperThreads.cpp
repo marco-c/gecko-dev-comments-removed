@@ -38,7 +38,6 @@
 #include "vm/SharedImmutableStringsCache.h"
 #include "vm/Time.h"
 #include "vm/TraceLogging.h"
-#include "vm/Xdr.h"
 #include "wasm/WasmGenerator.h"
 
 #include "debugger/DebugAPI-inl.h"
@@ -773,10 +772,13 @@ void ScriptDecodeTask::parse(JSContext* cx) {
     return;
   }
 
-  XDRStencilDecoder decoder(cx, range);
-  JS::DecodeOptions options(stencilInput_->options);
-  XDRResult res = decoder.codeStencil(options, *stencil_);
-  if (!res.isOk()) {
+  
+  
+  
+  
+  bool succeeded = false;
+  (void)stencil_->deserializeStencils(cx, *stencilInput_, range, &succeeded);
+  if (!succeeded) {
     stencil_.reset();
     return;
   }
