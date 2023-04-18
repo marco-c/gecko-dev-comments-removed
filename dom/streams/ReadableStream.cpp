@@ -521,6 +521,47 @@ bool IsReadableStreamLocked(ReadableStream* aStream) {
 }
 
 
+MOZ_CAN_RUN_SCRIPT already_AddRefed<ReadableStream> ReadableStream::PipeThrough(
+    const ReadableWritablePair& aTransform, const StreamPipeOptions& aOptions,
+    ErrorResult& aRv) {
+  
+  
+  if (IsReadableStreamLocked(this)) {
+    aRv.ThrowTypeError("Cannot pipe from a locked stream.");
+    return nullptr;
+  }
+
+  
+  
+  if (IsWritableStreamLocked(aTransform.mWritable)) {
+    aRv.ThrowTypeError("Cannot pipe to a locked stream.");
+    return nullptr;
+  }
+
+  
+  
+  RefPtr<AbortSignal> signal =
+      aOptions.mSignal.WasPassed() ? &aOptions.mSignal.Value() : nullptr;
+
+  
+  
+  
+  RefPtr<WritableStream> writable = aTransform.mWritable;
+  RefPtr<Promise> promise = ReadableStreamPipeTo(
+      this, writable, aOptions.mPreventClose, aOptions.mPreventAbort,
+      aOptions.mPreventCancel, signal, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  
+  MOZ_ALWAYS_TRUE(promise->SetAnyPromiseIsHandled());
+
+  
+  return do_AddRef(aTransform.mReadable.get());
+};
+
+
 double ReadableStreamGetNumReadRequests(ReadableStream* aStream) {
   
   MOZ_ASSERT(ReadableStreamHasDefaultReader(aStream));
@@ -851,7 +892,7 @@ already_AddRefed<Promise> ReadableStream::PipeTo(
   
   
   if (IsWritableStreamLocked(&aDestination)) {
-    aRv.ThrowTypeError("Can not pipe to a locked stream.");
+    aRv.ThrowTypeError("Cannot pipe to a locked stream.");
     return nullptr;
   }
 
