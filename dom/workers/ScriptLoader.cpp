@@ -51,6 +51,7 @@
 #include "nsXPCOM.h"
 #include "xpcpublic.h"
 
+#include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/LoadContext.h"
@@ -1103,6 +1104,15 @@ class ScriptLoaderRunnable final : public nsIRunnable, public nsINamed {
 
     if (IsMainWorkerScript()) {
       MOZ_DIAGNOSTIC_ASSERT(aLoadInfo.mReservedClientInfo.isSome());
+
+      
+      
+      
+      
+      nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+      loadInfo->SetIsThirdPartyContextToTopWindow(
+          mWorkerPrivate->IsThirdPartyContextToTopWindow());
+
       rv = AddClientChannelHelper(
           channel, std::move(aLoadInfo.mReservedClientInfo),
           Maybe<ClientInfo>(), mWorkerPrivate->HybridEventTarget());
