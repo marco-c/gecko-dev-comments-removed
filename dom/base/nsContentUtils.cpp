@@ -2170,6 +2170,11 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIPrincipal* aPrincipal) {
   return !isChrome && ShouldResistFingerprinting();
 }
 
+
+bool nsContentUtils::ShouldResistFingerprinting(char* aChar) {
+  return ShouldResistFingerprinting();
+}
+
 inline void LogDomainAndPrefList(const char* exemptedDomainsPrefName,
                                  nsAutoCString& url, bool isExemptDomain) {
   nsAutoCString list;

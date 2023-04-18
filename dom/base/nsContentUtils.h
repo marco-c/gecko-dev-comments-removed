@@ -353,6 +353,19 @@ class nsContentUtils {
   static bool ShouldResistFingerprinting(nsIChannel* aChannel);
 
   
+
+
+
+
+
+
+
+
+
+
+  static bool ShouldResistFingerprinting(char* aChar);
+
+  
   static bool UseStandinsForNativeColors();
 
   
