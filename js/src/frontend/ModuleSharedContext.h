@@ -10,20 +10,23 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 
-#include "builtin/ModuleObject.h"    
+#include "jstypes.h"
+
 #include "frontend/SharedContext.h"  
-#include "js/CompileOptions.h"       
-#include "js/RootingAPI.h"           
 #include "vm/Scope.h"                
-#include "vm/StencilEnums.h"         
+#include "vm/SharedStencil.h"        
+
+struct JS_PUBLIC_API JSContext;
+
+namespace JS {
+class JS_PUBLIC_API ReadOnlyCompileOptions;
+}
 
 namespace js {
 
 class ModuleBuilder;
 
 namespace frontend {
-
-struct CompilationStencil;
 
 class MOZ_STACK_CLASS ModuleSharedContext : public SuspendableContext {
  public:
