@@ -80,6 +80,7 @@ class ScreenOrientation final : public DOMEventTargetHelper {
   
   
   void UnlockDeviceOrientation();
+  void CleanupFullscreenListener();
 
   
   
