@@ -7,7 +7,11 @@
 var { ExtensionParent } = ChromeUtils.import(
   "resource://gre/modules/ExtensionParent.jsm"
 );
-var { HiddenExtensionPage, promiseExtensionViewLoaded } = ExtensionParent;
+var {
+  HiddenExtensionPage,
+  promiseExtensionViewLoaded,
+  watchExtensionWorkerContextLoaded,
+} = ExtensionParent;
 
 ChromeUtils.defineModuleGetter(
   this,
@@ -123,7 +127,18 @@ class BackgroundWorker {
   async build() {
     const { extension } = this;
 
+    let context;
     try {
+      const contextPromise = new Promise(resolve => {
+        let unwatch = watchExtensionWorkerContextLoaded(
+          { extension, viewType: "background_worker" },
+          context => {
+            unwatch();
+            resolve(context);
+          }
+        );
+      });
+
       
       
       const regInfo = await serviceWorkerManager.registerForAddonPrincipal(
@@ -133,8 +148,8 @@ class BackgroundWorker {
         Ci.nsIServiceWorkerRegistrationInfo
       );
 
-      
-      
+      context = await contextPromise;
+
       await this.waitForActiveWorker();
     } catch (e) {
       
@@ -150,10 +165,12 @@ class BackgroundWorker {
       return;
     }
 
-    
-    
-    
-    
+    if (context) {
+      
+      
+      await Promise.all(context.listenerPromises);
+      context.listenerPromises = null;
+    }
 
     if (extension.persistentListeners) {
       
