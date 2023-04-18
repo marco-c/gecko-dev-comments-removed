@@ -799,17 +799,20 @@ void WebGLTexture::GenerateMipmap() {
 
   if (gl->WorkAroundDriverBugs()) {
     
-    
-    
-    
-    
-    
-    
-    gl->fTexParameteri(mTarget.get(), LOCAL_GL_TEXTURE_MIN_FILTER,
-                       LOCAL_GL_NEAREST_MIPMAP_NEAREST);
-    gl->fGenerateMipmap(mTarget.get());
-    gl->fTexParameteri(mTarget.get(), LOCAL_GL_TEXTURE_MIN_FILTER,
-                       mSamplingState.minFilter.get());
+    if (!(mImmutable && mBaseMipmapLevel >= mImmutableLevelCount)) {
+      
+      
+      
+      
+      
+      
+      
+      gl->fTexParameteri(mTarget.get(), LOCAL_GL_TEXTURE_MIN_FILTER,
+                         LOCAL_GL_NEAREST_MIPMAP_NEAREST);
+      gl->fGenerateMipmap(mTarget.get());
+      gl->fTexParameteri(mTarget.get(), LOCAL_GL_TEXTURE_MIN_FILTER,
+                         mSamplingState.minFilter.get());
+    }
   } else {
     gl->fGenerateMipmap(mTarget.get());
   }
