@@ -78,7 +78,7 @@ class RemoteDataDecoder : public MediaDataDecoder,
 
   
   
-  java::sdk::BufferInfo::GlobalRef mInputBufferInfo;
+  java::sdk::MediaCodec::BufferInfo::GlobalRef mInputBufferInfo;
 
   
   

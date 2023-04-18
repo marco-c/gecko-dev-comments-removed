@@ -71,6 +71,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
@@ -103,11 +104,14 @@ public class SDKProcessor {
     private final HashMap<String, String> mAnnotations = new HashMap<>();
     
     private final String mDefaultAnnotation;
+    
+    private final ArrayList<Class<?>> mNestedClasses;
 
     public ClassInfo(final String text) {
       final String[] mapping = text.split("=", 2);
       name = mapping[0].trim();
       mDefaultAnnotation = mapping.length > 1 ? mapping[1].trim() : null;
+      mNestedClasses = new ArrayList<>();
     }
 
     public void addAnnotation(final String text) throws ParseException {
@@ -266,7 +270,9 @@ public class SDKProcessor {
       }
 
       try {
-        final ClassInfo[] classes = getClassList(configFile);
+        ClassInfo[] classes = getClassList(configFile);
+        classes = addNestedClassForwardDeclarations(classes, loader);
+
         for (final ClassInfo cls : classes) {
           System.out.println("Looking up: " + cls.name);
           generateClass(Class.forName(cls.name, true, loader), cls, implementationFile, headerFile);
@@ -401,13 +407,33 @@ public class SDKProcessor {
     }
   }
 
+  private static String getGeneratedName(Class<?> clazz) {
+    ArrayList<String> classes = new ArrayList<>();
+    do {
+      classes.add(clazz.getSimpleName());
+      clazz = clazz.getDeclaringClass();
+    } while (clazz != null);
+    Collections.reverse(classes);
+    return String.join("::", classes);
+  }
+
   private static void generateClass(
       Class<?> clazz, ClassInfo clsInfo, StringBuilder implementationFile, StringBuilder headerFile)
       throws ParseException {
-    String generatedName = clazz.getSimpleName();
+    String generatedName = getGeneratedName(clazz);
 
     CodeGenerator generator =
         new CodeGenerator(new ClassWithOptions(clazz, generatedName,  ""));
+
+    
+    ClassWithOptions[] nestedClasses =
+        clsInfo.mNestedClasses.stream()
+            .map(
+                nestedClass ->
+                    new ClassWithOptions(nestedClass, getGeneratedName(nestedClass), null))
+            .sorted((a, b) -> a.generatedName.compareTo(b.generatedName))
+            .toArray(ClassWithOptions[]::new);
+    generator.generateClasses(nestedClasses);
 
     generateMembers(generator, clsInfo, sortAndFilterMembers(clazz, clazz.getConstructors()));
     generateMembers(generator, clsInfo, sortAndFilterMembers(clazz, clazz.getMethods()));
@@ -466,6 +492,46 @@ public class SDKProcessor {
         reader.close();
       }
     }
+  }
+
+  
+
+
+
+
+  private static ClassInfo[] addNestedClassForwardDeclarations(
+      final ClassInfo[] classes, final ClassLoader loader) throws ClassNotFoundException {
+    final HashMap<String, ClassInfo> classMap = new HashMap<>();
+    for (final ClassInfo cls : classes) {
+      classMap.put(cls.name, cls);
+    }
+
+    for (final ClassInfo classInfo : classes) {
+      Class<?> innerClass = Class.forName(classInfo.name, true, loader);
+      while (innerClass.getDeclaringClass() != null) {
+        Class<?> outerClass = innerClass.getDeclaringClass();
+        ClassInfo outerClassInfo = classMap.get(outerClass.getName());
+        if (outerClassInfo == null) {
+          
+          
+          
+          
+          outerClassInfo = new ClassInfo(String.format("%s = skip:true", outerClass.getName()));
+          classMap.put(outerClass.getName(), outerClassInfo);
+        }
+        
+        
+        outerClassInfo.mNestedClasses.add(innerClass);
+
+        innerClass = outerClass;
+      }
+    }
+
+    
+    
+    return classMap.values().stream()
+        .sorted((a, b) -> a.name.compareTo(b.name))
+        .toArray(ClassInfo[]::new);
   }
 
   private static void writeOutputFiles(

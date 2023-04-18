@@ -79,7 +79,7 @@ class AndroidDataEncoder final : public MediaDataEncoder {
   java::sdk::MediaFormat::GlobalRef mFormat;
   
   
-  java::sdk::BufferInfo::GlobalRef mInputBufferInfo;
+  java::sdk::MediaCodec::BufferInfo::GlobalRef mInputBufferInfo;
 
   MozPromiseHolder<EncodePromise> mDrainPromise;
 
