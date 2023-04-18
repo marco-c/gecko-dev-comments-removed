@@ -37,6 +37,7 @@ var SignupOverlay = function(options) {
 
     
     let queryParams = new URL(window.location.href).searchParams;
+    let isEmailSignupEnabled = queryParams.get(`emailButton`) === `true`;
     let pockethost = queryParams.get(`pockethost`) || `getpocket.com`;
     let utmCampaign =
       queryParams.get(`utmCampaign`) || `firefox_door_hanger_menu`;
@@ -69,6 +70,11 @@ var SignupOverlay = function(options) {
         `text/html`
       ).documentElement
     );
+
+    
+    if (!isEmailSignupEnabled) {
+      document.querySelector(`.btn-container-email`).remove();
+    }
 
     
     this.setupClickEvents();
