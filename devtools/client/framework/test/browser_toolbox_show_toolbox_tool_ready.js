@@ -34,15 +34,6 @@ function isPanelReady(toolbox, toolId) {
 
 
 add_task(async function automaticallyBindTexbox() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["security.csp.enable", false],
-      ["dom.security.skip_about_page_has_csp_assert", true],
-    ],
-  });
-
   info(
     "Registering a tool with an input field and making sure the context menu works"
   );
@@ -50,7 +41,7 @@ add_task(async function automaticallyBindTexbox() {
   gDevTools.registerTool({
     id: lazyToolId,
     isTargetSupported: () => true,
-    url: `data:text/html;charset=utf8,Lazy tool`,
+    url: CHROME_URL_ROOT + "doc_lazy_tool.html",
     label: "Lazy",
     build: function(iframeWindow, toolbox) {
       this.panel = new LazyDevToolsPanel(iframeWindow, toolbox);
