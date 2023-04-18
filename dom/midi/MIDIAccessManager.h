@@ -11,8 +11,7 @@
 #include "mozilla/dom/MIDITypes.h"
 #include "mozilla/Observer.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class MIDIAccess;
 class MIDIManagerChild;
@@ -46,7 +45,7 @@ class MIDIAccessManager final {
   
   static bool IsRunning();
   
-  void Update(const MIDIPortList& aEvent);
+  void Update(const MIDIPortList& aPortList);
   
   bool AddObserver(Observer<MIDIPortList>* aObserver);
   
@@ -69,7 +68,6 @@ class MIDIAccessManager final {
   RefPtr<MIDIManagerChild> mChild;
 };
 
-}  
 }  
 
 #endif  

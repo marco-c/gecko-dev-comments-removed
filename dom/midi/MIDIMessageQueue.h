@@ -35,9 +35,9 @@ class MIDIMessageQueue {
   void Add(nsTArray<MIDIMessage>& aMsg);
   
   void GetMessagesBefore(TimeStamp aTimestamp,
-                         nsTArray<MIDIMessage>& aMsgArray);
+                         nsTArray<MIDIMessage>& aMsgQueue);
   
-  void GetMessages(nsTArray<MIDIMessage>& aMsgArray);
+  void GetMessages(nsTArray<MIDIMessage>& aMsgQueue);
   
   void Clear();
   

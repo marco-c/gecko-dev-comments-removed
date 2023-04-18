@@ -35,7 +35,7 @@ class MIDIPortInfo;
 class MIDIPortList;
 class Promise;
 
-typedef Observer<void_t> MIDIAccessDestructionObserver;
+using MIDIAccessDestructionObserver = Observer<void_t>;
 
 
 
@@ -76,7 +76,7 @@ class MIDIAccess final : public DOMEventTargetHelper,
   
   
   
-  void RemovePortListener(MIDIAccessDestructionObserver* aPort);
+  void RemovePortListener(MIDIAccessDestructionObserver* aObs);
 
   
   void FireConnectionEvent(MIDIPort* aPort);

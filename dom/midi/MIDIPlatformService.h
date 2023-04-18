@@ -16,8 +16,7 @@
 
 #include "mozilla/dom/MIDIMessageQueue.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class MIDIManagerParent;
 class MIDIPortParent;
@@ -41,10 +40,10 @@ class MIDIPlatformService {
   void RemovePortInfo(MIDIPortInfo& aPortInfo);
 
   
-  void AddManager(MIDIManagerParent* aParent);
+  void AddManager(MIDIManagerParent* aManager);
 
   
-  void RemoveManager(MIDIManagerParent* aParent);
+  void RemoveManager(MIDIManagerParent* aManager);
 
   
   void AddPort(MIDIPortParent* aPort);
@@ -156,7 +155,6 @@ class MIDIPlatformService {
   Mutex mMessageQueueMutex;
 };
 
-}  
 }  
 
 #endif  

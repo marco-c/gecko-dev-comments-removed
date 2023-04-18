@@ -12,8 +12,7 @@
 
 class nsPIDOMWindowInner;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -34,7 +33,6 @@ class MIDIInputMap final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsPIDOMWindowInner> mParent;
 };
 
-}  
 }  
 
 #endif  

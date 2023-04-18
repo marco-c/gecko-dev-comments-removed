@@ -9,8 +9,7 @@
 
 #include "mozilla/dom/PMIDIManagerParent.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -30,7 +29,6 @@ class MIDIManagerParent final : public PMIDIManagerParent {
   ~MIDIManagerParent() = default;
 };
 
-}  
 }  
 
 #endif  

@@ -9,8 +9,7 @@
 
 #include "mozilla/dom/PMIDIManagerChild.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -33,7 +32,6 @@ class MIDIManagerChild final : public PMIDIManagerChild {
   bool mShutdown;
 };
 
-}  
 }  
 
 #endif  

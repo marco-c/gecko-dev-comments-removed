@@ -224,7 +224,7 @@ void TestMIDIPlatformService::ProcessMessages(const nsAString& aPortId) {
                                      0x04, 0xF9, 0x05, 0xF7};
               
               
-              for (auto& s : msg) {
+              for (const auto& s : msg) {
                 msgs.AppendElement(s);
               }
               nsTArray<MIDIMessage> newMsgs;

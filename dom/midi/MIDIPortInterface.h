@@ -9,8 +9,7 @@
 
 #include "mozilla/dom/MIDIPortBinding.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class MIDIPortInfo;
 
 
@@ -44,7 +43,6 @@ class MIDIPortInterface {
   bool mShuttingDown;
 };
 
-}  
 }  
 
 #endif  

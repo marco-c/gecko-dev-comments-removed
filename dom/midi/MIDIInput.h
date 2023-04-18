@@ -11,8 +11,7 @@
 
 struct JSContext;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class MIDIPortInfo;
 
@@ -47,7 +46,6 @@ class MIDIInput final : public MIDIPort {
   void Receive(const nsTArray<MIDIMessage>& aMsgs) override;
 };
 
-}  
 }  
 
 #endif  
