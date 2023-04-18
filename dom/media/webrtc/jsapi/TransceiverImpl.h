@@ -126,6 +126,19 @@ class TransceiverImpl : public nsISupports,
            mJsepTransceiver->mRecvTrack.GetActive();
   }
 
+  Maybe<const std::vector<UniquePtr<JsepCodecDescription>>&>
+  GetNegotiatedSendCodecs() const;
+
+  Maybe<const std::vector<UniquePtr<JsepCodecDescription>>&>
+  GetNegotiatedRecvCodecs() const;
+
+  struct PayloadTypes {
+    Maybe<int> mSendPayloadType;
+    Maybe<int> mRecvPayloadType;
+  };
+  using ActivePayloadTypesPromise = MozPromise<PayloadTypes, nsresult, true>;
+  RefPtr<ActivePayloadTypesPromise> GetActivePayloadTypes() const;
+
   MediaSessionConduit* GetConduit() const { return mConduit; }
 
   
@@ -139,6 +152,19 @@ class TransceiverImpl : public nsISupports,
   static nsresult NegotiatedDetailsToVideoCodecConfigs(
       const JsepTrackNegotiatedDetails& aDetails,
       std::vector<VideoCodecConfig>* aConfigs);
+
+  
+
+
+
+
+
+
+  static RefPtr<dom::RTCStatsPromise> ApplyCodecStats(
+      nsTArray<dom::RTCCodecStats> aCodecStats,
+      nsTArray<std::tuple<TransceiverImpl*,
+                          RefPtr<dom::RTCStatsPromise::AllPromiseType>>>
+          aTransceiverStatsPromises);
 
   AbstractCanonical<bool>* CanonicalReceiving() { return &mReceiving; }
   AbstractCanonical<bool>* CanonicalTransmitting() { return &mTransmitting; }

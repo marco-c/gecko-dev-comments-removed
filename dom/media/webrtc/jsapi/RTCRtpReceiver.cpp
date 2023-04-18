@@ -24,6 +24,7 @@
 #include "mozilla/dom/RTCRtpSourcesBinding.h"
 #include "RTCStatsReport.h"
 #include "mozilla/Preferences.h"
+#include "PeerConnectionCtx.h"
 #include "TransceiverImpl.h"
 #include "libwebrtcglue/AudioConduit.h"
 #include "RTCStatsIdGenerator.h"
@@ -160,15 +161,37 @@ already_AddRefed<Promise> RTCRtpReceiver::GetStats() {
     return nullptr;
   }
 
-  
-  auto promises = GetStatsInternal();
-  RTCStatsPromise::All(mMainThread, promises)
+  if (!mTransceiverImpl) {
+    return nullptr;
+  }
+
+  nsTArray<RTCCodecStats> codecStats;
+  if (PeerConnectionCtx::isActive()) {
+    PeerConnectionCtx* ctx = PeerConnectionCtx::GetInstance();
+    if (PeerConnectionImpl* pc = ctx->GetPeerConnection(mPCHandle); pc) {
+      codecStats = pc->GetCodecStats(pc->GetTimestampMaker().GetNow());
+    }
+  }
+
+  AutoTArray<
+      std::tuple<TransceiverImpl*, RefPtr<RTCStatsPromise::AllPromiseType>>, 1>
+      statsPromises;
+  nsTArray<RefPtr<RTCStatsPromise>> stats = GetStatsInternal();
+  statsPromises.AppendElement(std::make_tuple(
+      mTransceiverImpl.get(), RTCStatsPromise::All(mMainThread, stats)));
+
+  TransceiverImpl::ApplyCodecStats(std::move(codecStats),
+                                   std::move(statsPromises))
       ->Then(
           mMainThread, __func__,
-          [promise, window = mWindow, idGen = mIdGenerator](
-              nsTArray<UniquePtr<RTCStatsCollection>> aStats) {
+          [promise, window = mWindow,
+           idGen = mIdGenerator](UniquePtr<RTCStatsCollection> aStats) mutable {
+            
+            AutoTArray<UniquePtr<RTCStatsCollection>, 1> stats;
+            stats.AppendElement(std::move(aStats));
+
             RTCStatsCollection opaqueStats;
-            idGen->RewriteIds(std::move(aStats), &opaqueStats);
+            idGen->RewriteIds(std::move(stats), &opaqueStats);
 
             RefPtr<RTCStatsReport> report(new RTCStatsReport(window));
             report->Incorporate(opaqueStats);

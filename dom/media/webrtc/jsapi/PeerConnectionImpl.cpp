@@ -2884,24 +2884,54 @@ void PeerConnectionImpl::CollectConduitTelemetryData() {
   }
 }
 
+nsTArray<dom::RTCCodecStats> PeerConnectionImpl::GetCodecStats(
+    DOMHighResTimeStamp aNow) {
+  MOZ_ASSERT(NS_IsMainThread());
+  nsTArray<dom::RTCCodecStats> result;
+  
+  return result;
+}
+
 RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
     dom::MediaStreamTrack* aSelector, bool aInternalStats) {
   MOZ_ASSERT(NS_IsMainThread());
   nsTArray<RefPtr<dom::RTCStatsPromise>> promises;
   DOMHighResTimeStamp now = mTimestampMaker.GetNow();
 
+  nsTArray<dom::RTCCodecStats> codecStats = GetCodecStats(now);
+
   if (mMedia) {
+    nsTArray<
+        std::tuple<TransceiverImpl*, RefPtr<RTCStatsPromise::AllPromiseType>>>
+        transceiverStatsPromises;
     for (const auto& transceiver : mMedia->GetTransceivers()) {
-      if (transceiver->HasSendTrack(aSelector)) {
-        
-        promises.AppendElements(GetSenderStats(transceiver));
+      const bool sendSelected = transceiver->HasSendTrack(aSelector);
+      const bool recvSelected = transceiver->Receiver()->HasTrack(aSelector);
+      if (!sendSelected && !recvSelected) {
+        continue;
       }
-      if (transceiver->Receiver()->HasTrack(aSelector)) {
+      nsTArray<RefPtr<RTCStatsPromise>> rtpStreamPromises;
+      
+      
+      
+      if (sendSelected) {
         
-        
-        promises.AppendElements(transceiver->Receiver()->GetStatsInternal());
+        rtpStreamPromises.AppendElements(GetSenderStats(transceiver));
       }
+      if (recvSelected) {
+        
+        
+        rtpStreamPromises.AppendElements(
+            transceiver->Receiver()->GetStatsInternal());
+      }
+      transceiverStatsPromises.AppendElement(
+          std::make_tuple(transceiver.get(),
+                          RTCStatsPromise::All(GetMainThreadSerialEventTarget(),
+                                               rtpStreamPromises)));
     }
+
+    promises.AppendElement(TransceiverImpl::ApplyCodecStats(
+        std::move(codecStats), std::move(transceiverStatsPromises)));
 
     
     

@@ -411,6 +411,9 @@ class PeerConnectionImpl final
   
   void StartCallTelem();
 
+  
+  nsTArray<dom::RTCCodecStats> GetCodecStats(DOMHighResTimeStamp aNow);
+
   RefPtr<dom::RTCStatsReportPromise> GetStats(dom::MediaStreamTrack* aSelector,
                                               bool aInternalStats);
 
