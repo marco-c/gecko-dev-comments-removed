@@ -5741,6 +5741,12 @@ HttpBaseChannel::HasCrossOriginOpenerPolicyMismatch(bool* aIsMismatch) {
 
 void HttpBaseChannel::MaybeFlushConsoleReports() {
   
+  if (mLoadInfo->GetInnerWindowID() > 0) {
+    FlushReportsToConsole(mLoadInfo->GetInnerWindowID());
+    return;
+  }
+
+  
   
   nsCOMPtr<nsILoadGroup> loadGroup;
   nsresult rv = GetLoadGroup(getter_AddRefs(loadGroup));
