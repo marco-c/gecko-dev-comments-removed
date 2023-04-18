@@ -541,10 +541,9 @@ class JSStreamConsumer final : public nsIInputStreamCallback,
 
     if (rv == NS_BASE_STREAM_CLOSED) {
       if (mOptimizedEncoding) {
-        MOZ_DIAGNOSTIC_ASSERT(mZStreamInitialized,
-                              "corrupt optimized wasm cache file: no init");
-        MOZ_DIAGNOSTIC_ASSERT(mZStream.avail_out == 0,
-                              "corrupt optimized wasm cache file: incomplete");
+        
+        
+        
         
         bool ok = mZStreamInitialized && mZStream.avail_out == 0;
         if (!ok) {
