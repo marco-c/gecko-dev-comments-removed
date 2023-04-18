@@ -1328,7 +1328,13 @@ bool SandboxBroker::SetSecurityLevelForUtilityProcess(
   SANDBOX_ENSURE_SUCCESS(result, "Failed to add the win32k lockdown policy");
 
   mitigations = sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
-                sandbox::MITIGATION_DLL_SEARCH_ORDER;
+                sandbox::MITIGATION_DLL_SEARCH_ORDER
+
+
+#if defined(_M_X64)
+                | sandbox::MITIGATION_DYNAMIC_CODE_DISABLE
+#endif  
+      ;
 
   if (exceptionModules.isNothing()) {
     mitigations |= sandbox::MITIGATION_FORCE_MS_SIGNED_BINS;
