@@ -714,6 +714,22 @@ impl<'a> CustomPropertiesBuilder<'a> {
         true
     }
 
+    fn inherited_properties_match(&self, map: &CustomPropertiesMap) -> bool {
+        let inherited = match self.inherited {
+            Some(inherited) => inherited,
+            None => return false,
+        };
+        if inherited.len() != map.len() {
+            return false;
+        }
+        for name in self.seen.iter() {
+            if inherited.get(*name) != map.get(*name) {
+                return false;
+            }
+        }
+        true
+    }
+
     
     
     
@@ -725,9 +741,19 @@ impl<'a> CustomPropertiesBuilder<'a> {
             Some(m) => m,
             None => return self.inherited.cloned(),
         };
+
         if self.may_have_cycles {
             substitute_all(&mut map, &self.seen, self.device);
         }
+
+        
+        
+        
+        
+        if self.inherited_properties_match(&map) {
+            return self.inherited.cloned();
+        }
+
         map.shrink_to_fit();
         Some(Arc::new(map))
     }
