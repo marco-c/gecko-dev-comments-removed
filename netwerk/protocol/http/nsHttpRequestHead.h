@@ -40,8 +40,8 @@ class nsHttpRequestHead {
   
   
   const nsHttpHeaderArray& Headers() const;
-  void Enter() { mRecursiveMutex.Lock(); }
-  void Exit() { mRecursiveMutex.Unlock(); }
+  void Enter() const { mRecursiveMutex.Lock(); }
+  void Exit() const { mRecursiveMutex.Unlock(); }
 
   void SetHeaders(const nsHttpHeaderArray& aHeaders);
 
@@ -134,7 +134,7 @@ class nsHttpRequestHead {
 
   
   
-  RecursiveMutex mRecursiveMutex{"nsHttpRequestHead.mRecursiveMutex"};
+  mutable RecursiveMutex mRecursiveMutex{"nsHttpRequestHead.mRecursiveMutex"};
 
   
   bool mInVisitHeaders{false};
