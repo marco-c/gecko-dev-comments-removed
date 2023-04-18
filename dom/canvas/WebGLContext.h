@@ -479,11 +479,35 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
 
   
  private:
-  bool PresentInto(gl::SwapChain& swapChain, WebGLFramebuffer* srcFb = nullptr);
+  bool PresentInto(gl::SwapChain& swapChain);
   bool PresentIntoXR(gl::SwapChain& swapChain, const gl::MozFramebuffer& xrFb);
 
  public:
+  
+  
+  
+  
+  
+  
+  
   void Present(WebGLFramebuffer*, layers::TextureType, const bool webvr);
+  
+  
+  
+  
+  
+  
+  void CopyToSwapChain(
+      WebGLFramebuffer*, layers::TextureType,
+      const webgl::SwapChainOptions& options = webgl::SwapChainOptions());
+  
+  
+  
+  
+  
+  
+  
+  void EndOfFrame();
   RefPtr<gfx::DataSourceSurface> GetFrontBufferSnapshot();
   Maybe<uvec2> FrontBufferSnapshotInto(Maybe<Range<uint8_t>>);
   Maybe<layers::SurfaceDescriptor> GetFrontBuffer(WebGLFramebuffer*,
@@ -1214,7 +1238,8 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   void DoColorMask(uint8_t bitmask) const;
   void BlitBackbufferToCurDriverFB(
       WebGLFramebuffer* const srcAsWebglFb = nullptr,
-      const gl::MozFramebuffer* const srcAsMozFb = nullptr) const;
+      const gl::MozFramebuffer* const srcAsMozFb = nullptr,
+      bool srcIsBGRA = false) const;
   bool BindDefaultFBForRead();
 
   

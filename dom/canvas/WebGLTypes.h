@@ -657,6 +657,12 @@ struct OpaqueFramebufferOptions final {
 
 
 
+struct SwapChainOptions final {
+  bool bgra = false;
+};
+
+
+
 struct ActiveInfo {
   GLenum elemType = 0;     
   uint32_t elemCount = 0;  

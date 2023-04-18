@@ -75,6 +75,8 @@ struct IsTriviallySerializable<webgl::ReadPixelsDesc> : std::true_type {};
 
 
 
+template <>
+struct IsTriviallySerializable<webgl::SwapChainOptions> : std::true_type {};
 
 template <typename T>
 struct QueueParamTraits<RawBuffer<T>> {
