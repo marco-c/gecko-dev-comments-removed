@@ -242,7 +242,10 @@ async function test_jumplist() {
     Ci.nsIWinTaskbar
   );
 
-  var builder = taskbar.createJumpListBuilder();
+  
+  
+  
+  var builder = taskbar.createJumpListBuilder(false);
 
   Assert.notEqual(builder, null);
 
