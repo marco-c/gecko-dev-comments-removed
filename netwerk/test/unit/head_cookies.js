@@ -23,13 +23,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsICookieService"
 );
 
-XPCOMUtils.defineLazyServiceGetter(
-  Services,
-  "cookiemgr",
-  "@mozilla.org/cookiemanager;1",
-  "nsICookieManager"
-);
-
 function do_check_throws(f, result, stack) {
   if (!stack) {
     stack = Components.stack.caller;
@@ -157,7 +150,7 @@ function do_load_profile(generator) {
 
 function do_set_single_http_cookie(uri, channel, expected) {
   Services.cookiesvc.setCookieStringFromHttp(uri, "foo=bar", channel);
-  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri.host), expected);
+  Assert.equal(Services.cookies.countCookiesFromHost(uri.host), expected);
 }
 
 
@@ -189,15 +182,15 @@ async function do_set_cookies(uri, channel, session, expected) {
   );
   await contentPage.close();
 
-  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri.host), expected[0]);
+  Assert.equal(Services.cookies.countCookiesFromHost(uri.host), expected[0]);
 
   
   Services.cookiesvc.setCookieStringFromHttp(uri, "hot=dog" + suffix, channel);
-  Assert.equal(Services.cookiemgr.countCookiesFromHost(uri.host), expected[1]);
+  Assert.equal(Services.cookies.countCookiesFromHost(uri.host), expected[1]);
 }
 
 function do_count_cookies() {
-  return Services.cookiemgr.cookies.length;
+  return Services.cookies.cookies.length;
 }
 
 
