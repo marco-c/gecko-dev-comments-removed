@@ -678,23 +678,6 @@ void JSJitProfilingFrameIterator::operator++() {
   moveToNextFrame(frame);
 }
 
-void JSJitProfilingFrameIterator::moveToWasmFrame(CommonFrameLayout* frame) {
-  
-  
-  resumePCinCurrentFrame_ = nullptr;
-  fp_ = GetPreviousRawFrame<uint8_t*>(frame);
-  type_ = FrameType::WasmToJSJit;
-  MOZ_ASSERT(!done());
-}
-
-void JSJitProfilingFrameIterator::moveToCppEntryFrame() {
-  
-  
-  resumePCinCurrentFrame_ = nullptr;
-  fp_ = nullptr;
-  type_ = FrameType::CppToJSJit;
-}
-
 void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
   
 
@@ -760,11 +743,20 @@ void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
     }
 
     case FrameType::WasmToJSJit:
-      moveToWasmFrame(frame);
+      
+      
+      resumePCinCurrentFrame_ = nullptr;
+      fp_ = GetPreviousRawFrame<uint8_t*>(frame);
+      type_ = FrameType::WasmToJSJit;
+      MOZ_ASSERT(!done());
       return;
 
     case FrameType::CppToJSJit:
-      moveToCppEntryFrame();
+      
+      
+      resumePCinCurrentFrame_ = nullptr;
+      fp_ = nullptr;
+      type_ = FrameType::CppToJSJit;
       return;
 
     case FrameType::Rectifier:
