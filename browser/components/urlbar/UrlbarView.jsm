@@ -2166,6 +2166,7 @@ class UrlbarView {
 
   async _cacheL10nStrings() {
     let idArgs = [
+      ...this._cacheL10nIDArgsForSearchService(),
       { id: "urlbar-result-action-search-bookmarks" },
       { id: "urlbar-result-action-search-history" },
       { id: "urlbar-result-action-search-in-private" },
@@ -2174,17 +2175,52 @@ class UrlbarView {
       { id: "urlbar-result-action-visit" },
     ];
 
-    if (Services.search.defaultPrivateEngine) {
+    if (UrlbarPrefs.get("groupLabels.enabled")) {
+      idArgs.push({ id: "urlbar-group-firefox-suggest" });
+    }
+
+    if (UrlbarPrefs.get("quickSuggestEnabled")) {
+      idArgs.push({ id: "urlbar-result-action-sponsored" });
+    }
+
+    await this._l10nCache.ensureAll(idArgs);
+  }
+
+  
+
+
+
+
+
+
+  _cacheL10nIDArgsForSearchService() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!Services.search.isInitialized) {
+      return [];
+    }
+
+    let idArgs = [];
+
+    let { defaultEngine, defaultPrivateEngine } = Services.search;
+    let engineNames = [defaultEngine?.name, defaultPrivateEngine?.name].filter(
+      name => name
+    );
+
+    if (defaultPrivateEngine) {
       idArgs.push({
         id: "urlbar-result-action-search-in-private-w-engine",
-        args: { engine: Services.search.defaultPrivateEngine.name },
+        args: { engine: defaultPrivateEngine.name },
       });
     }
 
-    let engineNames = [
-      Services.search.defaultEngine?.name,
-      Services.search.defaultPrivateEngine?.name,
-    ].filter(name => name);
     let engineStringIDs = [
       "urlbar-result-action-tabtosearch-web",
       "urlbar-result-action-tabtosearch-other-engine",
@@ -2196,19 +2232,14 @@ class UrlbarView {
 
     if (UrlbarPrefs.get("groupLabels.enabled")) {
       idArgs.push(
-        { id: "urlbar-group-firefox-suggest" },
-        ...engineNames.map(engineName => ({
+        ...engineNames.map(name => ({
           id: "urlbar-group-search-suggestions",
-          args: { engine: engineName },
+          args: { engine: name },
         }))
       );
     }
 
-    if (UrlbarPrefs.get("quickSuggestEnabled")) {
-      idArgs.push({ id: "urlbar-result-action-sponsored" });
-    }
-
-    await this._l10nCache.ensureAll(idArgs);
+    return idArgs;
   }
 
   
