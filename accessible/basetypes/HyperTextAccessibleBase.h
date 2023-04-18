@@ -128,6 +128,11 @@ class HyperTextAccessibleBase {
   
 
 
+  int32_t LinkIndexOf(Accessible* aLink);
+
+  
+
+
   virtual already_AddRefed<AccAttributes> TextAttributes(bool aIncludeDefAttrs,
                                                          int32_t aOffset,
                                                          int32_t* aStartOffset,

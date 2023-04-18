@@ -87,13 +87,6 @@ class HyperTextAccessible : public AccessibleWrap,
   
 
 
-  int32_t LinkIndexOf(LocalAccessible* aLink) {
-    return IndexOfEmbeddedChild(aLink);
-  }
-
-  
-
-
   int32_t LinkIndexAtOffset(uint32_t aOffset) {
     LocalAccessible* child = GetChildAtOffset(aOffset);
     return child ? LinkIndexOf(child) : -1;
