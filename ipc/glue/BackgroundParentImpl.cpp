@@ -71,8 +71,6 @@
 #include "mozilla/net/HttpBackgroundChannelParent.h"
 #include "mozilla/net/HttpConnectionMgrParent.h"
 #include "mozilla/net/WebSocketConnectionParent.h"
-#include "mozilla/psm/IPCClientCertsChild.h"
-#include "mozilla/psm/IPCClientCertsParent.h"
 #include "mozilla/psm/VerifySSLServerCertParent.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIPrincipal.h"
@@ -1047,21 +1045,6 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPMessagePortConstructor(
     return IPC_FAIL_NO_REASON(this);
   }
   return IPC_OK();
-}
-
-already_AddRefed<psm::PIPCClientCertsParent>
-BackgroundParentImpl::AllocPIPCClientCertsParent() {
-  
-  
-  
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(mozilla::ipc::BackgroundParent::GetChildID(this) == 0);
-  if (!XRE_IsParentProcess() ||
-      mozilla::ipc::BackgroundParent::GetChildID(this) != 0) {
-    return nullptr;
-  }
-  RefPtr<psm::IPCClientCertsParent> result = new psm::IPCClientCertsParent();
-  return result.forget();
 }
 
 bool BackgroundParentImpl::DeallocPMessagePortParent(
