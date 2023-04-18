@@ -73,7 +73,14 @@ void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aDesc) {
   
   
   
-  mCanvasElement->InvalidateCanvas();
+  if (mCanvasElement) {
+    mCanvasElement->InvalidateCanvas();
+  } else if (mOffscreenCanvas) {
+    dom::OffscreenCanvasDisplayData data;
+    data.mSize = {mWidth, mHeight};
+    data.mHandle = mHandle;
+    mOffscreenCanvas->UpdateDisplayData(data);
+  }
 }
 
 void CanvasContext::Unconfigure() {

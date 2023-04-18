@@ -45,11 +45,21 @@ RefPtr<layers::ImageContainer> OffscreenCanvasDisplayHelper::GetImageContainer()
   return mImageContainer;
 }
 
+layers::CompositableHandle OffscreenCanvasDisplayHelper::GetCompositableHandle()
+    const {
+  MutexAutoLock lock(mMutex);
+  return mData.mHandle;
+}
+
 void OffscreenCanvasDisplayHelper::UpdateContext(
     CanvasContextType aType, const Maybe<int32_t>& aChildId) {
   MutexAutoLock lock(mMutex);
-  mImageContainer =
-      MakeRefPtr<layers::ImageContainer>(layers::ImageContainer::ASYNCHRONOUS);
+
+  if (aType != CanvasContextType::WebGPU) {
+    mImageContainer = MakeRefPtr<layers::ImageContainer>(
+        layers::ImageContainer::ASYNCHRONOUS);
+  }
+
   mType = aType;
   mContextChildId = aChildId;
 
@@ -80,6 +90,16 @@ bool OffscreenCanvasDisplayHelper::CommitFrameToCompositor(
   if (aData) {
     mData = aData.ref();
     MaybeQueueInvalidateElement();
+  }
+
+  if (mData.mHandle) {
+    
+    
+    return true;
+  }
+
+  if (!mImageContainer) {
+    return false;
   }
 
   if (mData.mIsOpaque) {

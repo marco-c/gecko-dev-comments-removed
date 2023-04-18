@@ -111,24 +111,32 @@ class nsDisplayCanvas final : public nsPaintedDisplayItem {
       
       
       
+      
+
+      nsHTMLCanvasFrame* canvasFrame = static_cast<nsHTMLCanvasFrame*>(mFrame);
+      nsIntSize canvasSizeInPx = canvasFrame->GetCanvasSize();
+      IntrinsicSize intrinsicSize = IntrinsicSizeFromCanvasSize(canvasSizeInPx);
+      AspectRatio intrinsicRatio = IntrinsicRatioFromCanvasSize(canvasSizeInPx);
+      nsRect area = mFrame->GetContentRectRelativeToSelf() + ToReferenceFrame();
+      nsRect dest = nsLayoutUtils::ComputeObjectDestRect(
+          area, intrinsicSize, intrinsicRatio, mFrame->StylePosition());
+      LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(
+          dest, mFrame->PresContext()->AppUnitsPerDevPixel());
+
       RefPtr<ImageContainer> container = element->GetImageContainer();
       if (container) {
-        nsHTMLCanvasFrame* canvasFrame =
-            static_cast<nsHTMLCanvasFrame*>(mFrame);
-        nsIntSize canvasSizeInPx = canvasFrame->GetCanvasSize();
-        IntrinsicSize intrinsicSize =
-            IntrinsicSizeFromCanvasSize(canvasSizeInPx);
-        AspectRatio intrinsicRatio =
-            IntrinsicRatioFromCanvasSize(canvasSizeInPx);
-        nsRect area =
-            mFrame->GetContentRectRelativeToSelf() + ToReferenceFrame();
-        nsRect dest = nsLayoutUtils::ComputeObjectDestRect(
-            area, intrinsicSize, intrinsicRatio, mFrame->StylePosition());
-        LayoutDeviceRect bounds = LayoutDeviceRect::FromAppUnits(
-            dest, mFrame->PresContext()->AppUnitsPerDevPixel());
         aManager->CommandBuilder().PushImage(this, container, aBuilder,
                                              aResources, aSc, bounds, bounds);
+        return true;
       }
+
+      CompositableHandle handle = element->GetCompositableHandle();
+      if (handle) {
+        aManager->CommandBuilder().PushInProcessImage(this, handle, aBuilder,
+                                                      aResources, aSc, bounds);
+        return true;
+      }
+
       return true;
     }
 
