@@ -8,8 +8,6 @@
 
 
 add_task(async function() {
-  await pushPref("devtools.netmonitor.features.webSockets", true);
-
   
   await pushPref("devtools.netmonitor.msg.messageDataLimit", 100);
 
