@@ -8,6 +8,7 @@
 #include "mozilla/RelativeLuminanceUtils.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "ThemeDrawing.h"
+#include "nsNativeTheme.h"
 
 using namespace mozilla::gfx;
 
@@ -155,6 +156,30 @@ bool ThemeColors::ShouldBeHighContrast(const nsPresContext& aPc) {
   return aPc.GetBackgroundColorDraw() &&
          PreferenceSheet::PrefsFor(*aPc.Document())
              .NonNativeThemeShouldBeHighContrast();
+}
+
+ColorScheme ThemeColors::ColorSchemeForWidget(const nsIFrame* aFrame,
+                                              StyleAppearance aAppearance,
+                                              bool aHighContrast) {
+  if (!nsNativeTheme::IsWidgetScrollbarPart(aAppearance)) {
+    return LookAndFeel::ColorSchemeForFrame(aFrame);
+  }
+  
+  
+  
+  
+  
+  
+  
+  if (aHighContrast) {
+    return ColorScheme::Light;
+  }
+  if (StaticPrefs::widget_disable_dark_scrollbar()) {
+    return ColorScheme::Light;
+  }
+  return nsNativeTheme::IsDarkBackground(const_cast<nsIFrame*>(aFrame))
+             ? ColorScheme::Dark
+             : ColorScheme::Light;
 }
 
 
