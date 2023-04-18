@@ -32,7 +32,6 @@ ChromeUtils.defineModuleGetter(
 class ClickHandlerChild extends JSWindowActorChild {
   handleEvent(event) {
     if (
-      !event.isTrusted ||
       event.defaultPrevented ||
       event.button == 2 ||
       (event.type == "click" && event.button == 1)
@@ -55,6 +54,13 @@ class ClickHandlerChild extends JSWindowActorChild {
     let originalTarget = event.originalTarget;
     let ownerDoc = originalTarget.ownerDocument;
     if (!ownerDoc) {
+      return;
+    }
+
+    
+    
+    
+    if (!event.isTrusted && !ownerDoc.consumeTransientUserGestureActivation()) {
       return;
     }
 
