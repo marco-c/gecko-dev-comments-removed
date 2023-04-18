@@ -4370,7 +4370,11 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   
 
   
-  g_set_prgname(gAppData->remotingName);
+  {
+    nsAutoCString program(gAppData->name);
+    ToLowerCase(program);
+    g_set_prgname(program.get());
+  }
 
   
 
