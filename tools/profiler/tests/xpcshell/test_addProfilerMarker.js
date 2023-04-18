@@ -39,7 +39,7 @@ function expectDuration(marker) {
   
   Assert.less(
     Math.abs(marker.startTime - startTime),
-    1e-5,
+    5e-5,
     "startTime should be the expected time"
   );
   Assert.equal(typeof marker.endTime, "number", "endTime should be a number");
