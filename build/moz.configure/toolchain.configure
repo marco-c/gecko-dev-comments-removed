@@ -2147,6 +2147,7 @@ def security_hardening_cflags(
 
     flags = []
     ldflags = []
+    trivial_auto_var_init = []
 
     
     if target.os == "WASI":
@@ -2188,12 +2189,14 @@ def security_hardening_cflags(
         if (
             (c_compiler.type == "clang" or c_compiler.type == "clang-cl")
             and c_compiler.version >= "8"
-            and debug
             and not linux32
         ):
             if c_compiler.type == "clang-cl":
-                flags.append("-Xclang")
-            flags.append("-ftrivial-auto-var-init=pattern")
+                trivial_auto_var_init.append("-Xclang")
+            trivial_auto_var_init.append("-ftrivial-auto-var-init=pattern")
+            
+            if debug:
+                flags.extend(trivial_auto_var_init)
 
         
         
@@ -2232,11 +2235,16 @@ def security_hardening_cflags(
     return namespace(
         flags=flags,
         ldflags=ldflags,
+        trivial_auto_var_init=trivial_auto_var_init,
     )
 
 
 set_config("MOZ_HARDENING_CFLAGS", security_hardening_cflags.flags)
 set_config("MOZ_HARDENING_LDFLAGS", security_hardening_cflags.ldflags)
+set_config(
+    "MOZ_TRIVIAL_AUTO_VAR_INIT",
+    security_hardening_cflags.trivial_auto_var_init,
+)
 
 
 
