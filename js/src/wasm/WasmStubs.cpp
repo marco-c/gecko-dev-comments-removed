@@ -625,7 +625,7 @@ STATIC_ASSERT_ANYREF_IS_JSOBJECT;
 
 
 
-static void UnboxAnyrefIntoValue(MacroAssembler& masm, Register tls,
+static void UnboxAnyrefIntoValue(MacroAssembler& masm, Register instance,
                                  Register src, const Address& dst,
                                  Register scratch) {
   MOZ_ASSERT(src != scratch);
@@ -644,7 +644,7 @@ static void UnboxAnyrefIntoValue(MacroAssembler& masm, Register tls,
   masm.storeValue(JSVAL_TYPE_OBJECT, src, dst);
   
   masm.branchTestObjClass(Assembler::Equal, src,
-                          Address(tls, Instance::offsetOfValueBoxClass()),
+                          Address(instance, Instance::offsetOfValueBoxClass()),
                           scratch, src, &mustUnbox);
   masm.jump(&done);
 
@@ -656,7 +656,7 @@ static void UnboxAnyrefIntoValue(MacroAssembler& masm, Register tls,
 
 
 
-static void UnboxAnyrefIntoValueReg(MacroAssembler& masm, Register tls,
+static void UnboxAnyrefIntoValueReg(MacroAssembler& masm, Register instance,
                                     Register src, ValueOperand dst,
                                     Register scratch) {
   MOZ_ASSERT(src != scratch);
@@ -681,7 +681,7 @@ static void UnboxAnyrefIntoValueReg(MacroAssembler& masm, Register tls,
   masm.moveValue(TypedOrValueRegister(MIRType::Object, AnyRegister(src)), dst);
   
   masm.branchTestObjClass(Assembler::Equal, src,
-                          Address(tls, Instance::offsetOfValueBoxClass()),
+                          Address(instance, Instance::offsetOfValueBoxClass()),
                           scratch, src, &mustUnbox);
   masm.jump(&done);
 
@@ -902,7 +902,8 @@ static void CallSymbolicAddress(MacroAssembler& masm, bool isAbsolute,
 }
 
 
-static void GenerateJitEntryLoadTls(MacroAssembler& masm, unsigned frameSize) {
+static void GenerateJitEntryLoadInstance(MacroAssembler& masm,
+                                         unsigned frameSize) {
   AssertExpectedSP(masm);
 
   
@@ -924,7 +925,7 @@ static void GenerateJitEntryThrow(MacroAssembler& masm, unsigned frameSize) {
 
   MOZ_ASSERT(masm.framePushed() == frameSize);
 
-  GenerateJitEntryLoadTls(masm, frameSize);
+  GenerateJitEntryLoadInstance(masm, frameSize);
 
   masm.freeStack(frameSize);
   MoveSPForJitABI(masm);
@@ -1023,7 +1024,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   
   masm.reserveStack(frameSize);
 
-  GenerateJitEntryLoadTls(masm, frameSize);
+  GenerateJitEntryLoadInstance(masm, frameSize);
 
   if (fe.funcType().hasUnexposableArgOrRet()) {
     CallSymbolicAddress(masm, !fe.hasEagerStubs(),
@@ -1355,7 +1356,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
           case RefType::Extern:
             
             
-            GenerateJitEntryLoadTls(masm,  0);
+            GenerateJitEntryLoadInstance(masm,  0);
             UnboxAnyrefIntoValueReg(masm, InstanceReg, ReturnReg,
                                     JSReturnOperand, WasmJitEntryReturnScratch);
             break;
@@ -1830,7 +1831,7 @@ static void FillArgumentArrayForInterpExit(MacroAssembler& masm,
 
 
 
-static void FillArgumentArrayForJitExit(MacroAssembler& masm, Register tls,
+static void FillArgumentArrayForJitExit(MacroAssembler& masm, Register instance,
                                         unsigned funcImportIndex,
                                         const FuncType& funcType,
                                         unsigned argOffset, Register scratch,
@@ -1867,7 +1868,7 @@ static void FillArgumentArrayForJitExit(MacroAssembler& masm, Register tls,
           
           
           masm.movePtr(i->gpr(), scratch2);
-          UnboxAnyrefIntoValue(masm, tls, scratch2, dst, scratch);
+          UnboxAnyrefIntoValue(masm, instance, scratch2, dst, scratch);
         } else if (type == MIRType::StackResults) {
           MOZ_CRASH("Multi-result exit to JIT unimplemented");
         } else {
@@ -1931,7 +1932,7 @@ static void FillArgumentArrayForJitExit(MacroAssembler& masm, Register tls,
           
           
           masm.loadPtr(src, scratch);
-          UnboxAnyrefIntoValue(masm, tls, scratch, dst, scratch2);
+          UnboxAnyrefIntoValue(masm, instance, scratch, dst, scratch2);
         } else if (IsFloatingPointType(type)) {
           ScratchDoubleScope dscratch(masm);
           FloatRegister fscratch = dscratch.asSingle();
@@ -1983,16 +1984,16 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
   GenerateFunctionPrologue(masm, funcTypeId, Nothing(), offsets);
 
   MOZ_ASSERT(masm.framePushed() == 0);
-  const unsigned sizeOfTlsSlot = sizeof(void*);
+  const unsigned sizeOfInstanceSlot = sizeof(void*);
   unsigned framePushed = StackDecrementForCall(
       WasmStackAlignment,
       sizeof(Frame),  
-      StackArgBytesForWasmABI(fi.funcType()) + sizeOfTlsSlot);
+      StackArgBytesForWasmABI(fi.funcType()) + sizeOfInstanceSlot);
   masm.wasmReserveStackChecked(framePushed, BytecodeOffset(0));
   MOZ_ASSERT(masm.framePushed() == framePushed);
 
-  masm.storePtr(InstanceReg,
-                Address(masm.getStackPointer(), framePushed - sizeOfTlsSlot));
+  masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
+                                     framePushed - sizeOfInstanceSlot));
 
   
   
@@ -2022,11 +2023,12 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
   
   CallSiteDesc desc(CallSiteDesc::Import);
   MoveSPForJitABI(masm);
-  masm.wasmCallImport(desc, CalleeDesc::import(fi.tlsDataOffset()));
+  masm.wasmCallImport(desc, CalleeDesc::import(fi.instanceOffset()));
 
   
-  masm.loadPtr(Address(masm.getStackPointer(), framePushed - sizeOfTlsSlot),
-               InstanceReg);
+  masm.loadPtr(
+      Address(masm.getStackPointer(), framePushed - sizeOfInstanceSlot),
+      InstanceReg);
   masm.loadWasmPinnedRegsFromInstance();
 
   
@@ -2269,14 +2271,14 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   
   
   static_assert(WasmStackAlignment >= JitStackAlignment, "subsumes");
-  const unsigned sizeOfTlsSlot = sizeof(void*);
+  const unsigned sizeOfInstanceSlot = sizeof(void*);
   const unsigned sizeOfRetAddr = sizeof(void*);
   const unsigned sizeOfPreFrame =
       WasmToJSJitFrameLayout::Size() - sizeOfRetAddr;
   const unsigned sizeOfThisAndArgs =
       (1 + fi.funcType().args().length()) * sizeof(Value);
   const unsigned totalJitFrameBytes =
-      sizeOfRetAddr + sizeOfPreFrame + sizeOfThisAndArgs + sizeOfTlsSlot;
+      sizeOfRetAddr + sizeOfPreFrame + sizeOfThisAndArgs + sizeOfInstanceSlot;
   const unsigned jitFramePushed =
       StackDecrementForCall(JitStackAlignment,
                             sizeof(Frame),  
@@ -2327,15 +2329,16 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   MOZ_ASSERT(argOffset == sizeOfThisAndArgs + sizeOfPreFrame + frameAlignExtra);
 
   
-  const size_t savedTlsOffset = argOffset;
-  masm.storePtr(InstanceReg, Address(masm.getStackPointer(), savedTlsOffset));
+  const size_t savedInstanceOffset = argOffset;
+  masm.storePtr(InstanceReg,
+                Address(masm.getStackPointer(), savedInstanceOffset));
 
   
   Register callee = ABINonArgReturnReg0;  
 
   
   masm.loadWasmGlobalPtr(
-      fi.tlsDataOffset() + offsetof(FuncImportInstanceData, fun), callee);
+      fi.instanceOffset() + offsetof(FuncImportInstanceData, fun), callee);
 
   
   masm.storePtr(callee, Address(masm.getStackPointer(), calleeArgOffset));
@@ -2385,7 +2388,8 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   AssertStackAlignment(masm, JitStackAlignment,
                        sizeOfRetAddr + frameAlignExtra);
 
-  masm.loadPtr(Address(masm.getStackPointer(), savedTlsOffset), InstanceReg);
+  masm.loadPtr(Address(masm.getStackPointer(), savedInstanceOffset),
+               InstanceReg);
   masm.moveStackPtrTo(FramePointer);
   masm.addPtr(Imm32(masm.framePushed()), FramePointer);
   offsets->untrustedFPEnd = masm.currentOffset();
