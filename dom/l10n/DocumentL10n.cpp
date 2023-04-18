@@ -117,6 +117,13 @@ void DocumentL10n::TriggerInitialTranslation() {
   if (mState >= DocumentL10nState::InitialTranslationTriggered) {
     return;
   }
+  if (!mReady) {
+    
+    
+    InitialTranslationCompleted(false);
+    return;
+  }
+
   mInitialTranslationStart = mozilla::TimeStamp::Now();
 
   AutoAllowLegacyScriptExecution exemption;
