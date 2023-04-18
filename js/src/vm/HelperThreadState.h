@@ -502,7 +502,8 @@ class MOZ_RAII AutoSetHelperThreadContext {
   AutoLockHelperThreadState& lock;
 
  public:
-  explicit AutoSetHelperThreadContext(AutoLockHelperThreadState& lock);
+  AutoSetHelperThreadContext(const JS::ContextOptions& options,
+                             AutoLockHelperThreadState& lock);
   ~AutoSetHelperThreadContext();
 };
 
@@ -527,6 +528,9 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
                    public HelperThreadTask {
   ParseTaskKind kind;
   JS::OwningCompileOptions options;
+
+  
+  const JS::ContextOptions contextOptions;
 
   
   
@@ -653,6 +657,9 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
   JSRuntime* runtime = nullptr;
 
   
+  const JS::ContextOptions contextOptions;
+
+  
   UniquePtr<DelazifyStrategy> strategy;
 
   
@@ -662,7 +669,7 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
   
   OffThreadFrontendErrors errors_;
 
-  explicit DelazifyTask(JSRuntime* runtime);
+  DelazifyTask(JSRuntime* runtime, const JS::ContextOptions& options);
 
   [[nodiscard]] bool init(
       JSContext* cx, const JS::ReadOnlyCompileOptions& options,
