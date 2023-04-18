@@ -125,4 +125,14 @@ interface nsIFOG : nsISupports
 
 
   void testTriggerGPUMetrics();
+
+  
+
+
+
+
+
+
+  [implicit_jscontext]
+  Promise testTriggerRDDMetrics();
 };

@@ -9,6 +9,7 @@
 #include "mozilla/PRemoteDecoderManagerChild.h"
 #include "mozilla/RDDProcessHost.h"
 #include "mozilla/ipc/TaskFactory.h"
+#include "mozilla/PRDDChild.h"
 #include "nsIObserver.h"
 
 namespace mozilla {
@@ -59,6 +60,13 @@ class RDDProcessManager final : public RDDProcessHost::Listener {
 
   
   RDDProcessHost* Process() { return mProcess; }
+
+  
+
+
+
+
+  RefPtr<PRDDChild::TestTriggerMetricsPromise> TestTriggerMetrics();
 
  private:
   bool IsRDDProcessLaunching();

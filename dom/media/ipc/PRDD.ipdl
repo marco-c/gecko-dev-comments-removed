@@ -72,6 +72,11 @@ parent:
   
   async FlushFOGData() returns (ByteBuf buf);
 
+  
+  
+  
+  async TestTriggerMetrics() returns (bool unused);
+
 child:
 
   async InitCrashReporter(NativeThreadId threadId);

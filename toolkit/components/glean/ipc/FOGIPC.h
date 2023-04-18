@@ -66,6 +66,16 @@ RefPtr<GenericPromise> FlushAndUseFOGData();
 
 void TestTriggerGPUMetrics();
 
+
+
+
+
+
+
+
+
+void TestTriggerRDDMetrics(const RefPtr<dom::Promise>& promise);
+
 }  
 }  
 
