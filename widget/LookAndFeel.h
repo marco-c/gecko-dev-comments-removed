@@ -266,21 +266,15 @@ class LookAndFeel {
 
 
 
-
-
     GTKCSDMinimizeButtonPosition,
 
     
 
 
 
-
-
     GTKCSDMaximizeButtonPosition,
 
     
-
-
 
 
 

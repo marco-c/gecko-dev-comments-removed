@@ -356,7 +356,6 @@ enum WidgetNodeType : int {
 
 struct ButtonLayout {
   WidgetNodeType mType;
-  bool mAtRight;
 };
 
 
