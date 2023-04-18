@@ -89,6 +89,8 @@ pub enum VsVers {
     Vs15,
     
     Vs16,
+    
+    Vs17,
 
     
     
@@ -114,6 +116,7 @@ pub fn find_vs_version() -> Result<VsVers, String> {
 
     match env::var("VisualStudioVersion") {
         Ok(version) => match &version[..] {
+            "17.0" => Ok(VsVers::Vs17),
             "16.0" => Ok(VsVers::Vs16),
             "15.0" => Ok(VsVers::Vs15),
             "14.0" => Ok(VsVers::Vs14),
@@ -223,7 +226,7 @@ mod impl_ {
     }
 
     
-    pub fn find_msvc_environment(target: &str, tool: &str) -> Option<Tool> {
+    pub fn find_msvc_environment(tool: &str, target: &str) -> Option<Tool> {
         
         if env::var_os("VCINSTALLDIR").is_none() {
             return None;
