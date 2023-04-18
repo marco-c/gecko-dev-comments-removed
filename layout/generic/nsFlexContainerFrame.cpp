@@ -46,12 +46,6 @@ static mozilla::LazyLogModule gFlexContainerLog("FlexContainer");
 
 
 
-
-
-
-
-
-
 static inline bool IsDisplayValueLegacyBox(const nsStyleDisplay* aStyleDisp) {
   return aStyleDisp->mDisplay == mozilla::StyleDisplay::WebkitBox ||
          aStyleDisp->mDisplay == mozilla::StyleDisplay::WebkitInlineBox ||
