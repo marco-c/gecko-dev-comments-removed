@@ -334,12 +334,16 @@ function keyboardExecuteAndWaitForMessage(
 
 
 
-async function checkUniqueMessageExists(hud, msg, selector) {
+async function checkUniqueMessageExists(hud, msg, typeSelector) {
   info(`Checking "${msg}" was logged`);
   let messages;
   try {
     messages = await waitFor(async () => {
-      const msgs = await findMessagesVirtualized({ hud, text: msg, selector });
+      const msgs = await findMessagesVirtualizedByType({
+        hud,
+        text: msg,
+        typeSelector,
+      });
       return msgs.length > 0 ? msgs : null;
     });
   } catch (e) {
