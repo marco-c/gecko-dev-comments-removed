@@ -19,13 +19,27 @@ using namespace mozilla;
 using namespace mozilla::a11y;
 
 TraversalRule::TraversalRule()
-    : TraversalRule(java::SessionAccessibility::HTML_GRANULARITY_DEFAULT) {}
+    : TraversalRule(java::SessionAccessibility::HTML_GRANULARITY_DEFAULT,
+                    true) {}
 
-TraversalRule::TraversalRule(int32_t aGranularity)
-    : mGranularity(aGranularity) {}
+TraversalRule::TraversalRule(int32_t aGranularity, bool aIsLocal)
+    : mGranularity(aGranularity), mIsLocal(aIsLocal) {}
 
 uint16_t TraversalRule::Match(Accessible* aAcc) {
   MOZ_ASSERT(aAcc);
+
+  if (mIsLocal && aAcc->IsRemote()) {
+    
+    
+    
+    return nsIAccessibleTraversalRule::FILTER_IGNORE |
+           nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+  } else if (!mIsLocal && aAcc->IsLocal()) {
+    
+    
+    
+    return nsIAccessibleTraversalRule::FILTER_IGNORE;
+  }
 
   uint16_t result = nsIAccessibleTraversalRule::FILTER_IGNORE;
 
@@ -280,15 +294,4 @@ uint16_t TraversalRule::DefaultMatch(Accessible* aAccessible) {
   }
 
   return nsIAccessibleTraversalRule::FILTER_IGNORE;
-}
-
-uint16_t ExploreByTouchRule::Match(Accessible* aAcc) {
-  if (aAcc->IsRemote()) {
-    
-    
-    return nsIAccessibleTraversalRule::FILTER_IGNORE |
-           nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
-  }
-
-  return TraversalRule::Match(aAcc);
 }
