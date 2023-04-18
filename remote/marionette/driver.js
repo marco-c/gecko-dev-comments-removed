@@ -109,7 +109,7 @@ const TIMEOUT_NO_WINDOW_MANAGER = 5000;
 
 
 
-this.GeckoDriver = function(server) {
+function GeckoDriver(server) {
   this._server = server;
 
   
@@ -128,7 +128,7 @@ this.GeckoDriver = function(server) {
   
   this.dialog = null;
   this.dialogObserver = null;
-};
+}
 
 
 

@@ -32,7 +32,7 @@ XPCOMUtils.defineLazyGetter(this, "service", () => {
 });
 
 
-this.accessibility = {
+const accessibility = {
   get service() {
     return service;
   },

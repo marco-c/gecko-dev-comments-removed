@@ -31,7 +31,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 
-this.action = {
+const action = {
   Pause: "pause",
   KeyDown: "keyDown",
   KeyUp: "keyUp",

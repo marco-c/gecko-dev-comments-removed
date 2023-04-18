@@ -31,7 +31,7 @@ const DEFAULT_TIMEOUT = 10000;
 const FINISH = "finish";
 
 
-this.evaluate = {};
+const evaluate = {};
 
 
 
@@ -461,7 +461,7 @@ evaluate.isDead = function(obj, prop) {
   return false;
 };
 
-this.sandbox = {};
+const sandbox = {};
 
 
 
@@ -570,7 +570,7 @@ sandbox.createSimpleTest = function(win, harness) {
 
 
 
-this.Sandboxes = class {
+class Sandboxes {
   
 
 
@@ -622,4 +622,4 @@ this.Sandboxes = class {
   clear() {
     this.boxes_.clear();
   }
-};
+}

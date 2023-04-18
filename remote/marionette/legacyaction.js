@@ -32,8 +32,8 @@ const CONTEXT_MENU_DELAY_PREF = "ui.click_hold_context_menus.delay";
 const DEFAULT_CONTEXT_MENU_DELAY = 750; 
 
 
-
-this.legacyaction = this.action = {};
+const legacyaction = {};
+const action = legacyaction;
 
 
 

@@ -61,7 +61,7 @@ const DEFAULT_PDF_RESOLUTION = 96 / 72;
 
 
 
-this.reftest = {};
+const reftest = {};
 
 
 

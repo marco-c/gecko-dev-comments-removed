@@ -17,7 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 
-this.event = {};
+const event = {};
 
 XPCOMUtils.defineLazyGetter(this, "dblclickTimer", () => {
   return Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);

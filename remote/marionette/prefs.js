@@ -196,4 +196,4 @@ this.EnvironmentPrefs = EnvironmentPrefs;
 
 
 
-this.MarionettePrefs = new MarionetteBranch();
+const MarionettePrefs = new MarionetteBranch();

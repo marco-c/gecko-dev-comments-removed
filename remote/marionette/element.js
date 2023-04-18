@@ -69,7 +69,7 @@ const XUL_SELECTED_ELS = new Set([
 
 
 
-this.element = {};
+const element = {};
 
 element.Strategy = {
   ClassName: "class name",

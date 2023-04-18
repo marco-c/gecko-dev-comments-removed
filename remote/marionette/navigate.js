@@ -32,7 +32,7 @@ const TIMEOUT_BEFOREUNLOAD_EVENT = 200;
 const TIMEOUT_UNLOAD_EVENT = 5000;
 
 
-this.navigate = {};
+const navigate = {};
 
 
 

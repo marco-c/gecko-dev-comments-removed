@@ -34,7 +34,7 @@ XPCOMUtils.defineLazyGetter(this, "domParser", () => {
 });
 
 
-this.l10n = {};
+const l10n = {};
 
 
 

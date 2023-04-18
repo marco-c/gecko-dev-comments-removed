@@ -75,7 +75,7 @@ const INPUT_TYPES_NO_EVENT = new Set([
 ]);
 
 
-this.interaction = {};
+const interaction = {};
 
 
 

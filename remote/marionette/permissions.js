@@ -17,7 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 
-this.permissions = {};
+const permissions = {};
 
 
 
