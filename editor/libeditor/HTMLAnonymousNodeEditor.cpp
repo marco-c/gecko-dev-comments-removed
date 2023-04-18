@@ -436,7 +436,7 @@ nsresult HTMLEditor::RefreshEditingUI() {
   }
 
   
-  nsIContent* hostContent = GetActiveEditingHost();
+  nsIContent* hostContent = ComputeEditingHost();
 
   if (IsObjectResizerEnabled() && focusElement &&
       HTMLEditUtils::IsSimplyEditableNode(*focusElement) &&

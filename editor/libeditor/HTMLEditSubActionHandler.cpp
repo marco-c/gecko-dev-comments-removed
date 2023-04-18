@@ -818,7 +818,7 @@ nsresult HTMLEditor::EnsureCaretNotAfterInvisibleBRElement() {
     return NS_OK;
   }
 
-  Element* editingHost = GetActiveEditingHost();
+  Element* editingHost = ComputeEditingHost();
   if (!editingHost) {
     NS_WARNING(
         "HTMLEditor::EnsureCaretNotAfterInvisibleBRElement() did nothing "
@@ -1112,9 +1112,9 @@ EditActionResult HTMLEditor::HandleInsertText(
   
   
   if (!pointToInsert.IsInTextNode()) {
-    Element* editingHost = GetActiveEditingHost(GetDocument()->IsXMLDocument()
-                                                    ? LimitInBodyElement::No
-                                                    : LimitInBodyElement::Yes);
+    Element* editingHost = ComputeEditingHost(GetDocument()->IsXMLDocument()
+                                                  ? LimitInBodyElement::No
+                                                  : LimitInBodyElement::Yes);
     if (NS_WARN_IF(!editingHost)) {
       return EditActionHandled(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
@@ -1271,7 +1271,7 @@ EditActionResult HTMLEditor::HandleInsertText(
       }
     } else {
       const RefPtr<Element> editingHost =
-          GetActiveEditingHost(LimitInBodyElement::No);
+          ComputeEditingHost(LimitInBodyElement::No);
       if (NS_WARN_IF(!editingHost)) {
         return EditActionHandled(NS_ERROR_FAILURE);
       }
@@ -1459,7 +1459,7 @@ nsresult HTMLEditor::InsertLineBreakAsSubAction() {
   }
   MOZ_ASSERT(atStartOfSelection.IsSetAndValid());
 
-  RefPtr<Element> editingHost = GetActiveEditingHost();
+  RefPtr<Element> editingHost = ComputeEditingHost();
   if (NS_WARN_IF(!editingHost)) {
     return NS_ERROR_FAILURE;
   }
@@ -1601,7 +1601,7 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
     }
   }
 
-  RefPtr<Element> editingHost = GetActiveEditingHost();
+  RefPtr<Element> editingHost = ComputeEditingHost();
   if (NS_WARN_IF(!editingHost)) {
     return EditActionIgnored(NS_ERROR_FAILURE);
   }
@@ -2468,7 +2468,7 @@ HTMLEditor::GetPreviousCharPointDataForNormalizingWhiteSpaces(
   }
   const auto previousCharPoint =
       WSRunScanner::GetPreviousEditableCharPoint<EditorRawDOMPointInText>(
-          GetActiveEditingHost(), aPoint);
+          ComputeEditingHost(), aPoint);
   if (!previousCharPoint.IsSet()) {
     return CharPointData::InDifferentTextNode(CharPointType::TextEnd);
   }
@@ -2486,7 +2486,7 @@ HTMLEditor::GetInclusiveNextCharPointDataForNormalizingWhiteSpaces(
   }
   const auto nextCharPoint =
       WSRunScanner::GetInclusiveNextEditableCharPoint<EditorRawDOMPointInText>(
-          GetActiveEditingHost(), aPoint);
+          ComputeEditingHost(), aPoint);
   if (!nextCharPoint.IsSet()) {
     return CharPointData::InDifferentTextNode(CharPointType::TextEnd);
   }
@@ -2583,7 +2583,7 @@ void HTMLEditor::ExtendRangeToDeleteWithNormalizingWhiteSpaces(
   
   
   
-  Element* editingHost = GetActiveEditingHost();
+  Element* editingHost = ComputeEditingHost();
   const EditorDOMPointInText precedingCharPoint =
       WSRunScanner::GetPreviousEditableCharPoint(editingHost, aStartToDelete);
   const EditorDOMPointInText followingCharPoint =
@@ -2873,7 +2873,7 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
                 *newCaretPosition.ContainerAsContent(),
                 HTMLEditUtils::
                     ClosestEditableBlockElementOrInlineEditingHost)) {
-      Element* editingHost = GetActiveEditingHost();
+      Element* editingHost = ComputeEditingHost();
       
       nsIContent* previousContent =
           HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
@@ -2947,7 +2947,7 @@ nsresult HTMLEditor::InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
     return NS_OK;
   }
 
-  WSRunScanner wsRunScanner(GetActiveEditingHost(), aPointToInsert);
+  WSRunScanner wsRunScanner(ComputeEditingHost(), aPointToInsert);
   
   
   if (!wsRunScanner.StartsFromHardLineBreak()) {
@@ -3112,7 +3112,7 @@ EditActionResult HTMLEditor::ChangeSelectedHardLinesToList(
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
   MOZ_ASSERT(!IsSelectionRangeContainerNotContent());
 
-  RefPtr<Element> editingHost = GetActiveEditingHost();
+  RefPtr<Element> editingHost = ComputeEditingHost();
   if (MOZ_UNLIKELY(NS_WARN_IF(!editingHost))) {
     return EditActionResult(NS_ERROR_FAILURE);
   }
@@ -3815,7 +3815,7 @@ nsresult HTMLEditor::RemoveListAtSelectionAsSubAction() {
 nsresult HTMLEditor::FormatBlockContainerWithTransaction(nsAtom& blockType) {
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
 
-  RefPtr<Element> editingHost = GetActiveEditingHost();
+  RefPtr<Element> editingHost = ComputeEditingHost();
   if (MOZ_UNLIKELY(NS_WARN_IF(!editingHost))) {
     return NS_ERROR_FAILURE;
   }
@@ -4097,7 +4097,7 @@ nsresult HTMLEditor::IndentListChild(RefPtr<Element>* aCurList,
              "unexpected container");
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
 
-  RefPtr<Element> editingHost = GetActiveEditingHost();
+  RefPtr<Element> editingHost = ComputeEditingHost();
   if (MOZ_UNLIKELY(NS_WARN_IF(!editingHost))) {
     return NS_ERROR_FAILURE;
   }
@@ -4308,7 +4308,7 @@ nsresult HTMLEditor::HandleCSSIndentAtSelectionInternal() {
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
   MOZ_ASSERT(!IsSelectionRangeContainerNotContent());
 
-  RefPtr<Element> editingHost = GetActiveEditingHost();
+  RefPtr<Element> editingHost = ComputeEditingHost();
   if (MOZ_UNLIKELY(NS_WARN_IF(!editingHost))) {
     return NS_ERROR_FAILURE;
   }
@@ -4550,7 +4550,7 @@ nsresult HTMLEditor::HandleHTMLIndentAtSelection() {
 nsresult HTMLEditor::HandleHTMLIndentAtSelectionInternal() {
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
 
-  RefPtr<Element> editingHost = GetActiveEditingHost();
+  RefPtr<Element> editingHost = ComputeEditingHost();
   if (MOZ_UNLIKELY(NS_WARN_IF(!editingHost))) {
     return NS_ERROR_FAILURE;
   }
@@ -5127,7 +5127,7 @@ SplitRangeOffFromNodeResult HTMLEditor::HandleOutdentAtSelectionInternal() {
     }
 
     indentedParentIndentedWith = BlockIndentedWith::HTML;
-    RefPtr<Element> editingHost = GetActiveEditingHost();
+    RefPtr<Element> editingHost = ComputeEditingHost();
     for (nsCOMPtr<nsIContent> parentContent = content->GetParent();
          parentContent && !parentContent->IsHTMLElement(nsGkAtoms::body) &&
          parentContent != editingHost &&
@@ -5866,7 +5866,7 @@ EditActionResult HTMLEditor::AlignContentsAtSelectionWithEmptyDivElement(
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
   MOZ_ASSERT(!IsSelectionRangeContainerNotContent());
 
-  RefPtr<Element> editingHost = GetActiveEditingHost();
+  RefPtr<Element> editingHost = ComputeEditingHost();
   if (MOZ_UNLIKELY(NS_WARN_IF(!editingHost))) {
     return EditActionResult(NS_ERROR_FAILURE);
   }
@@ -5929,7 +5929,7 @@ EditActionResult HTMLEditor::AlignContentsAtSelectionWithEmptyDivElement(
 nsresult HTMLEditor::AlignNodesAndDescendants(
     nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
     const nsAString& aAlignType) {
-  RefPtr<Element> editingHost = GetActiveEditingHost();
+  RefPtr<Element> editingHost = ComputeEditingHost();
   if (MOZ_UNLIKELY(NS_WARN_IF(!editingHost))) {
     return NS_ERROR_FAILURE;
   }
@@ -6327,7 +6327,7 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
 
   
   
-  WSRunScanner wsScannerAtEnd(GetActiveEditingHost(), endPoint);
+  WSRunScanner wsScannerAtEnd(ComputeEditingHost(), endPoint);
   WSScanResult scanResultAtEnd =
       wsScannerAtEnd.ScanPreviousVisibleNodeOrBlockBoundaryFrom(endPoint);
   if (scanResultAtEnd.Failed()) {
@@ -6804,7 +6804,7 @@ already_AddRefed<nsRange> HTMLEditor::CreateRangeIncludingAdjuscentWhiteSpaces(
     return nullptr;
   }
 
-  const Element* const editingHost = GetActiveEditingHost();
+  const Element* const editingHost = ComputeEditingHost();
   if (NS_WARN_IF(!editingHost)) {
     return nullptr;
   }
@@ -6885,7 +6885,7 @@ already_AddRefed<nsRange> HTMLEditor::CreateRangeExtendedToHardLineStartAndEnd(
     return nullptr;
   }
 
-  const Element* const editingHost = GetActiveEditingHost();
+  const Element* const editingHost = ComputeEditingHost();
   if (NS_WARN_IF(!editingHost)) {
     return nullptr;
   }
@@ -7258,7 +7258,7 @@ nsresult HTMLEditor::SplitParentInlineElementsAtRangeEdges(
     RangeItem& aRangeItem) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  RefPtr<Element> editingHost = GetActiveEditingHost();
+  RefPtr<Element> editingHost = ComputeEditingHost();
   if (NS_WARN_IF(!editingHost)) {
     return NS_OK;
   }
@@ -7288,7 +7288,7 @@ nsresult HTMLEditor::SplitParentInlineElementsAtRangeEdges(
         NS_WARNING("SplitNodeResult::SuggestCaretPointTo() failed");
         return rv;
       }
-      if (MOZ_UNLIKELY(editingHost != GetActiveEditingHost())) {
+      if (MOZ_UNLIKELY(editingHost != ComputeEditingHost())) {
         NS_WARNING(
             "HTMLEditor::SplitNodeDeepWithTransaction(SplitAtEdges::"
             "eDoNotCreateEmptyContainer) caused changing editing host");
@@ -7806,7 +7806,7 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
   } else {
     
     
-    Element* editingHost = GetActiveEditingHost();
+    Element* editingHost = ComputeEditingHost();
     nsIContent* nearContent =
         editingHost ? HTMLEditUtils::GetPreviousContent(
                           atStartOfSelection,
@@ -8283,7 +8283,7 @@ nsresult HTMLEditor::MoveNodesIntoNewBlockquoteElement(
     nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents) {
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
 
-  RefPtr<Element> editingHost = GetActiveEditingHost();
+  RefPtr<Element> editingHost = ComputeEditingHost();
   if (MOZ_UNLIKELY(NS_WARN_IF(!editingHost))) {
     return NS_ERROR_FAILURE;
   }
@@ -8525,7 +8525,7 @@ nsresult HTMLEditor::CreateOrChangeBlockContainerElement(
     nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents, nsAtom& aBlockTag) {
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
 
-  RefPtr<Element> editingHost = GetActiveEditingHost();
+  RefPtr<Element> editingHost = ComputeEditingHost();
   if (MOZ_UNLIKELY(NS_WARN_IF(!editingHost))) {
     return NS_ERROR_FAILURE;
   }
@@ -8804,7 +8804,7 @@ SplitNodeResult HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction(
   }
   MOZ_ASSERT(aStartOfDeepestRightNode.IsSetAndValid());
 
-  RefPtr<Element> host = GetActiveEditingHost();
+  RefPtr<Element> host = ComputeEditingHost();
   if (NS_WARN_IF(!host)) {
     return SplitNodeResult(NS_ERROR_FAILURE);
   }
@@ -9362,7 +9362,7 @@ void HTMLEditor::SetSelectionInterlinePosition() {
   
   
   
-  if (Element* editingHost = GetActiveEditingHost()) {
+  if (Element* editingHost = ComputeEditingHost()) {
     if (nsIContent* previousEditableContentInBlock =
             HTMLEditUtils::GetPreviousContent(
                 atCaret,
@@ -9499,7 +9499,7 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
   
   
   
-  RefPtr<Element> editingHost = GetActiveEditingHost();
+  RefPtr<Element> editingHost = ComputeEditingHost();
   if (!editingHost) {
     return NS_OK;
   }
@@ -10508,7 +10508,7 @@ nsresult HTMLEditor::ChangeMarginStart(Element& aElement,
     return NS_OK;
   }
   
-  Element* editingHost = GetActiveEditingHost();
+  Element* editingHost = ComputeEditingHost();
   if (&aElement == editingHost ||
       !aElement.IsInclusiveDescendantOf(editingHost)) {
     return NS_OK;
@@ -10645,7 +10645,7 @@ nsresult HTMLEditor::MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aTargetElement);
 
-  RefPtr<Element> editingHost = GetActiveEditingHost();
+  RefPtr<Element> editingHost = ComputeEditingHost();
   if (MOZ_UNLIKELY(NS_WARN_IF(!editingHost))) {
     return NS_ERROR_FAILURE;
   }

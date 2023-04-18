@@ -725,12 +725,11 @@ bool RootWindowGlobalKeyListener::IsHTMLEditorFocused() {
     
     
     
-    nsCOMPtr<dom::Element> activeEditingHost =
-        htmlEditor->GetActiveEditingHost();
-    if (!activeEditingHost) {
+    dom::Element* editingHost = htmlEditor->ComputeEditingHost();
+    if (!editingHost) {
       return false;
     }
-    return focusedNode->IsInclusiveDescendantOf(activeEditingHost);
+    return focusedNode->IsInclusiveDescendantOf(editingHost);
   }
 
   return false;

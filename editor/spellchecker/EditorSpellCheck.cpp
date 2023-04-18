@@ -659,13 +659,14 @@ EditorSpellCheck::SetCurrentDictionaries(
       
       
       
-      nsCOMPtr<nsIContent> rootContent;
+      
+      nsCOMPtr<nsIContent> anonymousDivOrEditingHost;
       if (HTMLEditor* htmlEditor = mEditor->GetAsHTMLEditor()) {
-        rootContent = htmlEditor->GetActiveEditingHost();
+        anonymousDivOrEditingHost = htmlEditor->ComputeEditingHost();
       } else {
-        rootContent = mEditor->GetRoot();
+        anonymousDivOrEditingHost = mEditor->GetRoot();
       }
-      RefPtr<Document> ownerDoc = rootContent->OwnerDoc();
+      RefPtr<Document> ownerDoc = anonymousDivOrEditingHost->OwnerDoc();
       Document* parentDoc = ownerDoc->GetInProcessParentDocument();
       if (parentDoc) {
         parentDoc->SetHeaderData(
@@ -743,8 +744,9 @@ EditorSpellCheck::UpdateCurrentDictionary(
     if (aEditorBase.IsMailEditor()) {
       
       
+      
       Element* const editingHost =
-          aEditorBase.AsHTMLEditor()->GetActiveEditingHost();
+          aEditorBase.AsHTMLEditor()->ComputeEditingHost();
       if (!editingHost) {
         return nullptr;
       }

@@ -3903,7 +3903,7 @@ EditorBase::CreateTransactionForCollapsedRange(
   
   
   const Element* const anonymousDivOrEditingHost =
-      IsTextEditor() ? GetRoot() : AsHTMLEditor()->GetActiveEditingHost();
+      IsTextEditor() ? GetRoot() : AsHTMLEditor()->ComputeEditingHost();
   if (aHowToHandleCollapsedRange == HowToHandleCollapsedRange::ExtendBackward &&
       point.IsStartOfContainer()) {
     MOZ_ASSERT(IsHTMLEditor());
@@ -4531,7 +4531,7 @@ nsresult EditorBase::HandleDropEvent(DragEvent* aDropEvent) {
   
   
   else if (!AsHTMLEditor()->IsInDesignMode()) {
-    focusedElement = AsHTMLEditor()->GetActiveEditingHost();
+    focusedElement = AsHTMLEditor()->ComputeEditingHost();
     if (focusedElement &&
         droppedAt.GetContainerAsContent()->IsInclusiveDescendantOf(
             focusedElement)) {
@@ -4581,8 +4581,7 @@ nsresult EditorBase::HandleDropEvent(DragEvent* aDropEvent) {
     
     
     if (IsHTMLEditor() && !AsHTMLEditor()->IsInDesignMode() &&
-        NS_WARN_IF(newFocusedElement !=
-                   AsHTMLEditor()->GetActiveEditingHost())) {
+        NS_WARN_IF(newFocusedElement != AsHTMLEditor()->ComputeEditingHost())) {
       editActionData.Abort();
       return NS_OK;
     }
@@ -5071,7 +5070,7 @@ nsresult EditorBase::ReplaceTextAsAction(
       NS_WARNING_ASSERTION(targetRange && targetRange->IsPositioned(),
                            "StaticRange::Create() failed");
     } else {
-      Element* editingHost = AsHTMLEditor()->GetActiveEditingHost();
+      Element* editingHost = AsHTMLEditor()->ComputeEditingHost();
       NS_WARNING_ASSERTION(editingHost,
                            "No active editing host, no target ranges");
       if (editingHost) {
