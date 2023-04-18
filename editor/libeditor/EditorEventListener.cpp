@@ -1125,7 +1125,15 @@ nsresult EditorEventListener::Focus(InternalFocusEvent* aFocusEvent) {
   }
 
   
-  SpellCheckIfNeeded();
+  nsresult rv = editorBase->FlushPendingSpellCheck();
+  if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    NS_WARNING(
+        "EditorBase::FlushPendingSpellCheck() caused destroying the editor");
+    return NS_OK;
+  }
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "EditorBase::FlushPendingSpellCheck() failed, but ignored");
   if (MOZ_UNLIKELY(
           !editorBase->CanKeepHandlingFocusEvent(*originalEventTargetNode))) {
     return NS_OK;
@@ -1177,21 +1185,6 @@ nsresult EditorEventListener::Blur(InternalFocusEvent* aBlurEvent) {
                          "EditorBase::FinalizeSelection() failed, but ignored");
   }
   return NS_OK;
-}
-
-void EditorEventListener::SpellCheckIfNeeded() {
-  MOZ_ASSERT(!DetachedFromEditor());
-
-  
-  
-  RefPtr<EditorBase> editorBase(mEditorBase);
-  if (!editorBase->ShouldSkipSpellCheck()) {
-    return;
-  }
-  DebugOnly<nsresult> rvIgnored =
-      editorBase->RemoveFlags(nsIEditor::eEditorSkipSpellCheck);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                       "EditorBase::RemoveFlags() failed, but ignored");
 }
 
 bool EditorEventListener::IsFileControlTextBox() {
