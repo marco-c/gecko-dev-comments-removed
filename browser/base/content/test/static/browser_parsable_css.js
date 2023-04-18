@@ -65,12 +65,6 @@ let whitelist = [
     errorMessage: /Unknown property ‘text-size-adjust’\. {2}Declaration dropped\./i,
     isFromDevTools: false,
   },
-  
-  {
-    sourceName: /web\/viewer\.css$/i,
-    errorMessage: /Unknown property ‘forced-color-adjust’\. {2}Declaration dropped\./i,
-    isFromDevTools: false,
-  },
   {
     sourceName: /overlay\.css$/i,
     errorMessage: /Unknown pseudo-class.*moz-native-anonymous/i,
@@ -148,6 +142,7 @@ let propNameWhitelist = [
 
   
   { propName: "--zoom-factor", isFromDevTools: false },
+  { propName: "--viewport-scale-factor", isFromDevTools: false },
 ];
 
 
