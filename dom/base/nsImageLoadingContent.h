@@ -99,6 +99,10 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
   void ForceImageState(bool aForce, mozilla::EventStates::InternalType aState);
 
+  
+  already_AddRefed<mozilla::dom::Promise> RecognizeCurrentImageText(
+      mozilla::ErrorResult&);
+
  protected:
   enum ImageLoadType {
     
