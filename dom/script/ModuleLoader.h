@@ -45,9 +45,6 @@ class ModuleLoader final : public JS::loader::ModuleLoaderBase {
   ScriptLoader* GetScriptLoader();
 
   
-  void EnsureModuleHooksInitialized() override;
-
-  
 
 
 
