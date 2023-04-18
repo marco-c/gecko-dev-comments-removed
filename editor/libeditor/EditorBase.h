@@ -599,22 +599,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  [[nodiscard]] bool CanKeepHandlingFocusEvent(
-      const nsINode& aOriginalEventTargetNode) const;
-
-  
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult FlushPendingSpellCheck();
-
-  
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult OnFocus(const nsINode& aOriginalEventTargetNode);
+  MOZ_CAN_RUN_SCRIPT virtual nsresult OnFocus(
+      const nsINode& aOriginalEventTargetNode);
 
   
 
@@ -2249,6 +2235,21 @@ class EditorBase : public nsIEditor,
   MOZ_ALWAYS_INLINE EditorType GetEditorType() const {
     return mIsHTMLEditorClass ? EditorType::HTML : EditorType::Text;
   }
+
+  
+
+
+
+
+
+  [[nodiscard]] bool CanKeepHandlingFocusEvent(
+      const nsINode& aOriginalEventTargetNode) const;
+
+  
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult FlushPendingSpellCheck();
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult EnsureEmptyTextFirstChild();
 
