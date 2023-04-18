@@ -7,13 +7,11 @@
 #ifndef frontend_LexicalScopeEmitter_h
 #define frontend_LexicalScopeEmitter_h
 
-#include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 #include "mozilla/Maybe.h"       
 
 #include "frontend/EmitterScope.h"   
 #include "frontend/TDZCheckCache.h"  
-#include "gc/Rooting.h"              
 #include "vm/Scope.h"                
 
 namespace js {

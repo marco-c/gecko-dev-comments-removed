@@ -13,15 +13,13 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "frontend/BytecodeOffset.h"  
-#include "frontend/EmitterScope.h"    
-#include "frontend/NameOpEmitter.h"   
-#include "frontend/ParseNode.h"       
-#include "frontend/ParserAtom.h"      
-#include "frontend/TDZCheckCache.h"   
-#include "vm/NativeObject.h"          
-#include "vm/Opcodes.h"               
-#include "vm/Scope.h"                 
+#include "frontend/EmitterScope.h"   
+#include "frontend/NameOpEmitter.h"  
+#include "frontend/ParseNode.h"      
+#include "frontend/ParserAtom.h"     
+#include "frontend/TDZCheckCache.h"  
+#include "vm/Opcodes.h"              
+#include "vm/Scope.h"                
 
 namespace js {
 

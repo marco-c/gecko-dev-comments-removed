@@ -10,7 +10,6 @@
 
 #include "frontend/BytecodeEmitter.h"  
 #include "frontend/SharedContext.h"    
-#include "vm/JSScript.h"               
 #include "vm/Opcodes.h"                
 
 using namespace js;

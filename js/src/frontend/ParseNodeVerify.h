@@ -7,12 +7,15 @@
 #ifndef frontend_ParseNodeVerify_h
 #define frontend_ParseNodeVerify_h
 
-#include "ds/LifoAlloc.h"                 
-#include "frontend/ParseNode.h"           
 #include "frontend/SyntaxParseHandler.h"  
 
 namespace js {
+
+class LifoAlloc;
+
 namespace frontend {
+
+class ParseNode;
 
 
 

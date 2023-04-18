@@ -21,7 +21,6 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Casting.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/Range.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/Utf8.h"
@@ -34,10 +33,7 @@
 #include "jsnum.h"
 #include "jstypes.h"
 
-#include "builtin/ModuleObject.h"
-#include "builtin/SelfHostingDefines.h"
 #include "frontend/BytecodeCompiler.h"
-#include "frontend/BytecodeSection.h"
 #include "frontend/FoldConstants.h"
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ModuleSharedContext.h"
@@ -50,31 +46,23 @@
 #include "js/friend/ErrorMessages.h"  
 #include "js/RegExpFlags.h"           
 #include "util/StringBuffer.h"        
-#include "vm/BigIntType.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/FunctionFlags.h"          
 #include "vm/GeneratorAndAsyncKind.h"  
-#include "vm/JSAtom.h"
 #include "vm/JSContext.h"
-#include "vm/JSFunction.h"
 #include "vm/JSScript.h"
 #include "vm/ModuleBuilder.h"  
-#include "vm/RegExpObject.h"
-#include "vm/Scope.h"  
-#include "vm/SelfHosting.h"
-#include "vm/StringType.h"
+#include "vm/Scope.h"          
 #include "vm/WellKnownAtom.h"  
 #include "wasm/AsmJS.h"
 
 #include "frontend/ParseContext-inl.h"
 #include "frontend/SharedContext-inl.h"
-#include "vm/EnvironmentObject-inl.h"
 
 using namespace js;
 
 using mozilla::AssertedCast;
 using mozilla::AsVariant;
-using mozilla::DebugOnly;
 using mozilla::Maybe;
 using mozilla::Nothing;
 using mozilla::PointerRangeSize;

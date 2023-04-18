@@ -6,8 +6,7 @@
 
 #include "frontend/BytecodeSection.h"
 
-#include "mozilla/Assertions.h"       
-#include "mozilla/ReverseIterator.h"  
+#include "mozilla/Assertions.h"  
 
 #include "frontend/AbstractScopePtr.h"    
 #include "frontend/CompilationStencil.h"  

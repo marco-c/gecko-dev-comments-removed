@@ -12,7 +12,6 @@
 #include <stdint.h>  
 
 #include "frontend/BytecodeControlStructures.h"  
-#include "frontend/BytecodeOffset.h"             
 #include "frontend/IteratorKind.h"               
 #include "frontend/TryEmitter.h"                 
 #include "vm/CompletionKind.h"                   
@@ -21,6 +20,7 @@ namespace js {
 namespace frontend {
 
 struct BytecodeEmitter;
+class BytecodeOffset;
 class EmitterScope;
 
 class ForOfLoopControl : public LoopControl {

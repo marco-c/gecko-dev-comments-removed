@@ -12,20 +12,8 @@
 #include "frontend/IfEmitter.h"        
 #include "frontend/ParseNode.h"        
 #include "frontend/SharedContext.h"    
-#include "gc/AllocKind.h"              
-#include "js/Id.h"                     
-#include "js/Value.h"                  
 #include "vm/FunctionPrefixKind.h"     
-#include "vm/JSContext.h"              
-#include "vm/JSObject.h"               
-#include "vm/NativeObject.h"           
 #include "vm/Opcodes.h"                
-#include "vm/Runtime.h"                
-#include "vm/SharedStencil.h"          
-
-#include "gc/ObjectKind-inl.h"  
-#include "vm/JSAtom-inl.h"      
-#include "vm/JSObject-inl.h"    
 
 using namespace js;
 using namespace js::frontend;

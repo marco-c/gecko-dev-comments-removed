@@ -9,16 +9,13 @@
 
 #include "mozilla/Attributes.h"
 
-#include <stdint.h>
-
-#include "frontend/ParserAtom.h"  
-#include "js/TypeDecls.h"
 #include "vm/SharedStencil.h"  
 
 namespace js {
 namespace frontend {
 
 struct BytecodeEmitter;
+class TaggedParserAtomIndex;
 
 
 

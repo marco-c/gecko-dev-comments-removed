@@ -14,33 +14,22 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
-#include "jstypes.h"           
-#include "NamespaceImports.h"  
-
 #include "frontend/AbstractScopePtr.h"  
 #include "frontend/BytecodeOffset.h"    
 #include "frontend/CompilationStencil.h"  
 #include "frontend/JumpList.h"         
 #include "frontend/NameCollections.h"  
-#include "frontend/ObjLiteral.h"       
 #include "frontend/ParseNode.h"        
 #include "frontend/ParserAtom.h"  
 #include "frontend/SourceNotes.h"  
 #include "frontend/Stencil.h"      
-#include "gc/Rooting.h"            
-#include "js/GCVariant.h"          
-#include "js/GCVector.h"           
 #include "js/TypeDecls.h"          
-#include "js/Value.h"              
 #include "js/Vector.h"             
 #include "vm/Opcodes.h"            
 #include "vm/SharedStencil.h"      
 #include "vm/StencilEnums.h"       
 
 namespace js {
-
-class Scope;
-
 namespace frontend {
 
 class FunctionBox;

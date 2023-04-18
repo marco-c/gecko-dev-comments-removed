@@ -14,7 +14,6 @@
 
 #include "frontend/SharedContext.h"  
 #include "vm/Scope.h"                
-#include "vm/SharedStencil.h"        
 
 struct JS_PUBLIC_API JSContext;
 
@@ -25,6 +24,7 @@ class JS_PUBLIC_API ReadOnlyCompileOptions;
 namespace js {
 
 class ModuleBuilder;
+struct SourceExtent;
 
 namespace frontend {
 

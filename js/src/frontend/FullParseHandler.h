@@ -8,10 +8,11 @@
 #define frontend_FullParseHandler_h
 
 #include "mozilla/Maybe.h"  
-#include "mozilla/PodOperations.h"
 
 #include <cstddef>  
 #include <string.h>
+
+#include "jstypes.h"
 
 #include "frontend/CompilationStencil.h"  
 #include "frontend/FunctionSyntaxKind.h"  
@@ -20,12 +21,10 @@
 #include "frontend/ParserAtom.h"  
 #include "frontend/SharedContext.h"
 #include "frontend/Stencil.h"
-#include "vm/JSContext.h"
+
+struct JS_PUBLIC_API JSContext;
 
 namespace js {
-
-class RegExpObject;
-
 namespace frontend {
 
 class TokenStreamAnyChars;

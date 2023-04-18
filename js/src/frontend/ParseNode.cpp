@@ -16,9 +16,7 @@
 #include "frontend/Parser.h"      
 #include "frontend/ParserAtom.h"  
 #include "frontend/SharedContext.h"
-#include "vm/BigIntType.h"
 #include "vm/Printer.h"
-#include "vm/RegExpObject.h"
 #include "vm/Scope.h"  
 
 using namespace js;

@@ -8,21 +8,20 @@
 
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Maybe.h"  
-#include "mozilla/Range.h"
 
 #include "jslibmath.h"
 #include "jsmath.h"
-#include "jsnum.h"
 
+#include "frontend/FullParseHandler.h"
 #include "frontend/ParseNode.h"
 #include "frontend/ParseNodeVisitor.h"
-#include "frontend/Parser.h"
 #include "frontend/ParserAtom.h"  
 #include "js/Conversions.h"
 #include "js/friend/StackLimits.h"  
-#include "js/Vector.h"
-#include "util/StringBuffer.h"  
+#include "util/StringBuffer.h"      
 #include "vm/StringType.h"
+#include "vm/TraceLogging.h"
+#include "vm/TraceLoggingTypes.h"
 
 using namespace js;
 using namespace js::frontend;

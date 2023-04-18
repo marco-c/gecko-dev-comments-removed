@@ -7,10 +7,8 @@
 #include "frontend/ForOfLoopControl.h"
 
 #include "frontend/BytecodeEmitter.h"  
-#include "frontend/EmitterScope.h"     
 #include "frontend/IfEmitter.h"        
 #include "vm/CompletionKind.h"         
-#include "vm/JSScript.h"               
 #include "vm/Opcodes.h"                
 
 using namespace js;

@@ -18,7 +18,6 @@
 #include "frontend/EmitterScope.h"               
 #include "frontend/JumpList.h"                   
 #include "frontend/TDZCheckCache.h"              
-#include "gc/Rooting.h"                          
 #include "js/AllocPolicy.h"                      
 #include "js/Value.h"                            
 #include "js/Vector.h"                           

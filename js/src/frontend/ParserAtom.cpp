@@ -9,13 +9,11 @@
 #include "mozilla/TextUtils.h"  
 
 #include <memory>  
-#include <type_traits>
 
 #include "jsnum.h"  
 
 #include "frontend/BytecodeCompiler.h"  
 #include "frontend/CompilationStencil.h"
-#include "frontend/NameCollections.h"
 #include "util/StringBuffer.h"  
 #include "util/Text.h"          
 #include "util/Unicode.h"

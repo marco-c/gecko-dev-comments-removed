@@ -12,10 +12,10 @@
 
 #include <stdint.h>  
 
-#include "ds/Nestable.h"               
-#include "frontend/BytecodeSection.h"  
-#include "frontend/JumpList.h"         
-#include "frontend/ParserAtom.h"       
+#include "ds/Nestable.h"              
+#include "frontend/BytecodeOffset.h"  
+#include "frontend/JumpList.h"        
+#include "frontend/ParserAtom.h"      
 #include "frontend/SharedContext.h"  
 #include "frontend/TDZCheckCache.h"  
 #include "vm/StencilEnums.h"         

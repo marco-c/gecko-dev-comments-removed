@@ -10,7 +10,6 @@
 #include "frontend/ParserAtom.h"  
 #include "frontend/SharedContext.h"
 #include "vm/Opcodes.h"
-#include "vm/StringType.h"
 #include "vm/ThrowMsgKind.h"  
 
 using namespace js;

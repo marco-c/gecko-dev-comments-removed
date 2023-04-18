@@ -15,20 +15,19 @@
 #include "frontend/AbstractScopePtr.h"
 #include "frontend/NameAnalysisTypes.h"
 #include "frontend/NameCollections.h"
-#include "frontend/ParseContext.h"
-#include "frontend/ParserAtom.h"  
-#include "frontend/SharedContext.h"
-#include "js/TypeDecls.h"
+#include "frontend/Stencil.h"
 #include "vm/Opcodes.h"        
 #include "vm/SharedStencil.h"  
 
 namespace js {
-
-class Scope;
-
 namespace frontend {
 
 struct BytecodeEmitter;
+class EvalSharedContext;
+class FunctionBox;
+class GlobalSharedContext;
+class ModuleSharedContext;
+class TaggedParserAtomIndex;
 
 
 class EmitterScope : public Nestable<EmitterScope> {

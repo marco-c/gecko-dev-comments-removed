@@ -11,7 +11,6 @@
 #include "mozilla/Casting.h"     
 
 #include <stdint.h>  
-#include <type_traits>
 
 #include "frontend/ParserAtom.h"     
 #include "js/AllocPolicy.h"          

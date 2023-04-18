@@ -8,22 +8,16 @@
 
 #include "mozilla/Assertions.h"  
 
-#include "builtin/ModuleObject.h"          
 #include "frontend/AsyncEmitter.h"         
 #include "frontend/BytecodeEmitter.h"      
 #include "frontend/FunctionSyntaxKind.h"   
 #include "frontend/ModuleSharedContext.h"  
 #include "frontend/NameAnalysisTypes.h"    
 #include "frontend/NameOpEmitter.h"        
-#include "frontend/ParseContext.h"         
-#include "frontend/PropOpEmitter.h"        
 #include "frontend/SharedContext.h"        
-#include "vm/AsyncFunctionResolveKind.h"   
-#include "vm/JSScript.h"                   
 #include "vm/ModuleBuilder.h"              
 #include "vm/Opcodes.h"                    
 #include "vm/Scope.h"                      
-#include "wasm/AsmJS.h"                    
 
 using namespace js;
 using namespace js::frontend;

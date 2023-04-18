@@ -13,7 +13,6 @@
 #include <stdint.h>  
 
 #include "frontend/BytecodeControlStructures.h"  
-#include "frontend/BytecodeOffset.h"             
 #include "frontend/TDZCheckCache.h"              
 
 namespace js {

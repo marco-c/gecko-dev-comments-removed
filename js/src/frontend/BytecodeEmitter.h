@@ -11,23 +11,16 @@
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
-#include "mozilla/Maybe.h"   
-#include "mozilla/Span.h"    
-#include "mozilla/Vector.h"  
+#include "mozilla/Maybe.h"  
+#include "mozilla/Span.h"   
 
-#include <functional>  
-#include <stddef.h>    
-#include <stdint.h>    
+#include <stddef.h>  
+#include <stdint.h>  
 
-#include "frontend/AbstractScopePtr.h"           
-#include "frontend/BCEParserHandle.h"            
-#include "frontend/BytecodeControlStructures.h"  
-#include "frontend/BytecodeOffset.h"             
+#include "frontend/AbstractScopePtr.h"  
 #include "frontend/BytecodeSection.h"  
 #include "frontend/DestructuringFlavor.h"  
 #include "frontend/EitherParser.h"         
-#include "frontend/ErrorReporter.h"        
-#include "frontend/FullParseHandler.h"     
 #include "frontend/IteratorKind.h"         
 #include "frontend/JumpList.h"             
 #include "frontend/NameAnalysisTypes.h"    
@@ -35,42 +28,41 @@
 #include "frontend/ParseNode.h"            
 #include "frontend/Parser.h"               
 #include "frontend/ParserAtom.h"           
-#include "frontend/PrivateOpEmitter.h"     
 #include "frontend/ScriptIndex.h"          
-#include "frontend/SharedContext.h"        
 #include "frontend/SourceNotes.h"          
-#include "frontend/TokenStream.h"          
 #include "frontend/ValueUsage.h"           
-#include "js/RootingAPI.h"                 
+#include "js/AllocPolicy.h"                
 #include "js/TypeDecls.h"                  
 #include "vm/BuiltinObjectKind.h"          
 #include "vm/CheckIsObjectKind.h"          
 #include "vm/CompletionKind.h"             
 #include "vm/FunctionPrefixKind.h"         
 #include "vm/GeneratorResumeKind.h"        
-#include "vm/JSFunction.h"                 
-#include "vm/JSScript.h"       
-#include "vm/Opcodes.h"        
-#include "vm/Runtime.h"        
-#include "vm/SharedStencil.h"  
-#include "vm/StencilEnums.h"   
-#include "vm/StringType.h"     
-#include "vm/ThrowMsgKind.h"   
+#include "vm/Opcodes.h"                    
+#include "vm/SharedStencil.h"              
+#include "vm/StencilEnums.h"               
+#include "vm/ThrowMsgKind.h"               
 
 namespace js {
 namespace frontend {
 
+class BytecodeOffset;
 class CallOrNewEmitter;
 class ClassEmitter;
 class ElemOpEmitter;
 class EmitterScope;
+class FullParseHandler;
 class NestableControl;
+class PrivateOpEmitter;
 class PropertyEmitter;
 class PropOpEmitter;
 class OptionalEmitter;
+class SharedContext;
 class TDZCheckCache;
 class TryEmitter;
-class ScriptStencil;
+
+struct BCEParserHandle;
+struct TokenPos;
 
 enum class ValueIsOnStack { Yes, No };
 

@@ -9,7 +9,7 @@
 #include "frontend/BytecodeEmitter.h"  
 #include "frontend/EmitterScope.h"     
 #include "vm/Opcodes.h"                
-#include "vm/Scope.h"                  
+#include "vm/ScopeKind.h"              
 #include "vm/StencilEnums.h"           
 
 using namespace js;

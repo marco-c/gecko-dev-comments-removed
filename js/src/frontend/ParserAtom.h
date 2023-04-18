@@ -7,17 +7,13 @@
 #ifndef frontend_ParserAtom_h
 #define frontend_ParserAtom_h
 
-#include "mozilla/DebugOnly.h"        
 #include "mozilla/HashFunctions.h"    
 #include "mozilla/MemoryReporting.h"  
 #include "mozilla/Range.h"            
 #include "mozilla/Span.h"             
-#include "mozilla/Variant.h"          
 
-#include "ds/LifoAlloc.h"         
 #include "frontend/TypedIndex.h"  
 #include "js/HashTable.h"         
-#include "js/UniquePtr.h"         
 #include "js/Vector.h"            
 #include "vm/CommonPropertyNames.h"
 #include "vm/StringType.h"     
@@ -25,6 +21,7 @@
 
 namespace js {
 
+class LifoAlloc;
 class StringBuffer;
 
 namespace frontend {
@@ -32,12 +29,9 @@ namespace frontend {
 struct CompilationAtomCache;
 struct CompilationStencil;
 class BorrowingCompilationStencil;
-class ParserAtom;
 
 template <typename CharT>
 class SpecificParserAtomLookup;
-
-class ParserAtomsTable;
 
 
 enum class Length1StaticParserString : uint8_t;
