@@ -68,12 +68,14 @@ add_task(async function testSlowLoadingFrame() {
   );
 });
 
-const DOCUMENT_DELAY = 5000;
-
 add_task(async function testSlowLoadingDocument() {
   info("Create a test server serving a slow document");
   const httpServer = createTestHTTPServer();
   httpServer.registerContentType("html", "text/html");
+
+  
+  let unblockRequest;
+  const onRequestUnblocked = new Promise(r => (unblockRequest = r));
 
   httpServer.registerPathHandler(`/`, async function(request, response) {
     response.processAsync();
@@ -90,7 +92,8 @@ add_task(async function testSlowLoadingDocument() {
     response.setHeader("Content-Length", page.length + "", false);
     response.write(page_start);
 
-    await wait(DOCUMENT_DELAY);
+    await onRequestUnblocked;
+
     response.write(page_end);
     response.finish();
   });
@@ -143,6 +146,9 @@ add_task(async function testSlowLoadingDocument() {
     "body",
     inspector
   );
+
+  info("Unblock the document request");
+  unblockRequest();
 
   info("Wait for the #end div to be available as a markupview container");
   await TestUtils.waitForCondition(async () => {
