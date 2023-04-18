@@ -31,14 +31,6 @@ MFBT_API ProfileChunkedBuffer& profiler_get_core_buffer();
 
 namespace mozilla::base_profiler_markers_detail {
 
-
-
-inline ProfileChunkedBuffer& CachedBaseCoreBuffer() {
-  static ProfileChunkedBuffer& coreBuffer =
-      baseprofiler::profiler_get_core_buffer();
-  return coreBuffer;
-}
-
 struct Streaming {
   
   

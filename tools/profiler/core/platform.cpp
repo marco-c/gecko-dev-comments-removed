@@ -212,6 +212,16 @@ using ThreadRegistry = mozilla::profiler::ThreadRegistry;
 
 LazyLogModule gProfilerLog("prof");
 
+ProfileChunkedBuffer& profiler_get_core_buffer() {
+  
+  
+  
+  
+  static ProfileChunkedBuffer sProfileChunkedBuffer{
+      ProfileChunkedBuffer::ThreadSafety::WithMutex};
+  return sProfileChunkedBuffer;
+}
+
 mozilla::Atomic<int, mozilla::MemoryOrdering::Relaxed> gSkipSampling;
 
 #if defined(GP_OS_android)
@@ -386,12 +396,7 @@ using JsFrameBuffer = mozilla::profiler::ThreadRegistrationData::JsFrameBuffer;
 class CorePS {
  private:
   CorePS()
-      : mProcessStartTime(TimeStamp::ProcessCreation()),
-        
-        
-        
-        
-        mCoreBuffer(ProfileChunkedBuffer::ThreadSafety::WithMutex)
+      : mProcessStartTime(TimeStamp::ProcessCreation())
 #ifdef USE_LUL_STACKWALK
         ,
         mLul(nullptr)
@@ -451,9 +456,6 @@ class CorePS {
 
   
   PS_GET_LOCKLESS(TimeStamp, ProcessStartTime)
-
-  
-  PS_GET_LOCKLESS(ProfileChunkedBuffer&, CoreBuffer)
 
   PS_GET(JsFrameBuffer&, JsFrames)
 
@@ -545,17 +547,6 @@ class CorePS {
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  ProfileChunkedBuffer mCoreBuffer;
-
-  
-  
   Vector<RefPtr<PageInformation>> mRegisteredPages;
 
   
@@ -583,11 +574,6 @@ class CorePS {
 };
 
 CorePS* CorePS::sInstance = nullptr;
-
-ProfileChunkedBuffer& profiler_get_core_buffer() {
-  MOZ_ASSERT(CorePS::Exists());
-  return CorePS::CoreBuffer();
-}
 
 void locked_profiler_add_sampled_counter(PSLockRef aLock,
                                          BaseProfilerCount* aCounter) {
@@ -707,8 +693,9 @@ class ActivePS {
             size_t(ClampToAllowedEntries(aCapacity.Value())) * scBytesPerEntry,
             ChunkSizeForEntries(aCapacity.Value())),
         mProfileBuffer([this]() -> ProfileChunkedBuffer& {
-          CorePS::CoreBuffer().SetChunkManager(mProfileBufferChunkManager);
-          return CorePS::CoreBuffer();
+          ProfileChunkedBuffer& coreBuffer = profiler_get_core_buffer();
+          coreBuffer.SetChunkManager(mProfileBufferChunkManager);
+          return coreBuffer;
         }()),
         mMaybeProcessCPUCounter(ProfilerFeature::HasProcessCPU(aFeatures)
                                     ? new ProcessCPUCounter(aLock)
@@ -776,7 +763,7 @@ class ActivePS {
       }
     }
 #endif
-    CorePS::CoreBuffer().ResetChunkManager();
+    profiler_get_core_buffer().ResetChunkManager();
   }
 
   bool ThreadSelected(const char* aThreadName) {
@@ -1214,7 +1201,7 @@ class ActivePS {
     if (sInstance->mBaseProfileThreads &&
         sInstance->mGeckoIndexWhenBaseProfileAdded
                 .ConvertToProfileBufferIndex() <
-            CorePS::CoreBuffer().GetState().mRangeStart) {
+            profiler_get_core_buffer().GetState().mRangeStart) {
       DEBUG_LOG("ClearExpiredExitProfiles() - Discarding base profile %p",
                 sInstance->mBaseProfileThreads.get());
       sInstance->mBaseProfileThreads.reset();
@@ -1232,7 +1219,7 @@ class ActivePS {
     sInstance->mBaseProfileThreads = std::move(aBaseProfileThreads);
     sInstance->mGeckoIndexWhenBaseProfileAdded =
         ProfileBufferBlockIndex::CreateFromProfileBufferIndex(
-            CorePS::CoreBuffer().GetState().mRangeEnd);
+            profiler_get_core_buffer().GetState().mRangeEnd);
   }
 
   static UniquePtr<char[]> MoveBaseProfileThreads(PSLockRef aLock) {
@@ -3971,7 +3958,7 @@ void SamplerThread::Run() {
             
             
             if (!runningTimesDiff.IsEmpty()) {
-              CorePS::CoreBuffer().PutObjects(
+              profiler_get_core_buffer().PutObjects(
                   ProfileBufferEntry::Kind::RunningTimes, runningTimesDiff);
             }
 
@@ -4187,7 +4174,7 @@ void SamplerThread::Run() {
               
               
               if (unresponsiveDuration_ms.isSome()) {
-                CorePS::CoreBuffer().PutObjects(
+                profiler_get_core_buffer().PutObjects(
                     ProfileBufferEntry::Kind::UnresponsiveDurationMs,
                     *unresponsiveDuration_ms);
               }
@@ -4208,20 +4195,20 @@ void SamplerThread::Run() {
                            previousState.mFailedPutBytes));
               
               
-              CorePS::CoreBuffer().PutObjects(
+              profiler_get_core_buffer().PutObjects(
                   ProfileBufferEntry::Kind::CompactStack,
                   UniquePtr<ProfileChunkedBuffer>(nullptr));
             } else if (state.mRangeEnd - previousState.mRangeEnd >=
-                       *CorePS::CoreBuffer().BufferLength()) {
+                       *profiler_get_core_buffer().BufferLength()) {
               LOG("Stack sample too big for profiler storage, needed %u bytes",
                   unsigned(state.mRangeEnd - previousState.mRangeEnd));
               
               
-              CorePS::CoreBuffer().PutObjects(
+              profiler_get_core_buffer().PutObjects(
                   ProfileBufferEntry::Kind::CompactStack,
                   UniquePtr<ProfileChunkedBuffer>(nullptr));
             } else {
-              CorePS::CoreBuffer().PutObjects(
+              profiler_get_core_buffer().PutObjects(
                   ProfileBufferEntry::Kind::CompactStack, localBuffer);
             }
 
@@ -6452,7 +6439,7 @@ bool profiler_is_locked_on_current_thread() {
   return PSAutoLock::IsLockedOnCurrentThread() ||
          ThreadRegistry::IsRegistryMutexLockedOnCurrentThread() ||
          ThreadRegistration::IsDataMutexLockedOnCurrentThread() ||
-         CorePS::CoreBuffer().IsThreadSafeAndLockedOnCurrentThread() ||
+         profiler_get_core_buffer().IsThreadSafeAndLockedOnCurrentThread() ||
          ProfilerParent::IsLockedOnCurrentThread() ||
          ProfilerChild::IsLockedOnCurrentThread();
 }

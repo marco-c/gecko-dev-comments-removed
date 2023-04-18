@@ -183,6 +183,16 @@ void PrintToConsole(const char* aFmt, ...) {
   va_end(args);
 }
 
+ProfileChunkedBuffer& profiler_get_core_buffer() {
+  
+  
+  
+  
+  static ProfileChunkedBuffer sProfileChunkedBuffer{
+      ProfileChunkedBuffer::ThreadSafety::WithMutex};
+  return sProfileChunkedBuffer;
+}
+
 Atomic<int, MemoryOrdering::Relaxed> gSkipSampling;
 
 constexpr static bool ValidateFeatures() {
@@ -316,12 +326,7 @@ typedef const PSAutoLock& PSLockRef;
 class CorePS {
  private:
   CorePS()
-      : mProcessStartTime(TimeStamp::ProcessCreation()),
-        
-        
-        
-        
-        mCoreBuffer(ProfileChunkedBuffer::ThreadSafety::WithMutex)
+      : mProcessStartTime(TimeStamp::ProcessCreation())
 #ifdef USE_LUL_STACKWALK
         ,
         mLul(nullptr)
@@ -379,9 +384,6 @@ class CorePS {
 
   
   PS_GET_LOCKLESS(const TimeStamp&, ProcessStartTime)
-
-  
-  PS_GET_LOCKLESS(ProfileChunkedBuffer&, CoreBuffer)
 
   PS_GET(const Vector<UniquePtr<RegisteredThread>>&, RegisteredThreads)
 
@@ -490,17 +492,6 @@ class CorePS {
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  ProfileChunkedBuffer mCoreBuffer;
-
-  
-  
   Vector<UniquePtr<RegisteredThread>> mRegisteredThreads;
 
   
@@ -523,11 +514,6 @@ class CorePS {
 };
 
 CorePS* CorePS::sInstance = nullptr;
-
-ProfileChunkedBuffer& profiler_get_core_buffer() {
-  MOZ_ASSERT(CorePS::Exists());
-  return CorePS::CoreBuffer();
-}
 
 class SamplerThread;
 
@@ -629,8 +615,9 @@ class ActivePS {
             size_t(ClampToAllowedEntries(aCapacity.Value())) * scBytesPerEntry,
             ChunkSizeForEntries(aCapacity.Value())),
         mProfileBuffer([this]() -> ProfileChunkedBuffer& {
-          CorePS::CoreBuffer().SetChunkManager(mProfileBufferChunkManager);
-          return CorePS::CoreBuffer();
+          ProfileChunkedBuffer& buffer = profiler_get_core_buffer();
+          buffer.SetChunkManager(mProfileBufferChunkManager);
+          return buffer;
         }()),
         
         
@@ -650,7 +637,7 @@ class ActivePS {
     }
   }
 
-  ~ActivePS() { CorePS::CoreBuffer().ResetChunkManager(); }
+  ~ActivePS() { profiler_get_core_buffer().ResetChunkManager(); }
 
   bool ThreadSelected(const char* aThreadName) {
     if (mFiltersLowered.empty()) {
@@ -2338,11 +2325,11 @@ void SamplerThread::Run() {
               LOG("Stack sample too big for local storage, needed %u bytes",
                   unsigned(state.mRangeEnd - previousState.mRangeEnd));
             } else if (state.mRangeEnd - previousState.mRangeEnd >=
-                       *CorePS::CoreBuffer().BufferLength()) {
+                       *profiler_get_core_buffer().BufferLength()) {
               LOG("Stack sample too big for profiler storage, needed %u bytes",
                   unsigned(state.mRangeEnd - previousState.mRangeEnd));
             } else {
-              CorePS::CoreBuffer().AppendContents(localBuffer);
+              profiler_get_core_buffer().AppendContents(localBuffer);
             }
 
             
@@ -3651,7 +3638,7 @@ bool profiler_is_locked_on_current_thread() {
   
   
   return PSAutoLock::IsLockedOnCurrentThread() ||
-         CorePS::CoreBuffer().IsThreadSafeAndLockedOnCurrentThread();
+         profiler_get_core_buffer().IsThreadSafeAndLockedOnCurrentThread();
 }
 
 
