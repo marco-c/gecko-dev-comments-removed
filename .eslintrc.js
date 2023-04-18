@@ -561,5 +561,12 @@ module.exports = {
         "devtools/**",
       ],
     },
+    {
+      
+      files: ["toolkit/components/osfile/**"],
+      rules: {
+        "mozilla/reject-osfile": "off",
+      },
+    },
   ],
 };
