@@ -3404,7 +3404,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 124;
+    const UI_VERSION = 125;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     const PROFILE_DIR = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
@@ -4160,6 +4160,24 @@ BrowserGlue.prototype = {
       
       Services.prefs.clearUserPref(oldFormAutofillModule);
       Services.prefs.clearUserPref(oldCreditCardsAvailable);
+    }
+
+    if (currentUIVersion < 125) {
+      
+      
+      const PIP_PLAYER_URI =
+        "chrome://global/content/pictureinpicture/player.xhtml";
+      try {
+        for (let value of ["left", "top", "width", "height"]) {
+          Services.xulStore.removeValue(
+            PIP_PLAYER_URI,
+            "picture-in-picture",
+            value
+          );
+        }
+      } catch (ex) {
+        Cu.reportError("Failed to clear XULStore PiP values: " + ex);
+      }
     }
 
     
