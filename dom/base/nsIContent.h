@@ -372,6 +372,17 @@ class nsIContent : public nsINode {
 
   inline nsIContent* GetFlattenedTreeParent() const;
 
+  
+
+
+
+
+
+
+
+  mozilla::Maybe<uint32_t> ComputeFlatTreeIndexOf(
+      const nsINode* aPossibleChild) const;
+
  protected:
   
   

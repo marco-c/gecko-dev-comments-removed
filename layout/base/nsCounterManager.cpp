@@ -13,8 +13,10 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/WritingModes.h"
+#include "mozilla/dom/Element.h"
 #include "nsContentUtils.h"
 #include "nsIContent.h"
+#include "nsIContentInlines.h"
 #include "nsIFrame.h"
 #include "nsContainerFrame.h"
 #include "nsTArray.h"
@@ -131,6 +133,20 @@ void nsCounterUseNode::GetText(WritingMode aWM, CounterStyle* aStyle,
   }
 }
 
+static const nsIContent* GetParentContentForScope(nsIFrame* frame) {
+  
+  
+  
+  
+  nsIContent* content = frame->GetContent()->GetFlattenedTreeParent();
+  while (content && content->IsElement() &&
+         content->AsElement()->IsDisplayContents()) {
+    content = content->GetFlattenedTreeParent();
+  }
+
+  return content;
+}
+
 void nsCounterList::SetScope(nsCounterNode* aNode) {
   
   
@@ -207,8 +223,12 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
   
   
   
-  nsIContent* nodeContent = aNode->mPseudoFrame->GetContent()->GetParent();
-
+  
+  
+  
+  
+  
+  const nsIContent* nodeContent = GetParentContentForScope(aNode->mPseudoFrame);
   for (nsCounterNode *prev = Prev(aNode), *start; prev;
        prev = start->mScopePrev) {
     
@@ -221,7 +241,8 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
                 : prev->mScopeStart;
 
     
-    nsIContent* startContent = start->mPseudoFrame->GetContent()->GetParent();
+    const nsIContent* startContent =
+        GetParentContentForScope(start->mPseudoFrame);
     NS_ASSERTION(nodeContent || !startContent,
                  "null check on startContent should be sufficient to "
                  "null check nodeContent as well, since if nodeContent "
@@ -233,8 +254,8 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
           nodeContent == startContent) &&
         
         
-        
-        (!startContent || nodeContent->IsInclusiveDescendantOf(startContent))) {
+        (!startContent ||
+         nodeContent->IsInclusiveFlatTreeDescendantOf(startContent))) {
       aNode->mScopeStart = start;
       aNode->mScopePrev = prev;
       didSetScopeFor(aNode);
