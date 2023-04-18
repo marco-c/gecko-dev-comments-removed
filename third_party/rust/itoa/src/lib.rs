@@ -30,72 +30,19 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#![doc(html_root_url = "https://docs.rs/itoa/0.4.8")]
-#![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
-#![cfg_attr(
-    feature = "cargo-clippy",
-    allow(
-        expl_impl_clone_on_copy,
-        missing_errors_doc,
-        must_use_candidate,
-        transmute_ptr_to_ptr
-    )
+#![doc(html_root_url = "https://docs.rs/itoa/1.0.2")]
+#![no_std]
+#![allow(
+    clippy::cast_lossless,
+    clippy::cast_possible_truncation,
+    clippy::must_use_candidate,
+    clippy::unreadable_literal
 )]
 
-#[cfg(feature = "i128")]
 mod udiv128;
 
-#[cfg(feature = "std")]
-use std::{fmt, io, mem, ptr, slice, str};
-
-#[cfg(not(feature = "std"))]
-use core::{fmt, mem, ptr, slice, str};
-
-
-#[cfg(feature = "std")]
-#[inline]
-pub fn write<W: io::Write, V: Integer>(mut wr: W, value: V) -> io::Result<usize> {
-    let mut buf = Buffer::new();
-    let s = buf.format(value);
-    match wr.write_all(s.as_bytes()) {
-        Ok(()) => Ok(s.len()),
-        Err(e) => Err(e),
-    }
-}
-
-
-#[inline]
-pub fn fmt<W: fmt::Write, V: Integer>(mut wr: W, value: V) -> fmt::Result {
-    let mut buf = Buffer::new();
-    wr.write_str(buf.format(value))
-}
+use core::mem::{self, MaybeUninit};
+use core::{ptr, slice, str};
 
 
 
@@ -106,9 +53,9 @@ pub fn fmt<W: fmt::Write, V: Integer>(mut wr: W, value: V) -> fmt::Result {
 
 
 
-#[derive(Copy)]
+
 pub struct Buffer {
-    bytes: [u8; I128_MAX_LEN],
+    bytes: [MaybeUninit<u8>; I128_MAX_LEN],
 }
 
 impl Default for Buffer {
@@ -129,39 +76,35 @@ impl Buffer {
     
     
     #[inline]
-    #[allow(deprecated)]
     pub fn new() -> Buffer {
-        Buffer {
-            bytes: unsafe { mem::uninitialized() },
-        }
+        let bytes = [MaybeUninit::<u8>::uninit(); I128_MAX_LEN];
+        Buffer { bytes }
     }
 
     
     
     pub fn format<I: Integer>(&mut self, i: I) -> &str {
-        i.write(self)
+        i.write(unsafe {
+            &mut *(&mut self.bytes as *mut [MaybeUninit<u8>; I128_MAX_LEN]
+                as *mut <I as private::Sealed>::Buffer)
+        })
     }
 }
 
 
+
+
+pub trait Integer: private::Sealed {}
+
+
 mod private {
-    pub trait Sealed {}
+    pub trait Sealed: Copy {
+        type Buffer: 'static;
+        fn write(self, buf: &mut Self::Buffer) -> &str;
+    }
 }
 
-
-
-
-pub trait Integer: private::Sealed {
-    
-    #[doc(hidden)]
-    fn write(self, buf: &mut Buffer) -> &str;
-}
-
-trait IntegerPrivate<B> {
-    fn write_to(self, buf: &mut B) -> &[u8];
-}
-
-const DEC_DIGITS_LUT: &'static [u8] = b"\
+const DEC_DIGITS_LUT: &[u8] = b"\
       0001020304050607080910111213141516171819\
       2021222324252627282930313233343536373839\
       4041424344454647484950515253545556575859\
@@ -170,34 +113,16 @@ const DEC_DIGITS_LUT: &'static [u8] = b"\
 
 
 
-macro_rules! impl_IntegerCommon {
-    ($max_len:expr, $t:ident) => {
-        impl Integer for $t {
-            #[inline]
-            fn write(self, buf: &mut Buffer) -> &str {
-                unsafe {
-                    debug_assert!($max_len <= I128_MAX_LEN);
-                    let buf = mem::transmute::<&mut [u8; I128_MAX_LEN], &mut [u8; $max_len]>(
-                        &mut buf.bytes,
-                    );
-                    let bytes = self.write_to(buf);
-                    str::from_utf8_unchecked(bytes)
-                }
-            }
-        }
-
-        impl private::Sealed for $t {}
-    };
-}
-
 macro_rules! impl_Integer {
     ($($max_len:expr => $t:ident),* as $conv_fn:ident) => {$(
-        impl_IntegerCommon!($max_len, $t);
+        impl Integer for $t {}
 
-        impl IntegerPrivate<[u8; $max_len]> for $t {
+        impl private::Sealed for $t {
+            type Buffer = [MaybeUninit<u8>; $max_len];
+
             #[allow(unused_comparisons)]
             #[inline]
-            fn write_to(self, buf: &mut [u8; $max_len]) -> &[u8] {
+            fn write(self, buf: &mut [MaybeUninit<u8>; $max_len]) -> &str {
                 let is_nonnegative = self >= 0;
                 let mut n = if is_nonnegative {
                     self as $conv_fn
@@ -206,7 +131,7 @@ macro_rules! impl_Integer {
                     (!(self as $conv_fn)).wrapping_add(1)
                 };
                 let mut curr = buf.len() as isize;
-                let buf_ptr = buf.as_mut_ptr();
+                let buf_ptr = buf.as_mut_ptr() as *mut u8;
                 let lut_ptr = DEC_DIGITS_LUT.as_ptr();
 
                 unsafe {
@@ -253,7 +178,8 @@ macro_rules! impl_Integer {
                 }
 
                 let len = buf.len() - curr as usize;
-                unsafe { slice::from_raw_parts(buf_ptr.offset(curr), len) }
+                let bytes = unsafe { slice::from_raw_parts(buf_ptr.offset(curr), len) };
+                unsafe { str::from_utf8_unchecked(bytes) }
             }
         }
     )*};
@@ -288,15 +214,16 @@ impl_Integer!(I32_MAX_LEN => isize, U32_MAX_LEN => usize as u32);
 #[cfg(target_pointer_width = "64")]
 impl_Integer!(I64_MAX_LEN => isize, U64_MAX_LEN => usize as u64);
 
-#[cfg(all(feature = "i128"))]
 macro_rules! impl_Integer128 {
     ($($max_len:expr => $t:ident),*) => {$(
-        impl_IntegerCommon!($max_len, $t);
+        impl Integer for $t {}
 
-        impl IntegerPrivate<[u8; $max_len]> for $t {
+        impl private::Sealed for $t {
+            type Buffer = [MaybeUninit<u8>; $max_len];
+
             #[allow(unused_comparisons)]
             #[inline]
-            fn write_to(self, buf: &mut [u8; $max_len]) -> &[u8] {
+            fn write(self, buf: &mut [MaybeUninit<u8>; $max_len]) -> &str {
                 let is_nonnegative = self >= 0;
                 let n = if is_nonnegative {
                     self as u128
@@ -305,13 +232,13 @@ macro_rules! impl_Integer128 {
                     (!(self as u128)).wrapping_add(1)
                 };
                 let mut curr = buf.len() as isize;
-                let buf_ptr = buf.as_mut_ptr();
+                let buf_ptr = buf.as_mut_ptr() as *mut u8;
 
                 unsafe {
                     // Divide by 10^19 which is the highest power less than 2^64.
                     let (n, rem) = udiv128::udivmod_1e19(n);
-                    let buf1 = buf_ptr.offset(curr - U64_MAX_LEN as isize) as *mut [u8; U64_MAX_LEN];
-                    curr -= rem.write_to(&mut *buf1).len() as isize;
+                    let buf1 = buf_ptr.offset(curr - U64_MAX_LEN as isize) as *mut [MaybeUninit<u8>; U64_MAX_LEN];
+                    curr -= rem.write(&mut *buf1).len() as isize;
 
                     if n != 0 {
                         // Memset the base10 leading zeros of rem.
@@ -321,8 +248,8 @@ macro_rules! impl_Integer128 {
 
                         // Divide by 10^19 again.
                         let (n, rem) = udiv128::udivmod_1e19(n);
-                        let buf2 = buf_ptr.offset(curr - U64_MAX_LEN as isize) as *mut [u8; U64_MAX_LEN];
-                        curr -= rem.write_to(&mut *buf2).len() as isize;
+                        let buf2 = buf_ptr.offset(curr - U64_MAX_LEN as isize) as *mut [MaybeUninit<u8>; U64_MAX_LEN];
+                        curr -= rem.write(&mut *buf2).len() as isize;
 
                         if n != 0 {
                             // Memset the leading zeros.
@@ -343,16 +270,15 @@ macro_rules! impl_Integer128 {
                     }
 
                     let len = buf.len() - curr as usize;
-                    slice::from_raw_parts(buf_ptr.offset(curr), len)
+                    let bytes = slice::from_raw_parts(buf_ptr.offset(curr), len);
+                    str::from_utf8_unchecked(bytes)
                 }
             }
         }
     )*};
 }
 
-#[cfg(all(feature = "i128"))]
 const U128_MAX_LEN: usize = 39;
 const I128_MAX_LEN: usize = 40;
 
-#[cfg(all(feature = "i128"))]
 impl_Integer128!(I128_MAX_LEN => i128, U128_MAX_LEN => u128);
