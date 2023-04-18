@@ -3,12 +3,15 @@
 
 
 
+include "VRGPUParent.h";
+include "VRGPUChild.h";
+
 namespace mozilla {
 namespace gfx {
 
 
 
-[NeedsOtherPid]
+[NeedsOtherPid, ChildImpl="VRGPUChild", ParentImpl="VRGPUParent"]
 async protocol PVRGPU
 {
 parent:

@@ -1,8 +1,8 @@
-/* -*- Mode: C++; c-basic-offset: 2; indent-tabs-mode: nil; tab-width: 8 -*- */
-/* vim: set sw=4 ts=8 et tw=80 ft=cpp : */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 include protocol PBackground;
 
@@ -14,9 +14,10 @@ using mozilla::OriginAttributesPattern
 namespace mozilla {
 namespace dom {
 
-/* This protocol bridges async access to the database thread running on the
- * parent process and caches running on the child process.
- */
+
+
+
+[ChildImpl=virtual, ParentImpl=virtual]
 sync protocol PBackgroundStorage
 {
   manager PBackground;
@@ -41,11 +42,11 @@ parent:
   async AsyncClear(nsCString originSuffix, nsCString originNoSuffix);
   async AsyncFlush();
 
-  // These are privileged operations for use only by the observer API for
-  // delayed initialization and clearing origins and will never be used from
-  // content process children.  Ideally these would be guarded by checks or
-  // exist on a separate, privileged interface, but PBackgroundStorage is
-  // already insecure.
+  
+  
+  
+  
+  
   async Startup();
   async ClearAll();
   async ClearMatchingOrigin(nsCString originNoSuffix);
