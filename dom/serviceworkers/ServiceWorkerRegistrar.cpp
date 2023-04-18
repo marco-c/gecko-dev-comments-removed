@@ -1312,48 +1312,53 @@ void ServiceWorkerRegistrar::ProfileStopped() {
     nsresult rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
                                          getter_AddRefs(mProfileDir));
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      return;
+      
+      MOZ_DIAGNOSTIC_ASSERT(
+          false,
+          "NS_GetSpecialDirectory for NS_APP_USER_PROFILE_50_DIR failed!");
     }
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   PBackgroundChild* child = BackgroundChild::GetForCurrentThread();
-  if (!child) {
+  if (mProfileDir && child) {
+    if (child->SendShutdownServiceWorkerRegistrar()) {
+      
+      return;
+    }
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    mShuttingDown = true;
-    ShutdownCompleted();
-    return;
+    MOZ_DIAGNOSTIC_ASSERT(
+        false, "Unable to send the ShutdownServiceWorkerRegistrar message.");
   }
 
-  if (!child->SendShutdownServiceWorkerRegistrar()) {
-    
-    
-    MOZ_CRASH("Unable to send the ShutdownServiceWorkerRegistrar message.");
-  }
+  
+  
+  
+  
+  mShuttingDown = true;
+  ShutdownCompleted();
 }
 
 
