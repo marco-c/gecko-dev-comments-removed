@@ -1668,7 +1668,6 @@ GCMarker::MarkQueueProgress GCMarker::processMarkQueue() {
   
   
   
-  bool willRevertToGray = markColor() == MarkColor::Gray;
   AutoSetMarkColor autoRevertColor(*this, queueMarkColor.valueOr(markColor()));
 
   
@@ -1701,14 +1700,6 @@ GCMarker::MarkQueueProgress GCMarker::processMarkQueue() {
       }
 
       if (markColor() == MarkColor::Gray && zone->isGCMarkingBlackOnly()) {
-        
-        
-        queuePos--;
-        return QueueSuspended;
-      }
-
-      if (markColor() == MarkColor::Black && willRevertToGray) {
-        
         
         
         queuePos--;
