@@ -3,6 +3,7 @@
 
 
 const path = require("path");
+const webpack = require("webpack");
 
 const PATHS = {
   
@@ -224,7 +225,16 @@ module.exports = function(config) {
       resolve: {
         extensions: [".js", ".jsx"],
         modules: [PATHS.moduleResolveDirectory, "node_modules"],
+        fallback: {
+          stream: require.resolve("stream-browserify"),
+          buffer: require.resolve("buffer"),
+        },
       },
+      plugins: [
+        new webpack.DefinePlugin({
+          "process.env.NODE_ENV": JSON.stringify("development"),
+        }),
+      ],
       externals: {
         
         
