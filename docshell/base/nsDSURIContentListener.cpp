@@ -138,26 +138,8 @@ nsDSURIContentListener::DoContent(const nsACString& aContentType,
 
   
   nsLoadFlags loadFlags = 0;
-  nsCOMPtr<nsIChannel> aOpenedChannel = do_QueryInterface(aRequest);
-
-  if (aOpenedChannel) {
-    aOpenedChannel->GetLoadFlags(&loadFlags);
-
-    
-    if (!nsContentSecurityManager::AllowTopLevelNavigationToDataURI(
-            aOpenedChannel)) {
-      
-      aRequest->Cancel(NS_ERROR_DOM_BAD_URI);
-      *aAbortProcess = true;
-      
-      if (mDocShell && mDocShell->GetBrowsingContext()) {
-        RefPtr<MaybeCloseWindowHelper> maybeCloseWindowHelper =
-            new MaybeCloseWindowHelper(mDocShell->GetBrowsingContext());
-        maybeCloseWindowHelper->SetShouldCloseWindow(true);
-        Unused << maybeCloseWindowHelper->MaybeCloseWindow();
-      }
-      return NS_OK;
-    }
+  if (nsCOMPtr<nsIChannel> openedChannel = do_QueryInterface(aRequest)) {
+    openedChannel->GetLoadFlags(&loadFlags);
   }
 
   if (loadFlags & nsIChannel::LOAD_RETARGETED_DOCUMENT_URI) {
