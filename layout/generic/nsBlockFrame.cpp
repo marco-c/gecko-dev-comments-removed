@@ -2139,35 +2139,46 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
                                         const nsStyleDisplay* aDisplay) const {
   
   
-  if (ShouldApplyOverflowClipping(aDisplay) != PhysicalAxes::Both) {
-    for (const auto& line : Lines()) {
-      if (aDisplay->IsContainLayout()) {
-        
-        
-        
-        
-        
-        
-        nsRect childVisualRect = line.InkOverflowRect();
-        OverflowAreas childVisualArea =
-            OverflowAreas(childVisualRect, nsRect());
-        aOverflowAreas.UnionWith(childVisualArea);
-      } else {
-        aOverflowAreas.UnionWith(line.GetOverflowAreas());
-      }
-    }
+  auto overflowClipAxes = ShouldApplyOverflowClipping(aDisplay);
+  auto overflowClipMargin = OverflowClipMargin(overflowClipAxes);
+  if (overflowClipAxes == PhysicalAxes::Both &&
+      overflowClipMargin == nsSize()) {
+    return;
+  }
 
-    
-    
-    
-    
-    
-    if (nsIFrame* outsideMarker = GetOutsideMarker()) {
-      aOverflowAreas.UnionAllWith(outsideMarker->GetRect());
-    }
+  
+  nsRect frameBounds = aOverflowAreas.ScrollableOverflow();
 
-    ConsiderBlockEndEdgeOfChildren(aOverflowAreas, aBEndEdgeOfChildren,
-                                   aDisplay);
+  for (const auto& line : Lines()) {
+    if (aDisplay->IsContainLayout()) {
+      
+      
+      
+      
+      
+      
+      nsRect childVisualRect = line.InkOverflowRect();
+      OverflowAreas childVisualArea = OverflowAreas(childVisualRect, nsRect());
+      aOverflowAreas.UnionWith(childVisualArea);
+    } else {
+      aOverflowAreas.UnionWith(line.GetOverflowAreas());
+    }
+  }
+
+  
+  
+  
+  
+  
+  if (nsIFrame* outsideMarker = GetOutsideMarker()) {
+    aOverflowAreas.UnionAllWith(outsideMarker->GetRect());
+  }
+
+  ConsiderBlockEndEdgeOfChildren(aOverflowAreas, aBEndEdgeOfChildren, aDisplay);
+
+  if (overflowClipAxes != PhysicalAxes::None) {
+    aOverflowAreas.ApplyClipping(frameBounds, overflowClipAxes,
+                                 overflowClipMargin);
   }
 
 #ifdef NOISY_OVERFLOW_AREAS
