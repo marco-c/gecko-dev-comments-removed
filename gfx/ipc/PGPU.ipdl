@@ -92,7 +92,7 @@ parent:
 
   
   
-  sync SimulateDeviceReset() returns (GPUDeviceData status);
+  async SimulateDeviceReset();
 
   
   
