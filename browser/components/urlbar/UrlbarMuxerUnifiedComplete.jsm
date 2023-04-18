@@ -888,6 +888,31 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     
     
     
+    if (
+      result.source == UrlbarUtils.RESULT_SOURCE.HISTORY &&
+      result.type == UrlbarUtils.RESULT_TYPE.URL
+    ) {
+      let param = Services.prefs.getCharPref(
+        "browser.newtabpage.activity-stream.hideTopSitesWithSearchParam"
+      );
+      if (param) {
+        let [key, value] = param.split("=");
+        let searchParams;
+        try {
+          ({ searchParams } = new URL(result.payload.url));
+        } catch (error) {}
+        if (
+          (value === undefined && searchParams?.has(key)) ||
+          (value !== undefined && searchParams?.getAll(key).includes(value))
+        ) {
+          return false;
+        }
+      }
+    }
+
+    
+    
+    
     
     
     
