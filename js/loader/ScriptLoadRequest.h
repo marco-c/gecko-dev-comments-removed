@@ -180,17 +180,25 @@ class ScriptLoadRequest
 
   virtual void Cancel();
 
-  bool IsCanceled() const { return mIsCanceled; }
-
   virtual void SetReady();
 
-  enum class State : uint8_t { Fetching, Compiling, LoadingImports, Ready };
+  enum class State : uint8_t {
+    Fetching,
+    Compiling,
+    LoadingImports,
+    Ready,
+    Canceled
+  };
 
-  bool IsReadyToRun() const { return mState == State::Ready; }
+  bool IsReadyToRun() const {
+    return mState == State::Ready || mState == State::Canceled;
+  }
 
   bool IsLoading() const { return mState == State::Fetching; }
 
   bool InCompilingStage() const { return mState == State::Compiling; }
+
+  bool IsCanceled() const { return mState == State::Canceled; }
 
   
   enum class DataType : uint8_t { eUnknown, eTextSource, eBytecode };
@@ -286,10 +294,9 @@ class ScriptLoadRequest
   const ScriptKind mKind;  
                            
 
-  bool mIsCanceled;    
-  State mState;        
+  State mState;           
   bool mFetchSourceOnly;  
-  DataType mDataType;  
+  DataType mDataType;     
   RefPtr<ScriptFetchOptions> mFetchOptions;
   const SRIMetadata mIntegrity;
   const nsCOMPtr<nsIURI> mReferrer;
