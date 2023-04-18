@@ -95,7 +95,3 @@ user_pref("startup.homepage_welcome_url.additional", "");
 
 
 user_pref("browser.tabs.remote.systemTriggeredAboutBlankAnywhere", true);
-
-
-
-user_pref("fission.autostart", false);
