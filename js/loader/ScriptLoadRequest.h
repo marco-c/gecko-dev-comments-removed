@@ -295,7 +295,7 @@ class ScriptLoadRequest
 
   bool HasLoadContext() { return mLoadContext; }
 
-  mozilla::dom::ScriptLoadContext* GetLoadContext();
+  mozilla::dom::ScriptLoadContext* GetScriptLoadContext();
 
   const ScriptKind mKind;  
                            
