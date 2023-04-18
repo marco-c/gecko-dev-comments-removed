@@ -20,13 +20,6 @@
 class nsPrintObject;
 class nsIWebProgressListener;
 
-
-
-
-
-
-
-
 class nsPrintData {
  public:
   typedef enum { eIsPrinting, eIsPrintPreview } ePrintDataType;
@@ -61,8 +54,7 @@ class nsPrintData {
   nsTArray<nsPrintObject*> mPrintDocList;
 
   bool mOnStartSent;
-  bool mIsAborted;          
-  bool mPreparingForPrint;  
+  bool mIsAborted;  
 
  private:
   nsPrintData() = delete;

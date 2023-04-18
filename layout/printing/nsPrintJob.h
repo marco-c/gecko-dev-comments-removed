@@ -268,6 +268,11 @@ class nsPrintJob final : public nsIWebProgressListener,
 
   int32_t mNumPrintablePages = 0;
 
+  
+  
+  
+  bool mPreparingForPrint = false;
+
   bool mCreatedForPrintPreview = false;
   bool mIsCreatingPrintPreview = false;
   bool mIsDoingPrinting = false;
