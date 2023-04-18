@@ -65,7 +65,7 @@ class Addresses extends AddressesBase {
 
 
   async mergeIfPossible(guid, address, strict) {
-    this.log.debug("mergeIfPossible:", guid, address);
+    this.log.debug(`mergeIfPossible: ${guid}`);
 
     let addressFound = this._findByGUID(guid);
     if (!addressFound) {
@@ -190,7 +190,7 @@ class CreditCards extends CreditCardsBase {
 
 
   async mergeIfPossible(guid, creditCard) {
-    this.log.debug("mergeIfPossible:", guid, creditCard);
+    this.log.debug(`mergeIfPossible: ${guid}`);
 
     
     if (!creditCard["cc-number"]) {
