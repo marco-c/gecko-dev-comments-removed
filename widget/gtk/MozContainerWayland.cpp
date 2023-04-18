@@ -361,6 +361,10 @@ static gboolean moz_container_wayland_map_event(GtkWidget* widget,
 
   
   
+  gtk_widget_set_mapped(widget, TRUE);
+
+  
+  
   if (wl_container->ready_to_draw || wl_container->before_first_size_alloc) {
     return FALSE;
   }
