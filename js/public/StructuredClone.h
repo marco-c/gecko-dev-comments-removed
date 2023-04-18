@@ -179,6 +179,12 @@ enum class StructuredCloneScope : uint32_t {
   UnknownDestination,
 };
 
+
+
+
+
+
+
 enum TransferableOwnership {
   
   SCTAG_TMO_UNFILLED = 0,
@@ -190,7 +196,7 @@ enum TransferableOwnership {
   SCTAG_TMO_FIRST_OWNED = 2,
 
   
-  SCTAG_TMO_ALLOC_DATA = 2,
+  SCTAG_TMO_ALLOC_DATA = SCTAG_TMO_FIRST_OWNED,
 
   
   SCTAG_TMO_MAPPED_DATA = 3,
@@ -198,9 +204,12 @@ enum TransferableOwnership {
   
 
 
-
-
   SCTAG_TMO_CUSTOM = 4,
+
+  
+
+
+
 
   SCTAG_TMO_USER_MIN
 };
@@ -312,6 +321,19 @@ typedef bool (*TransferStructuredCloneOp)(JSContext* cx,
                                           uint32_t* tag,
                                           JS::TransferableOwnership* ownership,
                                           void** content, uint64_t* extraData);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
