@@ -1,15 +1,26 @@
 @charset "UTF-8";
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @import url("resource://content-accessible/viewsource.css");
+
+:host {
+  color-scheme: light dark;
+}
 
 #header {
   background-color: #ccc;
   border-bottom: 3px solid black;
   padding: 0.5em;
   margin-bottom: 1em;
+}
+
+@media (prefers-color-scheme: dark) {
+  #header {
+    background-color: #333;
+    border-color: #555;
+  }
 }
 
 #tree,
@@ -36,8 +47,8 @@
 .expandable-opening::marker {
   cursor: pointer;
   padding-inline-end: 2px;
-  
-  color: initial;
+  /* Don't want to inherit the styling from pi and comment elements */
+  color: buttontext;
   font: initial;
 }
 
