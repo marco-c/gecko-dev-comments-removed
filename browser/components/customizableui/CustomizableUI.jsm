@@ -2138,19 +2138,6 @@ var CustomizableUIInternal = {
 
 
   _isOnInteractiveElement(aEvent) {
-    function getMenuPopupForDescendant(aNode) {
-      let lastPopup = null;
-      while (
-        aNode &&
-        aNode.parentNode &&
-        aNode.parentNode.localName.startsWith("menu")
-      ) {
-        lastPopup = aNode.localName == "menupopup" ? aNode : lastPopup;
-        aNode = aNode.parentNode;
-      }
-      return lastPopup;
-    }
-
     let target = aEvent.originalTarget;
     let panel = this._getPanelForNode(aEvent.currentTarget);
     
@@ -2165,13 +2152,11 @@ var CustomizableUIInternal = {
     let inMenu = false;
     
     let inItem = false;
-    
-    let menuitemCloseMenu = "auto";
 
     
     
     
-    while (true && target) {
+    while (target) {
       
       if (target.nodeType == target.DOCUMENT_NODE) {
         if (!target.defaultView) {
@@ -2187,16 +2172,8 @@ var CustomizableUIInternal = {
       let tagName = target.localName;
       inInput = tagName == "input" || tagName == "searchbar";
       inItem = tagName == "toolbaritem" || tagName == "toolbarbutton";
-      let isMenuItem = tagName == "menuitem";
-      inMenu = inMenu || isMenuItem;
+      inMenu = tagName == "menuitem";
 
-      if (isMenuItem && target.hasAttribute("closemenu")) {
-        let closemenuVal = target.getAttribute("closemenu");
-        menuitemCloseMenu =
-          closemenuVal == "single" || closemenuVal == "none"
-            ? closemenuVal
-            : "auto";
-      }
       
       
       if (target.getAttribute("disabled") == "true") {
@@ -2205,38 +2182,19 @@ var CustomizableUIInternal = {
 
       
       
-      if (inInput || inItem || target == panel) {
+      if (inMenu || inInput || inItem || target == panel) {
         break;
       }
       
-      
-      if (isMenuItem) {
-        let topmostMenuPopup = getMenuPopupForDescendant(target);
-        target =
-          (topmostMenuPopup && topmostMenuPopup.triggerNode) ||
-          target.parentNode;
-      } else {
-        
-        target = target.parentNode?.host?.parentNode || target.parentNode;
-      }
+      target = target.parentNode?.host?.parentNode || target.parentNode;
     }
-
-    
-    if (inMenu) {
+    return (
+      inMenu ||
+      inInput ||
       
       
-      if (inInput || menuitemCloseMenu != "auto") {
-        return true;
-      }
-      
-      return false;
-    }
-    
-    
-    if (inItem && target.getAttribute("type") == "menu") {
-      return true;
-    }
-    return inInput || !inItem;
+      (inItem && target.getAttribute("type") == "menu")
+    );
   },
 
   hidePanelForNode(aNode) {
@@ -2247,24 +2205,25 @@ var CustomizableUIInternal = {
   },
 
   maybeAutoHidePanel(aEvent) {
-    if (aEvent.type == "keypress") {
-      if (aEvent.keyCode != aEvent.DOM_VK_RETURN) {
-        return;
-      }
-      
-      
-      
-      
-    } else if (aEvent.type != "command") {
-      
-      if (aEvent.defaultPrevented || aEvent.button != 0) {
-        return;
-      }
-      let isInteractive = this._isOnInteractiveElement(aEvent);
-      log.debug("maybeAutoHidePanel: interactive ? " + isInteractive);
-      if (isInteractive) {
-        return;
-      }
+    let eventType = aEvent.type;
+    if (eventType == "keypress" && aEvent.keyCode != aEvent.DOM_VK_RETURN) {
+      return;
+    }
+
+    
+    
+    
+    
+    if (
+      eventType != "command" &&
+      eventType != "keypress" &&
+      (aEvent.defaultPrevented || aEvent.button != 0)
+    ) {
+      return;
+    }
+
+    if (eventType != "command" && this._isOnInteractiveElement(aEvent)) {
+      return;
     }
 
     
