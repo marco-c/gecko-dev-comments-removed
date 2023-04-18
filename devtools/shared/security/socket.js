@@ -11,7 +11,7 @@ Cc["@mozilla.org/psm;1"].getService(Ci.nsISupports);
 
 var Services = require("Services");
 var DevToolsUtils = require("devtools/shared/DevToolsUtils");
-var { dumpn, dumpv } = DevToolsUtils;
+var { dumpn } = DevToolsUtils;
 loader.lazyRequireGetter(
   this,
   "WebSocketServer",
@@ -33,7 +33,6 @@ loader.lazyRequireGetter(
   "discovery",
   "devtools/shared/discovery/discovery"
 );
-loader.lazyRequireGetter(this, "cert", "devtools/shared/security/cert");
 loader.lazyRequireGetter(
   this,
   "Authenticators",
@@ -65,23 +64,7 @@ DevToolsUtils.defineLazyGetter(this, "socketTransportService", () => {
   );
 });
 
-DevToolsUtils.defineLazyGetter(this, "certOverrideService", () => {
-  return Cc["@mozilla.org/security/certoverride;1"].getService(
-    Ci.nsICertOverrideService
-  );
-});
-
-DevToolsUtils.defineLazyGetter(this, "nssErrorsService", () => {
-  return Cc["@mozilla.org/nss_errors_service;1"].getService(
-    Ci.nsINSSErrorsService
-  );
-});
-
 var DebuggerSocket = {};
-
-
-
-
 
 
 
@@ -105,13 +88,11 @@ DebuggerSocket.connect = async function(settings) {
   }
   _validateSettings(settings);
   
-  const { host, port, encryption, authenticator, cert } = settings;
+  const { host, port, authenticator } = settings;
   const transport = await _getTransport(settings);
   await authenticator.authenticate({
     host,
     port,
-    encryption,
-    cert,
     transport,
   });
   transport.connectionSettings = settings;
@@ -122,11 +103,8 @@ DebuggerSocket.connect = async function(settings) {
 
 
 function _validateSettings(settings) {
-  const { encryption, webSocket, authenticator } = settings;
+  const { authenticator } = settings;
 
-  if (webSocket && encryption) {
-    throw new Error("Encryption not supported on WebSocket transport");
-  }
   authenticator.validateSettings(settings);
 }
 
@@ -147,12 +125,8 @@ function _validateSettings(settings) {
 
 
 
-
-
-
-
 var _getTransport = async function(settings) {
-  const { host, port, encryption, webSocket } = settings;
+  const { host, port, webSocket } = settings;
 
   if (webSocket) {
     
@@ -165,37 +139,14 @@ var _getTransport = async function(settings) {
     return new WebSocketDebuggerTransport(socket);
   }
 
-  let attempt = await _attemptTransport(settings);
+  const attempt = await _attemptTransport(settings);
   if (attempt.transport) {
     
     return attempt.transport;
   }
 
-  
-  
-  if (encryption && attempt.certError) {
-    _storeCertOverride(attempt.s, host, port);
-  } else {
-    throw new Error("Connection failed");
-  }
-
-  attempt = await _attemptTransport(settings);
-  if (attempt.transport) {
-    
-    return attempt.transport;
-  }
-
-  throw new Error("Connection failed even after cert override");
+  throw new Error("Connection failed");
 };
-
-
-
-
-
-
-
-
-
 
 
 
@@ -220,12 +171,10 @@ var _attemptTransport = async function(settings) {
   const { s, input, output } = await _attemptConnect(settings);
 
   
-  
-  let alive, certError;
+  let alive;
   try {
     const results = await _isInputAlive(input);
     alive = results.alive;
-    certError = results.certError;
   } catch (e) {
     
     
@@ -233,7 +182,6 @@ var _attemptTransport = async function(settings) {
     output.close();
     throw e;
   }
-  dumpv("Server cert accepted? " + !certError);
 
   
   
@@ -242,8 +190,6 @@ var _attemptTransport = async function(settings) {
     authenticator.validateConnection({
       host: settings.host,
       port: settings.port,
-      encryption: settings.encryption,
-      cert: settings.cert,
       socket: s,
     });
 
@@ -256,7 +202,7 @@ var _attemptTransport = async function(settings) {
     output.close();
   }
 
-  return { transport, certError, s };
+  return { transport, s };
 };
 
 
@@ -273,13 +219,8 @@ var _attemptTransport = async function(settings) {
 
 
 
-var _attemptConnect = async function({ host, port, encryption }) {
-  let s;
-  if (encryption) {
-    s = socketTransportService.createTransport(["ssl"], host, port, null, null);
-  } else {
-    s = socketTransportService.createTransport([], host, port, null, null);
-  }
+var _attemptConnect = async function({ host, port }) {
+  const s = socketTransportService.createTransport([], host, port, null, null);
 
   
   
@@ -292,34 +233,14 @@ var _attemptConnect = async function({ host, port, encryption }) {
   
   s.setTimeout(Ci.nsISocketTransport.TIMEOUT_CONNECT, 2);
 
-  
-  
-  let clientCert;
-  if (encryption) {
-    clientCert = await cert.local.getOrCreate();
-  }
-
   let input;
   let output;
   return new Promise((resolve, reject) => {
-    
-    
-    
-    
-    
-    
-    
     s.setEventSink(
       {
         onTransportStatus(transport, status) {
           if (status != Ci.nsISocketTransport.STATUS_CONNECTING_TO) {
             return;
-          }
-          if (encryption) {
-            const sslSocketControl = transport.securityInfo.QueryInterface(
-              Ci.nsISSLSocketControl
-            );
-            sslSocketControl.clientCert = clientCert;
           }
           try {
             input = s.openInputStream(0, 0, 0);
@@ -354,8 +275,6 @@ var _attemptConnect = async function({ host, port, encryption }) {
 
 
 
-
-
 function _isInputAlive(input) {
   return new Promise((resolve, reject) => {
     input.asyncWait(
@@ -365,17 +284,7 @@ function _isInputAlive(input) {
             stream.available();
             resolve({ alive: true });
           } catch (e) {
-            try {
-              
-              const errorClass = nssErrorsService.getErrorClass(e.result);
-              if (errorClass === Ci.nsINSSErrorsService.ERROR_CLASS_BAD_CERT) {
-                resolve({ certError: true });
-              } else {
-                reject(e);
-              }
-            } catch (nssErr) {
-              reject(e);
-            }
+            reject(e);
           }
         },
       },
@@ -385,31 +294,6 @@ function _isInputAlive(input) {
     );
   });
 }
-
-
-
-
-
-
-function _storeCertOverride(s, host, port) {
-  
-  const cert = s.securityInfo.QueryInterface(Ci.nsITransportSecurityInfo)
-    .serverCert;
-  const overrideBits =
-    Ci.nsICertOverrideService.ERROR_UNTRUSTED |
-    Ci.nsICertOverrideService.ERROR_MISMATCH;
-  certOverrideService.rememberValidityOverride(
-    host,
-    port,
-    {},
-    cert,
-    overrideBits,
-    true 
-  );
-}
-
-
-
 
 
 
@@ -452,7 +336,6 @@ function SocketListener(devToolsServer, socketOptions) {
     authenticator:
       socketOptions.authenticator || new (Authenticators.get().Server)(),
     discoverable: !!socketOptions.discoverable,
-    encryption: !!socketOptions.encryption,
     fromBrowserToolbox: !!socketOptions.fromBrowserToolbox,
     portOrPath: socketOptions.portOrPath || null,
     webSocket: !!socketOptions.webSocket,
@@ -468,10 +351,6 @@ SocketListener.prototype = {
 
   get discoverable() {
     return this._socketOptions.discoverable;
-  },
-
-  get encryption() {
-    return this._socketOptions.encryption;
   },
 
   get fromBrowserToolbox() {
@@ -496,10 +375,6 @@ SocketListener.prototype = {
     if (this.discoverable && !Number(this.portOrPath)) {
       throw new Error("Discovery only supported for TCP sockets.");
     }
-    if (this.encryption && this.webSocket) {
-      throw new Error("Encryption not supported on WebSocket transport");
-    }
-    this.authenticator.validateOptions(this);
   },
 
   
@@ -532,7 +407,6 @@ SocketListener.prototype = {
         
         self._socket.initWithAbstractAddress(self.portOrPath, backlog);
       }
-      await self._setAdditionalSocketOptions();
       self._socket.asyncListen(self);
       dumpn("Socket listening on: " + (self.port || self.portOrPath));
     })()
@@ -560,7 +434,6 @@ SocketListener.prototype = {
 
     const advertisement = {
       port: this.port,
-      encryption: this.encryption,
     };
 
     this.authenticator.augmentAdvertisement(this, advertisement);
@@ -569,24 +442,9 @@ SocketListener.prototype = {
   },
 
   _createSocketInstance: function() {
-    if (this.encryption) {
-      return Cc["@mozilla.org/network/tls-server-socket;1"].createInstance(
-        Ci.nsITLSServerSocket
-      );
-    }
     return Cc["@mozilla.org/network/server-socket;1"].createInstance(
       Ci.nsIServerSocket
     );
-  },
-
-  async _setAdditionalSocketOptions() {
-    if (this.encryption) {
-      this._socket.serverCert = await cert.local.getOrCreate();
-      this._socket.setSessionTickets(false);
-      const requestCert = Ci.nsITLSServerSocket.REQUEST_NEVER;
-      this._socket.setRequestClientCertificate(requestCert);
-    }
-    this.authenticator.augmentSocketOptions(this, this._socket);
   },
 
   
@@ -636,15 +494,6 @@ SocketListener.prototype = {
     return this._socket.port;
   },
 
-  get cert() {
-    if (!this._socket || !this._socket.serverCert) {
-      return null;
-    }
-    return {
-      sha256: this._socket.serverCert.sha256Fingerprint,
-    };
-  },
-
   onAllowedConnection(transport) {
     dumpn("onAllowedConnection, transport: " + transport);
     this.emit("accepted", transport, this);
@@ -665,13 +514,6 @@ SocketListener.prototype = {
     dumpn("onStopListening, status: " + status);
   },
 };
-
-
-loader.lazyGetter(this, "HANDSHAKE_TIMEOUT", () => {
-  return Services.prefs.getIntPref("devtools.remote.tls-handshake-timeout");
-});
-
-
 
 
 
@@ -697,15 +539,6 @@ ServerSocketConnection.prototype = {
     return this._socketTransport.port;
   },
 
-  get cert() {
-    if (!this._clientCert) {
-      return null;
-    }
-    return {
-      sha256: this._clientCert.sha256Fingerprint,
-    };
-  },
-
   get address() {
     return this.host + ":" + this.port;
   },
@@ -715,9 +548,6 @@ ServerSocketConnection.prototype = {
       host: this.host,
       port: this.port,
     };
-    if (this.cert) {
-      client.cert = this.cert;
-    }
     return client;
   },
 
@@ -726,9 +556,6 @@ ServerSocketConnection.prototype = {
       host: this._listener.host,
       port: this._listener.port,
     };
-    if (this._listener.cert) {
-      server.cert = this._listener.cert;
-    }
     return server;
   },
 
@@ -740,9 +567,7 @@ ServerSocketConnection.prototype = {
   async _handle() {
     dumpn("Debugging connection starting authentication on " + this.address);
     try {
-      this._listenForTLSHandshake();
       await this._createTransport();
-      await this._awaitTLSHandshake();
       await this._authenticate();
       this.allow();
     } catch (e) {
@@ -777,72 +602,6 @@ ServerSocketConnection.prototype = {
       },
     };
     this._transport.ready();
-  },
-
-  
-
-
-
-  _setSecurityObserver(observer) {
-    if (!this._socketTransport || !this._socketTransport.securityInfo) {
-      return;
-    }
-    const connectionInfo = this._socketTransport.securityInfo.QueryInterface(
-      Ci.nsITLSServerConnectionInfo
-    );
-    connectionInfo.setSecurityObserver(observer);
-  },
-
-  
-
-
-
-
-  _listenForTLSHandshake() {
-    if (!this._listener.encryption) {
-      this._handshakePromise = Promise.resolve();
-      return;
-    }
-
-    this._handshakePromise = new Promise((resolve, reject) => {
-      this._observer = {
-        
-        onHandshakeDone: (socket, clientStatus) => {
-          clearTimeout(this._handshakeTimeout);
-          this._setSecurityObserver(null);
-          dumpv("TLS version:    " + clientStatus.tlsVersionUsed.toString(16));
-          dumpv("TLS cipher:     " + clientStatus.cipherName);
-          dumpv("TLS key length: " + clientStatus.keyLength);
-          dumpv("TLS MAC length: " + clientStatus.macLength);
-          this._clientCert = clientStatus.peerCert;
-          
-
-
-
-
-
-
-
-          if (
-            clientStatus.tlsVersionUsed < Ci.nsITLSClientStatus.TLS_VERSION_1_2
-          ) {
-            reject(Cr.NS_ERROR_CONNECTION_REFUSED);
-            return;
-          }
-
-          resolve();
-        },
-      };
-      this._setSecurityObserver(this._observer);
-      this._handshakeTimeout = setTimeout(() => {
-        dumpv("Client failed to complete TLS handshake");
-        reject(Cr.NS_ERROR_NET_TIMEOUT);
-      }, HANDSHAKE_TIMEOUT);
-    });
-  },
-
-  _awaitTLSHandshake() {
-    return this._handshakePromise;
   },
 
   async _authenticate() {
@@ -903,12 +662,9 @@ ServerSocketConnection.prototype = {
 
   destroy() {
     this._destroyed = true;
-    clearTimeout(this._handshakeTimeout);
-    this._setSecurityObserver(null);
     this._listener = null;
     this._socketTransport = null;
     this._transport = null;
-    this._clientCert = null;
   },
 };
 
