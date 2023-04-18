@@ -95,6 +95,18 @@ def check_headers(*headers, **kwargs):
     return checks
 
 
+@depends(linker_ldflags, target)
+def check_symbol_flags(linker_ldflags, target):
+    if target.kernel == "WINNT":
+        
+        
+        
+        
+        
+        return ["-fuse-ld=lld"]
+    return linker_ldflags
+
+
 
 
 
@@ -115,6 +127,17 @@ def check_symbol(symbol, language="C", flags=None, when=None, onerror=lambda: No
         "/* We use char because int might match the return type of a gcc2",
         "    builtin and then its argument prototype would still apply.  */",
     ]
+
+    if flags:
+
+        @depends(check_symbol_flags, dependable(flags))
+        def flags(base_flags, extra_flags):
+            if extra_flags:
+                return base_flags + extra_flags
+            return base_flags
+
+    else:
+        flags = check_symbol_flags
 
     return compiler.try_run(
         header=comment + ["%schar %s();" % (extern_c, symbol)],
