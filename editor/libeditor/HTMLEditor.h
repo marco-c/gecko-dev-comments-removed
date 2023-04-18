@@ -1614,8 +1614,12 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult CreateOrChangeBlockContainerElement(
-      nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents, nsAtom& aBlockTag);
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  CreateOrChangeBlockContainerElement(
+      nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents, nsAtom& aBlockTag,
+      const Element& aEditingHost);
 
   
 
