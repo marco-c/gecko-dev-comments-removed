@@ -429,7 +429,7 @@ class UrlbarValueFormatter {
     
     
     if (
-      this.document.documentElement.hasAttribute("lwtheme") ||
+      this.document.documentElement.querySelector(":-moz-lwtheme") ||
       this.window.matchMedia("(prefers-contrast)").matches
     ) {
       
