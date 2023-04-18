@@ -504,24 +504,9 @@ class LocalAccessible : public nsISupports, public Accessible {
   
   
 
-  
+  virtual uint8_t ActionCount() const override;
 
-
-  virtual uint8_t ActionCount() const;
-
-  
-
-
-  virtual void ActionNameAt(uint8_t aIndex, nsAString& aName);
-
-  
-
-
-  void ActionDescriptionAt(uint8_t aIndex, nsAString& aDescription) {
-    nsAutoString name;
-    ActionNameAt(aIndex, name);
-    TranslateString(name, aDescription);
-  }
+  virtual void ActionNameAt(uint8_t aIndex, nsAString& aName) override;
 
   
 
