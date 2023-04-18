@@ -2516,7 +2516,7 @@ bool ScriptLoader::HasPendingRequests() {
          !mLoadedAsyncRequests.isEmpty() ||
          !mNonAsyncExternalScriptInsertedRequests.isEmpty() ||
          !mDeferRequests.isEmpty() ||
-         !mModuleLoader->mDynamicImportRequests.isEmpty() ||
+         mModuleLoader->HasPendingDynamicImports() ||
          !mPendingChildLoaders.IsEmpty();
   
 }
@@ -2982,13 +2982,7 @@ void ScriptLoader::HandleLoadError(ScriptLoadRequest* aRequest,
     if (modReq->IsDynamicImport()) {
       MOZ_ASSERT(modReq->IsTopLevel());
       if (aRequest->isInList()) {
-        RefPtr<ScriptLoadRequest> req =
-            mModuleLoader->mDynamicImportRequests.Steal(aRequest);
-        modReq->Cancel();
-        
-        
-        
-        mModuleLoader->FinishDynamicImportAndReject(modReq, aResult);
+        mModuleLoader->CancelDynamicImport(modReq, aResult);
       }
     } else {
       MOZ_ASSERT(!modReq->IsTopLevel());
@@ -3223,17 +3217,17 @@ nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
   
   
   
-  NS_ASSERTION(mDeferRequests.Contains(aRequest) ||
-                   mLoadingAsyncRequests.Contains(aRequest) ||
-                   mNonAsyncExternalScriptInsertedRequests.Contains(aRequest) ||
-                   mXSLTRequests.Contains(aRequest) ||
-                   mModuleLoader->mDynamicImportRequests.Contains(aRequest) ||
-                   (aRequest->IsModuleRequest() &&
-                    !aRequest->AsModuleRequest()->IsTopLevel() &&
-                    !aRequest->isInList()) ||
-                   mPreloads.Contains(aRequest, PreloadRequestComparator()) ||
-                   mParserBlockingRequest == aRequest,
-               "aRequest should be pending!");
+  NS_ASSERTION(
+      mDeferRequests.Contains(aRequest) ||
+          mLoadingAsyncRequests.Contains(aRequest) ||
+          mNonAsyncExternalScriptInsertedRequests.Contains(aRequest) ||
+          mXSLTRequests.Contains(aRequest) ||
+          (aRequest->IsModuleRequest() &&
+           (mModuleLoader->HasDynamicImport(aRequest->AsModuleRequest()) ||
+            !aRequest->AsModuleRequest()->IsTopLevel())) ||
+          mPreloads.Contains(aRequest, PreloadRequestComparator()) ||
+          mParserBlockingRequest == aRequest,
+      "aRequest should be pending!");
 
   nsCOMPtr<nsIURI> uri;
   rv = channel->GetOriginalURI(getter_AddRefs(uri));
