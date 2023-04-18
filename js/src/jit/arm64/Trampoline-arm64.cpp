@@ -49,7 +49,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.SetStackPointer64(sp);
 
   
-  masm.push(r29, r30);
+  masm.push(r30, r29);
   masm.moveStackPtrTo(r29);
 
   
@@ -82,8 +82,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.Mov(PseudoStackPointer64, sp);
   masm.SetStackPointer64(PseudoStackPointer64);
 
-  
-  masm.moveStackPtrTo(FramePointer);
   
   masm.moveStackPtrTo(r19);
 
@@ -317,7 +315,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.storeValue(JSReturnOperand, Address(reg_vp, 0));
 
   
-  masm.pop(r30, r29);
+  masm.pop(r29, r30);
 
   
   masm.abiret();
