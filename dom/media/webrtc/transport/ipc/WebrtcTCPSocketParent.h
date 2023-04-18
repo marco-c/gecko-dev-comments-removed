@@ -13,8 +13,7 @@
 
 class nsIAuthPromptProvider;
 
-namespace mozilla {
-namespace net {
+namespace mozilla::net {
 
 class WebrtcTCPSocket;
 
@@ -54,7 +53,6 @@ class WebrtcTCPSocketParent : public PWebrtcTCPSocketParent,
   RefPtr<WebrtcTCPSocket> mChannel;
 };
 
-}  
 }  
 
 #endif  

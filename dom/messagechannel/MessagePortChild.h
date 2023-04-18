@@ -11,8 +11,7 @@
 #include "mozilla/dom/PMessagePortChild.h"
 #include "nsISupportsImpl.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class MessagePort;
 
@@ -41,7 +40,6 @@ class MessagePortChild final : public PMessagePortChild {
   MessagePort* mPort;
 };
 
-}  
 }  
 
 #endif  

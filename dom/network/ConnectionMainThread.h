@@ -11,9 +11,7 @@
 #include "mozilla/Hal.h"
 #include "mozilla/Observer.h"
 
-namespace mozilla {
-namespace dom {
-namespace network {
+namespace mozilla::dom::network {
 
 class ConnectionMainThread final : public Connection,
                                    public hal::NetworkObserver {
@@ -37,8 +35,6 @@ class ConnectionMainThread final : public Connection,
                              bool aNotify);
 };
 
-}  
-}  
 }  
 
 #endif  

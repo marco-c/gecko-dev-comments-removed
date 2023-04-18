@@ -10,16 +10,12 @@
 
 
 
-namespace mozilla {
-namespace dom {
-namespace network {
+namespace mozilla::dom::network {
 
 static const uint32_t kDefaultType = 5;  
 static const bool kDefaultIsWifi = false;
 static const uint32_t kDefaultDHCPGateway = 0;
 
-}  
-}  
 }  
 
 #endif  

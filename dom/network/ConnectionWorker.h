@@ -9,9 +9,7 @@
 
 #include "Connection.h"
 
-namespace mozilla {
-namespace dom {
-namespace network {
+namespace mozilla::dom::network {
 
 class ConnectionProxy;
 
@@ -31,8 +29,6 @@ class ConnectionWorker final : public Connection {
   RefPtr<ConnectionProxy> mProxy;
 };
 
-}  
-}  
 }  
 
 #endif  

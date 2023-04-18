@@ -14,8 +14,7 @@
 #include "nsString.h"
 #include "TimeUnits.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class TextTrackList;
 class TextTrackCue;
@@ -144,7 +143,6 @@ class TextTrack final : public DOMEventTargetHelper {
   TextTrackSource mTextTrackSource;
 };
 
-}  
 }  
 
 #endif  

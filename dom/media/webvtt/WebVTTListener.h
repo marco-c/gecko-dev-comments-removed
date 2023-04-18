@@ -15,8 +15,7 @@
 
 class nsIWebVTTParserWrapper;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class HTMLTrackElement;
 
@@ -65,7 +64,6 @@ class WebVTTListener final : public nsIWebVTTListener,
   bool mCancel = false;
 };
 
-}  
 }  
 
 #endif  

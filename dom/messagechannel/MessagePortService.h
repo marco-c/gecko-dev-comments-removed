@@ -11,8 +11,7 @@
 #include "nsHashKeys.h"
 #include "nsISupportsImpl.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class MessagePortParent;
 class SharedMessageBody;
@@ -56,7 +55,6 @@ class MessagePortService final {
   nsClassHashtable<nsIDHashKey, MessagePortServiceData> mPorts;
 };
 
-}  
 }  
 
 #endif  
