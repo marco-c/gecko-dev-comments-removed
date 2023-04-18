@@ -73,7 +73,7 @@ const PREF_PERSONALIZATION_OVERRIDE =
 
 let getHardcodedLayout;
 
-this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
+class DiscoveryStreamFeed {
   constructor() {
     
     this.loaded = false;
@@ -1880,7 +1880,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         break;
     }
   }
-};
+}
 
 
 

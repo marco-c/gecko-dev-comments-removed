@@ -2,7 +2,7 @@
 
 
 
-this.Dedupe = class Dedupe {
+class Dedupe {
   constructor(createKey) {
     this.createKey = createKey || this.defaultCreateKey;
   }
@@ -33,6 +33,6 @@ this.Dedupe = class Dedupe {
     }
     return result.map(m => Array.from(m.values()));
   }
-};
+}
 
 const EXPORTED_SYMBOLS = ["Dedupe"];

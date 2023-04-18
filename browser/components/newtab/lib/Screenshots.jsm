@@ -41,7 +41,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-this.Screenshots = {
+const Screenshots = {
   
 
 

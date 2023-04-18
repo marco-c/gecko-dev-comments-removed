@@ -50,7 +50,7 @@ const PREF_USER_TOPSTORIES = "feeds.section.topstories";
 const MAX_LIFETIME_CAP = 500; 
 const DISCOVERY_STREAM_PREF = "discoverystream.config";
 
-this.TopStoriesFeed = class TopStoriesFeed {
+class TopStoriesFeed {
   constructor(ds) {
     
     
@@ -738,7 +738,7 @@ this.TopStoriesFeed = class TopStoriesFeed {
         break;
     }
   }
-};
+}
 
 this.STORIES_UPDATE_TIME = STORIES_UPDATE_TIME;
 this.TOPICS_UPDATE_TIME = TOPICS_UPDATE_TIME;

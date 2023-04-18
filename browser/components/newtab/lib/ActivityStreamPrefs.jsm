@@ -12,7 +12,7 @@ const { Preferences } = ChromeUtils.import(
 
 const ACTIVITY_STREAM_PREF_BRANCH = "browser.newtabpage.activity-stream.";
 
-this.Prefs = class Prefs extends Preferences {
+class Prefs extends Preferences {
   
 
 
@@ -35,9 +35,9 @@ this.Prefs = class Prefs extends Preferences {
     this._prefBranch.addObserver("", observer);
     this._branchObservers.set(listener, observer);
   }
-};
+}
 
-this.DefaultPrefs = class DefaultPrefs extends Preferences {
+class DefaultPrefs extends Preferences {
   
 
 
@@ -90,6 +90,6 @@ this.DefaultPrefs = class DefaultPrefs extends Preferences {
       }
     }
   }
-};
+}
 
 const EXPORTED_SYMBOLS = ["DefaultPrefs", "Prefs"];

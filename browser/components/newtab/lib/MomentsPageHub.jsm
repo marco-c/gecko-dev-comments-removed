@@ -174,6 +174,6 @@ this._MomentsPageHub = _MomentsPageHub;
 
 
 
-this.MomentsPageHub = new _MomentsPageHub();
+const MomentsPageHub = new _MomentsPageHub();
 
 const EXPORTED_SYMBOLS = ["_MomentsPageHub", "MomentsPageHub"];

@@ -311,6 +311,6 @@ this._ToolbarBadgeHub = _ToolbarBadgeHub;
 
 
 
-this.ToolbarBadgeHub = new _ToolbarBadgeHub();
+const ToolbarBadgeHub = new _ToolbarBadgeHub();
 
 const EXPORTED_SYMBOLS = ["ToolbarBadgeHub", "_ToolbarBadgeHub"];

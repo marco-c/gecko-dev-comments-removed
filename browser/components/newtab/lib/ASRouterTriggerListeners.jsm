@@ -86,7 +86,7 @@ function createMatchPatternSet(patterns, flags) {
 
 
 
-this.ASRouterTriggerListeners = new Map([
+const ASRouterTriggerListeners = new Map([
   [
     "openArticleURL",
     {

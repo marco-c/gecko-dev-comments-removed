@@ -1791,6 +1791,6 @@ this._ASRouter = _ASRouter;
 
 
 
-this.ASRouter = new _ASRouter();
+const ASRouter = new _ASRouter();
 
 const EXPORTED_SYMBOLS = ["_ASRouter", "ASRouter", "MessageLoaderUtils"];

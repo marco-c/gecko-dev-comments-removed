@@ -18,7 +18,7 @@ const PREF_PERSONALIZATION = "discoverystream.personalization.enabled";
 
 
 
-this.RecommendationProvider = class RecommendationProvider {
+class RecommendationProvider {
   setProvider(scores) {
     
     
@@ -108,6 +108,6 @@ this.RecommendationProvider = class RecommendationProvider {
         break;
     }
   }
-};
+}
 
 const EXPORTED_SYMBOLS = ["RecommendationProvider"];

@@ -18,7 +18,7 @@ const EXPIRATION_TIME = 4.5 * 60 * 1000;
 
 
 
-this.LinksCache = class LinksCache {
+class LinksCache {
   
 
 
@@ -133,4 +133,4 @@ this.LinksCache = class LinksCache {
     
     return (await this.cache).map(link => link && Object.assign({}, link));
   }
-};
+}

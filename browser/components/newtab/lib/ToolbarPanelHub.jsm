@@ -605,6 +605,6 @@ this._ToolbarPanelHub = _ToolbarPanelHub;
 
 
 
-this.ToolbarPanelHub = new _ToolbarPanelHub();
+const ToolbarPanelHub = new _ToolbarPanelHub();
 
 const EXPORTED_SYMBOLS = ["ToolbarPanelHub", "_ToolbarPanelHub"];

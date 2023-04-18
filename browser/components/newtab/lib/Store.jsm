@@ -26,7 +26,7 @@ const { redux } = ChromeUtils.import(
 
 
 
-this.Store = class Store {
+class Store {
   
 
 
@@ -185,6 +185,6 @@ this.Store = class Store {
     this._feedFactories = null;
     this._messageChannel.destroyChannel();
   }
-};
+}
 
 const EXPORTED_SYMBOLS = ["Store"];

@@ -6,7 +6,7 @@
 
 
 
-this.PersistentCache = class PersistentCache {
+class PersistentCache {
   
 
 
@@ -90,6 +90,6 @@ this.PersistentCache = class PersistentCache {
       tmpPath: `${filepath}.tmp`,
     });
   }
-};
+}
 
 const EXPORTED_SYMBOLS = ["PersistentCache"];
