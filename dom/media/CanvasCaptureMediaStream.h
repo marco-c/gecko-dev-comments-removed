@@ -70,6 +70,12 @@ class OutputStreamDriver : public FrameCaptureListener {
 
 
 
+  virtual void RequestFrameCapture() = 0;
+
+  
+
+
+
   void SetImage(RefPtr<layers::Image>&& aImage, const TimeStamp& aTime);
 
   
@@ -77,12 +83,6 @@ class OutputStreamDriver : public FrameCaptureListener {
 
 
   void EndTrack();
-
-  
-
-
-
-  virtual void Forget() {}
 
   const RefPtr<SourceMediaTrack> mSourceStream;
   const PrincipalHandle mPrincipalHandle;
