@@ -2398,9 +2398,10 @@ void nsWindow::WaylandPopupMove() {
   LOG("  popup use move to rect %d\n", mPopupUseMoveToRect);
 
   if (!mPopupUseMoveToRect) {
-    if (mNeedsShow && mPopupType != ePopupTypeTooltip) {
-      
-      
+    
+    
+    
+    if (mPopupHint == ePopupTypeMenu) {
       LOG("  use gtk_window_move(%d, %d) for hidden widget\n", mPopupPosition.x,
           mPopupPosition.y);
       gtk_window_move(GTK_WINDOW(mShell), mPopupPosition.x, mPopupPosition.y);
