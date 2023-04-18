@@ -63,6 +63,15 @@ XPCOMUtils.defineLazyGetter(this, "logConsole", function() {
 
 
 
+
+
+
+
+
+
+
+
+
 class SnapshotSelector extends EventEmitter {
   
 
@@ -207,20 +216,26 @@ class SnapshotSelector extends EventEmitter {
     
     
     
-    
     let snapshots = await Snapshots.query({
-      limit: context.filterAdult ? context.count * 4 : context.count + 1,
+      limit: context.count * 4,
       type: context.type,
     });
 
-    snapshots = snapshots
-      .filter(snapshot => {
-        if (snapshot.url == context.url) {
-          return false;
-        }
-        return !context.filterAdult || !FilterAdult.isAdultUrl(snapshot.url);
-      })
-      .slice(0, context.count);
+    snapshots = snapshots.filter(snapshot => {
+      if (snapshot.url == context.url) {
+        return false;
+      }
+      return !context.filterAdult || !FilterAdult.isAdultUrl(snapshot.url);
+    });
+
+    snapshots = SnapshotScorer.dedupeSnapshots(
+      snapshots.map(s => ({
+        snapshot: s,
+      }))
+    )
+      .slice(0, context.count)
+      .map(s => s.snapshot)
+      .slice();
 
     this.#snapshotsGenerated(snapshots);
   }
