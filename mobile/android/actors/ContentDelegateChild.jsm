@@ -93,6 +93,9 @@ class ContentDelegateChild extends GeckoViewActorChild {
         if (uri || isImage || isMedia) {
           const msg = {
             type: "GeckoView:ContextMenu",
+            
+            
+            
             screenX: aEvent.screenX,
             screenY: aEvent.screenY,
             baseUri: (baseUri && baseUri.displaySpec) || null,
