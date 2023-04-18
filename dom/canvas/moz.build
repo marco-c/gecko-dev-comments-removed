@@ -103,7 +103,6 @@ SOURCES += [
     "ImageUtils.cpp",
     "OffscreenCanvasDisplayHelper.cpp",  
     "OffscreenCanvasRenderingContext2D.cpp",  
-    "SourceSurfaceWebgl.cpp",
 ]
 
 
