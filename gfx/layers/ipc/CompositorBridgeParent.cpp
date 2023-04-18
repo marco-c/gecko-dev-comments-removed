@@ -31,6 +31,7 @@
 #include "mozilla/gfx/Rect.h"     
 #include "mozilla/gfx/gfxVars.h"  
 #include "mozilla/gfx/GPUParent.h"
+#include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/layers/APZCTreeManagerParent.h"  
 #include "mozilla/layers/APZSampler.h"             
 #include "mozilla/layers/APZThreadUtils.h"         
@@ -1658,26 +1659,53 @@ void CompositorBridgeParent::NotifyDidRender(const VsyncId& aCompositeStartId,
   }
 }
 
+bool CompositorBridgeParent::sStable = false;
+uint32_t CompositorBridgeParent::sFramesComposited = 0;
+
+ void CompositorBridgeParent::ResetStable() {
+  if (!CompositorThreadHolder::IsInCompositorThread()) {
+    if (CompositorThread()) {
+      CompositorThread()->Dispatch(
+          NewRunnableFunction("CompositorBridgeParent::ResetStable",
+                              &CompositorBridgeParent::ResetStable));
+    }
+
+    
+    
+    return;
+  }
+
+  sStable = false;
+  sFramesComposited = 0;
+}
+
 void CompositorBridgeParent::MaybeDeclareStable() {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
 
-  static bool sStable = false;
-  if (!XRE_IsGPUProcess() || sStable) {
+  if (sStable) {
     return;
   }
 
   
   
   
-  static uint32_t sFramesComposited = 0;
-
   if (++sFramesComposited >=
       StaticPrefs::layers_gpu_process_stable_frame_threshold()) {
     sStable = true;
 
     NS_DispatchToMainThread(NS_NewRunnableFunction(
-        "gfx::GPUParent::SendDeclareStable", []() -> void {
-          Unused << GPUParent::GetSingleton()->SendDeclareStable();
+        "CompositorBridgeParent::MaybeDeclareStable", []() -> void {
+          if (XRE_IsParentProcess()) {
+            GPUProcessManager* gpm = GPUProcessManager::Get();
+            if (gpm) {
+              gpm->OnProcessDeclaredStable();
+            }
+          } else {
+            gfx::GPUParent* gpu = gfx::GPUParent::GetSingleton();
+            if (gpu && gpu->CanSend()) {
+              Unused << gpu->SendDeclareStable();
+            }
+          }
         }));
   }
 }

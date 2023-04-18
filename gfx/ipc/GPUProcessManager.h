@@ -256,6 +256,14 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   bool MaybeDisableGPUProcess(const char* aMessage, bool aAllowRestart);
 
+  bool FallbackFromAcceleration(wr::WebRenderError aError,
+                                const nsCString& aMsg);
+
+  void ResetProcessStable();
+
+  
+  bool IsProcessStable(const TimeStamp& aNow);
+
   
   void CleanShutdown();
   
@@ -330,6 +338,8 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   GPUProcessHost* mProcess;
   uint64_t mProcessToken;
   bool mProcessStable;
+  Maybe<wr::WebRenderError> mLastError;
+  Maybe<nsCString> mLastErrorMsg;
   GPUChild* mGPUChild;
   RefPtr<VsyncBridgeChild> mVsyncBridge;
   
