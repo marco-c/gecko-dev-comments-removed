@@ -6,6 +6,8 @@
 
 #include "mozilla/SandboxSettings.h"
 #include "mozISandboxSettings.h"
+#include "nsIXULRuntime.h"
+#include "nsServiceManagerUtils.h"
 
 #include "mozilla/Components.h"
 #include "mozilla/Preferences.h"
@@ -79,10 +81,38 @@ const char* ContentWin32kLockdownStateToString(
   MOZ_CRASH("Should never reach here");
 }
 
+bool InSafeMode() {
+  static bool sSafeModeInitialized = false;
+  static bool sInSafeMode = false;
+
+  if (!sSafeModeInitialized) {
+    sSafeModeInitialized = true;
+    nsCOMPtr<nsIXULRuntime> xr = do_GetService("@mozilla.org/xre/runtime;1");
+    if (xr) {
+      xr->GetInSafeMode(&sInSafeMode);
+    } else {
+      MOZ_CRASH("could not get service");
+    }
+  }
+  return sInSafeMode;
+}
+
 ContentWin32kLockdownState GetContentWin32kLockdownState() {
 #ifdef XP_WIN
   static ContentWin32kLockdownState result = [] {
     ContentWin32kLockdownState state = [] {
+      if (InSafeMode()) {
+        return ContentWin32kLockdownState::DisabledBySafeMode;
+      }
+
+      if (PR_GetEnv("MOZ_ENABLE_WIN32K")) {
+        return ContentWin32kLockdownState::DisabledByEnvVar;
+      }
+
+      if (!mozilla::BrowserTabsRemoteAutostart()) {
+        return ContentWin32kLockdownState::DisabledByE10S;
+      }
+
       if (!IsWin8OrLater()) {
         return ContentWin32kLockdownState::OperatingSystemNotSupported;
       }
@@ -98,20 +128,41 @@ ContentWin32kLockdownState GetContentWin32kLockdownState() {
       }
 
       
+      if (!StaticPrefs::widget_non_native_theme_enabled()) {
+        return ContentWin32kLockdownState::MissingNonNativeTheming;
+      }
+
+      
       
       if (!gfx::gfxVars::AllowWebglOop() ||
           !StaticPrefs::webgl_out_of_process()) {
         return ContentWin32kLockdownState::MissingRemoteWebGL;
       }
 
-      
-      
-      
-      if (!StaticPrefs::security_sandbox_content_win32k_disable()) {
-        return ContentWin32kLockdownState::PrefNotSet;
+      bool prefSetByUser =
+          Preferences::HasUserValue("security.sandbox.content.win32k-disable");
+      bool prefValue =
+          Preferences::GetBool("security.sandbox.content.win32k-disable", false,
+                               PrefValueKind::User);
+      bool defaultValue =
+          Preferences::GetBool("security.sandbox.content.win32k-disable", false,
+                               PrefValueKind::Default);
+
+      if (prefSetByUser) {
+        if (prefValue) {
+          return ContentWin32kLockdownState::EnabledByUserPref;
+        } else {
+          return ContentWin32kLockdownState::DisabledByUserPref;
+        }
       }
 
-      return ContentWin32kLockdownState::LockdownEnabled;
+      
+
+      if (defaultValue) {
+        return ContentWin32kLockdownState::EnabledByDefault;
+      } else {
+        return ContentWin32kLockdownState::DisabledByDefault;
+      }
     }();
 
     const char* stateStr = ContentWin32kLockdownStateToString(state);
