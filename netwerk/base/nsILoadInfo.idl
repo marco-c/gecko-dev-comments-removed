@@ -513,6 +513,12 @@ interface nsILoadInfo : nsISupports
   
 
 
+
+  [infallible] attribute boolean isUserTriggeredSave;
+
+  
+
+
   [infallible] attribute boolean isInDevToolsContext;
 
   

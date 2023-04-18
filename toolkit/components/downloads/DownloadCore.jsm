@@ -2867,6 +2867,15 @@ DownloadLegacySaver.prototype = {
       this.download.source.referrerInfo = aRequest.referrerInfo;
     }
 
+    
+    
+    if (
+      aRequest instanceof Ci.nsIChannel &&
+      aRequest.loadInfo.isUserTriggeredSave
+    ) {
+      this.download.openDownloadsListOnStart = false;
+    }
+
     this.addToHistory();
   },
 
