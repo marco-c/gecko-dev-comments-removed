@@ -28,6 +28,8 @@ namespace mozilla::net {
 
 class nsStandardURL;
 class Http2Session;
+class Http2Stream;
+class Http2PushedStream;
 class Http2Decompressor;
 
 class Http2StreamBase : public nsAHttpSegmentReader,
@@ -35,7 +37,6 @@ class Http2StreamBase : public nsAHttpSegmentReader,
                         public SupportsWeakPtr {
  public:
   NS_DECL_NSAHTTPSEGMENTREADER
-  NS_DECL_NSAHTTPSEGMENTWRITER
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Http2StreamBase, override)
 
   enum stateType {
@@ -56,8 +57,6 @@ class Http2StreamBase : public nsAHttpSegmentReader,
   Http2StreamBase(nsAHttpTransaction*, Http2Session*, int32_t, uint64_t);
 
   uint32_t StreamID() { return mStreamID; }
-  Http2PushedStream* PushSource() { return mPushSource; }
-  void ClearPushSource();
 
   stateType HTTPState() { return mState; }
   void SetHTTPState(stateType val) { mState = val; }
@@ -67,10 +66,6 @@ class Http2StreamBase : public nsAHttpSegmentReader,
   [[nodiscard]] virtual nsresult WriteSegments(nsAHttpSegmentWriter*, uint32_t,
                                                uint32_t*);
   virtual bool DeferCleanup(nsresult status);
-
-  
-  
-  virtual Http2StreamBase* GetConsumerStream() { return nullptr; };
 
   const nsCString& Origin() const { return mOrigin; }
   const nsCString& Host() const { return mHeaderHost; }
@@ -87,7 +82,7 @@ class Http2StreamBase : public nsAHttpSegmentReader,
     return mTransaction ? mTransaction->RequestContext() : nullptr;
   }
 
-  void Close(nsresult reason);
+  virtual void Close(nsresult reason);
   void SetResponseIsComplete();
 
   void SetRecvdFin(bool aStatus);
@@ -121,8 +116,6 @@ class Http2StreamBase : public nsAHttpSegmentReader,
   
   [[nodiscard]] nsresult ConvertResponseHeaders(Http2Decompressor*, nsACString&,
                                                 nsACString&, int32_t&);
-  [[nodiscard]] nsresult ConvertPushHeaders(Http2Decompressor*, nsACString&,
-                                            nsACString&);
   [[nodiscard]] nsresult ConvertResponseTrailers(Http2Decompressor*,
                                                  nsACString&);
 
@@ -158,17 +151,7 @@ class Http2StreamBase : public nsAHttpSegmentReader,
   
   virtual bool HasSink() { return true; }
 
-  
-  virtual void SetPushComplete(){};
-
   already_AddRefed<Http2Session> Session();
-
-  [[nodiscard]] static nsresult MakeOriginURL(const nsACString& origin,
-                                              nsCOMPtr<nsIURI>& url);
-
-  [[nodiscard]] static nsresult MakeOriginURL(const nsACString& scheme,
-                                              const nsACString& origin,
-                                              nsCOMPtr<nsIURI>& url);
 
   
   bool Do0RTT();
@@ -180,12 +163,20 @@ class Http2StreamBase : public nsAHttpSegmentReader,
   void TopBrowsingContextIdChangedInternal(
       uint64_t id);  
 
+  virtual bool IsTunnel() { return false; }
+
+  virtual uint32_t GetWireStreamId() { return mStreamID; }
+  virtual Http2Stream* GetHttp2Stream() { return nullptr; }
+  virtual Http2PushedStream* GetHttp2PushedStream() { return nullptr; }
+
+  [[nodiscard]] virtual nsresult OnWriteSegment(char*, uint32_t,
+                                                uint32_t*) override;
+
  protected:
   virtual ~Http2StreamBase();
-  static void CreatePushHashKey(
-      const nsCString& scheme, const nsCString& hostHeader,
-      const mozilla::OriginAttributes& originAttributes, uint64_t serial,
-      const nsACString& pathInfo, nsCString& outOrigin, nsCString& outKey);
+
+  virtual void HandleResponseHeaders(nsACString& aHeadersOut,
+                                     int32_t httpResponseCode) {}
 
   
   enum upstreamStateType {
@@ -196,7 +187,7 @@ class Http2StreamBase : public nsAHttpSegmentReader,
     UPSTREAM_COMPLETE
   };
 
-  uint32_t mStreamID;
+  uint32_t mStreamID{0};
 
   
   nsWeakPtr mSession;
@@ -205,7 +196,7 @@ class Http2StreamBase : public nsAHttpSegmentReader,
   
   
   RefPtr<nsAHttpSegmentReader> mSegmentReader;
-  nsAHttpSegmentWriter* mSegmentWriter;
+  nsAHttpSegmentWriter* mSegmentWriter{nullptr};
 
   nsCString mOrigin;
   nsCString mHeaderHost;
@@ -215,10 +206,10 @@ class Http2StreamBase : public nsAHttpSegmentReader,
   
   
   
-  enum upstreamStateType mUpstreamState;
+  enum upstreamStateType mUpstreamState { GENERATING_HEADERS };
 
   
-  enum stateType mState;
+  enum stateType mState { IDLE };
 
   
   uint32_t mRequestHeadersDone : 1;
@@ -245,7 +236,21 @@ class Http2StreamBase : public nsAHttpSegmentReader,
   uint8_t mPriorityWeight = 0;       
   uint32_t mPriorityDependency = 0;  
   uint64_t mCurrentTopBrowsingContextId;
-  uint64_t mTransactionTabId;
+  uint64_t mTransactionTabId{0};
+
+  
+  
+  
+  
+  RefPtr<nsAHttpTransaction> mTransaction;
+
+  
+  
+  UniquePtr<uint8_t[]> mTxInlineFrame;
+  uint32_t mTxInlineFrameSize{0};
+  uint32_t mTxInlineFrameUsed{0};
+
+  uint32_t mPriority = 0;  
 
  private:
   friend class mozilla::DefaultDelete<Http2StreamBase>;
@@ -254,16 +259,9 @@ class Http2StreamBase : public nsAHttpSegmentReader,
                                                  uint32_t*);
   [[nodiscard]] nsresult GenerateOpen();
 
-  void AdjustPushedPriority();
   void GenerateDataFrameHeader(uint32_t, bool);
 
   [[nodiscard]] nsresult BufferInput(uint32_t, uint32_t*);
-
-  
-  
-  
-  
-  RefPtr<nsAHttpTransaction> mTransaction;
 
   
   uint32_t mChunkSize;
@@ -305,14 +303,8 @@ class Http2StreamBase : public nsAHttpSegmentReader,
 
   
   
-  UniquePtr<uint8_t[]> mTxInlineFrame;
-  uint32_t mTxInlineFrameSize;
-  uint32_t mTxInlineFrameUsed;
-
   
-  
-  
-  uint32_t mTxStreamFrameSize;
+  uint32_t mTxStreamFrameSize{0};
 
   
   nsCString mFlatHttpRequestHeaders;
@@ -323,9 +315,7 @@ class Http2StreamBase : public nsAHttpSegmentReader,
   
   
   
-  int64_t mRequestBodyLenRemaining;
-
-  uint32_t mPriority = 0;  
+  int64_t mRequestBodyLenRemaining{0};
 
   
   
@@ -343,50 +333,21 @@ class Http2StreamBase : public nsAHttpSegmentReader,
   
   
   
-  uint64_t mLocalUnacked;
+  uint64_t mLocalUnacked{0};
 
   
   
-  bool mBlockedOnRwin;
+  bool mBlockedOnRwin{false};
 
   
-  uint64_t mTotalSent;
-  uint64_t mTotalRead;
-
-  
-  Http2PushedStream* mPushSource;
+  uint64_t mTotalSent{0};
+  uint64_t mTotalRead{0};
 
   
   
   SimpleBuffer mSimpleBuffer;
 
-  bool mAttempting0RTT;
-
-  
- public:
-  bool IsTunnel() { return mIsTunnel; }
-  
-  
-  
-  
-  nsCString& RegistrationKey();
-
- private:
-  void ClearTransactionsBlockedOnTunnel();
-  void MapStreamToPlainText();
-  bool MapStreamToHttpConnection(const nsACString& aFlat407Headers,
-                                 int32_t aHttpResponseCode = -1);
-
-  bool mIsTunnel;
-  bool mPlainTextTunnel;
-  nsCString mRegistrationKey;
-
-  
- public:
-  bool IsWebsocket() { return mIsWebsocket; }
-
- private:
-  bool mIsWebsocket;
+  bool mAttempting0RTT{false};
 };
 
 }  
