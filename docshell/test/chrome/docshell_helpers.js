@@ -23,6 +23,9 @@ const { BrowserTestUtils } = ChromeUtils.import(
 );
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+const ACTOR_MODULE_URI =
+  "chrome://mochitests/content/chrome/docshell/test/chrome/DocShellHelpers.jsm";
+const { DocShellHelpersParent } = ChromeUtils.import(ACTOR_MODULE_URI);
 
 
 
@@ -32,8 +35,9 @@ var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const NAV_NONE = 0;
 const NAV_BACK = 1;
 const NAV_FORWARD = 2;
-const NAV_URI = 3;
-const NAV_RELOAD = 4;
+const NAV_GOTOINDEX = 3;
+const NAV_URI = 4;
+const NAV_RELOAD = 5;
 
 var gExpectedEvents; 
 
@@ -106,10 +110,17 @@ var gExtractedPath = null;
 
 
 
+
+
+
+
+
+
 function doPageNavigation(params) {
   
   let back = params.back ? params.back : false;
   let forward = params.forward ? params.forward : false;
+  let gotoIndex = params.gotoIndex ? params.gotoIndex : false;
   let reload = params.reload ? params.reload : false;
   let uri = params.uri ? params.uri : false;
   let eventsToListenFor =
@@ -134,20 +145,15 @@ function doPageNavigation(params) {
     typeof params.waitForEventsOnly == "boolean" && params.waitForEventsOnly;
 
   
-  if (back && forward) {
-    throw new Error("Can't specify both back and forward");
-  }
-  if (back && uri) {
-    throw new Error("Can't specify both back and a uri");
-  }
-  if (forward && uri) {
-    throw new Error("Can't specify both forward and a uri");
-  }
-  if (reload && (forward || back || uri)) {
-    throw new Error("Can't specify reload and another navigation type");
-  }
-  if (!back && !forward && !uri && !reload && !waitOnly) {
-    throw new Error("Must specify back or foward or reload or uri");
+  let navigation = ["back", "forward", "gotoIndex", "reload", "uri"].filter(k =>
+    params.hasOwnProperty(k)
+  );
+  if (navigation.length > 1) {
+    throw new Error(`Can't specify both ${navigation[0]} and ${navigation[1]}`);
+  } else if (navigation.length == 0 && !waitOnly) {
+    throw new Error(
+      "Must specify back or forward or gotoIndex or reload or uri"
+    );
   }
   if (params.onNavComplete && eventsToListenFor.length == 0) {
     throw new Error("Can't use onNavComplete when eventsToListenFor == []");
@@ -163,7 +169,7 @@ function doPageNavigation(params) {
       "Must specify onNavComplete when specifying waitForEventsOnly"
     );
   }
-  if (waitOnly && (back || forward || reload || uri)) {
+  if (waitOnly && navigation.length > 0) {
     throw new Error(
       "Can't specify a navigation type when using waitForEventsOnly"
     );
@@ -200,14 +206,82 @@ function doPageNavigation(params) {
   gFinalEvent = eventsToListenFor.length == 0;
 
   
+  let observers = new Map();
+  if (params.hasOwnProperty("onGlobalCreation")) {
+    observers.set("content-document-global-created", params.onGlobalCreation);
+  }
+
   
-  for (let eventType of eventsToListenFor) {
-    dump("TEST: registering a listener for " + eventType + " events\n");
-    TestWindow.getBrowser().addEventListener(
-      eventType,
-      pageEventListener,
-      true
-    );
+  
+  
+  let cleanup;
+  let useActor = TestWindow.getBrowser().isRemoteBrowser;
+  if (useActor) {
+    ChromeUtils.registerWindowActor("DocShellHelpers", {
+      parent: {
+        moduleURI: ACTOR_MODULE_URI,
+      },
+      child: {
+        moduleURI: ACTOR_MODULE_URI,
+        events: {
+          pageshow: { createActor: true, capture: true },
+          pagehide: { createActor: true, capture: true },
+          load: { createActor: true, capture: true },
+          unload: { createActor: true, capture: true },
+          visibilitychange: { createActor: true, capture: true },
+        },
+        observers: observers.keys(),
+      },
+      allFrames: true,
+    });
+    DocShellHelpersParent.eventsToListenFor = eventsToListenFor;
+    DocShellHelpersParent.observers = observers;
+
+    cleanup = () => {
+      DocShellHelpersParent.eventsToListenFor = null;
+      DocShellHelpersParent.observers = null;
+      ChromeUtils.unregisterWindowActor("DocShellHelpers");
+    };
+  } else {
+    for (let eventType of eventsToListenFor) {
+      dump("TEST: registering a listener for " + eventType + " events\n");
+      TestWindow.getBrowser().addEventListener(
+        eventType,
+        pageEventListener,
+        true
+      );
+    }
+    if (observers.size > 0) {
+      let observer = (_, topic) => {
+        observers.get(topic).call();
+      };
+      for (let topic of observers.keys()) {
+        Services.obs.addObserver(observer, topic);
+      }
+
+      
+      
+      cleanup = () => {
+        for (let topic of observers.keys()) {
+          Services.obs.removeObserver(observer, topic);
+        }
+      };
+    }
+  }
+
+  if (cleanup) {
+    
+    
+    Services.ww.registerNotification(function windowClosed(
+      subject,
+      topic,
+      data
+    ) {
+      if (topic == "domwindowclosed" && subject == window) {
+        Services.ww.unregisterNotification(windowClosed);
+        cleanup();
+      }
+    });
   }
 
   
@@ -217,6 +291,9 @@ function doPageNavigation(params) {
   } else if (forward) {
     gNavType = NAV_FORWARD;
     TestWindow.getBrowser().goForward();
+  } else if (typeof gotoIndex == "number") {
+    gNavType = NAV_GOTOINDEX;
+    TestWindow.getBrowser().gotoIndex(gotoIndex);
   } else if (uri) {
     gNavType = NAV_URI;
     BrowserTestUtils.loadURI(TestWindow.getBrowser(), uri);
@@ -240,10 +317,14 @@ function doPageNavigation(params) {
         doPageNavigation_complete(
           eventsToListenFor,
           params.onNavComplete,
-          preventBFCache
+          preventBFCache,
+          useActor,
+          cleanup
         );
       }
     );
+  } else if (cleanup) {
+    cleanup();
   }
 }
 
@@ -256,33 +337,42 @@ function doPageNavigation(params) {
 function doPageNavigation_complete(
   eventsToListenFor,
   onNavComplete,
-  preventBFCache
+  preventBFCache,
+  useActor,
+  cleanup
 ) {
-  
-  dump("TEST: removing event listeners\n");
-  for (let eventType of eventsToListenFor) {
-    TestWindow.getBrowser().removeEventListener(
-      eventType,
-      pageEventListener,
-      true
-    );
+  if (useActor) {
+    if (preventBFCache) {
+      let actor = TestWindow.getBrowser().browsingContext.currentWindowGlobal.getActor(
+        "DocShellHelpers"
+      );
+      actor.sendAsyncMessage("docshell_helpers:preventBFCache");
+    }
+  } else {
+    
+    dump("TEST: removing event listeners\n");
+    for (let eventType of eventsToListenFor) {
+      TestWindow.getBrowser().removeEventListener(
+        eventType,
+        pageEventListener,
+        true
+      );
+    }
+
+    
+    
+    if (preventBFCache) {
+      let win = TestWindow.getWindow();
+      win.blockBFCache = new win.RTCPeerConnection();
+    }
   }
 
-  
-  
+  if (cleanup) {
+    cleanup();
+  }
+
   let uri = TestWindow.getBrowser().currentURI.spec;
   if (preventBFCache) {
-    TestWindow.getWindow().addEventListener(
-      "unload",
-      function() {
-        dump(
-          "TEST: Called dummy unload function to prevent page from " +
-            "being bfcached.\n"
-        );
-      },
-      true
-    );
-
     
     
     if (!(uri in gUrisNotInBFCache)) {
@@ -302,6 +392,18 @@ function doPageNavigation_complete(
   onNavComplete.call();
 }
 
+function promisePageNavigation(params) {
+  if (params.hasOwnProperty("onNavComplete")) {
+    throw new Error(
+      "Can't use a onNavComplete completion callback with promisePageNavigation."
+    );
+  }
+  return new Promise(resolve => {
+    params.onNavComplete = resolve;
+    doPageNavigation(params);
+  });
+}
+
 
 
 
@@ -312,10 +414,26 @@ function waitForPageEvents(params) {
   doPageNavigation(params);
 }
 
+function promisePageEvents(params) {
+  if (params.hasOwnProperty("onNavComplete")) {
+    throw new Error(
+      "Can't use a onNavComplete completion callback with promisePageEvents."
+    );
+  }
+  return new Promise(resolve => {
+    params.waitForEventsOnly = true;
+    params.onNavComplete = resolve;
+    doPageNavigation(params);
+  });
+}
 
 
 
-function pageEventListener(event) {
+
+function pageEventListener(
+  event,
+  originalTargetIsHTMLDocument = event.originalTarget instanceof HTMLDocument
+) {
   try {
     dump(
       "TEST: eventListener received a " +
@@ -336,7 +454,9 @@ function pageEventListener(event) {
   
   if (
     event.type == "pageshow" &&
-    (gNavType == NAV_BACK || gNavType == NAV_FORWARD)
+    (gNavType == NAV_BACK ||
+      gNavType == NAV_FORWARD ||
+      gNavType == NAV_GOTOINDEX)
   ) {
     let uri = TestWindow.getBrowser().currentURI.spec;
     if (uri in gUrisNotInBFCache) {
@@ -389,7 +509,7 @@ function pageEventListener(event) {
 
   if (typeof expected.title != "undefined") {
     ok(
-      event.originalTarget instanceof HTMLDocument,
+      originalTargetIsHTMLDocument,
       "originalTarget for last " + event.type + " event not an HTMLDocument"
     );
     is(
@@ -444,21 +564,24 @@ function pageEventListener(event) {
   }
 }
 
+DocShellHelpersParent.eventListener = pageEventListener;
+
 
 
 
 function finish() {
   
-  let history;
+  let historyPurged;
   if (SpecialPowers.Services.appinfo.sessionHistoryInParent) {
-    history = TestWindow.getBrowser().browsingContext?.sessionHistory;
-  } else {
-    history = TestWindow.getBrowser().webNavigation.sessionHistory
-      .legacySHistory;
-  }
-
-  if (history) {
+    let history = TestWindow.getBrowser().browsingContext?.sessionHistory;
     history.purgeHistory(history.count);
+    historyPurged = Promise.resolve();
+  } else {
+    historyPurged = SpecialPowers.spawn(TestWindow.getBrowser(), [], () => {
+      let history = docShell.QueryInterface(Ci.nsIWebNavigation).sessionHistory
+        .legacySHistory;
+      history.purgeHistory(history.count);
+    });
   }
 
   
@@ -482,7 +605,9 @@ function finish() {
     }
   });
 
-  window.close();
+  historyPurged.then(_ => {
+    window.close();
+  });
 }
 
 
@@ -503,7 +628,12 @@ function finish() {
 
 
 function waitForTrue(fn, onWaitComplete, timeout) {
-  var start = new Date().valueOf();
+  promiseTrue(fn, timeout).then(() => {
+    onWaitComplete.call();
+  });
+}
+
+function promiseTrue(fn, timeout) {
   if (typeof timeout != "undefined") {
     
     
@@ -514,25 +644,41 @@ function waitForTrue(fn, onWaitComplete, timeout) {
 
   
   
-  var intervalid;
-  intervalid = setInterval(function() {
-    var timeoutHit = false;
-    if (typeof timeout != "undefined") {
-      timeoutHit = new Date().valueOf() - start >= timeout;
-      if (timeoutHit) {
-        ok(false, "Timed out waiting for condition");
+  let intervalid, timeoutid;
+  let condition = new Promise(resolve => {
+    intervalid = setInterval(async () => {
+      if (await fn.call()) {
+        resolve();
       }
-    }
-    if (timeoutHit || fn.call()) {
-      
+    }, 20);
+  });
+  if (typeof timeout != "undefined") {
+    condition = Promise.race([
+      condition,
+      new Promise((_, reject) => {
+        timeoutid = setTimeout(() => {
+          reject();
+        }, timeout);
+      }),
+    ]);
+  }
+  return condition
+    .finally(() => {
       clearInterval(intervalid);
-      onWaitComplete.call();
-    }
-  }, 20);
+    })
+    .then(() => {
+      clearTimeout(timeoutid);
+    });
 }
 
 function waitForNextPaint(cb) {
   requestAnimationFrame(_ => requestAnimationFrame(cb));
+}
+
+function promiseNextPaint() {
+  return new Promise(resolve => {
+    waitForNextPaint(resolve);
+  });
 }
 
 
