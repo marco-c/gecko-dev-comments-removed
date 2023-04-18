@@ -306,48 +306,36 @@ nsWindowWatcher::OpenWindow(mozIDOMWindowProxy* aParent, const nsACString& aUrl,
 }
 
 struct SizeSpec {
-  SizeSpec()
-      : mLeft(0),
-        mTop(0),
-        mOuterWidth(0),
-        mOuterHeight(0),
-        mInnerWidth(0),
-        mInnerHeight(0),
-        mLeftSpecified(false),
-        mTopSpecified(false),
-        mOuterWidthSpecified(false),
-        mOuterHeightSpecified(false),
-        mInnerWidthSpecified(false),
-        mInnerHeightSpecified(false),
-        mLockAspectRatio(false) {}
+  SizeSpec() = default;
 
-  int32_t mLeft;
-  int32_t mTop;
-  int32_t mOuterWidth;   
-  int32_t mOuterHeight;  
-  int32_t mInnerWidth;   
-  int32_t mInnerHeight;  
+  
+  Maybe<DesktopIntCoord> mLeft;
+  Maybe<DesktopIntCoord> mTop;
+  Maybe<CSSIntCoord> mOuterWidth;   
+  Maybe<CSSIntCoord> mOuterHeight;  
+  Maybe<CSSIntCoord> mInnerWidth;   
+  Maybe<CSSIntCoord> mInnerHeight;  
 
-  bool mLeftSpecified;
-  bool mTopSpecified;
-  bool mOuterWidthSpecified;
-  bool mOuterHeightSpecified;
-  bool mInnerWidthSpecified;
-  bool mInnerHeightSpecified;
-  bool mLockAspectRatio;
+  bool mLockAspectRatio = false;
 
-  bool PositionSpecified() const { return mLeftSpecified || mTopSpecified; }
+  bool PositionSpecified() const { return mLeft.isSome() || mTop.isSome(); }
 
   bool SizeSpecified() const { return WidthSpecified() || HeightSpecified(); }
 
   bool WidthSpecified() const {
-    return mOuterWidthSpecified || mInnerWidthSpecified;
+    return mOuterWidth.isSome() || mInnerWidth.isSome();
   }
 
   bool HeightSpecified() const {
-    return mOuterHeightSpecified || mInnerHeightSpecified;
+    return mOuterHeight.isSome() || mOuterHeight.isSome();
   }
 };
+
+static void SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
+                             mozIDOMWindowProxy* aParent, bool aIsCallerChrome,
+                             const SizeSpec&);
+static SizeSpec CalcSizeSpec(const WindowFeatures&, bool aHasChromeParent,
+                             CSSToDesktopScale);
 
 NS_IMETHODIMP
 nsWindowWatcher::OpenWindow2(mozIDOMWindowProxy* aParent,
@@ -452,13 +440,13 @@ nsresult nsWindowWatcher::CreateChromeWindow(nsIWebBrowserChrome* aParentChrome,
 
 
 
-void nsWindowWatcher::MaybeDisablePersistence(
-    const SizeSpec& sizeSpec, nsIDocShellTreeOwner* aTreeOwner) {
+static void MaybeDisablePersistence(const SizeSpec& aSizeSpec,
+                                    nsIDocShellTreeOwner* aTreeOwner) {
   if (!aTreeOwner) {
     return;
   }
 
-  if (sizeSpec.SizeSpecified()) {
+  if (aSizeSpec.SizeSpecified()) {
     aTreeOwner->SetPersistence(false, false, false);
   }
 }
@@ -526,8 +514,14 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
   WindowFeatures features;
   features.Tokenize(aFeatures);
 
-  SizeSpec sizeSpec;
-  CalcSizeSpec(features, false, sizeSpec);
+  
+  CSSToDesktopScale cssToDesktopScale(1.0f);
+  if (nsCOMPtr<nsIBaseWindow> win = do_QueryInterface(parentTreeOwner)) {
+    cssToDesktopScale = win->GetCSSToDesktopScale();
+  }
+  cssToDesktopScale.scale *= aOpenerFullZoom;
+
+  SizeSpec sizeSpec = CalcSizeSpec(features, false, cssToDesktopScale);
 
   
   
@@ -583,8 +577,7 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
 
   MaybeDisablePersistence(sizeSpec, chromeTreeOwner);
 
-  SizeOpenedWindow(chromeTreeOwner, parentWindowOuter, false, sizeSpec,
-                   Some(aOpenerFullZoom));
+  SizeOpenedWindow(chromeTreeOwner, parentWindowOuter, false, sizeSpec);
 
   nsCOMPtr<nsIRemoteTab> newBrowserParent;
   chromeTreeOwner->GetPrimaryRemoteTab(getter_AddRefs(newBrowserParent));
@@ -698,7 +691,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   
 
   
-  bool hasChromeParent = XRE_IsContentProcess() ? false : true;
+  bool hasChromeParent = !XRE_IsContentProcess();
   if (aParent) {
     
     Document* doc = parentWindow->GetDoc();
@@ -707,8 +700,15 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
   bool isCallerChrome = nsContentUtils::LegacyIsCallerChromeOrNativeCode();
 
-  SizeSpec sizeSpec;
-  CalcSizeSpec(features, hasChromeParent, sizeSpec);
+  CSSToDesktopScale cssToDesktopScale(1.0);
+  if (nsCOMPtr<nsIBaseWindow> win = do_QueryInterface(parentDocShell)) {
+    cssToDesktopScale = win->GetCSSToDesktopScale();
+  }
+  if (parentBC) {
+    cssToDesktopScale.scale *= parentBC->FullZoom();
+  }
+  SizeSpec sizeSpec =
+      CalcSizeSpec(features, hasChromeParent, cssToDesktopScale);
 
   bool isPopupRequested = false;
 
@@ -2000,8 +2000,9 @@ already_AddRefed<BrowsingContext> nsWindowWatcher::GetBrowsingContextByName(
 }
 
 
-void nsWindowWatcher::CalcSizeSpec(const WindowFeatures& aFeatures,
-                                   bool aHasChromeParent, SizeSpec& aResult) {
+SizeSpec CalcSizeSpec(const WindowFeatures& aFeatures, bool aHasChromeParent,
+                      CSSToDesktopScale aCSSToDesktopScale) {
+  SizeSpec result;
   
   
   
@@ -2034,8 +2035,7 @@ void nsWindowWatcher::CalcSizeSpec(const WindowFeatures& aFeatures,
     
     
     
-    aResult.mLeft = x;
-    aResult.mLeftSpecified = true;
+    result.mLeft.emplace((CSSCoord(x) * aCSSToDesktopScale).Rounded());
   }
 
   
@@ -2054,8 +2054,7 @@ void nsWindowWatcher::CalcSizeSpec(const WindowFeatures& aFeatures,
     
     
     
-    aResult.mTop = y;
-    aResult.mTopSpecified = true;
+    result.mTop.emplace((CSSCoord(y) * aCSSToDesktopScale).Rounded());
   }
 
   
@@ -2063,12 +2062,11 @@ void nsWindowWatcher::CalcSizeSpec(const WindowFeatures& aFeatures,
   if (aHasChromeParent && aFeatures.Exists("outerwidth")) {
     int32_t width = aFeatures.GetInt("outerwidth");
     if (width) {
-      aResult.mOuterWidth = width;
-      aResult.mOuterWidthSpecified = true;
+      result.mOuterWidth.emplace(width);
     }
   }
 
-  if (!aResult.mOuterWidthSpecified) {
+  if (result.mOuterWidth.isNothing()) {
     
     if (aFeatures.Exists("width")) {
       
@@ -2087,8 +2085,7 @@ void nsWindowWatcher::CalcSizeSpec(const WindowFeatures& aFeatures,
         
         
         
-        aResult.mInnerWidth = width;
-        aResult.mInnerWidthSpecified = true;
+        result.mInnerWidth.emplace(width);
 
         
         
@@ -2103,12 +2100,11 @@ void nsWindowWatcher::CalcSizeSpec(const WindowFeatures& aFeatures,
   if (aHasChromeParent && aFeatures.Exists("outerheight")) {
     int32_t height = aFeatures.GetInt("outerheight");
     if (height) {
-      aResult.mOuterHeight = height;
-      aResult.mOuterHeightSpecified = true;
+      result.mOuterHeight.emplace(height);
     }
   }
 
-  if (!aResult.mOuterHeightSpecified) {
+  if (result.mOuterHeight.isNothing()) {
     
     if (aFeatures.Exists("height")) {
       
@@ -2127,8 +2123,7 @@ void nsWindowWatcher::CalcSizeSpec(const WindowFeatures& aFeatures,
         
         
         
-        aResult.mInnerHeight = height;
-        aResult.mInnerHeightSpecified = true;
+        result.mInnerHeight.emplace(height);
 
         
         
@@ -2140,8 +2135,9 @@ void nsWindowWatcher::CalcSizeSpec(const WindowFeatures& aFeatures,
 
   
   
-  aResult.mLockAspectRatio =
+  result.mLockAspectRatio =
       aFeatures.GetBoolWithDefault("lockaspectratio", false);
+  return result;
 }
 
 
@@ -2157,24 +2153,12 @@ void nsWindowWatcher::CalcSizeSpec(const WindowFeatures& aFeatures,
 
 
 
-
-
-
-void nsWindowWatcher::SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
-                                       mozIDOMWindowProxy* aParent,
-                                       bool aIsCallerChrome,
-                                       const SizeSpec& aSizeSpec,
-                                       const Maybe<float>& aOpenerFullZoom) {
+static void SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
+                             mozIDOMWindowProxy* aParent, bool aIsCallerChrome,
+                             const SizeSpec& aSizeSpec) {
   
   
   MOZ_ASSERT(XRE_IsParentProcess());
-
-  
-  int32_t left = 0, top = 0, width = 100, height = 100;
-  
-  int32_t chromeWidth = 0, chromeHeight = 0;
-  
-  bool sizeChromeWidth = true, sizeChromeHeight = true;
 
   
   nsCOMPtr<nsIBaseWindow> treeOwnerAsWin(do_QueryInterface(aTreeOwner));
@@ -2182,33 +2166,34 @@ void nsWindowWatcher::SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
     return;
   }
 
-  double openerZoom = aOpenerFullZoom.valueOr(1.0);
-  if (aParent && aOpenerFullZoom.isNothing()) {
-    nsCOMPtr<nsPIDOMWindowOuter> piWindow = nsPIDOMWindowOuter::From(aParent);
-    if (Document* doc = piWindow->GetDoc()) {
-      if (nsPresContext* presContext = doc->GetPresContext()) {
-        openerZoom = presContext->GetFullZoom();
-      }
-    }
-  }
-
-  double scale = 1.0;
-  treeOwnerAsWin->GetUnscaledDevicePixelsPerCSSPixel(&scale);
-
   
+  
+  
+  
+  
+  
+  DesktopIntCoord left = 0, top = 0;
+  CSSIntCoord width = 0, height = 0;
+  
+  CSSIntCoord chromeWidth = 0, chromeHeight = 0;
+  
+  bool sizeChromeWidth = true, sizeChromeHeight = true;
 
-
-
-
-
-
-  treeOwnerAsWin->GetPositionAndSize(&left, &top, &width, &height);
-  left = NSToIntRound(left / scale);
-  top = NSToIntRound(top / scale);
-  width = NSToIntRound(width / scale);
-  height = NSToIntRound(height / scale);
   {
-    int32_t contentWidth, contentHeight;
+    CSSToLayoutDeviceScale cssToDevScale =
+        treeOwnerAsWin->UnscaledDevicePixelsPerCSSPixel();
+    DesktopToLayoutDeviceScale devToDesktopScale =
+        treeOwnerAsWin->DevicePixelsPerDesktopPixel();
+
+    LayoutDeviceIntRect devPxRect;
+    treeOwnerAsWin->GetPositionAndSize(&devPxRect.x, &devPxRect.y,
+                                       &devPxRect.width, &devPxRect.height);
+    width = (LayoutDeviceCoord(devPxRect.width) / cssToDevScale).Rounded();
+    height = (LayoutDeviceCoord(devPxRect.height) / cssToDevScale).Rounded();
+    left = (LayoutDeviceCoord(devPxRect.x) / devToDesktopScale).Rounded();
+    top = (LayoutDeviceCoord(devPxRect.y) / devToDesktopScale).Rounded();
+
+    int32_t contentWidth, contentHeight;  
     bool hasPrimaryContent = false;
     aTreeOwner->GetHasPrimaryContent(&hasPrimaryContent);
     if (hasPrimaryContent) {
@@ -2221,28 +2206,28 @@ void nsWindowWatcher::SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
   }
 
   
-  if (aSizeSpec.mLeftSpecified) {
-    left = NSToIntRound(aSizeSpec.mLeft * openerZoom);
+  if (aSizeSpec.mLeft) {
+    left = *aSizeSpec.mLeft;
   }
 
-  if (aSizeSpec.mTopSpecified) {
-    top = NSToIntRound(aSizeSpec.mTop * openerZoom);
+  if (aSizeSpec.mTop) {
+    top = *aSizeSpec.mTop;
   }
 
   
-  if (aSizeSpec.mOuterWidthSpecified) {
-    width = NSToIntRound(aSizeSpec.mOuterWidth * openerZoom);
-  } else if (aSizeSpec.mInnerWidthSpecified) {
+  if (aSizeSpec.mOuterWidth) {
+    width = *aSizeSpec.mOuterWidth;
+  } else if (aSizeSpec.mInnerWidth) {
     sizeChromeWidth = false;
-    width = NSToIntRound(aSizeSpec.mInnerWidth * openerZoom);
+    width = *aSizeSpec.mInnerWidth;
   }
 
   
-  if (aSizeSpec.mOuterHeightSpecified) {
-    height = NSToIntRound(aSizeSpec.mOuterHeight * openerZoom);
-  } else if (aSizeSpec.mInnerHeightSpecified) {
+  if (aSizeSpec.mOuterHeight) {
+    height = *aSizeSpec.mOuterHeight;
+  } else if (aSizeSpec.mInnerHeight) {
     sizeChromeHeight = false;
-    height = NSToIntRound(aSizeSpec.mInnerHeight * openerZoom);
+    height = *aSizeSpec.mInnerHeight;
   }
 
   bool positionSpecified = aSizeSpec.PositionSpecified();
@@ -2256,6 +2241,10 @@ void nsWindowWatcher::SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
     enabled = !aParent || chromeWin;
   }
 
+  const CSSIntCoord extraWidth = sizeChromeWidth ? CSSIntCoord(0) : chromeWidth;
+  const CSSIntCoord extraHeight =
+      sizeChromeHeight ? CSSIntCoord(0) : chromeHeight;
+
   if (!enabled) {
     
 
@@ -2265,22 +2254,20 @@ void nsWindowWatcher::SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
     nsCOMPtr<nsIScreen> screen;
     nsCOMPtr<nsIScreenManager> screenMgr(
         do_GetService("@mozilla.org/gfx/screenmanager;1"));
-    if (screenMgr)
+    if (screenMgr) {
+      
       screenMgr->ScreenForRect(left, top, width, height,
                                getter_AddRefs(screen));
+    }
     if (screen) {
-      int32_t screenLeft, screenTop, screenWidth, screenHeight;
-      int32_t winWidth = width + (sizeChromeWidth ? 0 : chromeWidth),
-              winHeight = height + (sizeChromeHeight ? 0 : chromeHeight);
+      CSSIntCoord winWidth = width + extraWidth;
+      CSSIntCoord winHeight = height + extraHeight;
 
+      const auto screenCssToDesktopScale = screen->GetCSSToDesktopScale();
+      const DesktopIntRect screenDesktopRect = screen->GetAvailRectDisplayPix();
       
-      screen->GetAvailRect(&screenLeft, &screenTop, &screenWidth,
-                           &screenHeight);
-      
-      screenLeft = NSToIntRound(screenLeft / scale);
-      screenTop = NSToIntRound(screenTop / scale);
-      screenWidth = NSToIntRound(screenWidth / scale);
-      screenHeight = NSToIntRound(screenHeight / scale);
+      const CSSSize screenCssSize =
+          screenDesktopRect.Size() / screenCssToDesktopScale;
 
       if (aSizeSpec.SizeSpecified()) {
         if (!nsContentUtils::ShouldResistFingerprinting()) {
@@ -2289,59 +2276,61 @@ void nsWindowWatcher::SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
 
           if (height < 100) {
             height = 100;
-            winHeight = height + (sizeChromeHeight ? 0 : chromeHeight);
+            winHeight = height + extraHeight;
           }
-          if (winHeight > screenHeight) {
-            height = screenHeight - (sizeChromeHeight ? 0 : chromeHeight);
+          if (winHeight > screenCssSize.height) {
+            height = screenCssSize.height - extraHeight;
           }
           if (width < 100) {
             width = 100;
-            winWidth = width + (sizeChromeWidth ? 0 : chromeWidth);
+            winWidth = width + extraWidth;
           }
-          if (winWidth > screenWidth) {
-            width = screenWidth - (sizeChromeWidth ? 0 : chromeWidth);
+          if (winWidth > screenCssSize.width) {
+            width = screenCssSize.width - extraWidth;
           }
         } else {
           int32_t targetContentWidth = 0;
           int32_t targetContentHeight = 0;
 
           nsContentUtils::CalcRoundedWindowSizeForResistingFingerprinting(
-              chromeWidth, chromeHeight, screenWidth, screenHeight, width,
-              height, sizeChromeWidth, sizeChromeHeight, &targetContentWidth,
-              &targetContentHeight);
+              chromeWidth, chromeHeight, screenCssSize.width,
+              screenCssSize.height, width, height, sizeChromeWidth,
+              sizeChromeHeight, &targetContentWidth, &targetContentHeight);
 
-          if (aSizeSpec.mInnerWidthSpecified ||
-              aSizeSpec.mOuterWidthSpecified) {
+          if (aSizeSpec.mInnerWidth || aSizeSpec.mOuterWidth) {
             width = targetContentWidth;
-            winWidth = width + (sizeChromeWidth ? 0 : chromeWidth);
+            winWidth = width + extraWidth;
           }
 
-          if (aSizeSpec.mInnerHeightSpecified ||
-              aSizeSpec.mOuterHeightSpecified) {
+          if (aSizeSpec.mInnerHeight || aSizeSpec.mOuterHeight) {
             height = targetContentHeight;
-            winHeight = height + (sizeChromeHeight ? 0 : chromeHeight);
+            winHeight = height + extraHeight;
           }
         }
       }
 
-      CheckedInt<decltype(left)> leftPlusWinWidth = left;
-      leftPlusWinWidth += winWidth;
+      const DesktopIntCoord desktopWinWidth =
+          (CSSCoord(winWidth) * screenCssToDesktopScale).Rounded();
+      const DesktopIntCoord desktopWinHeight =
+          (CSSCoord(winHeight) * screenCssToDesktopScale).Rounded();
+      CheckedInt<int32_t> leftPlusWinWidth = int32_t(left);
+      leftPlusWinWidth += int32_t(desktopWinWidth);
       if (!leftPlusWinWidth.isValid() ||
-          leftPlusWinWidth.value() > screenLeft + screenWidth) {
-        left = screenLeft + screenWidth - winWidth;
+          leftPlusWinWidth.value() > screenDesktopRect.XMost()) {
+        left = screenDesktopRect.XMost() - desktopWinWidth;
       }
-      if (left < screenLeft) {
-        left = screenLeft;
+      if (left < screenDesktopRect.x) {
+        left = screenDesktopRect.x;
       }
 
-      CheckedInt<decltype(top)> topPlusWinHeight = top;
-      topPlusWinHeight += winHeight;
+      CheckedInt<int32_t> topPlusWinHeight = int32_t(top);
+      topPlusWinHeight += int32_t(desktopWinHeight);
       if (!topPlusWinHeight.isValid() ||
-          topPlusWinHeight.value() > screenTop + screenHeight) {
-        top = screenTop + screenHeight - winHeight;
+          topPlusWinHeight.value() > screenDesktopRect.YMost()) {
+        top = screenDesktopRect.YMost() - desktopWinHeight;
       }
-      if (top < screenTop) {
-        top = screenTop;
+      if (top < screenDesktopRect.y) {
+        top = screenDesktopRect.y;
       }
 
       if (top != oldTop || left != oldLeft) {
@@ -2353,56 +2342,34 @@ void nsWindowWatcher::SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
   
 
   if (positionSpecified) {
-    
-    
-    nsCOMPtr<nsIScreen> screen;
-    nsCOMPtr<nsIScreenManager> screenMgr(
-        do_GetService("@mozilla.org/gfx/screenmanager;1"));
-    if (screenMgr) {
-      screenMgr->ScreenForRect(left, top, 1, 1, getter_AddRefs(screen));
-    }
-    if (screen) {
-      double cssToDevPixScale, desktopToDevPixScale;
-      screen->GetDefaultCSSScaleFactor(&cssToDevPixScale);
-      screen->GetContentsScaleFactor(&desktopToDevPixScale);
-      double cssToDesktopScale = cssToDevPixScale / desktopToDevPixScale;
-      int32_t screenLeft, screenTop, screenWd, screenHt;
-      screen->GetRectDisplayPix(&screenLeft, &screenTop, &screenWd, &screenHt);
-      
-      
-      treeOwnerAsWin->SetPositionDesktopPix(
-          (left - screenLeft) * cssToDesktopScale + screenLeft,
-          (top - screenTop) * cssToDesktopScale + screenTop);
-    } else {
-      
-      treeOwnerAsWin->SetPosition(left * scale, top * scale);
-    }
-    
-    
-    
-    
-    treeOwnerAsWin->GetUnscaledDevicePixelsPerCSSPixel(&scale);
+    treeOwnerAsWin->SetPositionDesktopPix(left, top);
   }
+
   if (aSizeSpec.SizeSpecified()) {
+    const CSSToLayoutDeviceScale scale =
+        treeOwnerAsWin->UnscaledDevicePixelsPerCSSPixel();
+
     
 
 
     if (!sizeChromeWidth && !sizeChromeHeight) {
+      const LayoutDeviceIntCoord widthDevPx =
+          (CSSCoord(width) * scale).Rounded();
+      const LayoutDeviceIntCoord heightDevPx =
+          (CSSCoord(height) * scale).Rounded();
       bool hasPrimaryContent = false;
       aTreeOwner->GetHasPrimaryContent(&hasPrimaryContent);
       if (hasPrimaryContent) {
-        aTreeOwner->SetPrimaryContentSize(width * scale, height * scale);
+        aTreeOwner->SetPrimaryContentSize(widthDevPx, heightDevPx);
       } else {
-        aTreeOwner->SetRootShellSize(width * scale, height * scale);
+        aTreeOwner->SetRootShellSize(widthDevPx, heightDevPx);
       }
     } else {
-      if (!sizeChromeWidth) {
-        width += chromeWidth;
-      }
-      if (!sizeChromeHeight) {
-        height += chromeHeight;
-      }
-      treeOwnerAsWin->SetSize(width * scale, height * scale, false);
+      const LayoutDeviceIntCoord widthDevPx =
+          (CSSCoord(width + extraWidth) * scale).Rounded();
+      const LayoutDeviceIntCoord heightDevPx =
+          (CSSCoord(height + extraHeight) * scale).Rounded();
+      treeOwnerAsWin->SetSize(widthDevPx, heightDevPx, false);
     }
   }
 
