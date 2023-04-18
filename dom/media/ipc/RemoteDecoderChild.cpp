@@ -40,7 +40,8 @@ void RemoteDecoderChild::HandleRejectionError(
     GetManager()->RunWhenGPUProcessRecreated(NS_NewRunnableFunction(
         "RemoteDecoderChild::HandleRejectionError",
         [self, callback = std::move(aCallback)]() {
-          MediaResult error(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER, __func__);
+          MediaResult error(NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_ERR,
+                            __func__);
           callback(error);
         }));
     return;
@@ -48,7 +49,8 @@ void RemoteDecoderChild::HandleRejectionError(
   
   
   
-  aCallback(MediaResult(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER, __func__));
+  aCallback(
+      MediaResult(NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_ERR, __func__));
 }
 
 

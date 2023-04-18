@@ -330,7 +330,7 @@ RemoteDecoderManagerChild::Construct(RefPtr<RemoteDecoderChild>&& aChild) {
           [](const mozilla::ipc::ResponseRejectReason& aReason) {
             
             return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
-                NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER, __func__);
+                NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_ERR, __func__);
           });
   return p;
 }
