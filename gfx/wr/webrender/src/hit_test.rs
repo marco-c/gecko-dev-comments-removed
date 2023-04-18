@@ -391,51 +391,53 @@ impl HitTester {
             }
 
             
-            if let Some(point_in_layer) = point_in_layer {
-                
-                
-                if !item.rect.contains(point_in_layer) {
-                    continue;
-                }
-                if !item.clip_rect.contains(point_in_layer) {
-                    continue;
-                }
+            let point_in_layer = match point_in_layer {
+                Some(p) => p,
+                None => continue,
+            };
 
-                
-                let mut is_valid = true;
-                let clip_nodes = &self.scene.clip_nodes[item.clip_nodes_range.start.0 as usize .. item.clip_nodes_range.end.0 as usize];
-                for clip_node in clip_nodes {
-                    let transform = self
-                        .spatial_nodes[&clip_node.spatial_node_index]
-                        .world_content_transform;
-                    let transformed_point = match transform
-                        .inverse()
-                        .and_then(|inverted| inverted.transform_point2d(test.point))
-                    {
-                        Some(point) => point,
-                        None => {
-                            continue;
-                        }
-                    };
-                    if !clip_node.region.contains(&transformed_point) {
-                        is_valid = false;
-                        break;
-                    }
-                }
-                if !is_valid {
-                    continue;
-                }
-
-                
-                if !item.is_backface_visible && scroll_node.world_content_transform.is_backface_visible() {
-                    continue;
-                }
-
-                result.items.push(HitTestItem {
-                    pipeline: pipeline_id,
-                    tag: item.tag,
-                });
+            
+            
+            if !item.rect.contains(point_in_layer) {
+                continue;
             }
+
+            if !item.clip_rect.contains(point_in_layer) {
+                continue;
+            }
+
+            
+            let mut is_valid = true;
+            let clip_nodes = &self.scene.clip_nodes[item.clip_nodes_range.start.0 as usize .. item.clip_nodes_range.end.0 as usize];
+            for clip_node in clip_nodes {
+                let transform = self
+                    .spatial_nodes[&clip_node.spatial_node_index]
+                    .world_content_transform;
+                let transformed_point = match transform
+                    .inverse()
+                    .and_then(|inverted| inverted.transform_point2d(test.point))
+                {
+                    Some(point) => point,
+                    None => continue,
+                };
+                if !clip_node.region.contains(&transformed_point) {
+                    is_valid = false;
+                    break;
+                }
+            }
+            if !is_valid {
+                continue;
+            }
+
+            
+            if !item.is_backface_visible && scroll_node.world_content_transform.is_backface_visible() {
+                continue;
+            }
+
+            result.items.push(HitTestItem {
+                pipeline: pipeline_id,
+                tag: item.tag,
+            });
         }
 
         result.items.dedup();
