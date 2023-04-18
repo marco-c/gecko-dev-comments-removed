@@ -929,9 +929,16 @@ void nsPresContext::RecomputeBrowsingContextDependentData() {
     
     return;
   }
-  auto systemZoom = LookAndFeel::SystemZoomSettings();
-  SetFullZoom(browsingContext->FullZoom() * systemZoom.mFullZoom);
-  SetTextZoom(browsingContext->TextZoom() * systemZoom.mTextZoom);
+  
+  
+  
+  
+  
+  
+  float effectiveFullZoom =
+      browsingContext->FullZoom() * LookAndFeel::GetTextScaleFactor();
+  SetFullZoom(effectiveFullZoom);
+  SetTextZoom(browsingContext->TextZoom());
   SetOverrideDPPX(browsingContext->OverrideDPPX());
 
   auto* top = browsingContext->Top();
