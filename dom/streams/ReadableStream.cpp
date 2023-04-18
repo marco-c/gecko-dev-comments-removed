@@ -759,24 +759,21 @@ class ReadableStreamTeeClosePromiseHandler final : public PromiseNativeHandler {
   explicit ReadableStreamTeeClosePromiseHandler(TeeState* aTeeState)
       : mTeeState(aTeeState) {}
 
-  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
-  }
-  void RejectedCallback(JSContext* aCx,
-                        JS::Handle<JS::Value> aReason) override {
+  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                        ErrorResult& aRv) override {}
+  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aReason,
+                        ErrorResult& aRv) override {
     
-    ErrorResult rv;
     ReadableStreamDefaultControllerError(
-        aCx, mTeeState->Branch1()->DefaultController(), aReason, rv);
-    if (rv.MaybeSetPendingException(
-            aCx, "ReadableStreamDefaultTee Error During Promise Rejection")) {
+        aCx, mTeeState->Branch1()->DefaultController(), aReason, aRv);
+    if (aRv.Failed()) {
       return;
     }
 
     
     ReadableStreamDefaultControllerError(
-        aCx, mTeeState->Branch2()->DefaultController(), aReason, rv);
-    if (rv.MaybeSetPendingException(
-            aCx, "ReadableStreamDefaultTee Error During Promise Rejection")) {
+        aCx, mTeeState->Branch2()->DefaultController(), aReason, aRv);
+    if (aRv.Failed()) {
       return;
     }
 

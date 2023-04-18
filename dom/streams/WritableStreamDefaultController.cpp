@@ -139,8 +139,9 @@ class WritableStartPromiseNativeHandler final : public PromiseNativeHandler {
       WritableStreamDefaultController* aController)
       : PromiseNativeHandler(), mController(aController) {}
 
-  MOZ_CAN_RUN_SCRIPT void ResolvedCallback(
-      JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  MOZ_CAN_RUN_SCRIPT void ResolvedCallback(JSContext* aCx,
+                                           JS::Handle<JS::Value> aValue,
+                                           ErrorResult& aRv) override {
     
     
     
@@ -152,16 +153,13 @@ class WritableStartPromiseNativeHandler final : public PromiseNativeHandler {
     mController->SetStarted(true);
     
     
-    IgnoredErrorResult rv;
     WritableStreamDefaultControllerAdvanceQueueIfNeeded(
-        aCx, MOZ_KnownLive(mController), rv);
-    if (rv.MaybeSetPendingException(aCx)) {
-      return;
-    }
+        aCx, MOZ_KnownLive(mController), aRv);
   }
 
-  MOZ_CAN_RUN_SCRIPT void RejectedCallback(
-      JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  MOZ_CAN_RUN_SCRIPT void RejectedCallback(JSContext* aCx,
+                                           JS::Handle<JS::Value> aValue,
+                                           ErrorResult& aRv) override {
     
     RefPtr<WritableStream> stream = mController->Stream();
     
@@ -171,11 +169,7 @@ class WritableStartPromiseNativeHandler final : public PromiseNativeHandler {
     
     mController->SetStarted(true);
     
-    IgnoredErrorResult rv;
-    stream->DealWithRejection(aCx, aValue, rv);
-    if (rv.MaybeSetPendingException(aCx)) {
-      return;
-    }
+    stream->DealWithRejection(aCx, aValue, aRv);
   }
 };
 
@@ -326,7 +320,8 @@ class SinkCloseNativePromiseHandler final : public PromiseNativeHandler {
       WritableStreamDefaultController* aController)
       : PromiseNativeHandler(), mController(aController) {}
 
-  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                        ErrorResult& aRv) override {
     
     RefPtr<WritableStream> stream = mController->Stream();
     
@@ -334,16 +329,16 @@ class SinkCloseNativePromiseHandler final : public PromiseNativeHandler {
     stream->FinishInFlightClose();
   }
 
-  MOZ_CAN_RUN_SCRIPT void RejectedCallback(
-      JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  MOZ_CAN_RUN_SCRIPT void RejectedCallback(JSContext* aCx,
+                                           JS::Handle<JS::Value> aValue,
+                                           ErrorResult& aRv) override {
     
     RefPtr<WritableStream> stream = mController->Stream();
     
     
     
-    IgnoredErrorResult rv;
-    stream->FinishInFlightCloseWithError(aCx, aValue, rv);
-    NS_WARNING_ASSERTION(!rv.Failed(), "FinishInFlightCloseWithError failed");
+
+    stream->FinishInFlightCloseWithError(aCx, aValue, aRv);
   }
 
  private:
@@ -410,8 +405,9 @@ class SinkWriteNativePromiseHandler final : public PromiseNativeHandler {
       WritableStreamDefaultController* aController)
       : PromiseNativeHandler(), mController(aController) {}
 
-  MOZ_CAN_RUN_SCRIPT void ResolvedCallback(
-      JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  MOZ_CAN_RUN_SCRIPT void ResolvedCallback(JSContext* aCx,
+                                           JS::Handle<JS::Value> aValue,
+                                           ErrorResult& aRv) override {
     
     RefPtr<WritableStream> stream = mController->Stream();
 
@@ -438,25 +434,21 @@ class SinkWriteNativePromiseHandler final : public PromiseNativeHandler {
       bool backpressure = mController->GetBackpressure();
       
       
-      IgnoredErrorResult rv;
-      stream->UpdateBackpressure(backpressure, rv);
-      
-      NS_WARNING_ASSERTION(!rv.Failed(), "UpdateBackpressure failed");
+      stream->UpdateBackpressure(backpressure, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
     }
 
     
     
-    IgnoredErrorResult rv;
     WritableStreamDefaultControllerAdvanceQueueIfNeeded(
-        aCx, MOZ_KnownLive(mController), rv);
-    
-    NS_WARNING_ASSERTION(
-        !rv.Failed(),
-        "WritableStreamDefaultControllerAdvanceQueueIfNeeded failed");
+        aCx, MOZ_KnownLive(mController), aRv);
   }
 
-  MOZ_CAN_RUN_SCRIPT void RejectedCallback(
-      JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  MOZ_CAN_RUN_SCRIPT void RejectedCallback(JSContext* aCx,
+                                           JS::Handle<JS::Value> aValue,
+                                           ErrorResult& aRv) override {
     
     RefPtr<WritableStream> stream = mController->Stream();
 
@@ -468,10 +460,8 @@ class SinkWriteNativePromiseHandler final : public PromiseNativeHandler {
 
     
     
-    IgnoredErrorResult rv;
-    stream->FinishInFlightWriteWithError(aCx, aValue, rv);
-    
-    NS_WARNING_ASSERTION(!rv.Failed(), "FinishInFlightWriteWithError failed");
+
+    stream->FinishInFlightWriteWithError(aCx, aValue, aRv);
   }
 };
 

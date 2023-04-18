@@ -420,8 +420,9 @@ class PullIfNeededNativePromiseHandler final : public PromiseNativeHandler {
       ReadableStreamDefaultController* aController)
       : PromiseNativeHandler(), mController(aController) {}
 
-  MOZ_CAN_RUN_SCRIPT void ResolvedCallback(
-      JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  MOZ_CAN_RUN_SCRIPT void ResolvedCallback(JSContext* aCx,
+                                           JS::Handle<JS::Value> aValue,
+                                           ErrorResult& aRv) override {
     
     
     mController->SetPulling(false);
@@ -433,18 +434,15 @@ class PullIfNeededNativePromiseHandler final : public PromiseNativeHandler {
       
       ErrorResult rv;
       ReadableStreamDefaultControllerCallPullIfNeeded(
-          aCx, MOZ_KnownLive(mController), rv);
-
-      (void)rv.MaybeSetPendingException(aCx);
+          aCx, MOZ_KnownLive(mController), aRv);
     }
   }
 
-  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                        ErrorResult& aRv) override {
     
     
-    ErrorResult rv;
-    ReadableStreamDefaultControllerError(aCx, mController, aValue, rv);
-    (void)rv.MaybeSetPendingException(aCx, "PullIfNeeded Rejected Error");
+    ReadableStreamDefaultControllerError(aCx, mController, aValue, aRv);
   }
 };
 
@@ -513,7 +511,8 @@ class StartPromiseNativeHandler final : public PromiseNativeHandler {
       : PromiseNativeHandler(), mController(aController) {}
 
   MOZ_CAN_RUN_SCRIPT
-  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                        ErrorResult& aRv) override {
     MOZ_ASSERT(mController);
 
     
@@ -528,18 +527,16 @@ class StartPromiseNativeHandler final : public PromiseNativeHandler {
     mController->SetPullAgain(false);
 
     
-    ErrorResult rv;
+
     RefPtr<ReadableStreamDefaultController> stackController = mController;
-    ReadableStreamDefaultControllerCallPullIfNeeded(aCx, stackController, rv);
-    (void)rv.MaybeSetPendingException(aCx, "StartPromise Resolved Error");
+    ReadableStreamDefaultControllerCallPullIfNeeded(aCx, stackController, aRv);
   }
 
-  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                        ErrorResult& aRv) override {
     
     
-    ErrorResult rv;
-    ReadableStreamDefaultControllerError(aCx, mController, aValue, rv);
-    (void)rv.MaybeSetPendingException(aCx, "StartPromise Rejected Error");
+    ReadableStreamDefaultControllerError(aCx, mController, aValue, aRv);
   }
 };
 
