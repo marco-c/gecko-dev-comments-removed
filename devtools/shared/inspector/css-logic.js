@@ -130,9 +130,14 @@ exports.isAgentStylesheet = function(sheet) {
 
 
 exports.shortSource = function(sheet) {
-  
-  if (!sheet || !sheet.href) {
+  if (!sheet) {
     return exports.l10n("rule.sourceInline");
+  }
+
+  if (!sheet.href) {
+    return exports.l10n(
+      sheet.constructed ? "rule.sourceConstructed" : "rule.sourceInline"
+    );
   }
 
   
