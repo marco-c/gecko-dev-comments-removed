@@ -158,10 +158,6 @@ class IOUtils final {
   class EventQueue;
   class State;
 
-  template <typename Fn>
-  static already_AddRefed<Promise> WithPromiseAndState(GlobalObject& aGlobal,
-                                                       Fn aFn);
-
   
 
 

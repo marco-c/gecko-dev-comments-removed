@@ -52,9 +52,32 @@ interface nsILocalFileWin : nsIFile
 
 
 
+    
 
 
-    attribute bool readOnly;
+
+
+    const unsigned long WFA_SEARCH_INDEXED = 1;
+
+    
+
+
+    const unsigned long WFA_READONLY = 2;
+
+    
+
+
+    const unsigned long WFA_READWRITE = 4;
+
+    
+
+
+
+
+
+
+
+    attribute unsigned long fileAttributesWin;
 
     
 
