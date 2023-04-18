@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=832025
+-->
 <head>
   <title>Test for Bug 832025</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -29,7 +29,7 @@ var sel = getSelection();
 sel.collapse(test, test.childNodes.length);
 
 // make it a H1
-document.execCommand("heading", false, "H1");
+document.execCommand("formatBlock", false, "H1");
 // simulate a CR key
 sendKey("return");
 // insert some text
