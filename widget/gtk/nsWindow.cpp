@@ -5393,300 +5393,292 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     }
   }
 
+  if (mWindowType != eWindowType_dialog && mWindowType != eWindowType_popup &&
+      mWindowType != eWindowType_toplevel &&
+      mWindowType != eWindowType_invisible) {
+    MOZ_ASSERT_UNREACHABLE("Unexpected eWindowType");
+    return NS_ERROR_FAILURE;
+  }
+
   mAlwaysOnTop = aInitData && aInitData->mAlwaysOnTop;
   mIsPIPWindow = aInitData && aInitData->mPIPWindow;
   mNoAutoHide = aInitData && aInitData->mNoAutoHide;
   mMouseTransparent = aInitData && aInitData->mMouseTransparent;
 
   
-  switch (mWindowType) {
-    case eWindowType_dialog:
-    case eWindowType_popup:
-    case eWindowType_toplevel:
-    case eWindowType_invisible: {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      GtkWindowType type = GTK_WINDOW_TOPLEVEL;
-      if (mWindowType == eWindowType_popup) {
-        MOZ_ASSERT(aInitData);
-        type = GTK_WINDOW_POPUP;
-        if (GdkIsX11Display() && mNoAutoHide) {
-          type = GTK_WINDOW_TOPLEVEL;
-        }
-      }
-      mShell = gtk_window_new(type);
+  
+  
+  
+  
+  
+  
+  
+  
+  GtkWindowType type = GTK_WINDOW_TOPLEVEL;
+  if (mWindowType == eWindowType_popup) {
+    MOZ_ASSERT(aInitData);
+    type = GTK_WINDOW_POPUP;
+    if (GdkIsX11Display() && mNoAutoHide) {
+      type = GTK_WINDOW_TOPLEVEL;
+    }
+  }
+  mShell = gtk_window_new(type);
 
-      
-      
-      Unused << gfxPlatform::GetPlatform();
+  
+  
+  Unused << gfxPlatform::GetPlatform();
 
-      if (mWindowType == eWindowType_toplevel ||
-          mWindowType == eWindowType_dialog) {
-        mGtkWindowDecoration = GetSystemGtkWindowDecoration();
-      }
+  if (mWindowType == eWindowType_toplevel ||
+      mWindowType == eWindowType_dialog) {
+    mGtkWindowDecoration = GetSystemGtkWindowDecoration();
+  }
 
-      
-      bool toplevelNeedsAlphaVisual = false;
-      if (mWindowType == eWindowType_toplevel && !mIsPIPWindow) {
-        toplevelNeedsAlphaVisual = IsToplevelWindowTransparent();
-      }
+  
+  bool toplevelNeedsAlphaVisual = false;
+  if (mWindowType == eWindowType_toplevel && !mIsPIPWindow) {
+    toplevelNeedsAlphaVisual = IsToplevelWindowTransparent();
+  }
 
-      bool isGLVisualSet = false;
-      mIsAccelerated = ComputeShouldAccelerate();
+  bool isGLVisualSet = false;
+  mIsAccelerated = ComputeShouldAccelerate();
 #ifdef MOZ_X11
-      if (GdkIsX11Display() && mIsAccelerated) {
-        isGLVisualSet = ConfigureX11GLVisual();
-      }
+  if (GdkIsX11Display() && mIsAccelerated) {
+    isGLVisualSet = ConfigureX11GLVisual();
+  }
 #endif
-      if (!isGLVisualSet &&
-          (popupNeedsAlphaVisual || toplevelNeedsAlphaVisual)) {
-        
-        
-        if (mCompositedScreen) {
-          GdkVisual* visual =
-              gdk_screen_get_rgba_visual(gtk_widget_get_screen(mShell));
-          if (visual) {
-            gtk_widget_set_visual(mShell, visual);
-            mHasAlphaVisual = true;
-          }
+  if (!isGLVisualSet && (popupNeedsAlphaVisual || toplevelNeedsAlphaVisual)) {
+    
+    
+    if (mCompositedScreen) {
+      GdkVisual* visual =
+          gdk_screen_get_rgba_visual(gtk_widget_get_screen(mShell));
+      if (visual) {
+        gtk_widget_set_visual(mShell, visual);
+        mHasAlphaVisual = true;
+      }
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  mTransparencyBitmapForTitlebar = TitlebarUseShapeMask();
+
+  
+  
+  
+  
+  if (mWindowType == eWindowType_toplevel &&
+      (mHasAlphaVisual || mTransparencyBitmapForTitlebar)) {
+    mIsTransparent = true;
+  }
+
+  
+  
+  
+  if (AreBoundsSane()) {
+    GdkRectangle size = DevicePixelsToGdkSizeRoundUp(mBounds.Size());
+    LOG("nsWindow::Create() Initial resize to %d x %d\n", size.width,
+        size.height);
+    gtk_window_resize(GTK_WINDOW(mShell), size.width, size.height);
+  }
+
+  if (mWindowType == eWindowType_dialog) {
+    mGtkWindowRoleName = "Dialog";
+
+    SetDefaultIcon();
+    gtk_window_set_type_hint(GTK_WINDOW(mShell), GDK_WINDOW_TYPE_HINT_DIALOG);
+    LOG("nsWindow::Create(): dialog [%p]\n", this);
+    if (parentnsWindow) {
+      gtk_window_set_transient_for(GTK_WINDOW(mShell),
+                                   GTK_WINDOW(parentnsWindow->GetGtkWidget()));
+      LOG("    set parent window [%p]\n", parentnsWindow);
+    }
+  } else if (mWindowType == eWindowType_popup) {
+    MOZ_ASSERT(aInitData);
+    mGtkWindowRoleName = "Popup";
+    mPopupHint = aInitData->mPopupHint;
+
+    LOG("nsWindow::Create() Popup [%p]\n", this);
+
+    if (mNoAutoHide) {
+      
+      
+      if (mBorderStyle == eBorderStyle_default) {
+        gtk_window_set_decorated(GTK_WINDOW(mShell), FALSE);
+      } else {
+        bool decorate = mBorderStyle & eBorderStyle_title;
+        gtk_window_set_decorated(GTK_WINDOW(mShell), decorate);
+        if (decorate) {
+          gtk_window_set_deletable(GTK_WINDOW(mShell),
+                                   mBorderStyle & eBorderStyle_close);
         }
       }
-
+      gtk_window_set_skip_taskbar_hint(GTK_WINDOW(mShell), TRUE);
       
       
       
-      
-      
-      
-      
-      mTransparencyBitmapForTitlebar = TitlebarUseShapeMask();
-
-      
-      
-      
-      
-      if (mWindowType == eWindowType_toplevel &&
-          (mHasAlphaVisual || mTransparencyBitmapForTitlebar)) {
-        mIsTransparent = true;
-      }
-
-      
-      
-      
-      if (AreBoundsSane()) {
-        GdkRectangle size = DevicePixelsToGdkSizeRoundUp(mBounds.Size());
-        LOG("nsWindow::Create() Initial resize to %d x %d\n", size.width,
-            size.height);
-        gtk_window_resize(GTK_WINDOW(mShell), size.width, size.height);
-      }
-
-      if (mWindowType == eWindowType_dialog) {
-        mGtkWindowRoleName = "Dialog";
-
-        SetDefaultIcon();
-        gtk_window_set_type_hint(GTK_WINDOW(mShell),
-                                 GDK_WINDOW_TYPE_HINT_DIALOG);
-        LOG("nsWindow::Create(): dialog [%p]\n", this);
-        if (parentnsWindow) {
-          gtk_window_set_transient_for(
-              GTK_WINDOW(mShell), GTK_WINDOW(parentnsWindow->GetGtkWidget()));
-          LOG("    set parent window [%p]\n", parentnsWindow);
-        }
-      } else if (mWindowType == eWindowType_popup) {
-        MOZ_ASSERT(aInitData);
-        mGtkWindowRoleName = "Popup";
-        mPopupHint = aInitData->mPopupHint;
-
-        LOG("nsWindow::Create() Popup [%p]\n", this);
-
-        if (mNoAutoHide) {
-          
-          
-          if (mBorderStyle == eBorderStyle_default) {
-            gtk_window_set_decorated(GTK_WINDOW(mShell), FALSE);
-          } else {
-            bool decorate = mBorderStyle & eBorderStyle_title;
-            gtk_window_set_decorated(GTK_WINDOW(mShell), decorate);
-            if (decorate) {
-              gtk_window_set_deletable(GTK_WINDOW(mShell),
-                                       mBorderStyle & eBorderStyle_close);
-            }
-          }
-          gtk_window_set_skip_taskbar_hint(GTK_WINDOW(mShell), TRUE);
-          
-          
-          
-          gtk_window_set_accept_focus(GTK_WINDOW(mShell), FALSE);
+      gtk_window_set_accept_focus(GTK_WINDOW(mShell), FALSE);
 #ifdef MOZ_X11
-          
-          
-          if (GdkIsX11Display()) {
-            gtk_widget_realize(mShell);
-            gdk_window_add_filter(gtk_widget_get_window(mShell),
-                                  popup_take_focus_filter, nullptr);
-          }
-#endif
-        }
-
-        if (aInitData->mIsDragPopup) {
-          gtk_window_set_type_hint(GTK_WINDOW(mShell),
-                                   GDK_WINDOW_TYPE_HINT_DND);
-          mIsDragPopup = true;
-          LOG_POPUP("nsWindow::Create() Drag popup [%p]\n", this);
-        } else if (GdkIsX11Display()) {
-          
-          
-          GdkWindowTypeHint gtkTypeHint;
-          switch (mPopupHint) {
-            case ePopupTypeMenu:
-              gtkTypeHint = GDK_WINDOW_TYPE_HINT_POPUP_MENU;
-              break;
-            case ePopupTypeTooltip:
-              gtkTypeHint = GDK_WINDOW_TYPE_HINT_TOOLTIP;
-              break;
-            default:
-              gtkTypeHint = GDK_WINDOW_TYPE_HINT_UTILITY;
-              break;
-          }
-          gtk_window_set_type_hint(GTK_WINDOW(mShell), gtkTypeHint);
-          LOG_POPUP("nsWindow::Create() popup type %s\n",
-                    GetPopupTypeName().get());
-        }
-        if (parentnsWindow) {
-          LOG_POPUP("    set parent window [%p] %s\n", parentnsWindow,
-                    parentnsWindow->mGtkWindowRoleName.get());
-          GtkWindow* parentWidget = GTK_WINDOW(parentnsWindow->GetGtkWidget());
-          gtk_window_set_transient_for(GTK_WINDOW(mShell), parentWidget);
-          if (GdkIsWaylandDisplay() && gtk_window_get_modal(parentWidget)) {
-            gtk_window_set_modal(GTK_WINDOW(mShell), true);
-          }
-        }
-
-        
+      
+      
+      if (GdkIsX11Display()) {
         gtk_widget_realize(mShell);
-
-        if (GdkIsX11Display()) {
-          
-          
-          
-          NativeMoveResize( true,  false);
-        }
-      } else {  
-        mGtkWindowRoleName = "Toplevel";
-        SetDefaultIcon();
-
-        LOG("nsWindow::Create() Toplevel\n");
-
-        if (mIsPIPWindow) {
-          LOG("    Is PIP Window\n");
-          gtk_window_set_type_hint(GTK_WINDOW(mShell),
-                                   GDK_WINDOW_TYPE_HINT_UTILITY);
-        }
-
-        
-        GtkWindowGroup* group = gtk_window_group_new();
-        gtk_window_group_add_window(group, GTK_WINDOW(mShell));
-        g_object_unref(group);
+        gdk_window_add_filter(gtk_widget_get_window(mShell),
+                              popup_take_focus_filter, nullptr);
       }
+#endif
+    }
 
-      if (mAlwaysOnTop) {
-        gtk_window_set_keep_above(GTK_WINDOW(mShell), TRUE);
+    if (aInitData->mIsDragPopup) {
+      gtk_window_set_type_hint(GTK_WINDOW(mShell), GDK_WINDOW_TYPE_HINT_DND);
+      mIsDragPopup = true;
+      LOG_POPUP("nsWindow::Create() Drag popup [%p]\n", this);
+    } else if (GdkIsX11Display()) {
+      
+      
+      GdkWindowTypeHint gtkTypeHint;
+      switch (mPopupHint) {
+        case ePopupTypeMenu:
+          gtkTypeHint = GDK_WINDOW_TYPE_HINT_POPUP_MENU;
+          break;
+        case ePopupTypeTooltip:
+          gtkTypeHint = GDK_WINDOW_TYPE_HINT_TOOLTIP;
+          break;
+        default:
+          gtkTypeHint = GDK_WINDOW_TYPE_HINT_UTILITY;
+          break;
       }
-
-      
-      GtkWidget* container = moz_container_new();
-      mContainer = MOZ_CONTAINER(container);
-
-      
-      mCompositorState = COMPOSITOR_PAUSED_INITIALLY;
-
-      
-      
-      gtk_widget_realize(mShell);
-
-      
-
-
-
-
-
-
-
-
-
-
-      GtkStyleContext* style = gtk_widget_get_style_context(mShell);
-      mDrawToContainer = GdkIsWaylandDisplay() ||
-                         (mGtkWindowDecoration == GTK_DECORATION_CLIENT) ||
-                         gtk_style_context_has_class(style, "csd");
-      eventWidget = mDrawToContainer ? container : mShell;
-
-      
-      gtk_widget_set_app_paintable(eventWidget, gTransparentWindows);
-
-      gtk_widget_add_events(eventWidget, kEvents);
-
-      if (mDrawToContainer) {
-        gtk_widget_add_events(mShell, GDK_PROPERTY_CHANGE_MASK);
-        gtk_widget_set_app_paintable(mShell, gTransparentWindows);
+      gtk_window_set_type_hint(GTK_WINDOW(mShell), gtkTypeHint);
+      LOG_POPUP("nsWindow::Create() popup type %s\n", GetPopupTypeName().get());
+    }
+    if (parentnsWindow) {
+      LOG_POPUP("    set parent window [%p] %s\n", parentnsWindow,
+                parentnsWindow->mGtkWindowRoleName.get());
+      GtkWindow* parentWidget = GTK_WINDOW(parentnsWindow->GetGtkWidget());
+      gtk_window_set_transient_for(GTK_WINDOW(mShell), parentWidget);
+      if (GdkIsWaylandDisplay() && gtk_window_get_modal(parentWidget)) {
+        gtk_window_set_modal(GTK_WINDOW(mShell), true);
       }
-      if (mTransparencyBitmapForTitlebar) {
-        moz_container_force_default_visual(mContainer);
-      }
+    }
 
+    
+    gtk_widget_realize(mShell);
+
+    if (GdkIsX11Display()) {
       
       
-      gtk_widget_set_has_window(container, mDrawToContainer);
-
-      gtk_container_add(GTK_CONTAINER(mShell), container);
-
       
-      
-      if (mAlwaysOnTop) {
-        gtk_window_set_focus_on_map(GTK_WINDOW(mShell), FALSE);
-      }
+      NativeMoveResize( true,  false);
+    }
+  } else {  
+    mGtkWindowRoleName = "Toplevel";
+    SetDefaultIcon();
 
-      gtk_widget_realize(container);
+    LOG("nsWindow::Create() Toplevel\n");
 
-      
-      gtk_widget_show(container);
+    if (mIsPIPWindow) {
+      LOG("    Is PIP Window\n");
+      gtk_window_set_type_hint(GTK_WINDOW(mShell),
+                               GDK_WINDOW_TYPE_HINT_UTILITY);
+    }
 
-      if (!mAlwaysOnTop) {
-        gtk_widget_grab_focus(container);
-      }
+    
+    GtkWindowGroup* group = gtk_window_group_new();
+    gtk_window_group_add_window(group, GTK_WINDOW(mShell));
+    g_object_unref(group);
+  }
 
-      if (mIsWaylandPanelWindow) {
-        gtk_window_set_decorated(GTK_WINDOW(mShell), false);
-      }
+  if (mAlwaysOnTop) {
+    gtk_window_set_keep_above(GTK_WINDOW(mShell), TRUE);
+  }
+
+  
+  GtkWidget* container = moz_container_new();
+  mContainer = MOZ_CONTAINER(container);
+
+  
+  mCompositorState = COMPOSITOR_PAUSED_INITIALLY;
+
+  
+  
+  gtk_widget_realize(mShell);
+
+  
+
+
+
+
+
+
+
+
+
+
+  GtkStyleContext* style = gtk_widget_get_style_context(mShell);
+  mDrawToContainer = GdkIsWaylandDisplay() ||
+                     (mGtkWindowDecoration == GTK_DECORATION_CLIENT) ||
+                     gtk_style_context_has_class(style, "csd");
+  eventWidget = mDrawToContainer ? container : mShell;
+
+  
+  gtk_widget_set_app_paintable(eventWidget, gTransparentWindows);
+
+  gtk_widget_add_events(eventWidget, kEvents);
+
+  if (mDrawToContainer) {
+    gtk_widget_add_events(mShell, GDK_PROPERTY_CHANGE_MASK);
+    gtk_widget_set_app_paintable(mShell, gTransparentWindows);
+  }
+  if (mTransparencyBitmapForTitlebar) {
+    moz_container_force_default_visual(mContainer);
+  }
+
+  
+  
+  gtk_widget_set_has_window(container, mDrawToContainer);
+
+  gtk_container_add(GTK_CONTAINER(mShell), container);
+
+  
+  
+  if (mAlwaysOnTop) {
+    gtk_window_set_focus_on_map(GTK_WINDOW(mShell), FALSE);
+  }
+
+  gtk_widget_realize(container);
+
+  
+  gtk_widget_show(container);
+
+  if (!mAlwaysOnTop) {
+    gtk_widget_grab_focus(container);
+  }
+
+  if (mIsWaylandPanelWindow) {
+    gtk_window_set_decorated(GTK_WINDOW(mShell), false);
+  }
 
 #ifdef MOZ_WAYLAND
-      if (mIsDragPopup && GdkIsWaylandDisplay()) {
-        LOG("  set commit to parent");
-        moz_container_wayland_set_commit_to_parent(mContainer);
-      }
+  if (mIsDragPopup && GdkIsWaylandDisplay()) {
+    LOG("  set commit to parent");
+    moz_container_wayland_set_commit_to_parent(mContainer);
+  }
 #endif
 
-      if (mWindowType == eWindowType_popup) {
-        MOZ_ASSERT(aInitData);
-        
-        
+  if (mWindowType == eWindowType_popup) {
+    MOZ_ASSERT(aInitData);
+    
+    
 
-        
-        
-        mUpdateCursor = true;
-        SetCursor(Cursor{eCursor_standard});
-      }
-    } break;
-    default:
-      MOZ_ASSERT_UNREACHABLE("Unexpected eWindowType");
-      return NS_ERROR_FAILURE;
+    
+    
+    mUpdateCursor = true;
+    SetCursor(Cursor{eCursor_standard});
   }
 
   if (mIsChildWindow && parentnsWindow) {
