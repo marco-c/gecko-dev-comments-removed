@@ -62,8 +62,7 @@ class CompositorWidgetDelegate {
 };
 
 
-#if defined(XP_WIN) || defined(MOZ_X11) || defined(MOZ_WIDGET_ANDROID) || \
-    defined(MOZ_WAYLAND)
+#if defined(XP_WIN) || defined(MOZ_X11) || defined(MOZ_WIDGET_ANDROID)
 
 
 class CompositorWidgetParent;

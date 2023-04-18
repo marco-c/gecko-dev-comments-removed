@@ -6,8 +6,7 @@
 
 #include "mozilla/Types.h"
 
-#ifdef MOZ_X11
-#  include <X11/Xlib.h>
+#include <X11/Xlib.h>
 
 
 
@@ -20,4 +19,3 @@
 
 
 MOZ_EXPORT Bool XShmQueryExtension(Display* aDisplay) { return False; }
-#endif

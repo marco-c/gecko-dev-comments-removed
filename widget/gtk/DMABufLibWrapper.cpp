@@ -5,7 +5,6 @@
 
 
 
-#include "base/message_loop.h"  
 #include "nsWaylandDisplay.h"
 #include "DMABufLibWrapper.h"
 #include "mozilla/StaticPrefs_widget.h"

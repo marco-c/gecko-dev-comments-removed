@@ -31,6 +31,7 @@
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/XlibDisplay.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_gfx.h"
@@ -41,12 +42,9 @@
 #include "nsMathUtils.h"
 #include "nsUnicharUtils.h"
 #include "nsUnicodeProperties.h"
-#include "prenv.h"
 #include "VsyncSource.h"
-#include "mozilla/WidgetUtilsGtk.h"
 
 #ifdef MOZ_X11
-#  include "mozilla/gfx/XlibDisplay.h"
 #  include <gdk/gdkx.h>
 #  include <X11/extensions/Xrandr.h>
 #  include "cairo-xlib.h"
@@ -327,6 +325,7 @@ already_AddRefed<gfxASurface> gfxPlatformGtk::CreateOffscreenSurface(
 
   RefPtr<gfxASurface> newSurface;
   bool needsClear = true;
+#ifdef MOZ_X11
   
   
   
@@ -337,6 +336,7 @@ already_AddRefed<gfxASurface> gfxPlatformGtk::CreateOffscreenSurface(
     
     needsClear = false;
   }
+#endif
 
   if (!newSurface) {
     
@@ -951,10 +951,8 @@ class XrandrSoftwareVsyncSource final : public SoftwareVsyncSource {
     return rate;
   }
 };
-#endif
 
 already_AddRefed<gfx::VsyncSource> gfxPlatformGtk::CreateHardwareVsyncSource() {
-#ifdef MOZ_X11
   if (IsHeadless() || IsWaylandDisplay()) {
     
     
@@ -990,10 +988,8 @@ already_AddRefed<gfx::VsyncSource> gfxPlatformGtk::CreateHardwareVsyncSource() {
 
   RefPtr<VsyncSource> softwareVsync = new XrandrSoftwareVsyncSource();
   return softwareVsync.forget();
-#else
-  return gfxPlatform::CreateHardwareVsyncSource();
-#endif
 }
+#endif
 
 void gfxPlatformGtk::BuildContentDeviceData(ContentDeviceData* aOut) {
   gfxPlatform::BuildContentDeviceData(aOut);
