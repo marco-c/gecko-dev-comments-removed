@@ -26,8 +26,6 @@ const SEARCH_DATA_TRANSFERRED_SCALAR = "browser.search.data_transferred";
 const SEARCH_TELEMETRY_KEY_PREFIX = "sggt";
 const SEARCH_TELEMETRY_PRIVATE_BROWSING_KEY_SUFFIX = "pb";
 
-const SEARCH_TELEMETRY_LATENCY = "SEARCH_SUGGESTIONS_LATENCY_MS";
-
 
 
 
@@ -372,37 +370,6 @@ SearchSuggestionController.prototype = {
 
 
 
-
-
-  _reportTelemetryForEngine(engineId, privateMode, aborted = false) {
-    this._reportBandwidthForEngine(engineId, privateMode);
-
-    
-    if (this._requestStopwatchToken) {
-      if (aborted) {
-        TelemetryStopwatch.cancelKeyed(
-          SEARCH_TELEMETRY_LATENCY,
-          engineId,
-          this._requestStopwatchToken
-        );
-      } else {
-        TelemetryStopwatch.finishKeyed(
-          SEARCH_TELEMETRY_LATENCY,
-          engineId,
-          this._requestStopwatchToken
-        );
-      }
-      this._requestStopwatchToken = null;
-    }
-  },
-
-  
-
-
-
-
-
-
   _reportBandwidthForEngine(engineId, privateMode) {
     if (!this._request || !this._request.channel) {
       return;
@@ -483,13 +450,13 @@ SearchSuggestionController.prototype = {
       this._onRemoteLoaded.bind(this, deferredResponse, engineId, privateMode)
     );
     this._request.addEventListener("error", evt => {
-      this._reportTelemetryForEngine(engineId, privateMode);
+      this._reportBandwidthForEngine(engineId, privateMode);
       deferredResponse.resolve("HTTP error");
     });
     
     
     this._request.addEventListener("abort", evt => {
-      this._reportTelemetryForEngine(engineId, privateMode, true);
+      this._reportBandwidthForEngine(engineId, privateMode);
       deferredResponse.reject("HTTP request aborted");
     });
 
@@ -498,24 +465,6 @@ SearchSuggestionController.prototype = {
     } else {
       this._request.send();
     }
-
-    
-    
-    
-    
-    if (this._requestStopwatchToken) {
-      TelemetryStopwatch.cancelKeyed(
-        SEARCH_TELEMETRY_LATENCY,
-        this._requestStopwatchToken.engineId,
-        this._requestStopwatchToken
-      );
-    }
-    this._requestStopwatchToken = { engineId };
-    TelemetryStopwatch.startKeyed(
-      SEARCH_TELEMETRY_LATENCY,
-      engineId,
-      this._requestStopwatchToken
-    );
 
     return deferredResponse;
   },
@@ -533,14 +482,14 @@ SearchSuggestionController.prototype = {
 
 
   _onRemoteLoaded(deferredResponse, engineId, privateMode) {
-    this._reportTelemetryForEngine(engineId, privateMode);
-
     if (!this._request) {
       deferredResponse.resolve(
         "Got HTTP response after the request was cancelled"
       );
       return;
     }
+
+    this._reportBandwidthForEngine(engineId, privateMode);
 
     let status, serverResults;
     try {
@@ -783,8 +732,6 @@ SearchSuggestionController.engineOffersSuggestions = function(engine) {
 
 
 SearchSuggestionController.SEARCH_HISTORY_MAX_VALUE_LENGTH = 255;
-
-SearchSuggestionController.REMOTE_TIMEOUT_DEFAULT = REMOTE_TIMEOUT_DEFAULT;
 
 
 
