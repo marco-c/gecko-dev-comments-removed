@@ -135,10 +135,17 @@ class ProfileBuffer final {
   
   
   
-  mutable ProfileBufferChunkManagerSingle mWorkerChunkManager{
-      ProfileBufferChunk::Create(
+  mutable Maybe<ProfileBufferChunkManagerSingle> mMaybeWorkerChunkManager;
+  ProfileBufferChunkManagerSingle& WorkerChunkManager() const {
+    if (mMaybeWorkerChunkManager.isNothing()) {
+      
+      
+      mMaybeWorkerChunkManager.emplace(
           ProfileBufferChunk::SizeofChunkMetadata() +
-          ProfileBufferChunkManager::scExpectedMaximumStackSize)};
+          ProfileBufferChunkManager::scExpectedMaximumStackSize);
+    }
+    return *mMaybeWorkerChunkManager;
+  }
 
   
   double mFirstSamplingTimeUs = 0.0;
