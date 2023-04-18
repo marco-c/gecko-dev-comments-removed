@@ -345,7 +345,16 @@ void StickyScrollContainer::GetScrollRanges(nsIFrame* aFrame,
 void StickyScrollContainer::PositionContinuations(nsIFrame* aFrame) {
   NS_ASSERTION(nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame),
                "Should be starting from the first continuation");
-  nsPoint translation = ComputePosition(aFrame) - aFrame->GetNormalPosition();
+  bool hadProperty;
+  nsPoint translation =
+      ComputePosition(aFrame) - aFrame->GetNormalPosition(&hadProperty);
+  if (NS_WARN_IF(!hadProperty)) {
+    
+    
+    
+    
+    return;
+  }
 
   
   for (nsIFrame* cont = aFrame; cont;
