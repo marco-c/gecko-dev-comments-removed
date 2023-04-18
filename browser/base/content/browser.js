@@ -4338,6 +4338,12 @@ const BrowserSearch = {
       },
       button
     );
+
+    
+    this._updateURLBarPlaceholderFromDefaultEngine(
+      PrivateBrowsingUtils.isWindowPrivate(window),
+      false
+    ).catch(Cu.reportError);
   },
 };
 
