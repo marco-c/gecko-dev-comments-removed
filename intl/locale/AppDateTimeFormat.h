@@ -49,6 +49,11 @@ class AppDateTimeFormat {
                          const PRExplodedTime* aExplodedTime,
                          nsAString& aStringOut);
 
+  
+
+
+  static void ClearLocaleCache();
+
   static void Shutdown();
 
  private:
