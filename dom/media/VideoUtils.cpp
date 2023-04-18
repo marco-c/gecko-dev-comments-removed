@@ -335,8 +335,7 @@ bool ExtractVPXCodecDetails(const nsAString& aCodec, uint8_t& aProfile,
 
   
   
-  
-  if (aProfile > 2) {
+  if (aProfile > 3) {
     
     return false;
   }

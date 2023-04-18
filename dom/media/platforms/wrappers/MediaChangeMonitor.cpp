@@ -163,6 +163,16 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
         mDisplayAspectRatioFromContainer((float)(aInfo.mDisplay.Width()) /
                                          (float)(aInfo.mDisplay.Height())) {
     mTrackInfo = new TrackInfoSharedPtr(mCurrentConfig, mStreamID++);
+
+    if (mCurrentConfig.mExtraData && !mCurrentConfig.mExtraData->IsEmpty()) {
+      
+      
+      VPXDecoder::VPXStreamInfo vpxInfo;
+      vpxInfo.mImage = mCurrentConfig.mImage;
+      vpxInfo.mDisplay = mCurrentConfig.mDisplay;
+      VPXDecoder::ReadVPCCBox(vpxInfo, mCurrentConfig.mExtraData);
+      mInfo = Some(vpxInfo);
+    }
   }
 
   bool CanBeInstantiated() const override {

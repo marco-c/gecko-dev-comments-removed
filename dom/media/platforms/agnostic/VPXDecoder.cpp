@@ -9,7 +9,7 @@
 #include <algorithm>
 
 #include "BitReader.h"
-#include "ByteWriter.h"
+#include "BitWriter.h"
 #include "ImageContainer.h"
 #include "TimeUnits.h"
 #include "gfx2DGlue.h"
@@ -517,7 +517,7 @@ bool VPXDecoder::GetStreamInfo(Span<const uint8_t> aBuffer,
 
 void VPXDecoder::GetVPCCBox(MediaByteBuffer* aDestBox,
                             const VPXStreamInfo& aInfo) {
-  ByteWriter<BigEndian> writer(*aDestBox);
+  BitWriter writer(aDestBox);
 
   int chroma = [&]() {
     if (aInfo.mSubSampling_x && aInfo.mSubSampling_y) {
@@ -534,18 +534,83 @@ void VPXDecoder::GetVPCCBox(MediaByteBuffer* aDestBox,
     return 1;
   }();
 
-  MOZ_ALWAYS_TRUE(writer.WriteU32(1 << 24));        
-  MOZ_ALWAYS_TRUE(writer.WriteU8(aInfo.mProfile));  
-  MOZ_ALWAYS_TRUE(writer.WriteU8(10));              
-  MOZ_ALWAYS_TRUE(writer.WriteU8(
-      (0xF & aInfo.mBitDepth) << 4 | (0x7 & chroma) << 1 |
-      (0x1 & aInfo.mFullRange)));      
-                                       
-  MOZ_ALWAYS_TRUE(writer.WriteU8(2));  
-  MOZ_ALWAYS_TRUE(writer.WriteU8(2));  
-  MOZ_ALWAYS_TRUE(writer.WriteU8(2));  
-  MOZ_ALWAYS_TRUE(
-      writer.WriteU16(0));  
+  writer.WriteU8(1);        
+  writer.WriteBits(0, 24);  
+
+  writer.WriteU8(aInfo.mProfile);  
+  writer.WriteU8(10);              
+
+  writer.WriteBits(aInfo.mBitDepth, 4);  
+  writer.WriteBits(chroma, 3);           
+  writer.WriteBit(aInfo.mFullRange);     
+
+  
+  writer.WriteU8(2);  
+  writer.WriteU8(2);  
+  writer.WriteU8(2);  
+
+  writer.WriteBits(0,
+                   16);  
+}
+
+
+bool VPXDecoder::SetVideoInfo(VideoInfo* aDestInfo, const nsAString& aCodec) {
+  VPXDecoder::VPXStreamInfo info;
+  uint8_t level = 0;
+  uint8_t chroma = 1;
+  VideoColorSpace colorSpace;
+  if (!ExtractVPXCodecDetails(aCodec, info.mProfile, level, info.mBitDepth,
+                              chroma, colorSpace)) {
+    return false;
+  }
+
+  aDestInfo->mColorDepth = gfx::ColorDepthForBitDepth(info.mBitDepth);
+  VPXDecoder::SetChroma(info, chroma);
+  info.mFullRange = colorSpace.mRangeId;
+  RefPtr<MediaByteBuffer> extraData = new MediaByteBuffer();
+  VPXDecoder::GetVPCCBox(extraData, info);
+  aDestInfo->mExtraData = extraData;
+  return true;
+}
+
+
+void VPXDecoder::SetChroma(VPXStreamInfo& aDestInfo, uint8_t chroma) {
+  switch (chroma) {
+    case 0:
+    case 1:
+      aDestInfo.mSubSampling_x = true;
+      aDestInfo.mSubSampling_y = true;
+      break;
+    case 2:
+      aDestInfo.mSubSampling_x = true;
+      aDestInfo.mSubSampling_y = false;
+      break;
+    case 3:
+      aDestInfo.mSubSampling_x = false;
+      aDestInfo.mSubSampling_y = false;
+      break;
+  }
+}
+
+
+void VPXDecoder::ReadVPCCBox(VPXStreamInfo& aDestInfo, MediaByteBuffer* aBox) {
+  BitReader reader(aBox);
+
+  reader.ReadBits(8);   
+  reader.ReadBits(24);  
+  aDestInfo.mProfile = reader.ReadBits(8);
+  reader.ReadBits(8);  
+
+  aDestInfo.mBitDepth = reader.ReadBits(4);
+  SetChroma(aDestInfo, reader.ReadBits(3));
+  aDestInfo.mFullRange = reader.ReadBit();
+
+  reader.ReadBits(8);  
+  reader.ReadBits(8);  
+  reader.ReadBits(8);  
+
+  MOZ_ASSERT(reader.ReadBits(16) ==
+             0);  
 }
 
 }  
