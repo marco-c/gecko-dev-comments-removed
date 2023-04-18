@@ -327,64 +327,6 @@ static void AddDynamicPathList(SandboxBroker::Policy* policy,
   }
 }
 
-static void AddX11Dependencies(SandboxBroker::Policy* policy) {
-  
-  
-  const char* bumblebeeSocket = PR_GetEnv("BUMBLEBEE_SOCKET");
-  if (bumblebeeSocket == nullptr) {
-    bumblebeeSocket = "/var/run/bumblebee.socket";
-  }
-  policy->AddPath(SandboxBroker::MAY_CONNECT, bumblebeeSocket);
-
-#if defined(MOZ_WIDGET_GTK) && defined(MOZ_X11)
-  
-  
-  
-  
-  
-  
-  static const bool kIsX11 =
-      !mozilla::widget::GdkIsWaylandDisplay() && PR_GetEnv("DISPLAY");
-  if (kIsX11) {
-    policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
-    if (auto* const xauth = PR_GetEnv("XAUTHORITY")) {
-      policy->AddPath(rdonly, xauth);
-    } else if (auto* const home = PR_GetEnv("HOME")) {
-      
-      
-      
-      
-      nsAutoCString xauth(home);
-      if (xauth != "/"_ns) {
-        xauth.Append('/');
-      }
-      xauth.AppendLiteral(".Xauthority");
-      policy->AddPath(rdonly, xauth.get());
-    }
-  }
-#endif
-}
-
-static void AddGLDependencies(SandboxBroker::Policy* policy) {
-  
-  policy->AddDir(rdwr, "/dev/dri");
-  policy->AddFilePrefix(rdwr, "/dev", "nvidia");
-
-  
-  AddDriPaths(policy);
-
-  
-  policy->AddDir(rdonly, "/etc");
-  policy->AddDir(rdonly, "/usr/share");
-  policy->AddDir(rdonly, "/usr/local/share");
-
-  
-  
-  
-
-  AddX11Dependencies(policy);
-}
-
 void SandboxBrokerPolicyFactory::InitContentPolicy() {
   const bool headless =
       StaticPrefs::security_sandbox_content_headless_AtStartup();
@@ -393,13 +335,17 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
   
   SandboxBroker::Policy* policy = new SandboxBroker::Policy;
   
+  
+  if (!headless) {
+    
+    policy->AddFilePrefix(rdwr, "/dev", "nvidia");
+
+    
+    policy->AddDir(rdwr, "/dev/dri");
+  }
 
   
   policy->AddPath(rdwr, "/dev/null");
-
-  if (!headless) {
-    AddGLDependencies(policy);
-  }
 
   
   policy->AddPath(rdonly, "/dev/urandom");
@@ -426,6 +372,9 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
   policy->AddDir(rdonly, "/run/host/local-fonts");
   policy->AddDir(rdonly, "/var/cache/fontconfig");
 
+  if (!headless) {
+    AddDriPaths(policy);
+  }
   AddLdconfigPaths(policy);
   AddLdLibraryEnvPaths(policy);
 
@@ -622,7 +571,41 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
 #endif
 
   if (!headless) {
-    AddX11Dependencies(policy);
+    
+    
+    const char* bumblebeeSocket = PR_GetEnv("BUMBLEBEE_SOCKET");
+    if (bumblebeeSocket == nullptr) {
+      bumblebeeSocket = "/var/run/bumblebee.socket";
+    }
+    policy->AddPath(SandboxBroker::MAY_CONNECT, bumblebeeSocket);
+
+#if defined(MOZ_WIDGET_GTK) && defined(MOZ_X11)
+    
+    
+    
+    
+    
+    
+    static const bool kIsX11 =
+        !mozilla::widget::GdkIsWaylandDisplay() && PR_GetEnv("DISPLAY");
+    if (kIsX11) {
+      policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
+      if (auto* const xauth = PR_GetEnv("XAUTHORITY")) {
+        policy->AddPath(rdonly, xauth);
+      } else if (auto* const home = PR_GetEnv("HOME")) {
+        
+        
+        
+        
+        nsAutoCString xauth(home);
+        if (xauth != "/"_ns) {
+          xauth.Append('/');
+        }
+        xauth.AppendLiteral(".Xauthority");
+        policy->AddPath(rdonly, xauth.get());
+      }
+    }
+#endif
   }
 
   
@@ -856,7 +839,8 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
   }
 
   
-  AddGLDependencies(policy.get());
+  policy->AddDir(rdwr, "/dev/dri");
+  AddDriPaths(policy.get());
 
   
   AddLdconfigPaths(policy.get());

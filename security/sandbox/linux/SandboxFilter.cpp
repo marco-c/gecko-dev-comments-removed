@@ -125,12 +125,27 @@ namespace mozilla {
 
 class SandboxPolicyCommon : public SandboxPolicyBase {
  protected:
-  
-  
+  enum class ShmemUsage : uint8_t {
+    MAY_CREATE,
+    ONLY_USE,
+  };
+
+  enum class AllowUnsafeSocketPair : uint8_t {
+    NO,
+    YES,
+  };
+
   SandboxBrokerClient* mBroker = nullptr;
   bool mMayCreateShmem = false;
   bool mAllowUnsafeSocketPair = false;
-  bool mBrokeredConnect = false;  
+
+  explicit SandboxPolicyCommon(SandboxBrokerClient* aBroker,
+                               ShmemUsage aShmemUsage,
+                               AllowUnsafeSocketPair aAllowUnsafeSocketPair)
+      : mBroker(aBroker),
+        mMayCreateShmem(aShmemUsage == ShmemUsage::MAY_CREATE),
+        mAllowUnsafeSocketPair(aAllowUnsafeSocketPair ==
+                               AllowUnsafeSocketPair::YES) {}
 
   SandboxPolicyCommon() = default;
 
@@ -536,120 +551,6 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
 #endif
   }
 
-  
-  
-  
-  
-  static intptr_t FakeSocketTrapCommon(int domain, int type, int protocol) {
-    int fds[2];
-    
-    
-    
-    
-    if (domain != AF_UNIX) {
-      return -EAFNOSUPPORT;
-    }
-    if (socketpair(domain, type, protocol, fds) != 0) {
-      return -errno;
-    }
-    close(fds[1]);
-    return fds[0];
-  }
-
-  static intptr_t FakeSocketTrap(ArgsRef aArgs, void* aux) {
-    return FakeSocketTrapCommon(static_cast<int>(aArgs.args[0]),
-                                static_cast<int>(aArgs.args[1]),
-                                static_cast<int>(aArgs.args[2]));
-  }
-
-  static intptr_t FakeSocketTrapLegacy(ArgsRef aArgs, void* aux) {
-    const auto innerArgs = reinterpret_cast<unsigned long*>(aArgs.args[1]);
-
-    return FakeSocketTrapCommon(static_cast<int>(innerArgs[0]),
-                                static_cast<int>(innerArgs[1]),
-                                static_cast<int>(innerArgs[2]));
-  }
-
-  static Maybe<int> DoGetSockOpt(int fd, int optname) {
-    int optval;
-    socklen_t optlen = sizeof(optval);
-
-    if (getsockopt(fd, SOL_SOCKET, optname, &optval, &optlen) != 0) {
-      return Nothing();
-    }
-    MOZ_RELEASE_ASSERT(static_cast<size_t>(optlen) == sizeof(optval));
-    return Some(optval);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  static intptr_t ConnectTrapCommon(SandboxBrokerClient* aBroker, int aFd,
-                                    const struct sockaddr_un* aAddr,
-                                    socklen_t aLen) {
-    if (aFd < 0) {
-      return -EBADF;
-    }
-    const auto maybeDomain = DoGetSockOpt(aFd, SO_DOMAIN);
-    if (!maybeDomain) {
-      return -errno;
-    }
-    if (*maybeDomain != AF_UNIX) {
-      return -EAFNOSUPPORT;
-    }
-    const auto maybeType = DoGetSockOpt(aFd, SO_TYPE);
-    if (!maybeType) {
-      return -errno;
-    }
-    const int oldFlags = fcntl(aFd, F_GETFL);
-    if (oldFlags == -1) {
-      return -errno;
-    }
-    const int newFd = aBroker->Connect(aAddr, aLen, *maybeType);
-    if (newFd < 0) {
-      return newFd;
-    }
-    
-    
-    
-    
-    
-    if (fcntl(newFd, F_SETFL, oldFlags & O_NONBLOCK) != 0) {
-      close(newFd);
-      return -errno;
-    }
-    if (dup2(newFd, aFd) < 0) {
-      close(newFd);
-      return -errno;
-    }
-    close(newFd);
-    return 0;
-  }
-
-  static intptr_t ConnectTrap(ArgsRef aArgs, void* aux) {
-    typedef const struct sockaddr_un* AddrPtr;
-
-    return ConnectTrapCommon(static_cast<SandboxBrokerClient*>(aux),
-                             static_cast<int>(aArgs.args[0]),
-                             reinterpret_cast<AddrPtr>(aArgs.args[1]),
-                             static_cast<socklen_t>(aArgs.args[2]));
-  }
-
-  static intptr_t ConnectTrapLegacy(ArgsRef aArgs, void* aux) {
-    const auto innerArgs = reinterpret_cast<unsigned long*>(aArgs.args[1]);
-    typedef const struct sockaddr_un* AddrPtr;
-
-    return ConnectTrapCommon(static_cast<SandboxBrokerClient*>(aux),
-                             static_cast<int>(innerArgs[0]),
-                             reinterpret_cast<AddrPtr>(innerArgs[1]),
-                             static_cast<socklen_t>(innerArgs[2]));
-  }
-
  public:
   ResultExpr InvalidSyscall() const override {
     return Trap(BlockedSyscallTrap, nullptr);
@@ -701,14 +602,6 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
     switch (aCall) {
       case SYS_RECVMSG:
       case SYS_SENDMSG:
-        
-        
-        
-        
-      case SYS_RECVFROM:
-      case SYS_SENDTO:
-      case SYS_RECV:
-      case SYS_SEND:
         return Some(Allow());
 
       case SYS_SOCKETPAIR: {
@@ -755,32 +648,10 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         Arg<int> level(1), optname(2);
         
         
-        
-        
-        
-        return Some(If(AllOf(level == SOL_SOCKET,
-                             AnyOf(optname == SO_SNDBUF, optname == SO_DOMAIN,
-                                   optname == SO_TYPE)),
-                       Allow())
-                        .Else(InvalidSyscall()));
+        return Some(
+            If(AllOf(level == SOL_SOCKET, optname == SO_SNDBUF), Allow())
+                .Else(InvalidSyscall()));
       }
-
-        
-      case SYS_SOCKET:
-        if (mBrokeredConnect) {
-          const auto trapFn = aHasArgs ? FakeSocketTrap : FakeSocketTrapLegacy;
-          MOZ_ASSERT(mBroker);
-          return Some(Trap(trapFn, mBroker));
-        }
-        return Nothing();
-
-      case SYS_CONNECT:
-        if (mBrokeredConnect) {
-          const auto trapFn = aHasArgs ? ConnectTrap : ConnectTrapLegacy;
-          MOZ_ASSERT(mBroker);
-          return Some(Trap(trapFn, mBroker));
-        }
-        return Nothing();
 
       default:
         return Nothing();
@@ -1153,12 +1024,6 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
             .Else(SandboxPolicyBase::EvaluateSyscall(sysno));
       }
 
-      CASES_FOR_dup2:  
-        if (mBrokeredConnect) {
-          return Allow();
-        }
-        return SandboxPolicyBase::EvaluateSyscall(sysno);
-
 #ifdef MOZ_ASAN
         
       case __NR_ioctl: {
@@ -1246,23 +1111,136 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
     return rv;
   }
 
+  
+  
+  
+  
+  static intptr_t FakeSocketTrapCommon(int domain, int type, int protocol) {
+    int fds[2];
+    
+    
+    
+    
+    if (domain != AF_UNIX) {
+      return -EAFNOSUPPORT;
+    }
+    if (socketpair(domain, type, protocol, fds) != 0) {
+      return -errno;
+    }
+    close(fds[1]);
+    return fds[0];
+  }
+
+  static intptr_t FakeSocketTrap(ArgsRef aArgs, void* aux) {
+    return FakeSocketTrapCommon(static_cast<int>(aArgs.args[0]),
+                                static_cast<int>(aArgs.args[1]),
+                                static_cast<int>(aArgs.args[2]));
+  }
+
+  static intptr_t FakeSocketTrapLegacy(ArgsRef aArgs, void* aux) {
+    const auto innerArgs = reinterpret_cast<unsigned long*>(aArgs.args[1]);
+
+    return FakeSocketTrapCommon(static_cast<int>(innerArgs[0]),
+                                static_cast<int>(innerArgs[1]),
+                                static_cast<int>(innerArgs[2]));
+  }
+
+  static Maybe<int> DoGetSockOpt(int fd, int optname) {
+    int optval;
+    socklen_t optlen = sizeof(optval);
+
+    if (getsockopt(fd, SOL_SOCKET, optname, &optval, &optlen) != 0) {
+      return Nothing();
+    }
+    MOZ_RELEASE_ASSERT(static_cast<size_t>(optlen) == sizeof(optval));
+    return Some(optval);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  static intptr_t ConnectTrapCommon(SandboxBrokerClient* aBroker, int aFd,
+                                    const struct sockaddr_un* aAddr,
+                                    socklen_t aLen) {
+    if (aFd < 0) {
+      return -EBADF;
+    }
+    const auto maybeDomain = DoGetSockOpt(aFd, SO_DOMAIN);
+    if (!maybeDomain) {
+      return -errno;
+    }
+    if (*maybeDomain != AF_UNIX) {
+      return -EAFNOSUPPORT;
+    }
+    const auto maybeType = DoGetSockOpt(aFd, SO_TYPE);
+    if (!maybeType) {
+      return -errno;
+    }
+    const int oldFlags = fcntl(aFd, F_GETFL);
+    if (oldFlags == -1) {
+      return -errno;
+    }
+    const int newFd = aBroker->Connect(aAddr, aLen, *maybeType);
+    if (newFd < 0) {
+      return newFd;
+    }
+    
+    
+    
+    
+    
+    if (fcntl(newFd, F_SETFL, oldFlags & O_NONBLOCK) != 0) {
+      close(newFd);
+      return -errno;
+    }
+    if (dup2(newFd, aFd) < 0) {
+      close(newFd);
+      return -errno;
+    }
+    close(newFd);
+    return 0;
+  }
+
+  static intptr_t ConnectTrap(ArgsRef aArgs, void* aux) {
+    typedef const struct sockaddr_un* AddrPtr;
+
+    return ConnectTrapCommon(static_cast<SandboxBrokerClient*>(aux),
+                             static_cast<int>(aArgs.args[0]),
+                             reinterpret_cast<AddrPtr>(aArgs.args[1]),
+                             static_cast<socklen_t>(aArgs.args[2]));
+  }
+
+  static intptr_t ConnectTrapLegacy(ArgsRef aArgs, void* aux) {
+    const auto innerArgs = reinterpret_cast<unsigned long*>(aArgs.args[1]);
+    typedef const struct sockaddr_un* AddrPtr;
+
+    return ConnectTrapCommon(static_cast<SandboxBrokerClient*>(aux),
+                             static_cast<int>(innerArgs[0]),
+                             reinterpret_cast<AddrPtr>(innerArgs[1]),
+                             static_cast<socklen_t>(innerArgs[2]));
+  }
+
  public:
   ContentSandboxPolicy(SandboxBrokerClient* aBroker,
                        ContentProcessSandboxParams&& aParams)
-      : mParams(std::move(aParams)),
+      : SandboxPolicyCommon(aBroker, ShmemUsage::MAY_CREATE,
+                            AllowUnsafeSocketPair::YES),
+        mParams(std::move(aParams)),
         mAllowSysV(PR_GetEnv("MOZ_SANDBOX_ALLOW_SYSV") != nullptr),
-        mUsingRenderDoc(PR_GetEnv("RENDERDOC_CAPTUREOPTS") != nullptr) {
-    mBroker = aBroker;
-    mMayCreateShmem = true;
-    mAllowUnsafeSocketPair = true;
-    mBrokeredConnect = true;
-  }
+        mUsingRenderDoc(PR_GetEnv("RENDERDOC_CAPTUREOPTS") != nullptr) {}
 
   ~ContentSandboxPolicy() override = default;
 
   Maybe<ResultExpr> EvaluateSocketCall(int aCall,
                                        bool aHasArgs) const override {
     switch (aCall) {
+      case SYS_RECVFROM:
+      case SYS_SENDTO:
       case SYS_SENDMMSG:  
         return Some(Allow());
 
@@ -1270,23 +1248,22 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
       case SYS_SOCKET:
         return Some(Error(EACCES));
 #else  
-      case SYS_SOCKET:
-      case SYS_CONNECT:
-        if (BelowLevel(4)) {
-          return Some(Allow());
-        }
-        return SandboxPolicyCommon::EvaluateSocketCall(aCall, aHasArgs);
-
-        
+      case SYS_SOCKET: {
+        const auto trapFn = aHasArgs ? FakeSocketTrap : FakeSocketTrapLegacy;
+        return Some(AllowBelowLevel(4, Trap(trapFn, nullptr)));
+      }
+      case SYS_CONNECT: {
+        const auto trapFn = aHasArgs ? ConnectTrap : ConnectTrapLegacy;
+        return Some(AllowBelowLevel(4, Trap(trapFn, mBroker)));
+      }
+      case SYS_RECV:
+      case SYS_SEND:
       case SYS_GETSOCKOPT:
       case SYS_SETSOCKOPT:
-        
-        
       case SYS_GETSOCKNAME:
       case SYS_GETPEERNAME:
       case SYS_SHUTDOWN:
         return Some(Allow());
-
       case SYS_ACCEPT:
       case SYS_ACCEPT4:
         if (mUsingRenderDoc) {
@@ -1495,6 +1472,9 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
 
       case __NR_getrusage:
       case __NR_times:
+        return Allow();
+
+      CASES_FOR_dup2:  
         return Allow();
 
       case __NR_fsync:
@@ -1782,11 +1762,9 @@ UniquePtr<sandbox::bpf_dsl::Policy> GetMediaSandboxPolicy(
 
 class RDDSandboxPolicy final : public SandboxPolicyCommon {
  public:
-  explicit RDDSandboxPolicy(SandboxBrokerClient* aBroker) {
-    mBroker = aBroker;
-    mMayCreateShmem = true;
-    mBrokeredConnect = true;
-  }
+  explicit RDDSandboxPolicy(SandboxBrokerClient* aBroker)
+      : SandboxPolicyCommon(aBroker, ShmemUsage::MAY_CREATE,
+                            AllowUnsafeSocketPair::NO) {}
 
 #ifndef ANDROID
   Maybe<ResultExpr> EvaluateIpcCall(int aCall, int aArgShift) const override {
@@ -1822,10 +1800,10 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
                                        bool aHasArgs) const override {
     switch (aCall) {
       
-      case SYS_GETSOCKNAME:
-      case SYS_GETPEERNAME:
-      case SYS_SHUTDOWN:
-        return Some(Allow());
+      
+      
+      case SYS_SOCKET:
+        return Some(Error(EACCES));
 
       default:
         return SandboxPolicyCommon::EvaluateSocketCall(aCall, aHasArgs);
@@ -1897,10 +1875,9 @@ UniquePtr<sandbox::bpf_dsl::Policy> GetDecoderSandboxPolicy(
 
 class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
  public:
-  explicit SocketProcessSandboxPolicy(SandboxBrokerClient* aBroker) {
-    mBroker = aBroker;
-    mMayCreateShmem = true;
-  }
+  explicit SocketProcessSandboxPolicy(SandboxBrokerClient* aBroker)
+      : SandboxPolicyCommon(aBroker, ShmemUsage::MAY_CREATE,
+                            AllowUnsafeSocketPair::NO) {}
 
   static intptr_t FcntlTrap(const sandbox::arch_seccomp_data& aArgs,
                             void* aux) {
@@ -1920,15 +1897,22 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
   Maybe<ResultExpr> EvaluateSocketCall(int aCall,
                                        bool aHasArgs) const override {
     switch (aCall) {
-      case SYS_SOCKET:
-      case SYS_CONNECT:
       case SYS_BIND:
         return Some(Allow());
 
-        
+      case SYS_SOCKET:
+        return Some(Allow());
+
+      case SYS_CONNECT:
+        return Some(Allow());
+
+      case SYS_RECVFROM:
+      case SYS_SENDTO:
       case SYS_SENDMMSG:
         return Some(Allow());
 
+      case SYS_RECV:
+      case SYS_SEND:
       case SYS_GETSOCKOPT:
       case SYS_SETSOCKOPT:
       case SYS_GETSOCKNAME:
@@ -2029,10 +2013,9 @@ UniquePtr<sandbox::bpf_dsl::Policy> GetSocketProcessSandboxPolicy(
 
 class UtilitySandboxPolicy : public SandboxPolicyCommon {
  public:
-  explicit UtilitySandboxPolicy(SandboxBrokerClient* aBroker) {
-    mBroker = aBroker;
-    mMayCreateShmem = true;
-  }
+  explicit UtilitySandboxPolicy(SandboxBrokerClient* aBroker)
+      : SandboxPolicyCommon(aBroker, ShmemUsage::MAY_CREATE,
+                            AllowUnsafeSocketPair::NO) {}
 
   ResultExpr PrctlPolicy() const override {
     Arg<int> op(0);
