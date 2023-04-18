@@ -21,16 +21,16 @@ namespace mozilla {
 
 
 
-class CAPABILITY Monitor {
+class Monitor {
  public:
   explicit Monitor(const char* aName)
       : mMutex(aName), mCondVar(mMutex, "[Monitor.mCondVar]") {}
 
   ~Monitor() = default;
 
-  void Lock() CAPABILITY_ACQUIRE() { mMutex.Lock(); }
-  [[nodiscard]] bool TryLock() TRY_ACQUIRE(true) { return mMutex.TryLock(); }
-  void Unlock() CAPABILITY_RELEASE() { mMutex.Unlock(); }
+  void Lock() { mMutex.Lock(); }
+  [[nodiscard]] bool TryLock() { return mMutex.TryLock(); }
+  void Unlock() { mMutex.Unlock(); }
 
   void Wait() { mCondVar.Wait(); }
   CVStatus Wait(TimeDuration aDuration) { return mCondVar.Wait(aDuration); }
@@ -38,17 +38,16 @@ class CAPABILITY Monitor {
   void Notify() { mCondVar.Notify(); }
   void NotifyAll() { mCondVar.NotifyAll(); }
 
-  void AssertCurrentThreadOwns() const ASSERT_CAPABILITY(this) {
-    mMutex.AssertCurrentThreadOwns();
-  }
-  void AssertNotCurrentThreadOwns() const ASSERT_CAPABILITY(!this) {
+  void AssertCurrentThreadOwns() const { mMutex.AssertCurrentThreadOwns(); }
+
+  void AssertNotCurrentThreadOwns() const {
     mMutex.AssertNotCurrentThreadOwns();
   }
 
  private:
-  Monitor() = delete;
-  Monitor(const Monitor&) = delete;
-  Monitor& operator=(const Monitor&) = delete;
+  Monitor();
+  Monitor(const Monitor&);
+  Monitor& operator=(const Monitor&);
 
   Mutex mMutex;
   CondVar mCondVar;
@@ -61,235 +60,58 @@ class CAPABILITY Monitor {
 
 
 
-
-
-
-
-
-
-class MonitorSingleWriter : public Monitor {
+class MOZ_STACK_CLASS MonitorAutoLock {
  public:
-  
-  
-  
-  
-  explicit MonitorSingleWriter(const char* aName, SingleWriterLockOwner* aOwner)
-      : Monitor(aName)
-#ifdef DEBUG
-        ,
-        mOwner(aOwner)
-#endif
-  {
-    MOZ_COUNT_CTOR(MonitorSingleWriter);
-    MOZ_ASSERT(mOwner);
-  }
-
-  MOZ_COUNTED_DTOR(MonitorSingleWriter)
-
-  void AssertOnWritingThread() const ASSERT_CAPABILITY(this) {
-    MOZ_ASSERT(mOwner->OnWritingThread());
-  }
-  void AssertOnWritingThreadOrHeld() const ASSERT_CAPABILITY(this) {
-#ifdef DEBUG
-    if (!mOwner->OnWritingThread()) {
-      AssertCurrentThreadOwns();
-    }
-#endif
-  }
-
- private:
-#ifdef DEBUG
-  SingleWriterLockOwner* mOwner MOZ_UNSAFE_REF(
-      "This is normally the object that contains the MonitorSingleWriter, so "
-      "we don't want to hold a reference to ourselves");
-#endif
-
-  MonitorSingleWriter() = delete;
-  MonitorSingleWriter(const MonitorSingleWriter&) = delete;
-  MonitorSingleWriter& operator=(const MonitorSingleWriter&) = delete;
-};
-
-
-
-
-
-
-
-
-namespace detail {
-template <typename T>
-class SCOPED_CAPABILITY MOZ_STACK_CLASS BaseMonitorAutoLock {
- public:
-  explicit BaseMonitorAutoLock(T& aMonitor) CAPABILITY_ACQUIRE(aMonitor)
-      : mMonitor(&aMonitor) {
+  explicit MonitorAutoLock(Monitor& aMonitor) : mMonitor(&aMonitor) {
     mMonitor->Lock();
   }
 
-  ~BaseMonitorAutoLock() CAPABILITY_RELEASE() { mMonitor->Unlock(); }
+  ~MonitorAutoLock() { mMonitor->Unlock(); }
+
   void Wait() { mMonitor->Wait(); }
   CVStatus Wait(TimeDuration aDuration) { return mMonitor->Wait(aDuration); }
 
   void Notify() { mMonitor->Notify(); }
   void NotifyAll() { mMonitor->NotifyAll(); }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void AssertOwns(const T& aMonitor) const ASSERT_CAPABILITY(aMonitor) {
-    MOZ_ASSERT(&aMonitor == mMonitor);
-    mMonitor->AssertCurrentThreadOwns();
-  }
-
  private:
-  BaseMonitorAutoLock() = delete;
-  BaseMonitorAutoLock(const BaseMonitorAutoLock&) = delete;
-  BaseMonitorAutoLock& operator=(const BaseMonitorAutoLock&) = delete;
+  MonitorAutoLock();
+  MonitorAutoLock(const MonitorAutoLock&);
+  MonitorAutoLock& operator=(const MonitorAutoLock&);
   static void* operator new(size_t) noexcept(true);
 
   friend class MonitorAutoUnlock;
 
- protected:
-  T* mMonitor;
-};
-}  
-typedef detail::BaseMonitorAutoLock<Monitor> MonitorAutoLock;
-typedef detail::BaseMonitorAutoLock<MonitorSingleWriter>
-    MonitorSingleWriterAutoLock;
-
-
-
-
-
-
-
-
-#define MonitorSingleWriterAutoLockOnThread(lock, monitor) \
-  PUSH_IGNORE_THREAD_SAFETY                                \
-  MonitorSingleWriterAutoLock lock(monitor);               \
-  POP_THREAD_SAFETY
-
-
-
-
-
-
-
-
-namespace detail {
-template <typename T>
-class MOZ_STACK_CLASS SCOPED_CAPABILITY BaseMonitorAutoUnlock {
- public:
-  explicit BaseMonitorAutoUnlock(T& aMonitor) SCOPED_UNLOCK_RELEASE(aMonitor)
-      : mMonitor(&aMonitor) {
-    mMonitor->Unlock();
-  }
-
-  ~BaseMonitorAutoUnlock() SCOPED_UNLOCK_REACQUIRE() { mMonitor->Lock(); }
-
- private:
-  BaseMonitorAutoUnlock() = delete;
-  BaseMonitorAutoUnlock(const BaseMonitorAutoUnlock&) = delete;
-  BaseMonitorAutoUnlock& operator=(const BaseMonitorAutoUnlock&) = delete;
-  static void* operator new(size_t) noexcept(true);
-
-  T* mMonitor;
-};
-}  
-typedef detail::BaseMonitorAutoUnlock<Monitor> MonitorAutoUnlock;
-typedef detail::BaseMonitorAutoUnlock<MonitorSingleWriter>
-    MonitorSingleWriterAutoUnlock;
-
-
-
-
-
-
-
-
-class SCOPED_CAPABILITY MOZ_STACK_CLASS ReleaseableMonitorAutoLock {
- public:
-  explicit ReleaseableMonitorAutoLock(Monitor& aMonitor) CAPABILITY_ACQUIRE(aMonitor)
-      : mMonitor(&aMonitor) {
-    mMonitor->Lock();
-    mLocked = true;
-  }
-
-  ~ReleaseableMonitorAutoLock() CAPABILITY_RELEASE() {
-    if (mLocked) {
-      mMonitor->Unlock();
-    }
-  }
-
-  void Wait() { mMonitor->Wait(); }
-  CVStatus Wait(TimeDuration aDuration) {
-    MOZ_ASSERT(mLocked);
-    return mMonitor->Wait(aDuration);
-  }
-
-  void Notify() {
-    MOZ_ASSERT(mLocked);
-    mMonitor->Notify();
-  }
-  void NotifyAll() {
-    MOZ_ASSERT(mLocked);
-    mMonitor->NotifyAll();
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void Unlock() CAPABILITY_RELEASE() {
-    MOZ_ASSERT(mLocked);
-    mMonitor->Unlock();
-    mLocked = false;
-  }
-  void Lock() CAPABILITY_ACQUIRE() {
-    MOZ_ASSERT(!mLocked);
-    mMonitor->Lock();
-    mLocked = true;
-  }
-  void AssertCurrentThreadOwns() const ASSERT_CAPABILITY() {
-    mMonitor->AssertCurrentThreadOwns();
-  }
-
- private:
-  bool mLocked;
   Monitor* mMonitor;
+};
 
-  ReleaseableMonitorAutoLock() = delete;
-  ReleaseableMonitorAutoLock(const ReleaseableMonitorAutoLock&) = delete;
-  ReleaseableMonitorAutoLock& operator=(const ReleaseableMonitorAutoLock&) =
-      delete;
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS MonitorAutoUnlock {
+ public:
+  explicit MonitorAutoUnlock(Monitor& aMonitor) : mMonitor(&aMonitor) {
+    mMonitor->Unlock();
+  }
+
+  explicit MonitorAutoUnlock(MonitorAutoLock& aMonitorLock)
+      : mMonitor(aMonitorLock.mMonitor) {
+    mMonitor->Unlock();
+  }
+
+  ~MonitorAutoUnlock() { mMonitor->Lock(); }
+
+ private:
+  MonitorAutoUnlock();
+  MonitorAutoUnlock(const MonitorAutoUnlock&);
+  MonitorAutoUnlock& operator=(const MonitorAutoUnlock&);
   static void* operator new(size_t) noexcept(true);
+
+  Monitor* mMonitor;
 };
 
 }  

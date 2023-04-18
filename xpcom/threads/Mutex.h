@@ -8,7 +8,6 @@
 #define mozilla_Mutex_h
 
 #include "mozilla/BlockingResourceBase.h"
-#include "mozilla/ThreadSafety.h"
 #include "mozilla/PlatformMutex.h"
 #include "nsISupports.h"
 
@@ -34,8 +33,7 @@ namespace mozilla {
 
 
 
-class CAPABILITY OffTheBooksMutex : public detail::MutexImpl,
-                                    BlockingResourceBase {
+class OffTheBooksMutex : public detail::MutexImpl, BlockingResourceBase {
  public:
   
 
@@ -62,51 +60,52 @@ class CAPABILITY OffTheBooksMutex : public detail::MutexImpl,
   
 
 
-  void Lock() CAPABILITY_ACQUIRE() { this->lock(); }
+  void Lock() { this->lock(); }
 
   
 
 
-  [[nodiscard]] bool TryLock() TRY_ACQUIRE(true) { return this->tryLock(); }
+  [[nodiscard]] bool TryLock() { return this->tryLock(); }
 
   
 
 
-  void Unlock() CAPABILITY_RELEASE() { this->unlock(); }
-
-  
-
-
-
-
-  void AssertCurrentThreadOwns() const ASSERT_CAPABILITY(this) {}
+  void Unlock() { this->unlock(); }
 
   
 
 
 
 
+  void AssertCurrentThreadOwns() const {}
+
+  
 
 
 
-  void AssertNotCurrentThreadOwns() const ASSERT_CAPABILITY(!this) {}
+
+
+
+
+  void AssertNotCurrentThreadOwns() const {}
 
 #else
-  void Lock() CAPABILITY_ACQUIRE();
+  void Lock();
+  [[nodiscard]] bool TryLock();
+  void Unlock();
 
-  [[nodiscard]] bool TryLock() TRY_ACQUIRE(true);
-  void Unlock() CAPABILITY_RELEASE();
+  void AssertCurrentThreadOwns() const;
 
-  void AssertCurrentThreadOwns() const ASSERT_CAPABILITY(this);
-  void AssertNotCurrentThreadOwns() const ASSERT_CAPABILITY(!this) {
+  void AssertNotCurrentThreadOwns() const {
     
   }
+
 #endif  
 
  private:
-  OffTheBooksMutex() = delete;
-  OffTheBooksMutex(const OffTheBooksMutex&) = delete;
-  OffTheBooksMutex& operator=(const OffTheBooksMutex&) = delete;
+  OffTheBooksMutex();
+  OffTheBooksMutex(const OffTheBooksMutex&);
+  OffTheBooksMutex& operator=(const OffTheBooksMutex&);
 
   friend class OffTheBooksCondVar;
 
@@ -129,85 +128,9 @@ class Mutex : public OffTheBooksMutex {
   MOZ_COUNTED_DTOR(Mutex)
 
  private:
-  Mutex() = delete;
-  Mutex(const Mutex&) = delete;
-  Mutex& operator=(const Mutex&) = delete;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class SingleWriterLockOwner {
- public:
-  SingleWriterLockOwner() = default;
-  ~SingleWriterLockOwner() = default;
-
-  virtual bool OnWritingThread() const = 0;
-};
-
-class MutexSingleWriter : public OffTheBooksMutex {
- public:
-  
-  
-  
-  
-  explicit MutexSingleWriter(const char* aName, SingleWriterLockOwner* aOwner)
-      : OffTheBooksMutex(aName)
-#ifdef DEBUG
-        ,
-        mOwner(aOwner)
-#endif
-  {
-    MOZ_COUNT_CTOR(MutexSingleWriter);
-    MOZ_ASSERT(mOwner);
-  }
-
-  MOZ_COUNTED_DTOR(MutexSingleWriter)
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  void AssertOnWritingThread() const ASSERT_CAPABILITY(this) {
-    MOZ_ASSERT(mOwner->OnWritingThread());
-  }
-  void AssertOnWritingThreadOrHeld() const ASSERT_CAPABILITY(this) {
-#ifdef DEBUG
-    if (!mOwner->OnWritingThread()) {
-      AssertCurrentThreadOwns();
-    }
-#endif
-  }
-
- private:
-#ifdef DEBUG
-  SingleWriterLockOwner* mOwner MOZ_UNSAFE_REF(
-      "This is normally the object that contains the MonitorSingleWriter, so "
-      "we don't want to hold a reference to ourselves");
-#endif
-
-  MutexSingleWriter() = delete;
-  MutexSingleWriter(const MutexSingleWriter&) = delete;
-  MutexSingleWriter& operator=(const MutexSingleWriter&) = delete;
+  Mutex();
+  Mutex(const Mutex&);
+  Mutex& operator=(const Mutex&);
 };
 
 namespace detail {
@@ -222,7 +145,7 @@ class MOZ_RAII BaseAutoUnlock;
 
 
 template <typename T>
-class MOZ_RAII SCOPED_CAPABILITY BaseAutoLock {
+class MOZ_RAII BaseAutoLock {
  public:
   
 
@@ -232,9 +155,9 @@ class MOZ_RAII SCOPED_CAPABILITY BaseAutoLock {
 
 
 
-  explicit BaseAutoLock(T aLock) CAPABILITY_ACQUIRE(aLock) : mLock(aLock) { mLock.Lock(); }
+  explicit BaseAutoLock(T aLock) : mLock(aLock) { mLock.Lock(); }
 
-  ~BaseAutoLock(void) CAPABILITY_RELEASE() { mLock.Unlock(); }
+  ~BaseAutoLock(void) { mLock.Unlock(); }
 
   
   
@@ -261,15 +184,15 @@ class MOZ_RAII SCOPED_CAPABILITY BaseAutoLock {
   
   
   
-  void AssertOwns(const T& aMutex) const ASSERT_CAPABILITY(aMutex) {
+  void AssertOwns(const T& aMutex) const {
     MOZ_ASSERT(&aMutex == &mLock);
     mLock.AssertCurrentThreadOwns();
   }
 
  private:
-  BaseAutoLock() = delete;
-  BaseAutoLock(BaseAutoLock&) = delete;
-  BaseAutoLock& operator=(BaseAutoLock&) = delete;
+  BaseAutoLock();
+  BaseAutoLock(BaseAutoLock&);
+  BaseAutoLock& operator=(BaseAutoLock&);
   static void* operator new(size_t) noexcept(true);
 
   friend class BaseAutoUnlock<T>;
@@ -282,19 +205,8 @@ BaseAutoLock(MutexType&) -> BaseAutoLock<MutexType&>;
 }  
 
 typedef detail::BaseAutoLock<Mutex&> MutexAutoLock;
-typedef detail::BaseAutoLock<MutexSingleWriter&> MutexSingleWriterAutoLock;
 typedef detail::BaseAutoLock<OffTheBooksMutex&> OffTheBooksMutexAutoLock;
 
-
-
-
-
-
-#define MutexSingleWriterAutoLockOnThread(lock, mutex) \
-  PUSH_IGNORE_THREAD_SAFETY                            \
-  MutexSingleWriterAutoLock lock(mutex);               \
-  POP_THREAD_SAFETY
-
 namespace detail {
 
 
@@ -304,96 +216,21 @@ namespace detail {
 
 
 template <typename T>
-class MOZ_RAII SCOPED_CAPABILITY ReleaseableBaseAutoLock {
+class MOZ_RAII BaseAutoUnlock {
  public:
-  
+  explicit BaseAutoUnlock(T aLock) : mLock(aLock) { mLock.Unlock(); }
 
-
-
-
-
-
-
-  explicit ReleaseableBaseAutoLock(T aLock) CAPABILITY_ACQUIRE(aLock)
-      : BaseAutoLock<T>(aLock) {
-    mLock.Lock();
-    mLocked = true;
-  }
-
-  ~ReleaseableBaseAutoLock(void) CAPABILITY_RELEASE() {
-    if (!mLocked) {
-      mLock.Unlock();
-    }
-  }
-
-  void AssertOwns(const T& aMutex) const ASSERT_CAPABILITY(mLock) {
-    MOZ_ASSERT(&aMutex == &mLock);
-    mLock.AssertCurrentThreadOwns();
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void Unlock() CAPABILITY_RELEASE() {
-    mLock.Unlock();
-    mLocked = false;
-  }
-  void Lock() CAPABILITY_ACQUIRE() {
-    mLock.Lock();
-    mLocked = true;
-  }
-
- private:
-  ReleaseableBaseAutoLock() = delete;
-  ReleaseableBaseAutoLock(ReleaseableBaseAutoLock&) = delete;
-  ReleaseableBaseAutoLock& operator=(ReleaseableBaseAutoLock&) = delete;
-  static void* operator new(size_t) noexcept(true);
-
-  bool mLocked;
-  T mLock;
-};
-
-template <typename MutexType>
-ReleaseableBaseAutoLock(MutexType&) -> ReleaseableBaseAutoLock<MutexType&>;
-}  
-
-typedef detail::ReleaseableBaseAutoLock<Mutex&> ReleaseableMutexAutoLock;
-
-namespace detail {
-
-
-
-
-
-
-
-template <typename T>
-class MOZ_RAII SCOPED_CAPABILITY BaseAutoUnlock {
- public:
-  explicit BaseAutoUnlock(T aLock) SCOPED_UNLOCK_RELEASE(aLock) : mLock(aLock) {
-    mLock.Unlock();
-  }
-
-  explicit BaseAutoUnlock(BaseAutoLock<T>& aAutoLock)
-      
-      : mLock(aAutoLock.mLock) {
+  explicit BaseAutoUnlock(BaseAutoLock<T>& aAutoLock) : mLock(aAutoLock.mLock) {
     NS_ASSERTION(mLock, "null lock");
     mLock->Unlock();
   }
 
-  ~BaseAutoUnlock() SCOPED_UNLOCK_REACQUIRE() { mLock.Lock(); }
+  ~BaseAutoUnlock() { mLock.Lock(); }
 
  private:
-  BaseAutoUnlock() = delete;
-  BaseAutoUnlock(BaseAutoUnlock&) = delete;
-  BaseAutoUnlock& operator=(BaseAutoUnlock&) = delete;
+  BaseAutoUnlock();
+  BaseAutoUnlock(BaseAutoUnlock&);
+  BaseAutoUnlock& operator=(BaseAutoUnlock&);
   static void* operator new(size_t) noexcept(true);
 
   T mLock;
@@ -404,7 +241,6 @@ BaseAutoUnlock(MutexType&) -> BaseAutoUnlock<MutexType&>;
 }  
 
 typedef detail::BaseAutoUnlock<Mutex&> MutexAutoUnlock;
-typedef detail::BaseAutoUnlock<MutexSingleWriter&> MutexSingleWriterAutoUnlock;
 typedef detail::BaseAutoUnlock<OffTheBooksMutex&> OffTheBooksMutexAutoUnlock;
 
 namespace detail {
@@ -416,21 +252,21 @@ namespace detail {
 
 
 template <typename T>
-class MOZ_RAII SCOPED_CAPABILITY BaseAutoTryLock {
+class MOZ_RAII BaseAutoTryLock {
  public:
-  explicit BaseAutoTryLock(T& aLock) CAPABILITY_ACQUIRE(aLock)
+  explicit BaseAutoTryLock(T& aLock)
       : mLock(aLock.TryLock() ? &aLock : nullptr) {}
 
-  ~BaseAutoTryLock() CAPABILITY_RELEASE() {
+  ~BaseAutoTryLock() {
     if (mLock) {
       mLock->Unlock();
-      mLock = nullptr;
     }
   }
 
   explicit operator bool() const { return mLock; }
 
  private:
+  BaseAutoTryLock() = delete;
   BaseAutoTryLock(BaseAutoTryLock&) = delete;
   BaseAutoTryLock& operator=(BaseAutoTryLock&) = delete;
   static void* operator new(size_t) noexcept(true);

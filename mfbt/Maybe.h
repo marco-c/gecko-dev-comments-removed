@@ -21,7 +21,6 @@
 #include "mozilla/MemoryChecking.h"
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/Poison.h"
-#include "mozilla/ThreadSafety.h"
 
 class nsCycleCollectionTraversalCallback;
 
@@ -637,13 +636,7 @@ class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS Maybe
   constexpr void reset() {
     if (isSome()) {
       if constexpr (!std::is_trivially_destructible_v<T>) {
-        
-
-
-
-        PUSH_IGNORE_THREAD_SAFETY
         ref().T::~T();
-        POP_THREAD_SAFETY
         poisonData();
       }
       mIsSome = false;

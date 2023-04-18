@@ -26,7 +26,7 @@ namespace mozilla {
 
 
 
-class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS CAPABILITY StaticMutex {
+class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS StaticMutex {
  public:
   
   
@@ -35,11 +35,11 @@ class MOZ_ONLY_USED_TO_AVOID_STATIC_CONSTRUCTORS CAPABILITY StaticMutex {
   StaticMutex() { MOZ_ASSERT(!mMutex); }
 #endif
 
-  void Lock() CAPABILITY_ACQUIRE() { Mutex()->Lock(); }
+  void Lock() { Mutex()->Lock(); }
 
-  void Unlock() CAPABILITY_RELEASE() { Mutex()->Unlock(); }
+  void Unlock() { Mutex()->Unlock(); }
 
-  void AssertCurrentThreadOwns() ASSERT_CAPABILITY(this) {
+  void AssertCurrentThreadOwns() {
 #ifdef DEBUG
     Mutex()->AssertCurrentThreadOwns();
 #endif
