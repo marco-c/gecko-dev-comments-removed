@@ -15,8 +15,10 @@
 #include "harfbuzz/hb.h"
 #include "punycode.h"
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/Casting.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Utf8.h"
+#include "mozilla/intl/Script.h"
 
 
 
@@ -26,7 +28,6 @@
 const bool kIDNA2008_TransitionalProcessing = false;
 
 #include "ICUUtils.h"
-#include "unicode/uscript.h"
 
 using namespace mozilla;
 using namespace mozilla::unicode;
@@ -790,16 +791,15 @@ bool nsIDNService::isLabelSafe(const nsAString& label) {
       }
       
       if (lastScript != Script::INVALID) {
-        const size_t kMaxScripts = 32;  
-                                        
-        UScriptCode scripts[kMaxScripts];
-        UErrorCode errorCode = U_ZERO_ERROR;
-        int nScripts =
-            uscript_getScriptExtensions(ch, scripts, kMaxScripts, &errorCode);
-        MOZ_ASSERT(U_SUCCESS(errorCode), "uscript_getScriptExtensions failed");
-        if (U_FAILURE(errorCode)) {
+        mozilla::intl::ScriptExtensionVector scripts;
+        auto extResult = mozilla::intl::Script::GetExtensions(ch, scripts);
+        MOZ_ASSERT(extResult.isOk());
+        if (extResult.isErr()) {
           return false;
         }
+
+        int nScripts = AssertedCast<int>(scripts.length());
+
         
         
         
