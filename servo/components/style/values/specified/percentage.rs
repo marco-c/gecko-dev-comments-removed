@@ -98,6 +98,11 @@ impl Percentage {
     }
 
     
+    pub fn calc_clamping_mode(&self) -> Option<AllowedNumericType> {
+        self.calc_clamping_mode
+    }
+
+    
     
     
     pub fn reverse(&mut self) {
