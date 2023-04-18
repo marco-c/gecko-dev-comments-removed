@@ -43,6 +43,11 @@ class RefCountedMonitor : public Monitor {
  public:
   RefCountedMonitor() : Monitor("mozilla.ipc.MessageChannel.mMonitor") {}
 
+  void AssertSameMonitor(const RefCountedMonitor& aOther) const REQUIRES(*this)
+      ASSERT_CAPABILITY(aOther) {
+    MOZ_ASSERT(this == &aOther);
+  }
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RefCountedMonitor)
 
  private:
@@ -186,23 +191,27 @@ class MessageChannel : HasResultCodes {
 
 
 
-  void NotifyImpendingShutdown();
+  void NotifyImpendingShutdown() EXCLUDES(*mMonitor);
 
   
-  void Close();
-
-  
-  
-  void CloseWithError();
-
-  void CloseWithTimeout();
-
-  void SetAbortOnError(bool abort) { mAbortOnError = abort; }
+  void Close() EXCLUDES(*mMonitor);
 
   
   
+  void CloseWithError() EXCLUDES(*mMonitor);
+
+  void CloseWithTimeout() EXCLUDES(*mMonitor);
+
+  void SetAbortOnError(bool abort) EXCLUDES(*mMonitor) {
+    MonitorAutoLock lock(*mMonitor);
+    mAbortOnError = abort;
+  }
+
   
-  void PeekMessages(const std::function<bool(const Message& aMsg)>& aInvoke);
+  
+  
+  void PeekMessages(const std::function<bool(const Message& aMsg)>& aInvoke)
+      EXCLUDES(*mMonitor);
 
   
   enum ChannelFlags {
@@ -223,13 +232,14 @@ class MessageChannel : HasResultCodes {
   ChannelFlags GetChannelFlags() { return mFlags; }
 
   
-  bool Send(UniquePtr<Message> aMsg);
+  bool Send(UniquePtr<Message> aMsg) EXCLUDES(*mMonitor);
 
   
   
   template <typename Value>
   void Send(UniquePtr<Message> aMsg, ActorIdType aActorId,
-            ResolveCallback<Value>&& aResolve, RejectCallback&& aReject) {
+            ResolveCallback<Value>&& aResolve, RejectCallback&& aReject)
+      EXCLUDES(*mMonitor) {
     int32_t seqno = NextSeqno();
     aMsg->set_seqno(seqno);
     if (!Send(std::move(aMsg))) {
@@ -244,13 +254,16 @@ class MessageChannel : HasResultCodes {
     gUnresolvedResponses++;
   }
 
-  bool SendBuildIDsMatchMessage(const char* aParentBuildI);
-  bool DoBuildIDsMatch() { return mBuildIDsConfirmedMatch; }
+  bool SendBuildIDsMatchMessage(const char* aParentBuildID) EXCLUDES(*mMonitor);
+  bool DoBuildIDsMatch() EXCLUDES(*mMonitor) {
+    MonitorAutoLock lock(*mMonitor);
+    return mBuildIDsConfirmedMatch;
+  }
 
   
-  bool Send(UniquePtr<Message> aMsg, Message* aReply);
+  bool Send(UniquePtr<Message> aMsg, Message* aReply) EXCLUDES(*mMonitor);
 
-  bool CanSend() const;
+  bool CanSend() const EXCLUDES(*mMonitor);
 
   
   UniquePtr<UntypedCallbackHolder> PopCallback(const Message& aMsg);
@@ -270,14 +283,14 @@ class MessageChannel : HasResultCodes {
 
   bool IsOnCxxStack() const { return mOnCxxStack; }
 
-  void CancelCurrentTransaction();
+  void CancelCurrentTransaction() EXCLUDES(*mMonitor);
 
   
   
   
   
   
-  void BeginPostponingSends();
+  void BeginPostponingSends() EXCLUDES(*mMonitor);
 
   
   
@@ -286,15 +299,15 @@ class MessageChannel : HasResultCodes {
   
   
   
-  void StopPostponingSends();
+  void StopPostponingSends() EXCLUDES(*mMonitor);
 
   
   
-  bool IsClosed() {
+  bool IsClosed() EXCLUDES(*mMonitor) {
     MonitorAutoLock lock(*mMonitor);
     return IsClosedLocked();
   }
-  bool IsClosedLocked() const {
+  bool IsClosedLocked() const REQUIRES(*mMonitor) {
     mMonitor->AssertCurrentThreadOwns();
     return mLink ? mLink->IsClosed() : true;
   }
@@ -307,8 +320,8 @@ class MessageChannel : HasResultCodes {
   
 
 
-  bool IsCrossProcess() const;
-  void SetIsCrossProcess(bool aIsCrossProcess);
+  bool IsCrossProcess() const REQUIRES(*mMonitor);
+  void SetIsCrossProcess(bool aIsCrossProcess) REQUIRES(*mMonitor);
 
 #ifdef OS_WIN
   struct MOZ_STACK_CLASS SyncStackFrame {
@@ -355,32 +368,37 @@ class MessageChannel : HasResultCodes {
 #endif    
 
  private:
-  void PostErrorNotifyTask();
-  void OnNotifyMaybeChannelError();
+  void PostErrorNotifyTask() REQUIRES(*mMonitor);
+  void OnNotifyMaybeChannelError() EXCLUDES(*mMonitor);
   void ReportConnectionError(const char* aFunctionName,
-                             const uint32_t aMsgTyp) const;
-  void ReportMessageRouteError(const char* channelName) const;
+                             const uint32_t aMsgTyp) const REQUIRES(*mMonitor);
+  void ReportMessageRouteError(const char* channelName) const
+      EXCLUDES(*mMonitor);
   bool MaybeHandleError(Result code, const Message& aMsg,
-                        const char* channelName);
+                        const char* channelName) EXCLUDES(*mMonitor);
 
-  void Clear();
+  void Clear() REQUIRES(*mMonitor);
 
-  bool HasPendingEvents();
+  bool HasPendingEvents() REQUIRES(*mMonitor);
 
   void ProcessPendingRequests(ActorLifecycleProxy* aProxy,
-                              AutoEnterTransaction& aTransaction);
-  bool ProcessPendingRequest(ActorLifecycleProxy* aProxy, Message&& aUrgent);
+                              AutoEnterTransaction& aTransaction)
+      REQUIRES(*mMonitor);
+  bool ProcessPendingRequest(ActorLifecycleProxy* aProxy, Message&& aUrgent)
+      REQUIRES(*mMonitor);
 
-  void EnqueuePendingMessages();
+  void EnqueuePendingMessages() REQUIRES(*mMonitor);
 
   
-  void DispatchMessage(ActorLifecycleProxy* aProxy, Message&& aMsg);
+  void DispatchMessage(ActorLifecycleProxy* aProxy, Message&& aMsg)
+      REQUIRES(*mMonitor);
 
   
   
   void DispatchSyncMessage(ActorLifecycleProxy* aProxy, const Message& aMsg,
-                           Message*& aReply);
-  void DispatchAsyncMessage(ActorLifecycleProxy* aProxy, const Message& aMsg);
+                           Message*& aReply) EXCLUDES(*mMonitor);
+  void DispatchAsyncMessage(ActorLifecycleProxy* aProxy, const Message& aMsg)
+      EXCLUDES(*mMonitor);
 
   
   
@@ -392,16 +410,16 @@ class MessageChannel : HasResultCodes {
   
   
   
-  bool WaitForSyncNotify(bool aHandleWindowsMessages);
+  bool WaitForSyncNotify(bool aHandleWindowsMessages) REQUIRES(*mMonitor);
 
   bool WaitResponse(bool aWaitTimedOut);
 
-  bool ShouldContinueFromTimeout();
+  bool ShouldContinueFromTimeout() REQUIRES(*mMonitor);
 
-  void EndTimeout();
-  void CancelTransaction(int transaction);
+  void EndTimeout() REQUIRES(*mMonitor);
+  void CancelTransaction(int transaction) REQUIRES(*mMonitor);
 
-  void RepostAllMessages();
+  void RepostAllMessages() REQUIRES(*mMonitor);
 
   int32_t NextSeqno() {
     AssertWorkerThread();
@@ -409,10 +427,10 @@ class MessageChannel : HasResultCodes {
   }
 
   void DebugAbort(const char* file, int line, const char* cond, const char* why,
-                  bool reply = false);
+                  bool reply = false) REQUIRES(*mMonitor);
 
   void AddProfilerMarker(const IPC::Message& aMessage,
-                         MessageDirection aDirection);
+                         MessageDirection aDirection) REQUIRES(*mMonitor);
 
  private:
   
@@ -426,18 +444,18 @@ class MessageChannel : HasResultCodes {
     return mDispatchingAsyncMessageNestedLevel;
   }
 
-  bool Connected() const;
+  bool Connected() const REQUIRES(*mMonitor);
 
  private:
   
-  void NotifyWorkerThread();
+  void NotifyWorkerThread() REQUIRES(*mMonitor);
 
   
   
-  bool MaybeInterceptSpecialIOMessage(const Message& aMsg);
+  bool MaybeInterceptSpecialIOMessage(const Message& aMsg) REQUIRES(*mMonitor);
 
   
-  void SynchronouslyClose();
+  void SynchronouslyClose() REQUIRES(*mMonitor);
 
   
   
@@ -446,12 +464,12 @@ class MessageChannel : HasResultCodes {
 
   
   
-  void SendMessageToLink(UniquePtr<Message> aMsg);
+  void SendMessageToLink(UniquePtr<Message> aMsg) REQUIRES(*mMonitor);
 
   bool WasTransactionCanceled(int transaction);
-  bool ShouldDeferMessage(const Message& aMsg);
-  void OnMessageReceivedFromLink(Message&& aMsg);
-  void OnChannelErrorFromLink();
+  bool ShouldDeferMessage(const Message& aMsg) REQUIRES(*mMonitor);
+  void OnMessageReceivedFromLink(Message&& aMsg) REQUIRES(*mMonitor);
+  void OnChannelErrorFromLink() REQUIRES(*mMonitor);
 
  private:
   
@@ -461,8 +479,10 @@ class MessageChannel : HasResultCodes {
   
   
   
-  void NotifyChannelClosed(Maybe<MonitorAutoLock>& aLock);
-  void NotifyMaybeChannelError(Maybe<MonitorAutoLock>& aLock);
+  void NotifyChannelClosed(ReleasableMonitorAutoLock& aLock)
+      REQUIRES(*mMonitor);
+  void NotifyMaybeChannelError(ReleasableMonitorAutoLock& aLock)
+      REQUIRES(*mMonitor);
 
  private:
   void AssertWorkerThread() const {
@@ -487,9 +507,9 @@ class MessageChannel : HasResultCodes {
     nsresult Cancel() override;
     NS_IMETHOD GetPriority(uint32_t* aPriority) override;
     NS_DECL_NSIRUNNABLEIPCMESSAGETYPE
-    void Post();
+    void Post() REQUIRES(*mMonitor);
 
-    bool IsScheduled() const {
+    bool IsScheduled() const REQUIRES(*mMonitor) {
       mMonitor->AssertCurrentThreadOwns();
       return mScheduled;
     }
@@ -497,10 +517,15 @@ class MessageChannel : HasResultCodes {
     Message& Msg() { return mMessage; }
     const Message& Msg() const { return mMessage; }
 
+    void AssertMonitorHeld(const RefCountedMonitor& aMonitor) REQUIRES(aMonitor)
+        ASSERT_CAPABILITY(*mMonitor) {
+      aMonitor.AssertSameMonitor(*mMonitor);
+    }
+
    private:
     ~MessageTask() = default;
 
-    MessageChannel* Channel() {
+    MessageChannel* Channel() REQUIRES(*mMonitor) {
       mMonitor->AssertCurrentThreadOwns();
       MOZ_RELEASE_ASSERT(isInList());
       return mChannel;
@@ -513,11 +538,12 @@ class MessageChannel : HasResultCodes {
     
     MessageChannel* const mChannel;
     Message mMessage;
-    bool mScheduled : 1;
+    bool mScheduled : 1 GUARDED_BY(*mMonitor);
   };
 
-  bool ShouldRunMessage(const Message& aMsg);
-  void RunMessage(ActorLifecycleProxy* aProxy, MessageTask& aTask);
+  bool ShouldRunMessage(const Message& aMsg) REQUIRES(*mMonitor);
+  void RunMessage(ActorLifecycleProxy* aProxy, MessageTask& aTask)
+      REQUIRES(*mMonitor);
 
   typedef LinkedList<RefPtr<MessageTask>> MessageQueue;
   typedef std::map<size_t, UniquePtr<UntypedCallbackHolder>> CallbackMap;
@@ -537,13 +563,13 @@ class MessageChannel : HasResultCodes {
   
   RefPtr<RefCountedMonitor> const mMonitor;
 
-  ChannelState mChannelState = ChannelClosed;
+  ChannelState mChannelState GUARDED_BY(*mMonitor) = ChannelClosed;
   Side mSide = UnknownSide;
-  bool mIsCrossProcess = false;
-  UniquePtr<MessageLink> mLink;
+  bool mIsCrossProcess GUARDED_BY(*mMonitor) = false;
+  UniquePtr<MessageLink> mLink GUARDED_BY(*mMonitor);
 
   
-  RefPtr<CancelableRunnable> mChannelErrorTask;
+  RefPtr<CancelableRunnable> mChannelErrorTask GUARDED_BY(*mMonitor);
 
   
   
@@ -611,20 +637,20 @@ class MessageChannel : HasResultCodes {
   
 
   friend class AutoEnterTransaction;
-  AutoEnterTransaction* mTransactionStack = nullptr;
+  AutoEnterTransaction* mTransactionStack GUARDED_BY(*mMonitor) = nullptr;
 
-  int32_t CurrentNestedInsideSyncTransaction() const;
+  int32_t CurrentNestedInsideSyncTransaction() const REQUIRES(*mMonitor);
 
-  bool AwaitingSyncReply() const;
-  int AwaitingSyncReplyNestedLevel() const;
+  bool AwaitingSyncReply() const REQUIRES(*mMonitor);
+  int AwaitingSyncReplyNestedLevel() const REQUIRES(*mMonitor);
 
-  bool DispatchingSyncMessage() const;
-  int DispatchingSyncMessageNestedLevel() const;
+  bool DispatchingSyncMessage() const REQUIRES(*mMonitor);
+  int DispatchingSyncMessageNestedLevel() const REQUIRES(*mMonitor);
 
 #ifdef DEBUG
-  void AssertMaybeDeferredCountCorrect();
+  void AssertMaybeDeferredCountCorrect() REQUIRES(*mMonitor);
 #else
-  void AssertMaybeDeferredCountCorrect() {}
+  void AssertMaybeDeferredCountCorrect() REQUIRES(*mMonitor) {}
 #endif
 
   
@@ -640,8 +666,8 @@ class MessageChannel : HasResultCodes {
   
   
   
-  int32_t mTimedOutMessageSeqno = 0;
-  int mTimedOutMessageNestedLevel = 0;
+  int32_t mTimedOutMessageSeqno GUARDED_BY(*mMonitor) = 0;
+  int mTimedOutMessageNestedLevel GUARDED_BY(*mMonitor) = 0;
 
   
   
@@ -651,12 +677,12 @@ class MessageChannel : HasResultCodes {
   
   
   
-  MessageQueue mPending;
+  MessageQueue mPending GUARDED_BY(*mMonitor);
 
   
   
   
-  size_t mMaybeDeferredPendingCount = 0;
+  size_t mMaybeDeferredPendingCount GUARDED_BY(*mMonitor) = 0;
 
   
   
@@ -672,21 +698,21 @@ class MessageChannel : HasResultCodes {
 
   
   
-  bool mAbortOnError = false;
+  bool mAbortOnError GUARDED_BY(*mMonitor) = false;
 
   
   
-  bool mNotifiedChannelDone = false;
+  bool mNotifiedChannelDone GUARDED_BY(*mMonitor) = false;
 
   
   ChannelFlags mFlags = REQUIRE_DEFAULT;
 
   
   
-  bool mIsPostponingSends = false;
-  std::vector<UniquePtr<Message>> mPostponedSends;
+  bool mIsPostponingSends GUARDED_BY(*mMonitor) = false;
+  std::vector<UniquePtr<Message>> mPostponedSends GUARDED_BY(*mMonitor);
 
-  bool mBuildIDsConfirmedMatch = false;
+  bool mBuildIDsConfirmedMatch GUARDED_BY(*mMonitor) = false;
 
   
   
