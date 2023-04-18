@@ -3,7 +3,6 @@
 <link rel="author" title="David Grogan" href="dgrogan@chromium.org">
 <link rel="help" href="https://www.w3.org/TR/CSS22/tables.html#model">
 <link rel="match" href="floats-in-table-caption-001-ref.html">
-<meta name="flags" content="" />
 <meta name="assert" content="Basic floats are honored inside a caption" />
 <title>
 Caption block containers are rendered same as normal block boxes
@@ -15,7 +14,7 @@ to the right of the border surrounding floated.
 </p>
 
 <table>
-  
+  <!-- 200px allows floated and inline to not wrap -->
   <caption style="text-align:left; width:200px">
     <div style="float:left; border: 1px solid black;">
       floated
