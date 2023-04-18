@@ -39,6 +39,10 @@ function TypedArrayLengthMethod() {
     return TypedArrayLength(this);
 }
 
+function TypedArrayByteOffsetMethod() {
+    return TypedArrayByteOffset(this);
+}
+
 function GetAttachedArrayBuffer(tarray) {
     var buffer = ViewedArrayBufferIfReified(tarray);
     if (IsDetachedBuffer(buffer))
@@ -981,6 +985,81 @@ function TypedArraySome(callbackfn) {
 
 
 
+
+
+function TypedArrayCompare(x, y) {
+    
+    assert(typeof x === "number" && typeof y === "number",
+           "x and y are not numbers.");
+
+    
+
+    
+    if (x < y)
+        return -1;
+
+    
+    if (x > y)
+        return 1;
+
+    
+    if (x === 0 && y === 0)
+        return ((1 / x) > 0 ? 1 : 0) - ((1 / y) > 0 ? 1 : 0);
+
+    
+    if (Number_isNaN(x))
+        return Number_isNaN(y) ? 0 : 1;
+
+    
+    return Number_isNaN(y) ? -1 : 0;
+}
+
+
+function TypedArrayCompareInt(x, y) {
+    
+    assert(typeof x === "number" && typeof y === "number",
+           "x and y are not numbers.");
+    assert((x === (x | 0) || x === (x >>> 0)) && (y === (y | 0) || y === (y >>> 0)),
+           "x and y are not int32/uint32 numbers.");
+
+    
+
+    
+    var diff = x - y;
+    if (diff)
+        return diff;
+
+    
+
+    
+    return 0;
+}
+
+
+
+function TypedArrayCompareBigInt(x, y) {
+    
+    assert(typeof x === "bigint" && typeof y === "bigint",
+           "x and y are not BigInts.");
+
+    
+
+    
+    if (x < y)
+        return -1;
+
+    
+    if (x > y)
+        return 1;
+
+    
+
+    
+    return 0;
+}
+
+
+
 function TypedArraySort(comparefn) {
     
 
@@ -994,7 +1073,14 @@ function TypedArraySort(comparefn) {
     var obj = this;
 
     
-    var isTypedArray = IsTypedArrayEnsuringArrayBuffer(obj);
+    var isTypedArray = IsObject(obj) && IsTypedArray(obj);
+
+    var buffer;
+    if (isTypedArray) {
+        buffer = GetAttachedArrayBuffer(obj);
+    } else {
+        buffer = callFunction(CallTypedArrayMethodIfWrapped, obj, "GetAttachedArrayBufferMethod");
+    }
 
     
     var len;
@@ -1008,14 +1094,67 @@ function TypedArraySort(comparefn) {
     if (len <= 1)
         return obj;
 
-    if (comparefn === undefined)
-        return TypedArrayNativeSort(obj);
+    if (comparefn === undefined) {
+        var kind = GetTypedArrayKind(obj);
+        switch (kind) {
+          case TYPEDARRAY_KIND_UINT8:
+          case TYPEDARRAY_KIND_UINT8CLAMPED:
+            return CountingSort(obj, len, false , TypedArrayCompareInt);
+          case TYPEDARRAY_KIND_INT8:
+            return CountingSort(obj, len, true , TypedArrayCompareInt);
+          case TYPEDARRAY_KIND_UINT16:
+            return RadixSort(obj, len, buffer,
+                             2 , false , false ,
+                             TypedArrayCompareInt);
+          case TYPEDARRAY_KIND_INT16:
+            return RadixSort(obj, len, buffer,
+                             2 , true , false ,
+                             TypedArrayCompareInt);
+          case TYPEDARRAY_KIND_UINT32:
+            return RadixSort(obj, len, buffer,
+                             4 , false , false ,
+                             TypedArrayCompareInt);
+          case TYPEDARRAY_KIND_INT32:
+            return RadixSort(obj, len, buffer,
+                             4 , true , false ,
+                             TypedArrayCompareInt);
+          case TYPEDARRAY_KIND_BIGINT64:
+          case TYPEDARRAY_KIND_BIGUINT64:
+            return QuickSort(obj, len, TypedArrayCompareBigInt);
+          case TYPEDARRAY_KIND_FLOAT32:
+            return RadixSort(obj, len, buffer,
+                             4 , true , true ,
+                             TypedArrayCompare);
+          case TYPEDARRAY_KIND_FLOAT64:
+          default:
+            
+            
+            assert(kind === TYPEDARRAY_KIND_FLOAT64, "unexpected typed array kind");
+            return QuickSort(obj, len, TypedArrayCompare);
+        }
+    }
 
     
     
     var wrappedCompareFn = function(x, y) {
         
         var v = +comparefn(x, y);
+
+        
+        var length;
+        if (isTypedArray) {
+            length = TypedArrayLength(obj);
+        } else {
+            length = callFunction(CallTypedArrayMethodIfWrapped, obj, "TypedArrayLengthMethod");
+        }
+
+        
+        
+        if (length === 0) {
+            assert(PossiblyWrappedTypedArrayHasDetachedBuffer(obj),
+                   "Length can only change from non-zero to zero when the buffer was detached");
+            ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
+        }
 
         
         if (v !== v)
