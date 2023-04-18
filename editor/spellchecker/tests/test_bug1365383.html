@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1365383
+-->
 <head>
   <title>Test for Bug 1365383</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -29,9 +29,10 @@ SimpleTest.waitForFocus(() => {
 
   textarea.focus();
 
-  SpecialPowers.Cu.import(
-    "resource://testing-common/AsyncSpellCheckTestHelper.jsm")
-  .onSpellCheck(textarea, () => {
+  const { onSpellCheck } = SpecialPowers.ChromeUtils.import(
+    "resource://testing-common/AsyncSpellCheckTestHelper.jsm"
+  );
+  onSpellCheck(textarea, () => {
     // Callback parameter isn't set
     spellChecker.UpdateCurrentDictionary();
 
