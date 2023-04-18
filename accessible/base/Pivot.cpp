@@ -12,8 +12,11 @@
 #include "nsAccessibilityService.h"
 #include "nsAccUtils.h"
 
+#include "mozilla/a11y/Accessible.h"
+#include "mozilla/a11y/HyperTextAccessibleBase.h"
 #include "mozilla/dom/ChildIterator.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/StaticPrefs_accessibility.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;
@@ -154,28 +157,28 @@ Accessible* Pivot::SearchForward(Accessible* aAnchor, PivotRule& aRule,
   return nullptr;
 }
 
-
-HyperTextAccessible* Pivot::SearchForText(LocalAccessible* aAnchor,
-                                          bool aBackward) {
-  if (!mRoot->IsLocal()) {
+Accessible* Pivot::SearchForText(Accessible* aAnchor, bool aBackward) {
+  if (mRoot->IsRemote() &&
+      !StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+    
     return nullptr;
   }
-  LocalAccessible* accessible = aAnchor;
+  Accessible* accessible = aAnchor;
   while (true) {
-    LocalAccessible* child = nullptr;
+    Accessible* child = nullptr;
 
-    while ((child = (aBackward ? accessible->LocalLastChild()
-                               : accessible->LocalFirstChild()))) {
+    while ((child = (aBackward ? accessible->LastChild()
+                               : accessible->FirstChild()))) {
       accessible = child;
       if (child->IsHyperText()) {
-        return child->AsHyperText();
+        return child;
       }
     }
 
-    LocalAccessible* sibling = nullptr;
-    LocalAccessible* temp = accessible;
+    Accessible* sibling = nullptr;
+    Accessible* temp = accessible;
     do {
-      if (temp == mRoot->AsLocal()) {
+      if (temp == mRoot) {
         break;
       }
 
@@ -184,15 +187,15 @@ HyperTextAccessible* Pivot::SearchForText(LocalAccessible* aAnchor,
       
       
       if (temp != aAnchor && temp->IsHyperText()) {
-        return temp->AsHyperText();
+        return temp;
       }
 
       if (sibling) {
         break;
       }
 
-      sibling = aBackward ? temp->LocalPrevSibling() : temp->LocalNextSibling();
-    } while ((temp = temp->LocalParent()));
+      sibling = aBackward ? temp->PrevSibling() : temp->NextSibling();
+    } while ((temp = temp->Parent()));
 
     if (!sibling) {
       break;
@@ -200,7 +203,7 @@ HyperTextAccessible* Pivot::SearchForText(LocalAccessible* aAnchor,
 
     accessible = sibling;
     if (accessible->IsHyperText()) {
-      return accessible->AsHyperText();
+      return accessible;
     }
   }
 
@@ -234,23 +237,23 @@ Accessible* Pivot::Last(PivotRule& aRule) {
   return SearchBackward(lastAcc, aRule, true);
 }
 
-
-LocalAccessible* Pivot::NextText(LocalAccessible* aAnchor,
-                                 int32_t* aStartOffset, int32_t* aEndOffset,
-                                 int32_t aBoundaryType) {
-  if (!mRoot->IsLocal()) {
+Accessible* Pivot::NextText(Accessible* aAnchor, int32_t* aStartOffset,
+                            int32_t* aEndOffset, int32_t aBoundaryType) {
+  if (mRoot->IsRemote() &&
+      !StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+    
     return nullptr;
   }
 
   int32_t tempStart = *aStartOffset, tempEnd = *aEndOffset;
-  LocalAccessible* tempPosition = aAnchor;
+  Accessible* tempPosition = aAnchor;
 
   
   
-  if (aAnchor->IsTextLeaf() && aAnchor->LocalParent() &&
-      aAnchor->LocalParent()->IsHyperText()) {
-    HyperTextAccessible* text = aAnchor->LocalParent()->AsHyperText();
-    tempPosition = text;
+  if (aAnchor->IsTextLeaf() && aAnchor->Parent() &&
+      aAnchor->Parent()->IsHyperText()) {
+    tempPosition = aAnchor->Parent();
+    HyperTextAccessibleBase* text = tempPosition->AsHyperTextBase();
     int32_t childOffset = text->GetChildOffset(aAnchor);
     if (tempEnd == -1) {
       tempStart = 0;
@@ -262,27 +265,27 @@ LocalAccessible* Pivot::NextText(LocalAccessible* aAnchor,
 
   while (true) {
     MOZ_ASSERT(tempPosition);
-    LocalAccessible* curPosition = tempPosition;
-    HyperTextAccessible* text = nullptr;
+    Accessible* curPosition = tempPosition;
+    HyperTextAccessibleBase* text = nullptr;
     
     
-    if (!(text = tempPosition->AsHyperText())) {
-      text = SearchForText(tempPosition, false);
-      if (!text) {
+    if (!(text = tempPosition->AsHyperTextBase())) {
+      tempPosition = SearchForText(tempPosition, false);
+      if (!tempPosition) {
         return nullptr;
       }
 
-      if (text != curPosition) {
+      if (tempPosition != curPosition) {
         tempStart = tempEnd = -1;
       }
-      tempPosition = text;
+      text = tempPosition->AsHyperTextBase();
     }
 
     
     
     
     if (tempEnd == -1) {
-      tempEnd = text == curPosition->LocalParent()
+      tempEnd = tempPosition == curPosition->Parent()
                     ? text->GetChildOffset(curPosition)
                     : 0;
     }
@@ -290,7 +293,7 @@ LocalAccessible* Pivot::NextText(LocalAccessible* aAnchor,
     
     
     if (tempEnd == static_cast<int32_t>(text->CharacterCount())) {
-      if (tempPosition == mRoot->AsLocal()) {
+      if (tempPosition == mRoot) {
         return nullptr;
       }
 
@@ -299,7 +302,7 @@ LocalAccessible* Pivot::NextText(LocalAccessible* aAnchor,
       
       
       
-      LocalAccessible* sibling = tempPosition->LocalNextSibling();
+      Accessible* sibling = tempPosition->NextSibling();
       if (tempPosition->IsLink()) {
         if (sibling && sibling->IsLink()) {
           tempStart = tempEnd = -1;
@@ -307,7 +310,7 @@ LocalAccessible* Pivot::NextText(LocalAccessible* aAnchor,
         } else {
           tempStart = tempPosition->StartOffset();
           tempEnd = tempPosition->EndOffset();
-          tempPosition = tempPosition->LocalParent();
+          tempPosition = tempPosition->Parent();
         }
       } else {
         tempPosition = SearchForText(tempPosition, false);
@@ -349,7 +352,7 @@ LocalAccessible* Pivot::NextText(LocalAccessible* aAnchor,
     
     
     
-    LocalAccessible* childAtOffset = nullptr;
+    Accessible* childAtOffset = nullptr;
     for (int32_t i = tempStart; i < tempEnd; i++) {
       childAtOffset = text->GetChildAtOffset(i);
       if (childAtOffset && childAtOffset->IsHyperText()) {
@@ -375,23 +378,23 @@ LocalAccessible* Pivot::NextText(LocalAccessible* aAnchor,
   }
 }
 
-
-LocalAccessible* Pivot::PrevText(LocalAccessible* aAnchor,
-                                 int32_t* aStartOffset, int32_t* aEndOffset,
-                                 int32_t aBoundaryType) {
-  if (!mRoot->IsLocal()) {
+Accessible* Pivot::PrevText(Accessible* aAnchor, int32_t* aStartOffset,
+                            int32_t* aEndOffset, int32_t aBoundaryType) {
+  if (mRoot->IsRemote() &&
+      !StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+    
     return nullptr;
   }
 
   int32_t tempStart = *aStartOffset, tempEnd = *aEndOffset;
-  LocalAccessible* tempPosition = aAnchor;
+  Accessible* tempPosition = aAnchor;
 
   
   
-  if (aAnchor->IsTextLeaf() && aAnchor->LocalParent() &&
-      aAnchor->LocalParent()->IsHyperText()) {
-    HyperTextAccessible* text = aAnchor->LocalParent()->AsHyperText();
-    tempPosition = text;
+  if (aAnchor->IsTextLeaf() && aAnchor->Parent() &&
+      aAnchor->Parent()->IsHyperText()) {
+    tempPosition = aAnchor->Parent();
+    HyperTextAccessibleBase* text = tempPosition->AsHyperTextBase();
     int32_t childOffset = text->GetChildOffset(aAnchor);
     if (tempStart == -1) {
       tempStart = nsAccUtils::TextLength(aAnchor);
@@ -404,27 +407,28 @@ LocalAccessible* Pivot::PrevText(LocalAccessible* aAnchor,
   while (true) {
     MOZ_ASSERT(tempPosition);
 
-    LocalAccessible* curPosition = tempPosition;
-    HyperTextAccessible* text;
+    Accessible* curPosition = tempPosition;
+    HyperTextAccessibleBase* text;
     
     
-    if (!(text = tempPosition->AsHyperText())) {
-      text = SearchForText(tempPosition, true);
-      if (!text) {
+    if (!(text = tempPosition->AsHyperTextBase())) {
+      tempPosition = SearchForText(tempPosition, true);
+      if (!tempPosition) {
         return nullptr;
       }
 
-      if (text != curPosition) {
+      if (tempPosition != curPosition) {
         tempStart = tempEnd = -1;
       }
-      tempPosition = text;
+      text = tempPosition->AsHyperTextBase();
     }
 
     
     
     
     if (tempStart == -1) {
-      if (tempPosition != curPosition && text == curPosition->LocalParent()) {
+      if (tempPosition != curPosition &&
+          tempPosition == curPosition->Parent()) {
         tempStart = text->GetChildOffset(curPosition) +
                     nsAccUtils::TextLength(curPosition);
       } else {
@@ -435,7 +439,7 @@ LocalAccessible* Pivot::PrevText(LocalAccessible* aAnchor,
     
     
     if (tempStart == 0) {
-      if (tempPosition == mRoot->AsLocal()) {
+      if (tempPosition == mRoot) {
         return nullptr;
       }
 
@@ -444,25 +448,25 @@ LocalAccessible* Pivot::PrevText(LocalAccessible* aAnchor,
       
       
       
-      LocalAccessible* sibling = tempPosition->LocalPrevSibling();
+      Accessible* sibling = tempPosition->PrevSibling();
       if (tempPosition->IsLink()) {
         if (sibling && sibling->IsLink()) {
-          HyperTextAccessible* siblingText = sibling->AsHyperText();
+          HyperTextAccessibleBase* siblingText = sibling->AsHyperTextBase();
           tempStart = tempEnd =
               siblingText ? siblingText->CharacterCount() : -1;
           tempPosition = sibling;
         } else {
           tempStart = tempPosition->StartOffset();
           tempEnd = tempPosition->EndOffset();
-          tempPosition = tempPosition->LocalParent();
+          tempPosition = tempPosition->Parent();
         }
       } else {
-        HyperTextAccessible* tempText = SearchForText(tempPosition, true);
-        if (!tempText) {
+        tempPosition = SearchForText(tempPosition, true);
+        if (!tempPosition) {
           return nullptr;
         }
 
-        tempPosition = tempText;
+        HyperTextAccessibleBase* tempText = tempPosition->AsHyperTextBase();
         tempStart = tempEnd = tempText->CharacterCount();
       }
       continue;
@@ -505,7 +509,7 @@ LocalAccessible* Pivot::PrevText(LocalAccessible* aAnchor,
     
     
     
-    LocalAccessible* childAtOffset = nullptr;
+    Accessible* childAtOffset = nullptr;
     for (int32_t i = tempEnd - 1; i >= tempStart; i--) {
       childAtOffset = text->GetChildAtOffset(i);
       if (childAtOffset && !childAtOffset->IsText()) {
@@ -519,7 +523,8 @@ LocalAccessible* Pivot::PrevText(LocalAccessible* aAnchor,
     if (childAtOffset && !childAtOffset->IsText() &&
         tempEnd == static_cast<int32_t>(childAtOffset->EndOffset())) {
       tempPosition = childAtOffset;
-      tempStart = tempEnd = childAtOffset->AsHyperText()->CharacterCount();
+      tempStart = tempEnd = static_cast<int32_t>(
+          childAtOffset->AsHyperTextBase()->CharacterCount());
       continue;
     }
 
