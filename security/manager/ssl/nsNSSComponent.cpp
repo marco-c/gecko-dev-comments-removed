@@ -940,8 +940,6 @@ nsresult nsNSSComponent::CheckForSmartCardChanges() {
 
   
   
-  
-  
   Vector<UniqueSECMODModule> modulesWithRemovableSlots;
   {
     AutoSECMODListReadLock secmodLock;
@@ -959,6 +957,9 @@ nsresult nsNSSComponent::CheckForSmartCardChanges() {
   for (auto& module : modulesWithRemovableSlots) {
     
     Unused << SECMOD_UpdateSlotList(module.get());
+  }
+  AutoSECMODListReadLock secmodLock;
+  for (auto& module : modulesWithRemovableSlots) {
     for (int i = 0; i < module->slotCount; i++) {
       
       

@@ -110,6 +110,7 @@ int32_t RootCABinNumber(Span<const uint8_t> cert) {
   
   
   UniqueSECMODModule rootsModule(SECMOD_FindModule(kRootModuleName));
+  AutoSECMODListReadLock secmodLock;
   if (!rootsModule || rootsModule->slotCount != 1) {
     return ROOT_CERTIFICATE_UNKNOWN;
   }
