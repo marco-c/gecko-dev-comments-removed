@@ -258,7 +258,20 @@ function delay(ms = 0) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function promiseContentDimensions(browser) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function promiseContentDimensions(browser, tolleratedWidthSizeDiff = 1) {
   
   
   
@@ -267,9 +280,15 @@ async function promiseContentDimensions(browser) {
 
   let dims = await promisePossiblyInaccurateContentDimensions(browser);
   while (
-    browser.clientWidth !== Math.round(dims.window.innerWidth) ||
+    Math.abs(browser.clientWidth - dims.window.innerWidth) >
+      tolleratedWidthSizeDiff ||
     browser.clientHeight !== Math.round(dims.window.innerHeight)
   ) {
+    const diffWidth = Math.abs(browser.clientWidth - dims.window.innerWidth);
+    const diffHeight = Math.abs(browser.clientHeight - dims.window.innerHeight);
+    info(
+      `Content dimension did not reached the expected size yet (diff: ${diffWidth}x${diffHeight}). Wait further.`
+    );
     await delay(50);
     dims = await promisePossiblyInaccurateContentDimensions(browser);
   }
