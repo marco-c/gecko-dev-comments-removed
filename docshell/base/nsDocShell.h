@@ -732,6 +732,11 @@ class nsDocShell final : public nsDocLoader,
                 nsIContentSecurityPolicy* aCsp, bool aFireOnLocationChange,
                 bool aAddToGlobalHistory, bool aCloneSHChildren);
 
+  
+  
+  
+  void CollectWireframe();
+
  public:
   
   

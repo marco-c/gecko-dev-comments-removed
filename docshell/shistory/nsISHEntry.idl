@@ -457,4 +457,13 @@ interface nsISHEntry : nsISupports
     [notxpcom] void SyncTreesForSubframeNavigation(in nsISHEntry aEntry,
                                                    in BrowsingContext aTopBC,
                                                    in BrowsingContext aIgnoreBC);
+
+    
+
+
+
+
+
+
+    [implicit_jscontext] readonly attribute jsval wireframe;
 };

@@ -825,6 +825,10 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
           
           shistory->InternalSetRequestedIndex(indexOfHistoryLoad);
           shistory->UpdateIndex();
+
+          if (IsTop()) {
+            mActiveEntry->SetWireframe(Nothing());
+          }
         } else if (addEntry) {
           shistory->AddEntry(mActiveEntry, aPersist);
           shistory->InternalSetRequestedIndex(-1);
@@ -1015,6 +1019,10 @@ void CanonicalBrowsingContext::ReplaceActiveSessionHistoryEntry(
   }
 
   ResetSHEntryHasUserInteractionCache();
+
+  if (IsTop()) {
+    mActiveEntry->SetWireframe(Nothing());
+  }
 
   
 }
