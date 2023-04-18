@@ -325,6 +325,9 @@ CookieService::GetCookieStringFromDocument(Document* aDocument,
     return NS_OK;
   }
 
+  nsICookie::schemeType schemeType =
+      CookieCommons::PrincipalToSchemeType(principal);
+
   CookieStorage* storage = PickStorage(principal->OriginAttributesRef());
 
   nsAutoCString baseDomain;
@@ -394,6 +397,10 @@ CookieService::GetCookieStringFromDocument(Document* aDocument,
 
     
     if (cookie->IsSecure() && !potentiallyTurstworthy) {
+      continue;
+    }
+
+    if (!CookieCommons::MaybeCompareScheme(cookie, schemeType)) {
       continue;
     }
 
@@ -918,6 +925,8 @@ void CookieService::GetCookiesForURI(
                                             baseDomainFromURI);
   NS_ENSURE_SUCCESS_VOID(rv);
 
+  nsICookie::schemeType schemeType = CookieCommons::URIToSchemeType(aHostURI);
+
   
   uint32_t rejectedReason = aRejectedReason;
   uint32_t priorCookieCount = storage->CountCookiesFromHost(
@@ -981,6 +990,12 @@ void CookieService::GetCookiesForURI(
 
     
     if (cookie->IsSecure() && !potentiallyTurstworthy) {
+      continue;
+    }
+
+    
+    if (!CookieCommons::MaybeCompareSchemeWithLogging(crc, aHostURI, cookie,
+                                                      schemeType)) {
       continue;
     }
 
