@@ -969,10 +969,9 @@ class AsyncPanZoomController {
   
 
 
-  RefPtr<GeckoContentController> mGeckoContentController
-      GUARDED_BY(mRefPtrMonitor);
-  RefPtr<GestureEventListener> mGestureEventListener GUARDED_BY(mRefPtrMonitor);
-  mutable Monitor mRefPtrMonitor;
+  RefPtr<GeckoContentController> mGeckoContentController;
+  RefPtr<GestureEventListener> mGestureEventListener;
+  mutable Monitor mRefPtrMonitor MOZ_UNANNOTATED;
 
   
   
@@ -1021,7 +1020,7 @@ class AsyncPanZoomController {
   
   
   
-  mutable RecursiveMutex mRecursiveMutex;
+  mutable RecursiveMutex mRecursiveMutex MOZ_UNANNOTATED;
 
  private:
   
@@ -1768,7 +1767,7 @@ class AsyncPanZoomController {
                                uint32_t aMagnitude);
 
   
-  Mutex mCheckerboardEventLock;
+  Mutex mCheckerboardEventLock MOZ_UNANNOTATED;
   
   
   

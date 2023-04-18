@@ -150,7 +150,7 @@ class CompositorVsyncScheduler {
    private:
     virtual ~Observer();
 
-    Mutex mMutex;
+    Mutex mMutex MOZ_UNANNOTATED;
     
     CompositorVsyncScheduler* mOwner;
   };
@@ -170,16 +170,15 @@ class CompositorVsyncScheduler {
   widget::CompositorWidget* mWidget;
   RefPtr<CompositorVsyncScheduler::Observer> mVsyncObserver;
 
-  mozilla::Monitor mCurrentCompositeTaskMonitor;
-  RefPtr<CancelableRunnable> mCurrentCompositeTask
-      GUARDED_BY(mCurrentCompositeTaskMonitor);
+  mozilla::Monitor mCurrentCompositeTaskMonitor MOZ_UNANNOTATED;
+  RefPtr<CancelableRunnable> mCurrentCompositeTask;
   
-  wr::RenderReasons mCurrentCompositeTaskReasons
-      GUARDED_BY(mCurrentCompositeTaskMonitor);
+  wr::RenderReasons mCurrentCompositeTaskReasons;
 
-  mozilla::Monitor mCurrentVRTaskMonitor;
-  RefPtr<CancelableRunnable> mCurrentVRTask GUARDED_BY(mCurrentVRTaskMonitor);
+  mozilla::Monitor mCurrentVRTaskMonitor MOZ_UNANNOTATED;
+  RefPtr<CancelableRunnable> mCurrentVRTask;
 };
+
 }  
 }  
 
