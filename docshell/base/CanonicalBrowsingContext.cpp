@@ -69,6 +69,9 @@ static mozilla::LazyLogModule sPBContext("PBContext");
 
 static uint32_t gNumberOfPrivateContexts = 0;
 
+
+static uint64_t gParentInitiatedNavigationEpoch = 0;
+
 static void IncreasePrivateCount() {
   gNumberOfPrivateContexts++;
   MOZ_LOG(sPBContext, mozilla::LogLevel::Debug,
@@ -2042,6 +2045,8 @@ bool CanonicalBrowsingContext::LoadInParent(nsDocShellLoadState* aLoadState,
 
   MOZ_ASSERT(!net::SchemeIsJavascript(aLoadState->URI()));
 
+  MOZ_ALWAYS_SUCCEEDS(
+      SetParentInitiatedNavigationEpoch(++gParentInitiatedNavigationEpoch));
   
   
   
