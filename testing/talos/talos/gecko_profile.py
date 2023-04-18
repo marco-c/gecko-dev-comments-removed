@@ -50,10 +50,13 @@ class GeckoProfile(object):
         
         
         self.profile_arcname = os.path.join(
-            self.upload_dir, "profile_{0}.zip".format(test_config["name"])
+            self.upload_dir, "profile_{0}.zip".format(test_config["suite"])
         )
-        LOG.info("Clearing archive {0}".format(self.profile_arcname))
-        mozfile.remove(self.profile_arcname)
+
+        
+        if test_config.get("is_first_test", False):
+            LOG.info("Clearing archive {0}".format(self.profile_arcname))
+            mozfile.remove(self.profile_arcname)
 
         self.symbol_paths = {
             "FIREFOX": tempfile.mkdtemp(),
