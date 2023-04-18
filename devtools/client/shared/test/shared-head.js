@@ -1937,11 +1937,35 @@ async function getFluentStringHelper(resourceIds) {
 
 
 
-  return (id, args) => {
-    const string = reactLocalization.getString(id, args);
+
+
+
+
+
+  return (id, attributeName, args) => {
+    let string;
+
+    if (!attributeName) {
+      string = reactLocalization.getString(id, args);
+    } else {
+      for (const bundle of reactLocalization.bundles) {
+        const msg = bundle.getMessage(id);
+        if (msg?.attributes[attributeName]) {
+          string = bundle.formatPattern(
+            msg.attributes[attributeName],
+            args,
+            []
+          );
+          break;
+        }
+      }
+    }
+
     if (!string) {
       throw new Error(
-        `Could not find a string for "${id}". Was the correct resource bundle loaded?`
+        `Could not find a string for "${id}"${
+          attributeName ? ` and attribute "${attributeName}")` : ""
+        }. Was the correct resource bundle loaded?`
       );
     }
     return string;

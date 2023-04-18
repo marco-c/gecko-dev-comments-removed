@@ -16,6 +16,8 @@ const UnsupportedBrowserItem = createFactory(
 );
 
 const Types = require("devtools/client/inspector/compatibility/types");
+const FluentReact = require("devtools/client/shared/vendor/fluent-react");
+const Localized = createFactory(FluentReact.Localized);
 
 class UnsupportedBrowserList extends PureComponent {
   static get propTypes() {
@@ -27,35 +29,31 @@ class UnsupportedBrowserList extends PureComponent {
   render() {
     const { browsers } = this.props;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const browsersMap = browsers.reduce(
-      (map, { id, name, status: alias, version }) => {
-        if (!map.has(id)) {
-          map.set(id, { name, versions: [] });
-        }
-        map.get(id).versions.push({ alias, version });
+    const unsupportedBrowserItems = {};
+    const browsersList = [];
 
-        return map;
-      },
-      new Map()
-    );
-
-    return dom.ul(
+    for (const { id, name, version, status } of browsers) {
+      
+      if (!unsupportedBrowserItems[id]) {
+        unsupportedBrowserItems[id] = UnsupportedBrowserItem({
+          key: id,
+          id,
+          name,
+        });
+      }
+      browsersList.push(`${name} ${version}${status ? ` (${status})` : ""}`);
+    }
+    return Localized(
       {
-        className: "compatibility-unsupported-browser-list",
+        id: "compatibility-issue-browsers-list",
+        $browsers: browsersList.join("\n"),
+        attrs: { title: true },
       },
-      [...browsersMap.entries()].map(([id, { name, versions }]) =>
-        UnsupportedBrowserItem({ key: id, id, name, versions })
+      dom.ul(
+        {
+          className: "compatibility-unsupported-browser-list",
+        },
+        Object.values(unsupportedBrowserItems)
       )
     );
   }
