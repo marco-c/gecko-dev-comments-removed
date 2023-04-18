@@ -578,6 +578,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   Maybe<nsCString> mOriginalUriString;
 
+  
   bool mSupportsRedirectToRealChannel = true;
 
   Maybe<nsCString> mRemoteTypeOverride;
