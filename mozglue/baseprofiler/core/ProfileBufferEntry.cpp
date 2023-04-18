@@ -1039,8 +1039,8 @@ void ProfileBuffer::StreamCountersToJSON(SpliceableJSONWriter& aWriter,
           ERROR_AND_CONTINUE("expected a Time entry");
         }
         double time = e.Get().GetDouble();
+        e.Next();
         if (time >= aSinceTime) {
-          e.Next();
           while (e.Has() && e.Get().IsCounterKey()) {
             uint64_t key = e.Get().GetUint64();
             CounterKeyedSamples& data = LookupOrAdd(counter, key);
@@ -1055,6 +1055,7 @@ void ProfileBuffer::StreamCountersToJSON(SpliceableJSONWriter& aWriter,
               number = 0;
             } else {
               number = e.Get().GetInt64();
+              e.Next();
             }
             CounterKeyedSample sample = {time, number, count};
             MOZ_RELEASE_ASSERT(data.append(sample));
@@ -1063,8 +1064,9 @@ void ProfileBuffer::StreamCountersToJSON(SpliceableJSONWriter& aWriter,
           
           
         }
+      } else {
+        e.Next();
       }
-      e.Next();
     }
     
     if (counters.count() == 0) {
