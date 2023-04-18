@@ -2699,12 +2699,8 @@
 
 
 
-
-
-
-
  \
-    MACRO(Finally, finally, NULL, 1, 0, 2, JOF_BYTE) \
+    MACRO(Finally, finally, NULL, 1, 0, 0, JOF_BYTE) \
     
 
 

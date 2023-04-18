@@ -926,12 +926,30 @@ bool BytecodeParser::parse() {
                 return false;
               }
             } else if (tn.kind() == TryNoteKind::Finally) {
-              if (!addJump(catchOffset, stackDepth, offsetStack, pc,
+              
+              
+              
+              
+              offsetStack[stackDepth].set(offset, 0);
+              offsetStack[stackDepth + 1].set(offset, 1);
+              if (!addJump(catchOffset, stackDepth + 2, offsetStack, pc,
                            JumpKind::TryFinally)) {
                 return false;
               }
             }
           }
+        }
+        break;
+      }
+
+      case JSOp::ResumeIndex: {
+        
+        
+        
+        
+        uint32_t resumeOffset = script_->resumeOffsets()[GET_UINT24(pc)];
+        if (!recordBytecode(resumeOffset, offsetStack, stackDepth - 2)) {
+          return false;
         }
         break;
       }
@@ -2094,7 +2112,9 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
       case JSOp::Exception:
         return write("EXCEPTION");
 
-      case JSOp::Finally:
+      case JSOp::Try:
+        
+        
         if (defIndex == 0) {
           return write("THROWING");
         }

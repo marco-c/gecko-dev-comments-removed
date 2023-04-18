@@ -144,7 +144,7 @@ class TryFinallyControl : public NestableControl {
 
  public:
   
-  JumpList gosubs;
+  JumpList finallyJumps_;
 
   TryFinallyControl(BytecodeEmitter* bce, StatementKind kind);
 

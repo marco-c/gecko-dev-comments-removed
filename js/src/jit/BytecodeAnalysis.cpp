@@ -130,11 +130,24 @@ bool BytecodeAnalysis::init(TempAllocator& alloc) {
               (tn.kind() == TryNoteKind::Catch ||
                tn.kind() == TryNoteKind::Finally)) {
             uint32_t catchOrFinallyOffset = tn.start + tn.length;
+            uint32_t targetDepth =
+                tn.kind() == TryNoteKind::Finally ? stackDepth + 2 : stackDepth;
             BytecodeInfo& targetInfo = infos_[catchOrFinallyOffset];
-            targetInfo.init(stackDepth);
+            targetInfo.init(targetDepth);
             targetInfo.setJumpTarget( false);
           }
         }
+        break;
+      }
+
+      case JSOp::ResumeIndex: {
+        
+        
+        
+        
+        uint32_t resumeOffset = script_->resumeOffsets()[(it.getResumeIndex())];
+        infos_[resumeOffset].init(stackDepth - 2);
+        infos_[resumeOffset].setJumpTarget(normallyReachable);
         break;
       }
 
@@ -144,7 +157,6 @@ bool BytecodeAnalysis::init(TempAllocator& alloc) {
 
 #ifdef DEBUG
       case JSOp::Exception:
-      case JSOp::Finally:
         
         
         MOZ_ASSERT(!normallyReachable);
@@ -184,10 +196,7 @@ bool BytecodeAnalysis::init(TempAllocator& alloc) {
 #endif
 
       infos_[targetOffset].init(newStackDepth);
-
-      
-      bool targetNormallyReachable = (op != JSOp::Gosub) && normallyReachable;
-      infos_[targetOffset].setJumpTarget(targetNormallyReachable);
+      infos_[targetOffset].setJumpTarget(normallyReachable);
     }
 
     
@@ -200,10 +209,7 @@ bool BytecodeAnalysis::init(TempAllocator& alloc) {
 
       
       if (jump) {
-        
-        
-        bool nextNormallyReachable = (op != JSOp::Gosub) && normallyReachable;
-        infos_[fallthroughOffset].setJumpTarget(nextNormallyReachable);
+        infos_[fallthroughOffset].setJumpTarget(normallyReachable);
       }
     }
   }

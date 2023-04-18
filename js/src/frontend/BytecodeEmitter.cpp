@@ -791,7 +791,7 @@ bool NonLocalExitControl::prepareForNonLocalJump(NestableControl* target) {
           if (!flushPops(bce_)) {
             return false;
           }
-          if (!bce_->emitGoSub(&finallyControl.gosubs)) {
+          if (!bce_->emitJumpToFinally(&finallyControl.finallyJumps_)) {
             
             return false;
           }
@@ -5020,6 +5020,7 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitTry(TryNode* tryNode) {
     
     
     
+    
     if (!tryCatch.emitCatch()) {
       return false;
     }
@@ -5048,7 +5049,7 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitTry(TryNode* tryNode) {
   return true;
 }
 
-[[nodiscard]] bool BytecodeEmitter::emitGoSub(JumpList* jump) {
+[[nodiscard]] bool BytecodeEmitter::emitJumpToFinally(JumpList* jump) {
   
   
   
@@ -5069,9 +5070,13 @@ MOZ_NEVER_INLINE bool BytecodeEmitter::emitTry(TryNode* tryNode) {
     return false;
   }
 
-  if (!emitJumpNoFallthrough(JSOp::Gosub, jump)) {
+  if (!emitJumpNoFallthrough(JSOp::Goto, jump)) {
     return false;
   }
+
+  
+  
+  bytecodeSection().setStackDepth(bytecodeSection().stackDepth() - 2);
 
   uint32_t resumeIndex;
   if (!allocateResumeIndex(bytecodeSection().offset(), &resumeIndex)) {

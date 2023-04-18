@@ -63,7 +63,7 @@ bool TryEmitter::emitTryEnd() {
 
   
   if (hasFinally() && controlInfo_) {
-    if (!bce_->emitGoSub(&controlInfo_->gosubs)) {
+    if (!bce_->emitJumpToFinally(&controlInfo_->finallyJumps_)) {
       return false;
     }
   }
@@ -120,7 +120,7 @@ bool TryEmitter::emitCatchEnd() {
 
   
   if (hasFinally()) {
-    if (!bce_->emitGoSub(&controlInfo_->gosubs)) {
+    if (!bce_->emitJumpToFinally(&controlInfo_->finallyJumps_)) {
       return false;
     }
     MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == depth_);
@@ -164,14 +164,19 @@ bool TryEmitter::emitFinally(
 
   MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == depth_);
 
+  
+  
+  
+  
+  bce_->bytecodeSection().setStackDepth(depth_ + 2);
+
   if (!bce_->emitJumpTarget(&finallyStart_)) {
     return false;
   }
 
   if (controlInfo_) {
     
-    
-    bce_->patchJumpsToTarget(controlInfo_->gosubs, finallyStart_);
+    bce_->patchJumpsToTarget(controlInfo_->finallyJumps_, finallyStart_);
 
     
     controlInfo_->setEmittingSubroutine();

@@ -4630,10 +4630,6 @@ template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_Finally() {
   
   
-  frame.incStackDepth(2);
-
-  
-  
   return emitInterruptCheck();
 }
 
