@@ -7,11 +7,15 @@
 const Services = require("Services");
 const isWindows = Services.appinfo.OS === "WINNT";
 
+
+
 const TEST_SUITES = {
   INSPECTOR: "inspector",
   WEBCONSOLE: "webconsole",
   OTHER: "other",
 };
+
+
 
 
 
