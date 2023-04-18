@@ -40,12 +40,6 @@ const TEST_LOGIN2 = new nsLoginInfo(
   "password"
 );
 
-async function reloadTab(tab) {
-  const tabReloaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  gBrowser.reloadTab(tab);
-  await tabReloaded;
-}
-
 
 const mockGetLoginDataWithSyncedDevices = (
   mobileDeviceConnected = false,

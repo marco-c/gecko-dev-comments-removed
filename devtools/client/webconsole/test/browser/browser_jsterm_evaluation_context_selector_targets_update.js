@@ -229,11 +229,7 @@ add_task(async function() {
 
   
   
-  const onBrowserLoaded = BrowserTestUtils.browserLoaded(
-    originalTab.linkedBrowser
-  );
-  gBrowser.reloadTab(originalTab);
-  await onBrowserLoaded;
+  await BrowserTestUtils.reloadTab(originalTab);
 
   ok(
     !hud.ui.document.querySelector(".app-error-panel"),

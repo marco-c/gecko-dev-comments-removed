@@ -1786,6 +1786,25 @@ var BrowserTestUtils = {
 
 
 
+  reloadTab(tab, includeSubFrames = false) {
+    const finished = BrowserTestUtils.browserLoaded(
+      tab.linkedBrowser,
+      includeSubFrames
+    );
+    tab.ownerGlobal.gBrowser.reloadTab(tab);
+    return finished;
+  },
+
+  
+
+
+
+
+
+
+
+
+
 
 
 
