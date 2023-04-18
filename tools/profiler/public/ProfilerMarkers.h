@@ -120,6 +120,16 @@ inline mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(
 }
 #endif
 
+[[nodiscard]] inline bool profiler_thread_is_being_profiled_for_markers() {
+  return profiler_thread_is_being_profiled(ThreadProfilingFeatures::Markers);
+}
+
+[[nodiscard]] inline bool profiler_thread_is_being_profiled_for_markers(
+    const ProfilerThreadId& aThreadId) {
+  return profiler_thread_is_being_profiled(aThreadId,
+                                           ThreadProfilingFeatures::Markers);
+}
+
 
 
 
@@ -136,8 +146,8 @@ mozilla::ProfileBufferBlockIndex profiler_add_marker(
 #ifndef MOZ_GECKO_PROFILER
   return {};
 #else
-  if (!profiler_thread_is_being_profiled(aOptions.ThreadId().ThreadId(),
-                                         ThreadProfilingFeatures::Markers)) {
+  if (!profiler_thread_is_being_profiled_for_markers(
+          aOptions.ThreadId().ThreadId())) {
     return {};
   }
   return ::AddMarkerToBuffer(profiler_markers_detail::CachedCoreBuffer(), aName,
