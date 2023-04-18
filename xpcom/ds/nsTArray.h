@@ -2463,6 +2463,9 @@ auto nsTArray_Impl<E, Alloc>::ReplaceElementsAtInternal(index_type aStart,
   if (MOZ_UNLIKELY(aStart > Length())) {
     mozilla::detail::InvalidArrayIndex_CRASH(aStart, Length());
   }
+  if (MOZ_UNLIKELY(aCount > Length() - aStart)) {
+    mozilla::detail::InvalidArrayIndex_CRASH(aStart + aCount, Length());
+  }
 
   
   if (!ActualAlloc::Successful(this->template EnsureCapacity<ActualAlloc>(
