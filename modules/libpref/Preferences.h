@@ -224,6 +224,9 @@ class Preferences final : public nsIPrefService,
   static bool HasUserValue(const char* aPref);
 
   
+  static bool HasDefaultValue(const char* aPref);
+
+  
   
   static nsresult AddStrongObserver(nsIObserver* aObserver,
                                     const nsACString& aPref);
