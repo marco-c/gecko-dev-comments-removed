@@ -1079,6 +1079,8 @@ bool Instance::initElems(JSContext* cx, uint32_t tableIndex,
     
     
     
+    
+    
 
     
     
