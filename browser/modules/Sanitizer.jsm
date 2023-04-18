@@ -958,10 +958,17 @@ async function maybeSanitizeSessionPrincipals(progress, principals, flags) {
   log("Sanitizing " + principals.length + " principals");
 
   let promises = [];
+  let permissions = new Map();
+  Services.perms.getAllWithTypePrefix("cookie").forEach(perm => {
+    permissions.set(perm.principal.origin, perm);
+  });
 
   principals.forEach(principal => {
     progress.step = "checking-principal";
-    let cookieAllowed = cookiesAllowedForDomainOrSubDomain(principal);
+    let cookieAllowed = cookiesAllowedForDomainOrSubDomain(
+      principal,
+      permissions
+    );
     progress.step = "principal-checked:" + cookieAllowed;
 
     if (!cookieAllowed) {
@@ -974,12 +981,13 @@ async function maybeSanitizeSessionPrincipals(progress, principals, flags) {
   progress.step = "promises resolved";
 }
 
-function cookiesAllowedForDomainOrSubDomain(principal) {
-  log("Checking principal: " + principal.asciispec);
+function cookiesAllowedForDomainOrSubDomain(principal, permissions) {
+  log("Checking principal: " + principal.asciiSpec);
 
   
   
   let p = Services.perms.testPermissionFromPrincipal(principal, "cookie");
+
   if (p == Ci.nsICookiePermission.ACCESS_ALLOW) {
     log("Cookie allowed!");
     return true;
@@ -999,19 +1007,23 @@ function cookiesAllowedForDomainOrSubDomain(principal) {
     return false;
   }
 
-  for (let perm of Services.perms.getAllWithTypePrefix("cookie")) {
+  for (let perm of permissions.values()) {
     if (perm.type != "cookie") {
+      permissions.delete(perm.principal.origin);
       continue;
     }
     
     if (!isSupportedPrincipal(perm.principal)) {
+      permissions.delete(perm.principal.origin);
       continue;
     }
 
     
     if (Services.eTLD.hasRootDomain(perm.principal.host, principal.host)) {
+      
+      permissions.delete(perm.principal.origin);
       log("Recursive cookie check on principal: " + perm.principal.asciiSpec);
-      return cookiesAllowedForDomainOrSubDomain(perm.principal);
+      return cookiesAllowedForDomainOrSubDomain(perm.principal, permissions);
     }
   }
 
@@ -1020,7 +1032,7 @@ function cookiesAllowedForDomainOrSubDomain(principal) {
 }
 
 async function sanitizeSessionPrincipal(progress, principal, flags) {
-  log("Sanitizing principal: " + principal.asciispec);
+  log("Sanitizing principal: " + principal.asciiSpec);
 
   await new Promise(resolve => {
     progress.sanitizePrincipal = "started";

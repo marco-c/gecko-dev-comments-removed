@@ -90,18 +90,18 @@ class PrincipalsCollector {
           return;
         }
 
-        let list = [];
+        let principalsMap = new Map();
         for (const origin of request.result) {
           let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
             origin
           );
           if (PrincipalsCollector.isSupportedPrincipal(principal)) {
-            list.push(principal);
+            principalsMap.set(principal.origin, principal);
           }
         }
 
         progress.step = "principals-quota-manager-completed";
-        resolve(list);
+        resolve(principalsMap);
       };
     }).catch(ex => {
       Cu.reportError("QuotaManagerService promise failed: " + ex);
@@ -116,7 +116,7 @@ class PrincipalsCollector {
         Ci.nsIServiceWorkerRegistrationInfo
       );
       
-      principals.push(sw.principal);
+      principals.set(sw.principal.origin, sw.principal);
     }
 
     
@@ -134,14 +134,14 @@ class PrincipalsCollector {
     hosts.forEach(host => {
       
       
-      principals.push(
-        Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-          "https://" + host
-        )
+      const principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+        "https://" + host
       );
+      principals.set(principal.origin, principal);
     });
 
     progress.step = "total-principals:" + principals.length;
+    principals = Array.from(principals.values());
     return principals;
   }
 }
