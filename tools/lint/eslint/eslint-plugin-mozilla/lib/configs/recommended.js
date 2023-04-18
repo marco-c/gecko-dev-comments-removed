@@ -49,6 +49,7 @@ module.exports = {
       },
       files: ["**/*.mjs", "**/*.jsm", "**/*.jsm.js"],
       rules: {
+        "mozilla/reject-top-level-await": "error",
         
         
         
