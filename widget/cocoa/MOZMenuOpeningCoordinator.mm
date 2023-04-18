@@ -175,7 +175,11 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
   
 
   if (aAppearance) {
+#if !defined(MAC_OS_VERSION_11_0) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_11_0
+    if (nsCocoaFeatures::OnBigSurOrLater()) {
+#else
     if (@available(macOS 11.0, *)) {
+#endif
       
       
       
