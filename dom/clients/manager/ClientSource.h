@@ -61,6 +61,7 @@ class ClientSource final : public ClientThing<ClientSourceChild> {
 
   ClientInfo mClientInfo;
   Maybe<ServiceWorkerDescriptor> mController;
+  Maybe<nsCOMPtr<nsIPrincipal>> mPrincipal;
 
   
   
@@ -164,6 +165,8 @@ class ClientSource final : public ClientThing<ClientSourceChild> {
   void NoteCalledRegisterForServiceWorkerScope(const nsACString& aScope);
 
   bool CalledRegisterForServiceWorkerScope(const nsACString& aScope);
+
+  nsIPrincipal* GetPrincipal();
 };
 
 inline void ImplCycleCollectionUnlink(UniquePtr<ClientSource>& aField) {

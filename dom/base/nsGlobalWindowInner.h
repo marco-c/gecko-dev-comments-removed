@@ -1183,6 +1183,10 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   
   
+  nsIPrincipal* GetClientPrincipal();
+
+  
+  
   
   void StorageAccessPermissionGranted();
 
