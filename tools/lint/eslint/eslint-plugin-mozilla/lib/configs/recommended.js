@@ -47,14 +47,8 @@ module.exports = {
         browser: false,
         "mozilla/jsm": true,
       },
-      files: ["**/*.jsm", "**/*.jsm.js"],
-      globals: {
-        
-        
-        Intl: false,
-      },
+      files: ["**/*.mjs", "**/*.jsm", "**/*.jsm.js"],
       rules: {
-        "mozilla/mark-exported-symbols-as-used": "error",
         
         
         
@@ -71,6 +65,12 @@ module.exports = {
             vars: "all",
           },
         ],
+      },
+    },
+    {
+      files: ["**/*.jsm", "**/*.jsm.js"],
+      rules: {
+        "mozilla/mark-exported-symbols-as-used": "error",
       },
     },
     {

@@ -12,10 +12,12 @@ module.exports = {
   globals: {
     
     
+    
+    
     atob: false,
     btoa: false,
-    debug: false,
     dump: false,
+    Intl: false,
     
     
     
