@@ -122,7 +122,8 @@ size_t CreatePlaneDictionary(CFTypeRefPtr<CFMutableDictionaryRef>& aDict,
 
 already_AddRefed<MacIOSurface> MacIOSurface::CreateNV12OrP010Surface(
     const IntSize& aYSize, const IntSize& aCbCrSize, YUVColorSpace aColorSpace,
-    ColorRange aColorRange, ColorDepth aColorDepth) {
+    TransferFunction aTransferFunction, ColorRange aColorRange,
+    ColorDepth aColorDepth) {
   MOZ_ASSERT(aColorSpace == YUVColorSpace::BT601 ||
              aColorSpace == YUVColorSpace::BT709 ||
              aColorSpace == YUVColorSpace::BT2020);
@@ -209,12 +210,10 @@ already_AddRefed<MacIOSurface> MacIOSurface::CreateNV12OrP010Surface(
   
   
   
-
-  
-  
-  
 #if !defined(MAC_OS_VERSION_10_13) || \
     MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_10_13
+  CFStringRef kCVImageBufferTransferFunction_ITU_R_2100_HLG =
+      CFSTR("ITU_R_2100_HLG");
   CFStringRef kCVImageBufferTransferFunction_SMPTE_ST_2084_PQ =
       CFSTR("SMPTE_ST_2084_PQ");
 #endif
@@ -230,16 +229,14 @@ already_AddRefed<MacIOSurface> MacIOSurface::CreateNV12OrP010Surface(
     IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceTransferFunction"),
                       kCVImageBufferTransferFunction_ITU_R_709_2);
   } else {
-    
-    
     IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceYCbCrMatrix"),
                       kCVImageBufferYCbCrMatrix_ITU_R_2020);
     IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceColorPrimaries"),
                       kCVImageBufferColorPrimaries_ITU_R_2020);
     IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceTransferFunction"),
-                      kCVImageBufferTransferFunction_SMPTE_ST_2084_PQ);
-    NS_WARNING(
-        "Rec2020 transfer function is ambiguous, guessing PQ instead of HLG.");
+                      (aTransferFunction == TransferFunction::HLG)
+                          ? kCVImageBufferTransferFunction_ITU_R_2100_HLG
+                          : kCVImageBufferTransferFunction_SMPTE_ST_2084_PQ);
   }
   
   
