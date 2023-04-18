@@ -73,7 +73,7 @@ bool nsHTMLButtonControlFrame::ShouldClipPaintingToBorderBox() {
 
 void nsHTMLButtonControlFrame::BuildDisplayList(
     nsDisplayListBuilder* aBuilder, const nsDisplayListSet& aLists) {
-  nsDisplayList onTop;
+  nsDisplayList onTop(aBuilder);
   if (IsVisibleForPainting()) {
     
     Maybe<DisplayListClipState::AutoSaveRestore> eventClipState;
