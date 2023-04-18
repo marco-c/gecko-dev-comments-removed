@@ -2334,7 +2334,8 @@ void TextControlState::SetRangeText(const nsAString& aReplacement,
   Selection* selection =
       mSelCon ? mSelCon->GetSelection(SelectionType::eNormal) : nullptr;
   SelectionBatcher selectionBatcher(
-      selection, nsISelectionListener::JS_REASON);  
+      selection, __FUNCTION__,
+      nsISelectionListener::JS_REASON);  
 
   MOZ_ASSERT(aStart <= aEnd);
   value.Replace(aStart, aEnd - aStart, aReplacement);
@@ -2787,7 +2788,7 @@ bool TextControlState::SetValueWithTextEditor(
   
   
   Selection* selection = mSelCon->GetSelection(SelectionType::eNormal);
-  SelectionBatcher selectionBatcher(selection);
+  SelectionBatcher selectionBatcher(selection, __FUNCTION__);
 
   
   

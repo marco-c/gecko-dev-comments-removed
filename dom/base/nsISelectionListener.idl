@@ -29,4 +29,13 @@ interface nsISelectionListener : nsISupports
                               in short reason);
 };
 
+%{C++
+namespace mozilla {
 
+
+
+
+nsCString SelectionChangeReasonsToCString(int16_t aReasons);
+
+} 
+%}

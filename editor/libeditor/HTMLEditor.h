@@ -4477,18 +4477,25 @@ class HTMLEditor final : public EditorBase,
 
   class MOZ_RAII AutoTransactionBatch final {
    public:
-    MOZ_CAN_RUN_SCRIPT explicit AutoTransactionBatch(HTMLEditor& aHTMLEditor)
-        : mHTMLEditor(aHTMLEditor) {
-      MOZ_KnownLive(mHTMLEditor).BeginTransactionInternal();
+    
+
+
+
+
+    MOZ_CAN_RUN_SCRIPT explicit AutoTransactionBatch(
+        HTMLEditor& aHTMLEditor, const char* aRequesterFuncName)
+        : mHTMLEditor(aHTMLEditor), mRequesterFuncName(aRequesterFuncName) {
+      MOZ_KnownLive(mHTMLEditor).BeginTransactionInternal(mRequesterFuncName);
     }
 
     MOZ_CAN_RUN_SCRIPT ~AutoTransactionBatch() {
-      MOZ_KnownLive(mHTMLEditor).EndTransactionInternal();
+      MOZ_KnownLive(mHTMLEditor).EndTransactionInternal(mRequesterFuncName);
     }
 
    protected:
     
     MOZ_KNOWN_LIVE HTMLEditor& mHTMLEditor;
+    const char* const mRequesterFuncName;
   };
 
   RefPtr<TypeInState> mTypeInState;

@@ -75,11 +75,24 @@ class Selection final : public nsSupportsWeakReference,
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Selection)
 
   
-  
-  void StartBatchChanges();
+
+
+
+
+
+
+  void StartBatchChanges(const char* aDetails);
 
   
-  void EndBatchChanges(int16_t aReason = nsISelectionListener::NO_REASON);
+
+
+
+
+
+
+
+  void EndBatchChanges(const char* aDetails,
+                       int16_t aReason = nsISelectionListener::NO_REASON);
 
   
 
@@ -938,24 +951,36 @@ class Selection final : public nsSupportsWeakReference,
 
 class MOZ_STACK_CLASS SelectionBatcher final {
  private:
-  RefPtr<Selection> mSelection;
-  int16_t mReason;
+  const RefPtr<Selection> mSelection;
+  const int16_t mReasons;
+  const char* const mRequesterFuncName;
 
  public:
-  explicit SelectionBatcher(Selection& aSelectionRef)
-      : SelectionBatcher(&aSelectionRef) {}
+  
+
+
+
+
+  
+  
+  explicit SelectionBatcher(Selection& aSelectionRef,
+                            const char* aRequesterFuncName,
+                            int16_t aReasons = nsISelectionListener::NO_REASON)
+      : SelectionBatcher(&aSelectionRef, aRequesterFuncName, aReasons) {}
   explicit SelectionBatcher(Selection* aSelection,
-                            int16_t aReason = nsISelectionListener::NO_REASON) {
-    mSelection = aSelection;
-    mReason = aReason;
+                            const char* aRequesterFuncName,
+                            int16_t aReasons = nsISelectionListener::NO_REASON)
+      : mSelection(aSelection),
+        mReasons(aReasons),
+        mRequesterFuncName(aRequesterFuncName) {
     if (mSelection) {
-      mSelection->StartBatchChanges();
+      mSelection->StartBatchChanges(mRequesterFuncName);
     }
   }
 
   ~SelectionBatcher() {
     if (mSelection) {
-      mSelection->EndBatchChanges(mReason);
+      mSelection->EndBatchChanges(mRequesterFuncName, mReasons);
     }
   }
 };

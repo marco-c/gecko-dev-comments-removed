@@ -908,7 +908,7 @@ nsresult EditorBase::DoTransactionInternal(nsITransaction* aTransaction) {
     
 
     
-    SelectionBatcher selectionBatcher(SelectionRef());
+    SelectionBatcher selectionBatcher(SelectionRef(), __FUNCTION__);
 
     if (mTransactionManager) {
       RefPtr<TransactionManager> transactionManager(mTransactionManager);
@@ -1016,7 +1016,7 @@ nsresult EditorBase::UndoAsAction(uint32_t aCount, nsIPrincipal* aPrincipal) {
     return EditorBase::ToGenericNSResult(rv);
   }
 
-  AutoUpdateViewBatch preventSelectionChangeEvent(*this);
+  AutoUpdateViewBatch preventSelectionChangeEvent(*this, __FUNCTION__);
 
   NotifyEditorObservers(eNotifyEditorObserversOfBefore);
   if (NS_WARN_IF(!CanUndo()) || NS_WARN_IF(Destroyed())) {
@@ -1081,7 +1081,7 @@ nsresult EditorBase::RedoAsAction(uint32_t aCount, nsIPrincipal* aPrincipal) {
     return EditorBase::ToGenericNSResult(rv);
   }
 
-  AutoUpdateViewBatch preventSelectionChangeEvent(*this);
+  AutoUpdateViewBatch preventSelectionChangeEvent(*this, __FUNCTION__);
 
   NotifyEditorObservers(eNotifyEditorObserversOfBefore);
   if (NS_WARN_IF(!CanRedo()) || NS_WARN_IF(Destroyed())) {
@@ -1124,12 +1124,12 @@ NS_IMETHODIMP EditorBase::BeginTransaction() {
     return NS_ERROR_FAILURE;
   }
 
-  BeginTransactionInternal();
+  BeginTransactionInternal(__FUNCTION__);
   return NS_OK;
 }
 
-void EditorBase::BeginTransactionInternal() {
-  BeginUpdateViewBatch();
+void EditorBase::BeginTransactionInternal(const char* aRequesterFuncName) {
+  BeginUpdateViewBatch(aRequesterFuncName);
 
   if (NS_WARN_IF(!mTransactionManager)) {
     return;
@@ -1147,11 +1147,11 @@ NS_IMETHODIMP EditorBase::EndTransaction() {
     return NS_ERROR_FAILURE;
   }
 
-  EndTransactionInternal();
+  EndTransactionInternal(__FUNCTION__);
   return NS_OK;
 }
 
-void EditorBase::EndTransactionInternal() {
+void EditorBase::EndTransactionInternal(const char* aRequesterFuncName) {
   if (mTransactionManager) {
     RefPtr<TransactionManager> transactionManager(mTransactionManager);
     DebugOnly<nsresult> rvIgnored = transactionManager->EndBatch(false);
@@ -1159,17 +1159,18 @@ void EditorBase::EndTransactionInternal() {
                          "TransactionManager::EndBatch() failed, but ignored");
   }
 
-  EndUpdateViewBatch();
+  EndUpdateViewBatch(aRequesterFuncName);
 }
 
-void EditorBase::BeginPlaceholderTransaction(nsStaticAtom& aTransactionName) {
+void EditorBase::BeginPlaceholderTransaction(nsStaticAtom& aTransactionName,
+                                             const char* aRequesterFuncName) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(mPlaceholderBatch >= 0, "negative placeholder batch count!");
 
   if (!mPlaceholderBatch) {
     NotifyEditorObservers(eNotifyEditorObserversOfBefore);
     
-    BeginUpdateViewBatch();
+    BeginUpdateViewBatch(aRequesterFuncName);
     mPlaceholderTransaction = nullptr;
     mPlaceholderName = &aTransactionName;
     mSelState.emplace();
@@ -1187,7 +1188,8 @@ void EditorBase::BeginPlaceholderTransaction(nsStaticAtom& aTransactionName) {
 }
 
 void EditorBase::EndPlaceholderTransaction(
-    ScrollSelectionIntoView aScrollSelectionIntoView) {
+    ScrollSelectionIntoView aScrollSelectionIntoView,
+    const char* aRequesterFuncName) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(mPlaceholderBatch > 0,
              "zero or negative placeholder batch count when ending batch!");
@@ -1202,7 +1204,7 @@ void EditorBase::EndPlaceholderTransaction(
     SelectionRef().SetCanCacheFrameOffset(true);
 
     
-    EndUpdateViewBatch();
+    EndUpdateViewBatch(aRequesterFuncName);
     
 
     
@@ -1678,7 +1680,8 @@ nsresult EditorBase::CutAsAction(nsIPrincipal* aPrincipal) {
   
   
   AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::DeleteTxnName,
-                                             ScrollSelectionIntoView::Yes);
+                                             ScrollSelectionIntoView::Yes,
+                                             __FUNCTION__);
   rv = DeleteSelectionAsSubAction(
       eNone, IsTextEditor() ? nsIEditor::eNoStrip : nsIEditor::eStrip);
   NS_WARNING_ASSERTION(
@@ -2610,8 +2613,8 @@ NS_IMETHODIMP EditorBase::CloneAttributes(Element* aDestElement,
 
 void EditorBase::CloneAttributesWithTransaction(Element& aDestElement,
                                                 Element& aSourceElement) {
-  AutoPlaceholderBatch treatAsOneTransaction(*this,
-                                             ScrollSelectionIntoView::Yes);
+  AutoPlaceholderBatch treatAsOneTransaction(
+      *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
 
   
   
@@ -2980,11 +2983,11 @@ nsresult EditorBase::InsertTextIntoTextNodeWithTransaction(
 
   
   
-  BeginUpdateViewBatch();
+  BeginUpdateViewBatch(__FUNCTION__);
   nsresult rv = DoTransactionInternal(transaction);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::DoTransactionInternal() failed");
-  EndUpdateViewBatch();
+  EndUpdateViewBatch(__FUNCTION__);
 
   if (IsHTMLEditor() && pointToInsert.IsSet()) {
     auto [begin, end] = ComputeInsertedRange(pointToInsert, aStringToInsert);
@@ -3408,23 +3411,23 @@ nsresult EditorBase::EnsurePaddingBRElementInMultilineEditor() {
   return NS_OK;
 }
 
-void EditorBase::BeginUpdateViewBatch() {
+void EditorBase::BeginUpdateViewBatch(const char* aRequesterFuncName) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(mUpdateCount >= 0, "bad state");
 
   if (!mUpdateCount) {
     
-    SelectionRef().StartBatchChanges();
+    SelectionRef().StartBatchChanges(aRequesterFuncName);
   }
 
   mUpdateCount++;
 }
 
-void EditorBase::EndUpdateViewBatch() {
+void EditorBase::EndUpdateViewBatch(const char* aRequesterFuncName) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(mUpdateCount > 0, "bad state");
 
-  if (mUpdateCount <= 0) {
+  if (NS_WARN_IF(mUpdateCount <= 0)) {
     mUpdateCount = 0;
     return;
   }
@@ -3434,7 +3437,7 @@ void EditorBase::EndUpdateViewBatch() {
   }
 
   
-  SelectionRef().EndBatchChanges();
+  SelectionRef().EndBatchChanges(aRequesterFuncName);
 }
 
 TextComposition* EditorBase::GetComposition() const { return mComposition; }
@@ -3595,7 +3598,8 @@ nsresult EditorBase::OnCompositionChange(
 
   {
     AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::IMETxnName,
-                                               ScrollSelectionIntoView::Yes);
+                                               ScrollSelectionIntoView::Yes,
+                                               __FUNCTION__);
 
     MOZ_ASSERT(
         mIsInEditSubAction,
@@ -4175,7 +4179,8 @@ nsresult EditorBase::DeleteSelectionAsAction(
 
   
   AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::DeleteTxnName,
-                                             ScrollSelectionIntoView::Yes);
+                                             ScrollSelectionIntoView::Yes,
+                                             __FUNCTION__);
   rv = DeleteSelectionAsSubAction(aDirectionAndAmount, aStripWrappers);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::DeleteSelectionAsSubAction() failed");
@@ -4407,11 +4412,11 @@ nsresult EditorBase::HandleDropEvent(DragEvent* aDropEvent) {
   }
 
   
-  AutoPlaceholderBatch treatAsOneTransaction(*this,
-                                             ScrollSelectionIntoView::Yes);
+  AutoPlaceholderBatch treatAsOneTransaction(
+      *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
 
   
-  SelectionBatcher selectionBatcher(SelectionRef());
+  SelectionBatcher selectionBatcher(SelectionRef(), __FUNCTION__);
 
   
   
@@ -4561,7 +4566,8 @@ nsresult EditorBase::DeleteSelectionByDragAsAction(bool aDispatchInputEvent) {
   
   Maybe<AutoPlaceholderBatch> treatAsOneTransaction;
   if (requestedByAnotherEditor) {
-    treatAsOneTransaction.emplace(*this, ScrollSelectionIntoView::Yes);
+    treatAsOneTransaction.emplace(*this, ScrollSelectionIntoView::Yes,
+                                  __FUNCTION__);
   }
 
   rv = DeleteSelectionAsSubAction(nsIEditor::eNone, IsTextEditor()
@@ -4967,7 +4973,8 @@ nsresult EditorBase::OnInputText(const nsAString& aStringToInsert) {
   }
 
   AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::TypingTxnName,
-                                             ScrollSelectionIntoView::Yes);
+                                             ScrollSelectionIntoView::Yes,
+                                             __FUNCTION__);
   rv = InsertTextAsSubAction(aStringToInsert, SelectionHandling::Delete);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::InsertTextAsSubAction() failed");
@@ -5028,8 +5035,8 @@ nsresult EditorBase::ReplaceTextAsAction(
     return EditorBase::ToGenericNSResult(rv);
   }
 
-  AutoPlaceholderBatch treatAsOneTransaction(*this,
-                                             ScrollSelectionIntoView::Yes);
+  AutoPlaceholderBatch treatAsOneTransaction(
+      *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
 
   
   IgnoredErrorResult ignoredError;
@@ -5063,7 +5070,7 @@ nsresult EditorBase::ReplaceTextAsAction(
   
   
   
-  AutoUpdateViewBatch preventSelectionChangeEvent(*this);
+  AutoUpdateViewBatch preventSelectionChangeEvent(*this, __FUNCTION__);
 
   
   
@@ -5928,8 +5935,8 @@ nsresult EditorBase::InsertTextAsAction(const nsAString& aStringToInsert,
   if (IsTextEditor()) {
     nsContentUtils::PlatformToDOMLineBreaks(stringToInsert);
   }
-  AutoPlaceholderBatch treatAsOneTransaction(*this,
-                                             ScrollSelectionIntoView::Yes);
+  AutoPlaceholderBatch treatAsOneTransaction(
+      *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
   rv = InsertTextAsSubAction(stringToInsert, SelectionHandling::Delete);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::InsertTextAsSubAction() failed");
@@ -6092,7 +6099,7 @@ void EditorBase::AutoEditActionDataSetter::UpdateSelectionCache(
   
   
   if (mEditorBase.mUpdateCount && mSelection) {
-    mSelection->EndBatchChanges();
+    mSelection->EndBatchChanges(__FUNCTION__);
   }
 
   Selection* previousSelection = mSelection;
@@ -6117,7 +6124,7 @@ void EditorBase::AutoEditActionDataSetter::UpdateSelectionCache(
 
   
   if (mEditorBase.mUpdateCount) {
-    aSelection.StartBatchChanges();
+    aSelection.StartBatchChanges(__FUNCTION__);
   }
 }
 

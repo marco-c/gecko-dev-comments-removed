@@ -282,8 +282,8 @@ NS_IMETHODIMP TextEditor::InsertLineBreak() {
     return NS_ERROR_FAILURE;
   }
 
-  AutoPlaceholderBatch treatAsOneTransaction(*this,
-                                             ScrollSelectionIntoView::Yes);
+  AutoPlaceholderBatch treatAsOneTransaction(
+      *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
   rv = InsertLineBreakAsSubAction();
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "TextEditor::InsertLineBreakAsSubAction() failed");
@@ -307,7 +307,8 @@ nsresult TextEditor::InsertLineBreakAsAction(nsIPrincipal* aPrincipal) {
   
   
   AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::TypingTxnName,
-                                             ScrollSelectionIntoView::Yes);
+                                             ScrollSelectionIntoView::Yes,
+                                             __FUNCTION__);
   rv = InsertLineBreakAsSubAction();
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::InsertLineBreakAsSubAction() failed");
@@ -332,8 +333,8 @@ nsresult TextEditor::SetTextAsAction(
     return EditorBase::ToGenericNSResult(rv);
   }
 
-  AutoPlaceholderBatch treatAsOneTransaction(*this,
-                                             ScrollSelectionIntoView::Yes);
+  AutoPlaceholderBatch treatAsOneTransaction(
+      *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
   rv = SetTextAsSubAction(aString);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "TextEditor::SetTextAsSubAction() failed");
@@ -372,7 +373,7 @@ nsresult TextEditor::SetTextAsSubAction(const nsAString& aString) {
     
     
     
-    AutoUpdateViewBatch preventSelectionChangeEvent(*this);
+    AutoUpdateViewBatch preventSelectionChangeEvent(*this, __FUNCTION__);
 
     
     
@@ -561,8 +562,8 @@ nsresult TextEditor::PasteAsQuotationAsAction(int32_t aClipboardType,
     return EditorBase::ToGenericNSResult(rv);
   }
 
-  AutoPlaceholderBatch treatAsOneTransaction(*this,
-                                             ScrollSelectionIntoView::Yes);
+  AutoPlaceholderBatch treatAsOneTransaction(
+      *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
   rv = InsertWithQuotationsAsSubAction(stuffToPaste);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "TextEditor::InsertWithQuotationsAsSubAction() failed");

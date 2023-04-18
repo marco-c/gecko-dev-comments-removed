@@ -1260,8 +1260,8 @@ nsresult HTMLEditor::SetFinalSizeWithTransaction(int32_t aX, int32_t aY) {
                  : 0);
 
   
-  AutoPlaceholderBatch treatAsOneTransaction(*this,
-                                             ScrollSelectionIntoView::Yes);
+  AutoPlaceholderBatch treatAsOneTransaction(
+      *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
   RefPtr<Element> resizedElement(mResizedObject);
   RefPtr<nsStyledElement> resizedStyleElement =
       nsStyledElement::FromNodeOrNull(mResizedObject);

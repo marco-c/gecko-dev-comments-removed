@@ -631,7 +631,7 @@ EditActionResult TextEditor::HandleDeleteSelectionInternal(
   
   
   
-  SelectionBatcher selectionBatcher(SelectionRef());
+  SelectionBatcher selectionBatcher(SelectionRef(), __FUNCTION__);
   AutoHideSelectionChanges hideSelection(SelectionRef());
   nsAutoScriptBlocker scriptBlocker;
 

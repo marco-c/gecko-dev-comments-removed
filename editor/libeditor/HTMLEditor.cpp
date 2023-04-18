@@ -1399,8 +1399,8 @@ nsresult HTMLEditor::ReplaceHeadContentsWithSourceWithTransaction(
   
   inputString.ReplaceSubstring(u"\r"_ns, u"\n"_ns);
 
-  AutoPlaceholderBatch treatAsOneTransaction(*this,
-                                             ScrollSelectionIntoView::Yes);
+  AutoPlaceholderBatch treatAsOneTransaction(
+      *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
 
   
   RefPtr<const nsRange> range = SelectionRef().GetRangeAt(0);
@@ -1504,8 +1504,8 @@ NS_IMETHODIMP HTMLEditor::RebuildDocumentFromSource(
   }
 
   
-  AutoPlaceholderBatch treatAsOneTransaction(*this,
-                                             ScrollSelectionIntoView::Yes);
+  AutoPlaceholderBatch treatAsOneTransaction(
+      *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
 
   nsReadingIterator<char16_t> endtotal;
   aSourceString.EndReading(endtotal);
@@ -1728,8 +1728,8 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
 
   UndefineCaretBidiLevel();
 
-  AutoPlaceholderBatch treatAsOneTransaction(*this,
-                                             ScrollSelectionIntoView::Yes);
+  AutoPlaceholderBatch treatAsOneTransaction(
+      *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
   IgnoredErrorResult ignoredError;
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertElement, nsIEditor::eNext, ignoredError);
@@ -2497,8 +2497,8 @@ nsresult HTMLEditor::FormatBlockContainerAsSubAction(nsAtom& aTagName) {
 
   MOZ_ASSERT(&aTagName != nsGkAtoms::dd && &aTagName != nsGkAtoms::dt);
 
-  AutoPlaceholderBatch treatAsOneTransaction(*this,
-                                             ScrollSelectionIntoView::Yes);
+  AutoPlaceholderBatch treatAsOneTransaction(
+      *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
   IgnoredErrorResult ignoredError;
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eCreateOrRemoveBlock, nsIEditor::eNext,
@@ -3173,8 +3173,8 @@ nsresult HTMLEditor::InsertLinkAroundSelectionAsAction(
     return NS_OK;
   }
 
-  AutoPlaceholderBatch treatAsOneTransaction(*this,
-                                             ScrollSelectionIntoView::Yes);
+  AutoPlaceholderBatch treatAsOneTransaction(
+      *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
 
   
   RefPtr<nsDOMAttributeMap> attributeMap = anchor->Attributes();
@@ -5364,8 +5364,8 @@ nsresult HTMLEditor::SetCSSBackgroundColorWithTransaction(
 
   bool selectionIsCollapsed = SelectionRef().IsCollapsed();
 
-  AutoPlaceholderBatch treatAsOneTransaction(*this,
-                                             ScrollSelectionIntoView::Yes);
+  AutoPlaceholderBatch treatAsOneTransaction(
+      *this, ScrollSelectionIntoView::Yes, __FUNCTION__);
   IgnoredErrorResult ignoredError;
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eInsertElement, nsIEditor::eNext, ignoredError);
