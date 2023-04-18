@@ -175,7 +175,7 @@ function remoteSettingsFunction() {
     
     const pastEntries = await gSyncHistory.list();
     const lastSuccessIdx = pastEntries.findIndex(
-      e => e.status == UptakeTelemetry.STATUS_SUCCESS
+      e => e.status == UptakeTelemetry.STATUS.SUCCESS
     );
     return (
       
