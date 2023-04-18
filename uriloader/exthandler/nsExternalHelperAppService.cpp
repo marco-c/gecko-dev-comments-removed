@@ -64,6 +64,7 @@
 
 #include "nsDSURIContentListener.h"
 #include "nsMimeTypes.h"
+#include "nsMIMEInfoImpl.h"
 
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
@@ -77,7 +78,6 @@
 #  include "nsILocalFileMac.h"
 #endif
 
-#include "nsPluginHost.h"
 #include "nsEscape.h"
 
 #include "nsIStringBundle.h"  
@@ -1960,6 +1960,33 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
                 action != nsIMIMEInfo::useHelperApp &&
                 action != nsIMIMEInfo::useSystemDefault &&
                 !shouldAutomaticallyHandleInternally;
+  }
+
+  
+  
+  if (!alwaysAsk && action == nsIMIMEInfo::useSystemDefault) {
+    bool areOSDefault = false;
+    alwaysAsk = NS_SUCCEEDED(mMimeInfo->IsCurrentAppOSDefault(&areOSDefault)) &&
+                areOSDefault;
+  } else if (!alwaysAsk && action == nsIMIMEInfo::useHelperApp) {
+    nsCOMPtr<nsIHandlerApp> preferredApp;
+    mMimeInfo->GetPreferredApplicationHandler(getter_AddRefs(preferredApp));
+    nsCOMPtr<nsILocalHandlerApp> handlerApp = do_QueryInterface(preferredApp);
+    if (handlerApp) {
+      nsCOMPtr<nsIFile> executable;
+      handlerApp->GetExecutable(getter_AddRefs(executable));
+      nsCOMPtr<nsIFile> ourselves;
+      if (executable &&
+          
+          NS_SUCCEEDED(NS_GetSpecialDirectory(XRE_EXECUTABLE_FILE,
+                                              getter_AddRefs(ourselves)))) {
+        ourselves = nsMIMEInfoBase::GetCanonicalExecutable(ourselves);
+        executable = nsMIMEInfoBase::GetCanonicalExecutable(executable);
+        bool isSameApp = false;
+        alwaysAsk =
+            NS_FAILED(executable->Equals(ourselves, &isSameApp)) || isSameApp;
+      }
+    }
   }
 
   
