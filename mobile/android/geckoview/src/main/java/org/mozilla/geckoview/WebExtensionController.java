@@ -546,7 +546,7 @@ public class WebExtensionController {
 
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({EnableSource.USER, EnableSource.APP})
-  @interface EnableSources {}
+  public @interface EnableSources {}
 
   
 

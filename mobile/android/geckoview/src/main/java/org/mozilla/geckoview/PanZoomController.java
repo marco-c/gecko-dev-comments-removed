@@ -43,7 +43,7 @@ public class PanZoomController {
 
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({SCROLL_BEHAVIOR_SMOOTH, SCROLL_BEHAVIOR_AUTO})
-   @interface ScrollBehaviorType {}
+  public @interface ScrollBehaviorType {}
 
   
   public static final int SCROLL_BEHAVIOR_SMOOTH = 0;
@@ -57,7 +57,7 @@ public class PanZoomController {
     INPUT_RESULT_HANDLED_CONTENT,
     INPUT_RESULT_IGNORED
   })
-   @interface InputResult {}
+  public @interface InputResult {}
 
   
 
@@ -93,7 +93,7 @@ public class PanZoomController {
         SCROLLABLE_FLAG_BOTTOM,
         SCROLLABLE_FLAG_LEFT
       })
-   @interface ScrollableDirections {}
+  public @interface ScrollableDirections {}
   
 
 
@@ -114,7 +114,7 @@ public class PanZoomController {
   @IntDef(
       flag = true,
       value = {OVERSCROLL_FLAG_NONE, OVERSCROLL_FLAG_HORIZONTAL, OVERSCROLL_FLAG_VERTICAL})
-   @interface OverscrollDirections {}
+  public @interface OverscrollDirections {}
   
 
 

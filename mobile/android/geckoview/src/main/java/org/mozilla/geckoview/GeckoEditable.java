@@ -800,7 +800,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         SEND_COMPOSITION_NOTIFY_GECKO,
         SEND_COMPOSITION_KEEP_CURRENT
       })
-   @interface CompositionFlags {}
+  public @interface CompositionFlags {}
 
   
   

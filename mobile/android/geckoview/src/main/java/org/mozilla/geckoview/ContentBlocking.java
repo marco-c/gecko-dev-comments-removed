@@ -1168,7 +1168,7 @@ public class ContentBlocking {
         AntiTracking.STP,
         AntiTracking.NONE
       })
-   @interface CBAntiTracking {}
+  public @interface CBAntiTracking {}
 
   public static class SafeBrowsing {
     public static final int NONE = 0;
@@ -1199,7 +1199,7 @@ public class ContentBlocking {
         SafeBrowsing.HARMFUL, SafeBrowsing.PHISHING,
         SafeBrowsing.DEFAULT, SafeBrowsing.NONE
       })
-   @interface CBSafeBrowsing {}
+  public @interface CBSafeBrowsing {}
 
   
   public static class CookieBehavior {
@@ -1242,7 +1242,7 @@ public class ContentBlocking {
     CookieBehavior.ACCEPT_NONE, CookieBehavior.ACCEPT_VISITED,
     CookieBehavior.ACCEPT_NON_TRACKERS
   })
-   @interface CBCookieBehavior {}
+  public @interface CBCookieBehavior {}
 
   
   public static class CookieLifetime {
@@ -1260,11 +1260,11 @@ public class ContentBlocking {
 
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({CookieLifetime.NORMAL, CookieLifetime.RUNTIME, CookieLifetime.DAYS})
-   @interface CBCookieLifetime {}
+  public @interface CBCookieLifetime {}
 
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({EtpLevel.NONE, EtpLevel.DEFAULT, EtpLevel.STRICT})
-   @interface CBEtpLevel {}
+  public @interface CBEtpLevel {}
 
   
   public static class EtpLevel {

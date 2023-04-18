@@ -95,7 +95,7 @@ public class Autofill {
     Notify.NODE_FOCUSED,
     Notify.NODE_BLURRED
   })
-   @interface AutofillNotify {}
+  public @interface AutofillNotify {}
 
   public static final class Hint {
     private Hint() {}
@@ -130,7 +130,7 @@ public class Autofill {
 
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({Hint.NONE, Hint.EMAIL_ADDRESS, Hint.PASSWORD, Hint.URI, Hint.USERNAME})
-   @interface AutofillHint {}
+  public @interface AutofillHint {}
 
   public static final class InputType {
     private InputType() {}
@@ -162,7 +162,7 @@ public class Autofill {
 
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({InputType.NONE, InputType.TEXT, InputType.NUMBER, InputType.PHONE})
-   @interface AutofillInputType {}
+  public @interface AutofillInputType {}
 
   
   public static final class Session {

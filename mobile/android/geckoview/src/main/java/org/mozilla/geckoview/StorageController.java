@@ -79,7 +79,7 @@ public final class StorageController {
         ClearFlags.SITE_DATA,
         ClearFlags.ALL
       })
-   @interface StorageControllerClearFlags {}
+  public @interface StorageControllerClearFlags {}
 
   
 

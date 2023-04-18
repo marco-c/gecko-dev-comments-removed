@@ -131,7 +131,7 @@ public class ContentBlockingController {
         Event.COOKIES_BLOCKED_FOREIGN, Event.BLOCKED_SOCIALTRACKING_CONTENT,
         Event.LOADED_SOCIALTRACKING_CONTENT, Event.REPLACED_TRACKING_CONTENT
       })
-       @interface LogEvent {}
+      public @interface LogEvent {}
 
       
       public final @LogEvent int category;

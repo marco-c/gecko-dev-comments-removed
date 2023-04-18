@@ -494,7 +494,7 @@ public class MediaSession {
         Feature.PREVIOUS_TRACK,
         
       })
-   @interface MSFeature {}
+  public @interface MSFeature {}
 
   
   public static class Feature {

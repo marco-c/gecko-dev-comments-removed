@@ -811,7 +811,7 @@ public class Autocomplete {
   @IntDef(
       flag = true,
       value = {UsedField.PASSWORD})
-   @interface LSUsedField {}
+  public @interface LSUsedField {}
 
   
   
@@ -945,7 +945,7 @@ public class Autocomplete {
     @IntDef(
         flag = true,
         value = {Hint.NONE, Hint.GENERATED, Hint.LOW_CONFIDENCE})
-     @interface SaveOptionHint {}
+    public @interface SaveOptionHint {}
 
     
     public static class Hint {
@@ -982,7 +982,7 @@ public class Autocomplete {
           Hint.DUPLICATE_USERNAME,
           Hint.MATCHING_ORIGIN
         })
-     @interface SelectOptionHint {}
+    public @interface SelectOptionHint {}
 
     
     public static class Hint {
@@ -1166,7 +1166,7 @@ public class Autocomplete {
     @IntDef(
         flag = true,
         value = {Hint.NONE, Hint.INSECURE_FORM})
-     @interface CreditCardSelectHint {}
+    public @interface CreditCardSelectHint {}
 
     
     public static class Hint {
@@ -1223,7 +1223,7 @@ public class Autocomplete {
     @IntDef(
         flag = true,
         value = {Hint.NONE, Hint.INSECURE_FORM})
-     @interface AddressSelectHint {}
+    public @interface AddressSelectHint {}
 
     
     public static class Hint {

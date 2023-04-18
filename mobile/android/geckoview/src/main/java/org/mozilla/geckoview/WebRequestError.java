@@ -35,7 +35,7 @@ public class WebRequestError extends Exception {
     ERROR_CATEGORY_PROXY,
     ERROR_CATEGORY_SAFEBROWSING
   })
-   @interface ErrorCategory {}
+  public @interface ErrorCategory {}
 
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
@@ -68,7 +68,7 @@ public class WebRequestError extends Exception {
     ERROR_DATA_URI_TOO_LONG,
     ERROR_HTTPS_ONLY
   })
-   @interface Error {}
+  public @interface Error {}
 
   
 
