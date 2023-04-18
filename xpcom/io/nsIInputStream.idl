@@ -86,6 +86,10 @@ interface nsIInputStream : nsISupports
 
 
 
+
+
+
+
     unsigned long long available();
 
     
