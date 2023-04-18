@@ -456,8 +456,9 @@ int32_t DesktopCaptureImpl::DeliverCapturedFrame(
 }
 
 
+
 int32_t DesktopCaptureImpl::IncomingFrame(
-    uint8_t* videoFrame, size_t videoFrameLength,
+    uint8_t* videoFrame, size_t videoFrameLength, size_t widthWithPadding,
     const VideoCaptureCapability& frameInfo) {
   int64_t startProcessTime = rtc::TimeNanos();
   rtc::CritScope cs(&_apiCs);
@@ -489,8 +490,8 @@ int32_t DesktopCaptureImpl::IncomingFrame(
       buffer.get()->StrideY(), buffer.get()->MutableDataU(),
       buffer.get()->StrideU(), buffer.get()->MutableDataV(),
       buffer.get()->StrideV(), 0, 0,  
-      width, height, width, height, libyuv::kRotate0,
-      ConvertVideoType(frameInfo.videoType));
+      static_cast<int>(widthWithPadding), height, width, height,
+      libyuv::kRotate0, ConvertVideoType(frameInfo.videoType));
   if (conversionResult != 0) {
     RTC_LOG(LS_ERROR) << "Failed to convert capture frame from type "
                       << static_cast<int>(frameInfo.videoType) << "to I420.";
@@ -628,7 +629,8 @@ void DesktopCaptureImpl::OnCaptureResult(DesktopCapturer::Result result,
 
   size_t videoFrameLength =
       frameInfo.width * frameInfo.height * DesktopFrame::kBytesPerPixel;
-  IncomingFrame(videoFrame, videoFrameLength, frameInfo);
+  IncomingFrame(videoFrame, videoFrameLength,
+                frame->stride() / DesktopFrame::kBytesPerPixel, frameInfo);
 }
 
 void DesktopCaptureImpl::process() {
