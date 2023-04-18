@@ -36,3 +36,7 @@ user_pref("gfx.color_management.force_srgb", true);
 user_pref("gfx.color_management.mode", 1);
 
 user_pref("browser.topsites.contile.enabled", false);
+
+
+
+user_pref("fission.autostart", false);

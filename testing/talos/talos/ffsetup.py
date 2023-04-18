@@ -340,7 +340,9 @@ class FFSetup(object):
             raise
         self._init_gecko_profile()
         LOG.info("Browser initialized.")
-        LOG.info("Fission enabled: %s" % self.browser_config.get("fission", True))
+        LOG.info(
+            "Fission enabled: %s" % self.browser_config.get("enable_fission", False)
+        )
         
         if self.browser_config.get("code_coverage", False):
             

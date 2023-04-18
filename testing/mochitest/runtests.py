@@ -2847,15 +2847,12 @@ toolbar#nav-bar {
         """Prepare, configure, run tests and cleanup"""
         self.extraPrefs = parse_preferences(options.extraPrefs)
 
-        if "fission.autostart" not in self.extraPrefs:
-            self.extraPrefs["fission.autostart"] = options.fission
-
         
         mozinfo.update(
             {
                 "a11y_checks": options.a11y_checks,
                 "e10s": options.e10s,
-                "fission": self.extraPrefs.get("fission.autostart", True),
+                "fission": self.extraPrefs.get("fission.autostart", False),
                 "headless": options.headless,
                 
                 
@@ -2868,7 +2865,7 @@ toolbar#nav-bar {
                 "sessionHistoryInParent": self.extraPrefs.get(
                     "fission.sessionHistoryInParent", False
                 )
-                or self.extraPrefs.get("fission.autostart", True),
+                or self.extraPrefs.get("fission.autostart", False),
                 "socketprocess_e10s": self.extraPrefs.get(
                     "network.process.enabled", False
                 ),

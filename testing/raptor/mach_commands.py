@@ -350,9 +350,6 @@ def run_raptor(command_context, **kwargs):
             xre=True,
         ):  
             return 1
-        
-        
-        kwargs["fission"] = False
 
     
     

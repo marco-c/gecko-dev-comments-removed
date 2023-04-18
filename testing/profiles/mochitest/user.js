@@ -14,3 +14,8 @@ user_pref("browser.sessionstore.resume_from_crash", false);
 
 
 user_pref("nglayout.initialpaint.unsuppress_with_no_background", true);
+
+
+
+
+user_pref("fission.autostart", false);

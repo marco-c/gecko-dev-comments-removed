@@ -208,12 +208,12 @@ class Talos(
                 },
             ],
             [
-                ["--disable-fission"],
+                ["--enable-fission"],
                 {
-                    "action": "store_false",
-                    "dest": "fission",
-                    "default": True,
-                    "help": "Disable Fission (site isolation) in Gecko.",
+                    "action": "store_true",
+                    "dest": "enable_fission",
+                    "default": False,
+                    "help": "Enable Fission (site isolation) in Gecko.",
                 },
             ],
             [
@@ -529,10 +529,11 @@ class Talos(
             )
         
         
-        if (not self.config["fission"]) or "fission.autostart=false" in self.config[
-            "extra_prefs"
-        ]:
-            options.extend(["--disable-fission"])
+        if (
+            self.config["enable_fission"]
+            or "fission.autostart=true" in self.config["extra_prefs"]
+        ):
+            options.extend(["--enable-fission"])
 
         return options
 
