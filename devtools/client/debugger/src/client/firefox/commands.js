@@ -319,15 +319,37 @@ async function pauseOnExceptions(
 }
 
 async function blackBox(sourceActor, shouldBlackBox, ranges) {
-  const sourceFront = currentThreadFront().source({ actor: sourceActor.actor });
   
-  if (!ranges.length) {
-    await toggleBlackBoxSourceFront(sourceFront, shouldBlackBox);
-    return;
-  }
   
-  for (const range of ranges) {
-    await toggleBlackBoxSourceFront(sourceFront, shouldBlackBox, range);
+  
+  
+  
+  
+  
+  
+  const hasWatcherSupport = commands.targetCommand.hasTargetWatcherSupport(
+    "blackboxing"
+  );
+  if (hasWatcherSupport) {
+    const blackboxingFront = await commands.targetCommand.watcherFront.getBlackboxingActor();
+    if (shouldBlackBox) {
+      await blackboxingFront.blackbox(sourceActor.url, ranges);
+    } else {
+      await blackboxingFront.unblackbox(sourceActor.url, ranges);
+    }
+  } else {
+    const sourceFront = currentThreadFront().source({
+      actor: sourceActor.actor,
+    });
+    
+    if (!ranges.length) {
+      await toggleBlackBoxSourceFront(sourceFront, shouldBlackBox);
+      return;
+    }
+    
+    for (const range of ranges) {
+      await toggleBlackBoxSourceFront(sourceFront, shouldBlackBox, range);
+    }
   }
 }
 

@@ -48,6 +48,7 @@ if (typeof module == "object") {
 
 
 const SUPPORTED_DATA = {
+  BLACKBOXING: "blackboxing",
   BREAKPOINTS: "breakpoints",
   XHR_BREAKPOINTS: "xhr-breakpoints",
   EVENT_BREAKPOINTS: "event-breakpoints",
@@ -60,6 +61,14 @@ const SUPPORTED_DATA = {
 
 
 const DATA_KEY_FUNCTION = {
+  [SUPPORTED_DATA.BLACKBOXING]: function({ url, range }) {
+    return (
+      url +
+      (range
+        ? `:${range.start.line}:${range.start.column}-${range.end.line}:${range.end.column}`
+        : "")
+    );
+  },
   [SUPPORTED_DATA.BREAKPOINTS]: function({ location }) {
     validateBreakpointLocation(location);
     const { sourceUrl, sourceId, line, column } = location;

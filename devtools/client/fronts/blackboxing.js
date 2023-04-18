@@ -1,0 +1,15 @@
+
+
+
+
+"use strict";
+
+const {
+  FrontClassWithSpec,
+  registerFront,
+} = require("devtools/shared/protocol");
+const { blackboxingSpec } = require("devtools/shared/specs/blackboxing");
+
+class BlackboxingFront extends FrontClassWithSpec(blackboxingSpec) {}
+
+registerFront(BlackboxingFront);
