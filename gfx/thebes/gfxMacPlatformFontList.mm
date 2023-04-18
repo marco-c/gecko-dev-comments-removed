@@ -87,7 +87,10 @@ using namespace mozilla;
 using namespace mozilla::gfx;
 
 
-#define USE_DEPRECATED_FONT_FAMILY_NAMES !(MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_15)
+
+
+
+#define USE_DEPRECATED_FONT_FAMILY_NAMES 1
 
 #if USE_DEPRECATED_FONT_FAMILY_NAMES
 
