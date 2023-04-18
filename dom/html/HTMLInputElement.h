@@ -1000,7 +1000,7 @@ class HTMLInputElement final : public TextControlElement,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult MaybeSubmitForm(nsPresContext* aPresContext);
+  MOZ_CAN_RUN_SCRIPT void MaybeSubmitForm(nsPresContext* aPresContext);
 
   
 
