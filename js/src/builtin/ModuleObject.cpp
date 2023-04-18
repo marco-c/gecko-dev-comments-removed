@@ -2261,7 +2261,10 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
 
   if (module->hasTopLevelCapability()) {
     MOZ_ASSERT(module->getCycleRoot() == module);
-    ModuleObject::topLevelCapabilityResolve(cx, module);
+    if (!ModuleObject::topLevelCapabilityResolve(cx, module)) {
+      
+      cx->clearPendingException();
+    }
   }
 
   RootedArrayObject sortedList(cx);
@@ -2312,7 +2315,10 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
         m->setAsyncEvaluatingFalse();
         if (m->hasTopLevelCapability()) {
           MOZ_ASSERT(m->getCycleRoot() == m);
-          ModuleObject::topLevelCapabilityResolve(cx, m);
+          if (!ModuleObject::topLevelCapabilityResolve(cx, m)) {
+            
+            cx->clearPendingException();
+          }
         }
       }
     }
@@ -2358,7 +2364,10 @@ void js::AsyncModuleExecutionRejected(JSContext* cx, HandleModuleObject module,
   
   if (module->hasTopLevelCapability()) {
     MOZ_ASSERT(module->getCycleRoot() == module);
-    ModuleObject::topLevelCapabilityReject(cx, module, error);
+    if (!ModuleObject::topLevelCapabilityReject(cx, module, error)) {
+      
+      cx->clearPendingException();
+    }
   }
 
   
