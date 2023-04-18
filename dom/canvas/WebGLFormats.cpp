@@ -1082,11 +1082,11 @@ UniquePtr<FormatUsageAuthority> FormatUsageAuthority::CreateForWebGL2(
   
   
   
-  fnAllowES3TexFormat(FOO(DEPTH_COMPONENT16), true, true);
-  fnAllowES3TexFormat(FOO(DEPTH_COMPONENT24), true, true);
-  fnAllowES3TexFormat(FOO(DEPTH_COMPONENT32F), true, true);
-  fnAllowES3TexFormat(FOO(DEPTH24_STENCIL8), true, true);
-  fnAllowES3TexFormat(FOO(DEPTH32F_STENCIL8), true, true);
+  fnAllowES3TexFormat(FOO(DEPTH_COMPONENT16), true, false);
+  fnAllowES3TexFormat(FOO(DEPTH_COMPONENT24), true, false);
+  fnAllowES3TexFormat(FOO(DEPTH_COMPONENT32F), true, false);
+  fnAllowES3TexFormat(FOO(DEPTH24_STENCIL8), true, false);
+  fnAllowES3TexFormat(FOO(DEPTH32F_STENCIL8), true, false);
 
 #undef FOO
 
