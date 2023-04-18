@@ -1,5 +1,5 @@
-/* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -42,6 +42,15 @@ const TESTS = [
   },
   {
     title: "Google organic",
+    trackingUrl:
+      "https://www.google.com/search?client=firefox-b-d-invalid&source=hp&ei=EI_VALUE&q=test&oq=test&gs_l=GS_L_VALUE",
+    expectedSearchCountEntry: "google.in-content:organic:other",
+    expectedAdKey: "google:organic",
+    adUrls: ["https://www.googleadservices.com/aclk=foobar"],
+    nonAdUrls: ["https://www.googleadservices.com/?aclk=foobar"],
+  },
+  {
+    title: "Google organic no code",
     trackingUrl:
       "https://www.google.com/search?source=hp&ei=EI_VALUE&q=test&oq=test&gs_l=GS_L_VALUE",
     expectedSearchCountEntry: "google.in-content:organic:none",
@@ -92,7 +101,7 @@ const TESTS = [
         "www.bing.com",
         "/",
         "SRCHS",
-        "PC=MOZ",
+        "PC=MOZI",
         false,
         false,
         false,
@@ -108,10 +117,18 @@ const TESTS = [
     title: "Bing search access point follow-on",
     trackingUrl:
       "https://www.bing.com/search?q=test&qs=n&form=QBRE&sp=-1&pq=&sc=0-0&sk=&cvid=CVID_VALUE",
-    expectedSearchCountEntry: "bing.in-content:sap-follow-on:MOZ",
+    expectedSearchCountEntry: "bing.in-content:sap-follow-on:MOZI",
   },
   {
     title: "Bing organic",
+    trackingUrl: "https://www.bing.com/search?q=test&pc=MOZIfoo&form=MOZLBR",
+    expectedSearchCountEntry: "bing.in-content:organic:other",
+    expectedAdKey: "bing:organic",
+    adUrls: ["https://www.bing.com/aclick?ld=foo"],
+    nonAdUrls: ["https://www.bing.com/fd/ls/ls.gif?IG=foo"],
+  },
+  {
+    title: "Bing organic no code",
     trackingUrl:
       "https://www.bing.com/search?q=test&qs=n&form=QBLH&sp=-1&pq=&sc=0-0&sk=&cvid=CVID_VALUE",
     expectedSearchCountEntry: "bing.in-content:organic:none",
@@ -138,7 +155,15 @@ const TESTS = [
   {
     title: "DuckDuckGo organic",
     trackingUrl: "https://duckduckgo.com/?q=test&t=hi&ia=news",
-    expectedSearchCountEntry: "duckduckgo.in-content:organic:hi",
+    expectedSearchCountEntry: "duckduckgo.in-content:organic:other",
+    expectedAdKey: "duckduckgo:organic",
+    adUrls: ["https://duckduckgo.com/y.js?ad_provider=foo"],
+    nonAdUrls: ["https://duckduckgo.com/?q=foo&t=ffab&ia=images&iax=images"],
+  },
+  {
+    title: "DuckDuckGo organic no code",
+    trackingUrl: "https://duckduckgo.com/?q=test&ia=news",
+    expectedSearchCountEntry: "duckduckgo.in-content:organic:none",
     expectedAdKey: "duckduckgo:organic",
     adUrls: ["https://duckduckgo.com/y.js?ad_provider=foo"],
     nonAdUrls: ["https://duckduckgo.com/?q=foo&t=ffab&ia=images&iax=images"],
@@ -160,24 +185,30 @@ const TESTS = [
   {
     title: "Baidu organic",
     trackingUrl:
-      "https://www.baidu.com/s?ie=utf-8&f=8&rsv_bp=1&rsv_idx=1&ch=&tn=baidu&bar=&wd=test&rn=&oq=&rsv_pq=RSV_PQ_VALUE&rsv_t=RSV_T_VALUE&rqlang=cn",
-    expectedSearchCountEntry: "baidu.in-content:organic:baidu",
+      "https://www.baidu.com/s?ie=utf-8&f=8&rsv_bp=1&rsv_idx=1&ch=&tn=baidu&bar=&wd=test&rn=&oq&rsv_pq=RSV_PQ_VALUE&rsv_t=RSV_T_VALUE&rqlang=cn",
+    expectedSearchCountEntry: "baidu.in-content:organic:other",
+  },
+  {
+    title: "Baidu organic no code",
+    trackingUrl:
+      "https://www.baidu.com/s?ie=utf-8&f=8&rsv_bp=1&rsv_idx=1&ch=&bar=&wd=test&rn=&oq&rsv_pq=RSV_PQ_VALUE&rsv_t=RSV_T_VALUE&rqlang=cn",
+    expectedSearchCountEntry: "baidu.in-content:organic:none",
   },
 ];
 
-/**
- * This function is primarily for testing the Ad URL regexps that are triggered
- * when a URL is clicked on. These regexps are also used for the `with_ads`
- * probe. However, we test the ad_clicks route as that is easier to hit.
- *
- * @param {string} serpUrl
- *   The url to simulate where the page the click came from.
- * @param {string} adUrl
- *   The ad url to simulate being clicked.
- * @param {string} [expectedAdKey]
- *   The expected key to be logged for the scalar. Omit if no scalar should be
- *   logged.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function testAdUrlClicked(serpUrl, adUrl, expectedAdKey) {
   info(`Testing Ad URL: ${adUrl}`);
   let channel = NetUtil.newChannel({
@@ -193,8 +224,8 @@ async function testAdUrlClicked(serpUrl, adUrl, expectedAdKey) {
     Ci.nsIHttpActivityObserver.ACTIVITY_TYPE_HTTP_TRANSACTION,
     Ci.nsIHttpActivityObserver.ACTIVITY_SUBTYPE_TRANSACTION_CLOSE
   );
-  // Since the content handler takes a moment to allow the channel information
-  // to settle down, wait the same amount of time here.
+  
+  
   await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
 
   const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
@@ -233,12 +264,11 @@ add_task(async function test_parsing_search_urls() {
       },
       test.trackingUrl
     );
-    const hs = Services.telemetry
-      .getKeyedHistogramById("SEARCH_COUNTS")
-      .snapshot();
-    Assert.ok(hs);
+    let histogram = Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS");
+    let snapshot = histogram.snapshot();
+    Assert.ok(snapshot);
     Assert.ok(
-      test.expectedSearchCountEntry in hs,
+      test.expectedSearchCountEntry in snapshot,
       "The histogram must contain the correct key"
     );
 
@@ -254,5 +284,6 @@ add_task(async function test_parsing_search_urls() {
     if (test.tearDown) {
       test.tearDown();
     }
+    histogram.clear();
   }
 });
