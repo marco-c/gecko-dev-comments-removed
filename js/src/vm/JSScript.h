@@ -85,6 +85,7 @@ class DebugScript;
 namespace frontend {
 struct CompilationStencil;
 struct CompilationGCOutput;
+class StencilXDR;
 }  
 
 class ScriptCounts {
@@ -389,6 +390,8 @@ class ScriptSource {
   friend class SourceCompressionTask;
   friend bool SynchronouslyCompressSource(JSContext* cx,
                                           JS::Handle<BaseScript*> script);
+
+  friend class frontend::StencilXDR;
 
  private:
   
@@ -957,16 +960,6 @@ class ScriptSource {
   void triggerConvertToCompressedSourceFromTask(
       SharedImmutableString compressed);
 
- private:
-  
-  
-  
-  
-  
-  template <XDRMode mode>
-  [[nodiscard]] XDRResult xdrUnretrievableUncompressedSource(
-      XDRState<mode>* xdr, uint8_t sourceCharSize, uint32_t uncompressedLength);
-
  public:
   const char* filename() const {
     return filename_ ? filename_.chars() : nullptr;
@@ -1027,33 +1020,6 @@ class ScriptSource {
   
   
   bool xdrFinalizeEncoder(JSContext* cx, JS::TranscodeBuffer& buffer);
-
- private:
-  template <typename Unit,
-            template <typename U, SourceRetrievable CanRetrieve> class Data,
-            XDRMode mode>
-  static void codeRetrievable(ScriptSource* ss);
-
-  template <typename Unit, XDRMode mode>
-  [[nodiscard]] static XDRResult codeUncompressedData(XDRState<mode>* const xdr,
-                                                      ScriptSource* const ss);
-
-  template <typename Unit, XDRMode mode>
-  [[nodiscard]] static XDRResult codeCompressedData(XDRState<mode>* const xdr,
-                                                    ScriptSource* const ss);
-
-  template <typename Unit, XDRMode mode>
-  static void codeRetrievableData(ScriptSource* ss);
-
-  template <XDRMode mode>
-  [[nodiscard]] static XDRResult xdrData(XDRState<mode>* const xdr,
-                                         ScriptSource* const ss);
-
- public:
-  template <XDRMode mode>
-  [[nodiscard]] static XDRResult XDR(XDRState<mode>* xdr,
-                                     const JS::DecodeOptions* maybeOptions,
-                                     RefPtr<ScriptSource>& source);
 };
 
 
