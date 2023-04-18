@@ -45,13 +45,11 @@ ChromeUtils.defineModuleGetter(
   "LoginManagerChild",
   "resource://gre/modules/LoginManagerChild.jsm"
 );
-
 ChromeUtils.defineModuleGetter(
   this,
   "NewPasswordModel",
   "resource://gre/modules/NewPasswordModel.jsm"
 );
-
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "formFillController",
@@ -63,7 +61,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "SHOULD_SHOW_ORIGIN",
   "signon.showAutoCompleteOrigins"
 );
-
 XPCOMUtils.defineLazyGetter(this, "log", () => {
   return LoginHelper.createLogger("LoginAutoComplete");
 });
@@ -124,8 +121,8 @@ function findDuplicates(loginList) {
   return duplicates;
 }
 
-function getLocalizedString(key, formatArgs = null) {
-  if (formatArgs) {
+function getLocalizedString(key, ...formatArgs) {
+  if (formatArgs.length) {
     return passwordMgrBundle.formatStringFromName(key, formatArgs);
   }
   return passwordMgrBundle.GetStringFromName(key);
@@ -149,14 +146,18 @@ class InsecureLoginFormAutocompleteItem extends AutocompleteItem {
 
     XPCOMUtils.defineLazyGetter(this, "label", () => {
       let learnMoreString = getLocalizedString("insecureFieldWarningLearnMore");
-      return getLocalizedString("insecureFieldWarningDescription2", [
-        learnMoreString,
-      ]);
+      return getLocalizedString(
+        "insecureFieldWarningDescription2",
+        learnMoreString
+      );
     });
   }
 }
 
 class LoginAutocompleteItem extends AutocompleteItem {
+  login;
+  #actor;
+
   constructor(
     login,
     hasBeenTypePassword,
@@ -165,23 +166,23 @@ class LoginAutocompleteItem extends AutocompleteItem {
     isOriginMatched
   ) {
     super(SHOULD_SHOW_ORIGIN ? "loginWithOrigin" : "login");
-    this._login = login.QueryInterface(Ci.nsILoginMetaInfo);
-    this._actor = actor;
+    this.login = login.QueryInterface(Ci.nsILoginMetaInfo);
+    this.#actor = actor;
 
-    this._isDuplicateUsername =
+    let isDuplicateUsername =
       login.username && duplicateUsernames.has(login.username);
 
     XPCOMUtils.defineLazyGetter(this, "label", () => {
       let username = login.username;
       
-      if (!username || this._isDuplicateUsername) {
+      if (!username || isDuplicateUsername) {
         if (!username) {
           username = getLocalizedString("noUsername");
         }
         let time = dateAndTimeFormatter.format(
           new Date(login.timePasswordChanged)
         );
-        username = getLocalizedString("loginHostAge", [username, time]);
+        username = getLocalizedString("loginHostAge", username, time);
       }
       return username;
     });
@@ -194,7 +195,7 @@ class LoginAutocompleteItem extends AutocompleteItem {
       return JSON.stringify({
         guid: login.guid,
         login,
-        isDuplicateUsername: this._isDuplicateUsername,
+        isDuplicateUsername,
         isOriginMatched,
         comment:
           isOriginMatched && login.httpRealm === null
@@ -205,13 +206,13 @@ class LoginAutocompleteItem extends AutocompleteItem {
   }
 
   removeFromStorage() {
-    if (this._actor) {
-      let vanilla = LoginHelper.loginToVanillaObject(this._login);
-      this._actor.sendAsyncMessage("PasswordManager:removeLogin", {
+    if (this.#actor) {
+      let vanilla = LoginHelper.loginToVanillaObject(this.login);
+      this.#actor.sendAsyncMessage("PasswordManager:removeLogin", {
         login: vanilla,
       });
     } else {
-      Services.logins.removeLogin(this._login);
+      Services.logins.removeLogin(this.login);
     }
   }
 }
@@ -240,22 +241,24 @@ class ImportableLearnMoreAutocompleteItem extends AutocompleteItem {
 }
 
 class ImportableLoginsAutocompleteItem extends AutocompleteItem {
+  #actor;
+
   constructor(browserId, hostname, actor) {
     super("importableLogins");
     this.label = browserId;
     this.comment = hostname;
-    this._actor = actor;
+    this.#actor = actor;
 
     
     
-    this._actor.sendAsyncMessage(
+    this.#actor.sendAsyncMessage(
       "PasswordManager:decreaseSuggestImportCount",
       1
     );
   }
 
   removeFromStorage() {
-    this._actor.sendAsyncMessage(
+    this.#actor.sendAsyncMessage(
       "PasswordManager:decreaseSuggestImportCount",
       100
     );
@@ -283,217 +286,213 @@ class LoginsFooterAutocompleteItem extends AutocompleteItem {
 }
 
 
-function LoginAutoCompleteResult(
-  aSearchString,
-  matchingLogins,
-  formOrigin,
-  {
-    generatedPassword,
-    willAutoSaveGeneratedPassword,
-    importable,
-    isSecure,
-    actor,
-    hasBeenTypePassword,
-    hostname,
-    telemetryEventData,
-  }
-) {
-  let hidingFooterOnPWFieldAutoOpened = false;
-  const importableBrowsers =
-    importable?.state === "import" && importable?.browsers;
-  function isFooterEnabled() {
-    
-    
-    if (!LoginHelper.showAutoCompleteFooter || !LoginHelper.enabled) {
-      return false;
-    }
+class LoginAutoCompleteResult {
+  #rows = [];
 
-    
-    
-    if (hasBeenTypePassword && aSearchString && !generatedPassword) {
-      log.debug("Hiding footer: non-empty password field");
-      return false;
-    }
-
-    if (
-      !importableBrowsers &&
-      !matchingLogins.length &&
-      !generatedPassword &&
-      hasBeenTypePassword &&
-      formFillController.passwordPopupAutomaticallyOpened
-    ) {
-      hidingFooterOnPWFieldAutoOpened = true;
-      log.debug(
-        "Hiding footer: no logins and the popup was opened upon focus of the pw. field"
-      );
-      return false;
-    }
-
-    return true;
-  }
-
-  this.searchString = aSearchString;
-
-  
-  this._rows = [];
-
-  
-  if (!isSecure && LoginHelper.showInsecureFieldWarning) {
-    this._rows.push(new InsecureLoginFormAutocompleteItem());
-  }
-
-  
-  let formHostPort = LoginHelper.maybeGetHostPortForURL(formOrigin);
-  let logins = matchingLogins.sort(loginSort.bind(null, formHostPort));
-  let duplicateUsernames = findDuplicates(matchingLogins);
-
-  for (let login of logins) {
-    let item = new LoginAutocompleteItem(
-      login,
-      hasBeenTypePassword,
-      duplicateUsernames,
+  constructor(
+    aSearchString,
+    matchingLogins,
+    formOrigin,
+    {
+      generatedPassword,
+      willAutoSaveGeneratedPassword,
+      importable,
+      isSecure,
       actor,
-      LoginHelper.isOriginMatching(login.origin, formOrigin, {
-        schemeUpgrades: LoginHelper.schemeUpgrades,
-      })
-    );
-    this._rows.push(item);
-  }
+      hasBeenTypePassword,
+      hostname,
+      telemetryEventData,
+    }
+  ) {
+    let hidingFooterOnPWFieldAutoOpened = false;
+    const importableBrowsers =
+      importable?.state === "import" && importable?.browsers;
 
-  
-  if (isFooterEnabled()) {
-    if (generatedPassword) {
-      this._rows.push(
-        new GeneratedPasswordAutocompleteItem(
-          generatedPassword,
-          willAutoSaveGeneratedPassword
-        )
+    function isFooterEnabled() {
+      
+      
+      if (!LoginHelper.showAutoCompleteFooter || !LoginHelper.enabled) {
+        return false;
+      }
+
+      
+      
+      if (hasBeenTypePassword && aSearchString && !generatedPassword) {
+        log.debug("Hiding footer: non-empty password field");
+        return false;
+      }
+
+      if (
+        !importableBrowsers &&
+        !matchingLogins.length &&
+        !generatedPassword &&
+        hasBeenTypePassword &&
+        formFillController.passwordPopupAutomaticallyOpened
+      ) {
+        hidingFooterOnPWFieldAutoOpened = true;
+        log.debug(
+          "Hiding footer: no logins and the popup was opened upon focus of the pw. field"
+        );
+        return false;
+      }
+
+      return true;
+    }
+
+    this.searchString = aSearchString;
+
+    
+    if (!isSecure && LoginHelper.showInsecureFieldWarning) {
+      this.#rows.push(new InsecureLoginFormAutocompleteItem());
+    }
+
+    
+    let formHostPort = LoginHelper.maybeGetHostPortForURL(formOrigin);
+    let logins = matchingLogins.sort(loginSort.bind(null, formHostPort));
+    let duplicateUsernames = findDuplicates(matchingLogins);
+
+    for (let login of logins) {
+      let item = new LoginAutocompleteItem(
+        login,
+        hasBeenTypePassword,
+        duplicateUsernames,
+        actor,
+        LoginHelper.isOriginMatching(login.origin, formOrigin, {
+          schemeUpgrades: LoginHelper.schemeUpgrades,
+        })
+      );
+      this.#rows.push(item);
+    }
+
+    
+    if (isFooterEnabled()) {
+      if (generatedPassword) {
+        this.#rows.push(
+          new GeneratedPasswordAutocompleteItem(
+            generatedPassword,
+            willAutoSaveGeneratedPassword
+          )
+        );
+      }
+
+      
+      if (!logins.length && importableBrowsers) {
+        this.#rows.push(
+          ...importableBrowsers.map(
+            browserId =>
+              new ImportableLoginsAutocompleteItem(browserId, hostname, actor)
+          )
+        );
+        this.#rows.push(new ImportableLearnMoreAutocompleteItem());
+      }
+
+      this.#rows.push(
+        new LoginsFooterAutocompleteItem(hostname, telemetryEventData)
       );
     }
 
     
-    if (!logins.length && importableBrowsers) {
-      this._rows.push(
-        ...importableBrowsers.map(
-          browserId =>
-            new ImportableLoginsAutocompleteItem(browserId, hostname, actor)
-        )
-      );
-      this._rows.push(new ImportableLearnMoreAutocompleteItem());
+    if (this.matchCount > 0) {
+      this.searchResult = Ci.nsIAutoCompleteResult.RESULT_SUCCESS;
+      this.defaultIndex = 0;
+    } else if (hidingFooterOnPWFieldAutoOpened) {
+      
+      
+      this.searchResult = Ci.nsIAutoCompleteResult.RESULT_FAILURE;
+      this.defaultIndex = -1;
     }
-
-    this._rows.push(
-      new LoginsFooterAutocompleteItem(hostname, telemetryEventData)
-    );
   }
 
-  
-  if (this.matchCount > 0) {
-    this.searchResult = Ci.nsIAutoCompleteResult.RESULT_SUCCESS;
-    this.defaultIndex = 0;
-  } else if (hidingFooterOnPWFieldAutoOpened) {
-    
-    
-    this.searchResult = Ci.nsIAutoCompleteResult.RESULT_FAILURE;
-    this.defaultIndex = -1;
-  }
-}
-
-LoginAutoCompleteResult.prototype = {
-  QueryInterface: ChromeUtils.generateQI([
+  QueryInterface = ChromeUtils.generateQI([
     "nsIAutoCompleteResult",
     "nsISupportsWeakReference",
-  ]),
+  ]);
 
   
 
 
 
   get logins() {
-    return this._rows
-      .filter(item => {
-        return item.constructor === LoginAutocompleteItem;
-      })
-      .map(item => item._login);
-  },
+    return this.#rows
+      .filter(item => item instanceof LoginAutocompleteItem)
+      .map(item => item.login);
+  }
 
   
   
   get wrappedJSObject() {
     return this;
-  },
+  }
 
   
-  searchString: null,
-  searchResult: Ci.nsIAutoCompleteResult.RESULT_NOMATCH,
-  defaultIndex: -1,
-  errorDescription: "",
+  searchString = null;
+  searchResult = Ci.nsIAutoCompleteResult.RESULT_NOMATCH;
+  defaultIndex = -1;
+  errorDescription = "";
+
   get matchCount() {
-    return this._rows.length;
-  },
+    return this.#rows.length;
+  }
+
+  #throwOnBadIndex(index) {
+    if (index < 0 || index >= this.matchCount) {
+      throw new Error("Index out of range.");
+    }
+  }
 
   getValueAt(index) {
-    if (index < 0 || index >= this.matchCount) {
-      throw new Error("Index out of range.");
-    }
-    return this._rows[index].value;
-  },
+    this.#throwOnBadIndex(index);
+    return this.#rows[index].value;
+  }
 
   getLabelAt(index) {
-    if (index < 0 || index >= this.matchCount) {
-      throw new Error("Index out of range.");
-    }
-    return this._rows[index].label;
-  },
+    this.#throwOnBadIndex(index);
+    return this.#rows[index].label;
+  }
 
   getCommentAt(index) {
-    if (index < 0 || index >= this.matchCount) {
-      throw new Error("Index out of range.");
-    }
-    return this._rows[index].comment;
-  },
+    this.#throwOnBadIndex(index);
+    return this.#rows[index].comment;
+  }
 
   getStyleAt(index) {
-    return this._rows[index].style;
-  },
+    this.#throwOnBadIndex(index);
+    return this.#rows[index].style;
+  }
 
   getImageAt(index) {
+    this.#throwOnBadIndex(index);
     return "";
-  },
+  }
 
   getFinalCompleteValueAt(index) {
     return this.getValueAt(index);
-  },
+  }
 
   isRemovableAt(index) {
+    this.#throwOnBadIndex(index);
     return true;
-  },
+  }
 
   removeValueAt(index) {
-    if (index < 0 || index >= this.matchCount) {
-      throw new Error("Index out of range.");
-    }
+    this.#throwOnBadIndex(index);
 
-    let [removedItem] = this._rows.splice(index, 1);
+    let [removedItem] = this.#rows.splice(index, 1);
 
-    if (this.defaultIndex > this._rows.length) {
+    if (this.defaultIndex > this.#rows.length) {
       this.defaultIndex--;
     }
 
     removedItem.removeFromStorage();
-  },
-};
-
-function LoginAutoComplete() {
-  
-  this._cachedNewPasswordScore = new WeakMap();
+  }
 }
-LoginAutoComplete.prototype = {
-  classID: Components.ID("{2bdac17c-53f1-4896-a521-682ccdeef3a8}"),
-  QueryInterface: ChromeUtils.generateQI(["nsILoginAutoCompleteSearch"]),
 
-  _autoCompleteLookupPromise: null,
-  _cachedNewPasswordScore: null,
+class LoginAutoComplete {
+  
+  #cachedNewPasswordScore = new WeakMap();
+  #autoCompleteLookupPromise = null;
+  classID = Components.ID("{2bdac17c-53f1-4896-a521-682ccdeef3a8}");
+  QueryInterface = ChromeUtils.generateQI(["nsILoginAutoCompleteSearch"]);
 
   
 
@@ -519,7 +518,6 @@ LoginAutoComplete.prototype = {
     let searchStartTimeMS = Services.telemetry.msSystemNow();
 
     
-    let isSecure = !isNullPrincipal;
     
     
     
@@ -533,20 +531,16 @@ LoginAutoComplete.prototype = {
     
     
     let form = LoginFormFactory.createFromField(aElement);
-    if (isSecure) {
-      isSecure = InsecurePasswordUtils.isFormSecure(form);
-    }
+    let isSecure = !isNullPrincipal && InsecurePasswordUtils.isFormSecure(form);
     let { hasBeenTypePassword } = aElement;
     let hostname = aElement.ownerDocument.documentURIObject.host;
     let formOrigin = LoginHelper.getLoginOrigin(
       aElement.ownerDocument.documentURI
     );
-
     let loginManagerActor = LoginManagerChild.forWindow(aElement.ownerGlobal);
-
     let completeSearch = async autoCompleteLookupPromise => {
       
-      this._autoCompleteLookupPromise = autoCompleteLookupPromise;
+      this.#autoCompleteLookupPromise = autoCompleteLookupPromise;
 
       let {
         generatedPassword,
@@ -559,7 +553,7 @@ LoginAutoComplete.prototype = {
       
       
       
-      if (this._autoCompleteLookupPromise !== autoCompleteLookupPromise) {
+      if (this.#autoCompleteLookupPromise !== autoCompleteLookupPromise) {
         log.debug("ignoring result from previous search");
         return;
       }
@@ -573,7 +567,7 @@ LoginAutoComplete.prototype = {
         stringLength: aSearchString.length,
       };
 
-      this._autoCompleteLookupPromise = null;
+      this.#autoCompleteLookupPromise = null;
       let results = new LoginAutoCompleteResult(
         aSearchString,
         logins,
@@ -627,7 +621,7 @@ LoginAutoComplete.prototype = {
       previousResult = null;
     }
 
-    let acLookupPromise = this._requestAutoCompleteResultsFromParent({
+    let acLookupPromise = this.#requestAutoCompleteResultsFromParent({
       searchString: aSearchString,
       previousResult,
       inputElement: aElement,
@@ -635,13 +629,13 @@ LoginAutoComplete.prototype = {
       hasBeenTypePassword,
     });
     completeSearch(acLookupPromise).catch(log.error.bind(log));
-  },
+  }
 
   stopSearch() {
-    this._autoCompleteLookupPromise = null;
-  },
+    this.#autoCompleteLookupPromise = null;
+  }
 
-  async _requestAutoCompleteResultsFromParent({
+  async #requestAutoCompleteResultsFromParent({
     searchString,
     previousResult,
     inputElement,
@@ -664,7 +658,7 @@ LoginAutoComplete.prototype = {
       
       isProbablyANewPasswordField =
         autocompleteInfo.fieldName == "new-password" ||
-        this._isProbablyANewPasswordField(inputElement);
+        this.isProbablyANewPasswordField(inputElement);
     }
 
     let messageData = {
@@ -686,9 +680,7 @@ LoginAutoComplete.prototype = {
       isSecure: messageData.isSecure,
       hasBeenTypePassword,
       isProbablyANewPasswordField,
-      searchString: hasBeenTypePassword
-        ? "*".repeat(searchString.length)
-        : searchString,
+      searchStringLength: searchString.length,
     });
 
     let result = await loginManagerActor.sendQuery(
@@ -702,16 +694,16 @@ LoginAutoComplete.prototype = {
       logins: LoginHelper.vanillaObjectsToLogins(result.logins),
       willAutoSaveGeneratedPassword: result.willAutoSaveGeneratedPassword,
     };
-  },
+  }
 
-  _isProbablyANewPasswordField(inputElement) {
+  isProbablyANewPasswordField(inputElement) {
     const threshold = LoginHelper.generationConfidenceThreshold;
     if (threshold == -1) {
       
       return false;
     }
 
-    let score = this._cachedNewPasswordScore.get(inputElement);
+    let score = this.#cachedNewPasswordScore.get(inputElement);
     if (score) {
       return score >= threshold;
     }
@@ -719,10 +711,10 @@ LoginAutoComplete.prototype = {
     const { rules, type } = NewPasswordModel;
     const results = rules.against(inputElement);
     score = results.get(inputElement).scoreFor(type);
-    this._cachedNewPasswordScore.set(inputElement, score);
+    this.#cachedNewPasswordScore.set(inputElement, score);
     return score >= threshold;
-  },
-};
+  }
+}
 
 let gAutoCompleteListener = {
   

@@ -146,7 +146,7 @@ add_task(async function test_returns_false_when_pref_disabled() {
         );
   for (let [i, input] of testcase.inputs ||
     document.querySelectorAll(`input[type="password"]`).entries()) {
-    const result = LoginAutoComplete._isProbablyANewPasswordField(input);
+    const result = LoginAutoComplete.isProbablyANewPasswordField(input);
     Assert.strictEqual(
       result,
       false,
@@ -177,7 +177,7 @@ for (let testcase of TESTCASES) {
       const results = [];
       for (let input of testcase.inputs ||
         document.querySelectorAll(`input[type="password"]`)) {
-        const result = LoginAutoComplete._isProbablyANewPasswordField(input);
+        const result = LoginAutoComplete.isProbablyANewPasswordField(input);
         results.push(result);
       }
 
