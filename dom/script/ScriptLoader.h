@@ -560,6 +560,12 @@ class ScriptLoader final : public ScriptLoaderInterface {
   nsresult EvaluateScriptElement(ScriptLoadRequest* aRequest);
 
   
+  nsresult CompileOrFinishModuleScript(
+      JSContext* aCx, JS::Handle<JSObject*> aGlobal,
+      JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
+      JS::MutableHandle<JSObject*> aModule) override;
+
+  
   
   nsresult CompileOrDecodeClassicScript(JSContext* aCx,
                                         JSExecutionContext& aExec,
