@@ -1,5 +1,8 @@
 
 
+
+#![allow(dead_code)] 
+
 #[cfg(feature = "dot-out")]
 pub mod dot;
 #[cfg(feature = "glsl-out")]
@@ -13,25 +16,21 @@ pub mod spv;
 #[cfg(feature = "wgsl-out")]
 pub mod wgsl;
 
-#[allow(dead_code)]
 const COMPONENTS: &[char] = &['x', 'y', 'z', 'w'];
-#[allow(dead_code)]
 const INDENT: &str = "    ";
-#[allow(dead_code)]
 const BAKE_PREFIX: &str = "_e";
 
+type NeedBakeExpressions = crate::FastHashSet<crate::Handle<crate::Expression>>;
+
 #[derive(Clone, Copy)]
-#[allow(dead_code)]
 struct Level(usize);
 
-#[allow(dead_code)]
 impl Level {
     fn next(&self) -> Self {
         Level(self.0 + 1)
     }
 }
 
-#[allow(dead_code)]
 impl std::fmt::Display for Level {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         (0..self.0).try_for_each(|_| formatter.write_str(INDENT))
@@ -41,7 +40,6 @@ impl std::fmt::Display for Level {
 
 
 
-#[allow(dead_code)]
 enum FunctionType {
     
     Function(crate::Handle<crate::Function>),
@@ -50,7 +48,6 @@ enum FunctionType {
 }
 
 
-#[allow(dead_code)]
 struct FunctionCtx<'a> {
     
     ty: FunctionType,
@@ -62,7 +59,6 @@ struct FunctionCtx<'a> {
     named_expressions: &'a crate::NamedExpressions,
 }
 
-#[allow(dead_code)]
 impl<'a> FunctionCtx<'_> {
     
     fn name_key(&self, local: crate::Handle<crate::LocalVariable>) -> crate::proc::NameKey {
@@ -132,7 +128,6 @@ impl crate::Expression {
     
     
     
-    #[allow(dead_code)]
     fn bake_ref_count(&self) -> usize {
         match *self {
             
@@ -154,7 +149,6 @@ impl crate::Expression {
 
 
 
-#[allow(dead_code)]
 fn binary_operation_str(op: crate::BinaryOperator) -> &'static str {
     use crate::BinaryOperator as Bo;
     match op {
@@ -182,7 +176,6 @@ fn binary_operation_str(op: crate::BinaryOperator) -> &'static str {
 
 
 
-#[allow(dead_code)]
 fn vector_size_str(size: crate::VectorSize) -> &'static str {
     match size {
         crate::VectorSize::Bi => "2",
@@ -192,7 +185,6 @@ fn vector_size_str(size: crate::VectorSize) -> &'static str {
 }
 
 impl crate::TypeInner {
-    #[allow(unused)]
     fn is_handle(&self) -> bool {
         match *self {
             crate::TypeInner::Image { .. } | crate::TypeInner::Sampler { .. } => true,

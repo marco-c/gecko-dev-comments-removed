@@ -8,6 +8,13 @@ type Index = NonZeroU32;
 use crate::Span;
 use indexmap::set::IndexSet;
 
+#[derive(Clone, Copy, Debug, thiserror::Error, PartialEq)]
+#[error("Handle {index} of {kind} is either not present, or inaccessible yet")]
+pub struct BadHandle {
+    pub kind: &'static str,
+    pub index: usize,
+}
+
 
 
 
@@ -17,6 +24,7 @@ use indexmap::set::IndexSet;
     any(feature = "serialize", feature = "deserialize"),
     serde(transparent)
 )]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Handle<T> {
     index: Index,
     #[cfg_attr(any(feature = "serialize", feature = "deserialize"), serde(skip))]
@@ -110,6 +118,7 @@ impl<T> Handle<T> {
     any(feature = "serialize", feature = "deserialize"),
     serde(transparent)
 )]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Range<T> {
     inner: ops::Range<u32>,
     #[cfg_attr(any(feature = "serialize", feature = "deserialize"), serde(skip))]
@@ -154,6 +163,7 @@ impl<T> Iterator for Range<T> {
 
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "serialize", serde(transparent))]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(test, derive(PartialEq))]
 pub struct Arena<T> {
     
@@ -262,8 +272,11 @@ impl<T> Arena<T> {
         self.fetch_if_or_append(value, span, T::eq)
     }
 
-    pub fn try_get(&self, handle: Handle<T>) -> Option<&T> {
-        self.data.get(handle.index())
+    pub fn try_get(&self, handle: Handle<T>) -> Result<&T, BadHandle> {
+        self.data.get(handle.index()).ok_or_else(|| BadHandle {
+            kind: std::any::type_name::<T>(),
+            index: handle.index(),
+        })
     }
 
     
@@ -516,8 +529,11 @@ impl<T: Eq + hash::Hash> UniqueArena<T> {
     }
 
     
-    pub fn get_handle(&self, handle: Handle<T>) -> Option<&T> {
-        self.set.get_index(handle.index())
+    pub fn get_handle(&self, handle: Handle<T>) -> Result<&T, BadHandle> {
+        self.set.get_index(handle.index()).ok_or_else(|| BadHandle {
+            kind: std::any::type_name::<T>(),
+            index: handle.index(),
+        })
     }
 }
 
@@ -543,8 +559,7 @@ impl<T> ops::Index<Handle<T>> for UniqueArena<T> {
 #[cfg(feature = "serialize")]
 impl<T> serde::Serialize for UniqueArena<T>
 where
-    T: Eq + hash::Hash,
-    T: serde::Serialize,
+    T: Eq + hash::Hash + serde::Serialize,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -557,8 +572,7 @@ where
 #[cfg(feature = "deserialize")]
 impl<'de, T> serde::Deserialize<'de> for UniqueArena<T>
 where
-    T: Eq + hash::Hash,
-    T: serde::Deserialize<'de>,
+    T: Eq + hash::Hash + serde::Deserialize<'de>,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -573,5 +587,38 @@ where
             #[cfg(feature = "span")]
             span_info,
         })
+    }
+}
+
+
+#[cfg(feature = "arbitrary")]
+impl<'a, T> arbitrary::Arbitrary<'a> for UniqueArena<T>
+where
+    T: Eq + hash::Hash + arbitrary::Arbitrary<'a>,
+{
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let mut arena = Self::default();
+        for elem in u.arbitrary_iter()? {
+            arena.set.insert(elem?);
+            #[cfg(feature = "span")]
+            arena.span_info.push(Span::UNDEFINED);
+        }
+        Ok(arena)
+    }
+
+    fn arbitrary_take_rest(u: arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let mut arena = Self::default();
+        for elem in u.arbitrary_take_rest_iter()? {
+            arena.set.insert(elem?);
+            #[cfg(feature = "span")]
+            arena.span_info.push(Span::UNDEFINED);
+        }
+        Ok(arena)
+    }
+
+    #[inline]
+    fn size_hint(depth: usize) -> (usize, Option<usize>) {
+        let depth_hint = <usize as arbitrary::Arbitrary>::size_hint(depth);
+        arbitrary::size_hint::and(depth_hint, (0, None))
     }
 }

@@ -231,6 +231,16 @@ impl<S: ResourceState> ResourceTracker<S> {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub(crate) fn remove_abandoned(&mut self, id: Valid<S::Id>) -> bool {
         let (index, epoch, backend) = id.0.unzip();
         debug_assert_eq!(backend, self.backend);
@@ -288,6 +298,8 @@ impl<S: ResourceState> ResourceTracker<S> {
     
     
     
+    
+    
     pub(crate) fn init(
         &mut self,
         id: Valid<S::Id>,
@@ -324,6 +336,16 @@ impl<S: ResourceState> ResourceTracker<S> {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn get_or_insert<'a>(
         self_backend: wgt::Backend,
         map: &'a mut FastHashMap<Index, Resource<S>>,
@@ -345,6 +367,7 @@ impl<S: ResourceState> ResourceTracker<S> {
         }
     }
 
+    
     fn get<'a>(
         self_backend: wgt::Backend,
         map: &'a mut FastHashMap<Index, Resource<S>>,
@@ -549,6 +572,11 @@ pub enum UsageConflict {
         combined_use: hal::TextureUses,
     },
 }
+
+
+
+
+
 
 
 #[derive(Debug)]

@@ -1,9 +1,9 @@
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 use super::{builtins::MacroCall, context::ExprPos, Span};
 use crate::{
-    BinaryOperator, Binding, Constant, Expression, Function, GlobalVariable, Handle, Interpolation,
-    Sampling, StorageAccess, StorageClass, Type, UnaryOperator,
+    AddressSpace, BinaryOperator, Binding, Constant, Expression, Function, GlobalVariable, Handle,
+    Interpolation, Sampling, StorageAccess, Type, UnaryOperator,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -56,17 +56,34 @@ pub struct Overload {
     
     pub defined: bool,
     
+    
+    pub internal: bool,
+    
     pub void: bool,
+}
+
+bitflags::bitflags! {
+    /// Tracks the variations of the builtin already generated, this is needed because some
+    /// builtins overloads can't be generated unless explicitly used, since they might cause
+    /// uneeded capabilities to be requested
+    #[derive(Default)]
+    pub struct BuiltinVariations: u32 {
+        /// Request the standard overloads
+        const STANDARD = 1 << 0;
+        /// Request overloads that use the double type
+        const DOUBLE = 1 << 1;
+        /// Request overloads that use samplerCubeArray(Shadow)
+        const CUBE_TEXTURES_ARRAY = 1 << 2;
+        /// Request overloads that use sampler2DMSArray
+        const D2_MULTI_TEXTURES_ARRAY = 1 << 3;
+    }
 }
 
 #[derive(Debug, Default)]
 pub struct FunctionDeclaration {
     pub overloads: Vec<Overload>,
     
-    pub builtin: bool,
-    
-    
-    pub double: bool,
+    pub variations: BuiltinVariations,
 }
 
 #[derive(Debug)]
@@ -134,19 +151,121 @@ pub enum HirExprKind {
     },
 }
 
+#[derive(Debug, Hash, PartialEq, Eq)]
+pub enum QualifierKey<'a> {
+    String(Cow<'a, str>),
+    
+    Layout,
+    
+    Format,
+}
+
 #[derive(Debug)]
-pub enum TypeQualifier {
-    StorageQualifier(StorageQualifier),
-    Interpolation(Interpolation),
-    Set(u32),
-    Binding(u32),
-    Location(u32),
-    WorkGroupSize(usize, u32),
-    Sampling(Sampling),
+pub enum QualifierValue {
+    None,
+    Uint(u32),
     Layout(StructLayout),
-    Precision(Precision),
-    EarlyFragmentTests,
-    StorageAccess(StorageAccess),
+    Format(crate::StorageFormat),
+}
+
+#[derive(Debug, Default)]
+pub struct TypeQualifiers<'a> {
+    pub span: Span,
+    pub storage: (StorageQualifier, Span),
+    pub interpolation: Option<(Interpolation, Span)>,
+    pub precision: Option<(Precision, Span)>,
+    pub sampling: Option<(Sampling, Span)>,
+    pub storage_acess: Option<(StorageAccess, Span)>,
+    pub layout_qualifiers: crate::FastHashMap<QualifierKey<'a>, (QualifierValue, Span)>,
+}
+
+impl<'a> TypeQualifiers<'a> {
+    
+    pub fn unused_errors(&self, errors: &mut Vec<super::Error>) {
+        if let Some((_, meta)) = self.interpolation {
+            errors.push(super::Error {
+                kind: super::ErrorKind::SemanticError(
+                    "Interpolation qualifiers can only be used in in/out variables".into(),
+                ),
+                meta,
+            });
+        }
+
+        if let Some((_, meta)) = self.sampling {
+            errors.push(super::Error {
+                kind: super::ErrorKind::SemanticError(
+                    "Sampling qualifiers can only be used in in/out variables".into(),
+                ),
+                meta,
+            });
+        }
+
+        if let Some((_, meta)) = self.storage_acess {
+            errors.push(super::Error {
+                kind: super::ErrorKind::SemanticError(
+                    "Memory qualifiers can only be used in storage variables".into(),
+                ),
+                meta,
+            });
+        }
+
+        for &(_, meta) in self.layout_qualifiers.values() {
+            errors.push(super::Error {
+                kind: super::ErrorKind::SemanticError("Unexpected qualifier".into()),
+                meta,
+            });
+        }
+    }
+
+    
+    
+    pub fn uint_layout_qualifier(
+        &mut self,
+        name: &'a str,
+        errors: &mut Vec<super::Error>,
+    ) -> Option<u32> {
+        match self
+            .layout_qualifiers
+            .remove(&QualifierKey::String(name.into()))
+        {
+            Some((QualifierValue::Uint(v), _)) => Some(v),
+            Some((_, meta)) => {
+                errors.push(super::Error {
+                    kind: super::ErrorKind::SemanticError("Qualifier expects a uint value".into()),
+                    meta,
+                });
+                
+                
+                
+                
+                Some(0)
+            }
+            _ => None,
+        }
+    }
+
+    
+    
+    pub fn none_layout_qualifier(&mut self, name: &'a str, errors: &mut Vec<super::Error>) -> bool {
+        match self
+            .layout_qualifiers
+            .remove(&QualifierKey::String(name.into()))
+        {
+            Some((QualifierValue::None, _)) => true,
+            Some((_, meta)) => {
+                errors.push(super::Error {
+                    kind: super::ErrorKind::SemanticError(
+                        "Qualifier doesn't expect a value".into(),
+                    ),
+                    meta,
+                });
+                
+                
+                true
+            }
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -163,10 +282,16 @@ pub struct FunctionCall {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum StorageQualifier {
-    StorageClass(StorageClass),
+    AddressSpace(AddressSpace),
     Input,
     Output,
     Const,
+}
+
+impl Default for StorageQualifier {
+    fn default() -> Self {
+        StorageQualifier::AddressSpace(AddressSpace::Function)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
