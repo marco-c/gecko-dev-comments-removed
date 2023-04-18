@@ -201,16 +201,7 @@ class _RFPHelper {
   _handleHttpOnModifyRequest(subject, data) {
     
     
-    let httpChannel;
-    try {
-      httpChannel = subject.QueryInterface(Ci.nsIHttpChannel);
-    } catch (e) {
-      return;
-    }
-
-    if (!httpChannel) {
-      return;
-    }
+    let httpChannel = subject.QueryInterface(Ci.nsIHttpChannel);
 
     let notificationCallbacks = httpChannel.notificationCallbacks;
     if (!notificationCallbacks) {
