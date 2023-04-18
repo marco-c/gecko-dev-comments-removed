@@ -23,7 +23,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AppConstants: "resource://gre/modules/AppConstants.jsm",
   ConsoleAPI: "resource://gre/modules/Console.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   Schemas: "resource://gre/modules/Schemas.jsm",
@@ -58,12 +57,6 @@ function getConsole() {
 }
 
 XPCOMUtils.defineLazyGetter(this, "console", getConsole);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "DELAYED_BG_STARTUP",
-  "extensions.webextensions.background-delayed-startup"
-);
 
 var ExtensionCommon;
 
@@ -2150,46 +2143,68 @@ class EventManager {
 
 
 
+
+
+
+
+
+
+
+
+
+
   constructor(params) {
     let {
       context,
+      module,
+      event,
       name,
       register,
       inputHandling = false,
-      persistent = null,
     } = params;
     this.context = context;
+    this.module = module;
+    this.event = event;
     this.name = name;
     this.register = register;
     this.inputHandling = inputHandling;
-    this.persistent = persistent;
 
-    
-    
-    if (!DELAYED_BG_STARTUP) {
-      this.persistent = null;
+    if (!name) {
+      this.name = `${module}.${event}`;
+    }
+
+    this.canPersistEvents =
+      module &&
+      event &&
+      ["background", "background_worker"].includes(this.context.viewType) &&
+      this.context.envType == "addon_parent";
+
+    if (this.canPersistEvents) {
+      let { extension } = context;
+      if (extension.persistentBackground) {
+        
+        let api_module = extension.apiManager.getModule(this.module);
+        if (!api_module?.startupBlocking) {
+          this.canPersistEvents = false;
+        }
+      } else {
+        
+        
+        let api = extension.apiManager.getAPI(
+          this.module,
+          extension,
+          "addon_parent"
+        );
+
+        
+        if (!api?.primeListener) {
+          this.canPersistEvents = false;
+        }
+      }
     }
 
     this.unregister = new Map();
     this.remove = new Map();
-
-    if (this.persistent) {
-      if (AppConstants.DEBUG) {
-        if (this.context.envType !== "addon_parent") {
-          throw new Error(
-            "Persistent event managers can only be created for addon_parent"
-          );
-        }
-        if (!this.persistent.module || !this.persistent.event) {
-          throw new Error(
-            "Persistent event manager must specify module and event"
-          );
-        }
-      }
-      if (this.context.viewType !== "background") {
-        this.persistent = null;
-      }
-    }
   }
 
   
@@ -2222,7 +2237,7 @@ class EventManager {
     let listeners = new DefaultMap(() => new DefaultMap(() => new Map()));
     extension.persistentListeners = listeners;
 
-    let { persistentListeners } = extension.startupData;
+    let persistentListeners = extension.startupData?.persistentListeners;
     if (!persistentListeners) {
       return false;
     }
@@ -2272,7 +2287,17 @@ class EventManager {
     }
 
     for (let [module, moduleEntry] of extension.persistentListeners) {
+      
+      
+      if (isInStartup) {
+        let api_module = extension.apiManager.getModule(module);
+        if (!api_module.startupBlocking) {
+          continue;
+        }
+      }
+
       let api = extension.apiManager.getAPI(module, extension, "addon_parent");
+
       
       
       if (!api?.primeListener) {
@@ -2434,6 +2459,7 @@ class EventManager {
     };
 
     let { extension } = this.context;
+    let { module, event } = this;
 
     let unregister = null;
     let recordStartupData = false;
@@ -2441,9 +2467,10 @@ class EventManager {
     
     
     
-    if (this.persistent) {
-      recordStartupData = true;
-      let { module, event } = this.persistent;
+    if (this.canPersistEvents) {
+      
+      
+      recordStartupData = !!this.context.listenerPromises;
 
       let key = uneval(args);
       EventManager._initPersistentListeners(extension);
@@ -2491,7 +2518,6 @@ class EventManager {
     
     
     if (recordStartupData) {
-      let { module, event } = this.persistent;
       EventManager.savePersistentListener(extension, module, event, args);
       this.remove.set(callback, () => {
         EventManager.clearPersistentListener(

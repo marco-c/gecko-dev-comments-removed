@@ -92,6 +92,7 @@ class BackgroundPage extends HiddenExtensionPage {
     if (context) {
       
       
+      
       await Promise.all(context.listenerPromises);
       context.listenerPromises = null;
     }
