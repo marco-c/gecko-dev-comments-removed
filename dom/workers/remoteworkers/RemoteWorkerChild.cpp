@@ -636,7 +636,13 @@ void RemoteWorkerChild::CloseWorkerOnMainThread(State& aState) {
   
 
   if (aState.is<Pending>()) {
-    aState.as<Pending>().mWorkerPrivate->Cancel();
+    
+    
+    
+    
+    if (aState.as<Pending>().mWorkerPrivate) {
+      aState.as<Pending>().mWorkerPrivate->Cancel();
+    }
     TransitionStateToPendingTerminated(aState);
     return;
   }
