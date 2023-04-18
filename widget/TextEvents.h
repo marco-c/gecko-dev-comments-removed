@@ -1174,8 +1174,6 @@ class WidgetQueryContentEvent : public WidgetGUIEvent {
     
     bool mReversed;
     
-    bool mHasSelection;
-    
     bool mWidgetIsHit;
 
     Reply() = delete;
@@ -1184,7 +1182,6 @@ class WidgetQueryContentEvent : public WidgetGUIEvent {
           mContentsRoot(nullptr),
           mFocusedWidget(nullptr),
           mReversed(false),
-          mHasSelection(false),
           mWidgetIsHit(false) {}
 
     
@@ -1272,8 +1269,7 @@ class WidgetQueryContentEvent : public WidgetGUIEvent {
                   << ToString(aReply.mTentativeCaretOffset).c_str() << ", ";
         }
       }
-      aStream << "mHasSelection=" << (aReply.mHasSelection ? "true" : "false");
-      if (aReply.mHasSelection) {
+      if (aReply.mOffsetAndData.isSome() && aReply.mOffsetAndData->Length()) {
         if (aReply.mEventMessage == eQuerySelectedText) {
           aStream << ", mReversed=" << (aReply.mReversed ? "true" : "false");
         }
