@@ -368,7 +368,7 @@ class TSFTextStore final : public ITextStoreACP,
   
   
   
-  SelectionChangeData mPendingSelectionChangeData;
+  Maybe<SelectionChangeData> mPendingSelectionChangeData;
 
   
   
@@ -584,6 +584,18 @@ class TSFTextStore final : public ITextStoreACP,
     }
 
     bool SetSelection(const SelectionChangeDataBase& aSelectionChangeData) {
+      
+      
+      if (!aSelectionChangeData.IsValid()) {
+        if (mACP.isNothing()) {
+          return false;
+        }
+        mACP.reset();
+        
+        
+        
+        return true;
+      }
       return SetSelection(aSelectionChangeData.mOffset,
                           aSelectionChangeData.Length(),
                           aSelectionChangeData.mReversed,
