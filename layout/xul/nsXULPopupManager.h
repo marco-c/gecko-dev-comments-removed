@@ -467,6 +467,19 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
   void SetActiveMenuBar(nsMenuBarFrame* aMenuBar, bool aActivate);
 
+  struct MayShowMenuResult {
+    const bool mIsNative = false;
+    nsMenuFrame* const mMenuFrame = nullptr;
+    nsMenuPopupFrame* const mMenuPopupFrame = nullptr;
+
+    explicit operator bool() const {
+      MOZ_ASSERT(!!mMenuFrame == !!mMenuPopupFrame);
+      return mIsNative || mMenuFrame;
+    }
+  };
+
+  MayShowMenuResult MayShowMenu(nsIContent* aMenu);
+
   
 
 
