@@ -19,6 +19,9 @@ const LABEL_REDIRECT = 1;
 const LABEL_STRIP_FOR_NAVIGATION = 2;
 const LABEL_STRIP_FOR_REDIRECT = 3;
 
+const QUERY_STRIPPING_COUNT = "QUERY_STRIPPING_COUNT";
+const QUERY_STRIPPING_PARAM_COUNT = "QUERY_STRIPPING_PARAM_COUNT";
+
 async function clearTelemetry() {
   
   
@@ -27,7 +30,8 @@ async function clearTelemetry() {
   await new Promise(resolve => setTimeout(resolve, 2000));
 
   Services.telemetry.getSnapshotForHistograms("main", true );
-  Services.telemetry.getHistogramById("QUERY_STRIPPING_COUNT").clear();
+  Services.telemetry.getHistogramById(QUERY_STRIPPING_COUNT).clear();
+  Services.telemetry.getHistogramById(QUERY_STRIPPING_PARAM_COUNT).clear();
 
   
   await TestUtils.waitForCondition(() => {
@@ -36,7 +40,11 @@ async function clearTelemetry() {
       false 
     ).content;
 
-    return !histograms || !histograms.QUERY_STRIPPING_COUNT;
+    return (
+      !histograms ||
+      (!histograms[QUERY_STRIPPING_COUNT] &&
+        !histograms[QUERY_STRIPPING_PARAM_COUNT])
+    );
   });
 }
 
@@ -49,8 +57,8 @@ async function verifyQueryString(browser, expected) {
   });
 }
 
-async function getTelemetryProbe(probeInParent, label, checkCntFn) {
-  let queryStrippingHistogram;
+async function getTelemetryProbe(probeInParent, key, label, checkCntFn) {
+  let histogram;
 
   
   await TestUtils.waitForCondition(() => {
@@ -66,25 +74,24 @@ async function getTelemetryProbe(probeInParent, label, checkCntFn) {
         false 
       ).content;
     }
-    queryStrippingHistogram = histograms.QUERY_STRIPPING_COUNT;
+    histogram = histograms[key];
 
     let checkRes = false;
 
-    if (queryStrippingHistogram) {
-      checkRes = checkCntFn
-        ? checkCntFn(queryStrippingHistogram.values[label])
-        : true;
+    if (histogram) {
+      checkRes = checkCntFn ? checkCntFn(histogram.values[label]) : true;
     }
 
     return checkRes;
   });
 
-  return queryStrippingHistogram.values[label];
+  return histogram.values[label];
 }
 
-async function checkTelemetryProbe(probeInParent, expectedCnt, label) {
+async function checkTelemetryProbe(probeInParent, key, expectedCnt, label) {
   let cnt = await getTelemetryProbe(
     probeInParent,
+    key,
     label,
     cnt => cnt == expectedCnt
   );
@@ -96,7 +103,10 @@ add_setup(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["privacy.query_stripping.enabled", true],
-      ["privacy.query_stripping.strip_list", "paramToStrip"],
+      [
+        "privacy.query_stripping.strip_list",
+        "paramToStrip paramToStripB paramToStripC paramToStripD",
+      ],
     ],
   });
 
@@ -115,13 +125,20 @@ add_task(async function testQueryStrippingNavigationInParent() {
 
   
   
-  await checkTelemetryProbe(true, 1, LABEL_STRIP_FOR_NAVIGATION);
+  await checkTelemetryProbe(
+    true,
+    QUERY_STRIPPING_COUNT,
+    1,
+    LABEL_STRIP_FOR_NAVIGATION
+  );
+  await checkTelemetryProbe(true, QUERY_STRIPPING_PARAM_COUNT, 1, "1");
 
   
   
   
   let newNavigationCnt = await getTelemetryProbe(
     true,
+    QUERY_STRIPPING_COUNT,
     LABEL_NAVIGATION,
     cnt => cnt > 0
   );
@@ -152,11 +169,73 @@ add_task(async function testQueryStrippingNavigationInContent() {
   });
 
   
-  await checkTelemetryProbe(false, 1, LABEL_STRIP_FOR_NAVIGATION);
+  await checkTelemetryProbe(
+    false,
+    QUERY_STRIPPING_COUNT,
+    1,
+    LABEL_STRIP_FOR_NAVIGATION
+  );
+  await checkTelemetryProbe(false, QUERY_STRIPPING_PARAM_COUNT, 1, "1");
 
   
   let newNavigationCnt = await getTelemetryProbe(
     false,
+    QUERY_STRIPPING_COUNT,
+    LABEL_NAVIGATION,
+    cnt => cnt > 0
+  );
+  ok(newNavigationCnt > 0, "There is navigation count added.");
+
+  await clearTelemetry();
+});
+
+add_task(async function testQueryStrippingNavigationInContentQueryCount() {
+  let testThirdPartyURI =
+    TEST_THIRD_PARTY_URI +
+    "?paramToStrip=value&paramToStripB=valueB&paramToStripC=valueC&paramToStripD=valueD";
+
+  await BrowserTestUtils.withNewTab(TEST_URI, async browser => {
+    
+    let locationChangePromise = BrowserTestUtils.waitForLocationChange(
+      gBrowser,
+      TEST_THIRD_PARTY_URI
+    );
+
+    
+    await SpecialPowers.spawn(browser, [testThirdPartyURI], async url => {
+      content.postMessage({ type: "script", url }, "*");
+    });
+
+    await locationChangePromise;
+
+    
+    await verifyQueryString(browser, "");
+  });
+
+  
+  await checkTelemetryProbe(
+    false,
+    QUERY_STRIPPING_COUNT,
+    1,
+    LABEL_STRIP_FOR_NAVIGATION
+  );
+
+  await getTelemetryProbe(false, QUERY_STRIPPING_PARAM_COUNT, "0", cnt => !cnt);
+  await getTelemetryProbe(false, QUERY_STRIPPING_PARAM_COUNT, "1", cnt => !cnt);
+  await getTelemetryProbe(false, QUERY_STRIPPING_PARAM_COUNT, "2", cnt => !cnt);
+  await getTelemetryProbe(false, QUERY_STRIPPING_PARAM_COUNT, "3", cnt => !cnt);
+  await getTelemetryProbe(
+    false,
+    QUERY_STRIPPING_PARAM_COUNT,
+    "4",
+    cnt => cnt == 1
+  );
+  await getTelemetryProbe(false, QUERY_STRIPPING_PARAM_COUNT, "5", cnt => !cnt);
+
+  
+  let newNavigationCnt = await getTelemetryProbe(
+    false,
+    QUERY_STRIPPING_COUNT,
     LABEL_NAVIGATION,
     cnt => cnt > 0
   );
@@ -188,8 +267,14 @@ add_task(async function testQueryStrippingRedirect() {
 
   
   
-  await checkTelemetryProbe(true, 1, LABEL_STRIP_FOR_REDIRECT);
-  await checkTelemetryProbe(true, 1, LABEL_REDIRECT);
+  await checkTelemetryProbe(
+    true,
+    QUERY_STRIPPING_COUNT,
+    1,
+    LABEL_STRIP_FOR_REDIRECT
+  );
+  await checkTelemetryProbe(true, QUERY_STRIPPING_COUNT, 1, LABEL_REDIRECT);
+  await checkTelemetryProbe(true, QUERY_STRIPPING_PARAM_COUNT, 1, "1");
 
   await clearTelemetry();
 });
@@ -210,10 +295,16 @@ add_task(async function testQueryStrippingDisabled() {
 
   
   
-  await checkTelemetryProbe(true, undefined, LABEL_STRIP_FOR_NAVIGATION);
+  await checkTelemetryProbe(
+    true,
+    QUERY_STRIPPING_COUNT,
+    undefined,
+    LABEL_STRIP_FOR_NAVIGATION
+  );
   
   let newNavigationCnt = await getTelemetryProbe(
     true,
+    QUERY_STRIPPING_COUNT,
     LABEL_NAVIGATION,
     cnt => cnt > 0
   );
@@ -242,10 +333,16 @@ add_task(async function testQueryStrippingDisabled() {
 
   
   
-  await checkTelemetryProbe(false, undefined, LABEL_STRIP_FOR_NAVIGATION);
+  await checkTelemetryProbe(
+    false,
+    QUERY_STRIPPING_COUNT,
+    undefined,
+    LABEL_STRIP_FOR_NAVIGATION
+  );
   
   newNavigationCnt = await getTelemetryProbe(
     false,
+    QUERY_STRIPPING_COUNT,
     LABEL_NAVIGATION,
     cnt => cnt > 0
   );
@@ -273,8 +370,13 @@ add_task(async function testQueryStrippingDisabled() {
   });
 
   
-  await checkTelemetryProbe(true, undefined, LABEL_STRIP_FOR_REDIRECT);
-  await checkTelemetryProbe(true, 1, LABEL_REDIRECT);
+  await checkTelemetryProbe(
+    true,
+    QUERY_STRIPPING_COUNT,
+    undefined,
+    LABEL_STRIP_FOR_REDIRECT
+  );
+  await checkTelemetryProbe(true, QUERY_STRIPPING_COUNT, 1, LABEL_REDIRECT);
 
   await clearTelemetry();
 });
