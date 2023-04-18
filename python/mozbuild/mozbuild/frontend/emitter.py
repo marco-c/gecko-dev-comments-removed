@@ -4,7 +4,6 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import itertools
 import logging
 import os
 import six
@@ -31,12 +30,10 @@ from .data import (
     FinalTargetFiles,
     FinalTargetPreprocessedFiles,
     GeneratedFile,
-    GeneratedSources,
     GnProjectData,
     ExternalStaticLibrary,
     ExternalSharedLibrary,
     HostDefines,
-    HostGeneratedSources,
     HostLibrary,
     HostProgram,
     HostRustProgram,
@@ -70,7 +67,6 @@ from .data import (
     UnifiedSources,
     VariablePassthru,
     WasmDefines,
-    WasmGeneratedSources,
     WasmSources,
     XPCOMComponentManifests,
     XPIDLModule,
@@ -649,8 +645,6 @@ class TreeMetadataEmitter(LoggingMixin):
         host_linkables = []
         wasm_linkables = []
 
-        unified_build = context.config.substs.get("ENABLE_UNIFIED_BUILD", False)
-
         def add_program(prog, var):
             if var.startswith("HOST_"):
                 host_linkables.append(prog)
@@ -1056,10 +1050,6 @@ class TreeMetadataEmitter(LoggingMixin):
                         context,
                     )
 
-        
-        
-        assert not gen_sources["UNIFIED_SOURCES"]
-
         no_pgo = context.get("NO_PGO")
         no_pgo_sources = [f for f, flags in six.iteritems(all_flags) if flags.no_pgo]
         if no_pgo:
@@ -1094,23 +1084,20 @@ class TreeMetadataEmitter(LoggingMixin):
             for a in alternatives:
                 canonicalized_suffix_map[a] = suffix
 
-        def canonical_suffix_for_file(f):
-            return canonicalized_suffix_map[mozpath.splitext(f)[1]]
-
         
         
         all_suffixes = list(suffix_map.keys())
         varmap = dict(
-            SOURCES=(Sources, GeneratedSources, all_suffixes),
-            HOST_SOURCES=(HostSources, HostGeneratedSources, [".c", ".mm", ".cpp"]),
-            UNIFIED_SOURCES=(UnifiedSources, None, [".c", ".mm", ".m", ".cpp"]),
+            SOURCES=(Sources, all_suffixes),
+            HOST_SOURCES=(HostSources, [".c", ".mm", ".cpp"]),
+            UNIFIED_SOURCES=(UnifiedSources, [".c", ".mm", ".m", ".cpp"]),
         )
         
         
         
         
         if sources["WASM_SOURCES"] or gen_sources["WASM_SOURCES"]:
-            varmap["WASM_SOURCES"] = (WasmSources, WasmGeneratedSources, [".c", ".cpp"])
+            varmap["WASM_SOURCES"] = (WasmSources, [".c", ".cpp"])
         
         
         
@@ -1119,46 +1106,43 @@ class TreeMetadataEmitter(LoggingMixin):
         
         ctxt_sources = defaultdict(lambda: defaultdict(list))
 
-        for variable, (klass, gen_klass, suffixes) in varmap.items():
-            allowed_suffixes = set().union(*[suffix_map[s] for s in suffixes])
-
+        for variable, (klass, suffixes) in varmap.items():
             
             
-            for f in itertools.chain(sources[variable], gen_sources[variable]):
-                ext = mozpath.splitext(f)[1]
-                if ext not in allowed_suffixes:
-                    raise SandboxValidationError(
-                        "%s has an unknown file type." % f, context
-                    )
-
-            for srcs, cls in (
-                (sources[variable], klass),
-                (gen_sources[variable], gen_klass),
+            by_canonical_suffix = defaultdict(lambda: {"static": [], "generated": []})
+            for srcs, key in (
+                (sources[variable], "static"),
+                (gen_sources[variable], "generated"),
             ):
-                
-                sorted_files = sorted(srcs, key=canonical_suffix_for_file)
-                for canonical_suffix, files in itertools.groupby(
-                    sorted_files, canonical_suffix_for_file
-                ):
-                    if canonical_suffix in (".cpp", ".mm"):
-                        cxx_sources[variable] = True
-                    elif canonical_suffix in (".s", ".S"):
-                        self._asm_compile_dirs.add(context.objdir)
-                    arglist = [context, list(files), canonical_suffix]
-                    if variable.startswith("UNIFIED_"):
-                        if (
-                            unified_build is False
-                            and context.get("REQUIRES_UNIFIED_BUILD", False) is False
-                        ):
-                            arglist.append(1)
-                        else:
-                            arglist.append(context.get("FILES_PER_UNIFIED_FILE", 16))
-                    obj = cls(*arglist)
-                    srcs = list(obj.files)
-                    if isinstance(obj, UnifiedSources) and obj.have_unified_mapping:
-                        srcs = dict(obj.unified_source_mapping).keys()
-                    ctxt_sources[variable][canonical_suffix] += sorted(srcs)
-                    yield obj
+                for f in srcs:
+                    canonical_suffix = canonicalized_suffix_map.get(
+                        mozpath.splitext(f)[1]
+                    )
+                    if canonical_suffix not in suffixes:
+                        raise SandboxValidationError(
+                            "%s has an unknown file type." % f, context
+                        )
+                    by_canonical_suffix[canonical_suffix][key].append(f)
+
+            
+            
+            for canonical_suffix in sorted(by_canonical_suffix.keys()):
+                if canonical_suffix in (".cpp", ".mm"):
+                    cxx_sources[variable] = True
+                elif canonical_suffix in (".s", ".S"):
+                    self._asm_compile_dirs.add(context.objdir)
+                src_group = by_canonical_suffix[canonical_suffix]
+                obj = klass(
+                    context,
+                    src_group["static"],
+                    src_group["generated"],
+                    canonical_suffix,
+                )
+                srcs = list(obj.files)
+                if isinstance(obj, UnifiedSources) and obj.have_unified_mapping:
+                    srcs = sorted(dict(obj.unified_source_mapping).keys())
+                ctxt_sources[variable][canonical_suffix] += srcs
+                yield obj
 
         if ctxt_sources:
             for linkable in linkables:
