@@ -225,6 +225,11 @@ class Accessible {
 
   
 
+
+  virtual bool DoAction(uint8_t aIndex) const = 0;
+
+  
+
   bool IsDoc() const { return HasGenericType(eDocument); }
 
   bool IsTableRow() const { return HasGenericType(eTableRow); }
