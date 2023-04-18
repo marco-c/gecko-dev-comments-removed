@@ -92,7 +92,7 @@ struct Read_ReadIntoRequest final : public ReadIntoRequest {
   explicit Read_ReadIntoRequest(Promise* aPromise) : mPromise(aPromise) {}
 
   void ChunkSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
-                  ErrorResult& errorResult) override {
+                  ErrorResult& aRv) override {
     MOZ_ASSERT(aChunk.isObject());
     
     
@@ -115,7 +115,7 @@ struct Read_ReadIntoRequest final : public ReadIntoRequest {
   }
 
   void CloseSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
-                  ErrorResult& errorResult) override {
+                  ErrorResult& aRv) override {
     MOZ_ASSERT(aChunk.isObject() || aChunk.isUndefined());
     
     
@@ -139,7 +139,7 @@ struct Read_ReadIntoRequest final : public ReadIntoRequest {
   }
 
   void ErrorSteps(JSContext* aCx, JS::Handle<JS::Value> e,
-                  ErrorResult& errorResult) override {
+                  ErrorResult& aRv) override {
     
     
     

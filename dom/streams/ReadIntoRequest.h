@@ -26,18 +26,18 @@ struct ReadIntoRequest : public nsISupports,
 
   
   virtual void ChunkSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
-                          ErrorResult& errorResult) = 0;
+                          ErrorResult& aRv) = 0;
 
   
   
   MOZ_CAN_RUN_SCRIPT
   virtual void CloseSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
-                          ErrorResult& errorResult) = 0;
+                          ErrorResult& aRv) = 0;
 
   
   
   virtual void ErrorSteps(JSContext* aCx, JS::Handle<JS::Value> e,
-                          ErrorResult& errorResult) = 0;
+                          ErrorResult& aRv) = 0;
 
  protected:
   virtual ~ReadIntoRequest() = default;
