@@ -1890,7 +1890,8 @@ APZEventResult APZCTreeManager::InputHandlingState::Finish(
   }
 
   
-  if (mHit.mHitOverscrollGutter) {
+  
+  if (mHit.mHitOverscrollGutter && mHit.mFixedPosSides == SideBits::eNone) {
     mResult.SetStatusAsConsumeNoDefault();
   }
 
