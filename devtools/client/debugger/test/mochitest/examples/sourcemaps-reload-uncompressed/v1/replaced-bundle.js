@@ -74,6 +74,8 @@ module.exports = __webpack_require__(1);
 
  (function(module, exports) {
 
+
+
 window.removedOriginal = function removedOriginal() {
   console.log("Removed original");
 };

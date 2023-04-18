@@ -3,36 +3,38 @@ const webpack = require("webpack");
 
 const config = {
   devtool: "sourcemap",
-  module: {
+};
+
+if (webpack.version && webpack.version[0] === "4") {
+  
+  
+  config.mode = "production";
+} else {
+  
+  config.module = {
     loaders: [
       {
         test: /\.js$/,
         exclude: /node_modules/,
-        loader: "babel-loader"
-      }
-    ]
-  },
-  plugins: [
-  ],
-};
+        loader: "babel-loader",
+      },
+    ],
+  };
+}
 
 const originalBundle = Object.assign({}, config, {
-  entry: [
-    path.join(__dirname, "original.js"),
-  ],
+  entry: [path.join(__dirname, "original.js")],
   output: {
     path: __dirname,
-    filename: "bundle.js"
+    filename: "bundle.js",
   },
 });
 
 const replacedBundle = Object.assign({}, config, {
-  entry: [
-    path.join(__dirname, "removed-original.js"),
-  ],
+  entry: [path.join(__dirname, "new-original.js")],
   output: {
     path: __dirname,
-    filename: "replaced-bundle.js"
+    filename: "replaced-bundle.js",
   },
 });
 

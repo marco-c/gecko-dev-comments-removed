@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+"use strict";
+
+add_task(async function() {
+  const testFolder = "sourcemaps-reload-uncompressed";
+  const isCompressed = false;
+
+  await runAllIntegrationTests(testFolder, {
+    isCompressed,
+  });
+});

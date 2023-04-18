@@ -74,10 +74,12 @@ module.exports = __webpack_require__(1);
 
  (function(module, exports) {
 
-window.newOriginal = function newOriginal() {
+
+
+window.____newOriginal = function ____newOriginal() {
   console.log("New original");
 };
-window.newOriginal();
+window.____newOriginal();
 
  })
  ]);

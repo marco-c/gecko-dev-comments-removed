@@ -1,0 +1,6 @@
+
+
+window.____newOriginal = function ____newOriginal() {
+  console.log("New original");
+}
+window.____newOriginal();

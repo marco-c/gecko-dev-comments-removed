@@ -1,0 +1,31 @@
+const path = require("path");
+const webpack = require("webpack");
+
+const config = {
+  devtool: "sourcemap",
+};
+
+if (webpack.version && webpack.version[0] === "4") {
+  
+  
+  config.mode = "production";
+} else {
+  
+  config.module = {
+    loaders: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        loader: "babel-loader",
+      },
+    ],
+  };
+}
+
+module.exports = Object.assign({}, config, {
+  entry: [path.join(__dirname, "original.js")],
+  output: {
+    path: __dirname,
+    filename: "bundle.js",
+  },
+});
