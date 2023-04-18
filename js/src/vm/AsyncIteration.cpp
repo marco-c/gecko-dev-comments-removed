@@ -76,8 +76,15 @@ using namespace js;
 enum class ResumeNextKind { Enqueue, Reject, Resolve };
 
 [[nodiscard]] static bool AsyncGeneratorResumeNext(
-    JSContext* cx, Handle<AsyncGeneratorObject*> generator, ResumeNextKind kind,
-    HandleValue valueOrException = UndefinedHandleValue, bool done = false);
+    JSContext* cx, Handle<AsyncGeneratorObject*> generator);
+
+[[nodiscard]] static bool AsyncGeneratorCompleteStepNormal(
+    JSContext* cx, Handle<AsyncGeneratorObject*> generator, HandleValue value,
+    bool done);
+
+[[nodiscard]] static bool AsyncGeneratorCompleteStepThrow(
+    JSContext* cx, Handle<AsyncGeneratorObject*> generator,
+    HandleValue exception);
 
 [[nodiscard]] bool js::AsyncGeneratorPromiseReactionJob(
     JSContext* cx, PromiseHandler handler,
@@ -114,8 +121,10 @@ enum class ResumeNextKind { Enqueue, Reject, Resolve };
       asyncGenObj->setCompleted();
 
       
-      return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Resolve,
-                                      argument, true);
+      if (!AsyncGeneratorCompleteStepNormal(cx, asyncGenObj, argument, true)) {
+        return false;
+      }
+      return AsyncGeneratorResumeNext(cx, asyncGenObj);
     }
 
     
@@ -129,8 +138,10 @@ enum class ResumeNextKind { Enqueue, Reject, Resolve };
       asyncGenObj->setCompleted();
 
       
-      return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Reject,
-                                      argument);
+      if (!AsyncGeneratorCompleteStepThrow(cx, asyncGenObj, argument)) {
+        return false;
+      }
+      return AsyncGeneratorResumeNext(cx, asyncGenObj);
     }
 
     
@@ -446,8 +457,11 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   
 
   
-  return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Resolve,
-                                  value, true);
+  if (!AsyncGeneratorCompleteStepNormal(cx, asyncGenObj, value, true)) {
+    return false;
+  }
+
+  return AsyncGeneratorResumeNext(cx, asyncGenObj);
 }
 
 
@@ -469,8 +483,10 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   }
 
   
-  return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Reject,
-                                  value);
+  if (!AsyncGeneratorCompleteStepThrow(cx, asyncGenObj, value)) {
+    return false;
+  }
+  return AsyncGeneratorResumeNext(cx, asyncGenObj);
 }
 
 
@@ -485,8 +501,10 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   asyncGenObj->setSuspendedYield();
 
   
-  return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Resolve,
-                                  value, false);
+  if (!AsyncGeneratorCompleteStepNormal(cx, asyncGenObj, value, false)) {
+    return false;
+  }
+  return AsyncGeneratorResumeNext(cx, asyncGenObj);
 }
 
 
@@ -551,28 +569,8 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 }
 
 [[nodiscard]] static bool AsyncGeneratorResumeNext(
-    JSContext* cx, Handle<AsyncGeneratorObject*> generator, ResumeNextKind kind,
-    HandleValue valueOrException_ ,
-    bool done ) {
-  RootedValue valueOrException(cx, valueOrException_);
-
+    JSContext* cx, Handle<AsyncGeneratorObject*> generator) {
   while (true) {
-    switch (kind) {
-      case ResumeNextKind::Enqueue:
-        break;
-      case ResumeNextKind::Reject:
-        if (!AsyncGeneratorCompleteStepThrow(cx, generator, valueOrException)) {
-          return false;
-        }
-        break;
-      case ResumeNextKind::Resolve:
-        if (!AsyncGeneratorCompleteStepNormal(cx, generator, valueOrException,
-                                              done)) {
-          return false;
-        }
-        break;
-    }
-
     MOZ_ASSERT(!generator->isExecuting());
     MOZ_ASSERT(!generator->isAwaitingYieldReturn());
 
@@ -614,14 +612,16 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
         MOZ_ASSERT(completionKind == CompletionKind::Throw);
 
-        kind = ResumeNextKind::Reject;
-        valueOrException.set(value);
+        if (!AsyncGeneratorCompleteStepThrow(cx, generator, value)) {
+          return false;
+        }
         continue;
       }
     } else if (generator->isCompleted()) {
-      kind = ResumeNextKind::Resolve;
-      valueOrException.setUndefined();
-      done = true;
+      if (!AsyncGeneratorCompleteStepNormal(cx, generator, UndefinedHandleValue,
+                                            true)) {
+        return false;
+      }
       continue;
     }
 
@@ -714,7 +714,7 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
     }
 
     if (!asyncGenObj->isExecuting() && !asyncGenObj->isAwaitingYieldReturn()) {
-      if (!AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Enqueue)) {
+      if (!AsyncGeneratorResumeNext(cx, asyncGenObj)) {
         return false;
       }
     }
