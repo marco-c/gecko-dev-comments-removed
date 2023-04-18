@@ -316,10 +316,11 @@ fn eval_prefers_reduced_motion(device: &Device, query_value: Option<PrefersReduc
 #[repr(u8)]
 pub enum PrefersContrast {
     
-    
     More,
     
     Less,
+    
+    Custom,
     
     NoPreference,
 }
