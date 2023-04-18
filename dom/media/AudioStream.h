@@ -103,7 +103,11 @@ class AudioClock {
   
   
   
-  const UniquePtr<FrameHistory> mFrameHistory;
+  const UniquePtr<FrameHistory> mFrameHistory
+#  ifndef XP_MACOSX
+  GUARDED_BY(mMutex)
+#  endif
+    ;
 #  ifdef XP_MACOSX
   
   
@@ -113,6 +117,8 @@ class AudioClock {
   
   
   AutoTArray<CallbackInfo, 5> mAudioThreadCallbackInfo;
+#  else
+  Mutex mMutex{"AudioClock"};
 #  endif
 };
 
@@ -271,7 +277,7 @@ class AudioStream final {
     return CubebUtils::PreferredSampleRate();
   }
 
-  uint32_t GetOutChannels() { return mOutChannels; }
+  uint32_t GetOutChannels() const { return mOutChannels; }
 
   
   
@@ -319,24 +325,27 @@ class AudioStream final {
 
   
   
-  bool IsValidAudioFormat(Chunk* aChunk);
+  bool IsValidAudioFormat(Chunk* aChunk) REQUIRES(mMonitor);
 
   template <typename Function, typename... Args>
-  int InvokeCubeb(Function aFunction, Args&&... aArgs);
+  int InvokeCubeb(Function aFunction, Args&&... aArgs) REQUIRES(mMonitor);
   bool CheckThreadIdChanged();
   void AssertIsOnAudioThread() const;
 
   soundtouch::SoundTouch* mTimeStretcher;
 
-  
-  Monitor mMonitor MOZ_UNANNOTATED;
-
-  const uint32_t mOutChannels;
-  const AudioConfig::ChannelLayout::ChannelMap mChannelMap;
   AudioClock mAudioClock;
 
   WavDumper mDumpFile;
 
+  const AudioConfig::ChannelLayout::ChannelMap mChannelMap;
+
+  
+  Monitor mMonitor MOZ_UNANNOTATED;
+
+  const uint32_t mOutChannels;
+
+  
   
   UniquePtr<cubeb_stream, CubebDestroyPolicy> mCubebStream;
 
@@ -349,8 +358,10 @@ class AudioStream final {
     SHUTDOWN      
   };
 
-  StreamState mState;
+  std::atomic<StreamState> mState;
 
+  
+  
   DataSource& mDataSource;
 
   
@@ -361,7 +372,7 @@ class AudioStream final {
   std::atomic<ProfilerThreadId> mAudioThreadId;
   const bool mSandboxed = false;
 
-  MozPromiseHolder<MediaSink::EndedPromise> mEndedPromise;
+  MozPromiseHolder<MediaSink::EndedPromise> mEndedPromise GUARDED_BY(mMonitor);
   std::atomic<bool> mPlaybackComplete;
   
   std::atomic<float> mPlaybackRate;

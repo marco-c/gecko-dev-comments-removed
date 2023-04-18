@@ -255,6 +255,7 @@ uint32_t AudioSink::PopFrames(AudioDataValue* aBuffer, uint32_t aFrames,
 
 bool AudioSink::Ended() const {
   
+  
   return mProcessedQueueFinished || mErrored;
 }
 
