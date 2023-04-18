@@ -1455,7 +1455,6 @@ public class GeckoAppShell {
 
 
 
-
   @WrapForJNI
-  public static native GeckoResult<Boolean> ensureGpuProcessReady();
+  public static native GeckoResult<Boolean> isGpuProcessEnabled();
 }

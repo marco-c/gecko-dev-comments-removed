@@ -92,6 +92,7 @@ GPUProcessManager::GPUProcessManager()
       mUnstableProcessAttempts(0),
       mTotalProcessAttempts(0),
       mDeviceResetCount(0),
+      mAppInForeground(true),
       mProcess(nullptr),
       mProcessToken(0),
       mProcessStable(true),
@@ -130,6 +131,13 @@ GPUProcessManager::Observer::Observe(nsISupports* aSubject, const char* aTopic,
     mManager->OnXPCOMShutdown();
   } else if (!strcmp(aTopic, "nsPref:changed")) {
     mManager->OnPreferenceChange(aData);
+  } else if (!strcmp(aTopic, "application-foreground")) {
+    mManager->mAppInForeground = true;
+    if (!mManager->mProcess && gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
+      mManager->LaunchGPUProcess();
+    }
+  } else if (!strcmp(aTopic, "application-background")) {
+    mManager->mAppInForeground = false;
   }
   return NS_OK;
 }
@@ -138,6 +146,11 @@ void GPUProcessManager::OnXPCOMShutdown() {
   if (mObserver) {
     nsContentUtils::UnregisterShutdownObserver(mObserver);
     Preferences::RemoveObserver(mObserver, "");
+    nsCOMPtr<nsIObserverService> obsServ = services::GetObserverService();
+    if (obsServ) {
+      obsServ->RemoveObserver(mObserver, "application-foreground");
+      obsServ->RemoveObserver(mObserver, "application-background");
+    }
     mObserver = nullptr;
   }
 
@@ -174,6 +187,11 @@ void GPUProcessManager::LaunchGPUProcess() {
     mObserver = new Observer(this);
     nsContentUtils::RegisterShutdownObserver(mObserver);
     Preferences::AddStrongObserver(mObserver, "");
+    nsCOMPtr<nsIObserverService> obsServ = services::GetObserverService();
+    if (obsServ) {
+      obsServ->AddObserver(mObserver, "application-foreground", false);
+      obsServ->AddObserver(mObserver, "application-background", false);
+    }
   }
 
   
@@ -263,6 +281,13 @@ bool GPUProcessManager::MaybeDisableGPUProcess(const char* aMessage,
 }
 
 bool GPUProcessManager::EnsureGPUReady() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  if (!mProcess && gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
+    LaunchGPUProcess();
+  }
+
   if (mProcess && !mProcess->IsConnected()) {
     if (!mProcess->WaitForLaunch()) {
       
@@ -439,6 +464,8 @@ void GPUProcessManager::OnProcessLaunchComplete(GPUProcessHost* aHost) {
   CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::GPUProcessLaunchCount,
       static_cast<int>(mTotalProcessAttempts));
+
+  ReinitializeRendering();
 }
 
 void GPUProcessManager::OnProcessDeclaredStable() { mProcessStable = true; }
@@ -544,9 +571,9 @@ void GPUProcessManager::DisableWebRender(wr::WebRenderError aError,
                                          const nsCString& aMsg) {
   if (DisableWebRenderConfig(aError, aMsg)) {
     if (mProcess) {
-      RebuildRemoteSessions();
+      DestroyRemoteCompositorSessions();
     } else {
-      RebuildInProcessSessions();
+      DestroyInProcessCompositorSessions();
     }
     NotifyListenersOnCompositeDeviceReset();
   }
@@ -612,7 +639,7 @@ void GPUProcessManager::OnInProcessDeviceReset(bool aTrackThreshold) {
   
   gfxWindowsPlatform::GetPlatform()->HandleDeviceReset();
 #endif
-  RebuildInProcessSessions();
+  DestroyInProcessCompositorSessions();
   NotifyListenersOnCompositeDeviceReset();
 }
 
@@ -624,7 +651,7 @@ void GPUProcessManager::OnRemoteProcessDeviceReset(GPUProcessHost* aHost) {
     return;
   }
 
-  RebuildRemoteSessions();
+  DestroyRemoteCompositorSessions();
   NotifyListenersOnCompositeDeviceReset();
 }
 
@@ -670,76 +697,96 @@ void GPUProcessManager::OnProcessUnexpectedShutdown(GPUProcessHost* aHost) {
 }
 
 void GPUProcessManager::HandleProcessLost() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  DestroyRemoteCompositorSessions();
+
+  
+  
+  
   if (gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
-    LaunchGPUProcess();
+    if (mAppInForeground) {
+      LaunchGPUProcess();
+    }
+  } else {
+    
+    
+    
+    ReinitializeRendering();
   }
+}
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RebuildRemoteSessions();
-
+void GPUProcessManager::ReinitializeRendering() {
   
   
   
@@ -756,7 +803,7 @@ void GPUProcessManager::HandleProcessLost() {
   }
 }
 
-void GPUProcessManager::RebuildRemoteSessions() {
+void GPUProcessManager::DestroyRemoteCompositorSessions() {
   
   
   nsTArray<RefPtr<RemoteCompositorSession>> sessions;
@@ -771,7 +818,7 @@ void GPUProcessManager::RebuildRemoteSessions() {
   }
 }
 
-void GPUProcessManager::RebuildInProcessSessions() {
+void GPUProcessManager::DestroyInProcessCompositorSessions() {
   
   
   nsTArray<RefPtr<InProcessCompositorSession>> sessions;
@@ -1109,24 +1156,30 @@ void GPUProcessManager::InitVideoBridge(
 
 void GPUProcessManager::MapLayerTreeId(LayersId aLayersId,
                                        base::ProcessId aOwningId) {
-  LayerTreeOwnerTracker::Get()->Map(aLayersId, aOwningId);
-
   if (EnsureGPUReady()) {
     mGPUChild->SendAddLayerTreeIdMapping(
         LayerTreeIdMapping(aLayersId, aOwningId));
   }
+
+  
+  
+  
+  LayerTreeOwnerTracker::Get()->Map(aLayersId, aOwningId);
 }
 
 void GPUProcessManager::UnmapLayerTreeId(LayersId aLayersId,
                                          base::ProcessId aOwningId) {
-  LayerTreeOwnerTracker::Get()->Unmap(aLayersId, aOwningId);
-
   if (EnsureGPUReady()) {
     mGPUChild->SendRemoveLayerTreeIdMapping(
         LayerTreeIdMapping(aLayersId, aOwningId));
-    return;
+  } else {
+    CompositorBridgeParent::DeallocateLayerTreeId(aLayersId);
   }
-  CompositorBridgeParent::DeallocateLayerTreeId(aLayersId);
+
+  
+  
+  
+  LayerTreeOwnerTracker::Get()->Unmap(aLayersId, aOwningId);
 }
 
 bool GPUProcessManager::IsLayerTreeIdMapped(LayersId aLayersId,
@@ -1275,7 +1328,9 @@ class GPUMemoryReporter : public MemoryReportingProcess {
 };
 
 RefPtr<MemoryReportingProcess> GPUProcessManager::GetProcessMemoryReporter() {
-  if (!EnsureGPUReady()) {
+  
+  
+  if (!mProcess || !EnsureGPUReady()) {
     return nullptr;
   }
   return new GPUMemoryReporter();

@@ -72,19 +72,27 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
 
   @Override 
   public ISurfaceAllocator getSurfaceAllocator() {
-    final GeckoResult<Boolean> gpuReady = GeckoAppShell.ensureGpuProcessReady();
+    final GeckoResult<Boolean> gpuEnabled = GeckoAppShell.isGpuProcessEnabled();
 
     try {
       final GeckoResult<ISurfaceAllocator> allocator = new GeckoResult<>();
-      if (gpuReady.poll(1000)) {
+      if (gpuEnabled.poll(1000)) {
         
         XPCOMEventTarget.runOnLauncherThread(
             () -> {
               final Selector selector = new Selector(GeckoProcessType.GPU);
               final GpuProcessConnection conn =
                   (GpuProcessConnection) INSTANCE.mConnections.getExistingConnection(selector);
-
-              allocator.complete(conn.getSurfaceAllocator());
+              if (conn != null) {
+                allocator.complete(conn.getSurfaceAllocator());
+              } else {
+                
+                
+                
+                
+                
+                allocator.complete(null);
+              }
             });
       } else {
         
