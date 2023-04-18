@@ -1061,7 +1061,6 @@ impl Default for MozControlCharacterVisibility {
 }
 
 
-
 #[repr(u8)]
 #[derive(
     Clone,
@@ -1258,15 +1257,7 @@ impl ToCss for TextUnderlinePosition {
 
 #[repr(u8)]
 #[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    MallocSizeOf,
-    PartialEq,
-    ToComputedValue,
-    ToResolvedValue,
-    ToShmem,
+    Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem,
 )]
 #[allow(missing_docs)]
 pub enum RubyPosition {
@@ -1282,7 +1273,9 @@ impl Parse for RubyPosition {
         input: &mut Parser<'i, 't>,
     ) -> Result<RubyPosition, ParseError<'i>> {
         
-        let alternate = input.try_parse(|i| i.expect_ident_matching("alternate")).is_ok();
+        let alternate = input
+            .try_parse(|i| i.expect_ident_matching("alternate"))
+            .is_ok();
         if alternate && input.is_exhausted() {
             return Ok(RubyPosition::AlternateOver);
         }
@@ -1293,7 +1286,9 @@ impl Parse for RubyPosition {
         };
         
         let alternate = alternate ||
-             input.try_parse(|i| i.expect_ident_matching("alternate")).is_ok();
+            input
+                .try_parse(|i| i.expect_ident_matching("alternate"))
+                .is_ok();
 
         Ok(match (over, alternate) {
             (true, true) => RubyPosition::AlternateOver,

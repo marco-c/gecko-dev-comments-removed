@@ -211,13 +211,15 @@ fn consume_operation_or_colon(input: &mut Parser) -> Result<Option<Operator>, ()
     
     
     
-    let parsed_equal = input.try_parse(|i| {
-        let t = i.next_including_whitespace().map_err(|_| ())?;
-        if !matches!(t, Token::Delim('=')) {
-            return Err(())
-        }
-        Ok(())
-    }).is_ok();
+    let parsed_equal = input
+        .try_parse(|i| {
+            let t = i.next_including_whitespace().map_err(|_| ())?;
+            if !matches!(t, Token::Delim('=')) {
+                return Err(());
+            }
+            Ok(())
+        })
+        .is_ok();
 
     if !parsed_equal {
         return Ok(Some(operator));
