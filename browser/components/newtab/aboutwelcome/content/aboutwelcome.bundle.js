@@ -101,7 +101,7 @@ __webpack_require__.r(__webpack_exports__);
  var react_dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
  var react_dom__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_1__);
  var _components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
- var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(11);
+ var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(10);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
@@ -191,8 +191,7 @@ class AboutWelcome extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComp
       metricsFlowUri: this.state.metricsFlowUri,
       utm_term: props.UTMTerm,
       transitions: props.transitions,
-      backdrop: props.backdrop,
-      appAndSystemLocaleInfo: props.appAndSystemLocaleInfo
+      backdrop: props.backdrop
     });
   }
 
@@ -277,9 +276,7 @@ __webpack_require__.r(__webpack_exports__);
  var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
- var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9);
- var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(10);
-
+ var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9);
 
 
 
@@ -291,13 +288,10 @@ __webpack_require__.r(__webpack_exports__);
 
 const TRANSITION_OUT_TIME = 1000;
 const MultiStageAboutWelcome = props => {
-  let {
-    screens
-  } = props;
   const [index, setScreenIndex] = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])(0);
   Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(() => {
     
-    screens.forEach((screen, order) => {
+    props.screens.forEach((screen, order) => {
       if (index === order) {
         _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__["AboutWelcomeUtils"].sendImpressionTelemetry(`${props.message_id}_${order}_${screen.id}`);
       }
@@ -313,7 +307,7 @@ const MultiStageAboutWelcome = props => {
     
     const handler = ({
       state
-    }) => setScreenIndex(Math.min(state, screens.length - 1)); 
+    }) => setScreenIndex(Math.min(state, props.screens.length - 1)); 
 
 
     handler(window.history); 
@@ -351,7 +345,7 @@ const MultiStageAboutWelcome = props => {
     setTransition(props.transitions ? "out" : ""); 
 
     setTimeout(() => {
-      if (index < screens.length - 1) {
+      if (index < props.screens.length - 1) {
         setTransition(props.transitions ? "in" : "");
         setScreenIndex(prevState => prevState + 1);
       } else {
@@ -406,24 +400,18 @@ const MultiStageAboutWelcome = props => {
     })();
   }, [useImportable, region]);
   const centeredScreens = props.screens.filter(s => s.content.position !== "corner");
-  const {
-    negotiatedLanguage,
-    langPackInstallPhase,
-    languageFilteredScreens
-  } = Object(_LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__["useLanguageSwitcher"])(props.appAndSystemLocaleInfo, screens, index, setScreenIndex);
-  screens = languageFilteredScreens;
   return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_0___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
     className: `outer-wrapper onboardingContainer proton transition-${transition}`,
     style: props.backdrop ? {
       background: props.backdrop
     } : {}
-  }, screens.map((screen, order) => {
+  }, props.screens.map((screen, order) => {
     const isFirstCenteredScreen = screen.content.position !== "corner" && screen.order === centeredScreens[0].order;
     const isLastCenteredScreen = screen.content.position !== "corner" && screen.order === centeredScreens[centeredScreens.length - 1].order;
     return index === order ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(WelcomeScreen, {
       key: screen.id + order,
       id: screen.id,
-      totalNumberOfScreens: screens.length,
+      totalNumberOfScreens: props.screens.length,
       isFirstCenteredScreen: isFirstCenteredScreen,
       isLastCenteredScreen: isLastCenteredScreen,
       order: order,
@@ -436,9 +424,7 @@ const MultiStageAboutWelcome = props => {
       activeTheme: activeTheme,
       initialTheme: initialTheme,
       setActiveTheme: setActiveTheme,
-      autoAdvance: screen.auto_advance,
-      negotiatedLanguage: negotiatedLanguage,
-      langPackInstallPhase: langPackInstallPhase
+      autoAdvance: screen.auto_advance
     }) : null;
   })));
 };
@@ -482,7 +468,7 @@ class WelcomeScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCom
     } = action;
 
     if (type === "SHOW_FIREFOX_ACCOUNTS") {
-      let params = { ..._asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__["BASE_PARAMS"],
+      let params = { ..._asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_4__["BASE_PARAMS"],
         utm_term: `aboutwelcome-${UTMTerm}-screen`
       };
 
@@ -497,7 +483,7 @@ class WelcomeScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCom
       };
     } else if (type === "OPEN_URL") {
       let url = new URL(data.args);
-      Object(_asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__["addUtmParams"])(url, `aboutwelcome-${UTMTerm}-screen`);
+      Object(_asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_4__["addUtmParams"])(url, `aboutwelcome-${UTMTerm}-screen`);
 
       if (action.addFlowParams && flowParams) {
         url.searchParams.append("device_id", flowParams.deviceId);
@@ -523,7 +509,7 @@ class WelcomeScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCom
     let {
       value
     } = event.currentTarget;
-    let targetContent = props.content[value] || props.content.tiles || props.content.languageSwitcher;
+    let targetContent = props.content[value] || props.content.tiles;
 
     if (!(targetContent && targetContent.action)) {
       return;
@@ -565,11 +551,7 @@ class WelcomeScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCom
       order: this.props.order,
       activeTheme: this.props.activeTheme,
       totalNumberOfScreens: this.props.totalNumberOfScreens - 1,
-      appAndSystemLocaleInfo: this.props.appAndSystemLocaleInfo,
-      negotiatedLanguage: this.props.negotiatedLanguage,
-      langPackInstallPhase: this.props.langPackInstallPhase,
       handleAction: this.handleAction,
-      messageId: this.props.messageId,
       isFirstCenteredScreen: this.props.isFirstCenteredScreen,
       isLastCenteredScreen: this.props.isLastCenteredScreen,
       autoAdvance: this.props.autoAdvance
@@ -790,8 +772,6 @@ __webpack_require__.r(__webpack_exports__);
  var _Colorways__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7);
  var _Themes__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8);
  var _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(3);
- var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(9);
-
 
 
 
@@ -832,10 +812,7 @@ const MultiStageProtonScreen = props => {
     autoAdvance: props.autoAdvance,
     isRtamo: props.isRtamo,
     isTheme: props.isTheme,
-    iconURL: props.iconURL,
-    messageId: props.messageId,
-    negotiatedLanguage: props.negotiatedLanguage,
-    langPackInstallPhase: props.langPackInstallPhase
+    iconURL: props.iconURL
   });
 };
 class ProtonScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComponent {
@@ -892,19 +869,7 @@ class ProtonScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComp
     }) : null);
   }
 
-  renderLanguageSwitcher() {
-    return this.props.content.languageSwitcher ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_LanguageSwitcher__WEBPACK_IMPORTED_MODULE_5__["LanguageSwitcher"], {
-      content: this.props.content,
-      handleAction: this.props.handleAction,
-      negotiatedLanguage: this.props.negotiatedLanguage,
-      langPackInstallPhase: this.props.langPackInstallPhase,
-      messageId: this.props.messageId
-    }) : null;
-  }
-
   render() {
-    var _this$props$appAndSys, _content$primary_butt;
-
     const {
       autoAdvance,
       content,
@@ -975,15 +940,13 @@ class ProtonScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComp
       text: content.subtitle
     }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h2", {
       "data-l10n-args": JSON.stringify({
-        "addon-name": this.props.addonName,
-        ...((_this$props$appAndSys = this.props.appAndSystemLocaleInfo) === null || _this$props$appAndSys === void 0 ? void 0 : _this$props$appAndSys.displayNames)
+        "addon-name": this.props.addonName
       })
-    })) : null), this.renderContentTiles(), this.renderLanguageSwitcher(), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
+    })) : null), this.renderContentTiles(), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
       text: content.primary_button ? content.primary_button.label : null
     }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
       className: "primary",
       value: "primary_button",
-      disabled: ((_content$primary_butt = content.primary_button) === null || _content$primary_butt === void 0 ? void 0 : _content$primary_butt.disabled) === true,
       onClick: this.props.handleAction
     })), content.secondary_button ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_4__["SecondaryCTA"], {
       content: content,
@@ -1253,259 +1216,6 @@ const Themes = props => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, "useLanguageSwitcher", function() { return useLanguageSwitcher; });
- __webpack_require__.d(__webpack_exports__, "LanguageSwitcher", function() { return LanguageSwitcher; });
- var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
- var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
- var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
- var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
-
-
-
-
-
-
-
-
-
-
-
-
-function useLanguageSwitcher(appAndSystemLocaleInfo, screens, screenIndex, setScreenIndex) {
-  const languageMismatchScreenIndex = screens.findIndex(({
-    id
-  }) => id === "AW_LANGUAGE_MISMATCH");
-  const screen = screens[languageMismatchScreenIndex]; 
-  
-
-  const [negotiatedLanguage, setNegotiatedLanguage] = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])(null);
-  Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(function getNegotiatedLanguage() {
-    if (!appAndSystemLocaleInfo) {
-      return;
-    }
-
-    if (appAndSystemLocaleInfo.matchType !== "language-mismatch") {
-      
-      return;
-    }
-
-    (async () => {
-      const langPack = await window.AWNegotiateLangPackForLanguageMismatch(appAndSystemLocaleInfo);
-
-      if (langPack) {
-        
-        
-        const displayNames = new Intl.DisplayNames(appAndSystemLocaleInfo.appLocaleRaw, {
-          type: "language"
-        });
-        setNegotiatedLanguage({
-          displayName: displayNames.of(langPack.target_locale),
-          langPack,
-          requestSystemLocales: [langPack.target_locale, appAndSystemLocaleInfo.appLocaleRaw]
-        });
-      } else {
-        setNegotiatedLanguage({
-          displayName: null,
-          langPack: null,
-          requestSystemLocales: null
-        });
-      }
-    })();
-  }, [appAndSystemLocaleInfo]);
-  
-
-
-
-
-
-
-
-
-
-  const [langPackInstallPhase, setLangPackInstallPhase] = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])("before-installation");
-  Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(function ensureLangPackInstalled() {
-    if (!negotiatedLanguage) {
-      
-      return;
-    }
-
-    setLangPackInstallPhase("installing");
-    window.AWEnsureLangPackInstalled(negotiatedLanguage.langPack).then(() => {
-      setLangPackInstallPhase("installed");
-    }, error => {
-      console.error(error);
-      setLangPackInstallPhase("installation-error");
-    });
-  }, [negotiatedLanguage]);
-  const shouldHideLanguageSwitcher = screen && (appAndSystemLocaleInfo === null || appAndSystemLocaleInfo === void 0 ? void 0 : appAndSystemLocaleInfo.matchType) !== "language-mismatch";
-  const [languageFilteredScreens, setLanguageFilteredScreens] = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])(screens);
-  Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(function filterScreen() {
-    if (shouldHideLanguageSwitcher || (negotiatedLanguage === null || negotiatedLanguage === void 0 ? void 0 : negotiatedLanguage.langPack) === null) {
-      if (screenIndex > languageMismatchScreenIndex) {
-        setScreenIndex(screenIndex - 1);
-      }
-
-      setLanguageFilteredScreens(screens.filter(s => s.id !== "AW_LANGUAGE_MISMATCH"));
-    } else {
-      setLanguageFilteredScreens(screens);
-    }
-  }, [screens, negotiatedLanguage]);
-  return {
-    negotiatedLanguage,
-    langPackInstallPhase,
-    languageFilteredScreens
-  };
-}
-
-
-
-
-
-
-
-function LanguageSwitcher(props) {
-  const {
-    content,
-    handleAction,
-    negotiatedLanguage,
-    langPackInstallPhase,
-    messageId
-  } = props;
-  const [isAwaitingLangpack, setIsAwaitingLangpack] = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])(false); 
-
-  Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(() => {
-    if (isAwaitingLangpack && langPackInstallPhase !== "installing") {
-      window.AWSetRequestedLocales(negotiatedLanguage.requestSystemLocales);
-      requestAnimationFrame(() => {
-        handleAction( 
-        {
-          currentTarget: {
-            value: "download_complete"
-          }
-        });
-      });
-    }
-  }, [isAwaitingLangpack, langPackInstallPhase]);
-  console.log(`!!! render`, {
-    negotiatedLanguage
-  }); 
-
-  const withMessageArgs = obj => {
-    console.log(`!!! withMessageArgs`, {
-      negotiatedLanguage
-    });
-    const displayName = negotiatedLanguage === null || negotiatedLanguage === void 0 ? void 0 : negotiatedLanguage.displayName;
-
-    if (displayName) {
-      return { ...obj,
-        args: { ...obj.args,
-          negotiatedLanguage: displayName
-        }
-      };
-    }
-
-    return obj;
-  };
-
-  let showWaitingScreen = false;
-  let showPreloadingScreen = false;
-  let showReadyScreen = false;
-
-  if (isAwaitingLangpack && langPackInstallPhase !== "installed") {
-    showWaitingScreen = true;
-  } else if (langPackInstallPhase === "before-installation") {
-    showPreloadingScreen = true;
-  } else {
-    showReadyScreen = true;
-  } 
-  
-
-
-  return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_0___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-    style: {
-      display: showPreloadingScreen ? "block" : "none"
-    }
-  }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
-    className: "primary",
-    value: "primary_button",
-    disabled: true,
-    type: "button"
-  }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("img", {
-    className: "language-loader",
-    src: "chrome://browser/skin/tabbrowser/tab-connecting.png",
-    alt: ""
-  }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
-    text: content.languageSwitcher.waiting
-  })), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-    className: "secondary-cta"
-  }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
-    text: content.languageSwitcher.skip
-  }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
-    value: "decline_waiting",
-    type: "button",
-    className: "secondary text-link",
-    onClick: handleAction
-  })))), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-    style: {
-      display: showWaitingScreen ? "block" : "none"
-    }
-  }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
-    className: "primary",
-    value: "primary_button",
-    disabled: true,
-    type: "button"
-  }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("img", {
-    className: "language-loader",
-    src: "chrome://browser/skin/tabbrowser/tab-connecting.png",
-    alt: ""
-  }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
-    text: withMessageArgs(content.languageSwitcher.downloading)
-  })), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-    className: "secondary-cta"
-  }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
-    text: content.languageSwitcher.cancel
-  }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
-    type: "button",
-    className: "secondary text-link",
-    onClick: () => {
-      setIsAwaitingLangpack(false);
-      handleAction({
-        currentTarget: {
-          value: "cancel_waiting"
-        }
-      });
-    }
-  })))), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-    style: {
-      display: showReadyScreen ? "block" : "none"
-    }
-  }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
-    text: withMessageArgs(content.languageSwitcher.switch)
-  }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
-    className: "primary",
-    value: "primary_button",
-    onClick: () => {
-      _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__["AboutWelcomeUtils"].sendActionTelemetry(messageId, "download_langpack");
-      setIsAwaitingLangpack(true);
-    }
-  }))), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-    className: "secondary-cta"
-  }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
-    text: content.languageSwitcher.not_now
-  }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("button", {
-    type: "button",
-    className: "secondary text-link",
-    value: "decline",
-    onClick: handleAction
-  })))));
-}
-
- }),
-
- (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "BASE_PARAMS", function() { return BASE_PARAMS; });
  __webpack_require__.d(__webpack_exports__, "addUtmParams", function() { return addUtmParams; });
 
@@ -1552,7 +1262,7 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6);
- var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(10);
+ var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9);
 
 
 

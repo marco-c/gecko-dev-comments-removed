@@ -2175,8 +2175,6 @@ pref("app.normandy.onsync_skew_sec", 600);
 pref("intl.multilingual.liveReload", false);
 pref("intl.multilingual.liveReloadBidirectional", false);
 
-pref("intl.multilingual.aboutWelcome.languageMismatchEnabled", false);
-
 
 
 
