@@ -224,7 +224,7 @@ impl Glean {
             let _scanning_thread = upload_manager.scan_pending_pings_directories();
         }
 
-        let (start_time, start_time_is_corrected) = local_now_with_offset();
+        let start_time = local_now_with_offset();
         let this = Self {
             upload_enabled: cfg.upload_enabled,
             
@@ -247,13 +247,6 @@ impl Glean {
             
             schedule_metrics_pings: false,
         };
-
-        
-        if start_time_is_corrected {
-            this.additional_metrics
-                .invalid_timezone_offset
-                .add(&this, 1);
-        }
 
         Ok(this)
     }

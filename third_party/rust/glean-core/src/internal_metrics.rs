@@ -20,14 +20,6 @@ pub struct AdditionalMetrics {
 
     
     pub pings_submitted: LabeledMetric<CounterMetric>,
-
-    
-    
-    
-    
-    
-    
-    pub invalid_timezone_offset: CounterMetric,
 }
 
 impl CoreMetrics {
@@ -101,15 +93,6 @@ impl AdditionalMetrics {
                 }),
                 None,
             ),
-
-            invalid_timezone_offset: CounterMetric::new(CommonMetricData {
-                name: "invalid_timezone_offset".into(),
-                category: "glean.time".into(),
-                send_in_pings: vec!["metrics".into()],
-                lifetime: Lifetime::Ping,
-                disabled: false,
-                dynamic_label: None,
-            }),
         }
     }
 }

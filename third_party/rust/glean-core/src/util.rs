@@ -48,8 +48,7 @@ pub fn get_iso_time_string(datetime: DateTime<FixedOffset>, truncate_to: TimeUni
 
 
 
-
-pub(crate) fn local_now_with_offset() -> (DateTime<FixedOffset>, bool) {
+pub(crate) fn local_now_with_offset() -> DateTime<FixedOffset> {
     #[cfg(target_os = "windows")]
     {
         
@@ -84,29 +83,12 @@ pub(crate) fn local_now_with_offset() -> (DateTime<FixedOffset>, bool) {
             );
             let now: DateTime<Utc> = Utc::now();
             let utc_offset = FixedOffset::east(0);
-            return (now.with_timezone(&utc_offset), true);
+            return now.with_timezone(&utc_offset);
         }
     }
 
     let now: DateTime<Local> = Local::now();
-    (now.with_timezone(now.offset()), false)
-}
-
-
-
-
-
-
-pub(crate) fn local_now_with_offset_and_record(glean: &Glean) -> DateTime<FixedOffset> {
-    let (now, is_corrected) = local_now_with_offset();
-    if is_corrected {
-        glean
-            .additional_metrics
-            .invalid_timezone_offset
-            .add(glean, 1);
-    }
-
-    now
+    now.with_timezone(now.offset())
 }
 
 
@@ -297,11 +279,7 @@ mod test {
     #[test]
     fn local_now_gets_the_time() {
         let now = Local::now();
-        let (fixed_now, is_corrected) = local_now_with_offset();
-
-        
-        
-        assert!(!is_corrected, "Timezone offset should be valid.");
+        let fixed_now = local_now_with_offset();
 
         
         
