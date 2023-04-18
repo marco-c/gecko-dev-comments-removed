@@ -42,9 +42,6 @@ this.takeshot = (function() {
       options.rect = rectangle;
       options.resetScrollPosition = true;
 
-      
-      
-      devicePixelRatio = 1;
       options.scale = 1 / zoomFactor;
     } else if (screenshotType != "visible") {
       let rectangle = {
