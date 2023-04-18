@@ -5,13 +5,13 @@
 
 
 const {
-  getDefaultTargetBrowsers,
+  getBrowsersList,
 } = require("devtools/client/inspector/shared/compatibility-user-settings");
 
 add_task(async () => {
   info("Check whether each default browsers data are unique by id and status");
 
-  const defaultBrowsers = await getDefaultTargetBrowsers();
+  const defaultBrowsers = await getBrowsersList();
 
   for (const target of defaultBrowsers) {
     const count = defaultBrowsers.reduce(

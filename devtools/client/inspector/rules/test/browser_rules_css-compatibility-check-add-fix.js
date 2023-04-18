@@ -18,12 +18,12 @@ const TARGET_BROWSERS = [
   {
     
     id: "chrome",
-    version: "84",
+    status: "current",
   },
   {
     
     id: "safari_ios",
-    version: "13",
+    status: "current",
   },
 ];
 
@@ -40,7 +40,6 @@ const TEST_URI = `
 
 const TEST_DATA_INITIAL = [
   {
-    selector: "div",
     rules: [
       {},
       {
@@ -61,7 +60,6 @@ const TEST_DATA_INITIAL = [
 
 const TEST_DATA_FIX_USER_SELECT = [
   {
-    selector: "div",
     rules: [
       {},
       {
@@ -83,7 +81,6 @@ const TEST_DATA_FIX_USER_SELECT = [
 
 const TEST_DATA_FIX_EXPERIMENTAL_SUPPORTED = [
   {
-    selector: "div",
     rules: [
       {},
       {
@@ -111,6 +108,11 @@ add_task(async function() {
   );
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   const { inspector, view } = await openRuleView();
+
+  
+  
+  
+  await selectNode("div", inspector);
 
   await runCSSCompatibilityTests(view, inspector, TEST_DATA_INITIAL);
 
