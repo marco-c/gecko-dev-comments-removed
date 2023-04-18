@@ -5558,8 +5558,8 @@ void nsFlexContainerFrame::MoveFlexItemToFinalPosition(
 
   
   LogicalMargin logicalOffsets(outerWM);
-  if (StylePositionProperty::Relative ==
-      aItem.Frame()->StyleDisplay()->mPosition) {
+  
+  if (aItem.Frame()->StyleDisplay()->IsRelativelyPositionedStyle()) {
     nsMargin* cachedOffsets =
         aItem.Frame()->GetProperty(nsIFrame::ComputedOffsetProperty());
     MOZ_ASSERT(cachedOffsets,

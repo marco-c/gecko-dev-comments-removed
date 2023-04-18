@@ -2226,8 +2226,7 @@ void ReflowInput::InitConstraints(
     
     
     
-    if (mStyleDisplay->IsRelativelyOrStickyPositioned(mFrame) &&
-        StylePositionProperty::Relative == mStyleDisplay->mPosition) {
+    if (mStyleDisplay->IsRelativelyPositioned(mFrame)) {
       const LogicalMargin offsets =
           ComputeRelativeOffsets(cbwm, mFrame, cbSize.ConvertTo(cbwm, wm));
       SetComputedLogicalOffsets(cbwm, offsets);
