@@ -179,12 +179,10 @@ class Instance {
 
   
   
-  [[nodiscard]] void* getIndirectStub(uint32_t funcIndex,
-                                      TlsData* targetTlsData,
-                                      const Tier tier) const;
+  void* getIndirectStub(uint32_t funcIndex, TlsData* targetTlsData,
+                        const Tier tier) const;
   
-  
-  [[nodiscard]] void* ensureAndGetIndirectStub(Tier tier, uint32_t funcIndex);
+  [[nodiscard]] void* createIndirectStub(Tier tier, uint32_t funcIndex);
   [[nodiscard]] bool createManyIndirectStubs(
       const VectorOfIndirectStubTarget& targets, const Tier tier);
   [[nodiscard]] bool ensureIndirectStubs(JSContext* cx,
