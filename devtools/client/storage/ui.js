@@ -65,35 +65,46 @@ const HEADERS_L10N_IDS = {
 
 
 
-
-const NON_L10N_STRINGS = new Map([
-  ["Cache.url", "URL"],
-  ["cookies.host", "Domain"],
-  ["cookies.hostOnly", "HostOnly"],
-  ["cookies.isHttpOnly", "HttpOnly"],
-  ["cookies.isSecure", "Secure"],
-  ["cookies.path", "Path"],
-  ["cookies.sameSite", "SameSite"],
-  ["cookies.uniqueKey", "Unique key"],
-  ["extensionStorage.name", "Key"],
-  ["extensionStorage.value", "Value"],
-  ["indexedDB.autoIncrement", "Auto Increment"],
-  ["indexedDB.db", "Database Name"],
-  ["indexedDB.indexes", "Indexes"],
-  ["indexedDB.keyPath", "Key Path"],
-  ["indexedDB.name", "Key"],
-  ["indexedDB.objectStore", "Object Store Name"],
-  ["indexedDB.objectStores", "Object Stores"],
-  ["indexedDB.origin", "Origin"],
-  ["indexedDB.storage", "Storage"],
-  ["indexedDB.uniqueKey", "Unique key"],
-  ["indexedDB.value", "Value"],
-  ["indexedDB.version", "Version"],
-  ["localStorage.name", "Key"],
-  ["localStorage.value", "Value"],
-  ["sessionStorage.name", "Key"],
-  ["sessionStorage.value", "Value"],
-]);
+const HEADERS_NON_L10N_STRINGS = {
+  Cache: {
+    url: "URL",
+  },
+  cookies: {
+    host: "Domain",
+    hostOnly: "HostOnly",
+    isHttpOnly: "HttpOnly",
+    isSecure: "Secure",
+    path: "Path",
+    sameSite: "SameSite",
+    uniqueKey: "Unique key",
+  },
+  extensionStorage: {
+    name: "Key",
+    value: "Value",
+  },
+  indexedDB: {
+    autoIncrement: "Auto Increment",
+    db: "Database Name",
+    indexes: "Indexes",
+    keyPath: "Key Path",
+    name: "Key",
+    objectStore: "Object Store Name",
+    objectStores: "Object Stores",
+    origin: "Origin",
+    storage: "Storage",
+    uniqueKey: "Unique key",
+    value: "Value",
+    version: "Version",
+  },
+  localStorage: {
+    name: "Key",
+    value: "Value",
+  },
+  sessionStorage: {
+    name: "Key",
+    value: "Value",
+  },
+};
 
 
 
@@ -673,7 +684,7 @@ class StorageUI {
 
   _getColumnName(type, name) {
     
-    const columnName = NON_L10N_STRINGS.get(`${type}.${name}`);
+    const columnName = HEADERS_NON_L10N_STRINGS[type]?.[name];
     if (columnName) {
       return columnName;
     }
@@ -1283,7 +1294,7 @@ class StorageUI {
         
         columns[f.name] = f.name;
         console.error(
-          `No string defined in NON_L10N_STRINGS for '${type}.${f.name}'`
+          `No string defined in HEADERS_NON_L10N_STRINGS for '${type}.${f.name}'`
         );
       }
     });
