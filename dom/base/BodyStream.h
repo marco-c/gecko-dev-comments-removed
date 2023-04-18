@@ -161,8 +161,8 @@ class BodyStream final : public nsIInputStreamCallback,
  private:
   
   void WriteIntoReadRequestBuffer(JSContext* aCx, ReadableStream* aStream,
-                                  JS::Handle<JSObject*> aBuffer, size_t aLength,
-                                  size_t* aByteWritten);
+                                  JS::Handle<JSObject*> aBuffer,
+                                  uint32_t aLength, uint32_t* aByteWritten);
 
   
   
