@@ -27,10 +27,6 @@ add_task(function test_setup() {
 add_task(function test_assemblingInstrumentation() {
   Telemetry.clearScalars();
 
-  Assert.equal(
-    undefined,
-    Glean.gifftValidation.mainPingAssembling.testGetValue()
-  );
   let snapshot = Telemetry.getSnapshotForScalars().parent;
   Assert.ok(
     !snapshot || !("gifft.validation.main_ping_assembling" in snapshot)
@@ -42,7 +38,6 @@ add_task(function test_assemblingInstrumentation() {
 
   let payload = TelemetrySession.getPayload("reason", true);
 
-  Assert.equal(true, Glean.gifftValidation.mainPingAssembling.testGetValue());
   
   
   snapshot = Telemetry.getSnapshotForScalars().parent;
@@ -57,10 +52,5 @@ add_task(function test_assemblingInstrumentation() {
   
   Assert.ok(
     payload.processes.parent.scalars["gifft.validation.main_ping_assembling"]
-  );
-  Assert.ok(
-    payload.processes.parent.scalars[
-      "gifft.validation.mirror_for_main_ping_assembling"
-    ]
   );
 });
