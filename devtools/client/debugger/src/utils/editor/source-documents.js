@@ -122,7 +122,7 @@ function setMode(editor, source, content, symbols) {
   
   if (
     content.type === "text" &&
-    isMinified(source) &&
+    isMinified(source, content) &&
     content.value.length > 1000000
   ) {
     return;

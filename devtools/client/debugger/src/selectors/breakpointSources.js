@@ -3,8 +3,8 @@
 
 
 import { createSelector } from "reselect";
-import { getSelectedSource, getSourceFromId } from "../selectors/sources";
-import { getBreakpointsList } from "../selectors/breakpoints";
+import { getSelectedSource, getSourceFromId } from "./sources";
+import { getBreakpointsList } from "./breakpoints";
 import { getFilename } from "../utils/source";
 import { getSelectedLocation } from "../utils/selected-location";
 import { sortSelectedBreakpoints } from "../utils/breakpoint";

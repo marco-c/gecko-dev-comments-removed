@@ -23,7 +23,7 @@ add_task(async function() {
   
   
   
-  const workerSource2 = dbg.selectors.getSelectedSourceWithContent();
+  const workerSource2 = dbg.selectors.getSelectedSource();
   assertPausedAtSourceAndLine(dbg, workerSource2.id, 1);
   
   
@@ -40,7 +40,7 @@ add_task(async function() {
   await waitForPaused(dbg, "simple-worker.js");
 
   
-  const workerSource3 = dbg.selectors.getSelectedSourceWithContent();
+  const workerSource3 = dbg.selectors.getSelectedSource();
   assertPausedAtSourceAndLine(dbg, workerSource3.id, 10);
   await removeBreakpoint(dbg, workerSource2.id, 10, 2);
 });

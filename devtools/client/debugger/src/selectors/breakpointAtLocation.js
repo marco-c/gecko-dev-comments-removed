@@ -2,11 +2,8 @@
 
 
 
-import {
-  getSelectedSource,
-  getBreakpointPositionsForLine,
-} from "../selectors/sources";
-import { getBreakpointsList } from "../selectors/breakpoints";
+import { getSelectedSource, getBreakpointPositionsForLine } from "./sources";
+import { getBreakpointsList } from "./breakpoints";
 import { isGenerated } from "../utils/source";
 
 function getColumn(column, selectedSource) {

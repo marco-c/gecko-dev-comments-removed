@@ -16,13 +16,11 @@ import {
   getResource,
   getResourceIds,
 } from "../utils/resource";
-import { pending, fulfilled, rejected } from "../utils/async-value";
 import { prefs } from "../utils/prefs";
 
 export function initialSourcesState(state) {
   return {
     
-
 
 
 
@@ -67,14 +65,6 @@ export function initialSourcesState(state) {
 
     breakpointPositions: {},
     breakableLines: {},
-
-    
-
-
-
-
-
-    epoch: 1,
 
     
 
@@ -178,9 +168,6 @@ function update(state = initialSourcesState(), action) {
       prefs.pendingSelectedLocation = location;
       return { ...state, pendingSelectedLocation: location };
 
-    case "LOAD_SOURCE_TEXT":
-      return updateLoadedState(state, action);
-
     case "BLACKBOX":
       if (action.status === "done") {
         const { blackboxSources } = action.value;
@@ -218,11 +205,9 @@ function update(state = initialSourcesState(), action) {
         },
       };
     }
+
     case "NAVIGATE":
-      return {
-        ...initialSourcesState(state),
-        epoch: state.epoch + 1,
-      };
+      return initialSourcesState(state);
   }
 
   return state;
@@ -242,13 +227,7 @@ function addSources(state, sources) {
     plainUrls: { ...state.plainUrls },
   };
 
-  state.sources = insertResources(
-    state.sources,
-    sources.map(source => ({
-      ...source,
-      content: null,
-    }))
-  );
+  state.sources = insertResources(state.sources, sources);
 
   for (const source of sources) {
     
@@ -386,47 +365,6 @@ function updateRootRelativeValues(
   state.sources = updateResources(state.sources, relativeURLUpdates);
 
   return state;
-}
-
-
-
-
-function updateLoadedState(state, action) {
-  const { sourceId } = action;
-
-  
-  
-  if (action.epoch !== state.epoch || !hasResource(state.sources, sourceId)) {
-    return state;
-  }
-
-  let content;
-  if (action.status === "start") {
-    content = pending();
-  } else if (action.status === "error") {
-    content = rejected(action.error);
-  } else if (typeof action.value.text === "string") {
-    content = fulfilled({
-      type: "text",
-      value: action.value.text,
-      contentType: action.value.contentType,
-    });
-  } else {
-    content = fulfilled({
-      type: "wasm",
-      value: action.value.text,
-    });
-  }
-
-  return {
-    ...state,
-    sources: updateResources(state.sources, [
-      {
-        id: sourceId,
-        content,
-      },
-    ]),
-  };
 }
 
 
