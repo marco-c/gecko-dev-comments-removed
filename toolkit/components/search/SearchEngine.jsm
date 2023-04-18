@@ -15,7 +15,6 @@ const { AppConstants } = ChromeUtils.import(
 const lazy = {};
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
-  ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
   Region: "resource://gre/modules/Region.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
@@ -905,78 +904,42 @@ class SearchEngine {
 
 
 
-  _initFromManifest(
-    extensionID,
-    extensionBaseURI,
-    manifest,
-    locale,
-    configuration = {}
-  ) {
-    let { IconDetails } = lazy.ExtensionParent;
 
-    let searchProvider = manifest.chrome_settings_overrides.search_provider;
 
-    let iconURL = manifest.iconURL || searchProvider.favicon_url;
 
-    
-    let icons = manifest.icons;
-    let iconList = [];
-    if (icons) {
-      iconList = Object.entries(icons).map(icon => {
-        return {
-          width: icon[0],
-          height: icon[0],
-          url: extensionBaseURI.resolve(icon[1]),
-        };
-      });
-    }
 
-    if (!iconURL) {
-      iconURL =
-        icons &&
-        extensionBaseURI.resolve(IconDetails.getPreferredIcon(icons).icon);
-    }
 
-    
-    
-    if (this._isAppProvided) {
-      if (configuration.telemetryId) {
-        this._telemetryId = configuration.telemetryId;
-      } else {
-        let telemetryId = extensionID.split("@")[0];
-        if (locale != lazy.SearchUtils.DEFAULT_TAG) {
-          telemetryId += "-" + locale;
-        }
-        this._telemetryId = telemetryId;
-      }
-    }
 
-    this._extensionID = extensionID;
-    this._locale = locale;
+
+
+
+
+
+
+
+
+
+
+
+  _initWithDetails(details, configuration = {}) {
     this._orderHint = configuration.orderHint;
-    this._name = searchProvider.name.trim();
+    this._name = details.name.trim();
     this._regionParams = configuration.regionParams;
     this._sendAttributionRequest =
       configuration.sendAttributionRequest ?? false;
 
     this._definedAliases = [];
-    if (Array.isArray(searchProvider.keyword)) {
-      this._definedAliases = searchProvider.keyword.map(k => k.trim());
-    } else if (searchProvider.keyword?.trim()) {
-      this._definedAliases = [searchProvider.keyword?.trim()];
+    if (Array.isArray(details.keyword)) {
+      this._definedAliases = details.keyword.map(k => k.trim());
+    } else if (details.keyword?.trim()) {
+      this._definedAliases = [details.keyword?.trim()];
     }
 
-    this._description = manifest.description;
-    if (iconURL) {
-      this._setIcon(iconURL, true);
+    this._description = details.description;
+    if (details.iconURL) {
+      this._setIcon(details.iconURL, true);
     }
-    
-    if (iconList) {
-      for (let icon of iconList) {
-        this._addIconToMap(icon.size, icon.size, icon.url);
-      }
-    }
-    this._setUrls(searchProvider, configuration);
+    this._setUrls(details, configuration);
   }
 
   
@@ -990,49 +953,57 @@ class SearchEngine {
 
 
 
-  _setUrls(searchProvider, configuration = {}) {
-    
-    
-    
-    if (searchProvider.params) {
-      searchProvider.params = searchProvider.params.filter(param => {
-        return !(param.value && param.value.startsWith("__MSG_"));
-      });
-    }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _setUrls(details, configuration = {}) {
     let postParams =
       configuration.params?.searchUrlPostParams ||
-      searchProvider.search_url_post_params ||
+      details.search_url_post_params ||
       "";
     let url = this._getEngineURLFromMetaData(lazy.SearchUtils.URL_TYPE.SEARCH, {
       method: (postParams && "POST") || "GET",
       
       
-      template: decodeURI(searchProvider.search_url),
+      template: decodeURI(details.search_url),
       getParams:
         configuration.params?.searchUrlGetParams ||
-        searchProvider.search_url_get_params ||
+        details.search_url_get_params ||
         "",
       postParams,
-      mozParams: configuration.extraParams || searchProvider.params || [],
+      mozParams: configuration.extraParams || details.params || [],
     });
 
     this._urls.push(url);
 
-    if (searchProvider.suggest_url) {
+    if (details.suggest_url) {
       let suggestPostParams =
         configuration.params?.suggestUrlPostParams ||
-        searchProvider.suggest_url_post_params ||
+        details.suggest_url_post_params ||
         "";
       url = this._getEngineURLFromMetaData(
         lazy.SearchUtils.URL_TYPE.SUGGEST_JSON,
         {
           method: (suggestPostParams && "POST") || "GET",
           
-          template: searchProvider.suggest_url,
+          template: details.suggest_url,
           getParams:
             configuration.params?.suggestUrlGetParams ||
-            searchProvider.suggest_url_get_params ||
+            details.suggest_url_get_params ||
             "",
           postParams: suggestPostParams,
         }
@@ -1041,24 +1012,24 @@ class SearchEngine {
       this._urls.push(url);
     }
 
-    if (searchProvider.encoding) {
-      this._queryCharset = searchProvider.encoding;
+    if (details.encoding) {
+      this._queryCharset = details.encoding;
     }
-    this.__searchForm = searchProvider.search_form;
+    this.__searchForm = details.search_form;
   }
 
-  checkSearchUrlMatchesManifest(searchProvider) {
+  checkSearchUrlMatchesManifest(details) {
     let existingUrl = this._getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH);
 
     let newUrl = this._getEngineURLFromMetaData(
       lazy.SearchUtils.URL_TYPE.SEARCH,
       {
-        method: (searchProvider.search_url_post_params && "POST") || "GET",
+        method: (details.search_url_post_params && "POST") || "GET",
         
         
-        template: decodeURI(searchProvider.search_url),
-        getParams: searchProvider.search_url_get_params || "",
-        postParams: searchProvider.search_url_post_params || "",
+        template: decodeURI(details.search_url),
+        getParams: details.search_url_get_params || "",
+        postParams: details.search_url_post_params || "",
       }
     );
 
@@ -1069,41 +1040,6 @@ class SearchEngine {
       existingSubmission.uri.equals(newSubmission.uri) &&
       existingSubmission.postData == newSubmission.postData
     );
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _updateFromManifest(
-    extensionID,
-    extensionBaseURI,
-    manifest,
-    locale,
-    configuration = {}
-  ) {
-    this._urls = [];
-    this._iconMapObj = null;
-    this._initFromManifest(
-      extensionID,
-      extensionBaseURI,
-      manifest,
-      locale,
-      configuration
-    );
-    lazy.SearchUtils.notifyAction(this, lazy.SearchUtils.MODIFIED_TYPE.CHANGED);
   }
 
   

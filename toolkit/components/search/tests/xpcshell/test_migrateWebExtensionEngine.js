@@ -105,12 +105,8 @@ add_task(async function test_migrateLegacySkipsPolicyAndUser() {
   
   await Assert.rejects(
     Services.search.addPolicyEngine({
-      chrome_settings_overrides: {
-        search_provider: {
-          name: "simple",
-          search_url: "https://example.com",
-        },
-      },
+      name: "simple",
+      search_url: "https://example.com",
     }),
     /NS_ERROR_FILE_ALREADY_EXISTS/,
     "Should have rejected adding the engine"
@@ -119,12 +115,8 @@ add_task(async function test_migrateLegacySkipsPolicyAndUser() {
   
   
   await Services.search.addPolicyEngine({
-    chrome_settings_overrides: {
-      search_provider: {
-        name: "simple search",
-        search_url: "https://example.com",
-      },
-    },
+    name: "simple search",
+    search_url: "https://example.com",
   });
 
   engine = Services.search.getEngineByName("simple");

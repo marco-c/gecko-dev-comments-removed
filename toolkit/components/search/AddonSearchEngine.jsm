@@ -11,6 +11,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 const lazy = {};
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
+  ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
   SearchEngine: "resource://gre/modules/SearchEngine.jsm",
   SearchUtils: "resource://gre/modules/SearchUtils.jsm",
 });
@@ -44,7 +45,7 @@ class AddonSearchEngine extends lazy.SearchEngine {
         );
       }
 
-      this._initFromManifest(
+      this.#initFromManifest(
         details.extensionID,
         details.extensionBaseURI,
         details.manifest,
@@ -54,6 +55,122 @@ class AddonSearchEngine extends lazy.SearchEngine {
     } else {
       this._initWithJSON(json);
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  updateFromManifest(
+    extensionID,
+    extensionBaseURI,
+    manifest,
+    locale,
+    configuration = {}
+  ) {
+    this._urls = [];
+    this._iconMapObj = null;
+    this.#initFromManifest(
+      extensionID,
+      extensionBaseURI,
+      manifest,
+      locale,
+      configuration
+    );
+    lazy.SearchUtils.notifyAction(this, lazy.SearchUtils.MODIFIED_TYPE.CHANGED);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  #initFromManifest(
+    extensionID,
+    extensionBaseURI,
+    manifest,
+    locale,
+    configuration = {}
+  ) {
+    let searchProvider = manifest.chrome_settings_overrides.search_provider;
+
+    this._extensionID = extensionID;
+    this._locale = locale;
+
+    
+    
+    if (this._isAppProvided) {
+      if (configuration.telemetryId) {
+        this._telemetryId = configuration.telemetryId;
+      } else {
+        let telemetryId = extensionID.split("@")[0];
+        if (locale != lazy.SearchUtils.DEFAULT_TAG) {
+          telemetryId += "-" + locale;
+        }
+        this._telemetryId = telemetryId;
+      }
+    }
+
+    
+    let iconURL = searchProvider.favicon_url;
+
+    if (!iconURL) {
+      iconURL =
+        manifest.icons &&
+        extensionBaseURI.resolve(
+          lazy.ExtensionParent.IconDetails.getPreferredIcon(manifest.icons).icon
+        );
+    }
+
+    
+    if (manifest.icons) {
+      let iconList = Object.entries(manifest.icons).map(icon => {
+        return {
+          width: icon[0],
+          height: icon[0],
+          url: extensionBaseURI.resolve(icon[1]),
+        };
+      });
+      for (let icon of iconList) {
+        this._addIconToMap(icon.size, icon.size, icon.url);
+      }
+    }
+
+    
+    
+    
+    if (searchProvider.params) {
+      searchProvider.params = searchProvider.params.filter(param => {
+        return !(param.value && param.value.startsWith("__MSG_"));
+      });
+    }
+
+    this._initWithDetails(
+      { ...searchProvider, iconURL, description: manifest.description },
+      configuration
+    );
   }
 }
 
