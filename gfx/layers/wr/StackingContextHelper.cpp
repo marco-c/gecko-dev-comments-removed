@@ -75,7 +75,7 @@ Size ChooseScale(nsIFrame* aContainerFrame, nsDisplayItem* aContainerItem,
     } else {
       
       
-      scale = aTransform2d.ScaleFactors();
+      scale = aTransform2d.ScaleFactors().ToSize();
       
       
       

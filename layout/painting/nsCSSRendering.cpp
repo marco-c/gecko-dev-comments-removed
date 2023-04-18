@@ -4818,7 +4818,7 @@ bool nsContextBoxBlur::InsetBoxBlur(
   
   
   
-  gfx::Size scale = aDestinationCtx->CurrentMatrix().ScaleFactors();
+  auto scale = aDestinationCtx->CurrentMatrix().ScaleFactors();
   Matrix transform = aDestinationCtx->CurrentMatrix();
 
   
@@ -4842,9 +4842,9 @@ bool nsContextBoxBlur::InsetBoxBlur(
 
   for (size_t i = 0; i < 4; i++) {
     aInnerClipRectRadii[i].width =
-        std::floor(scale.width * aInnerClipRectRadii[i].width);
+        std::floor(scale.xScale * aInnerClipRectRadii[i].width);
     aInnerClipRectRadii[i].height =
-        std::floor(scale.height * aInnerClipRectRadii[i].height);
+        std::floor(scale.yScale * aInnerClipRectRadii[i].height);
   }
 
   mAlphaBoxBlur.BlurInsetBox(aDestinationCtx, transformedDestRect,

@@ -4904,7 +4904,7 @@ void CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
   
   auto scale = mTarget->GetTransform().ScaleFactors();
   bool isDownScale =
-      aDw * Abs(scale.width) < aSw && aDh * Abs(scale.height) < aSh;
+      aDw * Abs(scale.xScale) < aSw && aDh * Abs(scale.yScale) < aSh;
 
   SamplingFilter samplingFilter;
   AntialiasMode antialiasMode;
@@ -5009,10 +5009,10 @@ void CanvasRenderingContext2D::DrawDirectlyToCanvas(
   
   Matrix matrix = tempTarget->GetTransform();
   gfxMatrix contextMatrix = ThebesMatrix(matrix);
-  gfxSize contextScale(contextMatrix.ScaleFactors());
+  MatrixScalesDouble contextScale = contextMatrix.ScaleFactors();
 
   
-  aDest.Scale(contextScale.width, contextScale.height);
+  aDest.Scale((float)contextScale.xScale, (float)contextScale.yScale);
 
   
   gfxSize scale(aDest.width / aSrc.width, aDest.height / aSrc.height);
@@ -5031,7 +5031,7 @@ void CanvasRenderingContext2D::DrawDirectlyToCanvas(
   }
   context->SetMatrixDouble(
       contextMatrix
-          .PreScale(1.0 / contextScale.width, 1.0 / contextScale.height)
+          .PreScale(1.0 / contextScale.xScale, 1.0 / contextScale.yScale)
           .PreTranslate(aDest.x - aSrc.x, aDest.y - aSrc.y));
 
   context->SetOp(tempTarget.UsedOperation());
