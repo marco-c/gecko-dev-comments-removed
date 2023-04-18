@@ -48,8 +48,6 @@ const { ExtensionUtils } = ChromeUtils.import(
   "resource://gre/modules/ExtensionUtils.jsm"
 );
 
-XPCOMUtils.defineLazyGlobalGetters(lazy, ["crypto"]);
-
 const {
   DefaultMap,
   DefaultWeakMap,
@@ -373,7 +371,7 @@ class Script {
     }
 
     
-    const buffer = await lazy.crypto.subtle.digest(
+    const buffer = await crypto.subtle.digest(
       "SHA-1",
       new TextEncoder().encode(cssCode)
     );

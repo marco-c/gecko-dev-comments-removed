@@ -17,8 +17,6 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
   setTimeout: "resource://gre/modules/Timer.jsm",
 });
 
-XPCOMUtils.defineLazyGlobalGetters(lazy, ["fetch"]);
-
 
 const POSITION_UNAVAILABLE = 2;
 
@@ -492,7 +490,7 @@ NetworkGeolocationProvider.prototype = {
       Services.prefs.getIntPref("geo.provider.network.timeout")
     );
 
-    let req = await lazy.fetch(url, fetchOpts);
+    let req = await fetch(url, fetchOpts);
     lazy.clearTimeout(timeoutId);
     let result = req.json();
     return result;
