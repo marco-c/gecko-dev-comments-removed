@@ -58,7 +58,6 @@
 #include "nsComponentManagerUtils.h"
 #include "nsError.h"
 #include "nsNetCID.h"
-#include "nsComponentManagerUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "ScopedNSSTypes.h"
 #include "runnable_utils.h"

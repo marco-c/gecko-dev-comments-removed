@@ -43,7 +43,6 @@
 
 #include "nsISocketTransportService.h"
 #include "nsDNSService2.h"
-#include "nsNetUtil.h"  
 
 #include <string>
 #include <vector>

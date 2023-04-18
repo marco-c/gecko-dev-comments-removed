@@ -43,10 +43,6 @@
 
 #include "ActorsChild.h"
 
-#ifdef DEBUG
-#  include "nsContentUtils.h"  
-#endif
-
 namespace mozilla::dom {
 
 using namespace mozilla::dom::indexedDB;
