@@ -28,6 +28,33 @@ dictionary FileSourceOptions {
 
 
 
+
+
+
+
+
+
+
+
+
+
+dictionary ResourceId {
+  required UTF8String path;
+  boolean _optional = false;
+};
+
+typedef (UTF8String or ResourceId) L10nResourceId;
+
+
+
+
+
+
+
+
+
+
+
 [ChromeOnly,
  Exposed=Window]
 interface L10nFileSource {
@@ -145,8 +172,8 @@ interface L10nRegistry {
   void clearSources();
 
   [Throws, NewObject]
-  FluentBundleIterator generateBundlesSync(sequence<UTF8String> aLocales, sequence<UTF8String> aResourceIds);
+  FluentBundleIterator generateBundlesSync(sequence<UTF8String> aLocales, sequence<L10nResourceId> aResourceIds);
 
   [Throws, NewObject]
-  FluentBundleAsyncIterator generateBundles(sequence<UTF8String> aLocales, sequence<UTF8String> aResourceIds);
+  FluentBundleAsyncIterator generateBundles(sequence<UTF8String> aLocales, sequence<L10nResourceId> aResourceIds);
 };

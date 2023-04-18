@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use fluent_fallback::types::ResourceId;
 use std::io;
 
 
@@ -13,7 +14,7 @@ pub trait FileFetcher {
     
     
     
-    fn fetch_sync(&self, path: &str) -> io::Result<String>;
+    fn fetch_sync(&self, resource_id: &ResourceId) -> io::Result<String>;
 
     
     
@@ -25,5 +26,5 @@ pub trait FileFetcher {
     
     
     
-    async fn fetch(&self, path: &str) -> io::Result<String>;
+    async fn fetch(&self, path: &ResourceId) -> io::Result<String>;
 }
