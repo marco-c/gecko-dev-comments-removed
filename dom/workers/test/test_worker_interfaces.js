@@ -227,7 +227,7 @@ var interfaceNamesInGlobalScope = [
   
   "NavigationPreloadManager",
   
-  { name: "NetworkInformation", insecureContext: true, android: true },
+  { name: "NetworkInformation", insecureContext: true, disabled: true },
   
   { name: "Notification", insecureContext: true },
   
