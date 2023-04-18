@@ -79,22 +79,6 @@ enum class ResumeNextKind { Enqueue, Reject, Resolve };
     JSContext* cx, Handle<AsyncGeneratorObject*> generator, ResumeNextKind kind,
     HandleValue valueOrException = UndefinedHandleValue, bool done = false);
 
-
-[[nodiscard]] static bool AsyncGeneratorResolve(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj, HandleValue value,
-    bool done) {
-  return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Resolve,
-                                  value, done);
-}
-
-
-[[nodiscard]] static bool AsyncGeneratorReject(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
-    HandleValue exception) {
-  return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Reject,
-                                  exception);
-}
-
 [[nodiscard]] bool js::AsyncGeneratorPromiseReactionJob(
     JSContext* cx, PromiseHandler handler,
     Handle<AsyncGeneratorObject*> asyncGenObj, HandleValue argument) {
@@ -130,7 +114,8 @@ enum class ResumeNextKind { Enqueue, Reject, Resolve };
       asyncGenObj->setCompleted();
 
       
-      return AsyncGeneratorResolve(cx, asyncGenObj, argument, true);
+      return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Resolve,
+                                      argument, true);
     }
 
     
@@ -144,7 +129,8 @@ enum class ResumeNextKind { Enqueue, Reject, Resolve };
       asyncGenObj->setCompleted();
 
       
-      return AsyncGeneratorReject(cx, asyncGenObj, argument);
+      return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Reject,
+                                      argument);
     }
 
     
@@ -460,7 +446,8 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   
 
   
-  return AsyncGeneratorResolve(cx, asyncGenObj, value, true);
+  return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Resolve,
+                                  value, true);
 }
 
 
@@ -482,7 +469,8 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   }
 
   
-  return AsyncGeneratorReject(cx, asyncGenObj, value);
+  return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Reject,
+                                  value);
 }
 
 
@@ -497,7 +485,8 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   asyncGenObj->setSuspendedYield();
 
   
-  return AsyncGeneratorResolve(cx, asyncGenObj, value, false);
+  return AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Resolve,
+                                  value, false);
 }
 
 
