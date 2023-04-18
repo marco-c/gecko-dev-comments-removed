@@ -14,7 +14,8 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/JSONFile.jsm"
 );
 
-const EXPORTED_SYMBOLS = ["pushBroadcastService"];
+
+const EXPORTED_SYMBOLS = ["pushBroadcastService", "BroadcastService"];
 
 
 const DUMMY_VERSION_STRING = "____NOP____";
