@@ -190,6 +190,14 @@ nsStaticAtom* nsLanguageAtomService::GetUncachedLanguageGroup(
 
     Locale loc;
     auto result = LocaleParser::TryParse(langStr, loc);
+    if (!result.isOk()) {
+      
+      
+      if (langStr.Contains('_')) {
+        langStr.ReplaceChar('_', '-');
+        result = LocaleParser::TryParse(langStr, loc);
+      }
+    }
     if (result.isOk() && loc.Canonicalize().isOk()) {
       
       if (loc.Script().Missing()) {
