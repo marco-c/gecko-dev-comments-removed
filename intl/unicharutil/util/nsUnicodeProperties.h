@@ -9,6 +9,7 @@
 
 #include "mozilla/intl/UnicodeProperties.h"
 
+#include "mozilla/Span.h"
 #include "nsBidiUtils.h"
 #include "nsUGenCategory.h"
 #include "harfbuzz/hb.h"
@@ -159,7 +160,7 @@ inline bool IsClusterExtender(uint32_t aCh) {
 }
 
 
-uint32_t CountGraphemeClusters(const char16_t* aText, uint32_t aLength);
+uint32_t CountGraphemeClusters(Span<const char16_t> aText);
 
 
 
