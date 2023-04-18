@@ -419,8 +419,8 @@ add_task(async function testExceptionListRemoteSettings() {
   Services.prefs.setStringPref(EXCEPTION_LIST_PREF_NAME, "");
 
   
-  let db = await RemoteSettings(COLLECTION_NAME).db;
-  await db.importChanges({}, 42, []);
+  let db = RemoteSettings(COLLECTION_NAME).db;
+  await db.importChanges({}, Date.now(), []);
 
   
   

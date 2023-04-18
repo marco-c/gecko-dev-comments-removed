@@ -171,8 +171,8 @@ add_task(async function testRemoteSettings() {
   });
 
   
-  let db = await RemoteSettings(COLLECTION_NAME).db;
-  await db.importChanges({}, 42, []);
+  let db = RemoteSettings(COLLECTION_NAME).db;
+  await db.importChanges({}, Date.now(), []);
 
   
   let updateEvent = new UpdateEvent();

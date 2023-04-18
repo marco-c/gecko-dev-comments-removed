@@ -58,8 +58,8 @@ add_task(async function test_list_changes() {
   ];
 
   
-  let db = await RemoteSettings(COLLECTION_NAME).db;
-  await db.importChanges({}, 42, records);
+  let db = RemoteSettings(COLLECTION_NAME).db;
+  await db.importChanges({}, Date.now(), records);
   let promise = waitForEvent(updateEvent, "update");
 
   exceptionListService.registerAndRunExceptionListObserver(
@@ -187,8 +187,8 @@ add_task(async function test_list_init_data() {
   ];
 
   
-  let db = await RemoteSettings(COLLECTION_NAME).db;
-  await db.importChanges({}, 42, records);
+  let db = RemoteSettings(COLLECTION_NAME).db;
+  await db.importChanges({}, Date.now(), records);
 
   
   

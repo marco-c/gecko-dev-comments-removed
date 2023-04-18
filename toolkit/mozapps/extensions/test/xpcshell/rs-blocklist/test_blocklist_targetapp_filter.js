@@ -21,7 +21,7 @@ async function createRecords(records) {
     ...record,
   }));
   
-  return client.db.importChanges({}, 9999999999999, withId);
+  return client.db.importChanges({}, Date.now(), withId);
 }
 
 function run_test() {
