@@ -221,13 +221,18 @@ TEST(TestAudioInputProcessing, ProcessDataWithDifferentPrincipals)
       {200, PRINCIPAL_HANDLE_NONE},
       {300, principal2},
       {400, principal1},
-      {200, PRINCIPAL_HANDLE_NONE},
+      {440, PRINCIPAL_HANDLE_NONE},
+      
       {480, principal1},
       {480, principal2},
       {480, PRINCIPAL_HANDLE_NONE},
+      
       {500, principal2},
-      {400, principal1},
-      {300, principal1}};
+      {490, principal1},
+      {600, principal1},
+      {330, principal1}
+      
+  };
 
   
   AudioSegment input;
@@ -268,18 +273,18 @@ TEST(TestAudioInputProcessing, ProcessDataWithDifferentPrincipals)
       
 
       AudioSegment data;
-      aip->Process(graph, 0, 3840, &input, &data);
-      EXPECT_EQ(input.GetDuration(), 3840);
-      EXPECT_EQ(data.GetDuration(), 3840);
+      aip->Process(graph, 0, 4800, &input, &data);
+      EXPECT_EQ(input.GetDuration(), 4800);
+      EXPECT_EQ(data.GetDuration(), 4800);
 
       AudioSegment dummy;
       dummy.AppendNullData(480);
       aip->Process(graph, 0, 480, &dummy, &data);
       EXPECT_EQ(dummy.GetDuration(), 480);
-      EXPECT_EQ(data.GetDuration(), 480 + 3840);
+      EXPECT_EQ(data.GetDuration(), 480 + 4800);
 
       
-      output.AppendSlice(data, 480, 480 + 3840);
+      output.AppendSlice(data, 480, 480 + 4800);
     }
 
     verifyPrincipals(output);
@@ -289,9 +294,9 @@ TEST(TestAudioInputProcessing, ProcessDataWithDifferentPrincipals)
   aip->SetPassThrough(graph, true);
   {
     AudioSegment output;
-    aip->Process(graph, 0, 3840, &input, &output);
-    EXPECT_EQ(input.GetDuration(), 3840);
-    EXPECT_EQ(output.GetDuration(), 3840);
+    aip->Process(graph, 0, 4800, &input, &output);
+    EXPECT_EQ(input.GetDuration(), 4800);
+    EXPECT_EQ(output.GetDuration(), 4800);
 
     verifyPrincipals(output);
   }
