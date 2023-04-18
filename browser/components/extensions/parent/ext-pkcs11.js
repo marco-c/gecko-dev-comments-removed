@@ -39,19 +39,31 @@ this.pkcs11 = class extends ExtensionAPI {
         context
       );
       if (hostInfo) {
+        
+        
+        
+        
+        let absolutePath = PathUtils.isAbsolute(hostInfo.manifest.path)
+          ? hostInfo.manifest.path
+          : PathUtils.joinRelative(
+              PathUtils.parent(hostInfo.path),
+              hostInfo.manifest.path
+            );
+
         if (AppConstants.platform === "win") {
           
           
-          if (!PathUtils.isAbsolute(hostInfo.manifest.path)) {
-            hostInfo.manifest.path = PathUtils.normalize(
-              PathUtils.joinRelative(
-                PathUtils.parent(hostInfo.path),
-                hostInfo.manifest.path
-              )
-            );
-          }
+          
+          absolutePath = PathUtils.normalize(absolutePath);
+          hostInfo.manifest.path = absolutePath;
         }
-        let manifestLib = PathUtils.filename(hostInfo.manifest.path);
+
+        
+        
+        
+        
+        let manifestLib = PathUtils.filename(absolutePath);
+
         if (AppConstants.platform !== "linux") {
           manifestLib = manifestLib.toLowerCase(manifestLib);
         }
