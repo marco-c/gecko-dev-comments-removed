@@ -163,7 +163,7 @@ bool IMEHandler::ProcessMessage(nsWindow* aWindow, UINT aMessage,
   
   
   if (!sHasNativeCaretBeenRequested && aMessage == WM_GETOBJECT &&
-      aLParam == OBJID_CARET) {
+      static_cast<DWORD>(aLParam) == OBJID_CARET) {
     
     
     sHasNativeCaretBeenRequested = true;

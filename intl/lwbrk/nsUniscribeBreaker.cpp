@@ -118,7 +118,7 @@ void NS_GetComplexLineBreaks(const char16_t* aText, uint32_t aLength,
   }
 
   bool mismatch = false;
-  for (uint32_t i = 0; i < aLength; ++i) {
+  for (int i = 0; i < aLength; ++i) {
     if (aBreakBefore[i] != brokeredBreaks[i]) {
       mismatch = true;
       break;
@@ -129,13 +129,13 @@ void NS_GetComplexLineBreaks(const char16_t* aText, uint32_t aLength,
     
     
     printf_stderr("uniscribe: ");
-    for (uint32_t i = 0; i < aLength; ++i) {
+    for (int i = 0; i < aLength; ++i) {
       if (aBreakBefore[i]) printf_stderr("#");
       printf_stderr("%s", NS_ConvertUTF16toUTF8(aText + i, 1).get());
     }
     printf_stderr("\n");
     printf_stderr("brokered : ");
-    for (uint32_t i = 0; i < aLength; ++i) {
+    for (int i = 0; i < aLength; ++i) {
       if (brokeredBreaks[i]) printf_stderr("#");
       printf_stderr("%s", NS_ConvertUTF16toUTF8(aText + i, 1).get());
     }

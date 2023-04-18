@@ -36,7 +36,7 @@ IsFlashTempFile(std::wstring aFilename, std::wstring* aFolder=nullptr)
 {
   
   
-  size_t slashIdx = aFilename.find_last_of(L'\\');
+  int slashIdx = aFilename.find_last_of(L'\\');
   if (slashIdx != std::wstring::npos) {
     if (aFolder) {
       *aFolder = aFilename.substr(0, slashIdx + 1);
