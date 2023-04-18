@@ -2965,6 +2965,7 @@ impl TileCacheInstance {
         composite_state: &mut CompositeState,
         gpu_cache: &mut GpuCache,
         is_root_tile_cache: bool,
+        surfaces: &mut [SurfaceInfo],
     ) {
         
         profile_scope!("update_prim_dependencies");
@@ -2986,12 +2987,10 @@ impl TileCacheInstance {
             
             
             let mut current_pic_clip_rect = prim_clip_chain.pic_clip_rect;
-            let mut current_spatial_node_index = frame_context
-                .surfaces[prim_surface_index.0]
-                .surface_spatial_node_index;
+            let mut current_spatial_node_index = surfaces[prim_surface_index.0].surface_spatial_node_index;
 
             for surface_index in surface_stack.iter().rev() {
-                let surface = &frame_context.surfaces[surface_index.0];
+                let surface = &surfaces[surface_index.0];
 
                 let map_local_to_surface = SpaceMapper::new_with_target(
                     surface.surface_spatial_node_index,
@@ -3329,6 +3328,38 @@ impl TileCacheInstance {
         let sub_slice = &mut self.sub_slices[sub_slice_index];
 
         if let Some(mut backdrop_candidate) = backdrop_candidate {
+
+            
+            
+            
+            
+            match backdrop_candidate.kind {
+                Some(BackdropKind::Color { .. }) | None => {
+                    let surface = &mut surfaces[prim_surface_index.0];
+
+                    let is_same_coord_system = frame_context.spatial_tree.is_matching_coord_system(
+                        prim_spatial_node_index,
+                        surface.surface_spatial_node_index,
+                    );
+
+                    
+                    
+                    
+                    
+                    if is_same_coord_system &&
+                       !prim_clip_chain.needs_mask &&
+                       prim_clip_chain.pic_clip_rect.contains_box(&surface.rect)
+                    {
+                        
+                        
+                        
+                        
+                        surface.is_opaque = true;
+                    }
+                }
+                Some(BackdropKind::Clear) => {}
+            }
+
             let is_suitable_backdrop = match backdrop_candidate.kind {
                 Some(BackdropKind::Clear) => {
                     
@@ -3345,15 +3376,10 @@ impl TileCacheInstance {
                     
                     
                     
-                    
-                    let same_coord_system = {
-                        let prim_spatial_node = frame_context.spatial_tree
-                            .get_spatial_node(prim_spatial_node_index);
-                        let surface_spatial_node = &frame_context.spatial_tree
-                            .get_spatial_node(self.spatial_node_index);
-
-                        prim_spatial_node.coordinate_system_id == surface_spatial_node.coordinate_system_id
-                    };
+                    let same_coord_system = frame_context.spatial_tree.is_matching_coord_system(
+                        prim_spatial_node_index,
+                        self.spatial_node_index,
+                    );
 
                     same_coord_system && on_picture_surface
                 }
@@ -3695,7 +3721,8 @@ pub struct SurfaceInfo {
     
     pub rect: PictureRect,
     
-    pub opaque_rect: PictureRect,
+    
+    pub is_opaque: bool,
     
     
     pub map_local_to_surface: SpaceMapper<LayoutPixel, PicturePixel>,
@@ -3743,7 +3770,7 @@ impl SurfaceInfo {
 
         SurfaceInfo {
             rect: PictureRect::zero(),
-            opaque_rect: PictureRect::zero(),
+            is_opaque: false,
             map_local_to_surface,
             render_tasks: None,
             raster_spatial_node_index,
@@ -3950,10 +3977,6 @@ pub struct PrimitiveCluster {
     
     bounding_rect: LayoutRect,
     
-    
-    
-    pub opaque_rect: LayoutRect,
-    
     pub prim_range: Range<usize>,
     
     pub flags: ClusterFlags,
@@ -3968,7 +3991,6 @@ impl PrimitiveCluster {
     ) -> Self {
         PrimitiveCluster {
             bounding_rect: LayoutRect::zero(),
-            opaque_rect: LayoutRect::zero(),
             spatial_node_index,
             flags,
             prim_range: first_instance_index..first_instance_index
