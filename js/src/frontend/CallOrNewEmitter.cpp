@@ -195,10 +195,20 @@ bool CallOrNewEmitter::wantSpreadOperand() {
   return isSingleSpread() || isPassthroughRest();
 }
 
+bool CallOrNewEmitter::prepareForSpreadArguments() {
+  MOZ_ASSERT(state_ == State::WantSpreadOperand);
+  MOZ_ASSERT(isSpread());
+  MOZ_ASSERT(!isSingleSpread() && !isPassthroughRest());
+
+  state_ = State::Arguments;
+  return true;
+}
+
 bool CallOrNewEmitter::emitSpreadArgumentsTest() {
   
   MOZ_ASSERT(state_ == State::WantSpreadOperand);
   MOZ_ASSERT(isSpread());
+  MOZ_ASSERT(isSingleSpread() || isPassthroughRest());
 
   if (isSingleSpread()) {
     
@@ -212,6 +222,10 @@ bool CallOrNewEmitter::emitSpreadArgumentsTest() {
     
 
     ifNotOptimizable_.emplace(bce_);
+    if (!bce_->emit1(JSOp::Dup)) {
+      
+      return false;
+    }
     if (!bce_->emit1(JSOp::OptimizeSpreadCall)) {
       
       return false;
@@ -230,7 +244,7 @@ bool CallOrNewEmitter::emitSpreadArgumentsTest() {
       return false;
     }
 
-    if (!ifNotOptimizable_->emitThen()) {
+    if (!ifNotOptimizable_->emitThenElse()) {
       
       return false;
     }
@@ -256,6 +270,19 @@ bool CallOrNewEmitter::emitEnd(uint32_t argc, uint32_t beginPos) {
   MOZ_ASSERT(state_ == State::Arguments);
 
   if (isSingleSpread()) {
+    if (!ifNotOptimizable_->emitElse()) {
+      
+      return false;
+    }
+    if (!bce_->emit1(JSOp::Swap)) {
+      
+      return false;
+    }
+    if (!bce_->emit1(JSOp::Pop)) {
+      
+      return false;
+    }
+
     if (!ifNotOptimizable_->emitEnd()) {
       
       return false;
