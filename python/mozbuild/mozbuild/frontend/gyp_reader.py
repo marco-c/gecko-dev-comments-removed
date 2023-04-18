@@ -203,6 +203,10 @@ def process_gyp_result(
         os_libs = []
         for l in libs:
             if l.startswith("-"):
+                if l.startswith("-l"):
+                    
+                    
+                    l = l[2:]
                 if l not in os_libs:
                     os_libs.append(l)
             elif l.endswith(".lib"):
