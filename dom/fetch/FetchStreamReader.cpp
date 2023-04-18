@@ -248,6 +248,43 @@ void FetchStreamReader::StartConsuming(JSContext* aCx, JS::HandleObject aStream,
 }
 #endif
 
+#ifdef MOZ_DOM_STREAMS
+struct FetchReadRequest : public ReadRequest {
+ public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(FetchReadRequest, ReadRequest)
+
+  explicit FetchReadRequest(FetchStreamReader* aReader)
+      : mFetchStreamReader(aReader) {}
+
+  void ChunkSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
+                  ErrorResult& aRv) override {
+    mFetchStreamReader->ChunkSteps(aCx, aChunk, aRv);
+  }
+
+  void CloseSteps(JSContext* aCx, ErrorResult& aRv) override {
+    mFetchStreamReader->CloseAndRelease(aCx, NS_BASE_STREAM_CLOSED);
+  }
+
+  void ErrorSteps(JSContext* aCx, JS::Handle<JS::Value> aError,
+                  ErrorResult& aRv) override {
+    mFetchStreamReader->ErrorSteps(aCx, aError, aRv);
+  }
+
+ protected:
+  virtual ~FetchReadRequest() = default;
+
+  RefPtr<FetchStreamReader> mFetchStreamReader;
+};
+
+NS_IMPL_CYCLE_COLLECTION_INHERITED(FetchReadRequest, ReadRequest,
+                                   mFetchStreamReader)
+NS_IMPL_ADDREF_INHERITED(FetchReadRequest, ReadRequest)
+NS_IMPL_RELEASE_INHERITED(FetchReadRequest, ReadRequest)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(FetchReadRequest)
+NS_INTERFACE_MAP_END_INHERITING(ReadRequest)
+#endif
+
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY
 NS_IMETHODIMP
@@ -276,19 +313,7 @@ FetchStreamReader::OnOutputStreamReady(nsIAsyncOutputStream* aStream) {
   
   
   
-  
-  
-  
-  RefPtr<Promise> domPromise = Promise::Create(mGlobal, rv);
-  if (NS_WARN_IF(rv.Failed())) {
-    
-    CloseAndRelease(aes.cx(), NS_ERROR_DOM_INVALID_STATE_ERR);
-    return NS_ERROR_FAILURE;
-  }
-
-  RefPtr<ReadRequest> readRequest =
-      new Read_ReadRequest(domPromise,  false);
-
+  RefPtr<ReadRequest> readRequest = new FetchReadRequest(this);
   ReadableStreamDefaultReaderRead(aes.cx(), MOZ_KnownLive(mReader), readRequest,
                                   rv);
 
@@ -314,11 +339,60 @@ FetchStreamReader::OnOutputStreamReady(nsIAsyncOutputStream* aStream) {
     CloseAndRelease(aes.cx(), NS_ERROR_DOM_INVALID_STATE_ERR);
     return NS_ERROR_FAILURE;
   }
-#endif
+
   
   domPromise->AppendNativeHandler(this);
+#endif
+
   return NS_OK;
 }
+
+#ifdef MOZ_DOM_STREAMS
+void FetchStreamReader::ChunkSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
+                                   ErrorResult& aRv) {
+  
+  
+
+  RootedSpiderMonkeyInterface<Uint8Array> chunk(aCx);
+  if (!aChunk.isObject() || !chunk.Init(&aChunk.toObject())) {
+    CloseAndRelease(aCx, NS_ERROR_DOM_INVALID_STATE_ERR);
+    return;
+  }
+  chunk.ComputeState();
+
+  uint32_t len = chunk.Length();
+  if (len == 0) {
+    
+    OnOutputStreamReady(mPipeOut);
+    return;
+  }
+
+  MOZ_DIAGNOSTIC_ASSERT(mBuffer.IsEmpty());
+
+  
+  if (!mBuffer.AppendElements(chunk.Data(), len, fallible)) {
+    CloseAndRelease(aCx, NS_ERROR_OUT_OF_MEMORY);
+    return;
+  }
+
+  mBufferOffset = 0;
+  mBufferRemaining = len;
+
+  nsresult rv = WriteBuffer();
+  if (NS_FAILED(rv)) {
+    
+    
+    CloseAndRelease(aCx, NS_ERROR_DOM_ABORT_ERR);
+  }
+}
+
+void FetchStreamReader::ErrorSteps(JSContext* aCx, JS::Handle<JS::Value> aError,
+                                   ErrorResult& aRv) {
+  ReportErrorToConsole(aCx, aError);
+  CloseAndRelease(aCx, NS_ERROR_FAILURE);
+}
+
+#else
 
 void FetchStreamReader::ResolvedCallback(JSContext* aCx,
                                          JS::Handle<JS::Value> aValue,
@@ -382,6 +456,7 @@ void FetchStreamReader::ResolvedCallback(JSContext* aCx,
     CloseAndRelease(aCx, NS_ERROR_DOM_ABORT_ERR);
   }
 }
+#endif
 
 nsresult FetchStreamReader::WriteBuffer() {
   MOZ_ASSERT(!mBuffer.IsEmpty());
@@ -419,12 +494,14 @@ nsresult FetchStreamReader::WriteBuffer() {
   return NS_OK;
 }
 
+#ifndef MOZ_DOM_STREAMS
 void FetchStreamReader::RejectedCallback(JSContext* aCx,
                                          JS::Handle<JS::Value> aValue,
                                          ErrorResult& aRv) {
   ReportErrorToConsole(aCx, aValue);
   CloseAndRelease(aCx, NS_ERROR_FAILURE);
 }
+#endif
 
 void FetchStreamReader::ReportErrorToConsole(JSContext* aCx,
                                              JS::Handle<JS::Value> aValue) {
