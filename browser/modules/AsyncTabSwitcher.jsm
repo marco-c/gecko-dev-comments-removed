@@ -281,7 +281,6 @@ class AsyncTabSwitcher {
 
       if (remoteTab) {
         browser.renderLayers = true;
-        remoteTab.priorityHint = true;
       } else {
         this.onLayersReady(browser);
       }
@@ -290,9 +289,7 @@ class AsyncTabSwitcher {
       
       
       browser.docShellIsActive = false;
-      if (remoteTab) {
-        remoteTab.priorityHint = false;
-      } else {
+      if (!remoteTab) {
         this.onLayersCleared(browser);
       }
     } else if (state == this.STATE_LOADED) {
