@@ -2,7 +2,7 @@
 
 
 
-import { getSource, getSourceActorsForSource } from "../../selectors";
+import { getLocationSource, getSourceActorsForSource } from "../../selectors";
 import { isGenerated } from "../source";
 import { sortSelectedLocations } from "../location";
 import assert from "../assert";
@@ -30,7 +30,7 @@ export function makePendingLocationId(location) {
 }
 
 export function makeBreakpointLocation(state, location) {
-  const source = getSource(state, location.sourceId);
+  const source = getLocationSource(state, location);
   if (!source) {
     throw new Error("no source");
   }

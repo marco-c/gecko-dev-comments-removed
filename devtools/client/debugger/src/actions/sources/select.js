@@ -32,7 +32,7 @@ import {
   getSelectedSource,
   canPrettyPrintSource,
   getIsCurrentThreadPaused,
-  getSourceFromId,
+  getLocationSource,
   getSourceTextContent,
   tabExists,
 } from "../../selectors";
@@ -127,7 +127,7 @@ export function selectLocation(cx, location, { keepContext = true } = {}) {
       return;
     }
 
-    let source = getSource(getState(), location.sourceId);
+    let source = getLocationSource(getState(), location);
 
     if (!source) {
       
@@ -156,7 +156,7 @@ export function selectLocation(cx, location, { keepContext = true } = {}) {
       
       
       location = await getRelatedMapLocation(getState(), sourceMaps, location);
-      source = getSourceFromId(getState(), location.sourceId);
+      source = getLocationSource(getState(), location);
     }
 
     if (!tabExists(getState(), source.id)) {
