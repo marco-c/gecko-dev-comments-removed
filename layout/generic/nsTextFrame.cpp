@@ -8370,8 +8370,8 @@ static bool FindFirstLetterRange(const nsTextFragment* aFrag,
   
   bool allowSplitLigature;
 
-  typedef unicode::Script Script;
-  Script script = unicode::GetScriptCode(usv);
+  typedef intl::Script Script;
+  Script script = intl::UnicodeProperties::GetScriptCode(usv);
   switch (script) {
     default:
       allowSplitLigature = true;

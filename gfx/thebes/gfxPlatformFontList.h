@@ -162,7 +162,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   typedef mozilla::StretchRange StretchRange;
   typedef mozilla::SlantStyleRange SlantStyleRange;
   typedef mozilla::WeightRange WeightRange;
-  typedef mozilla::unicode::Script Script;
+  typedef mozilla::intl::Script Script;
 
   
   
