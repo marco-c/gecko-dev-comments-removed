@@ -248,8 +248,8 @@ class WebSocketImpl final : public nsIInterfaceRequestor,
   bool mIsMainThread;
 
   
-  mozilla::Mutex mMutex MOZ_UNANNOTATED;
-  bool mWorkerShuttingDown;
+  mozilla::Mutex mMutex;
+  bool mWorkerShuttingDown GUARDED_BY(mMutex);
 
   RefPtr<WebSocketEventService> mService;
   nsCOMPtr<nsIPrincipal> mLoadingPrincipal;

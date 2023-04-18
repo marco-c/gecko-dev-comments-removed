@@ -178,10 +178,10 @@ class WebSocket final : public DOMEventTargetHelper {
 
   
   
-  mozilla::Mutex mMutex MOZ_UNANNOTATED;
+  mozilla::Mutex mMutex;
 
   
-  uint16_t mReadyState;
+  uint16_t mReadyState GUARDED_BY(mMutex);
 };
 
 }  
