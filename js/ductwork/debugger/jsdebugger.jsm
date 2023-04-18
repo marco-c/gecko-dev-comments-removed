@@ -18,6 +18,8 @@ var EXPORTED_SYMBOLS = [ "addDebuggerToGlobal", "addSandboxedDebuggerToGlobal" ]
 
 
 
+
+
 const init = Cc["@mozilla.org/jsdebugger;1"].createInstance(Ci.IJSDebugger);
 function addDebuggerToGlobal(global) {
   init.addClass(global);
