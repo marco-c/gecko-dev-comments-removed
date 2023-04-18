@@ -509,6 +509,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
           mRecentVsync(TimeStamp::Now()),
           mLastTickStart(TimeStamp::Now()),
           mLastIdleTaskCount(0),
+          mLastRunOutOfMTTasksCount(0),
           mVsyncRate(TimeDuration::Forever()),
           mProcessedVsync(true) {
       MOZ_ASSERT(NS_IsMainThread());
@@ -566,8 +567,14 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
 
       
       
+      
+      
+      
       return mLastIdleTaskCount == idleTaskCount &&
-             pendingTaskCount > pendingIdleTaskCount;
+             pendingTaskCount > pendingIdleTaskCount &&
+             (taskController->RunOutOfMTTasksCount() ==
+                  mLastRunOutOfMTTasksCount ||
+              XRE_IsParentProcess());
     }
 
     void NotifyVsyncOnMainThread() {
@@ -651,6 +658,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       mLastTickStart = TimeStamp::Now();
       mLastTickEnd = TimeStamp();
       mLastIdleTaskCount = 0;
+      mLastRunOutOfMTTasksCount = 0;
     }
 
     void IdlePriorityNotify() {
@@ -764,6 +772,8 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
 
         mLastIdleTaskCount =
             TaskController::Get()->GetIdleTaskManager()->ProcessedTaskCount();
+        mLastRunOutOfMTTasksCount =
+            TaskController::Get()->RunOutOfMTTasksCount();
       }
 
       mLastTickEnd = TimeStamp::Now();
@@ -806,6 +816,9 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     
     
     uint64_t mLastIdleTaskCount;
+    
+    
+    uint64_t mLastRunOutOfMTTasksCount;
     
     
     TimeStamp mLastProcessedTick;

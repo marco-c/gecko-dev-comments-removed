@@ -281,7 +281,8 @@ class TaskController {
   TaskController()
       : mGraphMutex("TaskController::mGraphMutex"),
         mThreadPoolCV(mGraphMutex, "TaskController::mThreadPoolCV"),
-        mMainThreadCV(mGraphMutex, "TaskController::mMainThreadCV") {}
+        mMainThreadCV(mGraphMutex, "TaskController::mMainThreadCV"),
+        mRunOutOfMTTasksCounter(0) {}
 
   static TaskController* Get();
 
@@ -299,6 +300,8 @@ class TaskController {
     mIdleTaskManager = aIdleTaskManager;
   }
   IdleTaskManager* GetIdleTaskManager() { return mIdleTaskManager.get(); }
+
+  uint64_t RunOutOfMTTasksCount() { return mRunOutOfMTTasksCounter; }
 
   
   void SetPerformanceCounterState(
@@ -421,6 +424,9 @@ class TaskController {
   CondVar* mExternalCondVar = nullptr;
   
   RefPtr<IdleTaskManager> mIdleTaskManager;
+
+  
+  std::atomic<uint64_t> mRunOutOfMTTasksCounter;
 
   
   
