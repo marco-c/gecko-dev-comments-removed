@@ -45,6 +45,13 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
 });
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 
+
+
+
+
+
+
+
 const ATTR_CODE_MAX_LENGTH = 1010;
 const ATTR_CODE_VALUE_REGEX = /[a-zA-Z0-9_%\\-\\.\\(\\)]*/;
 const ATTR_CODE_FIELD_SEPARATOR = "%26"; 
@@ -58,6 +65,7 @@ const ATTR_CODE_KEYS = [
   "variation",
   "ua",
   "dltoken",
+  "msstoresignedin",
 ];
 
 let gCachedAttrData = null;
@@ -147,7 +155,17 @@ var AttributionCode = {
       let [key, value] = param.split(ATTR_CODE_KEY_VALUE_SEPARATOR, 2);
       if (key && ATTR_CODE_KEYS.includes(key)) {
         if (value && ATTR_CODE_VALUE_REGEX.test(value)) {
-          parsed[key] = value;
+          if (key === "msstoresignedin") {
+            if (value === "true") {
+              parsed[key] = true;
+            } else if (value === "false") {
+              parsed[key] = false;
+            } else {
+              throw new Error("Couldn't parse msstoresignedin");
+            }
+          } else {
+            parsed[key] = value;
+          }
         }
       } else {
         log.debug(
@@ -314,7 +332,29 @@ var AttributionCode = {
 
     let bytes;
     try {
-      bytes = await AttributionIOUtils.read(attributionFile.path);
+      if (
+        AppConstants.platform === "win" &&
+        Services.sysinfo.getProperty("hasWinPackageId")
+      ) {
+        
+        
+        
+        log.debug(
+          `winPackageFamilyName is: ${Services.sysinfo.getProperty(
+            "winPackageFamilyName"
+          )}`
+        );
+        let encoder = new TextEncoder();
+        bytes = encoder.encode(
+          encodeURIComponent(
+            Cc["@mozilla.org/windows-package-manager;1"]
+              .createInstance(Ci.nsIWindowsPackageManager)
+              .getCampaignId()
+          )
+        );
+      } else {
+        bytes = await AttributionIOUtils.read(attributionFile.path);
+      }
     } catch (ex) {
       if (DOMException.isInstance(ex) && ex.name == "NotFoundError") {
         log.debug(
@@ -324,6 +364,13 @@ var AttributionCode = {
         );
         return gCachedAttrData;
       }
+      log.debug(
+        `other error trying to read attribution data:
+          attributionFile.path is: ${attributionFile.path}`
+      );
+      log.debug("Full exception is:");
+      log.debug(ex);
+
       Services.telemetry
         .getHistogramById("BROWSER_ATTRIBUTION_ERRORS")
         .add("read_error");
@@ -333,7 +380,7 @@ var AttributionCode = {
         let decoder = new TextDecoder();
         let code = decoder.decode(bytes);
         log.debug(
-          `getAttrDataAsync: ${attributionFile.path} deserializes to ${code}`
+          `getAttrDataAsync: attribution bytes deserializes to ${code}`
         );
         if (AppConstants.platform == "macosx" && !code) {
           
