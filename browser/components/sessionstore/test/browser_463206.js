@@ -33,66 +33,62 @@ addNonCoopTask(
 
 async function test_restore_text_data_subframes(aURL) {
   
-  let tab = BrowserTestUtils.addTab(gBrowser, aURL);
-  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, aURL);
 
-  
-  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
-    function typeText(aTextField, aValue) {
-      aTextField.value = aValue;
+  await setPropertyOfFormField(
+    tab.linkedBrowser,
+    "#out1",
+    "value",
+    Date.now().toString(16)
+  );
 
-      let event = aTextField.ownerDocument.createEvent("UIEvents");
-      event.initUIEvent("input", true, true, aTextField.ownerGlobal, 0);
-      aTextField.dispatchEvent(event);
-    }
-    typeText(content.document.getElementById("out1"), Date.now().toString(16));
-    typeText(content.document.getElementsByName("1|#out2")[0], Math.random());
-    await SpecialPowers.spawn(content.frames[0], [], async function() {
-      await SpecialPowers.spawn(content.frames[1], [], async function() {
-        function typeText2(aTextField, aValue) {
-          aTextField.value = aValue;
+  await setPropertyOfFormField(
+    tab.linkedBrowser,
+    "input[name='1|#out2']",
+    "value",
+    Math.random()
+  );
 
-          let event = aTextField.ownerDocument.createEvent("UIEvents");
-          event.initUIEvent("input", true, true, aTextField.ownerGlobal, 0);
-          aTextField.dispatchEvent(event);
-        }
-        typeText2(content.document.getElementById("in1"), new Date());
-      });
-    });
-  });
+  await setPropertyOfFormField(
+    tab.linkedBrowser.browsingContext.children[0].children[1],
+    "#in1",
+    "value",
+    new Date()
+  );
 
   
   let tab2 = gBrowser.duplicateTab(tab);
+  let browser2 = tab2.linkedBrowser;
   await promiseTabRestored(tab2);
+
+  isnot(
+    await getPropertyOfFormField(browser2, "#out1", "value"),
+    await getPropertyOfFormField(
+      browser2.browsingContext.children[1],
+      "#out1",
+      "value"
+    ),
+    "text isn't reused for frames"
+  );
+
+  isnot(
+    await getPropertyOfFormField(browser2, "input[name='1|#out2']", "value"),
+    "",
+    "text containing | and # is correctly restored"
+  );
+
+  is(
+    await getPropertyOfFormField(
+      browser2.browsingContext.children[1],
+      "#out2",
+      "value"
+    ),
+    "",
+    "id prefixes can't be faked"
+  );
 
   
   await SpecialPowers.spawn(tab2.linkedBrowser, [], async function() {
-    let out1Val = await SpecialPowers.spawn(
-      content.frames[1],
-      [],
-      async function() {
-        return content.document.getElementById("out1").value;
-      }
-    );
-    Assert.notEqual(
-      content.document.getElementById("out1").value,
-      out1Val,
-      "text isn't reused for frames"
-    );
-    Assert.notEqual(
-      content.document.getElementsByName("1|#out2")[0].value,
-      "",
-      "text containing | and # is correctly restored"
-    );
-    let out2Val = await SpecialPowers.spawn(
-      content.frames[1],
-      [],
-      async function() {
-        return content.document.getElementById("out2").value;
-      }
-    );
-    Assert.equal(out2Val, "", "id prefixes can't be faked");
-
     
     
     
@@ -107,19 +103,17 @@ async function test_restore_text_data_subframes(aURL) {
 
 
 
-
-    let in1ValFrame1_0 = await SpecialPowers.spawn(
-      content.frames[1],
-      [],
-      async function() {
-        return SpecialPowers.spawn(content.frames[0], [], async function() {
-          return content.document.getElementById("in1").value;
-        });
-      }
-    );
-    Assert.equal(in1ValFrame1_0, "", "id prefixes aren't mixed up");
   });
 
+  is(
+    await getPropertyOfFormField(
+      browser2.browsingContext.children[1].children[0],
+      "#in1",
+      "value"
+    ),
+    "",
+    "id prefixes aren't mixed up"
+  );
   
   gBrowser.removeTab(tab2);
   gBrowser.removeTab(tab);
