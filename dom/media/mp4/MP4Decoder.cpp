@@ -149,30 +149,45 @@ bool MP4Decoder::IsSupportedType(const MediaContainerType& aType,
     return false;
   }
 
-  if (tracks.IsEmpty()) {
+  if (!tracks.IsEmpty()) {
     
-    if (aType.Type() == MEDIAMIMETYPE("audio/mp4") ||
-        aType.Type() == MEDIAMIMETYPE("audio/x-m4a")) {
+    RefPtr<PDMFactory> platform = new PDMFactory();
+    for (const auto& track : tracks) {
+      if (!track ||
+          !platform->Supports(SupportDecoderParams(*track), aDiagnostics)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  
+  
+  if (aType.Type() == MEDIAMIMETYPE("audio/mp4") ||
+      aType.Type() == MEDIAMIMETYPE("audio/x-m4a")) {
+    tracks.AppendElement(
+        CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
+            "audio/mp4a-latm"_ns, aType));
+  } else {
+    tracks.AppendElement(
+        CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
+            "video/avc"_ns, aType));
+    if (StaticPrefs::media_av1_enabled()) {
       tracks.AppendElement(
           CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
-              "audio/mp4a-latm"_ns, aType));
-    } else {
-      tracks.AppendElement(
-          CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
-              "video/avc"_ns, aType));
+              "video/av1"_ns, aType));
     }
   }
 
   
   RefPtr<PDMFactory> platform = new PDMFactory();
   for (const auto& track : tracks) {
-    if (!track ||
-        !platform->Supports(SupportDecoderParams(*track), aDiagnostics)) {
-      return false;
+    if (track &&
+        platform->Supports(SupportDecoderParams(*track), aDiagnostics)) {
+      return true;
     }
   }
-
-  return true;
+  return false;
 }
 
 
