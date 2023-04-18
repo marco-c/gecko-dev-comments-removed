@@ -131,6 +131,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(DocAccessible,
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAccessibleCache)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAnchorJumpElm)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mInvalidationList)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPendingUpdates)
   for (const auto& ar : tmp->mARIAOwnsHash.Values()) {
     for (uint32_t i = 0; i < ar->Length(); i++) {
       NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mARIAOwnsHash entry item");
@@ -148,6 +149,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(DocAccessible, LocalAccessible)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAccessibleCache)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAnchorJumpElm)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mInvalidationList)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPendingUpdates)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_REFERENCE
   tmp->mARIAOwnsHash.Clear();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -457,6 +459,7 @@ void DocAccessible::Shutdown() {
 
   mAnchorJumpElm = nullptr;
   mInvalidationList.Clear();
+  mPendingUpdates.Clear();
 
   for (auto iter = mAccessibleCache.Iter(); !iter.Done(); iter.Next()) {
     LocalAccessible* accessible = iter.Data();
@@ -1164,6 +1167,25 @@ void DocAccessible::ContentInserted(nsIContent* aStartChildNode,
   mNotificationController->ScheduleContentInsertion(container, list);
 }
 
+void DocAccessible::ScheduleTreeUpdate(nsIContent* aContent) {
+  if (mPendingUpdates.Contains(aContent)) {
+    return;
+  }
+  mPendingUpdates.AppendElement(aContent);
+  mNotificationController->ScheduleProcessing();
+}
+
+void DocAccessible::ProcessPendingUpdates() {
+  auto updates = std::move(mPendingUpdates);
+  for (auto update : updates) {
+    if (update->GetComposedDoc() != mDocumentNode) {
+      continue;
+    }
+    
+    ContentInserted(update, update->GetNextSibling());
+  }
+}
+
 bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
   bool insert = false;
 
@@ -1178,7 +1200,7 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
     
     while (nsIContent* childNode = iter.GetNextChild()) {
       if (!childNode->GetPrimaryFrame() &&
-          !nsCoreUtils::IsDisplayContents(childNode)) {
+          !nsCoreUtils::CanCreateAccessibleWithoutFrame(childNode)) {
         ContentRemoved(childNode);
       }
     }
@@ -1189,7 +1211,7 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
       for (nsIContent* childNode = aRoot->GetFirstChild(); childNode;
            childNode = childNode->GetNextSibling()) {
         if (!childNode->GetPrimaryFrame() &&
-            !nsCoreUtils::IsDisplayContents(childNode)) {
+            !nsCoreUtils::CanCreateAccessibleWithoutFrame(childNode)) {
           ContentRemoved(childNode);
         }
       }
@@ -1218,7 +1240,7 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
     
     
     
-    if (!frame && !nsCoreUtils::IsDisplayContents(aRoot)) {
+    if (!frame && !nsCoreUtils::CanCreateAccessibleWithoutFrame(aRoot)) {
       ContentRemoved(aRoot);
       return false;
     }
@@ -1280,7 +1302,8 @@ bool DocAccessible::PruneOrInsertSubtree(nsIContent* aRoot) {
   } else {
     
     
-    if (aRoot->GetPrimaryFrame() || nsCoreUtils::IsDisplayContents(aRoot)) {
+    if (aRoot->GetPrimaryFrame() ||
+        nsCoreUtils::CanCreateAccessibleWithoutFrame(aRoot)) {
       
       
       if (!GetAccessibleOrDescendant(aRoot)) {

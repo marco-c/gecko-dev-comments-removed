@@ -338,6 +338,11 @@ class DocAccessible : public HyperTextAccessibleWrap,
   
 
 
+  void ScheduleTreeUpdate(nsIContent* aContent);
+
+  
+
+
   void ContentRemoved(LocalAccessible* aAccessible);
   void ContentRemoved(nsIContent* aContentNode);
 
@@ -489,6 +494,11 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
   void ProcessInvalidationList();
+
+  
+
+
+  void ProcessPendingUpdates();
 
   
 
@@ -717,6 +727,11 @@ class DocAccessible : public HyperTextAccessibleWrap,
   nsClassHashtable<nsPtrHashKey<LocalAccessible>,
                    nsTArray<RefPtr<LocalAccessible>>>
       mARIAOwnsHash;
+
+  
+
+
+  nsTArray<RefPtr<nsIContent>> mPendingUpdates;
 
   
 
