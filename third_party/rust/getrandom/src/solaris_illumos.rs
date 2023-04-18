@@ -30,7 +30,6 @@ type GetRandomFn = unsafe extern "C" fn(*mut u8, libc::size_t, libc::c_uint) -> 
 type GetRandomFn = unsafe extern "C" fn(*mut u8, libc::size_t, libc::c_uint) -> libc::c_int;
 
 pub fn getrandom_inner(dest: &mut [u8]) -> Result<(), Error> {
-    
     static GETRANDOM: Weak = unsafe { Weak::new("getrandom\0") };
     if let Some(fptr) = GETRANDOM.ptr() {
         let func: GetRandomFn = unsafe { mem::transmute(fptr) };

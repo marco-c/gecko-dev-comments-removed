@@ -6,13 +6,8 @@
 
 
 #![allow(dead_code)]
-use crate::Error;
-use core::{
-    num::NonZeroU32,
-    ptr::NonNull,
-    sync::atomic::{fence, AtomicPtr, Ordering},
-};
-use libc::c_void;
+use crate::{util::LazyUsize, Error};
+use core::{num::NonZeroU32, ptr::NonNull};
 
 cfg_if! {
     if #[cfg(any(target_os = "netbsd", target_os = "openbsd", target_os = "android"))] {
@@ -83,55 +78,27 @@ pub fn sys_fill_exact(
 
 
 
-
 pub struct Weak {
     name: &'static str,
-    addr: AtomicPtr<c_void>,
+    addr: LazyUsize,
 }
 
 impl Weak {
     
     
-    
-    
-    
-    
-    const UNINIT: *mut c_void = 1 as *mut c_void;
-
-    
-    
     pub const unsafe fn new(name: &'static str) -> Self {
         Self {
             name,
-            addr: AtomicPtr::new(Self::UNINIT),
+            addr: LazyUsize::new(),
         }
     }
 
     
-    
-    
-    
-    pub fn ptr(&self) -> Option<NonNull<c_void>> {
-        
-        
-        
-        
-        
-        
-        match self.addr.load(Ordering::Relaxed) {
-            Self::UNINIT => {
-                let symbol = self.name.as_ptr() as *const _;
-                let addr = unsafe { libc::dlsym(libc::RTLD_DEFAULT, symbol) };
-                
-                self.addr.store(addr, Ordering::Release);
-                NonNull::new(addr)
-            }
-            addr => {
-                let func = NonNull::new(addr)?;
-                fence(Ordering::Acquire);
-                Some(func)
-            }
-        }
+    pub fn ptr(&self) -> Option<NonNull<libc::c_void>> {
+        let addr = self.addr.unsync_init(|| unsafe {
+            libc::dlsym(libc::RTLD_DEFAULT, self.name.as_ptr() as *const _) as usize
+        });
+        NonNull::new(addr as *mut _)
     }
 }
 
