@@ -239,7 +239,6 @@ class nsImageRenderer {
                                gfxContext& aRenderingContext);
 
   bool IsRasterImage();
-  bool IsAnimatedImage();
 
   
   already_AddRefed<imgIContainer> GetImage();
