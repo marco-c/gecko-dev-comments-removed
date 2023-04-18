@@ -1,8 +1,16 @@
 from __future__ import absolute_import
+
 from base64 import b64encode
 
-from ..packages.six import b, integer_types
 from ..exceptions import UnrewindableBodyError
+from ..packages.six import b, integer_types
+
+
+
+
+
+SKIP_HEADER = "@@@SKIP_HEADER@@@"
+SKIPPABLE_HEADERS = frozenset(["accept-encoding", "host", "user-agent"])
 
 ACCEPT_ENCODING = "gzip,deflate"
 try:
