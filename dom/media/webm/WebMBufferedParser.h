@@ -8,7 +8,7 @@
 
 #  include "nsISupportsImpl.h"
 #  include "nsTArray.h"
-#  include "mozilla/ReentrantMonitor.h"
+#  include "mozilla/Mutex.h"
 #  include "MediaResource.h"
 
 namespace mozilla {
@@ -261,8 +261,7 @@ class WebMBufferedState final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebMBufferedState)
 
  public:
-  WebMBufferedState()
-      : mReentrantMonitor("WebMBufferedState"), mLastBlockOffset(-1) {
+  WebMBufferedState() : mMutex("WebMBufferedState"), mLastBlockOffset(-1) {
     MOZ_COUNT_CTOR(WebMBufferedState);
   }
 
@@ -296,13 +295,13 @@ class WebMBufferedState final {
   MOZ_COUNTED_DTOR(WebMBufferedState)
 
   
-  ReentrantMonitor mReentrantMonitor;
+  Mutex mMutex;
 
   
   
-  nsTArray<WebMTimeDataOffset> mTimeMapping GUARDED_BY(mReentrantMonitor);
+  nsTArray<WebMTimeDataOffset> mTimeMapping GUARDED_BY(mMutex);
   
-  int64_t mLastBlockOffset GUARDED_BY(mReentrantMonitor);
+  int64_t mLastBlockOffset GUARDED_BY(mMutex);
 
   
   nsTArray<WebMBufferedParser> mRangeParsers;
