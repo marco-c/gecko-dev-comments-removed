@@ -64,6 +64,10 @@ public class GeckoView extends FrameLayout {
 
   private Integer mLastCoverColor;
   protected @Nullable GeckoSession mSession;
+  
+  
+  private boolean mIsSessionPoisoned = false;
+
   private boolean mStateSaved;
 
   private @Nullable SurfaceViewWrapper mSurfaceWrapper;
@@ -428,8 +432,24 @@ public class GeckoView extends FrameLayout {
       mSession.setFocused(false);
     }
     mSession = null;
+    mIsSessionPoisoned = false;
+    session.releaseOwner();
     return session;
   }
+
+  private final GeckoSession.Owner mSessionOwner =
+      new GeckoSession.Owner() {
+        @Override
+        public void onRelease() {
+          
+          
+          releaseSession();
+          
+          
+          
+          mIsSessionPoisoned = true;
+        }
+      };
 
   
 
@@ -443,13 +463,16 @@ public class GeckoView extends FrameLayout {
   public void setSession(@NonNull final GeckoSession session) {
     ThreadUtils.assertOnUiThread();
 
-    if (mSession != null && mSession.isOpen()) {
-      throw new IllegalStateException("Current session is open");
+    if (session == mSession) {
+      
+      return;
     }
 
     releaseSession();
 
+    session.setOwner(mSessionOwner);
     mSession = session;
+    mIsSessionPoisoned = false;
 
     
     mSession.getCompositorController().setClearColor(defaultColor());
@@ -527,6 +550,9 @@ public class GeckoView extends FrameLayout {
 
   @Override
   public void onAttachedToWindow() {
+    if (mIsSessionPoisoned) {
+      throw new IllegalStateException("Trying to display a view with invalid session.");
+    }
     if (mSession != null) {
       final GeckoRuntime runtime = mSession.getRuntime();
       if (runtime != null) {
