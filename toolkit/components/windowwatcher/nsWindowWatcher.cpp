@@ -701,9 +701,9 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   
   
   
-  if (isCallerChrome && XRE_IsParentProcess()) {
-    chromeFlags = CalculateChromeFlagsForSystem(
-        features, sizeSpec, aDialog, uriToLoadIsChrome, hasChromeParent);
+  if (hasChromeParent && isCallerChrome && XRE_IsParentProcess()) {
+    chromeFlags =
+        CalculateChromeFlagsForSystem(features, aDialog, uriToLoadIsChrome);
   } else {
     MOZ_DIAGNOSTIC_ASSERT(parentBC && parentBC->IsContent(),
                           "content caller must provide content parent");
@@ -1684,7 +1684,7 @@ nsresult nsWindowWatcher::URIfromURL(const nsACString& aURL,
 
 uint32_t nsWindowWatcher::CalculateChromeFlagsHelper(
     uint32_t aInitialFlags, const WindowFeatures& aFeatures,
-    const SizeSpec& aSizeSpec, bool* presenceFlag, bool aHasChromeParent) {
+    bool* presenceFlag) {
   uint32_t chromeFlags = aInitialFlags;
 
   if (aFeatures.GetBoolWithDefault("titlebar", false, presenceFlag)) {
@@ -1719,57 +1719,7 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsHelper(
     chromeFlags |= nsIWebBrowserChrome::CHROME_SCROLLBARS;
   }
 
-  if (aHasChromeParent) {
-    return chromeFlags;
-  }
-
-  
-  
-  
-  
-  
-
-  if (ShouldOpenPopup(aFeatures, aSizeSpec)) {
-    
-    
-    
-    
-    return aInitialFlags | nsIWebBrowserChrome::CHROME_TITLEBAR |
-           nsIWebBrowserChrome::CHROME_WINDOW_CLOSE |
-           nsIWebBrowserChrome::CHROME_LOCATIONBAR |
-           nsIWebBrowserChrome::CHROME_STATUSBAR |
-           nsIWebBrowserChrome::CHROME_WINDOW_RESIZE |
-           nsIWebBrowserChrome::CHROME_WINDOW_MIN |
-           nsIWebBrowserChrome::CHROME_SCROLLBARS;
-  }
-
-  
-  
-  return aInitialFlags | nsIWebBrowserChrome::CHROME_ALL;
-}
-
-
-uint32_t nsWindowWatcher::EnsureFlagsSafeForContent(uint32_t aChromeFlags,
-                                                    bool aChromeURL) {
-  aChromeFlags |= nsIWebBrowserChrome::CHROME_TITLEBAR;
-  aChromeFlags |= nsIWebBrowserChrome::CHROME_WINDOW_CLOSE;
-  aChromeFlags &= ~nsIWebBrowserChrome::CHROME_WINDOW_LOWERED;
-  aChromeFlags &= ~nsIWebBrowserChrome::CHROME_WINDOW_RAISED;
-  aChromeFlags &= ~nsIWebBrowserChrome::CHROME_WINDOW_POPUP;
-  
-
-
-
-  if (!aChromeURL) {
-    aChromeFlags &= ~(nsIWebBrowserChrome::CHROME_MODAL |
-                      nsIWebBrowserChrome::CHROME_OPENAS_CHROME);
-  }
-
-  if (!(aChromeFlags & nsIWebBrowserChrome::CHROME_OPENAS_CHROME)) {
-    aChromeFlags &= ~nsIWebBrowserChrome::CHROME_DEPENDENT;
-  }
-
-  return aChromeFlags;
+  return chromeFlags;
 }
 
 
@@ -1821,14 +1771,14 @@ bool nsWindowWatcher::ShouldOpenPopup(const WindowFeatures& aFeatures,
 
 uint32_t nsWindowWatcher::CalculateChromeFlagsForContent(
     const WindowFeatures& aFeatures, const SizeSpec& aSizeSpec) {
-  if (aFeatures.IsEmpty()) {
+  if (aFeatures.IsEmpty() || !ShouldOpenPopup(aFeatures, aSizeSpec)) {
+    
+    
     return nsIWebBrowserChrome::CHROME_ALL;
   }
 
-  uint32_t chromeFlags = CalculateChromeFlagsHelper(
-      nsIWebBrowserChrome::CHROME_WINDOW_BORDERS, aFeatures, aSizeSpec);
-
-  return EnsureFlagsSafeForContent(chromeFlags);
+  
+  return nsIWebBrowserChrome::CHROME_MINIMAL_POPUP;
 }
 
 
@@ -1840,10 +1790,8 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForContent(
 
 
 
-
 uint32_t nsWindowWatcher::CalculateChromeFlagsForSystem(
-    const WindowFeatures& aFeatures, const SizeSpec& aSizeSpec, bool aDialog,
-    bool aChromeURL, bool aHasChromeParent) {
+    const WindowFeatures& aFeatures, bool aDialog, bool aChromeURL) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(nsContentUtils::LegacyIsCallerChromeOrNativeCode());
 
@@ -1875,8 +1823,8 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForSystem(
   }
 
   
-  chromeFlags = CalculateChromeFlagsHelper(chromeFlags, aFeatures, aSizeSpec,
-                                           &presenceFlag, aHasChromeParent);
+  chromeFlags =
+      CalculateChromeFlagsHelper(chromeFlags, aFeatures, &presenceFlag);
 
   
   if (aFeatures.GetBoolWithDefault("private", false, &presenceFlag)) {
@@ -2001,11 +1949,6 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForSystem(
   
 
 
-
-  
-  if (!aHasChromeParent) {
-    chromeFlags = EnsureFlagsSafeForContent(chromeFlags, aChromeURL);
-  }
 
   return chromeFlags;
 }
