@@ -35,6 +35,17 @@ var gMoreFromMozillaPane = {
     return this._option;
   },
 
+  
+  sendToDeviceEmailsSupported() {
+    
+    const userLocales = window.navigator.languages.map(l => l.toLowerCase());
+    
+    let userSupportedLocales = this.emailSupportedLocales.filter(loc =>
+      userLocales.includes(loc)
+    );
+    return !!userSupportedLocales.length;
+  },
+
   getURL(url, region, option, hasEmail) {
     const URL_PARAMS = {
       utm_source: "about-prefs",
@@ -248,16 +259,22 @@ var gMoreFromMozillaPane = {
 
         
         qrc_link.id = `${this.option}-${product.qrcode.button.id}`;
-        qrc_link.setAttribute(
-          "data-l10n-id",
-          product.qrcode.button.label.string_id
-        );
-        qrc_link.href = this.getURL(
-          product.qrcode.button.actionURL,
-          product.region,
-          this.option,
-          true
-        );
+
+        
+        if (!this.sendToDeviceEmailsSupported()) {
+          qrc_link.classList.add("hidden");
+        } else {
+          qrc_link.setAttribute(
+            "data-l10n-id",
+            product.qrcode.button.label.string_id
+          );
+          qrc_link.href = this.getURL(
+            product.qrcode.button.actionURL,
+            product.region,
+            this.option,
+            true
+          );
+        }
       }
 
       frag.appendChild(template);
@@ -280,3 +297,15 @@ var gMoreFromMozillaPane = {
     this.renderProducts();
   },
 };
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  gMoreFromMozillaPane,
+  "emailSupportedLocales",
+  "browser.send_to_device_locales",
+  "",
+  null,
+  prefVal => {
+    
+    return prefVal.toLowerCase().split(/\s*,\s*/g);
+  }
+);
