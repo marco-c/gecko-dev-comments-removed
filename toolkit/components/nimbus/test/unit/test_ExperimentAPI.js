@@ -23,7 +23,7 @@ add_task(async function test_getExperiment_fromChild_slug() {
 
   sandbox.stub(ExperimentAPI, "_store").get(() => ExperimentFakes.childStore());
 
-  await manager.store.addExperiment(expected);
+  await manager.store.addEnrollment(expected);
 
   
   await TestUtils.waitForCondition(
@@ -55,7 +55,7 @@ add_task(async function test_getExperiment_fromParent_slug() {
   sandbox.stub(ExperimentAPI, "_store").get(() => manager.store);
   await ExperimentAPI.ready();
 
-  await manager.store.addExperiment(expected);
+  await manager.store.addEnrollment(expected);
 
   Assert.equal(
     ExperimentAPI.getExperiment({ slug: "foo" }).slug,
@@ -76,7 +76,37 @@ add_task(async function test_getExperimentMetaData() {
   sandbox.stub(ExperimentAPI, "_store").get(() => manager.store);
   await ExperimentAPI.ready();
 
-  await manager.store.addExperiment(expected);
+  await manager.store.addEnrollment(expected);
+
+  let metadata = ExperimentAPI.getExperimentMetaData({ slug: expected.slug });
+
+  Assert.equal(
+    Object.keys(metadata.branch).length,
+    1,
+    "Should only expose one property"
+  );
+  Assert.equal(
+    metadata.branch.slug,
+    expected.branch.slug,
+    "Should have the slug prop"
+  );
+
+  Assert.ok(exposureStub.notCalled, "Not called for this method");
+
+  sandbox.restore();
+});
+
+add_task(async function test_getRolloutMetaData() {
+  const sandbox = sinon.createSandbox();
+  const manager = ExperimentFakes.manager();
+  const expected = ExperimentFakes.rollout("foo");
+  let exposureStub = sandbox.stub(ExperimentAPI, "recordExposureEvent");
+
+  await manager.onStartup();
+  sandbox.stub(ExperimentAPI, "_store").get(() => manager.store);
+  await ExperimentAPI.ready();
+
+  await manager.store.addEnrollment(expected);
 
   let metadata = ExperimentAPI.getExperimentMetaData({ slug: expected.slug });
 
@@ -145,7 +175,7 @@ add_task(async function test_getExperiment_feature() {
   sandbox.stub(ExperimentAPI, "_store").get(() => ExperimentFakes.childStore());
   let exposureStub = sandbox.stub(ExperimentAPI, "recordExposureEvent");
 
-  await manager.store.addExperiment(expected);
+  await manager.store.addEnrollment(expected);
 
   
   await TestUtils.waitForCondition(
@@ -354,7 +384,7 @@ add_task(async function test_getAllBranches_Failure() {
 
 
 
-add_task(async function test_addExperiment_eventEmit_add() {
+add_task(async function test_addEnrollment_eventEmit_add() {
   const sandbox = sinon.createSandbox();
   const slugStub = sandbox.stub();
   const featureStub = sandbox.stub();
@@ -373,7 +403,7 @@ add_task(async function test_addExperiment_eventEmit_add() {
   ExperimentAPI.on("update", { slug: "foo" }, slugStub);
   ExperimentAPI.on("update", { featureId: "purple" }, featureStub);
 
-  await store.addExperiment(experiment);
+  await store.addEnrollment(experiment);
 
   Assert.equal(
     slugStub.callCount,
@@ -405,7 +435,7 @@ add_task(async function test_updateExperiment_eventEmit_add_and_update() {
   await store.init();
   await ExperimentAPI.ready();
 
-  await store.addExperiment(experiment);
+  await store.addEnrollment(experiment);
 
   ExperimentAPI.on("update", { slug: "foo" }, slugStub);
   ExperimentAPI.on("update", { featureId: "purple" }, featureStub);
@@ -442,7 +472,7 @@ add_task(async function test_updateExperiment_eventEmit_off() {
   ExperimentAPI.on("update", { slug: "foo" }, slugStub);
   ExperimentAPI.on("update", { featureId: "purple" }, featureStub);
 
-  await store.addExperiment(experiment);
+  await store.addEnrollment(experiment);
 
   ExperimentAPI.off("update:foo", slugStub);
   ExperimentAPI.off("update:purple", featureStub);
@@ -465,7 +495,7 @@ add_task(async function test_activateBranch() {
   });
 
   await store.init();
-  await store.addExperiment(experiment);
+  await store.addEnrollment(experiment);
 
   Assert.deepEqual(
     ExperimentAPI.activateBranch({ featureId: "green" }),
@@ -505,7 +535,7 @@ add_task(async function test_activateBranch_storeFailure() {
   });
 
   await store.init();
-  await store.addExperiment(experiment);
+  await store.addEnrollment(experiment);
   
   const stub = sandbox.stub(store, "emit");
   
@@ -532,7 +562,7 @@ add_task(async function test_activateBranch_noActivationEvent() {
   });
 
   await store.init();
-  await store.addExperiment(experiment);
+  await store.addEnrollment(experiment);
   
   const stub = sandbox.stub(store, "emit");
   

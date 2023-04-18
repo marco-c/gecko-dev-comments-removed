@@ -20,7 +20,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 const IS_MAIN_PROCESS =
   Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT;
-const REMOTE_DEFAULTS_KEY = "__REMOTE_DEFAULTS";
 
 
 const SYNC_DATA_PREF_BRANCH = "nimbus.syncdatastore.";
@@ -125,7 +124,10 @@ XPCOMUtils.defineLazyGetter(this, "syncDataStore", () => {
         return null;
       }
       let prefBranch = `${SYNC_DEFAULTS_PREF_BRANCH}${featureId}.`;
-      metadata.variables = this._getBranchChildValues(prefBranch, featureId);
+      metadata.branch.feature.value = this._getBranchChildValues(
+        prefBranch,
+        featureId
+      );
 
       return metadata;
     },
@@ -157,19 +159,26 @@ XPCOMUtils.defineLazyGetter(this, "syncDataStore", () => {
         this._trySetPrefValue(experimentsPrefBranch, featureId, value);
       }
     },
-    setDefault(featureId, value) {
+    setDefault(featureId, enrollment) {
       
 
 
 
 
-      for (let variable of Object.keys(value.variables || {})) {
+      let { feature } = enrollment.branch;
+      for (let variable of Object.keys(feature.value)) {
         let prefName = `${SYNC_DEFAULTS_PREF_BRANCH}${featureId}.${variable}`;
-        this._trySetTypedPrefValue(prefName, value.variables[variable]);
+        this._trySetTypedPrefValue(prefName, feature.value[variable]);
       }
       this._trySetPrefValue(defaultsPrefBranch, featureId, {
-        ...value,
-        variables: null,
+        ...enrollment,
+        branch: {
+          ...enrollment.branch,
+          feature: {
+            ...enrollment.branch.feature,
+            value: null,
+          },
+        },
       });
     },
     getAllDefaultBranches() {
@@ -238,6 +247,11 @@ class ExperimentStore extends SharedDataMap {
         this._emitFeatureUpdate(featureId, "feature-experiment-loaded")
       );
     });
+    this.getAllRollouts().forEach(({ featureIds }) => {
+      featureIds.forEach(featureId =>
+        this._emitFeatureUpdate(featureId, "feature-rollout-loaded")
+      );
+    });
 
     Services.tm.idleDispatchToMainThread(() => this._cleanupOldRecipes());
   }
@@ -296,7 +310,31 @@ class ExperimentStore extends SharedDataMap {
 
 
   getAllActive() {
-    return this.getAll().filter(experiment => experiment.active);
+    return this.getAll().filter(
+      enrollment => enrollment.active && !enrollment.isRollout
+    );
+  }
+
+  
+
+
+
+  getAllRollouts() {
+    return this.getAll().filter(
+      enrollment => enrollment.active && enrollment.isRollout
+    );
+  }
+
+  
+
+
+
+
+  getRolloutForFeature(featureId) {
+    return (
+      this.getAllRollouts().find(r => r.featureIds.includes(featureId)) ||
+      syncDataStore.getDefault(featureId)
+    );
   }
 
   
@@ -317,13 +355,16 @@ class ExperimentStore extends SharedDataMap {
     this._removeEntriesByKeys(recipesToRemove.map(r => r.slug));
   }
 
-  _emitExperimentUpdates(experiment) {
-    this.emit(`update:${experiment.slug}`, experiment);
+  _emitUpdates(enrollment) {
+    this.emit(`update:${enrollment.slug}`, enrollment);
     (
-      experiment.featureIds || getAllBranchFeatureIds(experiment.branch)
+      enrollment.featureIds || getAllBranchFeatureIds(enrollment.branch)
     ).forEach(featureId => {
-      this.emit(`update:${featureId}`, experiment);
-      this._emitFeatureUpdate(featureId, "experiment-updated");
+      this.emit(`update:${featureId}`, enrollment);
+      this._emitFeatureUpdate(
+        featureId,
+        enrollment.isRollout ? "rollout-updated" : "experiment-updated"
+      );
     });
   }
 
@@ -342,21 +383,29 @@ class ExperimentStore extends SharedDataMap {
   
 
 
-  _updateSyncStore(experiment) {
-    let features = featuresCompat(experiment.branch);
+
+  _updateSyncStore(enrollment) {
+    let features = featuresCompat(enrollment.branch);
     for (let feature of features) {
       if (
         FeatureManifest[feature.featureId]?.isEarlyStartup ||
         feature.isEarlyStartup
       ) {
-        if (!experiment.active) {
+        if (!enrollment.active) {
           
-          syncDataStore.delete(feature.featureId);
+          if (enrollment.isRollout) {
+            syncDataStore.deleteDefault(feature.featureId);
+          } else {
+            syncDataStore.delete(feature.featureId);
+          }
         } else {
-          syncDataStore.set(feature.featureId, {
-            ...experiment,
+          let updateEnrollmentSyncStore = enrollment.isRollout
+            ? syncDataStore.setDefault.bind(syncDataStore)
+            : syncDataStore.set.bind(syncDataStore);
+          updateEnrollmentSyncStore(feature.featureId, {
+            ...enrollment,
             branch: {
-              ...experiment.branch,
+              ...enrollment.branch,
               feature,
               
               features: null,
@@ -371,15 +420,15 @@ class ExperimentStore extends SharedDataMap {
 
 
 
-  addExperiment(experiment) {
-    if (!experiment || !experiment.slug) {
+  addEnrollment(enrollment) {
+    if (!enrollment || !enrollment.slug) {
       throw new Error(
         `Tried to add an experiment but it didn't have a .slug property.`
       );
     }
-    this.set(experiment.slug, experiment);
-    this._updateSyncStore(experiment);
-    this._emitExperimentUpdates(experiment);
+    this.set(enrollment.slug, enrollment);
+    this._updateSyncStore(enrollment);
+    this._emitUpdates(enrollment);
   }
 
   
@@ -391,13 +440,13 @@ class ExperimentStore extends SharedDataMap {
     const oldProperties = this.get(slug);
     if (!oldProperties) {
       throw new Error(
-        `Tried to update experiment ${slug} bug it doesn't exist`
+        `Tried to update experiment ${slug} but it doesn't exist`
       );
     }
     const updatedExperiment = { ...oldProperties, ...newProperties };
     this.set(slug, updatedExperiment);
     this._updateSyncStore(updatedExperiment);
-    this._emitExperimentUpdates(updatedExperiment);
+    this._emitUpdates(updatedExperiment);
   }
 
   
@@ -406,101 +455,9 @@ class ExperimentStore extends SharedDataMap {
 
 
 
-  finalizeRemoteConfigs(activeFeatureConfigIds) {
-    if (!activeFeatureConfigIds) {
-      throw new Error("You must pass in an array of active feature ids.");
-    }
-    
-    
-    for (let featureId of this.getAllExistingRemoteConfigIds()) {
-      if (!activeFeatureConfigIds.includes(featureId)) {
-        this.deleteRemoteConfig(featureId);
-      }
-    }
-
-    
-    
-    if (!activeFeatureConfigIds.length) {
-      
-      
-      this.ready().then(() => this.setNonPersistent(REMOTE_DEFAULTS_KEY, {}));
-    }
-
-    
-    
-    
-    this.emit("remote-defaults-finalized");
-  }
-
-  
-
-
-
-
-  updateRemoteConfigs(featureId, configuration) {
-    const remoteConfigState = this.get(REMOTE_DEFAULTS_KEY);
-    this.setNonPersistent(REMOTE_DEFAULTS_KEY, {
-      ...remoteConfigState,
-      [featureId]: { ...configuration },
-    });
-    if (
-      FeatureManifest[featureId]?.isEarlyStartup ||
-      configuration.isEarlyStartup
-    ) {
-      syncDataStore.setDefault(featureId, configuration);
-    }
-    this._emitFeatureUpdate(featureId, "remote-defaults-update");
-  }
-
-  deleteRemoteConfig(featureId) {
-    const remoteConfigState = this.get(REMOTE_DEFAULTS_KEY);
-    delete remoteConfigState?.[featureId];
-    this.setNonPersistent(REMOTE_DEFAULTS_KEY, { ...remoteConfigState });
-    syncDataStore.deleteDefault(featureId);
-    this._emitFeatureUpdate(featureId, "remote-defaults-update");
-  }
-
-  
-
-
-
-
-  getRemoteConfig(featureId) {
-    return (
-      this.get(REMOTE_DEFAULTS_KEY)?.[featureId] ||
-      syncDataStore.getDefault(featureId)
-    );
-  }
-
-  
-
-
-
-  getAllExistingRemoteConfigIds() {
-    return [
-      ...new Set([
-        ...syncDataStore.getAllDefaultBranches(),
-        ...Object.keys(this.get(REMOTE_DEFAULTS_KEY) || {}),
-      ]),
-    ];
-  }
-
-  getAllRemoteConfigs() {
-    const remoteDefaults = this.get(REMOTE_DEFAULTS_KEY);
-    if (!remoteDefaults) {
-      return [];
-    }
-
-    let featureIds = Object.keys(remoteDefaults);
-    return Object.values(remoteDefaults).map((rc, idx) => ({
-      ...rc,
-      featureId: featureIds[idx],
-    }));
-  }
-
-  _deleteForTests(featureId) {
-    super._deleteForTests(featureId);
-    syncDataStore.deleteDefault(featureId);
-    syncDataStore.delete(featureId);
+  _deleteForTests(slugOrFeatureId) {
+    super._deleteForTests(slugOrFeatureId);
+    syncDataStore.deleteDefault(slugOrFeatureId);
+    syncDataStore.delete(slugOrFeatureId);
   }
 }

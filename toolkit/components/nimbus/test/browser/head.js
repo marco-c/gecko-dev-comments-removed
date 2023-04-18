@@ -12,8 +12,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ExperimentManager: "resource://nimbus/lib/ExperimentManager.jsm",
   Ajv: "resource://testing-common/ajv-6.12.6.js",
   ExperimentTestUtils: "resource://testing-common/NimbusTestUtils.jsm",
-  RemoteDefaultsLoader:
-    "resource://nimbus/lib/RemoteSettingsExperimentLoader.jsm",
   ExperimentFakes: "resource://testing-common/NimbusTestUtils.jsm",
 });
 
@@ -25,32 +23,14 @@ add_task(function setup() {
 
 
 
-  let origAddExperiment = ExperimentManager.store.addExperiment.bind(
+  let origAddExperiment = ExperimentManager.store.addEnrollment.bind(
     ExperimentManager.store
   );
-  let origOnUpdatesReady = RemoteDefaultsLoader._onUpdatesReady.bind(
-    RemoteDefaultsLoader
-  );
   sandbox
-    .stub(ExperimentManager.store, "addExperiment")
+    .stub(ExperimentManager.store, "addEnrollment")
     .callsFake(async enrollment => {
       await ExperimentTestUtils.validateEnrollment(enrollment);
       return origAddExperiment(enrollment);
-    });
-  
-  
-  
-  
-  
-  sandbox
-    .stub(RemoteDefaultsLoader, "_onUpdatesReady")
-    .callsFake(async (remoteDefaults, reason) => {
-      for (let remoteDefault of remoteDefaults) {
-        for (let config of remoteDefault.configurations) {
-          await ExperimentTestUtils.validateRollouts(config);
-        }
-      }
-      return origOnUpdatesReady(remoteDefaults, reason);
     });
 
   registerCleanupFunction(() => {

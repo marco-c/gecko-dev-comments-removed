@@ -23,8 +23,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ExperimentStore: "resource://nimbus/lib/ExperimentStore.jsm",
   ExperimentManager: "resource://nimbus/lib/ExperimentManager.jsm",
   RemoteSettings: "resource://services-settings/remote-settings.js",
-  setTimeout: "resource://gre/modules/Timer.jsm",
-  clearTimeout: "resource://gre/modules/Timer.jsm",
   FeatureManifest: "resource://nimbus/FeatureManifest.js",
   AppConstants: "resource://gre/modules/AppConstants.jsm",
 });
@@ -132,7 +130,10 @@ const ExperimentAPI = {
 
 
 
-  getExperimentMetaData({ slug, featureId }) {
+
+
+
+  getEnrollmentMetaData({ slug, featureId }, isRollout) {
     if (!slug && !featureId) {
       throw new Error(
         "getExperiment(options) must include a slug or a feature."
@@ -144,7 +145,11 @@ const ExperimentAPI = {
       if (slug) {
         experimentData = this._store.get(slug);
       } else if (featureId) {
-        experimentData = this._store.getExperimentForFeature(featureId);
+        if (isRollout) {
+          experimentData = this._store.getRolloutForFeature(featureId);
+        } else {
+          experimentData = this._store.getExperimentForFeature(featureId);
+        }
       }
     } catch (e) {
       Cu.reportError(e);
@@ -158,6 +163,22 @@ const ExperimentAPI = {
     }
 
     return null;
+  },
+
+  
+
+
+
+  getExperimentMetaData(options) {
+    return this.getEnrollmentMetaData(options);
+  },
+
+  
+
+
+
+  getRolloutMetaData(options) {
+    return this.getEnrollmentMetaData(options, true);
   },
 
   
@@ -324,11 +345,6 @@ class _ExperimentFeature {
       );
     }
     this._didSendExposureEvent = false;
-    this._onRemoteReady = null;
-    this._waitForRemote = new Promise(
-      resolve => (this._onRemoteReady = resolve)
-    );
-    this._listenForRemoteDefaults = this._listenForRemoteDefaults.bind(this);
     const variables = this.manifest?.variables || {};
 
     Object.keys(variables).forEach(key => {
@@ -349,36 +365,6 @@ class _ExperimentFeature {
         );
       }
     });
-
-    
-
-
-
-
-
-
-    ExperimentAPI._store.on(
-      "remote-defaults-finalized",
-      this._listenForRemoteDefaults
-    );
-    this.onUpdate(this._listenForRemoteDefaults);
-  }
-
-  _listenForRemoteDefaults(eventName, reason) {
-    if (
-      
-      eventName === "remote-defaults-finalized" ||
-      
-      reason === "experiment-updated" ||
-      reason === "remote-defaults-update"
-    ) {
-      ExperimentAPI._store.off(
-        "remote-defaults-updated",
-        this._listenForRemoteDefaults
-      );
-      this.off(this._listenForRemoteDefaults);
-      this._onRemoteReady();
-    }
   }
 
   getPreferenceName(variable) {
@@ -405,22 +391,8 @@ class _ExperimentFeature {
 
 
 
-
-
-
-  async ready(timeout) {
-    const REMOTE_DEFAULTS_TIMEOUT_MS = 15 * 1000; 
-    await ExperimentAPI.ready();
-    if (ExperimentAPI._store.hasRemoteDefaultsReady()) {
-      this._onRemoteReady();
-    } else {
-      let remoteTimeoutId = setTimeout(
-        this._onRemoteReady,
-        timeout || REMOTE_DEFAULTS_TIMEOUT_MS
-      );
-      await this._waitForRemote;
-      clearTimeout(remoteTimeoutId);
-    }
+  ready() {
+    return ExperimentAPI.ready();
   }
 
   
@@ -441,10 +413,6 @@ class _ExperimentFeature {
       return feature.enabled;
     }
 
-    if (isBooleanValueDefined(this.getRemoteConfig()?.enabled)) {
-      return this.getRemoteConfig().enabled;
-    }
-
     let enabled;
     try {
       enabled = this.getVariable("enabled");
@@ -453,6 +421,10 @@ class _ExperimentFeature {
     }
     if (isBooleanValueDefined(enabled)) {
       return enabled;
+    }
+
+    if (isBooleanValueDefined(this.getRollout()?.enabled)) {
+      return this.getRollout().enabled;
     }
 
     return defaultValue;
@@ -474,7 +446,7 @@ class _ExperimentFeature {
     return {
       ...this.prefGetters,
       ...defaultValues,
-      ...this.getRemoteConfig()?.variables,
+      ...this.getRollout()?.value,
       ...(featureValue || null),
       ...userPrefs,
     };
@@ -511,7 +483,7 @@ class _ExperimentFeature {
     }
 
     
-    const remoteValue = this.getRemoteConfig()?.variables?.[variable];
+    const remoteValue = this.getRollout()?.value?.[variable];
     if (typeof remoteValue !== "undefined") {
       return remoteValue;
     }
@@ -519,13 +491,26 @@ class _ExperimentFeature {
     return prefValue;
   }
 
-  getRemoteConfig() {
-    let remoteConfig = ExperimentAPI._store.getRemoteConfig(this.featureId);
+  getRollout() {
+    let remoteConfig = ExperimentAPI._store.getRolloutForFeature(
+      this.featureId
+    );
     if (!remoteConfig) {
       return null;
     }
 
-    return remoteConfig;
+    if (remoteConfig.branch?.features) {
+      return remoteConfig.branch?.features.find(
+        f => f.featureId === this.featureId
+      );
+    }
+
+    
+    if (remoteConfig.branch?.feature) {
+      return remoteConfig.branch.feature;
+    }
+
+    return null;
   }
 
   recordExposureEvent({ once = false } = {}) {
@@ -533,16 +518,21 @@ class _ExperimentFeature {
       return;
     }
 
-    let experimentData = ExperimentAPI.getExperiment({
+    let enrollmentData = ExperimentAPI.getExperimentMetaData({
       featureId: this.featureId,
     });
+    if (!enrollmentData) {
+      enrollmentData = ExperimentAPI.getRolloutMetaData({
+        featureId: this.featureId,
+      });
+    }
 
     
-    if (experimentData) {
+    if (enrollmentData) {
       ExperimentAPI.recordExposureEvent({
         featureId: this.featureId,
-        experimentSlug: experimentData.slug,
-        branchSlug: experimentData.branch?.slug,
+        experimentSlug: enrollmentData.slug,
+        branchSlug: enrollmentData.branch?.slug,
       });
       this._didSendExposureEvent = true;
     }
@@ -570,7 +560,7 @@ class _ExperimentFeature {
           this.prefGetters[prefName],
         ]),
       userPrefs: this._getUserPrefsValues(),
-      remoteDefaults: this.getRemoteConfig(),
+      rollouts: this.getRollout(),
     };
   }
 }

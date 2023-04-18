@@ -36,6 +36,8 @@ XPCOMUtils.defineLazyGetter(this, "gStringBundle", function() {
   );
 });
 
+const NIMBUS_DEBUG_PREF = "nimbus.debug";
+
 
 
 
@@ -98,6 +100,12 @@ class ShieldFrameChild extends JSWindowActorChild {
         this.triggerPageCallback(
           "ReceiveRemoteValue:StudiesEnabled",
           studiesEnabled
+        );
+        break;
+      case "GetRemoteValue:DebugModeOn":
+        this.triggerPageCallback(
+          "ReceiveRemoteValue:DebugModeOn",
+          Services.prefs.getBoolPref(NIMBUS_DEBUG_PREF)
         );
         break;
       case "NavigateToDataPreferences":
