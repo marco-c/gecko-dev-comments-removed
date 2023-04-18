@@ -309,7 +309,8 @@ nsIFrame* nsFrameList::GetPrevVisualFor(nsIFrame* aFrame) const {
   mozilla::intl::BidiDirection paraDir =
       nsBidiPresUtils::ParagraphDirection(mFirstChild);
 
-  nsAutoLineIterator iter = parent->GetLineIterator();
+  AutoAssertNoDomMutations guard;
+  nsILineIterator* iter = parent->GetLineIterator();
   if (!iter) {
     
     if (parent->IsLineFrame()) {
@@ -380,7 +381,8 @@ nsIFrame* nsFrameList::GetNextVisualFor(nsIFrame* aFrame) const {
   mozilla::intl::BidiDirection paraDir =
       nsBidiPresUtils::ParagraphDirection(mFirstChild);
 
-  nsAutoLineIterator iter = parent->GetLineIterator();
+  AutoAssertNoDomMutations guard;
+  nsILineIterator* iter = parent->GetLineIterator();
   if (!iter) {
     
     if (parent->IsLineFrame()) {

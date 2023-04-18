@@ -183,8 +183,6 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
   
  public:
-  virtual void DisposeLineIterator() override {}
-
   
   
   
@@ -195,15 +193,15 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
   
 
 
-  virtual int32_t GetNumLines() const override;
+  int32_t GetNumLines() const final;
 
   
 
 
-  virtual bool GetDirection() override;
+  bool GetDirection() final;
 
   
-  Result<LineInfo, nsresult> GetLine(int32_t aLineNumber) override;
+  Result<LineInfo, nsresult> GetLine(int32_t aLineNumber) final;
 
   
 
@@ -212,8 +210,7 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
 
 
-  virtual int32_t FindLineContaining(nsIFrame* aFrame,
-                                     int32_t aStartLine = 0) override;
+  int32_t FindLineContaining(nsIFrame* aFrame, int32_t aStartLine = 0) final;
 
   
 
@@ -228,7 +225,7 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
   NS_IMETHOD FindFrameAt(int32_t aLineNumber, nsPoint aPos,
                          nsIFrame** aFrameFound, bool* aPosIsBeforeFirstFrame,
-                         bool* aPosIsAfterLastFrame) override;
+                         bool* aPosIsAfterLastFrame) final;
 
   
 
@@ -240,7 +237,7 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
   NS_IMETHOD CheckLineOrder(int32_t aLine, bool* aIsReordered,
                             nsIFrame** aFirstVisual,
-                            nsIFrame** aLastVisual) override;
+                            nsIFrame** aLastVisual) final;
 
   
   

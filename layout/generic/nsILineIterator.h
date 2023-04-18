@@ -7,6 +7,7 @@
 #define nsILineIterator_h___
 
 #include "nscore.h"
+#include "nsINode.h"
 #include "nsRect.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Result.h"
@@ -23,13 +24,13 @@ class nsIFrame;
 
 
 
+
+
 class nsILineIterator {
  protected:
   ~nsILineIterator() = default;
 
  public:
-  virtual void DisposeLineIterator() = 0;
-
   
 
 
@@ -89,31 +90,17 @@ class nsILineIterator {
                             nsIFrame** aLastVisual) = 0;
 };
 
-class nsAutoLineIterator {
+
+
+
+
+
+class MOZ_STACK_CLASS AutoAssertNoDomMutations final {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  nsMutationGuard mGuard;
+#endif
  public:
-  nsAutoLineIterator() : mRawPtr(nullptr) {}
-  MOZ_IMPLICIT nsAutoLineIterator(nsILineIterator* i) : mRawPtr(i) {}
-
-  ~nsAutoLineIterator() {
-    if (mRawPtr) mRawPtr->DisposeLineIterator();
-  }
-
-  operator const nsILineIterator*() const { return mRawPtr; }
-  operator nsILineIterator*() { return mRawPtr; }
-  const nsILineIterator* operator->() const { return mRawPtr; }
-  nsILineIterator* operator->() { return mRawPtr; }
-
-  nsILineIterator* operator=(nsILineIterator* i) {
-    if (i == mRawPtr) return i;
-
-    if (mRawPtr) mRawPtr->DisposeLineIterator();
-
-    mRawPtr = i;
-    return i;
-  }
-
- private:
-  nsILineIterator* mRawPtr;
+  ~AutoAssertNoDomMutations() { MOZ_DIAGNOSTIC_ASSERT(!mGuard.Mutated(0)); }
 };
 
 #endif 

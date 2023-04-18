@@ -1718,8 +1718,10 @@ int32_t HyperTextAccessible::CaretLineNumber() {
       caretContent, caretOffset, hint, &returnOffsetUnused);
   NS_ENSURE_TRUE(caretFrame, -1);
 
+  AutoAssertNoDomMutations guard;  
+                                   
   int32_t lineNumber = 1;
-  nsAutoLineIterator lineIterForCaret;
+  nsILineIterator* lineIterForCaret = nullptr;
   nsIContent* hyperTextContent = IsContent() ? mContent.get() : nullptr;
   while (caretFrame) {
     if (hyperTextContent == caretFrame->GetContent()) {
@@ -1732,7 +1734,7 @@ int32_t HyperTextAccessible::CaretLineNumber() {
     
     nsIFrame* sibling = parentFrame->PrincipalChildList().FirstChild();
     while (sibling && sibling != caretFrame) {
-      nsAutoLineIterator lineIterForSibling = sibling->GetLineIterator();
+      nsILineIterator* lineIterForSibling = sibling->GetLineIterator();
       if (lineIterForSibling) {
         
         int32_t addLines = lineIterForSibling->GetNumLines();
