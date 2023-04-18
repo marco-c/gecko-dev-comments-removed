@@ -9,6 +9,7 @@
 #include "AudioPacketizer.h"
 #include "AudioSegment.h"
 #include "AudioDeviceInfo.h"
+#include "DeviceInputTrack.h"
 #include "MediaEngineWebRTC.h"
 #include "MediaTrackListener.h"
 #include "modules/audio_processing/include/audio_processing.h"
@@ -224,6 +225,10 @@ class AudioProcessingTrack : public ProcessedMediaTrack {
   
   
   RefPtr<MediaInputPort> mPort;
+
+  
+  
+  RefPtr<NativeInputTrack> mDeviceInputTrack;
 
   
   
