@@ -6,7 +6,6 @@
 <link rel="author" title="Stephen Chenney" href="mailto:schenney@chromium.org">
 <link rel="help" href="https://github.com/w3c/csswg-drafts/issues/5165">
 <link rel="match" href="reference/image-orientation-none-cross-origin-svg-ref.html">
-<meta name=fuzzy content="10;100">
 <script src="/common/get-host-info.sub.js"></script>
 <script src="/common/reftest-wait.js"></script>
 <script src="/common/rendering-utils.js"></script>
@@ -109,60 +108,60 @@
     <svg class="image" id="svg_cors_from" style="left: 10px; top: 50px; image-orientation: from-image;">
         <image id="cors_from_image" href="support/exif-orientation-3-lr.jpg" X="-57" Y="-27"></image>
     </svg>
-    
-
+    <!-- This should be functionally identical to a plain <img> element. We test it here to verify
+         that SVG foreign object correctly tracks the security origin for the image. -->
     <svg class="image" style="left: 10px; top: 80px; image-orientation: from-image;">
         <foreignObject  x="-57" y="-27" width="100" height="50">
             <img id="cors_from_foreign" src="support/exif-orientation-3-lr.jpg"></img>
         </foreignObject>
     </svg>
-    
-
+    <!-- Note SVG-as-image requires any <image> elements to use (base64 encoded) data: URLs, that can
+         never be cross origin. This just tests that we don't crash or do other strange things. -->
     <img class="image" id="img_cors_from" src="support/svg-with-image-rotated.svg" style="left: 10px; top: 110px; image-orientation: from-image;"/>
 
     <svg class="image" style="left: 60px; top: 50px; image-orientation: none;">
         <image id="cors_none_image" href="support/exif-orientation-3-lr.jpg" X="-57" Y="-27"></image>
     </svg>
-    
-
+    <!-- This should be functionally identical to a plain <img> element. We test it here to verify
+         that SVG foreign object correctly tracks the security origin for the image. -->
     <svg class="image" style="left: 60px; top: 80px; image-orientation: none;">
         <foreignObject  x="-57" y="-27" width="100" height="50">
             <img id="cors_none_foreign" src="support/exif-orientation-3-lr.jpg"></img>
         </foreignObject>
     </svg>
-    
-
+    <!-- Note SVG-as-image requires any <image> elements to use (base64 encoded) data: URLs, that can
+         never be cross origin. This just tests that we don't crash or do other strange things. -->
     <img class="image" id="img_cors_none" src="support/svg-with-image-rotated.svg" style="left: 60px; top: 110px; image-orientation: none;"/>
 
     <svg class="image" style="left: 110px; top: 50px; image-orientation: from-image;">
         <image id="same_from_image" href="support/exif-orientation-3-lr.jpg" X="-57" Y="-27"></image>
     </svg>
-    
-
+    <!-- This should be functionally identical to a plain <img> element. We test it here to verify
+         that SVG foreign object correctly tracks the security origin for the image. -->
     <svg class="image" style="left: 110px; top: 80px; image-orientation: from-image;">
         <foreignObject  x="-57" y="-27" width="100" height="50">
             <img id="same_from_foreign" src="support/exif-orientation-3-lr.jpg"></img>
         </foreignObject>
     </svg>
-    
-
+    <!-- Note SVG-as-image requires any <image> elements to use (base64 encoded) data: URLs, that can
+         never be cross origin. This just tests that we don't crash or do other strange things. -->
     <img class="image" id="img_same_from" src="support/svg-with-image-rotated.svg" style="left: 110px; top: 110px; image-orientation: from-image;"/>
 
     <svg class="image" style="left: 160px; top: 50px; image-orientation: none;">
         <image id="same_none_image" href="support/exif-orientation-3-lr.jpg" X="0" Y="0"></image>
     </svg>
-    
-
+    <!-- This should be functionally identical to a plain <img> element. We test it here to verify
+         that SVG foreign object correctly tracks the security origin for the image. -->
     <svg class="image" style="left: 160px; top: 80px; image-orientation: none;">
         <foreignObject x="0" y="0" width="100" height="50">
             <img id="same_none_foreign" src="support/exif-orientation-3-lr.jpg"></img>
         </foreignObject>
     </svg>
-    
-
+    <!-- Note SVG-as-image requires any <image> elements to use (base64 encoded) data: URLs, that can
+         never be cross origin. This just tests that we don't crash or do other strange things. -->
     <img class="image" id="img_same_none" src="support/svg-with-image-rotated.svg" style="left: 160px; top: 110px; image-orientation: none;"/>
 
-    
+    <!-- This is the easiest way to get a cross origin url for SVG <image> -->
     <script>
         const img = document.createElement('img')
         img.src = "support/exif-orientation-3-lr.jpg"
