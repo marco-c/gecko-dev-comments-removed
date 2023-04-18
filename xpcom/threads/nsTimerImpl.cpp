@@ -601,7 +601,7 @@ void nsTimerImpl::Fire(int32_t aGeneration) {
   uint32_t oldDelay;
   TimeStamp oldTimeout;
   Callback callbackDuringFire{UnknownCallback{}};
-  nsCOMPtr<nsITimer> kungFuDeathGrip;
+  nsCOMPtr<nsITimer> timer;
 
   {
     
@@ -619,7 +619,7 @@ void nsTimerImpl::Fire(int32_t aGeneration) {
     
     
     
-    kungFuDeathGrip = mITimer;
+    timer = mITimer;
   }
 
   AUTO_PROFILER_LABEL("nsTimerImpl::Fire", OTHER);
@@ -651,12 +651,12 @@ void nsTimerImpl::Fire(int32_t aGeneration) {
 
   callbackDuringFire.match(
       [](const UnknownCallback&) {},
-      [&](const InterfaceCallback& i) { i->Notify(mITimer); },
+      [&](const InterfaceCallback& i) { i->Notify(timer); },
       [&](const ObserverCallback& o) {
-        o->Observe(mITimer, NS_TIMER_CALLBACK_TOPIC, nullptr);
+        o->Observe(timer, NS_TIMER_CALLBACK_TOPIC, nullptr);
       },
-      [&](const FuncCallback& f) { f.mFunc(mITimer, f.mClosure); },
-      [&](const ClosureCallback& c) { c.mFunc(mITimer); });
+      [&](const FuncCallback& f) { f.mFunc(timer, f.mClosure); },
+      [&](const ClosureCallback& c) { c.mFunc(timer); });
 
   TimeStamp now = TimeStamp::Now();
 
