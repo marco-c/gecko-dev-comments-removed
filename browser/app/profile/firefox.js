@@ -1432,6 +1432,11 @@ pref("services.sync.syncedTabs.showRemoteIcons", true);
 
 
 
+
+pref("services.sync.syncedTabs.syncDelayAfterTabChange", 0);
+
+
+
 pref("browser.menu.showCharacterEncoding", "chrome://browser/locale/browser.properties");
 
 
