@@ -226,10 +226,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:SkSpriteBlitter_Memcpy\n"
 
          
-         "race:nsPluginTag::nsPluginTag\n"
-         "race:nsFakePluginTag\n"
-
-         
          "race:CallInitFunc\n"
 
          
