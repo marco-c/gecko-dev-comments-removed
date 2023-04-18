@@ -541,7 +541,6 @@ module.exports = {
     {
       
       files: [
-        "dom/push/test/xpcshell/head.js",
         "dom/push/test/xpcshell/test_broadcast_success.js",
         "dom/push/test/xpcshell/test_crypto.js",
         "toolkit/mozapps/extensions/internal/AddonTestUtils.jsm",

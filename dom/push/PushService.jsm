@@ -52,7 +52,12 @@ const CONNECTION_PROTOCOLS = (function() {
   return [PushServiceAndroidGCM];
 })();
 
-const EXPORTED_SYMBOLS = ["PushService"];
+const EXPORTED_SYMBOLS = [
+  "PushService",
+  
+  "PushServiceHttp2",
+  "PushServiceWebSocket",
+];
 
 XPCOMUtils.defineLazyGetter(this, "console", () => {
   let { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
