@@ -95,10 +95,8 @@ class imgRequest final : public nsIStreamListener,
   
   void StartDecoding();
 
-  inline uint64_t InnerWindowID() const { return mInnerWindowId; }
-  void SetInnerWindowID(uint64_t aInnerWindowId) {
-    mInnerWindowId = aInnerWindowId;
-  }
+  uint64_t InnerWindowID() const;
+  void SetInnerWindowID(uint64_t aInnerWindowId);
 
   
   
@@ -264,9 +262,6 @@ class imgRequest final : public nsIStreamListener,
   nsCOMPtr<nsIChannel> mNewRedirectChannel;
 
   
-  uint64_t mInnerWindowId;
-
-  
   
   mozilla::CORSMode mCORSMode;
 
@@ -290,6 +285,8 @@ class imgRequest final : public nsIStreamListener,
   
   RefPtr<ProgressTracker> mProgressTracker;
   RefPtr<Image> mImage;
+  
+  uint64_t mInnerWindowId;
   bool mIsMultiPartChannel : 1;
   bool mIsInCache : 1;
   bool mDecodeRequested : 1;
