@@ -23,7 +23,7 @@ export function selectThread(cx, thread) {
       return;
     }
 
-    await dispatch({ cx, type: "SELECT_THREAD", thread });
+    dispatch({ cx, type: "SELECT_THREAD", thread });
 
     
     const threadcx = getThreadContext(getState());
