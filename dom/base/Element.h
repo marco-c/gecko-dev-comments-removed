@@ -308,7 +308,7 @@ class Element : public FragmentOrElement {
   
 
 
-  virtual void Blur(mozilla::ErrorResult& aError);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void Blur(mozilla::ErrorResult& aError);
 
   
 

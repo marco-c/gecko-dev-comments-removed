@@ -139,7 +139,8 @@ class nsFocusManager final : public nsIFocusManager,
   
 
 
-  nsresult ContentRemoved(Document* aDocument, nsIContent* aContent);
+  MOZ_CAN_RUN_SCRIPT nsresult ContentRemoved(Document* aDocument,
+                                             nsIContent* aContent);
 
   void NeedsFlushBeforeEventHandling(mozilla::dom::Element* aElement) {
     if (mFocusedElement == aElement) {
@@ -204,11 +205,9 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  nsresult DetermineElementToMoveFocus(nsPIDOMWindowOuter* aWindow,
-                                       nsIContent* aStart, int32_t aType,
-                                       bool aNoParentTraversal,
-                                       bool aNavigateByKey,
-                                       nsIContent** aNextContent);
+  MOZ_CAN_RUN_SCRIPT nsresult DetermineElementToMoveFocus(
+      nsPIDOMWindowOuter* aWindow, nsIContent* aStart, int32_t aType,
+      bool aNoParentTraversal, bool aNavigateByKey, nsIContent** aNextContent);
 
   
 
@@ -359,12 +358,12 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  bool AdjustInProcessWindowFocus(
+  MOZ_CAN_RUN_SCRIPT bool AdjustInProcessWindowFocus(
       mozilla::dom::BrowsingContext* aBrowsingContext, bool aCheckPermission,
       bool aIsVisible, uint64_t aActionId);
-  void AdjustWindowFocus(mozilla::dom::BrowsingContext* aBrowsingContext,
-                         bool aCheckPermission, bool aIsVisible,
-                         uint64_t aActionId);
+  MOZ_CAN_RUN_SCRIPT void AdjustWindowFocus(
+      mozilla::dom::BrowsingContext* aBrowsingContext, bool aCheckPermission,
+      bool aIsVisible, uint64_t aActionId);
 
   
 
@@ -418,12 +417,11 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  bool Blur(mozilla::dom::BrowsingContext* aBrowsingContextToClear,
-            mozilla::dom::BrowsingContext* aAncestorBrowsingContextToFocus,
-            bool aIsLeavingDocument, bool aAdjustWidget, uint64_t aActionId,
-            mozilla::dom::Element* aElementToFocus = nullptr);
+  MOZ_CAN_RUN_SCRIPT bool Blur(
+      mozilla::dom::BrowsingContext* aBrowsingContextToClear,
+      mozilla::dom::BrowsingContext* aAncestorBrowsingContextToFocus,
+      bool aIsLeavingDocument, bool aAdjustWidget, uint64_t aActionId,
+      mozilla::dom::Element* aElementToFocus = nullptr);
   MOZ_CAN_RUN_SCRIPT void BlurFromOtherProcess(
       mozilla::dom::BrowsingContext* aFocusedBrowsingContext,
       mozilla::dom::BrowsingContext* aBrowsingContextToClear,

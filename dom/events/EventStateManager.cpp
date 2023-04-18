@@ -3501,10 +3501,11 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
             
             EnsureDocument(mPresContext);
             if (mDocument) {
+              nsCOMPtr<nsPIDOMWindowOuter> outerWindow = mDocument->GetWindow();
 #ifdef XP_MACOSX
               if (!activeContent || !activeContent->IsXULElement())
 #endif
-                fm->ClearFocus(mDocument->GetWindow());
+                fm->ClearFocus(outerWindow);
               
               
               
@@ -3514,8 +3515,6 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
               
               
               if (XRE_IsParentProcess() || IsInActiveTab(mDocument)) {
-                nsCOMPtr<nsPIDOMWindowOuter> outerWindow =
-                    mDocument->GetWindow();
                 fm->SetFocusedWindow(outerWindow);
               }
             }
@@ -5823,8 +5822,9 @@ void EventStateManager::ContentRemoved(Document* aDocument,
 
   
   
-  nsFocusManager* fm = nsFocusManager::GetFocusManager();
-  if (fm) fm->ContentRemoved(aDocument, aContent);
+  if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
+    fm->ContentRemoved(aDocument, aContent);
+  }
 
   RemoveNodeFromChainIfNeeded(NS_EVENT_STATE_HOVER, aContent, true);
   RemoveNodeFromChainIfNeeded(NS_EVENT_STATE_ACTIVE, aContent, true);

@@ -6127,7 +6127,7 @@ nsresult Document::EditingStateChanged() {
 
   
   
-  nsCOMPtr<nsPIDOMWindowOuter> window = GetWindow();
+  const nsCOMPtr<nsPIDOMWindowOuter> window = GetWindow();
   if (!window) {
     return NS_ERROR_FAILURE;
   }
@@ -6227,8 +6227,7 @@ nsresult Document::EditingStateChanged() {
         bool clearFocus = focusedFrame ? !focusedFrame->IsFocusable()
                                        : !focusedContent->IsFocusable();
         if (clearFocus) {
-          nsFocusManager* fm = nsFocusManager::GetFocusManager();
-          if (fm) {
+          if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
             fm->ClearFocus(window);
             
             

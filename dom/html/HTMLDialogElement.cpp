@@ -182,9 +182,10 @@ void HTMLDialogElement::FocusDialog() {
       return;
     }
   } else if (IsInTopLayer()) {
-    if (nsFocusManager* fm = nsFocusManager::GetFocusManager()) {
+    if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
       
-      fm->ClearFocus(OwnerDoc()->GetWindow());
+      nsCOMPtr<nsPIDOMWindowOuter> outerWindow = OwnerDoc()->GetWindow();
+      fm->ClearFocus(outerWindow);
     }
   }
 
