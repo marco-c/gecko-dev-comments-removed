@@ -137,36 +137,6 @@ TEST_F(VsyncTester, CompositorGetVsyncNotifications) {
 }
 
 
-
-TEST_F(VsyncTester, ParentRefreshDriverGetVsyncNotifications) {
-  VsyncSource::Display& globalDisplay = mVsyncSource->GetGlobalDisplay();
-  globalDisplay.DisableVsync();
-  ASSERT_FALSE(globalDisplay.IsVsyncEnabled());
-
-  RefPtr<RefreshTimerVsyncDispatcher> vsyncDispatcher =
-      globalDisplay.GetRefreshTimerVsyncDispatcher();
-  ASSERT_TRUE(vsyncDispatcher != nullptr);
-
-  RefPtr<TestVsyncObserver> testVsyncObserver = new TestVsyncObserver();
-  vsyncDispatcher->SetParentRefreshTimer(testVsyncObserver);
-  ASSERT_TRUE(globalDisplay.IsVsyncEnabled());
-
-  testVsyncObserver->WaitForVsyncNotification();
-  ASSERT_TRUE(testVsyncObserver->DidGetVsyncNotification());
-  vsyncDispatcher->SetParentRefreshTimer(nullptr);
-
-  testVsyncObserver->ResetVsyncNotification();
-  testVsyncObserver->WaitForVsyncNotification();
-  ASSERT_FALSE(testVsyncObserver->DidGetVsyncNotification());
-
-  vsyncDispatcher = nullptr;
-  testVsyncObserver = nullptr;
-
-  globalDisplay.DisableVsync();
-  ASSERT_FALSE(globalDisplay.IsVsyncEnabled());
-}
-
-
 TEST_F(VsyncTester, ChildRefreshDriverGetVsyncNotifications) {
   VsyncSource::Display& globalDisplay = mVsyncSource->GetGlobalDisplay();
   globalDisplay.DisableVsync();

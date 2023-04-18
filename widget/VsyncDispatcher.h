@@ -83,10 +83,6 @@ class RefreshTimerVsyncDispatcher final {
 
   
   
-  void SetParentRefreshTimer(VsyncObserver* aVsyncObserver);
-
-  
-  
   
   
   void AddChildRefreshTimer(VsyncObserver* aVsyncObserver);
@@ -102,7 +98,6 @@ class RefreshTimerVsyncDispatcher final {
   
   gfx::VsyncSource::Display* mDisplay;
   Mutex mRefreshTimersLock;
-  RefPtr<VsyncObserver> mParentRefreshTimer;
   nsTArray<RefPtr<VsyncObserver>> mChildRefreshTimers;
 };
 
