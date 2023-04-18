@@ -159,6 +159,11 @@ class Channel {
 #elif defined(OS_WIN)
   
   void* GetServerPipeHandle() const;
+
+  
+  
+  
+  void StartAcceptingHandles(Mode mode);
 #endif  
 
   
