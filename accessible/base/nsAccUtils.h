@@ -140,9 +140,9 @@ class nsAccUtils {
 
 
 
-  static LayoutDeviceIntPoint ConvertToScreenCoords(int32_t aX, int32_t aY,
-                                                    uint32_t aCoordinateType,
-                                                    Accessible* aAccessible);
+  static LayoutDeviceIntPoint ConvertToScreenCoords(
+      int32_t aX, int32_t aY, uint32_t aCoordinateType,
+      LocalAccessible* aAccessible);
 
   
 
@@ -157,7 +157,7 @@ class nsAccUtils {
 
   static void ConvertScreenCoordsTo(int32_t* aX, int32_t* aY,
                                     uint32_t aCoordinateType,
-                                    Accessible* aAccessible);
+                                    LocalAccessible* aAccessible);
 
   
 
@@ -165,16 +165,8 @@ class nsAccUtils {
 
 
 
-  static LayoutDeviceIntPoint GetScreenCoordsForParent(Accessible* aAccessible);
-
-  
-
-
-
-
-
-  static mozilla::LayoutDeviceIntPoint GetScreenCoordsForWindow(
-      mozilla::a11y::Accessible* aAccessible);
+  static LayoutDeviceIntPoint GetScreenCoordsForParent(
+      LocalAccessible* aAccessible);
 
   
 

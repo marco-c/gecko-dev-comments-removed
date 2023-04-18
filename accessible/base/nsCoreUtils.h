@@ -184,6 +184,14 @@ class nsCoreUtils {
   
 
 
+
+
+
+  static mozilla::LayoutDeviceIntPoint GetScreenCoordsForWindow(nsINode* aNode);
+
+  
+
+
   static already_AddRefed<nsIDocShell> GetDocShellFor(nsINode* aNode);
 
   
