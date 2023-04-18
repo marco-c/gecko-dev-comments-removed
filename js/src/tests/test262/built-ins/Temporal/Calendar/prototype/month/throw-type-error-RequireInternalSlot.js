@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+let cal = new Temporal.Calendar("iso8601");
+
+let badCal = { month: cal.month }
+assert.throws(TypeError, () => badCal.month("2021-03-04"),
+    'badCal.month("2021-03-04") throws a TypeError exception');
+
+reportCompare(0, 0);
