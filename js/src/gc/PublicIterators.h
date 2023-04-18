@@ -28,10 +28,6 @@ class JS_PUBLIC_API Realm;
 
 namespace js {
 
-
-
-
-
 enum ZoneSelector { WithAtoms, SkipAtoms };
 
 

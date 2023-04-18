@@ -22,20 +22,7 @@
 
 
 
-
-
-
-
 namespace js {
-
-
-class MOZ_RAII AutoLockAllAtoms {
-  JSRuntime* runtime;
-
- public:
-  explicit AutoLockAllAtoms(JSRuntime* rt);
-  ~AutoLockAllAtoms();
-};
 
 
 
@@ -121,9 +108,6 @@ class AtomsTable {
     ~Partition();
 
     
-    Mutex lock;
-
-    
     AtomSet atoms;
 
     
@@ -132,13 +116,7 @@ class AtomsTable {
 
   Partition* partitions[PartitionCount];
 
-#ifdef DEBUG
-  bool allPartitionsLocked = false;
-#endif
-
  public:
-  class AutoLock;
-
   
   class SweepIterator {
     AtomsTable& atoms;
@@ -180,10 +158,6 @@ class AtomsTable {
   
   bool sweepIncrementally(SweepIterator& atomsToSweep, SliceBudget& budget);
 
-#ifdef DEBUG
-  bool mainThreadHasAllLocks() const { return allPartitionsLocked; }
-#endif
-
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
  private:
@@ -192,10 +166,6 @@ class AtomsTable {
 
   void tracePinnedAtomsInSet(JSTracer* trc, AtomSet& atoms);
   void mergeAtomsAddedWhileSweeping(Partition& partition);
-
-  friend class AutoLockAllAtoms;
-  void lockAll();
-  void unlockAll();
 };
 
 bool AtomIsPinned(JSContext* cx, JSAtom* atom);

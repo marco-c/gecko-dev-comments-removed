@@ -123,12 +123,6 @@ void CheckArenaListAccess<Helper>::check() const {
   JSRuntime* rt = TlsContext.get()->runtime();
   if (zone->isAtomsZone()) {
     
-    
-    if (rt->currentThreadHasAtomsTableAccess()) {
-      return;
-    }
-
-    
     if (rt->isOffThreadParseRunning()) {
       rt->gc.assertCurrentThreadHasLockedGC();
     }
