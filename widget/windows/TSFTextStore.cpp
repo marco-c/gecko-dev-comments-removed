@@ -2812,7 +2812,7 @@ bool TSFTextStore::DoNotReturnErrorFromGetSelection() {
   
   
   static bool sTSFMayCrashIfGetSelectionReturnsError =
-      IsWindows10BuildOrLater(14393);
+      IsWin10AnniversaryUpdateOrLater();
   return sTSFMayCrashIfGetSelectionReturnsError;
 }
 
@@ -6045,15 +6045,8 @@ void TSFTextStore::NotifyTSFOfSelectionChange() {
   
   
   if (mSelectionForTSF.isNothing()) {
-    mSelectionForTSF.emplace(mPendingSelectionChangeData.mOffset,
-                             mPendingSelectionChangeData.Length(),
-                             mPendingSelectionChangeData.mReversed,
-                             mPendingSelectionChangeData.GetWritingMode());
-  } else if (!mSelectionForTSF->SetSelection(
-                 mPendingSelectionChangeData.mOffset,
-                 mPendingSelectionChangeData.Length(),
-                 mPendingSelectionChangeData.mReversed,
-                 mPendingSelectionChangeData.GetWritingMode())) {
+    mSelectionForTSF.emplace(mPendingSelectionChangeData);
+  } else if (!mSelectionForTSF->SetSelection(mPendingSelectionChangeData)) {
     mPendingSelectionChangeData.Clear();
     MOZ_LOG(gIMELog, LogLevel::Debug,
             ("0x%p   TSFTextStore::NotifyTSFOfSelectionChange(), "
