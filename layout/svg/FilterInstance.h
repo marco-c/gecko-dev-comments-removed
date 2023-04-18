@@ -129,10 +129,13 @@ class FilterInstance {
 
 
 
+
+
   static bool BuildWebRenderFilters(
       nsIFrame* aFilteredFrame,
       mozilla::Span<const mozilla::StyleFilter> aFilters,
-      WrFiltersHolder& aWrFilters, mozilla::Maybe<nsRect>& aPostFilterClip);
+      WrFiltersHolder& aWrFilters, mozilla::Maybe<nsRect>& aPostFilterClip,
+      bool& aInitialized);
 
  private:
   
@@ -173,7 +176,8 @@ class FilterInstance {
   static bool BuildWebRenderFiltersImpl(
       nsIFrame* aFilteredFrame,
       mozilla::Span<const mozilla::StyleFilter> aFilters,
-      WrFiltersHolder& aWrFilters, mozilla::Maybe<nsRect>& aPostFilterClip);
+      WrFiltersHolder& aWrFilters, mozilla::Maybe<nsRect>& aPostFilterClip,
+      bool& aInitialized);
 
   
 
