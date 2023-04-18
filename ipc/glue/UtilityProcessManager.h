@@ -37,10 +37,6 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   void OnProcessUnexpectedShutdown(UtilityProcessHost* aHost);
 
   
-  
-  void NotifyRemoteActorDestroyed();
-
-  
   Maybe<base::ProcessId> ProcessPid();
 
   
@@ -49,9 +45,6 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
 
   
   UtilityProcessParent* GetProcessParent() { return mProcessParent; }
-
-  
-  bool AttemptedProcess() const { return mNumProcessAttempts > 0; }
 
   
   UtilityProcessHost* Process() { return mProcess; }
