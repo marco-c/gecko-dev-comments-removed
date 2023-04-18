@@ -497,6 +497,12 @@
     for (var i = 0; i < testpathparts.length - 1; i++) {
       prepath += testpathparts[i] + "/";
 
+      if (properties["test262-raw"]) {
+        
+        
+        continue;
+      }
+
       scripts.push({src: prepath + "shell.js", module: false});
       scripts.push({src: prepath + "browser.js", module: false});
     }

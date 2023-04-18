@@ -218,6 +218,9 @@ class RefTestCase(object):
         self.random = False
         
         self.slow = False
+        
+        
+        self.is_test262_raw = False
 
         
         
@@ -245,6 +248,12 @@ class RefTestCase(object):
         while path != "":
             assert path != "/"
             path = os.path.dirname(path)
+
+            if self.is_test262_raw and path != "":
+                
+                
+                continue
+
             shell_path = os.path.join(self.root, path, "shell.js")
             if os.path.exists(shell_path):
                 prefix.append(shell_path)
