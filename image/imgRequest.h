@@ -151,6 +151,8 @@ class imgRequest final : public nsIStreamListener,
   
   const char* GetMimeType() const { return mContentType.get(); }
 
+  void GetFileName(nsACString& aFileName);
+
   
   
   int32_t Priority() const;
