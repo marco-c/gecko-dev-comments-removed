@@ -904,6 +904,8 @@ pub enum DebugCommand {
     SimulateLongSceneBuild(u32),
     
     SetPictureTileSize(Option<DeviceIntSize>),
+    
+    SetMaximumSurfaceSize(Option<usize>),
 }
 
 
