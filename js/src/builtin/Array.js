@@ -652,50 +652,6 @@ function ArrayFill(value, start = 0, end = undefined) {
 }
 
 
-
-function ArrayIncludes(searchElement, fromIndex = 0) {
-    
-    var O = ToObject(this);
-
-    
-    var len = ToLength(O.length);
-
-    
-    if (len === 0)
-        return false;
-
-    
-    var n = ToInteger(fromIndex);
-
-    
-    var k;
-    if (n >= 0) {
-        
-        k = n;
-    } else {
-        
-        k = len + n;
-
-        
-        if (k < 0)
-            k = 0;
-    }
-
-    
-    while (k < len) {
-        
-        if (SameValueZero(searchElement, O[k]))
-            return true;
-
-        
-        k++;
-    }
-
-    
-    return false;
-}
-
-
 function CreateArrayIterator(obj, kind) {
     var iteratedObject = ToObject(obj);
     var iterator = NewArrayIterator();

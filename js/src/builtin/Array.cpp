@@ -3982,6 +3982,86 @@ bool js::array_lastIndexOf(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+
+
+bool js::array_includes(JSContext* cx, unsigned argc, Value* vp) {
+  AutoGeckoProfilerEntry pseudoFrame(
+      cx, "Array.prototype.includes", JS::ProfilingCategoryPair::JS,
+      uint32_t(ProfilingStackFrame::Flags::RELEVANT_FOR_JS));
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  RootedObject obj(cx, ToObject(cx, args.thisv()));
+  if (!obj) {
+    return false;
+  }
+
+  
+  uint64_t len;
+  if (!GetLengthPropertyInlined(cx, obj, &len)) {
+    return false;
+  }
+
+  
+  if (len == 0) {
+    args.rval().setBoolean(false);
+    return true;
+  }
+
+  
+  uint64_t k = 0;
+  if (args.length() > 1) {
+    double n;
+    if (!ToInteger(cx, args[1], &n)) {
+      return false;
+    }
+
+    if (n >= double(len)) {
+      args.rval().setBoolean(false);
+      return true;
+    }
+
+    
+    if (n >= 0) {
+      k = uint64_t(n);
+    } else {
+      double d = double(len) + n;
+      if (d >= 0) {
+        k = uint64_t(d);
+      }
+    }
+  }
+
+  MOZ_ASSERT(k < len);
+
+  HandleValue searchElement = args.get(0);
+
+  
+  RootedValue v(cx);
+  for (; k < len; k++) {
+    if (!CheckForInterrupt(cx)) {
+      return false;
+    }
+
+    if (!GetArrayElement(cx, obj, k, &v)) {
+      return false;
+    }
+
+    bool equal;
+    if (!SameValueZero(cx, v, searchElement, &equal)) {
+      return false;
+    }
+    if (equal) {
+      args.rval().setBoolean(true);
+      return true;
+    }
+  }
+
+  
+  args.rval().setBoolean(false);
+  return true;
+}
+
 static const JSFunctionSpec array_methods[] = {
     JS_FN(js_toSource_str, array_toSource, 0, 0),
     JS_SELF_HOSTED_FN(js_toString_str, "ArrayToString", 0, 0),
@@ -4028,7 +4108,7 @@ static const JSFunctionSpec array_methods[] = {
     JS_SELF_HOSTED_FN("values", "$ArrayValues", 0, 0),
 
     
-    JS_SELF_HOSTED_FN("includes", "ArrayIncludes", 2, 0),
+    JS_FN("includes", array_includes, 1, 0),
 
     
     JS_SELF_HOSTED_FN("flatMap", "ArrayFlatMap", 1, 0),
