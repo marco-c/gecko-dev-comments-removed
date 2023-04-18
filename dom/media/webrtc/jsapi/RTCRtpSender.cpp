@@ -372,14 +372,12 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal() {
                 streamStats->rtp_stats.retransmitted.packets);
             local.mRetransmittedBytesSent.Construct(
                 streamStats->rtp_stats.retransmitted.payload_bytes);
-            local.mTotalEncodedBytesTarget.Construct(
-                videoStats->total_encoded_bytes_target);
+            local.mFramesSent.Construct(streamStats->frames_encoded);
             local.mFrameWidth.Construct(streamStats->width);
             local.mFrameHeight.Construct(streamStats->height);
-            local.mFramesSent.Construct(streamStats->frames_encoded);
-            local.mHugeFramesSent.Construct(streamStats->huge_frames_sent);
-            local.mTotalEncodeTime.Construct(streamStats->total_encode_time_ms / 1000.);
             
+
+
 
 
 
