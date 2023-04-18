@@ -367,13 +367,14 @@ class MessageChannel : HasResultCodes {
 
   bool HasPendingEvents();
 
-  void ProcessPendingRequests(AutoEnterTransaction& aTransaction);
-  bool ProcessPendingRequest(Message&& aUrgent);
+  void ProcessPendingRequests(ActorLifecycleProxy* aProxy,
+                              AutoEnterTransaction& aTransaction);
+  bool ProcessPendingRequest(ActorLifecycleProxy* aProxy, Message&& aUrgent);
 
   void EnqueuePendingMessages();
 
   
-  void DispatchMessage(Message&& aMsg);
+  void DispatchMessage(ActorLifecycleProxy* aProxy, Message&& aMsg);
 
   
   
@@ -516,7 +517,7 @@ class MessageChannel : HasResultCodes {
   };
 
   bool ShouldRunMessage(const Message& aMsg);
-  void RunMessage(MessageTask& aTask);
+  void RunMessage(ActorLifecycleProxy* aProxy, MessageTask& aTask);
 
   typedef LinkedList<RefPtr<MessageTask>> MessageQueue;
   typedef std::map<size_t, UniquePtr<UntypedCallbackHolder>> CallbackMap;
