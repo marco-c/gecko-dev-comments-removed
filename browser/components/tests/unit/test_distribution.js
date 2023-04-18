@@ -24,10 +24,7 @@ const TOPIC_BROWSERGLUE_TEST = "browser-glue-test";
 registerCleanupFunction(async function() {
   
   
-  let folderPath = PathUtils.join(
-    await PathUtils.getProfileDir(),
-    "distribution"
-  );
+  let folderPath = PathUtils.join(PathUtils.profileDir, "distribution");
   await IOUtils.remove(folderPath, { ignoreAbsent: true, recursive: true });
   Assert.ok(!(await IOUtils.exists(folderPath)));
   Services.prefs.clearUserPref("distribution.testing.loadFromProfile");
