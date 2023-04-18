@@ -349,9 +349,6 @@ pref("security.warn_viewing_mixed", false);
 pref("security.cert_pinning.enforcement_level", 1);
 
 
-pref("security.OCSP.enabled", 2);
-
-
 pref("app.update.timerFirstInterval", 30000); 
 pref("app.update.timerMinimumDelay", 30); 
 
