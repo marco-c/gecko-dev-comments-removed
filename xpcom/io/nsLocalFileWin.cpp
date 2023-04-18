@@ -1181,7 +1181,7 @@ bool nsLocalFile::CleanupCmdHandlerPath(nsAString& aCommandHandler) {
   handlerCommand.Assign(destination.get());
 
   
-  handlerCommand.StripChars("\"");
+  handlerCommand.StripChars(u"\"");
 
   
   

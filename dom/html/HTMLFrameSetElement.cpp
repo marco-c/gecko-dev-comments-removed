@@ -171,7 +171,7 @@ nsresult HTMLFrameSetElement::ParseRowCol(const nsAString& aValue,
   nsAutoString spec(aValue);
   
   
-  spec.StripChars(" \n\r\t\"\'");
+  spec.StripChars(u" \n\r\t\"\'");
   spec.Trim(",");
 
   

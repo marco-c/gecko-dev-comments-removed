@@ -550,6 +550,133 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
     ReplaceLiteral(aCutStart, aCutLength, aStr, N - 1);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  size_type Mid(self_type& aResult, index_type aStartPos,
+                size_type aCount) const;
+
+  size_type Left(self_type& aResult, size_type aCount) const {
+    return Mid(aResult, 0, aCount);
+  }
+
+  size_type Right(self_type& aResult, size_type aCount) const {
+    aCount = XPCOM_MIN(this->Length(), aCount);
+    return Mid(aResult, this->mLength - aCount, aCount);
+  }
+
+  
+
+
+  void StripWhitespace();
+  bool StripWhitespace(const fallible_t&);
+
+  
+
+
+
+
+
+  void StripChar(char_type aChar);
+
+  
+
+
+
+
+
+  void StripChars(const char_type* aChars);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void StripTaggedASCII(const std::array<bool, 128>& aToStrip);
+
+  
+
+
+  void StripCRLF();
+
+  
+
+
+  void ReplaceChar(char_type aOldChar, char_type aNewChar);
+  void ReplaceChar(const char_type* aSet, char_type aNewChar);
+
+  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
+  void ReplaceChar(const char* aSet, char16_t aNewChar);
+
+  
+
+
+
+
+  void ReplaceSubstring(const self_type& aTarget, const self_type& aNewValue);
+  void ReplaceSubstring(const char_type* aTarget, const char_type* aNewValue);
+  [[nodiscard]] bool ReplaceSubstring(const self_type& aTarget,
+                                      const self_type& aNewValue,
+                                      const fallible_t&);
+  [[nodiscard]] bool ReplaceSubstring(const char_type* aTarget,
+                                      const char_type* aNewValue,
+                                      const fallible_t&);
+
+  
+
+
+
+
+
+
+
+
+
+  void Trim(const char* aSet, bool aEliminateLeading = true,
+            bool aEliminateTrailing = true, bool aIgnoreQuotes = false);
+
+  
+
+
+
+
+
+
+
+  void CompressWhitespace(bool aEliminateLeading = true,
+                          bool aEliminateTrailing = true);
+
+
   void Append(char_type aChar);
 
   [[nodiscard]] bool Append(char_type aChar, const fallible_t& aFallible);
@@ -1002,48 +1129,6 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
 
 
   void NS_FASTCALL SetIsVoid(bool);
-
-  
-
-
-
-
-
-
-  void StripChar(char_type aChar);
-
-  
-
-
-
-
-
-
-  void StripChars(const char_type* aChars);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void StripTaggedASCII(const std::array<bool, 128>& aToStrip);
-
-  
-
-
-  void StripCRLF();
 
   
 

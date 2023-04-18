@@ -27,6 +27,8 @@ class nsTString : public nsTSubstring<T> {
  public:
   typedef nsTString<T> self_type;
 
+  using repr_type = mozilla::detail::nsTStringRepr<T>;
+
 #ifdef __clang__
   
   using typename nsTSubstring<T>::substring_type;
@@ -176,168 +178,16 @@ class nsTString : public nsTSubstring<T> {
 
   char_type operator[](index_type aIndex) const { return CharAt(aIndex); }
 
-  
-
-
-
-
-
-
-
-
-
-
-  int32_t Find(const nsTString<char>& aString, bool aIgnoreCase = false,
-               int32_t aOffset = 0, int32_t aCount = -1) const;
-  int32_t Find(const char* aString, bool aIgnoreCase = false,
-               int32_t aOffset = 0, int32_t aCount = -1) const;
-
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  int32_t Find(const self_type& aString, int32_t aOffset = 0,
-               int32_t aCount = -1) const;
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  int32_t Find(const char_type* aString, int32_t aOffset = 0,
-               int32_t aCount = -1) const;
-#ifdef MOZ_USE_CHAR16_WRAPPER
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  int32_t Find(char16ptr_t aString, int32_t aOffset = 0,
-               int32_t aCount = -1) const {
-    return Find(static_cast<const char16_t*>(aString), aOffset, aCount);
-  }
-#endif
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  
-  int32_t RFind(const nsTString<char>& aString, bool aIgnoreCase = false,
-                int32_t aOffset = -1, int32_t aCount = -1) const;
-  int32_t RFind(const char* aCString, bool aIgnoreCase = false,
-                int32_t aOffset = -1, int32_t aCount = -1) const;
-
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  int32_t RFind(const self_type& aString, int32_t aOffset = -1,
-                int32_t aCount = -1) const;
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  int32_t RFind(const char_type* aString, int32_t aOffset = -1,
-                int32_t aCount = -1) const;
-
-  
-
-
-
-
-
-
-
-
-
-  
-  
-  int32_t RFindChar(char16_t aChar, int32_t aOffset = -1,
-                    int32_t aCount = -1) const;
-
-  
-
-
-
-
-
-
-
-
-
-  int32_t FindCharInSet(const char_type* aString, int32_t aOffset = 0) const;
-  int32_t FindCharInSet(const self_type& aString, int32_t aOffset = 0) const {
-    return FindCharInSet(aString.get(), aOffset);
-  }
-
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  int32_t FindCharInSet(const char* aSet, int32_t aOffset = 0) const;
-
-  
-
-
-
-
-
-
-
-
-
-  int32_t RFindCharInSet(const char_type* aString, int32_t aOffset = -1) const;
   int32_t RFindCharInSet(const self_type& aString, int32_t aOffset = -1) const {
-    return RFindCharInSet(aString.get(), aOffset);
+    return repr_type::RFindCharInSet(aString.get(), aOffset);
   }
-
-  
-
-
-
-
-
-  double ToDouble(nsresult* aErrorCode) const;
-
-  
-
-
-
-
-
-  float ToFloat(nsresult* aErrorCode) const;
-
-  
-
-
-
-  double ToDoubleAllowTrailingChars(nsresult* aErrorCode) const;
-  float ToFloatAllowTrailingChars(nsresult* aErrorCode) const;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  size_type Mid(self_type& aResult, index_type aStartPos,
-                size_type aCount) const;
-
-  size_type Left(self_type& aResult, size_type aCount) const {
-    return Mid(aResult, 0, aCount);
+  using repr_type::RFindCharInSet;
+  int32_t FindCharInSet(const self_type& aString, int32_t aOffset = 0) const {
+    return repr_type::FindCharInSet(aString.get(), aOffset);
   }
-
-  size_type Right(self_type& aResult, size_type aCount) const {
-    aCount = XPCOM_MIN(this->Length(), aCount);
-    return Mid(aResult, this->mLength - aCount, aCount);
-  }
+  using repr_type::FindCharInSet;
 
   
-
 
 
 
@@ -345,74 +195,6 @@ class nsTString : public nsTSubstring<T> {
 
 
   bool SetCharAt(char16_t aChar, index_type aIndex);
-
-  
-
-
-
-
-
-  void StripChars(const char_type* aSet);
-
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  bool StripChars(const incompatible_char_type* aSet, const fallible_t&);
-
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  void StripChars(const incompatible_char_type* aSet);
-
-  
-
-
-  void StripWhitespace();
-  bool StripWhitespace(const fallible_t&);
-
-  
-
-
-
-  void ReplaceChar(char_type aOldChar, char_type aNewChar);
-  void ReplaceChar(const char_type* aSet, char_type aNewChar);
-
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  void ReplaceChar(const char* aSet, char16_t aNewChar);
-
-  
-
-
-
-
-  void ReplaceSubstring(const self_type& aTarget, const self_type& aNewValue);
-  void ReplaceSubstring(const char_type* aTarget, const char_type* aNewValue);
-  [[nodiscard]] bool ReplaceSubstring(const self_type& aTarget,
-                                      const self_type& aNewValue,
-                                      const fallible_t&);
-  [[nodiscard]] bool ReplaceSubstring(const char_type* aTarget,
-                                      const char_type* aNewValue,
-                                      const fallible_t&);
-
-  
-
-
-
-
-
-
-
-
-
-  void Trim(const char* aSet, bool aEliminateLeading = true,
-            bool aEliminateTrailing = true, bool aIgnoreQuotes = false);
-
-  
-
-
-
-
-
-
-
-  void CompressWhitespace(bool aEliminateLeading = true,
-                          bool aEliminateTrailing = true);
 
   
 
@@ -447,26 +229,10 @@ class nsTString : public nsTSubstring<T> {
       : substring_type(char_traits::sEmptyBuffer, 0,
                        aDataFlags | DataFlags::TERMINATED,
                        ClassFlags::NULL_TERMINATED) {}
-
-  enum class TrailingCharsPolicy {
-    Disallow,
-    Allow,
-  };
-  
-  double ToDouble(TrailingCharsPolicy aTrailingCharsPolicy,
-                  nsresult* aErrorCode) const;
-
-  struct Segment {
-    uint32_t mBegin, mLength;
-    Segment(uint32_t aBegin, uint32_t aLength)
-        : mBegin(aBegin), mLength(aLength) {}
-  };
 };
 
-
-
-
-
+extern template class nsTString<char>;
+extern template class nsTString<char16_t>;
 
 
 
