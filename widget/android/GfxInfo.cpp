@@ -594,6 +594,11 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       const bool isPowerVrG6110 =
           mGLStrings->Renderer().Find("PowerVR Rogue G6110",
                                        true) >= 0;
+
+      const bool isVivanteGC7000UL =
+          mGLStrings->Renderer().Find("Vivante GC7000UL",
+                                       true) >= 0;
+
       if (isMali4xx) {
         
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
@@ -602,6 +607,10 @@ nsresult GfxInfo::GetFeatureStatusImpl(
         
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
         aFailureId = "FEATURE_FAILURE_POWERVR_G6110";
+      } else if (isVivanteGC7000UL) {
+        
+        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
+        aFailureId = "FEATURE_FAILURE_VIVANTE_GC7000UL";
       } else {
         *aStatus = nsIGfxInfo::FEATURE_ALLOW_QUALIFIED;
       }
