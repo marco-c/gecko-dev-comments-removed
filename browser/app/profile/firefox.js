@@ -1220,8 +1220,6 @@ pref("browser.bookmarks.editDialog.maxRecentFolders", 7);
 
 pref("browser.bookmarks.editDialog.delayedApply.enabled", false);
 
-pref("dom.ipc.shims.enabledWarnings", false);
-
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
   
   
