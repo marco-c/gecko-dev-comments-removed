@@ -58,7 +58,13 @@ Push.prototype = {
 
     this.initDOMRequestHelper(win);
 
-    this._principal = win.document.nodePrincipal;
+    
+    
+    this._principal = win.clientPrincipal;
+
+    if (!this._principal) {
+      throw new Error(" The client principal of the window is not available");
+    }
 
     try {
       this._topLevelPrincipal = win.top.document.nodePrincipal;
