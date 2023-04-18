@@ -1678,6 +1678,10 @@ void nsPresContext::UIResolutionChangedInternalScale(double aScale) {
     AppUnitsPerDevPixelChanged();
   }
 
+  if (GetPresShell()) {
+    GetPresShell()->RefreshZoomConstraintsForScreenSizeChange();
+  }
+
   
   if (nsPIDOMWindowOuter* window = mDocument->GetWindow()) {
     NotifyChildrenUIResolutionChanged(window);

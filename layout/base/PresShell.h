@@ -369,6 +369,8 @@ class PresShell final : public nsStubDocumentObserver,
   void MaybeNotifyShowDynamicToolbar();
 #endif  
 
+  void RefreshZoomConstraintsForScreenSizeChange();
+
  private:
   
 
