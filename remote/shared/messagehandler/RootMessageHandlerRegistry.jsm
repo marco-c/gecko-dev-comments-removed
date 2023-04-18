@@ -10,7 +10,9 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   MessageHandlerRegistry:
     "chrome://remote/content/shared/messagehandler/MessageHandlerRegistry.jsm",
   RootMessageHandler:
@@ -23,6 +25,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 
-var RootMessageHandlerRegistry = new MessageHandlerRegistry(
-  RootMessageHandler.type
+var RootMessageHandlerRegistry = new lazy.MessageHandlerRegistry(
+  lazy.RootMessageHandler.type
 );

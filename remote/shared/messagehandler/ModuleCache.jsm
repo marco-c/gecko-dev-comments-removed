@@ -11,7 +11,9 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   getMessageHandlerClass:
     "chrome://remote/content/shared/messagehandler/MessageHandlerRegistry.jsm",
   
@@ -23,13 +25,13 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 XPCOMUtils.defineLazyModuleGetter(
-  this,
+  lazy,
   "getTestModuleClass",
   "chrome://mochitests/content/browser/remote/shared/messagehandler/test/browser/resources/modules/ModuleRegistry.jsm",
   "getModuleClass"
 );
 
-XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
+XPCOMUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());
 
 
 
@@ -154,11 +156,11 @@ class ModuleCache {
     let module = null;
     if (ModuleClass) {
       module = new ModuleClass(this.messageHandler);
-      logger.trace(
+      lazy.logger.trace(
         `Module ${moduleFolder}/${moduleName}.jsm found for ${destination.type}`
       );
     } else {
-      logger.trace(
+      lazy.logger.trace(
         `Module ${moduleFolder}/${moduleName}.jsm not found for ${destination.type}`
       );
     }
@@ -188,16 +190,16 @@ class ModuleCache {
 
   _getModuleClass(moduleName, moduleFolder) {
     if (this._useTestModules) {
-      return getTestModuleClass(moduleName, moduleFolder);
+      return lazy.getTestModuleClass(moduleName, moduleFolder);
     }
 
     
     
-    return getModuleClass(moduleName, moduleFolder);
+    return lazy.getModuleClass(moduleName, moduleFolder);
   }
 
   _getModuleFolder(originType, destinationType) {
-    const originPath = getMessageHandlerClass(originType).modulePath;
+    const originPath = lazy.getMessageHandlerClass(originType).modulePath;
     if (originType === destinationType) {
       
       
@@ -205,7 +207,8 @@ class ModuleCache {
     }
     
     
-    const destinationPath = getMessageHandlerClass(destinationType).modulePath;
+    const destinationPath = lazy.getMessageHandlerClass(destinationType)
+      .modulePath;
     return `${destinationPath}-in-${originPath}`;
   }
 }
