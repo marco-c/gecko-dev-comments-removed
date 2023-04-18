@@ -203,12 +203,43 @@ already_AddRefed<MacIOSurface> MacIOSurface::CreateNV12OrP010Surface(
 
   
   
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+#if !defined(MAC_OS_VERSION_10_13) || \
+    MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_10_13
+  CFStringRef kCVImageBufferTransferFunction_SMPTE_ST_2084_PQ =
+      CFSTR("SMPTE_ST_2084_PQ");
+#endif
+
   if (aColorSpace == YUVColorSpace::BT601) {
     IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceYCbCrMatrix"),
-                      CFSTR("ITU_R_601_4"));
-  } else {
+                      kCVImageBufferYCbCrMatrix_ITU_R_601_4);
+  } else if (aColorSpace == YUVColorSpace::BT709) {
     IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceYCbCrMatrix"),
-                      CFSTR("ITU_R_709_2"));
+                      kCVImageBufferYCbCrMatrix_ITU_R_709_2);
+    IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceColorPrimaries"),
+                      kCVImageBufferColorPrimaries_ITU_R_709_2);
+    IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceTransferFunction"),
+                      kCVImageBufferTransferFunction_ITU_R_709_2);
+  } else {
+    
+    
+    IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceYCbCrMatrix"),
+                      kCVImageBufferYCbCrMatrix_ITU_R_2020);
+    IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceColorPrimaries"),
+                      kCVImageBufferColorPrimaries_ITU_R_2020);
+    IOSurfaceSetValue(surfaceRef.get(), CFSTR("IOSurfaceTransferFunction"),
+                      kCVImageBufferTransferFunction_SMPTE_ST_2084_PQ);
+    NS_WARNING(
+        "Rec2020 transfer function is ambiguous, guessing PQ instead of HLG.");
   }
   
   
