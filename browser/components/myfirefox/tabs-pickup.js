@@ -4,217 +4,89 @@
 
 
 
-const { switchToTabHavingURI } = window.docShell.chromeEventHandler.ownerGlobal;
-
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
-
 const tabsSetupFlowManager = new (class {
-  constructor() {
-    this.QueryInterface = ChromeUtils.generateQI(["nsIObserver"]);
-
-    this.setupState = new Map();
-    this._currentSetupStateName = "";
-    this.sync = {};
-
-    XPCOMUtils.defineLazyModuleGetters(this, {
-      Services: "resource://gre/modules/Services.jsm",
-      fxAccounts: "resource://gre/modules/FxAccounts.jsm",
-    });
-    ChromeUtils.defineModuleGetter(
-      this.sync,
-      "UIState",
-      "resource://services-sync/UIState.jsm"
-    );
-
-    this.registerSetupState({
-      uiStateIndex: 0,
-      name: "not-signed-in",
-      exitConditions: () => {
-        return this.fxaSignedIn;
-      },
-    });
-    
-    this.registerSetupState({
-      uiStateIndex: 1,
-      name: "no-mobile-device",
-      exitConditions: () => {
-        return this.mobileDeviceConnected;
-      },
-    });
-    this.registerSetupState({
-      uiStateIndex: 2,
-      name: "disabled-tab-sync",
-      exitConditions: () => {
-        
-        
-        return false;
-      },
-    });
-    this.registerSetupState({
-      uiStateIndex: 3,
-      name: "synced-tabs-not-ready",
-      exitConditions: () => {
-        
-        return false;
-      },
-    });
-    this.registerSetupState({
-      uiStateIndex: 4,
-      name: "show-synced-tabs-agreement",
-      exitConditions: () => {
-        
-        return false;
-      },
-    });
-  }
-  async initialize(elem) {
+  initialize(elem) {
     this.elem = elem;
+    
+    
+    this.setupState = 0;
+
     this.elem.addEventListener("click", this);
-    this.Services.obs.addObserver(this, this.sync.UIState.ON_UPDATE);
-    this.Services.obs.addObserver(this, "fxaccounts:device_connected");
-    this.Services.obs.addObserver(this, "fxaccounts:device_disconnected");
-
-    await this.fxAccounts.getSignedInUser();
-    this.maybeUpdateUI();
+    this.elem.updateSetupState(this.setupState);
   }
-  uninit() {
-    this.Services.obs.removeObserver(this, this.sync.UIState.ON_UPDATE);
-    this.Services.obs.removeObserver(this, "fxaccounts:device_connected");
-    this.Services.obs.removeObserver(this, "fxaccounts:device_disconnected");
-  }
-  get fxaSignedIn() {
-    return (
-      this.sync.UIState.get().status === this.sync.UIState.STATUS_SIGNED_IN
-    );
-  }
-  get mobileDeviceConnected() {
-    let mobileDevice = this.fxAccounts.device?.recentDeviceList?.find(
-      device => device.type == "mobile"
-    );
-    return !!mobileDevice;
-  }
-  registerSetupState(state) {
-    this.setupState.set(state.name, state);
-  }
-
-  async observe(subject, topic, data) {
-    switch (topic) {
-      case this.sync.UIState.ON_UPDATE:
-        this.maybeUpdateUI();
-        break;
-      case "fxaccounts:device_connected":
-      case "fxaccounts:device_disconnected":
-        await this.fxAccounts.device.refreshDeviceList();
-        this.maybeUpdateUI();
-        break;
-    }
-  }
-
   handleEvent(event) {
     if (event.type == "click" && event.target.dataset.action) {
       switch (event.target.dataset.action) {
         case "view0-primary-action": {
-          this.openFxASignup(event.target);
+          this.advanceToAddDeviceStep(event.target);
           break;
         }
         case "view1-primary-action": {
-          this.openSyncPreferences(event.target);
+          this.advanceToSyncTabsStep(event.target);
           break;
         }
         case "view2-primary-action": {
-          this.syncOpenTabs(event.target);
+          this.advanceToSetupComplete(event.target);
           break;
         }
         case "view3-primary-action": {
-          this.confirmSetupComplete(event.target);
+          this.advanceToGetMyTabs(event.target);
           break;
         }
       }
     }
   }
-
-  maybeUpdateUI() {
-    let nextSetupStateName = this._currentSetupStateName;
-
+  advanceToAddDeviceStep(containerElem) {
     
-    for (let state of this.setupState.values()) {
-      nextSetupStateName = state.name;
-      if (!state.exitConditions()) {
-        break;
-      }
-    }
-
-    if (nextSetupStateName !== this._currentSetupStateName) {
-      this.elem.updateSetupState(
-        this.setupState.get(nextSetupStateName).uiStateIndex
-      );
-      this._currentSetupStateName = nextSetupStateName;
-    }
+    this.setupState = 1;
+    this.elem.updateSetupState(this.setupState);
   }
-
-  async openFxASignup() {
-    const url = await this.fxAccounts.constructor.config.promiseConnectAccountURI(
-      "myfirefox"
-    );
-    switchToTabHavingURI(url, true);
-  }
-  openSyncPreferences(containerElem) {
-    const url = "about:preferences?action=pair#sync";
-    switchToTabHavingURI(url, true);
-  }
-  syncOpenTabs(containerElem) {
+  advanceToSyncTabsStep(containerElem) {
     
-    this.elem.updateSetupState(
-      this.setupState.get("synced-tabs-not-ready").uiStateIndex
-    );
+    this.setupState = 2;
+    this.elem.updateSetupState(this.setupState);
   }
-  confirmSetupComplete(containerElem) {
+  advanceToSetupComplete(containerElem) {
     
-    this.elem.updateSetupState(
-      this.setupState.get("show-synced-tabs-agreement").uiStateIndex
-    );
+    this.setupState = 3;
+    this.elem.updateSetupState(this.setupState);
+  }
+  advanceToGetMyTabs(containerElem) {
+    
+    this.setupState = 4;
+    this.elem.updateSetupState(this.setupState);
   }
 })();
 
-class TabsPickupContainer extends HTMLElement {
+export class TabsPickupContainer extends HTMLElement {
   constructor() {
     super();
     this.manager = null;
-    this._currentSetupStateIndex = -1;
+    this._currentSetupState = -1;
   }
   get setupContainerElem() {
-    return this.querySelector(".sync-setup-container");
+    return this.querySelector("#tabpickup-setup-steps");
   }
   get tabsContainerElem() {
-    return this.querySelector(".synced-tabs-container");
+    return this.querySelector("#tabpickup-tabs-container");
   }
   appendTemplatedElement(templateId, elementId) {
     const template = document.getElementById(templateId);
     const templateContent = template.content;
     const cloned = templateContent.cloneNode(true);
     if (elementId) {
-      
-      for (let elem of cloned.querySelectorAll("[data-prefix]")) {
-        let [name, value] = elem.dataset.prefix
-          .split(":")
-          .map(str => str.trim());
-        elem.setAttribute(name, elementId + value);
-        delete elem.dataset.prefix;
-      }
+      cloned.firstElementChild.id = elementId;
     }
     this.appendChild(cloned);
   }
   updateSetupState(stateIndex) {
-    const currStateIndex = this._currentSetupStateIndex;
     if (stateIndex === undefined) {
-      stateIndex = currStateIndex;
+      stateIndex = this._currentSetupState;
     }
-    if (stateIndex === this._currentSetupStateIndex) {
+    if (stateIndex == this._currentSetupState) {
       return;
     }
-    this._currentSetupStateIndex = stateIndex;
+    this._currentSetupState = stateIndex;
     this.render();
   }
   render() {
@@ -223,12 +95,15 @@ class TabsPickupContainer extends HTMLElement {
     }
     let setupElem = this.setupContainerElem;
     let tabsElem = this.tabsContainerElem;
-    const stateIndex = this._currentSetupStateIndex;
+    const stateIndex = this._currentSetupState;
 
     
     if (stateIndex < 4) {
       if (!setupElem) {
-        this.appendTemplatedElement("sync-setup-template", "tabpickup-steps");
+        this.appendTemplatedElement(
+          "sync-setup-template",
+          "tabpickup-setup-steps"
+        );
         setupElem = this.setupContainerElem;
       }
       if (tabsElem) {
