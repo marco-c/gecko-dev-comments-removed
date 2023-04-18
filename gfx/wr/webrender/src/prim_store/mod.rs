@@ -1083,6 +1083,7 @@ pub struct PrimitiveInstance {
     
     
     pub vis: PrimitiveVisibility,
+    pub anti_aliased: bool,
 }
 
 impl PrimitiveInstance {
@@ -1102,6 +1103,7 @@ impl PrimitiveInstance {
                 local_clip_rect,
                 clip_chain_id,
             },
+            anti_aliased: false,
         }
     }
 
@@ -1459,7 +1461,7 @@ fn test_struct_sizes() {
     
     
     
-    assert_eq!(mem::size_of::<PrimitiveInstance>(), 152, "PrimitiveInstance size changed");
+    assert_eq!(mem::size_of::<PrimitiveInstance>(), 160, "PrimitiveInstance size changed");
     assert_eq!(mem::size_of::<PrimitiveInstanceKind>(), 24, "PrimitiveInstanceKind size changed");
     assert_eq!(mem::size_of::<PrimitiveTemplate>(), 56, "PrimitiveTemplate size changed");
     assert_eq!(mem::size_of::<PrimitiveTemplateKind>(), 28, "PrimitiveTemplateKind size changed");

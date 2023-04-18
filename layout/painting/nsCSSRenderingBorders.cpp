@@ -3653,8 +3653,8 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
         
         
         if (noVerticalBorders && noHorizontalBorders) {
-          aBuilder.PushImage(dest, clip, !aItem->BackfaceIsHidden(), rendering,
-                             key.value());
+          aBuilder.PushImage(dest, clip, !aItem->BackfaceIsHidden(), false,
+                             rendering, key.value());
           break;
         }
 

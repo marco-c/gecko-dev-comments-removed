@@ -188,7 +188,7 @@ void MacIOSurfaceTextureHostOGL::PushDisplayItems(
       MOZ_ASSERT(mSurface->GetPlaneCount() == 0);
       
       
-      aBuilder.PushImage(aBounds, aClip, true, aFilter, aImageKeys[0],
+      aBuilder.PushImage(aBounds, aClip, true, false, aFilter, aImageKeys[0],
                          !(mFlags & TextureFlags::NON_PREMULTIPLIED),
                          wr::ColorF{1.0f, 1.0f, 1.0f, 1.0f},
                          preferCompositorSurface,
