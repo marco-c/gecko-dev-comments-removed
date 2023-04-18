@@ -901,11 +901,16 @@ nsresult nsAutoCompleteController::BeforeSearches() {
   mSearchStatus = nsIAutoCompleteController::STATUS_SEARCHING;
   mDefaultIndexCompleted = false;
 
-  
-  
-  
-  if (!mResultCache.AppendObjects(mResults)) {
-    return NS_ERROR_OUT_OF_MEMORY;
+  bool invalidatePreviousResult = false;
+  mInput->GetInvalidatePreviousResult(&invalidatePreviousResult);
+
+  if (!invalidatePreviousResult) {
+    
+    
+    
+    if (!mResultCache.AppendObjects(mResults)) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
   }
   ClearResults(true);
   mSearchesOngoing = mSearches.Length();
