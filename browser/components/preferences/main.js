@@ -1007,6 +1007,8 @@ var gMainPane = {
 
 
 
+
+
   async updatePrimaryBrowserLanguageUI(selected) {
     let available = await getAvailableLocales();
     let localeNames = Services.intl.getLocaleDisplayNames(
@@ -1340,6 +1342,13 @@ var gMainPane = {
       value
     );
   },
+
+  
+
+
+
+
+
 
   showBrowserLanguagesSubDialog({ search }) {
     

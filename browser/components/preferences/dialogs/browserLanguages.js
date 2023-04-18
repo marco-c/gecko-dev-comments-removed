@@ -209,12 +209,24 @@ class OrderedListBox {
   }
 }
 
+
+
+
 class SortedItemSelectList {
   constructor({ menulist, button, onSelect, onChange, compareFn }) {
+    
     this.menulist = menulist;
+
+    
     this.popup = menulist.menupopup;
+
+    
     this.button = button;
+
+    
     this.compareFn = compareFn;
+
+    
     this.items = [];
 
     
@@ -239,6 +251,9 @@ class SortedItemSelectList {
       onSelect(item);
     });
   }
+
+  
+
 
   setItems(items) {
     this.items = items.sort(this.compareFn);
@@ -318,6 +333,21 @@ class SortedItemSelectList {
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function getLocaleDisplayInfo(localeCodes) {
   let availableLocales = new Set(await getAvailableLocales());
   let packagedLocales = new Set(Services.locale.packagedLocales);
@@ -336,6 +366,11 @@ async function getLocaleDisplayInfo(localeCodes) {
     };
   });
 }
+
+
+
+
+
 
 function compareItems(a, b) {
   
@@ -360,9 +395,21 @@ function compareItems(a, b) {
 }
 
 var gBrowserLanguagesDialog = {
+  
+
+
+
   _telemetryId: null,
   accepted: false,
+
+  
+
+
   _availableLocalesUI: null,
+
+  
+
+
   _selectedLocalesUI: null,
   selectedLocales: null,
 
@@ -419,6 +466,9 @@ var gBrowserLanguagesDialog = {
     this.initialized = true;
   },
 
+  
+
+
   async initSelectedLocales(selectedLocales) {
     this._selectedLocalesUI = new OrderedListBox({
       richlistbox: document.getElementById("selectedLocales"),
@@ -432,6 +482,11 @@ var gBrowserLanguagesDialog = {
       await getLocaleDisplayInfo(selectedLocales)
     );
   },
+
+  
+
+
+
 
   async initAvailableLocales(available, search) {
     this._availableLocalesUI = new SortedItemSelectList({
@@ -517,6 +572,9 @@ var gBrowserLanguagesDialog = {
     );
   },
 
+  
+
+
   async loadLocalesFromInstalled(available) {
     let items;
     if (available.length) {
@@ -534,6 +592,9 @@ var gBrowserLanguagesDialog = {
     this._availableLocalesUI.setItems(items);
   },
 
+  
+
+
   async availableLanguageSelected(item) {
     if ((await getAvailableLocales()).includes(item.value)) {
       this.recordTelemetry("add");
@@ -546,7 +607,10 @@ var gBrowserLanguagesDialog = {
     }
   },
 
-  async requestLocalLanguage(item, available) {
+  
+
+
+  async requestLocalLanguage(item) {
     this._selectedLocalesUI.addItem(item);
     let selectedCount = this._selectedLocalesUI.items.length;
     let availableCount = (await getAvailableLocales()).length;
@@ -560,6 +624,9 @@ var gBrowserLanguagesDialog = {
       "browser-languages-select-language"
     );
   },
+
+  
+
 
   async requestRemoteLanguage(item) {
     this._availableLocalesUI.disableWithMessageId(
@@ -595,6 +662,9 @@ var gBrowserLanguagesDialog = {
     this.installDictionariesForLanguage(item.value);
   },
 
+  
+
+
   async installDictionariesForLanguage(locale) {
     try {
       let ids = await dictionaryIdsForLocale(locale);
@@ -627,9 +697,8 @@ var gBrowserLanguagesDialog = {
     document.getElementById("warning-message").hidden = true;
   },
 
-  getSelectedLocales() {
-    return this._selectedLocalesUI.items.map(item => item.value);
-  },
+  
+
 
   async selectedLocaleRemoved(item) {
     this.recordTelemetry("remove");
