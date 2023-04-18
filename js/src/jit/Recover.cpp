@@ -10,6 +10,7 @@
 
 #include "builtin/RegExp.h"
 #include "builtin/String.h"
+#include "jit/Bailouts.h"
 #include "jit/CompileInfo.h"
 #include "jit/Ion.h"
 #include "jit/JitSpewer.h"
@@ -68,35 +69,9 @@ bool MResumePoint::writeRecoverData(CompactBufferWriter& writer) const {
 #ifdef DEBUG
   
   
-  if (GetJitContext()->cx) {
-    uint32_t stackDepth;
-    bool reachablePC;
-    jsbytecode* bailPC = pc();
-
-    if (mode() == ResumeMode::ResumeAfter) {
-      bailPC = GetNextPc(pc());
-    }
-
-    if (!ReconstructStackDepth(GetJitContext()->cx, script, bailPC, &stackDepth,
-                               &reachablePC)) {
+  if (JSContext* cx = GetJitContext()->cx) {
+    if (!AssertBailoutStackDepth(cx, script, pc(), mode(), exprStack)) {
       return false;
-    }
-
-    if (reachablePC) {
-      if (mode() == ResumeMode::InlinedFunCall) {
-        
-        
-        
-        MOZ_ASSERT(stackDepth - exprStack <= 1);
-      } else {
-        
-        
-        
-        
-        
-        MOZ_ASSERT_IF(mode() != ResumeMode::InlinedAccessor,
-                      exprStack == stackDepth);
-      }
     }
   }
 #endif

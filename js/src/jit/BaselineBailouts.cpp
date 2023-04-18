@@ -10,6 +10,7 @@
 #include "builtin/ModuleObject.h"
 #include "debugger/DebugAPI.h"
 #include "jit/arm/Simulator-arm.h"
+#include "jit/Bailouts.h"
 #include "jit/BaselineFrame.h"
 #include "jit/BaselineIC.h"
 #include "jit/BaselineJIT.h"
@@ -1286,6 +1287,61 @@ bool BaselineStackBuilder::envChainSlotCanBeOptimized() {
   return true;
 }
 
+bool jit::AssertBailoutStackDepth(JSContext* cx, JSScript* script,
+                                  jsbytecode* pc, ResumeMode mode,
+                                  uint32_t exprStackSlots) {
+  if (mode == ResumeMode::ResumeAfter) {
+    pc = GetNextPc(pc);
+  }
+
+  uint32_t expectedDepth;
+  bool reachablePC;
+  if (!ReconstructStackDepth(cx, script, pc, &expectedDepth, &reachablePC)) {
+    return false;
+  }
+  if (!reachablePC) {
+    return true;
+  }
+
+  JSOp op = JSOp(*pc);
+
+  if (mode == ResumeMode::InlinedFunCall) {
+    
+    
+    
+    MOZ_ASSERT(IsInvokeOp(op));
+    if (GET_ARGC(pc) > 0) {
+      MOZ_ASSERT(expectedDepth == exprStackSlots + 1);
+    } else {
+      MOZ_ASSERT(expectedDepth == exprStackSlots);
+    }
+    return true;
+  }
+
+  if (mode == ResumeMode::InlinedAccessor) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(IsIonInlinableGetterOrSetterOp(op));
+    if (IsGetElemOp(op)) {
+      MOZ_ASSERT(exprStackSlots == expectedDepth);
+    } else {
+      MOZ_ASSERT(exprStackSlots == expectedDepth + 1);
+    }
+    return true;
+  }
+
+  
+  MOZ_ASSERT(exprStackSlots == expectedDepth);
+  return true;
+}
+
 bool BaselineStackBuilder::validateFrame() {
   const uint32_t frameSize = framePushed();
   blFrame()->setDebugFrameSize(frameSize);
@@ -1295,38 +1351,8 @@ bool BaselineStackBuilder::validateFrame() {
   MOZ_ASSERT(blFrame()->debugNumValueSlots() >= script_->nfixed());
   MOZ_ASSERT(blFrame()->debugNumValueSlots() <= script_->nslots());
 
-  uint32_t expectedDepth;
-  bool reachablePC;
-  jsbytecode* pcForStackDepth = resumeAfter() ? GetNextPc(pc_) : pc_;
-  if (!ReconstructStackDepth(cx_, script_, pcForStackDepth, &expectedDepth,
-                             &reachablePC)) {
-    return false;
-  }
-  if (!reachablePC) {
-    return true;
-  }
-
-  if (resumeMode() == ResumeMode::InlinedFunCall) {
-    
-    
-    
-    MOZ_ASSERT(expectedDepth - exprStackSlots() <= 1);
-  } else if (resumeMode() == ResumeMode::InlinedAccessor) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(exprStackSlots() - expectedDepth == (IsGetElemOp(op_) ? 0 : 1));
-  } else {
-    MOZ_ASSERT(exprStackSlots() == expectedDepth);
-  }
-  return true;
+  return AssertBailoutStackDepth(cx_, script_, pc_, resumeMode(),
+                                 exprStackSlots());
 }
 #endif
 
