@@ -78,6 +78,12 @@ enum class ImageFormat {
   
 
 
+
+  D3D11_TEXTURE_IMF_SAMPLE,
+
+  
+
+
   TEXTURE_WRAPPER,
 
   

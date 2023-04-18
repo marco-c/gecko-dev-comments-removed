@@ -80,8 +80,8 @@ already_AddRefed<IDirect3DSurface9> DXGID3D9TextureData::GetD3D9Surface()
 }
 
 bool DXGID3D9TextureData::Serialize(SurfaceDescriptor& aOutDescriptor) {
-  SurfaceDescriptorD3D10 desc((WindowsHandle)(mHandle), mFormat, GetSize(),
-                              gfx::YUVColorSpace::Identity,
+  SurfaceDescriptorD3D10 desc((WindowsHandle)(mHandle),  0,
+                              mFormat, GetSize(), gfx::YUVColorSpace::Identity,
                               gfx::ColorRange::FULL);
   
   bool isYUV = mFormat == gfx::SurfaceFormat::NV12 ||
