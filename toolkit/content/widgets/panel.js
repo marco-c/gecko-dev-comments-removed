@@ -17,6 +17,8 @@
       this._prevFocus = 0;
       this._fadeTimer = null;
 
+      this.attachShadow({ mode: "open" });
+
       this.addEventListener("popupshowing", this);
       this.addEventListener("popupshown", this);
       this.addEventListener("popuphiding", this);
@@ -28,7 +30,7 @@
       
       
       if (!this.hidden) {
-        this.initialize();
+        this.ensureInitialized();
       }
 
       if (this.isArrowPanel) {
@@ -47,17 +49,15 @@
       }
     }
 
-    initialize() {
+    ensureInitialized() {
       
       
       
       
       
-      if (this.shadowRoot) {
+      if (this.shadowRoot.firstChild) {
         return;
       }
-
-      this.attachShadow({ mode: "open" });
 
       this.shadowRoot.appendChild(this.constructor.fragment);
       if (this.hasAttribute("neverhidden")) {
@@ -66,7 +66,7 @@
     }
 
     get panelContent() {
-      return this.shadowRoot?.querySelector("[part=content]");
+      return this.shadowRoot.querySelector("[part=content]");
     }
 
     get hidden() {
@@ -75,14 +75,14 @@
 
     set hidden(v) {
       if (!v) {
-        this.initialize();
+        this.ensureInitialized();
       }
       super.hidden = v;
     }
 
     removeAttribute(name) {
       if (name == "hidden") {
-        this.initialize();
+        this.ensureInitialized();
       }
       super.removeAttribute(name);
     }

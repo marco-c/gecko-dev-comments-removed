@@ -47,13 +47,15 @@
       this._draggingState = this.NOT_DRAGGING;
       this._scrollTimer = 0;
 
+      this.attachShadow({ mode: "open" });
+
       this.addEventListener("popupshowing", event => {
         if (event.target != this) {
           return;
         }
 
         
-        this.shadowRoot;
+        this.ensureInitialized();
       });
 
       this.addEventListener("DOMMenuItemActive", this);
@@ -83,11 +85,15 @@
       );
     }
 
+    ensureInitialized() {
+      this.shadowRoot;
+    }
+
     get shadowRoot() {
-      if (!super.shadowRoot) {
+      if (!super.shadowRoot.firstChild) {
         
         
-        this.attachShadow({ mode: "open" }).appendChild(this.fragment);
+        super.shadowRoot.appendChild(this.fragment);
         this.initShadowDOM();
       }
       return super.shadowRoot;
@@ -148,7 +154,7 @@
       
       
       
-      this.shadowRoot;
+      this.ensureInitialized();
       this.classList.add("in-menulist");
 
       this.addEventListener("popupshown", () => {
