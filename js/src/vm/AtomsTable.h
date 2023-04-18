@@ -23,36 +23,17 @@
 
 namespace js {
 
-
-
-
-class AtomStateEntry {
-  uintptr_t bits;
-
- public:
-  AtomStateEntry() : bits(0) {}
-  AtomStateEntry(const AtomStateEntry& other) = default;
-  explicit AtomStateEntry(JSAtom* ptr) : bits(uintptr_t(ptr)) {}
-
-  JSAtom* asPtrUnbarriered() const {
-    MOZ_ASSERT(bits);
-    return reinterpret_cast<JSAtom*>(bits);
-  }
-
-  JSAtom* asPtr(JSContext* cx) const;
-};
-
 struct AtomHasher {
   struct Lookup;
   static inline HashNumber hash(const Lookup& l);
-  static MOZ_ALWAYS_INLINE bool match(const AtomStateEntry& entry,
+  static MOZ_ALWAYS_INLINE bool match(const WeakHeapPtrAtom& entry,
                                       const Lookup& lookup);
-  static void rekey(AtomStateEntry& k, const AtomStateEntry& newKey) {
+  static void rekey(WeakHeapPtrAtom& k, const WeakHeapPtrAtom& newKey) {
     k = newKey;
   }
 };
 
-using AtomSet = JS::GCHashSet<AtomStateEntry, AtomHasher, SystemAllocPolicy>;
+using AtomSet = JS::GCHashSet<WeakHeapPtrAtom, AtomHasher, SystemAllocPolicy>;
 
 
 
