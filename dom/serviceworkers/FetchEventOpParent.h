@@ -25,7 +25,7 @@ class FetchEventOpParent final : public PFetchEventOpParent {
 
   
   
-  Maybe<ParentToChildInternalResponse> OnStart(
+  Maybe<ParentToParentInternalResponse> OnStart(
       MovingNotNull<RefPtr<FetchEventOpProxyParent>> aFetchEventOpProxyParent);
 
   
@@ -42,7 +42,7 @@ class FetchEventOpParent final : public PFetchEventOpParent {
   void ActorDestroy(ActorDestroyReason) override;
 
   struct Pending {
-    Maybe<ParentToChildInternalResponse> mPreloadResponse;
+    Maybe<ParentToParentInternalResponse> mPreloadResponse;
   };
 
   struct Started {

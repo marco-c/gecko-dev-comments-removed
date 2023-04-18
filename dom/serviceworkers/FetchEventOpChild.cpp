@@ -229,16 +229,16 @@ FetchEventOpChild::FetchEventOpChild(
         ->Then(
             GetCurrentSerialEventTarget(), __func__,
             [this](SafeRefPtr<InternalResponse> aInternalResponse) {
-              
-              ParentToParentInternalResponse ipcPreloadResponse;
+              auto response =
+                  aInternalResponse->ToParentToParentInternalResponse();
               if (!mWasSent) {
                 
                 
-                mArgs.preloadResponse() = Some(ipcPreloadResponse);
+                mArgs.preloadResponse() = Some(std::move(response));
               } else {
                 
                 
-                SendPreloadResponse(ipcPreloadResponse);
+                SendPreloadResponse(response);
               }
               mPreloadResponseReadyPromiseRequestHolder.Complete();
             },

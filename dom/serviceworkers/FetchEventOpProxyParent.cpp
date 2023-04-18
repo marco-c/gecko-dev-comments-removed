@@ -123,8 +123,8 @@ ParentToParentFetchEventRespondWithResult ToParentToParent(
                                                       Nothing());
   if (aArgs.preloadResponse().isSome()) {
     
-    
-    
+    copyArgs.preloadResponse() = Some(ToParentToChild(
+        aArgs.preloadResponse().ref(), WrapNotNull(aManager->Manager())));
   }
 
   FetchEventOpProxyParent* actor =
@@ -136,10 +136,11 @@ ParentToParentFetchEventRespondWithResult ToParentToParent(
   
   
   
-  Maybe<ParentToChildInternalResponse> preloadResponse =
+  Maybe<ParentToParentInternalResponse> preloadResponse =
       actor->mReal->OnStart(WrapNotNull(actor));
-  if (copyArgs.preloadResponse().isNothing()) {
-    copyArgs.preloadResponse() = std::move(preloadResponse);
+  if (copyArgs.preloadResponse().isNothing() && preloadResponse.isSome()) {
+    copyArgs.preloadResponse() = Some(ToParentToChild(
+        preloadResponse.ref(), WrapNotNull(aManager->Manager())));
   }
 
   IPCInternalRequest& copyRequest = copyArgs.common().internalRequest();
