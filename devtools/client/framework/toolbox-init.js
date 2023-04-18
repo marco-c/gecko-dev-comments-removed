@@ -4,7 +4,6 @@
 
 
 
-
 "use strict";
 
 const { require } = ChromeUtils.import(
@@ -94,17 +93,12 @@ async function initToolbox(url, host) {
   const tool = url.searchParams.get("tool");
 
   try {
-    let descriptor;
-    if (url.searchParams.has("target")) {
-      descriptor = await _createTestOnlyDescriptor(host);
-    } else {
-      descriptor = await descriptorFromURL(url);
-      const toolbox = gDevTools.getToolboxForDescriptor(descriptor);
-      if (toolbox && toolbox.isDestroying()) {
-        
-        
-        await toolbox.destroy();
-      }
+    const descriptor = await descriptorFromURL(url);
+    const toolbox = gDevTools.getToolboxForDescriptor(descriptor);
+    if (toolbox && toolbox.isDestroying()) {
+      
+      
+      await toolbox.destroy();
     }
 
     
@@ -127,47 +121,6 @@ async function initToolbox(url, host) {
     console.error("Exception while loading the toolbox", error);
     showErrorPage(host.contentDocument, `${error}`);
   }
-}
-
-
-
-
-
-
-
-
-async function _createTestOnlyDescriptor(host) {
-  const { DevToolsServer } = require("devtools/server/devtools-server");
-  const { DevToolsClient } = require("devtools/client/devtools-client");
-
-  
-  let iframe = host.wrappedJSObject ? host.wrappedJSObject.target : host.target;
-  if (!iframe) {
-    throw new Error("Unable to find the targeted iframe to debug");
-  }
-
-  
-  
-  iframe = XPCNativeWrapper(iframe);
-
-  
-  
-  const tab = { linkedBrowser: iframe };
-
-  DevToolsServer.init();
-  DevToolsServer.registerAllActors();
-  const client = new DevToolsClient(DevToolsServer.connectPipe());
-
-  await client.connect();
-  
-  const descriptor = await client.mainRoot.getTab({ tab });
-
-  
-  
-  
-  await descriptor.getTarget();
-
-  return descriptor;
 }
 
 
