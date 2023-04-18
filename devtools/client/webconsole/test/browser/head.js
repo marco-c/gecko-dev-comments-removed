@@ -182,56 +182,6 @@ function logAllStoreChanges(hud) {
 
 
 
-function waitForMessages({ hud, messages, selector = ".message" }) {
-  return new Promise(resolve => {
-    const matchedMessages = [];
-    hud.ui.on("new-messages", function messagesReceived(newMessages) {
-      for (const message of messages) {
-        if (message.matched) {
-          continue;
-        }
-
-        for (const newMessage of newMessages) {
-          const messageBody = newMessage.node.querySelector(`.message-body`);
-          if (
-            messageBody &&
-            newMessage.node.matches(selector) &&
-            messageBody.textContent.includes(message.text)
-          ) {
-            matchedMessages.push(newMessage);
-            message.matched = true;
-            const messagesLeft = messages.length - matchedMessages.length;
-            info(
-              `Matched a message with text: "${message.text}", ` +
-                (messagesLeft > 0
-                  ? `still waiting for ${messagesLeft} messages.`
-                  : `all messages received.`)
-            );
-            break;
-          }
-        }
-
-        if (matchedMessages.length === messages.length) {
-          hud.ui.off("new-messages", messagesReceived);
-          resolve(matchedMessages);
-          return;
-        }
-      }
-    });
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -310,22 +260,6 @@ function waitForRepeatedMessageByType(hud, text, typeSelector, repeat) {
 
     return false;
   });
-}
-
-
-
-
-
-
-
-
-async function waitForMessage(hud, text, selector) {
-  const messages = await waitForMessages({
-    hud,
-    messages: [{ text }],
-    selector,
-  });
-  return messages[0];
 }
 
 
