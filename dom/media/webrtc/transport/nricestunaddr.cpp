@@ -7,7 +7,6 @@
 
 extern "C" {
 #include "nr_api.h"
-#include "r_memory.h"
 #include "local_addr.h"
 }
 

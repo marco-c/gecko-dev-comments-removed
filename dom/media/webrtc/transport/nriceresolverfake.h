@@ -46,8 +46,7 @@
 #include <map>
 #include <string>
 
-#include "nspr.h"
-#include "prnetdb.h"
+#include "csi_platform.h"
 
 typedef struct nr_resolver_ nr_resolver;
 typedef struct nr_resolver_vtbl_ nr_resolver_vtbl;

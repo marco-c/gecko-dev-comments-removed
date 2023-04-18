@@ -50,15 +50,8 @@
 
 extern "C" {
 #include "nr_api.h"
-#include "registry.h"
-#include "async_timer.h"
-#include "ice_util.h"
 #include "transport_addr.h"
-#include "nr_crypto.h"
 #include "nr_socket.h"
-#include "nr_socket_local.h"
-#include "stun_client_ctx.h"
-#include "stun_server_ctx.h"
 #include "ice_ctx.h"
 #include "ice_candidate.h"
 #include "ice_handler.h"

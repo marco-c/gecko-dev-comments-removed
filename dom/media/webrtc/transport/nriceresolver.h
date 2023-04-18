@@ -43,10 +43,6 @@
 #ifndef nriceresolver_h__
 #define nriceresolver_h__
 
-#include <map>
-#include <string>
-#include "nspr.h"
-#include "prnetdb.h"
 #include "nsIDNSService.h"
 #include "nsIDNSListener.h"
 #include "nsICancelable.h"

@@ -6,9 +6,7 @@
 
 
 #include "logging.h"
-#include "transportflow.h"
 #include "transportlayer.h"
-#include "nsThreadUtils.h"
 
 
 namespace mozilla {

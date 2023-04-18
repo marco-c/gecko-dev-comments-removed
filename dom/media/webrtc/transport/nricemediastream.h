@@ -51,7 +51,7 @@
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
-#include "nsCOMPtr.h"
+#include "nscore.h"
 
 #include "m_cpp_utils.h"
 

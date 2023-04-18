@@ -7,12 +7,8 @@
 
 #include <deque>
 
-#include "logging.h"
-#include "runnable_utils.h"
 #include "transportflow.h"
 #include "transportlayer.h"
-
-#include "mozilla/DebugOnly.h"
 
 namespace mozilla {
 
