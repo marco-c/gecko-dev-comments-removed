@@ -15,14 +15,7 @@
 #include "nsIClassInfo.h"
 #include "nsISerializable.h"
 #include "nsIX509Cert.h"
-#include "nsSimpleEnumerator.h"
 #include "nsStringFwd.h"
-
-namespace mozilla {
-namespace pkix {
-class DERArray;
-}
-}  
 
 class nsINSSComponent;
 
@@ -40,39 +33,15 @@ class nsNSSCertificate final : public nsIX509Cert,
   static nsNSSCertificate* Create(CERTCertificate* cert = nullptr);
   static nsNSSCertificate* ConstructFromDER(char* certDER, int derLen);
 
-  
-  
-  
-  
-  static nsresult GetIntermediatesAsDER(
-       const nsTArray<RefPtr<nsIX509Cert>>& aCertList,
-       nsTArray<nsTArray<uint8_t>>& aIntermediates);
-
-  
-  
-  
-  static nsresult GetRootCertificate(
-      const nsTArray<RefPtr<nsIX509Cert>>& aCertList,
-       nsCOMPtr<nsIX509Cert>& aRoot);
-
  private:
   virtual ~nsNSSCertificate() = default;
 
   mozilla::UniqueCERTCertificate mCert;
   uint32_t mCertType;
-  nsresult GetSortableDate(PRTime aTime, nsAString& _aSortableDate);
   bool InitFromDER(char* certDER, int derLen);  
 
   nsresult GetCertificateHash(nsAString& aFingerprint, SECOidTag aHashAlg);
 };
-
-namespace mozilla {
-
-SECStatus ConstructCERTCertListFromReversedDERArray(
-    const mozilla::pkix::DERArray& certArray,
-     mozilla::UniqueCERTCertList& certList);
-
-}  
 
 #define NS_X509CERT_CID                              \
   { /* 660a3226-915c-4ffb-bb20-8985a632df05 */       \

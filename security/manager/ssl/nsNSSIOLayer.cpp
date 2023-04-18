@@ -2236,11 +2236,30 @@ mozilla::pkix::Result ClientAuthCertNonverifyingTrustDomain::FindIssuer(
 }
 
 mozilla::pkix::Result ClientAuthCertNonverifyingTrustDomain::IsChainValid(
-    const DERArray& certChain, Time, const CertPolicyId&) {
-  if (ConstructCERTCertListFromReversedDERArray(certChain, mBuiltChain) !=
-      SECSuccess) {
+    const DERArray& certArray, Time, const CertPolicyId&) {
+  mBuiltChain = UniqueCERTCertList(CERT_NewCertList());
+  if (!mBuiltChain) {
     return MapPRErrorCodeToResult(PR_GetError());
   }
+
+  CERTCertDBHandle* certDB(CERT_GetDefaultCertDB());  
+
+  size_t numCerts = certArray.GetLength();
+  for (size_t i = 0; i < numCerts; ++i) {
+    SECItem certDER(UnsafeMapInputToSECItem(*certArray.GetDER(i)));
+    UniqueCERTCertificate cert(
+        CERT_NewTempCertificate(certDB, &certDER, nullptr, false, true));
+    if (!cert) {
+      return MapPRErrorCodeToResult(PR_GetError());
+    }
+    
+    
+    if (CERT_AddCertToListHead(mBuiltChain.get(), cert.get()) != SECSuccess) {
+      return MapPRErrorCodeToResult(PR_GetError());
+    }
+    Unused << cert.release();  
+  }
+
   return Success;
 }
 
