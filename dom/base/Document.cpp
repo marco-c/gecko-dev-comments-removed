@@ -16832,8 +16832,6 @@ Selection* Document::GetSelection(ErrorResult& aRv) {
 }
 
 nsresult Document::HasStorageAccessSync(bool& aHasStorageAccess) {
-  
-  
   nsCOMPtr<nsPIDOMWindowInner> inner = this->GetInnerWindow();
   if (!inner) {
     aHasStorageAccess = false;
@@ -16852,8 +16850,6 @@ nsresult Document::HasStorageAccessSync(bool& aHasStorageAccess) {
     }
   }
 
-  
-  
   bool isThirdPartyDocument = AntiTrackingUtils::IsThirdPartyDocument(this);
   Maybe<bool> resultBecauseBrowserSettings =
       ContentBlocking::CheckBrowserSettingsDecidesStorageAccessAPI(
@@ -16868,8 +16864,6 @@ nsresult Document::HasStorageAccessSync(bool& aHasStorageAccess) {
     }
   }
 
-  
-  
   Maybe<bool> resultBecauseCallContext =
       ContentBlocking::CheckCallingContextDecidesStorageAccessAPI(this, false);
   if (resultBecauseCallContext.isSome()) {
@@ -16882,8 +16876,6 @@ nsresult Document::HasStorageAccessSync(bool& aHasStorageAccess) {
     }
   }
 
-  
-  
   Maybe<bool> resultBecausePreviousPermission =
       ContentBlocking::CheckExistingPermissionDecidesStorageAccessAPI(this);
   if (resultBecausePreviousPermission.isSome()) {
@@ -16896,7 +16888,6 @@ nsresult Document::HasStorageAccessSync(bool& aHasStorageAccess) {
     }
   }
 
-  
   aHasStorageAccess = false;
   return NS_OK;
 }
@@ -16950,111 +16941,6 @@ Document::GetContentBlockingEvents() {
         return Document::GetContentBlockingEventsPromise::CreateAndReject(
             false, __func__);
       });
-}
-
-RefPtr<MozPromise<int, bool, true>> Document::RequestStorageAccessAsyncHelper(
-    nsPIDOMWindowInner* aInnerWindow, BrowsingContext* aBrowsingContext,
-    nsIPrincipal* aPrincipal, bool aHasUserInteraction,
-    ContentBlockingNotifier::StorageAccessPermissionGrantedReason aNotifier) {
-  RefPtr<Document> self(this);
-  RefPtr<nsPIDOMWindowInner> inner(aInnerWindow);
-  RefPtr<nsIPrincipal> principal(aPrincipal);
-
-  
-  
-  auto performFinalChecks = [inner, self, principal, aHasUserInteraction]() {
-    
-    RefPtr<ContentBlocking::StorageAccessFinalCheckPromise::Private> p =
-        new ContentBlocking::StorageAccessFinalCheckPromise::Private(__func__);
-    RefPtr<StorageAccessPermissionRequest> sapr =
-        StorageAccessPermissionRequest::Create(
-            inner, principal,
-            
-            [p] {
-              Telemetry::AccumulateCategorical(
-                  Telemetry::LABELS_STORAGE_ACCESS_API_UI::Allow);
-              p->Resolve(ContentBlocking::eAllow, __func__);
-            },
-            
-            [p] {
-              Telemetry::AccumulateCategorical(
-                  Telemetry::LABELS_STORAGE_ACCESS_API_UI::Deny);
-              p->Reject(false, __func__);
-            });
-
-    using PromptResult = ContentPermissionRequestBase::PromptResult;
-    PromptResult pr = sapr->CheckPromptPrefs();
-
-    if (pr == PromptResult::Pending) {
-      
-      Telemetry::AccumulateCategorical(
-          Telemetry::LABELS_STORAGE_ACCESS_API_UI::Request);
-    }
-
-    
-    self->AutomaticStorageAccessPermissionCanBeGranted(aHasUserInteraction)
-        ->Then(
-            GetCurrentSerialEventTarget(), __func__,
-            
-            [p, pr, sapr, inner](
-                const Document::AutomaticStorageAccessPermissionGrantPromise::
-                    ResolveOrRejectValue& aValue) -> void {
-              
-              
-              PromptResult pr2 = pr;
-
-              
-              
-              bool storageAccessCanBeGrantedAutomatically =
-                  aValue.IsResolve() && aValue.ResolveValue();
-              bool autoGrant = false;
-              if (pr2 == PromptResult::Pending &&
-                  storageAccessCanBeGrantedAutomatically) {
-                pr2 = PromptResult::Granted;
-                autoGrant = true;
-
-                Telemetry::AccumulateCategorical(
-                    Telemetry::LABELS_STORAGE_ACCESS_API_UI::
-                        AllowAutomatically);
-              }
-
-              
-              if (pr2 != PromptResult::Pending) {
-                MOZ_ASSERT_IF(pr2 != PromptResult::Granted,
-                              pr2 == PromptResult::Denied);
-                if (pr2 == PromptResult::Granted) {
-                  ContentBlocking::StorageAccessPromptChoices choice =
-                      ContentBlocking::eAllow;
-                  if (autoGrant) {
-                    choice = ContentBlocking::eAllowAutoGrant;
-                  }
-                  if (!autoGrant) {
-                    p->Resolve(choice, __func__);
-                  } else {
-                    sapr->MaybeDelayAutomaticGrants()->Then(
-                        GetCurrentSerialEventTarget(), __func__,
-                        [p, choice] { p->Resolve(choice, __func__); },
-                        [p] { p->Reject(false, __func__); });
-                  }
-                  return;
-                }
-                p->Reject(false, __func__);
-                return;
-              }
-
-              
-              
-              sapr->RequestDelayedTask(
-                  inner->EventTargetFor(TaskCategory::Other),
-                  ContentPermissionRequestBase::DelayedTaskType::Request);
-            });
-
-    return p;
-  };
-
-  
-  return ContentBlocking::AllowAccessFor(principal, aBrowsingContext, aNotifier,
-                                         performFinalChecks);
 }
 
 already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
@@ -17139,7 +17025,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
 
   
   RefPtr<BrowsingContext> bc = this->GetBrowsingContext();
-  nsPIDOMWindowInner* inner = this->GetInnerWindow();
+  nsCOMPtr<nsPIDOMWindowInner> inner = this->GetInnerWindow();
   if (!inner) {
     this->ConsumeTransientUserGestureActivation();
     promise->MaybeRejectWithUndefined();
@@ -17158,12 +17044,92 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   this->ConsumeTransientUserGestureActivation();
 
-  
-  
-  
-  
-  RequestStorageAccessAsyncHelper(inner, bc, NodePrincipal(), true,
-                                  ContentBlockingNotifier::eStorageAccessAPI)
+  auto performFinalChecks =
+      [inner,
+       self]() -> RefPtr<ContentBlocking::StorageAccessFinalCheckPromise> {
+    RefPtr<ContentBlocking::StorageAccessFinalCheckPromise::Private> p =
+        new ContentBlocking::StorageAccessFinalCheckPromise::Private(__func__);
+    RefPtr<StorageAccessPermissionRequest> sapr =
+        StorageAccessPermissionRequest::Create(
+            inner,
+            
+            [p] {
+              Telemetry::AccumulateCategorical(
+                  Telemetry::LABELS_STORAGE_ACCESS_API_UI::Allow);
+              p->Resolve(ContentBlocking::eAllow, __func__);
+            },
+            
+            [p] {
+              Telemetry::AccumulateCategorical(
+                  Telemetry::LABELS_STORAGE_ACCESS_API_UI::Deny);
+              p->Reject(false, __func__);
+            });
+
+    using PromptResult = ContentPermissionRequestBase::PromptResult;
+    PromptResult pr = sapr->CheckPromptPrefs();
+
+    if (pr == PromptResult::Pending) {
+      
+      Telemetry::AccumulateCategorical(
+          Telemetry::LABELS_STORAGE_ACCESS_API_UI::Request);
+    }
+
+    self->AutomaticStorageAccessPermissionCanBeGranted(true)->Then(
+        GetCurrentSerialEventTarget(), __func__,
+        [p, pr, sapr,
+         inner](const AutomaticStorageAccessPermissionGrantPromise::
+                    ResolveOrRejectValue& aValue) -> void {
+          
+          
+          PromptResult pr2 = pr;
+
+          bool storageAccessCanBeGrantedAutomatically =
+              aValue.IsResolve() && aValue.ResolveValue();
+
+          bool autoGrant = false;
+          if (pr2 == PromptResult::Pending &&
+              storageAccessCanBeGrantedAutomatically) {
+            pr2 = PromptResult::Granted;
+            autoGrant = true;
+
+            Telemetry::AccumulateCategorical(
+                Telemetry::LABELS_STORAGE_ACCESS_API_UI::AllowAutomatically);
+          }
+
+          if (pr2 != PromptResult::Pending) {
+            MOZ_ASSERT_IF(pr2 != PromptResult::Granted,
+                          pr2 == PromptResult::Denied);
+            if (pr2 == PromptResult::Granted) {
+              ContentBlocking::StorageAccessPromptChoices choice =
+                  ContentBlocking::eAllow;
+              if (autoGrant) {
+                choice = ContentBlocking::eAllowAutoGrant;
+              }
+              if (!autoGrant) {
+                p->Resolve(choice, __func__);
+              } else {
+                sapr->MaybeDelayAutomaticGrants()->Then(
+                    GetCurrentSerialEventTarget(), __func__,
+                    [p, choice] { p->Resolve(choice, __func__); },
+                    [p] { p->Reject(false, __func__); });
+              }
+              return;
+            }
+            p->Reject(false, __func__);
+            return;
+          }
+
+          sapr->RequestDelayedTask(
+              inner->EventTargetFor(TaskCategory::Other),
+              ContentPermissionRequestBase::DelayedTaskType::Request);
+        });
+
+    return p;
+  };
+
+  ContentBlocking::AllowAccessFor(NodePrincipal(), bc,
+                                  ContentBlockingNotifier::eStorageAccessAPI,
+                                  performFinalChecks)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self, outer, promise] {
@@ -17191,146 +17157,233 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
     aRv.Throw(NS_ERROR_NOT_AVAILABLE);
     return nullptr;
   }
+
   RefPtr<Promise> promise = Promise::Create(global, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
 
   
+  bool hasUserActivation = this->HasValidTransientUserGestureActivation();
+  if (aRequireUserActivation && !hasUserActivation) {
+    nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
+                                    nsLiteralCString("requestStorageAccess"),
+                                    this, nsContentUtils::eDOM_PROPERTIES,
+                                    "RequestStorageAccessUserGesture");
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
+  nsCOMPtr<nsPIDOMWindowInner> inner = GetInnerWindow();
+  if (!inner) {
+    this->ConsumeTransientUserGestureActivation();
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
+  
+  
+  if (AntiTrackingUtils::IsThirdPartyWindow(inner, nullptr)) {
+    this->ConsumeTransientUserGestureActivation();
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
+  
+  if (NodePrincipal()->GetIsNullPrincipal()) {
+    nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
+                                    nsLiteralCString("requestStorageAccess"),
+                                    this, nsContentUtils::eDOM_PROPERTIES,
+                                    "RequestStorageAccessNullPrincipal");
+    this->ConsumeTransientUserGestureActivation();
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
   nsCOMPtr<nsIURI> thirdPartyURI;
   nsresult rv = NS_NewURI(getter_AddRefs(thirdPartyURI), aThirdPartyOrigin);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.Throw(rv);
     return nullptr;
   }
-  bool isThirdPartyDocument;
-  rv = NodePrincipal()->IsThirdPartyURI(thirdPartyURI, &isThirdPartyDocument);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    aRv.Throw(rv);
-    return nullptr;
+
+  
+  if (CookieJarSettings()->GetBlockingAllContexts()) {
+    this->ConsumeTransientUserGestureActivation();
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
   }
-  Maybe<bool> resultBecauseBrowserSettings =
-      ContentBlocking::CheckBrowserSettingsDecidesStorageAccessAPI(
-          CookieJarSettings(), isThirdPartyDocument);
-  if (resultBecauseBrowserSettings.isSome()) {
-    if (resultBecauseBrowserSettings.value()) {
+
+  
+  if (!CookieJarSettings()->GetRejectThirdPartyContexts()) {
+    
+    if (NodePrincipal()->IsSameOrigin(thirdPartyURI)) {
       promise->MaybeResolveWithUndefined();
       return promise.forget();
     }
+  }
+
+  
+
+  if (CookieJarSettings()->GetBlockingAllThirdPartyContexts()) {
     this->ConsumeTransientUserGestureActivation();
     promise->MaybeRejectWithUndefined();
     return promise.forget();
   }
 
-  
-  
-  Maybe<bool> resultBecauseCallContext =
-      ContentBlocking::CheckSameSiteCallingContextDecidesStorageAccessAPI(
-          this, aRequireUserActivation);
-  if (resultBecauseCallContext.isSome()) {
-    if (resultBecauseCallContext.value()) {
-      promise->MaybeResolveWithUndefined();
+  if (CookieJarSettings()->GetRejectThirdPartyContexts()) {
+    RefPtr<BrowsingContext> bc = GetBrowsingContext();
+    if (!bc) {
+      this->ConsumeTransientUserGestureActivation();
+      promise->MaybeRejectWithUndefined();
       return promise.forget();
     }
-    this->ConsumeTransientUserGestureActivation();
-    promise->MaybeRejectWithUndefined();
-    return promise.forget();
-  }
 
-  
-  
-  RefPtr<BrowsingContext> bc = this->GetBrowsingContext();
-  nsCOMPtr<nsPIDOMWindowInner> inner = this->GetInnerWindow();
-  if (!inner) {
-    this->ConsumeTransientUserGestureActivation();
-    promise->MaybeRejectWithUndefined();
-    return promise.forget();
-  }
-  RefPtr<nsGlobalWindowOuter> outer =
-      nsGlobalWindowOuter::Cast(inner->GetOuterWindow());
-  if (!outer) {
-    this->ConsumeTransientUserGestureActivation();
-    promise->MaybeRejectWithUndefined();
-    return promise.forget();
-  }
-  nsCOMPtr<nsIPrincipal> principal = BasePrincipal::CreateContentPrincipal(
-      thirdPartyURI, NodePrincipal()->OriginAttributesRef());
-  if (!principal) {
-    this->ConsumeTransientUserGestureActivation();
-    promise->MaybeRejectWithUndefined();
-    return promise.forget();
-  }
+    nsCOMPtr<nsIPrincipal> principal = BasePrincipal::CreateContentPrincipal(
+        thirdPartyURI, NodePrincipal()->OriginAttributesRef());
 
-  RefPtr<Document> self(this);
-  bool hasUserActivation = HasValidTransientUserGestureActivation();
+    if (!principal) {
+      this->ConsumeTransientUserGestureActivation();
+      promise->MaybeRejectWithUndefined();
+      return promise.forget();
+    }
 
-  
-  
-  this->ConsumeTransientUserGestureActivation();
+    RefPtr<Document> self(this);
 
-  
-  
-  
-  
-  ContentBlocking::AsyncCheckCookiesPermittedDecidesStorageAccessAPI(
-      GetBrowsingContext(), principal)
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [inner, thirdPartyURI, bc, principal, hasUserActivation, self,
-           promise](Maybe<bool> cookieResult) {
-            
-            
-            if (cookieResult.isSome()) {
-              if (cookieResult.value()) {
-                return MozPromise<int, bool, true>::CreateAndResolve(true,
-                                                                     __func__);
+    
+    
+    this->ConsumeTransientUserGestureActivation();
+
+    auto performFinalChecks = [inner, self, principal, hasUserActivation]() {
+      RefPtr<ContentBlocking::StorageAccessFinalCheckPromise::Private> p =
+          new ContentBlocking::StorageAccessFinalCheckPromise::Private(
+              __func__);
+      RefPtr<StorageAccessPermissionRequest> sapr =
+          StorageAccessPermissionRequest::Create(
+              inner, principal,
+              
+              [p] {
+                Telemetry::AccumulateCategorical(
+                    Telemetry::LABELS_STORAGE_ACCESS_API_UI::Allow);
+                p->Resolve(ContentBlocking::eAllow, __func__);
+              },
+              
+              [p] {
+                Telemetry::AccumulateCategorical(
+                    Telemetry::LABELS_STORAGE_ACCESS_API_UI::Deny);
+                p->Reject(false, __func__);
+              });
+
+      using PromptResult = ContentPermissionRequestBase::PromptResult;
+      PromptResult pr = sapr->CheckPromptPrefs();
+
+      if (pr == PromptResult::Pending) {
+        
+        Telemetry::AccumulateCategorical(
+            Telemetry::LABELS_STORAGE_ACCESS_API_UI::Request);
+      }
+
+      self->AutomaticStorageAccessPermissionCanBeGranted(hasUserActivation)
+          ->Then(GetCurrentSerialEventTarget(), __func__,
+                 [p, pr, sapr,
+                  inner](const AutomaticStorageAccessPermissionGrantPromise::
+                             ResolveOrRejectValue& aValue) -> void {
+                   
+                   
+                   PromptResult pr2 = pr;
+
+                   bool storageAccessCanBeGrantedAutomatically =
+                       aValue.IsResolve() && aValue.ResolveValue();
+
+                   bool autoGrant = false;
+                   if (pr2 == PromptResult::Pending &&
+                       storageAccessCanBeGrantedAutomatically) {
+                     pr2 = PromptResult::Granted;
+                     autoGrant = true;
+
+                     Telemetry::AccumulateCategorical(
+                         Telemetry::LABELS_STORAGE_ACCESS_API_UI::
+                             AllowAutomatically);
+                   }
+
+                   if (pr2 != PromptResult::Pending) {
+                     MOZ_ASSERT_IF(pr2 != PromptResult::Granted,
+                                   pr2 == PromptResult::Denied);
+                     if (pr2 == PromptResult::Granted) {
+                       ContentBlocking::StorageAccessPromptChoices choice =
+                           ContentBlocking::eAllow;
+                       if (autoGrant) {
+                         choice = ContentBlocking::eAllowAutoGrant;
+                       }
+                       if (!autoGrant) {
+                         p->Resolve(choice, __func__);
+                       } else {
+                         sapr->MaybeDelayAutomaticGrants()->Then(
+                             GetCurrentSerialEventTarget(), __func__,
+                             [p, choice] { p->Resolve(choice, __func__); },
+                             [p] { p->Reject(false, __func__); });
+                       }
+                       return;
+                     }
+                     p->Reject(false, __func__);
+                     return;
+                   }
+
+                   sapr->RequestDelayedTask(
+                       inner->EventTargetFor(TaskCategory::Other),
+                       ContentPermissionRequestBase::DelayedTaskType::Request);
+                 });
+
+      return p;
+    };
+
+    
+    
+    AsyncStorageDisabledByAntiTracking(bc, principal)
+        ->Then(
+            GetCurrentSerialEventTarget(), __func__,
+            [performFinalChecks, promise, bc, principal,
+             self](AsyncStorageDisabledByAntiTrackingPromise::
+                       ResolveOrRejectValue&& aValue) {
+              if (aValue.IsReject()) {
+                
+                return ContentBlocking::StorageAccessPermissionGrantPromise::
+                    CreateAndResolve(0, __func__);
               }
-              return MozPromise<int, bool, true>::CreateAndReject(false,
-                                                                  __func__);
-            }
 
-            
-            nsAutoCString type;
-            bool ok =
-                AntiTrackingUtils::CreateStoragePermissionKey(principal, type);
-            if (!ok) {
-              return MozPromise<int, bool, true>::CreateAndReject(false,
-                                                                  __func__);
-            }
-            if (AntiTrackingUtils::CheckStoragePermission(
-                    self->NodePrincipal(), type,
-                    nsContentUtils::IsInPrivateBrowsing(self), nullptr, 0)) {
-              return MozPromise<int, bool, true>::CreateAndResolve(true,
-                                                                   __func__);
-            }
+              MOZ_ASSERT(aValue.IsResolve());
+              
 
-            
-            
-            
-            return self->RequestStorageAccessAsyncHelper(
-                inner, bc, principal, hasUserActivation,
-                ContentBlockingNotifier::ePrivilegeStorageAccessForOriginAPI);
-          },
-          
-          
-          [promise]() {
-            return MozPromise<int, bool, true>::CreateAndReject(false,
-                                                                __func__);
-          })
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          
-          
-          [self, promise] {
-            self->NotifyUserGestureActivation();
-            promise->MaybeResolveWithUndefined();
-          },
-          
-          
-          [promise] { promise->MaybeRejectWithUndefined(); });
+              
+              
+              uint32_t rejectReason = aValue.ResolveValue();
+              if (rejectReason ==
+                  nsIWebProgressListener::STATE_COOKIES_BLOCKED_BY_PERMISSION) {
+                return ContentBlocking::StorageAccessPermissionGrantPromise::
+                    CreateAndReject(true, __func__);
+                ;
+              }
 
-  
-  
+              MOZ_ASSERT(!self->CookieJarSettings()
+                              ->GetIsOnContentBlockingAllowList());
+
+              return ContentBlocking::AllowAccessFor(
+                  principal, bc,
+                  ContentBlockingNotifier::ePrivilegeStorageAccessForOriginAPI,
+                  performFinalChecks);
+            })
+        ->Then(
+            GetCurrentSerialEventTarget(), __func__,
+            [self, promise] {
+              self->NotifyUserGestureActivation();
+              promise->MaybeResolveWithUndefined();
+            },
+            [promise] { promise->MaybeRejectWithUndefined(); });
+
+    return promise.forget();
+  }
+
+  promise->MaybeResolveWithUndefined();
   return promise.forget();
 }
 

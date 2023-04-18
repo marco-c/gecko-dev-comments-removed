@@ -71,6 +71,11 @@ class ContentBlocking final {
   static bool ShouldAllowAccessFor(nsIPrincipal* aPrincipal,
                                    nsICookieJarSettings* aCookieJarSettings);
 
+  typedef MozPromise<nsresult, uint32_t, true> AsyncShouldAllowAccessForPromise;
+  [[nodiscard]] static RefPtr<AsyncShouldAllowAccessForPromise>
+  AsyncShouldAllowAccessFor(dom::BrowsingContext* aBrowsingContext,
+                            nsIPrincipal* aPrincipal);
+
   enum StorageAccessPromptChoices { eAllow, eAllowAutoGrant };
 
   
@@ -134,13 +139,6 @@ class ContentBlocking final {
 
   
   
-  static RefPtr<MozPromise<Maybe<bool>, nsresult, true>>
-  AsyncCheckCookiesPermittedDecidesStorageAccessAPI(
-      dom::BrowsingContext* aBrowsingContext,
-      nsIPrincipal* aRequestingPrincipal);
-
-  
-  
   
   
   
@@ -164,21 +162,6 @@ class ContentBlocking final {
   
   static Maybe<bool> CheckCallingContextDecidesStorageAccessAPI(
       dom::Document* aDocument, bool aRequestingStorageAccess);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static Maybe<bool> CheckSameSiteCallingContextDecidesStorageAccessAPI(
-      dom::Document* aDocument, bool aRequireUserActivation);
 
   
   

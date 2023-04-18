@@ -110,6 +110,17 @@ bool StorageDisabledByAntiTracking(nsPIDOMWindowInner* aWindow,
 bool StorageDisabledByAntiTracking(dom::Document* aDocument, nsIURI* aURI,
                                    uint32_t& aRejectedReason);
 
+
+
+
+
+
+using AsyncStorageDisabledByAntiTrackingPromise =
+    MozPromise<uint32_t, nsresult, true>;
+[[nodiscard]] RefPtr<AsyncStorageDisabledByAntiTrackingPromise>
+AsyncStorageDisabledByAntiTracking(dom::BrowsingContext* aContext,
+                                   nsIPrincipal* aPrincipal);
+
 bool ShouldPartitionStorage(StorageAccess aAccess);
 
 bool ShouldPartitionStorage(uint32_t aRejectedReason);
