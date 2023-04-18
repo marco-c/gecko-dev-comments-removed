@@ -40,13 +40,12 @@ function test_part1() {
   
   ok(
     !gSSService.isSecureURI(
-      Services.io.newURI("https://nonexistent.example.com"),
-      0
+      Services.io.newURI("https://nonexistent.example.com")
     )
   );
 
   
-  ok(!gSSService.isSecureURI(Services.io.newURI("https://com"), 0));
+  ok(!gSSService.isSecureURI(Services.io.newURI("https://com")));
 
   
   Services.prefs.setBoolPref(
@@ -55,8 +54,7 @@ function test_part1() {
   );
   ok(
     !gSSService.isSecureURI(
-      Services.io.newURI("https://includesubdomains.preloaded.test"),
-      0
+      Services.io.newURI("https://includesubdomains.preloaded.test")
     )
   );
   Services.prefs.setBoolPref(
@@ -65,42 +63,35 @@ function test_part1() {
   );
   ok(
     gSSService.isSecureURI(
-      Services.io.newURI("https://includesubdomains.preloaded.test"),
-      0
+      Services.io.newURI("https://includesubdomains.preloaded.test")
     )
   );
 
   
   ok(
     gSSService.isSecureURI(
-      Services.io.newURI("https://subdomain.includesubdomains.preloaded.test"),
-      0
+      Services.io.newURI("https://subdomain.includesubdomains.preloaded.test")
     )
   );
 
   
   ok(
     gSSService.isSecureURI(
-      Services.io.newURI("https://a.b.c.def.includesubdomains.preloaded.test"),
-      0
+      Services.io.newURI("https://a.b.c.def.includesubdomains.preloaded.test")
     )
   );
 
   
   ok(
     !gSSService.isSecureURI(
-      Services.io.newURI(
-        "https://subdomain.noincludesubdomains.preloaded.test"
-      ),
-      0
+      Services.io.newURI("https://subdomain.noincludesubdomains.preloaded.test")
     )
   );
 
   
   ok(
     !gSSService.isSecureURI(
-      Services.io.newURI("https://notsts.nonexistent.example.com."),
-      0
+      Services.io.newURI("https://notsts.nonexistent.example.com.")
     )
   );
 
@@ -114,23 +105,21 @@ function test_part1() {
     uri,
     "max-age=0",
     secInfo,
-    0,
     Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
   );
-  ok(!gSSService.isSecureURI(uri, 0));
-  ok(!gSSService.isSecureURI(subDomainUri, 0));
+  ok(!gSSService.isSecureURI(uri));
+  ok(!gSSService.isSecureURI(subDomainUri));
   
   
   gSSService.processHeader(
     uri,
     "max-age=1000",
     secInfo,
-    0,
     Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
   );
-  ok(gSSService.isSecureURI(uri, 0));
+  ok(gSSService.isSecureURI(uri));
   
-  ok(!gSSService.isSecureURI(subDomainUri, 0));
+  ok(!gSSService.isSecureURI(subDomainUri));
   gSSService.clearAll();
 
   
@@ -142,16 +131,14 @@ function test_part1() {
     uri,
     "max-age=0",
     secInfo,
-    0,
     Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
   );
   ok(
     gSSService.isSecureURI(
-      Services.io.newURI("https://noincludesubdomains.preloaded.test"),
-      0
+      Services.io.newURI("https://noincludesubdomains.preloaded.test")
     )
   );
-  ok(!gSSService.isSecureURI(uri, 0));
+  ok(!gSSService.isSecureURI(uri));
 
   uri = Services.io.newURI(
     "https://subdomain.includesubdomains.preloaded.test"
@@ -160,7 +147,6 @@ function test_part1() {
     uri,
     "max-age=0",
     secInfo,
-    0,
     Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
   );
   
@@ -174,28 +160,24 @@ function test_part1() {
   
   ok(
     gSSService.isSecureURI(
-      Services.io.newURI("https://includesubdomains.preloaded.test"),
-      0
+      Services.io.newURI("https://includesubdomains.preloaded.test")
     )
   );
   ok(
     gSSService.isSecureURI(
-      Services.io.newURI("https://subdomain.includesubdomains.preloaded.test"),
-      0
+      Services.io.newURI("https://subdomain.includesubdomains.preloaded.test")
     )
   );
   ok(
     gSSService.isSecureURI(
-      Services.io.newURI("https://sibling.includesubdomains.preloaded.test"),
-      0
+      Services.io.newURI("https://sibling.includesubdomains.preloaded.test")
     )
   );
   ok(
     gSSService.isSecureURI(
       Services.io.newURI(
         "https://another.subdomain.includesubdomains.preloaded.test"
-      ),
-      0
+      )
     )
   );
 
@@ -203,7 +185,6 @@ function test_part1() {
     uri,
     "max-age=1000",
     secInfo,
-    0,
     Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
   );
   
@@ -213,22 +194,19 @@ function test_part1() {
   
   ok(
     gSSService.isSecureURI(
-      Services.io.newURI("https://subdomain.includesubdomains.preloaded.test"),
-      0
+      Services.io.newURI("https://subdomain.includesubdomains.preloaded.test")
     )
   );
   ok(
     gSSService.isSecureURI(
-      Services.io.newURI("https://sibling.includesubdomains.preloaded.test"),
-      0
+      Services.io.newURI("https://sibling.includesubdomains.preloaded.test")
     )
   );
   ok(
     !gSSService.isSecureURI(
       Services.io.newURI(
         "https://another.subdomain.includesubdomains.preloaded.test"
-      ),
-      0
+      )
     )
   );
 
@@ -239,21 +217,20 @@ function test_part1() {
   
   
   uri = Services.io.newURI("https://includesubdomains2.preloaded.test");
-  ok(gSSService.isSecureURI(uri, 0));
+  ok(gSSService.isSecureURI(uri));
   gSSService.processHeader(
     uri,
     "max-age=1",
     secInfo,
-    0,
     Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
   );
   do_timeout(1250, function() {
-    ok(!gSSService.isSecureURI(uri, 0));
+    ok(!gSSService.isSecureURI(uri));
     run_next_test();
   });
 }
 
-const IS_PRIVATE = Ci.nsISocketProvider.NO_PERMANENT_STORAGE;
+const PRIVATE_ORIGIN_ATTRIBUTES = { privateBrowsingId: 1 };
 
 function test_private_browsing1() {
   gSSService.clearAll();
@@ -262,41 +239,41 @@ function test_private_browsing1() {
     "https://a.b.c.subdomain.includesubdomains.preloaded.test"
   );
   
-  ok(gSSService.isSecureURI(uri, IS_PRIVATE));
-  ok(gSSService.isSecureURI(subDomainUri, IS_PRIVATE));
+  ok(gSSService.isSecureURI(uri, PRIVATE_ORIGIN_ATTRIBUTES));
+  ok(gSSService.isSecureURI(subDomainUri, PRIVATE_ORIGIN_ATTRIBUTES));
 
   gSSService.processHeader(
     uri,
     "max-age=0",
     secInfo,
-    IS_PRIVATE,
-    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
+    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST,
+    PRIVATE_ORIGIN_ATTRIBUTES
   );
-  ok(!gSSService.isSecureURI(uri, IS_PRIVATE));
-  ok(!gSSService.isSecureURI(subDomainUri, IS_PRIVATE));
+  ok(!gSSService.isSecureURI(uri, PRIVATE_ORIGIN_ATTRIBUTES));
+  ok(!gSSService.isSecureURI(subDomainUri, PRIVATE_ORIGIN_ATTRIBUTES));
 
   
   gSSService.processHeader(
     uri,
     "max-age=1000",
     secInfo,
-    IS_PRIVATE,
-    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
+    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST,
+    PRIVATE_ORIGIN_ATTRIBUTES
   );
-  ok(gSSService.isSecureURI(uri, IS_PRIVATE));
+  ok(gSSService.isSecureURI(uri, PRIVATE_ORIGIN_ATTRIBUTES));
   
-  ok(!gSSService.isSecureURI(subDomainUri, IS_PRIVATE));
+  ok(!gSSService.isSecureURI(subDomainUri, PRIVATE_ORIGIN_ATTRIBUTES));
 
   
   gSSService.processHeader(
     uri,
     "max-age=0",
     secInfo,
-    IS_PRIVATE,
-    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
+    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST,
+    PRIVATE_ORIGIN_ATTRIBUTES
   );
-  ok(!gSSService.isSecureURI(uri, IS_PRIVATE));
-  ok(!gSSService.isSecureURI(subDomainUri, IS_PRIVATE));
+  ok(!gSSService.isSecureURI(uri, PRIVATE_ORIGIN_ATTRIBUTES));
+  ok(!gSSService.isSecureURI(subDomainUri, PRIVATE_ORIGIN_ATTRIBUTES));
 
   
   
@@ -305,16 +282,16 @@ function test_private_browsing1() {
   
   
   uri = Services.io.newURI("https://includesubdomains2.preloaded.test");
-  ok(gSSService.isSecureURI(uri, IS_PRIVATE));
+  ok(gSSService.isSecureURI(uri, PRIVATE_ORIGIN_ATTRIBUTES));
   gSSService.processHeader(
     uri,
     "max-age=1",
     secInfo,
-    IS_PRIVATE,
-    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST
+    Ci.nsISiteSecurityService.SOURCE_ORGANIC_REQUEST,
+    PRIVATE_ORIGIN_ATTRIBUTES
   );
   do_timeout(1250, function() {
-    ok(!gSSService.isSecureURI(uri, IS_PRIVATE));
+    ok(!gSSService.isSecureURI(uri, PRIVATE_ORIGIN_ATTRIBUTES));
     
     Services.obs.notifyObservers(null, "last-pb-context-exited");
   });
@@ -324,15 +301,13 @@ function test_private_browsing2() {
   
   ok(
     gSSService.isSecureURI(
-      Services.io.newURI("https://includesubdomains.preloaded.test"),
-      0
+      Services.io.newURI("https://includesubdomains.preloaded.test")
     )
   );
   
   ok(
     gSSService.isSecureURI(
-      Services.io.newURI("https://subdomain.includesubdomains.preloaded.test"),
-      0
+      Services.io.newURI("https://subdomain.includesubdomains.preloaded.test")
     )
   );
 
@@ -340,8 +315,7 @@ function test_private_browsing2() {
   
   ok(
     gSSService.isSecureURI(
-      Services.io.newURI("https://includesubdomains2.preloaded.test"),
-      0
+      Services.io.newURI("https://includesubdomains2.preloaded.test")
     )
   );
 

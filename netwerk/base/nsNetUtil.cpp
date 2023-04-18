@@ -2966,9 +2966,8 @@ static bool ShouldSecureUpgradeNoHSTS(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
 
 nsresult NS_ShouldSecureUpgrade(
     nsIURI* aURI, nsILoadInfo* aLoadInfo, nsIPrincipal* aChannelResultPrincipal,
-    bool aPrivateBrowsing, bool aAllowSTS,
-    const OriginAttributes& aOriginAttributes, bool& aShouldUpgrade,
-    std::function<void(bool, nsresult)>&& aResultCallback,
+    bool aAllowSTS, const OriginAttributes& aOriginAttributes,
+    bool& aShouldUpgrade, std::function<void(bool, nsresult)>&& aResultCallback,
     bool& aWillCallback) {
   MOZ_ASSERT(XRE_IsParentProcess());
   if (!XRE_IsParentProcess()) {
@@ -3010,8 +3009,6 @@ nsresult NS_ShouldSecureUpgrade(
 
   bool isStsHost = false;
   uint32_t hstsSource = 0;
-  uint32_t flags =
-      aPrivateBrowsing ? nsISocketProvider::NO_PERMANENT_STORAGE : 0;
   
   
   
@@ -3039,16 +3036,15 @@ nsresult NS_ShouldSecureUpgrade(
     nsresult rv = gSocketTransportService->Dispatch(
         NS_NewRunnableFunction(
             "net::NS_ShouldSecureUpgrade",
-            [service{std::move(service)}, uri{std::move(uri)}, flags(flags),
+            [service{std::move(service)}, uri{std::move(uri)},
              originAttributes(aOriginAttributes),
              handleResultFunc{std::move(handleResultFunc)},
              callbackWrapper{std::move(callbackWrapper)},
              allowSTS{std::move(aAllowSTS)}]() mutable {
               bool isStsHost = false;
               uint32_t hstsSource = 0;
-              nsresult rv =
-                  service->IsSecureURI(uri, flags, originAttributes, nullptr,
-                                       &hstsSource, &isStsHost);
+              nsresult rv = service->IsSecureURI(uri, originAttributes, nullptr,
+                                                 &hstsSource, &isStsHost);
 
               
               
@@ -3068,8 +3064,8 @@ nsresult NS_ShouldSecureUpgrade(
     return rv;
   }
 
-  nsresult rv = sss->IsSecureURI(aURI, flags, aOriginAttributes, nullptr,
-                                 &hstsSource, &isStsHost);
+  nsresult rv = sss->IsSecureURI(aURI, aOriginAttributes, nullptr, &hstsSource,
+                                 &isStsHost);
 
   
   

@@ -188,18 +188,7 @@ const SecurityInfo = {
 
     
     if (uri && uri.host) {
-      
-      
-      
-      let flags = 0;
-      if (
-        channel instanceof Ci.nsIPrivateBrowsingChannel &&
-        channel.isChannelPrivate
-      ) {
-        flags = Ci.nsISocketProvider.NO_PERMANENT_STORAGE;
-      }
-
-      info.hsts = sss.isSecureURI(uri, flags);
+      info.hsts = sss.isSecureURI(uri, channel.loadInfo.originAttributes);
       info.hpkp = pkps.hostHasPins(uri);
     } else {
       info.hsts = false;

@@ -408,8 +408,7 @@ SECStatus DetermineCertOverrideErrors(const nsCOMPtr<nsIX509Cert>& cert,
 
 static nsresult OverrideAllowedForHost(
     uint64_t aPtrForLog, const nsACString& aHostname,
-    const OriginAttributes& aOriginAttributes, uint32_t aProviderFlags,
-     bool& aOverrideAllowed) {
+    const OriginAttributes& aOriginAttributes,  bool& aOverrideAllowed) {
   aOverrideAllowed = false;
 
   
@@ -444,8 +443,8 @@ static nsresult OverrideAllowedForHost(
     return rv;
   }
 
-  rv = sss->IsSecureURI(uri, aProviderFlags, aOriginAttributes, nullptr,
-                        nullptr, &strictTransportSecurityEnabled);
+  rv = sss->IsSecureURI(uri, aOriginAttributes, nullptr, nullptr,
+                        &strictTransportSecurityEnabled);
   if (NS_FAILED(rv)) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("[0x%" PRIx64 "] checking for HSTS failed", aPtrForLog));
@@ -735,8 +734,8 @@ Result AuthCertificate(
 PRErrorCode AuthCertificateParseResults(
     uint64_t aPtrForLog, const nsACString& aHostName, int32_t aPort,
     const OriginAttributes& aOriginAttributes,
-    const nsCOMPtr<nsIX509Cert>& aCert, uint32_t aProviderFlags,
-    mozilla::pkix::Time aTime, PRErrorCode aDefaultErrorCodeToReport,
+    const nsCOMPtr<nsIX509Cert>& aCert, mozilla::pkix::Time aTime,
+    PRErrorCode aDefaultErrorCodeToReport,
      uint32_t& aCollectedErrors) {
   if (aDefaultErrorCodeToReport == 0) {
     MOZ_ASSERT_UNREACHABLE(
@@ -771,7 +770,7 @@ PRErrorCode AuthCertificateParseResults(
 
   bool overrideAllowed = false;
   if (NS_FAILED(OverrideAllowedForHost(aPtrForLog, aHostName, aOriginAttributes,
-                                       aProviderFlags, overrideAllowed))) {
+                                       overrideAllowed))) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
             ("[0x%" PRIx64 "] AuthCertificateParseResults - "
              "OverrideAllowedForHost failed\n",
@@ -949,8 +948,8 @@ SSLServerCertVerificationJob::Run() {
   uint32_t collectedErrors = 0;
   nsCOMPtr<nsIX509Cert> cert(new nsNSSCertificate(std::move(certBytes)));
   PRErrorCode finalError = AuthCertificateParseResults(
-      mAddrForLogging, mHostName, mPort, mOriginAttributes, cert,
-      mProviderFlags, mTime, error, collectedErrors);
+      mAddrForLogging, mHostName, mPort, mOriginAttributes, cert, mTime, error,
+      collectedErrors);
 
   
   mResultTask->Dispatch(

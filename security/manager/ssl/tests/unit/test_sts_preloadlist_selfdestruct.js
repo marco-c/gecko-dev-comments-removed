@@ -7,16 +7,16 @@ function run_test() {
   let uri = Services.io.newURI("https://includesubdomains.preloaded.test");
 
   
-  ok(SSService.isSecureURI(uri, 0));
+  ok(SSService.isSecureURI(uri));
 
   
   let offsetSeconds = 19 * 7 * 24 * 60 * 60;
   Services.prefs.setIntPref("test.currentTimeOffsetSeconds", offsetSeconds);
 
   
-  ok(!SSService.isSecureURI(uri, 0));
+  ok(!SSService.isSecureURI(uri));
 
   
   Services.prefs.clearUserPref("test.currentTimeOffsetSeconds");
-  ok(SSService.isSecureURI(uri, 0));
+  ok(SSService.isSecureURI(uri));
 }

@@ -12,22 +12,19 @@ function checkStateRead(aSubject, aTopic, aData) {
   
   ok(
     !gSSService.isSecureURI(
-      Services.io.newURI("https://nonexistent.example.com"),
-      0
+      Services.io.newURI("https://nonexistent.example.com")
     )
   );
   ok(
     gSSService.isSecureURI(
-      Services.io.newURI("https://includesubdomains.preloaded.test"),
-      0
+      Services.io.newURI("https://includesubdomains.preloaded.test")
     )
   );
   
   
   ok(
     !gSSService.isSecureURI(
-      Services.io.newURI("https://notexpired.example.com"),
-      0
+      Services.io.newURI("https://notexpired.example.com")
     )
   );
   do_test_finished();

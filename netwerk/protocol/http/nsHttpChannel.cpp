@@ -510,10 +510,9 @@ nsresult nsHttpChannel::OnBeforeConnect() {
       };
 
       bool willCallback = false;
-      rv = NS_ShouldSecureUpgrade(mURI, mLoadInfo, resultPrincipal,
-                                  mPrivateBrowsing, LoadAllowSTS(),
-                                  originAttributes, shouldUpgrade,
-                                  std::move(resultCallback), willCallback);
+      rv = NS_ShouldSecureUpgrade(
+          mURI, mLoadInfo, resultPrincipal, LoadAllowSTS(), originAttributes,
+          shouldUpgrade, std::move(resultCallback), willCallback);
       
       
       uint32_t httpOnlyStatus = mLoadInfo->GetHttpsOnlyStatus();
@@ -1774,8 +1773,7 @@ static void GetSTSConsoleErrorTag(uint32_t failureResult,
 
 
 
-nsresult nsHttpChannel::ProcessHSTSHeader(nsITransportSecurityInfo* aSecInfo,
-                                          uint32_t aFlags) {
+nsresult nsHttpChannel::ProcessHSTSHeader(nsITransportSecurityInfo* aSecInfo) {
   nsHttpAtom atom(nsHttp::ResolveAtom("Strict-Transport-Security"_ns));
 
   nsAutoCString securityHeader;
@@ -1799,7 +1797,7 @@ nsresult nsHttpChannel::ProcessHSTSHeader(nsITransportSecurityInfo* aSecInfo,
 
   uint32_t failureResult;
   uint32_t headerSource = nsISiteSecurityService::SOURCE_ORGANIC_REQUEST;
-  rv = sss->ProcessHeader(mURI, securityHeader, aSecInfo, aFlags, headerSource,
+  rv = sss->ProcessHeader(mURI, securityHeader, aSecInfo, headerSource,
                           originAttributes, nullptr, nullptr, &failureResult);
   if (NS_FAILED(rv)) {
     nsAutoString consoleErrorCategory(u"Invalid HSTS Headers"_ns);
@@ -1846,9 +1844,6 @@ nsresult nsHttpChannel::ProcessSecurityHeaders() {
   
   NS_ENSURE_TRUE(mSecurityInfo, NS_OK);
 
-  uint32_t flags =
-      NS_UsePrivateBrowsing(this) ? nsISocketProvider::NO_PERMANENT_STORAGE : 0;
-
   
   nsCOMPtr<nsITransportSecurityInfo> transSecInfo =
       do_QueryInterface(mSecurityInfo);
@@ -1857,7 +1852,7 @@ nsresult nsHttpChannel::ProcessSecurityHeaders() {
   
   
   if (!mLoadInfo->GetIsThirdPartyContextToTopWindow()) {
-    rv = ProcessHSTSHeader(transSecInfo, flags);
+    rv = ProcessHSTSHeader(transSecInfo);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
