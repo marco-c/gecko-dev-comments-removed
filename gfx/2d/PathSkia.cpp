@@ -175,6 +175,26 @@ Rect PathSkia::GetStrokedBounds(const StrokeOptions& aStrokeOptions,
   return aTransform.TransformBounds(bounds);
 }
 
+Rect PathSkia::GetFastBounds(const Matrix& aTransform,
+                             const StrokeOptions* aStrokeOptions) const {
+  if (!mPath.isFinite()) {
+    return Rect();
+  }
+  SkRect bounds = mPath.getBounds();
+  if (aStrokeOptions) {
+    
+    
+    
+    SkPaint paint;
+    if (!StrokeOptionsToPaint(paint, *aStrokeOptions, false)) {
+      return Rect();
+    }
+    SkRect outBounds = SkRect::MakeEmpty();
+    bounds = paint.computeFastStrokeBounds(bounds, &outBounds);
+  }
+  return aTransform.TransformBounds(SkRectToRect(bounds));
+}
+
 void PathSkia::StreamToSink(PathSink* aSink) const {
   SkPath::RawIter iter(mPath);
 

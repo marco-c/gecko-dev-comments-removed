@@ -108,7 +108,8 @@ static inline SkPaint::Join JoinStyleToSkiaJoin(JoinStyle aJoin) {
 }
 
 static inline bool StrokeOptionsToPaint(SkPaint& aPaint,
-                                        const StrokeOptions& aOptions) {
+                                        const StrokeOptions& aOptions,
+                                        bool aUsePathEffects = true) {
   
   
   
@@ -120,7 +121,7 @@ static inline bool StrokeOptionsToPaint(SkPaint& aPaint,
   aPaint.setStrokeCap(CapStyleToSkiaCap(aOptions.mLineCap));
   aPaint.setStrokeJoin(JoinStyleToSkiaJoin(aOptions.mLineJoin));
 
-  if (aOptions.mDashLength > 0) {
+  if (aOptions.mDashLength > 0 && aUsePathEffects) {
     
     uint32_t dashCount;
 

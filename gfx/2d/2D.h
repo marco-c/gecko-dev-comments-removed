@@ -136,6 +136,8 @@ struct DrawOptions {
 
 };
 
+struct StoredStrokeOptions;
+
 
 
 
@@ -169,15 +171,44 @@ struct StrokeOptions {
   JoinStyle mLineJoin;       
   CapStyle mLineCap;         
 
+  StoredStrokeOptions* Clone() const;
+
   bool operator==(const StrokeOptions& aOther) const {
     return mLineWidth == aOther.mLineWidth &&
            mMiterLimit == aOther.mMiterLimit &&
-           mDashPattern == aOther.mDashPattern &&
            mDashLength == aOther.mDashLength &&
+           (!mDashLength || (mDashPattern && aOther.mDashPattern &&
+                             !memcmp(mDashPattern, aOther.mDashPattern,
+                                     mDashLength * sizeof(Float)))) &&
            mDashOffset == aOther.mDashOffset && mLineJoin == aOther.mLineJoin &&
            mLineCap == aOther.mLineCap;
   }
 };
+
+
+
+
+
+struct StoredStrokeOptions : public StrokeOptions {
+  explicit StoredStrokeOptions(const StrokeOptions& aOptions)
+      : StrokeOptions(aOptions) {
+    if (mDashLength) {
+      Float* pattern = new Float[mDashLength];
+      memcpy(pattern, mDashPattern, mDashLength * sizeof(Float));
+      mDashPattern = pattern;
+    }
+  }
+
+  ~StoredStrokeOptions() {
+    if (mDashPattern) {
+      delete[] mDashPattern;
+    }
+  }
+};
+
+inline StoredStrokeOptions* StrokeOptions::Clone() const {
+  return new StoredStrokeOptions(*this);
+}
 
 
 

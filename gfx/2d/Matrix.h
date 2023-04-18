@@ -468,6 +468,17 @@ class BaseMatrix {
 
     return MatrixSize(major, minor);
   }
+
+  
+
+
+
+
+  bool PreservesDistance() const {
+    return FuzzyEqual(_11 * _11 + _12 * _12, 1.0) &&
+           FuzzyEqual(_21 * _21 + _22 * _22, 1.0) &&
+           FuzzyEqual(_11 * _21 + _12 * _22, 0.0);
+  }
 };
 
 typedef BaseMatrix<Float> Matrix;
