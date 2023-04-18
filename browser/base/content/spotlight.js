@@ -129,9 +129,6 @@ function renderMultistage(ready) {
   
   window.AWSendEventTelemetry =
     CONFIG?.metrics === "block" ? () => {} : receive("TELEMETRY_EVENT");
-  window.AWSendToDeviceEmailsSupported = receive(
-    "SEND_TO_DEVICE_EMAILS_SUPPORTED"
-  );
   window.AWSendToParent = (name, data) => receive(name)(data);
   window.AWFinish = () => {
     window.close();
