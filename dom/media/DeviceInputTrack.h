@@ -77,10 +77,10 @@ class DeviceInputConsumerTrack : public ProcessedMediaTrack {
   void DisconnectDeviceInput();
   Maybe<CubebUtils::AudioDeviceID> DeviceId() const;
   NotNull<AudioDataListener*> GetAudioDataListener() const;
-
-  
   bool ConnectToNativeDevice() const;
   bool ConnectToNonNativeDevice() const;
+
+  
   DeviceInputConsumerTrack* AsDeviceInputConsumerTrack() override {
     return this;
   }
