@@ -463,7 +463,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         this.store.getState().Prefs.values?.pocketConfig || {};
 
       let items = isBasicLayout ? 3 : 21;
-      if (pocketConfig.compactLayout) {
+      if (pocketConfig.compactLayout || pocketConfig.fourCardLayout) {
         items = isBasicLayout ? 4 : 24;
       }
 
@@ -476,6 +476,8 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
           pocketConfig.spocPositions?.split(`,`)
         ),
         compactLayout: pocketConfig.compactLayout,
+        hideCardBackground: pocketConfig.hideCardBackground,
+        fourCardLayout: pocketConfig.fourCardLayout,
         loadMore: pocketConfig.loadMore,
         lastCardMessageEnabled: pocketConfig.lastCardMessageEnabled,
         saveToPocketCard: pocketConfig.saveToPocketCard,
@@ -1882,11 +1884,15 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
 
 
+
+
 getHardcodedLayout = ({
   items = 21,
   spocPositions = [2, 4, 11, 20],
   sponsoredCollectionsEnabled = false,
   compactLayout = false,
+  hideCardBackground = false,
+  fourCardLayout = false,
   loadMore = false,
   lastCardMessageEnabled = false,
   newFooterSection = false,
@@ -1976,12 +1982,13 @@ getHardcodedLayout = ({
           type: "CardGrid",
           properties: {
             items,
-            compact: compactLayout,
+            hideCardBackground: hideCardBackground || compactLayout,
+            fourCardLayout: fourCardLayout || compactLayout,
             hideDescriptions: hideDescriptions || compactLayout,
             compactImages,
             imageGradient,
             newSponsoredLabel: newSponsoredLabel || compactLayout,
-            titleLines,
+            titleLines: (compactLayout && 3) || titleLines,
             descLines,
             compactGrid,
             essentialReadsHeader,
