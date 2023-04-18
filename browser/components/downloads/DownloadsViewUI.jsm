@@ -302,6 +302,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  DownloadsViewUI,
+  "clearHistoryOnDelete",
+  "browser.download.clearHistoryOnDelete",
+  0
+);
+
 DownloadsViewUI.BaseView = class {
   canClearDownloads(nodeContainer) {
     
@@ -1075,18 +1082,11 @@ DownloadsViewUI.DownloadElementShell.prototype = {
   },
 
   async downloadsCmd_deleteFile() {
-    let { download } = this;
-    let { path } = download.target;
-    let { succeeded } = download;
     
-    await DownloadsCommon.deleteDownload(download);
-    
-    if (succeeded) {
-      
-      
-      await IOUtils.setPermissions(path, 0o660);
-      await IOUtils.remove(path, { ignoreAbsent: true });
-    }
+    await DownloadsCommon.deleteDownloadFiles(
+      this.download,
+      DownloadsViewUI.clearHistoryOnDelete
+    );
   },
 
   downloadsCmd_openInSystemViewer() {

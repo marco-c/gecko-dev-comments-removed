@@ -533,6 +533,13 @@ pref("browser.download.autohideButton", true);
 
 pref("browser.download.alwaysOpenPanel", true);
 
+
+
+
+
+
+pref("browser.download.clearHistoryOnDelete", 0);
+
 #ifndef XP_MACOSX
   pref("browser.helperApps.deleteTempFileOnExit", true);
 #endif
