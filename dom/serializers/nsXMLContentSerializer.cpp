@@ -31,7 +31,7 @@
 #include "mozilla/dom/DocumentType.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ProcessingInstruction.h"
-#include "mozilla/intl/Segmenter.h"
+#include "mozilla/intl/LineBreaker.h"
 #include "nsParserConstants.h"
 #include "mozilla/Encoding.h"
 
@@ -1532,7 +1532,8 @@ bool nsXMLContentSerializer::AppendWrapped_NonWhitespaceSequence(
       } else {
         
         onceAgainBecauseWeAddedBreakInFront = false;
-        Maybe<uint32_t> wrapPosition;
+        bool foundWrapPosition = false;
+        int32_t wrapPosition = 0;
 
         if (mAllowLineBreaking) {
           MOZ_ASSERT(aPos < aEnd,
@@ -1540,34 +1541,37 @@ bool nsXMLContentSerializer::AppendWrapped_NonWhitespaceSequence(
 
           
           
-          Maybe<uint32_t> nextWrapPosition;
-          intl::LineBreakIteratorUtf16 lineBreakIter(
-              Span<const char16_t>(aSequenceStart, aEnd));
+          int32_t nextWrapPosition = 0;
           while (true) {
-            nextWrapPosition = lineBreakIter.Next();
-            MOZ_ASSERT(nextWrapPosition.isSome(),
+            nextWrapPosition = intl::LineBreaker::Next(
+                aSequenceStart, aEnd - aSequenceStart, wrapPosition);
+            MOZ_ASSERT(nextWrapPosition != NS_LINEBREAKER_NEED_MORE_TEXT,
                        "We should've exited the loop when reaching the end of "
                        "text in the previous iteration!");
-            if (aSequenceStart + *nextWrapPosition > aPos) {
+            if (aSequenceStart + nextWrapPosition > aPos) {
               break;
             }
             wrapPosition = nextWrapPosition;
           }
 
-          if (!wrapPosition) {
+          if (wrapPosition != 0) {
+            foundWrapPosition = true;
+          } else {
             
             
             
+            wrapPosition = nextWrapPosition;
+
             
             
             
-            if (*nextWrapPosition < aEnd - aSequenceStart) {
-              wrapPosition = nextWrapPosition;
+            if (wrapPosition < aEnd - aSequenceStart) {
+              foundWrapPosition = true;
             }
           }
         }
 
-        if (wrapPosition) {
+        if (foundWrapPosition) {
           if (!mColPos && mDoFormat) {
             NS_ENSURE_TRUE(AppendIndentation(aOutputStr), false);
           } else if (mAddSpace) {
@@ -1575,12 +1579,12 @@ bool nsXMLContentSerializer::AppendWrapped_NonWhitespaceSequence(
             mAddSpace = false;
             NS_ENSURE_TRUE(result, false);
           }
-          NS_ENSURE_TRUE(aOutputStr.Append(aSequenceStart, *wrapPosition,
+          NS_ENSURE_TRUE(aOutputStr.Append(aSequenceStart, wrapPosition,
                                            mozilla::fallible),
                          false);
 
           NS_ENSURE_TRUE(AppendNewLineToString(aOutputStr), false);
-          aPos = aSequenceStart + *wrapPosition;
+          aPos = aSequenceStart + wrapPosition;
           aMayIgnoreStartOfLineWhitespaceSequence = true;
         } else {
           

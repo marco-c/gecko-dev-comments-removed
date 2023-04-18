@@ -40,8 +40,6 @@ class WordBreaker final {
   
   
   
-  
-  
   static int32_t Next(const char16_t* aText, uint32_t aLen, uint32_t aPos);
 
  private:
