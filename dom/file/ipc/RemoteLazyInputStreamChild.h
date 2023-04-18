@@ -8,32 +8,97 @@
 #define mozilla_RemoteLazyInputStreamChild_h
 
 #include "mozilla/PRemoteLazyInputStreamChild.h"
+#include "mozilla/RemoteLazyInputStream.h"
+#include "mozilla/Mutex.h"
+#include "mozilla/UniquePtr.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 
 class RemoteLazyInputStream;
 
+namespace dom {
+class ThreadSafeWorkerRef;
+}
+
 class RemoteLazyInputStreamChild final : public PRemoteLazyInputStreamChild {
  public:
+  enum ActorState {
+    
+    eActive,
+
+    
+    eInactive,
+
+    
+    
+    eActiveMigrating,
+
+    
+    
+    eInactiveMigrating,
+  };
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteLazyInputStreamChild, final)
 
-  explicit RemoteLazyInputStreamChild(const nsID& aID);
+  RemoteLazyInputStreamChild(const nsID& aID, uint64_t aSize);
 
-  const nsID& StreamID() const { return mID; }
+  void ActorDestroy(IProtocol::ActorDestroyReason aReason) override;
 
-  
-  
-  void StreamCreated();
-  void StreamConsumed();
+  ActorState State();
 
-  void ActorDestroy(ActorDestroyReason aReason) override;
+  already_AddRefed<RemoteLazyInputStream> CreateStream();
+
+  void ForgetStream(RemoteLazyInputStream* aStream);
+
+  const nsID& ID() const { return mID; }
+
+  uint64_t Size() const { return mSize; }
+
+  void StreamNeeded(RemoteLazyInputStream* aStream,
+                    nsIEventTarget* aEventTarget);
+
+  mozilla::ipc::IPCResult RecvStreamReady(const Maybe<IPCStream>& aStream);
+
+  void LengthNeeded(RemoteLazyInputStream* aStream,
+                    nsIEventTarget* aEventTarget);
+
+  mozilla::ipc::IPCResult RecvLengthReady(const int64_t& aLength);
+
+  void Shutdown();
+
+  void Migrated();
 
  private:
   ~RemoteLazyInputStreamChild() override;
 
-  const nsID mID;
+  
+  
+  
+  nsTArray<RemoteLazyInputStream*> mStreams;
 
-  std::atomic<size_t> mStreamCount{0};
+  
+  Mutex mMutex MOZ_UNANNOTATED;
+
+  const nsID mID;
+  const uint64_t mSize;
+
+  ActorState mState;
+
+  
+  struct PendingOperation {
+    RefPtr<RemoteLazyInputStream> mStream;
+    nsCOMPtr<nsIEventTarget> mEventTarget;
+    enum {
+      eStreamNeeded,
+      eLengthNeeded,
+    } mOp;
+  };
+  nsTArray<PendingOperation> mPendingOperations;
+
+  nsCOMPtr<nsISerialEventTarget> mOwningEventTarget;
+
+  RefPtr<dom::ThreadSafeWorkerRef> mWorkerRef;
 };
 
 }  

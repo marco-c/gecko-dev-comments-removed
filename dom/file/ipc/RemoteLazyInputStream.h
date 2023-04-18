@@ -7,7 +7,6 @@
 #ifndef mozilla_RemoteLazyInputStream_h
 #define mozilla_RemoteLazyInputStream_h
 
-#include "chrome/common/ipc_message_utils.h"
 #include "mozilla/Mutex.h"
 #include "mozIRemoteLazyInputStream.h"
 #include "nsIAsyncInputStream.h"
@@ -42,56 +41,34 @@ class RemoteLazyInputStream final : public nsIAsyncInputStream,
   NS_DECL_NSIINPUTSTREAMLENGTH
   NS_DECL_NSIASYNCINPUTSTREAMLENGTH
 
-  
-  
-  
-  static already_AddRefed<RemoteLazyInputStream> WrapStream(
-      nsIInputStream* aInputStream);
+  explicit RemoteLazyInputStream(RemoteLazyInputStreamChild* aActor);
+
+  void StreamReady(already_AddRefed<nsIInputStream> aInputStream);
+
+  void LengthReady(int64_t aLength);
 
   
-  NS_IMETHOD TakeInternalStream(nsIInputStream** aStream) override;
-  NS_IMETHOD GetInternalStreamID(nsID& aID) override;
+  NS_IMETHOD_(nsIInputStream*) GetInternalStream() override {
+    if (mRemoteStream) {
+      return mRemoteStream;
+    }
+
+    if (mAsyncRemoteStream) {
+      return mAsyncRemoteStream;
+    }
+
+    return nullptr;
+  }
 
  private:
-  friend struct IPC::ParamTraits<mozilla::RemoteLazyInputStream*>;
-
-  
-  RemoteLazyInputStream() = default;
-
-  explicit RemoteLazyInputStream(RemoteLazyInputStreamChild* aActor,
-                                 uint64_t aStart = 0,
-                                 uint64_t aLength = UINT64_MAX);
-
-  explicit RemoteLazyInputStream(nsIInputStream* aStream);
-
   ~RemoteLazyInputStream();
 
-  void StreamNeeded() REQUIRES(mMutex);
+  nsresult EnsureAsyncRemoteStream(const MutexAutoLock& aProofOfLock);
 
-  
-  
-  
-  nsresult EnsureAsyncRemoteStream() REQUIRES(mMutex);
+  void InitWithExistingRange(uint64_t aStart, uint64_t aLength,
+                             const MutexAutoLock& aProofOfLock);
 
-  
-  
-  void MarkConsumed();
-
-  void IPCWrite(IPC::MessageWriter* aWriter);
-  static already_AddRefed<RemoteLazyInputStream> IPCRead(
-      IPC::MessageReader* aReader);
-
-  
-  nsCString Describe() REQUIRES(mMutex);
-
-  
-  
-  const uint64_t mStart = 0;
-  const uint64_t mLength = UINT64_MAX;
-
-  
-  
-  Mutex mMutex{"RemoteLazyInputStream::mMutex"};
+  RefPtr<RemoteLazyInputStreamChild> mActor;
 
   
   enum {
@@ -112,41 +89,35 @@ class RemoteLazyInputStream final : public nsIAsyncInputStream,
     
     
     eClosed,
-  } mState GUARDED_BY(mMutex) = eClosed;
+  } mState;
+
+  uint64_t mStart;
+  uint64_t mLength;
+
+  
+  bool mConsumed;
+
+  nsCOMPtr<nsIInputStream> mRemoteStream;
+  nsCOMPtr<nsIAsyncInputStream> mAsyncRemoteStream;
+
+  
+  nsCOMPtr<nsIInputStreamCallback> mInputStreamCallback;
+  nsCOMPtr<nsIEventTarget> mInputStreamCallbackEventTarget;
+
+  
+  nsCOMPtr<nsIFileMetadataCallback> mFileMetadataCallback;
+  nsCOMPtr<nsIEventTarget> mFileMetadataCallbackEventTarget;
 
   
   
-  
-  
-  
-  
-  
-  RefPtr<RemoteLazyInputStreamChild> mActor GUARDED_BY(mMutex);
-
-  nsCOMPtr<nsIInputStream> mInnerStream GUARDED_BY(mMutex);
-  nsCOMPtr<nsIAsyncInputStream> mAsyncInnerStream GUARDED_BY(mMutex);
+  nsCOMPtr<nsIInputStreamLengthCallback> mLengthCallback;
+  nsCOMPtr<nsIEventTarget> mLengthCallbackEventTarget;
 
   
   
-  
-  RefPtr<nsIInputStreamCallback> mInputStreamCallback GUARDED_BY(mMutex);
-  nsCOMPtr<nsIEventTarget> mInputStreamCallbackEventTarget GUARDED_BY(mMutex);
-  uint32_t mInputStreamCallbackFlags GUARDED_BY(mMutex) = 0;
-  uint32_t mInputStreamCallbackRequestedCount GUARDED_BY(mMutex) = 0;
-
-  
-  nsCOMPtr<nsIFileMetadataCallback> mFileMetadataCallback GUARDED_BY(mMutex);
-  nsCOMPtr<nsIEventTarget> mFileMetadataCallbackEventTarget GUARDED_BY(mMutex);
+  Mutex mMutex MOZ_UNANNOTATED;
 };
 
 }  
-
-template <>
-struct IPC::ParamTraits<mozilla::RemoteLazyInputStream*> {
-  static void Write(IPC::MessageWriter* aWriter,
-                    mozilla::RemoteLazyInputStream* aParam);
-  static bool Read(IPC::MessageReader* aReader,
-                   RefPtr<mozilla::RemoteLazyInputStream>* aResult);
-};
 
 #endif  

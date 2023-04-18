@@ -7,21 +7,12 @@
 #include "RemoteLazyInputStream.h"
 #include "RemoteLazyInputStreamChild.h"
 #include "RemoteLazyInputStreamParent.h"
-#include "chrome/common/ipc_message_utils.h"
-#include "mozilla/ErrorNames.h"
-#include "mozilla/Logging.h"
-#include "mozilla/PRemoteLazyInputStream.h"
-#include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/InputStreamParams.h"
-#include "mozilla/ipc/MessageChannel.h"
-#include "mozilla/ipc/ProtocolMessageUtils.h"
 #include "mozilla/net/SocketProcessParent.h"
 #include "mozilla/SlicedInputStream.h"
 #include "mozilla/NonBlockingAsyncInputStream.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
-#include "nsID.h"
-#include "nsIInputStream.h"
 #include "nsIPipe.h"
 #include "nsNetUtil.h"
 #include "nsStreamUtils.h"
@@ -31,7 +22,10 @@
 
 namespace mozilla {
 
-mozilla::LazyLogModule gRemoteLazyStreamLog("RemoteLazyStream");
+using namespace dom;
+using net::SocketProcessParent;
+
+class RemoteLazyInputStream;
 
 namespace {
 
@@ -39,14 +33,16 @@ class InputStreamCallbackRunnable final : public DiscardableRunnable {
  public:
   
   
-  static void Execute(already_AddRefed<nsIInputStreamCallback> aCallback,
-                      already_AddRefed<nsIEventTarget> aEventTarget,
+  static void Execute(nsIInputStreamCallback* aCallback,
+                      nsIEventTarget* aEventTarget,
                       RemoteLazyInputStream* aStream) {
-    RefPtr<InputStreamCallbackRunnable> runnable =
-        new InputStreamCallbackRunnable(std::move(aCallback), aStream);
+    MOZ_ASSERT(aCallback);
 
-    nsCOMPtr<nsIEventTarget> target = std::move(aEventTarget);
-    if (target) {
+    RefPtr<InputStreamCallbackRunnable> runnable =
+        new InputStreamCallbackRunnable(aCallback, aStream);
+
+    nsCOMPtr<nsIEventTarget> target = aEventTarget;
+    if (aEventTarget) {
       target->Dispatch(runnable, NS_DISPATCH_NORMAL);
     } else {
       runnable->Run();
@@ -62,17 +58,16 @@ class InputStreamCallbackRunnable final : public DiscardableRunnable {
   }
 
  private:
-  InputStreamCallbackRunnable(
-      already_AddRefed<nsIInputStreamCallback> aCallback,
-      RemoteLazyInputStream* aStream)
+  InputStreamCallbackRunnable(nsIInputStreamCallback* aCallback,
+                              RemoteLazyInputStream* aStream)
       : DiscardableRunnable("dom::InputStreamCallbackRunnable"),
-        mCallback(std::move(aCallback)),
+        mCallback(aCallback),
         mStream(aStream) {
     MOZ_ASSERT(mCallback);
     MOZ_ASSERT(mStream);
   }
 
-  RefPtr<nsIInputStreamCallback> mCallback;
+  nsCOMPtr<nsIInputStreamCallback> mCallback;
   RefPtr<RemoteLazyInputStream> mStream;
 };
 
@@ -133,166 +128,37 @@ NS_INTERFACE_MAP_BEGIN(RemoteLazyInputStream)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIInputStream)
 NS_INTERFACE_MAP_END
 
-RemoteLazyInputStream::RemoteLazyInputStream(RemoteLazyInputStreamChild* aActor,
-                                             uint64_t aStart, uint64_t aLength)
-    : mStart(aStart), mLength(aLength), mState(eInit), mActor(aActor) {
+RemoteLazyInputStream::RemoteLazyInputStream(RemoteLazyInputStreamChild* aActor)
+    : mActor(aActor),
+      mState(eInit),
+      mStart(0),
+      mLength(0),
+      mConsumed(false),
+      mMutex("RemoteLazyInputStream::mMutex") {
   MOZ_ASSERT(aActor);
 
-  mActor->StreamCreated();
+  mLength = aActor->Size();
 
-  auto storage = RemoteLazyInputStreamStorage::Get().unwrapOr(nullptr);
-  if (storage) {
+  if (XRE_IsParentProcess()) {
     nsCOMPtr<nsIInputStream> stream;
-    storage->GetStream(mActor->StreamID(), mStart, mLength,
-                       getter_AddRefs(stream));
-    if (stream) {
-      mState = eRunning;
-      mInnerStream = stream;
+    auto storage = RemoteLazyInputStreamStorage::Get().unwrapOr(nullptr);
+    if (storage) {
+      storage->GetStream(mActor->ID(), 0, mLength, getter_AddRefs(stream));
+      if (stream) {
+        mState = eRunning;
+        mRemoteStream = stream;
+      }
     }
   }
-}
-
-RemoteLazyInputStream::RemoteLazyInputStream(nsIInputStream* aStream)
-    : mStart(0), mLength(UINT64_MAX), mState(eRunning), mInnerStream(aStream) {}
-
-static already_AddRefed<RemoteLazyInputStreamChild> BindChildActor(
-    nsID aId, mozilla::ipc::Endpoint<PRemoteLazyInputStreamChild> aEndpoint) {
-  auto actor = MakeRefPtr<RemoteLazyInputStreamChild>(aId);
-
-  auto* thread = RemoteLazyInputStreamThread::GetOrCreate();
-  thread->Dispatch(
-      NS_NewRunnableFunction("RemoteLazyInputStream::BindChildActor",
-                             [actor, childEp = std::move(aEndpoint)]() mutable {
-                               bool ok = childEp.Bind(actor);
-                               MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Debug,
-                                       ("Binding child actor for %s (%p): %s",
-                                        nsIDToCString(actor->StreamID()).get(),
-                                        actor.get(), ok ? "OK" : "ERROR"));
-                             }));
-
-  return actor.forget();
-}
-
-already_AddRefed<RemoteLazyInputStream> RemoteLazyInputStream::WrapStream(
-    nsIInputStream* aInputStream) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  if (nsCOMPtr<mozIRemoteLazyInputStream> lazyStream =
-          do_QueryInterface(aInputStream)) {
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Debug,
-            ("Returning already-wrapped stream"));
-    return lazyStream.forget().downcast<RemoteLazyInputStream>();
-  }
-
-  
-  
-  auto streamStorage = RemoteLazyInputStreamStorage::Get();
-  if (NS_WARN_IF(streamStorage.isErr())) {
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Warning,
-            ("Cannot wrap with no storage!"));
-    return nullptr;
-  }
-
-  nsID id = nsID::GenerateUUID();
-  MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-          ("Wrapping stream %p as %s", aInputStream, nsIDToCString(id).get()));
-  streamStorage.inspect()->AddStream(aInputStream, id);
-
-  mozilla::ipc::Endpoint<PRemoteLazyInputStreamParent> parentEp;
-  mozilla::ipc::Endpoint<PRemoteLazyInputStreamChild> childEp;
-  MOZ_ALWAYS_SUCCEEDS(
-      PRemoteLazyInputStream::CreateEndpoints(&parentEp, &childEp));
-
-  
-  streamStorage.inspect()->TaskQueue()->Dispatch(NS_NewRunnableFunction(
-      "RemoteLazyInputStreamParent::Bind",
-      [parentEp = std::move(parentEp), id]() mutable {
-        auto actor = MakeRefPtr<RemoteLazyInputStreamParent>(id);
-        bool ok = parentEp.Bind(actor);
-        MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Debug,
-                ("Binding parent actor for %s (%p): %s",
-                 nsIDToCString(id).get(), actor.get(), ok ? "OK" : "ERROR"));
-      }));
-
-  RefPtr<RemoteLazyInputStreamChild> actor =
-      BindChildActor(id, std::move(childEp));
-  return do_AddRef(new RemoteLazyInputStream(actor));
-}
-
-NS_IMETHODIMP RemoteLazyInputStream::TakeInternalStream(
-    nsIInputStream** aStream) {
-  RefPtr<RemoteLazyInputStreamChild> actor;
-  {
-    MutexAutoLock lock(mMutex);
-    if (mState == eInit || mState == ePending) {
-      return NS_BASE_STREAM_WOULD_BLOCK;
-    }
-    if (mState == eClosed) {
-      return NS_BASE_STREAM_CLOSED;
-    }
-    if (mInputStreamCallback) {
-      MOZ_ASSERT_UNREACHABLE(
-          "Do not call TakeInternalStream after calling AsyncWait");
-      return NS_ERROR_UNEXPECTED;
-    }
-
-    
-    if (mInnerStream) {
-      mInnerStream.forget(aStream);
-    } else if (mAsyncInnerStream) {
-      mAsyncInnerStream.forget(aStream);
-    }
-    mState = eClosed;
-    actor = mActor.forget();
-  }
-  if (actor) {
-    actor->StreamConsumed();
-  }
-  return NS_OK;
-}
-
-NS_IMETHODIMP RemoteLazyInputStream::GetInternalStreamID(nsID& aID) {
-  MutexAutoLock lock(mMutex);
-  if (!mActor) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  aID = mActor->StreamID();
-  return NS_OK;
 }
 
 RemoteLazyInputStream::~RemoteLazyInputStream() { Close(); }
-
-nsCString RemoteLazyInputStream::Describe() {
-  const char* state = "?";
-  switch (mState) {
-    case eInit:
-      state = "i";
-      break;
-    case ePending:
-      state = "p";
-      break;
-    case eRunning:
-      state = "r";
-      break;
-    case eClosed:
-      state = "c";
-      break;
-  }
-  return nsPrintfCString(
-      "[%p, %s, %s, %p%s, %s%s|%s%s]", this, state,
-      mActor ? nsIDToCString(mActor->StreamID()).get() : "<no actor>",
-      mInnerStream ? mInnerStream.get() : mAsyncInnerStream.get(),
-      mAsyncInnerStream ? "(A)" : "", mInputStreamCallback ? "I" : "",
-      mInputStreamCallbackEventTarget ? "+" : "",
-      mFileMetadataCallback ? "F" : "",
-      mFileMetadataCallbackEventTarget ? "+" : "");
-}
 
 
 
 NS_IMETHODIMP
 RemoteLazyInputStream::Available(uint64_t* aLength) {
-  nsCOMPtr<nsIAsyncInputStream> stream;
+  nsCOMPtr<nsIAsyncInputStream> asyncRemoteStream;
   {
     MutexAutoLock lock(mMutex);
 
@@ -307,29 +173,26 @@ RemoteLazyInputStream::Available(uint64_t* aLength) {
     }
 
     MOZ_ASSERT(mState == eRunning);
-    MOZ_ASSERT(mInnerStream || mAsyncInnerStream);
+    MOZ_ASSERT(mRemoteStream || mAsyncRemoteStream);
 
-    nsresult rv = EnsureAsyncRemoteStream();
+    nsresult rv = EnsureAsyncRemoteStream(lock);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
 
-    stream = mAsyncInnerStream;
+    asyncRemoteStream = mAsyncRemoteStream;
   }
 
-  MOZ_ASSERT(stream);
-  return stream->Available(aLength);
+  MOZ_ASSERT(asyncRemoteStream);
+  return asyncRemoteStream->Available(aLength);
 }
 
 NS_IMETHODIMP
 RemoteLazyInputStream::Read(char* aBuffer, uint32_t aCount,
                             uint32_t* aReadCount) {
-  nsCOMPtr<nsIAsyncInputStream> stream;
+  nsCOMPtr<nsIAsyncInputStream> asyncRemoteStream;
   {
     MutexAutoLock lock(mMutex);
-
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-            ("Read(%u) %s", aCount, Describe().get()));
 
     
     if (mState == eInit || mState == ePending) {
@@ -341,29 +204,26 @@ RemoteLazyInputStream::Read(char* aBuffer, uint32_t aCount,
     }
 
     MOZ_ASSERT(mState == eRunning);
-    MOZ_ASSERT(mInnerStream || mAsyncInnerStream);
+    MOZ_ASSERT(mRemoteStream || mAsyncRemoteStream);
 
-    nsresult rv = EnsureAsyncRemoteStream();
+    nsresult rv = EnsureAsyncRemoteStream(lock);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
 
-    stream = mAsyncInnerStream;
+    asyncRemoteStream = mAsyncRemoteStream;
   }
 
-  MOZ_ASSERT(stream);
-  nsresult rv = stream->Read(aBuffer, aCount, aReadCount);
-  if (NS_FAILED(rv)) {
+  MOZ_ASSERT(asyncRemoteStream);
+  nsresult rv = asyncRemoteStream->Read(aBuffer, aCount, aReadCount);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  
-  if (*aReadCount > 0) {
-    MarkConsumed();
+  {
+    MutexAutoLock lock(mMutex);
+    mConsumed = true;
   }
-
-  MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-          ("Read %u/%u bytes", *aReadCount, aCount));
 
   return NS_OK;
 }
@@ -371,12 +231,9 @@ RemoteLazyInputStream::Read(char* aBuffer, uint32_t aCount,
 NS_IMETHODIMP
 RemoteLazyInputStream::ReadSegments(nsWriteSegmentFun aWriter, void* aClosure,
                                     uint32_t aCount, uint32_t* aResult) {
-  nsCOMPtr<nsIAsyncInputStream> stream;
+  nsCOMPtr<nsIAsyncInputStream> asyncRemoteStream;
   {
     MutexAutoLock lock(mMutex);
-
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-            ("ReadSegments(%u) %s", aCount, Describe().get()));
 
     
     if (mState == eInit || mState == ePending) {
@@ -388,50 +245,30 @@ RemoteLazyInputStream::ReadSegments(nsWriteSegmentFun aWriter, void* aClosure,
     }
 
     MOZ_ASSERT(mState == eRunning);
-    MOZ_ASSERT(mInnerStream || mAsyncInnerStream);
+    MOZ_ASSERT(mRemoteStream || mAsyncRemoteStream);
 
-    nsresult rv = EnsureAsyncRemoteStream();
+    nsresult rv = EnsureAsyncRemoteStream(lock);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Warning,
-              ("EnsureAsyncRemoteStream failed! %s %s",
-               mozilla::GetStaticErrorName(rv), Describe().get()));
       return rv;
     }
 
-    stream = mAsyncInnerStream;
+    asyncRemoteStream = mAsyncRemoteStream;
   }
 
-  MOZ_ASSERT(stream);
-  nsresult rv = stream->ReadSegments(aWriter, aClosure, aCount, aResult);
+  MOZ_ASSERT(asyncRemoteStream);
+  nsresult rv =
+      asyncRemoteStream->ReadSegments(aWriter, aClosure, aCount, aResult);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
   
   if (*aResult != 0) {
-    MarkConsumed();
+    MutexAutoLock lock(mMutex);
+    mConsumed = true;
   }
-
-  MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-          ("ReadSegments %u/%u bytes", *aResult, aCount));
 
   return NS_OK;
-}
-
-void RemoteLazyInputStream::MarkConsumed() {
-  RefPtr<RemoteLazyInputStreamChild> actor;
-  {
-    MutexAutoLock lock(mMutex);
-    if (mActor) {
-      MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Debug,
-              ("MarkConsumed %s", Describe().get()));
-    }
-
-    actor = mActor.forget();
-  }
-  if (actor) {
-    actor->StreamConsumed();
-  }
 }
 
 NS_IMETHODIMP
@@ -442,51 +279,45 @@ RemoteLazyInputStream::IsNonBlocking(bool* aNonBlocking) {
 
 NS_IMETHODIMP
 RemoteLazyInputStream::Close() {
-  RefPtr<RemoteLazyInputStreamChild> actor;
+  nsCOMPtr<nsIAsyncInputStream> asyncRemoteStream;
+  nsCOMPtr<nsIInputStream> remoteStream;
 
-  nsCOMPtr<nsIAsyncInputStream> asyncInnerStream;
-  nsCOMPtr<nsIInputStream> innerStream;
-
-  RefPtr<nsIInputStreamCallback> inputStreamCallback;
+  nsCOMPtr<nsIInputStreamCallback> inputStreamCallback;
   nsCOMPtr<nsIEventTarget> inputStreamCallbackEventTarget;
 
   {
     MutexAutoLock lock(mMutex);
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Debug,
-            ("Close %s", Describe().get()));
 
-    actor = mActor.forget();
+    if (mActor) {
+      mActor->ForgetStream(this);
+      mActor = nullptr;
+    }
 
-    asyncInnerStream = mAsyncInnerStream.forget();
-    innerStream = mInnerStream.forget();
+    asyncRemoteStream.swap(mAsyncRemoteStream);
+    remoteStream.swap(mRemoteStream);
 
     
     
     mFileMetadataCallback = nullptr;
     mFileMetadataCallbackEventTarget = nullptr;
 
-    inputStreamCallback = mInputStreamCallback.forget();
-    inputStreamCallbackEventTarget = mInputStreamCallbackEventTarget.forget();
+    inputStreamCallback = std::move(mInputStreamCallback);
+    inputStreamCallbackEventTarget = std::move(mInputStreamCallbackEventTarget);
 
     mState = eClosed;
   }
 
-  if (actor) {
-    actor->StreamConsumed();
-  }
-
   if (inputStreamCallback) {
-    InputStreamCallbackRunnable::Execute(
-        inputStreamCallback.forget(), inputStreamCallbackEventTarget.forget(),
-        this);
+    InputStreamCallbackRunnable::Execute(inputStreamCallback,
+                                         inputStreamCallbackEventTarget, this);
   }
 
-  if (asyncInnerStream) {
-    asyncInnerStream->CloseWithStatus(NS_BASE_STREAM_CLOSED);
+  if (asyncRemoteStream) {
+    asyncRemoteStream->CloseWithStatus(NS_BASE_STREAM_CLOSED);
   }
 
-  if (innerStream) {
-    innerStream->Close();
+  if (remoteStream) {
+    remoteStream->Close();
   }
 
   return NS_OK;
@@ -496,13 +327,30 @@ RemoteLazyInputStream::Close() {
 
 NS_IMETHODIMP
 RemoteLazyInputStream::GetCloneable(bool* aCloneable) {
-  *aCloneable = true;
+  MutexAutoLock lock(mMutex);
+  *aCloneable = mState != eClosed;
   return NS_OK;
 }
 
 NS_IMETHODIMP
 RemoteLazyInputStream::Clone(nsIInputStream** aResult) {
-  return CloneWithRange(0, UINT64_MAX, aResult);
+  MutexAutoLock lock(mMutex);
+
+  if (mState == eClosed) {
+    return NS_BASE_STREAM_CLOSED;
+  }
+
+  MOZ_ASSERT(mActor);
+
+  RefPtr<RemoteLazyInputStream> stream = mActor->CreateStream();
+  if (!stream) {
+    return NS_ERROR_FAILURE;
+  }
+
+  stream->InitWithExistingRange(mStart, mLength, lock);
+
+  stream.forget(aResult);
+  return NS_OK;
 }
 
 
@@ -511,145 +359,35 @@ NS_IMETHODIMP
 RemoteLazyInputStream::CloneWithRange(uint64_t aStart, uint64_t aLength,
                                       nsIInputStream** aResult) {
   MutexAutoLock lock(mMutex);
-  MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Debug,
-          ("CloneWithRange %" PRIu64 " %" PRIu64 " %s", aStart, aLength,
-           Describe().get()));
 
-  nsresult rv;
-
-  RefPtr<RemoteLazyInputStream> stream;
   if (mState == eClosed) {
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose, ("Cloning closed stream"));
-    stream = new RemoteLazyInputStream();
-    stream.forget(aResult);
-    return NS_OK;
-  }
-
-  uint64_t start = 0;
-  uint64_t length = 0;
-  auto maxLength = CheckedUint64(mLength) - aStart;
-  if (maxLength.isValid()) {
-    start = mStart + aStart;
-    length = std::min(maxLength.value(), aLength);
+    return NS_BASE_STREAM_CLOSED;
   }
 
   
-  if (length == 0) {
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose, ("Creating empty stream"));
-
-    nsCOMPtr<nsIInputStream> emptyStream;
-    rv = NS_NewCStringInputStream(getter_AddRefs(emptyStream), ""_ns);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    stream = new RemoteLazyInputStream(emptyStream);
-    stream.forget(aResult);
-    return NS_OK;
+  if (aLength == 0 || aStart >= mLength) {
+    return NS_NewCStringInputStream(aResult, ""_ns);
   }
 
-  
-  
-  
-  if (mActor) {
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-            ("Cloning stream with actor"));
+  MOZ_ASSERT(mActor);
 
-    stream = new RemoteLazyInputStream(mActor, start, length);
-    stream.forget(aResult);
-    return NS_OK;
+  RefPtr<RemoteLazyInputStream> stream = mActor->CreateStream();
+  if (!stream) {
+    return NS_ERROR_FAILURE;
   }
 
-  
-  
-  
-
-  nsCOMPtr<nsIInputStream> innerStream = mInnerStream;
-  if (mAsyncInnerStream) {
-    innerStream = mAsyncInnerStream;
+  CheckedInt<uint64_t> streamSize = mLength;
+  streamSize -= aStart;
+  if (!streamSize.isValid()) {
+    return NS_ERROR_FAILURE;
   }
 
-  nsCOMPtr<nsICloneableInputStream> cloneable = do_QueryInterface(innerStream);
-  if (!cloneable || !cloneable->GetCloneable()) {
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-            ("Cloning non-cloneable stream - copying to pipe"));
-
-    
-    
-    nsCOMPtr<nsIAsyncInputStream> pipeIn;
-    nsCOMPtr<nsIAsyncOutputStream> pipeOut;
-    rv = NS_NewPipe2(getter_AddRefs(pipeIn), getter_AddRefs(pipeOut), true,
-                     true);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    RefPtr<RemoteLazyInputStreamThread> thread =
-        RemoteLazyInputStreamThread::GetOrCreate();
-    if (NS_WARN_IF(!thread)) {
-      return NS_ERROR_FAILURE;
-    }
-
-    mAsyncInnerStream = pipeIn;
-    mInnerStream = nullptr;
-
-    
-    
-    
-    
-    if (mInputStreamCallback) {
-      mAsyncInnerStream->AsyncWait(this, mInputStreamCallbackFlags,
-                                   mInputStreamCallbackRequestedCount,
-                                   mInputStreamCallbackEventTarget);
-    }
-
-    rv = NS_AsyncCopy(innerStream, pipeOut, thread,
-                      NS_ASYNCCOPY_VIA_WRITESEGMENTS);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      
-      
-      mAsyncInnerStream = nullptr;
-      mInnerStream = innerStream;
-      return rv;
-    }
-
-    cloneable = do_QueryInterface(mAsyncInnerStream);
+  if (aLength > streamSize.value()) {
+    aLength = streamSize.value();
   }
 
-  MOZ_ASSERT(cloneable && cloneable->GetCloneable());
+  stream->InitWithExistingRange(aStart + mStart, aLength, lock);
 
-  
-  if (length < UINT64_MAX) {
-    if (nsCOMPtr<nsICloneableInputStreamWithRange> cloneableWithRange =
-            do_QueryInterface(cloneable)) {
-      MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose, ("Cloning with range"));
-      nsCOMPtr<nsIInputStream> cloned;
-      rv = cloneableWithRange->CloneWithRange(start, length,
-                                              getter_AddRefs(cloned));
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-
-      stream = new RemoteLazyInputStream(cloned);
-      stream.forget(aResult);
-      return NS_OK;
-    }
-  }
-
-  
-  nsCOMPtr<nsIInputStream> cloned;
-  rv = cloneable->Clone(getter_AddRefs(cloned));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  if (length < UINT64_MAX) {
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-            ("Slicing stream with %" PRIu64 " %" PRIu64, start, length));
-    cloned = new SlicedInputStream(cloned.forget(), start, length);
-  }
-
-  stream = new RemoteLazyInputStream(cloned);
   stream.forget(aResult);
   return NS_OK;
 }
@@ -663,74 +401,52 @@ NS_IMETHODIMP
 RemoteLazyInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
                                  uint32_t aFlags, uint32_t aRequestedCount,
                                  nsIEventTarget* aEventTarget) {
-  
-  
-  nsCOMPtr<nsIEventTarget> eventTarget = aEventTarget;
-  if (aCallback && !eventTarget) {
-    eventTarget = RemoteLazyInputStreamThread::GetOrCreate();
-    if (NS_WARN_IF(!eventTarget)) {
-      return NS_ERROR_UNEXPECTED;
-    }
-  }
-
+  nsCOMPtr<nsIAsyncInputStream> asyncRemoteStream;
   {
     MutexAutoLock lock(mMutex);
 
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-            ("AsyncWait(%p, %u, %u, %p) %s", aCallback, aFlags, aRequestedCount,
-             aEventTarget, Describe().get()));
-
     
     
 
-    nsCOMPtr<nsIAsyncInputStream> stream;
     switch (mState) {
       
       case eInit:
         MOZ_ASSERT(mActor);
 
         mInputStreamCallback = aCallback;
-        mInputStreamCallbackEventTarget = eventTarget;
-        mInputStreamCallbackFlags = aFlags;
-        mInputStreamCallbackRequestedCount = aRequestedCount;
+        mInputStreamCallbackEventTarget = aEventTarget;
         mState = ePending;
 
-        StreamNeeded();
+        mActor->StreamNeeded(this, aEventTarget);
         return NS_OK;
 
       
       case ePending: {
-        if (NS_WARN_IF(mInputStreamCallback && aCallback &&
-                       mInputStreamCallback != aCallback)) {
+        if (mInputStreamCallback && aCallback) {
           return NS_ERROR_FAILURE;
         }
 
         mInputStreamCallback = aCallback;
-        mInputStreamCallbackEventTarget = eventTarget;
-        mInputStreamCallbackFlags = aFlags;
-        mInputStreamCallbackRequestedCount = aRequestedCount;
+        mInputStreamCallbackEventTarget = aEventTarget;
         return NS_OK;
       }
 
       
       
       case eRunning: {
-        if (NS_WARN_IF(mInputStreamCallback && aCallback &&
-                       mInputStreamCallback != aCallback)) {
+        if (mInputStreamCallback && aCallback) {
           return NS_ERROR_FAILURE;
         }
 
-        nsresult rv = EnsureAsyncRemoteStream();
+        nsresult rv = EnsureAsyncRemoteStream(lock);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
 
         mInputStreamCallback = aCallback;
-        mInputStreamCallbackEventTarget = eventTarget;
-        mInputStreamCallbackFlags = aFlags;
-        mInputStreamCallbackRequestedCount = aRequestedCount;
+        mInputStreamCallbackEventTarget = aEventTarget;
 
-        stream = mAsyncInnerStream;
+        asyncRemoteStream = mAsyncRemoteStream;
         break;
       }
 
@@ -738,126 +454,128 @@ RemoteLazyInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
         [[fallthrough]];
       default:
         MOZ_ASSERT(mState == eClosed);
-        if (NS_WARN_IF(mInputStreamCallback && aCallback &&
-                       mInputStreamCallback != aCallback)) {
+        if (mInputStreamCallback && aCallback) {
           return NS_ERROR_FAILURE;
         }
         break;
     }
+  }
 
-    if (stream) {
-      return stream->AsyncWait(aCallback ? this : nullptr, aFlags,
-                               aRequestedCount, eventTarget);
-    }
+  if (asyncRemoteStream) {
+    return asyncRemoteStream->AsyncWait(aCallback ? this : nullptr, 0, 0,
+                                        aEventTarget);
   }
 
   
   
-  InputStreamCallbackRunnable::Execute(do_AddRef(aCallback),
-                                       do_AddRef(eventTarget), this);
+  InputStreamCallbackRunnable::Execute(aCallback, aEventTarget, this);
   return NS_OK;
 }
 
-void RemoteLazyInputStream::StreamNeeded() {
-  MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Debug,
-          ("StreamNeeded %s", Describe().get()));
+void RemoteLazyInputStream::StreamReady(
+    already_AddRefed<nsIInputStream> aInputStream) {
+  nsCOMPtr<nsIInputStream> inputStream = std::move(aInputStream);
 
-  auto* thread = RemoteLazyInputStreamThread::GetOrCreate();
-  thread->Dispatch(NS_NewRunnableFunction(
-      "RemoteLazyInputStream::StreamNeeded",
-      [self = RefPtr{this}, actor = mActor, start = mStart, length = mLength] {
-        MOZ_LOG(
-            gRemoteLazyStreamLog, LogLevel::Debug,
-            ("Sending StreamNeeded(%" PRIu64 " %" PRIu64 ") %s %d", start,
-             length, nsIDToCString(actor->StreamID()).get(), actor->CanSend()));
+  
+  
+  
 
-        actor->SendStreamNeeded(
-            start, length,
-            [self](const Maybe<mozilla::ipc::IPCStream>& aStream) {
-              
-              
-              nsCOMPtr<nsIInputStream> stream =
-                  mozilla::ipc::DeserializeIPCStream(aStream);
-              if (NS_WARN_IF(!stream)) {
-                NS_WARNING("Failed to deserialize IPC stream");
-                self->Close();
-              }
+  if (!inputStream) {
+    return;
+  }
 
-              
-              
-              MutexAutoLock lock(self->mMutex);
+  nsCOMPtr<nsIFileMetadataCallback> fileMetadataCallback;
+  nsCOMPtr<nsIEventTarget> fileMetadataCallbackEventTarget;
+  nsCOMPtr<nsIInputStreamCallback> inputStreamCallback;
+  nsCOMPtr<nsIEventTarget> inputStreamCallbackEventTarget;
+  nsCOMPtr<nsIAsyncInputStream> asyncRemoteStream;
+  {
+    MutexAutoLock lock(mMutex);
 
-              MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Debug,
-                      ("ResolveStreamNeeded(%p) %s", stream.get(),
-                       self->Describe().get()));
+    
+    if (mState == eClosed) {
+      if (inputStream) {
+        MutexAutoUnlock unlock(mMutex);
+        inputStream->Close();
+      }
+      return;
+    }
 
-              if (self->mState == ePending) {
-                self->mInnerStream = stream.forget();
-                self->mState = eRunning;
+    
+    if (mStart > 0 || mLength < mActor->Size()) {
+      inputStream =
+          new SlicedInputStream(inputStream.forget(), mStart, mLength);
+    }
 
-                
-                
-                nsCOMPtr<nsIFileMetadataCallback> fileMetadataCallback =
-                    self->mFileMetadataCallback.forget();
-                nsCOMPtr<nsIEventTarget> fileMetadataCallbackEventTarget =
-                    self->mFileMetadataCallbackEventTarget.forget();
-                if (fileMetadataCallback) {
-                  FileMetadataCallbackRunnable::Execute(
-                      fileMetadataCallback, fileMetadataCallbackEventTarget,
-                      self);
-                }
+    mRemoteStream = inputStream;
 
-                
-                
-                
-                if (self->mInputStreamCallback) {
-                  if (NS_FAILED(self->EnsureAsyncRemoteStream()) ||
-                      NS_FAILED(self->mAsyncInnerStream->AsyncWait(
-                          self, self->mInputStreamCallbackFlags,
-                          self->mInputStreamCallbackRequestedCount,
-                          self->mInputStreamCallbackEventTarget))) {
-                    InputStreamCallbackRunnable::Execute(
-                        self->mInputStreamCallback.forget(),
-                        self->mInputStreamCallbackEventTarget.forget(), self);
-                  }
-                }
-              }
+    MOZ_ASSERT(mState == ePending);
+    mState = eRunning;
 
-              if (stream) {
-                NS_WARNING("Failed to save stream, closing it");
-                stream->Close();
-              }
-            },
-            [self](mozilla::ipc::ResponseRejectReason) {
-              NS_WARNING("SendStreamNeeded rejected");
-              self->Close();
-            });
-      }));
+    fileMetadataCallback.swap(mFileMetadataCallback);
+    fileMetadataCallbackEventTarget.swap(mFileMetadataCallbackEventTarget);
+
+    inputStreamCallback = mInputStreamCallback ? this : nullptr;
+    inputStreamCallbackEventTarget = mInputStreamCallbackEventTarget;
+
+    if (inputStreamCallback) {
+      nsresult rv = EnsureAsyncRemoteStream(lock);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return;
+      }
+
+      MOZ_ASSERT(mAsyncRemoteStream);
+      asyncRemoteStream = mAsyncRemoteStream;
+    }
+  }
+
+  if (fileMetadataCallback) {
+    FileMetadataCallbackRunnable::Execute(
+        fileMetadataCallback, fileMetadataCallbackEventTarget, this);
+  }
+
+  if (inputStreamCallback) {
+    MOZ_ASSERT(asyncRemoteStream);
+
+    nsresult rv = asyncRemoteStream->AsyncWait(inputStreamCallback, 0, 0,
+                                               inputStreamCallbackEventTarget);
+    Unused << NS_WARN_IF(NS_FAILED(rv));
+  }
+}
+
+void RemoteLazyInputStream::InitWithExistingRange(
+    uint64_t aStart, uint64_t aLength, const MutexAutoLock& aProofOfLock) {
+  MOZ_ASSERT(mActor->Size() >= aStart + aLength);
+  mStart = aStart;
+  mLength = aLength;
+
+  
+  
+  
+  
+  if (mState == eRunning && mRemoteStream && XRE_IsParentProcess() &&
+      (mStart > 0 || mLength < mActor->Size())) {
+    mRemoteStream =
+        new SlicedInputStream(mRemoteStream.forget(), mStart, mLength);
+  }
 }
 
 
 
 NS_IMETHODIMP
 RemoteLazyInputStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
-  RefPtr<nsIInputStreamCallback> callback;
+  nsCOMPtr<nsIInputStreamCallback> callback;
   nsCOMPtr<nsIEventTarget> callbackEventTarget;
   {
     MutexAutoLock lock(mMutex);
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Debug,
-            ("OnInputStreamReady %s", Describe().get()));
 
     
     if (mState == eClosed) {
       return NS_OK;
     }
 
-    
-    
-    if (mAsyncInnerStream != aStream) {
-      return NS_OK;
-    }
-
     MOZ_ASSERT(mState == eRunning);
+    MOZ_ASSERT(mAsyncRemoteStream == aStream);
 
     
     if (!mInputStreamCallback) {
@@ -871,28 +589,74 @@ RemoteLazyInputStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
   
   
   MOZ_ASSERT(callback);
-  InputStreamCallbackRunnable::Execute(callback.forget(),
-                                       callbackEventTarget.forget(), this);
+  InputStreamCallbackRunnable::Execute(callback, callbackEventTarget, this);
   return NS_OK;
 }
 
 
 
-void RemoteLazyInputStream::SerializedComplexity(uint32_t aMaxSize,
-                                                 uint32_t* aSizeUsed,
-                                                 uint32_t* aNewPipes,
-                                                 uint32_t* aTransferables) {
-  *aTransferables = 1;
+void RemoteLazyInputStream::Serialize(
+    mozilla::ipc::InputStreamParams& aParams,
+    FileDescriptorArray& aFileDescriptors, bool aDelayedStart,
+    uint32_t aMaxSize, uint32_t* aSizeUsed,
+    mozilla::ipc::ParentToChildStreamActorManager* aManager) {
+  MOZ_ASSERT(aSizeUsed);
+  *aSizeUsed = 0;
+
+  
+  MOZ_DIAGNOSTIC_ASSERT(
+      aManager == SocketProcessParent::GetSingleton(),
+      "Serializing an RemoteLazyInputStream parent to child is "
+      "wrong! The caller must be fixed! See IPCBlobUtils.h.");
+  SocketProcessParent* socketActor = SocketProcessParent::GetSingleton();
+
+  nsresult rv;
+  nsCOMPtr<nsIAsyncInputStream> asyncRemoteStream;
+  RefPtr<RemoteLazyInputStreamParent> parentActor;
+  {
+    MutexAutoLock lock(mMutex);
+    rv = EnsureAsyncRemoteStream(lock);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+
+    asyncRemoteStream = mAsyncRemoteStream;
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+  }
+
+  MOZ_ASSERT(asyncRemoteStream);
+
+  parentActor = RemoteLazyInputStreamParent::Create(asyncRemoteStream, mLength,
+                                                    0, &rv, socketActor);
+  MOZ_ASSERT(parentActor);
+
+  if (!socketActor->SendPRemoteLazyInputStreamConstructor(
+          parentActor, parentActor->ID(), parentActor->Size())) {
+    MOZ_CRASH("The serialization is not supposed to fail");
+  }
+
+  aParams = mozilla::ipc::RemoteLazyInputStreamParams(parentActor);
 }
 
-void RemoteLazyInputStream::Serialize(mozilla::ipc::InputStreamParams& aParams,
-                                      uint32_t aMaxSize, uint32_t* aSizeUsed) {
+void RemoteLazyInputStream::Serialize(
+    mozilla::ipc::InputStreamParams& aParams,
+    FileDescriptorArray& aFileDescriptors, bool aDelayedStart,
+    uint32_t aMaxSize, uint32_t* aSizeUsed,
+    mozilla::ipc::ChildToParentStreamActorManager* aManager) {
+  MOZ_ASSERT(aSizeUsed);
   *aSizeUsed = 0;
-  aParams = mozilla::ipc::RemoteLazyInputStreamParams(this);
+
+  MutexAutoLock lock(mMutex);
+
+  mozilla::ipc::RemoteLazyInputStreamRef params;
+  params.id() = mActor->ID();
+  params.start() = mStart;
+  params.length() = mLength;
+
+  aParams = params;
 }
 
 bool RemoteLazyInputStream::Deserialize(
-    const mozilla::ipc::InputStreamParams& aParams) {
+    const mozilla::ipc::InputStreamParams& aParams,
+    const FileDescriptorArray& aFileDescriptors) {
   MOZ_CRASH("This should never be called.");
   return false;
 }
@@ -914,9 +678,6 @@ RemoteLazyInputStream::AsyncFileMetadataWait(nsIFileMetadataCallback* aCallback,
 
   {
     MutexAutoLock lock(mMutex);
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Debug,
-            ("AsyncFileMetadataWait(%p, %p) %s", aCallback, aEventTarget,
-             Describe().get()));
 
     switch (mState) {
       
@@ -927,7 +688,7 @@ RemoteLazyInputStream::AsyncFileMetadataWait(nsIFileMetadataCallback* aCallback,
         mFileMetadataCallbackEventTarget = aEventTarget;
         mState = ePending;
 
-        StreamNeeded();
+        mActor->StreamNeeded(this, aEventTarget);
         return NS_OK;
 
       
@@ -965,10 +726,7 @@ RemoteLazyInputStream::GetSize(int64_t* aRetval) {
   nsCOMPtr<nsIFileMetadata> fileMetadata;
   {
     MutexAutoLock lock(mMutex);
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-            ("GetSize %s", Describe().get()));
-
-    fileMetadata = do_QueryInterface(mInnerStream);
+    fileMetadata = do_QueryInterface(mRemoteStream);
     if (!fileMetadata) {
       return mState == eClosed ? NS_BASE_STREAM_CLOSED : NS_ERROR_FAILURE;
     }
@@ -982,10 +740,7 @@ RemoteLazyInputStream::GetLastModified(int64_t* aRetval) {
   nsCOMPtr<nsIFileMetadata> fileMetadata;
   {
     MutexAutoLock lock(mMutex);
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-            ("GetLastModified %s", Describe().get()));
-
-    fileMetadata = do_QueryInterface(mInnerStream);
+    fileMetadata = do_QueryInterface(mRemoteStream);
     if (!fileMetadata) {
       return mState == eClosed ? NS_BASE_STREAM_CLOSED : NS_ERROR_FAILURE;
     }
@@ -999,10 +754,7 @@ RemoteLazyInputStream::GetFileDescriptor(PRFileDesc** aRetval) {
   nsCOMPtr<nsIFileMetadata> fileMetadata;
   {
     MutexAutoLock lock(mMutex);
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-            ("GetFileDescriptor %s", Describe().get()));
-
-    fileMetadata = do_QueryInterface(mInnerStream);
+    fileMetadata = do_QueryInterface(mRemoteStream);
     if (!fileMetadata) {
       return mState == eClosed ? NS_BASE_STREAM_CLOSED : NS_ERROR_FAILURE;
     }
@@ -1011,37 +763,23 @@ RemoteLazyInputStream::GetFileDescriptor(PRFileDesc** aRetval) {
   return fileMetadata->GetFileDescriptor(aRetval);
 }
 
-nsresult RemoteLazyInputStream::EnsureAsyncRemoteStream() {
+nsresult RemoteLazyInputStream::EnsureAsyncRemoteStream(
+    const MutexAutoLock& aProofOfLock) {
   
-  if (mAsyncInnerStream) {
+  if (mAsyncRemoteStream) {
     return NS_OK;
   }
 
-  MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Debug,
-          ("EnsureAsyncRemoteStream %s", Describe().get()));
-
-  if (NS_WARN_IF(!mInnerStream)) {
+  if (!mRemoteStream) {
     return NS_ERROR_FAILURE;
   }
 
-  nsCOMPtr<nsIInputStream> stream = mInnerStream;
-
-  
-  
-  bool nonBlocking = false;
-  nsresult rv = stream->IsNonBlocking(&nonBlocking);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
+  nsCOMPtr<nsIInputStream> stream = mRemoteStream;
   
   
   
   
-  
-  
-  
-  if (nonBlocking && !NS_InputStreamIsBuffered(stream)) {
+  if (!NS_InputStreamIsBuffered(stream)) {
     nsCOMPtr<nsIInputStream> bufferedStream;
     nsresult rv = NS_NewBufferedInputStream(getter_AddRefs(bufferedStream),
                                             stream.forget(), 4096);
@@ -1050,6 +788,13 @@ nsresult RemoteLazyInputStream::EnsureAsyncRemoteStream() {
     }
 
     stream = bufferedStream;
+  }
+
+  
+  bool nonBlocking = false;
+  nsresult rv = stream->IsNonBlocking(&nonBlocking);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
   }
 
   nsCOMPtr<nsIAsyncInputStream> asyncStream = do_QueryInterface(stream);
@@ -1090,8 +835,8 @@ nsresult RemoteLazyInputStream::EnsureAsyncRemoteStream() {
   }
 
   MOZ_ASSERT(asyncStream);
-  mAsyncInnerStream = asyncStream;
-  mInnerStream = nullptr;
+  mAsyncRemoteStream = asyncStream;
+  mRemoteStream = nullptr;
 
   return NS_OK;
 }
@@ -1106,7 +851,7 @@ RemoteLazyInputStream::Length(int64_t* aLength) {
     return NS_BASE_STREAM_CLOSED;
   }
 
-  if (!mActor) {
+  if (mConsumed) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -1170,48 +915,19 @@ RemoteLazyInputStream::AsyncLengthWait(nsIInputStreamLengthCallback* aCallback,
   {
     MutexAutoLock lock(mMutex);
 
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-            ("AsyncLengthWait(%p, %p) %s", aCallback, aEventTarget,
-             Describe().get()));
+    mLengthCallback = aCallback;
+    mLengthCallbackEventTarget = aEventTarget;
 
-    if (mActor) {
+    if (mState != eClosed && !mConsumed) {
+      MOZ_ASSERT(mActor);
+
       if (aCallback) {
-        auto* thread = RemoteLazyInputStreamThread::GetOrCreate();
-        thread->Dispatch(NS_NewRunnableFunction(
-            "RemoteLazyInputStream::AsyncLengthWait",
-            [self = RefPtr{this}, actor = mActor,
-             callback = nsCOMPtr{aCallback},
-             eventTarget = nsCOMPtr{aEventTarget}] {
-              actor->SendLengthNeeded(
-                  [self, callback, eventTarget](int64_t aLength) {
-                    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-                            ("AsyncLengthWait resolve %" PRId64, aLength));
-                    int64_t length = -1;
-                    if (aLength > 0) {
-                      uint64_t sourceLength =
-                          aLength - std::min<uint64_t>(aLength, self->mStart);
-                      length = int64_t(
-                          std::min<uint64_t>(sourceLength, self->mLength));
-                    }
-                    InputStreamLengthCallbackRunnable::Execute(
-                        callback, eventTarget, self, length);
-                  },
-                  [self, callback,
-                   eventTarget](mozilla::ipc::ResponseRejectReason) {
-                    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Warning,
-                            ("AsyncLengthWait reject"));
-                    InputStreamLengthCallbackRunnable::Execute(
-                        callback, eventTarget, self, -1);
-                  });
-            }));
+        mActor->LengthNeeded(this, aEventTarget);
       }
 
       return NS_OK;
     }
   }
-
-  MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-          ("AsyncLengthWait immediate"));
 
   
   
@@ -1219,187 +935,37 @@ RemoteLazyInputStream::AsyncLengthWait(nsIInputStreamLengthCallback* aCallback,
   return NS_OK;
 }
 
-void RemoteLazyInputStream::IPCWrite(IPC::MessageWriter* aWriter) {
-  
-  
-  RefPtr<RemoteLazyInputStreamChild> actor;
-
-  nsCOMPtr<nsIInputStream> innerStream;
-
-  RefPtr<nsIInputStreamCallback> inputStreamCallback;
-  nsCOMPtr<nsIEventTarget> inputStreamCallbackEventTarget;
+void RemoteLazyInputStream::LengthReady(int64_t aLength) {
+  nsCOMPtr<nsIInputStreamLengthCallback> lengthCallback;
+  nsCOMPtr<nsIEventTarget> lengthCallbackEventTarget;
 
   {
     MutexAutoLock lock(mMutex);
 
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-            ("Serialize %s", Describe().get()));
-
-    actor = mActor.forget();
-
-    if (mAsyncInnerStream) {
-      MOZ_ASSERT(!mInnerStream);
-      innerStream = mAsyncInnerStream.forget();
+    
+    
+    if (mState == eClosed || mConsumed) {
+      aLength = -1;
     } else {
-      innerStream = mInnerStream.forget();
+      if (mStart > 0) {
+        aLength -= mStart;
+      }
+
+      if (mLength < mActor->Size()) {
+        
+        
+        aLength = XPCOM_MIN(aLength, (int64_t)mLength);
+      }
     }
 
-    
-    
-    mFileMetadataCallback = nullptr;
-    mFileMetadataCallbackEventTarget = nullptr;
-
-    inputStreamCallback = mInputStreamCallback.forget();
-    inputStreamCallbackEventTarget = mInputStreamCallbackEventTarget.forget();
-
-    mState = eClosed;
+    lengthCallback.swap(mLengthCallback);
+    lengthCallbackEventTarget.swap(mLengthCallbackEventTarget);
   }
 
-  if (inputStreamCallback) {
-    InputStreamCallbackRunnable::Execute(
-        inputStreamCallback.forget(), inputStreamCallbackEventTarget.forget(),
-        this);
+  if (lengthCallback) {
+    InputStreamLengthCallbackRunnable::Execute(
+        lengthCallback, lengthCallbackEventTarget, this, aLength);
   }
-
-  bool closed = !actor && !innerStream;
-  IPC::WriteParam(aWriter, closed);
-  if (closed) {
-    return;
-  }
-
-  
-  
-  
-  if (actor) {
-    MOZ_LOG(
-        gRemoteLazyStreamLog, LogLevel::Debug,
-        ("Serializing as actor: %s", nsIDToCString(actor->StreamID()).get()));
-    
-    
-    mozilla::ipc::Endpoint<PRemoteLazyInputStreamParent> parentEp;
-    mozilla::ipc::Endpoint<PRemoteLazyInputStreamChild> childEp;
-    MOZ_ALWAYS_SUCCEEDS(
-        PRemoteLazyInputStream::CreateEndpoints(&parentEp, &childEp));
-
-    auto* thread = RemoteLazyInputStreamThread::GetOrCreate();
-    thread->Dispatch(NS_NewRunnableFunction(
-        "RemoteLazyInputStreamChild::SendClone",
-        [actor, parentEp = std::move(parentEp)]() mutable {
-          bool ok = actor->SendClone(std::move(parentEp));
-          MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-                  ("SendClone for %s: %s",
-                   nsIDToCString(actor->StreamID()).get(), ok ? "OK" : "ERR"));
-        }));
-
-    
-    
-    
-    actor->StreamConsumed();
-
-    IPC::WriteParam(aWriter, actor->StreamID());
-    IPC::WriteParam(aWriter, mStart);
-    IPC::WriteParam(aWriter, mLength);
-    IPC::WriteParam(aWriter, std::move(childEp));
-
-    if (innerStream) {
-      innerStream->Close();
-    }
-    return;
-  }
-
-  
-  
-  auto streamStorage = RemoteLazyInputStreamStorage::Get();
-  if (streamStorage.isOk()) {
-    MOZ_ASSERT(XRE_IsParentProcess());
-    nsID id = nsID::GenerateUUID();
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Debug,
-            ("Serializing as new stream: %s", nsIDToCString(id).get()));
-
-    streamStorage.inspect()->AddStream(innerStream, id);
-
-    mozilla::ipc::Endpoint<PRemoteLazyInputStreamParent> parentEp;
-    mozilla::ipc::Endpoint<PRemoteLazyInputStreamChild> childEp;
-    MOZ_ALWAYS_SUCCEEDS(
-        PRemoteLazyInputStream::CreateEndpoints(&parentEp, &childEp));
-
-    
-    streamStorage.inspect()->TaskQueue()->Dispatch(NS_NewRunnableFunction(
-        "RemoteLazyInputStreamParent::Bind",
-        [parentEp = std::move(parentEp), id]() mutable {
-          auto stream = MakeRefPtr<RemoteLazyInputStreamParent>(id);
-          parentEp.Bind(stream);
-        }));
-
-    IPC::WriteParam(aWriter, id);
-    IPC::WriteParam(aWriter, 0);
-    IPC::WriteParam(aWriter, UINT64_MAX);
-    IPC::WriteParam(aWriter, std::move(childEp));
-    return;
-  }
-
-  MOZ_CRASH("Cannot serialize new RemoteLazyInputStream from this process");
-}
-
-already_AddRefed<RemoteLazyInputStream> RemoteLazyInputStream::IPCRead(
-    IPC::MessageReader* aReader) {
-  MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose, ("Deserialize"));
-
-  bool closed;
-  if (NS_WARN_IF(!IPC::ReadParam(aReader, &closed))) {
-    return nullptr;
-  }
-  if (closed) {
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Verbose,
-            ("Deserialize closed stream"));
-    return do_AddRef(new RemoteLazyInputStream());
-  }
-
-  nsID id{};
-  uint64_t start;
-  uint64_t length;
-  mozilla::ipc::Endpoint<PRemoteLazyInputStreamChild> endpoint;
-  if (NS_WARN_IF(!IPC::ReadParam(aReader, &id)) ||
-      NS_WARN_IF(!IPC::ReadParam(aReader, &start)) ||
-      NS_WARN_IF(!IPC::ReadParam(aReader, &length)) ||
-      NS_WARN_IF(!IPC::ReadParam(aReader, &endpoint))) {
-    return nullptr;
-  }
-
-  if (!endpoint.IsValid()) {
-    MOZ_LOG(gRemoteLazyStreamLog, LogLevel::Warning,
-            ("Deserialize failed due to invalid endpoint!"));
-    return do_AddRef(new RemoteLazyInputStream());
-  }
-
-  RefPtr<RemoteLazyInputStreamChild> actor =
-      BindChildActor(id, std::move(endpoint));
-
-  return do_AddRef(new RemoteLazyInputStream(actor, start, length));
 }
 
 }  
-
-void IPC::ParamTraits<mozilla::RemoteLazyInputStream*>::Write(
-    IPC::MessageWriter* aWriter, mozilla::RemoteLazyInputStream* aParam) {
-  bool nonNull = !!aParam;
-  IPC::WriteParam(aWriter, nonNull);
-  if (aParam) {
-    aParam->IPCWrite(aWriter);
-  }
-}
-
-bool IPC::ParamTraits<mozilla::RemoteLazyInputStream*>::Read(
-    IPC::MessageReader* aReader,
-    RefPtr<mozilla::RemoteLazyInputStream>* aResult) {
-  bool nonNull = false;
-  if (!IPC::ReadParam(aReader, &nonNull)) {
-    return false;
-  }
-  if (!nonNull) {
-    *aResult = nullptr;
-    return true;
-  }
-  *aResult = mozilla::RemoteLazyInputStream::IPCRead(aReader);
-  return *aResult;
-}
