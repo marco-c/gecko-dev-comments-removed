@@ -38,8 +38,7 @@ JSObject* ReadableStreamBYOBReader::WrapObject(
 }
 
 
-void SetUpReadableStreamBYOBReader(JSContext* aCx,
-                                   ReadableStreamBYOBReader* reader,
+void SetUpReadableStreamBYOBReader(ReadableStreamBYOBReader* reader,
                                    ReadableStream& stream, ErrorResult& rv) {
   
   
@@ -75,7 +74,7 @@ ReadableStreamBYOBReader::Constructor(const GlobalObject& global,
       new ReadableStreamBYOBReader(globalObject);
 
   
-  SetUpReadableStreamBYOBReader(global.Context(), reader, stream, rv);
+  SetUpReadableStreamBYOBReader(reader, stream, rv);
   if (rv.Failed()) {
     return nullptr;
   }
@@ -340,7 +339,7 @@ already_AddRefed<ReadableStreamBYOBReader> AcquireReadableStreamBYOBReader(
       new ReadableStreamBYOBReader(aStream->GetParentObject());
 
   
-  SetUpReadableStreamBYOBReader(aCx, reader, *aStream, aRv);
+  SetUpReadableStreamBYOBReader(reader, *aStream, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
