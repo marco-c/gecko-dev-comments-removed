@@ -1655,7 +1655,7 @@ function _filterDB(addonDB, aFilter) {
   return Array.from(addonDB.values()).filter(aFilter);
 }
 
-this.XPIDatabase = {
+const XPIDatabase = {
   
   initialized: false,
   
@@ -2835,7 +2835,7 @@ this.XPIDatabase = {
   },
 };
 
-this.XPIDatabaseReconcile = {
+const XPIDatabaseReconcile = {
   
 
 

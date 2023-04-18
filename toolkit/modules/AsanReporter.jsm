@@ -3,7 +3,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["AsanReporter"];
+const EXPORTED_SYMBOLS = ["AsanReporter"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -39,7 +39,7 @@ XPCOMUtils.defineLazyGetter(this, "asanDumpDir", () => {
   return OS.Path.join(profileDir.path, "asan");
 });
 
-this.AsanReporter = {
+const AsanReporter = {
   init() {
     if (this.initialized) {
       return;
