@@ -6012,47 +6012,34 @@ void BaseCompiler::emitPreBarrier(RegPtr valueAddr) {
   masm.bind(&skipBarrier);
 }
 
-
-
-bool BaseCompiler::emitPostBarrierCall(RegPtr valueAddr) {
+bool BaseCompiler::emitPostBarrier(const Maybe<RegRef>& object,
+                                   RegPtr valueAddr, RegRef value) {
   uint32_t bytecodeOffset = iter_.lastOpcodeOffset();
 
   
   
-  
-  pushPtr(valueAddr);
-  return emitInstanceCall(bytecodeOffset, SASigPostBarrier);
-}
-
-
-
-bool BaseCompiler::emitBarrieredStore(const Maybe<RegRef>& object,
-                                      RegPtr valueAddr, RegRef value) {
-  
-  
-  ASSERT_ANYREF_IS_JSOBJECT;
-
-  emitPreBarrier(valueAddr);  
-  masm.storePtr(value, Address(valueAddr, 0));
-
-  Label skipBarrier;
   sync();
 
-  RegRef otherScratch = needRef();
+  
+  Label skipBarrier;
+  RegPtr otherScratch = needPtr();
   EmitWasmPostBarrierGuard(masm, object, otherScratch, value, &skipBarrier);
-  freeRef(otherScratch);
+  freePtr(otherScratch);
 
+  
   if (object) {
     pushRef(*object);
   }
   pushRef(value);
 
   
-  if (!emitPostBarrierCall(valueAddr)) {
+  
+  
+  pushPtr(valueAddr);
+  if (!emitInstanceCall(bytecodeOffset, SASigPostBarrier)) {
     return false;
   }
 
-  
   
   popRef(value);
   if (object) {
@@ -6063,15 +6050,34 @@ bool BaseCompiler::emitBarrieredStore(const Maybe<RegRef>& object,
   return true;
 }
 
+bool BaseCompiler::emitBarrieredStore(const Maybe<RegRef>& object,
+                                      RegPtr valueAddr, RegRef value) {
+  
+  
+  ASSERT_ANYREF_IS_JSOBJECT;
 
+  
+  emitPreBarrier(valueAddr);
+
+  
+  masm.storePtr(value, Address(valueAddr, 0));
+
+  
+  return emitPostBarrier(object, valueAddr, value);
+}
 
 void BaseCompiler::emitBarrieredClear(RegPtr valueAddr) {
   
   
   ASSERT_ANYREF_IS_JSOBJECT;
 
-  emitPreBarrier(valueAddr);  
+  
+  emitPreBarrier(valueAddr);
+
+  
   masm.storePtr(ImmWord(0), Address(valueAddr, 0));
+
+  
 }
 
 

@@ -1264,8 +1264,24 @@ struct BaseCompiler final {
   void emitPreBarrier(RegPtr valueAddr);
 
   
-  [[nodiscard]] bool emitPostBarrierCall(RegPtr valueAddr);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  [[nodiscard]] bool emitPostBarrier(const Maybe<RegRef>& object,
+                                     RegPtr valueAddr, RegRef value);
 
+  
+  
   
   
   [[nodiscard]] bool emitBarrieredStore(const Maybe<RegRef>& object,
