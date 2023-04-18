@@ -687,10 +687,13 @@ nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer,
   }
 
   
-  if (mWaiting) {
-    mNotified = true;
-    mMonitor.Notify();
-  }
+  
+  
+  
+  
+  
+  
+  
 
   if (profiler_thread_is_being_profiled_for_markers(mProfilerThreadId)) {
     nsAutoCString name;
