@@ -17,7 +17,7 @@ namespace dom {
 
 
 
-enum StructuredCloneTags {
+enum StructuredCloneTags : uint32_t {
   SCTAG_BASE = JS_SCTAG_USER_MIN,
 
   
