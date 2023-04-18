@@ -337,17 +337,19 @@ class HTMLMeterAccessible : public LeafAccessible {
 
 
 template <a11y::role R>
-class HTMLDateTimeAccessible : public AccessibleWrap {
+class HTMLDateTimeAccessible : public HyperTextAccessibleWrap {
  public:
   HTMLDateTimeAccessible(nsIContent* aContent, DocAccessible* aDoc)
-      : AccessibleWrap(aContent, aDoc) {}
+      : HyperTextAccessibleWrap(aContent, aDoc) {}
 
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLDateTimeAccessible, AccessibleWrap)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLDateTimeAccessible,
+                                       HyperTextAccessibleWrap)
 
   
   virtual mozilla::a11y::role NativeRole() const override { return R; }
   virtual already_AddRefed<AccAttributes> NativeAttributes() override {
-    RefPtr<AccAttributes> attributes = AccessibleWrap::NativeAttributes();
+    RefPtr<AccAttributes> attributes =
+        HyperTextAccessibleWrap::NativeAttributes();
     
     
     nsString type;
