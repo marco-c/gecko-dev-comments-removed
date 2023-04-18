@@ -52,9 +52,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   int32_t OtherPid() const { return other_pid_; }
 
   
-  
-  bool Unsound_IsClosed() const;
-  uint32_t Unsound_NumQueuedMessages() const;
+  bool IsClosed() const;
 
 #if defined(OS_MACOSX)
   void SetOtherMachTask(task_t task);
@@ -177,12 +175,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   
   mozilla::UniqueMachSendRight other_task_;
 #endif
-
-  
-  
-  
-  
-  std::atomic<size_t> output_queue_length_;
 
   ScopedRunnableMethodFactory<ChannelImpl> factory_;
 

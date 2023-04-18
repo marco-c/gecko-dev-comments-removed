@@ -478,12 +478,13 @@ ContentParentsMemoryReporter::CollectReports(
     const char* channelStr = "no channel";
     uint32_t numQueuedMessages = 0;
     if (channel) {
-      if (channel->Unsound_IsClosed()) {
+      if (channel->IsClosed()) {
         channelStr = "closed channel";
       } else {
         channelStr = "open channel";
       }
-      numQueuedMessages = channel->Unsound_NumQueuedMessages();
+      numQueuedMessages =
+          0;  
     }
 
     nsPrintfCString path(

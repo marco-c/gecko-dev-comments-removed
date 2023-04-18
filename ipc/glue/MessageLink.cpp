@@ -189,19 +189,11 @@ void PortLink::OnPortStatusChanged() {
   }
 }
 
-bool PortLink::Unsound_IsClosed() const {
+bool PortLink::IsClosed() const {
   if (Maybe<PortStatus> status = mNode->GetStatus(mPort)) {
     return !(status->has_messages || status->receiving_messages);
   }
   return true;
-}
-
-uint32_t PortLink::Unsound_NumQueuedMessages() const {
-  
-  
-  
-  
-  return 0;
 }
 
 }  

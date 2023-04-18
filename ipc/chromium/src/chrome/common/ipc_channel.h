@@ -136,8 +136,7 @@ class Channel {
   
   
   
-  bool Unsound_IsClosed() const;
-  uint32_t Unsound_NumQueuedMessages() const;
+  bool IsClosed() const;
 
 #if defined(OS_POSIX)
   

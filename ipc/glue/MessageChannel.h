@@ -290,15 +290,13 @@ class MessageChannel : HasResultCodes {
 
   
   
-  
-  
-  
-  
-  bool Unsound_IsClosed() const {
-    return mLink ? mLink->Unsound_IsClosed() : true;
+  bool IsClosed() {
+    MonitorAutoLock lock(*mMonitor);
+    return IsClosedLocked();
   }
-  uint32_t Unsound_NumQueuedMessages() const {
-    return mLink ? mLink->Unsound_NumQueuedMessages() : 0;
+  bool IsClosedLocked() const {
+    mMonitor->AssertCurrentThreadOwns();
+    return mLink ? mLink->IsClosed() : true;
   }
 
   static bool IsPumpingMessages() { return sIsPumpingMessages; }
@@ -547,8 +545,11 @@ class MessageChannel : HasResultCodes {
   RefPtr<CancelableRunnable> mChannelErrorTask;
 
   
+  
+  
   nsCOMPtr<nsISerialEventTarget> mWorkerThread;
 
+  
   
   
   

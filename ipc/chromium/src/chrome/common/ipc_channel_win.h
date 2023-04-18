@@ -50,9 +50,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   int32_t OtherPid() const { return other_pid_; }
 
   
-  
-  bool Unsound_IsClosed() const;
-  uint32_t Unsound_NumQueuedMessages() const;
+  bool IsClosed() const;
 
  private:
   void Init(Mode mode, Listener* listener);
@@ -126,12 +124,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   
   
   int32_t other_pid_ = -1;
-
-  
-  
-  
-  
-  std::atomic<size_t> output_queue_length_ = 0;
 
   ScopedRunnableMethodFactory<ChannelImpl> factory_;
 

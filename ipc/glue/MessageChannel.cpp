@@ -462,7 +462,7 @@ MessageChannel::~MessageChannel() {
   
   
   
-  if (!Unsound_IsClosed()) {
+  if (!IsClosedLocked()) {
     CrashReporter::AnnotateCrashReport(
         CrashReporter::Annotation::IPCFatalErrorProtocol,
         nsDependentCString(mName));
@@ -578,8 +578,7 @@ bool MessageChannel::CanSend() const {
 void MessageChannel::Clear() {
   AssertWorkerThread();
   mMonitor->AssertCurrentThreadOwns();
-  MOZ_DIAGNOSTIC_ASSERT(Unsound_IsClosed(),
-                        "MessageChannel cleared too early?");
+  MOZ_DIAGNOSTIC_ASSERT(IsClosedLocked(), "MessageChannel cleared too early?");
 
   
   
@@ -622,6 +621,7 @@ bool MessageChannel::Open(ScopedPort aPort, Side aSide,
     MonitorAutoLock lock(*mMonitor);
     MOZ_RELEASE_ASSERT(!mLink, "Open() called > once");
     MOZ_RELEASE_ASSERT(ChannelClosed == mChannelState, "Not currently closed");
+    MOZ_ASSERT(mSide == UnknownSide);
 
     mWorkerThread = aEventTarget ? aEventTarget : GetCurrentSerialEventTarget();
     MOZ_ASSERT(mWorkerThread, "We should always be on a nsISerialEventTarget");
@@ -729,6 +729,8 @@ bool MessageChannel::Send(UniquePtr<Message> aMsg) {
 }
 
 void MessageChannel::SendMessageToLink(UniquePtr<Message> aMsg) {
+  AssertWorkerThread();
+  mMonitor->AssertCurrentThreadOwns();
   if (mIsPostponingSends) {
     mPostponedSends.push_back(std::move(aMsg));
     return;
@@ -1503,6 +1505,7 @@ nsresult MessageChannel::MessageTask::Cancel() {
 
 void MessageChannel::MessageTask::Post() {
   mMonitor->AssertCurrentThreadOwns();
+  Channel()->mMonitor->AssertCurrentThreadOwns();
   MOZ_RELEASE_ASSERT(!mScheduled);
   MOZ_RELEASE_ASSERT(isInList());
 
@@ -1671,6 +1674,7 @@ void MessageChannel::EnqueuePendingMessages() {
 }
 
 bool MessageChannel::WaitResponse(bool aWaitTimedOut) {
+  AssertWorkerThread();
   if (aWaitTimedOut) {
     if (mInTimeoutSecondHalf) {
       
@@ -1686,6 +1690,7 @@ bool MessageChannel::WaitResponse(bool aWaitTimedOut) {
 
 #ifndef OS_WIN
 bool MessageChannel::WaitForSyncNotify(bool ) {
+  AssertWorkerThread();
 #  ifdef DEBUG
   
   
