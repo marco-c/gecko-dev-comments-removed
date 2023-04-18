@@ -591,6 +591,9 @@ class nsContextMenu {
     this.showItem("context-copyimage", this.onImage || showBGImage);
 
     
+    this.showItem("context-imagetext", this.onImage);
+
+    
     this.showItem("context-sendimage", this.onImage || showBGImage);
 
     
@@ -2227,6 +2230,10 @@ class nsContextMenu {
       Ci.nsIClipboardHelper
     );
     clipboard.copyString(this.originalMediaURL);
+  }
+
+  getImageText() {
+    this.actor.getImageText(this.targetIdentifier);
   }
 
   drmLearnMore(aEvent) {
