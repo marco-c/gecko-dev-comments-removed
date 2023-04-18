@@ -149,6 +149,7 @@ var legacyMozPrefixedInterfaces = [
 
 
 
+
 var interfaceNamesInGlobalScope = [
   
   { name: "AbortController", insecureContext: true },
@@ -1286,40 +1287,6 @@ var interfaceNamesInGlobalScope = [
   
   { name: "VisualViewport", insecureContext: true },
   
-  { name: "VRDisplay", releaseNonWindowsAndMac: false },
-  
-  {
-    name: "VRDisplayCapabilities",
-    releaseNonWindowsAndMac: false,
-  },
-  
-  {
-    name: "VRDisplayEvent",
-    releaseNonWindowsAndMac: false,
-  },
-  
-  {
-    name: "VREyeParameters",
-    releaseNonWindowsAndMac: false,
-  },
-  
-  {
-    name: "VRFieldOfView",
-    releaseNonWindowsAndMac: false,
-  },
-  
-  {
-    name: "VRFrameData",
-    releaseNonWindowsAndMac: false,
-  },
-  
-  { name: "VRPose", releaseNonWindowsAndMac: false },
-  
-  {
-    name: "VRStageParameters",
-    releaseNonWindowsAndMac: false,
-  },
-  
   { name: "VTTCue", insecureContext: true },
   
   { name: "VTTRegion", insecureContext: true },
@@ -1411,7 +1378,6 @@ function entryDisabled(entry) {
     entry.fennecOrDesktop === (isAndroid && !isFennec) ||
     entry.fennec === !isFennec ||
     entry.release === !isRelease ||
-    entry.releaseNonWindowsAndMac === !(isRelease && !isWindows && !isMac) ||
     entry.releaseNonWindows === !(isRelease && !isWindows) ||
     
     
