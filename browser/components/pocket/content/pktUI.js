@@ -222,7 +222,10 @@ var pktUI = (function() {
       homeVersion = "control";
     }
     const sizes = initialPanelSize.home[homeVersion];
-    showPanel("about:pocket-home", sizes);
+    const hideRecentSaves = NimbusFeatures.saveToPocket.getVariable(
+      "hideRecentSaves"
+    );
+    showPanel(`about:pocket-home?hiderecentsaves=${hideRecentSaves}`, sizes);
   }
 
   
@@ -271,7 +274,7 @@ var pktUI = (function() {
     );
   }
 
-  function onShowHome() {
+  async function onShowHome() {
     
     pktTelemetry.sendStructuredIngestionEvent(
       pktTelemetry.createPingPayload({
@@ -283,6 +286,35 @@ var pktUI = (function() {
         ],
       })
     );
+
+    if (
+      NimbusFeatures.saveToPocket.getVariable("layoutRefresh") &&
+      !NimbusFeatures.saveToPocket.getVariable("hideRecentSaves")
+    ) {
+      let recentSaves = await pktApi.getRecentSavesCache();
+      if (recentSaves) {
+        
+        pktUIMessaging.sendMessageToPanel("PKT_renderRecentSaves", recentSaves);
+      } else {
+        
+        pktUIMessaging.sendMessageToPanel(
+          "PKT_loadingRecentSaves",
+          recentSaves
+        );
+        
+        pktApi.getRecentSaves({
+          success(data) {
+            pktUIMessaging.sendMessageToPanel("PKT_renderRecentSaves", data);
+          },
+          error(error) {
+            pktUIMessaging.sendErrorMessageToPanel(
+              "PKT_renderRecentSaves",
+              error
+            );
+          },
+        });
+      }
+    }
   }
 
   function onShowSaved() {

@@ -2071,6 +2071,8 @@ pref("extensions.pocket.refresh.layout.enabled", false);
 
 pref("extensions.pocket.refresh.emailButton.enabled", false);
 
+pref("extensions.pocket.refresh.hideRecentSaves.enabled", false);
+
 pref("signon.management.page.fileImport.enabled", false);
 
 #ifdef NIGHTLY_BUILD
