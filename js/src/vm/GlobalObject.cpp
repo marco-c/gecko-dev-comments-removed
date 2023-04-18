@@ -673,20 +673,6 @@ bool GlobalObject::initStandardClasses(JSContext* cx,
 }
 
 
-bool GlobalObject::isRuntimeCodeGenEnabled(JSContext* cx, HandleString code,
-                                           Handle<GlobalObject*> global) {
-  
-  
-  JSCSPEvalChecker allows =
-      cx->runtime()->securityCallbacks->contentSecurityPolicyAllows;
-  if (allows) {
-    return allows(cx, code);
-  }
-
-  return true;
-}
-
-
 JSFunction* GlobalObject::createConstructor(JSContext* cx, Native ctor,
                                             JSAtom* nameArg, unsigned length,
                                             gc::AllocKind kind,
