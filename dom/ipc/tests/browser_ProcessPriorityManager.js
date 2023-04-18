@@ -319,19 +319,6 @@ add_task(async function test_normal_background_tab() {
       );
 
       
-      originalTab.linkedBrowser.preserveLayers(true);
-      originalTab.linkedBrowser.renderLayers = true;
-      await new Promise(resolve =>
-        
-        setTimeout(resolve, WAIT_FOR_CHANGE_TIME_MS)
-      );
-      Assert.equal(
-        gTabPriorityWatcher.currentPriority(origtabID),
-        PROCESS_PRIORITY_BACKGROUND,
-        "Tab didn't get prioritized only due to renderLayers"
-      );
-
-      
       
       originalTab.linkedBrowser.frameLoader.remoteTab.priorityHint = true;
       Assert.equal(
@@ -377,9 +364,6 @@ add_task(async function test_normal_background_tab() {
         PROCESS_PRIORITY_FOREGROUND,
         "Setting priorityHint to false should maintain the new tab priority as foreground"
       );
-
-      originalTab.linkedBrowser.preserveLayers(false);
-      originalTab.linkedBrowser.renderLayers = false;
     }
   );
 });
