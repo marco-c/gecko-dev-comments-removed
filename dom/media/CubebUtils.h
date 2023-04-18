@@ -55,6 +55,17 @@ uint32_t MaxNumberOfChannels();
 
 uint32_t PreferredSampleRate();
 
+
+
+
+int CubebStreamInit(cubeb * context, cubeb_stream ** stream,
+                    char const * stream_name, cubeb_devid input_device,
+                    cubeb_stream_params * input_stream_params,
+                    cubeb_devid output_device,
+                    cubeb_stream_params * output_stream_params,
+                    uint32_t latency_frames, cubeb_data_callback data_callback,
+                    cubeb_state_callback state_callback, void * user_ptr);
+
 enum Side { Input, Output };
 
 double GetVolumeScale();
