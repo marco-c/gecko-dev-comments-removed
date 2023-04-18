@@ -7713,6 +7713,11 @@ void Document::SetScriptGlobalObject(
     mTemplateContentsOwner->SetScriptGlobalObject(aScriptGlobalObject);
   }
 
+  
+  if (mScriptLoader) {
+    mScriptLoader->SetGlobalObject(mScriptGlobalObject);
+  }
+
   if (!mMaybeServiceWorkerControlled && mDocumentContainer &&
       mScriptGlobalObject && GetChannel()) {
     

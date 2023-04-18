@@ -136,6 +136,12 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
+  void SetGlobalObject(nsIGlobalObject* aGlobalObject);
+
+  
+
+
+
 
   void DropDocumentReference() { mDocument = nullptr; }
 
@@ -322,7 +328,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
 
 
-  bool HasPendingRequests();
+  bool HasPendingRequests() const;
 
   
 
