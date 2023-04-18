@@ -322,10 +322,17 @@ DrawTargetSkia::~DrawTargetSkia() {
 #endif
 }
 
-already_AddRefed<SourceSurface> DrawTargetSkia::Snapshot() {
+already_AddRefed<SourceSurface> DrawTargetSkia::Snapshot(
+    SurfaceFormat aFormat) {
   
   
   MutexAutoLock lock(mSnapshotLock);
+  if (mSnapshot && aFormat != mSnapshot->GetFormat()) {
+    if (!mSnapshot->hasOneRef()) {
+      mSnapshot->DrawTargetWillChange();
+    }
+    mSnapshot = nullptr;
+  }
   RefPtr<SourceSurfaceSkia> snapshot = mSnapshot;
   if (mSurface && !snapshot) {
     snapshot = new SourceSurfaceSkia();
@@ -339,7 +346,7 @@ already_AddRefed<SourceSurface> DrawTargetSkia::Snapshot() {
     } else {
       image = mSurface->makeImageSnapshot();
     }
-    if (!snapshot->InitFromImage(image, mFormat, this)) {
+    if (!snapshot->InitFromImage(image, aFormat, this)) {
       return nullptr;
     }
     mSnapshot = snapshot;

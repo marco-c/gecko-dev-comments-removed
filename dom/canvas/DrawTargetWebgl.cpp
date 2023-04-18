@@ -189,23 +189,30 @@ inline void DrawTargetWebgl::SharedContext::ClearLastTexture() {
 
 
 
-inline already_AddRefed<SourceSurfaceWebgl> DrawTargetWebgl::ClearSnapshot() {
-  if (mSnapshot) {
-    mSharedContext->ClearLastTexture();
-    if (!mSnapshot->hasOneRef() && mSnapshot->GetType() == SurfaceType::WEBGL) {
-      return mSnapshot.forget().downcast<SourceSurfaceWebgl>();
-    }
-    mSnapshot = nullptr;
+void DrawTargetWebgl::ClearSnapshot(bool aCopyOnWrite) {
+  if (!mSnapshot) {
+    return;
   }
-  return nullptr;
-}
-
-DrawTargetWebgl::~DrawTargetWebgl() {
-  if (RefPtr<SourceSurfaceWebgl> snapshot = ClearSnapshot()) {
+  mSharedContext->ClearLastTexture();
+  if (mSnapshot->hasOneRef() || mSnapshot->GetType() != SurfaceType::WEBGL) {
+    mSnapshot = nullptr;
+    return;
+  }
+  RefPtr<SourceSurfaceWebgl> snapshot =
+      mSnapshot.forget().downcast<SourceSurfaceWebgl>();
+  if (aCopyOnWrite) {
+    
+    
+    snapshot->DrawTargetWillChange();
+  } else {
     
     snapshot->GiveTexture(
         mSharedContext->WrapSnapshot(GetSize(), GetFormat(), mTex.forget()));
   }
+}
+
+DrawTargetWebgl::~DrawTargetWebgl() {
+  ClearSnapshot(false);
 
   
   if (--mSharedContext->mNumTargets <= 0 && sSharedContext == mSharedContext) {
@@ -288,9 +295,10 @@ bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format) {
   }
 
   mSkia = new DrawTargetSkia;
-  if (!mSkia->Init(size, format)) {
+  if (!mSkia->Init(size, SurfaceFormat::B8G8R8A8)) {
     return false;
   }
+  mSkia->SetPermitSubpixelAA(IsOpaque(format));
 
   
   ++mSharedContext->mNumTargets;
@@ -539,6 +547,7 @@ already_AddRefed<TextureHandle> DrawTargetWebgl::SharedContext::CopySnapshot() {
 
 
 already_AddRefed<TextureHandle> DrawTargetWebgl::CopySnapshot() {
+  AutoRestoreContext restore(this);
   if (!PrepareContext(false)) {
     return nullptr;
   }
@@ -551,7 +560,7 @@ already_AddRefed<SourceSurface> DrawTargetWebgl::Snapshot() {
     if (mSkiaLayer) {
       FlattenSkia();
     }
-    return mSkia->Snapshot();
+    return mSkia->Snapshot(mFormat);
   }
 
   
@@ -604,8 +613,6 @@ bool DrawTargetWebgl::SharedContext::ReadInto(uint8_t* aDstData,
     mWebgl->BindFramebuffer(LOCAL_GL_FRAMEBUFFER, mCurrentTarget->mFramebuffer);
   }
 
-  SwizzleData(aDstData, aDstStride, SurfaceFormat::R8G8B8A8, aDstData,
-              aDstStride, aFormat, aBounds.Size());
   return true;
 }
 
@@ -646,10 +653,10 @@ bool DrawTargetWebgl::ReadInto(uint8_t* aDstData, int32_t aDstStride) {
 
 
 already_AddRefed<DataSourceSurface> DrawTargetWebgl::ReadSnapshot() {
+  AutoRestoreContext restore(this);
   if (!PrepareContext(false)) {
     return nullptr;
   }
-
   return mSharedContext->ReadSnapshot();
 }
 
@@ -685,13 +692,24 @@ bool DrawTargetWebgl::CopySnapshotTo(DrawTarget* aDT) {
   return result;
 }
 
-void DrawTargetWebgl::MarkChanged() {
-  mSkiaValid = false;
-  if (RefPtr<SourceSurfaceWebgl> snapshot = ClearSnapshot()) {
-    
-    
-    snapshot->DrawTargetWillChange();
+void DrawTargetWebgl::DetachAllSnapshots() {
+  mSkia->DetachAllSnapshots();
+  ClearSnapshot();
+}
+
+
+
+
+
+bool DrawTargetWebgl::MarkChanged() {
+  if (mSnapshot) {
+    ClearSnapshot();
   }
+  if (!mWebglValid && !FlushFromSkia()) {
+    return false;
+  }
+  mSkiaValid = false;
+  return true;
 }
 
 bool DrawTargetWebgl::LockBits(uint8_t** aData, IntSize* aSize,
@@ -799,9 +817,7 @@ bool DrawTargetWebgl::SharedContext::CreateShaders() {
         "void main() {\n"
         "   vec2 tc = clamp(v_texcoord, u_texbounds.xy, u_texbounds.zw);\n"
         "   vec4 image = texture2D(u_sampler, tc);\n"
-        "   image = u_swizzle > 0.0 ? image.rrrr\n"
-        "                           : (u_swizzle < 0.0 ? image : image.bgra);\n"
-        "   gl_FragColor = u_color * image;\n"
+        "   gl_FragColor = u_color * mix(image, image.rrrr, u_swizzle);\n"
         "}\n"_ns;
     RefPtr<WebGLShaderJS> vsId = mWebgl->CreateShader(LOCAL_GL_VERTEX_SHADER);
     mWebgl->ShaderSource(*vsId, vsSource);
@@ -997,7 +1013,7 @@ bool DrawTargetWebgl::DrawRect(const Rect& aRect, const Pattern& aPattern,
   
   
   
-  if (!PrepareContext(aClipped) || (!mWebglValid && !FlushFromSkia())) {
+  if ((!mWebglValid && !mSkiaLayer) || !PrepareContext(aClipped)) {
     if (!aAccelOnly) {
       DrawRectFallback(aRect, aPattern, aOptions, aMaskColor, aTransformed,
                        aClipped, aStrokeOptions);
@@ -1084,6 +1100,54 @@ DrawTargetWebgl::SharedContext::GetCompatibleSnapshot(SourceSurface* aSurface) {
   return nullptr;
 }
 
+bool DrawTargetWebgl::SharedContext::UploadSurface(DataSourceSurface* aData,
+                                                   SurfaceFormat aFormat,
+                                                   const IntRect& aSrcRect,
+                                                   const IntPoint& aDstOffset,
+                                                   bool aInit) {
+  webgl::TexUnpackBlobDesc texDesc = {
+      LOCAL_GL_TEXTURE_2D,
+      {uint32_t(aSrcRect.width), uint32_t(aSrcRect.height), 1}};
+  if (aData) {
+    
+    
+    
+    DataSourceSurface::ScopedMap map(aData, DataSourceSurface::READ);
+    if (!map.IsMapped()) {
+      return false;
+    }
+    int32_t stride = map.GetStride();
+    int32_t bpp = BytesPerPixel(aFormat);
+    
+    
+    Range<const uint8_t> range(
+        map.GetData() + aSrcRect.y * size_t(stride) + aSrcRect.x * bpp,
+        std::max(aSrcRect.height - 1, 0) * size_t(stride) +
+            aSrcRect.width * bpp);
+    texDesc.cpuData = Some(RawBuffer(range));
+    
+    
+    
+    texDesc.unpacking.alignmentInTypeElems = stride % 4 ? 1 : 4;
+    texDesc.unpacking.rowLength = stride / bpp;
+    texDesc.unpacking.imageHeight = aSrcRect.height;
+  }
+  
+  
+  
+  
+  GLenum intFormat =
+      aFormat == SurfaceFormat::A8 ? LOCAL_GL_R8 : LOCAL_GL_RGBA8;
+  GLenum extFormat =
+      aFormat == SurfaceFormat::A8 ? LOCAL_GL_RED : LOCAL_GL_RGBA;
+  webgl::PackingInfo texPI = {extFormat, LOCAL_GL_UNSIGNED_BYTE};
+  
+  mWebgl->RawTexImage(0, aInit ? intFormat : 0,
+                      {uint32_t(aDstOffset.x), uint32_t(aDstOffset.y), 0},
+                      texPI, texDesc);
+  return true;
+}
+
 
 
 
@@ -1105,7 +1169,9 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
 
   
   
-  if (!SupportsDrawOptions(aOptions) || !SupportsPattern(aPattern)) {
+  
+  if (!SupportsDrawOptions(aOptions) || !SupportsPattern(aPattern) ||
+      !mCurrentTarget->MarkChanged()) {
     
     
     if (!aAccelOnly) {
@@ -1133,12 +1199,12 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
   
   switch (aPattern.GetType()) {
     case PatternType::COLOR: {
-      mCurrentTarget->MarkChanged();
       auto color = static_cast<const ColorPattern&>(aPattern).mColor;
       if (((color.a * aOptions.mAlpha == 1.0f &&
             aOptions.mCompositionOp == CompositionOp::OP_OVER) ||
            aOptions.mCompositionOp == CompositionOp::OP_SOURCE) &&
-          (!aTransformed || currentTransform.HasOnlyIntegerTranslation())) {
+          (!aTransformed || currentTransform.HasOnlyIntegerTranslation()) &&
+          !aStrokeOptions) {
         
         
         
@@ -1155,7 +1221,7 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
                             intRect.height);
           }
           float a = color.a * aOptions.mAlpha;
-          mWebgl->ClearColor(color.r * a, color.g * a, color.b * a, a);
+          mWebgl->ClearColor(color.b * a, color.g * a, color.r * a, a);
           mWebgl->Clear(LOCAL_GL_COLOR_BUFFER_BIT);
           success = true;
           break;
@@ -1168,7 +1234,7 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
         mLastProgram = mSolidProgram;
       }
       float a = color.a * aOptions.mAlpha;
-      float colorData[4] = {color.r * a, color.g * a, color.b * a, a};
+      float colorData[4] = {color.b * a, color.g * a, color.r * a, a};
       Matrix xform(aRect.width, 0.0f, 0.0f, aRect.height, aRect.x, aRect.y);
       if (aTransformed) {
         xform *= currentTransform;
@@ -1226,52 +1292,70 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
           offset = surfacePattern.mSamplingRect.TopLeft();
         }
       }
-      mCurrentTarget->MarkChanged();
-
-      
-      if (mLastProgram != mImageProgram) {
-        mWebgl->UseProgram(mImageProgram);
-        mLastProgram = mImageProgram;
-      }
-      DeviceColor color = aMaskColor.valueOr(DeviceColor(1, 1, 1, 1));
-      float a = color.a * aOptions.mAlpha;
-      float colorData[4] = {color.r * a, color.g * a, color.b * a, a};
-      float swizzleData = aMaskColor ? 1.0f : 0.0f;
-      Matrix xform(aRect.width, 0.0f, 0.0f, aRect.height, aRect.x, aRect.y);
-      if (aTransformed) {
-        xform *= currentTransform;
-      }
-      xform *= Matrix(2.0f / float(mViewportSize.width), 0.0f, 0.0f,
-                      2.0f / float(mViewportSize.height), -1, -1);
-      float xformData[6] = {xform._11, xform._12, xform._21,
-                            xform._22, xform._31, xform._32};
-      mWebgl->UniformData(LOCAL_GL_FLOAT_VEC2, mImageProgramTransform, false,
-                          {(const uint8_t*)xformData, sizeof(xformData)});
-      mWebgl->UniformData(LOCAL_GL_FLOAT_VEC4, mImageProgramColor, false,
-                          {(const uint8_t*)colorData, sizeof(colorData)});
 
       RefPtr<WebGLTextureJS> tex;
       IntRect bounds;
       IntSize backingSize;
-      bool update = aForceUpdate;
+      RefPtr<DataSourceSurface> data;
       bool init = false;
       if (handle) {
-        
-        handle->remove();
-        mTextureHandles.insertFront(handle);
-        if (update) {
+        if (aForceUpdate) {
+          data = surfacePattern.mSurface->GetDataSurface();
+          if (!data) {
+            break;
+          }
           
           mUsedTextureMemory -= handle->UsedBytes();
           handle->UpdateSize(texSize);
           mUsedTextureMemory += handle->UsedBytes();
           handle->SetSamplingOffset(surfacePattern.mSamplingRect.TopLeft());
         }
+        
+        handle->remove();
+        mTextureHandles.insertFront(handle);
       } else if ((tex = GetCompatibleSnapshot(surfacePattern.mSurface))) {
         backingSize = surfacePattern.mSurface->GetSize();
         bounds = IntRect(offset, texSize);
-        
-        swizzleData = -1.0f;
       } else {
+        
+        data = surfacePattern.mSurface->GetDataSurface();
+        if (!data) {
+          break;
+        }
+        
+        
+        
+        if ((aOptions.mCompositionOp == CompositionOp::OP_SOURCE ||
+             (aOptions.mCompositionOp == CompositionOp::OP_OVER &&
+              format == SurfaceFormat::B8G8R8X8)) &&
+            aOptions.mAlpha == 1.0f &&
+            (!aTransformed || currentTransform.HasOnlyIntegerTranslation()) &&
+            surfacePattern.mMatrix.HasOnlyIntegerTranslation() &&
+            !aStrokeOptions && !aMaskColor) {
+          auto intRect = RoundedToInt(aRect);
+          if (aRect.WithinEpsilonOf(Rect(intRect), 1.0e-3f)) {
+            if (aTransformed) {
+              intRect += RoundedToInt(currentTransform.GetTranslation());
+            }
+            intRect = intRect.Intersect(mClipRect);
+            auto destOffset =
+                RoundedToInt(surfacePattern.mMatrix.GetTranslation());
+            bounds = (IntRect(offset, texSize) + destOffset).Intersect(intRect);
+            if (bounds.IsEmpty()) {
+              success = true;
+              break;
+            }
+            if (mLastTexture != mCurrentTarget->mTex) {
+              mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, mCurrentTarget->mTex);
+              mLastTexture = mCurrentTarget->mTex;
+            }
+            if (UploadSurface(data, format, bounds - destOffset,
+                              bounds.TopLeft(), false)) {
+              success = true;
+            }
+            break;
+          }
+        }
         
         
         
@@ -1315,7 +1399,6 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
             }
             init = true;
           }
-          update = true;
         } else {
           
           
@@ -1329,7 +1412,6 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
           mStandaloneTextures.push_back(standalone);
           mTotalTextureMemory += standalone->UsedBytes();
           handle = standalone;
-          update = true;
           init = true;
         }
 
@@ -1348,6 +1430,30 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
                                                ReleaseTextureHandle);
         }
       }
+
+      
+      if (mLastProgram != mImageProgram) {
+        mWebgl->UseProgram(mImageProgram);
+        mLastProgram = mImageProgram;
+      }
+      DeviceColor color = aMaskColor.valueOr(DeviceColor(1, 1, 1, 1));
+      float a = color.a * aOptions.mAlpha;
+      float colorData[4] = {color.b * a, color.g * a, color.r * a, a};
+      float swizzleData = aMaskColor ? 1.0f : 0.0f;
+      Matrix xform(aRect.width, 0.0f, 0.0f, aRect.height, aRect.x, aRect.y);
+      if (aTransformed) {
+        xform *= currentTransform;
+      }
+      xform *= Matrix(2.0f / float(mViewportSize.width), 0.0f, 0.0f,
+                      2.0f / float(mViewportSize.height), -1, -1);
+      float xformData[6] = {xform._11, xform._12, xform._21,
+                            xform._22, xform._31, xform._32};
+      mWebgl->UniformData(LOCAL_GL_FLOAT_VEC2, mImageProgramTransform, false,
+                          {(const uint8_t*)xformData, sizeof(xformData)});
+      mWebgl->UniformData(LOCAL_GL_FLOAT_VEC4, mImageProgramColor, false,
+                          {(const uint8_t*)colorData, sizeof(colorData)});
+      mWebgl->UniformData(LOCAL_GL_FLOAT, mImageProgramSwizzle, false,
+                          {(const uint8_t*)&swizzleData, sizeof(swizzleData)});
 
       
       if (handle) {
@@ -1370,62 +1476,15 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
           
           
           
-          GLenum intFormat =
-              format == SurfaceFormat::A8 ? LOCAL_GL_R8 : LOCAL_GL_RGBA8;
-          GLenum extFormat =
-              format == SurfaceFormat::A8 ? LOCAL_GL_RED : LOCAL_GL_RGBA;
-          webgl::PackingInfo texPI = {extFormat, LOCAL_GL_UNSIGNED_BYTE};
-          webgl::TexUnpackBlobDesc texDesc = {
-              LOCAL_GL_TEXTURE_2D,
-              {uint32_t(backingSize.width), uint32_t(backingSize.height), 1},
-          };
-          mWebgl->RawTexImage(0, intFormat, {0, 0, 0}, texPI, texDesc);
+          UploadSurface(nullptr, format, IntRect(IntPoint(), backingSize),
+                        IntPoint(), true);
         }
       }
 
-      if (update) {
-        
-        
-        
-        RefPtr<DataSourceSurface> data =
-            surfacePattern.mSurface->GetDataSurface();
-        DataSourceSurface::ScopedMap map(data, DataSourceSurface::READ);
-        int32_t stride = map.GetStride();
-        int32_t bpp = BytesPerPixel(format);
-        
-        
-        Range<const uint8_t> range(
-            map.GetData() + offset.y * size_t(stride) + offset.x * bpp,
-            texSize.height * size_t(stride));
-        webgl::TexUnpackBlobDesc texDesc = {
-            LOCAL_GL_TEXTURE_2D,
-            {uint32_t(texSize.width), uint32_t(texSize.height), 1},
-            gfxAlphaType::NonPremult,
-            Some(RawBuffer(range)),
-        };
-        
-        
-        
-        texDesc.unpacking.alignmentInTypeElems = stride % 4 ? 1 : 4;
-        texDesc.unpacking.rowLength = stride / bpp;
-        texDesc.unpacking.imageHeight = texSize.height;
-        
-        
-        
-        
-        GLenum intFormat =
-            format == SurfaceFormat::A8 ? LOCAL_GL_R8 : LOCAL_GL_RGBA8;
-        GLenum extFormat =
-            format == SurfaceFormat::A8 ? LOCAL_GL_RED : LOCAL_GL_RGBA;
-        webgl::PackingInfo texPI = {extFormat, LOCAL_GL_UNSIGNED_BYTE};
-        
-        mWebgl->RawTexImage(0, texSize == backingSize ? intFormat : 0,
-                            {uint32_t(bounds.x), uint32_t(bounds.y), 0}, texPI,
-                            texDesc);
+      if (data) {
+        UploadSurface(data, format, IntRect(offset, texSize), bounds.TopLeft(),
+                      texSize == backingSize);
       }
-
-      mWebgl->UniformData(LOCAL_GL_FLOAT, mImageProgramSwizzle, false,
-                          {(const uint8_t*)&swizzleData, sizeof(swizzleData)});
 
       
       
@@ -2179,7 +2238,7 @@ static bool CheckForColorGlyphs(const RefPtr<SourceSurface>& aSurface) {
 
 bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
     ScaledFont* aFont, const GlyphBuffer& aBuffer, const Pattern& aPattern,
-    const DrawOptions& aOptions) {
+    const DrawOptions& aOptions, bool aUseSubpixelAA) {
   
   
   
@@ -2198,24 +2257,16 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
   if (xformBounds.IsEmpty()) {
     return true;
   }
+  
+  xformBounds.Inflate(1);
   IntRect intBounds = RoundedOut(xformBounds);
 
   
   
   
-  AntialiasMode aaMode = aFont->GetDefaultAAMode();
-  if (aOptions.mAntialiasMode != AntialiasMode::DEFAULT) {
-    aaMode = aOptions.mAntialiasMode;
-  }
-  bool useSubpixelAA =
-      mCurrentTarget->GetPermitSubpixelAA() &&
-      (aaMode == AntialiasMode::DEFAULT || aaMode == AntialiasMode::SUBPIXEL);
   
   
-  
-  
-  
-  bool useColor = useSubpixelAA;
+  bool useColor = aUseSubpixelAA;
 
   
   GlyphCache* cache =
@@ -2258,7 +2309,7 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
     if (textDT->Init(intBounds.Size(), SurfaceFormat::B8G8R8A8)) {
       textDT->SetTransform(currentTransform *
                            Matrix::Translation(-intBounds.TopLeft()));
-      textDT->SetPermitSubpixelAA(useSubpixelAA);
+      textDT->SetPermitSubpixelAA(aUseSubpixelAA);
       DrawOptions drawOptions(1.0f, CompositionOp::OP_OVER,
                               aOptions.mAntialiasMode);
       textDT->FillGlyphs(aFont, aBuffer, ColorPattern(aaColor), drawOptions);
@@ -2307,15 +2358,31 @@ void DrawTargetWebgl::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
   if (!aFont || !aBuffer.mNumGlyphs) {
     return;
   }
+
+  AntialiasMode aaMode = aFont->GetDefaultAAMode();
+  if (aOptions.mAntialiasMode != AntialiasMode::DEFAULT) {
+    aaMode = aOptions.mAntialiasMode;
+  }
+  bool useSubpixelAA =
+      GetPermitSubpixelAA() &&
+      (aaMode == AntialiasMode::DEFAULT || aaMode == AntialiasMode::SUBPIXEL);
+
   if (mWebglValid && SupportsDrawOptions(aOptions) &&
       aPattern.GetType() == PatternType::COLOR && PrepareContext() &&
-      mSharedContext->FillGlyphsAccel(aFont, aBuffer, aPattern, aOptions)) {
+      mSharedContext->FillGlyphsAccel(aFont, aBuffer, aPattern, aOptions,
+                                      useSubpixelAA)) {
     return;
   }
 
   
   
-  MarkSkiaChanged(aOptions);
+  if (useSubpixelAA) {
+    
+    
+    MarkSkiaChanged();
+  } else {
+    MarkSkiaChanged(aOptions);
+  }
   mSkia->FillGlyphs(aFont, aBuffer, aPattern, aOptions);
 }
 
@@ -2324,9 +2391,11 @@ void DrawTargetWebgl::MarkSkiaChanged(const DrawOptions& aOptions) {
     
     if (!mSkiaValid) {
       
-      mSkia->Clear();
       mSkiaValid = true;
-      mSkiaLayer = true;
+      if (mWebglValid) {
+        mSkiaLayer = true;
+        mSkia->Clear();
+      }
     }
     
     mWebglValid = false;
@@ -2397,13 +2466,15 @@ bool DrawTargetWebgl::FlushFromSkia() {
       mWebglValid = false;
       return false;
     }
+    AutoRestoreContext restore(this);
     SurfacePattern pattern(skiaSnapshot, ExtendMode::CLAMP);
     
     
     if (!DrawRect(Rect(GetRect()), pattern,
                   DrawOptions(1.0f, mSkiaLayer ? CompositionOp::OP_OVER
                                                : CompositionOp::OP_SOURCE),
-                  Nothing(), &mSnapshotTexture, false, false, true, true)) {
+                  Nothing(), mSkiaLayer ? &mSnapshotTexture : nullptr, false,
+                  false, true, true)) {
       
       
       mWebglValid = false;
@@ -2414,32 +2485,53 @@ bool DrawTargetWebgl::FlushFromSkia() {
 }
 
 
-
-void DrawTargetWebgl::Flush() {
-  
-  if (!mWebglValid) {
-    FlushFromSkia();
+void DrawTargetWebgl::BeginFrame(const IntRect& aPersistedRect) {
+  if (mNeedsPresent) {
+    mNeedsPresent = false;
+    
+    
+    if (!mWebglValid) {
+      if (aPersistedRect.IsEmpty()) {
+        
+        mWebglValid = true;
+      } else {
+        FlushFromSkia();
+      }
+    }
   }
-  
-  mSharedContext->mWebgl->Present(mFramebuffer);
-  
-  mSharedContext->ClearTarget();
-  mSharedContext->ClearLastTexture();
+}
+
+
+void DrawTargetWebgl::EndFrame() {
   
   mSharedContext->PruneTextureMemory();
+  
+  mSharedContext->mWebgl->EndOfFrame();
+  
+  mNeedsPresent = true;
 }
 
 Maybe<layers::SurfaceDescriptor> DrawTargetWebgl::GetFrontBuffer() {
-  if (mSkiaValid && !mSkiaLayer) {
-    
-    
-    
+  
+  
+  
+  if (mSharedContext->mWebgl->GetTexTypeForSwapChain() ==
+      layers::TextureType::Unknown) {
     return Nothing();
   }
-  if (!mWebglValid) {
-    FlushFromSkia();
+  if (mNeedsPresent) {
+    mNeedsPresent = false;
+    if (mWebglValid || FlushFromSkia()) {
+      
+      webgl::SwapChainOptions options;
+      options.bgra = true;
+      mSharedContext->mWebgl->CopyToSwapChain(mFramebuffer, options);
+    }
   }
-  return mSharedContext->mWebgl->GetFrontBuffer(mFramebuffer);
+  if (mWebglValid) {
+    return mSharedContext->mWebgl->GetFrontBuffer(mFramebuffer);
+  }
+  return Nothing();
 }
 
 already_AddRefed<DrawTarget> DrawTargetWebgl::CreateSimilarDrawTarget(
