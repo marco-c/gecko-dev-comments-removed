@@ -184,13 +184,24 @@ async function verifyGmpContentSignature(data, contentSignatureHeader) {
     "@mozilla.org/security/contentsignatureverifier;1"
   ].createInstance(Ci.nsIContentSignatureVerifier);
 
+  
+  
+  let root = Ci.nsIContentSignatureVerifier.ContentSignatureProdRoot;
+  let env = Cc["@mozilla.org/process/environment;1"].getService(
+    Ci.nsIEnvironment
+  );
+  if (env.exists("XPCSHELL_TEST_PROFILE_DIR")) {
+    root = Ci.nsIX509CertDB.AppXPCShellRoot;
+  }
+
   let valid;
   try {
     valid = await verifier.asyncVerifyContentSignature(
       data,
       signature,
       certChain,
-      "aus.content-signature.mozilla.org"
+      "aus.content-signature.mozilla.org",
+      root
     );
   } catch (err) {
     logger.warn(`Unexpected error while validating content signature: ${err}`);

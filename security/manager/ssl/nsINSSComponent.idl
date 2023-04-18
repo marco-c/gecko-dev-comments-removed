@@ -40,12 +40,6 @@ interface nsINSSComponent : nsISupports {
 
 
 
-  [noscript] bool isCertContentSigningRoot(in Array<octet> cert);
-
-  
-
-
-
 
 
 

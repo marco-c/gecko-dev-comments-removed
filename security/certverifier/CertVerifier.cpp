@@ -8,10 +8,10 @@
 
 #include <stdint.h>
 
+#include "AppTrustDomain.h"
 #include "CTDiversityPolicy.h"
 #include "CTKnownLogs.h"
 #include "CTLogVerifier.h"
-#include "CSTrustDomain.h"
 #include "ExtendedValidation.h"
 #include "MultiLogCTVerifier.h"
 #include "NSSCertDBTrustDomain.h"
@@ -740,9 +740,10 @@ static bool CertIsSelfSigned(const BackCert& backCert, void* pinarg) {
     return false;
   }
 
-  nsTArray<nsTArray<uint8_t>> emptyCertList;
+  nsTArray<Span<const uint8_t>> emptyCertList;
   
-  mozilla::psm::CSTrustDomain trustDomain(emptyCertList);
+  
+  mozilla::psm::AppTrustDomain trustDomain(std::move(emptyCertList));
   Result rv = VerifySignedData(trustDomain, backCert.GetSignedData(),
                                backCert.GetSubjectPublicKeyInfo());
   return rv == Success;

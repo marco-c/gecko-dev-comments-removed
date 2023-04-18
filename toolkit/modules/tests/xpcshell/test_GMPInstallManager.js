@@ -530,9 +530,6 @@ add_task(async function test_checkForAddons_contentSignatureSuccess() {
 
   const xmlFetchResultHistogram = resetGmpTelemetryAndGetHistogram();
 
-  
-  setCertRoot("content_signing_root.pem");
-
   const testServerInfo = getTestServerForContentSignatureTests();
   Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, testServerInfo.validUpdateUri);
 
@@ -1251,42 +1248,6 @@ function readStringFromFile(file) {
 
 
 
-
-function setCertRoot(filename) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  function pemToBase64(pem) {
-    return pem
-      .replace(/-----BEGIN CERTIFICATE-----/, "")
-      .replace(/-----END CERTIFICATE-----/, "")
-      .replace(/[\r\n]/g, "");
-  }
-
-  let certBytes = readStringFromFile(do_get_file(filename));
-  let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
-    Ci.nsIX509CertDB
-  );
-  
-  let cert = certdb.constructX509FromBase64(pemToBase64(certBytes));
-  Services.prefs.setCharPref(
-    "security.content.signature.root_hash",
-    cert.sha256Fingerprint
-  );
-}
-
-
-
-
-
 function mockRequest(inputStatus, inputResponse, options) {
   this.inputStatus = inputStatus;
   this.inputResponse = inputResponse;
@@ -1569,7 +1530,6 @@ function getTestServerForContentSignatureTests() {
   const validCertChain = [
     readStringFromFile(do_get_file("content_signing_aus_ee.pem")),
     readStringFromFile(do_get_file("content_signing_int.pem")),
-    readStringFromFile(do_get_file("content_signing_root.pem")),
   ];
   testServer.registerPathHandler(validX5uPath, (req, res) => {
     res.write(validCertChain.join("\n"));
