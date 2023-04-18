@@ -529,6 +529,12 @@ void moz_container_wayland_set_scale_factor_locked(MozContainer* container) {
 
     LOGWAYLAND("%s [%p] scale %d\n", __FUNCTION__,
                (void*)moz_container_get_nsWindow(container), scale);
+    
+    
+    
+    
+    
+    wl_surface_attach(wl_container->surface, nullptr, 0, 0);
     wl_surface_set_buffer_scale(wl_container->surface, scale);
     wl_container->buffer_scale = scale;
   }
