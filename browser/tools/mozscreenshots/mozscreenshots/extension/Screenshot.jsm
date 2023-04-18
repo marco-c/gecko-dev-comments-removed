@@ -17,8 +17,7 @@ const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 const PREF_LOG_LEVEL = "extensions.mozscreenshots@mozilla.org.loglevel";
 XPCOMUtils.defineLazyGetter(this, "log", () => {
-  let ConsoleAPI = ChromeUtils.import("resource://gre/modules/Console.jsm", {})
-    .ConsoleAPI;
+  let { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
   let consoleOptions = {
     maxLogLevel: "info",
     maxLogLevelPref: PREF_LOG_LEVEL,

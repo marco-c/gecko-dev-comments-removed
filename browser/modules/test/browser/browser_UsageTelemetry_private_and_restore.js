@@ -120,10 +120,9 @@ add_task(async function test_sessionRestore() {
   };
 
   
-  let SessionStore = ChromeUtils.import(
-    "resource:///modules/sessionstore/SessionStore.jsm",
-    {}
-  ).SessionStore;
+  let { SessionStore } = ChromeUtils.import(
+    "resource:///modules/sessionstore/SessionStore.jsm"
+  );
 
   
   
