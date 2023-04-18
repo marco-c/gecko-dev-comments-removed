@@ -29,8 +29,6 @@ const SUPPORTED_OPTIONS = {
   
   customUserAgent: true,
   
-  isNewPerfPanelEnabled: true,
-  
   javascriptEnabled: true,
   
   overrideDPPX: true,

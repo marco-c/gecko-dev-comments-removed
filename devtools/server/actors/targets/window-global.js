@@ -313,9 +313,6 @@ const windowGlobalTargetPrototype = {
     
     this.watchNewDocShells = false;
 
-    
-    this._isNewPerfPanelEnabled = false;
-
     this._workerDescriptorActorList = null;
     this._workerDescriptorActorPool = null;
     this._onWorkerDescriptorActorListChanged = this._onWorkerDescriptorActorListChanged.bind(
@@ -906,20 +903,16 @@ const windowGlobalTargetPrototype = {
     
     
     
-    if (this._isNewPerfPanelEnabled) {
-      
-      
-      
-      const warningFlag = 1;
-      this.logInPage({
-        text:
-          "console.profile is not compatible with the new Performance recorder. " +
-          "The new Performance recorder can be disabled in the advanced section of the Settings panel. " +
-          "See https://bugzilla.mozilla.org/show_bug.cgi?id=1730896",
-        category: "console.profile unavailable",
-        flags: warningFlag,
-      });
-    }
+
+    
+    const warningFlag = 1;
+    this.logInPage({
+      text:
+        "console.profile is not compatible with the new Performance recorder. " +
+        "See https://bugzilla.mozilla.org/show_bug.cgi?id=1730896",
+      category: "console.profile unavailable",
+      flags: warningFlag,
+    });
   },
 
   observe(subject, topic, data) {
@@ -1313,10 +1306,6 @@ const windowGlobalTargetPrototype = {
       } else {
         this.touchSimulator.stop();
       }
-    }
-
-    if (typeof options.isNewPerfPanelEnabled == "boolean") {
-      this._isNewPerfPanelEnabled = options.isNewPerfPanelEnabled;
     }
 
     if (!this.isTopLevelTarget) {
