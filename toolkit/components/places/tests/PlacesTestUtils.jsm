@@ -513,6 +513,15 @@ var PlacesTestUtils = Object.freeze({
   
 
 
+  async clearInputHistory() {
+    await PlacesUtils.withConnectionWrapper("test:clearInputHistory", db => {
+      return db.executeCached("DELETE FROM moz_inputhistory");
+    });
+  },
+
+  
+
+
 
 
 

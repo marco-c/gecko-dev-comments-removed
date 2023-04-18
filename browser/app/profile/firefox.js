@@ -358,6 +358,13 @@ pref("browser.urlbar.accessibility.tabToSearch.announceResults", true);
 pref("browser.urlbar.autoFill", true);
 
 
+#ifdef NIGHTLY_BUILD
+pref("browser.urlbar.autoFill.adaptiveHistory.enabled", true);
+#else
+pref("browser.urlbar.autoFill.adaptiveHistory.enabled", false);
+#endif
+
+
 pref("browser.urlbar.speculativeConnect.enabled", true);
 
 

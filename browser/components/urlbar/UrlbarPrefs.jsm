@@ -47,6 +47,13 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["autoFill", true],
 
   
+  ["autoFill.adaptiveHistory.enabled", false],
+
+  
+  
+  ["autoFill.adaptiveHistory.useCountThreshold", [0.1, "float"]],
+
+  
   
   ["autoFill.searchEngines", false],
 
