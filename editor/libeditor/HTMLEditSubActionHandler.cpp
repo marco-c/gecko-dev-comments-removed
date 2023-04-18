@@ -1354,13 +1354,8 @@ EditActionResult HTMLEditor::HandleInsertText(
     
   }
 
-  DebugOnly<nsresult> rvIgnored =
-      SelectionRef().SetInterlinePosition(InterlinePosition::EndOfLine);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                       "Selection::SetInterlinePosition(InterlinePosition::"
-                       "EndOfLine) failed, but ignored");
-
   if (currentPoint.IsSet()) {
+    currentPoint.SetInterlinePosition(InterlinePosition::EndOfLine);
     nsresult rv = CollapseSelectionTo(currentPoint);
     if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
       NS_WARNING(
@@ -1369,17 +1364,20 @@ EditActionResult HTMLEditor::HandleInsertText(
     }
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "Selection::Collapse() failed, but ignored");
-  }
 
-  
-  
-  if (currentPoint.IsSet()) {
-    nsresult rv = TopLevelEditSubActionDataRef().mChangedRange->SetStartAndEnd(
+    
+    
+    rv = TopLevelEditSubActionDataRef().mChangedRange->SetStartAndEnd(
         pointToInsert.ToRawRangeBoundary(), currentPoint.ToRawRangeBoundary());
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "nsRange::SetStartAndEnd() failed");
     return EditActionHandled(rv);
   }
 
+  DebugOnly<nsresult> rvIgnored =
+      SelectionRef().SetInterlinePosition(InterlinePosition::EndOfLine);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                       "Selection::SetInterlinePosition(InterlinePosition::"
+                       "EndOfLine) failed, but ignored");
   rv = TopLevelEditSubActionDataRef().mChangedRange->CollapseTo(pointToInsert);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "nsRange::CollapseTo() failed");
   return EditActionHandled(rv);
@@ -1608,16 +1606,12 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
             "HTMLEditor::HandleInsertParagraphInMailCiteElement() failed");
         return EditActionHandled(atNewBRElementOrError.unwrapErr());
       }
-      MOZ_ASSERT(atNewBRElementOrError.inspect().IsSet());
-      DebugOnly<nsresult> rvIgnored = SelectionRef().SetInterlinePosition(
-          InterlinePosition::StartOfNextLine);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                           "Selection::SetInterlinePosition(InterlinePosition::"
-                           "StartOfNextLine) failed, but ignored");
-      MOZ_ASSERT(atNewBRElementOrError.inspect().GetChild());
-      MOZ_ASSERT(atNewBRElementOrError.inspect().GetChild()->IsHTMLElement(
-          nsGkAtoms::br));
-      nsresult rv = CollapseSelectionTo(atNewBRElementOrError.inspect());
+      EditorDOMPoint pointToPutCaret = atNewBRElementOrError.unwrap();
+      MOZ_ASSERT(pointToPutCaret.IsSet());
+      pointToPutCaret.SetInterlinePosition(InterlinePosition::StartOfNextLine);
+      MOZ_ASSERT(pointToPutCaret.GetChild());
+      MOZ_ASSERT(pointToPutCaret.GetChild()->IsHTMLElement(nsGkAtoms::br));
+      nsresult rv = CollapseSelectionTo(pointToPutCaret);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                            "EditorBase::CollapseSelectionTo() failed");
       return EditActionHandled(rv);
@@ -1984,12 +1978,8 @@ nsresult HTMLEditor::HandleInsertBRElement(const EditorDOMPoint& aPointToBreak,
     
     
     
-    DebugOnly<nsresult> rvIgnored =
-        SelectionRef().SetInterlinePosition(InterlinePosition::StartOfNextLine);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                         "Selection::SetInterlinePosition(InterlinePosition::"
-                         "StartOfNextLine) failed, but ignored");
-    nsresult rv = CollapseSelectionTo(EditorRawDOMPoint(brElement));
+    nsresult rv = CollapseSelectionTo(
+        EditorRawDOMPoint(brElement, InterlinePosition::StartOfNextLine));
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "EditorBase::CollapseSelectionTo() failed");
     return rv;
@@ -2036,13 +2026,11 @@ nsresult HTMLEditor::HandleInsertBRElement(const EditorDOMPoint& aPointToBreak,
   
   
   nsIContent* nextSiblingOfBRElement = brElement->GetNextSibling();
-  DebugOnly<nsresult> rvIgnored = SelectionRef().SetInterlinePosition(
+  afterBRElement.SetInterlinePosition(
       nextSiblingOfBRElement &&
               HTMLEditUtils::IsBlockElement(*nextSiblingOfBRElement)
           ? InterlinePosition::EndOfLine
           : InterlinePosition::StartOfNextLine);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                       "Selection::SetInterlinePosition() failed, but ignored");
   nsresult rv = CollapseSelectionTo(afterBRElement);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::CollapseSelectionTo() failed");
@@ -2151,29 +2139,35 @@ nsresult HTMLEditor::HandleInsertLinefeed(const EditorDOMPoint& aPointToBreak,
     }
   }
 
-  DebugOnly<nsresult> rvIgnored =
-      SelectionRef().SetInterlinePosition(InterlinePosition::EndOfLine);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                       "Selection::SetInterlinePosition(InterlinePosition::"
-                       "EndOfLine) failed, but ignored");
-
   
   
-  if (!caretAfterInsert.IsSet()) {
+  
+  if (NS_WARN_IF(!caretAfterInsert.IsSet())) {
+    DebugOnly<nsresult> rvIgnored =
+        SelectionRef().SetInterlinePosition(InterlinePosition::EndOfLine);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "Selection::SetInterlinePosition(InterlinePosition::"
+                         "EndOfLine) failed, but ignored");
     if (NS_FAILED(TopLevelEditSubActionDataRef().mChangedRange->CollapseTo(
             pointToInsert))) {
       NS_WARNING("nsRange::CollapseTo() failed");
       return NS_ERROR_FAILURE;
     }
+    
+    
+    
+    return NS_ERROR_FAILURE;
   }
 
-  if (NS_FAILED(TopLevelEditSubActionDataRef().mChangedRange->SetStartAndEnd(
-          pointToInsert.ToRawRangeBoundary(),
-          caretAfterInsert.ToRawRangeBoundary()))) {
+  if (MOZ_UNLIKELY(NS_FAILED(
+          TopLevelEditSubActionDataRef().mChangedRange->SetStartAndEnd(
+              pointToInsert.ToRawRangeBoundary(),
+              caretAfterInsert.ToRawRangeBoundary())))) {
     NS_WARNING("nsRange::SetStartAndEnd() failed");
     return NS_ERROR_FAILURE;
   }
 
+  caretAfterInsert.SetInterlinePosition(InterlinePosition::EndOfLine);
   rv = CollapseSelectionTo(caretAfterInsert);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::CollapseSelectionTo() failed");
@@ -8790,15 +8784,10 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
               "failed");
           return createPaddingBRResult.Rv();
         }
-        point.Set(createPaddingBRResult.GetNewNode());
         
         
-        DebugOnly<nsresult> rvIgnored = SelectionRef().SetInterlinePosition(
-            InterlinePosition::StartOfNextLine);
-        NS_WARNING_ASSERTION(
-            NS_SUCCEEDED(rvIgnored),
-            "Selection::SetInterlinePosition(InterlinePosition::"
-            "StartOfNextLine) failed, but ignored");
+        point = EditorDOMPoint(createPaddingBRResult.GetNewNode(),
+                               InterlinePosition::StartOfNextLine);
         nsresult rv = CollapseSelectionTo(point);
         if (MOZ_UNLIKELY(NS_FAILED(rv))) {
           NS_WARNING("EditorBase::CollapseSelectionTo() failed");

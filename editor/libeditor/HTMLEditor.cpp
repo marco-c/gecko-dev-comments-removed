@@ -3692,16 +3692,10 @@ Result<RefPtr<Element>, nsresult> HTMLEditor::InsertBRElement(
     case eNone:
       break;
     case eNext: {
-      if (MOZ_UNLIKELY(NS_FAILED(SelectionRef().SetInterlinePosition(
-              InterlinePosition::StartOfNextLine)))) {
-        NS_WARNING("Selection::SetInterlinePosition(true) failed");
-        
-        return Err(NS_ERROR_FAILURE);
-      }
       
-      EditorRawDOMPoint afterBRElement(
-          EditorRawDOMPoint::After(*maybeNewBRElement.inspect()));
-      if (!afterBRElement.IsSet()) {
+      const auto afterBRElement = EditorRawDOMPoint::After(
+          *maybeNewBRElement.inspect(), InterlinePosition::StartOfNextLine);
+      if (MOZ_UNLIKELY(!afterBRElement.IsSet())) {
         NS_WARNING("Setting point to after <br> element failed");
         return Err(NS_ERROR_FAILURE);
       }
@@ -3713,15 +3707,10 @@ Result<RefPtr<Element>, nsresult> HTMLEditor::InsertBRElement(
       break;
     }
     case ePrevious: {
-      if (MOZ_UNLIKELY(NS_FAILED(SelectionRef().SetInterlinePosition(
-              InterlinePosition::StartOfNextLine)))) {
-        NS_WARNING("Selection::SetInterlinePosition(true) failed");
-        
-        return Err(NS_ERROR_FAILURE);
-      }
       
-      EditorRawDOMPoint atBRElement(maybeNewBRElement.inspect());
-      if (!atBRElement.IsSet()) {
+      EditorRawDOMPoint atBRElement(maybeNewBRElement.inspect(),
+                                    InterlinePosition::StartOfNextLine);
+      if (MOZ_UNLIKELY(!atBRElement.IsSet())) {
         NS_WARNING("Setting point to at <br> element failed");
         return Err(NS_ERROR_FAILURE);
       }
