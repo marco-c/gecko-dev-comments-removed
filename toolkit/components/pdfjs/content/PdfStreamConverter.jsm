@@ -357,7 +357,15 @@ class ChromeActions {
 
     
     
-    if (data.sourceEventType == "save") {
+    const saveOnDownload = getBoolPref(
+      "browser.download.improvements_to_download_panel",
+      false
+    );
+
+    if (
+      data.sourceEventType == "save" ||
+      (saveOnDownload && data.sourceEventType == "download")
+    ) {
       let actor = getActor(this.domWindow);
       actor.sendAsyncMessage("PDFJS:Parent:saveURL", {
         blobUrl,
