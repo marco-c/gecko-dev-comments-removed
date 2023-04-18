@@ -78,3 +78,10 @@ user_pref("browser.topsites.contile.enabled", false);
 
 
 user_pref("telemetry.fog.test.localhost_port", -1);
+
+
+
+
+
+
+user_pref("widget.gtk.overlay-scrollbars.enabled", false);
