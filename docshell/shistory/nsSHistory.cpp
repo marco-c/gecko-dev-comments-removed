@@ -137,22 +137,6 @@ extern mozilla::LazyLogModule gSHIPBFCacheLog;
 #define NOTIFY_LISTENERS(method, args) \
   ITERATE_LISTENERS(listener->method args;);
 
-
-
-
-#define NOTIFY_LISTENERS_CANCELABLE(method, retval, args)                     \
-  PR_BEGIN_MACRO {                                                            \
-    bool canceled = false;                                                    \
-    (retval) = true;                                                          \
-    ITERATE_LISTENERS(if (NS_SUCCEEDED(listener->method args) && !(retval)) { \
-      canceled = true;                                                        \
-    });                                                                       \
-    if (canceled) {                                                           \
-      (retval) = false;                                                       \
-    }                                                                         \
-  }                                                                           \
-  PR_END_MACRO
-
 class MOZ_STACK_CLASS SHistoryChangeNotifier {
  public:
   explicit SHistoryChangeNotifier(nsSHistory* aHistory) {
@@ -1149,9 +1133,24 @@ nsSHistory::ReplaceEntry(int32_t aIndex, nsISHEntry* aReplaceEntry) {
   return NS_OK;
 }
 
+
+
+
 NS_IMETHODIMP
 nsSHistory::NotifyOnHistoryReload(bool* aCanReload) {
-  NOTIFY_LISTENERS_CANCELABLE(OnHistoryReload, *aCanReload, (aCanReload));
+  *aCanReload = true;
+
+  for (const nsWeakPtr& weakPtr : mListeners.EndLimitedRange()) {
+    nsCOMPtr<nsISHistoryListener> listener = do_QueryReferent(weakPtr);
+    if (listener) {
+      bool retval = true;
+
+      if (NS_SUCCEEDED(listener->OnHistoryReload(&retval)) && !retval) {
+        *aCanReload = false;
+      }
+    }
+  }
+
   return NS_OK;
 }
 
@@ -1413,7 +1412,7 @@ nsresult nsSHistory::Reload(uint32_t aReloadFlags,
   
   
   bool canNavigate = true;
-  NOTIFY_LISTENERS_CANCELABLE(OnHistoryReload, canNavigate, (&canNavigate));
+  MOZ_ALWAYS_SUCCEEDS(NotifyOnHistoryReload(&canNavigate));
   if (!canNavigate) {
     return NS_OK;
   }
