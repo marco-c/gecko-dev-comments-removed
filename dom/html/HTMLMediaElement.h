@@ -86,8 +86,7 @@ class nsISerialEventTarget;
 class nsITimer;
 class nsRange;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 #define TIMEUPDATE_MS 250
@@ -1935,7 +1934,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 bool HasDebuggerOrTabsPrivilege(JSContext* aCx, JSObject* aObj);
 
-}  
 }  
 
 #endif  

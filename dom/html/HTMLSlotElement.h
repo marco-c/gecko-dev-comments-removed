@@ -11,8 +11,7 @@
 #include "nsTArray.h"
 #include "mozilla/dom/HTMLSlotElementBinding.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class HTMLSlotElement final : public nsGenericHTMLElement {
  public:
@@ -87,7 +86,6 @@ class HTMLSlotElement final : public nsGenericHTMLElement {
   bool mInManualShadowRoot = false;
 };
 
-}  
 }  
 
 #endif  

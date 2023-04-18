@@ -10,8 +10,7 @@
 #include "mozilla/Attributes.h"
 #include "nsGenericHTMLElement.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class HTMLDetailsElement;
 
 
@@ -51,7 +50,6 @@ class HTMLSummaryElement final : public nsGenericHTMLElement {
                      JS::Handle<JSObject*> aGivenProto) override;
 };
 
-}  
 }  
 
 #endif 
