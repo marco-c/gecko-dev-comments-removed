@@ -195,23 +195,43 @@ static HMODULE GetContainingModuleHandle() {
   return thisModule;
 }
 
+static uint16_t sActCtxResourceId = 0;
+
+
+void ActCtxResource::SetAccessibilityResourceId(uint16_t aResourceId) {
+  sActCtxResourceId = aResourceId;
+}
+
+
+uint16_t ActCtxResource::GetAccessibilityResourceId() {
+  return sActCtxResourceId;
+}
+
+static void EnsureAccessibilityResourceId() {
+  if (!sActCtxResourceId) {
+#if defined(HAVE_64BIT_BUILD)
+    
+    sActCtxResourceId = 64;
+#else
+    
+    
+    
+    
+    
+    if (mozilla::IsWin10CreatorsUpdateOrLater() || UseIAccessibleProxyStub()) {
+      sActCtxResourceId = 64;
+    } else {
+      sActCtxResourceId = 32;
+    }
+#endif  
+  }
+}
+
 ActCtxResource ActCtxResource::GetAccessibilityResource() {
   ActCtxResource result = {};
   result.mModule = GetContainingModuleHandle();
-#if defined(HAVE_64BIT_BUILD)
-  
-  result.mId = 64;
-#else
-  
-  
-  
-  
-  if (mozilla::IsWin10CreatorsUpdateOrLater() || UseIAccessibleProxyStub()) {
-    result.mId = 64;
-  } else {
-    result.mId = 32;
-  }
-#endif  
+  EnsureAccessibilityResourceId();
+  result.mId = GetAccessibilityResourceId();
   return result;
 }
 
