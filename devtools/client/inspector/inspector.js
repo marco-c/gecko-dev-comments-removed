@@ -914,9 +914,39 @@ Inspector.prototype = {
     this.toolbox.emit("inspector-sidebar-resized", { width, height });
   },
 
+  
+
+
+  getActiveSidebar: function() {
+    return Services.prefs.getCharPref("devtools.inspector.activeSidebar");
+  },
+
+  setActiveSidebar: function(toolId) {
+    Services.prefs.setCharPref("devtools.inspector.activeSidebar", toolId);
+  },
+
+  
+
+
+  getSelectedSidebar: function() {
+    const pref = "devtools.inspector.selectedSidebar";
+    
+    
+    if (!Services.prefs.prefHasUserValue(pref)) {
+      return this.getActiveSidebar();
+    }
+
+    return Services.prefs.getCharPref(pref);
+  },
+
+  setSelectedSidebar: function(toolId) {
+    Services.prefs.setCharPref("devtools.inspector.selectedSidebar", toolId);
+  },
+
   onSidebarSelect: function(toolId) {
     
-    Services.prefs.setCharPref("devtools.inspector.activeSidebar", toolId);
+    this.setSelectedSidebar(toolId);
+    this.setActiveSidebar(toolId);
 
     
     
@@ -1000,12 +1030,8 @@ Inspector.prototype = {
 
 
 
-
-
-
-
-
-  addRuleView({ defaultTab = "ruleview", skipQueue = false } = {}) {
+  addRuleView({ skipQueue = false } = {}) {
+    const selectedSidebar = this.getSelectedSidebar();
     const ruleViewSidebar = this.sidebarSplitBoxRef.current.startPanelContainer;
 
     if (this.is3PaneModeEnabled) {
@@ -1020,6 +1046,7 @@ Inspector.prototype = {
       this.getPanel("ruleview");
 
       this.sidebar.removeTab("ruleview");
+      this.sidebar.select(selectedSidebar);
 
       this.ruleViewSideBar.addExistingTab(
         "ruleview",
@@ -1029,6 +1056,8 @@ Inspector.prototype = {
 
       this.ruleViewSideBar.show();
     } else {
+      
+      this.setActiveSidebar("ruleview");
       
       
       ruleViewSidebar.style.display = "none";
@@ -1059,18 +1088,22 @@ Inspector.prototype = {
         this.sidebar.addExistingTab(
           "ruleview",
           INSPECTOR_L10N.getStr("inspector.sidebar.ruleViewTitle"),
-          defaultTab == "ruleview",
+          true,
           0
         );
       } else {
         this.sidebar.queueExistingTab(
           "ruleview",
           INSPECTOR_L10N.getStr("inspector.sidebar.ruleViewTitle"),
-          defaultTab == "ruleview",
+          true,
           0
         );
       }
     }
+
+    
+    
+    this.setSelectedSidebar(selectedSidebar);
 
     this.emit("ruleview-added");
   },
@@ -1179,18 +1212,7 @@ Inspector.prototype = {
     });
 
     
-    
-    let defaultTab = Services.prefs.getCharPref(
-      "devtools.inspector.activeSidebar"
-    );
-
-    if (this.is3PaneModeEnabled && defaultTab === "ruleview") {
-      defaultTab = "layoutview";
-    }
-
-    
-
-    this.addRuleView({ defaultTab });
+    this.addRuleView();
 
     
     const sidebarPanels = [];
@@ -1229,6 +1251,8 @@ Inspector.prototype = {
       id: "animationinspector",
       title: INSPECTOR_L10N.getStr("inspector.sidebar.animationInspectorTitle"),
     });
+
+    const defaultTab = this.getActiveSidebar();
 
     for (const { id, title } of sidebarPanels) {
       

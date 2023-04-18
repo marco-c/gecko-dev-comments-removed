@@ -2273,6 +2273,7 @@ pref("devtools.command-button-errorcount.enabled", true);
 
 pref("devtools.inspector.enabled", true);
 
+pref("devtools.inspector.selectedSidebar", "layoutview");
 pref("devtools.inspector.activeSidebar", "layoutview");
 pref("devtools.inspector.remote", false);
 
