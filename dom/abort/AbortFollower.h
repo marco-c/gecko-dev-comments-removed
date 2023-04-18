@@ -24,8 +24,13 @@ class AbortFollower : public nsISupports {
  public:
   virtual void RunAbortAlgorithm() = 0;
 
+  
+  
+  
   void Follow(AbortSignalImpl* aSignal);
 
+  
+  
   void Unfollow();
 
   bool IsFollowing() const;
@@ -63,7 +68,7 @@ class AbortSignalImpl : public nsISupports, public SupportsWeakPtr {
 
   static void Unlink(AbortSignalImpl* aSignal);
 
-  virtual ~AbortSignalImpl() = default;
+  virtual ~AbortSignalImpl() { UnlinkFollowers(); }
 
   JS::Heap<JS::Value> mReason;
 
@@ -72,11 +77,13 @@ class AbortSignalImpl : public nsISupports, public SupportsWeakPtr {
 
   void MaybeAssignAbortError(JSContext* aCx);
 
+  void UnlinkFollowers();
+
   
   
   
   
-  nsTObserverArray<AbortFollower*> mFollowers;
+  nsTObserverArray<RefPtr<AbortFollower>> mFollowers;
 
   bool mAborted;
 };
