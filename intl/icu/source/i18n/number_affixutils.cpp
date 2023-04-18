@@ -136,7 +136,7 @@ Field AffixUtils::getFieldForType(AffixPatternType type) {
             return {UFIELD_CATEGORY_NUMBER, UNUM_SIGN_FIELD};
         case TYPE_APPROXIMATELY_SIGN:
             
-            return {UFIELD_CATEGORY_NUMBER, UNUM_SIGN_FIELD};
+            return {UFIELD_CATEGORY_NUMBER, UNUM_APPROXIMATELY_SIGN_FIELD};
         case TYPE_PERCENT:
             return {UFIELD_CATEGORY_NUMBER, UNUM_PERCENT_FIELD};
         case TYPE_PERMILLE:

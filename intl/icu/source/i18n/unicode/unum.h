@@ -402,12 +402,14 @@ typedef enum UNumberFormatFields {
     
     UNUM_COMPACT_FIELD,
 
+    UNUM_APPROXIMATELY_SIGN_FIELD,
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    UNUM_FIELD_COUNT = UNUM_SIGN_FIELD + 3
+    UNUM_FIELD_COUNT = UNUM_SIGN_FIELD + 4
 #endif  
 } UNumberFormatFields;
 
