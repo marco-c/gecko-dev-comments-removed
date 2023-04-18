@@ -2329,7 +2329,7 @@ already_AddRefed<ComputedStyle> nsIFrame::ComputeSelectionStyle(
   
   
   
-  if (!PresContext()->PrefSheetPrefs().mUseDocumentColors) {
+  if (PresContext()->ForcingColors()) {
     return nullptr;
   }
   Element* element = FindElementAncestorForMozSelection(GetContent());

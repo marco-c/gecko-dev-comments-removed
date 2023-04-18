@@ -494,7 +494,7 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       
       
       
-      if (!PresContext()->PrefSheetPrefs().mUseDocumentColors &&
+      if (PresContext()->ForcingColors() &&
           StaticPrefs::
               browser_display_suppress_canvas_background_image_on_forced_colors()) {
         return true;

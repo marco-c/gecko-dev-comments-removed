@@ -7024,8 +7024,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   
   if (StaticPrefs::browser_display_permit_backplate() &&
-      !PresContext()->PrefSheetPrefs().mUseDocumentColors &&
-      !IsComboboxControlFrame()) {
+      PresContext()->ForcingColors() && !IsComboboxControlFrame()) {
     backplateColor.emplace(GetBackplateColor(this));
   }
 

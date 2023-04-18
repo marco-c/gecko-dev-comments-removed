@@ -1121,6 +1121,27 @@ void LookAndFeel::RecomputeColorSchemes() {
 
 ColorScheme LookAndFeel::ColorSchemeForStyle(
     const dom::Document& aDoc, const StyleColorSchemeFlags& aFlags) {
+  if (PreferenceSheet::MayForceColors()) {
+    auto& prefs = PreferenceSheet::PrefsFor(aDoc);
+    if (!prefs.mUseDocumentColors) {
+      
+      
+      
+      
+      
+      
+#ifdef XP_WIN
+      if (prefs.mUseAccessibilityTheme) {
+        return ColorScheme::Light;
+      }
+#endif
+      if (StaticPrefs::browser_display_use_system_colors()) {
+        return aDoc.PreferredColorScheme();
+      }
+      return ColorScheme::Light;
+    }
+  }
+
   StyleColorSchemeFlags style(aFlags);
   if (!style) {
     style.bits = aDoc.GetColorSchemeBits();
