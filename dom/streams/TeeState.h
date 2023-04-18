@@ -16,6 +16,9 @@
 
 namespace mozilla::dom {
 
+class ReadableStreamDefaultTeePullAlgorithm;
+
+
 
 
 struct TeeState : public nsISupports {
@@ -32,6 +35,9 @@ struct TeeState : public nsISupports {
 
   ReadableStreamDefaultReader* GetReader() const { return mReader; }
   void SetReader(ReadableStreamDefaultReader* aReader) { mReader = aReader; }
+
+  bool ReadAgain() const { return mReadAgain; }
+  void SetReadAgain(bool aReadAgain) { mReadAgain = aReadAgain; }
 
   bool Reading() const { return mReading; }
   void SetReading(bool aReading) { mReading = aReading; }
@@ -68,6 +74,11 @@ struct TeeState : public nsISupports {
     mCloneForBranch2 = aCloneForBranch2;
   }
 
+  void SetPullAlgorithm(ReadableStreamDefaultTeePullAlgorithm* aPullAlgorithm);
+  ReadableStreamDefaultTeePullAlgorithm* PullAlgorithm() {
+    return mPullAlgorithm;
+  }
+
  private:
   TeeState(JSContext* aCx, ReadableStream* aStream, bool aCloneForBranch2);
 
@@ -79,6 +90,9 @@ struct TeeState : public nsISupports {
 
   
   bool mReading = false;
+
+  
+  bool mReadAgain = false;
 
   
   bool mCanceled1 = false;
@@ -103,6 +117,9 @@ struct TeeState : public nsISupports {
 
   
   bool mCloneForBranch2 = false;
+
+  
+  RefPtr<ReadableStreamDefaultTeePullAlgorithm> mPullAlgorithm;
 
   virtual ~TeeState() { mozilla::DropJSObjects(this); }
 };

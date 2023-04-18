@@ -33,15 +33,17 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ReadableStreamDefaultTeePullAlgorithm)
 NS_INTERFACE_MAP_END_INHERITING(UnderlyingSourcePullCallbackHelper)
 
 already_AddRefed<Promise> ReadableStreamDefaultTeePullAlgorithm::PullCallback(
-    JSContext* aCx, ReadableStreamDefaultController& aController,
-    ErrorResult& aRv) {
+    JSContext* aCx, nsIGlobalObject* aGlobal, ErrorResult& aRv) {
   
   
 
   
   if (mTeeState->Reading()) {
-    return Promise::CreateResolvedWithUndefined(aController.GetParentObject(),
-                                                aRv);
+    
+    mTeeState->SetReadAgain(true);
+
+    
+    return Promise::CreateResolvedWithUndefined(aGlobal, aRv);
   }
 
   
@@ -59,8 +61,7 @@ already_AddRefed<Promise> ReadableStreamDefaultTeePullAlgorithm::PullCallback(
   }
 
   
-  return Promise::CreateResolvedWithUndefined(aController.GetParentObject(),
-                                              aRv);
+  return Promise::CreateResolvedWithUndefined(aGlobal, aRv);
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(ReadableStreamDefaultTeeReadRequest)
@@ -105,7 +106,7 @@ void ReadableStreamDefaultTeeReadRequest::ChunkSteps(
       
       
       
-      mTeeState->SetReading(false);
+      mTeeState->SetReadAgain(false);
 
       
       JS::RootedValue chunk1(cx, mChunk);
@@ -129,6 +130,24 @@ void ReadableStreamDefaultTeeReadRequest::ChunkSteps(
         RefPtr<ReadableStreamDefaultController> controller(
             mTeeState->Branch2()->Controller());
         ReadableStreamDefaultControllerEnqueue(cx, controller, chunk2, rv);
+        (void)NS_WARN_IF(rv.Failed());
+      }
+
+      
+      mTeeState->SetReading(false);
+
+      
+      if (mTeeState->ReadAgain()) {
+        RefPtr<ReadableStreamDefaultTeePullAlgorithm> pullAlgorithm(
+            mTeeState->PullAlgorithm());
+        IgnoredErrorResult rv;
+        nsCOMPtr<nsIGlobalObject> global(
+            mTeeState->GetStream()->GetParentObject());
+        
+        
+        
+        RefPtr<Promise> ignoredPromise =
+            pullAlgorithm->PullCallback(cx, global, rv);
         (void)NS_WARN_IF(rv.Failed());
       }
     }
