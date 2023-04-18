@@ -32,8 +32,6 @@ user_pref("dom.ipc.processPriorityManager.enabled", false);
 
 user_pref("idle.lastDailyNotification", -1);
 
-user_pref("network.cookie.sameSite.laxByDefault", false);
-
 user_pref("gfx.color_management.force_srgb", true);
 user_pref("gfx.color_management.mode", 1);
 
