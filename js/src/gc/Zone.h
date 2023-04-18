@@ -37,6 +37,7 @@ class JitZone;
 
 namespace gc {
 
+class FinalizationRegistryZone;
 class ZoneList;
 
 using ZoneComponentFinder = ComponentFinder<JS::Zone>;
@@ -56,9 +57,6 @@ class ZoneAllCellIter;
 
 template <typename T>
 class ZoneCellIter;
-
-
-using FinalizationRecordVector = GCVector<HeapPtrObject, 1, ZoneAllocPolicy>;
 
 }  
 
@@ -289,18 +287,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::ZoneData<js::ShapeZone> shapeZone_;
 
   
-  using FinalizationRegistrySet =
-      GCHashSet<js::HeapPtrObject, js::MovableCellHasher<js::HeapPtrObject>,
-                js::ZoneAllocPolicy>;
-  js::ZoneOrGCTaskData<FinalizationRegistrySet> finalizationRegistries_;
-
-  
-  
-  
-  using FinalizationRecordMap =
-      GCHashMap<js::HeapPtrObject, js::gc::FinalizationRecordVector,
-                js::MovableCellHasher<js::HeapPtrObject>, js::ZoneAllocPolicy>;
-  js::ZoneOrGCTaskData<FinalizationRecordMap> finalizationRecordMap_;
+  js::ZoneOrGCTaskData<js::UniquePtr<js::gc::FinalizationRegistryZone>>
+      finalizationRegistryZone_;
 
   js::ZoneOrGCTaskData<js::jit::JitZone*> jitZone_;
 
@@ -636,13 +624,10 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   void sweepEphemeronTablesAfterMinorGC();
 
-  FinalizationRegistrySet& finalizationRegistries() {
-    return finalizationRegistries_.ref();
+  js::gc::FinalizationRegistryZone* finalizationRegistryZone() {
+    return finalizationRegistryZone_.ref().get();
   }
-
-  FinalizationRecordMap& finalizationRecordMap() {
-    return finalizationRecordMap_.ref();
-  }
+  bool ensureFinalizationRegistryZone();
 
   bool isOnList() const;
   Zone* nextZone() const;
