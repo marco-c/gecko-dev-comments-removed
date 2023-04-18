@@ -8,8 +8,10 @@
 
 "use strict";
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "AsyncShutdown",
   "resource://gre/modules/AsyncShutdown.jsm"
 );
@@ -237,7 +239,7 @@ function nsAsyncShutdownService() {
       configurable: true,
       get() {
         delete this[k];
-        let wrapped = AsyncShutdown[k]; 
+        let wrapped = lazy.AsyncShutdown[k]; 
         let result = wrapped ? new nsAsyncShutdownClient(wrapped) : undefined;
         Object.defineProperty(this, k, {
           value: result,
@@ -254,7 +256,7 @@ function nsAsyncShutdownService() {
 }
 nsAsyncShutdownService.prototype = {
   makeBarrier(name) {
-    return new nsAsyncShutdownBarrier(new AsyncShutdown.Barrier(name));
+    return new nsAsyncShutdownBarrier(new lazy.AsyncShutdown.Barrier(name));
   },
 
   QueryInterface: ChromeUtils.generateQI(["nsIAsyncShutdownService"]),
