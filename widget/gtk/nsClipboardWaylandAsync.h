@@ -32,8 +32,8 @@ class nsRetrievalContextWaylandAsync : public nsRetrievalContext {
 
   
   
-  virtual GdkAtom* GetTargets(int32_t aWhichClipboard,
-                              int* aTargetNum) override;
+  virtual GdkAtom* GetTargetsImpl(int32_t aWhichClipboard,
+                                  int* aTargetNum) override;
 
   void TransferAsyncClipboardData(ClipboardDataType aDataType,
                                   int aClipboardRequestNumber,

@@ -42,12 +42,31 @@ class nsRetrievalContext {
 
   
   
-  virtual GdkAtom* GetTargets(int32_t aWhichClipboard, int* aTargetNum) = 0;
+  GdkAtom* GetTargets(int32_t aWhichClipboard, int* aTargetNum);
+
+  virtual GdkAtom* GetTargetsImpl(int32_t aWhichClipboard, int* aTargetNum) = 0;
 
   virtual bool HasSelectionSupport(void) = 0;
 
+  
+  void ClipboardOwnerChanged();
+  void PrimaryOwnerChanged();
+
+  GdkAtom* GetStoredTargets(int32_t aWhichClipboard, int* aTargetNum);
+  void StoreTargets(int32_t aWhichClipboard, GdkAtom* aTargets, int aTargetNum);
+
+  nsRetrievalContext();
+
  protected:
-  virtual ~nsRetrievalContext() = default;
+  virtual ~nsRetrievalContext();
+
+ private:
+  
+  GdkAtom* mTargets = nullptr;
+  int mTargetNum = 0;
+
+  GdkAtom* mTargetsPrimary = nullptr;
+  int mTargetPrimaryNum = 0;
 };
 
 class nsClipboard : public nsIClipboard, public nsIObserver {
