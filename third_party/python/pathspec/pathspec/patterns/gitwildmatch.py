@@ -8,14 +8,6 @@ from __future__ import unicode_literals
 
 import re
 import warnings
-try:
-	from typing import (
-		AnyStr,
-		Optional,
-		Text,
-		Tuple)
-except ImportError:
-	pass
 
 from .. import util
 from ..compat import unicode
@@ -23,14 +15,6 @@ from ..pattern import RegexPattern
 
 
 _BYTES_ENCODING = 'latin1'
-
-
-class GitWildMatchPatternError(ValueError):
-	"""
-	The :class:`GitWildMatchPatternError` indicates an invalid git wild match
-	pattern.
-	"""
-	pass
 
 
 class GitWildMatchPattern(RegexPattern):
@@ -44,7 +28,6 @@ class GitWildMatchPattern(RegexPattern):
 
 	@classmethod
 	def pattern_to_regex(cls, pattern):
-		
 		"""
 		Convert the pattern into a regular expression.
 
@@ -64,7 +47,6 @@ class GitWildMatchPattern(RegexPattern):
 		else:
 			raise TypeError("pattern:{!r} is not a unicode or byte string.".format(pattern))
 
-		original_pattern = pattern
 		pattern = pattern.strip()
 
 		if pattern.startswith('#'):
@@ -81,6 +63,7 @@ class GitWildMatchPattern(RegexPattern):
 			include = None
 
 		elif pattern:
+
 			if pattern.startswith('!'):
 				
 				
@@ -98,29 +81,9 @@ class GitWildMatchPattern(RegexPattern):
 				pattern = pattern[1:]
 
 			
-			
-			override_regex = None
-
-			
 			pattern_segs = pattern.split('/')
 
 			
-
-			
-			
-			
-			
-			for i in range(len(pattern_segs) - 1, 0, -1):
-				prev = pattern_segs[i-1]
-				seg = pattern_segs[i]
-				if prev == '**' and seg == '**':
-					del pattern_segs[i]
-
-			if len(pattern_segs) == 2 and pattern_segs[0] == '**' and not pattern_segs[1]:
-				
-				
-				
-				override_regex = '^.+/.*$'
 
 			if not pattern_segs[0]:
 				
@@ -146,75 +109,58 @@ class GitWildMatchPattern(RegexPattern):
 				
 				pass
 
-			if not pattern_segs:
-				
-				
-				
-				raise GitWildMatchPatternError("Invalid git pattern: %r" % (original_pattern,))
-
 			if not pattern_segs[-1] and len(pattern_segs) > 1:
-				
 				
 				
 				
 				
 				pattern_segs[-1] = '**'
 
-			if override_regex is None:
-				
-				output = ['^']
-				need_slash = False
-				end = len(pattern_segs) - 1
-				for i, seg in enumerate(pattern_segs):
-					if seg == '**':
-						if i == 0 and i == end:
-							
-							
-							output.append('.+')
-						elif i == 0:
-							
-							
-							output.append('(?:.+/)?')
-							need_slash = False
-						elif i == end:
-							
-							
-							output.append('/.*')
-						else:
-							
-							
-							output.append('(?:/.+)?')
-							need_slash = True
-
-					elif seg == '*':
+			
+			output = ['^']
+			need_slash = False
+			end = len(pattern_segs) - 1
+			for i, seg in enumerate(pattern_segs):
+				if seg == '**':
+					if i == 0 and i == end:
 						
-						if need_slash:
-							output.append('/')
-						output.append('[^/]+')
-						need_slash = True
-
+						
+						output.append('.+')
+					elif i == 0:
+						
+						
+						output.append('(?:.+/)?')
+						need_slash = False
+					elif i == end:
+						
+						
+						output.append('/.*')
 					else:
 						
-						if need_slash:
-							output.append('/')
-
-						output.append(cls._translate_segment_glob(seg))
-						if i == end and include is True:
-							
-							
-							
-							
-							
-							output.append('(?:/.*)?')
-
+						
+						output.append('(?:/.+)?')
 						need_slash = True
-
-				output.append('$')
-				regex = ''.join(output)
-
-			else:
-				
-				regex = override_regex
+				elif seg == '*':
+					
+					if need_slash:
+						output.append('/')
+					output.append('[^/]+')
+					need_slash = True
+				else:
+					
+					if need_slash:
+						output.append('/')
+					output.append(cls._translate_segment_glob(seg))
+					if i == end and include is True:
+						
+						
+						
+						
+						
+						output.append('(?:/.*)?')
+					need_slash = True
+			output.append('$')
+			regex = ''.join(output)
 
 		else:
 			
@@ -229,7 +175,6 @@ class GitWildMatchPattern(RegexPattern):
 
 	@staticmethod
 	def _translate_segment_glob(pattern):
-		
 		"""
 		Translates the glob pattern to a regular expression. This is used in
 		the constructor to translate a path segment glob pattern to its
@@ -336,33 +281,18 @@ class GitWildMatchPattern(RegexPattern):
 
 	@staticmethod
 	def escape(s):
-		
 		"""
 		Escape special characters in the given string.
 
 		*s* (:class:`unicode` or :class:`bytes`) a filename or a string
 		that you want to escape, usually before adding it to a `.gitignore`
 
-		Returns the escaped string (:class:`unicode` or :class:`bytes`)
+		Returns the escaped string (:class:`unicode`, :class:`bytes`)
 		"""
-		if isinstance(s, unicode):
-			return_type = unicode
-			string = s
-		elif isinstance(s, bytes):
-			return_type = bytes
-			string = s.decode(_BYTES_ENCODING)
-		else:
-			raise TypeError("s:{!r} is not a unicode or byte string.".format(s))
-
 		
 		meta_characters = r"[]!*#?"
 
-		out_string = "".join("\\" + x if x in meta_characters else x for x in string)
-
-		if return_type is bytes:
-			return out_string.encode(_BYTES_ENCODING)
-		else:
-			return out_string
+		return "".join("\\" + x if x in meta_characters else x for x in s)
 
 util.register_pattern('gitwildmatch', GitWildMatchPattern)
 
@@ -378,7 +308,7 @@ class GitIgnorePattern(GitWildMatchPattern):
 		Warn about deprecation.
 		"""
 		self._deprecated()
-		super(GitIgnorePattern, self).__init__(*args, **kw)
+		return super(GitIgnorePattern, self).__init__(*args, **kw)
 
 	@staticmethod
 	def _deprecated():

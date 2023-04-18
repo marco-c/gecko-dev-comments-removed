@@ -36,6 +36,3 @@ try:
 except ImportError:
 	
 	from collections import Container as Collection
-
-CollectionType = Collection
-IterableType = Iterable
