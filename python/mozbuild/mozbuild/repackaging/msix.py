@@ -410,12 +410,19 @@ def repackage_msix(
     
     brandingUuids = {}
     lines = open(mozpath.join(branding, "configure.sh")).readlines()
+    
+    
+    
+    
+    if channel in ("official", "unofficial"):
+        
+        lines.reverse()
     for key in (
         "MOZ_IGECKOBACKCHANNEL_IID",
         "MOZ_IHANDLERCONTROL_IID",
         "MOZ_ASYNCIHANDLERCONTROL_IID",
     ):
-        for line in reversed(lines):
+        for line in lines:
             if key not in line:
                 continue
             _, _, uuid = line.partition("=")
