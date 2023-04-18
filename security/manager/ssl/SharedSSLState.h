@@ -36,9 +36,6 @@ class SharedSSLState {
   void SetSignedCertTimestampsEnabled(bool signedCertTimestampsEnabled) {
     mSignedCertTimestampsEnabled = signedCertTimestampsEnabled;
   }
-  void SetNameMatchingMode(BRNameMatchingPolicy::Mode aMode) {
-    mNameMatchingMode = aMode;
-  }
 
   
   bool SocketCreated();
@@ -49,7 +46,6 @@ class SharedSSLState {
   bool IsSignedCertTimestampsEnabled() const {
     return mSignedCertTimestampsEnabled;
   }
-  BRNameMatchingPolicy::Mode NameMatchingMode() { return mNameMatchingMode; }
 
  private:
   ~SharedSSLState();
@@ -67,7 +63,6 @@ class SharedSSLState {
   bool mOCSPStaplingEnabled;
   bool mOCSPMustStapleEnabled;
   bool mSignedCertTimestampsEnabled;
-  BRNameMatchingPolicy::Mode mNameMatchingMode;
 };
 
 SharedSSLState* PublicSSLState();
