@@ -2923,7 +2923,7 @@ static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
 
   
   masm.bind(&resumeCatch);
-  masm.loadPtr(Address(ReturnReg, ResumeFromException::offsetOfTlsData()),
+  masm.loadPtr(Address(ReturnReg, ResumeFromException::offsetOfInstance()),
                InstanceReg);
   masm.loadWasmPinnedRegsFromInstance();
   masm.switchToWasmInstanceRealm(scratch1, scratch2);

@@ -760,7 +760,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
                           MoveOp::Type result = MoveOp::GENERAL);
 
   CodeOffset callWithABI(wasm::BytecodeOffset offset, wasm::SymbolicAddress fun,
-                         mozilla::Maybe<int32_t> tlsOffset,
+                         mozilla::Maybe<int32_t> instanceOffset,
                          MoveOp::Type result = MoveOp::GENERAL);
   void callDebugWithABI(wasm::SymbolicAddress fun,
                         MoveOp::Type result = MoveOp::GENERAL);
@@ -3689,6 +3689,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   void loadWasmGlobalPtr(uint32_t globalDataOffset, Register dest);
 
+  
   
   
   CodeOffset wasmCallImport(const wasm::CallSiteDesc& desc,
