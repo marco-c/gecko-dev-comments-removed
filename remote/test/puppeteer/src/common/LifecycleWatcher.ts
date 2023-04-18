@@ -171,7 +171,8 @@ export class LifecycleWatcher {
     this._checkLifecycleComplete();
   }
 
-  navigationResponse(): HTTPResponse | null {
+  async navigationResponse(): Promise<HTTPResponse | null> {
+    
     return this._navigationRequest ? this._navigationRequest.response() : null;
   }
 

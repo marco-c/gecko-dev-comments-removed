@@ -17,7 +17,7 @@
 import { assert } from './assert.js';
 import { helper, debugError } from './helper.js';
 import { ExecutionContext } from './ExecutionContext.js';
-import { Page } from './Page.js';
+import { Page, ScreenshotOptions } from './Page.js';
 import { CDPSession } from './Connection.js';
 import { KeyInput } from './USKeyboardLayout.js';
 import { FrameManager, Frame } from './FrameManager.js';
@@ -191,7 +191,7 @@ export class JSHandle<HandleObjectType = unknown> {
 
   
 
-  async getProperty(propertyName: string): Promise<JSHandle | undefined> {
+  async getProperty(propertyName: string): Promise<JSHandle> {
     const objectHandle = await this.evaluateHandle(
       (object: Element, propertyName: string) => {
         const result = { __proto__: null };
@@ -201,7 +201,8 @@ export class JSHandle<HandleObjectType = unknown> {
       propertyName
     );
     const properties = await objectHandle.getProperties();
-    const result = properties.get(propertyName) || null;
+    const result = properties.get(propertyName);
+    assert(result instanceof JSHandle);
     await objectHandle.dispose();
     return result;
   }
@@ -350,6 +351,59 @@ export class ElementHandle<
     this._frameManager = frameManager;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async waitForSelector(
+    selector: string,
+    options: {
+      visible?: boolean;
+      hidden?: boolean;
+      timeout?: number;
+    } = {}
+  ): Promise<ElementHandle | null> {
+    const frame = this._context.frame();
+    const secondaryContext = await frame._secondaryWorld.executionContext();
+    const adoptedRoot = await secondaryContext._adoptElementHandle(this);
+    const handle = await frame._secondaryWorld.waitForSelector(selector, {
+      ...options,
+      root: adoptedRoot,
+    });
+    await adoptedRoot.dispose();
+    if (!handle) return null;
+    const mainExecutionContext = await frame._mainWorld.executionContext();
+    const result = await mainExecutionContext._adoptElementHandle(handle);
+    await handle.dispose();
+    return result;
+  }
+
   asElement(): ElementHandle<ElementType> | null {
     return this;
   }
@@ -411,7 +465,10 @@ export class ElementHandle<
     if (error) throw new Error(error);
   }
 
-  private async _clickablePoint(): Promise<{ x: number; y: number }> {
+  
+
+
+  async clickablePoint(offset?: Offset): Promise<Point> {
     const [result, layoutMetrics] = await Promise.all([
       this._client
         .send('DOM.getContentQuads', {
@@ -421,9 +478,11 @@ export class ElementHandle<
       this._client.send('Page.getLayoutMetrics'),
     ]);
     if (!result || !result.quads.length)
-      throw new Error('Node is either not visible or not an HTMLElement');
+      throw new Error('Node is either not clickable or not an HTMLElement');
     
-    const { clientWidth, clientHeight } = layoutMetrics.layoutViewport;
+    
+    const { clientWidth, clientHeight } =
+      layoutMetrics.cssLayoutViewport || layoutMetrics.layoutViewport;
     const quads = result.quads
       .map((quad) => this._fromProtocolQuad(quad))
       .map((quad) =>
@@ -431,9 +490,31 @@ export class ElementHandle<
       )
       .filter((quad) => computeQuadArea(quad) > 1);
     if (!quads.length)
-      throw new Error('Node is either not visible or not an HTMLElement');
-    
+      throw new Error('Node is either not clickable or not an HTMLElement');
     const quad = quads[0];
+    if (offset) {
+      
+      let minX = Number.MAX_SAFE_INTEGER;
+      let minY = Number.MAX_SAFE_INTEGER;
+      for (const point of quad) {
+        if (point.x < minX) {
+          minX = point.x;
+        }
+        if (point.y < minY) {
+          minY = point.y;
+        }
+      }
+      if (
+        minX !== Number.MAX_SAFE_INTEGER &&
+        minY !== Number.MAX_SAFE_INTEGER
+      ) {
+        return {
+          x: minX + offset.x,
+          y: minY + offset.y,
+        };
+      }
+    }
+    
     let x = 0;
     let y = 0;
     for (const point of quad) {
@@ -482,7 +563,7 @@ export class ElementHandle<
 
   async hover(): Promise<void> {
     await this._scrollIntoViewIfNeeded();
-    const { x, y } = await this._clickablePoint();
+    const { x, y } = await this.clickablePoint();
     await this._page.mouse.move(x, y);
   }
 
@@ -493,8 +574,67 @@ export class ElementHandle<
 
   async click(options: ClickOptions = {}): Promise<void> {
     await this._scrollIntoViewIfNeeded();
-    const { x, y } = await this._clickablePoint();
+    const { x, y } = await this.clickablePoint(options.offset);
     await this._page.mouse.click(x, y, options);
+  }
+
+  
+
+
+  async drag(target: Point): Promise<Protocol.Input.DragData> {
+    assert(
+      this._page.isDragInterceptionEnabled(),
+      'Drag Interception is not enabled!'
+    );
+    await this._scrollIntoViewIfNeeded();
+    const start = await this.clickablePoint();
+    return await this._page.mouse.drag(start, target);
+  }
+
+  
+
+
+  async dragEnter(
+    data: Protocol.Input.DragData = { items: [], dragOperationsMask: 1 }
+  ): Promise<void> {
+    await this._scrollIntoViewIfNeeded();
+    const target = await this.clickablePoint();
+    await this._page.mouse.dragEnter(target, data);
+  }
+
+  
+
+
+  async dragOver(
+    data: Protocol.Input.DragData = { items: [], dragOperationsMask: 1 }
+  ): Promise<void> {
+    await this._scrollIntoViewIfNeeded();
+    const target = await this.clickablePoint();
+    await this._page.mouse.dragOver(target, data);
+  }
+
+  
+
+
+  async drop(
+    data: Protocol.Input.DragData = { items: [], dragOperationsMask: 1 }
+  ): Promise<void> {
+    await this._scrollIntoViewIfNeeded();
+    const destination = await this.clickablePoint();
+    await this._page.mouse.drop(destination, data);
+  }
+
+  
+
+
+  async dragAndDrop(
+    target: ElementHandle,
+    options?: { delay: number }
+  ): Promise<void> {
+    await this._scrollIntoViewIfNeeded();
+    const startPoint = await this.clickablePoint();
+    const targetPoint = await target.clickablePoint();
+    await this._page.mouse.dragAndDrop(startPoint, targetPoint, options);
   }
 
   
@@ -621,7 +761,7 @@ export class ElementHandle<
 
   async tap(): Promise<void> {
     await this._scrollIntoViewIfNeeded();
-    const { x, y } = await this._clickablePoint();
+    const { x, y } = await this.clickablePoint();
     await this._page.touchscreen.tap(x, y);
   }
 
@@ -727,7 +867,7 @@ export class ElementHandle<
 
 
 
-  async screenshot(options = {}): Promise<string | Buffer | void> {
+  async screenshot(options: ScreenshotOptions = {}): Promise<string | Buffer> {
     let needsViewportReset = false;
 
     let boundingBox = await this.boundingBox();
@@ -756,9 +896,10 @@ export class ElementHandle<
     assert(boundingBox.width !== 0, 'Node has 0 width.');
     assert(boundingBox.height !== 0, 'Node has 0 height.');
 
-    const {
-      layoutViewport: { pageX, pageY },
-    } = await this._client.send('Page.getLayoutMetrics');
+    const layoutMetrics = await this._client.send('Page.getLayoutMetrics');
+    
+    const { pageX, pageY } =
+      layoutMetrics.cssLayoutViewport || layoutMetrics.layoutViewport;
 
     const clip = Object.assign({}, boundingBox);
     clip.x += pageX;
@@ -932,20 +1073,35 @@ export class ElementHandle<
   
 
 
-  async isIntersectingViewport(): Promise<boolean> {
-    return await this.evaluate<(element: Element) => Promise<boolean>>(
-      async (element) => {
-        const visibleRatio = await new Promise((resolve) => {
-          const observer = new IntersectionObserver((entries) => {
-            resolve(entries[0].intersectionRatio);
-            observer.disconnect();
-          });
-          observer.observe(element);
+  async isIntersectingViewport(options?: {
+    threshold?: number;
+  }): Promise<boolean> {
+    const { threshold = 0 } = options || {};
+    return await this.evaluate(async (element: Element, threshold: number) => {
+      const visibleRatio = await new Promise<number>((resolve) => {
+        const observer = new IntersectionObserver((entries) => {
+          resolve(entries[0].intersectionRatio);
+          observer.disconnect();
         });
-        return visibleRatio > 0;
-      }
-    );
+        observer.observe(element);
+      });
+      return threshold === 1 ? visibleRatio === 1 : visibleRatio > threshold;
+    }, threshold);
   }
+}
+
+
+
+
+export interface Offset {
+  
+
+
+  x: number;
+  
+
+
+  y: number;
 }
 
 
@@ -966,6 +1122,10 @@ export interface ClickOptions {
 
 
   clickCount?: number;
+  
+
+
+  offset?: Offset;
 }
 
 
@@ -980,6 +1140,14 @@ export interface PressOptions {
 
 
   text?: string;
+}
+
+
+
+
+export interface Point {
+  x: number;
+  y: number;
 }
 
 function computeQuadArea(quad: Array<{ x: number; y: number }>): number {

@@ -14,7 +14,9 @@
 
 
 
-import { EventEmitter } from './EventEmitter.js';
+import type { Readable } from 'stream';
+
+import { EventEmitter, Handler } from './EventEmitter.js';
 import {
   Connection,
   CDPSession,
@@ -29,7 +31,7 @@ import {
 } from './FrameManager.js';
 import { Keyboard, Mouse, Touchscreen, MouseButton } from './Input.js';
 import { Tracing } from './Tracing.js';
-import { assert } from './assert.js';
+import { assert, assertNever } from './assert.js';
 import { helper, debugError } from './helper.js';
 import { Coverage } from './Coverage.js';
 import { WebWorker } from './WebWorker.js';
@@ -60,6 +62,7 @@ import {
 } from './EvalTypes.js';
 import { PDFOptions, paperFormats } from './PDFOptions.js';
 import { isNode } from '../environment.js';
+import { TaskQueue } from './TaskQueue.js';
 
 
 
@@ -155,7 +158,7 @@ export interface ScreenshotOptions {
   
 
 
-  type?: 'png' | 'jpeg';
+  type?: 'png' | 'jpeg' | 'webp';
   
 
 
@@ -200,6 +203,8 @@ export interface ScreenshotOptions {
 
 export const enum PageEmittedEvents {
   
+
+
   Close = 'close',
   
 
@@ -366,22 +371,6 @@ export interface PageEventObject {
   workerdestroyed: WebWorker;
 }
 
-class ScreenshotTaskQueue {
-  _chain: Promise<Buffer | string | void>;
-
-  constructor() {
-    this._chain = Promise.resolve<Buffer | string | void>(undefined);
-  }
-
-  public postTask(
-    task: () => Promise<Buffer | string>
-  ): Promise<Buffer | string | void> {
-    const result = this._chain.then(task);
-    this._chain = result.catch(() => {});
-    return result;
-  }
-}
-
 
 
 
@@ -433,9 +422,15 @@ export class Page extends EventEmitter {
     client: CDPSession,
     target: Target,
     ignoreHTTPSErrors: boolean,
-    defaultViewport: Viewport | null
+    defaultViewport: Viewport | null,
+    screenshotTaskQueue: TaskQueue
   ): Promise<Page> {
-    const page = new Page(client, target, ignoreHTTPSErrors);
+    const page = new Page(
+      client,
+      target,
+      ignoreHTTPSErrors,
+      screenshotTaskQueue
+    );
     await page._initialize();
     if (defaultViewport) await page.setViewport(defaultViewport);
     return page;
@@ -456,18 +451,25 @@ export class Page extends EventEmitter {
   private _coverage: Coverage;
   private _javascriptEnabled = true;
   private _viewport: Viewport | null;
-  private _screenshotTaskQueue: ScreenshotTaskQueue;
+  private _screenshotTaskQueue: TaskQueue;
   private _workers = new Map<string, WebWorker>();
   
   
   private _fileChooserInterceptors = new Set<Function>();
 
   private _disconnectPromise?: Promise<Error>;
+  private _userDragInterceptionEnabled = false;
+  private _handlerMap = new WeakMap<Handler, Handler>();
 
   
 
 
-  constructor(client: CDPSession, target: Target, ignoreHTTPSErrors: boolean) {
+  constructor(
+    client: CDPSession,
+    target: Target,
+    ignoreHTTPSErrors: boolean,
+    screenshotTaskQueue: TaskQueue
+  ) {
     super();
     this._client = client;
     this._target = target;
@@ -484,37 +486,44 @@ export class Page extends EventEmitter {
     this._emulationManager = new EmulationManager(client);
     this._tracing = new Tracing(client);
     this._coverage = new Coverage(client);
-    this._screenshotTaskQueue = new ScreenshotTaskQueue();
+    this._screenshotTaskQueue = screenshotTaskQueue;
     this._viewport = null;
 
-    client.on('Target.attachedToTarget', (event) => {
-      if (
-        event.targetInfo.type !== 'worker' &&
-        event.targetInfo.type !== 'iframe'
-      ) {
-        
-        
-        
-        
-        
-        
-        client
-          .send('Target.detachFromTarget', {
-            sessionId: event.sessionId,
-          })
-          .catch(debugError);
-        return;
+    client.on(
+      'Target.attachedToTarget',
+      (event: Protocol.Target.AttachedToTargetEvent) => {
+        if (
+          event.targetInfo.type !== 'worker' &&
+          event.targetInfo.type !== 'iframe'
+        ) {
+          
+          
+          
+          
+          
+          
+          client
+            .send('Target.detachFromTarget', {
+              sessionId: event.sessionId,
+            })
+            .catch(debugError);
+          return;
+        }
+        if (event.targetInfo.type === 'worker') {
+          const session = Connection.fromSession(client).session(
+            event.sessionId
+          );
+          const worker = new WebWorker(
+            session,
+            event.targetInfo.url,
+            this._addConsoleMessage.bind(this),
+            this._handleException.bind(this)
+          );
+          this._workers.set(event.sessionId, worker);
+          this.emit(PageEmittedEvents.WorkerCreated, worker);
+        }
       }
-      const session = Connection.fromSession(client).session(event.sessionId);
-      const worker = new WebWorker(
-        session,
-        event.targetInfo.url,
-        this._addConsoleMessage.bind(this),
-        this._handleException.bind(this)
-      );
-      this._workers.set(event.sessionId, worker);
-      this.emit(PageEmittedEvents.WorkerCreated, worker);
-    });
+    );
     client.on('Target.detachedFromTarget', (event) => {
       const worker = this._workers.get(event.sessionId);
       if (!worker) return;
@@ -600,6 +609,13 @@ export class Page extends EventEmitter {
   
 
 
+  isDragInterceptionEnabled(): boolean {
+    return this._userDragInterceptionEnabled;
+  }
+
+  
+
+
   public isJavaScriptEnabled(): boolean {
     return this._javascriptEnabled;
   }
@@ -607,12 +623,24 @@ export class Page extends EventEmitter {
   
 
 
+  
+  
+  
   public on<K extends keyof PageEventObject>(
     eventName: K,
     handler: (event: PageEventObject[K]) => void
   ): EventEmitter {
-    
-    
+    if (eventName === 'request') {
+      const wrap = (event: HTTPRequest) => {
+        event.enqueueInterceptAction(() =>
+          handler(event as PageEventObject[K])
+        );
+      };
+
+      this._handlerMap.set(handler, wrap);
+
+      return super.on(eventName, wrap);
+    }
     return super.on(eventName, handler);
   }
 
@@ -625,7 +653,36 @@ export class Page extends EventEmitter {
     return super.once(eventName, handler);
   }
 
+  off<K extends keyof PageEventObject>(
+    eventName: K,
+    handler: (event: PageEventObject[K]) => void
+  ): EventEmitter {
+    if (eventName === 'request') {
+      handler = this._handlerMap.get(handler) || handler;
+    }
+
+    return super.off(eventName, handler);
+  }
+
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -638,7 +695,7 @@ export class Page extends EventEmitter {
       });
 
     const { timeout = this._timeoutSettings.timeout() } = options;
-    let callback;
+    let callback: (value: FileChooser | PromiseLike<FileChooser>) => void;
     const promise = new Promise<FileChooser>((x) => (callback = x));
     this._fileChooserInterceptors.add(callback);
     return helper
@@ -654,8 +711,6 @@ export class Page extends EventEmitter {
   }
 
   
-
-
 
 
 
@@ -696,6 +751,14 @@ export class Page extends EventEmitter {
   
 
 
+
+  client(): CDPSession {
+    return this._client;
+  }
+
+  
+
+
   browser(): Browser {
     return this._target.browser();
   }
@@ -722,6 +785,8 @@ export class Page extends EventEmitter {
   }
 
   
+
+
 
 
   mainFrame(): Frame {
@@ -756,6 +821,9 @@ export class Page extends EventEmitter {
   }
 
   
+
+
+
 
 
 
@@ -795,6 +863,7 @@ export class Page extends EventEmitter {
 
 
 
+
   async setRequestInterception(value: boolean): Promise<void> {
     return this._frameManager.networkManager().setRequestInterception(value);
   }
@@ -802,9 +871,47 @@ export class Page extends EventEmitter {
   
 
 
+
+
+
+
+
+  async setDragInterception(enabled: boolean): Promise<void> {
+    this._userDragInterceptionEnabled = enabled;
+    return this._client.send('Input.setInterceptDrags', { enabled });
+  }
+
+  
+
+
+
+
+
+
   setOfflineMode(enabled: boolean): Promise<void> {
     return this._frameManager.networkManager().setOfflineMode(enabled);
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   emulateNetworkConditions(
     networkConditions: NetworkConditions | null
@@ -815,6 +922,20 @@ export class Page extends EventEmitter {
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   setDefaultNavigationTimeout(timeout: number): void {
@@ -903,6 +1024,11 @@ export class Page extends EventEmitter {
   }
 
   
+
+
+
+
+
 
 
 
@@ -1085,11 +1211,26 @@ export class Page extends EventEmitter {
     return this.mainFrame().$$eval<ReturnType>(selector, pageFunction, ...args);
   }
 
+  
+
+
+
+
+
+
   async $$<T extends Element = Element>(
     selector: string
   ): Promise<Array<ElementHandle<T>>> {
     return this.mainFrame().$$<T>(selector);
   }
+
+  
+
+
+
+
+
+
 
   async $x(expression: string): Promise<ElementHandle[]> {
     return this.mainFrame().$x(expression);
@@ -1127,6 +1268,12 @@ export class Page extends EventEmitter {
     }
   }
 
+  
+
+
+
+
+
   async setCookie(...cookies: Protocol.Network.CookieParam[]): Promise<void> {
     const pageURL = this.url();
     const startsWithHTTP = pageURL.startsWith('http');
@@ -1148,14 +1295,28 @@ export class Page extends EventEmitter {
       await this._client.send('Network.setCookies', { cookies: items });
   }
 
+  
+
+
+
+
+
+
   async addScriptTag(options: {
     url?: string;
     path?: string;
     content?: string;
     type?: string;
+    id?: string;
   }): Promise<ElementHandle> {
     return this.mainFrame().addScriptTag(options);
   }
+
+  
+
+
+
+
 
   async addStyleTag(options: {
     url?: string;
@@ -1165,15 +1326,86 @@ export class Page extends EventEmitter {
     return this.mainFrame().addStyleTag(options);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async exposeFunction(
     name: string,
-    puppeteerFunction: Function
+    puppeteerFunction: Function | { default: Function }
   ): Promise<void> {
     if (this._pageBindings.has(name))
       throw new Error(
         `Failed to add page binding with name ${name}: window['${name}'] already exists!`
       );
-    this._pageBindings.set(name, puppeteerFunction);
+
+    let exposedFunction: Function;
+    if (typeof puppeteerFunction === 'function') {
+      exposedFunction = puppeteerFunction;
+    } else if (typeof puppeteerFunction.default === 'function') {
+      exposedFunction = puppeteerFunction.default;
+    } else {
+      throw new Error(
+        `Failed to add page binding with name ${name}: ${puppeteerFunction} is not a function or a module with a default export.`
+      );
+    }
+
+    this._pageBindings.set(name, exposedFunction);
 
     const expression = helper.pageBindingInitString('exposedFun', name);
     await this._client.send('Runtime.addBinding', { name: name });
@@ -1185,17 +1417,76 @@ export class Page extends EventEmitter {
     );
   }
 
+  
+
+
+
   async authenticate(credentials: Credentials): Promise<void> {
     return this._frameManager.networkManager().authenticate(credentials);
   }
+
+  
+
+
+
+
+
+
+
+
 
   async setExtraHTTPHeaders(headers: Record<string, string>): Promise<void> {
     return this._frameManager.networkManager().setExtraHTTPHeaders(headers);
   }
 
-  async setUserAgent(userAgent: string): Promise<void> {
-    return this._frameManager.networkManager().setUserAgent(userAgent);
+  
+
+
+
+
+
+  async setUserAgent(
+    userAgent: string,
+    userAgentMetadata?: Protocol.Emulation.UserAgentMetadata
+  ): Promise<void> {
+    return this._frameManager
+      .networkManager()
+      .setUserAgent(userAgent, userAgentMetadata);
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   async metrics(): Promise<Metrics> {
     const response = await this._client.send('Performance.getMetrics');
@@ -1248,7 +1539,8 @@ export class Page extends EventEmitter {
       return;
     }
     const context = this._frameManager.executionContextById(
-      event.executionContextId
+      event.executionContextId,
+      this._client
     );
     const values = event.args.map((arg) => createJSHandle(context, arg));
     this._addConsoleMessage(event.type, values, event.stackTrace);
@@ -1367,6 +1659,12 @@ export class Page extends EventEmitter {
     });
   }
 
+  
+
+
+
+
+
   url(): string {
     return this.mainFrame().url();
   }
@@ -1375,9 +1673,91 @@ export class Page extends EventEmitter {
     return await this._frameManager.mainFrame().content();
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async setContent(html: string, options: WaitForOptions = {}): Promise<void> {
     await this._frameManager.mainFrame().setContent(html, options);
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   async goto(
     url: string,
@@ -1385,6 +1765,34 @@ export class Page extends EventEmitter {
   ): Promise<HTTPResponse> {
     return await this._frameManager.mainFrame().goto(url, options);
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   async reload(options?: WaitForOptions): Promise<HTTPResponse | null> {
     const result = await Promise.all<HTTPResponse, void>([
@@ -1394,6 +1802,30 @@ export class Page extends EventEmitter {
 
     return result[0];
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   async waitForNavigation(
     options: WaitForOptions = {}
@@ -1410,6 +1842,31 @@ export class Page extends EventEmitter {
       );
     return this._disconnectPromise;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   async waitForRequest(
     urlOrPredicate: string | ((req: HTTPRequest) => boolean | Promise<boolean>),
@@ -1430,6 +1887,31 @@ export class Page extends EventEmitter {
       this._sessionClosePromise()
     );
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   async waitForResponse(
     urlOrPredicate:
@@ -1453,9 +1935,187 @@ export class Page extends EventEmitter {
     );
   }
 
+  
+
+
+
+  async waitForNetworkIdle(
+    options: { idleTime?: number; timeout?: number } = {}
+  ): Promise<void> {
+    const { idleTime = 500, timeout = this._timeoutSettings.timeout() } =
+      options;
+
+    const networkManager = this._frameManager.networkManager();
+
+    let idleResolveCallback;
+    const idlePromise = new Promise((resolve) => {
+      idleResolveCallback = resolve;
+    });
+
+    let abortRejectCallback;
+    const abortPromise = new Promise<Error>((_, reject) => {
+      abortRejectCallback = reject;
+    });
+
+    let idleTimer;
+    const onIdle = () => idleResolveCallback();
+
+    const cleanup = () => {
+      idleTimer && clearTimeout(idleTimer);
+      abortRejectCallback(new Error('abort'));
+    };
+
+    const evaluate = () => {
+      idleTimer && clearTimeout(idleTimer);
+      if (networkManager.numRequestsInProgress() === 0)
+        idleTimer = setTimeout(onIdle, idleTime);
+    };
+
+    evaluate();
+
+    const eventHandler = () => {
+      evaluate();
+      return false;
+    };
+
+    const listenToEvent = (event) =>
+      helper.waitForEvent(
+        networkManager,
+        event,
+        eventHandler,
+        timeout,
+        abortPromise
+      );
+
+    const eventPromises = [
+      listenToEvent(NetworkManagerEmittedEvents.Request),
+      listenToEvent(NetworkManagerEmittedEvents.Response),
+    ];
+
+    await Promise.race([
+      idlePromise,
+      ...eventPromises,
+      this._sessionClosePromise(),
+    ]).then(
+      (r) => {
+        cleanup();
+        return r;
+      },
+      (error) => {
+        cleanup();
+        throw error;
+      }
+    );
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async waitForFrame(
+    urlOrPredicate: string | ((frame: Frame) => boolean | Promise<boolean>),
+    options: { timeout?: number } = {}
+  ): Promise<Frame> {
+    const { timeout = this._timeoutSettings.timeout() } = options;
+
+    async function predicate(frame: Frame) {
+      if (helper.isString(urlOrPredicate))
+        return urlOrPredicate === frame.url();
+      if (typeof urlOrPredicate === 'function')
+        return !!(await urlOrPredicate(frame));
+      return false;
+    }
+
+    return Promise.race([
+      helper.waitForEvent(
+        this._frameManager,
+        FrameManagerEmittedEvents.FrameAttached,
+        predicate,
+        timeout,
+        this._sessionClosePromise()
+      ),
+      helper.waitForEvent(
+        this._frameManager,
+        FrameManagerEmittedEvents.FrameNavigated,
+        predicate,
+        timeout,
+        this._sessionClosePromise()
+      ),
+    ]);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async goBack(options: WaitForOptions = {}): Promise<HTTPResponse | null> {
     return this._go(-1, options);
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   async goForward(options: WaitForOptions = {}): Promise<HTTPResponse | null> {
     return this._go(+1, options);
@@ -1475,9 +2135,35 @@ export class Page extends EventEmitter {
     return result[0];
   }
 
+  
+
+
   async bringToFront(): Promise<void> {
     await this._client.send('Page.bringToFront');
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   async emulate(options: {
     viewport: Viewport;
@@ -1489,6 +2175,13 @@ export class Page extends EventEmitter {
     ]);
   }
 
+  
+
+
+
+
+
+
   async setJavaScriptEnabled(enabled: boolean): Promise<void> {
     if (this._javascriptEnabled === enabled) return;
     this._javascriptEnabled = enabled;
@@ -1497,9 +2190,41 @@ export class Page extends EventEmitter {
     });
   }
 
+  
+
+
+
+
+
+
+
   async setBypassCSP(enabled: boolean): Promise<void> {
     await this._client.send('Page.setBypassCSP', { enabled });
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   async emulateMediaType(type?: string): Promise<void> {
     assert(
@@ -1510,6 +2235,72 @@ export class Page extends EventEmitter {
       media: type || '',
     });
   }
+
+  
+
+
+
+  async emulateCPUThrottling(factor: number | null): Promise<void> {
+    assert(
+      factor === null || factor >= 1,
+      'Throttling rate should be greater or equal to 1'
+    );
+    await this._client.send('Emulation.setCPUThrottlingRate', {
+      rate: factor !== null ? factor : 1,
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   async emulateMediaFeatures(features?: MediaFeature[]): Promise<void> {
     if (features === null)
@@ -1531,6 +2322,12 @@ export class Page extends EventEmitter {
     }
   }
 
+  
+
+
+
+
+
   async emulateTimezone(timezoneId?: string): Promise<void> {
     try {
       await this._client.send('Emulation.setTimezoneOverride', {
@@ -1544,8 +2341,6 @@ export class Page extends EventEmitter {
   }
 
   
-
-
 
 
 
@@ -1630,11 +2425,69 @@ export class Page extends EventEmitter {
     }
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async setViewport(viewport: Viewport): Promise<void> {
     const needsReload = await this._emulationManager.emulateViewport(viewport);
     this._viewport = viewport;
     if (needsReload) await this.reload();
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   viewport(): Viewport | null {
     return this._viewport;
@@ -1695,6 +2548,37 @@ export class Page extends EventEmitter {
     return this._frameManager.mainFrame().evaluate<T>(pageFunction, ...args);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   async evaluateOnNewDocument(
     pageFunction: Function | string,
     ...args: unknown[]
@@ -1705,22 +2589,64 @@ export class Page extends EventEmitter {
     });
   }
 
+  
+
+
+
+
   async setCacheEnabled(enabled = true): Promise<void> {
     await this._frameManager.networkManager().setCacheEnabled(enabled);
   }
 
-  async screenshot(
-    options: ScreenshotOptions = {}
-  ): Promise<Buffer | string | void> {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async screenshot(options: ScreenshotOptions = {}): Promise<Buffer | string> {
     let screenshotType = null;
     
     
     
     if (options.type) {
-      assert(
-        options.type === 'png' || options.type === 'jpeg',
-        'Unknown options.type value: ' + options.type
-      );
+      const type = options.type;
+      if (type !== 'png' && type !== 'jpeg' && type !== 'webp') {
+        assertNever(type, 'Unknown options.type value: ' + type);
+      }
       screenshotType = options.type;
     } else if (options.path) {
       const filePath = options.path;
@@ -1730,6 +2656,7 @@ export class Page extends EventEmitter {
       if (extension === 'png') screenshotType = 'png';
       else if (extension === 'jpg' || extension === 'jpeg')
         screenshotType = 'jpeg';
+      else if (extension === 'webp') screenshotType = 'webp';
       assert(
         screenshotType,
         `Unsupported screenshot type for extension \`.${extension}\``
@@ -1740,7 +2667,7 @@ export class Page extends EventEmitter {
 
     if (options.quality) {
       assert(
-        screenshotType === 'jpeg',
+        screenshotType === 'jpeg' || screenshotType === 'webp',
         'options.quality is unsupported for the ' +
           screenshotType +
           ' screenshots'
@@ -1800,7 +2727,7 @@ export class Page extends EventEmitter {
   }
 
   private async _screenshotTask(
-    format: 'png' | 'jpeg',
+    format: Protocol.Page.CaptureScreenshotRequestFormat,
     options?: ScreenshotOptions
   ): Promise<Buffer | string> {
     await this._client.send('Target.activateTarget', {
@@ -1813,8 +2740,8 @@ export class Page extends EventEmitter {
 
     if (options.fullPage) {
       const metrics = await this._client.send('Page.getLayoutMetrics');
-      const width = Math.ceil(metrics.contentSize.width);
-      const height = Math.ceil(metrics.contentSize.height);
+      
+      const { width, height } = metrics.cssContentSize || metrics.contentSize;
 
       
       clip = { x: 0, y: 0, width, height, scale: 1 };
@@ -1839,7 +2766,7 @@ export class Page extends EventEmitter {
       }
     }
     const shouldSetDefaultBackground =
-      options.omitBackground && format === 'png';
+      options.omitBackground && (format === 'png' || format === 'webp');
     if (shouldSetDefaultBackground) {
       await this._setTransparentBackgroundColor();
     }
@@ -1902,7 +2829,7 @@ export class Page extends EventEmitter {
 
 
 
-  async pdf(options: PDFOptions = {}): Promise<Buffer> {
+  async createPDFStream(options: PDFOptions = {}): Promise<Readable> {
     const {
       scale = 1,
       displayHeaderFooter = false,
@@ -1913,8 +2840,8 @@ export class Page extends EventEmitter {
       pageRanges = '',
       preferCSSPageSize = false,
       margin = {},
-      path = null,
       omitBackground = false,
+      timeout = 30000,
     } = options;
 
     let paperWidth = 8.5;
@@ -1939,7 +2866,7 @@ export class Page extends EventEmitter {
       await this._setTransparentBackgroundColor();
     }
 
-    const result = await this._client.send('Page.printToPDF', {
+    const printCommandPromise = this._client.send('Page.printToPDF', {
       transferMode: 'ReturnAsStream',
       landscape,
       displayHeaderFooter,
@@ -1957,12 +2884,33 @@ export class Page extends EventEmitter {
       preferCSSPageSize,
     });
 
+    const result = await helper.waitWithTimeout(
+      printCommandPromise,
+      'Page.printToPDF',
+      timeout
+    );
+
     if (omitBackground) {
       await this._resetDefaultBackgroundColor();
     }
 
-    return await helper.readProtocolStream(this._client, result.stream, path);
+    return helper.getReadableFromProtocolStream(this._client, result.stream);
   }
+
+  
+
+
+
+  async pdf(options: PDFOptions = {}): Promise<Buffer> {
+    const { path = undefined } = options;
+    const readable = await this.createPDFStream(options);
+    return await helper.getReadableAsBuffer(readable, path);
+  }
+
+  
+
+
+
 
   async title(): Promise<string> {
     return this.mainFrame().title();
@@ -1986,6 +2934,10 @@ export class Page extends EventEmitter {
     }
   }
 
+  
+
+
+
   isClosed(): boolean {
     return this._closed;
   }
@@ -1993,6 +2945,29 @@ export class Page extends EventEmitter {
   get mouse(): Mouse {
     return this._mouse;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   click(
     selector: string,
@@ -2005,21 +2980,103 @@ export class Page extends EventEmitter {
     return this.mainFrame().click(selector, options);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
   focus(selector: string): Promise<void> {
     return this.mainFrame().focus(selector);
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
   hover(selector: string): Promise<void> {
     return this.mainFrame().hover(selector);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   select(selector: string, ...values: string[]): Promise<string[]> {
     return this.mainFrame().select(selector, ...values);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
   tap(selector: string): Promise<void> {
     return this.mainFrame().tap(selector);
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   type(
     selector: string,
@@ -2094,6 +3151,54 @@ export class Page extends EventEmitter {
     return this.mainFrame().waitForTimeout(milliseconds);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   waitForSelector(
     selector: string,
     options: {
@@ -2105,6 +3210,54 @@ export class Page extends EventEmitter {
     return this.mainFrame().waitForSelector(selector, options);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   waitForXPath(
     xpath: string,
     options: {
@@ -2115,6 +3268,72 @@ export class Page extends EventEmitter {
   ): Promise<ElementHandle | null> {
     return this.mainFrame().waitForXPath(xpath, options);
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   waitForFunction(
     pageFunction: Function | string,

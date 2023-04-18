@@ -49,6 +49,17 @@ export interface CoverageEntry {
 
 
 
+export interface JSCoverageEntry extends CoverageEntry {
+  
+
+
+  rawScriptCoverage?: Protocol.Profiler.ScriptCoverage;
+}
+
+
+
+
+
 export interface JSCoverageOptions {
   
 
@@ -58,6 +69,10 @@ export interface JSCoverageOptions {
 
 
   reportAnonymousScripts?: boolean;
+  
+
+
+  includeRawScriptCoverage?: boolean;
 }
 
 
@@ -145,7 +160,7 @@ export class Coverage {
 
 
 
-  async stopJSCoverage(): Promise<CoverageEntry[]> {
+  async stopJSCoverage(): Promise<JSCoverageEntry[]> {
     return await this._jsCoverage.stop();
   }
 
@@ -181,6 +196,7 @@ export class JSCoverage {
   _eventListeners: PuppeteerEventListener[] = [];
   _resetOnNavigation = false;
   _reportAnonymousScripts = false;
+  _includeRawScriptCoverage = false;
 
   constructor(client: CDPSession) {
     this._client = client;
@@ -190,13 +206,18 @@ export class JSCoverage {
     options: {
       resetOnNavigation?: boolean;
       reportAnonymousScripts?: boolean;
+      includeRawScriptCoverage?: boolean;
     } = {}
   ): Promise<void> {
     assert(!this._enabled, 'JSCoverage is already enabled');
-    const { resetOnNavigation = true, reportAnonymousScripts = false } =
-      options;
+    const {
+      resetOnNavigation = true,
+      reportAnonymousScripts = false,
+      includeRawScriptCoverage = false,
+    } = options;
     this._resetOnNavigation = resetOnNavigation;
     this._reportAnonymousScripts = reportAnonymousScripts;
+    this._includeRawScriptCoverage = includeRawScriptCoverage;
     this._enabled = true;
     this._scriptURLs.clear();
     this._scriptSources.clear();
@@ -215,7 +236,7 @@ export class JSCoverage {
     await Promise.all([
       this._client.send('Profiler.enable'),
       this._client.send('Profiler.startPreciseCoverage', {
-        callCount: false,
+        callCount: this._includeRawScriptCoverage,
         detailed: true,
       }),
       this._client.send('Debugger.enable'),
@@ -248,7 +269,7 @@ export class JSCoverage {
     }
   }
 
-  async stop(): Promise<CoverageEntry[]> {
+  async stop(): Promise<JSCoverageEntry[]> {
     assert(this._enabled, 'JSCoverage is not enabled');
     this._enabled = false;
 
@@ -278,7 +299,11 @@ export class JSCoverage {
       const flattenRanges = [];
       for (const func of entry.functions) flattenRanges.push(...func.ranges);
       const ranges = convertToDisjointRanges(flattenRanges);
-      coverage.push({ url, ranges, text });
+      if (!this._includeRawScriptCoverage) {
+        coverage.push({ url, ranges, text });
+      } else {
+        coverage.push({ url, ranges, text, rawScriptCoverage: entry });
+      }
     }
     return coverage;
   }

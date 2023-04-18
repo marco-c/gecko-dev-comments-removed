@@ -13,12 +13,15 @@
 
 
 
-import { CDPSession } from './Connection.js';
+import { ProtocolMapping } from 'devtools-protocol/types/protocol-mapping.js';
+
+import { EventEmitter } from './EventEmitter.js';
 import { Frame } from './FrameManager.js';
 import { HTTPResponse } from './HTTPResponse.js';
 import { assert } from './assert.js';
 import { helper, debugError } from './helper.js';
 import { Protocol } from 'devtools-protocol';
+import { ProtocolError } from './Errors.js';
 
 
 
@@ -31,6 +34,14 @@ export interface ContinueRequestOverrides {
   method?: string;
   postData?: string;
   headers?: Record<string, string>;
+}
+
+
+
+
+export interface InterceptResolutionState {
+  action: InterceptResolutionAction;
+  priority?: number;
 }
 
 
@@ -54,6 +65,20 @@ export interface ResponseForRequest {
 
 
 export type ResourceType = Lowercase<Protocol.Network.ResourceType>;
+
+
+
+
+
+
+export const DEFAULT_INTERCEPT_RESOLUTION_PRIORITY = 0;
+
+interface CDPSession extends EventEmitter {
+  send<T extends keyof ProtocolMapping.Commands>(
+    method: T,
+    ...paramArgs: ProtocolMapping.Commands[T]['paramsType']
+  ): Promise<ProtocolMapping.Commands[T]['returnType']>;
+}
 
 
 
@@ -124,6 +149,12 @@ export class HTTPRequest {
   private _postData?: string;
   private _headers: Record<string, string> = {};
   private _frame: Frame;
+  private _continueRequestOverrides: ContinueRequestOverrides;
+  private _responseForRequest: Partial<ResponseForRequest>;
+  private _abortErrorReason: Protocol.Network.ErrorReason;
+  private _interceptResolutionState: InterceptResolutionState;
+  private _interceptHandlers: Array<() => void | PromiseLike<any>>;
+  private _initiator: Protocol.Network.Initiator;
 
   
 
@@ -148,6 +179,10 @@ export class HTTPRequest {
     this._postData = event.request.postData;
     this._frame = frame;
     this._redirectChain = redirectChain;
+    this._continueRequestOverrides = {};
+    this._interceptResolutionState = { action: InterceptResolutionAction.None };
+    this._interceptHandlers = [];
+    this._initiator = event.initiator;
 
     for (const key of Object.keys(event.request.headers))
       this._headers[key.toLowerCase()] = event.request.headers[key];
@@ -158,6 +193,92 @@ export class HTTPRequest {
 
   url(): string {
     return this._url;
+  }
+
+  
+
+
+
+
+  continueRequestOverrides(): ContinueRequestOverrides {
+    assert(this._allowInterception, 'Request Interception is not enabled!');
+    return this._continueRequestOverrides;
+  }
+
+  
+
+
+
+  responseForRequest(): Partial<ResponseForRequest> {
+    assert(this._allowInterception, 'Request Interception is not enabled!');
+    return this._responseForRequest;
+  }
+
+  
+
+
+  abortErrorReason(): Protocol.Network.ErrorReason {
+    assert(this._allowInterception, 'Request Interception is not enabled!');
+    return this._abortErrorReason;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  interceptResolutionState(): InterceptResolutionState {
+    if (!this._allowInterception)
+      return { action: InterceptResolutionAction.Disabled };
+    if (this._interceptionHandled)
+      return { action: InterceptResolutionAction.AlreadyHandled };
+    return { ...this._interceptResolutionState };
+  }
+
+  
+
+
+
+  isInterceptResolutionHandled(): boolean {
+    return this._interceptionHandled;
+  }
+
+  
+
+
+
+
+
+  enqueueInterceptAction(
+    pendingHandler: () => void | PromiseLike<unknown>
+  ): void {
+    this._interceptHandlers.push(pendingHandler);
+  }
+
+  
+
+
+
+  async finalizeInterceptions(): Promise<void> {
+    await this._interceptHandlers.reduce(
+      (promiseChain, interceptAction) => promiseChain.then(interceptAction),
+      Promise.resolve()
+    );
+    const { action } = this.interceptResolutionState();
+    switch (action) {
+      case 'abort':
+        return this._abort(this._abortErrorReason);
+      case 'respond':
+        return this._respond(this._responseForRequest);
+      case 'continue':
+        return this._continue(this._continueRequestOverrides);
+    }
   }
 
   
@@ -211,6 +332,13 @@ export class HTTPRequest {
 
   isNavigationRequest(): boolean {
     return this._isNavigationRequest;
+  }
+
+  
+
+
+  initiator(): Protocol.Network.Initiator {
+    return this._initiator;
   }
 
   
@@ -296,11 +424,47 @@ export class HTTPRequest {
 
 
 
-  async continue(overrides: ContinueRequestOverrides = {}): Promise<void> {
+
+
+
+  async continue(
+    overrides: ContinueRequestOverrides = {},
+    priority?: number
+  ): Promise<void> {
     
     if (this._url.startsWith('data:')) return;
     assert(this._allowInterception, 'Request Interception is not enabled!');
     assert(!this._interceptionHandled, 'Request is already handled!');
+    if (priority === undefined) {
+      return this._continue(overrides);
+    }
+    this._continueRequestOverrides = overrides;
+    if (
+      priority > this._interceptResolutionState.priority ||
+      this._interceptResolutionState.priority === undefined
+    ) {
+      this._interceptResolutionState = {
+        action: InterceptResolutionAction.Continue,
+        priority,
+      };
+      return;
+    }
+    if (priority === this._interceptResolutionState.priority) {
+      if (
+        this._interceptResolutionState.action === 'abort' ||
+        this._interceptResolutionState.action === 'respond'
+      ) {
+        return;
+      }
+      this._interceptResolutionState.action =
+        InterceptResolutionAction.Continue;
+    }
+    return;
+  }
+
+  private async _continue(
+    overrides: ContinueRequestOverrides = {}
+  ): Promise<void> {
     const { url, method, postData, headers } = overrides;
     this._interceptionHandled = true;
 
@@ -317,10 +481,8 @@ export class HTTPRequest {
         headers: headers ? headersArray(headers) : undefined,
       })
       .catch((error) => {
-        
-        
-        
-        debugError(error);
+        this._interceptionHandled = false;
+        return handleError(error);
       });
   }
 
@@ -352,11 +514,40 @@ export class HTTPRequest {
 
 
 
-  async respond(response: Partial<ResponseForRequest>): Promise<void> {
+
+
+
+  async respond(
+    response: Partial<ResponseForRequest>,
+    priority?: number
+  ): Promise<void> {
     
     if (this._url.startsWith('data:')) return;
     assert(this._allowInterception, 'Request Interception is not enabled!');
     assert(!this._interceptionHandled, 'Request is already handled!');
+    if (priority === undefined) {
+      return this._respond(response);
+    }
+    this._responseForRequest = response;
+    if (
+      priority > this._interceptResolutionState.priority ||
+      this._interceptResolutionState.priority === undefined
+    ) {
+      this._interceptResolutionState = {
+        action: InterceptResolutionAction.Respond,
+        priority,
+      };
+      return;
+    }
+    if (priority === this._interceptResolutionState.priority) {
+      if (this._interceptResolutionState.action === 'abort') {
+        return;
+      }
+      this._interceptResolutionState.action = InterceptResolutionAction.Respond;
+    }
+  }
+
+  private async _respond(response: Partial<ResponseForRequest>): Promise<void> {
     this._interceptionHandled = true;
 
     const responseBody: Buffer | null =
@@ -387,10 +578,8 @@ export class HTTPRequest {
         body: responseBody ? responseBody.toString('base64') : undefined,
       })
       .catch((error) => {
-        
-        
-        
-        debugError(error);
+        this._interceptionHandled = false;
+        return handleError(error);
       });
   }
 
@@ -404,27 +593,66 @@ export class HTTPRequest {
 
 
 
-  async abort(errorCode: ErrorCode = 'failed'): Promise<void> {
+
+
+
+  async abort(
+    errorCode: ErrorCode = 'failed',
+    priority?: number
+  ): Promise<void> {
     
     if (this._url.startsWith('data:')) return;
     const errorReason = errorReasons[errorCode];
     assert(errorReason, 'Unknown error code: ' + errorCode);
     assert(this._allowInterception, 'Request Interception is not enabled!');
     assert(!this._interceptionHandled, 'Request is already handled!');
+    if (priority === undefined) {
+      return this._abort(errorReason);
+    }
+    this._abortErrorReason = errorReason;
+    if (
+      priority >= this._interceptResolutionState.priority ||
+      this._interceptResolutionState.priority === undefined
+    ) {
+      this._interceptResolutionState = {
+        action: InterceptResolutionAction.Abort,
+        priority,
+      };
+      return;
+    }
+  }
+
+  private async _abort(
+    errorReason: Protocol.Network.ErrorReason
+  ): Promise<void> {
     this._interceptionHandled = true;
     await this._client
       .send('Fetch.failRequest', {
         requestId: this._interceptionId,
         errorReason,
       })
-      .catch((error) => {
-        
-        
-        
-        debugError(error);
-      });
+      .catch(handleError);
   }
 }
+
+
+
+
+export enum InterceptResolutionAction {
+  Abort = 'abort',
+  Respond = 'respond',
+  Continue = 'continue',
+  Disabled = 'disabled',
+  None = 'none',
+  AlreadyHandled = 'already-handled',
+}
+
+
+
+
+
+
+export type InterceptResolutionStrategy = InterceptResolutionAction;
 
 
 
@@ -462,6 +690,11 @@ const errorReasons: Record<ErrorCode, Protocol.Network.ErrorReason> = {
   failed: 'Failed',
 } as const;
 
+
+
+
+export type ActionResult = 'continue' | 'abort' | 'respond';
+
 function headersArray(
   headers: Record<string, string>
 ): Array<{ name: string; value: string }> {
@@ -471,6 +704,16 @@ function headersArray(
       result.push({ name, value: headers[name] + '' });
   }
   return result;
+}
+
+async function handleError(error: ProtocolError) {
+  if (['Invalid header'].includes(error.originalMessage)) {
+    throw error;
+  }
+  
+  
+  
+  debugError(error);
 }
 
 

@@ -14,6 +14,8 @@
 
 
 
+import { debug } from '../common/Debug.js';
+
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -22,7 +24,6 @@ import removeFolder from 'rimraf';
 import { promisify } from 'util';
 
 import { assert } from '../common/assert.js';
-import { debug } from '../common/Debug.js';
 import { helper, debugError } from '../common/helper.js';
 import { LaunchOptions } from './LaunchOptions.js';
 import { Connection } from '../common/Connection.js';
@@ -180,13 +181,6 @@ export class BrowserRunner {
 
   kill(): void {
     
-    try {
-      if (this._isTempUserDataDir) {
-        removeFolder.sync(this._userDataDir);
-      }
-    } catch (error) {}
-
-    
     
     
     if (this.proc && this.proc.pid && !this.proc.killed) {
@@ -198,6 +192,14 @@ export class BrowserRunner {
         );
       }
     }
+
+    
+    try {
+      if (this._isTempUserDataDir) {
+        removeFolder.sync(this._userDataDir);
+      }
+    } catch (error) {}
+
     
     
     helper.removeEventListeners(this._listeners);

@@ -165,8 +165,8 @@ export class PuppeteerNode extends Puppeteer {
 
 
 
-  executablePath(): string {
-    return this._launcher.executablePath();
+  executablePath(channel?: string): string {
+    return this._launcher.executablePath(channel);
   }
 
   

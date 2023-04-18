@@ -156,6 +156,11 @@ export interface PDFOptions {
 
 
   omitBackground?: boolean;
+  
+
+
+
+  timeout?: number;
 }
 
 

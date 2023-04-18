@@ -168,7 +168,8 @@ describeFailsFirefox('Accessibility', function () {
       '<div tabIndex=-1 aria-roledescription="foo">Hi</div>'
     );
     const snapshot = await page.accessibility.snapshot();
-    expect(snapshot.children[0].roledescription).toEqual('foo');
+    
+    expect(snapshot.children[0].roledescription).toEqual(undefined);
   });
   it('orientation', async () => {
     const { page } = getTestState();

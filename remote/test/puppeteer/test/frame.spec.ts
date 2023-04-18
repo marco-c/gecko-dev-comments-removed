@@ -79,6 +79,17 @@ describe('Frame specs', function () {
         'Execution context is not available in detached frame'
       );
     });
+
+    it('allows readonly array to be an argument', async () => {
+      const { page, server } = getTestState();
+      await page.goto(server.EMPTY_PAGE);
+      const mainFrame = page.mainFrame();
+
+      
+      
+      const readonlyArray: readonly string[] = ['a', 'b', 'c'];
+      await mainFrame.evaluate((arr) => arr, readonlyArray);
+    });
   });
 
   describe('Frame Management', function () {

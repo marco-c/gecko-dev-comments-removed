@@ -54,7 +54,7 @@ export type Serializable =
 
 
 
-export type JSONArray = Serializable[];
+export type JSONArray = readonly Serializable[];
 
 
 
