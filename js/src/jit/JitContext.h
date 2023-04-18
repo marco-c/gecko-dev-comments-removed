@@ -148,6 +148,7 @@ class JitContext {
 
 
 [[nodiscard]] bool InitializeJit();
+void ShutdownJit();
 
 
 JitContext* GetJitContext();
