@@ -1339,16 +1339,21 @@ bool wasm::IsRoundingFunction(SymbolicAddress callee, jit::RoundingMode* mode) {
 }
 
 bool wasm::NeedsBuiltinThunk(SymbolicAddress sym) {
+  
   switch (sym) {
     
     case SymbolicAddress::InlineTypedObjectClass:
       return false;
 
     
-    case SymbolicAddress::HandleDebugTrap:  
-    case SymbolicAddress::HandleThrow:      
-    case SymbolicAddress::HandleTrap:       
+    case SymbolicAddress::HandleThrow:  
+    case SymbolicAddress::HandleTrap:   
       return false;
+
+    
+    
+    
+    case SymbolicAddress::HandleDebugTrap:  
 
     
     case SymbolicAddress::CallImport_General:      
@@ -1462,6 +1467,8 @@ bool wasm::NeedsBuiltinThunk(SymbolicAddress sym) {
 
   MOZ_CRASH("unexpected symbolic address");
 }
+
+
 
 
 
