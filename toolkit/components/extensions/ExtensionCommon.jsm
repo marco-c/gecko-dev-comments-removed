@@ -2765,6 +2765,55 @@ const stylesheetMap = new DefaultMap(url => {
   return styleSheetService.preloadSheet(uri, styleSheetService.AGENT_SHEET);
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+function updateAllowedOrigins(policy, origins, isAdd) {
+  if (!origins.length) {
+    
+    return;
+  }
+  let patternMap = new Map();
+  for (let pattern of policy.allowedOrigins.patterns) {
+    patternMap.set(pattern.pattern, pattern);
+  }
+  if (!isAdd) {
+    for (let origin of origins) {
+      patternMap.delete(origin);
+    }
+  } else {
+    
+    
+    
+    const restrictSchemes =
+      policy.extension?.restrictSchemes ??
+      policy.hasPermission("mozillaAddons");
+    for (let origin of origins) {
+      if (patternMap.has(origin)) {
+        continue;
+      }
+      patternMap.set(
+        origin,
+        new MatchPattern(origin, { restrictSchemes, ignorePath: true })
+      );
+    }
+  }
+  
+  
+  
+  policy.allowedOrigins = new MatchPatternSet(Array.from(patternMap.values()));
+}
+
 ExtensionCommon = {
   BaseContext,
   CanOfAPIs,
@@ -2786,6 +2835,7 @@ ExtensionCommon = {
   normalizeTime,
   runSafeSyncWithoutClone,
   stylesheetMap,
+  updateAllowedOrigins,
   withHandlingUserInput,
 
   MultiAPIManager,
