@@ -41,6 +41,12 @@ public class WebRequest extends WebMessage {
   public final @CacheMode int cacheMode;
 
   
+
+
+
+  public final boolean beConservative;
+
+  
   public final @Nullable String referrer;
 
   @Retention(RetentionPolicy.SOURCE)
@@ -103,6 +109,7 @@ public class WebRequest extends WebMessage {
     method = builder.mMethod;
     cacheMode = builder.mCacheMode;
     referrer = builder.mReferrer;
+    beConservative = builder.mBeConservative;
 
     if (builder.mBody != null) {
       body = builder.mBody.asReadOnlyBuffer();
@@ -117,6 +124,7 @@ public class WebRequest extends WebMessage {
      String mMethod = "GET";
      int mCacheMode = CACHE_MODE_DEFAULT;
      String mReferrer;
+     boolean mBeConservative;
 
     
 
@@ -212,6 +220,18 @@ public class WebRequest extends WebMessage {
 
     public @NonNull Builder referrer(final @Nullable String referrer) {
       mReferrer = referrer;
+      return this;
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Builder beConservative(final boolean beConservative) {
+      mBeConservative = beConservative;
       return this;
     }
 
