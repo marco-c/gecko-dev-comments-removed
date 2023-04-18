@@ -980,7 +980,7 @@ class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
 
 
 
-  bool Lock(const void* aOwner = nullptr) CAPABILITY_ACQUIRE(mLock) {
+  bool Lock(void* aOwner = nullptr) CAPABILITY_ACQUIRE(mLock) {
     mLock.Lock();
     return !aOwner || mLastLockOwner.exchange(aOwner) == aOwner;
   }
@@ -989,7 +989,7 @@ class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
   
 
 
-  void ForgetLockOwner(const void* aOwner) {
+  void ForgetLockOwner(void* aOwner) {
     if (aOwner) {
       mLastLockOwner.compareExchange(aOwner, nullptr);
     }
@@ -1002,7 +1002,7 @@ class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
   
   
   
-  Atomic<const void*> mLastLockOwner;
+  Atomic<void*> mLastLockOwner;
 };
 #endif
 

@@ -25,11 +25,7 @@ class gfxHarfBuzzShaper : public gfxFontShaper {
     gfxHarfBuzzShaper* mShaper;
   };
 
-  
   bool Initialize();
-
-  
-  bool IsInitialized() const { return mHBFont != nullptr; }
 
   bool ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
                  uint32_t aOffset, uint32_t aLength, Script aScript,
