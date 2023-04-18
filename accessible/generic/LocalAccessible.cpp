@@ -3446,13 +3446,15 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       
       
       int32_t value = static_cast<int32_t>(cell->RowExtent());
-      if (value != 1) {
+      MOZ_ASSERT(value > 0);
+      if (value > 1) {
         fields->SetAttribute(nsGkAtoms::rowspan, value);
       } else if (aUpdateType == CacheUpdateType::Update) {
         fields->SetAttribute(nsGkAtoms::rowspan, DeleteEntry());
       }
       value = static_cast<int32_t>(cell->ColExtent());
-      if (value != 1) {
+      MOZ_ASSERT(value > 0);
+      if (value > 1) {
         fields->SetAttribute(nsGkAtoms::colspan, value);
       } else if (aUpdateType == CacheUpdateType::Update) {
         fields->SetAttribute(nsGkAtoms::colspan, DeleteEntry());
