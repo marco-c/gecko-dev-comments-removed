@@ -726,7 +726,7 @@ impl<'a> CustomPropertiesBuilder<'a> {
             None => return self.inherited.cloned(),
         };
         if self.may_have_cycles {
-            substitute_all(&mut map, self.device);
+            substitute_all(&mut map, &self.seen, self.device);
         }
         map.shrink_to_fit();
         Some(Arc::new(map))
@@ -737,7 +737,7 @@ impl<'a> CustomPropertiesBuilder<'a> {
 
 
 
-fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, device: &Device) {
+fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, seen: &PrecomputedHashSet<&Name>, device: &Device) {
     
     
     
@@ -795,10 +795,10 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, device: &Devi
     
     
     
-    fn traverse<'a>(name: Name, context: &mut Context<'a>) -> Option<usize> {
+    fn traverse<'a>(name: &Name, context: &mut Context<'a>) -> Option<usize> {
         
         let (name, value) = {
-            let value = context.map.get(&name)?;
+            let value = context.map.get(name)?;
 
             
             if value.references.is_empty() {
@@ -811,7 +811,7 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, device: &Devi
 
             
             let key;
-            match context.index_map.entry(name) {
+            match context.index_map.entry(name.clone()) {
                 Entry::Occupied(entry) => {
                     return Some(*entry.get());
                 },
@@ -839,7 +839,7 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, device: &Devi
         let mut self_ref = false;
         let mut lowlink = index;
         for next in value.references.iter() {
-            let next_index = match traverse(next.clone(), context) {
+            let next_index = match traverse(next, context) {
                 Some(index) => index,
                 
                 
@@ -926,8 +926,8 @@ fn substitute_all(custom_properties_map: &mut CustomPropertiesMap, device: &Devi
 
     
     
-    let names: Vec<_> = custom_properties_map.keys().cloned().collect();
-    for name in names.into_iter() {
+    
+    for name in seen {
         let mut context = Context {
             count: 0,
             index_map: PrecomputedHashMap::default(),
