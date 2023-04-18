@@ -47,6 +47,7 @@
 #include "memory_hooks.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/AutoProfilerLabel.h"
+#include "mozilla/BaseAndGeckoProfilerDetail.h"
 #include "mozilla/ExtensionPolicyService.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
 #include "mozilla/Monitor.h"
@@ -781,12 +782,8 @@ class ActivePS {
       }
 
       
-      if (filter.find("pid:") == 0) {
-        std::string mypid =
-            std::to_string(profiler_current_process_id().ToNumber());
-        if (filter.compare(4, std::string::npos, mypid) == 0) {
-          return true;
-        }
+      if (mozilla::profiler::detail::FilterHasPid(filter.c_str())) {
+        return true;
       }
     }
 
@@ -5006,6 +5003,11 @@ void profiler_init(void* aStackTop) {
     if (startupFilters && startupFilters[0] != '\0') {
       filters = SplitAtCommas(startupFilters, filterStorage);
       LOG("- MOZ_PROFILER_STARTUP_FILTERS = %s", startupFilters);
+
+      if (mozilla::profiler::detail::FiltersExcludePid(filters)) {
+        LOG(" -> This process is excluded and won't be profiled");
+        return;
+      }
     }
 
     const char* startupActiveTabID =
