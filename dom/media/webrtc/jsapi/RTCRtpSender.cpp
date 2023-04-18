@@ -87,7 +87,7 @@ RTCDTMFSender* RTCRtpSender::GetDtmf() const { return mDtmf; }
 
 already_AddRefed<Promise> RTCRtpSender::GetStats() {
   RefPtr<Promise> promise = MakePromise();
-  if (NS_WARN_IF(!mTransceiverImpl)) {
+  if (NS_WARN_IF(!mPipeline)) {
     
     
     
@@ -109,7 +109,7 @@ already_AddRefed<Promise> RTCRtpSender::GetStats() {
 nsTArray<RefPtr<dom::RTCStatsPromise>> RTCRtpSender::GetStatsInternal() {
   MOZ_ASSERT(NS_IsMainThread());
   nsTArray<RefPtr<RTCStatsPromise>> promises(2);
-  if (!mSenderTrack || !mTransceiverImpl) {
+  if (!mSenderTrack || !mPipeline) {
     return promises;
   }
 
@@ -675,7 +675,6 @@ void RTCRtpSender::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
   mPipeline->Shutdown();
   mPipeline = nullptr;
-  mTransceiverImpl = nullptr;
 }
 
 void RTCRtpSender::UpdateTransport() {
