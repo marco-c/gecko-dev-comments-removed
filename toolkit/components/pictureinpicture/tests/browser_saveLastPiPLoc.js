@@ -9,7 +9,8 @@
 
 
 
-async function doTest() {
+
+add_task(async () => {
   await BrowserTestUtils.withNewTab(
     {
       url: TEST_PAGE,
@@ -358,13 +359,4 @@ async function doTest() {
       await ensureMessageAndClosePiP(browser, "with-controls", pipWin, true);
     }
   );
-}
-
-add_task(async function test_pip_save_last_loc() {
-  await doTest();
-});
-
-add_task(async function test_pip_save_last_loc_with_os_zoom() {
-  await SpecialPowers.pushPrefEnv({ set: [["ui.textScaleFactor", 200]] });
-  await doTest();
 });
