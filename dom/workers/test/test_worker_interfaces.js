@@ -290,6 +290,8 @@ var interfaceNamesInGlobalScope = [
   
   { name: "WebGLProgram", insecureContext: true, disabled: true },
   
+  { name: "WebGLQuery", insecureContext: true },
+  
   { name: "WebGLRenderbuffer", insecureContext: true, disabled: true },
   
   { name: "WebGLRenderingContext", insecureContext: true, disabled: true },

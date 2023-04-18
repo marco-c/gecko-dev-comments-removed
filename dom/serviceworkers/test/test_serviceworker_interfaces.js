@@ -280,6 +280,8 @@ var interfaceNamesInGlobalScope = [
   
   "WebSocket",
   
+  "WebGLQuery",
+  
   "WindowClient",
   
   "WorkerGlobalScope",
