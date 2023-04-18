@@ -139,7 +139,6 @@ use style::values::animated::{Animate, Procedure, ToAnimatedZero};
 use style::values::computed::font::{FontFamily, FontFamilyList, GenericFontFamily};
 use style::values::computed::{self, Context, ToComputedValue};
 use style::values::distance::ComputeSquaredDistance;
-use style::values::specified::FontSizeKeyword;
 use style::values::specified::gecko::IntersectionObserverRootMargin;
 use style::values::specified::source_size_list::SourceSizeList;
 use style::values::{specified, AtomIdent, CustomIdent, KeyframesName};
@@ -6965,7 +6964,7 @@ pub unsafe extern "C" fn Servo_ParseFontShorthandForMatching(
     style: &mut ComputedFontStyleDescriptor,
     stretch: &mut f32,
     weight: &mut f32,
-    size: &mut f32,
+    size: Option<&mut f32>,
 ) -> bool {
     use style::properties::shorthands::font;
     use style::values::computed::font::FontWeight as ComputedFontWeight;
@@ -6973,7 +6972,6 @@ pub unsafe extern "C" fn Servo_ParseFontShorthandForMatching(
     use style::values::specified::font::{
         FontFamily, FontSize, FontStretch, FontStyle, FontWeight, SpecifiedFontStyle,
     };
-    use style::values::specified::LengthPercentage;
 
     let string = value.as_str_unchecked();
     let mut input = ParserInput::new(&string);
@@ -7031,44 +7029,30 @@ pub unsafe extern "C" fn Servo_ParseFontShorthandForMatching(
 
     
     
-    *size = match font.font_size {
-        FontSize::Length(lp) => {
-            match lp {
-                LengthPercentage::Length(len) => {
-                    if let Ok(len) = len.to_computed_pixel_length_without_context() {
-                        len
-                    } else {
-                        return false;
-                    }
-                },
-                LengthPercentage::Percentage(_) => return false,
+    if let Some(size) = size {
+        *size = match font.font_size {
+            FontSize::Length(lp) => {
+                use style::values::generics::transform::ToAbsoluteLength;
+                match lp.to_pixel_length(None) {
+                    Ok(len) => len,
+                    Err(..) => return false,
+                }
+            },
+            
+            FontSize::Keyword(info) => {
+                let metrics = get_metrics_provider_for_product();
                 
-                LengthPercentage::Calc(_) => return false,
+                
+                let language = atom!("x-western");
+                let quirks_mode = QuirksMode::NoQuirks;
+                info.kw.to_length_without_context(quirks_mode, &metrics, &language, family).0.px()
             }
-        },
-        
-        
-        
-        
-        
-        FontSize::Keyword(info) => {
-            match info.kw {
-                FontSizeKeyword::XXSmall => 9.0,
-                FontSizeKeyword::XSmall => 10.0,
-                FontSizeKeyword::Small => 13.0,
-                FontSizeKeyword::Medium => 16.0,
-                FontSizeKeyword::Large => 18.0,
-                FontSizeKeyword::XLarge => 24.0,
-                FontSizeKeyword::XXLarge => 32.0,
-                FontSizeKeyword::XXXLarge => 48.0,
-                FontSizeKeyword::None => unreachable!(),
+            
+            FontSize::Smaller | FontSize::Larger | FontSize::System(_) => {
+                return false;
             }
-        }
-        
-        FontSize::Smaller => return false,
-        FontSize::Larger => return false,
-        FontSize::System(_) => return false,
-    };
+        };
+    }
 
     true
 }
