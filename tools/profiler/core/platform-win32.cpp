@@ -99,12 +99,26 @@ void Sampler::Disable(PSLockRef aLock) {}
 
 static void StreamMetaPlatformSampleUnits(PSLockRef aLock,
                                           SpliceableJSONWriter& aWriter) {
-  aWriter.StringProperty("threadCPUDelta", "variable CPU cycles");
+  static const Span<const char> units =
+      (GetCycleTimeFrequencyMHz() != 0) ? MakeStringSpan("ns")
+                                        : MakeStringSpan("variable CPU cycles");
+  aWriter.StringProperty("threadCPUDelta", units);
 }
 
 
 uint64_t RunningTimes::ConvertRawToJson(uint64_t aRawValue) {
-  return aRawValue;
+  static const uint64_t cycleTimeFrequencyMHz = GetCycleTimeFrequencyMHz();
+  if (cycleTimeFrequencyMHz == 0u) {
+    return aRawValue;
+  }
+
+  constexpr uint64_t GHZ_PER_MHZ = 1'000u;
+  
+  
+  
+  
+  
+  return (aRawValue * GHZ_PER_MHZ + (GHZ_PER_MHZ / 2u)) / cycleTimeFrequencyMHz;
 }
 
 static RunningTimes GetThreadRunningTimesDiff(
