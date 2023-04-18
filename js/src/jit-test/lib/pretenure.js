@@ -1,10 +1,12 @@
 
 
+const is64bit = getBuildConfiguration()['pointer-byte-size'] === 8;
 
-const nurseryCount = 25000;
+
+const nurseryCount = is64bit ? 25000 : 50000;
 
 
-const tenuredCount = 300000;
+const tenuredCount = is64bit ? 300000 : 600000;
 
 function setupPretenureTest() {
   
