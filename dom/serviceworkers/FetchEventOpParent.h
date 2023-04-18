@@ -9,6 +9,7 @@
 
 #include "nsISupports.h"
 
+#include "mozilla/Tuple.h"
 #include "mozilla/dom/FetchEventOpProxyParent.h"
 #include "mozilla/dom/PFetchEventOpParent.h"
 
@@ -24,7 +25,7 @@ class FetchEventOpParent final : public PFetchEventOpParent {
 
   
   
-  Maybe<ParentToParentResponseWithTiming> OnStart(
+  Tuple<Maybe<ParentToParentInternalResponse>, Maybe<ResponseEndArgs>> OnStart(
       MovingNotNull<RefPtr<FetchEventOpProxyParent>> aFetchEventOpProxyParent);
 
   
@@ -36,12 +37,15 @@ class FetchEventOpParent final : public PFetchEventOpParent {
   
 
   mozilla::ipc::IPCResult RecvPreloadResponse(
-      ParentToParentResponseWithTiming&& aResponse);
+      ParentToParentInternalResponse&& aResponse);
+
+  mozilla::ipc::IPCResult RecvPreloadResponseEnd(ResponseEndArgs&& aArgs);
 
   void ActorDestroy(ActorDestroyReason) override;
 
   struct Pending {
-    Maybe<ParentToParentResponseWithTiming> mPreloadResponse;
+    Maybe<ParentToParentInternalResponse> mPreloadResponse;
+    Maybe<ResponseEndArgs> mEndArgs;
   };
 
   struct Started {

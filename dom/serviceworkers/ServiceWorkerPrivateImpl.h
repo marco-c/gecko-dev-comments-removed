@@ -143,7 +143,7 @@ class ServiceWorkerPrivateImpl final : public ServiceWorkerPrivate::Inner,
 
   
   
-  RefPtr<FetchServiceResponsePromise> SetupNavigationPreload(
+  RefPtr<FetchServicePromises> SetupNavigationPreload(
       nsCOMPtr<nsIInterceptedChannel>& aChannel,
       const RefPtr<ServiceWorkerRegistrationInfo>& aRegistration);
 
@@ -151,7 +151,7 @@ class ServiceWorkerPrivateImpl final : public ServiceWorkerPrivate::Inner,
       RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
       ParentToParentServiceWorkerFetchEventOpArgs&& aArgs,
       nsCOMPtr<nsIInterceptedChannel>&& aChannel,
-      RefPtr<FetchServiceResponsePromise>&& aPreloadResponseReadyPromise);
+      RefPtr<FetchServicePromises>&& aPreloadResponseReadyPromises);
 
   void Shutdown();
 
@@ -197,7 +197,7 @@ class ServiceWorkerPrivateImpl final : public ServiceWorkerPrivate::Inner,
         RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
         ParentToParentServiceWorkerFetchEventOpArgs&& aArgs,
         nsCOMPtr<nsIInterceptedChannel>&& aChannel,
-        RefPtr<FetchServiceResponsePromise>&& aPreloadResponseReadyPromise);
+        RefPtr<FetchServicePromises>&& aPreloadResponseReadyPromises);
 
     nsresult Send() override;
 
@@ -212,7 +212,7 @@ class ServiceWorkerPrivateImpl final : public ServiceWorkerPrivate::Inner,
     
     
     
-    RefPtr<FetchServiceResponsePromise> mPreloadResponseReadyPromise;
+    RefPtr<FetchServicePromises> mPreloadResponseReadyPromises;
   };
 
   nsTArray<UniquePtr<PendingFunctionalEvent>> mPendingFunctionalEvents;

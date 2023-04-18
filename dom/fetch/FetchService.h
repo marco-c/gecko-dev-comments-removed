@@ -11,6 +11,7 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/FetchDriver.h"
+#include "mozilla/dom/FetchTypes.h"
 #include "mozilla/dom/PerformanceTimingTypes.h"
 #include "mozilla/dom/SafeRefPtr.h"
 
@@ -24,12 +25,36 @@ namespace mozilla::dom {
 class InternalRequest;
 class InternalResponse;
 
-using FetchServiceResponse =
-    Tuple<SafeRefPtr<InternalResponse>, IPCPerformanceTimingData, nsString,
-          nsString>;
-
-using FetchServiceResponsePromise =
+using FetchServiceResponse = SafeRefPtr<InternalResponse>;
+using FetchServiceResponseAvailablePromise =
     MozPromise<FetchServiceResponse, CopyableErrorResult, true>;
+using FetchServiceResponseEndPromise =
+    MozPromise<ResponseEndArgs, CopyableErrorResult, true>;
+
+class FetchServicePromises final {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FetchServicePromises);
+
+ public:
+  FetchServicePromises();
+
+  RefPtr<FetchServiceResponseAvailablePromise> GetResponseAvailablePromise();
+  RefPtr<FetchServiceResponseEndPromise> GetResponseEndPromise();
+
+  void ResolveResponseAvailablePromise(FetchServiceResponse&& aResponse,
+                                       const char* aMethodName);
+  void RejectResponseAvailablePromise(const CopyableErrorResult&& aError,
+                                      const char* aMethodName);
+  void ResolveResponseEndPromise(ResponseEndArgs&& aArgs,
+                                 const char* aMethodName);
+  void RejectResponseEndPromise(const CopyableErrorResult&& aError,
+                                const char* aMethodName);
+
+ private:
+  ~FetchServicePromises() = default;
+
+  RefPtr<FetchServiceResponseAvailablePromise::Private> mAvailablePromise;
+  RefPtr<FetchServiceResponseEndPromise::Private> mEndPromise;
+};
 
 
 
@@ -49,16 +74,16 @@ class FetchService final : public nsIObserver {
 
   static already_AddRefed<FetchService> GetInstance();
 
-  static RefPtr<FetchServiceResponsePromise> NetworkErrorResponse(nsresult aRv);
+  static RefPtr<FetchServicePromises> NetworkErrorResponse(nsresult aRv);
 
   FetchService();
 
   
   
-  RefPtr<FetchServiceResponsePromise> Fetch(
-      SafeRefPtr<InternalRequest> aRequest, nsIChannel* aChannel = nullptr);
+  RefPtr<FetchServicePromises> Fetch(SafeRefPtr<InternalRequest> aRequest,
+                                     nsIChannel* aChannel = nullptr);
 
-  void CancelFetch(RefPtr<FetchServiceResponsePromise>&& aResponsePromise);
+  void CancelFetch(RefPtr<FetchServicePromises>&& aPromises);
 
  private:
   
@@ -86,7 +111,7 @@ class FetchService final : public nsIObserver {
     
     nsresult Initialize(nsIChannel* aChannel = nullptr);
 
-    RefPtr<FetchServiceResponsePromise> Fetch();
+    RefPtr<FetchServicePromises> Fetch();
 
     void Cancel();
 
@@ -109,7 +134,7 @@ class FetchService final : public nsIObserver {
     RefPtr<FetchDriver> mFetchDriver;
     SafeRefPtr<InternalResponse> mResponse;
 
-    MozPromiseHolder<FetchServiceResponsePromise> mResponsePromiseHolder;
+    RefPtr<FetchServicePromises> mPromises;
   };
 
   ~FetchService();
@@ -118,8 +143,7 @@ class FetchService final : public nsIObserver {
   nsresult UnregisterNetworkObserver();
 
   
-  nsTHashMap<nsRefPtrHashKey<FetchServiceResponsePromise>,
-             RefPtr<FetchInstance> >
+  nsTHashMap<nsRefPtrHashKey<FetchServicePromises>, RefPtr<FetchInstance> >
       mFetchInstanceTable;
   bool mObservingNetwork{false};
   bool mOffline{false};

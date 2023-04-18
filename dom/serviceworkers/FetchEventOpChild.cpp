@@ -184,7 +184,7 @@ NS_IMPL_ISUPPORTS(SynthesizeResponseWatcher, nsIInterceptedBodyCallback)
     ParentToParentServiceWorkerFetchEventOpArgs&& aArgs,
     nsCOMPtr<nsIInterceptedChannel> aInterceptedChannel,
     RefPtr<ServiceWorkerRegistrationInfo> aRegistration,
-    RefPtr<FetchServiceResponsePromise>&& aPreloadResponseReadyPromise,
+    RefPtr<FetchServicePromises>&& aPreloadResponseReadyPromises,
     RefPtr<KeepAliveToken>&& aKeepAliveToken) {
   AssertIsOnMainThread();
   MOZ_ASSERT(aManager);
@@ -193,7 +193,7 @@ NS_IMPL_ISUPPORTS(SynthesizeResponseWatcher, nsIInterceptedBodyCallback)
 
   FetchEventOpChild* actor = new FetchEventOpChild(
       std::move(aArgs), std::move(aInterceptedChannel),
-      std::move(aRegistration), std::move(aPreloadResponseReadyPromise),
+      std::move(aRegistration), std::move(aPreloadResponseReadyPromises),
       std::move(aKeepAliveToken));
 
   actor->mWasSent = true;
@@ -212,53 +212,63 @@ FetchEventOpChild::FetchEventOpChild(
     ParentToParentServiceWorkerFetchEventOpArgs&& aArgs,
     nsCOMPtr<nsIInterceptedChannel>&& aInterceptedChannel,
     RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
-    RefPtr<FetchServiceResponsePromise>&& aPreloadResponseReadyPromise,
+    RefPtr<FetchServicePromises>&& aPreloadResponseReadyPromises,
     RefPtr<KeepAliveToken>&& aKeepAliveToken)
     : mArgs(std::move(aArgs)),
       mInterceptedChannel(std::move(aInterceptedChannel)),
       mRegistration(std::move(aRegistration)),
       mKeepAliveToken(std::move(aKeepAliveToken)),
-      mPreloadResponseReadyPromise(std::move(aPreloadResponseReadyPromise)) {
-  if (mPreloadResponseReadyPromise) {
+      mPreloadResponseReadyPromises(std::move(aPreloadResponseReadyPromises)) {
+  if (mPreloadResponseReadyPromises) {
     
     
     
     
     
     
-    mPreloadResponseReadyPromise
+    mPreloadResponseReadyPromises->GetResponseAvailablePromise()
         ->Then(
             GetCurrentSerialEventTarget(), __func__,
             [this](FetchServiceResponse&& aResponse) {
-              SafeRefPtr<InternalResponse> preloadResponse;
-              IPCPerformanceTimingData timingData;
-              nsString initiatorType;
-              nsString entryName;
-              Tie(preloadResponse, timingData, initiatorType, entryName) =
-                  std::move(aResponse);
-              ParentToParentResponseWithTiming response;
-              response.response() =
-                  preloadResponse->ToParentToParentInternalResponse();
-              response.timingData() = timingData;
-              response.initiatorType() = initiatorType;
-              response.entryName() = entryName;
               if (!mWasSent) {
                 
                 
-                mArgs.preloadResponse() = Some(std::move(response));
+                mArgs.preloadResponse() =
+                    Some(aResponse->ToParentToParentInternalResponse());
               } else {
                 
                 
-                SendPreloadResponse(response);
+                SendPreloadResponse(
+                    aResponse->ToParentToParentInternalResponse());
               }
-              mPreloadResponseReadyPromise = nullptr;
-              mPreloadResponseReadyPromiseRequestHolder.Complete();
+              mPreloadResponseAvailablePromiseRequestHolder.Complete();
             },
             [this](const CopyableErrorResult&) {
-              mPreloadResponseReadyPromise = nullptr;
-              mPreloadResponseReadyPromiseRequestHolder.Complete();
+              mPreloadResponseAvailablePromiseRequestHolder.Complete();
             })
-        ->Track(mPreloadResponseReadyPromiseRequestHolder);
+        ->Track(mPreloadResponseAvailablePromiseRequestHolder);
+
+    mPreloadResponseReadyPromises->GetResponseEndPromise()
+        ->Then(
+            GetCurrentSerialEventTarget(), __func__,
+            [this](ResponseEndArgs&& aResponse) {
+              if (!mWasSent) {
+                
+                
+                mArgs.preloadResponseEndArgs() = Some(std::move(aResponse));
+              } else {
+                
+                
+                SendPreloadResponseEnd(aResponse);
+              }
+              mPreloadResponseReadyPromises = nullptr;
+              mPreloadResponseEndPromiseRequestHolder.Complete();
+            },
+            [this](const CopyableErrorResult&) {
+              mPreloadResponseReadyPromises = nullptr;
+              mPreloadResponseEndPromiseRequestHolder.Complete();
+            })
+        ->Track(mPreloadResponseEndPromiseRequestHolder);
   }
 }
 
@@ -278,14 +288,6 @@ mozilla::ipc::IPCResult FetchEventOpChild::RecvAsyncLog(
 mozilla::ipc::IPCResult FetchEventOpChild::RecvRespondWith(
     ParentToParentFetchEventRespondWithResult&& aResult) {
   AssertIsOnMainThread();
-
-  
-  
-  mPreloadResponseReadyPromiseRequestHolder.DisconnectIfExists();
-  if (mPreloadResponseReadyPromise) {
-    RefPtr<FetchService> fetchService = FetchService::GetInstance();
-    fetchService->CancelFetch(std::move(mPreloadResponseReadyPromise));
-  }
 
   switch (aResult.type()) {
     case ParentToParentFetchEventRespondWithResult::
@@ -326,6 +328,22 @@ mozilla::ipc::IPCResult FetchEventOpChild::RecvRespondWith(
       break;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  if (mPreloadResponseAvailablePromiseRequestHolder.Exists()) {
+    mPreloadResponseAvailablePromiseRequestHolder.Disconnect();
+    mPreloadResponseEndPromiseRequestHolder.Disconnect();
+    if (mPreloadResponseReadyPromises) {
+      RefPtr<FetchService> fetchService = FetchService::GetInstance();
+      fetchService->CancelFetch(std::move(mPreloadResponseReadyPromises));
+    }
+  }
+
   return IPC_OK();
 }
 
@@ -344,10 +362,11 @@ mozilla::ipc::IPCResult FetchEventOpChild::Recv__delete__(
   }
 
   mPromiseHolder.ResolveIfExists(true, __func__);
-  mPreloadResponseReadyPromiseRequestHolder.DisconnectIfExists();
-  if (mPreloadResponseReadyPromise) {
+  mPreloadResponseAvailablePromiseRequestHolder.DisconnectIfExists();
+  mPreloadResponseEndPromiseRequestHolder.DisconnectIfExists();
+  if (mPreloadResponseReadyPromises) {
     RefPtr<FetchService> fetchService = FetchService::GetInstance();
-    fetchService->CancelFetch(std::move(mPreloadResponseReadyPromise));
+    fetchService->CancelFetch(std::move(mPreloadResponseReadyPromises));
   }
 
   
