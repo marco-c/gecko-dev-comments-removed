@@ -1253,7 +1253,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
   DebuggerSource* wrapSource(JSContext* cx,
-                             js::HandleScriptSourceObject source);
+                             js::Handle<ScriptSourceObject*> source);
 
   
 

@@ -739,7 +739,7 @@ ScriptSourceObject* ScriptSourceObject::create(JSContext* cx,
 }
 
 [[nodiscard]] static bool MaybeValidateFilename(
-    JSContext* cx, HandleScriptSourceObject sso,
+    JSContext* cx, Handle<ScriptSourceObject*> sso,
     const JS::InstantiateOptions& options) {
   
   
@@ -772,7 +772,7 @@ ScriptSourceObject* ScriptSourceObject::create(JSContext* cx,
 
 
 bool ScriptSourceObject::initFromOptions(
-    JSContext* cx, HandleScriptSourceObject source,
+    JSContext* cx, Handle<ScriptSourceObject*> source,
     const JS::InstantiateOptions& options) {
   cx->releaseCheck(source);
   MOZ_ASSERT(
@@ -803,9 +803,9 @@ bool ScriptSourceObject::initFromOptions(
 }
 
 
-bool ScriptSourceObject::initElementProperties(JSContext* cx,
-                                               HandleScriptSourceObject source,
-                                               HandleString elementAttrName) {
+bool ScriptSourceObject::initElementProperties(
+    JSContext* cx, Handle<ScriptSourceObject*> source,
+    HandleString elementAttrName) {
   RootedValue nameValue(cx);
   if (elementAttrName) {
     nameValue = StringValue(elementAttrName);
@@ -2301,7 +2301,7 @@ void PrivateScriptData::trace(JSTracer* trc) {
 
 
 JSScript* JSScript::Create(JSContext* cx, JS::Handle<JSFunction*> function,
-                           js::HandleScriptSourceObject sourceObject,
+                           js::Handle<ScriptSourceObject*> sourceObject,
                            const SourceExtent& extent,
                            js::ImmutableScriptFlags flags) {
   return static_cast<JSScript*>(
@@ -3127,7 +3127,7 @@ BaseScript::BaseScript(uint8_t* stubEntry, JSFunction* function,
 
 
 BaseScript* BaseScript::New(JSContext* cx, JS::Handle<JSFunction*> function,
-                            HandleScriptSourceObject sourceObject,
+                            Handle<ScriptSourceObject*> sourceObject,
                             const SourceExtent& extent,
                             uint32_t immutableFlags) {
   void* script = Allocate<BaseScript>(cx);
@@ -3151,7 +3151,7 @@ BaseScript* BaseScript::New(JSContext* cx, JS::Handle<JSFunction*> function,
 
 BaseScript* BaseScript::CreateRawLazy(JSContext* cx, uint32_t ngcthings,
                                       HandleFunction fun,
-                                      HandleScriptSourceObject sourceObject,
+                                      Handle<ScriptSourceObject*> sourceObject,
                                       const SourceExtent& extent,
                                       uint32_t immutableFlags) {
   cx->check(fun);
