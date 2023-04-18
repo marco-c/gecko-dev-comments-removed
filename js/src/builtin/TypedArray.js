@@ -1037,29 +1037,6 @@ function TypedArrayCompareInt(x, y) {
 
 
 
-function TypedArrayCompareBigInt(x, y) {
-    
-    assert(typeof x === "bigint" && typeof y === "bigint",
-           "x and y are not BigInts.");
-
-    
-
-    
-    if (x < y)
-        return -1;
-
-    
-    if (x > y)
-        return 1;
-
-    
-
-    
-    return 0;
-}
-
-
-
 function TypedArraySort(comparefn) {
     
 
@@ -1120,7 +1097,7 @@ function TypedArraySort(comparefn) {
                              TypedArrayCompareInt);
           case TYPEDARRAY_KIND_BIGINT64:
           case TYPEDARRAY_KIND_BIGUINT64:
-            return QuickSort(obj, len, TypedArrayCompareBigInt);
+            return TypedArrayNativeSort(obj);
           case TYPEDARRAY_KIND_FLOAT32:
             return RadixSort(obj, len, buffer,
                              4 , true , true ,
@@ -1130,7 +1107,7 @@ function TypedArraySort(comparefn) {
             
             
             assert(kind === TYPEDARRAY_KIND_FLOAT64, "unexpected typed array kind");
-            return QuickSort(obj, len, TypedArrayCompare);
+            return TypedArrayNativeSort(obj);
         }
     }
 
