@@ -23,7 +23,6 @@ class PickleIterator;
 namespace mozilla {
 namespace ipc {
 
-class AutoIPCStream;
 class PBackgroundChild;
 class PBackgroundParent;
 
@@ -275,10 +274,6 @@ class StructuredCloneData : public StructuredCloneHolder {
 
   bool SupportsTransferring() { return mSupportsTransferring; }
 
-  FallibleTArray<mozilla::ipc::AutoIPCStream>& IPCStreams() {
-    return mIPCStreams;
-  }
-
   
   void WriteIPCParams(IPC::MessageWriter* aWriter) const;
   bool ReadIPCParams(IPC::MessageReader* aReader);
@@ -290,9 +285,6 @@ class StructuredCloneData : public StructuredCloneHolder {
   JSStructuredCloneData mExternalData;
   RefPtr<SharedJSAllocatedData> mSharedData;
 
-  
-  
-  FallibleTArray<mozilla::ipc::AutoIPCStream> mIPCStreams;
   bool mInitialized;
 };
 

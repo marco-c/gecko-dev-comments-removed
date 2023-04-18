@@ -23,7 +23,6 @@
 using mozilla::Maybe;
 using mozilla::Unused;
 using mozilla::dom::cache::CacheReadStream;
-using mozilla::ipc::AutoIPCStream;
 using mozilla::ipc::PBackgroundParent;
 
 namespace {
@@ -55,12 +54,6 @@ AutoChildOpArgs::AutoChildOpArgs(TypeUtils* aTypeUtils,
     : mTypeUtils(aTypeUtils), mOpArgs(aOpArgs), mSent(false) {
   MOZ_DIAGNOSTIC_ASSERT(mTypeUtils);
   MOZ_RELEASE_ASSERT(aEntryCount != 0);
-  
-  
-  
-  
-  
-  
   if (mOpArgs.type() == CacheOpArgs::TCachePutAllArgs) {
     CachePutAllArgs& args = mOpArgs.get_CachePutAllArgs();
     args.requestResponseList().SetCapacity(aEntryCount);
@@ -117,8 +110,6 @@ AutoChildOpArgs::~AutoChildOpArgs() {
       
       break;
   }
-
-  mStreamCleanupList.Clear();
 }
 
 void AutoChildOpArgs::Add(const InternalRequest& aRequest,
@@ -130,7 +121,7 @@ void AutoChildOpArgs::Add(const InternalRequest& aRequest,
     case CacheOpArgs::TCacheMatchArgs: {
       CacheMatchArgs& args = mOpArgs.get_CacheMatchArgs();
       mTypeUtils->ToCacheRequest(args.request(), aRequest, aBodyAction,
-                                 aSchemeAction, mStreamCleanupList, aRv);
+                                 aSchemeAction, aRv);
       break;
     }
     case CacheOpArgs::TCacheMatchAllArgs: {
@@ -138,14 +129,13 @@ void AutoChildOpArgs::Add(const InternalRequest& aRequest,
       MOZ_DIAGNOSTIC_ASSERT(args.maybeRequest().isNothing());
       args.maybeRequest().emplace(CacheRequest());
       mTypeUtils->ToCacheRequest(args.maybeRequest().ref(), aRequest,
-                                 aBodyAction, aSchemeAction, mStreamCleanupList,
-                                 aRv);
+                                 aBodyAction, aSchemeAction, aRv);
       break;
     }
     case CacheOpArgs::TCacheDeleteArgs: {
       CacheDeleteArgs& args = mOpArgs.get_CacheDeleteArgs();
       mTypeUtils->ToCacheRequest(args.request(), aRequest, aBodyAction,
-                                 aSchemeAction, mStreamCleanupList, aRv);
+                                 aSchemeAction, aRv);
       break;
     }
     case CacheOpArgs::TCacheKeysArgs: {
@@ -153,14 +143,13 @@ void AutoChildOpArgs::Add(const InternalRequest& aRequest,
       MOZ_DIAGNOSTIC_ASSERT(args.maybeRequest().isNothing());
       args.maybeRequest().emplace(CacheRequest());
       mTypeUtils->ToCacheRequest(args.maybeRequest().ref(), aRequest,
-                                 aBodyAction, aSchemeAction, mStreamCleanupList,
-                                 aRv);
+                                 aBodyAction, aSchemeAction, aRv);
       break;
     }
     case CacheOpArgs::TStorageMatchArgs: {
       StorageMatchArgs& args = mOpArgs.get_StorageMatchArgs();
       mTypeUtils->ToCacheRequest(args.request(), aRequest, aBodyAction,
-                                 aSchemeAction, mStreamCleanupList, aRv);
+                                 aSchemeAction, aRv);
       break;
     }
     default:
@@ -273,10 +262,6 @@ void AutoChildOpArgs::Add(JSContext* aCx, const InternalRequest& aRequest,
         return;
       }
 
-      
-      
-      
-      
       MOZ_RELEASE_ASSERT(args.requestResponseList().Length() <
                          args.requestResponseList().Capacity());
 
@@ -292,10 +277,9 @@ void AutoChildOpArgs::Add(JSContext* aCx, const InternalRequest& aRequest,
       pair.response().body() = Nothing();
 
       mTypeUtils->ToCacheRequest(pair.request(), aRequest, aBodyAction,
-                                 aSchemeAction, mStreamCleanupList, aRv);
+                                 aSchemeAction, aRv);
       if (!aRv.Failed()) {
-        mTypeUtils->ToCacheResponse(aCx, pair.response(), aResponse,
-                                    mStreamCleanupList, aRv);
+        mTypeUtils->ToCacheResponse(aCx, pair.response(), aResponse, aRv);
       }
 
       if (aRv.Failed()) {
@@ -313,9 +297,6 @@ void AutoChildOpArgs::Add(JSContext* aCx, const InternalRequest& aRequest,
 const CacheOpArgs& AutoChildOpArgs::SendAsOpArgs() {
   MOZ_DIAGNOSTIC_ASSERT(!mSent);
   mSent = true;
-  for (UniquePtr<AutoIPCStream>& autoStream : mStreamCleanupList) {
-    autoStream->TakeOptionalValue();
-  }
   return mOpArgs;
 }
 
@@ -330,12 +311,6 @@ AutoParentOpResult::AutoParentOpResult(
       mSent(false) {
   MOZ_DIAGNOSTIC_ASSERT(mManager);
   MOZ_RELEASE_ASSERT(aEntryCount != 0);
-  
-  
-  
-  
-  
-  
   if (mOpResult.type() == CacheOpResult::TCacheMatchAllResult) {
     CacheMatchAllResult& result = mOpResult.get_CacheMatchAllResult();
     result.responseList().SetCapacity(aEntryCount);
@@ -370,8 +345,6 @@ AutoParentOpResult::~AutoParentOpResult() {
     QM_WARNONLY_TRY(
         OkIf(PCacheStreamControlParent::Send__delete__(mStreamControl)));
   }
-
-  mStreamCleanupList.Clear();
 }
 
 void AutoParentOpResult::Add(CacheId aOpenedCacheId,
@@ -399,10 +372,6 @@ void AutoParentOpResult::Add(const SavedResponse& aSavedResponse,
     }
     case CacheOpResult::TCacheMatchAllResult: {
       CacheMatchAllResult& result = mOpResult.get_CacheMatchAllResult();
-      
-      
-      
-      
       MOZ_RELEASE_ASSERT(result.responseList().Length() <
                          result.responseList().Capacity());
       result.responseList().AppendElement(aSavedResponse.mValue);
@@ -430,10 +399,6 @@ void AutoParentOpResult::Add(const SavedRequest& aSavedRequest,
   switch (mOpResult.type()) {
     case CacheOpResult::TCacheKeysResult: {
       CacheKeysResult& result = mOpResult.get_CacheKeysResult();
-      
-      
-      
-      
       MOZ_RELEASE_ASSERT(result.requestList().Length() <
                          result.requestList().Capacity());
       result.requestList().AppendElement(aSavedRequest.mValue);
@@ -457,9 +422,6 @@ void AutoParentOpResult::Add(const SavedRequest& aSavedRequest,
 const CacheOpResult& AutoParentOpResult::SendAsOpResult() {
   MOZ_DIAGNOSTIC_ASSERT(!mSent);
   mSent = true;
-  for (UniquePtr<AutoIPCStream>& autoStream : mStreamCleanupList) {
-    autoStream->TakeOptionalValue();
-  }
   return mOpResult;
 }
 
@@ -504,7 +466,7 @@ void AutoParentOpResult::SerializeReadStream(const nsID& aId,
   RefPtr<ReadStream> readStream =
       ReadStream::Create(mStreamControl, aId, stream);
   ErrorResult rv;
-  readStream->Serialize(aReadStreamOut, mStreamCleanupList, rv);
+  readStream->Serialize(aReadStreamOut, rv);
   MOZ_DIAGNOSTIC_ASSERT(!rv.Failed());
 }
 

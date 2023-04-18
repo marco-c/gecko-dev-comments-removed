@@ -15,8 +15,7 @@ namespace mozilla::ipc {
 
 
 
-class BackgroundParentImpl : public PBackgroundParent,
-                             public ParentToChildStreamActorManager {
+class BackgroundParentImpl : public PBackgroundParent {
  protected:
   BackgroundParentImpl();
   virtual ~BackgroundParentImpl();
