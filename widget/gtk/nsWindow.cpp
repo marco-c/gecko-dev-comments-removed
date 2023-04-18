@@ -400,7 +400,7 @@ nsWindow::nsWindow()
       mPopupTemporaryHidden(false),
       mPopupClosed(false),
       mPopupUseMoveToRect(false),
-      mPreferredPopupRectFlushed(false),
+      mMoveToRectPopupRectCleared(false),
       mWaitingForMoveToRectCallback(false),
       mUpdatedByMoveToRectCallback(false),
       mConfiguredClearColor(false),
@@ -945,7 +945,7 @@ void nsWindow::ResizeInt(int aX, int aY, int aWidth, int aHeight, bool aMove) {
   }
 
   
-  if (mPreferredPopupRectFlushed) {
+  if (mMoveToRectPopupRectCleared) {
     aMove = true;
   }
 
@@ -1037,12 +1037,12 @@ void nsWindow::Move(double aX, double aY) {
   }
 
   if (IsWaylandPopup()) {
-    auto prefBounds = mPreferredPopupRect;
+    auto prefBounds = mMoveToRectPopupRect;
     if (prefBounds.TopLeft() != mBounds.TopLeft()) {
       NativeMoveResize( true,  false);
       NotifyRollupGeometryChange();
     } else {
-      LOG("  mBounds same as mPreferredPopupRect, no need to move");
+      LOG("  mBounds same as mMoveToRectPopupRect, no need to move");
     }
   } else {
     NativeMoveResize( true,  false);
@@ -1839,7 +1839,8 @@ void nsWindow::NativeMoveResizeWaylandPopupCallback(
 
     
     
-    mPreferredPopupRect = LayoutDeviceIntRect();
+    
+    mMoveToRectPopupRect = LayoutDeviceIntRect();
     if (moved) {
       mBounds.x = mNewBoundsAfterMoveToRect.x;
       mBounds.y = mNewBoundsAfterMoveToRect.y;
@@ -1867,15 +1868,17 @@ void nsWindow::NativeMoveResizeWaylandPopupCallback(
   LOG("  new mBounds [%d, %d] -> [%d x %d]", newBounds.x, newBounds.y,
       newBounds.width, newBounds.height);
 
+  
+  
+  mMoveToRectPopupRect = newBounds;
+  mMoveToRectPopupRectCleared = false;
+
   const bool needsPositionUpdate = newBounds.TopLeft() != mBounds.TopLeft();
   const bool needsSizeUpdate = newBounds.Size() != mBounds.Size();
 
   
   if (needsSizeUpdate) {
     LOG("  needSizeUpdate\n");
-    mPreferredPopupRect = newBounds;
-    mPreferredPopupRectFlushed = false;
-
     Resize(aFinalSize->width, aFinalSize->height, true);
 
     if (nsMenuPopupFrame* popupFrame = GetMenuPopupFrame(GetFrame())) {
@@ -2020,7 +2023,6 @@ bool nsWindow::WaylandPopupFitsParentWindow(const GdkRectangle& aSize) {
   int popupHeight = aSize.height;
 
   auto popupBounds = DevicePixelsToGdkRectRoundOut(mBounds);
-
   return popupBounds.x + popupWidth <= parentWidth &&
          popupBounds.y + popupHeight <= parentHeight;
 }
@@ -5355,8 +5357,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   LOG("  mBounds: x:%d y:%d w:%d h:%d\n", mBounds.x, mBounds.y, mBounds.width,
       mBounds.height);
 
-  mPreferredPopupRectFlushed = false;
-
   ConstrainSize(&mBounds.width, &mBounds.height);
 
   GtkWidget* eventWidget = nullptr;
@@ -6186,8 +6186,8 @@ void nsWindow::NativeShow(bool aAction) {
   } else {
     
     
-    mPreferredPopupRect = LayoutDeviceIntRect();
-    mPreferredPopupRectFlushed = false;
+    mMoveToRectPopupRect = LayoutDeviceIntRect();
+    mMoveToRectPopupRectCleared = false;
     LOG("nsWindow::NativeShow hide\n");
     if (GdkIsWaylandDisplay()) {
       if (IsWaylandPopup()) {

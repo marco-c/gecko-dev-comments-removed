@@ -1708,15 +1708,14 @@ class nsIWidget : public nsISupports {
   }
 
   
-  
-  
-  virtual LayoutDeviceIntRect GetPreferredPopupRect() const {
-    NS_WARNING("GetPreferredPopupRect implemented only for wayland");
+
+
+  virtual LayoutDeviceIntRect GetMoveToRectPopupRect() const {
+    NS_WARNING("GetLayoutPopupRect implemented only for wayland");
     return LayoutDeviceIntRect();
   }
-
-  virtual void FlushPreferredPopupRect() {
-    NS_WARNING("FlushPreferredPopupRect implemented only for wayland");
+  virtual void MoveToRectPopupRectClear() {
+    NS_WARNING("LayoutPopupRectChanged implemented only for wayland");
     return;
   }
 

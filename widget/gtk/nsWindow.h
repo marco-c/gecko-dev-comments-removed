@@ -406,12 +406,12 @@ class nsWindow final : public nsBaseWidget {
       const LayoutDeviceIntPoint& aLockCenter) override;
   void LockNativePointer() override;
   void UnlockNativePointer() override;
-  LayoutDeviceIntRect GetPreferredPopupRect() const override {
-    return mPreferredPopupRect;
+  LayoutDeviceIntRect GetMoveToRectPopupRect() const override {
+    return mMoveToRectPopupRect;
   };
-  void FlushPreferredPopupRect() override {
-    mPreferredPopupRect = LayoutDeviceIntRect();
-    mPreferredPopupRectFlushed = true;
+  void MoveToRectPopupRectClear() override {
+    mMoveToRectPopupRect = LayoutDeviceIntRect();
+    mMoveToRectPopupRectCleared = true;
   };
 #endif
 
@@ -685,7 +685,10 @@ class nsWindow final : public nsBaseWidget {
   
   bool mPopupUseMoveToRect : 1;
 
-  bool mPreferredPopupRectFlushed : 1;
+  
+  
+  bool mMoveToRectPopupRectCleared : 1;
+
   
 
 
@@ -827,7 +830,9 @@ class nsWindow final : public nsBaseWidget {
   RefPtr<nsWindow> mWaylandPopupPrev;
 
   
-  LayoutDeviceIntRect mPreferredPopupRect;
+  
+  
+  LayoutDeviceIntRect mMoveToRectPopupRect;
 
   LayoutDeviceIntRect mNewBoundsAfterMoveToRect;
 
