@@ -597,8 +597,16 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
 
   
   
-  RandomUint64OrDie();
-#endif
+  
+  
+  UCHAR buffer[32];
+  NTSTATUS status = BCryptGenRandom(NULL,            
+                                    buffer,          
+                                    sizeof(buffer),  
+                                    BCRYPT_USE_SYSTEM_PREFERRED_RNG  
+  );
+  MOZ_RELEASE_ASSERT(status == STATUS_SUCCESS);
+#endif  
 
   {
     
