@@ -3683,9 +3683,21 @@ static Maybe<PropertyInfo> LookupShapeForSetSlot(JSOp op, NativeObject* obj,
 
   
   
-  
-  if (IsPropertyInitOp(op) && (!prop->configurable() || !prop->enumerable())) {
-    return mozilla::Nothing();
+  if (IsPropertyInitOp(op)) {
+    
+    if (IsLockedInitOp(op)) {
+      return mozilla::Nothing();
+    }
+
+    
+    if (!prop->configurable()) {
+      return mozilla::Nothing();
+    }
+
+    
+    if (IsHiddenInitOp(op) == prop->enumerable()) {
+      return mozilla::Nothing();
+    }
   }
 
   return prop;
