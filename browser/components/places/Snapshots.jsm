@@ -129,6 +129,15 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 
 const Snapshots = new (class Snapshots {
+  USER_PERSISTED = {
+    
+    NO: 0,
+    
+    MANUAL: 1,
+    
+    PINNED: 2,
+  };
+
   constructor() {
     
     
@@ -329,7 +338,7 @@ const Snapshots = new (class Snapshots {
 
 
 
-  async add({ url, userPersisted = false }) {
+  async add({ url, userPersisted = this.USER_PERSISTED.NO }) {
     if (!url) {
       throw new Error("Missing url parameter to Snapshots.add()");
     }
@@ -360,7 +369,7 @@ const Snapshots = new (class Snapshots {
             LEFT JOIN moz_places_metadata m ON m.place_id = h.id
             WHERE h.url_hash = hash(:url) AND h.url = :url
             GROUP BY h.id
-            ON CONFLICT DO UPDATE SET user_persisted = :userPersisted, removed_at = NULL WHERE :userPersisted = 1
+            ON CONFLICT DO UPDATE SET user_persisted = :userPersisted, removed_at = NULL WHERE :userPersisted <> 0
             RETURNING place_id, created_at, user_persisted
           `,
           {
@@ -376,7 +385,7 @@ const Snapshots = new (class Snapshots {
           
           if (
             rows[0].getResultByName("created_at") != now &&
-            !rows[0].getResultByName("user_persisted")
+            rows[0].getResultByName("user_persisted") == this.USER_PERSISTED.NO
           ) {
             return null;
           }
@@ -680,7 +689,7 @@ const Snapshots = new (class Snapshots {
         row.getResultByName("last_interaction_at")
       ),
       documentType: row.getResultByName("document_type"),
-      userPersisted: !!row.getResultByName("user_persisted"),
+      userPersisted: row.getResultByName("user_persisted"),
       overlappingVisitScore,
       pageData: pageData ?? new Map(),
       visitCount: row.getResultByName("visit_count"),
