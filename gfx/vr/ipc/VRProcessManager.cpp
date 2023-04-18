@@ -217,7 +217,7 @@ void VRProcessManager::OnPreferenceChange(const char16_t* aData) {
   NS_LossyConvertUTF16toASCII strData(aData);
 
   
-  if (!dom::ContentParent::ShouldSyncPreference(strData.Data())) {
+  if (!ShouldSyncPreference(strData.Data())) {
     return;
   }
 
