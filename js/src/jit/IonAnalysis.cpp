@@ -553,31 +553,6 @@ bool jit::IsUint32Type(const MDefinition* def) {
 }
 
 
-static bool BlockComputesConstant(MBasicBlock* block, MDefinition* value,
-                                  bool* constBool) {
-  
-  
-  
-  if (value->hasUses()) {
-    return false;
-  }
-
-  if (!value->isConstant() || value->block() != block) {
-    return false;
-  }
-  if (!block->phisEmpty()) {
-    return false;
-  }
-  for (MInstructionIterator iter = block->begin(); iter != block->end();
-       ++iter) {
-    if (*iter != value || !iter->isGoto()) {
-      return false;
-    }
-  }
-  return value->toConstant()->valueToBoolean(constBool);
-}
-
-
 
 static bool BlockIsSingleTest(MBasicBlock* phiBlock, MBasicBlock* testBlock,
                               MPhi** pphi, MTest** ptest) {
@@ -839,8 +814,6 @@ static bool MaybeFoldDiamondConditionBlock(MIRGraph& graph,
   
   
   
-  
-  
 
   
 
@@ -905,16 +878,8 @@ static bool MaybeFoldDiamondConditionBlock(MIRGraph& graph,
 
   
   
-  
-  
 
-  MBasicBlock* trueTarget = trueBranch;
-  bool constBool;
-  if (BlockComputesConstant(trueBranch, trueResult, &constBool)) {
-    trueTarget = constBool ? finalTest->ifTrue() : finalTest->ifFalse();
-    phiBlock->removePredecessor(trueBranch);
-    graph.removeBlock(trueBranch);
-  } else if (IsTestInputMaybeToBool(initialTest, trueResult)) {
+  if (IsTestInputMaybeToBool(initialTest, trueResult)) {
     if (!UpdateGotoSuccessor(graph.alloc(), trueBranch, finalTest->ifTrue(),
                              testBlock)) {
       return false;
@@ -927,12 +892,7 @@ static bool MaybeFoldDiamondConditionBlock(MIRGraph& graph,
     }
   }
 
-  MBasicBlock* falseTarget = falseBranch;
-  if (BlockComputesConstant(falseBranch, falseResult, &constBool)) {
-    falseTarget = constBool ? finalTest->ifTrue() : finalTest->ifFalse();
-    phiBlock->removePredecessor(falseBranch);
-    graph.removeBlock(falseBranch);
-  } else if (IsTestInputMaybeToBool(initialTest, falseResult)) {
+  if (IsTestInputMaybeToBool(initialTest, falseResult)) {
     if (!UpdateGotoSuccessor(graph.alloc(), falseBranch, finalTest->ifFalse(),
                              testBlock)) {
       return false;
@@ -943,13 +903,6 @@ static bool MaybeFoldDiamondConditionBlock(MIRGraph& graph,
                               testBlock)) {
       return false;
     }
-  }
-
-  
-  
-  if (!UpdateTestSuccessors(graph.alloc(), initialBlock, initialTest->input(),
-                            trueTarget, falseTarget, testBlock)) {
-    return false;
   }
 
   
