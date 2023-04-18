@@ -251,7 +251,7 @@ void PointerEvent::GetCoalescedEvents(
       mCoalescedEvents.AppendElement(domEvent);
     }
   }
-  if (mEvent->mTarget) {
+  if (mEvent->IsTrusted() && mEvent->mTarget) {
     for (RefPtr<PointerEvent>& pointerEvent : mCoalescedEvents) {
       
       if (!pointerEvent->mEvent->mTarget) {
@@ -265,7 +265,7 @@ void PointerEvent::GetCoalescedEvents(
 void PointerEvent::GetPredictedEvents(
     nsTArray<RefPtr<PointerEvent>>& aPointerEvents) {
   
-  if (mEvent->mTarget) {
+  if (mEvent->IsTrusted() && mEvent->mTarget) {
     for (RefPtr<PointerEvent>& pointerEvent : mPredictedEvents) {
       
       if (!pointerEvent->mEvent->mTarget) {
