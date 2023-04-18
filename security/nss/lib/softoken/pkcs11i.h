@@ -49,6 +49,8 @@
 #define NSC_SEARCH_BLOCK_SIZE 5
 #define NSC_SLOT_LIST_BLOCK_SIZE 10
 
+#define NSC_MIN_SESSION_OBJECT_HANDLE 1U
+
 #define NSC_FIPS_MODULE 1
 #define NSC_NON_FIPS_MODULE 0
 
@@ -375,6 +377,9 @@ struct SFTKSlotStr {
     char tokDescription[33];       
     char updateTokDescription[33]; 
     char slotDescription[65];      
+    SFTKSession moduleObjects;     
+
+
 };
 
 
@@ -766,6 +771,7 @@ extern CK_RV sftk_DeleteObject(SFTKSession *session, SFTKObject *object);
 extern void sftk_ReferenceObject(SFTKObject *object);
 extern SFTKObject *sftk_ObjectFromHandle(CK_OBJECT_HANDLE handle,
                                          SFTKSession *session);
+extern CK_OBJECT_HANDLE sftk_getNextHandle(SFTKSlot *slot);
 extern void sftk_AddSlotObject(SFTKSlot *slot, SFTKObject *object);
 extern void sftk_AddObject(SFTKSession *session, SFTKObject *object);
 
@@ -787,7 +793,11 @@ extern SFTKSlot *sftk_SlotFromSessionHandle(CK_SESSION_HANDLE handle);
 extern CK_SLOT_ID sftk_SlotIDFromSessionHandle(CK_SESSION_HANDLE handle);
 extern SFTKSession *sftk_SessionFromHandle(CK_SESSION_HANDLE handle);
 extern void sftk_FreeSession(SFTKSession *session);
+extern void sftk_ClearSession(SFTKSession *session);
 extern void sftk_DestroySession(SFTKSession *session);
+extern CK_RV sftk_InitSession(SFTKSession *session, SFTKSlot *slot,
+                              CK_SLOT_ID slotID, CK_NOTIFY notify,
+                              CK_VOID_PTR pApplication, CK_FLAGS flags);
 extern SFTKSession *sftk_NewSession(CK_SLOT_ID slotID, CK_NOTIFY notify,
                                     CK_VOID_PTR pApplication, CK_FLAGS flags);
 extern void sftk_update_state(SFTKSlot *slot, SFTKSession *session);
@@ -955,6 +965,9 @@ CK_FLAGS sftk_AttributeToFlags(CK_ATTRIBUTE_TYPE op);
 
 PRBool sftk_operationIsFIPS(SFTKSlot *slot, CK_MECHANISM *mech,
                             CK_ATTRIBUTE_TYPE op, SFTKObject *source);
+
+CK_RV sftk_CreateValidationObjects(SFTKSlot *slot);
+
 SEC_END_PROTOS
 
 #endif 

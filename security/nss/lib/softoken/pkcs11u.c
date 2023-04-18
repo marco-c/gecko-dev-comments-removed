@@ -14,6 +14,7 @@
 #include "sftkdb.h"
 #include "softoken.h"
 #include "secoid.h"
+#include "softkver.h"
 
 #if !defined(NSS_FIPS_DISABLED) && defined(NSS_ENABLE_FIPS_INDICATORS)
 
@@ -1247,6 +1248,36 @@ sftk_FreeObject(SFTKObject *object)
 
 
 
+
+CK_OBJECT_HANDLE
+sftk_getNextHandle(SFTKSlot *slot)
+{
+    CK_OBJECT_HANDLE handle;
+    SFTKObject *duplicateObject = NULL;
+    do {
+        PRUint32 wrappedAround;
+
+        duplicateObject = NULL;
+        PZ_Lock(slot->objectLock);
+        wrappedAround = slot->sessionObjectHandleCount & SFTK_TOKEN_MASK;
+        handle = slot->sessionObjectHandleCount & ~SFTK_TOKEN_MASK;
+        if (!handle) 
+            handle = NSC_MIN_SESSION_OBJECT_HANDLE;
+        slot->sessionObjectHandleCount = (handle + 1U) | wrappedAround;
+        
+        if (wrappedAround) {
+            sftkqueue_find(duplicateObject, handle, slot->sessObjHashTable,
+                           slot->sessObjHashSize);
+        }
+        PZ_Unlock(slot->objectLock);
+    } while (duplicateObject != NULL);
+    return handle;
+}
+
+
+
+
+
 void
 sftk_AddSlotObject(SFTKSlot *slot, SFTKObject *object)
 {
@@ -1851,20 +1882,10 @@ sftk_FreeContext(SFTKSessionContext *context)
 
 
 
-SFTKSession *
-sftk_NewSession(CK_SLOT_ID slotID, CK_NOTIFY notify, CK_VOID_PTR pApplication,
-                CK_FLAGS flags)
+CK_RV
+sftk_InitSession(SFTKSession *session, SFTKSlot *slot, CK_SLOT_ID slotID,
+                 CK_NOTIFY notify, CK_VOID_PTR pApplication, CK_FLAGS flags)
 {
-    SFTKSession *session;
-    SFTKSlot *slot = sftk_SlotFromID(slotID, PR_FALSE);
-
-    if (slot == NULL)
-        return NULL;
-
-    session = (SFTKSession *)PORT_Alloc(sizeof(SFTKSession));
-    if (session == NULL)
-        return NULL;
-
     session->next = session->prev = NULL;
     session->enc_context = NULL;
     session->hash_context = NULL;
@@ -1873,8 +1894,7 @@ sftk_NewSession(CK_SLOT_ID slotID, CK_NOTIFY notify, CK_VOID_PTR pApplication,
     session->objectIDCount = 1;
     session->objectLock = PZ_NewLock(nssILockObject);
     if (session->objectLock == NULL) {
-        PORT_Free(session);
-        return NULL;
+        return CKR_HOST_MEMORY;
     }
     session->objects[0] = NULL;
 
@@ -1887,12 +1907,38 @@ sftk_NewSession(CK_SLOT_ID slotID, CK_NOTIFY notify, CK_VOID_PTR pApplication,
     sftk_update_state(slot, session);
     
     session->lastOpWasFIPS = PR_FALSE;
+    return CKR_OK;
+}
+
+
+
+
+SFTKSession *
+sftk_NewSession(CK_SLOT_ID slotID, CK_NOTIFY notify, CK_VOID_PTR pApplication,
+                CK_FLAGS flags)
+{
+    SFTKSession *session;
+    SFTKSlot *slot = sftk_SlotFromID(slotID, PR_FALSE);
+    CK_RV crv;
+
+    if (slot == NULL)
+        return NULL;
+
+    session = (SFTKSession *)PORT_Alloc(sizeof(SFTKSession));
+    if (session == NULL)
+        return NULL;
+
+    crv = sftk_InitSession(session, slot, slotID, notify, pApplication, flags);
+    if (crv != CKR_OK) {
+        PORT_Free(session);
+        return NULL;
+    }
     return session;
 }
 
 
 void
-sftk_DestroySession(SFTKSession *session)
+sftk_ClearSession(SFTKSession *session)
 {
     SFTKObjectList *op, *next;
 
@@ -1918,6 +1964,13 @@ sftk_DestroySession(SFTKSession *session)
     if (session->search) {
         sftk_FreeSearch(session->search);
     }
+}
+
+
+void
+sftk_DestroySession(SFTKSession *session)
+{
+    sftk_ClearSession(session);
     PORT_Free(session);
 }
 
@@ -2385,4 +2438,71 @@ sftk_operationIsFIPS(SFTKSlot *slot, CK_MECHANISM *mech, CK_ATTRIBUTE_TYPE op,
     }
     return PR_FALSE;
 #endif
+}
+
+
+
+
+
+
+CK_RV
+sftk_CreateValidationObjects(SFTKSlot *slot)
+{
+    const char *module_id;
+    int module_id_len;
+    CK_RV crv = CKR_OK;
+    
+
+    CK_OBJECT_CLASS cko_validation = CKO_NSS_VALIDATION;
+    CK_NSS_VALIDATION_TYPE ckv_fips = CKV_NSS_FIPS_140;
+    CK_VERSION fips_version = { 3, 0 }; 
+    CK_ULONG fips_level = 1;            
+
+#ifndef NSS_FIPS_MODULE_ID
+#define NSS_FIPS_MODULE_ID "Generic NSS " SOFTOKEN_VERSION " Unvalidated"
+#endif
+    module_id = NSS_FIPS_MODULE_ID;
+    module_id_len = sizeof(NSS_FIPS_MODULE_ID) - 1;
+    SFTKObject *object;
+
+    object = sftk_NewObject(slot); 
+    if (object == NULL) {
+        return CKR_HOST_MEMORY;
+    }
+    object->isFIPS = PR_FALSE;
+
+    crv = sftk_AddAttributeType(object, CKA_CLASS,
+                                &cko_validation, sizeof(cko_validation));
+    if (crv != CKR_OK) {
+        goto loser;
+    }
+    crv = sftk_AddAttributeType(object, CKA_NSS_VALIDATION_TYPE,
+                                &ckv_fips, sizeof(ckv_fips));
+    if (crv != CKR_OK) {
+        goto loser;
+    }
+    crv = sftk_AddAttributeType(object, CKA_NSS_VALIDATION_VERSION,
+                                &fips_version, sizeof(fips_version));
+    if (crv != CKR_OK) {
+        goto loser;
+    }
+    crv = sftk_AddAttributeType(object, CKA_NSS_VALIDATION_LEVEL,
+                                &fips_level, sizeof(fips_level));
+    if (crv != CKR_OK) {
+        goto loser;
+    }
+    crv = sftk_AddAttributeType(object, CKA_NSS_VALIDATION_MODULE_ID,
+                                module_id, module_id_len);
+    if (crv != CKR_OK) {
+        goto loser;
+    }
+
+    
+
+    object->handle = sftk_getNextHandle(slot);
+    object->slot = slot;
+    sftk_AddObject(&slot->moduleObjects, object);
+loser:
+    sftk_FreeObject(object);
+    return crv;
 }
