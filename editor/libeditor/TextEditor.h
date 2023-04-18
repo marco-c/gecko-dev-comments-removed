@@ -88,6 +88,14 @@ class TextEditor final : public EditorBase,
 
 
 
+  MOZ_CAN_RUN_SCRIPT void ReinitializeSelection(Element& aElement);
+
+  
+
+
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT_BOUNDARY UniquePtr<PasswordMaskData>
   PreDestroy();
 

@@ -5354,23 +5354,6 @@ nsresult EditorBase::FinalizeSelection() {
   return NS_OK;
 }
 
-void EditorBase::ReinitializeSelection(Element& aElement) {
-  if (NS_WARN_IF(Destroyed())) {
-    return;
-  }
-
-  AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
-  if (NS_WARN_IF(!editActionData.CanHandle())) {
-    return;
-  }
-
-  OnFocus(aElement);
-
-  
-  
-  SyncRealTimeSpell();
-}
-
 Element* EditorBase::GetEditorRoot() const { return GetRoot(); }
 
 Element* EditorBase::GetExposedRoot() const {

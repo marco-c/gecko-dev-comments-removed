@@ -633,6 +633,23 @@ nsresult TextEditor::SelectEntireDocument() {
 
 EventTarget* TextEditor::GetDOMEventTarget() const { return mEventTarget; }
 
+void TextEditor::ReinitializeSelection(Element& aElement) {
+  if (NS_WARN_IF(Destroyed())) {
+    return;
+  }
+
+  AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
+  if (NS_WARN_IF(!editActionData.CanHandle())) {
+    return;
+  }
+
+  OnFocus(aElement);
+
+  
+  
+  SyncRealTimeSpell();
+}
+
 nsresult TextEditor::SetAttributeOrEquivalent(Element* aElement,
                                               nsAtom* aAttribute,
                                               const nsAString& aValue,
