@@ -987,9 +987,6 @@ class TargetCommand extends EventEmitter {
     
     
     
-    
-    
-    
     const { parentInnerWindowId } = targetFront.targetForm;
     if (parentInnerWindowId) {
       const targets = this.getAllTargets([TargetCommand.TYPES.FRAME]);
