@@ -447,7 +447,6 @@ class JSStreamConsumer final : public nsIInputStreamCallback,
       
 
       MOZ_DIAGNOSTIC_ASSERT(aCount > 0);
-      MOZ_DIAGNOSTIC_ASSERT(self->mZStream.avail_out > 0);
       self->mZStream.avail_in = aCount;
       self->mZStream.next_in = (uint8_t*)aFromSegment;
 
