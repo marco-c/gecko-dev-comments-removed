@@ -425,9 +425,13 @@ class _RemoteSettingsExperimentLoader {
       const prop = {};
       switch (desc.type) {
         case "boolean":
-        case "int":
         case "string":
           prop.type = desc.type;
+          break;
+
+        case "int":
+          
+          prop.type = "number";
           break;
 
         case "json":
