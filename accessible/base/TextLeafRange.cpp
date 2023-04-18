@@ -1061,36 +1061,15 @@ already_AddRefed<AccAttributes> TextLeafPoint::GetTextAttributes(
   return attrs.forget();
 }
 
-TextLeafPoint TextLeafPoint::FindTextAttrsStart(
-    nsDirection aDirection, bool aIncludeOrigin,
-    const AccAttributes* aOriginAttrs, bool aIncludeDefaults) const {
+TextLeafPoint TextLeafPoint::FindTextAttrsStart(nsDirection aDirection,
+                                                bool aIncludeOrigin) const {
   if (IsCaret()) {
-    return ActualizeCaret().FindTextAttrsStart(aDirection, aIncludeOrigin,
-                                               aOriginAttrs, aIncludeDefaults);
+    return ActualizeCaret().FindTextAttrsStart(aDirection, aIncludeOrigin);
   }
-  
-  RefPtr<const AccAttributes> lastAttrs;
   const bool isRemote = mAcc->IsRemote();
-  if (isRemote) {
-    
-    
-    
-    
-    
-    
-    lastAttrs = mAcc->AsRemote()->GetCachedTextAttributes();
-  } else {
-    
-    
-    if (aOriginAttrs) {
-      lastAttrs = aOriginAttrs;
-      
-      
-      
-    } else {
-      lastAttrs = GetTextAttributesLocalAcc(aIncludeDefaults);
-    }
-  }
+  RefPtr<const AccAttributes> lastAttrs =
+      isRemote ? mAcc->AsRemote()->GetCachedTextAttributes()
+               : GetTextAttributesLocalAcc();
   if (aIncludeOrigin && aDirection == eDirNext && mOffset == 0) {
     
     
@@ -1104,7 +1083,7 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(
     
     RefPtr<const AccAttributes> attrs =
         isRemote ? point.mAcc->AsRemote()->GetCachedTextAttributes()
-                 : point.GetTextAttributesLocalAcc(aIncludeDefaults);
+                 : point.GetTextAttributesLocalAcc();
     if (attrs && lastAttrs && !attrs->Equal(lastAttrs)) {
       return *this;
     }
@@ -1119,7 +1098,7 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(
     }
     RefPtr<const AccAttributes> attrs =
         isRemote ? point.mAcc->AsRemote()->GetCachedTextAttributes()
-                 : point.GetTextAttributesLocalAcc(aIncludeDefaults);
+                 : point.GetTextAttributesLocalAcc();
     if (attrs && lastAttrs && !attrs->Equal(lastAttrs)) {
       
       

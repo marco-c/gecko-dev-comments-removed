@@ -136,17 +136,8 @@ class TextLeafPoint final {
 
 
 
-
-
-
-
-
-
-
   TextLeafPoint FindTextAttrsStart(nsDirection aDirection,
-                                   bool aIncludeOrigin = false,
-                                   const AccAttributes* aOriginAttrs = nullptr,
-                                   bool aIncludeDefaults = true) const;
+                                   bool aIncludeOrigin = false) const;
 
   
 
