@@ -167,9 +167,6 @@ def _purge_vendor_dir(vendor_dir):
         
         "virtualenv",
         
-        
-        "vsdownload",
-        
         "moz.build",
         "requirements.in",
     ]
