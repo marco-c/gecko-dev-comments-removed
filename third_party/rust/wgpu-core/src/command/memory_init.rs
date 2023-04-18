@@ -3,17 +3,16 @@ use std::{collections::hash_map::Entry, ops::Range, vec::Drain};
 use hal::CommandEncoder;
 
 use crate::{
-    command::collect_zero_buffer_copies_for_clear_texture,
     device::Device,
     hub::Storage,
     id::{self, TextureId},
     init_tracker::*,
     resource::{Buffer, Texture},
-    track::{ResourceTracker, TextureSelector, TextureState, TrackerSet},
+    track::{ResourceTracker, TextureState, TrackerSet},
     FastHashMap,
 };
 
-use super::{BakedCommands, DestroyedBufferError, DestroyedTextureError};
+use super::{clear::clear_texture, BakedCommands, DestroyedBufferError, DestroyedTextureError};
 
 
 
@@ -103,13 +102,13 @@ impl CommandBufferTextureMemoryActions {
     
     pub(crate) fn register_implicit_init<A: hal::Api>(
         &mut self,
-        id: TextureId,
+        id: id::Valid<TextureId>,
         range: TextureInitRange,
         texture_guard: &Storage<Texture<A>, TextureId>,
     ) {
         let must_be_empty = self.register_init_action(
             &TextureInitTrackerAction {
-                id,
+                id: id.0,
                 range,
                 kind: MemoryInitKind::ImplicitlyInitialized,
             },
@@ -131,43 +130,19 @@ pub(crate) fn fixup_discarded_surfaces<
     texture_tracker: &mut ResourceTracker<TextureState>,
     device: &Device<A>,
 ) {
-    let mut zero_buffer_copy_regions = Vec::new();
     for init in inits {
-        let mip_range = init.mip_level..(init.mip_level + 1);
-        let layer_range = init.layer..(init.layer + 1);
-
-        let (texture, pending) = texture_tracker
-            .use_replace(
-                &*texture_guard,
-                init.texture,
-                TextureSelector {
-                    levels: mip_range.clone(),
-                    layers: layer_range.clone(),
-                },
-                hal::TextureUses::COPY_DST,
-            )
-            .unwrap();
-
-        collect_zero_buffer_copies_for_clear_texture(
-            &texture.desc,
-            device.alignments.buffer_copy_pitch.get() as u32,
-            mip_range,
-            layer_range,
-            &mut zero_buffer_copy_regions,
-        );
-
-        let barriers = pending.map(|pending| pending.into_hal(texture));
-        let raw_texture = texture.inner.as_raw().unwrap();
-
-        unsafe {
-            
-            encoder.transition_textures(barriers);
-            encoder.copy_buffer_to_texture(
-                &device.zero_buffer,
-                raw_texture,
-                zero_buffer_copy_regions.drain(..),
-            );
-        }
+        clear_texture(
+            id::Valid(init.texture),
+            texture_guard.get(init.texture).unwrap(),
+            TextureInitRange {
+                mip_range: init.mip_level..(init.mip_level + 1),
+                layer_range: init.layer..(init.layer + 1),
+            },
+            encoder,
+            texture_tracker,
+            device,
+        )
+        .unwrap();
     }
 }
 
@@ -285,65 +260,28 @@ impl<A: hal::Api> BakedCommands<A> {
                     }
                 }
                 MemoryInitKind::NeedsInitializedMemory => {
-                    ranges.clear();
                     for (mip_level, mip_tracker) in affected_mip_trackers {
                         for layer_range in mip_tracker.drain(use_range.layer_range.clone()) {
                             ranges.push(TextureInitRange {
-                                mip_range: mip_level as u32..(mip_level as u32 + 1),
+                                mip_range: (mip_level as u32)..(mip_level as u32 + 1),
                                 layer_range,
-                            })
-                        }
-                    }
-
-                    let raw_texture = texture
-                        .inner
-                        .as_raw()
-                        .ok_or(DestroyedTextureError(texture_use.id))?;
-
-                    let mut texture_barriers = Vec::new();
-                    let mut zero_buffer_copy_regions = Vec::new();
-                    for range in &ranges {
-                        
-                        
-                        texture_barriers.extend(
-                            device_tracker
-                                .textures
-                                .change_replace_tracked(
-                                    id::Valid(texture_use.id),
-                                    TextureSelector {
-                                        levels: range.mip_range.clone(),
-                                        layers: range.layer_range.clone(),
-                                    },
-                                    hal::TextureUses::COPY_DST,
-                                )
-                                .map(|pending| pending.into_hal(texture)),
-                        );
-
-                        collect_zero_buffer_copies_for_clear_texture(
-                            &texture.desc,
-                            device.alignments.buffer_copy_pitch.get() as u32,
-                            range.mip_range.clone(),
-                            range.layer_range.clone(),
-                            &mut zero_buffer_copy_regions,
-                        );
-                    }
-
-                    if !zero_buffer_copy_regions.is_empty() {
-                        debug_assert!(texture.hal_usage.contains(hal::TextureUses::COPY_DST),
-                            "Texture needs to have the COPY_DST flag. Otherwise we can't ensure initialized memory!");
-                        unsafe {
-                            
-                            
-                            self.encoder
-                                .transition_textures(texture_barriers.into_iter());
-                            self.encoder.copy_buffer_to_texture(
-                                &device.zero_buffer,
-                                raw_texture,
-                                zero_buffer_copy_regions.into_iter(),
-                            );
+                            });
                         }
                     }
                 }
+            }
+
+            
+            for range in ranges.drain(..) {
+                clear_texture(
+                    id::Valid(texture_use.id),
+                    &*texture,
+                    range,
+                    &mut self.encoder,
+                    &mut device_tracker.textures,
+                    device,
+                )
+                .unwrap();
             }
         }
 

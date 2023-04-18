@@ -1,9 +1,10 @@
+#![deny(clippy::use_self)]
 #![allow(
     clippy::too_many_arguments,
     clippy::missing_safety_doc,
     clippy::upper_case_acronyms
 )]
-
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 
 
@@ -33,15 +34,13 @@
 
 
 pub use crate::device::Device;
-pub use crate::entry::{EntryCustom, InstanceError};
-#[cfg(feature = "libloading")]
-pub use crate::entry_libloading::{Entry, LoadingError};
+pub use crate::entry::Entry;
+#[cfg(feature = "loaded")]
+pub use crate::entry::LoadingError;
 pub use crate::instance::Instance;
 
 mod device;
 mod entry;
-#[cfg(feature = "libloading")]
-mod entry_libloading;
 mod instance;
 pub mod prelude;
 pub mod util;

@@ -15,6 +15,12 @@ pub mod db {
     }
 }
 
+
+
+
+
+pub const MAX_I32_BINDING_SIZE: u32 = 1 << 31;
+
 pub fn map_naga_stage(stage: naga::ShaderStage) -> wgt::ShaderStages {
     match stage {
         naga::ShaderStage::Vertex => wgt::ShaderStages::VERTEX,

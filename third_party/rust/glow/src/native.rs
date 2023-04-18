@@ -76,6 +76,14 @@ impl Context {
 
         context
     }
+
+    
+    
+    
+    
+    pub unsafe fn create_texture_from_gl_name(gl_name: native_gl::GLuint) -> NativeTexture {
+        NativeTexture(non_zero_gl_name(gl_name))
+    }
 }
 
 impl std::fmt::Debug for Context {

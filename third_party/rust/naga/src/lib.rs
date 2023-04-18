@@ -885,6 +885,8 @@ pub enum MathFunction {
     Asinh,
     Acosh,
     Atanh,
+    Radians,
+    Degrees,
     
     Ceil,
     Floor,
@@ -926,6 +928,8 @@ pub enum MathFunction {
     ReverseBits,
     ExtractBits,
     InsertBits,
+    FindLsb,
+    FindMsb,
     
     Pack4x8snorm,
     Pack4x8unorm,
@@ -975,7 +979,7 @@ pub enum ImageQuery {
 
 
 #[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum SwizzleComponent {
@@ -1128,6 +1132,9 @@ pub enum Expression {
     ImageSample {
         image: Handle<Expression>,
         sampler: Handle<Expression>,
+        
+        
+        gather: Option<SwizzleComponent>,
         coordinate: Handle<Expression>,
         array_index: Option<Handle<Expression>>,
         offset: Option<Handle<Constant>>,

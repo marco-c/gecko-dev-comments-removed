@@ -73,7 +73,7 @@ impl From<Range<usize>> for Span {
 pub type SpanContext = (Span, String);
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct WithSpan<E> {
     inner: E,
     #[cfg(feature = "span")]

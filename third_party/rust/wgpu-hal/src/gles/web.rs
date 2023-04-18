@@ -11,6 +11,10 @@ pub struct AdapterContext {
 }
 
 impl AdapterContext {
+    pub fn is_owned(&self) -> bool {
+        false
+    }
+
     
     
     #[track_caller]

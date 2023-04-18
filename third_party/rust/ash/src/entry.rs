@@ -2,41 +2,146 @@ use crate::instance::Instance;
 use crate::prelude::*;
 use crate::vk;
 use crate::RawPtr;
-use std::error::Error;
 use std::ffi::CStr;
-use std::fmt;
+#[cfg(feature = "loaded")]
+use std::ffi::OsStr;
 use std::mem;
 use std::os::raw::c_char;
 use std::os::raw::c_void;
 use std::ptr;
+#[cfg(feature = "loaded")]
+use std::sync::Arc;
 
-
-
-
-
+#[cfg(feature = "loaded")]
+use libloading::Library;
 
 
 #[derive(Clone)]
-pub struct EntryCustom<L> {
+pub struct Entry {
     static_fn: vk::StaticFn,
     entry_fn_1_0: vk::EntryFnV1_0,
     entry_fn_1_1: vk::EntryFnV1_1,
     entry_fn_1_2: vk::EntryFnV1_2,
-    lib: L,
+    #[cfg(feature = "loaded")]
+    _lib_guard: Option<Arc<Library>>,
 }
 
 
 #[allow(non_camel_case_types)]
-impl<L> EntryCustom<L> {
-    pub fn new_custom<Load>(
-        mut lib: L,
-        mut load: Load,
-    ) -> std::result::Result<Self, MissingEntryPoint>
-    where
-        Load: FnMut(&mut L, &::std::ffi::CStr) -> *const c_void,
-    {
+impl Entry {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "loaded")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "loaded")))]
+    pub unsafe fn load() -> Result<Self, LoadingError> {
+        #[cfg(windows)]
+        const LIB_PATH: &str = "vulkan-1.dll";
+
+        #[cfg(all(
+            unix,
+            not(any(target_os = "macos", target_os = "ios", target_os = "android"))
+        ))]
+        const LIB_PATH: &str = "libvulkan.so.1";
+
+        #[cfg(target_os = "android")]
+        const LIB_PATH: &str = "libvulkan.so";
+
+        #[cfg(any(target_os = "macos", target_os = "ios"))]
+        const LIB_PATH: &str = "libvulkan.dylib";
+
+        Self::load_from(LIB_PATH)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "linked")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "linked")))]
+    pub fn linked() -> Self {
         
-        let static_fn = vk::StaticFn::load_checked(|name| load(&mut lib, name))?;
+        
+        unsafe {
+            Self::from_static_fn(vk::StaticFn {
+                get_instance_proc_addr: vkGetInstanceProcAddr,
+            })
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(feature = "loaded")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "loaded")))]
+    pub unsafe fn load_from(path: impl AsRef<OsStr>) -> Result<Self, LoadingError> {
+        let lib = Library::new(path)
+            .map_err(LoadingError::LibraryLoadFailure)
+            .map(Arc::new)?;
+
+        let static_fn = vk::StaticFn::load_checked(|name| {
+            lib.get(name.to_bytes_with_nul())
+                .map(|symbol| *symbol)
+                .unwrap_or(ptr::null_mut())
+        })?;
+
+        Ok(Self {
+            _lib_guard: Some(lib),
+            ..Self::from_static_fn(static_fn)
+        })
+    }
+
+    
+    
+    
+    
+    
+    pub unsafe fn from_static_fn(static_fn: vk::StaticFn) -> Self {
         let load_fn = |name: &std::ffi::CStr| unsafe {
             mem::transmute(static_fn.get_instance_proc_addr(vk::Instance::null(), name.as_ptr()))
         };
@@ -44,13 +149,14 @@ impl<L> EntryCustom<L> {
         let entry_fn_1_1 = vk::EntryFnV1_1::load(load_fn);
         let entry_fn_1_2 = vk::EntryFnV1_2::load(load_fn);
 
-        Ok(EntryCustom {
+        Self {
             static_fn,
             entry_fn_1_0,
             entry_fn_1_1,
             entry_fn_1_2,
-            lib,
-        })
+            #[cfg(feature = "loaded")]
+            _lib_guard: None,
+        }
     }
 
     pub fn fp_v1_0(&self) -> &vk::EntryFnV1_0 {
@@ -107,7 +213,7 @@ impl<L> EntryCustom<L> {
         &self,
         create_info: &vk::InstanceCreateInfo,
         allocation_callbacks: Option<&vk::AllocationCallbacks>,
-    ) -> Result<Instance, InstanceError> {
+    ) -> VkResult<Instance> {
         let mut instance = mem::zeroed();
         self.entry_fn_1_0
             .create_instance(
@@ -115,8 +221,7 @@ impl<L> EntryCustom<L> {
                 allocation_callbacks.as_raw_ptr(),
                 &mut instance,
             )
-            .result()
-            .map_err(InstanceError::VkError)?;
+            .result()?;
         Ok(Instance::load(&self.static_fn, instance))
     }
 
@@ -154,7 +259,7 @@ impl<L> EntryCustom<L> {
 
 
 #[allow(non_camel_case_types)]
-impl<L> EntryCustom<L> {
+impl Entry {
     pub fn fp_v1_1(&self) -> &vk::EntryFnV1_1 {
         &self.entry_fn_1_1
     }
@@ -175,28 +280,19 @@ impl<L> EntryCustom<L> {
 
 
 #[allow(non_camel_case_types)]
-impl<L> EntryCustom<L> {
+impl Entry {
     pub fn fp_v1_2(&self) -> &vk::EntryFnV1_2 {
         &self.entry_fn_1_2
     }
 }
 
-#[derive(Clone, Debug)]
-pub enum InstanceError {
-    LoadError(Vec<&'static str>),
-    VkError(vk::Result),
-}
-
-impl fmt::Display for InstanceError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            InstanceError::LoadError(e) => write!(f, "{}", e.join("; ")),
-            InstanceError::VkError(e) => write!(f, "{}", e),
-        }
+#[cfg(feature = "linked")]
+#[cfg_attr(docsrs, doc(cfg(feature = "linked")))]
+impl Default for Entry {
+    fn default() -> Self {
+        Self::linked()
     }
 }
-
-impl Error for InstanceError {}
 
 impl vk::StaticFn {
     pub fn load_checked<F>(mut _f: F) -> Result<Self, MissingEntryPoint>
@@ -206,7 +302,7 @@ impl vk::StaticFn {
         
         static ENTRY_POINT: &[u8] = b"vkGetInstanceProcAddr\0";
 
-        Ok(vk::StaticFn {
+        Ok(Self {
             get_instance_proc_addr: unsafe {
                 let cname = CStr::from_bytes_with_nul_unchecked(ENTRY_POINT);
                 let val = _f(cname);
@@ -228,3 +324,50 @@ impl std::fmt::Display for MissingEntryPoint {
     }
 }
 impl std::error::Error for MissingEntryPoint {}
+
+#[cfg(feature = "linked")]
+extern "system" {
+    fn vkGetInstanceProcAddr(instance: vk::Instance, name: *const c_char)
+        -> vk::PFN_vkVoidFunction;
+}
+
+#[cfg(feature = "loaded")]
+mod loaded {
+    use std::error::Error;
+    use std::fmt;
+
+    use super::*;
+
+    #[derive(Debug)]
+    #[cfg_attr(docsrs, doc(cfg(feature = "loaded")))]
+    pub enum LoadingError {
+        LibraryLoadFailure(libloading::Error),
+        MissingEntryPoint(MissingEntryPoint),
+    }
+
+    impl fmt::Display for LoadingError {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            match self {
+                LoadingError::LibraryLoadFailure(err) => fmt::Display::fmt(err, f),
+                LoadingError::MissingEntryPoint(err) => fmt::Display::fmt(err, f),
+            }
+        }
+    }
+
+    impl Error for LoadingError {
+        fn source(&self) -> Option<&(dyn Error + 'static)> {
+            Some(match self {
+                LoadingError::LibraryLoadFailure(err) => err,
+                LoadingError::MissingEntryPoint(err) => err,
+            })
+        }
+    }
+
+    impl From<MissingEntryPoint> for LoadingError {
+        fn from(err: MissingEntryPoint) -> Self {
+            Self::MissingEntryPoint(err)
+        }
+    }
+}
+#[cfg(feature = "loaded")]
+pub use self::loaded::*;

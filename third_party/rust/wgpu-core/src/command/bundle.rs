@@ -94,6 +94,8 @@ impl RenderBundleEncoder {
         parent_id: id::DeviceId,
         base: Option<BasePass<RenderCommand>>,
     ) -> Result<Self, CreateRenderBundleError> {
+        
+        
         Ok(Self {
             base: base.unwrap_or_else(|| BasePass::new(&desc.label)),
             parent_id,
