@@ -2127,17 +2127,12 @@ Element* nsFocusManager::FlushAndCheckIfFocusable(Element* aElement,
       
       
       
-      
-      
-      
       if (nsPIDOMWindowInner* innerWindow =
               aElement->OwnerDoc()->GetInnerWindow()) {
-        BrowsingContext* bc = innerWindow->GetBrowsingContext();
-        if (bc && bc->IsTop()) {
-          if (Element* focusedElement = innerWindow->GetFocusedElement()) {
-            if (focusedElement->IsShadowIncludingInclusiveDescendantOf(root)) {
-              return nullptr;
-            }
+        if (Element* focusedElement = innerWindow->GetFocusedElement()) {
+          if (focusedElement->IsShadowIncludingInclusiveDescendantOf(
+                  aElement)) {
+            return nullptr;
           }
         }
       }
