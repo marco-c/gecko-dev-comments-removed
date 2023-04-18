@@ -232,6 +232,8 @@ static already_AddRefed<dom::AnimationTimeline> GetTimeline(
     case StyleAnimationTimeline::Tag::None:
       
       break;
+    case StyleAnimationTimeline::Tag::Scroll:
+      
     case StyleAnimationTimeline::Tag::Auto:
       timeline = aTarget.mElement->OwnerDoc()->Timeline();
       break;
