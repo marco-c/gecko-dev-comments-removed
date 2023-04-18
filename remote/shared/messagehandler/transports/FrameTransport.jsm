@@ -11,14 +11,21 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  Services: "resource://gre/modules/Services.jsm",
+
   ContextDescriptorType:
     "chrome://remote/content/shared/messagehandler/MessageHandler.jsm",
   isBrowsingContextCompatible:
     "chrome://remote/content/shared/messagehandler/transports/FrameContextUtils.jsm",
+  Log: "chrome://remote/content/shared/Log.jsm",
   MessageHandlerFrameActor:
     "chrome://remote/content/shared/messagehandler/transports/js-window-actors/MessageHandlerFrameActor.jsm",
   TabManager: "chrome://remote/content/shared/TabManager.jsm",
 });
+
+XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
+
+const MAX_RETRY_ATTEMPTS = 10;
 
 
 
@@ -100,10 +107,44 @@ class FrameTransport {
     );
   }
 
-  _sendCommandToBrowsingContext(command, browsingContext) {
-    return browsingContext.currentWindowGlobal
-      .getActor("MessageHandlerFrame")
-      .sendCommand(command, this._messageHandler.sessionId);
+  async _sendCommandToBrowsingContext(command, browsingContext) {
+    const name = `${command.moduleName}.${command.commandName}`;
+
+    
+    
+    
+    const webProgress = browsingContext.webProgress;
+
+    const { retryOnAbort = false } = command;
+
+    let attempts = 0;
+    while (true) {
+      try {
+        return await webProgress.browsingContext.currentWindowGlobal
+          .getActor("MessageHandlerFrame")
+          .sendCommand(command, this._messageHandler.sessionId);
+      } catch (e) {
+        if (!retryOnAbort || e.name != "AbortError") {
+          
+          
+          throw e;
+        }
+
+        if (++attempts > MAX_RETRY_ATTEMPTS) {
+          logger.trace(
+            `FrameTransport reached the limit of retry attempts (${MAX_RETRY_ATTEMPTS})` +
+              ` for command ${name} and browsing context ${webProgress.browsingContext.id}.`
+          );
+          throw e;
+        }
+
+        logger.trace(
+          `FrameTransport retrying command ${name} for ` +
+            `browsing context ${webProgress.browsingContext.id}, attempt: ${attempts}.`
+        );
+        await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
+      }
+    }
   }
 
   toString() {
