@@ -201,6 +201,15 @@ class _BuiltInThemes {
       );
     }
   }
+
+  
+
+
+
+
+  findActiveColorwayCollection() {
+    return this.builtInThemeMap.findActiveColorwayCollection(new Date());
+  }
 }
 
 var BuiltInThemes = new _BuiltInThemes();
