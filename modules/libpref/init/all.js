@@ -4447,12 +4447,14 @@ pref("extensions.formautofill.available", "detect");
 pref("extensions.formautofill.addresses.supported", "detect");
 pref("extensions.formautofill.addresses.enabled", true);
 pref("extensions.formautofill.addresses.capture.enabled", false);
+pref("extensions.formautofill.addresses.ignoreAutocompleteOff", true);
 
 pref("extensions.formautofill.addresses.supportedCountries", "US,CA");
 
 pref("extensions.formautofill.creditCards.available", true);
 pref("extensions.formautofill.creditCards.supported", "detect");
 pref("extensions.formautofill.creditCards.enabled", true);
+pref("extensions.formautofill.creditCards.ignoreAutocompleteOff", true);
 
 pref("extensions.formautofill.creditCards.supportedCountries", "US,CA,GB,FR,DE");
 

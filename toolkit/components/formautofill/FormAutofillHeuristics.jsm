@@ -568,6 +568,8 @@ class FieldScanner {
 this.FormAutofillHeuristics = {
   RULES: null,
 
+  CREDIT_CARD_FIELDNAMES: [],
+  ADDRESS_FIELDNAMES: [],
   
 
 
@@ -1072,53 +1074,24 @@ this.FormAutofillHeuristics = {
     return fieldScanner.getSectionFieldDetails();
   },
 
-  _regExpTableHashValue(...signBits) {
-    return signBits.reduce((p, c, i) => p | (!!c << i), 0);
-  },
-
-  _setRegExpListCache(regexps, b0, b1, b2) {
-    if (!this._regexpList) {
-      this._regexpList = [];
+  _getPossibleFieldNames(element) {
+    let fieldNames = [];
+    let isAutoCompleteOff =
+      element.autocomplete == "off" || element.form?.autocomplete == "off";
+    if (
+      FormAutofill.isAutofillCreditCardsAvailable &&
+      (!isAutoCompleteOff || FormAutofill.creditCardsAutocompleteOff)
+    ) {
+      fieldNames.push(...this.CREDIT_CARD_FIELDNAMES);
     }
-    this._regexpList[this._regExpTableHashValue(b0, b1, b2)] = regexps;
-  },
-
-  _getRegExpListCache(b0, b1, b2) {
-    if (!this._regexpList) {
-      return null;
-    }
-    return this._regexpList[this._regExpTableHashValue(b0, b1, b2)] || null;
-  },
-
-  _getPossibleFieldNames(isAutoCompleteOff, elementTagName) {
-    let isSelectElem = elementTagName == "SELECT";
-    let regExpListCache = this._getRegExpListCache(
-      isAutoCompleteOff,
-      FormAutofill.isAutofillCreditCardsAvailable,
-      isSelectElem
-    );
-    if (regExpListCache) {
-      return regExpListCache;
-    }
-    const FIELDNAMES_IGNORING_AUTOCOMPLETE_OFF = [
-      "cc-name",
-      "cc-number",
-      "cc-exp-month",
-      "cc-exp-year",
-      "cc-exp",
-      "cc-type",
-    ];
-    let regexps = isAutoCompleteOff
-      ? FIELDNAMES_IGNORING_AUTOCOMPLETE_OFF
-      : Object.keys(this.RULES);
-
-    if (!FormAutofill.isAutofillCreditCardsAvailable) {
-      regexps = regexps.filter(
-        name => !FormAutofillUtils.isCreditCardField(name)
-      );
+    if (
+      FormAutofill.isAutofillAddressesAvailable &&
+      (!isAutoCompleteOff || FormAutofill.addressesAutocompleteOff)
+    ) {
+      fieldNames.push(...this.ADDRESS_FIELDNAMES);
     }
 
-    if (isSelectElem) {
+    if (HTMLSelectElement.isInstance(element)) {
       const FIELDNAMES_FOR_SELECT_ELEMENT = [
         "address-level1",
         "address-level2",
@@ -1128,22 +1101,15 @@ this.FormAutofillHeuristics = {
         "cc-exp",
         "cc-type",
       ];
-      regexps = regexps.filter(name =>
+      fieldNames = fieldNames.filter(name =>
         FIELDNAMES_FOR_SELECT_ELEMENT.includes(name)
       );
     }
 
-    this._setRegExpListCache(
-      regexps,
-      isAutoCompleteOff,
-      FormAutofill.isAutofillCreditCardsAvailable,
-      isSelectElem
-    );
-
-    return regexps;
+    return fieldNames;
   },
 
-  getInfo(element, sacnner) {
+  getInfo(element, scanner) {
     function infoRecordWithFieldName(fieldName) {
       return {
         fieldName,
@@ -1170,29 +1136,22 @@ this.FormAutofillHeuristics = {
       return null;
     }
 
-    let isAutoCompleteOff =
-      element.autocomplete == "off" ||
-      (element.form && element.form.autocomplete == "off");
+    let fields = this._getPossibleFieldNames(element);
 
     
     
     
     
-    if (element.type == "email" && !isAutoCompleteOff) {
+    if (element.type == "email" && fields.includes("email")) {
       return infoRecordWithFieldName("email");
     }
-
-    let fields = this._getPossibleFieldNames(
-      isAutoCompleteOff,
-      element.tagName
-    );
 
     if (FormAutofillUtils.isFathomCreditCardsEnabled()) {
       
       let fathomFields = fields.filter(r =>
         creditCardRulesets.types.includes(r)
       );
-      let fathomField = sacnner.getFathomField(element, fathomFields);
+      let fathomField = scanner.getFathomField(element, fathomFields);
       
       if (fathomField) {
         return infoRecordWithFieldName(fathomField);
@@ -1408,6 +1367,21 @@ XPCOMUtils.defineLazyGetter(FormAutofillHeuristics, "RULES", () => {
   Services.scriptloader.loadSubScript(HEURISTICS_REGEXP, sandbox);
   return sandbox.HeuristicsRegExp.RULES;
 });
+
+XPCOMUtils.defineLazyGetter(
+  FormAutofillHeuristics,
+  "CREDIT_CARD_FIELDNAMES",
+  () =>
+    Object.keys(FormAutofillHeuristics.RULES).filter(name =>
+      FormAutofillUtils.isCreditCardField(name)
+    )
+);
+
+XPCOMUtils.defineLazyGetter(FormAutofillHeuristics, "ADDRESS_FIELDNAMES", () =>
+  Object.keys(FormAutofillHeuristics.RULES).filter(name =>
+    FormAutofillUtils.isAddressField(name)
+  )
+);
 
 XPCOMUtils.defineLazyGetter(FormAutofillHeuristics, "_prefEnabled", () => {
   return Services.prefs.getBoolPref(PREF_HEURISTICS_ENABLED);

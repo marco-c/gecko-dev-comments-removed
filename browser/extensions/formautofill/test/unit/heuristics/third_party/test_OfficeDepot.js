@@ -210,6 +210,14 @@ runHeuristicsTest(
       expectedResult: [
         [
           
+          [
+            { 
+              section: "",
+              addressType: "",
+              contactType: "",
+              fieldName: "email"
+            },
+          ]
           
         ],
       ],

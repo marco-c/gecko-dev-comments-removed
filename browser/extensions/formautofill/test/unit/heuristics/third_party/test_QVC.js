@@ -9,7 +9,7 @@ runHeuristicsTest(
       expectedResult: [
         [
           [
-            
+            {"section": "", "addressType": "", "contactType": "", "fieldName": "tel"}, 
             {
               section: "",
               addressType: "",
@@ -67,7 +67,12 @@ runHeuristicsTest(
       expectedResult: [
         [
           [
-            
+            {
+              section: "",
+              addressType: "",
+              contactType: "",
+              fieldName: "tel"
+            }, 
             {
               section: "",
               addressType: "",
