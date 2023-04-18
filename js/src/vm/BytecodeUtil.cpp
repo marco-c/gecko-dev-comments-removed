@@ -874,7 +874,7 @@ bool BytecodeParser::parse() {
 
     uint32_t stackDepth = simulateOp(op, offset, offsetStack, code->stackDepth);
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
     if (isStackDump) {
       if (!code->captureOffsetStackAfter(alloc(), offsetStack, stackDepth)) {
         reportOOM();
