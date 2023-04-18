@@ -8279,6 +8279,11 @@ bool nsDisplayBackdropFilters::CreateWebRenderCommands(
                                                       wrFilters) &&
       !SVGIntegrationUtils::BuildWebRenderFilters(
           mFrame, filterChain, wrFilters, filterClip, initialized)) {
+    if (mStyle) {
+      
+      
+      return true;
+    }
     return false;
   }
 
