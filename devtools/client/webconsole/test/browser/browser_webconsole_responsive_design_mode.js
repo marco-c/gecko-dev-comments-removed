@@ -11,13 +11,6 @@ const TEST_URI =
 add_task(async function() {
   const tab = await addTab(TEST_URI);
 
-  
-  
-  await pushPref(
-    "devtools.devices.url",
-    "http://example.com/browser/devtools/client/responsive/test/browser/devices.json"
-  );
-
   info("Open responsive design mode");
   await openRDM(tab);
 

@@ -7,13 +7,6 @@
 const TEST_URI = URL_ROOT + "doc_media_queries.html";
 
 add_task(async function() {
-  
-  
-  await pushPref(
-    "devtools.devices.url",
-    "http://example.com/browser/devtools/client/responsive/test/browser/devices.json"
-  );
-
   const tab = await addTab(TEST_URI);
   const { inspector, view } = await openRuleView();
 

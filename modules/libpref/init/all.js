@@ -4372,9 +4372,6 @@ pref("devtools.remote.adb.extensionID", "adb@mozilla.org");
 pref("devtools.remote.adb.extensionURL", "https://ftp.mozilla.org/pub/mozilla.org/labs/devtools/adb-extension/#OS#/adb-extension-latest-#OS#.xpi");
 
 
-pref("devtools.devices.url", "https://code.cdn.mozilla.net/devices/devices.json");
-
-
 pref("devtools.inspector.inactive.css.enabled", true);
 
 

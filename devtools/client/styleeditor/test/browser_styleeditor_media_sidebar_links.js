@@ -6,17 +6,6 @@
 
 
 
-const asyncStorage = require("devtools/shared/async-storage");
-Services.prefs.setCharPref(
-  "devtools.devices.url",
-  "http://example.com/browser/devtools/client/responsive/test/browser/devices.json"
-);
-
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("devtools.devices.url");
-  asyncStorage.removeItem("devtools.devices.url_cache");
-});
-
 loader.lazyRequireGetter(
   this,
   "ResponsiveUIManager",
