@@ -22,6 +22,7 @@ const {
 } = require("devtools/client/inspector/shared/utils");
 const { debounce } = require("devtools/shared/debounce");
 const EventEmitter = require("devtools/shared/event-emitter");
+const DOUBLESPACE = "  ";
 
 loader.lazyRequireGetter(
   this,
@@ -625,6 +626,9 @@ CssRuleView.prototype = {
 
         
         text = text.replace(/(\r?\n)\r?\n/g, "$1");
+
+        
+        text = text.replace(/\ {4}/g, DOUBLESPACE);
       }
 
       clipboardHelper.copyString(text);
