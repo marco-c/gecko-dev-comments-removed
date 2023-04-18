@@ -112,12 +112,6 @@ using JS::CompileOptions;
 using JS::ReadOnlyCompileOptions;
 using JS::SourceText;
 
-#ifdef HAVE_VA_LIST_AS_ARRAY
-#  define JS_ADDRESSOF_VA_LIST(ap) ((va_list*)(ap))
-#else
-#  define JS_ADDRESSOF_VA_LIST(ap) (&(ap))
-#endif
-
 
 
 #ifdef JS_64BIT
