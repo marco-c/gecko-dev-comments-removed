@@ -131,6 +131,7 @@ class TRRService : public TRRServiceBase,
   Atomic<bool, Relaxed> mCaptiveIsPassed{
       false};  
   Atomic<bool, Relaxed> mDisableIPv6;  
+  Atomic<bool, Relaxed> mShutdown{false};
 
   
   
