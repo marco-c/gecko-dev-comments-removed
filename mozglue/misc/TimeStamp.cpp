@@ -36,7 +36,29 @@ struct TimeStampInitialization {
 
   TimeStampInitialization() {
     TimeStamp::Startup();
-    mFirstTimeStamp = TimeStamp::Now();
+    TimeStamp now = TimeStamp::Now();
+
+    TimeStamp process_creation;
+    char* mozAppRestart = getenv("MOZ_APP_RESTART");
+
+    
+
+
+    if (mozAppRestart && (strcmp(mozAppRestart, "") != 0)) {
+      process_creation = now;
+    } else {
+      uint64_t uptime = TimeStamp::ComputeProcessUptime();
+      process_creation =
+          now - TimeDuration::FromMicroseconds(static_cast<double>(uptime));
+
+      if ((process_creation > now) || (uptime == 0)) {
+        process_creation = now;
+      }
+    }
+
+    mFirstTimeStamp = now;
+    mProcessCreation = process_creation;
+
     
     
     mozilla::InitializeUptime();
@@ -47,47 +69,12 @@ struct TimeStampInitialization {
 
 static TimeStampInitialization sInitOnce;
 
-MFBT_API TimeStamp TimeStamp::ProcessCreation(bool* aIsInconsistent) {
-  if (aIsInconsistent) {
-    *aIsInconsistent = false;
-  }
-
-  if (sInitOnce.mProcessCreation.IsNull()) {
-    char* mozAppRestart = getenv("MOZ_APP_RESTART");
-    TimeStamp ts;
-
-    
-
-
-    if (mozAppRestart && (strcmp(mozAppRestart, "") != 0)) {
-      
-
-      ts = sInitOnce.mFirstTimeStamp;
-    } else {
-      TimeStamp now = Now();
-      uint64_t uptime = ComputeProcessUptime();
-
-      ts = now - TimeDuration::FromMicroseconds(uptime);
-
-      if ((ts > sInitOnce.mFirstTimeStamp) || (uptime == 0)) {
-        
-
-
-        if (aIsInconsistent) {
-          *aIsInconsistent = true;
-        }
-        ts = sInitOnce.mFirstTimeStamp;
-      }
-    }
-
-    sInitOnce.mProcessCreation = ts;
-  }
-
+MFBT_API TimeStamp TimeStamp::ProcessCreation() {
   return sInitOnce.mProcessCreation;
 }
 
 void TimeStamp::RecordProcessRestart() {
-  sInitOnce.mProcessCreation = TimeStamp();
+  sInitOnce.mProcessCreation = TimeStamp::Now();
 }
 
 }  
