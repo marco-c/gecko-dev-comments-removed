@@ -16,6 +16,7 @@
 #include "nsINode.h"
 #include "nsIStreamListener.h"
 #include "nsILoadInfo.h"
+#include "nsIMIMEService.h"
 #include "nsIOService.h"
 #include "nsContentUtils.h"
 #include "nsCORSListenerProxy.h"
@@ -1227,6 +1228,39 @@ nsresult nsContentSecurityManager::CheckChannelHasProtocolSecurityFlag(
 
 
 
+static nsresult CheckAllowFileProtocolScriptLoad(nsIChannel* aChannel) {
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  ExtContentPolicyType type = loadInfo->GetExternalContentPolicyType();
+
+  
+  if (type != ExtContentPolicy::TYPE_SCRIPT) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (!uri || !uri->SchemeIs("file")) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIMIMEService> mime = do_GetService("@mozilla.org/mime;1", &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoCString contentType;
+  rv = mime->GetTypeFromURI(uri, contentType);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (!nsContentUtils::IsJavascriptMIMEType(
+          NS_ConvertUTF8toUTF16(contentType))) {
+    return NS_ERROR_CONTENT_BLOCKED;
+  }
+
+  return NS_OK;
+}
+
+
+
 
 
 
@@ -1252,6 +1286,9 @@ nsresult nsContentSecurityManager::doContentSecurityCheck(
   }
 
   nsresult rv = CheckAllowLoadInSystemPrivilegedContext(aChannel);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = CheckAllowFileProtocolScriptLoad(aChannel);
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = CheckChannelHasProtocolSecurityFlag(aChannel);
