@@ -233,7 +233,7 @@ class LoadInfo final : public nsILoadInfo {
       const Maybe<mozilla::net::LoadInfoArgs>& aLoadInfoArgs,
       nsINode* aCspToInheritLoadingContext, net::LoadInfo** outLoadInfo);
 
-  ~LoadInfo() = default;
+  ~LoadInfo();
 
   void ComputeIsThirdPartyContext(nsPIDOMWindowOuter* aOuterWindow);
   void ComputeIsThirdPartyContext(dom::WindowGlobalParent* aGlobal);
@@ -254,6 +254,7 @@ class LoadInfo final : public nsILoadInfo {
     mFrameBrowsingContextID = aFrameBrowsingContextID;
   }
   bool DispatchRelease();
+  MOZ_NEVER_INLINE void ReleaseMembers();
 
   
   
