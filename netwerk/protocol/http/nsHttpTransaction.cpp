@@ -2169,6 +2169,27 @@ nsresult nsHttpTransaction::HandleContentStart() {
         mNoContent = true;
         LOG(("this response should not contain a body.\n"));
         break;
+      case 408:
+        LOG(("408 Server Timeouts"));
+
+        if (mConnection->Version() >= HttpVersion::v2_0) {
+          mForceRestart = true;
+          return NS_ERROR_NET_RESET;
+        }
+
+        
+        
+        
+        
+        
+        LOG(("408 Server Timeouts now=%d lastWrite=%d", PR_IntervalNow(),
+             mConnection->LastWriteTime()));
+        if ((PR_IntervalNow() - mConnection->LastWriteTime()) >=
+            PR_MillisecondsToInterval(1000)) {
+          mForceRestart = true;
+          return NS_ERROR_NET_RESET;
+        }
+        break;
       case 421:
         LOG(("Misdirected Request.\n"));
         gHttpHandler->ClearHostMapping(mConnInfo);

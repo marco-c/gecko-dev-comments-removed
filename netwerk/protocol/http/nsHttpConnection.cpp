@@ -1130,18 +1130,7 @@ nsresult nsHttpConnection::OnHeadersAvailable(nsAHttpTransaction* trans,
 
   
   uint16_t responseStatus = responseHead->Status();
-  static const PRIntervalTime k1000ms = PR_MillisecondsToInterval(1000);
   if (responseStatus == 408) {
-    
-    
-    
-    
-    if (mIsReused && ((PR_IntervalNow() - mLastWriteTime) < k1000ms)) {
-      Close(NS_ERROR_NET_RESET);
-      *reset = true;
-      return NS_OK;
-    }
-
     
     
     
@@ -1616,6 +1605,8 @@ HttpVersion nsHttpConnection::Version() {
   }
   return mLastHttpResponseVersion;
 }
+
+PRIntervalTime nsHttpConnection::LastWriteTime() { return mLastWriteTime; }
 
 
 

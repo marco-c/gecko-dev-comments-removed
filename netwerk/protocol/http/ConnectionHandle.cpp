@@ -84,5 +84,9 @@ void ConnectionHandle::TopBrowsingContextIdChanged(uint64_t id) {
   
 }
 
+PRIntervalTime ConnectionHandle::LastWriteTime() {
+  return mConn->LastWriteTime();
+}
+
 }  
 }  
