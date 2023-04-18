@@ -65,6 +65,9 @@ var gExceptionPaths = [
 
   
   "chrome://browser/content/pagedata/schemas/",
+
+  
+  "resource://nimbus/schemas/",
 ];
 
 
