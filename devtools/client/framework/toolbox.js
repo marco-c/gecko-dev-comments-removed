@@ -693,11 +693,6 @@ Toolbox.prototype = {
 
   async _onTargetAvailable({ targetFront, isTargetSwitching }) {
     if (targetFront.isTopLevel) {
-      if (isTargetSwitching) {
-        
-        this.emit("switch-target", targetFront);
-      }
-
       
       
       if (!targetFront.targetForm.ignoreSubFrames) {
