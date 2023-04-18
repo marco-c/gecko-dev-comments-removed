@@ -84,6 +84,42 @@ add_task(async function() {
       },
     },
     {
+      description: "DOM Timer",
+      sourceForm: {
+        introductionType: "domTimer",
+        sourceMapBaseURL:
+          "https://example.com/browser/devtools/shared/commands/resource/tests/sources.html",
+        url: null,
+        isBlackBoxed: false,
+        sourceMapURL: null,
+        extensionName: null,
+      },
+      sourceContent: {
+        contentType: "text/javascript",
+        
+
+
+
+        source: new Array(39).join("\n") + `console.log("timeout")`,
+      },
+    },
+    {
+      description: "Event Handler",
+      sourceForm: {
+        introductionType: "eventHandler",
+        sourceMapBaseURL:
+          "https://example.com/browser/devtools/shared/commands/resource/tests/sources.html",
+        url: null,
+        isBlackBoxed: false,
+        sourceMapURL: null,
+        extensionName: null,
+      },
+      sourceContent: {
+        contentType: "text/javascript",
+        source: "console.log('link')",
+      },
+    },
+    {
       description: "inline JS inserted at runtime",
       sourceForm: {
         introductionType: "scriptElement", 
@@ -185,6 +221,14 @@ add_task(async function() {
       },
     },
   ];
+
+  
+  
+  await waitFor(
+    () => availableResources.length >= expectedExistingResources.length,
+    "Got all the sources"
+  );
+
   await assertResources(availableResources, expectedExistingResources);
 
   await targetCommand.stopListening();
