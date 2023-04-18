@@ -336,7 +336,7 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
   
   bool const mSkipSizeCheck;
   
-  bool mIsDoomed{false};
+  Atomic<bool, Relaxed> mIsDoomed{false};
 
   
 
