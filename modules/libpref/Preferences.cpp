@@ -4168,8 +4168,13 @@ nsresult Preferences::WritePrefFile(nsIFile* aFile, SaveMethod aSaveMethod) {
         rv = target->Dispatch(new PWRunnable(aFile),
                               nsIEventTarget::DISPATCH_NORMAL);
       } else {
+        rv =
+            SyncRunnable::DispatchToThread(target, new PWRunnable(aFile), true);
+      }
+      if (NS_FAILED(rv)) {
         
-        SyncRunnable::DispatchToThread(target, new PWRunnable(aFile), true);
+        
+        PreferencesWriter::sPendingWriteCount--;
       }
       return rv;
     }
