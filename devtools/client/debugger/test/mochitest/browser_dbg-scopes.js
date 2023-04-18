@@ -7,7 +7,7 @@ add_task(async function() {
 
   const ready = Promise.all([
     waitForPaused(dbg),
-    waitForLoadedSource(dbg, "switching-02"),
+    waitForLoadedSource(dbg, "script-switching-02.js"),
 
     
     

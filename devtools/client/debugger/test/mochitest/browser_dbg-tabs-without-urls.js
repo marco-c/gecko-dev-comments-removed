@@ -5,10 +5,10 @@
 
 
 add_task(async function() {
-  const dbg = await initDebugger("doc-scripts.html", "simple1", "simple2");
+  const dbg = await initDebugger("doc-scripts.html", "simple1.js", "simple2.js");
 
-  await selectSource(dbg, "simple1");
-  await selectSource(dbg, "simple2");
+  await selectSource(dbg, "simple1.js");
+  await selectSource(dbg, "simple2.js");
 
   is(countTabs(dbg), 2);
 
@@ -23,13 +23,13 @@ add_task(async function() {
   is(countTabs(dbg), 4);
 
   
-  await reload(dbg, "simple1", "simple2");
+  await reload(dbg, "simple1.js", "simple2.js");
   is(countTabs(dbg), 2);
 
   
   
   
   
-  await selectSource(dbg, "simple1");
-  await selectSource(dbg, "simple2");
+  await selectSource(dbg, "simple1.js");
+  await selectSource(dbg, "simple2.js");
 });

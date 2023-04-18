@@ -5,7 +5,7 @@
 
 
 add_task(async function() {
-  const dbg = await initDebugger("doc-scripts.html", "simple1", "simple2");
+  const dbg = await initDebugger("doc-scripts.html", "simple1.js", "simple2.js");
 
   
   invokeInTab("doEval");

@@ -655,23 +655,32 @@ function pauseTest() {
 
 
 
-function findSource(dbg, url, { silent } = { silent: false }) {
-  if (typeof url !== "string") {
+
+
+
+
+function findSource(dbg, filenameOrUrlOrSource, { silent } = { silent: false }) {
+  if (typeof filenameOrUrlOrSource !== "string") {
     
     
-    const source = url;
-    return source;
+    return filenameOrUrlOrSource; 
   }
 
   const sources = dbg.selectors.getSourceList();
-  const source = sources.find(s => (s.url || "").includes(url));
+  const source = sources.find(s => {
+    
+    const sourceFileName = s.url ? s.url.substring(s.url.lastIndexOf("/") + 1) : "";
+    
+    
+    return sourceFileName == filenameOrUrlOrSource || s.url == filenameOrUrlOrSource;
+  });
 
   if (!source) {
     if (silent) {
       return false;
     }
 
-    throw new Error(`Unable to find source: ${url}`);
+    throw new Error(`Unable to find source: ${filenameOrUrlOrSource}`);
   }
 
   return source;

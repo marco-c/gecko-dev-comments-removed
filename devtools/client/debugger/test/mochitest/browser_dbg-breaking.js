@@ -11,11 +11,11 @@ add_task(async function() {
     getState,
   } = dbg;
 
-  await selectSource(dbg, "scripts.html");
+  await selectSource(dbg, "doc-scripts.html");
 
   
   
-  await addBreakpoint(dbg, "scripts.html", 21);
+  await addBreakpoint(dbg, "doc-scripts.html", 21);
 
   reload(dbg);
 

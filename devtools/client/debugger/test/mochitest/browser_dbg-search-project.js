@@ -4,9 +4,9 @@
 
 
 add_task(async function() {
-  const dbg = await initDebugger("doc-script-switching.html", "switching-01");
+  const dbg = await initDebugger("doc-script-switching.html", "script-switching-01.js");
 
-  await selectSource(dbg, "switching-01");
+  await selectSource(dbg, "script-switching-01.js");
 
   
   await openProjectSearch(dbg);
@@ -23,8 +23,8 @@ add_task(async function() {
   is(dbg.selectors.getActiveSearch(), null);
 
   const selectedSource = dbg.selectors.getSelectedSource();
-  ok(selectedSource.url.includes("switching-01"));
-  await waitForLoadedSource(dbg, "switching-01");
+  ok(selectedSource.url.includes("script-switching-01.js"));
+  await waitForLoadedSource(dbg, "script-switching-01.js");
 });
 
 

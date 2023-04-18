@@ -10,10 +10,10 @@ add_task(async function() {
 
   const dbg = await initDebugger(
     "doc-event-breakpoints.html",
-    "event-breakpoints"
+    "event-breakpoints.js"
   );
-  await selectSource(dbg, "event-breakpoints");
-  await waitForSelectedSource(dbg, "event-breakpoints");
+  await selectSource(dbg, "event-breakpoints.js");
+  await waitForSelectedSource(dbg, "event-breakpoints.js");
 
   
   await toggleEventBreakpoint(dbg, "Mouse", "event.mouse.click");

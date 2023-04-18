@@ -4,11 +4,11 @@
 
 
 add_task(async function() {
-  const dbg = await initDebugger("doc-scripts.html", "simple2");
-  await selectSource(dbg, "simple2");
-  await waitForSelectedSource(dbg, "simple2");
+  const dbg = await initDebugger("doc-scripts.html", "simple2.js");
+  await selectSource(dbg, "simple2.js");
+  await waitForSelectedSource(dbg, "simple2.js");
 
-  await addBreakpoint(dbg, "simple2", 3);
+  await addBreakpoint(dbg, "simple2.js", 3);
 
   await openFirstBreakpointContextMenu(dbg);
   
@@ -21,12 +21,12 @@ add_task(async function() {
 
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html");
-  await selectSource(dbg, "simple1");
-  await waitForSelectedSource(dbg, "simple1");
+  await selectSource(dbg, "simple1.js");
+  await waitForSelectedSource(dbg, "simple1.js");
 
-  await addBreakpoint(dbg, "simple1", 4);
-  await addBreakpoint(dbg, "simple1", 5);
-  await addBreakpoint(dbg, "simple1", 6);
+  await addBreakpoint(dbg, "simple1.js", 4);
+  await addBreakpoint(dbg, "simple1.js", 5);
+  await addBreakpoint(dbg, "simple1.js", 6);
 
   await openFirstBreakpointContextMenu(dbg);
   

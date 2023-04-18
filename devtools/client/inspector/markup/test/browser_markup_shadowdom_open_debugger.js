@@ -134,5 +134,5 @@ async function waitUntilDebuggerReady(debuggerContext) {
 
   
   
-  await waitForLoadedSource(debuggerContext, "data:");
+  await waitForLoadedSource(debuggerContext, TEST_URL);
 }
