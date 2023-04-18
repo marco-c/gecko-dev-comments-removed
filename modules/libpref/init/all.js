@@ -1006,11 +1006,6 @@ pref("print.print_edge_bottom", 0);
 
 
 
-
-pref("extensions.spellcheck.inline.max-misspellings", 500);
-
-
-
 pref("editor.use_div_for_default_newlines",  true);
 
 

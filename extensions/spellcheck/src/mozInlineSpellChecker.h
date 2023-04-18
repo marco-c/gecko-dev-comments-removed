@@ -165,7 +165,7 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   RefPtr<mozilla::EditorSpellCheck> mPendingSpellCheck;
 
   int32_t mNumWordsInSpellSelection;
-  int32_t mMaxNumWordsInSpellSelection;
+  const int32_t mMaxNumWordsInSpellSelection;
 
   
   
