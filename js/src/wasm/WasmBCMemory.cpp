@@ -282,7 +282,7 @@ void BaseCompiler::boundsCheck4GBOrLargerAccess(RegPtr tls, RegI32 ptr,
 #  ifdef RABALDR_ZERO_EXTENDS
   masm.debugAssertCanonicalInt32(ptr);
 #  else
-  MOZ_CRASH("Platform code needed here");
+  masm.move32To64ZeroExtend(ptr, ptr64);
 #  endif
 
   boundsCheck4GBOrLargerAccess(tls, ptr64, ok);
@@ -293,7 +293,7 @@ void BaseCompiler::boundsCheck4GBOrLargerAccess(RegPtr tls, RegI32 ptr,
 #  ifdef RABALDR_ZERO_EXTENDS
   
 #  else
-  MOZ_CRASH("Platform code needed here");
+  masm.move64To32(ptr64, ptr);
 #  endif
 #else
   
@@ -323,6 +323,18 @@ void BaseCompiler::boundsCheckBelow4GBAccess(RegPtr tls, RegI64 ptr,
   
   boundsCheck4GBOrLargerAccess(tls, ptr, ok);
 }
+
+
+static inline void ToValidIndex(MacroAssembler& masm, RegI32 ptr) {
+#if defined(JS_CODEGEN_MIPS64)
+  
+  
+  
+  masm.move32To64ZeroExtend(ptr, Register64(ptr));
+#endif
+}
+
+static inline void ToValidIndex(MacroAssembler& masm, RegI64 ptr) {}
 
 
 template <typename RegIndexType>
@@ -387,6 +399,8 @@ void BaseCompiler::prepareMemoryAccess(MemoryAccessDesc* access,
     masm.wasmTrap(Trap::OutOfBounds, bytecodeOffset());
     masm.bind(&ok);
   }
+
+  ToValidIndex(masm, ptr);
 }
 
 template <typename RegIndexType>

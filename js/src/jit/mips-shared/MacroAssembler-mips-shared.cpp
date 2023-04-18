@@ -2099,7 +2099,7 @@ void MacroAssemblerMIPSShared::wasmLoadImpl(
 
   
   if (offset) {
-    asMasm().addPtr(Imm32(offset), ptrScratch);
+    asMasm().addPtr(ImmWord(offset), ptrScratch);
     ptr = ptrScratch;
   }
 
@@ -2181,7 +2181,7 @@ void MacroAssemblerMIPSShared::wasmStoreImpl(
 
   
   if (offset) {
-    asMasm().addPtr(Imm32(offset), ptrScratch);
+    asMasm().addPtr(ImmWord(offset), ptrScratch);
     ptr = ptrScratch;
   }
 
