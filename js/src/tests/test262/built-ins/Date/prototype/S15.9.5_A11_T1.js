@@ -6,9 +6,10 @@
 
 
 
-
-if (Date.prototype.hasOwnProperty("getUTCFullYear") !== true) {
-  throw new Test262Error('#1: The Date.prototype has the property "getUTCFullYear"');
-}
+assert.sameValue(
+  Date.prototype.hasOwnProperty("getUTCFullYear"),
+  true,
+  'Date.prototype.hasOwnProperty("getUTCFullYear") must return true'
+);
 
 reportCompare(0, 0);

@@ -9,24 +9,9 @@
 
 var __re = new RegExp(null, void 0);
 
-
-if (__re.source !== "null") {
-  throw new Test262Error('#1: __re = new RegExp(null, void 0); __re.source === "null". Actual: '+ (__re.source));
-}
-
-
-if (__re.multiline !== false) {
-  throw new Test262Error('#2: __re = new RegExp(null, void 0); __re.multiline === false. Actual: ' + (__re.multiline));
-}
-
-
-if (__re.global !== false) {
-  throw new Test262Error('#3: __re = new RegExp(null, void 0); __re.global === false. Actual: ' + (__re.global));
-}
-
-
-if (__re.ignoreCase !== false) {
-  throw new Test262Error('#4: __re = new RegExp(null, void 0); __re.ignoreCase === false. Actual: ' + (__re.ignoreCase));
-}
+assert.sameValue(__re.source, "null", 'The value of __re.source is expected to be "null"');
+assert.sameValue(__re.multiline, false, 'The value of __re.multiline is expected to be false');
+assert.sameValue(__re.global, false, 'The value of __re.global is expected to be false');
+assert.sameValue(__re.ignoreCase, false, 'The value of __re.ignoreCase is expected to be false');
 
 reportCompare(0, 0);

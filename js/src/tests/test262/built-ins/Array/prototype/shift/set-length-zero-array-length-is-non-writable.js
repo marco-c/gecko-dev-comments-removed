@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var array = [];
+Object.defineProperty(array, "length", { writable: false });
+
+assert.throws(TypeError, function() {
+  array.shift();
+});
+
+reportCompare(0, 0);

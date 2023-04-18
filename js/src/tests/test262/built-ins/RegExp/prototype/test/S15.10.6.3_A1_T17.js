@@ -9,9 +9,6 @@
 
 var __re = /ll|l/;
 
-
-if (__re.test(null) !== (__re.exec(null) !== null)) {
-	throw new Test262Error('#0: __re = /ll|l/; __re.test(null) === (__re.exec(null) !== null)');
-}
+assert.sameValue(__re.test(null), __re.exec(null) !== null, '__re.test(null) must return __re.exec(null) !== null');
 
 reportCompare(0, 0);

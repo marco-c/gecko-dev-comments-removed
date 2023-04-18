@@ -8,22 +8,19 @@
 
 
 
-
-
-if (Object.prototype.toString() == false) {
-  throw new Test262Error('#1: Object prototype object has not prototype');
-}
+assert.notSameValue(Object.prototype.toString(), false, 'Object.prototype.toString() must return false');
 
 delete Object.prototype.toString;
-
 
 try {
   Object.prototype.toString();
   throw new Test262Error('#2: Object prototype object has not prototype');
 } catch (e) {
-  if ((e instanceof TypeError) !== true) {
-    throw new Test262Error('#1.1: delete Object.prototype.toString; Object.prototype.toString() throw a TypeError. Actual: ' + (e));
-  }
+  assert.sameValue(
+    e instanceof TypeError,
+    true,
+    'The result of evaluating (e instanceof TypeError) is expected to be true'
+  );
 }
 
 

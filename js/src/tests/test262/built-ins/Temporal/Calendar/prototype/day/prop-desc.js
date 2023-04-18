@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Temporal.Calendar.prototype.day,
+  "function",
+  "`typeof Calendar.prototype.day` is `function`"
+);
+
+verifyProperty(Temporal.Calendar.prototype, "day", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

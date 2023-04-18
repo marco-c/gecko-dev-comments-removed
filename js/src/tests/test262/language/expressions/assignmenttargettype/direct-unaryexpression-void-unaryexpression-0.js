@@ -18,7 +18,4 @@
 
 $DONOTEVALUATE();
 
-function _() {
-  void x = 1;
-}
-
+void x = 1;

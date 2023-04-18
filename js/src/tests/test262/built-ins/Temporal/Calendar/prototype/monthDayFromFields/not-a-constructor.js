@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.Calendar.prototype.monthDayFromFields();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.Calendar.prototype.monthDayFromFields), false,
+  "isConstructor(Temporal.Calendar.prototype.monthDayFromFields)");
+
+reportCompare(0, 0);

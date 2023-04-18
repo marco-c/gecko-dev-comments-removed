@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.isExtensible(ShadowRealm), true);
+
+reportCompare(0, 0);

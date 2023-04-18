@@ -10,9 +10,10 @@
 var __string = new Boolean;
 var __re = /AL|se/;
 
-
-if (__re.test(__string) !== (__re.exec(__string) !== null)) {
-	throw new Test262Error('#0: var __string = new Boolean;__re = /AL|se/; __re.test(__string) === (__re.exec(__string) !== null)');
-}
+assert.sameValue(
+  __re.test(__string),
+  __re.exec(__string) !== null,
+  '__re.test(new Boolean) must return __re.exec(__string) !== null'
+);
 
 reportCompare(0, 0);

@@ -13,16 +13,15 @@
 
 
 
+assert.sameValue(
+  typeof Object.prototype.hasOwnProperty,
+  "function",
+  'The value of `typeof Object.prototype.hasOwnProperty` is expected to be "function"'
+);
 
-
-if (typeof Object.prototype.hasOwnProperty !== "function") {
-  throw new Test262Error('#1: hasOwnProperty method is defined');
-}
-
-
-if (!(Object.prototype.hasOwnProperty("hasOwnProperty"))) {
-  throw new Test262Error('#2: hasOwnProperty method works properly');
-}
-
+assert(
+  !!Object.prototype.hasOwnProperty("hasOwnProperty"),
+  'The value of !!Object.prototype.hasOwnProperty("hasOwnProperty") is expected to be true'
+);
 
 reportCompare(0, 0);

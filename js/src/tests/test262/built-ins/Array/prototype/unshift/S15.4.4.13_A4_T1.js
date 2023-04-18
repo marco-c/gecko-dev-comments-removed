@@ -13,24 +13,20 @@ Array.prototype[0] = -1;
 var x = [1];
 x.length = 1;
 
-
 var unshift = x.unshift(0);
 if (unshift !== 2) {
   throw new Test262Error('#1: Array.prototype[0] = -1; x = [1]; x.length = 1; x.unshift(0) === 2. Actual: ' + (unshift));
 }
 
-
 if (x[0] !== 0) {
   throw new Test262Error('#2: Array.prototype[0] = -1; x = [1]; x.length = 1; x.unshift(0); x[0] === 0. Actual: ' + (x[0]));
 }
-
 
 if (x[1] !== 1) {
   throw new Test262Error('#3: Array.prototype[0] = -1; x = [1]; x.length = 1; x.unshift(0); x[1] === 1. Actual: ' + (x[1]));
 }
 
 delete x[0];
-
 
 if (x[0] !== -1) {
   throw new Test262Error('#4: Array.prototype[0] = -1; x = [1]; x.length = 1; x.unshift(0); delete x[0]; x[0] === -1. Actual: ' + (x[0]));
@@ -43,17 +39,14 @@ x = {
   0: 1
 };
 
-
 var unshift = x.unshift(0);
 if (unshift !== 2) {
   throw new Test262Error('#5: Object.prototype[0] = -1; Object.prototype.length = 1; Object.prototype.unshift = Array.prototype.unshift; x = {0:0}; x.unshift(0) === 2. Actual: ' + (unshift));
 }
 
-
 if (x[0] !== 0) {
   throw new Test262Error('#6: Object.prototype[0] = -1; Object.prototype.length = 1; Object.prototype.unshift = Array.prototype.unshift; x = {0:0}; x.unshift(0); x[0] === 0. Actual: ' + (x[0]));
 }
-
 
 if (x[1] !== 1) {
   throw new Test262Error('#7: Object.prototype[0] = -1; Object.prototype.length = 1; Object.prototype.unshift = Array.prototype.unshift; x = {0:0}; x.unshift(0); x[1] === 1. Actual: ' + (x[1]));
@@ -61,16 +54,13 @@ if (x[1] !== 1) {
 
 delete x[0];
 
-
 if (x[0] !== -1) {
   throw new Test262Error('#8: Object.prototype[0] = -1; Object.prototype.length = 1; Object.prototype.unshift = Array.prototype.unshift; x = {0:0}; x.unshift(0); delete x[0]; x[0] === -1. Actual: ' + (x[0]));
 }
 
-
 if (x.length !== 2) {
   throw new Test262Error('#9: Object.prototype[0] = -1; Object.prototype.length = 1; Object.prototype.unshift = Array.prototype.unshift; x = {0:0}; x.unshift(0); x.length === 1. Actual: ' + (x.length));
 }
-
 
 delete x.length;
 if (x.length !== 1) {

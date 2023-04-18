@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TemporalHelpers.checkToTemporalCalendarFastPath((temporalObject) => {
+  const timeZone = new Temporal.TimeZone("UTC");
+  timeZone.getPossibleInstantsFor({ year: 2000, month: 5, day: 2, calendar: temporalObject });
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, () => new Temporal.TimeZone());
+assert.throws(RangeError, () => new Temporal.TimeZone(undefined));
+
+reportCompare(0, 0);

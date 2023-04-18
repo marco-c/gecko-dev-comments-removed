@@ -13,9 +13,6 @@
 
 var __executed = /\bot/.test("pilot\nsoviet robot\topenoffice");
 
-
-if (__executed) {
-	throw new Test262Error('#1: /\\bot/.test("pilot\\nsoviet robot\\topenoffice") === false');
-}
+assert(!__executed, 'The value of !__executed is expected to be true');
 
 reportCompare(0, 0);

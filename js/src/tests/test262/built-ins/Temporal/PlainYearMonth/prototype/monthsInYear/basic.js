@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+const ym = new Temporal.PlainYearMonth(1976, 11);
+assert.sameValue(ym.monthsInYear, 12);
+
+reportCompare(0, 0);

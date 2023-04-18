@@ -8,20 +8,22 @@
 
 
 
+assert.sameValue(
+  typeof Object.prototype.toLocaleString,
+  "function",
+  'The value of `typeof Object.prototype.toLocaleString` is expected to be "function"'
+);
 
+assert.sameValue(
+  Object.prototype.toLocaleString(),
+  Object.prototype.toString(),
+  'Object.prototype.toLocaleString() must return the same value returned by Object.prototype.toString()'
+);
 
-if (typeof Object.prototype.toLocaleString !== "function") {
-  throw new Test262Error('#1: toLocaleString method defined');
-}
-
-
-if (Object.prototype.toLocaleString() !== Object.prototype.toString()) {
-  throw new Test262Error('#1: toLocaleString function returns the result of calling toString()');
-}
-
-
-if ({}.toLocaleString() !== {}.toString()) {
-  throw new Test262Error('#2: toLocaleString function returns the result of calling toString()');
-}
+assert.sameValue(
+  {}.toLocaleString(),
+  {}.toString(),
+  '({}).toLocaleString() must return the same value returned by ({}).toString()'
+);
 
 reportCompare(0, 0);

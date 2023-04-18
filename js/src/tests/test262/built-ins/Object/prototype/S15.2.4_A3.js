@@ -11,6 +11,6 @@
 
 assert.throws(TypeError, function() {
   Object.prototype();
-});
+}, 'Object.prototype() throws a TypeError exception');
 
 reportCompare(0, 0);

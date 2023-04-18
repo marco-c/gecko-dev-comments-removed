@@ -1,0 +1,55 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  #field = false;
+  compoundAssignment() {
+    return this.#field ||= true;
+  }
+  fieldValue() {
+    return this.#field;
+  }
+}
+
+const o = new C();
+assert.sameValue(o.compoundAssignment(), true, "The expression should evaluate to the result");
+assert.sameValue(o.fieldValue(), true, "PutValue should store the result in the private reference");
+
+reportCompare(0, 0);

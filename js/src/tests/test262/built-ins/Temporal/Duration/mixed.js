@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, () => new Temporal.Duration(-1, 1, 1, 1, 1, 1, 1, 1, 1, 1));
+assert.throws(RangeError, () => new Temporal.Duration(1, -1, 1, 1, 1, 1, 1, 1, 1, 1));
+assert.throws(RangeError, () => new Temporal.Duration(1, 1, -1, 1, 1, 1, 1, 1, 1, 1));
+assert.throws(RangeError, () => new Temporal.Duration(1, 1, 1, -1, 1, 1, 1, 1, 1, 1));
+assert.throws(RangeError, () => new Temporal.Duration(1, 1, 1, 1, -1, 1, 1, 1, 1, 1));
+assert.throws(RangeError, () => new Temporal.Duration(1, 1, 1, 1, 1, -1, 1, 1, 1, 1));
+assert.throws(RangeError, () => new Temporal.Duration(1, 1, 1, 1, 1, 1, -1, 1, 1, 1));
+assert.throws(RangeError, () => new Temporal.Duration(1, 1, 1, 1, 1, 1, 1, -1, 1, 1));
+assert.throws(RangeError, () => new Temporal.Duration(1, 1, 1, 1, 1, 1, 1, 1, -1, 1));
+assert.throws(RangeError, () => new Temporal.Duration(1, 1, 1, 1, 1, 1, 1, 1, 1, -1));
+
+reportCompare(0, 0);

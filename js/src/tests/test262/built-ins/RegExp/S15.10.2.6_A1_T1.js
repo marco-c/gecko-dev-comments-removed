@@ -11,9 +11,6 @@
 
 var __executed = /s$/.test("pairs\nmakes\tdouble");
 
-
-if (__executed) {
-	throw new Test262Error('#1: /s$/.test("pairs\\nmakes\\tdouble") === false');
-}
+assert(!__executed, 'The value of !__executed is expected to be true');
 
 reportCompare(0, 0);

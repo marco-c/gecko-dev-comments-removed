@@ -11,12 +11,9 @@
 
 var __string;
 
-
 var __re = /1|12/;
-if (__re.exec(__string) !== null) {
-	throw new Test262Error('#1: var __string; /1|12/.exec(__string) === null; function __string(){}. Actual: ' + (__re));
-}
+assert.sameValue(__re.exec(__string), null, '__re.exec() must return null');
 
-function __string(){};
+function __string(){}
 
 reportCompare(0, 0);

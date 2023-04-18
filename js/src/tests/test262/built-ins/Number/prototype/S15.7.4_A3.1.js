@@ -6,10 +6,10 @@
 
 
 
-
-
-if (Number.prototype.hasOwnProperty("constructor") !== true) {
-  throw new Test262Error('#1: The Number prototype object has the property constructor');
-}
+assert.sameValue(
+  Number.prototype.hasOwnProperty("constructor"),
+  true,
+  'Number.prototype.hasOwnProperty("constructor") must return true'
+);
 
 reportCompare(0, 0);

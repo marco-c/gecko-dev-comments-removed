@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+const datetime = new Temporal.ZonedDateTime(1_000_000_000_123_987_500n, "UTC");
+assert.throws(RangeError, () => datetime.round({ smallestUnit: "other string" }));
+
+reportCompare(0, 0);

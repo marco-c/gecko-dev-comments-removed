@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var array = [];
+Object.freeze(array);
+
+assert.throws(TypeError, function() {
+  array.pop();
+});
+
+reportCompare(0, 0);

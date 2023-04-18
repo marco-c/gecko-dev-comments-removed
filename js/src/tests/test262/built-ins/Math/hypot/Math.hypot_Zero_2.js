@@ -7,9 +7,13 @@
 
 
 
+
+assert.sameValue(Math.hypot(0), 0, 'Math.hypot(0)');
+assert.sameValue(Math.hypot(-0), 0, 'Math.hypot(-0)');
 assert.sameValue(Math.hypot(0, 0), 0, 'Math.hypot(0, 0)');
 assert.sameValue(Math.hypot(0, -0), 0, 'Math.hypot(0, -0)');
 assert.sameValue(Math.hypot(-0, 0), 0, 'Math.hypot(-0, 0)');
 assert.sameValue(Math.hypot(-0, -0), 0, 'Math.hypot(-0, -0)');
+assert.sameValue(Math.hypot(0, -0, -0), 0, 'Math.hypot(0, -0, -0)');
 
 reportCompare(0, 0);

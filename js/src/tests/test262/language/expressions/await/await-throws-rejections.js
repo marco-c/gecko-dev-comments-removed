@@ -8,6 +8,8 @@
 
 
 
+
+
 async function foo() {
   var err = {};
   var caught = false;
@@ -21,5 +23,4 @@ async function foo() {
   assert(caught);
 }
 
-
-reportCompare(0, 0);
+foo().then($DONE, $DONE);

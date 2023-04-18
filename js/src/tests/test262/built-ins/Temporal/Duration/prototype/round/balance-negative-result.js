@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const duration = new Temporal.Duration(0, 0, 0, 0, -60);
+const result = duration.round({ largestUnit: "days" });
+TemporalHelpers.assertDuration(result, 0, 0, 0, -2, -12, 0, 0, 0, 0, 0);
+
+reportCompare(0, 0);

@@ -10,11 +10,7 @@
 
 
 
-var __executed = /[]a/.test("\0a\0a");;
-
-
- if (__executed) {
-	throw new Test262Error('#1: /[]a/.test("\\0a\\0a") === false');
-}
+var __executed = /[]a/.test("\0a\0a");
+assert(!__executed, 'The value of !__executed is expected to be true');
 
 reportCompare(0, 0);

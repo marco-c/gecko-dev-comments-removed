@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.PlainTime.prototype.subtract();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.PlainTime.prototype.subtract), false,
+  "isConstructor(Temporal.PlainTime.prototype.subtract)");
+
+reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.Instant.prototype.round();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.Instant.prototype.round), false,
+  "isConstructor(Temporal.Instant.prototype.round)");
+
+reportCompare(0, 0);

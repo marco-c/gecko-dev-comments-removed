@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Temporal.PlainMonthDay.prototype, "object");
+assert.notSameValue(Temporal.PlainMonthDay.prototype, null);
+
+verifyProperty(Temporal.PlainMonthDay, "prototype", {
+  writable: false,
+  enumerable: false,
+  configurable: false,
+});
+
+reportCompare(0, 0);

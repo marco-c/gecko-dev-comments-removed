@@ -9,18 +9,15 @@
 
 
 
-
 var x = new Array();
 var shift = x.shift();
 if (shift !== undefined) {
   throw new Test262Error('#1: var x = new Array(); x.shift() === undefined. Actual: ' + (shift));
 }
 
-
 if (x.length !== 0) {
   throw new Test262Error('#2: var x = new Array(); x.shift(); x.length === 0. Actual: ' + (x.length));
 }
-
 
 var x = Array(1, 2, 3);
 x.length = 0;
@@ -28,7 +25,6 @@ var shift = x.shift();
 if (shift !== undefined) {
   throw new Test262Error('#2: var x = Array(1,2,3); x.length = 0; x.shift() === undefined. Actual: ' + (shift));
 }
-
 
 if (x.length !== 0) {
   throw new Test262Error('#4: var x = new Array(1,2,3); x.length = 0; x.shift(); x.length === 0. Actual: ' + (x.length));

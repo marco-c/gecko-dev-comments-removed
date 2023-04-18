@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(String(Temporal.Now), "[object Temporal.Now]");
+
+reportCompare(0, 0);

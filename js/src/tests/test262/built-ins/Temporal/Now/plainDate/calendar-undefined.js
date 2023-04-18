@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, () => Temporal.Now.plainDate(), "implicit");
+assert.throws(RangeError, () => Temporal.Now.plainDate(undefined), "implicit");
+
+reportCompare(0, 0);

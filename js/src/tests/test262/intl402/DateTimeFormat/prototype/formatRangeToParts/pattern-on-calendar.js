@@ -10,25 +10,8 @@
 
 
 
-let calendars = [
-  "buddhist",
-  "chinese",
-  "coptic",
-  "dangi",
-  "ethiopic",
-  "ethioaa",
-  "gregory",
-  "hebrew",
-  "indian",
-  "islamic",
-  "islamic-civil",
-  "islamic-rgsa",
-  "islamic-tbla",
-  "islamic-umalqura",
-  "japanese",
-  "persian",
-  "roc"
-];
+
+let calendars = allCalendars();
 let date1 = new Date(2017, 3, 12);
 let date2 = new Date();
 

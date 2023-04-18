@@ -68,6 +68,7 @@ assert.notSameValue = function (actual, unexpected, message) {
 };
 
 assert.throws = function (expectedErrorConstructor, func, message) {
+  var expectedName, actualName;
   if (typeof func !== "function") {
     throw new Test262Error('assert.throws requires two arguments: the error constructor ' +
       'and a function to run');
@@ -86,7 +87,13 @@ assert.throws = function (expectedErrorConstructor, func, message) {
       message += 'Thrown value was not an object!';
       throw new Test262Error(message);
     } else if (thrown.constructor !== expectedErrorConstructor) {
-      message += 'Expected a ' + expectedErrorConstructor.name + ' but got a ' + thrown.constructor.name;
+      expectedName = expectedErrorConstructor.name;
+      actualName = thrown.constructor.name;
+      if (expectedName === actualName) {
+        message += 'Expected a ' + expectedName + ' but got a different error constructor with the same name';
+      } else {
+        message += 'Expected a ' + expectedName + ' but got a ' + actualName;
+      }
       throw new Test262Error(message);
     }
     return;
@@ -141,19 +148,27 @@ compareArray.isSameValue = function(a, b) {
   return a === b;
 };
 
-compareArray.format = function(array) {
-  return `[${array.map(String).join(', ')}]`;
+compareArray.format = function(arrayLike) {
+  return `[${[].map.call(arrayLike, String).join(', ')}]`;
 };
 
 assert.compareArray = function(actual, expected, message) {
   message  = message === undefined ? '' : message;
+
+  if (typeof message === 'symbol') {
+    message = message.toString();
+  }
+
   assert(actual != null, `First argument shouldn't be nullish. ${message}`);
   assert(expected != null, `Second argument shouldn't be nullish. ${message}`);
   var format = compareArray.format;
-  assert(
-    compareArray(actual, expected),
-    `Expected ${format(actual)} and ${format(expected)} to have the same contents. ${message}`
-  );
+  var result = compareArray(actual, expected);
+
+  
+  
+  if (!result) {
+    assert(false, `Expected ${format(actual)} and ${format(expected)} to have the same contents. ${message}`);
+  }
 };
 
 
@@ -332,12 +347,18 @@ function isWritable(obj, name, verifyProp, value) {
   return writeSucceeded;
 }
 
+
+
+
 function verifyEqualTo(obj, name, value) {
   if (!isSameValue(obj[name], value)) {
     throw new Test262Error("Expected obj[" + String(name) + "] to equal " + value +
            ", actually " + obj[name]);
   }
 }
+
+
+
 
 function verifyWritable(obj, name, verifyProp, value) {
   if (!verifyProp) {
@@ -349,6 +370,9 @@ function verifyWritable(obj, name, verifyProp, value) {
   }
 }
 
+
+
+
 function verifyNotWritable(obj, name, verifyProp, value) {
   if (!verifyProp) {
     assert(!Object.getOwnPropertyDescriptor(obj, name).writable,
@@ -359,6 +383,9 @@ function verifyNotWritable(obj, name, verifyProp, value) {
   }
 }
 
+
+
+
 function verifyEnumerable(obj, name) {
   assert(Object.getOwnPropertyDescriptor(obj, name).enumerable,
        "Expected obj[" + String(name) + "] to have enumerable:true.");
@@ -366,6 +393,9 @@ function verifyEnumerable(obj, name) {
     throw new Test262Error("Expected obj[" + String(name) + "] to be enumerable, but was not.");
   }
 }
+
+
+
 
 function verifyNotEnumerable(obj, name) {
   assert(!Object.getOwnPropertyDescriptor(obj, name).enumerable,
@@ -375,6 +405,9 @@ function verifyNotEnumerable(obj, name) {
   }
 }
 
+
+
+
 function verifyConfigurable(obj, name) {
   assert(Object.getOwnPropertyDescriptor(obj, name).configurable,
        "Expected obj[" + String(name) + "] to have configurable:true.");
@@ -382,6 +415,9 @@ function verifyConfigurable(obj, name) {
     throw new Test262Error("Expected obj[" + String(name) + "] to be configurable, but was not.");
   }
 }
+
+
+
 
 function verifyNotConfigurable(obj, name) {
   assert(!Object.getOwnPropertyDescriptor(obj, name).configurable,

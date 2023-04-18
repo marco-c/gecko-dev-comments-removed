@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Temporal.ZonedDateTime.from,
+  "function",
+  "`typeof ZonedDateTime.from` is `function`"
+);
+
+verifyProperty(Temporal.ZonedDateTime, "from", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

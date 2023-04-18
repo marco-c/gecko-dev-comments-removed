@@ -6,66 +6,33 @@
 
 
 
+assert.sameValue((new Number("a")).toFixed(), "NaN", '(new Number("a")).toFixed() must return "NaN"');
+assert.sameValue((new Number("a")).toFixed(0), "NaN", '(new Number("a")).toFixed(0) must return "NaN"');
+assert.sameValue((new Number("a")).toFixed(1), "NaN", '(new Number("a")).toFixed(1) must return "NaN"');
+assert.sameValue((new Number("a")).toFixed(1.1), "NaN", '(new Number("a")).toFixed(1.1) must return "NaN"');
+assert.sameValue((new Number("a")).toFixed(0.9), "NaN", '(new Number("a")).toFixed(0.9) must return "NaN"');
+assert.sameValue((new Number("a")).toFixed("1"), "NaN", '(new Number("a")).toFixed("1") must return "NaN"');
+assert.sameValue((new Number("a")).toFixed("1.1"), "NaN", '(new Number("a")).toFixed("1.1") must return "NaN"');
+assert.sameValue((new Number("a")).toFixed("0.9"), "NaN", '(new Number("a")).toFixed("0.9") must return "NaN"');
 
+assert.sameValue(
+  (new Number("a")).toFixed(Number.NaN),
+  "NaN",
+  '(new Number("a")).toFixed(Number.NaN) must return "NaN"'
+);
 
-if ((new Number("a")).toFixed() !== "NaN") {
-  throw new Test262Error('#1: (new Number("a")).prototype.toFixed() === "NaN"');
-}
-
-
-if ((new Number("a")).toFixed(0) !== "NaN") {
-  throw new Test262Error('#2: (new Number("a")).prototype.toFixed(0) === "NaN"');
-}
-
-
-if ((new Number("a")).toFixed(1) !== "NaN") {
-  throw new Test262Error('#3: (new Number("a")).prototype.toFixed(1) === "NaN"');
-}
-
-
-if ((new Number("a")).toFixed(1.1) !== "NaN") {
-  throw new Test262Error('#4: (new Number("a")).toFixed(1.1) === "NaN"');
-}
-
-
-if ((new Number("a")).toFixed(0.9) !== "NaN") {
-  throw new Test262Error('#5: (new Number("a")).toFixed(0.9) === "NaN"');
-}
-
-
-if ((new Number("a")).toFixed("1") !== "NaN") {
-  throw new Test262Error('#6: (new Number("a")).toFixed("1") === "NaN"');
-}
-
-
-if ((new Number("a")).toFixed("1.1") !== "NaN") {
-  throw new Test262Error('#7: (new Number("a")).toFixed("1.1") === "NaN"');
-}
-
-
-if ((new Number("a")).toFixed("0.9") !== "NaN") {
-  throw new Test262Error('#8: (new Number("a")).toFixed("0.9") === "NaN"');
-}
-
-
-if ((new Number("a")).toFixed(Number.NaN) !== "NaN") {
-  throw new Test262Error('#9: (new Number("a")).toFixed(Number.NaN) === "NaN"');
-}
-
-
-if ((new Number("a")).toFixed("some string") !== "NaN") {
-  throw new Test262Error('#9: (new Number("a")).toFixed("some string") === "NaN"');
-}
-
+assert.sameValue(
+  (new Number("a")).toFixed("some string"),
+  "NaN",
+  '(new Number("a")).toFixed("some string") must return "NaN"'
+);
 
 try {
   s = (new Number("a")).toFixed(Number.POSITIVE_INFINITY);
   throw new Test262Error('#10: (new Number("a")).toFixed(Number.POSITIVE_INFINITY) should throw RangeError, not return NaN');
 }
 catch (e) {
-  if (!(e instanceof RangeError)) {
-    throw new Test262Error('#10: (new Number("a")).toFixed(Number.POSITIVE_INFINITY) should throw RangeError, not ' + e);
-  }
+  assert(e instanceof RangeError, 'The result of evaluating (e instanceof RangeError) is expected to be true');
 }
 
 reportCompare(0, 0);

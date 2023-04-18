@@ -12,12 +12,10 @@
 
 
 
-
 Array.prototype[2] = 2;
 var x = [0, 1];
 x.length = 3;
 assert.sameValue(x.hasOwnProperty('2'), false, 'x.hasOwnProperty("2") must return false');
-
 
 x.length = 2;
 assert.sameValue(x[2], 2, 'The value of x[2] is expected to be 2');

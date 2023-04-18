@@ -7,19 +7,6 @@
 
 
 
-
-
-var err1 = new Error("Error");
-try {
-  var toStr = err1.toString();
-}
-catch (e) {
-  throw new Test262Error('#1: var err1=new Error("Error"); var toStr=err1.toString(); lead to throwing exception. Exception is ' + e);
-}
-if (toStr === undefined) {
-  throw new Test262Error('#2: var err1=new Error("Error"); var toStr=err1.toString(); toStr!==undefined. Actual: ' + toStr);
-}
-
-
+assert.notSameValue(new Error("Error").toString(), undefined, 'The value of toStr is expected to not equal ``undefined``');
 
 reportCompare(0, 0);

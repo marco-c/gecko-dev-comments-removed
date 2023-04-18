@@ -7,7 +7,6 @@
 
 
 
-
 var FunctionPrototype = Function.prototype;
 
 assert.sameValue(FunctionPrototype.hasOwnProperty('arguments'), true, 'The result of %FunctionPrototype%.hasOwnProperty("arguments") is true');

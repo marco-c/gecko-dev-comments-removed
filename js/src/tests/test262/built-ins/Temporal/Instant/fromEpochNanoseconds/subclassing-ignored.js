@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+TemporalHelpers.checkSubclassingIgnoredStatic(
+  Temporal.Instant,
+  "fromEpochNanoseconds",
+  [10n],
+  (result) => {
+    assert.sameValue(result.epochNanoseconds, 10n, "epochNanoseconds result");
+  },
+);
+
+reportCompare(0, 0);

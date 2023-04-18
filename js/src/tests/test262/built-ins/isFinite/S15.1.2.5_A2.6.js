@@ -6,10 +6,6 @@
 
 
 
-
-
-if (isFinite.prototype !== undefined) {
-  throw new Test262Error('#1: isFinite.prototype === undefined. Actual: ' + (isFinite.prototype));
-}
+assert.sameValue(isFinite.prototype, undefined, 'The value of isFinite.prototype is expected to equal undefined');
 
 reportCompare(0, 0);

@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TemporalHelpers.checkToTemporalCalendarFastPath((temporalObject) => {
+  assert.throws(RangeError, () => Temporal.PlainTime.from({ hour: 12, minute: 34, second: 56, calendar: temporalObject }));
+});
+
+reportCompare(0, 0);

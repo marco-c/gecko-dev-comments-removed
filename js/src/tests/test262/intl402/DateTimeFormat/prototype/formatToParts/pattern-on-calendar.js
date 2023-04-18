@@ -9,25 +9,8 @@
 
 
 
-let calendars = [
-  "buddhist",
-  "chinese",
-  "coptic",
-  "dangi",
-  "ethiopic",
-  "ethioaa",
-  "gregory",
-  "hebrew",
-  "indian",
-  "islamic",
-  "islamic-civil",
-  "islamic-rgsa",
-  "islamic-tbla",
-  "islamic-umalqura",
-  "japanese",
-  "persian",
-  "roc"
-];
+
+let calendars = allCalendars();
 let date = new Date();
 
 

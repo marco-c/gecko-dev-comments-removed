@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const datetime = new Temporal.PlainDateTime(2000, 5, 2, 12, 34, 56, 987, 650, 0);
+TemporalHelpers.checkFractionalSecondDigitsOptionWrongType(datetime);
+
+reportCompare(0, 0);

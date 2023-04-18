@@ -7,13 +7,16 @@
 
 
 
-
 try {
   throw new Test262Error('#1.1: RegExp("a|b","g")() throw TypeError. Actual: ' + (RegExp("a|b","g")()));
 } catch (e) {
-  if ((e instanceof TypeError) !== true) {
-    throw new Test262Error('#1.2: RegExp("a|b","g")() throw TypeError. Actual: ' + (e));
-  }
+  assert.sameValue(
+    e instanceof TypeError,
+    true,
+    'The result of evaluating (e instanceof TypeError) is expected to be true'
+  );
 }
+
+
 
 reportCompare(0, 0);

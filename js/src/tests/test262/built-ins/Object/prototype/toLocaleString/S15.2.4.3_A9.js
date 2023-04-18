@@ -10,20 +10,21 @@
 
 
 
+assert(
+  !!Object.prototype.toLocaleString.hasOwnProperty('length'),
+  'The value of !!Object.prototype.toLocaleString.hasOwnProperty("length") is expected to be true'
+);
+
+assert(
+  !!delete Object.prototype.toLocaleString.length,
+  'The value of !!delete Object.prototype.toLocaleString.length is expected to be true'
+);
+
+assert(
+  !Object.prototype.toLocaleString.hasOwnProperty('length'),
+  'The value of !Object.prototype.toLocaleString.hasOwnProperty("length") is expected to be true'
+);
 
 
-if (!(Object.prototype.toLocaleString.hasOwnProperty('length'))) {
-  throw new Test262Error('#0: the Object.prototype.toLocaleString has length property');
-}
-
-
-if (!delete Object.prototype.toLocaleString.length) {
-  throw new Test262Error('#1: The Object.prototype.toLocaleString.length property does not have the attributes DontDelete');
-}
-
-
-if (Object.prototype.toLocaleString.hasOwnProperty('length')) {
-  throw new Test262Error('#2: The Object.prototype.toLocaleString.length property does not have the attributes DontDelete');
-}
 
 reportCompare(0, 0);

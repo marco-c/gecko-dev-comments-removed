@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.PlainDate.prototype.toZonedDateTime();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.PlainDate.prototype.toZonedDateTime), false,
+  "isConstructor(Temporal.PlainDate.prototype.toZonedDateTime)");
+
+reportCompare(0, 0);

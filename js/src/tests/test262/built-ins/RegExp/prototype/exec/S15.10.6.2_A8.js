@@ -8,26 +8,28 @@
 
 
 
+assert.sameValue(
+  RegExp.prototype.exec.hasOwnProperty('length'),
+  true,
+  'RegExp.prototype.exec.hasOwnProperty(\'length\') must return true'
+);
 
+assert.sameValue(
+  RegExp.prototype.exec.propertyIsEnumerable('length'),
+  false,
+  'RegExp.prototype.exec.propertyIsEnumerable(\'length\') must return false'
+);
 
-if (RegExp.prototype.exec.hasOwnProperty('length') !== true) {
-  throw new Test262Error('#0: RegExp.prototype.exec.hasOwnProperty(\'length\') === true');
-}
-
- 
-if (RegExp.prototype.exec.propertyIsEnumerable('length') !== false) {
-  throw new Test262Error('#1: RegExp.prototype.exec.propertyIsEnumerable(\'length\') === true');
-}
-
- 
 var count=0;
 
 for (var p in RegExp.prototype.exec){
-  if (p==="length") count++;
+  if (p==="length") {
+    count++;
+  }
 }
 
-if (count !== 0) {
-  throw new Test262Error('#2: count = 0; for (p in RegExp.prototype.exec){ if (p==="length") count++; } count === 0. Actual: ' + (count));
-}
+assert.sameValue(count, 0, 'The value of count is expected to be 0');
+
+
 
 reportCompare(0, 0);

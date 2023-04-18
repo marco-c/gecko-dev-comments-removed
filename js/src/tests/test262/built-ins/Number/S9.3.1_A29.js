@@ -8,25 +8,9 @@
 
 
 
-
-
-if (+("0xd") !== 13) {
-  throw new Test262Error('#1: +("0xd") === 13. Actual: ' + (+("0xd")));
-}
-
-
-if (Number("0xD") !== 13) {
-  throw new Test262Error('#2: Number("0xD") === 13. Actual: ' + (Number("0xD")));
-}
-
-
-if (Number("0Xd") !== 13) {
-  throw new Test262Error('#3: Number("0Xd") === 13. Actual: ' + (Number("0Xd")));
-}
-
-
-if (Number("0XD") !== 13) {
-  throw new Test262Error('#4: Number("0XD") === 13. Actual: ' + (Number("0XD")));
-}
+assert.sameValue(+("0xd"), 13, 'The value of `+("0xd")` is expected to be 13');
+assert.sameValue(Number("0xD"), 13, 'Number("0xD") must return 13');
+assert.sameValue(Number("0Xd"), 13, 'Number("0Xd") must return 13');
+assert.sameValue(Number("0XD"), 13, 'Number("0XD") must return 13');
 
 reportCompare(0, 0);

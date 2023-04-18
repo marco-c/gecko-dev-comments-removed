@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const instant = new Temporal.Instant(1_000_000_000_987_650_000n);
+assert.throws(RangeError, () => instant.toString({ fractionalSecondDigits: NaN }));
+
+reportCompare(0, 0);

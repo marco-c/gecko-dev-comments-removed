@@ -6,10 +6,10 @@
 
 
 
-
-
-if (Number.prototype.hasOwnProperty("toFixed") !== true) {
-  throw new Test262Error('#1: The Number prototype object has the property toFixed');
-}
+assert.sameValue(
+  Number.prototype.hasOwnProperty("toFixed"),
+  true,
+  'Number.prototype.hasOwnProperty("toFixed") must return true'
+);
 
 reportCompare(0, 0);

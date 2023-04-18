@@ -11,7 +11,6 @@
 
 
 
-
 Array.prototype.toString = Object.prototype.toString;
 var x = new Array(0);
 assert.sameValue(x.toString(), "[object Array]", 'x.toString() must return "[object Array]"');

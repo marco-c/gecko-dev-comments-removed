@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.Calendar.prototype.inLeapYear();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.Calendar.prototype.inLeapYear), false,
+  "isConstructor(Temporal.Calendar.prototype.inLeapYear)");
+
+reportCompare(0, 0);

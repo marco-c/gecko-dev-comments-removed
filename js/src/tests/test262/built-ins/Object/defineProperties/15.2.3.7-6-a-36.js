@@ -10,7 +10,6 @@
 
 
 
-
 var obj = {};
 var getFun = function() {
   return 10;

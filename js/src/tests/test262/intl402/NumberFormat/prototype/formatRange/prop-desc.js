@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Intl.NumberFormat.prototype.formatRange,
+  'function',
+  '`typeof Intl.NumberFormat.prototype.formatRange` is `function`'
+);
+
+verifyProperty(Intl.NumberFormat.prototype, 'formatRange', {
+  enumerable: false,
+  writable: true,
+  configurable: true,
+});
+
+reportCompare(0, 0);

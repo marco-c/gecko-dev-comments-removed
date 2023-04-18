@@ -9,7 +9,6 @@
 
 
 
-
 var x = [];
 var object = {
   valueOf: function() {
@@ -18,7 +17,6 @@ var object = {
 };
 x[object] = 0;
 assert.sameValue(x["[object Object]"], 0, 'The value of x["[object Object]"] is expected to be 0');
-
 
 x = [];
 var object = {
@@ -32,7 +30,6 @@ var object = {
 x[object] = 0;
 assert.sameValue(x[0], 0, 'The value of x[0] is expected to be 0');
 
-
 x = [];
 var object = {
   valueOf: function() {
@@ -44,7 +41,6 @@ var object = {
 };
 x[object] = 0;
 assert.sameValue(x[1], 0, 'The value of x[1] is expected to be 0');
-
 
 try {
   x = [];
@@ -63,7 +59,6 @@ catch (e) {
   assert.notSameValue(e, "error", 'The value of e is not "error"');
 }
 
-
 x = [];
 var object = {
   toString: function() {
@@ -72,7 +67,6 @@ var object = {
 };
 x[object] = 0;
 assert.sameValue(x[1], 0, 'The value of x[1] is expected to be 0');
-
 
 x = [];
 var object = {
@@ -85,7 +79,6 @@ var object = {
 }
 x[object] = 0;
 assert.sameValue(x[1], 0, 'The value of x[1] is expected to be 0');
-
 
 try {
   x = [];
@@ -103,7 +96,6 @@ try {
 catch (e) {
   assert.sameValue(e, "error", 'The value of e is expected to be "error"');
 }
-
 
 try {
   x = [];

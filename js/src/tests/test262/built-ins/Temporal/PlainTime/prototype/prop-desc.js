@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Temporal.PlainTime.prototype, "object");
+assert.notSameValue(Temporal.PlainTime.prototype, null);
+
+verifyProperty(Temporal.PlainTime, "prototype", {
+  writable: false,
+  enumerable: false,
+  configurable: false,
+});
+
+reportCompare(0, 0);

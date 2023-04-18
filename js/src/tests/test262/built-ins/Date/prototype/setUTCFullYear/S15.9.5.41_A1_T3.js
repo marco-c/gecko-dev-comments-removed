@@ -6,15 +6,15 @@
 
 
 
-
-if (Date.prototype.propertyIsEnumerable('setUTCFullYear')) {
-  throw new Test262Error('#1: The Date.prototype.setUTCFullYear property has the attribute DontEnum');
-}
+assert(
+  !Date.prototype.propertyIsEnumerable('setUTCFullYear'),
+  'The value of !Date.prototype.propertyIsEnumerable(\'setUTCFullYear\') is expected to be true'
+);
 
 for (var x in Date.prototype) {
-  if (x === "setUTCFullYear") {
-    throw new Test262Error('#2: The Date.prototype.setUTCFullYear has the attribute DontEnum');
-  }
+  assert.notSameValue(x, "setUTCFullYear", 'The value of x is not "setUTCFullYear"');
 }
+
+
 
 reportCompare(0, 0);

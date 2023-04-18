@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Temporal.ZonedDateTime.prototype.withTimeZone,
+  "function",
+  "`typeof ZonedDateTime.prototype.withTimeZone` is `function`"
+);
+
+verifyProperty(Temporal.ZonedDateTime.prototype, "withTimeZone", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

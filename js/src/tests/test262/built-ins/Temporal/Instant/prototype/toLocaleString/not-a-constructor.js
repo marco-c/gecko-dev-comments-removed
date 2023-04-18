@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.Instant.prototype.toLocaleString();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.Instant.prototype.toLocaleString), false,
+  "isConstructor(Temporal.Instant.prototype.toLocaleString)");
+
+reportCompare(0, 0);

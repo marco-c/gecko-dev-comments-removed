@@ -14,7 +14,11 @@
 
 
 
-assert.sameValue(DataView.prototype[Symbol.toStringTag], 'DataView');
+assert.sameValue(
+  DataView.prototype[Symbol.toStringTag],
+  'DataView',
+  'The value of DataView.prototype[Symbol.toStringTag] is expected to be "DataView"'
+);
 
 verifyNotEnumerable(DataView.prototype, Symbol.toStringTag);
 verifyNotWritable(DataView.prototype, Symbol.toStringTag);

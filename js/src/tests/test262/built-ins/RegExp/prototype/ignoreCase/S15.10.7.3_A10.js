@@ -10,19 +10,17 @@
 
 var __re = RegExp.prototype;
 
-
-if (__re.hasOwnProperty('ignoreCase') !== true) {
-  throw new Test262Error('#1: __re = RegExp.prototype; __re.hasOwnProperty(\'ignoreCase\') === true');
-}
+assert.sameValue(__re.hasOwnProperty('ignoreCase'), true, '__re.hasOwnProperty(\'ignoreCase\') must return true');
 
 var __sample = /a|b|c/;
 var __obj = __sample.ignoreCase;
 
 verifyNotWritable(__sample, "ignoreCase", "ignoreCase", "shifted");
 
-
-if (__sample.ignoreCase !== __obj) {
-  throw new Test262Error('#2: __sample = /a|b|c/; __obj = __sample.ignoreCase; __sample.ignoreCase = "shifted"; __sample.ignoreCase === __obj. Actual: ' + (__sample.ignoreCase));
-}
+assert.sameValue(
+  __sample.ignoreCase,
+  __obj,
+  'The value of __sample.ignoreCase is expected to equal the value of __obj'
+);
 
 reportCompare(0, 0);

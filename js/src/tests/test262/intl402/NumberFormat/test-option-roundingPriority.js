@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+testOption(
+  Intl.NumberFormat,
+  "roundingPriority",
+  "string",
+  ["auto", "morePrecision", "lessPrecision"],
+  "auto"
+);
+
+reportCompare(0, 0);

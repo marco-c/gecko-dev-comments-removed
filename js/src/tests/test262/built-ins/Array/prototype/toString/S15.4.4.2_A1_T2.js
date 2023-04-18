@@ -14,7 +14,6 @@
 
 
 
-
 var x = new Array(0, 1, 2, 3);
 if (x.toString() !== x.join()) {
   throw new Test262Error('#1.1: x = new Array(0,1,2,3); x.toString() === x.join(). Actual: ' + (x.toString()));
@@ -23,7 +22,6 @@ if (x.toString() !== x.join()) {
     throw new Test262Error('#1.2: x = new Array(0,1,2,3); x.toString() === "0,1,2,3". Actual: ' + (x.toString()));
   }
 }
-
 
 x = [];
 x[0] = 0;
@@ -36,7 +34,6 @@ if (x.toString() !== x.join()) {
   }
 }
 
-
 x = Array(undefined, 1, null, 3);
 if (x.toString() !== x.join()) {
   throw new Test262Error('#3.1: x = Array(undefined,1,null,3); x.toString() === x.join(). Actual: ' + (x.toString()));
@@ -45,7 +42,6 @@ if (x.toString() !== x.join()) {
     throw new Test262Error('#3.2: x = Array(undefined,1,null,3); x.toString() === ",1,,3". Actual: ' + (x.toString()));
   }
 }
-
 
 x = [];
 x[0] = 0;

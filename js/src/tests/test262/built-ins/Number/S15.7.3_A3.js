@@ -6,9 +6,6 @@
 
 
 
-
-if (!Number.hasOwnProperty("MIN_VALUE")) {
-  throw new Test262Error('#1: The Number constructor has the property "MIN_VALUE"');
-}
+assert(Number.hasOwnProperty("MIN_VALUE"), 'Number.hasOwnProperty("MIN_VALUE") must return true');
 
 reportCompare(0, 0);

@@ -6,13 +6,13 @@
 
 
 
+assert.notSameValue(delete Date.prototype.setDate, false, 'The value of delete Date.prototype.setDate is not false');
 
-if (delete Date.prototype.setDate === false) {
-  throw new Test262Error('#1: The Date.prototype.setDate property has not the attributes DontDelete');
-}
+assert(
+  !Date.prototype.hasOwnProperty('setDate'),
+  'The value of !Date.prototype.hasOwnProperty(\'setDate\') is expected to be true'
+);
 
-if (Date.prototype.hasOwnProperty('setDate')) {
-  throw new Test262Error('#2: The Date.prototype.setDate property has not the attributes DontDelete');
-}
+
 
 reportCompare(0, 0);

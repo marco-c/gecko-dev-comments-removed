@@ -10,8 +10,8 @@
 
 
 NaN = true;
-if (typeof(NaN) === "boolean") {
-  throw new Test262Error('#1: NaN = true; typeof(NaN) !== "boolean". Actual: ' + (typeof(NaN)));
-}
+assert.notSameValue(typeof(NaN), "boolean", 'The value of typeof(NaN) is not "boolean"');
+
+
 
 reportCompare(0, 0);

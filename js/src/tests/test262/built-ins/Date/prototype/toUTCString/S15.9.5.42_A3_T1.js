@@ -12,8 +12,13 @@
 
 var x = Date.prototype.toUTCString.length;
 verifyNotWritable(Date.prototype.toUTCString, "length", null, 1);
-if (Date.prototype.toUTCString.length !== x) {
-  throw new Test262Error('#1: The Date.prototype.toUTCString.length has the attribute ReadOnly');
-}
+
+assert.sameValue(
+  Date.prototype.toUTCString.length,
+  x,
+  'The value of Date.prototype.toUTCString.length is expected to equal the value of x'
+);
+
+
 
 reportCompare(0, 0);

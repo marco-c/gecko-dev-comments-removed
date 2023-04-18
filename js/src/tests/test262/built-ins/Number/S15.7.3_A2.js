@@ -6,9 +6,6 @@
 
 
 
-
-if (!Number.hasOwnProperty("MAX_VALUE")) {
-  throw new Test262Error('#1: The Number constructor has the property "MAX_VALUE"');
-}
+assert(Number.hasOwnProperty("MAX_VALUE"), 'Number.hasOwnProperty("MAX_VALUE") must return true');
 
 reportCompare(0, 0);

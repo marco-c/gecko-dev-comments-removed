@@ -6,13 +6,6 @@
 
 
 
-
-
-
-if (!(Error.hasOwnProperty('prototype'))) {
-  throw new Test262Error('#1: Error.hasOwnProperty(\'prototype\') return true. Actual: ' + Error.hasOwnProperty('prototype'));
-}
-
-
+assert(Error.hasOwnProperty('prototype'), 'Error.hasOwnProperty(\'prototype\') must return true');
 
 reportCompare(0, 0);

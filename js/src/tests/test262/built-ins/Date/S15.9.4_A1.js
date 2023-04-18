@@ -6,9 +6,6 @@
 
 
 
-
-if (!Date.hasOwnProperty("prototype")) {
-  throw new Test262Error('#1: The Date constructor has the property "prototype"');
-}
+assert(Date.hasOwnProperty("prototype"), 'Date.hasOwnProperty("prototype") must return true');
 
 reportCompare(0, 0);

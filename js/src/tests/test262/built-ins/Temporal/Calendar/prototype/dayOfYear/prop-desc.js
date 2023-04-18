@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Temporal.Calendar.prototype.dayOfYear,
+  "function",
+  "`typeof Calendar.prototype.dayOfYear` is `function`"
+);
+
+verifyProperty(Temporal.Calendar.prototype, "dayOfYear", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

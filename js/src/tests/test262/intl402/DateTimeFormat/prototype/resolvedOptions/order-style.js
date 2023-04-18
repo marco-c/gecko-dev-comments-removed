@@ -7,7 +7,6 @@
 
 
 
-
 const options = new Intl.DateTimeFormat([], {
   "hourCycle": "h24",
   "weekday": "short",
@@ -34,10 +33,10 @@ let actual = Object.getOwnPropertyNames(options);
 
 
 
-assert(arrayContains(actual, expected));
+assert(actual.indexOf("locale") > -1, "\"locale\" is present");
 for (var i = 1; i < expected.length; i++) {
   
-  assert(actual.indexOf(expected[i-1]) < actual.indexOf(expected[i]));
+  assert(actual.indexOf(expected[i-1]) < actual.indexOf(expected[i]), `"${expected[i-1]}" precedes "${expected[i]}"`);
 }
 
 reportCompare(0, 0);

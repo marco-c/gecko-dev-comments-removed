@@ -9,13 +9,16 @@
 
 
 
-
 try {
-	throw new Test262Error('#1.1: new RegExp("^",1.0) throw SyntaxError. Actual: ' + (new RegExp("^",1.0)));
+    throw new Test262Error('#1.1: new RegExp("^",1.0) throw SyntaxError. Actual: ' + (new RegExp("^",1.0)));
 } catch (e) {
-	if ((e instanceof SyntaxError) !== true) {
-		throw new Test262Error('#1.2: new RegExp("^",1.0) throw SyntaxError. Actual: ' + (e));
-	}
+  assert.sameValue(
+    e instanceof SyntaxError,
+    true,
+    'The result of evaluating (e instanceof SyntaxError) is expected to be true'
+  );
 }
+
+
 
 reportCompare(0, 0);

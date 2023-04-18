@@ -10,23 +10,21 @@
 
 
 
+assert(
+  !!Object.prototype.toLocaleString.hasOwnProperty('length'),
+  'The value of !!Object.prototype.toLocaleString.hasOwnProperty("length") is expected to be true'
+);
 
-
-if (!(Object.prototype.toLocaleString.hasOwnProperty('length'))) {
-  throw new Test262Error('#0: the Object.prototype.toLocaleString has length property.');
-}
-
-
-
-if (Object.prototype.toLocaleString.propertyIsEnumerable('length')) {
-  throw new Test262Error('#1: the Object.prototype.toLocaleString.length property has the attributes DontEnum');
-}
-
+assert(
+  !Object.prototype.toLocaleString.propertyIsEnumerable('length'),
+  'The value of !Object.prototype.toLocaleString.propertyIsEnumerable("length") is expected to be true'
+);
 
 for (var p in Object.prototype.toLocaleString) {
-  if (p === "length")
-    throw new Test262Error('#2: the Object.prototype.toLocaleString.length property has the attributes DontEnum');
+  assert.notSameValue(p, "length", 'The value of p is not "length"');
 }
+
+
 
 
 reportCompare(0, 0);

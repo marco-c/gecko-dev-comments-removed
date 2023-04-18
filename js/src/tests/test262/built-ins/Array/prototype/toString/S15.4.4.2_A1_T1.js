@@ -10,7 +10,6 @@
 
 
 
-
 var x = new Array();
 if (x.toString() !== x.join()) {
   throw new Test262Error('#1.1: x = new Array(); x.toString() === x.join(). Actual: ' + (x.toString()));
@@ -19,7 +18,6 @@ if (x.toString() !== x.join()) {
     throw new Test262Error('#1.2: x = new Array(); x.toString() === "". Actual: ' + (x.toString()));
   }
 }
-
 
 x = [];
 x[0] = 1;

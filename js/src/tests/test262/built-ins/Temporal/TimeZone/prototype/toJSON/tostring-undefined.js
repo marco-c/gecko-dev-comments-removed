@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+const tz = Temporal.TimeZone.from('UTC');
+tz.toString = undefined;
+
+assert.throws(TypeError, () => tz.toJSON());
+
+reportCompare(0, 0);

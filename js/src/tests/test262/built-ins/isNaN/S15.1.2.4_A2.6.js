@@ -6,10 +6,6 @@
 
 
 
-
-
-if (isNaN.prototype !== undefined) {
-  throw new Test262Error('#1: isNaN.prototype === undefined. Actual: ' + (isNaN.prototype));
-}
+assert.sameValue(isNaN.prototype, undefined, 'The value of isNaN.prototype is expected to equal undefined');
 
 reportCompare(0, 0);

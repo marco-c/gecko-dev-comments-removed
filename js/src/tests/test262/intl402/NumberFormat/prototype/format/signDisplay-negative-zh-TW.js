@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+const nf = new Intl.NumberFormat("zh-TW", {signDisplay: "negative"});
+assert.sameValue(nf.format(-Infinity), "-∞", "-Infinity");
+assert.sameValue(nf.format(-987), "-987", "-987");
+assert.sameValue(nf.format(-0.0001), "0", "-0.0001");
+assert.sameValue(nf.format(-0), "0", "-0");
+assert.sameValue(nf.format(0), "0", "0");
+assert.sameValue(nf.format(0.0001), "0", "0.0001");
+assert.sameValue(nf.format(987), "987", "987");
+assert.sameValue(nf.format(Infinity), "∞", "Infinity");
+assert.sameValue(nf.format(NaN), "非數值", "NaN");
+
+reportCompare(0, 0);

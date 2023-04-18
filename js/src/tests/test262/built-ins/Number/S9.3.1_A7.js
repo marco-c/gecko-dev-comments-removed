@@ -9,10 +9,10 @@
 
 
 
-
-
-if (Number("1234.5678") !== Number("1234") + (+("5678") * 1e-4)) {
-  throw new Test262Error('#1: Number("1234.5678") === Number("1234")+(+("5678")*1e-4)');
-}
+assert.sameValue(
+  Number("1234.5678"),
+  1234.5678,
+  'Number("1234.5678") must return Number("1234") + (+("5678") * 1e-4)'
+);
 
 reportCompare(0, 0);

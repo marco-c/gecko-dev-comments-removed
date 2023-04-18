@@ -6,20 +6,8 @@
 
 
 
-
-
-if (+("8") !== 8) {
-  throw new Test262Error('#1: +("8") === 8. Actual: ' + (+("8")));
-}
-
-
-if (Number("0x8") !== 8) {
-  throw new Test262Error('#2: Number("0x8") === 8. Actual: ' + (Number("0x8")));
-}
-
-
-if (Number("0X8") !== 8) {
-  throw new Test262Error('#3: Number("0X8") === 8. Actual: ' + (Number("0X8")));
-}
+assert.sameValue(+("8"), 8, 'The value of `+("8")` is expected to be 8');
+assert.sameValue(Number("0x8"), 8, 'Number("0x8") must return 8');
+assert.sameValue(Number("0X8"), 8, 'Number("0X8") must return 8');
 
 reportCompare(0, 0);

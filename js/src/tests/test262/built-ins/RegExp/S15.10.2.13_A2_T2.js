@@ -16,26 +16,30 @@ var __expected = ["a\t"];
 __expected.index = 3;
 __expected.input = "   a\t\n";
 
+assert.sameValue(
+  __executed.length,
+  __expected.length,
+  'The value of __executed.length is expected to equal the value of __expected.length'
+);
 
-if (__executed.length !== __expected.length) {
-	throw new Test262Error('#1: __executed = /a[^]/.exec("   a\\t\\n"); __executed.length === ' + __expected.length + '. Actual: ' + __executed.length);
-}
+assert.sameValue(
+  __executed.index,
+  __expected.index,
+  'The value of __executed.index is expected to equal the value of __expected.index'
+);
 
-
-if (__executed.index !== __expected.index) {
-	throw new Test262Error('#2: __executed = /a[^]/.exec("   a\\t\\n"); __executed.index === ' + __expected.index + '. Actual: ' + __executed.index);
-}
-
-
-if (__executed.input !== __expected.input) {
-	throw new Test262Error('#3: __executed = /a[^]/.exec("   a\\t\\n"); __executed.input === ' + __expected.input + '. Actual: ' + __executed.input);
-}
-
+assert.sameValue(
+  __executed.input,
+  __expected.input,
+  'The value of __executed.input is expected to equal the value of __expected.input'
+);
 
 for(var index=0; index<__expected.length; index++) {
-	if (__executed[index] !== __expected[index]) {
-		throw new Test262Error('#4: __executed = /a[^]/.exec("   a\\t\\n"); __executed[' + index + '] === ' + __expected[index] + '. Actual: ' + __executed[index]);
-	}
+  assert.sameValue(
+    __executed[index],
+    __expected[index],
+    'The value of __executed[index] is expected to equal the value of __expected[index]'
+  );
 }
 
 reportCompare(0, 0);

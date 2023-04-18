@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.PlainDateTime.from();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.PlainDateTime.from), false,
+  "isConstructor(Temporal.PlainDateTime.from)");
+
+reportCompare(0, 0);

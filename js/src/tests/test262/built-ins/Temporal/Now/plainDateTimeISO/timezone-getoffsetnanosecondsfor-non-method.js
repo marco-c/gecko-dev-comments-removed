@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+var timeZone = {
+  getOffsetNanosecondsFor: 7
+};
+
+assert.throws(TypeError, function() {
+  Temporal.Now.plainDateTimeISO(timeZone);
+}, 'Temporal.Now.plainDateTimeISO(timeZone) throws a TypeError exception');
+
+reportCompare(0, 0);

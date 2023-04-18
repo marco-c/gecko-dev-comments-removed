@@ -18,7 +18,4 @@
 
 $DONOTEVALUATE();
 
-function _() {
-  x in y = 1;
-}
-
+x in y = 1;

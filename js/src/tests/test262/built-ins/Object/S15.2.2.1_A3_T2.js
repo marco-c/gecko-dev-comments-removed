@@ -11,31 +11,13 @@
 
 var str = '';
 
-
-if (typeof str !== 'string') {
-  throw new Test262Error('#1: "" is NOT a String');
-}
+assert.sameValue(typeof str, 'string', 'The value of `typeof str` is expected to be "string"');
 
 var n_obj = new Object(str);
 
-
-if (n_obj.constructor !== String) {
-  throw new Test262Error('#2: When the Object constructor is called with String argument return ToObject(string)');
-}
-
-
-if (typeof n_obj !== 'object') {
-  throw new Test262Error('#3: When the Object constructor is called with String argument return ToObject(string)');
-}
-
-
-if (n_obj != str) {
-  throw new Test262Error('#4: When the Object constructor is called with String argument return ToObject(string)');
-}
-
-
-if (n_obj === str) {
-  throw new Test262Error('#5: When the Object constructor is called with String argument return ToObject(string)');
-}
+assert.sameValue(n_obj.constructor, String, 'The value of n_obj.constructor is expected to equal the value of String');
+assert.sameValue(typeof n_obj, 'object', 'The value of `typeof n_obj` is expected to be "object"');
+assert(n_obj == str, 'The result of evaluating (n_obj == str) is expected to be true');
+assert.notSameValue(n_obj, str, 'The value of n_obj is expected to not equal the value of `str`');
 
 reportCompare(0, 0);

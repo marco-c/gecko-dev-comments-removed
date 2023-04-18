@@ -6,10 +6,10 @@
 
 
 
-
-
-if (Number.prototype.hasOwnProperty("valueOf") !== true) {
-  throw new Test262Error('#1: The Number prototype object has the property valueOf');
-}
+assert.sameValue(
+  Number.prototype.hasOwnProperty("valueOf"),
+  true,
+  'Number.prototype.hasOwnProperty("valueOf") must return true'
+);
 
 reportCompare(0, 0);

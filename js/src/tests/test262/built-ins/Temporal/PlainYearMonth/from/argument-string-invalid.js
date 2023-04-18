@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, () => Temporal.PlainYearMonth.from("2020-13", { overflow: "reject" }));
+assert.throws(RangeError, () => Temporal.PlainYearMonth.from("2020-13", { overflow: "constrain" }));
+
+reportCompare(0, 0);

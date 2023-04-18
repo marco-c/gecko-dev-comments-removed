@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Temporal.PlainYearMonth.compare,
+  "function",
+  "`typeof PlainYearMonth.compare` is `function`"
+);
+
+verifyProperty(Temporal.PlainYearMonth, "compare", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

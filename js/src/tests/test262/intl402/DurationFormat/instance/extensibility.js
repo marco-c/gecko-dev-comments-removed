@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.isExtensible(new Intl.DurationFormat()),
+  true,
+  "Object.isExtensible(new Intl.DurationFormat()) returns true"
+);
+
+
+
+reportCompare(0, 0);

@@ -9,13 +9,16 @@
 
 
 
-
 try {
-	throw new Test262Error('#1.1: new RegExp("[{-z]") throw SyntaxError. Actual: ' + (new RegExp("[{-z]")));
+    throw new Test262Error('#1.1: new RegExp("[{-z]") throw SyntaxError. Actual: ' + (new RegExp("[{-z]")));
 } catch (e) {
-	if ((e instanceof SyntaxError) !== true) {
-		throw new Test262Error('#1.2: new RegExp("[{-z]") throw SyntaxError. Actual: ' + (e));
-	}
+  assert.sameValue(
+    e instanceof SyntaxError,
+    true,
+    'The result of evaluating (e instanceof SyntaxError) is expected to be true'
+  );
 }
+
+
 
 reportCompare(0, 0);

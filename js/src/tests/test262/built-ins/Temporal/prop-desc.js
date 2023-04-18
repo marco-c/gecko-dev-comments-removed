@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Temporal, "object");
+verifyProperty(this, "Temporal", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

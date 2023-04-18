@@ -9,7 +9,6 @@
 
 
 
-
 var x = [];
 var k = 1;
 for (var i = 0; i < 32; i++) {

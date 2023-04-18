@@ -55,7 +55,7 @@
 
 
 
-var result = eval('{length: 3000}() => 1, 42;;');
+var result = eval('{length: 3000}() => 1, 42;');
 
 
 var expected = 3000;

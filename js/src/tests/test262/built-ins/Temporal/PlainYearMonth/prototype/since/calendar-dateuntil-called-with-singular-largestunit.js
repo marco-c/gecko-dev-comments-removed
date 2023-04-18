@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TemporalHelpers.checkCalendarDateUntilLargestUnitSingular(
+  (calendar, largestUnit) => {
+    const earlier = new Temporal.PlainYearMonth(2000, 5, calendar);
+    const later = new Temporal.PlainYearMonth(2001, 6, calendar);
+    later.since(earlier, { largestUnit });
+  },
+  {
+    years: ["year"],
+    months: ["month"]
+  }
+);
+
+reportCompare(0, 0);

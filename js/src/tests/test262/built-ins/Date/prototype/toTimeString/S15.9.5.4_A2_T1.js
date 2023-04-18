@@ -6,13 +6,17 @@
 
 
 
+assert.sameValue(
+  Date.prototype.toTimeString.hasOwnProperty("length"),
+  true,
+  'Date.prototype.toTimeString.hasOwnProperty("length") must return true'
+);
 
-if (Date.prototype.toTimeString.hasOwnProperty("length") !== true) {
-  throw new Test262Error('#1: The toTimeString has a "length" property');
-}
 
-if (Date.prototype.toTimeString.length !== 0) {
-  throw new Test262Error('#2: The "length" property of the toTimeString is 0');
-}
+assert.sameValue(
+  Date.prototype.toTimeString.length,
+  0,
+  'The value of Date.prototype.toTimeString.length is expected to be 0'
+);
 
 reportCompare(0, 0);

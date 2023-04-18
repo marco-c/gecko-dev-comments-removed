@@ -11,9 +11,6 @@
 
 var __executed = /b{8}/.test("aaabbbbcccddeeeefffff");
 
-
-if (__executed) {
-	throw new Test262Error('#1: /b{8}/.test("aaabbbbcccddeeeefffff") === false');
-}
+assert(!__executed, 'The value of !__executed is expected to be true');
 
 reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.PlainTime.prototype.getISOFields();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.PlainTime.prototype.getISOFields), false,
+  "isConstructor(Temporal.PlainTime.prototype.getISOFields)");
+
+reportCompare(0, 0);

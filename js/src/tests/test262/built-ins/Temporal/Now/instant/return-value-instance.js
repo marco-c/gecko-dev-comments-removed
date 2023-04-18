@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+const instant = Temporal.Now.instant();
+assert(instant instanceof Temporal.Instant);
+
+reportCompare(0, 0);

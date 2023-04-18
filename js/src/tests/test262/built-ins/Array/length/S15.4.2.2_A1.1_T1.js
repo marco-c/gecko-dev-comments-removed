@@ -13,7 +13,6 @@
 
 
 
-
 Array.prototype.myproperty = 1;
 var x = new Array(0);
 assert.sameValue(x.myproperty, 1, 'The value of x.myproperty is expected to be 1');

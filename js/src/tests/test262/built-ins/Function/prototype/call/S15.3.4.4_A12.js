@@ -8,10 +8,10 @@
 
 
 
-
-
-if (Function.prototype.call.prototype !== undefined) {
-  throw new Test262Error('#1: Function.prototype.call has not prototype property' + Function.prototype.call.prototype);
-}
+assert.sameValue(
+  Function.prototype.call.prototype,
+  undefined,
+  'The value of Function.prototype.call.prototype is expected to equal undefined'
+);
 
 reportCompare(0, 0);

@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TemporalHelpers.checkToTemporalCalendarFastPath((temporalObject, calendar) => {
+  const newCalendar = Temporal.Calendar.from(temporalObject);
+  assert.sameValue(newCalendar, calendar, "calendar object retrieved from internal slot");
+});
+
+reportCompare(0, 0);

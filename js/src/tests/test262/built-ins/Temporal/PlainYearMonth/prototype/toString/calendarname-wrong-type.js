@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const calendar = {
+  toString() { return "custom"; }
+};
+const yearmonth = new Temporal.PlainYearMonth(2000, 5, calendar);
+
+TemporalHelpers.checkStringOptionWrongType("calendarName", "auto",
+  (calendarName) => yearmonth.toString({ calendarName }),
+  (result, descr) => assert.sameValue(result, "2000-05-01[u-ca=custom]", descr),
+);
+
+reportCompare(0, 0);

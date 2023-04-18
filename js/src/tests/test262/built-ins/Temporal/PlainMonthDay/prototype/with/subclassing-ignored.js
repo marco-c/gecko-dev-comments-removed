@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+TemporalHelpers.checkSubclassingIgnored(
+  Temporal.PlainMonthDay,
+  [5, 2],
+  "with",
+  [{ day: 20 }],
+  (result) => TemporalHelpers.assertPlainMonthDay(result, "M05", 20),
+);
+
+reportCompare(0, 0);
