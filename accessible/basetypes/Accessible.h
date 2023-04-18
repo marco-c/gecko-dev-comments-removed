@@ -319,6 +319,15 @@ class Accessible {
 
   virtual int32_t GetLevel(bool aFast) const;
 
+  
+
+
+
+
+
+
+  virtual void GetPositionAndSetSize(int32_t* aPosInSet, int32_t* aSetSize);
+
  private:
   static const uint8_t kTypeBits = 6;
   static const uint8_t kGenericTypesBits = 18;

@@ -274,16 +274,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-
-
-
-
-  virtual void GetPositionAndSizeInternal(int32_t* aPosInSet,
-                                          int32_t* aSetSize);
-
-  
-
-
   virtual Relation RelationByType(RelationType aType) const;
 
   

@@ -142,14 +142,15 @@ class XULToolbarButtonAccessible : public XULButtonAccessible {
   XULToolbarButtonAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
-  virtual void GetPositionAndSizeInternal(int32_t* aPosInSet,
-                                          int32_t* aSetSize) override;
-
-  
   static bool IsSeparator(LocalAccessible* aAccessible);
 
   
   virtual bool IsAcceptableChild(nsIContent* aEl) const override;
+
+ protected:
+  
+  virtual void GetPositionAndSetSize(int32_t* aPosInSet,
+                                     int32_t* aSetSize) override;
 };
 
 
