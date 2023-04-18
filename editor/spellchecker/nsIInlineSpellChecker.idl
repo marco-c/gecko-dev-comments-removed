@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "nsISupports.idl"
 #include "domstubs.idl"
@@ -24,9 +24,11 @@ interface nsIInlineSpellChecker : nsISupports
 
   void spellCheckRange(in Range aSelection);
 
-  Range getMisspelledWord(in Node aNode, in long aOffset);
+  Range getMisspelledWord(in Node aNode, in unsigned long aOffset);
   [can_run_script]
-  void replaceWord(in Node aNode, in long aOffset, in AString aNewword);
+  void replaceWord(in Node aNode,
+                   in unsigned long aOffset,
+                   in AString aNewword);
   void addWordToDictionary(in AString aWord);
   void removeWordFromDictionary(in AString aWord);
 
