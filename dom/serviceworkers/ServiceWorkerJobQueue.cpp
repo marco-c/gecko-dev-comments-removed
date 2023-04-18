@@ -10,14 +10,13 @@
 #include "ServiceWorkerJob.h"
 #include "mozilla/dom/WorkerCommon.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ServiceWorkerJobQueue::Callback final
     : public ServiceWorkerJob::Callback {
   RefPtr<ServiceWorkerJobQueue> mQueue;
 
-  ~Callback() {}
+  ~Callback() = default;
 
  public:
   explicit Callback(ServiceWorkerJobQueue* aQueue) : mQueue(aQueue) {
@@ -118,5 +117,4 @@ void ServiceWorkerJobQueue::CancelAll() {
   }
 }
 
-}  
 }  

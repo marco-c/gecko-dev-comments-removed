@@ -13,8 +13,7 @@
 
 class nsIGlobalWindow;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ClientPostMessageArgs;
 struct MessageEventInit;
@@ -167,6 +166,5 @@ class ServiceWorkerContainer final : public DOMEventTargetHelper {
 };
 
 }  
-}  
 
-#endif
+#endif 

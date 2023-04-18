@@ -12,8 +12,7 @@
 
 #include "mozilla/dom/WorkerRef.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class RemoteServiceWorkerContainerImpl;
 
@@ -43,7 +42,6 @@ class ServiceWorkerContainerChild final : public PServiceWorkerContainerChild {
   void MaybeStartTeardown();
 };
 
-}  
 }  
 
 #endif  

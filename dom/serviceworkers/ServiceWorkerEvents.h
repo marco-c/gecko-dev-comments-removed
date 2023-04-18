@@ -22,8 +22,7 @@
 
 class nsIInterceptedChannel;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Blob;
 class Client;
@@ -306,6 +305,5 @@ class ExtendableMessageEvent final : public ExtendableEvent {
 };
 
 }  
-}  
 
-#endif
+#endif 
