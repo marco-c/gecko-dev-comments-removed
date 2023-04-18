@@ -178,6 +178,13 @@ class LoadInfo final : public nsILoadInfo {
     mCspToInherit = aCspToInherit;
   }
 
+  bool HasIsThirdPartyContextToTopWindowSet() {
+    return mIsThirdPartyContextToTopWindow.isSome();
+  }
+  void ClearIsThirdPartyContextToTopWindow() {
+    mIsThirdPartyContextToTopWindow.reset();
+  }
+
  private:
   
   
@@ -204,8 +211,9 @@ class LoadInfo final : public nsILoadInfo {
       bool aForceInheritPrincipalDropped, uint64_t aInnerWindowID,
       uint64_t aBrowsingContextID, uint64_t aFrameBrowsingContextID,
       bool aInitialSecurityCheckDone, bool aIsThirdPartyContext,
-      bool aIsThirdPartyContextToTopWindow, bool aIsFormSubmission,
-      bool aSendCSPViolationEvents, const OriginAttributes& aOriginAttributes,
+      const Maybe<bool>& aIsThirdPartyContextToTopWindow,
+      bool aIsFormSubmission, bool aSendCSPViolationEvents,
+      const OriginAttributes& aOriginAttributes,
       RedirectHistoryArray&& aRedirectChainIncludingInternalRedirects,
       RedirectHistoryArray&& aRedirectChain,
       nsTArray<nsCOMPtr<nsIPrincipal>>&& aAncestorPrincipals,
@@ -300,7 +308,7 @@ class LoadInfo final : public nsILoadInfo {
   bool mInitialSecurityCheckDone = false;
   
   bool mIsThirdPartyContext = false;
-  bool mIsThirdPartyContextToTopWindow = true;
+  Maybe<bool> mIsThirdPartyContextToTopWindow;
   bool mIsFormSubmission = false;
   bool mSendCSPViolationEvents = true;
   OriginAttributes mOriginAttributes;
