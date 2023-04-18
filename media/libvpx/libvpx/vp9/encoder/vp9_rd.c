@@ -197,28 +197,68 @@ static const int rd_boost_factor[16] = { 64, 32, 32, 32, 24, 16, 12, 12,
 static const int rd_frame_type_factor[FRAME_UPDATE_TYPES] = { 128, 144, 128,
                                                               128, 144, 144 };
 
-int vp9_compute_rd_mult_based_on_qindex(const VP9_COMP *cpi, int qindex) {
-  
-  const int q = vp9_dc_quant(qindex, 0, cpi->common.bit_depth);
-  uint32_t rdmult = q * q;
 
-  if (cpi->common.frame_type != KEY_FRAME) {
-    if (qindex < 128)
-      rdmult = rdmult * 4;
-    else if (qindex < 190)
-      rdmult = rdmult * 4 + rdmult / 2;
-    else
-      rdmult = rdmult * 3;
+
+void vp9_init_rd_parameters(VP9_COMP *cpi) {
+  RD_CONTROL *const rdc = &cpi->rd_ctrl;
+
+  
+  
+  
+  
+  
+  if (cpi->twopass.use_vizier_rc_params) return;
+
+  
+  vpx_clear_system_state();
+
+  rdc->rd_mult_inter_qp_fac = 1.0;
+  rdc->rd_mult_arf_qp_fac = 1.0;
+  rdc->rd_mult_key_qp_fac = 1.0;
+}
+
+
+
+
+static double def_inter_rd_multiplier(int qindex) {
+  return 4.15 + (0.001 * (double)qindex);
+}
+
+
+
+
+static double def_arf_rd_multiplier(int qindex) {
+  return 4.25 + (0.001 * (double)qindex);
+}
+
+
+
+
+static double def_kf_rd_multiplier(int qindex) {
+  return 4.35 + (0.001 * (double)qindex);
+}
+
+int vp9_compute_rd_mult_based_on_qindex(const VP9_COMP *cpi, int qindex) {
+  const RD_CONTROL *rdc = &cpi->rd_ctrl;
+  const int q = vp9_dc_quant(qindex, 0, cpi->common.bit_depth);
+  
+  int rdmult = q * q;
+
+  
+  vpx_clear_system_state();
+
+  if (cpi->common.frame_type == KEY_FRAME) {
+    double def_rd_q_mult = def_kf_rd_multiplier(qindex);
+    rdmult = (int)((double)rdmult * def_rd_q_mult * rdc->rd_mult_key_qp_fac);
+  } else if (!cpi->rc.is_src_frame_alt_ref &&
+             (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)) {
+    double def_rd_q_mult = def_arf_rd_multiplier(qindex);
+    rdmult = (int)((double)rdmult * def_rd_q_mult * rdc->rd_mult_arf_qp_fac);
   } else {
-    if (qindex < 64)
-      rdmult = rdmult * 4;
-    else if (qindex <= 128)
-      rdmult = rdmult * 3 + rdmult / 2;
-    else if (qindex < 190)
-      rdmult = rdmult * 4 + rdmult / 2;
-    else
-      rdmult = rdmult * 7 + rdmult / 2;
+    double def_rd_q_mult = def_inter_rd_multiplier(qindex);
+    rdmult = (int)((double)rdmult * def_rd_q_mult * rdc->rd_mult_inter_qp_fac);
   }
+
 #if CONFIG_VP9_HIGHBITDEPTH
   switch (cpi->common.bit_depth) {
     case VPX_BITS_10: rdmult = ROUND_POWER_OF_TWO(rdmult, 4); break;

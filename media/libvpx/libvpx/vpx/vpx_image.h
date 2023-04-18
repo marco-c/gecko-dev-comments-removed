@@ -43,6 +43,7 @@ typedef enum vpx_img_fmt {
   VPX_IMG_FMT_I422 = VPX_IMG_FMT_PLANAR | 5,
   VPX_IMG_FMT_I444 = VPX_IMG_FMT_PLANAR | 6,
   VPX_IMG_FMT_I440 = VPX_IMG_FMT_PLANAR | 7,
+  VPX_IMG_FMT_NV12 = VPX_IMG_FMT_PLANAR | 9,
   VPX_IMG_FMT_I42016 = VPX_IMG_FMT_I420 | VPX_IMG_FMT_HIGHBITDEPTH,
   VPX_IMG_FMT_I42216 = VPX_IMG_FMT_I422 | VPX_IMG_FMT_HIGHBITDEPTH,
   VPX_IMG_FMT_I44416 = VPX_IMG_FMT_I444 | VPX_IMG_FMT_HIGHBITDEPTH,
@@ -166,6 +167,7 @@ vpx_image_t *vpx_img_alloc(vpx_image_t *img, vpx_img_fmt_t fmt,
 vpx_image_t *vpx_img_wrap(vpx_image_t *img, vpx_img_fmt_t fmt, unsigned int d_w,
                           unsigned int d_h, unsigned int stride_align,
                           unsigned char *img_data);
+
 
 
 

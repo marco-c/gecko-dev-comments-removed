@@ -14,6 +14,8 @@
 
 
 
+#include <stdint.h>
+
 #include "./vpx_config.h"
 #include "vp8/common/treecoder.h"
 
@@ -48,7 +50,9 @@ static INLINE unsigned int vp8_cost_branch(const unsigned int ct[2],
                                            vp8_prob p) {
   
 
-  return ((ct[0] * vp8_cost_zero(p)) + (ct[1] * vp8_cost_one(p))) >> 8;
+  return (unsigned int)(((((uint64_t)ct[0]) * vp8_cost_zero(p)) +
+                         (((uint64_t)ct[1]) * vp8_cost_one(p))) >>
+                        8);
 }
 
 

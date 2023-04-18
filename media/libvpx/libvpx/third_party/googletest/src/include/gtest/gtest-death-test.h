@@ -165,7 +165,6 @@ GTEST_API_ bool InDeathTestChild();
 
 
 
-
 # define ASSERT_EXIT(statement, predicate, regex) \
     GTEST_DEATH_TEST_(statement, predicate, regex, GTEST_FATAL_FAILURE_)
 

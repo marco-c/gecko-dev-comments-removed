@@ -14,7 +14,7 @@
 
 #include "./vpx_config.h"
 #include "vpx/vpx_integer.h"
-#include "vpx_ports/mem.h"
+#include "vpx_ports/compiler_attributes.h"
 
 
 

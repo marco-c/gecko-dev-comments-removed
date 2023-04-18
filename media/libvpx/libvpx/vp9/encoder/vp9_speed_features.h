@@ -526,9 +526,6 @@ typedef struct SPEED_FEATURES {
   } rd_ml_partition;
 
   
-  int allow_partition_search_skip;
-
-  
   int simple_model_rd_from_var;
 
   
@@ -612,6 +609,12 @@ typedef struct SPEED_FEATURES {
   
   
   int rt_intra_dc_only_low_content;
+
+  
+  
+  
+  
+  int allow_skip_txfm_ac_dc;
 } SPEED_FEATURES;
 
 struct VP9_COMP;

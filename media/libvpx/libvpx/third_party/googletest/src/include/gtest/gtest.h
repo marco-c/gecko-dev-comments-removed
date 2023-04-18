@@ -52,13 +52,17 @@
 #ifndef GTEST_INCLUDE_GTEST_GTEST_H_
 #define GTEST_INCLUDE_GTEST_GTEST_H_
 
+#include <cstddef>
 #include <limits>
+#include <memory>
 #include <ostream>
+#include <type_traits>
 #include <vector>
 
 #include "gtest/internal/gtest-internal.h"
 #include "gtest/internal/gtest-string.h"
 #include "gtest/gtest-death-test.h"
+#include "gtest/gtest-matchers.h"
 #include "gtest/gtest-message.h"
 #include "gtest/gtest-param-test.h"
 #include "gtest/gtest-printers.h"
@@ -68,21 +72,6 @@
 
 GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 namespace testing {
 
@@ -188,6 +177,7 @@ class FuchsiaDeathTest;
 class UnitTestImpl* GetUnitTestImpl();
 void ReportFailureInUnknownLocation(TestPartResult::Type result_type,
                                     const std::string& message);
+std::set<std::string>* GetIgnoredParameterizedTestSuites();
 
 }  
 
@@ -195,7 +185,12 @@ void ReportFailureInUnknownLocation(TestPartResult::Type result_type,
 
 
 class Test;
-class TestCase;
+class TestSuite;
+
+
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
+using TestCase = TestSuite;
+#endif
 class TestInfo;
 class UnitTest;
 
@@ -284,7 +279,11 @@ class GTEST_API_ AssertionResult {
   
   AssertionResult(const AssertionResult& other);
 
-#if defined(_MSC_VER) && _MSC_VER < 1910
+
+
+
+
+#if defined(_MSC_VER) && (_MSC_VER < 1910 || _MSC_VER >= 1920)
   GTEST_DISABLE_MSC_WARNINGS_PUSH_(4800 )
 #endif
 
@@ -298,12 +297,13 @@ class GTEST_API_ AssertionResult {
   template <typename T>
   explicit AssertionResult(
       const T& success,
-      typename internal::EnableIf<
-          !internal::ImplicitlyConvertible<T, AssertionResult>::value>::type*
-           = NULL)
+      typename std::enable_if<
+          !std::is_convertible<T, AssertionResult>::value>::type*
+      
+      = nullptr)
       : success_(success) {}
 
-#if defined(_MSC_VER) && _MSC_VER < 1910
+#if defined(_MSC_VER) && (_MSC_VER < 1910 || _MSC_VER >= 1920)
   GTEST_DISABLE_MSC_WARNINGS_POP_()
 #endif
 
@@ -324,9 +324,8 @@ class GTEST_API_ AssertionResult {
   
   
   const char* message() const {
-    return message_.get() != NULL ?  message_->c_str() : "";
+    return message_.get() != nullptr ? message_->c_str() : "";
   }
-  
   
   const char* failure_message() const { return message(); }
 
@@ -347,8 +346,7 @@ class GTEST_API_ AssertionResult {
  private:
   
   void AppendMessage(const Message& a_message) {
-    if (message_.get() == NULL)
-      message_.reset(new ::std::string);
+    if (message_.get() == nullptr) message_.reset(new ::std::string);
     message_->append(a_message.GetString().c_str());
   }
 
@@ -361,7 +359,7 @@ class GTEST_API_ AssertionResult {
   
   
   
-  internal::scoped_ptr< ::std::string> message_;
+  std::unique_ptr< ::std::string> message_;
 };
 
 
@@ -411,11 +409,6 @@ class GTEST_API_ Test {
   friend class TestInfo;
 
   
-  
-  typedef internal::SetUpTestCaseFunc SetUpTestCaseFunc;
-  typedef internal::TearDownTestCaseFunc TearDownTestCaseFunc;
-
-  
   virtual ~Test();
 
   
@@ -424,7 +417,7 @@ class GTEST_API_ Test {
   
   
   
-  static void SetUpTestCase() {}
+  static void SetUpTestSuite() {}
 
   
   
@@ -432,13 +425,22 @@ class GTEST_API_ Test {
   
   
   
+  static void TearDownTestSuite() {}
+
+  
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
   static void TearDownTestCase() {}
+  static void SetUpTestCase() {}
+#endif  
 
   
   static bool HasFatalFailure();
 
   
   static bool HasNonfatalFailure();
+
+  
+  static bool IsSkipped();
 
   
   
@@ -490,7 +492,7 @@ class GTEST_API_ Test {
   
   void DeleteSelf_() { delete this; }
 
-  const internal::scoped_ptr< GTEST_FLAG_SAVER_ > gtest_flag_saver_;
+  const std::unique_ptr<GTEST_FLAG_SAVER_> gtest_flag_saver_;
 
   
   
@@ -509,7 +511,7 @@ class GTEST_API_ Test {
   
   
   struct Setup_should_be_spelled_SetUp {};
-  virtual Setup_should_be_spelled_SetUp* Setup() { return NULL; }
+  virtual Setup_should_be_spelled_SetUp* Setup() { return nullptr; }
 
   
   GTEST_DISALLOW_COPY_AND_ASSIGN_(Test);
@@ -574,7 +576,10 @@ class GTEST_API_ TestResult {
   int test_property_count() const;
 
   
-  bool Passed() const { return !Failed(); }
+  bool Passed() const { return !Skipped() && !Failed(); }
+
+  
+  bool Skipped() const;
 
   
   bool Failed() const;
@@ -590,6 +595,10 @@ class GTEST_API_ TestResult {
 
   
   
+  TimeInMillis start_timestamp() const { return start_timestamp_; }
+
+  
+  
   const TestPartResult& GetTestPartResult(int i) const;
 
   
@@ -599,7 +608,7 @@ class GTEST_API_ TestResult {
 
  private:
   friend class TestInfo;
-  friend class TestCase;
+  friend class TestSuite;
   friend class UnitTest;
   friend class internal::DefaultGlobalTestPartResultReporter;
   friend class internal::ExecDeathTest;
@@ -617,6 +626,9 @@ class GTEST_API_ TestResult {
   const std::vector<TestProperty>& test_properties() const {
     return test_properties_;
   }
+
+  
+  void set_start_timestamp(TimeInMillis start) { start_timestamp_ = start; }
 
   
   void set_elapsed_time(TimeInMillis elapsed) { elapsed_time_ = elapsed; }
@@ -662,6 +674,8 @@ class GTEST_API_ TestResult {
   
   int death_test_count_;
   
+  TimeInMillis start_timestamp_;
+  
   TimeInMillis elapsed_time_;
 
   
@@ -686,7 +700,12 @@ class GTEST_API_ TestInfo {
   ~TestInfo();
 
   
-  const char* test_case_name() const { return test_case_name_.c_str(); }
+  const char* test_suite_name() const { return test_suite_name_.c_str(); }
+
+
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
+  const char* test_case_name() const { return test_suite_name(); }
+#endif  
 
   
   const char* name() const { return name_.c_str(); }
@@ -694,17 +713,15 @@ class GTEST_API_ TestInfo {
   
   
   const char* type_param() const {
-    if (type_param_.get() != NULL)
-      return type_param_->c_str();
-    return NULL;
+    if (type_param_.get() != nullptr) return type_param_->c_str();
+    return nullptr;
   }
 
   
   
   const char* value_param() const {
-    if (value_param_.get() != NULL)
-      return value_param_->c_str();
-    return NULL;
+    if (value_param_.get() != nullptr) return value_param_->c_str();
+    return nullptr;
   }
 
   
@@ -749,24 +766,19 @@ class GTEST_API_ TestInfo {
   friend class internal::DefaultDeathTestFactory;
 #endif  
   friend class Test;
-  friend class TestCase;
+  friend class TestSuite;
   friend class internal::UnitTestImpl;
   friend class internal::StreamingListenerTest;
   friend TestInfo* internal::MakeAndRegisterTestInfo(
-      const char* test_case_name,
-      const char* name,
-      const char* type_param,
-      const char* value_param,
-      internal::CodeLocation code_location,
-      internal::TypeId fixture_class_id,
-      Test::SetUpTestCaseFunc set_up_tc,
-      Test::TearDownTestCaseFunc tear_down_tc,
+      const char* test_suite_name, const char* name, const char* type_param,
+      const char* value_param, internal::CodeLocation code_location,
+      internal::TypeId fixture_class_id, internal::SetUpTestSuiteFunc set_up_tc,
+      internal::TearDownTestSuiteFunc tear_down_tc,
       internal::TestFactoryBase* factory);
 
   
   
-  TestInfo(const std::string& test_case_name,
-           const std::string& name,
+  TestInfo(const std::string& test_suite_name, const std::string& name,
            const char* a_type_param,   
            const char* a_value_param,  
            internal::CodeLocation a_code_location,
@@ -788,21 +800,21 @@ class GTEST_API_ TestInfo {
   }
 
   
-  const std::string test_case_name_;     
+  const std::string test_suite_name_;    
   const std::string name_;               
   
   
-  const internal::scoped_ptr<const ::std::string> type_param_;
+  const std::unique_ptr<const ::std::string> type_param_;
   
   
-  const internal::scoped_ptr<const ::std::string> value_param_;
+  const std::unique_ptr<const ::std::string> value_param_;
   internal::CodeLocation location_;
-  const internal::TypeId fixture_class_id_;   
-  bool should_run_;                 
-  bool is_disabled_;                
-  bool matches_filter_;             
-                                    
-  bool is_in_another_shard_;        
+  const internal::TypeId fixture_class_id_;  
+  bool should_run_;           
+  bool is_disabled_;          
+  bool matches_filter_;       
+                              
+  bool is_in_another_shard_;  
   internal::TestFactoryBase* const factory_;  
                                               
 
@@ -816,7 +828,7 @@ class GTEST_API_ TestInfo {
 
 
 
-class GTEST_API_ TestCase {
+class GTEST_API_ TestSuite {
  public:
   
   
@@ -830,12 +842,12 @@ class GTEST_API_ TestCase {
   
   
   
-  TestCase(const char* name, const char* a_type_param,
-           Test::SetUpTestCaseFunc set_up_tc,
-           Test::TearDownTestCaseFunc tear_down_tc);
+  TestSuite(const char* name, const char* a_type_param,
+            internal::SetUpTestSuiteFunc set_up_tc,
+            internal::TearDownTestSuiteFunc tear_down_tc);
 
   
-  virtual ~TestCase();
+  virtual ~TestSuite();
 
   
   const char* name() const { return name_.c_str(); }
@@ -843,9 +855,8 @@ class GTEST_API_ TestCase {
   
   
   const char* type_param() const {
-    if (type_param_.get() != NULL)
-      return type_param_->c_str();
-    return NULL;
+    if (type_param_.get() != nullptr) return type_param_->c_str();
+    return nullptr;
   }
 
   
@@ -853,6 +864,9 @@ class GTEST_API_ TestCase {
 
   
   int successful_test_count() const;
+
+  
+  int skipped_test_count() const;
 
   
   int failed_test_count() const;
@@ -876,10 +890,16 @@ class GTEST_API_ TestCase {
   bool Passed() const { return !Failed(); }
 
   
-  bool Failed() const { return failed_test_count() > 0; }
+  bool Failed() const {
+    return failed_test_count() > 0 || ad_hoc_test_result().Failed();
+  }
 
   
   TimeInMillis elapsed_time() const { return elapsed_time_; }
+
+  
+  
+  TimeInMillis start_timestamp() const { return start_timestamp_; }
 
   
   
@@ -916,8 +936,8 @@ class GTEST_API_ TestCase {
   void ClearResult();
 
   
-  static void ClearTestCaseResult(TestCase* test_case) {
-    test_case->ClearResult();
+  static void ClearTestSuiteResult(TestSuite* test_suite) {
+    test_suite->ClearResult();
   }
 
   
@@ -925,15 +945,28 @@ class GTEST_API_ TestCase {
 
   
   
-  void RunSetUpTestCase() { (*set_up_tc_)(); }
+  void RunSetUpTestSuite() {
+    if (set_up_tc_ != nullptr) {
+      (*set_up_tc_)();
+    }
+  }
 
   
   
-  void RunTearDownTestCase() { (*tear_down_tc_)(); }
+  void RunTearDownTestSuite() {
+    if (tear_down_tc_ != nullptr) {
+      (*tear_down_tc_)();
+    }
+  }
 
   
   static bool TestPassed(const TestInfo* test_info) {
     return test_info->should_run() && test_info->result()->Passed();
+  }
+
+  
+  static bool TestSkipped(const TestInfo* test_info) {
+    return test_info->should_run() && test_info->result()->Skipped();
   }
 
   
@@ -972,7 +1005,7 @@ class GTEST_API_ TestCase {
   std::string name_;
   
   
-  const internal::scoped_ptr<const ::std::string> type_param_;
+  const std::unique_ptr<const ::std::string> type_param_;
   
   
   std::vector<TestInfo*> test_info_list_;
@@ -981,11 +1014,13 @@ class GTEST_API_ TestCase {
   
   std::vector<int> test_indices_;
   
-  Test::SetUpTestCaseFunc set_up_tc_;
+  internal::SetUpTestSuiteFunc set_up_tc_;
   
-  Test::TearDownTestCaseFunc tear_down_tc_;
+  internal::TearDownTestSuiteFunc tear_down_tc_;
   
   bool should_run_;
+  
+  TimeInMillis start_timestamp_;
   
   TimeInMillis elapsed_time_;
   
@@ -993,7 +1028,7 @@ class GTEST_API_ TestCase {
   TestResult ad_hoc_test_result_;
 
   
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(TestCase);
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(TestSuite);
 };
 
 
@@ -1024,7 +1059,7 @@ class Environment {
   
   
   struct Setup_should_be_spelled_SetUp {};
-  virtual Setup_should_be_spelled_SetUp* Setup() { return NULL; }
+  virtual Setup_should_be_spelled_SetUp* Setup() { return nullptr; }
 };
 
 #if GTEST_HAS_EXCEPTIONS
@@ -1061,7 +1096,12 @@ class TestEventListener {
   virtual void OnEnvironmentsSetUpEnd(const UnitTest& unit_test) = 0;
 
   
-  virtual void OnTestCaseStart(const TestCase& test_case) = 0;
+  virtual void OnTestSuiteStart(const TestSuite& ) {}
+
+  
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
+  virtual void OnTestCaseStart(const TestCase& ) {}
+#endif  
 
   
   virtual void OnTestStart(const TestInfo& test_info) = 0;
@@ -1075,7 +1115,12 @@ class TestEventListener {
   virtual void OnTestEnd(const TestInfo& test_info) = 0;
 
   
-  virtual void OnTestCaseEnd(const TestCase& test_case) = 0;
+  virtual void OnTestSuiteEnd(const TestSuite& ) {}
+
+
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
+  virtual void OnTestCaseEnd(const TestCase& ) {}
+#endif  
 
   
   virtual void OnEnvironmentsTearDownStart(const UnitTest& unit_test) = 0;
@@ -1098,21 +1143,30 @@ class TestEventListener {
 
 class EmptyTestEventListener : public TestEventListener {
  public:
-  virtual void OnTestProgramStart(const UnitTest& ) {}
-  virtual void OnTestIterationStart(const UnitTest& ,
-                                    int ) {}
-  virtual void OnEnvironmentsSetUpStart(const UnitTest& ) {}
-  virtual void OnEnvironmentsSetUpEnd(const UnitTest& ) {}
-  virtual void OnTestCaseStart(const TestCase& ) {}
-  virtual void OnTestStart(const TestInfo& ) {}
-  virtual void OnTestPartResult(const TestPartResult& ) {}
-  virtual void OnTestEnd(const TestInfo& ) {}
-  virtual void OnTestCaseEnd(const TestCase& ) {}
-  virtual void OnEnvironmentsTearDownStart(const UnitTest& ) {}
-  virtual void OnEnvironmentsTearDownEnd(const UnitTest& ) {}
-  virtual void OnTestIterationEnd(const UnitTest& ,
-                                  int ) {}
-  virtual void OnTestProgramEnd(const UnitTest& ) {}
+  void OnTestProgramStart(const UnitTest& ) override {}
+  void OnTestIterationStart(const UnitTest& ,
+                            int ) override {}
+  void OnEnvironmentsSetUpStart(const UnitTest& ) override {}
+  void OnEnvironmentsSetUpEnd(const UnitTest& ) override {}
+  void OnTestSuiteStart(const TestSuite& ) override {}
+
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
+  void OnTestCaseStart(const TestCase& ) override {}
+#endif  
+
+  void OnTestStart(const TestInfo& ) override {}
+  void OnTestPartResult(const TestPartResult& ) override {}
+  void OnTestEnd(const TestInfo& ) override {}
+  void OnTestSuiteEnd(const TestSuite& ) override {}
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
+  void OnTestCaseEnd(const TestCase& ) override {}
+#endif  
+
+  void OnEnvironmentsTearDownStart(const UnitTest& ) override {}
+  void OnEnvironmentsTearDownEnd(const UnitTest& ) override {}
+  void OnTestIterationEnd(const UnitTest& ,
+                          int ) override {}
+  void OnTestProgramEnd(const UnitTest& ) override {}
 };
 
 
@@ -1152,7 +1206,7 @@ class GTEST_API_ TestEventListeners {
   }
 
  private:
-  friend class TestCase;
+  friend class TestSuite;
   friend class TestInfo;
   friend class internal::DefaultGlobalTestPartResultReporter;
   friend class internal::NoExecDeathTest;
@@ -1224,8 +1278,12 @@ class GTEST_API_ UnitTest {
 
   
   
-  const TestCase* current_test_case() const
-      GTEST_LOCK_EXCLUDED_(mutex_);
+  const TestSuite* current_test_suite() const GTEST_LOCK_EXCLUDED_(mutex_);
+
+
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
+  const TestCase* current_test_case() const GTEST_LOCK_EXCLUDED_(mutex_);
+#endif
 
   
   
@@ -1239,24 +1297,35 @@ class GTEST_API_ UnitTest {
   
   
   
-  internal::ParameterizedTestCaseRegistry& parameterized_test_registry()
+  internal::ParameterizedTestSuiteRegistry& parameterized_test_registry()
       GTEST_LOCK_EXCLUDED_(mutex_);
 
   
+  int successful_test_suite_count() const;
+
+  
+  int failed_test_suite_count() const;
+
+  
+  int total_test_suite_count() const;
+
+  
+  
+  int test_suite_to_run_count() const;
+
+  
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
   int successful_test_case_count() const;
-
-  
   int failed_test_case_count() const;
-
-  
   int total_test_case_count() const;
-
-  
-  
   int test_case_to_run_count() const;
+#endif  
 
   
   int successful_test_count() const;
+
+  
+  int skipped_test_count() const;
 
   
   int failed_test_count() const;
@@ -1284,6 +1353,7 @@ class GTEST_API_ UnitTest {
   TimeInMillis elapsed_time() const;
 
   
+  
   bool Passed() const;
 
   
@@ -1292,7 +1362,12 @@ class GTEST_API_ UnitTest {
 
   
   
+  const TestSuite* GetTestSuite(int i) const;
+
+
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
   const TestCase* GetTestCase(int i) const;
+#endif  
 
   
   
@@ -1334,7 +1409,7 @@ class GTEST_API_ UnitTest {
 
   
   
-  TestCase* GetMutableTestCase(int i);
+  TestSuite* GetMutableTestSuite(int i);
 
   
   internal::UnitTestImpl* impl() { return impl_; }
@@ -1348,6 +1423,7 @@ class GTEST_API_ UnitTest {
   friend class internal::StreamingListenerTest;
   friend class internal::UnitTestRecordPropertyTestHelper;
   friend Environment* AddGlobalTestEnvironment(Environment* env);
+  friend std::set<std::string>* internal::GetIgnoredParameterizedTestSuites();
   friend internal::UnitTestImpl* internal::GetUnitTestImpl();
   friend void internal::ReportFailureInUnknownLocation(
       TestPartResult::Type result_type,
@@ -1419,6 +1495,10 @@ GTEST_API_ void InitGoogleTest(int* argc, char** argv);
 
 GTEST_API_ void InitGoogleTest(int* argc, wchar_t** argv);
 
+
+
+GTEST_API_ void InitGoogleTest();
+
 namespace internal {
 
 
@@ -1434,6 +1514,13 @@ AssertionResult CmpHelperEQFailure(const char* lhs_expression,
                    FormatForComparisonFailureMessage(rhs, lhs),
                    false);
 }
+
+
+
+
+struct faketype {};
+inline bool operator==(faketype, faketype) { return true; }
+inline bool operator!=(faketype, faketype) { return false; }
 
 
 template <typename T1, typename T2>
@@ -1456,18 +1543,17 @@ GTEST_API_ AssertionResult CmpHelperEQ(const char* lhs_expression,
                                        BiggestInt lhs,
                                        BiggestInt rhs);
 
-
-
-
-
-template <bool lhs_is_null_literal>
 class EqHelper {
  public:
   
-  template <typename T1, typename T2>
+  template <
+      typename T1, typename T2,
+      
+      
+      typename std::enable_if<!std::is_integral<T1>::value ||
+                              !std::is_pointer<T2>::value>::type* = nullptr>
   static AssertionResult Compare(const char* lhs_expression,
-                                 const char* rhs_expression,
-                                 const T1& lhs,
+                                 const char* rhs_expression, const T1& lhs,
                                  const T2& rhs) {
     return CmpHelperEQ(lhs_expression, rhs_expression, lhs, rhs);
   }
@@ -1484,49 +1570,15 @@ class EqHelper {
                                  BiggestInt rhs) {
     return CmpHelperEQ(lhs_expression, rhs_expression, lhs, rhs);
   }
-};
 
-
-
-template <>
-class EqHelper<true> {
- public:
-  
-  
-  
-  
-  template <typename T1, typename T2>
-  static AssertionResult Compare(
-      const char* lhs_expression,
-      const char* rhs_expression,
-      const T1& lhs,
-      const T2& rhs,
-      
-      
-      
-      
-      
-      typename EnableIf<!is_pointer<T2>::value>::type* = 0) {
-    return CmpHelperEQ(lhs_expression, rhs_expression, lhs, rhs);
-  }
-
-  
-  
   template <typename T>
   static AssertionResult Compare(
-      const char* lhs_expression,
-      const char* rhs_expression,
+      const char* lhs_expression, const char* rhs_expression,
       
-      
-      
-      
-      
-      
-      Secret* ,
-      T* rhs) {
+      std::nullptr_t , T* rhs) {
     
-    return CmpHelperEQ(lhs_expression, rhs_expression,
-                       static_cast<T*>(NULL), rhs);
+    return CmpHelperEQ(lhs_expression, rhs_expression, static_cast<T*>(nullptr),
+                       rhs);
   }
 };
 
@@ -1755,6 +1807,12 @@ class GTEST_API_ AssertHelper {
   GTEST_DISALLOW_COPY_AND_ASSIGN_(AssertHelper);
 };
 
+enum GTestColor { COLOR_DEFAULT, COLOR_RED, COLOR_GREEN, COLOR_YELLOW };
+
+GTEST_API_ GTEST_ATTRIBUTE_PRINTF_(2, 3) void ColoredPrintf(GTestColor color,
+                                                            const char* fmt,
+                                                            ...);
+
 }  
 
 
@@ -1800,7 +1858,7 @@ class WithParamInterface {
   
   
   static const ParamType& GetParam() {
-    GTEST_CHECK_(parameter_ != NULL)
+    GTEST_CHECK_(parameter_ != nullptr)
         << "GetParam() can only be called inside a value-parameterized test "
         << "-- did you intend to write TEST_P instead of TEST_F?";
     return *parameter_;
@@ -1821,7 +1879,7 @@ class WithParamInterface {
 };
 
 template <typename T>
-const T* WithParamInterface<T>::parameter_ = NULL;
+const T* WithParamInterface<T>::parameter_ = nullptr;
 
 
 
@@ -1831,6 +1889,11 @@ class TestWithParam : public Test, public WithParamInterface<T> {
 };
 
 
+
+
+
+
+#define GTEST_SKIP() GTEST_SKIP_("")
 
 
 
@@ -1860,6 +1923,11 @@ class TestWithParam : public Test, public WithParamInterface<T> {
 
 
 #define GTEST_FAIL() GTEST_FATAL_FAILURE_("Failed")
+
+
+#define GTEST_FAIL_AT(file, line)         \
+  GTEST_MESSAGE_AT_(file, line, "Failed", \
+                    ::testing::TestPartResult::kFatalFailure)
 
 
 
@@ -1961,9 +2029,7 @@ class TestWithParam : public Test, public WithParamInterface<T> {
 
 
 #define EXPECT_EQ(val1, val2) \
-  EXPECT_PRED_FORMAT2(::testing::internal:: \
-                      EqHelper<GTEST_IS_NULL_LITERAL_(val1)>::Compare, \
-                      val1, val2)
+  EXPECT_PRED_FORMAT2(::testing::internal::EqHelper::Compare, val1, val2)
 #define EXPECT_NE(val1, val2) \
   EXPECT_PRED_FORMAT2(::testing::internal::CmpHelperNE, val1, val2)
 #define EXPECT_LE(val1, val2) \
@@ -1976,9 +2042,7 @@ class TestWithParam : public Test, public WithParamInterface<T> {
   EXPECT_PRED_FORMAT2(::testing::internal::CmpHelperGT, val1, val2)
 
 #define GTEST_ASSERT_EQ(val1, val2) \
-  ASSERT_PRED_FORMAT2(::testing::internal:: \
-                      EqHelper<GTEST_IS_NULL_LITERAL_(val1)>::Compare, \
-                      val1, val2)
+  ASSERT_PRED_FORMAT2(::testing::internal::EqHelper::Compare, val1, val2)
 #define GTEST_ASSERT_NE(val1, val2) \
   ASSERT_PRED_FORMAT2(::testing::internal::CmpHelperNE, val1, val2)
 #define GTEST_ASSERT_LE(val1, val2) \
@@ -2169,12 +2233,6 @@ class GTEST_API_ ScopedTrace {
     PushTrace(file, line, message ? message : "(null)");
   }
 
-#if GTEST_HAS_GLOBAL_STRING
-  ScopedTrace(const char* file, int line, const ::string& message) {
-    PushTrace(file, line, message);
-  }
-#endif
-
   ScopedTrace(const char* file, int line, const std::string& message) {
     PushTrace(file, line, message);
   }
@@ -2242,10 +2300,9 @@ class GTEST_API_ ScopedTrace {
 
 
 
-
 template <typename T1, typename T2>
-bool StaticAssertTypeEq() {
-  (void)internal::StaticAssertTypeEqHelper<T1, T2>();
+constexpr bool StaticAssertTypeEq() noexcept {
+  static_assert(std::is_same<T1, T2>::value, "T1 and T2 are not the same type");
   return true;
 }
 
@@ -2274,14 +2331,14 @@ bool StaticAssertTypeEq() {
 
 
 
-#define GTEST_TEST(test_case_name, test_name)\
-  GTEST_TEST_(test_case_name, test_name, \
-              ::testing::Test, ::testing::internal::GetTestTypeId())
+#define GTEST_TEST(test_suite_name, test_name)             \
+  GTEST_TEST_(test_suite_name, test_name, ::testing::Test, \
+              ::testing::internal::GetTestTypeId())
 
 
 
 #if !GTEST_DONT_DEFINE_TEST
-# define TEST(test_case_name, test_name) GTEST_TEST(test_case_name, test_name)
+#define TEST(test_suite_name, test_name) GTEST_TEST(test_suite_name, test_name)
 #endif
 
 
@@ -2310,9 +2367,12 @@ bool StaticAssertTypeEq() {
 
 
 
+
+#if !GTEST_DONT_DEFINE_TEST
 #define TEST_F(test_fixture, test_name)\
   GTEST_TEST_(test_fixture, test_name, test_fixture, \
               ::testing::internal::GetTypeId<test_fixture>())
+#endif  
 
 
 
@@ -2321,6 +2381,86 @@ GTEST_API_ std::string TempDir();
 #ifdef _MSC_VER
 #  pragma warning(pop)
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <int&... ExplicitParameterBarrier, typename Factory>
+TestInfo* RegisterTest(const char* test_suite_name, const char* test_name,
+                       const char* type_param, const char* value_param,
+                       const char* file, int line, Factory factory) {
+  using TestT = typename std::remove_pointer<decltype(factory())>::type;
+
+  class FactoryImpl : public internal::TestFactoryBase {
+   public:
+    explicit FactoryImpl(Factory f) : factory_(std::move(f)) {}
+    Test* CreateTest() override { return factory_(); }
+
+   private:
+    Factory factory_;
+  };
+
+  return internal::MakeAndRegisterTestInfo(
+      test_suite_name, test_name, type_param, value_param,
+      internal::CodeLocation(file, line), internal::GetTypeId<TestT>(),
+      internal::SuiteApiResolver<TestT>::GetSetUpCaseOrSuite(file, line),
+      internal::SuiteApiResolver<TestT>::GetTearDownCaseOrSuite(file, line),
+      new FactoryImpl{std::move(factory)});
+}
 
 }  
 

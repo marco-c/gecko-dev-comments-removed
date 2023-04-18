@@ -30,6 +30,7 @@ extern "C" {
 #endif
 
 #include "./vpx_codec.h"
+#include "./vpx_ext_ratectrl.h"
 
 
 
@@ -57,7 +58,8 @@ extern "C" {
 
 
 #define VPX_ENCODER_ABI_VERSION \
-  (14 + VPX_CODEC_ABI_VERSION) /**<\hideinitializer*/
+  (15 + VPX_CODEC_ABI_VERSION + \
+   VPX_EXT_RATECTRL_ABI_VERSION) /**<\hideinitializer*/
 
 
 
@@ -691,6 +693,151 @@ typedef struct vpx_codec_enc_cfg {
 
 
   int temporal_layering_mode;
+
+  
+
+
+
+  int use_vizier_rc_params;
+
+  
+
+
+
+
+
+
+  vpx_rational_t active_wq_factor;
+
+  
+
+
+
+
+
+
+  vpx_rational_t err_per_mb_factor;
+
+  
+
+
+
+
+
+
+  vpx_rational_t sr_default_decay_limit;
+
+  
+
+
+
+
+
+
+  vpx_rational_t sr_diff_factor;
+
+  
+
+
+
+
+
+
+  vpx_rational_t kf_err_per_mb_factor;
+
+  
+
+
+
+
+
+
+  vpx_rational_t kf_frame_min_boost_factor;
+
+  
+
+
+
+
+
+
+
+  vpx_rational_t kf_frame_max_boost_first_factor;
+
+  
+
+
+
+
+
+
+  vpx_rational_t kf_frame_max_boost_subs_factor;
+
+  
+
+
+
+
+
+
+  vpx_rational_t kf_max_total_boost_factor;
+
+  
+
+
+
+
+
+
+  vpx_rational_t gf_max_total_boost_factor;
+
+  
+
+
+
+
+
+
+  vpx_rational_t gf_frame_max_boost_factor;
+
+  
+
+
+
+
+
+
+  vpx_rational_t zm_factor;
+
+  
+
+
+
+
+
+
+
+  vpx_rational_t rd_mult_inter_qp_fac;
+
+  
+
+
+
+
+
+
+
+  vpx_rational_t rd_mult_arf_qp_fac;
+
+  
+
+
+
+
+
+
+
+  vpx_rational_t rd_mult_key_qp_fac;
 } vpx_codec_enc_cfg_t; 
 
 
@@ -705,6 +852,7 @@ typedef struct vpx_svc_parameters {
   int scaling_factor_den[VPX_MAX_LAYERS]; 
   int speed_per_layer[VPX_MAX_LAYERS];    
   int temporal_layering_mode;             
+  int loopfilter_ctrl[VPX_MAX_LAYERS];    
 } vpx_svc_extra_cfg_t;
 
 

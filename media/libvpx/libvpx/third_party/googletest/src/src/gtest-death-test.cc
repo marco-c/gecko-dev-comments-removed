@@ -31,6 +31,9 @@
 
 
 #include "gtest/gtest-death-test.h"
+
+#include <utility>
+
 #include "gtest/internal/gtest-port.h"
 #include "gtest/internal/custom/gtest.h"
 
@@ -62,10 +65,16 @@
 # endif  
 
 # if GTEST_OS_FUCHSIA
+#  include <lib/fdio/fd.h>
 #  include <lib/fdio/io.h>
 #  include <lib/fdio/spawn.h>
+#  include <lib/zx/channel.h>
+#  include <lib/zx/port.h>
+#  include <lib/zx/process.h>
+#  include <lib/zx/socket.h>
 #  include <zircon/processargs.h>
 #  include <zircon/syscalls.h>
+#  include <zircon/syscalls/policy.h>
 #  include <zircon/syscalls/port.h>
 # endif  
 
@@ -113,8 +122,8 @@ GTEST_DEFINE_string_(
     "Indicates the file, line number, temporal index of "
     "the single death test to run, and a file descriptor to "
     "which a success code may be sent, all separated by "
-    "the '|' characters.  This flag is specified if and only if the current "
-    "process is a sub-process launched for running a thread-safe "
+    "the '|' characters.  This flag is specified if and only if the "
+    "current process is a sub-process launched for running a thread-safe "
     "death test.  FOR INTERNAL USE ONLY.");
 }  
 
@@ -266,8 +275,6 @@ static const int kFuchsiaReadPipeFd = 3;
 
 
 
-
-
 enum DeathTestOutcome { IN_PROGRESS, DIED, LIVED, RETURNED, THREW };
 
 
@@ -281,7 +288,7 @@ static void DeathTestAbort(const std::string& message) {
   
   const InternalRunDeathTestFlag* const flag =
       GetUnitTestImpl()->internal_run_death_test_flag();
-  if (flag != NULL) {
+  if (flag != nullptr) {
     FILE* parent = posix::FDOpen(flag->write_fd(), "w");
     fputc(kDeathTestInternalError, parent);
     fprintf(parent, "%s", message.c_str());
@@ -361,7 +368,7 @@ static void FailFromInternalError(int fd) {
 
 DeathTest::DeathTest() {
   TestInfo* const info = GetUnitTestImpl()->current_test_info();
-  if (info == NULL) {
+  if (info == nullptr) {
     DeathTestAbort("Cannot run a death test outside of a TEST or "
                    "TEST_F construct");
   }
@@ -369,10 +376,11 @@ DeathTest::DeathTest() {
 
 
 
-bool DeathTest::Create(const char* statement, const RE* regex,
-                       const char* file, int line, DeathTest** test) {
+bool DeathTest::Create(const char* statement,
+                       Matcher<const std::string&> matcher, const char* file,
+                       int line, DeathTest** test) {
   return GetUnitTestImpl()->death_test_factory()->Create(
-      statement, regex, file, line, test);
+      statement, std::move(matcher), file, line, test);
 }
 
 const char* DeathTest::LastMessage() {
@@ -388,9 +396,9 @@ std::string DeathTest::last_death_test_message_;
 
 class DeathTestImpl : public DeathTest {
  protected:
-  DeathTestImpl(const char* a_statement, const RE* a_regex)
+  DeathTestImpl(const char* a_statement, Matcher<const std::string&> matcher)
       : statement_(a_statement),
-        regex_(a_regex),
+        matcher_(std::move(matcher)),
         spawned_(false),
         status_(-1),
         outcome_(IN_PROGRESS),
@@ -398,13 +406,12 @@ class DeathTestImpl : public DeathTest {
         write_fd_(-1) {}
 
   
-  ~DeathTestImpl() { GTEST_DEATH_TEST_CHECK_(read_fd_ == -1); }
+  ~DeathTestImpl() override { GTEST_DEATH_TEST_CHECK_(read_fd_ == -1); }
 
-  void Abort(AbortReason reason);
-  virtual bool Passed(bool status_ok);
+  void Abort(AbortReason reason) override;
+  bool Passed(bool status_ok) override;
 
   const char* statement() const { return statement_; }
-  const RE* regex() const { return regex_; }
   bool spawned() const { return spawned_; }
   void set_spawned(bool is_spawned) { spawned_ = is_spawned; }
   int status() const { return status_; }
@@ -422,13 +429,15 @@ class DeathTestImpl : public DeathTest {
   
   void ReadAndInterpretStatusByte();
 
+  
+  virtual std::string GetErrorLogs();
+
  private:
   
   
   const char* const statement_;
   
-  
-  const RE* const regex_;
+  Matcher<const std::string&> matcher_;
   
   bool spawned_;
   
@@ -488,6 +497,10 @@ void DeathTestImpl::ReadAndInterpretStatusByte() {
   }
   GTEST_DEATH_TEST_CHECK_SYSCALL_(posix::Close(read_fd()));
   set_read_fd(-1);
+}
+
+std::string DeathTestImpl::GetErrorLogs() {
+  return GetCapturedStderr();
 }
 
 
@@ -553,12 +566,11 @@ static ::std::string FormatDeathTestOutput(const ::std::string& output) {
 
 
 
-
 bool DeathTestImpl::Passed(bool status_ok) {
   if (!spawned())
     return false;
 
-  const std::string error_message = GetCapturedStderr();
+  const std::string error_message = GetErrorLogs();
 
   bool success = false;
   Message buffer;
@@ -579,18 +591,15 @@ bool DeathTestImpl::Passed(bool status_ok) {
       break;
     case DIED:
       if (status_ok) {
-# if GTEST_USES_PCRE
-        
-        const bool matched = RE::PartialMatch(error_message, *regex());
-# else
-        const bool matched = RE::PartialMatch(error_message.c_str(), *regex());
-# endif  
-        if (matched) {
+        if (matcher_.Matches(error_message)) {
           success = true;
         } else {
+          std::ostringstream stream;
+          matcher_.DescribeTo(&stream);
           buffer << "    Result: died but not with expected error.\n"
-                 << "  Expected: " << regex()->pattern() << "\n"
-                 << "Actual msg:\n" << FormatDeathTestOutput(error_message);
+                 << "  Expected: " << stream.str() << "\n"
+                 << "Actual msg:\n"
+                 << FormatDeathTestOutput(error_message);
         }
       } else {
         buffer << "    Result: died but not with expected exit code:\n"
@@ -639,11 +648,11 @@ bool DeathTestImpl::Passed(bool status_ok) {
 
 class WindowsDeathTest : public DeathTestImpl {
  public:
-  WindowsDeathTest(const char* a_statement,
-                   const RE* a_regex,
-                   const char* file,
-                   int line)
-      : DeathTestImpl(a_statement, a_regex), file_(file), line_(line) {}
+  WindowsDeathTest(const char* a_statement, Matcher<const std::string&> matcher,
+                   const char* file, int line)
+      : DeathTestImpl(a_statement, std::move(matcher)),
+        file_(file),
+        line_(line) {}
 
   
   virtual int Wait();
@@ -720,7 +729,7 @@ DeathTest::TestRole WindowsDeathTest::AssumeRole() {
   const TestInfo* const info = impl->current_test_info();
   const int death_test_index = info->result()->death_test_count();
 
-  if (flag != NULL) {
+  if (flag != nullptr) {
     
     
     set_write_fd(flag->write_fd());
@@ -729,8 +738,8 @@ DeathTest::TestRole WindowsDeathTest::AssumeRole() {
 
   
   
-  SECURITY_ATTRIBUTES handles_are_inheritable = {
-    sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
+  SECURITY_ATTRIBUTES handles_are_inheritable = {sizeof(SECURITY_ATTRIBUTES),
+                                                 nullptr, TRUE};
   HANDLE read_handle, write_handle;
   GTEST_DEATH_TEST_CHECK_(
       ::CreatePipe(&read_handle, &write_handle, &handles_are_inheritable,
@@ -741,13 +750,13 @@ DeathTest::TestRole WindowsDeathTest::AssumeRole() {
   write_handle_.Reset(write_handle);
   event_handle_.Reset(::CreateEvent(
       &handles_are_inheritable,
-      TRUE,    
-      FALSE,   
-      NULL));  
-  GTEST_DEATH_TEST_CHECK_(event_handle_.Get() != NULL);
-  const std::string filter_flag =
-      std::string("--") + GTEST_FLAG_PREFIX_ + kFilterFlag + "=" +
-      info->test_case_name() + "." + info->name();
+      TRUE,       
+      FALSE,      
+      nullptr));  
+  GTEST_DEATH_TEST_CHECK_(event_handle_.Get() != nullptr);
+  const std::string filter_flag = std::string("--") + GTEST_FLAG_PREFIX_ +
+                                  kFilterFlag + "=" + info->test_suite_name() +
+                                  "." + info->name();
   const std::string internal_flag =
       std::string("--") + GTEST_FLAG_PREFIX_ + kInternalRunDeathTestFlag +
       "=" + file_ + "|" + StreamableToString(line_) + "|" +
@@ -760,10 +769,9 @@ DeathTest::TestRole WindowsDeathTest::AssumeRole() {
       "|" + StreamableToString(reinterpret_cast<size_t>(event_handle_.Get()));
 
   char executable_path[_MAX_PATH + 1];  
-  GTEST_DEATH_TEST_CHECK_(
-      _MAX_PATH + 1 != ::GetModuleFileNameA(NULL,
-                                            executable_path,
-                                            _MAX_PATH));
+  GTEST_DEATH_TEST_CHECK_(_MAX_PATH + 1 != ::GetModuleFileNameA(nullptr,
+                                                                executable_path,
+                                                                _MAX_PATH));
 
   std::string command_line =
       std::string(::GetCommandLineA()) + " " + filter_flag + " \"" +
@@ -784,17 +792,16 @@ DeathTest::TestRole WindowsDeathTest::AssumeRole() {
   startup_info.hStdError = ::GetStdHandle(STD_ERROR_HANDLE);
 
   PROCESS_INFORMATION process_info;
-  GTEST_DEATH_TEST_CHECK_(::CreateProcessA(
-      executable_path,
-      const_cast<char*>(command_line.c_str()),
-      NULL,   
-      NULL,   
-      TRUE,   
-      0x0,    
-      NULL,   
-      UnitTest::GetInstance()->original_working_dir(),
-      &startup_info,
-      &process_info) != FALSE);
+  GTEST_DEATH_TEST_CHECK_(
+      ::CreateProcessA(
+          executable_path, const_cast<char*>(command_line.c_str()),
+          nullptr,  
+          nullptr,  
+          TRUE,  
+          0x0,   
+          nullptr,  
+          UnitTest::GetInstance()->original_working_dir(), &startup_info,
+          &process_info) != FALSE);
   child_handle_.Reset(process_info.hProcess);
   ::CloseHandle(process_info.hThread);
   set_spawned(true);
@@ -805,38 +812,34 @@ DeathTest::TestRole WindowsDeathTest::AssumeRole() {
 
 class FuchsiaDeathTest : public DeathTestImpl {
  public:
-  FuchsiaDeathTest(const char* a_statement,
-                   const RE* a_regex,
-                   const char* file,
-                   int line)
-      : DeathTestImpl(a_statement, a_regex), file_(file), line_(line) {}
-  virtual ~FuchsiaDeathTest() {
-    zx_status_t status = zx_handle_close(child_process_);
-    GTEST_DEATH_TEST_CHECK_(status == ZX_OK);
-    status = zx_handle_close(port_);
-    GTEST_DEATH_TEST_CHECK_(status == ZX_OK);
-  }
+  FuchsiaDeathTest(const char* a_statement, Matcher<const std::string&> matcher,
+                   const char* file, int line)
+      : DeathTestImpl(a_statement, std::move(matcher)),
+        file_(file),
+        line_(line) {}
 
   
-  virtual int Wait();
-  virtual TestRole AssumeRole();
+  int Wait() override;
+  TestRole AssumeRole() override;
+  std::string GetErrorLogs() override;
 
  private:
   
   const char* const file_;
   
   const int line_;
+  
+  std::string captured_stderr_;
 
-  zx_handle_t child_process_ = ZX_HANDLE_INVALID;
-  zx_handle_t port_ = ZX_HANDLE_INVALID;
+  zx::process child_process_;
+  zx::channel exception_channel_;
+  zx::socket stderr_socket_;
 };
 
 
 class Arguments {
  public:
-  Arguments() {
-    args_.push_back(NULL);
-  }
+  Arguments() { args_.push_back(nullptr); }
 
   ~Arguments() {
     for (std::vector<char*>::iterator i = args_.begin(); i != args_.end();
@@ -872,51 +875,88 @@ class Arguments {
 
 
 int FuchsiaDeathTest::Wait() {
+  const int kProcessKey = 0;
+  const int kSocketKey = 1;
+  const int kExceptionKey = 2;
+
   if (!spawned())
     return 0;
 
   
   zx_status_t status_zx;
-  status_zx = zx_object_wait_async(child_process_,
-                                   port_,
-                                   0 ,
-                                   ZX_PROCESS_TERMINATED,
-                                   ZX_WAIT_ASYNC_ONCE);
+  zx::port port;
+  status_zx = zx::port::create(0, &port);
   GTEST_DEATH_TEST_CHECK_(status_zx == ZX_OK);
 
   
-  zx_port_packet_t packet;
-  status_zx = zx_port_wait(port_, ZX_TIME_INFINITE, &packet);
+  status_zx = child_process_.wait_async(
+      port, kProcessKey, ZX_PROCESS_TERMINATED, ZX_WAIT_ASYNC_ONCE);
   GTEST_DEATH_TEST_CHECK_(status_zx == ZX_OK);
 
-  if (ZX_PKT_IS_EXCEPTION(packet.type)) {
-    
-    
-    status_zx = zx_task_kill(child_process_);
+  
+  status_zx = stderr_socket_.wait_async(
+      port, kSocketKey, ZX_SOCKET_READABLE | ZX_SOCKET_PEER_CLOSED,
+      ZX_WAIT_ASYNC_ONCE);
+  GTEST_DEATH_TEST_CHECK_(status_zx == ZX_OK);
+
+  
+  status_zx = exception_channel_.wait_async(
+      port, kExceptionKey, ZX_CHANNEL_READABLE, ZX_WAIT_ASYNC_ONCE);
+  GTEST_DEATH_TEST_CHECK_(status_zx == ZX_OK);
+
+  bool process_terminated = false;
+  bool socket_closed = false;
+  do {
+    zx_port_packet_t packet = {};
+    status_zx = port.wait(zx::time::infinite(), &packet);
     GTEST_DEATH_TEST_CHECK_(status_zx == ZX_OK);
 
-    
-    zx_signals_t signals = 0;
-    status_zx = zx_object_wait_one(
-        child_process_, ZX_PROCESS_TERMINATED, ZX_TIME_INFINITE, &signals);
-    GTEST_DEATH_TEST_CHECK_(status_zx == ZX_OK);
-    GTEST_DEATH_TEST_CHECK_(signals & ZX_PROCESS_TERMINATED);
-  } else {
-    
-    GTEST_DEATH_TEST_CHECK_(ZX_PKT_IS_SIGNAL_ONE(packet.type));
-    GTEST_DEATH_TEST_CHECK_(packet.signal.observed & ZX_PROCESS_TERMINATED);
-  }
+    if (packet.key == kExceptionKey) {
+      
+      
+      
+      status_zx = child_process_.kill();
+      GTEST_DEATH_TEST_CHECK_(status_zx == ZX_OK);
+    } else if (packet.key == kProcessKey) {
+      
+      GTEST_DEATH_TEST_CHECK_(ZX_PKT_IS_SIGNAL_ONE(packet.type));
+      GTEST_DEATH_TEST_CHECK_(packet.signal.observed & ZX_PROCESS_TERMINATED);
+      process_terminated = true;
+    } else if (packet.key == kSocketKey) {
+      GTEST_DEATH_TEST_CHECK_(ZX_PKT_IS_SIGNAL_ONE(packet.type));
+      if (packet.signal.observed & ZX_SOCKET_READABLE) {
+        
+        constexpr size_t kBufferSize = 1024;
+        do {
+          size_t old_length = captured_stderr_.length();
+          size_t bytes_read = 0;
+          captured_stderr_.resize(old_length + kBufferSize);
+          status_zx = stderr_socket_.read(
+              0, &captured_stderr_.front() + old_length, kBufferSize,
+              &bytes_read);
+          captured_stderr_.resize(old_length + bytes_read);
+        } while (status_zx == ZX_OK);
+        if (status_zx == ZX_ERR_PEER_CLOSED) {
+          socket_closed = true;
+        } else {
+          GTEST_DEATH_TEST_CHECK_(status_zx == ZX_ERR_SHOULD_WAIT);
+          status_zx = stderr_socket_.wait_async(
+              port, kSocketKey, ZX_SOCKET_READABLE | ZX_SOCKET_PEER_CLOSED,
+              ZX_WAIT_ASYNC_ONCE);
+          GTEST_DEATH_TEST_CHECK_(status_zx == ZX_OK);
+        }
+      } else {
+        GTEST_DEATH_TEST_CHECK_(packet.signal.observed & ZX_SOCKET_PEER_CLOSED);
+        socket_closed = true;
+      }
+    }
+  } while (!process_terminated && !socket_closed);
 
   ReadAndInterpretStatusByte();
 
   zx_info_process_t buffer;
-  status_zx = zx_object_get_info(
-      child_process_,
-      ZX_INFO_PROCESS,
-      &buffer,
-      sizeof(buffer),
-      nullptr,
-      nullptr);
+  status_zx = child_process_.get_info(
+      ZX_INFO_PROCESS, &buffer, sizeof(buffer), nullptr, nullptr);
   GTEST_DEATH_TEST_CHECK_(status_zx == ZX_OK);
 
   GTEST_DEATH_TEST_CHECK_(buffer.exited);
@@ -936,21 +976,20 @@ DeathTest::TestRole FuchsiaDeathTest::AssumeRole() {
   const TestInfo* const info = impl->current_test_info();
   const int death_test_index = info->result()->death_test_count();
 
-  if (flag != NULL) {
+  if (flag != nullptr) {
     
     
     set_write_fd(kFuchsiaReadPipeFd);
     return EXECUTE_TEST;
   }
 
-  CaptureStderr();
   
   FlushInfoLog();
 
   
-  const std::string filter_flag =
-      std::string("--") + GTEST_FLAG_PREFIX_ + kFilterFlag + "="
-      + info->test_case_name() + "." + info->name();
+  const std::string filter_flag = std::string("--") + GTEST_FLAG_PREFIX_ +
+                                  kFilterFlag + "=" + info->test_suite_name() +
+                                  "." + info->name();
   const std::string internal_flag =
       std::string("--") + GTEST_FLAG_PREFIX_ + kInternalRunDeathTestFlag + "="
       + file_ + "|"
@@ -964,33 +1003,66 @@ DeathTest::TestRole FuchsiaDeathTest::AssumeRole() {
   
   zx_status_t status;
   zx_handle_t child_pipe_handle;
-  uint32_t type;
-  status = fdio_pipe_half(&child_pipe_handle, &type);
+  int child_pipe_fd;
+  status = fdio_pipe_half(&child_pipe_fd, &child_pipe_handle);
+  GTEST_DEATH_TEST_CHECK_(status == ZX_OK);
+  set_read_fd(child_pipe_fd);
+
+  
+  fdio_spawn_action_t spawn_actions[2] = {};
+  fdio_spawn_action_t* add_handle_action = &spawn_actions[0];
+  add_handle_action->action = FDIO_SPAWN_ACTION_ADD_HANDLE;
+  add_handle_action->h.id = PA_HND(PA_FD, kFuchsiaReadPipeFd);
+  add_handle_action->h.handle = child_pipe_handle;
+
+  
+  zx::socket stderr_producer_socket;
+  status =
+      zx::socket::create(0, &stderr_producer_socket, &stderr_socket_);
   GTEST_DEATH_TEST_CHECK_(status >= 0);
-  set_read_fd(status);
+  int stderr_producer_fd = -1;
+  status =
+      fdio_fd_create(stderr_producer_socket.release(), &stderr_producer_fd);
+  GTEST_DEATH_TEST_CHECK_(status >= 0);
 
   
-  fdio_spawn_action_t add_handle_action = {};
-  add_handle_action.action = FDIO_SPAWN_ACTION_ADD_HANDLE;
-  add_handle_action.h.id = PA_HND(type, kFuchsiaReadPipeFd);
-  add_handle_action.h.handle = child_pipe_handle;
+  GTEST_DEATH_TEST_CHECK_(fcntl(stderr_producer_fd, F_SETFL, 0) == 0);
+
+  fdio_spawn_action_t* add_stderr_action = &spawn_actions[1];
+  add_stderr_action->action = FDIO_SPAWN_ACTION_CLONE_FD;
+  add_stderr_action->fd.local_fd = stderr_producer_fd;
+  add_stderr_action->fd.target_fd = STDERR_FILENO;
 
   
-  status = fdio_spawn_etc(ZX_HANDLE_INVALID, FDIO_SPAWN_CLONE_ALL,
-                          args.Argv()[0], args.Argv(), nullptr, 1,
-                          &add_handle_action, &child_process_, nullptr);
+  zx_handle_t child_job = ZX_HANDLE_INVALID;
+  status = zx_job_create(zx_job_default(), 0, & child_job);
+  GTEST_DEATH_TEST_CHECK_(status == ZX_OK);
+  zx_policy_basic_t policy;
+  policy.condition = ZX_POL_NEW_ANY;
+  policy.policy = ZX_POL_ACTION_ALLOW;
+  status = zx_job_set_policy(
+      child_job, ZX_JOB_POL_RELATIVE, ZX_JOB_POL_BASIC, &policy, 1);
   GTEST_DEATH_TEST_CHECK_(status == ZX_OK);
 
   
   
-  status = zx_port_create(0, &port_);
+  status =
+      zx_task_create_exception_channel(
+          child_job, 0, exception_channel_.reset_and_get_address());
   GTEST_DEATH_TEST_CHECK_(status == ZX_OK);
-  status = zx_task_bind_exception_port(
-      child_process_, port_, 0 , 0 );
+
+  
+  status = fdio_spawn_etc(
+      child_job, FDIO_SPAWN_CLONE_ALL, args.Argv()[0], args.Argv(), nullptr,
+      2, spawn_actions, child_process_.reset_and_get_address(), nullptr);
   GTEST_DEATH_TEST_CHECK_(status == ZX_OK);
 
   set_spawned(true);
   return OVERSEE_TEST;
+}
+
+std::string FuchsiaDeathTest::GetErrorLogs() {
+  return captured_stderr_;
 }
 
 #else  
@@ -1000,10 +1072,10 @@ DeathTest::TestRole FuchsiaDeathTest::AssumeRole() {
 
 class ForkingDeathTest : public DeathTestImpl {
  public:
-  ForkingDeathTest(const char* statement, const RE* regex);
+  ForkingDeathTest(const char* statement, Matcher<const std::string&> matcher);
 
   
-  virtual int Wait();
+  int Wait() override;
 
  protected:
   void set_child_pid(pid_t child_pid) { child_pid_ = child_pid; }
@@ -1014,9 +1086,9 @@ class ForkingDeathTest : public DeathTestImpl {
 };
 
 
-ForkingDeathTest::ForkingDeathTest(const char* a_statement, const RE* a_regex)
-    : DeathTestImpl(a_statement, a_regex),
-      child_pid_(-1) {}
+ForkingDeathTest::ForkingDeathTest(const char* a_statement,
+                                   Matcher<const std::string&> matcher)
+    : DeathTestImpl(a_statement, std::move(matcher)), child_pid_(-1) {}
 
 
 
@@ -1037,9 +1109,9 @@ int ForkingDeathTest::Wait() {
 
 class NoExecDeathTest : public ForkingDeathTest {
  public:
-  NoExecDeathTest(const char* a_statement, const RE* a_regex) :
-      ForkingDeathTest(a_statement, a_regex) { }
-  virtual TestRole AssumeRole();
+  NoExecDeathTest(const char* a_statement, Matcher<const std::string&> matcher)
+      : ForkingDeathTest(a_statement, std::move(matcher)) {}
+  TestRole AssumeRole() override;
 };
 
 
@@ -1092,10 +1164,13 @@ DeathTest::TestRole NoExecDeathTest::AssumeRole() {
 
 class ExecDeathTest : public ForkingDeathTest {
  public:
-  ExecDeathTest(const char* a_statement, const RE* a_regex,
-                const char* file, int line) :
-      ForkingDeathTest(a_statement, a_regex), file_(file), line_(line) { }
-  virtual TestRole AssumeRole();
+  ExecDeathTest(const char* a_statement, Matcher<const std::string&> matcher,
+                const char* file, int line)
+      : ForkingDeathTest(a_statement, std::move(matcher)),
+        file_(file),
+        line_(line) {}
+  TestRole AssumeRole() override;
+
  private:
   static ::std::vector<std::string> GetArgvsForDeathTestChildProcess() {
     ::std::vector<std::string> args = GetInjectableArgvs();
@@ -1115,9 +1190,7 @@ class ExecDeathTest : public ForkingDeathTest {
 
 class Arguments {
  public:
-  Arguments() {
-    args_.push_back(NULL);
-  }
+  Arguments() { args_.push_back(nullptr); }
 
   ~Arguments() {
     for (std::vector<char*>::iterator i = args_.begin(); i != args_.end();
@@ -1211,6 +1284,9 @@ static int ExecDeathTestChildMain(void* child_arg) {
 
 static void StackLowerThanAddress(const void* ptr,
                                   bool* result) GTEST_NO_INLINE_;
+
+
+GTEST_ATTRIBUTE_NO_SANITIZE_HWADDRESS_
 static void StackLowerThanAddress(const void* ptr, bool* result) {
   int dummy;
   *result = (&dummy < ptr);
@@ -1218,6 +1294,7 @@ static void StackLowerThanAddress(const void* ptr, bool* result) {
 
 
 GTEST_ATTRIBUTE_NO_SANITIZE_ADDRESS_
+GTEST_ATTRIBUTE_NO_SANITIZE_HWADDRESS_
 static bool StackGrowsDown() {
   int dummy;
   bool result;
@@ -1262,7 +1339,8 @@ static pid_t ExecDeathTestSpawnChild(char* const* argv, int close_fd) {
                                         fd_flags | FD_CLOEXEC));
   struct inheritance inherit = {0};
   
-  child_pid = spawn(args.argv[0], 0, NULL, &inherit, args.argv, GetEnviron());
+  child_pid =
+      spawn(args.argv[0], 0, nullptr, &inherit, args.argv, GetEnviron());
   
   GTEST_DEATH_TEST_CHECK_(fchdir(cwd_fd) != -1);
   GTEST_DEATH_TEST_CHECK_SYSCALL_(close(cwd_fd));
@@ -1286,9 +1364,9 @@ static pid_t ExecDeathTestSpawnChild(char* const* argv, int close_fd) {
 
   if (!use_fork) {
     static const bool stack_grows_down = StackGrowsDown();
-    const size_t stack_size = getpagesize();
+    const auto stack_size = static_cast<size_t>(getpagesize() * 2);
     
-    void* const stack = mmap(NULL, stack_size, PROT_READ | PROT_WRITE,
+    void* const stack = mmap(nullptr, stack_size, PROT_READ | PROT_WRITE,
                              MAP_ANON | MAP_PRIVATE, -1, 0);
     GTEST_DEATH_TEST_CHECK_(stack != MAP_FAILED);
 
@@ -1302,8 +1380,9 @@ static pid_t ExecDeathTestSpawnChild(char* const* argv, int close_fd) {
     void* const stack_top =
         static_cast<char*>(stack) +
             (stack_grows_down ? stack_size - kMaxStackAlignment : 0);
-    GTEST_DEATH_TEST_CHECK_(stack_size > kMaxStackAlignment &&
-        reinterpret_cast<intptr_t>(stack_top) % kMaxStackAlignment == 0);
+    GTEST_DEATH_TEST_CHECK_(
+        static_cast<size_t>(stack_size) > kMaxStackAlignment &&
+        reinterpret_cast<uintptr_t>(stack_top) % kMaxStackAlignment == 0);
 
     child_pid = clone(&ExecDeathTestChildMain, stack_top, SIGCHLD, &args);
 
@@ -1320,7 +1399,7 @@ static pid_t ExecDeathTestSpawnChild(char* const* argv, int close_fd) {
 #  endif  
 #  if GTEST_OS_LINUX
   GTEST_DEATH_TEST_CHECK_SYSCALL_(
-      sigaction(SIGPROF, &saved_sigprof_action, NULL));
+      sigaction(SIGPROF, &saved_sigprof_action, nullptr));
 #  endif  
 
   GTEST_DEATH_TEST_CHECK_(child_pid != -1);
@@ -1338,7 +1417,7 @@ DeathTest::TestRole ExecDeathTest::AssumeRole() {
   const TestInfo* const info = impl->current_test_info();
   const int death_test_index = info->result()->death_test_count();
 
-  if (flag != NULL) {
+  if (flag != nullptr) {
     set_write_fd(flag->write_fd());
     return EXECUTE_TEST;
   }
@@ -1349,9 +1428,9 @@ DeathTest::TestRole ExecDeathTest::AssumeRole() {
   
   GTEST_DEATH_TEST_CHECK_(fcntl(pipe_fd[1], F_SETFD, 0) != -1);
 
-  const std::string filter_flag =
-      std::string("--") + GTEST_FLAG_PREFIX_ + kFilterFlag + "="
-      + info->test_case_name() + "." + info->name();
+  const std::string filter_flag = std::string("--") + GTEST_FLAG_PREFIX_ +
+                                  kFilterFlag + "=" + info->test_suite_name() +
+                                  "." + info->name();
   const std::string internal_flag =
       std::string("--") + GTEST_FLAG_PREFIX_ + kInternalRunDeathTestFlag + "="
       + file_ + "|" + StreamableToString(line_) + "|"
@@ -1384,7 +1463,8 @@ DeathTest::TestRole ExecDeathTest::AssumeRole() {
 
 
 
-bool DefaultDeathTestFactory::Create(const char* statement, const RE* regex,
+bool DefaultDeathTestFactory::Create(const char* statement,
+                                     Matcher<const std::string&> matcher,
                                      const char* file, int line,
                                      DeathTest** test) {
   UnitTestImpl* const impl = GetUnitTestImpl();
@@ -1393,7 +1473,7 @@ bool DefaultDeathTestFactory::Create(const char* statement, const RE* regex,
   const int death_test_index = impl->current_test_info()
       ->increment_death_test_count();
 
-  if (flag != NULL) {
+  if (flag != nullptr) {
     if (death_test_index > flag->index()) {
       DeathTest::set_last_death_test_message(
           "Death test count (" + StreamableToString(death_test_index)
@@ -1404,7 +1484,7 @@ bool DefaultDeathTestFactory::Create(const char* statement, const RE* regex,
 
     if (!(flag->file() == file && flag->line() == line &&
           flag->index() == death_test_index)) {
-      *test = NULL;
+      *test = nullptr;
       return true;
     }
   }
@@ -1413,22 +1493,22 @@ bool DefaultDeathTestFactory::Create(const char* statement, const RE* regex,
 
   if (GTEST_FLAG(death_test_style) == "threadsafe" ||
       GTEST_FLAG(death_test_style) == "fast") {
-    *test = new WindowsDeathTest(statement, regex, file, line);
+    *test = new WindowsDeathTest(statement, std::move(matcher), file, line);
   }
 
 # elif GTEST_OS_FUCHSIA
 
   if (GTEST_FLAG(death_test_style) == "threadsafe" ||
       GTEST_FLAG(death_test_style) == "fast") {
-    *test = new FuchsiaDeathTest(statement, regex, file, line);
+    *test = new FuchsiaDeathTest(statement, std::move(matcher), file, line);
   }
 
 # else
 
   if (GTEST_FLAG(death_test_style) == "threadsafe") {
-    *test = new ExecDeathTest(statement, regex, file, line);
+    *test = new ExecDeathTest(statement, std::move(matcher), file, line);
   } else if (GTEST_FLAG(death_test_style) == "fast") {
-    *test = new NoExecDeathTest(statement, regex);
+    *test = new NoExecDeathTest(statement, std::move(matcher));
   }
 
 # endif  
@@ -1458,8 +1538,6 @@ static int GetStatusFileDescriptor(unsigned int parent_process_id,
                    StreamableToString(parent_process_id));
   }
 
-  
-  
   GTEST_CHECK_(sizeof(HANDLE) <= sizeof(size_t));
 
   const HANDLE write_handle =
@@ -1515,7 +1593,7 @@ static int GetStatusFileDescriptor(unsigned int parent_process_id,
 
 
 InternalRunDeathTestFlag* ParseInternalRunDeathTestFlag() {
-  if (GTEST_FLAG(internal_run_death_test) == "") return NULL;
+  if (GTEST_FLAG(internal_run_death_test) == "") return nullptr;
 
   
   
@@ -1570,6 +1648,6 @@ InternalRunDeathTestFlag* ParseInternalRunDeathTestFlag() {
 
 }  
 
-#endif  
+#endif
 
 }  

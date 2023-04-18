@@ -349,8 +349,12 @@ static void calc_iframe_target_size(VP8_COMP *cpi) {
   }
 
   if (cpi->oxcf.rc_max_intra_bitrate_pct) {
-    unsigned int max_rate =
-        cpi->per_frame_bandwidth * cpi->oxcf.rc_max_intra_bitrate_pct / 100;
+    unsigned int max_rate;
+    
+    uint64_t product = cpi->per_frame_bandwidth;
+    product *= cpi->oxcf.rc_max_intra_bitrate_pct;
+    product /= 100;
+    max_rate = (unsigned int)VPXMIN(INT_MAX, product);
 
     if (target > max_rate) target = max_rate;
   }
@@ -1375,14 +1379,17 @@ void vp8_compute_frame_size_bounds(VP8_COMP *cpi, int *frame_under_shoot_limit,
     *frame_under_shoot_limit = 0;
     *frame_over_shoot_limit = INT_MAX;
   } else {
+    const int64_t this_frame_target = cpi->this_frame_target;
+    int64_t over_shoot_limit, under_shoot_limit;
+
     if (cpi->common.frame_type == KEY_FRAME) {
-      *frame_over_shoot_limit = cpi->this_frame_target * 9 / 8;
-      *frame_under_shoot_limit = cpi->this_frame_target * 7 / 8;
+      over_shoot_limit = this_frame_target * 9 / 8;
+      under_shoot_limit = this_frame_target * 7 / 8;
     } else {
       if (cpi->oxcf.number_of_layers > 1 || cpi->common.refresh_alt_ref_frame ||
           cpi->common.refresh_golden_frame) {
-        *frame_over_shoot_limit = cpi->this_frame_target * 9 / 8;
-        *frame_under_shoot_limit = cpi->this_frame_target * 7 / 8;
+        over_shoot_limit = this_frame_target * 9 / 8;
+        under_shoot_limit = this_frame_target * 7 / 8;
       } else {
         
         if (cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
@@ -1392,18 +1399,18 @@ void vp8_compute_frame_size_bounds(VP8_COMP *cpi, int *frame_under_shoot_limit,
             
 
 
-            *frame_over_shoot_limit = cpi->this_frame_target * 12 / 8;
-            *frame_under_shoot_limit = cpi->this_frame_target * 6 / 8;
+            over_shoot_limit = this_frame_target * 12 / 8;
+            under_shoot_limit = this_frame_target * 6 / 8;
           } else if (cpi->buffer_level <=
                      (cpi->oxcf.optimal_buffer_level >> 1)) {
             
 
 
-            *frame_over_shoot_limit = cpi->this_frame_target * 10 / 8;
-            *frame_under_shoot_limit = cpi->this_frame_target * 4 / 8;
+            over_shoot_limit = this_frame_target * 10 / 8;
+            under_shoot_limit = this_frame_target * 4 / 8;
           } else {
-            *frame_over_shoot_limit = cpi->this_frame_target * 11 / 8;
-            *frame_under_shoot_limit = cpi->this_frame_target * 5 / 8;
+            over_shoot_limit = this_frame_target * 11 / 8;
+            under_shoot_limit = this_frame_target * 5 / 8;
           }
         }
         
@@ -1413,11 +1420,11 @@ void vp8_compute_frame_size_bounds(VP8_COMP *cpi, int *frame_under_shoot_limit,
         else {
           
           if (cpi->oxcf.end_usage == USAGE_CONSTRAINED_QUALITY) {
-            *frame_over_shoot_limit = cpi->this_frame_target * 11 / 8;
-            *frame_under_shoot_limit = cpi->this_frame_target * 2 / 8;
+            over_shoot_limit = this_frame_target * 11 / 8;
+            under_shoot_limit = this_frame_target * 2 / 8;
           } else {
-            *frame_over_shoot_limit = cpi->this_frame_target * 11 / 8;
-            *frame_under_shoot_limit = cpi->this_frame_target * 5 / 8;
+            over_shoot_limit = this_frame_target * 11 / 8;
+            under_shoot_limit = this_frame_target * 5 / 8;
           }
         }
       }
@@ -1427,9 +1434,13 @@ void vp8_compute_frame_size_bounds(VP8_COMP *cpi, int *frame_under_shoot_limit,
 
 
 
-    *frame_over_shoot_limit += 200;
-    *frame_under_shoot_limit -= 200;
-    if (*frame_under_shoot_limit < 0) *frame_under_shoot_limit = 0;
+    over_shoot_limit += 200;
+    under_shoot_limit -= 200;
+    if (under_shoot_limit < 0) under_shoot_limit = 0;
+    if (under_shoot_limit > INT_MAX) under_shoot_limit = INT_MAX;
+    if (over_shoot_limit > INT_MAX) over_shoot_limit = INT_MAX;
+    *frame_under_shoot_limit = (int)under_shoot_limit;
+    *frame_over_shoot_limit = (int)over_shoot_limit;
   }
 }
 

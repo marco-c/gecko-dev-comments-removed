@@ -101,6 +101,13 @@ typedef enum {
   THR_INTRA,
 } THR_MODES_SUB8X8;
 
+typedef struct {
+  
+  double rd_mult_inter_qp_fac;
+  double rd_mult_arf_qp_fac;
+  double rd_mult_key_qp_fac;
+} RD_CONTROL;
+
 typedef struct RD_OPT {
   
   
@@ -114,11 +121,11 @@ typedef struct RD_OPT {
   int64_t prediction_type_threshes[MAX_REF_FRAMES][REFERENCE_MODES];
 
   int64_t filter_threshes[MAX_REF_FRAMES][SWITCHABLE_FILTER_CONTEXTS];
-#if CONFIG_CONSISTENT_RECODE
+#if CONFIG_CONSISTENT_RECODE || CONFIG_RATE_CTRL
   int64_t prediction_type_threshes_prev[MAX_REF_FRAMES][REFERENCE_MODES];
 
   int64_t filter_threshes_prev[MAX_REF_FRAMES][SWITCHABLE_FILTER_CONTEXTS];
-#endif
+#endif  
   int RDMULT;
   int RDDIV;
   double r0;
@@ -143,6 +150,8 @@ struct TileInfo;
 struct TileDataEnc;
 struct VP9_COMP;
 struct macroblock;
+
+void vp9_init_rd_parameters(struct VP9_COMP *cpi);
 
 int vp9_compute_rd_mult_based_on_qindex(const struct VP9_COMP *cpi, int qindex);
 

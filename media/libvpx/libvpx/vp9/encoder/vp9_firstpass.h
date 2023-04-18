@@ -21,27 +21,6 @@
 extern "C" {
 #endif
 
-#if CONFIG_FP_MB_STATS
-
-#define FPMB_DCINTRA_MASK 0x01
-
-#define FPMB_MOTION_ZERO_MASK 0x02
-#define FPMB_MOTION_LEFT_MASK 0x04
-#define FPMB_MOTION_RIGHT_MASK 0x08
-#define FPMB_MOTION_UP_MASK 0x10
-#define FPMB_MOTION_DOWN_MASK 0x20
-
-#define FPMB_ERROR_SMALL_MASK 0x40
-#define FPMB_ERROR_LARGE_MASK 0x80
-#define FPMB_ERROR_SMALL_TH 2000
-#define FPMB_ERROR_LARGE_TH 48000
-
-typedef struct {
-  uint8_t *mb_stats_start;
-  uint8_t *mb_stats_end;
-} FIRSTPASS_MB_STATS;
-#endif
-
 #define INVALID_ROW (-1)
 
 #define MAX_ARF_LAYERS 6
@@ -188,12 +167,6 @@ typedef struct {
   double mb_av_energy;
   double mb_smooth_pct;
 
-#if CONFIG_FP_MB_STATS
-  uint8_t *frame_mb_stats_buf;
-  uint8_t *this_frame_mb_stats;
-  FIRSTPASS_MB_STATS firstpass_mb_stats;
-#endif
-
   FP_MB_FLOAT_STATS *fp_mb_float_stats;
 
   
@@ -221,6 +194,24 @@ typedef struct {
   int last_qindex_of_arf_layer[MAX_ARF_LAYERS];
 
   GF_GROUP gf_group;
+
+  
+  
+  
+  
+  int use_vizier_rc_params;
+  double active_wq_factor;
+  double err_per_mb;
+  double sr_default_decay_limit;
+  double sr_diff_factor;
+  double kf_err_per_mb;
+  double kf_frame_min_boost;
+  double kf_frame_max_boost_first;  
+  double kf_frame_max_boost_subs;   
+  double kf_max_total_boost;
+  double gf_max_total_boost;
+  double gf_frame_max_boost;
+  double zm_factor;
 } TWO_PASS;
 
 struct VP9_COMP;
@@ -239,6 +230,7 @@ void vp9_first_pass_encode_tile_mb_row(struct VP9_COMP *cpi,
 
 void vp9_init_second_pass(struct VP9_COMP *cpi);
 void vp9_rc_get_second_pass_params(struct VP9_COMP *cpi);
+void vp9_init_vizier_params(TWO_PASS *const twopass, int screen_area);
 
 
 void vp9_twopass_postencode_update(struct VP9_COMP *cpi);
@@ -248,18 +240,59 @@ void calculate_coded_size(struct VP9_COMP *cpi, int *scaled_frame_width,
 
 struct VP9EncoderConfig;
 int vp9_get_frames_to_next_key(const struct VP9EncoderConfig *oxcf,
-                               const FRAME_INFO *frame_info,
-                               const FIRST_PASS_INFO *first_pass_info,
-                               int kf_show_idx, int min_gf_interval);
+                               const TWO_PASS *const twopass, int kf_show_idx,
+                               int min_gf_interval);
 #if CONFIG_RATE_CTRL
-int vp9_get_coding_frame_num(const struct VP9EncoderConfig *oxcf,
-                             const FRAME_INFO *frame_info,
-                             const FIRST_PASS_INFO *first_pass_info,
-                             int multi_layer_arf, int allow_alt_ref);
-#endif
 
-FIRSTPASS_STATS vp9_get_frame_stats(const TWO_PASS *two_pass);
-FIRSTPASS_STATS vp9_get_total_stats(const TWO_PASS *two_pass);
+
+
+
+
+void vp9_get_next_group_of_picture(const struct VP9_COMP *cpi,
+                                   int *first_is_key_frame, int *use_alt_ref,
+                                   int *coding_frame_count, int *first_show_idx,
+                                   int *last_gop_use_alt_ref);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int vp9_get_gop_coding_frame_count(const struct VP9EncoderConfig *oxcf,
+                                   const TWO_PASS *const twopass,
+                                   const FRAME_INFO *frame_info,
+                                   const RATE_CONTROL *rc, int show_idx,
+                                   int multi_layer_arf, int allow_alt_ref,
+                                   int first_is_key_frame,
+                                   int last_gop_use_alt_ref, int *use_alt_ref);
+
+int vp9_get_coding_frame_num(const struct VP9EncoderConfig *oxcf,
+                             const TWO_PASS *const twopass,
+                             const FRAME_INFO *frame_info, int multi_layer_arf,
+                             int allow_alt_ref);
+
+
+
+
+
+
+void vp9_get_key_frame_map(const struct VP9EncoderConfig *oxcf,
+                           const TWO_PASS *const twopass, int *key_frame_map);
+#endif  
+
+FIRSTPASS_STATS vp9_get_frame_stats(const TWO_PASS *twopass);
+FIRSTPASS_STATS vp9_get_total_stats(const TWO_PASS *twopass);
 
 #ifdef __cplusplus
 }  

@@ -24,15 +24,15 @@ class RealtimeTest
       public ::libvpx_test::CodecTestWithParam<libvpx_test::TestMode> {
  protected:
   RealtimeTest() : EncoderTest(GET_PARAM(0)), frame_packets_(0) {}
-  virtual ~RealtimeTest() {}
+  ~RealtimeTest() override {}
 
-  virtual void SetUp() {
+  void SetUp() override {
     InitializeConfig();
     cfg_.g_lag_in_frames = 0;
     SetMode(::libvpx_test::kRealTime);
   }
 
-  virtual void BeginPassHook(unsigned int ) {
+  void BeginPassHook(unsigned int ) override {
     
     
     
@@ -40,7 +40,15 @@ class RealtimeTest
     
     cfg_.g_pass = VPX_RC_FIRST_PASS;
   }
-  virtual void FramePktHook(const vpx_codec_cx_pkt_t * ) {
+
+  void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
+                          ::libvpx_test::Encoder *encoder) override {
+    if (video->frame() == 0) {
+      encoder->Control(VP8E_SET_CPUUSED, 8);
+    }
+  }
+
+  void FramePktHook(const vpx_codec_cx_pkt_t * ) override {
     frame_packets_++;
   }
 
@@ -55,9 +63,17 @@ TEST_P(RealtimeTest, RealtimeFirstPassProducesFrames) {
   EXPECT_EQ(kFramesToEncode, frame_packets_);
 }
 
-VP8_INSTANTIATE_TEST_CASE(RealtimeTest,
-                          ::testing::Values(::libvpx_test::kRealTime));
-VP9_INSTANTIATE_TEST_CASE(RealtimeTest,
-                          ::testing::Values(::libvpx_test::kRealTime));
+TEST_P(RealtimeTest, IntegerOverflow) {
+  ::libvpx_test::RandomVideoSource video;
+  video.SetSize(800, 480);
+  video.set_limit(20);
+  cfg_.rc_target_bitrate = 140000000;
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+}
+
+VP8_INSTANTIATE_TEST_SUITE(RealtimeTest,
+                           ::testing::Values(::libvpx_test::kRealTime));
+VP9_INSTANTIATE_TEST_SUITE(RealtimeTest,
+                           ::testing::Values(::libvpx_test::kRealTime));
 
 }  

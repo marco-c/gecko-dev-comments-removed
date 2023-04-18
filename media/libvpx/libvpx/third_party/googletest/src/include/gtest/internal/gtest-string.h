@@ -47,6 +47,7 @@
 #endif
 
 #include <string.h>
+#include <cstdint>
 #include <string>
 
 #include "gtest/internal/gtest-port.h"
@@ -94,6 +95,7 @@ class GTEST_API_ String {
   static const char* Utf16ToAnsi(LPCWSTR utf16_str);
 #endif
 
+  
   
   
   
@@ -149,6 +151,9 @@ class GTEST_API_ String {
 
   
   static std::string FormatHexInt(int value);
+
+  
+  static std::string FormatHexUInt32(uint32_t value);
 
   
   static std::string FormatByte(unsigned char value);

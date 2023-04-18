@@ -72,14 +72,15 @@ class GTEST_API_ ScopedFakeTestPartResultReporter
                                    TestPartResultArray* result);
 
   
-  virtual ~ScopedFakeTestPartResultReporter();
+  ~ScopedFakeTestPartResultReporter() override;
 
   
   
   
   
   
-  virtual void ReportTestPartResult(const TestPartResult& result);
+  void ReportTestPartResult(const TestPartResult& result) override;
+
  private:
   void Init();
 
@@ -234,4 +235,4 @@ GTEST_DISABLE_MSC_WARNINGS_POP_()
     }\
   } while (::testing::internal::AlwaysFalse())
 
-#endif
+#endif  

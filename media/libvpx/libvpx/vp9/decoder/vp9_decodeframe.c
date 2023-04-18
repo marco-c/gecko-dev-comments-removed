@@ -1300,7 +1300,6 @@ static void setup_token_decoder(const uint8_t *data, const uint8_t *data_end,
                                 void *decrypt_state) {
   
   
-  
   if (!read_is_valid(data, read_size, data_end))
     vpx_internal_error(error_info, VPX_CODEC_CORRUPT_FRAME,
                        "Truncated packet or corrupt tile length");

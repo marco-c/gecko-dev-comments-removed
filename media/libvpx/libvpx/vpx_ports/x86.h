@@ -166,7 +166,7 @@ static INLINE uint64_t xgetbv(void) {
 
 static INLINE int x86_simd_caps(void) {
   unsigned int flags = 0;
-  unsigned int mask = ~0;
+  unsigned int mask = ~0u;
   unsigned int max_cpuid_val, reg_eax, reg_ebx, reg_ecx, reg_edx;
   char *env;
   (void)reg_ebx;
@@ -222,6 +222,8 @@ static INLINE int x86_simd_caps(void) {
       }
     }
   }
+
+  (void)reg_eax;  
 
   return flags & mask;
 }
@@ -306,14 +308,26 @@ static INLINE unsigned int x86_readtscp(void) {
 
 static INLINE unsigned int x86_tsc_start(void) {
   unsigned int reg_eax, reg_ebx, reg_ecx, reg_edx;
+  
   cpuid(0, 0, reg_eax, reg_ebx, reg_ecx, reg_edx);
+  
+  (void)reg_eax;
+  (void)reg_ebx;
+  (void)reg_ecx;
+  (void)reg_edx;
   return x86_readtsc();
 }
 
 static INLINE unsigned int x86_tsc_end(void) {
   uint32_t v = x86_readtscp();
   unsigned int reg_eax, reg_ebx, reg_ecx, reg_edx;
+  
   cpuid(0, 0, reg_eax, reg_ebx, reg_ecx, reg_edx);
+  
+  (void)reg_eax;
+  (void)reg_ebx;
+  (void)reg_ecx;
+  (void)reg_edx;
   return v;
 }
 

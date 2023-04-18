@@ -59,17 +59,16 @@ extern "C" {
 
 #define VPX_CODEC_CAP_INPUT_FRAGMENTS 0x100000
 
-
-
-
-
-
-
-
-
 #define VPX_CODEC_CAP_FRAME_THREADING 0x200000
 
 #define VPX_CODEC_CAP_EXTERNAL_FRAME_BUFFER 0x400000
+
+
+
+
+
+
+
 
 #define VPX_CODEC_USE_POSTPROC 0x10000 /**< Postprocess decoded frame */
 
@@ -248,9 +247,9 @@ vpx_image_t *vpx_codec_get_frame(vpx_codec_ctx_t *ctx, vpx_codec_iter_t *iter);
 
 
 
-
 typedef void (*vpx_codec_put_frame_cb_fn_t)(void *user_priv,
                                             const vpx_image_t *img);
+
 
 
 
@@ -270,7 +269,6 @@ typedef void (*vpx_codec_put_frame_cb_fn_t)(void *user_priv,
 vpx_codec_err_t vpx_codec_register_put_frame_cb(vpx_codec_ctx_t *ctx,
                                                 vpx_codec_put_frame_cb_fn_t cb,
                                                 void *user_priv);
-
 
 
 
@@ -308,9 +306,11 @@ typedef void (*vpx_codec_put_slice_cb_fn_t)(void *user_priv,
 
 
 
+
 vpx_codec_err_t vpx_codec_register_put_slice_cb(vpx_codec_ctx_t *ctx,
                                                 vpx_codec_put_slice_cb_fn_t cb,
                                                 void *user_priv);
+
 
 
 

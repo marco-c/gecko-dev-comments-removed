@@ -64,6 +64,12 @@ typedef struct {
 
 typedef int8_t MV_REFERENCE_FRAME;
 
+static INLINE int mv_ref_frame_to_inter_ref_idx(
+    MV_REFERENCE_FRAME mv_ref_frame) {
+  assert(mv_ref_frame >= LAST_FRAME && mv_ref_frame < MAX_REF_FRAMES);
+  return mv_ref_frame - 1;
+}
+
 
 typedef struct MODE_INFO {
   

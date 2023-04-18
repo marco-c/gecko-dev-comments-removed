@@ -661,6 +661,17 @@ void vpx_highbd_lpf_vertical_8_dual_neon(
   vpx_highbd_lpf_vertical_8_neon(s + 8 * p, p, blimit1, limit1, thresh1, bd);
 }
 
+
+
+
+
+
+
+#if defined(__GNUC__) && __GNUC__ >= 4 && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 static void lpf_horizontal_16_kernel(uint16_t *s, int p,
                                      const uint16x8_t blimit_vec,
                                      const uint16x8_t limit_vec,
@@ -722,6 +733,10 @@ static void lpf_vertical_16_kernel(uint16_t *s, int p,
     store_4x8(s - 2, p, op1, op0, oq0, oq1);
   }
 }
+
+#if defined(__GNUC__) && __GNUC__ >= 4 && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 void vpx_highbd_lpf_horizontal_16_neon(uint16_t *s, int p,
                                        const uint8_t *blimit,

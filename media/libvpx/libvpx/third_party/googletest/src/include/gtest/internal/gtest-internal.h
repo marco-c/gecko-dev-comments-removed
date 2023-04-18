@@ -53,11 +53,13 @@
 #include <ctype.h>
 #include <float.h>
 #include <string.h>
+#include <cstdint>
 #include <iomanip>
 #include <limits>
 #include <map>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "gtest/gtest-message.h"
@@ -77,9 +79,17 @@
 #define GTEST_CONCAT_TOKEN_IMPL_(foo, bar) foo ## bar
 
 
-#define GTEST_STRINGIFY_(name) #name
 
-class ProtocolMessage;
+
+
+
+
+
+
+
+#define GTEST_STRINGIFY_HELPER_(name, ...) #name
+#define GTEST_STRINGIFY_(...) GTEST_STRINGIFY_HELPER_(__VA_ARGS__, )
+
 namespace proto2 { class Message; }
 
 namespace testing {
@@ -107,33 +117,21 @@ class UnitTestImpl;
 GTEST_API_ extern const char kStackTraceMarker[];
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-char IsNullLiteralHelper(Secret* p);
-char (&IsNullLiteralHelper(...))[2];  
-
-
-
-
-#ifdef GTEST_ELLIPSIS_NEEDS_POD_
-
-
-# define GTEST_IS_NULL_LITERAL_(x) false
-#else
-# define GTEST_IS_NULL_LITERAL_(x) \
-    (sizeof(::testing::internal::IsNullLiteralHelper(x)) == 1)
-#endif  
+class IgnoredValue {
+  struct Sink {};
+ public:
+  
+  
+  
+  
+  
+  
+  
+  template <typename T,
+            typename std::enable_if<!std::is_convertible<T, Sink>::value,
+                                    int>::type = 0>
+  IgnoredValue(const T& ) {}  
+};
 
 
 GTEST_API_ std::string AppendUserMessage(
@@ -469,7 +467,7 @@ class TestFactoryBase {
 template <class TestClass>
 class TestFactoryImpl : public TestFactoryBase {
  public:
-  virtual Test* CreateTest() { return new TestClass; }
+  Test* CreateTest() override { return new TestClass; }
 };
 
 #if GTEST_OS_WINDOWS
@@ -486,8 +484,8 @@ GTEST_API_ AssertionResult IsHRESULTFailure(const char* expr,
 #endif  
 
 
-typedef void (*SetUpTestCaseFunc)();
-typedef void (*TearDownTestCaseFunc)();
+using SetUpTestSuiteFunc = void (*)();
+using TearDownTestSuiteFunc = void (*)();
 
 struct CodeLocation {
   CodeLocation(const std::string& a_file, int a_line)
@@ -495,6 +493,58 @@ struct CodeLocation {
 
   std::string file;
   int line;
+};
+
+
+
+
+
+using SetUpTearDownSuiteFuncType = void (*)();
+
+inline SetUpTearDownSuiteFuncType GetNotDefaultOrNull(
+    SetUpTearDownSuiteFuncType a, SetUpTearDownSuiteFuncType def) {
+  return a == def ? nullptr : a;
+}
+
+template <typename T>
+
+
+
+struct SuiteApiResolver : T {
+  
+  
+  using Test =
+      typename std::conditional<sizeof(T) != 0, ::testing::Test, void>::type;
+
+  static SetUpTearDownSuiteFuncType GetSetUpCaseOrSuite(const char* filename,
+                                                        int line_num) {
+    SetUpTearDownSuiteFuncType test_case_fp =
+        GetNotDefaultOrNull(&T::SetUpTestCase, &Test::SetUpTestCase);
+    SetUpTearDownSuiteFuncType test_suite_fp =
+        GetNotDefaultOrNull(&T::SetUpTestSuite, &Test::SetUpTestSuite);
+
+    GTEST_CHECK_(!test_case_fp || !test_suite_fp)
+        << "Test can not provide both SetUpTestSuite and SetUpTestCase, please "
+           "make sure there is only one present at "
+        << filename << ":" << line_num;
+
+    return test_case_fp != nullptr ? test_case_fp : test_suite_fp;
+  }
+
+  static SetUpTearDownSuiteFuncType GetTearDownCaseOrSuite(const char* filename,
+                                                           int line_num) {
+    SetUpTearDownSuiteFuncType test_case_fp =
+        GetNotDefaultOrNull(&T::TearDownTestCase, &Test::TearDownTestCase);
+    SetUpTearDownSuiteFuncType test_suite_fp =
+        GetNotDefaultOrNull(&T::TearDownTestSuite, &Test::TearDownTestSuite);
+
+    GTEST_CHECK_(!test_case_fp || !test_suite_fp)
+        << "Test can not provide both TearDownTestSuite and TearDownTestCase,"
+           " please make sure there is only one present at"
+        << filename << ":" << line_num;
+
+    return test_case_fp != nullptr ? test_case_fp : test_suite_fp;
+  }
 };
 
 
@@ -516,15 +566,10 @@ struct CodeLocation {
 
 
 GTEST_API_ TestInfo* MakeAndRegisterTestInfo(
-    const char* test_case_name,
-    const char* name,
-    const char* type_param,
-    const char* value_param,
-    CodeLocation code_location,
-    TypeId fixture_class_id,
-    SetUpTestCaseFunc set_up_tc,
-    TearDownTestCaseFunc tear_down_tc,
-    TestFactoryBase* factory);
+    const char* test_suite_name, const char* name, const char* type_param,
+    const char* value_param, CodeLocation code_location,
+    TypeId fixture_class_id, SetUpTestSuiteFunc set_up_tc,
+    TearDownTestSuiteFunc tear_down_tc, TestFactoryBase* factory);
 
 
 
@@ -537,9 +582,9 @@ GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 )
 
 
-class GTEST_API_ TypedTestCasePState {
+class GTEST_API_ TypedTestSuitePState {
  public:
-  TypedTestCasePState() : registered_(false) {}
+  TypedTestSuitePState() : registered_(false) {}
 
   
   
@@ -547,8 +592,9 @@ class GTEST_API_ TypedTestCasePState {
   bool AddTestName(const char* file, int line, const char* case_name,
                    const char* test_name) {
     if (registered_) {
-      fprintf(stderr, "%s Test %s must be defined before "
-              "REGISTER_TYPED_TEST_CASE_P(%s, ...).\n",
+      fprintf(stderr,
+              "%s Test %s must be defined before "
+              "REGISTER_TYPED_TEST_SUITE_P(%s, ...).\n",
               FormatFileLocation(file, line).c_str(), test_name, case_name);
       fflush(stderr);
       posix::Abort();
@@ -571,8 +617,9 @@ class GTEST_API_ TypedTestCasePState {
   
   
   
-  const char* VerifyRegisteredTestNames(
-      const char* file, int line, const char* registered_tests);
+  const char* VerifyRegisteredTestNames(const char* test_suite_name,
+                                        const char* file, int line,
+                                        const char* registered_tests);
 
  private:
   typedef ::std::map<std::string, CodeLocation> RegisteredTestsMap;
@@ -581,14 +628,19 @@ class GTEST_API_ TypedTestCasePState {
   RegisteredTestsMap registered_tests_;
 };
 
+
+#ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_
+using TypedTestCasePState = TypedTestSuitePState;
+#endif  
+
 GTEST_DISABLE_MSC_WARNINGS_POP_()  
 
 
 
 inline const char* SkipComma(const char* str) {
   const char* comma = strchr(str, ',');
-  if (comma == NULL) {
-    return NULL;
+  if (comma == nullptr) {
+    return nullptr;
   }
   while (IsSpace(*(++comma))) {}
   return comma;
@@ -598,7 +650,7 @@ inline const char* SkipComma(const char* str) {
 
 inline std::string GetPrefixUntilComma(const char* str) {
   const char* comma = strchr(str, ',');
-  return comma == NULL ? str : std::string(str, comma);
+  return comma == nullptr ? str : std::string(str, comma);
 }
 
 
@@ -621,7 +673,7 @@ struct NameGeneratorSelector {
 };
 
 template <typename NameGenerator>
-void GenerateNamesRecursively(Types0, std::vector<std::string>*, int) {}
+void GenerateNamesRecursively(internal::None, std::vector<std::string>*, int) {}
 
 template <typename NameGenerator, typename Types>
 void GenerateNamesRecursively(Types, std::vector<std::string>* result, int i) {
@@ -663,13 +715,17 @@ class TypeParameterizedTest {
     
     MakeAndRegisterTestInfo(
         (std::string(prefix) + (prefix[0] == '\0' ? "" : "/") + case_name +
-         "/" + type_names[index])
+         "/" + type_names[static_cast<size_t>(index)])
             .c_str(),
         StripTrailingSpaces(GetPrefixUntilComma(test_names)).c_str(),
         GetTypeName<Type>().c_str(),
-        NULL,  
-        code_location, GetTypeId<FixtureClass>(), TestClass::SetUpTestCase,
-        TestClass::TearDownTestCase, new TestFactoryImpl<TestClass>);
+        nullptr,  
+        code_location, GetTypeId<FixtureClass>(),
+        SuiteApiResolver<TestClass>::GetSetUpCaseOrSuite(
+            code_location.file.c_str(), code_location.line),
+        SuiteApiResolver<TestClass>::GetTearDownCaseOrSuite(
+            code_location.file.c_str(), code_location.line),
+        new TestFactoryImpl<TestClass>);
 
     
     return TypeParameterizedTest<Fixture, TestSel,
@@ -684,7 +740,7 @@ class TypeParameterizedTest {
 
 
 template <GTEST_TEMPLATE_ Fixture, class TestSel>
-class TypeParameterizedTest<Fixture, TestSel, Types0> {
+class TypeParameterizedTest<Fixture, TestSel, internal::None> {
  public:
   static bool Register(const char* , const CodeLocation&,
                        const char* , const char* ,
@@ -695,18 +751,24 @@ class TypeParameterizedTest<Fixture, TestSel, Types0> {
   }
 };
 
+GTEST_API_ void RegisterTypeParameterizedTestSuite(const char* test_suite_name,
+                                                   CodeLocation code_location);
+GTEST_API_ void RegisterTypeParameterizedTestSuiteInstantiation(
+    const char* case_name);
+
 
 
 
 
 template <GTEST_TEMPLATE_ Fixture, typename Tests, typename Types>
-class TypeParameterizedTestCase {
+class TypeParameterizedTestSuite {
  public:
   static bool Register(const char* prefix, CodeLocation code_location,
-                       const TypedTestCasePState* state, const char* case_name,
+                       const TypedTestSuitePState* state, const char* case_name,
                        const char* test_names,
                        const std::vector<std::string>& type_names =
                            GenerateNames<DefaultNameGenerator, Types>()) {
+    RegisterTypeParameterizedTestSuiteInstantiation(case_name);
     std::string test_name = StripTrailingSpaces(
         GetPrefixUntilComma(test_names));
     if (!state->TestExists(test_name)) {
@@ -726,20 +788,20 @@ class TypeParameterizedTestCase {
         prefix, test_location, case_name, test_names, 0, type_names);
 
     
-    return TypeParameterizedTestCase<Fixture, typename Tests::Tail,
-                                     Types>::Register(prefix, code_location,
-                                                      state, case_name,
-                                                      SkipComma(test_names),
-                                                      type_names);
+    return TypeParameterizedTestSuite<Fixture, typename Tests::Tail,
+                                      Types>::Register(prefix, code_location,
+                                                       state, case_name,
+                                                       SkipComma(test_names),
+                                                       type_names);
   }
 };
 
 
 template <GTEST_TEMPLATE_ Fixture, typename Types>
-class TypeParameterizedTestCase<Fixture, Templates0, Types> {
+class TypeParameterizedTestSuite<Fixture, internal::None, Types> {
  public:
   static bool Register(const char* , const CodeLocation&,
-                       const TypedTestCasePState* ,
+                       const TypedTestSuitePState* ,
                        const char* , const char* ,
                        const std::vector<std::string>& =
                            std::vector<std::string>() ) {
@@ -782,140 +844,45 @@ struct GTEST_API_ ConstCharPtr {
 
 
 
+struct TrueWithString {
+  TrueWithString() = default;
+  explicit TrueWithString(const char* str) : value(str) {}
+  explicit TrueWithString(const std::string& str) : value(str) {}
+  explicit operator bool() const { return true; }
+  std::string value;
+};
+
+
+
 
 
 
 class GTEST_API_ Random {
  public:
-  static const UInt32 kMaxRange = 1u << 31;
+  static const uint32_t kMaxRange = 1u << 31;
 
-  explicit Random(UInt32 seed) : state_(seed) {}
+  explicit Random(uint32_t seed) : state_(seed) {}
 
-  void Reseed(UInt32 seed) { state_ = seed; }
+  void Reseed(uint32_t seed) { state_ = seed; }
 
   
   
-  UInt32 Generate(UInt32 range);
+  uint32_t Generate(uint32_t range);
 
  private:
-  UInt32 state_;
+  uint32_t state_;
   GTEST_DISALLOW_COPY_AND_ASSIGN_(Random);
 };
 
 
-
-template <typename T1, typename T2>
-struct CompileAssertTypesEqual;
-
-template <typename T>
-struct CompileAssertTypesEqual<T, T> {
-};
-
-
-
-
-template <typename T>
-struct RemoveReference { typedef T type; };  
-template <typename T>
-struct RemoveReference<T&> { typedef T type; };  
-
-
-
-#define GTEST_REMOVE_REFERENCE_(T) \
-    typename ::testing::internal::RemoveReference<T>::type
-
-
-
-
-template <typename T>
-struct RemoveConst { typedef T type; };  
-template <typename T>
-struct RemoveConst<const T> { typedef T type; };  
-
-
-
-
-template <typename T, size_t N>
-struct RemoveConst<const T[N]> {
-  typedef typename RemoveConst<T>::type type[N];
-};
-
-#if defined(_MSC_VER) && _MSC_VER < 1400
-
-
-
-template <typename T, size_t N>
-struct RemoveConst<T[N]> {
-  typedef typename RemoveConst<T>::type type[N];
-};
-#endif
-
-
-
-#define GTEST_REMOVE_CONST_(T) \
-    typename ::testing::internal::RemoveConst<T>::type
-
-
 #define GTEST_REMOVE_REFERENCE_AND_CONST_(T) \
-    GTEST_REMOVE_CONST_(GTEST_REMOVE_REFERENCE_(T))
-
-
-
-
-template <typename From, typename To>
-class ImplicitlyConvertible {
- private:
-  
-  
-
-  
-  
-  
-  static typename AddReference<From>::type MakeFrom();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static char Helper(To);
-  static char (&Helper(...))[2];  
-
-  
-  
- public:
-#if defined(__BORLANDC__)
-  
-  
-  
-  static const bool value = __is_convertible(From, To);
-#else
-  
-  
-  
-  GTEST_DISABLE_MSC_WARNINGS_PUSH_(4244)
-  static const bool value =
-      sizeof(Helper(ImplicitlyConvertible::MakeFrom())) == 1;
-  GTEST_DISABLE_MSC_WARNINGS_POP_()
-#endif  
-};
-template <typename From, typename To>
-const bool ImplicitlyConvertible<From, To>::value;
-
+  typename std::remove_const<typename std::remove_reference<T>::type>::type
 
 
 
 template <typename T>
 struct IsAProtocolMessage
-    : public bool_constant<
-  ImplicitlyConvertible<const T*, const ::ProtocolMessage*>::value ||
-  ImplicitlyConvertible<const T*, const ::proto2::Message*>::value> {
-};
+    : public std::is_convertible<const T*, const ::proto2::Message*> {};
 
 
 
@@ -942,7 +909,6 @@ struct IsAProtocolMessage
 
 
 typedef int IsContainer;
-#if GTEST_LANG_CXX11
 template <class C,
           class Iterator = decltype(::std::declval<const C&>().begin()),
           class = decltype(::std::declval<const C&>().end()),
@@ -952,14 +918,6 @@ template <class C,
 IsContainer IsContainerTest(int ) {
   return 0;
 }
-#else
-template <class C>
-IsContainer IsContainerTest(int ,
-                            typename C::iterator*  = NULL,
-                            typename C::const_iterator*  = NULL) {
-  return 0;
-}
-#endif  
 
 typedef char IsNotContainer;
 template <class C>
@@ -980,47 +938,30 @@ struct IsHashTable {
   static char test(...);
 
  public:
-  static const bool value = sizeof(test<T>(0, 0)) == sizeof(int);
+  static const bool value = sizeof(test<T>(nullptr, nullptr)) == sizeof(int);
 };
 
 template <typename T>
 const bool IsHashTable<T>::value;
 
-template<typename T>
-struct VoidT {
-    typedef void value_type;
-};
-
-template <typename T, typename = void>
-struct HasValueType : false_type {};
-template <typename T>
-struct HasValueType<T, VoidT<typename T::value_type> > : true_type {
-};
-
 template <typename C,
-          bool = sizeof(IsContainerTest<C>(0)) == sizeof(IsContainer),
-          bool = HasValueType<C>::value>
+          bool = sizeof(IsContainerTest<C>(0)) == sizeof(IsContainer)>
 struct IsRecursiveContainerImpl;
 
-template <typename C, bool HV>
-struct IsRecursiveContainerImpl<C, false, HV> : public false_type {};
+template <typename C>
+struct IsRecursiveContainerImpl<C, false> : public std::false_type {};
 
 
 
 
 
 template <typename C>
-struct IsRecursiveContainerImpl<C, true, false> : public false_type {};
-
-template <typename C>
-struct IsRecursiveContainerImpl<C, true, true> {
-  #if GTEST_LANG_CXX11
-  typedef typename IteratorTraits<typename C::const_iterator>::value_type
-      value_type;
-#else
-  typedef typename IteratorTraits<typename C::iterator>::value_type value_type;
-#endif
-  typedef is_same<value_type, C> type;
+struct IsRecursiveContainerImpl<C, true> {
+  using value_type = decltype(*std::declval<typename C::const_iterator>());
+  using type =
+      std::is_same<typename std::remove_const<
+                       typename std::remove_reference<value_type>::type>::type,
+                   C>;
 };
 
 
@@ -1031,13 +972,6 @@ struct IsRecursiveContainerImpl<C, true, true> {
 
 template <typename C>
 struct IsRecursiveContainer : public IsRecursiveContainerImpl<C>::type {};
-
-
-
-
-
-template<bool> struct EnableIf;
-template<> struct EnableIf<true> { typedef void type; };  
 
 
 
@@ -1161,10 +1095,9 @@ class NativeArray {
   }
 
  private:
-  enum {
-    kCheckTypeIsNotConstOrAReference = StaticAssertTypeEqHelper<
-        Element, GTEST_REMOVE_REFERENCE_AND_CONST_(Element)>::value
-  };
+  static_assert(!std::is_const<Element>::value, "Type must not be const");
+  static_assert(!std::is_reference<Element>::value,
+                "Type must not be a reference");
 
   
   void InitCopy(const Element* array, size_t a_size) {
@@ -1189,6 +1122,142 @@ class NativeArray {
   GTEST_DISALLOW_ASSIGN_(NativeArray);
 };
 
+
+template <size_t... Is>
+struct IndexSequence {
+  using type = IndexSequence;
+};
+
+
+template <bool plus_one, typename T, size_t sizeofT>
+struct DoubleSequence;
+template <size_t... I, size_t sizeofT>
+struct DoubleSequence<true, IndexSequence<I...>, sizeofT> {
+  using type = IndexSequence<I..., (sizeofT + I)..., 2 * sizeofT>;
+};
+template <size_t... I, size_t sizeofT>
+struct DoubleSequence<false, IndexSequence<I...>, sizeofT> {
+  using type = IndexSequence<I..., (sizeofT + I)...>;
+};
+
+
+
+template <size_t N>
+struct MakeIndexSequence
+    : DoubleSequence<N % 2 == 1, typename MakeIndexSequence<N / 2>::type,
+                     N / 2>::type {};
+
+template <>
+struct MakeIndexSequence<0> : IndexSequence<> {};
+
+template <size_t>
+struct Ignore {
+  Ignore(...);  
+};
+
+template <typename>
+struct ElemFromListImpl;
+template <size_t... I>
+struct ElemFromListImpl<IndexSequence<I...>> {
+  
+  
+  
+  
+  template <typename R>
+  static R Apply(Ignore<0 * I>..., R (*)(), ...);
+};
+
+template <size_t N, typename... T>
+struct ElemFromList {
+  using type =
+      decltype(ElemFromListImpl<typename MakeIndexSequence<N>::type>::Apply(
+          static_cast<T (*)()>(nullptr)...));
+};
+
+template <typename... T>
+class FlatTuple;
+
+template <typename Derived, size_t I>
+struct FlatTupleElemBase;
+
+template <typename... T, size_t I>
+struct FlatTupleElemBase<FlatTuple<T...>, I> {
+  using value_type = typename ElemFromList<I, T...>::type;
+  FlatTupleElemBase() = default;
+  explicit FlatTupleElemBase(value_type t) : value(std::move(t)) {}
+  value_type value;
+};
+
+template <typename Derived, typename Idx>
+struct FlatTupleBase;
+
+template <size_t... Idx, typename... T>
+struct FlatTupleBase<FlatTuple<T...>, IndexSequence<Idx...>>
+    : FlatTupleElemBase<FlatTuple<T...>, Idx>... {
+  using Indices = IndexSequence<Idx...>;
+  FlatTupleBase() = default;
+  explicit FlatTupleBase(T... t)
+      : FlatTupleElemBase<FlatTuple<T...>, Idx>(std::move(t))... {}
+};
+
+
+
+
+
+
+
+
+
+
+template <typename... T>
+class FlatTuple
+    : private FlatTupleBase<FlatTuple<T...>,
+                            typename MakeIndexSequence<sizeof...(T)>::type> {
+  using Indices = typename FlatTupleBase<
+      FlatTuple<T...>, typename MakeIndexSequence<sizeof...(T)>::type>::Indices;
+
+ public:
+  FlatTuple() = default;
+  explicit FlatTuple(T... t) : FlatTuple::FlatTupleBase(std::move(t)...) {}
+
+  template <size_t I>
+  const typename ElemFromList<I, T...>::type& Get() const {
+    return static_cast<const FlatTupleElemBase<FlatTuple, I>*>(this)->value;
+  }
+
+  template <size_t I>
+  typename ElemFromList<I, T...>::type& Get() {
+    return static_cast<FlatTupleElemBase<FlatTuple, I>*>(this)->value;
+  }
+};
+
+
+
+GTEST_INTERNAL_DEPRECATED(
+    "INSTANTIATE_TEST_CASE_P is deprecated, please use "
+    "INSTANTIATE_TEST_SUITE_P")
+constexpr bool InstantiateTestCase_P_IsDeprecated() { return true; }
+
+GTEST_INTERNAL_DEPRECATED(
+    "TYPED_TEST_CASE_P is deprecated, please use "
+    "TYPED_TEST_SUITE_P")
+constexpr bool TypedTestCase_P_IsDeprecated() { return true; }
+
+GTEST_INTERNAL_DEPRECATED(
+    "TYPED_TEST_CASE is deprecated, please use "
+    "TYPED_TEST_SUITE")
+constexpr bool TypedTestCaseIsDeprecated() { return true; }
+
+GTEST_INTERNAL_DEPRECATED(
+    "REGISTER_TYPED_TEST_CASE_P is deprecated, please use "
+    "REGISTER_TYPED_TEST_SUITE_P")
+constexpr bool RegisterTypedTestCase_P_IsDeprecated() { return true; }
+
+GTEST_INTERNAL_DEPRECATED(
+    "INSTANTIATE_TYPED_TEST_CASE_P is deprecated, please use "
+    "INSTANTIATE_TYPED_TEST_SUITE_P")
+constexpr bool InstantiateTypedTestCase_P_IsDeprecated() { return true; }
+
 }  
 }  
 
@@ -1207,6 +1276,9 @@ class NativeArray {
 
 #define GTEST_SUCCESS_(message) \
   GTEST_MESSAGE_(message, ::testing::TestPartResult::kSuccess)
+
+#define GTEST_SKIP_(message) \
+  return GTEST_MESSAGE_(message, ::testing::TestPartResult::kSkip)
 
 
 
@@ -1240,19 +1312,39 @@ class NativeArray {
     GTEST_CONCAT_TOKEN_(gtest_label_testthrow_, __LINE__): \
       fail(gtest_msg.value)
 
+#if GTEST_HAS_EXCEPTIONS
+
+#define GTEST_TEST_NO_THROW_CATCH_STD_EXCEPTION_() \
+  catch (std::exception const& e) { \
+    gtest_msg.value = ( \
+      "it throws std::exception-derived exception with description: \"" \
+    ); \
+    gtest_msg.value += e.what(); \
+    gtest_msg.value += "\"."; \
+    goto GTEST_CONCAT_TOKEN_(gtest_label_testnothrow_, __LINE__); \
+  }
+
+#else  
+
+#define GTEST_TEST_NO_THROW_CATCH_STD_EXCEPTION_()
+
+#endif  
+
 #define GTEST_TEST_NO_THROW_(statement, fail) \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
-  if (::testing::internal::AlwaysTrue()) { \
+  if (::testing::internal::TrueWithString gtest_msg{}) { \
     try { \
       GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement); \
     } \
+    GTEST_TEST_NO_THROW_CATCH_STD_EXCEPTION_() \
     catch (...) { \
+      gtest_msg.value = "it throws."; \
       goto GTEST_CONCAT_TOKEN_(gtest_label_testnothrow_, __LINE__); \
     } \
   } else \
     GTEST_CONCAT_TOKEN_(gtest_label_testnothrow_, __LINE__): \
-      fail("Expected: " #statement " doesn't throw an exception.\n" \
-           "  Actual: it throws.")
+      fail(("Expected: " #statement " doesn't throw an exception.\n" \
+            "  Actual: " + gtest_msg.value).c_str())
 
 #define GTEST_TEST_ANY_THROW_(statement, fail) \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
@@ -1300,31 +1392,41 @@ class NativeArray {
            "  Actual: it does.")
 
 
-#define GTEST_TEST_CLASS_NAME_(test_case_name, test_name) \
-  test_case_name##_##test_name##_Test
+#define GTEST_TEST_CLASS_NAME_(test_suite_name, test_name) \
+  test_suite_name##_##test_name##_Test
 
 
-#define GTEST_TEST_(test_case_name, test_name, parent_class, parent_id)\
-class GTEST_TEST_CLASS_NAME_(test_case_name, test_name) : public parent_class {\
- public:\
-  GTEST_TEST_CLASS_NAME_(test_case_name, test_name)() {}\
- private:\
-  virtual void TestBody();\
-  static ::testing::TestInfo* const test_info_ GTEST_ATTRIBUTE_UNUSED_;\
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(\
-      GTEST_TEST_CLASS_NAME_(test_case_name, test_name));\
-};\
-\
-::testing::TestInfo* const GTEST_TEST_CLASS_NAME_(test_case_name, test_name)\
-  ::test_info_ =\
-    ::testing::internal::MakeAndRegisterTestInfo(\
-        #test_case_name, #test_name, NULL, NULL, \
-        ::testing::internal::CodeLocation(__FILE__, __LINE__), \
-        (parent_id), \
-        parent_class::SetUpTestCase, \
-        parent_class::TearDownTestCase, \
-        new ::testing::internal::TestFactoryImpl<\
-            GTEST_TEST_CLASS_NAME_(test_case_name, test_name)>);\
-void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::TestBody()
+#define GTEST_TEST_(test_suite_name, test_name, parent_class, parent_id)      \
+  static_assert(sizeof(GTEST_STRINGIFY_(test_suite_name)) > 1,                \
+                "test_suite_name must not be empty");                         \
+  static_assert(sizeof(GTEST_STRINGIFY_(test_name)) > 1,                      \
+                "test_name must not be empty");                               \
+  class GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)                    \
+      : public parent_class {                                                 \
+   public:                                                                    \
+    GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)() {}                   \
+    ~GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)() override = default; \
+    GTEST_DISALLOW_COPY_AND_ASSIGN_(GTEST_TEST_CLASS_NAME_(test_suite_name,   \
+                                                           test_name));       \
+    GTEST_DISALLOW_MOVE_AND_ASSIGN_(GTEST_TEST_CLASS_NAME_(test_suite_name,   \
+                                                           test_name));       \
+                                                                              \
+   private:                                                                   \
+    void TestBody() override;                                                 \
+    static ::testing::TestInfo* const test_info_ GTEST_ATTRIBUTE_UNUSED_;     \
+  };                                                                          \
+                                                                              \
+  ::testing::TestInfo* const GTEST_TEST_CLASS_NAME_(test_suite_name,          \
+                                                    test_name)::test_info_ =  \
+      ::testing::internal::MakeAndRegisterTestInfo(                           \
+          #test_suite_name, #test_name, nullptr, nullptr,                     \
+          ::testing::internal::CodeLocation(__FILE__, __LINE__), (parent_id), \
+          ::testing::internal::SuiteApiResolver<                              \
+              parent_class>::GetSetUpCaseOrSuite(__FILE__, __LINE__),         \
+          ::testing::internal::SuiteApiResolver<                              \
+              parent_class>::GetTearDownCaseOrSuite(__FILE__, __LINE__),      \
+          new ::testing::internal::TestFactoryImpl<GTEST_TEST_CLASS_NAME_(    \
+              test_suite_name, test_name)>);                                  \
+  void GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)::TestBody()
 
 #endif  

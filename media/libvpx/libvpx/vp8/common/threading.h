@@ -171,17 +171,20 @@ static inline int sem_destroy(sem_t *sem) {
 #define sem_wait(sem) (semaphore_wait(*sem))
 #define sem_post(sem) semaphore_signal(*sem)
 #define sem_destroy(sem) semaphore_destroy(mach_task_self(), *sem)
+#else
+#include <unistd.h>
+#include <sched.h>
+#endif 
+
+
+
+#if defined(__unix__) || defined(__APPLE__)
 #define thread_sleep(nms)
 
 
 #else
-#include <unistd.h>
-#include <sched.h>
 #define thread_sleep(nms) sched_yield();
-
-
-#endif
-
+#endif 
 
 #endif
 

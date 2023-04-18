@@ -40,6 +40,8 @@
 
 
 
+
+
 #ifndef VPX_VPX_INTERNAL_VPX_CODEC_INTERNAL_H_
 #define VPX_VPX_INTERNAL_VPX_CODEC_INTERNAL_H_
 #include "../vpx_decoder.h"
@@ -171,7 +173,6 @@ typedef const struct vpx_codec_ctrl_fn_map {
   int ctrl_id;
   vpx_codec_control_fn_t fn;
 } vpx_codec_ctrl_fn_map_t;
-
 
 
 

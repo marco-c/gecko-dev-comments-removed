@@ -91,10 +91,13 @@ int read_yuv_frame(struct VpxInputContext *input_ctx, vpx_image_t *yuv_frame) {
 
   for (plane = 0; plane < 3; ++plane) {
     uint8_t *ptr;
-    const int w = vpx_img_plane_width(yuv_frame, plane);
+    int w = vpx_img_plane_width(yuv_frame, plane);
     const int h = vpx_img_plane_height(yuv_frame, plane);
     int r;
-
+    
+    if (yuv_frame->fmt == VPX_IMG_FMT_NV12 && plane > 1) break;
+    
+    if (yuv_frame->fmt == VPX_IMG_FMT_NV12 && plane == 1) w = (w + 1) & ~1;
     
 
 

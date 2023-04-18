@@ -69,7 +69,16 @@ typedef struct {
   int mi_rows;
   int mi_cols;
   uint8_t released;
-  int frame_index;
+
+  
+  
+
+  
+  
+  int frame_index;         
+                           
+  int frame_coding_index;  
+                           
   vpx_codec_frame_buffer_t raw_frame_buffer;
   YV12_BUFFER_CONFIG buf;
 } RefCntBuffer;
@@ -226,7 +235,14 @@ typedef struct VP9Common {
   unsigned int frame_context_idx; 
   FRAME_COUNTS counts;
 
+  
+  
   unsigned int current_video_frame;
+  
+  
+
+  
+  int current_frame_coding_index;
   BITSTREAM_PROFILE profile;
 
   
@@ -253,6 +269,20 @@ typedef struct VP9Common {
 
   int lf_row;
 } VP9_COMMON;
+
+static INLINE void init_frame_indexes(VP9_COMMON *cm) {
+  cm->current_video_frame = 0;
+  cm->current_frame_coding_index = 0;
+}
+
+static INLINE void update_frame_indexes(VP9_COMMON *cm, int show_frame) {
+  if (show_frame) {
+    
+    
+    ++cm->current_video_frame;
+  }
+  ++cm->current_frame_coding_index;
+}
 
 typedef struct {
   int frame_width;

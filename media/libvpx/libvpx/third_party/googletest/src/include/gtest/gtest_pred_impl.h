@@ -33,13 +33,14 @@
 
 
 
-
 #ifndef GTEST_INCLUDE_GTEST_GTEST_PRED_IMPL_H_
 #define GTEST_INCLUDE_GTEST_GTEST_PRED_IMPL_H_
 
 #include "gtest/gtest.h"
 
 namespace testing {
+
+
 
 
 
@@ -89,9 +90,10 @@ AssertionResult AssertPred1Helper(const char* pred_text,
                                   const T1& v1) {
   if (pred(v1)) return AssertionSuccess();
 
-  return AssertionFailure() << pred_text << "("
-                            << e1 << ") evaluates to false, where"
-                            << "\n" << e1 << " evaluates to " << v1;
+  return AssertionFailure()
+         << pred_text << "(" << e1 << ") evaluates to false, where"
+         << "\n"
+         << e1 << " evaluates to " << ::testing::PrintToString(v1);
 }
 
 
@@ -133,11 +135,12 @@ AssertionResult AssertPred2Helper(const char* pred_text,
                                   const T2& v2) {
   if (pred(v1, v2)) return AssertionSuccess();
 
-  return AssertionFailure() << pred_text << "("
-                            << e1 << ", "
-                            << e2 << ") evaluates to false, where"
-                            << "\n" << e1 << " evaluates to " << v1
-                            << "\n" << e2 << " evaluates to " << v2;
+  return AssertionFailure()
+         << pred_text << "(" << e1 << ", " << e2
+         << ") evaluates to false, where"
+         << "\n"
+         << e1 << " evaluates to " << ::testing::PrintToString(v1) << "\n"
+         << e2 << " evaluates to " << ::testing::PrintToString(v2);
 }
 
 
@@ -184,13 +187,13 @@ AssertionResult AssertPred3Helper(const char* pred_text,
                                   const T3& v3) {
   if (pred(v1, v2, v3)) return AssertionSuccess();
 
-  return AssertionFailure() << pred_text << "("
-                            << e1 << ", "
-                            << e2 << ", "
-                            << e3 << ") evaluates to false, where"
-                            << "\n" << e1 << " evaluates to " << v1
-                            << "\n" << e2 << " evaluates to " << v2
-                            << "\n" << e3 << " evaluates to " << v3;
+  return AssertionFailure()
+         << pred_text << "(" << e1 << ", " << e2 << ", " << e3
+         << ") evaluates to false, where"
+         << "\n"
+         << e1 << " evaluates to " << ::testing::PrintToString(v1) << "\n"
+         << e2 << " evaluates to " << ::testing::PrintToString(v2) << "\n"
+         << e3 << " evaluates to " << ::testing::PrintToString(v3);
 }
 
 
@@ -242,15 +245,14 @@ AssertionResult AssertPred4Helper(const char* pred_text,
                                   const T4& v4) {
   if (pred(v1, v2, v3, v4)) return AssertionSuccess();
 
-  return AssertionFailure() << pred_text << "("
-                            << e1 << ", "
-                            << e2 << ", "
-                            << e3 << ", "
-                            << e4 << ") evaluates to false, where"
-                            << "\n" << e1 << " evaluates to " << v1
-                            << "\n" << e2 << " evaluates to " << v2
-                            << "\n" << e3 << " evaluates to " << v3
-                            << "\n" << e4 << " evaluates to " << v4;
+  return AssertionFailure()
+         << pred_text << "(" << e1 << ", " << e2 << ", " << e3 << ", " << e4
+         << ") evaluates to false, where"
+         << "\n"
+         << e1 << " evaluates to " << ::testing::PrintToString(v1) << "\n"
+         << e2 << " evaluates to " << ::testing::PrintToString(v2) << "\n"
+         << e3 << " evaluates to " << ::testing::PrintToString(v3) << "\n"
+         << e4 << " evaluates to " << ::testing::PrintToString(v4);
 }
 
 
@@ -307,17 +309,15 @@ AssertionResult AssertPred5Helper(const char* pred_text,
                                   const T5& v5) {
   if (pred(v1, v2, v3, v4, v5)) return AssertionSuccess();
 
-  return AssertionFailure() << pred_text << "("
-                            << e1 << ", "
-                            << e2 << ", "
-                            << e3 << ", "
-                            << e4 << ", "
-                            << e5 << ") evaluates to false, where"
-                            << "\n" << e1 << " evaluates to " << v1
-                            << "\n" << e2 << " evaluates to " << v2
-                            << "\n" << e3 << " evaluates to " << v3
-                            << "\n" << e4 << " evaluates to " << v4
-                            << "\n" << e5 << " evaluates to " << v5;
+  return AssertionFailure()
+         << pred_text << "(" << e1 << ", " << e2 << ", " << e3 << ", " << e4
+         << ", " << e5 << ") evaluates to false, where"
+         << "\n"
+         << e1 << " evaluates to " << ::testing::PrintToString(v1) << "\n"
+         << e2 << " evaluates to " << ::testing::PrintToString(v2) << "\n"
+         << e3 << " evaluates to " << ::testing::PrintToString(v3) << "\n"
+         << e4 << " evaluates to " << ::testing::PrintToString(v4) << "\n"
+         << e5 << " evaluates to " << ::testing::PrintToString(v5);
 }
 
 

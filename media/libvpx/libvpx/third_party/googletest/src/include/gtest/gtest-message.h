@@ -48,6 +48,8 @@
 #define GTEST_INCLUDE_GTEST_GTEST_MESSAGE_H_
 
 #include <limits>
+#include <memory>
+#include <sstream>
 
 #include "gtest/internal/gtest-port.h"
 
@@ -106,14 +108,6 @@ class GTEST_API_ Message {
     *ss_ << str;
   }
 
-#if GTEST_OS_SYMBIAN
-  
-  template <typename T>
-  inline Message& operator <<(const T& value) {
-    StreamHelper(typename internal::is_pointer<T>::type(), value);
-    return *this;
-  }
-#else
   
   template <typename T>
   inline Message& operator <<(const T& val) {
@@ -151,14 +145,13 @@ class GTEST_API_ Message {
   
   template <typename T>
   inline Message& operator <<(T* const& pointer) {  
-    if (pointer == NULL) {
+    if (pointer == nullptr) {
       *ss_ << "(null)";
     } else {
       *ss_ << pointer;
     }
     return *this;
   }
-#endif  
 
   
   
@@ -187,12 +180,6 @@ class GTEST_API_ Message {
   Message& operator <<(const ::std::wstring& wstr);
 #endif  
 
-#if GTEST_HAS_GLOBAL_WSTRING
-  
-  
-  Message& operator <<(const ::wstring& wstr);
-#endif  
-
   
   
   
@@ -200,31 +187,8 @@ class GTEST_API_ Message {
   std::string GetString() const;
 
  private:
-#if GTEST_OS_SYMBIAN
   
-  
-  
-  
-  template <typename T>
-  inline void StreamHelper(internal::true_type , T* pointer) {
-    if (pointer == NULL) {
-      *ss_ << "(null)";
-    } else {
-      *ss_ << pointer;
-    }
-  }
-  template <typename T>
-  inline void StreamHelper(internal::false_type ,
-                           const T& value) {
-    
-    
-    using ::operator <<;
-    *ss_ << value;
-  }
-#endif  
-
-  
-  const internal::scoped_ptr< ::std::stringstream> ss_;
+  const std::unique_ptr< ::std::stringstream> ss_;
 
   
   

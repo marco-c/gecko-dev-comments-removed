@@ -28,6 +28,7 @@ typedef enum {
   I444,  
   I440,  
   YV12,  
+  NV12,  
 } ColorInputType;
 
 struct VpxInterface;
