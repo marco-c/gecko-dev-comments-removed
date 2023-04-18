@@ -28,7 +28,7 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
 
 
 
-this.LoginManagerContextMenu = {
+const LoginManagerContextMenu = {
   
 
 

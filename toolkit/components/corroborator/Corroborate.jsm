@@ -15,7 +15,7 @@ var EXPORTED_SYMBOLS = ["Corroborate"];
 
 
 
-this.Corroborate = {
+const Corroborate = {
   async init() {},
 
   

@@ -10,7 +10,7 @@
 
 
 
-this.EXPORTED_SYMBOLS = ["formAutofillStorage", "FormAutofillStorage"];
+const EXPORTED_SYMBOLS = ["formAutofillStorage", "FormAutofillStorage"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -262,4 +262,4 @@ class FormAutofillStorage extends FormAutofillStorageBase {
 }
 
 
-this.formAutofillStorage = new FormAutofillStorage();
+const formAutofillStorage = new FormAutofillStorage();

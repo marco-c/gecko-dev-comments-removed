@@ -357,7 +357,7 @@ class ImportRowProcessor {
 
 
 
-this.LoginHelper = {
+const LoginHelper = {
   debug: null,
   enabled: null,
   storageEnabled: null,

@@ -30,7 +30,7 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
   return LoginHelper.createLogger("LoginFormFactory");
 });
 
-this.LoginFormFactory = {
+const LoginFormFactory = {
   
 
 

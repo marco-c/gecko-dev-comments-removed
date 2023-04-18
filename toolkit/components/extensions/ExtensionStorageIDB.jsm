@@ -4,7 +4,8 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["ExtensionStorageIDB"];
+const EXPORTED_SYMBOLS = ["ExtensionStorageIDB"];
+let ExtensionStorageIDB;
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -570,7 +571,7 @@ async function migrateJSONFileData(extension, storagePrincipal) {
 
 
 
-this.ExtensionStorageIDB = {
+ExtensionStorageIDB = {
   BACKEND_ENABLED_PREF,
   IDB_MIGRATED_PREF_BRANCH,
   IDB_MIGRATE_RESULT_HISTOGRAM,

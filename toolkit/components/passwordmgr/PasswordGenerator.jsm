@@ -48,7 +48,7 @@ DEFAULT_RULES.set(MIN_LENGTH, REQUIRED_CHARACTER_CLASSES.length);
 DEFAULT_RULES.set(MAX_LENGTH, MAX_UINT8);
 DEFAULT_RULES.set(REQUIRED, [UPPER, LOWER, DIGIT]);
 
-this.PasswordGenerator = {
+const PasswordGenerator = {
   
 
 

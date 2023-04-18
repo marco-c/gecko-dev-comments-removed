@@ -2,7 +2,7 @@
 
 
 
-this.URLDecorationAnnotationsService = function() {};
+function URLDecorationAnnotationsService() {}
 
 ChromeUtils.defineModuleGetter(
   this,

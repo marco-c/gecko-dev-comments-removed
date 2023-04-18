@@ -34,7 +34,7 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
 
 
 
-this.InsecurePasswordUtils = {
+const InsecurePasswordUtils = {
   _formRootsWarned: new WeakMap(),
 
   

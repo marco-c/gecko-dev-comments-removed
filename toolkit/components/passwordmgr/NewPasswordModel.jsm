@@ -667,7 +667,7 @@ function makeRuleset(coeffs, biases) {
 
 
 
-this.NewPasswordModel = {
+const NewPasswordModel = {
   type: "new",
   rules: makeRuleset([...coefficients.new], biases),
 };

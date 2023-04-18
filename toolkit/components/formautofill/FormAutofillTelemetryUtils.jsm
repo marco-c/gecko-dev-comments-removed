@@ -16,7 +16,7 @@ ChromeUtils.defineModuleGetter(
 
 const { FIELD_STATES } = FormAutofillUtils;
 
-this.CreditCardTelemetry = {
+const CreditCardTelemetry = {
   
   
   CC_FORM_V2_SUPPORTED_FIELDS: {

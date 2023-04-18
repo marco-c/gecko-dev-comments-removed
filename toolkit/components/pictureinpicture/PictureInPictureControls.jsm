@@ -12,7 +12,7 @@ var EXPORTED_SYMBOLS = [
 ];
 
 
-this.KEYBOARD_CONTROLS = {
+const KEYBOARD_CONTROLS = {
   NONE: 0,
   PLAY_PAUSE: 1 << 0,
   MUTE_UNMUTE: 1 << 1,
@@ -23,7 +23,7 @@ this.KEYBOARD_CONTROLS = {
 
 
 
-this.TOGGLE_POLICIES = {
+const TOGGLE_POLICIES = {
   DEFAULT: 1,
   HIDDEN: 2,
   TOP: 3,
@@ -35,7 +35,7 @@ this.TOGGLE_POLICIES = {
 
 
 
-this.TOGGLE_POLICY_STRINGS = {
+const TOGGLE_POLICY_STRINGS = {
   [TOGGLE_POLICIES.DEFAULT]: "default",
   [TOGGLE_POLICIES.HIDDEN]: "hidden",
   [TOGGLE_POLICIES.TOP]: "top",

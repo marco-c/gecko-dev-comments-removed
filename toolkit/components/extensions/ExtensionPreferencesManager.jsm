@@ -20,7 +20,8 @@
 
 
 
-var EXPORTED_SYMBOLS = ["ExtensionPreferencesManager"];
+const EXPORTED_SYMBOLS = ["ExtensionPreferencesManager"];
+let ExtensionPreferencesManager;
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
@@ -218,7 +219,7 @@ async function processSetting(id, name, action) {
   return false;
 }
 
-this.ExtensionPreferencesManager = {
+ExtensionPreferencesManager = {
   
 
 

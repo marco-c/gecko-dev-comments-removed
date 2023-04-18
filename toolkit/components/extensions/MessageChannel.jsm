@@ -97,9 +97,8 @@
 
 
 
-var EXPORTED_SYMBOLS = ["MessageChannel"];
-
-
+const EXPORTED_SYMBOLS = ["MessageChannel"];
+let MessageChannel;
 
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
@@ -570,7 +569,9 @@ class PendingMessage {
   }
 }
 
-this.MessageChannel = {
+
+
+MessageChannel = {
   init() {
     Services.obs.addObserver(this, "message-manager-close");
     Services.obs.addObserver(this, "message-manager-disconnect");

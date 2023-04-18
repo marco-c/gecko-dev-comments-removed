@@ -30,7 +30,7 @@ const PREF_DISABLE_TEST_BACKOFF =
 
 
 
-this.BindToObject = function BindToObject(fn, self, opt_args) {
+function BindToObject(fn, self, opt_args) {
   var boundargs = fn.boundArgs_ || [];
   boundargs = boundargs.concat(
     Array.prototype.slice.call(arguments, 2, arguments.length)
@@ -54,7 +54,7 @@ this.BindToObject = function BindToObject(fn, self, opt_args) {
   newfn.boundFn_ = fn;
 
   return newfn;
-};
+}
 
 
 
@@ -66,9 +66,9 @@ this.BindToObject = function BindToObject(fn, self, opt_args) {
 
 
 
-this.HTTP_FOUND = 302;
-this.HTTP_SEE_OTHER = 303;
-this.HTTP_TEMPORARY_REDIRECT = 307;
+const HTTP_FOUND = 302;
+const HTTP_SEE_OTHER = 303;
+const HTTP_TEMPORARY_REDIRECT = 307;
 
 
 
@@ -81,7 +81,7 @@ this.HTTP_TEMPORARY_REDIRECT = 307;
 
 
 
-this.RequestBackoff = function RequestBackoff(
+function RequestBackoff(
   maxErrors,
   retryIncrement,
   maxRequests,
@@ -116,7 +116,7 @@ this.RequestBackoff = function RequestBackoff(
       return this.canMakeRequestDefault();
     };
   }
-};
+}
 
 
 
@@ -226,4 +226,4 @@ function UrlClassifierLib() {
 }
 UrlClassifierLib.prototype.QueryInterface = ChromeUtils.generateQI([]);
 
-var EXPORTED_SYMBOLS = ["UrlClassifierLib"];
+var EXPORTED_SYMBOLS = ["UrlClassifierLib", "BindToObject"];

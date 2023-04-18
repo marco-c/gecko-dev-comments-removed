@@ -31,7 +31,7 @@ let loggingEnabled = false;
 let BindToObject, RequestBackoffV4;
 
 
-this.log = function log(...stuff) {
+function log(...stuff) {
   if (!loggingEnabled) {
     return;
   }
@@ -41,7 +41,7 @@ this.log = function log(...stuff) {
   msg = Services.urlFormatter.trimSensitiveURLs(msg);
   Services.console.logStringMessage(msg);
   dump(msg + "\n");
-};
+}
 
 
 
@@ -49,7 +49,7 @@ this.log = function log(...stuff) {
 
 
 
-this.PROT_ListManager = function PROT_ListManager() {
+function PROT_ListManager() {
   loggingEnabled = Services.prefs.getBoolPref(PREF_DEBUG_ENABLED);
 
   log("Initializing list manager");
@@ -79,7 +79,7 @@ this.PROT_ListManager = function PROT_ListManager() {
 
   Services.obs.addObserver(this, "quit-application");
   Services.prefs.addObserver(PREF_DEBUG_ENABLED, this);
-};
+}
 
 
 

@@ -520,7 +520,7 @@ const observer = {
 
 Services.obs.addObserver(observer, "autocomplete-did-enter-text");
 
-this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
+class LoginManagerChild extends JSWindowActorChild {
   
 
 
@@ -3174,4 +3174,4 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
     return result;
   }
-};
+}
