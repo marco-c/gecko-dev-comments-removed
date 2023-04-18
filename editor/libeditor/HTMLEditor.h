@@ -3461,8 +3461,6 @@ class HTMLEditor final : public EditorBase,
       bool* aMixed, nsAString& aOutColor, bool aBlockLevel);
   nsresult GetHTMLBackgroundColorState(bool* aMixed, nsAString& outColor);
 
-  nsresult GetLastCellInRow(nsINode* aRowNode, nsINode** aCellNode);
-
   
 
 
@@ -3599,8 +3597,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult InsertTableCellsWithTransaction(
-      int32_t aNumberOfCellsToInsert, InsertPosition aInsertPosition);
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
+  InsertTableCellsWithTransaction(const EditorDOMPoint& aPointToInsert,
+                                  int32_t aNumberOfCellsToInsert);
 
   
 
