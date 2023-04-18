@@ -3117,6 +3117,24 @@ class FunctionCompiler {
     }
 
     
+    
+    
+    
+    uint32_t relativeDepth = 1;
+    if (!delegatePadPatches(control.tryPadPatches, relativeDepth)) {
+      return false;
+    }
+    return true;
+  }
+
+  bool finishBodyDelegateThrowPad(Control& control) {
+    
+    
+    if (control.tryPadPatches.empty()) {
+      return true;
+    }
+
+    
     MBasicBlock* prevBlock = curBlock_;
     curBlock_ = nullptr;
 
@@ -3662,18 +3680,18 @@ static bool EmitEnd(FunctionCompiler& f) {
 
   Control& control = f.iter().controlItem();
   MBasicBlock* block = control.block;
-  f.iter().popEnd();
 
   if (!f.pushDefs(preJoinDefs)) {
     return false;
   }
 
+  
+  
   DefVector postJoinDefs;
   switch (kind) {
     case LabelKind::Body:
-      MOZ_ASSERT(f.iter().controlStackEmpty());
 #ifdef ENABLE_WASM_EXCEPTIONS
-      if (!f.finishCatchlessTry(control)) {
+      if (!f.finishBodyDelegateThrowPad(control)) {
         return false;
       }
 #endif
@@ -3683,16 +3701,20 @@ static bool EmitEnd(FunctionCompiler& f) {
       if (!f.returnValues(postJoinDefs)) {
         return false;
       }
+      f.iter().popEnd();
+      MOZ_ASSERT(f.iter().controlStackEmpty());
       return f.iter().endFunction(f.iter().end());
     case LabelKind::Block:
       if (!f.finishBlock(&postJoinDefs)) {
         return false;
       }
+      f.iter().popEnd();
       break;
     case LabelKind::Loop:
       if (!f.closeLoop(block, &postJoinDefs)) {
         return false;
       }
+      f.iter().popEnd();
       break;
     case LabelKind::Then: {
       
@@ -3708,12 +3730,14 @@ static bool EmitEnd(FunctionCompiler& f) {
       if (!f.joinIfElse(block, &postJoinDefs)) {
         return false;
       }
+      f.iter().popEnd();
       break;
     }
     case LabelKind::Else:
       if (!f.joinIfElse(block, &postJoinDefs)) {
         return false;
       }
+      f.iter().popEnd();
       break;
 #ifdef ENABLE_WASM_EXCEPTIONS
     case LabelKind::Try: {
@@ -3725,6 +3749,7 @@ static bool EmitEnd(FunctionCompiler& f) {
       if (!f.finishBlock(&postJoinDefs)) {
         return false;
       }
+      f.iter().popEnd();
       break;
     }
     case LabelKind::Catch:
@@ -3737,6 +3762,7 @@ static bool EmitEnd(FunctionCompiler& f) {
       if (!f.finishBlock(&postJoinDefs)) {
         return false;
       }
+      f.iter().popEnd();
       break;
 #endif
   }

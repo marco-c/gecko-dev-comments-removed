@@ -3293,6 +3293,8 @@ bool BaseCompiler::emitEnd() {
     return false;
   }
 
+  
+  
   switch (kind) {
     case LabelKind::Body:
       if (!endBlock(type)) {
@@ -3314,20 +3316,24 @@ bool BaseCompiler::emitEnd() {
       if (!endBlock(type)) {
         return false;
       }
+      iter_.popEnd();
       break;
     case LabelKind::Loop:
       
       
+      iter_.popEnd();
       break;
     case LabelKind::Then:
       if (!endIfThen(type)) {
         return false;
       }
+      iter_.popEnd();
       break;
     case LabelKind::Else:
       if (!endIfThenElse(type)) {
         return false;
       }
+      iter_.popEnd();
       break;
 #ifdef ENABLE_WASM_EXCEPTIONS
     case LabelKind::Try:
@@ -3336,11 +3342,10 @@ bool BaseCompiler::emitEnd() {
       if (!endTryCatch(type)) {
         return false;
       }
+      iter_.popEnd();
       break;
 #endif
   }
-
-  iter_.popEnd();
 
   return true;
 }
