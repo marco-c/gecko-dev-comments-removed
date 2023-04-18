@@ -2112,19 +2112,13 @@ void MacroAssembler::wasmStoreI64(const wasm::MemoryAccessDesc& access,
 void MacroAssembler::enterFakeExitFrameForWasm(Register cxreg, Register scratch,
                                                ExitFrameType type) {
   
-  
-  
 
   linkExitFrame(cxreg, scratch);
 
   MOZ_RELEASE_ASSERT(sp.Is(GetStackPointer64()));
 
-  const ARMRegister tmp(scratch, 64);
-
-  vixl::UseScratchRegisterScope temps(this);
-  const ARMRegister tmp2 = temps.AcquireX();
-
-  Sub(sp, sp, 8);
+  move32(Imm32(int32_t(type)), scratch);
+  push(FramePointer, scratch);
 
   
   
@@ -2134,10 +2128,6 @@ void MacroAssembler::enterFakeExitFrameForWasm(Register cxreg, Register scratch,
   
   
   Mov(PseudoStackPointer64, sp);
-
-  Mov(tmp, sp);  
-  Mov(tmp2, int32_t(type));
-  Str(tmp2, vixl::MemOperand(tmp, 0));
 }
 
 void MacroAssembler::widenInt32(Register r) {

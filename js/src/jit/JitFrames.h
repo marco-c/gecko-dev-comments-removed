@@ -216,6 +216,10 @@ class CommonFrameLayout {
   uintptr_t descriptor_;
 
  public:
+  
+  
+  static constexpr size_t FramePointerOffset = sizeof(void*);
+
   static size_t offsetOfDescriptor() {
     return offsetof(CommonFrameLayout, descriptor_);
   }
@@ -240,6 +244,11 @@ class CommonFrameLayout {
   void clearHasCachedSavedFrame() { descriptor_ &= ~HASCACHEDSAVEDFRAME_BIT; }
   uint8_t* returnAddress() const { return returnAddress_; }
   void setReturnAddress(uint8_t* addr) { returnAddress_ = addr; }
+
+  uint8_t* callerFramePtr() const {
+    auto* p = reinterpret_cast<const uintptr_t*>(this) - 1;
+    return reinterpret_cast<uint8_t*>(*p);
+  }
 };
 
 class JitFrameLayout : public CommonFrameLayout {
@@ -278,14 +287,6 @@ class JitFrameLayout : public CommonFrameLayout {
 
   
   
-  static constexpr size_t FramePointerOffset = sizeof(void*);
-
-  uint8_t* callerFramePtr() const {
-    auto* p = reinterpret_cast<const uintptr_t*>(this) - 1;
-    return reinterpret_cast<uint8_t*>(*p);
-  }
-
-  
   
   static constexpr size_t IonFirstSlotOffset = 8;
 
@@ -313,10 +314,6 @@ class IonICCallFrameLayout : public CommonFrameLayout {
   JitCode* stubCode_;
 
  public:
-  
-  
-  static constexpr size_t FramePointerOffset = sizeof(void*);
-
   JitCode** stubCode() { return &stubCode_; }
   static size_t Size() { return sizeof(IonICCallFrameLayout); }
 };
@@ -342,6 +339,12 @@ class ExitFooterFrame {
   
   
   uintptr_t data_;
+
+  
+  
+ protected:  
+  static_assert(CommonFrameLayout::FramePointerOffset == sizeof(void*));
+  uint8_t* callerFP_;
 
  public:
   static inline size_t Size() { return sizeof(ExitFooterFrame); }
@@ -709,9 +712,7 @@ class BaselineStubFrameLayout : public CommonFrameLayout {
   
 
  public:
-  
-  
-  static constexpr size_t FramePointerOffset = sizeof(void*);
+  static_assert(FramePointerOffset == sizeof(void*));
   static constexpr size_t ICStubOffset = 2 * sizeof(void*);
   static constexpr int ICStubOffsetFromFP = -int(sizeof(void*));
 

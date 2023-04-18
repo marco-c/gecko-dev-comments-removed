@@ -25,10 +25,7 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
   masm.bind(profilerExitTail);
 
   
-  static constexpr size_t FPOffset = sizeof(void*);
-  static_assert(JitFrameLayout::FramePointerOffset == FPOffset);
-  static_assert(BaselineStubFrameLayout::FramePointerOffset == FPOffset);
-  static_assert(IonICCallFrameLayout::FramePointerOffset == FPOffset);
+  static constexpr size_t FPOffset = CommonFrameLayout::FramePointerOffset;
 
   
   auto emitAssertPrevFrameType = [&masm](
