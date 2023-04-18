@@ -94,7 +94,7 @@ class MatchURLFilters {
       }
 
       
-      return filter.ports.some(filterPort => {
+      const portMatch = filter.ports.some(filterPort => {
         if (Array.isArray(filterPort)) {
           let [lower, upper] = filterPort;
           return port >= lower && port <= upper;
@@ -102,6 +102,10 @@ class MatchURLFilters {
 
         return port === filterPort;
       });
+
+      if (!portMatch) {
+        return false;
+      }
     }
 
     
