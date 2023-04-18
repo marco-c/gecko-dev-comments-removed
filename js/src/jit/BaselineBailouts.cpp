@@ -179,6 +179,7 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   [[nodiscard]] bool buildFixedSlots();
   [[nodiscard]] bool fixUpCallerArgs(MutableHandleValueVector savedCallerArgs,
                                      bool* fixedUp);
+  [[nodiscard]] bool buildFinallyException();
   [[nodiscard]] bool buildExpressionStack();
   [[nodiscard]] bool finishLastFrame();
 
@@ -208,6 +209,11 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   bool catchingException() const {
     return excInfo_ && excInfo_->catchingException() &&
            excInfo_->frameNo() == frameNo_;
+  }
+
+  
+  bool resumingInFinallyBlock() const {
+    return catchingException() && excInfo_->isFinally();
   }
 
   
@@ -894,6 +900,19 @@ bool BaselineStackBuilder::buildExpressionStack() {
   return true;
 }
 
+bool BaselineStackBuilder::buildFinallyException() {
+  MOZ_ASSERT(resumingInFinallyBlock());
+
+  if (!writeValue(excInfo_->finallyException(), "Exception")) {
+    return false;
+  }
+  if (!writeValue(BooleanValue(true), "throwing")) {
+    return false;
+  }
+
+  return true;
+}
+
 bool BaselineStackBuilder::prepareForNextFrame(
     HandleValueVector savedCallerArgs) {
   const uint32_t frameSize = framePushed();
@@ -1355,8 +1374,15 @@ bool BaselineStackBuilder::validateFrame() {
   MOZ_ASSERT(blFrame()->debugNumValueSlots() >= script_->nfixed());
   MOZ_ASSERT(blFrame()->debugNumValueSlots() <= script_->nslots());
 
+  uint32_t expectedSlots = exprStackSlots();
+  if (resumingInFinallyBlock()) {
+    
+    
+    
+    expectedSlots += 2;
+  }
   return AssertBailoutStackDepth(cx_, script_, pc_, resumeMode(),
-                                 exprStackSlots());
+                                 expectedSlots);
 }
 #endif
 
@@ -1516,8 +1542,13 @@ bool BaselineStackBuilder::buildOneFrame() {
     return false;
   }
 
-  if (!fixedUp && !buildExpressionStack()) {
-    return false;
+  if (!fixedUp) {
+    if (!buildExpressionStack()) {
+      return false;
+    }
+    if (resumingInFinallyBlock() && !buildFinallyException()) {
+      return false;
+    }
   }
 
 #ifdef DEBUG
@@ -1972,7 +2003,7 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
 
   
   
-  if (cx->isExceptionPending() && bailoutInfo->faultPC) {
+  if (bailoutInfo->faultPC) {
     EnvironmentIter ei(cx, topFrame, bailoutInfo->faultPC);
     UnwindEnvironment(cx, ei, bailoutInfo->tryPC);
   }
@@ -2089,6 +2120,12 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
         
         action = BailoutAction::DisableIfFrequent;
       }
+      break;
+
+    case BailoutKind::Finally:
+      
+      
+      action = BailoutAction::DisableIfFrequent;
       break;
 
     case BailoutKind::Inevitable:

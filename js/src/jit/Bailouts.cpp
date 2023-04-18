@@ -206,8 +206,11 @@ bool jit::ExceptionHandlerBailout(JSContext* cx,
   
   
   
-  MOZ_ASSERT_IF(!excInfo.propagatingIonExceptionForDebugMode(),
-                cx->isExceptionPending());
+  
+  
+  MOZ_ASSERT_IF(
+      !cx->isExceptionPending(),
+      excInfo.isFinally() || excInfo.propagatingIonExceptionForDebugMode());
 
   JS::AutoSaveExceptionState savedExc(cx);
 
@@ -235,6 +238,8 @@ bool jit::ExceptionHandlerBailout(JSContext* cx,
     if (excInfo.propagatingIonExceptionForDebugMode()) {
       bailoutInfo->bailoutKind =
           mozilla::Some(BailoutKind::IonExceptionDebugMode);
+    } else if (excInfo.isFinally()) {
+      bailoutInfo->bailoutKind = mozilla::Some(BailoutKind::Finally);
     }
 
     rfe->kind = ResumeFromException::RESUME_BAILOUT;

@@ -169,6 +169,9 @@ enum class BailoutKind : uint8_t {
   IonExceptionDebugMode,
 
   
+  Finally,
+
+  
   OnStackInvalidation,
 
   
@@ -211,6 +214,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "UninitializedLexical";
     case BailoutKind::IonExceptionDebugMode:
       return "IonExceptionDebugMode";
+    case BailoutKind::Finally:
+      return "Finally";
     case BailoutKind::OnStackInvalidation:
       return "OnStackInvalidation";
     case BailoutKind::Unreachable:

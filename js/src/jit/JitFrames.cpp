@@ -201,7 +201,7 @@ static void HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame,
     
     
     
-    ExceptionBailoutInfo propagateInfo;
+    ExceptionBailoutInfo propagateInfo(cx);
     if (ExceptionHandlerBailout(cx, frame, rfe, propagateInfo)) {
       return;
     }
@@ -231,7 +231,7 @@ static void HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame,
 
           
           jsbytecode* catchPC = script->offsetToPC(tn->start + tn->length);
-          ExceptionBailoutInfo excInfo(frame.frameNo(), catchPC,
+          ExceptionBailoutInfo excInfo(cx, frame.frameNo(), catchPC,
                                        tn->stackDepth);
           if (ExceptionHandlerBailout(cx, frame, rfe, excInfo)) {
             
@@ -247,6 +247,44 @@ static void HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame,
           MOZ_ASSERT(cx->isExceptionPending());
         }
         break;
+
+      case TryNoteKind::Finally: {
+        if (!cx->isExceptionPending()) {
+          
+          break;
+        }
+
+        script->resetWarmUpCounterToDelayIonCompilation();
+
+        if (*hitBailoutException) {
+          break;
+        }
+
+        
+        jsbytecode* finallyPC = script->offsetToPC(tn->start + tn->length);
+        ExceptionBailoutInfo excInfo(cx, frame.frameNo(), finallyPC,
+                                     tn->stackDepth);
+
+        RootedValue exception(cx);
+        if (!cx->getPendingException(&exception)) {
+          exception = UndefinedValue();
+        }
+        excInfo.setFinallyException(exception.get());
+        cx->clearPendingException();
+
+        if (ExceptionHandlerBailout(cx, frame, rfe, excInfo)) {
+          
+          
+          rfe->bailoutInfo->tryPC =
+              UnwindEnvironmentToTryPc(frame.script(), tn);
+          rfe->bailoutInfo->faultPC = frame.pc();
+          return;
+        }
+
+        *hitBailoutException = true;
+        MOZ_ASSERT(cx->isExceptionPending());
+        break;
+      }
 
       case TryNoteKind::ForOf:
       case TryNoteKind::Loop:
