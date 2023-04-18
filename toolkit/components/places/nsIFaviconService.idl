@@ -228,11 +228,13 @@ interface nsIFaviconService : nsISupports
 
 
 
+
   void getFaviconURLForPage(in nsIURI aPageURI,
                             in nsIFaviconDataCallback aCallback,
                             [optional] in unsigned short aPreferredWidth);
 
   
+
 
 
 

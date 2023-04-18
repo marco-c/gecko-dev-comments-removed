@@ -64,6 +64,10 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 
 
+
+
+
+
 const SnapshotGroups = new (class SnapshotGroups {
   constructor() {}
 
@@ -372,7 +376,7 @@ const SnapshotGroups = new (class SnapshotGroups {
       params
     );
 
-    return rows.map(row => this.#translateSnapshotGroupRow(row));
+    return Promise.all(rows.map(row => this.#translateSnapshotGroupRow(row)));
   }
 
   
@@ -499,7 +503,7 @@ const SnapshotGroups = new (class SnapshotGroups {
 
 
 
-  #translateSnapshotGroupRow(row) {
+  async #translateSnapshotGroupRow(row) {
     
     
     
@@ -512,7 +516,7 @@ const SnapshotGroups = new (class SnapshotGroups {
     
     
     let imageUrls = row.getResultByName("image_urls")?.split("|");
-    let imageUrl = null;
+    let imageUrl, faviconDataUrl, imagePageUrl;
     if (imageUrls) {
       imageUrl = imageUrls[0] || imageUrls[1];
       if (!imageUrl && imageUrls[2]) {
@@ -524,11 +528,41 @@ const SnapshotGroups = new (class SnapshotGroups {
           imageUrl = PageThumbs.getThumbnailURL(imageUrl);
         }
       }
+
+      
+      imagePageUrl =
+        imageUrls[2] && !imageUrls[0] && imageUrls[1]
+          ? imageUrls[3]
+          : imageUrls[2];
+      if (imagePageUrl) {
+        faviconDataUrl = await new Promise(resolve => {
+          PlacesUtils.favicons.getFaviconDataForPage(
+            Services.io.newURI(imagePageUrl),
+            (uri, dataLength, data, mimeType) => {
+              if (dataLength) {
+                
+                
+                
+                
+                
+                let b64 = btoa(
+                  data.reduce((d, byte) => d + String.fromCharCode(byte), "")
+                );
+                resolve(`data:${mimeType};base64,${b64}`);
+                return;
+              }
+              resolve(undefined);
+            }
+          );
+        });
+      }
     }
 
     let snapshotGroup = {
       id: row.getResultByName("id"),
+      faviconDataUrl,
       imageUrl,
+      imagePageUrl,
       title: row.getResultByName("title") || "",
       hidden: row.getResultByName("hidden") == 1,
       builder: row.getResultByName("builder"),
