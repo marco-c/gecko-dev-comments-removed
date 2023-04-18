@@ -5486,6 +5486,12 @@ nsresult XREMain::XRE_mainRun() {
 
     mDirProvider.DoStartup();
 
+#ifdef XP_WIN
+    
+    
+    EnsureWin32kInitialized();
+#endif
+
     
     
     mozilla::FilePreferences::InitDirectoriesWhitelist();
