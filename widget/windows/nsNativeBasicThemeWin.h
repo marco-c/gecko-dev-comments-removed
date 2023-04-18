@@ -1,0 +1,22 @@
+
+
+
+
+
+
+#ifndef nsNativeBasicThemeWin_h
+#define nsNativeBasicThemeWin_h
+
+#include "nsNativeBasicTheme.h"
+
+class nsNativeBasicThemeWin : public nsNativeBasicTheme {
+ public:
+  nsNativeBasicThemeWin() = default;
+
+  Transparency GetWidgetTransparency(nsIFrame*, StyleAppearance) override;
+
+ protected:
+  virtual ~nsNativeBasicThemeWin() = default;
+};
+
+#endif
