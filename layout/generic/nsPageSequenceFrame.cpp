@@ -190,10 +190,21 @@ void nsPageSequenceFrame::PopulateReflowOutput(
   nscoord iSize = wm.IsVertical() ? mSize.Height() : mSize.Width();
   nscoord bSize = wm.IsVertical() ? mSize.Width() : mSize.Height();
 
+  nscoord availableISize = aReflowInput.AvailableISize();
+  nscoord computedBSize = aReflowInput.ComputedBSize();
+  if (MOZ_UNLIKELY(computedBSize == NS_UNCONSTRAINEDSIZE)) {
+    
+    
+    
+    
+    
+    
+    availableISize = computedBSize = 0;
+  }
   aReflowOutput.ISize(wm) =
-      std::max(NSToCoordFloor(iSize * scale), aReflowInput.AvailableISize());
+      std::max(NSToCoordFloor(iSize * scale), availableISize);
   aReflowOutput.BSize(wm) =
-      std::max(NSToCoordFloor(bSize * scale), aReflowInput.ComputedBSize());
+      std::max(NSToCoordFloor(bSize * scale), computedBSize);
   aReflowOutput.SetOverflowAreasToDesiredBounds();
 }
 
@@ -272,6 +283,9 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
   };
 
   if (aPresContext->IsScreen()) {
+    
+    
+    
     
     
     
