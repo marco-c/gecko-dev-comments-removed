@@ -17,8 +17,7 @@
 
 
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 static inline SVGAttrTearoffTable<void, DOMSVGPathSegList>&
 SVGPathSegListTearoffTable() {
@@ -533,5 +532,4 @@ void DOMSVGPathSegList::UpdateListIndicesFromIndex(
   }
 }
 
-}  
 }  

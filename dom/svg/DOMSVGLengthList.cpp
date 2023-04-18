@@ -33,8 +33,7 @@ void UpdateListIndicesFromIndex(FallibleTArray<DOMSVGLength*>& aItemsArray,
 
 }  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -358,5 +357,4 @@ void DOMSVGLengthList::MaybeRemoveItemFromAnimValListAt(uint32_t aIndex) {
   UpdateListIndicesFromIndex(animVal->mItems, aIndex);
 }
 
-}  
 }  

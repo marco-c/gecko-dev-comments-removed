@@ -13,8 +13,7 @@
 
 
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 using namespace dom::SVGPathSeg_Binding;
 
@@ -315,5 +314,4 @@ DOMSVGPathSeg* DOMSVGPathSeg::CreateFor(DOMSVGPathSegList* aList,
   }
 }
 
-}  
 }  

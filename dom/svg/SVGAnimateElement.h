@@ -14,8 +14,7 @@
 nsresult NS_NewSVGAnimateElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class SVGAnimateElement final : public SVGAnimationElement {
  protected:
@@ -38,7 +37,6 @@ class SVGAnimateElement final : public SVGAnimationElement {
   virtual SMILAnimationFunction& AnimationFunction() override;
 };
 
-}  
 }  
 
 #endif  

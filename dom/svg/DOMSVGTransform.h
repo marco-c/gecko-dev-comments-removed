@@ -19,8 +19,7 @@
 
 #define MOZ_SVG_LIST_INDEX_BIT_COUNT 31  // supports > 2 billion list items
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 struct DOMMatrix2DInit;
 class SVGElement;
@@ -174,7 +173,6 @@ class DOMSVGTransform final : public nsWrapperCache {
   UniquePtr<SVGTransform> mTransform;
 };
 
-}  
 }  
 
 #undef MOZ_SVG_LIST_INDEX_BIT_COUNT

@@ -16,8 +16,7 @@
 
 
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -142,5 +141,4 @@ JSObject* DOMSVGNumber::WrapObject(JSContext* aCx,
   return SVGNumber_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-}  
 }  

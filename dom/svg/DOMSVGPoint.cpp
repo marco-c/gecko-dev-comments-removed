@@ -16,8 +16,7 @@
 
 using namespace mozilla::gfx;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -228,5 +227,4 @@ bool DOMSVGPoint::IndexIsValid() {
 }
 #endif
 
-}  
 }  
