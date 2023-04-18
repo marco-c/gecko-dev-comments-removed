@@ -3686,6 +3686,15 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
   }
 }
 
+static bool ScreenHasNotch(nsCocoaWindow* aGeckoWindow) {
+  if (@available(macOS 12.0, *)) {
+    nsCOMPtr<nsIScreen> widgetScreen = aGeckoWindow->GetWidgetScreen();
+    NSScreen* cocoaScreen = ScreenHelperCocoa::CocoaScreenForScreen(widgetScreen);
+    return cocoaScreen.safeAreaInsets.top != 0.0f;
+  }
+  return false;
+}
+
 - (void)updateTitlebarShownAmount:(CGFloat)aShownAmount {
   NSInteger styleMask = [self styleMask];
   if (!(styleMask & NSWindowStyleMaskFullScreen)) {
@@ -3714,7 +3723,7 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
       
       
       CGFloat shiftByPixels = mInitialTitlebarHeight * aShownAmount;
-      if (!gMenubarAlwaysShownInFullScreen) {
+      if (!gMenubarAlwaysShownInFullScreen && !ScreenHasNotch(geckoWindow)) {
         shiftByPixels += mMenuBarHeight * aShownAmount;
       }
       
