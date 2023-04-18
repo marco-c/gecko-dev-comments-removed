@@ -1030,27 +1030,6 @@ bool WebGLProgram::ValidateAfterTentativeLink(
 
   
   {
-    std::unordered_set<std::string> attribNames;
-    for (const auto& attrib : linkInfo->active.activeAttribs) {
-      attribNames.insert(attrib.name);
-    }
-    for (const auto& uniform : linkInfo->active.activeUniforms) {
-      auto name = uniform.name;
-      const auto maybe = webgl::ParseIndexed(name);
-      if (maybe) {
-        name = maybe->name;
-      }
-      if (attribNames.count(name)) {
-        *out_linkLog = nsPrintfCString(
-                           "Attrib name conflicts with uniform name:"
-                           " %s",
-                           name.c_str())
-                           .BeginReading();
-        return false;
-      }
-    }
-  }
-  {
     std::unordered_map<uint32_t, const std::string&> nameByLoc;
     for (const auto& attrib : linkInfo->active.activeAttribs) {
       if (attrib.location == -1) continue;
