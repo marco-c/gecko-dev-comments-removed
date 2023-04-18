@@ -3346,99 +3346,6 @@ bool SchemeIsFTP(nsIURI* aURI) {
   return aURI->SchemeIs("ftp");
 }
 
-}  
-}  
-
-nsresult NS_HasRootDomain(const nsACString& aInput, const nsACString& aHost,
-                          bool* aResult) {
-  if (NS_WARN_IF(!aResult)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  *aResult = false;
-
-  
-  if (aInput == aHost) {
-    *aResult = true;
-    return NS_OK;
-  }
-
-  
-  int32_t index = nsAutoCString(aInput).Find(aHost.BeginReading());
-  if (index == kNotFound) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  *aResult = index > 0 && (uint32_t)index == aInput.Length() - aHost.Length() &&
-             (aInput[index - 1] == '.' || aInput[index - 1] == '/');
-  return NS_OK;
-}
-
-void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
-  if (!aURI) {
-    return;
-  }
-  nsAutoCString scheme;
-  aURI->GetScheme(scheme);
-  if (!scheme.EqualsLiteral("chrome") && !scheme.EqualsLiteral("resource")) {
-    return;
-  }
-  nsAutoCString host;
-  aURI->GetHost(host);
-  
-  if (host.EqualsLiteral("mochitests") || host.EqualsLiteral("reftest")) {
-    return;
-  }
-
-  nsAutoCString filePath;
-  aURI->GetFilePath(filePath);
-  
-  if (StringEndsWith(filePath, ".ftl"_ns)) {
-    return;
-  }
-
-  
-  
-  
-  ExtContentPolicy policy = aLoadInfo
-                                ? aLoadInfo->GetExternalContentPolicyType()
-                                : ExtContentPolicy::TYPE_OTHER;
-  if (policy == ExtContentPolicy::TYPE_FETCH ||
-      policy == ExtContentPolicy::TYPE_XMLHTTPREQUEST) {
-    return;
-  }
-
-  nsCString spec;
-  aURI->GetSpec(spec);
-
-  
-  if (StringBeginsWith(spec, "resource://gre/res/dtd/"_ns)) {
-    return;
-  }
-
-  
-  
-  
-  if (spec.Find("backgroundtasks") != kNotFound) {
-    return;
-  }
-
-  if (xpc::IsInAutomation()) {
-#ifdef DEBUG
-    if (NS_IsMainThread()) {
-      nsCOMPtr<nsIXPConnect> xpc = nsIXPConnect::XPConnect();
-      Unused << xpc->DebugDumpJSStack(false, false, false);
-    }
-#endif
-    MOZ_CRASH_UNSAFE_PRINTF("Missing chrome or resource URLs: %s", spec.get());
-  } else {
-    printf_stderr("Missing chrome or resource URL: %s\n", spec.get());
-  }
-}
-
 
 
 
@@ -3753,4 +3660,97 @@ nsTArray<LinkHeader> ParseLinkHeader(const nsAString& aLinkData) {
   }
 
   return linkHeaders;
+}
+
+}  
+}  
+
+nsresult NS_HasRootDomain(const nsACString& aInput, const nsACString& aHost,
+                          bool* aResult) {
+  if (NS_WARN_IF(!aResult)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  *aResult = false;
+
+  
+  if (aInput == aHost) {
+    *aResult = true;
+    return NS_OK;
+  }
+
+  
+  int32_t index = nsAutoCString(aInput).Find(aHost.BeginReading());
+  if (index == kNotFound) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  *aResult = index > 0 && (uint32_t)index == aInput.Length() - aHost.Length() &&
+             (aInput[index - 1] == '.' || aInput[index - 1] == '/');
+  return NS_OK;
+}
+
+void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
+  if (!aURI) {
+    return;
+  }
+  nsAutoCString scheme;
+  aURI->GetScheme(scheme);
+  if (!scheme.EqualsLiteral("chrome") && !scheme.EqualsLiteral("resource")) {
+    return;
+  }
+  nsAutoCString host;
+  aURI->GetHost(host);
+  
+  if (host.EqualsLiteral("mochitests") || host.EqualsLiteral("reftest")) {
+    return;
+  }
+
+  nsAutoCString filePath;
+  aURI->GetFilePath(filePath);
+  
+  if (StringEndsWith(filePath, ".ftl"_ns)) {
+    return;
+  }
+
+  
+  
+  
+  ExtContentPolicy policy = aLoadInfo
+                                ? aLoadInfo->GetExternalContentPolicyType()
+                                : ExtContentPolicy::TYPE_OTHER;
+  if (policy == ExtContentPolicy::TYPE_FETCH ||
+      policy == ExtContentPolicy::TYPE_XMLHTTPREQUEST) {
+    return;
+  }
+
+  nsCString spec;
+  aURI->GetSpec(spec);
+
+  
+  if (StringBeginsWith(spec, "resource://gre/res/dtd/"_ns)) {
+    return;
+  }
+
+  
+  
+  
+  if (spec.Find("backgroundtasks") != kNotFound) {
+    return;
+  }
+
+  if (xpc::IsInAutomation()) {
+#ifdef DEBUG
+    if (NS_IsMainThread()) {
+      nsCOMPtr<nsIXPConnect> xpc = nsIXPConnect::XPConnect();
+      Unused << xpc->DebugDumpJSStack(false, false, false);
+    }
+#endif
+    MOZ_CRASH_UNSAFE_PRINTF("Missing chrome or resource URLs: %s", spec.get());
+  } else {
+    printf_stderr("Missing chrome or resource URL: %s\n", spec.get());
+  }
 }

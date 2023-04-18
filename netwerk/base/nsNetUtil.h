@@ -994,22 +994,6 @@ bool SchemeIsData(nsIURI* aURI);
 bool SchemeIsViewSource(nsIURI* aURI);
 bool SchemeIsResource(nsIURI* aURI);
 bool SchemeIsFTP(nsIURI* aURI);
-}  
-}  
-
-
-
-
-
-
-
-
-
-
-nsresult NS_HasRootDomain(const nsACString& aInput, const nsACString& aHost,
-                          bool* aResult);
-
-void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI);
 
 struct LinkHeader {
   nsString mHref;
@@ -1031,5 +1015,22 @@ struct LinkHeader {
 };
 
 nsTArray<LinkHeader> ParseLinkHeader(const nsAString& aLinkData);
+
+}  
+}  
+
+
+
+
+
+
+
+
+
+
+nsresult NS_HasRootDomain(const nsACString& aInput, const nsACString& aHost,
+                          bool* aResult);
+
+void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI);
 
 #endif  
