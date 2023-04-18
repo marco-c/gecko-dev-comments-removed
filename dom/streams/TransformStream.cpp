@@ -15,7 +15,7 @@
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TransformStream, mGlobal, mController)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TransformStream, mGlobal)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(TransformStream)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(TransformStream)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TransformStream)
@@ -40,85 +40,8 @@ already_AddRefed<TransformStream> TransformStream::Constructor(
     const Optional<JS::Handle<JSObject*>>& aTransformer,
     const QueuingStrategy& aWritableStrategy,
     const QueuingStrategy& aReadableStrategy, ErrorResult& aRv) {
-  
-  JS::Rooted<JSObject*> transformerObj(
-      aGlobal.Context(),
-      aTransformer.WasPassed() ? aTransformer.Value() : nullptr);
-
-  
-  
-  Transformer transformerDict;
-  if (transformerObj) {
-    JS::Rooted<JS::Value> objValue(aGlobal.Context(),
-                                   JS::ObjectValue(*transformerObj));
-    dom::BindingCallContext callCx(aGlobal.Context(),
-                                   "TransformStream.constructor");
-    aRv.MightThrowJSException();
-    if (!transformerDict.Init(callCx, objValue)) {
-      aRv.StealExceptionFromJSContext(aGlobal.Context());
-      return nullptr;
-    }
-  }
-
-  
-  
-  if (!transformerDict.mReadableType.isUndefined()) {
-    aRv.ThrowRangeError(
-        "`readableType` is unsupported and preserved for future use");
-    return nullptr;
-  }
-
-  
-  
-  if (!transformerDict.mWritableType.isUndefined()) {
-    aRv.ThrowRangeError(
-        "`writableType` is unsupported and preserved for future use");
-    return nullptr;
-  }
-
-  
-  
-  
-
-  
-  
-  
-
-  
-  
-  
-
-  
-  
-  
-
-  
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
-  RefPtr<Promise> startPromise = Promise::Create(global, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  
-  
-  
   RefPtr<TransformStream> transformStream = new TransformStream(global);
-  
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  
-  
-  
-  SetUpTransformStreamDefaultControllerFromTransformer(
-      aGlobal.Context(), *transformStream, transformerObj, transformerDict);
-
-  
-  
-  
-  
-
   return transformStream.forget();
 }
 

@@ -48,10 +48,6 @@ class TransformStreamDefaultController final : public nsISupports,
   nsCOMPtr<nsIGlobalObject> mGlobal;
 };
 
-extern void SetUpTransformStreamDefaultControllerFromTransformer(
-    JSContext* aCx, TransformStream& aStream, JS::HandleObject aTransformer,
-    Transformer& aTransformerDict);
-
 }  
 
 #endif  
