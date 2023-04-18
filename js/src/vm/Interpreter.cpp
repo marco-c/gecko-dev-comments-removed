@@ -565,10 +565,14 @@ static bool InternalCall(JSContext* cx, const AnyInvokeArgs& args,
   if (args.thisv().isObject()) {
     
     
-    
-    if (CalleeNeedsOuterizedThisObject(args.calleev())) {
-      JSObject* thisObj = GetThisObject(&args.thisv().toObject());
-      args.mutableThisv().setObject(*thisObj);
+    JSObject* thisObj = &args.thisv().toObject();
+    if (thisObj->is<GlobalObject>()) {
+      if (CalleeNeedsOuterizedThisObject(args.calleev())) {
+        args.mutableThisv().setObject(*GetThisObject(thisObj));
+      }
+    } else {
+      
+      MOZ_ASSERT(GetThisObject(thisObj) == thisObj);
     }
   }
 
