@@ -1325,12 +1325,6 @@ const windowGlobalTargetPrototype = {
       
       return;
     }
-    if (
-      typeof options.paintFlashing !== "undefined" &&
-      options.PaintFlashing !== this._getPaintFlashing()
-    ) {
-      this._setPaintFlashingEnabled(options.paintFlashing);
-    }
     if (typeof options.restoreFocus == "boolean") {
       this._restoreFocus = options.restoreFocus;
     }
@@ -1362,31 +1356,9 @@ const windowGlobalTargetPrototype = {
 
 
   _restoreTargetConfiguration() {
-    this._setPaintFlashingEnabled(false);
-
     if (this._restoreFocus && this.browsingContext?.isActive) {
       this.window.focus();
     }
-  },
-
-  
-
-
-  _setPaintFlashingEnabled(enabled) {
-    const windowUtils = this.window.windowUtils;
-    windowUtils.paintFlashing = enabled;
-  },
-
-  
-
-
-  _getPaintFlashing() {
-    if (!this.docShell) {
-      
-      return null;
-    }
-
-    return this.window.windowUtils.paintFlashing;
   },
 
   _changeTopLevelDocument(window) {

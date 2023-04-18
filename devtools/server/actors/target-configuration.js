@@ -32,8 +32,6 @@ const SUPPORTED_OPTIONS = {
   
   overrideDPPX: true,
   
-  paintFlashing: true,
-  
   printSimulationEnabled: true,
   
   rdmPaneMaxTouchPoints: true,
