@@ -410,7 +410,8 @@ class CallSiteDesc {
 
   enum Kind {
     Func,        
-    Dynamic,     
+    Import,      
+    Indirect,    
     Symbolic,    
     EnterFrame,  
     LeaveFrame,  
@@ -427,7 +428,12 @@ class CallSiteDesc {
   }
   uint32_t lineOrBytecode() const { return lineOrBytecode_; }
   Kind kind() const { return Kind(kind_); }
-  bool mightBeCrossInstance() const { return kind() == CallSiteDesc::Dynamic; }
+  bool isImportCall() const { return kind() == CallSiteDesc::Import; }
+  bool isIndirectCall() const { return kind() == CallSiteDesc::Indirect; }
+  
+  bool mightBeCrossInstance() const {
+    return isImportCall() || isIndirectCall();
+  }
 };
 
 class CallSite : public CallSiteDesc {
