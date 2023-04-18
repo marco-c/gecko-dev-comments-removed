@@ -71,7 +71,9 @@ add_task(async function test_click_on_footer() {
       true
     );
     
-    await sleep(3000);
+    await BrowserTestUtils.waitForCondition(() =>
+      BrowserTestUtils.is_visible(optionButton)
+    );
     await EventUtils.synthesizeMouseAtCenter(optionButton, {});
     info(`expecting tab: about:preferences#privacy opened`);
     const prefTab = await prefTabPromise;
