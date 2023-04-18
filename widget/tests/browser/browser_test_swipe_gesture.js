@@ -52,12 +52,12 @@ function getPanHandler() {
 
 const NativePanHandler = getPanHandler();
 
-async function panRightToLeft(aElement, aX, aY) {
+async function panRightToLeft(aElement, aX, aY, aMultiplier) {
   await NativePanHandler.promiseNativePanEvent(
     aElement,
     aX,
     aY,
-    NativePanHandler.deltaOnRTL,
+    NativePanHandler.deltaOnRTL * aMultiplier,
     0,
     NativePanHandler.beginPhase
   );
@@ -73,7 +73,7 @@ async function panRightToLeft(aElement, aX, aY) {
     aElement,
     aX,
     aY,
-    NativePanHandler.deltaOnRTL,
+    NativePanHandler.deltaOnRTL * aMultiplier,
     0,
     NativePanHandler.updatePhase
   );
@@ -87,12 +87,17 @@ async function panRightToLeft(aElement, aX, aY) {
   );
 }
 
-async function panLeftToRight(aElement, aX, aY) {
+async function panLeftToRight(aElement, aX, aY, aMultiplier) {
+  await panLeftToRightBeginAndUpdate(aElement, aX, aY, aMultiplier);
+  await panLeftToRightEnd(aElement, aX, aY, aMultiplier);
+}
+
+async function panLeftToRightBeginAndUpdate(aElement, aX, aY, aMultiplier) {
   await NativePanHandler.promiseNativePanEvent(
     aElement,
     aX,
     aY,
-    -NativePanHandler.deltaOnRTL,
+    -NativePanHandler.deltaOnRTL * aMultiplier,
     0,
     NativePanHandler.beginPhase
   );
@@ -100,7 +105,7 @@ async function panLeftToRight(aElement, aX, aY) {
     aElement,
     aX,
     aY,
-    -NativePanHandler.deltaOnRTL,
+    -NativePanHandler.deltaOnRTL * aMultiplier,
     0,
     NativePanHandler.updatePhase
   );
@@ -108,10 +113,13 @@ async function panLeftToRight(aElement, aX, aY) {
     aElement,
     aX,
     aY,
-    -NativePanHandler.deltaOnRTL,
+    -NativePanHandler.deltaOnRTL * aMultiplier,
     0,
     NativePanHandler.updatePhase
   );
+}
+
+async function panLeftToRightEnd(aElement, aX, aY, aMultiplier) {
   await NativePanHandler.promiseNativePanEvent(
     aElement,
     aX,
@@ -156,7 +164,7 @@ add_task(async () => {
   });
 
   
-  await panRightToLeft(tab.linkedBrowser, 100, 100);
+  await panRightToLeft(tab.linkedBrowser, 100, 100, 1);
   
   
   is(wheelEventCount, 3, "Received 3 wheel events");
@@ -175,7 +183,7 @@ add_task(async () => {
     tab.linkedBrowser,
     firstPage
   );
-  await panLeftToRight(tab.linkedBrowser, 100, 100);
+  await panLeftToRight(tab.linkedBrowser, 100, 100, 1);
   
   
   is(wheelEventCount, 1, "Received a wheel event");
@@ -195,7 +203,7 @@ add_task(async () => {
     tab.linkedBrowser,
     secondPage
   );
-  await panRightToLeft(tab.linkedBrowser, 100, 100);
+  await panRightToLeft(tab.linkedBrowser, 100, 100, 1);
   is(wheelEventCount, 1, "Received a wheel event");
 
   await Promise.all([startLoadingPromise, stoppedLoadingPromise]);
@@ -209,7 +217,7 @@ add_task(async () => {
     event.preventDefault();
   };
   tab.linkedBrowser.addEventListener("wheel", wheelEventListener);
-  await panLeftToRight(tab.linkedBrowser, 100, 100);
+  await panLeftToRight(tab.linkedBrowser, 100, 100, 1);
   is(wheelEventCount, 3, "Received all wheel events");
 
   await waitForWhile();
@@ -224,12 +232,209 @@ add_task(async () => {
     set: [["widget.disable-swipe-tracker", true]],
   });
 
-  await panLeftToRight(tab.linkedBrowser, 100, 100);
+  await panLeftToRight(tab.linkedBrowser, 100, 100, 1);
   is(wheelEventCount, 3, "Received all wheel events");
 
   await waitForWhile();
   
   is(tab.linkedBrowser.currentURI.spec, secondPage);
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async () => {
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.gesture.swipe.left", "Browser:BackOrBackDuplicate"],
+      ["browser.gesture.swipe.eight", "Browser:ForwardOrForwardDuplicate"],
+      ["widget.disable-swipe-tracker", false],
+      ["widget.swipe.velocity-twitch-tolerance", 0.0000001],
+      ["widget.swipe.success-threshold", 0.25],
+      
+      
+      ["widget.swipe.success-velocity-contribution", 0.0],
+      ["widget.swipe.whole-page-pixel-size", 550.0],
+    ],
+  });
+
+  const firstPage = "about:about";
+  const secondPage = "about:mozilla";
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    firstPage,
+    true 
+  );
+
+  BrowserTestUtils.loadURI(tab.linkedBrowser, secondPage);
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, secondPage);
+
+  
+  ok(gBrowser.webNavigation.canGoBack);
+  
+  ok(!gBrowser.webNavigation.canGoForward);
+
+  let wheelEventCount = 0;
+  tab.linkedBrowser.addEventListener("wheel", () => {
+    wheelEventCount++;
+  });
+
+  
+  
+  
+  
+  await panLeftToRightBeginAndUpdate(tab.linkedBrowser, 100, 100, 0.9);
+
+  
+  let computedOpacity = window
+    .getComputedStyle(gHistorySwipeAnimation._prevBox)
+    .getPropertyValue("opacity");
+  ok(
+    0.98 < computedOpacity && computedOpacity < 0.99,
+    "opacity of prevbox is not quite 1"
+  );
+  let opacity = gHistorySwipeAnimation._prevBox.style.opacity;
+  ok(0.98 < opacity && opacity < 0.99, "opacity of prevbox is not quite 1");
+
+  await panLeftToRightEnd(tab.linkedBrowser, 100, 100, 0.9);
+
+  
+  
+  is(wheelEventCount, 1, "Received a wheel event");
+
+  await waitForWhile();
+  
+  is(tab.linkedBrowser.currentURI.spec, secondPage);
+
+  
+  wheelEventCount = 0;
+  let startLoadingPromise = BrowserTestUtils.browserStarted(
+    tab.linkedBrowser,
+    firstPage
+  );
+  let stoppedLoadingPromise = BrowserTestUtils.browserStopped(
+    tab.linkedBrowser,
+    firstPage
+  );
+  await panLeftToRight(tab.linkedBrowser, 100, 100, 1);
+  
+  
+  is(wheelEventCount, 1, "Received a wheel event");
+
+  
+  
+  computedOpacity = window
+    .getComputedStyle(gHistorySwipeAnimation._prevBox)
+    .getPropertyValue("opacity");
+  ok(computedOpacity == 1, "computed opacity of prevbox is 1");
+  opacity = gHistorySwipeAnimation._prevBox.style.opacity;
+  ok(opacity == 0, "element.style opacity of prevbox 0");
+
+  
+  await Promise.all([startLoadingPromise, stoppedLoadingPromise]);
+
+  ok(gBrowser.webNavigation.canGoForward);
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+
+add_task(async () => {
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.gesture.swipe.left", "Browser:BackOrBackDuplicate"],
+      ["browser.gesture.swipe.eight", "Browser:ForwardOrForwardDuplicate"],
+      ["widget.disable-swipe-tracker", false],
+      ["widget.swipe.velocity-twitch-tolerance", 0.0000001],
+      ["widget.swipe.success-threshold", 0.25],
+      
+      
+      ["widget.swipe.success-velocity-contribution", 0.0],
+      ["widget.swipe.whole-page-pixel-size", 1100.0],
+    ],
+  });
+
+  const firstPage = "about:about";
+  const secondPage = "about:mozilla";
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    firstPage,
+    true 
+  );
+
+  BrowserTestUtils.loadURI(tab.linkedBrowser, secondPage);
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, secondPage);
+
+  
+  ok(gBrowser.webNavigation.canGoBack);
+  
+  ok(!gBrowser.webNavigation.canGoForward);
+
+  let wheelEventCount = 0;
+  tab.linkedBrowser.addEventListener("wheel", () => {
+    wheelEventCount++;
+  });
+
+  
+  
+  
+  
+  await panLeftToRightBeginAndUpdate(tab.linkedBrowser, 100, 100, 1.8);
+
+  
+  let computedOpacity = window
+    .getComputedStyle(gHistorySwipeAnimation._prevBox)
+    .getPropertyValue("opacity");
+  ok(
+    0.98 < computedOpacity && computedOpacity < 0.99,
+    "opacity of prevbox is not quite 1"
+  );
+  let opacity = gHistorySwipeAnimation._prevBox.style.opacity;
+  ok(0.98 < opacity && opacity < 0.99, "opacity of prevbox is not quite 1");
+
+  await panLeftToRightEnd(tab.linkedBrowser, 100, 100, 1.8);
+
+  
+  
+  is(wheelEventCount, 1, "Received a wheel event");
+
+  await waitForWhile();
+  
+  is(tab.linkedBrowser.currentURI.spec, secondPage);
+
+  
+  wheelEventCount = 0;
+  let startLoadingPromise = BrowserTestUtils.browserStarted(
+    tab.linkedBrowser,
+    firstPage
+  );
+  let stoppedLoadingPromise = BrowserTestUtils.browserStopped(
+    tab.linkedBrowser,
+    firstPage
+  );
+  await panLeftToRight(tab.linkedBrowser, 100, 100, 2);
+  
+  
+  is(wheelEventCount, 1, "Received a wheel event");
+
+  
+  
+  computedOpacity = window
+    .getComputedStyle(gHistorySwipeAnimation._prevBox)
+    .getPropertyValue("opacity");
+  ok(computedOpacity == 1, "computed opacity of prevbox is 1");
+  opacity = gHistorySwipeAnimation._prevBox.style.opacity;
+  ok(opacity == 0, "element.style opacity of prevbox 0");
+
+  
+  await Promise.all([startLoadingPromise, stoppedLoadingPromise]);
+
+  ok(gBrowser.webNavigation.canGoForward);
 
   BrowserTestUtils.removeTab(tab);
 });
