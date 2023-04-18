@@ -3,6 +3,9 @@
 
 
 
+use crate::internal::Parser;
+use crate::lib::std::fmt;
+
 
 
 
@@ -29,7 +32,11 @@ pub trait ParseError<I>: Sized {
   fn or(self, other: Self) -> Self {
     other
   }
+}
 
+
+
+pub trait ContextError<I>: Sized {
   
   
   
@@ -37,6 +44,61 @@ pub trait ParseError<I>: Sized {
     other
   }
 }
+
+
+
+pub trait FromExternalError<I, E> {
+  
+  
+  fn from_external_error(input: I, kind: ErrorKind, e: E) -> Self;
+}
+
+
+#[derive(Debug, PartialEq)]
+pub struct Error<I> {
+  
+  pub input: I,
+  
+  pub code: ErrorKind,
+}
+
+impl<I> Error<I> {
+  
+  pub fn new(input: I, code: ErrorKind) -> Error<I> {
+    Error { input, code }
+  }
+}
+
+impl<I> ParseError<I> for Error<I> {
+  fn from_error_kind(input: I, kind: ErrorKind) -> Self {
+    Error { input, code: kind }
+  }
+
+  fn append(_: I, _: ErrorKind, other: Self) -> Self {
+    other
+  }
+}
+
+impl<I> ContextError<I> for Error<I> {}
+
+impl<I, E> FromExternalError<I, E> for Error<I> {
+  
+  fn from_external_error(input: I, kind: ErrorKind, _e: E) -> Self {
+    Error { input, code: kind }
+  }
+}
+
+
+impl<I: fmt::Display> fmt::Display for Error<I> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "error {:?} at: {}", self.code, self.input)
+  }
+}
+
+#[cfg(feature = "std")]
+impl<I: fmt::Debug + fmt::Display> std::error::Error for Error<I> {}
+
+
 
 impl<I> ParseError<I> for (I, ErrorKind) {
   fn from_error_kind(input: I, kind: ErrorKind) -> Self {
@@ -48,10 +110,24 @@ impl<I> ParseError<I> for (I, ErrorKind) {
   }
 }
 
+impl<I> ContextError<I> for (I, ErrorKind) {}
+
+impl<I, E> FromExternalError<I, E> for (I, ErrorKind) {
+  fn from_external_error(input: I, kind: ErrorKind, _e: E) -> Self {
+    (input, kind)
+  }
+}
+
 impl<I> ParseError<I> for () {
   fn from_error_kind(_: I, _: ErrorKind) -> Self {}
 
   fn append(_: I, _: ErrorKind, _: Self) -> Self {}
+}
+
+impl<I> ContextError<I> for () {}
+
+impl<I, E> FromExternalError<I, E> for () {
+  fn from_external_error(_input: I, _kind: ErrorKind, _e: E) -> Self {}
 }
 
 
@@ -70,6 +146,7 @@ pub fn append_error<I, E: ParseError<I>>(input: I, kind: ErrorKind, other: E) ->
 
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct VerboseError<I> {
   
@@ -78,6 +155,7 @@ pub struct VerboseError<I> {
 }
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 #[derive(Clone, Debug, PartialEq)]
 
 pub enum VerboseErrorKind {
@@ -90,6 +168,7 @@ pub enum VerboseErrorKind {
 }
 
 #[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
 impl<I> ParseError<I> for VerboseError<I> {
   fn from_error_kind(input: I, kind: ErrorKind) -> Self {
     VerboseError {
@@ -107,23 +186,58 @@ impl<I> ParseError<I> for VerboseError<I> {
       errors: vec![(input, VerboseErrorKind::Char(c))],
     }
   }
+}
 
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+impl<I> ContextError<I> for VerboseError<I> {
   fn add_context(input: I, ctx: &'static str, mut other: Self) -> Self {
     other.errors.push((input, VerboseErrorKind::Context(ctx)));
     other
   }
 }
 
+#[cfg(feature = "alloc")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+impl<I, E> FromExternalError<I, E> for VerboseError<I> {
+  
+  fn from_external_error(input: I, kind: ErrorKind, _e: E) -> Self {
+    Self::from_error_kind(input, kind)
+  }
+}
+
+#[cfg(feature = "alloc")]
+impl<I: fmt::Display> fmt::Display for VerboseError<I> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    writeln!(f, "Parse error:")?;
+    for (input, error) in &self.errors {
+      match error {
+        VerboseErrorKind::Nom(e) => writeln!(f, "{:?} at: {}", e, input)?,
+        VerboseErrorKind::Char(c) => writeln!(f, "expected '{}' at: {}", c, input)?,
+        VerboseErrorKind::Context(s) => writeln!(f, "in section '{}', at: {}", s, input)?,
+      }
+    }
+
+    Ok(())
+  }
+}
+
+#[cfg(feature = "std")]
+impl<I: fmt::Debug + fmt::Display> std::error::Error for VerboseError<I> {}
+
 use crate::internal::{Err, IResult};
 
 
 
 
-pub fn context<I: Clone, E: ParseError<I>, F, O>(context: &'static str, f: F) -> impl Fn(I) -> IResult<I, O, E>
+pub fn context<I: Clone, E: ContextError<I>, F, O>(
+  context: &'static str,
+  mut f: F,
+) -> impl FnMut(I) -> IResult<I, O, E>
 where
-  F: Fn(I) -> IResult<I, O, E>,
+  F: Parser<I, O, E>,
 {
-  move |i: I| match f(i.clone()) {
+  move |i: I| match f.parse(i.clone()) {
     Ok(o) => Ok(o),
     Err(Err::Incomplete(i)) => Err(Err::Incomplete(i)),
     Err(Err::Error(e)) => Err(Err::Error(E::add_context(i, context, e))),
@@ -133,7 +247,11 @@ where
 
 
 #[cfg(feature = "alloc")]
-pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::string::String {
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "alloc")))]
+pub fn convert_error<I: core::ops::Deref<Target = str>>(
+  input: I,
+  e: VerboseError<I>,
+) -> crate::lib::std::string::String {
   use crate::lib::std::fmt::Write;
   use crate::traits::Offset;
 
@@ -144,7 +262,9 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
 
     if input.is_empty() {
       match kind {
-        VerboseErrorKind::Char(c) => write!(&mut result, "{}: expected '{}', got empty input\n\n", i, c),
+        VerboseErrorKind::Char(c) => {
+          write!(&mut result, "{}: expected '{}', got empty input\n\n", i, c)
+        }
         VerboseErrorKind::Context(s) => write!(&mut result, "{}: in {}, got empty input\n\n", i, s),
         VerboseErrorKind::Nom(e) => write!(&mut result, "{}: in {:?}, got empty input\n\n", i, e),
       }
@@ -156,45 +276,56 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
 
       
       
-      let line_begin = prefix.iter().rev().position(|&b| b == b'\n').map(|pos| offset - pos).unwrap_or(0);
+      let line_begin = prefix
+        .iter()
+        .rev()
+        .position(|&b| b == b'\n')
+        .map(|pos| offset - pos)
+        .unwrap_or(0);
 
       
-      let line = input[line_begin..].lines().next().unwrap_or(&input[line_begin..]).trim_end();
+      let line = input[line_begin..]
+        .lines()
+        .next()
+        .unwrap_or(&input[line_begin..])
+        .trim_end();
 
       
       let column_number = line.offset(substring) + 1;
 
       match kind {
-        VerboseErrorKind::Char(c) => if let Some(actual) = substring.chars().next() {
-          write!(
-            &mut result,
-            "{i}: at line {line_number}:\n\
+        VerboseErrorKind::Char(c) => {
+          if let Some(actual) = substring.chars().next() {
+            write!(
+              &mut result,
+              "{i}: at line {line_number}:\n\
                {line}\n\
                {caret:>column$}\n\
                expected '{expected}', found {actual}\n\n",
-            i = i,
-            line_number = line_number,
-            line = line,
-            caret = '^',
-            column = column_number,
-            expected = c,
-            actual = actual,
-          )
-        } else {
-          write!(
-            &mut result,
-            "{i}: at line {line_number}:\n\
+              i = i,
+              line_number = line_number,
+              line = line,
+              caret = '^',
+              column = column_number,
+              expected = c,
+              actual = actual,
+            )
+          } else {
+            write!(
+              &mut result,
+              "{i}: at line {line_number}:\n\
                {line}\n\
                {caret:>column$}\n\
                expected '{expected}', got end of input\n\n",
-            i = i,
-            line_number = line_number,
-            line = line,
-            caret = '^',
-            column = column_number,
-            expected = c,
-          )
-        },
+              i = i,
+              line_number = line_number,
+              line = line,
+              caret = '^',
+              column = column_number,
+              expected = c,
+            )
+          }
+        }
         VerboseErrorKind::Context(s) => write!(
           &mut result,
           "{i}: at line {line_number}, in {context}:\n\
@@ -229,7 +360,7 @@ pub fn convert_error(input: &str, e: VerboseError<&str>) -> crate::lib::std::str
 }
 
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 #[derive(Debug,PartialEq,Eq,Hash,Clone,Copy)]
 #[allow(deprecated,missing_docs)]
 pub enum ErrorKind {
@@ -285,9 +416,10 @@ pub enum ErrorKind {
   Many0Count,
   Many1Count,
   Float,
+  Satisfy,
 }
 
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 #[allow(deprecated)]
 
 pub fn error_to_u32(e: &ErrorKind) -> u32 {
@@ -344,11 +476,12 @@ pub fn error_to_u32(e: &ErrorKind) -> u32 {
     ErrorKind::Many0Count                => 72,
     ErrorKind::Many1Count                => 73,
     ErrorKind::Float                     => 74,
+    ErrorKind::Satisfy                   => 75,
   }
 }
 
 impl ErrorKind {
-  #[cfg_attr(rustfmt, rustfmt_skip)]
+  #[rustfmt::skip]
   #[allow(deprecated)]
   
   pub fn description(&self) -> &str {
@@ -405,6 +538,7 @@ impl ErrorKind {
       ErrorKind::Many0Count                => "Count occurrence of >=0 patterns",
       ErrorKind::Many1Count                => "Count occurrence of >=1 patterns",
       ErrorKind::Float                     => "Float",
+      ErrorKind::Satisfy                   => "Satisfy",
     }
   }
 }
@@ -429,27 +563,6 @@ macro_rules! error_node_position(
     $crate::error::append_error($input, $code, $next)
   });
 );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -559,7 +672,7 @@ mod tests {
   fn convert_error_panic() {
     let input = "";
 
-    let result: IResult<_, _, VerboseError<&str>> = char('x')(input);
+    let _result: IResult<_, _, VerboseError<&str>> = char('x')(input);
   }
 }
 

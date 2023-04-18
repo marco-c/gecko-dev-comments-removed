@@ -452,8 +452,6 @@ macro_rules! switch (
 
 
 
-
-
 #[macro_export(local_inner_macros)]
 macro_rules! permutation (
   ($i:expr, $($rest:tt)*) => (
@@ -568,6 +566,7 @@ macro_rules! succ (
   (17, $submac:ident ! ($($rest:tt)*)) => ($submac!(18, $($rest)*));
   (18, $submac:ident ! ($($rest:tt)*)) => ($submac!(19, $($rest)*));
   (19, $submac:ident ! ($($rest:tt)*)) => ($submac!(20, $($rest)*));
+  (20, $submac:ident ! ($($rest:tt)*)) => ($submac!(21, $($rest)*));
 );
 
 #[doc(hidden)]
@@ -720,15 +719,15 @@ macro_rules! permutation_iterator (
 #[cfg(test)]
 mod tests {
   use crate::error::ErrorKind;
+  use crate::internal::{Err, IResult, Needed};
   #[cfg(feature = "alloc")]
   use crate::{
     error::ParseError,
     lib::std::{
       fmt::Debug,
-      string::{String, ToString}
-    }
+      string::{String, ToString},
+    },
   };
-  use crate::internal::{Err, IResult, Needed};
 
   
   macro_rules! tag (
@@ -762,7 +761,7 @@ mod tests {
           let e: ErrorKind = ErrorKind::Tag;
           Err(Err::Error(error_position!($i, e)))
         } else if m < blen {
-          Err(Err::Incomplete(Needed::Size(blen)))
+          Err(Err::Incomplete(Needed::new(blen)))
         } else {
           Ok((&$i[blen..], reduced))
         };
@@ -776,7 +775,7 @@ mod tests {
       {
         let cnt = $count as usize;
         let res:IResult<&[u8],&[u8],_> = if $i.len() < cnt {
-          Err(Err::Incomplete(Needed::Size(cnt)))
+          Err(Err::Incomplete(Needed::new(cnt)))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
         };
@@ -810,7 +809,10 @@ mod tests {
     }
 
     fn append(input: I, kind: ErrorKind, other: Self) -> Self {
-      ErrorStr(format!("custom error message: ({:?}, {:?}) - {:?}", input, kind, other))
+      ErrorStr(format!(
+        "custom error message: ({:?}, {:?}) - {:?}",
+        input, kind, other
+      ))
     }
   }
 
@@ -854,7 +856,10 @@ mod tests {
     assert_eq!(alt4(b), Ok((&b""[..], b)));
 
     
-    named!(alt5<bool>, alt!(tag!("abcd") => { |_| false } | tag!("efgh") => { |_| true }));
+    named!(
+      alt5<bool>,
+      alt!(tag!("abcd") => { |_| false } | tag!("efgh") => { |_| true })
+    );
     assert_eq!(alt5(a), Ok((&b""[..], false)));
     assert_eq!(alt5(b), Ok((&b""[..], true)));
 
@@ -869,15 +874,15 @@ mod tests {
     named!(alt1, alt!(tag!("a") | tag!("bc") | tag!("def")));
 
     let a = &b""[..];
-    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::Size(1))));
+    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::new(1))));
     let a = &b"b"[..];
-    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::Size(2))));
+    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::new(2))));
     let a = &b"bcd"[..];
     assert_eq!(alt1(a), Ok((&b"d"[..], &b"bc"[..])));
     let a = &b"cde"[..];
     assert_eq!(alt1(a), Err(Err::Error(error_position!(a, ErrorKind::Alt))));
     let a = &b"de"[..];
-    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(alt1(a), Err(Err::Incomplete(Needed::new(3))));
     let a = &b"defg"[..];
     assert_eq!(alt1(a), Ok((&b"g"[..], &b"def"[..])));
   }
@@ -899,7 +904,13 @@ mod tests {
     let b = &b"efghijkl"[..];
     assert_eq!(sw(b), Ok((&b""[..], &b"ijkl"[..])));
     let c = &b"afghijkl"[..];
-    assert_eq!(sw(c), Err(Err::Error(error_position!(&b"afghijkl"[..], ErrorKind::Switch))));
+    assert_eq!(
+      sw(c),
+      Err(Err::Error(error_position!(
+        &b"afghijkl"[..],
+        ErrorKind::Switch
+      )))
+    );
 
     let a = &b"xxxxefgh"[..];
     assert_eq!(sw(a), Ok((&b"gh"[..], &b"ef"[..])));
@@ -907,7 +918,10 @@ mod tests {
 
   #[test]
   fn permutation() {
-    named!(perm<(&[u8], &[u8], &[u8])>, permutation!(tag!("abcd"), tag!("efg"), tag!("hi")));
+    named!(
+      perm<(&[u8], &[u8], &[u8])>,
+      permutation!(tag!("abcd"), tag!("efg"), tag!("hi"))
+    );
 
     let expected = (&b"abcd"[..], &b"efg"[..], &b"hi"[..]);
 
@@ -929,7 +943,7 @@ mod tests {
     );
 
     let e = &b"efgabc"[..];
-    assert_eq!(perm(e), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(perm(e), Err(Err::Incomplete(Needed::new(4))));
   }
 
   

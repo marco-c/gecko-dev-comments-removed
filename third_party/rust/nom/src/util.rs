@@ -4,6 +4,7 @@ use crate::internal::IResult;
 use std::fmt::Debug;
 
 #[cfg(feature = "std")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "std")))]
 
 pub trait HexDisplay {
   
@@ -16,7 +17,7 @@ pub trait HexDisplay {
 }
 
 #[cfg(feature = "std")]
-static CHARS: &'static [u8] = b"0123456789abcdef";
+static CHARS: &[u8] = b"0123456789abcdef";
 
 #[cfg(feature = "std")]
 impl HexDisplay for [u8] {
@@ -114,9 +115,8 @@ macro_rules! nom_stringify (
 
 
 
-
 #[macro_export(local_inner_macros)]
-macro_rules! dbg (
+macro_rules! dbg_basic (
   ($i: expr, $submac:ident!( $($args:tt)* )) => (
     {
       use $crate::lib::std::result::Result::*;
@@ -132,7 +132,7 @@ macro_rules! dbg (
   );
 
   ($i:expr, $f:ident) => (
-      dbg!($i, call!($f));
+      dbg_basic!($i, call!($f));
   );
 );
 
@@ -158,16 +158,20 @@ macro_rules! dbg (
 
 
 #[cfg(feature = "std")]
-pub fn dbg_dmp<'a, F, O, E: Debug>(f: F, context: &'static str) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], O, E>
-  where F: Fn(&'a [u8]) -> IResult<&'a [u8], O, E> {
-  move |i: &'a [u8]| {
-      match f(i) {
-        Err(e) => {
-          println!("{}: Error({:?}) at:\n{}", context, e, i.to_hex(8));
-          Err(e)
-        },
-        a => a,
-      }
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "std")))]
+pub fn dbg_dmp<'a, F, O, E: Debug>(
+  f: F,
+  context: &'static str,
+) -> impl Fn(&'a [u8]) -> IResult<&'a [u8], O, E>
+where
+  F: Fn(&'a [u8]) -> IResult<&'a [u8], O, E>,
+{
+  move |i: &'a [u8]| match f(i) {
+    Err(e) => {
+      println!("{}: Error({:?}) at:\n{}", context, e, i.to_hex(8));
+      Err(e)
+    }
+    a => a,
   }
 }
 
@@ -192,6 +196,7 @@ pub fn dbg_dmp<'a, F, O, E: Debug>(f: F, context: &'static str) -> impl Fn(&'a [
 
 #[macro_export(local_inner_macros)]
 #[cfg(feature = "std")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "std")))]
 macro_rules! dbg_dmp (
   ($i: expr, $submac:ident!( $($args:tt)* )) => (
     {
@@ -211,4 +216,3 @@ macro_rules! dbg_dmp (
       dbg_dmp!($i, call!($f));
   );
 );
-

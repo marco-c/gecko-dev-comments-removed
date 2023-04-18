@@ -5,8 +5,8 @@
 #[macro_use]
 mod macros;
 
-pub mod streaming;
 pub mod complete;
+pub mod streaming;
 
 
 
@@ -99,3 +99,18 @@ pub fn is_space(chr: u8) -> bool {
   chr == b' ' || chr == b'\t'
 }
 
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn is_newline(chr: u8) -> bool {
+  chr == b'\n'
+}

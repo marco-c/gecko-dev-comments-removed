@@ -3,8 +3,8 @@
 #[macro_use]
 mod macros;
 
-use crate::internal::IResult;
 use crate::error::ParseError;
+use crate::internal::{IResult, Parser};
 
 
 
@@ -25,20 +25,27 @@ use crate::error::ParseError;
 
 
 
-pub fn pair<I, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, (O1, O2), E>
+pub fn pair<I, O1, O2, E: ParseError<I>, F, G>(
+  mut first: F,
+  mut second: G,
+) -> impl FnMut(I) -> IResult<I, (O1, O2), E>
 where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
+  F: Parser<I, O1, E>,
+  G: Parser<I, O2, E>,
 {
   move |input: I| {
-    let (input, o1) = first(input)?;
-    second(input).map(|(i, o2)| (i, (o1, o2)))
+    let (input, o1) = first.parse(input)?;
+    second.parse(input).map(|(i, o2)| (i, (o1, o2)))
   }
 }
 
 
 #[doc(hidden)]
-pub fn pairc<I, O1, O2, E: ParseError<I>, F, G>(input: I, first: F, second: G) -> IResult<I, (O1, O2), E>
+pub fn pairc<I, O1, O2, E: ParseError<I>, F, G>(
+  input: I,
+  first: F,
+  second: G,
+) -> IResult<I, (O1, O2), E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
   G: Fn(I) -> IResult<I, O2, E>,
@@ -65,20 +72,27 @@ where
 
 
 
-pub fn preceded<I, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O2, E>
+pub fn preceded<I, O1, O2, E: ParseError<I>, F, G>(
+  mut first: F,
+  mut second: G,
+) -> impl FnMut(I) -> IResult<I, O2, E>
 where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
+  F: Parser<I, O1, E>,
+  G: Parser<I, O2, E>,
 {
   move |input: I| {
-    let (input, _) = first(input)?;
-    second(input)
+    let (input, _) = first.parse(input)?;
+    second.parse(input)
   }
 }
 
 
 #[doc(hidden)]
-pub fn precededc<I, O1, O2, E: ParseError<I>, F, G>(input: I, first: F, second: G) -> IResult<I, O2, E>
+pub fn precededc<I, O1, O2, E: ParseError<I>, F, G>(
+  input: I,
+  first: F,
+  second: G,
+) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
   G: Fn(I) -> IResult<I, O2, E>,
@@ -105,20 +119,27 @@ where
 
 
 
-pub fn terminated<I, O1, O2, E: ParseError<I>, F, G>(first: F, second: G) -> impl Fn(I) -> IResult<I, O1, E>
+pub fn terminated<I, O1, O2, E: ParseError<I>, F, G>(
+  mut first: F,
+  mut second: G,
+) -> impl FnMut(I) -> IResult<I, O1, E>
 where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
+  F: Parser<I, O1, E>,
+  G: Parser<I, O2, E>,
 {
   move |input: I| {
-    let (input, o1) = first(input)?;
-    second(input).map(|(i, _)| (i, o1))
+    let (input, o1) = first.parse(input)?;
+    second.parse(input).map(|(i, _)| (i, o1))
   }
 }
 
 
 #[doc(hidden)]
-pub fn terminatedc<I, O1, O2, E: ParseError<I>, F, G>(input: I, first: F, second: G) -> IResult<I, O1, E>
+pub fn terminatedc<I, O1, O2, E: ParseError<I>, F, G>(
+  input: I,
+  first: F,
+  second: G,
+) -> IResult<I, O1, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
   G: Fn(I) -> IResult<I, O2, E>,
@@ -147,22 +168,31 @@ where
 
 
 
-pub fn separated_pair<I, O1, O2, O3, E: ParseError<I>, F, G, H>(first: F, sep: G, second: H) -> impl Fn(I) -> IResult<I, (O1, O3), E>
+pub fn separated_pair<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
+  mut first: F,
+  mut sep: G,
+  mut second: H,
+) -> impl FnMut(I) -> IResult<I, (O1, O3), E>
 where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
-  H: Fn(I) -> IResult<I, O3, E>,
+  F: Parser<I, O1, E>,
+  G: Parser<I, O2, E>,
+  H: Parser<I, O3, E>,
 {
   move |input: I| {
-    let (input, o1) = first(input)?;
-    let (input, _) = sep(input)?;
-    second(input).map(|(i, o2)| (i, (o1, o2)))
+    let (input, o1) = first.parse(input)?;
+    let (input, _) = sep.parse(input)?;
+    second.parse(input).map(|(i, o2)| (i, (o1, o2)))
   }
 }
 
 
 #[doc(hidden)]
-pub fn separated_pairc<I, O1, O2, O3, E: ParseError<I>, F, G, H>(input: I, first: F, sep: G, second: H) -> IResult<I, (O1, O3), E>
+pub fn separated_pairc<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
+  input: I,
+  first: F,
+  sep: G,
+  second: H,
+) -> IResult<I, (O1, O3), E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
   G: Fn(I) -> IResult<I, O2, E>,
@@ -192,42 +222,53 @@ where
 
 
 
-pub fn delimited<I, O1, O2, O3, E: ParseError<I>, F, G, H>(first: F, sep: G, second: H) -> impl Fn(I) -> IResult<I, O2, E>
+pub fn delimited<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
+  mut first: F,
+  mut second: G,
+  mut third: H,
+) -> impl FnMut(I) -> IResult<I, O2, E>
 where
-  F: Fn(I) -> IResult<I, O1, E>,
-  G: Fn(I) -> IResult<I, O2, E>,
-  H: Fn(I) -> IResult<I, O3, E>,
+  F: Parser<I, O1, E>,
+  G: Parser<I, O2, E>,
+  H: Parser<I, O3, E>,
 {
   move |input: I| {
-    let (input, _) = first(input)?;
-    let (input, o2) = sep(input)?;
-    second(input).map(|(i, _)| (i, o2))
+    let (input, _) = first.parse(input)?;
+    let (input, o2) = second.parse(input)?;
+    third.parse(input).map(|(i, _)| (i, o2))
   }
 }
 
 
 #[doc(hidden)]
-pub fn delimitedc<I, O1, O2, O3, E: ParseError<I>, F, G, H>(input: I, first: F, sep: G, second: H) -> IResult<I, O2, E>
+pub fn delimitedc<I, O1, O2, O3, E: ParseError<I>, F, G, H>(
+  input: I,
+  first: F,
+  second: G,
+  third: H,
+) -> IResult<I, O2, E>
 where
   F: Fn(I) -> IResult<I, O1, E>,
   G: Fn(I) -> IResult<I, O2, E>,
   H: Fn(I) -> IResult<I, O3, E>,
 {
-  delimited(first, sep, second)(input)
+  delimited(first, second, third)(input)
 }
 
 
 
 
-pub trait Tuple<I,O,E> {
+pub trait Tuple<I, O, E> {
   
-  fn parse(&self, input: I) -> IResult<I,O,E>;
+  fn parse(&mut self, input: I) -> IResult<I, O, E>;
 }
 
-impl<Input, Output, Error: ParseError<Input>, F: Fn(Input) -> IResult<Input, Output, Error> > Tuple<Input, (Output,), Error> for (F,) {
-   fn parse(&self, input: Input) -> IResult<Input,(Output,),Error> {
-     self.0(input).map(|(i,o)| (i, (o,)))
-   }
+impl<Input, Output, Error: ParseError<Input>, F: Parser<Input, Output, Error>>
+  Tuple<Input, (Output,), Error> for (F,)
+{
+  fn parse(&mut self, input: Input) -> IResult<Input, (Output,), Error> {
+    self.0.parse(input).map(|(i, o)| (i, (o,)))
+  }
 }
 
 macro_rules! tuple_trait(
@@ -248,10 +289,10 @@ macro_rules! tuple_trait_impl(
   ($($name:ident $ty: ident),+) => (
     impl<
       Input: Clone, $($ty),+ , Error: ParseError<Input>,
-      $($name: Fn(Input) -> IResult<Input, $ty, Error>),+
+      $($name: Parser<Input, $ty, Error>),+
     > Tuple<Input, ( $($ty),+ ), Error> for ( $($name),+ ) {
 
-      fn parse(&self, input: Input) -> IResult<Input, ( $($ty),+ ), Error> {
+      fn parse(&mut self, input: Input) -> IResult<Input, ( $($ty),+ ), Error> {
         tuple_trait_inner!(0, self, input, (), $($name)+)
 
       }
@@ -261,17 +302,17 @@ macro_rules! tuple_trait_impl(
 
 macro_rules! tuple_trait_inner(
   ($it:tt, $self:expr, $input:expr, (), $head:ident $($id:ident)+) => ({
-    let (i, o) = $self.$it($input.clone())?;
+    let (i, o) = $self.$it.parse($input.clone())?;
 
     succ!($it, tuple_trait_inner!($self, i, ( o ), $($id)+))
   });
   ($it:tt, $self:expr, $input:expr, ($($parsed:tt)*), $head:ident $($id:ident)+) => ({
-    let (i, o) = $self.$it($input.clone())?;
+    let (i, o) = $self.$it.parse($input.clone())?;
 
     succ!($it, tuple_trait_inner!($self, i, ($($parsed)* , o), $($id)+))
   });
   ($it:tt, $self:expr, $input:expr, ($($parsed:tt)*), $head:ident) => ({
-    let (i, o) = $self.$it($input.clone())?;
+    let (i, o) = $self.$it.parse($input.clone())?;
 
     Ok((i, ($($parsed)* , o)))
   });
@@ -291,10 +332,10 @@ tuple_trait!(FnA A, FnB B, FnC C, FnD D, FnE E, FnF F, FnG G, FnH H, FnI I, FnJ 
 
 
 
-pub fn tuple<I: Clone, O, E: ParseError<I>, List: Tuple<I,O,E>>(l: List)  -> impl Fn(I) -> IResult<I, O, E> {
-  move |i: I| {
-    l.parse(i)
-  }
+pub fn tuple<I, O, E: ParseError<I>, List: Tuple<I, O, E>>(
+  mut l: List,
+) -> impl FnMut(I) -> IResult<I, O, E> {
+  move |i: I| l.parse(i)
 }
 
 #[cfg(test)]
@@ -303,11 +344,14 @@ mod tests {
 
   #[test]
   fn single_element_tuples() {
-    use crate::character::complete::{alpha1, digit1};
-    use crate::{Err, error::ErrorKind};
+    use crate::character::complete::alpha1;
+    use crate::{error::ErrorKind, Err};
 
-    let parser = tuple((alpha1,));
+    let mut parser = tuple((alpha1,));
     assert_eq!(parser("abc123def"), Ok(("123def", ("abc",))));
-    assert_eq!(parser("123def"), Err(Err::Error(("123def", ErrorKind::Alpha))));
+    assert_eq!(
+      parser("123def"),
+      Err(Err::Error(("123def", ErrorKind::Alpha)))
+    );
   }
 }

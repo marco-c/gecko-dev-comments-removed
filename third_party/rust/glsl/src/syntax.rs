@@ -553,7 +553,14 @@ impl From<TypeSpecifierNonArray> for FullySpecifiedType {
 
 
 #[derive(Clone, Debug, PartialEq)]
-pub enum ArraySpecifier {
+pub struct ArraySpecifier {
+  
+  pub dimensions: NonEmpty<ArraySpecifierDimension>,
+}
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ArraySpecifierDimension {
   Unsized,
   ExplicitlySized(Box<Expr>),
 }

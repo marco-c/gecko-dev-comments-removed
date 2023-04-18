@@ -399,46 +399,50 @@
 
 
 
-#![cfg_attr(all(not(feature = "std"), feature = "alloc"), feature(alloc))]
+
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(feature = "cargo-clippy", allow(doc_markdown))]
+#![cfg_attr(feature = "cargo-clippy", allow(clippy::doc_markdown))]
 #![cfg_attr(nightly, feature(test))]
+#![cfg_attr(feature = "docsrs", feature(doc_cfg))]
+#![cfg_attr(feature = "docsrs", feature(external_doc))]
 #![deny(missing_docs)]
 #![warn(missing_doc_code_examples)]
 
-#[cfg(all(not(feature = "std"), feature = "alloc"))]
+#[cfg(feature = "alloc")]
 #[macro_use]
 extern crate alloc;
-#[cfg(feature = "regexp_macros")]
-#[macro_use]
-extern crate lazy_static;
+#[cfg(feature = "bitvec")]
+pub extern crate bitvec;
+#[cfg(doctest)]
+extern crate doc_comment;
+#[cfg(feature = "lexical")]
+extern crate lexical_core;
 extern crate memchr;
 #[cfg(feature = "regexp")]
 pub extern crate regex;
-#[cfg(feature = "lexical")]
-extern crate lexical_core;
 #[cfg(nightly)]
 extern crate test;
-#[cfg(test)]
-extern crate doc_comment;
+
+#[cfg(doctest)]
+doc_comment::doctest!("../README.md");
 
 
 
-
-
-
-
+#[allow(missing_doc_code_examples)]
 pub mod lib {
   
   
   #[cfg(not(feature = "std"))]
+  #[allow(missing_doc_code_examples)]
   
   pub mod std {
-    #[cfg(feature = "alloc")]
-    #[cfg_attr(feature = "alloc", macro_use)]
-    pub use alloc::{boxed, string, vec};
+    #[cfg(not(feature = "alloc"))]
+    pub use core::borrow;
 
-    pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str, borrow};
+    #[cfg(feature = "alloc")]
+    pub use alloc::{borrow, boxed, string, vec};
+
+    pub use core::{cmp, convert, fmt, iter, mem, ops, option, result, slice, str};
 
     
     pub mod prelude {
@@ -447,9 +451,13 @@ pub mod lib {
   }
 
   #[cfg(feature = "std")]
+  #[allow(missing_doc_code_examples)]
   
   pub mod std {
-    pub use std::{alloc, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result, slice, str, string, vec, borrow};
+    pub use std::{
+      alloc, borrow, boxed, cmp, collections, convert, fmt, hash, iter, mem, ops, option, result,
+      slice, str, string, vec,
+    };
 
     
     pub mod prelude {
@@ -461,12 +469,10 @@ pub mod lib {
   pub use regex;
 }
 
+pub use self::bits::*;
+pub use self::internal::*;
 pub use self::traits::*;
 pub use self::util::*;
-pub use self::internal::*;
-pub use self::methods::*;
-pub use self::bits::*;
-pub use self::whitespace::*;
 
 #[cfg(feature = "regexp")]
 pub use self::regexp::*;
@@ -489,8 +495,6 @@ pub mod branch;
 pub mod sequence;
 #[macro_use]
 pub mod multi;
-#[macro_use]
-pub mod methods;
 
 #[macro_use]
 pub mod bytes;
@@ -500,14 +504,16 @@ pub mod bits;
 #[macro_use]
 pub mod character;
 
-#[macro_use]
-pub mod whitespace;
-
 #[cfg(feature = "regexp")]
+#[cfg_attr(feature = "docsrs", doc(cfg(feature = "regexp")))]
 #[macro_use]
-mod regexp;
+pub mod regexp;
 
 mod str;
 
 #[macro_use]
 pub mod number;
+
+#[cfg(feature = "docsrs")]
+#[cfg_attr(feature = "docsrs", doc(include = "../doc/nom_recipes.md"))]
+pub mod recipes {}

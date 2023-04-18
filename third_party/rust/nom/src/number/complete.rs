@@ -1,15 +1,15 @@
 
 
-use crate::internal::*;
-use crate::error::ParseError;
-use crate::traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
-use crate::lib::std::ops::{RangeFrom, RangeTo};
-use crate::traits::{Offset, Slice};
-use crate::error::{ErrorKind, make_error};
-use crate::character::complete::{char, digit1};
-use crate::combinator::{opt, cut, map, recognize};
 use crate::branch::alt;
-use crate::sequence::{tuple, pair};
+use crate::character::complete::{char, digit1};
+use crate::combinator::{cut, map, opt, recognize};
+use crate::error::ParseError;
+use crate::error::{make_error, ErrorKind};
+use crate::internal::*;
+use crate::lib::std::ops::{RangeFrom, RangeTo};
+use crate::sequence::{pair, tuple};
+use crate::traits::{AsChar, InputIter, InputLength, InputTakeAtPosition};
+use crate::traits::{Offset, Slice};
 
 
 
@@ -27,11 +27,17 @@ use crate::sequence::{tuple, pair};
 
 
 #[inline]
-pub fn be_u8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> {
-  if i.len() < 1 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn be_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 1;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    Ok((&i[1..], i[0]))
+    let res = input.iter_elements().next().unwrap();
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -51,12 +57,20 @@ pub fn be_u8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> 
 
 
 #[inline]
-pub fn be_u16<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E> {
-  if i.len() < 2 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn be_u16<I, E: ParseError<I>>(input: I) -> IResult<I, u16, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 2;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let res = ((i[0] as u16) << 8) + i[1] as u16;
-    Ok((&i[2..], res))
+    let mut res = 0u16;
+    for byte in input.iter_elements().take(bound) {
+      res = (res << 8) + byte as u16;
+    }
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -76,12 +90,20 @@ pub fn be_u16<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E
 
 
 #[inline]
-pub fn be_u24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
-  if i.len() < 3 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn be_u24<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 3;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let res = ((i[0] as u32) << 16) + ((i[1] as u32) << 8) + (i[2] as u32);
-    Ok((&i[3..], res))
+    let mut res = 0u32;
+    for byte in input.iter_elements().take(bound) {
+      res = (res << 8) + byte as u32;
+    }
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -101,12 +123,20 @@ pub fn be_u24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E
 
 
 #[inline]
-pub fn be_u32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
-  if i.len() < 4 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn be_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 4;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let res = ((i[0] as u32) << 24) + ((i[1] as u32) << 16) + ((i[2] as u32) << 8) + i[3] as u32;
-    Ok((&i[4..], res))
+    let mut res = 0u32;
+    for byte in input.iter_elements().take(bound) {
+      res = (res << 8) + byte as u32;
+    }
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -126,13 +156,20 @@ pub fn be_u32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E
 
 
 #[inline]
-pub fn be_u64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E> {
-  if i.len() < 8 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn be_u64<I, E: ParseError<I>>(input: I) -> IResult<I, u64, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 8;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let res = ((i[0] as u64) << 56) + ((i[1] as u64) << 48) + ((i[2] as u64) << 40) + ((i[3] as u64) << 32) + ((i[4] as u64) << 24)
-      + ((i[5] as u64) << 16) + ((i[6] as u64) << 8) + i[7] as u64;
-    Ok((&i[8..], res))
+    let mut res = 0u64;
+    for byte in input.iter_elements().take(bound) {
+      res = (res << 8) + byte as u64;
+    }
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -153,27 +190,20 @@ pub fn be_u64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E
 
 #[inline]
 #[cfg(stable_i128)]
-pub fn be_u128<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128, E> {
-  if i.len() < 16 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn be_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 16;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let res = ((i[0] as u128) << 120)
-      + ((i[1] as u128) << 112)
-      + ((i[2] as u128) << 104)
-      + ((i[3] as u128) << 96)
-      + ((i[4] as u128) << 88)
-      + ((i[5] as u128) << 80)
-      + ((i[6] as u128) << 72)
-      + ((i[7] as u128) << 64)
-      + ((i[8] as u128) << 56)
-      + ((i[9] as u128) << 48)
-      + ((i[10] as u128) << 40)
-      + ((i[11] as u128) << 32)
-      + ((i[12] as u128) << 24)
-      + ((i[13] as u128) << 16)
-      + ((i[14] as u128) << 8)
-      + i[15] as u128;
-    Ok((&i[16..], res))
+    let mut res = 0u128;
+    for byte in input.iter_elements().take(bound) {
+      res = (res << 8) + byte as u128;
+    }
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -193,8 +223,11 @@ pub fn be_u128<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128,
 
 
 #[inline]
-pub fn be_i8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E> {
-  map!(i, be_u8, |x| x as i8)
+pub fn be_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, be_u8, |x| x as i8)
 }
 
 
@@ -213,8 +246,11 @@ pub fn be_i8<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E> 
 
 
 #[inline]
-pub fn be_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, E> {
-  map!(i, be_u16, |x| x as i16)
+pub fn be_i16<I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, be_u16, |x| x as i16)
 }
 
 
@@ -233,9 +269,12 @@ pub fn be_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, 
 
 
 #[inline]
-pub fn be_i24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
+pub fn be_i24<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   
-  map!(i, be_u24, |x| if x & 0x80_00_00 != 0 {
+  map!(input, be_u24, |x| if x & 0x80_00_00 != 0 {
     (x | 0xff_00_00_00) as i32
   } else {
     x as i32
@@ -258,8 +297,11 @@ pub fn be_i24<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E
 
 
 #[inline]
-pub fn be_i32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
-  map!(i, be_u32, |x| x as i32)
+pub fn be_i32<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, be_u32, |x| x as i32)
 }
 
 
@@ -278,154 +320,11 @@ pub fn be_i32<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E
 
 
 #[inline]
-pub fn be_i64<'a, E: ParseError<&'a[u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, E> {
-  map!(i, be_u64, |x| x as i64)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-#[cfg(stable_i128)]
-pub fn be_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128, E> {
-  map!(i, be_u128, |x| x as i128)
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-pub fn le_u8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u8, E> {
-  if i.len() < 1 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
-  } else {
-    Ok((&i[1..], i[0]))
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-pub fn le_u16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u16, E> {
-  if i.len() < 2 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
-  } else {
-    let res = ((i[1] as u16) << 8) + i[0] as u16;
-    Ok((&i[2..], res))
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-pub fn le_u24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
-  if i.len() < 3 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
-  } else {
-    let res = (i[0] as u32) + ((i[1] as u32) << 8) + ((i[2] as u32) << 16);
-    Ok((&i[3..], res))
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-pub fn le_u32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u32, E> {
-  if i.len() < 4 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
-  } else {
-    let res = ((i[3] as u32) << 24) + ((i[2] as u32) << 16) + ((i[1] as u32) << 8) + i[0] as u32;
-    Ok((&i[4..], res))
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[inline]
-pub fn le_u64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, E> {
-  if i.len() < 8 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
-  } else {
-    let res = ((i[7] as u64) << 56) + ((i[6] as u64) << 48) + ((i[5] as u64) << 40) + ((i[4] as u64) << 32) + ((i[3] as u64) << 24)
-      + ((i[2] as u64) << 16) + ((i[1] as u64) << 8) + i[0] as u64;
-    Ok((&i[8..], res))
-  }
+pub fn be_i64<I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, be_u64, |x| x as i64)
 }
 
 
@@ -445,27 +344,40 @@ pub fn le_u64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u64, 
 
 #[inline]
 #[cfg(stable_i128)]
-pub fn le_u128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128, E> {
-  if i.len() < 16 {
-    Err(Err::Error(make_error(i, ErrorKind::Eof)))
+pub fn be_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, be_u128, |x| x as i128)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn le_u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 1;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
   } else {
-    let res = ((i[15] as u128) << 120)
-      + ((i[14] as u128) << 112)
-      + ((i[13] as u128) << 104)
-      + ((i[12] as u128) << 96)
-      + ((i[11] as u128) << 88)
-      + ((i[10] as u128) << 80)
-      + ((i[9] as u128) << 72)
-      + ((i[8] as u128) << 64)
-      + ((i[7] as u128) << 56)
-      + ((i[6] as u128) << 48)
-      + ((i[5] as u128) << 40)
-      + ((i[4] as u128) << 32)
-      + ((i[3] as u128) << 24)
-      + ((i[2] as u128) << 16)
-      + ((i[1] as u128) << 8)
-      + i[0] as u128;
-    Ok((&i[16..], res))
+    let res = input.iter_elements().next().unwrap();
+
+    Ok((input.slice(bound..), res))
   }
 }
 
@@ -485,8 +397,21 @@ pub fn le_u128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], u128
 
 
 #[inline]
-pub fn le_i8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E> {
-  map!(i, le_u8, |x| x as i8)
+pub fn le_u16<I, E: ParseError<I>>(input: I) -> IResult<I, u16, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 2;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+  } else {
+    let mut res = 0u16;
+    for (index, byte) in input.iter_indices().take(bound) {
+      res += (byte as u16) << (8 * index);
+    }
+
+    Ok((input.slice(bound..), res))
+  }
 }
 
 
@@ -505,8 +430,21 @@ pub fn le_i8<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i8, E>
 
 
 #[inline]
-pub fn le_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, E> {
-  map!(i, le_u16, |x| x as i16)
+pub fn le_u24<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 3;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+  } else {
+    let mut res = 0u32;
+    for (index, byte) in input.iter_indices().take(bound) {
+      res += (byte as u32) << (8 * index);
+    }
+
+    Ok((input.slice(bound..), res))
+  }
 }
 
 
@@ -525,9 +463,158 @@ pub fn le_i16<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i16, 
 
 
 #[inline]
-pub fn le_i24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
+pub fn le_u32<I, E: ParseError<I>>(input: I) -> IResult<I, u32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 4;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+  } else {
+    let mut res = 0u32;
+    for (index, byte) in input.iter_indices().take(bound) {
+      res += (byte as u32) << (8 * index);
+    }
+
+    Ok((input.slice(bound..), res))
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn le_u64<I, E: ParseError<I>>(input: I) -> IResult<I, u64, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 8;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+  } else {
+    let mut res = 0u64;
+    for (index, byte) in input.iter_indices().take(bound) {
+      res += (byte as u64) << (8 * index);
+    }
+
+    Ok((input.slice(bound..), res))
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+#[cfg(stable_i128)]
+pub fn le_u128<I, E: ParseError<I>>(input: I) -> IResult<I, u128, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 16;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+  } else {
+    let mut res = 0u128;
+    for (index, byte) in input.iter_indices().take(bound) {
+      res += (byte as u128) << (8 * index);
+    }
+
+    Ok((input.slice(bound..), res))
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn le_i8<I, E: ParseError<I>>(input: I) -> IResult<I, i8, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, be_u8, |x| x as i8)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn le_i16<I, E: ParseError<I>>(input: I) -> IResult<I, i16, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, le_u16, |x| x as i16)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn le_i24<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   
-  map!(i, le_u24, |x| if x & 0x80_00_00 != 0 {
+  map!(input, le_u24, |x| if x & 0x80_00_00 != 0 {
     (x | 0xff_00_00_00) as i32
   } else {
     x as i32
@@ -550,8 +637,11 @@ pub fn le_i24<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, 
 
 
 #[inline]
-pub fn le_i32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, E> {
-  map!(i, le_u32, |x| x as i32)
+pub fn le_i32<I, E: ParseError<I>>(input: I) -> IResult<I, i32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, le_u32, |x| x as i32)
 }
 
 
@@ -570,8 +660,11 @@ pub fn le_i32<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i32, 
 
 
 #[inline]
-pub fn le_i64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, E> {
-  map!(i, le_u64, |x| x as i64)
+pub fn le_i64<I, E: ParseError<I>>(input: I) -> IResult<I, i64, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, le_u64, |x| x as i64)
 }
 
 
@@ -591,8 +684,459 @@ pub fn le_i64<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i64, 
 
 #[inline]
 #[cfg(stable_i128)]
-pub fn le_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128, E> {
-  map!(i, le_u128, |x| x as i128)
+pub fn le_i128<I, E: ParseError<I>>(input: I) -> IResult<I, i128, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(input, le_u128, |x| x as i128)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn u8<I, E: ParseError<I>>(input: I) -> IResult<I, u8, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  let bound: usize = 1;
+  if input.input_len() < bound {
+    Err(Err::Error(make_error(input, ErrorKind::Eof)))
+  } else {
+    let res = input.iter_elements().next().unwrap();
+
+    Ok((input.slice(bound..), res))
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn u16<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u16, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  match endian {
+    crate::number::Endianness::Big => be_u16,
+    crate::number::Endianness::Little => le_u16,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_u16,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_u16,
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn u24<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  match endian {
+    crate::number::Endianness::Big => be_u24,
+    crate::number::Endianness::Little => le_u24,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_u24,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_u24,
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn u32<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  match endian {
+    crate::number::Endianness::Big => be_u32,
+    crate::number::Endianness::Little => le_u32,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_u32,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_u32,
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn u64<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u64, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  match endian {
+    crate::number::Endianness::Big => be_u64,
+    crate::number::Endianness::Little => le_u64,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_u64,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_u64,
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+#[cfg(stable_i128)]
+pub fn u128<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, u128, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  match endian {
+    crate::number::Endianness::Big => be_u128,
+    crate::number::Endianness::Little => le_u128,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_u128,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_u128,
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn i8<I, E: ParseError<I>>(i: I) -> IResult<I, i8, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  map!(i, u8, |x| x as i8)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn i16<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i16, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  match endian {
+    crate::number::Endianness::Big => be_i16,
+    crate::number::Endianness::Little => le_i16,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_i16,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_i16,
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn i24<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  match endian {
+    crate::number::Endianness::Big => be_i24,
+    crate::number::Endianness::Little => le_i24,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_i24,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_i24,
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn i32<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  match endian {
+    crate::number::Endianness::Big => be_i32,
+    crate::number::Endianness::Little => le_i32,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_i32,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_i32,
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn i64<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i64, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  match endian {
+    crate::number::Endianness::Big => be_i64,
+    crate::number::Endianness::Little => le_i64,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_i64,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_i64,
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+#[cfg(stable_i128)]
+pub fn i128<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, i128, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  match endian {
+    crate::number::Endianness::Big => be_i128,
+    crate::number::Endianness::Little => le_i128,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_i128,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_i128,
+  }
 }
 
 
@@ -611,7 +1155,10 @@ pub fn le_i128<'a, E: ParseError<&'a [u8]>>(i: &'a[u8]) -> IResult<&'a[u8], i128
 
 
 #[inline]
-pub fn be_f32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f32, E> {
+pub fn be_f32<I, E: ParseError<I>>(input: I) -> IResult<I, f32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match be_u32(input) {
     Err(e) => Err(e),
     Ok((i, o)) => Ok((i, f32::from_bits(o))),
@@ -634,7 +1181,10 @@ pub fn be_f32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
 
 
 #[inline]
-pub fn be_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f64, E> {
+pub fn be_f64<I, E: ParseError<I>>(input: I) -> IResult<I, f64, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match be_u64(input) {
     Err(e) => Err(e),
     Ok((i, o)) => Ok((i, f64::from_bits(o))),
@@ -657,7 +1207,10 @@ pub fn be_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
 
 
 #[inline]
-pub fn le_f32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f32, E> {
+pub fn le_f32<I, E: ParseError<I>>(input: I) -> IResult<I, f32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match le_u32(input) {
     Err(e) => Err(e),
     Ok((i, o)) => Ok((i, f32::from_bits(o))),
@@ -680,7 +1233,10 @@ pub fn le_f32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
 
 
 #[inline]
-pub fn le_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f64, E> {
+pub fn le_f64<I, E: ParseError<I>>(input: I) -> IResult<I, f64, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
   match le_u64(input) {
     Err(e) => Err(e),
     Ok((i, o)) => Ok((i, f64::from_bits(o))),
@@ -703,8 +1259,86 @@ pub fn le_f64<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], f
 
 
 
+
+
+
+
+
+
+
+
 #[inline]
-pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], u32, E> {
+pub fn f32<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, f32, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  match endian {
+    crate::number::Endianness::Big => be_f32,
+    crate::number::Endianness::Little => le_f32,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_f32,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_f32,
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn f64<I, E: ParseError<I>>(endian: crate::number::Endianness) -> fn(I) -> IResult<I, f64, E>
+where
+  I: Slice<RangeFrom<usize>> + InputIter<Item = u8> + InputLength,
+{
+  match endian {
+    crate::number::Endianness::Big => be_f64,
+    crate::number::Endianness::Little => le_f64,
+    #[cfg(target_endian = "big")]
+    crate::number::Endianness::Native => be_f64,
+    #[cfg(target_endian = "little")]
+    crate::number::Endianness::Native => le_f64,
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a [u8]) -> IResult<&'a [u8], u32, E> {
   let (i, o) = crate::bytes::complete::is_a(&b"0123456789abcdefABCDEF"[..])(input)?;
   
   let (parsed, remaining) = if o.len() <= 8 {
@@ -745,7 +1379,7 @@ pub fn hex_u32<'a, E: ParseError<&'a [u8]>>(input: &'a[u8]) -> IResult<&'a[u8], 
 
 
 #[allow(unused_imports)]
-#[cfg_attr(rustfmt, rustfmt_skip)]
+#[rustfmt::skip]
 pub fn recognize_float<T, E:ParseError<T>>(input: T) -> IResult<T, T, E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
@@ -789,21 +1423,21 @@ where
 
 
 #[cfg(not(feature = "lexical"))]
-pub fn float<T, E:ParseError<T>>(input: T) -> IResult<T, f32, E>
+pub fn float<T, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
   T: InputIter + InputLength + crate::traits::ParseTo<f32>,
   <T as InputIter>::Item: AsChar,
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   match recognize_float(input) {
     Err(e) => Err(e),
     Ok((i, s)) => match s.parse_to() {
       Some(n) => Ok((i, n)),
-      None =>  Err(Err::Error(E::from_error_kind(i, ErrorKind::Float)))
-    }
+      None => Err(Err::Error(E::from_error_kind(i, ErrorKind::Float))),
+    },
   }
 }
 
@@ -828,13 +1462,13 @@ where
 
 
 #[cfg(feature = "lexical")]
-pub fn float<T, E:ParseError<T>>(input: T) -> IResult<T, f32, E>
+pub fn float<T, E: ParseError<T>>(input: T) -> IResult<T, f32, E>
 where
   T: crate::traits::AsBytes + InputLength + Slice<RangeFrom<usize>>,
 {
   match ::lexical_core::parse_partial(input.as_bytes()) {
     Ok((value, processed)) => Ok((input.slice(processed..), value)),
-    Err(_) => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float)))
+    Err(_) => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float))),
   }
 }
 
@@ -856,21 +1490,21 @@ where
 
 
 #[cfg(not(feature = "lexical"))]
-pub fn double<T, E:ParseError<T>>(input: T) -> IResult<T, f64, E>
+pub fn double<T, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
   T: Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
   T: Clone + Offset,
   T: InputIter + InputLength + crate::traits::ParseTo<f64>,
   <T as InputIter>::Item: AsChar,
   T: InputTakeAtPosition,
-  <T as InputTakeAtPosition>::Item: AsChar
+  <T as InputTakeAtPosition>::Item: AsChar,
 {
   match recognize_float(input) {
     Err(e) => Err(e),
     Ok((i, s)) => match s.parse_to() {
       Some(n) => Ok((i, n)),
-      None =>  Err(Err::Error(E::from_error_kind(i, ErrorKind::Float)))
-    }
+      None => Err(Err::Error(E::from_error_kind(i, ErrorKind::Float))),
+    },
   }
 }
 
@@ -895,21 +1529,21 @@ where
 
 
 #[cfg(feature = "lexical")]
-pub fn double<T, E:ParseError<T>>(input: T) -> IResult<T, f64, E>
+pub fn double<T, E: ParseError<T>>(input: T) -> IResult<T, f64, E>
 where
   T: crate::traits::AsBytes + InputLength + Slice<RangeFrom<usize>>,
 {
   match ::lexical_core::parse_partial(input.as_bytes()) {
     Ok((value, processed)) => Ok((input.slice(processed..), value)),
-    Err(_) => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float)))
+    Err(_) => Err(Err::Error(E::from_error_kind(input, ErrorKind::Float))),
   }
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::internal::Err;
   use crate::error::ErrorKind;
+  use crate::internal::Err;
 
   macro_rules! assert_parse(
     ($left: expr, $right: expr) => {
@@ -920,129 +1554,175 @@ mod tests {
 
   #[test]
   fn i8_tests() {
-    assert_parse!(be_i8(&[0x00]), Ok((&b""[..], 0)));
-    assert_parse!(be_i8(&[0x7f]), Ok((&b""[..], 127)));
-    assert_parse!(be_i8(&[0xff]), Ok((&b""[..], -1)));
-    assert_parse!(be_i8(&[0x80]), Ok((&b""[..], -128)));
+    assert_parse!(i8(&[0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(i8(&[0x7f][..]), Ok((&b""[..], 127)));
+    assert_parse!(i8(&[0xff][..]), Ok((&b""[..], -1)));
+    assert_parse!(i8(&[0x80][..]), Ok((&b""[..], -128)));
   }
 
   #[test]
-  fn i16_tests() {
-    assert_parse!(be_i16(&[0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_parse!(be_i16(&[0x7f, 0xff]), Ok((&b""[..], 32_767_i16)));
-    assert_parse!(be_i16(&[0xff, 0xff]), Ok((&b""[..], -1)));
-    assert_parse!(be_i16(&[0x80, 0x00]), Ok((&b""[..], -32_768_i16)));
+  fn be_i8_tests() {
+    assert_parse!(be_i8(&[0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(be_i8(&[0x7f][..]), Ok((&b""[..], 127)));
+    assert_parse!(be_i8(&[0xff][..]), Ok((&b""[..], -1)));
+    assert_parse!(be_i8(&[0x80][..]), Ok((&b""[..], -128)));
   }
 
   #[test]
-  fn u24_tests() {
-    assert_parse!(be_u24(&[0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_parse!(be_u24(&[0x00, 0xFF, 0xFF]), Ok((&b""[..], 65_535_u32)));
-    assert_parse!(be_u24(&[0x12, 0x34, 0x56]), Ok((&b""[..], 1_193_046_u32)));
+  fn be_i16_tests() {
+    assert_parse!(be_i16(&[0x00, 0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(be_i16(&[0x7f, 0xff][..]), Ok((&b""[..], 32_767_i16)));
+    assert_parse!(be_i16(&[0xff, 0xff][..]), Ok((&b""[..], -1)));
+    assert_parse!(be_i16(&[0x80, 0x00][..]), Ok((&b""[..], -32_768_i16)));
   }
 
   #[test]
-  fn i24_tests() {
-    assert_parse!(be_i24(&[0xFF, 0xFF, 0xFF]), Ok((&b""[..], -1_i32)));
-    assert_parse!(be_i24(&[0xFF, 0x00, 0x00]), Ok((&b""[..], -65_536_i32)));
-    assert_parse!(be_i24(&[0xED, 0xCB, 0xAA]), Ok((&b""[..], -1_193_046_i32)));
-  }
-
-  #[test]
-  fn i32_tests() {
-    assert_parse!(be_i32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
+  fn be_u24_tests() {
+    assert_parse!(be_u24(&[0x00, 0x00, 0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(be_u24(&[0x00, 0xFF, 0xFF][..]), Ok((&b""[..], 65_535_u32)));
     assert_parse!(
-      be_i32(&[0x7f, 0xff, 0xff, 0xff]),
+      be_u24(&[0x12, 0x34, 0x56][..]),
+      Ok((&b""[..], 1_193_046_u32))
+    );
+  }
+
+  #[test]
+  fn be_i24_tests() {
+    assert_parse!(be_i24(&[0xFF, 0xFF, 0xFF][..]), Ok((&b""[..], -1_i32)));
+    assert_parse!(be_i24(&[0xFF, 0x00, 0x00][..]), Ok((&b""[..], -65_536_i32)));
+    assert_parse!(
+      be_i24(&[0xED, 0xCB, 0xAA][..]),
+      Ok((&b""[..], -1_193_046_i32))
+    );
+  }
+
+  #[test]
+  fn be_i32_tests() {
+    assert_parse!(be_i32(&[0x00, 0x00, 0x00, 0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(
+      be_i32(&[0x7f, 0xff, 0xff, 0xff][..]),
       Ok((&b""[..], 2_147_483_647_i32))
     );
-    assert_parse!(be_i32(&[0xff, 0xff, 0xff, 0xff]), Ok((&b""[..], -1)));
+    assert_parse!(be_i32(&[0xff, 0xff, 0xff, 0xff][..]), Ok((&b""[..], -1)));
     assert_parse!(
-      be_i32(&[0x80, 0x00, 0x00, 0x00]),
+      be_i32(&[0x80, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], -2_147_483_648_i32))
     );
   }
 
   #[test]
-  fn i64_tests() {
+  fn be_i64_tests() {
     assert_parse!(
-      be_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+      be_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], 0))
     );
     assert_parse!(
-      be_i64(&[0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
+      be_i64(&[0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff][..]),
       Ok((&b""[..], 9_223_372_036_854_775_807_i64))
     );
     assert_parse!(
-      be_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
+      be_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff][..]),
       Ok((&b""[..], -1))
     );
     assert_parse!(
-      be_i64(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+      be_i64(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], -9_223_372_036_854_775_808_i64))
     );
   }
 
   #[test]
   #[cfg(stable_i128)]
-  fn i128_tests() {
+  fn be_i128_tests() {
     assert_parse!(
-      be_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+      be_i128(
+        &[
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+          0x00
+        ][..]
+      ),
       Ok((&b""[..], 0))
     );
     assert_parse!(
-      be_i128(&[0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
-      Ok((&b""[..], 170_141_183_460_469_231_731_687_303_715_884_105_727_i128))
+      be_i128(
+        &[
+          0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+          0xff
+        ][..]
+      ),
+      Ok((
+        &b""[..],
+        170_141_183_460_469_231_731_687_303_715_884_105_727_i128
+      ))
     );
     assert_parse!(
-      be_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
+      be_i128(
+        &[
+          0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+          0xff
+        ][..]
+      ),
       Ok((&b""[..], -1))
     );
     assert_parse!(
-      be_i128(&[0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
-      Ok((&b""[..], -170_141_183_460_469_231_731_687_303_715_884_105_728_i128))
+      be_i128(
+        &[
+          0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+          0x00
+        ][..]
+      ),
+      Ok((
+        &b""[..],
+        -170_141_183_460_469_231_731_687_303_715_884_105_728_i128
+      ))
     );
   }
 
   #[test]
   fn le_i8_tests() {
-    assert_parse!(le_i8(&[0x00]), Ok((&b""[..], 0)));
-    assert_parse!(le_i8(&[0x7f]), Ok((&b""[..], 127)));
-    assert_parse!(le_i8(&[0xff]), Ok((&b""[..], -1)));
-    assert_parse!(le_i8(&[0x80]), Ok((&b""[..], -128)));
+    assert_parse!(le_i8(&[0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(le_i8(&[0x7f][..]), Ok((&b""[..], 127)));
+    assert_parse!(le_i8(&[0xff][..]), Ok((&b""[..], -1)));
+    assert_parse!(le_i8(&[0x80][..]), Ok((&b""[..], -128)));
   }
 
   #[test]
   fn le_i16_tests() {
-    assert_parse!(le_i16(&[0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_parse!(le_i16(&[0xff, 0x7f]), Ok((&b""[..], 32_767_i16)));
-    assert_parse!(le_i16(&[0xff, 0xff]), Ok((&b""[..], -1)));
-    assert_parse!(le_i16(&[0x00, 0x80]), Ok((&b""[..], -32_768_i16)));
+    assert_parse!(le_i16(&[0x00, 0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(le_i16(&[0xff, 0x7f][..]), Ok((&b""[..], 32_767_i16)));
+    assert_parse!(le_i16(&[0xff, 0xff][..]), Ok((&b""[..], -1)));
+    assert_parse!(le_i16(&[0x00, 0x80][..]), Ok((&b""[..], -32_768_i16)));
   }
 
   #[test]
   fn le_u24_tests() {
-    assert_parse!(le_u24(&[0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
-    assert_parse!(le_u24(&[0xFF, 0xFF, 0x00]), Ok((&b""[..], 65_535_u32)));
-    assert_parse!(le_u24(&[0x56, 0x34, 0x12]), Ok((&b""[..], 1_193_046_u32)));
+    assert_parse!(le_u24(&[0x00, 0x00, 0x00][..]), Ok((&b""[..], 0)));
+    assert_parse!(le_u24(&[0xFF, 0xFF, 0x00][..]), Ok((&b""[..], 65_535_u32)));
+    assert_parse!(
+      le_u24(&[0x56, 0x34, 0x12][..]),
+      Ok((&b""[..], 1_193_046_u32))
+    );
   }
 
   #[test]
   fn le_i24_tests() {
-    assert_parse!(le_i24(&[0xFF, 0xFF, 0xFF]), Ok((&b""[..], -1_i32)));
-    assert_parse!(le_i24(&[0x00, 0x00, 0xFF]), Ok((&b""[..], -65_536_i32)));
-    assert_parse!(le_i24(&[0xAA, 0xCB, 0xED]), Ok((&b""[..], -1_193_046_i32)));
+    assert_parse!(le_i24(&[0xFF, 0xFF, 0xFF][..]), Ok((&b""[..], -1_i32)));
+    assert_parse!(le_i24(&[0x00, 0x00, 0xFF][..]), Ok((&b""[..], -65_536_i32)));
+    assert_parse!(
+      le_i24(&[0xAA, 0xCB, 0xED][..]),
+      Ok((&b""[..], -1_193_046_i32))
+    );
   }
 
   #[test]
   fn le_i32_tests() {
-    assert_parse!(le_i32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0)));
+    assert_parse!(le_i32(&[0x00, 0x00, 0x00, 0x00][..]), Ok((&b""[..], 0)));
     assert_parse!(
-      le_i32(&[0xff, 0xff, 0xff, 0x7f]),
+      le_i32(&[0xff, 0xff, 0xff, 0x7f][..]),
       Ok((&b""[..], 2_147_483_647_i32))
     );
-    assert_parse!(le_i32(&[0xff, 0xff, 0xff, 0xff]), Ok((&b""[..], -1)));
+    assert_parse!(le_i32(&[0xff, 0xff, 0xff, 0xff][..]), Ok((&b""[..], -1)));
     assert_parse!(
-      le_i32(&[0x00, 0x00, 0x00, 0x80]),
+      le_i32(&[0x00, 0x00, 0x00, 0x80][..]),
       Ok((&b""[..], -2_147_483_648_i32))
     );
   }
@@ -1050,19 +1730,19 @@ mod tests {
   #[test]
   fn le_i64_tests() {
     assert_parse!(
-      le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+      le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], 0))
     );
     assert_parse!(
-      le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
+      le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f][..]),
       Ok((&b""[..], 9_223_372_036_854_775_807_i64))
     );
     assert_parse!(
-      le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
+      le_i64(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff][..]),
       Ok((&b""[..], -1))
     );
     assert_parse!(
-      le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80]),
+      le_i64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80][..]),
       Ok((&b""[..], -9_223_372_036_854_775_808_i64))
     );
   }
@@ -1071,28 +1751,54 @@ mod tests {
   #[cfg(stable_i128)]
   fn le_i128_tests() {
     assert_parse!(
-      le_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+      le_i128(
+        &[
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+          0x00
+        ][..]
+      ),
       Ok((&b""[..], 0))
     );
     assert_parse!(
-      le_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]),
-      Ok((&b""[..], 170_141_183_460_469_231_731_687_303_715_884_105_727_i128))
+      le_i128(
+        &[
+          0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+          0x7f
+        ][..]
+      ),
+      Ok((
+        &b""[..],
+        170_141_183_460_469_231_731_687_303_715_884_105_727_i128
+      ))
     );
     assert_parse!(
-      le_i128(&[0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]),
+      le_i128(
+        &[
+          0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+          0xff
+        ][..]
+      ),
       Ok((&b""[..], -1))
     );
     assert_parse!(
-      le_i128(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80]),
-      Ok((&b""[..], -170_141_183_460_469_231_731_687_303_715_884_105_728_i128))
+      le_i128(
+        &[
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+          0x80
+        ][..]
+      ),
+      Ok((
+        &b""[..],
+        -170_141_183_460_469_231_731_687_303_715_884_105_728_i128
+      ))
     );
   }
 
   #[test]
   fn be_f32_tests() {
-    assert_parse!(be_f32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0_f32)));
+    assert_parse!(be_f32(&[0x00, 0x00, 0x00, 0x00][..]), Ok((&b""[..], 0_f32)));
     assert_parse!(
-      be_f32(&[0x4d, 0x31, 0x1f, 0xd8]),
+      be_f32(&[0x4d, 0x31, 0x1f, 0xd8][..]),
       Ok((&b""[..], 185_728_392_f32))
     );
   }
@@ -1100,20 +1806,20 @@ mod tests {
   #[test]
   fn be_f64_tests() {
     assert_parse!(
-      be_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+      be_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], 0_f64))
     );
     assert_parse!(
-      be_f64(&[0x41, 0xa6, 0x23, 0xfb, 0x10, 0x00, 0x00, 0x00]),
+      be_f64(&[0x41, 0xa6, 0x23, 0xfb, 0x10, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], 185_728_392_f64))
     );
   }
 
   #[test]
   fn le_f32_tests() {
-    assert_parse!(le_f32(&[0x00, 0x00, 0x00, 0x00]), Ok((&b""[..], 0_f32)));
+    assert_parse!(le_f32(&[0x00, 0x00, 0x00, 0x00][..]), Ok((&b""[..], 0_f32)));
     assert_parse!(
-      le_f32(&[0xd8, 0x1f, 0x31, 0x4d]),
+      le_f32(&[0xd8, 0x1f, 0x31, 0x4d][..]),
       Ok((&b""[..], 185_728_392_f32))
     );
   }
@@ -1121,11 +1827,11 @@ mod tests {
   #[test]
   fn le_f64_tests() {
     assert_parse!(
-      le_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
+      le_f64(&[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00][..]),
       Ok((&b""[..], 0_f64))
     );
     assert_parse!(
-      le_f64(&[0x00, 0x00, 0x00, 0x10, 0xfb, 0x23, 0xa6, 0x41]),
+      le_f64(&[0x00, 0x00, 0x00, 0x10, 0xfb, 0x23, 0xa6, 0x41][..]),
       Ok((&b""[..], 185_728_392_f64))
     );
   }
@@ -1194,5 +1900,4 @@ mod tests {
       Err(Err::Failure(("", ErrorKind::Digit)))
     );
   }
-
 }

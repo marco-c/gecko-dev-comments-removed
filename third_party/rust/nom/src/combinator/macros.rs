@@ -105,7 +105,7 @@ macro_rules! named (
         named_attr!(#$($args)*);
     );
     ($vis:vis $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
-        $vis fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::error::ErrorKind)> {
+        $vis fn $name( i: $i ) -> $crate::IResult<$i, $o, $crate::error::Error<$i>> {
             $submac!(i, $($args)*)
         }
     );
@@ -115,17 +115,17 @@ macro_rules! named (
         }
     );
     ($vis:vis $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        $vis fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::error::ErrorKind)> {
+        $vis fn $name( i: $i ) -> $crate::IResult<$i, $o, $crate::error::Error<$i>> {
             $submac!(i, $($args)*)
         }
     );
     ($vis:vis $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
-        $vis fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, (&[u8], $crate::error::ErrorKind)> {
+        $vis fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, $crate::error::Error<&[u8]>> {
             $submac!(i, $($args)*)
         }
     );
     ($vis:vis $name:ident, $submac:ident!( $($args:tt)* )) => (
-        $vis fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], (&[u8], $crate::error::ErrorKind)> {
+        $vis fn $name( i: &[u8] ) -> $crate::IResult<&[u8], &[u8], $crate::error::Error<&[u8]>> {
             $submac!(i, $($args)*)
         }
     );
@@ -217,7 +217,7 @@ macro_rules! named_args {
 macro_rules! named_attr (
     ($(#[$attr:meta])*, $vis:vis $name:ident( $i:ty ) -> $o:ty, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        $vis fn $name( i: $i ) -> $crate::IResult<$i,$o, ($i, $crate::error::ErrorKind)> {
+        $vis fn $name( i: $i ) -> $crate::IResult<$i,$o, $crate::error::Error<$i>> {
             $submac!(i, $($args)*)
         }
     );
@@ -229,19 +229,19 @@ macro_rules! named_attr (
     );
     ($(#[$attr:meta])*, $vis:vis $name:ident<$i:ty,$o:ty>, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        $vis fn $name( i: $i ) -> $crate::IResult<$i, $o, ($i, $crate::error::ErrorKind)> {
+        $vis fn $name( i: $i ) -> $crate::IResult<$i, $o, $crate::error::Error<$i>> {
             $submac!(i, $($args)*)
         }
     );
     ($(#[$attr:meta])*, $vis:vis $name:ident<$o:ty>, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        $vis fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, (&[u8], $crate::error::ErrorKind)> {
+        $vis fn $name( i: &[u8] ) -> $crate::IResult<&[u8], $o, $crate::error::Error<&[u8]>> {
             $submac!(i, $($args)*)
         }
     );
     ($(#[$attr:meta])*, $vis:vis $name:ident, $submac:ident!( $($args:tt)* )) => (
         $(#[$attr])*
-        $vis fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], (&[u8], $crate::error::ErrorKind)> {
+        $vis fn $name<'a>( i: &'a [u8] ) -> $crate::IResult<&[u8], &[u8], $crate::error::Error<&[u8]>> {
             $submac!(i, $($args)*)
         }
     );
@@ -926,7 +926,8 @@ macro_rules! eof (
 
       use $crate::InputLength;
       if ($i).input_len() == 0 {
-        Ok(($i, $i))
+        let clone = $i.clone();
+        Ok(($i, clone))
       } else {
         Err(Err::Error(error_position!($i, ErrorKind::Eof)))
       }
@@ -968,11 +969,35 @@ macro_rules! recognize (
   );
 );
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[macro_export(local_inner_macros)]
+macro_rules! into (
+  ($i:expr, $submac:ident!( $($args:tt)* )) => (
+    $crate::combinator::intoc($i, |i| $submac!(i, $($args)*))
+  );
+  ($i:expr, $f:expr) => (
+    $crate::combinator::intoc($i, $f)
+  );
+);
+
 #[cfg(test)]
 mod tests {
-  use crate::internal::{Err, IResult, Needed};
-  use crate::error::ParseError;
   use crate::error::ErrorKind;
+  use crate::error::ParseError;
+  use crate::internal::{Err, IResult, Needed};
   #[cfg(feature = "alloc")]
   use crate::lib::std::boxed::Box;
 
@@ -989,7 +1014,7 @@ mod tests {
           Ok(($i.slice(blen..), $i.slice(..blen)))
         },
         CompareResult::Incomplete => {
-          Err(Err::Incomplete(Needed::Size($tag.input_len())))
+          Err(Err::Incomplete(Needed::new($tag.input_len() - $i.input_len())))
         },
         CompareResult::Error => {
           let e:ErrorKind = ErrorKind::Tag;
@@ -1005,7 +1030,7 @@ mod tests {
       {
         let cnt = $count as usize;
         let res:IResult<&[u8],&[u8]> = if $i.len() < cnt {
-          Err($crate::Err::Incomplete($crate::Needed::Size(cnt)))
+          Err($crate::Err::Incomplete($crate::Needed::new(cnt - $i.len())))
         } else {
           Ok((&$i[cnt..],&$i[0..cnt]))
         };
@@ -1060,12 +1085,12 @@ mod tests {
     let c = &b"ab"[..];
     assert_eq!(opt_abcd(a), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
     assert_eq!(opt_abcd(b), Ok((&b"bcdefg"[..], None)));
-    assert_eq!(opt_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(opt_abcd(c), Err(Err::Incomplete(Needed::new(2))));
   }
 
   #[test]
   fn opt_res() {
-    named!(opt_res_abcd<&[u8], Result<&[u8], Err<(&[u8], ErrorKind)>> >, opt_res!(tag!("abcd")));
+    named!(opt_res_abcd<&[u8], Result<&[u8], Err<crate::error::Error<&[u8]>>> >, opt_res!(tag!("abcd")));
 
     let a = &b"abcdef"[..];
     let b = &b"bcdefg"[..];
@@ -1078,7 +1103,7 @@ mod tests {
         Err(Err::Error(error_position!(b, ErrorKind::Tag)))
       ))
     );
-    assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(opt_res_abcd(c), Err(Err::Incomplete(Needed::new(2))));
   }
 
   use crate::lib::std::convert::From;
@@ -1086,6 +1111,11 @@ mod tests {
   pub struct CustomError(&'static str);
   impl<I> From<(I, ErrorKind)> for CustomError {
     fn from(_: (I, ErrorKind)) -> Self {
+      CustomError("test")
+    }
+  }
+  impl<I> From<crate::error::Error<I>> for CustomError {
+    fn from(_: crate::error::Error<I>) -> Self {
       CustomError("test")
     }
   }
@@ -1100,7 +1130,6 @@ mod tests {
     }
   }
 
-
   #[test]
   #[cfg(feature = "alloc")]
   fn cond() {
@@ -1113,7 +1142,7 @@ mod tests {
     }
 
     assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
-    assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::new(2))));
     assert_eq!(f_true(&b"xxx"[..]), Err(Err::Error(CustomError("test"))));
 
     assert_eq!(f_false(&b"abcdef"[..]), Ok((&b"abcdef"[..], None)));
@@ -1135,7 +1164,7 @@ mod tests {
     }
 
     assert_eq!(f_true(&b"abcdef"[..]), Ok((&b"ef"[..], Some(&b"abcd"[..]))));
-    assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(f_true(&b"ab"[..]), Err(Err::Incomplete(Needed::new(2))));
     assert_eq!(f_true(&b"xxx"[..]), Err(Err::Error(CustomError("test"))));
 
     assert_eq!(f_false(&b"abcdef"[..]), Ok((&b"abcdef"[..], None)));
@@ -1148,7 +1177,7 @@ mod tests {
     named!(peek_tag<&[u8],&[u8]>, peek!(tag!("abcd")));
 
     assert_eq!(peek_tag(&b"abcdef"[..]), Ok((&b"abcdef"[..], &b"abcd"[..])));
-    assert_eq!(peek_tag(&b"ab"[..]), Err(Err::Incomplete(Needed::Size(4))));
+    assert_eq!(peek_tag(&b"ab"[..]), Err(Err::Incomplete(Needed::new(2))));
     assert_eq!(
       peek_tag(&b"xxx"[..]),
       Err(Err::Error(error_position!(&b"xxx"[..], ErrorKind::Tag)))
@@ -1162,14 +1191,14 @@ mod tests {
       not_aaa(&b"aaa"[..]),
       Err(Err::Error(error_position!(&b"aaa"[..], ErrorKind::Not)))
     );
-    assert_eq!(not_aaa(&b"aa"[..]), Err(Err::Incomplete(Needed::Size(3))));
+    assert_eq!(not_aaa(&b"aa"[..]), Err(Err::Incomplete(Needed::new(1))));
     assert_eq!(not_aaa(&b"abcd"[..]), Ok((&b"abcd"[..], ())));
   }
 
   #[test]
   fn verify() {
     named!(test, verify!(take!(5), |slice: &[u8]| slice[0] == b'a'));
-    assert_eq!(test(&b"bcd"[..]), Err(Err::Incomplete(Needed::Size(5))));
+    assert_eq!(test(&b"bcd"[..]), Err(Err::Incomplete(Needed::new(2))));
     assert_eq!(
       test(&b"bcdefg"[..]),
       Err(Err::Error(error_position!(
@@ -1186,10 +1215,7 @@ mod tests {
 
     assert_eq!(
       res,
-      Err(Err::Error(error_position!(
-        "ab",
-        ErrorKind::ParseTo
-      )))
+      Err(Err::Error(error_position!("ab", ErrorKind::ParseTo)))
     );
 
     let res: IResult<_, _, (&str, ErrorKind)> = parse_to!("42", usize);
@@ -1197,5 +1223,4 @@ mod tests {
     assert_eq!(res, Ok(("", 42)));
     
   }
-
 }
