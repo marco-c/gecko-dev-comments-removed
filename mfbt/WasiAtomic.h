@@ -7,7 +7,12 @@
 #ifndef mozilla_WasiAtomic_h
 #define mozilla_WasiAtomic_h
 
-#include <cstdint>
+
+#if _LIBCPP_VERSION >= 14000
+#  include <atomic>
+#else
+
+#  include <cstdint>
 
 
 
@@ -188,5 +193,7 @@ using atomic_uint32_t = atomic<uint32_t>;
 using atomic_uint64_t = atomic<uint64_t>;
 
 }  
+
+#endif
 
 #endif  
