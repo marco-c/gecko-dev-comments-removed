@@ -880,6 +880,7 @@ this.FormAutofillHeuristics = {
     
     
     if (FormAutofillUtils.isFathomCreditCardsEnabled()) {
+      fieldScanner.parsingIndex++;
       return true;
     }
 
