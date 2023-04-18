@@ -695,6 +695,39 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   return AsyncGeneratorObject::enqueueRequest(cx, asyncGenObj, request);
 }
 
+class MOZ_STACK_CLASS MaybeEnterAsyncGeneratorRealm {
+  mozilla::Maybe<AutoRealm> ar_;
+
+ public:
+  MaybeEnterAsyncGeneratorRealm() = default;
+  ~MaybeEnterAsyncGeneratorRealm() = default;
+
+  
+  
+  [[nodiscard]] bool maybeEnterAndWrap(
+      JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
+      MutableHandleValue value) {
+    if (asyncGenObj->compartment() == cx->compartment()) {
+      return true;
+    }
+
+    ar_.emplace(cx, asyncGenObj);
+    return cx->compartment()->wrap(cx, value);
+  }
+
+  
+  
+  [[nodiscard]] bool maybeLeaveAndWrap(JSContext* cx,
+                                       MutableHandleValue result) {
+    if (!ar_) {
+      return true;
+    }
+    ar_.reset();
+
+    return cx->compartment()->wrap(cx, result);
+  }
+};
+
 [[nodiscard]] static bool AsyncGeneratorMethodCommon(
     JSContext* cx, HandleValue asyncGenVal, CompletionKind completionKind,
     HandleValue completionValue, MutableHandleValue result) {
@@ -705,70 +738,56 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   Rooted<AsyncGeneratorObject*> asyncGenObj(
       cx, &asyncGenVal.toObject().unwrapAs<AsyncGeneratorObject>());
 
-  bool wrapResult = false;
-  {
-    
-    
-    
-    
-    
-    
+  MaybeEnterAsyncGeneratorRealm maybeEnterRealm;
 
-    mozilla::Maybe<AutoRealm> ar;
-    RootedValue completionVal(cx, completionValue);
-    if (asyncGenObj->compartment() != cx->compartment()) {
-      ar.emplace(cx, asyncGenObj);
-      wrapResult = true;
+  RootedValue completionVal(cx, completionValue);
+  if (!maybeEnterRealm.maybeEnterAndWrap(cx, asyncGenObj, &completionVal)) {
+    return false;
+  }
 
-      if (!cx->compartment()->wrap(cx, &completionVal)) {
-        return false;
-      }
+  Rooted<PromiseObject*> resultPromise(
+      cx, CreatePromiseObjectForAsyncGenerator(cx));
+  if (!resultPromise) {
+    return false;
+  }
+
+  if (!AsyncGeneratorEnqueue(cx, asyncGenObj, completionKind, completionVal,
+                             resultPromise)) {
+    return false;
+  }
+
+  if (asyncGenObj->isCompleted()) {
+    if (!AsyncGeneratorDrainQueue(cx, asyncGenObj)) {
+      return false;
     }
-
-    Rooted<PromiseObject*> resultPromise(
-        cx, CreatePromiseObjectForAsyncGenerator(cx));
-    if (!resultPromise) {
+  } else if (asyncGenObj->isSuspendedStart() ||
+             asyncGenObj->isSuspendedYield()) {
+    Rooted<AsyncGeneratorRequest*> request(
+        cx, AsyncGeneratorObject::peekRequest(asyncGenObj));
+    if (!request) {
       return false;
     }
 
-    if (!AsyncGeneratorEnqueue(cx, asyncGenObj, completionKind, completionVal,
-                               resultPromise)) {
-      return false;
-    }
+    CompletionKind completionKind = request->completionKind();
 
-    if (asyncGenObj->isCompleted()) {
+    if (completionKind != CompletionKind::Normal &&
+        asyncGenObj->isSuspendedStart()) {
+      asyncGenObj->setCompleted();
       if (!AsyncGeneratorDrainQueue(cx, asyncGenObj)) {
         return false;
       }
-    } else if (asyncGenObj->isSuspendedStart() ||
-               asyncGenObj->isSuspendedYield()) {
-      Rooted<AsyncGeneratorRequest*> request(
-          cx, AsyncGeneratorObject::peekRequest(asyncGenObj));
-      if (!request) {
+    } else {
+      RootedValue resumptionValue(cx, request->completionValue());
+      if (!AsyncGeneratorUnwrapYieldResumptionAndResume(
+              cx, asyncGenObj, completionKind, resumptionValue)) {
         return false;
       }
-
-      CompletionKind completionKind = request->completionKind();
-
-      if (completionKind != CompletionKind::Normal &&
-          asyncGenObj->isSuspendedStart()) {
-        asyncGenObj->setCompleted();
-        if (!AsyncGeneratorDrainQueue(cx, asyncGenObj)) {
-          return false;
-        }
-      } else {
-        RootedValue resumptionValue(cx, request->completionValue());
-        if (!AsyncGeneratorUnwrapYieldResumptionAndResume(
-                cx, asyncGenObj, completionKind, resumptionValue)) {
-          return false;
-        }
-      }
     }
-
-    result.setObject(*resultPromise);
   }
 
-  return !wrapResult || cx->compartment()->wrap(cx, result);
+  result.setObject(*resultPromise);
+
+  return maybeEnterRealm.maybeLeaveAndWrap(cx, result);
 }
 
 
