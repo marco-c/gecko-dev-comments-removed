@@ -2843,7 +2843,11 @@ class AddonDetails extends HTMLElement {
 
     
     this.sitePermissionsList = this.querySelector("addon-sitepermissions-list");
-    this.sitePermissionsList.setAddon(addon);
+    if (addon.type == "sitepermission") {
+      this.sitePermissionsList.setAddon(addon);
+    }
+    this.querySelector(".addon-detail-sitepermissions").hidden =
+      addon.type !== "sitepermission";
 
     
     this.inlineOptions = this.querySelector("inline-options-browser");
