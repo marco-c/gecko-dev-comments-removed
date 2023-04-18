@@ -24,7 +24,6 @@ class ImageContainer;
 class PTextureChild;
 class SurfaceDescriptorTiles;
 class TextureClient;
-class ThebesBufferData;
 
 
 
