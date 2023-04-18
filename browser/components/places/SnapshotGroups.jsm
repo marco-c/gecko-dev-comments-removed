@@ -88,28 +88,7 @@ const SnapshotGroups = new (class SnapshotGroups {
         );
         id = row[0].getResultByIndex(0);
 
-        
-        let params = {};
-        let SQLInFragment = [];
-        let i = 0;
-        for (let url of urls) {
-          params[`url${i}`] = url;
-          SQLInFragment.push(`hash(:url${i})`);
-          i++;
-        }
-        params.id = id;
-
-        await db.execute(
-          `
-          INSERT INTO moz_places_metadata_groups_to_snapshots (group_id, place_id)
-          SELECT :id, s.place_id
-          FROM moz_places h
-          JOIN moz_places_metadata_snapshots s
-          ON h.id = s.place_id
-          WHERE h.url_hash IN (${SQLInFragment.join(",")})
-        `,
-          params
-        );
+        await this.#insertUrls(db, id, urls);
       }
     );
 
@@ -154,8 +133,24 @@ const SnapshotGroups = new (class SnapshotGroups {
 
 
 
+
+
   async updateUrls(id, urls) {
-    
+    await PlacesUtils.withConnectionWrapper(
+      "SnapshotsGroups.jsm:updateUrls",
+      async db => {
+        
+        
+        
+        await db.executeCached(
+          `DELETE FROM moz_places_metadata_groups_to_snapshots WHERE group_id = :id`,
+          { id }
+        );
+
+        await this.#insertUrls(db, id, urls);
+      }
+    );
+
     Services.obs.notifyObservers(null, "places-snapshot-group-updated");
   }
 
@@ -304,6 +299,41 @@ const SnapshotGroups = new (class SnapshotGroups {
     }
 
     return snapshots;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  async #insertUrls(db, id, urls) {
+    
+    let params = {};
+    let SQLInFragment = [];
+    let i = 0;
+    for (let url of urls) {
+      params[`url${i}`] = url;
+      SQLInFragment.push(`hash(:url${i})`);
+      i++;
+    }
+    params.id = id;
+
+    await db.execute(
+      `
+      INSERT INTO moz_places_metadata_groups_to_snapshots (group_id, place_id)
+      SELECT :id, s.place_id
+      FROM moz_places h
+      JOIN moz_places_metadata_snapshots s
+      ON h.id = s.place_id
+      WHERE h.url_hash IN (${SQLInFragment.join(",")})
+    `,
+      params
+    );
   }
 
   
