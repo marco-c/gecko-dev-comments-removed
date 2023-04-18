@@ -2027,9 +2027,13 @@ nsresult JsepSessionImpl::CreateGenericSDP(UniquePtr<Sdp>* sdpp) {
   
   
   
-
-  auto origin = SdpOrigin("mozilla...THIS_IS_SDPARTA-" MOZ_APP_UA_VERSION,
-                          mSessionId, mSessionVersion, sdp::kIPv4, "0.0.0.0");
+  
+  
+  
+  
+  
+  auto origin = SdpOrigin("mozilla...THIS_IS_SDPARTA-99.0", mSessionId,
+                          mSessionVersion, sdp::kIPv4, "0.0.0.0");
 
   UniquePtr<Sdp> sdp = MakeUnique<SipccSdp>(origin);
 
