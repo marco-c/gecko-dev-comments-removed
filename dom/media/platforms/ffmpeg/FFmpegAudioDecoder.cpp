@@ -36,6 +36,29 @@ FFmpegAudioDecoder<LIBAV_VER>::FFmpegAudioDecoder(FFmpegLibWrapper* aLib,
     }
   }
 
+  if (mCodecID == AV_CODEC_ID_FLAC) {
+    MOZ_DIAGNOSTIC_ASSERT(
+        aConfig.mCodecSpecificConfig.is<FlacCodecSpecificData>());
+    
+    
+    
+    if (aConfig.mCodecSpecificConfig.is<FlacCodecSpecificData>()) {
+      const FlacCodecSpecificData& flacCodecSpecificData =
+          aConfig.mCodecSpecificConfig.as<FlacCodecSpecificData>();
+      if (flacCodecSpecificData.mStreamInfoBinaryBlob->IsEmpty()) {
+        
+        
+        
+        return;
+      }
+      
+      
+      mExtraData = new MediaByteBuffer;
+      mExtraData->AppendElements(*flacCodecSpecificData.mStreamInfoBinaryBlob);
+      return;
+    }
+  }
+
   RefPtr<MediaByteBuffer> audioCodecSpecificBinaryBlob =
       ForceGetAudioCodecSpecificBlob(aConfig.mCodecSpecificConfig);
   if (audioCodecSpecificBinaryBlob && audioCodecSpecificBinaryBlob->Length()) {
