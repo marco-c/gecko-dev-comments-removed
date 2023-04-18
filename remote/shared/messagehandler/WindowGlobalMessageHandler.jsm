@@ -25,6 +25,14 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 class WindowGlobalMessageHandler extends MessageHandler {
+  constructor() {
+    super(...arguments);
+
+    
+    
+    this._innerWindowId;
+  }
+
   
 
 
@@ -55,6 +63,14 @@ class WindowGlobalMessageHandler extends MessageHandler {
 
   static getIdFromContext(context) {
     return context.id;
+  }
+
+  get innerWindowId() {
+    if (this._innerWindowId === undefined) {
+      this._innerWindowId = this._context.window.windowGlobalChild.innerWindowId;
+    }
+
+    return this._innerWindowId;
   }
 
   forwardCommand(command) {
