@@ -18,9 +18,8 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/Span.h"
+#include "mozilla/Tuple.h"
 #include "nsString.h"
-
-#include <tuple>
 
 namespace mozilla {
 class Encoding;
@@ -218,12 +217,11 @@ class Encoding final {
 
 
 
-
-  static inline std::tuple<const Encoding*, size_t> ForBOM(
+  static inline Tuple<const Encoding*, size_t> ForBOM(
       Span<const uint8_t> aBuffer) {
     size_t len = aBuffer.Length();
     const Encoding* encoding = encoding_for_bom(aBuffer.Elements(), &len);
-    return {encoding, len};
+    return MakeTuple(encoding, len);
   }
 
   
@@ -310,7 +308,7 @@ class Encoding final {
 
 
 
-  inline std::tuple<nsresult, NotNull<const mozilla::Encoding*>> Decode(
+  inline Tuple<nsresult, NotNull<const mozilla::Encoding*>> Decode(
       const nsACString& aBytes, nsACString& aOut) const {
     const Encoding* encoding = this;
     const nsACString* bytes = &aBytes;
@@ -322,7 +320,7 @@ class Encoding final {
     } else {
       rv = mozilla_encoding_decode_to_nscstring(&encoding, bytes, out);
     }
-    return {rv, WrapNotNull(encoding)};
+    return MakeTuple(rv, WrapNotNull(encoding));
   }
 
   
@@ -346,12 +344,12 @@ class Encoding final {
 
 
 
-  inline std::tuple<nsresult, NotNull<const mozilla::Encoding*>> Decode(
+  inline Tuple<nsresult, NotNull<const mozilla::Encoding*>> Decode(
       Span<const uint8_t> aBytes, nsAString& aOut) const {
     const Encoding* encoding = this;
     nsresult rv = mozilla_encoding_decode_to_nsstring(
         &encoding, aBytes.Elements(), aBytes.Length(), &aOut);
-    return {rv, WrapNotNull(encoding)};
+    return MakeTuple(rv, WrapNotNull(encoding));
   }
 
   
@@ -603,7 +601,7 @@ class Encoding final {
 
 
 
-  inline std::tuple<nsresult, NotNull<const mozilla::Encoding*>> Encode(
+  inline Tuple<nsresult, NotNull<const mozilla::Encoding*>> Encode(
       const nsACString& aString, nsACString& aOut) const {
     const Encoding* encoding = this;
     const nsACString* string = &aString;
@@ -615,7 +613,7 @@ class Encoding final {
     } else {
       rv = mozilla_encoding_encode_from_nscstring(&encoding, string, out);
     }
-    return {rv, WrapNotNull(encoding)};
+    return MakeTuple(rv, WrapNotNull(encoding));
   }
 
   
@@ -639,12 +637,12 @@ class Encoding final {
 
 
 
-  inline std::tuple<nsresult, NotNull<const mozilla::Encoding*>> Encode(
+  inline Tuple<nsresult, NotNull<const mozilla::Encoding*>> Encode(
       Span<const char16_t> aString, nsACString& aOut) const {
     const Encoding* encoding = this;
     nsresult rv = mozilla_encoding_encode_from_utf16(
         &encoding, aString.Elements(), aString.Length(), &aOut);
-    return {rv, WrapNotNull(encoding)};
+    return MakeTuple(rv, WrapNotNull(encoding));
   }
 
   
@@ -946,7 +944,7 @@ class Decoder final {
 
 
 
-  inline std::tuple<uint32_t, size_t, size_t, bool> DecodeToUTF8(
+  inline Tuple<uint32_t, size_t, size_t, bool> DecodeToUTF8(
       Span<const uint8_t> aSrc, Span<uint8_t> aDst, bool aLast) {
     size_t srcRead = aSrc.Length();
     size_t dstWritten = aDst.Length();
@@ -954,7 +952,7 @@ class Decoder final {
     uint32_t result =
         decoder_decode_to_utf8(this, aSrc.Elements(), &srcRead, aDst.Elements(),
                                &dstWritten, aLast, &hadReplacements);
-    return {result, srcRead, dstWritten, hadReplacements};
+    return MakeTuple(result, srcRead, dstWritten, hadReplacements);
   }
 
   
@@ -963,13 +961,13 @@ class Decoder final {
 
 
 
-  inline std::tuple<uint32_t, size_t, size_t> DecodeToUTF8WithoutReplacement(
+  inline Tuple<uint32_t, size_t, size_t> DecodeToUTF8WithoutReplacement(
       Span<const uint8_t> aSrc, Span<uint8_t> aDst, bool aLast) {
     size_t srcRead = aSrc.Length();
     size_t dstWritten = aDst.Length();
     uint32_t result = decoder_decode_to_utf8_without_replacement(
         this, aSrc.Elements(), &srcRead, aDst.Elements(), &dstWritten, aLast);
-    return {result, srcRead, dstWritten};
+    return MakeTuple(result, srcRead, dstWritten);
   }
 
   
@@ -1000,7 +998,7 @@ class Decoder final {
 
 
 
-  inline std::tuple<uint32_t, size_t, size_t, bool> DecodeToUTF16(
+  inline Tuple<uint32_t, size_t, size_t, bool> DecodeToUTF16(
       Span<const uint8_t> aSrc, Span<char16_t> aDst, bool aLast) {
     size_t srcRead = aSrc.Length();
     size_t dstWritten = aDst.Length();
@@ -1008,7 +1006,7 @@ class Decoder final {
     uint32_t result = decoder_decode_to_utf16(this, aSrc.Elements(), &srcRead,
                                               aDst.Elements(), &dstWritten,
                                               aLast, &hadReplacements);
-    return {result, srcRead, dstWritten, hadReplacements};
+    return MakeTuple(result, srcRead, dstWritten, hadReplacements);
   }
 
   
@@ -1017,13 +1015,13 @@ class Decoder final {
 
 
 
-  inline std::tuple<uint32_t, size_t, size_t> DecodeToUTF16WithoutReplacement(
+  inline Tuple<uint32_t, size_t, size_t> DecodeToUTF16WithoutReplacement(
       Span<const uint8_t> aSrc, Span<char16_t> aDst, bool aLast) {
     size_t srcRead = aSrc.Length();
     size_t dstWritten = aDst.Length();
     uint32_t result = decoder_decode_to_utf16_without_replacement(
         this, aSrc.Elements(), &srcRead, aDst.Elements(), &dstWritten, aLast);
-    return {result, srcRead, dstWritten};
+    return MakeTuple(result, srcRead, dstWritten);
   }
 
   
@@ -1241,7 +1239,7 @@ class Encoder final {
 
 
 
-  inline std::tuple<uint32_t, size_t, size_t, bool> EncodeFromUTF8(
+  inline Tuple<uint32_t, size_t, size_t, bool> EncodeFromUTF8(
       Span<const uint8_t> aSrc, Span<uint8_t> aDst, bool aLast) {
     size_t srcRead = aSrc.Length();
     size_t dstWritten = aDst.Length();
@@ -1249,7 +1247,7 @@ class Encoder final {
     uint32_t result = encoder_encode_from_utf8(this, aSrc.Elements(), &srcRead,
                                                aDst.Elements(), &dstWritten,
                                                aLast, &hadReplacements);
-    return {result, srcRead, dstWritten, hadReplacements};
+    return MakeTuple(result, srcRead, dstWritten, hadReplacements);
   }
 
   
@@ -1262,13 +1260,13 @@ class Encoder final {
 
 
 
-  inline std::tuple<uint32_t, size_t, size_t> EncodeFromUTF8WithoutReplacement(
+  inline Tuple<uint32_t, size_t, size_t> EncodeFromUTF8WithoutReplacement(
       Span<const uint8_t> aSrc, Span<uint8_t> aDst, bool aLast) {
     size_t srcRead = aSrc.Length();
     size_t dstWritten = aDst.Length();
     uint32_t result = encoder_encode_from_utf8_without_replacement(
         this, aSrc.Elements(), &srcRead, aDst.Elements(), &dstWritten, aLast);
-    return {result, srcRead, dstWritten};
+    return MakeTuple(result, srcRead, dstWritten);
   }
 
   
@@ -1321,7 +1319,7 @@ class Encoder final {
 
 
 
-  inline std::tuple<uint32_t, size_t, size_t, bool> EncodeFromUTF16(
+  inline Tuple<uint32_t, size_t, size_t, bool> EncodeFromUTF16(
       Span<const char16_t> aSrc, Span<uint8_t> aDst, bool aLast) {
     size_t srcRead = aSrc.Length();
     size_t dstWritten = aDst.Length();
@@ -1329,7 +1327,7 @@ class Encoder final {
     uint32_t result = encoder_encode_from_utf16(this, aSrc.Elements(), &srcRead,
                                                 aDst.Elements(), &dstWritten,
                                                 aLast, &hadReplacements);
-    return {result, srcRead, dstWritten, hadReplacements};
+    return MakeTuple(result, srcRead, dstWritten, hadReplacements);
   }
 
   
@@ -1338,13 +1336,13 @@ class Encoder final {
 
 
 
-  inline std::tuple<uint32_t, size_t, size_t> EncodeFromUTF16WithoutReplacement(
+  inline Tuple<uint32_t, size_t, size_t> EncodeFromUTF16WithoutReplacement(
       Span<const char16_t> aSrc, Span<uint8_t> aDst, bool aLast) {
     size_t srcRead = aSrc.Length();
     size_t dstWritten = aDst.Length();
     uint32_t result = encoder_encode_from_utf16_without_replacement(
         this, aSrc.Elements(), &srcRead, aDst.Elements(), &dstWritten, aLast);
-    return {result, srcRead, dstWritten};
+    return MakeTuple(result, srcRead, dstWritten);
   }
 
  private:

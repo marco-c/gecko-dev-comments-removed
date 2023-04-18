@@ -25,15 +25,15 @@
 #include "nsHTMLTokenizer.h"
 #include "nsXPCOMCIDInternal.h"
 #include "nsMimeTypes.h"
+#include "mozilla/CondVar.h"
+#include "mozilla/Mutex.h"
 #include "nsCharsetSource.h"
 #include "nsThreadUtils.h"
 #include "nsIHTMLContentSink.h"
 
 #include "mozilla/BinarySearch.h"
-#include "mozilla/CondVar.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/Encoding.h"
-#include "mozilla/Mutex.h"
 
 using namespace mozilla;
 
@@ -1215,7 +1215,7 @@ static nsresult ParserWriteFunc(nsIInputStream* in, void* closure,
     
     
     const Encoding* encoding;
-    std::tie(encoding, std::ignore) = Encoding::ForBOM(Span(buf, count));
+    Tie(encoding, Ignore) = Encoding::ForBOM(Span(buf, count));
     if (encoding) {
       
       
