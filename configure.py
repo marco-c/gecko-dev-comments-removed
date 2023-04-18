@@ -42,6 +42,33 @@ import six
 
 
 def main(argv):
+    
+    with open(__file__, "r") as fh:
+        data = fh.read()
+        if "\r" in data:
+            print(
+                "\n ***\n"
+                " * The source tree appears to have Windows-style line endings.\n"
+                " *\n"
+                " * If using Git, Git is likely configured to use Windows-style\n"
+                " * line endings.\n"
+                " *\n"
+                " * To convert the working copy to UNIX-style line endings, run\n"
+                " * the following:\n"
+                " *\n"
+                " * $ git config core.autocrlf false\n"
+                " * $ git config core.eof lf\n"
+                " * $ git rm --cached -r .\n"
+                " * $ git reset --hard\n"
+                " *\n"
+                " * If not using Git, the tool you used to obtain the source\n"
+                " * code likely converted files to Windows line endings. See\n"
+                " * usage information for that tool for more.\n"
+                " ***",
+                file=sys.stderr,
+            )
+            return 1
+
     config = {}
 
     if "OLD_CONFIGURE" not in os.environ:
@@ -50,6 +77,46 @@ def main(argv):
     sandbox = ConfigureSandbox(config, os.environ, argv)
 
     if not sandbox._help:
+        
+        
+        
+        
+        
+        
+        
+        
+        topsrcdir = os.path.realpath(os.path.dirname(__file__))
+        if len(topsrcdir.split()) > 1:
+            print(
+                "Source directory cannot be located in a path with spaces: %s"
+                % topsrcdir,
+                file=sys.stderr,
+            )
+            return 1
+        topobjdir = os.path.realpath(os.curdir)
+        if len(topobjdir.split()) > 1:
+            print(
+                "Object directory cannot be located in a path with spaces: %s"
+                % topobjdir,
+                file=sys.stderr,
+            )
+            return 1
+
+        
+        if os.path.samefile(topsrcdir, topobjdir):
+            print(
+                "  ***\n"
+                "  * Building directly in the main source directory is not allowed.\n"
+                "  *\n"
+                "  * To build, you must run configure from a separate directory\n"
+                "  * (referred to as an object directory).\n"
+                "  *\n"
+                "  * If you are building with a mozconfig, you will need to change your\n"
+                "  * mozconfig to point to a different object directory.\n"
+                "  ***",
+                file=sys.stderr,
+            )
+            return 1
         _activate_build_virtualenv()
 
     clobber_file = "CLOBBER"
