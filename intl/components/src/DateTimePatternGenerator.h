@@ -14,6 +14,14 @@
 
 namespace mozilla::intl {
 
+class DisplayNames;
+
+
+
+
+
+
+
 class DateTimePatternGenerator final {
  public:
   explicit DateTimePatternGenerator(UDateTimePatternGenerator* aGenerator)
@@ -114,16 +122,15 @@ class DateTimePatternGenerator final {
     return Span{combined, static_cast<size_t>(length)};
   }
 
+ private:
   
+  
+  friend class DisplayNames;
 
-
-
-
-  UDateTimePatternGenerator* UnsafeGetUDateTimePatternGenerator() {
+  UDateTimePatternGenerator* GetUDateTimePatternGenerator() {
     return mGenerator.GetMut();
   }
 
- private:
   ICUPointer<UDateTimePatternGenerator> mGenerator =
       ICUPointer<UDateTimePatternGenerator>(nullptr);
 

@@ -108,7 +108,7 @@ class TestBuffer {
 
 
 
-  bool verboseMatches(const CharType* aExpected) {
+  [[nodiscard]] bool verboseMatches(const CharType* aExpected) {
     std::basic_string_view<CharType> actualSV(data(), length());
     std::basic_string_view<CharType> expectedSV(aExpected);
 
