@@ -83,6 +83,20 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
     );
 
     
+    
+    eventTooltip.on(
+      "event-tooltip-listener-toggled",
+      ({ hasDisabledEventListeners }) => {
+        const className = "has-disabled-events";
+        if (hasDisabledEventListeners) {
+          this.editor._eventBadge.classList.add(className);
+        } else {
+          this.editor._eventBadge.classList.remove(className);
+        }
+      }
+    );
+
+    
     this.markup._disableImagePreviewTooltip();
     tooltip.once("hidden", () => {
       eventTooltip.destroy();

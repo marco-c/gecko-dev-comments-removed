@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root {
   --badge-active-background-color: var(--blue-50);
@@ -29,11 +29,11 @@
   --badge-scrollable-background-color: transparent;
 }
 
-
+/* Inspector badge */
 .inspector-badge,
 .editor.text .whitespace::before {
   display: inline-block;
-  
+  /* 9px text is too blurry on low-resolution screens */
   font-size: 10px;
   font-weight: normal;
   line-height: 10px;
@@ -62,7 +62,7 @@
   }
 }
 
-
+/* Inspector badges that are interactive/clickable */
 .inspector-badge.interactive {
   background-color: var(--badge-interactive-background-color);
   color: var(--badge-interactive-color);
@@ -90,4 +90,13 @@
 .inspector-badge.interactive.scrollable-badge.active {
   background-color: var(--badge-scrollable-active-background-color);
   color: var(--theme-selection-color);
+}
+
+.inspector-badge.has-disabled-events {
+  font-style: italic;
+}
+
+.inspector-badge.has-disabled-events::before {
+  content: "*";
+  padding-inline-end: 2px;
 }
