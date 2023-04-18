@@ -652,9 +652,8 @@ class nsWindow final : public nsBaseWidget {
 
   void ApplySizeConstraints(void);
 
-  void GetParentPosition(int* aX, int* aY);
-
   
+  void WaylandGetParentPosition(int* aX, int* aY);
   bool WaylandPopupNeedsTrackInHierarchy();
   bool WaylandPopupIsAnchored();
   bool WaylandPopupIsMenu();
