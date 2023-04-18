@@ -28,17 +28,18 @@
 #include "nsIAnonymousContentCreator.h"
 #include "nsISelectControlFrame.h"
 #include "nsIRollupListener.h"
-#include "nsIStatefulFrame.h"
 #include "nsThreadUtils.h"
 
-class nsListControlFrame;
 class nsComboboxDisplayFrame;
-class nsIDOMEventListener;
-class nsIScrollableFrame;
 class nsTextNode;
 
 namespace mozilla {
 class PresShell;
+class HTMLSelectEventListener;
+namespace dom {
+class HTMLSelectElement;
+}
+
 namespace gfx {
 class DrawTarget;
 }  
@@ -47,9 +48,7 @@ class DrawTarget;
 class nsComboboxControlFrame final : public nsBlockFrame,
                                      public nsIFormControlFrame,
                                      public nsIAnonymousContentCreator,
-                                     public nsISelectControlFrame,
-                                     public nsIRollupListener,
-                                     public nsIStatefulFrame {
+                                     public nsISelectControlFrame {
   using DrawTarget = mozilla::gfx::DrawTarget;
   using Element = mozilla::dom::Element;
 
@@ -100,7 +99,8 @@ class nsComboboxControlFrame final : public nsBlockFrame,
         aFlags & ~(nsIFrame::eReplaced | nsIFrame::eReplacedContainsBlock));
   }
 
-  nsIScrollableFrame* GetScrollTargetFrame() const final;
+  void Init(nsIContent* aContent, nsContainerFrame* aParent,
+            nsIFrame* aPrevInFlow) final;
 
 #ifdef DEBUG_FRAME_DUMP
   nsresult GetFrameName(nsAString& aResult) const final;
@@ -117,7 +117,10 @@ class nsComboboxControlFrame final : public nsBlockFrame,
   void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) final;
 
   
-  nsresult SetFormProperty(nsAtom* aName, const nsAString& aValue) final;
+  nsresult SetFormProperty(nsAtom* aName, const nsAString& aValue) final {
+    return NS_OK;
+  }
+
   
 
 
@@ -129,12 +132,6 @@ class nsComboboxControlFrame final : public nsBlockFrame,
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void SetFocus(bool aOn, bool aRepaint) final;
-
-  bool IsDroppedDown() { return mDroppedDown; }
-  MOZ_CAN_RUN_SCRIPT void ShowDropDown(bool aDoDropDown);
-  nsIFrame* GetDropDown();
-  void SetDropDown(nsListControlFrame* aDropDownFrame);
-  MOZ_CAN_RUN_SCRIPT void RollupFromList();
 
   
 
@@ -151,15 +148,12 @@ class nsComboboxControlFrame final : public nsBlockFrame,
 
   nsresult RedisplaySelectedText();
   int32_t UpdateRecentIndex(int32_t aIndex);
-  void OnContentReset();
 
   bool IsOpenInParentProcess() { return mIsOpenInParentProcess; }
 
   void SetOpenInParentProcess(bool aVal) { mIsOpenInParentProcess = aVal; }
 
-  bool IsDroppedDownOrHasParentPopup() {
-    return IsDroppedDown() || IsOpenInParentProcess();
-  }
+  bool IsDroppedDown() { return IsOpenInParentProcess(); }
 
   
   NS_IMETHOD AddOption(int32_t index) final;
@@ -169,54 +163,12 @@ class nsComboboxControlFrame final : public nsBlockFrame,
   NS_IMETHOD_(void)
   OnSetSelectedIndex(int32_t aOldIndex, int32_t aNewIndex) final;
 
-  
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  bool Rollup(uint32_t aCount, bool aFlush,
-              const mozilla::LayoutDeviceIntPoint* pos,
-              nsIContent** aLastRolledUp) final;
-  void NotifyGeometryChange() final;
-
-  
-
-
-
-  bool ShouldRollupOnMouseWheelEvent() final { return true; }
-
-  bool ShouldConsumeOnMouseWheelEvent() final { return false; }
-
-  
-
-
-
-  bool ShouldRollupOnMouseActivate() final { return false; }
-
-  uint32_t GetSubmenuWidgetChain(nsTArray<nsIWidget*>* aWidgetChain) final {
-    return 0;
-  }
-
-  nsIWidget* GetRollupWidget() final;
-
-  
-  mozilla::UniquePtr<mozilla::PresState> SaveState() final;
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  NS_IMETHOD RestoreState(mozilla::PresState* aState) final;
-  void GenerateStateKey(nsIContent* aContent, mozilla::dom::Document* aDocument,
-                        nsACString& aKey) final;
-
-  static bool ToolkitHasNativePopup();
+  int32_t CharCountOfLargestOptionForInflation() const;
 
  protected:
   friend class RedisplayTextEvent;
   friend class nsAsyncResize;
   friend class nsResizeDropdownAtFinalPosition;
-
-  
-  void ReflowDropdown(nsPresContext* aPresContext,
-                      const ReflowInput& aReflowInput);
 
   
   bool HasDropDownButton() const;
@@ -248,38 +200,25 @@ class nsComboboxControlFrame final : public nsBlockFrame,
     nsComboboxControlFrame* mControlFrame;
   };
 
-  
-
-
-
-  MOZ_CAN_RUN_SCRIPT void ShowPopup(bool aShowPopup);
-
-  
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT bool ShowList(bool aShowList);
   void CheckFireOnChange();
   void FireValueChangeEvent();
   nsresult RedisplayText();
   void HandleRedisplayTextEvent();
   void ActuallyDisplayText(bool aNotify);
 
- private:
   
   
   nsPoint GetCSSTransformTranslation();
 
- protected:
+  mozilla::dom::HTMLSelectElement& Select() const;
+  void GetOptionText(uint32_t aIndex, nsAString& aText) const;
+
   nsFrameList mPopupFrames;            
   RefPtr<nsTextNode> mDisplayContent;  
                                        
   RefPtr<Element> mButtonContent;      
   nsContainerFrame* mDisplayFrame;     
   nsIFrame* mButtonFrame;              
-  nsListControlFrame* mDropdownFrame;  
 
   
   
@@ -296,24 +235,10 @@ class nsComboboxControlFrame final : public nsBlockFrame,
   int32_t mDisplayedIndex;
   nsString mDisplayedOptionTextOrPreview;
 
-  
-  
-  nsCOMPtr<nsIDOMEventListener> mButtonListener;
+  RefPtr<mozilla::HTMLSelectEventListener> mEventListener;
 
-  
-  
-  
-  
-  
-  nscoord mLastDropDownBeforeScreenBCoord;
-  nscoord mLastDropDownAfterScreenBCoord;
-  
-  bool mDroppedDown;
   
   bool mInRedisplayText;
-  
-  bool mDelayedShowDropDown;
-
   bool mIsOpenInParentProcess;
 
   

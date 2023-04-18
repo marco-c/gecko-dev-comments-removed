@@ -1616,26 +1616,15 @@ nsMargin ScrollFrameHelper::GetDesiredScrollbarSizes(nsBoxLayoutState* aState) {
   return result;
 }
 
-nscoord ScrollFrameHelper::GetNondisappearingScrollbarWidth(
-    nsBoxLayoutState* aState, WritingMode aWM) {
-  NS_ASSERTION(aState && aState->GetRenderingContext(),
-               "Must have rendering context in layout state for size "
-               "computations");
-
-  bool verticalWM = aWM.IsVertical();
+nscoord nsIScrollableFrame::GetNondisappearingScrollbarWidth(nsPresContext* aPc,
+                                                             WritingMode aWM) {
   
   
-  nsIFrame* box = verticalWM ? mHScrollbarBox : mVScrollbarBox;
-  if (box) {
-    auto sizes = aState->PresContext()->Theme()->GetScrollbarSizes(
-        aState->PresContext(), StyleScrollbarWidth::Auto,
-        nsITheme::Overlay::No);
-    return aState->PresContext()->DevPixelsToAppUnits(
-        verticalWM ? sizes.mHorizontal : sizes.mVertical);
-  }
-
-  nsMargin sizes(GetDesiredScrollbarSizes(aState));
-  return verticalWM ? sizes.TopBottom() : sizes.LeftRight();
+  
+  auto sizes = aPc->Theme()->GetScrollbarSizes(aPc, StyleScrollbarWidth::Auto,
+                                               nsITheme::Overlay::No);
+  return aPc->DevPixelsToAppUnits(aWM.IsVertical() ? sizes.mHorizontal
+                                                   : sizes.mVertical);
 }
 
 void ScrollFrameHelper::HandleScrollbarStyleSwitching() {

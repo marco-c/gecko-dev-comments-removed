@@ -420,6 +420,7 @@ function createDevToolsFrame(doc, className) {
   frame.setAttribute("type", "content");
   frame.flex = 1; 
   frame.className = className;
+  frame.setAttribute("selectmenulist", "ContentSelectDropdown");
 
   const inXULDocument = doc.documentElement.namespaceURI === XUL_NS;
   if (inXULDocument) {

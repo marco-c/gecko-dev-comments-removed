@@ -143,9 +143,8 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   
 
 
-  virtual nscoord GetNondisappearingScrollbarWidth(
-      nsPresContext* aPresContext, gfxContext* aRC,
-      mozilla::WritingMode aWM) = 0;
+  static nscoord GetNondisappearingScrollbarWidth(nsPresContext*,
+                                                  mozilla::WritingMode);
   
 
 

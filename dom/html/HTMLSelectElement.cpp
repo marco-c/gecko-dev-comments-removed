@@ -1423,20 +1423,9 @@ HTMLSelectElement::SubmitNamesValues(FormData* aFormData) {
 }
 
 void HTMLSelectElement::DispatchContentReset() {
-  nsIFormControlFrame* formControlFrame = GetFormControlFrame(false);
-  if (formControlFrame) {
-    
-    
-    if (IsCombobox()) {
-      nsComboboxControlFrame* comboFrame = do_QueryFrame(formControlFrame);
-      if (comboFrame) {
-        comboFrame->OnContentReset();
-      }
-    } else {
-      nsListControlFrame* listFrame = do_QueryFrame(formControlFrame);
-      if (listFrame) {
-        listFrame->OnContentReset();
-      }
+  if (nsIFormControlFrame* formControlFrame = GetFormControlFrame(false)) {
+    if (nsListControlFrame* listFrame = do_QueryFrame(formControlFrame)) {
+      listFrame->OnContentReset();
     }
   }
 }
