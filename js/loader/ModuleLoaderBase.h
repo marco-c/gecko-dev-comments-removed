@@ -22,7 +22,6 @@
 #include "mozilla/dom/JSExecutionContext.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MozPromise.h"
-#include "ModuleMapKey.h"
 
 class nsIURI;
 
@@ -86,9 +85,9 @@ class ModuleLoaderBase : public nsISupports {
   using GenericPromise = mozilla::GenericPromise;
 
   
-  nsRefPtrHashtable<ModuleMapKey, GenericNonExclusivePromise::Private>
+  nsRefPtrHashtable<nsURIHashKey, GenericNonExclusivePromise::Private>
       mFetchingModules;
-  nsRefPtrHashtable<ModuleMapKey, ModuleScript> mFetchedModules;
+  nsRefPtrHashtable<nsURIHashKey, ModuleScript> mFetchedModules;
 
   
   ScriptLoadRequestList mDynamicImportRequests;
@@ -208,13 +207,12 @@ class ModuleLoaderBase : public nsISupports {
   nsresult StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
                                     RestartRequest aRestart);
 
-  bool ModuleMapContainsURL(nsIURI* aURL, nsIGlobalObject* aGlobal) const;
-  bool IsModuleFetching(nsIURI* aURL, nsIGlobalObject* aGlobal) const;
-  RefPtr<GenericNonExclusivePromise> WaitForModuleFetch(
-      nsIURI* aURL, nsIGlobalObject* aGlobal);
+  bool ModuleMapContainsURL(nsIURI* aURL) const;
+  bool IsModuleFetching(nsIURI* aURL) const;
+  RefPtr<GenericNonExclusivePromise> WaitForModuleFetch(nsIURI* aURL);
   void SetModuleFetchStarted(ModuleLoadRequest* aRequest);
 
-  ModuleScript* GetFetchedModule(nsIURI* aURL, nsIGlobalObject* aGlobal) const;
+  ModuleScript* GetFetchedModule(nsIURI* aURL) const;
 
   
   nsresult EvaluateModule(ModuleLoadRequest* aRequest);
