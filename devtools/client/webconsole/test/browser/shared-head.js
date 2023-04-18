@@ -356,6 +356,18 @@ function findMessagesByType(hud, text, typeSelector) {
 
 
 
+function findAllMessages(hud) {
+  const messages = hud.ui.outputNode.querySelectorAll(".message");
+  return Array.from(messages);
+}
+
+
+
+
+
+
+
+
 
 
 
