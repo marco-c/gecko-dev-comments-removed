@@ -1845,8 +1845,10 @@ class EditorBase : public nsIEditor,
   
 
 
+
+
+
   bool IsRoot(const nsINode* inNode) const;
-  bool IsEditorRoot(const nsINode* aNode) const;
 
   
 
