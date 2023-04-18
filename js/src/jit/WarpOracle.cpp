@@ -419,13 +419,12 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
       case JSOp::GetElemSuper: {
 #if defined(JS_CODEGEN_X86)
         
-        if (mirGen_.instrumentedProfiling()) {
-          return abort(AbortReason::Disable,
-                       "GetElemSuper with profiling is not supported on x86");
-        }
-#endif
+        return abort(AbortReason::Disable,
+                     "GetElemSuper is not supported on x86");
+#else
         MOZ_TRY(maybeInlineIC(opSnapshots, loc));
         break;
+#endif
       }
 
       case JSOp::Rest: {
