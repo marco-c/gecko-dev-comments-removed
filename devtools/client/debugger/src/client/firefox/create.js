@@ -192,6 +192,7 @@ export function createGeneratedSource(sourceResource) {
     isWasm: !!features.wasm && sourceResource.introductionType === "wasm",
     isExtension:
       (sourceResource.url && isUrlExtension(sourceResource.url)) || false,
+    isHTML: !!sourceResource.isInlineSource,
   });
 }
 
@@ -210,6 +211,7 @@ function createSourceObject({
   isExtension = false,
   isPrettyPrinted = false,
   isOriginal = false,
+  isHTML = false,
 }) {
   return {
     
@@ -241,6 +243,10 @@ function createSourceObject({
 
     
     isWasm,
+
+    
+    
+    isHTML,
 
     
     isPrettyPrinted,
