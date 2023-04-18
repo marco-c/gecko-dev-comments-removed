@@ -685,12 +685,12 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
     case ColorID::MozNativehyperlinktext:
       
       
-      color = NS_RGB(0x9e, 0x9e, 0xff);
+      color = NS_RGB(0x8c, 0x8c, 0xff);
       break;
     case ColorID::MozNativevisitedhyperlinktext:
       
       
-      color = NS_RGB(0xd0, 0xad, 0xf0);
+      color = NS_RGB(0xff, 0xad, 0xff);
       break;
 
     default:
