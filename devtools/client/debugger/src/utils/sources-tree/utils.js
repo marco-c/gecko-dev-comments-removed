@@ -46,18 +46,6 @@ export function nodeHasChildren(item) {
   return item.type == "directory" && Array.isArray(item.contents);
 }
 
-export function isExactUrlMatch(pathPart, debuggeeUrl) {
-  
-  const { host } = parse(debuggeeUrl);
-  if (!host) {
-    return false;
-  }
-  return (
-    host === pathPart ||
-    host.replace(/^www\./, "") === pathPart.replace(/^www\./, "")
-  );
-}
-
 export function isPathDirectory(path) {
   
   
