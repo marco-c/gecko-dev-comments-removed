@@ -2193,7 +2193,12 @@ NS_IMETHODIMP
 nsDOMWindowUtils::GetScreenPixelsPerCSSPixel(float* aScreenPixels) {
   nsCOMPtr<nsPIDOMWindowOuter> window = do_QueryReferent(mWindow);
   NS_ENSURE_TRUE(window, NS_ERROR_FAILURE);
-  *aScreenPixels = window->GetDevicePixelRatio(CallerType::System);
+  nsCOMPtr<nsPIDOMWindowInner> innerWindow = window->GetCurrentInnerWindow();
+  NS_ENSURE_STATE(innerWindow);
+  
+  *aScreenPixels =
+      nsGlobalWindowInner::Cast(innerWindow)
+          ->GetDevicePixelRatio(CallerType::System, IgnoreErrors());
   return NS_OK;
 }
 
