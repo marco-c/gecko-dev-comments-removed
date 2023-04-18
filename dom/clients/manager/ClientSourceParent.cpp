@@ -219,6 +219,7 @@ void ClientSourceParent::Init() {
   
   
   if (NS_WARN_IF(!ClientIsValidPrincipalInfo(mClientInfo.PrincipalInfo()))) {
+    mService->ForgetFutureSource(mClientInfo.ToIPC());
     KillInvalidChild();
     return;
   }
