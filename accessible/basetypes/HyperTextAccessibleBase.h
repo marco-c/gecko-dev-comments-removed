@@ -178,6 +178,16 @@ class HyperTextAccessibleBase {
   std::pair<bool, int32_t> TransformOffset(Accessible* aDescendant,
                                            int32_t aOffset,
                                            bool aIsEndOffset) const;
+
+  
+
+
+
+
+
+
+  void AdjustOriginIfEndBoundary(TextLeafPoint& aOrigin,
+                                 AccessibleTextBoundary aBoundaryType) const;
 };
 
 }  
