@@ -40,6 +40,8 @@
 
 
 
+
+
 "use strict";
 
 const { PureComponent } = require("devtools/client/shared/vendor/react");
@@ -64,6 +66,7 @@ class ProfilerEventHandling extends PureComponent {
       reportProfilerStopped,
       reportPrivateBrowsingStarted,
       reportPrivateBrowsingStopped,
+      traits: { noDisablingOnPrivateBrowsing },
     } = this.props;
 
     if (!isSupportedPlatform) {
@@ -73,7 +76,9 @@ class ProfilerEventHandling extends PureComponent {
     
     Promise.all([
       perfFront.isActive(),
-      perfFront.isLockedForPrivateBrowsing(),
+      noDisablingOnPrivateBrowsing
+        ? false
+        : perfFront.isLockedForPrivateBrowsing(),
     ]).then(([isActive, isLockedForPrivateBrowsing]) => {
       reportProfilerReady(isActive, isLockedForPrivateBrowsing);
     });
@@ -81,14 +86,20 @@ class ProfilerEventHandling extends PureComponent {
     
     this.props.perfFront.on("profiler-started", reportProfilerStarted);
     this.props.perfFront.on("profiler-stopped", reportProfilerStopped);
-    this.props.perfFront.on(
-      "profile-locked-by-private-browsing",
-      reportPrivateBrowsingStarted
-    );
-    this.props.perfFront.on(
-      "profile-unlocked-from-private-browsing",
-      reportPrivateBrowsingStopped
-    );
+
+    if (!noDisablingOnPrivateBrowsing) {
+      
+      
+      
+      this.props.perfFront.on(
+        "profile-locked-by-private-browsing",
+        reportPrivateBrowsingStarted
+      );
+      this.props.perfFront.on(
+        "profile-unlocked-from-private-browsing",
+        reportPrivateBrowsingStopped
+      );
+    }
   }
 
   componentWillUnmount() {
