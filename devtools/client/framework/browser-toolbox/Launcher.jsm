@@ -1,11 +1,11 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
 
-// Keep this synchronized with the value of the same name in
-// toolkit/xre/nsAppRunner.cpp.
+
+
 const BROWSER_TOOLBOX_WINDOW_URL =
   "chrome://devtools/content/framework/browser-toolbox/window.html";
 const CHROME_DEBUGGER_PROFILE_NAME = "chrome_debugger_profile";
@@ -44,17 +44,17 @@ const EXPORTED_SYMBOLS = ["BrowserToolboxLauncher"];
 
 var processes = new Set();
 
-/**
- * Constructor for creating a process that will hold a chrome toolbox.
- *
- * @param function onClose [optional]
- *        A function called when the process stops running.
- * @param function onRun [optional]
- *        A function called when the process starts running.
- * @param boolean overwritePreferences [optional]
- *        Set to force overwriting the toolbox profile's preferences with the
- *        current set of preferences.
- */
+
+
+
+
+
+
+
+
+
+
+
 function BrowserToolboxLauncher(
   onClose,
   onRun,
@@ -65,7 +65,7 @@ function BrowserToolboxLauncher(
   this.on = emitter.on.bind(emitter);
   this.off = emitter.off.bind(emitter);
   this.once = emitter.once.bind(emitter);
-  // Forward any events to the shared emitter.
+  
   this.emit = function(...args) {
     emitter.emit(...args);
     BrowserToolboxLauncher.emit(...args);
@@ -91,10 +91,10 @@ function BrowserToolboxLauncher(
 
 EventEmitter.decorate(BrowserToolboxLauncher);
 
-/**
- * Initializes and starts a chrome toolbox process.
- * @return object
- */
+
+
+
+
 BrowserToolboxLauncher.init = function(
   onClose,
   onRun,
@@ -116,18 +116,18 @@ BrowserToolboxLauncher.init = function(
   );
 };
 
-/**
- * Figure out if there are any open Browser Toolboxes that'll need to be restored.
- * @return bool
- */
+
+
+
+
 BrowserToolboxLauncher.getBrowserToolboxSessionState = function() {
   return processes.size !== 0;
 };
 
 BrowserToolboxLauncher.prototype = {
-  /**
-   * Initializes the devtools server.
-   */
+  
+
+
   _initServer: function() {
     if (this.devToolsServer) {
       dumpn("The chrome toolbox server is already running.");
@@ -136,11 +136,11 @@ BrowserToolboxLauncher.prototype = {
 
     dumpn("Initializing the chrome toolbox server.");
 
-    // Create a separate loader instance, so that we can be sure to receive a
-    // separate instance of the DebuggingServer from the rest of the devtools.
-    // This allows us to safely use the tools against even the actors and
-    // DebuggingServer itself, especially since we can mark this loader as
-    // invisible to the debugger (unlike the usual loader settings).
+    
+    
+    
+    
+    
     this.loader = new DevToolsLoader({
       invisibleToDebugger: true,
     });
@@ -154,9 +154,9 @@ BrowserToolboxLauncher.prototype = {
     dumpn("Created a separate loader instance for the DevToolsServer.");
 
     this.devToolsServer.init();
-    // We mainly need a root actor and target actors for opening a toolbox, even
-    // against chrome/content. But the "no auto hide" button uses the
-    // preference actor, so also register the browser actors.
+    
+    
+    
     this.devToolsServer.registerAllActors();
     this.devToolsServer.allowChromeProcess = true;
     dumpn("initialized and added the browser actors for the DevToolsServer.");
@@ -184,9 +184,9 @@ BrowserToolboxLauncher.prototype = {
     );
   },
 
-  /**
-   * Initializes a profile for the remote debugger process.
-   */
+  
+
+
   _initProfile(overwritePreferences) {
     dumpn("Initializing the chrome toolbox user profile.");
 
@@ -200,7 +200,7 @@ BrowserToolboxLauncher.prototype = {
           this._dbgProfilePath = debuggingProfileDir.path;
           return;
         }
-        // Fall through and copy the current set of prefs to the profile.
+        
       } else {
         dumpn("Error trying to create a profile directory, failing.");
         dumpn("Error: " + (ex.message || ex));
@@ -210,16 +210,16 @@ BrowserToolboxLauncher.prototype = {
 
     this._dbgProfilePath = debuggingProfileDir.path;
 
-    // We would like to copy prefs into this new profile...
+    
     const prefsFile = debuggingProfileDir.clone();
     prefsFile.append("prefs.js");
-    // ... but unfortunately, when we run tests, it seems the starting profile
-    // clears out the prefs file before re-writing it, and in practice the
-    // file is empty when we get here. So just copying doesn't work in that
-    // case.
-    // We could force a sync pref flush and then copy it... but if we're doing
-    // that, we might as well just flush directly to the new profile, which
-    // always works:
+    
+    
+    
+    
+    
+    
+    
     Services.prefs.savePrefFile(prefsFile);
 
     dumpn(
@@ -228,9 +228,9 @@ BrowserToolboxLauncher.prototype = {
     );
   },
 
-  /**
-   * Creates and initializes the profile & process for the remote debugger.
-   */
+  
+
+
   _create: function(binaryPath) {
     dumpn("Initializing chrome debugging process.");
 
@@ -262,27 +262,27 @@ BrowserToolboxLauncher.prototype = {
       false
     );
     const environment = {
-      // Will be read by the Browser Toolbox Firefox instance to update the
-      // devtools.browsertoolbox.fission pref on the Browser Toolbox profile.
+      
+      
       MOZ_BROWSER_TOOLBOX_FISSION_PREF: isBrowserToolboxFission ? "1" : "0",
-      // Similar, but for the WebConsole input context dropdown.
+      
       MOZ_BROWSER_TOOLBOX_INPUT_CONTEXT: isInputContextEnabled ? "1" : "0",
-      // Disable safe mode for the new process in case this was opened via the
-      // keyboard shortcut.
+      
+      
       MOZ_DISABLE_SAFE_MODE_KEY: "1",
       MOZ_BROWSER_TOOLBOX_PORT: String(this.port),
       MOZ_HEADLESS: null,
-      // Never enable Marionette for the new process.
+      
       MOZ_MARIONETTE: null,
     };
 
-    // During local development, incremental builds can trigger the main process
-    // to clear its startup cache with the "flag file" .purgecaches, but this
-    // file is removed during app startup time, so we aren't able to know if it
-    // was present in order to also clear the child profile's startup cache as
-    // well.
-    //
-    // As an approximation of "isLocalBuild", check for an unofficial build.
+    
+    
+    
+    
+    
+    
+    
     if (!AppConstants.MOZILLA_OFFICIAL) {
       args.push("-purgecaches");
     }
@@ -298,8 +298,8 @@ BrowserToolboxLauncher.prototype = {
       proc => {
         this._dbgProcess = proc;
 
-        // jsbrowserdebugger is not connected with a toolbox so we pass -1 as the
-        // toolbox session id.
+        
+        
         this._telemetry.toolOpened("jsbrowserdebugger", -1, this);
 
         dumpn("Chrome toolbox is now running...");
@@ -307,10 +307,21 @@ BrowserToolboxLauncher.prototype = {
 
         proc.stdin.close();
         const dumpPipe = async pipe => {
+          let leftover = "";
           let data = await pipe.readString();
           while (data) {
-            dump("> " + data);
+            data = leftover + data;
+            const lines = data.split(/\r\n|\r|\n/);
+            if (lines.length) {
+              for (const line of lines.slice(0, -1)) {
+                dump(`${proc.pid}> ${line}\n`);
+              }
+              leftover = lines[lines.length - 1];
+            }
             data = await pipe.readString();
+          }
+          if (leftover) {
+            dump(`${proc.pid}> ${leftover}\n`);
           }
         };
         dumpPipe(proc.stdout);
@@ -328,9 +339,9 @@ BrowserToolboxLauncher.prototype = {
     );
   },
 
-  /**
-   * Closes the remote debugging server and kills the toolbox process.
-   */
+  
+
+
   close: async function() {
     if (this.closed) {
       return;
@@ -345,8 +356,8 @@ BrowserToolboxLauncher.prototype = {
     this._dbgProcess.stdout.close();
     await this._dbgProcess.kill();
 
-    // jsbrowserdebugger is not connected with a toolbox so we pass -1 as the
-    // toolbox session id.
+    
+    
     this._telemetry.toolClosed("jsbrowserdebugger", -1, this);
 
     if (this.listener) {
@@ -371,10 +382,10 @@ BrowserToolboxLauncher.prototype = {
   },
 };
 
-/**
- * Helper method for debugging.
- * @param string
- */
+
+
+
+
 function dumpn(str) {
   if (wantLogging) {
     dump("DBG-FRONTEND: " + str + "\n");
