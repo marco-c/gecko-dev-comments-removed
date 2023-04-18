@@ -45,7 +45,6 @@ typedef struct FT_LibraryRec_* FT_Library;
 namespace mozilla {
 struct StyleFontFamilyList;
 class LogModule;
-class VsyncDispatcher;
 namespace layers {
 class FrameStats;
 }
@@ -55,7 +54,6 @@ class SourceSurface;
 class DataSourceSurface;
 class ScaledFont;
 class VsyncSource;
-class SoftwareVsyncSource;
 class ContentDeviceData;
 class GPUDeviceData;
 class FeatureState;
@@ -658,8 +656,11 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
-
-  RefPtr<mozilla::VsyncDispatcher> GetGlobalVsyncDispatcher();
+  virtual mozilla::gfx::VsyncSource* GetHardwareVsync() {
+    MOZ_ASSERT(mVsyncSource != nullptr);
+    MOZ_ASSERT(XRE_IsParentProcess());
+    return mVsyncSource;
+  }
 
   
 
@@ -686,7 +687,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
-  static void ReInitFrameRate(const char* aPrefIgnored, void* aDataIgnored);
+  static void ReInitFrameRate();
 
   
 
@@ -821,17 +822,10 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   virtual void WillShutdown();
 
   
-  already_AddRefed<mozilla::gfx::VsyncSource> GetGlobalHardwareVsyncSource();
 
-  
-  
-  
-  already_AddRefed<mozilla::gfx::VsyncSource> GetSoftwareVsyncSource();
 
-  
-  
   virtual already_AddRefed<mozilla::gfx::VsyncSource>
-  CreateGlobalHardwareVsyncSource() = 0;
+  CreateHardwareVsyncSource();
 
   
   
@@ -933,19 +927,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   int32_t mWordCacheMaxEntries;
 
   
-  
-  
-  RefPtr<mozilla::VsyncDispatcher> mVsyncDispatcher;
-
-  
-  
-  RefPtr<mozilla::gfx::VsyncSource> mGlobalHardwareVsyncSource;
-
-  
-  
-  
-  
-  RefPtr<mozilla::gfx::SoftwareVsyncSource> mSoftwareVsyncSource;
+  RefPtr<mozilla::gfx::VsyncSource> mVsyncSource;
 
   RefPtr<mozilla::gfx::DrawTarget> mScreenReferenceDrawTarget;
 

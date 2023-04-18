@@ -7,7 +7,6 @@
 #ifndef GFX_SOFTWARE_VSYNC_SOURCE_H
 #define GFX_SOFTWARE_VSYNC_SOURCE_H
 
-#include "mozilla/DataMutex.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
@@ -15,39 +14,31 @@
 #include "nsISupportsImpl.h"
 #include "VsyncSource.h"
 
-namespace mozilla::gfx {
 
 
 
-
-class SoftwareVsyncSource : public VsyncSource {
+class SoftwareVsyncSource : public mozilla::gfx::VsyncSource {
  public:
-  explicit SoftwareVsyncSource(const TimeDuration& aInitialVsyncRate);
+  explicit SoftwareVsyncSource();
   virtual ~SoftwareVsyncSource();
 
   void EnableVsync() override;
   void DisableVsync() override;
   bool IsVsyncEnabled() override;
   bool IsInSoftwareVsyncThread();
-  void NotifyVsync(const TimeStamp& aVsyncTimestamp,
-                   const TimeStamp& aOutputTimestamp) override;
-  TimeDuration GetVsyncRate() override;
-  void ScheduleNextVsync(TimeStamp aVsyncTimestamp);
+  void NotifyVsync(const mozilla::TimeStamp& aVsyncTimestamp,
+                   const mozilla::TimeStamp& aOutputTimestamp) override;
+  mozilla::TimeDuration GetVsyncRate() override;
+  void ScheduleNextVsync(mozilla::TimeStamp aVsyncTimestamp);
   void Shutdown() override;
 
-  
-  void SetVsyncRate(const TimeDuration& aNewRate);
-
  protected:
+  mozilla::TimeDuration mVsyncRate;
   
   base::Thread* mVsyncThread;
-  RefPtr<CancelableRunnable> mCurrentVsyncTask;  
-  bool mVsyncEnabled;                            
-
- private:
-  DataMutex<TimeDuration> mVsyncRate;  
+  RefPtr<mozilla::CancelableRunnable>
+      mCurrentVsyncTask;  
+  bool mVsyncEnabled;     
 };
-
-}  
 
 #endif 

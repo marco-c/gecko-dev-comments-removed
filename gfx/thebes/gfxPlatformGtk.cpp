@@ -852,11 +852,12 @@ class GtkVsyncSource final : public VsyncSource {
   bool mVsyncEnabled;
 };
 
-class XrandrSoftwareVsyncSource final
-    : public mozilla::gfx::SoftwareVsyncSource {
+class XrandrSoftwareVsyncSource final : public SoftwareVsyncSource {
  public:
-  XrandrSoftwareVsyncSource() : SoftwareVsyncSource(ComputeVsyncRate()) {
+  XrandrSoftwareVsyncSource() {
     MOZ_ASSERT(NS_IsMainThread());
+
+    UpdateVsyncRate();
 
     GdkScreen* defaultScreen = gdk_screen_get_default();
     g_signal_connect(defaultScreen, "monitors-changed",
@@ -867,7 +868,7 @@ class XrandrSoftwareVsyncSource final
   
   
   
-  static mozilla::TimeDuration ComputeVsyncRate() {
+  void UpdateVsyncRate() {
     struct _XDisplay* dpy = gdk_x11_get_default_xdisplay();
 
     
@@ -916,13 +917,13 @@ class XrandrSoftwareVsyncSource final
     }
 
     const double rate = 1000.0 / highestRefreshRate;
-    return mozilla::TimeDuration::FromMilliseconds(rate);
+    mVsyncRate = mozilla::TimeDuration::FromMilliseconds(rate);
   }
 
   static void monitors_changed(GdkScreen* aScreen, gpointer aClosure) {
     XrandrSoftwareVsyncSource* self =
         static_cast<XrandrSoftwareVsyncSource*>(aClosure);
-    self->SetVsyncRate(ComputeVsyncRate());
+    self->UpdateVsyncRate();
   }
 
   
@@ -952,13 +953,12 @@ class XrandrSoftwareVsyncSource final
 };
 #endif
 
-already_AddRefed<gfx::VsyncSource>
-gfxPlatformGtk::CreateGlobalHardwareVsyncSource() {
+already_AddRefed<gfx::VsyncSource> gfxPlatformGtk::CreateHardwareVsyncSource() {
 #ifdef MOZ_X11
   if (IsHeadless() || IsWaylandDisplay()) {
     
     
-    return GetSoftwareVsyncSource();
+    return gfxPlatform::CreateHardwareVsyncSource();
   }
 
   nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
@@ -983,7 +983,7 @@ gfxPlatformGtk::CreateGlobalHardwareVsyncSource() {
     RefPtr<GtkVsyncSource> vsyncSource = new GtkVsyncSource();
     if (!vsyncSource->Setup()) {
       NS_WARNING("Failed to setup GLContext, falling back to software vsync.");
-      return GetSoftwareVsyncSource();
+      return gfxPlatform::CreateHardwareVsyncSource();
     }
     return vsyncSource.forget();
   }
@@ -991,7 +991,7 @@ gfxPlatformGtk::CreateGlobalHardwareVsyncSource() {
   RefPtr<VsyncSource> softwareVsync = new XrandrSoftwareVsyncSource();
   return softwareVsync.forget();
 #else
-  return CreateSoftwareVsyncSource();
+  return gfxPlatform::CreateHardwareVsyncSource();
 #endif
 }
 

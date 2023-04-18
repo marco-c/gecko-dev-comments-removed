@@ -31,7 +31,6 @@ class VsyncObserver {
   virtual ~VsyncObserver() = default;
 };  
 
-class VsyncDispatcher;
 
 
 
@@ -44,15 +43,17 @@ class VsyncDispatcher;
 
 
 
-
-class CompositorVsyncDispatcher final : public VsyncObserver {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorVsyncDispatcher, override)
+class CompositorVsyncDispatcher final {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorVsyncDispatcher)
 
  public:
-  explicit CompositorVsyncDispatcher(RefPtr<VsyncDispatcher> aVsyncDispatcher);
+  CompositorVsyncDispatcher();
+  explicit CompositorVsyncDispatcher(RefPtr<gfx::VsyncSource> aVsyncSource);
 
   
-  void NotifyVsync(const VsyncEvent& aVsync) override;
+  void NotifyVsync(const VsyncEvent& aVsync);
+
+  void MoveToSource(const RefPtr<gfx::VsyncSource>& aVsyncSource);
 
   
   void SetCompositorVsyncObserver(VsyncObserver* aVsyncObserver);
@@ -62,7 +63,7 @@ class CompositorVsyncDispatcher final : public VsyncObserver {
   virtual ~CompositorVsyncDispatcher();
   void ObserveVsync(bool aEnable);
 
-  RefPtr<VsyncDispatcher> mVsyncDispatcher;
+  RefPtr<gfx::VsyncSource> mVsyncSource;
   Mutex mCompositorObserverLock MOZ_UNANNOTATED;
   RefPtr<VsyncObserver> mCompositorVsyncObserver;
   bool mDidShutdown;
@@ -74,32 +75,16 @@ class CompositorVsyncDispatcher final : public VsyncObserver {
 
 
 
-
-
-
-
-
-
-
-
-
-class VsyncDispatcher final {
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VsyncDispatcher)
+class RefreshTimerVsyncDispatcher final {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RefreshTimerVsyncDispatcher)
 
  public:
-  explicit VsyncDispatcher(gfx::VsyncSource* aVsyncSource);
+  explicit RefreshTimerVsyncDispatcher(gfx::VsyncSource* aVsyncSource);
 
   
   void NotifyVsync(const VsyncEvent& aVsync);
 
-  
-  
-  void SetVsyncSource(gfx::VsyncSource* aVsyncSource);
-
-  
-  RefPtr<gfx::VsyncSource> GetCurrentVsyncSource();
-
-  TimeDuration GetVsyncRate();
+  void MoveToSource(gfx::VsyncSource* aVsyncSource);
 
   
   
@@ -109,42 +94,16 @@ class VsyncDispatcher final {
   
   void RemoveVsyncObserver(VsyncObserver* aVsyncObserver);
 
-  
-  
-  
-  
-  
-  
-  void AddMainThreadObserver(VsyncObserver* aObserver);
-  void RemoveMainThreadObserver(VsyncObserver* aObserver);
-
  private:
-  virtual ~VsyncDispatcher();
-
-  
+  virtual ~RefreshTimerVsyncDispatcher();
   void UpdateVsyncStatus();
+  bool NeedsVsync();
 
   
-  void NotifyMainThreadObservers(VsyncEvent aEvent);
-
-  struct State {
-    explicit State(gfx::VsyncSource* aVsyncSource)
-        : mCurrentVsyncSource(aVsyncSource) {}
-    State(State&&) = default;
-    ~State() = default;
-
-    nsTArray<RefPtr<VsyncObserver>> mObservers;
-    nsTArray<RefPtr<VsyncObserver>> mMainThreadObservers;
-    VsyncId mLastVsyncIdSentToMainThread;
-    VsyncId mLastMainThreadProcessedVsyncId;
-
-    
-    RefPtr<gfx::VsyncSource> mCurrentVsyncSource;
-
-    bool mIsObservingVsync = false;
-  };
-
-  DataMutex<State> mState;
+  
+  
+  gfx::VsyncSource* mVsyncSource;
+  DataMutex<nsTArray<RefPtr<VsyncObserver>>> mVsyncObservers;
 };
 
 }  

@@ -42,6 +42,10 @@
 #include "nsWidgetInitData.h"
 #include "nsXULAppAPI.h"
 
+#ifdef MOZ_IS_GCC
+#  include "VsyncSource.h"
+#endif
+
 
 class nsIBidiKeyboard;
 class nsIRollupListener;
@@ -53,7 +57,6 @@ class nsIRunnable;
 
 namespace mozilla {
 enum class NativeKeyBindingsType : uint8_t;
-class VsyncDispatcher;
 class WidgetGUIEvent;
 class WidgetInputEvent;
 class WidgetKeyboardEvent;
@@ -79,6 +82,9 @@ class CompositorBridgeChild;
 struct FrameMetrics;
 class LayerManager;
 class WebRenderBridgeChild;
+}  
+namespace gfx {
+class VsyncSource;
 }  
 namespace widget {
 class TextEventDispatcher;
@@ -1995,10 +2001,7 @@ class nsIWidget : public nsISupports {
 
 
 
-
-  virtual RefPtr<mozilla::VsyncDispatcher> GetVsyncDispatcher() {
-    return nullptr;
-  }
+  virtual RefPtr<mozilla::gfx::VsyncSource> GetVsyncSource() { return nullptr; }
 
   
 

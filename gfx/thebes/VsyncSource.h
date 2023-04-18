@@ -7,7 +7,6 @@
 #define GFX_VSYNCSOURCE_H
 
 #include "nsTArray.h"
-#include "mozilla/DataMutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
@@ -16,7 +15,8 @@
 #include "mozilla/layers/LayersTypes.h"
 
 namespace mozilla {
-class VsyncDispatcher;
+class RefreshTimerVsyncDispatcher;
+class CompositorVsyncDispatcher;
 class VsyncObserver;
 struct VsyncEvent;
 
@@ -30,7 +30,8 @@ namespace gfx {
 class VsyncSource {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VsyncSource)
 
-  typedef mozilla::VsyncDispatcher VsyncDispatcher;
+  typedef mozilla::RefreshTimerVsyncDispatcher RefreshTimerVsyncDispatcher;
+  typedef mozilla::CompositorVsyncDispatcher CompositorVsyncDispatcher;
 
  public:
   VsyncSource();
@@ -52,11 +53,18 @@ class VsyncSource {
   
   virtual void NotifyVsync(const TimeStamp& aVsyncTimestamp,
                            const TimeStamp& aOutputTimestamp);
+  void NotifyGenericObservers(VsyncEvent aEvent);
 
-  
-  void AddVsyncDispatcher(VsyncDispatcher* aDispatcher);
-  void RemoveVsyncDispatcher(VsyncDispatcher* aDispatcher);
+  void EnableCompositorVsyncDispatcher(
+      CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
+  void DisableCompositorVsyncDispatcher(
+      CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
+  void RegisterCompositorVsyncDispatcher(
+      CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
+  void DeregisterCompositorVsyncDispatcher(
+      CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
 
+  void NotifyRefreshTimerVsyncStatus(bool aEnable);
   virtual TimeDuration GetVsyncRate();
 
   
@@ -66,27 +74,39 @@ class VsyncSource {
   virtual void Shutdown() = 0;
 
   
+  
+  
+  
+  
+  void AddGenericObserver(VsyncObserver* aObserver);
+  void RemoveGenericObserver(VsyncObserver* aObserver);
+
+  void MoveListenersToNewSource(const RefPtr<VsyncSource>& aNewSource);
+
+  RefPtr<RefreshTimerVsyncDispatcher> GetRefreshTimerVsyncDispatcher();
+
+  
   static Maybe<TimeDuration> GetFastestVsyncRate();
 
  protected:
   virtual ~VsyncSource();
 
  private:
-  
   void UpdateVsyncStatus();
 
-  struct State {
-    
-    
-    
-    
-    nsTArray<RefPtr<VsyncDispatcher>> mDispatchers;
-
-    
-    VsyncId mVsyncId;
-  };
-
-  DataMutex<State> mState;
+  Mutex mDispatcherLock MOZ_UNANNOTATED;
+  bool mRefreshTimerNeedsVsync;
+  nsTArray<RefPtr<CompositorVsyncDispatcher>>
+      mEnabledCompositorVsyncDispatchers;
+  nsTArray<RefPtr<CompositorVsyncDispatcher>>
+      mRegisteredCompositorVsyncDispatchers;
+  RefPtr<RefreshTimerVsyncDispatcher> mRefreshTimerVsyncDispatcher;
+  nsTArray<RefPtr<VsyncObserver>>
+      mGenericObservers;  
+  VsyncId mVsyncId;
+  VsyncId mLastVsyncIdSentToMainThread;     
+  VsyncId mLastMainThreadProcessedVsyncId;  
+  bool mHasGenericObservers;                
 };
 
 }  
