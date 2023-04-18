@@ -200,8 +200,7 @@ class SourceSurfaceSharedData : public DataSourceSurface {
 
 
 
-  nsresult ShareToProcess(base::ProcessId aPid,
-                          SharedMemoryBasic::Handle& aHandle);
+  nsresult CloneHandle(SharedMemoryBasic::Handle& aHandle);
 
   
 

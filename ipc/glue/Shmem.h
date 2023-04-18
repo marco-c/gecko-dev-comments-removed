@@ -160,14 +160,15 @@ class Shmem final {
   
   
   
-  UniquePtr<IPC::Message> ShareTo(PrivateIPDLCaller, base::ProcessId aTargetPid,
-                                  int32_t routingId);
+  UniquePtr<IPC::Message> MkCreatedMessage(PrivateIPDLCaller,
+                                           int32_t routingId);
 
   
   
   
   
-  UniquePtr<IPC::Message> UnshareFrom(PrivateIPDLCaller, int32_t routingId);
+  UniquePtr<IPC::Message> MkDestroyedMessage(PrivateIPDLCaller,
+                                             int32_t routingId);
 
   
   

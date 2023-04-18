@@ -717,18 +717,8 @@ Shmem::SharedMemory* IToplevelProtocol::CreateSharedMemory(
   int32_t id = NextId();
   Shmem shmem(Shmem::PrivateIPDLCaller(), segment.get(), id);
 
-  base::ProcessId pid =
-#ifdef ANDROID
-      
-      
-      
-      OtherPidMaybeInvalid();
-#else
-      OtherPid();
-#endif
-
   UniquePtr<Message> descriptor =
-      shmem.ShareTo(Shmem::PrivateIPDLCaller(), pid, MSG_ROUTING_CONTROL);
+      shmem.MkCreatedMessage(Shmem::PrivateIPDLCaller(), MSG_ROUTING_CONTROL);
   if (!descriptor) {
     return nullptr;
   }
@@ -762,7 +752,7 @@ bool IToplevelProtocol::DestroySharedMemory(Shmem& shmem) {
   }
 
   UniquePtr<Message> descriptor =
-      shmem.UnshareFrom(Shmem::PrivateIPDLCaller(), MSG_ROUTING_CONTROL);
+      shmem.MkDestroyedMessage(Shmem::PrivateIPDLCaller(), MSG_ROUTING_CONTROL);
 
   MOZ_ASSERT(mShmemMap.Contains(aId),
              "Attempting to remove an ID not in the shmem map");

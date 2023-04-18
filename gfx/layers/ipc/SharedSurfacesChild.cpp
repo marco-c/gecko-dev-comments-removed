@@ -207,8 +207,7 @@ nsresult SharedSurfacesChild::ShareInternal(SourceSurfaceSharedData* aSurface,
   
   
   
-  auto pid = manager->OtherPid();
-  if (pid == base::GetCurrentProcId()) {
+  if (manager->SameProcess()) {
     SharedSurfacesParent::AddSameProcess(data->Id(), aSurface);
     data->MarkShared();
     *aUserData = data;
@@ -219,7 +218,7 @@ nsresult SharedSurfacesChild::ShareInternal(SourceSurfaceSharedData* aSurface,
   
   
   ipc::SharedMemoryBasic::Handle handle = ipc::SharedMemoryBasic::NULLHandle();
-  nsresult rv = aSurface->ShareToProcess(pid, handle);
+  nsresult rv = aSurface->CloneHandle(handle);
   if (rv == NS_ERROR_NOT_AVAILABLE) {
     
     
@@ -229,7 +228,7 @@ nsresult SharedSurfacesChild::ShareInternal(SourceSurfaceSharedData* aSurface,
     }
 
     
-    rv = aSurface->ShareToProcess(pid, handle);
+    rv = aSurface->CloneHandle(handle);
   }
 
   if (NS_WARN_IF(NS_FAILED(rv))) {

@@ -487,9 +487,8 @@ void nsHyphenator::HyphenateWord(const nsAString& aString, uint32_t aStart,
   }
 }
 
-void nsHyphenator::ShareToProcess(base::ProcessId aPid,
-                                  base::SharedMemoryHandle* aOutHandle,
-                                  uint32_t* aOutSize) {
+void nsHyphenator::CloneHandle(base::SharedMemoryHandle* aOutHandle,
+                               uint32_t* aOutSize) {
   
   
   

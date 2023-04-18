@@ -91,7 +91,7 @@ class CrossProcessSemaphore {
 
 
 
-  CrossProcessSemaphoreHandle ShareToProcess(base::ProcessId aTargetPid);
+  CrossProcessSemaphoreHandle CloneHandle();
 
   void CloseHandle();
 

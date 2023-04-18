@@ -71,8 +71,7 @@ class GlobalStyleSheetCache final : public nsIObserver,
   
   
   
-  bool ShareToProcess(base::ProcessId aProcessId,
-                      base::SharedMemoryHandle* aHandle);
+  base::SharedMemoryHandle CloneHandle();
 
   
   
