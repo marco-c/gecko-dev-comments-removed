@@ -267,6 +267,17 @@ mozilla::PresShell* nsSubDocumentFrame::GetSubdocumentPresShellForPainting(
   return presShell;
 }
 
+nsRect nsSubDocumentFrame::GetDestRect() {
+  nsRect rect = GetContent()->IsHTMLElement(nsGkAtoms::frame)
+                    ? GetRectRelativeToSelf()
+                    : GetContentRectRelativeToSelf();
+
+  
+  
+  return nsLayoutUtils::ComputeObjectDestRect(
+      rect, GetIntrinsicSize(), GetIntrinsicRatio(), StylePosition());
+}
+
 ScreenIntSize nsSubDocumentFrame::GetSubdocumentSize() {
   if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     if (RefPtr<nsFrameLoader> frameloader = FrameLoader()) {
@@ -285,24 +296,10 @@ ScreenIntSize nsSubDocumentFrame::GetSubdocumentSize() {
     return ScreenIntSize(10, 10);
   }
 
-  nsSize docSizeAppUnits;
-  nsPresContext* presContext = PresContext();
-  if (GetContent()->IsHTMLElement(nsGkAtoms::frame)) {
-    docSizeAppUnits = GetSize();
-  } else {
-    docSizeAppUnits = GetContentRect().Size();
-  }
-
-  
-  
-  docSizeAppUnits = nsLayoutUtils::ComputeObjectDestRect(
-                        nsRect(nsPoint(), docSizeAppUnits), GetIntrinsicSize(),
-                        GetIntrinsicRatio(), StylePosition())
-                        .Size();
-
-  return ScreenIntSize(
-      presContext->AppUnitsToDevPixels(docSizeAppUnits.width),
-      presContext->AppUnitsToDevPixels(docSizeAppUnits.height));
+  nsSize docSizeAppUnits = GetDestRect().Size();
+  nsPresContext* pc = PresContext();
+  return ScreenIntSize(pc->AppUnitsToDevPixels(docSizeAppUnits.width),
+                       pc->AppUnitsToDevPixels(docSizeAppUnits.height));
 }
 
 static void WrapBackgroundColorInOwnLayer(nsDisplayListBuilder* aBuilder,
@@ -1271,24 +1268,6 @@ void nsSubDocumentFrame::SubdocumentIntrinsicSizeOrRatioChanged() {
 
 
 
-
-static nsPoint GetContentRectLayerOffset(nsIFrame* aContainerFrame,
-                                         nsDisplayListBuilder* aBuilder) {
-  
-  
-  
-  
-  nsPoint frameOffset =
-      aBuilder->ToReferenceFrame(aContainerFrame) +
-      aContainerFrame->GetContentRectRelativeToSelf().TopLeft();
-
-  return frameOffset;
-}
-
-
-
-
-
 nsDisplayRemote::nsDisplayRemote(nsDisplayListBuilder* aBuilder,
                                  nsSubDocumentFrame* aFrame)
     : nsPaintedDisplayItem(aBuilder, aFrame),
@@ -1364,6 +1343,9 @@ bool nsDisplayRemote::CreateWebRenderCommands(
 
   nsPresContext* pc = mFrame->PresContext();
   nsFrameLoader* fl = GetFrameLoader();
+
+  auto* subDocFrame = static_cast<nsSubDocumentFrame*>(mFrame);
+  nsRect destRect = subDocFrame->GetDestRect();
   if (RefPtr<RemoteBrowser> remoteBrowser = fl->GetRemoteBrowser()) {
     if (pc->GetPrintSettings()) {
       
@@ -1374,15 +1356,14 @@ bool nsDisplayRemote::CreateWebRenderCommands(
       
       
       
-      fl->UpdatePositionAndSize(static_cast<nsSubDocumentFrame*>(mFrame));
+      fl->UpdatePositionAndSize(subDocFrame);
     }
 
     
     
     nsRect visibleRect = GetBuildingRect() - ToReferenceFrame();
-    nsRect contentRect = Frame()->GetContentRectRelativeToSelf();
-    visibleRect.IntersectRect(visibleRect, contentRect);
-    visibleRect -= contentRect.TopLeft();
+    visibleRect.IntersectRect(visibleRect, destRect);
+    visibleRect -= destRect.TopLeft();
 
     
     gfx::Size scale = aSc.GetInheritedScale();
@@ -1409,13 +1390,11 @@ bool nsDisplayRemote::CreateWebRenderCommands(
   }
 
   nscoord auPerDevPixel = pc->AppUnitsPerDevPixel();
-  nsPoint layerOffset = GetContentRectLayerOffset(mFrame, aDisplayListBuilder);
+  nsPoint layerOffset = ToReferenceFrame() + destRect.TopLeft();
   mOffset = LayoutDevicePoint::FromAppUnits(layerOffset, auPerDevPixel);
 
-  nsRect contentRect = mFrame->GetContentRectRelativeToSelf();
-  contentRect.MoveTo(0, 0);
-  LayoutDeviceRect rect =
-      LayoutDeviceRect::FromAppUnits(contentRect, auPerDevPixel);
+  destRect.MoveTo(0, 0);
+  auto rect = LayoutDeviceRect::FromAppUnits(destRect, auPerDevPixel);
   rect += mOffset;
 
   aBuilder.PushIFrame(mozilla::wr::ToLayoutRect(rect), !BackfaceIsHidden(),
