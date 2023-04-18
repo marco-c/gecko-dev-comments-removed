@@ -135,9 +135,12 @@ var extensionStorageSync = null;
 
 
 
-function ciphertextHMAC(keyBundle, id, IV, ciphertext) {
-  const hasher = keyBundle.sha256HMACHasher;
-  return CommonUtils.bytesAsHex(Utils.digestUTF8(id + IV + ciphertext, hasher));
+async function ciphertextHMAC(keyBundle, id, IV, ciphertext) {
+  const hmacKey = CommonUtils.byteStringToArrayBuffer(keyBundle.hmacKey);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(id + IV + ciphertext);
+  const hmac = await CryptoUtils.hmac("SHA-256", hmacKey, data);
+  return CommonUtils.bytesAsHex(CommonUtils.arrayBufferToByteString(hmac));
 }
 
 
@@ -176,7 +179,7 @@ class EncryptionRemoteTransformer {
       keyBundle.encryptionKeyB64,
       IV
     );
-    let hmac = ciphertextHMAC(keyBundle, id, IV, ciphertext);
+    let hmac = await ciphertextHMAC(keyBundle, id, IV, ciphertext);
     const encryptedResult = { ciphertext, IV, hmac, id };
 
     
@@ -202,7 +205,7 @@ class EncryptionRemoteTransformer {
     }
     const keyBundle = await this.getKeys();
     
-    let computedHMAC = ciphertextHMAC(
+    let computedHMAC = await ciphertextHMAC(
       keyBundle,
       record.id,
       record.IV,

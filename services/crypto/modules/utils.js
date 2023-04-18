@@ -62,14 +62,10 @@ var CryptoUtils = {
     let data = this._utf8Converter.convertToByteArray(message, {});
     hasher.update(data, data.length);
     let result = hasher.finish(false);
-    if (hasher instanceof Ci.nsICryptoHMAC) {
-      hasher.reset();
-    }
     return result;
   },
 
   
-
 
 
 
@@ -83,9 +79,6 @@ var CryptoUtils = {
   digestBytesArray(bytes, hasher) {
     hasher.update(bytes, bytes.length);
     let result = hasher.finish(false);
-    if (hasher instanceof Ci.nsICryptoHMAC) {
-      hasher.reset();
-    }
     return result;
   },
 
@@ -116,24 +109,6 @@ var CryptoUtils = {
     hasher.init(hasher.SHA256);
     hasher.update(data, data.length);
     return hasher.finish(true);
-  },
-
-  
-
-
-  makeHMACKey: function makeHMACKey(str) {
-    return Svc.KeyFactory.keyFromString(Ci.nsIKeyObject.HMAC, str);
-  },
-
-  
-
-
-  makeHMACHasher: function makeHMACHasher(type, key) {
-    let hasher = Cc["@mozilla.org/security/hmac;1"].createInstance(
-      Ci.nsICryptoHMAC
-    );
-    hasher.init(type, key);
-    return hasher;
   },
 
   
@@ -570,13 +545,6 @@ XPCOMUtils.defineLazyGetter(CryptoUtils, "_utf8Converter", function() {
 });
 
 var Svc = {};
-
-XPCOMUtils.defineLazyServiceGetter(
-  Svc,
-  "KeyFactory",
-  "@mozilla.org/security/keyobjectfactory;1",
-  "nsIKeyObjectFactory"
-);
 
 Observers.add("xpcom-shutdown", function unloadServices() {
   Observers.remove("xpcom-shutdown", unloadServices);
