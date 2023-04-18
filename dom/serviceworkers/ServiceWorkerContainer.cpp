@@ -652,7 +652,10 @@ nsIGlobalObject* ServiceWorkerContainer::GetGlobalIfValid(
   
   
   auto storageAllowed = StorageAllowedForWindow(window);
-  if (NS_WARN_IF(storageAllowed != StorageAccess::eAllow)) {
+  if (NS_WARN_IF(storageAllowed != StorageAccess::eAllow &&
+                 (!StaticPrefs::privacy_partition_serviceWorkers() ||
+                  !StoragePartitioningEnabled(storageAllowed,
+                                              doc->CookieJarSettings())))) {
     if (aStorageFailureCB) {
       aStorageFailureCB(doc);
     }

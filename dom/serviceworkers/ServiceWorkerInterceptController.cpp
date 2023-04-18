@@ -14,6 +14,7 @@
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
+#include "nsICookieJarSettings.h"
 #include "ServiceWorkerManager.h"
 #include "nsIPrincipal.h"
 
@@ -90,8 +91,18 @@ ServiceWorkerInterceptController::ShouldPrepareForIntercept(
   
   
   
-  if (StorageAllowedForChannel(aChannel) != StorageAccess::eAllow) {
-    return NS_OK;
+  auto storageAccess = StorageAllowedForChannel(aChannel);
+  if (storageAccess != StorageAccess::eAllow) {
+    if (!StaticPrefs::privacy_partition_serviceWorkers()) {
+      return NS_OK;
+    }
+
+    nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
+    loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
+
+    if (!StoragePartitioningEnabled(storageAccess, cookieJarSettings)) {
+      return NS_OK;
+    }
   }
 
   *aShouldIntercept = true;
