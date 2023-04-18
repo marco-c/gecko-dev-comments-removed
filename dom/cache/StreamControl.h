@@ -15,6 +15,9 @@
 struct nsID;
 
 namespace mozilla {
+namespace ipc {
+class AutoIPCStream;
+}  
 namespace dom {
 namespace cache {
 
@@ -28,8 +31,9 @@ class StreamControl {
   
   virtual void SerializeControl(CacheReadStream* aReadStreamOut) = 0;
 
-  virtual void SerializeStream(CacheReadStream* aReadStreamOut,
-                               nsIInputStream* aStream) = 0;
+  virtual void SerializeStream(
+      CacheReadStream* aReadStreamOut, nsIInputStream* aStream,
+      nsTArray<UniquePtr<mozilla::ipc::AutoIPCStream>>& aStreamCleanupList) = 0;
 
   virtual void OpenStream(const nsID& aId, InputStreamResolver&& aResolver) = 0;
 

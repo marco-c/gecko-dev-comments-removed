@@ -29,7 +29,8 @@ namespace ipc {
 
 
 
-class BackgroundChildImpl : public PBackgroundChild {
+class BackgroundChildImpl : public PBackgroundChild,
+                            public ChildToParentStreamActorManager {
  public:
   class ThreadLocal;
 
@@ -39,6 +40,11 @@ class BackgroundChildImpl : public PBackgroundChild {
   
   
   static ThreadLocal* GetThreadLocalForCurrentThread();
+
+  PChildToParentStreamChild* SendPChildToParentStreamConstructor(
+      PChildToParentStreamChild* aActor) override;
+  PFileDescriptorSetChild* SendPFileDescriptorSetConstructor(
+      const FileDescriptor& aFD) override;
 
  protected:
   BackgroundChildImpl();
@@ -107,6 +113,10 @@ class BackgroundChildImpl : public PBackgroundChild {
   virtual bool DeallocPBackgroundStorageChild(
       PBackgroundStorageChild* aActor) override;
 
+  virtual already_AddRefed<PRemoteLazyInputStreamChild>
+  AllocPRemoteLazyInputStreamChild(const nsID& aID,
+                                   const uint64_t& aSize) override;
+
   virtual PTemporaryIPCBlobChild* AllocPTemporaryIPCBlobChild() override;
 
   virtual bool DeallocPTemporaryIPCBlobChild(
@@ -147,6 +157,12 @@ class BackgroundChildImpl : public PBackgroundChild {
 
   virtual bool DeallocPSharedWorkerChild(
       mozilla::dom::PSharedWorkerChild* aActor) override;
+
+  virtual PFileDescriptorSetChild* AllocPFileDescriptorSetChild(
+      const FileDescriptor& aFileDescriptor) override;
+
+  virtual bool DeallocPFileDescriptorSetChild(
+      PFileDescriptorSetChild* aActor) override;
 
   virtual PCamerasChild* AllocPCamerasChild() override;
 
@@ -189,6 +205,16 @@ class BackgroundChildImpl : public PBackgroundChild {
       const uint32_t& aSequenceID) override;
 
   virtual bool DeallocPMessagePortChild(PMessagePortChild* aActor) override;
+
+  virtual PChildToParentStreamChild* AllocPChildToParentStreamChild() override;
+
+  virtual bool DeallocPChildToParentStreamChild(
+      PChildToParentStreamChild* aActor) override;
+
+  virtual PParentToChildStreamChild* AllocPParentToChildStreamChild() override;
+
+  virtual bool DeallocPParentToChildStreamChild(
+      PParentToChildStreamChild* aActor) override;
 
   virtual PQuotaChild* AllocPQuotaChild() override;
 
