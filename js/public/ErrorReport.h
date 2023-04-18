@@ -18,6 +18,7 @@
 #define js_ErrorReport_h
 
 #include "mozilla/Assertions.h"  
+#include "mozilla/Maybe.h"       
 
 #include <iterator>  
 #include <stdarg.h>
@@ -31,6 +32,7 @@
 #include "js/CharacterEncoding.h"  
 #include "js/RootingAPI.h"         
 #include "js/UniquePtr.h"          
+#include "js/Value.h"              
 #include "js/Vector.h"             
 
 struct JS_PUBLIC_API JSContext;
@@ -478,7 +480,8 @@ namespace JS {
 extern JS_PUBLIC_API bool CreateError(
     JSContext* cx, JSExnType type, HandleObject stack, HandleString fileName,
     uint32_t lineNumber, uint32_t columnNumber, JSErrorReport* report,
-    HandleString message, MutableHandleValue rval);
+    HandleString message, Handle<mozilla::Maybe<Value>> cause,
+    MutableHandleValue rval);
 
 } 
 
