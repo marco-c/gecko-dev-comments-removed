@@ -22,7 +22,6 @@
 #include "gc/GCProbes.h"
 #include "gc/Policy.h"
 #include "jit/JitCode.h"
-#include "js/friend/DumpFunctions.h"  
 #include "js/GCTypeMacros.h"  
 #include "js/SliceBudget.h"
 #include "util/DiagnosticAssertions.h"
@@ -289,6 +288,19 @@ static inline bool ShouldMarkCrossCompartment(GCMarker* marker, JSObject* src,
   MarkColor color = marker->markColor();
 
   if (!dstCell->isTenured()) {
+#ifdef DEBUG
+    
+    
+    if (color != MarkColor::Black) {
+      fprintf(stderr,
+              "ShouldMarkCrossCompartment: cross compartment edge from gray "
+              "object to nursery thing\n");
+      fprintf(stderr, "src: ");
+      src->dump();
+      fprintf(stderr, "dst: ");
+      dstCell->dump();
+    }
+#endif
     MOZ_ASSERT(color == MarkColor::Black);
     return false;
   }
@@ -1960,7 +1972,7 @@ scan_value_range:
                 "processMarkStackTop found ObjectValue(nullptr) "
                 "at %zu Values from end of range in object:\n",
                 size_t(end - (index - 1)));
-        DumpObject(obj);
+        obj->dump();
       }
 #endif
       CheckForCompartmentMismatch(obj, obj2);
