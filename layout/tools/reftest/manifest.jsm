@@ -527,10 +527,6 @@ function BuildConditionSandbox(aURL) {
       prefs.getBoolPref("layout.display-list.retain") && !sandbox.useDrawSnapshot;
 
     
-    sandbox.retainedDisplayListNew =
-        sandbox.retainedDisplayList && prefs.getBoolPref("layout.display-list.retain.sc");
-
-    
     
     sandbox.geckoview = (sandbox.Android && g.browserIsRemote);
 
@@ -554,6 +550,8 @@ function BuildConditionSandbox(aURL) {
     sandbox.webrtc = AppConstants.MOZ_WEBRTC;
     sandbox.jxl = AppConstants.MOZ_JXL;
 
+    let retainedDisplayListsEnabled = prefs.getBoolPref("layout.display-list.retain", false);
+    sandbox.retainedDisplayLists = retainedDisplayListsEnabled && !g.compareRetainedDisplayLists && !sandbox.useDrawSnapshot;
     sandbox.compareRetainedDisplayLists = g.compareRetainedDisplayLists;
 
     sandbox.release_or_beta = AppConstants.RELEASE_OR_BETA;
