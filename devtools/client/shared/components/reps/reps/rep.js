@@ -57,7 +57,6 @@ define(function(require, exports, module) {
     Attribute,
     Func,
     PromiseRep,
-    ArrayRep,
     Document,
     DocumentType,
     Window,
@@ -77,8 +76,10 @@ define(function(require, exports, module) {
     InfinityRep,
     NaNRep,
     Accessor,
-    Obj,
   ];
+
+  
+  const noGripReps = [StringRep, Number, ArrayRep, Undefined, Null, Obj];
 
   
 
@@ -109,8 +110,8 @@ define(function(require, exports, module) {
 
 
   function getRep(object, defaultRep = Grip, noGrip = false) {
-    for (let i = 0; i < reps.length; i++) {
-      const rep = reps[i];
+    const repsList = noGrip ? noGripReps : reps;
+    for (const rep of repsList) {
       try {
         
         
