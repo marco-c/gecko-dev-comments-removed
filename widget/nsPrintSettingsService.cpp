@@ -940,18 +940,10 @@ nsPrintSettingsService::InitPrintSettingsFromPrefs(nsIPrintSettings* aPS,
 nsresult nsPrintSettingsService::SavePrintSettingsToPrefs(
     nsIPrintSettings* aPS, bool aUsePrinterNamePrefix, uint32_t aFlags) {
   NS_ENSURE_ARG_POINTER(aPS);
-
-  if (GeckoProcessType_Content == XRE_GetProcessType()) {
-    
-    
-    
-    RefPtr<nsPrintingProxy> proxy = nsPrintingProxy::GetInstance();
-    return proxy->SavePrintSettings(aPS, aUsePrinterNamePrefix, aFlags);
-  }
-
-  nsAutoString prtName;
+  MOZ_DIAGNOSTIC_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
 
   
+  nsAutoString prtName;
   nsresult rv = GetAdjustedPrinterName(aPS, aUsePrinterNamePrefix, prtName);
   NS_ENSURE_SUCCESS(rv, rv);
 

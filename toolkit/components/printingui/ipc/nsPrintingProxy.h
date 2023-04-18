@@ -25,16 +25,6 @@ class nsPrintingProxy final : public nsIPrintingPromptService,
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPRINTINGPROMPTSERVICE
 
-  
-
-
-
-
-
-
-  nsresult SavePrintSettings(nsIPrintSettings* aPS, bool aUsePrinterNamePrefix,
-                             uint32_t aFlags);
-
  protected:
   PPrintSettingsDialogChild* AllocPPrintSettingsDialogChild() final;
 
