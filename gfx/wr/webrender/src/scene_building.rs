@@ -63,6 +63,7 @@ use crate::prim_store::{PrimitiveInstance, register_prim_chase_id};
 use crate::prim_store::{PrimitiveInstanceKind, NinePatchDescriptor, PrimitiveStore};
 use crate::prim_store::{InternablePrimitive, SegmentInstanceIndex, PictureIndex};
 use crate::prim_store::{PolygonKey};
+use crate::prim_store::backdrop::Backdrop;
 use crate::prim_store::borders::{ImageBorder, NormalBorderPrim};
 use crate::prim_store::gradient::{
     GradientStopKey, LinearGradient, RadialGradient, RadialGradientParams, ConicGradient,
@@ -399,6 +400,14 @@ impl PictureChainBuilder {
             }
         }
     }
+
+    
+    fn has_picture(&self) -> bool {
+        match self.current {
+            PictureSource::WrappedPicture { .. } => true,
+            PictureSource::PrimitiveList { .. } => false,
+        }
+    }
 }
 
 bitflags! {
@@ -406,8 +415,8 @@ bitflags! {
     pub struct SliceFlags : u8 {
         /// Slice created by a prim that has PrimitiveFlags::IS_SCROLLBAR_CONTAINER
         const IS_SCROLLBAR = 1;
-        /// Represents a mix-blend container (can't split out compositor surfaces in this slice)
-        const IS_BLEND_CONTAINER = 2;
+        /// Represents an atomic container (can't split out compositor surfaces in this slice)
+        const IS_ATOMIC = 2;
     }
 }
 
@@ -579,6 +588,11 @@ impl<'a> SceneBuilder<'a> {
         
         for pic_index in &tile_cache_pictures {
             builder.picture_graph.add_root(*pic_index);
+            SceneBuilder::finalize_picture(
+                *pic_index,
+                &mut builder.prim_store.pictures,
+                None,
+            );
         }
 
         BuiltScene {
@@ -597,6 +611,61 @@ impl<'a> SceneBuilder<'a> {
             prim_instances: builder.prim_instances,
             surfaces: builder.surfaces,
         }
+    }
+
+    
+    
+    
+    
+    
+    fn finalize_picture(
+        pic_index: PictureIndex,
+        pictures: &mut [PicturePrimitive],
+        parent_spatial_node_index: Option<SpatialNodeIndex>,
+    ) {
+        
+        
+        let (mut prim_list, spatial_node_index) = {
+            let pic = &mut pictures[pic_index.0];
+            assert_ne!(pic.spatial_node_index, SpatialNodeIndex::UNKNOWN);
+
+            
+            let spatial_node_index = match pic.composite_mode {
+                Some(_) => pic.spatial_node_index,
+                None => parent_spatial_node_index.expect("bug: no parent"),
+            };
+
+            (
+                mem::replace(&mut pic.prim_list, PrimitiveList::empty()),
+                spatial_node_index,
+            )
+        };
+
+        
+        for cluster in &mut prim_list.clusters {
+            if cluster.spatial_node_index == SpatialNodeIndex::UNKNOWN {
+                cluster.spatial_node_index = spatial_node_index;
+            }
+        }
+
+        
+        for child_pic_index in &prim_list.child_pictures {
+            let child_pic = &mut pictures[child_pic_index.0];
+
+            if child_pic.spatial_node_index == SpatialNodeIndex::UNKNOWN {
+                child_pic.spatial_node_index = spatial_node_index;
+            }
+
+            
+            SceneBuilder::finalize_picture(
+                *child_pic_index,
+                pictures,
+                Some(spatial_node_index),
+            );
+        }
+
+        
+        pictures[pic_index.0].prim_list = prim_list;
     }
 
     
@@ -1606,25 +1675,23 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::BackdropFilter(ref info) => {
                 profile_scope!("backdrop");
 
-                let (_layout, _, _spatial_node_index, _clip_chain_id) = self.process_common_properties(
+                let (layout, _, spatial_node_index, clip_chain_id) = self.process_common_properties(
                     &info.common,
                     None,
                 );
 
-                let _filters = filter_ops_for_compositing(item.filters());
-                let _filter_datas = filter_datas_for_compositing(item.filter_datas());
-                let _filter_primitives = filter_primitives_for_compositing(item.filter_primitives());
+                let filters = filter_ops_for_compositing(item.filters());
+                let filter_datas = filter_datas_for_compositing(item.filter_datas());
+                let filter_primitives = filter_primitives_for_compositing(item.filter_primitives());
 
-                
-
-
-
-
-
-
-
-
-
+                self.add_backdrop_filter(
+                    spatial_node_index,
+                    clip_chain_id,
+                    &layout,
+                    filters,
+                    filter_datas,
+                    filter_primitives,
+                );
             }
 
             
@@ -2116,7 +2183,6 @@ impl<'a> SceneBuilder<'a> {
                 blit_reason,
                 transform_style,
                 context_3d,
-                is_redundant,
                 flags,
                 raster_space: new_space,
             });
@@ -2163,7 +2229,7 @@ impl<'a> SceneBuilder<'a> {
         
         
         
-        if stacking_context.flags.contains(StackingContextFlags::IS_BLEND_CONTAINER) &&
+        if stacking_context.flags.intersects(StackingContextFlags::IS_BLEND_CONTAINER | StackingContextFlags::IS_BACKDROP_ROOT) &&
            self.sc_stack.is_empty() &&
            self.tile_cache_builder.can_add_container_tile_cache() &&
            self.spatial_tree.is_root_coord_system(stacking_context.spatial_node_index)
@@ -2176,7 +2242,7 @@ impl<'a> SceneBuilder<'a> {
                 self.interners,
                 &self.config,
                 self.root_iframe_clip,
-                SliceFlags::IS_BLEND_CONTAINER,
+                SliceFlags::IS_ATOMIC,
                 &self.prim_instances,
             );
 
@@ -2185,7 +2251,6 @@ impl<'a> SceneBuilder<'a> {
 
         let parent_is_empty = match self.sc_stack.last() {
             Some(parent_sc) => {
-                assert!(!stacking_context.is_redundant);
                 parent_sc.prim_list.is_empty()
             },
             None => true,
@@ -3496,6 +3561,95 @@ impl<'a> SceneBuilder<'a> {
         }
     }
 
+    pub fn add_backdrop_filter(
+        &mut self,
+        spatial_node_index: SpatialNodeIndex,
+        clip_chain_id: ClipChainId,
+        info: &LayoutPrimitiveInfo,
+        filters: Vec<Filter>,
+        filter_datas: Vec<FilterData>,
+        filter_primitives: Vec<FilterPrimitive>,
+    ) {
+        
+        
+        
+        let filter_spatial_node_index = SpatialNodeIndex::UNKNOWN;
+
+        
+        
+        let backdrop_instance = self.create_primitive(
+            info,
+            spatial_node_index,
+            clip_chain_id,
+            Backdrop {
+            },
+        );
+
+        
+        
+        let mut prim_list = PrimitiveList::empty();
+        prim_list.add_prim(
+            backdrop_instance,
+            info.rect,
+            spatial_node_index,
+            info.flags,
+            &mut self.prim_instances,
+        );
+
+        let mut source = PictureChainBuilder::from_prim_list(
+            prim_list,
+            info.flags,
+            filter_spatial_node_index,
+            RasterSpace::Screen,
+            true,
+        );
+
+        
+        
+        source = self.wrap_prim_with_filters(
+            source,
+            filters,
+            filter_primitives,
+            filter_datas,
+        );
+
+        
+        
+        
+        
+        let filter_clips = vec![
+            ClipItemKey {
+                kind: ClipItemKeyKind::rectangle(
+                    info.rect,
+                    ClipMode::Clip,
+                ),
+                spatial_node_index,
+            },
+        ];
+
+        let filter_clip_chain_id = self.build_clip_chain(
+            filter_clips,
+            clip_chain_id,
+        );
+
+        
+        
+        if source.has_picture() {
+            let filtered_instance = source.finalize(
+                filter_clip_chain_id,
+                &mut self.interners,
+                &mut self.prim_store,
+            );
+
+            self.add_primitive_to_draw_list(
+                filtered_instance,
+                info.rect,
+                filter_spatial_node_index,
+                info.flags,
+            );
+        }
+    }
+
     #[must_use]
     fn wrap_prim_with_filters(
         &mut self,
@@ -3665,9 +3819,6 @@ struct FlattenedStackingContext {
 
     
     context_3d: Picture3DContext<ExtendedPrimitiveInstance>,
-
-    
-    is_redundant: bool,
 
     
     flags: StackingContextFlags,

@@ -58,6 +58,13 @@ pub struct SpatialNodeIndex(pub u32);
 
 impl SpatialNodeIndex {
     pub const INVALID: SpatialNodeIndex = SpatialNodeIndex(u32::MAX);
+
+    
+    
+    
+    
+    
+    pub const UNKNOWN: SpatialNodeIndex = SpatialNodeIndex(u32::MAX - 1);
 }
 
 

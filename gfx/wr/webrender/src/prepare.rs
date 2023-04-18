@@ -801,6 +801,9 @@ fn prepare_interned_prim_for_render(
             }
         }
         PrimitiveInstanceKind::Backdrop { .. } => {
+            
+            
+            frame_state.surface_builder.register_resolve_source();
         }
     };
 }
