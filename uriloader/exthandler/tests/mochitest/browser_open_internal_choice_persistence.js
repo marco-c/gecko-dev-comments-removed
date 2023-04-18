@@ -33,11 +33,13 @@ function waitForAcceptButtonToGetEnabled(doc) {
 }
 
 add_setup(async function() {
-  
   await SpecialPowers.pushPrefEnv({
     set: [
+      
       ["security.dialog_enable_delay", 0],
       ["browser.helperApps.showOpenOptionForViewableInternally", true],
+      
+      ["browser.download.useDownloadDir", true],
     ],
   });
 
