@@ -55,26 +55,13 @@ httpServer.registerPathHandler("/http-error-script.js", (request, response) => {
   response.write(`console.log("http error")`);
 });
 add_task(async function testSourceTextContent() {
-  const tab = await addTab(BASE_URL + "index.html");
-
-  is(
-    loadCounts["/index.html"],
-    1,
-    "index.html is loaded once before opening devtools"
-  );
+  const dbg = await initDebuggerWithAbsoluteURL("about:blank");
 
   
   
-  is(
-    loadCounts["/http-error-script.js"],
-    2,
-    "We loaded http-error-script.js twice."
-  );
-
-  const toolbox = await openToolboxForTab(tab, "jsdebugger");
-  const dbg = createDebuggerContext(toolbox);
-  await waitForSources(
+  await navigateToAbsoluteURL(
     dbg,
+    BASE_URL + "index.html",
     "index.html",
     "normal-script.js",
     "slow-loading-script.js"
@@ -96,7 +83,7 @@ add_task(async function testSourceTextContent() {
 
   
   
-  is(loadCounts["/index.html"], 2, "We loaded index.html twice");
+  is(loadCounts["/index.html"], 1, "We loaded index.html only once");
   is(
     loadCounts["/normal-script.js"],
     1,
@@ -107,6 +94,8 @@ add_task(async function testSourceTextContent() {
     1,
     "We loaded slow-loading-script.js only once"
   );
+  
+  
   is(
     loadCounts["/http-error-script.js"],
     2,
