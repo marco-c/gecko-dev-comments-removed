@@ -2230,8 +2230,16 @@ inline void* arena_t::ArenaRunRegAlloc(arena_run_t* aRun, arena_bin_t* aBin) {
   return nullptr;
 }
 
-static inline void arena_run_reg_dalloc(arena_run_t* run, arena_bin_t* bin,
-                                        void* ptr, size_t size) {
+
+
+
+static const unsigned num_divisors =
+    (kMaxQuantumClass - 2 * kQuantum) / kQuantum;
+
+template <unsigned q>
+static unsigned divide(size_t num, unsigned div) {
+  
+  
   
   
   
@@ -2242,25 +2250,36 @@ static inline void arena_run_reg_dalloc(arena_run_t* run, arena_bin_t* bin,
   
 
 #define SIZE_INV_SHIFT 21
-#define SIZE_INV(s) (((1U << SIZE_INV_SHIFT) / (s * kQuantum)) + 1)
+#define SIZE_INV(s) (((1U << SIZE_INV_SHIFT) / ((s)*q)) + 1)
   
   static const unsigned size_invs[] = {
     SIZE_INV(3),
-    SIZE_INV(4), SIZE_INV(5), SIZE_INV(6), SIZE_INV(7),
-    SIZE_INV(8), SIZE_INV(9), SIZE_INV(10), SIZE_INV(11),
-    SIZE_INV(12),SIZE_INV(13), SIZE_INV(14), SIZE_INV(15),
-    SIZE_INV(16),SIZE_INV(17), SIZE_INV(18), SIZE_INV(19),
-    SIZE_INV(20),SIZE_INV(21), SIZE_INV(22), SIZE_INV(23),
-    SIZE_INV(24),SIZE_INV(25), SIZE_INV(26), SIZE_INV(27),
-    SIZE_INV(28),SIZE_INV(29), SIZE_INV(30), SIZE_INV(31)
+    SIZE_INV(4),  SIZE_INV(5),  SIZE_INV(6),  SIZE_INV(7),
+    SIZE_INV(8),  SIZE_INV(9),  SIZE_INV(10), SIZE_INV(11),
+    SIZE_INV(12), SIZE_INV(13), SIZE_INV(14), SIZE_INV(15),
+    SIZE_INV(16), SIZE_INV(17), SIZE_INV(18), SIZE_INV(19),
+    SIZE_INV(20), SIZE_INV(21), SIZE_INV(22), SIZE_INV(23),
+    SIZE_INV(24), SIZE_INV(25), SIZE_INV(26), SIZE_INV(27),
+    SIZE_INV(28), SIZE_INV(29), SIZE_INV(30), SIZE_INV(31)
   };
   
+  static_assert(num_divisors == sizeof(size_invs) / sizeof(unsigned),
+                "num_divisors does not match array size");
+
+  
+  static_assert(IsPowerOfTwo(q), "q must be a power-of-two");
+  MOZ_ASSERT(div / q > 2);
+  MOZ_ASSERT((div / q) - 3 < 32);
+  return (num * size_invs[(div / q) - 3]) >> SIZE_INV_SHIFT;
+#undef SIZE_INV
+#undef SIZE_INV_SHIFT
+}
+
+static inline void arena_run_reg_dalloc(arena_run_t* run, arena_bin_t* bin,
+                                        void* ptr, size_t size) {
   unsigned diff, regind, elm, bit;
 
   MOZ_DIAGNOSTIC_ASSERT(run->mMagic == ARENA_RUN_MAGIC);
-  static_assert(
-      ((sizeof(size_invs)) / sizeof(unsigned)) + 3 >= kNumQuantumClasses,
-      "size_invs doesn't have enough values");
 
   
   
@@ -2268,11 +2287,11 @@ static inline void arena_run_reg_dalloc(arena_run_t* run, arena_bin_t* bin,
       (unsigned)((uintptr_t)ptr - (uintptr_t)run - bin->mRunFirstRegionOffset);
   if (mozilla::IsPowerOfTwo(size)) {
     regind = diff >> FloorLog2(size);
-  } else if (size <= ((sizeof(size_invs) / sizeof(unsigned)) * kQuantum) + 2) {
-    regind = size_invs[(size / kQuantum) - 3] * diff;
-    regind >>= SIZE_INV_SHIFT;
-  } else {
+  } else if (size < kMaxQuantumClass) {
     
+    
+    regind = divide<kQuantum>(diff, size);
+  } else {
     
     
     
@@ -2289,8 +2308,6 @@ static inline void arena_run_reg_dalloc(arena_run_t* run, arena_bin_t* bin,
   MOZ_RELEASE_ASSERT((run->mRegionsMask[elm] & (1U << bit)) == 0,
                      "Double-free?");
   run->mRegionsMask[elm] |= (1U << bit);
-#undef SIZE_INV
-#undef SIZE_INV_SHIFT
 }
 
 bool arena_t::SplitRun(arena_run_t* aRun, size_t aSize, bool aLarge,
