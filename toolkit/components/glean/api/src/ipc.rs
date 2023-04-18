@@ -9,14 +9,11 @@ use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 #[cfg(not(feature = "with_gecko"))]
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
 #[cfg(feature = "with_gecko")]
-use {
-    std::convert::TryInto,
-    std::sync::atomic::{AtomicU32, Ordering},
-    xpcom::interfaces::nsIXULRuntime,
-};
+use {std::convert::TryInto, std::sync::atomic::AtomicU32, xpcom::interfaces::nsIXULRuntime};
 
 use super::metrics::__glean_metric_maps;
 
@@ -41,10 +38,32 @@ pub struct IPCPayload {
 
 static PAYLOAD: Lazy<Mutex<IPCPayload>> = Lazy::new(|| Mutex::new(IPCPayload::default()));
 
+static PAYLOAD_ACCESS_COUNT: AtomicUsize = AtomicUsize::new(0);
+
+
+
+
+
+
+
+
+
+
+
+
+const PAYLOAD_ACCESS_WATERMARK: usize = 100000 - 1;
+
 pub fn with_ipc_payload<F, R>(f: F) -> R
 where
     F: FnOnce(&mut IPCPayload) -> R,
 {
+    if PAYLOAD_ACCESS_COUNT.fetch_add(1, Ordering::SeqCst) > PAYLOAD_ACCESS_WATERMARK {
+        
+        
+        
+        PAYLOAD_ACCESS_COUNT.store(0, Ordering::SeqCst);
+        handle_payload_filling();
+    }
     let mut payload = PAYLOAD.lock().unwrap();
     f(&mut payload)
 }
@@ -160,6 +179,21 @@ pub fn take_buf() -> Option<Vec<u8>> {
         };
         buf
     })
+}
+
+#[cfg(not(feature = "with_gecko"))]
+fn handle_payload_filling() {
+    
+    
+}
+
+#[cfg(feature = "with_gecko")]
+fn handle_payload_filling() {
+    extern "C" {
+        fn FOG_IPCPayloadFull();
+    }
+    
+    unsafe { FOG_IPCPayloadFull() };
 }
 
 

@@ -8,6 +8,7 @@
 
 #include "FOGIPC.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "nsThreadUtils.h"
 
 using mozilla::RunOnShutdown;
 using mozilla::ShutdownPhase;
@@ -25,4 +26,16 @@ void FOG_RegisterContentChildShutdown() {
 }
 
 int FOG_GetProcessType() { return XRE_GetProcessType(); }
+
+
+
+
+
+void FOG_IPCPayloadFull() {
+  
+  NS_DispatchToMainThread(
+      NS_NewRunnableFunction("FOG IPC Payload getting full", [] {
+        FlushFOGData([](ByteBuf&& aBuf) { SendFOGData(std::move(aBuf)); });
+      }));
+}
 }
