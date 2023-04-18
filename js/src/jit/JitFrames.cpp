@@ -257,6 +257,11 @@ static void HandleExceptionIon(JSContext* cx, const InlineFrameIterator& frame,
         break;
 
       case TryNoteKind::Catch:
+        
+        if (cx->isClosingGenerator()) {
+          break;
+        }
+
         if (cx->isExceptionPending()) {
           
           
@@ -438,7 +443,6 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
     MOZ_ASSERT(cx->isExceptionPending());
     switch (tn->kind()) {
       case TryNoteKind::Catch: {
-        
         
         if (cx->isClosingGenerator()) {
           break;
