@@ -261,8 +261,17 @@ bool TryEmitter::emitFinallyEnd() {
     return false;
   }
 
-  if (!bce_->emit1(JSOp::Retsub)) {
-    return false;
+  if (controlInfo_ && controlInfo_->hasNonLocalJumps()) {
+    if (!bce_->emit1(JSOp::Retsub)) {
+      return false;
+    }
+  } else {
+    
+    
+    
+    if (!bce_->emit1(JSOp::Pop)) {
+      return false;
+    }
   }
 
   if (!ifThrowing.emitEnd()) {
