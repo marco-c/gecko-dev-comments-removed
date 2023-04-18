@@ -6306,24 +6306,28 @@ bool BytecodeEmitter::emitReturn(UnaryNode* returnNode) {
 
 
 
-
-  BytecodeOffset top = bytecodeSection().offset();
-
-  bool needsFinalYield =
-      sc->isFunctionBox() && sc->asFunctionBox()->needsFinalYield();
-  bool isDerivedClassConstructor =
-      sc->isFunctionBox() && sc->asFunctionBox()->isDerivedClassConstructor();
-
-  if (!emit1((needsFinalYield || isDerivedClassConstructor) ? JSOp::SetRval
-                                                            : JSOp::Return)) {
+  BytecodeOffset setRvalOffset = bytecodeSection().offset();
+  if (!emit1(JSOp::SetRval)) {
     return false;
   }
 
   NonLocalExitControl nle(this, NonLocalExitControl::Return);
-
   if (!nle.prepareForNonLocalJumpToOutermost()) {
     return false;
   }
+
+  return finishReturn(setRvalOffset);
+}
+
+bool BytecodeEmitter::finishReturn(BytecodeOffset setRvalOffset) {
+  bool needsFinalYield =
+      sc->isFunctionBox() && sc->asFunctionBox()->needsFinalYield();
+  bool isDerivedClassConstructor =
+      sc->isFunctionBox() && sc->asFunctionBox()->isDerivedClassConstructor();
+  bool isSimpleReturn =
+      setRvalOffset.valid() &&
+      setRvalOffset + BytecodeOffsetDiff(JSOpLength_SetRval) ==
+          bytecodeSection().offset();
 
   if (needsFinalYield) {
     
@@ -6361,13 +6365,16 @@ bool BytecodeEmitter::emitReturn(UnaryNode* returnNode) {
       return false;
     }
   } else if (isDerivedClassConstructor) {
-    MOZ_ASSERT(JSOp(bytecodeSection().code()[top.value()]) == JSOp::SetRval);
     if (!emitJump(JSOp::Goto, &endOfDerivedClassConstructorBody)) {
       return false;
     }
-  } else if (top + BytecodeOffsetDiff(JSOpLength_Return) !=
-             bytecodeSection().offset()) {
-    bytecodeSection().code()[top.value()] = jsbytecode(JSOp::SetRval);
+  } else if (isSimpleReturn) {
+    
+    
+    MOZ_ASSERT(JSOp(bytecodeSection().code()[setRvalOffset.value()]) ==
+               JSOp::SetRval);
+    bytecodeSection().code()[setRvalOffset.value()] = jsbytecode(JSOp::Return);
+  } else {
     if (!emitReturnRval()) {
       return false;
     }
