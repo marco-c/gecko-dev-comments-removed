@@ -25,25 +25,9 @@
 
 
 
-
-
-
-
-#ifdef NS_COORD_IS_FLOAT
-typedef float nscoord;
-#  define nscoord_MAX (mozilla::PositiveInfinity<float>())
-#else
 typedef int32_t nscoord;
-#  define nscoord_MAX nscoord((1 << 30) - 1)
-#endif
-
+#define nscoord_MAX nscoord((1 << 30) - 1)
 #define nscoord_MIN (-nscoord_MAX)
-
-inline void VERIFY_COORD(nscoord aCoord) {
-#ifdef NS_COORD_IS_FLOAT
-  NS_ASSERTION(floorf(aCoord) == aCoord, "Coords cannot have fractions");
-#endif
-}
 
 namespace mozilla {
 struct AppUnit {};
@@ -104,22 +88,13 @@ using AuCoord64 = detail::AuCoordImpl<int64_t>;
 
 
 inline nscoord NSCoordDivRem(nscoord aSpace, size_t aN, nscoord* aQuotient) {
-#ifdef NS_COORD_IS_FLOAT
-  *aQuotient = aSpace / aN;
-  return 0.0f;
-#else
   div_t result = div(aSpace, aN);
   *aQuotient = nscoord(result.quot);
   return nscoord(result.rem);
-#endif
 }
 
 inline nscoord NSCoordMulDiv(nscoord aMult1, nscoord aMult2, nscoord aDiv) {
-#ifdef NS_COORD_IS_FLOAT
-  return (aMult1 * aMult2 / aDiv);
-#else
   return (int64_t(aMult1) * int64_t(aMult2) / int64_t(aDiv));
-#endif
 }
 
 inline nscoord NSToCoordRound(float aValue) {
@@ -141,7 +116,6 @@ inline nscoord NSToCoordRound(double aValue) {
 }
 
 inline nscoord NSToCoordRoundWithClamp(float aValue) {
-#ifndef NS_COORD_IS_FLOAT
   
   if (aValue >= float(nscoord_MAX)) {
     return nscoord_MAX;
@@ -149,12 +123,10 @@ inline nscoord NSToCoordRoundWithClamp(float aValue) {
   if (aValue <= float(nscoord_MIN)) {
     return nscoord_MIN;
   }
-#endif
   return NSToCoordRound(aValue);
 }
 
 inline nscoord NSToCoordRoundWithClamp(double aValue) {
-#ifndef NS_COORD_IS_FLOAT
   
   if (aValue >= double(nscoord_MAX)) {
     return nscoord_MAX;
@@ -162,7 +134,6 @@ inline nscoord NSToCoordRoundWithClamp(double aValue) {
   if (aValue <= double(nscoord_MIN)) {
     return nscoord_MIN;
   }
-#endif
   return NSToCoordRound(aValue);
 }
 
@@ -174,20 +145,15 @@ inline nscoord NSToCoordRoundWithClamp(double aValue) {
 
 inline nscoord _nscoordSaturatingMultiply(nscoord aCoord, float aScale,
                                           bool requireNotNegative) {
-  VERIFY_COORD(aCoord);
   if (requireNotNegative) {
     MOZ_ASSERT(aScale >= 0.0f,
                "negative scaling factors must be handled manually");
   }
-#ifdef NS_COORD_IS_FLOAT
-  return floorf(aCoord * aScale);
-#else
   float product = aCoord * aScale;
   if (requireNotNegative ? aCoord > 0 : (aCoord > 0) == (aScale > 0))
     return NSToCoordRoundWithClamp(
         std::min<float>((float)nscoord_MAX, product));
   return NSToCoordRoundWithClamp(std::max<float>((float)nscoord_MIN, product));
-#endif
 }
 
 
@@ -214,18 +180,7 @@ inline nscoord NSCoordSaturatingMultiply(nscoord aCoord, float aScale) {
 
 
 
-
-
-
-
 inline nscoord NSCoordSaturatingAdd(nscoord a, nscoord b) {
-  VERIFY_COORD(a);
-  VERIFY_COORD(b);
-
-#ifdef NS_COORD_IS_FLOAT
-  
-  return a + b;
-#else
   if (a == nscoord_MAX || b == nscoord_MAX) {
     
     return nscoord_MAX;
@@ -234,13 +189,7 @@ inline nscoord NSCoordSaturatingAdd(nscoord a, nscoord b) {
     
     return std::min(nscoord_MAX, a + b);
   }
-#endif
 }
-
-
-
-
-
 
 
 
@@ -255,9 +204,6 @@ inline nscoord NSCoordSaturatingAdd(nscoord a, nscoord b) {
 
 inline nscoord NSCoordSaturatingSubtract(nscoord a, nscoord b,
                                          nscoord infMinusInfResult) {
-  VERIFY_COORD(a);
-  VERIFY_COORD(b);
-
   if (b == nscoord_MAX) {
     if (a == nscoord_MAX) {
       
@@ -267,10 +213,6 @@ inline nscoord NSCoordSaturatingSubtract(nscoord a, nscoord b,
       return 0;
     }
   } else {
-#ifdef NS_COORD_IS_FLOAT
-    
-    return a - b;
-#else
     if (a == nscoord_MAX) {
       
       return nscoord_MAX;
@@ -279,17 +221,10 @@ inline nscoord NSCoordSaturatingSubtract(nscoord a, nscoord b,
       
       return std::min(nscoord_MAX, a - b);
     }
-#endif
   }
 }
 
-inline float NSCoordToFloat(nscoord aCoord) {
-  VERIFY_COORD(aCoord);
-#ifdef NS_COORD_IS_FLOAT
-  NS_ASSERTION(!mozilla::IsNaN(aCoord), "NaN encountered in float conversion");
-#endif
-  return (float)aCoord;
-}
+inline float NSCoordToFloat(nscoord aCoord) { return (float)aCoord; }
 
 
 
@@ -299,7 +234,6 @@ inline nscoord NSToCoordFloor(float aValue) { return nscoord(floorf(aValue)); }
 inline nscoord NSToCoordFloor(double aValue) { return nscoord(floor(aValue)); }
 
 inline nscoord NSToCoordFloorClamped(float aValue) {
-#ifndef NS_COORD_IS_FLOAT
   
   if (aValue >= float(nscoord_MAX)) {
     return nscoord_MAX;
@@ -307,7 +241,6 @@ inline nscoord NSToCoordFloorClamped(float aValue) {
   if (aValue <= float(nscoord_MIN)) {
     return nscoord_MIN;
   }
-#endif
   return NSToCoordFloor(aValue);
 }
 
@@ -316,7 +249,6 @@ inline nscoord NSToCoordCeil(float aValue) { return nscoord(ceilf(aValue)); }
 inline nscoord NSToCoordCeil(double aValue) { return nscoord(ceil(aValue)); }
 
 inline nscoord NSToCoordCeilClamped(double aValue) {
-#ifndef NS_COORD_IS_FLOAT
   
   if (aValue >= nscoord_MAX) {
     return nscoord_MAX;
@@ -324,7 +256,6 @@ inline nscoord NSToCoordCeilClamped(double aValue) {
   if (aValue <= nscoord_MIN) {
     return nscoord_MIN;
   }
-#endif
   return NSToCoordCeil(aValue);
 }
 
@@ -345,7 +276,6 @@ inline nscoord NSToCoordTrunc(double aValue) {
 }
 
 inline nscoord NSToCoordTruncClamped(float aValue) {
-#ifndef NS_COORD_IS_FLOAT
   
   if (aValue >= float(nscoord_MAX)) {
     return nscoord_MAX;
@@ -353,12 +283,10 @@ inline nscoord NSToCoordTruncClamped(float aValue) {
   if (aValue <= float(nscoord_MIN)) {
     return nscoord_MIN;
   }
-#endif
   return NSToCoordTrunc(aValue);
 }
 
 inline nscoord NSToCoordTruncClamped(double aValue) {
-#ifndef NS_COORD_IS_FLOAT
   
   if (aValue >= float(nscoord_MAX)) {
     return nscoord_MAX;
@@ -366,7 +294,6 @@ inline nscoord NSToCoordTruncClamped(double aValue) {
   if (aValue <= float(nscoord_MIN)) {
     return nscoord_MIN;
   }
-#endif
   return NSToCoordTrunc(aValue);
 }
 
@@ -397,7 +324,6 @@ inline nscoord NSIntPixelsToAppUnits(int32_t aPixels,
   
   
   nscoord r = aPixels * (nscoord)aAppUnitsPerPixel;
-  VERIFY_COORD(r);
   return r;
 }
 
