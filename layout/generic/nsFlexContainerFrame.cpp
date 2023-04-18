@@ -5564,6 +5564,16 @@ void nsFlexContainerFrame::PopulateReflowOutput(
   }
 
   
+  
+  
+  
+  if (!GetPrevInFlow() && !aStatus.IsFullyComplete() &&
+      ShouldAvoidBreakInside(aReflowInput)) {
+    aStatus.SetInlineLineBreakBeforeAndReset();
+    return;
+  }
+
+  
   mBaselineFromLastReflow = aFlexContainerAscent;
   mLastBaselineFromLastReflow = aLines.LastElement().LastBaselineOffset();
   if (mLastBaselineFromLastReflow == nscoord_MIN) {
