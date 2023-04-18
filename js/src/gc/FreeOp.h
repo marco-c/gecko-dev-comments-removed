@@ -40,13 +40,12 @@ class JSFreeOp {
 
   js::jit::JitPoisonRangeVector jitPoisonRanges;
 
-  const bool isDefault;
   bool isCollecting_;
 
   friend class js::gc::AutoSetThreadIsPerformingGC;
 
  public:
-  explicit JSFreeOp(JSRuntime* maybeRuntime, bool isDefault = false);
+  explicit JSFreeOp(JSRuntime* maybeRuntime);
   ~JSFreeOp();
 
   JSRuntime* runtime() const {
@@ -55,14 +54,6 @@ class JSFreeOp {
   }
 
   bool onMainThread() const { return runtime_ != nullptr; }
-
-  bool maybeOnHelperThread() const {
-    
-    
-    return !runtime_;
-  }
-
-  bool isDefaultFreeOp() const { return isDefault; }
   bool isCollecting() const { return isCollecting_; }
 
   

@@ -319,7 +319,7 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
     return;
   }
 
-  JSFreeOp fop(nullptr);
+  JSFreeOp* fop = TlsContext.get()->defaultFreeOp();
 
   
   
@@ -335,7 +335,7 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
     
     for (auto phase : BackgroundFinalizePhases) {
       for (auto kind : phase.kinds) {
-        backgroundFinalize(&fop, zone, kind, &emptyArenas);
+        backgroundFinalize(fop, zone, kind, &emptyArenas);
       }
     }
 
