@@ -2234,11 +2234,12 @@ bool InlineFrameIterator::isConstructing() const {
 
     
     JSOp parentOp = JSOp(*parent.pc());
+
+    
     if (IsIonInlinableGetterOrSetterOp(parentOp)) {
       return false;
     }
 
-    
     MOZ_ASSERT(IsInvokeOp(parentOp) && !IsSpreadOp(parentOp));
 
     return IsConstructOp(parentOp);
