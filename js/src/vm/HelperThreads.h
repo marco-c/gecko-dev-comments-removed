@@ -14,6 +14,7 @@
 #include "mozilla/Variant.h"
 #include "NamespaceImports.h"
 
+#include "js/experimental/JSStencil.h"
 #include "js/OffThreadScriptCompilation.h"
 #include "js/Transcoding.h"
 #include "js/UniquePtr.h"
@@ -207,6 +208,11 @@ void CancelOffThreadDelazify(JSRuntime* runtime);
 
 
 
+void WaitForAllDelazifyTasks(JSRuntime* rt);
+
+
+
+
 
 
 JS::OffThreadToken* StartOffThreadCompileToStencil(
@@ -236,6 +242,12 @@ JS::OffThreadToken* StartOffThreadDecodeMultiStencils(
     JSContext* cx, const JS::DecodeOptions& options,
     JS::TranscodeSources& sources, JS::OffThreadCompileCallback callback,
     void* callbackData);
+
+
+
+[[nodiscard]] bool StartOffThreadDelazification(
+    JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+    const frontend::CompilationStencil& stencil);
 
 
 
