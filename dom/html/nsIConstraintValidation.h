@@ -9,6 +9,8 @@
 
 #include "nsISupports.h"
 
+class nsIContent;
+
 namespace mozilla::dom {
 class ValidityState;
 }  
@@ -59,9 +61,20 @@ class nsIConstraintValidation : public nsISupports {
   void SetValidityState(ValidityStateType aState, bool aValue);
 
   
+
+
+
+
+
+
+
+
+  bool CheckValidity(nsIContent& aEventTarget,
+                     bool* aEventDefaultAction = nullptr);
+
+  
   bool WillValidate() const { return IsCandidateForConstraintValidation(); }
   mozilla::dom::ValidityState* Validity();
-  bool CheckValidity();
   bool ReportValidity();
 
  protected:

@@ -20,6 +20,7 @@ class ConstraintValidation : public nsIConstraintValidation {
   
   void GetValidationMessage(nsAString& aValidationMessage,
                             mozilla::ErrorResult& aError);
+  bool CheckValidity();
 
  protected:
   
