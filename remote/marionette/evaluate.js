@@ -227,7 +227,8 @@ evaluate.sandbox = function(
 
 
 
-evaluate.fromJSON = function(obj, seenEls = undefined, win = undefined) {
+evaluate.fromJSON = function(options = {}) {
+  const { obj, seenEls, win } = options;
   switch (typeof obj) {
     case "boolean":
     case "number":
@@ -241,7 +242,7 @@ evaluate.fromJSON = function(obj, seenEls = undefined, win = undefined) {
 
         
       } else if (Array.isArray(obj)) {
-        return obj.map(e => evaluate.fromJSON(e, seenEls, win));
+        return obj.map(e => evaluate.fromJSON({ obj: e, seenEls, win }));
 
         
       } else if (WebElement.isReference(obj.webElRef)) {
@@ -258,7 +259,7 @@ evaluate.fromJSON = function(obj, seenEls = undefined, win = undefined) {
       
       let rv = {};
       for (let prop in obj) {
-        rv[prop] = evaluate.fromJSON(obj[prop], seenEls, win);
+        rv[prop] = evaluate.fromJSON({ obj: obj[prop], seenEls, win });
       }
       return rv;
   }
