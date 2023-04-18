@@ -17,6 +17,11 @@ add_task(async function() {
 });
 
 async function testNavigation() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["network.cookie.sameSite.laxByDefault", false]],
+  });
+
   const URL1 = buildURLWithContent(
     "example.com",
     `<h1>example.com</h1>` + `<script>document.cookie = "lorem=ipsum";</script>`
@@ -133,4 +138,6 @@ async function testNavigation() {
     "Cookies",
     "Cookies item is properly displayed"
   );
+
+  SpecialPowers.clearUserPref("network.cookie.sameSite.laxByDefault");
 }

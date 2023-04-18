@@ -4,9 +4,12 @@ if (SpecialPowers.useRemoteSubframes) {
 
 add_task(async function setup() {
   Services.prefs.setBoolPref("privacy.firstparty.isolate", true);
+  
+  Services.prefs.setBoolPref("network.cookie.sameSite.laxByDefault", false);
 
   registerCleanupFunction(function() {
     Services.prefs.clearUserPref("privacy.firstparty.isolate");
+    Services.prefs.clearUserPref("network.cookie.sameSite.laxByDefault");
   });
 });
 

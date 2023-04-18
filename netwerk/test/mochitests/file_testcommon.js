@@ -24,6 +24,8 @@ function setupTest(uri, cookies, loads) {
           
           
           ["network.cookie.rejectForeignWithExceptions.enabled", false],
+          
+          ["network.cookie.sameSite.laxByDefault", false],
         ],
       },
       resolve
@@ -46,6 +48,7 @@ function setupTest(uri, cookies, loads) {
 
 function finishTest() {
   gScript.destroy();
+  SpecialPowers.clearUserPref("network.cookie.sameSite.laxByDefault");
   SimpleTest.finish();
 }
 

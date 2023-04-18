@@ -275,6 +275,8 @@ add_task(async function() {
       ["privacy.trackingprotection.enabled", false],
       ["privacy.trackingprotection.pbmode.enabled", false],
       ["privacy.trackingprotection.annotate_channels", true],
+      
+      ["network.cookie.sameSite.laxByDefault", false],
     ],
   });
 
@@ -289,6 +291,7 @@ add_task(async function() {
   }
 
   SpecialPowers.clearUserPref("privacy.dynamic_firstparty.limitForeign");
+  SpecialPowers.clearUserPref("network.cookie.sameSite.laxByDefault");
 });
 
 add_task(async function() {

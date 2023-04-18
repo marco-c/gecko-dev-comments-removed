@@ -51,6 +51,8 @@ add_task(async function setup() {
       ["privacy.trackingprotection.enabled", false],
       ["privacy.trackingprotection.pbmode.enabled", false],
       ["privacy.trackingprotection.annotate_channels", true],
+      
+      ["network.cookie.sameSite.laxByDefault", false],
     ],
   });
   registerCleanupFunction(cleanup);
