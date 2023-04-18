@@ -157,6 +157,8 @@ extern "C" const char* __lsan_default_suppressions() {
          
          
          "leak:libcairo.so\n"
+         
+         "leak:libcups.so\n"
          "leak:libdl.so\n"
          "leak:libdricore.so\n"
          "leak:libdricore9.2.1.so\n"
