@@ -708,33 +708,30 @@ impl AnimationIterationCount {
     PartialEq,
     SpecifiedValueInfo,
     ToComputedValue,
+    ToCss,
     ToResolvedValue,
     ToShmem,
 )]
 #[value_info(other_values = "none")]
-pub struct AnimationName(pub Option<KeyframesName>);
+pub struct AnimationName(pub KeyframesName);
 
 impl AnimationName {
     
     pub fn as_atom(&self) -> Option<&Atom> {
-        self.0.as_ref().map(|n| n.as_atom())
+        if self.is_none() {
+            return None;
+        }
+        Some(self.0.as_atom())
     }
 
     
     pub fn none() -> Self {
-        AnimationName(None)
+        AnimationName(KeyframesName::none())
     }
-}
 
-impl ToCss for AnimationName {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        match self.0 {
-            Some(ref name) => name.to_css(dest),
-            None => dest.write_str("none"),
-        }
+    
+    pub fn is_none(&self) -> bool {
+        self.0.is_none()
     }
 }
 
@@ -744,11 +741,11 @@ impl Parse for AnimationName {
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         if let Ok(name) = input.try_parse(|input| KeyframesName::parse(context, input)) {
-            return Ok(AnimationName(Some(name)));
+            return Ok(AnimationName(name));
         }
 
         input.expect_ident_matching("none")?;
-        Ok(AnimationName(None))
+        Ok(AnimationName(KeyframesName::none()))
     }
 }
 
@@ -848,8 +845,6 @@ pub enum AnimationTimeline {
     
     Auto,
     
-    None,
-    
     Timeline(TimelineName),
     
     
@@ -882,12 +877,16 @@ impl Parse for AnimationTimeline {
         
         
         
+        
+        
+        
+        
         if input.try_parse(|i| i.expect_ident_matching("auto")).is_ok() {
             return Ok(Self::Auto);
         }
 
         if input.try_parse(|i| i.expect_ident_matching("none")).is_ok() {
-            return Ok(Self::None);
+            return Ok(AnimationTimeline::Timeline(TimelineName::none()));
         }
 
         
