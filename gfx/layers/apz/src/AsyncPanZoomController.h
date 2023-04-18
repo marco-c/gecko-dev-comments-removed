@@ -1189,6 +1189,8 @@ class AsyncPanZoomController {
       AsyncTransformConsumer aMode,
       AsyncTransformComponents aComponents = LayoutAndVisual) const;
 
+  LayoutDevicePoint GetAsyncScrollDeltaForSampling() const;
+
   
 
 

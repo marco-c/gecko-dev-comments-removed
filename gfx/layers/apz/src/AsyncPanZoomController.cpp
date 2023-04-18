@@ -4558,6 +4558,39 @@ LayoutDeviceToParentLayerScale AsyncPanZoomController::GetCurrentPinchZoomScale(
   return scale / Metrics().GetDevPixelsPerCSSPixel();
 }
 
+LayoutDevicePoint AsyncPanZoomController::GetAsyncScrollDeltaForSampling()
+    const {
+  AssertOnSamplerThread();
+
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
+
+  const AsyncTransformComponents asyncTransformComponents =
+      GetZoomAnimationId()
+          ? AsyncTransformComponents{AsyncTransformComponent::eLayout}
+          : LayoutAndVisual;
+  ParentLayerPoint layerTranslation =
+      GetCurrentAsyncTransformWithOverscroll(
+          AsyncPanZoomController::eForCompositing, asyncTransformComponents)
+          .TransformPoint(ParentLayerPoint(0, 0));
+
+  
+  
+  
+  
+  
+  
+  LayoutDeviceToParentLayerScale resolution =
+      GetCumulativeResolution() * LayerToParentLayerScale(1.0f);
+
+  
+  
+  
+  
+  LayoutDevicePoint asyncScrollDelta = -layerTranslation / resolution;
+
+  return asyncScrollDelta;
+}
+
 bool AsyncPanZoomController::SuppressAsyncScrollOffset() const {
   return mScrollMetadata.IsApzForceDisabled() ||
          (Metrics().IsMinimalDisplayPort() &&
