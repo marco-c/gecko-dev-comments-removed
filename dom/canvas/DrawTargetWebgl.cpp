@@ -1134,8 +1134,8 @@ bool DrawTargetWebgl::DrawRect(const Rect& aRect, const Pattern& aPattern,
   
   
   
-  if (mWebglValid ||
-      (mSkiaLayer && (aAccelOnly || !SupportsLayering(aOptions)))) {
+  if (mWebglValid || (mSkiaLayer && !mLayerDepth &&
+                      (aAccelOnly || !SupportsLayering(aOptions)))) {
     
     
     
@@ -2917,6 +2917,33 @@ bool DrawTargetWebgl::Draw3DTransformedSurface(SourceSurface* aSurface,
                                                const Matrix4x4& aMatrix) {
   MarkSkiaChanged();
   return mSkia->Draw3DTransformedSurface(aSurface, aMatrix);
+}
+
+void DrawTargetWebgl::PushLayer(bool aOpaque, Float aOpacity,
+                                SourceSurface* aMask,
+                                const Matrix& aMaskTransform,
+                                const IntRect& aBounds, bool aCopyBackground) {
+  PushLayerWithBlend(aOpaque, aOpacity, aMask, aMaskTransform, aBounds,
+                     aCopyBackground, CompositionOp::OP_OVER);
+}
+
+void DrawTargetWebgl::PushLayerWithBlend(bool aOpaque, Float aOpacity,
+                                         SourceSurface* aMask,
+                                         const Matrix& aMaskTransform,
+                                         const IntRect& aBounds,
+                                         bool aCopyBackground,
+                                         CompositionOp aCompositionOp) {
+  MarkSkiaChanged(DrawOptions(aOpacity, aCompositionOp));
+  mSkia->PushLayerWithBlend(aOpaque, aOpacity, aMask, aMaskTransform, aBounds,
+                            aCopyBackground, aCompositionOp);
+  ++mLayerDepth;
+}
+
+void DrawTargetWebgl::PopLayer() {
+  MOZ_ASSERT(mSkiaValid);
+  MOZ_ASSERT(mLayerDepth > 0);
+  --mLayerDepth;
+  mSkia->PopLayer();
 }
 
 }  
