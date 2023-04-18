@@ -667,9 +667,9 @@ class SourceMediaTrack : public MediaTrack {
   
   
   void SetVolume(float aVolume);
-  float GetVolumeLocked();
+  float GetVolumeLocked() REQUIRES(mMutex);
 
-  Mutex& GetMutex() { return mMutex; }
+  Mutex& GetMutex() RETURN_CAPABILITY(mMutex) { return mMutex; }
 
   friend class MediaTrackGraphImpl;
 
@@ -702,7 +702,7 @@ class SourceMediaTrack : public MediaTrack {
 
   bool NeedsMixing();
 
-  void ResampleAudioToGraphSampleRate(MediaSegment* aSegment);
+  void ResampleAudioToGraphSampleRate(MediaSegment* aSegment) REQUIRES(mMutex);
 
   void AddDirectListenerImpl(
       already_AddRefed<DirectMediaTrackListener> aListener) override;
@@ -714,7 +714,7 @@ class SourceMediaTrack : public MediaTrack {
 
 
 
-  void NotifyDirectConsumers(MediaSegment* aSegment);
+  void NotifyDirectConsumers(MediaSegment* aSegment) REQUIRES(mMutex);
 
   void OnGraphThreadDone() override {
     MutexAutoLock lock(mMutex);
@@ -733,11 +733,12 @@ class SourceMediaTrack : public MediaTrack {
 
   
   
-  Mutex mMutex MOZ_UNANNOTATED;
+  Mutex mMutex;
   
-  float mVolume = 1.0;
-  UniquePtr<TrackData> mUpdateTrack;
-  nsTArray<RefPtr<DirectMediaTrackListener>> mDirectTrackListeners;
+  float mVolume GUARDED_BY(mMutex) = 1.0;
+  UniquePtr<TrackData> mUpdateTrack GUARDED_BY(mMutex);
+  nsTArray<RefPtr<DirectMediaTrackListener>> mDirectTrackListeners
+      GUARDED_BY(mMutex);
 };
 
 

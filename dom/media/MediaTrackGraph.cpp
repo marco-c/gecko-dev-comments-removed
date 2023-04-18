@@ -1382,7 +1382,16 @@ auto MediaTrackGraphImpl::OneIterationImpl(GraphTime aStateTime,
   
   
   
+
+  
+  
+  
+
+  
+  PUSH_IGNORE_THREAD_SAFETY
   MOZ_DIAGNOSTIC_ASSERT(mLifecycleState <= LIFECYCLE_RUNNING);
+  POP_THREAD_SAFETY
+
   MOZ_ASSERT(OnGraphThread());
 
   WebCore::DenormalDisabler disabler;
@@ -2570,7 +2579,8 @@ bool SourceMediaTrack::PullNewData(GraphTime aDesiredUpToTime) {
 
 static void MoveToSegment(SourceMediaTrack* aTrack, MediaSegment* aIn,
                           MediaSegment* aOut, TrackTime aCurrentTime,
-                          TrackTime aDesiredUpToTime) {
+                          TrackTime aDesiredUpToTime)
+    REQUIRES(aTrack->GetMutex()) {
   MOZ_ASSERT(aIn->GetType() == aOut->GetType());
   MOZ_ASSERT(aOut->GetDuration() >= aCurrentTime);
   MOZ_ASSERT(aDesiredUpToTime >= aCurrentTime);

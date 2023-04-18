@@ -80,15 +80,15 @@ class GraphRunner final : public Runnable {
 
   
   
-  Monitor mMonitor MOZ_UNANNOTATED;
+  Monitor mMonitor;
   
   
   MediaTrackGraphImpl* const mGraph;
   
   
-  Maybe<IterationState> mIterationState;
+  Maybe<IterationState> mIterationState GUARDED_BY(mMonitor);
   
-  IterationResult mIterationResult;
+  IterationResult mIterationResult GUARDED_BY(mMonitor);
 
   enum class ThreadState {
     Wait,      
@@ -100,7 +100,7 @@ class GraphRunner final : public Runnable {
   };
   
   
-  ThreadState mThreadState;
+  ThreadState mThreadState GUARDED_BY(mMonitor);
 
   
   
