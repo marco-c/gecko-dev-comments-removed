@@ -25,19 +25,34 @@ class CalcSnapPoints final {
  public:
   CalcSnapPoints(ScrollUnit aUnit, ScrollSnapFlags aSnapFlags,
                  const nsPoint& aDestination, const nsPoint& aStartPos);
-  void AddHorizontalEdge(nscoord aEdge);
-  void AddVerticalEdge(nscoord aEdge);
+  struct SnapPosition {
+    SnapPosition() = default;
+
+    SnapPosition(nscoord aPosition, StyleScrollSnapStop aScrollSnapStop)
+        : mPosition(aPosition), mScrollSnapStop(aScrollSnapStop) {}
+
+    nscoord mPosition;
+    StyleScrollSnapStop mScrollSnapStop;
+  };
+
+  void AddHorizontalEdge(const SnapPosition& aEdge);
+  void AddVerticalEdge(const SnapPosition& aEdge);
+  void AddEdge(const SnapPosition& aEdge, nscoord aDestination,
+               nscoord aStartPos, nscoord aScrollingDirection,
+               SnapPosition* aBestEdge, SnapPosition* aSecondBestEdge,
+               bool* aEdgeFound);
+
   void AddEdge(nscoord aEdge, nscoord aDestination, nscoord aStartPos,
                nscoord aScrollingDirection, nscoord* aBestEdge,
                nscoord* aSecondBestEdge, bool* aEdgeFound);
   nsPoint GetBestEdge() const;
   nscoord XDistanceBetweenBestAndSecondEdge() const {
-    return std::abs(
-        NSCoordSaturatingSubtract(mSecondBestEdge.x, mBestEdge.x, nscoord_MAX));
+    return std::abs(NSCoordSaturatingSubtract(
+        mSecondBestEdgeX.mPosition, mBestEdgeX.mPosition, nscoord_MAX));
   }
   nscoord YDistanceBetweenBestAndSecondEdge() const {
-    return std::abs(
-        NSCoordSaturatingSubtract(mSecondBestEdge.y, mBestEdge.y, nscoord_MAX));
+    return std::abs(NSCoordSaturatingSubtract(
+        mSecondBestEdgeY.mPosition, mBestEdgeY.mPosition, nscoord_MAX));
   }
   const nsPoint& Destination() const { return mDestination; }
 
@@ -48,14 +63,20 @@ class CalcSnapPoints final {
                          
   nsPoint mStartPos;     
   nsIntPoint mScrollingDirection;  
-  nsPoint mBestEdge;  
-  nsPoint mSecondBestEdge;  
+  SnapPosition mBestEdgeX;  
                             
+  SnapPosition mBestEdgeY;  
                             
-  bool mHorizontalEdgeFound;  
-                              
-  bool mVerticalEdgeFound;    
-                              
+  SnapPosition mSecondBestEdgeX;  
+                                  
+                                  
+  SnapPosition mSecondBestEdgeY;  
+                                  
+                                  
+  bool mHorizontalEdgeFound;      
+                                  
+  bool mVerticalEdgeFound;  
+                            
 };
 
 CalcSnapPoints::CalcSnapPoints(ScrollUnit aUnit, ScrollSnapFlags aSnapFlags,
@@ -82,40 +103,42 @@ CalcSnapPoints::CalcSnapPoints(ScrollUnit aUnit, ScrollSnapFlags aSnapFlags,
   if (direction.y > 0) {
     mScrollingDirection.y = 1;
   }
-  mBestEdge = aDestination;
+  mBestEdgeX = SnapPosition{aDestination.x, StyleScrollSnapStop::Normal};
+  mBestEdgeY = SnapPosition{aDestination.y, StyleScrollSnapStop::Normal};
   
   
   
   
-  mSecondBestEdge = nsPoint(nscoord_MAX, nscoord_MAX);
+  mSecondBestEdgeX = SnapPosition{nscoord_MAX, StyleScrollSnapStop::Normal};
+  mSecondBestEdgeY = SnapPosition{nscoord_MAX, StyleScrollSnapStop::Normal};
   mHorizontalEdgeFound = false;
   mVerticalEdgeFound = false;
 }
 
 nsPoint CalcSnapPoints::GetBestEdge() const {
-  return nsPoint(mVerticalEdgeFound ? mBestEdge.x : mStartPos.x,
-                 mHorizontalEdgeFound ? mBestEdge.y : mStartPos.y);
+  return nsPoint(mVerticalEdgeFound ? mBestEdgeX.mPosition : mStartPos.x,
+                 mHorizontalEdgeFound ? mBestEdgeY.mPosition : mStartPos.y);
 }
 
-void CalcSnapPoints::AddHorizontalEdge(nscoord aEdge) {
+void CalcSnapPoints::AddHorizontalEdge(const SnapPosition& aEdge) {
   AddEdge(aEdge, mDestination.y, mStartPos.y, mScrollingDirection.y,
-          &mBestEdge.y, &mSecondBestEdge.y, &mHorizontalEdgeFound);
+          &mBestEdgeY, &mSecondBestEdgeY, &mHorizontalEdgeFound);
 }
 
-void CalcSnapPoints::AddVerticalEdge(nscoord aEdge) {
+void CalcSnapPoints::AddVerticalEdge(const SnapPosition& aEdge) {
   AddEdge(aEdge, mDestination.x, mStartPos.x, mScrollingDirection.x,
-          &mBestEdge.x, &mSecondBestEdge.x, &mVerticalEdgeFound);
+          &mBestEdgeX, &mSecondBestEdgeX, &mVerticalEdgeFound);
 }
 
-void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
+void CalcSnapPoints::AddEdge(const SnapPosition& aEdge, nscoord aDestination,
                              nscoord aStartPos, nscoord aScrollingDirection,
-                             nscoord* aBestEdge, nscoord* aSecondBestEdge,
-                             bool* aEdgeFound) {
+                             SnapPosition* aBestEdge,
+                             SnapPosition* aSecondBestEdge, bool* aEdgeFound) {
   if (mSnapFlags & ScrollSnapFlags::IntendedDirection) {
     
     
     if (aScrollingDirection == 0 ||
-        (aEdge - aStartPos) * aScrollingDirection <= 0) {
+        (aEdge.mPosition - aStartPos) * aScrollingDirection <= 0) {
       
       
       return;
@@ -128,19 +151,52 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
     return;
   }
 
-  const bool isOnOppositeSide =
-      ((aEdge - aDestination) > 0) != ((*aBestEdge - aDestination) > 0);
+  auto isPreferredStopAlways = [&](const SnapPosition& aSnapPosition) -> bool {
+    MOZ_ASSERT(mSnapFlags & ScrollSnapFlags::IntendedDirection);
+    
+    
+    
+    
+    return aSnapPosition.mScrollSnapStop == StyleScrollSnapStop::Always &&
+           std::abs(aSnapPosition.mPosition - aStartPos) <
+               std::abs(aDestination - aStartPos);
+  };
+
+  const bool isOnOppositeSide = ((aEdge.mPosition - aDestination) > 0) !=
+                                ((aBestEdge->mPosition - aDestination) > 0);
+  const nscoord distanceFromStart = aEdge.mPosition - aStartPos;
   
   
   
   
   
   
+  const nscoord distanceFromDestination = aEdge.mPosition - aDestination;
   auto updateBestEdges = [&](bool aIsCloserThanBest, bool aIsCloserThanSecond) {
     if (aIsCloserThanBest) {
-      
-      
-      if (isOnOppositeSide) {
+      if (mSnapFlags & ScrollSnapFlags::IntendedDirection &&
+          isPreferredStopAlways(aEdge)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        *aSecondBestEdge = aEdge;
+      } else if (isOnOppositeSide) {
+        
+        
+        
         *aSecondBestEdge = *aBestEdge;
       }
       *aBestEdge = aEdge;
@@ -157,23 +213,25 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
     case ScrollUnit::DEVICE_PIXELS:
     case ScrollUnit::LINES:
     case ScrollUnit::WHOLE: {
-      nscoord distance = std::abs(aEdge - aDestination);
-      isCandidateOfBest = distance < std::abs(*aBestEdge - aDestination);
+      isCandidateOfBest = std::abs(distanceFromDestination) <
+                          std::abs(aBestEdge->mPosition - aDestination);
       isCandidateOfSecondBest =
-          distance < std::abs(NSCoordSaturatingSubtract(
-                         *aSecondBestEdge, aDestination, nscoord_MAX));
+          std::abs(distanceFromDestination) <
+          std::abs(NSCoordSaturatingSubtract(aSecondBestEdge->mPosition,
+                                             aDestination, nscoord_MAX));
       break;
     }
     case ScrollUnit::PAGES: {
       
       
-      nscoord overshoot = (aEdge - aDestination) * aScrollingDirection;
+      nscoord overshoot = distanceFromDestination * aScrollingDirection;
       
       
-      nscoord curOvershoot = (*aBestEdge - aDestination) * aScrollingDirection;
+      nscoord curOvershoot =
+          (aBestEdge->mPosition - aDestination) * aScrollingDirection;
 
       nscoord secondOvershoot =
-          NSCoordSaturatingSubtract(*aSecondBestEdge, aDestination,
+          NSCoordSaturatingSubtract(aSecondBestEdge->mPosition, aDestination,
                                     nscoord_MAX) *
           aScrollingDirection;
 
@@ -190,6 +248,21 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
         isCandidateOfBest = overshoot < curOvershoot;
         isCandidateOfSecondBest = overshoot < secondOvershoot;
       }
+    }
+  }
+
+  if (mSnapFlags & ScrollSnapFlags::IntendedDirection) {
+    if (isPreferredStopAlways(aEdge)) {
+      
+      
+      
+      isCandidateOfBest = std::abs(distanceFromStart) <
+                          std::abs(aBestEdge->mPosition - aStartPos);
+    } else if (isPreferredStopAlways(*aBestEdge)) {
+      
+      
+      
+      isCandidateOfBest = false;
     }
   }
 
@@ -213,11 +286,13 @@ static void ProcessSnapPositions(CalcSnapPoints& aCalcSnapPoints,
 
     if (target.mSnapPositionX &&
         aSnapInfo.mScrollSnapStrictnessX != StyleScrollSnapStrictness::None) {
-      aCalcSnapPoints.AddVerticalEdge(*target.mSnapPositionX);
+      aCalcSnapPoints.AddVerticalEdge(
+          {*target.mSnapPositionX, target.mScrollSnapStop});
     }
     if (target.mSnapPositionY &&
         aSnapInfo.mScrollSnapStrictnessY != StyleScrollSnapStrictness::None) {
-      aCalcSnapPoints.AddHorizontalEdge(*target.mSnapPositionY);
+      aCalcSnapPoints.AddHorizontalEdge(
+          {*target.mSnapPositionY, target.mScrollSnapStop});
     }
   }
 }
@@ -251,7 +326,8 @@ Maybe<nsPoint> ScrollSnapUtils::GetSnapPointForDestination(
     if (range.IsValid(clampedDestination.x, aSnapInfo.mSnapportSize.width) &&
         calcSnapPoints.XDistanceBetweenBestAndSecondEdge() >
             aSnapInfo.mSnapportSize.width) {
-      calcSnapPoints.AddVerticalEdge(clampedDestination.x);
+      calcSnapPoints.AddVerticalEdge(CalcSnapPoints::SnapPosition{
+          clampedDestination.x, StyleScrollSnapStop::Normal});
       break;
     }
   }
@@ -259,7 +335,8 @@ Maybe<nsPoint> ScrollSnapUtils::GetSnapPointForDestination(
     if (range.IsValid(clampedDestination.y, aSnapInfo.mSnapportSize.height) &&
         calcSnapPoints.YDistanceBetweenBestAndSecondEdge() >
             aSnapInfo.mSnapportSize.height) {
-      calcSnapPoints.AddHorizontalEdge(clampedDestination.y);
+      calcSnapPoints.AddHorizontalEdge(CalcSnapPoints::SnapPosition{
+          clampedDestination.y, StyleScrollSnapStop::Normal});
       break;
     }
   }
