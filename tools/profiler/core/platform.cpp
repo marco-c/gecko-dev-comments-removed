@@ -501,7 +501,6 @@ class CorePS {
     
     
     
-    
 
 #if defined(USE_LUL_STACKWALK)
     if (lul::LUL* lulPtr = sInstance->mLul; lulPtr) {
@@ -736,6 +735,12 @@ class ActivePS {
     return aFeatures;
   }
 
+  bool ShouldInterposeIOs() {
+    return ProfilerFeature::HasMainThreadIO(mFeatures) ||
+           ProfilerFeature::HasFileIO(mFeatures) ||
+           ProfilerFeature::HasFileIOAll(mFeatures);
+  }
+
   ActivePS(
       PSLockRef aLock, PowerOfTwo32 aCapacity, double aInterval,
       uint32_t aFeatures, const char** aFilters, uint32_t aFilterCount,
@@ -767,11 +772,6 @@ class ActivePS {
         
         mSamplerThread(
             NewSamplerThread(aLock, mGeneration, aInterval, aFeatures)),
-        mInterposeObserver((ProfilerFeature::HasMainThreadIO(aFeatures) ||
-                            ProfilerFeature::HasFileIO(aFeatures) ||
-                            ProfilerFeature::HasFileIOAll(aFeatures))
-                               ? new ProfilerIOInterposeObserver()
-                               : nullptr),
         mIsPaused(false),
         mIsSamplingPaused(false) {
     
@@ -785,20 +785,29 @@ class ActivePS {
     }
 
 #if !defined(RELEASE_OR_BETA)
-    if (mInterposeObserver) {
+    if (ShouldInterposeIOs()) {
       
       
       
       
       if (NS_IsMainThread()) {
         IOInterposer::Init();
-        IOInterposer::Register(IOInterposeObserver::OpAll, mInterposeObserver);
+        IOInterposer::Register(IOInterposeObserver::OpAll,
+                               &ProfilerIOInterposeObserver::GetInstance());
       } else {
-        RefPtr<ProfilerIOInterposeObserver> observer = mInterposeObserver;
         NS_DispatchToMainThread(
-            NS_NewRunnableFunction("ActivePS::ActivePS", [=]() {
+            NS_NewRunnableFunction("ActivePS::ActivePS", []() {
+              
+              
+              
+              
+              
+              
+              
               IOInterposer::Init();
-              IOInterposer::Register(IOInterposeObserver::OpAll, observer);
+              IOInterposer::Register(
+                  IOInterposeObserver::OpAll,
+                  &ProfilerIOInterposeObserver::GetInstance());
             }));
       }
     }
@@ -810,17 +819,18 @@ class ActivePS {
         !mMaybeProcessCPUCounter,
         "mMaybeProcessCPUCounter should have been deleted before ~ActivePS()");
 #if !defined(RELEASE_OR_BETA)
-    if (mInterposeObserver) {
+    if (ShouldInterposeIOs()) {
       
       
       if (NS_IsMainThread()) {
         IOInterposer::Unregister(IOInterposeObserver::OpAll,
-                                 mInterposeObserver);
+                                 &ProfilerIOInterposeObserver::GetInstance());
       } else {
-        RefPtr<ProfilerIOInterposeObserver> observer = mInterposeObserver;
         NS_DispatchToMainThread(
-            NS_NewRunnableFunction("ActivePS::~ActivePS", [=]() {
-              IOInterposer::Unregister(IOInterposeObserver::OpAll, observer);
+            NS_NewRunnableFunction("ActivePS::~ActivePS", []() {
+              IOInterposer::Unregister(
+                  IOInterposeObserver::OpAll,
+                  &ProfilerIOInterposeObserver::GetInstance());
             }));
       }
     }
@@ -1413,9 +1423,6 @@ class ActivePS {
   
   
   SamplerThread* const mSamplerThread;
-
-  
-  RefPtr<ProfilerIOInterposeObserver> mInterposeObserver;
 
   
   bool mIsPaused;
