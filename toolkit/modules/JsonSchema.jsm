@@ -48,6 +48,7 @@ Cu.evalInSandbox(
 
 class Validator {
   #inner;
+  #draft;
 
   
 
@@ -58,7 +59,15 @@ class Validator {
 
 
 
-  constructor(schema, draft = "2019-09", shortCircuit = true) {
+
+
+
+
+  constructor(
+    schema,
+    { draft = detectSchemaDraft(schema), shortCircuit = true } = {}
+  ) {
+    this.#draft = draft;
     this.#inner = Cu.waiveXrays(
       new sandbox.Validator(Cu.cloneInto(schema, sandbox), draft, shortCircuit)
     );
@@ -84,6 +93,14 @@ class Validator {
 
 
   addSchema(schema, id) {
+    const draft = detectSchemaDraft(schema, undefined);
+    if (draft && this.#draft != draft) {
+      Cu.reportError(
+        `Adding a draft "${draft}" schema to a draft "${
+          this.#draft
+        }" validator.`
+      );
+    }
     this.#inner.addSchema(Cu.cloneInto(schema, sandbox), id);
   }
 }
@@ -103,10 +120,14 @@ class Validator {
 
 
 
+
+
+
+
 function validate(
   instance,
   schema,
-  { draft = "2019-09", shortCircuit = true } = {}
+  { draft = detectSchemaDraft(schema), shortCircuit = true } = {}
 ) {
   const clonedSchema = Cu.cloneInto(schema, sandbox);
 
@@ -117,6 +138,37 @@ function validate(
     sandbox.dereference(clonedSchema),
     shortCircuit
   );
+}
+
+function detectSchemaDraft(schema, defaultDraft = "2019-09") {
+  const { $schema } = schema;
+
+  if (typeof $schema === "undefined") {
+    return defaultDraft;
+  }
+
+  switch ($schema) {
+    case "http://json-schema.org/draft-04/schema#":
+      return "4";
+
+    case "http://json-schema.org/draft-06/schema#":
+      return "6";
+
+    case "http://json-schema.org/draft-07/schema#":
+      return "7";
+
+    case "https://json-schema.org/draft/2019-09/schema":
+      return "2019-09";
+
+    case "https://json-schema.org/draft/2020-12/schema":
+      return "2020-12";
+
+    default:
+      Cu.reportError(
+        `Unexpected $schema "${$schema}", defaulting to ${defaultDraft}.`
+      );
+      return defaultDraft;
+  }
 }
 
 const EXPORTED_SYMBOLS = ["Validator", "validate", "sandbox"];
