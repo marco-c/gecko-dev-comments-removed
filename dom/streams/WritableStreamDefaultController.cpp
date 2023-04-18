@@ -126,7 +126,7 @@ WritableStreamDefaultControllerAdvanceQueueIfNeeded(
     ErrorResult& aRv);
 
 class WritableStartPromiseNativeHandler final : public PromiseNativeHandler {
-  ~WritableStartPromiseNativeHandler() = default;
+  ~WritableStartPromiseNativeHandler() override = default;
 
   
   RefPtr<WritableStreamDefaultController> mController;
@@ -310,7 +310,7 @@ void SetUpWritableStreamDefaultControllerFromUnderlyingSink(
 
 
 class SinkCloseNativePromiseHandler final : public PromiseNativeHandler {
-  ~SinkCloseNativePromiseHandler() = default;
+  ~SinkCloseNativePromiseHandler() override = default;
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -396,7 +396,7 @@ MOZ_CAN_RUN_SCRIPT static void WritableStreamDefaultControllerProcessClose(
 
 
 class SinkWriteNativePromiseHandler final : public PromiseNativeHandler {
-  ~SinkWriteNativePromiseHandler() = default;
+  ~SinkWriteNativePromiseHandler() override = default;
 
   
   RefPtr<WritableStreamDefaultController> mController;

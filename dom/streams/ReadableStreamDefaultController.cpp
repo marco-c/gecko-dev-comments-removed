@@ -410,7 +410,7 @@ void ReadableStreamDefaultControllerError(
 
 
 class PullIfNeededNativePromiseHandler final : public PromiseNativeHandler {
-  ~PullIfNeededNativePromiseHandler() = default;
+  ~PullIfNeededNativePromiseHandler() override = default;
 
   
   RefPtr<ReadableStreamDefaultController> mController;
@@ -501,7 +501,7 @@ static void ReadableStreamDefaultControllerCallPullIfNeeded(
 }
 
 class StartPromiseNativeHandler final : public PromiseNativeHandler {
-  ~StartPromiseNativeHandler() = default;
+  ~StartPromiseNativeHandler() override = default;
 
   RefPtr<ReadableStreamDefaultController> mController;
 

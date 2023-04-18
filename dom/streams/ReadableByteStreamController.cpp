@@ -485,7 +485,7 @@ bool ReadableByteStreamControllerShouldCallPull(
 
 
 class ByteStreamPullIfNeededPromiseHandler final : public PromiseNativeHandler {
-  ~ByteStreamPullIfNeededPromiseHandler() = default;
+  ~ByteStreamPullIfNeededPromiseHandler() override = default;
 
   
   RefPtr<ReadableByteStreamController> mController;
@@ -1874,7 +1874,7 @@ void ReadableByteStreamControllerPullInto(
 }
 
 class ByteStreamStartPromiseNativeHandler final : public PromiseNativeHandler {
-  ~ByteStreamStartPromiseNativeHandler() = default;
+  ~ByteStreamStartPromiseNativeHandler() override = default;
 
   RefPtr<ReadableByteStreamController> mController;
 
