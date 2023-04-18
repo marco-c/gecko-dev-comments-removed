@@ -1,0 +1,10 @@
+
+
+
+
+
+
+DIRS += CONFIG["MOZ_EXTENSIONS"]
+
+with Files("**"):
+    BUG_COMPONENT = ("Core", "General")
