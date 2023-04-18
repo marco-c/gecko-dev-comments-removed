@@ -68,6 +68,35 @@ exports.executeSoon = function(fn) {
 
 
 
+exports.executeSoonWithMicroTask = function(fn) {
+  if (isWorker) {
+    setImmediate(fn);
+  } else {
+    let executor;
+    
+    
+    if (AppConstants.DEBUG_JS_MODULES || flags.testing) {
+      const stack = getStack();
+      executor = () => {
+        callFunctionWithAsyncStack(
+          fn,
+          stack,
+          "DevToolsUtils.executeSoonWithMicroTask"
+        );
+      };
+    } else {
+      executor = fn;
+    }
+    Services.tm.dispatchToMainThreadWithMicroTask({
+      run: exports.makeInfallible(executor),
+    });
+  }
+};
+
+
+
+
+
 
 
 exports.waitForTick = function() {

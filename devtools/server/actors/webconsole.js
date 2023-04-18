@@ -1001,7 +1001,10 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
     
     
-    DevToolsUtils.executeSoon(async () => {
+    
+    
+    
+    DevToolsUtils.executeSoonWithMicroTask(async () => {
       try {
         
         let response = await this.evaluateJS(request);

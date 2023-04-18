@@ -96,6 +96,13 @@ interface nsIThreadManager : nsISupports
 
 
 
+  [optional_argc]
+  void dispatchToMainThreadWithMicroTask(in nsIRunnable event, [optional] in uint32_t priority);
+
+  
+
+
+
 
 
 
