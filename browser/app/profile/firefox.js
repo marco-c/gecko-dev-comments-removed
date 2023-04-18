@@ -275,6 +275,11 @@ pref("browser.shell.setDefaultBrowserUserChoice", true);
 
 
 pref("browser.shell.setDefaultPDFHandler", false);
+
+
+
+
+pref("browser.shell.setDefaultPDFHandler.onlyReplaceBrowsers", true);
 #endif
 
 

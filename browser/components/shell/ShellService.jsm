@@ -27,6 +27,18 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIXREDirProvider"
 );
 
+XPCOMUtils.defineLazyGetter(this, "log", () => {
+  let { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
+  let consoleOptions = {
+    
+    
+    maxLogLevel: "debug",
+    maxLogLevelPref: "browser.shell.loglevel",
+    prefix: "ShellService",
+  };
+  return new ConsoleAPI(consoleOptions);
+});
+
 
 
 
@@ -157,6 +169,72 @@ let ShellServiceInternal = {
 
 
 
+  _shouldSetDefaultPDFHandler() {
+    if (
+      !NimbusFeatures.shellService.getVariable(
+        "setDefaultPDFHandlerOnlyReplaceBrowsers"
+      )
+    ) {
+      return true;
+    }
+
+    const knownBrowserPrefixes = [
+      "AppXq0fevzme2pys62n3e0fbqa7peapykr8v", 
+      "Brave", 
+      "Chrome", 
+      "Firefox", 
+      "IE", 
+      "MSEdge", 
+      "Opera", 
+      "Yandex", 
+    ];
+    let currentProgID = "";
+    try {
+      
+      
+      
+      currentProgID = this.queryCurrentDefaultHandlerFor(".pdf");
+    } catch (e) {
+      
+      
+      log.warn(
+        "Failed to queryCurrentDefaultHandlerFor: " +
+          "not setting Firefox as default PDF handler!"
+      );
+      return false;
+    }
+
+    if (currentProgID == "") {
+      log.debug(
+        `Current default PDF handler has no registered association; ` +
+          `should set as default PDF handler.`
+      );
+      return true;
+    }
+
+    let knownBrowserPrefix = knownBrowserPrefixes.find(it =>
+      currentProgID.startsWith(it)
+    );
+    if (knownBrowserPrefix) {
+      log.debug(
+        `Current default PDF handler progID matches known browser prefix: ` +
+          `'${knownBrowserPrefix}'; should set as default PDF handler.`
+      );
+      return true;
+    }
+
+    log.debug(
+      `Current default PDF handler progID does not match known browser prefix; ` +
+        `should not set as default PDF handler.`
+    );
+    return false;
+  },
+
+  
+
+
+
+
 
 
 
@@ -165,6 +243,8 @@ let ShellServiceInternal = {
     if (AppConstants.platform != "win") {
       throw new Error("Windows-only");
     }
+
+    log.info("Setting Firefox as default using UserChoice");
 
     
     
@@ -190,7 +270,12 @@ let ShellServiceInternal = {
       telemetryResult = "ErrLaunchExe";
       const exeArgs = ["set-default-browser-user-choice", aumi];
       if (NimbusFeatures.shellService.getVariable("setDefaultPDFHandler")) {
-        exeArgs.push(".pdf");
+        if (this._shouldSetDefaultPDFHandler()) {
+          log.info("Setting Firefox as default PDF handler");
+          exeArgs.push(".pdf");
+        } else {
+          log.info("Not setting Firefox as default PDF handler");
+        }
       }
       const exeProcess = await this._callExternalDefaultBrowserAgent({
         arguments: exeArgs,

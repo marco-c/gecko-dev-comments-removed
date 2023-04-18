@@ -29,9 +29,12 @@ const _userChoiceImpossibleTelemetryResultStub = sinon
 
 
 const setDefaultStub = sinon.stub();
-const shellStub = sinon
-  .stub(ShellService, "shellService")
-  .value({ setDefaultBrowser: setDefaultStub });
+
+const queryCurrentDefaultHandlerForStub = sinon.stub();
+const shellStub = sinon.stub(ShellService, "shellService").value({
+  setDefaultBrowser: setDefaultStub,
+  queryCurrentDefaultHandlerFor: queryCurrentDefaultHandlerForStub,
+});
 
 registerCleanupFunction(() => {
   _callExternalDefaultBrowserAgentStub.restore();
@@ -56,6 +59,7 @@ add_task(async function remoteEnableWithPDF() {
     featureId: NimbusFeatures.shellService.featureId,
     value: {
       setDefaultBrowserUserChoice: true,
+      setDefaultPDFHandlerOnlyReplaceBrowsers: false,
       setDefaultPDFHandler: true,
       enabled: true,
     },
@@ -78,6 +82,65 @@ add_task(async function remoteEnableWithPDF() {
   Assert.deepEqual(_callExternalDefaultBrowserAgentStub.firstCall.args, [
     { arguments: ["set-default-browser-user-choice", aumi, ".pdf"] },
   ]);
+
+  await doCleanup();
+});
+
+add_task(async function remoteEnableWithPDF_testOnlyReplaceBrowsers() {
+  let doCleanup = await ExperimentFakes.enrollWithRollout({
+    featureId: NimbusFeatures.shellService.featureId,
+    value: {
+      setDefaultBrowserUserChoice: true,
+      setDefaultPDFHandlerOnlyReplaceBrowsers: true,
+      setDefaultPDFHandler: true,
+      enabled: true,
+    },
+  });
+
+  Assert.equal(
+    NimbusFeatures.shellService.getVariable("setDefaultBrowserUserChoice"),
+    true
+  );
+  Assert.equal(
+    NimbusFeatures.shellService.getVariable("setDefaultPDFHandler"),
+    true
+  );
+  Assert.equal(
+    NimbusFeatures.shellService.getVariable(
+      "setDefaultPDFHandlerOnlyReplaceBrowsers"
+    ),
+    true
+  );
+
+  const aumi = XreDirProvider.getInstallHash();
+
+  
+  for (let progId of ["", "MSEdgePDF"]) {
+    queryCurrentDefaultHandlerForStub.callsFake(() => progId);
+
+    _callExternalDefaultBrowserAgentStub.resetHistory();
+    ShellService.setDefaultBrowser();
+
+    Assert.ok(_callExternalDefaultBrowserAgentStub.called);
+    Assert.deepEqual(
+      _callExternalDefaultBrowserAgentStub.firstCall.args,
+      [{ arguments: ["set-default-browser-user-choice", aumi, ".pdf"] }],
+      `Will take default from missing association or known browser with ProgID '${progId}'`
+    );
+  }
+
+  
+  queryCurrentDefaultHandlerForStub.callsFake(() => "Acrobat.Document.DC");
+
+  _callExternalDefaultBrowserAgentStub.resetHistory();
+  ShellService.setDefaultBrowser();
+
+  Assert.ok(_callExternalDefaultBrowserAgentStub.called);
+  Assert.deepEqual(
+    _callExternalDefaultBrowserAgentStub.firstCall.args,
+    [{ arguments: ["set-default-browser-user-choice", aumi] }],
+    `Will not take default from non-browser`
+  );
 
   await doCleanup();
 });
