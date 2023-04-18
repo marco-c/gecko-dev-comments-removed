@@ -1332,14 +1332,17 @@ bool SandboxBroker::SetSecurityLevelForUtilityProcess(
   }
 
   mitigations = sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
-                sandbox::MITIGATION_DLL_SEARCH_ORDER
+                sandbox::MITIGATION_DLL_SEARCH_ORDER;
 
 
 
+
+
+  if (IsWin10CreatorsUpdateOrLater()) {
 #if defined(_M_X64) && !defined(__MINGW64__)
-                | sandbox::MITIGATION_DYNAMIC_CODE_DISABLE
+    mitigations |= sandbox::MITIGATION_DYNAMIC_CODE_DISABLE;
 #endif  
-      ;
+  }
 
   if (exceptionModules.isNothing()) {
     mitigations |= sandbox::MITIGATION_FORCE_MS_SIGNED_BINS;
