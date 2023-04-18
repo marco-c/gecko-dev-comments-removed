@@ -3306,9 +3306,32 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
         }
       }
     }
+
+    if (nsIFrame* frame = GetFrame()) {
+      
+      
+      mOldComputedStyle = frame->Style();
+    }
   }
 
   return fields.forget();
+}
+
+void LocalAccessible::MaybeQueueCacheUpdateForStyleChanges() {
+  if (!StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+    return;
+  }
+
+  if (nsIFrame* frame = GetFrame()) {
+    const ComputedStyle* newStyle = frame->Style();
+    MOZ_ASSERT(newStyle != mOldComputedStyle, "New style matches old style!");
+
+    
+
+    
+
+    mOldComputedStyle = newStyle;
+  }
 }
 
 nsAtom* LocalAccessible::TagName() const {

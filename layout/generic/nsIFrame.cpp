@@ -1179,6 +1179,13 @@ void nsIFrame::MarkNeedsDisplayItemRebuild() {
 
 
 void nsIFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
+#ifdef ACCESSIBILITY
+  if (nsAccessibilityService* accService = GetAccService()) {
+    
+    accService->NotifyOfComputedStyleChange(PresShell(), mContent);
+  }
+#endif
+
   MaybeScheduleReflowSVGNonDisplayText(this);
 
   Document* doc = PresContext()->Document();
