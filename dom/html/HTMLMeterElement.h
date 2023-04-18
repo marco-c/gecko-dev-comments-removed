@@ -35,6 +35,9 @@ class HTMLMeterElement final : public nsGenericHTMLElement {
 
   
   double Value() const;
+  
+
+  double Position() const;
   void SetValue(double aValue, ErrorResult& aRv) {
     SetDoubleAttr(nsGkAtoms::value, aValue, aRv);
   }

@@ -50,15 +50,6 @@ class HTMLProgressElement final : public nsGenericHTMLElement {
                              JS::Handle<JSObject*> aGivenProto) override;
 
  protected:
-  
-
-
-
-
-
-
-  bool IsIndeterminate() const;
-
   static const double kIndeterminatePosition;
   static const double kDefaultValue;
   static const double kDefaultMax;
