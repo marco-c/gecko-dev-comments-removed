@@ -25,7 +25,16 @@ add_task(async function() {
   
   
   await toggleScopeNode(dbg, 4);
-  expectLabels(dbg, ["Block", "<this>", "z", "third", "arguments", "v", "x", "y"]);
+  expectLabels(dbg, [
+    "Block",
+    "<this>",
+    "z",
+    "third",
+    "arguments",
+    "v",
+    "x",
+    "y",
+  ]);
 });
 
 function getLabel(dbg, index) {
@@ -34,6 +43,10 @@ function getLabel(dbg, index) {
 
 function expectLabels(dbg, array) {
   for (let i = 0; i < array.length; i++) {
-    is(getLabel(dbg, i + 1), array[i], `Correct label ${array[i]} for index ${i + 1}`);
+    is(
+      getLabel(dbg, i + 1),
+      array[i],
+      `Correct label ${array[i]} for index ${i + 1}`
+    );
   }
 }

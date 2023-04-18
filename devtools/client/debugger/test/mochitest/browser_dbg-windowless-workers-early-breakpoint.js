@@ -4,7 +4,10 @@
 
 
 add_task(async function() {
-  const dbg = await initDebugger("doc-windowless-workers-early-breakpoint.html", "simple-worker.js");
+  const dbg = await initDebugger(
+    "doc-windowless-workers-early-breakpoint.html",
+    "simple-worker.js"
+  );
 
   const workerSource = findSource(dbg, "simple-worker.js");
 

@@ -8,7 +8,7 @@ add_task(async function() {
   await waitForPaused(dbg);
   assertPausedLocation(dbg);
 
-  await checkEvaluateInTopFrame(dbg, 'window.scrollBy(0, 10);', undefined);
+  await checkEvaluateInTopFrame(dbg, "window.scrollBy(0, 10);", undefined);
 
   
   await waitForPaused(dbg);

@@ -2,8 +2,6 @@
 
 
 
-"use strict";
-
 
 
 
@@ -24,7 +22,7 @@ async function waitForLink(toolbox, messageText) {
   return waitFor(async () => {
     const [message] = await findConsoleMessages(toolbox, messageText);
     if (!message) {
-      return false
+      return false;
     }
     return message.querySelector(".frame-link-source");
   });

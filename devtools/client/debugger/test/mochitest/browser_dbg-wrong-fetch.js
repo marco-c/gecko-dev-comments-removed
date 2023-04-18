@@ -6,7 +6,7 @@
 
 
 add_task(async function() {
-  await addTab(EXAMPLE_URL + "different_html.sjs");
+  await addTab(`${EXAMPLE_URL}different_html.sjs`);
 
   
   
@@ -21,5 +21,8 @@ add_task(async function() {
   await waitForLoadedSource(dbg, "different_html.sjs");
   const contents = findSourceContent(dbg, "different_html.sjs");
 
-  ok(contents.value.includes("Incorrect contents fetched"), "Error message is shown");
+  ok(
+    contents.value.includes("Incorrect contents fetched"),
+    "Error message is shown"
+  );
 });

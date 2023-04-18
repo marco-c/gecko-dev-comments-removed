@@ -1,14 +1,15 @@
- 
 
 
 
-"use strict";
-
-const TEST_COM_URI =
-  URL_ROOT_COM_SSL + "examples/doc_dbg-fission-frame-sources.html";
 
 
-add_task(async function () {
+
+
+
+const TEST_COM_URI = `${URL_ROOT_COM_SSL}examples/doc_dbg-fission-frame-sources.html`;
+
+
+add_task(async function() {
   
   
   
@@ -27,7 +28,7 @@ add_task(async function () {
   const fileResults = findAllElements(dbg, "projectSearchFileResults");
   const matches = findAllElements(dbg, "projectSearchExpandedResults");
 
-  is(fileResults.length, 2, "Two results found")
+  is(fileResults.length, 2, "Two results found");
   is(matches.length, 6, "Total no of matches found");
 
   
@@ -37,14 +38,17 @@ add_task(async function () {
 
   function assertFileResult(fileMatched, noOfMatches) {
     
-    const match = [...fileResults].find(result => result.querySelector(".file-path").innerText.includes(fileMatched));
+    const match = [...fileResults].find(result =>
+      result.querySelector(".file-path").innerText.includes(fileMatched)
+    );
 
     ok(match, `Matches were found in ${fileMatched} file.`);
 
     const matchText = noOfMatches > 1 ? "matches" : "match";
-    is(match.querySelector(".matches-summary").innerText.trim(),
-    `(${noOfMatches} ${matchText})`,
-    `${noOfMatches} ${matchText} were found in ${fileMatched} file.`);
+    is(
+      match.querySelector(".matches-summary").innerText.trim(),
+      `(${noOfMatches} ${matchText})`,
+      `${noOfMatches} ${matchText} were found in ${fileMatched} file.`
+    );
   }
 });
-

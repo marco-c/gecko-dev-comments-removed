@@ -5,36 +5,36 @@
 
 
 add_task(async function() {
-    const dbg = await initDebugger("doc-scripts.html", "simple3.js", "long.js");
-    const {
-      selectors: { getIsWaitingOnBreak, getCurrentThread }
-    } = dbg;
+  const dbg = await initDebugger("doc-scripts.html", "simple3.js", "long.js");
+  const {
+    selectors: { getIsWaitingOnBreak, getCurrentThread },
+  } = dbg;
 
-    async function toggleBlackbox() {
-      await selectSource(dbg, "simple3.js");
-      await clickElement(dbg, "blackbox");
-      await waitForDispatch(dbg.store, "BLACKBOX");
-    }
-
-    
+  async function toggleBlackbox() {
     await selectSource(dbg, "simple3.js");
-    await addBreakpoint(dbg, "simple3.js", 5);
-    invokeInTab("simple");
-    await waitForPaused(dbg, "simple3");
+    await clickElement(dbg, "blackbox");
+    await waitForDispatch(dbg.store, "BLACKBOX");
+  }
 
-    await toggleBlackbox();
-    await dbg.actions.stepIn(getThreadContext(dbg));
+  
+  await selectSource(dbg, "simple3.js");
+  await addBreakpoint(dbg, "simple3.js", 5);
+  invokeInTab("simple");
+  await waitForPaused(dbg, "simple3");
 
-    
-    await selectSource(dbg, "long.js");
-    await addBreakpoint(dbg, "long.js", 1);
+  await toggleBlackbox();
+  await dbg.actions.stepIn(getThreadContext(dbg));
 
-    
-    const reloaded = reload(dbg);
-    await waitForPaused(dbg);
-    assertPausedAtSourceAndLine(dbg, findSource(dbg, "long.js").id, 1);
+  
+  await selectSource(dbg, "long.js");
+  await addBreakpoint(dbg, "long.js", 1);
 
-    await resume(dbg);
-    await waitForSource(dbg, "simple3.js");
-    await toggleBlackbox();
-  });
+  
+  const reloaded = reload(dbg);
+  await waitForPaused(dbg);
+  assertPausedAtSourceAndLine(dbg, findSource(dbg, "long.js").id, 1);
+
+  await resume(dbg);
+  await waitForSource(dbg, "simple3.js");
+  await toggleBlackbox();
+});

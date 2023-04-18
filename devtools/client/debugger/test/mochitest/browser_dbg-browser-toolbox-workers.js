@@ -5,8 +5,6 @@
 
 
 
-"use strict";
-
 requestLongerTimeout(4);
 
 Services.scriptloader.loadSubScript(
@@ -20,9 +18,12 @@ add_task(async function() {
   await pushPref("dom.serviceWorkers.testing.enabled", true);
 
   const ToolboxTask = await initBrowserToolboxTask();
-  await ToolboxTask.importFunctions({ waitUntil, waitForAllTargetsToBeAttached });
+  await ToolboxTask.importFunctions({
+    waitUntil,
+    waitForAllTargetsToBeAttached,
+  });
 
-  await addTab(EXAMPLE_URL + "doc-all-workers.html");
+  await addTab(`${EXAMPLE_URL}doc-all-workers.html`);
 
   await ToolboxTask.spawn(null, async () => {
     await gToolbox.selectTool("jsdebugger");

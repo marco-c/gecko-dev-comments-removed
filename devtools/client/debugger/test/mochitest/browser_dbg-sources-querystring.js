@@ -5,10 +5,14 @@
 
 
 add_task(async function() {
-  const dbg = await initDebugger("doc-sources-querystring.html", "simple1.js?x=1", "simple1.js?x=2");
+  const dbg = await initDebugger(
+    "doc-sources-querystring.html",
+    "simple1.js?x=1",
+    "simple1.js?x=2"
+  );
   const {
     selectors: { getSelectedSource },
-    getState
+    getState,
   } = dbg;
 
   
@@ -16,16 +20,8 @@ add_task(async function() {
   await clickElement(dbg, "sourceDirectoryLabel", 2);
 
   const labels = [getLabel(dbg, 4), getLabel(dbg, 3)];
-  is(
-    getLabel(dbg, 3),
-    "simple1.js?x=1",
-    "simple1.js?x=1 exists"
-  );
-  is(
-    getLabel(dbg, 4),
-    "simple1.js?x=2",
-    "simple1.js?x=2 exists"
-  );
+  is(getLabel(dbg, 3), "simple1.js?x=1", "simple1.js?x=1 exists");
+  is(getLabel(dbg, 4), "simple1.js?x=2", "simple1.js?x=2 exists");
 
   const source = findSource(dbg, "simple1.js?x=1");
   await selectSource(dbg, source);

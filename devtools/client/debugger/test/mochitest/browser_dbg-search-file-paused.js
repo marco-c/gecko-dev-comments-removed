@@ -5,10 +5,14 @@
 
 
 add_task(async function() {
-  const dbg = await initDebugger("doc-scripts.html", "simple1.js", "simple2.js");
+  const dbg = await initDebugger(
+    "doc-scripts.html",
+    "simple1.js",
+    "simple2.js"
+  );
   const {
     selectors: { getBreakpoints, getBreakpoint, getActiveSearch },
-    getState
+    getState,
   } = dbg;
 
   info("Add a breakpoint, wait for pause");
@@ -34,7 +38,7 @@ add_task(async function() {
 
   info("Switching files via frame click");
   const frames = findAllElements(dbg, "frames");
-  pressMouseDown(dbg, frames[1])
+  pressMouseDown(dbg, frames[1]);
 
   
   

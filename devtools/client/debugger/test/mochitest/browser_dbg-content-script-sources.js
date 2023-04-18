@@ -2,8 +2,6 @@
 
 
 
-"use strict";
-
 
 
 add_task(async function() {
@@ -12,7 +10,6 @@ add_task(async function() {
 
   let dbg = await initDebugger("doc-content-script-sources.html");
   await clickElement(dbg, "sourceDirectoryLabel", 2);
-
 
   await selectContentScriptSources(dbg);
   await closeTab(dbg, "content_script.js");
@@ -71,19 +68,19 @@ async function installAndStartExtension() {
     window.onload = () => {};
   }
 
-  let extension = ExtensionTestUtils.loadExtension({
+  const extension = ExtensionTestUtils.loadExtension({
     manifest: {
       content_scripts: [
         {
           js: ["content_script.js"],
           matches: ["https://example.com/*"],
-          run_at: "document_start"
-        }
-      ]
+          run_at: "document_start",
+        },
+      ],
     },
     files: {
-      "content_script.js": contentScript
-    }
+      "content_script.js": contentScript,
+    },
   });
 
   await extension.startup();

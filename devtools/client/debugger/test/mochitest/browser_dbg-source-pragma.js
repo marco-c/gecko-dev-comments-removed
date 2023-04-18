@@ -1,10 +1,11 @@
 
 
 
+
 add_task(async function() {
   
   await SpecialPowers.pushPrefEnv({
-    set: [["javascript.options.source_pragmas", false]]
+    set: [["javascript.options.source_pragmas", false]],
   });
 
   const dbg = await initDebugger("doc-source-pragma.html");
@@ -15,6 +16,9 @@ add_task(async function() {
   const actors = dbg.selectors.getSourceActorsForSource(source.id);
 
   is(actors.length, 1, "have a single actor");
-  ok(actors[0].url.endsWith("/source-pragma.js"), "source url was not rewritten");
+  ok(
+    actors[0].url.endsWith("/source-pragma.js"),
+    "source url was not rewritten"
+  );
   is(actors[0].sourceMapURL, null, "source map was not exposed");
 });

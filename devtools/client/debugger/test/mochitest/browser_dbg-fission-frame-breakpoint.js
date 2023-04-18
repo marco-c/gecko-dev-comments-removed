@@ -2,10 +2,7 @@
 
 
 
-"use strict";
-
-const TEST_COM_URI =
-  URL_ROOT_COM_SSL + "examples/doc_dbg-fission-frame-sources.html";
+const TEST_COM_URI = `${URL_ROOT_COM_SSL}examples/doc_dbg-fission-frame-sources.html`;
 
 add_task(async function() {
   
@@ -26,10 +23,13 @@ add_task(async function() {
   const onBreakpoint = waitForDispatch(dbg.store, "SET_BREAKPOINT");
   info("Reload the page to hit the breakpoint on load");
   await reload(dbg);
-  await onBreakpoint
+  await onBreakpoint;
   await waitForSelectedSource(dbg, "simple2.js");
 
-  ok(getSelectedSource().url.includes("simple2.js"), "Selected source is simple2.js");
+  ok(
+    getSelectedSource().url.includes("simple2.js"),
+    "Selected source is simple2.js"
+  );
   assertPausedLocation(dbg);
   assertDebugLine(dbg, 7);
 

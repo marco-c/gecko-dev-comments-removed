@@ -5,18 +5,14 @@
 
 
 
-"use strict";
-
-const IFRAME_TEST_COM_URI =
-  `https://example.com/document-builder.sjs?html=` +
-  encodeURI(`<script>const a=2;\ndebugger;\nconsole.log(a);</script>`);
+const IFRAME_TEST_COM_URI = `https://example.com/document-builder.sjs?html=${encodeURI(
+  `<script>const a=2;\ndebugger;\nconsole.log(a);</script>`
+)}`;
 
 
-const IFRAME_TEST_URI =
-  `https://example.org/document-builder.sjs?html=` +
-  encodeURI(
-    `<script>function breakDebugger() {const b=3;\ndebugger;\nconsole.log(b);}</script><iframe src="${IFRAME_TEST_COM_URI}"></iframe><body>`
-  );
+const IFRAME_TEST_URI = `https://example.org/document-builder.sjs?html=${encodeURI(
+  `<script>function breakDebugger() {const b=3;\ndebugger;\nconsole.log(b);}</script><iframe src="${IFRAME_TEST_COM_URI}"></iframe><body>`
+)}`;
 
 add_task(async function() {
   info("Test a debugger statement from the top level document");

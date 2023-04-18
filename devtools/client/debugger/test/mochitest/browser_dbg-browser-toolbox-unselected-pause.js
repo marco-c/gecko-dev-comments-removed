@@ -5,8 +5,6 @@
 
 
 
-"use strict";
-
 requestLongerTimeout(4);
 
 Services.scriptloader.loadSubScript(
@@ -36,7 +34,7 @@ add_task(async function() {
   });
   
   
-  await ToolboxTask.spawn(JSON.stringify(selectors), async (_selectors) => {
+  await ToolboxTask.spawn(JSON.stringify(selectors), async _selectors => {
     this.selectors = _selectors;
   });
 

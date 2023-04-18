@@ -2,19 +2,19 @@
 
 
 
-"use strict";
-
 
 
 
 
 
 add_task(async function() {
-  const dbg = await initDebugger("doc-gc-sources.html",
-                                 "doc-gc-sources.html",
-                                 "collected-bundle.js",
-                                 "collected.js",
-                                 "collected2.js");
+  const dbg = await initDebugger(
+    "doc-gc-sources.html",
+    "doc-gc-sources.html",
+    "collected-bundle.js",
+    "collected.js",
+    "collected2.js"
+  );
   await selectSource(dbg, "doc-gc-sources.html");
   await addBreakpoint(dbg, "doc-gc-sources.html", 21);
   await selectSource(dbg, "collected-bundle.js");

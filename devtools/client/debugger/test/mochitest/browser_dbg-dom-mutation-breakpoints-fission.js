@@ -20,14 +20,12 @@ Services.scriptloader.loadSubScript(
 
 
 
-const TEST_COM_URI =
-  `https://example.com/document-builder.sjs?html=` +
-  encodeURI(
-    `<input disabled=""/>
+const TEST_COM_URI = `https://example.com/document-builder.sjs?html=${encodeURI(
+  `<input disabled=""/>
      <button onclick="document.querySelector('input').toggleAttribute('disabled')">
        click me
      </button>`
-  );
+)}`;
 
 
 const TEST_URI = `https://example.org/document-builder.sjs?html=
@@ -75,9 +73,7 @@ add_task(async function() {
   checkbox.click();
   await waitFor(() => !checkbox.checked);
 
-  info(
-    "Click the button in the remote iframe, should not hit the breakpoint"
-  );
+  info("Click the button in the remote iframe, should not hit the breakpoint");
   BrowserTestUtils.synthesizeMouseAtCenter("button", {}, frameBC);
 
   info("Wait until the input is enabled");

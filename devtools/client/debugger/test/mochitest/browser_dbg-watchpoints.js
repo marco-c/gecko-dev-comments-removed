@@ -11,7 +11,7 @@ add_task(async function() {
   const dbg = await initDebugger("doc-sources.html");
 
   
-  const onNavigated = navigateTo(EXAMPLE_URL + "doc-watchpoints.html");
+  const onNavigated = navigateTo(`${EXAMPLE_URL}doc-watchpoints.html`);
   await waitForSources(dbg, "doc-watchpoints.html");
   await selectSource(dbg, "doc-watchpoints.html");
   await waitForPaused(dbg);
