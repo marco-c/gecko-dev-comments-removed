@@ -93,8 +93,7 @@ static std::string ChooseDeviceReplacement(const std::string& str) {
   static const std::string GEFORCE_480 = "GeForce GTX 480";
   static const std::string GEFORCE_980 = "GeForce GTX 980";
 
-  if (Contains(str, "NVIDIA") ||
-      Contains(str, "GeForce") ||
+  if (Contains(str, "NVIDIA") || Contains(str, "GeForce") ||
       Contains(str, "Quadro")) {
     auto ret = std::invoke([&]() {
       static const std::regex kGeForce("GeForce.*?([0-9][0-9][0-9]+)");
@@ -276,6 +275,7 @@ static std::string ChooseDeviceReplacement(const std::string& str) {
 std::string SanitizeRenderer(const std::string& str) {
   std::smatch m;
 
+  
   
   static const std::regex kReAngle(
       "ANGLE [(]([^,]*), ([^,]*)( Direct3D[^,]*), .*[)]");
