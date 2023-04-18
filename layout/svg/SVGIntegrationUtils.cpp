@@ -758,19 +758,16 @@ bool SVGIntegrationUtils::PaintMask(const PaintFramesParams& aParams,
     MoveContextOriginToUserSpace(firstFrame, aParams);
 
     basicShapeSR.SetContext(&ctx);
-    gfxMatrix mat = SVGUtils::GetCSSPxToDevPxMatrix(frame);
+    CSSClipPathInstance::ApplyBasicShapeOrPathClip(
+        ctx, frame, SVGUtils::GetCSSPxToDevPxMatrix(frame));
     if (!maskUsage.shouldGenerateMaskLayer) {
       
       
       ctx.SetDeviceColor(DeviceColor::MaskOpaqueWhite());
-      RefPtr<Path> path = CSSClipPathInstance::CreateClipPathForFrame(
-          ctx.GetDrawTarget(), frame, mat);
-      ctx.SetPath(path);
       ctx.Fill();
 
       return true;
     }
-    CSSClipPathInstance::ApplyBasicShapeOrPathClip(ctx, frame, mat);
   }
 
   
