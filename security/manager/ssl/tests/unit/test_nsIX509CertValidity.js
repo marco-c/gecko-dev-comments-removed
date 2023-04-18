@@ -5,17 +5,6 @@
 
 
 
-function fuzzyEqual(attributeName, dateString, expectedTime) {
-  info(`${attributeName}: ${dateString}`);
-  let absTimeDiff = Math.abs(expectedTime - Date.parse(dateString));
-  const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000;
-  lessOrEqual(
-    absTimeDiff,
-    ONE_DAY_IN_MS,
-    `Time difference for ${attributeName} should be <= one day`
-  );
-}
-
 function run_test() {
   
   const NOT_BEFORE_IN_MS = 1356998400000;
@@ -33,38 +22,4 @@ function run_test() {
     NOT_AFTER_IN_MS * 1000,
     "Actual and expected notAfter should be equal"
   );
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (AppConstants.platform != "android") {
-    fuzzyEqual(
-      "notBeforeLocalTime",
-      cert.validity.notBeforeLocalTime,
-      NOT_BEFORE_IN_MS
-    );
-    fuzzyEqual(
-      "notBeforeLocalDay",
-      cert.validity.notBeforeLocalDay,
-      NOT_BEFORE_IN_MS
-    );
-    fuzzyEqual("notBeforeGMT", cert.validity.notBeforeGMT, NOT_BEFORE_IN_MS);
-
-    fuzzyEqual(
-      "notAfterLocalTime",
-      cert.validity.notAfterLocalTime,
-      NOT_AFTER_IN_MS
-    );
-    fuzzyEqual(
-      "notAfterLocalDay",
-      cert.validity.notAfterLocalDay,
-      NOT_AFTER_IN_MS
-    );
-    fuzzyEqual("notAfterGMT", cert.validity.notAfterGMT, NOT_AFTER_IN_MS);
-  }
 }

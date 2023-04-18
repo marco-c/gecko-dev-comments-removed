@@ -143,11 +143,15 @@ add_task(async function setup() {
 
 
 add_task(async function testContents() {
+  const formatter = new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "long",
+  });
   let [win] = await openClientAuthDialog(cert);
   checkDialogContents(
     win,
-    cert.validity.notBeforeLocalTime,
-    cert.validity.notAfterLocalTime
+    formatter.format(new Date(cert.validity.notBefore / 1000)),
+    formatter.format(new Date(cert.validity.notAfter / 1000))
   );
   await BrowserTestUtils.closeWindow(win);
 });
