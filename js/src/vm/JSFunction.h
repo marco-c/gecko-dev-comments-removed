@@ -730,14 +730,14 @@ extern bool AsyncGeneratorConstructor(JSContext* cx, unsigned argc, Value* vp);
 
 extern JSFunction* NewFunctionWithProto(
     JSContext* cx, JSNative native, unsigned nargs, FunctionFlags flags,
-    HandleObject enclosingEnv, HandleAtom atom, HandleObject proto,
+    HandleObject enclosingEnv, Handle<JSAtom*> atom, HandleObject proto,
     gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
     NewObjectKind newKind = GenericObject);
 
 
 
 inline JSFunction* NewNativeFunction(
-    JSContext* cx, JSNative native, unsigned nargs, HandleAtom atom,
+    JSContext* cx, JSNative native, unsigned nargs, Handle<JSAtom*> atom,
     gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
     NewObjectKind newKind = TenuredObject,
     FunctionFlags flags = FunctionFlags::NATIVE_FUN) {
@@ -749,7 +749,7 @@ inline JSFunction* NewNativeFunction(
 
 
 inline JSFunction* NewNativeConstructor(
-    JSContext* cx, JSNative native, unsigned nargs, HandleAtom atom,
+    JSContext* cx, JSNative native, unsigned nargs, Handle<JSAtom*> atom,
     gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
     NewObjectKind newKind = TenuredObject,
     FunctionFlags flags = FunctionFlags::NATIVE_CTOR) {

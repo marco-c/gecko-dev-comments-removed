@@ -1289,7 +1289,7 @@ bool js::array_join(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  RootedLinearString sepstr(cx);
+  Rooted<JSLinearString*> sepstr(cx);
   if (args.hasDefined(0)) {
     JSString* s = ToString<CanGC>(cx, args[0]);
     if (!s) {
@@ -1370,7 +1370,7 @@ bool js::array_join(JSContext* cx, unsigned argc, Value* vp) {
       }
     }
   } else {
-    HandleLinearString sepHandle = sepstr;
+    Handle<JSLinearString*> sepHandle = sepstr;
     auto sepOp = [sepHandle](StringBuffer& sb) { return sb.append(sepHandle); };
     if (!ArrayJoinKernel(cx, sepOp, obj, length, sb)) {
       return false;

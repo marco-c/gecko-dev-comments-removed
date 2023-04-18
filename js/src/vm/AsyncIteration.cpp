@@ -1064,11 +1064,11 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
   
   
   
-  HandlePropertyName funName = completionKind == CompletionKind::Normal
-                                   ? cx->names().AsyncGeneratorNext
-                               : completionKind == CompletionKind::Throw
-                                   ? cx->names().AsyncGeneratorThrow
-                                   : cx->names().AsyncGeneratorReturn;
+  Handle<PropertyName*> funName = completionKind == CompletionKind::Normal
+                                      ? cx->names().AsyncGeneratorNext
+                                  : completionKind == CompletionKind::Throw
+                                      ? cx->names().AsyncGeneratorThrow
+                                      : cx->names().AsyncGeneratorReturn;
   FixedInvokeArgs<1> args(cx);
   args[0].set(argument);
   RootedValue thisOrRval(cx, ObjectValue(*generator));
@@ -1105,7 +1105,7 @@ static JSObject* CreateAsyncGeneratorFunction(JSContext* cx, JSProtoKey key) {
   if (!proto) {
     return nullptr;
   }
-  HandlePropertyName name = cx->names().AsyncGeneratorFunction;
+  Handle<PropertyName*> name = cx->names().AsyncGeneratorFunction;
 
   
   

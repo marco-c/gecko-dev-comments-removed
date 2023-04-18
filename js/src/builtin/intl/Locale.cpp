@@ -237,7 +237,7 @@ class SepKeywordIterator {
 
 
 static bool GetStringOption(JSContext* cx, HandleObject options,
-                            HandlePropertyName name,
+                            Handle<PropertyName*> name,
                             MutableHandle<JSLinearString*> string) {
   
   RootedValue option(cx);
@@ -273,7 +273,7 @@ static bool GetStringOption(JSContext* cx, HandleObject options,
 
 
 static bool GetBooleanOption(JSContext* cx, HandleObject options,
-                             HandlePropertyName name,
+                             Handle<PropertyName*> name,
                              MutableHandle<JSLinearString*> string) {
   
   RootedValue option(cx);
@@ -302,7 +302,7 @@ static bool ApplyOptionsToTag(JSContext* cx, mozilla::intl::Locale& tag,
                               HandleObject options) {
   
 
-  RootedLinearString option(cx);
+  Rooted<JSLinearString*> option(cx);
 
   
   if (!GetStringOption(cx, options, cx->names().language, &option)) {
@@ -534,7 +534,7 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  RootedLinearString tagLinearStr(cx, tagStr->ensureLinear(cx));
+  Rooted<JSLinearString*> tagLinearStr(cx, tagStr->ensureLinear(cx));
   if (!tagLinearStr) {
     return false;
   }
@@ -575,7 +575,7 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
     JS::RootedVector<intl::UnicodeExtensionKeyword> keywords(cx);
 
     
-    RootedLinearString calendar(cx);
+    Rooted<JSLinearString*> calendar(cx);
     if (!GetStringOption(cx, options, cx->names().calendar, &calendar)) {
       return false;
     }
@@ -602,7 +602,7 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     
-    RootedLinearString collation(cx);
+    Rooted<JSLinearString*> collation(cx);
     if (!GetStringOption(cx, options, cx->names().collation, &collation)) {
       return false;
     }
@@ -629,7 +629,7 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     
-    RootedLinearString hourCycle(cx);
+    Rooted<JSLinearString*> hourCycle(cx);
     if (!GetStringOption(cx, options, cx->names().hourCycle, &hourCycle)) {
       return false;
     }
@@ -654,7 +654,7 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     
-    RootedLinearString caseFirst(cx);
+    Rooted<JSLinearString*> caseFirst(cx);
     if (!GetStringOption(cx, options, cx->names().caseFirst, &caseFirst)) {
       return false;
     }
@@ -678,7 +678,7 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     
-    RootedLinearString numeric(cx);
+    Rooted<JSLinearString*> numeric(cx);
     if (!GetBooleanOption(cx, options, cx->names().numeric, &numeric)) {
       return false;
     }
@@ -691,7 +691,7 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     
-    RootedLinearString numberingSystem(cx);
+    Rooted<JSLinearString*> numberingSystem(cx);
     if (!GetStringOption(cx, options, cx->names().numberingSystem,
                          &numberingSystem)) {
       return false;
@@ -933,7 +933,7 @@ static bool Locale_maximize(JSContext* cx, const CallArgs& args) {
 
   
   auto* locale = &args.thisv().toObject().as<LocaleObject>();
-  RootedLinearString tagStr(cx, locale->languageTag()->ensureLinear(cx));
+  Rooted<JSLinearString*> tagStr(cx, locale->languageTag()->ensureLinear(cx));
   if (!tagStr) {
     return false;
   }
@@ -970,7 +970,7 @@ static bool Locale_minimize(JSContext* cx, const CallArgs& args) {
 
   
   auto* locale = &args.thisv().toObject().as<LocaleObject>();
-  RootedLinearString tagStr(cx, locale->languageTag()->ensureLinear(cx));
+  Rooted<JSLinearString*> tagStr(cx, locale->languageTag()->ensureLinear(cx));
   if (!tagStr) {
     return false;
   }
@@ -1326,7 +1326,7 @@ bool js::intl_ValidateAndCanonicalizeLanguageTag(JSContext* cx, unsigned argc,
     return false;
   }
 
-  RootedLinearString tagLinearStr(cx, tagStr->ensureLinear(cx));
+  Rooted<JSLinearString*> tagLinearStr(cx, tagStr->ensureLinear(cx));
   if (!tagLinearStr) {
     return false;
   }
@@ -1381,7 +1381,7 @@ bool js::intl_TryValidateAndCanonicalizeLanguageTag(JSContext* cx,
   CallArgs args = CallArgsFromVp(argc, vp);
   MOZ_ASSERT(args.length() == 1);
 
-  RootedLinearString linear(cx, args[0].toString()->ensureLinear(cx));
+  Rooted<JSLinearString*> linear(cx, args[0].toString()->ensureLinear(cx));
   if (!linear) {
     return false;
   }
@@ -1447,7 +1447,7 @@ bool js::intl_ValidateAndCanonicalizeUnicodeExtensionType(JSContext* cx,
   HandleValue keyArg = args[2];
   MOZ_ASSERT(keyArg.isString(), "key must be a string");
 
-  RootedLinearString unicodeType(cx, typeArg.toString()->ensureLinear(cx));
+  Rooted<JSLinearString*> unicodeType(cx, typeArg.toString()->ensureLinear(cx));
   if (!unicodeType) {
     return false;
   }

@@ -339,7 +339,7 @@ RegExpShared* CrossCompartmentWrapper::regexp_toShared(
   }
 
   
-  RootedAtom source(cx, re->getSource());
+  Rooted<JSAtom*> source(cx, re->getSource());
   cx->markAtom(source);
   return cx->zone()->regExps().get(cx, source, re->getFlags());
 }

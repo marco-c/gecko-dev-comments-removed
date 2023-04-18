@@ -18,7 +18,7 @@
 namespace js {
 namespace intl {
 
-[[nodiscard]] bool ParseLocale(JSContext* cx, HandleLinearString str,
+[[nodiscard]] bool ParseLocale(JSContext* cx, Handle<JSLinearString*> str,
                                mozilla::intl::Locale& result) {
   if (StringIsAscii(str)) {
     intl::StringAsciiChars chars(str);
@@ -38,7 +38,7 @@ namespace intl {
   return false;
 }
 
-bool ParseStandaloneLanguageTag(HandleLinearString str,
+bool ParseStandaloneLanguageTag(Handle<JSLinearString*> str,
                                 mozilla::intl::LanguageSubtag& result) {
   
   JS::AutoSuppressGCAnalysis nogc;
@@ -59,7 +59,7 @@ bool ParseStandaloneLanguageTag(HandleLinearString str,
   return true;
 }
 
-bool ParseStandaloneScriptTag(HandleLinearString str,
+bool ParseStandaloneScriptTag(Handle<JSLinearString*> str,
                               mozilla::intl::ScriptSubtag& result) {
   
   JS::AutoSuppressGCAnalysis nogc;
@@ -80,7 +80,7 @@ bool ParseStandaloneScriptTag(HandleLinearString str,
   return true;
 }
 
-bool ParseStandaloneRegionTag(HandleLinearString str,
+bool ParseStandaloneRegionTag(Handle<JSLinearString*> str,
                               mozilla::intl::RegionSubtag& result) {
   
   JS::AutoSuppressGCAnalysis nogc;
@@ -137,8 +137,8 @@ static bool IsAsciiAlpha(JSLinearString* str) {
   return IsAsciiAlpha<char16_t>(str->twoByteRange(nogc));
 }
 
-JS::Result<JSString*> ParseStandaloneISO639LanguageTag(JSContext* cx,
-                                                       HandleLinearString str) {
+JS::Result<JSString*> ParseStandaloneISO639LanguageTag(
+    JSContext* cx, Handle<JSLinearString*> str) {
   
   size_t length = str->length();
   if (length != 2 && length != 3) {

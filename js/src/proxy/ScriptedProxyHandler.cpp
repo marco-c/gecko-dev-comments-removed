@@ -178,7 +178,7 @@ JSObject* ScriptedProxyHandler::handlerObject(const JSObject* proxy) {
 
 
 static bool GetProxyTrap(JSContext* cx, HandleObject handler,
-                         HandlePropertyName name, MutableHandleValue func) {
+                         Handle<PropertyName*> name, MutableHandleValue func) {
   
   if (!GetProperty(cx, handler, handler, name, func)) {
     return false;
