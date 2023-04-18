@@ -991,6 +991,34 @@ static bool IsAlreadyResolvedMaybeWrappedRejectFunction(
 
 
 
+static void SetAlreadyResolvedResolutionFunction(JSFunction* resolutionFun) {
+  JSFunction* resolve;
+  JSFunction* reject;
+  if (resolutionFun->maybeNative() == ResolvePromiseFunction) {
+    resolve = resolutionFun;
+    reject = GetRejectFunctionFromResolve(resolutionFun);
+  } else {
+    resolve = GetResolveFunctionFromReject(resolutionFun);
+    reject = resolutionFun;
+  }
+
+  resolve->setExtendedSlot(ResolveFunctionSlot_Promise, UndefinedValue());
+  resolve->setExtendedSlot(ResolveFunctionSlot_RejectFunction,
+                           UndefinedValue());
+
+  reject->setExtendedSlot(RejectFunctionSlot_Promise, UndefinedValue());
+  reject->setExtendedSlot(RejectFunctionSlot_ResolveFunction, UndefinedValue());
+
+  MOZ_ASSERT(IsAlreadyResolvedMaybeWrappedResolveFunction(resolve));
+  MOZ_ASSERT(IsAlreadyResolvedMaybeWrappedRejectFunction(reject));
+}
+
+
+
+
+
+
+
 [[nodiscard]] static MOZ_ALWAYS_INLINE bool CreateResolvingFunctions(
     JSContext* cx, HandleObject promise, MutableHandleObject resolveFn,
     MutableHandleObject rejectFn) {
@@ -1056,8 +1084,6 @@ static bool IsAlreadyResolvedMaybeWrappedRejectFunction(
   return true;
 }
 
-static void ClearResolutionFunctionSlots(JSFunction* resolutionFun);
-
 static bool IsSettledMaybeWrappedPromise(JSObject* promise) {
   if (IsProxy(promise)) {
     promise = UncheckedUnwrap(promise);
@@ -1110,10 +1136,7 @@ static bool RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
   RootedObject promise(cx, &promiseVal.toObject());
 
   
-  
-  
-  
-  ClearResolutionFunctionSlots(reject);
+  SetAlreadyResolvedResolutionFunction(reject);
 
   
   
@@ -1294,10 +1317,7 @@ static bool ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
   RootedObject promise(cx, &promiseVal.toObject());
 
   
-  
-  
-  
-  ClearResolutionFunctionSlots(resolve);
+  SetAlreadyResolvedResolutionFunction(resolve);
 
   
   
@@ -2553,28 +2573,6 @@ static JSFunction* GetResolveFunctionFromPromise(PromiseObject* promise) {
   }
 
   return GetResolveFunctionFromReject(rejectFun);
-}
-
-static void ClearResolutionFunctionSlots(JSFunction* resolutionFun) {
-  JSFunction* resolve;
-  JSFunction* reject;
-  if (resolutionFun->maybeNative() == ResolvePromiseFunction) {
-    resolve = resolutionFun;
-    reject = GetRejectFunctionFromResolve(resolutionFun);
-  } else {
-    resolve = GetResolveFunctionFromReject(resolutionFun);
-    reject = resolutionFun;
-  }
-
-  resolve->setExtendedSlot(ResolveFunctionSlot_Promise, UndefinedValue());
-  resolve->setExtendedSlot(ResolveFunctionSlot_RejectFunction,
-                           UndefinedValue());
-
-  reject->setExtendedSlot(RejectFunctionSlot_Promise, UndefinedValue());
-  reject->setExtendedSlot(RejectFunctionSlot_ResolveFunction, UndefinedValue());
-
-  MOZ_ASSERT(IsAlreadyResolvedMaybeWrappedResolveFunction(resolve));
-  MOZ_ASSERT(IsAlreadyResolvedMaybeWrappedRejectFunction(reject));
 }
 
 
