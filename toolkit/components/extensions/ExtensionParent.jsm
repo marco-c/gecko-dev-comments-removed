@@ -486,8 +486,45 @@ class ProxyContextParent extends BaseContext {
     this.listenerProxies = new Map();
 
     this.pendingEventBrowser = null;
+    this.callContextData = null;
 
     apiManager.emit("proxy-context-load", this);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  withCallContextData({ isHandlingUserInput }, callable) {
+    if (this.callContextData) {
+      Cu.reportError(
+        `Unexpected pre-existing callContextData on "${this.extension?.policy.debugName}" contextId ${this.contextId}`
+      );
+    }
+
+    try {
+      this.callContextData = {
+        isHandlingUserInput,
+      };
+      return callable();
+    } finally {
+      this.callContextData = null;
+    }
   }
 
   async withPendingBrowser(browser, callable) {
@@ -985,10 +1022,15 @@ ParentAPIManager = {
 
     try {
       let args = data.args;
+      let { isHandlingUserInput = false } = data.options || {};
       let pendingBrowser = context.pendingEventBrowser;
       let fun = await context.apiCan.asyncFindAPIPath(data.path);
       let result = this.callAndLog(context, data, () => {
-        return context.withPendingBrowser(pendingBrowser, () => fun(...args));
+        return context.withPendingBrowser(pendingBrowser, () =>
+          context.withCallContextData({ isHandlingUserInput }, () =>
+            fun(...args)
+          )
+        );
       });
 
       if (data.callId) {
