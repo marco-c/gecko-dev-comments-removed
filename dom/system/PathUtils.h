@@ -23,6 +23,21 @@ namespace dom {
 
 class PathUtils final {
  public:
+  
+
+
+
+
+
+
+
+
+
+
+
+  static inline nsresult InitFileWithPath(nsIFile* aFile,
+                                          const nsAString& aPath);
+
   static void Filename(const GlobalObject&, const nsAString& aPath,
                        nsString& aResult, ErrorResult& aErr);
 
