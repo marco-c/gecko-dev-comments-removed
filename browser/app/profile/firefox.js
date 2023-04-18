@@ -1604,6 +1604,10 @@ pref("toolkit.startup.max_resumed_crashes", 3);
 
 
 
+
+pref("pdfjs.disabled", false);
+
+
 pref("pdfjs.firstRun", true);
 
 
