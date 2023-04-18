@@ -318,6 +318,34 @@ class MOZ_STACK_CLASS nsFlexContainerFrame::FlexboxAxisTracker {
   }
 
   
+  StyleAlignFlags ResolveJustifyLeftRight(const StyleAlignFlags& aFlags) const {
+    MOZ_ASSERT(
+        aFlags == StyleAlignFlags::LEFT || aFlags == StyleAlignFlags::RIGHT,
+        "This helper accepts only 'LEFT' or 'RIGHT' flags!");
+
+    const auto wm = GetWritingMode();
+    if (IsColumnOriented() && !wm.IsVertical()) {
+      
+      
+      
+      return StyleAlignFlags::START;
+    }
+
+    MOZ_ASSERT(
+        MainAxis() == eLogicalAxisInline ||
+            wm.PhysicalAxis(MainAxis()) == eAxisHorizontal,
+        "The container's main axis should be parallel to either line-left "
+        "<-> line-right axis or physical left <-> physical right axis!");
+
+    
+    
+    const bool isLTR = wm.IsPhysicalLTR();
+    const bool isJustifyLeft = aFlags == StyleAlignFlags::LEFT;
+    return isJustifyLeft == isLTR ? StyleAlignFlags::START
+                                  : StyleAlignFlags::END;
+  }
+
+  
   
   FlexboxAxisTracker(const FlexboxAxisTracker&) = delete;
   FlexboxAxisTracker& operator=(const FlexboxAxisTracker&) = delete;
@@ -3432,28 +3460,8 @@ MainAxisPositionTracker::MainAxisPositionTracker(
   
   if (mJustifyContent.primary == StyleAlignFlags::LEFT ||
       mJustifyContent.primary == StyleAlignFlags::RIGHT) {
-    const auto wm = aAxisTracker.GetWritingMode();
-    if (aAxisTracker.IsColumnOriented() && !wm.IsVertical()) {
-      
-      
-      
-      mJustifyContent.primary = StyleAlignFlags::START;
-    } else {
-      MOZ_ASSERT(
-          aAxisTracker.MainAxis() == eLogicalAxisInline ||
-              wm.PhysicalAxis(aAxisTracker.MainAxis()) == eAxisHorizontal,
-          "The container's main axis should be parallel to either line-left "
-          "<-> line-right axis or physical left <-> physical right axis!");
-
-      
-      
-      const bool isLTR = wm.IsPhysicalLTR();
-      const bool isJustifyLeft =
-          (mJustifyContent.primary == StyleAlignFlags::LEFT);
-      mJustifyContent.primary = (isJustifyLeft == isLTR)
-                                    ? StyleAlignFlags::START
-                                    : StyleAlignFlags::END;
-    }
+    mJustifyContent.primary =
+        aAxisTracker.ResolveJustifyLeftRight(mJustifyContent.primary);
   }
 
   
