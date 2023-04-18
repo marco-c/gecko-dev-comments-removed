@@ -21,7 +21,7 @@ class FinalizationRecordObject;
 namespace gc {
 
 
-class FinalizationRegistryZone {
+class FinalizationObservers {
   Zone* const zone;
 
   
@@ -49,8 +49,8 @@ class FinalizationRegistryZone {
   WrapperWeakSet crossZoneWrappers;
 
  public:
-  explicit FinalizationRegistryZone(Zone* zone);
-  ~FinalizationRegistryZone();
+  explicit FinalizationObservers(Zone* zone);
+  ~FinalizationObservers();
 
   bool addRegistry(Handle<FinalizationRegistryObject*> registry);
   bool addRecord(HandleObject target, HandleObject record);

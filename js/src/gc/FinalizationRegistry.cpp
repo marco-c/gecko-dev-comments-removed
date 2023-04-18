@@ -26,10 +26,10 @@
 using namespace js;
 using namespace js::gc;
 
-FinalizationRegistryZone::FinalizationRegistryZone(Zone* zone)
+FinalizationObservers::FinalizationObservers(Zone* zone)
     : zone(zone), registries(zone), recordMap(zone), crossZoneWrappers(zone) {}
 
-FinalizationRegistryZone::~FinalizationRegistryZone() {
+FinalizationObservers::~FinalizationObservers() {
   MOZ_ASSERT(registries.empty());
   MOZ_ASSERT(recordMap.empty());
   MOZ_ASSERT(crossZoneWrappers.empty());
@@ -37,8 +37,8 @@ FinalizationRegistryZone::~FinalizationRegistryZone() {
 
 bool GCRuntime::addFinalizationRegistry(
     JSContext* cx, Handle<FinalizationRegistryObject*> registry) {
-  if (!cx->zone()->ensureFinalizationRegistryZone() ||
-      !cx->zone()->finalizationRegistryZone()->addRegistry(registry)) {
+  if (!cx->zone()->ensureFinalizationObservers() ||
+      !cx->zone()->finalizationObservers()->addRegistry(registry)) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -46,7 +46,7 @@ bool GCRuntime::addFinalizationRegistry(
   return true;
 }
 
-bool FinalizationRegistryZone::addRegistry(
+bool FinalizationObservers::addRegistry(
     Handle<FinalizationRegistryObject*> registry) {
   return registries.put(registry);
 }
@@ -60,8 +60,8 @@ bool GCRuntime::registerWithFinalizationRegistry(JSContext* cx,
   MOZ_ASSERT(target->compartment() == record->compartment());
 
   Zone* zone = cx->zone();
-  if (!zone->ensureFinalizationRegistryZone() ||
-      !zone->finalizationRegistryZone()->addRecord(target, record)) {
+  if (!zone->ensureFinalizationObservers() ||
+      !zone->finalizationObservers()->addRecord(target, record)) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -69,8 +69,8 @@ bool GCRuntime::registerWithFinalizationRegistry(JSContext* cx,
   return true;
 }
 
-bool FinalizationRegistryZone::addRecord(HandleObject target,
-                                         HandleObject record) {
+bool FinalizationObservers::addRecord(HandleObject target,
+                                      HandleObject record) {
   
   
   
@@ -118,7 +118,7 @@ bool FinalizationRegistryZone::addRecord(HandleObject target,
   return true;
 }
 
-bool FinalizationRegistryZone::addCrossZoneWrapper(JSObject* wrapper) {
+bool FinalizationObservers::addCrossZoneWrapper(JSObject* wrapper) {
   MOZ_ASSERT(IsCrossCompartmentWrapper(wrapper));
   MOZ_ASSERT(UncheckedUnwrapWithoutExpose(wrapper)->zone() != zone);
 
@@ -127,7 +127,7 @@ bool FinalizationRegistryZone::addCrossZoneWrapper(JSObject* wrapper) {
   return crossZoneWrappers.add(ptr, wrapper, UndefinedValue());
 }
 
-void FinalizationRegistryZone::removeCrossZoneWrapper(JSObject* wrapper) {
+void FinalizationObservers::removeCrossZoneWrapper(JSObject* wrapper) {
   MOZ_ASSERT(IsCrossCompartmentWrapper(wrapper));
   MOZ_ASSERT(UncheckedUnwrapWithoutExpose(wrapper)->zone() != zone);
 
@@ -147,7 +147,7 @@ static FinalizationRecordObject* UnwrapFinalizationRecord(JSObject* obj) {
   return &obj->as<FinalizationRecordObject>();
 }
 
-void FinalizationRegistryZone::clearRecords() {
+void FinalizationObservers::clearRecords() {
 #ifdef DEBUG
   
   for (RecordMap::Enum e(recordMap); !e.empty(); e.popFront()) {
@@ -166,19 +166,19 @@ void FinalizationRegistryZone::clearRecords() {
 }
 
 void GCRuntime::traceWeakFinalizationRegistryEdges(JSTracer* trc, Zone* zone) {
-  FinalizationRegistryZone* frzone = zone->finalizationRegistryZone();
-  if (frzone) {
-    frzone->traceWeakEdges(trc);
+  FinalizationObservers* observers = zone->finalizationObservers();
+  if (observers) {
+    observers->traceWeakEdges(trc);
   }
 }
 
-void FinalizationRegistryZone::traceRoots(JSTracer* trc) {
+void FinalizationObservers::traceRoots(JSTracer* trc) {
   
   
   crossZoneWrappers.trace(trc);
 }
 
-void FinalizationRegistryZone::traceWeakEdges(JSTracer* trc) {
+void FinalizationObservers::traceWeakEdges(JSTracer* trc) {
   
   
 
@@ -237,7 +237,7 @@ void FinalizationRegistryZone::traceWeakEdges(JSTracer* trc) {
 }
 
 
-bool FinalizationRegistryZone::shouldRemoveRecord(
+bool FinalizationObservers::shouldRemoveRecord(
     FinalizationRecordObject* record) {
   
   return !record ||                        
@@ -245,7 +245,7 @@ bool FinalizationRegistryZone::shouldRemoveRecord(
          !record->queue()->hasRegistry();  
 }
 
-void FinalizationRegistryZone::updateForRemovedRecord(
+void FinalizationObservers::updateForRemovedRecord(
     JSObject* wrapper, FinalizationRecordObject* record) {
   
   
@@ -270,8 +270,8 @@ void GCRuntime::nukeFinalizationRecordWrapper(
     JSObject* wrapper, FinalizationRecordObject* record) {
   if (record->isInRecordMap()) {
     FinalizationRegistryObject::unregisterRecord(record);
-    wrapper->zone()->finalizationRegistryZone()->updateForRemovedRecord(wrapper,
-                                                                        record);
+    wrapper->zone()->finalizationObservers()->updateForRemovedRecord(wrapper,
+                                                                     record);
   }
 }
 
