@@ -8896,10 +8896,39 @@ nsresult nsIFrame::PeekOffsetForWord(nsPeekOffsetStruct* aPos,
   return NS_OK;
 }
 
+static nsIFrame* GetFirstSelectableDescendantWithLineIterator(
+    nsIFrame* aParentFrame, bool aForceEditableRegion) {
+  auto FoundValidFrame = [aForceEditableRegion](const nsIFrame* aFrame) {
+    if (!aFrame->IsSelectable(nullptr)) {
+      return false;
+    }
+    if (aForceEditableRegion && !aFrame->GetContent()->IsEditable()) {
+      return false;
+    }
+    return true;
+  };
+
+  for (nsIFrame* child : aParentFrame->PrincipalChildList()) {
+    
+    
+    
+    if (child->CanProvideLineIterator() && FoundValidFrame(child)) {
+      return child;
+    }
+    if (nsIFrame* nested = GetFirstSelectableDescendantWithLineIterator(
+            child, aForceEditableRegion)) {
+      return nested;
+    }
+  }
+  return nullptr;
+}
+
 nsresult nsIFrame::PeekOffsetForLine(nsPeekOffsetStruct* aPos) {
   nsIFrame* blockFrame = this;
   nsresult result = NS_ERROR_FAILURE;
 
+  
+  
   while (NS_FAILED(result)) {
     auto [newBlock, lineFrame] =
         blockFrame->GetContainingBlockForLine(aPos->mScrollViewStop);
@@ -8920,6 +8949,8 @@ nsresult nsIFrame::PeekOffsetForLine(nsPeekOffsetStruct* aPos) {
     
     
     nsIFrame* lastFrame = this;
+
+    
     do {
       result = nsIFrame::GetNextPrevLineFromeBlockFrame(
           PresContext(), aPos, blockFrame, thisLine,
@@ -8950,49 +8981,43 @@ nsresult nsIFrame::PeekOffsetForLine(nsPeekOffsetStruct* aPos) {
 
 
 
-        bool searchTableBool = false;
-        if (aPos->mResultFrame->IsTableWrapperFrame() ||
-            aPos->mResultFrame->IsTableCellFrame()) {
-          nsIFrame* frame =
-              aPos->mResultFrame->PrincipalChildList().FirstChild();
-          
-          
-          while (frame) {
-            if (frame->CanProvideLineIterator()) {
-              aPos->mResultFrame = frame;
-              searchTableBool = true;
-              result = NS_OK;
-              break;  
-            }
-            result = NS_ERROR_FAILURE;
-            frame = frame->PrincipalChildList().FirstChild();
+
+
+
+
+
+
+
+        bool shouldDrillIntoChildren =
+            aPos->mResultFrame->IsTableWrapperFrame() ||
+            aPos->mResultFrame->IsTableCellFrame() ||
+            aPos->mResultFrame->IsFlexContainerFrame() ||
+            aPos->mResultFrame->IsGridContainerFrame();
+
+        if (shouldDrillIntoChildren) {
+          nsIFrame* child = GetFirstSelectableDescendantWithLineIterator(
+              aPos->mResultFrame, aPos->mForceEditableRegion);
+          if (child) {
+            aPos->mResultFrame = child;
           }
         }
 
-        if (!searchTableBool) {
-          result = aPos->mResultFrame->CanProvideLineIterator()
-                       ? NS_OK
-                       : NS_ERROR_FAILURE;
+        if (!aPos->mResultFrame->CanProvideLineIterator()) {
+          
+          break;
         }
 
         
-        if (NS_SUCCEEDED(result)) {
-          doneLooping = false;
-          if (aPos->mDirection == eDirPrevious) {
-            edgeCase = 1;  
-          } else {
-            edgeCase = -1;  
-          }
-          thisLine = 0;  
-          
-          
-          blockFrame = aPos->mResultFrame;
+        doneLooping = false;
+        if (aPos->mDirection == eDirPrevious) {
+          edgeCase = 1;  
         } else {
-          
-          
-          result = NS_OK;
-          break;
+          edgeCase = -1;  
         }
+        thisLine = 0;  
+        
+        
+        blockFrame = aPos->mResultFrame;
       }
     } while (!doneLooping);
   }
