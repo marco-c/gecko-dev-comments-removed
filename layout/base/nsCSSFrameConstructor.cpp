@@ -368,7 +368,10 @@ static bool ShouldSuppressColumnSpanDescendants(nsIFrame* aFrame) {
   }
 
   if (!aFrame->IsBlockFrameOrSubclass() ||
-      aFrame->HasAnyStateBits(NS_BLOCK_FLOAT_MGR | NS_FRAME_OUT_OF_FLOW)) {
+      aFrame->HasAnyStateBits(NS_BLOCK_FLOAT_MGR | NS_FRAME_OUT_OF_FLOW) ||
+      aFrame->IsFixedPosContainingBlock()) {
+    
+    
     
     
     
