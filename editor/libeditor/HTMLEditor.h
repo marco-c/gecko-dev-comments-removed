@@ -802,8 +802,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<dom::HTMLBRElement>, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
   CopyLastEditableChildStylesWithTransaction(Element& aPreviousBlock,
                                              Element& aNewBlock,
                                              Element& aEditingHost);
