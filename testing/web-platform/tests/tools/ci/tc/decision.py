@@ -105,9 +105,9 @@ def filter_jobs(jobs, event):
 
     
     try:
-        if event["sender"]["login"] == "chromium-wpt-export-bot":
+        if event["pull_request"]["user"]["login"] == "chromium-wpt-export-bot":
             jobs.discard("wpt-chrome-dev-stability")
-        if event["sender"]["login"] == "moz-wptsync-bot":
+        if event["pull_request"]["user"]["login"] == "moz-wptsync-bot":
             jobs.discard("wpt-firefox-nightly-stability")
     except KeyError:
         
