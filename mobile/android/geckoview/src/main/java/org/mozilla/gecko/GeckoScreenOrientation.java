@@ -99,8 +99,10 @@ public class GeckoScreenOrientation {
 
 
   public void enableNotifications() {
-    update();
+    
+    mScreenOrientation = ScreenOrientation.NONE;
     mShouldNotify = true;
+    update();
   }
 
   
