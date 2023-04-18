@@ -116,16 +116,6 @@ if CONFIG["OS_ARCH"] == "WINNT":
 LIBRARY_DEFINES["IMPL_MFBT"] = True
 LIBRARY_DEFINES["MOZ_HAS_MOZGLUE"] = True
 
-if CONFIG["OS_TARGET"] == "Darwin":
-    
-    
-    
-    
-    
-    
-    
-    LDFLAGS += ["-Wl,-bind_at_load"]
-
 if CONFIG["MOZ_LINKER"] and CONFIG["CPU_ARCH"] == "arm":
     LDFLAGS += ["-Wl,-version-script,%s/arm-eabi-filter" % SRCDIR]
 
