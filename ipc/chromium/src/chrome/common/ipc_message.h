@@ -350,6 +350,27 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   
   void SetAttachedPorts(nsTArray<mozilla::ipc::ScopedPort> ports);
 
+#if defined(OS_MACOSX)
+  bool WriteMachSendRight(mozilla::UniqueMachSendRight port);
+
+  
+  
+  bool ConsumeMachSendRight(PickleIterator* iter,
+                            mozilla::UniqueMachSendRight* port) const;
+
+  uint32_t num_send_rights() const;
+#endif
+
+  uint32_t num_relayed_attachments() const {
+#if defined(OS_WIN)
+    return num_handles();
+#elif defined(OS_MACOSX)
+    return num_send_rights();
+#else
+    return 0;
+#endif
+  }
+
   friend class Channel;
   friend class MessageReplyDeserializer;
   friend class SyncMessage;
@@ -369,6 +390,8 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
     uint32_t num_handles;  
 #if defined(OS_MACOSX)
     uint32_t cookie;  
+    uint32_t num_send_rights;  
+                               
 #endif
     union {
       
@@ -400,6 +423,14 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   
   
   mutable nsTArray<mozilla::ipc::ScopedPort> attached_ports_;
+
+#if defined(OS_MACOSX)
+  
+  
+  
+  
+  mutable nsTArray<mozilla::UniqueMachSendRight> attached_send_rights_;
+#endif
 
   mozilla::TimeStamp create_time_;
 };

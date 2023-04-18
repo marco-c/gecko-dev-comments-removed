@@ -13,6 +13,9 @@
 #include <sys/types.h>
 
 #include "base/basictypes.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/Result.h"
+#include "mozilla/UniquePtrExtensions.h"
 
 
 
@@ -303,5 +306,26 @@ class MachPortSender {
 
   DISALLOW_COPY_AND_ASSIGN(MachPortSender);
 };
+
+
+
+
+
+
+kern_return_t MachSendPortSendRight(
+    mach_port_t endpoint, mach_port_t attachment,
+    mozilla::Maybe<mach_msg_timeout_t> opt_timeout,
+    mach_msg_type_name_t endpoint_disposition = MACH_MSG_TYPE_COPY_SEND);
+
+
+
+
+
+
+kern_return_t MachReceivePortSendRight(
+    const mozilla::UniqueMachReceiveRight& endpoint,
+    mozilla::Maybe<mach_msg_timeout_t> opt_timeout,
+    mozilla::UniqueMachSendRight* attachment,
+    audit_token_t* audit_token = nullptr);
 
 #endif  

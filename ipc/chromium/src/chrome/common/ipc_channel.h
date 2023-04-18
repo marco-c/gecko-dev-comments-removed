@@ -163,6 +163,16 @@ class Channel {
   
   void CloseClientFileDescriptor();
 
+#  if defined(OS_MACOSX)
+  
+  void SetOtherMachTask(task_t task);
+
+  
+  
+  
+  void StartAcceptingMachPorts(Mode mode);
+#  endif
+
 #elif defined(OS_WIN)
   
   void* GetServerPipeHandle() const;

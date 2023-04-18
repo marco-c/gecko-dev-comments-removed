@@ -98,6 +98,12 @@ class NodeChannel final : public IPC::Channel::Listener {
   
   void SetName(const NodeName& aNewName) { mName = aNewName; }
 
+#ifdef XP_MACOSX
+  
+  
+  void SetMachTaskPort(task_t aTask);
+#endif
+
  private:
   ~NodeChannel();
 

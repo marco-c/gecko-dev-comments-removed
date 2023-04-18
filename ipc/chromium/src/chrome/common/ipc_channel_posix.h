@@ -58,6 +58,12 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   bool Unsound_IsClosed() const;
   uint32_t Unsound_NumQueuedMessages() const;
 
+#if defined(OS_MACOSX)
+  void SetOtherMachTask(task_t task);
+
+  void StartAcceptingMachPorts(Mode mode);
+#endif
+
  private:
   void Init(Mode mode, Listener* listener);
   bool CreatePipe(Mode mode);
@@ -74,6 +80,11 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
 
 #if defined(OS_MACOSX)
   void CloseDescriptors(uint32_t pending_fd_id);
+
+  
+  
+  bool AcceptMachPorts(Message& msg);
+  bool TransferMachPorts(Message& msg);
 #endif
 
   void OutputQueuePush(mozilla::UniquePtr<Message> msg);
@@ -158,6 +169,15 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
 
   
   uint32_t last_pending_fd_id_;
+
+  
+  
+  
+  bool accept_mach_ports_ = false;
+  bool privileged_ = false;
+
+  
+  mozilla::UniqueMachSendRight other_task_;
 #endif
 
   

@@ -15,6 +15,7 @@
 #include "mojo/core/ports/port_ref.h"
 
 #include "mozilla/ipc/FileDescriptor.h"
+#include "mozilla/ipc/NodeChannel.h"
 #include "mozilla/ipc/ScopedPort.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Buffer.h"
@@ -198,6 +199,8 @@ class GeckoChildProcessHost : public ChildProcessHost,
   
   UniquePtr<base::LaunchOptions> mLaunchOptions;
   ScopedPort mInitialPort;
+  RefPtr<NodeController> mNodeController;
+  RefPtr<NodeChannel> mNodeChannel;
 
   
   enum {
