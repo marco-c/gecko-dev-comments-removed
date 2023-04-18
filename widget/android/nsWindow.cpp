@@ -88,6 +88,7 @@
 #include "mozilla/java/GeckoSystemStateListenerWrappers.h"
 #include "mozilla/java/PanZoomControllerNatives.h"
 #include "mozilla/java/SessionAccessibilityWrappers.h"
+#include "mozilla/java/SurfaceControlManagerWrappers.h"
 #include "mozilla/layers/APZEventState.h"
 #include "mozilla/layers/APZInputBridge.h"
 #include "mozilla/layers/APZThreadUtils.h"
@@ -899,6 +900,8 @@ class LayerViewSupport final
   Atomic<bool, ReleaseAcquire> mCompositorPaused;
   java::sdk::Surface::GlobalRef mSurface;
   java::sdk::SurfaceControl::GlobalRef mSurfaceControl;
+  int32_t mWidth;
+  int32_t mHeight;
   
   
   RefPtr<UiCompositorControllerChild> mUiCompositorControllerChild;
@@ -1019,19 +1022,27 @@ class LayerViewSupport final
     MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
     mUiCompositorControllerChild = aUiCompositorControllerChild;
 
-    if (auto window{mWindow.Access()}) {
-      nsWindow* gkWindow = window->GetNsWindow();
-      if (gkWindow) {
-        mUiCompositorControllerChild->OnCompositorSurfaceChanged(
-            gkWindow->mWidgetId, mSurface, mSurfaceControl);
-      }
-    }
-
     if (mDefaultClearColor) {
       mUiCompositorControllerChild->SetDefaultClearColor(*mDefaultClearColor);
     }
 
     if (!mCompositorPaused) {
+      
+      
+      
+      if (mSurfaceControl && !mSurface) {
+        mSurface = java::SurfaceControlManager::GetInstance()->GetChildSurface(
+            mSurfaceControl, mWidth, mHeight);
+      }
+
+      if (auto window{mWindow.Access()}) {
+        nsWindow* gkWindow = window->GetNsWindow();
+        if (gkWindow) {
+          mUiCompositorControllerChild->OnCompositorSurfaceChanged(
+              gkWindow->mWidgetId, mSurface);
+        }
+      }
+
       mUiCompositorControllerChild->Resume();
     }
   }
@@ -1040,6 +1051,12 @@ class LayerViewSupport final
   void NotifyCompositorSessionLost() {
     MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
     mUiCompositorControllerChild = nullptr;
+
+    if (mSurfaceControl) {
+      
+      
+      mSurface = nullptr;
+    }
 
     if (auto window = mWindow.Access()) {
       while (!mCapturePixelsResults.empty()) {
@@ -1057,9 +1074,6 @@ class LayerViewSupport final
   }
 
   java::sdk::Surface::Param GetSurface() { return mSurface; }
-  java::sdk::SurfaceControl::Param GetSurfaceControl() {
-    return mSurfaceControl;
-  }
 
  private:
   already_AddRefed<DataSourceSurface> FlipScreenPixels(
@@ -1178,6 +1192,16 @@ class LayerViewSupport final
 
     if (mUiCompositorControllerChild) {
       mUiCompositorControllerChild->Pause();
+
+      mSurface = nullptr;
+      mSurfaceControl = nullptr;
+      if (auto window = mWindow.Access()) {
+        nsWindow* gkWindow = window->GetNsWindow();
+        if (gkWindow) {
+          mUiCompositorControllerChild->OnCompositorSurfaceChanged(
+              gkWindow->mWidgetId, nullptr);
+        }
+      }
     }
 
     if (auto lock{mWindow.Access()}) {
@@ -1210,20 +1234,19 @@ class LayerViewSupport final
       jni::Object::Param aSurfaceControl) {
     MOZ_ASSERT(AndroidBridge::IsJavaUiThread());
 
-    mSurface = java::sdk::Surface::GlobalRef::From(aSurface);
-    
-    
-    
-    
-    
-    mSurfaceControl = nullptr;
-
+    mWidth = aWidth;
+    mHeight = aHeight;
+    mSurfaceControl =
+        java::sdk::SurfaceControl::GlobalRef::From(aSurfaceControl);
     if (mSurfaceControl) {
       
       
-      java::sdk::SurfaceControl::Transaction::LocalRef transaction =
-          java::sdk::SurfaceControl::Transaction::New();
-      transaction->SetBufferSize(mSurfaceControl, aWidth, aHeight)->Apply();
+      
+      
+      mSurface = java::SurfaceControlManager::GetInstance()->GetChildSurface(
+          mSurfaceControl, mWidth, mHeight);
+    } else {
+      mSurface = java::sdk::Surface::GlobalRef::From(aSurface);
     }
 
     if (mUiCompositorControllerChild) {
@@ -1232,7 +1255,7 @@ class LayerViewSupport final
         if (gkWindow) {
           
           mUiCompositorControllerChild->OnCompositorSurfaceChanged(
-              gkWindow->mWidgetId, mSurface, mSurfaceControl);
+              gkWindow->mWidgetId, mSurface);
         }
       }
 
@@ -2491,13 +2514,6 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
       if (::mozilla::jni::NativeWeakPtr<LayerViewSupport>::Accessor lvs{
               mLayerViewSupport.Access()}) {
         return lvs->GetSurface().Get();
-      }
-      return nullptr;
-
-    case NS_JAVA_SURFACE_CONTROL:
-      if (::mozilla::jni::NativeWeakPtr<LayerViewSupport>::Accessor lvs{
-              mLayerViewSupport.Access()}) {
-        return lvs->GetSurfaceControl().Get();
       }
       return nullptr;
   }

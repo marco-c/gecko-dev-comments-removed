@@ -70,9 +70,8 @@ class UiCompositorControllerChild final
   
   
   
-  void OnCompositorSurfaceChanged(
-      int32_t aWidgetId, java::sdk::Surface::Param aSurface,
-      java::sdk::SurfaceControl::Param aSurfaceControl);
+  void OnCompositorSurfaceChanged(int32_t aWidgetId,
+                                  java::sdk::Surface::Param aSurface);
 #endif
 
  protected:

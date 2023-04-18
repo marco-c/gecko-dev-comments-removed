@@ -332,16 +332,15 @@ void UiCompositorControllerChild::SetCompositorSurfaceManager(
 };
 
 void UiCompositorControllerChild::OnCompositorSurfaceChanged(
-    int32_t aWidgetId, java::sdk::Surface::Param aSurface,
-    java::sdk::SurfaceControl::Param aSurfaceControl) {
+    int32_t aWidgetId, java::sdk::Surface::Param aSurface) {
   
   
   if (mCompositorSurfaceManager == nullptr) {
     return;
   }
 
-  nsresult result = mCompositorSurfaceManager->OnSurfaceChanged(
-      aWidgetId, aSurface, aSurfaceControl);
+  nsresult result =
+      mCompositorSurfaceManager->OnSurfaceChanged(aWidgetId, aSurface);
 
   
   if (NS_FAILED(result)) {
