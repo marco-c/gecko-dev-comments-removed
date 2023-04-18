@@ -33,13 +33,33 @@ struct PreferenceSheet {
     } mLightColors, mDarkColors;
 
     const Colors& ColorsFor(ColorScheme aScheme) const {
-      return aScheme == ColorScheme::Light ? mLightColors : mDarkColors;
+      return mMustUseLightColorSet || aScheme == ColorScheme::Light
+                 ? mLightColors
+                 : mDarkColors;
     }
 
     bool mIsChrome = false;
     bool mUseAccessibilityTheme = false;
-
     bool mUseDocumentColors = true;
+    bool mUsePrefColors = false;
+    bool mUseStandins = false;
+    bool mMustUseLightColorSet = false;
+
+    
+    
+    
+    enum class ColorSchemeChoice : uint8_t {
+      
+      
+      Standard,
+      
+      
+      UserPreferred,
+      Light,
+      Dark,
+    };
+
+    ColorSchemeChoice mColorSchemeChoice = ColorSchemeChoice::Standard;
 
     
     bool NonNativeThemeShouldBeHighContrast() const;
