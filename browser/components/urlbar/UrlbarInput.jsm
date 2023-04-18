@@ -2177,6 +2177,20 @@ class UrlbarInput {
       selectedVal = BrowserUIUtils.trimURLProtocol + selectedVal;
     }
 
+    
+    
+    
+    if (!UrlbarPrefs.get("decodeURLsOnCopy") && !uri.schemeIs("data")) {
+      try {
+        new URL(selectedVal);
+        
+        
+        selectedVal = encodeURI(selectedVal);
+      } catch (ex) {
+        
+      }
+    }
+
     return selectedVal;
   }
 
