@@ -337,6 +337,10 @@ static bool IsObjectEscaped(MDefinition* ins, MInstruction* newObject,
       }
 
       
+      case MDefinition::Opcode::IsObject:
+        break;
+
+      
       
       case MDefinition::Opcode::AssertRecoveredOnBailout:
         break;
@@ -403,6 +407,7 @@ class ObjectMemoryView : public MDefinitionVisitorDefaultNoop {
   void visitFunctionWithProto(MFunctionWithProto* ins);
   void visitPhi(MPhi* ins);
   void visitCompare(MCompare* ins);
+  void visitIsObject(MIsObject* ins);
 };
 
  const char ObjectMemoryView::phaseName[] =
@@ -807,6 +812,22 @@ void ObjectMemoryView::visitCompare(MCompare* ins) {
   MOZ_ALWAYS_TRUE(ins->tryFold(&folded));
 
   auto* cst = MConstant::New(alloc_, BooleanValue(folded));
+  ins->block()->insertBefore(ins, cst);
+
+  
+  ins->replaceAllUsesWith(cst);
+
+  
+  ins->block()->discard(ins);
+}
+
+void ObjectMemoryView::visitIsObject(MIsObject* ins) {
+  
+  if (ins->input() != obj_) {
+    return;
+  }
+
+  auto* cst = MConstant::New(alloc_, BooleanValue(true));
   ins->block()->insertBefore(ins, cst);
 
   
