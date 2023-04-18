@@ -30,13 +30,6 @@ const TELEMETRY_COMPONENT = "remotesettings";
 
 XPCOMUtils.defineLazyGetter(this, "console", () => Utils.log);
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "gLoadDump",
-  "services.settings.load_dump",
-  true
-);
-
 
 
 
@@ -359,7 +352,7 @@ class RemoteSettingsClient extends EventEmitter {
         if (!this._importingPromise) {
           
           this._importingPromise = (async () => {
-            const importedFromDump = gLoadDump
+            const importedFromDump = Utils.LOAD_DUMPS
               ? await this._importJSONDump()
               : -1;
             if (importedFromDump < 0) {
@@ -526,11 +519,10 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
-
   async maybeSync(expectedTimestamp, options = {}) {
     
     const {
-      loadDump = gLoadDump,
+      loadDump = Utils.LOAD_DUMPS,
       trigger = "manual",
       sendEvents = true,
     } = options;
