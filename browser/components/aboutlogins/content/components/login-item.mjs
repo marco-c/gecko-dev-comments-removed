@@ -1,17 +1,17 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import {
   recordTelemetryEvent,
   promptForPrimaryPassword,
-} from "../aboutLoginsUtils.js";
+} from "../aboutLoginsUtils.mjs";
 
 export default class LoginItem extends HTMLElement {
-  
-
-
-
+  /**
+   * The number of milliseconds to display the "Copied" success message
+   * before reverting to the normal "Copy" button.
+   */
   static get COPY_BUTTON_RESET_TIMEOUT() {
     return 5000;
   }
@@ -60,12 +60,12 @@ export default class LoginItem extends HTMLElement {
     this._usernameInput = this.shadowRoot.querySelector(
       "input[name='username']"
     );
-    
-    
+    // type=password field for display which only ever contains spaces the correct
+    // length of the password.
     this._passwordDisplayInput = this.shadowRoot.querySelector(
       "input.password-display"
     );
-    
+    // type=text field for editing the password with the actual password value.
     this._passwordInput = this.shadowRoot.querySelector(
       "input[name='password']"
     );
@@ -214,7 +214,7 @@ export default class LoginItem extends HTMLElement {
       this._favicon.src = this._login.faviconDataURI;
       this._favicon.hidden = false;
     } else {
-      
+      // reset the src and alt attributes if the currently selected favicon doesn't have a favicon
       this._favicon.src = "";
       this._favicon.hidden = true;
       this._faviconWrapper.classList.remove("hide-default-favicon");
@@ -224,24 +224,24 @@ export default class LoginItem extends HTMLElement {
     this._title.title = this._login.title;
     this._originInput.defaultValue = this._login.origin || "";
     if (this._login.origin) {
-      
+      // Creates anchor element with origin URL
       this._originDisplayInput.href = this._login.origin || "";
       this._originDisplayInput.innerText = this._login.origin || "";
     }
     this._usernameInput.defaultValue = this._login.username || "";
     if (this._login.password) {
-      
-      
-      
-      
-      
-      
-      
+      // We use .value instead of .defaultValue since the latter updates the
+      // content attribute making the password easily viewable with Inspect
+      // Element even when Primary Password is enabled. This is only run when
+      // the password is non-empty since setting the field to an empty value
+      // would mark the field as 'dirty' for form validation and thus trigger
+      // the error styling since the password field is 'required'.
+      // This element is only in the document while unmasked or editing.
       this._passwordInput.value = this._login.password;
 
-      
-      
-      
+      // In masked non-edit mode we use a different "display" element to render
+      // the masked password so that one cannot simply remove/change
+      // @type=password to reveal the real password.
       this._passwordDisplayInput.value = " ".repeat(
         this._login.password.length
       );
@@ -338,7 +338,7 @@ export default class LoginItem extends HTMLElement {
         break;
       }
       case "blur": {
-        
+        // Add https:// prefix if one was not provided.
         let originValue = this._originInput.value.trim();
         if (!originValue) {
           return;
@@ -351,7 +351,7 @@ export default class LoginItem extends HTMLElement {
       case "click": {
         let classList = event.currentTarget.classList;
         if (classList.contains("reveal-password-checkbox")) {
-          
+          // We prompt for the primary password when entering edit mode already.
           if (this._revealCheckbox.checked && !this.dataset.editing) {
             let primaryPasswordAuth = await promptForPrimaryPassword(
               "about-logins-reveal-password-os-auth-dialog-message"
@@ -422,8 +422,8 @@ export default class LoginItem extends HTMLElement {
               detail: propertyToCopy,
             })
           );
-          
-          
+          // If there is no username, this must be triggered by the password button,
+          // don't enable otherCopyButton (username copy button) in this case.
           if (this._login.username) {
             otherCopyButton.disabled = false;
             delete otherCopyButton.dataset.copied;
@@ -508,7 +508,7 @@ export default class LoginItem extends HTMLElement {
         break;
       }
       case "submit": {
-        
+        // Prevent page navigation form submit behavior.
         event.preventDefault();
         if (!this._isFormValid({ reportErrors: true })) {
           return;
@@ -545,7 +545,7 @@ export default class LoginItem extends HTMLElement {
         break;
       }
       case "mousedown": {
-        
+        // No AutoScroll when middle clicking on origin input.
         if (event.currentTarget == this._originInput && event.button == 1) {
           event.preventDefault();
         }
@@ -563,17 +563,17 @@ export default class LoginItem extends HTMLElement {
     }
   }
 
-  
-
-
-
-
-
+  /**
+   * Helper to show the "Discard changes" confirmation dialog and delay the
+   * received event after confirmation.
+   * @param {object} event The event to be delayed.
+   * @param {object} login The login to be shown on confirmation.
+   */
   confirmPendingChangesOnEvent(event, login) {
     if (this.hasPendingChanges()) {
       event.preventDefault();
       this.showConfirmationDialog("discard-changes", () => {
-        
+        // Clear any pending changes
         this.setLogin(login);
 
         window.dispatchEvent(
@@ -588,11 +588,11 @@ export default class LoginItem extends HTMLElement {
     }
   }
 
-  
-
-
-
-
+  /**
+   * Shows a confirmation dialog.
+   * @param {string} type The type of confirmation dialog to display.
+   * @param {boolean} onConfirm Optional, the function to execute when the confirm button is clicked.
+   */
   showConfirmationDialog(type, onConfirm = () => {}) {
     const dialog = document.querySelector("confirmation-dialog");
     let options;
@@ -643,9 +643,9 @@ export default class LoginItem extends HTMLElement {
   }
 
   resetForm() {
-    
-    
-    
+    // If the password input (which uses HTML form validation) wasn't connected,
+    // append it to the form so it gets included in the reset, specifically for
+    // .value and the dirty state for validation.
     let wasConnected = this._passwordInput.isConnected;
     if (!wasConnected) {
       this._revealCheckbox.insertAdjacentElement(
@@ -660,13 +660,13 @@ export default class LoginItem extends HTMLElement {
     }
   }
 
-  
-
-
-
-
-
-
+  /**
+   * @param {login} login The login that should be displayed. The login object is
+   *                      a plain JS object representation of nsILoginInfo/nsILoginMetaInfo.
+   * @param {boolean} skipFocusChange Optional, if present and set to true, the Edit button of the
+   *                                  login will not get focus automatically. This is used to prevent
+   *                                  stealing focus from the search filter upon page load.
+   */
   setLogin(login, { skipFocusChange } = {}) {
     this._login = login;
     this._error = null;
@@ -699,13 +699,13 @@ export default class LoginItem extends HTMLElement {
     this.render();
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Updates the view if the login argument matches the login currently
+   * displayed.
+   *
+   * @param {login} login The login that was added to storage. The login object is
+   *                      a plain JS object representation of nsILoginInfo/nsILoginMetaInfo.
+   */
   loginAdded(login) {
     if (
       this._login.guid ||
@@ -724,19 +724,19 @@ export default class LoginItem extends HTMLElement {
     );
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Updates the view if the login argument matches the login currently
+   * displayed.
+   *
+   * @param {login} login The login that was modified in storage. The login object is
+   *                      a plain JS object representation of nsILoginInfo/nsILoginMetaInfo.
+   */
   loginModified(login) {
     if (this._login.guid != login.guid) {
       return;
     }
 
-    
+    // Restore faviconDataURI on modified login
     if (this._login.faviconDataURI && this._login.origin == login.origin) {
       login.faviconDataURI = this._login.faviconDataURI;
     }
@@ -753,13 +753,13 @@ export default class LoginItem extends HTMLElement {
     }
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Clears the displayed login if the argument matches the currently
+   * displayed login.
+   *
+   * @param {login} login The login that was removed from storage. The login object is
+   *                      a plain JS object representation of nsILoginInfo/nsILoginMetaInfo.
+   */
   loginRemoved(login) {
     if (login.guid != this._login.guid) {
       return;
@@ -776,21 +776,21 @@ export default class LoginItem extends HTMLElement {
     });
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Checks that the edit/new-login form has valid values present for their
+   * respective required fields.
+   *
+   * @param {boolean} reportErrors If true, validation errors will be reported
+   *                               to the user.
+   */
   _isFormValid({ reportErrors } = {}) {
     let fields = [this._passwordInput];
     if (this.dataset.isNewLogin) {
       fields.push(this._originInput);
     }
     let valid = true;
-    
-    
+    // Check validity on all required fields so each field will get :invalid styling
+    // if applicable.
     for (let field of fields) {
       if (reportErrors) {
         valid &= field.reportValidity();
@@ -811,8 +811,8 @@ export default class LoginItem extends HTMLElement {
   }
 
   _recordTelemetryEvent(eventObject) {
-    
-    
+    // Breach alerts have higher priority than vulnerable logins, the
+    // following conditionals must reflect this priority.
     const extra = eventObject.hasOwnProperty("extra") ? eventObject.extra : {};
     if (this._breachesMap && this._breachesMap.has(this._login.guid)) {
       Object.assign(extra, { breached: "true" });
@@ -827,12 +827,12 @@ export default class LoginItem extends HTMLElement {
     recordTelemetryEvent(eventObject);
   }
 
-  
-
-
-
-
-
+  /**
+   * Toggles the login-item view from editing to non-editing mode.
+   *
+   * @param {boolean} force When true puts the form in 'edit' mode, otherwise
+   *                        puts the form in read-only mode.
+   */
   _toggleEditing(force) {
     let shouldEdit = force !== undefined ? force : !this.dataset.editing;
 
@@ -840,15 +840,15 @@ export default class LoginItem extends HTMLElement {
       delete this.dataset.isNewLogin;
     }
 
-    
+    // Reset cursor to the start of the input for long text names.
     this._usernameInput.scrollLeft = 0;
 
     if (shouldEdit) {
       this._passwordInput.style.removeProperty("width");
       this._passwordDisplayInput.style.removeProperty("width");
     } else {
-      
-      
+      // Need to set a shorter width than -moz-available so the reveal checkbox
+      // will still appear next to the password.
       this._passwordDisplayInput.style.width = this._passwordInput.style.width =
         (this._login.password || "").length + "ch";
     }
@@ -866,7 +866,7 @@ export default class LoginItem extends HTMLElement {
       this.dataset.editing = true;
     } else {
       delete this.dataset.editing;
-      
+      // Only reset the reveal checkbox when exiting 'edit' mode
       this._revealCheckbox.checked = false;
     }
   }
@@ -883,9 +883,9 @@ export default class LoginItem extends HTMLElement {
     let inputType = checked ? "text" : "password";
     this._passwordInput.type = inputType;
 
-    
-    
-    
+    // Swap which <input> is in the document depending on whether we need the
+    // real .value (which means that the primary password was already entered,
+    // if applicable)
     if (checked || this.dataset.editing) {
       this._passwordDisplayInput.replaceWith(this._passwordInput);
     } else {
@@ -894,8 +894,8 @@ export default class LoginItem extends HTMLElement {
   }
 
   _updateOriginDisplayState() {
-    
-    
+    // Switches between the origin input and anchor tag depending
+    // if a new login is being created.
     if (this.dataset.isNewLogin) {
       this._originDisplayInput.replaceWith(this._originInput);
       this._originInput.focus();

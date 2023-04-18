@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 export default class MenuButton extends HTMLElement {
   connectedCallback() {
@@ -40,7 +40,7 @@ export default class MenuButton extends HTMLElement {
             node = node.parentElement;
           }
           if (node.closest(".menu") == this._menu) {
-            
+            // Only hide the menu if focus has left the menu-button.
             return;
           }
         }
@@ -48,8 +48,8 @@ export default class MenuButton extends HTMLElement {
         break;
       }
       case "click": {
-        
-        
+        // Skip the catch-all event listener if it was the menu-button
+        // that was clicked on.
         if (
           event.currentTarget == document.documentElement &&
           event.target == this &&
@@ -77,12 +77,12 @@ export default class MenuButton extends HTMLElement {
             })
           );
 
-          
-          
+          // Bug 1645365: Only hide the menu when the buttons are clicked
+          // So that the menu isn't closed when non-buttons (e.g. separators, paddings) are clicked
           this._hideMenu();
         }
 
-        
+        // Explicitly close menu at the catch-all click event (i.e. a click outside of the menu)
         if (
           !this._menu.contains(event.originalTarget) &&
           !this._menuButton.contains(event.originalTarget)
@@ -163,14 +163,14 @@ export default class MenuButton extends HTMLElement {
 
     this._menu.hidden = false;
 
-    
+    // Event listeners to close the menu
     this.addEventListener("blur", this);
     document.documentElement.addEventListener("click", this, true);
   }
 
-  
-
-
+  /**
+   * Toggles the visibility of the menu.
+   */
   _toggleMenu() {
     let wasHidden = this._menu.hidden;
     if (wasHidden) {
