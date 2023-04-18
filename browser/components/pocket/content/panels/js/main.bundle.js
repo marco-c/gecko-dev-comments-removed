@@ -195,7 +195,9 @@ function Article(props) {
   }, react.createElement(react.Fragment, null, thumbnail ? react.createElement("img", {
     className: "stp_article_list_thumb",
     src: thumbnail,
-    alt: alt
+    alt: alt,
+    width: "40",
+    height: "40"
   }) : react.createElement("div", {
     className: "stp_article_list_thumb_placeholder"
   }), react.createElement("div", {
