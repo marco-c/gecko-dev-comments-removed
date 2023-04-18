@@ -204,6 +204,47 @@ static bool IsLocalAccAtLineStart(LocalAccessible* aAcc) {
 
 enum WordBreakClass { eWbcSpace = 0, eWbcPunct, eWbcOther };
 
+static WordBreakClass GetWordBreakClass(char16_t aChar) {
+  
+  
+  const char16_t kCharNbsp = 0xA0;
+  switch (aChar) {
+    case ' ':
+    case kCharNbsp:
+    case '\t':
+    case '\f':
+    case '\n':
+    case '\r':
+      return eWbcSpace;
+    default:
+      break;
+  }
+  
+  
+  uint8_t cat = unicode::GetGeneralCategory(aChar);
+  switch (cat) {
+    case HB_UNICODE_GENERAL_CATEGORY_CONNECT_PUNCTUATION: 
+      if (aChar == '_' &&
+          !StaticPrefs::layout_word_select_stop_at_underscore()) {
+        return eWbcOther;
+      }
+      [[fallthrough]];
+    case HB_UNICODE_GENERAL_CATEGORY_DASH_PUNCTUATION:    
+    case HB_UNICODE_GENERAL_CATEGORY_CLOSE_PUNCTUATION:   
+    case HB_UNICODE_GENERAL_CATEGORY_FINAL_PUNCTUATION:   
+    case HB_UNICODE_GENERAL_CATEGORY_INITIAL_PUNCTUATION: 
+    case HB_UNICODE_GENERAL_CATEGORY_OTHER_PUNCTUATION:   
+    case HB_UNICODE_GENERAL_CATEGORY_OPEN_PUNCTUATION:    
+    case HB_UNICODE_GENERAL_CATEGORY_CURRENCY_SYMBOL:     
+    case HB_UNICODE_GENERAL_CATEGORY_MATH_SYMBOL:         
+    case HB_UNICODE_GENERAL_CATEGORY_OTHER_SYMBOL:        
+      return eWbcPunct;
+    default:
+      break;
+  }
+  return eWbcOther;
+}
+
 
 
 
@@ -214,7 +255,7 @@ class PrevWordBreakClassWalker {
   PrevWordBreakClassWalker(Accessible* aAcc, const nsAString& aText,
                            int32_t aOffset)
       : mAcc(aAcc), mText(aText), mOffset(aOffset) {
-    mClass = GetClass(mText.CharAt(mOffset));
+    mClass = GetWordBreakClass(mText.CharAt(mOffset));
   }
 
   WordBreakClass CurClass() { return mClass; }
@@ -224,7 +265,7 @@ class PrevWordBreakClassWalker {
       if (!PrevChar()) {
         return Nothing();
       }
-      WordBreakClass curClass = GetClass(mText.CharAt(mOffset));
+      WordBreakClass curClass = GetWordBreakClass(mText.CharAt(mOffset));
       if (curClass != mClass) {
         mClass = curClass;
         return Some(curClass);
@@ -239,7 +280,7 @@ class PrevWordBreakClassWalker {
       
       return true;
     }
-    WordBreakClass curClass = GetClass(mText.CharAt(mOffset));
+    WordBreakClass curClass = GetWordBreakClass(mText.CharAt(mOffset));
     
     ++mOffset;
     return curClass != mClass;
@@ -263,47 +304,6 @@ class PrevWordBreakClassWalker {
     mAcc->AppendTextTo(mText);
     mOffset = static_cast<int32_t>(mText.Length()) - 1;
     return true;
-  }
-
-  WordBreakClass GetClass(char16_t aChar) {
-    
-    
-    const char16_t kCharNbsp = 0xA0;
-    switch (aChar) {
-      case ' ':
-      case kCharNbsp:
-      case '\t':
-      case '\f':
-      case '\n':
-      case '\r':
-        return eWbcSpace;
-      default:
-        break;
-    }
-    
-    
-    uint8_t cat = unicode::GetGeneralCategory(aChar);
-    switch (cat) {
-      case HB_UNICODE_GENERAL_CATEGORY_CONNECT_PUNCTUATION: 
-        if (aChar == '_' &&
-            !StaticPrefs::layout_word_select_stop_at_underscore()) {
-          return eWbcOther;
-        }
-        [[fallthrough]];
-      case HB_UNICODE_GENERAL_CATEGORY_DASH_PUNCTUATION:    
-      case HB_UNICODE_GENERAL_CATEGORY_CLOSE_PUNCTUATION:   
-      case HB_UNICODE_GENERAL_CATEGORY_FINAL_PUNCTUATION:   
-      case HB_UNICODE_GENERAL_CATEGORY_INITIAL_PUNCTUATION: 
-      case HB_UNICODE_GENERAL_CATEGORY_OTHER_PUNCTUATION:   
-      case HB_UNICODE_GENERAL_CATEGORY_OPEN_PUNCTUATION:    
-      case HB_UNICODE_GENERAL_CATEGORY_CURRENCY_SYMBOL:     
-      case HB_UNICODE_GENERAL_CATEGORY_MATH_SYMBOL:         
-      case HB_UNICODE_GENERAL_CATEGORY_OTHER_SYMBOL:        
-        return eWbcPunct;
-      default:
-        break;
-    }
-    return eWbcOther;
   }
 
   Accessible* mAcc;
