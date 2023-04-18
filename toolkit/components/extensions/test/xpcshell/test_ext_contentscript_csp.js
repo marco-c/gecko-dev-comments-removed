@@ -199,17 +199,6 @@ let TESTS = [
       "violated-directive": "connect-src",
     },
   },
-  {
-    description: "Fetch url from content script uses page csp.",
-    pageCSP: `${gDefaultCSP} connect-src *;`,
-    script: testFetch,
-    version: 3,
-    data: {
-      content: true,
-      url: `${BASE_URL}/data/file_image_good.png`,
-    },
-    expect: true,
-  },
 
   
   {
@@ -328,16 +317,6 @@ let TESTS = [
     backgroundScript: webSocketUpgradeListenerBackground,
   },
   {
-    description:
-      "content.WebSocket in content script is affected by page csp. v3",
-    version: 3,
-    pageCSP: `upgrade-insecure-requests;`,
-    data: { content: true, url: "ws://example.com/ws_dummy" },
-    script: testWebSocketUpgraded,
-    expect: "wss:", 
-    backgroundScript: webSocketUpgradeListenerBackground,
-  },
-  {
     description: "WebSocket in content script is not affected by page csp.",
     version: 2,
     pageCSP: `upgrade-insecure-requests;`,
@@ -352,7 +331,8 @@ let TESTS = [
     pageCSP: `upgrade-insecure-requests;`,
     data: { url: "ws://example.com/ws_dummy" },
     script: testWebSocketUpgraded,
-    expect: "ws:", 
+    
+    expect: "wss:", 
     backgroundScript: webSocketUpgradeListenerBackground,
   },
   {
@@ -370,19 +350,12 @@ let TESTS = [
     pageCSP: `upgrade-insecure-requests;`,
     data: { url: "http://example.com/plain.html" },
     script: testHttpRequestUpgraded,
-    expect: "http:", 
+    
+    expect: "https:", 
   },
   {
     description: "content.fetch in content script is affected by page csp.",
     version: 2,
-    pageCSP: `upgrade-insecure-requests;`,
-    data: { content: true, url: "http://example.com/plain.html" },
-    script: testHttpRequestUpgraded,
-    expect: "https:", 
-  },
-  {
-    description: "content.fetch in content script is affected by page csp. v3",
-    version: 3,
     pageCSP: `upgrade-insecure-requests;`,
     data: { content: true, url: "http://example.com/plain.html" },
     script: testHttpRequestUpgraded,

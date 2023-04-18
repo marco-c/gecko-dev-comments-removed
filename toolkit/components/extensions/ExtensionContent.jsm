@@ -822,6 +822,16 @@ class ContentScriptContextChild extends BaseContext {
         addonId: extensionPrincipal.addonId,
       };
 
+      let isMV2 = extension.manifestVersion == 2;
+      let wantGlobalProperties;
+      if (isMV2) {
+        
+        
+        wantGlobalProperties = ["XMLHttpRequest", "fetch", "WebSocket"];
+      } else {
+        
+        wantGlobalProperties = [];
+      }
       this.sandbox = Cu.Sandbox(principal, {
         metadata,
         sandboxName: `Content Script ${extension.policy.debugName}`,
@@ -830,7 +840,7 @@ class ContentScriptContextChild extends BaseContext {
         wantXrays: true,
         isWebExtensionContentScript: true,
         wantExportHelpers: true,
-        wantGlobalProperties: ["XMLHttpRequest", "fetch", "WebSocket"],
+        wantGlobalProperties,
         originAttributes: attrs,
       });
 
@@ -840,25 +850,32 @@ class ContentScriptContextChild extends BaseContext {
       this.cloneScopePromise = this.sandbox.Promise;
       this.cloneScopeError = this.sandbox.Error;
 
-      
-      
-      
-      
-      Cu.evalInSandbox(
-        `
-        this.content = {
-          XMLHttpRequest: window.XMLHttpRequest,
-          fetch: window.fetch.bind(window),
-          WebSocket: window.WebSocket,
-        };
+      if (isMV2) {
+        
+        
+        
+        
+        Cu.evalInSandbox(
+          `
+          this.content = {
+            XMLHttpRequest: window.XMLHttpRequest,
+            fetch: window.fetch.bind(window),
+            WebSocket: window.WebSocket,
+          };
 
-        window.JSON = JSON;
-        window.XMLHttpRequest = XMLHttpRequest;
-        window.fetch = fetch;
-        window.WebSocket = WebSocket;
-      `,
-        this.sandbox
-      );
+          window.JSON = JSON;
+          window.XMLHttpRequest = XMLHttpRequest;
+          window.fetch = fetch;
+          window.WebSocket = WebSocket;
+        `,
+          this.sandbox
+        );
+      } else {
+        
+        
+        
+        Cu.evalInSandbox("window.JSON = JSON;", this.sandbox);
+      }
     }
 
     Object.defineProperty(this, "principal", {

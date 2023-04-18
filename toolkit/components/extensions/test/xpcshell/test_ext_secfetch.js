@@ -2,6 +2,8 @@
 
 "use strict";
 
+Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
+
 const server = createHttpServer({
   
   
@@ -32,21 +34,30 @@ server.registerPathHandler("/return_headers", (request, response) => {
 });
 
 async function contentScript() {
-  const results = await Promise.all([
+  let content_fetch;
+  if (browser.runtime.getManifest().manifest_version === 2) {
+    content_fetch = content.fetch;
+  } else {
     
+    browser.test.assertEq(typeof content, "undefined", "no .content in MV3");
     
+    content_fetch = window.fetch.bind(window);
+  }
+  let results = await Promise.allSettled([
     
-    
+    fetch("http://127.0.0.1/return_headers").then(res => res.json()),
 
     
     
-    content.fetch("http://127.0.0.1/return_headers").then(res => res.json()),
+    content_fetch("http://127.0.0.1/return_headers").then(res => res.json()),
     
     
-    content.fetch("http://127.0.0.2/return_headers").then(res => res.json()),
+    content_fetch("http://127.0.0.2/return_headers").then(res => res.json()),
     
     fetch("http://127.0.0.2/return_headers").then(res => res.json()),
   ]);
+
+  results = results.map(({ value, reason }) => value ?? reason.message);
 
   browser.test.sendMessage("content_results", results);
 }
@@ -64,7 +75,7 @@ async function runSecFetchTest(test) {
       browser.test.sendMessage("background_results", headers);
     },
     manifest: {
-      manifest_version: 2,
+      manifest_version: test.manifest_version,
       content_scripts: [
         {
           matches: ["http://127.0.0.2/*"],
@@ -77,12 +88,24 @@ async function runSecFetchTest(test) {
     },
   };
 
+  if (data.manifest.manifest_version == 3) {
+    
+    data.manifest.granted_host_permissions = true;
+    
+    data.temporarilyInstalled = true;
+    
+    data.manifest.host_permissions = ["http://127.0.0.2/*"];
+    
+  }
+
   
   
   const site = "http://127.0.0.1";
 
   if (test.permission) {
-    data.manifest.permissions = ["http://127.0.0.2/*", `${site}/*`];
+    
+    
+    data.manifest.host_permissions = ["http://127.0.0.2/*", `${site}/*`];
   }
 
   let extension = ExtensionTestUtils.loadExtension(data);
@@ -102,8 +125,9 @@ async function runSecFetchTest(test) {
   await extension.unload();
 }
 
-add_task(async function test_fetch_without_permissions() {
+add_task(async function test_fetch_without_permissions_mv2() {
   await runSecFetchTest({
+    manifest_version: 2,
     permission: false,
     expectedBackgroundHeaders: {
       "sec-fetch-site": "cross-site",
@@ -111,6 +135,14 @@ add_task(async function test_fetch_without_permissions() {
       "sec-fetch-dest": "empty",
     },
     expectedContentHeaders: [
+      
+      "NetworkError when attempting to fetch resource.",
+      
+      
+      
+      
+      
+      
       {
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
@@ -130,8 +162,9 @@ add_task(async function test_fetch_without_permissions() {
   });
 });
 
-add_task(async function test_fetch_with_permissions() {
+add_task(async function test_fetch_with_permissions_mv2() {
   await runSecFetchTest({
+    manifest_version: 2,
     permission: true,
     expectedBackgroundHeaders: {
       "sec-fetch-site": "same-origin",
@@ -139,6 +172,82 @@ add_task(async function test_fetch_with_permissions() {
       "sec-fetch-dest": "empty",
     },
     expectedContentHeaders: [
+      {
+        "sec-fetch-site": "cross-site",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+      },
+      {
+        "sec-fetch-site": "cross-site",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+      },
+      {
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+      },
+      {
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+      },
+    ],
+  });
+});
+
+add_task(async function test_fetch_without_permissions_mv3() {
+  await runSecFetchTest({
+    manifest_version: 3,
+    permission: false,
+    expectedBackgroundHeaders: {
+      
+      "sec-fetch-site": "cross-site",
+      "sec-fetch-mode": "cors",
+      "sec-fetch-dest": "empty",
+    },
+    expectedContentHeaders: [
+      {
+        "sec-fetch-site": "cross-site",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+      },
+      {
+        "sec-fetch-site": "cross-site",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+      },
+      {
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+      },
+      {
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+      },
+    ],
+  });
+});
+
+add_task(async function test_fetch_with_permissions_mv3() {
+  await runSecFetchTest({
+    manifest_version: 3,
+    permission: true,
+    expectedBackgroundHeaders: {
+      
+      "sec-fetch-site": "same-origin",
+      "sec-fetch-mode": "cors",
+      "sec-fetch-dest": "empty",
+    },
+    expectedContentHeaders: [
+      
+      {
+        "sec-fetch-site": "cross-site",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+      },
       {
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
