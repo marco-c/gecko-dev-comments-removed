@@ -273,6 +273,10 @@ class nsExternalAppHandler final : public nsIStreamListener,
   void SetShouldCloseWindow() { mShouldCloseWindow = true; }
 
  protected:
+
+  
+  void RecordDownloadTelemetry(nsIChannel* aChannel, const char* aAction);
+
   bool IsDownloadSpam(nsIChannel* aChannel);
 
   ~nsExternalAppHandler();
