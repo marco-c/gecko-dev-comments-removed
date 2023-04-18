@@ -321,16 +321,6 @@ var BrowserUtils = {
       !avoidAdsCountries.has(currentRegion.toLowerCase())
     );
   },
-
-  
-  shouldShowRallyPromo() {
-    const homeRegion = Region.home || "";
-    const currentRegion = Region.current || "";
-    const region = currentRegion || homeRegion;
-    const language = Services.locale.appLocaleAsBCP47;
-
-    return language.startsWith("en-") && region.toLowerCase() == "us";
-  },
 };
 
 XPCOMUtils.defineLazyPreferenceGetter(
