@@ -147,6 +147,7 @@ class nsIOService final : public nsIIOService,
   nsresult LaunchSocketProcess();
 
   static bool TooManySocketProcessCrash();
+  static void IncreaseSocketProcessCrashCount();
 
  private:
   
