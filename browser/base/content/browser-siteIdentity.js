@@ -357,16 +357,6 @@ var gIdentityHandler = {
     );
     return this._httpsOnlyModeEnabledPBM;
   },
-  get _useGrayLockIcon() {
-    delete this._useGrayLockIcon;
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_useGrayLockIcon",
-      "security.secure_connection_icon_color_gray",
-      false
-    );
-    return this._useGrayLockIcon;
-  },
 
   
 
@@ -873,13 +863,6 @@ var gIdentityHandler = {
     }
 
     
-    this._updateAttribute(
-      this._identityIcon,
-      "lock-icon-gray",
-      this._useGrayLockIcon
-    );
-
-    
     this._identityIcon.setAttribute("tooltiptext", tooltip);
 
     if (this._pageExtensionPolicy) {
@@ -1027,13 +1010,6 @@ var gIdentityHandler = {
     ) {
       ciphers = "weak";
     }
-
-    
-    this._updateAttribute(
-      this._identityPopup,
-      "lock-icon-gray",
-      this._useGrayLockIcon
-    );
 
     
     const privateBrowsingWindow = PrivateBrowsingUtils.isWindowPrivate(window);
