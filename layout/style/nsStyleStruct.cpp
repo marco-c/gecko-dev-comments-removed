@@ -2187,6 +2187,7 @@ nsStyleDisplay::nsStyleDisplay(const Document& aDocument)
       mDisplay(StyleDisplay::Inline),
       mOriginalDisplay(StyleDisplay::Inline),
       mContain(StyleContain::NONE),
+      mContentVisibility(StyleContentVisibility::Visible),
       mAppearance(StyleAppearance::None),
       mDefaultAppearance(StyleAppearance::None),
       mPosition(StylePositionProperty::Static),
@@ -2259,6 +2260,7 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
       mDisplay(aSource.mDisplay),
       mOriginalDisplay(aSource.mOriginalDisplay),
       mContain(aSource.mContain),
+      mContentVisibility(aSource.mContentVisibility),
       mAppearance(aSource.mAppearance),
       mDefaultAppearance(aSource.mDefaultAppearance),
       mPosition(aSource.mPosition),
@@ -2463,6 +2465,12 @@ nsChangeHint nsStyleDisplay::CalcDifference(
       
       hint |= nsChangeHint_UpdateOverflow | nsChangeHint_RepaintFrame;
     }
+  }
+
+  
+  
+  if (mContentVisibility != aNewData.mContentVisibility) {
+    hint |= nsChangeHint_NeedReflow;
   }
 
   if (mScrollbarGutter != aNewData.mScrollbarGutter) {

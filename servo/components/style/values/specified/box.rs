@@ -1438,6 +1438,34 @@ impl Parse for Contain {
     }
 }
 
+#[allow(missing_docs)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(u8)]
+pub enum ContentVisibility {
+    
+    
+    
+    Auto,
+    
+    Hidden,
+    
+    Visible,
+}
+
 
 pub type Perspective = GenericPerspective<NonNegativeLength>;
 
