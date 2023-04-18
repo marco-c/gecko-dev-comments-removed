@@ -184,10 +184,17 @@ class Network extends Domain {
 
 
   async getCookies(options = {}) {
-    
-    const urls = this.session.target.browsingContext
-      .getAllBrowsingContextsInSubtree()
-      .map(context => context.currentURI.spec);
+    const { urls = this._getDefaultUrls() } = options;
+
+    if (!Array.isArray(urls)) {
+      throw new TypeError("urls: array expected");
+    }
+
+    for (const [index, url] of urls.entries()) {
+      if (typeof url !== "string") {
+        throw new TypeError(`urls: string value expected at index ${index}`);
+      }
+    }
 
     const cookies = [];
     for (let url of urls) {
@@ -453,6 +460,19 @@ class Network extends Domain {
       },
       frameId: data.frameId.toString(),
     });
+  }
+
+  
+
+
+
+
+  _getDefaultUrls() {
+    const urls = this.session.target.browsingContext
+      .getAllBrowsingContextsInSubtree()
+      .map(context => context.currentURI.spec);
+
+    return urls;
   }
 }
 
