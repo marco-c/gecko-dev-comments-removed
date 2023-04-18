@@ -423,6 +423,22 @@ this.backgroundPage = class extends ExtensionAPI {
         return;
       }
 
+      const childId = extension.backgroundContext?.childId;
+      if (childId !== undefined) {
+        
+        
+        
+        
+        
+        const hasActiveStreamFilter = await ExtensionParent.ParentAPIManager.queryStreamFilterSuspendCancel(
+          extension.backgroundContext.childId
+        );
+        if (hasActiveStreamFilter) {
+          extension.emit("background-script-reset-idle");
+          return;
+        }
+      }
+
       extension.backgroundState = BACKGROUND_STATE.SUSPENDING;
       this.clearIdleTimer();
       
