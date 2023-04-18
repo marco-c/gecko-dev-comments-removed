@@ -556,8 +556,9 @@ void BodyStream::EnqueueChunkWithSizeIntoStream(JSContext* aCx,
                                                 ErrorResult& aRv) {
   
   
+  
   uint32_t ableToRead =
-      std::min(static_cast<uint64_t>(UINT32_MAX), aAvailableData);
+      std::min(static_cast<uint64_t>(256 * 1024 * 1024), aAvailableData);
 
   
   aRv.MightThrowJSException();
