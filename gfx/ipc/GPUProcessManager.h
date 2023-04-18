@@ -192,6 +192,13 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   GPUProcessHost* Process() { return mProcess; }
 
+  
+
+
+
+
+  void TestTriggerMetrics();
+
  private:
   
   void OnXPCOMShutdown();

@@ -59,6 +59,13 @@ void SendFOGData(ipc::ByteBuf&& buf);
 
 RefPtr<GenericPromise> FlushAndUseFOGData();
 
+
+
+
+
+
+void TestTriggerGPUMetrics();
+
 }  
 }  
 

@@ -118,4 +118,11 @@ interface nsIFOG : nsISupports
 
 
   void testResetFOG([optional] in AUTF8String aDataPathOverride, [optional] in AUTF8String aAppIdOverride);
+
+  
+
+
+
+
+  void testTriggerGPUMetrics();
 };

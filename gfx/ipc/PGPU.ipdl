@@ -118,6 +118,10 @@ parent:
   
   async FlushFOGData() returns (ByteBuf buf);
 
+  
+  
+  async TestTriggerMetrics();
+
 child:
   
   
