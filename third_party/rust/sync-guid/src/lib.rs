@@ -209,7 +209,9 @@ impl Guid {
     pub fn is_valid_for_sync_server(&self) -> bool {
         !self.is_empty()
             && self.len() <= 64
-            && self.bytes().all(|b| b >= b' ' && b <= b'~' && b != b',')
+            && self
+                .bytes()
+                .all(|b| (b' '..=b'~').contains(&b) && b != b',')
     }
 
     
@@ -250,7 +252,7 @@ const BASE64URL_BYTES: [u8; 256] = [
 
 impl Ord for Guid {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.as_bytes().cmp(&other.as_bytes())
+        self.as_bytes().cmp(other.as_bytes())
     }
 }
 
@@ -416,6 +418,7 @@ mod test {
         assert!(!Guid::from("aaaabbbbccc=").is_valid_for_places()); 
     }
 
+    #[allow(clippy::cmp_owned)] 
     #[test]
     fn test_comparison() {
         assert_eq!(Guid::from("abcdabcdabcd"), "abcdabcdabcd");
@@ -439,6 +442,10 @@ mod test {
             Vec::from(b"ABCDabcdabcd4321".as_ref())
         );
 
+        
+        
+        
+        
         
         assert!(Guid::from("zzz") > Guid::from("aaaaaa"));
         assert!(Guid::from("ThisIsASolowGuid") < Guid::from("zzz"));

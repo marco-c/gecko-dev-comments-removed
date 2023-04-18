@@ -2,22 +2,33 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 #![warn(rust_2018_idioms)]
 pub mod bridged_engine;
 mod changeset;
 pub mod client;
+mod engine;
 mod payload;
 pub mod request;
 mod server_timestamp;
-mod store;
 pub mod telemetry;
 
 pub use bridged_engine::{ApplyResults, BridgedEngine, IncomingEnvelope, OutgoingEnvelope};
 pub use changeset::{IncomingChangeset, OutgoingChangeset, RecordChangeset};
+pub use engine::{CollSyncIds, EngineSyncAssociation, SyncEngine};
 pub use payload::Payload;
 pub use request::{CollectionRequest, RequestOrder};
 pub use server_timestamp::ServerTimestamp;
-pub use store::{CollSyncIds, Store, StoreSyncAssociation};
 pub use sync_guid::Guid;
 
 
