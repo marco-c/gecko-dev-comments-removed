@@ -8,9 +8,11 @@ var EXPORTED_SYMBOLS = ["MacAttribution"];
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
-XPCOMUtils.defineLazyGetter(this, "log", () => {
+const lazy = {};
+XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   let { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
   let consoleOptions = {
+    
     
     
     maxLogLevel: "error",
@@ -22,7 +24,7 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "Subprocess",
   "resource://gre/modules/Subprocess.jsm"
 );
@@ -92,7 +94,7 @@ async function queryQuarantineDatabase(
        WHERE LSQuarantineEventIdentifier = '${guid}'
        ORDER BY LSQuarantineTimeStamp DESC LIMIT 1`;
 
-  let proc = await Subprocess.call({
+  let proc = await lazy.Subprocess.call({
     command: "/usr/bin/sqlite3",
     arguments: [path, query],
     environment: {},
@@ -148,7 +150,7 @@ var MacAttribution = {
 
 
   async getReferrerUrl(path = this.applicationPath) {
-    log.debug(`getReferrerUrl(${JSON.stringify(path)})`);
+    lazy.log.debug(`getReferrerUrl(${JSON.stringify(path)})`);
 
     
     let guid;
@@ -160,13 +162,13 @@ var MacAttribution = {
         Cr.NS_ERROR_NOT_AVAILABLE
       );
     }
-    log.debug(`getReferrerUrl: guid: ${guid}`);
+    lazy.log.debug(`getReferrerUrl: guid: ${guid}`);
 
     
     let url = "";
     try {
       url = await queryQuarantineDatabase(guid);
-      log.debug(`getReferrerUrl: url: ${url}`);
+      lazy.log.debug(`getReferrerUrl: url: ${url}`);
     } catch (ex) {
       
       throw new Components.Exception(
