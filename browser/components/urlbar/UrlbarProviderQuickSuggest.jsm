@@ -27,6 +27,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 XPCOMUtils.defineLazyGlobalGetters(this, ["AbortController", "fetch"]);
 
 const TIMESTAMP_TEMPLATE = "%YYYYMMDDHH%";
+const TIMESTAMP_LENGTH = 10;
+const TIMESTAMP_REGEXP = /^\d{10}$/;
 
 const MERINO_ENDPOINT_PARAM_QUERY = "q";
 
@@ -169,6 +171,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
       qsSuggestion: [suggestion.full_keyword, UrlbarUtils.HIGHLIGHT.SUGGESTED],
       title: suggestion.title,
       url: suggestion.url,
+      urlTimestampIndex: suggestion.urlTimestampIndex,
       icon: suggestion.icon,
       sponsoredImpressionUrl: suggestion.impression_url,
       sponsoredClickUrl: suggestion.click_url,
@@ -397,6 +400,66 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  isURLEquivalentToResultURL(url, result) {
+    
+    let resultURL = result.payload.url;
+    if (resultURL.length != url.length) {
+      return false;
+    }
+
+    
+    
+    let { urlTimestampIndex } = result.payload;
+    if (typeof urlTimestampIndex != "number" || urlTimestampIndex < 0) {
+      return resultURL == url;
+    }
+
+    
+    if (
+      resultURL.substring(0, urlTimestampIndex) !=
+      url.substring(0, urlTimestampIndex)
+    ) {
+      return false;
+    }
+
+    
+    let remainderIndex = urlTimestampIndex + TIMESTAMP_LENGTH;
+    if (resultURL.substring(remainderIndex) != url.substring(remainderIndex)) {
+      return false;
+    }
+
+    
+    let maybeTimestamp = url.substring(
+      urlTimestampIndex,
+      urlTimestampIndex + TIMESTAMP_LENGTH
+    );
+    return TIMESTAMP_REGEXP.test(maybeTimestamp);
+  }
+
+  
+
+
+
+
+
+
+
   async _fetchRemoteSettingsSuggestion(queryContext, searchString) {
     let instance = this.queryInstance;
 
@@ -583,7 +646,25 @@ class ProviderQuickSuggest extends UrlbarProvider {
       .map(n => n.toString().padStart(2, "0"))
       .join("");
     for (let key of ["url", "click_url"]) {
-      suggestion[key] = suggestion[key]?.replace(TIMESTAMP_TEMPLATE, timestamp);
+      let value = suggestion[key];
+      if (!value) {
+        continue;
+      }
+
+      let timestampIndex = value.indexOf(TIMESTAMP_TEMPLATE);
+      if (timestampIndex >= 0) {
+        if (key == "url") {
+          suggestion.urlTimestampIndex = timestampIndex;
+        }
+        
+        
+        
+        
+        suggestion[key] =
+          value.substring(0, timestampIndex) +
+          timestamp +
+          value.substring(timestampIndex + TIMESTAMP_TEMPLATE.length);
+      }
     }
   }
 

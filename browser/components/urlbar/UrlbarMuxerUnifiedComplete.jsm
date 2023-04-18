@@ -16,6 +16,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
+  UrlbarProviderQuickSuggest:
+    "resource:///modules/UrlbarProviderQuickSuggest.jsm",
   UrlbarProviderTabToSearch:
     "resource:///modules/UrlbarProviderTabToSearch.jsm",
   UrlbarMuxer: "resource:///modules/UrlbarUtils.jsm",
@@ -583,10 +585,13 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
 
 
+  
+  
+  
   _canAddResult(result, state) {
     
     
-    if (result.providerName == "UrlbarProviderQuickSuggest") {
+    if (result.providerName == UrlbarProviderQuickSuggest.name) {
       return true;
     }
 
@@ -810,6 +815,19 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     }
 
     
+    if (
+      state.quickSuggestResult &&
+      !result.heuristic &&
+      result.type == UrlbarUtils.RESULT_TYPE.URL &&
+      UrlbarProviderQuickSuggest.isURLEquivalentToResultURL(
+        result.payload.url,
+        state.quickSuggestResult
+      )
+    ) {
+      return false;
+    }
+
+    
     
     
     
@@ -886,7 +904,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         
         
         (topPrefixRank == prefixRank &&
-          result.providerName == "UrlbarProviderQuickSuggest")
+          result.providerName == UrlbarProviderQuickSuggest.name)
       ) {
         
         state.strippedUrlToTopPrefixAndTitle.set(strippedUrl, {
@@ -919,6 +937,10 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         (!result.payload.inPrivateWindow && !result.payload.tail))
     ) {
       state.canShowTailSuggestions = false;
+    }
+
+    if (result.providerName == UrlbarProviderQuickSuggest.name) {
+      state.quickSuggestResult = result;
     }
 
     state.hasUnitConversionResult =
