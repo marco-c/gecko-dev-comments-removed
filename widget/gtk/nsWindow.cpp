@@ -2495,9 +2495,22 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
 
   
   
-  if (!mShell || mSizeState == mSizeMode) {
+  if (!mShell || mSizeState == aMode) {
     LOG("    already set");
     return;
+  }
+
+  if (mSizeState == nsSizeMode_Fullscreen) {
+    LOG("    unfullscreening");
+    MakeFullScreen(false);
+    
+    
+    mSizeState = mSizeMode;
+    mSizeMode = aMode;
+    if (mSizeState == aMode) {
+      LOG("    restored to desired state");
+      return;
+    }
   }
 
   switch (aMode) {
@@ -2513,20 +2526,18 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
       LOG("    set fullscreen");
       MakeFullScreen(true);
       break;
-
     default:
+      MOZ_FALLTHROUGH_ASSERT("Unknown size mode");
+    case nsSizeMode_Normal:
       LOG("    set normal");
       
       if (mSizeState == nsSizeMode_Minimized) {
         gtk_window_deiconify(GTK_WINDOW(mShell));
       } else if (mSizeState == nsSizeMode_Maximized) {
         gtk_window_unmaximize(GTK_WINDOW(mShell));
-      } else if (mSizeState == nsSizeMode_Fullscreen) {
-        MakeFullScreen(false);
       }
       break;
   }
-
   mSizeState = mSizeMode;
 }
 
@@ -7098,7 +7109,9 @@ nsresult nsWindow::MakeFullScreen(bool aFullScreen) {
   }
 
   if (aFullScreen) {
-    if (mSizeMode != nsSizeMode_Fullscreen) mLastSizeMode = mSizeMode;
+    if (mSizeMode != nsSizeMode_Fullscreen) {
+      mLastSizeMode = mSizeMode;
+    }
 
     mSizeMode = nsSizeMode_Fullscreen;
 
