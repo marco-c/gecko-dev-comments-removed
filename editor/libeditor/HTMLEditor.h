@@ -1520,8 +1520,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
-  CreateAndInsertElement(
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult CreateAndInsertElement(
       WithTransaction aWithTransaction, nsAtom& aTagName,
       const EditorDOMPoint& aPointToInsert,
       const InitializeInsertingElement& aInitializer = DoNothingForNewElement);
