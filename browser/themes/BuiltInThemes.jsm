@@ -66,6 +66,15 @@ class _BuiltInThemes {
 
 
 
+
+  isMonochromaticTheme(id) {
+    return id.endsWith("-colorway@mozilla.org");
+  }
+
+  
+
+
+
   maybeInstallActiveBuiltInTheme() {
     const activeThemeID = Services.prefs.getStringPref(
       kActiveThemePref,
@@ -91,6 +100,8 @@ class _BuiltInThemes {
     installPromises.push(this._uninstallExpiredThemes());
 
     const now = new Date();
+    this.monochromaticSortIndices = new Map();
+    let monochromaticSortIndex = 0;
     for (let [id, themeInfo] of this.builtInThemeMap.entries()) {
       if (
         !themeInfo.expiry ||
@@ -104,6 +115,12 @@ class _BuiltInThemes {
             themeInfo.path
           )
         );
+        if (this.isMonochromaticTheme(id)) {
+          
+          
+          
+          this.monochromaticSortIndices.set(id, monochromaticSortIndex++);
+        }
       }
     }
 
