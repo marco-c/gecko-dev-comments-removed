@@ -2271,11 +2271,7 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
   if (!ModuleObject::GatherAsyncParentCompletions(cx, module, &sortedList)) {
     
     
-    if (!cx->isExceptionPending()) {
-      AsyncModuleExecutionRejected(cx, module, UndefinedHandleValue);
-      return;
-    }
-
+    MOZ_ASSERT(cx->isExceptionPending());
     RootedValue exception(cx);
     if (!cx->getPendingException(&exception)) {
       return;
