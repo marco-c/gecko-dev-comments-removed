@@ -165,7 +165,15 @@ bool SocketProcessChild::Init(base::ProcessId aParentPid,
   
   nsCOMPtr<nsIDNSService> dns =
       do_GetService("@mozilla.org/network/dns-service;1", &rv);
-  return NS_SUCCEEDED(rv);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+
+  if (!EnsureNSSInitializedChromeOrContent()) {
+    return false;
+  }
+
+  return true;
 }
 
 void SocketProcessChild::ActorDestroy(ActorDestroyReason aWhy) {
