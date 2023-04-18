@@ -201,7 +201,7 @@ class EditorBase : public nsIEditor,
   nsPresContext* GetPresContext() const;
   already_AddRefed<nsCaret> GetCaret() const;
 
-  already_AddRefed<nsIWidget> GetWidget();
+  already_AddRefed<nsIWidget> GetWidget() const;
 
   nsISelectionController* GetSelectionController() const;
 
@@ -1768,13 +1768,13 @@ class EditorBase : public nsIEditor,
 
 
 
-  already_AddRefed<Element> CreateHTMLContent(const nsAtom* aTag);
+  already_AddRefed<Element> CreateHTMLContent(const nsAtom* aTag) const;
 
   
 
 
 
-  already_AddRefed<nsTextNode> CreateTextNode(const nsAString& aData);
+  already_AddRefed<nsTextNode> CreateTextNode(const nsAString& aData) const;
 
   
 
@@ -1811,7 +1811,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MarkElementDirty(Element& aElement);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  MarkElementDirty(Element& aElement) const;
 
   MOZ_CAN_RUN_SCRIPT nsresult
   DoTransactionInternal(nsITransaction* aTransaction);
@@ -2359,7 +2360,8 @@ class EditorBase : public nsIEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult ScrollSelectionFocusIntoView();
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  ScrollSelectionFocusIntoView() const;
 
   virtual nsresult InstallEventListeners();
   virtual void CreateEventListeners();
@@ -2379,9 +2381,9 @@ class EditorBase : public nsIEditor,
   
 
 
-  bool GetDesiredSpellCheckState();
+  [[nodiscard]] bool GetDesiredSpellCheckState();
 
-  bool CanEnableSpellCheck() {
+  [[nodiscard]] bool CanEnableSpellCheck() const {
     
     
     
