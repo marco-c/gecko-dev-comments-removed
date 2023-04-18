@@ -129,7 +129,8 @@
 
 
 
-#if defined(GP_OS_darwin) && defined(MOZ_PROFILING)
+
+#if defined(GP_OS_darwin)
 #  define HAVE_NATIVE_UNWIND
 #  define USE_FRAME_POINTER_STACK_WALK
 #endif
