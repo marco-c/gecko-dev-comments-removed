@@ -1631,11 +1631,7 @@ void nsExpatDriver::MaybeStopParser(nsresult aState) {
     
     
     
-
-    
-    
-    int resumable = BlockedOrInterrupted();
-    RLBOX_EXPAT_MCALL(MOZ_XML_StopParser, resumable);
+    RLBOX_EXPAT_MCALL(MOZ_XML_StopParser, BlockedOrInterrupted());
   } else if (NS_SUCCEEDED(mInternalState)) {
     
     
