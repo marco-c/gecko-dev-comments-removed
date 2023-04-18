@@ -11,7 +11,7 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = ["LoginManagerChild"];
+const EXPORTED_SYMBOLS = ["LoginManagerChild", "LoginFormState"];
 
 const PASSWORD_INPUT_ADDED_COALESCING_THRESHOLD_MS = 1;
 
@@ -887,6 +887,93 @@ class LoginFormState {
 
     return null;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+  static _getPasswordFields(
+    form,
+    {
+      fieldOverrideRecipe = null,
+      minPasswordLength = 0,
+      ignoreConnect = false,
+    } = {}
+  ) {
+    
+    let pwFields = [];
+    for (let i = 0; i < form.elements.length; i++) {
+      let element = form.elements[i];
+      if (
+        !HTMLInputElement.isInstance(element) ||
+        !element.hasBeenTypePassword ||
+        (!element.isConnected && !ignoreConnect)
+      ) {
+        continue;
+      }
+
+      
+      if (
+        fieldOverrideRecipe?.notPasswordSelector &&
+        element.matches(fieldOverrideRecipe.notPasswordSelector)
+      ) {
+        lazy.log(
+          "skipping password field (id/name is",
+          element.id,
+          " / ",
+          element.name + ") due to recipe:",
+          fieldOverrideRecipe
+        );
+        continue;
+      }
+
+      
+      
+      
+      if (
+        minPasswordLength &&
+        element.value.trim().length < minPasswordLength
+      ) {
+        lazy.log(
+          "skipping password field (id/name is",
+          element.id,
+          " / ",
+          element.name + ") as value is too short:",
+          element.value.trim().length
+        );
+        continue; 
+      }
+
+      pwFields[pwFields.length] = {
+        index: i,
+        element,
+      };
+    }
+
+    
+    if (!pwFields.length) {
+      lazy.log("(form ignored -- no password fields.)");
+      return null;
+    }
+
+    if (pwFields.length > 5) {
+      lazy.log(
+        "(form ignored -- too many password fields. [ got ",
+        pwFields.length,
+        "])"
+      );
+      return null;
+    }
+
+    return pwFields;
+  }
 }
 
 
@@ -1761,91 +1848,6 @@ class LoginManagerChild extends JSWindowActorChild {
 
 
 
-  _getPasswordFields(
-    form,
-    {
-      fieldOverrideRecipe = null,
-      minPasswordLength = 0,
-      ignoreConnect = false,
-    } = {}
-  ) {
-    
-    let pwFields = [];
-    for (let i = 0; i < form.elements.length; i++) {
-      let element = form.elements[i];
-      if (
-        !HTMLInputElement.isInstance(element) ||
-        !element.hasBeenTypePassword ||
-        (!element.isConnected && !ignoreConnect)
-      ) {
-        continue;
-      }
-
-      
-      if (
-        fieldOverrideRecipe?.notPasswordSelector &&
-        element.matches(fieldOverrideRecipe.notPasswordSelector)
-      ) {
-        lazy.log(
-          "skipping password field (id/name is",
-          element.id,
-          " / ",
-          element.name + ") due to recipe:",
-          fieldOverrideRecipe
-        );
-        continue;
-      }
-
-      
-      
-      
-      if (
-        minPasswordLength &&
-        element.value.trim().length < minPasswordLength
-      ) {
-        lazy.log(
-          "skipping password field (id/name is",
-          element.id,
-          " / ",
-          element.name + ") as value is too short:",
-          element.value.trim().length
-        );
-        continue; 
-      }
-
-      pwFields[pwFields.length] = {
-        index: i,
-        element,
-      };
-    }
-
-    
-    if (!pwFields.length) {
-      lazy.log("(form ignored -- no password fields.)");
-      return null;
-    } else if (pwFields.length > 5) {
-      lazy.log(
-        "(form ignored -- too many password fields. [ got ",
-        pwFields.length,
-        "])"
-      );
-      return null;
-    }
-
-    return pwFields;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1907,7 +1909,7 @@ class LoginManagerChild extends JSWindowActorChild {
       
       
       const minSubmitPasswordLength = 2;
-      pwFields = this._getPasswordFields(form, {
+      pwFields = LoginFormState._getPasswordFields(form, {
         fieldOverrideRecipe,
         minPasswordLength: isSubmission ? minSubmitPasswordLength : 0,
         ignoreConnect,
