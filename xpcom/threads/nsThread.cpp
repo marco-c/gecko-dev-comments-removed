@@ -428,11 +428,19 @@ void nsThread::ThreadFunc(void* aArg) {
   MOZ_ASSERT(context->mTerminatingThread == self);
   nsCOMPtr<nsIRunnable> event =
       do_QueryObject(new nsThreadShutdownAckEvent(context));
+  nsresult dispatch_ack_rv;
   if (context->mIsMainThreadJoining) {
-    SchedulerGroup::Dispatch(TaskCategory::Other, event.forget());
+    dispatch_ack_rv =
+        SchedulerGroup::Dispatch(TaskCategory::Other, event.forget());
   } else {
-    context->mJoiningThread->Dispatch(event, NS_DISPATCH_NORMAL);
+    dispatch_ack_rv =
+        context->mJoiningThread->Dispatch(event, NS_DISPATCH_NORMAL);
   }
+  
+  
+  
+  
+  MOZ_RELEASE_ASSERT(NS_SUCCEEDED(dispatch_ack_rv));
 
   
   self->SetObserver(nullptr);
