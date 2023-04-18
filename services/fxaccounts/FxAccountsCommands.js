@@ -30,6 +30,17 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   CryptoWrapper: "resource://services-sync/record.js",
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "INVALID_SHAREABLE_SCHEMES",
+  "services.sync.engine.tabs.filteredSchemes",
+  "",
+  null,
+  val => {
+    return new Set(val.split("|"));
+  }
+);
+
 class FxAccountsCommands {
   constructor(fxAccountsInternal) {
     this._fxai = fxAccountsInternal;
@@ -199,6 +210,13 @@ class FxAccountsCommands {
                 sender ? sender.name : "Unknown device"
               }.`
             );
+            
+            
+            
+            const scheme = Services.io.newURI(uri).scheme;
+            if (INVALID_SHAREABLE_SCHEMES.has(scheme)) {
+              throw new Error("Invalid scheme found for received URI.");
+            }
             tabsReceived.push({ title, uri, sender });
           } catch (e) {
             log.error(`Error while handling incoming Send Tab payload.`, e);
@@ -209,8 +227,12 @@ class FxAccountsCommands {
       }
     }
     if (tabsReceived.length) {
-      Observers.notify("fxaccounts:commands:open-uri", tabsReceived);
+      this._notifyFxATabsReceived(tabsReceived);
     }
+  }
+
+  _notifyFxATabsReceived(tabsReceived) {
+    Observers.notify("fxaccounts:commands:open-uri", tabsReceived);
   }
 }
 
