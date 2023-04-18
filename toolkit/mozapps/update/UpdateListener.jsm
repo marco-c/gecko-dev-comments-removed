@@ -127,7 +127,7 @@ var UpdateListener = {
     return promptTime - now;
   },
 
-  maybeShowUnsupportedNotification() {
+  init() {
     
     
     let url = Services.prefs.getCharPref(PREF_APP_UPDATE_UNSUPPORTED_URL, null);
@@ -136,6 +136,10 @@ var UpdateListener = {
         this.openUnsupportedUpdateUrl(win, url)
       );
     }
+  },
+
+  uninit() {
+    this.reset();
   },
 
   reset() {
