@@ -9,8 +9,12 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/ErrorResult.h"
+#include "UnderlyingSourceCallbackHelpers.h"
 
 namespace mozilla::dom {
+
+class ReadableStream;
+class BodyStreamHolder;
 
 
 
@@ -25,6 +29,11 @@ bool CanTransferArrayBuffer(JSContext* aCx, JS::Handle<JSObject*> aObject,
 
 
 JSObject* CloneAsUint8Array(JSContext* aCx, JS::HandleObject aObject);
+
+MOZ_CAN_RUN_SCRIPT void
+SetUpReadableByteStreamControllerFromBodyStreamUnderlyingSource(
+    JSContext* aCx, ReadableStream* aStream,
+    BodyStreamHolder* aUnderlyingSource, ErrorResult& aRv);
 
 }  
 

@@ -28,205 +28,87 @@ namespace mozilla::dom {
 class BodyStreamHolder;
 class ReadableStreamController;
 
-
-
-
-class UnderlyingSourceStartCallbackHelper : public nsISupports {
+class UnderlyingSourceAlgorithmsBase : public nsISupports {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(
-      UnderlyingSourceStartCallbackHelper)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(UnderlyingSourceAlgorithmsBase)
 
-  UnderlyingSourceStartCallbackHelper(UnderlyingSourceStartCallback* aCallback,
-                                      JS::HandleObject aThisObj)
-      : mThisObj(aThisObj), mCallback(aCallback) {
-    mozilla::HoldJSObjects(this);
-  }
+  MOZ_CAN_RUN_SCRIPT virtual void StartCallback(
+      JSContext* aCx, ReadableStreamController& aController,
+      JS::MutableHandle<JS::Value> aRetVal, ErrorResult& aRv) = 0;
 
   
-  MOZ_CAN_RUN_SCRIPT
-  void StartCallback(JSContext* aCx, ReadableStreamController& aController,
-                     JS::MutableHandle<JS::Value> aRetVal, ErrorResult& aRv);
-
- protected:
-  virtual ~UnderlyingSourceStartCallbackHelper() {
-    mozilla::DropJSObjects(this);
-  };
-
- private:
-  JS::Heap<JSObject*> mThisObj;
-  RefPtr<UnderlyingSourceStartCallback> mCallback;
-};
-
-
-class UnderlyingSourcePullCallbackHelper : public nsISupports {
- public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(
-      UnderlyingSourcePullCallbackHelper)
-
   
-  MOZ_CAN_RUN_SCRIPT
-  virtual already_AddRefed<Promise> PullCallback(
+  MOZ_CAN_RUN_SCRIPT virtual already_AddRefed<Promise> PullCallback(
       JSContext* aCx, ReadableStreamController& aController,
       ErrorResult& aRv) = 0;
 
- protected:
-  virtual ~UnderlyingSourcePullCallbackHelper() = default;
-};
-
-
-class IDLUnderlyingSourcePullCallbackHelper final
-    : public UnderlyingSourcePullCallbackHelper {
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(
-      IDLUnderlyingSourcePullCallbackHelper, UnderlyingSourcePullCallbackHelper)
-
-  explicit IDLUnderlyingSourcePullCallbackHelper(
-      UnderlyingSourcePullCallback* aCallback, JS::HandleObject aThisObj)
-      : mThisObj(aThisObj), mCallback(aCallback) {
-    MOZ_ASSERT(mCallback);
-    mozilla::HoldJSObjects(this);
-  }
-
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<Promise> PullCallback(JSContext* aCx,
-                                         ReadableStreamController& aController,
-                                         ErrorResult& aRv) override;
-
- protected:
-  ~IDLUnderlyingSourcePullCallbackHelper() override {
-    mozilla::DropJSObjects(this);
-  }
-
- private:
-  JS::Heap<JSObject*> mThisObj;
-  RefPtr<UnderlyingSourcePullCallback> mCallback;
-};
-
-class BodyStreamUnderlyingSourcePullCallbackHelper final
-    : public UnderlyingSourcePullCallbackHelper {
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(
-      BodyStreamUnderlyingSourcePullCallbackHelper,
-      UnderlyingSourcePullCallbackHelper)
-
-  explicit BodyStreamUnderlyingSourcePullCallbackHelper(
-      BodyStreamHolder* underlyingSource);
-
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<Promise> PullCallback(JSContext* aCx,
-                                         ReadableStreamController& aController,
-                                         ErrorResult& aRv) override;
-
- protected:
-  ~BodyStreamUnderlyingSourcePullCallbackHelper() override = default;
-
- private:
-  RefPtr<BodyStreamHolder> mUnderlyingSource;
-};
-
-class UnderlyingSourceCancelCallbackHelper : public nsISupports {
- public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(
-      UnderlyingSourceCancelCallbackHelper)
-
-  MOZ_CAN_RUN_SCRIPT
-  virtual already_AddRefed<Promise> CancelCallback(
+  
+  
+  MOZ_CAN_RUN_SCRIPT virtual already_AddRefed<Promise> CancelCallback(
       JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
       ErrorResult& aRv) = 0;
 
+  
+  virtual void ErrorCallback() = 0;
+
  protected:
-  virtual ~UnderlyingSourceCancelCallbackHelper() = default;
+  virtual ~UnderlyingSourceAlgorithmsBase() = default;
 };
 
-
-class IDLUnderlyingSourceCancelCallbackHelper final
-    : public UnderlyingSourceCancelCallbackHelper {
+class UnderlyingSourceAlgorithms final : public UnderlyingSourceAlgorithmsBase {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(
-      IDLUnderlyingSourceCancelCallbackHelper,
-      UnderlyingSourceCancelCallbackHelper)
+      UnderlyingSourceAlgorithms, UnderlyingSourceAlgorithmsBase)
 
-  explicit IDLUnderlyingSourceCancelCallbackHelper(
-      UnderlyingSourceCancelCallback* aCallback, JS::HandleObject aThisObj)
-      : mThisObj(aThisObj), mCallback(aCallback) {
-    MOZ_ASSERT(mCallback);
+  UnderlyingSourceAlgorithms(nsIGlobalObject* aGlobal,
+                             JS::HandleObject aUnderlyingSource,
+                             UnderlyingSource& aUnderlyingSourceDict)
+      : mGlobal(aGlobal), mUnderlyingSource(aUnderlyingSource) {
+    
+    if (aUnderlyingSourceDict.mStart.WasPassed()) {
+      mStartCallback = aUnderlyingSourceDict.mStart.Value();
+    }
+
+    
+    if (aUnderlyingSourceDict.mPull.WasPassed()) {
+      mPullCallback = aUnderlyingSourceDict.mPull.Value();
+    }
+
+    
+    if (aUnderlyingSourceDict.mCancel.WasPassed()) {
+      mCancelCallback = aUnderlyingSourceDict.mCancel.Value();
+    }
+
     mozilla::HoldJSObjects(this);
-  }
+  };
 
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<Promise> CancelCallback(
+  MOZ_CAN_RUN_SCRIPT void StartCallback(JSContext* aCx,
+                                        ReadableStreamController& aController,
+                                        JS::MutableHandle<JS::Value> aRetVal,
+                                        ErrorResult& aRv) override;
+
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> PullCallback(
+      JSContext* aCx, ReadableStreamController& aController,
+      ErrorResult& aRv) override;
+
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> CancelCallback(
       JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
       ErrorResult& aRv) override;
 
+  void ErrorCallback() override {}
+
  protected:
-  ~IDLUnderlyingSourceCancelCallbackHelper() override {
-    mozilla::DropJSObjects(this);
-  }
+  ~UnderlyingSourceAlgorithms() override { mozilla::DropJSObjects(this); };
 
  private:
-  JS::Heap<JSObject*> mThisObj;
-  RefPtr<UnderlyingSourceCancelCallback> mCallback;
-};
-
-class BodyStreamUnderlyingSourceCancelCallbackHelper final
-    : public UnderlyingSourceCancelCallbackHelper {
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(
-      BodyStreamUnderlyingSourceCancelCallbackHelper,
-      UnderlyingSourceCancelCallbackHelper)
-
-  explicit BodyStreamUnderlyingSourceCancelCallbackHelper(
-      BodyStreamHolder* aUnderlyingSource);
-
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<Promise> CancelCallback(
-      JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
-      ErrorResult& aRv) override;
-
- protected:
-  ~BodyStreamUnderlyingSourceCancelCallbackHelper() override = default;
-
- private:
-  RefPtr<BodyStreamHolder> mUnderlyingSource;
-};
-
-
-class UnderlyingSourceErrorCallbackHelper : public nsISupports {
- public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(UnderlyingSourceErrorCallbackHelper)
-
-  virtual void Call() = 0;
-
- protected:
-  virtual ~UnderlyingSourceErrorCallbackHelper() = default;
-};
-
-class BodyStreamUnderlyingSourceErrorCallbackHelper final
-    : public UnderlyingSourceErrorCallbackHelper {
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(
-      BodyStreamUnderlyingSourceErrorCallbackHelper,
-      UnderlyingSourceErrorCallbackHelper)
-
-  explicit BodyStreamUnderlyingSourceErrorCallbackHelper(
-      BodyStreamHolder* aUnderlyingSource);
-
-  void Call() override;
-
- protected:
-  ~BodyStreamUnderlyingSourceErrorCallbackHelper() override = default;
-
- private:
-  RefPtr<BodyStreamHolder> mUnderlyingSource;
+  
+  nsCOMPtr<nsIGlobalObject> mGlobal;
+  JS::Heap<JSObject*> mUnderlyingSource;
+  MOZ_KNOWN_LIVE RefPtr<UnderlyingSourceStartCallback> mStartCallback;
+  MOZ_KNOWN_LIVE RefPtr<UnderlyingSourcePullCallback> mPullCallback;
+  MOZ_KNOWN_LIVE RefPtr<UnderlyingSourceCancelCallback> mCancelCallback;
 };
 
 }  

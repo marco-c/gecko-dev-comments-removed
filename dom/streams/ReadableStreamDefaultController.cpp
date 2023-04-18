@@ -38,16 +38,15 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTION_CLASS(ReadableStreamDefaultController)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(ReadableStreamDefaultController)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mCancelAlgorithm, mStrategySizeAlgorithm,
-                                  mPullAlgorithm, mStream)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mAlgorithms, mStrategySizeAlgorithm, mStream)
   tmp->mQueue.clear();
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(
     ReadableStreamDefaultController, ReadableStreamController)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCancelAlgorithm, mStrategySizeAlgorithm,
-                                    mPullAlgorithm, mStream)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAlgorithms, mStrategySizeAlgorithm,
+                                    mStream)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(ReadableStreamDefaultController,
@@ -188,10 +187,8 @@ Nullable<double> ReadableStreamDefaultController::GetDesiredSize() {
 void ReadableStreamDefaultControllerClearAlgorithms(
     ReadableStreamDefaultController* aController) {
   
-  aController->SetPullAlgorithm(nullptr);
-
   
-  aController->SetCancelAlgorithm(nullptr);
+  aController->SetAlgorithms(nullptr);
 
   
   aController->setStrategySizeAlgorithm(nullptr);
@@ -481,13 +478,10 @@ static void ReadableStreamDefaultControllerCallPullIfNeeded(
   aController->SetPulling(true);
 
   
-  RefPtr<UnderlyingSourcePullCallbackHelper> pullAlgorithm(
-      aController->GetPullAlgorithm());
-
+  RefPtr<UnderlyingSourceAlgorithmsBase> algorithms =
+      aController->GetAlgorithms();
   RefPtr<Promise> pullPromise =
-      pullAlgorithm ? pullAlgorithm->PullCallback(aCx, *aController, aRv)
-                    : Promise::CreateResolvedWithUndefined(
-                          aController->GetParentObject(), aRv);
+      algorithms->PullCallback(aCx, *aController, aRv);
   if (aRv.Failed()) {
     return;
   }
@@ -552,11 +546,8 @@ NS_INTERFACE_MAP_END
 void SetUpReadableStreamDefaultController(
     JSContext* aCx, ReadableStream* aStream,
     ReadableStreamDefaultController* aController,
-    UnderlyingSourceStartCallbackHelper* aStartAlgorithm,
-    UnderlyingSourcePullCallbackHelper* aPullAlgorithm,
-    UnderlyingSourceCancelCallbackHelper* aCancelAlgorithm,
-    double aHighWaterMark, QueuingStrategySize* aSizeAlgorithm,
-    ErrorResult& aRv) {
+    UnderlyingSourceAlgorithmsBase* aAlgorithms, double aHighWaterMark,
+    QueuingStrategySize* aSizeAlgorithm, ErrorResult& aRv) {
   
   MOZ_ASSERT(!aStream->Controller());
 
@@ -577,10 +568,8 @@ void SetUpReadableStreamDefaultController(
   aController->SetStrategyHWM(aHighWaterMark);
 
   
-  aController->SetPullAlgorithm(aPullAlgorithm);
-
   
-  aController->SetCancelAlgorithm(aCancelAlgorithm);
+  aController->SetAlgorithms(aAlgorithms);
 
   
   aStream->SetController(aController);
@@ -588,15 +577,10 @@ void SetUpReadableStreamDefaultController(
   
   
   JS::RootedValue startResult(aCx, JS::UndefinedValue());
-  if (aStartAlgorithm) {
-    
-    RefPtr<UnderlyingSourceStartCallbackHelper> startAlgorithm(aStartAlgorithm);
-    RefPtr<ReadableStreamDefaultController> controller(aController);
-
-    startAlgorithm->StartCallback(aCx, *controller, &startResult, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
+  RefPtr<ReadableStreamDefaultController> controller = aController;
+  aAlgorithms->StartCallback(aCx, *controller, &startResult, aRv);
+  if (aRv.Failed()) {
+    return;
   }
 
   
@@ -623,30 +607,12 @@ void SetupReadableStreamDefaultControllerFromUnderlyingSource(
       new ReadableStreamDefaultController(aStream->GetParentObject());
 
   
-  
-  RefPtr<UnderlyingSourceStartCallbackHelper> startAlgorithm =
-      aUnderlyingSourceDict.mStart.WasPassed()
-          ? new UnderlyingSourceStartCallbackHelper(
-                aUnderlyingSourceDict.mStart.Value(), aUnderlyingSource)
-          : nullptr;
+  RefPtr<UnderlyingSourceAlgorithms> algorithms =
+      new UnderlyingSourceAlgorithms(aStream->GetParentObject(),
+                                     aUnderlyingSource, aUnderlyingSourceDict);
 
   
-  RefPtr<UnderlyingSourcePullCallbackHelper> pullAlgorithm =
-      aUnderlyingSourceDict.mPull.WasPassed()
-          ? new IDLUnderlyingSourcePullCallbackHelper(
-                aUnderlyingSourceDict.mPull.Value(), aUnderlyingSource)
-          : nullptr;
-
-  
-  RefPtr<UnderlyingSourceCancelCallbackHelper> cancelAlgorithm =
-      aUnderlyingSourceDict.mCancel.WasPassed()
-          ? new IDLUnderlyingSourceCancelCallbackHelper(
-                aUnderlyingSourceDict.mCancel.Value(), aUnderlyingSource)
-          : nullptr;
-
-  
-  SetUpReadableStreamDefaultController(aCx, aStream, controller, startAlgorithm,
-                                       pullAlgorithm, cancelAlgorithm,
+  SetUpReadableStreamDefaultController(aCx, aStream, controller, algorithms,
                                        aHighWaterMark, aSizeAlgorithm, aRv);
 }
 
@@ -658,11 +624,8 @@ already_AddRefed<Promise> ReadableStreamDefaultController::CancelSteps(
 
   
   Optional<JS::Handle<JS::Value>> errorOption(aCx, aReason);
-  RefPtr<UnderlyingSourceCancelCallbackHelper> callback =
-      this->GetCancelAlgorithm();
-  RefPtr<Promise> result =
-      callback ? callback->CancelCallback(aCx, errorOption, aRv)
-               : Promise::CreateResolvedWithUndefined(GetParentObject(), aRv);
+  RefPtr<UnderlyingSourceAlgorithmsBase> algorithms = mAlgorithms;
+  RefPtr<Promise> result = algorithms->CancelCallback(aCx, errorOption, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }

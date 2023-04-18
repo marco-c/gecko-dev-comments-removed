@@ -73,7 +73,7 @@ namespace mozilla::dom {
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WITH_JS_MEMBERS(ReadableStream,
                                                       (mGlobal, mController,
-                                                       mReader, mErrorAlgorithm,
+                                                       mReader, mAlgorithms,
                                                        mNativeUnderlyingSource),
                                                       (mStoredError))
 
@@ -273,9 +273,7 @@ static void InitializeReadableStream(ReadableStream* aStream) {
 MOZ_CAN_RUN_SCRIPT
 already_AddRefed<ReadableStream> CreateReadableStream(
     JSContext* aCx, nsIGlobalObject* aGlobal,
-    UnderlyingSourceStartCallbackHelper* aStartAlgorithm,
-    UnderlyingSourcePullCallbackHelper* aPullAlgorithm,
-    UnderlyingSourceCancelCallbackHelper* aCancelAlgorithm,
+    UnderlyingSourceAlgorithmsBase* aAlgorithms,
     mozilla::Maybe<double> aHighWaterMark, QueuingStrategySize* aSizeAlgorithm,
     ErrorResult& aRv) {
   
@@ -296,8 +294,7 @@ already_AddRefed<ReadableStream> CreateReadableStream(
       new ReadableStreamDefaultController(aGlobal);
 
   
-  SetUpReadableStreamDefaultController(aCx, stream, controller, aStartAlgorithm,
-                                       aPullAlgorithm, aCancelAlgorithm,
+  SetUpReadableStreamDefaultController(aCx, stream, controller, aAlgorithms,
                                        highWaterMark, aSizeAlgorithm, aRv);
 
   
@@ -620,8 +617,8 @@ void ReadableStreamError(JSContext* aCx, ReadableStream* aStream,
 
   
   
-  if (aStream->GetErrorAlgorithm()) {
-    aStream->GetErrorAlgorithm()->Call();
+  if (UnderlyingSourceAlgorithmsBase* algorithms = aStream->GetAlgorithms()) {
+    algorithms->ErrorCallback();
   }
 }
 
@@ -664,109 +661,58 @@ void ReadableStreamAddReadRequest(ReadableStream* aStream,
   aStream->GetDefaultReader()->ReadRequests().insertBack(aReadRequest);
 }
 
-class ReadableStreamDefaultTeeCancelAlgorithm final
-    : public UnderlyingSourceCancelCallbackHelper {
-  RefPtr<TeeState> mTeeState;
-  
-  
-  
-  bool mIsCancel1 = true;
 
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(
-      ReadableStreamDefaultTeeCancelAlgorithm,
-      UnderlyingSourceCancelCallbackHelper)
 
-  explicit ReadableStreamDefaultTeeCancelAlgorithm(TeeState* aTeeState,
-                                                   bool aIsCancel1)
-      : mTeeState(aTeeState), mIsCancel1(aIsCancel1) {}
+MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise>
+ReadableStreamDefaultTeeSourceAlgorithms::CancelCallback(
+    JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
+    ErrorResult& aRv) {
+  
+  mTeeState->SetCanceled(mBranch, true);
 
-  MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<Promise> CancelCallback(
-      JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
-      ErrorResult& aRv) override {
+  
+  mTeeState->SetReason(mBranch, aReason.Value());
+
+  
+
+  if (mTeeState->Canceled(OtherTeeBranch(mBranch))) {
     
-    if (mIsCancel1) {
-      mTeeState->SetCanceled1(true);
-    } else {
-      mTeeState->SetCanceled2(true);
+
+    JS::RootedObject compositeReason(aCx, JS::NewArrayObject(aCx, 2));
+    if (!compositeReason) {
+      aRv.StealExceptionFromJSContext(aCx);
+      return nullptr;
+    }
+
+    JS::RootedValue reason1(aCx, mTeeState->Reason1());
+    if (!JS_SetElement(aCx, compositeReason, 0, reason1)) {
+      aRv.StealExceptionFromJSContext(aCx);
+      return nullptr;
+    }
+
+    JS::RootedValue reason2(aCx, mTeeState->Reason2());
+    if (!JS_SetElement(aCx, compositeReason, 1, reason2)) {
+      aRv.StealExceptionFromJSContext(aCx);
+      return nullptr;
     }
 
     
-    if (mIsCancel1) {
-      mTeeState->SetReason1(aReason.Value());
-    } else {
-      mTeeState->SetReason2(aReason.Value());
+    JS::RootedValue compositeReasonValue(aCx,
+                                         JS::ObjectValue(*compositeReason));
+    RefPtr<ReadableStream> stream(mTeeState->GetStream());
+    RefPtr<Promise> cancelResult =
+        ReadableStreamCancel(aCx, stream, compositeReasonValue, aRv);
+    if (aRv.Failed()) {
+      return nullptr;
     }
 
     
-
-    if ((mIsCancel1 && mTeeState->Canceled2()) ||
-        (!mIsCancel1 && mTeeState->Canceled1())) {
-      
-
-      JS::RootedObject compositeReason(aCx, JS::NewArrayObject(aCx, 2));
-      if (!compositeReason) {
-        aRv.StealExceptionFromJSContext(aCx);
-        return nullptr;
-      }
-
-      JS::RootedValue reason1(aCx, mTeeState->Reason1());
-      if (!JS_SetElement(aCx, compositeReason, 0, reason1)) {
-        aRv.StealExceptionFromJSContext(aCx);
-        return nullptr;
-      }
-
-      JS::RootedValue reason2(aCx, mTeeState->Reason2());
-      if (!JS_SetElement(aCx, compositeReason, 1, reason2)) {
-        aRv.StealExceptionFromJSContext(aCx);
-        return nullptr;
-      }
-
-      
-      JS::RootedValue compositeReasonValue(aCx,
-                                           JS::ObjectValue(*compositeReason));
-      RefPtr<ReadableStream> stream(mTeeState->GetStream());
-      RefPtr<Promise> cancelResult =
-          ReadableStreamCancel(aCx, stream, compositeReasonValue, aRv);
-      if (aRv.Failed()) {
-        return nullptr;
-      }
-
-      
-      mTeeState->CancelPromise()->MaybeResolve(cancelResult);
-    }
-
-    
-    return do_AddRef(mTeeState->CancelPromise());
+    mTeeState->CancelPromise()->MaybeResolve(cancelResult);
   }
 
- protected:
-  ~ReadableStreamDefaultTeeCancelAlgorithm() override = default;
-};
-
-NS_IMPL_CYCLE_COLLECTION_CLASS(ReadableStreamDefaultTeeCancelAlgorithm)
-
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(
-    ReadableStreamDefaultTeeCancelAlgorithm,
-    UnderlyingSourceCancelCallbackHelper)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mTeeState)
-NS_IMPL_CYCLE_COLLECTION_UNLINK_END
-
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(
-    ReadableStreamDefaultTeeCancelAlgorithm,
-    UnderlyingSourceCancelCallbackHelper)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTeeState)
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
-
-NS_IMPL_ADDREF_INHERITED(ReadableStreamDefaultTeeCancelAlgorithm,
-                         UnderlyingSourceCancelCallbackHelper)
-NS_IMPL_RELEASE_INHERITED(ReadableStreamDefaultTeeCancelAlgorithm,
-                          UnderlyingSourceCancelCallbackHelper)
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ReadableStreamDefaultTeeCancelAlgorithm)
-NS_INTERFACE_MAP_END_INHERITING(UnderlyingSourceCancelCallbackHelper)
+  
+  return do_AddRef(mTeeState->CancelPromise());
+}
 
 
 
@@ -830,37 +776,22 @@ static void ReadableStreamDefaultTee(JSContext* aCx, ReadableStream* aStream,
   }
 
   
-  RefPtr<ReadableStreamDefaultTeePullAlgorithm> pullAlgorithm =
-      new ReadableStreamDefaultTeePullAlgorithm(teeState);
-
-  
-  teeState->SetPullAlgorithm(pullAlgorithm);
-
-  
-  RefPtr<UnderlyingSourceCancelCallbackHelper> cancel1Algorithm =
-      new ReadableStreamDefaultTeeCancelAlgorithm(teeState, true);
-
-  
-  RefPtr<UnderlyingSourceCancelCallbackHelper> cancel2Algorithm =
-      new ReadableStreamDefaultTeeCancelAlgorithm(teeState, false);
-
-  
-  
-  RefPtr<UnderlyingSourceStartCallbackHelper> startAlgorithm;
+  auto branch1Algorithms = MakeRefPtr<ReadableStreamDefaultTeeSourceAlgorithms>(
+      teeState, TeeBranch::Branch1);
+  auto branch2Algorithms = MakeRefPtr<ReadableStreamDefaultTeeSourceAlgorithms>(
+      teeState, TeeBranch::Branch2);
 
   
   nsCOMPtr<nsIGlobalObject> global(
       do_AddRef(teeState->GetStream()->GetParentObject()));
-  teeState->SetBranch1(CreateReadableStream(aCx, global, startAlgorithm,
-                                            pullAlgorithm, cancel1Algorithm,
+  teeState->SetBranch1(CreateReadableStream(aCx, global, branch1Algorithms,
                                             mozilla::Nothing(), nullptr, aRv));
   if (aRv.Failed()) {
     return;
   }
 
   
-  teeState->SetBranch2(CreateReadableStream(aCx, global, startAlgorithm,
-                                            pullAlgorithm, cancel2Algorithm,
+  teeState->SetBranch2(CreateReadableStream(aCx, global, branch2Algorithms,
                                             mozilla::Nothing(), nullptr, aRv));
   if (aRv.Failed()) {
     return;
@@ -947,9 +878,7 @@ void ReadableStreamAddReadIntoRequest(ReadableStream* aStream,
 
 already_AddRefed<ReadableStream> CreateReadableByteStream(
     JSContext* aCx, nsIGlobalObject* aGlobal,
-    UnderlyingSourceStartCallbackHelper* aStartAlgorithm,
-    UnderlyingSourcePullCallbackHelper* aPullAlgorithm,
-    UnderlyingSourceCancelCallbackHelper* aCancelAlgorithm, ErrorResult& aRv) {
+    UnderlyingSourceAlgorithmsBase* aAlgorithms, ErrorResult& aRv) {
   
   RefPtr<ReadableStream> stream = new ReadableStream(aGlobal);
 
@@ -962,9 +891,8 @@ already_AddRefed<ReadableStream> CreateReadableByteStream(
 
   
   
-  SetUpReadableByteStreamController(aCx, stream, controller, aStartAlgorithm,
-                                    aPullAlgorithm, aCancelAlgorithm, nullptr,
-                                    0, mozilla::Nothing(), aRv);
+  SetUpReadableByteStreamController(aCx, stream, controller, aAlgorithms, 0,
+                                    mozilla::Nothing(), aRv);
   if (aRv.Failed()) {
     return nullptr;
   }

@@ -18,7 +18,7 @@ using ::ImplCycleCollectionUnlink;
 
 NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(TeeState,
                                          (mStream, mReader, mBranch1, mBranch2,
-                                          mCancelPromise, mPullAlgorithm),
+                                          mCancelPromise),
                                          (mReason1, mReason2))
 NS_IMPL_CYCLE_COLLECTING_ADDREF(TeeState)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(TeeState)
@@ -58,8 +58,33 @@ already_AddRefed<TeeState> TeeState::Create(ReadableStream* aStream,
   return teeState.forget();
 }
 
-void TeeState::SetPullAlgorithm(
-    ReadableStreamDefaultTeePullAlgorithm* aPullAlgorithm) {
-  mPullAlgorithm = aPullAlgorithm;
+
+
+void TeeState::PullCallback(JSContext* aCx, nsIGlobalObject* aGlobal,
+                            ErrorResult& aRv) {
+  
+  if (Reading()) {
+    
+    SetReadAgain(true);
+
+    
+    
+    return;
+  }
+
+  
+  SetReading(true);
+
+  
+  RefPtr<ReadRequest> readRequest =
+      new ReadableStreamDefaultTeeReadRequest(this);
+
+  
+  RefPtr<ReadableStreamGenericReader> reader = GetReader();
+  ReadableStreamDefaultReaderRead(aCx, reader, readRequest, aRv);
+
+  
+  
 }
+
 }  
