@@ -84,12 +84,6 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-
-
-
-
-
-
   initialize: function(conn, sessionContext) {
     protocol.Actor.prototype.initialize.call(this, conn);
     this._sessionContext = sessionContext;

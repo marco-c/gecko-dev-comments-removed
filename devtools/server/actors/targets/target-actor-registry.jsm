@@ -44,7 +44,6 @@ var TargetActorRegistry = {
 
 
 
-
   getTopLevelTargetActorForContext(sessionContext, connectionPrefix) {
     if (sessionContext.type == "all") {
       if (
@@ -74,7 +73,6 @@ var TargetActorRegistry = {
   },
 
   
-
 
 
 

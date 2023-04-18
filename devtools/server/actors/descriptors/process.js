@@ -8,6 +8,9 @@ const Services = require("Services");
 const { DevToolsServer } = require("devtools/server/devtools-server");
 const { Cc, Ci } = require("chrome");
 
+const {
+  createBrowserSessionContext,
+} = require("devtools/server/actors/watcher/session-context");
 const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
 const {
   processDescriptorSpec,
@@ -157,12 +160,7 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
 
   getWatcher() {
     if (!this.watcher) {
-      this.watcher = new WatcherActor(this.conn, {
-        type: "all",
-        
-        
-        isServerTargetSwitchingEnabled: false,
-      });
+      this.watcher = new WatcherActor(this.conn, createBrowserSessionContext());
       this.manage(this.watcher);
     }
     return this.watcher;
