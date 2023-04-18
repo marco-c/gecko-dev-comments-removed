@@ -4,13 +4,23 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["ScreenshotsUtils"];
+var EXPORTED_SYMBOLS = ["ScreenshotsUtils", "ScreenshotsComponentParent"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 const PanelPosition = "bottomright topright";
 const PanelOffsetX = -33;
 const PanelOffsetY = -8;
+
+class ScreenshotsComponentParent extends JSWindowActorParent {
+  receiveMessage(message) {
+    switch (message.name) {
+      case "Screenshots:CancelScreenshot":
+        let browser = message.target.browsingContext.topFrameElement;
+        ScreenshotsUtils.closePanel(browser);
+    }
+  }
+}
 
 var ScreenshotsUtils = {
   initialized: false,
@@ -58,8 +68,7 @@ var ScreenshotsUtils = {
         break;
       case "screenshots-take-screenshot":
         
-        
-        this.togglePreview(browser);
+        this.closePanel(browser);
 
         
         let dialogBox = gBrowser.getTabDialogBox(browser);
@@ -106,6 +115,29 @@ var ScreenshotsUtils = {
 
 
 
+  openPanel(browser) {
+    let actor = this.getActor(browser);
+    actor.sendQuery("Screenshots:ShowOverlay");
+    this.createOrDisplayButtons(browser);
+  },
+  
+
+
+
+  closePanel(browser) {
+    let buttonsPanel = browser.ownerDocument.querySelector(
+      "#screenshotsPagePanel"
+    );
+    if (buttonsPanel && buttonsPanel.state !== "closed") {
+      buttonsPanel.hidePopup();
+    }
+    let actor = this.getActor(browser);
+    actor.sendQuery("Screenshots:HideOverlay");
+  },
+  
+
+
+
 
 
   togglePreview(browser) {
@@ -117,6 +149,8 @@ var ScreenshotsUtils = {
       let actor = this.getActor(browser);
       return actor.sendQuery("Screenshots:HideOverlay");
     }
+    let actor = this.getActor(browser);
+    actor.sendQuery("Screenshots:ShowOverlay");
     return this.createOrDisplayButtons(browser);
   },
   
@@ -173,10 +207,9 @@ var ScreenshotsUtils = {
       template.replaceWith(clone);
       buttonsPanel = doc.querySelector("#screenshotsPagePanel");
     }
+
     let anchor = doc.querySelector("#navigator-toolbox");
     buttonsPanel.openPopup(anchor, PanelPosition, PanelOffsetX, PanelOffsetY);
-    let actor = this.getActor(browser);
-    return actor.sendQuery("Screenshots:ShowOverlay");
   },
   
 
