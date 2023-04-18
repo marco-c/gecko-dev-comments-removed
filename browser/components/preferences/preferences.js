@@ -72,6 +72,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   formAutofillParent: "resource://formautofill/FormAutofillParent.jsm",
   FeatureGate: "resource://featuregates/FeatureGate.jsm",
   HomePage: "resource:///modules/HomePage.jsm",
+  LangPackMatcher: "resource://gre/modules/LangPackMatcher.jsm",
   LoginHelper: "resource://gre/modules/LoginHelper.jsm",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
   OSKeyStore: "resource://gre/modules/OSKeyStore.jsm",
@@ -629,26 +630,4 @@ function maybeDisplayPoliciesNotice() {
     document.getElementById("policies-container").removeAttribute("hidden");
     ensureScrollPadding();
   }
-}
-
-
-
-
-
-
-
-
-
-async function getAvailableLocales() {
-  let { availableLocales, defaultLocale, lastFallbackLocale } = Services.locale;
-  
-  
-  if (defaultLocale != lastFallbackLocale) {
-    let lastFallbackId = `langpack-${lastFallbackLocale}@firefox.mozilla.org`;
-    let lastFallbackInstalled = await AddonManager.getAddonByID(lastFallbackId);
-    if (!lastFallbackInstalled) {
-      return availableLocales.filter(locale => locale != lastFallbackLocale);
-    }
-  }
-  return availableLocales;
 }

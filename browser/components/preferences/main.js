@@ -1021,7 +1021,7 @@ var gMainPane = {
 
 
   async updatePrimaryBrowserLanguageUI(selected) {
-    let available = await getAvailableLocales();
+    let available = await LangPackMatcher.getAvailableLocales();
     let localeNames = Services.intl.getLocaleDisplayNames(
       undefined,
       available,

@@ -129,7 +129,8 @@ function ensureLangPackInstalled(langPack) {
 
 
 async function _ensureLangPackInstalledImpl(langPack) {
-  if (mockable.getAvailableLocales().includes(langPack.target_locale)) {
+  const availablelocales = await getAvailableLocales();
+  if (availablelocales.includes(langPack.target_locale)) {
     
     return true;
   }
@@ -186,8 +187,25 @@ const mockable = {
   
 
 
-  getAvailableLocales() {
+
+
+
+  getAvailableLocalesIncludingFallback() {
     return Services.locale.availableLocales;
+  },
+
+  
+
+
+  getDefaultLocale() {
+    return Services.locale.defaultLocale;
+  },
+
+  
+
+
+  getLastFallbackLocale() {
+    return Services.locale.lastFallbackLocale;
   },
 
   
@@ -337,11 +355,36 @@ function getAppAndSystemLocaleInfo() {
   };
 }
 
+
+
+
+
+
+
+
+
+async function getAvailableLocales() {
+  const availableLocales = mockable.getAvailableLocalesIncludingFallback();
+  const defaultLocale = mockable.getDefaultLocale();
+  const lastFallbackLocale = mockable.getLastFallbackLocale();
+  
+  
+  if (defaultLocale != lastFallbackLocale) {
+    let lastFallbackId = `langpack-${lastFallbackLocale}@firefox.mozilla.org`;
+    let lastFallbackInstalled = await AddonManager.getAddonByID(lastFallbackId);
+    if (!lastFallbackInstalled) {
+      return availableLocales.filter(locale => locale != lastFallbackLocale);
+    }
+  }
+  return availableLocales;
+}
+
 var LangPackMatcher = {
   negotiateLangPackForLanguageMismatch,
   ensureLangPackInstalled,
   getAppAndSystemLocaleInfo,
   setRequestedAppLocales,
+  getAvailableLocales,
   mockable,
 };
 

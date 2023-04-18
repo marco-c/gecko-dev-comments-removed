@@ -501,6 +501,41 @@ add_task(async function test_aboutwelcome_languageSwitcher_asyncCalls() {
 
 
 
+
+add_task(async function test_aboutwelcome_fallback_locale() {
+  sandbox.restore();
+  const {
+    resolveLangPacks,
+    resolveInstaller,
+    mockable,
+  } = mockAddonAndLocaleAPIs({
+    systemLocale: "en-US",
+    appLocale: "it",
+  });
+
+  await openAboutWelcome();
+
+  info("Waiting for getAvailableLangpacks to be called.");
+  await TestUtils.waitForCondition(
+    () => mockable.getAvailableLangpacks.called,
+    "getAvailableLangpacks called once"
+  );
+  ok(mockable.installLangPack.notCalled);
+
+  resolveLangPacks(["en-US"]);
+
+  await TestUtils.waitForCondition(
+    () => mockable.installLangPack.called,
+    "installLangPack was called once"
+  );
+  ok(mockable.getAvailableLangpacks.called);
+
+  resolveInstaller();
+});
+
+
+
+
 add_task(async function test_aboutwelcome_languageSwitcher_noMatch() {
   sandbox.restore();
   const { resolveLangPacks, mockable } = mockAddonAndLocaleAPIs({
