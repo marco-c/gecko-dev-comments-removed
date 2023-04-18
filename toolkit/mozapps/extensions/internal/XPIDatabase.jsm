@@ -347,7 +347,10 @@ class AddonInternal {
 
 
 
-  validInstallOrigins(origins = {}) {
+
+
+
+  validInstallOrigins({ installFrom, source }) {
     if (
       !Services.prefs.getBoolPref("extensions.install_origins.enabled", true)
     ) {
@@ -366,10 +369,40 @@ class AddonInternal {
       return false;
     }
 
-    for (const [name, source] of Object.entries(origins)) {
+    if (this.type == "sitepermission") {
+      
+      for (let origin of installOrigins) {
+        let host = new URL(origin).host;
+        
+        if (Services.eTLD.getKnownPublicSuffixFromHost(host) == host) {
+          logger.warn(
+            `Addon ${this.id} Installation not allowed from the install_origin ${host} that is an eTLD`
+          );
+          return false;
+        }
+      }
+
       if (!installOrigins.includes(new URL(source.spec).origin)) {
         logger.warn(
-          `Addon ${this.id} Installation not allowed, ${name} "${source.spec}" is not included in the Addon install_origins`
+          `Addon ${this.id} Installation not allowed, "${source.spec}" is not included in the Addon install_origins`
+        );
+        return false;
+      }
+
+      if (!installFrom.host.endsWith(source.host)) {
+        logger.warn(
+          `Addon ${this.id} Installation not allowed, "${installFrom.spec}" is not a subdomain of the Addon install_origins`
+        );
+        return false;
+      }
+
+      return true;
+    }
+
+    for (const [name, uri] of Object.entries({ installFrom, source })) {
+      if (!installOrigins.includes(new URL(uri.spec).origin)) {
+        logger.warn(
+          `Addon ${this.id} Installation not allowed, ${name} "${uri.spec}" is not included in the Addon install_origins`
         );
         return false;
       }
