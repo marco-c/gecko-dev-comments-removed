@@ -17,6 +17,7 @@
 #include "mozilla/intl/WordBreaker.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "nsAccUtils.h"
+#include "nsBlockFrame.h"
 #include "nsContentUtils.h"
 #include "nsIAccessiblePivot.h"
 #include "nsILineIterator.h"
@@ -181,6 +182,22 @@ static bool IsLocalAccAtLineStart(LocalAccessible* aAcc) {
     
     
     return true;
+  }
+  if (nsBlockFrame* block = do_QueryFrame(thisBlock)) {
+    
+    
+    bool found = false;
+    block->SetupLineCursorForQuery();
+    nsBlockInFlowLineIterator prevIt(block, prevLineFrame, &found);
+    if (!found) {
+      
+      return true;
+    }
+    found = false;
+    nsBlockInFlowLineIterator thisIt(block, thisLineFrame, &found);
+    
+    
+    return !found || prevIt.GetLine() != thisIt.GetLine();
   }
   nsAutoLineIterator it = prevBlock->GetLineIterator();
   MOZ_ASSERT(it, "GetLineIterator impl in line-container blocks is infallible");
