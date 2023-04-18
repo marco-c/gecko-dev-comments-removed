@@ -14,6 +14,7 @@
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/IntegerPrintfMacros.h"
 
 namespace mozilla {
 namespace media {
@@ -39,6 +40,16 @@ namespace media {
 
 
 static const int64_t NSECS_PER_S = 1000000000;
+
+#ifndef PROCESS_DECODE_LOG
+#  define PROCESS_DECODE_LOG(sample)                                         \
+    MOZ_LOG(                                                                 \
+        sPDMLog, mozilla::LogLevel::Verbose,                                 \
+        ("ProcessDecode: mDuration=%" PRIu64 "µs ; mTime=%" PRIu64           \
+         "µs ; mTimecode=%" PRIu64 "µs",                                     \
+         sample->mDuration.ToMicroseconds(), sample->mTime.ToMicroseconds(), \
+         sample->mTimecode.ToMicroseconds()))
+#endif  
 
 
 
