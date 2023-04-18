@@ -26,13 +26,9 @@ using namespace mozilla;
 
 
 nsJAR::nsJAR()
-    : mZip(new nsZipArchive()),
-      mReleaseTime(PR_INTERVAL_NO_TIMEOUT),
-      mCache(nullptr),
+    : mReleaseTime(PR_INTERVAL_NO_TIMEOUT),
       mLock("nsJAR::mLock"),
-      mMtime(0),
-      mOpened(false),
-      mSkipArchiveClosing(false) {}
+      mCache(nullptr) {}
 
 nsJAR::~nsJAR() { Close(); }
 
@@ -50,7 +46,7 @@ MozExternalRefCountType nsJAR::Release(void) {
   if (mRefCnt == 2) {  
     
     
-    MutexAutoLock lock(mLock);
+    RecursiveMutexAutoLock lock(mLock);
     cache = mCache;
     mCache = nullptr;
   }
@@ -79,76 +75,83 @@ MozExternalRefCountType nsJAR::Release(void) {
 NS_IMETHODIMP
 nsJAR::Open(nsIFile* zipFile) {
   NS_ENSURE_ARG_POINTER(zipFile);
-  if (mOpened) return NS_ERROR_FAILURE;  
+  RecursiveMutexAutoLock lock(mLock);
+  if (mZip) return NS_ERROR_FAILURE;  
 
   mZipFile = zipFile;
   mOuterZipEntry.Truncate();
-  mOpened = true;
 
   
-  
   RefPtr<nsZipArchive> zip = mozilla::Omnijar::GetReader(zipFile);
-  if (zip) {
-    mZip = zip;
-    mSkipArchiveClosing = true;
-    return NS_OK;
+  if (!zip) {
+    zip = nsZipArchive::OpenArchive(zipFile);
   }
-  return mZip->OpenArchive(zipFile);
+  mZip = zip;
+  return mZip ? NS_OK : NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
 nsJAR::OpenInner(nsIZipReader* aZipReader, const nsACString& aZipEntry) {
-  NS_ENSURE_ARG_POINTER(aZipReader);
-  if (mOpened) return NS_ERROR_FAILURE;  
+  nsresult rv;
 
-  nsJAR* outerJAR = static_cast<nsJAR*>(aZipReader);
+  NS_ENSURE_ARG_POINTER(aZipReader);
+
+  nsCOMPtr<nsIFile> zipFile;
+  rv = aZipReader->GetFile(getter_AddRefs(zipFile));
+  NS_ENSURE_SUCCESS(rv, rv);
+
   RefPtr<nsZipArchive> innerZip =
-      mozilla::Omnijar::GetInnerReader(outerJAR->mZipFile, aZipEntry);
+      mozilla::Omnijar::GetInnerReader(zipFile, aZipEntry);
   if (innerZip) {
-    mOpened = true;
+    RecursiveMutexAutoLock lock(mLock);
+    if (mZip) {
+      return NS_ERROR_FAILURE;
+    }
     mZip = innerZip;
-    mSkipArchiveClosing = true;
     return NS_OK;
   }
 
   bool exist;
-  nsresult rv = aZipReader->HasEntry(aZipEntry, &exist);
+  rv = aZipReader->HasEntry(aZipEntry, &exist);
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(exist, NS_ERROR_FILE_NOT_FOUND);
 
-  rv = aZipReader->GetFile(getter_AddRefs(mZipFile));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  mOpened = true;
-
-  mOuterZipEntry.Assign(aZipEntry);
-
   RefPtr<nsZipHandle> handle;
-  rv = nsZipHandle::Init(static_cast<nsJAR*>(aZipReader)->mZip.get(),
-                         PromiseFlatCString(aZipEntry).get(),
-                         getter_AddRefs(handle));
-  if (NS_FAILED(rv)) return rv;
+  {
+    nsJAR* outerJAR = static_cast<nsJAR*>(aZipReader);
+    RecursiveMutexAutoLock outerLock(outerJAR->mLock);
+    rv = nsZipHandle::Init(outerJAR->mZip.get(),
+                           PromiseFlatCString(aZipEntry).get(),
+                           getter_AddRefs(handle));
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
-  return mZip->OpenArchive(handle);
+  RecursiveMutexAutoLock lock(mLock);
+  MOZ_ASSERT(!mZip, "Another thread tried to open this nsJAR racily!");
+  mZipFile = zipFile.forget();
+  mOuterZipEntry.Assign(aZipEntry);
+  mZip = nsZipArchive::OpenArchive(handle);
+  return mZip ? NS_OK : NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
 nsJAR::OpenMemory(void* aData, uint32_t aLength) {
   NS_ENSURE_ARG_POINTER(aData);
-  if (mOpened) return NS_ERROR_FAILURE;  
-
-  mOpened = true;
+  RecursiveMutexAutoLock lock(mLock);
+  if (mZip) return NS_ERROR_FAILURE;  
 
   RefPtr<nsZipHandle> handle;
   nsresult rv = nsZipHandle::Init(static_cast<uint8_t*>(aData), aLength,
                                   getter_AddRefs(handle));
   if (NS_FAILED(rv)) return rv;
 
-  return mZip->OpenArchive(handle);
+  mZip = nsZipArchive::OpenArchive(handle);
+  return mZip ? NS_OK : NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
 nsJAR::GetFile(nsIFile** result) {
+  RecursiveMutexAutoLock lock(mLock);
   *result = mZipFile;
   NS_IF_ADDREF(*result);
   return NS_OK;
@@ -156,24 +159,21 @@ nsJAR::GetFile(nsIFile** result) {
 
 NS_IMETHODIMP
 nsJAR::Close() {
-  if (!mOpened) {
+  RecursiveMutexAutoLock lock(mLock);
+  if (!mZip) {
     return NS_ERROR_FAILURE;  
   }
 
-  mOpened = false;
-
-  if (mSkipArchiveClosing) {
-    
-    mSkipArchiveClosing = false;
-    mZip = new nsZipArchive();
-    return NS_OK;
-  }
-
-  return mZip->CloseArchive();
+  mZip = nullptr;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 nsJAR::Test(const nsACString& aEntryName) {
+  RecursiveMutexAutoLock lock(mLock);
+  if (!mZip) {
+    return NS_ERROR_FAILURE;
+  }
   return mZip->Test(
       aEntryName.IsEmpty() ? nullptr : PromiseFlatCString(aEntryName).get());
 }
@@ -182,7 +182,10 @@ NS_IMETHODIMP
 nsJAR::Extract(const nsACString& aEntryName, nsIFile* outFile) {
   
   
-  MutexAutoLock lock(mLock);
+  RecursiveMutexAutoLock lock(mLock);
+  if (!mZip) {
+    return NS_ERROR_FAILURE;
+  }
 
   nsZipItem* item = mZip->GetItem(PromiseFlatCString(aEntryName).get());
   NS_ENSURE_TRUE(item, NS_ERROR_FILE_TARGET_DOES_NOT_EXIST);
@@ -219,6 +222,10 @@ nsJAR::Extract(const nsACString& aEntryName, nsIFile* outFile) {
 
 NS_IMETHODIMP
 nsJAR::GetEntry(const nsACString& aEntryName, nsIZipEntry** result) {
+  RecursiveMutexAutoLock lock(mLock);
+  if (!mZip) {
+    return NS_ERROR_FAILURE;
+  }
   nsZipItem* zipItem = mZip->GetItem(PromiseFlatCString(aEntryName).get());
   NS_ENSURE_TRUE(zipItem, NS_ERROR_FILE_TARGET_DOES_NOT_EXIST);
 
@@ -230,6 +237,10 @@ nsJAR::GetEntry(const nsACString& aEntryName, nsIZipEntry** result) {
 
 NS_IMETHODIMP
 nsJAR::HasEntry(const nsACString& aEntryName, bool* result) {
+  RecursiveMutexAutoLock lock(mLock);
+  if (!mZip) {
+    return NS_ERROR_FAILURE;
+  }
   *result = mZip->GetItem(PromiseFlatCString(aEntryName).get()) != nullptr;
   return NS_OK;
 }
@@ -238,6 +249,10 @@ NS_IMETHODIMP
 nsJAR::FindEntries(const nsACString& aPattern,
                    nsIUTF8StringEnumerator** result) {
   NS_ENSURE_ARG_POINTER(result);
+  RecursiveMutexAutoLock lock(mLock);
+  if (!mZip) {
+    return NS_ERROR_FAILURE;
+  }
 
   nsZipFind* find;
   nsresult rv = mZip->FindInit(
@@ -260,6 +275,10 @@ nsJAR::GetInputStreamWithSpec(const nsACString& aJarDirSpec,
                               const nsACString& aEntryName,
                               nsIInputStream** result) {
   NS_ENSURE_ARG_POINTER(result);
+  RecursiveMutexAutoLock lock(mLock);
+  if (!mZip) {
+    return NS_ERROR_FAILURE;
+  }
 
   
   nsZipItem* item = nullptr;
@@ -277,7 +296,8 @@ nsJAR::GetInputStreamWithSpec(const nsACString& aJarDirSpec,
   if (!item || item->IsDirectory()) {
     rv = jis->InitDirectory(this, aJarDirSpec, entry.get());
   } else {
-    rv = jis->InitFile(this, item);
+    RefPtr<nsZipHandle> fd = mZip->GetFD();
+    rv = jis->InitFile(fd, mZip->GetData(item), item);
   }
   if (NS_FAILED(rv)) {
     NS_RELEASE(*result);
@@ -285,13 +305,27 @@ nsJAR::GetInputStreamWithSpec(const nsACString& aJarDirSpec,
   return rv;
 }
 
-nsresult nsJAR::GetJarPath(nsACString& aResult) {
+nsresult nsJAR::GetFullJarPath(nsACString& aResult) {
+  RecursiveMutexAutoLock lock(mLock);
   NS_ENSURE_ARG_POINTER(mZipFile);
 
-  return mZipFile->GetPersistentDescriptor(aResult);
+  nsresult rv = mZipFile->GetPersistentDescriptor(aResult);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  if (mOuterZipEntry.IsEmpty()) {
+    aResult.InsertLiteral("file:", 0);
+  } else {
+    aResult.InsertLiteral("jar:", 0);
+    aResult.AppendLiteral("!/");
+    aResult.Append(mOuterZipEntry);
+  }
+  return NS_OK;
 }
 
 nsresult nsJAR::GetNSPRFileDesc(PRFileDesc** aNSPRFileDesc) {
+  RecursiveMutexAutoLock lock(mLock);
   if (!aNSPRFileDesc) {
     return NS_ERROR_ILLEGAL_VALUE;
   }
@@ -530,6 +564,7 @@ nsZipReaderCache::nsZipReaderCache()
 
 NS_IMETHODIMP
 nsZipReaderCache::Init(uint32_t cacheSize) {
+  MutexAutoLock lock(mLock);
   mCacheSize = cacheSize;
 
   
@@ -769,15 +804,9 @@ nsresult nsZipReaderCache::ReleaseZip(nsJAR* zip) {
 
   
   nsAutoCString uri;
-  rv = oldest->GetJarPath(uri);
-  if (NS_FAILED(rv)) return rv;
-
-  if (oldest->mOuterZipEntry.IsEmpty()) {
-    uri.InsertLiteral("file:", 0);
-  } else {
-    uri.InsertLiteral("jar:", 0);
-    uri.AppendLiteral("!/");
-    uri.Append(oldest->mOuterZipEntry);
+  rv = oldest->GetFullJarPath(uri);
+  if (NS_FAILED(rv)) {
+    return rv;
   }
 
   
