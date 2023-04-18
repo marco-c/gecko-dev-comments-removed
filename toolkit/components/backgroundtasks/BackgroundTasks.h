@@ -8,20 +8,14 @@
 
 #include "nsCOMPtr.h"
 #include "nsIBackgroundTasks.h"
-#include "nsIBackgroundTasksManager.h"
-#include "nsICommandLine.h"
-#include "nsIFile.h"
 #include "nsISupports.h"
-#include "nsImportModule.h"
 #include "nsString.h"
-#include "nsXULAppAPI.h"
 
-#include "mozilla/LateWriteChecks.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/Unused.h"
 
-#include "prenv.h"
+class nsICommandLine;
+class nsIFile;
 
 namespace mozilla {
 
@@ -34,104 +28,33 @@ class BackgroundTasks final : public nsIBackgroundTasks {
   explicit BackgroundTasks(Maybe<nsCString> aBackgroundTask)
       : mBackgroundTask(aBackgroundTask) {}
 
-  static void Init(Maybe<nsCString> aBackgroundTask) {
-    MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  static void Init(Maybe<nsCString> aBackgroundTask);
 
-    MOZ_RELEASE_ASSERT(!sSingleton,
-                       "BackgroundTasks singleton already initialized");
-    
-    sSingleton = new BackgroundTasks(aBackgroundTask);
-  }
-
-  static void Shutdown() {
-    MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
-
-    if (!sSingleton) {
-      return;
-    }
-
-    if (sSingleton->mProfD) {
-      AutoSuspendLateWriteChecks suspend;
-
-      mozilla::Unused << sSingleton->mProfD->Remove( true);
-    }
-
-    sSingleton = nullptr;
-  }
+  static void Shutdown();
 
   
 
 
 
 
-  static BackgroundTasks* GetSingleton() {
-    if (!sSingleton) {
-      
-      
-      Init(Nothing());
-    }
-
-    MOZ_RELEASE_ASSERT(
-        sSingleton, "BackgroundTasks singleton should have been initialized");
-
-    return sSingleton.get();
-  }
+  static BackgroundTasks* GetSingleton();
 
   
 
 
 
-  static already_AddRefed<BackgroundTasks> GetSingletonAddRefed() {
-    return RefPtr<BackgroundTasks>(GetSingleton()).forget();
-  }
+  static already_AddRefed<BackgroundTasks> GetSingletonAddRefed();
 
-  static const Maybe<nsCString> GetBackgroundTasks() {
-    if (!XRE_IsParentProcess()) {
-      return Nothing();
-    }
+  static Maybe<nsCString> GetBackgroundTasks();
 
-    return GetSingleton()->mBackgroundTask;
-  }
-
-  static bool IsBackgroundTaskMode() {
-    if (!XRE_IsParentProcess()) {
-      return false;
-    }
-
-    return GetBackgroundTasks().isSome();
-  }
+  static bool IsBackgroundTaskMode();
 
   static nsresult CreateTemporaryProfileDirectory(const nsCString& aInstallHash,
-                                                  nsIFile** aFile) {
-    if (!XRE_IsParentProcess()) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
+                                                  nsIFile** aFile);
 
-    return GetSingleton()->CreateTemporaryProfileDirectoryImpl(aInstallHash,
-                                                               aFile);
-  }
+  static bool IsUsingTemporaryProfile();
 
-  static bool IsUsingTemporaryProfile() {
-    return sSingleton && sSingleton->mProfD;
-  }
-
-  static nsresult RunBackgroundTask(nsICommandLine* aCmdLine) {
-    Maybe<nsCString> task = GetBackgroundTasks();
-    if (task.isNothing()) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-
-    nsCOMPtr<nsIBackgroundTasksManager> manager =
-        do_ImportModule("resource://gre/modules/BackgroundTasksManager.jsm",
-                        "BackgroundTasksManager", fallible);
-
-    NS_ENSURE_TRUE(manager, NS_ERROR_FAILURE);
-
-    NS_ConvertASCIItoUTF16 name(task.ref().get());
-    Unused << manager->RunBackgroundTaskNamed(name, aCmdLine);
-
-    return NS_OK;
-  }
+  static nsresult RunBackgroundTask(nsICommandLine* aCmdLine);
 
   
 
@@ -140,10 +63,7 @@ class BackgroundTasks final : public nsIBackgroundTasks {
 
 
 
-  static bool IsUpdatingTaskName(const nsCString& aName) {
-    return aName.EqualsLiteral("backgroundupdate") ||
-           aName.EqualsLiteral("shouldprocessupdates");
-  }
+  static bool IsUpdatingTaskName(const nsCString& aName);
 
  protected:
   static StaticRefPtr<BackgroundTasks> sSingleton;
