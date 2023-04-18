@@ -26,6 +26,7 @@
 #include "mozilla/layers/ScreenshotGrabber.h"
 #include "mozilla/layers/SurfacePoolCA.h"
 #include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/Telemetry.h"
 #include "mozilla/webrender/RenderMacIOSurfaceTextureHost.h"
 #include "nsCocoaFeatures.h"
 #include "ScopedGLHelpers.h"
@@ -46,6 +47,58 @@ using gfx::Matrix4x4;
 using gfx::SurfaceFormat;
 using gl::GLContext;
 using gl::GLContextCGL;
+
+ bool IsSpecializeFail(SpecializeType aSpecialize) {
+  return (aSpecialize != SpecializeType::None && aSpecialize != SpecializeType::Success);
+}
+
+ Maybe<Telemetry::LABELS_GFX_MACOS_VIDEO_LOW_POWER> SpecializeTypeToTelemetryType(
+    SpecializeType aSpecialize) {
+  switch (aSpecialize) {
+    case SpecializeType::Success:
+      return Some(Telemetry::LABELS_GFX_MACOS_VIDEO_LOW_POWER::Success);
+
+    case SpecializeType::FailPref:
+      return Some(Telemetry::LABELS_GFX_MACOS_VIDEO_LOW_POWER::FailPref);
+
+    case SpecializeType::Fail10_13:
+      return Some(Telemetry::LABELS_GFX_MACOS_VIDEO_LOW_POWER::Fail10_13);
+
+    case SpecializeType::FailFullscreen:
+      return Some(Telemetry::LABELS_GFX_MACOS_VIDEO_LOW_POWER::FailFullscreen);
+
+    case SpecializeType::FailIsoMouse:
+      return Some(Telemetry::LABELS_GFX_MACOS_VIDEO_LOW_POWER::FailIsoMouse);
+
+    case SpecializeType::FailIsoTopVideo:
+      return Some(Telemetry::LABELS_GFX_MACOS_VIDEO_LOW_POWER::FailIsoTopVideo);
+
+    case SpecializeType::FailIsoSize:
+      return Some(Telemetry::LABELS_GFX_MACOS_VIDEO_LOW_POWER::FailIsoSize);
+
+    case SpecializeType::FailIsoCenter:
+      return Some(Telemetry::LABELS_GFX_MACOS_VIDEO_LOW_POWER::FailIsoCenter);
+
+    case SpecializeType::FailIsoOneVideo:
+      return Some(Telemetry::LABELS_GFX_MACOS_VIDEO_LOW_POWER::FailIsoOneVideo);
+
+    case SpecializeType::FailSurface:
+      return Some(Telemetry::LABELS_GFX_MACOS_VIDEO_LOW_POWER::FailSurface);
+
+    case SpecializeType::FailEnqueue:
+      return Some(Telemetry::LABELS_GFX_MACOS_VIDEO_LOW_POWER::FailEnqueue);
+
+    default:
+      return Nothing();
+  }
+}
+
+ void EmitTelemetryForSpecialize(SpecializeType aSpecialize) {
+  auto telemetryValue = SpecializeTypeToTelemetryType(aSpecialize);
+  if (telemetryValue.isSome()) {
+    Telemetry::AccumulateCategorical(telemetryValue.value());
+  }
+}
 
 
 
@@ -134,9 +187,8 @@ static CALayer* MakeOffscreenRootCALayer() {
 NativeLayerRootCA::NativeLayerRootCA(CALayer* aLayer)
     : mMutex("NativeLayerRootCA"),
       mOnscreenRepresentation(aLayer),
-      mOffscreenRepresentation(MakeOffscreenRootCALayer()) {
-  mLastMouseMoveTime = TimeStamp::NowLoRes();
-}
+      mOffscreenRepresentation(MakeOffscreenRootCALayer()),
+      mLastMouseMoveTime(TimeStamp::NowLoRes()) {}
 
 NativeLayerRootCA::~NativeLayerRootCA() {
   MOZ_RELEASE_ASSERT(mSublayers.IsEmpty(),
@@ -241,9 +293,14 @@ bool NativeLayerRootCA::CommitToScreen() {
     }
 
     UpdateMouseMovedRecently(lock);
-    mOnscreenRepresentation.Commit(WhichRepresentation::ONSCREEN, mSublayers, mWindowIsFullscreen,
-                                   mMouseMovedRecently);
+    SpecializeType specialize = mOnscreenRepresentation.Commit(
+        WhichRepresentation::ONSCREEN, mSublayers, mWindowIsFullscreen, mMouseMovedRecently);
 
+    
+    mTelemetryCommitCount = (mTelemetryCommitCount + 1) % TELEMETRY_COMMIT_PERIOD;
+    if (mTelemetryCommitCount == 0) {
+      EmitTelemetryForSpecialize(specialize);
+    }
     mCommitPending = false;
   }
 
@@ -314,11 +371,13 @@ NativeLayerRootCA::Representation::~Representation() {
   [mRootCALayer release];
 }
 
-void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentation,
-                                               const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
-                                               bool aWindowIsFullscreen, bool aMouseMovedRecently) {
+SpecializeType NativeLayerRootCA::Representation::Commit(
+    WhichRepresentation aRepresentation, const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
+    bool aWindowIsFullscreen, bool aMouseMovedRecently) {
+  SpecializeType specialize = SpecializeType::None;
+
   bool mightIsolate = (aRepresentation == WhichRepresentation::ONSCREEN &&
-                       StaticPrefs::gfx_core_animation_specialize_video());
+                       StaticPrefs::gfx_core_animation_specialize_video() && aWindowIsFullscreen);
   bool mustRebuild = (mMutatedLayerStructure || (mightIsolate && mMutatedMouseMovedRecently));
   if (!mustRebuild) {
     
@@ -334,18 +393,23 @@ void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentati
 
     if (updateRequired == NativeLayerCA::UpdateType::None) {
       
-      return;
+      return specialize;
     }
 
     if (updateRequired == NativeLayerCA::UpdateType::OnlyVideo) {
-      bool allUpdatesSucceeded = std::all_of(
-          aSublayers.begin(), aSublayers.end(), [=](const RefPtr<NativeLayerCA>& layer) {
-            return layer->ApplyChanges(aRepresentation, NativeLayerCA::UpdateType::OnlyVideo);
-          });
-
-      if (allUpdatesSucceeded) {
+      for (auto layer : aSublayers) {
         
-        return;
+        
+        specialize = std::max(
+            specialize, layer->ApplyChanges(aRepresentation, NativeLayerCA::UpdateType::OnlyVideo));
+      }
+
+      if (!IsSpecializeFail(specialize)) {
+        
+        
+        
+        
+        return mIsIsolatingVideo;
       }
     }
   }
@@ -354,7 +418,8 @@ void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentati
   AutoCATransaction transaction;
   for (auto layer : aSublayers) {
     mustRebuild |= layer->WillUpdateAffectLayers(aRepresentation);
-    layer->ApplyChanges(aRepresentation, NativeLayerCA::UpdateType::All);
+    specialize =
+        std::max(specialize, layer->ApplyChanges(aRepresentation, NativeLayerCA::UpdateType::All));
   }
 
   if (mustRebuild) {
@@ -404,28 +469,46 @@ void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentati
         "The topmost layer must be a child of mRootCALayer.");
 
     bool didIsolate = false;
-    if (mightIsolate && aWindowIsFullscreen && !aMouseMovedRecently) {
-      CALayer* isolatedLayer = FindVideoLayerToIsolate(aRepresentation, aSublayers);
+
+    
+    
+    
+    
+    MOZ_ASSERT(mightIsolate || IsSpecializeFail(specialize),
+               "If we know we can't isolate, specialize should be a failure.");
+
+    
+    if (!IsSpecializeFail(specialize)) {
+      CALayer* isolatedLayer = FindVideoLayerToIsolate(aRepresentation, aSublayers, specialize);
       if (isolatedLayer) {
-        
-        didIsolate = true;
+        MOZ_ASSERT(!IsSpecializeFail(specialize),
+                   "We chose to isolate, so we shouldn't have a specialize fail.");
 
-        
-        
-        if (!mIsIsolatingVideo || isolatedLayer != mRootCALayer.sublayers.lastObject) {
+        if (aMouseMovedRecently) {
           
-          CGFloat rootWidth = mRootCALayer.bounds.size.width;
-          CGFloat rootHeight = mRootCALayer.bounds.size.height;
+          specialize = SpecializeType::FailIsoMouse;
+        } else {
+          
+          didIsolate = true;
 
           
           
-          CALayer* blackLayer = [CALayer layer];
-          blackLayer.position = NSZeroPoint;
-          blackLayer.anchorPoint = NSZeroPoint;
-          blackLayer.bounds = CGRectMake(0, 0, rootWidth, rootHeight);
-          blackLayer.backgroundColor = [[NSColor blackColor] CGColor];
+          if (IsSpecializeFail(mIsIsolatingVideo) ||
+              isolatedLayer != mRootCALayer.sublayers.lastObject) {
+            
+            CGFloat rootWidth = mRootCALayer.bounds.size.width;
+            CGFloat rootHeight = mRootCALayer.bounds.size.height;
 
-          mRootCALayer.sublayers = @[ blackLayer, isolatedLayer ];
+            
+            
+            CALayer* blackLayer = [CALayer layer];
+            blackLayer.position = NSZeroPoint;
+            blackLayer.anchorPoint = NSZeroPoint;
+            blackLayer.bounds = CGRectMake(0, 0, rootWidth, rootHeight);
+            blackLayer.backgroundColor = [[NSColor blackColor] CGColor];
+
+            mRootCALayer.sublayers = @[ blackLayer, isolatedLayer ];
+          }
         }
       }
     }
@@ -435,16 +518,25 @@ void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentati
     if (topLayerIsRooted && !didIsolate) {
       acceptProvidedSublayers();
     }
-
-    mIsIsolatingVideo = didIsolate;
+  } else if (aMouseMovedRecently && specialize == SpecializeType::Success) {
+    
+    specialize = SpecializeType::FailIsoMouse;
   }
 
   mMutatedLayerStructure = false;
   mMutatedMouseMovedRecently = false;
+
+  
+  
+  
+  mIsIsolatingVideo = specialize;
+
+  return specialize;
 }
 
 CALayer* NativeLayerRootCA::Representation::FindVideoLayerToIsolate(
-    WhichRepresentation aRepresentation, const nsTArray<RefPtr<NativeLayerCA>>& aSublayers) {
+    WhichRepresentation aRepresentation, const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
+    SpecializeType& aSpecialize) {
   
   
   
@@ -461,6 +553,7 @@ CALayer* NativeLayerRootCA::Representation::FindVideoLayerToIsolate(
   auto topLayer = aSublayers.LastElement();
   if (!topLayer || !topLayer->IsVideo()) {
     
+    aSpecialize = SpecializeType::FailIsoTopVideo;
     return nil;
   }
 
@@ -480,6 +573,7 @@ CALayer* NativeLayerRootCA::Representation::FindVideoLayerToIsolate(
   CGFloat candidateArea = candidateBoundsInRoot.size.width * candidateBoundsInRoot.size.height;
   if (candidateArea < minimumRootArea) {
     
+    aSpecialize = SpecializeType::FailIsoSize;
     return nil;
   }
 
@@ -494,6 +588,7 @@ CALayer* NativeLayerRootCA::Representation::FindVideoLayerToIsolate(
                   candidateBoundsInRoot.origin.y + (candidateBoundsInRoot.size.height * 0.5));
   if (!CGRectContainsPoint(centerZone, candidateCenterInRoot)) {
     
+    aSpecialize = SpecializeType::FailIsoCenter;
     return nil;
   }
 
@@ -501,6 +596,7 @@ CALayer* NativeLayerRootCA::Representation::FindVideoLayerToIsolate(
   for (auto layer : aSublayers) {
     if (layer->IsVideo() && layer != topLayer) {
       
+      aSpecialize = SpecializeType::FailIsoOneVideo;
       return nil;
     }
   }
@@ -758,8 +854,8 @@ void NativeLayerCA::AttachExternalImage(wr::RenderTextureHost* aExternalImage) {
 
   mDisplayRect = IntRect(IntPoint{}, mSize);
 
-  bool oldSpecializeVideo = mSpecializeVideo;
-  mSpecializeVideo = ShouldSpecializeVideo(lock);
+  SpecializeType oldSpecializeVideo = mSpecializeVideo;
+  mSpecializeVideo = CanSpecializeVideo(lock);
   bool changedSpecializeVideo = (mSpecializeVideo != oldSpecializeVideo);
 
   ForAllRepresentations([&](Representation& r) {
@@ -780,10 +876,24 @@ bool NativeLayerCA::IsVideoAndLocked(const MutexAutoLock& aProofOfLock) {
   return mTextureHost;
 }
 
-bool NativeLayerCA::ShouldSpecializeVideo(const MutexAutoLock& aProofOfLock) {
-  return StaticPrefs::gfx_core_animation_specialize_video() &&
-         nsCocoaFeatures::OnHighSierraOrLater() && mRootWindowIsFullscreen &&
-         IsVideoAndLocked(aProofOfLock);
+SpecializeType NativeLayerCA::CanSpecializeVideo(const MutexAutoLock& aProofOfLock) {
+  if (!IsVideoAndLocked(aProofOfLock)) {
+    return SpecializeType::FailNotVideo;
+  }
+
+  if (!StaticPrefs::gfx_core_animation_specialize_video()) {
+    return SpecializeType::FailPref;
+  }
+
+  if (!nsCocoaFeatures::OnHighSierraOrLater()) {
+    return SpecializeType::Fail10_13;
+  }
+
+  if (!mRootWindowIsFullscreen) {
+    return SpecializeType::FailFullscreen;
+  }
+
+  return SpecializeType::None;
 }
 
 void NativeLayerCA::SetRootWindowIsFullscreen(bool aFullscreen) {
@@ -791,8 +901,8 @@ void NativeLayerCA::SetRootWindowIsFullscreen(bool aFullscreen) {
 
   mRootWindowIsFullscreen = aFullscreen;
 
-  bool oldSpecializeVideo = mSpecializeVideo;
-  mSpecializeVideo = ShouldSpecializeVideo(lock);
+  SpecializeType oldSpecializeVideo = mSpecializeVideo;
+  mSpecializeVideo = CanSpecializeVideo(lock);
 
   if (mSpecializeVideo != oldSpecializeVideo) {
     ForAllRepresentations([&](Representation& r) { r.mMutatedSpecializeVideo = true; });
@@ -1204,8 +1314,8 @@ NativeLayerCA::UpdateType NativeLayerCA::HasUpdate(WhichRepresentation aRepresen
   return GetRepresentation(aRepresentation).HasUpdate(IsVideoAndLocked(lock));
 }
 
-bool NativeLayerCA::ApplyChanges(WhichRepresentation aRepresentation,
-                                 NativeLayerCA::UpdateType aUpdate) {
+SpecializeType NativeLayerCA::ApplyChanges(WhichRepresentation aRepresentation,
+                                           NativeLayerCA::UpdateType aUpdate) {
   MutexAutoLock lock(mMutex);
   CFTypeRefPtr<IOSurfaceRef> surface;
   if (mFrontSurface) {
@@ -1274,38 +1384,44 @@ bool NativeLayerCA::Representation::EnqueueSurface(IOSurfaceRef aSurfaceRef) {
   return true;
 }
 
-bool NativeLayerCA::Representation::ApplyChanges(
+SpecializeType NativeLayerCA::Representation::ApplyChanges(
     NativeLayerCA::UpdateType aUpdate, const IntSize& aSize, bool aIsOpaque,
     const IntPoint& aPosition, const Matrix4x4& aTransform, const IntRect& aDisplayRect,
     const Maybe<IntRect>& aClipRect, float aBackingScale, bool aSurfaceIsFlipped,
-    gfx::SamplingFilter aSamplingFilter, bool aSpecializeVideo,
+    gfx::SamplingFilter aSamplingFilter, SpecializeType aSpecializeVideo,
     CFTypeRefPtr<IOSurfaceRef> aFrontSurface) {
+  SpecializeType specialize = aSpecializeVideo;
+  bool tryToSpecialize = !IsSpecializeFail(aSpecializeVideo);
+
   
   if (aUpdate == UpdateType::OnlyVideo) {
     
     
     
     if (HasUpdate(true) == UpdateType::None) {
-      return true;
+      return specialize;
     }
 
     MOZ_ASSERT(!mMutatedSpecializeVideo && mMutatedFrontSurface,
                "Shouldn't attempt a OnlyVideo update in this case.");
 
-    bool updateSucceeded = false;
-    if (aSpecializeVideo) {
+    if (tryToSpecialize) {
       IOSurfaceRef surface = aFrontSurface.get();
       if (CanSpecializeSurface(surface)) {
         IOSurfaceRef surface = aFrontSurface.get();
-        updateSucceeded = EnqueueSurface(surface);
-
-        if (updateSucceeded) {
+        bool isEnqueued = EnqueueSurface(surface);
+        if (isEnqueued) {
           mMutatedFrontSurface = false;
+          specialize = SpecializeType::Success;
+        } else {
+          specialize = SpecializeType::FailEnqueue;
         }
+      } else {
+        specialize = SpecializeType::FailSurface;
       }
     }
 
-    return updateSucceeded;
+    return specialize;
   }
 
   MOZ_ASSERT(aUpdate == UpdateType::All);
@@ -1329,7 +1445,7 @@ bool NativeLayerCA::Representation::ApplyChanges(
     mWrappingCALayer.anchorPoint = NSZeroPoint;
     mWrappingCALayer.contentsGravity = kCAGravityTopLeft;
     mWrappingCALayer.edgeAntialiasingMask = 0;
-    if (aSpecializeVideo) {
+    if (tryToSpecialize) {
       mContentCALayer = [[AVSampleBufferDisplayLayer layer] retain];
     } else {
       mContentCALayer = [[CALayer layer] retain];
@@ -1450,9 +1566,18 @@ bool NativeLayerCA::Representation::ApplyChanges(
   if (mMutatedFrontSurface) {
     bool isEnqueued = false;
     IOSurfaceRef surface = aFrontSurface.get();
-    if (aSpecializeVideo && CanSpecializeSurface(surface)) {
-      
-      isEnqueued = EnqueueSurface(surface);
+    if (tryToSpecialize) {
+      if (CanSpecializeSurface(surface)) {
+        
+        isEnqueued = EnqueueSurface(surface);
+        if (isEnqueued) {
+          specialize = SpecializeType::Success;
+        } else {
+          specialize = SpecializeType::FailEnqueue;
+        }
+      } else {
+        specialize = SpecializeType::FailSurface;
+      }
     }
 
     if (!isEnqueued) {
@@ -1481,7 +1606,7 @@ bool NativeLayerCA::Representation::ApplyChanges(
   mMutatedSamplingFilter = false;
   mMutatedSpecializeVideo = false;
 
-  return true;
+  return specialize;
 }
 
 NativeLayerCA::UpdateType NativeLayerCA::Representation::HasUpdate(bool aIsVideo) {
