@@ -2931,6 +2931,7 @@ NS_IMETHODIMP HTMLEditor::JoinTableCells(bool aMergeNonContiguousContents) {
     
     uint32_t rangeCount = SelectionRef().RangeCount();
 
+    
     RefPtr<nsRange> range;
     for (uint32_t i = 0; i < rangeCount; i++) {
       range = SelectionRef().GetRangeAt(i);

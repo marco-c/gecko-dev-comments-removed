@@ -215,7 +215,7 @@ class Selection final : public nsSupportsWeakReference,
   
 
 
-  nsRange* GetRangeAt(int32_t aIndex) const;
+  nsRange* GetRangeAt(uint32_t aIndex) const;
 
   
   

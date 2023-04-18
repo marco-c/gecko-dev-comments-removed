@@ -11,6 +11,7 @@
 #include "mozilla/EditorUtils.h"      
 #include "mozilla/HTMLEditHelpers.h"  
 #include "mozilla/HTMLEditUtils.h"    
+#include "mozilla/IntegerRange.h"     
 #include "mozilla/mozalloc.h"         
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/UniquePtr.h"          
@@ -588,9 +589,10 @@ nsresult TextServicesDocument::LastSelectedBlock(
   
   
 
-  for (uint32_t i = rangeCount; i > 0; i--) {
-    range = selection->GetRangeAt(i - 1, IgnoreErrors());
-    if (!range) {
+  for (const uint32_t i : Reversed(IntegerRange(rangeCount))) {
+    MOZ_ASSERT(selection->RangeCount() == rangeCount);
+    range = selection->GetRangeAt(i);
+    if (MOZ_UNLIKELY(!range)) {
       return NS_OK;  
     }
 
@@ -643,9 +645,7 @@ nsresult TextServicesDocument::LastSelectedBlock(
   
   
   
-
-  range = selection->GetRangeAt(rangeCount - 1, IgnoreErrors());
-
+  range = rangeCount > 0 ? selection->GetRangeAt(rangeCount - 1) : nullptr;
   if (!range) {
     return NS_ERROR_FAILURE;
   }
@@ -2043,9 +2043,12 @@ nsresult TextServicesDocument::GetUncollapsedSelection(
   Maybe<int32_t> e1s2;
   Maybe<int32_t> e2s1;
   uint32_t startOffset, endOffset;
-  for (uint32_t i = 0; i < rangeCount; i++) {
-    range = selection->GetRangeAt(i, IgnoreErrors());
-    NS_ENSURE_STATE(range);
+  for (const uint32_t i : IntegerRange(rangeCount)) {
+    MOZ_ASSERT(selection->RangeCount() == rangeCount);
+    range = selection->GetRangeAt(i);
+    if (MOZ_UNLIKELY(NS_WARN_IF(!range))) {
+      return NS_ERROR_FAILURE;
+    }
 
     nsresult rv =
         GetRangeEndPoints(range, getter_AddRefs(startContainer), &startOffset,
