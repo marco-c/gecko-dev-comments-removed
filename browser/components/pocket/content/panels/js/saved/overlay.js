@@ -5,20 +5,20 @@
 
 
 
+import React from "react";
+import ReactDOM from "react-dom";
 import pktPanelMessaging from "../messages.js";
+import Saved from "../components/Saved/Saved";
 
 var SavedOverlay = function(options) {
   var myself = this;
 
   this.inited = false;
   this.active = false;
-  this.pockethost = "getpocket.com";
   this.savedItemId = 0;
   this.savedUrl = "";
-  this.premiumStatus = false;
   this.userTags = [];
   this.tagsDropdownOpen = false;
-  this.fxasignedin = false;
 
   this.parseHTML = function(htmlString) {
     const parser = new DOMParser();
@@ -659,94 +659,96 @@ SavedOverlay.prototype = {
     this.active = true;
     var myself = this;
 
-    var url = window.location.href.match(/premiumStatus=([\w|\d|\.]*)&?/);
-    if (url && url.length > 1) {
-      this.premiumStatus = url[1] == "1";
-    }
-    var fxasignedin = window.location.href.match(/fxasignedin=([\w|\d|\.]*)&?/);
-    if (fxasignedin && fxasignedin.length > 1) {
-      this.fxasignedin = fxasignedin[1] == "1";
-    }
-    var host = window.location.href.match(/pockethost=([\w|\.]*)&?/);
-    if (host && host.length > 1) {
-      this.pockethost = host[1];
-    }
-    var locale = window.location.href.match(/locale=([\w|\.]*)&?/);
-    if (locale && locale.length > 1) {
-      this.locale = locale[1].toLowerCase();
-    }
+    const { searchParams } = new URL(window.location.href);
+    const pockethost = searchParams.get(`pockethost`) || `getpocket.com`;
+    const premiumStatus = searchParams.get(`premiumStatus`) == `1`;
+    const locale = searchParams.get(`locale`) || ``;
+    const language = locale.split(`-`)[0].toLowerCase();
+    const layoutRefresh = searchParams.get(`layoutRefresh`) === `true`;
 
-    
-    const templateData = {
-      pockethost: this.pockethost,
-    };
-
-    
-    if (this.locale) {
-      document
-        .querySelector(`body`)
-        .classList.add(`pkt_ext_saved_${this.locale}`);
-    }
-
-    const parser = new DOMParser();
-
-    
-    document
-      .querySelector(`body`)
-      .append(
-        ...parser.parseFromString(
-          Handlebars.templates.saved_shell(templateData),
-          `text/html`
-        ).body.childNodes
+    if (layoutRefresh) {
+      
+      ReactDOM.render(
+        <Saved pockethost={pockethost} />,
+        document.querySelector(`body`)
       );
-
-    
-    if (
-      this.premiumStatus &&
-      !document.querySelector(`.pkt_ext_suggestedtag_detail`)
-    ) {
-      let elSubshell = document.querySelector(`body .pkt_ext_subshell`);
-
-      let elPremiumShellElements = parser.parseFromString(
-        Handlebars.templates.saved_premiumshell(templateData),
-        `text/html`
-      ).body.childNodes;
+    } else {
+      
+      const templateData = {
+        pockethost,
+      };
 
       
-      elPremiumShellElements = [].slice.call(elPremiumShellElements).reverse();
-
-      elPremiumShellElements.forEach(el => {
-        elSubshell.insertBefore(el, elSubshell.firstChild);
-      });
-    }
-
-    
-    this.initTagInput();
-    this.initAddTagInput();
-    this.initRemovePageInput();
-    this.initOpenListInput();
-
-    
-    pktPanelMessaging.addMessageListener("PKT_saveLink", function(resp) {
-      const { data } = resp;
-      if (data.status == "error") {
-        
-        let errorLocalizedKey =
-          data?.error?.localizedKey || "pocket-panel-saved-error-generic";
-        myself.showStateLocalizedError(
-          "pocket-panel-saved-error-not-saved",
-          errorLocalizedKey
-        );
-        return;
+      if (language) {
+        document
+          .querySelector(`body`)
+          .classList.add(`pkt_ext_saved_${language}`);
       }
 
-      myself.showStateSaved(data);
-    });
+      const parser = new DOMParser();
 
-    pktPanelMessaging.addMessageListener("PKT_renderItemRecs", function(resp) {
-      const { data } = resp;
-      myself.renderItemRecs(data);
-    });
+      
+      document
+        .querySelector(`body`)
+        .append(
+          ...parser.parseFromString(
+            Handlebars.templates.saved_shell(templateData),
+            `text/html`
+          ).body.childNodes
+        );
+
+      
+      if (
+        premiumStatus &&
+        !document.querySelector(`.pkt_ext_suggestedtag_detail`)
+      ) {
+        let elSubshell = document.querySelector(`body .pkt_ext_subshell`);
+
+        let elPremiumShellElements = parser.parseFromString(
+          Handlebars.templates.saved_premiumshell(templateData),
+          `text/html`
+        ).body.childNodes;
+
+        
+        elPremiumShellElements = [].slice
+          .call(elPremiumShellElements)
+          .reverse();
+
+        elPremiumShellElements.forEach(el => {
+          elSubshell.insertBefore(el, elSubshell.firstChild);
+        });
+      }
+
+      
+      this.initTagInput();
+      this.initAddTagInput();
+      this.initRemovePageInput();
+      this.initOpenListInput();
+
+      
+      pktPanelMessaging.addMessageListener("PKT_saveLink", function(resp) {
+        const { data } = resp;
+        if (data.status == "error") {
+          
+          let errorLocalizedKey =
+            data?.error?.localizedKey || "pocket-panel-saved-error-generic";
+          myself.showStateLocalizedError(
+            "pocket-panel-saved-error-not-saved",
+            errorLocalizedKey
+          );
+          return;
+        }
+
+        myself.showStateSaved(data);
+      });
+
+      pktPanelMessaging.addMessageListener("PKT_renderItemRecs", function(
+        resp
+      ) {
+        const { data } = resp;
+        myself.renderItemRecs(data);
+      });
+    }
 
     
     pktPanelMessaging.sendMessage("PKT_show_saved");

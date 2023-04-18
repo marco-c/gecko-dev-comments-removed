@@ -7,13 +7,13 @@
 
 import React from "react";
 import ReactDOM from "react-dom";
-import PopularTopics from "../components/PopularTopics";
+import PopularTopics from "../components/PopularTopics/PopularTopics";
+import Home from "../components/Home/Home";
 import pktPanelMessaging from "../messages.js";
 
 var HomeOverlay = function(options) {
   this.inited = false;
   this.active = false;
-  this.pockethost = "getpocket.com";
   this.parseHTML = function(htmlString) {
     const parser = new DOMParser();
     return parser.parseFromString(htmlString, `text/html`).documentElement;
@@ -38,66 +38,63 @@ var HomeOverlay = function(options) {
 
 HomeOverlay.prototype = {
   create() {
-    var host = window.location.href.match(/pockethost=([\w|\.]*)&?/);
-    if (host && host.length > 1) {
-      this.pockethost = host[1];
-    }
-    var locale = window.location.href.match(/locale=([\w|\.]*)&?/);
-    if (locale && locale.length > 1) {
-      this.locale = locale[1].toLowerCase();
-    }
+    const { searchParams } = new URL(window.location.href);
+    const pockethost = searchParams.get(`pockethost`) || `getpocket.com`;
+    const locale = searchParams.get(`locale`) || ``;
+    const layoutRefresh = searchParams.get(`layoutRefresh`) === `true`;
 
     if (this.active) {
       return;
     }
     this.active = true;
 
-    
-    
-    
-    const enableLocalizedExploreMore = false;
-    const templateData = {
-      pockethost: this.pockethost,
-      utmsource: "firefox-button",
-    };
-
-    
-    if (this.locale) {
-      document
-        .querySelector(`body`)
-        .classList.add(`pkt_ext_home_${this.locale}`);
-    }
-
-    
-    document
-      .querySelector(`body`)
-      .append(this.parseHTML(Handlebars.templates.home_shell(templateData)));
-
-    
-    
-    if (this.locale.startsWith("en")) {
+    if (layoutRefresh) {
+      
       ReactDOM.render(
-        <PopularTopics
-          pockethost={templateData.pockethost}
-          utmsource={templateData.utmsource}
-          topics={[
-            { title: "Self Improvement", topic: "self-improvement" },
-            { title: "Food", topic: "food" },
-            { title: "Entertainment", topic: "entertainment" },
-            { title: "Science", topic: "science" },
-          ]}
-        />,
-        document.querySelector(`.pkt_ext_more`)
+        <Home pockethost={pockethost} />,
+        document.querySelector(`body`)
       );
-    } else if (enableLocalizedExploreMore) {
+    } else {
+      
+      
+      
+      const enableLocalizedExploreMore = false;
+      const templateData = {
+        pockethost,
+        utmsource: `firefox-button`,
+      };
+
       
       document
-        .querySelector(`.pkt_ext_more`)
-        .append(this.parseHTML(Handlebars.templates.explore_more()));
-    }
+        .querySelector(`body`)
+        .append(this.parseHTML(Handlebars.templates.home_shell(templateData)));
 
-    
-    this.setupClickEvents();
+      
+      
+      if (locale.startsWith("en")) {
+        ReactDOM.render(
+          <PopularTopics
+            pockethost={templateData.pockethost}
+            utmsource={templateData.utmsource}
+            topics={[
+              { title: "Self Improvement", topic: "self-improvement" },
+              { title: "Food", topic: "food" },
+              { title: "Entertainment", topic: "entertainment" },
+              { title: "Science", topic: "science" },
+            ]}
+          />,
+          document.querySelector(`.pkt_ext_more`)
+        );
+      } else if (enableLocalizedExploreMore) {
+        
+        document
+          .querySelector(`.pkt_ext_more`)
+          .append(this.parseHTML(Handlebars.templates.explore_more()));
+      }
+
+      
+      this.setupClickEvents();
+    }
 
     
     pktPanelMessaging.sendMessage("PKT_show_home");

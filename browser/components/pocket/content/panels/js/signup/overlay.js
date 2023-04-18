@@ -5,7 +5,10 @@
 
 
 
+import React from "react";
+import ReactDOM from "react-dom";
 import pktPanelMessaging from "../messages.js";
+import Signup from "../components/Signup/Signup";
 
 var SignupOverlay = function(options) {
   this.inited = false;
@@ -36,48 +39,60 @@ var SignupOverlay = function(options) {
     let elBody = document.querySelector(`body`);
 
     
-    let queryParams = new URL(window.location.href).searchParams;
-    let isEmailSignupEnabled = queryParams.get(`emailButton`) === `true`;
-    let pockethost = queryParams.get(`pockethost`) || `getpocket.com`;
-    let utmCampaign =
-      queryParams.get(`utmCampaign`) || `firefox_door_hanger_menu`;
-    let utmSource = queryParams.get(`utmSource`) || `control`;
-    let language = queryParams
+    const { searchParams } = new URL(window.location.href);
+    const isEmailSignupEnabled = searchParams.get(`emailButton`) === `true`;
+    const pockethost = searchParams.get(`pockethost`) || `getpocket.com`;
+    const utmCampaign =
+      searchParams.get(`utmCampaign`) || `firefox_door_hanger_menu`;
+    const utmSource = searchParams.get(`utmSource`) || `control`;
+    const language = searchParams
       .get(`locale`)
       ?.split(`-`)[0]
       .toLowerCase();
+    const layoutRefresh = searchParams.get(`layoutRefresh`) === `true`;
 
     if (this.active) {
       return;
     }
     this.active = true;
 
-    const templateData = {
-      pockethost,
-      utmCampaign,
-      utmSource,
-    };
+    if (layoutRefresh) {
+      
+      document
+        .querySelector(`.pkt_ext_containersignup`)
+        ?.classList.remove(`pkt_ext_containersignup`);
+      ReactDOM.render(
+        <Signup pockethost={pockethost} />,
+        document.querySelector(`body`)
+      );
+    } else {
+      const templateData = {
+        pockethost,
+        utmCampaign,
+        utmSource,
+      };
 
-    
-    if (language) {
-      elBody.classList.add(`pkt_ext_signup_${language}`);
+      
+      if (language) {
+        elBody.classList.add(`pkt_ext_signup_${language}`);
+      }
+
+      
+      elBody.append(
+        parser.parseFromString(
+          Handlebars.templates.signup_shell(templateData),
+          `text/html`
+        ).documentElement
+      );
+
+      
+      if (!isEmailSignupEnabled) {
+        document.querySelector(`.btn-container-email`).remove();
+      }
+
+      
+      this.setupClickEvents();
     }
-
-    
-    elBody.append(
-      parser.parseFromString(
-        Handlebars.templates.signup_shell(templateData),
-        `text/html`
-      ).documentElement
-    );
-
-    
-    if (!isEmailSignupEnabled) {
-      document.querySelector(`.btn-container-email`).remove();
-    }
-
-    
-    this.setupClickEvents();
 
     
     pktPanelMessaging.sendMessage("PKT_show_signup");

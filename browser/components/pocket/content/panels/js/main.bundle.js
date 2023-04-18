@@ -2,7 +2,7 @@
  	"use strict";
  	var __webpack_modules__ = ({
 
- 883:
+ 672:
  ((__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) => {
 
 
@@ -33,7 +33,36 @@ function PopularTopics(props) {
   }));
 }
 
- const components_PopularTopics = (PopularTopics);
+ const PopularTopics_PopularTopics = (PopularTopics);
+;
+
+
+
+
+
+function Header(props) {
+  return react.createElement("h1", {
+    className: "stp_header"
+  }, react.createElement("div", {
+    className: "stp_header_logo"
+  }), props.children);
+}
+
+ const Header_Header = (Header);
+;
+
+
+
+
+
+
+function Home(props) {
+  return react.createElement(react.Fragment, null, react.createElement(Header_Header, null, react.createElement("a", null, react.createElement("span", {
+    "data-l10n-id": "pocket-panel-header-my-list"
+  }))));
+}
+
+ const Home_Home = (Home);
 ;
 
 var pktPanelMessaging = {
@@ -100,10 +129,10 @@ var pktPanelMessaging = {
 
 
 
+
 var HomeOverlay = function (options) {
   this.inited = false;
   this.active = false;
-  this.pockethost = "getpocket.com";
 
   this.parseHTML = function (htmlString) {
     const parser = new DOMParser();
@@ -128,65 +157,64 @@ var HomeOverlay = function (options) {
 
 HomeOverlay.prototype = {
   create() {
-    var host = window.location.href.match(/pockethost=([\w|\.]*)&?/);
-
-    if (host && host.length > 1) {
-      this.pockethost = host[1];
-    }
-
-    var locale = window.location.href.match(/locale=([\w|\.]*)&?/);
-
-    if (locale && locale.length > 1) {
-      this.locale = locale[1].toLowerCase();
-    }
+    const {
+      searchParams
+    } = new URL(window.location.href);
+    const pockethost = searchParams.get(`pockethost`) || `getpocket.com`;
+    const locale = searchParams.get(`locale`) || ``;
+    const layoutRefresh = searchParams.get(`layoutRefresh`) === `true`;
 
     if (this.active) {
       return;
     }
 
-    this.active = true; 
-    
-    
+    this.active = true;
 
-    const enableLocalizedExploreMore = false;
-    const templateData = {
-      pockethost: this.pockethost,
-      utmsource: "firefox-button"
-    }; 
-
-    if (this.locale) {
-      document.querySelector(`body`).classList.add(`pkt_ext_home_${this.locale}`);
-    } 
-
-
-    document.querySelector(`body`).append(this.parseHTML(Handlebars.templates.home_shell(templateData))); 
-    
-
-    if (this.locale.startsWith("en")) {
-      react_dom.render( react.createElement(components_PopularTopics, {
-        pockethost: templateData.pockethost,
-        utmsource: templateData.utmsource,
-        topics: [{
-          title: "Self Improvement",
-          topic: "self-improvement"
-        }, {
-          title: "Food",
-          topic: "food"
-        }, {
-          title: "Entertainment",
-          topic: "entertainment"
-        }, {
-          title: "Science",
-          topic: "science"
-        }]
-      }), document.querySelector(`.pkt_ext_more`));
-    } else if (enableLocalizedExploreMore) {
+    if (layoutRefresh) {
       
-      document.querySelector(`.pkt_ext_more`).append(this.parseHTML(Handlebars.templates.explore_more()));
+      react_dom.render( react.createElement(Home_Home, {
+        pockethost: pockethost
+      }), document.querySelector(`body`));
+    } else {
+      
+      
+      
+      const enableLocalizedExploreMore = false;
+      const templateData = {
+        pockethost,
+        utmsource: `firefox-button`
+      }; 
+
+      document.querySelector(`body`).append(this.parseHTML(Handlebars.templates.home_shell(templateData))); 
+      
+
+      if (locale.startsWith("en")) {
+        react_dom.render( react.createElement(PopularTopics_PopularTopics, {
+          pockethost: templateData.pockethost,
+          utmsource: templateData.utmsource,
+          topics: [{
+            title: "Self Improvement",
+            topic: "self-improvement"
+          }, {
+            title: "Food",
+            topic: "food"
+          }, {
+            title: "Entertainment",
+            topic: "entertainment"
+          }, {
+            title: "Science",
+            topic: "science"
+          }]
+        }), document.querySelector(`.pkt_ext_more`));
+      } else if (enableLocalizedExploreMore) {
+        
+        document.querySelector(`.pkt_ext_more`).append(this.parseHTML(Handlebars.templates.explore_more()));
+      } 
+
+
+      this.setupClickEvents();
     } 
 
-
-    this.setupClickEvents(); 
 
     messages.sendMessage("PKT_show_home");
   }
@@ -194,6 +222,23 @@ HomeOverlay.prototype = {
 };
  const overlay = (HomeOverlay);
 ;
+
+
+
+
+
+
+function Signup(props) {
+  return react.createElement(react.Fragment, null, react.createElement(Header_Header, null, react.createElement("a", null, react.createElement("span", {
+    "data-l10n-id": "pocket-panel-header-sign-in"
+  }))));
+}
+
+ const Signup_Signup = (Signup);
+;
+
+
+
 
 
 
@@ -225,37 +270,50 @@ var SignupOverlay = function (options) {
     const parser = new DOMParser();
     let elBody = document.querySelector(`body`); 
 
-    let queryParams = new URL(window.location.href).searchParams;
-    let isEmailSignupEnabled = queryParams.get(`emailButton`) === `true`;
-    let pockethost = queryParams.get(`pockethost`) || `getpocket.com`;
-    let utmCampaign = queryParams.get(`utmCampaign`) || `firefox_door_hanger_menu`;
-    let utmSource = queryParams.get(`utmSource`) || `control`;
-    let language = queryParams.get(`locale`)?.split(`-`)[0].toLowerCase();
+    const {
+      searchParams
+    } = new URL(window.location.href);
+    const isEmailSignupEnabled = searchParams.get(`emailButton`) === `true`;
+    const pockethost = searchParams.get(`pockethost`) || `getpocket.com`;
+    const utmCampaign = searchParams.get(`utmCampaign`) || `firefox_door_hanger_menu`;
+    const utmSource = searchParams.get(`utmSource`) || `control`;
+    const language = searchParams.get(`locale`)?.split(`-`)[0].toLowerCase();
+    const layoutRefresh = searchParams.get(`layoutRefresh`) === `true`;
 
     if (this.active) {
       return;
     }
 
     this.active = true;
-    const templateData = {
-      pockethost,
-      utmCampaign,
-      utmSource
-    }; 
 
-    if (language) {
-      elBody.classList.add(`pkt_ext_signup_${language}`);
+    if (layoutRefresh) {
+      
+      document.querySelector(`.pkt_ext_containersignup`)?.classList.remove(`pkt_ext_containersignup`);
+      react_dom.render( react.createElement(Signup_Signup, {
+        pockethost: pockethost
+      }), document.querySelector(`body`));
+    } else {
+      const templateData = {
+        pockethost,
+        utmCampaign,
+        utmSource
+      }; 
+
+      if (language) {
+        elBody.classList.add(`pkt_ext_signup_${language}`);
+      } 
+
+
+      elBody.append(parser.parseFromString(Handlebars.templates.signup_shell(templateData), `text/html`).documentElement); 
+
+      if (!isEmailSignupEnabled) {
+        document.querySelector(`.btn-container-email`).remove();
+      } 
+
+
+      this.setupClickEvents();
     } 
 
-
-    elBody.append(parser.parseFromString(Handlebars.templates.signup_shell(templateData), `text/html`).documentElement); 
-
-    if (!isEmailSignupEnabled) {
-      document.querySelector(`.btn-container-email`).remove();
-    } 
-
-
-    this.setupClickEvents(); 
 
     messages.sendMessage("PKT_show_signup");
   };
@@ -269,19 +327,33 @@ var SignupOverlay = function (options) {
 
 
 
+function Saved(props) {
+  return react.createElement(react.Fragment, null, react.createElement(Header_Header, null, react.createElement("a", null, react.createElement("span", {
+    "data-l10n-id": "pocket-panel-header-my-list"
+  }))));
+}
+
+ const Saved_Saved = (Saved);
+;
+
+
+
+
+
+
+
+
+
 
 
 var SavedOverlay = function (options) {
   var myself = this;
   this.inited = false;
   this.active = false;
-  this.pockethost = "getpocket.com";
   this.savedItemId = 0;
   this.savedUrl = "";
-  this.premiumStatus = false;
   this.userTags = [];
   this.tagsDropdownOpen = false;
-  this.fxasignedin = false;
 
   this.parseHTML = function (htmlString) {
     const parser = new DOMParser();
@@ -776,79 +848,72 @@ SavedOverlay.prototype = {
 
     this.active = true;
     var myself = this;
-    var url = window.location.href.match(/premiumStatus=([\w|\d|\.]*)&?/);
+    const {
+      searchParams
+    } = new URL(window.location.href);
+    const pockethost = searchParams.get(`pockethost`) || `getpocket.com`;
+    const premiumStatus = searchParams.get(`premiumStatus`) == `1`;
+    const locale = searchParams.get(`locale`) || ``;
+    const language = locale.split(`-`)[0].toLowerCase();
+    const layoutRefresh = searchParams.get(`layoutRefresh`) === `true`;
 
-    if (url && url.length > 1) {
-      this.premiumStatus = url[1] == "1";
-    }
+    if (layoutRefresh) {
+      
+      react_dom.render( react.createElement(Saved_Saved, {
+        pockethost: pockethost
+      }), document.querySelector(`body`));
+    } else {
+      
+      const templateData = {
+        pockethost
+      }; 
 
-    var fxasignedin = window.location.href.match(/fxasignedin=([\w|\d|\.]*)&?/);
+      if (language) {
+        document.querySelector(`body`).classList.add(`pkt_ext_saved_${language}`);
+      }
 
-    if (fxasignedin && fxasignedin.length > 1) {
-      this.fxasignedin = fxasignedin[1] == "1";
-    }
+      const parser = new DOMParser(); 
 
-    var host = window.location.href.match(/pockethost=([\w|\.]*)&?/);
+      document.querySelector(`body`).append(...parser.parseFromString(Handlebars.templates.saved_shell(templateData), `text/html`).body.childNodes); 
 
-    if (host && host.length > 1) {
-      this.pockethost = host[1];
-    }
+      if (premiumStatus && !document.querySelector(`.pkt_ext_suggestedtag_detail`)) {
+        let elSubshell = document.querySelector(`body .pkt_ext_subshell`);
+        let elPremiumShellElements = parser.parseFromString(Handlebars.templates.saved_premiumshell(templateData), `text/html`).body.childNodes; 
 
-    var locale = window.location.href.match(/locale=([\w|\.]*)&?/);
-
-    if (locale && locale.length > 1) {
-      this.locale = locale[1].toLowerCase();
-    } 
+        elPremiumShellElements = [].slice.call(elPremiumShellElements).reverse();
+        elPremiumShellElements.forEach(el => {
+          elSubshell.insertBefore(el, elSubshell.firstChild);
+        });
+      } 
 
 
-    const templateData = {
-      pockethost: this.pockethost
-    }; 
+      this.initTagInput();
+      this.initAddTagInput();
+      this.initRemovePageInput();
+      this.initOpenListInput(); 
 
-    if (this.locale) {
-      document.querySelector(`body`).classList.add(`pkt_ext_saved_${this.locale}`);
-    }
+      messages.addMessageListener("PKT_saveLink", function (resp) {
+        const {
+          data
+        } = resp;
 
-    const parser = new DOMParser(); 
+        if (data.status == "error") {
+          
+          let errorLocalizedKey = data?.error?.localizedKey || "pocket-panel-saved-error-generic";
+          myself.showStateLocalizedError("pocket-panel-saved-error-not-saved", errorLocalizedKey);
+          return;
+        }
 
-    document.querySelector(`body`).append(...parser.parseFromString(Handlebars.templates.saved_shell(templateData), `text/html`).body.childNodes); 
-
-    if (this.premiumStatus && !document.querySelector(`.pkt_ext_suggestedtag_detail`)) {
-      let elSubshell = document.querySelector(`body .pkt_ext_subshell`);
-      let elPremiumShellElements = parser.parseFromString(Handlebars.templates.saved_premiumshell(templateData), `text/html`).body.childNodes; 
-
-      elPremiumShellElements = [].slice.call(elPremiumShellElements).reverse();
-      elPremiumShellElements.forEach(el => {
-        elSubshell.insertBefore(el, elSubshell.firstChild);
+        myself.showStateSaved(data);
+      });
+      messages.addMessageListener("PKT_renderItemRecs", function (resp) {
+        const {
+          data
+        } = resp;
+        myself.renderItemRecs(data);
       });
     } 
 
-
-    this.initTagInput();
-    this.initAddTagInput();
-    this.initRemovePageInput();
-    this.initOpenListInput(); 
-
-    messages.addMessageListener("PKT_saveLink", function (resp) {
-      const {
-        data
-      } = resp;
-
-      if (data.status == "error") {
-        
-        let errorLocalizedKey = data?.error?.localizedKey || "pocket-panel-saved-error-generic";
-        myself.showStateLocalizedError("pocket-panel-saved-error-not-saved", errorLocalizedKey);
-        return;
-      }
-
-      myself.showStateSaved(data);
-    });
-    messages.addMessageListener("PKT_renderItemRecs", function (resp) {
-      const {
-        data
-      } = resp;
-      myself.renderItemRecs(data);
-    }); 
 
     messages.sendMessage("PKT_show_saved");
   }
@@ -865,7 +930,7 @@ var StyleGuideOverlay = function (options) {};
 StyleGuideOverlay.prototype = {
   create() {
     
-    react_dom.render( react.createElement(components_PopularTopics, {
+    react_dom.render( react.createElement(PopularTopics_PopularTopics, {
       pockethost: `getpocket.com`,
       utmsource: `styleguide`,
       topics: [{
@@ -1133,7 +1198,7 @@ window.pktPanelMessaging = messages;
  	
  	
  	
- 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(883)))
+ 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(672)))
  	__webpack_exports__ = __webpack_require__.O(__webpack_exports__);
  	
  })()
