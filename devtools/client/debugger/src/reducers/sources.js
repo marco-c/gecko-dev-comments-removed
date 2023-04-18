@@ -8,16 +8,6 @@
 
 
 import { getRelativeUrl, getPlainUrl } from "../utils/source";
-import {
-  createInitial,
-  insertResources,
-  removeResources,
-  updateResources,
-  hasResource,
-  getResource,
-  getResourceIds,
-  getResourceValues,
-} from "../utils/resource";
 import { prefs } from "../utils/prefs";
 
 export function initialSourcesState(state) {
@@ -27,7 +17,7 @@ export function initialSourcesState(state) {
 
 
 
-    sources: createInitial(),
+    sources: new Map(),
 
     
 
@@ -209,10 +199,13 @@ function update(state = initialSourcesState(), action) {
       return initialSourcesState(state);
 
     case "REMOVE_THREAD": {
-      const sources = Object.values(getResourceValues(state.sources)).filter(
-        source => source.thread == action.threadActorID
-      );
-      return removeSourcesAndActors(state, sources);
+      const threadSources = [];
+      for (const source of state.sources.values()) {
+        if (source.thread == action.threadActorID) {
+          threadSources.push(source);
+        }
+      }
+      return removeSourcesAndActors(state, threadSources);
     }
   }
 
@@ -233,9 +226,10 @@ function addSources(state, sources) {
     plainUrls: { ...state.plainUrls },
   };
 
-  state.sources = insertResources(state.sources, sources);
-
+  const newSourceMap = new Map(state.sources);
   for (const source of sources) {
+    newSourceMap.set(source.id, source);
+
     
     const existing = state.urls[source.url] || [];
     if (!existing.includes(source.id)) {
@@ -258,6 +252,7 @@ function addSources(state, sources) {
       state.sourcesWithUrls.push(source.id);
     }
   }
+  state.sources = newSourceMap;
 
   state = updateRootRelativeValues(state, sources);
 
@@ -272,9 +267,10 @@ function removeSourcesAndActors(state, sources) {
     sourcesWithUrls: [...state.sourcesWithUrls],
   };
 
-  state.sources = removeResources(state.sources, sources);
-
+  const newSourceMap = new Map(state.sources);
   for (const source of sources) {
+    newSourceMap.delete(source.id);
+
     if (source.url) {
       
       if (state.urls[source.url]) {
@@ -308,6 +304,7 @@ function removeSourcesAndActors(state, sources) {
     
     delete state.actors[source.id];
   }
+  state.sources = newSourceMap;
   return state;
 }
 
@@ -356,7 +353,12 @@ function updateProjectDirectoryRoot(state, root, name) {
     prefs.projectDirectoryRootName = name;
   }
 
-  return updateRootRelativeValues(state, undefined, root, name);
+  return updateRootRelativeValues(
+    state,
+    [...state.sources.values()],
+    root,
+    name
+  );
 }
 
 
@@ -369,30 +371,24 @@ function actorType(actor) {
 
 function updateRootRelativeValues(
   state,
-  sources,
+  sourcesToUpdate,
   projectDirectoryRoot = state.projectDirectoryRoot,
   projectDirectoryRootName = state.projectDirectoryRootName
 ) {
-  const wrappedIdsOrIds = sources ? sources : getResourceIds(state.sources);
-
   state = {
     ...state,
     projectDirectoryRoot,
     projectDirectoryRootName,
   };
 
-  const relativeURLUpdates = wrappedIdsOrIds.map(wrappedIdOrId => {
-    const id =
-      typeof wrappedIdOrId === "string" ? wrappedIdOrId : wrappedIdOrId.id;
-    const source = getResource(state.sources, id);
-
-    return {
-      id,
+  const newSourceMap = new Map(state.sources);
+  for (const source of sourcesToUpdate) {
+    newSourceMap.set(source.id, {
+      ...state.sources.get(source.id),
       relativeUrl: getRelativeUrl(source, state.projectDirectoryRoot),
-    };
-  });
-
-  state.sources = updateResources(state.sources, relativeURLUpdates);
+    });
+  }
+  state.sources = newSourceMap;
 
   return state;
 }
@@ -401,10 +397,10 @@ function updateRootRelativeValues(
 
 
 function updateSourcesBlackboxState(state, blackboxSources) {
-  const sourcesToUpdate = [];
-
+  const newSourceMap = new Map(state.sources);
+  let changed = false;
   for (const { source } of blackboxSources) {
-    if (!hasResource(state.sources, source.id)) {
+    if (!state.sources.has(source.id)) {
       
       
       continue;
@@ -413,12 +409,15 @@ function updateSourcesBlackboxState(state, blackboxSources) {
     
     
     const isBlackBoxed = !!state.blackboxedRanges[source.url];
-    sourcesToUpdate.push({
-      id: source.id,
+    newSourceMap.set(source.id, {
+      ...state.sources.get(source.id),
       isBlackBoxed,
     });
+    changed = true;
   }
-  state.sources = updateResources(state.sources, sourcesToUpdate);
+  if (changed) {
+    state.sources = newSourceMap;
+  }
 
   return state;
 }
