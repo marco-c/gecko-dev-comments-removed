@@ -30,6 +30,29 @@ add_task(async function test_tab_key_nav() {
   let browser = gBrowser.selectedBrowser;
   await SpecialPowers.spawn(browser, [], async () => {
     const EventUtils = ContentTaskUtils.getEventUtils(content);
+    
+    
+    let expectedElementsInOrder = [
+      ["login-filter", "input"],
+      ["fxaccounts-button", "button"],
+      ["menu-button", "button"],
+      ["login-list", "select"],
+      ["login-list", "ol"],
+      ["login-list", "button"],
+      ["login-item", "button.edit-button"],
+      ["login-item", "button.delete-button"],
+      ["login-item", "a.origin-input"],
+      ["login-item", "button.copy-username-button"],
+      ["login-item", "input.reveal-password-checkbox"],
+      ["login-item", "button.copy-password-button"],
+    ];
+
+    let firstElement = content.document
+      .querySelector(expectedElementsInOrder.at(0).at(0))
+      .shadowRoot.querySelector(expectedElementsInOrder.at(0).at(1));
+    let lastElement = content.document
+      .querySelector(expectedElementsInOrder.at(-1).at(0))
+      .shadowRoot.querySelector(expectedElementsInOrder.at(-1).at(1));
 
     async function tab() {
       EventUtils.synthesizeKey("KEY_Tab", {}, content);
@@ -37,63 +60,107 @@ add_task(async function test_tab_key_nav() {
       
       
     }
+    async function shiftTab() {
+      EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true }, content);
+      await new Promise(resolve => content.requestAnimationFrame(resolve));
+    }
 
     
     
     
-    function getFocusedEl() {
-      let el = content.document.activeElement;
+    function getFocusedElement() {
+      let element = content.document.activeElement;
       const getShadowRootFocus = e => {
         if (e.shadowRoot) {
           return getShadowRootFocus(e.shadowRoot.activeElement);
         }
         return e;
       };
-      return getShadowRootFocus(el);
+      return getShadowRootFocus(element);
     }
-
     
+    function getElementFromOrderedArray(combinedSelectors) {
+      let [selector, shadowRootSelector] = combinedSelectors;
+      return content.document
+        .querySelector(selector)
+        .shadowRoot.querySelector(shadowRootSelector);
+    }
     
+    firstElement.focus();
+    info(`what is our navigator platform ${content.window.navigator.platform}`);
     
-    const focused = new Set();
-    const focusedAgain = new Set();
-
-    
-    const firstEl = getFocusedEl();
-    focused.add(firstEl);
-
-    
-    
-    
-    const maxKeypresses = content.document.getElementsByTagName("*").length * 2;
-    let keypresses = 1;
-
-    while (focusedAgain.size < focused.size && keypresses <= maxKeypresses) {
+    for (let expectedSelector of expectedElementsInOrder) {
+      let expectedElement = getElementFromOrderedArray(expectedSelector);
+      
+      if (
+        content.window.navigator.platform.toLowerCase().includes("mac") &&
+        expectedElement.tagName === "A"
+      ) {
+        continue;
+      }
+      expectedElement = Cu.waiveXrays(expectedElement);
+      info(`expectedElement className ${expectedElement.className}`);
+      let actualElem = getFocusedElement();
+      actualElem = Cu.waiveXrays(actualElem);
+      info(`actualElement className ${actualElem.className}`);
+      is(
+        actualElem,
+        expectedElement,
+        "Actual focused element should equal the expected focused element"
+      );
       await tab();
-      keypresses++;
-      let el = getFocusedEl();
-
-      
-      
-      
-      if (el.tagName === "BODY" && el !== firstEl) {
-        firstEl.focus();
-        await new Promise(resolve => content.requestAnimationFrame(resolve));
-        el = getFocusedEl();
-      }
-
-      if (focused.has(el)) {
-        focusedAgain.add(el);
-      } else {
-        focused.add(el);
-      }
     }
 
-    is(
-      focusedAgain.size,
-      focused.size,
-      "All focusable elements should be kept accessible with TAB key (no focus trap)."
-    );
+    
+    
+    
+    if (getFocusedElement().tagName === "BODY") {
+      firstElement.focus();
+    }
+
+    
+    for (let expectedSelector of expectedElementsInOrder) {
+      let expectedElement = getElementFromOrderedArray(expectedSelector);
+      
+      if (
+        content.window.navigator.platform.toLowerCase().includes("mac") &&
+        expectedElement.tagName === "A"
+      ) {
+        continue;
+      }
+      let actualElement = getFocusedElement();
+      is(
+        actualElement,
+        expectedElement,
+        "Actual focused element should equal the expected focused element"
+      );
+      await tab();
+    }
+    
+    
+    
+    if (getFocusedElement().tagName === "BODY") {
+      lastElement.focus();
+    }
+
+    
+    for (let expectedSelector of expectedElementsInOrder.reverse()) {
+      let expectedElement = getElementFromOrderedArray(expectedSelector);
+      
+      if (
+        content.window.navigator.platform.toLowerCase().includes("mac") &&
+        expectedElement.tagName === "A"
+      ) {
+        continue;
+      }
+      let actualElement = getFocusedElement();
+      is(
+        actualElement,
+        expectedElement,
+        "Actual focused element should equal the expected focused element"
+      );
+      await shiftTab();
+    }
   });
 });
 
@@ -117,22 +184,22 @@ add_task(async function testTabToCreateButton() {
     let createButton = loginList.shadowRoot.querySelector(
       ".create-login-button"
     );
-    let getFocusedEl = () => loginList.shadowRoot.activeElement;
+    let getFocusedElement = () => loginList.shadowRoot.activeElement;
 
-    is(getFocusedEl(), null, "login-list isn't focused");
+    is(getFocusedElement(), null, "login-list isn't focused");
 
     loginSort.focus();
     await waitForAnimationFrame();
-    is(getFocusedEl(), loginSort, "login sort is focused");
+    is(getFocusedElement(), loginSort, "login sort is focused");
 
     await tab();
-    is(getFocusedEl(), loginListbox, "listbox is focused next");
+    is(getFocusedElement(), loginListbox, "listbox is focused next");
 
     await tab();
-    is(getFocusedEl(), createButton, "create button is after");
+    is(getFocusedElement(), createButton, "create button is after");
 
     await tab();
-    is(getFocusedEl(), null, "login-list isn't focused again");
+    is(getFocusedElement(), null, "login-list isn't focused again");
   });
 });
 
@@ -156,17 +223,21 @@ add_task(async function testTabToEditButton() {
 
       let loginList = content.document.querySelector("login-list");
       let loginItem = content.document.querySelector("login-item");
+      let loginFilter = content.document.querySelector("login-filter");
       let createButton = loginList.shadowRoot.querySelector(
         ".create-login-button"
       );
       let editButton = loginItem.shadowRoot.querySelector(".edit-button");
       let breachAlert = loginItem.shadowRoot.querySelector(".breach-alert");
-      let getFocusedEl = () => {
+      let getFocusedElement = () => {
         if (content.document.activeElement == loginList) {
           return loginList.shadowRoot.activeElement;
         }
         if (content.document.activeElement == loginItem) {
           return loginItem.shadowRoot.activeElement;
+        }
+        if (content.document.activeElement == loginFilter) {
+          return loginFilter.shadowRoot.activeElement;
         }
         ok(
           false,
@@ -198,11 +269,11 @@ add_task(async function testTabToEditButton() {
 
         createButton.focus();
         await waitForAnimationFrame();
-        is(getFocusedEl(), createButton, "create button is focused");
+        is(getFocusedElement(), createButton, "create button is focused");
 
         await tab();
         await waitForAnimationFrame();
-        is(getFocusedEl(), editButton, "edit button is focused");
+        is(getFocusedElement(), editButton, "edit button is focused");
       }
     }
   );
