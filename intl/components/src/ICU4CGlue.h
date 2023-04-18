@@ -379,15 +379,7 @@ class Enumeration {
     return *this;
   }
 
-  
-  
-  class Iterator
-      : public std::iterator<std::input_iterator_tag,
-                             const CharType*,  
-                             void,             
-                             void,             
-                             T  
-                             > {
+  class Iterator {
     Enumeration& mEnumeration;
     
     Maybe<int32_t> mIteration = Nothing{};
@@ -395,6 +387,10 @@ class Enumeration {
     int32_t mNextLength = 0;
 
    public:
+    using value_type = const CharType*;
+    using reference = T;
+    using iterator_category = std::input_iterator_tag;
+
     explicit Iterator(Enumeration& aEnumeration, bool aIsBegin)
         : mEnumeration(aEnumeration) {
       if (aIsBegin) {
