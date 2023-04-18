@@ -3929,6 +3929,9 @@ static bool SearchElementDense(JSContext* cx, HandleValue val, Iter iterator,
     return iterator(cx, cmp, rval);
   }
 
+  MOZ_ASSERT(val.isBigInt() ||
+             IF_RECORD_TUPLE(val.isExtendedPrimitive(), false));
+
   
   RootedValue elementRoot(cx);
   auto cmp = [val, &elementRoot](JSContext* cx, const Value& element,
@@ -3936,20 +3939,14 @@ static bool SearchElementDense(JSContext* cx, HandleValue val, Iter iterator,
     if (MOZ_UNLIKELY(element.isMagic(JS_ELEMENTS_HOLE))) {
       
       
-      if constexpr (Kind == SearchKind::Includes) {
-        elementRoot.setUndefined();
-      } else {
-        static_assert(Kind == SearchKind::IndexOf);
-        *equal = false;
-        return true;
-      }
-    } else {
-      elementRoot = element;
+      *equal = false;
+      return true;
     }
     
     
     
     MOZ_ASSERT(!val.isNumber());
+    elementRoot = element;
     return StrictlyEqual(cx, val, elementRoot, equal);
   };
   return iterator(cx, cmp, rval);
