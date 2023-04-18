@@ -46,6 +46,9 @@ class ServiceWorkerRegistrationDescriptor;
 }  
 }  
 
+
+
+
 class nsIGlobalObject : public nsISupports,
                         public mozilla::dom::DispatcherTrait {
   nsTArray<nsCString> mHostObjectURIs;
