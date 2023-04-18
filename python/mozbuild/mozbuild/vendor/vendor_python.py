@@ -60,8 +60,11 @@ class VendorPython(MozbuildObject):
 
             with TemporaryDirectory() as tmp:
                 
-                self.virtualenv_manager._run_pip(
+                subprocess.check_call(
                     [
+                        self.virtualenv_manager.python_path,
+                        "-m",
+                        "pip",
                         "download",
                         "-r",
                         tmp_requirements_absolute,

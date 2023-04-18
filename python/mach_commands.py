@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import argparse
 import logging
 import os
+import subprocess
 import sys
 import tempfile
 from multiprocessing import cpu_count
@@ -103,7 +104,15 @@ def python(
             if not no_virtualenv:
                 
                 
-                command_context.virtualenv_manager._run_pip(["install", "ipython"])
+                subprocess.check_call(
+                    [
+                        command_context.virtualenv_manager.python_path,
+                        "-m",
+                        "pip",
+                        "install",
+                        "ipython",
+                    ]
+                )
                 python_path = which("ipython", path=bindir)
 
             if not python_path:
