@@ -82,7 +82,7 @@ static PROCESS_TYPE: Lazy<AtomicU32> = Lazy::new(|| {
     
     let process_type = process_type
         .try_into()
-        .unwrap_or(nsIXULRuntime::PROCESS_TYPE_DEFAULT as u32);
+        .unwrap_or(nsIXULRuntime::PROCESS_TYPE_DEFAULT);
     
     
     
@@ -93,7 +93,7 @@ static PROCESS_TYPE: Lazy<AtomicU32> = Lazy::new(|| {
 
 #[cfg(feature = "with_gecko")]
 pub fn need_ipc() -> bool {
-    PROCESS_TYPE.load(Ordering::Relaxed) != nsIXULRuntime::PROCESS_TYPE_DEFAULT as u32
+    PROCESS_TYPE.load(Ordering::Relaxed) != nsIXULRuntime::PROCESS_TYPE_DEFAULT
 }
 
 
