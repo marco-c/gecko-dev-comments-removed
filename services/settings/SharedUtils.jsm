@@ -8,6 +8,11 @@
 
 var EXPORTED_SYMBOLS = ["SharedUtils"];
 
+
+if (typeof crypto == "undefined") {
+  Cu.importGlobalProperties(["fetch", "crypto"]);
+}
+
 var SharedUtils = {
   
 

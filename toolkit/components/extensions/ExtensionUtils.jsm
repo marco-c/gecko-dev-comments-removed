@@ -20,6 +20,8 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/Timer.jsm"
 );
 
+XPCOMUtils.defineLazyGlobalGetters(lazy, ["fetch"]);
+
 
 XPCOMUtils.defineLazyGetter(lazy, "idleTimeout", () =>
   Services.appinfo.name === "XPCShell" ? 500 : undefined
@@ -322,7 +324,7 @@ function parseMatchPatterns(patterns, options) {
 async function makeDataURI(iconUrl) {
   let response;
   try {
-    response = await fetch(iconUrl);
+    response = await lazy.fetch(iconUrl);
   } catch (e) {
     
     Cu.reportError(e);

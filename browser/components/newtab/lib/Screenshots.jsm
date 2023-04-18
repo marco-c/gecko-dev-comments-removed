@@ -11,6 +11,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 const lazy = {};
 
+XPCOMUtils.defineLazyGlobalGetters(lazy, ["fetch"]);
+
 ChromeUtils.defineModuleGetter(
   lazy,
   "BackgroundPageThumbs",
@@ -61,7 +63,7 @@ const Screenshots = {
       
       const imgPath = lazy.PageThumbs.getThumbnailPath(url);
 
-      const filePathResponse = await fetch(`file://${imgPath}`);
+      const filePathResponse = await lazy.fetch(`file://${imgPath}`);
       const fileContents = await filePathResponse.blob();
 
       

@@ -3,6 +3,7 @@
 
 
 "use strict";
+Cu.importGlobalProperties(["fetch"]);
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 

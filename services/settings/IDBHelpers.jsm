@@ -9,6 +9,12 @@ const DB_VERSION = 3;
 
 
 
+if (typeof indexedDB == "undefined") {
+  Cu.importGlobalProperties(["indexedDB"]);
+}
+
+
+
 
 class IndexedDBError extends Error {
   constructor(error, method = "", identifier = "") {
