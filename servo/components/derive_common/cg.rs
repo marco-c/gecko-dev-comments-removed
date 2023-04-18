@@ -374,6 +374,11 @@ pub fn to_css_identifier(mut camel_case: &str) -> String {
 }
 
 
+pub fn to_scream_case(css_case: &str) -> String {
+    css_case.to_uppercase().replace('-', "_")
+}
+
+
 fn split_camel_segment<'input>(camel_case: &mut &'input str) -> Option<&'input str> {
     let index = match camel_case.chars().next() {
         None => return None,
