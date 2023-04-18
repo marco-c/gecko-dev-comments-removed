@@ -701,7 +701,11 @@ nsWindow::nsWindow(bool aIsChildWindow)
   if (!sInstanceCount) {
     
     
-    mozilla::widget::WinTaskbar::RegisterAppUserModelID();
+    
+    
+    if (!WinUtils::HasPackageIdentity()) {
+      mozilla::widget::WinTaskbar::RegisterAppUserModelID();
+    }
     KeyboardLayout::GetInstance()->OnLayoutChange(::GetKeyboardLayout(0));
 #if defined(ACCESSIBILITY)
     mozilla::TIPMessageHandler::Initialize();

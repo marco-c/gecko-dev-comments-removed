@@ -135,7 +135,10 @@ JumpListBuilder::JumpListBuilder()
 
   
   nsString modelId;
-  if (mozilla::widget::WinTaskbar::GetAppUserModelID(modelId)) {
+  
+  
+  if (mozilla::widget::WinTaskbar::GetAppUserModelID(modelId) &&
+      !mozilla::widget::WinUtils::HasPackageIdentity()) {
     jumpListMgr->SetAppID(modelId.get());
   }
 }

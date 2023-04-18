@@ -26,6 +26,7 @@
 #  endif
 #  include "mozilla/ScopeExit.h"
 #  include "mozilla/WinDllServices.h"
+#  include "WinUtils.h"
 #endif
 
 #include "nsAppRunner.h"
@@ -544,8 +545,10 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
   
   
   
+  
+  
   const char* const appModelUserId = aArgv[--aArgc];
-  if (appModelUserId) {
+  if (appModelUserId && !mozilla::widget::WinUtils::HasPackageIdentity()) {
     
     if (*appModelUserId != '-') {
       nsString appId;
