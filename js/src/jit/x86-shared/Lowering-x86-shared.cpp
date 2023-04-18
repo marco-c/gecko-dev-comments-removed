@@ -1231,7 +1231,12 @@ void LIRGenerator::visitWasmShiftSimd128(MWasmShiftSimd128* ins) {
         case wasm::SimdOp::I64x2ShrS: {
           auto* lir = new (alloc())
               LWasmSignReplicationSimd128(useRegisterAtStart(lhs));
-          defineReuseInput(lir, ins, LWasmConstantShiftSimd128::Src);
+          if (isThreeOpAllowed()) {
+            define(lir, ins);
+          } else {
+            
+            defineReuseInput(lir, ins, LWasmConstantShiftSimd128::Src);
+          }
           return;
         }
         default:
@@ -1242,11 +1247,14 @@ void LIRGenerator::visitWasmShiftSimd128(MWasmShiftSimd128* ins) {
 #  ifdef DEBUG
     js::wasm::ReportSimdAnalysis("shift -> constant shift");
 #  endif
-    
-    
     auto* lir = new (alloc())
         LWasmConstantShiftSimd128(useRegisterAtStart(lhs), shiftCount);
-    defineReuseInput(lir, ins, LWasmConstantShiftSimd128::Src);
+    if (isThreeOpAllowed()) {
+      define(lir, ins);
+    } else {
+      
+      defineReuseInput(lir, ins, LWasmConstantShiftSimd128::Src);
+    }
     return;
   }
 
@@ -1449,8 +1457,11 @@ void LIRGenerator::visitWasmUnarySimd128(MWasmUnarySimd128* ins) {
     case wasm::SimdOp::I16x8Neg:
     case wasm::SimdOp::I32x4Neg:
     case wasm::SimdOp::I64x2Neg:
+    case wasm::SimdOp::I16x8ExtaddPairwiseI8x16S:
       
-      MOZ_ASSERT(!useAtStart && !reuseInput);
+      MOZ_ASSERT(!reuseInput);
+      
+      useAtStart = isThreeOpAllowed();
       break;
     case wasm::SimdOp::F32x4Neg:
     case wasm::SimdOp::F64x2Neg:
@@ -1465,7 +1476,6 @@ void LIRGenerator::visitWasmUnarySimd128(MWasmUnarySimd128* ins) {
     case wasm::SimdOp::I64x2Abs:
     case wasm::SimdOp::I32x4TruncSatF32x4S:
     case wasm::SimdOp::F32x4ConvertI32x4U:
-    case wasm::SimdOp::I16x8ExtaddPairwiseI8x16S:
     case wasm::SimdOp::I16x8ExtaddPairwiseI8x16U:
     case wasm::SimdOp::I32x4ExtaddPairwiseI16x8S:
     case wasm::SimdOp::I32x4ExtaddPairwiseI16x8U:
@@ -1478,7 +1488,7 @@ void LIRGenerator::visitWasmUnarySimd128(MWasmUnarySimd128* ins) {
       
       
       useAtStart = true;
-      reuseInput = true;
+      reuseInput = !isThreeOpAllowed();
       break;
     case wasm::SimdOp::I32x4TruncSatF32x4U:
     case wasm::SimdOp::I32x4TruncSatF64x2SZero:
@@ -1486,8 +1496,9 @@ void LIRGenerator::visitWasmUnarySimd128(MWasmUnarySimd128* ins) {
     case wasm::SimdOp::I8x16Popcnt:
       tempReg = tempSimd128();
       
+      
       useAtStart = true;
-      reuseInput = true;
+      reuseInput = !isThreeOpAllowed();
       break;
     case wasm::SimdOp::I16x8ExtendLowI8x16S:
     case wasm::SimdOp::I16x8ExtendHighI8x16S:

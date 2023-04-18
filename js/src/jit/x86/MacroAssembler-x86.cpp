@@ -421,6 +421,12 @@ void MacroAssemblerX86::vcmplepdSimd128(const SimdConstant& v,
   vpPatchOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX86::vcmplepd_mr);
 }
 
+void MacroAssemblerX86::vpmaddubswSimd128(const SimdConstant& v,
+                                          FloatRegister lhs,
+                                          FloatRegister dest) {
+  vpPatchOpSimd128(v, lhs, dest, &X86Encoding::BaseAssemblerX86::vpmaddubsw_mr);
+}
+
 void MacroAssemblerX86::finish() {
   
   
