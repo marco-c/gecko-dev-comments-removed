@@ -1994,12 +1994,11 @@ void RuntimeService::MemoryPressureAllWorkers() {
   BroadcastAllWorkers([](auto& worker) { worker.MemoryPressure(); });
 }
 
-uint32_t RuntimeService::ClampedHardwareConcurrency(
-    bool aShouldResistFingerprinting) const {
+uint32_t RuntimeService::ClampedHardwareConcurrency() const {
   
   
   
-  if (MOZ_UNLIKELY(aShouldResistFingerprinting)) {
+  if (MOZ_UNLIKELY(nsContentUtils::ShouldResistFingerprinting())) {
     return 2;
   }
 
