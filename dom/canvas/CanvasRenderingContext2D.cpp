@@ -5007,10 +5007,13 @@ void CanvasRenderingContext2D::DrawDirectlyToCanvas(
   aDest.Scale((float)contextScale.xScale, (float)contextScale.yScale);
 
   
-  gfxSize scale(aDest.width / aSrc.width, aDest.height / aSrc.height);
-  IntSize scaledImageSize = IntSize::Ceil(aImgSize.width * scale.width,
-                                          aImgSize.height * scale.height);
-  aSrc.Scale(scale.width, scale.height);
+  MatrixScalesDouble scale(aDest.width / aSrc.width,
+                           aDest.height / aSrc.height);
+  IntSize scaledImageSize =
+      IntSize::Ceil(static_cast<float>(scale.xScale * aImgSize.width),
+                    static_cast<float>(scale.yScale * aImgSize.height));
+  aSrc.Scale(static_cast<float>(scale.xScale),
+             static_cast<float>(scale.yScale));
 
   
   
