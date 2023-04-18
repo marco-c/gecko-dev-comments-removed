@@ -52,7 +52,10 @@ class MediaSourceDemuxer : public MediaDataDemuxer,
 
   
   
-  void GetDebugInfo(dom::MediaSourceDemuxerDebugInfo& aInfo);
+  
+  
+  RefPtr<GenericPromise> GetDebugInfo(
+      dom::MediaSourceDemuxerDebugInfo& aInfo) const;
 
   void AddSizeOfResources(MediaSourceDecoder::ResourceSizes* aSizes);
 

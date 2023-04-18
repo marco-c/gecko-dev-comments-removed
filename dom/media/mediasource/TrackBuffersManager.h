@@ -165,8 +165,12 @@ class TrackBuffersManager final
   media::TimeUnit GetNextRandomAccessPoint(TrackInfo::TrackType aTrack,
                                            const media::TimeUnit& aFuzz);
 
+  
+  
+  
+  RefPtr<GenericPromise> RequestDebugInfo(
+      dom::TrackBuffersManagerDebugInfo& aInfo) const;
   void AddSizeOfResources(MediaSourceDecoder::ResourceSizes* aSizes) const;
-  void GetDebugInfo(dom::TrackBuffersManagerDebugInfo& aInfo);
 
  private:
   typedef MozPromise<bool, MediaResult,  true>
@@ -271,6 +275,8 @@ class TrackBuffersManager final
       const nsTArray<RefPtr<MediaRawData>>& aSamples);
 
   void DoEvictData(const media::TimeUnit& aPlaybackTime, int64_t aSizeToEvict);
+
+  void GetDebugInfo(dom::TrackBuffersManagerDebugInfo& aInfo) const;
 
   struct TrackData {
     TrackData() : mNumTracks(0), mNeedRandomAccessPoint(true), mSizeBuffer(0) {}
