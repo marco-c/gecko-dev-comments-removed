@@ -25,141 +25,6 @@ module.exports = ReactDOM;
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "AboutWelcomeUtils": () => ( AboutWelcomeUtils),
-   "DEFAULT_RTAMO_CONTENT": () => ( DEFAULT_RTAMO_CONTENT)
- });
-
-
-
-
-const page = document.querySelector(":root[dialogroot=true]") ? "spotlight" : "about:welcome";
-const AboutWelcomeUtils = {
-  handleUserAction(action) {
-    window.AWSendToParent("SPECIAL_ACTION", action);
-  },
-
-  sendImpressionTelemetry(messageId, context) {
-    window.AWSendEventTelemetry({
-      event: "IMPRESSION",
-      event_context: { ...context,
-        page
-      },
-      message_id: messageId
-    });
-  },
-
-  sendActionTelemetry(messageId, elementId, eventName = "CLICK_BUTTON") {
-    const ping = {
-      event: eventName,
-      event_context: {
-        source: elementId,
-        page
-      },
-      message_id: messageId
-    };
-    window.AWSendEventTelemetry(ping);
-  },
-
-  async fetchFlowParams(metricsFlowUri) {
-    let flowParams;
-
-    try {
-      const response = await fetch(metricsFlowUri, {
-        credentials: "omit"
-      });
-
-      if (response.status === 200) {
-        const {
-          deviceId,
-          flowId,
-          flowBeginTime
-        } = await response.json();
-        flowParams = {
-          deviceId,
-          flowId,
-          flowBeginTime
-        };
-      } else {
-        console.error("Non-200 response", response); 
-      }
-    } catch (e) {
-      flowParams = null;
-    }
-
-    return flowParams;
-  },
-
-  sendEvent(type, detail) {
-    document.dispatchEvent(new CustomEvent(`AWPage:${type}`, {
-      bubbles: true,
-      detail
-    }));
-  }
-
-};
-const DEFAULT_RTAMO_CONTENT = {
-  template: "return_to_amo",
-  utm_term: "rtamo",
-  content: {
-    position: "corner",
-    hero_text: {
-      string_id: "mr1-welcome-screen-hero-text"
-    },
-    title: {
-      string_id: "return-to-amo-subtitle"
-    },
-    has_noodles: true,
-    subtitle: {
-      string_id: "return-to-amo-addon-title"
-    },
-    help_text: {
-      string_id: "mr1-onboarding-welcome-image-caption"
-    },
-    backdrop: "#212121 url(chrome://activity-stream/content/data/content/assets/proton-bkg.avif) center/cover no-repeat fixed",
-    primary_button: {
-      label: {
-        string_id: "return-to-amo-add-extension-label"
-      },
-      source_id: "ADD_EXTENSION_BUTTON",
-      action: {
-        type: "INSTALL_ADDON_FROM_URL",
-        data: {
-          url: null,
-          telemetrySource: "rtamo"
-        }
-      }
-    },
-    secondary_button: {
-      label: {
-        string_id: "onboarding-not-now-button-label"
-      },
-      source_id: "RTAMO_START_BROWSING_BUTTON",
-      action: {
-        type: "OPEN_AWESOME_BAR"
-      }
-    },
-    secondary_button_top: {
-      label: {
-        string_id: "mr1-onboarding-sign-in-button-label"
-      },
-      source_id: "RTAMO_FXA_SIGNIN_BUTTON",
-      action: {
-        data: {
-          entrypoint: "activity-stream-firstrun"
-        },
-        type: "SHOW_FIREFOX_ACCOUNTS",
-        addFlowParams: true
-      }
-    }
-  }
-};
-
- }),
-
- ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
- __webpack_require__.d(__webpack_exports__, {
    "MultiStageAboutWelcome": () => ( MultiStageAboutWelcome),
    "SecondaryCTA": () => ( SecondaryCTA),
    "StepsIndicator": () => ( StepsIndicator),
@@ -167,8 +32,8 @@ __webpack_require__.r(__webpack_exports__);
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
- var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
- var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
+ var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
+ var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
  var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(10);
  var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(11);
@@ -576,16 +441,147 @@ const Localized = ({
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
+   "AboutWelcomeUtils": () => ( AboutWelcomeUtils),
+   "DEFAULT_RTAMO_CONTENT": () => ( DEFAULT_RTAMO_CONTENT)
+ });
+
+
+
+const AboutWelcomeUtils = {
+  handleUserAction(action) {
+    window.AWSendToParent("SPECIAL_ACTION", action);
+  },
+
+  sendImpressionTelemetry(messageId, context) {
+    window.AWSendEventTelemetry({
+      event: "IMPRESSION",
+      event_context: context,
+      message_id: messageId
+    });
+  },
+
+  sendActionTelemetry(messageId, elementId, eventName = "CLICK_BUTTON") {
+    const ping = {
+      event: eventName,
+      event_context: {
+        source: elementId,
+        page: "about:welcome"
+      },
+      message_id: messageId
+    };
+    window.AWSendEventTelemetry(ping);
+  },
+
+  async fetchFlowParams(metricsFlowUri) {
+    let flowParams;
+
+    try {
+      const response = await fetch(metricsFlowUri, {
+        credentials: "omit"
+      });
+
+      if (response.status === 200) {
+        const {
+          deviceId,
+          flowId,
+          flowBeginTime
+        } = await response.json();
+        flowParams = {
+          deviceId,
+          flowId,
+          flowBeginTime
+        };
+      } else {
+        console.error("Non-200 response", response); 
+      }
+    } catch (e) {
+      flowParams = null;
+    }
+
+    return flowParams;
+  },
+
+  sendEvent(type, detail) {
+    document.dispatchEvent(new CustomEvent(`AWPage:${type}`, {
+      bubbles: true,
+      detail
+    }));
+  }
+
+};
+const DEFAULT_RTAMO_CONTENT = {
+  template: "return_to_amo",
+  utm_term: "rtamo",
+  content: {
+    position: "corner",
+    hero_text: {
+      string_id: "mr1-welcome-screen-hero-text"
+    },
+    title: {
+      string_id: "return-to-amo-subtitle"
+    },
+    has_noodles: true,
+    subtitle: {
+      string_id: "return-to-amo-addon-title"
+    },
+    help_text: {
+      string_id: "mr1-onboarding-welcome-image-caption"
+    },
+    backdrop: "#212121 url(chrome://activity-stream/content/data/content/assets/proton-bkg.avif) center/cover no-repeat fixed",
+    primary_button: {
+      label: {
+        string_id: "return-to-amo-add-extension-label"
+      },
+      source_id: "ADD_EXTENSION_BUTTON",
+      action: {
+        type: "INSTALL_ADDON_FROM_URL",
+        data: {
+          url: null,
+          telemetrySource: "rtamo"
+        }
+      }
+    },
+    secondary_button: {
+      label: {
+        string_id: "onboarding-not-now-button-label"
+      },
+      source_id: "RTAMO_START_BROWSING_BUTTON",
+      action: {
+        type: "OPEN_AWESOME_BAR"
+      }
+    },
+    secondary_button_top: {
+      label: {
+        string_id: "mr1-onboarding-sign-in-button-label"
+      },
+      source_id: "RTAMO_FXA_SIGNIN_BUTTON",
+      action: {
+        data: {
+          entrypoint: "activity-stream-firstrun"
+        },
+        type: "SHOW_FIREFOX_ACCOUNTS",
+        addFlowParams: true
+      }
+    }
+  }
+};
+
+ }),
+
+ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
    "MultiStageProtonScreen": () => ( MultiStageProtonScreen),
    "ProtonScreen": () => ( ProtonScreen)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
- var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+ var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
  var _Colorways__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(7);
  var _MobileDownloads__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8);
  var _Themes__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(9);
- var _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(4);
+ var _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(3);
  var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(10);
 
 
@@ -824,7 +820,7 @@ __webpack_require__.r(__webpack_exports__);
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
- var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+ var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
 
 
 
@@ -1012,7 +1008,7 @@ __webpack_require__.r(__webpack_exports__);
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
- var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+ var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
 
 
 
@@ -1071,7 +1067,7 @@ __webpack_require__.r(__webpack_exports__);
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
- var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+ var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
 
 
 
@@ -1126,8 +1122,8 @@ __webpack_require__.r(__webpack_exports__);
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
- var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
- var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
+ var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4);
+ var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(5);
 
 
 
@@ -1416,7 +1412,7 @@ __webpack_require__.r(__webpack_exports__);
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
- var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
+ var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6);
  var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(11);
 
@@ -1611,11 +1607,9 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
  var react_dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(2);
  var react_dom__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_1__);
- var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
- var _components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4);
- var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(12);
+ var _components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
+ var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(12);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
-
 
 
 
@@ -1651,12 +1645,17 @@ class AboutWelcome extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
         domComplete,
         domInteractive
       } = performance.getEntriesByType("navigation").pop();
-      _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendImpressionTelemetry(this.props.messageId, {
-        domComplete,
-        domInteractive,
-        mountStart: performance.getEntriesByName("mount").pop().startTime,
-        domState,
-        source: this.props.UTMTerm
+      window.AWSendEventTelemetry({
+        event: "IMPRESSION",
+        event_context: {
+          domComplete,
+          domInteractive,
+          mountStart: performance.getEntriesByName("mount").pop().startTime,
+          domState,
+          source: this.props.UTMTerm,
+          page: "about:welcome"
+        },
+        message_id: this.props.messageId
       });
     };
 
@@ -1682,7 +1681,7 @@ class AboutWelcome extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     } = this;
 
     if (props.template === "return_to_amo") {
-      return react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__.ReturnToAMO, {
+      return react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_3__.ReturnToAMO, {
         message_id: props.messageId,
         type: props.type,
         name: props.name,
@@ -1693,7 +1692,7 @@ class AboutWelcome extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       });
     }
 
-    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__.MultiStageAboutWelcome, {
+    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_2__.MultiStageAboutWelcome, {
       message_id: props.messageId,
       screens: props.screens,
       metricsFlowUri: this.state.metricsFlowUri,
