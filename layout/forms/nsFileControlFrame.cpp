@@ -398,8 +398,7 @@ nsFileControlFrame::DnDListener::HandleEvent(Event* aEvent) {
     } else {
       bool blinkFileSystemEnabled =
           StaticPrefs::dom_webkitBlink_filesystem_enabled();
-      bool dirPickerEnabled = StaticPrefs::dom_input_dirpicker();
-      if (blinkFileSystemEnabled || dirPickerEnabled) {
+      if (blinkFileSystemEnabled) {
         FileList* files = static_cast<FileList*>(fileList.get());
         if (files) {
           for (uint32_t i = 0; i < files->Length(); ++i) {
@@ -423,10 +422,6 @@ nsFileControlFrame::DnDListener::HandleEvent(Event* aEvent) {
         
         inputElement->SetFiles(fileList, true);
         inputElement->UpdateEntries(array);
-      }
-      
-      else if (dirPickerEnabled) {
-        inputElement->SetFilesOrDirectories(array, true);
       }
       
       else {
