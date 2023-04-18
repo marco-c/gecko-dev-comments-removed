@@ -120,7 +120,6 @@ const XPI_INTERNAL_SYMBOLS = [
   "KEY_APP_SYSTEM_ADDONS",
   "KEY_APP_SYSTEM_DEFAULTS",
   "KEY_APP_SYSTEM_PROFILE",
-  "KEY_PROFILEDIR",
   "PREF_BRANCH_INSTALLED_ADDON",
   "PREF_SYSTEM_ADDON_SET",
   "TEMPORARY_ADDON_SUFFIX",
@@ -1761,11 +1760,9 @@ class AddonInstall {
         }
 
         
-        let existingAddonID = this.existingAddon ? this.existingAddon.id : null;
         let file = await this.location.installer.installAddon({
           id: this.addon.id,
           source: stagedAddon,
-          existingAddonID,
         });
 
         
@@ -2532,7 +2529,6 @@ var DownloadAddonInstall = class extends AddonInstall {
     this.addon.updateDate = Date.now();
 
     if (this.existingAddon) {
-      this.addon.existingAddonID = this.existingAddon.id;
       this.addon.installDate = this.existingAddon.installDate;
     } else {
       this.addon.installDate = this.addon.updateDate;
@@ -3205,9 +3201,7 @@ class DirectoryInstaller {
 
 
 
-
-
-  installAddon({ id, source, existingAddonID, action = "move" }) {
+  installAddon({ id, source, action = "move" }) {
     let trashDir = this.getTrashDir();
 
     let transaction = new SafeInstallOperation();
@@ -3229,39 +3223,6 @@ class DirectoryInstaller {
     
     try {
       moveOldAddon(id);
-      if (existingAddonID && existingAddonID != id) {
-        moveOldAddon(existingAddonID);
-
-        {
-          
-          
-
-
-
-          let oldDataDir = FileUtils.getDir(
-            KEY_PROFILEDIR,
-            ["extension-data", existingAddonID],
-            false,
-            true
-          );
-
-          if (oldDataDir.exists()) {
-            let newDataDir = FileUtils.getDir(
-              KEY_PROFILEDIR,
-              ["extension-data", id],
-              false,
-              true
-            );
-            if (newDataDir.exists()) {
-              let trashData = getFile("data-directory", trashDir);
-              transaction.moveUnder(newDataDir, trashData);
-            }
-
-            transaction.moveTo(oldDataDir, newDataDir);
-          }
-        }
-      }
-
       if (action == "copy") {
         transaction.copy(source, this.dir);
       } else if (action == "move") {
@@ -3985,7 +3946,6 @@ var XPIInstall = {
       addon.sourceBundle = location.installer.installAddon({
         id,
         source,
-        existingAddonID: id,
       });
       XPIStates.addAddon(addon);
     } catch (e) {
