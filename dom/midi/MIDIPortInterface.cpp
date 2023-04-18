@@ -18,8 +18,7 @@ mozilla::dom::MIDIPortInterface::MIDIPortInterface(
       mType((MIDIPortType)aPortInfo.type()),
       
       mDeviceState(MIDIPortDeviceState::Connected),
-      
-      mConnectionState(MIDIPortConnectionState::Open),
+      mConnectionState(MIDIPortConnectionState::Closed),
       mShuttingDown(false) {}
 
 mozilla::dom::MIDIPortInterface::~MIDIPortInterface() { Shutdown(); }
