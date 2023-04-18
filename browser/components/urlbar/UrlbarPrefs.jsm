@@ -195,6 +195,10 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["suggest.openpage", true],
 
   
+  
+  ["suggest.remotetab", true],
+
+  
   ["suggest.quicksuggest.nonsponsored", false],
 
   
