@@ -406,8 +406,8 @@ var PictureInPicture = {
     let { top, left, width, height } = this.fitToScreen(parentWin, videoData);
 
     let features =
-      `${PLAYER_FEATURES},top=${top},left=${left},` +
-      `outerWidth=${width},outerHeight=${height}`;
+      `${PLAYER_FEATURES},top=${Math.round(top)},left=${Math.round(left)},` +
+      `outerWidth=${Math.round(width)},outerHeight=${Math.round(height)}`;
 
     let pipWindow = Services.ww.openWindow(
       parentWin,
@@ -467,34 +467,40 @@ var PictureInPicture = {
 
 
 
+
   fitToScreen(requestingWin, videoData) {
     let { videoHeight, videoWidth } = videoData;
 
     const isPlayer = requestingWin.document.location.href == PLAYER_URI;
 
+    let requestingCssToDesktopScale =
+      requestingWin.devicePixelRatio / requestingWin.desktopToDeviceScale;
+
     let top, left, width, height;
     if (isPlayer) {
       
-      left = requestingWin.screenX;
-      top = requestingWin.screenY;
-      width = requestingWin.innerWidth;
-      height = requestingWin.innerHeight;
+      left = requestingWin.screenX * requestingCssToDesktopScale;
+      top = requestingWin.screenY * requestingCssToDesktopScale;
+      width = requestingWin.outerWidth;
+      height = requestingWin.outerHeight;
     } else {
       
       ({ top, left, width, height } = this.loadPosition());
     }
 
     
+    
+    
     if (!isNaN(top) && !isNaN(left) && !isNaN(width) && !isNaN(height)) {
       
-      let centerX = left + width / 2;
-      let centerY = top + height / 2;
+      
+      let PiPScreen = this.getWorkingScreen(left, top);
 
       
-      
-      
-      
-      let PiPScreen = this.getWorkingScreen(centerX, centerY);
+      let PipScreenCssToDesktopScale =
+        PiPScreen.defaultCSSScaleFactor / PiPScreen.contentsScaleFactor;
+      let centerX = left + (width * PipScreenCssToDesktopScale) / 2;
+      let centerY = top + (height * PipScreenCssToDesktopScale) / 2;
 
       
       let [
@@ -560,6 +566,9 @@ var PictureInPicture = {
           
           top += PiPScreenTop + PiPScreenHeight - top - height;
         }
+        
+        top /= requestingCssToDesktopScale;
+        left /= requestingCssToDesktopScale;
         return { top, left, width, height };
       }
     }
@@ -567,10 +576,10 @@ var PictureInPicture = {
     
     
     let screen = this.getWorkingScreen(
-      requestingWin.screenX,
-      requestingWin.screenY,
-      requestingWin.innerWidth,
-      requestingWin.innerHeight
+      requestingWin.screenX * requestingCssToDesktopScale,
+      requestingWin.screenY * requestingCssToDesktopScale,
+      requestingWin.outerWidth * requestingCssToDesktopScale,
+      requestingWin.outerHeight * requestingCssToDesktopScale
     );
     let [
       screenLeft,
@@ -579,13 +588,16 @@ var PictureInPicture = {
       screenHeight,
     ] = this.getAvailScreenSize(screen);
 
+    let screenCssToDesktopScale =
+      screen.defaultCSSScaleFactor / screen.contentsScaleFactor;
+
     
     
     const MAX_HEIGHT = screenHeight / 4;
     const MAX_WIDTH = screenWidth / 3;
 
-    width = videoWidth;
-    height = videoHeight;
+    width = videoWidth * screenCssToDesktopScale;
+    height = videoHeight * screenCssToDesktopScale;
     let aspectRatio = videoWidth / videoHeight;
 
     if (videoHeight > MAX_HEIGHT || videoWidth > MAX_WIDTH) {
@@ -626,6 +638,14 @@ var PictureInPicture = {
     let isRTL = Services.locale.isAppLocaleRTL;
     left = isRTL ? screenLeft : screenLeft + screenWidth - width;
     top = screenTop + screenHeight - height;
+
+    
+    
+    
+    top /= requestingCssToDesktopScale;
+    left /= requestingCssToDesktopScale;
+    width /= screenCssToDesktopScale;
+    height /= screenCssToDesktopScale;
 
     return { top, left, width, height };
   },
@@ -768,23 +788,6 @@ var PictureInPicture = {
       screenWidth,
       screenHeight
     );
-    let fullLeft = {},
-      fullTop = {},
-      fullWidth = {},
-      fullHeight = {};
-    screen.GetRectDisplayPix(fullLeft, fullTop, fullWidth, fullHeight);
-
-    
-    
-    
-    let scaleFactor = screen.contentsScaleFactor / screen.defaultCSSScaleFactor;
-    screenWidth.value *= scaleFactor;
-    screenHeight.value *= scaleFactor;
-    screenLeft.value =
-      (screenLeft.value - fullLeft.value) * scaleFactor + fullLeft.value;
-    screenTop.value =
-      (screenTop.value - fullTop.value) * scaleFactor + fullTop.value;
-
     return [
       screenLeft.value,
       screenTop.value,
@@ -809,6 +812,12 @@ var PictureInPicture = {
 
 
 
+
+
+
+
+
+
   getWorkingScreen(left, top, width = 1, height = 1) {
     
     let screenManager = Cc["@mozilla.org/gfx/screenmanager;1"].getService(
@@ -817,12 +826,7 @@ var PictureInPicture = {
     
     
     
-    
-    
-    
-    let screen = screenManager.screenForRect(left, top, width, height);
-
-    return screen;
+    return screenManager.screenForRect(left, top, width, height);
   },
 
   
@@ -832,10 +836,15 @@ var PictureInPicture = {
   savePosition(win) {
     let xulStore = Services.xulStore;
 
-    let left = win.screenX;
-    let top = win.screenY;
-    let width = win.innerWidth;
-    let height = win.innerHeight;
+    
+    
+    
+    let cssToDesktopScale = win.devicePixelRatio / win.desktopToDeviceScale;
+
+    let left = win.screenX * cssToDesktopScale;
+    let top = win.screenY * cssToDesktopScale;
+    let width = win.outerWidth;
+    let height = win.outerHeight;
 
     xulStore.setValue(PLAYER_URI, "picture-in-picture", "left", left);
     xulStore.setValue(PLAYER_URI, "picture-in-picture", "top", top);
