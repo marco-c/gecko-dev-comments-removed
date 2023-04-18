@@ -116,14 +116,15 @@ var Utils = {
         if (
           
           bypassProxy ||
+          Services.startup.shuttingDown ||
+          Utils.isOffline ||
           !request.isProxied ||
           !request.bypassProxyEnabled
         ) {
           reject(err);
           return;
         }
-        
-        ServiceRequest.logProxySource?.(request.channel, "remote-settings");
+        ServiceRequest.logProxySource(request.channel, "remote-settings");
         resolve(Utils.fetch(input, { ...init, bypassProxy: true }));
       }
 
