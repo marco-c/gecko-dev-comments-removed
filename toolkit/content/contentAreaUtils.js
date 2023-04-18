@@ -568,28 +568,36 @@ function initFileInfo(
   aContentDisposition
 ) {
   try {
+    let uriExt = null;
     
     try {
       aFI.uri = makeURI(aURL, aURLCharset);
       
       
-      var url = aFI.uri.QueryInterface(Ci.nsIURL);
-      aFI.fileExt = url.fileExtension;
+      uriExt = aFI.uri.QueryInterface(Ci.nsIURL).fileExtension;
     } catch (e) {}
 
     
-    aFI.fileName = getDefaultFileName(
+    let fileName = getDefaultFileName(
       aFI.suggestedFileName || aFI.fileName,
       aFI.uri,
       aDocument,
       aContentDisposition
     );
+
+    let mimeService = this.getMIMEService();
+    aFI.fileName = mimeService.validateFileNameForSaving(
+      fileName,
+      aContentType,
+      mimeService.VALIDATE_DEFAULT
+    );
+
     
     
     
     
     if (
-      !aFI.fileExt &&
+      !uriExt &&
       !aDocument &&
       !aContentType &&
       /^http(s?):\/\//i.test(aURL)
@@ -597,8 +605,10 @@ function initFileInfo(
       aFI.fileExt = "htm";
       aFI.fileBaseName = aFI.fileName;
     } else {
-      aFI.fileExt = getDefaultExtension(aFI.fileName, aFI.uri, aContentType);
-      aFI.fileBaseName = getFileBaseName(aFI.fileName);
+      let idx = aFI.fileName.lastIndexOf(".");
+      aFI.fileBaseName =
+        idx >= 0 ? aFI.fileName.substring(0, idx) : aFI.fileName;
+      aFI.fileExt = idx >= 0 ? aFI.fileName.substring(idx + 1) : null;
     }
   } catch (e) {}
 }
@@ -645,9 +655,7 @@ function promiseTargetFile(
     let dir = new FileUtils.File(dirPath);
 
     if (useDownloadDir && dirExists) {
-      dir.append(
-        getNormalizedLeafName(aFpP.fileInfo.fileName, aFpP.fileInfo.fileExt)
-      );
+      dir.append(aFpP.fileInfo.fileName);
       aFpP.file = uniqueFile(dir);
       return true;
     }
@@ -688,10 +696,7 @@ function promiseTargetFile(
 
     fp.displayDirectory = dir;
     fp.defaultExtension = aFpP.fileInfo.fileExt;
-    fp.defaultString = getNormalizedLeafName(
-      aFpP.fileInfo.fileName,
-      aFpP.fileInfo.fileExt
-    );
+    fp.defaultString = aFpP.fileInfo.fileName;
     appendFiltersForContentType(
       fp,
       aFpP.contentType,
@@ -1021,11 +1026,9 @@ function getDefaultFileName(
       } catch (e) {}
     }
     if (fileName) {
-      return validateFileName(
-        Services.textToSubURI.unEscapeURIForUI(
-          fileName,
-           true
-        )
+      return Services.textToSubURI.unEscapeURIForUI(
+        fileName,
+         true
       );
     }
   }
@@ -1033,7 +1036,6 @@ function getDefaultFileName(
   let docTitle;
   if (aDocument && aDocument.title && aDocument.title.trim()) {
     
-    docTitle = validateFileName(aDocument.title);
     let contentType = aDocument.contentType;
     if (
       contentType == "application/xhtml+xml" ||
@@ -1043,7 +1045,7 @@ function getDefaultFileName(
       contentType == "text/xml"
     ) {
       
-      return docTitle;
+      return aDocument.title;
     }
   }
 
@@ -1051,11 +1053,9 @@ function getDefaultFileName(
     var url = aURI.QueryInterface(Ci.nsIURL);
     if (url.fileName != "") {
       
-      return validateFileName(
-        Services.textToSubURI.unEscapeURIForUI(
-          url.fileName,
-           true
-        )
+      return Services.textToSubURI.unEscapeURIForUI(
+        url.fileName,
+         true
       );
     }
   } catch (e) {
@@ -1070,34 +1070,21 @@ function getDefaultFileName(
 
   if (aDefaultFileName) {
     
-    return validateFileName(aDefaultFileName);
-  }
-
-  
-  var path = aURI.pathQueryRef.match(/\/([^\/]+)\/$/);
-  if (path && path.length > 1) {
-    return validateFileName(path[1]);
+    return aDefaultFileName;
   }
 
   try {
     if (aURI.host) {
       
-      return validateFileName(aURI.host);
+      return aURI.host;
     }
   } catch (e) {
     
   }
-  try {
-    
-    return ContentAreaUtils.stringBundle.GetStringFromName(
-      "DefaultSaveFileName"
-    );
-  } catch (e) {
-    
-  }
-  
-  return "index";
+
+  return "";
 }
+
 
 function validateFileName(aFileName) {
   let processed = DownloadPaths.sanitize(aFileName) || "_";
@@ -1122,120 +1109,6 @@ function validateFileName(aFileName) {
     }
   }
   return processed;
-}
-
-
-
-const kImageExtensions = new Set([
-  "art",
-  "bmp",
-  "gif",
-  "ico",
-  "cur",
-  "jpeg",
-  "jpg",
-  "jfif",
-  "pjpeg",
-  "pjp",
-  "png",
-  "apng",
-  "tiff",
-  "tif",
-  "xbm",
-  "svg",
-  "webp",
-  "avif",
-  "jxl",
-]);
-
-function getNormalizedLeafName(aFile, aDefaultExtension) {
-  if (!aDefaultExtension) {
-    return aFile;
-  }
-
-  if (AppConstants.platform == "win") {
-    
-    aFile = aFile.replace(/[\s.]+$/, "");
-  }
-
-  
-  aFile = aFile.replace(/^\.+/, "");
-
-  
-  var i = aFile.lastIndexOf(".");
-  let previousExtension = aFile.substr(i + 1).toLowerCase();
-  if (previousExtension != aDefaultExtension.toLowerCase()) {
-    
-    
-    
-    
-    
-    
-    if (kImageExtensions.has(previousExtension)) {
-      return aFile.substr(0, i + 1) + aDefaultExtension;
-    }
-    return aFile + "." + aDefaultExtension;
-  }
-
-  return aFile;
-}
-
-function getDefaultExtension(aFilename, aURI, aContentType) {
-  if (
-    aContentType == "text/plain" ||
-    aContentType == "application/octet-stream" ||
-    aURI.scheme == "ftp"
-  ) {
-    return "";
-  } 
-
-  
-  var url = Cc["@mozilla.org/network/standard-url-mutator;1"]
-    .createInstance(Ci.nsIURIMutator)
-    .setSpec("http://example.com") 
-    .setFilePath(aFilename)
-    .finalize()
-    .QueryInterface(Ci.nsIURL);
-
-  var ext = url.fileExtension;
-
-  
-  
-
-  
-  
-  var lookupExt = ext;
-  if (aContentType?.startsWith("image/")) {
-    lookupExt = "";
-  }
-  var mimeInfo = getMIMEInfoForType(aContentType, lookupExt);
-
-  if (ext && mimeInfo && mimeInfo.extensionExists(ext)) {
-    return ext;
-  }
-
-  
-  var urlext;
-  try {
-    url = aURI.QueryInterface(Ci.nsIURL);
-    urlext = url.fileExtension;
-  } catch (e) {}
-
-  if (urlext && mimeInfo && mimeInfo.extensionExists(urlext)) {
-    return urlext;
-  }
-
-  
-  
-  try {
-    if (mimeInfo) {
-      return mimeInfo.primaryExtension;
-    }
-  } catch (e) {}
-
-  
-  
-  return ext || urlext;
 }
 
 function GetSaveModeForContentType(aContentType, aDocument) {
