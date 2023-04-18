@@ -1006,6 +1006,7 @@ CanvasRenderingContext2D::ContextState::ContextState(const ContextState& aOther)
       font(aOther.font),
       textAlign(aOther.textAlign),
       textBaseline(aOther.textBaseline),
+      textDirection(aOther.textDirection),
       shadowColor(aOther.shadowColor),
       transform(aOther.transform),
       shadowOffset(aOther.shadowOffset),
@@ -3534,6 +3535,30 @@ void CanvasRenderingContext2D::GetTextBaseline(nsAString& aTextBaseline) {
   }
 }
 
+void CanvasRenderingContext2D::SetDirection(const nsAString& aDirection) {
+  if (aDirection.EqualsLiteral("ltr")) {
+    CurrentState().textDirection = TextDirection::LTR;
+  } else if (aDirection.EqualsLiteral("rtl")) {
+    CurrentState().textDirection = TextDirection::RTL;
+  } else if (aDirection.EqualsLiteral("inherit")) {
+    CurrentState().textDirection = TextDirection::INHERIT;
+  }
+}
+
+void CanvasRenderingContext2D::GetDirection(nsAString& aDirection) {
+  switch (CurrentState().textDirection) {
+    case TextDirection::LTR:
+      aDirection.AssignLiteral("ltr");
+      break;
+    case TextDirection::RTL:
+      aDirection.AssignLiteral("rtl");
+      break;
+    case TextDirection::INHERIT:
+      aDirection.AssignLiteral("inherit");
+      break;
+  }
+}
+
 
 
 
@@ -3689,11 +3714,11 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor
   using ContextState = CanvasRenderingContext2D::ContextState;
 
   virtual void SetText(const char16_t* aText, int32_t aLength,
-                       mozilla::intl::BidiDirection aDirection) override {
+                       intl::BidiDirection aDirection) override {
     mFontgrp->UpdateUserFonts();  
     
     gfx::ShapedTextFlags flags = mTextRunFlags;
-    if (aDirection == mozilla::intl::BidiDirection::RTL) {
+    if (aDirection == intl::BidiDirection::RTL) {
       flags |= gfx::ShapedTextFlags::TEXT_IS_RTL;
     } else {
       flags &= ~gfx::ShapedTextFlags::TEXT_IS_RTL;
@@ -3962,9 +3987,6 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
     textToDraw.Truncate();
   }
 
-  
-  bool isRTL = false;
-
   RefPtr<ComputedStyle> canvasStyle;
   if (mCanvasElement && mCanvasElement->IsInComposedDoc()) {
     
@@ -3973,11 +3995,25 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
       aError = NS_ERROR_FAILURE;
       return nullptr;
     }
+  }
 
-    isRTL = canvasStyle->StyleVisibility()->mDirection == StyleDirection::Rtl;
-  } else {
-    isRTL = GET_BIDI_OPTION_DIRECTION(document->GetBidiOptions()) ==
-            IBMBIDI_TEXTDIRECTION_RTL;
+  
+  const ContextState& state = CurrentState();
+  bool isRTL;
+  switch (state.textDirection) {
+    case TextDirection::LTR:
+      isRTL = false;
+      break;
+    case TextDirection::RTL:
+      isRTL = true;
+      break;
+    case TextDirection::INHERIT:
+      isRTL = canvasStyle
+                  ? canvasStyle->StyleVisibility()->mDirection ==
+                        StyleDirection::Rtl
+                  : GET_BIDI_OPTION_DIRECTION(document->GetBidiOptions()) ==
+                        IBMBIDI_TEXTDIRECTION_RTL;
+      break;
   }
 
   
@@ -4060,8 +4096,7 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
   
   aError = nsBidiPresUtils::ProcessText(
       textToDraw.get(), textToDraw.Length(),
-      isRTL ? mozilla::intl::BidiEmbeddingLevel::RTL()
-            : mozilla::intl::BidiEmbeddingLevel::LTR(),
+      isRTL ? intl::BidiEmbeddingLevel::RTL() : intl::BidiEmbeddingLevel::LTR(),
       presShell->GetPresContext(), processor, nsBidiPresUtils::MODE_MEASURE,
       nullptr, 0, &totalWidthCoord, &mBidiEngine);
   if (aError.Failed()) {
@@ -4073,7 +4108,6 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
   
   gfxFloat anchorX;
 
-  const ContextState& state = CurrentState();
   if (state.textAlign == TextAlign::CENTER) {
     anchorX = .5;
   } else if (state.textAlign == TextAlign::LEFT ||
@@ -4203,8 +4237,7 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
 
   aError = nsBidiPresUtils::ProcessText(
       textToDraw.get(), textToDraw.Length(),
-      isRTL ? mozilla::intl::BidiEmbeddingLevel::RTL()
-            : mozilla::intl::BidiEmbeddingLevel::LTR(),
+      isRTL ? intl::BidiEmbeddingLevel::RTL() : intl::BidiEmbeddingLevel::LTR(),
       presShell->GetPresContext(), processor, nsBidiPresUtils::MODE_DRAW,
       nullptr, 0, nullptr, &mBidiEngine);
 
