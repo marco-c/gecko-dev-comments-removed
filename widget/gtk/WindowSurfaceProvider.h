@@ -34,7 +34,7 @@ namespace widget {
 class WindowSurfaceProvider final {
  public:
   WindowSurfaceProvider();
-  ~WindowSurfaceProvider();
+  ~WindowSurfaceProvider() = default;
 
   
 
@@ -67,6 +67,15 @@ class WindowSurfaceProvider final {
   void CleanupWindowSurface();
 
   RefPtr<WindowSurface> mWindowSurface;
+
+  
+
+
+
+
+
+
+  mozilla::Mutex mMutex;
   
   mozilla::Atomic<bool> mWindowSurfaceValid;
 #ifdef MOZ_WAYLAND
