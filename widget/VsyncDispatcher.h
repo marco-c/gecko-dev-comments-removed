@@ -75,6 +75,15 @@ class CompositorVsyncDispatcher final {
 
 
 
+
+
+
+
+
+
+
+
+
 class VsyncDispatcher final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VsyncDispatcher)
 
