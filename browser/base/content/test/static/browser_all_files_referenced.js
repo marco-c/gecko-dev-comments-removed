@@ -23,6 +23,9 @@ var gExceptionPaths = [
   "resource://gre/defaults/pref/",
 
   
+  "resource://payments/",
+
+  
   "chrome://global/content/certviewer/components/",
 
   

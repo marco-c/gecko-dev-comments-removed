@@ -1,0 +1,33 @@
+
+
+
+
+import AddressPicker from "./address-picker.js";
+
+
+
+
+
+
+
+export default class BillingAddressPicker extends AddressPicker {
+  constructor() {
+    super();
+    this._allowEmptyOption = true;
+  }
+
+  
+
+
+
+
+  getCurrentValue() {
+    return this.dropdown.value;
+  }
+
+  onChange(event) {
+    this.render(this.requestStore.getState());
+  }
+}
+
+customElements.define("billing-address-picker", BillingAddressPicker);
