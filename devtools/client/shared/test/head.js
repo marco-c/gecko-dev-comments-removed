@@ -155,27 +155,6 @@ async function openAndCloseToolbox(nbOfTimes, usageTime, toolId) {
 
 
 
-function synthesizeProfileForTest(samples) {
-  const RecordingUtils = require("devtools/shared/performance/recording-utils");
-
-  samples.unshift({
-    time: 0,
-    frames: [],
-  });
-
-  const uniqueStacks = new RecordingUtils.UniqueStacks();
-  return RecordingUtils.deflateThread(
-    {
-      samples: samples,
-      markers: [],
-    },
-    uniqueStacks
-  );
-}
-
-
-
-
 
 
 
