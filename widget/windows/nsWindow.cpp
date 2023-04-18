@@ -537,8 +537,7 @@ class TIPMessageHandler {
     
     
     
-    if (!aMsgResult || aMsgCode != WM_GETOBJECT ||
-        static_cast<DWORD>(aLParam) != OBJID_CLIENT ||
+    if (!aMsgResult || aMsgCode != WM_GETOBJECT || aLParam != OBJID_CLIENT ||
         !WinUtils::GetNSWindowPtr(aHwnd) ||
         ::GetWindowThreadProcessId(aHwnd, nullptr) != ::GetCurrentThreadId() ||
         !IsA11yBlocked()) {
