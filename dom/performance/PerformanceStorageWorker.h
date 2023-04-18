@@ -37,11 +37,11 @@ class PerformanceStorageWorker final : public PerformanceStorage {
   PerformanceStorageWorker();
   ~PerformanceStorageWorker();
 
-  Mutex mMutex MOZ_UNANNOTATED;
+  Mutex mMutex;
 
   
   
-  RefPtr<WeakWorkerRef> mWorkerRef;
+  RefPtr<WeakWorkerRef> mWorkerRef GUARDED_BY(mMutex);
 };
 
 }  
