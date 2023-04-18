@@ -273,8 +273,6 @@ bool ReadableStream::constructor(JSContext* cx, unsigned argc, JS::Value* vp) {
 
 
 
-enum class ReadableStreamReaderMode { Byob };
-
 
 
 
@@ -303,7 +301,7 @@ enum class ReadableStreamReaderMode { Byob };
     return false;
   }
 
-  Maybe<ReadableStreamReaderMode> mode;
+  Maybe<JS::ReadableStreamReaderMode> mode;
   
   
   
@@ -339,7 +337,7 @@ enum class ReadableStreamReaderMode { Byob };
         return false;
       }
 
-      mode = Some(ReadableStreamReaderMode::Byob);
+      mode = Some(JS::ReadableStreamReaderMode::Byob);
     }
   }
 
@@ -351,7 +349,7 @@ enum class ReadableStreamReaderMode { Byob };
                                                ForAuthorCodeBool::Yes);
   } else {
     
-    MOZ_ASSERT(mode.value() == ReadableStreamReaderMode::Byob);
+    MOZ_ASSERT(mode.value() == JS::ReadableStreamReaderMode::Byob);
 
     
     reader = CreateReadableStreamBYOBReader(cx, unwrappedStream,
