@@ -388,18 +388,19 @@ already_AddRefed<Promise> ReadableStreamCancel(JSContext* aCx,
   return returnResult.unwrap().forget();
 }
 
+
 MOZ_CAN_RUN_SCRIPT
 already_AddRefed<Promise> ReadableStream::Cancel(JSContext* aCx,
                                                  JS::Handle<JS::Value> aReason,
                                                  ErrorResult& aRv) {
+  
+  
   if (Locked()) {
-    RefPtr<Promise> promise = Promise::Create(GetParentObject(), aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
-    promise->MaybeRejectWithTypeError("Canceled Locked Stream");
-    return promise.forget();
+    aRv.ThrowTypeError("Cannot cancel a stream locked by a reader.");
+    return nullptr;
   }
+
+  
   RefPtr<ReadableStream> thisRefPtr = this;
   return ReadableStreamCancel(aCx, thisRefPtr, aReason, aRv);
 }
