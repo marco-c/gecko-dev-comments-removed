@@ -24,7 +24,7 @@ var { getScriptGlobals } = require("./utils");
 
 const EXTRA_SCRIPTS = [
   "browser/base/content/nsContextMenu.js",
-  "browser/components/places/content/editBookmark.js",
+  "browser/components/places/content/instantEditBookmark.js",
   "browser/components/downloads/content/downloads.js",
   "browser/components/downloads/content/indicator.js",
   "toolkit/content/customElements.js",
