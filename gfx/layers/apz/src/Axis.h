@@ -157,7 +157,9 @@ class Axis {
 
 
 
-  bool SampleOverscrollAnimation(const TimeDuration& aDelta);
+
+  bool SampleOverscrollAnimation(const TimeDuration& aDelta,
+                                 SideBits aOverscrollSideBits);
 
   
 
