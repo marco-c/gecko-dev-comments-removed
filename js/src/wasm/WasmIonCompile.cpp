@@ -60,44 +60,18 @@ using DefVector = Vector<MDefinition*, 8, SystemAllocPolicy>;
 using ControlInstructionVector =
     Vector<MControlInstruction*, 8, SystemAllocPolicy>;
 
-struct CatchInfo {
-  uint32_t tagIndex;
-  MBasicBlock* block;
-
-  CatchInfo(uint32_t tagIndex, MBasicBlock* block)
-      : tagIndex(tagIndex), block(block) {}
-};
-
-using CatchInfoVector = Vector<CatchInfo, 8, SystemAllocPolicy>;
-
 struct Control {
   MBasicBlock* block;
-  MBasicBlock* catchAllBlock;
   
   
   ControlInstructionVector tryPadPatches;
 
-  
-  
-  
-  CatchInfoVector tryCatches;
+  Control() : block(nullptr) {}
 
-  Control() : block(nullptr), catchAllBlock(nullptr) {}
-
-  explicit Control(MBasicBlock* block) : block(block), catchAllBlock(nullptr) {}
+  explicit Control(MBasicBlock* block) : block(block) {}
 
  public:
   void setBlock(MBasicBlock* newBlock) { block = newBlock; }
-
-  
-  bool tagAlreadyHandled(uint32_t tagIndex) {
-    for (CatchInfo& info : tryCatches) {
-      if (tagIndex == info.tagIndex) {
-        return true;
-      }
-    }
-    return false;
-  }
 };
 
 
@@ -2782,6 +2756,28 @@ class FunctionCompiler {
     return addPadPatch(insToPatch, relativeTryDepth);
   }
 
+  bool delegatePadPatches(const ControlInstructionVector& patches,
+                          uint32_t relativeDepth) {
+    if (patches.empty()) {
+      return true;
+    }
+
+    
+    uint32_t targetRelativeDepth;
+    if (!iter().controlFindInnermostFrom(LabelKind::Try, relativeDepth,
+                                         &targetRelativeDepth)) {
+      MOZ_ASSERT(relativeDepth <= blockDepth_ - 1);
+      targetRelativeDepth = blockDepth_ - 1;
+    }
+    
+    for (MControlInstruction* ins : patches) {
+      if (!addPadPatch(ins, targetRelativeDepth)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   bool checkPendingExceptionAndBranch(uint32_t relativeTryDepth) {
     
     
@@ -2837,17 +2833,14 @@ class FunctionCompiler {
   
   
   
-  bool maybeCreateTryPadBlock(Control& catching) {
-    
-    MOZ_ASSERT(inDeadCode() || curBlock_->hasLastIns());
-
+  bool createTryLandingPadIfNeeded(Control& control, MBasicBlock** landingPad) {
     
     
     
     
-    ControlInstructionVector& patches = catching.tryPadPatches;
+    ControlInstructionVector& patches = control.tryPadPatches;
     if (patches.empty()) {
-      curBlock_ = nullptr;
+      *landingPad = nullptr;
       return true;
     }
 
@@ -2874,21 +2867,22 @@ class FunctionCompiler {
     
     
     
-    curBlock_ = pad;
-    mirGraph().moveBlockToEnd(curBlock_);
-    mirGraph().setHasTryBlock();
+    *landingPad = pad;
+    mirGraph().moveBlockToEnd(pad);
 
     
     patches.clear();
     return true;
   }
 
-  bool emitTry(MBasicBlock** curBlock) {
+  bool startTry(MBasicBlock** curBlock) {
     *curBlock = curBlock_;
     return startBlock();
   }
 
-  bool finishTryOrCatchBlock(Control& control) {
+  bool joinTryOrCatchBlock(Control& control) {
+    
+    
     if (inDeadCode()) {
       return true;
     }
@@ -2906,11 +2900,12 @@ class FunctionCompiler {
     return true;
   }
 
-  bool switchToCatch(const LabelKind& kind, uint32_t tagIndex,
-                     Control& control) {
+  
+  
+  bool switchToCatch(Control& control, const LabelKind& fromKind,
+                     uint32_t tagIndex) {
     
     
-
     
     
     if (!control.block) {
@@ -2918,105 +2913,113 @@ class FunctionCompiler {
       return true;
     }
 
-    if (!finishTryOrCatchBlock(control)) {
+    
+    
+    if (!joinTryOrCatchBlock(control)) {
       return false;
     }
 
     
     
-    if (kind == LabelKind::Try) {
-      if (!maybeCreateTryPadBlock(control)) {
+    if (fromKind == LabelKind::Try) {
+      MBasicBlock* padBlock = nullptr;
+      if (!createTryLandingPadIfNeeded(control, &padBlock)) {
         return false;
       }
-
       
-      control.block = curBlock_;
-
-      
-      if (curBlock_ == nullptr) {
-        return true;
-      }
-
-      
-      
-      MOZ_ASSERT(numPushed(curBlock_) == 2);
-
-      
-      
-      
-      if (tagIndex == CatchAllIndex) {
-        MBasicBlock* catchAllBlock = nullptr;
-        if (!goToNewBlock(curBlock_, &catchAllBlock)) {
-          return false;
-        }
-        control.catchAllBlock = catchAllBlock;
-        curBlock_ = catchAllBlock;
-        curBlock_->pop();
-        curBlock_->pop();
-        return true;
-      }
-
-      MOZ_ASSERT(control.tryCatches.empty());
+      control.block = padBlock;
     }
 
     
-    MBasicBlock* padBlock = control.block;
-
     
-    
-    if (tagIndex != CatchAllIndex && control.tagAlreadyHandled(tagIndex)) {
+    if (!control.block) {
       curBlock_ = nullptr;
       return true;
     }
 
     
-    MBasicBlock* nextCatch = nullptr;
-    if (!newBlock(padBlock, &nextCatch)) {
+    curBlock_ = control.block;
+
+    
+    
+    
+    
+    
+    if (tagIndex == CatchAllIndex) {
+      MBasicBlock* catchAllBlock = nullptr;
+      if (!goToNewBlock(curBlock_, &catchAllBlock)) {
+        return false;
+      }
+      
+      curBlock_ = catchAllBlock;
+      
+      
+      curBlock_->pop();
+      curBlock_->pop();
+      return true;
+    }
+
+    
+    
+    
+    MBasicBlock* catchBlock = nullptr;
+    MBasicBlock* fallthroughBlock = nullptr;
+    if (!newBlock(curBlock_, &catchBlock) ||
+        !newBlock(curBlock_, &fallthroughBlock)) {
       return false;
     }
 
     
     
-    if (tagIndex == CatchAllIndex) {
-      control.catchAllBlock = nextCatch;
-    } else {
-      CatchInfo catchInfo(tagIndex, nextCatch);
-      if (!control.tryCatches.emplaceBack(catchInfo)) {
-        return false;
-      }
-    }
+    MDefinition* exceptionTagIndex = curBlock_->pop();
+    MDefinition* exception = curBlock_->pop();
 
     
     
-    curBlock_ = nextCatch;
-    mirGraph().moveBlockToEnd(curBlock_);
+    MDefinition* catchTagIndex = constant(Int32Value(tagIndex), MIRType::Int32);
+    MDefinition* matchesCatchTag = compare(exceptionTagIndex, catchTagIndex,
+                                           JSOp::Eq, MCompare::Compare_Int32);
+    curBlock_->end(
+        MTest::New(alloc(), matchesCatchTag, catchBlock, fallthroughBlock));
+
+    
+    control.block = fallthroughBlock;
+
+    
+    
+    curBlock_ = catchBlock;
+
+    
     
     curBlock_->pop();
-    MDefinition* exn = curBlock_->pop();
-    MOZ_ASSERT(exn->type() == MIRType::RefOrNull);
+    curBlock_->pop();
 
     
-    if (tagIndex == CatchAllIndex) {
-      return true;
+    DefVector values;
+    if (!loadExceptionValues(exception, tagIndex, &values)) {
+      return false;
     }
+    iter().setResults(values.length(), values);
+    return true;
+  }
 
-    
+  bool loadExceptionValues(MDefinition* exception, uint32_t tagIndex,
+                           DefVector* values) {
     const TagType& tagType = moduleEnv().tags[tagIndex].type;
     const ValTypeVector& tagParams = tagType.argTypes;
     const TagOffsetVector& offsets = tagType.argOffsets;
 
     MWasmExceptionDataPointer* exnDataPtr =
-        MWasmExceptionDataPointer::New(alloc(), exn);
+        MWasmExceptionDataPointer::New(alloc(), exception);
     curBlock_->add(exnDataPtr);
     MWasmExceptionRefsPointer* exnRefsPtr =
-        MWasmExceptionRefsPointer::New(alloc(), exn, tagType.refCount);
+        MWasmExceptionRefsPointer::New(alloc(), exception, tagType.refCount);
     curBlock_->add(exnRefsPtr);
 
     MIRType type;
     size_t count = tagParams.length();
-    DefVector loadedValues;
     
-    if (!loadedValues.reserve(count)) {
+    if (!values->reserve(count)) {
       return false;
     }
 
@@ -3026,7 +3029,7 @@ class FunctionCompiler {
       if (IsNumberType(type) || tagParams[i].kind() == ValType::V128) {
         auto* load =
             MWasmLoadExceptionDataValue::New(alloc(), exnDataPtr, offset, type);
-        if (!load || !loadedValues.append(load)) {
+        if (!load || !values->append(load)) {
           return false;
         }
         MOZ_ASSERT(load->type() != MIRType::None);
@@ -3036,220 +3039,78 @@ class FunctionCompiler {
                    tagParams[i].kind() == ValType::Ref);
         auto* load =
             MWasmLoadExceptionRefsValue::New(alloc(), exnRefsPtr, offset);
-        if (!load || !loadedValues.append(load)) {
+        if (!load || !values->append(load)) {
           return false;
         }
         MOZ_ASSERT(load->type() != MIRType::None);
         curBlock_->add(load);
       }
     }
-    iter().setResults(count, loadedValues);
     return true;
   }
 
-  bool delegatePadPatches(const ControlInstructionVector& delegatePadPatches,
-                          uint32_t relativeDepth) {
-    if (delegatePadPatches.empty()) {
-      return true;
-    }
-
-    
-    uint32_t targetRelativeDepth;
-    if (!iter().controlFindInnermostFrom(LabelKind::Try, relativeDepth,
-                                         &targetRelativeDepth)) {
-      MOZ_ASSERT(relativeDepth <= blockDepth_ - 1);
-      targetRelativeDepth = blockDepth_ - 1;
-    }
-    
-    for (MControlInstruction* ins : delegatePadPatches) {
-      if (!addPadPatch(ins, targetRelativeDepth)) {
-        return false;
+  bool finishTryCatch(LabelKind kind, Control& control, DefVector* defs) {
+    switch (kind) {
+      case LabelKind::Try: {
+        
+        
+        
+        
+        
+        uint32_t relativeDepth = 1;
+        if (!delegatePadPatches(control.tryPadPatches, relativeDepth)) {
+          return false;
+        }
+        break;
       }
+      case LabelKind::Catch: {
+        
+        
+        MBasicBlock* padBlock = control.block;
+        if (padBlock) {
+          MBasicBlock* prevBlock = curBlock_;
+          curBlock_ = padBlock;
+          MDefinition* tagIndex = curBlock_->pop();
+          MDefinition* exception = curBlock_->pop();
+          if (!throwFrom(exception, tagIndex)) {
+            return false;
+          }
+          curBlock_ = prevBlock;
+        }
+        break;
+      }
+      case LabelKind::CatchAll:
+        
+        break;
+      default:
+        MOZ_CRASH();
     }
-    return true;
+
+    
+    return finishBlock(defs);
   }
 
-  bool finishCatchlessTry(Control& control) {
+  bool emitBodyDelegateThrowPad(Control& control) {
     
-    
-    if (control.tryPadPatches.empty()) {
-      return true;
-    }
-
-    
-    
-    
-    
-    uint32_t relativeDepth = 1;
-    if (!delegatePadPatches(control.tryPadPatches, relativeDepth)) {
-      return false;
-    }
-    return true;
-  }
-
-  bool finishBodyDelegateThrowPad(Control& control) {
-    
-    
-    if (control.tryPadPatches.empty()) {
-      return true;
-    }
-
-    
-    MBasicBlock* prevBlock = curBlock_;
-    curBlock_ = nullptr;
-
-    
-    if (!maybeCreateTryPadBlock(control)) {
+    MBasicBlock* padBlock;
+    if (!createTryLandingPadIfNeeded(control, &padBlock)) {
       return false;
     }
 
-    
-    
-    
-    
-    MOZ_ASSERT(!inDeadCode());
-    MOZ_ASSERT(numPushed(curBlock_) == 2);
-
-    
-    
-    MDefinition* tagIndex = curBlock_->pop();
-    MDefinition* exn = curBlock_->pop();
-    if (!throwFrom(exn, tagIndex)) {
-      return false;
-    }
-
-    
-    curBlock_ = prevBlock;
-    return true;
-  }
-
-  bool finishCatches(LabelKind kind, Control& control) {
-    MBasicBlock* padBlock = control.block;
     
     if (!padBlock) {
       return true;
     }
 
     
-    
-    if (control.tryCatches.empty()) {
-      MOZ_ASSERT(kind == LabelKind::CatchAll);
-      MOZ_ASSERT(padBlock->hasLastIns());
-      return true;
-    }
-
-    
-
-    
     MBasicBlock* prevBlock = curBlock_;
-
-    
     curBlock_ = padBlock;
-
-    
-    MOZ_ASSERT(numPushed(curBlock_) == 2);
     MDefinition* tagIndex = curBlock_->pop();
-    MDefinition* exn = curBlock_->pop();
-    MOZ_ASSERT(exn && tagIndex);
-    MOZ_ASSERT(tagIndex->type() == MIRType::Int32);
-    MOZ_ASSERT(exn->type() == MIRType::RefOrNull);
-
-    
-    
-    curBlock_->push(exn);
-    curBlock_->push(tagIndex);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MDefinition* one = constant(Int32Value(1), MIRType::Int32);
-    MDefinition* adjustedTagIndex = add(tagIndex, one, MIRType::Int32);
-    uint32_t numTags = moduleEnv_.tags.length();
-
-    
-    MTableSwitch* table =
-        MTableSwitch::New(alloc(), adjustedTagIndex, 0, (int32_t)numTags);
-
-    
-    MBasicBlock* defaultCatch = nullptr;
-    if (kind == LabelKind::CatchAll) {
-      MOZ_ASSERT(control.catchAllBlock);
-      defaultCatch = control.catchAllBlock;
-    } else {
-      if (!newBlock(curBlock_, &defaultCatch)) {
-        return false;
-      }
-      
-      curBlock_ = defaultCatch;
-      MDefinition* rethrowTagIndex = curBlock_->pop();
-      MDefinition* rethrowExn = curBlock_->pop();
-      if (!throwFrom(rethrowExn, rethrowTagIndex)) {
-        return false;
-      }
-      curBlock_ = padBlock;
-    }
-
-    
-    size_t defaultIndex;
-    if (!table->addDefault(defaultCatch, &defaultIndex)) {
+    MDefinition* exception = curBlock_->pop();
+    if (!throwFrom(exception, tagIndex)) {
       return false;
     }
-    MOZ_ASSERT(defaultIndex == 0);
-    using TagMap =
-        HashMap<uint32_t, uint32_t, DefaultHasher<uint32_t>, SystemAllocPolicy>;
-
-    TagMap tagMap;
-
-    
-    for (CatchInfo& info : control.tryCatches) {
-      uint32_t catchTagIndex = info.tagIndex;
-      MBasicBlock* catchBlock = info.block;
-      MOZ_ASSERT(catchTagIndex < numTags);
-      MOZ_ASSERT(catchBlock);
-      size_t switchIndex;
-      if (!table->addSuccessor(catchBlock, &switchIndex)) {
-        return false;
-      }
-      if (!tagMap.put(catchTagIndex, switchIndex)) {
-        return false;
-      }
-    }
-
-    
-    
-
-    
-    if (!table->addCase(0)) {
-      return false;
-    }
-
-    
-    for (size_t catchTagIndex = 0; catchTagIndex < numTags; catchTagIndex++) {
-      size_t switchIndex;
-      TagMap::Ptr p = tagMap.lookup(catchTagIndex);
-      switchIndex = p ? p->value() : 0;
-      if (!table->addCase(switchIndex)) {
-        return false;
-      }
-    }
-
-    
-    curBlock_->end(table);
-
-    
     curBlock_ = prevBlock;
-    if (prevBlock) {
-      mirGraph().moveBlockToEnd(curBlock_);
-    }
-
     return true;
   }
 
@@ -3374,7 +3235,7 @@ class FunctionCompiler {
     return true;
   }
 
-  bool rethrow(uint32_t relativeDepth) {
+  bool emitRethrow(uint32_t relativeDepth) {
     if (inDeadCode()) {
       return true;
     }
@@ -3389,10 +3250,10 @@ class FunctionCompiler {
     
     size_t exnSlotPosition = pad->nslots() - 2;
     MDefinition* tagIndex = pad->getSlot(exnSlotPosition + 1);
-    MDefinition* exn = pad->getSlot(exnSlotPosition);
-    MOZ_ASSERT(exn->type() == MIRType::RefOrNull &&
+    MDefinition* exception = pad->getSlot(exnSlotPosition);
+    MOZ_ASSERT(exception->type() == MIRType::RefOrNull &&
                tagIndex->type() == MIRType::Int32);
-    return throwFrom(exn, tagIndex);
+    return throwFrom(exception, tagIndex);
   }
 #endif
 
@@ -3651,7 +3512,7 @@ static bool EmitEnd(FunctionCompiler& f) {
   switch (kind) {
     case LabelKind::Body:
 #ifdef ENABLE_WASM_EXCEPTIONS
-      if (!f.finishBodyDelegateThrowPad(control)) {
+      if (!f.emitBodyDelegateThrowPad(control)) {
         return false;
       }
 #endif
@@ -3700,26 +3561,10 @@ static bool EmitEnd(FunctionCompiler& f) {
       f.iter().popEnd();
       break;
 #ifdef ENABLE_WASM_EXCEPTIONS
-    case LabelKind::Try: {
-      if (block) {
-        if (!f.finishCatchlessTry(control)) {
-          return false;
-        }
-      }
-      if (!f.finishBlock(&postJoinDefs)) {
-        return false;
-      }
-      f.iter().popEnd();
-      break;
-    }
+    case LabelKind::Try:
     case LabelKind::Catch:
     case LabelKind::CatchAll:
-      if (block) {
-        if (!f.finishCatches(kind, control)) {
-          return false;
-        }
-      }
-      if (!f.finishBlock(&postJoinDefs)) {
+      if (!f.finishTryCatch(kind, control, &postJoinDefs)) {
         return false;
       }
       f.iter().popEnd();
@@ -3811,7 +3656,7 @@ static bool EmitTry(FunctionCompiler& f) {
   }
 
   MBasicBlock* curBlock = nullptr;
-  if (!f.emitTry(&curBlock)) {
+  if (!f.startTry(&curBlock)) {
     return false;
   }
 
@@ -3837,7 +3682,7 @@ static bool EmitCatch(FunctionCompiler& f) {
     return false;
   }
 
-  return f.switchToCatch(kind, tagIndex, f.iter().controlItem());
+  return f.switchToCatch(f.iter().controlItem(), kind, tagIndex);
 }
 
 static bool EmitCatchAll(FunctionCompiler& f) {
@@ -3855,7 +3700,7 @@ static bool EmitCatchAll(FunctionCompiler& f) {
     return false;
   }
 
-  return f.switchToCatch(kind, CatchAllIndex, f.iter().controlItem());
+  return f.switchToCatch(f.iter().controlItem(), kind, CatchAllIndex);
 }
 
 static bool EmitDelegate(FunctionCompiler& f) {
@@ -3911,7 +3756,7 @@ static bool EmitRethrow(FunctionCompiler& f) {
     return false;
   }
 
-  return f.rethrow(relativeDepth);
+  return f.emitRethrow(relativeDepth);
 }
 #endif
 
