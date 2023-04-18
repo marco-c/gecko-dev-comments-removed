@@ -40,6 +40,8 @@
 #include "nsWeakReference.h"         
 #include "nscore.h"                  
 
+#include <tuple>  
+
 class mozInlineSpellChecker;
 class nsAtom;
 class nsCaret;
@@ -2523,7 +2525,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  Tuple<EditorDOMPointInText, EditorDOMPointInText> ComputeInsertedRange(
+  std::tuple<EditorDOMPointInText, EditorDOMPointInText> ComputeInsertedRange(
       const EditorDOMPointInText& aInsertedPoint,
       const nsAString& aInsertedString) const;
 
