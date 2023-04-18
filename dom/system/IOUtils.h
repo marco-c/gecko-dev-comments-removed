@@ -211,6 +211,9 @@ class IOUtils final {
 
 
 
+
+
+
   template <typename OkT, typename Fn>
   static void DispatchAndResolve(EventQueue* aQueue, Promise* aPromise,
                                  Fn aFunc);
@@ -516,6 +519,21 @@ class IOUtils::EventQueue final {
   EventQueue(EventQueue&&) = delete;
   EventQueue& operator=(const EventQueue&) = delete;
   EventQueue& operator=(EventQueue&&) = delete;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   template <typename OkT, typename Fn>
   RefPtr<IOPromise<OkT>> Dispatch(Fn aFunc);
