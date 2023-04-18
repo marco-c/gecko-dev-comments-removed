@@ -46,7 +46,6 @@ class GLPresenter;
 namespace mozilla {
 class InputData;
 class PanGestureInput;
-class SwipeTracker;
 struct SwipeEventQueue;
 class VibrancyManager;
 namespace layers {
@@ -485,8 +484,6 @@ class nsChildView final : public nsBaseWidget {
                                 LayoutDeviceIntPoint aScreenPosition,
                                 mozilla::Modifiers aModifiers);
 
-  void SwipeFinished();
-
   
   
   
@@ -583,7 +580,6 @@ class nsChildView final : public nsBaseWidget {
   LayoutDeviceIntRegion mContentLayerInvalidRegion;
 
   mozilla::UniquePtr<mozilla::VibrancyManager> mVibrancyManager;
-  RefPtr<mozilla::SwipeTracker> mSwipeTracker;
   mozilla::UniquePtr<mozilla::SwipeEventQueue> mSwipeEventQueue;
 
   RefPtr<mozilla::CancelableRunnable> mUnsuspendAsyncCATransactionsRunnable;

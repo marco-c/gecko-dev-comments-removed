@@ -1368,6 +1368,10 @@ class nsIWidget : public nsISupports {
 
   
 
+  virtual void SwipeFinished() = 0;
+
+  
+
 
   virtual void EnableDragDrop(bool aEnable) = 0;
   virtual nsresult AsyncEnableDragDrop(bool aEnable) = 0;
