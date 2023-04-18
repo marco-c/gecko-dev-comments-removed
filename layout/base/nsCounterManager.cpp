@@ -131,20 +131,6 @@ void nsCounterUseNode::GetText(WritingMode aWM, CounterStyle* aStyle,
   }
 }
 
-static const nsIContent* GetParentContentForScope(nsIFrame* frame) {
-  
-  
-  
-  
-  nsIContent* content = frame->GetContent()->GetFlattenedTreeParent();
-  while (content && content->IsElement() &&
-         content->AsElement()->IsDisplayContents()) {
-    content = content->GetFlattenedTreeParent();
-  }
-
-  return content;
-}
-
 void nsCounterList::SetScope(nsCounterNode* aNode) {
   
   
@@ -221,12 +207,8 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
   
   
   
-  
-  
-  
-  
-  
-  const nsIContent* nodeContent = GetParentContentForScope(aNode->mPseudoFrame);
+  nsIContent* nodeContent = aNode->mPseudoFrame->GetContent()->GetParent();
+
   for (nsCounterNode *prev = Prev(aNode), *start; prev;
        prev = start->mScopePrev) {
     
@@ -239,8 +221,7 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
                 : prev->mScopeStart;
 
     
-    const nsIContent* startContent =
-        GetParentContentForScope(start->mPseudoFrame);
+    nsIContent* startContent = start->mPseudoFrame->GetContent()->GetParent();
     NS_ASSERTION(nodeContent || !startContent,
                  "null check on startContent should be sufficient to "
                  "null check nodeContent as well, since if nodeContent "
@@ -252,8 +233,8 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
           nodeContent == startContent) &&
         
         
-        (!startContent ||
-         nodeContent->IsInclusiveFlatTreeDescendantOf(startContent))) {
+        
+        (!startContent || nodeContent->IsInclusiveDescendantOf(startContent))) {
       aNode->mScopeStart = start;
       aNode->mScopePrev = prev;
       didSetScopeFor(aNode);

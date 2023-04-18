@@ -452,14 +452,6 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-
-  bool IsInclusiveFlatTreeDescendantOf(const nsINode* aNode) const;
-
-  
-
-
-
-
   inline mozilla::dom::DocumentFragment* AsDocumentFragment();
   inline const mozilla::dom::DocumentFragment* AsDocumentFragment() const;
 
