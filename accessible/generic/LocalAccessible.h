@@ -593,11 +593,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual uint32_t StartOffset();
-
-  
-
-
   virtual uint32_t EndOffset();
 
   

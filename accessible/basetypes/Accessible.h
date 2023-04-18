@@ -154,6 +154,12 @@ class Accessible {
 
   
 
+
+
+  virtual uint32_t StartOffset();
+
+  
+
   virtual void TakeFocus() const = 0;
 
   
