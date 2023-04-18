@@ -3,76 +3,103 @@
 
 
 import { asSettled } from "../utils/async-value";
-import {
-  hasResource,
-  getResource,
-  getMappedResource,
-  makeWeakQuery,
-  makeIdQuery,
-  makeReduceAllQuery,
-} from "../utils/resource";
 
-function resourceAsSourceActor({ breakableLines, ...sourceActor }) {
-  return sourceActor;
-}
+
+
+
+
+
+
+
 
 export function hasSourceActor(state, id) {
-  return hasResource(state.sourceActors, id);
+  return state.sourceActors.has(id);
 }
+
+
+
+
+
+
+
+
+
 
 export function getSourceActor(state, id) {
-  return getMappedResource(state.sourceActors, id, resourceAsSourceActor);
+  return state.sourceActors.get(id);
 }
 
 
 
 
 
-const querySourceActorsById = makeIdQuery(resourceAsSourceActor);
+
+
+
+
 
 
 export function getSourceActors(state, ids) {
-  return querySourceActorsById(state.sourceActors, ids);
+  return ids.map(id => getSourceActor(state, id)).filter(source => !!source);
 }
 
-const querySourcesByThreadID = makeReduceAllQuery(
-  resourceAsSourceActor,
-  actors => {
-    return actors.reduce((acc, actor) => {
-      acc[actor.thread] = acc[actor.thread] || [];
-      acc[actor.thread].push(actor);
-      return acc;
-    }, {});
-  }
-);
+
+
+
+
+
+
+
+
 
 export function getSourceActorsForThread(state, ids) {
-  const sourcesByThread = querySourcesByThreadID(state.sourceActors);
-
-  let sources = [];
-  for (const id of Array.isArray(ids) ? ids : [ids]) {
-    sources = sources.concat(sourcesByThread[id] || []);
+  if (!Array.isArray(ids)) {
+    ids = [ids];
   }
-  return sources;
+  const actors = [];
+  for (const sourceActor of state.sourceActors.values()) {
+    if (ids.includes(sourceActor.thread)) {
+      actors.push(sourceActor);
+    }
+  }
+  return actors;
 }
 
+
+
+
+
+
+
+
+
+
 export function getSourceActorBreakableLines(state, id) {
-  const { breakableLines } = getResource(state.sourceActors, id);
+  const { breakableLines } = getSourceActor(state, id);
 
   return asSettled(breakableLines);
 }
 
 
-export const getBreakableLinesForSourceActors = makeWeakQuery({
-  filter: (state, ids) => ids,
-  map: ({ breakableLines }) => breakableLines,
-  reduce: items =>
-    Array.from(
-      items.reduce((acc, item) => {
-        if (item && item.state === "fulfilled") {
-          acc = acc.concat(item.value);
-        }
-        return acc;
-      }, [])
-    ),
-});
+
+
+
+
+
+
+
+
+
+
+
+
+export function getBreakableLinesForSourceActors(state, ids) {
+  const allBreakableLines = [];
+  for (const id of ids) {
+    const { breakableLines } = getSourceActor(state, id);
+    if (breakableLines && breakableLines.state == "fulfilled") {
+      allBreakableLines.push(...breakableLines.value);
+    }
+  }
+  return allBreakableLines;
+}

@@ -362,12 +362,14 @@ export function getBreakableLines(state, sourceId) {
     return state.sources.breakableLines[sourceId];
   }
 
+  const sourceActorIDs = state.sources.actors[sourceId];
+  if (!sourceActorIDs?.length) {
+    return null;
+  }
+
   
   
-  return getBreakableLinesForSourceActors(
-    state.sourceActors,
-    state.sources.actors[sourceId]
-  );
+  return getBreakableLinesForSourceActors(state, sourceActorIDs);
 }
 
 export const getSelectedBreakableLines = createSelector(
