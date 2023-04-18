@@ -1,0 +1,14 @@
+
+
+
+'use strict';
+
+usb_test(async () => {
+  {
+    let {device} = await getFakeDevice();
+    await device.open();
+    await device.selectConfiguration(2);
+    await device.claimInterface(0);
+  }
+  return runGarbageCollection();
+}, 'Run garbage collection when the device reference is out of scope');
