@@ -21,12 +21,7 @@ async function grantOptionalPermission(extension, permissions) {
 
 add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["extensions.manifestV3.enabled", true],
-      
-      
-      ["extensions.webextensions.background-delayed-startup", false],
-    ],
+    set: [["extensions.manifestV3.enabled", true]],
   });
 });
 

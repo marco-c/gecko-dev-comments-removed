@@ -262,14 +262,6 @@ class ExtensionWrapper {
 
 
 
-  terminateBackground() {
-    return this.extension.terminateBackground();
-  }
-
-  
-
-
-
 
 
 

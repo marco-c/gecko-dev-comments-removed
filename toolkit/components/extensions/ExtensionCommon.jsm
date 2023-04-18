@@ -2216,7 +2216,7 @@ class EventManager {
 
   static _initPersistentListeners(extension) {
     if (extension.persistentListeners) {
-      return !!extension.persistentListeners.size;
+      return false;
     }
 
     let listeners = new DefaultMap(() => new DefaultMap(() => new Map()));
@@ -2266,7 +2266,7 @@ class EventManager {
   
   
   
-  static primeListeners(extension, isInStartup = false) {
+  static primeListeners(extension) {
     if (!EventManager._initPersistentListeners(extension)) {
       return;
     }
@@ -2305,8 +2305,7 @@ class EventManager {
             extension,
             event,
             fire,
-            listener.params,
-            isInStartup
+            listener.params
           );
           if (handler) {
             listener.primed = primed;
@@ -2323,10 +2322,6 @@ class EventManager {
   
   
   static clearPrimedListeners(extension, clearPersistent = true) {
-    if (!extension.persistentListeners) {
-      return;
-    }
-
     for (let [module, moduleEntry] of extension.persistentListeners) {
       for (let [event, listeners] of moduleEntry) {
         for (let [key, listener] of listeners) {

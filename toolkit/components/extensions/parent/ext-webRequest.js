@@ -126,9 +126,9 @@ function makeWebRequestEvent(context, name) {
 }
 
 this.webRequest = class extends ExtensionAPI {
-  primeListener(extension, event, fire, params, isInStartup) {
+  primeListener(extension, event, fire, params) {
     
-    if (!isInStartup || params[1]?.includes("blocking")) {
+    if (params[1]?.includes("blocking")) {
       return registerEvent(extension, event, fire, ...params);
     }
   }

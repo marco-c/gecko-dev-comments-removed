@@ -52,10 +52,10 @@ function trackEvents(wrapper) {
 
 
 
-async function testPersistentRequestStartup(extension, events, expect = {}) {
+async function testPersistentRequestStartup(extension, events, expect) {
   equal(
     events.get("background-script-event"),
-    !!expect.background,
+    expect.background,
     "Should have gotten a background script event"
   );
   equal(
@@ -70,7 +70,7 @@ async function testPersistentRequestStartup(extension, events, expect = {}) {
 
     equal(
       events.get("start-background-script"),
-      !!expect.delayedStart,
+      expect.delayedStart,
       "Should have gotten start-background-script event"
     );
   }
@@ -160,80 +160,6 @@ add_task(async function test_nonblocking() {
   await extension.unload();
 
   await promiseShutdownManager();
-});
-
-
-
-add_task(async function test_eventpage_nonblocking() {
-  Services.prefs.setBoolPref("extensions.eventPages.enabled", true);
-  await promiseStartupManager();
-
-  let id = "event-nonblocking@test";
-  let extension = ExtensionTestUtils.loadExtension({
-    useAddonManager: "permanent",
-    manifest: {
-      applications: { gecko: { id } },
-      permissions: ["webRequest", "http://example.com/"],
-      background: { persistent: false },
-    },
-
-    background() {
-      browser.webRequest.onBeforeRequest.addListener(
-        details => {
-          browser.test.sendMessage("got-request");
-        },
-        { urls: ["http://example.com/data/file_sample.html"] }
-      );
-    },
-  });
-
-  
-  await extension.startup();
-
-  
-  await promiseRestartManager();
-  await extension.awaitStartup();
-  assertPersistentListeners(extension, "webRequest", "onBeforeRequest", {
-    primed: false,
-  });
-
-  
-  let events = trackEvents(extension);
-
-  await ExtensionTestUtils.fetch(
-    "http://example.com/",
-    "http://example.com/data/file_sample.html"
-  );
-
-  await testPersistentRequestStartup(extension, events);
-
-  Services.obs.notifyObservers(null, "sessionstore-windows-restored");
-  await ExtensionParent.browserStartupPromise;
-  
-  assertPersistentListeners(extension, "webRequest", "onBeforeRequest", {
-    primed: true,
-  });
-
-  
-  await testPersistentRequestStartup(extension, events);
-
-  
-  await ExtensionTestUtils.fetch(
-    "http://example.com/",
-    "http://example.com/data/file_sample.html"
-  );
-
-  
-  await testPersistentRequestStartup(extension, events, {
-    background: true,
-    started: true,
-    request: true,
-  });
-
-  await extension.unload();
-
-  await promiseShutdownManager();
-  Services.prefs.setBoolPref("extensions.eventPages.enabled", false);
 });
 
 

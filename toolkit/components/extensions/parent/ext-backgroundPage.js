@@ -266,12 +266,9 @@ this.backgroundPage = class extends ExtensionAPI {
     return this.bgInstance.build();
   }
 
-  async primeBackground(isInStartup = true) {
+  onManifestEntry(entryName) {
     let { extension } = this;
 
-    if (this.bgInstance) {
-      Cu.reportError(`background script exists before priming ${extension.id}`);
-    }
     this.bgInstance = null;
 
     
@@ -303,36 +300,11 @@ this.backgroundPage = class extends ExtensionAPI {
       return bgStartupPromise;
     };
 
-    extension.terminateBackground = async () => {
-      await bgStartupPromise;
-      this.onShutdown(false);
-      EventManager.clearPrimedListeners(this.extension, false);
-      
-      return this.primeBackground(false);
-    };
-
-    extension.once("terminate-background-script", async () => {
-      if (!this.extension) {
-        
-        return;
-      }
-      this.extension.terminateBackground();
-    });
-
-    
-    
-    
-    if (
-      isInStartup &&
-      (!DELAYED_STARTUP ||
-        (extension.persistentBackground &&
-          extension.startupReason !== "APP_STARTUP") ||
-        ["ADDON_INSTALL", "ADDON_ENABLE"].includes(extension.startupReason))
-    ) {
+    if (extension.startupReason !== "APP_STARTUP" || !DELAYED_STARTUP) {
       return this.build();
     }
 
-    EventManager.primeListeners(extension, isInStartup);
+    EventManager.primeListeners(extension);
 
     extension.once("start-background-script", async () => {
       if (!this.extension) {
@@ -354,45 +326,18 @@ this.backgroundPage = class extends ExtensionAPI {
       await ExtensionParent.browserPaintedPromise;
       extension.emit("start-background-script");
     });
+
+    ExtensionParent.browserStartupPromise.then(() => {
+      extension.emit("start-background-script");
+    });
   }
 
   onShutdown(isAppShutdown) {
     if (this.bgInstance) {
       this.bgInstance.shutdown(isAppShutdown);
       this.bgInstance = null;
-      this.extension.emit("shutdown-background-script");
     } else {
       EventManager.clearPrimedListeners(this.extension, false);
     }
-  }
-
-  async onManifestEntry(entryName) {
-    let { extension } = this;
-
-    await this.primeBackground();
-
-    ExtensionParent.browserStartupPromise.then(() => {
-      
-      
-      if (this.bgInstance) {
-        return;
-      }
-
-      
-      
-      if (
-        extension.persistentBackground ||
-        !extension.persistentListeners?.size
-      ) {
-        extension.emit("start-background-script");
-      } else {
-        
-        
-        EventManager.clearPrimedListeners(extension, false);
-        
-        extension.persistentListeners = null;
-        EventManager.primeListeners(extension, false);
-      }
-    });
   }
 };
