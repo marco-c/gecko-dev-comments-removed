@@ -399,6 +399,9 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
                               accessible);
     }
   } else if (eventType.EqualsLiteral("DOMMenuItemActive")) {
+    RefPtr<AccEvent> event =
+        new AccStateChangeEvent(accessible, states::ACTIVE, true);
+    nsEventShell::FireEvent(event);
     FocusMgr()->ActiveItemChanged(accessible);
 #ifdef A11Y_LOG
     if (logging::IsEnabled(logging::eFocus)) {
@@ -406,6 +409,10 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
     }
 #endif
   } else if (eventType.EqualsLiteral("DOMMenuItemInactive")) {
+    RefPtr<AccEvent> event =
+        new AccStateChangeEvent(accessible, states::ACTIVE, false);
+    nsEventShell::FireEvent(event);
+
     
     
     
