@@ -1540,6 +1540,8 @@ async function schedulePreciseGCAndForceCC(maxCount) {
 
 
 
+
+var _gSupportedProperties = ["skip_if", "pref_set"];
 var _gTests = [];
 var _gRunOnlyThisTest = null;
 function add_test(properties, func = properties, isTask = false) {
@@ -1547,6 +1549,12 @@ function add_test(properties, func = properties, isTask = false) {
     properties = { isTask };
     _gTests.push([properties, func]);
   } else if (typeof properties == "object") {
+    
+    for (let prop of Object.keys(properties)) {
+      if (!_gSupportedProperties.includes(prop)) {
+        do_throw(`Task property is not supported: ${prop}`);
+      }
+    }
     properties.isTask = isTask;
     _gTests.push([properties, func]);
   } else {
