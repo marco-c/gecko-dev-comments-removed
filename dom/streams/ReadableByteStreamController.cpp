@@ -108,7 +108,8 @@ void ReadableByteStreamController::ClearPendingPullIntos() {
 
 already_AddRefed<ReadableStreamBYOBRequest>
 ReadableByteStreamControllerGetBYOBRequest(
-    JSContext* aCx, ReadableByteStreamController* aController) {
+    JSContext* aCx, ReadableByteStreamController* aController,
+    ErrorResult& aRv) {
   
   if (!aController->GetByobRequest() &&
       !aController->PendingPullIntos().isEmpty()) {
@@ -124,6 +125,10 @@ ReadableByteStreamControllerGetBYOBRequest(
                  firstDescriptor->ByteOffset() + firstDescriptor->BytesFilled(),
                  int64_t(firstDescriptor->ByteLength() -
                          firstDescriptor->BytesFilled())));
+    if (!view) {
+      aRv.StealExceptionFromJSContext(aCx);
+      return nullptr;
+    }
 
     
     RefPtr<ReadableStreamBYOBRequest> byobRequest =
@@ -145,8 +150,8 @@ ReadableByteStreamControllerGetBYOBRequest(
 }
 
 already_AddRefed<ReadableStreamBYOBRequest>
-ReadableByteStreamController::GetByobRequest(JSContext* aCx) {
-  return ReadableByteStreamControllerGetBYOBRequest(aCx, this);
+ReadableByteStreamController::GetByobRequest(JSContext* aCx, ErrorResult& aRv) {
+  return ReadableByteStreamControllerGetBYOBRequest(aCx, this, aRv);
 }
 
 
@@ -298,6 +303,7 @@ void ReadableByteStreamControllerClose(
         return;
       }
 
+      aRv.MightThrowJSException();
       aRv.ThrowJSException(aCx, exception);
       return;
     }
@@ -644,6 +650,10 @@ void ReadableByteStreamControllerEnqueue(
   bool isShared;
   JS::Rooted<JSObject*> buffer(
       aCx, JS_GetArrayBufferViewBuffer(aCx, aChunk, &isShared));
+  if (!buffer) {
+    aRv.StealExceptionFromJSContext(aCx);
+    return;
+  }
 
   
   size_t byteOffset = JS_GetArrayBufferViewByteOffset(aChunk);
@@ -674,7 +684,7 @@ void ReadableByteStreamControllerEnqueue(
     
     JS::Rooted<JSObject*> pendingBuffer(aCx, firstPendingPullInto->Buffer());
     if (JS::IsDetachedArrayBufferObject(pendingBuffer)) {
-      aRv.ThrowTypeError("Pending PullInto has detatched buffer");
+      aRv.ThrowTypeError("Pending PullInto has detached buffer");
       return;
     }
 
@@ -712,7 +722,9 @@ void ReadableByteStreamControllerEnqueue(
             ReaderType::Default);
 
         
-        (void)ReadableByteStreamControllerShiftPendingPullInto(aController);
+        RefPtr<PullIntoDescriptor> pullIntoDescriptor =
+            ReadableByteStreamControllerShiftPendingPullInto(aController);
+        (void)pullIntoDescriptor;
       }
 
       
@@ -747,7 +759,7 @@ void ReadableByteStreamControllerEnqueue(
     }
   } else {
     
-    MOZ_ASSERT(IsReadableStreamLocked(stream));
+    MOZ_ASSERT(!IsReadableStreamLocked(stream));
 
     
     ReadableByteStreamControllerEnqueueChunkToQueue(
@@ -889,6 +901,10 @@ void ReadableByteStreamController::PullSteps(JSContext* aCx,
     JS::Rooted<JSObject*> view(
         aCx, JS_NewUint8ArrayWithBuffer(aCx, buffer, entry->ByteOffset(),
                                         int64_t(entry->ByteLength())));
+    if (!view) {
+      aRv.StealExceptionFromJSContext(aCx);
+      return;
+    }
 
     
     JS::RootedValue viewValue(aCx, JS::ObjectValue(*view));
@@ -1004,15 +1020,15 @@ JSObject* ReadableByteStreamControllerConvertPullIntoDescriptor(
   }
 
   
+  
   JS::Rooted<JSObject*> res(
       aCx, ConstructFromPullIntoConstructor(
                aCx, pullIntoDescriptor->ViewConstructor(), buffer,
-               pullIntoDescriptor->ByteOffset(), bytesFilled % elementSize));
+               pullIntoDescriptor->ByteOffset(), bytesFilled / elementSize));
   if (!res) {
     aRv.StealExceptionFromJSContext(aCx);
     return nullptr;
   }
-
   return res;
 }
 
@@ -1084,7 +1100,9 @@ static void ReadableByteStreamControllerRespondInReadableState(
 
   
   
-  (void)ReadableByteStreamControllerShiftPendingPullInto(aController);
+  RefPtr<PullIntoDescriptor> pullIntoDescriptor =
+      ReadableByteStreamControllerShiftPendingPullInto(aController);
+  (void)pullIntoDescriptor;
 
   
   
@@ -1306,7 +1324,12 @@ void ReadableByteStreamControllerRespondWithNewView(
   }
 
   
-  JS::Rooted<JSObject*> transferedBuffer(aCx, TransferArrayBuffer(aCx, aView));
+  size_t viewByteLength = JS_GetArrayBufferViewByteLength(aView);
+
+  
+  
+  JS::Rooted<JSObject*> transferedBuffer(
+      aCx, TransferArrayBuffer(aCx, viewedArrayBuffer));
   if (!transferedBuffer) {
     aRv.StealExceptionFromJSContext(aCx);
     return;
@@ -1314,8 +1337,9 @@ void ReadableByteStreamControllerRespondWithNewView(
   firstDescriptor->SetBuffer(transferedBuffer);
 
   
-  ReadableByteStreamControllerRespondInternal(
-      aCx, aController, JS_GetArrayBufferViewByteLength(aView), aRv);
+  
+  ReadableByteStreamControllerRespondInternal(aCx, aController, viewByteLength,
+                                              aRv);
 }
 
 
@@ -1569,7 +1593,7 @@ void ReadableByteStreamControllerPullInto(
     if (ready) {
       
       
-      JS::RootedObject filledView(
+      JS::Rooted<JSObject*> filledView(
           aCx, ReadableByteStreamControllerConvertPullIntoDescriptor(
                    aCx, pullIntoDescriptor, aRv));
       if (aRv.Failed()) {
@@ -1760,12 +1784,86 @@ void SetUpReadableByteStreamController(
 }
 
 
-
-
-
-
-
 void SetUpReadableByteStreamControllerFromUnderlyingSource(
+    JSContext* aCx, ReadableStream* aStream, JS::HandleObject aUnderlyingSource,
+    UnderlyingSource& aUnderlyingSourceDict, double aHighWaterMark,
+    ErrorResult& aRv) {
+  
+  RefPtr<ReadableByteStreamController> controller =
+      new ReadableByteStreamController(aStream->GetParentObject());
+
+  
+  RefPtr<UnderlyingSourceStartCallbackHelper> startAlgorithm;
+
+  
+  
+  RefPtr<UnderlyingSourcePullCallbackHelper> pullAlgorithm;
+
+  
+  
+  RefPtr<UnderlyingSourceCancelCallbackHelper> cancelAlgorithm;
+
+  
+  
+  
+  
+  startAlgorithm =
+      aUnderlyingSourceDict.mStart.WasPassed()
+          ? new UnderlyingSourceStartCallbackHelper(
+                aUnderlyingSourceDict.mStart.Value(), aUnderlyingSource)
+          : nullptr;
+
+  
+  
+  
+  
+  pullAlgorithm =
+      aUnderlyingSourceDict.mPull.WasPassed()
+          ? new IDLUnderlyingSourcePullCallbackHelper(
+                aUnderlyingSourceDict.mPull.Value(), aUnderlyingSource)
+          : nullptr;
+
+  
+  
+  
+  
+  cancelAlgorithm =
+      aUnderlyingSourceDict.mCancel.WasPassed()
+          ? new IDLUnderlyingSourceCancelCallbackHelper(
+                aUnderlyingSourceDict.mCancel.Value(), aUnderlyingSource)
+          : nullptr;
+
+  
+  
+  
+  Maybe<uint64_t> autoAllocateChunkSize = mozilla::Nothing();
+  if (aUnderlyingSourceDict.mAutoAllocateChunkSize.WasPassed()) {
+    uint64_t value = aUnderlyingSourceDict.mAutoAllocateChunkSize.Value();
+    
+    
+    if (value == 0) {
+      aRv.ThrowTypeError("autoAllocateChunkSize can not be zero.");
+      return;
+    }
+    autoAllocateChunkSize = mozilla::Some(value);
+  }
+
+  
+  
+  
+  SetUpReadableByteStreamController(aCx, aStream, controller, startAlgorithm,
+                                    pullAlgorithm, cancelAlgorithm,
+                                    nullptr ,
+                                    aHighWaterMark, autoAllocateChunkSize, aRv);
+}
+
+
+
+
+
+
+
+void SetUpReadableByteStreamControllerFromBodyStreamUnderlyingSource(
     JSContext* aCx, ReadableStream* aStream,
     BodyStreamHolder* aUnderlyingSource, ErrorResult& aRv) {
   
@@ -1798,7 +1896,7 @@ void SetUpReadableByteStreamControllerFromUnderlyingSource(
       new BodyStreamUnderlyingSourceErrorCallbackHelper(aUnderlyingSource);
 
   
-  Maybe<double> autoAllocateChunkSize = mozilla::Nothing();
+  Maybe<uint64_t> autoAllocateChunkSize = mozilla::Nothing();
   
 
   

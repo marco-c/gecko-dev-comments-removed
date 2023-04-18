@@ -16,6 +16,7 @@
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/HoldDropJSObjects.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BindingCallContext.h"
 #include "mozilla/dom/ByteStreamHelpers.h"
 #include "mozilla/dom/BodyStream.h"
@@ -211,10 +212,19 @@ already_AddRefed<ReadableStream> ReadableStream::Constructor(
     }
 
     
-    (void)highWaterMark;
-    aRv.ThrowNotSupportedError("BYOB Byte Streams Not Yet Supported");
+    if (!StaticPrefs::dom_streams_byte_streams()) {
+      aRv.ThrowNotSupportedError("BYOB byte streams not yet supported.");
+      return nullptr;
+    }
 
-    return nullptr;
+    SetUpReadableByteStreamControllerFromUnderlyingSource(
+        aGlobal.Context(), readableStream, underlyingSourceObj,
+        underlyingSourceDict, highWaterMark, aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+
+    return readableStream.forget();
   }
 
   
@@ -478,6 +488,7 @@ void ReadableStream::GetReader(JSContext* aCx,
                                OwningReadableStreamReader& resultReader,
                                ErrorResult& aRv) {
   
+  
   if (!aOptions.mMode.WasPassed()) {
     RefPtr<ReadableStream> thisRefPtr = this;
     RefPtr<ReadableStreamDefaultReader> defaultReader =
@@ -488,8 +499,23 @@ void ReadableStream::GetReader(JSContext* aCx,
     resultReader.SetAsReadableStreamDefaultReader() = defaultReader;
     return;
   }
+
   
-  aRv.ThrowTypeError("BYOB STREAMS NOT IMPLEMENTED");
+  MOZ_ASSERT(aOptions.mMode.Value() == ReadableStreamReaderMode::Byob);
+
+  
+  if (!StaticPrefs::dom_streams_byte_streams()) {
+    aRv.ThrowTypeError("BYOB byte streams reader not yet supported.");
+    return;
+  }
+
+  RefPtr<ReadableStream> thisRefPtr = this;
+  RefPtr<ReadableStreamBYOBReader> byobReader =
+      AcquireReadableStreamBYOBReader(aCx, thisRefPtr, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+  resultReader.SetAsReadableStreamBYOBReader() = byobReader;
 }
 
 
@@ -905,8 +931,8 @@ already_AddRefed<ReadableStream> ReadableStream::Create(
 
   stream->SetNativeUnderlyingSource(aUnderlyingSource);
 
-  SetUpReadableByteStreamControllerFromUnderlyingSource(aCx, stream,
-                                                        aUnderlyingSource, aRv);
+  SetUpReadableByteStreamControllerFromBodyStreamUnderlyingSource(
+      aCx, stream, aUnderlyingSource, aRv);
 
   if (aRv.Failed()) {
     return nullptr;

@@ -17,6 +17,8 @@ namespace dom {
 
 
 JSObject* TransferArrayBuffer(JSContext* aCx, JS::Handle<JSObject*> aObject) {
+  MOZ_ASSERT(JS::IsArrayBufferObject(aObject));
+
   
   MOZ_ASSERT(!JS::IsDetachedArrayBufferObject(aObject));
 
@@ -49,7 +51,9 @@ bool CanTransferArrayBuffer(JSContext* aCx, JS::Handle<JSObject*> aObject,
 
   
   
-  bool hasDefinedArrayBufferDetachKey;
+  
+  
+  bool hasDefinedArrayBufferDetachKey = false;
   if (!JS::HasDefinedArrayBufferDetachKey(aCx, aObject,
                                           &hasDefinedArrayBufferDetachKey)) {
     aRv.StealExceptionFromJSContext(aCx);
@@ -71,7 +75,7 @@ JSObject* CloneAsUint8Array(JSContext* aCx, JS::HandleObject aObject) {
 
   
   bool isShared;
-  JS::RootedObject viewedArrayBuffer(
+  JS::Rooted<JSObject*> viewedArrayBuffer(
       aCx, JS_GetArrayBufferViewBuffer(aCx, aObject, &isShared));
   if (!viewedArrayBuffer) {
     return nullptr;
@@ -80,16 +84,18 @@ JSObject* CloneAsUint8Array(JSContext* aCx, JS::HandleObject aObject) {
 
   
   
-  JS::RootedObject buffer(aCx, JS::CopyArrayBuffer(aCx, aObject));
+  size_t byteOffset = JS_GetTypedArrayByteOffset(aObject);
+  size_t byteLength = JS_GetTypedArrayByteLength(aObject);
+  JS::Rooted<JSObject*> buffer(
+      aCx,
+      JS::ArrayBufferClone(aCx, viewedArrayBuffer, byteOffset, byteLength));
   if (!buffer) {
     return nullptr;
   }
 
   
-  size_t length = JS_GetTypedArrayLength(aObject);
-  size_t byteOffset = JS_GetTypedArrayByteOffset(aObject);
-  JS::RootedObject array(aCx, JS_NewUint8ArrayWithBuffer(
-                                  aCx, buffer, byteOffset, (int64_t)length));
+  JS::Rooted<JSObject*> array(
+      aCx, JS_NewUint8ArrayWithBuffer(aCx, buffer, 0, byteLength));
   if (!array) {
     return nullptr;
   }

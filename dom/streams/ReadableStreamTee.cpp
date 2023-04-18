@@ -241,12 +241,12 @@ MOZ_CAN_RUN_SCRIPT void ByteStreamTeePullAlgorithm(JSContext* aCx, size_t index,
   
   if (aTeeState->Reading()) {
     
-    aTeeState->SetReadAgainForBranch(1, true);
+    aTeeState->SetReadAgainForBranch(index, true);
 
     
-
     return;
   }
+
   
   aTeeState->SetReading(true);
 
@@ -254,7 +254,10 @@ MOZ_CAN_RUN_SCRIPT void ByteStreamTeePullAlgorithm(JSContext* aCx, size_t index,
   
   RefPtr<ReadableStreamBYOBRequest> byobRequest =
       ReadableByteStreamControllerGetBYOBRequest(
-          aCx, aTeeState->Branch(index)->Controller()->AsByte());
+          aCx, aTeeState->Branch(index)->Controller()->AsByte(), aRv);
+  if (aRv.Failed()) {
+    return;
+  }
 
   
   if (!byobRequest) {
@@ -371,22 +374,26 @@ struct PullWithDefaultReaderReadRequest final : public ReadRequest {
         mTeeState->SetReadAgainForBranch2(false);
 
         
-        JS::RootedObject chunk1(cx, mChunk);
-        JS::RootedObject chunk2(cx, mChunk);
+        JS::Rooted<JSObject*> chunk1(cx, mChunk);
+        JS::Rooted<JSObject*> chunk2(cx, mChunk);
 
         
         ErrorResult rv;
         if (!mTeeState->Canceled1() && !mTeeState->Canceled2()) {
           
-          JS::RootedObject cloneResult(cx, CloneAsUint8Array(cx, mChunk));
+          JS::Rooted<JSObject*> cloneResult(cx, CloneAsUint8Array(cx, mChunk));
+
           
           if (!cloneResult) {
             
-            JS::RootedValue exceptionValue(cx);
+            
+            
+            JS::Rooted<JS::Value> exceptionValue(cx);
             if (!JS_GetPendingException(cx, &exceptionValue)) {
               
               return;
             }
+            JS_ClearPendingException(cx);
 
             ErrorResult rv;
             ReadableByteStreamControllerError(
@@ -398,6 +405,8 @@ struct PullWithDefaultReaderReadRequest final : public ReadRequest {
             }
 
             
+            
+            
             ReadableByteStreamControllerError(
                 mTeeState->Branch2()->Controller()->AsByte(), exceptionValue,
                 rv);
@@ -406,6 +415,7 @@ struct PullWithDefaultReaderReadRequest final : public ReadRequest {
               return;
             }
 
+            
             
             RefPtr<ReadableStream> stream(mTeeState->GetStream());
             RefPtr<Promise> promise =
@@ -419,10 +429,13 @@ struct PullWithDefaultReaderReadRequest final : public ReadRequest {
             
             return;
           }
+
           
           chunk2 = cloneResult;
         }
 
+        
+        
         
         if (!mTeeState->Canceled1()) {
           ErrorResult rv;
@@ -434,6 +447,9 @@ struct PullWithDefaultReaderReadRequest final : public ReadRequest {
             return;
           }
         }
+
+        
+        
         
         if (!mTeeState->Canceled2()) {
           ErrorResult rv;
@@ -452,6 +468,10 @@ struct PullWithDefaultReaderReadRequest final : public ReadRequest {
         
         if (mTeeState->ReadAgainForBranch1()) {
           ByteStreamTeePullAlgorithm(cx, 1, MOZ_KnownLive(mTeeState), rv);
+        } else if (mTeeState->ReadAgainForBranch2()) {
+          
+          
+          ByteStreamTeePullAlgorithm(cx, 2, MOZ_KnownLive(mTeeState), rv);
         }
       }
 
@@ -470,9 +490,65 @@ struct PullWithDefaultReaderReadRequest final : public ReadRequest {
     CycleCollectedJSContext::Get()->DispatchToMicroTask(task.forget());
   }
 
-  void CloseSteps(JSContext* aCx, ErrorResult& aRv) override {}
-  void ErrorSteps(JSContext* aCx, JS::Handle<JS::Value> e,
-                  ErrorResult& aRv) override {}
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void CloseSteps(JSContext* aCx,
+                                              ErrorResult& aRv) override {
+    
+    
+
+    
+    mTeeState->SetReading(false);
+
+    
+    
+    RefPtr<ReadableByteStreamController> branch1Controller =
+        mTeeState->Branch1()->Controller()->AsByte();
+    if (!mTeeState->Canceled1()) {
+      ReadableByteStreamControllerClose(aCx, branch1Controller, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
+    }
+
+    
+    
+    RefPtr<ReadableByteStreamController> branch2Controller =
+        mTeeState->Branch2()->Controller()->AsByte();
+    if (!mTeeState->Canceled2()) {
+      ReadableByteStreamControllerClose(aCx, branch2Controller, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
+    }
+
+    
+    
+    if (!branch1Controller->PendingPullIntos().isEmpty()) {
+      ReadableByteStreamControllerRespond(aCx, branch1Controller, 0, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
+    }
+
+    
+    
+    if (!branch2Controller->PendingPullIntos().isEmpty()) {
+      ReadableByteStreamControllerRespond(aCx, branch2Controller, 0, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
+    }
+
+    
+    
+    if (!mTeeState->Canceled1() || !mTeeState->Canceled2()) {
+      mTeeState->CancelPromise()->MaybeResolveWithUndefined();
+    }
+  }
+
+  void ErrorSteps(JSContext* aCx, JS::Handle<JS::Value> aError,
+                  ErrorResult& aRv) override {
+    mTeeState->SetReading(false);
+  }
 
  protected:
   virtual ~PullWithDefaultReaderReadRequest() = default;
@@ -485,23 +561,47 @@ NS_IMPL_RELEASE_INHERITED(PullWithDefaultReaderReadRequest, ReadRequest)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(PullWithDefaultReaderReadRequest)
 NS_INTERFACE_MAP_END_INHERITING(ReadRequest)
 
+void ForwardReaderError(TeeState* aTeeState,
+                        ReadableStreamGenericReader* aThisReader);
+
 
 
 void PullWithDefaultReader(JSContext* aCx, TeeState* aTeeState,
                            ErrorResult& aRv) {
+  RefPtr<ReadableStreamGenericReader> reader = aTeeState->GetReader();
+
   
-  MOZ_ASSERT(!aTeeState->GetReader()->IsBYOB());
+  if (reader->IsBYOB()) {
+    
+    MOZ_ASSERT(reader->AsBYOB()->ReadIntoRequests().length() == 0);
+
+    
+    
+    
+    ReadableStreamReaderGenericRelease(reader, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+
+    
+    reader =
+        AcquireReadableStreamDefaultReader(aCx, aTeeState->GetStream(), aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+    aTeeState->SetReader(reader);
+
+    
+    ForwardReaderError(aTeeState, reader);
+  }
 
   
   RefPtr<ReadRequest> readRequest =
       new PullWithDefaultReaderReadRequest(aTeeState);
 
   
-  RefPtr<ReadableStreamGenericReader> reader = aTeeState->GetReader();
   ReadableStreamDefaultReaderRead(aCx, reader, readRequest, aRv);
 }
-void ForwardReaderError(TeeState* aTeeState,
-                        ReadableStreamGenericReader* aThisReader);
 
 class PullWithBYOBReader_ReadIntoRequest final : public ReadIntoRequest {
   RefPtr<TeeState> mTeeState;
@@ -658,7 +758,7 @@ class PullWithBYOBReader_ReadIntoRequest final : public ReadIntoRequest {
             return;
           }
         } else if (mTeeState->ReadAgainForBranch2()) {
-          ByteStreamTeePullAlgorithm(cx, 1, MOZ_KnownLive(mTeeState), rv);
+          ByteStreamTeePullAlgorithm(cx, 2, MOZ_KnownLive(mTeeState), rv);
           if (rv.MaybeSetPendingException(cx)) {
             return;
           }

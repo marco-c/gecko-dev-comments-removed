@@ -122,22 +122,23 @@ struct Read_ReadIntoRequest final : public ReadIntoRequest {
 
   void CloseSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
                   ErrorResult& errorResult) override {
-    MOZ_ASSERT(aChunk.isObject());
+    MOZ_ASSERT(aChunk.isObject() || aChunk.isUndefined());
     
     
     
     
-
-    
-    
-    JS::RootedObject chunk(aCx, &aChunk.toObject());
-    if (!JS_WrapObject(aCx, &chunk)) {
-      return;
-    }
-
     ReadableStreamBYOBReadResult result;
-    result.mValue.Construct();
-    result.mValue.Value().Init(chunk);
+    if (aChunk.isObject()) {
+      
+      
+      JS::RootedObject chunk(aCx, &aChunk.toObject());
+      if (!JS_WrapObject(aCx, &chunk)) {
+        return;
+      }
+
+      result.mValue.Construct();
+      result.mValue.Value().Init(chunk);
+    }
     result.mDone.Construct(true);
 
     mPromise->MaybeResolve(result);
@@ -210,7 +211,7 @@ already_AddRefed<Promise> ReadableStreamBYOBReader::Read(
     const ArrayBufferView& aArray, ErrorResult& aRv) {
   AutoJSAPI jsapi;
   if (!jsapi.Init(GetParentObject())) {
-    
+    aRv.ThrowUnknownError("Internal error");
     return nullptr;
   }
   JSContext* cx = jsapi.cx();
