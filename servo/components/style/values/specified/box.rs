@@ -904,6 +904,49 @@ impl Parse for AnimationTimeline {
 }
 
 
+
+
+
+
+
+#[derive(
+    Clone,
+    Debug,
+    Eq,
+    Hash,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C)]
+pub struct ScrollTimelineName(pub TimelineName);
+
+impl ScrollTimelineName {
+    
+    pub fn none() -> Self {
+        Self(TimelineName::none())
+    }
+}
+
+impl Parse for ScrollTimelineName {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        if let Ok(name) = input.try_parse(|input| TimelineName::parse(context, input)) {
+            return Ok(Self(name));
+        }
+
+        input.expect_ident_matching("none")?;
+        Ok(Self(TimelineName::none()))
+    }
+}
+
+
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
