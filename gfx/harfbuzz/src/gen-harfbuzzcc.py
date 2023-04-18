@@ -15,4 +15,8 @@ with open (OUTPUT, "wb") as f:
 	f.write ("".join ('#include "{}"\n'.format (os.path.basename (x)) for x in sources if x.endswith (".cc")).encode ())
 
 
-shutil.copyfile (OUTPUT, os.path.join (CURRENT_SOURCE_DIR, os.path.basename (OUTPUT)))
+baseline_filename = os.path.join (CURRENT_SOURCE_DIR, os.path.basename (OUTPUT))
+with open(baseline_filename, "rb") as baseline:
+	with open(OUTPUT, "rb") as generated:
+		if baseline.read() != generated.read():
+			shutil.copyfile (OUTPUT, baseline_filename)

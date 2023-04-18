@@ -13,1610 +13,1613 @@
 #ifndef HB_OT_TAG_TABLE_HH
 #define HB_OT_TAG_TABLE_HH
 
-static const LangTag ot_languages[] = {
-  {"aa",	HB_TAG('A','F','R',' ')},	
-  {"aae",	HB_TAG('S','Q','I',' ')},	
-  {"aao",	HB_TAG('A','R','A',' ')},	
-  {"aat",	HB_TAG('S','Q','I',' ')},	
-  {"ab",	HB_TAG('A','B','K',' ')},	
-  {"aba",	HB_TAG_NONE	       },	
-  {"abh",	HB_TAG('A','R','A',' ')},	
-  {"abq",	HB_TAG('A','B','A',' ')},	
-  {"abs",	HB_TAG('C','P','P',' ')},	
-  {"abv",	HB_TAG('A','R','A',' ')},	
-  {"acf",	HB_TAG('F','A','N',' ')},	
-  {"acf",	HB_TAG('C','P','P',' ')},	
-	
-  {"acm",	HB_TAG('A','R','A',' ')},	
-  {"acq",	HB_TAG('A','R','A',' ')},	
-  {"acr",	HB_TAG('A','C','R',' ')},	
-  {"acr",	HB_TAG('M','Y','N',' ')},	
-  {"acw",	HB_TAG('A','R','A',' ')},	
-  {"acx",	HB_TAG('A','R','A',' ')},	
-  {"acy",	HB_TAG('A','R','A',' ')},	
-  {"ada",	HB_TAG('D','N','G',' ')},	
-  {"adf",	HB_TAG('A','R','A',' ')},	
-  {"adp",	HB_TAG('D','Z','N',' ')},	
-	
-  {"aeb",	HB_TAG('A','R','A',' ')},	
-  {"aec",	HB_TAG('A','R','A',' ')},	
-  {"af",	HB_TAG('A','F','K',' ')},	
-  {"afb",	HB_TAG('A','R','A',' ')},	
-  {"afk",	HB_TAG_NONE	       },	
-  {"afs",	HB_TAG('C','P','P',' ')},	
-  {"agu",	HB_TAG('M','Y','N',' ')},	
-  {"agw",	HB_TAG_NONE	       },	
-  {"ahg",	HB_TAG('A','G','W',' ')},	
-  {"aht",	HB_TAG('A','T','H',' ')},	
-  {"aig",	HB_TAG('C','P','P',' ')},	
-  {"aii",	HB_TAG('S','W','A',' ')},	
-  {"aii",	HB_TAG('S','Y','R',' ')},	
-	
-  {"aiw",	HB_TAG('A','R','I',' ')},	
-  {"ajp",	HB_TAG('A','R','A',' ')},	
-  {"ajt",	HB_TAG('A','R','A',' ')},	
-  {"ak",	HB_TAG('A','K','A',' ')},	
-  {"akb",	HB_TAG('A','K','B',' ')},	
-  {"akb",	HB_TAG('B','T','K',' ')},	
-  {"aln",	HB_TAG('S','Q','I',' ')},	
-  {"als",	HB_TAG('S','Q','I',' ')},	
-	
-  {"am",	HB_TAG('A','M','H',' ')},	
-  {"amf",	HB_TAG('H','B','N',' ')},	
-  {"amw",	HB_TAG('S','Y','R',' ')},	
-  {"an",	HB_TAG('A','R','G',' ')},	
-	
-  {"aoa",	HB_TAG('C','P','P',' ')},	
-  {"apa",	HB_TAG('A','T','H',' ')},	
-  {"apc",	HB_TAG('A','R','A',' ')},	
-  {"apd",	HB_TAG('A','R','A',' ')},	
-  {"apj",	HB_TAG('A','T','H',' ')},	
-  {"apk",	HB_TAG('A','T','H',' ')},	
-  {"apl",	HB_TAG('A','T','H',' ')},	
-  {"apm",	HB_TAG('A','T','H',' ')},	
-  {"apw",	HB_TAG('A','T','H',' ')},	
-  {"ar",	HB_TAG('A','R','A',' ')},	
-  {"arb",	HB_TAG('A','R','A',' ')},	
-  {"ari",	HB_TAG_NONE	       },	
-  {"ark",	HB_TAG_NONE	       },	
-  {"arn",	HB_TAG('M','A','P',' ')},	
-  {"arq",	HB_TAG('A','R','A',' ')},	
-  {"ars",	HB_TAG('A','R','A',' ')},	
-  {"ary",	HB_TAG('M','O','R',' ')},	
-  {"ary",	HB_TAG('A','R','A',' ')},	
-  {"arz",	HB_TAG('A','R','A',' ')},	
-  {"as",	HB_TAG('A','S','M',' ')},	
-	
-	
-  {"atj",	HB_TAG('R','C','R',' ')},	
-  {"atv",	HB_TAG('A','L','T',' ')},	
-  {"auj",	HB_TAG('B','B','R',' ')},	
-  {"auz",	HB_TAG('A','R','A',' ')},	
-  {"av",	HB_TAG('A','V','R',' ')},	
-  {"avl",	HB_TAG('A','R','A',' ')},	
-	
-	
-  {"ay",	HB_TAG('A','Y','M',' ')},	
-  {"ayc",	HB_TAG('A','Y','M',' ')},	
-  {"ayh",	HB_TAG('A','R','A',' ')},	
-  {"ayl",	HB_TAG('A','R','A',' ')},	
-  {"ayn",	HB_TAG('A','R','A',' ')},	
-  {"ayp",	HB_TAG('A','R','A',' ')},	
-  {"ayr",	HB_TAG('A','Y','M',' ')},	
-  {"az",	HB_TAG('A','Z','E',' ')},	
-  {"azb",	HB_TAG('A','Z','B',' ')},	
-  {"azb",	HB_TAG('A','Z','E',' ')},	
-  {"azd",	HB_TAG('N','A','H',' ')},	
-  {"azj",	HB_TAG('A','Z','E',' ')},	
-  {"azn",	HB_TAG('N','A','H',' ')},	
-  {"azz",	HB_TAG('N','A','H',' ')},	
-  {"ba",	HB_TAG('B','S','H',' ')},	
-  {"bad",	HB_TAG('B','A','D','0')},	
-  {"bag",	HB_TAG_NONE	       },	
-  {"bah",	HB_TAG('C','P','P',' ')},	
-  {"bai",	HB_TAG('B','M','L',' ')},	
-  {"bal",	HB_TAG('B','L','I',' ')},	
-	
-	
-  {"bau",	HB_TAG_NONE	       },	
-  {"bbc",	HB_TAG('B','B','C',' ')},	
-  {"bbc",	HB_TAG('B','T','K',' ')},	
-  {"bbj",	HB_TAG('B','M','L',' ')},	
-  {"bbp",	HB_TAG('B','A','D','0')},	
-  {"bbr",	HB_TAG_NONE	       },	
-  {"bbz",	HB_TAG('A','R','A',' ')},	
-  {"bcc",	HB_TAG('B','L','I',' ')},	
-  {"bch",	HB_TAG_NONE	       },	
-  {"bci",	HB_TAG('B','A','U',' ')},	
-  {"bcl",	HB_TAG('B','I','K',' ')},	
-  {"bcq",	HB_TAG('B','C','H',' ')},	
-  {"bcr",	HB_TAG('A','T','H',' ')},	
-	
-  {"be",	HB_TAG('B','E','L',' ')},	
-  {"bea",	HB_TAG('A','T','H',' ')},	
-  {"beb",	HB_TAG('B','T','I',' ')},	
-	
-  {"ber",	HB_TAG('B','B','R',' ')},	
-  {"bew",	HB_TAG('C','P','P',' ')},	
-  {"bfl",	HB_TAG('B','A','D','0')},	
-  {"bfq",	HB_TAG('B','A','D',' ')},	
-  {"bft",	HB_TAG('B','L','T',' ')},	
-  {"bfu",	HB_TAG('L','A','H',' ')},	
-  {"bfy",	HB_TAG('B','A','G',' ')},	
-  {"bg",	HB_TAG('B','G','R',' ')},	
-	
-  {"bgn",	HB_TAG('B','L','I',' ')},	
-  {"bgp",	HB_TAG('B','L','I',' ')},	
-  {"bgq",	HB_TAG('B','G','Q',' ')},	
-  {"bgq",	HB_TAG('R','A','J',' ')},	
-  {"bgr",	HB_TAG('Q','I','N',' ')},	
-  {"bhb",	HB_TAG('B','H','I',' ')},	
-	
-  {"bhk",	HB_TAG('B','I','K',' ')},	
-	
-  {"bhr",	HB_TAG('M','L','G',' ')},	
-  {"bi",	HB_TAG('B','I','S',' ')},	
-  {"bi",	HB_TAG('C','P','P',' ')},	
-	
-  {"bil",	HB_TAG_NONE	       },	
-  {"bin",	HB_TAG('E','D','O',' ')},	
-  {"biu",	HB_TAG('Q','I','N',' ')},	
-	
-  {"bjn",	HB_TAG('M','L','Y',' ')},	
-  {"bjo",	HB_TAG('B','A','D','0')},	
-  {"bjq",	HB_TAG('M','L','G',' ')},	
-  {"bjs",	HB_TAG('C','P','P',' ')},	
-  {"bjt",	HB_TAG('B','L','N',' ')},	
-  {"bkf",	HB_TAG_NONE	       },	
-  {"bko",	HB_TAG('B','M','L',' ')},	
-  {"bla",	HB_TAG('B','K','F',' ')},	
-  {"ble",	HB_TAG('B','L','N',' ')},	
-  {"blg",	HB_TAG('I','B','A',' ')},	
-  {"bli",	HB_TAG_NONE	       },	
-  {"blk",	HB_TAG('B','L','K',' ')},	
-  {"blk",	HB_TAG('K','R','N',' ')},	
-  {"bln",	HB_TAG('B','I','K',' ')},	
-  {"blt",	HB_TAG_NONE	       },	
-  {"bm",	HB_TAG('B','M','B',' ')},	
-  {"bmb",	HB_TAG_NONE	       },	
-  {"bml",	HB_TAG_NONE	       },	
-  {"bmm",	HB_TAG('M','L','G',' ')},	
-  {"bn",	HB_TAG('B','E','N',' ')},	
-  {"bo",	HB_TAG('T','I','B',' ')},	
-  {"bpd",	HB_TAG('B','A','D','0')},	
-  {"bpl",	HB_TAG('C','P','P',' ')},	
-  {"bpq",	HB_TAG('C','P','P',' ')},	
-	
-  {"bqi",	HB_TAG('L','R','C',' ')},	
-  {"bqk",	HB_TAG('B','A','D','0')},	
-  {"br",	HB_TAG('B','R','E',' ')},	
-  {"bra",	HB_TAG('B','R','I',' ')},	
-  {"brc",	HB_TAG('C','P','P',' ')},	
-	
-  {"bri",	HB_TAG_NONE	       },	
-  {"brm",	HB_TAG_NONE	       },	
-	
-  {"bs",	HB_TAG('B','O','S',' ')},	
-  {"bsh",	HB_TAG_NONE	       },	
-	
-  {"btb",	HB_TAG('B','T','I',' ')},	
-  {"btd",	HB_TAG('B','T','D',' ')},	
-  {"btd",	HB_TAG('B','T','K',' ')},	
-  {"bti",	HB_TAG_NONE	       },	
-  {"btj",	HB_TAG('M','L','Y',' ')},	
-	
-  {"btm",	HB_TAG('B','T','M',' ')},	
-  {"btm",	HB_TAG('B','T','K',' ')},	
-  {"bto",	HB_TAG('B','I','K',' ')},	
-  {"bts",	HB_TAG('B','T','S',' ')},	
-  {"bts",	HB_TAG('B','T','K',' ')},	
-  {"btx",	HB_TAG('B','T','X',' ')},	
-  {"btx",	HB_TAG('B','T','K',' ')},	
-  {"btz",	HB_TAG('B','T','Z',' ')},	
-  {"btz",	HB_TAG('B','T','K',' ')},	
-	
-  {"bum",	HB_TAG('B','T','I',' ')},	
-  {"bve",	HB_TAG('M','L','Y',' ')},	
-  {"bvu",	HB_TAG('M','L','Y',' ')},	
-  {"bwe",	HB_TAG('K','R','N',' ')},	
-  {"bxk",	HB_TAG('L','U','H',' ')},	
-  {"bxo",	HB_TAG('C','P','P',' ')},	
-  {"bxp",	HB_TAG('B','T','I',' ')},	
-  {"bxr",	HB_TAG('R','B','U',' ')},	
-  {"byn",	HB_TAG('B','I','L',' ')},	
-  {"byv",	HB_TAG('B','Y','V',' ')},	
-  {"byv",	HB_TAG('B','M','L',' ')},	
-  {"bzc",	HB_TAG('M','L','G',' ')},	
-  {"bzj",	HB_TAG('C','P','P',' ')},	
-  {"bzk",	HB_TAG('C','P','P',' ')},	
-  {"ca",	HB_TAG('C','A','T',' ')},	
-  {"caa",	HB_TAG('M','Y','N',' ')},	
-  {"cac",	HB_TAG('M','Y','N',' ')},	
-  {"caf",	HB_TAG('C','R','R',' ')},	
-  {"caf",	HB_TAG('A','T','H',' ')},	
-  {"cak",	HB_TAG('C','A','K',' ')},	
-  {"cak",	HB_TAG('M','Y','N',' ')},	
-  {"cbk",	HB_TAG('C','B','K',' ')},	
-  {"cbk",	HB_TAG('C','P','P',' ')},	
-  {"cbl",	HB_TAG('Q','I','N',' ')},	
-  {"ccl",	HB_TAG('C','P','P',' ')},	
-  {"ccm",	HB_TAG('C','P','P',' ')},	
-  {"cco",	HB_TAG('C','C','H','N')},	
-  {"ccq",	HB_TAG('A','R','K',' ')},	
-  {"cdo",	HB_TAG('Z','H','S',' ')},	
-  {"ce",	HB_TAG('C','H','E',' ')},	
-	
-  {"cek",	HB_TAG('Q','I','N',' ')},	
-  {"cey",	HB_TAG('Q','I','N',' ')},	
-  {"cfm",	HB_TAG('H','A','L',' ')},	
-  {"cfm",	HB_TAG('Q','I','N',' ')},	
-	
-  {"ch",	HB_TAG('C','H','A',' ')},	
-  {"chf",	HB_TAG('M','Y','N',' ')},	
-  {"chg",	HB_TAG_NONE	       },	
-  {"chh",	HB_TAG_NONE	       },	
-  {"chj",	HB_TAG('C','C','H','N')},	
-  {"chk",	HB_TAG('C','H','K','0')},	
-  {"chm",	HB_TAG('H','M','A',' ')},	
-  {"chm",	HB_TAG('L','M','A',' ')},	
-  {"chn",	HB_TAG('C','P','P',' ')},	
-	
-  {"chp",	HB_TAG('C','H','P',' ')},	
-  {"chp",	HB_TAG('S','A','Y',' ')},	
-  {"chp",	HB_TAG('A','T','H',' ')},	
-  {"chq",	HB_TAG('C','C','H','N')},	
-	
-	
-  {"chz",	HB_TAG('C','C','H','N')},	
-  {"ciw",	HB_TAG('O','J','B',' ')},	
-	
-	
-  {"cjy",	HB_TAG('Z','H','S',' ')},	
-  {"cka",	HB_TAG('Q','I','N',' ')},	
-  {"ckb",	HB_TAG('K','U','R',' ')},	
-  {"ckn",	HB_TAG('Q','I','N',' ')},	
-  {"cks",	HB_TAG('C','P','P',' ')},	
-  {"ckt",	HB_TAG('C','H','K',' ')},	
-  {"ckz",	HB_TAG('M','Y','N',' ')},	
-  {"clc",	HB_TAG('A','T','H',' ')},	
-  {"cld",	HB_TAG('S','Y','R',' ')},	
-  {"cle",	HB_TAG('C','C','H','N')},	
-  {"clj",	HB_TAG('Q','I','N',' ')},	
-  {"clt",	HB_TAG('Q','I','N',' ')},	
-  {"cmn",	HB_TAG('Z','H','S',' ')},	
-  {"cmr",	HB_TAG('Q','I','N',' ')},	
-  {"cnb",	HB_TAG('Q','I','N',' ')},	
-  {"cnh",	HB_TAG('Q','I','N',' ')},	
-  {"cnk",	HB_TAG('Q','I','N',' ')},	
-  {"cnl",	HB_TAG('C','C','H','N')},	
-  {"cnp",	HB_TAG('Z','H','S',' ')},	
-  {"cnr",	HB_TAG('S','R','B',' ')},	
-  {"cnt",	HB_TAG('C','C','H','N')},	
-  {"cnu",	HB_TAG('B','B','R',' ')},	
-  {"cnw",	HB_TAG('Q','I','N',' ')},	
-  {"co",	HB_TAG('C','O','S',' ')},	
-  {"coa",	HB_TAG('M','L','Y',' ')},	
-  {"cob",	HB_TAG('M','Y','N',' ')},	
-	
-  {"coq",	HB_TAG('A','T','H',' ')},	
-  {"cpa",	HB_TAG('C','C','H','N')},	
-  {"cpe",	HB_TAG('C','P','P',' ')},	
-  {"cpf",	HB_TAG('C','P','P',' ')},	
-  {"cpi",	HB_TAG('C','P','P',' ')},	
-	
-  {"cpx",	HB_TAG('Z','H','S',' ')},	
-  {"cqd",	HB_TAG('H','M','N',' ')},	
-  {"cqu",	HB_TAG('Q','U','H',' ')},	
-  {"cqu",	HB_TAG('Q','U','Z',' ')},	
-  {"cr",	HB_TAG('C','R','E',' ')},	
-  {"crh",	HB_TAG('C','R','T',' ')},	
-  {"cri",	HB_TAG('C','P','P',' ')},	
-  {"crj",	HB_TAG('E','C','R',' ')},	
-  {"crj",	HB_TAG('Y','C','R',' ')},	
-  {"crj",	HB_TAG('C','R','E',' ')},	
-  {"crk",	HB_TAG('W','C','R',' ')},	
-  {"crk",	HB_TAG('Y','C','R',' ')},	
-  {"crk",	HB_TAG('C','R','E',' ')},	
-  {"crl",	HB_TAG('E','C','R',' ')},	
-  {"crl",	HB_TAG('Y','C','R',' ')},	
-  {"crl",	HB_TAG('C','R','E',' ')},	
-  {"crm",	HB_TAG('M','C','R',' ')},	
-  {"crm",	HB_TAG('L','C','R',' ')},	
-  {"crm",	HB_TAG('C','R','E',' ')},	
-  {"crp",	HB_TAG('C','P','P',' ')},	
-  {"crr",	HB_TAG_NONE	       },	
-  {"crs",	HB_TAG('C','P','P',' ')},	
-  {"crt",	HB_TAG_NONE	       },	
-  {"crx",	HB_TAG('C','R','R',' ')},	
-  {"crx",	HB_TAG('A','T','H',' ')},	
-  {"cs",	HB_TAG('C','S','Y',' ')},	
-  {"csa",	HB_TAG('C','C','H','N')},	
-	
-  {"csh",	HB_TAG('Q','I','N',' ')},	
-  {"csj",	HB_TAG('Q','I','N',' ')},	
-  {"csl",	HB_TAG_NONE	       },	
-  {"cso",	HB_TAG('C','C','H','N')},	
-  {"csp",	HB_TAG('Z','H','S',' ')},	
-  {"csv",	HB_TAG('Q','I','N',' ')},	
-  {"csw",	HB_TAG('N','C','R',' ')},	
-  {"csw",	HB_TAG('N','H','C',' ')},	
-  {"csw",	HB_TAG('C','R','E',' ')},	
-  {"csy",	HB_TAG('Q','I','N',' ')},	
-  {"ctc",	HB_TAG('A','T','H',' ')},	
-  {"ctd",	HB_TAG('Q','I','N',' ')},	
-  {"cte",	HB_TAG('C','C','H','N')},	
-	
-  {"cth",	HB_TAG('Q','I','N',' ')},	
-  {"ctl",	HB_TAG('C','C','H','N')},	
-  {"cts",	HB_TAG('B','I','K',' ')},	
-	
-  {"ctu",	HB_TAG('M','Y','N',' ')},	
-  {"cu",	HB_TAG('C','S','L',' ')},	
-  {"cuc",	HB_TAG('C','C','H','N')},	
-	
-  {"cv",	HB_TAG('C','H','U',' ')},	
-  {"cvn",	HB_TAG('C','C','H','N')},	
-  {"cwd",	HB_TAG('D','C','R',' ')},	
-  {"cwd",	HB_TAG('T','C','R',' ')},	
-  {"cwd",	HB_TAG('C','R','E',' ')},	
-  {"cy",	HB_TAG('W','E','L',' ')},	
-  {"czh",	HB_TAG('Z','H','S',' ')},	
-  {"czo",	HB_TAG('Z','H','S',' ')},	
-  {"czt",	HB_TAG('Q','I','N',' ')},	
-  {"da",	HB_TAG('D','A','N',' ')},	
-	
-  {"dao",	HB_TAG('Q','I','N',' ')},	
-  {"dap",	HB_TAG('N','I','S',' ')},	
-	
-	
-  {"dcr",	HB_TAG('C','P','P',' ')},	
-  {"de",	HB_TAG('D','E','U',' ')},	
-  {"den",	HB_TAG('S','L','A',' ')},	
-  {"den",	HB_TAG('A','T','H',' ')},	
-  {"dep",	HB_TAG('C','P','P',' ')},	
-  {"dgo",	HB_TAG('D','G','O',' ')},	
-  {"dgo",	HB_TAG('D','G','R',' ')},	
-  {"dgr",	HB_TAG('A','T','H',' ')},	
-  {"dhd",	HB_TAG('M','A','W',' ')},	
-	
-  {"dhv",	HB_TAG_NONE	       },	
-  {"dib",	HB_TAG('D','N','K',' ')},	
-  {"dik",	HB_TAG('D','N','K',' ')},	
-  {"din",	HB_TAG('D','N','K',' ')},	
-  {"dip",	HB_TAG('D','N','K',' ')},	
-  {"diq",	HB_TAG('D','I','Q',' ')},	
-  {"diq",	HB_TAG('Z','Z','A',' ')},	
-  {"diw",	HB_TAG('D','N','K',' ')},	
-  {"dje",	HB_TAG('D','J','R',' ')},	
-  {"djk",	HB_TAG('C','P','P',' ')},	
-  {"djr",	HB_TAG('D','J','R','0')},	
-  {"dks",	HB_TAG('D','N','K',' ')},	
-  {"dng",	HB_TAG('D','U','N',' ')},	
-	
-  {"dnk",	HB_TAG_NONE	       },	
-  {"doi",	HB_TAG('D','G','R',' ')},	
-  {"drh",	HB_TAG('M','N','G',' ')},	
-  {"dri",	HB_TAG_NONE	       },	
-  {"drw",	HB_TAG('D','R','I',' ')},	
-  {"drw",	HB_TAG('F','A','R',' ')},	
-  {"dsb",	HB_TAG('L','S','B',' ')},	
-  {"dty",	HB_TAG('N','E','P',' ')},	
-	
-  {"dun",	HB_TAG_NONE	       },	
-  {"dup",	HB_TAG('M','L','Y',' ')},	
-  {"dv",	HB_TAG('D','I','V',' ')},	
-  {"dv",	HB_TAG('D','H','V',' ')},	
-  {"dwk",	HB_TAG('K','U','I',' ')},	
-  {"dwu",	HB_TAG('D','U','J',' ')},	
-  {"dwy",	HB_TAG('D','U','J',' ')},	
-  {"dyu",	HB_TAG('J','U','L',' ')},	
-  {"dz",	HB_TAG('D','Z','N',' ')},	
-  {"dzn",	HB_TAG_NONE	       },	
-  {"ecr",	HB_TAG_NONE	       },	
-  {"ee",	HB_TAG('E','W','E',' ')},	
-	
-  {"ekk",	HB_TAG('E','T','I',' ')},	
-  {"eky",	HB_TAG('K','R','N',' ')},	
-  {"el",	HB_TAG('E','L','L',' ')},	
-  {"emk",	HB_TAG('E','M','K',' ')},	
-  {"emk",	HB_TAG('M','N','K',' ')},	
-  {"emy",	HB_TAG('M','Y','N',' ')},	
-  {"en",	HB_TAG('E','N','G',' ')},	
-  {"enb",	HB_TAG('K','A','L',' ')},	
-  {"enf",	HB_TAG('F','N','E',' ')},	
-  {"enh",	HB_TAG('T','N','E',' ')},	
-  {"eo",	HB_TAG('N','T','O',' ')},	
-  {"es",	HB_TAG('E','S','P',' ')},	
-  {"esg",	HB_TAG('G','O','N',' ')},	
-  {"esi",	HB_TAG('I','P','K',' ')},	
-  {"esk",	HB_TAG('I','P','K',' ')},	
-	
-  {"et",	HB_TAG('E','T','I',' ')},	
-  {"eto",	HB_TAG('B','T','I',' ')},	
-  {"eu",	HB_TAG('E','U','Q',' ')},	
-  {"euq",	HB_TAG_NONE	       },	
-  {"eve",	HB_TAG('E','V','N',' ')},	
-  {"evn",	HB_TAG('E','V','K',' ')},	
-  {"ewo",	HB_TAG('B','T','I',' ')},	
-  {"eyo",	HB_TAG('K','A','L',' ')},	
-  {"fa",	HB_TAG('F','A','R',' ')},	
-  {"fab",	HB_TAG('C','P','P',' ')},	
-  {"fan",	HB_TAG('F','A','N','0')},	
-  {"fan",	HB_TAG('B','T','I',' ')},	
-  {"far",	HB_TAG_NONE	       },	
-  {"fat",	HB_TAG('F','A','T',' ')},	
-  {"fat",	HB_TAG('A','K','A',' ')},	
-  {"fbl",	HB_TAG('B','I','K',' ')},	
-  {"ff",	HB_TAG('F','U','L',' ')},	
-  {"ffm",	HB_TAG('F','U','L',' ')},	
-  {"fi",	HB_TAG('F','I','N',' ')},	
-  {"fil",	HB_TAG('P','I','L',' ')},	
-  {"fj",	HB_TAG('F','J','I',' ')},	
-  {"flm",	HB_TAG('H','A','L',' ')},	
-  {"flm",	HB_TAG('Q','I','N',' ')},	
-  {"fmp",	HB_TAG('F','M','P',' ')},	
-  {"fmp",	HB_TAG('B','M','L',' ')},	
-  {"fng",	HB_TAG('C','P','P',' ')},	
-  {"fo",	HB_TAG('F','O','S',' ')},	
-	
-  {"fos",	HB_TAG_NONE	       },	
-  {"fpe",	HB_TAG('C','P','P',' ')},	
-  {"fr",	HB_TAG('F','R','A',' ')},	
-	
-	
-  {"fub",	HB_TAG('F','U','L',' ')},	
-  {"fuc",	HB_TAG('F','U','L',' ')},	
-  {"fue",	HB_TAG('F','U','L',' ')},	
-  {"fuf",	HB_TAG('F','T','A',' ')},	
-  {"fuf",	HB_TAG('F','U','L',' ')},	
-  {"fuh",	HB_TAG('F','U','L',' ')},	
-  {"fui",	HB_TAG('F','U','L',' ')},	
-  {"fuq",	HB_TAG('F','U','L',' ')},	
-  {"fur",	HB_TAG('F','R','L',' ')},	
-  {"fuv",	HB_TAG('F','U','V',' ')},	
-  {"fuv",	HB_TAG('F','U','L',' ')},	
-  {"fy",	HB_TAG('F','R','I',' ')},	
-  {"ga",	HB_TAG('I','R','I',' ')},	
-  {"gaa",	HB_TAG('G','A','D',' ')},	
-  {"gac",	HB_TAG('C','P','P',' ')},	
-  {"gad",	HB_TAG_NONE	       },	
-  {"gae",	HB_TAG_NONE	       },	
-	
-  {"gal",	HB_TAG_NONE	       },	
-  {"gan",	HB_TAG('Z','H','S',' ')},	
-  {"gar",	HB_TAG_NONE	       },	
-  {"gaw",	HB_TAG_NONE	       },	
-  {"gax",	HB_TAG('O','R','O',' ')},	
-  {"gaz",	HB_TAG('O','R','O',' ')},	
-  {"gbm",	HB_TAG('G','A','W',' ')},	
-  {"gce",	HB_TAG('A','T','H',' ')},	
-  {"gcf",	HB_TAG('C','P','P',' ')},	
-  {"gcl",	HB_TAG('C','P','P',' ')},	
-  {"gcr",	HB_TAG('C','P','P',' ')},	
-  {"gd",	HB_TAG('G','A','E',' ')},	
-  {"gda",	HB_TAG('R','A','J',' ')},	
-	
-  {"ggo",	HB_TAG('G','O','N',' ')},	
-  {"gha",	HB_TAG('B','B','R',' ')},	
-  {"ghk",	HB_TAG('K','R','N',' ')},	
-  {"gho",	HB_TAG('B','B','R',' ')},	
-  {"gib",	HB_TAG('C','P','P',' ')},	
-	
-  {"gil",	HB_TAG('G','I','L','0')},	
-  {"gju",	HB_TAG('R','A','J',' ')},	
-  {"gkp",	HB_TAG('G','K','P',' ')},	
-  {"gkp",	HB_TAG('K','P','L',' ')},	
-  {"gl",	HB_TAG('G','A','L',' ')},	
-  {"gld",	HB_TAG('N','A','N',' ')},	
-	
-  {"gmz",	HB_TAG_NONE	       },	
-  {"gn",	HB_TAG('G','U','A',' ')},	
-  {"gnb",	HB_TAG('Q','I','N',' ')},	
-	
-  {"gno",	HB_TAG('G','O','N',' ')},	
-  {"gnw",	HB_TAG('G','U','A',' ')},	
-	
-  {"gom",	HB_TAG('K','O','K',' ')},	
-	
-  {"goq",	HB_TAG('C','P','P',' ')},	
-  {"gox",	HB_TAG('B','A','D','0')},	
-  {"gpe",	HB_TAG('C','P','P',' ')},	
-  {"gro",	HB_TAG_NONE	       },	
-  {"grr",	HB_TAG('B','B','R',' ')},	
-  {"grt",	HB_TAG('G','R','O',' ')},	
-  {"gru",	HB_TAG('S','O','G',' ')},	
-  {"gsw",	HB_TAG('A','L','S',' ')},	
-  {"gu",	HB_TAG('G','U','J',' ')},	
-  {"gua",	HB_TAG_NONE	       },	
-	
-	
-  {"gug",	HB_TAG('G','U','A',' ')},	
-  {"gui",	HB_TAG('G','U','A',' ')},	
-  {"guk",	HB_TAG('G','M','Z',' ')},	
-  {"gul",	HB_TAG('C','P','P',' ')},	
-  {"gun",	HB_TAG('G','U','A',' ')},	
-	
-  {"gv",	HB_TAG('M','N','X',' ')},	
-  {"gwi",	HB_TAG('A','T','H',' ')},	
-  {"gyn",	HB_TAG('C','P','P',' ')},	
-  {"ha",	HB_TAG('H','A','U',' ')},	
-  {"haa",	HB_TAG('A','T','H',' ')},	
-  {"hae",	HB_TAG('O','R','O',' ')},	
-  {"hai",	HB_TAG('H','A','I','0')},	
-  {"hak",	HB_TAG('Z','H','S',' ')},	
-  {"hal",	HB_TAG_NONE	       },	
-  {"har",	HB_TAG('H','R','I',' ')},	
-	
-  {"hax",	HB_TAG('H','A','I','0')},	
-	
-	
-  {"hbn",	HB_TAG_NONE	       },	
-  {"hca",	HB_TAG('C','P','P',' ')},	
-  {"hdn",	HB_TAG('H','A','I','0')},	
-  {"he",	HB_TAG('I','W','R',' ')},	
-  {"hea",	HB_TAG('H','M','N',' ')},	
-	
-  {"hi",	HB_TAG('H','I','N',' ')},	
-	
-  {"hji",	HB_TAG('M','L','Y',' ')},	
-  {"hlt",	HB_TAG('Q','I','N',' ')},	
-  {"hma",	HB_TAG('H','M','N',' ')},	
-  {"hmc",	HB_TAG('H','M','N',' ')},	
-  {"hmd",	HB_TAG('H','M','D',' ')},	
-  {"hmd",	HB_TAG('H','M','N',' ')},	
-  {"hme",	HB_TAG('H','M','N',' ')},	
-  {"hmg",	HB_TAG('H','M','N',' ')},	
-  {"hmh",	HB_TAG('H','M','N',' ')},	
-  {"hmi",	HB_TAG('H','M','N',' ')},	
-  {"hmj",	HB_TAG('H','M','N',' ')},	
-  {"hml",	HB_TAG('H','M','N',' ')},	
-  {"hmm",	HB_TAG('H','M','N',' ')},	
-	
-  {"hmp",	HB_TAG('H','M','N',' ')},	
-  {"hmq",	HB_TAG('H','M','N',' ')},	
-  {"hmr",	HB_TAG('Q','I','N',' ')},	
-  {"hms",	HB_TAG('H','M','N',' ')},	
-  {"hmw",	HB_TAG('H','M','N',' ')},	
-  {"hmy",	HB_TAG('H','M','N',' ')},	
-  {"hmz",	HB_TAG('H','M','Z',' ')},	
-  {"hmz",	HB_TAG('H','M','N',' ')},	
-	
-  {"hne",	HB_TAG('C','H','H',' ')},	
-  {"hnj",	HB_TAG('H','M','N',' ')},	
-  {"hno",	HB_TAG('H','N','D',' ')},	
-  {"ho",	HB_TAG('H','M','O',' ')},	
-  {"ho",	HB_TAG('C','P','P',' ')},	
-  {"hoc",	HB_TAG('H','O',' ',' ')},	
-  {"hoi",	HB_TAG('A','T','H',' ')},	
-  {"hoj",	HB_TAG('H','A','R',' ')},	
-  {"hoj",	HB_TAG('R','A','J',' ')},	
-  {"hr",	HB_TAG('H','R','V',' ')},	
-  {"hra",	HB_TAG('Q','I','N',' ')},	
-  {"hrm",	HB_TAG('H','M','N',' ')},	
-  {"hsb",	HB_TAG('U','S','B',' ')},	
-  {"hsn",	HB_TAG('Z','H','S',' ')},	
-  {"ht",	HB_TAG('H','A','I',' ')},	
-  {"ht",	HB_TAG('C','P','P',' ')},	
-  {"hu",	HB_TAG('H','U','N',' ')},	
-  {"huj",	HB_TAG('H','M','N',' ')},	
-  {"hup",	HB_TAG('A','T','H',' ')},	
-  {"hus",	HB_TAG('M','Y','N',' ')},	
-  {"hwc",	HB_TAG('C','P','P',' ')},	
-  {"hy",	HB_TAG('H','Y','E','0')},	
-  {"hy",	HB_TAG('H','Y','E',' ')},	
-  {"hyw",	HB_TAG('H','Y','E',' ')},	
-  {"hz",	HB_TAG('H','E','R',' ')},	
-  {"ia",	HB_TAG('I','N','A',' ')},	
-	
-	
-  {"iby",	HB_TAG('I','J','O',' ')},	
-  {"icr",	HB_TAG('C','P','P',' ')},	
-  {"id",	HB_TAG('I','N','D',' ')},	
-  {"id",	HB_TAG('M','L','Y',' ')},	
-  {"ida",	HB_TAG('L','U','H',' ')},	
-  {"idb",	HB_TAG('C','P','P',' ')},	
-  {"ie",	HB_TAG('I','L','E',' ')},	
-  {"ig",	HB_TAG('I','B','O',' ')},	
-  {"igb",	HB_TAG('E','B','I',' ')},	
-  {"ihb",	HB_TAG('C','P','P',' ')},	
-  {"ii",	HB_TAG('Y','I','M',' ')},	
-  {"ijc",	HB_TAG('I','J','O',' ')},	
-  {"ije",	HB_TAG('I','J','O',' ')},	
-  {"ijn",	HB_TAG('I','J','O',' ')},	
-	
-  {"ijs",	HB_TAG('I','J','O',' ')},	
-  {"ik",	HB_TAG('I','P','K',' ')},	
-  {"ike",	HB_TAG('I','N','U',' ')},	
-  {"ike",	HB_TAG('I','N','U','K')},	
-  {"ikt",	HB_TAG('I','N','U',' ')},	
-	
-  {"in",	HB_TAG('I','N','D',' ')},	
-  {"in",	HB_TAG('M','L','Y',' ')},	
-  {"ing",	HB_TAG('A','T','H',' ')},	
-  {"inh",	HB_TAG('I','N','G',' ')},	
-  {"io",	HB_TAG('I','D','O',' ')},	
-  {"iri",	HB_TAG_NONE	       },	
-	
-  {"is",	HB_TAG('I','S','L',' ')},	
-  {"ism",	HB_TAG_NONE	       },	
-  {"it",	HB_TAG('I','T','A',' ')},	
-  {"itz",	HB_TAG('M','Y','N',' ')},	
-  {"iu",	HB_TAG('I','N','U',' ')},	
-  {"iu",	HB_TAG('I','N','U','K')},	
-  {"iw",	HB_TAG('I','W','R',' ')},	
-  {"ixl",	HB_TAG('M','Y','N',' ')},	
-  {"ja",	HB_TAG('J','A','N',' ')},	
-  {"jac",	HB_TAG('M','Y','N',' ')},	
-  {"jak",	HB_TAG('M','L','Y',' ')},	
-  {"jam",	HB_TAG('J','A','M',' ')},	
-  {"jam",	HB_TAG('C','P','P',' ')},	
-  {"jan",	HB_TAG_NONE	       },	
-  {"jax",	HB_TAG('M','L','Y',' ')},	
-  {"jbe",	HB_TAG('B','B','R',' ')},	
-  {"jbn",	HB_TAG('B','B','R',' ')},	
-	
-	
-  {"jgo",	HB_TAG('B','M','L',' ')},	
-  {"ji",	HB_TAG('J','I','I',' ')},	
-  {"jii",	HB_TAG_NONE	       },	
-  {"jkm",	HB_TAG('K','R','N',' ')},	
-  {"jkp",	HB_TAG('K','R','N',' ')},	
-  {"jud",	HB_TAG_NONE	       },	
-  {"jul",	HB_TAG_NONE	       },	
-  {"jv",	HB_TAG('J','A','V',' ')},	
-  {"jvd",	HB_TAG('C','P','P',' ')},	
-  {"jw",	HB_TAG('J','A','V',' ')},	
-  {"ka",	HB_TAG('K','A','T',' ')},	
-  {"kaa",	HB_TAG('K','R','K',' ')},	
-  {"kab",	HB_TAG('K','A','B','0')},	
-  {"kab",	HB_TAG('B','B','R',' ')},	
-  {"kac",	HB_TAG_NONE	       },	
-  {"kam",	HB_TAG('K','M','B',' ')},	
-  {"kar",	HB_TAG('K','R','N',' ')},	
-	
-  {"kbd",	HB_TAG('K','A','B',' ')},	
-  {"kby",	HB_TAG('K','N','R',' ')},	
-  {"kca",	HB_TAG('K','H','K',' ')},	
-  {"kca",	HB_TAG('K','H','S',' ')},	
-  {"kca",	HB_TAG('K','H','V',' ')},	
-  {"kcn",	HB_TAG('C','P','P',' ')},	
-	
-  {"kdr",	HB_TAG('K','R','M',' ')},	
-  {"kdt",	HB_TAG('K','U','Y',' ')},	
-  {"kea",	HB_TAG('K','E','A',' ')},	
-  {"kea",	HB_TAG('C','P','P',' ')},	
-  {"keb",	HB_TAG_NONE	       },	
-  {"kek",	HB_TAG('K','E','K',' ')},	
-  {"kek",	HB_TAG('M','Y','N',' ')},	
-  {"kex",	HB_TAG('K','K','N',' ')},	
-  {"kfa",	HB_TAG('K','O','D',' ')},	
-  {"kfr",	HB_TAG('K','A','C',' ')},	
-  {"kfx",	HB_TAG('K','U','L',' ')},	
-  {"kfy",	HB_TAG('K','M','N',' ')},	
-  {"kg",	HB_TAG('K','O','N','0')},	
-  {"kge",	HB_TAG_NONE	       },	
-  {"kha",	HB_TAG('K','S','I',' ')},	
-  {"khb",	HB_TAG('X','B','D',' ')},	
-  {"khk",	HB_TAG('M','N','G',' ')},	
-  {"khn",	HB_TAG_NONE	       },	
-  {"khs",	HB_TAG_NONE	       },	
-  {"kht",	HB_TAG('K','H','T',' ')},	
-  {"kht",	HB_TAG('K','H','N',' ')},	
-  {"khv",	HB_TAG_NONE	       },	
-	
-  {"ki",	HB_TAG('K','I','K',' ')},	
-  {"kis",	HB_TAG_NONE	       },	
-  {"kiu",	HB_TAG('K','I','U',' ')},	
-  {"kiu",	HB_TAG('Z','Z','A',' ')},	
-  {"kj",	HB_TAG('K','U','A',' ')},	
-  {"kjb",	HB_TAG('M','Y','N',' ')},	
-	
-  {"kjh",	HB_TAG('K','H','A',' ')},	
-  {"kjp",	HB_TAG('K','J','P',' ')},	
-  {"kjp",	HB_TAG('K','R','N',' ')},	
-  {"kjt",	HB_TAG('K','R','N',' ')},	
-	
-  {"kk",	HB_TAG('K','A','Z',' ')},	
-  {"kkn",	HB_TAG_NONE	       },	
-  {"kkz",	HB_TAG('A','T','H',' ')},	
-  {"kl",	HB_TAG('G','R','N',' ')},	
-  {"klm",	HB_TAG_NONE	       },	
-  {"kln",	HB_TAG('K','A','L',' ')},	
-  {"km",	HB_TAG('K','H','M',' ')},	
-  {"kmb",	HB_TAG('M','B','N',' ')},	
-  {"kmn",	HB_TAG_NONE	       },	
-  {"kmo",	HB_TAG_NONE	       },	
-  {"kmr",	HB_TAG('K','U','R',' ')},	
-  {"kms",	HB_TAG_NONE	       },	
-  {"kmv",	HB_TAG('C','P','P',' ')},	
-  {"kmw",	HB_TAG('K','M','O',' ')},	
-	
-  {"kn",	HB_TAG('K','A','N',' ')},	
-  {"knc",	HB_TAG('K','N','R',' ')},	
-  {"kng",	HB_TAG('K','O','N','0')},	
-  {"knj",	HB_TAG('M','Y','N',' ')},	
-  {"knn",	HB_TAG('K','O','K',' ')},	
-  {"knr",	HB_TAG_NONE	       },	
-  {"ko",	HB_TAG('K','O','R',' ')},	
-  {"ko",	HB_TAG('K','O','H',' ')},	
-  {"kod",	HB_TAG_NONE	       },	
-  {"koh",	HB_TAG_NONE	       },	
-  {"koi",	HB_TAG('K','O','P',' ')},	
-  {"koi",	HB_TAG('K','O','M',' ')},	
-	
-  {"kop",	HB_TAG_NONE	       },	
-	
-  {"koy",	HB_TAG('A','T','H',' ')},	
-  {"koz",	HB_TAG_NONE	       },	
-  {"kpe",	HB_TAG('K','P','L',' ')},	
-  {"kpl",	HB_TAG_NONE	       },	
-  {"kpp",	HB_TAG('K','R','N',' ')},	
-  {"kpv",	HB_TAG('K','O','Z',' ')},	
-  {"kpv",	HB_TAG('K','O','M',' ')},	
-  {"kpy",	HB_TAG('K','Y','K',' ')},	
-  {"kqs",	HB_TAG('K','I','S',' ')},	
-  {"kqy",	HB_TAG('K','R','T',' ')},	
-  {"kr",	HB_TAG('K','N','R',' ')},	
-  {"krc",	HB_TAG('K','A','R',' ')},	
-  {"krc",	HB_TAG('B','A','L',' ')},	
-  {"kri",	HB_TAG('K','R','I',' ')},	
-  {"kri",	HB_TAG('C','P','P',' ')},	
-  {"krk",	HB_TAG_NONE	       },	
-	
-  {"krm",	HB_TAG_NONE	       },	
-  {"krn",	HB_TAG_NONE	       },	
-  {"krt",	HB_TAG('K','N','R',' ')},	
-  {"kru",	HB_TAG('K','U','U',' ')},	
-  {"ks",	HB_TAG('K','S','H',' ')},	
-  {"ksh",	HB_TAG('K','S','H','0')},	
-  {"ksi",	HB_TAG_NONE	       },	
-  {"ksm",	HB_TAG_NONE	       },	
-  {"kss",	HB_TAG('K','I','S',' ')},	
-  {"ksw",	HB_TAG('K','S','W',' ')},	
-  {"ksw",	HB_TAG('K','R','N',' ')},	
-  {"ktb",	HB_TAG('K','E','B',' ')},	
-  {"ktu",	HB_TAG('K','O','N',' ')},	
-  {"ktw",	HB_TAG('A','T','H',' ')},	
-  {"ku",	HB_TAG('K','U','R',' ')},	
-  {"kui",	HB_TAG_NONE	       },	
-  {"kul",	HB_TAG_NONE	       },	
-	
-  {"kuu",	HB_TAG('A','T','H',' ')},	
-  {"kuw",	HB_TAG('B','A','D','0')},	
-  {"kuy",	HB_TAG_NONE	       },	
-  {"kv",	HB_TAG('K','O','M',' ')},	
-  {"kvb",	HB_TAG('M','L','Y',' ')},	
-  {"kvl",	HB_TAG('K','R','N',' ')},	
-  {"kvq",	HB_TAG('K','R','N',' ')},	
-  {"kvr",	HB_TAG('M','L','Y',' ')},	
-  {"kvt",	HB_TAG('K','R','N',' ')},	
-  {"kvu",	HB_TAG('K','R','N',' ')},	
-  {"kvy",	HB_TAG('K','R','N',' ')},	
-  {"kw",	HB_TAG('C','O','R',' ')},	
-	
-  {"kww",	HB_TAG('C','P','P',' ')},	
-  {"kwy",	HB_TAG('K','O','N','0')},	
-  {"kxc",	HB_TAG('K','M','S',' ')},	
-  {"kxd",	HB_TAG('M','L','Y',' ')},	
-  {"kxf",	HB_TAG('K','R','N',' ')},	
-  {"kxk",	HB_TAG('K','R','N',' ')},	
-  {"kxl",	HB_TAG('K','U','U',' ')},	
-  {"kxu",	HB_TAG('K','U','I',' ')},	
-  {"ky",	HB_TAG('K','I','R',' ')},	
-  {"kyk",	HB_TAG_NONE	       },	
-  {"kyu",	HB_TAG('K','Y','U',' ')},	
-  {"kyu",	HB_TAG('K','R','N',' ')},	
-  {"la",	HB_TAG('L','A','T',' ')},	
-  {"lac",	HB_TAG('M','Y','N',' ')},	
-  {"lad",	HB_TAG('J','U','D',' ')},	
-  {"lah",	HB_TAG_NONE	       },	
-  {"lak",	HB_TAG_NONE	       },	
-  {"lam",	HB_TAG_NONE	       },	
-  {"laz",	HB_TAG_NONE	       },	
-  {"lb",	HB_TAG('L','T','Z',' ')},	
-  {"lbe",	HB_TAG('L','A','K',' ')},	
-  {"lbj",	HB_TAG('L','D','K',' ')},	
-  {"lbl",	HB_TAG('B','I','K',' ')},	
-  {"lce",	HB_TAG('M','L','Y',' ')},	
-  {"lcf",	HB_TAG('M','L','Y',' ')},	
-  {"ldi",	HB_TAG('K','O','N','0')},	
-  {"ldk",	HB_TAG_NONE	       },	
-	
-	
-  {"lg",	HB_TAG('L','U','G',' ')},	
-  {"li",	HB_TAG('L','I','M',' ')},	
-  {"lif",	HB_TAG('L','M','B',' ')},	
-	
-  {"lir",	HB_TAG('C','P','P',' ')},	
-	
-  {"liw",	HB_TAG('M','L','Y',' ')},	
-  {"liy",	HB_TAG('B','A','D','0')},	
-	
-  {"lkb",	HB_TAG('L','U','H',' ')},	
-	
-  {"lko",	HB_TAG('L','U','H',' ')},	
-  {"lks",	HB_TAG('L','U','H',' ')},	
-  {"lld",	HB_TAG('L','A','D',' ')},	
-  {"lma",	HB_TAG_NONE	       },	
-  {"lmb",	HB_TAG_NONE	       },	
-  {"lmn",	HB_TAG('L','A','M',' ')},	
-	
-  {"lmw",	HB_TAG_NONE	       },	
-  {"ln",	HB_TAG('L','I','N',' ')},	
-  {"lna",	HB_TAG('B','A','D','0')},	
-  {"lnl",	HB_TAG('B','A','D','0')},	
-  {"lo",	HB_TAG('L','A','O',' ')},	
-	
-  {"lou",	HB_TAG('C','P','P',' ')},	
-	
-	
-  {"lri",	HB_TAG('L','U','H',' ')},	
-  {"lrm",	HB_TAG('L','U','H',' ')},	
-  {"lrt",	HB_TAG('C','P','P',' ')},	
-  {"lsb",	HB_TAG_NONE	       },	
-  {"lsm",	HB_TAG('L','U','H',' ')},	
-  {"lt",	HB_TAG('L','T','H',' ')},	
-  {"ltg",	HB_TAG('L','V','I',' ')},	
-  {"lth",	HB_TAG_NONE	       },	
-  {"lto",	HB_TAG('L','U','H',' ')},	
-  {"lts",	HB_TAG('L','U','H',' ')},	
-  {"lu",	HB_TAG('L','U','B',' ')},	
-	
-	
-  {"lus",	HB_TAG('M','I','Z',' ')},	
-  {"lus",	HB_TAG('Q','I','N',' ')},	
-  {"luy",	HB_TAG('L','U','H',' ')},	
-  {"luz",	HB_TAG('L','R','C',' ')},	
-  {"lv",	HB_TAG('L','V','I',' ')},	
-  {"lvi",	HB_TAG_NONE	       },	
-  {"lvs",	HB_TAG('L','V','I',' ')},	
-  {"lwg",	HB_TAG('L','U','H',' ')},	
-  {"lzh",	HB_TAG('Z','H','T',' ')},	
-  {"lzz",	HB_TAG('L','A','Z',' ')},	
-	
-	
-  {"mai",	HB_TAG('M','T','H',' ')},	
-  {"maj",	HB_TAG_NONE	       },	
-  {"mak",	HB_TAG('M','K','R',' ')},	
-  {"mam",	HB_TAG('M','A','M',' ')},	
-  {"mam",	HB_TAG('M','Y','N',' ')},	
-  {"man",	HB_TAG('M','N','K',' ')},	
-  {"map",	HB_TAG_NONE	       },	
-  {"maw",	HB_TAG_NONE	       },	
-  {"max",	HB_TAG('M','L','Y',' ')},	
-  {"max",	HB_TAG('C','P','P',' ')},	
-  {"mbf",	HB_TAG('C','P','P',' ')},	
-  {"mbn",	HB_TAG_NONE	       },	
-	
-  {"mch",	HB_TAG_NONE	       },	
-  {"mcm",	HB_TAG('C','P','P',' ')},	
-  {"mcr",	HB_TAG_NONE	       },	
-  {"mct",	HB_TAG('B','T','I',' ')},	
-  {"mde",	HB_TAG_NONE	       },	
-  {"mdf",	HB_TAG('M','O','K',' ')},	
-	
-  {"mdy",	HB_TAG('M','L','E',' ')},	
-  {"men",	HB_TAG('M','D','E',' ')},	
-  {"meo",	HB_TAG('M','L','Y',' ')},	
-	
-  {"mfa",	HB_TAG('M','F','A',' ')},	
-  {"mfa",	HB_TAG('M','L','Y',' ')},	
-  {"mfb",	HB_TAG('M','L','Y',' ')},	
-  {"mfe",	HB_TAG('M','F','E',' ')},	
-  {"mfe",	HB_TAG('C','P','P',' ')},	
-  {"mfp",	HB_TAG('C','P','P',' ')},	
-  {"mg",	HB_TAG('M','L','G',' ')},	
-  {"mh",	HB_TAG('M','A','H',' ')},	
-  {"mhc",	HB_TAG('M','Y','N',' ')},	
-  {"mhr",	HB_TAG('L','M','A',' ')},	
-  {"mhv",	HB_TAG('A','R','K',' ')},	
-  {"mi",	HB_TAG('M','R','I',' ')},	
-  {"min",	HB_TAG('M','I','N',' ')},	
-  {"min",	HB_TAG('M','L','Y',' ')},	
-  {"miz",	HB_TAG_NONE	       },	
-  {"mk",	HB_TAG('M','K','D',' ')},	
-  {"mkn",	HB_TAG('C','P','P',' ')},	
-  {"mkr",	HB_TAG_NONE	       },	
-  {"mku",	HB_TAG('M','N','K',' ')},	
-	
-  {"ml",	HB_TAG('M','A','L',' ')},	
-  {"ml",	HB_TAG('M','L','R',' ')},	
-  {"mle",	HB_TAG_NONE	       },	
-  {"mln",	HB_TAG_NONE	       },	
-  {"mlq",	HB_TAG('M','L','N',' ')},	
-  {"mlq",	HB_TAG('M','N','K',' ')},	
-  {"mlr",	HB_TAG_NONE	       },	
-  {"mmr",	HB_TAG('H','M','N',' ')},	
-  {"mn",	HB_TAG('M','N','G',' ')},	
-  {"mnc",	HB_TAG('M','C','H',' ')},	
-  {"mnd",	HB_TAG_NONE	       },	
-  {"mng",	HB_TAG_NONE	       },	
-  {"mnh",	HB_TAG('B','A','D','0')},	
-	
-  {"mnk",	HB_TAG('M','N','D',' ')},	
-  {"mnk",	HB_TAG('M','N','K',' ')},	
-  {"mnp",	HB_TAG('Z','H','S',' ')},	
-  {"mns",	HB_TAG('M','A','N',' ')},	
-  {"mnw",	HB_TAG('M','O','N',' ')},	
-  {"mnw",	HB_TAG('M','O','N','T')},	
-  {"mnx",	HB_TAG_NONE	       },	
-  {"mo",	HB_TAG('M','O','L',' ')},	
-  {"mo",	HB_TAG('R','O','M',' ')},	
-  {"mod",	HB_TAG('C','P','P',' ')},	
-	
-  {"mok",	HB_TAG_NONE	       },	
-  {"mop",	HB_TAG('M','Y','N',' ')},	
-  {"mor",	HB_TAG_NONE	       },	
-	
-  {"mpe",	HB_TAG('M','A','J',' ')},	
-  {"mqg",	HB_TAG('M','L','Y',' ')},	
-  {"mr",	HB_TAG('M','A','R',' ')},	
-  {"mrh",	HB_TAG('Q','I','N',' ')},	
-  {"mrj",	HB_TAG('H','M','A',' ')},	
-  {"ms",	HB_TAG('M','L','Y',' ')},	
-  {"msc",	HB_TAG('M','N','K',' ')},	
-  {"msh",	HB_TAG('M','L','G',' ')},	
-  {"msi",	HB_TAG('M','L','Y',' ')},	
-  {"msi",	HB_TAG('C','P','P',' ')},	
-  {"mt",	HB_TAG('M','T','S',' ')},	
-  {"mth",	HB_TAG_NONE	       },	
-  {"mtr",	HB_TAG('M','A','W',' ')},	
-  {"mts",	HB_TAG_NONE	       },	
-  {"mud",	HB_TAG('C','P','P',' ')},	
-  {"mui",	HB_TAG('M','L','Y',' ')},	
-  {"mun",	HB_TAG_NONE	       },	
-  {"mup",	HB_TAG('R','A','J',' ')},	
-  {"muq",	HB_TAG('H','M','N',' ')},	
-	
-  {"mvb",	HB_TAG('A','T','H',' ')},	
-  {"mve",	HB_TAG('M','A','W',' ')},	
-  {"mvf",	HB_TAG('M','N','G',' ')},	
-  {"mwk",	HB_TAG('M','N','K',' ')},	
-	
-  {"mwq",	HB_TAG('Q','I','N',' ')},	
-  {"mwr",	HB_TAG('M','A','W',' ')},	
-  {"mww",	HB_TAG('M','W','W',' ')},	
-  {"mww",	HB_TAG('H','M','N',' ')},	
-  {"my",	HB_TAG('B','R','M',' ')},	
-  {"mym",	HB_TAG('M','E','N',' ')},	
-	
-  {"myq",	HB_TAG('M','N','K',' ')},	
-  {"myv",	HB_TAG('E','R','Z',' ')},	
-  {"mzb",	HB_TAG('B','B','R',' ')},	
-	
-  {"mzs",	HB_TAG('C','P','P',' ')},	
-  {"na",	HB_TAG('N','A','U',' ')},	
-  {"nag",	HB_TAG('N','A','G',' ')},	
-  {"nag",	HB_TAG('C','P','P',' ')},	
-	
-  {"nan",	HB_TAG('Z','H','S',' ')},	
-	
-  {"nas",	HB_TAG_NONE	       },	
-  {"naz",	HB_TAG('N','A','H',' ')},	
-  {"nb",	HB_TAG('N','O','R',' ')},	
-  {"nch",	HB_TAG('N','A','H',' ')},	
-  {"nci",	HB_TAG('N','A','H',' ')},	
-  {"ncj",	HB_TAG('N','A','H',' ')},	
-  {"ncl",	HB_TAG('N','A','H',' ')},	
-  {"ncr",	HB_TAG_NONE	       },	
-  {"ncx",	HB_TAG('N','A','H',' ')},	
-  {"nd",	HB_TAG('N','D','B',' ')},	
-  {"ndb",	HB_TAG_NONE	       },	
-	
-  {"ndg",	HB_TAG_NONE	       },	
-	
-  {"ne",	HB_TAG('N','E','P',' ')},	
-  {"nef",	HB_TAG('C','P','P',' ')},	
-	
-  {"ng",	HB_TAG('N','D','G',' ')},	
-	
-  {"ngl",	HB_TAG('L','M','W',' ')},	
-  {"ngm",	HB_TAG('C','P','P',' ')},	
-  {"ngo",	HB_TAG('S','X','T',' ')},	
-  {"ngr",	HB_TAG_NONE	       },	
-  {"ngu",	HB_TAG('N','A','H',' ')},	
-  {"nhc",	HB_TAG('N','A','H',' ')},	
-  {"nhd",	HB_TAG('G','U','A',' ')},	
-  {"nhe",	HB_TAG('N','A','H',' ')},	
-  {"nhg",	HB_TAG('N','A','H',' ')},	
-  {"nhi",	HB_TAG('N','A','H',' ')},	
-  {"nhk",	HB_TAG('N','A','H',' ')},	
-  {"nhm",	HB_TAG('N','A','H',' ')},	
-  {"nhn",	HB_TAG('N','A','H',' ')},	
-  {"nhp",	HB_TAG('N','A','H',' ')},	
-  {"nhq",	HB_TAG('N','A','H',' ')},	
-  {"nht",	HB_TAG('N','A','H',' ')},	
-  {"nhv",	HB_TAG('N','A','H',' ')},	
-  {"nhw",	HB_TAG('N','A','H',' ')},	
-  {"nhx",	HB_TAG('N','A','H',' ')},	
-  {"nhy",	HB_TAG('N','A','H',' ')},	
-  {"nhz",	HB_TAG('N','A','H',' ')},	
-  {"niq",	HB_TAG('K','A','L',' ')},	
-  {"nis",	HB_TAG_NONE	       },	
-	
-  {"niv",	HB_TAG('G','I','L',' ')},	
-  {"njt",	HB_TAG('C','P','P',' ')},	
-  {"njz",	HB_TAG('N','I','S',' ')},	
-  {"nko",	HB_TAG_NONE	       },	
-  {"nkx",	HB_TAG('I','J','O',' ')},	
-  {"nl",	HB_TAG('N','L','D',' ')},	
-  {"nla",	HB_TAG('B','M','L',' ')},	
-  {"nle",	HB_TAG('L','U','H',' ')},	
-  {"nln",	HB_TAG('N','A','H',' ')},	
-  {"nlv",	HB_TAG('N','A','H',' ')},	
-  {"nn",	HB_TAG('N','Y','N',' ')},	
-  {"nnh",	HB_TAG('B','M','L',' ')},	
-  {"nnz",	HB_TAG('B','M','L',' ')},	
-  {"no",	HB_TAG('N','O','R',' ')},	
-  {"nod",	HB_TAG('N','T','A',' ')},	
-	
-	
-	
-  {"npi",	HB_TAG('N','E','P',' ')},	
-  {"npl",	HB_TAG('N','A','H',' ')},	
-  {"nqo",	HB_TAG('N','K','O',' ')},	
-  {"nr",	HB_TAG('N','D','B',' ')},	
-  {"nsk",	HB_TAG('N','A','S',' ')},	
-  {"nsm",	HB_TAG_NONE	       },	
-	
-  {"nsu",	HB_TAG('N','A','H',' ')},	
-  {"nto",	HB_TAG_NONE	       },	
-  {"nue",	HB_TAG('B','A','D','0')},	
-  {"nuu",	HB_TAG('B','A','D','0')},	
-  {"nuz",	HB_TAG('N','A','H',' ')},	
-  {"nv",	HB_TAG('N','A','V',' ')},	
-  {"nv",	HB_TAG('A','T','H',' ')},	
-  {"nwe",	HB_TAG('B','M','L',' ')},	
-  {"ny",	HB_TAG('C','H','I',' ')},	
-  {"nyd",	HB_TAG('L','U','H',' ')},	
-	
-  {"nyn",	HB_TAG('N','K','L',' ')},	
-	
-  {"oc",	HB_TAG('O','C','I',' ')},	
-  {"oj",	HB_TAG('O','J','B',' ')},	
-	
-  {"ojc",	HB_TAG('O','J','B',' ')},	
-  {"ojg",	HB_TAG('O','J','B',' ')},	
-  {"ojs",	HB_TAG('O','C','R',' ')},	
-  {"ojs",	HB_TAG('O','J','B',' ')},	
-  {"ojw",	HB_TAG('O','J','B',' ')},	
-  {"okd",	HB_TAG('I','J','O',' ')},	
-  {"oki",	HB_TAG('K','A','L',' ')},	
-  {"okm",	HB_TAG('K','O','H',' ')},	
-  {"okr",	HB_TAG('I','J','O',' ')},	
-  {"om",	HB_TAG('O','R','O',' ')},	
-  {"onx",	HB_TAG('C','P','P',' ')},	
-  {"oor",	HB_TAG('C','P','P',' ')},	
-  {"or",	HB_TAG('O','R','I',' ')},	
-  {"orc",	HB_TAG('O','R','O',' ')},	
-  {"orn",	HB_TAG('M','L','Y',' ')},	
-  {"oro",	HB_TAG_NONE	       },	
-  {"orr",	HB_TAG('I','J','O',' ')},	
-  {"ors",	HB_TAG('M','L','Y',' ')},	
-  {"ory",	HB_TAG('O','R','I',' ')},	
-  {"os",	HB_TAG('O','S','S',' ')},	
-  {"otw",	HB_TAG('O','J','B',' ')},	
-  {"oua",	HB_TAG('B','B','R',' ')},	
-  {"pa",	HB_TAG('P','A','N',' ')},	
-  {"paa",	HB_TAG_NONE	       },	
-	
-  {"pal",	HB_TAG_NONE	       },	
-	
-  {"pap",	HB_TAG('P','A','P','0')},	
-  {"pap",	HB_TAG('C','P','P',' ')},	
-  {"pas",	HB_TAG_NONE	       },	
-	
-  {"pbt",	HB_TAG('P','A','S',' ')},	
-  {"pbu",	HB_TAG('P','A','S',' ')},	
-	
-	
-  {"pce",	HB_TAG('P','L','G',' ')},	
-  {"pck",	HB_TAG('Q','I','N',' ')},	
-  {"pcm",	HB_TAG('C','P','P',' ')},	
-	
-  {"pdu",	HB_TAG('K','R','N',' ')},	
-  {"pea",	HB_TAG('C','P','P',' ')},	
-  {"pel",	HB_TAG('M','L','Y',' ')},	
-  {"pes",	HB_TAG('F','A','R',' ')},	
-  {"pey",	HB_TAG('C','P','P',' ')},	
-  {"pga",	HB_TAG('A','R','A',' ')},	
-  {"pga",	HB_TAG('C','P','P',' ')},	
-	
-  {"pi",	HB_TAG('P','A','L',' ')},	
-  {"pih",	HB_TAG('P','I','H',' ')},	
-  {"pih",	HB_TAG('C','P','P',' ')},	
-  {"pil",	HB_TAG_NONE	       },	
-  {"pis",	HB_TAG('C','P','P',' ')},	
-  {"pkh",	HB_TAG('Q','I','N',' ')},	
-  {"pko",	HB_TAG('K','A','L',' ')},	
-  {"pl",	HB_TAG('P','L','K',' ')},	
-  {"plg",	HB_TAG_NONE	       },	
-  {"plk",	HB_TAG_NONE	       },	
-  {"pll",	HB_TAG('P','L','G',' ')},	
-  {"pln",	HB_TAG('C','P','P',' ')},	
-  {"plp",	HB_TAG('P','A','P',' ')},	
-  {"plt",	HB_TAG('M','L','G',' ')},	
-  {"pml",	HB_TAG('C','P','P',' ')},	
-	
-  {"pmy",	HB_TAG('C','P','P',' ')},	
-	
-  {"poc",	HB_TAG('M','Y','N',' ')},	
-  {"poh",	HB_TAG('P','O','H',' ')},	
-  {"poh",	HB_TAG('M','Y','N',' ')},	
-	
-  {"pov",	HB_TAG('C','P','P',' ')},	
-  {"ppa",	HB_TAG('B','A','G',' ')},	
-  {"pre",	HB_TAG('C','P','P',' ')},	
-	
-  {"prs",	HB_TAG('D','R','I',' ')},	
-  {"prs",	HB_TAG('F','A','R',' ')},	
-  {"ps",	HB_TAG('P','A','S',' ')},	
-  {"pse",	HB_TAG('M','L','Y',' ')},	
-  {"pst",	HB_TAG('P','A','S',' ')},	
-  {"pt",	HB_TAG('P','T','G',' ')},	
-  {"pub",	HB_TAG('Q','I','N',' ')},	
-  {"puz",	HB_TAG('Q','I','N',' ')},	
-  {"pwo",	HB_TAG('P','W','O',' ')},	
-  {"pwo",	HB_TAG('K','R','N',' ')},	
-  {"pww",	HB_TAG('K','R','N',' ')},	
-  {"qu",	HB_TAG('Q','U','Z',' ')},	
-  {"qub",	HB_TAG('Q','W','H',' ')},	
-  {"qub",	HB_TAG('Q','U','Z',' ')},	
-  {"quc",	HB_TAG('Q','U','C',' ')},	
-  {"quc",	HB_TAG('M','Y','N',' ')},	
-  {"qud",	HB_TAG('Q','V','I',' ')},	
-  {"qud",	HB_TAG('Q','U','Z',' ')},	
-  {"quf",	HB_TAG('Q','U','Z',' ')},	
-  {"qug",	HB_TAG('Q','V','I',' ')},	
-  {"qug",	HB_TAG('Q','U','Z',' ')},	
-  {"quh",	HB_TAG('Q','U','H',' ')},	
-  {"quh",	HB_TAG('Q','U','Z',' ')},	
-  {"quk",	HB_TAG('Q','U','Z',' ')},	
-  {"qul",	HB_TAG('Q','U','H',' ')},	
-  {"qul",	HB_TAG('Q','U','Z',' ')},	
-  {"qum",	HB_TAG('M','Y','N',' ')},	
-  {"qup",	HB_TAG('Q','V','I',' ')},	
-  {"qup",	HB_TAG('Q','U','Z',' ')},	
-  {"qur",	HB_TAG('Q','W','H',' ')},	
-  {"qur",	HB_TAG('Q','U','Z',' ')},	
-  {"qus",	HB_TAG('Q','U','H',' ')},	
-  {"qus",	HB_TAG('Q','U','Z',' ')},	
-  {"quv",	HB_TAG('M','Y','N',' ')},	
-  {"quw",	HB_TAG('Q','V','I',' ')},	
-  {"quw",	HB_TAG('Q','U','Z',' ')},	
-  {"qux",	HB_TAG('Q','W','H',' ')},	
-  {"qux",	HB_TAG('Q','U','Z',' ')},	
-  {"quy",	HB_TAG('Q','U','Z',' ')},	
-	
-  {"qva",	HB_TAG('Q','W','H',' ')},	
-  {"qva",	HB_TAG('Q','U','Z',' ')},	
-  {"qvc",	HB_TAG('Q','U','Z',' ')},	
-  {"qve",	HB_TAG('Q','U','Z',' ')},	
-  {"qvh",	HB_TAG('Q','W','H',' ')},	
-  {"qvh",	HB_TAG('Q','U','Z',' ')},	
-  {"qvi",	HB_TAG('Q','V','I',' ')},	
-  {"qvi",	HB_TAG('Q','U','Z',' ')},	
-  {"qvj",	HB_TAG('Q','V','I',' ')},	
-  {"qvj",	HB_TAG('Q','U','Z',' ')},	
-  {"qvl",	HB_TAG('Q','W','H',' ')},	
-  {"qvl",	HB_TAG('Q','U','Z',' ')},	
-  {"qvm",	HB_TAG('Q','W','H',' ')},	
-  {"qvm",	HB_TAG('Q','U','Z',' ')},	
-  {"qvn",	HB_TAG('Q','W','H',' ')},	
-  {"qvn",	HB_TAG('Q','U','Z',' ')},	
-  {"qvo",	HB_TAG('Q','V','I',' ')},	
-  {"qvo",	HB_TAG('Q','U','Z',' ')},	
-  {"qvp",	HB_TAG('Q','W','H',' ')},	
-  {"qvp",	HB_TAG('Q','U','Z',' ')},	
-  {"qvs",	HB_TAG('Q','U','Z',' ')},	
-  {"qvw",	HB_TAG('Q','W','H',' ')},	
-  {"qvw",	HB_TAG('Q','U','Z',' ')},	
-  {"qvz",	HB_TAG('Q','V','I',' ')},	
-  {"qvz",	HB_TAG('Q','U','Z',' ')},	
-  {"qwa",	HB_TAG('Q','W','H',' ')},	
-  {"qwa",	HB_TAG('Q','U','Z',' ')},	
-  {"qwc",	HB_TAG('Q','U','Z',' ')},	
-  {"qwh",	HB_TAG('Q','W','H',' ')},	
-  {"qwh",	HB_TAG('Q','U','Z',' ')},	
-  {"qws",	HB_TAG('Q','W','H',' ')},	
-  {"qws",	HB_TAG('Q','U','Z',' ')},	
-  {"qwt",	HB_TAG('A','T','H',' ')},	
-  {"qxa",	HB_TAG('Q','W','H',' ')},	
-  {"qxa",	HB_TAG('Q','U','Z',' ')},	
-  {"qxc",	HB_TAG('Q','W','H',' ')},	
-  {"qxc",	HB_TAG('Q','U','Z',' ')},	
-  {"qxh",	HB_TAG('Q','W','H',' ')},	
-  {"qxh",	HB_TAG('Q','U','Z',' ')},	
-  {"qxl",	HB_TAG('Q','V','I',' ')},	
-  {"qxl",	HB_TAG('Q','U','Z',' ')},	
-  {"qxn",	HB_TAG('Q','W','H',' ')},	
-  {"qxn",	HB_TAG('Q','U','Z',' ')},	
-  {"qxo",	HB_TAG('Q','W','H',' ')},	
-  {"qxo",	HB_TAG('Q','U','Z',' ')},	
-  {"qxp",	HB_TAG('Q','U','Z',' ')},	
-  {"qxr",	HB_TAG('Q','V','I',' ')},	
-  {"qxr",	HB_TAG('Q','U','Z',' ')},	
-  {"qxt",	HB_TAG('Q','W','H',' ')},	
-  {"qxt",	HB_TAG('Q','U','Z',' ')},	
-  {"qxu",	HB_TAG('Q','U','Z',' ')},	
-  {"qxw",	HB_TAG('Q','W','H',' ')},	
-  {"qxw",	HB_TAG('Q','U','Z',' ')},	
-  {"rag",	HB_TAG('L','U','H',' ')},	
-	
-  {"ral",	HB_TAG('Q','I','N',' ')},	
-	
-  {"rbb",	HB_TAG('P','L','G',' ')},	
-  {"rbl",	HB_TAG('B','I','K',' ')},	
-  {"rcf",	HB_TAG('C','P','P',' ')},	
-	
-	
-	
-  {"rif",	HB_TAG('R','I','F',' ')},	
-  {"rif",	HB_TAG('B','B','R',' ')},	
-	
-  {"rki",	HB_TAG('A','R','K',' ')},	
-	
-  {"rm",	HB_TAG('R','M','S',' ')},	
-  {"rmc",	HB_TAG('R','O','Y',' ')},	
-  {"rmf",	HB_TAG('R','O','Y',' ')},	
-  {"rml",	HB_TAG('R','O','Y',' ')},	
-  {"rmn",	HB_TAG('R','O','Y',' ')},	
-  {"rmo",	HB_TAG('R','O','Y',' ')},	
-  {"rms",	HB_TAG_NONE	       },	
-  {"rmw",	HB_TAG('R','O','Y',' ')},	
-  {"rmy",	HB_TAG('R','M','Y',' ')},	
-  {"rmy",	HB_TAG('R','O','Y',' ')},	
-  {"rmz",	HB_TAG('A','R','K',' ')},	
-  {"rn",	HB_TAG('R','U','N',' ')},	
-  {"ro",	HB_TAG('R','O','M',' ')},	
-  {"rom",	HB_TAG('R','O','Y',' ')},	
-  {"rop",	HB_TAG('C','P','P',' ')},	
-  {"rtc",	HB_TAG('Q','I','N',' ')},	
-	
-  {"ru",	HB_TAG('R','U','S',' ')},	
-  {"rue",	HB_TAG('R','S','Y',' ')},	
-	
-  {"rw",	HB_TAG('R','U','A',' ')},	
-  {"rwr",	HB_TAG('M','A','W',' ')},	
-  {"sa",	HB_TAG('S','A','N',' ')},	
-  {"sad",	HB_TAG_NONE	       },	
-  {"sah",	HB_TAG('Y','A','K',' ')},	
-  {"sam",	HB_TAG('P','A','A',' ')},	
-	
-	
-  {"say",	HB_TAG_NONE	       },	
-  {"sc",	HB_TAG('S','R','D',' ')},	
-  {"scf",	HB_TAG('C','P','P',' ')},	
-  {"sch",	HB_TAG('Q','I','N',' ')},	
-  {"sci",	HB_TAG('C','P','P',' ')},	
-  {"sck",	HB_TAG('S','A','D',' ')},	
-	
-	
-  {"scs",	HB_TAG('S','C','S',' ')},	
-  {"scs",	HB_TAG('S','L','A',' ')},	
-  {"scs",	HB_TAG('A','T','H',' ')},	
-  {"sd",	HB_TAG('S','N','D',' ')},	
-  {"sdc",	HB_TAG('S','R','D',' ')},	
-  {"sdh",	HB_TAG('K','U','R',' ')},	
-  {"sdn",	HB_TAG('S','R','D',' ')},	
-  {"sds",	HB_TAG('B','B','R',' ')},	
-  {"se",	HB_TAG('N','S','M',' ')},	
-  {"seh",	HB_TAG('S','N','A',' ')},	
-  {"sek",	HB_TAG('A','T','H',' ')},	
-	
-  {"sez",	HB_TAG('Q','I','N',' ')},	
-  {"sfm",	HB_TAG('S','F','M',' ')},	
-  {"sfm",	HB_TAG('H','M','N',' ')},	
-  {"sg",	HB_TAG('S','G','O',' ')},	
-	
-  {"sgc",	HB_TAG('K','A','L',' ')},	
-  {"sgo",	HB_TAG_NONE	       },	
-	
-  {"sgw",	HB_TAG('C','H','G',' ')},	
-  {"sh",	HB_TAG('B','O','S',' ')},	
-  {"sh",	HB_TAG('H','R','V',' ')},	
-  {"sh",	HB_TAG('S','R','B',' ')},	
-  {"shi",	HB_TAG('S','H','I',' ')},	
-  {"shi",	HB_TAG('B','B','R',' ')},	
-  {"shl",	HB_TAG('Q','I','N',' ')},	
-	
-  {"shu",	HB_TAG('A','R','A',' ')},	
-  {"shy",	HB_TAG('B','B','R',' ')},	
-  {"si",	HB_TAG('S','N','H',' ')},	
-  {"sib",	HB_TAG_NONE	       },	
-	
-  {"sig",	HB_TAG_NONE	       },	
-  {"siz",	HB_TAG('B','B','R',' ')},	
-  {"sjd",	HB_TAG('K','S','M',' ')},	
-  {"sjo",	HB_TAG('S','I','B',' ')},	
-  {"sjs",	HB_TAG('B','B','R',' ')},	
-  {"sk",	HB_TAG('S','K','Y',' ')},	
-  {"skg",	HB_TAG('M','L','G',' ')},	
-  {"skr",	HB_TAG('S','R','K',' ')},	
-  {"sks",	HB_TAG_NONE	       },	
-  {"skw",	HB_TAG('C','P','P',' ')},	
-  {"sky",	HB_TAG_NONE	       },	
-  {"sl",	HB_TAG('S','L','V',' ')},	
-  {"sla",	HB_TAG_NONE	       },	
-  {"sm",	HB_TAG('S','M','O',' ')},	
-  {"sma",	HB_TAG('S','S','M',' ')},	
-  {"smd",	HB_TAG('M','B','N',' ')},	
-  {"smj",	HB_TAG('L','S','M',' ')},	
-  {"sml",	HB_TAG_NONE	       },	
-  {"smn",	HB_TAG('I','S','M',' ')},	
-  {"sms",	HB_TAG('S','K','S',' ')},	
-  {"smt",	HB_TAG('Q','I','N',' ')},	
-  {"sn",	HB_TAG('S','N','A','0')},	
-  {"snb",	HB_TAG('I','B','A',' ')},	
-  {"snh",	HB_TAG_NONE	       },	
-	
-  {"so",	HB_TAG('S','M','L',' ')},	
-  {"sog",	HB_TAG_NONE	       },	
-	
-  {"spv",	HB_TAG('O','R','I',' ')},	
-  {"spy",	HB_TAG('K','A','L',' ')},	
-  {"sq",	HB_TAG('S','Q','I',' ')},	
-  {"sr",	HB_TAG('S','R','B',' ')},	
-  {"srb",	HB_TAG_NONE	       },	
-  {"src",	HB_TAG('S','R','D',' ')},	
-  {"srk",	HB_TAG_NONE	       },	
-  {"srm",	HB_TAG('C','P','P',' ')},	
-  {"srn",	HB_TAG('C','P','P',' ')},	
-  {"sro",	HB_TAG('S','R','D',' ')},	
-	
-  {"srs",	HB_TAG('A','T','H',' ')},	
-  {"ss",	HB_TAG('S','W','Z',' ')},	
-  {"ssh",	HB_TAG('A','R','A',' ')},	
-  {"ssl",	HB_TAG_NONE	       },	
-  {"ssm",	HB_TAG_NONE	       },	
-  {"st",	HB_TAG('S','O','T',' ')},	
-  {"sta",	HB_TAG('C','P','P',' ')},	
-	
-  {"stv",	HB_TAG('S','I','G',' ')},	
-  {"su",	HB_TAG('S','U','N',' ')},	
-	
-  {"suq",	HB_TAG('S','U','R',' ')},	
-  {"sur",	HB_TAG_NONE	       },	
-  {"sv",	HB_TAG('S','V','E',' ')},	
-	
-  {"svc",	HB_TAG('C','P','P',' ')},	
-  {"sve",	HB_TAG_NONE	       },	
-  {"sw",	HB_TAG('S','W','K',' ')},	
-  {"swb",	HB_TAG('C','M','R',' ')},	
-  {"swc",	HB_TAG('S','W','K',' ')},	
-  {"swh",	HB_TAG('S','W','K',' ')},	
-  {"swk",	HB_TAG_NONE	       },	
-  {"swn",	HB_TAG('B','B','R',' ')},	
-  {"swv",	HB_TAG('M','A','W',' ')},	
-	
-  {"syc",	HB_TAG('S','Y','R',' ')},	
-	
-	
-	
-  {"ta",	HB_TAG('T','A','M',' ')},	
-  {"taa",	HB_TAG('A','T','H',' ')},	
-	
-  {"taj",	HB_TAG_NONE	       },	
-  {"taq",	HB_TAG('T','M','H',' ')},	
-  {"taq",	HB_TAG('B','B','R',' ')},	
-  {"tas",	HB_TAG('C','P','P',' ')},	
-  {"tau",	HB_TAG('A','T','H',' ')},	
-  {"tcb",	HB_TAG('A','T','H',' ')},	
-  {"tce",	HB_TAG('A','T','H',' ')},	
-  {"tch",	HB_TAG('C','P','P',' ')},	
-  {"tcp",	HB_TAG('Q','I','N',' ')},	
-  {"tcs",	HB_TAG('C','P','P',' ')},	
-  {"tcy",	HB_TAG('T','U','L',' ')},	
-  {"tcz",	HB_TAG('Q','I','N',' ')},	
-	
-  {"tdx",	HB_TAG('M','L','G',' ')},	
-  {"te",	HB_TAG('T','E','L',' ')},	
-  {"tec",	HB_TAG('K','A','L',' ')},	
-  {"tem",	HB_TAG('T','M','N',' ')},	
-	
-  {"tez",	HB_TAG('B','B','R',' ')},	
-  {"tfn",	HB_TAG('A','T','H',' ')},	
-  {"tg",	HB_TAG('T','A','J',' ')},	
-  {"tgh",	HB_TAG('C','P','P',' ')},	
-  {"tgj",	HB_TAG('N','I','S',' ')},	
-  {"tgn",	HB_TAG_NONE	       },	
-  {"tgr",	HB_TAG_NONE	       },	
-  {"tgx",	HB_TAG('A','T','H',' ')},	
-  {"tgy",	HB_TAG_NONE	       },	
-  {"th",	HB_TAG('T','H','A',' ')},	
-  {"tht",	HB_TAG('A','T','H',' ')},	
-  {"thv",	HB_TAG('T','M','H',' ')},	
-  {"thv",	HB_TAG('B','B','R',' ')},	
-  {"thz",	HB_TAG('T','M','H',' ')},	
-  {"thz",	HB_TAG('B','B','R',' ')},	
-  {"ti",	HB_TAG('T','G','Y',' ')},	
-  {"tia",	HB_TAG('B','B','R',' ')},	
-  {"tig",	HB_TAG('T','G','R',' ')},	
-	
-	
-  {"tjo",	HB_TAG('B','B','R',' ')},	
-  {"tk",	HB_TAG('T','K','M',' ')},	
-  {"tkg",	HB_TAG('M','L','G',' ')},	
-  {"tkm",	HB_TAG_NONE	       },	
-  {"tl",	HB_TAG('T','G','L',' ')},	
-	
-  {"tmg",	HB_TAG('C','P','P',' ')},	
-  {"tmh",	HB_TAG('T','M','H',' ')},	
-  {"tmh",	HB_TAG('B','B','R',' ')},	
-  {"tmn",	HB_TAG_NONE	       },	
-  {"tmw",	HB_TAG('M','L','Y',' ')},	
-  {"tn",	HB_TAG('T','N','A',' ')},	
-  {"tna",	HB_TAG_NONE	       },	
-  {"tne",	HB_TAG_NONE	       },	
-  {"tnf",	HB_TAG('D','R','I',' ')},	
-  {"tnf",	HB_TAG('F','A','R',' ')},	
-  {"tng",	HB_TAG_NONE	       },	
-  {"to",	HB_TAG('T','G','N',' ')},	
-  {"tod",	HB_TAG('T','O','D','0')},	
-  {"toi",	HB_TAG('T','N','G',' ')},	
-  {"toj",	HB_TAG('M','Y','N',' ')},	
-  {"tol",	HB_TAG('A','T','H',' ')},	
-  {"tor",	HB_TAG('B','A','D','0')},	
-  {"tpi",	HB_TAG('T','P','I',' ')},	
-  {"tpi",	HB_TAG('C','P','P',' ')},	
-  {"tr",	HB_TAG('T','R','K',' ')},	
-  {"trf",	HB_TAG('C','P','P',' ')},	
-  {"trk",	HB_TAG_NONE	       },	
-  {"tru",	HB_TAG('T','U','A',' ')},	
-  {"tru",	HB_TAG('S','Y','R',' ')},	
-  {"ts",	HB_TAG('T','S','G',' ')},	
-  {"tsg",	HB_TAG_NONE	       },	
-	
-  {"tt",	HB_TAG('T','A','T',' ')},	
-  {"ttc",	HB_TAG('M','Y','N',' ')},	
-  {"ttm",	HB_TAG('A','T','H',' ')},	
-  {"ttq",	HB_TAG('T','M','H',' ')},	
-  {"ttq",	HB_TAG('B','B','R',' ')},	
-  {"tua",	HB_TAG_NONE	       },	
-  {"tul",	HB_TAG_NONE	       },	
-	
-  {"tuu",	HB_TAG('A','T','H',' ')},	
-  {"tuv",	HB_TAG_NONE	       },	
-  {"tuy",	HB_TAG('K','A','L',' ')},	
-	
-  {"tvy",	HB_TAG('C','P','P',' ')},	
-  {"tw",	HB_TAG('T','W','I',' ')},	
-  {"tw",	HB_TAG('A','K','A',' ')},	
-  {"txc",	HB_TAG('A','T','H',' ')},	
-  {"txy",	HB_TAG('M','L','G',' ')},	
-  {"ty",	HB_TAG('T','H','T',' ')},	
-  {"tyv",	HB_TAG('T','U','V',' ')},	
-	
-  {"tzh",	HB_TAG('M','Y','N',' ')},	
-  {"tzj",	HB_TAG('M','Y','N',' ')},	
-  {"tzm",	HB_TAG('T','Z','M',' ')},	
-  {"tzm",	HB_TAG('B','B','R',' ')},	
-  {"tzo",	HB_TAG('T','Z','O',' ')},	
-  {"tzo",	HB_TAG('M','Y','N',' ')},	
-  {"ubl",	HB_TAG('B','I','K',' ')},	
-	
-  {"ug",	HB_TAG('U','Y','G',' ')},	
-  {"uk",	HB_TAG('U','K','R',' ')},	
-  {"uki",	HB_TAG('K','U','I',' ')},	
-  {"uln",	HB_TAG('C','P','P',' ')},	
-	
-  {"unr",	HB_TAG('M','U','N',' ')},	
-  {"ur",	HB_TAG('U','R','D',' ')},	
-  {"urk",	HB_TAG('M','L','Y',' ')},	
-  {"usp",	HB_TAG('M','Y','N',' ')},	
-  {"uz",	HB_TAG('U','Z','B',' ')},	
-  {"uzn",	HB_TAG('U','Z','B',' ')},	
-  {"uzs",	HB_TAG('U','Z','B',' ')},	
-  {"vap",	HB_TAG('Q','I','N',' ')},	
-  {"ve",	HB_TAG('V','E','N',' ')},	
-	
-  {"vi",	HB_TAG('V','I','T',' ')},	
-  {"vic",	HB_TAG('C','P','P',' ')},	
-  {"vit",	HB_TAG_NONE	       },	
-  {"vkk",	HB_TAG('M','L','Y',' ')},	
-  {"vkp",	HB_TAG('C','P','P',' ')},	
-  {"vkt",	HB_TAG('M','L','Y',' ')},	
-  {"vls",	HB_TAG('F','L','E',' ')},	
-  {"vmw",	HB_TAG('M','A','K',' ')},	
-  {"vo",	HB_TAG('V','O','L',' ')},	
-	
-  {"wa",	HB_TAG('W','L','N',' ')},	
-  {"wag",	HB_TAG_NONE	       },	
-	
-  {"wbm",	HB_TAG('W','A',' ',' ')},	
-  {"wbr",	HB_TAG('W','A','G',' ')},	
-  {"wbr",	HB_TAG('R','A','J',' ')},	
-	
-  {"wea",	HB_TAG('K','R','N',' ')},	
-  {"wes",	HB_TAG('C','P','P',' ')},	
-  {"weu",	HB_TAG('Q','I','N',' ')},	
-  {"wlc",	HB_TAG('C','M','R',' ')},	
-  {"wle",	HB_TAG('S','I','G',' ')},	
-  {"wlk",	HB_TAG('A','T','H',' ')},	
-  {"wni",	HB_TAG('C','M','R',' ')},	
-  {"wo",	HB_TAG('W','L','F',' ')},	
-  {"wry",	HB_TAG('M','A','W',' ')},	
-  {"wsg",	HB_TAG('G','O','N',' ')},	
-	
-  {"wuu",	HB_TAG('Z','H','S',' ')},	
-  {"xal",	HB_TAG('K','L','M',' ')},	
-  {"xal",	HB_TAG('T','O','D',' ')},	
-  {"xan",	HB_TAG('S','E','K',' ')},	
-  {"xbd",	HB_TAG_NONE	       },	
-  {"xh",	HB_TAG('X','H','S',' ')},	
-	
-	
-  {"xmg",	HB_TAG('B','M','L',' ')},	
-  {"xmm",	HB_TAG('M','L','Y',' ')},	
-  {"xmm",	HB_TAG('C','P','P',' ')},	
-  {"xmv",	HB_TAG('M','L','G',' ')},	
-  {"xmw",	HB_TAG('M','L','G',' ')},	
-  {"xnj",	HB_TAG('S','X','T',' ')},	
-  {"xnq",	HB_TAG('S','X','T',' ')},	
-  {"xnr",	HB_TAG('D','G','R',' ')},	
-	
-  {"xpe",	HB_TAG('X','P','E',' ')},	
-  {"xpe",	HB_TAG('K','P','L',' ')},	
-  {"xsl",	HB_TAG('S','S','L',' ')},	
-  {"xsl",	HB_TAG('S','L','A',' ')},	
-  {"xsl",	HB_TAG('A','T','H',' ')},	
-  {"xst",	HB_TAG('S','I','G',' ')},	
-	
-	
-  {"xup",	HB_TAG('A','T','H',' ')},	
-  {"xwo",	HB_TAG('T','O','D',' ')},	
-  {"yaj",	HB_TAG('B','A','D','0')},	
-  {"yak",	HB_TAG_NONE	       },	
-	
-	
-  {"yba",	HB_TAG_NONE	       },	
-  {"ybb",	HB_TAG('B','M','L',' ')},	
-  {"ybd",	HB_TAG('A','R','K',' ')},	
-  {"ydd",	HB_TAG('J','I','I',' ')},	
-	
-  {"yi",	HB_TAG('J','I','I',' ')},	
-  {"yih",	HB_TAG('J','I','I',' ')},	
-  {"yim",	HB_TAG_NONE	       },	
-	
-  {"yo",	HB_TAG('Y','B','A',' ')},	
-  {"yos",	HB_TAG('Q','I','N',' ')},	
-  {"yua",	HB_TAG('M','Y','N',' ')},	
-  {"yue",	HB_TAG('Z','H','H',' ')},	
-	
-  {"za",	HB_TAG('Z','H','A',' ')},	
-  {"zch",	HB_TAG('Z','H','A',' ')},	
-  {"zdj",	HB_TAG('C','M','R',' ')},	
-	
-  {"zeh",	HB_TAG('Z','H','A',' ')},	
-  {"zen",	HB_TAG('B','B','R',' ')},	
-  {"zgb",	HB_TAG('Z','H','A',' ')},	
-  {"zgh",	HB_TAG('Z','G','H',' ')},	
-  {"zgh",	HB_TAG('B','B','R',' ')},	
-  {"zgm",	HB_TAG('Z','H','A',' ')},	
-  {"zgn",	HB_TAG('Z','H','A',' ')},	
-  {"zh",	HB_TAG('Z','H','S',' ')},	
-  {"zhd",	HB_TAG('Z','H','A',' ')},	
-  {"zhn",	HB_TAG('Z','H','A',' ')},	
-  {"zlj",	HB_TAG('Z','H','A',' ')},	
-  {"zlm",	HB_TAG('M','L','Y',' ')},	
-  {"zln",	HB_TAG('Z','H','A',' ')},	
-  {"zlq",	HB_TAG('Z','H','A',' ')},	
-  {"zmi",	HB_TAG('M','L','Y',' ')},	
-  {"zmz",	HB_TAG('B','A','D','0')},	
-  {"znd",	HB_TAG_NONE	       },	
-  {"zne",	HB_TAG('Z','N','D',' ')},	
-  {"zom",	HB_TAG('Q','I','N',' ')},	
-  {"zqe",	HB_TAG('Z','H','A',' ')},	
-  {"zsm",	HB_TAG('M','L','Y',' ')},	
-  {"zu",	HB_TAG('Z','U','L',' ')},	
-  {"zum",	HB_TAG('L','R','C',' ')},	
-  {"zyb",	HB_TAG('Z','H','A',' ')},	
-  {"zyg",	HB_TAG('Z','H','A',' ')},	
-  {"zyj",	HB_TAG('Z','H','A',' ')},	
-  {"zyn",	HB_TAG('Z','H','A',' ')},	
-  {"zyp",	HB_TAG('Q','I','N',' ')},	
-	
-  {"zzj",	HB_TAG('Z','H','A',' ')},	
+static const LangTag ot_languages2[] = {
+  {HB_TAG('a','a',' ',' '),	HB_TAG('A','F','R',' ')},	
+  {HB_TAG('a','b',' ',' '),	HB_TAG('A','B','K',' ')},	
+  {HB_TAG('a','f',' ',' '),	HB_TAG('A','F','K',' ')},	
+  {HB_TAG('a','k',' ',' '),	HB_TAG('A','K','A',' ')},	
+  {HB_TAG('a','m',' ',' '),	HB_TAG('A','M','H',' ')},	
+  {HB_TAG('a','n',' ',' '),	HB_TAG('A','R','G',' ')},	
+  {HB_TAG('a','r',' ',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','s',' ',' '),	HB_TAG('A','S','M',' ')},	
+  {HB_TAG('a','v',' ',' '),	HB_TAG('A','V','R',' ')},	
+  {HB_TAG('a','y',' ',' '),	HB_TAG('A','Y','M',' ')},	
+  {HB_TAG('a','z',' ',' '),	HB_TAG('A','Z','E',' ')},	
+  {HB_TAG('b','a',' ',' '),	HB_TAG('B','S','H',' ')},	
+  {HB_TAG('b','e',' ',' '),	HB_TAG('B','E','L',' ')},	
+  {HB_TAG('b','g',' ',' '),	HB_TAG('B','G','R',' ')},	
+  {HB_TAG('b','i',' ',' '),	HB_TAG('B','I','S',' ')},	
+  {HB_TAG('b','i',' ',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('b','m',' ',' '),	HB_TAG('B','M','B',' ')},	
+  {HB_TAG('b','n',' ',' '),	HB_TAG('B','E','N',' ')},	
+  {HB_TAG('b','o',' ',' '),	HB_TAG('T','I','B',' ')},	
+  {HB_TAG('b','r',' ',' '),	HB_TAG('B','R','E',' ')},	
+  {HB_TAG('b','s',' ',' '),	HB_TAG('B','O','S',' ')},	
+  {HB_TAG('c','a',' ',' '),	HB_TAG('C','A','T',' ')},	
+  {HB_TAG('c','e',' ',' '),	HB_TAG('C','H','E',' ')},	
+  {HB_TAG('c','h',' ',' '),	HB_TAG('C','H','A',' ')},	
+  {HB_TAG('c','o',' ',' '),	HB_TAG('C','O','S',' ')},	
+  {HB_TAG('c','r',' ',' '),	HB_TAG('C','R','E',' ')},	
+  {HB_TAG('c','s',' ',' '),	HB_TAG('C','S','Y',' ')},	
+  {HB_TAG('c','u',' ',' '),	HB_TAG('C','S','L',' ')},	
+  {HB_TAG('c','v',' ',' '),	HB_TAG('C','H','U',' ')},	
+  {HB_TAG('c','y',' ',' '),	HB_TAG('W','E','L',' ')},	
+  {HB_TAG('d','a',' ',' '),	HB_TAG('D','A','N',' ')},	
+  {HB_TAG('d','e',' ',' '),	HB_TAG('D','E','U',' ')},	
+  {HB_TAG('d','v',' ',' '),	HB_TAG('D','I','V',' ')},	
+  {HB_TAG('d','v',' ',' '),	HB_TAG('D','H','V',' ')},	
+  {HB_TAG('d','z',' ',' '),	HB_TAG('D','Z','N',' ')},	
+  {HB_TAG('e','e',' ',' '),	HB_TAG('E','W','E',' ')},	
+  {HB_TAG('e','l',' ',' '),	HB_TAG('E','L','L',' ')},	
+  {HB_TAG('e','n',' ',' '),	HB_TAG('E','N','G',' ')},	
+  {HB_TAG('e','o',' ',' '),	HB_TAG('N','T','O',' ')},	
+  {HB_TAG('e','s',' ',' '),	HB_TAG('E','S','P',' ')},	
+  {HB_TAG('e','t',' ',' '),	HB_TAG('E','T','I',' ')},	
+  {HB_TAG('e','u',' ',' '),	HB_TAG('E','U','Q',' ')},	
+  {HB_TAG('f','a',' ',' '),	HB_TAG('F','A','R',' ')},	
+  {HB_TAG('f','f',' ',' '),	HB_TAG('F','U','L',' ')},	
+  {HB_TAG('f','i',' ',' '),	HB_TAG('F','I','N',' ')},	
+  {HB_TAG('f','j',' ',' '),	HB_TAG('F','J','I',' ')},	
+  {HB_TAG('f','o',' ',' '),	HB_TAG('F','O','S',' ')},	
+  {HB_TAG('f','r',' ',' '),	HB_TAG('F','R','A',' ')},	
+  {HB_TAG('f','y',' ',' '),	HB_TAG('F','R','I',' ')},	
+  {HB_TAG('g','a',' ',' '),	HB_TAG('I','R','I',' ')},	
+  {HB_TAG('g','d',' ',' '),	HB_TAG('G','A','E',' ')},	
+  {HB_TAG('g','l',' ',' '),	HB_TAG('G','A','L',' ')},	
+  {HB_TAG('g','n',' ',' '),	HB_TAG('G','U','A',' ')},	
+  {HB_TAG('g','u',' ',' '),	HB_TAG('G','U','J',' ')},	
+  {HB_TAG('g','v',' ',' '),	HB_TAG('M','N','X',' ')},	
+  {HB_TAG('h','a',' ',' '),	HB_TAG('H','A','U',' ')},	
+  {HB_TAG('h','e',' ',' '),	HB_TAG('I','W','R',' ')},	
+  {HB_TAG('h','i',' ',' '),	HB_TAG('H','I','N',' ')},	
+  {HB_TAG('h','o',' ',' '),	HB_TAG('H','M','O',' ')},	
+  {HB_TAG('h','o',' ',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('h','r',' ',' '),	HB_TAG('H','R','V',' ')},	
+  {HB_TAG('h','t',' ',' '),	HB_TAG('H','A','I',' ')},	
+  {HB_TAG('h','t',' ',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('h','u',' ',' '),	HB_TAG('H','U','N',' ')},	
+  {HB_TAG('h','y',' ',' '),	HB_TAG('H','Y','E','0')},	
+  {HB_TAG('h','y',' ',' '),	HB_TAG('H','Y','E',' ')},	
+  {HB_TAG('h','z',' ',' '),	HB_TAG('H','E','R',' ')},	
+  {HB_TAG('i','a',' ',' '),	HB_TAG('I','N','A',' ')},	
+  {HB_TAG('i','d',' ',' '),	HB_TAG('I','N','D',' ')},	
+  {HB_TAG('i','d',' ',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('i','e',' ',' '),	HB_TAG('I','L','E',' ')},	
+  {HB_TAG('i','g',' ',' '),	HB_TAG('I','B','O',' ')},	
+  {HB_TAG('i','i',' ',' '),	HB_TAG('Y','I','M',' ')},	
+  {HB_TAG('i','k',' ',' '),	HB_TAG('I','P','K',' ')},	
+  {HB_TAG('i','n',' ',' '),	HB_TAG('I','N','D',' ')},	
+  {HB_TAG('i','n',' ',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('i','o',' ',' '),	HB_TAG('I','D','O',' ')},	
+  {HB_TAG('i','s',' ',' '),	HB_TAG('I','S','L',' ')},	
+  {HB_TAG('i','t',' ',' '),	HB_TAG('I','T','A',' ')},	
+  {HB_TAG('i','u',' ',' '),	HB_TAG('I','N','U',' ')},	
+  {HB_TAG('i','u',' ',' '),	HB_TAG('I','N','U','K')},	
+  {HB_TAG('i','w',' ',' '),	HB_TAG('I','W','R',' ')},	
+  {HB_TAG('j','a',' ',' '),	HB_TAG('J','A','N',' ')},	
+  {HB_TAG('j','i',' ',' '),	HB_TAG('J','I','I',' ')},	
+  {HB_TAG('j','v',' ',' '),	HB_TAG('J','A','V',' ')},	
+  {HB_TAG('j','w',' ',' '),	HB_TAG('J','A','V',' ')},	
+  {HB_TAG('k','a',' ',' '),	HB_TAG('K','A','T',' ')},	
+  {HB_TAG('k','g',' ',' '),	HB_TAG('K','O','N','0')},	
+  {HB_TAG('k','i',' ',' '),	HB_TAG('K','I','K',' ')},	
+  {HB_TAG('k','j',' ',' '),	HB_TAG('K','U','A',' ')},	
+  {HB_TAG('k','k',' ',' '),	HB_TAG('K','A','Z',' ')},	
+  {HB_TAG('k','l',' ',' '),	HB_TAG('G','R','N',' ')},	
+  {HB_TAG('k','m',' ',' '),	HB_TAG('K','H','M',' ')},	
+  {HB_TAG('k','n',' ',' '),	HB_TAG('K','A','N',' ')},	
+  {HB_TAG('k','o',' ',' '),	HB_TAG('K','O','R',' ')},	
+  {HB_TAG('k','o',' ',' '),	HB_TAG('K','O','H',' ')},	
+  {HB_TAG('k','r',' ',' '),	HB_TAG('K','N','R',' ')},	
+  {HB_TAG('k','s',' ',' '),	HB_TAG('K','S','H',' ')},	
+  {HB_TAG('k','u',' ',' '),	HB_TAG('K','U','R',' ')},	
+  {HB_TAG('k','v',' ',' '),	HB_TAG('K','O','M',' ')},	
+  {HB_TAG('k','w',' ',' '),	HB_TAG('C','O','R',' ')},	
+  {HB_TAG('k','y',' ',' '),	HB_TAG('K','I','R',' ')},	
+  {HB_TAG('l','a',' ',' '),	HB_TAG('L','A','T',' ')},	
+  {HB_TAG('l','b',' ',' '),	HB_TAG('L','T','Z',' ')},	
+  {HB_TAG('l','g',' ',' '),	HB_TAG('L','U','G',' ')},	
+  {HB_TAG('l','i',' ',' '),	HB_TAG('L','I','M',' ')},	
+  {HB_TAG('l','n',' ',' '),	HB_TAG('L','I','N',' ')},	
+  {HB_TAG('l','o',' ',' '),	HB_TAG('L','A','O',' ')},	
+  {HB_TAG('l','t',' ',' '),	HB_TAG('L','T','H',' ')},	
+  {HB_TAG('l','u',' ',' '),	HB_TAG('L','U','B',' ')},	
+  {HB_TAG('l','v',' ',' '),	HB_TAG('L','V','I',' ')},	
+  {HB_TAG('m','g',' ',' '),	HB_TAG('M','L','G',' ')},	
+  {HB_TAG('m','h',' ',' '),	HB_TAG('M','A','H',' ')},	
+  {HB_TAG('m','i',' ',' '),	HB_TAG('M','R','I',' ')},	
+  {HB_TAG('m','k',' ',' '),	HB_TAG('M','K','D',' ')},	
+  {HB_TAG('m','l',' ',' '),	HB_TAG('M','A','L',' ')},	
+  {HB_TAG('m','l',' ',' '),	HB_TAG('M','L','R',' ')},	
+  {HB_TAG('m','n',' ',' '),	HB_TAG('M','N','G',' ')},	
+  {HB_TAG('m','o',' ',' '),	HB_TAG('M','O','L',' ')},	
+  {HB_TAG('m','o',' ',' '),	HB_TAG('R','O','M',' ')},	
+  {HB_TAG('m','r',' ',' '),	HB_TAG('M','A','R',' ')},	
+  {HB_TAG('m','s',' ',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('m','t',' ',' '),	HB_TAG('M','T','S',' ')},	
+  {HB_TAG('m','y',' ',' '),	HB_TAG('B','R','M',' ')},	
+  {HB_TAG('n','a',' ',' '),	HB_TAG('N','A','U',' ')},	
+  {HB_TAG('n','b',' ',' '),	HB_TAG('N','O','R',' ')},	
+  {HB_TAG('n','d',' ',' '),	HB_TAG('N','D','B',' ')},	
+  {HB_TAG('n','e',' ',' '),	HB_TAG('N','E','P',' ')},	
+  {HB_TAG('n','g',' ',' '),	HB_TAG('N','D','G',' ')},	
+  {HB_TAG('n','l',' ',' '),	HB_TAG('N','L','D',' ')},	
+  {HB_TAG('n','n',' ',' '),	HB_TAG('N','Y','N',' ')},	
+  {HB_TAG('n','o',' ',' '),	HB_TAG('N','O','R',' ')},	
+  {HB_TAG('n','r',' ',' '),	HB_TAG('N','D','B',' ')},	
+  {HB_TAG('n','v',' ',' '),	HB_TAG('N','A','V',' ')},	
+  {HB_TAG('n','v',' ',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('n','y',' ',' '),	HB_TAG('C','H','I',' ')},	
+  {HB_TAG('o','c',' ',' '),	HB_TAG('O','C','I',' ')},	
+  {HB_TAG('o','j',' ',' '),	HB_TAG('O','J','B',' ')},	
+  {HB_TAG('o','m',' ',' '),	HB_TAG('O','R','O',' ')},	
+  {HB_TAG('o','r',' ',' '),	HB_TAG('O','R','I',' ')},	
+  {HB_TAG('o','s',' ',' '),	HB_TAG('O','S','S',' ')},	
+  {HB_TAG('p','a',' ',' '),	HB_TAG('P','A','N',' ')},	
+  {HB_TAG('p','i',' ',' '),	HB_TAG('P','A','L',' ')},	
+  {HB_TAG('p','l',' ',' '),	HB_TAG('P','L','K',' ')},	
+  {HB_TAG('p','s',' ',' '),	HB_TAG('P','A','S',' ')},	
+  {HB_TAG('p','t',' ',' '),	HB_TAG('P','T','G',' ')},	
+  {HB_TAG('q','u',' ',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('r','m',' ',' '),	HB_TAG('R','M','S',' ')},	
+  {HB_TAG('r','n',' ',' '),	HB_TAG('R','U','N',' ')},	
+  {HB_TAG('r','o',' ',' '),	HB_TAG('R','O','M',' ')},	
+  {HB_TAG('r','u',' ',' '),	HB_TAG('R','U','S',' ')},	
+  {HB_TAG('r','w',' ',' '),	HB_TAG('R','U','A',' ')},	
+  {HB_TAG('s','a',' ',' '),	HB_TAG('S','A','N',' ')},	
+  {HB_TAG('s','c',' ',' '),	HB_TAG('S','R','D',' ')},	
+  {HB_TAG('s','d',' ',' '),	HB_TAG('S','N','D',' ')},	
+  {HB_TAG('s','e',' ',' '),	HB_TAG('N','S','M',' ')},	
+  {HB_TAG('s','g',' ',' '),	HB_TAG('S','G','O',' ')},	
+  {HB_TAG('s','h',' ',' '),	HB_TAG('B','O','S',' ')},	
+  {HB_TAG('s','h',' ',' '),	HB_TAG('H','R','V',' ')},	
+  {HB_TAG('s','h',' ',' '),	HB_TAG('S','R','B',' ')},	
+  {HB_TAG('s','i',' ',' '),	HB_TAG('S','N','H',' ')},	
+  {HB_TAG('s','k',' ',' '),	HB_TAG('S','K','Y',' ')},	
+  {HB_TAG('s','l',' ',' '),	HB_TAG('S','L','V',' ')},	
+  {HB_TAG('s','m',' ',' '),	HB_TAG('S','M','O',' ')},	
+  {HB_TAG('s','n',' ',' '),	HB_TAG('S','N','A','0')},	
+  {HB_TAG('s','o',' ',' '),	HB_TAG('S','M','L',' ')},	
+  {HB_TAG('s','q',' ',' '),	HB_TAG('S','Q','I',' ')},	
+  {HB_TAG('s','r',' ',' '),	HB_TAG('S','R','B',' ')},	
+  {HB_TAG('s','s',' ',' '),	HB_TAG('S','W','Z',' ')},	
+  {HB_TAG('s','t',' ',' '),	HB_TAG('S','O','T',' ')},	
+  {HB_TAG('s','u',' ',' '),	HB_TAG('S','U','N',' ')},	
+  {HB_TAG('s','v',' ',' '),	HB_TAG('S','V','E',' ')},	
+  {HB_TAG('s','w',' ',' '),	HB_TAG('S','W','K',' ')},	
+  {HB_TAG('t','a',' ',' '),	HB_TAG('T','A','M',' ')},	
+  {HB_TAG('t','e',' ',' '),	HB_TAG('T','E','L',' ')},	
+  {HB_TAG('t','g',' ',' '),	HB_TAG('T','A','J',' ')},	
+  {HB_TAG('t','h',' ',' '),	HB_TAG('T','H','A',' ')},	
+  {HB_TAG('t','i',' ',' '),	HB_TAG('T','G','Y',' ')},	
+  {HB_TAG('t','k',' ',' '),	HB_TAG('T','K','M',' ')},	
+  {HB_TAG('t','l',' ',' '),	HB_TAG('T','G','L',' ')},	
+  {HB_TAG('t','n',' ',' '),	HB_TAG('T','N','A',' ')},	
+  {HB_TAG('t','o',' ',' '),	HB_TAG('T','G','N',' ')},	
+  {HB_TAG('t','r',' ',' '),	HB_TAG('T','R','K',' ')},	
+  {HB_TAG('t','s',' ',' '),	HB_TAG('T','S','G',' ')},	
+  {HB_TAG('t','t',' ',' '),	HB_TAG('T','A','T',' ')},	
+  {HB_TAG('t','w',' ',' '),	HB_TAG('T','W','I',' ')},	
+  {HB_TAG('t','w',' ',' '),	HB_TAG('A','K','A',' ')},	
+  {HB_TAG('t','y',' ',' '),	HB_TAG('T','H','T',' ')},	
+  {HB_TAG('u','g',' ',' '),	HB_TAG('U','Y','G',' ')},	
+  {HB_TAG('u','k',' ',' '),	HB_TAG('U','K','R',' ')},	
+  {HB_TAG('u','r',' ',' '),	HB_TAG('U','R','D',' ')},	
+  {HB_TAG('u','z',' ',' '),	HB_TAG('U','Z','B',' ')},	
+  {HB_TAG('v','e',' ',' '),	HB_TAG('V','E','N',' ')},	
+  {HB_TAG('v','i',' ',' '),	HB_TAG('V','I','T',' ')},	
+  {HB_TAG('v','o',' ',' '),	HB_TAG('V','O','L',' ')},	
+  {HB_TAG('w','a',' ',' '),	HB_TAG('W','L','N',' ')},	
+  {HB_TAG('w','o',' ',' '),	HB_TAG('W','L','F',' ')},	
+  {HB_TAG('x','h',' ',' '),	HB_TAG('X','H','S',' ')},	
+  {HB_TAG('y','i',' ',' '),	HB_TAG('J','I','I',' ')},	
+  {HB_TAG('y','o',' ',' '),	HB_TAG('Y','B','A',' ')},	
+  {HB_TAG('z','a',' ',' '),	HB_TAG('Z','H','A',' ')},	
+  {HB_TAG('z','h',' ',' '),	HB_TAG('Z','H','S',' ')},	
+  {HB_TAG('z','u',' ',' '),	HB_TAG('Z','U','L',' ')},	
+};
+
+static const LangTag ot_languages3[] = {
+  {HB_TAG('a','a','e',' '),	HB_TAG('S','Q','I',' ')},	
+  {HB_TAG('a','a','o',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','a','t',' '),	HB_TAG('S','Q','I',' ')},	
+  {HB_TAG('a','b','a',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('a','b','h',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','b','q',' '),	HB_TAG('A','B','A',' ')},	
+  {HB_TAG('a','b','s',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('a','b','v',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','c','f',' '),	HB_TAG('F','A','N',' ')},	
+  {HB_TAG('a','c','f',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('a','c','m',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','c','q',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','c','r',' '),	HB_TAG('A','C','R',' ')},	
+  {HB_TAG('a','c','r',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('a','c','w',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','c','x',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','c','y',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','d','a',' '),	HB_TAG('D','N','G',' ')},	
+  {HB_TAG('a','d','f',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','d','p',' '),	HB_TAG('D','Z','N',' ')},	
+	
+  {HB_TAG('a','e','b',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','e','c',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','f','b',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','f','k',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('a','f','s',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('a','g','u',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('a','g','w',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('a','h','g',' '),	HB_TAG('A','G','W',' ')},	
+  {HB_TAG('a','h','t',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('a','i','g',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('a','i','i',' '),	HB_TAG('S','W','A',' ')},	
+  {HB_TAG('a','i','i',' '),	HB_TAG('S','Y','R',' ')},	
+	
+  {HB_TAG('a','i','w',' '),	HB_TAG('A','R','I',' ')},	
+  {HB_TAG('a','j','p',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','j','t',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','k','b',' '),	HB_TAG('A','K','B',' ')},	
+  {HB_TAG('a','k','b',' '),	HB_TAG('B','T','K',' ')},	
+  {HB_TAG('a','l','n',' '),	HB_TAG('S','Q','I',' ')},	
+  {HB_TAG('a','l','s',' '),	HB_TAG('S','Q','I',' ')},	
+	
+  {HB_TAG('a','m','f',' '),	HB_TAG('H','B','N',' ')},	
+  {HB_TAG('a','m','w',' '),	HB_TAG('S','Y','R',' ')},	
+	
+  {HB_TAG('a','o','a',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('a','p','a',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('a','p','c',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','p','d',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','p','j',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('a','p','k',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('a','p','l',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('a','p','m',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('a','p','w',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('a','r','b',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','r','i',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('a','r','k',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('a','r','n',' '),	HB_TAG('M','A','P',' ')},	
+  {HB_TAG('a','r','q',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','r','s',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','r','y',' '),	HB_TAG('M','O','R',' ')},	
+  {HB_TAG('a','r','y',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','r','z',' '),	HB_TAG('A','R','A',' ')},	
+	
+	
+  {HB_TAG('a','t','j',' '),	HB_TAG('R','C','R',' ')},	
+  {HB_TAG('a','t','v',' '),	HB_TAG('A','L','T',' ')},	
+  {HB_TAG('a','u','j',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('a','u','z',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','v','l',' '),	HB_TAG('A','R','A',' ')},	
+	
+	
+  {HB_TAG('a','y','c',' '),	HB_TAG('A','Y','M',' ')},	
+  {HB_TAG('a','y','h',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','y','l',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','y','n',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','y','p',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('a','y','r',' '),	HB_TAG('A','Y','M',' ')},	
+  {HB_TAG('a','z','b',' '),	HB_TAG('A','Z','B',' ')},	
+  {HB_TAG('a','z','b',' '),	HB_TAG('A','Z','E',' ')},	
+  {HB_TAG('a','z','d',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('a','z','j',' '),	HB_TAG('A','Z','E',' ')},	
+  {HB_TAG('a','z','n',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('a','z','z',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('b','a','d',' '),	HB_TAG('B','A','D','0')},	
+  {HB_TAG('b','a','g',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('b','a','h',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('b','a','i',' '),	HB_TAG('B','M','L',' ')},	
+  {HB_TAG('b','a','l',' '),	HB_TAG('B','L','I',' ')},	
+	
+	
+  {HB_TAG('b','a','u',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('b','b','c',' '),	HB_TAG('B','B','C',' ')},	
+  {HB_TAG('b','b','c',' '),	HB_TAG('B','T','K',' ')},	
+  {HB_TAG('b','b','j',' '),	HB_TAG('B','M','L',' ')},	
+  {HB_TAG('b','b','p',' '),	HB_TAG('B','A','D','0')},	
+  {HB_TAG('b','b','r',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('b','b','z',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('b','c','c',' '),	HB_TAG('B','L','I',' ')},	
+  {HB_TAG('b','c','h',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('b','c','i',' '),	HB_TAG('B','A','U',' ')},	
+  {HB_TAG('b','c','l',' '),	HB_TAG('B','I','K',' ')},	
+  {HB_TAG('b','c','q',' '),	HB_TAG('B','C','H',' ')},	
+  {HB_TAG('b','c','r',' '),	HB_TAG('A','T','H',' ')},	
+	
+  {HB_TAG('b','e','a',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('b','e','b',' '),	HB_TAG('B','T','I',' ')},	
+	
+  {HB_TAG('b','e','r',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('b','e','w',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('b','f','l',' '),	HB_TAG('B','A','D','0')},	
+  {HB_TAG('b','f','q',' '),	HB_TAG('B','A','D',' ')},	
+  {HB_TAG('b','f','t',' '),	HB_TAG('B','L','T',' ')},	
+  {HB_TAG('b','f','u',' '),	HB_TAG('L','A','H',' ')},	
+  {HB_TAG('b','f','y',' '),	HB_TAG('B','A','G',' ')},	
+	
+  {HB_TAG('b','g','n',' '),	HB_TAG('B','L','I',' ')},	
+  {HB_TAG('b','g','p',' '),	HB_TAG('B','L','I',' ')},	
+  {HB_TAG('b','g','q',' '),	HB_TAG('B','G','Q',' ')},	
+  {HB_TAG('b','g','q',' '),	HB_TAG('R','A','J',' ')},	
+  {HB_TAG('b','g','r',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('b','h','b',' '),	HB_TAG('B','H','I',' ')},	
+	
+  {HB_TAG('b','h','k',' '),	HB_TAG('B','I','K',' ')},	
+	
+  {HB_TAG('b','h','r',' '),	HB_TAG('M','L','G',' ')},	
+	
+  {HB_TAG('b','i','l',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('b','i','n',' '),	HB_TAG('E','D','O',' ')},	
+  {HB_TAG('b','i','u',' '),	HB_TAG('Q','I','N',' ')},	
+	
+  {HB_TAG('b','j','n',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('b','j','o',' '),	HB_TAG('B','A','D','0')},	
+  {HB_TAG('b','j','q',' '),	HB_TAG('M','L','G',' ')},	
+  {HB_TAG('b','j','s',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('b','j','t',' '),	HB_TAG('B','L','N',' ')},	
+  {HB_TAG('b','k','f',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('b','k','o',' '),	HB_TAG('B','M','L',' ')},	
+  {HB_TAG('b','l','a',' '),	HB_TAG('B','K','F',' ')},	
+  {HB_TAG('b','l','e',' '),	HB_TAG('B','L','N',' ')},	
+  {HB_TAG('b','l','g',' '),	HB_TAG('I','B','A',' ')},	
+  {HB_TAG('b','l','i',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('b','l','k',' '),	HB_TAG('B','L','K',' ')},	
+  {HB_TAG('b','l','k',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('b','l','n',' '),	HB_TAG('B','I','K',' ')},	
+  {HB_TAG('b','l','t',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('b','m','b',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('b','m','l',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('b','m','m',' '),	HB_TAG('M','L','G',' ')},	
+  {HB_TAG('b','p','d',' '),	HB_TAG('B','A','D','0')},	
+  {HB_TAG('b','p','l',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('b','p','q',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('b','q','i',' '),	HB_TAG('L','R','C',' ')},	
+  {HB_TAG('b','q','k',' '),	HB_TAG('B','A','D','0')},	
+  {HB_TAG('b','r','a',' '),	HB_TAG('B','R','I',' ')},	
+  {HB_TAG('b','r','c',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('b','r','i',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('b','r','m',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('b','s','h',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('b','t','b',' '),	HB_TAG('B','T','I',' ')},	
+  {HB_TAG('b','t','d',' '),	HB_TAG('B','T','D',' ')},	
+  {HB_TAG('b','t','d',' '),	HB_TAG('B','T','K',' ')},	
+  {HB_TAG('b','t','i',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('b','t','j',' '),	HB_TAG('M','L','Y',' ')},	
+	
+  {HB_TAG('b','t','m',' '),	HB_TAG('B','T','M',' ')},	
+  {HB_TAG('b','t','m',' '),	HB_TAG('B','T','K',' ')},	
+  {HB_TAG('b','t','o',' '),	HB_TAG('B','I','K',' ')},	
+  {HB_TAG('b','t','s',' '),	HB_TAG('B','T','S',' ')},	
+  {HB_TAG('b','t','s',' '),	HB_TAG('B','T','K',' ')},	
+  {HB_TAG('b','t','x',' '),	HB_TAG('B','T','X',' ')},	
+  {HB_TAG('b','t','x',' '),	HB_TAG('B','T','K',' ')},	
+  {HB_TAG('b','t','z',' '),	HB_TAG('B','T','Z',' ')},	
+  {HB_TAG('b','t','z',' '),	HB_TAG('B','T','K',' ')},	
+	
+  {HB_TAG('b','u','m',' '),	HB_TAG('B','T','I',' ')},	
+  {HB_TAG('b','v','e',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('b','v','u',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('b','w','e',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('b','x','k',' '),	HB_TAG('L','U','H',' ')},	
+  {HB_TAG('b','x','o',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('b','x','p',' '),	HB_TAG('B','T','I',' ')},	
+  {HB_TAG('b','x','r',' '),	HB_TAG('R','B','U',' ')},	
+  {HB_TAG('b','y','n',' '),	HB_TAG('B','I','L',' ')},	
+  {HB_TAG('b','y','v',' '),	HB_TAG('B','Y','V',' ')},	
+  {HB_TAG('b','y','v',' '),	HB_TAG('B','M','L',' ')},	
+  {HB_TAG('b','z','c',' '),	HB_TAG('M','L','G',' ')},	
+  {HB_TAG('b','z','j',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('b','z','k',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('c','a','a',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('c','a','c',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('c','a','f',' '),	HB_TAG('C','R','R',' ')},	
+  {HB_TAG('c','a','f',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('c','a','k',' '),	HB_TAG('C','A','K',' ')},	
+  {HB_TAG('c','a','k',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('c','b','k',' '),	HB_TAG('C','B','K',' ')},	
+  {HB_TAG('c','b','k',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('c','b','l',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','c','l',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('c','c','m',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('c','c','o',' '),	HB_TAG('C','C','H','N')},	
+  {HB_TAG('c','c','q',' '),	HB_TAG('A','R','K',' ')},	
+  {HB_TAG('c','d','o',' '),	HB_TAG('Z','H','S',' ')},	
+	
+  {HB_TAG('c','e','k',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','e','y',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','f','m',' '),	HB_TAG('H','A','L',' ')},	
+  {HB_TAG('c','f','m',' '),	HB_TAG('Q','I','N',' ')},	
+	
+  {HB_TAG('c','h','f',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('c','h','g',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('c','h','h',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('c','h','j',' '),	HB_TAG('C','C','H','N')},	
+  {HB_TAG('c','h','k',' '),	HB_TAG('C','H','K','0')},	
+  {HB_TAG('c','h','m',' '),	HB_TAG('H','M','A',' ')},	
+  {HB_TAG('c','h','m',' '),	HB_TAG('L','M','A',' ')},	
+  {HB_TAG('c','h','n',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('c','h','p',' '),	HB_TAG('C','H','P',' ')},	
+  {HB_TAG('c','h','p',' '),	HB_TAG('S','A','Y',' ')},	
+  {HB_TAG('c','h','p',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('c','h','q',' '),	HB_TAG('C','C','H','N')},	
+	
+	
+  {HB_TAG('c','h','z',' '),	HB_TAG('C','C','H','N')},	
+  {HB_TAG('c','i','w',' '),	HB_TAG('O','J','B',' ')},	
+	
+	
+  {HB_TAG('c','j','y',' '),	HB_TAG('Z','H','S',' ')},	
+  {HB_TAG('c','k','a',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','k','b',' '),	HB_TAG('K','U','R',' ')},	
+  {HB_TAG('c','k','n',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','k','s',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('c','k','t',' '),	HB_TAG('C','H','K',' ')},	
+  {HB_TAG('c','k','z',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('c','l','c',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('c','l','d',' '),	HB_TAG('S','Y','R',' ')},	
+  {HB_TAG('c','l','e',' '),	HB_TAG('C','C','H','N')},	
+  {HB_TAG('c','l','j',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','l','t',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','m','n',' '),	HB_TAG('Z','H','S',' ')},	
+  {HB_TAG('c','m','r',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','n','b',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','n','h',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','n','k',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','n','l',' '),	HB_TAG('C','C','H','N')},	
+  {HB_TAG('c','n','p',' '),	HB_TAG('Z','H','S',' ')},	
+  {HB_TAG('c','n','r',' '),	HB_TAG('S','R','B',' ')},	
+  {HB_TAG('c','n','t',' '),	HB_TAG('C','C','H','N')},	
+  {HB_TAG('c','n','u',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('c','n','w',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','o','a',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('c','o','b',' '),	HB_TAG('M','Y','N',' ')},	
+	
+  {HB_TAG('c','o','q',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('c','p','a',' '),	HB_TAG('C','C','H','N')},	
+  {HB_TAG('c','p','e',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('c','p','f',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('c','p','i',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('c','p','x',' '),	HB_TAG('Z','H','S',' ')},	
+  {HB_TAG('c','q','d',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('c','q','u',' '),	HB_TAG('Q','U','H',' ')},	
+  {HB_TAG('c','q','u',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('c','r','h',' '),	HB_TAG('C','R','T',' ')},	
+  {HB_TAG('c','r','i',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('c','r','j',' '),	HB_TAG('E','C','R',' ')},	
+  {HB_TAG('c','r','j',' '),	HB_TAG('Y','C','R',' ')},	
+  {HB_TAG('c','r','j',' '),	HB_TAG('C','R','E',' ')},	
+  {HB_TAG('c','r','k',' '),	HB_TAG('W','C','R',' ')},	
+  {HB_TAG('c','r','k',' '),	HB_TAG('Y','C','R',' ')},	
+  {HB_TAG('c','r','k',' '),	HB_TAG('C','R','E',' ')},	
+  {HB_TAG('c','r','l',' '),	HB_TAG('E','C','R',' ')},	
+  {HB_TAG('c','r','l',' '),	HB_TAG('Y','C','R',' ')},	
+  {HB_TAG('c','r','l',' '),	HB_TAG('C','R','E',' ')},	
+  {HB_TAG('c','r','m',' '),	HB_TAG('M','C','R',' ')},	
+  {HB_TAG('c','r','m',' '),	HB_TAG('L','C','R',' ')},	
+  {HB_TAG('c','r','m',' '),	HB_TAG('C','R','E',' ')},	
+  {HB_TAG('c','r','p',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('c','r','r',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('c','r','s',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('c','r','t',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('c','r','x',' '),	HB_TAG('C','R','R',' ')},	
+  {HB_TAG('c','r','x',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('c','s','a',' '),	HB_TAG('C','C','H','N')},	
+	
+  {HB_TAG('c','s','h',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','s','j',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','s','l',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('c','s','o',' '),	HB_TAG('C','C','H','N')},	
+  {HB_TAG('c','s','p',' '),	HB_TAG('Z','H','S',' ')},	
+  {HB_TAG('c','s','v',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','s','w',' '),	HB_TAG('N','C','R',' ')},	
+  {HB_TAG('c','s','w',' '),	HB_TAG('N','H','C',' ')},	
+  {HB_TAG('c','s','w',' '),	HB_TAG('C','R','E',' ')},	
+  {HB_TAG('c','s','y',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','t','c',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('c','t','d',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','t','e',' '),	HB_TAG('C','C','H','N')},	
+	
+  {HB_TAG('c','t','h',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('c','t','l',' '),	HB_TAG('C','C','H','N')},	
+  {HB_TAG('c','t','s',' '),	HB_TAG('B','I','K',' ')},	
+	
+  {HB_TAG('c','t','u',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('c','u','c',' '),	HB_TAG('C','C','H','N')},	
+	
+  {HB_TAG('c','v','n',' '),	HB_TAG('C','C','H','N')},	
+  {HB_TAG('c','w','d',' '),	HB_TAG('D','C','R',' ')},	
+  {HB_TAG('c','w','d',' '),	HB_TAG('T','C','R',' ')},	
+  {HB_TAG('c','w','d',' '),	HB_TAG('C','R','E',' ')},	
+  {HB_TAG('c','z','h',' '),	HB_TAG('Z','H','S',' ')},	
+  {HB_TAG('c','z','o',' '),	HB_TAG('Z','H','S',' ')},	
+  {HB_TAG('c','z','t',' '),	HB_TAG('Q','I','N',' ')},	
+	
+  {HB_TAG('d','a','o',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('d','a','p',' '),	HB_TAG('N','I','S',' ')},	
+	
+	
+  {HB_TAG('d','c','r',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('d','e','n',' '),	HB_TAG('S','L','A',' ')},	
+  {HB_TAG('d','e','n',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('d','e','p',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('d','g','o',' '),	HB_TAG('D','G','O',' ')},	
+  {HB_TAG('d','g','o',' '),	HB_TAG('D','G','R',' ')},	
+  {HB_TAG('d','g','r',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('d','h','d',' '),	HB_TAG('M','A','W',' ')},	
+	
+  {HB_TAG('d','h','v',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('d','i','b',' '),	HB_TAG('D','N','K',' ')},	
+  {HB_TAG('d','i','k',' '),	HB_TAG('D','N','K',' ')},	
+  {HB_TAG('d','i','n',' '),	HB_TAG('D','N','K',' ')},	
+  {HB_TAG('d','i','p',' '),	HB_TAG('D','N','K',' ')},	
+  {HB_TAG('d','i','q',' '),	HB_TAG('D','I','Q',' ')},	
+  {HB_TAG('d','i','q',' '),	HB_TAG('Z','Z','A',' ')},	
+  {HB_TAG('d','i','w',' '),	HB_TAG('D','N','K',' ')},	
+  {HB_TAG('d','j','e',' '),	HB_TAG('D','J','R',' ')},	
+  {HB_TAG('d','j','k',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('d','j','r',' '),	HB_TAG('D','J','R','0')},	
+  {HB_TAG('d','k','s',' '),	HB_TAG('D','N','K',' ')},	
+  {HB_TAG('d','n','g',' '),	HB_TAG('D','U','N',' ')},	
+	
+  {HB_TAG('d','n','k',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('d','o','i',' '),	HB_TAG('D','G','R',' ')},	
+  {HB_TAG('d','r','h',' '),	HB_TAG('M','N','G',' ')},	
+  {HB_TAG('d','r','i',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('d','r','w',' '),	HB_TAG('D','R','I',' ')},	
+  {HB_TAG('d','r','w',' '),	HB_TAG('F','A','R',' ')},	
+  {HB_TAG('d','s','b',' '),	HB_TAG('L','S','B',' ')},	
+  {HB_TAG('d','t','y',' '),	HB_TAG('N','E','P',' ')},	
+	
+  {HB_TAG('d','u','n',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('d','u','p',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('d','w','k',' '),	HB_TAG('K','U','I',' ')},	
+  {HB_TAG('d','w','u',' '),	HB_TAG('D','U','J',' ')},	
+  {HB_TAG('d','w','y',' '),	HB_TAG('D','U','J',' ')},	
+  {HB_TAG('d','y','u',' '),	HB_TAG('J','U','L',' ')},	
+  {HB_TAG('d','z','n',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('e','c','r',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('e','k','k',' '),	HB_TAG('E','T','I',' ')},	
+  {HB_TAG('e','k','y',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('e','m','k',' '),	HB_TAG('E','M','K',' ')},	
+  {HB_TAG('e','m','k',' '),	HB_TAG('M','N','K',' ')},	
+  {HB_TAG('e','m','y',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('e','n','b',' '),	HB_TAG('K','A','L',' ')},	
+  {HB_TAG('e','n','f',' '),	HB_TAG('F','N','E',' ')},	
+  {HB_TAG('e','n','h',' '),	HB_TAG('T','N','E',' ')},	
+  {HB_TAG('e','s','g',' '),	HB_TAG('G','O','N',' ')},	
+  {HB_TAG('e','s','i',' '),	HB_TAG('I','P','K',' ')},	
+  {HB_TAG('e','s','k',' '),	HB_TAG('I','P','K',' ')},	
+	
+  {HB_TAG('e','t','o',' '),	HB_TAG('B','T','I',' ')},	
+  {HB_TAG('e','u','q',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('e','v','e',' '),	HB_TAG('E','V','N',' ')},	
+  {HB_TAG('e','v','n',' '),	HB_TAG('E','V','K',' ')},	
+  {HB_TAG('e','w','o',' '),	HB_TAG('B','T','I',' ')},	
+  {HB_TAG('e','y','o',' '),	HB_TAG('K','A','L',' ')},	
+  {HB_TAG('f','a','b',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('f','a','n',' '),	HB_TAG('F','A','N','0')},	
+  {HB_TAG('f','a','n',' '),	HB_TAG('B','T','I',' ')},	
+  {HB_TAG('f','a','r',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('f','a','t',' '),	HB_TAG('F','A','T',' ')},	
+  {HB_TAG('f','a','t',' '),	HB_TAG('A','K','A',' ')},	
+  {HB_TAG('f','b','l',' '),	HB_TAG('B','I','K',' ')},	
+  {HB_TAG('f','f','m',' '),	HB_TAG('F','U','L',' ')},	
+  {HB_TAG('f','i','l',' '),	HB_TAG('P','I','L',' ')},	
+  {HB_TAG('f','l','m',' '),	HB_TAG('H','A','L',' ')},	
+  {HB_TAG('f','l','m',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('f','m','p',' '),	HB_TAG('F','M','P',' ')},	
+  {HB_TAG('f','m','p',' '),	HB_TAG('B','M','L',' ')},	
+  {HB_TAG('f','n','g',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('f','o','s',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('f','p','e',' '),	HB_TAG('C','P','P',' ')},	
+	
+	
+  {HB_TAG('f','u','b',' '),	HB_TAG('F','U','L',' ')},	
+  {HB_TAG('f','u','c',' '),	HB_TAG('F','U','L',' ')},	
+  {HB_TAG('f','u','e',' '),	HB_TAG('F','U','L',' ')},	
+  {HB_TAG('f','u','f',' '),	HB_TAG('F','T','A',' ')},	
+  {HB_TAG('f','u','f',' '),	HB_TAG('F','U','L',' ')},	
+  {HB_TAG('f','u','h',' '),	HB_TAG('F','U','L',' ')},	
+  {HB_TAG('f','u','i',' '),	HB_TAG('F','U','L',' ')},	
+  {HB_TAG('f','u','q',' '),	HB_TAG('F','U','L',' ')},	
+  {HB_TAG('f','u','r',' '),	HB_TAG('F','R','L',' ')},	
+  {HB_TAG('f','u','v',' '),	HB_TAG('F','U','V',' ')},	
+  {HB_TAG('f','u','v',' '),	HB_TAG('F','U','L',' ')},	
+  {HB_TAG('g','a','a',' '),	HB_TAG('G','A','D',' ')},	
+  {HB_TAG('g','a','c',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('g','a','d',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('g','a','e',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('g','a','l',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('g','a','n',' '),	HB_TAG('Z','H','S',' ')},	
+  {HB_TAG('g','a','r',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('g','a','w',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('g','a','x',' '),	HB_TAG('O','R','O',' ')},	
+  {HB_TAG('g','a','z',' '),	HB_TAG('O','R','O',' ')},	
+  {HB_TAG('g','b','m',' '),	HB_TAG('G','A','W',' ')},	
+  {HB_TAG('g','c','e',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('g','c','f',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('g','c','l',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('g','c','r',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('g','d','a',' '),	HB_TAG('R','A','J',' ')},	
+	
+  {HB_TAG('g','g','o',' '),	HB_TAG('G','O','N',' ')},	
+  {HB_TAG('g','h','a',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('g','h','k',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('g','h','o',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('g','i','b',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('g','i','l',' '),	HB_TAG('G','I','L','0')},	
+  {HB_TAG('g','j','u',' '),	HB_TAG('R','A','J',' ')},	
+  {HB_TAG('g','k','p',' '),	HB_TAG('G','K','P',' ')},	
+  {HB_TAG('g','k','p',' '),	HB_TAG('K','P','L',' ')},	
+  {HB_TAG('g','l','d',' '),	HB_TAG('N','A','N',' ')},	
+	
+  {HB_TAG('g','m','z',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('g','n','b',' '),	HB_TAG('Q','I','N',' ')},	
+	
+  {HB_TAG('g','n','o',' '),	HB_TAG('G','O','N',' ')},	
+  {HB_TAG('g','n','w',' '),	HB_TAG('G','U','A',' ')},	
+	
+  {HB_TAG('g','o','m',' '),	HB_TAG('K','O','K',' ')},	
+	
+  {HB_TAG('g','o','q',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('g','o','x',' '),	HB_TAG('B','A','D','0')},	
+  {HB_TAG('g','p','e',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('g','r','o',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('g','r','r',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('g','r','t',' '),	HB_TAG('G','R','O',' ')},	
+  {HB_TAG('g','r','u',' '),	HB_TAG('S','O','G',' ')},	
+  {HB_TAG('g','s','w',' '),	HB_TAG('A','L','S',' ')},	
+  {HB_TAG('g','u','a',' '),	HB_TAG_NONE	       },	
+	
+	
+  {HB_TAG('g','u','g',' '),	HB_TAG('G','U','A',' ')},	
+  {HB_TAG('g','u','i',' '),	HB_TAG('G','U','A',' ')},	
+  {HB_TAG('g','u','k',' '),	HB_TAG('G','M','Z',' ')},	
+  {HB_TAG('g','u','l',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('g','u','n',' '),	HB_TAG('G','U','A',' ')},	
+	
+  {HB_TAG('g','w','i',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('g','y','n',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('h','a','a',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('h','a','e',' '),	HB_TAG('O','R','O',' ')},	
+  {HB_TAG('h','a','i',' '),	HB_TAG('H','A','I','0')},	
+  {HB_TAG('h','a','k',' '),	HB_TAG('Z','H','S',' ')},	
+  {HB_TAG('h','a','l',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('h','a','r',' '),	HB_TAG('H','R','I',' ')},	
+	
+  {HB_TAG('h','a','x',' '),	HB_TAG('H','A','I','0')},	
+	
+	
+  {HB_TAG('h','b','n',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('h','c','a',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('h','d','n',' '),	HB_TAG('H','A','I','0')},	
+  {HB_TAG('h','e','a',' '),	HB_TAG('H','M','N',' ')},	
+	
+	
+  {HB_TAG('h','j','i',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('h','l','t',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('h','m','a',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','m','c',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','m','d',' '),	HB_TAG('H','M','D',' ')},	
+  {HB_TAG('h','m','d',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','m','e',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','m','g',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','m','h',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','m','i',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','m','j',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','m','l',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','m','m',' '),	HB_TAG('H','M','N',' ')},	
+	
+  {HB_TAG('h','m','p',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','m','q',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','m','r',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('h','m','s',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','m','w',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','m','y',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','m','z',' '),	HB_TAG('H','M','Z',' ')},	
+  {HB_TAG('h','m','z',' '),	HB_TAG('H','M','N',' ')},	
+	
+  {HB_TAG('h','n','e',' '),	HB_TAG('C','H','H',' ')},	
+  {HB_TAG('h','n','j',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','n','o',' '),	HB_TAG('H','N','D',' ')},	
+  {HB_TAG('h','o','c',' '),	HB_TAG('H','O',' ',' ')},	
+  {HB_TAG('h','o','i',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('h','o','j',' '),	HB_TAG('H','A','R',' ')},	
+  {HB_TAG('h','o','j',' '),	HB_TAG('R','A','J',' ')},	
+  {HB_TAG('h','r','a',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('h','r','m',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','s','b',' '),	HB_TAG('U','S','B',' ')},	
+  {HB_TAG('h','s','n',' '),	HB_TAG('Z','H','S',' ')},	
+  {HB_TAG('h','u','j',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('h','u','p',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('h','u','s',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('h','w','c',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('h','y','w',' '),	HB_TAG('H','Y','E',' ')},	
+	
+	
+  {HB_TAG('i','b','y',' '),	HB_TAG('I','J','O',' ')},	
+  {HB_TAG('i','c','r',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('i','d','a',' '),	HB_TAG('L','U','H',' ')},	
+  {HB_TAG('i','d','b',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('i','g','b',' '),	HB_TAG('E','B','I',' ')},	
+  {HB_TAG('i','h','b',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('i','j','c',' '),	HB_TAG('I','J','O',' ')},	
+  {HB_TAG('i','j','e',' '),	HB_TAG('I','J','O',' ')},	
+  {HB_TAG('i','j','n',' '),	HB_TAG('I','J','O',' ')},	
+	
+  {HB_TAG('i','j','s',' '),	HB_TAG('I','J','O',' ')},	
+  {HB_TAG('i','k','e',' '),	HB_TAG('I','N','U',' ')},	
+  {HB_TAG('i','k','e',' '),	HB_TAG('I','N','U','K')},	
+  {HB_TAG('i','k','t',' '),	HB_TAG('I','N','U',' ')},	
+	
+  {HB_TAG('i','n','g',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('i','n','h',' '),	HB_TAG('I','N','G',' ')},	
+  {HB_TAG('i','r','i',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('i','s','m',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('i','t','z',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('i','x','l',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('j','a','c',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('j','a','k',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('j','a','m',' '),	HB_TAG('J','A','M',' ')},	
+  {HB_TAG('j','a','m',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('j','a','n',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('j','a','x',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('j','b','e',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('j','b','n',' '),	HB_TAG('B','B','R',' ')},	
+	
+	
+  {HB_TAG('j','g','o',' '),	HB_TAG('B','M','L',' ')},	
+  {HB_TAG('j','i','i',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('j','k','m',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('j','k','p',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('j','u','d',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('j','u','l',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('j','v','d',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('k','a','a',' '),	HB_TAG('K','R','K',' ')},	
+  {HB_TAG('k','a','b',' '),	HB_TAG('K','A','B','0')},	
+  {HB_TAG('k','a','b',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('k','a','c',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','a','m',' '),	HB_TAG('K','M','B',' ')},	
+  {HB_TAG('k','a','r',' '),	HB_TAG('K','R','N',' ')},	
+	
+  {HB_TAG('k','b','d',' '),	HB_TAG('K','A','B',' ')},	
+  {HB_TAG('k','b','y',' '),	HB_TAG('K','N','R',' ')},	
+  {HB_TAG('k','c','a',' '),	HB_TAG('K','H','K',' ')},	
+  {HB_TAG('k','c','a',' '),	HB_TAG('K','H','S',' ')},	
+  {HB_TAG('k','c','a',' '),	HB_TAG('K','H','V',' ')},	
+  {HB_TAG('k','c','n',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('k','d','r',' '),	HB_TAG('K','R','M',' ')},	
+  {HB_TAG('k','d','t',' '),	HB_TAG('K','U','Y',' ')},	
+  {HB_TAG('k','e','a',' '),	HB_TAG('K','E','A',' ')},	
+  {HB_TAG('k','e','a',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('k','e','b',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','e','k',' '),	HB_TAG('K','E','K',' ')},	
+  {HB_TAG('k','e','k',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('k','e','x',' '),	HB_TAG('K','K','N',' ')},	
+  {HB_TAG('k','f','a',' '),	HB_TAG('K','O','D',' ')},	
+  {HB_TAG('k','f','r',' '),	HB_TAG('K','A','C',' ')},	
+  {HB_TAG('k','f','x',' '),	HB_TAG('K','U','L',' ')},	
+  {HB_TAG('k','f','y',' '),	HB_TAG('K','M','N',' ')},	
+  {HB_TAG('k','g','e',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','h','a',' '),	HB_TAG('K','S','I',' ')},	
+  {HB_TAG('k','h','b',' '),	HB_TAG('X','B','D',' ')},	
+  {HB_TAG('k','h','k',' '),	HB_TAG('M','N','G',' ')},	
+  {HB_TAG('k','h','n',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','h','s',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','h','t',' '),	HB_TAG('K','H','T',' ')},	
+  {HB_TAG('k','h','t',' '),	HB_TAG('K','H','N',' ')},	
+  {HB_TAG('k','h','v',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('k','i','s',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','i','u',' '),	HB_TAG('K','I','U',' ')},	
+  {HB_TAG('k','i','u',' '),	HB_TAG('Z','Z','A',' ')},	
+  {HB_TAG('k','j','b',' '),	HB_TAG('M','Y','N',' ')},	
+	
+  {HB_TAG('k','j','h',' '),	HB_TAG('K','H','A',' ')},	
+  {HB_TAG('k','j','p',' '),	HB_TAG('K','J','P',' ')},	
+  {HB_TAG('k','j','p',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('k','j','t',' '),	HB_TAG('K','R','N',' ')},	
+	
+  {HB_TAG('k','k','n',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','k','z',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('k','l','m',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','l','n',' '),	HB_TAG('K','A','L',' ')},	
+  {HB_TAG('k','m','b',' '),	HB_TAG('M','B','N',' ')},	
+  {HB_TAG('k','m','n',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','m','o',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','m','r',' '),	HB_TAG('K','U','R',' ')},	
+  {HB_TAG('k','m','s',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','m','v',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('k','m','w',' '),	HB_TAG('K','M','O',' ')},	
+	
+  {HB_TAG('k','n','c',' '),	HB_TAG('K','N','R',' ')},	
+  {HB_TAG('k','n','g',' '),	HB_TAG('K','O','N','0')},	
+  {HB_TAG('k','n','j',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('k','n','n',' '),	HB_TAG('K','O','K',' ')},	
+  {HB_TAG('k','n','r',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','o','d',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','o','h',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','o','i',' '),	HB_TAG('K','O','P',' ')},	
+  {HB_TAG('k','o','i',' '),	HB_TAG('K','O','M',' ')},	
+	
+  {HB_TAG('k','o','p',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('k','o','y',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('k','o','z',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','p','e',' '),	HB_TAG('K','P','L',' ')},	
+  {HB_TAG('k','p','l',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','p','p',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('k','p','v',' '),	HB_TAG('K','O','Z',' ')},	
+  {HB_TAG('k','p','v',' '),	HB_TAG('K','O','M',' ')},	
+  {HB_TAG('k','p','y',' '),	HB_TAG('K','Y','K',' ')},	
+  {HB_TAG('k','q','s',' '),	HB_TAG('K','I','S',' ')},	
+  {HB_TAG('k','q','y',' '),	HB_TAG('K','R','T',' ')},	
+  {HB_TAG('k','r','c',' '),	HB_TAG('K','A','R',' ')},	
+  {HB_TAG('k','r','c',' '),	HB_TAG('B','A','L',' ')},	
+  {HB_TAG('k','r','i',' '),	HB_TAG('K','R','I',' ')},	
+  {HB_TAG('k','r','i',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('k','r','k',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('k','r','m',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','r','n',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','r','t',' '),	HB_TAG('K','N','R',' ')},	
+  {HB_TAG('k','r','u',' '),	HB_TAG('K','U','U',' ')},	
+  {HB_TAG('k','s','h',' '),	HB_TAG('K','S','H','0')},	
+  {HB_TAG('k','s','i',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','s','m',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','s','s',' '),	HB_TAG('K','I','S',' ')},	
+  {HB_TAG('k','s','w',' '),	HB_TAG('K','S','W',' ')},	
+  {HB_TAG('k','s','w',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('k','t','b',' '),	HB_TAG('K','E','B',' ')},	
+  {HB_TAG('k','t','u',' '),	HB_TAG('K','O','N',' ')},	
+  {HB_TAG('k','t','w',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('k','u','i',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','u','l',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('k','u','u',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('k','u','w',' '),	HB_TAG('B','A','D','0')},	
+  {HB_TAG('k','u','y',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','v','b',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('k','v','l',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('k','v','q',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('k','v','r',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('k','v','t',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('k','v','u',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('k','v','y',' '),	HB_TAG('K','R','N',' ')},	
+	
+  {HB_TAG('k','w','w',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('k','w','y',' '),	HB_TAG('K','O','N','0')},	
+  {HB_TAG('k','x','c',' '),	HB_TAG('K','M','S',' ')},	
+  {HB_TAG('k','x','d',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('k','x','f',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('k','x','k',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('k','x','l',' '),	HB_TAG('K','U','U',' ')},	
+  {HB_TAG('k','x','u',' '),	HB_TAG('K','U','I',' ')},	
+  {HB_TAG('k','y','k',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('k','y','u',' '),	HB_TAG('K','Y','U',' ')},	
+  {HB_TAG('k','y','u',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('l','a','c',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('l','a','d',' '),	HB_TAG('J','U','D',' ')},	
+  {HB_TAG('l','a','h',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('l','a','k',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('l','a','m',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('l','a','z',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('l','b','e',' '),	HB_TAG('L','A','K',' ')},	
+  {HB_TAG('l','b','j',' '),	HB_TAG('L','D','K',' ')},	
+  {HB_TAG('l','b','l',' '),	HB_TAG('B','I','K',' ')},	
+  {HB_TAG('l','c','e',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('l','c','f',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('l','d','i',' '),	HB_TAG('K','O','N','0')},	
+  {HB_TAG('l','d','k',' '),	HB_TAG_NONE	       },	
+	
+	
+  {HB_TAG('l','i','f',' '),	HB_TAG('L','M','B',' ')},	
+	
+  {HB_TAG('l','i','r',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('l','i','w',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('l','i','y',' '),	HB_TAG('B','A','D','0')},	
+	
+  {HB_TAG('l','k','b',' '),	HB_TAG('L','U','H',' ')},	
+	
+  {HB_TAG('l','k','o',' '),	HB_TAG('L','U','H',' ')},	
+  {HB_TAG('l','k','s',' '),	HB_TAG('L','U','H',' ')},	
+  {HB_TAG('l','l','d',' '),	HB_TAG('L','A','D',' ')},	
+  {HB_TAG('l','m','a',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('l','m','b',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('l','m','n',' '),	HB_TAG('L','A','M',' ')},	
+	
+  {HB_TAG('l','m','w',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('l','n','a',' '),	HB_TAG('B','A','D','0')},	
+  {HB_TAG('l','n','l',' '),	HB_TAG('B','A','D','0')},	
+	
+  {HB_TAG('l','o','u',' '),	HB_TAG('C','P','P',' ')},	
+	
+	
+  {HB_TAG('l','r','i',' '),	HB_TAG('L','U','H',' ')},	
+  {HB_TAG('l','r','m',' '),	HB_TAG('L','U','H',' ')},	
+  {HB_TAG('l','r','t',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('l','s','b',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('l','s','m',' '),	HB_TAG('L','U','H',' ')},	
+  {HB_TAG('l','t','g',' '),	HB_TAG('L','V','I',' ')},	
+  {HB_TAG('l','t','h',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('l','t','o',' '),	HB_TAG('L','U','H',' ')},	
+  {HB_TAG('l','t','s',' '),	HB_TAG('L','U','H',' ')},	
+	
+	
+  {HB_TAG('l','u','s',' '),	HB_TAG('M','I','Z',' ')},	
+  {HB_TAG('l','u','s',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('l','u','y',' '),	HB_TAG('L','U','H',' ')},	
+  {HB_TAG('l','u','z',' '),	HB_TAG('L','R','C',' ')},	
+  {HB_TAG('l','v','i',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('l','v','s',' '),	HB_TAG('L','V','I',' ')},	
+  {HB_TAG('l','w','g',' '),	HB_TAG('L','U','H',' ')},	
+  {HB_TAG('l','z','h',' '),	HB_TAG('Z','H','T',' ')},	
+  {HB_TAG('l','z','z',' '),	HB_TAG('L','A','Z',' ')},	
+	
+	
+  {HB_TAG('m','a','i',' '),	HB_TAG('M','T','H',' ')},	
+  {HB_TAG('m','a','j',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','a','k',' '),	HB_TAG('M','K','R',' ')},	
+  {HB_TAG('m','a','m',' '),	HB_TAG('M','A','M',' ')},	
+  {HB_TAG('m','a','m',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('m','a','n',' '),	HB_TAG('M','N','K',' ')},	
+  {HB_TAG('m','a','p',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','a','w',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','a','x',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('m','a','x',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('m','b','f',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('m','b','n',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('m','c','h',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','c','m',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('m','c','r',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','c','t',' '),	HB_TAG('B','T','I',' ')},	
+  {HB_TAG('m','d','e',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','d','f',' '),	HB_TAG('M','O','K',' ')},	
+	
+  {HB_TAG('m','d','y',' '),	HB_TAG('M','L','E',' ')},	
+  {HB_TAG('m','e','n',' '),	HB_TAG('M','D','E',' ')},	
+  {HB_TAG('m','e','o',' '),	HB_TAG('M','L','Y',' ')},	
+	
+  {HB_TAG('m','f','a',' '),	HB_TAG('M','F','A',' ')},	
+  {HB_TAG('m','f','a',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('m','f','b',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('m','f','e',' '),	HB_TAG('M','F','E',' ')},	
+  {HB_TAG('m','f','e',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('m','f','p',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('m','h','c',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('m','h','r',' '),	HB_TAG('L','M','A',' ')},	
+  {HB_TAG('m','h','v',' '),	HB_TAG('A','R','K',' ')},	
+  {HB_TAG('m','i','n',' '),	HB_TAG('M','I','N',' ')},	
+  {HB_TAG('m','i','n',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('m','i','z',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','k','n',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('m','k','r',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','k','u',' '),	HB_TAG('M','N','K',' ')},	
+	
+  {HB_TAG('m','l','e',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','l','n',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','l','q',' '),	HB_TAG('M','L','N',' ')},	
+  {HB_TAG('m','l','q',' '),	HB_TAG('M','N','K',' ')},	
+  {HB_TAG('m','l','r',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','m','r',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('m','n','c',' '),	HB_TAG('M','C','H',' ')},	
+  {HB_TAG('m','n','d',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','n','g',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','n','h',' '),	HB_TAG('B','A','D','0')},	
+	
+  {HB_TAG('m','n','k',' '),	HB_TAG('M','N','D',' ')},	
+  {HB_TAG('m','n','k',' '),	HB_TAG('M','N','K',' ')},	
+  {HB_TAG('m','n','p',' '),	HB_TAG('Z','H','S',' ')},	
+  {HB_TAG('m','n','s',' '),	HB_TAG('M','A','N',' ')},	
+  {HB_TAG('m','n','w',' '),	HB_TAG('M','O','N',' ')},	
+  {HB_TAG('m','n','w',' '),	HB_TAG('M','O','N','T')},	
+  {HB_TAG('m','n','x',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','o','d',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('m','o','k',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','o','p',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('m','o','r',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('m','p','e',' '),	HB_TAG('M','A','J',' ')},	
+  {HB_TAG('m','q','g',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('m','r','h',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('m','r','j',' '),	HB_TAG('H','M','A',' ')},	
+  {HB_TAG('m','s','c',' '),	HB_TAG('M','N','K',' ')},	
+  {HB_TAG('m','s','h',' '),	HB_TAG('M','L','G',' ')},	
+  {HB_TAG('m','s','i',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('m','s','i',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('m','t','h',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','t','r',' '),	HB_TAG('M','A','W',' ')},	
+  {HB_TAG('m','t','s',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','u','d',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('m','u','i',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('m','u','n',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('m','u','p',' '),	HB_TAG('R','A','J',' ')},	
+  {HB_TAG('m','u','q',' '),	HB_TAG('H','M','N',' ')},	
+	
+  {HB_TAG('m','v','b',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('m','v','e',' '),	HB_TAG('M','A','W',' ')},	
+  {HB_TAG('m','v','f',' '),	HB_TAG('M','N','G',' ')},	
+  {HB_TAG('m','w','k',' '),	HB_TAG('M','N','K',' ')},	
+	
+  {HB_TAG('m','w','q',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('m','w','r',' '),	HB_TAG('M','A','W',' ')},	
+  {HB_TAG('m','w','w',' '),	HB_TAG('M','W','W',' ')},	
+  {HB_TAG('m','w','w',' '),	HB_TAG('H','M','N',' ')},	
+  {HB_TAG('m','y','m',' '),	HB_TAG('M','E','N',' ')},	
+	
+  {HB_TAG('m','y','q',' '),	HB_TAG('M','N','K',' ')},	
+  {HB_TAG('m','y','v',' '),	HB_TAG('E','R','Z',' ')},	
+  {HB_TAG('m','z','b',' '),	HB_TAG('B','B','R',' ')},	
+	
+  {HB_TAG('m','z','s',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('n','a','g',' '),	HB_TAG('N','A','G',' ')},	
+  {HB_TAG('n','a','g',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('n','a','n',' '),	HB_TAG('Z','H','S',' ')},	
+	
+  {HB_TAG('n','a','s',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('n','a','z',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','c','h',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','c','i',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','c','j',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','c','l',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','c','r',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('n','c','x',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','d','b',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('n','d','g',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('n','e','f',' '),	HB_TAG('C','P','P',' ')},	
+	
+	
+  {HB_TAG('n','g','l',' '),	HB_TAG('L','M','W',' ')},	
+  {HB_TAG('n','g','m',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('n','g','o',' '),	HB_TAG('S','X','T',' ')},	
+  {HB_TAG('n','g','r',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('n','g','u',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','h','c',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','h','d',' '),	HB_TAG('G','U','A',' ')},	
+  {HB_TAG('n','h','e',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','h','g',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','h','i',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','h','k',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','h','m',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','h','n',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','h','p',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','h','q',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','h','t',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','h','v',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','h','w',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','h','x',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','h','y',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','h','z',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','i','q',' '),	HB_TAG('K','A','L',' ')},	
+  {HB_TAG('n','i','s',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('n','i','v',' '),	HB_TAG('G','I','L',' ')},	
+  {HB_TAG('n','j','t',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('n','j','z',' '),	HB_TAG('N','I','S',' ')},	
+  {HB_TAG('n','k','o',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('n','k','x',' '),	HB_TAG('I','J','O',' ')},	
+  {HB_TAG('n','l','a',' '),	HB_TAG('B','M','L',' ')},	
+  {HB_TAG('n','l','e',' '),	HB_TAG('L','U','H',' ')},	
+  {HB_TAG('n','l','n',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','l','v',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','n','h',' '),	HB_TAG('B','M','L',' ')},	
+  {HB_TAG('n','n','z',' '),	HB_TAG('B','M','L',' ')},	
+  {HB_TAG('n','o','d',' '),	HB_TAG('N','T','A',' ')},	
+	
+	
+	
+  {HB_TAG('n','p','i',' '),	HB_TAG('N','E','P',' ')},	
+  {HB_TAG('n','p','l',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','q','o',' '),	HB_TAG('N','K','O',' ')},	
+  {HB_TAG('n','s','k',' '),	HB_TAG('N','A','S',' ')},	
+  {HB_TAG('n','s','m',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('n','s','u',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','t','o',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('n','u','e',' '),	HB_TAG('B','A','D','0')},	
+  {HB_TAG('n','u','u',' '),	HB_TAG('B','A','D','0')},	
+  {HB_TAG('n','u','z',' '),	HB_TAG('N','A','H',' ')},	
+  {HB_TAG('n','w','e',' '),	HB_TAG('B','M','L',' ')},	
+  {HB_TAG('n','y','d',' '),	HB_TAG('L','U','H',' ')},	
+	
+  {HB_TAG('n','y','n',' '),	HB_TAG('N','K','L',' ')},	
+	
+	
+  {HB_TAG('o','j','c',' '),	HB_TAG('O','J','B',' ')},	
+  {HB_TAG('o','j','g',' '),	HB_TAG('O','J','B',' ')},	
+  {HB_TAG('o','j','s',' '),	HB_TAG('O','C','R',' ')},	
+  {HB_TAG('o','j','s',' '),	HB_TAG('O','J','B',' ')},	
+  {HB_TAG('o','j','w',' '),	HB_TAG('O','J','B',' ')},	
+  {HB_TAG('o','k','d',' '),	HB_TAG('I','J','O',' ')},	
+  {HB_TAG('o','k','i',' '),	HB_TAG('K','A','L',' ')},	
+  {HB_TAG('o','k','m',' '),	HB_TAG('K','O','H',' ')},	
+  {HB_TAG('o','k','r',' '),	HB_TAG('I','J','O',' ')},	
+  {HB_TAG('o','n','x',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('o','o','r',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('o','r','c',' '),	HB_TAG('O','R','O',' ')},	
+  {HB_TAG('o','r','n',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('o','r','o',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('o','r','r',' '),	HB_TAG('I','J','O',' ')},	
+  {HB_TAG('o','r','s',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('o','r','y',' '),	HB_TAG('O','R','I',' ')},	
+  {HB_TAG('o','t','w',' '),	HB_TAG('O','J','B',' ')},	
+  {HB_TAG('o','u','a',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('p','a','a',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('p','a','l',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('p','a','p',' '),	HB_TAG('P','A','P','0')},	
+  {HB_TAG('p','a','p',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('p','a','s',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('p','b','t',' '),	HB_TAG('P','A','S',' ')},	
+  {HB_TAG('p','b','u',' '),	HB_TAG('P','A','S',' ')},	
+	
+	
+  {HB_TAG('p','c','e',' '),	HB_TAG('P','L','G',' ')},	
+  {HB_TAG('p','c','k',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('p','c','m',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('p','d','u',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('p','e','a',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('p','e','l',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('p','e','s',' '),	HB_TAG('F','A','R',' ')},	
+  {HB_TAG('p','e','y',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('p','g','a',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('p','g','a',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('p','i','h',' '),	HB_TAG('P','I','H',' ')},	
+  {HB_TAG('p','i','h',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('p','i','l',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('p','i','s',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('p','k','h',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('p','k','o',' '),	HB_TAG('K','A','L',' ')},	
+  {HB_TAG('p','l','g',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('p','l','k',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('p','l','l',' '),	HB_TAG('P','L','G',' ')},	
+  {HB_TAG('p','l','n',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('p','l','p',' '),	HB_TAG('P','A','P',' ')},	
+  {HB_TAG('p','l','t',' '),	HB_TAG('M','L','G',' ')},	
+  {HB_TAG('p','m','l',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('p','m','y',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('p','o','c',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('p','o','h',' '),	HB_TAG('P','O','H',' ')},	
+  {HB_TAG('p','o','h',' '),	HB_TAG('M','Y','N',' ')},	
+	
+  {HB_TAG('p','o','v',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('p','p','a',' '),	HB_TAG('B','A','G',' ')},	
+  {HB_TAG('p','r','e',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('p','r','s',' '),	HB_TAG('D','R','I',' ')},	
+  {HB_TAG('p','r','s',' '),	HB_TAG('F','A','R',' ')},	
+  {HB_TAG('p','s','e',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('p','s','t',' '),	HB_TAG('P','A','S',' ')},	
+  {HB_TAG('p','u','b',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('p','u','z',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('p','w','o',' '),	HB_TAG('P','W','O',' ')},	
+  {HB_TAG('p','w','o',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('p','w','w',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('q','u','b',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','u','b',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','u','c',' '),	HB_TAG('Q','U','C',' ')},	
+  {HB_TAG('q','u','c',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('q','u','d',' '),	HB_TAG('Q','V','I',' ')},	
+  {HB_TAG('q','u','d',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','u','f',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','u','g',' '),	HB_TAG('Q','V','I',' ')},	
+  {HB_TAG('q','u','g',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','u','h',' '),	HB_TAG('Q','U','H',' ')},	
+  {HB_TAG('q','u','h',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','u','k',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','u','l',' '),	HB_TAG('Q','U','H',' ')},	
+  {HB_TAG('q','u','l',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','u','m',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('q','u','p',' '),	HB_TAG('Q','V','I',' ')},	
+  {HB_TAG('q','u','p',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','u','r',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','u','r',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','u','s',' '),	HB_TAG('Q','U','H',' ')},	
+  {HB_TAG('q','u','s',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','u','v',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('q','u','w',' '),	HB_TAG('Q','V','I',' ')},	
+  {HB_TAG('q','u','w',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','u','x',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','u','x',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','u','y',' '),	HB_TAG('Q','U','Z',' ')},	
+	
+  {HB_TAG('q','v','a',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','v','a',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','v','c',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','v','e',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','v','h',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','v','h',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','v','i',' '),	HB_TAG('Q','V','I',' ')},	
+  {HB_TAG('q','v','i',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','v','j',' '),	HB_TAG('Q','V','I',' ')},	
+  {HB_TAG('q','v','j',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','v','l',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','v','l',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','v','m',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','v','m',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','v','n',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','v','n',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','v','o',' '),	HB_TAG('Q','V','I',' ')},	
+  {HB_TAG('q','v','o',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','v','p',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','v','p',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','v','s',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','v','w',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','v','w',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','v','z',' '),	HB_TAG('Q','V','I',' ')},	
+  {HB_TAG('q','v','z',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','w','a',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','w','a',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','w','c',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','w','h',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','w','h',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','w','s',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','w','s',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','w','t',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('q','x','a',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','x','a',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','x','c',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','x','c',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','x','h',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','x','h',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','x','l',' '),	HB_TAG('Q','V','I',' ')},	
+  {HB_TAG('q','x','l',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','x','n',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','x','n',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','x','o',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','x','o',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','x','p',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','x','r',' '),	HB_TAG('Q','V','I',' ')},	
+  {HB_TAG('q','x','r',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','x','t',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','x','t',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','x','u',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('q','x','w',' '),	HB_TAG('Q','W','H',' ')},	
+  {HB_TAG('q','x','w',' '),	HB_TAG('Q','U','Z',' ')},	
+  {HB_TAG('r','a','g',' '),	HB_TAG('L','U','H',' ')},	
+	
+  {HB_TAG('r','a','l',' '),	HB_TAG('Q','I','N',' ')},	
+	
+  {HB_TAG('r','b','b',' '),	HB_TAG('P','L','G',' ')},	
+  {HB_TAG('r','b','l',' '),	HB_TAG('B','I','K',' ')},	
+  {HB_TAG('r','c','f',' '),	HB_TAG('C','P','P',' ')},	
+	
+	
+	
+  {HB_TAG('r','i','f',' '),	HB_TAG('R','I','F',' ')},	
+  {HB_TAG('r','i','f',' '),	HB_TAG('B','B','R',' ')},	
+	
+  {HB_TAG('r','k','i',' '),	HB_TAG('A','R','K',' ')},	
+	
+  {HB_TAG('r','m','c',' '),	HB_TAG('R','O','Y',' ')},	
+  {HB_TAG('r','m','f',' '),	HB_TAG('R','O','Y',' ')},	
+  {HB_TAG('r','m','l',' '),	HB_TAG('R','O','Y',' ')},	
+  {HB_TAG('r','m','n',' '),	HB_TAG('R','O','Y',' ')},	
+  {HB_TAG('r','m','o',' '),	HB_TAG('R','O','Y',' ')},	
+  {HB_TAG('r','m','s',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('r','m','w',' '),	HB_TAG('R','O','Y',' ')},	
+  {HB_TAG('r','m','y',' '),	HB_TAG('R','M','Y',' ')},	
+  {HB_TAG('r','m','y',' '),	HB_TAG('R','O','Y',' ')},	
+  {HB_TAG('r','m','z',' '),	HB_TAG('A','R','K',' ')},	
+  {HB_TAG('r','o','m',' '),	HB_TAG('R','O','Y',' ')},	
+  {HB_TAG('r','o','p',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('r','t','c',' '),	HB_TAG('Q','I','N',' ')},	
+	
+  {HB_TAG('r','u','e',' '),	HB_TAG('R','S','Y',' ')},	
+	
+  {HB_TAG('r','w','r',' '),	HB_TAG('M','A','W',' ')},	
+  {HB_TAG('s','a','d',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('s','a','h',' '),	HB_TAG('Y','A','K',' ')},	
+  {HB_TAG('s','a','m',' '),	HB_TAG('P','A','A',' ')},	
+	
+	
+  {HB_TAG('s','a','y',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('s','c','f',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('s','c','h',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('s','c','i',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('s','c','k',' '),	HB_TAG('S','A','D',' ')},	
+	
+	
+  {HB_TAG('s','c','s',' '),	HB_TAG('S','C','S',' ')},	
+  {HB_TAG('s','c','s',' '),	HB_TAG('S','L','A',' ')},	
+  {HB_TAG('s','c','s',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('s','d','c',' '),	HB_TAG('S','R','D',' ')},	
+  {HB_TAG('s','d','h',' '),	HB_TAG('K','U','R',' ')},	
+  {HB_TAG('s','d','n',' '),	HB_TAG('S','R','D',' ')},	
+  {HB_TAG('s','d','s',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('s','e','h',' '),	HB_TAG('S','N','A',' ')},	
+  {HB_TAG('s','e','k',' '),	HB_TAG('A','T','H',' ')},	
+	
+  {HB_TAG('s','e','z',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('s','f','m',' '),	HB_TAG('S','F','M',' ')},	
+  {HB_TAG('s','f','m',' '),	HB_TAG('H','M','N',' ')},	
+	
+  {HB_TAG('s','g','c',' '),	HB_TAG('K','A','L',' ')},	
+  {HB_TAG('s','g','o',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('s','g','w',' '),	HB_TAG('C','H','G',' ')},	
+  {HB_TAG('s','h','i',' '),	HB_TAG('S','H','I',' ')},	
+  {HB_TAG('s','h','i',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('s','h','l',' '),	HB_TAG('Q','I','N',' ')},	
+	
+  {HB_TAG('s','h','u',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('s','h','y',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('s','i','b',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('s','i','g',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('s','i','z',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('s','j','d',' '),	HB_TAG('K','S','M',' ')},	
+  {HB_TAG('s','j','o',' '),	HB_TAG('S','I','B',' ')},	
+  {HB_TAG('s','j','s',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('s','k','g',' '),	HB_TAG('M','L','G',' ')},	
+  {HB_TAG('s','k','r',' '),	HB_TAG('S','R','K',' ')},	
+  {HB_TAG('s','k','s',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('s','k','w',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('s','k','y',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('s','l','a',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('s','m','a',' '),	HB_TAG('S','S','M',' ')},	
+  {HB_TAG('s','m','d',' '),	HB_TAG('M','B','N',' ')},	
+  {HB_TAG('s','m','j',' '),	HB_TAG('L','S','M',' ')},	
+  {HB_TAG('s','m','l',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('s','m','n',' '),	HB_TAG('I','S','M',' ')},	
+  {HB_TAG('s','m','s',' '),	HB_TAG('S','K','S',' ')},	
+  {HB_TAG('s','m','t',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('s','n','b',' '),	HB_TAG('I','B','A',' ')},	
+  {HB_TAG('s','n','h',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('s','o','g',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('s','p','v',' '),	HB_TAG('O','R','I',' ')},	
+  {HB_TAG('s','p','y',' '),	HB_TAG('K','A','L',' ')},	
+  {HB_TAG('s','r','b',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('s','r','c',' '),	HB_TAG('S','R','D',' ')},	
+  {HB_TAG('s','r','k',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('s','r','m',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('s','r','n',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('s','r','o',' '),	HB_TAG('S','R','D',' ')},	
+	
+  {HB_TAG('s','r','s',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('s','s','h',' '),	HB_TAG('A','R','A',' ')},	
+  {HB_TAG('s','s','l',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('s','s','m',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('s','t','a',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('s','t','v',' '),	HB_TAG('S','I','G',' ')},	
+	
+  {HB_TAG('s','u','q',' '),	HB_TAG('S','U','R',' ')},	
+  {HB_TAG('s','u','r',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('s','v','c',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('s','v','e',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('s','w','b',' '),	HB_TAG('C','M','R',' ')},	
+  {HB_TAG('s','w','c',' '),	HB_TAG('S','W','K',' ')},	
+  {HB_TAG('s','w','h',' '),	HB_TAG('S','W','K',' ')},	
+  {HB_TAG('s','w','k',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('s','w','n',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('s','w','v',' '),	HB_TAG('M','A','W',' ')},	
+	
+  {HB_TAG('s','y','c',' '),	HB_TAG('S','Y','R',' ')},	
+	
+	
+	
+  {HB_TAG('t','a','a',' '),	HB_TAG('A','T','H',' ')},	
+	
+  {HB_TAG('t','a','j',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('t','a','q',' '),	HB_TAG('T','M','H',' ')},	
+  {HB_TAG('t','a','q',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('t','a','s',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('t','a','u',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('t','c','b',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('t','c','e',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('t','c','h',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('t','c','p',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('t','c','s',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('t','c','y',' '),	HB_TAG('T','U','L',' ')},	
+  {HB_TAG('t','c','z',' '),	HB_TAG('Q','I','N',' ')},	
+	
+  {HB_TAG('t','d','x',' '),	HB_TAG('M','L','G',' ')},	
+  {HB_TAG('t','e','c',' '),	HB_TAG('K','A','L',' ')},	
+  {HB_TAG('t','e','m',' '),	HB_TAG('T','M','N',' ')},	
+	
+  {HB_TAG('t','e','z',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('t','f','n',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('t','g','h',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('t','g','j',' '),	HB_TAG('N','I','S',' ')},	
+  {HB_TAG('t','g','n',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('t','g','r',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('t','g','x',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('t','g','y',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('t','h','t',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('t','h','v',' '),	HB_TAG('T','M','H',' ')},	
+  {HB_TAG('t','h','v',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('t','h','z',' '),	HB_TAG('T','M','H',' ')},	
+  {HB_TAG('t','h','z',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('t','i','a',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('t','i','g',' '),	HB_TAG('T','G','R',' ')},	
+	
+	
+  {HB_TAG('t','j','o',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('t','k','g',' '),	HB_TAG('M','L','G',' ')},	
+  {HB_TAG('t','k','m',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('t','m','g',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('t','m','h',' '),	HB_TAG('T','M','H',' ')},	
+  {HB_TAG('t','m','h',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('t','m','n',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('t','m','w',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('t','n','a',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('t','n','e',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('t','n','f',' '),	HB_TAG('D','R','I',' ')},	
+  {HB_TAG('t','n','f',' '),	HB_TAG('F','A','R',' ')},	
+  {HB_TAG('t','n','g',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('t','o','d',' '),	HB_TAG('T','O','D','0')},	
+  {HB_TAG('t','o','i',' '),	HB_TAG('T','N','G',' ')},	
+  {HB_TAG('t','o','j',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('t','o','l',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('t','o','r',' '),	HB_TAG('B','A','D','0')},	
+  {HB_TAG('t','p','i',' '),	HB_TAG('T','P','I',' ')},	
+  {HB_TAG('t','p','i',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('t','r','f',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('t','r','k',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('t','r','u',' '),	HB_TAG('T','U','A',' ')},	
+  {HB_TAG('t','r','u',' '),	HB_TAG('S','Y','R',' ')},	
+  {HB_TAG('t','s','g',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('t','t','c',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('t','t','m',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('t','t','q',' '),	HB_TAG('T','M','H',' ')},	
+  {HB_TAG('t','t','q',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('t','u','a',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('t','u','l',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('t','u','u',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('t','u','v',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('t','u','y',' '),	HB_TAG('K','A','L',' ')},	
+	
+  {HB_TAG('t','v','y',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('t','x','c',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('t','x','y',' '),	HB_TAG('M','L','G',' ')},	
+  {HB_TAG('t','y','v',' '),	HB_TAG('T','U','V',' ')},	
+	
+  {HB_TAG('t','z','h',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('t','z','j',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('t','z','m',' '),	HB_TAG('T','Z','M',' ')},	
+  {HB_TAG('t','z','m',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('t','z','o',' '),	HB_TAG('T','Z','O',' ')},	
+  {HB_TAG('t','z','o',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('u','b','l',' '),	HB_TAG('B','I','K',' ')},	
+	
+  {HB_TAG('u','k','i',' '),	HB_TAG('K','U','I',' ')},	
+  {HB_TAG('u','l','n',' '),	HB_TAG('C','P','P',' ')},	
+	
+  {HB_TAG('u','n','r',' '),	HB_TAG('M','U','N',' ')},	
+  {HB_TAG('u','r','k',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('u','s','p',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('u','z','n',' '),	HB_TAG('U','Z','B',' ')},	
+  {HB_TAG('u','z','s',' '),	HB_TAG('U','Z','B',' ')},	
+  {HB_TAG('v','a','p',' '),	HB_TAG('Q','I','N',' ')},	
+	
+  {HB_TAG('v','i','c',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('v','i','t',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('v','k','k',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('v','k','p',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('v','k','t',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('v','l','s',' '),	HB_TAG('F','L','E',' ')},	
+  {HB_TAG('v','m','w',' '),	HB_TAG('M','A','K',' ')},	
+	
+  {HB_TAG('w','a','g',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('w','b','m',' '),	HB_TAG('W','A',' ',' ')},	
+  {HB_TAG('w','b','r',' '),	HB_TAG('W','A','G',' ')},	
+  {HB_TAG('w','b','r',' '),	HB_TAG('R','A','J',' ')},	
+	
+  {HB_TAG('w','e','a',' '),	HB_TAG('K','R','N',' ')},	
+  {HB_TAG('w','e','s',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('w','e','u',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('w','l','c',' '),	HB_TAG('C','M','R',' ')},	
+  {HB_TAG('w','l','e',' '),	HB_TAG('S','I','G',' ')},	
+  {HB_TAG('w','l','k',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('w','n','i',' '),	HB_TAG('C','M','R',' ')},	
+  {HB_TAG('w','r','y',' '),	HB_TAG('M','A','W',' ')},	
+  {HB_TAG('w','s','g',' '),	HB_TAG('G','O','N',' ')},	
+	
+  {HB_TAG('w','u','u',' '),	HB_TAG('Z','H','S',' ')},	
+  {HB_TAG('x','a','l',' '),	HB_TAG('K','L','M',' ')},	
+  {HB_TAG('x','a','l',' '),	HB_TAG('T','O','D',' ')},	
+  {HB_TAG('x','a','n',' '),	HB_TAG('S','E','K',' ')},	
+  {HB_TAG('x','b','d',' '),	HB_TAG_NONE	       },	
+	
+	
+  {HB_TAG('x','m','g',' '),	HB_TAG('B','M','L',' ')},	
+  {HB_TAG('x','m','m',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('x','m','m',' '),	HB_TAG('C','P','P',' ')},	
+  {HB_TAG('x','m','v',' '),	HB_TAG('M','L','G',' ')},	
+  {HB_TAG('x','m','w',' '),	HB_TAG('M','L','G',' ')},	
+  {HB_TAG('x','n','j',' '),	HB_TAG('S','X','T',' ')},	
+  {HB_TAG('x','n','q',' '),	HB_TAG('S','X','T',' ')},	
+  {HB_TAG('x','n','r',' '),	HB_TAG('D','G','R',' ')},	
+	
+  {HB_TAG('x','p','e',' '),	HB_TAG('X','P','E',' ')},	
+  {HB_TAG('x','p','e',' '),	HB_TAG('K','P','L',' ')},	
+  {HB_TAG('x','s','l',' '),	HB_TAG('S','S','L',' ')},	
+  {HB_TAG('x','s','l',' '),	HB_TAG('S','L','A',' ')},	
+  {HB_TAG('x','s','l',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('x','s','t',' '),	HB_TAG('S','I','G',' ')},	
+	
+	
+  {HB_TAG('x','u','p',' '),	HB_TAG('A','T','H',' ')},	
+  {HB_TAG('x','w','o',' '),	HB_TAG('T','O','D',' ')},	
+  {HB_TAG('y','a','j',' '),	HB_TAG('B','A','D','0')},	
+  {HB_TAG('y','a','k',' '),	HB_TAG_NONE	       },	
+	
+	
+  {HB_TAG('y','b','a',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('y','b','b',' '),	HB_TAG('B','M','L',' ')},	
+  {HB_TAG('y','b','d',' '),	HB_TAG('A','R','K',' ')},	
+  {HB_TAG('y','d','d',' '),	HB_TAG('J','I','I',' ')},	
+	
+  {HB_TAG('y','i','h',' '),	HB_TAG('J','I','I',' ')},	
+  {HB_TAG('y','i','m',' '),	HB_TAG_NONE	       },	
+	
+  {HB_TAG('y','o','s',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('y','u','a',' '),	HB_TAG('M','Y','N',' ')},	
+  {HB_TAG('y','u','e',' '),	HB_TAG('Z','H','H',' ')},	
+	
+  {HB_TAG('z','c','h',' '),	HB_TAG('Z','H','A',' ')},	
+  {HB_TAG('z','d','j',' '),	HB_TAG('C','M','R',' ')},	
+	
+  {HB_TAG('z','e','h',' '),	HB_TAG('Z','H','A',' ')},	
+  {HB_TAG('z','e','n',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('z','g','b',' '),	HB_TAG('Z','H','A',' ')},	
+  {HB_TAG('z','g','h',' '),	HB_TAG('Z','G','H',' ')},	
+  {HB_TAG('z','g','h',' '),	HB_TAG('B','B','R',' ')},	
+  {HB_TAG('z','g','m',' '),	HB_TAG('Z','H','A',' ')},	
+  {HB_TAG('z','g','n',' '),	HB_TAG('Z','H','A',' ')},	
+  {HB_TAG('z','h','d',' '),	HB_TAG('Z','H','A',' ')},	
+  {HB_TAG('z','h','n',' '),	HB_TAG('Z','H','A',' ')},	
+  {HB_TAG('z','l','j',' '),	HB_TAG('Z','H','A',' ')},	
+  {HB_TAG('z','l','m',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('z','l','n',' '),	HB_TAG('Z','H','A',' ')},	
+  {HB_TAG('z','l','q',' '),	HB_TAG('Z','H','A',' ')},	
+  {HB_TAG('z','m','i',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('z','m','z',' '),	HB_TAG('B','A','D','0')},	
+  {HB_TAG('z','n','d',' '),	HB_TAG_NONE	       },	
+  {HB_TAG('z','n','e',' '),	HB_TAG('Z','N','D',' ')},	
+  {HB_TAG('z','o','m',' '),	HB_TAG('Q','I','N',' ')},	
+  {HB_TAG('z','q','e',' '),	HB_TAG('Z','H','A',' ')},	
+  {HB_TAG('z','s','m',' '),	HB_TAG('M','L','Y',' ')},	
+  {HB_TAG('z','u','m',' '),	HB_TAG('L','R','C',' ')},	
+  {HB_TAG('z','y','b',' '),	HB_TAG('Z','H','A',' ')},	
+  {HB_TAG('z','y','g',' '),	HB_TAG('Z','H','A',' ')},	
+  {HB_TAG('z','y','j',' '),	HB_TAG('Z','H','A',' ')},	
+  {HB_TAG('z','y','n',' '),	HB_TAG('Z','H','A',' ')},	
+  {HB_TAG('z','y','p',' '),	HB_TAG('Q','I','N',' ')},	
+	
+  {HB_TAG('z','z','j',' '),	HB_TAG('Z','H','A',' ')},	
 };
 
 
@@ -1639,69 +1642,75 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
 				  unsigned int *count ,
 				  hb_tag_t     *tags )
 {
-  if (subtag_matches (lang_str, limit, "-fonnapa"))
+  if (limit - lang_str >= 7)
   {
-    
-    tags[0] = HB_TAG('A','P','P','H');  
-    *count = 1;
-    return true;
+    const char *p = strchr (lang_str, '-');
+    if (!p || p >= limit || limit - p < 5) goto out;
+    if (subtag_matches (p, limit, "-fonnapa", 8))
+    {
+      
+      tags[0] = HB_TAG('A','P','P','H');  
+      *count = 1;
+      return true;
+    }
+    if (subtag_matches (p, limit, "-polyton", 8))
+    {
+      
+      tags[0] = HB_TAG('P','G','R',' ');  
+      *count = 1;
+      return true;
+    }
+    if (subtag_matches (p, limit, "-arevmda", 8))
+    {
+      
+      tags[0] = HB_TAG('H','Y','E',' ');  
+      *count = 1;
+      return true;
+    }
+    if (subtag_matches (p, limit, "-provenc", 8))
+    {
+      
+      tags[0] = HB_TAG('P','R','O',' ');  
+      *count = 1;
+      return true;
+    }
+    if (subtag_matches (p, limit, "-fonipa", 7))
+    {
+      
+      tags[0] = HB_TAG('I','P','P','H');  
+      *count = 1;
+      return true;
+    }
+    if (subtag_matches (p, limit, "-geok", 5))
+    {
+      
+      tags[0] = HB_TAG('K','G','E',' ');  
+      *count = 1;
+      return true;
+    }
+    if (subtag_matches (p, limit, "-syre", 5))
+    {
+      
+      tags[0] = HB_TAG('S','Y','R','E');  
+      *count = 1;
+      return true;
+    }
+    if (subtag_matches (p, limit, "-syrj", 5))
+    {
+      
+      tags[0] = HB_TAG('S','Y','R','J');  
+      *count = 1;
+      return true;
+    }
+    if (subtag_matches (p, limit, "-syrn", 5))
+    {
+      
+      tags[0] = HB_TAG('S','Y','R','N');  
+      *count = 1;
+      return true;
+    }
   }
-  if (subtag_matches (lang_str, limit, "-polyton"))
-  {
-    
-    tags[0] = HB_TAG('P','G','R',' ');  
-    *count = 1;
-    return true;
-  }
-  if (subtag_matches (lang_str, limit, "-arevmda"))
-  {
-    
-    tags[0] = HB_TAG('H','Y','E',' ');  
-    *count = 1;
-    return true;
-  }
-  if (subtag_matches (lang_str, limit, "-provenc"))
-  {
-    
-    tags[0] = HB_TAG('P','R','O',' ');  
-    *count = 1;
-    return true;
-  }
-  if (subtag_matches (lang_str, limit, "-fonipa"))
-  {
-    
-    tags[0] = HB_TAG('I','P','P','H');  
-    *count = 1;
-    return true;
-  }
-  if (subtag_matches (lang_str, limit, "-geok"))
-  {
-    
-    tags[0] = HB_TAG('K','G','E',' ');  
-    *count = 1;
-    return true;
-  }
-  if (subtag_matches (lang_str, limit, "-syre"))
-  {
-    
-    tags[0] = HB_TAG('S','Y','R','E');  
-    *count = 1;
-    return true;
-  }
-  if (subtag_matches (lang_str, limit, "-syrj"))
-  {
-    
-    tags[0] = HB_TAG('S','Y','R','J');  
-    *count = 1;
-    return true;
-  }
-  if (subtag_matches (lang_str, limit, "-syrn"))
-  {
-    
-    tags[0] = HB_TAG('S','Y','R','N');  
-    *count = 1;
-    return true;
-  }
+out:
   switch (lang_str[0])
   {
   case 'a':
@@ -1714,14 +1723,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
     }
     break;
   case 'c':
-    if (lang_matches (&lang_str[1], "do-hant-hk"))
+    if (lang_matches (&lang_str[1], limit, "do-hant-hk", 10))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "do-hant-mo"))
+    if (lang_matches (&lang_str[1], limit, "do-hant-mo", 10))
     {
       
       unsigned int i;
@@ -1734,14 +1743,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = i;
       return true;
     }
-    if (lang_matches (&lang_str[1], "jy-hant-hk"))
+    if (lang_matches (&lang_str[1], limit, "jy-hant-hk", 10))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "jy-hant-mo"))
+    if (lang_matches (&lang_str[1], limit, "jy-hant-mo", 10))
     {
       
       unsigned int i;
@@ -1754,14 +1763,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = i;
       return true;
     }
-    if (lang_matches (&lang_str[1], "mn-hant-hk"))
+    if (lang_matches (&lang_str[1], limit, "mn-hant-hk", 10))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "mn-hant-mo"))
+    if (lang_matches (&lang_str[1], limit, "mn-hant-mo", 10))
     {
       
       unsigned int i;
@@ -1774,14 +1783,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = i;
       return true;
     }
-    if (lang_matches (&lang_str[1], "np-hant-hk"))
+    if (lang_matches (&lang_str[1], limit, "np-hant-hk", 10))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "np-hant-mo"))
+    if (lang_matches (&lang_str[1], limit, "np-hant-mo", 10))
     {
       
       unsigned int i;
@@ -1794,14 +1803,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = i;
       return true;
     }
-    if (lang_matches (&lang_str[1], "px-hant-hk"))
+    if (lang_matches (&lang_str[1], limit, "px-hant-hk", 10))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "px-hant-mo"))
+    if (lang_matches (&lang_str[1], limit, "px-hant-mo", 10))
     {
       
       unsigned int i;
@@ -1814,14 +1823,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = i;
       return true;
     }
-    if (lang_matches (&lang_str[1], "sp-hant-hk"))
+    if (lang_matches (&lang_str[1], limit, "sp-hant-hk", 10))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "sp-hant-mo"))
+    if (lang_matches (&lang_str[1], limit, "sp-hant-mo", 10))
     {
       
       unsigned int i;
@@ -1834,14 +1843,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = i;
       return true;
     }
-    if (lang_matches (&lang_str[1], "zh-hant-hk"))
+    if (lang_matches (&lang_str[1], limit, "zh-hant-hk", 10))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "zh-hant-mo"))
+    if (lang_matches (&lang_str[1], limit, "zh-hant-mo", 10))
     {
       
       unsigned int i;
@@ -1854,14 +1863,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = i;
       return true;
     }
-    if (lang_matches (&lang_str[1], "zo-hant-hk"))
+    if (lang_matches (&lang_str[1], limit, "zo-hant-hk", 10))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "zo-hant-mo"))
+    if (lang_matches (&lang_str[1], limit, "zo-hant-mo", 10))
     {
       
       unsigned int i;
@@ -1874,112 +1883,112 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = i;
       return true;
     }
-    if (lang_matches (&lang_str[1], "do-hans"))
+    if (lang_matches (&lang_str[1], limit, "do-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "do-hant"))
+    if (lang_matches (&lang_str[1], limit, "do-hant", 7))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "jy-hans"))
+    if (lang_matches (&lang_str[1], limit, "jy-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "jy-hant"))
+    if (lang_matches (&lang_str[1], limit, "jy-hant", 7))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "mn-hans"))
+    if (lang_matches (&lang_str[1], limit, "mn-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "mn-hant"))
+    if (lang_matches (&lang_str[1], limit, "mn-hant", 7))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "np-hans"))
+    if (lang_matches (&lang_str[1], limit, "np-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "np-hant"))
+    if (lang_matches (&lang_str[1], limit, "np-hant", 7))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "px-hans"))
+    if (lang_matches (&lang_str[1], limit, "px-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "px-hant"))
+    if (lang_matches (&lang_str[1], limit, "px-hant", 7))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "sp-hans"))
+    if (lang_matches (&lang_str[1], limit, "sp-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "sp-hant"))
+    if (lang_matches (&lang_str[1], limit, "sp-hant", 7))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "zh-hans"))
+    if (lang_matches (&lang_str[1], limit, "zh-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "zh-hant"))
+    if (lang_matches (&lang_str[1], limit, "zh-hant", 7))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "zo-hans"))
+    if (lang_matches (&lang_str[1], limit, "zo-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "zo-hant"))
+    if (lang_matches (&lang_str[1], limit, "zo-hant", 7))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -1987,7 +1996,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "do-", 3)
-	&& subtag_matches (lang_str, limit, "-hk"))
+	&& subtag_matches (lang_str, limit, "-hk", 3))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
@@ -1995,7 +2004,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "do-", 3)
-	&& subtag_matches (lang_str, limit, "-mo"))
+	&& subtag_matches (lang_str, limit, "-mo", 3))
     {
       
       unsigned int i;
@@ -2009,7 +2018,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "do-", 3)
-	&& subtag_matches (lang_str, limit, "-tw"))
+	&& subtag_matches (lang_str, limit, "-tw", 3))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2017,7 +2026,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "jy-", 3)
-	&& subtag_matches (lang_str, limit, "-hk"))
+	&& subtag_matches (lang_str, limit, "-hk", 3))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
@@ -2025,7 +2034,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "jy-", 3)
-	&& subtag_matches (lang_str, limit, "-mo"))
+	&& subtag_matches (lang_str, limit, "-mo", 3))
     {
       
       unsigned int i;
@@ -2039,7 +2048,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "jy-", 3)
-	&& subtag_matches (lang_str, limit, "-tw"))
+	&& subtag_matches (lang_str, limit, "-tw", 3))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2047,7 +2056,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "mn-", 3)
-	&& subtag_matches (lang_str, limit, "-hk"))
+	&& subtag_matches (lang_str, limit, "-hk", 3))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
@@ -2055,7 +2064,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "mn-", 3)
-	&& subtag_matches (lang_str, limit, "-mo"))
+	&& subtag_matches (lang_str, limit, "-mo", 3))
     {
       
       unsigned int i;
@@ -2069,7 +2078,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "mn-", 3)
-	&& subtag_matches (lang_str, limit, "-tw"))
+	&& subtag_matches (lang_str, limit, "-tw", 3))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2077,7 +2086,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "np-", 3)
-	&& subtag_matches (lang_str, limit, "-hk"))
+	&& subtag_matches (lang_str, limit, "-hk", 3))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
@@ -2085,7 +2094,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "np-", 3)
-	&& subtag_matches (lang_str, limit, "-mo"))
+	&& subtag_matches (lang_str, limit, "-mo", 3))
     {
       
       unsigned int i;
@@ -2099,7 +2108,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "np-", 3)
-	&& subtag_matches (lang_str, limit, "-tw"))
+	&& subtag_matches (lang_str, limit, "-tw", 3))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2107,7 +2116,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "px-", 3)
-	&& subtag_matches (lang_str, limit, "-hk"))
+	&& subtag_matches (lang_str, limit, "-hk", 3))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
@@ -2115,7 +2124,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "px-", 3)
-	&& subtag_matches (lang_str, limit, "-mo"))
+	&& subtag_matches (lang_str, limit, "-mo", 3))
     {
       
       unsigned int i;
@@ -2129,7 +2138,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "px-", 3)
-	&& subtag_matches (lang_str, limit, "-tw"))
+	&& subtag_matches (lang_str, limit, "-tw", 3))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2137,7 +2146,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "sp-", 3)
-	&& subtag_matches (lang_str, limit, "-hk"))
+	&& subtag_matches (lang_str, limit, "-hk", 3))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
@@ -2145,7 +2154,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "sp-", 3)
-	&& subtag_matches (lang_str, limit, "-mo"))
+	&& subtag_matches (lang_str, limit, "-mo", 3))
     {
       
       unsigned int i;
@@ -2159,7 +2168,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "sp-", 3)
-	&& subtag_matches (lang_str, limit, "-tw"))
+	&& subtag_matches (lang_str, limit, "-tw", 3))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2167,7 +2176,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "zh-", 3)
-	&& subtag_matches (lang_str, limit, "-hk"))
+	&& subtag_matches (lang_str, limit, "-hk", 3))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
@@ -2175,7 +2184,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "zh-", 3)
-	&& subtag_matches (lang_str, limit, "-mo"))
+	&& subtag_matches (lang_str, limit, "-mo", 3))
     {
       
       unsigned int i;
@@ -2189,7 +2198,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "zh-", 3)
-	&& subtag_matches (lang_str, limit, "-tw"))
+	&& subtag_matches (lang_str, limit, "-tw", 3))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2197,7 +2206,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "zo-", 3)
-	&& subtag_matches (lang_str, limit, "-hk"))
+	&& subtag_matches (lang_str, limit, "-hk", 3))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
@@ -2205,7 +2214,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "zo-", 3)
-	&& subtag_matches (lang_str, limit, "-mo"))
+	&& subtag_matches (lang_str, limit, "-mo", 3))
     {
       
       unsigned int i;
@@ -2219,7 +2228,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "zo-", 3)
-	&& subtag_matches (lang_str, limit, "-tw"))
+	&& subtag_matches (lang_str, limit, "-tw", 3))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2228,14 +2237,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
     }
     break;
   case 'g':
-    if (lang_matches (&lang_str[1], "an-hant-hk"))
+    if (lang_matches (&lang_str[1], limit, "an-hant-hk", 10))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "an-hant-mo"))
+    if (lang_matches (&lang_str[1], limit, "an-hant-mo", 10))
     {
       
       unsigned int i;
@@ -2248,21 +2257,21 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = i;
       return true;
     }
-    if (lang_matches (&lang_str[1], "an-hans"))
+    if (lang_matches (&lang_str[1], limit, "an-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "an-hant"))
+    if (lang_matches (&lang_str[1], limit, "an-hant", 7))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "a-latg"))
+    if (lang_matches (&lang_str[1], limit, "a-latg", 6))
     {
       
       tags[0] = HB_TAG('I','R','T',' ');  
@@ -2270,7 +2279,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "an-", 3)
-	&& subtag_matches (lang_str, limit, "-hk"))
+	&& subtag_matches (lang_str, limit, "-hk", 3))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
@@ -2278,7 +2287,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "an-", 3)
-	&& subtag_matches (lang_str, limit, "-mo"))
+	&& subtag_matches (lang_str, limit, "-mo", 3))
     {
       
       unsigned int i;
@@ -2292,7 +2301,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "an-", 3)
-	&& subtag_matches (lang_str, limit, "-tw"))
+	&& subtag_matches (lang_str, limit, "-tw", 3))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2301,14 +2310,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
     }
     break;
   case 'h':
-    if (lang_matches (&lang_str[1], "ak-hant-hk"))
+    if (lang_matches (&lang_str[1], limit, "ak-hant-hk", 10))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "ak-hant-mo"))
+    if (lang_matches (&lang_str[1], limit, "ak-hant-mo", 10))
     {
       
       unsigned int i;
@@ -2321,14 +2330,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = i;
       return true;
     }
-    if (lang_matches (&lang_str[1], "sn-hant-hk"))
+    if (lang_matches (&lang_str[1], limit, "sn-hant-hk", 10))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "sn-hant-mo"))
+    if (lang_matches (&lang_str[1], limit, "sn-hant-mo", 10))
     {
       
       unsigned int i;
@@ -2341,28 +2350,28 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = i;
       return true;
     }
-    if (lang_matches (&lang_str[1], "ak-hans"))
+    if (lang_matches (&lang_str[1], limit, "ak-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "ak-hant"))
+    if (lang_matches (&lang_str[1], limit, "ak-hant", 7))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "sn-hans"))
+    if (lang_matches (&lang_str[1], limit, "sn-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "sn-hant"))
+    if (lang_matches (&lang_str[1], limit, "sn-hant", 7))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2370,7 +2379,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "ak-", 3)
-	&& subtag_matches (lang_str, limit, "-hk"))
+	&& subtag_matches (lang_str, limit, "-hk", 3))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
@@ -2378,7 +2387,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "ak-", 3)
-	&& subtag_matches (lang_str, limit, "-mo"))
+	&& subtag_matches (lang_str, limit, "-mo", 3))
     {
       
       unsigned int i;
@@ -2392,7 +2401,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "ak-", 3)
-	&& subtag_matches (lang_str, limit, "-tw"))
+	&& subtag_matches (lang_str, limit, "-tw", 3))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2400,7 +2409,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "sn-", 3)
-	&& subtag_matches (lang_str, limit, "-hk"))
+	&& subtag_matches (lang_str, limit, "-hk", 3))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
@@ -2408,7 +2417,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "sn-", 3)
-	&& subtag_matches (lang_str, limit, "-mo"))
+	&& subtag_matches (lang_str, limit, "-mo", 3))
     {
       
       unsigned int i;
@@ -2422,7 +2431,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "sn-", 3)
-	&& subtag_matches (lang_str, limit, "-tw"))
+	&& subtag_matches (lang_str, limit, "-tw", 3))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2460,7 +2469,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
     }
     break;
   case 'l':
-    if (lang_matches (&lang_str[1], "zh-hans"))
+    if (lang_matches (&lang_str[1], limit, "zh-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
@@ -2469,14 +2478,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
     }
     break;
   case 'm':
-    if (lang_matches (&lang_str[1], "np-hant-hk"))
+    if (lang_matches (&lang_str[1], limit, "np-hant-hk", 10))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "np-hant-mo"))
+    if (lang_matches (&lang_str[1], limit, "np-hant-mo", 10))
     {
       
       unsigned int i;
@@ -2489,14 +2498,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = i;
       return true;
     }
-    if (lang_matches (&lang_str[1], "np-hans"))
+    if (lang_matches (&lang_str[1], limit, "np-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "np-hant"))
+    if (lang_matches (&lang_str[1], limit, "np-hant", 7))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2504,7 +2513,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "np-", 3)
-	&& subtag_matches (lang_str, limit, "-hk"))
+	&& subtag_matches (lang_str, limit, "-hk", 3))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
@@ -2512,7 +2521,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "np-", 3)
-	&& subtag_matches (lang_str, limit, "-mo"))
+	&& subtag_matches (lang_str, limit, "-mo", 3))
     {
       
       unsigned int i;
@@ -2526,7 +2535,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "np-", 3)
-	&& subtag_matches (lang_str, limit, "-tw"))
+	&& subtag_matches (lang_str, limit, "-tw", 3))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2534,7 +2543,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "nw-", 3)
-	&& subtag_matches (lang_str, limit, "-th"))
+	&& subtag_matches (lang_str, limit, "-th", 3))
     {
       
       tags[0] = HB_TAG('M','O','N','T');  
@@ -2543,14 +2552,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
     }
     break;
   case 'n':
-    if (lang_matches (&lang_str[1], "an-hant-hk"))
+    if (lang_matches (&lang_str[1], limit, "an-hant-hk", 10))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "an-hant-mo"))
+    if (lang_matches (&lang_str[1], limit, "an-hant-mo", 10))
     {
       
       unsigned int i;
@@ -2563,14 +2572,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = i;
       return true;
     }
-    if (lang_matches (&lang_str[1], "an-hans"))
+    if (lang_matches (&lang_str[1], limit, "an-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "an-hant"))
+    if (lang_matches (&lang_str[1], limit, "an-hant", 7))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2578,7 +2587,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "an-", 3)
-	&& subtag_matches (lang_str, limit, "-hk"))
+	&& subtag_matches (lang_str, limit, "-hk", 3))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
@@ -2586,7 +2595,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "an-", 3)
-	&& subtag_matches (lang_str, limit, "-mo"))
+	&& subtag_matches (lang_str, limit, "-mo", 3))
     {
       
       unsigned int i;
@@ -2600,7 +2609,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "an-", 3)
-	&& subtag_matches (lang_str, limit, "-tw"))
+	&& subtag_matches (lang_str, limit, "-tw", 3))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2624,7 +2633,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
     break;
   case 'r':
     if (0 == strncmp (&lang_str[1], "o-", 2)
-	&& subtag_matches (lang_str, limit, "-md"))
+	&& subtag_matches (lang_str, limit, "-md", 3))
     {
       
       unsigned int i;
@@ -2639,14 +2648,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
     }
     break;
   case 'w':
-    if (lang_matches (&lang_str[1], "uu-hant-hk"))
+    if (lang_matches (&lang_str[1], limit, "uu-hant-hk", 10))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "uu-hant-mo"))
+    if (lang_matches (&lang_str[1], limit, "uu-hant-mo", 10))
     {
       
       unsigned int i;
@@ -2659,14 +2668,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = i;
       return true;
     }
-    if (lang_matches (&lang_str[1], "uu-hans"))
+    if (lang_matches (&lang_str[1], limit, "uu-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "uu-hant"))
+    if (lang_matches (&lang_str[1], limit, "uu-hant", 7))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2674,7 +2683,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "uu-", 3)
-	&& subtag_matches (lang_str, limit, "-hk"))
+	&& subtag_matches (lang_str, limit, "-hk", 3))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
@@ -2682,7 +2691,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "uu-", 3)
-	&& subtag_matches (lang_str, limit, "-mo"))
+	&& subtag_matches (lang_str, limit, "-mo", 3))
     {
       
       unsigned int i;
@@ -2696,7 +2705,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "uu-", 3)
-	&& subtag_matches (lang_str, limit, "-tw"))
+	&& subtag_matches (lang_str, limit, "-tw", 3))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2705,7 +2714,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
     }
     break;
   case 'y':
-    if (lang_matches (&lang_str[1], "ue-hans"))
+    if (lang_matches (&lang_str[1], limit, "ue-hans", 7))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
@@ -2714,14 +2723,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
     }
     break;
   case 'z':
-    if (lang_matches (&lang_str[1], "h-hant-hk"))
+    if (lang_matches (&lang_str[1], limit, "h-hant-hk", 9))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "h-hant-mo"))
+    if (lang_matches (&lang_str[1], limit, "h-hant-mo", 9))
     {
       
       unsigned int i;
@@ -2741,14 +2750,14 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "h-hans"))
+    if (lang_matches (&lang_str[1], limit, "h-hans", 6))
     {
       
       tags[0] = HB_TAG('Z','H','S',' ');  
       *count = 1;
       return true;
     }
-    if (lang_matches (&lang_str[1], "h-hant"))
+    if (lang_matches (&lang_str[1], limit, "h-hant", 6))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  
@@ -2763,7 +2772,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "h-", 2)
-	&& subtag_matches (lang_str, limit, "-hk"))
+	&& subtag_matches (lang_str, limit, "-hk", 3))
     {
       
       tags[0] = HB_TAG('Z','H','H',' ');  
@@ -2771,7 +2780,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "h-", 2)
-	&& subtag_matches (lang_str, limit, "-mo"))
+	&& subtag_matches (lang_str, limit, "-mo", 3))
     {
       
       unsigned int i;
@@ -2785,7 +2794,7 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       return true;
     }
     if (0 == strncmp (&lang_str[1], "h-", 2)
-	&& subtag_matches (lang_str, limit, "-tw"))
+	&& subtag_matches (lang_str, limit, "-tw", 3))
     {
       
       tags[0] = HB_TAG('Z','H','T',' ');  

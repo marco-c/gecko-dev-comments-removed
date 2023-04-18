@@ -186,6 +186,12 @@ hb_set_previous_range (const hb_set_t *set,
 		       hb_codepoint_t *last);
 
 
+HB_EXTERN unsigned int
+hb_set_next_many (const hb_set_t *set,
+		  hb_codepoint_t  codepoint,
+		  hb_codepoint_t *out,
+		  unsigned int    size);
+
 HB_END_DECLS
 
 #endif 

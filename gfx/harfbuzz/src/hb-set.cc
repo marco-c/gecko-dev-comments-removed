@@ -614,3 +614,28 @@ hb_set_previous_range (const hb_set_t *set,
 {
   return set->previous_range (first, last);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+unsigned int
+hb_set_next_many (const hb_set_t *set,
+		  hb_codepoint_t  codepoint,
+		  hb_codepoint_t *out,
+		  unsigned int    size)
+{
+  return set->next_many (codepoint, out, size);
+}

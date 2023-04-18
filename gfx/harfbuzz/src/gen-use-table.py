@@ -378,6 +378,9 @@ def map_to_use(data):
 		if 0x1CF8 <= U <= 0x1CF9: UIPC = Top
 
 		
+		if U == 0x10A38: UIPC = Bottom
+
+		
 		
 		if 0x1112A <= U <= 0x1112B: UIPC = Top
 		if 0x11131 <= U <= 0x11132: UIPC = Top

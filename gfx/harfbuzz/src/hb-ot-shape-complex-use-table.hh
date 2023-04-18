@@ -606,7 +606,7 @@ static const uint8_t use_table[] = {
        B,  VBlw,  VBlw,  VBlw,    WJ,  VAbv,  VBlw,    WJ,    WJ,    WJ,    WJ,    WJ,  VPst, VMBlw, VMBlw, VMAbv,
        B,     B,     B,     B,    WJ,     B,     B,     B,    WJ,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,    WJ,    WJ, CMAbv, CMBlw, CMBlw,    WJ,    WJ,    WJ,    WJ,    IS,
+       B,     B,     B,     B,     B,     B,    WJ,    WJ, CMBlw, CMBlw, CMBlw,    WJ,    WJ,    WJ,    WJ,    IS,
        B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
 #define use_offset_0x10ac0u 4304

@@ -289,3 +289,23 @@ hb_map_get_population (const hb_map_t *map)
 {
   return map->get_population ();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+hb_bool_t
+hb_map_is_equal (const hb_map_t *map,
+		 const hb_map_t *other)
+{
+  return map->is_equal (*other);
+}
+

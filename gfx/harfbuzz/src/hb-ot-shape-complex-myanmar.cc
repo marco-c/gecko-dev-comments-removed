@@ -79,21 +79,19 @@ collect_features_myanmar (hb_ot_shape_planner_t *plan)
   
   map->add_gsub_pause (setup_syllables_myanmar);
 
-  map->enable_feature (HB_TAG('l','o','c','l'));
+  map->enable_feature (HB_TAG('l','o','c','l'), F_PER_SYLLABLE);
   
 
-  map->enable_feature (HB_TAG('c','c','m','p'));
+  map->enable_feature (HB_TAG('c','c','m','p'), F_PER_SYLLABLE);
 
 
   map->add_gsub_pause (reorder_myanmar);
 
   for (unsigned int i = 0; i < ARRAY_LENGTH (myanmar_basic_features); i++)
   {
-    map->enable_feature (myanmar_basic_features[i], F_MANUAL_ZWJ);
+    map->enable_feature (myanmar_basic_features[i], F_MANUAL_ZWJ | F_PER_SYLLABLE);
     map->add_gsub_pause (nullptr);
   }
-
-  map->add_gsub_pause (_hb_clear_syllables);
 
   for (unsigned int i = 0; i < ARRAY_LENGTH (myanmar_other_features); i++)
     map->enable_feature (myanmar_other_features[i], F_MANUAL_ZWJ);
@@ -108,7 +106,6 @@ setup_masks_myanmar (const hb_ot_shape_plan_t *plan HB_UNUSED,
   HB_BUFFER_ALLOCATE_VAR (buffer, myanmar_position);
 
   
-
 
   unsigned int count = buffer->len;
   hb_glyph_info_t *info = buffer->info;
