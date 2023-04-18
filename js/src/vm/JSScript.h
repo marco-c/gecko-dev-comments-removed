@@ -44,6 +44,7 @@
 #include "vm/Shape.h"
 #include "vm/SharedImmutableStringsCache.h"
 #include "vm/SharedStencil.h"  
+#include "vm/StencilEnums.h"  
 #include "vm/Time.h"
 #include "vm/Xdr.h"  
 
@@ -371,11 +372,6 @@ struct SourceTypeTraits<char16_t> {
 
 [[nodiscard]] extern bool SynchronouslyCompressSource(
     JSContext* cx, JS::Handle<BaseScript*> script);
-
-
-
-
-enum class SourceRetrievable { Yes, No };
 
 
 

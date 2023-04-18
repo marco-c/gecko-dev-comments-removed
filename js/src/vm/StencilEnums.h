@@ -325,6 +325,11 @@ enum class MutableScriptFlagsEnum : uint32_t {
   HadUnboxFoldingBailout = 1 << 27,
 };
 
+
+
+
+enum class SourceRetrievable { No = 0, Yes };
+
 }  
 
 #endif 
