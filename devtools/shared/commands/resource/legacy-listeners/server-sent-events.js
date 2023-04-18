@@ -7,6 +7,10 @@
 const ResourceCommand = require("devtools/shared/commands/resource/resource-command");
 
 module.exports = async function({ targetFront, onAvailable }) {
+  if (!targetFront.getTrait("isBrowsingContext")) {
+    
+    return;
+  }
   const eventSourceFront = await targetFront.getFront("eventSource");
   eventSourceFront.startListening();
 
