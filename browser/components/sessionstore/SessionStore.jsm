@@ -1081,7 +1081,6 @@ var SessionStoreInternal = {
           
           this.onFinalTabStateUpdateComplete(aSubject);
         }
-        this._notifyOfClosedObjectsChange();
         break;
     }
   },
