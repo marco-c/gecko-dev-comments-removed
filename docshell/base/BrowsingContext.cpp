@@ -1355,9 +1355,13 @@ bool BrowsingContext::IsSandboxedFrom(BrowsingContext* aTarget) {
 
   
   
+  
+  
+  
   if (!(sandboxFlags & SANDBOXED_TOPLEVEL_NAVIGATION_USER_ACTIVATION) &&
       mCurrentWindowContext &&
-      mCurrentWindowContext->HasValidTransientUserGestureActivation() &&
+      (!mCurrentWindowContext->IsInProcess() ||
+       mCurrentWindowContext->HasValidTransientUserGestureActivation()) &&
       aTarget == Top()) {
     return false;
   }
