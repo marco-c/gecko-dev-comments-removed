@@ -666,6 +666,8 @@ this.downloads = class extends ExtensionAPIPersistent {
     return {
       downloads: {
         download(options) {
+          const isHandlingUserInput =
+            context.callContextData?.isHandlingUserInput;
           let { filename } = options;
           if (filename && AppConstants.platform === "win") {
             
@@ -1014,6 +1016,9 @@ this.downloads = class extends ExtensionAPIPersistent {
               }
 
               return Downloads.createDownload({
+                
+                
+                openDownloadsListOnStart: isHandlingUserInput,
                 source,
                 target: {
                   path: target,
