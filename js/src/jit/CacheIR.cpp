@@ -42,6 +42,7 @@
 #include "vm/RegExpObject.h"
 #include "vm/SelfHosting.h"
 #include "vm/ThrowMsgKind.h"  
+#include "vm/Watchtower.h"
 #include "wasm/WasmInstance.h"
 
 #include "jit/BaselineFrame-inl.h"
@@ -4554,6 +4555,11 @@ bool SetPropIRGenerator::canAttachAddSlotStub(HandleObject obj, HandleId id) {
     if (prop.isFound()) {
       return false;
     }
+  }
+
+  
+  if (Watchtower::watchesPropertyAdd(obj.as<NativeObject>())) {
+    return false;
   }
 
   
