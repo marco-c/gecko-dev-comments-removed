@@ -17,7 +17,9 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
   BinarySearch: "resource://gre/modules/BinarySearch.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
@@ -80,7 +82,7 @@ var PageActions = {
       
       
       
-      AsyncShutdown.profileBeforeChange.addBlocker(
+      lazy.AsyncShutdown.profileBeforeChange.addBlocker(
         "PageActions: purging unregistered actions from cache",
         () => this._purgeUnregisteredPersistedActions()
       );
@@ -242,7 +244,7 @@ var PageActions = {
     } else {
       
       
-      let index = BinarySearch.insertionIndexOf(
+      let index = lazy.BinarySearch.insertionIndexOf(
         (a1, a2) => {
           return a1.getTitle().localeCompare(a2.getTitle());
         },
@@ -676,7 +678,7 @@ Action.prototype = {
     }
     return !(
       this.disablePrivateBrowsing &&
-      PrivateBrowsingUtils.isWindowPrivate(browserWindow)
+      lazy.PrivateBrowsingUtils.isWindowPrivate(browserWindow)
     );
   },
 

@@ -9,7 +9,9 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   clearTimeout: "resource://gre/modules/Timer.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
 });
@@ -113,10 +115,10 @@ const TemporaryPermissions = {
     let expireTimeout = uriToPerm[setKey][id]?.expireTimeout;
     
     if (expireTimeout) {
-      clearTimeout(expireTimeout);
+      lazy.clearTimeout(expireTimeout);
     }
     
-    expireTimeout = setTimeout(() => {
+    expireTimeout = lazy.setTimeout(() => {
       let entryBrowser = entry.browser.get();
       
       
@@ -143,7 +145,7 @@ const TemporaryPermissions = {
     }
     expireTimeout = permissions[id]?.expireTimeout;
     if (expireTimeout) {
-      clearTimeout(expireTimeout);
+      lazy.clearTimeout(expireTimeout);
     }
     delete permissions[id];
   },
@@ -165,7 +167,7 @@ const TemporaryPermissions = {
       if (uriToPerm[key]?.[id] != null) {
         let { expireTimeout } = uriToPerm[key][id];
         if (expireTimeout) {
-          clearTimeout(expireTimeout);
+          lazy.clearTimeout(expireTimeout);
         }
         delete uriToPerm[key][id];
         
@@ -273,7 +275,7 @@ const TemporaryPermissions = {
           if (!expireTimeout) {
             return;
           }
-          clearTimeout(expireTimeout);
+          lazy.clearTimeout(expireTimeout);
         }
       );
       

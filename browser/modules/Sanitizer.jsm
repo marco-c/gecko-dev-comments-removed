@@ -13,7 +13,9 @@ const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   FormHistory: "resource://gre/modules/FormHistory.jsm",
   PrincipalsCollector: "resource://gre/modules/PrincipalsCollector.jsm",
@@ -160,7 +162,7 @@ var Sanitizer = {
     Services.prefs.addObserver(Sanitizer.PREF_SHUTDOWN_BRANCH, this, true);
 
     
-    let shutdownClient = PlacesUtils.history.shutdownClient.jsclient;
+    let shutdownClient = lazy.PlacesUtils.history.shutdownClient.jsclient;
     
     
     
@@ -293,7 +295,7 @@ var Sanitizer = {
     
     
     if (!progress.isShutdown) {
-      let shutdownClient = PlacesUtils.history.shutdownClient.jsclient;
+      let shutdownClient = lazy.PlacesUtils.history.shutdownClient.jsclient;
       shutdownClient.addBlocker("sanitize.js: Sanitize", promise, {
         fetchState: () => ({ progress }),
       });
@@ -426,7 +428,7 @@ var Sanitizer = {
         
         
         
-        let principalsCollector = new PrincipalsCollector();
+        let principalsCollector = new lazy.PrincipalsCollector();
         let principals = await principalsCollector.getAllPrincipals();
         await new Promise(resolve => {
           Services.clearData.deleteUserInteractionForClearingHistory(
@@ -487,7 +489,7 @@ var Sanitizer = {
             [change.firstUsedStart, change.firstUsedEnd] = range;
           }
           await new Promise(resolve => {
-            FormHistory.update(change, {
+            lazy.FormHistory.update(change, {
               handleError(e) {
                 seenException = new Error(
                   "Error " + e.result + ": " + e.message
@@ -754,7 +756,7 @@ async function sanitizeInternal(items, aItemsToClear, progress, options = {}) {
 
   
   if (progress.clearHonoringExceptions) {
-    let principalsCollector = new PrincipalsCollector();
+    let principalsCollector = new lazy.PrincipalsCollector();
     let principals = await principalsCollector.getAllPrincipals(progress);
     options.principalsForShutdownClearing = principals;
     options.progress = progress;
@@ -858,7 +860,7 @@ async function sanitizeOnShutdown(progress) {
     Services.prefs.savePrefFile(null);
   }
 
-  let principalsCollector = new PrincipalsCollector();
+  let principalsCollector = new lazy.PrincipalsCollector();
 
   
   
@@ -1069,7 +1071,7 @@ async function sanitizeSessionPrincipal(progress, principal, flags) {
 }
 
 function sanitizeNewTabSegregation() {
-  let identity = ContextualIdentityService.getPrivateIdentity(
+  let identity = lazy.ContextualIdentityService.getPrivateIdentity(
     "userContextIdInternal.thumbnail"
   );
   if (identity) {

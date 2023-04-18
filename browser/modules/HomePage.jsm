@@ -11,7 +11,9 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   CustomizableUI: "resource:///modules/CustomizableUI.jsm",
   ExtensionParent: "resource://gre/modules/ExtensionParent.jsm",
   ExtensionPreferencesManager:
@@ -88,7 +90,7 @@ let HomePage = {
     
     this._ignoreListListener = this._handleIgnoreListUpdated.bind(this);
 
-    this._initializationPromise = IgnoreLists.getAndSubscribe(
+    this._initializationPromise = lazy.IgnoreLists.getAndSubscribe(
       this._ignoreListListener
     );
 
@@ -112,8 +114,8 @@ let HomePage = {
   get(aWindow) {
     let homePages = getHomepagePref();
     if (
-      PrivateBrowsingUtils.permanentPrivateBrowsing ||
-      (aWindow && PrivateBrowsingUtils.isWindowPrivate(aWindow))
+      lazy.PrivateBrowsingUtils.permanentPrivateBrowsing ||
+      (aWindow && lazy.PrivateBrowsingUtils.isWindowPrivate(aWindow))
     ) {
       
       
@@ -277,16 +279,16 @@ let HomePage = {
             return;
           }
           
-          const item = await ExtensionPreferencesManager.getSetting(
+          const item = await lazy.ExtensionPreferencesManager.getSetting(
             "homepage_override"
           );
           if (item && item.id) {
             
             
-            await ExtensionParent.apiManager.asyncLoadModule(
+            await lazy.ExtensionParent.apiManager.asyncLoadModule(
               "chrome_settings_overrides"
             );
-            ExtensionPreferencesManager.removeSetting(
+            lazy.ExtensionPreferencesManager.removeSetting(
               item.id,
               "homepage_override"
             ).catch(Cu.reportError);
@@ -314,7 +316,7 @@ let HomePage = {
   onWidgetRemoved(widgetId, area) {
     if (widgetId == kWidgetId) {
       Services.prefs.setBoolPref(kWidgetRemovedPref, true);
-      CustomizableUI.removeListener(this);
+      lazy.CustomizableUI.removeListener(this);
     }
   },
 
@@ -332,13 +334,13 @@ let HomePage = {
       homePage !== "about:blank" &&
       !Services.prefs.getBoolPref(kExtensionControllerPref, false) &&
       !Services.prefs.getBoolPref(kWidgetRemovedPref, false) &&
-      !CustomizableUI.getWidget(kWidgetId).areaType
+      !lazy.CustomizableUI.getWidget(kWidgetId).areaType
     ) {
       
       
       
       
-      let navbarPlacements = CustomizableUI.getWidgetIdsInArea("nav-bar");
+      let navbarPlacements = lazy.CustomizableUI.getWidgetIdsInArea("nav-bar");
       let position = navbarPlacements.indexOf("urlbar-container");
       for (let i = position - 1; i >= 0; i--) {
         if (!navbarPlacements[i].startsWith("customizableui-special-spring")) {
@@ -346,13 +348,13 @@ let HomePage = {
           break;
         }
       }
-      CustomizableUI.addWidgetToArea(kWidgetId, "nav-bar", position);
+      lazy.CustomizableUI.addWidgetToArea(kWidgetId, "nav-bar", position);
     }
   },
 
   _addCustomizableUiListener() {
     if (!Services.prefs.getBoolPref(kWidgetRemovedPref, false)) {
-      CustomizableUI.addListener(this);
+      lazy.CustomizableUI.addListener(this);
     }
   },
 };

@@ -16,14 +16,16 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   Region: "resource://gre/modules/Region.jsm",
   PingCentre: "resource:///modules/PingCentre.jsm",
 });
 
 
 XPCOMUtils.defineLazyPreferenceGetter(
-  this,
+  lazy,
   "structuredIngestionEndpointBase",
   "browser.newtabpage.activity-stream.telemetry.structuredIngestion.endpoint",
   ""
@@ -31,13 +33,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
 const NAMESPACE_CONTEXUAL_SERVICES = "contextual-services";
 
 
-XPCOMUtils.defineLazyGetter(this, "pingcentre", () => {
-  return new PingCentre({ topic: "contextual-services" });
+XPCOMUtils.defineLazyGetter(lazy, "pingcentre", () => {
+  return new lazy.PingCentre({ topic: "contextual-services" });
 });
 
 
 const CONTEXT_ID_PREF = "browser.contextual-services.contextId";
-XPCOMUtils.defineLazyGetter(this, "contextId", () => {
+XPCOMUtils.defineLazyGetter(lazy, "contextId", () => {
   let _contextId = Services.prefs.getStringPref(CONTEXT_ID_PREF, null);
   if (!_contextId) {
     _contextId = String(Services.uuid.generateUUID());
@@ -176,21 +178,21 @@ var PartnerLinkAttribution = {
     }
 
     const endpoint = makeEndpointUrl(pingType, "1");
-    payload.context_id = contextId;
-    pingcentre.sendStructuredIngestionPing(payload, endpoint);
+    payload.context_id = lazy.contextId;
+    lazy.pingcentre.sendStructuredIngestionPing(payload, endpoint);
   },
 
   
 
 
   get _pingCentre() {
-    return pingcentre;
+    return lazy.pingcentre;
   },
 };
 
 async function sendRequest(attributionUrl, source, targetURL) {
   const request = new Request(attributionUrl);
-  request.headers.set("X-Region", Region.home);
+  request.headers.set("X-Region", lazy.Region.home);
   request.headers.set("X-Source", source);
   request.headers.set("X-Target-URL", targetURL);
   const response = await fetch(request);
@@ -222,5 +224,5 @@ function makeEndpointUrl(pingType, version) {
     .toString()
     .slice(1, -1);
   const extension = `${NAMESPACE_CONTEXUAL_SERVICES}/${pingType}/${version}/${docID}`;
-  return `${structuredIngestionEndpointBase}/${extension}`;
+  return `${lazy.structuredIngestionEndpointBase}/${extension}`;
 }

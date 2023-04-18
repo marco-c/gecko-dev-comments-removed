@@ -13,7 +13,8 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
 });
 
@@ -93,7 +94,7 @@ class AppUpdater {
     }
 
     
-    this.promiseAutoUpdateSetting = UpdateUtils.getAppUpdateAutoEnabled();
+    this.promiseAutoUpdateSetting = lazy.UpdateUtils.getAppUpdateAutoEnabled();
 
     
     
@@ -251,7 +252,7 @@ class AppUpdater {
           }
 
           if (!this.promiseAutoUpdateSetting) {
-            this.promiseAutoUpdateSetting = UpdateUtils.getAppUpdateAutoEnabled();
+            this.promiseAutoUpdateSetting = lazy.UpdateUtils.getAppUpdateAutoEnabled();
           }
           this.promiseAutoUpdateSetting.then(updateAuto => {
             if (updateAuto && !this.aus.manualUpdateOnly) {
