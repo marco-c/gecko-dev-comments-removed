@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/TransformStreamDefaultController.h"
 
+#include "TransformerCallbackHelpers.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/TransformStream.h"
@@ -14,15 +15,19 @@
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WITH_JS_MEMBERS(
-    TransformStreamDefaultController, (mGlobal, mTransformCallback),
-    (mTransformer))
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TransformStreamDefaultController, mGlobal,
+                                      mTransformerAlgorithms)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(TransformStreamDefaultController)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(TransformStreamDefaultController)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TransformStreamDefaultController)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
+
+void TransformStreamDefaultController::SetAlgorithms(
+    TransformerAlgorithms* aTransformerAlgorithms) {
+  mTransformerAlgorithms = aTransformerAlgorithms;
+}
 
 TransformStreamDefaultController::TransformStreamDefaultController(
     nsIGlobalObject* aGlobal)
@@ -70,7 +75,7 @@ void TransformStreamDefaultController::Terminate(ErrorResult& aRv) {
 void SetUpTransformStreamDefaultController(
     JSContext* aCx, TransformStream& aStream,
     TransformStreamDefaultController& aController,
-    TransformStreamDefaultController::TransformAlgorithm aTransformAlgorithm) {
+    TransformerAlgorithms& aTransformerAlgorithms) {
   
   
   MOZ_ASSERT(!aStream.Controller());
@@ -82,10 +87,8 @@ void SetUpTransformStreamDefaultController(
   aStream.SetController(&aController);
 
   
-  aController.SetTransformAlgorithm(aTransformAlgorithm);
-
   
-  
+  aController.SetAlgorithms(&aTransformerAlgorithms);
 }
 
 
@@ -93,68 +96,16 @@ void SetUpTransformStreamDefaultControllerFromTransformer(
     JSContext* aCx, TransformStream& aStream, JS::HandleObject aTransformer,
     Transformer& aTransformerDict) {
   
-  RefPtr<TransformStreamDefaultController> controller =
-      new TransformStreamDefaultController(aStream.GetParentObject());
+  auto controller =
+      MakeRefPtr<TransformStreamDefaultController>(aStream.GetParentObject());
 
-  TransformStreamDefaultController::TransformAlgorithm transformAlgorithm;
-  if (!aTransformerDict.mTransform.WasPassed()) {
-    
-    
-    transformAlgorithm = [](JSContext* aCx,
-                            TransformStreamDefaultController& aController,
-                            JS::HandleValue aChunk,
-                            ErrorResult& aRv) -> already_AddRefed<Promise> {
-      MOZ_ASSERT(!aController.GetTransformCallback());
-      MOZ_ASSERT(!aController.GetTransformer());
-
-      
-      
-      
-
-      
-      
-      
-
-      
-      return Promise::CreateResolvedWithUndefined(aController.GetParentObject(),
-                                                  aRv);
-    };
-  } else {
-    
-    
-    
-    
-    controller->SetTransformerMembers(aTransformerDict.mTransform.Value(),
-                                      aTransformer);
-    transformAlgorithm =
-        [](JSContext* aCx, TransformStreamDefaultController& aController,
-           JS::HandleValue aChunk, ErrorResult& aRv)
-            MOZ_CAN_RUN_SCRIPT_FOR_DEFINITION -> already_AddRefed<Promise> {
-      MOZ_ASSERT(aController.GetTransformCallback());
-      MOZ_ASSERT(aController.GetTransformer());
-      JS::RootedObject thisObj(aCx, aController.GetTransformer());
-      RefPtr<TransformerTransformCallback> callback =
-          aController.GetTransformCallback();
-      return callback->Call(
-          thisObj, aChunk, aController, aRv,
-          "TransformStreamDefaultController.[[transformAlgorithm]]",
-          CallbackObject::eRethrowExceptions);
-    };
-  }
+  
+  auto algorithms = MakeRefPtr<TransformerAlgorithms>(
+      aStream.GetParentObject(), aTransformer, aTransformerDict);
 
   
   
-  
-
-  
-  
-  
-  
-
-  
-  
-  SetUpTransformStreamDefaultController(aCx, aStream, *controller,
-                                        transformAlgorithm);
+  SetUpTransformStreamDefaultController(aCx, aStream, *controller, *algorithms);
 }
 
 }  
