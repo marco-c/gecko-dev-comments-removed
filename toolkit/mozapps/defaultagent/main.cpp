@@ -253,8 +253,6 @@ static bool CheckIfAppRanRecently(bool* aResult) {
 
 
 
-
-
 int wmain(int argc, wchar_t** argv) {
   if (argc < 2 || !argv[1]) {
     return E_INVALIDARG;
@@ -396,9 +394,7 @@ int wmain(int argc, wchar_t** argv) {
       return E_INVALIDARG;
     }
 
-    
-    
-    return SetDefaultBrowserUserChoice(argv[2], &argv[3]);
+    return SetDefaultBrowserUserChoice(argv[2]);
   } else {
     return E_INVALIDARG;
   }

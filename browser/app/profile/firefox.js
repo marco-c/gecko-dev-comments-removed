@@ -282,9 +282,6 @@ pref("browser.shell.defaultBrowserCheckCount", 0);
 
 
 pref("browser.shell.setDefaultBrowserUserChoice", true);
-
-
-pref("browser.shell.setDefaultPDFHandler", false);
 #endif
 
 

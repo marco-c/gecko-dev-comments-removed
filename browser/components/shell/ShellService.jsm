@@ -125,38 +125,6 @@ let ShellServiceInternal = {
 
 
 
-  _callExternalDefaultBrowserAgent(options = {}) {
-    const wdba = Services.dirsvc.get("XREExeF", Ci.nsIFile);
-    wdba.leafName = "default-browser-agent.exe";
-    return Subprocess.call({
-      ...options,
-      command: options.command || wdba.path,
-    });
-  },
-
-  
-
-
-
-
-
-
-
-  _userChoiceImpossibleTelemetryResult() {
-    if (!ShellService.checkAllProgIDsExist()) {
-      return "ErrProgID";
-    }
-    if (!ShellService.checkBrowserUserChoiceHashes()) {
-      return "ErrHash";
-    }
-    return null;
-  },
-
-  
-
-
-
-
 
 
 
@@ -176,24 +144,24 @@ let ShellServiceInternal = {
     let telemetryResult = "ErrOther";
 
     try {
-      telemetryResult =
-        this._userChoiceImpossibleTelemetryResult() ?? "ErrOther";
-      if (telemetryResult == "ErrProgID") {
+      if (!ShellService.checkAllProgIDsExist()) {
+        telemetryResult = "ErrProgID";
         throw new Error("checkAllProgIDsExist() failed");
       }
-      if (telemetryResult == "ErrHash") {
+
+      if (!ShellService.checkBrowserUserChoiceHashes()) {
+        telemetryResult = "ErrHash";
         throw new Error("checkBrowserUserChoiceHashes() failed");
       }
 
+      const wdba = Services.dirsvc.get("XREExeF", Ci.nsIFile);
+      wdba.leafName = "default-browser-agent.exe";
       const aumi = XreDirProvider.getInstallHash();
 
       telemetryResult = "ErrLaunchExe";
-      const exeArgs = ["set-default-browser-user-choice", aumi];
-      if (NimbusFeatures.shellService.getVariable("setDefaultPDFHandler")) {
-        exeArgs.push(".pdf");
-      }
-      const exeProcess = await this._callExternalDefaultBrowserAgent({
-        arguments: exeArgs,
+      const exeProcess = await Subprocess.call({
+        command: wdba.path,
+        arguments: ["set-default-browser-user-choice", aumi],
       });
       telemetryResult = "ErrOther";
 
@@ -287,21 +255,6 @@ let ShellServiceInternal = {
     Services.telemetry
       .getHistogramById("BROWSER_SET_DEFAULT_ERROR")
       .add(setAsDefaultError);
-  },
-
-  
-
-
-
-
-
-  isDefaultHandlerFor(aFileExtensionOrProtocol) {
-    if (AppConstants.platform == "win") {
-      return this.shellService
-        .QueryInterface(Ci.nsIWindowsShellService)
-        .isDefaultHandlerFor(aFileExtensionOrProtocol);
-    }
-    return false;
   },
 
   
