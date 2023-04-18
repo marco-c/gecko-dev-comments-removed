@@ -5,12 +5,8 @@
 
 
 #include "ScriptLoader.h"
-#include "ScriptLoadRequest.h"
 #include "ScriptTrace.h"
-#include "LoadedScript.h"
 #include "ModuleLoader.h"
-#include "ModuleLoaderBase.h"
-#include "ModuleLoadRequest.h"
 
 #include "jsapi.h"
 #include "js/ContextOptions.h"  
@@ -20,6 +16,10 @@
 #include "js/PropertyAndElement.h"  
 #include "js/Realm.h"
 #include "js/SourceText.h"
+#include "js/loader/LoadedScript.h"
+#include "js/loader/ScriptLoadRequest.h"
+#include "js/loader/ModuleLoaderBase.h"
+#include "js/loader/ModuleLoadRequest.h"
 #include "xpcpublic.h"
 #include "GeckoProfiler.h"
 #include "nsIContent.h"
@@ -32,6 +32,7 @@
 #include "mozilla/LoadInfo.h"
 
 using JS::SourceText;
+using namespace JS::loader;
 
 namespace mozilla::dom {
 

@@ -4,15 +4,13 @@
 
 
 
-#ifndef mozilla_dom_ScriptKind_h
-#define mozilla_dom_ScriptKind_h
+#ifndef js_loader_ScriptKind_h
+#define js_loader_ScriptKind_h
 
-namespace mozilla {
-namespace dom {
+namespace JS::loader {
 
 enum class ScriptKind { eClassic, eModule, eEvent };
 
-}  
 }  
 
 #endif
