@@ -12,6 +12,7 @@
 from __future__ import absolute_import
 
 import codecs
+import json
 import os
 import sys
 import tempfile
@@ -42,7 +43,14 @@ class GeckoInstance(object):
         
         "apz.content_response_timeout": 60000,
         
+        "browser.region.network.url": "",
+        
         "browser.topsites.contile.enabled": False,
+        
+        "browser.uitour.pinnedTabUrl": "http://%(server)s/uitour-dummy/pinnedTab",
+        "browser.uitour.url": "http://%(server)s/uitour-dummy/tour",
+        
+        "captivedetect.canonicalURL": "",
         
         "datareporting.healthreport.documentServerURI": "http://%(server)s/dummy/healthreport/",
         "datareporting.healthreport.logging.consoleEnabled": False,
@@ -77,11 +85,28 @@ class GeckoInstance(object):
         "extensions.update.enabled": False,
         "extensions.update.notifyUser": False,
         
+        "extensions.blocklist.detailsURL": (
+            "http://%(server)s/extensions-dummy/blocklistDetailsURL"
+        ),
+        "extensions.blocklist.itemURL": "http://%(server)s/extensions-dummy/blocklistItemURL",
+        "extensions.hotfix.url": "http://%(server)s/extensions-dummy/hotfixURL",
+        "extensions.systemAddon.update.url": "http://%(server)s/dummy-system-addons.xml",
+        "extensions.update.background.url": (
+            "http://%(server)s/extensions-dummy/updateBackgroundURL"
+        ),
+        "extensions.update.url": "http://%(server)s/extensions-dummy/updateURL",
+        
         "extensions.getAddons.discovery.api_url": "data:, ",
+        "extensions.getAddons.get.url": "http://%(server)s/extensions-dummy/repositoryGetURL",
+        "extensions.getAddons.search.browseURL": (
+            "http://%(server)s/extensions-dummy/repositoryBrowseURL"
+        ),
         
         "focusmanager.testmode": True,
         
         "general.useragent.updates.enabled": False,
+        
+        "geo.provider.network.url": "",
         
         
         "geo.provider.testing": True,
@@ -93,10 +118,14 @@ class GeckoInstance(object):
         
         "idle.lastDailyNotification": -1,
         
+        "identity.fxaccounts.auth.uri": "https://{server}/dummy/fxa",
+        
         "media.gmp-manager.updateEnabled": False,
         
         "media.sanity-test.disabled": True,
         "media.volume_scale": "0.01",
+        
+        "network.connectivity-service.enabled": False,
         
         "network.http.prompt-temp-redirect": False,
         
@@ -118,6 +147,8 @@ class GeckoInstance(object):
         "signon.rememberSignons": False,
         
         "toolkit.startup.max_resumed_crashes": -1,
+        
+        "toolkit.telemetry.server": "https://%(server)s/telemetry-dummy/",
     }
 
     def __init__(
@@ -327,6 +358,10 @@ class GeckoInstance(object):
 
         env = os.environ.copy()
 
+        
+        required_prefs_keys = list(self.required_prefs.keys())
+        env["MOZ_MARIONETTE_REQUIRED_PREFS"] = json.dumps(required_prefs_keys)
+
         if self.headless:
             env["MOZ_HEADLESS"] = "1"
             env["DISPLAY"] = "77"  
@@ -391,11 +426,7 @@ class FennecInstance(GeckoInstance):
         "browser.dom.window.dump.enabled": True,
         "devtools.console.stdout.chrome": True,
         
-        "browser.safebrowsing.blockedURIs.enabled": False,
-        "browser.safebrowsing.downloads.enabled": False,
-        "browser.safebrowsing.passwords.enabled": False,
-        "browser.safebrowsing.malware.enabled": False,
-        "browser.safebrowsing.phishing.enabled": False,
+        "browser.safebrowsing.update.enabled": False,
         
         "browser.sessionstore.resume_from_crash": False,
         
@@ -547,11 +578,7 @@ class DesktopInstance(GeckoInstance):
         
         "browser.pagethumbnails.capturing_disabled": True,
         
-        "browser.safebrowsing.blockedURIs.enabled": False,
-        "browser.safebrowsing.downloads.enabled": False,
-        "browser.safebrowsing.passwords.enabled": False,
-        "browser.safebrowsing.malware.enabled": False,
-        "browser.safebrowsing.phishing.enabled": False,
+        "browser.safebrowsing.update.enabled": False,
         
         "browser.search.update": False,
         
