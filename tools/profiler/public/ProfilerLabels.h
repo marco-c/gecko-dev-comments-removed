@@ -44,6 +44,12 @@ struct JSContext;
       label, nullptr, JS::ProfilingCategoryPair::categoryPair)
 
 
+#define AUTO_PROFILER_LABEL_RELEVANT_FOR_JS(label, categoryPair) \
+  mozilla::AutoProfilerLabel PROFILER_RAII(                      \
+      label, nullptr, JS::ProfilingCategoryPair::categoryPair,   \
+      uint32_t(js::ProfilingStackFrame::Flags::RELEVANT_FOR_JS))
+
+
 
 
 
@@ -52,6 +58,15 @@ struct JSContext;
       "", nullptr, JS::ProfilingCategoryPair::categoryPair, \
       uint32_t(                                             \
           js::ProfilingStackFrame::Flags::LABEL_DETERMINED_BY_CATEGORY_PAIR))
+
+
+
+#define AUTO_PROFILER_LABEL_CATEGORY_PAIR_RELEVANT_FOR_JS(categoryPair)        \
+  mozilla::AutoProfilerLabel PROFILER_RAII(                                    \
+      "", nullptr, JS::ProfilingCategoryPair::categoryPair,                    \
+      uint32_t(                                                                \
+          js::ProfilingStackFrame::Flags::LABEL_DETERMINED_BY_CATEGORY_PAIR) | \
+          uint32_t(js::ProfilingStackFrame::Flags::RELEVANT_FOR_JS))
 
 
 
@@ -99,6 +114,17 @@ struct JSContext;
     autoCStr.emplace(nsCStr);                                              \
     raiiObjectNsCString.emplace(label, autoCStr->get(),                    \
                                 JS::ProfilingCategoryPair::categoryPair);  \
+  }
+
+#define AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING_RELEVANT_FOR_JS(           \
+    label, categoryPair, nsCStr)                                         \
+  mozilla::Maybe<nsAutoCString> autoCStr;                                \
+  mozilla::Maybe<mozilla::AutoProfilerLabel> raiiObjectNsCString;        \
+  if (profiler_is_active()) {                                            \
+    autoCStr.emplace(nsCStr);                                            \
+    raiiObjectNsCString.emplace(                                         \
+        label, autoCStr->get(), JS::ProfilingCategoryPair::categoryPair, \
+        uint32_t(js::ProfilingStackFrame::Flags::RELEVANT_FOR_JS));      \
   }
 
 
