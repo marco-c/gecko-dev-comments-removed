@@ -4,7 +4,7 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = ["RootMessageHandler"];
+const EXPORTED_SYMBOLS = ["NavigationStrategy", "RootMessageHandler"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -17,11 +17,27 @@ XPCOMUtils.defineLazyModuleGetters(this, {
     "chrome://remote/content/shared/messagehandler/transports/FrameTransport.jsm",
   MessageHandler:
     "chrome://remote/content/shared/messagehandler/MessageHandler.jsm",
+  ProgressListener: "chrome://remote/content/shared/Navigate.jsm",
   SessionData:
     "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.jsm",
   WindowGlobalMessageHandler:
     "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.jsm",
 });
+
+
+
+
+
+
+
+const NavigationStrategy = {
+  
+  WaitForStart: "WaitForStart",
+  
+  WaitForInteractive: "WaitForInteractive",
+  
+  WaitForComplete: "WaitForComplete",
+};
 
 
 
@@ -119,6 +135,57 @@ class RootMessageHandler extends MessageHandler {
 
   removeSessionData(sessionData = {}) {
     return this._updateSessionData(sessionData, { mode: "remove" });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  async waitForNavigation(
+    webProgress,
+    navigationStrategy = NavigationStrategy.WaitForComplete
+  ) {
+    const resolveWhenStarted =
+      navigationStrategy === NavigationStrategy.WaitForStart;
+    const listener = new ProgressListener(webProgress, {
+      resolveWhenStarted,
+      
+      
+      waitForExplicitStart: true,
+    });
+    const navigated = listener.start();
+
+    
+    
+    if (navigationStrategy === NavigationStrategy.WaitForInteractive) {
+      const onEvent = (evtName, wrappedEvt) => {
+        if (wrappedEvt.name !== "window-global-dom-content-loaded") {
+          
+          return;
+        }
+
+        if (webProgress.browsingContext.id !== wrappedEvt.data.contextId) {
+          
+          return;
+        }
+
+        if (wrappedEvt.data.readyState === "interactive") {
+          listener.stop();
+        }
+      };
+
+      this.on("message-handler-event", onEvent);
+      navigated.finally(() => this.off("message-handler-event", onEvent));
+    }
+
+    return navigated;
   }
 
   _updateSessionData(sessionData, options = {}) {

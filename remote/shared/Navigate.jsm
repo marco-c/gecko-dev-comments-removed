@@ -4,7 +4,10 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = ["waitForInitialNavigationCompleted"];
+const EXPORTED_SYMBOLS = [
+  "ProgressListener",
+  "waitForInitialNavigationCompleted",
+];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -81,6 +84,7 @@ async function waitForInitialNavigationCompleted(webProgress, options = {}) {
 class ProgressListener {
   #resolveWhenStarted;
   #unloadTimeout;
+  #waitForExplicitStart;
   #webProgress;
 
   #resolve;
@@ -101,11 +105,21 @@ class ProgressListener {
 
 
 
+
+
+
+
+
   constructor(webProgress, options = {}) {
-    const { resolveWhenStarted = false, unloadTimeout = 200 } = options;
+    const {
+      resolveWhenStarted = false,
+      unloadTimeout = 200,
+      waitForExplicitStart = false,
+    } = options;
 
     this.#resolveWhenStarted = resolveWhenStarted;
     this.#unloadTimeout = unloadTimeout;
+    this.#waitForExplicitStart = waitForExplicitStart;
     this.#webProgress = webProgress;
 
     this.#resolve = null;
@@ -210,7 +224,7 @@ class ProgressListener {
 
     webProgressListeners.add(this);
 
-    if (this.#webProgress.isLoadingDocument) {
+    if (this.#webProgress.isLoadingDocument && !this.#waitForExplicitStart) {
       this.#checkLoadingState(this.#webProgress.documentRequest, {
         isStart: true,
       });
