@@ -28,6 +28,9 @@ const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 const Targets = require("devtools/server/actors/targets/index");
 const TargetActorMixin = require("devtools/server/actors/targets/target-actor-mixin");
+const {
+  getChildDocShells,
+} = require("devtools/server/actors/targets/window-global");
 
 loader.lazyRequireGetter(
   this,
@@ -168,6 +171,22 @@ webExtensionTargetPrototype.isRootActor = true;
 
 
 
+Object.defineProperty(webExtensionTargetPrototype, "docShells", {
+  get: function() {
+    
+    let docShells = [];
+    for (const window of Services.ww.getWindowEnumerator(null)) {
+      docShells = docShells.concat(getChildDocShells(window.docShell));
+    }
+    
+    return docShells.filter(docShell => {
+      return this.isExtensionWindowDescendent(docShell.domWindow);
+    });
+  },
+});
+
+
+
 
 webExtensionTargetPrototype.destroy = function() {
   if (this._chromeGlobal) {
@@ -217,10 +236,13 @@ webExtensionTargetPrototype._searchFallbackWindow = function() {
 
 
 webExtensionTargetPrototype._searchForExtensionWindow = function() {
-  for (const window of Services.ww.getWindowEnumerator(null)) {
-    if (window.document.nodePrincipal.addonId == this.addonId) {
-      return window;
-    }
+  
+  
+  const docShell = this.docShells.find(d =>
+    this.isTopLevelExtensionWindow(d.domWindow)
+  );
+  if (docShell) {
+    return docShell.domWindow;
   }
 
   return this._searchFallbackWindow();
@@ -228,7 +250,20 @@ webExtensionTargetPrototype._searchForExtensionWindow = function() {
 
 
 
+webExtensionTargetPrototype._onDocShellCreated = function(docShell) {
+  
+  
+  
+  if (docShell.browsingContext.group.id != this.addonBrowsingContextGroupId) {
+    return;
+  }
+  ParentProcessTargetActor.prototype._onDocShellCreated.call(this, docShell);
+};
+
 webExtensionTargetPrototype._onDocShellDestroy = function(docShell) {
+  if (docShell.browsingContext.group.id != this.addonBrowsingContextGroupId) {
+    return;
+  }
   
   
   this._unwatchDocShell(docShell);
@@ -252,56 +287,17 @@ webExtensionTargetPrototype._onNewExtensionWindow = function(window) {
   }
 };
 
-
-
-
-webExtensionTargetPrototype._docShellToWindow = function(docShell) {
-  const baseWindowDetails = ParentProcessTargetActor.prototype._docShellToWindow.call(
-    this,
-    docShell
-  );
-
-  const webProgress = docShell
-    .QueryInterface(Ci.nsIInterfaceRequestor)
-    .getInterface(Ci.nsIWebProgress);
-  const window = webProgress.DOMWindow;
-
-  
-  
-  const addonID = window.document.nodePrincipal.addonId;
-  const sameTypeRootAddonID =
-    docShell.sameTypeRootTreeItem.domWindow.document.nodePrincipal.addonId;
-
-  return Object.assign(baseWindowDetails, {
-    addonID,
-    sameTypeRootAddonID,
-  });
-};
-
-
-
-
-webExtensionTargetPrototype._docShellsToWindows = function(docshells) {
-  return ParentProcessTargetActor.prototype._docShellsToWindows
-    .call(this, docshells)
-    .filter(windowDetails => {
-      
-      
-      return (
-        windowDetails.addonID === this.addonId ||
-        windowDetails.sameTypeRootAddonID === this.addonId
-      );
-    });
-};
-
-webExtensionTargetPrototype.isExtensionWindow = function(window) {
-  return window.document.nodePrincipal.addonId == this.addonId;
+webExtensionTargetPrototype.isTopLevelExtensionWindow = function(window) {
+  const { docShell } = window;
+  const isTopLevel = docShell.sameTypeRootTreeItem == docShell;
+  return isTopLevel && window.document.nodePrincipal.addonId == this.addonId;
 };
 
 webExtensionTargetPrototype.isExtensionWindowDescendent = function(window) {
   
+  
   const rootWin = window.docShell.sameTypeRootTreeItem.domWindow;
-  return this.isExtensionWindow(rootWin);
+  return rootWin.document.nodePrincipal.addonId == this.addonId;
 };
 
 
@@ -313,10 +309,7 @@ webExtensionTargetPrototype._allowSource = function(source) {
   if (source.element) {
     try {
       const domEl = unwrapDebuggerObjectGlobal(source.element);
-      return (
-        this.isExtensionWindow(domEl.ownerGlobal) ||
-        this.isExtensionWindowDescendent(domEl.ownerGlobal)
-      );
+      return this.isExtensionWindowDescendent(domEl.ownerGlobal);
     } catch (e) {
       
       DevToolsUtils.reportException("WebExtensionTarget.allowSource", e);
@@ -378,16 +371,19 @@ webExtensionTargetPrototype._shouldAddNewGlobalAsDebuggee = function(
       
       return false;
     }
-
     
-    if (global.document.ownerGlobal && this.isExtensionWindow(global)) {
-      this._onNewExtensionWindow(global.document.ownerGlobal);
+    
+    const window = global.document.ownerGlobal;
+    if (!window) {
+      return false;
     }
 
-    return (
-      global.document.ownerGlobal &&
-      this.isExtensionWindowDescendent(global.document.ownerGlobal)
-    );
+    
+    if (this.isTopLevelExtensionWindow(window)) {
+      this._onNewExtensionWindow(window);
+    }
+
+    return this.isExtensionWindowDescendent(window);
   }
 
   try {
