@@ -697,6 +697,152 @@ var SignupOverlay = function (options) {
 
 
 
+function TagPicker(props) {
+  const [tags, setTags] = (0,react.useState)(props.tags);
+  const [duplicateTag, setDuplicateTag] = (0,react.useState)(null);
+  const [inputValue, setInputValue] = (0,react.useState)("");
+  const [usedTags, setUsedTags] = (0,react.useState)([]); 
+
+  const [{
+    tagInputStatus,
+    tagInputErrorMessage
+  }, setTagInputStatus] = (0,react.useState)({
+    tagInputStatus: "",
+    tagInputErrorMessage: ""
+  });
+  const inputToSubmit = inputValue.trim();
+  const tagsToSubmit = [...tags, ...(inputToSubmit ? [inputToSubmit] : [])];
+
+  let handleKeyDown = e => {
+    const enterKey = e.keyCode === 13;
+    const commaKey = e.keyCode === 188;
+    const tabKey = inputValue && e.keyCode === 9; 
+    
+    
+
+    if (commaKey || enterKey || tabKey) {
+      e.preventDefault();
+
+      if (inputValue) {
+        addTag();
+      } else if (enterKey) {
+        submitTags();
+      }
+    }
+  };
+
+  let addTag = () => {
+    let newDuplicateTag = tags.find(item => item === inputToSubmit);
+
+    if (!inputToSubmit?.length) {
+      return;
+    }
+
+    setInputValue(``); 
+
+    if (!newDuplicateTag) {
+      setTags(tagsToSubmit);
+    } else {
+      setDuplicateTag(newDuplicateTag);
+      setTimeout(() => {
+        setDuplicateTag(null);
+      }, 1000);
+    }
+  };
+
+  let removeTag = index => {
+    let updatedTags = tags.slice(0); 
+
+    updatedTags.splice(index, 1);
+    setTags(updatedTags);
+  };
+
+  let submitTags = () => {
+    if (!props.itemUrl || !tagsToSubmit?.length) {
+      return;
+    }
+
+    setTagInputStatus({
+      tagInputStatus: "waiting",
+      tagInputErrorMessage: ""
+    });
+    messages.sendMessage("PKT_addTags", {
+      url: props.itemUrl,
+      tags: tagsToSubmit
+    }, function (resp) {
+      const {
+        data
+      } = resp;
+
+      if (data.status === "success") {
+        setTagInputStatus({
+          tagInputStatus: "success",
+          tagInputErrorMessage: ""
+        });
+      } else if (data.status === "error") {
+        setTagInputStatus({
+          tagInputStatus: "error",
+          tagInputErrorMessage: data.error.message
+        });
+      }
+    });
+  };
+
+  (0,react.useEffect)(() => {
+    messages.sendMessage("PKT_getTags", {}, resp => setUsedTags(resp?.data?.tags));
+  }, []);
+  return react.createElement("div", {
+    className: "stp_tag_picker"
+  }, !tagInputStatus && react.createElement(react.Fragment, null, react.createElement("h3", {
+    className: "header_small",
+    "data-l10n-id": "pocket-panel-signup-add-tags"
+  }), react.createElement("div", {
+    className: "stp_tag_picker_tags"
+  }, tags.map((tag, i) => react.createElement("div", {
+    className: `stp_tag_picker_tag${duplicateTag === tag ? ` stp_tag_picker_tag_duplicate` : ``}`
+  }, tag, react.createElement("button", {
+    onClick: () => removeTag(i),
+    className: `stp_tag_picker_tag_remove`
+  }, "X"))), react.createElement("div", {
+    className: "stp_tag_picker_input_wrapper"
+  }, react.createElement("input", {
+    className: "stp_tag_picker_input",
+    type: "text",
+    list: "tag-list",
+    value: inputValue,
+    onChange: e => setInputValue(e.target.value),
+    onKeyDown: e => handleKeyDown(e),
+    maxlength: "25"
+  }), react.createElement("datalist", {
+    id: "tag-list"
+  }, usedTags.map(item => react.createElement("option", {
+    key: item,
+    value: item
+  }))), react.createElement("button", {
+    className: "stp_tag_picker_button",
+    disabled: !tagsToSubmit?.length,
+    "data-l10n-id": "pocket-panel-saved-save-tags",
+    onClick: () => submitTags()
+  })))), tagInputStatus === "waiting" && react.createElement("h3", {
+    className: "header_large",
+    "data-l10n-id": "pocket-panel-saved-processing-tags"
+  }), tagInputStatus === "success" && react.createElement("h3", {
+    className: "header_large",
+    "data-l10n-id": "pocket-panel-saved-tags-saved"
+  }), tagInputStatus === "error" && react.createElement("h3", {
+    className: "header_small"
+  }, tagInputErrorMessage));
+}
+
+ const TagPicker_TagPicker = (TagPicker);
+;
+
+
+
+
+
+
+
 
 
 
@@ -712,7 +858,8 @@ function Saved(props) {
   const [{
     savedStatus,
     savedErrorId,
-    itemId
+    itemId,
+    itemUrl
   }, setSavedStatusState] = (0,react.useState)({
     savedStatus: "loading"
   }); 
@@ -779,7 +926,8 @@ function Saved(props) {
 
       setSavedStatusState({
         savedStatus: "success",
-        itemId: data.item.item_id,
+        itemId: data.item?.item_id,
+        itemUrl: data.item?.given_url,
         savedErrorId: ""
       });
     });
@@ -840,9 +988,9 @@ function Saved(props) {
   }))), savedStory && react.createElement(ArticleList_ArticleList, {
     articles: [savedStory],
     savedArticle: true
-  }), react.createElement("h3", {
-    className: "header_small",
-    "data-l10n-id": "pocket-panel-cta-add-tags"
+  }), react.createElement(TagPicker_TagPicker, {
+    tags: [],
+    itemUrl: itemUrl
   }), similarRecs?.length && locale?.startsWith("en") && react.createElement(react.Fragment, null, react.createElement("hr", null), react.createElement("h3", {
     className: "header_medium"
   }, "Similar Stories"), react.createElement(ArticleList_ArticleList, {
@@ -1462,69 +1610,6 @@ SavedOverlay.prototype = {
 
 };
  const saved_overlay = (SavedOverlay);
-;
-
-
-
-
-
-function TagPicker(props) {
-  const [tags, setTags] = (0,react.useState)(props.tags);
-  const [duplicateTag, setDuplicateTag] = (0,react.useState)(null);
-
-  let handleKeyDown = e => {
-    
-    if (e.keyCode === 188 || e.keyCode === 13) {
-      let tag = e.target.value.trim();
-      e.preventDefault();
-      e.target.value = ``; 
-
-      addTag(tag);
-    }
-  };
-
-  let addTag = tag => {
-    let newDuplicateTag = tags.find(item => item === tag);
-
-    if (!tag.length) {
-      return;
-    }
-
-    if (!newDuplicateTag) {
-      setTags([...tags, tag]);
-    } else {
-      setDuplicateTag(newDuplicateTag);
-      setTimeout(() => {
-        setDuplicateTag(null);
-      }, 1000);
-    }
-  };
-
-  let removeTag = index => {
-    let updatedTags = tags.slice(0); 
-
-    updatedTags.splice(index, 1);
-    setTags(updatedTags);
-  };
-
-  return react.createElement("div", {
-    className: "stp_tag_picker"
-  }, react.createElement("p", null, "Add Tags:"), react.createElement("div", {
-    className: "stp_tag_picker_tags"
-  }, tags.map((tag, i) => react.createElement("div", {
-    className: `stp_tag_picker_tag${duplicateTag === tag ? ` stp_tag_picker_tag_duplicate` : ``}`
-  }, tag, react.createElement("button", {
-    onClick: () => removeTag(i),
-    className: `stp_tag_picker_tag_remove`
-  }, "X"))), react.createElement("input", {
-    className: "stp_tag_picker_input",
-    type: "text",
-    onKeyDown: e => handleKeyDown(e),
-    maxlength: "25"
-  })));
-}
-
- const TagPicker_TagPicker = (TagPicker);
 ;
 
 
