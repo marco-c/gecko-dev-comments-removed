@@ -1288,6 +1288,7 @@ class AddonInstall {
 
 
 
+
   constructor(installLocation, url, options = {}) {
     this.wrapper = new AddonInstallWrapper(this);
     this.location = installLocation;
@@ -1611,6 +1612,13 @@ class AddonInstall {
           return Promise.reject([
             AddonManager.ERROR_UNEXPECTED_ADDON_TYPE,
             `Refusing to change addon type from ${this.existingAddon.type} to ${this.addon.type}`,
+          ]);
+        }
+
+        if (this.version !== this.addon.version) {
+          return Promise.reject([
+            AddonManager.ERROR_UNEXPECTED_ADDON_VERSION,
+            `Expected addon version ${this.version} instead of ${this.addon.version}`
           ]);
         }
       }
@@ -2186,6 +2194,7 @@ var LocalAddonInstall = class extends AddonInstall {
 
 var DownloadAddonInstall = class extends AddonInstall {
   
+
 
 
 

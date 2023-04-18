@@ -1526,6 +1526,8 @@ public class WebExtension {
       
       public static final int ERROR_UNEXPECTED_ADDON_TYPE = -6;
       
+      public static final int ERROR_UNEXPECTED_ADDON_VERSION = -9;
+      
       public static final int ERROR_INCORRECT_ID = -7;
       
       public static final int ERROR_INVALID_DOMAIN = -8;
@@ -1572,6 +1574,7 @@ public class WebExtension {
           ErrorCodes.ERROR_FILE_ACCESS,
           ErrorCodes.ERROR_SIGNEDSTATE_REQUIRED,
           ErrorCodes.ERROR_UNEXPECTED_ADDON_TYPE,
+          ErrorCodes.ERROR_UNEXPECTED_ADDON_VERSION,
           ErrorCodes.ERROR_INCORRECT_ID,
           ErrorCodes.ERROR_INVALID_DOMAIN,
           ErrorCodes.ERROR_USER_CANCELED,
