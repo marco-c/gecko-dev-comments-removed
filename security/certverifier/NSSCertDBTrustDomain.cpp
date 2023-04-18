@@ -35,7 +35,6 @@
 #include "nsNSSCertHelper.h"
 #include "nsNSSCertificate.h"
 #include "nsNSSCertificateDB.h"
-#include "nsNSSIOLayer.h"
 #include "nsPrintfCString.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
@@ -1605,12 +1604,8 @@ void DisableMD5() {
       NSS_USE_ALG_IN_CERT_SIGNATURE | NSS_USE_ALG_IN_CMS_SIGNATURE);
 }
 
-
-
-
-
 bool LoadUserModuleAt(const char* moduleName, const char* libraryName,
-                      const nsCString& dir,  const char* params) {
+                      const nsCString& dir) {
   
   
   
@@ -1634,11 +1629,6 @@ bool LoadUserModuleAt(const char* moduleName, const char* libraryName,
   pkcs11ModuleSpec.AppendLiteral("\" library=\"");
   pkcs11ModuleSpec.Append(fullLibraryPath);
   pkcs11ModuleSpec.AppendLiteral("\"");
-  if (params) {
-    pkcs11ModuleSpec.AppendLiteral("\" parameters=\"");
-    pkcs11ModuleSpec.Append(params);
-    pkcs11ModuleSpec.AppendLiteral("\"");
-  }
 
   UniqueSECMODModule userModule(SECMOD_LoadUserModule(
       const_cast<char*>(pkcs11ModuleSpec.get()), nullptr, false));
@@ -1653,19 +1643,6 @@ bool LoadUserModuleAt(const char* moduleName, const char* libraryName,
   return true;
 }
 
-const char* kIPCClientCertsModuleName = "IPC Client Cert Module";
-
-bool LoadIPCClientCertsModule(const nsCString& dir) {
-  
-  
-  
-  
-  
-  nsPrintfCString addrs("%p,%p", DoFindObjects, DoSign);
-  return LoadUserModuleAt(kIPCClientCertsModuleName, "ipcclientcerts", dir,
-                          addrs.get());
-}
-
 const char* kOSClientCertsModuleName = "OS Client Cert Module";
 
 bool LoadOSClientCertsModule(const nsCString& dir) {
@@ -1675,8 +1652,7 @@ bool LoadOSClientCertsModule(const nsCString& dir) {
     return false;
   }
 #endif
-  return LoadUserModuleAt(kOSClientCertsModuleName, "osclientcerts", dir,
-                          nullptr);
+  return LoadUserModuleAt(kOSClientCertsModuleName, "osclientcerts", dir);
 }
 
 bool LoadLoadableRoots(const nsCString& dir) {
@@ -1687,7 +1663,7 @@ bool LoadLoadableRoots(const nsCString& dir) {
   
   int unusedModType;
   Unused << SECMOD_DeleteModule("Root Certs", &unusedModType);
-  return LoadUserModuleAt(kRootModuleName, "nssckbi", dir, nullptr);
+  return LoadUserModuleAt(kRootModuleName, "nssckbi", dir);
 }
 
 nsresult DefaultServerNicknameForCert(const CERTCertificate* cert,
