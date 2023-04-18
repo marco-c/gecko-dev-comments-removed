@@ -1317,44 +1317,28 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
       
       
       
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
-    defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
-      if (offsetFromEntry < PushedRetAddr) {
+      if (offsetFromEntry < PushedFP) {
         
         
         
         
         return false;
       }
-#endif
+      if (offsetInCode >= codeRange->ret() - PoppedFPJitEntry &&
+          offsetInCode <= codeRange->ret()) {
+        
+        
+        
+        return false;
+      }
       
       
       if (intptr_t(fp) == (FailFP & ~ExitOrJitEntryFPTag)) {
         return false;
       }
       
-      if (offsetFromEntry < PushedFP) {
-        
-        
-        
-#if defined(JS_CODEGEN_ARM64)
+      if (offsetFromEntry < SetFP) {
         fixedFP = reinterpret_cast<uint8_t*>(sp) + sizeof(JSJitToWasmFrame);
-#else
-        fixedFP = reinterpret_cast<uint8_t*>(sp);
-#endif
-      } else if (offsetFromEntry < SetFP) {
-        fixedFP = reinterpret_cast<uint8_t*>(sp) + sizeof(JSJitToWasmFrame);
-      } else if (offsetInCode >= codeRange->ret() - PoppedFPJitEntry &&
-                 offsetInCode <= codeRange->ret()) {
-        
-        
-        
-        
-#if defined(JS_CODEGEN_ARM64)
-        return false;
-#else
-        fixedFP = reinterpret_cast<uint8_t*>(sp);
-#endif
       } else {
         fixedFP = fp + JSJitToWasmFrame::jitFrameLayoutOffsetFromFP();
       }
