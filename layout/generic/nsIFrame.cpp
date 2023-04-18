@@ -4181,13 +4181,15 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
   
   
   if (IsThemed(ourDisp) && !PresContext()->Theme()->WidgetIsContainer(
-                               ourDisp->EffectiveAppearance()))
+                               ourDisp->EffectiveAppearance())) {
     return;
+  }
 
   
   
   
-  if (isPaintingToWindow && child->TrackingVisibility()) {
+  if (isPaintingToWindow && child->TrackingVisibility() &&
+      child->IsVisibleForPainting()) {
     child->PresShell()->EnsureFrameInApproximatelyVisibleList(child);
     awayFromCommonPath = true;
   }
