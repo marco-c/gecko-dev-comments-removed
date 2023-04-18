@@ -6321,6 +6321,12 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
     return mPrerenderDecision == PrerenderDecision::Partial;
   }
 
+  
+
+
+
+  void MarkWithAssociatedPerspective() { mHasAssociatedPerspective = true; }
+
   void AddSizeOfExcludingThis(nsWindowSizes&) const override;
 
   bool CreatesStackingContextHelper() override { return true; }
@@ -6367,6 +6373,9 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
   bool mIsTransformSeparator : 1;
   
   bool mHasTransformGetter : 1;
+  
+  
+  bool mHasAssociatedPerspective : 1;
 };
 
 

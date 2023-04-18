@@ -249,6 +249,7 @@ impl SceneSpatialTree {
             ReferenceFrameKind::Transform {
                 should_snap: true,
                 is_2d_scale_translation: true,
+                paired_with_perspective: false,
             },
             LayoutVector2D::zero(),
             PipelineId::dummy(),
@@ -1225,20 +1226,24 @@ impl SpatialTree {
             
             
             
-            
-            
-            
-            let parent = self.get_spatial_node(parent_index);
-            if let SpatialNode {
-                parent: Some(index),
-                node_type: SpatialNodeType::ReferenceFrame(ReferenceFrameInfo {
-                    kind: ReferenceFrameKind::Perspective { .. },
-                    ..
-                }),
+            if let SpatialNodeType::ReferenceFrame(ReferenceFrameInfo { kind: ReferenceFrameKind::Transform {
+                paired_with_perspective: true,
                 ..
-            } = *parent  {
-                parent_index = index;
+            }, .. }) = node.node_type {
+                let parent = self.get_spatial_node(parent_index);
+                match parent.node_type {
+                    SpatialNodeType::ReferenceFrame(ReferenceFrameInfo {
+                        kind: ReferenceFrameKind::Perspective { .. },
+                        ..
+                    }) => {
+                        parent_index = parent.parent.unwrap();
+                    }
+                    _ => {
+                        log::error!("Unexpected parent {:?} is not perspective", parent_index);
+                    }
+                }
             }
+
             self.get_relative_transform_with_face(node_index, parent_index, Some(&mut face));
         }
         face
@@ -1359,6 +1364,7 @@ fn add_reference_frame(
         ReferenceFrameKind::Transform {
             is_2d_scale_translation: false,
             should_snap: false,
+            paired_with_perspective: false,
         },
         origin_in_parent_reference_frame,
         PipelineId::dummy(),
@@ -1653,6 +1659,7 @@ fn test_find_scroll_root_simple() {
         ReferenceFrameKind::Transform {
             is_2d_scale_translation: true,
             should_snap: true,
+            paired_with_perspective: false,
         },
         LayoutVector2D::new(0.0, 0.0),
         PipelineId::dummy(),
@@ -1686,6 +1693,7 @@ fn test_find_scroll_root_sub_scroll_frame() {
         ReferenceFrameKind::Transform {
             is_2d_scale_translation: true,
             should_snap: true,
+            paired_with_perspective: false,
         },
         LayoutVector2D::new(0.0, 0.0),
         PipelineId::dummy(),
@@ -1730,6 +1738,7 @@ fn test_find_scroll_root_not_scrollable() {
         ReferenceFrameKind::Transform {
             is_2d_scale_translation: true,
             should_snap: true,
+            paired_with_perspective: false,
         },
         LayoutVector2D::new(0.0, 0.0),
         PipelineId::dummy(),
@@ -1774,6 +1783,7 @@ fn test_find_scroll_root_too_small() {
         ReferenceFrameKind::Transform {
             is_2d_scale_translation: true,
             should_snap: true,
+            paired_with_perspective: false,
         },
         LayoutVector2D::new(0.0, 0.0),
         PipelineId::dummy(),
@@ -1819,6 +1829,7 @@ fn test_find_scroll_root_perspective() {
         ReferenceFrameKind::Transform {
             is_2d_scale_translation: true,
             should_snap: true,
+            paired_with_perspective: false,
         },
         LayoutVector2D::new(0.0, 0.0),
         PipelineId::dummy(),
@@ -1876,6 +1887,7 @@ fn test_find_scroll_root_2d_scale() {
         ReferenceFrameKind::Transform {
             is_2d_scale_translation: true,
             should_snap: true,
+            paired_with_perspective: false,
         },
         LayoutVector2D::new(0.0, 0.0),
         PipelineId::dummy(),
@@ -1900,6 +1912,7 @@ fn test_find_scroll_root_2d_scale() {
         ReferenceFrameKind::Transform {
             is_2d_scale_translation: true,
             should_snap: false,
+            paired_with_perspective: false,
         },
         LayoutVector2D::new(0.0, 0.0),
         PipelineId::dummy(),
