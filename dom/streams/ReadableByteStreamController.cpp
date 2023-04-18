@@ -401,10 +401,6 @@ bool ReadableByteStreamControllerShouldCallPull(
   return false;
 }
 
-MOZ_CAN_RUN_SCRIPT void ReadableByteStreamControllerCallPullIfNeeded(
-    JSContext* aCx, ReadableByteStreamController* aController,
-    ErrorResult& aRv);
-
 
 
 class ByteStreamPullIfNeededPromiseHandler final : public PromiseNativeHandler {
@@ -1769,7 +1765,6 @@ void SetUpReadableByteStreamController(
 
 
 
-MOZ_CAN_RUN_SCRIPT
 void SetUpReadableByteStreamControllerFromUnderlyingSource(
     JSContext* aCx, ReadableStream* aStream,
     BodyStreamHolder* aUnderlyingSource, ErrorResult& aRv) {
