@@ -1131,6 +1131,12 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(
 }
 
 LayoutDeviceIntRect TextLeafPoint::CharBounds() {
+  if (mAcc && !mAcc->IsText()) {
+    
+    
+    return mAcc->Bounds();
+  }
+
   if (!mAcc || !mAcc->IsRemote() || !mAcc->AsRemote() ||
       !mAcc->AsRemote()->mCachedFields) {
     return LayoutDeviceIntRect();
