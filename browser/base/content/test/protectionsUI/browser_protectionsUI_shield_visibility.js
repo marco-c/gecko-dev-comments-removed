@@ -74,7 +74,7 @@ const TEST_CASES = [
   },
 ];
 
-add_setup(async function() {
+add_task(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [
       
