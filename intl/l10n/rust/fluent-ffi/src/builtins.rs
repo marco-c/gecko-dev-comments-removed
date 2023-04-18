@@ -351,12 +351,7 @@ impl DateTimeFormat {
         
         let loc: nsCString = locale.to_string().into();
         Self {
-            raw: unsafe {
-                NonNull::new(ffi::FluentBuiltInDateTimeFormatterCreate(
-                    &loc,
-                    options,
-                ))
-            },
+            raw: unsafe { NonNull::new(ffi::FluentBuiltInDateTimeFormatterCreate(&loc, options)) },
         }
     }
 

@@ -3,7 +3,7 @@
 
 
 pub use itoa::*;
-use std::{io, fmt};
+use std::{fmt, io};
 
 
 
