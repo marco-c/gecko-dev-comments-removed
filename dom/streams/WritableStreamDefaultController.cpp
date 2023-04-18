@@ -91,7 +91,7 @@ already_AddRefed<Promise> WritableStreamDefaultController::AbortSteps(
     JSContext* aCx, JS::Handle<JS::Value> aReason, ErrorResult& aRv) {
   
   
-  RefPtr<UnderlyingSinkAlgorithms> algorithms = mAlgorithms;
+  RefPtr<UnderlyingSinkAlgorithmsBase> algorithms = mAlgorithms;
   Optional<JS::Handle<JS::Value>> optionalReason(aCx, aReason);
   RefPtr<Promise> abortPromise =
       algorithms->AbortCallback(aCx, optionalReason, aRv);
@@ -126,7 +126,7 @@ WritableStreamDefaultControllerAdvanceQueueIfNeeded(
 void SetUpWritableStreamDefaultController(
     JSContext* aCx, WritableStream* aStream,
     WritableStreamDefaultController* aController,
-    UnderlyingSinkAlgorithms* aAlgorithms, double aHighWaterMark,
+    UnderlyingSinkAlgorithmsBase* aAlgorithms, double aHighWaterMark,
     QueuingStrategySize* aSizeAlgorithm, ErrorResult& aRv) {
   
   
@@ -260,7 +260,8 @@ MOZ_CAN_RUN_SCRIPT static void WritableStreamDefaultControllerProcessClose(
 
   
   
-  RefPtr<UnderlyingSinkAlgorithms> algorithms = aController->GetAlgorithms();
+  RefPtr<UnderlyingSinkAlgorithmsBase> algorithms =
+      aController->GetAlgorithms();
   RefPtr<Promise> sinkClosePromise = algorithms->CloseCallback(aCx, aRv);
   if (aRv.Failed()) {
     return;
@@ -303,7 +304,8 @@ MOZ_CAN_RUN_SCRIPT static void WritableStreamDefaultControllerProcessWrite(
 
   
   
-  RefPtr<UnderlyingSinkAlgorithms> algorithms = aController->GetAlgorithms();
+  RefPtr<UnderlyingSinkAlgorithmsBase> algorithms =
+      aController->GetAlgorithms();
   RefPtr<Promise> sinkWritePromise =
       algorithms->WriteCallback(aCx, aChunk, *aController, aRv);
   if (aRv.Failed()) {
