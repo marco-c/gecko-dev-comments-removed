@@ -63,7 +63,6 @@ static const uint32_t kCCPurpleLimit = 200;
 
 
 enum class GCRunnerAction {
-  MinorGC,        
   WaitToMajorGC,  
   StartMajorGC,   
   GCSlice,        
@@ -75,24 +74,12 @@ struct GCRunnerStep {
   JS::GCReason mReason;
 };
 
-
 enum class CCRunnerAction {
-  
   None,
-
-  
-  
-  MinorGC,
-
-  
   ForgetSkippable,
   CleanupContentUnbinder,
   CleanupDeferred,
-
-  
   CycleCollect,
-
-  
   StopRunning
 };
 
@@ -111,23 +98,13 @@ struct CCRunnerStep {
   
   CCRunnerYield mYield;
 
-  union ActionData {
-    
-    
-    CCRunnerForgetSkippableRemoveChildless mRemoveChildless;
+  
+  
+  
+  CCRunnerForgetSkippableRemoveChildless mRemoveChildless;
 
-    
-    CCReason mCCReason;
-
-    
-    JS::GCReason mReason;
-
-    MOZ_IMPLICIT ActionData(CCRunnerForgetSkippableRemoveChildless v)
-        : mRemoveChildless(v) {}
-    MOZ_IMPLICIT ActionData(CCReason v) : mCCReason(v) {}
-    MOZ_IMPLICIT ActionData(JS::GCReason v) : mReason(v) {}
-    ActionData() = default;
-  } mParam;
+  
+  CCReason mCCReason;
 };
 
 class CCGCScheduler {
@@ -168,7 +145,6 @@ class CCGCScheduler {
   void PokeShrinkingGC();
   void PokeFullGC();
   void MaybePokeCC(TimeStamp aNow, uint32_t aSuspectedCCObjects);
-  void PokeMinorGC(JS::GCReason aReason);
 
   void UserIsInactive();
   void UserIsActive();
@@ -239,12 +215,6 @@ class CCGCScheduler {
     }
   }
 
-  void SetWantEagerMinorGC(JS::GCReason aReason) {
-    if (mEagerMinorGCReason == JS::GCReason::NO_REASON) {
-      mEagerMinorGCReason = aReason;
-    }
-  }
-
   
   
   void EnsureCCThenGC(CCReason aReason) {
@@ -265,15 +235,13 @@ class CCGCScheduler {
   }
 
   
-  void NoteGCBegin(JS::GCReason aReason);
+  void NoteGCBegin();
 
   
   void NoteGCEnd();
 
   
   void NoteWontGC();
-
-  void NoteMinorGCEnd() { mEagerMinorGCReason = JS::GCReason::NO_REASON; }
 
   
   
@@ -456,13 +424,7 @@ class CCGCScheduler {
     mCCReason = CCReason::NO_REASON;
   }
 
-  bool HasMoreIdleGCRunnerWork() const {
-    return mMajorGCReason != JS::GCReason::NO_REASON ||
-           mEagerMajorGCReason != JS::GCReason::NO_REASON ||
-           mEagerMinorGCReason != JS::GCReason::NO_REASON;
-  }
-
-  GCRunnerStep GetNextGCRunnerAction(TimeStamp aDeadline) const;
+  GCRunnerStep GetNextGCRunnerAction() const;
 
   CCRunnerStep AdvanceCCRunner(TimeStamp aDeadline, TimeStamp aNow,
                                uint32_t aSuspectedCCObjects);
@@ -534,8 +496,6 @@ class CCGCScheduler {
 
   mozilla::CCReason mCCReason = mozilla::CCReason::NO_REASON;
   JS::GCReason mMajorGCReason = JS::GCReason::NO_REASON;
-  JS::GCReason mEagerMajorGCReason = JS::GCReason::NO_REASON;
-  JS::GCReason mEagerMinorGCReason = JS::GCReason::NO_REASON;
 
   bool mIsCompactingOnUserInactive = false;
   bool mIsCollectingCycles = false;

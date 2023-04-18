@@ -330,27 +330,11 @@ class GCRuntime {
   
   bool triggerZoneGC(Zone* zone, JS::GCReason reason, size_t usedBytes,
                      size_t thresholdBytes);
-
   void maybeGC();
-
-  
-  
-  
-  JS::GCReason wantMajorGC(bool eagerOk);
   bool checkEagerAllocTrigger(const HeapSize& size,
                               const HeapThreshold& threshold);
-
   
-  
-  bool gcIfRequested() { return gcIfRequestedImpl(false); }
-
-  
-  
-  
-  
-  
-  bool gcIfRequestedImpl(bool eagerOk);
-
+  bool gcIfRequested();
   void gc(JS::GCOptions options, JS::GCReason reason);
   void startGC(JS::GCOptions options, JS::GCReason reason,
                const SliceBudget& budget);

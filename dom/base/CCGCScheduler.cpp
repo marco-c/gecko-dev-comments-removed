@@ -4,7 +4,6 @@
 
 #include "CCGCScheduler.h"
 
-#include "js/GCAPI.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/ProfilerMarkers.h"
@@ -110,7 +109,7 @@
 
 namespace mozilla {
 
-void CCGCScheduler::NoteGCBegin(JS::GCReason aReason) {
+void CCGCScheduler::NoteGCBegin() {
   
   
   mInIncrementalGC = true;
@@ -123,20 +122,10 @@ void CCGCScheduler::NoteGCBegin(JS::GCReason aReason) {
   if (child) {
     child->StartedGC();
   }
-
-  
-  
-  
-  
-  MOZ_ASSERT(aReason != JS::GCReason::NO_REASON);
-  mMajorGCReason = aReason;
-  mEagerMajorGCReason = JS::GCReason::NO_REASON;
 }
 
 void CCGCScheduler::NoteGCEnd() {
   mMajorGCReason = JS::GCReason::NO_REASON;
-  mEagerMajorGCReason = JS::GCReason::NO_REASON;
-  mEagerMinorGCReason = JS::GCReason::NO_REASON;
 
   mInIncrementalGC = false;
   mCCBlockStart = TimeStamp();
@@ -216,7 +205,6 @@ void CCGCScheduler::NoteCCEnd(TimeStamp aWhen) {
 void CCGCScheduler::NoteWontGC() {
   mReadyForMajorGC = !mAskParentBeforeMajorGC;
   mMajorGCReason = JS::GCReason::NO_REASON;
-  mEagerMajorGCReason = JS::GCReason::NO_REASON;
   mWantAtLeastRegularGC = false;
   
   
@@ -225,17 +213,10 @@ void CCGCScheduler::NoteWontGC() {
 bool CCGCScheduler::GCRunnerFired(TimeStamp aDeadline) {
   MOZ_ASSERT(!mDidShutdown, "GCRunner still alive during shutdown");
 
-  GCRunnerStep step = GetNextGCRunnerAction(aDeadline);
+  GCRunnerStep step = GetNextGCRunnerAction();
   switch (step.mAction) {
     case GCRunnerAction::None:
-      KillGCRunner();
-      return false;
-
-    case GCRunnerAction::MinorGC:
-      JS::MaybeRunNurseryCollection(CycleCollectedJSRuntime::Get()->Runtime(),
-                                    step.mReason);
-      NoteMinorGCEnd();
-      return HasMoreIdleGCRunnerWork();
+      MOZ_CRASH("Unexpected GCRunnerAction");
 
     case GCRunnerAction::WaitToMajorGC: {
       MOZ_ASSERT(!mHaveAskedParent, "GCRunner alive after asking the parent");
@@ -465,9 +446,6 @@ void CCGCScheduler::PokeFullGC() {
 
 void CCGCScheduler::PokeGC(JS::GCReason aReason, JSObject* aObj,
                            TimeDuration aDelay) {
-  MOZ_ASSERT(aReason != JS::GCReason::NO_REASON);
-  MOZ_ASSERT(aReason != JS::GCReason::EAGER_NURSERY_COLLECTION);
-
   if (mDidShutdown) {
     return;
   }
@@ -503,24 +481,6 @@ void CCGCScheduler::PokeGC(JS::GCReason aReason, JSObject* aObj,
                          : StaticPrefs::javascript_options_gc_delay());
   first = false;
   EnsureGCRunner(delay);
-}
-
-void CCGCScheduler::PokeMinorGC(JS::GCReason aReason) {
-  MOZ_ASSERT(aReason != JS::GCReason::NO_REASON);
-
-  if (mDidShutdown) {
-    return;
-  }
-
-  SetWantEagerMinorGC(aReason);
-
-  if (mGCRunner || mHaveAskedParent || mCCRunner) {
-    
-    return;
-  }
-
-  
-  EnsureGCRunner(0);
 }
 
 void CCGCScheduler::EnsureGCRunner(TimeDuration aDelay) {
@@ -828,10 +788,6 @@ CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline, TimeStamp aNow,
     return {CCRunnerAction::StopRunning, Yield};
   }
 
-  if (mEagerMinorGCReason != JS::GCReason::NO_REASON && !aDeadline.IsNull()) {
-    return {CCRunnerAction::MinorGC, Continue, mEagerMinorGCReason};
-  }
-
   switch (mCCRunnerState) {
       
       
@@ -916,7 +872,7 @@ CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline, TimeStamp aNow,
       
     case CCRunnerState::CycleCollecting: {
       CCRunnerStep step{CCRunnerAction::CycleCollect, Yield};
-      step.mParam.mCCReason = mCCReason;
+      step.mCCReason = mCCReason;
       mCCReason = CCReason::SLICE;  
       return step;
     }
@@ -926,33 +882,18 @@ CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline, TimeStamp aNow,
   };
 }
 
-GCRunnerStep CCGCScheduler::GetNextGCRunnerAction(TimeStamp aDeadline) const {
+GCRunnerStep CCGCScheduler::GetNextGCRunnerAction() const {
+  MOZ_ASSERT(mMajorGCReason != JS::GCReason::NO_REASON);
+
   if (InIncrementalGC()) {
-    MOZ_ASSERT(mMajorGCReason != JS::GCReason::NO_REASON);
     return {GCRunnerAction::GCSlice, mMajorGCReason};
   }
 
-  
-  if (mMajorGCReason != JS::GCReason::NO_REASON) {
-    return {mReadyForMajorGC ? GCRunnerAction::StartMajorGC
-                             : GCRunnerAction::WaitToMajorGC,
-            mMajorGCReason};
+  if (mReadyForMajorGC) {
+    return {GCRunnerAction::StartMajorGC, mMajorGCReason};
   }
 
-  
-  if (!aDeadline.IsNull()) {
-    if (mEagerMajorGCReason != JS::GCReason::NO_REASON) {
-      return {mReadyForMajorGC ? GCRunnerAction::StartMajorGC
-                               : GCRunnerAction::WaitToMajorGC,
-              mEagerMajorGCReason};
-    }
-
-    if (mEagerMinorGCReason != JS::GCReason::NO_REASON) {
-      return {GCRunnerAction::MinorGC, mEagerMinorGCReason};
-    }
-  }
-
-  return {GCRunnerAction::None, JS::GCReason::NO_REASON};
+  return {GCRunnerAction::WaitToMajorGC, mMajorGCReason};
 }
 
 js::SliceBudget CCGCScheduler::ComputeForgetSkippableBudget(
