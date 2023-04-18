@@ -7115,7 +7115,7 @@ void QuotaManager::ClearOrigins(
 
   
   for (const auto& doomedOriginInfo :
-       Flatten<OriginInfosFlatTraversable::elem_type>(aDoomedOriginInfos)) {
+       Flatten<OriginInfosFlatTraversable::value_type>(aDoomedOriginInfos)) {
 #ifdef DEBUG
     {
       MutexAutoLock lock(mQuotaMutex);
@@ -7138,7 +7138,7 @@ void QuotaManager::ClearOrigins(
     MutexAutoLock lock(mQuotaMutex);
 
     for (const auto& doomedOriginInfo :
-         Flatten<OriginInfosFlatTraversable::elem_type>(aDoomedOriginInfos)) {
+         Flatten<OriginInfosFlatTraversable::value_type>(aDoomedOriginInfos)) {
       
       
       

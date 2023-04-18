@@ -73,7 +73,7 @@ class nsTObserverArray_base {
 template <class T, size_t N>
 class nsAutoTObserverArray : protected nsTObserverArray_base {
  public:
-  typedef T elem_type;
+  typedef T value_type;
   typedef nsTArray<T> array_type;
 
   nsAutoTObserverArray() = default;
@@ -91,18 +91,18 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
   
   
   
-  const elem_type* Elements() const { return mArray.Elements(); }
-  elem_type* Elements() { return mArray.Elements(); }
+  const value_type* Elements() const { return mArray.Elements(); }
+  value_type* Elements() { return mArray.Elements(); }
 
   
   
   
   
   
-  elem_type& ElementAt(index_type aIndex) { return mArray.ElementAt(aIndex); }
+  value_type& ElementAt(index_type aIndex) { return mArray.ElementAt(aIndex); }
 
   
-  const elem_type& ElementAt(index_type aIndex) const {
+  const value_type& ElementAt(index_type aIndex) const {
     return mArray.ElementAt(aIndex);
   }
 
@@ -111,13 +111,13 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
   
   
   
-  elem_type& SafeElementAt(index_type aIndex, elem_type& aDef) {
+  value_type& SafeElementAt(index_type aIndex, value_type& aDef) {
     return mArray.SafeElementAt(aIndex, aDef);
   }
 
   
-  const elem_type& SafeElementAt(index_type aIndex,
-                                 const elem_type& aDef) const {
+  const value_type& SafeElementAt(index_type aIndex,
+                                  const value_type& aDef) const {
     return mArray.SafeElementAt(aIndex, aDef);
   }
 
@@ -165,8 +165,8 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
 
   
   
-  elem_type* InsertElementAt(index_type aIndex) {
-    elem_type* item = mArray.InsertElementAt(aIndex);
+  value_type* InsertElementAt(index_type aIndex) {
+    value_type* item = mArray.InsertElementAt(aIndex);
     AdjustIterators(aIndex, 1);
     return item;
   }
@@ -191,7 +191,7 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
 
   
   
-  elem_type* AppendElement() { return mArray.AppendElement(); }
+  value_type* AppendElement() { return mArray.AppendElement(); }
 
   
   
@@ -233,7 +233,7 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
   template <typename Predicate>
   void NonObservingRemoveElementsBy(Predicate aPredicate) {
     index_type i = 0;
-    mArray.RemoveElementsBy([&](const elem_type& aItem) {
+    mArray.RemoveElementsBy([&](const value_type& aItem) {
       if (aPredicate(aItem)) {
         
         AdjustIterators(i, -1);
@@ -327,7 +327,7 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
     
     
     
-    elem_type& GetNext() {
+    value_type& GetNext() {
       NS_ASSERTION(HasMore(), "iterating beyond end of array");
       return base_type::mArray.Elements()[base_type::mPosition++];
     }
@@ -358,7 +358,7 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
     
     
     
-    elem_type& GetNext() {
+    value_type& GetNext() {
       NS_ASSERTION(HasMore(), "iterating beyond end of array");
       return base_type::mArray.Elements()[base_type::mPosition++];
     }
@@ -397,7 +397,7 @@ class nsAutoTObserverArray : protected nsTObserverArray_base {
     
     
     
-    elem_type& GetNext() {
+    value_type& GetNext() {
       NS_ASSERTION(HasMore(), "iterating beyond start of array");
       return base_type::mArray.Elements()[--base_type::mPosition];
     }
