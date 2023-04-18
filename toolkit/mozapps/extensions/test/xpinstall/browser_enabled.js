@@ -5,6 +5,8 @@ add_setup(async function() {
     set: [
       ["extensions.InstallTrigger.enabled", true],
       ["extensions.InstallTriggerImpl.enabled", true],
+      
+      ["xpinstall.userActivation.required", false],
     ],
   });
 });

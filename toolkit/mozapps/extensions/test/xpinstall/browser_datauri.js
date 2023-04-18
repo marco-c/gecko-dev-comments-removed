@@ -28,7 +28,11 @@ function test() {
   waitForExplicitFinish();
   SpecialPowers.pushPrefEnv(
     {
-      set: [["security.data_uri.block_toplevel_data_uri_navigations", false]],
+      set: [
+        ["security.data_uri.block_toplevel_data_uri_navigations", false],
+        
+        ["xpinstall.userActivation.required", false],
+      ],
     },
     runTest
   );

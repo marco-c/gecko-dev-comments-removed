@@ -33,13 +33,15 @@ function promisePopupNotificationShown(name) {
   });
 }
 
-add_setup(async function ensureInstallTriggerEnabled() {
+add_setup(async function setupTestEnvironment() {
   
   
   await SpecialPowers.pushPrefEnv({
     set: [
       ["extensions.InstallTrigger.enabled", true],
       ["extensions.InstallTriggerImpl.enabled", true],
+      
+      ["xpinstall.userActivation.required", false],
     ],
   });
 });

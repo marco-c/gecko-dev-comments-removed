@@ -40,10 +40,29 @@ amContentHandler.prototype = {
 
     let uri = aRequest.URI;
 
+    
+    
+    
+    
+    if (
+      !aRequest.loadInfo.hasValidUserGestureActivation &&
+      Services.prefs.getBoolPref("xpinstall.userActivation.required", true)
+    ) {
+      const error = Components.Exception(
+        `${uri.spec} install cancelled because of missing user gesture activation`,
+        Cr.NS_ERROR_WONT_HANDLE_CONTENT
+      );
+      
+      
+      Cu.reportError(error);
+      throw error;
+    }
+
     aRequest.cancel(Cr.NS_BINDING_ABORTED);
 
     let { loadInfo } = aRequest;
     const { triggeringPrincipal } = loadInfo;
+
     let browsingContext = loadInfo.targetBrowsingContext;
 
     let sourceHost;

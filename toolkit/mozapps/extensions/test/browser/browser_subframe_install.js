@@ -29,6 +29,10 @@ function testSubframeInstallOnNavigation({
   assertFn,
 }) {
   return BrowserTestUtils.withNewTab(topFrameURL, async browser => {
+    await SpecialPowers.pushPrefEnv({
+      
+      set: [["xpinstall.userActivation.required", false]],
+    });
     const extension = ExtensionTestUtils.loadExtension({
       manifest: {
         content_scripts: [
@@ -75,6 +79,7 @@ function testSubframeInstallOnNavigation({
     await assertFn({ browser });
 
     await extension.unload();
+    await SpecialPowers.popPrefEnv();
   });
 }
 
@@ -123,6 +128,8 @@ add_task(async function testInstallTriggerBlockedFromCrossOriginFrame() {
     set: [
       ["extensions.InstallTrigger.enabled", true],
       ["extensions.InstallTriggerImpl.enabled", true],
+      
+      ["xpinstall.userActivation.required", false],
     ],
   });
 
@@ -186,6 +193,8 @@ add_task(async function testInstallTriggerPromptedFromSameOriginFrame() {
     set: [
       ["extensions.InstallTrigger.enabled", true],
       ["extensions.InstallTriggerImpl.enabled", true],
+      
+      ["xpinstall.userActivation.required", false],
     ],
   });
 
