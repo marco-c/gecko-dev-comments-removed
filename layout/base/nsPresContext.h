@@ -584,7 +584,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   
   
-  Maybe<mozilla::ColorScheme> GetOverriddenColorScheme() const;
+  Maybe<mozilla::ColorScheme> GetOverriddenOrEmbedderColorScheme() const;
 
   
 
@@ -1377,7 +1377,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   
   FontVisibility mFontVisibility = FontVisibility::Unknown;
-  mozilla::dom::PrefersColorSchemeOverride mColorSchemeOverride;
+  mozilla::dom::PrefersColorSchemeOverride mOverriddenOrEmbedderColorScheme;
 
  protected:
   virtual ~nsPresContext();

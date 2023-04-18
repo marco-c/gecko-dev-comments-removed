@@ -779,7 +779,7 @@ void nsContainerFrame::SyncWindowProperties(nsPresContext* aPresContext,
     windowWidget->SetWindowShadowStyle(shadow);
 
     
-    if (auto scheme = aPresContext->GetOverriddenColorScheme()) {
+    if (auto scheme = aPresContext->GetOverriddenOrEmbedderColorScheme()) {
       windowWidget->SetColorScheme(scheme);
     }
   }
