@@ -61,19 +61,19 @@ add_task(async function() {
   equal(certB.displayName, gNickname);
 
   
-  ok(certA.equals(certB));
+  ok(areCertsEqual(certA, certB));
 
   
   equal(certA.certType, Ci.nsIX509Cert.USER_CERT);
 
   
   let diffNameCert = await getOrCreateCert("cool-stuff");
-  ok(!diffNameCert.equals(certA));
+  ok(!areCertsEqual(diffNameCert, certA));
 
   
   await removeCert(gNickname);
   let newCert = await getOrCreateCert(gNickname);
-  ok(!newCert.equals(certA));
+  ok(!areCertsEqual(newCert, certA));
 
   
   let serial = newCert.serialNumber;

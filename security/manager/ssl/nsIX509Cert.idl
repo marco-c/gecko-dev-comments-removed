@@ -189,15 +189,6 @@ interface nsIX509Cert : nsISupports {
 
 
 
-
-
-  [must_use]
-  boolean equals(in nsIX509Cert other);
-
-  
-
-
-
   [must_use]
   readonly attribute ACString sha256SubjectPublicKeyInfoDigest;
 
