@@ -260,11 +260,6 @@ const windowGlobalTargetPrototype = {
 
 
 
-
-
-
-
-
   initialize: function(
     connection,
     { docShell, followWindowGlobalLifeCycle, isTopLevelTarget, ignoreSubFrames }
@@ -1151,18 +1146,6 @@ const windowGlobalTargetPrototype = {
   },
 
   
-
-  attach(request) {
-    if (this.isDestroyed()) {
-      throw {
-        error: "destroyed",
-      };
-    }
-
-    return {
-      threadActor: this.threadActor.actorID,
-    };
-  },
 
   detach(request) {
     if (!this._detach()) {
