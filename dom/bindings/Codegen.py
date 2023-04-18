@@ -18027,17 +18027,16 @@ class CGForwardDeclarations(CGWrapper):
                         d.interface.maplikeOrSetlikeOrIterable.valueType, config
                     )
 
+            
+            builder.add(d.nativeType + "Atoms", isStruct=True)
+
+            for m in d.interface.members:
+                if m.isAttr() and m.type.isObservableArray():
+                    builder.forwardDeclareForType(m.type, config)
+
         
         builder.addInMozillaDom("NativePropertyHooks", isStruct=True)
         builder.addInMozillaDom("ProtoAndIfaceCache")
-        
-        for d in descriptors:
-            
-            
-            
-            if d.interface.isIteratorInterface():
-                continue
-            builder.add(d.nativeType + "Atoms", isStruct=True)
 
         for callback in callbacks:
             builder.addInMozillaDom(callback.identifier.name)
