@@ -149,6 +149,7 @@ class LazyIdleThread final : public nsIThread,
 
 
 
+
   nsCOMPtr<nsITimer> mIdleTimer;
 
   
