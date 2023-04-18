@@ -471,7 +471,8 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     CanonicalBrowsingContext* aTopBC, WindowGlobalParent* aParentWindow,
     nsIURI* aChannelCreationURI, nsIChannel* aChannel,
     const nsACString& aCurrentRemoteType, bool aHasCOOPMismatch,
-    uint32_t aLoadStateLoadType, const Maybe<uint64_t>& aChannelId,
+    bool aForNewTab, uint32_t aLoadStateLoadType,
+    const Maybe<uint64_t>& aChannelId,
     const Maybe<nsCString>& aRemoteTypeOverride) {
   
   nsCOMPtr<nsIPrincipal> resultPrincipal;
@@ -660,7 +661,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
 
   
   if (mozilla::BFCacheInParent() && nsSHistory::GetMaxTotalViewers() > 0 &&
-      !aParentWindow && !aTopBC->HadOriginalOpener() &&
+      !aForNewTab && !aParentWindow && !aTopBC->HadOriginalOpener() &&
       behavior != IsolationBehavior::Parent &&
       (ExtensionPolicyService::GetSingleton().UseRemoteExtensions() ||
        behavior != IsolationBehavior::Extension) &&
@@ -767,7 +768,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   
   
   
-  if (!options.mReplaceBrowsingContext) {
+  if (!options.mReplaceBrowsingContext && !aForNewTab) {
     
     
     

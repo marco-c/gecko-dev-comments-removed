@@ -25,6 +25,7 @@
 #include "nsHashKeys.h"
 #include "nsISecureBrowserUI.h"
 
+class nsIBrowserDOMWindow;
 class nsISHistory;
 class nsIWidget;
 class nsIPrintSettings;
@@ -111,6 +112,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   WindowGlobalParent* GetTopWindowContext();
 
   already_AddRefed<nsIWidget> GetParentProcessWidgetContaining();
+  already_AddRefed<nsIBrowserDOMWindow> GetBrowserDOMWindow();
 
   
   

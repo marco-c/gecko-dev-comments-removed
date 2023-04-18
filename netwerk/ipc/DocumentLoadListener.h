@@ -351,8 +351,20 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   bool MaybeTriggerProcessSwitch(bool* aWillSwitchToRemote);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   void TriggerProcessSwitch(dom::CanonicalBrowsingContext* aContext,
-                            const dom::NavigationIsolationOptions& aOptions);
+                            const dom::NavigationIsolationOptions& aOptions,
+                            bool aIsNewTab = false);
 
   
   
