@@ -259,6 +259,7 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
+  @SuppressLint("WrongThread") 
   @WrapForJNI(calledFrom = "gecko")
   private static @NonNull GeckoResult<String> serviceWorkerOpenWindow(final @NonNull String url) {
     if (sRuntime != null && sRuntime.mServiceWorkerDelegate != null) {
