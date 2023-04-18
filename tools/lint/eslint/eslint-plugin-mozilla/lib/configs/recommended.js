@@ -42,10 +42,6 @@ module.exports = {
     
     sizeToContent: false,
     
-    
-    
-    structuredClone: false,
-    
     uneval: false,
   },
 
