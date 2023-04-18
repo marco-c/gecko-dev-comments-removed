@@ -5,9 +5,11 @@
 
 
 #include "nsMathMLmspaceFrame.h"
+
 #include "mozilla/dom/MathMLElement.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/gfx/2D.h"
+#include "nsLayoutUtils.h"
 #include <algorithm>
 
 using namespace mozilla;

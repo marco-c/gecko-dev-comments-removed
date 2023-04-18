@@ -4,10 +4,12 @@
 
 
 
+#include "nsMathMLmoFrame.h"
+
 #include "gfxContext.h"
 #include "mozilla/PresShell.h"
 #include "nsCSSValue.h"
-#include "nsMathMLmoFrame.h"
+#include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsContentUtils.h"
 #include "nsFrameSelection.h"

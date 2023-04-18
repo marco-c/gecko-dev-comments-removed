@@ -5,10 +5,12 @@
 
 
 #include "nsMathMLmpaddedFrame.h"
+
 #include "mozilla/dom/MathMLElement.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/TextUtils.h"
+#include "nsLayoutUtils.h"
 #include <algorithm>
 
 using namespace mozilla;
