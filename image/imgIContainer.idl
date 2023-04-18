@@ -48,6 +48,7 @@ namespace image {
 
 class ImageRegion;
 class ImageIntRegion;
+class WebRenderImageProvider;
 struct Orientation;
 struct Resolution;
 
@@ -70,6 +71,7 @@ native nsSize(nsSize);
 [ptr] native nsIFrame(nsIFrame);
 native TempRefImageContainer(already_AddRefed<mozilla::layers::ImageContainer>);
 [ptr] native ImageContainer(mozilla::layers::ImageContainer);
+[ptr] native WebRenderImageProvider(mozilla::image::WebRenderImageProvider);
 [ref] native ImageRegion(mozilla::image::ImageRegion);
 [ptr] native WindowRenderer(mozilla::WindowRenderer);
 native Orientation(mozilla::image::Orientation);
@@ -351,6 +353,33 @@ interface imgIContainer : nsISupports
                                                              [const] in MaybeImageIntRegion aRegion,
                                                              in uint32_t aFlags,
                                                              out ImageContainer aOutContainer);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [noscript, notxpcom] ImgDrawResult getImageProvider(in WindowRenderer aRenderer,
+                                                      [const] in nsIntSize aSize,
+                                                      [const] in MaybeSVGImageContext aSVGContext,
+                                                      [const] in MaybeImageIntRegion aRegion,
+                                                      in uint32_t aFlags,
+                                                      out WebRenderImageProvider aProvider);
 
   
 

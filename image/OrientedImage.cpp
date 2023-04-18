@@ -175,6 +175,27 @@ OrientedImage::GetImageContainerAtSize(
   return ImgDrawResult::NOT_SUPPORTED;
 }
 
+NS_IMETHODIMP_(ImgDrawResult)
+OrientedImage::GetImageProvider(WindowRenderer* aRenderer,
+                                const gfx::IntSize& aSize,
+                                const Maybe<SVGImageContext>& aSVGContext,
+                                const Maybe<ImageIntRegion>& aRegion,
+                                uint32_t aFlags,
+                                WebRenderImageProvider** aProvider) {
+  
+  
+  
+  
+  
+
+  if (mOrientation.IsIdentity()) {
+    return InnerImage()->GetImageProvider(aRenderer, aSize, aSVGContext,
+                                          aRegion, aFlags, aProvider);
+  }
+
+  return ImgDrawResult::NOT_SUPPORTED;
+}
+
 struct MatrixBuilder {
   explicit MatrixBuilder(bool aInvert) : mInvert(aInvert) {}
 
