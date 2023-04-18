@@ -273,7 +273,7 @@ class SwatchColorPickerTooltip extends SwatchBasedEditorTooltip {
       .add(true);
 
     
-    toolbox.nodePicker.cancel();
+    toolbox.nodePicker.stop({ canceled: true });
 
     
     toolbox.tellRDMAboutPickerState(true, PICKER_TYPES.EYEDROPPER);

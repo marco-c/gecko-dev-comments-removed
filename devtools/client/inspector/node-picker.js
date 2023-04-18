@@ -43,7 +43,6 @@ class NodePicker extends EventEmitter {
     );
     this._onTargetAvailable = this._onTargetAvailable.bind(this);
 
-    this.cancel = this.cancel.bind(this);
     this.start = this.start.bind(this);
     this.stop = this.stop.bind(this);
     this.togglePicker = this.togglePicker.bind(this);
@@ -63,7 +62,7 @@ class NodePicker extends EventEmitter {
 
   togglePicker(doFocus) {
     if (this.isPicking) {
-      return this.stop();
+      return this.stop({ canceled: true });
     }
     return this.start(doFocus);
   }
@@ -172,7 +171,10 @@ class NodePicker extends EventEmitter {
 
 
 
-  async stop({ isDestroyCodepath } = {}) {
+
+
+
+  async stop({ isDestroyCodepath, canceled } = {}) {
     if (!this.isPicking) {
       return;
     }
@@ -193,6 +195,10 @@ class NodePicker extends EventEmitter {
     this._currentInspectorFronts.clear();
 
     this.emit("picker-stopped");
+
+    if (canceled) {
+      this.emit("picker-node-canceled");
+    }
   }
 
   destroy() {
@@ -200,14 +206,6 @@ class NodePicker extends EventEmitter {
     
     this.stop({ isDestroyCodepath: true });
     this.targetCommand = null;
-  }
-
-  
-
-
-  async cancel() {
-    await this.stop();
-    this.emit("picker-node-canceled");
   }
 
   
@@ -255,7 +253,7 @@ class NodePicker extends EventEmitter {
 
 
   _onCanceled() {
-    return this.cancel();
+    return this.stop({ canceled: true });
   }
 }
 
