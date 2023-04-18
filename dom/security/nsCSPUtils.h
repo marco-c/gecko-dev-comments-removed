@@ -18,11 +18,9 @@
 
 class nsIChannel;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 struct CSP;
 class Document;
-}  
 }  
 
 

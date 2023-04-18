@@ -11,8 +11,7 @@
 
 class nsIPrincipal;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Document;
 class Feature;
@@ -26,7 +25,6 @@ class FeaturePolicyParser final {
                           nsTArray<Feature>& aParsedFeatures);
 };
 
-}  
 }  
 
 #endif  

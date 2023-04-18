@@ -28,11 +28,9 @@
 
 class nsIContent;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class DocumentType;
 class Element;
-}  
 }  
 
 class nsPlainTextSerializer final : public nsIContentSerializer {

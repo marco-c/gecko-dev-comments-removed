@@ -34,10 +34,8 @@ enum MixedContentTypes {
 using mozilla::OriginAttributes;
 
 class nsILoadInfo;  
-namespace mozilla {
-namespace net {
+namespace mozilla::net {
 class nsProtocolProxyService;  
-}
 }  
 
 class nsMixedContentBlocker : public nsIContentPolicy,

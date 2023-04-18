@@ -18,8 +18,7 @@
 
 class nsIGlobalObject;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ServiceWorkerCloneData;
 struct StructuredSerializeOptions;
@@ -118,7 +117,6 @@ class ServiceWorker final : public DOMEventTargetHelper {
 
 NS_DEFINE_STATIC_IID_ACCESSOR(ServiceWorker, NS_DOM_SERVICEWORKER_IID)
 
-}  
 }  
 
 #endif  

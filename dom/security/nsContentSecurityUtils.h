@@ -19,10 +19,8 @@ class nsIHttpChannel;
 class nsIPrincipal;
 class NS_ConvertUTF8toUTF16;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class Document;
-}  
 }  
 
 using FilenameTypeAndDetails = std::pair<nsCString, mozilla::Maybe<nsString>>;

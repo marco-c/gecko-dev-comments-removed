@@ -10,8 +10,7 @@
 #include "mozilla/dom/PServiceWorkerChild.h"
 #include "mozilla/dom/WorkerRef.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class IPCWorkerRef;
 class RemoteServiceWorkerImpl;
@@ -40,7 +39,6 @@ class ServiceWorkerChild final : public PServiceWorkerChild {
   void MaybeStartTeardown();
 };
 
-}  
 }  
 
 #endif  
