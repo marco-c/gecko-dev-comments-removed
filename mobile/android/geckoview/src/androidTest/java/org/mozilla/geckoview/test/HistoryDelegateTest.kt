@@ -67,8 +67,8 @@ class HistoryDelegateTest : BaseSessionTest() {
 
         
         
-        sessionRule.session.loadUri(testUri)
-        sessionRule.session.waitUntilCalled(GeckoSession.HistoryDelegate::class,
+        mainSession.loadUri(testUri)
+        mainSession.waitUntilCalled(GeckoSession.HistoryDelegate::class,
                                             "onVisited", "getVisited")
 
         
@@ -97,7 +97,7 @@ class HistoryDelegateTest : BaseSessionTest() {
 
     @Ignore 
     @Test fun onHistoryStateChange() {
-        sessionRule.session.loadTestPath(HELLO_HTML_PATH)
+        mainSession.loadTestPath(HELLO_HTML_PATH)
 
         sessionRule.waitUntilCalled(object : HistoryDelegate {
             @AssertCalled(count = 1)
@@ -111,7 +111,7 @@ class HistoryDelegateTest : BaseSessionTest() {
             }
         })
 
-        sessionRule.session.loadTestPath(HELLO2_HTML_PATH)
+        mainSession.loadTestPath(HELLO2_HTML_PATH)
 
         sessionRule.waitUntilCalled(object : HistoryDelegate {
             @AssertCalled(count = 1)
@@ -125,7 +125,7 @@ class HistoryDelegateTest : BaseSessionTest() {
             }
         })
 
-        sessionRule.session.goBack()
+        mainSession.goBack()
 
         sessionRule.waitUntilCalled(object : HistoryDelegate {
             @AssertCalled(count = 1)
@@ -139,7 +139,7 @@ class HistoryDelegateTest : BaseSessionTest() {
             }
         })
 
-        sessionRule.session.goForward()
+        mainSession.goForward()
 
         sessionRule.waitUntilCalled(object : HistoryDelegate {
             @AssertCalled(count = 1)
@@ -153,7 +153,7 @@ class HistoryDelegateTest : BaseSessionTest() {
             }
         })
 
-        sessionRule.session.gotoHistoryIndex(0)
+        mainSession.gotoHistoryIndex(0)
 
         sessionRule.waitUntilCalled(object : HistoryDelegate {
             @AssertCalled(count = 1)
@@ -167,7 +167,7 @@ class HistoryDelegateTest : BaseSessionTest() {
             }
         })
 
-        sessionRule.session.gotoHistoryIndex(1)
+        mainSession.gotoHistoryIndex(1)
 
         sessionRule.waitUntilCalled(object : HistoryDelegate {
             @AssertCalled(count = 1)
@@ -187,7 +187,7 @@ class HistoryDelegateTest : BaseSessionTest() {
         assumeThat(sessionRule.env.isFission, equalTo(false))
 
         
-        sessionRule.session.loadTestPath(HELLO_HTML_PATH)
+        mainSession.loadTestPath(HELLO_HTML_PATH)
 
         sessionRule.waitUntilCalled(object : HistoryDelegate {
             @AssertCalled(count = 1)
@@ -201,7 +201,7 @@ class HistoryDelegateTest : BaseSessionTest() {
             }
         })
 
-        sessionRule.session.loadTestPath(HELLO2_HTML_PATH)
+        mainSession.loadTestPath(HELLO2_HTML_PATH)
 
         sessionRule.waitUntilCalled(object : HistoryDelegate {
             @AssertCalled(count = 1)

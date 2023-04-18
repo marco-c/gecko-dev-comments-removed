@@ -1,6 +1,6 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
+
 
 package org.mozilla.geckoview.test
 
@@ -16,10 +16,10 @@ import org.mozilla.geckoview.GeckoSessionSettings
 class PrivateModeTest : BaseSessionTest() {
     @Test
     fun privateDataNotShared() {
-        sessionRule.session.loadUri("https://example.com")
-        sessionRule.session.waitForPageStop()
+        mainSession.loadUri("https://example.com")
+        mainSession.waitForPageStop()
 
-        sessionRule.session.evaluateJS("""
+        mainSession.evaluateJS("""
             localStorage.setItem('ctx', 'regular');
         """)
 
@@ -33,7 +33,7 @@ class PrivateModeTest : BaseSessionTest() {
             localStorage.getItem('ctx') || 'null'
         """) as String
 
-        // Ensure that the regular session's data hasn't leaked into the private session.
+        
         assertThat("Private mode local storage value should be empty",
                 localStorage,
                 Matchers.equalTo("null"))
@@ -42,11 +42,11 @@ class PrivateModeTest : BaseSessionTest() {
             localStorage.setItem('ctx', 'private');
         """)
 
-        localStorage = sessionRule.session.evaluateJS("""
+        localStorage = mainSession.evaluateJS("""
             localStorage.getItem('ctx') || 'null'
         """) as String
 
-        // Conversely, ensure private data hasn't leaked into the regular session.
+        
         assertThat("Regular mode storage value should be unchanged",
                 localStorage,
                 Matchers.equalTo("regular"))
@@ -54,7 +54,7 @@ class PrivateModeTest : BaseSessionTest() {
 
     @Test
     fun privateModeStorageShared() {
-        // Two private mode sessions should share the same storage (bug 1533406).
+        
         val privateSession1 = sessionRule.createOpenSession(
                 GeckoSessionSettings.Builder(mainSession.settings)
                         .usePrivateMode(true)
