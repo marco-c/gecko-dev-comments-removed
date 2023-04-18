@@ -12,6 +12,7 @@ const { PromiseUtils } = ChromeUtils.import(
   "resource://gre/modules/PromiseUtils.jsm"
 );
 const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 
 var { GMPPrefs, GMPUtils, GMP_PLUGIN_IDS } = ChromeUtils.import(
@@ -655,13 +656,9 @@ GMPDownloader.prototype = {
     };
     return ProductAddonChecker.downloadAddon(gmpAddon, downloadOptions).then(
       zipPath => {
-        log.info(
-          `install to directory path: ${gmpAddon.id}/${gmpAddon.version}`
-        );
-        let gmpInstaller = new GMPExtractor(zipPath, [
-          gmpAddon.id,
-          gmpAddon.version,
-        ]);
+        let relativePath = OS.Path.join(gmpAddon.id, gmpAddon.version);
+        log.info("install to directory path: " + relativePath);
+        let gmpInstaller = new GMPExtractor(zipPath, relativePath);
         let installPromise = gmpInstaller.install();
         return installPromise.then(extractedPaths => {
           

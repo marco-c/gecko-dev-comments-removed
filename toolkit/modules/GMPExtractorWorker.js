@@ -6,6 +6,8 @@
 
 "use strict";
 
+importScripts("resource://gre/modules/osfile.jsm");
+
 const FILE_ENTRY = "201: ";
 
 onmessage = async function(msg) {
@@ -41,27 +43,31 @@ onmessage = async function(msg) {
         };
         reader.readAsArrayBuffer(fileContents);
       });
-      let profileDirPath = await IOUtils.getProfileDir();
-      let installToDirPath = IOUtils.join(
+      let profileDirPath = OS.Constants.Path.profileDir;
+      let installToDirPath = OS.Path.join(
         profileDirPath,
-        ...msg.data.relativeInstallPath
+        msg.data.relativeInstallPath
       );
-      await IOUtils.makeDirectory(installToDirPath);
+      await OS.File.makeDir(installToDirPath, {
+        ignoreExisting: true,
+        unixMode: 0o755,
+        from: profileDirPath,
+      });
       
       
-      let destPath = PathUtils.join(installToDirPath, fileName);
-      await IOUtils.write(destPath, new Uint8Array(fileData), {
+      let destPath = OS.Path.join(installToDirPath, fileName);
+      await OS.File.writeAtomic(destPath, new Uint8Array(fileData), {
         tmpPath: destPath + ".tmp",
       });
       
       
-      await IOUtils.setPermissions(destPath, 0o700);
-      if (IOUtils.removeMacXAttr) {
+      await OS.File.setPermissions(destPath, { unixMode: 0o700 });
+      if (OS.Constants.Sys.Name == "Darwin") {
         
         
         
         try {
-          await IOUtils.removeMacXAttr(destPath, "com.apple.quarantine");
+          await OS.File.macRemoveXAttr(destPath, "com.apple.quarantine");
         } catch (e) {
           
           
