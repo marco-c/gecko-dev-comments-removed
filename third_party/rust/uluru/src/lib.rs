@@ -12,18 +12,8 @@
 
 
 
-extern crate arrayvec;
-
-use arrayvec::{Array, ArrayVec};
-
-use core::fmt;
-
-#[cfg(test)]
-extern crate quickcheck;
-
-#[cfg(test)]
-#[macro_use(quickcheck)]
-extern crate quickcheck_macros;
+use arrayvec::ArrayVec;
+use core::{fmt, mem::replace};
 
 #[cfg(test)]
 mod tests;
@@ -65,13 +55,11 @@ mod tests;
 
 
 
-
-
-pub struct LRUCache<A: Array> {
+pub struct LRUCache<T, const N: usize> {
     
     
     
-    entries: ArrayVec<A>,
+    entries: ArrayVec<Entry<T>, N>,
     
     head: u16,
     
@@ -80,7 +68,7 @@ pub struct LRUCache<A: Array> {
 
 
 #[derive(Debug, Clone)]
-pub struct Entry<T> {
+struct Entry<T> {
     val: T,
     
     prev: u16,
@@ -88,7 +76,7 @@ pub struct Entry<T> {
     next: u16,
 }
 
-impl<A: Array> Default for LRUCache<A> {
+impl<T, const N: usize> Default for LRUCache<T, N> {
     fn default() -> Self {
         let cache = LRUCache {
             entries: ArrayVec::new(),
@@ -103,30 +91,43 @@ impl<A: Array> Default for LRUCache<A> {
     }
 }
 
-impl<T, A> LRUCache<A>
-where
-    A: Array<Item = Entry<T>>,
-{
+impl<T, const N: usize> LRUCache<T, N> {
     
-    pub fn len(&self) -> usize {
-        self.entries.len()
+    
+    
+    
+    pub fn insert(&mut self, val: T) -> Option<T> {
+        let entry = Entry {
+            val,
+            prev: 0,
+            next: 0,
+        };
+
+        
+        let (new_head, previous_entry) = if self.entries.len() == self.entries.capacity() {
+            let i = self.pop_back();
+            let previous_entry = replace(&mut self.entries[i as usize], entry);
+            (i, Some(previous_entry.val))
+        } else {
+            self.entries.push(entry);
+            (self.entries.len() as u16 - 1, None)
+        };
+
+        self.push_front(new_head);
+        previous_entry
     }
 
     
-    #[inline]
-    #[deprecated = "Use the 'len' method instead."]
-    pub fn num_entries(&self) -> usize {
-        self.len()
-    }
-
     
-    pub fn front(&self) -> Option<&T> {
-        self.entries.get(self.head as usize).map(|e| &e.val)
-    }
-
-    
-    pub fn front_mut(&mut self) -> Option<&mut T> {
-        self.entries.get_mut(self.head as usize).map(|e| &mut e.val)
+    pub fn find<F>(&mut self, pred: F) -> Option<&mut T>
+    where
+        F: FnMut(&T) -> bool,
+    {
+        if self.touch(pred) {
+            self.front_mut()
+        } else {
+            None
+        }
     }
 
     
@@ -154,6 +155,40 @@ where
     }
 
     
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+
+    
+    #[inline]
+    pub fn clear(&mut self) {
+        self.entries.clear();
+    }
+
+    
+    pub fn front(&self) -> Option<&T> {
+        self.entries.get(self.head as usize).map(|e| &e.val)
+    }
+
+    
+    pub fn front_mut(&mut self) -> Option<&mut T> {
+        self.entries.get_mut(self.head as usize).map(|e| &mut e.val)
+    }
+
+    
+    pub fn get(&self, index: usize) -> Option<&T> {
+        self.iter().nth(index)
+    }
+
+    
+    
     
     pub fn touch<F>(&mut self, mut pred: F) -> bool
     where
@@ -163,7 +198,7 @@ where
         while let Some((i, val)) = iter.next() {
             if pred(val) {
                 self.touch_index(i);
-                return true
+                return true;
             }
         }
         false
@@ -171,55 +206,16 @@ where
 
     
     
-    pub fn find<F>(&mut self, pred: F) -> Option<&mut T>
-    where
-        F: FnMut(&T) -> bool,
-    {
-        if self.touch(pred) {
-            self.front_mut()
-        } else {
-            None
+    pub fn iter(&self) -> Iter<'_, T, N> {
+        Iter {
+            pos: self.head,
+            cache: self,
         }
     }
 
     
     
-    
-    
-    pub fn insert(&mut self, val: T) {
-        let entry = Entry {
-            val,
-            prev: 0,
-            next: 0,
-        };
-
-        
-        let new_head = if self.entries.len() == self.entries.capacity() {
-            let i = self.pop_back();
-            self.entries[i as usize] = entry;
-            i
-        } else {
-            self.entries.push(entry);
-            self.entries.len() as u16 - 1
-        };
-
-        self.push_front(new_head);
-    }
-
-    
-    pub fn clear(&mut self) {
-        self.entries.clear();
-    }
-
-    
-    #[inline]
-    #[deprecated = "Use the 'clear' method instead."]
-    pub fn evict_all(&mut self) {
-        self.clear();
-    }
-
-    
-    fn iter_mut(&mut self) -> IterMut<A> {
+    fn iter_mut(&mut self) -> IterMut<'_, T, N> {
         IterMut {
             pos: self.head,
             cache: self,
@@ -277,9 +273,8 @@ where
     }
 }
 
-impl<T, A> Clone for LRUCache<A>
+impl<T, const N: usize> Clone for LRUCache<T, N>
 where
-    A: Array<Item = Entry<T>>,
     T: Clone,
 {
     fn clone(&self) -> Self {
@@ -291,9 +286,8 @@ where
     }
 }
 
-impl<T, A> fmt::Debug for LRUCache<A>
+impl<T, const N: usize> fmt::Debug for LRUCache<T, N>
 where
-    A: Array<Item = Entry<T>>,
     T: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -306,24 +300,42 @@ where
 }
 
 
-struct IterMut<'a, A: 'a + Array> {
-    cache: &'a mut LRUCache<A>,
+struct IterMut<'a, T, const N: usize> {
+    cache: &'a mut LRUCache<T, N>,
     pos: u16,
 }
 
-impl<'a, A, T> IterMut<'a, A>
-where
-    A: Array<Item = Entry<T>>,
-{
+impl<'a, T, const N: usize> IterMut<'a, T, N> {
     fn next(&mut self) -> Option<(u16, &mut T)> {
         let index = self.pos;
         let entry = self.cache.entries.get_mut(index as usize)?;
 
         self.pos = if index == self.cache.tail {
-            A::CAPACITY as u16 
+            N as u16 
         } else {
             entry.next
         };
         Some((index, &mut entry.val))
+    }
+}
+
+
+pub struct Iter<'a, T, const N: usize> {
+    cache: &'a LRUCache<T, N>,
+    pos: u16,
+}
+
+impl<'a, T, const N: usize> Iterator for Iter<'a, T, N> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<&'a T> {
+        let entry = self.cache.entries.get(self.pos as usize)?;
+
+        self.pos = if self.pos == self.cache.tail {
+            N as u16 
+        } else {
+            entry.next
+        };
+        Some(&entry.val)
     }
 }
