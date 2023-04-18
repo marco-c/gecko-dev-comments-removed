@@ -1965,11 +1965,17 @@ Inspector.prototype = {
   },
 
   onPickerPicked(nodeFront) {
-    this.highlighters.showHighlighterTypeForNode(
-      this.highlighters.TYPES.BOXMODEL,
-      nodeFront,
-      { duration: this.HIGHLIGHTER_AUTOHIDE_TIMER }
-    );
+    if (this.toolbox.isDebugTargetFenix()) {
+      
+      
+      this.highlighters.showHighlighterTypeForNode(
+        this.highlighters.TYPES.BOXMODEL,
+        nodeFront,
+        { duration: this.HIGHLIGHTER_AUTOHIDE_TIMER }
+      );
+      return;
+    }
+    this.highlighters.hideHighlighterType(this.highlighters.TYPES.BOXMODEL);
   },
 
   async inspectNodeActor(nodeGrip, reason) {

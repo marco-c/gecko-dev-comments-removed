@@ -926,11 +926,16 @@ MarkupView.prototype = {
 
 
 
+
+
+
   _shouldNewSelectionBeHighlighted: function() {
     const reason = this.inspector.selection.reason;
     const unwantedReasons = [
       "inspector-default-selection",
       "nodeselected",
+      "picker-node-picked",
+      "picker-node-previewed",
       "test",
     ];
 
