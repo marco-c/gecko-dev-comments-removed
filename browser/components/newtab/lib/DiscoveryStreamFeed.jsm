@@ -168,6 +168,9 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
   get personalized() {
     
+    if (!this.showStories) {
+      return false;
+    }
     const spocsPersonalized = this.store.getState().Prefs.values?.pocketConfig
       ?.spocsPersonalized;
     const recsPersonalized = this.store.getState().Prefs.values?.pocketConfig
