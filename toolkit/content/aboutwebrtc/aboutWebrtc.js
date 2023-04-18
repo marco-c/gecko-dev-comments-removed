@@ -240,9 +240,23 @@ class ShowTab extends Control {
     add(new SavePage().render());
     add(new DebugMode().render());
     add(new AecLogging().render());
+    
+    const autorefresh = document.createElement("input");
+    Object.assign(autorefresh, {
+      type: "checkbox",
+      id: "autorefresh",
+      checked: true,
+    });
+    const autorefreshLabel = document.createElement("label");
+    document.l10n.setAttributes(
+      autorefreshLabel,
+      "about-webrtc-auto-refresh-label"
+    );
 
     const ctrls = document.querySelector("#controls");
     ctrls.append(renderElements("div", { className: "controls" }, [ctrl, msg]));
+    ctrls.appendChild(autorefresh);
+    ctrls.appendChild(autorefreshLabel);
   }
 
   
@@ -323,6 +337,10 @@ class ShowTab extends Control {
 
   window.setInterval(
     async history => {
+      
+      if (!document.getElementById("autorefresh").checked) {
+        return;
+      }
       const reports = await getStats();
 
       const translateSection = async (report, id, renderFunc) => {
