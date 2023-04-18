@@ -24,7 +24,7 @@ function run_test() {
     getNetMonitorTimingsURL,
     getPerformanceAnalysisURL,
     getFilterBoxURL,
-  } = require("devtools/client/netmonitor/src/utils/mdn-utils");
+  } = require("devtools/client/netmonitor/src/utils/doc-utils");
 
   info("Checking for supported headers");
   equal(
