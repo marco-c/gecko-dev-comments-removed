@@ -6393,7 +6393,7 @@ static bool FinishOffThreadCompileToStencil(JSContext* cx, unsigned argc,
   JS::OffThreadToken* token = job->waitUntilDone(cx);
   MOZ_ASSERT(token);
 
-  RefPtr<JS::Stencil> stencil = JS::FinishOffThreadCompileToStencil(cx, token);
+  RefPtr<JS::Stencil> stencil = JS::FinishCompileToStencilOffThread(cx, token);
   DeleteOffThreadJob(cx, job);
   if (!stencil) {
     return false;
