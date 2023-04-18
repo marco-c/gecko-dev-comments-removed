@@ -23,7 +23,11 @@
 #    include <sys/syscall.h>
 #    include <sys/un.h>
 #    include "mozilla/ProcInfo_linux.h"
-#  endif  
+#    ifdef MOZ_X11
+#      include "X11/Xlib.h"
+#      include "X11UndefineNone.h"
+#    endif  
+#  endif    
 #  include <sys/socket.h>
 #  include <sys/stat.h>
 #  include <sys/types.h>
@@ -266,7 +270,22 @@ void RunTestsContent(SandboxTestingChild* child) {
                        return fd;
                      });
   }
-#  endif  
+
+#    ifdef MOZ_X11
+  
+  
+  if (PR_GetEnv("DISPLAY")) {
+    Display* disp = XOpenDisplay(nullptr);
+
+    child->SendReportTestResults(
+        "x11_access"_ns, !disp,
+        disp ? "XOpenDisplay succeeded"_ns : "XOpenDisplay failed"_ns);
+    if (disp) {
+      XCloseDisplay(disp);
+    }
+  }
+#    endif  
+#  endif    
 
 #  ifdef XP_MACOSX
   
