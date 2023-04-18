@@ -9888,7 +9888,6 @@ var ConfirmationHint = {
 
 
 
-
   show(anchor, messageId, options = {}) {
     this._reset();
 
@@ -9905,10 +9904,6 @@ var ConfirmationHint = {
     } else {
       this._description.hidden = true;
       this._panel.classList.remove("with-description");
-    }
-
-    if (options.hideArrow) {
-      this._panel.setAttribute("hidearrow", "true");
     }
 
     this._panel.setAttribute("data-message-id", messageId);
@@ -9949,7 +9944,6 @@ var ConfirmationHint = {
       this._timerID = null;
     }
     if (this.__panel) {
-      this._panel.removeAttribute("hidearrow");
       this._animationBox.removeAttribute("animate");
       this._panel.removeAttribute("data-message-id");
     }
