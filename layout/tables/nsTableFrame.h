@@ -95,6 +95,12 @@ class nsDisplayTableBackgroundSet {
 
   const nsRect& GetDirtyRect() { return mDirtyRect; }
 
+  const DisplayItemClipChain* GetTableClipChain() {
+    return mCombinedTableClipChain;
+  }
+
+  const ActiveScrolledRoot* GetTableASR() { return mTableASR; }
+
  private:
   
   
@@ -110,6 +116,9 @@ class nsDisplayTableBackgroundSet {
   nsTArray<nsTableColFrame*> mColumns;
   nsPoint mToReferenceFrame;
   nsRect mDirtyRect;
+
+  const DisplayItemClipChain* mCombinedTableClipChain;
+  const ActiveScrolledRoot* mTableASR;
 };
 
 }  

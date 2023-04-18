@@ -1092,6 +1092,25 @@ void nsTableCellFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
       bgRect += backgrounds->TableToReferenceFrame();
 
+      DisplayListClipState::AutoSaveRestore clipState(aBuilder);
+      nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter asrSetter(
+          aBuilder);
+      if (IsStackingContext()) {
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+        clipState.SetClipChainForContainingBlockDescendants(
+            backgrounds->GetTableClipChain());
+        asrSetter.SetCurrentActiveScrolledRoot(backgrounds->GetTableASR());
+      }
+
       
       
       nsTableColFrame* col = backgrounds->GetColForIndex(ColIndex());
