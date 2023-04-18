@@ -19,15 +19,7 @@
 #ifndef AVUTIL_HWCONTEXT_VAAPI_H
 #define AVUTIL_HWCONTEXT_VAAPI_H
 
-
-
-
-
-struct VASurfaceAttrib;
-typedef unsigned int VAGenericID;
-typedef VAGenericID VAConfigID;
-typedef VAGenericID VASurfaceID;
-typedef void* VADisplay;
+#include "va/va.h"
 
 
 
