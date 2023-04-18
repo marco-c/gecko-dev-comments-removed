@@ -118,7 +118,7 @@ BreakpointActor.prototype = {
 
 
   checkCondition: function(frame, condition) {
-    const completion = frame.eval(condition);
+    const completion = frame.eval(condition, { hideFromDebugger: true });
     if (completion) {
       if (completion.throw) {
         
