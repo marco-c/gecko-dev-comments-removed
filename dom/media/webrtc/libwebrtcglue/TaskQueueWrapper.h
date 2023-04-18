@@ -14,7 +14,6 @@
 
 namespace mozilla {
 
-enum class DeletionPolicy : uint8_t { Blocking, NonBlocking };
 
 
 
@@ -25,8 +24,6 @@ enum class DeletionPolicy : uint8_t { Blocking, NonBlocking };
 
 
 
-
-template <DeletionPolicy Deletion>
 class TaskQueueWrapper : public webrtc::TaskQueueBase {
  public:
   TaskQueueWrapper(RefPtr<TaskQueue> aTaskQueue, nsCString aName)
@@ -34,19 +31,15 @@ class TaskQueueWrapper : public webrtc::TaskQueueBase {
   ~TaskQueueWrapper() = default;
 
   void Delete() override {
+    MOZ_ASSERT(!mTaskQueue->IsOnCurrentThread(),
+               "TaskQueue::AwaitIdle must not be called on itself");
+    
     {
       auto hasShutdown = mHasShutdown.Lock();
       *hasShutdown = true;
       mTaskQueue->BeginShutdown();
     }
-
-    MOZ_RELEASE_ASSERT(Deletion == DeletionPolicy::NonBlocking ||
-                       !mTaskQueue->IsOnCurrentThread());
-
-    if constexpr (Deletion == DeletionPolicy::Blocking) {
-      mTaskQueue->AwaitIdle();
-    }
-
+    mTaskQueue->AwaitIdle();
     delete this;
   }
 
@@ -114,11 +107,10 @@ class TaskQueueWrapper : public webrtc::TaskQueueBase {
       false, "TaskQueueWrapper::mHasShutdown"};
 };
 
-template <DeletionPolicy Deletion>
-class DefaultDelete<TaskQueueWrapper<Deletion>>
-    : public webrtc::TaskQueueDeleter {
+template <>
+class DefaultDelete<TaskQueueWrapper> : public webrtc::TaskQueueDeleter {
  public:
-  void operator()(TaskQueueWrapper<Deletion>* aPtr) const {
+  void operator()(TaskQueueWrapper* aPtr) const {
     webrtc::TaskQueueDeleter::operator()(aPtr);
   }
 };
@@ -127,16 +119,14 @@ class SharedThreadPoolWebRtcTaskQueueFactory : public webrtc::TaskQueueFactory {
  public:
   SharedThreadPoolWebRtcTaskQueueFactory() {}
 
-  template <DeletionPolicy Deletion>
-  UniquePtr<TaskQueueWrapper<Deletion>> CreateTaskQueueWrapper(
+  UniquePtr<TaskQueueWrapper> CreateTaskQueueWrapper(
       absl::string_view aName, bool aSupportTailDispatch, Priority aPriority,
       MediaThreadType aThreadType = MediaThreadType::WEBRTC_WORKER) const {
     
     nsCString name(aName.data(), aName.size());
     auto taskQueue = MakeRefPtr<TaskQueue>(GetMediaThreadPool(aThreadType),
                                            name.get(), aSupportTailDispatch);
-    return MakeUnique<TaskQueueWrapper<Deletion>>(std::move(taskQueue),
-                                                  std::move(name));
+    return MakeUnique<TaskQueueWrapper>(std::move(taskQueue), std::move(name));
   }
 
   std::unique_ptr<webrtc::TaskQueueBase, webrtc::TaskQueueDeleter>
@@ -144,12 +134,9 @@ class SharedThreadPoolWebRtcTaskQueueFactory : public webrtc::TaskQueueFactory {
     
     
     
-    
-    
     constexpr bool supportTailDispatch = false;
     return std::unique_ptr<webrtc::TaskQueueBase, webrtc::TaskQueueDeleter>(
-        CreateTaskQueueWrapper<DeletionPolicy::Blocking>(
-            std::move(aName), supportTailDispatch, aPriority)
+        CreateTaskQueueWrapper(std::move(aName), supportTailDispatch, aPriority)
             .release(),
         webrtc::TaskQueueDeleter());
   }

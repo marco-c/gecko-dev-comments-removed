@@ -476,18 +476,12 @@ void PeerConnectionCtx::AddPeerConnection(const std::string& aKey,
 
     SharedThreadPoolWebRtcTaskQueueFactory taskQueueFactory;
     constexpr bool supportTailDispatch = true;
-    
-    
-    
-    
-    
-    auto callWorkerThread =
-        WrapUnique(taskQueueFactory
-                       .CreateTaskQueueWrapper<DeletionPolicy::NonBlocking>(
-                           "CallWorker", supportTailDispatch,
-                           webrtc::TaskQueueFactory::Priority::NORMAL,
-                           MediaThreadType::WEBRTC_CALL_THREAD)
-                       .release());
+    auto callWorkerThread = WrapUnique(
+        taskQueueFactory
+            .CreateTaskQueueWrapper("CallWorker", supportTailDispatch,
+                                    webrtc::TaskQueueFactory::Priority::NORMAL,
+                                    MediaThreadType::WEBRTC_CALL_THREAD)
+            .release());
 
     UniquePtr<webrtc::WebRtcKeyValueConfig> trials =
         WrapUnique(new NoTrialsConfig());
