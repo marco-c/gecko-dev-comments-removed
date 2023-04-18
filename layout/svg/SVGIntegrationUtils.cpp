@@ -1180,9 +1180,7 @@ bool PaintFrameCallback::operator()(gfxContext* aContext,
   aContext->Save();
 
   
-  aContext->NewPath();
-  aContext->Rectangle(aFillRect);
-  aContext->Clip();
+  aContext->Clip(aFillRect);
 
   gfxMatrix invmatrix = aTransform;
   if (!invmatrix.Invert()) {
