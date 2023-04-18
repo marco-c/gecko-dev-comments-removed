@@ -189,8 +189,8 @@ class ImageBufferWrapper final {
     MOZ_ASSERT(mDecoder);
   }
 
-  PlanarYCbCrImage* AsPlanarYCbCrImage() {
-    return mImage->AsPlanarYCbCrImage();
+  Image* AsImage() {
+    return mImage;
   }
 
   void ReleaseBuffer() {
@@ -201,8 +201,7 @@ class ImageBufferWrapper final {
     if (!mImage) {
       return;
     }
-    PlanarYCbCrImage* image = mImage->AsPlanarYCbCrImage();
-    RefPtr<layers::TextureClient> texture = image->GetTextureClient(nullptr);
+    RefPtr<layers::TextureClient> texture = mImage->GetTextureClient(nullptr);
     
     
     
