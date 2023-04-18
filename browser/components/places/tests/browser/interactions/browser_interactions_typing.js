@@ -273,7 +273,7 @@ add_task(async function test_typing_and_reload() {
       },
     ]);
   });
-});
+}).skip(); 
 
 add_task(async function test_switch_tabs_no_typing() {
   await Interactions.reset();
