@@ -930,7 +930,7 @@ const biases = [
 
 
 
-this.creditCardRulesets = {
+var creditCardRulesets = {
   init() {
     for (const type of this.types) {
       this[type] = makeRuleset([...coefficients[type]], biases);
@@ -948,7 +948,7 @@ this.creditCardRulesets = {
     ];
   },
 };
-this.creditCardRulesets.init();
+creditCardRulesets.init();
 
 FathomHeuristicsRegExp = {
   RULES: {
