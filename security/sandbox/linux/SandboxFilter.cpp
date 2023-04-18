@@ -188,6 +188,18 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         .Else(InvalidSyscall());
   }
 
+  static intptr_t SchedTrap(ArgsRef aArgs, void* aux) {
+    const pid_t tid = syscall(__NR_gettid);
+    if (aArgs.args[0] == static_cast<uint64_t>(tid)) {
+      return DoSyscall(aArgs.nr, 0, static_cast<uintptr_t>(aArgs.args[1]),
+                       static_cast<uintptr_t>(aArgs.args[2]),
+                       static_cast<uintptr_t>(aArgs.args[3]),
+                       static_cast<uintptr_t>(aArgs.args[4]),
+                       static_cast<uintptr_t>(aArgs.args[5]));
+    }
+    return -EPERM;
+  }
+
  private:
   
   
@@ -1633,19 +1645,6 @@ class GMPSandboxPolicy : public SandboxPolicyCommon {
       return -ENOENT;
     }
     return fd;
-  }
-
-  static intptr_t SchedTrap(ArgsRef aArgs, void* aux) {
-    const pid_t tid = syscall(__NR_gettid);
-    if (aArgs.args[0] == static_cast<uint64_t>(tid)) {
-      return DoSyscall(aArgs.nr, 0, static_cast<uintptr_t>(aArgs.args[1]),
-                       static_cast<uintptr_t>(aArgs.args[2]),
-                       static_cast<uintptr_t>(aArgs.args[3]),
-                       static_cast<uintptr_t>(aArgs.args[4]),
-                       static_cast<uintptr_t>(aArgs.args[5]));
-    }
-    SANDBOX_LOG_ERROR("unsupported tid in SchedTrap");
-    return BlockedSyscallTrap(aArgs, nullptr);
   }
 
   static intptr_t UnameTrap(const sandbox::arch_seccomp_data& aArgs,
