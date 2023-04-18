@@ -2691,7 +2691,7 @@ nsresult BackgroundRequestChild::PreprocessHelper::Init(
   
   
   
-  mTaskQueue = MakeRefPtr<TaskQueue>(target.forget());
+  mTaskQueue = MakeRefPtr<TaskQueue>(target.forget(), "BackgroundRequestChild");
 
   ErrorResult errorResult;
 

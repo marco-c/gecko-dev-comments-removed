@@ -21,10 +21,6 @@ TaskQueue::TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
       mIsShutdown(false),
       mName(aName) {}
 
-TaskQueue::TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
-                     bool aSupportsTailDispatch)
-    : TaskQueue(std::move(aTarget), "Unnamed", aSupportsTailDispatch) {}
-
 TaskQueue::~TaskQueue() {
   
   
