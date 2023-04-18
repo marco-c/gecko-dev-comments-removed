@@ -343,7 +343,11 @@ def clobber(command_context, what, full=False):
     "mach command.",
 )
 def show_log(command_context, log_file=None):
-    """Show mach logs."""
+    """Show mach logs
+    If we're in a terminal context, the log is piped to 'less'
+    for more convenient viewing.
+    (https://man7.org/linux/man-pages/man1/less.1.html)
+    """
     if not log_file:
         path = command_context._get_state_filename("last_log.json")
         log_file = open(path, "rb")
@@ -352,21 +356,45 @@ def show_log(command_context, log_file=None):
         env = dict(os.environ)
         if "LESS" not in env:
             
-            
-            env[b"LESS"] = b"FRX"
-        less = subprocess.Popen(["less"], stdin=subprocess.PIPE, env=env)
-        
-        
-        
-        
-        output_fd = os.dup(sys.stdout.fileno())
-        os.dup2(less.stdin.fileno(), sys.stdout.fileno())
+            env["LESS"] = "FRX"
+        less = subprocess.Popen(
+            ["less"], stdin=subprocess.PIPE, env=env, encoding="UTF-8"
+        )
 
-    startTime = 0
+        
+        
+        less_handler = logging.StreamHandler(stream=less.stdin)
+        less_handler.setFormatter(
+            command_context.log_manager.terminal_handler.formatter
+        )
+        less_handler.setLevel(command_context.log_manager.terminal_handler.level)
+
+        
+        
+        original_handler = command_context.log_manager.replace_terminal_handler(
+            less_handler
+        )
+
+        
+        handle_log_file(command_context, log_file)
+
+        
+        command_context.log_manager.replace_terminal_handler(original_handler)
+
+        
+        less.stdin.close()
+        
+        less.wait()
+    else:
+        handle_log_file(command_context, log_file)
+
+
+def handle_log_file(command_context, log_file):
+    start_time = 0
     for line in log_file:
         created, action, params = json.loads(line)
-        if not startTime:
-            startTime = created
+        if not start_time:
+            start_time = created
             command_context.log_manager.terminal_handler.formatter.start_time = created
         if "line" in params:
             record = logging.makeLogRecord(
@@ -380,17 +408,6 @@ def show_log(command_context, log_file=None):
                 }
             )
             command_context._logger.handle(record)
-
-    if command_context.log_manager.terminal:
-        
-        less.stdin.close()
-        
-        
-        
-        
-        
-        os.dup2(output_fd, sys.stdout.fileno())
-        less.wait()
 
 
 
