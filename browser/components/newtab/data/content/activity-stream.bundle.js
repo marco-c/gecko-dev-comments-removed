@@ -84,11 +84,11 @@ __webpack_require__.d(builtins_namespaceObject, {
 
 
 
-var MAIN_MESSAGE_TYPE = "ActivityStream:Main";
-var CONTENT_MESSAGE_TYPE = "ActivityStream:Content";
-var PRELOAD_MESSAGE_TYPE = "ActivityStream:PreloadedBrowser";
-var UI_CODE = 1;
-var BACKGROUND_PROCESS = 2;
+const MAIN_MESSAGE_TYPE = "ActivityStream:Main";
+const CONTENT_MESSAGE_TYPE = "ActivityStream:Content";
+const PRELOAD_MESSAGE_TYPE = "ActivityStream:PreloadedBrowser";
+const UI_CODE = 1;
+const BACKGROUND_PROCESS = 2;
 
 
 
@@ -96,7 +96,6 @@ var BACKGROUND_PROCESS = 2;
 
 
 const globalImportContext = typeof Window === "undefined" ? BACKGROUND_PROCESS : UI_CODE; 
-
 
 
 
@@ -329,7 +328,7 @@ function WebExtEvent(type, data, importContext = globalImportContext) {
   return importContext === UI_CODE ? AlsoToMain(action) : action;
 }
 
-var actionCreators = {
+const actionCreators = {
   BroadcastToContent,
   UserEvent,
   ASRouterUserEvent,
@@ -345,7 +344,7 @@ var actionCreators = {
   DiscoveryStreamLoadedContent
 }; 
 
-var actionUtils = {
+const actionUtils = {
   isSendToMain(action) {
     if (!action.meta) {
       return false;
@@ -11003,7 +11002,7 @@ function Search(prevState = INITIAL_STATE.Search, action) {
   }
 }
 
-var reducers = {
+const reducers = {
   TopSites,
   App,
   ASRouter,
