@@ -44,8 +44,9 @@ const EXPECTED_L10N_IDS = {
 };
 
 
-
-requestLongerTimeout(10);
+if (AppConstants.platform == "macosx") {
+  requestLongerTimeout(3);
+}
 
 
 
