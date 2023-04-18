@@ -421,41 +421,43 @@ class SimpleTimerBasedRefreshDriverTimer : public RefreshDriverTimer {
 
 class VsyncRefreshDriverTimer : public RefreshDriverTimer {
  public:
-  VsyncRefreshDriverTimer()
-      : mVsyncDispatcher(nullptr),
-        mVsyncChild(nullptr),
-        mVsyncRate(TimeDuration::Forever()) {
-    MOZ_ASSERT(XRE_IsParentProcess());
-    MOZ_ASSERT(NS_IsMainThread());
-    mVsyncSource = gfxPlatform::GetPlatform()->GetHardwareVsync();
-    mVsyncObserver = new RefreshDriverVsyncObserver(this);
-    MOZ_ALWAYS_TRUE(mVsyncDispatcher =
-                        mVsyncSource->GetRefreshTimerVsyncDispatcher());
+  
+  static RefPtr<VsyncRefreshDriverTimer>
+  CreateForParentProcessWithGlobalHardwareVsync() {
+    MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
+    RefPtr<gfx::VsyncSource> vsyncSource =
+        gfxPlatform::GetPlatform()->GetHardwareVsync();
+    RefPtr<RefreshTimerVsyncDispatcher> vsyncDispatcher =
+        vsyncSource->GetRefreshTimerVsyncDispatcher();
+    RefPtr<VsyncRefreshDriverTimer> timer = new VsyncRefreshDriverTimer(
+        std::move(vsyncSource), std::move(vsyncDispatcher), nullptr);
+    return timer.forget();
   }
 
   
   
   
-  explicit VsyncRefreshDriverTimer(const RefPtr<gfx::VsyncSource>& aVsyncSource)
-      : mVsyncSource(aVsyncSource),
-        mVsyncDispatcher(nullptr),
-        mVsyncChild(nullptr),
-        mVsyncRate(TimeDuration::Forever()) {
-    MOZ_ASSERT(XRE_IsParentProcess());
-    MOZ_ASSERT(NS_IsMainThread());
-    mVsyncObserver = new RefreshDriverVsyncObserver(this);
-    MOZ_ALWAYS_TRUE(mVsyncDispatcher =
-                        aVsyncSource->GetRefreshTimerVsyncDispatcher());
+  static RefPtr<VsyncRefreshDriverTimer>
+  CreateForParentProcessWithLocalVsyncSource(
+      RefPtr<gfx::VsyncSource>&& aVsyncSource) {
+    MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
+    RefPtr<RefreshTimerVsyncDispatcher> vsyncDispatcher =
+        aVsyncSource->GetRefreshTimerVsyncDispatcher();
+    RefPtr<VsyncRefreshDriverTimer> timer = new VsyncRefreshDriverTimer(
+        std::move(aVsyncSource), std::move(vsyncDispatcher), nullptr);
+    return timer.forget();
   }
 
-  explicit VsyncRefreshDriverTimer(RefPtr<VsyncMainChild>&& aVsyncChild)
-      : mVsyncSource(nullptr),
-        mVsyncDispatcher(nullptr),
-        mVsyncChild(std::move(aVsyncChild)),
-        mVsyncRate(TimeDuration::Forever()) {
-    MOZ_ASSERT(XRE_IsContentProcess());
-    MOZ_ASSERT(NS_IsMainThread());
-    mVsyncObserver = new RefreshDriverVsyncObserver(this);
+  
+  static RefPtr<VsyncRefreshDriverTimer> CreateForContentProcess(
+      RefPtr<VsyncMainChild>&& aVsyncChild) {
+    MOZ_RELEASE_ASSERT(XRE_IsContentProcess());
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
+    RefPtr<VsyncRefreshDriverTimer> timer =
+        new VsyncRefreshDriverTimer(nullptr, nullptr, std::move(aVsyncChild));
+    return timer.forget();
   }
 
   TimeDuration GetTimerRate() override {
@@ -726,6 +728,17 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     bool mProcessedVsync;
   };  
 
+  VsyncRefreshDriverTimer(
+      RefPtr<gfx::VsyncSource>&& aVsyncSource,
+      RefPtr<RefreshTimerVsyncDispatcher>&& aVsyncDispatcher,
+      RefPtr<VsyncMainChild>&& aVsyncChild)
+      : mVsyncSource(aVsyncSource),
+        mVsyncDispatcher(aVsyncDispatcher),
+        mVsyncChild(aVsyncChild),
+        mVsyncRate(TimeDuration::Forever()) {
+    mVsyncObserver = new RefreshDriverVsyncObserver(this);
+  }
+
   ~VsyncRefreshDriverTimer() override {
     if (mVsyncDispatcher) {
       mVsyncDispatcher->RemoveChildRefreshTimer(mVsyncObserver);
@@ -995,14 +1008,17 @@ void nsRefreshDriver::CreateVsyncRefreshTimer() {
     if (widget) {
       if (RefPtr<gfx::VsyncSource> localVsyncSource =
               widget->GetVsyncSource()) {
-        mOwnTimer = new VsyncRefreshDriverTimer(localVsyncSource);
+        mOwnTimer =
+            VsyncRefreshDriverTimer::CreateForParentProcessWithLocalVsyncSource(
+                std::move(localVsyncSource));
         sRegularRateTimerList->AppendElement(mOwnTimer.get());
         return;
       }
       if (BrowserChild* browserChild = widget->GetOwningBrowserChild()) {
-        if (RefPtr<VsyncMainChild> localVsyncSource =
+        if (RefPtr<VsyncMainChild> vsyncChildViaPBrowser =
                 browserChild->GetVsyncChild()) {
-          mOwnTimer = new VsyncRefreshDriverTimer(std::move(localVsyncSource));
+          mOwnTimer = VsyncRefreshDriverTimer::CreateForContentProcess(
+              std::move(vsyncChildViaPBrowser));
           sRegularRateTimerList->AppendElement(mOwnTimer.get());
           return;
         }
@@ -1014,7 +1030,8 @@ void nsRefreshDriver::CreateVsyncRefreshTimer() {
       
       gfxPlatform::GetPlatform();
       
-      sRegularRateTimer = new VsyncRefreshDriverTimer();
+      sRegularRateTimer = VsyncRefreshDriverTimer::
+          CreateForParentProcessWithGlobalHardwareVsync();
     } else {
       PBackgroundChild* actorChild =
           BackgroundChild::GetOrCreateForCurrentThread();
@@ -1022,14 +1039,16 @@ void nsRefreshDriver::CreateVsyncRefreshTimer() {
         return;
       }
 
-      auto child = MakeRefPtr<dom::VsyncMainChild>();
-      dom::PVsyncChild* actor = actorChild->SendPVsyncConstructor(child);
+      auto vsyncChildViaPBackground = MakeRefPtr<dom::VsyncMainChild>();
+      dom::PVsyncChild* actor =
+          actorChild->SendPVsyncConstructor(vsyncChildViaPBackground);
       if (NS_WARN_IF(!actor)) {
         return;
       }
 
       RefPtr<RefreshDriverTimer> vsyncRefreshDriverTimer =
-          new VsyncRefreshDriverTimer(std::move(child));
+          VsyncRefreshDriverTimer::CreateForContentProcess(
+              std::move(vsyncChildViaPBackground));
 
       sRegularRateTimer = std::move(vsyncRefreshDriverTimer);
     }
