@@ -54,12 +54,23 @@ class MainAsCurrent : public TaskQueueWrapper {
   MainAsCurrent()
       : TaskQueueWrapper(MakeRefPtr<TaskQueue>(
             do_AddRef(GetMainThreadEventTarget()), "MainAsCurrentTaskQueue")),
-        mSetter(this) {}
-  void Delete() override {
-    MOZ_RELEASE_ASSERT(!NS_IsMainThread(),
-                       "Releasing a main-thread-TaskQueue on main might hang");
-    TaskQueueWrapper::Delete();
+        mSetter(this) {
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
   }
+
+  void Delete() override {
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
+    
+    
+    
+    
+    
+    NS_DispatchBackgroundTask(
+        NS_NewRunnableFunction("MainAsCurrent off-main deleter",
+                               [this] { TaskQueueWrapper::Delete(); }),
+        NS_DISPATCH_SYNC);
+  }
+
   ~MainAsCurrent() = default;
 
  private:
@@ -468,14 +479,6 @@ class MediaPipelineTest : public ::testing::Test {
   ~MediaPipelineTest() {
     p1_.Shutdown();
     p2_.Shutdown();
-    
-    
-    
-    NS_DispatchBackgroundTask(
-        NS_NewRunnableFunction(
-            "MainAsCurrent off-main deleter",
-            [tq = std::move(main_task_queue_)]() mutable { tq = nullptr; }),
-        NS_DISPATCH_SYNC);
   }
 
   static void SetUpTestCase() {
