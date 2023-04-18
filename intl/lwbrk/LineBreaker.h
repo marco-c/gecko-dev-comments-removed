@@ -7,6 +7,8 @@
 
 #include "nscore.h"
 
+#include "mozilla/intl/Segmenter.h"
+
 #define NS_LINEBREAKER_NEED_MORE_TEXT -1
 
 namespace mozilla {
@@ -14,25 +16,16 @@ namespace intl {
 
 class LineBreaker final {
  public:
-  enum class WordBreak : uint8_t {
-    Normal = 0,    
-    BreakAll = 1,  
-    KeepAll = 2    
-  };
-
-  enum class Strictness : uint8_t {
-    Auto = 0,
-    Loose = 1,
-    Normal = 2,
-    Strict = 3,
-    Anywhere = 4
-  };
+  using WordBreak = WordBreakRule;
+  using Strictness = LineBreakRule;
 
   
   
   LineBreaker() = delete;
   ~LineBreaker() = delete;
 
+  
+  
   
   
   
