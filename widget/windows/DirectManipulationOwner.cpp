@@ -8,6 +8,7 @@
 #include "WinModifierKeyState.h"
 #include "InputData.h"
 #include "mozilla/StaticPrefs_apz.h"
+#include "mozilla/SwipeTracker.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/VsyncDispatcher.h"
 
@@ -532,6 +533,12 @@ void DManipEventHandler::SendPanCommon(nsWindow* aWindow, Phase aPhase,
                         aPosition,
                         ScreenPoint(aDeltaX, aDeltaY),
                         aMods};
+
+  
+  
+  
+  event.mRequiresContentResponseIfCannotScrollHorizontallyInStartDirection =
+      SwipeTracker::CanTriggerSwipe(event);
 
   aWindow->SendAnAPZEvent(event);
 }
