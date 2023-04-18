@@ -2923,25 +2923,25 @@ static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
 
   
   masm.bind(&resumeCatch);
-  masm.loadPtr(Address(ReturnReg, offsetof(ResumeFromException, tlsData)),
+  masm.loadPtr(Address(ReturnReg, ResumeFromException::offsetOfTlsData()),
                InstanceReg);
   masm.loadWasmPinnedRegsFromInstance();
   masm.switchToWasmInstanceRealm(scratch1, scratch2);
-  masm.loadPtr(Address(ReturnReg, offsetof(ResumeFromException, target)),
+  masm.loadPtr(Address(ReturnReg, ResumeFromException::offsetOfTarget()),
                scratch1);
-  masm.loadPtr(Address(ReturnReg, offsetof(ResumeFromException, framePointer)),
+  masm.loadPtr(Address(ReturnReg, ResumeFromException::offsetOfFramePointer()),
                FramePointer);
   masm.loadStackPtr(
-      Address(ReturnReg, offsetof(ResumeFromException, stackPointer)));
+      Address(ReturnReg, ResumeFromException::offsetOfStackPointer()));
   MoveSPForJitABI(masm);
   ClobberWasmRegsForLongJmp(masm, scratch1);
   masm.jump(scratch1);
 
   
   masm.bind(&leaveWasm);
-  masm.loadPtr(Address(ReturnReg, offsetof(ResumeFromException, framePointer)),
+  masm.loadPtr(Address(ReturnReg, ResumeFromException::offsetOfFramePointer()),
                FramePointer);
-  masm.loadPtr(Address(ReturnReg, offsetof(ResumeFromException, stackPointer)),
+  masm.loadPtr(Address(ReturnReg, ResumeFromException::offsetOfStackPointer()),
                scratch1);
   masm.moveToStackPtr(scratch1);
 #ifdef JS_CODEGEN_ARM64

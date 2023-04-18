@@ -492,7 +492,7 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(Label* profilerExitTail) {
   Label wasm;
   Label wasmCatch;
 
-  load32(Address(rsp, offsetof(ResumeFromException, kind)), rax);
+  load32(Address(rsp, ResumeFromException::offsetOfKind()), rax);
   asMasm().branch32(Assembler::Equal, rax,
                     Imm32(ExceptionResumeKind::EntryFrame), &entryFrame);
   asMasm().branch32(Assembler::Equal, rax, Imm32(ExceptionResumeKind::Catch),
@@ -514,26 +514,26 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(Label* profilerExitTail) {
   
   bind(&entryFrame);
   asMasm().moveValue(MagicValue(JS_ION_ERROR), JSReturnOperand);
-  loadPtr(Address(rsp, offsetof(ResumeFromException, stackPointer)), rsp);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfStackPointer()), rsp);
   ret();
 
   
   
   bind(&catch_);
-  loadPtr(Address(rsp, offsetof(ResumeFromException, target)), rax);
-  loadPtr(Address(rsp, offsetof(ResumeFromException, framePointer)), rbp);
-  loadPtr(Address(rsp, offsetof(ResumeFromException, stackPointer)), rsp);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfTarget()), rax);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfFramePointer()), rbp);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfStackPointer()), rsp);
   jmp(Operand(rax));
 
   
   
   bind(&finally);
   ValueOperand exception = ValueOperand(rcx);
-  loadValue(Address(esp, offsetof(ResumeFromException, exception)), exception);
+  loadValue(Address(esp, ResumeFromException::offsetOfException()), exception);
 
-  loadPtr(Address(rsp, offsetof(ResumeFromException, target)), rax);
-  loadPtr(Address(rsp, offsetof(ResumeFromException, framePointer)), rbp);
-  loadPtr(Address(rsp, offsetof(ResumeFromException, stackPointer)), rsp);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfTarget()), rax);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfFramePointer()), rbp);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfStackPointer()), rsp);
 
   pushValue(exception);
   pushValue(BooleanValue(true));
@@ -541,8 +541,8 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(Label* profilerExitTail) {
 
   
   bind(&return_);
-  loadPtr(Address(rsp, offsetof(ResumeFromException, framePointer)), rbp);
-  loadPtr(Address(rsp, offsetof(ResumeFromException, stackPointer)), rsp);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfFramePointer()), rbp);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfStackPointer()), rsp);
   loadValue(Address(rbp, BaselineFrame::reverseOffsetOfReturnValue()),
             JSReturnOperand);
   movq(rbp, rsp);
@@ -565,23 +565,23 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(Label* profilerExitTail) {
   
   
   bind(&bailout);
-  loadPtr(Address(esp, offsetof(ResumeFromException, bailoutInfo)), r9);
+  loadPtr(Address(esp, ResumeFromException::offsetOfBailoutInfo()), r9);
   move32(Imm32(1), ReturnReg);
-  jmp(Operand(rsp, offsetof(ResumeFromException, target)));
+  jmp(Operand(rsp, ResumeFromException::offsetOfTarget()));
 
   
   
   
   bind(&wasm);
-  loadPtr(Address(rsp, offsetof(ResumeFromException, framePointer)), rbp);
-  loadPtr(Address(rsp, offsetof(ResumeFromException, stackPointer)), rsp);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfFramePointer()), rbp);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfStackPointer()), rsp);
   masm.ret();
 
   
   bind(&wasmCatch);
-  loadPtr(Address(rsp, offsetof(ResumeFromException, target)), rax);
-  loadPtr(Address(rsp, offsetof(ResumeFromException, framePointer)), rbp);
-  loadPtr(Address(rsp, offsetof(ResumeFromException, stackPointer)), rsp);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfTarget()), rax);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfFramePointer()), rbp);
+  loadPtr(Address(rsp, ResumeFromException::offsetOfStackPointer()), rsp);
   jmp(Operand(rax));
 }
 
