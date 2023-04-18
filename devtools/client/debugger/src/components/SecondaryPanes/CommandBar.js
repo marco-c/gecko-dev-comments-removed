@@ -2,8 +2,8 @@
 
 
 
-import PropTypes from "prop-types";
 import React, { Component } from "react";
+import PropTypes from "prop-types";
 
 import { connect } from "../../utils/connect";
 import classnames from "classnames";
@@ -77,6 +77,28 @@ function formatKey(action) {
 }
 
 class CommandBar extends Component {
+  static get propTypes() {
+    return {
+      breakOnNext: PropTypes.func.isRequired,
+      cx: PropTypes.object.isRequired,
+      horizontal: PropTypes.bool.isRequired,
+      isPaused: PropTypes.bool.isRequired,
+      isWaitingOnBreak: PropTypes.bool.isRequired,
+      javascriptEnabled: PropTypes.bool.isRequired,
+      resume: PropTypes.func.isRequired,
+      skipPausing: PropTypes.bool.isRequired,
+      stepIn: PropTypes.func.isRequired,
+      stepOut: PropTypes.func.isRequired,
+      stepOver: PropTypes.func.isRequired,
+      toggleEditorWrapping: PropTypes.func.isRequired,
+      toggleInlinePreview: PropTypes.func.isRequired,
+      toggleJavaScriptEnabled: PropTypes.func.isRequired,
+      toggleSkipPausing: PropTypes.any.isRequired,
+      toggleSourceMapsEnabled: PropTypes.func.isRequired,
+      topFrameSelected: PropTypes.bool.isRequired,
+    };
+  }
+
   componentWillUnmount() {
     const { shortcuts } = this.context;
 

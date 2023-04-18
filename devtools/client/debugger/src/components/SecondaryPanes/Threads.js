@@ -3,6 +3,7 @@
 
 
 import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { connect } from "../../utils/connect";
 
 import { getAllThreads } from "../../selectors";
@@ -11,6 +12,12 @@ import Thread from "./Thread";
 import "./Threads.css";
 
 export class Threads extends Component {
+  static get propTypes() {
+    return {
+      threads: PropTypes.array.isRequired,
+    };
+  }
+
   render() {
     const { threads } = this.props;
 
