@@ -1013,18 +1013,20 @@ class ExtensionData {
 
     manifest = normalized.value;
 
-    let id;
-    try {
-      if (manifest.applications.gecko.id) {
-        id = manifest.applications.gecko.id;
+    
+    
+    
+    
+    if (manifest.browser_specific_settings?.gecko) {
+      if (manifest.applications) {
+        this.manifestWarning(
+          `"applications" property ignored and overridden by "browser_specific_settings"`
+        );
       }
-    } catch (e) {
-      
+      manifest.applications = manifest.browser_specific_settings;
     }
 
-    if (!this.id) {
-      this.id = id;
-    }
+    this.id ??= manifest.applications?.gecko?.id;
 
     let apiNames = new Set();
     let dependencies = new Set();
@@ -1037,7 +1039,7 @@ class ExtensionData {
     let result = {
       apiNames,
       dependencies,
-      id,
+      id: this.id,
       manifest,
       modules: null,
       originPermissions,
@@ -1061,7 +1063,7 @@ class ExtensionData {
             "extensions.geckoProfiler.acceptedExtensionIds",
             ""
           );
-          if (!acceptedExtensions.split(",").includes(id)) {
+          if (!acceptedExtensions.split(",").includes(this.id)) {
             this.manifestError(
               "Only specific extensions are allowed to access the geckoProfiler."
             );
