@@ -56,7 +56,9 @@
 #include "mozilla/Types.h"
 #include "mozilla/UniquePtr.h"
 #ifdef XP_WIN
+#  include "mozilla/Maybe.h"
 #  include "mozilla/WinHeaderOnlyUtils.h"
+#  include <climits>
 #endif  
 
 
@@ -2211,6 +2213,130 @@ static void WriteStatusFile(int status) {
   WriteStatusFile(text);
 }
 
+#if defined(XP_WIN)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool UpdateStatusIs(const char* statusString, const char* expectedStatus,
+                           mozilla::Maybe<int>* errorCode = nullptr) {
+  if (errorCode) {
+    *errorCode = mozilla::Nothing();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  const char* statusEnd = strchr(statusString, ':');
+  if (statusEnd == nullptr) {
+    statusEnd = strchr(statusString, '\n');
+  }
+  if (statusEnd == nullptr) {
+    statusEnd = strchr(statusString, '\0');
+  }
+  size_t statusLen = statusEnd - statusString;
+  size_t expectedStatusLen = strlen(expectedStatus);
+
+  bool statusMatch =
+      statusLen == expectedStatusLen &&
+      strncmp(statusString, expectedStatus, expectedStatusLen) == 0;
+
+  
+  
+  
+  if (!errorCode || *statusEnd != ':') {
+    return statusMatch;
+  }
+
+  const char* errorCodeStart = statusEnd + 1;
+  char* errorCodeEnd = nullptr;
+  
+  
+  
+  long longErrorCode = strtol(errorCodeStart, &errorCodeEnd, 10);
+  if (errorCodeEnd != errorCodeStart && longErrorCode < INT_MAX &&
+      longErrorCode > INT_MIN) {
+    
+    
+    
+    
+    
+    errorCode->emplace(static_cast<int>(longErrorCode));
+  }
+  return statusMatch;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool CompareSecureUpdateStatus(
+    const char* expectedStatus, bool& statusMatch,
+    mozilla::Maybe<int>* errorCode = nullptr) {
+  NS_tchar statusFilePath[MAX_PATH + 1] = {L'\0'};
+  if (!GetSecureOutputFilePath(gPatchDirPath, L".status", statusFilePath)) {
+    return false;
+  }
+
+  AutoFile file(NS_tfopen(statusFilePath, NS_T("rb")));
+  if (file == nullptr) {
+    return false;
+  }
+
+  const size_t bufferLength = 32;
+  char buf[bufferLength] = {0};
+  size_t charsRead = fread(buf, sizeof(buf[0]), bufferLength - 1, file);
+  if (ferror(file)) {
+    return false;
+  }
+  buf[charsRead] = '\0';
+
+  statusMatch = UpdateStatusIs(buf, expectedStatus, errorCode);
+  return true;
+}
+
+
+
+
+
+
+
+
+
+static bool IsSecureUpdateStatusSucceeded(bool& isSucceeded) {
+  return CompareSecureUpdateStatus("succeeded", isSucceeded);
+}
+#endif
+
 #ifdef MOZ_MAINTENANCE_SERVICE
 
 
@@ -2231,44 +2357,53 @@ static bool IsUpdateStatusPendingService() {
     return false;
   }
 
-  char buf[32] = {0};
-  fread(buf, sizeof(buf), 1, file);
-
-  const char kPendingService[] = "pending-service";
-  const char kAppliedService[] = "applied-service";
-
-  return (strncmp(buf, kPendingService, sizeof(kPendingService) - 1) == 0) ||
-         (strncmp(buf, kAppliedService, sizeof(kAppliedService) - 1) == 0);
-}
-#endif
-
-#if defined(XP_WIN)
-
-
-
-
-
-
-
-
-static bool IsSecureUpdateStatusSucceeded(bool& isSucceeded) {
-  isSucceeded = false;
-  NS_tchar statusFilePath[MAX_PATH + 1] = {L'\0'};
-  if (!GetSecureOutputFilePath(gPatchDirPath, L".status", statusFilePath)) {
-    return FALSE;
-  }
-
-  AutoFile file(NS_tfopen(statusFilePath, NS_T("rb")));
-  if (file == nullptr) {
+  const size_t bufferLength = 32;
+  char buf[bufferLength] = {0};
+  size_t charsRead = fread(buf, sizeof(buf[0]), bufferLength - 1, file);
+  if (ferror(file)) {
     return false;
   }
+  buf[charsRead] = '\0';
 
-  char buf[32] = {0};
-  fread(buf, sizeof(buf), 1, file);
+  return UpdateStatusIs(buf, "pending-service") ||
+         UpdateStatusIs(buf, "applied-service");
+}
 
-  const char kSucceeded[] = "succeeded";
-  isSucceeded = strncmp(buf, kSucceeded, sizeof(kSucceeded) - 1) == 0;
-  return true;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool IsSecureUpdateStatusFailed(
+    bool& isFailed, mozilla::Maybe<int>* errorCode = nullptr) {
+  return CompareSecureUpdateStatus("failed", isFailed, errorCode);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool IsServiceSpecificErrorCode(int errorCode) {
+  return ((errorCode >= 24 && errorCode <= 33) ||
+          (errorCode >= 49 && errorCode <= 58));
 }
 #endif
 
@@ -3396,6 +3531,22 @@ int NS_main(int argc, NS_tchar** argv) {
                     ("The secure ID hasn't changed after launching the updater "
                      "using the service"));
                 gCopyOutputFiles = false;
+              }
+              if (gCopyOutputFiles && !sStagedUpdate && !noServiceFallback) {
+                
+                
+                
+                
+                
+                
+                bool updateFailed;
+                mozilla::Maybe<int> maybeErrorCode;
+                bool success =
+                    IsSecureUpdateStatusFailed(updateFailed, &maybeErrorCode);
+                if (success && updateFailed && maybeErrorCode.isSome() &&
+                    IsServiceSpecificErrorCode(maybeErrorCode.value())) {
+                  useService = false;
+                }
               }
             }
           } else {

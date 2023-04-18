@@ -1848,6 +1848,27 @@ function updateIsAtLeastAsOldAsReadyUpdate(update) {
 
 
 
+
+
+
+
+
+
+
+
+function isServiceSpecificErrorCode(errorCode) {
+  return (
+    (errorCode >= 24 && errorCode <= 33) || (errorCode >= 49 && errorCode <= 58)
+  );
+}
+
+
+
+
+
+
+
+
 function UpdatePatch(patch) {
   this._properties = {};
   this.errorCode = 0;
@@ -4388,6 +4409,17 @@ UpdateManager.prototype = {
         parts[1] == UNEXPECTED_STAGING_ERROR
       ) {
         update.state = getBestPendingState();
+        writeStatusFile(getReadyUpdateDir(), update.state);
+      } else if (isServiceSpecificErrorCode(parts[1])) {
+        
+        
+        
+        LOG(
+          `UpdateManager:refreshUpdateStatus - Encountered service specific ` +
+            `error code: ${parts[1]}. Will try installing update without the ` +
+            `Maintenance Service.`
+        );
+        update.state = STATE_PENDING;
         writeStatusFile(getReadyUpdateDir(), update.state);
       } else if (!handleUpdateFailure(update, parts[1])) {
         await handleFallbackToCompleteUpdate(true);
