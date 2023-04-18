@@ -267,6 +267,29 @@ hb_set_add (hb_set_t       *set,
 
 
 
+
+HB_EXTERN void
+hb_set_add_sorted_array (hb_set_t             *set,
+		         const hb_codepoint_t *sorted_codepoints,
+		         unsigned int          num_codepoints)
+{
+  
+  set->add_sorted_array (sorted_codepoints,
+		         num_codepoints,
+		         sizeof(hb_codepoint_t));
+}
+
+
+
+
+
+
+
+
+
+
+
+
 void
 hb_set_add_range (hb_set_t       *set,
 		  hb_codepoint_t  first,

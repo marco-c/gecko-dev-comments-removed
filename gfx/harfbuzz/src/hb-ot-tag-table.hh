@@ -54,6 +54,7 @@ static const LangTag ot_languages[] = {
 	
   {"aiw",	HB_TAG('A','R','I',' ')},	
   {"ajp",	HB_TAG('A','R','A',' ')},	
+  {"ajt",	HB_TAG('A','R','A',' ')},	
   {"ak",	HB_TAG('A','K','A',' ')},	
   {"akb",	HB_TAG('A','K','B',' ')},	
   {"akb",	HB_TAG('B','T','K',' ')},	
@@ -1339,12 +1340,14 @@ static const LangTag ot_languages[] = {
   {"sla",	HB_TAG_NONE	       },	
   {"sm",	HB_TAG('S','M','O',' ')},	
   {"sma",	HB_TAG('S','S','M',' ')},	
+  {"smd",	HB_TAG('M','B','N',' ')},	
   {"smj",	HB_TAG('L','S','M',' ')},	
   {"sml",	HB_TAG_NONE	       },	
   {"smn",	HB_TAG('I','S','M',' ')},	
   {"sms",	HB_TAG('S','K','S',' ')},	
   {"smt",	HB_TAG('Q','I','N',' ')},	
   {"sn",	HB_TAG('S','N','A','0')},	
+  {"snb",	HB_TAG('I','B','A',' ')},	
   {"snh",	HB_TAG_NONE	       },	
 	
   {"so",	HB_TAG('S','M','L',' ')},	

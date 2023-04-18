@@ -332,31 +332,6 @@ hb_ot_layout_lookup_collect_glyphs (hb_face_t    *face,
 				    hb_set_t     *glyphs_after,  
 				    hb_set_t     *glyphs_output  );
 
-#ifdef HB_NOT_IMPLEMENTED
-typedef struct
-{
-  const hb_codepoint_t *before,
-  unsigned int          before_length,
-  const hb_codepoint_t *input,
-  unsigned int          input_length,
-  const hb_codepoint_t *after,
-  unsigned int          after_length,
-} hb_ot_layout_glyph_sequence_t;
-
-typedef hb_bool_t
-(*hb_ot_layout_glyph_sequence_func_t) (hb_font_t    *font,
-				       hb_tag_t      table_tag,
-				       unsigned int  lookup_index,
-				       const hb_ot_layout_glyph_sequence_t *sequence,
-				       void         *user_data);
-
-HB_EXTERN void
-Xhb_ot_layout_lookup_enumerate_sequences (hb_face_t    *face,
-					 hb_tag_t      table_tag,
-					 unsigned int  lookup_index,
-					 hb_ot_layout_glyph_sequence_func_t callback,
-					 void         *user_data);
-#endif
 
 
 
@@ -411,34 +386,12 @@ hb_ot_layout_lookups_substitute_closure (hb_face_t      *face,
 					 hb_set_t       *glyphs);
 
 
-#ifdef HB_NOT_IMPLEMENTED
-
-HB_EXTERN hb_bool_t
-Xhb_ot_layout_lookup_substitute (hb_font_t            *font,
-				unsigned int          lookup_index,
-				const hb_ot_layout_glyph_sequence_t *sequence,
-				unsigned int          out_size,
-				hb_codepoint_t       *glyphs_out,   
-				unsigned int         *clusters_out, 
-				unsigned int         *out_length    );
-#endif
-
-
 
 
 
 
 HB_EXTERN hb_bool_t
 hb_ot_layout_has_positioning (hb_face_t *face);
-
-#ifdef HB_NOT_IMPLEMENTED
-
-HB_EXTERN hb_bool_t
-Xhb_ot_layout_lookup_position (hb_font_t            *font,
-			      unsigned int          lookup_index,
-			      const hb_ot_layout_glyph_sequence_t *sequence,
-			      hb_glyph_position_t  *positions );
-#endif
 
 
 
@@ -498,18 +451,25 @@ hb_ot_layout_feature_get_characters (hb_face_t      *face,
 
 
 
+
+
 typedef enum {
   HB_OT_LAYOUT_BASELINE_TAG_ROMAN			= HB_TAG ('r','o','m','n'),
   HB_OT_LAYOUT_BASELINE_TAG_HANGING			= HB_TAG ('h','a','n','g'),
   HB_OT_LAYOUT_BASELINE_TAG_IDEO_FACE_BOTTOM_OR_LEFT	= HB_TAG ('i','c','f','b'),
   HB_OT_LAYOUT_BASELINE_TAG_IDEO_FACE_TOP_OR_RIGHT	= HB_TAG ('i','c','f','t'),
+  HB_OT_LAYOUT_BASELINE_TAG_IDEO_FACE_CENTRAL		= HB_TAG ('I','c','f','c'),
   HB_OT_LAYOUT_BASELINE_TAG_IDEO_EMBOX_BOTTOM_OR_LEFT	= HB_TAG ('i','d','e','o'),
   HB_OT_LAYOUT_BASELINE_TAG_IDEO_EMBOX_TOP_OR_RIGHT	= HB_TAG ('i','d','t','p'),
+  HB_OT_LAYOUT_BASELINE_TAG_IDEO_EMBOX_CENTRAL		= HB_TAG ('I','d','c','e'),
   HB_OT_LAYOUT_BASELINE_TAG_MATH			= HB_TAG ('m','a','t','h'),
 
   
   _HB_OT_LAYOUT_BASELINE_TAG_MAX_VALUE = HB_TAG_MAX_SIGNED 
 } hb_ot_layout_baseline_tag_t;
+
+HB_EXTERN hb_ot_layout_baseline_tag_t
+hb_ot_layout_get_horizontal_baseline_tag_for_script (hb_script_t script);
 
 HB_EXTERN hb_bool_t
 hb_ot_layout_get_baseline (hb_font_t                   *font,
@@ -518,6 +478,14 @@ hb_ot_layout_get_baseline (hb_font_t                   *font,
 			   hb_tag_t                     script_tag,
 			   hb_tag_t                     language_tag,
 			   hb_position_t               *coord        );
+
+HB_EXTERN void
+hb_ot_layout_get_baseline_with_fallback (hb_font_t                   *font,
+					 hb_ot_layout_baseline_tag_t  baseline_tag,
+					 hb_direction_t               direction,
+					 hb_tag_t                     script_tag,
+					 hb_tag_t                     language_tag,
+					 hb_position_t               *coord        );
 
 HB_END_DECLS
 

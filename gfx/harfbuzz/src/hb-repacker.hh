@@ -37,7 +37,6 @@
 
 
 
-
 struct graph_t
 {
   struct vertex_t
@@ -140,7 +139,8 @@ struct graph_t
 
 
 
-  graph_t (const hb_vector_t<hb_serialize_context_t::object_t *>& objects)
+  template<typename T>
+  graph_t (const T& objects)
       : parents_invalid (true),
         distance_invalid (true),
         positions_invalid (true),
@@ -1098,8 +1098,9 @@ struct graph_t
   hb_vector_t<unsigned> num_roots_for_space_;
 };
 
-static bool _try_isolating_subgraphs (const hb_vector_t<graph_t::overflow_record_t>& overflows,
-                                      graph_t& sorted_graph)
+static inline
+bool _try_isolating_subgraphs (const hb_vector_t<graph_t::overflow_record_t>& overflows,
+                               graph_t& sorted_graph)
 {
   unsigned space = 0;
   hb_set_t roots_to_isolate;
@@ -1147,9 +1148,10 @@ static bool _try_isolating_subgraphs (const hb_vector_t<graph_t::overflow_record
   return true;
 }
 
-static bool _process_overflows (const hb_vector_t<graph_t::overflow_record_t>& overflows,
-                                hb_set_t& priority_bumped_parents,
-                                graph_t& sorted_graph)
+static inline
+bool _process_overflows (const hb_vector_t<graph_t::overflow_record_t>& overflows,
+                         hb_set_t& priority_bumped_parents,
+                         graph_t& sorted_graph)
 {
   bool resolution_attempted = false;
 
@@ -1207,8 +1209,9 @@ static bool _process_overflows (const hb_vector_t<graph_t::overflow_record_t>& o
 
 
 
+template<typename T>
 inline hb_blob_t*
-hb_resolve_overflows (const hb_vector_t<hb_serialize_context_t::object_t *>& packed,
+hb_resolve_overflows (const T& packed,
                       hb_tag_t table_tag,
                       unsigned max_rounds = 20) {
   

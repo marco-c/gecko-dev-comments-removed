@@ -111,7 +111,7 @@ static void _collect_layout_indices (hb_face_t		  *face,
       retain_all_features = false;
       continue;
     }
-    
+
     if (visited_features.has (tag))
       continue;
 
@@ -249,9 +249,9 @@ static void _colr_closure (hb_face_t *face,
     hb_set_t glyphset_colrv0;
     for (hb_codepoint_t gid : glyphs_colred->iter ())
       colr.closure_glyphs (gid, &glyphset_colrv0);
-    
+
     glyphs_colred->union_ (glyphset_colrv0);
-    
+
     
     colr.closure_forV1 (glyphs_colred, &layer_indices, &palette_indices);
   } while (iteration_count++ <= HB_CLOSURE_MAX_STAGES &&
@@ -471,13 +471,14 @@ _nameid_closure (hb_face_t *face,
 
 
 
+
 hb_subset_plan_t *
-hb_subset_plan_create (hb_face_t	 *face,
-		       const hb_subset_input_t *input)
+hb_subset_plan_create_or_fail (hb_face_t	 *face,
+                               const hb_subset_input_t *input)
 {
   hb_subset_plan_t *plan;
   if (unlikely (!(plan = hb_object_create<hb_subset_plan_t> ())))
-    return const_cast<hb_subset_plan_t *> (&Null (hb_subset_plan_t));
+    return nullptr;
 
   plan->successful = true;
   plan->flags = input->flags;
@@ -514,8 +515,9 @@ hb_subset_plan_create (hb_face_t	 *face,
   plan->layout_variation_indices = hb_set_create ();
   plan->layout_variation_idx_map = hb_map_create ();
 
-  if (plan->in_error ()) {
-    return plan;
+  if (unlikely (plan->in_error ())) {
+    hb_subset_plan_destroy (plan);
+    return nullptr;
   }
 
   _populate_unicodes_to_retain (input->sets.unicodes, input->sets.glyphs, plan);
@@ -532,6 +534,10 @@ hb_subset_plan_create (hb_face_t	 *face,
 				  plan->reverse_glyph_map,
 				  &plan->_num_output_glyphs);
 
+  if (unlikely (plan->in_error ())) {
+    hb_subset_plan_destroy (plan);
+    return nullptr;
+  }
   return plan;
 }
 
@@ -595,4 +601,117 @@ hb_subset_plan_destroy (hb_subset_plan_t *plan)
   }
 
   hb_free (plan);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+const hb_map_t*
+hb_subset_plan_old_to_new_glyph_mapping (const hb_subset_plan_t *plan)
+{
+  return plan->glyph_map;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+const hb_map_t*
+hb_subset_plan_new_to_old_glyph_mapping (const hb_subset_plan_t *plan)
+{
+  return plan->reverse_glyph_map;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+const hb_map_t*
+hb_subset_plan_unicode_to_old_glyph_mapping (const hb_subset_plan_t *plan)
+{
+  return plan->codepoint_to_glyph;
+}
+
+
+
+
+
+
+
+
+
+
+
+hb_subset_plan_t *
+hb_subset_plan_reference (hb_subset_plan_t *plan)
+{
+  return hb_object_reference (plan);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+hb_bool_t
+hb_subset_plan_set_user_data (hb_subset_plan_t   *plan,
+                              hb_user_data_key_t *key,
+                              void               *data,
+                              hb_destroy_func_t   destroy,
+                              hb_bool_t	          replace)
+{
+  return hb_object_set_user_data (plan, key, data, destroy, replace);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+void *
+hb_subset_plan_get_user_data (const hb_subset_plan_t *plan,
+                              hb_user_data_key_t     *key)
+{
+  return hb_object_get_user_data (plan, key);
 }

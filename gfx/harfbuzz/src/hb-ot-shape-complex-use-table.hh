@@ -53,7 +53,7 @@
 #define GB	USE(GB)	/* BASE_OTHER */
 #define H	USE(H)	/* HALANT */
 #define HN	USE(HN)	/* HALANT_NUM */
-#define HVM	USE(HVM)	/* HALANT_OR_VOWEL_MODIFIER */
+#define IS	USE(IS)	/* INVISIBLE_STACKER */
 #define J	USE(J)	/* HIEROGLYPH_JOINER */
 #define N	USE(N)	/* BASE_NUM */
 #define O	USE(O)	/* OTHER */
@@ -62,6 +62,7 @@
 #define SE	USE(SE)	/* HIEROGLYPH_SEGMENT_END */
 #define SUB	USE(SUB)	/* CONS_SUB */
 #define Sk	USE(Sk)	/* SAKOT */
+#define WJ	USE(WJ)	/* Word_Joiner */
 #define ZWNJ	USE(ZWNJ)	/* ZWNJ */
 #define CMAbv	USE(CMAbv)
 #define CMBlw	USE(CMBlw)
@@ -102,7 +103,7 @@ static const uint8_t use_table[] = {
 
   
 
-      GB,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+      GB,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,    WJ,     O,     O,
        O,     O, FMPst, FMPst,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
        O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
        O,     O,     O,     O,     O,     O,     O,    GB,
@@ -127,7 +128,7 @@ static const uint8_t use_table[] = {
                                                                          O,     O,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv,
-   VMAbv, VMAbv, VMAbv, VMAbv,     O,     O,     O,     O,     O,     O,     B,     O,     O, VMAbv,     O,     O,
+   VMAbv, VMAbv, VMAbv, VMAbv,     O,     O,     O,     O,     O,     O,     B,    WJ,    WJ, VMAbv,     O,     O,
 
 #define use_offset_0x0840u 152
 
@@ -135,7 +136,7 @@ static const uint8_t use_table[] = {
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B, CMBlw, CMBlw, CMBlw,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B, CMBlw, CMBlw, CMBlw,    WJ,    WJ,     O,    WJ,
 
 #define use_offset_0x0900u 184
 
@@ -153,102 +154,102 @@ static const uint8_t use_table[] = {
 
   
 
-      GB, VMAbv, VMPst, VMPst,     O,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     B,
-       B,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     B,     B,     B,     B,
-       B,     O,     B,     O,     O,     O,     B,     B,     B,     B,     O,     O, CMBlw,     B,  VPst,  VPre,
-    VPst,  VBlw,  VBlw,  VBlw,  VBlw,     O,     O,  VPre,  VPre,     O,     O,  VPre,  VPre,     H,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,  VPst,     O,     O,     O,     O,     B,     B,     O,     B,
-       B,     B,  VBlw,  VBlw,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     B,     O, FMAbv,     O,
+      GB, VMAbv, VMPst, VMPst,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,     B,
+       B,    WJ,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,     B,     B,     B,     B,
+       B,    WJ,     B,    WJ,    WJ,    WJ,     B,     B,     B,     B,    WJ,    WJ, CMBlw,     B,  VPst,  VPre,
+    VPst,  VBlw,  VBlw,  VBlw,  VBlw,    WJ,    WJ,  VPre,  VPre,    WJ,    WJ,  VPre,  VPre,     H,     O,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,  VPst,    WJ,    WJ,    WJ,    WJ,     B,     B,    WJ,     B,
+       B,     B,  VBlw,  VBlw,    WJ,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     B,     O, FMAbv,    WJ,
 
   
 
-       O, VMAbv, VMAbv, VMPst,     O,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     B,
-       B,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     B,     B,     B,     B,
-       B,     O,     B,     B,     O,     B,     B,     O,     B,     B,     O,     O, CMBlw,     O,  VPst,  VPre,
-    VPst,  VBlw,  VBlw,     O,     O,     O,     O,  VAbv,  VAbv,     O,     O,  VAbv,  VAbv,     H,     O,     O,
-       O, VMBlw,     O,     O,     O,     O,     O,     O,     O,     B,     B,     B,     B,     O,     B,     O,
-       O,     O,     O,     O,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-   VMAbv, CMAbv,    GB,    GB,     O,  MBlw,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+      WJ, VMAbv, VMAbv, VMPst,    WJ,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,     B,
+       B,    WJ,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,     B,     B,     B,     B,
+       B,    WJ,     B,     B,    WJ,     B,     B,    WJ,     B,     B,    WJ,    WJ, CMBlw,    WJ,  VPst,  VPre,
+    VPst,  VBlw,  VBlw,    WJ,    WJ,    WJ,    WJ,  VAbv,  VAbv,    WJ,    WJ,  VAbv,  VAbv,     H,    WJ,    WJ,
+      WJ, VMBlw,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     B,     B,     B,     B,    WJ,     B,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+   VMAbv, CMAbv,    GB,    GB,     O,  MBlw,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
-       O, VMAbv, VMAbv, VMPst,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,
-       B,     B,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     B,     B,     B,     B,
-       B,     O,     B,     B,     O,     B,     B,     B,     B,     B,     O,     O, CMBlw,     B,  VPst,  VPre,
-    VPst,  VBlw,  VBlw,  VBlw,  VBlw,  VAbv,     O,  VAbv,  VAbv,  VAbv,     O,  VPst,  VPst,     H,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       B,     B,  VBlw,  VBlw,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     B, VMAbv, VMAbv, VMAbv, CMAbv, CMAbv, CMAbv,
+      WJ, VMAbv, VMAbv, VMPst,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,
+       B,     B,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,     B,     B,     B,     B,
+       B,    WJ,     B,     B,    WJ,     B,     B,     B,     B,     B,    WJ,    WJ, CMBlw,     B,  VPst,  VPre,
+    VPst,  VBlw,  VBlw,  VBlw,  VBlw,  VAbv,    WJ,  VAbv,  VAbv,  VAbv,    WJ,  VPst,  VPst,     H,    WJ,    WJ,
+       O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+       B,     B,  VBlw,  VBlw,    WJ,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     B, VMAbv, VMAbv, VMAbv, CMAbv, CMAbv, CMAbv,
 
   
 
-       O, VMAbv, VMPst, VMPst,     O,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     B,
-       B,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     B,     B,     B,     B,
-       B,     O,     B,     B,     O,     B,     B,     B,     B,     B,     O,     O, CMBlw,     B,  VPst,  VAbv,
-    VPst,  VBlw,  VBlw,  VBlw,  VBlw,     O,     O,  VPre,  VPre,     O,     O,  VPre,  VPre,     H,     O,     O,
-       O,     O,     O,     O,     O,  VAbv,  VAbv,  VAbv,     O,     O,     O,     O,     B,     B,     O,     B,
-       B,     B,  VBlw,  VBlw,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       O,     B,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+      WJ, VMAbv, VMPst, VMPst,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,     B,
+       B,    WJ,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,     B,     B,     B,     B,
+       B,    WJ,     B,     B,    WJ,     B,     B,     B,     B,     B,    WJ,    WJ, CMBlw,     B,  VPst,  VAbv,
+    VPst,  VBlw,  VBlw,  VBlw,  VBlw,    WJ,    WJ,  VPre,  VPre,    WJ,    WJ,  VPre,  VPre,     H,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,  VAbv,  VAbv,  VAbv,    WJ,    WJ,    WJ,    WJ,     B,     B,    WJ,     B,
+       B,     B,  VBlw,  VBlw,    WJ,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       O,     B,     O,     O,     O,     O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
-       O,     O, VMAbv,     O,     O,     B,     B,     B,     B,     B,     B,     O,     O,     O,     B,     B,
-       B,     O,     B,     B,     B,     B,     O,     O,     O,     B,     B,     O,     B,     O,     B,     B,
-       O,     O,     O,     B,     B,     O,     O,     O,     B,     B,     B,     O,     O,     O,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,  VPst,  VPst,
-    VAbv,  VPst,  VPst,     O,     O,     O,  VPre,  VPre,  VPre,     O,  VPre,  VPre,  VPre,     H,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,  VPst,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+      WJ,    WJ, VMAbv,     O,    WJ,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,     B,     B,
+       B,    WJ,     B,     B,     B,     B,    WJ,    WJ,    WJ,     B,     B,    WJ,     B,    WJ,     B,     B,
+      WJ,    WJ,    WJ,     B,     B,    WJ,    WJ,    WJ,     B,     B,     B,    WJ,    WJ,    WJ,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,  VPst,  VPst,
+    VAbv,  VPst,  VPst,    WJ,    WJ,    WJ,  VPre,  VPre,  VPre,    WJ,  VPre,  VPre,  VPre,     H,    WJ,    WJ,
+       O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,  VPst,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
-   VMAbv, VMPst, VMPst, VMPst, VMAbv,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,
-       B,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O, CMBlw,     B,  VAbv,  VAbv,
-    VAbv,  VPst,  VPst,  VPst,  VPst,     O,  VAbv,  VAbv,  VAbv,     O,  VAbv,  VAbv,  VAbv,     H,     O,     O,
-       O,     O,     O,     O,     O,  VAbv,  VBlw,     O,     B,     B,     B,     O,     O,     O,     O,     O,
-       B,     B,  VBlw,  VBlw,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+   VMAbv, VMPst, VMPst, VMPst, VMAbv,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,
+       B,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ, CMBlw,     B,  VAbv,  VAbv,
+    VAbv,  VPst,  VPst,  VPst,  VPst,    WJ,  VAbv,  VAbv,  VAbv,    WJ,  VAbv,  VAbv,  VAbv,     H,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,  VAbv,  VBlw,    WJ,     B,     B,     B,    WJ,    WJ,     O,    WJ,    WJ,
+       B,     B,  VBlw,  VBlw,    WJ,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     O,     O,     O,     O,     O,     O,     O,     O,     O,
 
   
 
-       B, VMAbv, VMPst, VMPst,     O,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,
-       B,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     O,     B,     B,     B,     B,     B,     O,     O, CMBlw,     B,  VPst,  VAbv,
-    VAbv,  VPst,  VPst,  VPst,  VPst,     O,  VAbv,  VAbv,  VAbv,     O,  VAbv,  VAbv,  VAbv,     H,     O,     O,
-       O,     O,     O,     O,     O,  VPst,  VPst,     O,     O,     O,     O,     O,     O,     O,     B,     O,
-       B,     B,  VBlw,  VBlw,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       O,    CS,    CS,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       B, VMAbv, VMPst, VMPst,     O,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,
+       B,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,    WJ,     B,     B,     B,     B,     B,    WJ,    WJ, CMBlw,     B,  VPst,  VAbv,
+    VAbv,  VPst,  VPst,  VPst,  VPst,    WJ,  VAbv,  VAbv,  VAbv,    WJ,  VAbv,  VAbv,  VAbv,     H,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,  VPst,  VPst,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     O,     B,    WJ,
+       B,     B,  VBlw,  VBlw,    WJ,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+      WJ,    CS,    CS,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
-   VMAbv, VMAbv, VMPst, VMPst,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,
-       B,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+   VMAbv, VMAbv, VMPst, VMPst,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,
+       B,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,  VAbv,  VAbv,     B,  VPst,  VPst,
-    VPst,  VPst,  VPst,  VBlw,  VBlw,     O,  VPre,  VPre,  VPre,     O,  VPre,  VPre,  VPre,     H,     R,     O,
-       O,     O,     O,     O,     O,     O,     O,  VPst,     O,     O,     O,     O,     O,     O,     O,     B,
-       B,     B,  VBlw,  VBlw,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+    VPst,  VPst,  VPst,  VBlw,  VBlw,    WJ,  VPre,  VPre,  VPre,    WJ,  VPre,  VPre,  VPre,     H,     R,     O,
+      WJ,    WJ,    WJ,    WJ,     O,     O,     O,  VPst,     O,     O,     O,     O,     O,     O,     O,     B,
+       B,     B,  VBlw,  VBlw,    WJ,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
 
   
 
-       O, VMAbv, VMPst, VMPst,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     B,     B,     B,     B,     B,     B,
+      WJ, VMAbv, VMPst, VMPst,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     H,     O,     O,     O,     O,  VPst,
-    VPst,  VPst,  VAbv,  VAbv,  VBlw,     O,  VBlw,     O,  VPst,  VPre,  VPre,  VPre,  VPre,  VPre,  VPre,  VPst,
-       O,     O,     O,     O,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       O,     O,  VPst,  VPst,     O,     O,     O,     O,
+       B,     B,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,     H,    WJ,    WJ,    WJ,    WJ,  VPst,
+    VPst,  VPst,  VAbv,  VAbv,  VBlw,    WJ,  VBlw,    WJ,  VPst,  VPre,  VPre,  VPre,  VPre,  VPre,  VPre,  VPst,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+      WJ,    WJ,  VPst,  VPst,     O,    WJ,    WJ,    WJ,
 
 #define use_offset_0x0f00u 1456
 
@@ -259,14 +260,14 @@ static const uint8_t use_table[] = {
        O,     O,     O,     O,     O,     O,     O,     O,  VBlw,  VBlw,     O,     O,     O,     O,     O,     O,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     O,  FBlw,     O,  FBlw,     O, CMAbv,     O,     O,     O,     O,  VPst,  VPre,
-       B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,
-       O, CMBlw,  VBlw,  VAbv,  VAbv,  VBlw,  VAbv,  VAbv,  VAbv,  VAbv,  VBlw,  VBlw,  VBlw,  VBlw, VMAbv,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,
+      WJ, CMBlw,  VBlw,  VAbv,  VAbv,  VBlw,  VAbv,  VAbv,  VAbv,  VAbv,  VBlw,  VBlw,  VBlw,  VBlw, VMAbv,     O,
     VBlw,  VAbv, VMAbv, VMAbv,  VBlw,     O, VMAbv, VMAbv,     B,     B,     B,     B,     B,   SUB,   SUB,   SUB,
-     SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,     O,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,
+     SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,    WJ,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,
      SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,
-     SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,     O,     O,     O,
+     SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,    WJ,     O,     O,
        O,     O,     O,     O,     O,     O,  FBlw,     O,
 
 #define use_offset_0x1000u 1656
@@ -277,7 +278,7 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,  VPst,  VPst,  VAbv,  VAbv,  VBlw,
-    VBlw,  VPre,  VAbv,  VAbv,  VAbv,  VAbv, VMAbv, VMBlw, VMPst,     H,  VAbv,  MPst,  MPre,  MBlw,  MBlw,     B,
+    VBlw,  VPre,  VAbv,  VAbv,  VAbv,  VAbv, VMAbv, VMBlw, VMPst,    IS,  VAbv,  MPst,  MPre,  MBlw,  MBlw,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,    GB,     O,     O,    GB,     O,
        B,     B,     B,     B,     B,     B,  VPst,  VPst,  VBlw,  VBlw,     B,     B,     B,     B,  MBlw,  MBlw,
     MBlw,     B,  VPst, VMPst, VMPst,     B,     B,  VPst,  VPst, VMPst, VMPst, VMPst, VMPst, VMPst,     B,     B,
@@ -291,22 +292,22 @@ static const uint8_t use_table[] = {
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,  VAbv,  VBlw,  VBlw,  VPst,     O,     O,     O,     O,     O,     O,     O,     O,     O,     B,
+       B,     B,  VAbv,  VBlw,  VBlw,  VPst,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     B,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,  VAbv,  VBlw,  VPst,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       B,     B,  VAbv,  VBlw,  VPst,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,  VAbv,  VBlw,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       B,     B,  VAbv,  VBlw,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,
-       B,     O,  VAbv,  VBlw,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,
+       B,    WJ,  VAbv,  VBlw,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
@@ -315,23 +316,23 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,   CGJ,   CGJ,  VPst,  VAbv,  VAbv,  VAbv,  VAbv,  VBlw,  VBlw,  VBlw,  VPre,  VPre,
     VPre,  VPre,  VPre,  VPre,  VPre,  VPre, VMAbv, VMPst,  VPst, VMAbv, VMAbv, FMAbv,  FAbv, CMAbv, FMAbv, VMAbv,
-   FMAbv,  VAbv,     H, FMAbv,     O,     O,     O,     O,     O,     O,     O,     O,     B, FMAbv,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+   FMAbv,  VAbv,    IS, FMAbv,     O,     O,     O,     O,     O,     O,     O,     O,     B, FMAbv,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
-       B,     O,     O,     O,     O,     O,     O,     B,     O,     O,     B,   CGJ,   CGJ,   CGJ,     O,   CGJ,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       B,     O,     O,     O,     O,     O,     O,     B,     O,     O,     B,   CGJ,   CGJ,   CGJ,    WJ,   CGJ,
+       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
       GB,    GB,    GB,    GB,    GB, CMAbv, CMAbv,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B, CMBlw,     B,     O,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B, CMBlw,     B,    WJ,    WJ,    WJ,    WJ,    WJ,
 
 #define use_offset_0x1900u 2248
 
@@ -339,43 +340,43 @@ static const uint8_t use_table[] = {
   
 
       GB,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,
-    VAbv,  VAbv,  VBlw,  VPst,  VPst,  VAbv,  VAbv,  VAbv,  VAbv,   SUB,   SUB,   SUB,     O,     O,     O,     O,
-    FPst,  FPst, VMBlw,  FPst,  FPst,  FPst,  FPst,  FPst,  FPst,  FBlw, VMAbv, FMBlw,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,
+    VAbv,  VAbv,  VBlw,  VPst,  VPst,  VAbv,  VAbv,  VAbv,  VAbv,   SUB,   SUB,   SUB,    WJ,    WJ,    WJ,    WJ,
+    FPst,  FPst, VMBlw,  FPst,  FPst,  FPst,  FPst,  FPst,  FPst,  FBlw, VMAbv, FMBlw,    WJ,    WJ,    WJ,    WJ,
+       O,    WJ,    WJ,    WJ,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,
-       B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,
+       B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B, VMPst, VMPst,     O,     O,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B, VMPst, VMPst,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,     O,     O,
        O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
        O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,  VAbv,  VAbv,  VPre,  VPst,  VAbv,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,  VAbv,  VAbv,  VPre,  VPst,  VAbv,    WJ,    WJ,     O,     O,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,  MPre,  MBlw,   SUB,  FAbv,  FAbv,  MAbv,   SUB,   SUB,   SUB,   SUB,     O,
+       B,     B,     B,     B,     B,  MPre,  MBlw,   SUB,  FAbv,  FAbv,  MAbv,   SUB,   SUB,   SUB,   SUB,    WJ,
       Sk,  VPst,  VAbv,  VPst,  VPst,  VAbv,  VAbv,  VAbv,  VAbv,  VBlw,  VBlw,  VAbv,  VBlw,  VPst,  VPre,  VPre,
-    VPre,  VPre,  VPre,  VAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv,  VAbv, VMAbv, VMAbv,     O,     O, VMBlw,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
+    VPre,  VPre,  VPre,  VAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv,  VAbv, VMAbv, VMAbv,    WJ,    WJ, VMBlw,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
 #define use_offset_0x1b00u 2664
 
@@ -386,16 +387,16 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B, CMAbv,  VPst,  VAbv,  VAbv,  VBlw,  VBlw,  VBlw,  VBlw,  VAbv,  VAbv,  VPre,  VPre,
-    VPre,  VPre,  VAbv,  VAbv,     H,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,    GB,    GB,     O,     O,    GB,
-       O,     O,    GB,     O,     O,     O,     O,     O,    GB,     O,     O, SMAbv, SMBlw, SMAbv, SMAbv, SMAbv,
-   SMAbv, SMAbv, SMAbv, SMAbv,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+    VPre,  VPre,  VAbv,  VAbv,     H,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
+       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O, SMAbv, SMBlw, SMAbv, SMAbv, SMAbv,
+   SMAbv, SMAbv, SMAbv, SMAbv,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,    WJ,
 
   
 
    VMAbv,  FAbv, VMPst,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,   SUB,   SUB,   SUB,  VAbv,  VBlw,  VPre,  VPst,  VAbv,  VAbv,  VPst,     H,   SUB,   SUB,     B,     B,
+       B,   SUB,   SUB,   SUB,  VAbv,  VBlw,  VPre,  VPst,  VAbv,  VAbv,  VPst,    IS,   SUB,   SUB,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
 
   
@@ -403,15 +404,15 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B, CMAbv,  VPst,  VAbv,  VAbv,  VPst,  VPst,  VPst,  VAbv,  VPst,  VAbv,
-    FAbv,  FAbv, CMBlw, CMBlw,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+    FAbv,  FAbv, CMBlw, CMBlw,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     O,     O,     O,     O,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,   SUB,   SUB,  VPst,  VPre,  VPre,  VPre,  VPst,  VPst,  VBlw,  FAbv,  FAbv,  FAbv,
-    FAbv,  FAbv,  FAbv,  FAbv, VMPre, VMPre, FMAbv, CMBlw,     O,     O,     O,     O,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     B,     B,     B,
+    FAbv,  FAbv,  FAbv,  FAbv, VMPre, VMPre, FMAbv, CMBlw,    WJ,    WJ,    WJ,     O,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,     B,     B,     B,
 
 #define use_offset_0x1cd0u 3000
 
@@ -420,7 +421,7 @@ static const uint8_t use_table[] = {
 
    VMAbv, VMAbv, VMAbv,     O, VMBlw, VMBlw, VMBlw, VMBlw, VMBlw, VMBlw, VMAbv, VMAbv, VMBlw, VMBlw, VMBlw, VMBlw,
    VMAbv, VMPst, VMBlw, VMBlw, VMBlw, VMBlw, VMBlw, VMBlw, VMBlw,     O,     O,     O,     O, VMBlw,     O,     O,
-       O,     O,     O,     O, VMAbv,    CS,    CS, VMPst, VMAbv, VMAbv,    GB,     O,     O,     O,     O,     O,
+       O,     O,     O,     O, VMAbv,    CS,    CS, VMPst, VMAbv, VMAbv,    GB,    WJ,    WJ,    WJ,    WJ,    WJ,
 
 #define use_offset_0x1df8u 3048
 
@@ -432,31 +433,33 @@ static const uint8_t use_table[] = {
 
 
   
-                                                                         O,     O,     O,     O,  ZWNJ,   CGJ,     O,     O,
-      GB,    GB,    GB,    GB,    GB,     O,     O,     O,
-
-#define use_offset_0x2070u 3072
-
+                                                                         O,     O,     O,    WJ,  ZWNJ,   CGJ,    WJ,    WJ,
+      GB,    GB,    GB,    GB,    GB,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,     O,
+       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
-       O,     O,     O,     O, FMPst,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       O,     O,    WJ,    WJ, FMPst,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
        O,     O, FMPst, FMPst, FMPst,     O,     O,     O,
 
-#define use_offset_0x20f0u 3096
+#define use_offset_0x20f0u 3184
 
 
   
 
-   VMAbv,     O,     O,     O,     O,     O,     O,     O,
+   VMAbv,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
-#define use_offset_0x25c8u 3104
+#define use_offset_0x25c8u 3192
 
 
   
                                                                          O,     O,     O,     O,     B,     O,     O,     O,
 
-#define use_offset_0x2d30u 3112
+#define use_offset_0x2d30u 3200
 
 
   
@@ -464,25 +467,25 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,     O,     B,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     H,
+       B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     B,
+       O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     H,
 
-#define use_offset_0xa800u 3192
+#define use_offset_0xa800u 3280
 
 
   
 
        B,     B,  VAbv,     B,     B,     B,     H,     B,     B,     B,     B, VMAbv,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,  VPst,  VPst,  VBlw,  VAbv,  VPst,     O,     O,     O,     O,  VBlw,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       B,     B,     B,  VPst,  VPst,  VBlw,  VAbv,  VPst,     O,     O,     O,     O,  VBlw,    WJ,    WJ,    WJ,
+       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       B,     B,     B,     B,     O,     O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
@@ -490,8 +493,8 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,  MPst,  VPst,  VPst,  VPst,  VPst,  VPst,  VPst,  VPst,  VPst,  VPst,  VPst,  VPst,
-    VPst,  VPst,  VPst,  VPst,     H, VMAbv,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
+    VPst,  VPst,  VPst,  VPst,     H, VMAbv,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
@@ -508,9 +511,9 @@ static const uint8_t use_table[] = {
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,  VBlw,  VBlw,  VBlw,  VAbv,  VBlw,  VBlw,  VBlw,  VBlw,  FAbv,
-    FAbv,  FAbv,  FPst,  VPst,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+    FAbv,  FAbv,  FPst,  VPst,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     O,
        O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,    WJ,    WJ,    WJ,
 
   
 
@@ -518,22 +521,22 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B, CMAbv,  VPst,  VPst,  VAbv,  VAbv,  VBlw,  VBlw,  VPre,  VPre,  VAbv,  MBlw,  MPst,  MBlw,
-       H,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
+       H,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,    WJ,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,     O,     O,
 
   
 
        B,     B,     B,     B,     B,  VAbv,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B, VMAbv,  VAbv,  VAbv,  VAbv,  VBlw,  VAbv,  VPre,
-    VPre,  VAbv,  VBlw,  MPst,  MPre,  MAbv,  MBlw,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       B,     B,     B,  FAbv,     B,     B,     B,     B,     B,     B,     B,     B,  FAbv,  FPst,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
+    VPre,  VAbv,  VBlw,  MPst,  MPre,  MAbv,  MBlw,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+       B,     B,     B,  FAbv,     B,     B,     B,     B,     B,     B,     B,     B,  FAbv,  FPst,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,     O,     O,     O,     O,
 
   
 
@@ -546,115 +549,128 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
     VAbv,     B,  VAbv,  VAbv,  VBlw,     B,     B,  VAbv,  VAbv,     B,     B,     B,     B,     B,  VAbv, VMAbv,
-       B, VMAbv,     B,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       B, VMAbv,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     O,     O,     O,     O,     O,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,  VPre,  VBlw,  VAbv,  VPre,  VPst,
-       O,     O,     O,     O,     O, VMPst,     H,     O,
+       O,     O,     O,     O,     O, VMPst,    IS,    WJ,
 
-#define use_offset_0xabc0u 3952
+#define use_offset_0xabc0u 4040
 
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,  VPst,  VPst,  VAbv,  VPst,  VPst,  VBlw,  VPst,  VPst,     O, VMPst,  VBlw,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
+       B,     B,     B,  VPst,  VPst,  VAbv,  VPst,  VPst,  VBlw,  VPst,  VPst,     O, VMPst,  VBlw,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
-#define use_offset_0xfe00u 4016
+#define use_offset_0xfe00u 4104
 
 
   
 
      CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,
 
-#define use_offset_0x10570u 4032
+#define use_offset_0xfef8u 4120
+
+
+  
+                                                                         O,     O,     O,     O,     O,    WJ,    WJ,    WJ,
+
+#define use_offset_0xfff0u 4128
 
 
   
 
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     B,     B,
-       B,     B,     B,     O,     B,     B,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     O,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     O,     O,     O,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     O,     O,     O,     O,     O,    WJ,    WJ,
 
-#define use_offset_0x10a00u 4112
+#define use_offset_0x10570u 4144
 
 
   
 
-       B,  VBlw,  VBlw,  VBlw,     O,  VAbv,  VBlw,     O,     O,     O,     O,     O,  VPst, VMBlw, VMBlw, VMAbv,
-       B,     B,     B,     B,     O,     B,     B,     B,     O,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,     B,     B,
+       B,     B,     B,    WJ,     B,     B,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,    WJ,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,    WJ,    WJ,    WJ,
+
+#define use_offset_0x10a00u 4224
+
+
+  
+
+       B,  VBlw,  VBlw,  VBlw,    WJ,  VAbv,  VBlw,    WJ,    WJ,    WJ,    WJ,    WJ,  VPst, VMBlw, VMBlw, VMAbv,
+       B,     B,     B,     B,    WJ,     B,     B,     B,    WJ,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     O,     O, CMAbv, CMBlw, CMBlw,     O,     O,     O,     O,     H,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,    WJ,    WJ, CMAbv, CMBlw, CMBlw,    WJ,    WJ,    WJ,    WJ,    IS,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
-#define use_offset_0x10ac0u 4192
+#define use_offset_0x10ac0u 4304
 
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B, CMBlw, CMBlw,     O,     O,     O,     O,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B, CMBlw, CMBlw,    WJ,    WJ,    WJ,    WJ,     B,     B,     B,     B,     B,
 
-#define use_offset_0x10b80u 4240
-
-
-  
-
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     B,     B,     B,     B,     B,     B,     O,
-
-#define use_offset_0x10d00u 4288
+#define use_offset_0x10b80u 4352
 
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B, VMAbv, VMAbv, VMAbv, CMAbv,     O,     O,     O,     O,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
+       B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     O,     O,     O,     O,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     B,     B,     B,     B,     B,     B,     O,
 
-#define use_offset_0x10e80u 4352
+#define use_offset_0x10d00u 4400
 
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,  VAbv,  VAbv,     O,     O,     O,
-       B,     B,     O,     O,     O,     O,     O,     O,
+       B,     B,     B,     B, VMAbv, VMAbv, VMAbv, CMAbv,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
-#define use_offset_0x10f30u 4408
+#define use_offset_0x10e80u 4464
+
+
+  
+
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,  VAbv,  VAbv,     O,    WJ,    WJ,
+       B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+
+#define use_offset_0x10f30u 4520
 
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B, VMBlw, VMBlw, VMBlw, VMBlw, VMBlw, VMBlw, VMBlw, VMBlw, VMBlw, VMBlw,
-   VMBlw,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+   VMBlw,     B,     B,     B,     B,     O,     O,     O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B, CMBlw, CMBlw, CMBlw, CMBlw,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       B,     B, CMBlw, CMBlw, CMBlw, CMBlw,     O,     O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
        B,     O,     B,     B,     B,     B,     B,     O,     B,     B,     B,     B,     B,     B,     B,     B,
-       O,     B,     B,     B,     B,     O,     O,     O,     O,     B,     B,     B,     O,     O,     O,     O,
+       O,     B,     B,     B,     B,     O,     O,     O,     O,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
        O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       O,     O,     O,     O,     O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
@@ -662,10 +678,10 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,  VAbv,  VAbv,  VAbv,  VAbv,  VBlw,  VBlw,  VBlw,  VBlw,
-    VBlw,  VBlw,  VAbv,  VAbv,  VAbv,  VAbv,     H,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     N,     N,     N,     N,     N,     N,     N,     N,     N,     N,     N,     N,     N,     N,
+    VBlw,  VBlw,  VAbv,  VAbv,  VAbv,  VAbv,     H,     O,     O,     O,     O,     O,     O,     O,    WJ,    WJ,
+      WJ,    WJ,     N,     N,     N,     N,     N,     N,     N,     N,     N,     N,     N,     N,     N,     N,
        N,     N,     N,     N,     N,     N,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-    VAbv,     B,     B,  VAbv,  VAbv,     B,     O,     O,     O,     O,     O,     O,     O,     O,     O,    HN,
+    VAbv,     B,     B,  VAbv,  VAbv,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    HN,
 
   
 
@@ -673,9 +689,9 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
     VPst,  VPre,  VPst,  VBlw,  VBlw,  VAbv,  VAbv,  VPst,  VPst,     H, CMBlw,     O,     O,     O,     O,     O,
-       O,     O,  VBlw,     O,     O,     O,     O,     O,
+       O,     O,  VBlw,    WJ,    WJ,    WJ,    WJ,    WJ,
 
-#define use_offset_0x11100u 4816
+#define use_offset_0x11100u 4928
 
 
   
@@ -683,14 +699,14 @@ static const uint8_t use_table[] = {
    VMAbv, VMAbv, VMAbv,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,  VBlw,  VBlw,  VBlw,  VAbv,  VAbv,  VPre,  VBlw,  VAbv,  VAbv,
-    VBlw,  VAbv,  VAbv,     H, CMAbv,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       O,     O,     O,     O,     B,  VPst,  VPst,     B,     O,     O,     O,     O,     O,     O,     O,     O,
+    VBlw,  VAbv,  VAbv,    IS, CMAbv,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       O,     O,     O,     O,     B,  VPst,  VPst,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B, CMBlw,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       B,     B,     B, CMBlw,     O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
@@ -698,50 +714,50 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,  VPst,  VPre,  VPst,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VAbv,  VAbv,  VAbv,  VAbv,
-       H,     B,     R,     R,     O,     O,     O,     O,    GB, FMBlw, CMBlw,  VAbv,  VBlw,     O,  VPre, VMAbv,
+       H,     B,     R,     R,     O,     O,     O,     O,     O, FMBlw, CMBlw,  VAbv,  VBlw,     O,  VPre, VMAbv,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,
 
   
 
-       O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+      WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,  VPst,  VPst,  VPst,  VBlw,
-    VAbv,  VAbv,  VAbv,  VAbv, VMAbv,     H, CMAbv, CMAbv,     O,     O,     O,     O,     O,     O, VMAbv,     O,
+    VAbv,  VAbv,  VAbv,  VAbv, VMAbv,     H, CMAbv, CMAbv,     O,     O,     O,     O,     O,     O, VMAbv,    WJ,
 
-#define use_offset_0x11280u 5136
+#define use_offset_0x11280u 5248
 
 
   
 
-       B,     B,     B,     B,     B,     B,     B,     O,     B,     O,     B,     B,     B,     B,     O,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,    WJ,     B,    WJ,     B,     B,     B,     B,    WJ,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B, VMAbv,
-    VPst,  VPre,  VPst,  VBlw,  VBlw,  VAbv,  VAbv,  VAbv,  VAbv, CMBlw,  VBlw,     O,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
+    VPst,  VPre,  VPst,  VBlw,  VBlw,  VAbv,  VAbv,  VAbv,  VAbv, CMBlw,  VBlw,    WJ,    WJ,    WJ,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
-   VMAbv, VMAbv, VMAbv, VMAbv,     O,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     B,
-       B,     O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     B,     B,     B,     B,
-       B,     O,     B,     B,     O,     B,     B,     B,     B,     B,     O, CMBlw, CMBlw,     B,  VPst,  VPst,
-    VAbv,  VPst,  VPst,  VPst,  VPst,     O,     O,  VPre,  VPre,     O,     O,  VPre,  VPre,   HVM,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,  VPst,     O,     O,     O,     O,     O,     O,     B,     B,
-       B,     B,  VPst,  VPst,     O,     O, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv,     O,     O,     O,
-   VMAbv, VMAbv, VMAbv, VMAbv, VMAbv,     O,     O,     O,
+   VMAbv, VMAbv, VMAbv, VMAbv,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,     B,
+       B,    WJ,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,     B,     B,     B,     B,
+       B,    WJ,     B,     B,    WJ,     B,     B,     B,     B,     B,    WJ, CMBlw, CMBlw,     B,  VPst,  VPst,
+    VAbv,  VPst,  VPst,  VPst,  VPst,    WJ,    WJ,  VPre,  VPre,    WJ,    WJ,  VPre,  VPre,     H,    WJ,    WJ,
+       O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,  VPst,    WJ,    WJ,    WJ,    WJ,    WJ,     O,     B,     B,
+       B,     B,  VPst,  VPst,    WJ,    WJ, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv,    WJ,    WJ,    WJ,
+   VMAbv, VMAbv, VMAbv, VMAbv, VMAbv,    WJ,    WJ,    WJ,
 
-#define use_offset_0x11400u 5384
+#define use_offset_0x11400u 5496
 
 
   
@@ -751,9 +767,9 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,  VPst,  VPre,  VPst,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VAbv,  VAbv,
     VPst,  VPst,     H, VMAbv, VMAbv, VMPst, CMBlw,     B,     O,     O,     O,     O,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O, FMAbv,     B,
-      CS,    CS,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,    WJ,     O, FMAbv,     B,
+      CS,    CS,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
@@ -761,10 +777,10 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
     VPst,  VPre,  VPst,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VPre,  VAbv,  VPre,  VPre,  VPst,  VPre, VMAbv,
-   VMAbv, VMAbv,     H, CMBlw,     B,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
+   VMAbv, VMAbv,     H, CMBlw,     B,     O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
-#define use_offset_0x11580u 5608
+#define use_offset_0x11580u 5720
 
 
   
@@ -772,11 +788,11 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,  VPst,
-    VPre,  VPst,  VBlw,  VBlw,  VBlw,  VBlw,     O,     O,  VPre,  VPre,  VPre,  VPre, VMAbv, VMAbv, VMPst,     H,
+    VPre,  VPst,  VBlw,  VBlw,  VBlw,  VBlw,    WJ,    WJ,  VPre,  VPre,  VPre,  VPre, VMAbv, VMAbv, VMPst,     H,
    CMBlw,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     B,     B,     B,     B,  VBlw,  VBlw,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       O,     O,     O,     O,     O,     O,     O,     O,     B,     B,     B,     B,  VBlw,  VBlw,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
@@ -784,31 +800,31 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
     VPst,  VPst,  VPst,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VAbv,  VAbv,  VPst,  VPst, VMAbv, VMPst,     H,
-    VAbv,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+    VAbv,     O,     O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B, VMAbv, VMPst,  VAbv,  VPre,  VPst,
-    VBlw,  VBlw,  VAbv,  VAbv,  VAbv,  VAbv,     H, CMBlw,     B,     O,     O,     O,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+    VBlw,  VBlw,  VAbv,  VAbv,  VAbv,  VAbv,     H, CMBlw,     B,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,  MBlw,  MPre,  MAbv,
-    VPst,  VPst,  VAbv,  VAbv,  VBlw,  VBlw,  VPre,  VAbv,  VBlw,  VAbv,  VAbv,  VAbv,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,  MBlw,  MPre,  MAbv,
+    VPst,  VPst,  VAbv,  VAbv,  VBlw,  VBlw,  VPre,  VAbv,  VBlw,  VAbv,  VAbv,  VAbv,    WJ,    WJ,    WJ,    WJ,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     O,
+       B,     B,     B,     B,     B,     B,     B,    WJ,
 
-#define use_offset_0x11800u 6064
+#define use_offset_0x11800u 6176
 
 
   
@@ -816,31 +832,31 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,  VPst,  VPre,  VPst,  VBlw,
-    VBlw,  VBlw,  VBlw,  VAbv,  VAbv,  VAbv,  VAbv, VMAbv, VMPst,     H, CMBlw,     O,     O,     O,     O,     O,
+    VBlw,  VBlw,  VBlw,  VAbv,  VAbv,  VAbv,  VAbv, VMAbv, VMPst,     H, CMBlw,     O,    WJ,    WJ,    WJ,    WJ,
 
-#define use_offset_0x11900u 6128
-
-
-  
-
-       B,     B,     B,     B,     B,     B,     B,     O,     O,     B,     O,     O,     B,     B,     B,     B,
-       B,     B,     B,     B,     O,     B,     B,     O,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-    VPst,  VPst,  VPst,  VPst,  VPst,  VPre,     O,  VPre,  VPre,     O,     O, VMAbv, VMAbv,  VPst,     H,     R,
-    MPst,     R,  MPst, CMBlw,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
-
-#define use_offset_0x119a0u 6224
+#define use_offset_0x11900u 6240
 
 
   
 
-       B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,     B,    WJ,    WJ,     B,     B,     B,     B,
+       B,     B,     B,     B,    WJ,     B,     B,    WJ,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+    VPst,  VPst,  VPst,  VPst,  VPst,  VPre,    WJ,  VPre,  VPre,    WJ,    WJ, VMAbv, VMAbv,  VPst,    IS,     R,
+    MPst,     R,  MPst, CMBlw,     O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+
+#define use_offset_0x119a0u 6336
+
+
+  
+
+       B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,  VPst,  VPre,  VPst,  VBlw,  VBlw,  VBlw,  VBlw,     O,     O,  VAbv,  VAbv,  VPst,  VPst, VMPst, VMPst,
-       H,     B,     O,     O,  VPre,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       B,  VPst,  VPre,  VPst,  VBlw,  VBlw,  VBlw,  VBlw,    WJ,    WJ,  VAbv,  VAbv,  VPst,  VPst, VMPst, VMPst,
+       H,     B,     O,     O,  VPre,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
@@ -848,7 +864,7 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B, FMBlw,  VBlw, VMAbv, VMAbv, VMAbv, VMAbv, VMPst,     R,  MBlw,  MBlw,  MBlw,  MBlw,    GB,
-       O,     O,     O,     O,     O,    GB,     O,     H,     O,     O,     O,     O,     O,     O,     O,     O,
+       O,     O,     O,     O,     O,    GB,     O,    IS,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
@@ -856,50 +872,50 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     R,     R,     R,     R,     R,     R,  FBlw,  FBlw,  FBlw,  FBlw,  FBlw,  FBlw,
-    FBlw,  FBlw,  FBlw,  FBlw,  FBlw,  FBlw, VMAbv, VMPst, CMAbv,     H,     O,     O,     O,     B,     O,     O,
+    FBlw,  FBlw,  FBlw,  FBlw,  FBlw,  FBlw, VMAbv, VMPst, CMAbv,    IS,     O,     O,     O,     B,     O,     O,
 
-#define use_offset_0x11c00u 6480
+#define use_offset_0x11c00u 6592
 
 
   
 
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,  VPst,
-    VAbv,  VAbv,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,     O,  VAbv,  VAbv,  VAbv,  VAbv, VMAbv, VMAbv, VMPst,     H,
-       B,     O,     O,     O,    GB,    GB,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+    VAbv,  VAbv,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,    WJ,  VAbv,  VAbv,  VAbv,  VAbv, VMAbv, VMAbv, VMPst,     H,
+       B,     O,     O,     O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,
 
   
 
        O,     O,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       O,     O,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,
-     SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,     O,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,
-    VBlw,  VPre,  VBlw,  VAbv,  VPst, VMAbv, VMAbv,     O,
+      WJ,    WJ,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,
+     SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,    WJ,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,   SUB,
+    VBlw,  VPre,  VBlw,  VAbv,  VPst, VMAbv, VMAbv,    WJ,
 
-#define use_offset_0x11d00u 6664
+#define use_offset_0x11d00u 6776
 
-
-  
-
-       B,     B,     B,     B,     B,     B,     B,     O,     B,     B,     O,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,  VAbv,  VAbv,  VAbv,  VAbv,  VAbv,  VBlw,     O,     O,     O,  VAbv,     O,  VAbv,  VAbv,     O,  VAbv,
-   VMAbv, VMAbv, CMBlw,  VAbv,  VBlw,     H,     R,  MBlw,     O,     O,     O,     O,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
 
   
 
-       B,     B,     B,     B,     B,     B,     O,     B,     B,     O,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,    WJ,     B,     B,    WJ,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,  VPst,  VPst,  VPst,  VPst,  VPst,     O,
-    VAbv,  VAbv,     O,  VPst,  VPst, VMAbv, VMPst,     H,     O,     O,     O,     O,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,  VAbv,  VAbv,  VAbv,  VAbv,  VAbv,  VBlw,    WJ,    WJ,    WJ,  VAbv,    WJ,  VAbv,  VAbv,    WJ,  VAbv,
+   VMAbv, VMAbv, CMBlw,  VAbv,  VBlw,    IS,     R,  MBlw,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
-#define use_offset_0x11ee0u 6840
+  
+
+       B,     B,     B,     B,     B,     B,    WJ,     B,     B,    WJ,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,  VPst,  VPst,  VPst,  VPst,  VPst,    WJ,
+    VAbv,  VAbv,    WJ,  VPst,  VPst, VMAbv, VMPst,    IS,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+
+#define use_offset_0x11ee0u 6952
 
 
   
@@ -907,7 +923,7 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,    GB,  VAbv,  VBlw,  VPre,  VPst,     O,
 
-#define use_offset_0x13000u 6864
+#define use_offset_0x13000u 6976
 
 
   
@@ -978,21 +994,21 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,
 
   
 
-       H,     H,     H,     H,     H,     H,     H,     B,     B,     O,     O,     O,     O,     O,     O,     O,
+       H,     H,     H,     H,     H,     H,     H,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
-#define use_offset_0x16ac0u 7952
+#define use_offset_0x16ac0u 8064
 
 
   
 
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
        O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,    WJ,    WJ,
+       O,     O,     O,     O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
@@ -1001,7 +1017,7 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
    VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv,     O,
 
-#define use_offset_0x16f00u 8072
+#define use_offset_0x16f00u 8184
 
 
   
@@ -1010,57 +1026,21 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O, CMBlw,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ, CMBlw,
        O,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,
     VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,
     VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,
-    VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,     O,     O,     O,     O,     O,     O,     O, VMBlw,
+    VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,  VBlw,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ, VMBlw,
    VMBlw, VMBlw, VMBlw,     O,     O,     O,     O,     O,
 
-#define use_offset_0x16fe0u 8224
+#define use_offset_0x16fe0u 8336
 
 
   
 
-       O,     O,     O,     O,     B,     O,     O,     O,
+       O,     O,     O,     O,     B,    WJ,    WJ,    WJ,
 
-#define use_offset_0x18b00u 8232
-
-
-  
-
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     O,     O,
-
-#define use_offset_0x1bc00u 8704
+#define use_offset_0x18b00u 8344
 
 
   
@@ -1071,55 +1051,120 @@ static const uint8_t use_table[] = {
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O, CMBlw, CMBlw,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,    WJ,    WJ,
 
-#define use_offset_0x1e100u 8864
+#define use_offset_0x1bc00u 8816
 
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,
-   VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv,     B,     B,     B,     B,     B,     B,     B,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,     O, CMBlw, CMBlw,     O,
 
-#define use_offset_0x1e290u 8944
+#define use_offset_0x1d170u 8976
+
+
+  
+
+       O,     O,     O,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,     O,     O,     O,     O,     O,
+
+#define use_offset_0x1e100u 8992
 
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B, VMAbv,     O,
-       O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,
+   VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv, VMAbv,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,     B,     B,
+
+#define use_offset_0x1e290u 9072
+
+
+  
+
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B, VMAbv,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
   
 
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
        B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B, VMAbv, VMAbv, VMAbv, VMAbv,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,    WJ,     O,
 
-#define use_offset_0x1e900u 9056
-
-
-  
-
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
-       B,     B,     B,     B, CMAbv, CMAbv, CMAbv, CMAbv, CMAbv, CMAbv, CMAbv,     B,     O,     O,     O,     O,
-       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     O,     O,     O,     O,     O,     O,
-
-#define use_offset_0xe0100u 9152
+#define use_offset_0x1e900u 9184
 
 
   
 
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,     B,
+       B,     B,     B,     B, CMAbv, CMAbv, CMAbv, CMAbv, CMAbv, CMAbv, CMAbv,     B,    WJ,    WJ,    WJ,    WJ,
+       B,     B,     B,     B,     B,     B,     B,     B,     B,     B,    WJ,    WJ,    WJ,    WJ,     O,     O,
+
+#define use_offset_0xe0000u 9280
+
+
+  
+
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+
+  
+
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+
+  
+
      CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,
      CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,
      CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,
@@ -1135,12 +1180,241 @@ static const uint8_t use_table[] = {
      CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,
      CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,
      CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,   CGJ,
+
+  
+
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
+      WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,    WJ,
 
 }; 
 
 static inline uint8_t
-hb_use_get_category (hb_codepoint_t u)
+hb_use_get_category (hb_glyph_info_t info)
 {
+  hb_codepoint_t u = info.codepoint;
   switch (u >> 12)
   {
     case 0x0u:
@@ -1164,8 +1438,7 @@ hb_use_get_category (hb_codepoint_t u)
       break;
 
     case 0x2u:
-      if (hb_in_range<hb_codepoint_t> (u, 0x2008u, 0x2017u)) return use_table[u - 0x2008u + use_offset_0x2008u];
-      if (hb_in_range<hb_codepoint_t> (u, 0x2070u, 0x2087u)) return use_table[u - 0x2070u + use_offset_0x2070u];
+      if (hb_in_range<hb_codepoint_t> (u, 0x2008u, 0x2087u)) return use_table[u - 0x2008u + use_offset_0x2008u];
       if (hb_in_range<hb_codepoint_t> (u, 0x20F0u, 0x20F7u)) return use_table[u - 0x20F0u + use_offset_0x20f0u];
       if (hb_in_range<hb_codepoint_t> (u, 0x25C8u, 0x25CFu)) return use_table[u - 0x25C8u + use_offset_0x25c8u];
       if (hb_in_range<hb_codepoint_t> (u, 0x2D30u, 0x2D7Fu)) return use_table[u - 0x2D30u + use_offset_0x2d30u];
@@ -1178,9 +1451,12 @@ hb_use_get_category (hb_codepoint_t u)
 
     case 0xFu:
       if (hb_in_range<hb_codepoint_t> (u, 0xFE00u, 0xFE0Fu)) return use_table[u - 0xFE00u + use_offset_0xfe00u];
+      if (hb_in_range<hb_codepoint_t> (u, 0xFEF8u, 0xFEFFu)) return use_table[u - 0xFEF8u + use_offset_0xfef8u];
+      if (hb_in_range<hb_codepoint_t> (u, 0xFFF0u, 0xFFFFu)) return use_table[u - 0xFFF0u + use_offset_0xfff0u];
       break;
 
     case 0x10u:
+      if (hb_in_range<hb_codepoint_t> (u, 0xFFF0u, 0xFFFFu)) return use_table[u - 0xFFF0u + use_offset_0xfff0u];
       if (hb_in_range<hb_codepoint_t> (u, 0x10570u, 0x105BFu)) return use_table[u - 0x10570u + use_offset_0x10570u];
       if (hb_in_range<hb_codepoint_t> (u, 0x10A00u, 0x10A4Fu)) return use_table[u - 0x10A00u + use_offset_0x10a00u];
       if (hb_in_range<hb_codepoint_t> (u, 0x10AC0u, 0x10AEFu)) return use_table[u - 0x10AC0u + use_offset_0x10ac0u];
@@ -1222,6 +1498,10 @@ hb_use_get_category (hb_codepoint_t u)
       if (hb_in_range<hb_codepoint_t> (u, 0x1BC00u, 0x1BC9Fu)) return use_table[u - 0x1BC00u + use_offset_0x1bc00u];
       break;
 
+    case 0x1Du:
+      if (hb_in_range<hb_codepoint_t> (u, 0x1D170u, 0x1D17Fu)) return use_table[u - 0x1D170u + use_offset_0x1d170u];
+      break;
+
     case 0x1Eu:
       if (hb_in_range<hb_codepoint_t> (u, 0x1E100u, 0x1E14Fu)) return use_table[u - 0x1E100u + use_offset_0x1e100u];
       if (hb_in_range<hb_codepoint_t> (u, 0x1E290u, 0x1E2FFu)) return use_table[u - 0x1E290u + use_offset_0x1e290u];
@@ -1229,13 +1509,19 @@ hb_use_get_category (hb_codepoint_t u)
       break;
 
     case 0xE0u:
-      if (hb_in_range<hb_codepoint_t> (u, 0xE0100u, 0xE01EFu)) return use_table[u - 0xE0100u + use_offset_0xe0100u];
+      if (hb_in_range<hb_codepoint_t> (u, 0xE0000u, 0xE0FFFu)) return use_table[u - 0xE0000u + use_offset_0xe0000u];
+      break;
+
+    case 0xE1u:
+      if (hb_in_range<hb_codepoint_t> (u, 0xE0000u, 0xE0FFFu)) return use_table[u - 0xE0000u + use_offset_0xe0000u];
       break;
 
     default:
       break;
   }
-  return USE(O);
+  if (_hb_glyph_info_get_general_category (&info) == HB_UNICODE_GENERAL_CATEGORY_UNASSIGNED)
+    return WJ;
+  return O;
 }
 
 #undef B
@@ -1245,7 +1531,7 @@ hb_use_get_category (hb_codepoint_t u)
 #undef GB
 #undef H
 #undef HN
-#undef HVM
+#undef IS
 #undef J
 #undef N
 #undef O
@@ -1254,6 +1540,7 @@ hb_use_get_category (hb_codepoint_t u)
 #undef SE
 #undef SUB
 #undef Sk
+#undef WJ
 #undef ZWNJ
 #undef CMAbv
 #undef CMBlw

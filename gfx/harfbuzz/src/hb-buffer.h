@@ -144,6 +144,10 @@ typedef struct hb_glyph_info_t {
 
 
 
+
+
+
+
 typedef enum { 
   HB_GLYPH_FLAG_UNSAFE_TO_BREAK		= 0x00000001,
   HB_GLYPH_FLAG_UNSAFE_TO_CONCAT	= 0x00000002,
@@ -370,6 +374,10 @@ hb_buffer_guess_segment_properties (hb_buffer_t *buffer);
 
 
 
+
+
+
+
 typedef enum { 
   HB_BUFFER_FLAG_DEFAULT			= 0x00000000u,
   HB_BUFFER_FLAG_BOT				= 0x00000001u, 
@@ -377,7 +385,8 @@ typedef enum {
   HB_BUFFER_FLAG_PRESERVE_DEFAULT_IGNORABLES	= 0x00000004u,
   HB_BUFFER_FLAG_REMOVE_DEFAULT_IGNORABLES	= 0x00000008u,
   HB_BUFFER_FLAG_DO_NOT_INSERT_DOTTED_CIRCLE	= 0x00000010u,
-  HB_BUFFER_FLAG_VERIFY				= 0x00000020u
+  HB_BUFFER_FLAG_VERIFY				= 0x00000020u,
+  HB_BUFFER_FLAG_PRODUCE_UNSAFE_TO_CONCAT	= 0x00000040u
 } hb_buffer_flags_t;
 
 HB_EXTERN void
