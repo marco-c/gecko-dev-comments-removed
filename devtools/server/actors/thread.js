@@ -28,6 +28,9 @@ const {
 const {
   WatchpointMap,
 } = require("devtools/server/actors/utils/watchpoint-map");
+const {
+  isHiddenSource,
+} = require("devtools/server/actors/utils/sources-manager");
 
 const { logEvent } = require("devtools/server/actors/utils/logEvent");
 
@@ -2066,7 +2069,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
   _addSource(source) {
-    if (!this.sourcesManager.allowSource(source)) {
+    if (isHiddenSource(source)) {
       return false;
     }
 

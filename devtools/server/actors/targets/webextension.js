@@ -24,7 +24,6 @@ const makeDebugger = require("devtools/server/actors/utils/make-debugger");
 const {
   webExtensionTargetSpec,
 } = require("devtools/shared/specs/targets/webextension");
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 const Targets = require("devtools/server/actors/targets/index");
 const TargetActorMixin = require("devtools/server/actors/targets/target-actor-mixin");
@@ -135,9 +134,6 @@ webExtensionTargetPrototype.initialize = function(
     },
   });
 
-  
-  
-  this._allowSource = this._allowSource.bind(this);
   this._onParentExit = this._onParentExit.bind(this);
 
   this._chromeGlobal.addMessageListener(
@@ -298,58 +294,6 @@ webExtensionTargetPrototype.isExtensionWindowDescendent = function(window) {
   
   const rootWin = window.docShell.sameTypeRootTreeItem.domWindow;
   return rootWin.document.nodePrincipal.addonId == this.addonId;
-};
-
-
-
-
-
-webExtensionTargetPrototype._allowSource = function(source) {
-  
-  if (source.element) {
-    try {
-      const domEl = unwrapDebuggerObjectGlobal(source.element);
-      return this.isExtensionWindowDescendent(domEl.ownerGlobal);
-    } catch (e) {
-      
-      DevToolsUtils.reportException("WebExtensionTarget.allowSource", e);
-      return false;
-    }
-  }
-
-  
-
-  
-  const url = source.url.split(" -> ").pop();
-
-  
-  if (url === "debugger eval code" || url === "debugger eager eval code") {
-    return false;
-  }
-
-  let uri;
-
-  
-  try {
-    uri = Services.io.newURI(url);
-  } catch (err) {
-    Cu.reportError(`Unexpected invalid url: ${url}`);
-    return false;
-  }
-
-  
-  if (["resource", "chrome", "file"].includes(uri.scheme)) {
-    return false;
-  }
-
-  try {
-    const addonID = this.aps.extensionURIToAddonId(uri);
-
-    return addonID == this.addonId;
-  } catch (err) {
-    
-    return false;
-  }
 };
 
 

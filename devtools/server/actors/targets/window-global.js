@@ -351,12 +351,6 @@ const windowGlobalTargetPrototype = {
   consoleAPIListenerOptions: {},
 
   
-  
-  _allowSource() {
-    return true;
-  },
-
-  
 
 
   get dbg() {
@@ -544,10 +538,7 @@ const windowGlobalTargetPrototype = {
 
   get sourcesManager() {
     if (!this._sourcesManager) {
-      this._sourcesManager = new SourcesManager(
-        this.threadActor,
-        this._allowSource
-      );
+      this._sourcesManager = new SourcesManager(this.threadActor);
     }
     return this._sourcesManager;
   },
