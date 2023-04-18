@@ -110,7 +110,9 @@ ReadableStreamDefaultReader::Constructor(const GlobalObject& aGlobal,
   
   
   if (aStream.Locked()) {
-    aRv.ThrowTypeError("Stream is Locked");
+    aRv.ThrowTypeError(
+        "Cannot create a new reader for a readable stream already locked by "
+        "another reader.");
     return nullptr;
   }
 
@@ -244,9 +246,8 @@ already_AddRefed<Promise> ReadableStreamDefaultReader::Read(JSContext* aCx,
                                                             ErrorResult& aRv) {
   
   if (!mStream) {
-    RefPtr<Promise> rejected = Promise::Create(GetParentObject(), aRv);
-    rejected->MaybeRejectWithTypeError("Stream is Undefined");
-    return rejected.forget();
+    aRv.ThrowTypeError("Reading is not possible after calling releaseLock.");
+    return nullptr;
   }
 
   
@@ -305,7 +306,8 @@ void ReadableStreamDefaultReader::ReleaseLock(ErrorResult& aRv) {
 
   
   if (!mReadRequests.isEmpty()) {
-    aRv.ThrowTypeError("Pending read requests");
+    aRv.ThrowTypeError(
+        "Cannot release lock while read requests are still pending.");
     return;
   }
 
@@ -337,15 +339,13 @@ static already_AddRefed<Promise> ReadableStreamGenericReaderCancel(
 already_AddRefed<Promise> ReadableStreamGenericReader::Cancel(
     JSContext* aCx, JS::Handle<JS::Value> aReason, ErrorResult& aRv) {
   
+  
   if (!mStream) {
-    RefPtr<Promise> promise = Promise::Create(GetParentObject(), aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
-    promise->MaybeRejectWithTypeError("Cancel reader with undefined stream");
-    return promise.forget();
+    aRv.ThrowTypeError("Canceling is not possible after calling releaseLock.");
+    return nullptr;
   }
 
+  
   return ReadableStreamGenericReaderCancel(aCx, this, aReason, aRv);
 }
 
@@ -356,8 +356,9 @@ void SetUpReadableStreamDefaultReader(JSContext* aCx,
                                       ErrorResult& aRv) {
   
   if (IsReadableStreamLocked(aStream)) {
-    aRv.ThrowTypeError("Locked Stream");
-    return;
+    return aRv.ThrowTypeError(
+        "Cannot get a new reader for a readable stream already locked by "
+        "another reader.");
   }
 
   
