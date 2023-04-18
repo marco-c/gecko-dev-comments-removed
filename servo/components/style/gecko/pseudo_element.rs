@@ -94,8 +94,9 @@ impl PseudoElement {
     }
 
     
+    
     #[inline]
-    pub fn is_animatable(&self) -> bool {
+    pub fn animations_stored_in_parent(&self) -> bool {
         matches!(*self, Self::Before | Self::After | Self::Marker)
     }
 
