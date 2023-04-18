@@ -285,8 +285,8 @@ class Completion {
   Variant variant;
 };
 
-typedef HashSet<WeakHeapPtrGlobalObject,
-                MovableCellHasher<WeakHeapPtrGlobalObject>, ZoneAllocPolicy>
+typedef HashSet<WeakHeapPtr<GlobalObject*>,
+                MovableCellHasher<WeakHeapPtr<GlobalObject*>>, ZoneAllocPolicy>
     WeakGlobalObjectSet;
 
 #ifdef DEBUG

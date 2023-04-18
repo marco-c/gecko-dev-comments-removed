@@ -546,7 +546,7 @@ void SavedFrame::initFromLookup(JSContext* cx, Handle<Lookup> lookup) {
 
 
 SavedFrame* SavedFrame::create(JSContext* cx) {
-  RootedGlobalObject global(cx, cx->global());
+  Rooted<GlobalObject*> global(cx, cx->global());
   cx->check(global);
 
   

@@ -12,7 +12,7 @@
 BEGIN_TEST(testForceLexicalInitialization) {
   
   
-  js::RootedGlobalObject g(cx, cx->global());
+  JS::Rooted<js::GlobalObject*> g(cx, cx->global());
   JS::Rooted<js::GlobalLexicalEnvironmentObject*> env(
       cx, js::GlobalLexicalEnvironmentObject::create(cx, g));
 
