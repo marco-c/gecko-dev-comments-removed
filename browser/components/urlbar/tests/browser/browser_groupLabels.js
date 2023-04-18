@@ -21,7 +21,7 @@ const TOP_SITES = [
 const FIREFOX_SUGGEST_LABEL = "Firefox Suggest";
 
 
-const ENGINE_SUGGESTIONS_LABEL = "%s Suggestions";
+const ENGINE_SUGGESTIONS_LABEL = "%s suggestions";
 
 
 if (AppConstants.platform == "macosx") {
