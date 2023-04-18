@@ -55,24 +55,12 @@ class ScreenGetterGtk : public ScreenGetter {
 };
 
 class ScreenGetterWayland;
-
-struct MonitorConfig {
-  int id = 0;
-  int x = 0;
-  int y = 0;
-  int width_mm = 0;
-  int height_mm = 0;
-  int width = 0;
-  int height = 0;
-  int scale = 0;
-
-  explicit MonitorConfig(int aId) : id(aId){};
-};
+struct MonitorConfig;
 
 #ifdef MOZ_WAYLAND
 class ScreenGetterWayland : public ScreenGetter {
  public:
-  ScreenGetterWayland() : mRegistry(){};
+  ScreenGetterWayland();
   ~ScreenGetterWayland();
 
   void Init();
@@ -91,7 +79,7 @@ class ScreenGetterWayland : public ScreenGetter {
   bool MonitorUsesNonIntegerScale(int aMonitor);
 
  private:
-  void* mRegistry;
+  void* mRegistry = nullptr;
   
   
   
