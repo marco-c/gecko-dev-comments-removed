@@ -1955,9 +1955,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  bool FormsBackdropRoot(const nsStyleDisplay* aStyleDisplay,
-                         const nsStyleEffects* aStyleEffects,
-                         const nsStyleSVGReset* aStyleSvgReset);
+  bool FormsBackdropRoot() const;
 
   
 

@@ -4172,6 +4172,35 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     set.PositionedDescendants()->AppendToTop(topLayerWrapList);
   }
 
+  nsDisplayList rootResultList(aBuilder);
+  bool serializedList = false;
+  auto SerializeList = [&] {
+    if (!serializedList) {
+      serializedList = true;
+      set.SerializeWithCorrectZOrder(&rootResultList, mOuter->GetContent());
+    }
+  };
+  if (mIsRoot) {
+    if (nsIFrame* rootStyleFrame = GetFrameForStyle()) {
+      if (rootStyleFrame->StyleEffects()->HasFilters()) {
+        SerializeList();
+        rootResultList.AppendNewToTop<nsDisplayFilters>(
+            aBuilder, mOuter, &rootResultList, rootStyleFrame);
+      }
+
+      if (rootStyleFrame->StyleEffects()->HasBackdropFilters() &&
+          rootStyleFrame->IsVisibleForPainting()) {
+        SerializeList();
+        aBuilder->SetContainsBackdropFilter(true);
+        DisplayListClipState::AutoSaveRestore clipState(aBuilder);
+        nsRect backdropRect = mOuter->GetRectRelativeToSelf() +
+                              aBuilder->ToReferenceFrame(mOuter);
+        rootResultList.AppendNewToTop<nsDisplayBackdropFilters>(
+            aBuilder, mOuter, &rootResultList, backdropRect, rootStyleFrame);
+      }
+    }
+  }
+
   if (willBuildAsyncZoomContainer) {
     MOZ_ASSERT(mIsRoot);
 
@@ -4181,9 +4210,7 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     
-
-    nsDisplayList resultList(aBuilder);
-    set.SerializeWithCorrectZOrder(&resultList, mOuter->GetContent());
+    SerializeList();
 
     if (blendCapture.CaptureContainsBlendMode()) {
       
@@ -4193,9 +4220,9 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       
       nsDisplayItem* blendContainer =
           nsDisplayBlendContainer::CreateForMixBlendMode(
-              aBuilder, mOuter, &resultList,
+              aBuilder, mOuter, &rootResultList,
               aBuilder->CurrentActiveScrolledRoot());
-      resultList.AppendToTop(blendContainer);
+      rootResultList.AppendToTop(blendContainer);
 
       
       
@@ -4217,8 +4244,9 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       
       
       
-      resultList.AppendNewToTop<nsDisplayBackdropRootContainer>(
-          aBuilder, mOuter, &resultList, aBuilder->CurrentActiveScrolledRoot());
+      rootResultList.AppendNewToTop<nsDisplayBackdropRootContainer>(
+          aBuilder, mOuter, &rootResultList,
+          aBuilder->CurrentActiveScrolledRoot());
 
       
       
@@ -4241,9 +4269,13 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     DisplayListClipState::AutoSaveRestore clipState(aBuilder);
     clipState.ClipContentDescendants(clipRect, haveRadii ? radii : nullptr);
 
-    set.Content()->AppendNewToTop<nsDisplayAsyncZoom>(
-        aBuilder, mOuter, &resultList, aBuilder->CurrentActiveScrolledRoot(),
-        viewID);
+    rootResultList.AppendNewToTop<nsDisplayAsyncZoom>(
+        aBuilder, mOuter, &rootResultList,
+        aBuilder->CurrentActiveScrolledRoot(), viewID);
+  }
+
+  if (serializedList) {
+    set.Content()->AppendToTop(&rootResultList);
   }
 
   nsDisplayListCollection scrolledContent(aBuilder);
