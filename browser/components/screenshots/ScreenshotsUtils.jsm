@@ -20,6 +20,14 @@ class ScreenshotsComponentParent extends JSWindowActorParent {
         ScreenshotsUtils.closePanel(browser);
     }
   }
+
+  didDestroy() {
+    
+    let browser = this.browsingContext.topFrameElement;
+    if (browser) {
+      ScreenshotsUtils.closePanel(browser, false);
+    }
+  }
 }
 
 var ScreenshotsUtils = {
@@ -124,15 +132,20 @@ var ScreenshotsUtils = {
 
 
 
-  closePanel(browser) {
+
+
+
+  closePanel(browser, closeOverlay = true) {
     let buttonsPanel = browser.ownerDocument.querySelector(
       "#screenshotsPagePanel"
     );
     if (buttonsPanel && buttonsPanel.state !== "closed") {
       buttonsPanel.hidePopup();
     }
-    let actor = this.getActor(browser);
-    actor.sendQuery("Screenshots:HideOverlay");
+    if (closeOverlay) {
+      let actor = this.getActor(browser);
+      actor.sendQuery("Screenshots:HideOverlay");
+    }
   },
   
 
