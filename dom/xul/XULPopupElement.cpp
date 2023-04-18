@@ -237,22 +237,12 @@ nsINode* XULPopupElement::GetTriggerNode() const {
   return nsMenuPopupFrame::GetTriggerContent(menuPopupFrame);
 }
 
-bool XULPopupElement::IsAnchored() const {
-  nsMenuPopupFrame* menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
-  if (!menuPopupFrame) {
-    return false;
-  }
-
-  return menuPopupFrame->IsAnchored();
-}
-
 
 Element* XULPopupElement::GetAnchorNode() const {
   nsMenuPopupFrame* menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
   if (!menuPopupFrame) {
     return nullptr;
   }
-
   return Element::FromNodeOrNull(menuPopupFrame->GetAnchor());
 }
 
