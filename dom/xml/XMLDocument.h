@@ -42,7 +42,8 @@ class XMLDocument : public Document {
                                      bool aReset = true,
                                      nsIContentSink* aSink = nullptr) override;
 
-  virtual void EndLoad() override;
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void EndLoad() override;
 
   virtual nsresult Init() override;
 

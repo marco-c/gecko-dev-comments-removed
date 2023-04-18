@@ -309,7 +309,8 @@ void XMLDocument::EndLoad() {
     
     
     WidgetEvent event(true, eLoad);
-    EventDispatcher::Dispatch(ToSupports(this), nullptr, &event);
+    
+    EventDispatcher::Dispatch(MOZ_KnownLive(ToSupports(this)), nullptr, &event);
   }
 }
 
