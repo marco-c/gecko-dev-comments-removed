@@ -713,7 +713,7 @@ extern JS_PUBLIC_API void NonIncrementalGC(JSContext* cx, JS::GCOptions options,
 extern JS_PUBLIC_API void StartIncrementalGC(JSContext* cx,
                                              JS::GCOptions options,
                                              GCReason reason,
-                                             const js::SliceBudget& budget);
+                                             int64_t millis = 0);
 
 
 
@@ -724,7 +724,7 @@ extern JS_PUBLIC_API void StartIncrementalGC(JSContext* cx,
 
 
 extern JS_PUBLIC_API void IncrementalGCSlice(JSContext* cx, GCReason reason,
-                                             const js::SliceBudget& budget);
+                                             int64_t millis = 0);
 
 
 
