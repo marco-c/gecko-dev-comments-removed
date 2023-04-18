@@ -122,13 +122,8 @@ add_task(async function() {
 });
 
 
-
 add_task(async function() {
   info("Subtest #4");
-  if (Services.appinfo.fissionAutostart) {
-    
-    return;
-  }
 
   const toolbox = await openNewTabAndToolbox(
     EXAMPLE_URL + "doc-service-workers.html",
