@@ -314,22 +314,13 @@ class ChildImpl final : public BackgroundChildImpl {
         return;
       }
 
-      nsCOMPtr<nsISerialEventTarget> starterQueue;
+      RefPtr<BackgroundStarterChild> starter;
       {
-        auto lock = mStarterInfo.Lock();
-        starterQueue = lock->mTaskQueue.forget();
-        lock->mOtherPid = base::kInvalidProcessId;
+        auto lock = mStarter.Lock();
+        starter = lock->forget();
       }
-
-      if (starterQueue) {
-        starterQueue->Dispatch(
-            NS_NewRunnableFunction("PBackgroundStarterChild Close", [this] {
-              MOZ_ASSERT(mStarter);
-              if (mStarter) {
-                mStarter->Close();
-              }
-              mStarter = nullptr;
-            }));
+      if (starter) {
+        CloseStarter(starter);
       }
 
       ThreadLocalInfo* threadLocalInfo;
@@ -369,20 +360,32 @@ class ChildImpl final : public BackgroundChildImpl {
       AssertIsOnMainThread();
 
       base::ProcessId otherPid = aEndpoint.OtherPid();
+
       nsCOMPtr<nsISerialEventTarget> taskQueue;
       MOZ_ALWAYS_SUCCEEDS(NS_CreateBackgroundTaskQueue(
           "PBackgroundStarter Queue", getter_AddRefs(taskQueue)));
+
+      RefPtr<BackgroundStarterChild> starter =
+          new BackgroundStarterChild(otherPid, taskQueue);
+
       taskQueue->Dispatch(NS_NewRunnableFunction(
           "PBackgroundStarterChild Init",
-          [this, endpoint = std::move(aEndpoint)]() mutable {
-            mStarter = new BackgroundStarterChild();
-            MOZ_ALWAYS_TRUE(endpoint.Bind(mStarter));
+          [starter, endpoint = std::move(aEndpoint)]() mutable {
+            MOZ_ALWAYS_TRUE(endpoint.Bind(starter));
           }));
 
-      auto lock = mStarterInfo.Lock();
-      MOZ_RELEASE_ASSERT(!lock->mTaskQueue);
-      lock->mTaskQueue = taskQueue;
-      lock->mOtherPid = otherPid;
+      
+      
+      
+      RefPtr<BackgroundStarterChild> prevStarter;
+      {
+        auto lock = mStarter.Lock();
+        prevStarter = lock->forget();
+        *lock = starter.forget();
+      }
+      if (prevStarter) {
+        CloseStarter(prevStarter);
+      }
     }
 
     void CloseForCurrentThread() {
@@ -447,15 +450,12 @@ class ChildImpl final : public BackgroundChildImpl {
         return threadLocalInfo->mActor;
       }
 
-      base::ProcessId otherPid = base::kInvalidProcessId;
-      nsCOMPtr<nsISerialEventTarget> starterQueue;
+      RefPtr<BackgroundStarterChild> starter;
       {
-        auto lock = mStarterInfo.Lock();
-        otherPid = lock->mOtherPid;
-        starterQueue = lock->mTaskQueue;
+        auto lock = mStarter.Lock();
+        starter = *lock;
       }
-
-      if (!starterQueue) {
+      if (!starter) {
         CRASH_IN_CHILD_PROCESS("No BackgroundStarterChild");
         return nullptr;
       }
@@ -463,8 +463,8 @@ class ChildImpl final : public BackgroundChildImpl {
       Endpoint<PBackgroundParent> parent;
       Endpoint<PBackgroundChild> child;
       nsresult rv;
-      rv = PBackground::CreateEndpoints(otherPid, base::GetCurrentProcId(),
-                                        &parent, &child);
+      rv = PBackground::CreateEndpoints(
+          starter->mOtherPid, base::GetCurrentProcId(), &parent, &child);
       if (NS_FAILED(rv)) {
         NS_WARNING("Failed to create top level actor!");
         return nullptr;
@@ -480,11 +480,10 @@ class ChildImpl final : public BackgroundChildImpl {
 
       
       
-      starterQueue->Dispatch(NS_NewRunnableFunction(
+      starter->mTaskQueue->Dispatch(NS_NewRunnableFunction(
           "PBackground GetOrCreateForCurrentThread",
-          [this, endpoint = std::move(parent)]() mutable {
-            if (!mStarter ||
-                !mStarter->SendInitBackground(std::move(endpoint))) {
+          [starter, endpoint = std::move(parent)]() mutable {
+            if (!starter->SendInitBackground(std::move(endpoint))) {
               NS_WARNING("Failed to create toplevel actor");
             }
           }));
@@ -492,6 +491,12 @@ class ChildImpl final : public BackgroundChildImpl {
     }
 
    private:
+    static void CloseStarter(BackgroundStarterChild* aStarter) {
+      aStarter->mTaskQueue->Dispatch(NS_NewRunnableFunction(
+          "PBackgroundStarterChild Close",
+          [starter = RefPtr{aStarter}] { starter->Close(); }));
+    }
+
     
     
     unsigned int mThreadLocalIndex = kBadThreadLocalIndex;
@@ -502,16 +507,9 @@ class ChildImpl final : public BackgroundChildImpl {
     ThreadLocalInfo* mMainThreadInfo = nullptr;
 
     
-    StaticRefPtr<BackgroundStarterChild> mStarter;
-
     
     
-    
-    struct StarterInfo {
-      base::ProcessId mOtherPid = base::kInvalidProcessId;
-      StaticRefPtr<nsISerialEventTarget> mTaskQueue;
-    };
-    StaticDataMutex<StarterInfo> mStarterInfo{"mStarterInfo"};
+    StaticDataMutex<StaticRefPtr<BackgroundStarterChild>> mStarter{"mStarter"};
   };
 
   

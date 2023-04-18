@@ -16,6 +16,15 @@ class BackgroundStarterChild final : public PBackgroundStarterChild {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BackgroundStarterChild, override)
 
+  BackgroundStarterChild(base::ProcessId aOtherPid,
+                         nsISerialEventTarget* aTaskQueue)
+      : mOtherPid(aOtherPid), mTaskQueue(aTaskQueue) {}
+
+  
+  
+  const base::ProcessId mOtherPid;
+  const nsCOMPtr<nsISerialEventTarget> mTaskQueue;
+
  private:
   friend class PBackgroundStarterChild;
   ~BackgroundStarterChild() = default;
