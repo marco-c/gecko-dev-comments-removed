@@ -70,7 +70,7 @@ class TRRServiceBase : public nsIProxyConfigChangedCallback {
   void RegisterProxyChangeListener();
   void UnregisterProxyChangeListener();
 
-  nsCString mPrivateURI;
+  nsCString mPrivateURI;  
   
   nsCString mURIPref;
   nsCString mRolloutURIPref;

@@ -31,7 +31,8 @@ class TRRServiceParent;
 class TRRService : public TRRServiceBase,
                    public nsIObserver,
                    public nsSupportsWeakReference,
-                   public AHostResolver {
+                   public AHostResolver,
+                   public SingleWriterLockOwner {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIOBSERVER
@@ -39,6 +40,8 @@ class TRRService : public TRRServiceBase,
 
   TRRService();
   static TRRService* Get();
+
+  bool OnWritingThread() const override { return NS_IsMainThread(); }
 
   nsresult Init();
   nsresult Start();
@@ -119,11 +122,11 @@ class TRRService : public TRRServiceBase,
   void AddEtcHosts(const nsTArray<nsCString>&);
 
   bool mInitialized{false};
-  Mutex mLock MOZ_UNANNOTATED{"TRRService"};
+  MutexSingleWriter mLock;
 
   nsCString mPrivateCred;  
-  nsCString mConfirmationNS{"example.com"_ns};
-  nsCString mBootstrapAddr;
+  nsCString mConfirmationNS GUARDED_BY(mLock){"example.com"_ns};
+  nsCString mBootstrapAddr GUARDED_BY(mLock);
 
   Atomic<bool, Relaxed> mCaptiveIsPassed{
       false};  
@@ -137,9 +140,9 @@ class TRRService : public TRRServiceBase,
       "DataMutex::TRRBlocklist"};
 
   
-  nsTHashSet<nsCString> mExcludedDomains;
-  nsTHashSet<nsCString> mDNSSuffixDomains;
-  nsTHashSet<nsCString> mEtcHostsDomains;
+  nsTHashSet<nsCString> mExcludedDomains GUARDED_BY(mLock);
+  nsTHashSet<nsCString> mDNSSuffixDomains GUARDED_BY(mLock);
+  nsTHashSet<nsCString> mEtcHostsDomains GUARDED_BY(mLock);
 
   enum class ConfirmationEvent {
     Init,
@@ -238,7 +241,7 @@ class TRRService : public TRRServiceBase,
    public:
     
     
-    void RecordEvent(const char* aReason, const MutexAutoLock&);
+    void RecordEvent(const char* aReason, const MutexSingleWriterAutoLock&);
 
     
     
@@ -253,7 +256,8 @@ class TRRService : public TRRServiceBase,
     
     
     bool HandleEvent(ConfirmationEvent aEvent);
-    bool HandleEvent(ConfirmationEvent aEvent, const MutexAutoLock&);
+    bool HandleEvent(ConfirmationEvent aEvent,
+                     const MutexSingleWriterAutoLock&);
 
     void SetCaptivePortalStatus(int32_t aStatus) {
       mCaptivePortalStatus = aStatus;
@@ -289,7 +293,7 @@ class TRRService : public TRRServiceBase,
    public:
     
     
-    void RecordEvent(const char* aReason, const MutexAutoLock& aLock) {
+    void RecordEvent(const char* aReason, const MutexSingleWriterAutoLock& aLock) {
       mConfirmation.RecordEvent(aReason, aLock);
     }
 
@@ -313,7 +317,8 @@ class TRRService : public TRRServiceBase,
       return mConfirmation.HandleEvent(aEvent);
     }
 
-    bool HandleEvent(ConfirmationEvent aEvent, const MutexAutoLock& lock) {
+    bool HandleEvent(ConfirmationEvent aEvent,
+                     const MutexSingleWriterAutoLock& lock) {
       return mConfirmation.HandleEvent(aEvent, lock);
     }
 
