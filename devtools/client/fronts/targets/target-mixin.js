@@ -522,7 +522,8 @@ function TargetMixin(parentClass) {
 
       
       
-      if (targetCommand.descriptorFront.createdForBrowserConsole) {
+      
+      if (targetCommand.descriptorFront.doNotAttachThreadActor) {
         return;
       }
 
