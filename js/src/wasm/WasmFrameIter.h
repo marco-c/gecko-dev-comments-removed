@@ -237,8 +237,8 @@ void GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed,
 
 
 
-const Instance* GetNearestEffectiveTls(const Frame* fp);
-Instance* GetNearestEffectiveTls(Frame* fp);
+const Instance* GetNearestEffectiveInstance(const Frame* fp);
+Instance* GetNearestEffectiveInstance(Frame* fp);
 
 
 
