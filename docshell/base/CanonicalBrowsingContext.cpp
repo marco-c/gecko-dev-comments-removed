@@ -2084,7 +2084,13 @@ bool CanonicalBrowsingContext::StartDocumentLoad(
   
   if (StaticPrefs::browser_tabs_documentchannel_parent_controlled() &&
       mozilla::SessionHistoryInParent() && mCurrentLoad) {
-    mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
+    
+    MOZ_ASSERT(!aLoad->IsLoadingJSURI());
+
+    
+    if (!aLoad->IsDownload()) {
+      mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD);
+    }
   }
   mCurrentLoad = aLoad;
 

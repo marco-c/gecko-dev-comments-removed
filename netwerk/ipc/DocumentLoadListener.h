@@ -282,6 +282,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   uint64_t GetLoadIdentifier() const { return mLoadIdentifier; }
   uint32_t GetLoadType() const { return mLoadStateLoadType; }
+  bool IsDownload() const { return mIsDownload; }
+  bool IsLoadingJSURI() const { return mIsLoadingJSURI; }
 
   mozilla::dom::LoadingSessionHistoryInfo* GetLoadingSessionHistoryInfo() {
     return mLoadingSessionHistoryInfo.get();
@@ -537,6 +539,12 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   uint32_t mLoadStateExternalLoadFlags = 0;
   uint32_t mLoadStateInternalLoadFlags = 0;
   uint32_t mLoadStateLoadType = 0;
+
+  
+  bool mIsDownload = false;
+
+  
+  bool mIsLoadingJSURI = false;
 
   
   
