@@ -118,8 +118,14 @@
     switchTheme(getTheme());
   }
 
-  if (documentElement.hasAttribute("force-theme")) {
-    switchTheme(documentElement.getAttribute("force-theme"));
+  
+  
+  const forcedTheme =
+    documentElement.getAttribute("force-theme") ||
+    window.top.document.documentElement.getAttribute("force-theme");
+
+  if (forcedTheme) {
+    switchTheme(forcedTheme);
   } else {
     switchTheme(getTheme());
 
