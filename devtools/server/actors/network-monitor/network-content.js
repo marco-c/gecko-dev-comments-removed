@@ -64,56 +64,56 @@ const NetworkContentActor = ActorClassWithSpec(networkContentSpec, {
 
 
   async sendHTTPRequest(request) {
-    const { url, method, headers, body, cause } = request;
-    
-    
-    const doc = this.targetActor.window.document;
+    return new Promise(resolve => {
+      const { url, method, headers, body, cause } = request;
+      
+      
+      const doc = this.targetActor.window.document;
 
-    const channel = NetUtil.newChannel({
-      uri: NetUtil.newURI(url),
-      loadingNode: doc,
-      securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
-      contentPolicyType:
-        NetworkUtils.stringToCauseType(cause.type) ||
-        Ci.nsIContentPolicy.TYPE_OTHER,
-    });
+      const channel = NetUtil.newChannel({
+        uri: NetUtil.newURI(url),
+        loadingNode: doc,
+        securityFlags:
+          Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+        contentPolicyType:
+          NetworkUtils.stringToCauseType(cause.type) ||
+          Ci.nsIContentPolicy.TYPE_OTHER,
+      });
 
-    channel.QueryInterface(Ci.nsIHttpChannel);
+      channel.QueryInterface(Ci.nsIHttpChannel);
+      channel.loadGroup = doc.documentLoadGroup;
+      channel.loadFlags |=
+        Ci.nsIRequest.LOAD_BYPASS_CACHE |
+        Ci.nsIRequest.INHIBIT_CACHING |
+        Ci.nsIRequest.LOAD_ANONYMOUS;
 
-    channel.loadGroup = doc.documentLoadGroup;
-    channel.loadFlags |=
-      Ci.nsIRequest.LOAD_BYPASS_CACHE |
-      Ci.nsIRequest.INHIBIT_CACHING |
-      Ci.nsIRequest.LOAD_ANONYMOUS;
-
-    channel.requestMethod = method;
-    if (headers) {
-      for (const { name, value } of headers) {
-        if (name.toLowerCase() == "referer") {
-          
-          
-          
-          channel.setNewReferrerInfo(
-            value,
-            Ci.nsIReferrerInfo.UNSAFE_URL,
-            true
-          );
-        } else {
-          channel.setRequestHeader(name, value, false);
+      channel.requestMethod = method;
+      if (headers) {
+        for (const { name, value } of headers) {
+          if (name.toLowerCase() == "referer") {
+            
+            
+            
+            channel.setNewReferrerInfo(
+              value,
+              Ci.nsIReferrerInfo.UNSAFE_URL,
+              true
+            );
+          } else {
+            channel.setRequestHeader(name, value, false);
+          }
         }
       }
-    }
 
-    if (body) {
-      channel.QueryInterface(Ci.nsIUploadChannel2);
-      const bodyStream = Cc[
-        "@mozilla.org/io/string-input-stream;1"
-      ].createInstance(Ci.nsIStringInputStream);
-      bodyStream.setData(body, body.length);
-      channel.explicitSetUploadStream(bodyStream, null, -1, method, false);
-    }
+      if (body) {
+        channel.QueryInterface(Ci.nsIUploadChannel2);
+        const bodyStream = Cc[
+          "@mozilla.org/io/string-input-stream;1"
+        ].createInstance(Ci.nsIStringInputStream);
+        bodyStream.setData(body, body.length);
+        channel.explicitSetUploadStream(bodyStream, null, -1, method, false);
+      }
 
-    return new Promise(resolve => {
       
       
       
