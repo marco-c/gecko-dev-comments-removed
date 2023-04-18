@@ -41,10 +41,7 @@ bool UtilityProcessImpl::Init(int aArgc, char* aArgv[]) {
     return false;
   }
 
-  
-  
-  if (*sandboxingKind < SandboxingKind::GENERIC_UTILITY ||
-      *sandboxingKind >= SandboxingKind::COUNT) {
+  if (*sandboxingKind >= SandboxingKind::COUNT) {
     return false;
   }
 
