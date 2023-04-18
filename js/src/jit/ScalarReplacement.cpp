@@ -144,8 +144,7 @@ static bool IsLambdaEscaped(MInstruction* lambda, const Shape* shape) {
 
 static inline bool IsOptimizableObjectInstruction(MInstruction* ins) {
   return ins->isNewObject() || ins->isNewPlainObject() ||
-         ins->isCreateThisWithTemplate() || ins->isNewCallObject() ||
-         ins->isNewIterator();
+         ins->isNewCallObject() || ins->isNewIterator();
 }
 
 

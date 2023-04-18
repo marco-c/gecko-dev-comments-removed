@@ -2813,39 +2813,6 @@ class MAssertShape : public MUnaryInstruction, public NoTypePolicy::Data {
 };
 
 
-
-
-
-class MCreateThisWithTemplate : public MUnaryInstruction,
-                                public NoTypePolicy::Data {
-  gc::InitialHeap initialHeap_;
-
-  MCreateThisWithTemplate(MConstant* templateConst, gc::InitialHeap initialHeap)
-      : MUnaryInstruction(classOpcode, templateConst),
-        initialHeap_(initialHeap) {
-    setResultType(MIRType::Object);
-  }
-
- public:
-  INSTRUCTION_HEADER(CreateThisWithTemplate)
-  TRIVIAL_NEW_WRAPPERS
-
-  
-  JSObject* templateObject() const {
-    return &getOperand(0)->toConstant()->toObject();
-  }
-
-  gc::InitialHeap initialHeap() const { return initialHeap_; }
-
-  
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
-
-  [[nodiscard]] bool writeRecoverData(
-      CompactBufferWriter& writer) const override;
-  bool canRecoverOnBailout() const override;
-};
-
-
 class MCreateArgumentsObject : public MUnaryInstruction,
                                public ObjectPolicy<0>::Data {
   CompilerGCPointer<ArgumentsObject*> templateObj_;
