@@ -92,9 +92,14 @@ bool SourceSurfaceSharedDataWrapper::EnsureMapped(size_t aLength) {
   return true;
 }
 
-bool SourceSurfaceSharedDataWrapper::Map(MapType,
+bool SourceSurfaceSharedDataWrapper::Map(MapType aMapType,
                                          MappedSurface* aMappedSurface) {
   uint8_t* dataPtr;
+
+  if (aMapType != MapType::READ) {
+    
+    return false;
+  }
 
   if (mHandleLock) {
     MutexAutoLock lock(*mHandleLock);
