@@ -188,48 +188,47 @@ class nsBlockFrame : public nsContainerFrame {
   
   
   
+
+  
+  
+  
+  
+  
+  
+  
   
   
 
   
-  void ClearLineCursor();
+  void ClearLineCursors() {
+    if (MaybeHasLineCursor()) {
+      ClearLineCursorForDisplay();
+      ClearLineCursorForQuery();
+      RemoveStateBits(NS_BLOCK_HAS_LINE_CURSOR);
+    }
+  }
+  void ClearLineCursorForDisplay() {
+    RemoveProperty(LineCursorPropertyDisplay());
+  }
+  void ClearLineCursorForQuery() { RemoveProperty(LineCursorPropertyQuery()); }
+
   
   
   
   
   
   nsLineBox* GetFirstLineContaining(nscoord y);
+
+  
   
   
   
-  
-  void SetupLineCursor();
+  void SetupLineCursorForDisplay();
 
   
-
-
-
-
-  class MOZ_STACK_CLASS AutoLineCursorSetup {
-   public:
-    explicit AutoLineCursorSetup(nsBlockFrame* aFrame)
-        : mFrame(aFrame), mOrigCursor(aFrame->GetLineCursor()) {
-      if (!mOrigCursor) {
-        mFrame->SetupLineCursor();
-      }
-    }
-    ~AutoLineCursorSetup() {
-      if (mOrigCursor) {
-        mFrame->SetProperty(LineCursorProperty(), mOrigCursor);
-      } else {
-        mFrame->ClearLineCursor();
-      }
-    }
-
-   private:
-    nsBlockFrame* mFrame;
-    nsLineBox* mOrigCursor;
-  };
+  
+  
+  void SetupLineCursorForQuery();
 
   void ChildIsDirty(nsIFrame* aChild) override;
 
@@ -424,10 +423,23 @@ class nsBlockFrame : public nsContainerFrame {
       nsPresContext* aPresContext);
 #endif
 
-  NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(LineCursorProperty, nsLineBox)
-  bool HasLineCursor() { return HasAnyStateBits(NS_BLOCK_HAS_LINE_CURSOR); }
-  nsLineBox* GetLineCursor() {
-    return HasLineCursor() ? GetProperty(LineCursorProperty()) : nullptr;
+  NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(LineCursorPropertyDisplay, nsLineBox)
+  NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(LineCursorPropertyQuery, nsLineBox)
+  
+  
+  
+  
+  
+  bool MaybeHasLineCursor() {
+    return HasAnyStateBits(NS_BLOCK_HAS_LINE_CURSOR);
+  }
+  nsLineBox* GetLineCursorForDisplay() {
+    return MaybeHasLineCursor() ? GetProperty(LineCursorPropertyDisplay())
+                                : nullptr;
+  }
+  nsLineBox* GetLineCursorForQuery() {
+    return MaybeHasLineCursor() ? GetProperty(LineCursorPropertyQuery())
+                                : nullptr;
   }
 
   nsLineBox* NewLineBox(nsIFrame* aFrame, bool aIsBlock) {
@@ -438,8 +450,11 @@ class nsBlockFrame : public nsContainerFrame {
     return NS_NewLineBox(PresShell(), aFromLine, aFrame, aCount);
   }
   void FreeLineBox(nsLineBox* aLine) {
-    if (aLine == GetLineCursor()) {
-      ClearLineCursor();
+    if (aLine == GetLineCursorForDisplay()) {
+      ClearLineCursorForDisplay();
+    }
+    if (aLine == GetLineCursorForQuery()) {
+      ClearLineCursorForQuery();
     }
     aLine->Destroy(PresShell());
   }
