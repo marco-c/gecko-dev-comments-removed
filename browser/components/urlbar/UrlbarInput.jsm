@@ -373,6 +373,10 @@ class UrlbarInput {
       valid = true;
     }
 
+    const previousUntrimmedValue = this.untrimmedValue;
+    const previousSelectionStart = this.selectionStart;
+    const previousSelectionEnd = this.selectionEnd;
+
     let isDifferentValidValue = valid && value != this.untrimmedValue;
     this.value = value;
     this.valueIsTyped = !valid;
@@ -380,7 +384,16 @@ class UrlbarInput {
     if (isDifferentValidValue) {
       
       
-      this.selectionStart = this.selectionEnd = 0;
+      
+      const isCaretPositionEnd =
+        previousUntrimmedValue.length === previousSelectionEnd ||
+        value.length <= previousSelectionEnd;
+      if (isCaretPositionEnd) {
+        this.selectionStart = this.selectionEnd = value.length;
+      } else {
+        this.selectionStart = previousSelectionStart;
+        this.selectionEnd = previousSelectionEnd;
+      }
     }
 
     
