@@ -149,6 +149,9 @@ def translate_metrics(
         options["allow_reserved"] = True
 
     
+    all_objects.value.pop("tags", None)
+
+    
     
     with tempfile.TemporaryDirectory() as tempdir:
         tempdir_path = Path(tempdir)
