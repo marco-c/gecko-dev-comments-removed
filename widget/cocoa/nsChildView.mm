@@ -2746,16 +2746,12 @@ NSEvent* gLastDragMouseDownEvent = nil;
   
   
   
-  if (![NSEvent isSwipeTrackingFromScrollEventsEnabled]) {
-    return false;
-  }
-
   
   
   
   NSEventPhase eventPhase = [anEvent phase];
   return [anEvent type] == NSEventTypeScrollWheel && eventPhase == NSEventPhaseBegan &&
-         [anEvent hasPreciseScrollingDeltas];
+         [anEvent hasPreciseScrollingDeltas] && [NSEvent isSwipeTrackingFromScrollEventsEnabled];
 }
 
 - (void)setUsingOMTCompositor:(BOOL)aUseOMTC {
