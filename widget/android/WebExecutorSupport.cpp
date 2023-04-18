@@ -351,6 +351,10 @@ static nsresult SetupHttpChannel(nsIHttpChannel* aHttpChannel,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
+  rv = internalChannel->SetBeConservative(true);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
   rv = internalChannel->SetBlockAuthPrompt(true);
   NS_ENSURE_SUCCESS(rv, rv);
 
