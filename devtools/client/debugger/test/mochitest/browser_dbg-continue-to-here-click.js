@@ -30,7 +30,12 @@ add_task(async function() {
   
   await waitForPaused(dbg);
 
-  assertDebugLine(dbg, lineToContinueTo, 4);
+  assertPausedAtSourceAndLine(
+    dbg,
+    findSource(dbg, "pause-points.js").id,
+    lineToContinueTo,
+    4
+  );
   ok(true, "Debugger continued to the expected line");
 
   info("Resume");
