@@ -23,56 +23,37 @@ protected:
                                 VisitFlags &ToVisit) const override {
     
     
-    if (getDeclarationNamespace(D) == "std") {
-      
-      
-      StringRef Name = getNameChecked(D);
-      if (isNameExcepted(Name.data())) {
-        return "";
-      }
-      return "it is an stl-provided type not guaranteed to be memmove-able";
+    if (getDeclarationNamespace(D) != "std") {
+      return "";
     }
-    return "";
+
+    StringRef Name = getNameChecked(D);
+
+    
+    
+    auto RD = dyn_cast<CXXRecordDecl>(D);
+    if (RD && RD->isCompleteDefinition() &&
+        (RD->hasTrivialMoveConstructor() ||
+         (!RD->hasMoveConstructor() && RD->hasTrivialCopyConstructor())) &&
+        RD->hasTrivialDestructor()) {
+      ToVisit = VISIT_NONE;
+      return "";
+    }
+
+    
+    
+    if (isNameExcepted(Name.data())) {
+      
+      
+      ToVisit = VISIT_TMPL_ARGS;
+      return "";
+    }
+    return "it is an stl-provided type not guaranteed to be memmove-able";
   }
 
 private:
-  bool isNameExcepted(const char *Name) const {
-    static std::unordered_set<std::string> NamesSet = {
-        {"pair"},
-        {"atomic"},
-        
-        {"__atomic_base"},
-        {"atomic_bool"},
-        {"__cxx_atomic_impl"},
-        {"__cxx_atomic_base_impl"},
-        {"__pair_base"},
-        
-        {"_Atomic_impl"},
-        {"_Atomic_base"},
-        {"_Atomic_bool"},
-        {"_Atomic_char"},
-        {"_Atomic_schar"},
-        {"_Atomic_uchar"},
-        {"_Atomic_char16_t"},
-        {"_Atomic_char32_t"},
-        {"_Atomic_wchar_t"},
-        {"_Atomic_short"},
-        {"_Atomic_ushort"},
-        {"_Atomic_int"},
-        {"_Atomic_uint"},
-        {"_Atomic_long"},
-        {"_Atomic_ulong"},
-        {"_Atomic_llong"},
-        {"_Atomic_ullong"},
-        {"_Atomic_address"},
-        
-        {"_Atomic_integral"},
-        {"_Atomic_integral_facade"},
-        {"_Atomic_padded"},
-        {"_Atomic_pointer"},
-        {"_Atomic_storage"}};
-
-    return NamesSet.find(Name) != NamesSet.end();
+  bool isNameExcepted(StringRef Name) const {
+    return Name == "pair" || Name == "atomic";
   }
 };
 
