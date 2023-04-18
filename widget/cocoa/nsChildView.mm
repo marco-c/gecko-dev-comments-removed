@@ -4282,14 +4282,16 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
   }
 
   if (mDragService) {
-    
     RefPtr<nsDragService> dragService = static_cast<nsDragService*>(mDragService);
-    FlipCocoaScreenCoordinate(aPoint);
-    dragService->SetDragEndPoint(gfx::IntPoint::Round(aPoint.x, aPoint.y));
 
+    
+    
+    
+    
     NSPoint pnt = [NSEvent mouseLocation];
+    NSPoint locationInWindow = nsCocoaUtils::ConvertPointFromScreen([self window], pnt);
     FlipCocoaScreenCoordinate(pnt);
-    dragService->SetDragEndPoint(gfx::IntPoint::Round(pnt.x, pnt.y));
+    dragService->SetDragEndPoint([self convertWindowCoordinates:locationInWindow]);
 
     
     
