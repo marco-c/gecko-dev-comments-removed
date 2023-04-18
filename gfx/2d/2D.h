@@ -168,6 +168,15 @@ struct StrokeOptions {
 
   JoinStyle mLineJoin;       
   CapStyle mLineCap;         
+
+  bool operator==(const StrokeOptions& aOther) const {
+    return mLineWidth == aOther.mLineWidth &&
+           mMiterLimit == aOther.mMiterLimit &&
+           mDashPattern == aOther.mDashPattern &&
+           mDashLength == aOther.mDashLength &&
+           mDashOffset == aOther.mDashOffset && mLineJoin == aOther.mLineJoin &&
+           mLineCap == aOther.mLineCap;
+  }
 };
 
 
