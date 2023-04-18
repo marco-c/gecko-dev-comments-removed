@@ -17,6 +17,7 @@ class NativeInputTrack : public ProcessedMediaTrack {
  public:
   
   static NativeInputTrack* Create(MediaTrackGraphImpl* aGraph,
+                                  CubebUtils::AudioDeviceID aDeviceId,
                                   const PrincipalHandle& aPrincipalHandle);
 
   size_t AddUser();
@@ -44,13 +45,14 @@ class NativeInputTrack : public ProcessedMediaTrack {
   NativeInputTrack* AsNativeInputTrack() override { return this; }
 
   
+  const CubebUtils::AudioDeviceID mDeviceId;
   const PrincipalHandle mPrincipalHandle;
 
   
   nsTArray<RefPtr<AudioDataListener>> mDataUsers;
 
  private:
-  NativeInputTrack(TrackRate aSampleRate,
+  NativeInputTrack(TrackRate aSampleRate, CubebUtils::AudioDeviceID aDeviceId,
                    const PrincipalHandle& aPrincipalHandle);
   ~NativeInputTrack() = default;
 
