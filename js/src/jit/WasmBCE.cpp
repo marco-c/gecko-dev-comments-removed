@@ -47,12 +47,6 @@ bool jit::EliminateBoundsChecks(MIRGenerator* mir, MIRGraph& graph) {
 
           
           
-          if (!bc->isMemory()) {
-            continue;
-          }
-
-          
-          
           
           
           

@@ -150,16 +150,6 @@ struct FunctionCall {
   size_t stackArgAreaSize;
 };
 
-enum class PostBarrierKind {
-  
-  
-  
-  Precise,
-  
-  
-  Imprecise,
-};
-
 
 
 
@@ -1092,15 +1082,6 @@ struct BaseCompiler final {
   
   
 
-  Address addressOfTableField(const TableDesc& table, uint32_t fieldOffset,
-                              RegPtr tls);
-  void loadTableLength(const TableDesc& table, RegPtr tls, RegI32 length);
-  void loadTableElements(const TableDesc& table, RegPtr tls, RegPtr elements);
-
-  
-  
-  
-
   void bceCheckLocal(MemoryAccessDesc* access, AccessCheck* check,
                      uint32_t local);
   void bceLocalIsUpdated(uint32_t local);
@@ -1274,36 +1255,12 @@ struct BaseCompiler final {
   void emitPreBarrier(RegPtr valueAddr);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  [[nodiscard]] bool emitPostBarrierImprecise(const Maybe<RegRef>& object,
-                                     RegPtr valueAddr, RegRef value);
-  [[nodiscard]] bool emitPostBarrierPrecise(const Maybe<RegRef>& object,
-                                            RegPtr valueAddr, RegRef prevValue, RegRef value);
+  [[nodiscard]] bool emitPostBarrierCall(RegPtr valueAddr);
 
   
   
-  
-  
   [[nodiscard]] bool emitBarrieredStore(const Maybe<RegRef>& object,
-                                        RegPtr valueAddr, RegRef value,
-                                        PostBarrierKind kind);
+                                        RegPtr valueAddr, RegRef value);
 
   
   
@@ -1584,10 +1541,6 @@ struct BaseCompiler final {
   [[nodiscard]] bool emitTableGrow();
   [[nodiscard]] bool emitTableSet();
   [[nodiscard]] bool emitTableSize();
-
-  void emitTableBoundsCheck(const TableDesc& table, RegI32 index, RegPtr tls);
-  [[nodiscard]] bool emitTableGetAnyRef(uint32_t tableIndex);
-  [[nodiscard]] bool emitTableSetAnyRef(uint32_t tableIndex);
 
 #ifdef ENABLE_WASM_GC
   [[nodiscard]] bool emitStructNewWithRtt();
