@@ -18,13 +18,8 @@ const NEWTAB_PREF = "browser.newtabpage.enabled";
 
 const SCREEN_STRINGS = [
   {
-    title: "upgrade-dialog-start-title",
-    subtitle: "upgrade-dialog-start-subtitle",
-    primary: "upgrade-dialog-start-primary-button",
-    secondary: "upgrade-dialog-start-secondary-button",
-  },
-  {
     title: "upgrade-dialog-colorway-title",
+    subtitle: "upgrade-dialog-start-subtitle",
     primary: "upgrade-dialog-colorway-primary-button",
     secondary: "upgrade-dialog-colorway-secondary-button",
   },
@@ -132,6 +127,11 @@ function triggerTransition(callback) {
 
 
 function onLoad(ready) {
+  
+  if (Cu.isInAutomation) {
+    Math.random = () => 0;
+  }
+
   const { body } = document;
   const logo = document.querySelector(".logo");
   const title = document.getElementById("title");
@@ -274,8 +274,6 @@ function onLoad(ready) {
     });
 
     
-    body.classList.remove("confetti");
-    logo.classList.add("hidden");
     colorways.classList.remove("hidden");
     adjustModalBackdrop();
 
@@ -337,20 +335,14 @@ function onLoad(ready) {
 
       recordEvent("show", `${SCREEN_STRINGS.length}-screens`);
       await document.l10n.ready;
+
+      
+      await gPrevTheme;
+      toFocus = showColorways();
     } else {
       
       const { l10nId } = target.dataset;
       switch (l10nId) {
-        
-        case "upgrade-dialog-start-primary-button":
-          toFocus = showColorways();
-          break;
-
-        
-        case "upgrade-dialog-start-secondary-button":
-          current++;
-          break;
-
         
         case "upgrade-dialog-colorway-primary-button":
           gPrevTheme = null;
