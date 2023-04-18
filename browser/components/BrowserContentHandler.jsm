@@ -913,6 +913,53 @@ function handURIToExistingBrowser(
   );
 }
 
+
+
+
+
+
+
+
+
+
+
+
+function maybeRecordToHandleTelemetry(uri, isLaunch) {
+  let scalar = isLaunch
+    ? "os.environment.launched_to_handle"
+    : "os.environment.invoked_to_handle";
+
+  if (uri instanceof Ci.nsIFileURL) {
+    let extension = "." + uri.fileExtension.toLowerCase();
+    
+    
+    let registeredExtensions = new Set([
+      ".avif",
+      ".htm",
+      ".html",
+      ".pdf",
+      ".shtml",
+      ".xht",
+      ".xhtml",
+      ".svg",
+      ".webp",
+    ]);
+    if (registeredExtensions.has(extension)) {
+      Services.telemetry.keyedScalarAdd(scalar, extension, 1);
+    } else {
+      Services.telemetry.keyedScalarAdd(scalar, ".<other extension>", 1);
+    }
+  } else if (uri) {
+    let scheme = uri.scheme.toLowerCase();
+    let registeredSchemes = new Set(["about", "http", "https", "mailto"]);
+    if (registeredSchemes.has(scheme)) {
+      Services.telemetry.keyedScalarAdd(scalar, scheme, 1);
+    } else {
+      Services.telemetry.keyedScalarAdd(scalar, "<other protocol>", 1);
+    }
+  }
+}
+
 function nsDefaultCommandLineHandler() {}
 
 nsDefaultCommandLineHandler.prototype = {
@@ -960,11 +1007,32 @@ nsDefaultCommandLineHandler.prototype = {
       }
     }
 
+    
+    let launchedWithArg_osint =
+      AppConstants.platform == "win" && cmdLine.findFlag("osint", false) == 0;
+    if (launchedWithArg_osint) {
+      cmdLine.handleFlag("osint", false);
+    }
+
     try {
       var ar;
       while ((ar = cmdLine.handleFlagWithParam("url", false))) {
         var uri = resolveURIInternal(cmdLine, ar);
         urilist.push(uri);
+
+        if (launchedWithArg_osint) {
+          launchedWithArg_osint = false;
+
+          
+          
+          
+          
+          
+          const isLaunch =
+            cmdLine && cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH;
+
+          maybeRecordToHandleTelemetry(uri, isLaunch);
+        }
       }
     } catch (e) {
       Cu.reportError(e);

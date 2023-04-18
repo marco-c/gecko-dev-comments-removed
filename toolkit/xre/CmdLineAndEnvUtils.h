@@ -228,11 +228,9 @@ inline void EnsureCommandlineSafe(int& aArgc, CharT** aArgv,
     if (!strimatch(osintLit, arg)) {
       exit(127);
     }
-    
-    RemoveArg(aArgc, aArgv + 1);
 
     
-    arg = aArgv[1];
+    arg = aArgv[2];
     if (*arg != '-'
 #ifdef XP_WIN
         && *arg != '/'
@@ -257,7 +255,7 @@ inline void EnsureCommandlineSafe(int& aArgc, CharT** aArgv,
       exit(127);
     }
     
-    arg = aArgv[2];
+    arg = aArgv[3];
     if (*arg == '-'
 #ifdef XP_WIN
         || *arg == '/'
