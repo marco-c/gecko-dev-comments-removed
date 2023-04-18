@@ -147,7 +147,9 @@ class ContentBlocking final {
   
   
   static Maybe<bool> CheckBrowserSettingsDecidesStorageAccessAPI(
-      nsICookieJarSettings* aCookieJarSettings, bool aThirdParty);
+      nsICookieJarSettings* aCookieJarSettings, bool aThirdParty,
+      bool aOnRejectForeignAllowlist, bool aIsOnThirdPartySkipList,
+      bool aIsThirdPartyTracker);
 
   
   

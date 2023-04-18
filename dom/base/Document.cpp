@@ -96,6 +96,7 @@
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/PseudoStyleType.h"
 #include "mozilla/RefCountType.h"
+#include "mozilla/RejectForeignAllowList.h"
 #include "mozilla/RelativeTo.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ReverseIterator.h"
@@ -16849,9 +16850,19 @@ nsresult Document::HasStorageAccessSync(bool& aHasStorageAccess) {
   
   
   bool isThirdPartyDocument = AntiTrackingUtils::IsThirdPartyDocument(this);
+  bool isOnRejectForeignAllowList = RejectForeignAllowList::Check(this);
+  bool isOnThirdPartySkipList = false;
+  if (mChannel) {
+    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+    isOnThirdPartySkipList = loadInfo->GetStoragePermission() ==
+                             nsILoadInfo::StoragePermissionAllowListed;
+  }
+  bool isThirdPartyTracker =
+      nsContentUtils::IsThirdPartyTrackingResourceWindow(inner);
   Maybe<bool> resultBecauseBrowserSettings =
       ContentBlocking::CheckBrowserSettingsDecidesStorageAccessAPI(
-          CookieJarSettings(), isThirdPartyDocument);
+          CookieJarSettings(), isThirdPartyDocument, isOnRejectForeignAllowList,
+          isOnThirdPartySkipList, isThirdPartyTracker);
   if (resultBecauseBrowserSettings.isSome()) {
     if (resultBecauseBrowserSettings.value()) {
       aHasStorageAccess = true;
@@ -16889,7 +16900,6 @@ nsresult Document::HasStorageAccessSync(bool& aHasStorageAccess) {
       return NS_OK;
     }
   }
-
   
   aHasStorageAccess = false;
   return NS_OK;
@@ -17065,6 +17075,14 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   }
 
   
+  nsPIDOMWindowInner* inner = this->GetInnerWindow();
+  if (!inner) {
+    this->ConsumeTransientUserGestureActivation();
+    promise->MaybeRejectWithUndefined();
+    return promise.forget();
+  }
+
+  
   
   
   
@@ -17087,9 +17105,19 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   
   bool isThirdPartyDocument = AntiTrackingUtils::IsThirdPartyDocument(this);
+  bool isOnRejectForeignAllowList = RejectForeignAllowList::Check(this);
+  bool isOnThirdPartySkipList = false;
+  if (mChannel) {
+    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+    isOnThirdPartySkipList = loadInfo->GetStoragePermission() ==
+                             nsILoadInfo::StoragePermissionAllowListed;
+  }
+  bool isThirdPartyTracker =
+      nsContentUtils::IsThirdPartyTrackingResourceWindow(inner);
   Maybe<bool> resultBecauseBrowserSettings =
       ContentBlocking::CheckBrowserSettingsDecidesStorageAccessAPI(
-          CookieJarSettings(), isThirdPartyDocument);
+          CookieJarSettings(), isThirdPartyDocument, isOnRejectForeignAllowList,
+          isOnThirdPartySkipList, isThirdPartyTracker);
   if (resultBecauseBrowserSettings.isSome()) {
     if (resultBecauseBrowserSettings.value()) {
       promise->MaybeResolveWithUndefined();
@@ -17133,12 +17161,6 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
 
   
   RefPtr<BrowsingContext> bc = this->GetBrowsingContext();
-  nsPIDOMWindowInner* inner = this->GetInnerWindow();
-  if (!inner) {
-    this->ConsumeTransientUserGestureActivation();
-    promise->MaybeRejectWithUndefined();
-    return promise.forget();
-  }
   RefPtr<nsGlobalWindowOuter> outer =
       nsGlobalWindowOuter::Cast(inner->GetOuterWindow());
   if (!outer) {
@@ -17161,10 +17183,6 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self, outer, promise] {
-            
-            
-            
-            
             outer->SetStorageAccessPermissionGranted(true);
             self->NotifyUserGestureActivation();
             promise->MaybeResolveWithUndefined();
@@ -17203,9 +17221,12 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
     aRv.Throw(rv);
     return nullptr;
   }
+  bool isOnRejectForeignAllowList =
+      RejectForeignAllowList::Check(thirdPartyURI);
   Maybe<bool> resultBecauseBrowserSettings =
       ContentBlocking::CheckBrowserSettingsDecidesStorageAccessAPI(
-          CookieJarSettings(), isThirdPartyDocument);
+          CookieJarSettings(), isThirdPartyDocument, isOnRejectForeignAllowList,
+          false, true);
   if (resultBecauseBrowserSettings.isSome()) {
     if (resultBecauseBrowserSettings.value()) {
       promise->MaybeResolveWithUndefined();
@@ -17315,7 +17336,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
           GetCurrentSerialEventTarget(), __func__,
           
           
-          [self, promise] {
+          [self, outer, promise] {
+            outer->SetStorageAccessPermissionGranted(true);
             self->NotifyUserGestureActivation();
             promise->MaybeResolveWithUndefined();
           },
