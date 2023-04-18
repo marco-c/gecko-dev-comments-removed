@@ -168,9 +168,15 @@ nsInputStreamPump::GetStatus(nsresult* status) {
 
 NS_IMETHODIMP
 nsInputStreamPump::Cancel(nsresult status) {
-  RecursiveMutexAutoLock lock(mMutex);
+#if DEBUG
+  if (mOffMainThread) {
+    MOZ_ASSERT_IF(mTargetThread, mTargetThread->IsOnCurrentThread());
+  } else {
+    MOZ_ASSERT(NS_IsMainThread());
+  }
+#endif
 
-  AssertOnThread();
+  RecursiveMutexAutoLock lock(mMutex);
 
   LOG(("nsInputStreamPump::Cancel [this=%p status=%" PRIx32 "]\n", this,
        static_cast<uint32_t>(status)));
@@ -270,8 +276,6 @@ NS_IMETHODIMP
 nsInputStreamPump::Init(nsIInputStream* stream, uint32_t segsize,
                         uint32_t segcount, bool closeWhenDone,
                         nsIEventTarget* mainThreadTarget) {
-  
-  RecursiveMutexAutoLock lock(mMutex);
   NS_ENSURE_TRUE(mState == STATE_IDLE, NS_ERROR_IN_PROGRESS);
 
   mStream = stream;
@@ -293,7 +297,6 @@ NS_IMETHODIMP
 nsInputStreamPump::AsyncRead(nsIStreamListener* listener) {
   RecursiveMutexAutoLock lock(mMutex);
 
-  
   NS_ENSURE_TRUE(mState == STATE_IDLE, NS_ERROR_IN_PROGRESS);
   NS_ENSURE_ARG_POINTER(listener);
   MOZ_ASSERT(NS_IsMainThread() || mOffMainThread,
@@ -359,7 +362,7 @@ nsInputStreamPump::OnInputStreamReady(nsIAsyncInputStream* stream) {
       break;
     }
     mProcessingCallbacks = true;
-    if (mSuspendCount || mState == STATE_IDLE || mState == STATE_DEAD) {
+    if (mSuspendCount || mState == STATE_IDLE) {
       mWaitingForInputStreamReady = false;
       mProcessingCallbacks = false;
       break;
@@ -459,8 +462,6 @@ uint32_t nsInputStreamPump::OnStateStart() {
     
     
     RecursiveMutexAutoUnlock unlock(mMutex);
-    
-    AssertOnThread();
     rv = mListener->OnStartRequest(this);
   }
 
@@ -528,16 +529,6 @@ uint32_t nsInputStreamPump::OnStateTransfer() {
       
       
       RecursiveMutexAutoUnlock unlock(mMutex);
-      
-      
-      
-      
-      
-      if (mTargetThread) {
-        MOZ_ASSERT(mTargetThread->IsOnCurrentThread());
-      } else {
-        MOZ_ASSERT(NS_IsMainThread());
-      }
       rv = mListener->OnDataAvailable(this, mAsyncStream, mStreamOffset,
                                       odaAvail);
     }
@@ -635,18 +626,15 @@ uint32_t nsInputStreamPump::OnStateStop() {
   }
 
   mAsyncStream = nullptr;
+  mTargetThread = nullptr;
   mIsPending = false;
   {
     
     
     
     RecursiveMutexAutoUnlock unlock(mMutex);
-    
-    
-    AssertOnThread();
     mListener->OnStopRequest(this, mStatus);
   }
-  mTargetThread = nullptr;
   mListener = nullptr;
 
   if (mLoadGroup) mLoadGroup->RemoveRequest(this, nullptr, mStatus);
