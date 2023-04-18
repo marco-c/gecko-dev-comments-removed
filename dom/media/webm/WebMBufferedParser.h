@@ -90,10 +90,8 @@ struct WebMBufferedParser {
   
   
   
-  
   bool Append(const unsigned char* aBuffer, uint32_t aLength,
-              nsTArray<WebMTimeDataOffset>& aMapping,
-              ReentrantMonitor& aReentrantMonitor);
+              nsTArray<WebMTimeDataOffset>& aMapping);
 
   bool operator==(int64_t aOffset) const { return mCurrentOffset == aOffset; }
 
