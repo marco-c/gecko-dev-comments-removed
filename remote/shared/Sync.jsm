@@ -60,12 +60,28 @@ function AnimationFramePromise(win) {
 
 
 
+
+
+
 function Deferred() {
   const deferred = {};
 
   deferred.promise = new Promise((resolve, reject) => {
-    deferred.resolve = resolve;
-    deferred.reject = reject;
+    deferred.fulfilled = false;
+    deferred.pending = true;
+    deferred.rejected = false;
+
+    deferred.resolve = (...args) => {
+      deferred.fulfilled = true;
+      deferred.pending = false;
+      resolve(...args);
+    };
+
+    deferred.reject = (...args) => {
+      deferred.pending = false;
+      deferred.rejected = true;
+      reject(...args);
+    };
   });
 
   return deferred;
