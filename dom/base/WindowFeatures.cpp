@@ -121,6 +121,11 @@ bool WindowFeatures::ParseBool(const nsCString& aValue) {
   }
 
   
+  if (aValue == "true") {
+    return true;
+  }
+
+  
   int32_t parsed = ParseIntegerWithFallback(aValue);
 
   
