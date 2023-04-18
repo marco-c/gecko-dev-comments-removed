@@ -34,130 +34,142 @@ add_task(async function() {
 
   info(`Setting "content.cors.disable" to true to test CORSDisabled message`);
   await pushPref("content.cors.disable", true);
-  onCorsMessage = waitForMessage(hud, "Reason: CORS disabled");
+  onCorsMessage = waitForMessageByType(hud, "Reason: CORS disabled", ".error");
   makeFaultyCorsCall("CORSDisabled");
   message = await onCorsMessage;
   await checkCorsMessage(hud, message, "CORSDisabled");
   await pushPref("content.cors.disable", false);
 
   info("Test CORSPreflightDidNotSucceed");
-  onCorsMessage = waitForMessage(
+  onCorsMessage = waitForMessageByType(
     hud,
-    `(Reason: CORS preflight response did not succeed). Status code: `
+    `(Reason: CORS preflight response did not succeed). Status code: `,
+    ".error"
   );
   makeFaultyCorsCall("CORSPreflightDidNotSucceed");
   message = await onCorsMessage;
   await checkCorsMessage(hud, message, "CORSPreflightDidNotSucceed");
 
   info("Test CORS did not succeed");
-  onCorsMessage = waitForMessage(
+  onCorsMessage = waitForMessageByType(
     hud,
-    "(Reason: CORS request did not succeed). Status code: "
+    "(Reason: CORS request did not succeed). Status code: ",
+    ".error"
   );
   makeFaultyCorsCall("CORSDidNotSucceed");
   message = await onCorsMessage;
   await checkCorsMessage(hud, message, "CORSDidNotSucceed");
 
   info("Test CORSExternalRedirectNotAllowed");
-  onCorsMessage = waitForMessage(
+  onCorsMessage = waitForMessageByType(
     hud,
-    "Reason: CORS request external redirect not allowed"
+    "Reason: CORS request external redirect not allowed",
+    ".error"
   );
   makeFaultyCorsCall("CORSExternalRedirectNotAllowed");
   message = await onCorsMessage;
   await checkCorsMessage(hud, message, "CORSExternalRedirectNotAllowed");
 
   info("Test CORSMissingAllowOrigin");
-  onCorsMessage = waitForMessage(
+  onCorsMessage = waitForMessageByType(
     hud,
     `(Reason: CORS header ${quote(
       "Access-Control-Allow-Origin"
-    )} missing). Status code: `
+    )} missing). Status code: `,
+    ".error"
   );
   makeFaultyCorsCall("CORSMissingAllowOrigin");
   message = await onCorsMessage;
   await checkCorsMessage(hud, message, "CORSMissingAllowOrigin");
 
   info("Test CORSMultipleAllowOriginNotAllowed");
-  onCorsMessage = waitForMessage(
+  onCorsMessage = waitForMessageByType(
     hud,
     `Reason: Multiple CORS header ${quote(
       "Access-Control-Allow-Origin"
-    )} not allowed`
+    )} not allowed`,
+    ".error"
   );
   makeFaultyCorsCall("CORSMultipleAllowOriginNotAllowed");
   message = await onCorsMessage;
   await checkCorsMessage(hud, message, "CORSMultipleAllowOriginNotAllowed");
 
   info("Test CORSAllowOriginNotMatchingOrigin");
-  onCorsMessage = waitForMessage(
+  onCorsMessage = waitForMessageByType(
     hud,
     `Reason: CORS header ` +
       `${quote("Access-Control-Allow-Origin")} does not match ${quote(
         "mochi.test"
-      )}`
+      )}`,
+    ".error"
   );
   makeFaultyCorsCall("CORSAllowOriginNotMatchingOrigin");
   message = await onCorsMessage;
   await checkCorsMessage(hud, message, "CORSAllowOriginNotMatchingOrigin");
 
   info("Test CORSNotSupportingCredentials");
-  onCorsMessage = waitForMessage(
+  onCorsMessage = waitForMessageByType(
     hud,
     `Reason: Credential is not supported if the CORS ` +
-      `header ${quote("Access-Control-Allow-Origin")} is ${quote("*")}`
+      `header ${quote("Access-Control-Allow-Origin")} is ${quote("*")}`,
+    ".error"
   );
   makeFaultyCorsCall("CORSNotSupportingCredentials");
   message = await onCorsMessage;
   await checkCorsMessage(hud, message, "CORSNotSupportingCredentials");
 
   info("Test CORSMethodNotFound");
-  onCorsMessage = waitForMessage(
+  onCorsMessage = waitForMessageByType(
     hud,
     `Reason: Did not find method in CORS header ` +
-      `${quote("Access-Control-Allow-Methods")}`
+      `${quote("Access-Control-Allow-Methods")}`,
+    ".error"
   );
   makeFaultyCorsCall("CORSMethodNotFound");
   message = await onCorsMessage;
   await checkCorsMessage(hud, message, "CORSMethodNotFound");
 
   info("Test CORSMissingAllowCredentials");
-  onCorsMessage = waitForMessage(
+  onCorsMessage = waitForMessageByType(
     hud,
     `Reason: expected ${quote("true")} in CORS ` +
-      `header ${quote("Access-Control-Allow-Credentials")}`
+      `header ${quote("Access-Control-Allow-Credentials")}`,
+    ".error"
   );
   makeFaultyCorsCall("CORSMissingAllowCredentials");
   message = await onCorsMessage;
   await checkCorsMessage(hud, message, "CORSMissingAllowCredentials");
 
   info("Test CORSInvalidAllowMethod");
-  onCorsMessage = waitForMessage(
+  onCorsMessage = waitForMessageByType(
     hud,
     `Reason: invalid token ${quote("xyz;")} in CORS ` +
-      `header ${quote("Access-Control-Allow-Methods")}`
+      `header ${quote("Access-Control-Allow-Methods")}`,
+    ".error"
   );
   makeFaultyCorsCall("CORSInvalidAllowMethod");
   message = await onCorsMessage;
   await checkCorsMessage(hud, message, "CORSInvalidAllowMethod");
 
   info("Test CORSInvalidAllowHeader");
-  onCorsMessage = waitForMessage(
+  onCorsMessage = waitForMessageByType(
     hud,
     `Reason: invalid token ${quote("xyz;")} in CORS ` +
-      `header ${quote("Access-Control-Allow-Headers")}`
+      `header ${quote("Access-Control-Allow-Headers")}`,
+    ".error"
   );
   makeFaultyCorsCall("CORSInvalidAllowHeader");
   message = await onCorsMessage;
   await checkCorsMessage(hud, message, "CORSInvalidAllowHeader");
 
   info("Test CORSMissingAllowHeaderFromPreflight");
-  onCorsMessage = waitForMessage(
+  onCorsMessage = waitForMessageByType(
     hud,
     `Reason: header ${quote("xyz")} is not allowed according to ` +
       `header ${quote(
         "Access-Control-Allow-Headers"
-      )} from CORS preflight response`
+      )} from CORS preflight response`,
+    ".error"
   );
   makeFaultyCorsCall("CORSMissingAllowHeaderFromPreflight");
   message = await onCorsMessage;
@@ -170,7 +182,9 @@ add_task(async function() {
   
   
   
+  
 
+  
   
   
   

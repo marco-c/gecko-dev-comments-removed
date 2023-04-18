@@ -79,7 +79,7 @@ async function doXhrAndExpand(hud) {
   
   
   
-  const onMessage = waitForMessage(hud, XHR_URL);
+  const onMessage = waitForMessageByType(hud, XHR_URL, ".network");
   const onRequestUpdates = waitForRequestUpdates(hud);
   const onPayloadReady = waitForPayloadReady(hud);
 

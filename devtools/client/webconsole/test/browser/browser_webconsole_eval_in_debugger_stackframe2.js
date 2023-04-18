@@ -26,7 +26,11 @@ add_task(async function() {
   const dbg = createDebuggerContext(toolbox);
 
   
-  const onFirstCallMessageReceived = waitForMessage(hud, "undefined");
+  const onFirstCallMessageReceived = waitForMessageByType(
+    hud,
+    "undefined",
+    ".result"
+  );
 
   const unresolvedSymbol = Symbol();
   let firstCallEvaluationResult = unresolvedSymbol;

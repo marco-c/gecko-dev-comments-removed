@@ -29,7 +29,7 @@ add_task(async function() {
   
   
   let text = "foobarz";
-  const onFooBarzMessage = waitForMessage(hud, text);
+  const onFooBarzMessage = waitForMessageByType(hud, text, ".console-api");
   SpecialPowers.spawn(gBrowser.selectedBrowser, [text], function(msg) {
     content.console.log(msg);
   });

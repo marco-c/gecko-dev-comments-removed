@@ -17,18 +17,21 @@ const TESTS = [
     file: "test-message-categories-css-loader.html",
     category: "CSS Loader",
     matchString: "text/css",
+    typeSelector: ".error",
   },
   {
     
     file: "test-message-categories-imagemap.html",
     category: "Layout: ImageMap",
     matchString: 'shape="rect"',
+    typeSelector: ".warn",
   },
   {
     
     file: "test-message-categories-html.html",
     category: "HTML",
     matchString: "multipart/form-data",
+    typeSelector: ".warn",
     onload: function() {
       SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
         const form = content.document.querySelector("form");
@@ -41,48 +44,56 @@ const TESTS = [
     file: "test-message-categories-workers.html",
     category: "Web Worker",
     matchString: "fooBarWorker",
+    typeSelector: ".error",
   },
   {
     
     file: "test-message-categories-malformedxml.xhtml",
     category: "malformed-xml",
     matchString: "no root element found",
+    typeSelector: ".error",
   },
   {
     
     file: "test-message-categories-svg.xhtml",
     category: "SVG",
     matchString: "fooBarSVG",
+    typeSelector: ".warn",
   },
   {
     
     file: "test-message-categories-css-parser.html",
     category: MESSAGE_CATEGORY.CSS_PARSER,
     matchString: "foobarCssParser",
+    typeSelector: ".warn",
   },
   {
     
     file: "test-message-categories-malformedxml-external.html",
     category: "malformed-xml",
     matchString: "</html>",
+    typeSelector: ".error",
   },
   {
     
     file: "test-message-categories-empty-getelementbyid.html",
     category: "DOM",
     matchString: "getElementById",
+    typeSelector: ".warn",
   },
   {
     
     file: "test-message-categories-canvas-css.html",
     category: MESSAGE_CATEGORY.CSS_PARSER,
     matchString: "foobarCanvasCssParser",
+    typeSelector: ".warn",
   },
   {
     
     file: "test-message-categories-image.html",
     category: "Image",
     matchString: "corrupt",
+    typeSelector: ".warn",
     
     skipInE10s: true,
   },
@@ -115,13 +126,20 @@ add_task(async function() {
 });
 
 async function runTest(test, hud) {
-  const { file, category, matchString, onload, skipInE10s } = test;
+  const {
+    file,
+    category,
+    matchString,
+    typeSelector,
+    onload,
+    skipInE10s,
+  } = test;
 
   if (skipInE10s && Services.appinfo.browserTabsRemoteAutostart) {
     return;
   }
 
-  const onMessageLogged = waitForMessage(hud, matchString);
+  const onMessageLogged = waitForMessageByType(hud, matchString, typeSelector);
 
   const onMessageObserved = new Promise(resolve => {
     Services.console.registerListener(function listener(subject) {

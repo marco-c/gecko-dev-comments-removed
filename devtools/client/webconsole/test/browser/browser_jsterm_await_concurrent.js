@@ -21,10 +21,10 @@ add_task(async function() {
   );
 
   
-  const onMessage = waitForMessage(
+  const onMessage = waitForMessageByType(
     hud,
     "await-concurrent-9000",
-    ".message.result"
+    ".result"
   );
   for (const input of inputs) {
     execute(hud, input);
