@@ -1031,6 +1031,7 @@ void nsWindow::Move(double aX, double aY) {
   }
 
   if (IsWaylandPopup()) {
+    
     auto prefBounds = mMoveToRectPopupRect;
     if (prefBounds.TopLeft() != mBounds.TopLeft()) {
       NativeMoveResize( true,  false);
@@ -1370,14 +1371,11 @@ void nsWindow::WaylandPopupHierarchyValidateByLayout(
 void nsWindow::WaylandPopupHierarchyHideTemporary() {
   LOG("nsWindow::WaylandPopupHierarchyHideTemporary() [%p]", this);
   nsWindow* popup = WaylandPopupFindLast(this);
-  while (popup) {
+  while (popup && popup != this) {
     LOG("  temporary hidding popup [%p]", popup);
     nsWindow* prev = popup->mWaylandPopupPrev;
     popup->HideWaylandPopupWindow( true,
                                    false);
-    if (popup == this) {
-      break;
-    }
     popup = prev;
   }
 }
@@ -1777,21 +1775,36 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
 
   nsWindow* popup = changedPopup;
   while (popup) {
-    
-    
-    
-    bool useMoveToRect = gUseMoveToRect && popup->mPopupMatchesLayout;
-    if (useMoveToRect) {
+    const bool useMoveToRect = [&] {
+      if (!gUseMoveToRect) {
+        return false;  
+      }
+      if (!popup->mPopupMatchesLayout) {
+        
+        
+        
+        return false;
+      }
       
       
       
       
       
-      useMoveToRect = (mPopupType == ePopupTypeTooltip) ||
-                      (popup->mPopupAnchored ||
-                       (!popup->mPopupAnchored &&
-                        popup->mWaylandPopupPrev->mWaylandToplevel == nullptr));
-    }
+      
+      bool useIt = mPopupType == ePopupTypeTooltip || popup->mPopupAnchored ||
+                   !popup->mWaylandPopupPrev->mWaylandToplevel;
+      if (!useIt) {
+        return false;
+      }
+      if (WaylandPopupFitsToplevelWindow()) {
+        
+        
+        
+        return false;
+      }
+      return true;
+    }();
+
     LOG("  popup [%p] matches layout [%d] anchored [%d] first popup [%d] use "
         "move-to-rect %d\n",
         popup, popup->mPopupMatchesLayout, popup->mPopupAnchored,
@@ -1820,31 +1833,60 @@ static void NativeMoveResizeCallback(GdkWindow* window,
   wnd->NativeMoveResizeWaylandPopupCallback(final_rect, flipped_x, flipped_y);
 }
 
+
+
+
+void nsWindow::WaylandPopupPropagateChangesToLayout(bool aMove, bool aResize) {
+  LOG("nsWindow::WaylandPopupPropagateChangesToLayout()");
+
+  
+  if (aResize) {
+    LOG("  needSizeUpdate\n");
+    if (nsMenuPopupFrame* popupFrame = GetMenuPopupFrame(GetFrame())) {
+      RefPtr<PresShell> presShell = popupFrame->PresShell();
+      presShell->FrameNeedsReflow(popupFrame, IntrinsicDirty::Resize,
+                                  NS_FRAME_IS_DIRTY);
+      
+      popupFrame->SetPopupPosition(nullptr, true, false);
+    }
+  }
+  if (aMove) {
+    LOG("  needPositionUpdate, bounds [%d, %d]", mBounds.x, mBounds.y);
+    NotifyWindowMoved(mBounds.x, mBounds.y);
+    if (nsMenuPopupFrame* popupFrame = GetMenuPopupFrame(GetFrame())) {
+      auto p = CSSIntPoint::Round(
+          mBounds.TopLeft() / popupFrame->PresContext()->CSSToDevPixelScale());
+      popupFrame->MoveTo(p, true);
+    }
+  }
+}
+
 void nsWindow::NativeMoveResizeWaylandPopupCallback(
     const GdkRectangle* aFinalSize, bool aFlippedX, bool aFlippedY) {
   mWaitingForMoveToRectCallback = false;
 
-  bool moved = mNewBoundsAfterMoveToRect.x || mNewBoundsAfterMoveToRect.y;
-  bool resized =
+  bool movedByLayout =
+      mNewBoundsAfterMoveToRect.x || mNewBoundsAfterMoveToRect.y;
+  bool resizedByLayout =
       mNewBoundsAfterMoveToRect.width || mNewBoundsAfterMoveToRect.height;
 
-  if (moved || resized) {
+  
+  
+  if (movedByLayout || resizedByLayout) {
     LOG("  Another move/resize called during waiting for callback\n");
-
-    
-    
-    
-    mMoveToRectPopupRect = LayoutDeviceIntRect();
-    if (moved) {
+    if (movedByLayout) {
       mBounds.x = mNewBoundsAfterMoveToRect.x;
       mBounds.y = mNewBoundsAfterMoveToRect.y;
     }
-    if (resized) {
+    if (resizedByLayout) {
       mBounds.width = mNewBoundsAfterMoveToRect.width;
       mBounds.height = mNewBoundsAfterMoveToRect.height;
     }
     mNewBoundsAfterMoveToRect = LayoutDeviceIntRect(0, 0, 0, 0);
-    NativeMoveResize(moved, resized);
+
+    
+    
+    NativeMoveResize(movedByLayout, resizedByLayout);
     return;
   }
 
@@ -1866,22 +1908,9 @@ void nsWindow::NativeMoveResizeWaylandPopupCallback(
   
   mMoveToRectPopupRect = newBounds;
 
-  const bool needsPositionUpdate = newBounds.TopLeft() != mBounds.TopLeft();
-  const bool needsSizeUpdate = newBounds.Size() != mBounds.Size();
+  bool needsPositionUpdate = newBounds.TopLeft() != mBounds.TopLeft();
+  bool needsSizeUpdate = newBounds.Size() != mBounds.Size();
 
-  
-  if (needsSizeUpdate) {
-    LOG("  needSizeUpdate\n");
-    Resize(aFinalSize->width, aFinalSize->height, true);
-
-    if (nsMenuPopupFrame* popupFrame = GetMenuPopupFrame(GetFrame())) {
-      RefPtr<PresShell> presShell = popupFrame->PresShell();
-      presShell->FrameNeedsReflow(popupFrame, IntrinsicDirty::Resize,
-                                  NS_FRAME_IS_DIRTY);
-      
-      popupFrame->SetPopupPosition(nullptr, true, false);
-    }
-  }
   if (needsPositionUpdate) {
     
     
@@ -1897,15 +1926,13 @@ void nsWindow::NativeMoveResizeWaylandPopupCallback(
         LOG("  apply rounding error workaround, move to %d, %d", topLeft.x,
             topLeft.y);
         gtk_window_move(GTK_WINDOW(mShell), topLeft.x, topLeft.y);
-        return;
+        needsPositionUpdate = false;
       }
     }
-
-    LOG("  needPositionUpdate, new bounds [%d, %d]", newBounds.x, newBounds.y);
-    mBounds.x = newBounds.x;
-    mBounds.y = newBounds.y;
-    NotifyWindowMoved(mBounds.x, mBounds.y);
   }
+
+  mBounds = newBounds;
+  WaylandPopupPropagateChangesToLayout(needsPositionUpdate, needsSizeUpdate);
 }
 
 static GdkGravity PopupAlignmentToGdkGravity(int8_t aAlignment) {
@@ -1997,12 +2024,7 @@ void nsWindow::WaylandPopupSetDirectPosition() {
     mBounds = LayoutDeviceIntRect(GdkPointToDevicePixels(mPopupPosition),
                                   mBounds.Size());
     LOG("  setting new bounds [%d, %d]\n", mBounds.x, mBounds.y);
-    NotifyWindowMoved(mBounds.x, mBounds.y);
-    if (nsMenuPopupFrame* popupFrame = GetMenuPopupFrame(GetFrame())) {
-      auto p = CSSIntPoint::Round(
-          mBounds.TopLeft() / popupFrame->PresContext()->CSSToDevPixelScale());
-      popupFrame->MoveTo(p, true);
-    }
+    WaylandPopupPropagateChangesToLayout( true,  false);
   }
 }
 
@@ -2354,14 +2376,16 @@ void nsWindow::WaylandPopupMove() {
       gtk_window_move(GTK_WINDOW(mShell), mRelativePopupPosition.x,
                       mRelativePopupPosition.y);
     }
+    
+    WaylandPopupPropagateChangesToLayout( true,  false);
     return;
   }
 
   
   
   if (gtk_widget_is_visible(mShell)) {
-    NS_WARNING(
-        "Positioning visible popup under Wayland, position may be wrong!");
+    HideWaylandPopupWindow( true,
+                            false);
   }
 
   
@@ -5925,6 +5949,10 @@ void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
   LOG("nsWindow::NativeMoveResize move %d resize %d to %d,%d -> %d x %d\n",
       aMoved, aResized, rect.x, rect.y, rect.width, rect.height);
 
+  
+  
+  MoveToRectPopupRectClear();
+
   if (aResized && !AreBoundsSane()) {
     LOG("  bounds are insane, hidding the window");
     
@@ -6187,7 +6215,7 @@ void nsWindow::NativeShow(bool aAction) {
   } else {
     
     
-    mMoveToRectPopupRect = LayoutDeviceIntRect();
+    MoveToRectPopupRectClear();
     LOG("nsWindow::NativeShow hide\n");
     if (GdkIsWaylandDisplay()) {
       if (IsWaylandPopup()) {
