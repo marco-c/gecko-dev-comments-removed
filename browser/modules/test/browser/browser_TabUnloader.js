@@ -38,6 +38,16 @@ async function addTab(win = window) {
   });
 }
 
+async function addPrivTab(win = window) {
+  const tab = BrowserTestUtils.addTab(
+    win.gBrowser,
+    BASE_URL + "dummy_page.html"
+  );
+  const browser = win.gBrowser.getBrowserForTab(tab);
+  await BrowserTestUtils.browserLoaded(browser);
+  return tab;
+}
+
 async function addAudioTab(win = window) {
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser: win.gBrowser,
@@ -119,7 +129,7 @@ async function compareTabOrder(expectedOrder) {
     "right number of tabs in discard sort list"
   );
   for (let idx = 0; idx < expectedOrder.length; idx++) {
-    is(tabInfo[idx].tab, expectedOrder[idx], "index " + idx + " is incorrect");
+    is(tabInfo[idx].tab, expectedOrder[idx], "index " + idx + " is correct");
   }
 }
 
@@ -170,6 +180,19 @@ add_task(async function test() {
   gBrowser.pinTab(pinnedSoundTab);
 
   
+  const windowPriv = await BrowserTestUtils.openNewBrowserWindow({
+    private: true,
+  });
+  const tabPriv0 = windowPriv.gBrowser.tabs[0];
+  const tabPriv1 = await addPrivTab(windowPriv);
+
+  
+  gBrowser.selectedTab = tab0;
+  tab0.ownerGlobal.focus();
+
+  
+  await BrowserTestUtils.switchTab(windowPriv.gBrowser, tabPriv1);
+  await BrowserTestUtils.switchTab(windowPriv.gBrowser, tabPriv0);
   await BrowserTestUtils.switchTab(gBrowser, tab1);
   await BrowserTestUtils.switchTab(gBrowser, tab2);
   await BrowserTestUtils.switchTab(gBrowser, pinnedTab);
@@ -189,9 +212,11 @@ add_task(async function test() {
     tab1,
     tab2,
     pinnedTab,
+    tabPriv1,
     soundTab,
     tab0,
     pinnedSoundTab,
+    tabPriv0,
   ]);
 
   
@@ -200,7 +225,9 @@ add_task(async function test() {
       tab2.linkedPanel &&
       pinnedTab.linkedPanel &&
       soundTab.linkedPanel &&
-      pinnedSoundTab.linkedPanel,
+      pinnedSoundTab.linkedPanel &&
+      tabPriv0.linkedPanel &&
+      tabPriv1.linkedPanel,
     "tabs are present"
   );
 
@@ -211,24 +238,39 @@ add_task(async function test() {
     "low-memory memory-pressure notification unloaded the LRU tab"
   );
 
-  await compareTabOrder([tab2, pinnedTab, soundTab, tab0, pinnedSoundTab]);
+  await compareTabOrder([
+    tab2,
+    pinnedTab,
+    tabPriv1,
+    soundTab,
+    tab0,
+    pinnedSoundTab,
+    tabPriv0,
+  ]);
 
   
   await pressure();
   ok(!tab2.linkedPanel, "unloaded a second tab in LRU order");
-  await compareTabOrder([pinnedTab, soundTab, tab0, pinnedSoundTab]);
+  await compareTabOrder([
+    pinnedTab,
+    tabPriv1,
+    soundTab,
+    tab0,
+    pinnedSoundTab,
+    tabPriv0,
+  ]);
 
   ok(soundTab.soundPlaying, "tab is still playing sound");
 
   await pressure();
   ok(!pinnedTab.linkedPanel, "unloaded a pinned tab");
-  await compareTabOrder([soundTab, tab0, pinnedSoundTab]);
+  await compareTabOrder([tabPriv1, soundTab, tab0, pinnedSoundTab, tabPriv0]);
 
   ok(pinnedSoundTab.soundPlaying, "tab is still playing sound");
 
   
   TabUnloader.unloadTabAsync(null);
-  ok(soundTab.linkedPanel, "a tab playing sound is never unloaded");
+  ok(tabPriv1.linkedPanel, "a tab in a private window is never unloaded");
 
   const histogram = TelemetryTestUtils.getAndClearHistogram(
     "TAB_UNLOAD_TO_RELOAD"
@@ -259,12 +301,16 @@ add_task(async function test() {
   await compareTabOrder([
     tab1,
     pinnedTab,
+    tabPriv1,
     soundTab,
     webrtcTab,
     anotherSoundTab,
     tab0,
     pinnedSoundTab,
+    tabPriv0,
   ]);
+
+  await BrowserTestUtils.closeWindow(windowPriv);
 
   let window2 = await BrowserTestUtils.openNewBrowserWindow();
   let win2tab1 = window2.gBrowser.selectedTab;
