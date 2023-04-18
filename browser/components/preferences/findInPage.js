@@ -33,6 +33,8 @@ var gSearchResultsPane = {
   
   subItems: new Map(),
 
+  searchResultsHighlighted: false,
+
   init() {
     if (this.inited) {
       return;
@@ -207,6 +209,8 @@ var gSearchResultsPane = {
       range.setStart(startNode, startValue);
       range.setEnd(endNode, endValue);
       this.getFindSelection(startNode.ownerGlobal).addRange(range);
+
+      this.searchResultsHighlighted = true;
     }
 
     return !!indices.length;
@@ -697,7 +701,10 @@ var gSearchResultsPane = {
 
 
   removeAllSearchIndicators(window, showSubItems) {
-    this.getFindSelection(window).removeAllRanges();
+    if (this.searchResultsHighlighted) {
+      this.getFindSelection(window).removeAllRanges();
+      this.searchResultsHighlighted = false;
+    }
     this.removeAllSearchTooltips();
     this.removeAllSearchMenuitemIndicators();
 
