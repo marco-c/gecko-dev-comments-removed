@@ -661,6 +661,17 @@ ProfilerParent::GatherProfiles() {
 }
 
 
+RefPtr<ProfilerParent::SingleProcessProgressPromise>
+ProfilerParent::RequestGatherProfileProgress(base::ProcessId aChildPid) {
+  RefPtr<SingleProcessProgressPromise> promise;
+  ProfilerParentTracker::ForChild(
+      aChildPid, [&promise](ProfilerParent* profilerParent) {
+        promise = profilerParent->SendGetGatherProfileProgress();
+      });
+  return promise;
+}
+
+
 
 constexpr static uint64_t scUpdateUnreleasedBytesFINAL = uint64_t(-1);
 

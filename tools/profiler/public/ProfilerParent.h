@@ -45,6 +45,9 @@ class ProfilerParent final : public PProfilerParent {
     base::ProcessId childPid;
   };
 
+  using SingleProcessProgressPromise =
+      MozPromise<GatherProfileProgress, ResponseRejectReason, true>;
+
   
   
   
@@ -58,6 +61,15 @@ class ProfilerParent final : public PProfilerParent {
 
   
   static nsTArray<SingleProcessProfilePromiseAndChildPid> GatherProfiles();
+
+  
+  
+  
+  
+  
+  
+  static RefPtr<SingleProcessProgressPromise> RequestGatherProfileProgress(
+      base::ProcessId aChildPid);
 
   static void ProfilerStarted(nsIProfilerStartParams* aParams);
   static void ProfilerWillStopIfStarted();
