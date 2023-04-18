@@ -197,9 +197,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
   mLastPaintBounds = mBounds;
 
 #ifdef MOZ_XUL
-  if (!aDC &&
-      (renderer->GetBackendType() == LayersBackend::LAYERS_NONE ||
-       renderer->GetBackendType() == LayersBackend::LAYERS_BASIC) &&
+  if (!aDC && (renderer->GetBackendType() == LayersBackend::LAYERS_NONE) &&
       (eTransparencyTransparent == mTransparencyMode)) {
     
     
@@ -273,8 +271,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
 #endif  
 
     switch (renderer->GetBackendType()) {
-      case LayersBackend::LAYERS_NONE:
-      case LayersBackend::LAYERS_BASIC: {
+      case LayersBackend::LAYERS_NONE: {
         RefPtr<gfxASurface> targetSurface;
 
 #if defined(MOZ_XUL)
