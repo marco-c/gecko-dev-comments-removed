@@ -541,9 +541,7 @@
 
 
 
-
-
-        if ('AbortController' in global_scope) {
+        if (global_scope.GLOBAL.isShadowRealm()) {
             return new ShadowRealmTestEnvironment();
         }
 
