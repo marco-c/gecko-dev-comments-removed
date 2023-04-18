@@ -89,10 +89,6 @@ class SourcesManager extends EventEmitter {
   createSourceActor(source) {
     assert(source, "SourcesManager.prototype.source needs a source");
 
-    if (isHiddenSource(source)) {
-      return null;
-    }
-
     if (this._sourceActors.has(source)) {
       return this._sourceActors.get(source);
     }
@@ -493,14 +489,6 @@ class SourcesManager extends EventEmitter {
   }
 }
 
-
-
-
-
-function isHiddenSource(source) {
-  return source.introductionType === "Function.prototype";
-}
-
 function isLocationInRange({ line, column }, range) {
   return (
     (range.start.line <= line ||
@@ -511,4 +499,3 @@ function isLocationInRange({ line, column }, range) {
 }
 
 exports.SourcesManager = SourcesManager;
-exports.isHiddenSource = isHiddenSource;

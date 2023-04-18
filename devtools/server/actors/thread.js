@@ -28,9 +28,6 @@ const {
 const {
   WatchpointMap,
 } = require("devtools/server/actors/utils/watchpoint-map");
-const {
-  isHiddenSource,
-} = require("devtools/server/actors/utils/sources-manager");
 
 const { logEvent } = require("devtools/server/actors/utils/logEvent");
 
@@ -1432,12 +1429,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
       
       
       if (frame instanceof Debugger.Frame) {
-        const sourceActor = this.sourcesManager.createSourceActor(
-          frame.script.source
-        );
-        if (!sourceActor) {
-          continue;
-        }
+        this.sourcesManager.createSourceActor(frame.script.source);
       }
 
       if (RESTARTED_FRAMES.has(frame)) {
@@ -2067,12 +2059,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
 
-
   _addSource(source) {
-    if (isHiddenSource(source)) {
-      return false;
-    }
-
     
     
     
@@ -2115,7 +2102,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     }
 
     this._debuggerSourcesSeen.add(source);
-    return true;
   },
 
   
