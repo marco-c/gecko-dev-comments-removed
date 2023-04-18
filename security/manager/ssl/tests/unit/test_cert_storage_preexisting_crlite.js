@@ -36,6 +36,14 @@ add_task(async function() {
     Ci.nsICertStorage
   );
 
+  
+  await new Promise(resolve => {
+    certStorage.addCRLiteStash(new Uint8Array([]), (rv, _) => {
+      Assert.equal(rv, Cr.NS_OK, "marked filter as fresh");
+      resolve();
+    });
+  });
+
   let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
     Ci.nsIX509CertDB
   );

@@ -14,6 +14,10 @@ add_task(async function test_preexisting_crlite_data() {
     CRLiteModeEnforcePrefValue
   );
 
+  let certStorage = Cc["@mozilla.org/security/certstorage;1"].getService(
+    Ci.nsICertStorage
+  );
+
   let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
     Ci.nsIX509CertDB
   );
@@ -30,6 +34,31 @@ add_task(async function test_preexisting_crlite_data() {
   );
 
   let validCert = constructCertFromFile("test_crlite_filters/valid.pem");
+  let revokedCert = constructCertFromFile("test_crlite_filters/revoked.pem");
+
+  
+  
+  
+  
+  await checkCertErrorGenericAtTime(
+    certdb,
+    revokedCert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "us-datarecovery.com",
+    Ci.nsIX509CertDB.FLAG_LOCAL_ONLY
+  );
+
+  
+  await new Promise(resolve => {
+    certStorage.addCRLiteStash(new Uint8Array([]), (rv, _) => {
+      Assert.equal(rv, Cr.NS_OK, "marked filter as fresh");
+      resolve();
+    });
+  });
+
   
   
   
@@ -46,7 +75,22 @@ add_task(async function test_preexisting_crlite_data() {
     0
   );
 
-  let revokedCert = constructCertFromFile("test_crlite_filters/revoked.pem");
+  
+  
+  
+  
+  
+  await checkCertErrorGenericAtTime(
+    certdb,
+    validCert,
+    PRErrorCodeSuccess,
+    certificateUsageSSLServer,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
+    false,
+    "vpn.worldofspeed.org",
+    0
+  );
+
   await checkCertErrorGenericAtTime(
     certdb,
     revokedCert,
@@ -63,9 +107,6 @@ add_task(async function test_preexisting_crlite_data() {
   );
   
   
-  let certStorage = Cc["@mozilla.org/security/certstorage;1"].getService(
-    Ci.nsICertStorage
-  );
   await new Promise(resolve => {
     certStorage.hasPriorData(
       Ci.nsICertStorage.DATA_TYPE_CRLITE_FILTER_INCREMENTAL,

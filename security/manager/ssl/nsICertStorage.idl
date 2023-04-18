@@ -122,6 +122,7 @@ interface nsICertStorage : nsISupports {
   const short STATE_ENFORCE = 1;
   const short STATE_NOT_ENROLLED = 2;
   const short STATE_NOT_COVERED = 3;
+  const short STATE_NO_FILTER = 4;
 
   
 
@@ -163,6 +164,7 @@ interface nsICertStorage : nsISupports {
                            in nsICertStorageCallback callback);
 
   
+
 
 
 
