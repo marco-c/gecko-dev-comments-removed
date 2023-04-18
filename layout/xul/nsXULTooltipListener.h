@@ -76,12 +76,11 @@ class nsXULTooltipListener final : public nsIDOMEventListener {
 
   
   
-  int32_t mMouseScreenX, mMouseScreenY;
-
   
-  enum {
-    kTooltipMouseMoveTolerance = 7  
-  };
+  
+  mozilla::CSSIntPoint mMouseScreenPoint;
+  
+  static constexpr mozilla::CSSIntCoord kTooltipMouseMoveTolerance = 7;
 
   
   
