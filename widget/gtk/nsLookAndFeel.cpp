@@ -531,10 +531,14 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
       aColor = mTextSelectedText;
       break;
     case ColorID::Selecteditem:
+      aColor = mSelectedItem;
+      break;
+    case ColorID::Selecteditemtext:
+      aColor = mSelectedItemText;
+      break;
     case ColorID::MozAccentColor:
       aColor = mAccentColor;
       break;
-    case ColorID::Selecteditemtext:
     case ColorID::MozAccentColorForeground:
       aColor = mAccentColorForeground;
       break;
@@ -1298,6 +1302,23 @@ void nsLookAndFeel::ConfigureAndInitializeAltTheme() {
 
   
   
+  
+  
+  
+  
+  
+  
+  if (mSystemTheme.mName.EqualsLiteral("Adwaita") ||
+      mSystemTheme.mName.EqualsLiteral("Adwaita-dark")) {
+    auto& dark = mSystemTheme.mIsDark ? mSystemTheme : mAltTheme;
+    auto& light = mSystemTheme.mIsDark ? mAltTheme : mSystemTheme;
+
+    dark.mAccentColor = light.mAccentColor;
+    dark.mAccentColorForeground = light.mAccentColorForeground;
+  }
+
+  
+  
   mSystemThemeOverridden = true;
 }
 
@@ -1564,6 +1585,55 @@ static nscolor GetBackgroundColor(
   return NS_TRANSPARENT;
 }
 
+static bool GetNamedColorPair(GtkStyleContext* aStyle, const char* aBgName,
+                              const char* aFgName, nscolor* aBg, nscolor* aFg) {
+  GdkRGBA bg, fg;
+  if (!gtk_style_context_lookup_color(aStyle, aBgName, &bg) ||
+      !gtk_style_context_lookup_color(aStyle, aFgName, &fg)) {
+    return false;
+  }
+
+  *aBg = GDK_RGBA_TO_NS_RGBA(bg);
+  *aFg = GDK_RGBA_TO_NS_RGBA(fg);
+
+  
+  
+  
+  if (NS_GET_A(*aBg) != 255 &&
+      (gtk_style_context_lookup_color(aStyle, "bg_color", &bg) ||
+       gtk_style_context_lookup_color(aStyle, "theme_bg_color", &bg))) {
+    *aBg = NS_ComposeColors(GDK_RGBA_TO_NS_RGBA(bg), *aBg);
+  }
+
+  
+  
+  if (NS_GET_A(*aFg) != 255 &&
+      (gtk_style_context_lookup_color(aStyle, "fg_color", &fg) ||
+       gtk_style_context_lookup_color(aStyle, "theme_fg_color", &fg))) {
+    *aFg = NS_ComposeColors(GDK_RGBA_TO_NS_RGBA(fg), *aFg);
+  }
+
+  return true;
+}
+
+static void EnsureColorPairIsOpaque(nscolor& aBg, nscolor& aFg) {
+  
+  
+  aBg = NS_ComposeColors(NS_RGB(0xff, 0xff, 0xff), aBg);
+  aFg = NS_ComposeColors(NS_RGB(0xff, 0xff, 0xff), aFg);
+}
+
+static void PreferDarkerBackground(nscolor& aBg, nscolor& aFg) {
+  
+  
+  
+  if (RelativeLuminanceUtils::Compute(aBg) >
+          RelativeLuminanceUtils::Compute(aFg) &&
+      (AnyColorChannelIsDifferent(aFg) || !AnyColorChannelIsDifferent(aBg))) {
+    std::swap(aBg, aFg);
+  }
+}
+
 void nsLookAndFeel::PerThemeData::Init() {
   mName = GetGtkTheme();
 
@@ -1818,64 +1888,39 @@ void nsLookAndFeel::PerThemeData::Init() {
     }
 
     
-    mAccentColor = mTextSelectedBackground;
-    mAccentColorForeground = mTextSelectedText;
-
     
     
     
     
     
     
-    {
-      GdkRGBA bg, fg;
-      const bool found =
-          (gtk_style_context_lookup_color(style, "selected_bg_color", &bg) &&
-           gtk_style_context_lookup_color(style, "selected_fg_color", &fg)) ||
-          (gtk_style_context_lookup_color(style, "theme_selected_bg_color",
-                                          &bg) &&
-           gtk_style_context_lookup_color(style, "theme_selected_fg_color",
-                                          &fg));
-      if (found) {
-        mAccentColor = GDK_RGBA_TO_NS_RGBA(bg);
-        mAccentColorForeground = GDK_RGBA_TO_NS_RGBA(fg);
-
-        
-        
-        
-        if (NS_GET_A(mAccentColor) != 255 &&
-            (gtk_style_context_lookup_color(style, "bg_color", &bg) ||
-             gtk_style_context_lookup_color(style, "theme_bg_color", &bg))) {
-          mAccentColor =
-              NS_ComposeColors(GDK_RGBA_TO_NS_RGBA(bg), mAccentColor);
-        }
-
-        
-        
-        if (NS_GET_A(mAccentColorForeground) != 255 &&
-            (gtk_style_context_lookup_color(style, "fg_color", &fg) ||
-             gtk_style_context_lookup_color(style, "theme_fg_color", &fg))) {
-          mAccentColorForeground =
-              NS_ComposeColors(GDK_RGBA_TO_NS_RGBA(fg), mAccentColorForeground);
-        }
-      }
+    if (!GetNamedColorPair(style, "selected_bg_color", "selected_fg_color",
+                           &mSelectedItem, &mSelectedItemText) &&
+        !GetNamedColorPair(style, "theme_selected_bg_color",
+                           "theme_selected_fg_color", &mSelectedItem,
+                           &mSelectedItemText)) {
+      mSelectedItem = mTextSelectedBackground;
+      mSelectedItemText = mTextSelectedText;
     }
 
-    
-    
-    
-    if (RelativeLuminanceUtils::Compute(mAccentColor) >
-            RelativeLuminanceUtils::Compute(mAccentColorForeground) &&
-        (AnyColorChannelIsDifferent(mAccentColorForeground) ||
-         !AnyColorChannelIsDifferent(mAccentColor))) {
-      std::swap(mAccentColor, mAccentColorForeground);
-    }
+    PreferDarkerBackground(mSelectedItem, mSelectedItemText);
+    EnsureColorPairIsOpaque(mSelectedItem, mSelectedItemText);
 
     
     
-    mAccentColorForeground =
-        NS_ComposeColors(NS_RGB(0xff, 0xff, 0xff), mAccentColorForeground);
-    mAccentColor = NS_ComposeColors(NS_RGB(0xff, 0xff, 0xff), mAccentColor);
+    
+    
+    
+    
+    
+    if (!GetNamedColorPair(style, "accent_bg_color", "accent_fg_color",
+                           &mAccentColor, &mAccentColorForeground)) {
+      mAccentColor = mSelectedItem;
+      mAccentColorForeground = mSelectedItemText;
+    }
+
+    PreferDarkerBackground(mAccentColor, mAccentColorForeground);
+    EnsureColorPairIsOpaque(mAccentColor, mAccentColorForeground);
   }
 
   
