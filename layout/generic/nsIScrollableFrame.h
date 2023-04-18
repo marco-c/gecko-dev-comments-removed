@@ -480,7 +480,7 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   
 
 
-  virtual void InvalidateVerticalScrollbar() const = 0;
+  virtual void InvalidateScrollbars() const = 0;
 
   virtual void UpdateScrollbarPosition() = 0;
 

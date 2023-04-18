@@ -1316,7 +1316,9 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   }
 
   nsTArray<uint32_t>& GetScrollMarks() { return mScrollMarks; }
-  void SetScrollMarks(const nsTArray<uint32_t>& aScrollMarks);
+  bool GetScrollMarksOnHScrollbar() const { return mScrollMarksOnHScrollbar; }
+  void SetScrollMarks(const nsTArray<uint32_t>& aScrollMarks,
+                      bool aOnHScrollbar);
 
   
   
@@ -1410,6 +1412,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   
   bool mHasOpenedExternalProtocolFrame : 1;
+
+  bool mScrollMarksOnHScrollbar : 1;
 
   nsCheapSet<nsUint32HashKey> mGamepadIndexSet;
   nsRefPtrHashtable<nsGenericHashKey<mozilla::dom::GamepadHandle>,

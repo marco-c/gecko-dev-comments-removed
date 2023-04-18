@@ -610,7 +610,12 @@ FinderHighlighter.prototype = {
 
     let marks = new Set(); 
     let window = this.finder._getWindow();
+    
+    let onHorizontalScrollbar = !window
+      .getComputedStyle(window.document.body || window.document.documentElement)
+      .writingMode.startsWith("horizontal");
     let yStart = window.scrollY;
+    let xStart = window.scrollX;
 
     let hasRanges = false;
     if (window) {
@@ -632,7 +637,7 @@ FinderHighlighter.prototype = {
         }
 
         
-        if (window.scrollMaxY > 0) {
+        if (window.scrollMaxY > 0 && !onHorizontalScrollbar) {
           
           let scrollHeight =
             window.document.body?.scrollHeight ||
@@ -644,6 +649,18 @@ FinderHighlighter.prototype = {
             let yPos = Math.round((yStart + rect.y + rect.height / 2) * yAdj); 
             marks.add(yPos);
           }
+        } else if (window.scrollMaxX > 0 && onHorizontalScrollbar) {
+          
+          let scrollWidth =
+            window.document.body?.scrollWidth ||
+            window.document.documentElement.scrollWidth;
+          let xAdj = window.scrollMaxX / scrollWidth;
+
+          for (let r = 0; r < rangeCount; r++) {
+            let rect = findSelection.getRangeAt(r).getBoundingClientRect();
+            let xPos = Math.round((xStart + rect.x + rect.width / 2) * xAdj);
+            marks.add(xPos);
+          }
         }
       }
     }
@@ -651,7 +668,7 @@ FinderHighlighter.prototype = {
     if (hasRanges) {
       
       
-      this.setScrollMarks(window, Array.from(marks));
+      this.setScrollMarks(window, Array.from(marks), onHorizontalScrollbar);
 
       if (!this._marksListener) {
         this._marksListener = event => {
@@ -700,8 +717,9 @@ FinderHighlighter.prototype = {
 
 
 
-  setScrollMarks(window, marks) {
-    window.setScrollMarks(marks);
+
+  setScrollMarks(window, marks, onHorizontalScrollbar = false) {
+    window.setScrollMarks(marks, onHorizontalScrollbar);
 
     
     if (this._testing) {
