@@ -65,7 +65,7 @@ class SourceSurfaceSharedDataWrapper final : public DataSourceSurface {
 
   bool OnHeap() const override { return false; }
 
-  bool Map(MapType aMapType, MappedSurface* aMappedSurface) final;
+  bool Map(MapType, MappedSurface* aMappedSurface) final;
 
   void Unmap() final;
 
@@ -174,12 +174,8 @@ class SourceSurfaceSharedData : public DataSourceSurface {
 
 
 
-  bool Map(MapType aMapType, MappedSurface* aMappedSurface) final {
+  bool Map(MapType, MappedSurface* aMappedSurface) final {
     MutexAutoLock lock(mMutex);
-    if (mFinalized && aMapType != MapType::READ) {
-      
-      return false;
-    }
     ++mMapCount;
     aMappedSurface->mData = GetDataInternal();
     aMappedSurface->mStride = mStride;
