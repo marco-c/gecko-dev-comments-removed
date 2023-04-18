@@ -40,6 +40,7 @@ class UntrustedModulesBackupData
                                UntrustedModulesDataContainer> {
  public:
   void Add(UntrustedModulesData&& aData);
+  void AddWithoutStacks(UntrustedModulesData&& aData);
 };
 
 class MOZ_HEAP_CLASS UntrustedModulesBackupService final {
@@ -60,6 +61,7 @@ class MOZ_HEAP_CLASS UntrustedModulesBackupService final {
   
   UntrustedModulesBackupData mStaging;
 
+  
   
   UntrustedModulesBackupData mSettled;
 

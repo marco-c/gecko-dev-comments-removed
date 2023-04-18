@@ -41,10 +41,8 @@ class CombinedStacks {
   size_t SizeOfExcludingThis() const;
   void RemoveStack(unsigned aIndex);
 
-#if defined(MOZ_GECKO_PROFILER)
   
   void Clear();
-#endif
 
  private:
   std::vector<Telemetry::ProcessedStack::Module> mModules;

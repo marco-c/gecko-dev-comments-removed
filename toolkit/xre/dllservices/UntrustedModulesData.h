@@ -190,6 +190,10 @@ using UntrustedModuleLoadingEvents =
     AutoCleanLinkedList<ProcessedModuleLoadEventContainer>;
 
 class UntrustedModulesData final {
+  
+  
+  void MergeModules(UntrustedModulesData& aNewData);
+
  public:
   
   
@@ -217,8 +221,11 @@ class UntrustedModulesData final {
                    UntrustedModuleLoadingEvents&& aEvents,
                    Vector<Telemetry::ProcessedStack>&& aStacks);
   void Merge(UntrustedModulesData&& aNewData);
-
+  void MergeWithoutStacks(UntrustedModulesData&& aNewData);
   void Swap(UntrustedModulesData& aOther);
+
+  
+  void Truncate();
 
   GeckoProcessType mProcessType;
   DWORD mPid;
