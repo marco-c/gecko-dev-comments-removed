@@ -62,6 +62,13 @@ class VPXDecoder : public MediaDataDecoder,
   struct VPXStreamInfo {
     gfx::IntSize mImage;
     gfx::IntSize mDisplay;
+    
+    
+    
+    
+    
+    
+    float mDisplayAspectRatio = 0.0;
     bool mKeyFrame = false;
 
     uint8_t mProfile = 0;
