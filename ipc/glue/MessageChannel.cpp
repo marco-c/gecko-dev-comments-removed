@@ -873,8 +873,6 @@ bool MessageChannel::SendBuildIDsMatchMessage(const char* aParentBuildID) {
       
       NoteIntentionalCrash(XRE_GetProcessTypeString());
       if (XRE_IsContentProcess()) {
-        
-        PR_Sleep(PR_MillisecondsToInterval(1000));
         return false;
       }
     }

@@ -1,6 +1,11 @@
 "use strict";
 
-const kTimeout = 5 * 1000;
+
+
+
+requestLongerTimeout(5);
+
+SimpleTest.expectChildProcessCrash();
 
 add_task(async function test_browser_crashed_basic_event() {
   info("Waiting for oop-browser-crashed event.");
@@ -12,8 +17,9 @@ add_task(async function test_browser_crashed_basic_event() {
     "Build ID mismatch false positive count should be undefined"
   );
 
-  let eventPromise = getEventPromise("oop-browser-crashed", "basic", kTimeout);
-  await openNewTab(true);
+  await forceCleanProcesses();
+  let eventPromise = getEventPromise("oop-browser-crashed", "basic");
+  let tab = await openNewTab(true);
   await eventPromise;
 
   is(
@@ -21,4 +27,5 @@ add_task(async function test_browser_crashed_basic_event() {
     undefined,
     "Build ID mismatch false positive count should be undefined"
   );
+  await closeTab(tab);
 });
