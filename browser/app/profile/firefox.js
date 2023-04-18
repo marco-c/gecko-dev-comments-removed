@@ -482,6 +482,9 @@ pref("browser.urlbar.merino.enabled", false);
 
 pref("browser.urlbar.merino.endpointURL", "https://merino.services.mozilla.com/api/v1/suggest");
 
+
+pref("browser.urlbar.merino.timeoutMs", 200);
+
 pref("browser.altClickSave", false);
 
 

@@ -133,6 +133,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["merino.endpointURL", "https://merino.services.mozilla.com/api/v1/suggest"],
 
   
+  ["merino.timeoutMs", 200],
+
+  
   
   ["openintab", false],
 

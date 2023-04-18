@@ -2008,6 +2008,7 @@ class SkippableTimer {
       this._timer.initWithCallback(
         () => {
           this._log(`Timed out!`, reportErrorOnTimeout);
+          this._timer = null;
           resolve();
         },
         time,
@@ -2017,16 +2018,22 @@ class SkippableTimer {
     });
 
     let firePromise = new Promise(resolve => {
-      this.fire = () => {
-        this._log(`Skipped`);
-        resolve();
-        return this.promise;
+      this.fire = async () => {
+        if (this._timer) {
+          if (!this._canceled) {
+            this._log(`Skipped`);
+          }
+          this._timer.cancel();
+          this._timer = null;
+          resolve();
+        }
+        await this.promise;
       };
     });
 
     this.promise = Promise.race([timerPromise, firePromise]).then(() => {
       
-      if (this._timer && callback) {
+      if (callback && !this._canceled) {
         callback();
       }
     });
@@ -2037,12 +2044,12 @@ class SkippableTimer {
 
 
 
-
-  cancel() {
-    this._log(`Canceling`);
-    this._timer.cancel();
-    delete this._timer;
-    return this.fire();
+  async cancel() {
+    if (this._timer) {
+      this._log(`Canceling`);
+      this._canceled = true;
+    }
+    await this.fire();
   }
 
   _log(msg, isError = false) {

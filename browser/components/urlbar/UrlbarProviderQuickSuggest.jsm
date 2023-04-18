@@ -16,6 +16,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
   PartnerLinkAttribution: "resource:///modules/PartnerLinkAttribution.jsm",
   Services: "resource://gre/modules/Services.jsm",
+  SkippableTimer: "resource:///modules/UrlbarUtils.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarQuickSuggest: "resource:///modules/UrlbarQuickSuggest.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
@@ -131,6 +132,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
       promises.push(this._fetchMerinoSuggestions(queryContext, searchString));
     }
 
+    
     let allSuggestions = await Promise.all(promises);
     if (instance != this.queryInstance) {
       return;
@@ -360,12 +362,12 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
   cancelQuery(queryContext) {
-    try {
-      this._merinoFetchController?.abort();
-    } catch (error) {
-      this.logger.error(error);
-    }
-    this._merinoFetchController = null;
+    
+    
+    this._merinoTimeoutTimer?.cancel();
+
+    
+    
   }
 
   
@@ -381,45 +383,86 @@ class ProviderQuickSuggest extends UrlbarProvider {
     let instance = this.queryInstance;
 
     
-    let response;
-    let controller;
+    let url;
     try {
-      let url = new URL(UrlbarPrefs.get("merino.endpointURL"));
-      url.searchParams.set(MERINO_ENDPOINT_PARAM_QUERY, searchString);
-
-      controller = this._merinoFetchController = new AbortController();
-      TelemetryStopwatch.start(TELEMETRY_MERINO_LATENCY, queryContext);
-      response = await fetch(url, {
-        signal: controller.signal,
-      });
-      TelemetryStopwatch.finish(TELEMETRY_MERINO_LATENCY, queryContext);
-      if (instance != this.queryInstance) {
-        return null;
-      }
+      url = new URL(UrlbarPrefs.get("merino.endpointURL"));
     } catch (error) {
-      TelemetryStopwatch.cancel(TELEMETRY_MERINO_LATENCY, queryContext);
-      if (error.name != "AbortError") {
-        this.logger.error(error);
-      }
-    } finally {
-      if (controller == this._merinoFetchController) {
-        this._merinoFetchController = null;
-      }
+      this.logger.error("Could not make Merino endpoint URL: " + error);
+      return null;
+    }
+    url.searchParams.set(MERINO_ENDPOINT_PARAM_QUERY, searchString);
+
+    
+    let timeout = UrlbarPrefs.get("merinoTimeoutMs");
+    let timer = (this._merinoTimeoutTimer = new SkippableTimer({
+      name: "Merino timeout",
+      time: timeout,
+      logger: this.logger,
+      callback: () => {
+        
+        this.logger.info(`Merino fetch timed out (timeout = ${timeout}ms)`);
+      },
+    }));
+
+    
+    
+    
+    try {
+      this._merinoFetchController?.abort();
+    } catch (error) {
+      this.logger.error("Could not abort Merino fetch: " + error);
     }
 
-    if (!response) {
+    
+    let response;
+    let controller = (this._merinoFetchController = new AbortController());
+    TelemetryStopwatch.start(TELEMETRY_MERINO_LATENCY, queryContext);
+    await Promise.race([
+      timer.promise,
+      (async () => {
+        try {
+          
+          
+          
+          
+          
+          
+          
+          
+          response = await fetch(url, { signal: controller.signal });
+          TelemetryStopwatch.finish(TELEMETRY_MERINO_LATENCY, queryContext);
+        } catch (error) {
+          TelemetryStopwatch.cancel(TELEMETRY_MERINO_LATENCY, queryContext);
+          if (error.name != "AbortError") {
+            this.logger.error("Could not fetch Merino endpoint: " + error);
+          }
+        } finally {
+          
+          
+          
+          timer.cancel();
+          if (controller == this._merinoFetchController) {
+            this._merinoFetchController = null;
+          }
+        }
+      })(),
+    ]);
+    if (timer == this._merinoTimeoutTimer) {
+      this._merinoTimeoutTimer = null;
+    }
+    if (instance != this.queryInstance) {
       return null;
     }
 
     
     let body;
     try {
-      body = await response.json();
+      body = await response?.json();
       if (instance != this.queryInstance) {
         return null;
       }
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error("Could not get Merino response as JSON: " + error);
     }
 
     if (!body?.suggestions?.length) {

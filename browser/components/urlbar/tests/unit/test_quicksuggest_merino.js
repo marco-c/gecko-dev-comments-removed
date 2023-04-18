@@ -54,6 +54,48 @@ const EXPECTED_REMOTE_SETTINGS_RESULT = {
   },
 };
 
+const MERINO_RESPONSE = {
+  body: {
+    request_id: "request_id",
+    suggestions: [
+      {
+        full_keyword: "full_keyword",
+        title: "title",
+        url: "url",
+        icon: "icon",
+        impression_url: "impression_url",
+        click_url: "click_url",
+        block_id: 1,
+        advertiser: "advertiser",
+        is_sponsored: true,
+        score: 1,
+      },
+    ],
+  },
+};
+
+const EXPECTED_MERINO_RESULT = {
+  type: UrlbarUtils.RESULT_TYPE.URL,
+  source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+  heuristic: false,
+  payload: {
+    qsSuggestion: "full_keyword",
+    title: "title",
+    url: "url",
+    icon: "icon",
+    sponsoredImpressionUrl: "impression_url",
+    sponsoredClickUrl: "click_url",
+    sponsoredBlockId: 1,
+    sponsoredAdvertiser: "advertiser",
+    isSponsored: true,
+    helpUrl: UrlbarProviderQuickSuggest.helpUrl,
+    helpL10nId: "firefox-suggest-urlbar-learn-more",
+    displayUrl: "url",
+    requestId: "request_id",
+    source: "merino",
+  },
+};
+
 let gMerinoResponse;
 
 add_task(async function init() {
@@ -71,6 +113,11 @@ add_task(async function init() {
   UrlbarPrefs.set(PREF_MERINO_ENDPOINT_URL, url.toString());
 
   
+  
+  
+  UrlbarPrefs.set("merino.timeoutMs", 1000);
+
+  
   await QuickSuggestTestUtils.ensureQuickSuggestInit(REMOTE_SETTINGS_DATA);
 
   Assert.equal(
@@ -85,27 +132,10 @@ add_task(async function oneEnabled_merino() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
 
-  setMerinoResponse({
-    body: {
-      request_id: "merinoOnly request_id",
-      suggestions: [
-        {
-          full_keyword: "merinoOnly full_keyword",
-          title: "merinoOnly title",
-          url: "merinoOnly url",
-          icon: "merinoOnly icon",
-          impression_url: "merinoOnly impression_url",
-          click_url: "merinoOnly click_url",
-          block_id: 111,
-          advertiser: "merinoOnly advertiser",
-          is_sponsored: true,
-          
-          
-          score: UrlbarQuickSuggest.SUGGESTION_SCORE / 2,
-        },
-      ],
-    },
-  });
+  
+  
+  setMerinoResponse().body.suggestions[0].score =
+    UrlbarQuickSuggest.SUGGESTION_SCORE / 2;
 
   let context = createContext(REMOTE_SETTINGS_SEARCH_STRING, {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -113,29 +143,7 @@ add_task(async function oneEnabled_merino() {
   });
   await check_results({
     context,
-    matches: [
-      {
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
-        heuristic: false,
-        payload: {
-          qsSuggestion: "merinoOnly full_keyword",
-          title: "merinoOnly title",
-          url: "merinoOnly url",
-          icon: "merinoOnly icon",
-          sponsoredImpressionUrl: "merinoOnly impression_url",
-          sponsoredClickUrl: "merinoOnly click_url",
-          sponsoredBlockId: 111,
-          sponsoredAdvertiser: "merinoOnly advertiser",
-          isSponsored: true,
-          helpUrl: UrlbarProviderQuickSuggest.helpUrl,
-          helpL10nId: "firefox-suggest-urlbar-learn-more",
-          displayUrl: "merinoOnly url",
-          requestId: "merinoOnly request_id",
-          source: "merino",
-        },
-      },
-    ],
+    matches: [EXPECTED_MERINO_RESULT],
   });
 });
 
@@ -146,25 +154,7 @@ add_task(async function oneEnabled_remoteSettings() {
 
   
   
-  setMerinoResponse({
-    body: {
-      request_id: "merinoOnly request_id",
-      suggestions: [
-        {
-          full_keyword: "remoteSettingsOnly full_keyword",
-          title: "remoteSettingsOnly title",
-          url: "remoteSettingsOnly url",
-          icon: "remoteSettingsOnly icon",
-          impression_url: "remoteSettingsOnly impression_url",
-          click_url: "remoteSettingsOnly click_url",
-          block_id: 111,
-          advertiser: "remoteSettingsOnly advertiser",
-          is_sponsored: true,
-          score: 1,
-        },
-      ],
-    },
-  });
+  setMerinoResponse();
 
   let context = createContext(REMOTE_SETTINGS_SEARCH_STRING, {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -182,25 +172,8 @@ add_task(async function higherScore_merino() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
 
-  setMerinoResponse({
-    body: {
-      request_id: "merinoOnly request_id",
-      suggestions: [
-        {
-          full_keyword: "higherScore full_keyword",
-          title: "higherScore title",
-          url: "higherScore url",
-          icon: "higherScore icon",
-          impression_url: "higherScore impression_url",
-          click_url: "higherScore click_url",
-          block_id: 111,
-          advertiser: "higherScore advertiser",
-          is_sponsored: true,
-          score: 1,
-        },
-      ],
-    },
-  });
+  setMerinoResponse().body.suggestions[0].score =
+    2 * UrlbarQuickSuggest.SUGGESTION_SCORE;
 
   let context = createContext(REMOTE_SETTINGS_SEARCH_STRING, {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -208,29 +181,7 @@ add_task(async function higherScore_merino() {
   });
   await check_results({
     context,
-    matches: [
-      {
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
-        heuristic: false,
-        payload: {
-          qsSuggestion: "higherScore full_keyword",
-          title: "higherScore title",
-          url: "higherScore url",
-          icon: "higherScore icon",
-          sponsoredImpressionUrl: "higherScore impression_url",
-          sponsoredClickUrl: "higherScore click_url",
-          sponsoredBlockId: 111,
-          sponsoredAdvertiser: "higherScore advertiser",
-          isSponsored: true,
-          helpUrl: UrlbarProviderQuickSuggest.helpUrl,
-          helpL10nId: "firefox-suggest-urlbar-learn-more",
-          displayUrl: "higherScore url",
-          requestId: "merinoOnly request_id",
-          source: "merino",
-        },
-      },
-    ],
+    matches: [EXPECTED_MERINO_RESULT],
   });
 });
 
@@ -240,25 +191,8 @@ add_task(async function higherScore_remoteSettings() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
 
-  setMerinoResponse({
-    body: {
-      request_id: "merinoOnly request_id",
-      suggestions: [
-        {
-          full_keyword: "higherScore full_keyword",
-          title: "higherScore title",
-          url: "higherScore url",
-          icon: "higherScore icon",
-          impression_url: "higherScore impression_url",
-          click_url: "higherScore click_url",
-          block_id: 111,
-          advertiser: "higherScore advertiser",
-          is_sponsored: true,
-          score: UrlbarQuickSuggest.SUGGESTION_SCORE / 2,
-        },
-      ],
-    },
-  });
+  setMerinoResponse().body.suggestions[0].score =
+    UrlbarQuickSuggest.SUGGESTION_SCORE / 2;
 
   let context = createContext(REMOTE_SETTINGS_SEARCH_STRING, {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -276,25 +210,8 @@ add_task(async function sameScore() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
 
-  setMerinoResponse({
-    body: {
-      request_id: "merinoOnly request_id",
-      suggestions: [
-        {
-          full_keyword: "sameScore full_keyword",
-          title: "sameScore title",
-          url: "sameScore url",
-          icon: "sameScore icon",
-          impression_url: "sameScore impression_url",
-          click_url: "sameScore click_url",
-          block_id: 111,
-          advertiser: "sameScore advertiser",
-          is_sponsored: true,
-          score: UrlbarQuickSuggest.SUGGESTION_SCORE,
-        },
-      ],
-    },
-  });
+  setMerinoResponse().body.suggestions[0].score =
+    UrlbarQuickSuggest.SUGGESTION_SCORE;
 
   let context = createContext(REMOTE_SETTINGS_SEARCH_STRING, {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -312,25 +229,13 @@ add_task(async function noMerinoScore() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
 
-  setMerinoResponse({
-    body: {
-      request_id: "merinoOnly request_id",
-      suggestions: [
-        {
-          full_keyword: "noMerinoScore full_keyword",
-          title: "noMerinoScore title",
-          url: "noMerinoScore url",
-          icon: "noMerinoScore icon",
-          impression_url: "noMerinoScore impression_url",
-          click_url: "noMerinoScore click_url",
-          block_id: 111,
-          advertiser: "noMerinoScore advertiser",
-          is_sponsored: true,
-          
-        },
-      ],
-    },
-  });
+  let resp = setMerinoResponse();
+  Assert.equal(
+    typeof resp.body.suggestions[0].score,
+    "number",
+    "Sanity check: First suggestion has a score"
+  );
+  delete resp.body.suggestions[0].score;
 
   let context = createContext(REMOTE_SETTINGS_SEARCH_STRING, {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -348,25 +253,7 @@ add_task(async function noSuggestion_remoteSettings() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
 
-  setMerinoResponse({
-    body: {
-      request_id: "merinoOnly request_id",
-      suggestions: [
-        {
-          full_keyword: "noSuggestion full_keyword",
-          title: "noSuggestion title",
-          url: "noSuggestion url",
-          icon: "noSuggestion icon",
-          impression_url: "noSuggestion impression_url",
-          click_url: "noSuggestion click_url",
-          block_id: 111,
-          advertiser: "noSuggestion advertiser",
-          is_sponsored: true,
-          score: UrlbarQuickSuggest.SUGGESTION_SCORE / 2,
-        },
-      ],
-    },
-  });
+  setMerinoResponse();
 
   let context = createContext("this doesn't match remote settings", {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -374,29 +261,7 @@ add_task(async function noSuggestion_remoteSettings() {
   });
   await check_results({
     context,
-    matches: [
-      {
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
-        heuristic: false,
-        payload: {
-          qsSuggestion: "noSuggestion full_keyword",
-          title: "noSuggestion title",
-          url: "noSuggestion url",
-          icon: "noSuggestion icon",
-          sponsoredImpressionUrl: "noSuggestion impression_url",
-          sponsoredClickUrl: "noSuggestion click_url",
-          sponsoredBlockId: 111,
-          sponsoredAdvertiser: "noSuggestion advertiser",
-          isSponsored: true,
-          helpUrl: UrlbarProviderQuickSuggest.helpUrl,
-          helpL10nId: "firefox-suggest-urlbar-learn-more",
-          displayUrl: "noSuggestion url",
-          requestId: "merinoOnly request_id",
-          source: "merino",
-        },
-      },
-    ],
+    matches: [EXPECTED_MERINO_RESULT],
   });
 });
 
@@ -408,7 +273,7 @@ add_task(async function noSuggestion_merino() {
 
   setMerinoResponse({
     body: {
-      request_id: "merinoOnly request_id",
+      request_id: "request_id",
       suggestions: [],
     },
   });
@@ -430,25 +295,7 @@ add_task(async function bothDisabled() {
 
   
   
-  setMerinoResponse({
-    body: {
-      request_id: "merinoOnly request_id",
-      suggestions: [
-        {
-          full_keyword: "bothDisabled full_keyword",
-          title: "bothDisabled title",
-          url: "bothDisabled url",
-          icon: "bothDisabled icon",
-          impression_url: "bothDisabled impression_url",
-          click_url: "bothDisabled click_url",
-          block_id: 111,
-          advertiser: "bothDisabled advertiser",
-          is_sponsored: true,
-          score: 1,
-        },
-      ],
-    },
-  });
+  setMerinoResponse();
 
   let context = createContext(REMOTE_SETTINGS_SEARCH_STRING, {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -465,7 +312,7 @@ add_task(async function multipleMerinoSuggestions() {
 
   setMerinoResponse({
     body: {
-      request_id: "merinoOnly request_id",
+      request_id: "request_id",
       suggestions: [
         {
           full_keyword: "multipleMerinoSuggestions 0 full_keyword",
@@ -531,7 +378,7 @@ add_task(async function multipleMerinoSuggestions() {
           helpUrl: UrlbarProviderQuickSuggest.helpUrl,
           helpL10nId: "firefox-suggest-urlbar-learn-more",
           displayUrl: "multipleMerinoSuggestions 1 url",
-          requestId: "merinoOnly request_id",
+          requestId: "request_id",
           source: "merino",
         },
       },
@@ -544,28 +391,10 @@ add_task(async function unexpectedResponseProperties() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
   UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
 
-  setMerinoResponse({
-    body: {
-      unexpectedString: "some value",
-      unexpectedArray: ["a", "b", "c"],
-      unexpectedObject: { foo: "bar" },
-      request_id: "merinoOnly request_id",
-      suggestions: [
-        {
-          full_keyword: "unexpected full_keyword",
-          title: "unexpected title",
-          url: "unexpected url",
-          icon: "unexpected icon",
-          impression_url: "unexpected impression_url",
-          click_url: "unexpected click_url",
-          block_id: 1234,
-          advertiser: "unexpected advertiser",
-          is_sponsored: true,
-          score: 1,
-        },
-      ],
-    },
-  });
+  let resp = setMerinoResponse();
+  resp.body.unexpectedString = "some value";
+  resp.body.unexpectedArray = ["a", "b", "c"];
+  resp.body.unexpectedObject = { foo: "bar" };
 
   let context = createContext("test", {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -573,29 +402,7 @@ add_task(async function unexpectedResponseProperties() {
   });
   await check_results({
     context,
-    matches: [
-      {
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
-        heuristic: false,
-        payload: {
-          qsSuggestion: "unexpected full_keyword",
-          title: "unexpected title",
-          url: "unexpected url",
-          icon: "unexpected icon",
-          sponsoredImpressionUrl: "unexpected impression_url",
-          sponsoredClickUrl: "unexpected click_url",
-          sponsoredBlockId: 1234,
-          sponsoredAdvertiser: "unexpected advertiser",
-          isSponsored: true,
-          helpUrl: UrlbarProviderQuickSuggest.helpUrl,
-          helpL10nId: "firefox-suggest-urlbar-learn-more",
-          displayUrl: "unexpected url",
-          requestId: "merinoOnly request_id",
-          source: "merino",
-        },
-      },
-    ],
+    matches: [EXPECTED_MERINO_RESULT],
   });
 });
 
@@ -656,151 +463,30 @@ add_task(async function latencyTelemetry() {
   let histogram = Services.telemetry.getHistogramById(TELEMETRY_MERINO_LATENCY);
   histogram.clear();
 
-  setMerinoResponse({
-    body: {
-      request_id: "merinoOnly request_id",
-      suggestions: [
-        {
-          full_keyword: "latencyTelemetry full_keyword",
-          title: "latencyTelemetry title",
-          url: "latencyTelemetry url",
-          icon: "latencyTelemetry icon",
-          impression_url: "latencyTelemetry impression_url",
-          click_url: "latencyTelemetry click_url",
-          block_id: 111,
-          advertiser: "latencyTelemetry advertiser",
-          is_sponsored: true,
-        },
-      ],
-    },
-  });
+  setMerinoResponse();
 
   let context = createContext("test", {
     providers: [UrlbarProviderQuickSuggest.name],
     isPrivate: false,
   });
 
-  let snapshot = histogram.snapshot();
-  Assert.equal(
-    Object.values(snapshot.values).reduce((sum, value) => sum + value, 0),
+  Assert.strictEqual(
+    histogram.snapshot().sum,
     0,
-    "Sanity check: No telemetry recorded before search"
+    "Sanity check: Latency histogram is empty before search"
   );
 
   await check_results({
     context,
-    matches: [
-      {
-        type: UrlbarUtils.RESULT_TYPE.URL,
-        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
-        heuristic: false,
-        payload: {
-          qsSuggestion: "latencyTelemetry full_keyword",
-          title: "latencyTelemetry title",
-          url: "latencyTelemetry url",
-          icon: "latencyTelemetry icon",
-          sponsoredImpressionUrl: "latencyTelemetry impression_url",
-          sponsoredClickUrl: "latencyTelemetry click_url",
-          sponsoredBlockId: 111,
-          sponsoredAdvertiser: "latencyTelemetry advertiser",
-          isSponsored: true,
-          helpUrl: UrlbarProviderQuickSuggest.helpUrl,
-          helpL10nId: "firefox-suggest-urlbar-learn-more",
-          displayUrl: "latencyTelemetry url",
-          requestId: "merinoOnly request_id",
-          source: "merino",
-        },
-      },
-    ],
+    matches: [EXPECTED_MERINO_RESULT],
   });
 
-  snapshot = histogram.snapshot();
-  Assert.greater(
-    Object.values(snapshot.values).reduce((sum, value) => sum + value, 0),
-    0,
-    "Telemetry recorded after search"
-  );
-  Assert.ok(
-    !TelemetryStopwatch.running(TELEMETRY_MERINO_LATENCY, context),
-    "Stopwatch not running after search"
-  );
-});
-
-
-
-add_task(async function latencyTelemetryCancel() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
-
-  let histogram = Services.telemetry.getHistogramById(TELEMETRY_MERINO_LATENCY);
-  histogram.clear();
-
   
   
-  setMerinoResponse({
-    delay: 3000,
-    body: {
-      request_id: "merinoOnly request_id",
-      suggestions: [
-        {
-          full_keyword: "latencyTelemetryCancel full_keyword",
-          title: "latencyTelemetryCancel title",
-          url: "latencyTelemetryCancel url",
-          icon: "latencyTelemetryCancel icon",
-          impression_url: "latencyTelemetryCancel impression_url",
-          click_url: "latencyTelemetryCancel click_url",
-          block_id: 111,
-          advertiser: "latencyTelemetryCancel advertiser",
-          is_sponsored: true,
-        },
-      ],
-    },
-  });
-
-  let context = createContext("test", {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-
-  let snapshot = histogram.snapshot();
-  Assert.equal(
-    Object.values(snapshot.values).reduce((sum, value) => sum + value, 0),
-    0,
-    "Sanity check: No telemetry recorded before search"
-  );
-
-  
-  let controller = UrlbarTestUtils.newMockController({
-    input: {
-      isPrivate: context.isPrivate,
-      onFirstResult() {
-        return false;
-      },
-      window: {
-        location: {
-          href: AppConstants.BROWSER_CHROME_URL,
-        },
-      },
-    },
-  });
-  let searchPromise = controller.startQuery(context);
-
-  
-  await TestUtils.waitForCondition(
-    () => TelemetryStopwatch.running(TELEMETRY_MERINO_LATENCY, context),
-    "Waiting for stopwatch to start running"
-  );
-
-  
-  controller.cancelQuery();
-  await searchPromise;
-
-  
-  snapshot = histogram.snapshot();
-  Assert.equal(
-    Object.values(snapshot.values).reduce((sum, value) => sum + value, 0),
-    0,
-    "Telemetry not recorded after canceling search"
+  Assert.deepEqual(
+    Object.values(histogram.snapshot().values).filter(v => v > 0),
+    [1],
+    "Latency histogram updated after search"
   );
   Assert.ok(
     !TelemetryStopwatch.running(TELEMETRY_MERINO_LATENCY, context),
@@ -817,7 +503,10 @@ add_task(async function latencyTelemetryException() {
 
   
   let originalURL = UrlbarPrefs.get(PREF_MERINO_ENDPOINT_URL);
-  UrlbarPrefs.set(PREF_MERINO_ENDPOINT_URL, "bogus");
+  UrlbarPrefs.set(
+    PREF_MERINO_ENDPOINT_URL,
+    "http://localhost/latencyTelemetryException"
+  );
 
   let histogram = Services.telemetry.getHistogramById(TELEMETRY_MERINO_LATENCY);
   histogram.clear();
@@ -826,25 +515,26 @@ add_task(async function latencyTelemetryException() {
     providers: [UrlbarProviderQuickSuggest.name],
     isPrivate: false,
   });
-
-  let snapshot = histogram.snapshot();
-  Assert.equal(
-    Object.values(snapshot.values).reduce((sum, value) => sum + value, 0),
-    0,
-    "Sanity check: No telemetry recorded before search"
-  );
-
   await check_results({
     context,
     matches: [],
   });
 
   
-  snapshot = histogram.snapshot();
-  Assert.equal(
-    Object.values(snapshot.values).reduce((sum, value) => sum + value, 0),
+  
+  
+  await TestUtils.waitForCondition(
+    () => !UrlbarProviderQuickSuggest._merinoFetchController,
+    "Waiting for fetch to finish",
+    100, 
+    100 
+  );
+
+  
+  Assert.strictEqual(
+    histogram.snapshot().sum,
     0,
-    "Telemetry not recorded after search with error"
+    "Latency histogram not updated after search with exception"
   );
   Assert.ok(
     !TelemetryStopwatch.running(TELEMETRY_MERINO_LATENCY, context),
@@ -852,6 +542,245 @@ add_task(async function latencyTelemetryException() {
   );
 
   UrlbarPrefs.set(PREF_MERINO_ENDPOINT_URL, originalURL);
+});
+
+
+
+add_task(async function timeout_merinoOnly() {
+  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
+  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
+  await doSimpleTimeoutTest([]);
+});
+
+
+
+add_task(async function timeout_withRemoteSettings() {
+  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
+  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
+  await doSimpleTimeoutTest([EXPECTED_REMOTE_SETTINGS_RESULT]);
+});
+
+async function doSimpleTimeoutTest(expectedResults) {
+  let histogram = Services.telemetry.getHistogramById(TELEMETRY_MERINO_LATENCY);
+  histogram.clear();
+
+  
+  setMerinoResponse().delay = 2 * UrlbarPrefs.get("merinoTimeoutMs");
+
+  let context = createContext("frab", {
+    providers: [UrlbarProviderQuickSuggest.name],
+    isPrivate: false,
+  });
+  await check_results({
+    context,
+    matches: expectedResults,
+  });
+
+  
+  Assert.ok(
+    !UrlbarProviderQuickSuggest._merinoTimeoutTimer,
+    "_merinoTimeoutTimer does not exist after search finished"
+  );
+
+  
+  
+  Assert.ok(
+    UrlbarProviderQuickSuggest._merinoFetchController,
+    "_merinoFetchController still exists after search finished"
+  );
+  Assert.ok(
+    !UrlbarProviderQuickSuggest._merinoFetchController.signal.aborted,
+    "_merinoFetchController is not aborted"
+  );
+
+  
+  
+  Assert.strictEqual(
+    histogram.snapshot().sum,
+    0,
+    "Latency histogram not updated after search finished"
+  );
+  Assert.ok(
+    TelemetryStopwatch.running(TELEMETRY_MERINO_LATENCY, context),
+    "Stopwatch still running after search finished"
+  );
+
+  
+  
+  await TestUtils.waitForCondition(
+    () => !UrlbarProviderQuickSuggest._merinoFetchController,
+    "Waiting for fetch to finish"
+  );
+
+  
+  
+  Assert.deepEqual(
+    Object.values(histogram.snapshot().values).filter(v => v > 0),
+    [1],
+    "Latency histogram updated after search finished"
+  );
+  Assert.ok(
+    !TelemetryStopwatch.running(TELEMETRY_MERINO_LATENCY, context),
+    "Stopwatch not running after fetch finished"
+  );
+}
+
+
+
+
+
+add_task(async function newFetchAbortsPrevious() {
+  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
+  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
+
+  let histogram = Services.telemetry.getHistogramById(TELEMETRY_MERINO_LATENCY);
+  histogram.clear();
+
+  
+  
+  let resp = setMerinoResponse();
+  resp.delay = 10000 * UrlbarPrefs.get("merinoTimeoutMs");
+
+  
+  let context = createContext("first search", {
+    providers: [UrlbarProviderQuickSuggest.name],
+    isPrivate: false,
+  });
+  await check_results({
+    context,
+    matches: [],
+  });
+
+  
+  
+
+  
+  Assert.ok(
+    !UrlbarProviderQuickSuggest._merinoTimeoutTimer,
+    "_merinoTimeoutTimer does not exist after first search finished"
+  );
+
+  
+  
+  Assert.ok(
+    UrlbarProviderQuickSuggest._merinoFetchController,
+    "_merinoFetchController still exists after first search finished"
+  );
+  Assert.ok(
+    !UrlbarProviderQuickSuggest._merinoFetchController.signal.aborted,
+    "_merinoFetchController is not aborted"
+  );
+
+  
+  
+  Assert.strictEqual(
+    histogram.snapshot().sum,
+    0,
+    "Latency histogram not updated after first search finished"
+  );
+
+  
+  delete resp.delay;
+  context = createContext("second search", {
+    providers: [UrlbarProviderQuickSuggest.name],
+    isPrivate: false,
+  });
+  await check_results({
+    context,
+    matches: [EXPECTED_MERINO_RESULT],
+  });
+
+  
+  
+  Assert.ok(
+    !UrlbarProviderQuickSuggest._merinoFetchController,
+    "_merinoFetchController does not exist after second search finished"
+  );
+  Assert.ok(
+    !UrlbarProviderQuickSuggest._merinoTimeoutTimer,
+    "_merinoTimeoutTimer does not exist after second search finished"
+  );
+
+  
+  
+  
+  Assert.deepEqual(
+    Object.values(histogram.snapshot().values).filter(v => v > 0),
+    [1],
+    "Latency histogram updated only once after second search finished"
+  );
+});
+
+
+
+
+add_task(async function cancelDoesNotAbortFetch() {
+  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
+  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
+
+  let histogram = Services.telemetry.getHistogramById(TELEMETRY_MERINO_LATENCY);
+  histogram.clear();
+
+  
+  
+  setMerinoResponse().delay = 1000;
+
+  
+  let context = createContext("test", {
+    providers: [UrlbarProviderQuickSuggest.name],
+    isPrivate: false,
+  });
+  let controller = UrlbarTestUtils.newMockController({
+    input: {
+      isPrivate: context.isPrivate,
+      onFirstResult() {
+        return false;
+      },
+      window: {
+        location: {
+          href: AppConstants.BROWSER_CHROME_URL,
+        },
+      },
+    },
+  });
+  let searchPromise = controller.startQuery(context);
+
+  
+  
+  await TestUtils.waitForCondition(
+    () => UrlbarProviderQuickSuggest._merinoFetchController,
+    "Waiting for _merinoFetchController"
+  );
+
+  
+  controller.cancelQuery();
+  await searchPromise;
+
+  
+  
+  Assert.ok(
+    UrlbarProviderQuickSuggest._merinoFetchController,
+    "_merinoFetchController still exists after search canceled"
+  );
+  Assert.ok(
+    !UrlbarProviderQuickSuggest._merinoFetchController.signal.aborted,
+    "_merinoFetchController is not aborted"
+  );
+
+  
+  
+  await TestUtils.waitForCondition(
+    () => !UrlbarProviderQuickSuggest._merinoFetchController,
+    "Waiting for provider to null out _merinoFetchController"
+  );
+
+  
+  
+  Assert.deepEqual(
+    Object.values(histogram.snapshot().values).filter(v => v > 0),
+    [1],
+    "Latency histogram updated after search finished"
+  );
 });
 
 function makeMerinoServer(endpointPath) {
@@ -879,9 +808,12 @@ function makeMerinoServer(endpointPath) {
   return server;
 }
 
-function setMerinoResponse(resp) {
+function setMerinoResponse(resp = { ...MERINO_RESPONSE }) {
   if (!resp.contentType) {
     resp.contentType = "application/json";
   }
   gMerinoResponse = resp;
+
+  info("Set Merino response: " + JSON.stringify(resp));
+  return resp;
 }
