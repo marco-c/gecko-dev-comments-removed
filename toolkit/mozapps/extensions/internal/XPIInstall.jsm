@@ -497,6 +497,11 @@ async function loadManifestFromWebManifest(aPackage) {
     addon.previewImage = "preview.png";
   }
 
+  if (addon.type == "sitepermission") {
+    addon.sitePermissions = manifest.site_permissions;
+    addon.siteOrigin = manifest.install_origins[0];
+  }
+
   if (manifest.options_ui) {
     
     
