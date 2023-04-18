@@ -150,7 +150,8 @@ class nsFocusManager final : public nsIFocusManager,
 
   bool CanSkipFocus(nsIContent* aContent);
 
-  void FlushBeforeEventHandlingIfNeeded(nsIContent* aContent) {
+  MOZ_CAN_RUN_SCRIPT void FlushBeforeEventHandlingIfNeeded(
+      nsIContent* aContent) {
     if (mEventHandlingNeedsFlush) {
       nsCOMPtr<Document> doc = aContent->GetComposedDoc();
       if (doc) {
@@ -394,7 +395,7 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  mozilla::dom::Element* FlushAndCheckIfFocusable(
+  MOZ_CAN_RUN_SCRIPT mozilla::dom::Element* FlushAndCheckIfFocusable(
       mozilla::dom::Element* aElement, uint32_t aFlags);
 
   
@@ -586,7 +587,7 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  nsIContent* GetNextTabbableContentInScope(
+  MOZ_CAN_RUN_SCRIPT nsIContent* GetNextTabbableContentInScope(
       nsIContent* aOwner, nsIContent* aStartContent,
       nsIContent* aOriginalStartContent, bool aForward,
       int32_t aCurrentTabIndex, bool aIgnoreTabIndex,
@@ -628,8 +629,8 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  nsIContent* GetNextTabbableContentInAncestorScopes(
-      nsIContent* aStartOwner, nsIContent** aStartContent,
+  MOZ_CAN_RUN_SCRIPT nsIContent* GetNextTabbableContentInAncestorScopes(
+      nsIContent* aStartOwner, nsCOMPtr<nsIContent>& aStartContent ,
       nsIContent* aOriginalStartContent, bool aForward,
       int32_t* aCurrentTabIndex, bool* aIgnoreTabIndex,
       bool aForDocumentNavigation, bool aNavigateByKey);
@@ -665,7 +666,7 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  nsresult GetNextTabbableContent(
+  MOZ_CAN_RUN_SCRIPT nsresult GetNextTabbableContent(
       mozilla::PresShell* aPresShell, nsIContent* aRootContent,
       nsIContent* aOriginalStartContent, nsIContent* aStartContent,
       bool aForward, int32_t aCurrentTabIndex, bool aIgnoreTabIndex,
@@ -701,8 +702,8 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  nsresult FocusFirst(mozilla::dom::Element* aRootContent,
-                      nsIContent** aNextContent);
+  MOZ_CAN_RUN_SCRIPT nsresult FocusFirst(mozilla::dom::Element* aRootContent,
+                                         nsIContent** aNextContent);
 
   
 
@@ -755,15 +756,14 @@ class nsFocusManager final : public nsIFocusManager,
   void SetFocusedWindowInternal(nsPIDOMWindowOuter* aWindow, uint64_t aActionId,
                                 bool aSyncBrowsingContext = true);
 
-  bool TryDocumentNavigation(nsIContent* aCurrentContent,
-                             bool* aCheckSubDocument,
-                             nsIContent** aResultContent);
+  MOZ_CAN_RUN_SCRIPT bool TryDocumentNavigation(nsIContent* aCurrentContent,
+                                                bool* aCheckSubDocument,
+                                                nsIContent** aResultContent);
 
-  bool TryToMoveFocusToSubDocument(nsIContent* aCurrentContent,
-                                   nsIContent* aOriginalStartContent,
-                                   bool aForward, bool aForDocumentNavigation,
-                                   bool aNavigateByKey,
-                                   nsIContent** aResultContent);
+  MOZ_CAN_RUN_SCRIPT bool TryToMoveFocusToSubDocument(
+      nsIContent* aCurrentContent, nsIContent* aOriginalStartContent,
+      bool aForward, bool aForDocumentNavigation, bool aNavigateByKey,
+      nsIContent** aResultContent);
 
   
   

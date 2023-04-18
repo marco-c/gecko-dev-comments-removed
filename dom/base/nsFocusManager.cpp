@@ -3361,15 +3361,17 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
     }
   }
 
-  Element* rootContent = doc->GetRootElement();
-  NS_ENSURE_TRUE(rootContent, NS_OK);
+  
+  
+  RefPtr<Element> rootElement = doc->GetRootElement();
+  NS_ENSURE_TRUE(rootElement, NS_OK);
 
-  PresShell* presShell = doc->GetPresShell();
+  RefPtr<PresShell> presShell = doc->GetPresShell();
   NS_ENSURE_TRUE(presShell, NS_OK);
 
   if (aType == MOVEFOCUS_FIRST) {
     if (!aStartContent) {
-      startContent = rootContent;
+      startContent = rootElement;
     }
     return GetNextTabbableContent(presShell, startContent, nullptr,
                                   startContent, true, 1, false, false,
@@ -3377,7 +3379,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
   }
   if (aType == MOVEFOCUS_LAST) {
     if (!aStartContent) {
-      startContent = rootContent;
+      startContent = rootElement;
     }
     return GetNextTabbableContent(presShell, startContent, nullptr,
                                   startContent, false, 0, false, false,
@@ -3409,7 +3411,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
     
     if (tabIndex < 0) {
       tabIndex = 1;
-      if (startContent != rootContent) {
+      if (startContent != rootElement) {
         ignoreTabIndex = true;
       }
     }
@@ -3425,13 +3427,13 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
     if (popupFrame && !forDocumentNavigation) {
       
       
-      rootContent = popupFrame->GetContent()->AsElement();
-      NS_ASSERTION(rootContent, "Popup frame doesn't have a content node");
+      rootElement = popupFrame->GetContent()->AsElement();
+      NS_ASSERTION(rootElement, "Popup frame doesn't have a content node");
     } else if (!forward) {
       
       
       
-      if (startContent == rootContent) {
+      if (startContent == rootElement) {
         doNavigation = false;
       } else {
         Document* doc = startContent->GetComposedDoc();
@@ -3460,7 +3462,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
       
       
       if (!forDocumentNavigation) {
-        rootContent = startContent->AsElement();
+        rootElement = startContent->AsElement();
       }
 
       doc = startContent ? startContent->GetComposedDoc() : nullptr;
@@ -3472,7 +3474,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
         GetSelectionLocation(doc, presShell, getter_AddRefs(startContent),
                              getter_AddRefs(endSelectionContent));
         
-        if (startContent == rootContent) {
+        if (startContent == rootElement) {
           startContent = nullptr;
         }
 
@@ -3497,7 +3499,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
 
       if (!startContent) {
         
-        startContent = rootContent;
+        startContent = rootElement;
         NS_ENSURE_TRUE(startContent, NS_OK);
       }
     }
@@ -3511,7 +3513,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
   if (forDocumentNavigation && nsContentUtils::IsChromeDoc(doc)) {
     nsAutoString retarget;
 
-    if (rootContent->GetAttr(kNameSpaceID_None,
+    if (rootElement->GetAttr(kNameSpaceID_None,
                              nsGkAtoms::retargetdocumentfocus, retarget)) {
       nsIContent* retargetElement = doc->GetElementById(retarget);
       
@@ -3522,7 +3524,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
           (retargetElement == startContent ||
            (!retargetElement->Contains(startContent) &&
             startContent->IsInclusiveDescendantOf(retargetElement)))) {
-        startContent = rootContent;
+        startContent = rootElement;
       }
     }
   }
@@ -3541,7 +3543,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
   
   
   bool skipOriginalContentCheck = true;
-  nsIContent* originalStartContent = startContent;
+  const nsCOMPtr<nsIContent> originalStartContent = startContent;
 
   LOGCONTENTNAVIGATION("Focus Navigation Start Content %s", startContent.get());
   LOGFOCUSNAVIGATION(("  Forward: %d Tabindex: %d Ignore: %d DocNav: %d",
@@ -3551,9 +3553,11 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
   while (doc) {
     if (doNavigation) {
       nsCOMPtr<nsIContent> nextFocus;
+      
       nsresult rv = GetNextTabbableContent(
-          presShell, rootContent,
-          skipOriginalContentCheck ? nullptr : originalStartContent,
+          presShell, rootElement,
+          MOZ_KnownLive(skipOriginalContentCheck ? nullptr
+                                                 : originalStartContent.get()),
           startContent, forward, tabIndex, ignoreTabIndex,
           forDocumentNavigation, aNavigateByKey, getter_AddRefs(nextFocus));
       NS_ENSURE_SUCCESS(rv, rv);
@@ -3580,8 +3584,8 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
         
         
         
-        if (startContent != rootContent) {
-          startContent = rootContent;
+        if (startContent != rootElement) {
+          startContent = rootElement;
           tabIndex = forward ? 1 : 0;
           continue;
         }
@@ -3594,11 +3598,11 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
     ignoreTabIndex = false;
 
     if (aNoParentTraversal) {
-      if (startContent == rootContent) {
+      if (startContent == rootElement) {
         return NS_OK;
       }
 
-      startContent = rootContent;
+      startContent = rootElement;
       tabIndex = forward ? 1 : 0;
       continue;
     }
@@ -3619,7 +3623,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
       doc = startContent->GetComposedDoc();
       NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
 
-      rootContent = doc->GetRootElement();
+      rootElement = doc->GetRootElement();
       presShell = doc->GetPresShell();
 
       
@@ -3646,8 +3650,8 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
         popupFrame = nsLayoutUtils::GetClosestFrameOfType(
             frame, LayoutFrameType::MenuPopup);
         if (popupFrame) {
-          rootContent = popupFrame->GetContent()->AsElement();
-          NS_ASSERTION(rootContent, "Popup frame doesn't have a content node");
+          rootElement = popupFrame->GetContent()->AsElement();
+          NS_ASSERTION(rootElement, "Popup frame doesn't have a content node");
         }
       }
     } else {
@@ -3682,8 +3686,9 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
         
         
         
-        Element* root = GetRootForFocus(piWindow, doc, true, true);
-        return FocusFirst(root, aNextContent);
+        RefPtr<Element> rootElementForFocus =
+            GetRootForFocus(piWindow, doc, true, true);
+        return FocusFirst(rootElementForFocus, aNextContent);
       }
 
       
@@ -3692,7 +3697,7 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
       mayFocusRoot = true;
 
       
-      startContent = rootContent;
+      startContent = rootElement;
       tabIndex = forward ? 1 : 0;
     }
 
@@ -4012,15 +4017,15 @@ nsIContent* nsFocusManager::GetNextTabbableContentInScope(
 }
 
 nsIContent* nsFocusManager::GetNextTabbableContentInAncestorScopes(
-    nsIContent* aStartOwner, nsIContent** aStartContent,
+    nsIContent* aStartOwner, nsCOMPtr<nsIContent>& aStartContent ,
     nsIContent* aOriginalStartContent, bool aForward, int32_t* aCurrentTabIndex,
     bool* aIgnoreTabIndex, bool aForDocumentNavigation, bool aNavigateByKey) {
-  MOZ_ASSERT(aStartOwner == FindScopeOwner(*aStartContent),
+  MOZ_ASSERT(aStartOwner == FindScopeOwner(aStartContent),
              "aStartOWner should be the scope owner of aStartContent");
   MOZ_ASSERT(IsHostOrSlot(aStartOwner), "scope owner should be host or slot");
 
-  nsIContent* owner = aStartOwner;
-  nsIContent* startContent = *aStartContent;
+  nsCOMPtr<nsIContent> owner = aStartOwner;
+  nsCOMPtr<nsIContent> startContent = aStartContent;
   while (IsHostOrSlot(owner)) {
     int32_t tabIndex = 0;
     if (IsHostOrSlot(startContent)) {
@@ -4044,7 +4049,7 @@ nsIContent* nsFocusManager::GetNextTabbableContentInAncestorScopes(
 
   
   
-  *aStartContent = startContent;
+  aStartContent = startContent;
   *aCurrentTabIndex = HostOrSlotTabIndexValue(startContent);
 
   if (*aCurrentTabIndex < 0) {
@@ -4085,8 +4090,9 @@ nsresult nsFocusManager::GetNextTabbableContent(
     return NS_OK;
   }
 
-  nsIContent* startContent = aStartContent;
-  nsIContent* currentTopLevelScopeOwner = GetTopLevelScopeOwner(startContent);
+  nsCOMPtr<nsIContent> startContent = aStartContent;
+  nsCOMPtr<nsIContent> currentTopLevelScopeOwner =
+      GetTopLevelScopeOwner(startContent);
 
   LOGCONTENTNAVIGATION("GetNextTabbable: %s", startContent);
   LOGFOCUSNAVIGATION(("  tabindex: %d", aCurrentTabIndex));
@@ -4106,9 +4112,9 @@ nsresult nsFocusManager::GetNextTabbableContent(
 
   
   
-  if (nsIContent* owner = FindScopeOwner(startContent)) {
+  if (nsCOMPtr<nsIContent> owner = FindScopeOwner(startContent)) {
     nsIContent* contentToFocus = GetNextTabbableContentInAncestorScopes(
-        owner, &startContent, aOriginalStartContent, aForward,
+        owner, startContent , aOriginalStartContent, aForward,
         &aCurrentTabIndex, &aIgnoreTabIndex, aForDocumentNavigation,
         aNavigateByKey);
     if (contentToFocus) {
@@ -4203,7 +4209,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
     while (frame) {
       
       
-      nsIContent* currentContent = frame->GetContent();
+      const nsCOMPtr<nsIContent> currentContent = frame->GetContent();
       if (currentTopLevelScopeOwner) {
         oldTopLevelScopeOwner = currentTopLevelScopeOwner;
       }
@@ -4467,15 +4473,16 @@ bool nsFocusManager::TryDocumentNavigation(nsIContent* aCurrentContent,
                                            bool* aCheckSubDocument,
                                            nsIContent** aResultContent) {
   *aCheckSubDocument = true;
-  if (Element* docRoot = GetRootForChildDocument(aCurrentContent)) {
+  if (RefPtr<Element> rootElementForChildDocument =
+          GetRootForChildDocument(aCurrentContent)) {
     
     
     
     
     
-    if (!docRoot->IsHTMLElement(nsGkAtoms::frameset)) {
+    if (!rootElementForChildDocument->IsHTMLElement(nsGkAtoms::frameset)) {
       *aCheckSubDocument = false;
-      Unused << FocusFirst(docRoot, aResultContent);
+      Unused << FocusFirst(rootElementForChildDocument, aResultContent);
       return *aResultContent != nullptr;
     }
   } else {
@@ -4506,16 +4513,16 @@ bool nsFocusManager::TryToMoveFocusToSubDocument(
         }
       }
     }
-    Element* rootElement = subdoc->GetRootElement();
-    PresShell* subPresShell = subdoc->GetPresShell();
-    if (rootElement && subPresShell) {
-      nsresult rv = GetNextTabbableContent(
-          subPresShell, rootElement, aOriginalStartContent, rootElement,
-          aForward, (aForward ? 1 : 0), false, aForDocumentNavigation,
-          aNavigateByKey, aResultContent);
-      NS_ENSURE_SUCCESS(rv, false);
-      if (*aResultContent) {
-        return true;
+    if (RefPtr<Element> rootElement = subdoc->GetRootElement()) {
+      if (RefPtr<PresShell> subPresShell = subdoc->GetPresShell()) {
+        nsresult rv = GetNextTabbableContent(
+            subPresShell, rootElement, aOriginalStartContent, rootElement,
+            aForward, (aForward ? 1 : 0), false, aForDocumentNavigation,
+            aNavigateByKey, aResultContent);
+        NS_ENSURE_SUCCESS(rv, false);
+        if (*aResultContent) {
+          return true;
+        }
       }
     }
   }
@@ -4646,7 +4653,7 @@ nsresult nsFocusManager::FocusFirst(Element* aRootElement,
 
       if (aRootElement->GetAttr(kNameSpaceID_None,
                                 nsGkAtoms::retargetdocumentfocus, retarget)) {
-        nsCOMPtr<Element> element = doc->GetElementById(retarget);
+        RefPtr<Element> element = doc->GetElementById(retarget);
         nsCOMPtr<nsIContent> retargetElement =
             FlushAndCheckIfFocusable(element, 0);
         if (retargetElement) {
@@ -4661,8 +4668,7 @@ nsresult nsFocusManager::FocusFirst(Element* aRootElement,
       
       
       
-      PresShell* presShell = doc->GetPresShell();
-      if (presShell) {
+      if (RefPtr<PresShell> presShell = doc->GetPresShell()) {
         return GetNextTabbableContent(presShell, aRootElement, nullptr,
                                       aRootElement, true, 1, false, false, true,
                                       aNextContent);
