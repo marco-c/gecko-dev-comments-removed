@@ -424,7 +424,8 @@ void AsyncImagePipelineManager::ApplyAsyncImageForPipeline(
   computedTransform.rotation = ToWrRotation(aPipeline->mRotation);
   
   
-  computedTransform.key = wr::SpatialKey(aPipelineId.mNamespace, aPipelineId.mHandle, wr::SpatialKeyKind::APZ);
+  computedTransform.key = wr::SpatialKey(
+      aPipelineId.mNamespace, aPipelineId.mHandle, wr::SpatialKeyKind::APZ);
   params.computed_transform = &computedTransform;
 
   Maybe<wr::WrSpatialId> referenceFrameId =

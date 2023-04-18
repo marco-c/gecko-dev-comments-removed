@@ -1264,7 +1264,7 @@ ScopedDrawCallWrapper::ScopedDrawCallWrapper(WebGLContext& webgl)
   if (!fb) {
     if (mWebGL.mDefaultFB_DrawBuffer0 == LOCAL_GL_NONE) {
       driverColorMask0 = 0;  
-                            
+                             
     } else {
       driverColorMask0 &= ~(uint8_t(mWebGL.mNeedsFakeNoAlpha) << 3);
     }

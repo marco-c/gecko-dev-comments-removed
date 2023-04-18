@@ -31,10 +31,11 @@ class APZTaskRunnable final : public Runnable {
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_DECL_NSIRUNNABLE
 
-  
-  
-  
-  void QueueRequest(const RepaintRequest& aRequest);
+      
+      
+      
+      void
+      QueueRequest(const RepaintRequest& aRequest);
   void QueueFlushCompleteNotification();
   void Revoke() {
     mController = nullptr;

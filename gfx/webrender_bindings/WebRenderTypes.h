@@ -119,6 +119,7 @@ enum class SpatialKeyKind : uint32_t {
 
 
 
+
 inline wr::SpatialTreeItemKey SpatialKey(uint64_t aFrame, uint32_t aPerFrameKey,
                                          SpatialKeyKind aKind) {
   return wr::SpatialTreeItemKey{

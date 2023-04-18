@@ -23,11 +23,11 @@
 #include "mozilla/TimeStamp.h"  
 #include "mozilla/UniquePtr.h"  
 #include "mozilla/gfx/BasePoint.h"  
-#include "mozilla/gfx/BaseSize.h"     
-#include "mozilla/gfx/Matrix.h"       
-#include "mozilla/gfx/Point.h"        
-#include "mozilla/gfx/Polygon.h"      
-#include "mozilla/gfx/Rect.h"         
+#include "mozilla/gfx/BaseSize.h"  
+#include "mozilla/gfx/Matrix.h"    
+#include "mozilla/gfx/Point.h"     
+#include "mozilla/gfx/Polygon.h"   
+#include "mozilla/gfx/Rect.h"      
 #include "mozilla/gfx/Types.h"  
 #include "mozilla/gfx/UserData.h"  
 #include "mozilla/layers/AnimationInfo.h"  
@@ -69,7 +69,7 @@ class TransformData;
 struct PropertyAnimationGroup;
 
 class Layer {
-  public:
+ public:
   enum {
     
 

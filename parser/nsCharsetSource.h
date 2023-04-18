@@ -33,8 +33,8 @@ enum {
   kCharsetFromOtherComponent,
   kCharsetFromInitialUserForcedAutoDetection,
   kCharsetFromFinalUserForcedAutoDetection,
-  kCharsetFromXmlDeclarationUtf16,        
-                                          
+  kCharsetFromXmlDeclarationUtf16,  
+                                    
   kCharsetFromByteOrderMark,
   kCharsetFromUtf8OnlyMime,  
   kCharsetFromBuiltIn,       

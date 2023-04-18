@@ -2314,7 +2314,6 @@ nsresult HttpBaseChannel::ProcessCrossOriginResourcePolicyHeader() {
 
 
 
-
 static bool CompareCrossOriginOpenerPolicies(
     nsILoadInfo::CrossOriginOpenerPolicy documentPolicy,
     nsIPrincipal* documentOrigin,
