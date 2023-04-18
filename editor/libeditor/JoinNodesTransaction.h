@@ -63,20 +63,22 @@ class JoinNodesTransaction final : public EditTransactionBase {
                                   const JoinNodesTransaction& aTransaction);
 
  protected:
+  virtual ~JoinNodesTransaction() = default;
+
   RefPtr<HTMLEditor> mHTMLEditor;
 
   
-  
-  nsCOMPtr<nsIContent> mLeftContent;
-  nsCOMPtr<nsIContent> mRightContent;
-
-  
-  
-  
-  uint32_t mOffset;
-
-  
   nsCOMPtr<nsINode> mParentNode;
+
+  
+  nsCOMPtr<nsIContent> mRemovedContent;
+
+  
+  nsCOMPtr<nsIContent> mKeepingContent;
+
+  
+  
+  uint32_t mJoinedOffset = 0u;
 };
 
 }  
