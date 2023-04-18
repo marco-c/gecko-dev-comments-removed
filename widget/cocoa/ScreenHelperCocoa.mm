@@ -87,27 +87,8 @@ static already_AddRefed<Screen> MakeScreen(NSScreen* aScreen) {
   frame = [aScreen visibleFrame];
   LayoutDeviceIntRect availRect =
       nsCocoaUtils::CocoaRectToGeckoRectDevPix(frame, contentsScaleFactor.scale);
-
-  
-  
-  
-  
-  uint32_t pixelDepth = 0;
-  const NSWindowDepth* depths = [aScreen supportedWindowDepths];
-  for (size_t d = 0; NSWindowDepth depth = depths[d]; d++) {
-    uint32_t bpp = NSBitsPerPixelFromDepth(depth);
-    if (bpp > pixelDepth) {
-      pixelDepth = bpp;
-    }
-  }
-
-  
-  
-  static const uint32_t MAX_REPORTED_PIXEL_DEPTH = 30;
-  if (pixelDepth > MAX_REPORTED_PIXEL_DEPTH) {
-    pixelDepth = MAX_REPORTED_PIXEL_DEPTH;
-  }
-
+  NSWindowDepth depth = [aScreen depth];
+  uint32_t pixelDepth = NSBitsPerPixelFromDepth(depth);
   float dpi = 96.0f;
   CGDirectDisplayID displayID =
       [[[aScreen deviceDescription] objectForKey:@"NSScreenNumber"] intValue];

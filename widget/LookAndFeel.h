@@ -327,15 +327,6 @@ class LookAndFeel {
     
 
 
-
-
-
-    DynamicRange,
-    VideoDynamicRange,
-
-    
-
-
     End,
   };
 
