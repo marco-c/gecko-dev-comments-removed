@@ -2,13 +2,11 @@
 
 
 
-import { findIndex } from "lodash";
-
 
 import { getFrameUrl } from "./getFrameUrl";
 
 function collapseLastFrames(frames) {
-  const index = findIndex(frames, frame =>
+  const index = frames.findIndex(frame =>
     getFrameUrl(frame).match(/webpack\/bootstrap/i)
   );
 

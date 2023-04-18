@@ -2,9 +2,6 @@
 
 
 
-import findIndex from "lodash/findIndex";
-import findLastIndex from "lodash/findLastIndex";
-
 import { containsLocation, containsPosition } from "./utils/contains";
 
 import { getSymbols } from "./getSymbols";
@@ -40,33 +37,37 @@ function getLocation(func) {
 
 
 
-function removeInnerLocations(locations, position) {
+
+function getInnerLocations(locations, position) {
   
   
-  const newLocs = locations.slice();
-  const parentIndex = findLastIndex(newLocs, loc =>
-    containsPosition(loc, position)
-  );
-  if (parentIndex < 0) {
-    return newLocs;
+  let parentIndex;
+  for (let i = locations.length - 1; i >= 0; i--) {
+    const loc = locations[i];
+    if (containsPosition(loc, position)) {
+      parentIndex = i;
+      break;
+    }
   }
 
-  
-  
-  
-  const innerStartIndex = parentIndex + 1;
-  const parentLoc = newLocs[parentIndex];
-  const outerBoundaryIndex = findIndex(
-    newLocs,
-    loc => !containsLocation(parentLoc, loc),
-    innerStartIndex
-  );
-  const innerBoundaryIndex =
-    outerBoundaryIndex < 0 ? newLocs.length - 1 : outerBoundaryIndex - 1;
+  if (parentIndex == undefined) {
+    return [];
+  }
+  const parentLoc = locations[parentIndex];
 
   
-  newLocs.splice(innerStartIndex, innerBoundaryIndex - parentIndex);
-  return newLocs;
+  
+  const innerLocations = [];
+  for (let i = parentIndex + 1; i < locations.length; i++) {
+    const loc = locations[i];
+    if (!containsLocation(parentLoc, loc)) {
+      break;
+    }
+
+    innerLocations.push(loc);
+  }
+
+  return innerLocations;
 }
 
 
@@ -112,16 +113,20 @@ function sortByStart(a, b) {
 function findOutOfScopeLocations(sourceId, position) {
   const { functions, comments } = findSymbols(sourceId);
   const commentLocations = comments.map(c => c.location);
-  let locations = functions
+  const locations = functions
     .map(getLocation)
     .concat(commentLocations)
     .sort(sortByStart);
-  
-  
-  locations = removeInnerLocations(locations, position).filter(
-    loc => !containsPosition(loc, position)
-  );
-  return removeOverlaps(locations);
+
+  const innerLocations = getInnerLocations(locations, position);
+  const outerLocations = locations.filter(loc => {
+    if (innerLocations.includes(loc)) {
+      return false;
+    }
+
+    return !containsPosition(loc, position);
+  });
+  return removeOverlaps(outerLocations);
 }
 
 export default findOutOfScopeLocations;
