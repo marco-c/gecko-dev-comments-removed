@@ -200,6 +200,14 @@ if (AppConstants.MOZ_DATA_REPORTING) {
   ]);
 }
 
+Preferences.addAll([
+  {
+    id: "browser.privacySegmentation.preferences.show",
+    type: "bool",
+  },
+  { id: "browser.privacySegmentation.enabled", type: "bool" },
+]);
+
 
 if (AppConstants.MOZ_CRASHREPORTER) {
   Preferences.add({
@@ -760,8 +768,9 @@ var gPrivacyPane = {
         .setAttribute("href", windowsSSOURL);
     }
 
+    this.initDataCollection();
+
     if (AppConstants.MOZ_DATA_REPORTING) {
-      this.initDataCollection();
       if (AppConstants.MOZ_CRASHREPORTER) {
         this.initSubmitCrashes();
       }
@@ -2624,10 +2633,24 @@ var gPrivacyPane = {
   },
 
   initDataCollection() {
+    if (
+      !AppConstants.MOZ_DATA_REPORTING &&
+      !Services.prefs.getBoolPref(
+        "browser.privacySegmentation.preferences.show",
+        false
+      )
+    ) {
+      
+      document.getElementById("dataCollectionCategory").remove();
+      document.getElementById("dataCollectionGroup").remove();
+      return;
+    }
+
     this._setupLearnMoreLink(
       "toolkit.datacollection.infoURL",
       "dataCollectionPrivacyNotice"
     );
+    this.initPrivacySegmentation();
   },
 
   initSubmitCrashes() {
@@ -2642,6 +2665,33 @@ var gPrivacyPane = {
       const checkboxId = event.target.getAttribute("for");
       document.getElementById(checkboxId).click();
     });
+  },
+
+  initPrivacySegmentation() {
+    
+    document
+      .getElementById("privacy-segmentation-learn-more-link")
+      .setAttribute(
+        "href",
+        Services.urlFormatter.formatURLPref("app.support.baseURL") +
+          Services.prefs.getStringPref(
+            "browser.privacySegmentation.preferences.learnMoreURLSuffix"
+          )
+      );
+
+    
+    let visibilityPref = Preferences.get(
+      "browser.privacySegmentation.preferences.show"
+    );
+    let section = document.getElementById("privacySegmentationSection");
+    let updatePrivacySegmentationSectionVisibilityState = () => {
+      section.hidden = !visibilityPref.value;
+    };
+    visibilityPref.on(
+      "change",
+      updatePrivacySegmentationSectionVisibilityState
+    );
+    updatePrivacySegmentationSectionVisibilityState();
   },
 
   

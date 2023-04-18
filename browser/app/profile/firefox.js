@@ -583,6 +583,12 @@ pref("browser.privacySegmentation.enabled", false);
 
 pref("browser.theme.dark-private-windows", false);
 
+
+pref("browser.privacySegmentation.preferences.show", false);
+
+
+pref("browser.privacySegmentation.preferences.learnMoreURLSuffix", "data-features");
+
 pref("browser.sessionhistory.max_entries", 50);
 
 
