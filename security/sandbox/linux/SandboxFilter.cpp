@@ -1782,6 +1782,20 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
   }
 #endif
 
+  Maybe<ResultExpr> EvaluateSocketCall(int aCall,
+                                       bool aHasArgs) const override {
+    switch (aCall) {
+      
+      
+      
+      case SYS_SOCKET:
+        return Some(Error(EACCES));
+
+      default:
+        return SandboxPolicyCommon::EvaluateSocketCall(aCall, aHasArgs);
+    }
+  }
+
   ResultExpr EvaluateSyscall(int sysno) const override {
     switch (sysno) {
       case __NR_getrusage:
