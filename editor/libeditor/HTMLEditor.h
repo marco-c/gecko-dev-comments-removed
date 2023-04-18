@@ -3243,8 +3243,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  already_AddRefed<Element> GetSelectedOrParentTableElement(
-      ErrorResult& aRv, bool* aIsCellSelected = nullptr) const;
+  Result<RefPtr<Element>, nsresult> GetSelectedOrParentTableElement(
+      bool* aIsCellSelected = nullptr) const;
 
   
 
