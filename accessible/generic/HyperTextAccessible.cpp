@@ -920,6 +920,16 @@ void HyperTextAccessible::TextBeforeOffset(int32_t aOffset,
                                            int32_t* aStartOffset,
                                            int32_t* aEndOffset,
                                            nsAString& aText) {
+  if (StaticPrefs::accessibility_cache_enabled_AtStartup() &&
+      (aBoundaryType == nsIAccessibleText::BOUNDARY_WORD_START ||
+       aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_START)) {
+    
+    
+    
+    return HyperTextAccessibleBase::TextBeforeOffset(
+        aOffset, aBoundaryType, aStartOffset, aEndOffset, aText);
+  }
+
   *aStartOffset = *aEndOffset = 0;
   aText.Truncate();
 
@@ -1096,6 +1106,16 @@ void HyperTextAccessible::TextAfterOffset(int32_t aOffset,
                                           int32_t* aStartOffset,
                                           int32_t* aEndOffset,
                                           nsAString& aText) {
+  if (StaticPrefs::accessibility_cache_enabled_AtStartup() &&
+      (aBoundaryType == nsIAccessibleText::BOUNDARY_WORD_START ||
+       aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_START)) {
+    
+    
+    
+    return HyperTextAccessibleBase::TextAfterOffset(
+        aOffset, aBoundaryType, aStartOffset, aEndOffset, aText);
+  }
+
   *aStartOffset = *aEndOffset = 0;
   aText.Truncate();
 
