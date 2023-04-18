@@ -4,6 +4,7 @@
 "use strict";
 
 add_task(async () => {
+  Services.fog.testResetFOG(); 
   Assert.equal(
     undefined,
     Glean.testOnlyIpc.eventWithExtra.testGetValue(),
