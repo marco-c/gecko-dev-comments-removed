@@ -2484,6 +2484,9 @@ void CodeGenerator::visitWasmSelect(LWasmSelect* lir) {
   }
 }
 
+
+
+
 void CodeGenerator::visitWasmCompareAndSelect(LWasmCompareAndSelect* ins) {
   MCompare::CompareType compTy = ins->compareType();
 
@@ -2494,6 +2497,14 @@ void CodeGenerator::visitWasmCompareAndSelect(LWasmCompareAndSelect* ins) {
       masm.cmp32(lhs, Imm32(ins->rightExpr()->toConstant()->toInt32()));
     } else {
       masm.cmp32(lhs, ToRegister(ins->rightExpr()));
+    }
+  } else if (compTy == MCompare::Compare_Int64 ||
+             compTy == MCompare::Compare_UInt64) {
+    Register lhs = ToRegister(ins->leftExpr());
+    if (ins->rightExpr()->isConstant()) {
+      masm.cmpPtr(lhs, Imm64(ins->rightExpr()->toConstant()->toInt64()));
+    } else {
+      masm.cmpPtr(lhs, ToRegister(ins->rightExpr()));
     }
   } else if (compTy == MCompare::Compare_Float32) {
     masm.compareFloat(JSOpToDoubleCondition(ins->jsop()),
@@ -2506,28 +2517,29 @@ void CodeGenerator::visitWasmCompareAndSelect(LWasmCompareAndSelect* ins) {
   } else {
     
     
-    MOZ_CRASH("Unexpected type");
+    MOZ_CRASH("CodeGenerator::visitWasmCompareAndSelect: unexpected type (1)");
   }
 
   
   Assembler::Condition cond = JSOpToCondition(ins->compareType(), ins->jsop());
   MIRType insTy = ins->mir()->type();
-  if (insTy == MIRType::Int32) {
-    Register outReg = ToRegister(ins->output());
+  if (insTy == MIRType::Int32 || insTy == MIRType::Int64) {
+    Register destReg = ToRegister(ins->output());
     Register trueReg = ToRegister(ins->ifTrueExpr());
     Register falseReg = ToRegister(ins->ifFalseExpr());
-    masm.Csel(ARMRegister(outReg, 32), ARMRegister(trueReg, 32),
-              ARMRegister(falseReg, 32), cond);
+    size_t size = insTy == MIRType::Int32 ? 32 : 64;
+    masm.Csel(ARMRegister(destReg, size), ARMRegister(trueReg, size),
+              ARMRegister(falseReg, size), cond);
   } else if (insTy == MIRType::Float32 || insTy == MIRType::Double) {
-    FloatRegister outReg = ToFloatRegister(ins->output());
+    FloatRegister destReg = ToFloatRegister(ins->output());
     FloatRegister trueReg = ToFloatRegister(ins->ifTrueExpr());
     FloatRegister falseReg = ToFloatRegister(ins->ifFalseExpr());
     size_t size = MIRTypeToSize(insTy) * 8;
-    masm.Fcsel(ARMFPRegister(outReg, size), ARMFPRegister(trueReg, size),
+    masm.Fcsel(ARMFPRegister(destReg, size), ARMFPRegister(trueReg, size),
                ARMFPRegister(falseReg, size), cond);
   } else {
     
-    MOZ_CRASH("Unexpected type");
+    MOZ_CRASH("CodeGenerator::visitWasmCompareAndSelect: unexpected type (2)");
   }
 }
 

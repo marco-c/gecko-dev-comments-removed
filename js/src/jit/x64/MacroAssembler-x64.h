@@ -538,6 +538,23 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
   }
 
   
+  template <size_t CmpSize, size_t MoveSize>
+  void cmpMove(Condition cond, Register lhs, Register rhs, Register falseVal,
+               Register trueValAndDest);
+
+  template <size_t CmpSize, size_t MoveSize>
+  void cmpMove(Condition cond, Register lhs, const Address& rhs,
+               Register falseVal, Register trueValAndDest);
+
+  template <size_t CmpSize, size_t LoadSize>
+  void cmpLoad(Condition cond, Register lhs, Register rhs,
+               const Address& falseVal, Register trueValAndDest);
+
+  template <size_t CmpSize, size_t LoadSize>
+  void cmpLoad(Condition cond, Register lhs, const Address& rhs,
+               const Address& falseVal, Register trueValAndDest);
+
+  
   
   
 
