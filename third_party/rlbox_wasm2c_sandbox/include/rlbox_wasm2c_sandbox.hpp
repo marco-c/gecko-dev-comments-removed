@@ -409,6 +409,16 @@ __attribute__((weak))
   }
 #endif
 
+  
+  
+  static inline uint64_t next_power_of_two(uint32_t value) {
+    uint64_t power = 1;
+    while(power < value) {
+      power *= 2;
+    }
+    return power;
+  }
+
 protected:
 
 #ifndef RLBOX_USE_STATIC_CALLS
@@ -462,11 +472,12 @@ protected:
 
 
 
+
   inline bool impl_create_sandbox(
 #ifndef RLBOX_USE_STATIC_CALLS
     path_buf wasm2c_module_path,
 #endif
-    bool infallible = true, const char* wasm_module_name = "")
+    bool infallible = true, uint64_t override_max_heap_size = 0, const char* wasm_module_name = "")
   {
     FALLIBLE_DYNAMIC_CHECK(infallible, sandbox == nullptr, "Sandbox already initialized");
 
@@ -515,7 +526,25 @@ protected:
       sandbox_info.wasm_rt_sys_init();
     });
 
-    sandbox = sandbox_info.create_wasm2c_sandbox();
+#define WASM_PAGE_SIZE 65536
+#define WASM_HEAP_MAX_ALLOWED_PAGES 65536
+#define WASM_MAX_HEAP (static_cast<uint64_t>(1) << 32)
+    if (override_max_heap_size != 0){
+      if(override_max_heap_size < WASM_PAGE_SIZE) {
+        override_max_heap_size = WASM_PAGE_SIZE;
+      } else if (override_max_heap_size > WASM_MAX_HEAP) {
+        override_max_heap_size = WASM_MAX_HEAP;
+      } else {
+        override_max_heap_size = next_power_of_two(override_max_heap_size);
+      }
+    }
+    const uint64_t override_max_wasm_pages = override_max_heap_size / WASM_PAGE_SIZE;
+    FALLIBLE_DYNAMIC_CHECK(infallible, override_max_wasm_pages <= 65536, "Wasm allows a max heap size of 4GB");
+#undef WASM_MAX_HEAP
+#undef WASM_HEAP_MAX_ALLOWED_PAGES
+#undef WASM_PAGE_SIZE
+
+    sandbox = sandbox_info.create_wasm2c_sandbox(static_cast<uint32_t>(override_max_wasm_pages));
     FALLIBLE_DYNAMIC_CHECK(infallible, sandbox != nullptr, "Sandbox could not be created");
 
     sandbox_memory_info = (wasm_rt_memory_t*) sandbox_info.lookup_wasm2c_nonfunc_export(sandbox, "w2c_memory");
