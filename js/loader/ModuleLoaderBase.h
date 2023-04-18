@@ -142,10 +142,12 @@ class ModuleLoaderBase : public nsISupports {
   
 
  public:
+  ScriptLoaderInterface* GetScriptLoaderInterface() const { return mLoader; }
+
   bool HasPendingDynamicImports() const;
   void CancelDynamicImport(ModuleLoadRequest* aRequest, nsresult aResult);
 #ifdef DEBUG
-  bool HasDynamicImport(ModuleLoadRequest* aRequest) const;
+  bool HasDynamicImport(const ModuleLoadRequest* aRequest) const;
 #endif
 
   
@@ -161,7 +163,7 @@ class ModuleLoaderBase : public nsISupports {
 
   
   nsresult EvaluateModule(nsIGlobalObject* aGlobalObject,
-                          ScriptLoadRequest* aRequest);
+                          ModuleLoadRequest* aRequest);
 
   void StartDynamicImport(ModuleLoadRequest* aRequest);
   void ProcessDynamicImport(ModuleLoadRequest* aRequest);
@@ -215,7 +217,7 @@ class ModuleLoaderBase : public nsISupports {
   ModuleScript* GetFetchedModule(nsIURI* aURL, nsIGlobalObject* aGlobal) const;
 
   
-  nsresult EvaluateModule(ScriptLoadRequest* aRequest);
+  nsresult EvaluateModule(ModuleLoadRequest* aRequest);
 
   JS::Value FindFirstParseError(ModuleLoadRequest* aRequest);
   static nsresult InitDebuggerDataForModuleTree(JSContext* aCx,
