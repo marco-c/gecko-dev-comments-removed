@@ -3,8 +3,18 @@
 
 
 function networkRequest(url, opts) {
-  const UNSUPPORTED_PROTOCOLS = ["chrome://", "resource://"];
-  if (UNSUPPORTED_PROTOCOLS.some(protocol => url.startsWith(protocol))) {
+  const supportedProtocols = ["http:", "https:", "data:"];
+
+  
+  
+  const ADDITIONAL_PROTOCOLS = ["chrome:", "file:", "moz-extension:"];
+  for (const protocol of ADDITIONAL_PROTOCOLS) {
+    if (opts.sourceMapBaseURL?.startsWith(protocol)) {
+      supportedProtocols.push(protocol);
+    }
+  }
+
+  if (supportedProtocols.every(protocol => !url.startsWith(protocol))) {
     return Promise.reject(`unsupported protocol for sourcemap request ${url}`);
   }
 
