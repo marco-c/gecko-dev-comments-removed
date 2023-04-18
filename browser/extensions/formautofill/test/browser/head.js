@@ -478,6 +478,10 @@ function getNotification(index = 0) {
   return notifications[index];
 }
 
+function promiseNotificationShown() {
+  return BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+}
+
 
 
 
