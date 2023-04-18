@@ -134,9 +134,7 @@ class SANDBOX_EXPORT PolicyCompiler {
 
   
   
-  
-  
-  CodeGen::Node Unexpected64bitArgument(int argno);
+  CodeGen::Node Unexpected64bitArgument();
 
   const Policy* policy_;
   TrapRegistry* registry_;

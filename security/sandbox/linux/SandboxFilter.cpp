@@ -746,8 +746,6 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         
         
         
-        
-        
         Arg<clockid_t> clk_id(0);
         clockid_t this_process =
             MAKE_PROCESS_CPUCLOCK(getpid(), CPUCLOCK_SCHED);

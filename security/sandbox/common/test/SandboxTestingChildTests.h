@@ -83,50 +83,7 @@ static void RunTestsSched(SandboxTestingChild* child) {
     return sched_getparam((pid_t)(syscall(__NR_gettid) - 1), &param_pid_Ntid);
   });
 }
-
-
-static void RunGenericTests(SandboxTestingChild* child, bool aIsGMP = false) {
-  
-  if (sizeof(void*) == 8) {
-    static constexpr uint64_t kHighBits = 0xDEADBEEF00000000;
-
-    struct timespec ts0, ts1;
-    child->ErrnoTest("high_bits_gettime"_ns, true, [&] {
-      return syscall(__NR_clock_gettime, kHighBits | CLOCK_MONOTONIC, &ts0);
-    });
-    
-    
-    int rv = clock_gettime(CLOCK_MONOTONIC, &ts1);
-    MOZ_RELEASE_ASSERT(rv == 0);
-    MOZ_RELEASE_ASSERT(ts0.tv_sec <= ts1.tv_sec + 1);
-    MOZ_RELEASE_ASSERT(ts1.tv_sec <= ts0.tv_sec + 60);
-
-    
-    
-    if (!aIsGMP) {
-      int flags;
-      child->ErrnoTest("high_bits_fcntl_getfl"_ns, true, [&] {
-        flags = syscall(__NR_fcntl, 0, kHighBits | F_GETFL);
-        return flags;
-      });
-      MOZ_RELEASE_ASSERT(flags == fcntl(0, F_GETFL));
-
-      int fds[2];
-      rv = pipe(fds);
-      MOZ_RELEASE_ASSERT(rv >= 0);
-      child->ErrnoTest("high_bits_fcntl_setfl"_ns, true, [&] {
-        return syscall(__NR_fcntl, fds[0], kHighBits | F_SETFL,
-                       kHighBits | O_NONBLOCK);
-      });
-      flags = fcntl(fds[0], F_GETFL);
-      MOZ_RELEASE_ASSERT(flags >= 0);
-      MOZ_RELEASE_ASSERT(flags & O_NONBLOCK);
-    }
-  }
-}
-#else  
-static void RunGenericTests(SandboxTestingChild*) {}
-#endif
+#endif  
 
 #ifdef XP_WIN
 
@@ -323,8 +280,6 @@ void RunWinTestWin32k(SandboxTestingChild* child,
 void RunTestsContent(SandboxTestingChild* child) {
   MOZ_ASSERT(child, "No SandboxTestingChild*?");
 
-  RunGenericTests(child);
-
 #ifdef XP_UNIX
   struct stat st;
   static const char kAllowedPath[] = "/usr/lib";
@@ -502,8 +457,6 @@ void RunTestsContent(SandboxTestingChild* child) {
 void RunTestsSocket(SandboxTestingChild* child) {
   MOZ_ASSERT(child, "No SandboxTestingChild*?");
 
-  RunGenericTests(child);
-
 #ifdef XP_UNIX
   child->ErrnoTest("getaddrinfo"_ns, true, [&] {
     struct addrinfo* res;
@@ -566,8 +519,6 @@ void RunTestsSocket(SandboxTestingChild* child) {
 void RunTestsRDD(SandboxTestingChild* child) {
   MOZ_ASSERT(child, "No SandboxTestingChild*?");
 
-  RunGenericTests(child);
-
 #ifdef XP_UNIX
 #  ifdef XP_LINUX
   child->ErrnoValueTest("ioctl_tiocsti"_ns, ENOSYS, [&] {
@@ -629,9 +580,6 @@ void RunTestsRDD(SandboxTestingChild* child) {
 
 void RunTestsGMPlugin(SandboxTestingChild* child) {
   MOZ_ASSERT(child, "No SandboxTestingChild*?");
-
-  RunGenericTests(child,  true);
-
 #ifdef XP_UNIX
 #  ifdef XP_LINUX
   struct utsname utsname_res = {};
@@ -685,8 +633,6 @@ void RunTestsGMPlugin(SandboxTestingChild* child) {
 void RunTestsGenericUtility(SandboxTestingChild* child) {
   MOZ_ASSERT(child, "No SandboxTestingChild*?");
 
-  RunGenericTests(child);
-
 #ifdef XP_UNIX
 #  ifdef XP_LINUX
   child->ErrnoValueTest("ioctl_tiocsti"_ns, ENOSYS, [&] {
@@ -721,8 +667,6 @@ void RunTestsGenericUtility(SandboxTestingChild* child) {
 
 void RunTestsUtilityAudioDecoder(SandboxTestingChild* child) {
   MOZ_ASSERT(child, "No SandboxTestingChild*?");
-
-  RunGenericTests(child);
 
 #ifdef XP_UNIX
 #  ifdef XP_LINUX
