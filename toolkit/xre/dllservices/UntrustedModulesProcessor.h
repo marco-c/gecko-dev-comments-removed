@@ -37,15 +37,10 @@ using GetModulesTrustIpcPromise =
 
 class UntrustedModulesProcessor final : public nsIObserver {
  public:
-  static RefPtr<UntrustedModulesProcessor> Create(
-      bool aIsReadyForBackgroundProcessing);
+  static RefPtr<UntrustedModulesProcessor> Create();
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
-
-  
-  
-  bool IsReadyForBackgroundProcessing() const;
 
   
   void Disable();
@@ -70,7 +65,7 @@ class UntrustedModulesProcessor final : public nsIObserver {
 
  private:
   ~UntrustedModulesProcessor() = default;
-  explicit UntrustedModulesProcessor(bool aIsReadyForBackgroundProcessing);
+  UntrustedModulesProcessor();
 
   static bool IsSupportedProcessType();
 
@@ -146,10 +141,8 @@ class UntrustedModulesProcessor final : public nsIObserver {
   
   UntrustedModulesData mProcessedModuleLoads;
 
-  enum class Status { StartingUp, Allowed, ShuttingDown };
-
   
-  Atomic<Status> mStatus;
+  Atomic<bool> mAllowProcessing;
 
   
   
