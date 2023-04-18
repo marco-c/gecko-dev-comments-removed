@@ -612,15 +612,11 @@ static StaticRefPtr<nsExternalHelperAppService> sExtHelperAppSvcSingleton;
 already_AddRefed<nsExternalHelperAppService>
 nsExternalHelperAppService::GetSingleton() {
   if (!sExtHelperAppSvcSingleton) {
-#if defined(XP_MACOSX) || defined(XP_WIN)
     if (XRE_IsParentProcess()) {
       sExtHelperAppSvcSingleton = new nsOSHelperAppService();
     } else {
       sExtHelperAppSvcSingleton = new nsOSHelperAppServiceChild();
     }
-#else
-    sExtHelperAppSvcSingleton = new nsOSHelperAppService();
-#endif  
     ClearOnShutdown(&sExtHelperAppSvcSingleton);
   }
 
