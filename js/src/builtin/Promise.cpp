@@ -589,8 +589,8 @@ static bool MaybeGetAndClearExceptionAndStack(JSContext* cx,
   return GetAndClearExceptionAndStack(cx, rval, stack);
 }
 
-[[nodiscard]] static bool RunRejectFunction(
-    JSContext* cx, HandleObject onRejectedFunc, HandleValue result,
+[[nodiscard]] static bool CallPromiseRejectFunction(
+    JSContext* cx, HandleObject rejectFun, HandleValue reason,
     HandleObject promiseObj, HandleSavedFrame unwrappedRejectionStack,
     UnhandledRejectionBehavior behavior);
 
@@ -616,8 +616,8 @@ static bool AbruptRejectPromise(JSContext* cx, CallArgs& args,
     return false;
   }
 
-  if (!RunRejectFunction(cx, reject, reason, promiseObj, stack,
-                         UnhandledRejectionBehavior::Report)) {
+  if (!CallPromiseRejectFunction(cx, reject, reason, promiseObj, stack,
+                                 UnhandledRejectionBehavior::Report)) {
     return false;
   }
 
@@ -2016,10 +2016,10 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
   });
 }
 
-[[nodiscard]] static bool RunFulfillFunction(JSContext* cx,
-                                             HandleObject onFulfilledFunc,
-                                             HandleValue result,
-                                             HandleObject promiseObj);
+[[nodiscard]] static bool CallPromiseResolveFunction(JSContext* cx,
+                                                     HandleObject resolveFun,
+                                                     HandleValue value,
+                                                     HandleObject promiseObj);
 
 
 
@@ -2081,7 +2081,7 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
     callee =
         reaction->getFixedSlot(ReactionRecordSlot_Resolve).toObjectOrNull();
 
-    return RunFulfillFunction(cx, callee, handlerResult, promiseObj);
+    return CallPromiseResolveFunction(cx, callee, handlerResult, promiseObj);
   }
 
   
@@ -2092,9 +2092,9 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
   
   callee = reaction->getFixedSlot(ReactionRecordSlot_Reject).toObjectOrNull();
 
-  return RunRejectFunction(cx, callee, handlerResult, promiseObj,
-                           unwrappedRejectionStack,
-                           reaction->unhandledRejectionBehavior());
+  return CallPromiseRejectFunction(cx, callee, handlerResult, promiseObj,
+                                   unwrappedRejectionStack,
+                                   reaction->unhandledRejectionBehavior());
 }
 
 
@@ -2254,14 +2254,14 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
     callee =
         reaction->getFixedSlot(ReactionRecordSlot_Resolve).toObjectOrNull();
 
-    return RunFulfillFunction(cx, callee, handlerResult, promiseObj);
+    return CallPromiseResolveFunction(cx, callee, handlerResult, promiseObj);
   }
 
   callee = reaction->getFixedSlot(ReactionRecordSlot_Reject).toObjectOrNull();
 
-  return RunRejectFunction(cx, callee, handlerResult, promiseObj,
-                           unwrappedRejectionStack,
-                           reaction->unhandledRejectionBehavior());
+  return CallPromiseRejectFunction(cx, callee, handlerResult, promiseObj,
+                                   unwrappedRejectionStack,
+                                   reaction->unhandledRejectionBehavior());
 }
 
 
@@ -3298,27 +3298,33 @@ static bool CallDefaultPromiseRejectFunction(
 
 
 
-[[nodiscard]] static bool RunFulfillFunction(JSContext* cx,
-                                             HandleObject onFulfilledFunc,
-                                             HandleValue handlerResult,
-                                             HandleObject promiseObj) {
-  cx->check(onFulfilledFunc);
-  cx->check(handlerResult);
+
+
+
+
+
+[[nodiscard]] static bool CallPromiseResolveFunction(JSContext* cx,
+                                                     HandleObject resolveFun,
+                                                     HandleValue value,
+                                                     HandleObject promiseObj) {
+  cx->check(resolveFun);
+  cx->check(value);
   cx->check(promiseObj);
 
   
   
+  
 
-  if (onFulfilledFunc) {
+  if (resolveFun) {
     
     
     
     
     
     
-    RootedValue calleeOrRval(cx, ObjectValue(*onFulfilledFunc));
-    return Call(cx, calleeOrRval, UndefinedHandleValue, handlerResult,
-                &calleeOrRval);
+    
+    RootedValue calleeOrRval(cx, ObjectValue(*resolveFun));
+    return Call(cx, calleeOrRval, UndefinedHandleValue, value, &calleeOrRval);
   }
 
   
@@ -3332,6 +3338,7 @@ static bool CallDefaultPromiseRejectFunction(
   if (!promiseObj) {
     
     
+    
 
     
     return true;
@@ -3343,10 +3350,14 @@ static bool CallDefaultPromiseRejectFunction(
   
   
   
+  
   Handle<PromiseObject*> promise = promiseObj.as<PromiseObject>();
   if (IsPromiseWithDefaultResolvingFunction(promise)) {
-    return CallDefaultPromiseResolveFunction(cx, promise, handlerResult);
+    return CallDefaultPromiseResolveFunction(cx, promise, value);
   }
+
+  
+  
 
   return true;
 }
@@ -3359,27 +3370,34 @@ static bool CallDefaultPromiseRejectFunction(
 
 
 
-[[nodiscard]] static bool RunRejectFunction(
-    JSContext* cx, HandleObject onRejectedFunc, HandleValue handlerResult,
+
+
+
+
+
+[[nodiscard]] static bool CallPromiseRejectFunction(
+    JSContext* cx, HandleObject rejectFun, HandleValue reason,
     HandleObject promiseObj, HandleSavedFrame unwrappedRejectionStack,
     UnhandledRejectionBehavior behavior) {
-  cx->check(onRejectedFunc);
-  cx->check(handlerResult);
+  cx->check(rejectFun);
+  cx->check(reason);
   cx->check(promiseObj);
 
   
   
+  
 
-  if (onRejectedFunc) {
+  if (rejectFun) {
     
     
     
     
-    RootedValue calleeOrRval(cx, ObjectValue(*onRejectedFunc));
-    return Call(cx, calleeOrRval, UndefinedHandleValue, handlerResult,
-                &calleeOrRval);
+    
+    RootedValue calleeOrRval(cx, ObjectValue(*rejectFun));
+    return Call(cx, calleeOrRval, UndefinedHandleValue, reason, &calleeOrRval);
   }
 
+  
   
   
   
@@ -3406,7 +3424,8 @@ static bool CallDefaultPromiseRejectFunction(
     
     
     
-    return RejectPromiseInternal(cx, temporaryPromise, handlerResult,
+    
+    return RejectPromiseInternal(cx, temporaryPromise, reason,
                                  unwrappedRejectionStack);
   }
 
@@ -3414,11 +3433,15 @@ static bool CallDefaultPromiseRejectFunction(
   
   
   
+  
   Handle<PromiseObject*> promise = promiseObj.as<PromiseObject>();
   if (IsPromiseWithDefaultResolvingFunction(promise)) {
-    return CallDefaultPromiseRejectFunction(cx, promise, handlerResult,
+    return CallDefaultPromiseRejectFunction(cx, promise, reason,
                                             unwrappedRejectionStack);
   }
+
+  
+  
 
   return true;
 }
@@ -4008,8 +4031,9 @@ static bool PromiseCombinatorElementFunctionAlreadyCalled(
     
     
     
-    return RunFulfillFunction(cx, resultCapability.resolve(), values.value(),
-                              resultCapability.promise());
+    return CallPromiseResolveFunction(cx, resultCapability.resolve(),
+                                      values.value(),
+                                      resultCapability.promise());
   }
 
   
@@ -4066,7 +4090,8 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
     
     RootedObject resolveAllFun(cx, data->resolveOrRejectObj());
     RootedObject promiseObj(cx, data->promiseObj());
-    if (!RunFulfillFunction(cx, resolveAllFun, values.value(), promiseObj)) {
+    if (!CallPromiseResolveFunction(cx, resolveAllFun, values.value(),
+                                    promiseObj)) {
       return false;
     }
   }
@@ -4237,8 +4262,9 @@ static bool Promise_static_allSettled(JSContext* cx, unsigned argc, Value* vp) {
     
     
     
-    return RunFulfillFunction(cx, resultCapability.resolve(), values.value(),
-                              resultCapability.promise());
+    return CallPromiseResolveFunction(cx, resultCapability.resolve(),
+                                      values.value(),
+                                      resultCapability.promise());
   }
 
   return true;
@@ -4347,7 +4373,8 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
     
     RootedObject resolveAllFun(cx, data->resolveOrRejectObj());
     RootedObject promiseObj(cx, data->promiseObj());
-    if (!RunFulfillFunction(cx, resolveAllFun, values.value(), promiseObj)) {
+    if (!CallPromiseResolveFunction(cx, resolveAllFun, values.value(),
+                                    promiseObj)) {
       return false;
     }
   }
@@ -4520,8 +4547,8 @@ static bool PromiseAnyRejectElementFunction(JSContext* cx, unsigned argc,
       return false;
     }
 
-    if (!RunRejectFunction(cx, rejectFun, reason, promiseObj, stack,
-                           UnhandledRejectionBehavior::Report)) {
+    if (!CallPromiseRejectFunction(cx, rejectFun, reason, promiseObj, stack,
+                                   UnhandledRejectionBehavior::Report)) {
       return false;
     }
   }
@@ -4693,14 +4720,16 @@ static void ThrowAggregateError(JSContext* cx,
   if (mode == ResolveMode) {
     
     
-    if (!RunFulfillFunction(cx, capability.resolve(), argVal, promise)) {
+    if (!CallPromiseResolveFunction(cx, capability.resolve(), argVal,
+                                    promise)) {
       return nullptr;
     }
   } else {
     
     
-    if (!RunRejectFunction(cx, capability.reject(), argVal, promise, nullptr,
-                           UnhandledRejectionBehavior::Report)) {
+    if (!CallPromiseRejectFunction(cx, capability.reject(), argVal, promise,
+                                   nullptr,
+                                   UnhandledRejectionBehavior::Report)) {
       return nullptr;
     }
   }
