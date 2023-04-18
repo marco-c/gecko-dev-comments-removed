@@ -55,32 +55,17 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
   
   
   
-  const nsSize pageSize = ComputePageSize();
-  
-  
-  
-  
-  
-  const float pageSizeScale = ComputePageSizeScale(pageSize);
-  
-  
-  
-  const float extraContentScale = aPresContext->GetPageScale();
-  
-  
-  
-  nsSize availableSpace = pageSize;
+  nsSize maxSize = ComputePageSize();
 
+  float scale = aPresContext->GetPageScale();
   
   
   
   
   
-  availableSpace.width =
-      NSToCoordCeil(availableSpace.width / extraContentScale);
-  if (availableSpace.height != NS_UNCONSTRAINEDSIZE) {
-    availableSpace.height =
-        NSToCoordCeil(availableSpace.height / extraContentScale);
+  maxSize.width = NSToCoordCeil(maxSize.width / scale);
+  if (maxSize.height != NS_UNCONSTRAINEDSIZE) {
+    maxSize.height = NSToCoordCeil(maxSize.height / scale);
   }
 
   
@@ -89,26 +74,17 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
   
   
   
-  if (availableSpace.width < onePixel || availableSpace.height < onePixel) {
+  if (maxSize.width < onePixel || maxSize.height < onePixel) {
     NS_WARNING("Reflow aborted; no space for content");
     return {};
   }
 
-  ReflowInput kidReflowInput(
-      aPresContext, aPageReflowInput, frame,
-      LogicalSize(frame->GetWritingMode(), availableSpace));
+  ReflowInput kidReflowInput(aPresContext, aPageReflowInput, frame,
+                             LogicalSize(frame->GetWritingMode(), maxSize));
   kidReflowInput.mFlags.mIsTopOfPage = true;
   kidReflowInput.mFlags.mTableIsSplittable = true;
 
-  nsMargin defaultMargins = aPresContext->GetDefaultPageMargin();
-  
-  
-  
-  for (const auto side : mozilla::AllPhysicalSides()) {
-    defaultMargins.Side(side) =
-        NSToCoordRound((float)defaultMargins.Side(side) / pageSizeScale);
-  }
-  mPageContentMargin = defaultMargins;
+  mPageContentMargin = aPresContext->GetDefaultPageMargin();
 
   
   
@@ -119,22 +95,14 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
     const auto& margin = kidReflowInput.mStyleMargin->mMargin;
     for (const auto side : mozilla::AllPhysicalSides()) {
       if (!margin.Get(side).IsAuto()) {
-        
-        
-        const nscoord computed =
-            kidReflowInput.ComputedPhysicalMargin().Side(side);
+        nscoord computed = kidReflowInput.ComputedPhysicalMargin().Side(side);
         
         
         if (computed == 0) {
           mPageContentMargin.Side(side) = 0;
         } else {
-          
-          
-          
-          const int32_t unwriteableTwips =
-              mPD->mPrintSettings->GetUnwriteableMarginInTwips().Side(side);
-          const nscoord unwriteable = nsPresContext::CSSTwipsToAppUnits(
-              (float)unwriteableTwips / pageSizeScale);
+          nscoord unwriteable = nsPresContext::CSSTwipsToAppUnits(
+              mPD->mPrintSettings->GetUnwriteableMarginInTwips().Side(side));
           mPageContentMargin.Side(side) = std::max(
               kidReflowInput.ComputedPhysicalMargin().Side(side), unwriteable);
         }
@@ -142,43 +110,36 @@ nsReflowStatus nsPageFrame::ReflowPageContent(
     }
   }
 
-  
-  
-  
-  
-  nscoord computedWidth =
-      availableSpace.width - mPageContentMargin.LeftRight() / extraContentScale;
-  nscoord computedHeight;
-  if (availableSpace.height == NS_UNCONSTRAINEDSIZE) {
-    computedHeight = NS_UNCONSTRAINEDSIZE;
+  nscoord maxWidth = maxSize.width - mPageContentMargin.LeftRight() / scale;
+  nscoord maxHeight;
+  if (maxSize.height == NS_UNCONSTRAINEDSIZE) {
+    maxHeight = NS_UNCONSTRAINEDSIZE;
   } else {
-    computedHeight = availableSpace.height -
-                     mPageContentMargin.TopBottom() / extraContentScale;
+    maxHeight = maxSize.height - mPageContentMargin.TopBottom() / scale;
   }
 
   
   
-  if (computedWidth < onePixel || computedHeight < onePixel) {
-    mPageContentMargin = defaultMargins;
-    computedWidth = availableSpace.width -
-                    mPageContentMargin.LeftRight() / extraContentScale;
-    if (computedHeight != NS_UNCONSTRAINEDSIZE) {
-      computedHeight = availableSpace.height -
-                       mPageContentMargin.TopBottom() / extraContentScale;
-    }
-    
-    if (computedWidth < onePixel || computedHeight < onePixel) {
-      NS_WARNING("Reflow aborted; no space for content");
-      return {};
+  if (maxWidth < onePixel || maxHeight < onePixel) {
+    mPageContentMargin = aPresContext->GetDefaultPageMargin();
+    maxWidth = maxSize.width - mPageContentMargin.LeftRight() / scale;
+    if (maxHeight != NS_UNCONSTRAINEDSIZE) {
+      maxHeight = maxSize.height - mPageContentMargin.TopBottom() / scale;
     }
   }
 
-  kidReflowInput.SetComputedWidth(computedWidth);
-  kidReflowInput.SetComputedHeight(computedHeight);
+  
+  if (maxWidth < onePixel || maxHeight < onePixel) {
+    NS_WARNING("Reflow aborted; no space for content");
+    return {};
+  }
+
+  kidReflowInput.SetComputedWidth(maxWidth);
+  kidReflowInput.SetComputedHeight(maxHeight);
 
   
-  const nscoord xc = mPageContentMargin.left;
-  const nscoord yc = mPageContentMargin.top;
+  nscoord xc = mPageContentMargin.left;
+  nscoord yc = mPageContentMargin.top;
 
   
   ReflowOutput kidOutput(kidReflowInput);
@@ -538,11 +499,31 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
 
   
   
-  const nsSize contentPageSize = pageFrame->ComputePageSize();
-  float scale = pageFrame->ComputePageSizeScale(contentPageSize);
+  float scale = 1.0f;
   nsPoint gridOrigin;
   uint32_t rowIdx = 0;
   uint32_t colIdx = 0;
+
+  
+  
+  
+  const nsSize actualPaperSize = pageFrame->PresContext()->GetPageSize();
+  const nsSize contentPageSize = pageFrame->ComputePageSize();
+  {
+    nscoord contentPageHeight = contentPageSize.height;
+    
+    if (contentPageSize.width > actualPaperSize.width) {
+      scale *= float(actualPaperSize.width) / float(contentPageSize.width);
+      contentPageHeight = NSToCoordRound(contentPageHeight * scale);
+    }
+    
+    if (contentPageHeight > actualPaperSize.height) {
+      scale *= float(actualPaperSize.height) / float(contentPageHeight);
+    }
+  }
+  MOZ_ASSERT(
+      scale <= 1.0f,
+      "Page-size mismatches should only have caused us to scale down, not up.");
 
   if (nsSharedPageData* pd = pageFrame->GetSharedPageData()) {
     const auto* ppsInfo = pd->PagesPerSheetInfo();
@@ -616,37 +597,6 @@ nsSize nsPageFrame::ComputePageSize() const {
     MOZ_ASSERT(pageSize.IsAuto(), "Impossible page-size value?");
   }
   return size;
-}
-
-float nsPageFrame::ComputePageSizeScale(const nsSize aContentPageSize) const {
-  MOZ_ASSERT(aContentPageSize == ComputePageSize(),
-             "Incorrect content page size");
-
-  
-  
-  if (PageContentFrame()->StylePage()->mSize.IsAuto()) {
-    return 1.0f;
-  }
-
-  
-  
-  
-  float scale = 1.0f;
-  const nsSize actualPaperSize = PresContext()->GetPageSize();
-  nscoord contentPageHeight = aContentPageSize.height;
-  
-  if (aContentPageSize.width > actualPaperSize.width) {
-    scale *= float(actualPaperSize.width) / float(aContentPageSize.width);
-    contentPageHeight = NSToCoordRound(contentPageHeight * scale);
-  }
-  
-  if (contentPageHeight > actualPaperSize.height) {
-    scale *= float(actualPaperSize.height) / float(contentPageHeight);
-  }
-  MOZ_ASSERT(
-      scale <= 1.0f,
-      "Page-size mismatches should only have caused us to scale down, not up.");
-  return scale;
 }
 
 void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
