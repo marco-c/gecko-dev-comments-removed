@@ -1132,26 +1132,26 @@ EditActionResult HTMLEditor::HandleInsertText(
 
   if (aEditSubAction == EditSubAction::eInsertTextComingFromIME) {
     auto compositionStartPoint =
-        GetFirstIMESelectionStartPoint<EditorRawDOMPoint>();
+        GetFirstIMESelectionStartPoint<EditorDOMPoint>();
     if (!compositionStartPoint.IsSet()) {
-      compositionStartPoint = pointToInsert.To<EditorRawDOMPoint>();
+      compositionStartPoint = pointToInsert;
     }
 
     if (aInsertionString.IsEmpty()) {
       
       
       
-      nsresult rv = InsertTextWithTransaction(*document, aInsertionString,
-                                              compositionStartPoint);
-      if (NS_WARN_IF(Destroyed())) {
-        return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
+      Result<EditorDOMPoint, nsresult> insertTextResult =
+          InsertTextWithTransaction(*document, aInsertionString,
+                                    compositionStartPoint);
+      if (MOZ_UNLIKELY(insertTextResult.isErr())) {
+        NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
+        return EditActionResult(insertTextResult.unwrapErr());
       }
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "HTMLEditor::InsertTextWithTransaction() failed");
-      return EditActionHandled(rv);
+      return EditActionHandled();
     }
 
-    auto compositionEndPoint = GetLastIMESelectionEndPoint<EditorRawDOMPoint>();
+    auto compositionEndPoint = GetLastIMESelectionEndPoint<EditorDOMPoint>();
     if (!compositionEndPoint.IsSet()) {
       compositionEndPoint = compositionStartPoint;
     }
@@ -1163,8 +1163,8 @@ EditActionResult HTMLEditor::HandleInsertText(
       return EditActionHandled(rv);
     }
 
-    compositionStartPoint = GetFirstIMESelectionStartPoint<EditorRawDOMPoint>();
-    compositionEndPoint = GetLastIMESelectionEndPoint<EditorRawDOMPoint>();
+    compositionStartPoint = GetFirstIMESelectionStartPoint<EditorDOMPoint>();
+    compositionEndPoint = GetLastIMESelectionEndPoint<EditorDOMPoint>();
     if (NS_WARN_IF(!compositionStartPoint.IsSet()) ||
         NS_WARN_IF(!compositionEndPoint.IsSet())) {
       
@@ -1256,19 +1256,14 @@ EditActionResult HTMLEditor::HandleInsertText(
                                "to different point "
                                "by mutation observer");
         } else {
-          EditorRawDOMPoint pointAfterInsertedString;
-          nsresult rv = InsertTextWithTransaction(
-              *document, subStr, currentPoint.To<EditorRawDOMPoint>(),
-              &pointAfterInsertedString);
-          if (NS_WARN_IF(Destroyed())) {
-            return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);
-          }
-          if (NS_FAILED(rv)) {
+          Result<EditorDOMPoint, nsresult> insertTextResult =
+              InsertTextWithTransaction(*document, subStr, currentPoint);
+          if (MOZ_UNLIKELY(insertTextResult.isErr())) {
             NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
-            return EditActionHandled(rv);
+            return EditActionHandled(insertTextResult.unwrapErr());
           }
-          currentPoint = pointAfterInsertedString.To<EditorDOMPoint>();
-          pointToInsert = pointAfterInsertedString.To<EditorDOMPoint>();
+          currentPoint = insertTextResult.inspect();
+          pointToInsert = insertTextResult.unwrap();
         }
       }
     } else {
@@ -2097,13 +2092,13 @@ nsresult HTMLEditor::HandleInsertLinefeed(const EditorDOMPoint& aPointToBreak,
   {
     AutoTrackDOMPoint trackingInsertingPosition(RangeUpdaterRef(),
                                                 &pointToInsert);
-    nsresult rv = InsertTextWithTransaction(
-        *document, u"\n"_ns, pointToInsert.To<EditorRawDOMPoint>(),
-        &caretAfterInsert);
-    if (NS_FAILED(rv)) {
+    Result<EditorDOMPoint, nsresult> insertTextResult =
+        InsertTextWithTransaction(*document, u"\n"_ns, pointToInsert);
+    if (MOZ_UNLIKELY(insertTextResult.isErr())) {
       NS_WARNING("HTMLEditor::InsertTextWithTransaction() failed");
-      return rv;
+      return insertTextResult.unwrapErr();
     }
+    caretAfterInsert = insertTextResult.unwrap().To<EditorRawDOMPoint>();
   }
 
   
