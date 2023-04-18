@@ -185,12 +185,11 @@ void ReadableStreamDefaultController::Close(JSContext* aCx, ErrorResult& aRv) {
   ReadableStreamDefaultControllerClose(aCx, this, aRv);
 }
 
-static void ReadableStreamDefaultControllerCallPullIfNeeded(
+MOZ_CAN_RUN_SCRIPT static void ReadableStreamDefaultControllerCallPullIfNeeded(
     JSContext* aCx, ReadableStreamDefaultController* aController,
     ErrorResult& aRv);
 
 
-MOZ_CAN_RUN_SCRIPT
 void ReadableStreamDefaultControllerEnqueue(
     JSContext* aCx, ReadableStreamDefaultController* aController,
     JS::Handle<JS::Value> aChunk, ErrorResult& aRv) {
@@ -277,7 +276,6 @@ void ReadableStreamDefaultControllerEnqueue(
 }
 
 
-MOZ_CAN_RUN_SCRIPT
 void ReadableStreamDefaultController::Enqueue(JSContext* aCx,
                                               JS::Handle<JS::Value> aChunk,
                                               ErrorResult& aRv) {
@@ -357,6 +355,7 @@ void ReadableStreamDefaultControllerError(
 class PullIfNeededNativePromiseHandler final : public PromiseNativeHandler {
   ~PullIfNeededNativePromiseHandler() = default;
 
+  
   RefPtr<ReadableStreamDefaultController> mController;
 
  public:
@@ -367,7 +366,8 @@ class PullIfNeededNativePromiseHandler final : public PromiseNativeHandler {
       ReadableStreamDefaultController* aController)
       : PromiseNativeHandler(), mController(aController) {}
 
-  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+  MOZ_CAN_RUN_SCRIPT void ResolvedCallback(
+      JSContext* aCx, JS::Handle<JS::Value> aValue) override {
     
     
     mController->SetPulling(false);
@@ -378,7 +378,8 @@ class PullIfNeededNativePromiseHandler final : public PromiseNativeHandler {
 
       
       IgnoredErrorResult rv;
-      ReadableStreamDefaultControllerCallPullIfNeeded(aCx, mController, rv);
+      ReadableStreamDefaultControllerCallPullIfNeeded(
+          aCx, MOZ_KnownLive(mController), rv);
       
       (void)NS_WARN_IF(rv.Failed());
     }
@@ -402,7 +403,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(PullIfNeededNativePromiseHandler)
 NS_INTERFACE_MAP_END
 
 
-MOZ_CAN_RUN_SCRIPT
 static void ReadableStreamDefaultControllerCallPullIfNeeded(
     JSContext* aCx, ReadableStreamDefaultController* aController,
     ErrorResult& aRv) {
@@ -528,7 +528,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(StartPromiseNativeHandler)
 NS_INTERFACE_MAP_END
 
 
-MOZ_CAN_RUN_SCRIPT
 void SetUpReadableStreamDefaultController(
     JSContext* aCx, ReadableStream* aStream,
     ReadableStreamDefaultController* aController,
@@ -594,7 +593,6 @@ void SetUpReadableStreamDefaultController(
 }
 
 
-MOZ_CAN_RUN_SCRIPT
 void SetupReadableStreamDefaultControllerFromUnderlyingSource(
     JSContext* aCx, ReadableStream* aStream, JS::HandleObject aUnderlyingSource,
     UnderlyingSource& aUnderlyingSourceDict, double aHighWaterMark,
@@ -632,7 +630,6 @@ void SetupReadableStreamDefaultControllerFromUnderlyingSource(
 }
 
 
-MOZ_CAN_RUN_SCRIPT
 already_AddRefed<Promise> ReadableStreamDefaultController::CancelSteps(
     JSContext* aCx, JS::Handle<JS::Value> aReason, ErrorResult& aRv) {
   
@@ -654,7 +651,6 @@ already_AddRefed<Promise> ReadableStreamDefaultController::CancelSteps(
 }
 
 
-MOZ_CAN_RUN_SCRIPT
 void ReadableStreamDefaultController::PullSteps(JSContext* aCx,
                                                 ReadRequest* aReadRequest,
                                                 ErrorResult& aRv) {

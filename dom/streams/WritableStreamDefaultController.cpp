@@ -187,7 +187,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(WritableStartPromiseNativeHandler)
 NS_INTERFACE_MAP_END
 
 
-MOZ_CAN_RUN_SCRIPT
 void SetUpWritableStreamDefaultController(
     JSContext* aCx, WritableStream* aStream,
     WritableStreamDefaultController* aController,
@@ -272,7 +271,6 @@ void SetUpWritableStreamDefaultController(
 }
 
 
-MOZ_CAN_RUN_SCRIPT
 void SetUpWritableStreamDefaultControllerFromUnderlyingSink(
     JSContext* aCx, WritableStream* aStream, JS::HandleObject aUnderlyingSink,
     UnderlyingSink& aUnderlyingSinkDict, double aHighWaterMark,

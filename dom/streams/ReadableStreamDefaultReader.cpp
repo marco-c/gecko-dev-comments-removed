@@ -203,7 +203,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(Read_ReadRequest)
 NS_INTERFACE_MAP_END_INHERITING(ReadRequest)
 
 
-MOZ_CAN_RUN_SCRIPT
 void ReadableStreamDefaultReaderRead(JSContext* aCx,
                                      ReadableStreamGenericReader* aReader,
                                      ReadRequest* aRequest, ErrorResult& aRv) {
@@ -241,7 +240,6 @@ void ReadableStreamDefaultReaderRead(JSContext* aCx,
 
 
 
-MOZ_CAN_RUN_SCRIPT
 already_AddRefed<Promise> ReadableStreamDefaultReader::Read(JSContext* aCx,
                                                             ErrorResult& aRv) {
   
@@ -336,7 +334,6 @@ static already_AddRefed<Promise> ReadableStreamGenericReaderCancel(
   return ReadableStreamCancel(aCx, stream, aReason, aRv);
 }
 
-MOZ_CAN_RUN_SCRIPT
 already_AddRefed<Promise> ReadableStreamGenericReader::Cancel(
     JSContext* aCx, JS::Handle<JS::Value> aReason, ErrorResult& aRv) {
   

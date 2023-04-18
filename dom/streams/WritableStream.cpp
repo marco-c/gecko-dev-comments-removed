@@ -618,7 +618,6 @@ already_AddRefed<Promise> WritableStreamAbort(JSContext* aCx,
 }
 
 
-MOZ_CAN_RUN_SCRIPT
 already_AddRefed<Promise> WritableStream::Abort(JSContext* aCx,
                                                 JS::Handle<JS::Value> aReason,
                                                 ErrorResult& aRv) {
@@ -697,7 +696,6 @@ already_AddRefed<Promise> WritableStreamClose(JSContext* aCx,
 }
 
 
-MOZ_CAN_RUN_SCRIPT
 already_AddRefed<Promise> WritableStream::Close(JSContext* aCx,
                                                 ErrorResult& aRv) {
   

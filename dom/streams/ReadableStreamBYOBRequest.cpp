@@ -48,7 +48,6 @@ void ReadableStreamBYOBRequest::GetView(
 }
 
 
-MOZ_CAN_RUN_SCRIPT
 void ReadableStreamBYOBRequest::Respond(JSContext* aCx, uint64_t bytesWritten,
                                         ErrorResult& aRv) {
   
@@ -84,7 +83,6 @@ void ReadableStreamBYOBRequest::Respond(JSContext* aCx, uint64_t bytesWritten,
 }
 
 
-MOZ_CAN_RUN_SCRIPT
 void ReadableStreamBYOBRequest::RespondWithNewView(JSContext* aCx,
                                                    const ArrayBufferView& view,
                                                    ErrorResult& aRv) {
