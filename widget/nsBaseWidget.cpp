@@ -1921,6 +1921,9 @@ void nsIWidget::OnLongTapTimerCallback(nsITimer* aTimer, void* aClosure) {
 nsresult nsIWidget::ClearNativeTouchSequence(nsIObserver* aObserver) {
   AutoObserverNotifier notifier(aObserver, "cleartouch");
 
+  
+  
+  
   if (!mLongTapTimer) {
     return NS_OK;
   }
