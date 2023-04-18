@@ -144,6 +144,8 @@ struct Statistics {
   using PhaseKindTimes =
       EnumeratedArray<PhaseKind, PhaseKind::LIMIT, TimeDuration>;
 
+  using PhaseTimeStamps = EnumeratedArray<Phase, Phase::LIMIT, TimeStamp>;
+
   [[nodiscard]] static bool initialize();
 
   explicit Statistics(gc::GCRuntime* gc);
@@ -272,6 +274,7 @@ struct Statistics {
     size_t startFaults = 0;
     size_t endFaults = 0;
     PhaseTimes phaseTimes;
+    PhaseKindTimes totalParallelTimes;
     PhaseKindTimes maxParallelTimes;
 
     TimeDuration duration() const { return end - start; }
@@ -334,11 +337,11 @@ struct Statistics {
   SliceDataVector slices_;
 
   
-  EnumeratedArray<Phase, Phase::LIMIT, TimeStamp> phaseStartTimes;
+  PhaseTimeStamps phaseStartTimes;
 
 #ifdef DEBUG
   
-  EnumeratedArray<Phase, Phase::LIMIT, TimeStamp> phaseEndTimes;
+  PhaseTimeStamps phaseEndTimes;
 #endif
 
   TimeStamp creationTime_;
@@ -349,6 +352,9 @@ struct Statistics {
 
   
   PhaseTimes phaseTimes;
+
+  
+  PhaseKindTimes parallelTimes;
 
   
   EnumeratedArray<Count, COUNT_LIMIT,
@@ -419,6 +425,7 @@ struct Statistics {
 
   enum class ProfileKey {
     Total,
+    Background,
 #define DEFINE_TIME_KEY(name, text, phase) name,
     FOR_EACH_GC_PROFILE_TIME(DEFINE_TIME_KEY)
 #undef DEFINE_TIME_KEY
