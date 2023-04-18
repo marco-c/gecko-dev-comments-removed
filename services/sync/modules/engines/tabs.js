@@ -41,16 +41,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
 });
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "ExperimentAPI",
-  "resource://nimbus/ExperimentAPI.jsm"
-);
-
-XPCOMUtils.defineLazyModuleGetters(this, {
-  NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
-});
-
 function TabSetRecord(collection, id) {
   CryptoWrapper.call(this, collection, id);
 }
@@ -322,7 +312,7 @@ TabTracker.prototype = {
     this.modified = false;
   },
 
-  _topics: ["TabOpen", "TabClose", "TabSelect"],
+  _topics: ["pageshow", "TabOpen", "TabClose", "TabSelect"],
 
   _registerListenersForWindow(window) {
     this._log.trace("Registering tab listeners in window");
@@ -395,21 +385,10 @@ TabTracker.prototype = {
     this._log.trace("onTab event: " + event.type);
     this.modified = true;
 
-    const delayInMs = NimbusFeatures.syncAfterTabChange.getVariable(
-      "syncDelayAfterTabChange"
-    );
-
     
     
     
-    if (delayInMs > 0) {
-      this._log.debug(
-        "Detected a tab change: scheduling a sync in " + delayInMs + "ms"
-      );
-      this.engine.service.scheduler.scheduleNextSync(delayInMs, {
-        why: "tabschanged",
-      });
-    } else {
+    if (event.type != "pageshow" || Math.random() < 0.1) {
       this.score += SCORE_INCREMENT_SMALL;
     }
   },
