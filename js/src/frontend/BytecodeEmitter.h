@@ -553,9 +553,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   [[nodiscard]] bool emitBuiltinObject(BuiltinObjectKind kind);
 
   
-  [[nodiscard]] bool emitPushNotUndefinedOrNull();
-
-  
   
   [[nodiscard]] bool emitUint16Operand(JSOp op, uint32_t operand);
 

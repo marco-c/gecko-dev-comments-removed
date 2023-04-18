@@ -21,17 +21,12 @@ bool OptionalEmitter::emitJumpShortCircuit() {
              state_ == State::ShortCircuitForCall);
   MOZ_ASSERT(initialDepth_ + 1 == bce_->bytecodeSection().stackDepth());
   InternalIfEmitter ifEmitter(bce_);
-  if (!bce_->emitPushNotUndefinedOrNull()) {
+  if (!bce_->emit1(JSOp::IsNullOrUndefined)) {
     
-    return false;
-  }
-
-  if (!bce_->emit1(JSOp::Not)) {
-    
-    return false;
   }
 
   if (!ifEmitter.emitThen()) {
+    
     return false;
   }
 
@@ -60,17 +55,13 @@ bool OptionalEmitter::emitJumpShortCircuitForCall() {
   }
 
   InternalIfEmitter ifEmitter(bce_);
-  if (!bce_->emitPushNotUndefinedOrNull()) {
-    
-    return false;
-  }
-
-  if (!bce_->emit1(JSOp::Not)) {
+  if (!bce_->emit1(JSOp::IsNullOrUndefined)) {
     
     return false;
   }
 
   if (!ifEmitter.emitThen()) {
+    
     return false;
   }
 
@@ -112,15 +103,13 @@ bool OptionalEmitter::emitOptionalJumpTarget(JSOp op,
   
   if (!bce_->emitJump(JSOp::Goto, &jumpFinish_)) {
     
-    
-    
-    
-    
-    
     return false;
   }
 
   if (!bce_->emitJumpTargetAndPatch(jumpShortCircuit_)) {
+    
+    
+    
     
     return false;
   }

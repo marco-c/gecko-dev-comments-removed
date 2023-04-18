@@ -3057,54 +3057,6 @@ bool BytecodeEmitter::emitIteratorNext(
   return true;
 }
 
-bool BytecodeEmitter::emitPushNotUndefinedOrNull() {
-  
-  MOZ_ASSERT(bytecodeSection().stackDepth() > 0);
-
-  if (!emit1(JSOp::Dup)) {
-    
-    return false;
-  }
-  if (!emit1(JSOp::Undefined)) {
-    
-    return false;
-  }
-  if (!emit1(JSOp::StrictNe)) {
-    
-    return false;
-  }
-
-  JumpList undefinedOrNullJump;
-  if (!emitJump(JSOp::And, &undefinedOrNullJump)) {
-    
-    return false;
-  }
-
-  if (!emit1(JSOp::Pop)) {
-    
-    return false;
-  }
-  if (!emit1(JSOp::Dup)) {
-    
-    return false;
-  }
-  if (!emit1(JSOp::Null)) {
-    
-    return false;
-  }
-  if (!emit1(JSOp::StrictNe)) {
-    
-    return false;
-  }
-
-  if (!emitJumpTargetAndPatch(undefinedOrNullJump)) {
-    
-    return false;
-  }
-
-  return true;
-}
-
 bool BytecodeEmitter::emitIteratorCloseInScope(
     EmitterScope& currentScope,
     IteratorKind iterKind ,
@@ -3169,12 +3121,13 @@ bool BytecodeEmitter::emitIteratorCloseInScope(
   
   
   InternalIfEmitter ifReturnMethodIsDefined(this);
-  if (!emitPushNotUndefinedOrNull()) {
+  if (!emit1(JSOp::IsNullOrUndefined)) {
     
     return false;
   }
 
-  if (!ifReturnMethodIsDefined.emitThenElse()) {
+  if (!ifReturnMethodIsDefined.emitThenElse(
+          IfEmitter::ConditionKind::Negative)) {
     
     return false;
   }
@@ -5425,12 +5378,11 @@ bool BytecodeEmitter::emitAsyncIterator() {
   }
 
   InternalIfEmitter ifAsyncIterIsUndefined(this);
-  if (!emitPushNotUndefinedOrNull()) {
+  if (!emit1(JSOp::IsNullOrUndefined)) {
     
     return false;
   }
-  if (!ifAsyncIterIsUndefined.emitThenElse(
-          IfEmitter::ConditionKind::Negative)) {
+  if (!ifAsyncIterIsUndefined.emitThenElse()) {
     
     return false;
   }
@@ -6674,13 +6626,13 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
 
     
     InternalIfEmitter ifThrowMethodIsNotDefined(this);
-    if (!emitPushNotUndefinedOrNull()) {
-      
+    if (!emit1(JSOp::IsNullOrUndefined)) {
       
       return false;
     }
 
-    if (!ifThrowMethodIsNotDefined.emitThenElse()) {
+    if (!ifThrowMethodIsNotDefined.emitThenElse(
+            IfEmitter::ConditionKind::Negative)) {
       
       return false;
     }
@@ -6785,7 +6737,7 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     
     
     InternalIfEmitter ifReturnMethodIsDefined(this);
-    if (!emitPushNotUndefinedOrNull()) {
+    if (!emit1(JSOp::IsNullOrUndefined)) {
       
       return false;
     }
@@ -6793,7 +6745,8 @@ bool BytecodeEmitter::emitYieldStar(ParseNode* iter) {
     
     
     
-    if (!ifReturnMethodIsDefined.emitThenElse()) {
+    if (!ifReturnMethodIsDefined.emitThenElse(
+            IfEmitter::ConditionKind::Negative)) {
       
       return false;
     }
