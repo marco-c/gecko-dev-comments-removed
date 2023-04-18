@@ -212,6 +212,7 @@ mozilla::ipc::IPCResult GMPChild::RecvPreloadLibs(const nsCString& aLibs) {
       u"ole32.dll",        
       u"psapi.dll",        
       u"softokn3.dll",     
+      u"winmm.dll",        
   };
   constexpr static bool (*IsASCII)(const char16_t*) =
       IsAsciiNullTerminated<char16_t>;
