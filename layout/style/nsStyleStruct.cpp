@@ -2359,6 +2359,13 @@ nsChangeHint nsStyleDisplay::CalcDifference(
     return nsChangeHint_ReconstructFrame;
   }
 
+  
+  
+  
+  if (mContentVisibility != aNewData.mContentVisibility) {
+    return nsChangeHint_ReconstructFrame;
+  }
+
   auto oldAppearance = EffectiveAppearance();
   auto newAppearance = aNewData.EffectiveAppearance();
 
@@ -2443,12 +2450,6 @@ nsChangeHint nsStyleDisplay::CalcDifference(
       
       hint |= nsChangeHint_UpdateOverflow | nsChangeHint_RepaintFrame;
     }
-  }
-
-  
-  
-  if (mContentVisibility != aNewData.mContentVisibility) {
-    hint |= nsChangeHint_RepaintFrame;
   }
 
   if (mScrollbarGutter != aNewData.mScrollbarGutter) {
