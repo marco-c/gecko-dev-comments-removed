@@ -43,14 +43,6 @@ const RESIZE_MARGIN_PX = 16;
 
 
 
-
-
-
-let gCloseReasons = new WeakMap();
-
-
-
-
 let gCurrentPlayerCount = 0;
 
 
@@ -317,8 +309,15 @@ var PictureInPicture = {
     }
     this.removePiPBrowserFromWeakMap(this.weakWinToBrowser.get(win));
 
+    let args = { reason };
+    Services.telemetry.recordEvent(
+      "pictureinpicture",
+      "closed_method",
+      "method",
+      null,
+      args
+    );
     await this.closePipWindow(win);
-    gCloseReasons.set(win, reason);
   },
 
   
@@ -382,12 +381,6 @@ var PictureInPicture = {
 
 
   unload(window) {
-    let reason = gCloseReasons.get(window) || "other";
-    Services.telemetry.keyedScalarAdd(
-      "pictureinpicture.closed_method",
-      reason,
-      1
-    );
     gCurrentPlayerCount -= 1;
     
     this.savePosition(window);
