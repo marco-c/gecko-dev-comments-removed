@@ -2729,7 +2729,6 @@ var SessionStoreInternal = {
         
         
         
-        
         if (TabCrashHandler.willShowCrashedTab(browser)) {
           this.enterCrashedState(browser);
         } else {
