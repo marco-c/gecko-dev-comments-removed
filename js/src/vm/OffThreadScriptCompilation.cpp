@@ -94,7 +94,7 @@ JS_PUBLIC_API JS::OffThreadToken* JS::CompileToStencilOffThread(
                                         callbackData);
 }
 
-JS_PUBLIC_API already_AddRefed<JS::Stencil> JS::FinishOffThreadCompileToStencil(
+JS_PUBLIC_API already_AddRefed<JS::Stencil> JS::FinishCompileToStencilOffThread(
     JSContext* cx, JS::OffThreadToken* token,
     JS::InstantiationStorage* storage ) {
   MOZ_ASSERT(cx);
@@ -120,7 +120,7 @@ JS_PUBLIC_API void JS::CancelOffThreadScript(JSContext* cx,
                                       token);
 }
 
-JS_PUBLIC_API void JS::CancelOffThreadCompileToStencil(
+JS_PUBLIC_API void JS::CancelCompileToStencilOffThread(
     JSContext* cx, JS::OffThreadToken* token) {
   MOZ_ASSERT(cx);
   MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
