@@ -6103,23 +6103,16 @@ nsresult Document::EditingStateChanged() {
     
     
     
-    ErrorResult errorResult;
-    nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
-    Unused << ExecCommand(u"insertBrOnReturn"_ns, false, u"false"_ns,
-                          
-                          
-                          
-                          
-                          *principal, errorResult);
-
-    if (errorResult.Failed()) {
+    if (MOZ_UNLIKELY(NS_WARN_IF(!IsHTMLOrXHTML()))) {
       
       
       editSession->TearDownEditorOnWindow(window);
       mEditingState = EditingState::eOff;
-
-      return errorResult.StealNSResult();
+      return NS_ERROR_DOM_INVALID_STATE_ERR;
     }
+    
+    
+    htmlEditor->SetReturnInParagraphCreatesNewParagraph(true);
   }
 
   
