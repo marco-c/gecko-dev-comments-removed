@@ -1124,7 +1124,7 @@ struct CompilationStencil {
       CompilationGCOutput& gcOutput);
 
   
-  [[nodiscard]] bool instantiateSelfHostedForRuntime(
+  [[nodiscard]] bool instantiateSelfHostedAtoms(
       JSContext* cx, CompilationAtomCache& atomCache) const;
   [[nodiscard]] JSScript* instantiateSelfHostedTopLevelForRealm(
       JSContext* cx, CompilationInput& input);
