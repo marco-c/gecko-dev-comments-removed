@@ -35,6 +35,7 @@
 #include "nsLocalFile.h"
 #include "nsIXULAppInfo.h"
 #include "nsINIParser.h"
+#include "nsNativeAppSupportWin.h"
 
 #include <windows.h>
 #include <shellapi.h>
@@ -730,15 +731,16 @@ static nsresult WriteShortcutToLog(KNOWNFOLDERID aFolderId,
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsWindowsShellService::CreateShortcut(nsIFile* aBinary,
-                                      const nsTArray<nsString>& aArguments,
-                                      const nsAString& aDescription,
-                                      nsIFile* aIconFile,
-                                      const nsAString& aAppUserModelId,
-                                      nsIFile* aTarget) {
+static nsresult CreateShortcutImpl(
+    nsIFile* aBinary, const nsTArray<nsString>& aArguments,
+    const nsAString& aDescription, nsIFile* aIconFile, uint16_t aIconIndex,
+    const nsAString& aAppUserModelId, KNOWNFOLDERID aShortcutFolder,
+    const nsAString& aShortcutName, nsAString& aShortcutPath) {
   NS_ENSURE_ARG(aBinary);
-  NS_ENSURE_ARG(aTarget);
+  NS_ENSURE_ARG(aIconFile);
+
+  nsresult rv = WriteShortcutToLog(aShortcutFolder, aShortcutName);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   RefPtr<IShellLinkW> link;
   HRESULT hr = CoCreateInstance(CLSID_ShellLink, nullptr, CLSCTX_INPROC_SERVER,
@@ -747,6 +749,11 @@ nsWindowsShellService::CreateShortcut(nsIFile* aBinary,
 
   nsString path(aBinary->NativePath());
   link->SetPath(path.get());
+
+  wchar_t workingDir[MAX_PATH + 1];
+  wcscpy_s(workingDir, MAX_PATH + 1, aBinary->NativePath().get());
+  PathRemoveFileSpecW(workingDir);
+  link->SetWorkingDirectory(workingDir);
 
   if (!aDescription.IsEmpty()) {
     link->SetDescription(PromiseFlatString(aDescription).get());
@@ -762,7 +769,7 @@ nsWindowsShellService::CreateShortcut(nsIFile* aBinary,
 
   if (aIconFile) {
     nsString icon(aIconFile->NativePath());
-    link->SetIconLocation(icon.get(), 0);
+    link->SetIconLocation(icon.get(), aIconIndex);
   }
 
   if (!aAppUserModelId.IsEmpty()) {
@@ -788,11 +795,57 @@ nsWindowsShellService::CreateShortcut(nsIFile* aBinary,
   hr = link->QueryInterface(IID_IPersistFile, getter_AddRefs(persist));
   NS_ENSURE_HRESULT(hr, NS_ERROR_FAILURE);
 
-  nsString target(aTarget->NativePath());
+  nsCOMPtr<nsIProperties> directoryService =
+      do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIFile> shortcutFile;
+  if (aShortcutFolder == FOLDERID_StartMenu) {
+    rv = directoryService->Get(NS_WIN_PROGRAMS_DIR, NS_GET_IID(nsIFile),
+                               getter_AddRefs(shortcutFile));
+  } else if (aShortcutFolder == FOLDERID_Desktop) {
+    rv = directoryService->Get(NS_OS_DESKTOP_DIR, NS_GET_IID(nsIFile),
+                               getter_AddRefs(shortcutFile));
+  } else {
+    return NS_ERROR_FILE_NOT_FOUND;
+  }
+  if (NS_FAILED(rv)) {
+    return NS_ERROR_FILE_NOT_FOUND;
+  }
+  shortcutFile->Append(aShortcutName);
+
+  nsString target(shortcutFile->NativePath());
   hr = persist->Save(target.get(), TRUE);
   NS_ENSURE_HRESULT(hr, NS_ERROR_FAILURE);
 
+  aShortcutPath.Assign(target);
+
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsWindowsShellService::CreateShortcut(
+    nsIFile* aBinary, const nsTArray<nsString>& aArguments,
+    const nsAString& aDescription, nsIFile* aIconFile, uint16_t aIconIndex,
+    const nsAString& aAppUserModelId, const nsAString& aShortcutFolder,
+    const nsAString& aShortcutName, nsAString& aShortcutPath) {
+  
+  
+  
+  
+  
+  KNOWNFOLDERID folderId;
+  if (aShortcutFolder.Equals(L"StartMenu")) {
+    folderId = FOLDERID_StartMenu;
+  } else if (aShortcutFolder.Equals(L"Desktop")) {
+    folderId = FOLDERID_Desktop;
+  } else {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  return CreateShortcutImpl(aBinary, aArguments, aDescription, aIconFile,
+                            aIconIndex, aAppUserModelId, folderId,
+                            aShortcutName, aShortcutPath);
 }
 
 
@@ -1033,7 +1086,59 @@ static nsresult PinCurrentAppToTaskbarImpl(bool aCheckOnly,
     }
   }
   if (shortcutPath.IsEmpty()) {
-    return NS_ERROR_FILE_NOT_FOUND;
+    if (aCheckOnly) {
+      
+      
+      
+      return NS_OK;
+    }
+
+    nsAutoString desc;
+    nsTArray<nsString> arguments;
+
+    if (aPrivateBrowsing) {
+      nsAutoString arg;
+      
+      
+      
+      
+
+
+
+
+
+
+
+
+
+      desc.AssignLiteral(MOZ_APP_DISPLAYNAME " Private Browsing");
+      arg.AssignLiteral("-private-window");
+      arguments.AppendElement(arg);
+    } else {
+      desc.AssignLiteral(MOZ_APP_DISPLAYNAME);
+    }
+
+    nsAutoString linkName(desc);
+    linkName.AppendLiteral(".lnk");
+
+    nsAutoString exeStr;
+    nsCOMPtr<nsIFile> exeFile;
+    exeStr.Assign(exePath);
+    nsresult rv = NS_NewLocalFile(exeStr, true, getter_AddRefs(exeFile));
+    if (!NS_SUCCEEDED(rv)) {
+      return NS_ERROR_FILE_NOT_FOUND;
+    }
+
+    uint16_t iconIndex = aPrivateBrowsing ? IDI_PBMODE : IDI_APPICON;
+    
+    
+    iconIndex--;
+
+    rv = CreateShortcutImpl(exeFile, arguments, desc, exeFile, iconIndex, aumid,
+                            FOLDERID_StartMenu, linkName, shortcutPath);
+    if (!NS_SUCCEEDED(rv)) {
+      return NS_ERROR_FILE_NOT_FOUND;
+    }
   }
 
   mozilla::UniquePtr<__unaligned ITEMIDLIST, ILFreeDeleter> path(
