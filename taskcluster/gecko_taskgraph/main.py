@@ -67,7 +67,7 @@ def get_filtered_taskgraph(taskgraph, tasksregex):
     and returns a new TaskGraph object
     """
     from taskgraph.graph import Graph
-    from gecko_taskgraph.taskgraph import TaskGraph
+    from taskgraph.taskgraph import TaskGraph
 
     
     if not tasksregex:
