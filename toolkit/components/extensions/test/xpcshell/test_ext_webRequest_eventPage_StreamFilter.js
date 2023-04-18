@@ -13,20 +13,25 @@ AddonTestUtils.createAppInfo(
 
 const server = createHttpServer({ hosts: ["example.com"] });
 
+let clearLastPendingRequest;
+
 server.registerPathHandler("/pending_request", (request, response) => {
   response.processAsync();
   response.setHeader("Content-Length", "10000", false);
   response.write("somedata\n");
   let intervalID = setInterval(() => response.write("continue\n"), 50);
 
-  registerCleanupFunction(() => {
+  const clearPendingRequest = () => {
     try {
       clearInterval(intervalID);
       response.finish();
     } catch (e) {
       
     }
-  });
+  };
+
+  clearLastPendingRequest = clearPendingRequest;
+  registerCleanupFunction(clearPendingRequest);
 });
 
 server.registerPathHandler("/completed_request", (request, response) => {
@@ -90,10 +95,23 @@ async function test_idletimeout_on_streamfilter({
   notEqual(contextId, undefined, "Got a contextId for the background context");
 
   info("Trigger a webRequest");
-  ExtensionTestUtils.fetch(
+  const testURL = `http://example.com/${requestUrlPath}`;
+  const promiseRequestCompleted = ExtensionTestUtils.fetch(
     "http://example.com/",
-    `http://example.com/${requestUrlPath}`
-  );
+    testURL
+  ).catch(err => {
+    
+    
+    if (/The operation was aborted/.test(err.message)) {
+      info(`Test webRequest fetching "${testURL}" aborted`);
+    } else {
+      ok(
+        false,
+        `Unexpected rejection triggered by the test webRequest fetching "${testURL}": ${err.message}`
+      );
+      throw err;
+    }
+  });
 
   info("Wait for the stream filter to be started");
   await extension.awaitMessage("streamfilter:started");
@@ -140,6 +158,8 @@ async function test_idletimeout_on_streamfilter({
   }
 
   await extension.unload();
+  clearLastPendingRequest();
+  await promiseRequestCompleted;
 }
 
 add_task(
