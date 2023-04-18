@@ -448,17 +448,9 @@ var PlacesOrganizer = {
         .promiseDocumentFlushed(() => {})
         .then(() => {
           if (view.selectedNode && ContentArea.currentView.view) {
-            
-            
-            
-            
-            
-            let row =
-              view.selectedNode.bookmarkIndex !== -1
-                ? view.selectedNode.bookmarkIndex
-                : ContentArea.currentView.view.treeIndexForNode(
-                    view.selectedNode
-                  );
+            let row = ContentArea.currentView.view.treeIndexForNode(
+              view.selectedNode
+            );
             ContentTree.view.ensureRowIsVisible(row);
           }
         });
