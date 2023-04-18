@@ -1019,7 +1019,11 @@ pref("dom.forms.datetime.timepicker", false);
 pref("dom.forms.selectSearch", false);
 
 
-#ifdef MOZ_WIDGET_GTK
+
+
+
+
+#if defined(MOZ_WIDGET_GTK) || defined(XP_MACOSX)
   pref("dom.forms.select.customstyling", false);
 #else
   pref("dom.forms.select.customstyling", true);
