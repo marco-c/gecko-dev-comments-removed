@@ -21,7 +21,7 @@ import { setBreakableLines } from ".";
 import { prefs } from "../../utils/prefs";
 import { isMinified } from "../../utils/source";
 import { createLocation } from "../../utils/location";
-import { mapLocation } from "../../utils/source-maps";
+import { getRelatedMapLocation } from "../../utils/source-maps";
 
 import {
   getSource,
@@ -37,12 +37,14 @@ import {
   tabExists,
 } from "../../selectors";
 
+
 export const setSelectedLocation = (cx, source, location) => ({
   type: "SET_SELECTED_LOCATION",
   cx,
   source,
   location,
 });
+
 
 export const setPendingSelectedLocation = (cx, url, options) => ({
   type: "SET_PENDING_SELECTED_LOCATION",
@@ -52,13 +54,11 @@ export const setPendingSelectedLocation = (cx, url, options) => ({
   column: options?.column,
 });
 
+
 export const clearSelectedLocation = cx => ({
   type: "CLEAR_SELECTED_LOCATION",
   cx,
 });
-
-
-
 
 
 
@@ -85,12 +85,33 @@ export function selectSourceURL(cx, url, options) {
 
 
 
-export function selectSource(cx, sourceId, options = {}) {
+
+
+
+
+
+
+
+
+export function selectSource(cx, sourceId, location = {}) {
   return async ({ dispatch }) => {
-    const location = createLocation({ ...options, sourceId });
+    location = createLocation({ ...location, sourceId });
     return dispatch(selectSpecificLocation(cx, location));
   };
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -119,13 +140,21 @@ export function selectLocation(cx, location, { keepContext = true } = {}) {
 
     
     
+    
+    
+    
+    
+    
+    
     const selectedSource = getSelectedSource(getState());
     if (
       keepContext &&
       selectedSource &&
       selectedSource.isOriginal != isOriginalId(location.sourceId)
     ) {
-      location = await mapLocation(getState(), sourceMaps, location);
+      
+      
+      location = await getRelatedMapLocation(getState(), sourceMaps, location);
       source = getSourceFromId(getState(), location.sourceId);
     }
 
@@ -177,9 +206,19 @@ export function selectLocation(cx, location, { keepContext = true } = {}) {
 
 
 
+
+
+
+
+
+
 export function selectSpecificLocation(cx, location) {
   return selectLocation(cx, location, { keepContext: false });
 }
+
+
+
+
 
 
 
@@ -191,11 +230,17 @@ export function jumpToMappedLocation(cx, location) {
       return;
     }
 
-    const pairedLocation = await mapLocation(getState(), sourceMaps, location);
+    
+    const pairedLocation = await getRelatedMapLocation(
+      getState(),
+      sourceMaps,
+      location
+    );
 
-    return dispatch(selectSpecificLocation(cx, { ...pairedLocation }));
+    return dispatch(selectSpecificLocation(cx, pairedLocation));
   };
 }
+
 
 export function jumpToMappedSelectedLocation(cx) {
   return async function({ dispatch, getState }) {
