@@ -43,6 +43,11 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(
 
 
 
+
+Services.prefs.setBoolPref("dom.security.https_first", false);
+
+
+
 Services.prefs.setBoolPref("browser.tabs.remote.autostart", false);
 Services.prefs.setBoolPref("extensions.webextensions.remote", false);
 const testEnv = {
