@@ -153,7 +153,7 @@ void HTMLDialogElement::FocusDialog() {
     doc->FlushPendingNotifications(FlushType::Frames);
   }
 
-  Element* control = nullptr;
+  Element* controlCandidate = nullptr;
   for (auto* child = GetFirstChild(); child; child = child->GetNextNode(this)) {
     auto* element = Element::FromNode(child);
     if (!element) {
@@ -166,20 +166,22 @@ void HTMLDialogElement::FocusDialog() {
     if (element->HasAttr(nsGkAtoms::autofocus)) {
       
       
-      control = element;
+      controlCandidate = element;
       break;
     }
-    if (!control) {
+    if (!controlCandidate) {
       
       
-      control = element;
+      controlCandidate = element;
     }
   }
 
   
-  if (!control) {
-    control = this;
+  if (!controlCandidate) {
+    controlCandidate = this;
   }
+
+  RefPtr<Element> control = controlCandidate;
 
   
   ErrorResult rv;
