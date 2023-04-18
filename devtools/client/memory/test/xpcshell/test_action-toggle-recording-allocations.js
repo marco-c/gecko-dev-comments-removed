@@ -16,10 +16,12 @@ add_task(async function() {
   await front.attach();
   
   const commands = {
-    targetConfigurationCommand: {
-      supports() {
+    targetCommand: {
+      hasTargetWatcherSupport() {
         return true;
       },
+    },
+    targetConfigurationCommand: {
       updateConfiguration() {},
     },
   };
