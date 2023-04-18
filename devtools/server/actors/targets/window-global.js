@@ -260,6 +260,7 @@ const windowGlobalTargetPrototype = {
 
 
 
+
   initialize: function(
     connection,
     { docShell, followWindowGlobalLifeCycle, isTopLevelTarget, ignoreSubFrames }
@@ -665,7 +666,44 @@ const windowGlobalTargetPrototype = {
       this._touchSimulator = null;
     }
 
-    this._detach({ isTargetSwitching });
+    
+    
+    if (this.docShell) {
+      this._unwatchDocShell(this.docShell);
+
+      
+      
+      
+      if (!isTargetSwitching) {
+        this._restoreTargetConfiguration();
+      }
+    }
+    this._unwatchDocshells();
+
+    this._destroyThreadActor();
+
+    
+    this._styleSheetActors.clear();
+    if (this._targetScopedActorPool) {
+      this._targetScopedActorPool.destroy();
+      this._targetScopedActorPool = null;
+    }
+
+    
+    if (this._workerDescriptorActorList !== null) {
+      this._workerDescriptorActorList.destroy();
+      this._workerDescriptorActorList = null;
+    }
+
+    if (this._workerDescriptorActorPool !== null) {
+      this._workerDescriptorActorPool.destroy();
+      this._workerDescriptorActorPool = null;
+    }
+
+    if (this._dbg) {
+      this._dbg.disable();
+      this._dbg = null;
+    }
     this.docShell = null;
     this._extraActors = null;
 
@@ -1069,74 +1107,12 @@ const windowGlobalTargetPrototype = {
 
   
 
-
-
-
-
-
-
-  _detach({ isTargetSwitching } = {}) {
-    if (this.isDestroyed()) {
-      return false;
-    }
-
-    
-    
-    if (this.docShell) {
-      this._unwatchDocShell(this.docShell);
-
-      
-      
-      
-      if (!isTargetSwitching) {
-        this._restoreTargetConfiguration();
-      }
-    }
-    this._unwatchDocshells();
-
-    this._destroyThreadActor();
-
-    
-    this._styleSheetActors.clear();
-    if (this._targetScopedActorPool) {
-      this._targetScopedActorPool.destroy();
-      this._targetScopedActorPool = null;
-    }
-
-    
-    if (this._workerDescriptorActorList !== null) {
-      this._workerDescriptorActorList.destroy();
-      this._workerDescriptorActorList = null;
-    }
-
-    if (this._workerDescriptorActorPool !== null) {
-      this._workerDescriptorActorPool.destroy();
-      this._workerDescriptorActorPool = null;
-    }
-
-    if (this._dbg) {
-      this._dbg.disable();
-      this._dbg = null;
-    }
-
-    
-    
-    
-    if (this.followWindowGlobalLifeCycle) {
-      return true;
-    }
-
-    return true;
-  },
-
-  
-
   detach(request) {
-    if (!this._detach()) {
-      throw {
-        error: "wrongState",
-      };
-    }
+    
+    
+    DevToolsUtils.executeSoon(() => {
+      this.destroy();
+    });
 
     return {};
   },
