@@ -73,7 +73,19 @@ declare namespace MockedExports {
 
   interface ChromeWindow {
     gBrowser: Browser;
-    focus: () => void;
+    focus(): void;
+    openWebLinkIn(
+      url: string,
+      where: "current" | "tab" | "window",
+      options: Partial<{
+        
+        userContextId: number;
+        forceNonPrivate: boolean;
+        resolveOnContentBrowserCreated: (
+          contentBrowser: ChromeBrowser
+        ) => unknown;
+      }>
+    ): void;
   }
 
   interface ChromeBrowser {

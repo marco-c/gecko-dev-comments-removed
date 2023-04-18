@@ -60,16 +60,8 @@ const UI_BASE_URL_PATH_DEFAULT = "/from-browser";
 
 
 
-function openProfilerTab(profilerViewMode) {
+async function openProfilerTab(profilerViewMode) {
   const Services = lazy.Services();
-  
-  
-  const win = Services.wm.getMostRecentWindow("navigator:browser");
-  if (!win) {
-    throw new Error("No browser window");
-  }
-  const browser = win.gBrowser;
-  win.focus();
 
   
   const baseUrl = Services.prefs.getStringPref(
@@ -92,16 +84,28 @@ function openProfilerTab(profilerViewMode) {
     viewModeQueryString = `?view=${profilerViewMode}`;
   }
 
-  const tab = browser.addWebTab(
-    `${baseUrl}${baseUrlPath}${viewModeQueryString}`,
-    {
-      triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({
-        userContextId: browser.contentPrincipal.userContextId,
-      }),
-    }
+  const urlToLoad = `${baseUrl}${baseUrlPath}${viewModeQueryString}`;
+
+  
+  
+  const win = Services.wm.getMostRecentWindow("navigator:browser");
+  if (!win) {
+    throw new Error("No browser window");
+  }
+  win.focus();
+
+  
+  
+  
+  
+  const contentBrowser = await new Promise(resolveOnContentBrowserCreated =>
+    win.openWebLinkIn(urlToLoad, "tab", {
+      forceNonPrivate: true,
+      resolveOnContentBrowserCreated,
+      userContextId: win.gBrowser.contentPrincipal.userContextId,
+    })
   );
-  browser.selectedTab = tab;
-  return tab.linkedBrowser;
+  return contentBrowser;
 }
 
 
