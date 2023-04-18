@@ -1531,6 +1531,16 @@ var PlacesControllerDragHelper = {
             parentId = PlacesUtils.bookmarks.getFolderIdForItem(parentId);
           }
         }
+
+        
+        
+        if (
+          !flavor.startsWith("text/x-moz-place") &&
+          (nodes.length > 1 || dropCount > 1) &&
+          nodes.some(n => n.uri?.startsWith("javascript:"))
+        ) {
+          return false;
+        }
       }
     }
     return true;
@@ -1597,6 +1607,16 @@ var PlacesControllerDragHelper = {
       } else {
         throw new Error("bogus data was passed as a tab");
       }
+    }
+
+    
+    
+    if (
+      externalDrag &&
+      (nodes.length > 1 || dropCount > 1) &&
+      nodes.some(n => n.uri?.startsWith("javascript:"))
+    ) {
+      throw new Error("Javascript bookmarklet passed with uris");
     }
 
     
