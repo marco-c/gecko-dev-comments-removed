@@ -83,7 +83,6 @@ void InspectorUtils::GetAllStyleSheets(GlobalObject& aGlobalObject,
                                        nsTArray<RefPtr<StyleSheet>>& aResult) {
   
   PresShell* presShell = aDocument.GetPresShell();
-  nsTHashSet<StyleSheet*> sheetSet;
 
   if (presShell) {
     ServoStyleSet* styleSet = presShell->StyleSet();
@@ -117,11 +116,9 @@ void InspectorUtils::GetAllStyleSheets(GlobalObject& aGlobalObject,
     aResult.AppendElement(aDocument.SheetAt(i));
   }
 
-  for (auto& sheet : aDocument.AdoptedStyleSheets()) {
-    if (sheetSet.EnsureInserted(sheet)) {
-      aResult.AppendElement(sheet);
-    }
-  }
+  
+  
+  
 }
 
 bool InspectorUtils::IsIgnorableWhitespace(CharacterData& aDataNode) {

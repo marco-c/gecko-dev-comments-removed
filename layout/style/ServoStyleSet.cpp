@@ -662,7 +662,6 @@ void ServoStyleSet::AppendAllNonDocumentAuthorSheets(
     for (auto index : IntegerRange(aShadowRoot.SheetCount())) {
       aArray.AppendElement(aShadowRoot.SheetAt(index));
     }
-    aArray.AppendElements(aShadowRoot.AdoptedStyleSheets());
   });
 }
 
@@ -1072,21 +1071,10 @@ bool ServoStyleSet::EnsureUniqueInnerOnCSSSheets() {
       queue.AppendElement(
           std::make_pair(aShadowRoot.SheetAt(index), SheetOwner{&aShadowRoot}));
     }
-    for (auto& adopted : aShadowRoot.AdoptedStyleSheets()) {
-      queue.AppendElement(
-          std::make_pair(adopted.get(), SheetOwner{&aShadowRoot}));
-    }
   });
 
   while (!queue.IsEmpty()) {
     auto [sheet, owner] = queue.PopLastElement();
-
-    if (sheet->HasForcedUniqueInner()) {
-      
-      
-      
-      continue;
-    }
 
     
     
