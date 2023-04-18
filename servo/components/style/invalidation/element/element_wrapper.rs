@@ -183,28 +183,6 @@ where
             
             
             
-            
-            
-            
-            #[cfg(feature = "gecko")]
-            NonTSPseudoClass::Dir(ref dir) => {
-                let selector_flag = dir.element_state();
-                if selector_flag.is_empty() {
-                    
-                    return false;
-                }
-                let state = match self.snapshot().and_then(|s| s.state()) {
-                    Some(snapshot_state) => snapshot_state,
-                    None => self.element.state(),
-                };
-                return state.contains(selector_flag);
-            },
-
-            
-            
-            
-            
-            
             NonTSPseudoClass::Link => {
                 return self.is_link() && context.visited_handling().matches_unvisited();
             },
