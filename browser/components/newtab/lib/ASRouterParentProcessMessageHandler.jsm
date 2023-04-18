@@ -7,10 +7,6 @@
 
 const EXPORTED_SYMBOLS = ["ASRouterParentProcessMessageHandler"];
 
-const { ASRouterPreferences } = ChromeUtils.import(
-  "resource://activity-stream/lib/ASRouterPreferences.jsm"
-);
-
 const { MESSAGE_TYPE_HASH: msg } = ChromeUtils.import(
   "resource://activity-stream/common/ActorConstants.jsm"
 );
@@ -56,12 +52,6 @@ class ASRouterParentProcessMessageHandler {
           data,
         });
       case msg.BLOCK_MESSAGE_BY_ID: {
-        ASRouterPreferences.console.debug(
-          "handleMesssage(): about to block, data = ",
-          data
-        );
-        ASRouterPreferences.console.trace();
-
         
         
         return this._router
