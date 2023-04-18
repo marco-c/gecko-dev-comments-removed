@@ -8,7 +8,7 @@
 
 pub trait Sample: Send + Copy {
     
-    fn from_float(f32) -> Self;
+    fn from_float(_: f32) -> Self;
 }
 
 impl Sample for i16 {

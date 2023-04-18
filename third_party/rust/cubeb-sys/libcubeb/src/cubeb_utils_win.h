@@ -8,30 +8,26 @@
 #if !defined(CUBEB_UTILS_WIN)
 #define CUBEB_UTILS_WIN
 
-#include <windows.h>
 #include "cubeb-internal.h"
+#include <windows.h>
 
 
 
-class owned_critical_section
-{
+
+class owned_critical_section {
 public:
   owned_critical_section()
+      : srwlock(SRWLOCK_INIT)
 #ifndef NDEBUG
-    : owner(0)
+        ,
+        owner(0)
 #endif
   {
-    InitializeCriticalSection(&critical_section);
-  }
-
-  ~owned_critical_section()
-  {
-    DeleteCriticalSection(&critical_section);
   }
 
   void lock()
   {
-    EnterCriticalSection(&critical_section);
+    AcquireSRWLockExclusive(&srwlock);
 #ifndef NDEBUG
     XASSERT(owner != GetCurrentThreadId() && "recursive locking");
     owner = GetCurrentThreadId();
@@ -44,7 +40,7 @@ public:
     
     owner = 0;
 #endif
-    LeaveCriticalSection(&critical_section);
+    ReleaseSRWLockExclusive(&srwlock);
   }
 
   
@@ -58,14 +54,14 @@ public:
   }
 
 private:
-  CRITICAL_SECTION critical_section;
+  SRWLOCK srwlock;
 #ifndef NDEBUG
   DWORD owner;
 #endif
 
   
-  owned_critical_section(const owned_critical_section&);
-  owned_critical_section& operator=(const owned_critical_section&);
+  owned_critical_section(const owned_critical_section &);
+  owned_critical_section & operator=(const owned_critical_section &);
 };
 
 #endif 

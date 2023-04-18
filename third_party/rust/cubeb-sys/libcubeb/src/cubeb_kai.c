@@ -4,15 +4,15 @@
 
 
 
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 #include <sys/fmutex.h>
 
 #include <kai.h>
 
-#include "cubeb/cubeb.h"
 #include "cubeb-internal.h"
+#include "cubeb/cubeb.h"
 
 
 #define MAX_CHANNELS 2
@@ -59,7 +59,8 @@ bytes_to_frames(long bytes, cubeb_stream_params params)
   return bytes / 2 / params.channels; 
 }
 
-static void kai_destroy(cubeb * ctx);
+static void
+kai_destroy(cubeb * ctx);
 
  int
 kai_init(cubeb ** context, char const * context_name)
@@ -97,7 +98,7 @@ kai_destroy(cubeb * ctx)
 }
 
 static void
-float_to_s16ne(int16_t *dst, float *src, size_t n)
+float_to_s16ne(int16_t * dst, float * src, size_t n)
 {
   long l;
 
@@ -115,14 +116,13 @@ static ULONG APIENTRY
 kai_callback(PVOID cbdata, PVOID buffer, ULONG len)
 {
   cubeb_stream * stm = cbdata;
-  void *p;
+  void * p;
   long wanted_frames;
   long frames;
   float soft_volume;
   int elements = len / sizeof(int16_t);
 
-  p = stm->params.format == CUBEB_SAMPLE_FLOAT32NE
-      ? stm->float_buffer : buffer;
+  p = stm->params.format == CUBEB_SAMPLE_FLOAT32NE ? stm->float_buffer : buffer;
 
   wanted_frames = bytes_to_frames(len, stm->params);
   frames = stm->data_callback(stm, stm->user_ptr, NULL, p, wanted_frames);
@@ -139,7 +139,7 @@ kai_callback(PVOID cbdata, PVOID buffer, ULONG len)
     float_to_s16ne(buffer, p, elements);
 
   if (soft_volume != -1.0f) {
-    int16_t *b = buffer;
+    int16_t * b = buffer;
     int i;
 
     for (i = 0; i < elements; i++)
@@ -149,12 +149,12 @@ kai_callback(PVOID cbdata, PVOID buffer, ULONG len)
   return frames_to_bytes(frames, stm->params);
 }
 
-static void kai_stream_destroy(cubeb_stream * stm);
+static void
+kai_stream_destroy(cubeb_stream * stm);
 
 static int
 kai_stream_init(cubeb * context, cubeb_stream ** stream,
-                char const * stream_name,
-                cubeb_devid input_device,
+                char const * stream_name, cubeb_devid input_device,
                 cubeb_stream_params * input_stream_params,
                 cubeb_devid output_device,
                 cubeb_stream_params * output_stream_params,
@@ -202,17 +202,17 @@ kai_stream_init(cubeb * context, cubeb_stream ** stream,
     return CUBEB_ERROR;
   }
 
-  wanted_spec.usDeviceIndex   = 0;
-  wanted_spec.ulType          = KAIT_PLAY;
+  wanted_spec.usDeviceIndex = 0;
+  wanted_spec.ulType = KAIT_PLAY;
   wanted_spec.ulBitsPerSample = BPS_16;
-  wanted_spec.ulSamplingRate  = stm->params.rate;
-  wanted_spec.ulDataFormat    = MCI_WAVE_FORMAT_PCM;
-  wanted_spec.ulChannels      = stm->params.channels;
-  wanted_spec.ulNumBuffers    = NBUFS;
-  wanted_spec.ulBufferSize    = frames_to_bytes(FRAME_SIZE, stm->params);
-  wanted_spec.fShareable      = TRUE;
-  wanted_spec.pfnCallBack     = kai_callback;
-  wanted_spec.pCallBackData   = stm;
+  wanted_spec.ulSamplingRate = stm->params.rate;
+  wanted_spec.ulDataFormat = MCI_WAVE_FORMAT_PCM;
+  wanted_spec.ulChannels = stm->params.channels;
+  wanted_spec.ulNumBuffers = NBUFS;
+  wanted_spec.ulBufferSize = frames_to_bytes(FRAME_SIZE, stm->params);
+  wanted_spec.fShareable = TRUE;
+  wanted_spec.pfnCallBack = kai_callback;
+  wanted_spec.pCallBackData = stm;
 
   if (kaiOpen(&wanted_spec, &stm->spec, &stm->hkai)) {
     _fmutex_close(&stm->mutex);
@@ -265,17 +265,17 @@ kai_get_preferred_sample_rate(cubeb * ctx, uint32_t * rate)
   params.rate = 48000;
   params.channels = 2;
 
-  wanted_spec.usDeviceIndex   = 0;
-  wanted_spec.ulType          = KAIT_PLAY;
+  wanted_spec.usDeviceIndex = 0;
+  wanted_spec.ulType = KAIT_PLAY;
   wanted_spec.ulBitsPerSample = BPS_16;
-  wanted_spec.ulSamplingRate  = params.rate;
-  wanted_spec.ulDataFormat    = MCI_WAVE_FORMAT_PCM;
-  wanted_spec.ulChannels      = params.channels;
-  wanted_spec.ulNumBuffers    = NBUFS;
-  wanted_spec.ulBufferSize    = frames_to_bytes(FRAME_SIZE, params);
-  wanted_spec.fShareable      = TRUE;
-  wanted_spec.pfnCallBack     = kai_callback;
-  wanted_spec.pCallBackData   = NULL;
+  wanted_spec.ulSamplingRate = params.rate;
+  wanted_spec.ulDataFormat = MCI_WAVE_FORMAT_PCM;
+  wanted_spec.ulChannels = params.channels;
+  wanted_spec.ulNumBuffers = NBUFS;
+  wanted_spec.ulBufferSize = frames_to_bytes(FRAME_SIZE, params);
+  wanted_spec.fShareable = TRUE;
+  wanted_spec.pfnCallBack = kai_callback;
+  wanted_spec.pCallBackData = NULL;
 
   
   if (kaiOpen(&wanted_spec, &spec, &hkai)) {
@@ -328,8 +328,8 @@ kai_stream_get_latency(cubeb_stream * stm, uint32_t * latency)
 {
   
 
-  *latency = bytes_to_frames(stm->spec.ulBufferSize, stm->params)
-             * (stm->spec.ulNumBuffers - 1);
+  *latency = bytes_to_frames(stm->spec.ulBufferSize, stm->params) *
+             (stm->spec.ulNumBuffers - 1);
 
   return CUBEB_OK;
 }
@@ -345,26 +345,25 @@ kai_stream_set_volume(cubeb_stream * stm, float volume)
 }
 
 static struct cubeb_ops const kai_ops = {
-   kai_init,
-   kai_get_backend_id,
-   kai_get_max_channel_count,
-   kai_get_min_latency,
-   kai_get_preferred_sample_rate,
-   NULL,
-   NULL,
-   NULL,
-   kai_destroy,
-   kai_stream_init,
-   kai_stream_destroy,
-   kai_stream_start,
-   kai_stream_stop,
-   kai_stream_get_position,
-   kai_stream_get_latency,
-   NULL,
-   kai_stream_set_volume,
-   NULL,
-   NULL,
-   NULL,
-   NULL,
-   NULL
-};
+    kai_init,
+    kai_get_backend_id,
+    kai_get_max_channel_count,
+    kai_get_min_latency,
+    kai_get_preferred_sample_rate,
+    NULL,
+    NULL,
+    NULL,
+    kai_destroy,
+    kai_stream_init,
+    kai_stream_destroy,
+    kai_stream_start,
+    kai_stream_stop,
+    kai_stream_get_position,
+     kai_stream_get_latency,
+     NULL,
+    kai_stream_set_volume,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL};

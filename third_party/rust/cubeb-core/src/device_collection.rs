@@ -3,10 +3,10 @@
 
 
 
-use {ContextRef, DeviceInfo};
 use ffi;
 use ffi_types;
 use std::{ops, slice};
+use {ContextRef, DeviceInfo};
 
 
 type CType = ffi::cubeb_device_collection;
@@ -55,11 +55,19 @@ impl<'ctx> ::std::convert::AsRef<DeviceCollectionRef> for DeviceCollection<'ctx>
 pub struct DeviceCollectionRef(ffi_types::Opaque);
 
 impl DeviceCollectionRef {
+    
+    
+    
+    
     #[inline]
     pub unsafe fn from_ptr<'a>(ptr: *mut CType) -> &'a Self {
         &*(ptr as *mut _)
     }
 
+    
+    
+    
+    
     #[inline]
     pub unsafe fn from_ptr_mut<'a>(ptr: *mut CType) -> &'a mut Self {
         &mut *(ptr as *mut _)

@@ -3,11 +3,11 @@
 
 
 
-use {ContextOps, StreamOps};
 use cubeb_core::{ffi, DeviceCollectionRef, DeviceRef, DeviceType, StreamParams, StreamParamsRef};
 use std::ffi::CStr;
 use std::mem;
 use std::os::raw::{c_char, c_int, c_void};
+use {ContextOps, StreamOps};
 
 
 
@@ -26,7 +26,7 @@ macro_rules! as_opt_ref {
         } else {
             Some(StreamParamsRef::from_ptr($e))
         }
-    }
+    };
 }
 
 #[macro_export]
@@ -58,6 +58,12 @@ macro_rules! capi_new(
                 Some($crate::capi::capi_register_device_collection_changed::<$ctx>)
         }));
 
+
+
+
+
+
+
 pub unsafe extern "C" fn capi_init<CTX: ContextOps>(
     c: *mut *mut ffi::cubeb,
     context_name: *const c_char,
@@ -71,10 +77,22 @@ pub unsafe extern "C" fn capi_init<CTX: ContextOps>(
     ffi::CUBEB_OK
 }
 
+
+
+
+
+
+
 pub unsafe extern "C" fn capi_get_backend_id<CTX: ContextOps>(c: *mut ffi::cubeb) -> *const c_char {
     let ctx = &mut *(c as *mut CTX);
     ctx.backend_id().as_ptr()
 }
+
+
+
+
+
+
 
 pub unsafe extern "C" fn capi_get_max_channel_count<CTX: ContextOps>(
     c: *mut ffi::cubeb,
@@ -85,6 +103,12 @@ pub unsafe extern "C" fn capi_get_max_channel_count<CTX: ContextOps>(
     *max_channels = _try!(ctx.max_channel_count());
     ffi::CUBEB_OK
 }
+
+
+
+
+
+
 
 pub unsafe extern "C" fn capi_get_min_latency<CTX: ContextOps>(
     c: *mut ffi::cubeb,
@@ -97,6 +121,12 @@ pub unsafe extern "C" fn capi_get_min_latency<CTX: ContextOps>(
     ffi::CUBEB_OK
 }
 
+
+
+
+
+
+
 pub unsafe extern "C" fn capi_get_preferred_sample_rate<CTX: ContextOps>(
     c: *mut ffi::cubeb,
     rate: *mut u32,
@@ -106,6 +136,12 @@ pub unsafe extern "C" fn capi_get_preferred_sample_rate<CTX: ContextOps>(
     *rate = _try!(ctx.preferred_sample_rate());
     ffi::CUBEB_OK
 }
+
+
+
+
+
+
 
 pub unsafe extern "C" fn capi_enumerate_devices<CTX: ContextOps>(
     c: *mut ffi::cubeb,
@@ -119,6 +155,12 @@ pub unsafe extern "C" fn capi_enumerate_devices<CTX: ContextOps>(
     ffi::CUBEB_OK
 }
 
+
+
+
+
+
+
 pub unsafe extern "C" fn capi_device_collection_destroy<CTX: ContextOps>(
     c: *mut ffi::cubeb,
     collection: *mut ffi::cubeb_device_collection,
@@ -129,9 +171,22 @@ pub unsafe extern "C" fn capi_device_collection_destroy<CTX: ContextOps>(
     ffi::CUBEB_OK
 }
 
+
+
+
+
+
+
 pub unsafe extern "C" fn capi_destroy<CTX>(c: *mut ffi::cubeb) {
     let _: Box<CTX> = Box::from_raw(c as *mut _);
 }
+
+
+
+
+
+
+
 
 pub unsafe extern "C" fn capi_stream_init<CTX: ContextOps>(
     c: *mut ffi::cubeb,
@@ -169,9 +224,21 @@ pub unsafe extern "C" fn capi_stream_init<CTX: ContextOps>(
     ffi::CUBEB_OK
 }
 
+
+
+
+
+
+
 pub unsafe extern "C" fn capi_stream_destroy<STM>(s: *mut ffi::cubeb_stream) {
     let _ = Box::from_raw(s as *mut STM);
 }
+
+
+
+
+
+
 
 pub unsafe extern "C" fn capi_stream_start<STM: StreamOps>(s: *mut ffi::cubeb_stream) -> c_int {
     let stm = &mut *(s as *mut STM);
@@ -180,12 +247,24 @@ pub unsafe extern "C" fn capi_stream_start<STM: StreamOps>(s: *mut ffi::cubeb_st
     ffi::CUBEB_OK
 }
 
+
+
+
+
+
+
 pub unsafe extern "C" fn capi_stream_stop<STM: StreamOps>(s: *mut ffi::cubeb_stream) -> c_int {
     let stm = &mut *(s as *mut STM);
 
     _try!(stm.stop());
     ffi::CUBEB_OK
 }
+
+
+
+
+
+
 
 pub unsafe extern "C" fn capi_stream_get_position<STM: StreamOps>(
     s: *mut ffi::cubeb_stream,
@@ -197,6 +276,12 @@ pub unsafe extern "C" fn capi_stream_get_position<STM: StreamOps>(
     ffi::CUBEB_OK
 }
 
+
+
+
+
+
+
 pub unsafe extern "C" fn capi_stream_get_latency<STM: StreamOps>(
     s: *mut ffi::cubeb_stream,
     latency: *mut u32,
@@ -206,6 +291,12 @@ pub unsafe extern "C" fn capi_stream_get_latency<STM: StreamOps>(
     *latency = _try!(stm.latency());
     ffi::CUBEB_OK
 }
+
+
+
+
+
+
 
 pub unsafe extern "C" fn capi_stream_get_input_latency<STM: StreamOps>(
     s: *mut ffi::cubeb_stream,
@@ -217,6 +308,12 @@ pub unsafe extern "C" fn capi_stream_get_input_latency<STM: StreamOps>(
     ffi::CUBEB_OK
 }
 
+
+
+
+
+
+
 pub unsafe extern "C" fn capi_stream_set_volume<STM: StreamOps>(
     s: *mut ffi::cubeb_stream,
     volume: f32,
@@ -226,6 +323,12 @@ pub unsafe extern "C" fn capi_stream_set_volume<STM: StreamOps>(
     _try!(stm.set_volume(volume));
     ffi::CUBEB_OK
 }
+
+
+
+
+
+
 
 pub unsafe extern "C" fn capi_stream_set_name<STM: StreamOps>(
     s: *mut ffi::cubeb_stream,
@@ -241,6 +344,12 @@ pub unsafe extern "C" fn capi_stream_set_name<STM: StreamOps>(
     }
 }
 
+
+
+
+
+
+
 pub unsafe extern "C" fn capi_stream_get_current_device<STM: StreamOps>(
     s: *mut ffi::cubeb_stream,
     device: *mut *mut ffi::cubeb_device,
@@ -250,6 +359,12 @@ pub unsafe extern "C" fn capi_stream_get_current_device<STM: StreamOps>(
     *device = _try!(stm.current_device()).as_ptr();
     ffi::CUBEB_OK
 }
+
+
+
+
+
+
 
 pub unsafe extern "C" fn capi_stream_device_destroy<STM: StreamOps>(
     s: *mut ffi::cubeb_stream,
@@ -261,6 +376,12 @@ pub unsafe extern "C" fn capi_stream_device_destroy<STM: StreamOps>(
     ffi::CUBEB_OK
 }
 
+
+
+
+
+
+
 pub unsafe extern "C" fn capi_stream_register_device_changed_callback<STM: StreamOps>(
     s: *mut ffi::cubeb_stream,
     device_changed_callback: ffi::cubeb_device_changed_callback,
@@ -270,6 +391,13 @@ pub unsafe extern "C" fn capi_stream_register_device_changed_callback<STM: Strea
     _try!(stm.register_device_changed_callback(device_changed_callback));
     ffi::CUBEB_OK
 }
+
+
+
+
+
+
+
 
 pub unsafe extern "C" fn capi_register_device_collection_changed<CTX: ContextOps>(
     c: *mut ffi::cubeb,

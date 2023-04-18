@@ -22,12 +22,14 @@ typedef struct cubeb_strings cubeb_strings;
 
 
 
-CUBEB_EXPORT int cubeb_strings_init(cubeb_strings ** strings);
+CUBEB_EXPORT int
+cubeb_strings_init(cubeb_strings ** strings);
 
 
 
 
-CUBEB_EXPORT void cubeb_strings_destroy(cubeb_strings * strings);
+CUBEB_EXPORT void
+cubeb_strings_destroy(cubeb_strings * strings);
 
 
 
@@ -35,7 +37,8 @@ CUBEB_EXPORT void cubeb_strings_destroy(cubeb_strings * strings);
 
 
 
-CUBEB_EXPORT char const * cubeb_strings_intern(cubeb_strings * strings, char const * s);
+CUBEB_EXPORT char const *
+cubeb_strings_intern(cubeb_strings * strings, char const * s);
 
 #if defined(__cplusplus)
 }
