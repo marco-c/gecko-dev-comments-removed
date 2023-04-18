@@ -156,6 +156,7 @@ class EventListenerManagerBase {
   uint16_t mMayHaveKeyEventListener : 1;
   uint16_t mMayHaveInputOrCompositionEventListener : 1;
   uint16_t mMayHaveSelectionChangeEventListener : 1;
+  uint16_t mMayHaveFormSelectEventListener : 1;
   uint16_t mClearingListeners : 1;
   uint16_t mIsMainThreadELM : 1;
   uint16_t mHasNonPrivilegedClickListeners : 1;
@@ -469,22 +470,25 @@ class EventListenerManager final : public EventListenerManagerBase {
 
 
 
-  bool MayHavePaintEventListener() { return mMayHavePaintEventListener; }
+  bool MayHavePaintEventListener() const { return mMayHavePaintEventListener; }
 
   
 
 
 
-  bool MayHaveTouchEventListener() { return mMayHaveTouchEventListener; }
+  bool MayHaveTouchEventListener() const { return mMayHaveTouchEventListener; }
 
-  bool MayHaveMouseEnterLeaveEventListener() {
+  bool MayHaveMouseEnterLeaveEventListener() const {
     return mMayHaveMouseEnterLeaveEventListener;
   }
-  bool MayHavePointerEnterLeaveEventListener() {
+  bool MayHavePointerEnterLeaveEventListener() const {
     return mMayHavePointerEnterLeaveEventListener;
   }
-  bool MayHaveSelectionChangeEventListener() {
+  bool MayHaveSelectionChangeEventListener() const {
     return mMayHaveSelectionChangeEventListener;
+  }
+  bool MayHaveFormSelectEventListener() const {
+    return mMayHaveFormSelectEventListener;
   }
 
   bool HasNonPrivilegedClickListeners();
@@ -493,14 +497,14 @@ class EventListenerManager final : public EventListenerManagerBase {
 
 
 
-  bool MayHaveKeyEventListener() { return mMayHaveKeyEventListener; }
+  bool MayHaveKeyEventListener() const { return mMayHaveKeyEventListener; }
 
   
 
 
 
 
-  bool MayHaveInputOrCompositionEventListener() {
+  bool MayHaveInputOrCompositionEventListener() const {
     return mMayHaveInputOrCompositionEventListener;
   }
 

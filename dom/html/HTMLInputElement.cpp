@@ -3031,6 +3031,10 @@ void HTMLInputElement::Select() {
 void HTMLInputElement::DispatchSelectEvent(nsPresContext* aPresContext) {
   
   if (!mHandlingSelectEvent) {
+    
+    
+    
+    
     WidgetEvent event(true, eFormSelect);
 
     mHandlingSelectEvent = true;

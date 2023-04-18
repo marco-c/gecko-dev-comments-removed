@@ -217,7 +217,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
 
 
-  bool HasMouseEnterLeaveEventListeners() {
+  bool HasMouseEnterLeaveEventListeners() const {
     return mMayHaveMouseEnterLeaveEventListener;
   }
 
@@ -233,7 +233,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
 
 
-  bool HasPointerEnterLeaveEventListeners() {
+  bool HasPointerEnterLeaveEventListeners() const {
     return mMayHavePointerEnterLeaveEventListener;
   }
 
@@ -474,8 +474,24 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
 
 
-  bool HasSelectionChangeEventListeners() {
+  bool HasSelectionChangeEventListeners() const {
     return mMayHaveSelectionChangeEventListener;
+  }
+
+  
+
+
+
+  void SetHasFormSelectEventListeners() {
+    mMayHaveFormSelectEventListener = true;
+  }
+
+  
+
+
+
+  bool HasFormSelectEventListeners() const {
+    return mMayHaveFormSelectEventListener;
   }
 
   
@@ -657,6 +673,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   bool mMayHavePaintEventListener;
   bool mMayHaveTouchEventListener;
   bool mMayHaveSelectionChangeEventListener;
+  bool mMayHaveFormSelectEventListener;
   bool mMayHaveMouseEnterLeaveEventListener;
   bool mMayHavePointerEnterLeaveEventListener;
   

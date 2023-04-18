@@ -13,12 +13,12 @@
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/Document.h"
+#include "mozilla/dom/Selection.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
-#include "mozilla/dom/Document.h"
 #include "nsFrameSelection.h"
 #include "nsRange.h"
-#include "mozilla/dom/Selection.h"
 
 namespace mozilla {
 
@@ -102,13 +102,6 @@ void SelectionChangeEventDispatcher::OnSelectionChange(Document* aDoc,
   }
   mOldDirection = aSel->GetDirection();
 
-  if (Document* doc = aSel->GetParentObject()) {
-    nsPIDOMWindowInner* inner = doc->GetInnerWindow();
-    if (inner && !inner->HasSelectionChangeEventListeners()) {
-      return;
-    }
-  }
-
   
   
   
@@ -116,22 +109,50 @@ void SelectionChangeEventDispatcher::OnSelectionChange(Document* aDoc,
     return;
   }
 
-  nsCOMPtr<nsINode> textControl;
-  if (const nsFrameSelection* fs = aSel->GetFrameSelection()) {
-    if (nsCOMPtr<nsIContent> root = fs->GetLimiter()) {
-      textControl = root->GetClosestNativeAnonymousSubtreeRootParent();
-      MOZ_ASSERT_IF(textControl,
-                    textControl->IsTextControlElement() &&
-                        !textControl->IsInNativeAnonymousSubtree());
-    }
+  const Document* doc = aSel->GetParentObject();
+  if (MOZ_UNLIKELY(!doc)) {
+    return;
+  }
+  const nsPIDOMWindowInner* inner = doc->GetInnerWindow();
+  if (MOZ_UNLIKELY(!inner)) {
+    return;
+  }
+  const bool maybeHasSelectionChangeEventListeners =
+      !inner || inner->HasSelectionChangeEventListeners();
+  const bool maybeHasFormSelectEventListeners =
+      !inner || inner->HasFormSelectEventListeners();
+  if (!maybeHasSelectionChangeEventListeners &&
+      !maybeHasFormSelectEventListeners) {
+    return;
   }
 
   
   
-  if (textControl && (aReason & nsISelectionListener::JS_REASON)) {
+  nsCOMPtr<nsIContent> textControl;
+  if ((maybeHasFormSelectEventListeners &&
+       (aReason & nsISelectionListener::JS_REASON)) ||
+      maybeHasSelectionChangeEventListeners) {
+    if (const nsFrameSelection* fs = aSel->GetFrameSelection()) {
+      if (nsCOMPtr<nsIContent> root = fs->GetLimiter()) {
+        textControl = root->GetClosestNativeAnonymousSubtreeRootParent();
+        MOZ_ASSERT_IF(textControl,
+                      textControl->IsTextControlElement() &&
+                          !textControl->IsInNativeAnonymousSubtree());
+      }
+    }
+  };
+
+  
+  
+  if (textControl && maybeHasFormSelectEventListeners &&
+      (aReason & nsISelectionListener::JS_REASON)) {
     RefPtr<AsyncEventDispatcher> asyncDispatcher =
         new AsyncEventDispatcher(textControl, eFormSelect, CanBubble::eYes);
     asyncDispatcher->PostDOMEvent();
+  }
+
+  if (!maybeHasSelectionChangeEventListeners) {
+    return;
   }
 
   
@@ -143,8 +164,8 @@ void SelectionChangeEventDispatcher::OnSelectionChange(Document* aDoc,
     return;
   }
 
-  nsCOMPtr<nsINode> target = textControl ? textControl : aDoc;
-
+  nsINode* target =
+      textControl ? static_cast<nsINode*>(textControl.get()) : aDoc;
   if (target) {
     CanBubble canBubble = textControl ? CanBubble::eYes : CanBubble::eNo;
     RefPtr<AsyncEventDispatcher> asyncDispatcher =

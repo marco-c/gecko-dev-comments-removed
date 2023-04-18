@@ -862,6 +862,10 @@ void TextInputListener::OnSelectionChange(Selection& aSelection,
   
   
   
+  
+  
+  
+  
   bool collapsed = aSelection.IsCollapsed();
   if (!collapsed && (aReason & (nsISelectionListener::MOUSEUP_REASON |
                                 nsISelectionListener::KEYPRESS_REASON |
