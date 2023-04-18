@@ -51,8 +51,6 @@ class AbstractThread : public nsISerialEventTarget {
   AbstractThread(bool aSupportsTailDispatch)
       : mSupportsTailDispatch(aSupportsTailDispatch) {}
 
-  NS_DECL_THREADSAFE_ISUPPORTS
-
   
   
   
