@@ -185,7 +185,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
 
     NodePosition() = default;
 
-    NodePosition(nsINode* aContainer, int32_t aOffset)
+    NodePosition(nsINode* aContainer, uint32_t aOffset)
         : RangeBoundary(aContainer, aOffset) {}
 
     NodePosition(nsINode* aContainer, nsIContent* aRef)
@@ -212,7 +212,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
   
   
   struct NodePositionBefore final : public NodePosition {
-    NodePositionBefore(nsINode* aContainer, int32_t aOffset)
+    NodePositionBefore(nsINode* aContainer, uint32_t aOffset)
         : NodePosition(aContainer, aOffset) {
       mAfterOpenTag = false;
     }
