@@ -546,12 +546,6 @@ pub struct PrimTemplateCommonData {
     
     
     pub gpu_cache_handle: GpuCacheHandle,
-    
-    
-    
-    
-    
-    pub edge_aa_mask: EdgeAaSegmentMask,
 }
 
 impl PrimTemplateCommonData {
@@ -562,7 +556,6 @@ impl PrimTemplateCommonData {
             prim_rect: common.prim_rect.into(),
             gpu_cache_handle: GpuCacheHandle::new(),
             opacity: PrimitiveOpacity::translucent(),
-            edge_aa_mask: EdgeAaSegmentMask::all(),
         }
     }
 }
