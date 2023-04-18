@@ -186,7 +186,7 @@ class AbstractFramePtr {
   inline JSObject* environmentChain() const;
   inline CallObject& callObj() const;
   inline bool initFunctionEnvironmentObjects(JSContext* cx);
-  inline bool pushVarEnvironment(JSContext* cx, HandleScope scope);
+  inline bool pushVarEnvironment(JSContext* cx, Handle<Scope*> scope);
   template <typename SpecificEnvironment>
   inline void pushOnEnvironmentChain(SpecificEnvironment& env);
   template <typename SpecificEnvironment>
@@ -532,7 +532,7 @@ class InterpreterFrame {
 
   
   
-  bool pushVarEnvironment(JSContext* cx, HandleScope scope);
+  bool pushVarEnvironment(JSContext* cx, Handle<Scope*> scope);
 
   
 

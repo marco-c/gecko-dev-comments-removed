@@ -2358,7 +2358,7 @@ bool JSScript::fullyInitFromStencil(
     frontend::CompilationGCOutput& gcOutput, HandleScript script,
     const js::frontend::ScriptIndex scriptIndex) {
   MutableScriptFlags lazyMutableFlags;
-  RootedScope lazyEnclosingScope(cx);
+  Rooted<Scope*> lazyEnclosingScope(cx);
 
   
   
