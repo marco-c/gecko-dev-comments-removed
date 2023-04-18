@@ -376,7 +376,8 @@ class GCMarker final : public JSTracer {
   
   
   
-  void markEphemeronEdges(gc::EphemeronEdgeVector& edges);
+  void markEphemeronEdges(gc::EphemeronEdgeVector& edges,
+                          gc::CellColor srcColor);
 
   size_t getMarkCount() const { return markCount; }
   void clearMarkCount() { markCount = 0; }

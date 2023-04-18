@@ -471,6 +471,8 @@ void GCRuntime::waitBackgroundFreeEnd() { freeTask.join(); }
 template <class ZoneIterT>
 IncrementalProgress GCRuntime::markWeakReferences(
     SliceBudget& incrementalBudget) {
+  MOZ_ASSERT(!marker.isWeakMarking());
+
   gcstats::AutoPhase ap1(stats(), gcstats::PhaseKind::SWEEP_MARK_WEAK);
 
   auto unlimited = SliceBudget::unlimited();
@@ -478,7 +480,11 @@ IncrementalProgress GCRuntime::markWeakReferences(
       marker.incrementalWeakMapMarkingEnabled ? incrementalBudget : unlimited;
 
   
-  if (!marker.isWeakMarking() && marker.enterWeakMarkingMode()) {
+  
+  auto leaveOnExit =
+      mozilla::MakeScopeExit([&] { marker.leaveWeakMarkingMode(); });
+
+  if (marker.enterWeakMarkingMode()) {
     
     
     
@@ -495,19 +501,10 @@ IncrementalProgress GCRuntime::markWeakReferences(
 
     for (ZoneIterT zone(this); !zone.done(); zone.next()) {
       if (zone->enterWeakMarkingMode(&marker, budget) == NotFinished) {
-        MOZ_ASSERT(marker.incrementalWeakMapMarkingEnabled);
-        marker.leaveWeakMarkingMode();
         return NotFinished;
       }
     }
   }
-
-  
-  
-  
-  
-  auto leaveOnExit =
-      mozilla::MakeScopeExit([&] { marker.leaveWeakMarkingMode(); });
 
   bool markedAny = true;
   while (markedAny) {
