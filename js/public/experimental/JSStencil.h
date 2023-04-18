@@ -119,12 +119,6 @@ extern JS_PUBLIC_API already_AddRefed<Stencil> CompileModuleScriptToStencil(
     SourceText<char16_t>& srcBuf);
 
 
-
-
-extern JS_PUBLIC_API already_AddRefed<Stencil> FinishOffThreadStencil(
-    JSContext* cx, JS::OffThreadToken* token);
-
-
 extern JS_PUBLIC_API JSScript* InstantiateGlobalStencil(
     JSContext* cx, const InstantiateOptions& options, Stencil* stencil);
 extern JS_PUBLIC_API JSScript* InstantiateGlobalStencil(
