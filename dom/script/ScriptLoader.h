@@ -23,7 +23,7 @@
 #include "mozilla/dom/LoadedScript.h"
 #include "mozilla/dom/JSExecutionContext.h"  
 #include "mozilla/dom/ScriptLoadRequest.h"
-#include "ModuleLoaderBase.h"
+#include "ModuleLoader.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MozPromise.h"
 #include "ScriptKind.h"
@@ -709,52 +709,6 @@ class nsAutoScriptLoaderDisabler {
 
   bool mWasEnabled;
   RefPtr<ScriptLoader> mLoader;
-};
-
-class ModuleLoader final : public ModuleLoaderBase {
- private:
-  virtual ~ModuleLoader();
-
- public:
-  explicit ModuleLoader(ScriptLoader* aLoader);
-
-  ScriptLoader* GetScriptLoader() {
-    return static_cast<ScriptLoader*>(mLoader.get());
-  }
-
-  
-  void EnsureModuleHooksInitialized() override;
-
-  
-
-
-
-
-  nsresult StartModuleLoad(ScriptLoadRequest* aRequest) override;
-
-  void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest) override;
-
-  nsresult CompileOrFinishModuleScript(
-      JSContext* aCx, JS::Handle<JSObject*> aGlobal,
-      JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
-      JS::MutableHandle<JSObject*> aModuleScript) override;
-
-  
-  static already_AddRefed<ModuleLoadRequest> CreateTopLevel(
-      nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
-      const SRIMetadata& aIntegrity, nsIURI* aReferrer, ScriptLoader* aLoader,
-      DOMScriptLoadContext* aContext);
-
-  
-  already_AddRefed<ModuleLoadRequest> CreateStaticImport(
-      nsIURI* aURI, ModuleLoadRequest* aParent) override;
-
-  
-  static already_AddRefed<ModuleLoadRequest> CreateDynamicImport(
-      nsIURI* aURI, ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL,
-      DOMScriptLoadContext* aContext, ScriptLoader* aLoader,
-      JS::Handle<JS::Value> aReferencingPrivate,
-      JS::Handle<JSString*> aSpecifier, JS::Handle<JSObject*> aPromise);
 };
 
 }  
