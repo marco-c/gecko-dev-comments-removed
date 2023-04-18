@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/DataMutex.h"
@@ -28,6 +29,10 @@ static inline SubmetricToMirrorMutex::AutoLock GetLabeledMirrorLock() {
   auto lock = sLabeledMirrors.Lock();
   if (!*lock) {
     *lock = MakeUnique<SubmetricToLabeledMirrorMapType>();
+    RunOnShutdown([&] {
+      auto lock = sLabeledMirrors.Lock();
+      *lock = nullptr;  
+    });
   }
   return lock;
 }
@@ -62,6 +67,10 @@ static inline TimesToStartsMutex::AutoLock GetTimesToStartsLock() {
   auto lock = sTimespanStarts.Lock();
   if (!*lock) {
     *lock = MakeUnique<nsTHashMap<ScalarIDHashKey, TimeStamp>>();
+    RunOnShutdown([&] {
+      auto lock = sTimespanStarts.Lock();
+      *lock = nullptr;  
+    });
   }
   return lock;
 }
