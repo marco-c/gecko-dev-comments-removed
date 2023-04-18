@@ -84,7 +84,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde/1.0.136")]
+#![doc(html_root_url = "https://docs.rs/serde/1.0.137")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -103,10 +103,8 @@
         
         semicolon_if_nothing_returned,
         
-        checked_conversions,
         empty_enum,
-        redundant_field_names,
-        redundant_static_lifetimes,
+        type_repetition_in_bounds, 
         
         cast_possible_truncation,
         cast_possible_wrap,
