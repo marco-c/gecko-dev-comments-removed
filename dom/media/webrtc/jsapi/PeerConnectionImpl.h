@@ -28,7 +28,7 @@
 #include "sdp/SdpMediaSection.h"
 
 #include "mozilla/ErrorResult.h"
-#include "mozilla/dom/RTCPeerConnectionBinding.h"  
+#include "jsapi/PacketDumper.h"
 #include "mozilla/dom/RTCRtpTransceiverBinding.h"
 #include "mozilla/dom/RTCConfigurationBinding.h"
 #include "PrincipalChangeObserver.h"
@@ -423,9 +423,6 @@ class PeerConnectionImpl final
 
   void OnMediaError(const std::string& aError);
 
-  bool ShouldDumpPacket(size_t level, dom::mozPacketDumpType type,
-                        bool sending) const;
-
   void DumpPacket_m(size_t level, dom::mozPacketDumpType type, bool sending,
                     UniquePtr<uint8_t[]>& packet, size_t size);
 
@@ -444,6 +441,14 @@ class PeerConnectionImpl final
     return mJsConfiguration.mIceTransportPolicy.WasPassed() &&
            mJsConfiguration.mIceTransportPolicy.Value() ==
                dom::RTCIceTransportPolicy::Relay;
+  }
+
+  RefPtr<PacketDumper> GetPacketDumper() {
+    if (!mPacketDumper) {
+      mPacketDumper = new PacketDumper(mHandle);
+    }
+
+    return mPacketDumper;
   }
 
  private:
@@ -591,11 +596,6 @@ class PeerConnectionImpl final
   
   uint16_t mMaxReceiving[SdpMediaSection::kMediaTypes];
   uint16_t mMaxSending[SdpMediaSection::kMediaTypes];
-
-  std::vector<unsigned> mSendPacketDumpFlags;
-  std::vector<unsigned> mRecvPacketDumpFlags;
-  Atomic<bool> mPacketDumpEnabled;
-  mutable Mutex mPacketDumpFlagsMutex;
 
   
   
@@ -776,6 +776,8 @@ class PeerConnectionImpl final
   };
 
   mozilla::UniquePtr<SignalHandler> mSignalHandler;
+
+  RefPtr<PacketDumper> mPacketDumper;
 
  public:
   
