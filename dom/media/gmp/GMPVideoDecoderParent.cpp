@@ -288,7 +288,8 @@ mozilla::ipc::IPCResult GMPVideoDecoderParent::RecvDecoded(
                   this, aDecodedFrame.mTimestamp(), mFrameCount);
 
   if (!mCallback) {
-    return IPC_FAIL_NO_REASON(this);
+    
+    return IPC_OK();
   }
 
   if (!GMPVideoi420FrameImpl::CheckFrameData(aDecodedFrame)) {
@@ -296,7 +297,10 @@ mozilla::ipc::IPCResult GMPVideoDecoderParent::RecvDecoded(
         "GMPVideoDecoderParent[%p]::RecvDecoded() "
         "timestamp=%" PRId64 " decoded frame corrupt, ignoring",
         this, aDecodedFrame.mTimestamp());
-    return IPC_FAIL_NO_REASON(this);
+    
+    
+    
+    return IPC_OK();
   }
   auto f = new GMPVideoi420FrameImpl(aDecodedFrame, &mVideoHost);
 

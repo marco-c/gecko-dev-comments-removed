@@ -39,52 +39,69 @@ bool MessagePortParent::Entangle(const nsID& aDestinationUUID,
 
 mozilla::ipc::IPCResult MessagePortParent::RecvPostMessages(
     nsTArray<MessageData>&& aMessages) {
+  if (!mService) {
+    NS_WARNING("PostMessages is called after a shutdown!");
+    
+    
+    return IPC_OK();
+  }
+
+  if (!mEntangled) {
+    
+    
+    return IPC_FAIL(this, "RecvPostMessages not entangled");
+  }
+
   
   FallibleTArray<RefPtr<SharedMessageBody>> messages;
   if (NS_WARN_IF(!SharedMessageBody::FromMessagesToSharedParent(aMessages,
                                                                 messages))) {
-    return IPC_FAIL_NO_REASON(this);
-  }
-
-  if (!mEntangled) {
-    return IPC_FAIL_NO_REASON(this);
-  }
-
-  if (!mService) {
-    NS_WARNING("Entangle is called after a shutdown!");
-    return IPC_FAIL_NO_REASON(this);
+    
+    
+    
+    return IPC_FAIL(this, "SharedMessageBody::FromMessagesToSharedParent");
   }
 
   if (messages.IsEmpty()) {
-    return IPC_FAIL_NO_REASON(this);
+    
+    return IPC_OK();
   }
 
   if (!mService->PostMessages(this, std::move(messages))) {
-    return IPC_FAIL_NO_REASON(this);
+    
+    
+    return IPC_FAIL(this, "RecvPostMessages->PostMessages");
   }
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult MessagePortParent::RecvDisentangle(
     nsTArray<MessageData>&& aMessages) {
+  if (!mService) {
+    NS_WARNING("Entangle is called after a shutdown!");
+    
+    
+    return IPC_OK();
+  }
+
+  if (!mEntangled) {
+    
+    
+    return IPC_FAIL(this, "RecvDisentangle not entangled");
+  }
+
   
   FallibleTArray<RefPtr<SharedMessageBody>> messages;
   if (NS_WARN_IF(!SharedMessageBody::FromMessagesToSharedParent(aMessages,
                                                                 messages))) {
-    return IPC_FAIL_NO_REASON(this);
-  }
-
-  if (!mEntangled) {
-    return IPC_FAIL_NO_REASON(this);
-  }
-
-  if (!mService) {
-    NS_WARNING("Entangle is called after a shutdown!");
-    return IPC_FAIL_NO_REASON(this);
+    
+    return IPC_FAIL(this, "SharedMessageBody::FromMessagesToSharedParent");
   }
 
   if (!mService->DisentanglePort(this, std::move(messages))) {
-    return IPC_FAIL_NO_REASON(this);
+    
+    
+    return IPC_FAIL(this, "RecvDisentangle->DisentanglePort");
   }
 
   CloseAndDelete();
@@ -106,7 +123,7 @@ mozilla::ipc::IPCResult MessagePortParent::RecvClose() {
     MOZ_ASSERT(mEntangled);
 
     if (!mService->ClosePort(this)) {
-      return IPC_FAIL_NO_REASON(this);
+      return IPC_FAIL(this, "RecvClose->ClosePort");
     }
 
     Close();
