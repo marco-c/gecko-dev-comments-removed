@@ -2456,6 +2456,7 @@ impl<'a> SceneBuilder<'a> {
             stacking_context.composite_ops.filters,
             stacking_context.composite_ops.filter_primitives,
             stacking_context.composite_ops.filter_datas,
+            None,
         );
 
         
@@ -3615,6 +3616,7 @@ impl<'a> SceneBuilder<'a> {
             filters,
             filter_primitives,
             filter_datas,
+            Some(false),
         );
 
         
@@ -3661,6 +3663,7 @@ impl<'a> SceneBuilder<'a> {
         mut filter_ops: Vec<Filter>,
         mut filter_primitives: Vec<FilterPrimitive>,
         filter_datas: Vec<FilterData>,
+        should_inflate_override: Option<bool>,
     ) -> PictureChainBuilder {
         
         
@@ -3704,7 +3707,18 @@ impl<'a> SceneBuilder<'a> {
                     if filter.is_noop() {
                         continue;
                     } else {
-                        PictureCompositeMode::Filter(filter.clone())
+                        let mut filter = filter.clone();
+
+                        
+                        
+                        
+                        if let Some(should_inflate_override) = should_inflate_override {
+                            if let Filter::Blur { ref mut should_inflate, .. } = filter {
+                                *should_inflate = should_inflate_override;
+                            }
+                        }
+
+                        PictureCompositeMode::Filter(filter)
                     }
                 }
             };
