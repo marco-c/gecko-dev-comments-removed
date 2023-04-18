@@ -11,17 +11,9 @@ async function getLocalDumpLastModified(bucket, collection) {
   let res = await fetch(
     `resource://app/defaults/settings/${bucket}/${collection}.json`
   );
-  let records = (await res.json()).data;
-
-  if (records.some(r => r.last_modified > records[0].last_modified)) {
-    
-    
-    ok(false, `${bucket}/${collection} - newest record should be in the front`);
-  }
-  return records.reduce(
-    (max, { last_modified }) => Math.max(last_modified, max),
-    0
-  );
+  const { timestamp } = await res.json();
+  ok(timestamp >= 0, `${bucket}/${collection} dump has timestamp`);
+  return timestamp;
 }
 
 add_task(async function lastModified_of_non_existing_dump() {
