@@ -56,6 +56,30 @@ using WasmBreakpointSiteMap =
     HashMap<uint32_t, WasmBreakpointSite*, DefaultHasher<uint32_t>,
             SystemAllocPolicy>;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class DebugState {
   const SharedCode code_;
   const SharedModule module_;
@@ -69,7 +93,10 @@ class DebugState {
   WasmBreakpointSiteMap breakpointSites_;
   StepperCounters stepperCounters_;
 
-  void toggleDebugTrap(uint32_t offset, bool enabled);
+  void enableDebuggingForFunction(Instance* instance, uint32_t funcIndex);
+  void disableDebuggingForFunction(Instance* instance, uint32_t funcIndex);
+  void enableDebugTrap(Instance* instance);
+  void disableDebugTrap(Instance* instance);
 
  public:
   DebugState(const Code& code, const Module& module);
@@ -88,15 +115,18 @@ class DebugState {
   
   
 
-  void adjustEnterAndLeaveFrameTrapsState(JSContext* cx, bool enabled);
-  void ensureEnterFrameTrapsState(JSContext* cx, bool enabled);
+  void adjustEnterAndLeaveFrameTrapsState(JSContext* cx, Instance* instance,
+                                          bool enabled);
+  void ensureEnterFrameTrapsState(JSContext* cx, Instance* instance,
+                                  bool enabled);
   bool enterFrameTrapsEnabled() const { return enterFrameTrapsEnabled_; }
 
   
   
 
   bool hasBreakpointTrapAtOffset(uint32_t offset);
-  void toggleBreakpointTrap(JSRuntime* rt, uint32_t offset, bool enabled);
+  void toggleBreakpointTrap(JSRuntime* rt, Instance* instance, uint32_t offset,
+                            bool enabled);
   WasmBreakpointSite* getBreakpointSite(uint32_t offset) const;
   WasmBreakpointSite* getOrCreateBreakpointSite(JSContext* cx,
                                                 Instance* instance,
@@ -111,8 +141,10 @@ class DebugState {
   
 
   bool stepModeEnabled(uint32_t funcIndex) const;
-  [[nodiscard]] bool incrementStepperCount(JSContext* cx, uint32_t funcIndex);
-  void decrementStepperCount(JS::GCContext* gcx, uint32_t funcIndex);
+  [[nodiscard]] bool incrementStepperCount(JSContext* cx, Instance* instance,
+                                           uint32_t funcIndex);
+  void decrementStepperCount(JS::GCContext* gcx, Instance* instance,
+                             uint32_t funcIndex);
 
   
 

@@ -79,6 +79,10 @@ class alignas(16) Instance {
   uintptr_t boundsCheckLimit_;
 
   
+  
+  void* debugTrapHandler_;
+
+  
   JS::Realm* realm_;
 
   
@@ -163,6 +167,14 @@ class alignas(16) Instance {
   
   const UniqueDebugState maybeDebug_;
 
+  
+  
+  
+  
+  
+  
+  uint32_t* debugFilter_;
+
 #ifdef ENABLE_WASM_GC
   
   
@@ -230,6 +242,9 @@ class alignas(16) Instance {
   static constexpr size_t offsetOfBoundsCheckLimit() {
     return offsetof(Instance, boundsCheckLimit_);
   }
+  static constexpr size_t offsetOfDebugTrapHandler() {
+    return offsetof(Instance, debugTrapHandler_);
+  }
 
   static constexpr size_t offsetOfRealm() { return offsetof(Instance, realm_); }
   static constexpr size_t offsetOfCx() { return offsetof(Instance, cx_); }
@@ -271,11 +286,16 @@ class alignas(16) Instance {
   static constexpr size_t offsetOfPreBarrierCode() {
     return offsetof(Instance, preBarrierCode_);
   }
+  static constexpr size_t offsetOfDebugFilter() {
+    return offsetof(Instance, debugFilter_);
+  }
   static constexpr size_t offsetOfGlobalArea() {
     return offsetof(Instance, globalArea_);
   }
 
   JSContext* cx() const { return cx_; }
+  void* debugTrapHandler() const { return debugTrapHandler_; }
+  void setDebugTrapHandler(void* newHandler) { debugTrapHandler_ = newHandler; }
   JS::Realm* realm() const { return realm_; }
   bool debugEnabled() const { return !!maybeDebug_; }
   DebugState& debug() { return *maybeDebug_; }
@@ -293,6 +313,9 @@ class alignas(16) Instance {
   void setInterrupt();
   bool isInterrupted() const;
   void resetInterrupt(JSContext* cx);
+
+  bool debugFilter(uint32_t funcIndex) const;
+  void setDebugFilter(uint32_t funcIndex, bool value);
 
   const Code& code() const { return *code_; }
   inline const CodeTier& code(Tier t) const;

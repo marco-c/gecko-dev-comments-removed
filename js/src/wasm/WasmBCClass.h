@@ -200,6 +200,10 @@ struct BaseCompiler final {
 
   
   
+  NonAssertingLabel debugTrapStub_;
+
+  
+  
   
   
   

@@ -262,27 +262,22 @@ bool wasm::IsValidStackMapKey(bool debugEnabled, const uint8_t* nextPC) {
   const uint8_t* insn = nextPC;
   return (insn[-2] == 0x0F && insn[-1] == 0x0B) ||           
          (insn[-2] == 0xFF && (insn[-1] & 0xF8) == 0xD0) ||  
-         insn[-5] == 0xE8 ||                                 
-         (debugEnabled && insn[-5] == 0x0F && insn[-4] == 0x1F &&
-          insn[-3] == 0x44 && insn[-2] == 0x00 &&
-          insn[-1] == 0x00);  
+         insn[-5] == 0xE8;                                   
 
 #  elif defined(JS_CODEGEN_ARM)
   const uint32_t* insn = (const uint32_t*)nextPC;
-  return ((uintptr_t(insn) & 3) == 0) &&              
-         (insn[-1] == 0xe7f000f0 ||                   
-          (insn[-1] & 0xfffffff0) == 0xe12fff30 ||    
-          (insn[-1] & 0xff000000) == 0xeb000000 ||    
-          (debugEnabled && insn[-1] == 0xe320f000));  
+  return ((uintptr_t(insn) & 3) == 0) &&            
+         (insn[-1] == 0xe7f000f0 ||                 
+          (insn[-1] & 0xfffffff0) == 0xe12fff30 ||  
+          (insn[-1] & 0x0f000000) == 0x0b000000);   
 
 #  elif defined(JS_CODEGEN_ARM64)
   const uint32_t hltInsn = 0xd4a00000;
   const uint32_t* insn = (const uint32_t*)nextPC;
   return ((uintptr_t(insn) & 3) == 0) &&
-         (insn[-1] == hltInsn ||                      
-          (insn[-1] & 0xfffffc1f) == 0xd63f0000 ||    
-          (insn[-1] & 0xfc000000) == 0x94000000 ||    
-          (debugEnabled && insn[-1] == 0xd503201f));  
+         (insn[-1] == hltInsn ||                    
+          (insn[-1] & 0xfffffc1f) == 0xd63f0000 ||  
+          (insn[-1] & 0xfc000000) == 0x94000000);   
 
 #  elif defined(JS_CODEGEN_MIPS64)
   

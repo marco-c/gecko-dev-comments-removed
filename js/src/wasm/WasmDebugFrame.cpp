@@ -158,7 +158,7 @@ void DebugFrame::clearReturnJSValue() {
 void DebugFrame::observe(JSContext* cx) {
   if (!flags_.observing) {
     instance()->debug().adjustEnterAndLeaveFrameTrapsState(
-        cx,  true);
+        cx, instance(),  true);
     flags_.observing = true;
   }
 }
@@ -166,7 +166,7 @@ void DebugFrame::observe(JSContext* cx) {
 void DebugFrame::leave(JSContext* cx) {
   if (flags_.observing) {
     instance()->debug().adjustEnterAndLeaveFrameTrapsState(
-        cx,  false);
+        cx, instance(),  false);
     flags_.observing = false;
   }
 }
