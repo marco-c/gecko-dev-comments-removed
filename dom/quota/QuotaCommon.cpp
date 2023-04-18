@@ -175,7 +175,6 @@ Result<nsIFileKind, nsresult> GetDirEntryKind(nsIFile& aFile) {
   
   
   
-  
   QM_TRY_RETURN(QM_OR_ELSE_LOG_VERBOSE_IF(
       MOZ_TO_RESULT_INVOKE_MEMBER(aFile, IsDirectory)
           .map([](const bool isDirectory) {
@@ -184,7 +183,6 @@ Result<nsIFileKind, nsresult> GetDirEntryKind(nsIFile& aFile) {
           }),
       ([](const nsresult rv) {
         return rv == NS_ERROR_FILE_NOT_FOUND ||
-               rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST ||
                
                
                rv == NS_ERROR_FILE_FS_CORRUPTED;

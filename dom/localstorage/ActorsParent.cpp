@@ -528,14 +528,12 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateStorageConnection(
             
             
             
-            
             QM_TRY(QM_OR_ELSE_WARN_IF(
                 
                 MOZ_TO_RESULT(aUsageFile.Remove(false)),
                 
                 ([](const nsresult rv) {
-                  return rv == NS_ERROR_FILE_NOT_FOUND ||
-                         rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST;
+                  return rv == NS_ERROR_FILE_NOT_FOUND;
                 }),
                 
                 ErrToDefaultOk<>));
@@ -1002,22 +1000,19 @@ Result<bool, nsresult> ExistsAsFile(nsIFile& aFile) {
   
   
   
-  
-  QM_TRY_INSPECT(const auto& res,
-                 QM_OR_ELSE_LOG_VERBOSE_IF(
-                     
-                     MOZ_TO_RESULT_INVOKE_MEMBER(aFile, IsDirectory)
-                         .map([](const bool isDirectory) {
-                           return isDirectory ? ExistsAsFileResult::IsDirectory
-                                              : ExistsAsFileResult::IsFile;
-                         }),
-                     
-                     ([](const nsresult rv) {
-                       return rv == NS_ERROR_FILE_NOT_FOUND ||
-                              rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST;
-                     }),
-                     
-                     ErrToOk<ExistsAsFileResult::DoesNotExist>));
+  QM_TRY_INSPECT(
+      const auto& res,
+      QM_OR_ELSE_LOG_VERBOSE_IF(
+          
+          MOZ_TO_RESULT_INVOKE_MEMBER(aFile, IsDirectory)
+              .map([](const bool isDirectory) {
+                return isDirectory ? ExistsAsFileResult::IsDirectory
+                                   : ExistsAsFileResult::IsFile;
+              }),
+          
+          ([](const nsresult rv) { return rv == NS_ERROR_FILE_NOT_FOUND; }),
+          
+          ErrToOk<ExistsAsFileResult::DoesNotExist>));
 
   QM_TRY(OkIf(res != ExistsAsFileResult::IsDirectory), Err(NS_ERROR_FAILURE));
 
@@ -4146,8 +4141,7 @@ nsresult Connection::EnsureStorageConnection() {
     }
 
     nsresult rv = directoryEntry->Remove(false);
-    if (rv != NS_ERROR_FILE_TARGET_DOES_NOT_EXIST &&
-        rv != NS_ERROR_FILE_NOT_FOUND && NS_FAILED(rv)) {
+    if (rv != NS_ERROR_FILE_NOT_FOUND && NS_FAILED(rv)) {
       NS_WARNING("Failed to remove database file!");
     }
   });

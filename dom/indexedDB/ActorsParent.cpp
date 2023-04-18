@@ -5718,8 +5718,7 @@ SerializeStructuredCloneFiles(PBackgroundParent* aBackgroundActor,
 }
 
 bool IsFileNotFoundError(const nsresult aRv) {
-  return aRv == NS_ERROR_FILE_NOT_FOUND ||
-         aRv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST;
+  return aRv == NS_ERROR_FILE_NOT_FOUND;
 }
 
 enum struct Idempotency { Yes, No };
@@ -12394,8 +12393,7 @@ Result<FileUsageType, nsresult> DatabaseFileManager::GetUsage(
                                }),
                            
                            ([](const nsresult rv) {
-                             return rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST ||
-                                    rv == NS_ERROR_FILE_NOT_FOUND;
+                             return rv == NS_ERROR_FILE_NOT_FOUND;
                            }),
                            
                            
@@ -12824,15 +12822,13 @@ nsresult QuotaClient::GetUsageForOriginInternal(
         
         
         
-        
         QM_TRY_INSPECT(const int64_t& walFileSize,
                        QM_OR_ELSE_LOG_VERBOSE_IF(
                            
                            MOZ_TO_RESULT_INVOKE_MEMBER(walFile, GetFileSize),
                            
                            ([](const nsresult rv) {
-                             return rv == NS_ERROR_FILE_NOT_FOUND ||
-                                    rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST;
+                             return rv == NS_ERROR_FILE_NOT_FOUND;
                            }),
                            
                            (ErrToOk<0, int64_t>)));

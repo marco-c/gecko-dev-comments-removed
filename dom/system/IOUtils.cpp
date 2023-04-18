@@ -93,8 +93,7 @@ namespace mozilla::dom {
 
 
 static bool IsFileNotFound(nsresult aResult) {
-  return aResult == NS_ERROR_FILE_NOT_FOUND ||
-         aResult == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST;
+  return aResult == NS_ERROR_FILE_NOT_FOUND;
 }
 
 
@@ -173,8 +172,6 @@ static void RejectJSPromise(Promise* aPromise, const IOUtils::IOError& aError) {
 
   switch (aError.Code()) {
     case NS_ERROR_FILE_UNRESOLVABLE_SYMLINK:
-      [[fallthrough]];  
-    case NS_ERROR_FILE_TARGET_DOES_NOT_EXIST:
       [[fallthrough]];  
     case NS_ERROR_FILE_NOT_FOUND:
       [[fallthrough]];  

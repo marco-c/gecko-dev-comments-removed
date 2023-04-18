@@ -260,9 +260,7 @@ DataStorage::Reader::Run() {
   nsCOMPtr<nsIInputStream> fileInputStream;
   rv = NS_NewLocalFileInputStream(getter_AddRefs(fileInputStream), file);
   
-  if (NS_WARN_IF(NS_FAILED(rv) &&
-                 rv != NS_ERROR_FILE_TARGET_DOES_NOT_EXIST &&  
-                 rv != NS_ERROR_FILE_NOT_FOUND)) {             
+  if (NS_WARN_IF(NS_FAILED(rv) && rv != NS_ERROR_FILE_NOT_FOUND)) {
     return rv;
   }
 
