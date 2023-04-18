@@ -790,6 +790,15 @@ class JSRope : public JSString {
 static_assert(sizeof(JSRope) == sizeof(JSString),
               "string subclasses must be binary-compatible with JSString");
 
+
+
+
+
+
+
+
+
+
 class JSLinearString : public JSString {
   friend class JSString;
   friend class JS::AutoStableStringChars;
@@ -823,6 +832,11 @@ class JSLinearString : public JSString {
   static inline JSLinearString* new_(
       JSContext* cx, js::UniquePtr<CharT[], JS::FreePolicy> chars,
       size_t length, js::gc::InitialHeap heap);
+
+  template <typename CharT>
+  static inline JSLinearString* newForAtomValidLength(
+      JSContext* cx, js::UniquePtr<CharT[], JS::FreePolicy> chars,
+      size_t length);
 
   template <typename CharT>
   MOZ_ALWAYS_INLINE const CharT* nonInlineChars(
@@ -1063,6 +1077,8 @@ class JSThinInlineString : public JSInlineString {
   static inline JSThinInlineString* new_(JSContext* cx,
                                          js::gc::InitialHeap heap);
 
+  static inline JSThinInlineString* newForAtom(JSContext* cx);
+
   template <typename CharT>
   inline CharT* init(size_t length);
 
@@ -1101,6 +1117,8 @@ class JSFatInlineString : public JSInlineString {
   template <js::AllowGC allowGC>
   static inline JSFatInlineString* new_(JSContext* cx,
                                         js::gc::InitialHeap heap);
+
+  static inline JSFatInlineString* newForAtom(JSContext* cx);
 
   static const size_t MAX_LENGTH_LATIN1 =
       JSString::NUM_INLINE_CHARS_LATIN1 + INLINE_EXTENSION_CHARS_LATIN1;
@@ -1369,6 +1387,14 @@ inline JSLinearString* NewStringCopyN(
   return NewStringCopyN<allowGC>(cx, reinterpret_cast<const Latin1Char*>(s), n,
                                  heap);
 }
+
+template <typename CharT>
+extern JSLinearString* NewStringForAtomCopyNMaybeDeflateValidLength(
+    JSContext* cx, const CharT* s, size_t n);
+
+template <typename CharT>
+extern JSLinearString* NewStringForAtomCopyNDontDeflateValidLength(
+    JSContext* cx, const CharT* s, size_t n);
 
 
 template <js::AllowGC allowGC, typename CharT>
