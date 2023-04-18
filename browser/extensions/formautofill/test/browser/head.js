@@ -216,6 +216,28 @@ async function sleep(ms = 500) {
 
 
 
+async function waitForStorageChangedEvents(...eventTypes) {
+  return Promise.all(
+    eventTypes.map(type =>
+      TestUtils.topicObserved(
+        "formautofill-storage-changed",
+        (subject, data) => {
+          return data == type;
+        }
+      )
+    )
+  );
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
