@@ -20,4 +20,9 @@ interface nsIAccessibleCaretMoveEvent: nsIAccessibleEvent
 
 
   readonly attribute bool isSelectionCollapsed;
+
+  
+
+
+  readonly attribute bool isAtEndOfLine;
 };
