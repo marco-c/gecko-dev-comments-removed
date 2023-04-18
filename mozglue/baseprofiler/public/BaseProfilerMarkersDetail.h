@@ -256,6 +256,11 @@ using BacktraceCaptureFunction = bool (*)(ProfileChunkedBuffer&,
 
 
 
+MFBT_API ProfileChunkedBuffer& StaticClearedBufferForMainThreadAddMarker();
+
+
+
+
 template <typename MarkerType, typename... Ts>
 ProfileBufferBlockIndex AddMarkerToBuffer(
     ProfileChunkedBuffer& aBuffer, const ProfilerString8View& aName,
@@ -286,6 +291,13 @@ ProfileBufferBlockIndex AddMarkerToBuffer(
       return AddMarkerWithOptionalStackToBuffer<MarkerType>(
           aBuffer, aName, aCategory, std::move(aOptions), aTs...);
     };
+
+    if (baseprofiler::profiler_is_main_thread()) {
+      
+      
+      return CaptureStackAndAddMarker(
+          StaticClearedBufferForMainThreadAddMarker());
+    }
     
     ProfileBufferChunkManagerSingle chunkManager(
         ProfileBufferChunkManager::scExpectedMaximumStackSize);
