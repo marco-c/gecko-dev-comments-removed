@@ -59,9 +59,11 @@ class OverscrollAnimation : public AsyncPanZoomAnimation {
       
       
       
-      mDeferredTasks.AppendElement(
-          NewRunnableMethod("layers::AsyncPanZoomController::ScrollSnap",
-                            &mApzc, &AsyncPanZoomController::ScrollSnap));
+      mDeferredTasks.AppendElement(NewRunnableMethod<ScrollSnapFlags>(
+          "layers::AsyncPanZoomController::ScrollSnap", &mApzc,
+          &AsyncPanZoomController::ScrollSnap,
+          ScrollSnapFlags::IntendedDirection |
+              ScrollSnapFlags::IntendedEndPosition));
       return false;
     }
     return true;
