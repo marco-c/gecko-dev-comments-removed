@@ -100,20 +100,23 @@ void CacheStreamControlParent::ActorDestroy(ActorDestroyReason aReason) {
     return;
   }
   mStreamList->GetManager().RemoveListener(this);
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  mStreamList->GetManager().RecordHaveDeletedCSCP(Id());
+#endif
   mStreamList->RemoveStreamControl(this);
   mStreamList->NoteClosedAll();
   mStreamList = nullptr;
 }
 
 void CacheStreamControlParent::AssertWillDelete() {
-  if (Id() != kFreedActorId) {
-    
-    
-    if (!CanSend()) {
-      MOZ_ASSERT(false, "Attempt to delete CSCP that cannot send.");
-      mStreamList->GetManager().RecordMayNotDeleteCSCP(Id());
-    }
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  
+  
+  if (mStreamList && !CanSend()) {
+    MOZ_ASSERT(false, "Attempt to delete blocking CSCP that cannot send.");
+    mStreamList->GetManager().RecordMayNotDeleteCSCP(Id());
   }
+#endif
 }
 
 mozilla::ipc::IPCResult CacheStreamControlParent::RecvOpenStream(
