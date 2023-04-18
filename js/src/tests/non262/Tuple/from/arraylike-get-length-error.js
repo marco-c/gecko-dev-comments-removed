@@ -1,0 +1,17 @@
+
+
+
+
+var arrayLike = {};
+
+Object.defineProperty(arrayLike, "length", {
+  get: function() {
+    throw new SyntaxError();
+  }
+});
+
+assertThrowsInstanceOf(function() {
+  Tuple.from(arrayLike);
+}, SyntaxError, "items.length throws");
+
+reportCompare(0, 0);
