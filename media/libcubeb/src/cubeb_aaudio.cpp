@@ -24,7 +24,7 @@
 #ifdef DISABLE_LIBAAUDIO_DLOPEN
 #define WRAP(x) x
 #else
-#define WRAP(x) cubeb_##x
+#define WRAP(x) (*cubeb_##x)
 #define LIBAAUDIO_API_VISIT(X)                                                 \
   X(AAudio_convertResultToText)                                                \
   X(AAudio_convertStreamStateToText)                                           \
@@ -60,6 +60,7 @@
   X(AAudioStream_getFramesPerBurst)                                            \
   X(AAudioStreamBuilder_setInputPreset)                                        \
   X(AAudioStreamBuilder_setUsage)
+
 
 
 
@@ -1475,7 +1476,7 @@ aaudio_init(cubeb ** context, char const * )
 
 #define LOAD(x)                                                                \
   {                                                                            \
-    WRAP(x) = (decltype(WRAP(x)))(dlsym(libaaudio, #x));                       \
+    cubeb_##x = (decltype(x) *)(dlsym(libaaudio, #x));                         \
     if (!WRAP(x)) {                                                            \
       LOG("AAudio: Failed to load %s", #x);                                    \
       dlclose(libaaudio);                                                      \

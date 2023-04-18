@@ -1,6 +1,8 @@
-#include "cubeb-jni-instances.h"
+
 #include "jni.h"
 #include <assert.h>
+#include "cubeb-jni-instances.h"
+
 
 #define AUDIO_STREAM_TYPE_MUSIC 3
 
