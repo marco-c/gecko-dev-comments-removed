@@ -344,8 +344,7 @@ class ElementStyle {
         earlier &&
         computedProp.priority === "important" &&
         earlier.priority !== "important" &&
-        (earlier.textProp.rule.inherited ||
-          !computedProp.textProp.rule.inherited)
+        !computedProp.textProp.rule.inherited
       ) {
         
         
