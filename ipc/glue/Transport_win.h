@@ -13,6 +13,7 @@
 #include "ipc/IPCMessageUtils.h"
 #include "nsWindowsHelpers.h"
 #include "nsXULAppAPI.h"
+#include "mozilla/UniquePtrExtensions.h"
 
 namespace mozilla {
 namespace ipc {
@@ -23,9 +24,6 @@ struct TransportDescriptor {
   base::ProcessId mDestinationProcessId;
 };
 
-HANDLE
-TransferHandleToProcess(HANDLE source, base::ProcessId pid);
-
 }  
 }  
 
@@ -35,71 +33,25 @@ template <>
 struct ParamTraits<mozilla::ipc::TransportDescriptor> {
   typedef mozilla::ipc::TransportDescriptor paramType;
   static void Write(Message* aMsg, const paramType& aParam) {
-    HANDLE pipe = mozilla::ipc::TransferHandleToProcess(
-        aParam.mServerPipeHandle, aParam.mDestinationProcessId);
-    DWORD duplicateFromProcessId = 0;
-    if (!pipe) {
-      if (XRE_IsParentProcess()) {
-        
-        
-        ::CloseHandle(aParam.mServerPipeHandle);
-      } else {
-        
-        pipe = aParam.mServerPipeHandle;
-        duplicateFromProcessId = ::GetCurrentProcessId();
-      }
-    }
-
     WriteParam(aMsg, aParam.mPipeName);
-    WriteParam(aMsg, pipe);
-    WriteParam(aMsg, duplicateFromProcessId);
+    WriteParam(aMsg, mozilla::UniqueFileHandle(aParam.mServerPipeHandle));
     WriteParam(aMsg, aParam.mDestinationProcessId);
   }
   static bool Read(const Message* aMsg, PickleIterator* aIter,
                    paramType* aResult) {
-    DWORD duplicateFromProcessId;
+    mozilla::UniqueFileHandle serverPipeHandle;
     bool r = (ReadParam(aMsg, aIter, &aResult->mPipeName) &&
-              ReadParam(aMsg, aIter, &aResult->mServerPipeHandle) &&
-              ReadParam(aMsg, aIter, &duplicateFromProcessId) &&
+              ReadParam(aMsg, aIter, &serverPipeHandle) &&
               ReadParam(aMsg, aIter, &aResult->mDestinationProcessId));
     if (!r) {
       return r;
     }
 
-    MOZ_RELEASE_ASSERT(
-        aResult->mServerPipeHandle,
-        "Main process failed to duplicate pipe handle to child.");
-
-    
-    if (aResult->mServerPipeHandle == INVALID_HANDLE_VALUE) {
-      return true;
-    }
-
-    MOZ_RELEASE_ASSERT(aResult->mDestinationProcessId ==
-                       base::GetCurrentProcId());
-
-    
-    if (!duplicateFromProcessId) {
-      return true;
-    }
-
-    
-    nsAutoHandle sourceProcess(
-        ::OpenProcess(PROCESS_DUP_HANDLE, FALSE, duplicateFromProcessId));
-    if (!sourceProcess) {
-      return false;
-    }
-
-    HANDLE ourHandle;
-    BOOL duped = ::DuplicateHandle(
-        sourceProcess, aResult->mServerPipeHandle, ::GetCurrentProcess(),
-        &ourHandle, 0, FALSE, DUPLICATE_CLOSE_SOURCE | DUPLICATE_SAME_ACCESS);
-    if (!duped) {
+    if (serverPipeHandle) {
+      aResult->mServerPipeHandle = serverPipeHandle.release();
+    } else {
       aResult->mServerPipeHandle = INVALID_HANDLE_VALUE;
-      return false;
     }
-
-    aResult->mServerPipeHandle = ourHandle;
     return true;
   }
 };
