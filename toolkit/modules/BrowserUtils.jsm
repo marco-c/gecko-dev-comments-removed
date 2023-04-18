@@ -318,84 +318,36 @@ var BrowserUtils = {
   },
 
   
-
-
-  PromoType: {
-    DEFAULT: 0, 
-    VPN: 1,
-    RALLY: 2,
-    FOCUS: 3,
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  shouldShowPromo(promoType) {
-    switch (promoType) {
-      case this.PromoType.VPN:
-        return this._shouldShowPromoInternal(promoType);
-      case this.PromoType.RALLY:
-        return this._shouldShowRallyPromo();
-      case this.PromoType.FOCUS:
-        return this._shouldShowPromoInternal(promoType);
-      default:
-        throw new Error("Unknown promo type: ", promoType);
-    }
-  },
-
-  
-
-
   shouldShowVPNPromo() {
-    return this._shouldShowPromoInternal(this.PromoType.VPN);
-  },
-
-  _shouldShowPromoInternal(promoType) {
-    const info = PromoInfo[promoType];
-    const promoEnabled = Services.prefs.getBoolPref(info.enabledPref, true);
-
+    const vpnPromoEnabled = Services.prefs.getBoolPref(
+      "browser.vpn_promo.enabled",
+      true
+    );
     const homeRegion = Region.home || "";
     const currentRegion = Region.current || "";
-
-    let inSupportedRegion = true;
-    if ("supportedRegions" in info.lazyStringSetPrefs) {
-      const supportedRegions =
-        info.lazyStringSetPrefs.supportedRegions.lazyValue;
-      inSupportedRegion =
-        supportedRegions.has(currentRegion.toLowerCase()) ||
-        supportedRegions.has(homeRegion.toLowerCase());
-    }
-
-    const avoidAdsRegions = info.lazyStringSetPrefs.disallowedRegions.lazyValue;
-
+    const supportedRegions = BrowserUtils.vpnSupportedRegions;
+    const inSupportedRegion =
+      supportedRegions.has(currentRegion.toLowerCase()) ||
+      supportedRegions.has(homeRegion.toLowerCase());
+    const avoidAdsCountries = BrowserUtils.vpnDisallowedRegions;
+    
+    const vpnIllegalCountries = ["cn", "kp", "tm"];
+    vpnIllegalCountries.forEach(country => avoidAdsCountries.add(country));
     
     const noActivePolicy =
       !Services.policies ||
       Services.policies.status !== Services.policies.ACTIVE;
 
     return (
-      promoEnabled &&
-      !avoidAdsRegions.has(homeRegion.toLowerCase()) &&
-      !avoidAdsRegions.has(currentRegion.toLowerCase()) &&
-      !info.illegalRegions.includes(homeRegion.toLowerCase()) &&
-      !info.illegalRegions.includes(currentRegion.toLowerCase()) &&
+      vpnPromoEnabled &&
+      !avoidAdsCountries.has(homeRegion.toLowerCase()) &&
+      !avoidAdsCountries.has(currentRegion.toLowerCase()) &&
       inSupportedRegion &&
       noActivePolicy
     );
   },
 
+  
   shouldShowRallyPromo() {
     const homeRegion = Region.home || "";
     const currentRegion = Region.current || "";
@@ -412,57 +364,30 @@ var BrowserUtils = {
   },
 };
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  BrowserUtils,
+  "navigationRequireUserInteraction",
+  "browser.navigation.requireUserInteraction",
+  false
+);
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  BrowserUtils,
+  "vpnSupportedRegions",
+  "browser.contentblocking.report.vpn_regions",
+  "us,ca,nz,sg,my,gb,de,fr",
+  null,
+  stringPrefToSet
+);
 
-
-
-
-let PromoInfo = {
-  [BrowserUtils.PromoType.VPN]: {
-    enabledPref: "browser.vpn_promo.enabled",
-    lazyStringSetPrefs: {
-      supportedRegions: {
-        name: "browser.contentblocking.report.vpn_region",
-        default: "us,ca,nz,sg,my,gb,de,fr",
-      },
-      disallowedRegions: {
-        name: "browser.vpn_promo.disallowed_regions",
-        default: "ae,by,cn,cu,iq,ir,kp,om,ru,sd,sy,tm,tr,ua",
-      },
-    },
-    illegalRegions: ["cn", "kp", "tm"],
-  },
-  [BrowserUtils.PromoType.FOCUS]: {
-    enabledPref: "browser.promo.focus.enabled",
-    lazyStringSetPrefs: {
-      
-      
-      disallowedRegions: {
-        name: "browser.promo.focus.disallowed_regions",
-        default: "cn",
-      },
-    },
-    illegalRegions: ["cn"],
-  },
-};
-
-
-
-
-
-
-for (let promo of Object.values(PromoInfo)) {
-  for (let prefObj of Object.values(promo.lazyStringSetPrefs)) {
-    XPCOMUtils.defineLazyPreferenceGetter(
-      prefObj,
-      "lazyValue",
-      prefObj.name,
-      prefObj.default,
-      null,
-      stringPrefToSet
-    );
-  }
-}
+XPCOMUtils.defineLazyPreferenceGetter(
+  BrowserUtils,
+  "vpnDisallowedRegions",
+  "browser.vpn_promo.disallowed_regions",
+  "ae,by,cn,cu,iq,ir,kp,om,ru,sd,sy,tm,tr,ua",
+  null,
+  stringPrefToSet
+);
 
 XPCOMUtils.defineLazyPreferenceGetter(
   BrowserUtils,
