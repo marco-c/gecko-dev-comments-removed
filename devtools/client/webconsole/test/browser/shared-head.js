@@ -373,6 +373,54 @@ function findAllMessages(hud) {
 
 
 
+function findMessagePartByType(hud, options) {
+  const elements = findMessagePartsByType(hud, options);
+  return elements.at(-1);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function findMessagePartsByType(hud, { text, typeSelector, partSelector }) {
+  if (!typeSelector) {
+    throw new Error("typeSelector parameter is required");
+  }
+  if (!typeSelector.startsWith(".")) {
+    throw new Error("typeSelector should start with a dot e.g. `.result`");
+  }
+  if (!partSelector) {
+    throw new Error("partSelector parameter is required");
+  }
+
+  const selector = ".message" + typeSelector + " " + partSelector;
+  const parts = hud.ui.outputNode.querySelectorAll(selector);
+  const elements = Array.from(parts).filter(el =>
+    el.textContent.includes(text)
+  );
+  return elements;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 function findEvaluationResultMessage(hud, text, extraSelector = "") {
   return findMessageByType(hud, text, ".result" + extraSelector);
 }
