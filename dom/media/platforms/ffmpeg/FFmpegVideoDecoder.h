@@ -148,6 +148,11 @@ class FFmpegVideoDecoder<LIBAV_VER>
   int mDecodedFrames;
 #if LIBAVCODEC_VERSION_MAJOR >= 58
   int mDecodedFramesLate;
+  
+  
+  
+  
+  int mMissedDecodeInAverangeTime;
 #endif
   float mAverangeDecodeTime;
 
