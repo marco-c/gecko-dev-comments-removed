@@ -169,6 +169,14 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   
 
 
+
+
+  void ScheduleAccessibilitySubtreeUpdate(mozilla::PresShell* aPresShell,
+                                          nsIContent* aStartChild);
+
+  
+
+
   void ContentRemoved(mozilla::PresShell* aPresShell, nsIContent* aChild);
 
   
@@ -176,6 +184,12 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
   void TableLayoutGuessMaybeChanged(mozilla::PresShell* aPresShell,
                                     nsIContent* aContent);
+
+  
+
+
+  void ComboboxOptionMaybeChanged(mozilla::PresShell*,
+                                  nsIContent* aMutatingNode);
 
   void UpdateText(mozilla::PresShell* aPresShell, nsIContent* aContent);
 
