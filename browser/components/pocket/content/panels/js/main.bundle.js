@@ -1054,11 +1054,12 @@ function Button(props) {
   return react.createElement("a", {
     href: props.url,
     className: `stp_button${props?.style && ` stp_button_${props.style}`}`
-  }, props.label);
+  }, props.children);
 }
 
  const Button_Button = (Button);
 ;
+
 
 
 
@@ -1073,16 +1074,17 @@ StyleGuideOverlay.prototype = {
     react_dom.render( react.createElement("div", null, react.createElement("h3", null, "JSX Components:"), react.createElement("h4", {
       className: "stp_styleguide_h4"
     }, "Button"), react.createElement(Button_Button, {
-      label: "Text Button",
       style: "text",
       url: "https://example.org"
-    }), react.createElement("br", null), react.createElement(Button_Button, {
-      label: "Primary Button",
+    }, "Text Button"), react.createElement("br", null), react.createElement(Button_Button, {
       style: "primary"
-    }), react.createElement("br", null), react.createElement(Button_Button, {
-      label: "Secondary Button",
+    }, "Primary Button"), react.createElement("br", null), react.createElement(Button_Button, {
       style: "secondary"
-    }), react.createElement("h4", {
+    }, "Secondary Button"), react.createElement("h4", {
+      className: "stp_styleguide_h4"
+    }, "Header"), react.createElement(Header_Header, null, react.createElement(Button_Button, {
+      style: "primary"
+    }, "View My List")), react.createElement("h4", {
       className: "stp_styleguide_h4"
     }, "PopularTopics"), react.createElement(PopularTopics_PopularTopics, {
       pockethost: `getpocket.com`,
