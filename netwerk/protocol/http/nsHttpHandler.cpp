@@ -885,6 +885,10 @@ void nsHttpHandler::InitUserAgentComponents() {
   const char* format;
 #  if defined _M_X64 || defined _M_AMD64
   format = OSCPU_WIN64;
+#  elif defined(_ARM64_)
+  
+  
+  format = IsWin11OrLater() ? OSCPU_WIN64 : OSCPU_WINDOWS;
 #  else
   BOOL isWow64 = FALSE;
   if (!IsWow64Process(GetCurrentProcess(), &isWow64)) {
