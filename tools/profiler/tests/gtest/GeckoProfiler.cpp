@@ -3572,6 +3572,13 @@ TEST(GeckoProfiler, StreamJSONForThisProcess)
   ASSERT_TRUE(!::profiler_stream_json_for_this_process(w));
 }
 
+
+
+
+bool do_profiler_stream_json_for_this_process(
+    SpliceableJSONWriter& aWriter, double aSinceTime, bool aIsShuttingDown,
+    ProfilerCodeAddressService* aService);
+
 TEST(GeckoProfiler, StreamJSONForThisProcessThreaded)
 {
   
@@ -3595,7 +3602,10 @@ TEST(GeckoProfiler, StreamJSONForThisProcessThreaded)
           "GeckoProfiler_StreamJSONForThisProcessThreaded_Test::TestBody",
           [&]() {
             w.Start();
-            ASSERT_TRUE(::profiler_stream_json_for_this_process(w));
+            ASSERT_TRUE(::do_profiler_stream_json_for_this_process(
+                w,  0.0,
+                 false,
+                 nullptr));
             w.End();
           }),
       NS_DISPATCH_SYNC);
@@ -3611,7 +3621,10 @@ TEST(GeckoProfiler, StreamJSONForThisProcessThreaded)
           "GeckoProfiler_StreamJSONForThisProcessThreaded_Test::TestBody",
           [&]() {
             profiler_stop();
-            ASSERT_TRUE(!::profiler_stream_json_for_this_process(w));
+            ASSERT_TRUE(!::do_profiler_stream_json_for_this_process(
+                w,  0.0,
+                 false,
+                 nullptr));
           }),
       NS_DISPATCH_SYNC);
   thread->Shutdown();
