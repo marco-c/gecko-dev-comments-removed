@@ -450,8 +450,8 @@ class nsContentUtils {
 
 
   static nsresult GetInclusiveAncestorsAndOffsets(
-      nsINode* aNode, int32_t aOffset, nsTArray<nsIContent*>* aAncestorNodes,
-      nsTArray<int32_t>* aAncestorOffsets);
+      nsINode* aNode, uint32_t aOffset, nsTArray<nsIContent*>* aAncestorNodes,
+      nsTArray<mozilla::Maybe<uint32_t>>* aAncestorOffsets);
 
   
 
