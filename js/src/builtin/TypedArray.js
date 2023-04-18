@@ -1076,9 +1076,8 @@ function TypedArraySort(comparefn) {
         switch (kind) {
           case TYPEDARRAY_KIND_UINT8:
           case TYPEDARRAY_KIND_UINT8CLAMPED:
-            return CountingSort(obj, len, false , TypedArrayCompareInt);
           case TYPEDARRAY_KIND_INT8:
-            return CountingSort(obj, len, true , TypedArrayCompareInt);
+            return TypedArrayNativeSort(obj);
           case TYPEDARRAY_KIND_UINT16:
             return RadixSort(obj, len, buffer,
                              2 , false , false ,
