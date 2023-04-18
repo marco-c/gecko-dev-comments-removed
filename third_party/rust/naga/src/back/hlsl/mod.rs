@@ -119,6 +119,8 @@ use crate::proc;
 pub struct BindTarget {
     pub space: u8,
     pub register: u32,
+    
+    pub binding_array_size: Option<u32>,
 }
 
 
@@ -214,6 +216,7 @@ impl Options {
             None if self.fake_missing_bindings => Ok(BindTarget {
                 space: res_binding.group as u8,
                 register: res_binding.binding,
+                binding_array_size: None,
             }),
             None => Err(EntryPointError::MissingBinding(res_binding.clone())),
         }

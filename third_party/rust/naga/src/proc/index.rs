@@ -117,6 +117,10 @@ pub struct BoundsCheckPolicies {
     
     #[cfg_attr(feature = "deserialize", serde(default))]
     pub image: BoundsCheckPolicy,
+
+    
+    #[cfg_attr(feature = "deserialize", serde(default))]
+    pub binding_array: BoundsCheckPolicy,
 }
 
 
@@ -134,13 +138,20 @@ impl BoundsCheckPolicies {
     
     
     
+    
     pub fn choose_policy(
         &self,
-        access: Handle<crate::Expression>,
+        base: Handle<crate::Expression>,
         types: &UniqueArena<crate::Type>,
         info: &valid::FunctionInfo,
     ) -> BoundsCheckPolicy {
-        match info[access].ty.inner_with(types).pointer_space() {
+        let ty = info[base].ty.inner_with(types);
+
+        if let crate::TypeInner::BindingArray { .. } = *ty {
+            return self.binding_array;
+        }
+
+        match ty.pointer_space() {
             Some(crate::AddressSpace::Storage { access: _ } | crate::AddressSpace::Uniform) => {
                 self.buffer
             }
@@ -365,7 +376,7 @@ impl crate::TypeInner {
         let known_length = match *self {
             Ti::Vector { size, .. } => size as _,
             Ti::Matrix { columns, .. } => columns as _,
-            Ti::Array { size, .. } => {
+            Ti::Array { size, .. } | Ti::BindingArray { size, .. } => {
                 return size.to_indexable_length(module);
             }
             Ti::ValuePointer {
