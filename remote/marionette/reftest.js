@@ -212,9 +212,14 @@ reftest.Runner = class {
     }
     
     
-    const windowStyle = `padding: 0px; margin: 0px; border:none;
-min-width: ${width}px; min-height: ${height}px;
-max-width: ${width}px; max-height: ${height}px`;
+    const windowStyle = `
+      padding: 0px;
+      margin: 0px;
+      border:none;
+      min-width: ${width}px; min-height: ${height}px;
+      max-width: ${width}px; max-height: ${height}px;
+      color-scheme: env(-moz-content-preferred-color-scheme);
+    `;
     browser.setAttribute("style", windowStyle);
 
     if (!AppInfo.isAndroid) {
