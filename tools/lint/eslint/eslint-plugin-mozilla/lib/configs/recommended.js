@@ -76,11 +76,16 @@ module.exports = {
       },
     },
     {
-      
-      
-      
+      env: {
+        browser: false,
+        "mozilla/privileged": false,
+        "mozilla/sjs": true,
+      },
       files: ["**/*.sjs"],
       rules: {
+        
+        
+        
         "mozilla/reject-importGlobalProperties": "off",
       },
     },

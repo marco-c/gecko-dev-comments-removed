@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+"use strict";
+
+module.exports = {
+  globals: {
+    
+    
+    atob: false,
+    btoa: false,
+    ChromeUtils: false,
+    dump: false,
+    getState: false,
+    setState: false,
+    getSharedState: false,
+    setSharedState: false,
+    getObjectState: false,
+    setObjectState: false,
+    registerPathHandler: false,
+    
+    importScripts: false,
+  },
+};
