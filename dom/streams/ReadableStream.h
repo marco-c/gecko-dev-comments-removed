@@ -145,7 +145,7 @@ class ReadableStream final : public nsISupports, public nsWrapperCache {
 
   
  private:
-  RefPtr<ReadableStreamController> mController;
+  MOZ_KNOWN_LIVE RefPtr<ReadableStreamController> mController;
   bool mDisturbed = false;
   RefPtr<ReadableStreamGenericReader> mReader;
   ReaderState mState = ReaderState::Readable;
