@@ -93,6 +93,11 @@ def run_setup(config):
     if "setup" not in config:
         return
 
+    if config["name"] == "clang-format":
+        
+        
+        return
+
     log = logging.LoggerAdapter(
         logger, {"lintname": config.get("name"), "pid": os.getpid()}
     )
