@@ -177,9 +177,8 @@ class WebDriverBiDi {
     Cu.printStderr(`WebDriver BiDi listening on ${this.address}\n`);
 
     
-    const profileDir = await PathUtils.getProfileDir();
     this._activePortPath = PathUtils.join(
-      profileDir,
+      PathUtils.profileDir,
       "WebDriverBiDiActivePort"
     );
 

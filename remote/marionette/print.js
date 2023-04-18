@@ -197,9 +197,8 @@ function parseRanges(ranges) {
 
 print.printToFile = async function(browser, settings) {
   
-  const tempDir = await PathUtils.getTempDir();
   const filePath = await IOUtils.createUniqueFile(
-    tempDir,
+    PathUtils.tempDir,
     "marionette.pdf",
     0o600
   );

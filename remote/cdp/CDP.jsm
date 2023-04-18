@@ -97,8 +97,10 @@ class CDP {
     Cu.printStderr(`DevTools listening on ${this.address}\n`);
 
     
-    const profileDir = await PathUtils.getProfileDir();
-    this._activePortPath = PathUtils.join(profileDir, "DevToolsActivePort");
+    this._activePortPath = PathUtils.join(
+      PathUtils.profileDir,
+      "DevToolsActivePort"
+    );
 
     const data = `${this.agent.port}\n${this.mainTargetPath}`;
     try {
