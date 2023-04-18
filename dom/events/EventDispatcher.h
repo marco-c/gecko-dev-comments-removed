@@ -344,14 +344,11 @@ class EventDispatcher {
 
 
 
-  
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  static nsresult Dispatch(nsISupports* aTarget, nsPresContext* aPresContext,
-                           WidgetEvent* aEvent, dom::Event* aDOMEvent = nullptr,
-                           nsEventStatus* aEventStatus = nullptr,
-                           EventDispatchingCallback* aCallback = nullptr,
-                           nsTArray<dom::EventTarget*>* aTargets = nullptr);
+  MOZ_CAN_RUN_SCRIPT static nsresult Dispatch(
+      nsISupports* aTarget, nsPresContext* aPresContext, WidgetEvent* aEvent,
+      dom::Event* aDOMEvent = nullptr, nsEventStatus* aEventStatus = nullptr,
+      EventDispatchingCallback* aCallback = nullptr,
+      nsTArray<dom::EventTarget*>* aTargets = nullptr);
 
   
 
