@@ -305,32 +305,39 @@ var BackgroundUpdate = {
     return result;
   },
 
-  async _mirrorToPerInstallationPref() {
-    try {
-      let scheduling = Services.prefs.getBoolPref(
-        "app.update.background.scheduling.enabled",
-        true
-      );
-      await UpdateUtils.writeUpdateConfigSetting(
-        "app.update.background.enabled",
-        scheduling,
-        { setDefaultOnly: true }
-      );
-      log.debug(
-        `mirrored per-profile pref "app.update.background.scheduling.enabled" default ` +
-          `to per-installation pref default "app.update.background.enabled": ${scheduling}`
-      );
-    } catch (e) {
-      if (e instanceof Ci.nsIException && e.result == Cr.NS_ERROR_UNEXPECTED) {
-        
-        return;
-      }
-      console.warn(
-        `ignoring failure to mirror per-profile pref "app.update.background.scheduling.enabled" default ` +
-          `to per-installation pref default "app.update.background.enabled"`,
-        e
-      );
+  
+
+
+
+
+
+
+  async ensureExperimentToRolloutTransitionPerformed() {
+    if (!UpdateUtils.PER_INSTALLATION_PREFS_SUPPORTED) {
+      return;
     }
+    const transitionPerformedPref = "app.update.background.rolledout";
+    if (Services.prefs.getBoolPref(transitionPerformedPref, false)) {
+      
+      
+      
+      return;
+    }
+    Services.prefs.setBoolPref(transitionPerformedPref, true);
+
+    const defaultValue =
+      UpdateUtils.PER_INSTALLATION_PREFS["app.update.background.enabled"]
+        .defaultValue;
+    await UpdateUtils.writeUpdateConfigSetting(
+      "app.update.background.enabled",
+      defaultValue,
+      { setDefaultOnly: true }
+    );
+
+    
+    
+    
+    Services.prefs.clearUserPref("app.update.background.scheduling.enabled");
   },
 
   async observe(subject, topic, data) {
@@ -363,12 +370,7 @@ var BackgroundUpdate = {
   async maybeScheduleBackgroundUpdateTask() {
     let SLUG = "maybeScheduleBackgroundUpdateTask";
 
-    if (
-      this._force() ||
-      BackgroundTasksUtils.currentProfileIsDefaultProfile()
-    ) {
-      await this._mirrorToPerInstallationPref();
-    }
+    await this.ensureExperimentToRolloutTransitionPerformed();
 
     log.info(
       `${SLUG}: checking eligibility before scheduling background update task`
@@ -395,15 +397,6 @@ var BackgroundUpdate = {
       
       Services.prefs.addObserver("app.update.background.force", this);
       Services.prefs.addObserver("app.update.background.interval", this);
-
-      
-      
-      
-      
-      Services.prefs.addObserver(
-        "app.update.background.scheduling.enabled",
-        this
-      );
 
       
       Services.prefs.addObserver("app.update.langpack.enabled", this);

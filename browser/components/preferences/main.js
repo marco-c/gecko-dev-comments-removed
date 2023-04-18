@@ -8,6 +8,10 @@
 
 
 
+XPCOMUtils.defineLazyModuleGetters(this, {
+  BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.jsm",
+});
+
 
 const TYPE_PDF = "application/pdf";
 
@@ -1828,10 +1832,6 @@ var gMainPane = {
 
   isBackgroundUpdateUIAvailable() {
     return (
-      Services.prefs.getBoolPref(
-        "app.update.background.scheduling.enabled",
-        false
-      ) &&
       AppConstants.MOZ_UPDATER &&
       AppConstants.MOZ_UPDATE_AGENT &&
       
@@ -1870,6 +1870,11 @@ var gMainPane = {
       
       
       backgroundCheckbox.disabled = true;
+
+      
+      
+      
+      await BackgroundUpdate.ensureExperimentToRolloutTransitionPerformed();
 
       let enabled = await UpdateUtils.readUpdateConfigSetting(prefName);
       backgroundCheckbox.checked = enabled;

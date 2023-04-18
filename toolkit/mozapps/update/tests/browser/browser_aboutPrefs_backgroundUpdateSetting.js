@@ -14,7 +14,6 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/UpdateUtils.jsm"
 );
 
-const ENABLE_UI_PREF = "app.update.background.scheduling.enabled";
 const BACKGROUND_UPDATE_PREF = "app.update.background.enabled";
 
 add_task(async function testBackgroundUpdateSettingUI() {
@@ -48,43 +47,12 @@ WARNING! This test involves background update, but background tasks are
   const originalUpdateAutoVal = await UpdateUtils.getAppUpdateAutoEnabled();
   registerCleanupFunction(async () => {
     await BrowserTestUtils.removeTab(tab);
-    Services.prefs.clearUserPref(ENABLE_UI_PREF);
     await UpdateUtils.writeUpdateConfigSetting(
       BACKGROUND_UPDATE_PREF,
       originalBackgroundUpdateVal
     );
     await UpdateUtils.setAppUpdateAutoEnabled(originalUpdateAutoVal);
   });
-
-  
-  
-  let defaultValue =
-    (AppConstants.EARLY_BETA_OR_EARLIER || AppConstants.MOZ_DEV_EDITION) &&
-    AppConstants.platform == "win";
-  is(
-    Services.prefs.getBoolPref(ENABLE_UI_PREF, false),
-    defaultValue,
-    `${ENABLE_UI_PREF} should default to ${defaultValue}.`
-  );
-
-  await SpecialPowers.spawn(tab.linkedBrowser, [defaultValue], defaultValue => {
-    is(
-      content.document.getElementById("backgroundUpdate").hidden,
-      !defaultValue,
-      `The background update UI should be ${
-        defaultValue ? "shown" : "hidden"
-      } when app.update.scheduling.enabled is ${defaultValue}.`
-    );
-  });
-
-  Services.prefs.setBoolPref(ENABLE_UI_PREF, true);
-  
-  
-  await BrowserTestUtils.removeTab(tab);
-  tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    "about:preferences"
-  );
 
   
   
@@ -102,8 +70,8 @@ WARNING! This test involves background update, but background tasks are
         !perInstallationPrefsSupported,
         `The background update UI should ${
           perInstallationPrefsSupported ? "not" : ""
-        } be hidden when app.update.background.scheduling.enabled is true ` +
-          `and perInstallationPrefsSupported is ${perInstallationPrefsSupported}`
+        } be hidden when and perInstallationPrefsSupported is ` +
+          `${perInstallationPrefsSupported}`
       );
       if (perInstallationPrefsSupported) {
         is(
