@@ -521,7 +521,7 @@ this.ExtensionPreferencesManager = {
         `ExtensionPreferencesManager.getSettingsAPI for ${name} should be updated to use a single paramater object.`
       );
     }
-    return ExtensionPreferencesManager._getInternalSettingsAPI(
+    return ExtensionPreferencesManager._getSettingsAPI(
       arguments.length === 1
         ? extensionId
         : {
@@ -532,41 +532,7 @@ this.ExtensionPreferencesManager = {
             readOnly,
             validate,
           }
-    ).api;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getPrimedSettingsListener(config) {
-    let { name, extension } = config;
-    if (!name || !extension) {
-      throw new Error(
-        `name and extension are required for getPrimedSettingListener`
-      );
-    }
-    if (!settingsMap.get(name)) {
-      throw new Error(
-        `addSetting must be called prior to getPrimedSettingListener`
-      );
-    }
-    return ExtensionPreferencesManager._getInternalSettingsAPI({
-      name,
-      extension,
-    }).registerEvent;
+    );
   },
 
   
@@ -589,21 +555,10 @@ this.ExtensionPreferencesManager = {
 
 
 
-
-
-
-
-
-
-
-
-
-  _getInternalSettingsAPI(params) {
+  _getSettingsAPI(params) {
     let {
       extensionId,
       context,
-      extension,
-      module,
       name,
       callback,
       storeType,
@@ -611,11 +566,8 @@ this.ExtensionPreferencesManager = {
       onChange,
       validate = () => {},
     } = params;
-    if (context) {
-      extension = context.extension;
-    }
-    if (!extensionId && extension) {
-      extensionId = extension.id;
+    if (!extensionId) {
+      extensionId = context.extension.id;
     }
 
     const checkScope = details => {
@@ -627,17 +579,9 @@ this.ExtensionPreferencesManager = {
       }
     };
 
-    
-    let setting = settingsMap.get(name);
-    readOnly = readOnly || !!setting?.readOnly;
-    let getValue = callback || setting?.getCallback;
-    if (!getValue || typeof getValue !== "function") {
-      throw new Error(`Invalid get callback for setting ${name} in ${module}`);
-    }
-
     let settingsAPI = {
       async get(details) {
-        validate(extension);
+        validate();
         let levelOfControl = details.incognito
           ? "not_controllable"
           : await ExtensionPreferencesManager.getLevelOfControl(
@@ -651,11 +595,11 @@ this.ExtensionPreferencesManager = {
             : levelOfControl;
         return {
           levelOfControl,
-          value: await getValue(),
+          value: await callback(),
         };
       },
       set(details) {
-        validate(extension);
+        validate();
         checkScope(details);
         if (!readOnly) {
           return ExtensionPreferencesManager.setSetting(
@@ -667,7 +611,7 @@ this.ExtensionPreferencesManager = {
         return false;
       },
       clear(details) {
-        validate(extension);
+        validate();
         checkScope(details);
         if (!readOnly) {
           return ExtensionPreferencesManager.removeSetting(extensionId, name);
@@ -676,43 +620,34 @@ this.ExtensionPreferencesManager = {
       },
       onChange,
     };
-    let registerEvent = fire => {
-      let listener = async () => {
-        fire.async(await settingsAPI.get({}));
-      };
-      Management.on(`extension-setting-changed:${name}`, listener);
-      return {
-        unregister: () => {
-          Management.off(`extension-setting-changed:${name}`, listener);
-        },
-        convert(_fire) {
-          fire = _fire;
-        },
-      };
-    };
-
     
     
     
     if (onChange === undefined && context) {
       
       
-      if (setting) {
-        settingsAPI.onChange = new ExtensionCommon.EventManager({
-          context,
-          module,
-          event: name,
-          name: `${name}.onChange`,
-          register: fire => {
-            return registerEvent(fire).unregister;
-          },
-        }).api();
-      } else {
+      let setting = settingsMap.get(name);
+      if (!setting) {
         Services.console.logStringMessage(
           `ExtensionPreferencesManager API ${name} created but addSetting was not called.`
         );
+        return settingsAPI;
       }
+
+      settingsAPI.onChange = new ExtensionCommon.EventManager({
+        context,
+        name: `${name}.onChange`,
+        register: fire => {
+          let listener = async () => {
+            fire.async(await settingsAPI.get({}));
+          };
+          Management.on(`extension-setting-changed:${name}`, listener);
+          return () => {
+            Management.off(`extension-setting-changed:${name}`, listener);
+          };
+        },
+      }).api();
     }
-    return { api: settingsAPI, registerEvent };
+    return settingsAPI;
   },
 };
