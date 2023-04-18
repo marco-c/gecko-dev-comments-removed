@@ -145,8 +145,24 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
   if (aNode == First()) {
     aNode->mScopeStart = nullptr;
     aNode->mScopePrev = nullptr;
+    if (aNode->IsUnitializedIncrementNode()) {
+      aNode->ChangeNode()->mChangeValue = 1;
+    }
     return;
   }
+
+  auto didSetScopeFor = [this](nsCounterNode* aNode) {
+    if (aNode->mType == nsCounterNode::USE) {
+      return;
+    }
+    if (aNode->mScopeStart->IsContentBasedReset()) {
+      mDirty = true;
+    }
+    if (aNode->IsUnitializedIncrementNode()) {
+      aNode->ChangeNode()->mChangeValue =
+          aNode->mScopeStart->IsReversed() ? -1 : 1;
+    }
+  };
 
   
   
@@ -166,8 +182,7 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
       }
       aNode->mScopeStart = counter;
       aNode->mScopePrev = counter;
-      for (nsCounterNode* prev = Prev(aNode); prev;
-           prev = prev->mScopePrev) {
+      for (nsCounterNode* prev = Prev(aNode); prev; prev = prev->mScopePrev) {
         if (prev->mScopeStart == counter) {
           aNode->mScopePrev =
               prev->mType == nsCounterNode::RESET ? prev->mScopePrev : prev;
@@ -180,6 +195,7 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
           }
         }
       }
+      didSetScopeFor(aNode);
       return;
     }
   }
@@ -217,6 +233,7 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
         (!startContent || nodeContent->IsInclusiveDescendantOf(startContent))) {
       aNode->mScopeStart = start;
       aNode->mScopePrev = prev;
+      didSetScopeFor(aNode);
       return;
     }
   }
@@ -226,20 +243,46 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
 }
 
 void nsCounterList::RecalcAll() {
-  mDirty = false;
-
   
+  
+  
+  
+  nsTHashMap<nsPtrHashKey<nsCounterChangeNode>, int32_t> scopes;
   for (nsCounterNode* node = First(); node; node = Next(node)) {
     SetScope(node);
     if (node->IsContentBasedReset()) {
-      node->mValueAfter = 1;
-    } else if (node->mType == nsCounterChangeNode::INCREMENT &&
-               node->mScopeStart && node->mScopeStart->IsContentBasedReset() &&
-               node->mPseudoFrame->StyleDisplay()->IsListItem()) {
-      ++node->mScopeStart->mValueAfter;
+      node->ChangeNode()->mSeenSetNode = false;
+      node->mValueAfter = 0;
+      scopes.InsertOrUpdate(node->ChangeNode(), 0);
+    } else if (node->mScopeStart && node->mScopeStart->IsContentBasedReset() &&
+               !node->mScopeStart->ChangeNode()->mSeenSetNode) {
+      if (node->mType == nsCounterChangeNode::INCREMENT) {
+        auto incrementNegated = -node->ChangeNode()->mChangeValue;
+        if (auto entry = scopes.Lookup(node->mScopeStart->ChangeNode())) {
+          entry.Data() = incrementNegated;
+        }
+        auto* next = Next(node);
+        if (next && next->mPseudoFrame == node->mPseudoFrame &&
+            next->mType == nsCounterChangeNode::SET) {
+          continue;
+        }
+        node->mScopeStart->mValueAfter += incrementNegated;
+      } else if (node->mType == nsCounterChangeNode::SET) {
+        node->mScopeStart->mValueAfter += node->ChangeNode()->mChangeValue;
+        
+        
+        node->mScopeStart->ChangeNode()->mSeenSetNode = true;
+      }
     }
   }
 
+  
+  
+  for (auto iter = scopes.ConstIter(); !iter.Done(); iter.Next()) {
+    iter.Key()->mValueAfter += iter.Data();
+  }
+
+  mDirty = false;
   for (nsCounterNode* node = First(); node; node = Next(node)) {
     node->Calc(this,  true);
   }
@@ -249,11 +292,11 @@ static bool AddCounterChangeNode(nsCounterManager& aManager, nsIFrame* aFrame,
                                  int32_t aIndex,
                                  const nsStyleContent::CounterPair& aPair,
                                  nsCounterNode::Type aType) {
-  auto* node = new nsCounterChangeNode(aFrame, aType, aPair.value, aIndex);
+  auto* node = new nsCounterChangeNode(aFrame, aType, aPair.value, aIndex,
+                                       aPair.is_reversed);
   nsCounterList* counterList = aManager.CounterListFor(aPair.name.AsAtom());
   counterList->Insert(node);
   if (!counterList->IsLast(node)) {
-    
     
     counterList->SetDirty();
     return true;
@@ -264,7 +307,7 @@ static bool AddCounterChangeNode(nsCounterManager& aManager, nsIFrame* aFrame,
   if (MOZ_LIKELY(!counterList->IsDirty())) {
     node->Calc(counterList);
   }
-  return false;
+  return counterList->IsDirty();
 }
 
 static bool HasCounters(const nsStyleContent& aStyle) {
@@ -316,11 +359,12 @@ bool nsCounterManager::AddCounterChanges(nsIFrame* aFrame) {
   }
 
   if (requiresListItemIncrement && !hasListItemIncrement) {
-    bool reversed =
-        aFrame->StyleList()->mMozListReversed == StyleMozListReversed::True;
     RefPtr<nsAtom> atom = nsGkAtoms::list_item;
+    
+    
+    
     auto listItemIncrement = nsStyleContent::CounterPair{
-        {StyleAtom(atom.forget())}, reversed ? -1 : 1};
+        {StyleAtom(atom.forget())}, std::numeric_limits<int32_t>::min()};
     dirty |= AddCounterChangeNode(
         *this, aFrame, styleContent->mCounterIncrement.Length(),
         listItemIncrement, nsCounterChangeNode::INCREMENT);

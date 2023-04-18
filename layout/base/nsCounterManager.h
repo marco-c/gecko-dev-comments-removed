@@ -71,7 +71,15 @@ struct nsCounterNode : public nsGenConNode {
   inline void Calc(nsCounterList* aList, bool aNotify);
 
   
+  
   inline bool IsContentBasedReset();
+
+  
+  inline bool IsReversed();
+
+  
+  
+  inline bool IsUnitializedIncrementNode();
 };
 
 struct nsCounterUseNode : public nsCounterNode {
@@ -114,15 +122,14 @@ struct nsCounterUseNode : public nsCounterNode {
 };
 
 struct nsCounterChangeNode : public nsCounterNode {
-  int32_t mChangeValue;  
-
   
   
   
   
   
   nsCounterChangeNode(nsIFrame* aPseudoFrame, nsCounterNode::Type aChangeType,
-                      int32_t aChangeValue, int32_t aPropIndex)
+                      int32_t aChangeValue, int32_t aPropIndex,
+                      bool aIsReversed)
       : nsCounterNode(  
                         
                         
@@ -132,7 +139,9 @@ struct nsCounterChangeNode : public nsCounterNode {
                                                       ? ((INT32_MIN / 3) * 2)
                                                       : INT32_MIN / 3)),
             aChangeType),
-        mChangeValue(aChangeValue) {
+        mChangeValue(aChangeValue),
+        mIsReversed(aIsReversed),
+        mSeenSetNode(false) {
     NS_ASSERTION(aPropIndex >= 0, "out of range");
     NS_ASSERTION(
         aChangeType == INCREMENT || aChangeType == SET || aChangeType == RESET,
@@ -144,6 +153,18 @@ struct nsCounterChangeNode : public nsCounterNode {
   
   
   void Calc(nsCounterList* aList);
+
+  
+  
+  
+  
+  int32_t mChangeValue;
+
+  
+  bool mIsReversed : 1;
+  
+  
+  bool mSeenSetNode : 1;
 };
 
 inline nsCounterUseNode* nsCounterNode::UseNode() {
@@ -165,6 +186,15 @@ inline void nsCounterNode::Calc(nsCounterList* aList, bool aNotify) {
 
 inline bool nsCounterNode::IsContentBasedReset() {
   return mType == RESET &&
+         ChangeNode()->mChangeValue == std::numeric_limits<int32_t>::min();
+}
+
+inline bool nsCounterNode::IsReversed() {
+  return mType == RESET && ChangeNode()->mIsReversed;
+}
+
+inline bool nsCounterNode::IsUnitializedIncrementNode() {
+  return mType == INCREMENT &&
          ChangeNode()->mChangeValue == std::numeric_limits<int32_t>::min();
 }
 
