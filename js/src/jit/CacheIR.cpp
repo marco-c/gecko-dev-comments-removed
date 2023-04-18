@@ -4529,12 +4529,24 @@ AttachDecision SetPropIRGenerator::tryAttachWindowProxy(HandleObject obj,
   return AttachDecision::Attach;
 }
 
+
+
+static bool IsFunctionPrototype(const JSAtomState& names, JSObject* obj,
+                                PropertyKey id) {
+  return obj->is<JSFunction>() && id.isAtom(names.prototype);
+}
+
 bool SetPropIRGenerator::canAttachAddSlotStub(HandleObject obj, HandleId id) {
+  if (!obj->is<NativeObject>()) {
+    return false;
+  }
+  auto* nobj = &obj->as<NativeObject>();
+
   
   
   
-  if (obj->is<JSFunction>() && id.isAtom(cx_->names().prototype)) {
-    MOZ_ASSERT(ClassMayResolveId(cx_->names(), obj->getClass(), id, obj));
+  if (IsFunctionPrototype(cx_->names(), nobj, id)) {
+    MOZ_ASSERT(ClassMayResolveId(cx_->names(), nobj->getClass(), id, nobj));
 
     
     
@@ -4545,7 +4557,7 @@ bool SetPropIRGenerator::canAttachAddSlotStub(HandleObject obj, HandleId id) {
     
     
     
-    JSFunction* fun = &obj->as<JSFunction>();
+    JSFunction* fun = &nobj->as<JSFunction>();
     if (!fun->isNonBuiltinConstructor()) {
       return false;
     }
@@ -4558,7 +4570,7 @@ bool SetPropIRGenerator::canAttachAddSlotStub(HandleObject obj, HandleId id) {
   } else {
     
     PropertyResult prop;
-    if (!LookupOwnPropertyPure(cx_, obj, id, &prop)) {
+    if (!LookupOwnPropertyPure(cx_, nobj, id, &prop)) {
       return false;
     }
     if (prop.isFound()) {
@@ -4567,13 +4579,13 @@ bool SetPropIRGenerator::canAttachAddSlotStub(HandleObject obj, HandleId id) {
   }
 
   
-  if (Watchtower::watchesPropertyAdd(obj.as<NativeObject>())) {
+  if (Watchtower::watchesPropertyAdd(nobj)) {
     return false;
   }
 
   
   
-  bool canAddNewProperty = obj->nonProxyIsExtensible() || id.isPrivateName();
+  bool canAddNewProperty = nobj->isExtensible() || id.isPrivateName();
   if (!canAddNewProperty) {
     return false;
   }
@@ -4587,7 +4599,7 @@ bool SetPropIRGenerator::canAttachAddSlotStub(HandleObject obj, HandleId id) {
 
   
   
-  for (JSObject* proto = obj->staticPrototype(); proto;
+  for (JSObject* proto = nobj->staticPrototype(); proto;
        proto = proto->staticPrototype()) {
     if (!proto->is<NativeObject>()) {
       return false;
@@ -4668,6 +4680,8 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(HandleShape oldShape) {
   }
 #endif
 
+  bool isFunctionPrototype = IsFunctionPrototype(cx_->names(), nobj, id);
+
   JSOp op = JSOp(*pc_);
 
   
@@ -4684,7 +4698,7 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(HandleShape oldShape) {
 
   
   
-  if (nobj->is<JSFunction>() && id.isAtom(cx_->names().prototype)) {
+  if (isFunctionPrototype) {
     MOZ_ASSERT(nobj->as<JSFunction>().isNonBuiltinConstructor());
     writer.guardFunctionIsNonBuiltinCtor(objId);
   }
