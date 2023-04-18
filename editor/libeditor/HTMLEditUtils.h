@@ -507,10 +507,10 @@ class HTMLEditUtils final {
     
     
     bool maybeStartOfAnchor = aPoint.IsStartOfContainer();
-    for (EditorRawDOMPoint point(aPoint.GetContainer());
+    for (EditorRawDOMPoint point(aPoint.ContainerAsContent());
          point.IsSet() && (maybeStartOfAnchor ? point.IsStartOfContainer()
                                               : point.IsAtLastContent());
-         point.Set(point.GetContainer())) {
+         point = point.ParentPoint()) {
       if (HTMLEditUtils::IsLink(point.GetContainer())) {
         
         if (aFoundLinkElement) {

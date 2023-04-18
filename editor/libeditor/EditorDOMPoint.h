@@ -619,6 +619,17 @@ class EditorDOMPointBase final {
   
 
 
+  MOZ_NEVER_INLINE_DEBUG SelfType ParentPoint() const {
+    MOZ_ASSERT(mParent);
+    if (MOZ_UNLIKELY(!mParent) || !mParent->IsContent()) {
+      return SelfType();
+    }
+    return SelfType(ContainerAsContent());
+  }
+
+  
+
+
 
   MOZ_NEVER_INLINE_DEBUG SelfType NextPoint() const {
     NS_ASSERTION(!IsEndOfContainer(), "Should not be at end of the container");
