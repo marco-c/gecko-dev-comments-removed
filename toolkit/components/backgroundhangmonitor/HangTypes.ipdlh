@@ -4,7 +4,7 @@
 
 
 
-using class mozilla::TimeDuration from "mozilla/TimeStamp.h";
+using mozilla::TimeDuration from "mozilla/TimeStamp.h";
 
 namespace mozilla {
 
