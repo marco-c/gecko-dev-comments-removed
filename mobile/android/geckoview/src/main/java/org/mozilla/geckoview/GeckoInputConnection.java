@@ -50,7 +50,7 @@ import org.mozilla.gecko.util.ThreadUtils;
   private static Handler sBackgroundHandler;
 
   
-  private int mIMEState;
+  @IMEState private int mIMEState;
   private String mIMEActionHint = "";
   private int mLastSelectionStart;
   private int mLastSelectionEnd;
@@ -718,7 +718,7 @@ import org.mozilla.gecko.util.ThreadUtils;
   }
 
   @Override 
-  public void notifyIME(final int type) {
+  public void notifyIME(final @IMENotificationType int type) {
     switch (type) {
       case NOTIFY_IME_OF_FOCUS:
         
@@ -731,6 +731,11 @@ import org.mozilla.gecko.util.ThreadUtils;
       case NOTIFY_IME_OF_BLUR:
         break;
 
+      case NOTIFY_IME_OF_TOKEN:
+      case NOTIFY_IME_OPEN_VKB:
+      case NOTIFY_IME_REPLY_EVENT:
+      case NOTIFY_IME_TO_CANCEL_COMPOSITION:
+      case NOTIFY_IME_TO_COMMIT_COMPOSITION:
       default:
         if (DEBUG) {
           throw new IllegalArgumentException("Unexpected NOTIFY_IME=" + type);
@@ -741,11 +746,11 @@ import org.mozilla.gecko.util.ThreadUtils;
 
   @Override 
   public synchronized void notifyIMEContext(
-      final int state,
+      @IMEState final int state,
       final String typeHint,
       final String modeHint,
       final String actionHint,
-      final int flags) {
+      @IMEContextFlags final int flags) {
     
     
     

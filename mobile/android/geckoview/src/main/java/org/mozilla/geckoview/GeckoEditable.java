@@ -31,8 +31,11 @@ import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -48,6 +51,9 @@ import org.mozilla.gecko.InputMethods;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
+import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEContextFlags;
+import org.mozilla.geckoview.SessionTextInput.EditableListener.IMENotificationType;
+import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
 
 
 
@@ -92,13 +98,15 @@ import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
   private boolean mNeedUpdateComposition; 
   private boolean mSuppressKeyUp; 
 
+  @IMEState
   private int mIMEState = 
       SessionTextInput.EditableListener.IME_STATE_DISABLED;
+
   private String mIMETypeHint = ""; 
   private String mIMEModeHint = ""; 
   private String mIMEActionHint = ""; 
   private String mIMEAutocapitalize = ""; 
-  private int mIMEFlags; 
+  @IMEContextFlags private int mIMEFlags; 
 
   private boolean mIgnoreSelectionChange; 
   
@@ -784,15 +792,25 @@ import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
   }
 
   
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(
+      flag = true,
+      value = {
+        SEND_COMPOSITION_USE_ENTIRE_TEXT,
+        SEND_COMPOSITION_NOTIFY_GECKO,
+        SEND_COMPOSITION_KEEP_CURRENT
+      })
+   @interface CompositionFlags {}
+
   
   
-  private static final int SEND_COMPOSITION_USE_ENTIRE_TEXT = 1;
+  private static final int SEND_COMPOSITION_USE_ENTIRE_TEXT = 1 << 0;
   
   
-  private static final int SEND_COMPOSITION_NOTIFY_GECKO = 2;
+  private static final int SEND_COMPOSITION_NOTIFY_GECKO = 1 << 1;
   
   
-  private static final int SEND_COMPOSITION_KEEP_CURRENT = 4;
+  private static final int SEND_COMPOSITION_KEEP_CURRENT = 1 << 2;
 
   
 
@@ -801,8 +819,8 @@ import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
 
 
 
-  private boolean icMaybeSendComposition(final CharSequence sequence, final int flags)
-      throws RemoteException {
+  private boolean icMaybeSendComposition(
+      final CharSequence sequence, @CompositionFlags final int flags) throws RemoteException {
     final boolean useEntireText = (flags & SEND_COMPOSITION_USE_ENTIRE_TEXT) != 0;
     final boolean notifyGecko = (flags & SEND_COMPOSITION_NOTIFY_GECKO) != 0;
     final boolean keepCurrent = (flags & SEND_COMPOSITION_KEEP_CURRENT) != 0;
@@ -1346,7 +1364,7 @@ import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
   }
 
   @Override 
-  public void requestCursorUpdates(final int requestMode) {
+  public void requestCursorUpdates(@CursorMonitorMode final int requestMode) {
     try {
       if (mFocusedChild != null) {
         mFocusedChild.onImeRequestCursorUpdates(requestMode);
@@ -1474,7 +1492,7 @@ import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
   }
 
   @Override 
-  public void notifyIME(final IGeckoEditableChild child, final int type) {
+  public void notifyIME(final IGeckoEditableChild child, @IMENotificationType final int type) {
     
     if (DEBUG) {
       
@@ -1528,7 +1546,8 @@ import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
         });
   }
 
-   void icNotifyIME(final IGeckoEditableChild child, final int type) {
+   void icNotifyIME(
+      final IGeckoEditableChild child, @IMENotificationType final int type) {
     if (DEBUG) {
       assertOnIcThread();
     }
@@ -1595,6 +1614,9 @@ import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
           return; 
         }
 
+      case SessionTextInput.EditableListener.NOTIFY_IME_OF_TOKEN:
+      case SessionTextInput.EditableListener.NOTIFY_IME_REPLY_EVENT:
+      case SessionTextInput.EditableListener.NOTIFY_IME_TO_CANCEL_COMPOSITION:
       default:
         throw new IllegalArgumentException("Invalid notifyIME type: " + type);
     }
@@ -1607,12 +1629,12 @@ import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
   @Override 
   public void notifyIMEContext(
       final IBinder token,
-      final int state,
+      @IMEState final int state,
       final String typeHint,
       final String modeHint,
       final String actionHint,
       final String autocapitalize,
-      final int flags) {
+      @IMEContextFlags final int flags) {
     
     if (DEBUG) {
       final StringBuilder sb = new StringBuilder("notifyIMEContext(");
@@ -1647,12 +1669,12 @@ import org.mozilla.gecko.util.ThreadUtils.AssertBehavior;
   }
 
    void icNotifyIMEContext(
-      final int originalState,
+      @IMEState final int originalState,
       final String typeHint,
       final String modeHint,
       final String actionHint,
       final String autocapitalize,
-      final int flags) {
+      @IMEContextFlags final int flags) {
     if (DEBUG) {
       assertOnIcThread();
     }
