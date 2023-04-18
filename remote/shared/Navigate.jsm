@@ -28,9 +28,21 @@ const webProgressListeners = new Set();
 
 
 
-function waitForInitialNavigationCompleted(browsingContext) {
+
+
+
+
+
+
+
+
+function waitForInitialNavigationCompleted(webProgress, options = {}) {
+  const { resolveWhenStarted = false } = options;
+
+  const browsingContext = webProgress.browsingContext;
+
   
-  const listener = new ProgressListener(browsingContext.webProgress);
+  const listener = new ProgressListener(webProgress, { resolveWhenStarted });
   const navigated = listener.start();
 
   
@@ -48,8 +60,8 @@ function waitForInitialNavigationCompleted(browsingContext) {
       truncate`[${browsingContext.id}] Document already finished loading: ${browsingContext.currentURI?.spec}`
     );
 
+    
     listener.stop();
-    return Promise.resolve();
   }
 
   return navigated;
@@ -58,23 +70,36 @@ function waitForInitialNavigationCompleted(browsingContext) {
 
 
 
-
-
-
-
-
-
 class ProgressListener {
-  #resolve;
+  #resolveWhenStarted;
   #unloadTimeout;
+
+  #resolve;
+  #seenStartFlag;
   #unloadTimer;
   #webProgress;
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
   constructor(webProgress, options = {}) {
-    const { unloadTimeout = 200 } = options;
+    const { resolveWhenStarted = false, unloadTimeout = 200 } = options;
+
+    this.#resolveWhenStarted = resolveWhenStarted;
+    this.#unloadTimeout = unloadTimeout;
 
     this.#resolve = null;
-    this.#unloadTimeout = unloadTimeout;
+    this.#seenStartFlag = false;
     this.#unloadTimer = null;
     this.#webProgress = webProgress;
   }
@@ -91,25 +116,42 @@ class ProgressListener {
     return this.#webProgress.isLoadingDocument;
   }
 
-  onStateChange(progress, request, flag, status) {
-    const isStart = flag & Ci.nsIWebProgressListener.STATE_START;
-    const isStop = flag & Ci.nsIWebProgressListener.STATE_STOP;
+  #checkLoadingState(options = {}) {
+    const { isStart = false, isStop = false } = options;
 
-    if (isStart) {
-      this.#unloadTimer?.cancel();
+    if (isStart && !this.#seenStartFlag) {
+      this.#seenStartFlag = true;
+
       logger.trace(
-        truncate`[${this.browsingContext.id}] Web progress state=start: ${this.currentURI?.spec}`
+        truncate`[${this.browsingContext.id}] ${this.constructor.name} state=start: ${this.currentURI.spec}`
       );
+
+      if (this.#unloadTimer) {
+        this.#unloadTimer.cancel();
+        this.#unloadTimer = null;
+      }
+
+      if (this.#resolveWhenStarted) {
+        
+        this.stop();
+        return;
+      }
     }
 
-    if (isStop) {
+    if (isStop && this.#seenStartFlag) {
       logger.trace(
-        truncate`this.browsingContext.id}] Web progress state=stop: ${this.currentURI?.spec}`
+        truncate`[${this.browsingContext.id}] ${this.constructor.name} state=stop: ${this.currentURI.spec}`
       );
 
-      this.#resolve();
       this.stop();
     }
+  }
+
+  onStateChange(progress, request, flag, status) {
+    this.#checkLoadingState({
+      isStart: flag & Ci.nsIWebProgressListener.STATE_START,
+      isStop: flag & Ci.nsIWebProgressListener.STATE_STOP,
+    });
   }
 
   
@@ -123,17 +165,26 @@ class ProgressListener {
       throw new Error(`Progress listener already started`);
     }
 
+    if (this.#webProgress.isLoadingDocument && this.#resolveWhenStarted) {
+      
+      
+      return Promise.resolve();
+    }
+
     const promise = new Promise(resolve => (this.#resolve = resolve));
 
+    
+    
     this.#webProgress.addProgressListener(
       this,
-      Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
-        Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
+      Ci.nsIWebProgress.NOTIFY_STATE_ALL
     );
 
     webProgressListeners.add(this);
 
-    if (!this.#webProgress.isLoadingDocument) {
+    if (this.#webProgress.isLoadingDocument) {
+      this.#checkLoadingState({ isStart: true });
+    } else {
       
       
       this.#unloadTimer = Cc["@mozilla.org/timer;1"].createInstance(
@@ -144,7 +195,6 @@ class ProgressListener {
           logger.trace(
             truncate`[${this.browsingContext.id}] No navigation detected: ${this.currentURI?.spec}`
           );
-          this.#resolve();
           this.stop();
         },
         this.#unloadTimeout,
@@ -166,17 +216,17 @@ class ProgressListener {
     this.#unloadTimer?.cancel();
     this.#unloadTimer = null;
 
+    this.#resolve();
     this.#resolve = null;
 
     this.#webProgress.removeProgressListener(
       this,
-      Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
-        Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
+      Ci.nsIWebProgress.NOTIFY_STATE_ALL
     );
     webProgressListeners.delete(this);
   }
 
-  get toString() {
+  toString() {
     return `[object ${this.constructor.name}]`;
   }
 
