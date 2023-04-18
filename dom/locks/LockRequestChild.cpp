@@ -57,11 +57,7 @@ void LockRequestChild::MaybeSetWorkerRef() {
 }
 
 void LockRequestChild::ActorDestroy(ActorDestroyReason aReason) {
-  if (aReason != ActorDestroyReason::AncestorDeletion) {
-    
-    
-    CastedManager()->NotifyRequestDestroy();
-  }
+  CastedManager()->NotifyRequestDestroy();
 }
 
 IPCResult LockRequestChild::RecvResolve(const LockMode& aLockMode,

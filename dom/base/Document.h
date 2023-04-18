@@ -1468,12 +1468,6 @@ class Document : public nsINode,
   void ChangeContentEditableCount(Element*, int32_t aChange);
   void DeferredContentEditableCountChange(Element*);
 
-  uint32_t UpdateLockCount(bool aIncrement) {
-    MOZ_ASSERT_IF(!aIncrement, mLockCount > 0);
-    mLockCount += aIncrement ? 1 : -1;
-    return mLockCount;
-  };
-
   enum class EditingState : int8_t {
     eTearingDown = -2,
     eSettingUp = -1,
@@ -4860,16 +4854,6 @@ class Document : public nsINode,
   uint32_t mLazyLoadImageReachViewportLoaded;
 
   uint32_t mContentEditableCount;
-  
-
-
-
-
-
-
-
-
-  uint32_t mLockCount = 0;
   EditingState mEditingState;
 
   
