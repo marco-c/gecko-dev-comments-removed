@@ -186,6 +186,7 @@ using dom::Promise;
 using dom::Sequence;
 using dom::UserActivation;
 using dom::WindowGlobalChild;
+using ConstDeviceSetPromise = MediaManager::ConstDeviceSetPromise;
 using LocalDevicePromise = MediaManager::LocalDevicePromise;
 using LocalDeviceSetPromise = MediaManager::LocalDeviceSetPromise;
 using LocalMediaDeviceSetRefCnt = MediaManager::LocalMediaDeviceSetRefCnt;
@@ -1929,6 +1930,39 @@ RefPtr<MediaManager::DeviceSetPromise> MediaManager::EnumerateRawDevices(
   return promise;
 }
 
+RefPtr<ConstDeviceSetPromise> MediaManager::GetPhysicalDevices() {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (mPhysicalDevices) {
+    return ConstDeviceSetPromise::CreateAndResolve(mPhysicalDevices, __func__);
+  }
+  if (mPendingDevicesPromises) {
+    
+    return mPendingDevicesPromises->AppendElement()->Ensure(__func__);
+  }
+  mPendingDevicesPromises =
+      new Refcountable<nsTArray<MozPromiseHolder<ConstDeviceSetPromise>>>;
+  EnumerateRawDevices(MediaSourceEnum::Camera, MediaSourceEnum::Microphone,
+                      EnumerationFlag::EnumerateAudioOutputs)
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [self = RefPtr(this), this, promises = mPendingDevicesPromises](
+              RefPtr<MediaDeviceSetRefCnt> aDevices) mutable {
+            for (auto& promiseHolder : *promises) {
+              promiseHolder.Resolve(aDevices, __func__);
+            }
+            
+            if (promises == mPendingDevicesPromises) {
+              mPendingDevicesPromises = nullptr;
+              mPhysicalDevices = std::move(aDevices);
+            }
+          },
+          [](RefPtr<MediaMgrError>&& reason) {
+            MOZ_ASSERT_UNREACHABLE("EnumerateRawDevices does not reject");
+          });
+
+  return mPendingDevicesPromises->AppendElement()->Ensure(__func__);
+}
+
 MediaManager::MediaManager(already_AddRefed<TaskQueue> aMediaThread)
     : mMediaThread(aMediaThread), mBackend(nullptr) {
   mPrefs.mFreq = 1000;  
@@ -1996,6 +2030,9 @@ static void ForeachObservedPref(const Function& aFunction) {
   aFunction("media.navigator.video.default_height"_ns);
   aFunction("media.navigator.video.default_fps"_ns);
   aFunction("media.navigator.audio.fake_frequency"_ns);
+  aFunction("media.audio_loopback_dev"_ns);
+  aFunction("media.video_loopback_dev"_ns);
+  aFunction("media.getusermedia.fake-camera-name"_ns);
 #ifdef MOZ_WEBRTC
   aFunction("media.getusermedia.aec_enabled"_ns);
   aFunction("media.getusermedia.aec"_ns);
@@ -2006,6 +2043,7 @@ static void ForeachObservedPref(const Function& aFunction) {
   aFunction("media.getusermedia.noise"_ns);
   aFunction("media.ondevicechange.fakeDeviceChangeEvent.enabled"_ns);
   aFunction("media.getusermedia.channels"_ns);
+  aFunction("media.navigator.streams.fake"_ns);
 #endif
 }
 
@@ -2189,6 +2227,10 @@ void MediaManager::DeviceListChanged() {
   }
   
   
+  InvalidateDeviceCache();
+
+  
+  
   
   
   
@@ -2218,58 +2260,67 @@ void MediaManager::DeviceListChanged() {
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self, this] {
+            
+            
+            InvalidateDeviceCache();
+
             mUnhandledDeviceChangeTime = TimeStamp();
             HandleDeviceListChanged();
           },
           [] {  });
 }
 
+void MediaManager::InvalidateDeviceCache() {
+  mPhysicalDevices = nullptr;
+  
+  
+  
+  mPendingDevicesPromises = nullptr;
+}
+
 void MediaManager::HandleDeviceListChanged() {
   mDeviceListChangeEvent.Notify();
 
-  EnumerateRawDevices(MediaSourceEnum::Camera, MediaSourceEnum::Microphone,
-                      EnumerationFlag::EnumerateAudioOutputs)
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [self = RefPtr(this), this](RefPtr<MediaDeviceSetRefCnt> aDevices) {
-            if (!MediaManager::GetIfExists()) {
-              return;
-            }
+  GetPhysicalDevices()->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [self = RefPtr(this), this](RefPtr<const MediaDeviceSetRefCnt> aDevices) {
+        if (!MediaManager::GetIfExists()) {
+          return;
+        }
 
-            nsTHashSet<nsString> deviceIDs;
-            for (auto& device : *aDevices) {
-              deviceIDs.Insert(device->mRawID);
+        nsTHashSet<nsString> deviceIDs;
+        for (const auto& device : *aDevices) {
+          deviceIDs.Insert(device->mRawID);
+        }
+        
+        
+        
+        
+        
+        
+        
+        const auto windowListeners = ToArray(mActiveWindows.Values());
+        for (const RefPtr<GetUserMediaWindowListener>& l : windowListeners) {
+          const auto activeDevices = l->GetDevices();
+          for (const RefPtr<LocalMediaDevice>& device : *activeDevices) {
+            if (device->IsFake()) {
+              continue;
             }
-            
-            
-            
-            
-            
-            
-            
-            const auto windowListeners = ToArray(mActiveWindows.Values());
-            for (const RefPtr<GetUserMediaWindowListener>& l :
-                 windowListeners) {
-              const auto activeDevices = l->GetDevices();
-              for (const RefPtr<LocalMediaDevice>& device : *activeDevices) {
-                if (device->IsFake()) {
-                  continue;
-                }
-                MediaSourceEnum mediaSource = device->GetMediaSource();
-                if (mediaSource != MediaSourceEnum::Microphone &&
-                    mediaSource != MediaSourceEnum::Camera) {
-                  continue;
-                }
-                if (!deviceIDs.Contains(device->RawID())) {
-                  
-                  l->StopRawID(device->RawID());
-                }
-              }
+            MediaSourceEnum mediaSource = device->GetMediaSource();
+            if (mediaSource != MediaSourceEnum::Microphone &&
+                mediaSource != MediaSourceEnum::Camera) {
+              continue;
             }
-          },
-          [](RefPtr<MediaMgrError>&& reason) {
-            MOZ_ASSERT_UNREACHABLE("EnumerateRawDevices does not reject");
-          });
+            if (!deviceIDs.Contains(device->RawID())) {
+              
+              l->StopRawID(device->RawID());
+            }
+          }
+        }
+      },
+      [](RefPtr<MediaMgrError>&& reason) {
+        MOZ_ASSERT_UNREACHABLE("EnumerateRawDevices does not reject");
+      });
 }
 
 size_t MediaManager::AddTaskAndGetCount(uint64_t aWindowID,
@@ -3495,6 +3546,7 @@ nsresult MediaManager::Observe(nsISupports* aSubject, const char* aTopic,
       GetPrefs(branch, NS_ConvertUTF16toUTF8(aData).get());
       LOG("%s: %dx%d @%dfps", __FUNCTION__, mPrefs.mWidth, mPrefs.mHeight,
           mPrefs.mFPS);
+      DeviceListChanged();
     }
   } else if (!strcmp(aTopic, "last-pb-context-exited")) {
     

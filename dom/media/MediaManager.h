@@ -265,6 +265,8 @@ class MediaManager final : public nsIMediaManagerService,
       MozPromise<RefPtr<DOMMediaStream>, RefPtr<MediaMgrError>, true>;
   using DeviceSetPromise =
       MozPromise<RefPtr<MediaDeviceSetRefCnt>, RefPtr<MediaMgrError>, true>;
+  using ConstDeviceSetPromise = MozPromise<RefPtr<const MediaDeviceSetRefCnt>,
+                                           RefPtr<MediaMgrError>, true>;
   using LocalDevicePromise =
       MozPromise<RefPtr<LocalMediaDevice>, RefPtr<MediaMgrError>, true>;
   using LocalDeviceSetPromise = MozPromise<RefPtr<LocalMediaDeviceSetRefCnt>,
@@ -291,6 +293,11 @@ class MediaManager final : public nsIMediaManagerService,
   RefPtr<LocalDevicePromise> SelectAudioOutput(
       nsPIDOMWindowInner* aWindow, const dom::AudioOutputOptions& aOptions,
       dom::CallerType aCallerType);
+
+  
+  
+  
+  RefPtr<ConstDeviceSetPromise> GetPhysicalDevices();
 
   void OnNavigation(uint64_t aWindowID);
   void OnCameraMute(bool aMute);
@@ -347,6 +354,7 @@ class MediaManager final : public nsIMediaManagerService,
 
   void RemoveMediaDevicesCallback(uint64_t aWindowID);
   void DeviceListChanged();
+  void InvalidateDeviceCache();
   void HandleDeviceListChanged();
 
   
@@ -367,6 +375,11 @@ class MediaManager final : public nsIMediaManagerService,
   nsRefPtrHashtable<nsStringHashKey, GetUserMediaTask> mActiveCallbacks;
   nsClassHashtable<nsUint64HashKey, nsTArray<nsString>> mCallIds;
   nsTArray<RefPtr<dom::GetUserMediaRequest>> mPendingGUMRequest;
+  
+  
+  RefPtr<media::Refcountable<nsTArray<MozPromiseHolder<ConstDeviceSetPromise>>>>
+      mPendingDevicesPromises;
+  RefPtr<MediaDeviceSetRefCnt> mPhysicalDevices;
   TimeStamp mUnhandledDeviceChangeTime;
   RefPtr<MediaTimer> mDeviceChangeTimer;
   bool mCamerasMuted = false;
