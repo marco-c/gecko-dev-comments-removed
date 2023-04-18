@@ -848,9 +848,15 @@ static DeviceResetReason GLenumToResetReason(GLenum aReason) {
 void RenderThread::HandleDeviceReset(const char* aWhere, GLenum aReason) {
   MOZ_ASSERT(IsInRenderThread());
 
+  if (aReason == LOCAL_GL_NO_ERROR) {
+    return;
+  }
+
   if (mHandlingDeviceReset) {
     return;
   }
+
+  mHandlingDeviceReset = true;
 
 #ifndef XP_WIN
   
@@ -865,27 +871,23 @@ void RenderThread::HandleDeviceReset(const char* aWhere, GLenum aReason) {
     }
   }
 
-  mHandlingDeviceReset = aReason != LOCAL_GL_NO_ERROR;
-  if (mHandlingDeviceReset) {
-    
-    
-    
-    
-    gfxCriticalNote << "GFX: RenderThread detected a device reset in "
-                    << aWhere;
-    if (XRE_IsGPUProcess()) {
-      gfx::GPUParent::GetSingleton()->NotifyDeviceReset();
-    } else {
+  
+  
+  
+  
+  gfxCriticalNote << "GFX: RenderThread detected a device reset in " << aWhere;
+  if (XRE_IsGPUProcess()) {
+    gfx::GPUParent::GetSingleton()->NotifyDeviceReset();
+  } else {
 #ifndef XP_WIN
-      
-      
-      bool guilty = aReason == LOCAL_GL_GUILTY_CONTEXT_RESET_ARB;
-      NS_DispatchToMainThread(NS_NewRunnableFunction(
-          "gfx::GPUProcessManager::OnInProcessDeviceReset", [guilty]() -> void {
-            gfx::GPUProcessManager::Get()->OnInProcessDeviceReset(guilty);
-          }));
+    
+    
+    bool guilty = aReason == LOCAL_GL_GUILTY_CONTEXT_RESET_ARB;
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "gfx::GPUProcessManager::OnInProcessDeviceReset", [guilty]() -> void {
+          gfx::GPUProcessManager::Get()->OnInProcessDeviceReset(guilty);
+        }));
 #endif
-    }
   }
 }
 
