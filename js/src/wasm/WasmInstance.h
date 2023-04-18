@@ -19,6 +19,7 @@
 #ifndef wasm_instance_h
 #define wasm_instance_h
 
+#include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 
 #include "gc/Barrier.h"
@@ -28,18 +29,25 @@
 #include "wasm/WasmExprType.h"   
 #include "wasm/WasmLog.h"        
 #include "wasm/WasmShareable.h"  
-#include "wasm/WasmTlsData.h"    
 #include "wasm/WasmTypeDecls.h"
+#include "wasm/WasmValue.h"
 
 namespace js {
 
+class SharedArrayRawBuffer;
 class WasmBreakpointSite;
 
 namespace wasm {
 
+using mozilla::Atomic;
+
 class FuncImport;
 class WasmFrameIter;
 
+struct FuncImportTls;
+struct TableTls;
+struct TableDesc;
+struct TagDesc;
 
 
 
@@ -51,22 +59,106 @@ class WasmFrameIter;
 
 
 
-class Instance {
-  JS::Realm* const realm_;
+
+struct TlsData;
+
+class alignas(16) Instance {
+  
+  uint8_t* memoryBase_;
+
+  
+  
+  
+  
+  
+  uintptr_t boundsCheckLimit_;
+
+  
+  Instance* instance_;
+
+  
+  JS::Realm* realm_;
+
+  
+  JSContext* cx_;
+
+  
+  const JSClass* valueBoxClass_;
+
+#ifdef ENABLE_WASM_EXCEPTIONS
+  
+  
+  
+  
+  
+  
+  
+  GCPtrObject pendingException_;
+  
+  GCPtrObject pendingExceptionTag_;
+#endif
+
+  
+  
+  
+  Atomic<uintptr_t, mozilla::Relaxed> stackLimit_;
+
+  
+  Atomic<uint32_t, mozilla::Relaxed> interrupt_;
+
+  const JS::shadow::Zone::BarrierState* addressOfNeedsIncrementalBarrier_;
+
+  
+  void* allocatedBase_;
+
+  
+  
+  void** jumpTable_;
+
+  
+  
+  uint32_t baselineScratch_[2];
+
+  
   WeakHeapPtrWasmInstanceObject object_;
+
+  
   void* jsJitArgsRectifier_;
+
+  
   void* jsJitExceptionHandler_;
+
+  
   void* preBarrierCode_;
+
+  
   const SharedCode code_;
-  const UniqueTlsData tlsData_;
+
+  
   const GCPtrWasmMemoryObject memory_;
+
+  
   const SharedTableVector tables_;
+
+  
   DataSegmentVector passiveDataSegments_;
+
+  
   ElemSegmentVector passiveElemSegments_;
+
+  
   const UniqueDebugState maybeDebug_;
+
 #ifdef ENABLE_WASM_GC
+  
+  
   bool hasGcTypes_;
 #endif
+
+  
+  
+  
+  MOZ_ALIGNED_DECL(16, char globalArea_);
 
   
   const void** addressOfTypeId(const TypeIdDesc& typeId) const;
@@ -83,11 +175,19 @@ class Instance {
   bool callImport(JSContext* cx, uint32_t funcImportIndex, unsigned argc,
                   uint64_t* argv);
 
- public:
   Instance(JSContext* cx, HandleWasmInstanceObject object, SharedCode code,
-           UniqueTlsData tlsData, HandleWasmMemoryObject memory,
+           HandleWasmMemoryObject memory,
            SharedTableVector&& tables, UniqueDebugState maybeDebug);
   ~Instance();
+
+ public:
+  static Instance* create(JSContext* cx, HandleWasmInstanceObject object,
+                          SharedCode code, uint32_t globalDataLength,
+                          HandleWasmMemoryObject memory,
+                          SharedTableVector&& tables,
+                          UniqueDebugState maybeDebug);
+  static void destroy(Instance* instance);
+
   bool init(JSContext* cx, const JSFunctionVector& funcImports,
             const ValVector& globalImportValues,
             const WasmGlobalObjectVector& globalObjs,
@@ -107,25 +207,44 @@ class Instance {
                        uint8_t* nextPC,
                        uintptr_t highestByteVisitedInPrevFrame);
 
-  JS::Realm* realm() const { return realm_; }
-  bool debugEnabled() const { return !!maybeDebug_; }
-  DebugState& debug() { return *maybeDebug_; }
-  TlsData* tlsData() const { return tlsData_.get(); }
-  uint8_t* globalData() const { return (uint8_t*)&tlsData_->globalArea_; }
-  const SharedTableVector& tables() const { return tables_; }
-  SharedMem<uint8_t*> memoryBase() const;
-  WasmMemoryObject* memory() const;
-  size_t memoryMappedSize() const;
-  SharedArrayRawBuffer* sharedMemoryBuffer() const;  
-  bool memoryAccessInGuardRegion(const uint8_t* addr, unsigned numBytes) const;
-
-  const Code& code() const { return *code_; }
-  inline const CodeTier& code(Tier t) const;
-  inline uint8_t* codeBase(Tier t) const;
-  inline const MetadataTier& metadata(Tier t) const;
-  inline const Metadata& metadata() const;
-  inline bool isAsmJS() const;
-
+  static constexpr size_t offsetOfMemoryBase() {
+    return offsetof(Instance, memoryBase_);
+  }
+  static constexpr size_t offsetOfBoundsCheckLimit() {
+    return offsetof(Instance, boundsCheckLimit_);
+  }
+  static constexpr size_t offsetOfInstance() {
+    return offsetof(Instance, instance_);
+  }
+  static constexpr size_t offsetOfRealm() { return offsetof(Instance, realm_); }
+  static constexpr size_t offsetOfCx() { return offsetof(Instance, cx_); }
+  static constexpr size_t offsetOfValueBoxClass() {
+    return offsetof(Instance, valueBoxClass_);
+  }
+  static constexpr size_t offsetOfPendingException() {
+    return offsetof(Instance, pendingException_);
+  }
+  static constexpr size_t offsetOfPendingExceptionTag() {
+    return offsetof(Instance, pendingExceptionTag_);
+  }
+  static constexpr size_t offsetOfStackLimit() {
+    return offsetof(Instance, stackLimit_);
+  }
+  static constexpr size_t offsetOfInterrupt() {
+    return offsetof(Instance, interrupt_);
+  }
+  static constexpr size_t offsetOfAddressOfNeedsIncrementalBarrier() {
+    return offsetof(Instance, addressOfNeedsIncrementalBarrier_);
+  }
+  static constexpr size_t offsetOfJumpTable() {
+    return offsetof(Instance, jumpTable_);
+  }
+  static constexpr size_t offsetOfBaselineScratch() {
+    return offsetof(Instance, baselineScratch_);
+  }
+  static constexpr size_t sizeOfBaselineScratch() {
+    return sizeof(baselineScratch_);
+  }
   static constexpr size_t offsetOfJSJitArgsRectifier() {
     return offsetof(Instance, jsJitArgsRectifier_);
   }
@@ -135,6 +254,40 @@ class Instance {
   static constexpr size_t offsetOfPreBarrierCode() {
     return offsetof(Instance, preBarrierCode_);
   }
+  static constexpr size_t offsetOfGlobalArea() {
+    return offsetof(Instance, globalArea_);
+  }
+
+  Instance* instance() const { return const_cast<Instance*>(this); }
+  JSContext* cx() const { return cx_; }
+  JS::Realm* realm() const { return realm_; }
+  bool debugEnabled() const { return !!maybeDebug_; }
+  DebugState& debug() { return *maybeDebug_; }
+  TlsData* tlsData() const {
+    return reinterpret_cast<TlsData*>(const_cast<Instance*>(this));
+  }
+  uint8_t* globalData() const { return (uint8_t*)&globalArea_; }
+  const SharedTableVector& tables() const { return tables_; }
+  SharedMem<uint8_t*> memoryBase() const;
+  WasmMemoryObject* memory() const;
+  size_t memoryMappedSize() const;
+  SharedArrayRawBuffer* sharedMemoryBuffer() const;  
+  bool memoryAccessInGuardRegion(const uint8_t* addr, unsigned numBytes) const;
+
+  
+  
+  void setInterrupt();
+  bool isInterrupted() const;
+  void resetInterrupt(JSContext* cx);
+
+  void setPendingException(JSObject* pendingException);
+
+  const Code& code() const { return *code_; }
+  inline const CodeTier& code(Tier t) const;
+  inline uint8_t* codeBase(Tier t) const;
+  inline const MetadataTier& metadata(Tier t) const;
+  inline const Metadata& metadata() const;
+  inline bool isAsmJS() const;
 
   
   
@@ -283,7 +436,18 @@ class Instance {
                               uint32_t src2, uint32_t len, uint8_t* memBase);
 };
 
-using UniqueInstance = UniquePtr<Instance>;
+
+
+
+
+
+
+
+
+
+
+
+struct TlsData : public Instance {};
 
 bool ResultsToJSValue(JSContext* cx, ResultType type, void* registerResultLoc,
                       Maybe<char*> stackResultsLoc, MutableHandleValue rval,
