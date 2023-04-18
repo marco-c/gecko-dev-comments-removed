@@ -189,7 +189,7 @@ class alignas(16) Instance {
   const void** addressOfTypeId(const TypeIdDesc& typeId) const;
   FuncImportInstanceData& funcImportInstanceData(const FuncImport& fi);
   TableInstanceData& tableInstanceData(const TableDesc& td) const;
-  GCPtrWasmTagObject& tagTls(const TagDesc& td) const;
+  GCPtrWasmTagObject& tagInstanceData(const TagDesc& td) const;
 
   
   friend class js::WasmInstanceObject;

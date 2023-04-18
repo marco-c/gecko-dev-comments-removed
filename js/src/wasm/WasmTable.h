@@ -84,7 +84,7 @@ class Table : public ShareableBase<Table> {
   Maybe<uint32_t> maximum() const { return maximum_; }
 
   
-  uint8_t* tlsElements() const;
+  uint8_t* instanceElements() const;
 
   
   

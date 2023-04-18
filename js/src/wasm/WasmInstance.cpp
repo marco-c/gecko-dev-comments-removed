@@ -146,7 +146,7 @@ TableInstanceData& Instance::tableInstanceData(const TableDesc& td) const {
   return *(TableInstanceData*)(globalData() + td.globalDataOffset);
 }
 
-GCPtrWasmTagObject& Instance::tagTls(const TagDesc& td) const {
+GCPtrWasmTagObject& Instance::tagInstanceData(const TagDesc& td) const {
   return *(GCPtrWasmTagObject*)(globalData() + td.globalDataOffset);
 }
 
@@ -1432,7 +1432,7 @@ bool Instance::init(JSContext* cx, const JSFunctionVector& funcImports,
     const TableDesc& td = metadata().tables[i];
     TableInstanceData& table = tableInstanceData(td);
     table.length = tables_[i]->length();
-    table.elements = tables_[i]->tlsElements();
+    table.elements = tables_[i]->instanceElements();
   }
 
   
@@ -1440,7 +1440,7 @@ bool Instance::init(JSContext* cx, const JSFunctionVector& funcImports,
     const TagDesc& td = metadata().tags[i];
     MOZ_ASSERT(td.globalDataOffset != UINT32_MAX);
     MOZ_ASSERT(tagObjs[i] != nullptr);
-    tagTls(td) = tagObjs[i];
+    tagInstanceData(td) = tagObjs[i];
   }
   pendingException_ = nullptr;
   pendingExceptionTag_ = nullptr;
@@ -1700,7 +1700,7 @@ void Instance::tracePrivate(JSTracer* trc) {
   }
 
   for (const TagDesc& tag : code().metadata().tags) {
-    TraceNullableEdge(trc, &tagTls(tag), "wasm tag");
+    TraceNullableEdge(trc, &tagInstanceData(tag), "wasm tag");
   }
 
   TraceNullableEdge(trc, &memory_, "wasm buffer");
@@ -2329,7 +2329,7 @@ void Instance::onMovingGrowTable(const Table* theTable) {
     if (tables_[i] == theTable) {
       TableInstanceData& table = tableInstanceData(metadata().tables[i]);
       table.length = tables_[i]->length();
-      table.elements = tables_[i]->tlsElements();
+      table.elements = tables_[i]->instanceElements();
     }
   }
 }

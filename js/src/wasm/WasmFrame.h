@@ -254,6 +254,8 @@
 
 
 
+
+
 #ifndef wasm_frame_h
 #define wasm_frame_h
 
@@ -406,10 +408,10 @@ class FrameWithInstances : public Frame {
 
 static_assert(FrameWithInstances::calleeInstanceOffsetWithoutFrame() ==
                   js::jit::ShadowStackSpace,
-              "Callee tls stored right above the return address.");
+              "Callee instance stored right above the return address.");
 static_assert(FrameWithInstances::callerInstanceOffsetWithoutFrame() ==
                   js::jit::ShadowStackSpace + sizeof(void*),
-              "Caller tls stored right above the callee tls.");
+              "Caller instance stored right above the callee instance.");
 
 static_assert(FrameWithInstances::sizeOfInstanceFields() == 2 * sizeof(void*),
               "There are only two additional slots");
