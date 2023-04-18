@@ -11896,20 +11896,6 @@ int main(int argc, char** argv) {
   SetOutputFile("JS_STDOUT", &rcStdout, &gOutFile);
   SetOutputFile("JS_STDERR", &rcStderr, &gErrFile);
 
-  
-  if (const char* message = JS_InitWithFailureDiagnostic()) {
-    fprintf(gErrFile->fp, "JS_Init failed: %s\n", message);
-    return 1;
-  }
-
-  
-  
-  
-  
-  Maybe<FileContents> selfHostedXDRBuffer;
-
-  auto shutdownEngine = MakeScopeExit([] { JS_ShutDown(); });
-
   OptionParser op("Usage: {progname} [options] [[script] scriptArgs*]");
 
   op.setDescription(
@@ -12358,6 +12344,20 @@ int main(int argc, char** argv) {
   if (op.getHelpOption()) {
     return EXIT_SUCCESS;
   }
+
+  
+  if (const char* message = JS_InitWithFailureDiagnostic()) {
+    fprintf(gErrFile->fp, "JS_Init failed: %s\n", message);
+    return 1;
+  }
+
+  
+  
+  
+  
+  Maybe<FileContents> selfHostedXDRBuffer;
+
+  auto shutdownEngine = MakeScopeExit([] { JS_ShutDown(); });
 
   
   
