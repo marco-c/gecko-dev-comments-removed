@@ -1154,18 +1154,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
-  SplitParentInlineElementsAtRangeEdges(
-      nsTArray<OwningNonNull<nsRange>>& aArrayOfRanges);
-
-  
-
-
-
-
-
-
-
 
 
 
@@ -1235,17 +1223,6 @@ class HTMLEditor final : public EditorBase,
       nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
       EditSubAction aEditSubAction,
       CollectNonEditableNodes aCollectNonEditableNodes);
-
-  
-
-
-
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
-  SplitTextNodesAtRangeEnd(
-      const nsTArray<OwningNonNull<nsRange>>& aArrayOfRanges);
 
   
 
@@ -4543,6 +4520,8 @@ class HTMLEditor final : public EditorBase,
 
   friend class AlignStateAtSelection;  
                                        
+  friend class AutoRangeArray;  
+                                
   friend class AutoSelectionSetterAfterTableEdit;  
   friend class
       AutoSetTemporaryAncestorLimiter;  

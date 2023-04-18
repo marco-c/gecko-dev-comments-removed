@@ -639,6 +639,20 @@ class MOZ_STACK_CLASS AutoRangeArray final {
     return range.forget();
   }
 
+  
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  SplitTextNodesAtEndBoundariesAndParentInlineElementsAtBoundaries(
+      HTMLEditor& aHTMLEditor);
+
  private:
   static nsresult ExtendRangeToWrapStartAndEndLinesContainingBoundaries(
       nsRange& aRange, EditSubAction aEditSubAction,
