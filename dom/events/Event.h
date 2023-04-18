@@ -51,6 +51,7 @@ class EventMessageAutoOverride;
 class ExtendableEvent;
 class KeyboardEvent;
 class MouseEvent;
+class MessageEvent;
 class TimeEvent;
 class UIEvent;
 class WantsPopupControlCheck;
@@ -126,6 +127,9 @@ class Event : public nsISupports, public nsWrapperCache {
 
   
   virtual CustomEvent* AsCustomEvent() { return nullptr; }
+
+  
+  virtual MessageEvent* AsMessageEvent() { return nullptr; }
 
   void InitEvent(const nsAString& aEventTypeArg, bool aCanBubble,
                  bool aCancelable) {
