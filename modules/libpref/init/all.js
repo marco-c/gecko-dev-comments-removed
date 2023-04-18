@@ -4586,19 +4586,11 @@ pref("security.external_protocol_requires_permission", true);
 
 
 
-
-
-
 pref("extensions.formautofill.available", "detect");
-pref("extensions.formautofill.addresses.supported", "detect");
 pref("extensions.formautofill.addresses.enabled", true);
 pref("extensions.formautofill.addresses.capture.enabled", false);
-pref("extensions.formautofill.addresses.supportedCountries", "US,CA");
-
 pref("extensions.formautofill.creditCards.available", true);
-pref("extensions.formautofill.creditCards.supported", "detect");
 pref("extensions.formautofill.creditCards.enabled", true);
-pref("extensions.formautofill.creditCards.supportedCountries", "US,CA,UK,FR,DE");
 
 
 pref("extensions.formautofill.creditCards.hideui", false);
@@ -4617,4 +4609,5 @@ pref("extensions.formautofill.loglevel", "Warn");
 
 pref("toolkit.osKeyStore.loglevel", "Warn");
 
+pref("extensions.formautofill.supportedCountries", "US,CA");
 pref("extensions.formautofill.supportRTL", false);
