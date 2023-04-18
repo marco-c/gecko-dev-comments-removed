@@ -2062,36 +2062,7 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
 
 
-
-
-
-  _acceptSource(source) {
-    
-    
-    
-    
-    
-    if (
-      this._parent.sessionContext.type == "browser-element" &&
-      source.url.endsWith("ExtensionContent.jsm")
-    ) {
-      return false;
-    }
-
-    return true;
-  },
-
-  
-
-
-
-
-
   _addSource(source) {
-    if (!this._acceptSource(source)) {
-      return;
-    }
-
     
     
     

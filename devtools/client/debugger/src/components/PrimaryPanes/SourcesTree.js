@@ -105,6 +105,17 @@ class SourcesTree extends Component {
       );
     }
 
+    if (
+      nextProps.selectedSource &&
+      nextProps.selectedSource != selectedSource
+    ) {
+      const highlightItems = getDirectories(
+        nextProps.selectedSource,
+        sourceTree
+      );
+      this.setState({ highlightItems });
+    }
+
     
     
     if (nextProps.sources != this.props.sources) {
@@ -117,42 +128,8 @@ class SourcesTree extends Component {
         sourceTree,
       });
       if (update) {
-        this.setState({
-          uncollapsedTree: update.uncollapsedTree,
-          sourceTree: update.sourceTree,
-          getParent: update.getParent,
-        });
+        this.setState(update);
       }
-    }
-
-    
-    
-    if (
-      nextProps.selectedSource &&
-      nextProps.selectedSource != selectedSource
-    ) {
-      const highlightItems = getDirectories(
-        nextProps.selectedSource,
-        
-        this.state.sourceTree
-      );
-      this.setState({ highlightItems });
-
-      
-      
-      
-      
-    } else if (
-      nextProps.selectedSource &&
-      this.state.highlightItems &&
-      this.state.highlightItems[0].name == "root"
-    ) {
-      const highlightItems = getDirectories(
-        nextProps.selectedSource,
-        
-        this.state.sourceTree
-      );
-      this.setState({ highlightItems });
     }
   }
 

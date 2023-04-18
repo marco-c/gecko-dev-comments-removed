@@ -393,14 +393,19 @@ add_task(async function testSourceTreeWithWebExtensionContentScript() {
   let dbg = await initDebugger("doc-content-script-sources.html");
   
   await wait(1000);
-  await waitForSourcesInSourceTree(dbg, []);
+  
+  
+  await waitForSourcesInSourceTree(dbg, ["ExtensionContent.jsm"]);
   await dbg.toolbox.closeToolbox();
 
   info("With the chrome preference, the content script shows up");
   await pushPref("devtools.chrome.enabled", true);
   const toolbox = await openToolboxForTab(gBrowser.selectedTab, "jsdebugger");
   dbg = createDebuggerContext(toolbox);
-  await waitForSourcesInSourceTree(dbg, ["content_script.js"]);
+  await waitForSourcesInSourceTree(dbg, [
+    "content_script.js",
+    "ExtensionContent.jsm",
+  ]);
   await selectSource(dbg, "content_script.js");
   ok(
     findElementWithSelector(dbg, ".sources-list .focused"),
@@ -440,6 +445,7 @@ add_task(async function testSourceTreeNamesForWebExtensions() {
     "Test content script extension",
     "Test content script extension is labeled properly"
   );
+  is(getLabel(dbg, 3), "resource://gre", "resource://gre is labeled properly");
 
   await dbg.toolbox.closeToolbox();
   await extension.unload();
