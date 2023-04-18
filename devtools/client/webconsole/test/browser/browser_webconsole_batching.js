@@ -51,8 +51,6 @@ async function testBatchLoggingAndClear(hud, messageNumber) {
   );
   ok(true, "console cleared message is displayed");
 
-  
-  
-  const messages = findMessages(hud, "");
+  const messages = findAllMessages(hud);
   is(messages.length, 1, "console was cleared as expected");
 }
