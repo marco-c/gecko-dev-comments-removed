@@ -12,6 +12,9 @@
 #include "nsContentUtils.h"
 #include "nsAString.h"
 #include "nsQueryFrame.h"
+#include "nsIScrollableFrame.h"
+#include "PresShell.h"
+#include "nsLayoutUtils.h"
 #include "nsRefreshDriver.h"
 #include "nsComponentManagerUtils.h"
 #include "nsStyledElement.h"
@@ -96,7 +99,23 @@ ScrollbarActivity::HandleEvent(dom::Event* aEvent) {
   if (type.EqualsLiteral("mousemove")) {
     
     
-    ActivityOccurred();
+    
+    
+    
+    nsIFrame* scrollFrame = do_QueryFrame(mScrollableFrame);
+    MOZ_ASSERT(scrollFrame);
+    nsIScrollableFrame* scrollableFrame = do_QueryFrame(mScrollableFrame);
+    nsCOMPtr<nsIContent> targetContent =
+        do_QueryInterface(aEvent->GetOriginalTarget());
+    nsIFrame* targetFrame =
+        targetContent ? targetContent->GetPrimaryFrame() : nullptr;
+    if ((scrollableFrame && scrollableFrame->IsRootScrollFrameOfDocument()) ||
+        !targetFrame ||
+        nsLayoutUtils::IsAncestorFrameCrossDocInProcess(
+            scrollFrame, targetFrame,
+            scrollFrame->PresShell()->GetRootFrame())) {
+      ActivityOccurred();
+    }
     return NS_OK;
   }
 
