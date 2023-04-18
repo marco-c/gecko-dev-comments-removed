@@ -74,6 +74,15 @@ module.exports = {
         ],
       },
     },
+    {
+      
+      
+      
+      files: ["**/*.sjs"],
+      rules: {
+        "mozilla/reject-importGlobalProperties": "off",
+      },
+    },
   ],
 
   parserOptions: {
