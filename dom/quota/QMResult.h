@@ -72,6 +72,6 @@ inline OkOrErr ToResult(QMResult&& aValue);
 
 #define MOZ_TO_RESULT(expr) ToResult(expr)
 
-#define QM_TO_RESULT(expr) ToResult(ToQMResult(expr))
+#define QM_TO_RESULT(expr) ToResult<QMResult>(expr)
 
 #endif
