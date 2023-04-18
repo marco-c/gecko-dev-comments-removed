@@ -1,5 +1,5 @@
 body {
-  
+  /* to match ua.css, see bug 1020143 */
   font-variant-numeric: tabular-nums;
 }
 div, p {

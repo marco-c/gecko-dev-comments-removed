@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <meta charset="UTF-8">
-<title>CSS Reference: symbols function, invalid</title>
+<title>CSS Test: name case sensitivity</title>
 <link rel="author" title="Xidorn Quan" href="https://www.upsuper.org/">
+<link rel="help" href="https://drafts.csswg.org/css-counter-styles-3/#typedef-counter-style-name">
+<link rel="match" href="name-case-sensitivity-ref.html">
 <style type="text/css">
   ol, div, p {
     padding: 0; margin: 0;
@@ -23,25 +25,25 @@
   }
 </style>
 
-
-<ol><li style="list-style: hiragana inside;"></li></ol>
-<ol><li style="list-style: decimal-leading-zero inside;"></li></ol>
+<!-- list-style -->
+<ol><li style="list-style: Hiragana inside;"></li></ol>
+<ol><li style="list-style: Decimal-Leading-Zero inside;"></li></ol>
 <ol><li style="list-style: custom-style inside;"></li></ol>
-<ol><li style="list-style: decimal inside;"></li></ol>
+<ol><li style="list-style: Custom-Style inside;"></li></ol>
 
-
-<ol><li style="list-style-type: hiragana;"></li></ol>
-<ol><li style="list-style-type: decimal-leading-zero;"></li></ol>
+<!-- list-style-type -->
+<ol><li style="list-style-type: Hiragana;"></li></ol>
+<ol><li style="list-style-type: Decimal-Leading-Zero;"></li></ol>
 <ol><li style="list-style-type: custom-style;"></li></ol>
-<ol><li style="list-style-type: decimal;"></li></ol>
+<ol><li style="list-style-type: Custom-Style;"></li></ol>
 
-
+<!-- counter() -->
 <style type="text/css">
   #counter { counter-reset: a 1; }
-  #counter-a::before { content: counter(a, hiragana); }
-  #counter-b::before { content: counter(a, decimal-leading-zero); }
+  #counter-a::before { content: counter(a, Hiragana); }
+  #counter-b::before { content: counter(a, Decimal-leading-Zero); }
   #counter-c::before { content: counter(a, custom-style); }
-  #counter-d::before { content: counter(a, decimal); }
+  #counter-d::before { content: counter(a, Custom-Style); }
 </style>
 <div id="counter">
   <p id="counter-a"></p>
@@ -50,13 +52,13 @@
   <p id="counter-d"></p>
 </div>
 
-
+<!-- counters() -->
 <style type="text/css">
   #counters { counter-reset: a 1; }
-  #counters-a::before { content: counters(a, '', hiragana); }
-  #counters-b::before { content: counters(a, '', decimal-leading-zero); }
+  #counters-a::before { content: counters(a, '', Hiragana); }
+  #counters-b::before { content: counters(a, '', Decimal-leading-Zero); }
   #counters-c::before { content: counters(a, '', custom-style); }
-  #counters-d::before { content: counters(a, '', decimal); }
+  #counters-d::before { content: counters(a, '', Custom-Style); }
 </style>
 <div id="counters">
   <p id="counters-a"></p>
@@ -66,10 +68,10 @@
 </div>
 
 <style type="text/css">
-  @counter-style a { system: extends hiragana; }
-  @counter-style b { system: extends decimal-leading-zero; }
+  @counter-style a { system: extends HiRaGaNa; }
+  @counter-style b { system: extends Decimal-leading-ZERO; }
   @counter-style c { system: extends custom-style; }
-  @counter-style d { system: extends decimal; }
+  @counter-style d { system: extends Custom-Style; }
 </style>
 <ol><li style="list-style-type: a;"></li></ol>
 <ol><li style="list-style-type: b;"></li></ol>
