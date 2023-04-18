@@ -216,6 +216,11 @@ class SingleTestMixin(object):
                 
                 (
                     "mochitest-browser-chrome",
+                    "a11y",
+                    None,
+                ): "mochitest-browser-a11y",
+                (
+                    "mochitest-browser-chrome",
                     "devtools",
                     None,
                 ): "mochitest-devtools-chrome",
