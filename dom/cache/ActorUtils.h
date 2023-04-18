@@ -28,7 +28,7 @@ class PCacheStorageParent;
 
 
 
-PCacheChild* AllocPCacheChild();
+already_AddRefed<PCacheChild> AllocPCacheChild();
 
 void DeallocPCacheChild(PCacheChild* aActor);
 

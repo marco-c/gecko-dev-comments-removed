@@ -30,7 +30,6 @@ class CacheChild final : public PCacheChild, public ActorChild {
   using AutoLock = mozilla::detail::BaseAutoLock<CacheChild&>;
 
   CacheChild();
-  ~CacheChild();
 
   void SetListener(Cache* aListener);
 
@@ -45,7 +44,12 @@ class CacheChild final : public PCacheChild, public ActorChild {
   
   void StartDestroyFromListener();
 
+  NS_DECL_OWNINGTHREAD
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CacheChild, override);
+
  private:
+  ~CacheChild();
+
   
 
   
@@ -76,8 +80,6 @@ class CacheChild final : public PCacheChild, public ActorChild {
   uint32_t mNumChildActors;
   bool mDelayedDestroy;
   bool mLocked;
-
-  NS_DECL_OWNINGTHREAD
 };
 
 }  
