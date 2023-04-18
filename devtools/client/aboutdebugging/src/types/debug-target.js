@@ -14,6 +14,8 @@ const extensionTargetDetails = {
   actor: PropTypes.string.isRequired,
   location: PropTypes.string.isRequired,
   
+  lastTerminateBackgroundScriptError: PropTypes.string,
+  
   
   manifestURL: PropTypes.string,
   
