@@ -2579,12 +2579,25 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
   }
   
   DeviceColor color = static_cast<const ColorPattern&>(aPattern).mColor;
+#ifdef XP_MACOSX
+  
+  
+  
+  
+  bool lightOnDark = !useBitmaps && color.r >= 0.33f && color.g >= 0.33f &&
+                     color.b >= 0.33f && color.r + color.g + color.b >= 2.0f;
+#else
+  
+  const bool lightOnDark = true;
+#endif
   
   
   
   RefPtr<GlyphCacheEntry> entry = cache->FindOrInsertEntry(
       aBuffer,
-      useBitmaps ? color : DeviceColor::Mask(aUseSubpixelAA ? 1 : 0, 1),
+      useBitmaps
+          ? color
+          : DeviceColor::Mask(aUseSubpixelAA ? 1 : 0, lightOnDark ? 1 : 0),
       quantizeTransform, intBounds);
   if (!entry) {
     return false;
@@ -2610,9 +2623,17 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
     
     
     RefPtr<DrawTargetSkia> textDT = new DrawTargetSkia;
-    if (textDT->Init(intBounds.Size(), !useBitmaps && !aUseSubpixelAA
-                                           ? SurfaceFormat::A8
-                                           : SurfaceFormat::B8G8R8A8)) {
+    if (textDT->Init(intBounds.Size(),
+                     lightOnDark && !useBitmaps && !aUseSubpixelAA
+                         ? SurfaceFormat::A8
+                         : SurfaceFormat::B8G8R8A8)) {
+      if (!lightOnDark) {
+        
+        
+        textDT->FillRect(Rect(IntRect(IntPoint(), intBounds.Size())),
+                         ColorPattern(DeviceColor(1, 1, 1, 1)),
+                         DrawOptions(1.0f, CompositionOp::OP_OVER));
+      }
       textDT->SetTransform(currentTransform *
                            Matrix::Translation(-intBounds.TopLeft()));
       textDT->SetPermitSubpixelAA(aUseSubpixelAA);
@@ -2622,10 +2643,38 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
       
       
       
+      
       textDT->FillGlyphs(
           aFont, aBuffer,
-          ColorPattern(useBitmaps ? color : DeviceColor(1, 1, 1, 1)),
+          ColorPattern(useBitmaps ? color
+                                  : DeviceColor::Mask(lightOnDark ? 1 : 0, 1)),
           drawOptions);
+      if (!lightOnDark) {
+        uint8_t* data = nullptr;
+        IntSize size;
+        int32_t stride = 0;
+        SurfaceFormat format = SurfaceFormat::UNKNOWN;
+        if (!textDT->LockBits(&data, &size, &stride, &format)) {
+          return false;
+        }
+        uint8_t* row = data;
+        for (int y = 0; y < size.height; ++y) {
+          uint8_t* px = row;
+          for (int x = 0; x < size.width; ++x) {
+            
+            
+            
+            
+            px[0] = 255 - px[0];
+            px[1] = 255 - px[1];
+            px[2] = 255 - px[2];
+            px[3] = std::max(px[0], std::max(px[1], px[2]));
+            px += 4;
+          }
+          row += stride;
+        }
+        textDT->ReleaseBits(data);
+      }
       RefPtr<SourceSurface> textSurface = textDT->Snapshot();
       if (textSurface) {
         
