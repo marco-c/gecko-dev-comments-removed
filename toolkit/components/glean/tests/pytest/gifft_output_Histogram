@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Telemetry.h"
@@ -19,19 +20,35 @@ using Telemetry::HistogramID;
 
 typedef uint64_t TimerId; 
 typedef StaticDataMutex<UniquePtr<nsTHashMap<TimerId, TimeStamp>>> TimerToStampMutex;
-static inline TimerToStampMutex::AutoLock GetTimerIdToStartsLock() {
+static inline Maybe<TimerToStampMutex::AutoLock> GetTimerIdToStartsLock() {
   static TimerToStampMutex sTimerIdToStarts("sTimerIdToStarts");
   auto lock = sTimerIdToStarts.Lock();
+  
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown)) {
+    return Nothing();
+  }
   if (!*lock) {
     *lock = MakeUnique<nsTHashMap<TimerId, TimeStamp>>();
-    NS_DispatchToMainThread(NS_NewRunnableFunction(__func__, [&] {
+    RefPtr<nsIRunnable> cleanupFn = NS_NewRunnableFunction(__func__, [&] {
       RunOnShutdown([&] {
         auto lock = sTimerIdToStarts.Lock();
         *lock = nullptr;  
-      });
-    }));
+      }, ShutdownPhase::XPCOMWillShutdown);
+    });
+    
+    
+    
+    nsIRunnable* temp = cleanupFn.get();
+    if (NS_FAILED(NS_DispatchToMainThread(cleanupFn.forget()))) {
+      
+      
+      NS_RELEASE(temp);
+      
+      *lock = nullptr;
+      return Nothing();
+    }
   }
-  return lock;
+  return Some(std::move(lock));
 }
 
 static Maybe<HistogramID> HistogramIdForMetric(uint32_t aId) {
