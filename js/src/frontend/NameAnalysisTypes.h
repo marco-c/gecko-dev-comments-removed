@@ -12,9 +12,6 @@
 
 #include <stdint.h>  
 
-#include "frontend/ParserAtom.h"     
-#include "js/AllocPolicy.h"          
-#include "js/Vector.h"               
 #include "vm/BindingKind.h"          
 #include "vm/BytecodeFormatFlags.h"  
 #include "vm/BytecodeUtil.h"  
@@ -386,14 +383,6 @@ class NameLocation {
            kind_ == Kind::EnvironmentCoordinate;
   }
 };
-
-
-using AtomVector = Vector<TrivialTaggedParserAtomIndex, 24, SystemAllocPolicy>;
-
-class FunctionBox;
-
-
-using FunctionBoxVector = Vector<FunctionBox*, 24, SystemAllocPolicy>;
 
 }  
 }  
