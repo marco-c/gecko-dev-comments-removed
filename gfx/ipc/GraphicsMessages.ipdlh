@@ -5,6 +5,8 @@
 
 
 
+include "mozilla/GfxMessageUtils.h";
+
 using struct DxgiAdapterDesc from "mozilla/D3DMessageUtils.h";
 using struct mozilla::null_t from "mozilla/ipc/IPCCore.h";
 using mozilla::gfx::FeatureStatus from "gfxTelemetry.h";

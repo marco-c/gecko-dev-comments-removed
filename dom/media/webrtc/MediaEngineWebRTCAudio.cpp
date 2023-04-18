@@ -1429,3 +1429,8 @@ void MediaEngineWebRTCAudioCaptureSource::GetSettings(
 }
 
 }  
+
+
+#undef MAX_CHANNELS
+#undef MONO
+#undef MAX_SAMPLING_FREQ
