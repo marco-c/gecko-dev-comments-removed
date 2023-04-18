@@ -1300,7 +1300,7 @@ class WorkerPrivate final : public RelativeTimeline {
     uint32_t mDebuggerEventLoopLevel;
 
     uint32_t mErrorHandlerRecursionCount;
-    uint32_t mNextTimeoutId;
+    int32_t mNextTimeoutId;
 
     
     
