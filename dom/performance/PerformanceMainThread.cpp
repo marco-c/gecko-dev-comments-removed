@@ -405,7 +405,7 @@ void PerformanceMainThread::InsertUserEntry(PerformanceEntry* aEntry) {
   MOZ_ASSERT(NS_IsMainThread());
 
   nsAutoCString uri;
-  uint64_t markCreationEpoch = 0;
+  double markCreationEpoch = 0;
 
   if (StaticPrefs::dom_performance_enable_user_timing_logging() ||
       StaticPrefs::dom_performance_enable_notify_performance_timing()) {
@@ -419,7 +419,11 @@ void PerformanceMainThread::InsertUserEntry(PerformanceEntry* aEntry) {
       
       uri.AssignLiteral("none");
     }
-    markCreationEpoch = static_cast<uint64_t>(PR_Now() / PR_USEC_PER_MSEC);
+
+    
+    
+    
+    markCreationEpoch = static_cast<double>(PR_Now() / PR_USEC_PER_MSEC);
 
     if (StaticPrefs::dom_performance_enable_user_timing_logging()) {
       Performance::LogEntry(aEntry, uri);
