@@ -730,13 +730,21 @@ bool EditorBase::IsSelectionEditable() {
   if (IsTextEditor()) {
     
     
-    nsCOMPtr<nsINode> anchorNode = SelectionRef().GetAnchorNode();
+    const nsINode* anchorNode = SelectionRef().GetAnchorNode();
     return anchorNode && anchorNode->IsContent() && anchorNode->IsEditable();
   }
 
-  nsINode* anchorNode = SelectionRef().GetAnchorNode();
-  nsINode* focusNode = SelectionRef().GetFocusNode();
+  const nsINode* anchorNode = SelectionRef().GetAnchorNode();
+  const nsINode* focusNode = SelectionRef().GetFocusNode();
   if (!anchorNode || !focusNode) {
+    return false;
+  }
+
+  
+  
+  
+  if (MOZ_UNLIKELY(anchorNode->IsInNativeAnonymousSubtree() ||
+                   focusNode->IsInNativeAnonymousSubtree())) {
     return false;
   }
 
@@ -750,7 +758,7 @@ bool EditorBase::IsSelectionEditable() {
     return false;
   }
 
-  nsINode* commonAncestor =
+  const nsINode* commonAncestor =
       SelectionRef().GetAnchorFocusRange()->GetClosestCommonInclusiveAncestor();
   while (commonAncestor && !commonAncestor->IsEditable()) {
     commonAncestor = commonAncestor->GetParentNode();
