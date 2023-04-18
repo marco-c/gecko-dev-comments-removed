@@ -685,6 +685,8 @@ static bool IsPopupBlocked(Document* aDoc) {
 }
 
 nsresult HTMLInputElement::InitColorPicker() {
+  MOZ_ASSERT(IsMutable());
+
   if (mPickerRunning) {
     NS_WARNING("Just one nsIColorPicker is allowed");
     return NS_ERROR_FAILURE;
@@ -729,6 +731,8 @@ nsresult HTMLInputElement::InitColorPicker() {
 }
 
 nsresult HTMLInputElement::InitFilePicker(FilePickerType aType) {
+  MOZ_ASSERT(IsMutable());
+
   if (mPickerRunning) {
     NS_WARNING("Just one nsIFilePicker is allowed");
     return NS_ERROR_FAILURE;
@@ -3493,11 +3497,6 @@ nsresult HTMLInputElement::MaybeInitPickers(EventChainPostVisitor& aVisitor) {
   
   
   
-  
-  
-  if (aVisitor.mEvent->DefaultPrevented()) {
-    return NS_OK;
-  }
   WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
   if (!(mouseEvent && mouseEvent->IsLeftClickEvent())) {
     return NS_OK;
@@ -4055,7 +4054,10 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
     PostHandleEventForRangeThumb(aVisitor);
   }
 
-  return MaybeInitPickers(aVisitor);
+  if (!preventDefault) {
+    MOZ_TRY(MaybeInitPickers(aVisitor));
+  }
+  return NS_OK;
 }
 
 enum class RadioButtonMove { Back, Forward, None };
