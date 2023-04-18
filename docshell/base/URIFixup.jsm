@@ -29,53 +29,55 @@ const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 
+const lazy = {};
+
 XPCOMUtils.defineLazyServiceGetter(
-  this,
+  lazy,
   "externalProtocolService",
   "@mozilla.org/uriloader/external-protocol-service;1",
   "nsIExternalProtocolService"
 );
 
 XPCOMUtils.defineLazyServiceGetter(
-  this,
+  lazy,
   "defaultProtocolHandler",
   "@mozilla.org/network/protocol;1?name=default",
   "nsIProtocolHandler"
 );
 
 XPCOMUtils.defineLazyServiceGetter(
-  this,
+  lazy,
   "fileProtocolHandler",
   "@mozilla.org/network/protocol;1?name=file",
   "nsIFileProtocolHandler"
 );
 
 XPCOMUtils.defineLazyPreferenceGetter(
-  this,
+  lazy,
   "fixupSchemeTypos",
   "browser.fixup.typo.scheme",
   true
 );
 XPCOMUtils.defineLazyPreferenceGetter(
-  this,
+  lazy,
   "dnsFirstForSingleWords",
   "browser.fixup.dns_first_for_single_words",
   false
 );
 XPCOMUtils.defineLazyPreferenceGetter(
-  this,
+  lazy,
   "keywordEnabled",
   "keyword.enabled",
   true
 );
 XPCOMUtils.defineLazyPreferenceGetter(
-  this,
+  lazy,
   "alternateEnabled",
   "browser.fixup.alternate.enabled",
   true
 );
 XPCOMUtils.defineLazyPreferenceGetter(
-  this,
+  lazy,
   "alternateProtocol",
   "browser.fixup.alternate.protocol",
   "https"
@@ -95,19 +97,19 @@ const COMMON_PROTOCOLS = ["http", "https", "file"];
 
 
 XPCOMUtils.defineLazyGetter(
-  this,
+  lazy,
   "userPasswordRegex",
   () => /^([a-z+.-]+:\/{0,3})*([^\/@]+@).+/i
 );
 
 
-XPCOMUtils.defineLazyGetter(this, "portRegex", () => /^:\d{1,5}([?#/]|$)/);
+XPCOMUtils.defineLazyGetter(lazy, "portRegex", () => /^:\d{1,5}([?#/]|$)/);
 
 
-XPCOMUtils.defineLazyGetter(this, "numberRegex", () => /^[0-9]+(\.[0-9]+)?$/);
+XPCOMUtils.defineLazyGetter(lazy, "numberRegex", () => /^[0-9]+(\.[0-9]+)?$/);
 
 
-XPCOMUtils.defineLazyGetter(this, "maxOneTabRegex", () => /^[^\t]*\t?[^\t]*$/);
+XPCOMUtils.defineLazyGetter(lazy, "maxOneTabRegex", () => /^[^\t]*\t?[^\t]*$/);
 
 
 
@@ -127,20 +129,20 @@ XPCOMUtils.defineLazyGetter(this, "maxOneTabRegex", () => /^[^\t]*\t?[^\t]*$/);
 
 
 XPCOMUtils.defineLazyGetter(
-  this,
+  lazy,
   "possiblyHostPortRegex",
   () => /^[a-z0-9-]+(\.[a-z0-9-]+)*:[0-9]{1,5}([/?#]|$)/i
 );
 
 
-XPCOMUtils.defineLazyGetter(this, "newLinesRegex", () => /[\r\n]/g);
+XPCOMUtils.defineLazyGetter(lazy, "newLinesRegex", () => /[\r\n]/g);
 
 
 
 
 
 XPCOMUtils.defineLazyGetter(
-  this,
+  lazy,
   "possibleProtocolRegex",
   () => /^([a-z][a-z0-9.+\t-]*)(:|;)?(\/\/)?/i
 );
@@ -149,19 +151,19 @@ XPCOMUtils.defineLazyGetter(
 
 
 XPCOMUtils.defineLazyGetter(
-  this,
+  lazy,
   "IPv4LikeRegex",
   () => /^(?:[a-z+.-]+:\/*(?!\/))?(?:\d{1,3}\.){2,3}\d{1,3}(?::\d+|\/)?/i
 );
 XPCOMUtils.defineLazyGetter(
-  this,
+  lazy,
   "IPv6LikeRegex",
   () =>
     /^(?:[a-z+.-]+:\/*(?!\/))?\[(?:[0-9a-f]{0,4}:){0,7}[0-9a-f]{0,4}\]?(?::\d+|\/)?/i
 );
 
 
-XPCOMUtils.defineLazyGetter(this, "knownDomains", () => {
+XPCOMUtils.defineLazyGetter(lazy, "knownDomains", () => {
   const branch = "browser.fixup.domainwhitelist.";
   let domains = new Set(
     Services.prefs
@@ -198,7 +200,7 @@ XPCOMUtils.defineLazyGetter(this, "knownDomains", () => {
 
 
 
-XPCOMUtils.defineLazyGetter(this, "knownSuffixes", () => {
+XPCOMUtils.defineLazyGetter(lazy, "knownSuffixes", () => {
   const branch = "browser.fixup.domainsuffixwhitelist.";
   let suffixes = new Map();
   let prefs = Services.prefs
@@ -270,7 +272,7 @@ URIFixup.prototype = {
 
     
     
-    uriString = uriString.trim().replace(newLinesRegex, "");
+    uriString = uriString.trim().replace(lazy.newLinesRegex, "");
 
     if (!uriString) {
       throw new Components.Exception(
@@ -312,16 +314,16 @@ URIFixup.prototype = {
     let canHandleProtocol =
       scheme &&
       (isCommonProtocol ||
-        Services.io.getProtocolHandler(scheme) != defaultProtocolHandler ||
-        externalProtocolService.externalProtocolHandlerExists(scheme));
+        Services.io.getProtocolHandler(scheme) != lazy.defaultProtocolHandler ||
+        lazy.externalProtocolService.externalProtocolHandlerExists(scheme));
 
     if (
       canHandleProtocol ||
       
       
       
-      (!possiblyHostPortRegex.test(uriString) &&
-        !userPasswordRegex.test(uriString))
+      (!lazy.possiblyHostPortRegex.test(uriString) &&
+        !lazy.userPasswordRegex.test(uriString))
     ) {
       
       try {
@@ -341,7 +343,7 @@ URIFixup.prototype = {
     
     if (
       info.fixedURI &&
-      keywordEnabled &&
+      lazy.keywordEnabled &&
       fixupFlags & FIXUP_FLAG_FIX_SCHEME_TYPOS &&
       scheme &&
       !canHandleProtocol
@@ -372,7 +374,7 @@ URIFixup.prototype = {
     
     
     
-    if (!isCommonProtocol && maxOneTabRegex.test(uriString)) {
+    if (!isCommonProtocol && lazy.maxOneTabRegex.test(uriString)) {
       let uriWithProtocol = fixupURIProtocol(uriString);
       if (uriWithProtocol) {
         info.fixedURI = uriWithProtocol;
@@ -410,7 +412,7 @@ URIFixup.prototype = {
 
     
     if (
-      keywordEnabled &&
+      lazy.keywordEnabled &&
       fixupFlags & FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP &&
       !inputHadDuffProtocol &&
       !checkSuffix(info).suffix &&
@@ -430,7 +432,7 @@ URIFixup.prototype = {
 
     
     
-    if (keywordEnabled && fixupFlags & FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP) {
+    if (lazy.keywordEnabled && fixupFlags & FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP) {
       tryKeywordFixupForURIInfo(info.originalInput, info, isPrivateContext);
     }
 
@@ -608,7 +610,7 @@ URIFixupInfo.prototype = {
 
 
 function isDomainKnown(asciiHost) {
-  if (dnsFirstForSingleWords) {
+  if (lazy.dnsFirstForSingleWords) {
     return true;
   }
   
@@ -620,7 +622,7 @@ function isDomainKnown(asciiHost) {
     asciiHost = asciiHost.substring(0, asciiHost.length - 1);
     lastDotIndex = asciiHost.lastIndexOf(".");
   }
-  if (knownDomains.has(asciiHost.toLowerCase())) {
+  if (lazy.knownDomains.has(asciiHost.toLowerCase())) {
     return true;
   }
   
@@ -632,7 +634,7 @@ function isDomainKnown(asciiHost) {
   
   
   let lastPart = asciiHost.substr(lastDotIndex + 1);
-  let suffixes = knownSuffixes.get(lastPart);
+  let suffixes = lazy.knownSuffixes.get(lastPart);
   if (suffixes) {
     return Array.from(suffixes).some(s => asciiHost.endsWith(s));
   }
@@ -686,7 +688,7 @@ function checkAndFixPublicSuffix(info) {
   
   
   let suffix = Services.eTLD.getPublicSuffix(uri);
-  if (!suffix || numberRegex.test(suffix)) {
+  if (!suffix || lazy.numberRegex.test(suffix)) {
     return { suffix: "", hasUnknownSuffix: false };
   }
   for (let [typo, fixed] of [
@@ -748,7 +750,7 @@ function maybeSetAlternateFixedURI(info, fixupFlags) {
   let uri = info.fixedURI;
   if (
     !(fixupFlags & FIXUP_FLAGS_MAKE_ALTERNATE_URI) ||
-    !alternateEnabled ||
+    !lazy.alternateEnabled ||
     
     !uri.schemeIs("http") ||
     
@@ -797,7 +799,7 @@ function maybeSetAlternateFixedURI(info, fixupFlags) {
   try {
     info.fixedURI = uri
       .mutate()
-      .setScheme(alternateProtocol)
+      .setScheme(lazy.alternateProtocol)
       .setHost(newHost)
       .finalize();
   } catch (ex) {
@@ -834,7 +836,7 @@ function fileURIFixup(uriString) {
       let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
       file.initWithPath(uriString);
       return Services.io.newURI(
-        fileProtocolHandler.getURLSpecFromActualFile(file)
+        lazy.fileProtocolHandler.getURLSpecFromActualFile(file)
       );
     } catch (ex) {
       
@@ -906,11 +908,11 @@ function keywordURIFixup(uriString, fixupInfo, isPrivateContext) {
   }
 
   
-  const userPassword = userPasswordRegex.exec(uriString);
+  const userPassword = lazy.userPasswordRegex.exec(uriString);
   const ipString = userPassword
     ? uriString.replace(userPassword[2], "")
     : uriString;
-  if (IPv4LikeRegex.test(ipString) || IPv6LikeRegex.test(ipString)) {
+  if (lazy.IPv4LikeRegex.test(ipString) || lazy.IPv6LikeRegex.test(ipString)) {
     return false;
   }
 
@@ -961,12 +963,12 @@ function keywordURIFixup(uriString, fixupInfo, isPrivateContext) {
 
 
 function extractScheme(uriString, fixupFlags = FIXUP_FLAG_NONE) {
-  const matches = uriString.match(possibleProtocolRegex);
+  const matches = uriString.match(lazy.possibleProtocolRegex);
   const hasColon = matches?.[2] === ":";
   const hasSlash2 = matches?.[3] === "//";
 
   const isFixupSchemeTypos =
-    fixupSchemeTypos && fixupFlags & FIXUP_FLAG_FIX_SCHEME_TYPOS;
+    lazy.fixupSchemeTypos && fixupFlags & FIXUP_FLAG_FIX_SCHEME_TYPOS;
 
   if (
     !matches ||
@@ -1121,5 +1123,5 @@ function isURILike(uriString, host) {
     uriString = uriString.substring(host.length);
   }
 
-  return portRegex.test(uriString);
+  return lazy.portRegex.test(uriString);
 }
