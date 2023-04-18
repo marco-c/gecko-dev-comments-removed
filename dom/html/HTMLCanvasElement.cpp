@@ -1190,14 +1190,6 @@ void HTMLCanvasElement::SetHeight(uint32_t aHeight, ErrorResult& aRv) {
 
 void HTMLCanvasElement::InvalidateCanvasPlaceholder(uint32_t aWidth,
                                                     uint32_t aHeight) {
-  
-  
-  
-  if (mOffscreenCanvas->IsNeutered()) {
-    mOffscreenCanvas->UpdateNeuteredSize(aWidth, aHeight);
-  }
-
-  
   ErrorResult rv;
   SetUnsignedIntAttr(nsGkAtoms::width, aWidth, DEFAULT_CANVAS_WIDTH, rv);
   MOZ_ASSERT(!rv.Failed());
