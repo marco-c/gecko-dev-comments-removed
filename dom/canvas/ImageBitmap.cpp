@@ -590,7 +590,6 @@ already_AddRefed<SourceSurface> ImageBitmap::PrepareForDrawTarget(
     }
   }
 
-  RefPtr<DrawTarget> target = aTarget;
   IntRect surfRect(0, 0, mSurface->GetSize().width, mSurface->GetSize().height);
 
   
@@ -600,8 +599,7 @@ already_AddRefed<SourceSurface> ImageBitmap::PrepareForDrawTarget(
     
     if (surfPortion.IsEmpty()) {
       mSurface = nullptr;
-      RefPtr<gfx::SourceSurface> surface(mSurface);
-      return surface.forget();
+      return nullptr;
     }
 
     IntPoint dest(std::max(0, surfPortion.X() - mPictureRect.X()),
@@ -610,17 +608,27 @@ already_AddRefed<SourceSurface> ImageBitmap::PrepareForDrawTarget(
     
     
     
-    target = target->CreateSimilarDrawTarget(mPictureRect.Size(),
-                                             target->GetFormat());
-
-    if (!target) {
+    
+    
+    
+    
+    
+    SurfaceFormat format = mSurface->GetFormat();
+    if (!surfPortion.IsEqualEdges(mPictureRect) && IsOpaque(format)) {
+      format = SurfaceFormat::B8G8R8A8;
+    }
+    RefPtr<DrawTarget> cropped =
+        aTarget->CreateSimilarDrawTarget(mPictureRect.Size(), format);
+    if (!cropped) {
       mSurface = nullptr;
-      RefPtr<gfx::SourceSurface> surface(mSurface);
-      return surface.forget();
+      return nullptr;
     }
 
-    target->CopySurface(mSurface, surfPortion, dest);
-    mSurface = target->Snapshot();
+    cropped->CopySurface(mSurface, surfPortion, dest);
+    mSurface = cropped->Snapshot();
+    if (!mSurface) {
+      return nullptr;
+    }
 
     
     mPictureRect.MoveTo(0, 0);
@@ -636,9 +644,12 @@ already_AddRefed<SourceSurface> ImageBitmap::PrepareForDrawTarget(
                mSurface->GetFormat() == SurfaceFormat::A8R8G8B8);
 
     RefPtr<DataSourceSurface> srcSurface = mSurface->GetDataSurface();
+    if (NS_WARN_IF(!srcSurface)) {
+      return nullptr;
+    }
     RefPtr<DataSourceSurface> dstSurface = Factory::CreateDataSourceSurface(
         srcSurface->GetSize(), srcSurface->GetFormat());
-    if (NS_WARN_IF(!srcSurface) || NS_WARN_IF(!dstSurface)) {
+    if (NS_WARN_IF(!dstSurface)) {
       return nullptr;
     }
 
@@ -667,10 +678,8 @@ already_AddRefed<SourceSurface> ImageBitmap::PrepareForDrawTarget(
   
   
   
-  mSurface = target->OptimizeSourceSurface(mSurface);
-
-  RefPtr<gfx::SourceSurface> surface(mSurface);
-  return surface.forget();
+  mSurface = aTarget->OptimizeSourceSurface(mSurface);
+  return do_AddRef(mSurface);
 }
 
 already_AddRefed<layers::Image> ImageBitmap::TransferAsImage() {
