@@ -8893,8 +8893,9 @@ AttachDecision CallIRGenerator::tryAttachTypedArrayConstructor(
 }
 
 AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
-  if (!calleeFunc->isNativeWithoutJitEntry() ||
-      calleeFunc->native() != fun_apply) {
+  MOZ_ASSERT(calleeFunc->isNativeWithoutJitEntry());
+
+  if (calleeFunc->native() != fun_apply) {
     return AttachDecision::NoAction;
   }
 
@@ -9868,9 +9869,6 @@ AttachDecision CallIRGenerator::tryAttachStub() {
   if (op_ == JSOp::FunCall) {
     return tryAttachFunCall(calleeFunc);
   }
-  if (op_ == JSOp::FunApply) {
-    return tryAttachFunApply(calleeFunc);
-  }
 
   
   if (calleeFunc->hasJitEntry()) {
@@ -9879,6 +9877,14 @@ AttachDecision CallIRGenerator::tryAttachStub() {
 
   
   MOZ_ASSERT(calleeFunc->isNativeWithoutJitEntry());
+
+  
+  
+  
+  if (op_ == JSOp::FunApply || op_ == JSOp::Call ||
+      op_ == JSOp::CallIgnoresRv) {
+    TRY_ATTACH(tryAttachFunApply(calleeFunc));
+  }
 
   return tryAttachCallNative(calleeFunc);
 }
