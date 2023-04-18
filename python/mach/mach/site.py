@@ -44,6 +44,10 @@ class MozSiteMetadataOutOfDateError(Exception):
     pass
 
 
+class InstallPipRequirementsException(Exception):
+    pass
+
+
 class SitePackagesSource(enum.Enum):
     NONE = enum.auto()
     SYSTEM = enum.auto()
@@ -582,11 +586,39 @@ class CommandSiteManager:
         if require_hashes:
             args.append("--require-hashes")
 
-        if quiet:
-            args.append("--quiet")
+        install_result = self._virtualenv.pip_install(
+            args,
+            check=not quiet,
+            stdout=subprocess.PIPE if quiet else None,
+        )
+        if install_result.returncode:
+            print(install_result.stdout)
+            raise InstallPipRequirementsException(
+                f'Failed to install "{path}" into the "{self._site_name}" site.'
+            )
 
-        self._virtualenv.pip_install(args)
-        self._virtualenv.pip_check()
+        check_result = subprocess.run(
+            [self.python_path, "-m", "pip", "check"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+        )
+        if check_result.returncode:
+            if quiet:
+                
+                
+                
+                print(install_result.stdout)
+
+            subprocess.check_call(
+                [self.python_path, "-m", "pip", "list", "-v"], stdout=sys.stderr
+            )
+            print(check_result.stdout, file=sys.stderr)
+            raise InstallPipRequirementsException(
+                f'As part of validation after installing "{path}" into the '
+                f'"{self._site_name}" site, the site appears to contain installed '
+                "packages that are incompatible with each other."
+            )
 
     def _pthfile_lines(self):
         """Generate the prioritized import scope to encode in the venv's pthfile
@@ -756,34 +788,29 @@ class PythonVirtualenv:
 
             return self.pip_install(["--constraint", constraints_path] + pip_args)
 
-    def pip_install(self, pip_install_args):
+    def pip_install(self, pip_install_args, **kwargs):
         
         
         
         
         
-        env = os.environ.copy()
-        env.setdefault("ARCHFLAGS", "-arch {}".format(platform.machine()))
-
-        
-        
-        
-        
-        
-        
-        
-        subprocess.run(
-            [self.python_path, "-m", "pip", "install"] + pip_install_args,
-            env=env,
-            universal_newlines=True,
-            stderr=subprocess.STDOUT,
-            check=True,
+        kwargs.setdefault("env", os.environ.copy()).setdefault(
+            "ARCHFLAGS", "-arch {}".format(platform.machine())
         )
+        kwargs.setdefault("check", True)
+        kwargs.setdefault("stderr", subprocess.STDOUT)
+        kwargs.setdefault("universal_newlines", True)
 
-    def pip_check(self):
-        subprocess.check_call(
-            [self.python_path, "-m", "pip", "check"],
-            stderr=subprocess.STDOUT,
+        
+        
+        
+        
+        
+        
+        
+        return subprocess.run(
+            [self.python_path, "-m", "pip", "install"] + pip_install_args,
+            **kwargs,
         )
 
     def install_optional_packages(self, optional_requirements):
@@ -1019,8 +1046,8 @@ def _assert_pip_check(topsrcdir, pthfile_lines, virtualenv_name):
             universal_newlines=True,
         )
         if check_result.returncode:
-            print(check_result.stdout, file=sys.stderr)
             subprocess.check_call(pip + ["list", "-v"], stdout=sys.stderr)
+            print(check_result.stdout, file=sys.stderr)
             raise Exception(
                 'According to "pip check", the current Python '
                 "environment has package-compatibility issues."
