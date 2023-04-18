@@ -3621,25 +3621,22 @@ nsresult HTMLEditor::FormatBlockContainerWithTransaction(nsAtom& blockType) {
       }
     }
     
-    SplitNodeResult splitNodeResult =
-        MaybeSplitAncestorsForInsertWithTransaction(blockType,
-                                                    pointToInsertBlock);
-    if (splitNodeResult.Failed()) {
+    Result<RefPtr<Element>, nsresult> newBlockElementOrError =
+        InsertElementWithSplittingAncestorsWithTransaction(blockType,
+                                                           pointToInsertBlock);
+    if (MOZ_UNLIKELY(newBlockElementOrError.isErr())) {
       NS_WARNING(
-          "HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction() failed");
-      return splitNodeResult.Rv();
+          nsPrintfCString(
+              "HTMLEditor::InsertElementWithSplittingAncestorsWithTransaction("
+              "%s) failed",
+              nsAtomCString(&blockType).get())
+              .get());
+      return newBlockElementOrError.unwrapErr();
     }
-    Result<RefPtr<Element>, nsresult> maybeNewBlockElement =
-        CreateAndInsertElementWithTransaction(blockType,
-                                              splitNodeResult.SplitPoint());
-    if (maybeNewBlockElement.isErr()) {
-      NS_WARNING("CreateAndInsertElementWithTransaction() failed");
-      return maybeNewBlockElement.unwrapErr();
-    }
-    MOZ_ASSERT(maybeNewBlockElement.inspect());
+    MOZ_ASSERT(newBlockElementOrError.inspect());
     
     TopLevelEditSubActionDataRef().mNewBlockElement =
-        maybeNewBlockElement.inspect();
+        newBlockElementOrError.inspect();
     
     while (!arrayOfContents.IsEmpty()) {
       OwningNonNull<nsIContent>& content = arrayOfContents[0];
@@ -3659,7 +3656,7 @@ nsresult HTMLEditor::FormatBlockContainerWithTransaction(nsAtom& blockType) {
     restoreSelectionLater.Abort();
     
     rv = CollapseSelectionToStartOf(
-        MOZ_KnownLive(*maybeNewBlockElement.inspect()));
+        MOZ_KnownLive(*newBlockElementOrError.inspect()));
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "HTMLEditor::CollapseSelectionToStartOf() failed");
     return rv;
