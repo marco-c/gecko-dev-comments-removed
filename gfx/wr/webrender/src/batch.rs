@@ -3813,12 +3813,24 @@ pub enum CommandBufferBuilderKind {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CommandBufferBuilder {
     pub kind: CommandBufferBuilderKind,
+
+    
+    
+    
+    
+    pub establishes_sub_graph: bool,
+
+    
+    
+    pub resolve_source: Option<RenderTaskId>,
 }
 
 impl CommandBufferBuilder {
     pub fn empty() -> Self {
         CommandBufferBuilder {
             kind: CommandBufferBuilderKind::Invalid,
+            establishes_sub_graph: false,
+            resolve_source: None,
         }
     }
 
@@ -3830,12 +3842,15 @@ impl CommandBufferBuilder {
             kind: CommandBufferBuilderKind::Tiled {
                 tiles,
             },
+            establishes_sub_graph: false,
+            resolve_source: None,
         }
     }
 
     
     pub fn new_simple(
         render_task_id: RenderTaskId,
+        establishes_sub_graph: bool,
         root_task_id: Option<RenderTaskId>,
     ) -> Self {
         CommandBufferBuilder {
@@ -3843,6 +3858,8 @@ impl CommandBufferBuilder {
                 render_task_id,
                 root_task_id,
             },
+            establishes_sub_graph,
+            resolve_source: None,
         }
     }
 }

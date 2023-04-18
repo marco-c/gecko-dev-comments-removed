@@ -7,9 +7,13 @@ use crate::batch::{CommandBufferBuilderKind, CommandBufferList, CommandBufferBui
 use crate::internal_types::FastHashMap;
 use crate::picture::{SurfaceInfo, SurfaceIndex, TileKey, SubSliceIndex};
 use crate::prim_store::{PrimitiveInstanceIndex};
-use crate::render_task::RenderTaskKind;
 use crate::render_task_graph::{RenderTaskId, RenderTaskGraphBuilder};
 use crate::spatial_tree::SpatialNodeIndex;
+use crate::render_target::ResolveOp;
+use crate::render_task::{RenderTask, RenderTaskKind, RenderTaskLocation};
+use crate::space::SpaceMapper;
+use crate::spatial_tree::{SpatialTree};
+use crate::util::MaxRect;
 use crate::visibility::{VisibilityState, PrimitiveVisibility};
 
 
@@ -203,9 +207,32 @@ impl SurfaceBuilder {
     }
 
     
+    
+    pub fn register_resolve_source(
+        &mut self,
+    ) {
+        let surface_task_id = match self.builder_stack.last().unwrap().kind {
+            CommandBufferBuilderKind::Tiled { .. } | CommandBufferBuilderKind::Invalid => {
+                panic!("bug: only supported for non-tiled surfaces");
+            }
+            CommandBufferBuilderKind::Simple { render_task_id, .. } => render_task_id,
+        };
+
+        for builder in self.builder_stack.iter_mut().rev() {
+            if builder.establishes_sub_graph {
+                assert_eq!(builder.resolve_source, None);
+                builder.resolve_source = Some(surface_task_id);
+                return;
+            }
+        }
+
+        unreachable!("bug: resolve source with no sub-graph");
+    }
+
     pub fn push_surface(
         &mut self,
         surface_index: SurfaceIndex,
+        is_sub_graph: bool,
         clipping_rect: PictureRect,
         descriptor: SurfaceDescriptor,
         surfaces: &mut [SurfaceInfo],
@@ -225,12 +252,14 @@ impl SurfaceBuilder {
             SurfaceDescriptorKind::Simple { render_task_id } => {
                 CommandBufferBuilder::new_simple(
                     render_task_id,
+                    is_sub_graph,
                     None,
                 )
             }
             SurfaceDescriptorKind::Chained { render_task_id, root_task_id } => {
                 CommandBufferBuilder::new_simple(
                     render_task_id,
+                    is_sub_graph,
                     Some(root_task_id),
                 )
             }
@@ -322,42 +351,185 @@ impl SurfaceBuilder {
     pub fn pop_surface(
         &mut self,
         rg_builder: &mut RenderTaskGraphBuilder,
+        cmd_buffers: &mut CommandBufferList,
+        spatial_tree: &SpatialTree,
     ) {
         self.dirty_rect_stack.pop().unwrap();
 
-        
-        
-
         let builder = self.builder_stack.pop().unwrap();
 
-        match builder.kind {
-            CommandBufferBuilderKind::Tiled { .. } => {
-                
-            }
-            CommandBufferBuilderKind::Simple { render_task_id: child_task_id, root_task_id: child_root_task_id } => {
-                match self.builder_stack.last().unwrap().kind {
-                    CommandBufferBuilderKind::Tiled { ref tiles } => {
-                        
-                        for (_, parent_task_id) in tiles {
-                            rg_builder.add_dependency(
-                                *parent_task_id,
-                                child_root_task_id.unwrap_or(child_task_id),
+        if builder.establishes_sub_graph {
+            
+            match builder.kind {
+                CommandBufferBuilderKind::Tiled { .. } | CommandBufferBuilderKind::Invalid => {
+                    unreachable!("bug: sub-graphs can only be simple surfaces");
+                }
+                CommandBufferBuilderKind::Simple { render_task_id: child_render_task_id, root_task_id: child_root_task_id } => {
+                    
+                    let resolve_task_id = builder.resolve_source.expect("bug: no resolve set");
+                    let dest_task = rg_builder.get_task_mut(resolve_task_id);
+
+                    
+                    let dest_origin = match dest_task.kind {
+                        RenderTaskKind::Picture(ref dest_task_info) => {
+                            let m: SpaceMapper<DevicePixel, DevicePixel> = SpaceMapper::new_with_target(
+                                dest_task_info.surface_spatial_node_index,
+                                dest_task_info.raster_spatial_node_index,
+                                DeviceRect::max_rect(),
+                                spatial_tree,
                             );
+
+                            m.map_point(dest_task_info.content_origin).unwrap()
                         }
-                    }
-                    CommandBufferBuilderKind::Simple { render_task_id: parent_task_id, .. } => {
-                        rg_builder.add_dependency(
-                            parent_task_id,
-                            child_root_task_id.unwrap_or(child_task_id),
-                        );
-                    }
-                    CommandBufferBuilderKind::Invalid => {
-                        unreachable!();
+                        _ => unreachable!(),
+                    };
+
+                    
+                    
+                    
+                    
+                    
+                    
+
+                    match self.builder_stack.last_mut().unwrap().kind {
+                        CommandBufferBuilderKind::Tiled { ref mut tiles } => {
+                            let keys: Vec<TileKey> = tiles.keys().cloned().collect();
+
+                            
+                            for key in keys {
+                                let parent_task_id = tiles.remove(&key).unwrap();
+                                let parent_task = rg_builder.get_task_mut(parent_task_id);
+
+                                
+                                let location = parent_task.location.clone();
+                                let pic_task = match parent_task.kind {
+                                    RenderTaskKind::Picture(ref mut pic_task) => {
+                                        let cmd_buffer_index = cmd_buffers.create_cmd_buffer();
+                                        let new_pic_task = pic_task.duplicate(cmd_buffer_index);
+
+                                        
+                                        pic_task.resolve_op = Some(ResolveOp {
+                                            src_task_id: parent_task_id,
+                                            dest_origin,
+                                            dest_task_id: resolve_task_id,
+                                        });
+
+                                        new_pic_task
+                                    }
+                                    _ => panic!("bug: not a picture"),
+                                };
+
+                                
+                                rg_builder.add_dependency(
+                                    resolve_task_id,
+                                    parent_task_id,
+                                );
+
+                                
+                                let new_task_id = rg_builder.add().init(
+                                    RenderTask::new(
+                                        location,          
+                                        RenderTaskKind::Picture(pic_task),
+                                    ),
+                                );
+
+                                
+                                rg_builder.add_dependency(
+                                    new_task_id,
+                                    child_root_task_id.unwrap_or(child_render_task_id),
+                                );
+
+                                
+                                tiles.insert(
+                                    key,
+                                    new_task_id,
+                                );
+                            }
+                        }
+                        CommandBufferBuilderKind::Simple { render_task_id: ref mut parent_task_id, .. } => {
+                            let parent_task = rg_builder.get_task_mut(*parent_task_id);
+
+                            
+                            let location = RenderTaskLocation::Existing {
+                                parent_task_id: *parent_task_id,
+                                size: parent_task.location.size(),
+                            };
+                            let pic_task = match parent_task.kind {
+                                RenderTaskKind::Picture(ref mut pic_task) => {
+                                    let cmd_buffer_index = cmd_buffers.create_cmd_buffer();
+
+                                    let new_pic_task = pic_task.duplicate(cmd_buffer_index);
+
+                                    pic_task.resolve_op = Some(ResolveOp {
+                                        src_task_id: *parent_task_id,
+                                        dest_origin,
+                                        dest_task_id: resolve_task_id,
+                                    });
+
+                                    new_pic_task
+                                }
+                                _ => panic!("bug: not a picture"),
+                            };
+
+                            
+                            rg_builder.add_dependency(
+                                resolve_task_id,
+                                *parent_task_id,
+                            );
+
+                            
+                            let new_task_id = rg_builder.add().init(
+                                RenderTask::new(
+                                    location,          
+                                    RenderTaskKind::Picture(pic_task),
+                                ),
+                            );
+
+                            
+                            rg_builder.add_dependency(
+                                new_task_id,
+                                child_root_task_id.unwrap_or(child_render_task_id),
+                            );
+
+                            
+                            *parent_task_id = new_task_id;
+                        }
+                        CommandBufferBuilderKind::Invalid => {
+                            unreachable!();
+                        }
                     }
                 }
             }
-            CommandBufferBuilderKind::Invalid => {
-                unreachable!();
+        } else {
+            match builder.kind {
+                CommandBufferBuilderKind::Tiled { .. } => {
+                    
+                }
+                CommandBufferBuilderKind::Simple { render_task_id: child_task_id, root_task_id: child_root_task_id } => {
+                    match self.builder_stack.last().unwrap().kind {
+                        CommandBufferBuilderKind::Tiled { ref tiles } => {
+                            
+                            for (_, parent_task_id) in tiles {
+                                rg_builder.add_dependency(
+                                    *parent_task_id,
+                                    child_root_task_id.unwrap_or(child_task_id),
+                                );
+                            }
+                        }
+                        CommandBufferBuilderKind::Simple { render_task_id: parent_task_id, .. } => {
+                            rg_builder.add_dependency(
+                                parent_task_id,
+                                child_root_task_id.unwrap_or(child_task_id),
+                            );
+                        }
+                        CommandBufferBuilderKind::Invalid => {
+                            unreachable!();
+                        }
+                    }
+                }
+                CommandBufferBuilderKind::Invalid => {
+                    unreachable!();
+                }
             }
         }
 
