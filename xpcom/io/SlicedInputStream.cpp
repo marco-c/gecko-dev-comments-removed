@@ -423,6 +423,24 @@ SlicedInputStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
 
 
 
+void SlicedInputStream::SerializedComplexity(uint32_t aMaxSize,
+                                             uint32_t* aSizeUsed,
+                                             uint32_t* aPipes,
+                                             uint32_t* aTransferables) {
+  InputStreamHelper::SerializedComplexity(mInputStream, aMaxSize, aSizeUsed,
+                                          aPipes, aTransferables);
+
+  
+  
+  
+  
+  if (*aPipes > 0 && *aTransferables == 0) {
+    *aSizeUsed = 0;
+    *aPipes = 1;
+    *aTransferables = 0;
+  }
+}
+
 void SlicedInputStream::Serialize(
     mozilla::ipc::InputStreamParams& aParams,
     FileDescriptorArray& aFileDescriptors, bool aDelayedStart,
@@ -448,6 +466,14 @@ void SlicedInputStream::SerializeInternal(
     uint32_t aMaxSize, uint32_t* aSizeUsed, M* aManager) {
   MOZ_ASSERT(mInputStream);
   MOZ_ASSERT(mWeakIPCSerializableInputStream);
+
+  uint32_t sizeUsed = 0, pipes = 0, transferables = 0;
+  SerializedComplexity(aMaxSize, &sizeUsed, &pipes, &transferables);
+  if (pipes > 0 && transferables == 0) {
+    InputStreamHelper::SerializeInputStreamAsPipe(mInputStream, aParams,
+                                                  aDelayedStart, aManager);
+    return;
+  }
 
   SlicedInputStreamParams params;
   InputStreamHelper::SerializeInputStream(mInputStream, params.stream(),
