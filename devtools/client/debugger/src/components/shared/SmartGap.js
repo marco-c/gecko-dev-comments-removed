@@ -3,6 +3,7 @@
 
 
 import React from "react";
+import PropTypes from "prop-types";
 
 function shorten(coordinates) {
   
@@ -154,3 +155,12 @@ export default function SmartGap({
     </svg>
   );
 }
+
+SmartGap.propTypes = {
+  coords: PropTypes.object.isRequired,
+  gapHeight: PropTypes.number.isRequired,
+  offset: PropTypes.number.isRequired,
+  preview: PropTypes.object.isRequired,
+  token: PropTypes.object.isRequired,
+  type: PropTypes.oneOf(["popover", "tooltip"]).isRequired,
+};

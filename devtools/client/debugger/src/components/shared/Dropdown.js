@@ -3,6 +3,7 @@
 
 
 import React, { Component } from "react";
+import PropTypes from "prop-types";
 import "./Dropdown.css";
 
 export class Dropdown extends Component {
@@ -10,6 +11,13 @@ export class Dropdown extends Component {
     super(props);
     this.state = {
       dropdownShown: false,
+    };
+  }
+
+  static get propTypes() {
+    return {
+      icon: PropTypes.node.isRequired,
+      panel: PropTypes.node.isRequired,
     };
   }
 

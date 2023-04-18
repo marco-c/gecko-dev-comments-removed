@@ -3,6 +3,7 @@
 
 
 import React from "react";
+import PropTypes from "prop-types";
 
 import AccessibleImage from "../AccessibleImage";
 
@@ -19,5 +20,11 @@ function CloseButton({ handleClick, buttonClass, tooltip }) {
     </button>
   );
 }
+
+CloseButton.propTypes = {
+  buttonClass: PropTypes.string,
+  handleClick: PropTypes.func.isRequired,
+  tooltip: PropTypes.string,
+};
 
 export default CloseButton;

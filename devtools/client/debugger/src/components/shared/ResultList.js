@@ -3,6 +3,7 @@
 
 
 import React, { Component } from "react";
+import PropTypes from "prop-types";
 import classnames from "classnames";
 
 import AccessibleImage from "./AccessibleImage";
@@ -14,6 +15,16 @@ export default class ResultList extends Component {
     size: "small",
     role: "listbox",
   };
+
+  static get propTypes() {
+    return {
+      items: PropTypes.array.isRequired,
+      role: PropTypes.oneOf(["listbox"]),
+      selectItem: PropTypes.func.isRequired,
+      selected: PropTypes.number.isRequired,
+      size: PropTypes.oneOf(["big", "small"]),
+    };
+  }
 
   renderListItem = (item, index) => {
     if (item.value === "/" && item.title === "") {
