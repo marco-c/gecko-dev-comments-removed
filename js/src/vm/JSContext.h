@@ -422,6 +422,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   friend class js::jit::DebugModeOSRVolatileJitFrameIter;
   friend void js::ReportOutOfMemory(JSContext*);
   friend void js::ReportOverRecursed(JSContext*);
+  friend void js::ReportOversizedAllocation(JSContext*, const unsigned);
 
  public:
   inline JS::Result<> boolToResult(bool ok);
@@ -696,11 +697,12 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
 #ifdef DEBUG
   
-  js::ContextData<bool> hadOverRecursed_;
+  
+  js::ContextData<bool> hadNondeterministicException_;
 
  public:
   bool hadNondeterministicException() const {
-    return hadOverRecursed_ || runtime()->hadOutOfMemory ||
+    return hadNondeterministicException_ ||
            js::oom::simulator.isThreadSimulatingAny();
   }
 #endif

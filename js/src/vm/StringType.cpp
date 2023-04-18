@@ -925,7 +925,7 @@ JSString* js::ConcatStrings(
   if (MOZ_UNLIKELY(wholeLength > JSString::MAX_LENGTH)) {
     
     if (allowGC) {
-      js::ReportAllocationOverflow(cx);
+      js::ReportOversizedAllocation(cx, JSMSG_ALLOC_OVERFLOW);
     }
     return nullptr;
   }

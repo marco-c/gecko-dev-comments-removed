@@ -302,6 +302,10 @@ JS_PUBLIC_API void js::ReportOutOfMemory(JSContext* cx) {
   cx->setPendingException(oomMessage, nullptr);
   MOZ_ASSERT(cx->status == JS::ExceptionStatus::Throwing);
   cx->status = JS::ExceptionStatus::OutOfMemory;
+
+#ifdef DEBUG
+  cx->hadNondeterministicException_ = true;
+#endif
 }
 
 JS_PUBLIC_API void js::ReportOverRecursed(JSContext* maybecx) {
@@ -333,9 +337,28 @@ JS_PUBLIC_API void js::ReportOverRecursed(JSContext* maybecx) {
       }
     }
 #ifdef DEBUG
-    maybecx->hadOverRecursed_ = true;
+    maybecx->hadNondeterministicException_ = true;
 #endif
   }
+}
+
+void js::ReportOversizedAllocation(JSContext* cx, const unsigned errorNumber) {
+  
+  
+  
+  
+  
+  
+  if (js::SupportDifferentialTesting()) {
+    fprintf(stderr, "ReportOutOfMemory called\n");
+  }
+
+  gc::AutoSuppressGC suppressGC(cx);
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, errorNumber);
+
+#ifdef DEBUG
+  cx->hadNondeterministicException_ = true;
+#endif
 }
 
 void js::ReportAllocationOverflow(JSContext* cx) {
@@ -976,7 +999,7 @@ JSContext::JSContext(JSRuntime* runtime, const JS::ContextOptions& options)
       unwrappedException_(this),
       unwrappedExceptionStack_(this),
 #ifdef DEBUG
-      hadOverRecursed_(this, false),
+      hadNondeterministicException_(this, false),
 #endif
       reportGranularity(this, JS_DEFAULT_JITREPORT_GRANULARITY),
       resolvingList(this, nullptr),
