@@ -196,28 +196,30 @@ class RenderThread final {
   bool Resume(wr::WindowId aWindowId);
 
   
-  void RegisterExternalImage(uint64_t aExternalImageId,
+  void RegisterExternalImage(const wr::ExternalImageId& aExternalImageId,
                              already_AddRefed<RenderTextureHost> aTexture);
 
   
-  void UnregisterExternalImage(uint64_t aExternalImageId);
+  void UnregisterExternalImage(const wr::ExternalImageId& aExternalImageId);
 
   
-  void PrepareForUse(uint64_t aExternalImageId);
+  void PrepareForUse(const wr::ExternalImageId& aExternalImageId);
 
   
-  void NotifyNotUsed(uint64_t aExternalImageId);
+  void NotifyNotUsed(const wr::ExternalImageId& aExternalImageId);
 
   
-  void NotifyForUse(uint64_t aExternalImageId);
+  void NotifyForUse(const wr::ExternalImageId& aExternalImageId);
 
   void HandleRenderTextureOps();
 
   
-  void UnregisterExternalImageDuringShutdown(uint64_t aExternalImageId);
+  void UnregisterExternalImageDuringShutdown(
+      const wr::ExternalImageId& aExternalImageId);
 
   
-  RenderTextureHost* GetRenderTexture(ExternalImageId aExternalImageId);
+  RenderTextureHost* GetRenderTexture(
+      const wr::ExternalImageId& aExternalImageId);
 
   
   bool IsDestroyed(wr::WindowId aWindowId);
@@ -310,7 +312,8 @@ class RenderThread final {
   void DoAccumulateMemoryReport(MemoryReport,
                                 const RefPtr<MemoryReportPromise::Private>&);
 
-  void AddRenderTextureOp(RenderTextureOp aOp, uint64_t aExternalImageId);
+  void AddRenderTextureOp(RenderTextureOp aOp,
+                          const wr::ExternalImageId& aExternalImageId);
 
   void CreateSingletonGL(nsACString& aError);
 
@@ -351,9 +354,18 @@ class RenderThread final {
 
   DataMutex<std::unordered_map<uint64_t, WindowInfo*>> mWindowInfos;
 
+  struct ExternalImageIdHashFn {
+    std::size_t operator()(const wr::ExternalImageId& aId) const {
+      return HashGeneric(wr::AsUint64(aId));
+    }
+  };
+
   Mutex mRenderTextureMapLock;
-  std::unordered_map<uint64_t, RefPtr<RenderTextureHost>> mRenderTextures;
-  std::unordered_map<uint64_t, RefPtr<RenderTextureHost>>
+  std::unordered_map<wr::ExternalImageId, RefPtr<RenderTextureHost>,
+                     ExternalImageIdHashFn>
+      mRenderTextures;
+  std::unordered_map<wr::ExternalImageId, RefPtr<RenderTextureHost>,
+                     ExternalImageIdHashFn>
       mSyncObjectNeededRenderTextures;
   std::list<std::pair<RenderTextureOp, RefPtr<RenderTextureHost>>>
       mRenderTextureOps;
