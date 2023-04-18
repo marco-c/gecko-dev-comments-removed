@@ -109,7 +109,8 @@ class imgFrame {
 
 
   void Finish(Opacity aFrameOpacity = Opacity::SOME_TRANSPARENCY,
-              bool aFinalize = true);
+              bool aFinalize = true,
+              bool aOrientationSwapsWidthAndHeight = false);
 
   
 

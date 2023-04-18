@@ -522,7 +522,8 @@ nsresult imgFrame::ImageUpdatedInternal(const nsIntRect& aUpdateRect) {
 }
 
 void imgFrame::Finish(Opacity aFrameOpacity ,
-                      bool aFinalize ) {
+                      bool aFinalize ,
+                      bool aOrientationSwapsWidthAndHeight ) {
   MonitorAutoLock lock(mMonitor);
 
   IntRect frameRect(GetRect());
@@ -530,15 +531,30 @@ void imgFrame::Finish(Opacity aFrameOpacity ,
     
     
     
+    
     IntRect delta(0, 0, frameRect.width, 0);
-    if (mDecoded.y == 0) {
-      delta.y = mDecoded.height;
-      delta.height = frameRect.height - mDecoded.height;
-    } else if (mDecoded.y + mDecoded.height == frameRect.height) {
-      delta.height = frameRect.height - mDecoded.y;
+    if (!aOrientationSwapsWidthAndHeight) {
+      delta.width = frameRect.width;
+      if (mDecoded.y == 0) {
+        delta.y = mDecoded.height;
+        delta.height = frameRect.height - mDecoded.height;
+      } else if (mDecoded.y + mDecoded.height == frameRect.height) {
+        delta.height = frameRect.height - mDecoded.y;
+      } else {
+        MOZ_ASSERT_UNREACHABLE("Decoder only updated middle of image!");
+        delta = frameRect;
+      }
     } else {
-      MOZ_ASSERT_UNREACHABLE("Decoder only updated middle of image!");
-      delta = frameRect;
+      delta.height = frameRect.height;
+      if (mDecoded.x == 0) {
+        delta.x = mDecoded.width;
+        delta.width = frameRect.width - mDecoded.width;
+      } else if (mDecoded.x + mDecoded.width == frameRect.width) {
+        delta.width = frameRect.width - mDecoded.x;
+      } else {
+        MOZ_ASSERT_UNREACHABLE("Decoder only updated middle of image!");
+        delta = frameRect;
+      }
     }
 
     ImageUpdatedInternal(delta);

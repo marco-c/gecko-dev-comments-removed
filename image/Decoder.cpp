@@ -477,7 +477,10 @@ void Decoder::PostFrameStop(Opacity aFrameOpacity) {
   mInFrame = false;
   mFinishedNewFrame = true;
 
-  mCurrentFrame->Finish(aFrameOpacity, mFinalizeFrames);
+  mCurrentFrame->Finish(
+      aFrameOpacity, mFinalizeFrames,
+       mImageMetadata.HasOrientation() &&
+          mImageMetadata.GetOrientation().SwapsWidthAndHeight());
 
   mProgress |= FLAG_FRAME_COMPLETE;
 
