@@ -96,7 +96,7 @@ enum StructuredCloneTags {
 
   
   
-  EMPTY_SLOT_8,
+  SCTAG_DOM_DOMEXCEPTION,
 
   
   
