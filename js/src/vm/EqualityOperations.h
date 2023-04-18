@@ -56,6 +56,17 @@ extern bool SameValueZeroLinear(const JS::Value& lval, const JS::Value& rval);
 extern bool SameValueZero(JSContext* cx, JS::Handle<JS::Value> v1,
                           JS::Handle<JS::Value> v2, bool* same);
 
+
+
+
+
+
+
+
+inline bool CanUseBitwiseCompareForStrictlyEqual(const JS::Value& v) {
+  return v.isObject() || v.isSymbol() || v.isNullOrUndefined() || v.isBoolean();
+}
+
 }  
 
 #endif  
