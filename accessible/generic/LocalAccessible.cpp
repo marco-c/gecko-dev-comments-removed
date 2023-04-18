@@ -670,8 +670,8 @@ nsRect LocalAccessible::ParentRelativeBounds() {
     }
 
     nsIFrame* boundingFrame = FindNearestAccessibleAncestorFrame();
-    nsRect unionRect = nsLayoutUtils::GetAllInFlowRectsUnion(
-        frame, boundingFrame, nsLayoutUtils::RECTS_ACCOUNT_FOR_TRANSFORMS);
+    nsRect unionRect =
+        nsLayoutUtils::GetAllInFlowRectsUnion(frame, boundingFrame);
 
     if (unionRect.IsEmpty()) {
       
@@ -3377,7 +3377,6 @@ void LocalAccessible::MaybeQueueCacheUpdateForStyleChanges() {
 
   if (nsIFrame* frame = GetFrame()) {
     const ComputedStyle* newStyle = frame->Style();
-    MOZ_ASSERT(newStyle != mOldComputedStyle, "New style matches old style!");
 
     nsAutoCString oldVal, newVal;
     mOldComputedStyle->GetComputedPropertyValue(eCSSProperty_display, oldVal);

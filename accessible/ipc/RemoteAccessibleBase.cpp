@@ -16,6 +16,7 @@
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/gfx/Matrix.h"
 #include "mozilla/Unused.h"
 #include "nsAccUtils.h"
 #include "nsTextEquivUtils.h"
@@ -314,12 +315,38 @@ Maybe<nsRect> RemoteAccessibleBase<Derived>::RetrieveCachedBounds() const {
 }
 
 template <class Derived>
+bool RemoteAccessibleBase<Derived>::ApplyTransform(nsRect& aBounds) const {
+  
+  Maybe<const UniquePtr<gfx::Matrix4x4>&> maybeTransform =
+      mCachedFields->GetAttribute<UniquePtr<gfx::Matrix4x4>>(
+          nsGkAtoms::transform);
+  if (!maybeTransform) {
+    return false;
+  }
+  
+  
+  
+  
+  
+  aBounds.MoveTo(0, 0);
+  auto mtxInPixels = gfx::Matrix4x4Typed<CSSPixel, CSSPixel>::FromUnknownMatrix(
+      *(*maybeTransform));
+
+  
+  
+  auto boundsInPixels = CSSRect::FromAppUnits(aBounds);
+  boundsInPixels = mtxInPixels.TransformBounds(boundsInPixels);
+  aBounds = CSSRect::ToAppUnits(boundsInPixels);
+
+  return true;
+}
+
+template <class Derived>
 LayoutDeviceIntRect RemoteAccessibleBase<Derived>::Bounds() const {
   if (mCachedFields) {
     Maybe<nsRect> maybeBounds = RetrieveCachedBounds();
     if (maybeBounds) {
       nsRect bounds = *maybeBounds;
-      LayoutDeviceIntRect devPxBounds;
       dom::CanonicalBrowsingContext* cbc =
           static_cast<dom::BrowserParent*>(mDoc->Manager())
               ->GetBrowsingContext()
@@ -328,7 +355,11 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::Bounds() const {
       nsPresContext* presContext =
           bp->GetOwnerElement()->OwnerDoc()->GetPresContext();
 
+      Unused << ApplyTransform(bounds);
+
+      LayoutDeviceIntRect devPxBounds;
       const Accessible* acc = this;
+
       while (acc) {
         if (LocalAccessible* localAcc =
                 const_cast<Accessible*>(acc)->AsLocal()) {
@@ -349,7 +380,6 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::Bounds() const {
           
           
           devPxBounds.MoveBy(localBounds.X(), localBounds.Y());
-
           break;
         }
 
@@ -360,6 +390,7 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::Bounds() const {
             (remoteAcc == this) ? Nothing() : remoteAcc->RetrieveCachedBounds();
 
         if (maybeRemoteBounds) {
+          nsRect remoteBounds = *maybeRemoteBounds;
           
           
           
@@ -380,9 +411,8 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::Bounds() const {
 
           
           
-          
-          nsRect remoteBounds = *maybeRemoteBounds;
           bounds.MoveBy(remoteBounds.X(), remoteBounds.Y());
+          Unused << remoteAcc->ApplyTransform(bounds);
         }
 
         acc = acc->Parent();
