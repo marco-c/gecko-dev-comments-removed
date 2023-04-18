@@ -56,9 +56,14 @@ var SignupOverlay = function(options) {
 
     if (layoutRefresh) {
       
+      
+      document
+        .querySelector(`.pkt_ext_containersignup`)
+        ?.classList.add(`stp_signup_body`);
       document
         .querySelector(`.pkt_ext_containersignup`)
         ?.classList.remove(`pkt_ext_containersignup`);
+      
       ReactDOM.render(
         <Signup pockethost={pockethost} locale={locale} />,
         document.querySelector(`body`)

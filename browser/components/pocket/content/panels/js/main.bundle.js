@@ -314,6 +314,21 @@ HomeOverlay.prototype = {
 
 
 
+function Button(props) {
+  return react.createElement("a", {
+    href: props.url,
+    className: `stp_button${props?.style && ` stp_button_${props.style}`}`
+  }, props.children);
+}
+
+ const Button_Button = (Button);
+;
+
+
+
+
+
+
 
 function Signup(props) {
   const {
@@ -322,18 +337,42 @@ function Signup(props) {
   return react.createElement("div", {
     className: "stp_panel_container"
   }, react.createElement("div", {
-    className: "stp_panel stp_panel_home"
-  }, react.createElement(Header_Header, null, react.createElement("a", null, react.createElement("span", {
-    "data-l10n-id": "pocket-panel-header-sign-in"
-  }))), react.createElement("hr", null), react.createElement("p", {
-    "data-l10n-id": "pocket-panel-signup-cta-a"
+    className: "stp_panel stp_panel_signup"
+  }, react.createElement(Header_Header, null, react.createElement(Button_Button, {
+    style: "secondary"
+  }, react.createElement("span", {
+    "data-l10n-id": "pocket-panel-signup-login"
+  }))), react.createElement("hr", null), locale?.startsWith("en") ? react.createElement(react.Fragment, null, react.createElement("div", {
+    className: "stp_signup_content_wrapper"
+  }, react.createElement("h3", {
+    className: "header_medium",
+    "data-l10n-id": "pocket-panel-signup-cta-a-fix"
   }), react.createElement("p", {
     "data-l10n-id": "pocket-panel-signup-cta-b"
-  }), locale?.startsWith("en") ? react.createElement(react.Fragment, null, react.createElement("hr", null), react.createElement("p", null, "Get thought-provoking article recommendations"), react.createElement("p", null, "Find stories that go deep into a subject or offer a new perspective.")) : react.createElement("p", {
+  })), react.createElement("div", {
+    className: "stp_signup_content_wrapper"
+  }, react.createElement("hr", null)), react.createElement("div", {
+    className: "stp_signup_content_wrapper"
+  }, react.createElement("div", {
+    className: "stp_signup_img_rainbow_reader"
+  }), react.createElement("h3", {
+    className: "header_medium"
+  }, "Get thought-provoking article recommendations"), react.createElement("p", null, "Find stories that go deep into a subject or offer a new perspective."))) : react.createElement("div", {
+    className: "stp_signup_content_wrapper"
+  }, react.createElement("h3", {
+    className: "header_large",
+    "data-l10n-id": "pocket-panel-signup-cta-a-fix"
+  }), react.createElement("p", {
+    "data-l10n-id": "pocket-panel-signup-cta-b-short"
+  }), react.createElement("strong", null, react.createElement("p", {
     "data-l10n-id": "pocket-panel-signup-cta-c"
-  }), react.createElement("hr", null), react.createElement("p", {
+  }))), react.createElement("hr", null), react.createElement("span", {
+    className: "stp_button_wide"
+  }, react.createElement(Button_Button, {
+    style: "primary"
+  }, react.createElement("span", {
     "data-l10n-id": "pocket-panel-button-activate"
-  })));
+  })))));
 }
 
  const Signup_Signup = (Signup);
@@ -391,7 +430,10 @@ var SignupOverlay = function (options) {
 
     if (layoutRefresh) {
       
-      document.querySelector(`.pkt_ext_containersignup`)?.classList.remove(`pkt_ext_containersignup`);
+      
+      document.querySelector(`.pkt_ext_containersignup`)?.classList.add(`stp_signup_body`);
+      document.querySelector(`.pkt_ext_containersignup`)?.classList.remove(`pkt_ext_containersignup`); 
+
       react_dom.render( react.createElement(Signup_Signup, {
         pockethost: pockethost,
         locale: locale
@@ -1044,20 +1086,6 @@ SavedOverlay.prototype = {
 
 };
  const saved_overlay = (SavedOverlay);
-;
-
-
-
-
-
-function Button(props) {
-  return react.createElement("a", {
-    href: props.url,
-    className: `stp_button${props?.style && ` stp_button_${props.style}`}`
-  }, props.children);
-}
-
- const Button_Button = (Button);
 ;
 
 
