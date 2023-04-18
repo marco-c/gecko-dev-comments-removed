@@ -38,6 +38,7 @@
 #include "debugger/Debugger-inl.h"  
 #include "vm/JSObject-inl.h"        
 #include "vm/NativeObject-inl.h"    
+#include "wasm/WasmInstance-inl.h"
 
 namespace js {
 class GlobalObject;
