@@ -235,7 +235,7 @@ TEST(TestAudioTrackGraph, ErrorCallback)
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  nullptr,
       MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE, nullptr);
 
-  const CubebUtils::AudioDeviceID deviceId = (void*)1;
+  const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
 
   
   
@@ -302,7 +302,7 @@ TEST(TestAudioTrackGraph, AudioProcessingTrack)
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  nullptr,
       MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE, nullptr);
 
-  const CubebUtils::AudioDeviceID deviceId = (void*)1;
+  const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
 
   RefPtr<AudioProcessingTrack> processingTrack;
   RefPtr<ProcessedMediaTrack> outputTrack;
@@ -392,7 +392,7 @@ TEST(TestAudioTrackGraph, ReConnectDeviceInput)
   MediaTrackGraph* graph = MediaTrackGraph::GetInstance(
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  nullptr, rate, nullptr);
 
-  const CubebUtils::AudioDeviceID deviceId = (void*)1;
+  const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
 
   RefPtr<AudioProcessingTrack> processingTrack;
   RefPtr<ProcessedMediaTrack> outputTrack;
@@ -547,7 +547,7 @@ TEST(TestAudioTrackGraph, AudioProcessingTrackDisabling)
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  nullptr,
       MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE, nullptr);
 
-  const CubebUtils::AudioDeviceID deviceId = (void*)1;
+  const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
 
   RefPtr<AudioProcessingTrack> processingTrack;
   RefPtr<ProcessedMediaTrack> outputTrack;
@@ -738,7 +738,7 @@ TEST(TestAudioTrackGraph, SetRequestedInputChannelCount)
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  nullptr,
       MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE, nullptr);
 
-  const CubebUtils::AudioDeviceID deviceId = (void*)1;
+  const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
 
   RefPtr<SmartMockCubebStream> stream;
 
@@ -812,7 +812,7 @@ TEST(TestAudioTrackGraph, SwitchingDriverIfMaxChannelCountChanged)
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  nullptr,
       MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE, nullptr);
 
-  const CubebUtils::AudioDeviceID deviceId = (void*)1;
+  const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
 
   RefPtr<SmartMockCubebStream> stream;
 
@@ -985,7 +985,7 @@ TEST(TestAudioTrackGraph, SetInputChannelCountBeforeAudioCallbackDriver)
 
   
 
-  const CubebUtils::AudioDeviceID deviceId = (void*)1;
+  const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
   RefPtr<MediaInputPort> port;
   DispatchFunction([&] {
     track->GraphImpl()->AppendMessage(
@@ -1030,7 +1030,7 @@ TEST(TestAudioTrackGraph, StartAudioDeviceBeforeStartingAudioProcessing)
       MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE, nullptr);
 
   
-  const CubebUtils::AudioDeviceID deviceId = (void*)1;
+  const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
   RefPtr<AudioProcessingTrack> track;
   RefPtr<AudioInputProcessing> listener;
   auto started = Invoke([&] {
@@ -1098,7 +1098,7 @@ TEST(TestAudioTrackGraph, StopAudioProcessingBeforeStoppingAudioDevice)
       MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE, nullptr);
 
   
-  const CubebUtils::AudioDeviceID deviceId = (void*)1;
+  const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
   RefPtr<AudioProcessingTrack> track;
   RefPtr<AudioInputProcessing> listener;
   auto started = Invoke([&] {
@@ -1180,7 +1180,7 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
       MediaTrackGraph::SYSTEM_THREAD_DRIVER,  nullptr, aOutputRate,
        reinterpret_cast<cubeb_devid>(1));
 
-  const CubebUtils::AudioDeviceID deviceId = (void*)1;
+  const CubebUtils::AudioDeviceID deviceId = (CubebUtils::AudioDeviceID)1;
 
   RefPtr<AudioProcessingTrack> processingTrack;
   RefPtr<AudioInputProcessing> listener;
