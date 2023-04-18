@@ -83,7 +83,7 @@ async function setupToolboxTest(extensionId) {
   
   
   
-  await client.close();
+  await commands.destroy();
 }
 
 add_task(async function test_addon_debugging_netmonitor_panel() {
