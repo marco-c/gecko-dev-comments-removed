@@ -5,3 +5,4 @@
 
 
 BROWSER_CHROME_MANIFESTS += ["browser.ini"]
+MOCHITEST_MANIFESTS += ["mochitest_audio_off.ini", "mochitest_audio_on.ini"]
