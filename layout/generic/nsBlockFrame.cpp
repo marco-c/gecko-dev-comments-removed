@@ -3907,6 +3907,12 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
                       clearance, aState.IsAdjacentWithTop(), aLine.get(),
                       *childReflowInput, frameReflowStatus, aState);
 
+      if (frameReflowStatus.IsInlineBreakBefore()) {
+        
+        
+        break;
+      }
+
       
       
       

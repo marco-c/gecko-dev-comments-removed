@@ -481,14 +481,11 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
       
       if (legend->StyleDisplay()->BreakBefore() ||
           aStatus.IsInlineBreakBefore()) {
-        
-        aDesiredSize.SetSize(wm, LogicalSize(wm));
         aStatus.SetInlineLineBreakBeforeAndReset();
         return;
       }
       
       if (MOZ_UNLIKELY(avoidBreakInside) && !aStatus.IsFullyComplete()) {
-        aDesiredSize.SetSize(wm, LogicalSize(wm));
         aStatus.SetInlineLineBreakBeforeAndReset();
         return;
       }
@@ -650,7 +647,6 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
         !aReflowInput.mFlags.mIsTopOfPage &&
         availSize.BSize(wm) != NS_UNCONSTRAINEDSIZE) {
       if (status.IsInlineBreakBefore() || !status.IsFullyComplete()) {
-        aDesiredSize.SetSize(wm, LogicalSize(wm));
         aStatus.SetInlineLineBreakBeforeAndReset();
         return;
       }
@@ -775,7 +771,6 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
       border.BEnd(wm) > 0 && aReflowInput.AvailableBSize() > border.BEnd(wm)) {
     
     if (MOZ_UNLIKELY(avoidBreakInside)) {
-      aDesiredSize.SetSize(wm, LogicalSize(wm));
       aStatus.SetInlineLineBreakBeforeAndReset();
       return;
     } else {
