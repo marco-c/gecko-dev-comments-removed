@@ -661,6 +661,7 @@ void ScriptPreloader::PrepareCacheWrite() {
 
 Result<Ok, nsresult> ScriptPreloader::WriteCache() {
   MOZ_ASSERT(!NS_IsMainThread());
+  mSaveMonitor.AssertCurrentThreadOwns();
 
   if (!mDataPrepared && !mSaveComplete) {
     MonitorAutoUnlock mau(mSaveMonitor);

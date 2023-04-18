@@ -1615,7 +1615,7 @@ void nsChildView::ConfigureAPZCTreeManager() { nsBaseWidget::ConfigureAPZCTreeMa
 
 void nsChildView::ConfigureAPZControllerThread() { nsBaseWidget::ConfigureAPZControllerThread(); }
 
-bool nsChildView::PreRender(WidgetRenderingContext* aContext) {
+bool nsChildView::PreRender(WidgetRenderingContext* aContext) NO_THREAD_SAFETY_ANALYSIS {
   
   
   
@@ -1628,7 +1628,9 @@ bool nsChildView::PreRender(WidgetRenderingContext* aContext) {
   return true;
 }
 
-void nsChildView::PostRender(WidgetRenderingContext* aContext) { mCompositingLock.Unlock(); }
+void nsChildView::PostRender(WidgetRenderingContext* aContext) NO_THREAD_SAFETY_ANALYSIS {
+  mCompositingLock.Unlock();
+}
 
 RefPtr<layers::NativeLayerRoot> nsChildView::GetNativeLayerRoot() { return mNativeLayerRoot; }
 

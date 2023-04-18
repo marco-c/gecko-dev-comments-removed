@@ -606,7 +606,8 @@ static bool moz_container_wayland_surface_create_locked(
   return true;
 }
 
-struct wl_surface* moz_container_wayland_surface_lock(MozContainer* container) {
+struct wl_surface* moz_container_wayland_surface_lock(MozContainer* container)
+    NO_THREAD_SAFETY_ANALYSIS {
   
   
   
@@ -619,7 +620,8 @@ struct wl_surface* moz_container_wayland_surface_lock(MozContainer* container) {
 }
 
 void moz_container_wayland_surface_unlock(MozContainer* container,
-                                          struct wl_surface** surface) {
+                                          struct wl_surface** surface)
+    NO_THREAD_SAFETY_ANALYSIS {
   
   
   
@@ -643,11 +645,13 @@ struct wl_surface* moz_container_wayland_get_surface_locked(
   return container->wl_container.surface;
 }
 
-void moz_container_wayland_lock(MozContainer* container) {
+void moz_container_wayland_lock(MozContainer* container)
+    NO_THREAD_SAFETY_ANALYSIS {
   container->wl_container.container_lock->Lock();
 }
 
-void moz_container_wayland_unlock(MozContainer* container) {
+void moz_container_wayland_unlock(MozContainer* container)
+    NO_THREAD_SAFETY_ANALYSIS {
   container->wl_container.container_lock->Unlock();
 }
 

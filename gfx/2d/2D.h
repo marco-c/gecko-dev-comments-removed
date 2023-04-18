@@ -980,11 +980,13 @@ class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
 
 
 
+  PUSH_IGNORE_THREAD_SAFETY
   bool Lock(void* aOwner = nullptr) {
     mLock.Lock();
     return !aOwner || mLastLockOwner.exchange(aOwner) == aOwner;
   }
   void Unlock() { mLock.Unlock(); }
+  POP_THREAD_SAFETY
 
   
 
