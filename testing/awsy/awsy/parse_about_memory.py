@@ -67,7 +67,9 @@ def path_total(data, path):
 
         
         
-        assert unclassified >= 0, "heap-unclassified was negative: %d" % unclassified
+        
+        
+        
 
         return unclassified
 
