@@ -1944,8 +1944,9 @@ class EditorBase : public nsIEditor,
 
 
 
-  EditorRawDOMPoint FindBetterInsertionPoint(
-      const EditorRawDOMPoint& aPoint) const;
+  template <typename EditorDOMPointType>
+  EditorDOMPointType FindBetterInsertionPoint(
+      const EditorDOMPointType& aPoint) const;
 
   
 

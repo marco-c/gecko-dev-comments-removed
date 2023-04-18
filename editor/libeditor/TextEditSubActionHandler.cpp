@@ -81,7 +81,7 @@ void TextEditor::OnStartToHandleTopLevelEditSubAction(
     
     
     
-    EditorRawDOMPoint point =
+    const EditorRawDOMPoint point =
         FindBetterInsertionPoint(EditorRawDOMPoint(SelectionRef().AnchorRef()));
     NS_WARNING_ASSERTION(
         point.IsSet(),
