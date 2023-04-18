@@ -3,7 +3,6 @@
 
 
 "use strict";
-Cu.importGlobalProperties(["fetch"]);
 
 var EXPORTED_SYMBOLS = ["AboutHttpsOnlyErrorChild"];
 

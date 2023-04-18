@@ -15,8 +15,6 @@
 
 var EXPORTED_SYMBOLS = ["IndexedDB"];
 
-Cu.importGlobalProperties(["indexedDB"]);
-
 
 
 
