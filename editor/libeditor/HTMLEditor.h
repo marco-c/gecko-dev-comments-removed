@@ -640,8 +640,20 @@ class HTMLEditor final : public EditorBase,
 
 
   enum class LimitInBodyElement { No, Yes };
-  Element* ComputeEditingHost(
-      LimitInBodyElement aLimitInBodyElement = LimitInBodyElement::Yes) const;
+  [[nodiscard]] Element* ComputeEditingHost(
+      const nsIContent& aContent,
+      LimitInBodyElement aLimitInBodyElement = LimitInBodyElement::Yes) const {
+    return ComputeEditingHostInternal(&aContent, aLimitInBodyElement);
+  }
+
+  
+
+
+
+  [[nodiscard]] Element* ComputeEditingHost(
+      LimitInBodyElement aLimitInBodyElement = LimitInBodyElement::Yes) const {
+    return ComputeEditingHostInternal(nullptr, aLimitInBodyElement);
+  }
 
   
 
@@ -1129,7 +1141,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
   SplitParentInlineElementsAtRangeEdges(RangeItem& aRangeItem);
 
   
@@ -1137,7 +1151,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
   SplitParentInlineElementsAtRangeEdges(
       nsTArray<OwningNonNull<nsRange>>& aArrayOfRanges);
 
@@ -2728,6 +2745,9 @@ class HTMLEditor final : public EditorBase,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InitEditorContentAndSelection();
 
   MOZ_CAN_RUN_SCRIPT nsresult SelectAllInternal() final;
+
+  [[nodiscard]] Element* ComputeEditingHostInternal(
+      const nsIContent* aContent, LimitInBodyElement aLimitInBodyElement) const;
 
   
 
