@@ -637,10 +637,16 @@ function exposure_set(object, default_set) {
     if (exposed && exposed.length) {
         const { rhs } = exposed[0];
         
-        const set = rhs.type === "identifier-list" ?
+        const set =
+            rhs.type === "*" ?
+            [ "*" ] :
+            rhs.type === "identifier-list" ?
             rhs.value.map(id => id.value) :
             [ rhs.value ];
         result = new Set(set);
+    }
+    if (result && result.has("*")) {
+        return "*";
     }
     if (result && result.has("Worker")) {
         result.delete("Worker");
@@ -652,6 +658,9 @@ function exposure_set(object, default_set) {
 }
 
 function exposed_in(globals) {
+    if (globals === "*") {
+        return true;
+    }
     if ('Window' in self) {
         return globals.has("Window");
     }
@@ -666,6 +675,10 @@ function exposed_in(globals) {
     if ('ServiceWorkerGlobalScope' in self &&
         self instanceof ServiceWorkerGlobalScope) {
         return globals.has("ServiceWorker");
+    }
+    if (Object.getPrototypeOf(self) === Object.prototype) {
+        
+        return false;
     }
     throw new IdlHarnessError("Unexpected global object");
 }
