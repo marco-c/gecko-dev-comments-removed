@@ -1362,7 +1362,15 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
   Telemetry::RecordEvent(eventType, mozilla::Some(fileNameTypeAndDetails.first),
                          extra);
 
-#ifdef NIGHTLY_BUILD
+#if defined(DEBUG) || defined(FUZZING)
+  auto crashString = nsContentSecurityUtils::SmartFormatCrashString(
+      aFilename,
+      fileNameTypeAndDetails.second.isSome()
+          ? NS_ConvertUTF16toUTF8(fileNameTypeAndDetails.second.value()).get()
+          : "(None)",
+      "Blocking a script load %s from file %s");
+  MOZ_CRASH_UNSAFE_PRINTF("%s", crashString.get());
+#elif defined(NIGHTLY_BUILD)
   
   
   
@@ -1373,14 +1381,6 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
   } else {
     PossiblyCrash("js_load_1", aFilename, "(None)"_ns);
   }
-#elif defined(FUZZING)
-  auto crashString = nsContentSecurityUtils::SmartFormatCrashString(
-      aFilename,
-      fileNameTypeAndDetails.second.isSome()
-          ? NS_ConvertUTF16toUTF8(fileNameTypeAndDetails.second.value()).get()
-          : "(None)",
-      "Blocking a script load %s from file %s");
-  MOZ_CRASH_UNSAFE_PRINTF("%s", crashString.get());
 #endif
 
   
@@ -1396,7 +1396,12 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
   
   
   
+  
+#ifdef NIGHTLY_BUILD
+  return false;
+#else
   return true;
+#endif
 }
 
 
