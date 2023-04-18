@@ -4,6 +4,18 @@ This module provides the base definition for patterns.
 """
 
 import re
+try:
+	from typing import (
+		AnyStr,
+		Iterable,
+		Iterator,
+		Optional,
+		Pattern as RegexHint,
+		Text,
+		Tuple,
+		Union)
+except ImportError:
+	pass
 
 from .compat import unicode
 
@@ -17,6 +29,7 @@ class Pattern(object):
 	__slots__ = ('include',)
 
 	def __init__(self, include):
+		
 		"""
 		Initializes the :class:`Pattern` instance.
 
@@ -33,6 +46,7 @@ class Pattern(object):
 		"""
 
 	def match(self, files):
+		
 		"""
 		Matches this pattern against the specified files.
 
@@ -55,6 +69,7 @@ class RegexPattern(Pattern):
 	__slots__ = ('regex',)
 
 	def __init__(self, pattern, include=None):
+		
 		"""
 		Initializes the :class:`RegexPattern` instance.
 
@@ -103,6 +118,7 @@ class RegexPattern(Pattern):
 		self.regex = regex
 
 	def __eq__(self, other):
+		
 		"""
 		Tests the equality of this regex pattern with *other* (:class:`RegexPattern`)
 		by comparing their :attr:`~Pattern.include` and :attr:`~RegexPattern.regex`
@@ -114,6 +130,7 @@ class RegexPattern(Pattern):
 			return NotImplemented
 
 	def match(self, files):
+		
 		"""
 		Matches this pattern against the specified files.
 
@@ -130,6 +147,7 @@ class RegexPattern(Pattern):
 
 	@classmethod
 	def pattern_to_regex(cls, pattern):
+		
 		"""
 		Convert the pattern into an uncompiled regular expression.
 
