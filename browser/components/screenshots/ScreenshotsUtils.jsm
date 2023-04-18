@@ -14,6 +14,14 @@ const PanelOffsetY = -8;
 
 var ScreenshotsUtils = {
   initialize() {
+    if (
+      !Services.prefs.getBoolPref(
+        "screenshots.browser.component.enabled",
+        false
+      )
+    ) {
+      return;
+    }
     Services.obs.addObserver(this, "menuitem-screenshot");
     Services.obs.addObserver(this, "screenshots-take-screenshot");
   },
@@ -22,6 +30,8 @@ var ScreenshotsUtils = {
     let browser = gBrowser.selectedBrowser;
 
     let currDialogBox = browser.tabDialogBox;
+
+    let zoom = subj.ZoomManager.getZoomForBrowser(browser);
 
     switch (topic) {
       case "menuitem-screenshot":
@@ -56,7 +66,7 @@ var ScreenshotsUtils = {
         
         let dialogBox = gBrowser.getTabDialogBox(browser);
 
-        return dialogBox.open(
+        let { dialog } = dialogBox.open(
           `chrome://browser/content/screenshots/screenshots.html?browsingContextId=${browser.browsingContext.id}`,
           {
             features: "resizable=no",
@@ -64,9 +74,15 @@ var ScreenshotsUtils = {
             allowDuplicateDialogs: false,
           }
         );
+        this.doScreenshot(browser, dialog, zoom, data);
     }
     return null;
   },
+  
+
+
+
+
   notify(window, type) {
     if (Services.prefs.getBoolPref("screenshots.browser.component.enabled")) {
       Services.obs.notifyObservers(
@@ -77,16 +93,40 @@ var ScreenshotsUtils = {
       Services.obs.notifyObservers(null, "menuitem-screenshot-extension", type);
     }
   },
+  
+
+
+
+
+  getActor(browser) {
+    let actor = browser.browsingContext.currentWindowGlobal.getActor(
+      "ScreenshotsComponent"
+    );
+    return actor;
+  },
+  
+
+
+
+
+
   togglePreview(browser) {
     let buttonsPanel = browser.ownerDocument.querySelector(
       "#screenshotsPagePanel"
     );
     if (buttonsPanel && buttonsPanel.state !== "closed") {
       buttonsPanel.hidePopup();
-    } else {
-      this.createOrDisplayButtons(browser);
+      let actor = this.getActor(browser);
+      return actor.sendQuery("Screenshots:HideOverlay");
     }
+    return this.createOrDisplayButtons(browser);
   },
+  
+
+
+
+
+
   createOrDisplayButtons(browser) {
     let doc = browser.ownerDocument;
     let buttonsPanel = doc.querySelector("#screenshotsPagePanel");
@@ -98,5 +138,90 @@ var ScreenshotsUtils = {
     }
     let anchor = doc.querySelector("#navigator-toolbox");
     buttonsPanel.openPopup(anchor, PanelPosition, PanelOffsetX, PanelOffsetY);
+    let actor = this.getActor(browser);
+    return actor.sendQuery("Screenshots:ShowOverlay");
+  },
+  
+
+
+
+
+
+  fetchFullPageBounds(browser) {
+    let actor = this.getActor(browser);
+    return actor.sendQuery("Screenshots:getFullPageBounds");
+  },
+  
+
+
+
+
+
+  fetchVisibleBounds(browser) {
+    let actor = this.getActor(browser);
+    return actor.sendQuery("Screenshots:getVisibleBounds");
+  },
+  
+
+
+
+
+
+
+  async doScreenshot(browser, dialog, zoom, type) {
+    await dialog._dialogReady;
+    let screenshotsUI = dialog._frame.contentDocument.createElement(
+      "screenshots-ui"
+    );
+    dialog._frame.contentDocument.body.appendChild(screenshotsUI);
+
+    let rect;
+    if (type === "full-page") {
+      ({ rect } = await this.fetchFullPageBounds(browser));
+    } else {
+      ({ rect } = await this.fetchVisibleBounds(browser));
+    }
+    return this.takeScreenshot(browser, dialog, rect, zoom);
+  },
+  
+
+
+
+
+
+
+  async takeScreenshot(browser, dialog, rect, zoom) {
+    let browsingContext = BrowsingContext.get(browser.browsingContext.id);
+
+    let snapshot = await browsingContext.currentWindowGlobal.drawSnapshot(
+      rect,
+      zoom,
+      "rgb(255,255,255)"
+    );
+
+    let canvas = dialog._frame.contentDocument.createElementNS(
+      "http://www.w3.org/1999/xhtml",
+      "html:canvas"
+    );
+    let context = canvas.getContext("2d");
+
+    canvas.width = snapshot.width;
+    canvas.height = snapshot.height;
+
+    context.drawImage(snapshot, 0, 0);
+
+    canvas.toBlob(function(blob) {
+      let newImg = dialog._frame.contentDocument.createElement("img");
+      let url = URL.createObjectURL(blob);
+
+      newImg.id = "placeholder-image";
+
+      newImg.src = url;
+      dialog._frame.contentDocument
+        .getElementById("preview-image-div")
+        .appendChild(newImg);
+    });
+
+    snapshot.close();
   },
 };
