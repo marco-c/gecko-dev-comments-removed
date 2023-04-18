@@ -507,7 +507,7 @@ class LoginFormState {
   
 
 
-  cachedIsInferredUsernameField = new WeakMap();
+  #cachedIsInferredUsernameField = new WeakMap();
   cachedIsInferredEmailField = new WeakMap();
   cachedIsInferredLoginForm = new WeakMap();
 
@@ -545,6 +545,25 @@ class LoginFormState {
     if (result === undefined) {
       result = lazy.LoginHelper.isInferredEmailField(inputElement);
       this.cachedIsInferredEmailField.set(inputElement, result);
+    }
+
+    return result;
+  }
+
+  
+
+
+
+
+
+
+
+
+  isProbablyAUsernameField(inputElement) {
+    let result = this.#cachedIsInferredUsernameField.get(inputElement);
+    if (result === undefined) {
+      result = lazy.LoginHelper.isInferredUsernameField(inputElement);
+      this.#cachedIsInferredUsernameField.set(inputElement, result);
     }
 
     return result;
@@ -1683,7 +1702,7 @@ class LoginManagerChild extends JSWindowActorChild {
           usernameField = element;
         }
 
-        if (this.isProbablyAUsernameField(element)) {
+        if (docState.isProbablyAUsernameField(element)) {
           
           usernameField = element;
           break;
@@ -3163,26 +3182,6 @@ class LoginManagerChild extends JSWindowActorChild {
 
 
 
-  isProbablyAUsernameField(inputElement) {
-    let docState = this.stateForDocument(inputElement.ownerDocument);
-    let result = docState.cachedIsInferredUsernameField.get(inputElement);
-    if (result === undefined) {
-      result = lazy.LoginHelper.isInferredUsernameField(inputElement);
-      docState.cachedIsInferredUsernameField.set(inputElement, result);
-    }
-
-    return result;
-  }
-
-  
-
-
-
-
-
-
-
-
 
 
   isProbablyAUsernameLoginForm(formElement, inputElement) {
@@ -3199,7 +3198,7 @@ class LoginManagerChild extends JSWindowActorChild {
       
       
       if (
-        this.isProbablyAUsernameField(inputElement) ||
+        docState.isProbablyAUsernameField(inputElement) ||
         lazy.LoginHelper.isInferredLoginForm(formElement)
       ) {
         
