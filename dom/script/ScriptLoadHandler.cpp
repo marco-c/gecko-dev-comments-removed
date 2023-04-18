@@ -8,6 +8,7 @@
 
 #include <stdlib.h>
 #include <utility>
+#include "ScriptCompression.h"
 #include "ScriptLoader.h"
 #include "ScriptTrace.h"
 #include "js/Transcoding.h"
@@ -39,14 +40,6 @@
 #include "nsString.h"
 #include "nsTArray.h"
 #include "zlib.h"
-
-namespace {
-
-
-
-using LengthPrefixType = uint32_t;
-const unsigned PREFIX_BYTES = sizeof(LengthPrefixType);
-}  
 
 namespace mozilla::dom {
 
@@ -410,45 +403,14 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
 
       mRequest->mBytecodeOffset = JS::AlignTranscodingBytecodeOffset(sriLength);
 
-      {
-        Vector<uint8_t>
-            compressedBytecode;  
-                                 
-        compressedBytecode.swap(mRequest->mScriptBytecode);
-
-        LengthPrefixType uncompressedLength;
-        memcpy(&uncompressedLength,
-               compressedBytecode.begin() + mRequest->mBytecodeOffset,
-               PREFIX_BYTES);
-        if (!mRequest->mScriptBytecode.resizeUninitialized(
-                mRequest->mBytecodeOffset + uncompressedLength)) {
-          return NS_ERROR_OUT_OF_MEMORY;
-        }
-        memcpy(mRequest->mScriptBytecode.begin(), compressedBytecode.begin(),
-               mRequest->mBytecodeOffset);  
-
-        z_stream zstream{.next_in = compressedBytecode.begin() +
-                                    mRequest->mBytecodeOffset + PREFIX_BYTES,
-                         .avail_in = static_cast<uint32_t>(
-                             compressedBytecode.length() -
-                             mRequest->mBytecodeOffset - PREFIX_BYTES),
-                         .next_out = mRequest->mScriptBytecode.begin() +
-                                     mRequest->mBytecodeOffset,
-                         .avail_out = uncompressedLength};
-        if (inflateInit(&zstream) != Z_OK) {
-          LOG(("ScriptLoadRequest (%p): inflateInit FAILED (%s)",
-               mRequest.get(), zstream.msg));
-          return nsresult::NS_ERROR_UNEXPECTED;
-        }
-        auto autoDestroy = MakeScopeExit([&]() { inflateEnd(&zstream); });
-
-        int ret = inflate(&zstream, Z_NO_FLUSH);
-        bool ok = (ret == Z_OK || ret == Z_STREAM_END) && zstream.avail_in == 0;
-        if (!ok) {
-          LOG(("ScriptLoadRequest (%p): inflate FAILED (%s)", mRequest.get(),
-               zstream.msg));
-          return NS_ERROR_UNEXPECTED;
-        }
+      Vector<uint8_t> compressedBytecode;
+      
+      
+      compressedBytecode.swap(mRequest->mScriptBytecode);
+      if (!JS::loader::ScriptBytecodeDecompress(compressedBytecode,
+                                                mRequest->mBytecodeOffset,
+                                                mRequest->mScriptBytecode)) {
+        return NS_ERROR_UNEXPECTED;
       }
     }
   }
