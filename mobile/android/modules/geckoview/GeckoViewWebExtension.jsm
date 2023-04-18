@@ -636,7 +636,10 @@ var GeckoViewWebExtension = {
 
   async ensureBuiltIn(aUri, aId) {
     await AddonManager.readyPromise;
-    const extensionData = new ExtensionData(aUri);
+    
+    
+    
+    const extensionData = new ExtensionData(aUri, false);
     const [extensionVersion, extension] = await Promise.all([
       extensionData.getExtensionVersionWithoutValidation(),
       this.extensionById(aId),
