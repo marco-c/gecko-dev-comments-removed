@@ -1271,6 +1271,11 @@ EditActionResult HTMLEditor::HandleInsertText(
         }
       }
     } else {
+      const RefPtr<Element> editingHost =
+          GetActiveEditingHost(LimitInBodyElement::No);
+      if (NS_WARN_IF(!editingHost)) {
+        return EditActionHandled(NS_ERROR_FAILURE);
+      }
       constexpr auto tabStr = u"\t"_ns;
       constexpr auto spacesStr = u"    "_ns;
       char specialChars[] = {TAB, nsCRT::LF, 0};
@@ -1310,14 +1315,29 @@ EditActionResult HTMLEditor::HandleInsertText(
         }
         
         else if (subStr.Equals(newlineStr)) {
-          Result<RefPtr<Element>, nsresult> result =
-              WhiteSpaceVisibilityKeeper::InsertBRElement(*this, currentPoint);
-          if (result.isErr()) {
+          CreateElementResult insertBRElementResult =
+              WhiteSpaceVisibilityKeeper::InsertBRElement(*this, currentPoint,
+                                                          *editingHost);
+          if (insertBRElementResult.isErr()) {
             NS_WARNING("WhiteSpaceVisibilityKeeper::InsertBRElement() failed");
-            return EditActionHandled(result.inspectErr());
+            return EditActionHandled(insertBRElementResult.unwrapErr());
           }
+          
+          
+          
+          nsresult rv = insertBRElementResult.SuggestCaretPointTo(
+              *this, {SuggestCaret::OnlyIfHasSuggestion,
+                      SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
+                      SuggestCaret::AndIgnoreTrivialError});
+          if (NS_FAILED(rv)) {
+            NS_WARNING("CareateElementResult::SuggestCaretPointTo() failed");
+            return EditActionHandled(rv);
+          }
+          NS_WARNING_ASSERTION(
+              rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+              "CreateElementResult::SuggestCaretPointTo() failed, but ignored");
           pos++;
-          RefPtr<Element> newBRElement = result.unwrap();
+          RefPtr<Element> newBRElement = insertBRElementResult.UnwrapNewNode();
           MOZ_DIAGNOSTIC_ASSERT(newBRElement);
           if (newBRElement->GetNextSibling()) {
             pointToInsert.Set(newBRElement->GetNextSibling());
@@ -1982,6 +2002,10 @@ CreateElementResult HTMLEditor::HandleInsertBRElement(
             "eDoNotCreateEmptyContainer) failed");
         return CreateElementResult(splitLinkNodeResult.unwrapErr());
       }
+      
+      
+      
+      
       nsresult rv = splitLinkNodeResult.SuggestCaretPointTo(
           *this, {SuggestCaret::OnlyIfHasSuggestion,
                   SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
@@ -1994,13 +2018,17 @@ CreateElementResult HTMLEditor::HandleInsertBRElement(
       
       splitLinkNodeResult.IgnoreCaretPointSuggestion();
     }
-    Result<RefPtr<Element>, nsresult> result =
-        WhiteSpaceVisibilityKeeper::InsertBRElement(*this, pointToBreak);
-    if (MOZ_UNLIKELY(result.isErr())) {
+    CreateElementResult insertBRElementResult =
+        WhiteSpaceVisibilityKeeper::InsertBRElement(*this, pointToBreak,
+                                                    aEditingHost);
+    if (insertBRElementResult.isErr()) {
       NS_WARNING("WhiteSpaceVisibilityKeeper::InsertBRElement() failed");
-      return CreateElementResult(result.unwrapErr());
+      return CreateElementResult(insertBRElementResult.unwrapErr());
     }
-    brElement = result.unwrap();
+    
+    
+    insertBRElementResult.IgnoreCaretPointSuggestion();
+    brElement = insertBRElementResult.UnwrapNewNode();
     MOZ_ASSERT(brElement);
   }
 

@@ -13,6 +13,7 @@
 #include "HTMLEditor.h"
 
 #include "HTMLEditUtils.h"
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
@@ -1462,9 +1463,9 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<RefPtr<Element>, nsresult>
-  InsertBRElement(HTMLEditor& aHTMLEditor,
-                  const EditorDOMPoint& aPointToInsert);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT static CreateElementResult InsertBRElement(
+      HTMLEditor& aHTMLEditor, const EditorDOMPoint& aPointToInsert,
+      Element& aEditingHost);
 
   
 
