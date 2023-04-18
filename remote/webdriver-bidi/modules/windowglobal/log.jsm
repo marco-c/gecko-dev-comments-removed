@@ -14,6 +14,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
 
   Module: "chrome://remote/content/shared/messagehandler/Module.jsm",
+  serialize: "chrome://remote/content/webdriver-bidi/RemoteValue.jsm",
 });
 
 class Log extends Module {
@@ -90,10 +91,9 @@ class Log extends Module {
 
     
     const serializedArgs = [];
-
-    
-    
-    args.forEach(arg => serializedArgs.push(String(arg)));
+    for (const arg of args) {
+      serializedArgs.push(serialize(arg ));
+    }
 
     
 
