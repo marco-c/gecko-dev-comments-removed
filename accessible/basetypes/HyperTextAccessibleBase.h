@@ -45,7 +45,7 @@ class HyperTextAccessibleBase {
 
 
 
-  virtual int32_t GetChildIndexAtOffset(uint32_t aOffset) const;
+  virtual int32_t GetChildIndexAtOffset(uint32_t aOffset) const = 0;
 
   
 
@@ -69,7 +69,7 @@ class HyperTextAccessibleBase {
 
 
   virtual int32_t GetChildOffset(uint32_t aChildIndex,
-                                 bool aInvalidateAfter = false) const;
+                                 bool aInvalidateAfter = false) const = 0;
 
   
 
