@@ -43,13 +43,13 @@ class FxAccountsCommands {
     ) {
       return {};
     }
-    const sendTabKey = await this.sendTab.getEncryptedKey();
-    if (!sendTabKey) {
+    const encryptedSendTabKeys = await this.sendTab.getEncryptedSendTabKeys();
+    if (!encryptedSendTabKeys) {
       
       return {};
     }
     return {
-      [COMMAND_SENDTAB]: sendTabKey,
+      [COMMAND_SENDTAB]: encryptedSendTabKeys,
     };
   }
 
@@ -221,6 +221,13 @@ class FxAccountsCommands {
 
 
 
+
+
+
+
+
+
+
 class SendTab {
   constructor(commands, fxAccountsInternal) {
     this._commands = commands;
@@ -337,13 +344,17 @@ class SendTab {
     return urlsafeBase64Encode(encrypted);
   }
 
-  async _getPersistedKeys() {
+  async _getPersistedSendTabKeys() {
     const { device } = await this._fxai.getUserAccountData(["device"]);
     return device && device.sendTabKeys;
   }
 
   async _decrypt(ciphertext) {
-    let { privateKey, publicKey, authSecret } = await this._getPersistedKeys();
+    let {
+      privateKey,
+      publicKey,
+      authSecret,
+    } = await this._getPersistedSendTabKeys();
     publicKey = urlsafeBase64Decode(publicKey);
     authSecret = urlsafeBase64Decode(authSecret);
     ciphertext = new Uint8Array(urlsafeBase64Decode(ciphertext));
@@ -357,7 +368,7 @@ class SendTab {
     );
   }
 
-  async _generateAndPersistKeys() {
+  async _generateAndPersistSendTabKeys() {
     let [publicKey, privateKey] = await PushCrypto.generateKeys();
     publicKey = urlsafeBase64Encode(publicKey);
     let authSecret = PushCrypto.generateAuthenticationSecret();
@@ -379,23 +390,24 @@ class SendTab {
     return sendTabKeys;
   }
 
-  async getEncryptedKey() {
-    let sendTabKeys = await this._getPersistedKeys();
+  async _getPersistedEncryptedSendTabKey() {
+    const { encryptedSendTabKeys } = await this._fxai.getUserAccountData([
+      "encryptedSendTabKeys",
+    ]);
+    return encryptedSendTabKeys;
+  }
+
+  async _generateAndPersistEncryptedSendTabKey() {
+    let sendTabKeys = await this._getPersistedSendTabKeys();
     if (!sendTabKeys) {
-      sendTabKeys = await this._generateAndPersistKeys();
+      log.info("Could not find sendtab keys, generating them");
+      sendTabKeys = await this._generateAndPersistSendTabKeys();
     }
     
     const keyToEncrypt = {
       publicKey: sendTabKeys.publicKey,
       authSecret: sendTabKeys.authSecret,
     };
-    
-    
-    
-    
-    
-    
-    
     if (!(await this._fxai.keys.canGetKeyForScope(SCOPE_OLD_SYNC))) {
       log.info("Can't fetch keys, so unable to determine sendtab keys");
       return null;
@@ -411,13 +423,39 @@ class SendTab {
     wrapper.cleartext = keyToEncrypt;
     const keyBundle = BulkKeyBundle.fromJWK(oldsyncKey);
     await wrapper.encrypt(keyBundle);
-    return JSON.stringify({
+    const encryptedSendTabKeys = JSON.stringify({
       
       kid: this._fxai.keys.kidAsHex(oldsyncKey),
       IV: wrapper.IV,
       hmac: wrapper.hmac,
       ciphertext: wrapper.ciphertext,
     });
+    await this._fxai.withCurrentAccountState(async state => {
+      await state.updateUserAccountData({
+        encryptedSendTabKeys,
+      });
+    });
+    return encryptedSendTabKeys;
+  }
+
+  async getEncryptedSendTabKeys() {
+    let encryptedSendTabKeys = await this._getPersistedEncryptedSendTabKey();
+    if (!encryptedSendTabKeys) {
+      log.info("Generating and persisting encrypted sendtab keys");
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      encryptedSendTabKeys = await this._generateAndPersistEncryptedSendTabKey();
+    }
+    return encryptedSendTabKeys;
   }
 }
 

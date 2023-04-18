@@ -33,7 +33,6 @@ const {
   FX_OAUTH_CLIENT_ID,
   ON_PROFILE_CHANGE_NOTIFICATION,
   PREF_LAST_FXA_USER,
-  SCOPE_OLD_SYNC,
   WEBCHANNEL_ID,
   log,
   logPII,
@@ -610,6 +609,8 @@ FxAccountsWebChannelHelpers.prototype = {
     
     let newCredentials = {
       device: null, 
+      
+      encryptedSendTabKeys: null,
     };
     for (let name of Object.keys(credentials)) {
       if (
@@ -623,14 +624,6 @@ FxAccountsWebChannelHelpers.prototype = {
       }
     }
     await this._fxAccounts._internal.updateUserAccountData(newCredentials);
-    
-    
-    
-    try {
-      await this._fxAccounts.keys.getKeyForScope(SCOPE_OLD_SYNC);
-    } catch (e) {
-      log.error("getKeyForScope errored", e);
-    }
     await this._fxAccounts._internal.updateDeviceRegistration();
   },
 
