@@ -18,7 +18,7 @@ namespace dom {
 
 
 
-async protocol PVsync
+[RefCounted] async protocol PVsync
 {
   manager PBackground or PBrowser;
 
