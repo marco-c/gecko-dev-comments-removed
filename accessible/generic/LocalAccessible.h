@@ -978,6 +978,8 @@ class LocalAccessible : public nsISupports, public Accessible {
                                  int32_t* aPosInSet) const override;
 
   
+  
+  
   nsCOMPtr<nsIContent> mContent;
   RefPtr<DocAccessible> mDoc;
 
