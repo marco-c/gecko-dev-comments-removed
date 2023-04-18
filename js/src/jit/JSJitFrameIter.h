@@ -476,6 +476,7 @@ class SnapshotIterator {
  public:
   
   uint32_t pcOffset() const;
+  ResumeMode resumeMode() const;
   [[nodiscard]] inline bool resumeAfter() const {
     
     

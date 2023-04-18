@@ -114,6 +114,7 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
 
   jsbytecode* pc_ = nullptr;
   JSOp op_ = JSOp::Nop;
+  mozilla::Maybe<ResumeMode> resumeMode_;
   uint32_t exprStackSlots_ = 0;
   void* prevFramePtr_ = nullptr;
   Maybe<BufferPointer<BaselineFrame>> blFrame_;
@@ -224,8 +225,10 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
     return !catchingException() && iter_.resumeAfter();
   }
 
+  ResumeMode resumeMode() const { return *resumeMode_; }
+
   bool needToSaveCallerArgs() const {
-    return IsIonInlinableGetterOrSetterOp(op_);
+    return resumeMode() == ResumeMode::InlinedAccessor;
   }
 
   [[nodiscard]] bool enlarge() {
@@ -546,6 +549,7 @@ bool BaselineStackBuilder::initFrame() {
   pc_ = catchingException() ? excInfo_->resumePC()
                             : script_->offsetToPC(iter_.pcOffset());
   op_ = JSOp(*pc_);
+  resumeMode_ = mozilla::Some(iter_.resumeMode());
 
   return true;
 }
@@ -753,18 +757,20 @@ bool BaselineStackBuilder::fixUpCallerArgs(
   
   MOZ_ASSERT(!IsSpreadOp(op_));
 
-  if (op_ != JSOp::FunCall && !needToSaveCallerArgs()) {
+  if (resumeMode() != ResumeMode::InlinedFunCall && !needToSaveCallerArgs()) {
     return true;
   }
 
   
   
   uint32_t inlinedArgs = 2;
-  if (op_ == JSOp::FunCall) {
+  if (resumeMode() == ResumeMode::InlinedFunCall) {
     
     
+    MOZ_ASSERT(IsInvokeOp(op_));
     inlinedArgs += GET_ARGC(pc_) > 0 ? GET_ARGC(pc_) - 1 : 0;
   } else {
+    MOZ_ASSERT(resumeMode() == ResumeMode::InlinedAccessor);
     MOZ_ASSERT(IsIonInlinableGetterOrSetterOp(op_));
     
     if (IsSetPropOp(op_)) {
@@ -791,7 +797,7 @@ bool BaselineStackBuilder::fixUpCallerArgs(
   
   
   
-  if (op_ == JSOp::FunCall) {
+  if (resumeMode() == ResumeMode::InlinedFunCall) {
     
     
     
@@ -994,7 +1000,7 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
         return false;
       }
     }
-  } else if (op_ == JSOp::FunCall && GET_ARGC(pc_) == 0) {
+  } else if (resumeMode() == ResumeMode::InlinedFunCall && GET_ARGC(pc_) == 0) {
     
     
     MOZ_ASSERT(!pushedNewTarget);
@@ -1012,8 +1018,10 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
     callee = *blFrame()->valueSlot(calleeSlot);
 
   } else {
+    MOZ_ASSERT(resumeMode() == ResumeMode::InlinedStandardCall ||
+               resumeMode() == ResumeMode::InlinedFunCall);
     actualArgc = GET_ARGC(pc_);
-    if (op_ == JSOp::FunCall) {
+    if (resumeMode() == ResumeMode::InlinedFunCall) {
       
       MOZ_ASSERT(actualArgc > 0);
       actualArgc--;
@@ -1298,12 +1306,12 @@ bool BaselineStackBuilder::validateFrame() {
     return true;
   }
 
-  if (op_ == JSOp::FunCall) {
+  if (resumeMode() == ResumeMode::InlinedFunCall) {
     
     
     
     MOZ_ASSERT(expectedDepth - exprStackSlots() <= 1);
-  } else if (iter_.moreFrames() && IsIonInlinableGetterOrSetterOp(op_)) {
+  } else if (resumeMode() == ResumeMode::InlinedAccessor) {
     
     
     
