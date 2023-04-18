@@ -197,6 +197,11 @@ class BufferList : private AllocPolicy {
       return mData;
     }
 
+    bool operator==(const IterImpl& other) const {
+      return mAbsoluteOffset == other.mAbsoluteOffset;
+    }
+    bool operator!=(const IterImpl& other) const { return !(*this == other); }
+
     
     
     bool HasRoomFor(size_t aBytes) const {
