@@ -180,3 +180,23 @@ function createNewStyleSheet(ui, panelWindow) {
     }, panelWindow);
   });
 }
+
+
+
+
+
+
+
+function getRootElement(panel) {
+  return panel.panelWindow.document.getElementById("style-editor-chrome");
+}
+
+
+
+
+
+
+
+function getContextMenuElement(panel) {
+  return panel.panelWindow.document.getElementById("sidebar-context");
+}
