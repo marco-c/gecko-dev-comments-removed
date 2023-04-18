@@ -161,7 +161,8 @@ void CompositorVsyncScheduler::ScheduleComposition(wr::RenderReasons aReasons) {
       
       
       
-      PostCompositeTask(vsyncEvent, aReasons);
+      PostCompositeTask(vsyncEvent,
+                        aReasons | wr::RenderReasons::START_OBSERVING_VSYNC);
     } else {
       mRendersDelayedByVsyncReasons = aReasons;
     }

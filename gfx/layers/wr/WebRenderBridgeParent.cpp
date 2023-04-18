@@ -1590,7 +1590,8 @@ void WebRenderBridgeParent::FlushFrameGeneration(wr::RenderReasons aReasons) {
     mCompositorScheduler->CancelCurrentCompositeTask();
     
     mCompositorScheduler->UpdateLastComposeTime();
-    MaybeGenerateFrame(VsyncId(),  true, aReasons);
+    MaybeGenerateFrame(VsyncId(),  true,
+                       aReasons | wr::RenderReasons::FLUSH);
   }
 }
 
