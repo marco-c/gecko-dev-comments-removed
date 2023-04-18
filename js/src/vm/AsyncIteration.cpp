@@ -510,78 +510,52 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
       PromiseHandler::AsyncGeneratorAwaitedRejected);
 }
 
-
-
-
-
 [[nodiscard]] static bool AsyncGeneratorResumeNext(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator, ResumeNextKind kind,
     HandleValue valueOrException_ ,
     bool done ) {
   RootedValue valueOrException(cx, valueOrException_);
 
-  
-  
   while (true) {
     switch (kind) {
       case ResumeNextKind::Enqueue:
-        
         break;
       case ResumeNextKind::Reject: {
-        
         HandleValue exception = valueOrException;
 
-        
-        
-        
         MOZ_ASSERT(!generator->isQueueEmpty());
 
-        
-        
         AsyncGeneratorRequest* request =
             AsyncGeneratorObject::dequeueRequest(cx, generator);
         if (!request) {
           return false;
         }
 
-        
         Rooted<PromiseObject*> resultPromise(cx, request->promise());
 
         generator->cacheRequest(request);
 
-        
-        
         if (!RejectPromiseInternal(cx, resultPromise, exception)) {
           return false;
         }
 
-        
-        
         break;
       }
       case ResumeNextKind::Resolve: {
-        
         HandleValue value = valueOrException;
 
-        
-        
-        
         MOZ_ASSERT(!generator->isQueueEmpty());
 
-        
-        
         AsyncGeneratorRequest* request =
             AsyncGeneratorObject::dequeueRequest(cx, generator);
         if (!request) {
           return false;
         }
 
-        
         Rooted<PromiseObject*> resultPromise(cx, request->promise());
 
         generator->cacheRequest(request);
 
-        
         JSObject* resultObj = CreateIterResultObject(cx, value, done);
         if (!resultObj) {
           return false;
@@ -589,128 +563,71 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
         RootedValue resultValue(cx, ObjectValue(*resultObj));
 
-        
-        
         if (!ResolvePromiseInternal(cx, resultPromise, resultValue)) {
           return false;
         }
 
-        
-        
         break;
       }
     }
 
-    
-    
-    
-    
     MOZ_ASSERT(!generator->isExecuting());
     MOZ_ASSERT(!generator->isAwaitingYieldReturn());
 
-    
     if (generator->isAwaitingReturn()) {
       return true;
     }
 
-    
-    
     if (generator->isQueueEmpty()) {
       return true;
     }
 
-    
-    
     Rooted<AsyncGeneratorRequest*> request(
         cx, AsyncGeneratorObject::peekRequest(generator));
     if (!request) {
       return false;
     }
 
-    
     CompletionKind completionKind = request->completionKind();
 
-    
     if (completionKind != CompletionKind::Normal) {
-      
       if (generator->isSuspendedStart()) {
-        
-        
         generator->setCompleted();
       }
 
-      
       if (generator->isCompleted()) {
         RootedValue value(cx, request->completionValue());
 
-        
         if (completionKind == CompletionKind::Return) {
-          
-          
           generator->setAwaitingReturn();
 
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
           const PromiseHandler onFulfilled =
               PromiseHandler::AsyncGeneratorResumeNextReturnFulfilled;
           const PromiseHandler onRejected =
               PromiseHandler::AsyncGeneratorResumeNextReturnRejected;
 
-          
-          
-          
-          
-          
-          
-          
-          
           return InternalAsyncGeneratorAwait(cx, generator, value, onFulfilled,
                                              onRejected);
         }
 
-        
-
-        
         MOZ_ASSERT(completionKind == CompletionKind::Throw);
 
-        
-        
-        
         kind = ResumeNextKind::Reject;
         valueOrException.set(value);
         continue;
       }
     } else if (generator->isCompleted()) {
-      
-      
       kind = ResumeNextKind::Resolve;
       valueOrException.setUndefined();
       done = true;
       continue;
     }
 
-    
     MOZ_ASSERT(generator->isSuspendedStart() || generator->isSuspendedYield());
 
     RootedValue argument(cx, request->completionValue());
 
     if (completionKind == CompletionKind::Return) {
-      
-      
-      
-      
       generator->setAwaitingYieldReturn();
 
       const PromiseHandler onFulfilled =
@@ -722,45 +639,34 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
                                          onRejected);
     }
 
-    
-    
     generator->setExecuting();
 
-    
     return AsyncGeneratorResume(cx, generator, completionKind, argument);
   }
 }
-
 
 [[nodiscard]] static bool AsyncGeneratorEnqueue(JSContext* cx,
                                                 HandleValue asyncGenVal,
                                                 CompletionKind completionKind,
                                                 HandleValue completionValue,
                                                 MutableHandleValue result) {
-  
-
-  
   if (!asyncGenVal.isObject() ||
       !asyncGenVal.toObject().canUnwrapAs<AsyncGeneratorObject>()) {
-    
     Rooted<PromiseObject*> resultPromise(
         cx, CreatePromiseObjectForAsyncGenerator(cx));
     if (!resultPromise) {
       return false;
     }
 
-    
     RootedValue badGeneratorError(cx);
     if (!GetTypeError(cx, JSMSG_NOT_AN_ASYNC_GENERATOR, &badGeneratorError)) {
       return false;
     }
 
-    
     if (!RejectPromiseInternal(cx, resultPromise, badGeneratorError)) {
       return false;
     }
 
-    
     result.setObject(*resultPromise);
     return true;
   }
@@ -788,14 +694,12 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
       }
     }
 
-    
     Rooted<PromiseObject*> resultPromise(
         cx, CreatePromiseObjectForAsyncGenerator(cx));
     if (!resultPromise) {
       return false;
     }
 
-    
     Rooted<AsyncGeneratorRequest*> request(
         cx, AsyncGeneratorObject::createRequest(cx, asyncGenObj, completionKind,
                                                 completionVal, resultPromise));
@@ -803,20 +707,16 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
       return false;
     }
 
-    
     if (!AsyncGeneratorObject::enqueueRequest(cx, asyncGenObj, request)) {
       return false;
     }
 
-    
     if (!asyncGenObj->isExecuting() && !asyncGenObj->isAwaitingYieldReturn()) {
-      
       if (!AsyncGeneratorResumeNext(cx, asyncGenObj, ResumeNextKind::Enqueue)) {
         return false;
       }
     }
 
-    
     result.setObject(*resultPromise);
   }
 
