@@ -5,8 +5,7 @@
     <link rel="help" href="https://www.w3.org/TR/css-fonts-4/#font-matching-algorithm" />
     <script src="/resources/testharness.js"></script>
     <script src="/resources/testharnessreport.js"></script>
-    
-    <meta name="flags" content="font" />
+    <!-- THIS TEST REQUIRES THAT YOU INSTALL THE [csstest-*.ttf] FONTS OF THE [resources] FOLDER -->
     <style>
 
         .testcase {
@@ -75,10 +74,10 @@
     </span>
 
     <div id="testcases" style="overflow: hidden">
-        
-
-
-
+        <!--
+            These testcases work using the new kerned CSSTest Weights fonts.
+            The letter A and its corresponding numeric digit kern as one character.
+        -->
         <div class="testcase" style="font-family:'CSSTest Weights W2569'; font-weight: 375;">
             A2
         </div>
