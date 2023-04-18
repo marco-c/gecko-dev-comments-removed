@@ -57,6 +57,18 @@ const ThemeVariableMap = [
     "--toolbar-bgcolor",
     {
       lwtProperty: "toolbarColor",
+      processColor(rgbaChannels, element) {
+        if (!rgbaChannels) {
+          Services.prefs.setIntPref("browser.theme.toolbar-theme", 2);
+          return null;
+        }
+        const { r, g, b, a } = rgbaChannels;
+        Services.prefs.setIntPref(
+          "browser.theme.toolbar-theme",
+          _isColorDark(r, g, b) ? 0 : 1
+        );
+        return `rgba(${r}, ${g}, ${b}, ${a})`;
+      },
     },
   ],
   [
@@ -174,10 +186,18 @@ const ThemeVariableMap = [
     {
       lwtProperty: "ntp_background",
       processColor(rgbaChannels) {
-        if (
-          !rgbaChannels ||
-          !Services.prefs.getBoolPref("browser.newtabpage.enabled")
-        ) {
+        if (!rgbaChannels) {
+          Services.prefs.setIntPref("browser.theme.content-theme", 2);
+          return null;
+        }
+
+        const { r, g, b } = rgbaChannels;
+        Services.prefs.setIntPref(
+          "browser.theme.content-theme",
+          _isColorDark(r, g, b) ? 0 : 1
+        );
+
+        if (!Services.prefs.getBoolPref("browser.newtabpage.enabled")) {
           
           
           
@@ -187,7 +207,6 @@ const ThemeVariableMap = [
           return null;
         }
         
-        let { r, g, b } = rgbaChannels;
         return `rgb(${r}, ${g}, ${b})`;
       },
     },
@@ -203,3 +222,8 @@ const ThemeContentPropertyList = [
   "sidebar_highlight_text",
   "sidebar_text",
 ];
+
+
+function _isColorDark(r, g, b) {
+  return 0.2125 * r + 0.7154 * g + 0.0721 * b <= 127;
+}
