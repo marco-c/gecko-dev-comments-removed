@@ -289,7 +289,7 @@ class SpeechEvent : public Runnable {
   friend class SpeechRecognition;
 
  private:
-  RefPtr<SpeechRecognition> mRecognition;
+  SpeechRecognition* mRecognition;
 
   
   
