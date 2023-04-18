@@ -3819,6 +3819,8 @@ var AddonManager = {
     ["ERROR_INCORRECT_ID", -7],
     
     ["ERROR_INVALID_DOMAIN", -8],
+    
+    ["ERROR_UNEXPECTED_ADDON_VERSION", -9],
   ]),
   
   ERROR_TIMEOUT: -1,
