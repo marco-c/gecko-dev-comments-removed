@@ -4827,9 +4827,25 @@ impl PicturePrimitive {
                                         }
                                     }
 
+                                    
+                                    
+                                    
+                                    let max_content_rect = (tile.local_dirty_rect.cast_unit() * device_pixel_scale)
+                                        .inflate(
+                                            MAX_BLUR_RADIUS * BLUR_SAMPLE_SCALE,
+                                            MAX_BLUR_RADIUS * BLUR_SAMPLE_SCALE,
+                                        )
+                                        .round_out()
+                                        .to_i32();
+
                                     let content_device_rect = (local_content_rect.cast_unit() * device_pixel_scale)
                                         .round_out()
                                         .to_i32();
+
+                                    let content_device_rect = content_device_rect
+                                        .intersection(&max_content_rect)
+                                        .expect("bug: no intersection with tile dirty rect");
+
                                     let content_task_size = content_device_rect.size();
                                     let normalized_content_rect = content_task_size.into();
 
