@@ -266,17 +266,21 @@ CanvasFrameAnonymousContentHelper.prototype = {
       
       return;
     }
-    if (isXUL(this.highlighterEnv.window)) {
+
+    const window = this.highlighterEnv.window;
+    const isXULWindow = isXUL(window);
+    const isChromeWindow = window.isChromeWindow;
+
+    if (isXULWindow || isChromeWindow) {
       
       
       
       
       
       
-      
-      
+
+      const { documentElement } = window.document;
       if (!this._iframe) {
-        const { documentElement } = this.highlighterEnv.window.document;
         this._iframe = documentElement.querySelector(
           ":scope > .devtools-highlighter-renderer"
         );
@@ -286,17 +290,17 @@ CanvasFrameAnonymousContentHelper.prototype = {
           const numberOfHighlighters =
             parseInt(this._iframe.dataset.numberOfHighlighters, 10) + 1;
           this._iframe.dataset.numberOfHighlighters = numberOfHighlighters;
-        } else {
-          this._iframe = this.highlighterEnv.window.document.createElement(
-            "iframe"
-          );
-          this._iframe.classList.add("devtools-highlighter-renderer");
-          
-          
-          this._iframe.dataset.numberOfHighlighters = 1;
-          documentElement.append(this._iframe);
-          loadSheet(this.highlighterEnv.window, XUL_HIGHLIGHTER_STYLES_SHEET);
         }
+      }
+
+      if (!this._iframe) {
+        this._iframe = window.document.createElement("iframe");
+        this._iframe.classList.add("devtools-highlighter-renderer");
+        
+        
+        this._iframe.dataset.numberOfHighlighters = 1;
+        documentElement.append(this._iframe);
+        loadSheet(window, XUL_HIGHLIGHTER_STYLES_SHEET);
       }
 
       if (this.waitForDocumentToLoad) {
