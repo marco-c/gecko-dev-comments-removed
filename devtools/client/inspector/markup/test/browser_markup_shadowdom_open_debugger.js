@@ -11,13 +11,7 @@
 
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/debugger/test/mochitest/helpers.js",
-  this
-);
-
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/debugger/test/mochitest/helpers/context.js",
+  "chrome://mochitests/content/browser/devtools/client/debugger/test/mochitest/shared-head.js",
   this
 );
 

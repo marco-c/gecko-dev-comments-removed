@@ -4,17 +4,15 @@
 "use strict";
 
 
-
-
-
 requestLongerTimeout(3);
 
 const FILENAME = "doc_backward_forward_navigation.html";
 const TEST_URI_ORG = `${URL_ROOT_ORG_SSL}${FILENAME}`;
 const TEST_URI_COM = `${URL_ROOT_COM_SSL}${FILENAME}`;
 
+
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/debugger/test/mochitest/helpers.js",
+  "chrome://mochitests/content/browser/devtools/client/debugger/test/mochitest/shared-head.js",
   this
 );
 

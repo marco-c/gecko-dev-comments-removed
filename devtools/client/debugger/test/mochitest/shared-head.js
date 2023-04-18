@@ -9,10 +9,21 @@
 
 
 
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/debugger/test/mochitest/helpers/context.js",
-  this
-);
+
+
+
+function createDebuggerContext(toolbox) {
+  const panel = toolbox.getPanel("jsdebugger");
+  const win = panel.panelWin;
+
+  return {
+    ...win.dbg,
+    commands: toolbox.commands,
+    toolbox: toolbox,
+    win: win,
+    panel: panel
+  };
+}
 
 var { Toolbox } = require("devtools/client/framework/toolbox");
 const asyncStorage = require("devtools/shared/async-storage");

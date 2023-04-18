@@ -9,26 +9,13 @@
 
 
 
+const EXAMPLE_URL =
+  "https://example.com/browser/devtools/client/debugger/test/mochitest/examples/";
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+const EXAMPLE_REMOTE_URL =
+  "https://example.org/browser/devtools/client/debugger/test/mochitest/examples/";
 
 
 
@@ -37,15 +24,8 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/debugger/test/mochitest/helpers.js",
+  "chrome://mochitests/content/browser/devtools/client/debugger/test/mochitest/shared-head.js",
   this
 );
-
-const EXAMPLE_URL =
-  "https://example.com/browser/devtools/client/debugger/test/mochitest/examples/";
-
-
-
-const EXAMPLE_REMOTE_URL =
-  "https://example.org/browser/devtools/client/debugger/test/mochitest/examples/";
