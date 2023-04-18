@@ -512,8 +512,8 @@ void JS::ProfilingFrameIterator::settleFrames() {
     return;
   }
 
-  if (isWasm() && wasmIter().done() && wasmIter().unwoundIonCallerFP()) {
-    uint8_t* fp = wasmIter().unwoundIonCallerFP();
+  if (isWasm() && wasmIter().done() && wasmIter().unwoundJitCallerFP()) {
+    uint8_t* fp = wasmIter().unwoundJitCallerFP();
     iteratorDestroy();
     
     
