@@ -5402,7 +5402,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayPush() {
   
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -5456,7 +5456,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayPopShift(
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -5498,7 +5498,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayJoin() {
   
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -5556,7 +5556,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArraySlice() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -5598,7 +5598,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayIsArray() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -5649,7 +5649,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewGet(
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -5714,7 +5714,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDataViewSet(
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -5768,7 +5768,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachUnsafeGetReservedSlot(
   size_t offset = NativeObject::getFixedSlotOffset(slot);
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -5819,7 +5819,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachUnsafeSetReservedSlot() {
   size_t offset = NativeObject::getFixedSlotOffset(slot);
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -5850,7 +5850,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsSuspendedGenerator() {
 
   MOZ_ASSERT(argc_ == 1);
 
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   
@@ -5882,7 +5882,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachToObject(
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   
@@ -5920,7 +5920,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachToInteger() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -5946,7 +5946,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachToLength() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -5968,7 +5968,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsObject() {
   MOZ_ASSERT(argc_ == 1);
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -5987,7 +5987,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsPackedArray() {
   MOZ_ASSERT(args_[0].isObject());
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -6006,7 +6006,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsCallable() {
   MOZ_ASSERT(argc_ == 1);
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -6029,7 +6029,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsConstructor() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -6056,7 +6056,7 @@ InlinableNativeIRGenerator::tryAttachIsCrossRealmArrayConstructor() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -6083,7 +6083,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachGuardToClass(
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -6114,7 +6114,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachHasClass(
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -6147,7 +6147,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachRegExpMatcherSearcherTester(
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -6194,7 +6194,7 @@ InlinableNativeIRGenerator::tryAttachRegExpPrototypeOptimizable() {
   MOZ_ASSERT(args_[0].isObject());
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -6216,7 +6216,7 @@ InlinableNativeIRGenerator::tryAttachRegExpInstanceOptimizable() {
   MOZ_ASSERT(args_[1].isObject());
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -6239,7 +6239,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachGetFirstDollarIndex() {
   MOZ_ASSERT(args_[0].isString());
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -6261,7 +6261,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSubstringKernel() {
   MOZ_ASSERT(args_[2].isInt32());
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -6296,7 +6296,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectHasPrototype() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -6318,7 +6318,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachString() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6350,7 +6350,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringConstructor() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6379,7 +6379,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToStringValueOf() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6405,7 +6405,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringReplaceString() {
   MOZ_ASSERT(args_[2].isString());
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -6432,7 +6432,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringSplitString() {
   MOZ_ASSERT(args_[1].isString());
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -6461,7 +6461,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringChar(
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6509,7 +6509,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringFromCharCode() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6539,7 +6539,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringFromCodePoint() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6568,7 +6568,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToLowerCase() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6598,7 +6598,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringToUpperCase() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6626,7 +6626,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathRandom() {
              "Shouldn't inline cross-realm Math.random because per-realm RNG");
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6652,7 +6652,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathAbs() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6682,7 +6682,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathClz32() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6711,7 +6711,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathSign() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6749,7 +6749,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathImul() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6787,7 +6787,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathFloor() {
   bool resultIsInt32 = mozilla::NumberIsInt32(res, &unused);
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6831,7 +6831,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathCeil() {
   bool resultIsInt32 = mozilla::NumberIsInt32(res, &unused);
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6875,7 +6875,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathTrunc() {
   bool resultIsInt32 = mozilla::NumberIsInt32(res, &unused);
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6918,7 +6918,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathRound() {
   bool resultIsInt32 = mozilla::NumberIsInt32(res, &unused);
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6957,7 +6957,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathSqrt() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -6979,7 +6979,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathFRound() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7029,7 +7029,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathPow() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7068,7 +7068,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathHypot() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7120,7 +7120,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathATan2() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7156,7 +7156,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathMinMax(bool isMax) {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7208,7 +7208,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSpreadMathMinMax(
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7240,7 +7240,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathFunction(
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7283,7 +7283,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNumberToString() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7314,7 +7314,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachReflectGetPrototypeOf() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7399,7 +7399,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsCompareExchange() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7467,7 +7467,7 @@ InlinableNativeIRGenerator::emitAtomicsReadWriteModifyOperands() {
   auto* typedArray = &args_[0].toObject().as<TypedArrayObject>();
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7627,7 +7627,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsLoad() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7693,7 +7693,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsStore() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7737,7 +7737,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAtomicsIsLockFree() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7761,7 +7761,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBoolean() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7788,7 +7788,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBailout() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7808,7 +7808,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAssertFloat32() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7834,7 +7834,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachAssertRecoveredOnBailout() {
   bool mustBeRecovered = args_[1].toBoolean();
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7855,7 +7855,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectIs() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7961,7 +7961,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectIsPrototypeOf() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -7997,7 +7997,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectToString() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -8026,7 +8026,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBigIntAsIntN() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -8060,7 +8060,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachBigIntAsUintN() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -8094,7 +8094,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetHas() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -8181,7 +8181,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapHas() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -8268,7 +8268,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapGet() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -8422,7 +8422,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsTypedArray(
   MOZ_ASSERT(args_[0].isObject());
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -8442,7 +8442,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsTypedArrayConstructor() {
   MOZ_ASSERT(args_[0].isObject());
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -8464,7 +8464,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayByteOffset() {
   auto* tarr = &args_[0].toObject().as<TypedArrayObject>();
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -8488,7 +8488,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayElementSize() {
   MOZ_ASSERT(args_[0].toObject().is<TypedArrayObject>());
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -8518,7 +8518,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayLength(
   auto* tarr = &args_[0].toObject().as<TypedArrayObject>();
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -8557,7 +8557,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayBufferByteLength(
   auto* buffer = &args_[0].toObject().as<ArrayBufferObject>();
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -8585,7 +8585,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsConstructing() {
   MOZ_ASSERT(script()->isFunction());
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -8608,7 +8608,7 @@ InlinableNativeIRGenerator::tryAttachGetNextMapSetEntryForIterator(bool isMap) {
   MOZ_ASSERT(args_[1].toObject().is<ArrayObject>());
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -8635,7 +8635,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachFinishBoundFunctionInit() {
   MOZ_ASSERT(args_[2].isInt32());
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -8670,7 +8670,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNewArrayIterator() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -8692,7 +8692,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNewStringIterator() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -8714,7 +8714,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachNewRegExpStringIterator() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -8744,7 +8744,7 @@ InlinableNativeIRGenerator::tryAttachArrayIteratorPrototypeOptimizable() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
 
@@ -8781,7 +8781,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectCreate() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
@@ -8830,7 +8830,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayConstructor() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   
@@ -8896,7 +8896,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayConstructor() {
   }
 
   
-  Int32OperandId argcId(writer.setInputOperandId(0));
+  initializeInputOperand();
 
   
   emitNativeCalleeGuard();
