@@ -151,6 +151,11 @@ class ModuleLoaderBase : public nsISupports {
 
   nsCOMPtr<nsIGlobalObject> mGlobalObject;
 
+  
+  
+  
+  bool mAcquiringImportMaps = true;
+
  protected:
   RefPtr<ScriptLoaderInterface> mLoader;
 
@@ -241,6 +246,14 @@ class ModuleLoaderBase : public nsISupports {
 
   
   void RegisterImportMap(mozilla::UniquePtr<ImportMap> aImportMap);
+
+  
+
+
+  bool GetAcquiringImportMaps() const { return mAcquiringImportMaps; }
+  void SetAcquiringImportMaps(bool acquiring) {
+    mAcquiringImportMaps = acquiring;
+  }
 
   
 
