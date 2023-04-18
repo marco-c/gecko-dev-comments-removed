@@ -56,7 +56,15 @@ impl<Image: ToCss> ToCss for Cursor<Image> {
 }
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[repr(C)]
 pub struct GenericCursorImage<Image, Number> {
     

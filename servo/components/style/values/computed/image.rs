@@ -84,6 +84,7 @@ impl ToComputedValue for specified::ImageSet {
         let mut selected_resolution = items[0].resolution.dppx();
 
         for (i, item) in items.iter().enumerate() {
+
             
             if item.has_mime_type && !context.device().is_supported_mime_type(&item.mime_type) {
                 continue;
