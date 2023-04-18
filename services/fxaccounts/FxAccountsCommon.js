@@ -304,7 +304,7 @@ exports.FXA_PWDMGR_SECURE_FIELDS = new Set([
 
 
 
-exports.FXA_PWDMGR_REAUTH_WHITELIST = new Set([
+exports.FXA_PWDMGR_REAUTH_ALLOWLIST = new Set([
   "email",
   "uid",
   "profile",

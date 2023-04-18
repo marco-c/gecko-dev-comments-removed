@@ -43,8 +43,8 @@ const MOCK_ENDPOINT = "http://mochi.test:8888";
 
 
 let mockPushService = {
-  pushTopic: this.pushService.pushTopic,
-  subscriptionChangeTopic: this.pushService.subscriptionChangeTopic,
+  pushTopic: pushService.pushTopic,
+  subscriptionChangeTopic: pushService.subscriptionChangeTopic,
   subscribe(scope, principal, cb) {
     cb(Cr.NS_OK, {
       endpoint: MOCK_ENDPOINT,

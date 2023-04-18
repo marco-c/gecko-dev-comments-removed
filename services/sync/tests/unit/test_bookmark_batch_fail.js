@@ -2,9 +2,8 @@
 
 
 _("Making sure a failing sync reports a useful error");
-const { BookmarksEngine } = ChromeUtils.import(
-  "resource://services-sync/engines/bookmarks.js"
-);
+
+
 const { Service } = ChromeUtils.import("resource://services-sync/service.js");
 
 add_bookmark_test(async function run_test(engine) {

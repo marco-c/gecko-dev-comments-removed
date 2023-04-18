@@ -8,12 +8,7 @@ const { CryptoUtils } = ChromeUtils.import(
   "resource://services-crypto/utils.js"
 );
 
-var {
-  hexToBytes: h2b,
-  hexAsString: h2s,
-  stringAsHex: s2h,
-  bytesAsHex: b2h,
-} = CommonUtils;
+var { hexToBytes: h2b, hexAsString: h2s, bytesAsHex: b2h } = CommonUtils;
 
 
 

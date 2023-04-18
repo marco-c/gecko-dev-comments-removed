@@ -1,6 +1,8 @@
 
 
 
+
+
 const { Service } = ChromeUtils.import("resource://services-sync/service.js");
 const { logManager } = ChromeUtils.import(
   "resource://gre/modules/FxAccountsCommon.js"

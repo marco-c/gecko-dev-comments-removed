@@ -13,10 +13,6 @@ ChromeUtils.defineModuleGetter(
 
 Cu.importGlobalProperties(["crypto"]);
 
-const SECOND_MS = 1000;
-const MINUTE_MS = SECOND_MS * 60;
-const HOUR_MS = MINUTE_MS * 60;
-
 
 Services.prefs.setCharPref("services.crypto.jwcrypto.log.level", "Debug");
 
