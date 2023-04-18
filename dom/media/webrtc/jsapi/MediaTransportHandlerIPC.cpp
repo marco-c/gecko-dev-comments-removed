@@ -120,10 +120,25 @@ void MediaTransportHandlerIPC::ExitPrivateMode() {
       [](const nsCString& aError) {});
 }
 
-nsresult MediaTransportHandlerIPC::CreateIceCtx(
-    const std::string& aName, const nsTArray<dom::RTCIceServer>& aIceServers,
-    dom::RTCIceTransportPolicy aIcePolicy) {
+void MediaTransportHandlerIPC::CreateIceCtx(const std::string& aName) {
   CSFLogDebug(LOGTAG, "MediaTransportHandlerIPC::CreateIceCtx start");
+
+  mInitPromise->Then(
+      mCallbackThread, __func__,
+      [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool ) {
+        if (mChild) {
+          CSFLogDebug(LOGTAG, "%s starting", __func__);
+          if (NS_WARN_IF(!mChild->SendCreateIceCtx(aName))) {
+            CSFLogError(LOGTAG, "%s failed!", __func__);
+          }
+        }
+      },
+      [](const nsCString& aError) {});
+}
+
+nsresult MediaTransportHandlerIPC::SetIceConfig(
+    const nsTArray<dom::RTCIceServer>& aIceServers,
+    dom::RTCIceTransportPolicy aIcePolicy) {
   
   
   
@@ -141,9 +156,8 @@ nsresult MediaTransportHandlerIPC::CreateIceCtx(
       [=, iceServers = aIceServers.Clone(),
        self = RefPtr<MediaTransportHandlerIPC>(this)](bool ) {
         if (mChild) {
-          CSFLogDebug(LOGTAG, "%s starting", __func__);
-          if (!mChild->SendCreateIceCtx(aName, std::move(iceServers),
-                                        aIcePolicy)) {
+          if (NS_WARN_IF(!mChild->SendSetIceConfig(std::move(iceServers),
+                                                   aIcePolicy))) {
             CSFLogError(LOGTAG, "%s failed!", __func__);
           }
         }
