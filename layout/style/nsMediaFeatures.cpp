@@ -258,10 +258,11 @@ bool Gecko_MediaFeatures_PrefersReducedMotion(const Document* aDocument) {
 }
 
 StylePrefersColorScheme Gecko_MediaFeatures_PrefersColorScheme(
-    const Document* aDocument) {
-  return aDocument->PreferredColorScheme() == ColorScheme::Dark
-             ? StylePrefersColorScheme::Dark
-             : StylePrefersColorScheme::Light;
+    const Document* aDocument, bool aUseContent) {
+  auto scheme = aUseContent ? LookAndFeel::PreferredColorSchemeForContent()
+                            : aDocument->PreferredColorScheme();
+  return scheme == ColorScheme::Dark ? StylePrefersColorScheme::Dark
+                                     : StylePrefersColorScheme::Light;
 }
 
 
