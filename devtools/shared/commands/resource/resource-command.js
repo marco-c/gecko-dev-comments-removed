@@ -583,6 +583,16 @@ class ResourceCommand {
 
       if (watcherFront) {
         targetFront = await this._getTargetForWatcherResource(resource);
+        
+        
+        
+        
+        
+        
+        
+        if (targetFront) {
+          await targetFront.initialized;
+        }
       }
 
       
@@ -702,6 +712,20 @@ class ResourceCommand {
 
       if (!resourceId) {
         console.warn(`Expected resource ${resourceType} to have a resourceId`);
+      }
+
+      
+      
+      
+      
+      if (watcherFront) {
+        targetFront = await this._getTargetForWatcherResource(update);
+        
+        
+        
+        if (targetFront) {
+          await targetFront.initialized;
+        }
       }
 
       const existingResource = this._cache.get(

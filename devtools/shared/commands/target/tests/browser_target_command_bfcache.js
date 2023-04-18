@@ -205,7 +205,6 @@ async function testTopLevelNavigations(bfcacheInParent) {
 
     
     
-    await targets[2].attachAndInitThread(targetCommand);
     await waitForAllTargetsToBeAttached(targetCommand);
   } else {
     info("Wait for 'dom-complete' resource");
@@ -268,7 +267,6 @@ async function testTopLevelNavigations(bfcacheInParent) {
 
     
     
-    await targets[3].attachAndInitThread(targetCommand);
     await waitForAllTargetsToBeAttached(targetCommand);
     await onNewTargetProcessed;
   } else {

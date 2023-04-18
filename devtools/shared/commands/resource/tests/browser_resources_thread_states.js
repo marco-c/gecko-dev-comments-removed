@@ -45,8 +45,10 @@ async function checkBreakpointBeforeWatchResources() {
 
   
   
-  info("Attach the top level thread actor");
-  await targetCommand.targetFront.attachAndInitThread(targetCommand);
+  info(
+    "Verify that TargetFront's initialized is resolved after having calling attachAndInitThread"
+  );
+  await targetCommand.targetFront.initialized;
 
   info("Run the 'debugger' statement");
   
