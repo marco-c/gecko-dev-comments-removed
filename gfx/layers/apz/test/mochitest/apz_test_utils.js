@@ -287,7 +287,7 @@ function promiseAfterPaint() {
 
 
 
-function promiseOnlyApzControllerFlushed(aWindow = window) {
+function promiseOnlyApzControllerFlushedWithoutSetTimeout(aWindow = window) {
   return new Promise(function(resolve, reject) {
     var repaintDone = function() {
       dump("PromiseApzRepaintsFlushed: APZ flush done\n");
@@ -295,7 +295,7 @@ function promiseOnlyApzControllerFlushed(aWindow = window) {
         repaintDone,
         "apz-repaints-flushed"
       );
-      setTimeout(resolve, 0);
+      resolve();
     };
     SpecialPowers.Services.obs.addObserver(repaintDone, "apz-repaints-flushed");
     if (SpecialPowers.getDOMWindowUtils(aWindow).flushApzRepaints()) {
@@ -308,6 +308,16 @@ function promiseOnlyApzControllerFlushed(aWindow = window) {
       );
       repaintDone();
     }
+  });
+}
+
+
+
+function promiseOnlyApzControllerFlushed(aWindow = window) {
+  return new Promise(resolve => {
+    promiseOnlyApzControllerFlushedWithoutSetTimeout(aWindow).then(() => {
+      setTimeout(resolve, 0);
+    });
   });
 }
 
