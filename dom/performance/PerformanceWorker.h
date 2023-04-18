@@ -8,11 +8,10 @@
 #define mozilla_dom_PerformanceWorker_h
 
 #include "Performance.h"
+#include "mozilla/dom/WorkerPrivate.h"
 
 namespace mozilla {
 namespace dom {
-
-class WorkerPrivate;
 
 class PerformanceWorker final : public Performance {
  public:
@@ -66,6 +65,22 @@ class PerformanceWorker final : public Performance {
     MOZ_CRASH("This should not be called on workers.");
   }
 
+  void InsertEventTimingEntry(PerformanceEventTiming*) override {
+    MOZ_CRASH("This should not be called on workers.");
+  }
+
+  void BufferEventTimingEntryIfNeeded(PerformanceEventTiming*) override {
+    MOZ_CRASH("This should not be called on workers.");
+  }
+
+  void DispatchPendingEventTimingEntries() override {
+    MOZ_CRASH("This should not be called on workders.");
+  }
+
+  class EventCounts* EventCounts() override {
+    MOZ_CRASH("This should not be called on workers");
+  }
+
   bool CrossOriginIsolated() const override;
 
  protected:
@@ -78,7 +93,7 @@ class PerformanceWorker final : public Performance {
   }
 
  private:
-  WorkerPrivate* mWorkerPrivate;
+  CheckedUnsafePtr<WorkerPrivate> mWorkerPrivate;
 };
 
 }  
