@@ -1,7 +1,7 @@
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsGIOService.h"
 #include "nsString.h"
@@ -48,7 +48,7 @@ nsFlatpakHandlerApp::GetName(nsAString& aName) {
 
 NS_IMETHODIMP
 nsFlatpakHandlerApp::SetName(const nsAString& aName) {
-  
+  // We don't implement SetName because flatpak system handler name is fixed
   return NS_OK;
 }
 
@@ -75,12 +75,12 @@ nsFlatpakHandlerApp::LaunchWithURI(
   aUri->GetSpec(spec);
   GUniquePtr<GError> error;
 
-  
-  
-  
-  
-  
-  
+  // The TMPDIR where files are downloaded when user choose to open them
+  // needs to be accessible from sandbox and host. The default settings
+  // TMPDIR=/tmp is accessible only to the sandbox. That can be the reason
+  // why the gtk_show_uri fails there.
+  // The workaround is to set TMPDIR environment variable in sandbox to
+  // $XDG_CACHE_HOME/tmp before executing Firefox.
   gtk_show_uri(nullptr, spec.get(), GDK_CURRENT_TIME, getter_Transfers(error));
   if (error) {
     NS_WARNING(
@@ -91,12 +91,12 @@ nsFlatpakHandlerApp::LaunchWithURI(
   return NS_OK;
 }
 
-
-
-
-
-
-
+/**
+ * Get command without any additional arguments
+ * @param aCommandWithArguments full commandline input string
+ * @param aCommand string for storing command without arguments
+ * @return NS_ERROR_FAILURE when unable to parse commandline
+ */
 static nsresult GetCommandFromCommandline(
     nsACString const& aCommandWithArguments, nsACString& aCommand) {
   GUniquePtr<GError> error;
@@ -143,8 +143,8 @@ nsGIOMimeApp::GetName(nsAString& aName) {
 
 NS_IMETHODIMP
 nsGIOMimeApp::SetName(const nsAString& aName) {
-  
-  
+  // We don't implement SetName because we're using mGIOMimeApp instance for
+  // obtaining application name
   return NS_OK;
 }
 
@@ -176,7 +176,7 @@ NS_IMETHODIMP
 nsGIOMimeApp::Equals(nsIHandlerApp* aHandlerApp, bool* _retval) {
   if (!aHandlerApp) return NS_ERROR_FAILURE;
 
-  
+  // Compare with nsILocalHandlerApp instance by name
   nsCOMPtr<nsILocalHandlerApp> localHandlerApp = do_QueryInterface(aHandlerApp);
   if (localHandlerApp) {
     nsAutoString theirName;
@@ -187,7 +187,7 @@ nsGIOMimeApp::Equals(nsIHandlerApp* aHandlerApp, bool* _retval) {
     return NS_OK;
   }
 
-  
+  // Compare with nsIGIOMimeApp instance by command with stripped arguments
   nsCOMPtr<nsIGIOMimeApp> gioMimeApp = do_QueryInterface(aHandlerApp);
   if (gioMimeApp) {
     nsAutoCString thisCommandline, thisCommand;
@@ -208,9 +208,20 @@ nsGIOMimeApp::Equals(nsIHandlerApp* aHandlerApp, bool* _retval) {
     return NS_OK;
   }
 
-  
+  // We can only compare with nsILocalHandlerApp and nsGIOMimeApp
   *_retval = false;
   return NS_OK;
+}
+
+static RefPtr<GAppLaunchContext> GetLaunchContext() {
+  RefPtr<GAppLaunchContext> context = dont_AddRef(g_app_launch_context_new());
+  // Unset this before launching third-party MIME handlers. Otherwise, if
+  // Thunderbird sets this in its startup script (as it does in Debian and
+  // Fedora), and Firefox does not set this in its startup script (it doesn't in
+  // Debian), then Firefox will think it is part of Thunderbird and try to make
+  // Thunderbird the default browser. See bug 1494436.
+  g_app_launch_context_unsetenv(context, "MOZ_APP_LAUNCHER");
+  return context;
 }
 
 NS_IMETHODIMP
@@ -219,13 +230,12 @@ nsGIOMimeApp::LaunchWithURI(nsIURI* aUri,
   GList uris = {0};
   nsCString spec;
   aUri->GetSpec(spec);
-  
+  // nsPromiseFlatCString flatUri(aUri);
   uris.data = const_cast<char*>(spec.get());
 
   GUniquePtr<GError> error;
-  gboolean result =
-      g_app_info_launch_uris(mApp, &uris, nullptr, getter_Transfers(error));
-
+  gboolean result = g_app_info_launch_uris(
+      mApp, &uris, GetLaunchContext().get(), getter_Transfers(error));
   if (!result) {
     g_warning("Cannot launch application: %s", error->message);
     return NS_ERROR_FAILURE;
@@ -283,8 +293,8 @@ nsGIOMimeApp::GetSupportedURISchemes(nsIUTF8StringEnumerator** aSchemes) {
   const gchar* const* uri_schemes = g_vfs_get_supported_uri_schemes(gvfs);
 
   while (*uri_schemes != nullptr) {
-    
-    
+    // XXX(Bug 1631371) Check if this should use a fallible operation as it
+    // pretended earlier.
     array->mStrings.AppendElement(*uri_schemes);
     uri_schemes++;
   }
@@ -308,12 +318,12 @@ nsGIOMimeApp::SetAsDefaultForMimeType(nsACString const& aMimeType) {
   }
   return NS_OK;
 }
-
-
-
-
-
-
+/**
+ * Set default application for files with given extensions
+ * @param fileExts string of space separated extensions
+ * @return NS_OK when application was set as default for given extensions,
+ * NS_ERROR_FAILURE otherwise
+ */
 NS_IMETHODIMP
 nsGIOMimeApp::SetAsDefaultForFileExtensions(nsACString const& fileExts) {
   GUniquePtr<GError> error;
@@ -341,12 +351,12 @@ nsGIOMimeApp::SetAsDefaultForFileExtensions(nsACString const& fileExts) {
   return NS_OK;
 }
 
-
-
-
-
-
-
+/**
+ * Set default application for URI's of a particular scheme
+ * @param aURIScheme string containing the URI scheme
+ * @return NS_OK when application was set as default for URI scheme,
+ * NS_ERROR_FAILURE otherwise
+ */
 NS_IMETHODIMP
 nsGIOMimeApp::SetAsDefaultForURIScheme(nsACString const& aURIScheme) {
   GUniquePtr<GError> error;
@@ -387,23 +397,23 @@ nsGIOService::GetMimeTypeFromExtension(const nsACString& aExtension,
   aMimeType.Assign(mime_type.get());
   return NS_OK;
 }
-
-
+// used in nsGNOMERegistry
+// -----------------------------------------------------------------------------
 NS_IMETHODIMP
 nsGIOService::GetAppForURIScheme(const nsACString& aURIScheme,
                                  nsIHandlerApp** aApp) {
   *aApp = nullptr;
 
-  
-  
-  
+  // Application in flatpak sandbox does not have access to the list
+  // of installed applications on the system. We use generic
+  // nsFlatpakHandlerApp which forwards launch call to the system.
   if (widget::ShouldUsePortal(widget::PortalKind::MimeHandler)) {
     if (mozilla::net::IsLoopbackHostname(aURIScheme)) {
-      
-      
-      
-      
-      
+      // When the user writes foo:1234, we try to handle it natively using
+      // GetAppForURIScheme, and if that fails, we carry on. On flatpak there's
+      // no way to know if an app has handlers or not. Some things like
+      // localhost:1234 are really unlikely to be handled by native
+      // apps, and we're much better off returning an error here instead.
       return NS_ERROR_FAILURE;
     }
     RefPtr<nsFlatpakHandlerApp> mozApp = new nsFlatpakHandlerApp();
@@ -424,13 +434,13 @@ nsGIOService::GetAppForURIScheme(const nsACString& aURIScheme,
 NS_IMETHODIMP
 nsGIOService::GetAppsForURIScheme(const nsACString& aURIScheme,
                                   nsIMutableArray** aResult) {
-  
-  
-  
-  
-  
-  
-  
+  // We don't need to return the nsFlatpakHandlerApp here because
+  // it would be skipped by the callers anyway.
+  // The preferred handler is provided by GetAppForURIScheme.
+  // This method returns all possible application handlers
+  // including preferred one. The callers skips the preferred
+  // handler in this list to avoid duplicate records in the list
+  // they create.
   nsCOMPtr<nsIMutableArray> handlersArray =
       do_CreateInstance(NS_ARRAY_CONTRACTID);
 
@@ -438,9 +448,9 @@ nsGIOService::GetAppsForURIScheme(const nsACString& aURIScheme,
   contentType.Append(aURIScheme);
 
   GList* appInfoList = g_app_info_get_all_for_type(contentType.get());
-  
-  
-  
+  // g_app_info_get_all_for_type returns NULL when no appinfo is found
+  // or error occurs (contentType is NULL). We are fine with empty app list
+  // and we're sure that contentType is not NULL, so we won't return failure.
   if (appInfoList) {
     GList* appInfo = appInfoList;
     while (appInfo) {
@@ -460,8 +470,8 @@ nsGIOService::GetAppForMimeType(const nsACString& aMimeType,
                                 nsIHandlerApp** aApp) {
   *aApp = nullptr;
 
-  
-  
+  // Flatpak does not reveal installed application to the sandbox,
+  // we need to create generic system handler.
   if (widget::ShouldUsePortal(widget::PortalKind::MimeHandler)) {
     RefPtr<nsFlatpakHandlerApp> mozApp = new nsFlatpakHandlerApp();
     mozApp.forget(aApp);
@@ -474,19 +484,19 @@ nsGIOService::GetAppForMimeType(const nsACString& aMimeType,
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  
+  // GIO returns "unknown" appinfo for the application/octet-stream, which is
+  // useless. It's better to fallback to create appinfo from file extension
+  // later.
   if (g_content_type_is_unknown(content_type.get())) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
 #if defined(__OpenBSD__) && defined(MOZ_SANDBOX)
-  
-  
-  
-  
-  
+  // g_app_info_get_default_for_type will fail on OpenBSD's veiled filesystem
+  // since we most likely don't have direct access to the binaries that are
+  // registered as defaults for this type.  Fake it up by just executing
+  // xdg-open via gio-launch-desktop (which we do have access to) and letting
+  // it figure out which program to execute for this MIME type
   RefPtr<GAppInfo> app_info = dont_AddRef(g_app_info_create_from_commandline(
       "/usr/local/bin/xdg-open",
       nsPrintfCString("System default for %s", content_type.get()).get(),
@@ -525,7 +535,7 @@ nsresult nsGIOService::ShowURI(nsIURI* aURI) {
   nsAutoCString spec;
   MOZ_TRY(aURI->GetSpec(spec));
   GUniquePtr<GError> error;
-  if (!g_app_info_launch_default_for_uri(spec.get(), nullptr,
+  if (!g_app_info_launch_default_for_uri(spec.get(), GetLaunchContext().get(),
                                          getter_Transfers(error))) {
     g_warning("Could not launch default application for URI: %s",
               error->message);
@@ -539,7 +549,7 @@ static nsresult LaunchPath(const nsACString& aPath) {
       g_file_new_for_commandline_arg(PromiseFlatCString(aPath).get()));
   GUniquePtr<char> spec(g_file_get_uri(file));
   GUniquePtr<GError> error;
-  g_app_info_launch_default_for_uri(spec.get(), nullptr,
+  g_app_info_launch_default_for_uri(spec.get(), GetLaunchContext().get(),
                                     getter_Transfers(error));
   if (error) {
     g_warning("Cannot launch default application: %s", error->message);
@@ -576,7 +586,7 @@ static nsresult RevealFileViaDBusWithProxy(GDBusProxy* aProxy, nsIFile* aFile) {
 
   GUniquePtr<gchar> uri(g_filename_to_uri(path.get(), nullptr, nullptr));
   if (!uri) {
-    RevealDirectory(aFile,  true);
+    RevealDirectory(aFile, /* aForce = */ true);
     return NS_ERROR_FAILURE;
   }
 
@@ -593,11 +603,11 @@ static nsresult RevealFileViaDBusWithProxy(GDBusProxy* aProxy, nsIFile* aFile) {
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [](RefPtr<GVariant>&& aResult) {
-            
+            // Do nothing, file is shown, we're done.
           },
           [file = RefPtr{aFile}](GUniquePtr<GError>&& aError) {
             g_printerr("Failed to query file manager: %s\n", aError->message);
-            RevealDirectory(file,  true);
+            RevealDirectory(file, /* aForce = */ true);
           });
   g_variant_builder_clear(&builder);
   return NS_OK;
@@ -608,7 +618,7 @@ static void RevealFileViaDBus(nsIFile* aFile) {
       G_BUS_TYPE_SESSION,
       GDBusProxyFlags(G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS |
                       G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES),
-       nullptr, "org.freedesktop.FileManager1",
+      /* aInterfaceInfo = */ nullptr, "org.freedesktop.FileManager1",
       "/org/freedesktop/FileManager1", "org.freedesktop.FileManager1")
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
@@ -618,31 +628,31 @@ static void RevealFileViaDBus(nsIFile* aFile) {
           [file = RefPtr{aFile}](GUniquePtr<GError>&& aError) {
             g_printerr("Failed to create DBUS proxy for FileManager1: %s\n",
                        aError->message);
-            RevealDirectory(file,  true);
+            RevealDirectory(file, /* aForce = */ true);
           });
 }
 #endif
 
 nsresult nsGIOService::RevealFile(nsIFile* aFile) {
 #ifdef MOZ_ENABLE_DBUS
-  if (NS_SUCCEEDED(RevealDirectory(aFile,  false))) {
+  if (NS_SUCCEEDED(RevealDirectory(aFile, /* aForce = */ false))) {
     return NS_OK;
   }
   RevealFileViaDBus(aFile);
   return NS_OK;
 #else
-  return RevealDirectory(aFile,  true);
+  return RevealDirectory(aFile, /* aForce = */ true);
 #endif
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Find GIO Mime App from given commandline.
+ * This is different from CreateAppFromCommand because instead of creating the
+ * GIO Mime App in case it's not found in the GIO application list, the method
+ * returns error.
+ * @param aCmd command with parameters used to start the application
+ * @return NS_OK when application is found, NS_ERROR_NOT_AVAILABLE otherwise
+ */
 NS_IMETHODIMP
 nsGIOService::FindAppFromCommand(nsACString const& aCmd,
                                  nsIGIOMimeApp** aAppInfo) {
@@ -650,21 +660,21 @@ nsGIOService::FindAppFromCommand(nsACString const& aCmd,
 
   GList* apps = g_app_info_get_all();
 
-  
-  
+  // Try to find relevant and existing GAppInfo in all installed application
+  // We do this by comparing each GAppInfo's executable with out own
   for (GList* node = apps; node; node = node->next) {
     RefPtr<GAppInfo> app_info_from_list = dont_AddRef((GAppInfo*)node->data);
     node->data = nullptr;
     if (!app_info) {
-      
+      // If the executable is not absolute, get it's full path
       GUniquePtr<char> executable(g_find_program_in_path(
           g_app_info_get_executable(app_info_from_list)));
 
       if (executable &&
           strcmp(executable.get(), PromiseFlatCString(aCmd).get()) == 0) {
         app_info = std::move(app_info_from_list);
-        
-        
+        // Can't break here because we need to keep iterating to unref the other
+        // nodes.
       }
     }
   }
@@ -679,25 +689,25 @@ nsGIOService::FindAppFromCommand(nsACString const& aCmd,
   return NS_OK;
 }
 
-
-
-
-
-
-
-
-
-
+/**
+ * Create application info for specified command and application name.
+ * Command arguments are ignored and the "%u" is always added.
+ * @param cmd command to execute
+ * @param appName application name
+ * @param appInfo location where created GAppInfo is stored
+ * @return NS_OK when object is created, NS_ERROR_FILE_NOT_FOUND when executable
+ * is not found in the system path or NS_ERROR_FAILURE otherwise.
+ */
 NS_IMETHODIMP
 nsGIOService::CreateAppFromCommand(nsACString const& cmd,
                                    nsACString const& appName,
                                    nsIGIOMimeApp** appInfo) {
   *appInfo = nullptr;
 
-  
-  
-  
-  
+  // Using G_APP_INFO_CREATE_SUPPORTS_URIS calling
+  // g_app_info_create_from_commandline appends %u to the cmd even when cmd
+  // already contains this parameter. To avoid that we're going to remove
+  // arguments before passing to it.
   nsAutoCString commandWithoutArgs;
   nsresult rv = GetCommandFromCommandline(cmd, commandWithoutArgs);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -712,7 +722,7 @@ nsGIOService::CreateAppFromCommand(nsACString const& cmd,
     return NS_ERROR_FAILURE;
   }
 
-  
+  // Check if executable exist in path
   GUniquePtr<gchar> executableWithFullPath(
       g_find_program_in_path(commandWithoutArgs.BeginReading()));
   if (!executableWithFullPath) {
