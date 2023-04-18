@@ -164,7 +164,7 @@ var Sanitizer = {
     
     
     
-    let progress = { isShutdown: true };
+    let progress = { isShutdown: true, clearHonoringExceptions: true };
     shutdownClient.addBlocker(
       "sanitize.js: Sanitize on shutdown",
       () => sanitizeOnShutdown(progress),
@@ -189,6 +189,8 @@ var Sanitizer = {
     
     for (let { itemsToClear, options } of pendingSanitizations) {
       try {
+        
+        options.progress = { clearHonoringExceptions: true };
         await this.sanitize(itemsToClear, options);
       } catch (ex) {
         Cu.reportError(
@@ -346,7 +348,10 @@ var Sanitizer = {
 
   
   async runSanitizeOnShutdown() {
-    return sanitizeOnShutdown({ isShutdown: true });
+    return sanitizeOnShutdown({
+      isShutdown: true,
+      clearHonoringExceptions: true,
+    });
   },
 
   
@@ -746,7 +751,7 @@ async function sanitizeInternal(items, aItemsToClear, progress, options = {}) {
   };
 
   
-  if (progress.isShutdown) {
+  if (progress.clearHonoringExceptions) {
     let principalsCollector = new PrincipalsCollector();
     let principals = await principalsCollector.getAllPrincipals(progress);
     options.principalsForShutdownClearing = principals;
