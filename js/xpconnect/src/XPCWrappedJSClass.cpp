@@ -764,6 +764,14 @@ nsXPCWrappedJS::CallMethod(uint16_t methodIndex, const nsXPTMethodInfo* info,
     return NS_ERROR_UNEXPECTED;
   }
 
+  
+  
+  
+  
+  if (!info->IsReflectable()) {
+    return NS_ERROR_FAILURE;
+  }
+
   Value* sp = nullptr;
   Value* argv = nullptr;
   uint8_t i;
@@ -790,7 +798,7 @@ nsXPCWrappedJS::CallMethod(uint16_t methodIndex, const nsXPTMethodInfo* info,
 
   JSContext* cx = ccx.GetJSContext();
 
-  if (!cx || !info->IsReflectable()) {
+  if (!cx) {
     return NS_ERROR_FAILURE;
   }
 
