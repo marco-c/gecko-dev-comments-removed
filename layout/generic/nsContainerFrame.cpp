@@ -2759,9 +2759,9 @@ void nsContainerFrame::ConsiderChildOverflow(OverflowAreas& aOverflowAreas,
     
     
     
-    nsRect childVisual = aChildFrame->InkOverflowRect();
-    OverflowAreas combined = OverflowAreas(childVisual, nsRect());
-    aOverflowAreas.UnionWith(combined + aChildFrame->GetPosition());
+    const OverflowAreas childOverflows(aChildFrame->InkOverflowRect(),
+                                       nsRect());
+    aOverflowAreas.UnionWith(childOverflows + aChildFrame->GetPosition());
   } else {
     aOverflowAreas.UnionWith(
         aChildFrame->GetActualAndNormalOverflowAreasRelativeToParent());

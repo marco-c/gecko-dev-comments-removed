@@ -3563,8 +3563,6 @@ class nsIFrame : public nsQueryFrame {
     return GetOverflowRect(mozilla::OverflowType::Scrollable);
   }
 
-  nsRect GetOverflowRect(mozilla::OverflowType aType) const;
-
   mozilla::OverflowAreas GetOverflowAreas() const;
 
   
@@ -5366,6 +5364,8 @@ class nsIFrame : public nsQueryFrame {
                                           bool aIsKeyboardSelect);
 
  private:
+  nsRect GetOverflowRect(mozilla::OverflowType aType) const;
+
   
   mozilla::OverflowAreas* GetOverflowAreasProperty() const {
     MOZ_ASSERT(mOverflow.mType == OverflowStorageType::Large);
