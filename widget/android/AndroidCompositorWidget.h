@@ -29,10 +29,6 @@ class AndroidCompositorWidget : public CompositorWidget {
                           const layers::CompositorOptions& aOptions);
   ~AndroidCompositorWidget() override;
 
-  
-  
-  virtual void OnCompositorSurfaceChanged() = 0;
-
   EGLNativeWindowType GetEGLNativeWindow();
 
   
@@ -57,6 +53,11 @@ class AndroidCompositorWidget : public CompositorWidget {
   ANativeWindow_Buffer mBuffer;
   int32_t mFormat;
   LayoutDeviceIntSize mClientSize;
+
+ private:
+  
+  
+  virtual void OnCompositorSurfaceChanged() = 0;
 };
 
 }  

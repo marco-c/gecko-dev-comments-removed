@@ -76,6 +76,7 @@ import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.IntentUtils;
 import org.mozilla.gecko.util.ThreadUtils;
+import org.mozilla.geckoview.GeckoDisplay.SurfaceInfo;
 
 public class GeckoSession {
   private static final String LOGTAG = "GeckoSession";
@@ -239,14 +240,12 @@ public class GeckoSession {
 
   private boolean mAttachedCompositor;
   private boolean mCompositorReady;
-  private Surface mSurface;
+  private SurfaceInfo mSurfaceInfo;
 
   
   private int mLeft;
   private int mTop; 
   private int mClientTop; 
-  private int mOffsetX;
-  private int mOffsetY;
   private int mWidth;
   private int mHeight; 
   private int mClientHeight; 
@@ -310,7 +309,7 @@ public class GeckoSession {
     
     @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
     public native void syncResumeResizeCompositor(
-        int x, int y, int width, int height, Object surface);
+        int x, int y, int width, int height, Object surface, Object surfaceControl);
 
     @WrapForJNI(calledFrom = "ui", dispatchTo = "current")
     public native void setMaxToolbarHeight(int height);
@@ -5904,24 +5903,27 @@ public class GeckoSession {
   })
   public @interface RestartReason {}
 
-   void onSurfaceChanged(
-      final Surface surface, final int x, final int y, final int width, final int height) {
+   void onSurfaceChanged(final @NonNull SurfaceInfo surfaceInfo) {
     ThreadUtils.assertOnUiThread();
 
-    mOffsetX = x;
-    mOffsetY = y;
-    mWidth = width;
-    mHeight = height;
+    mWidth = surfaceInfo.mWidth;
+    mHeight = surfaceInfo.mHeight;
 
     if (mCompositorReady) {
-      mCompositor.syncResumeResizeCompositor(x, y, width, height, surface);
+      mCompositor.syncResumeResizeCompositor(
+          surfaceInfo.mLeft,
+          surfaceInfo.mTop,
+          surfaceInfo.mWidth,
+          surfaceInfo.mHeight,
+          surfaceInfo.mSurface,
+          surfaceInfo.mSurfaceControl);
       onWindowBoundsChanged();
       return;
     }
 
     
     
-    mSurface = surface;
+    mSurfaceInfo = surfaceInfo;
 
     
     onWindowBoundsChanged();
@@ -5937,7 +5939,7 @@ public class GeckoSession {
 
     
     
-    mSurface = null;
+    mSurfaceInfo = null;
   }
 
    void onScreenOriginChanged(final int left, final int top) {
@@ -5995,10 +5997,10 @@ public class GeckoSession {
     mAttachedCompositor = true;
     mCompositor.attachNPZC(mPanZoomController.mNative);
 
-    if (mSurface != null) {
+    if (mSurfaceInfo != null) {
       
       
-      onSurfaceChanged(mSurface, mOffsetX, mOffsetY, mWidth, mHeight);
+      onSurfaceChanged(mSurfaceInfo);
     }
 
     mCompositor.sendToolbarAnimatorMessage(IS_COMPOSITOR_CONTROLLER_OPEN);
@@ -6083,11 +6085,11 @@ public class GeckoSession {
       mController.onCompositorReady();
     }
 
-    if (mSurface != null) {
+    if (mSurfaceInfo != null) {
       
       
-      onSurfaceChanged(mSurface, mOffsetX, mOffsetY, mWidth, mHeight);
-      mSurface = null;
+      onSurfaceChanged(mSurfaceInfo);
+      mSurfaceInfo = null;
     }
 
     if (mFixedBottomOffset != 0) {

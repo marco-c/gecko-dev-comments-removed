@@ -9,12 +9,12 @@ package org.mozilla.geckoview;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.view.Surface;
+import android.view.SurfaceControl;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import org.mozilla.gecko.util.ThreadUtils;
-
 
 
 
@@ -33,6 +33,107 @@ public class GeckoDisplay {
 
 
 
+  public static class SurfaceInfo {
+     final @NonNull Surface mSurface;
+     final @Nullable SurfaceControl mSurfaceControl;
+     final int mLeft;
+     final int mTop;
+     final int mWidth;
+     final int mHeight;
+
+    private SurfaceInfo(final @NonNull Builder builder) {
+      mSurface = builder.mSurface;
+      mSurfaceControl = builder.mSurfaceControl;
+      mLeft = builder.mLeft;
+      mTop = builder.mTop;
+      mWidth = builder.mWidth;
+      mHeight = builder.mHeight;
+    }
+
+    
+    public static class Builder {
+      private Surface mSurface;
+      private SurfaceControl mSurfaceControl;
+      private int mLeft;
+      private int mTop;
+      private int mWidth;
+      private int mHeight;
+
+      
+
+
+
+
+      public Builder(final @NonNull Surface surface) {
+        mSurface = surface;
+      }
+
+      
+
+
+
+
+
+
+
+
+
+
+      @UiThread
+      public @NonNull Builder surfaceControl(final @Nullable SurfaceControl surfaceControl) {
+        mSurfaceControl = surfaceControl;
+        return this;
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull Builder offset(final int left, final int top) {
+        mLeft = left;
+        mTop = top;
+        return this;
+      }
+
+      
+
+
+
+
+
+
+      @UiThread
+      public @NonNull Builder size(final int width, final int height) {
+        mWidth = width;
+        mHeight = height;
+        return this;
+      }
+
+      
+
+
+
+
+      @UiThread
+      public @NonNull SurfaceInfo build() {
+        if ((mLeft < 0) || (mTop < 0)) {
+          throw new IllegalArgumentException("Left and Top offsets can not be negative.");
+        }
+
+        return new SurfaceInfo(this);
+      }
+    }
+  }
+
+  
+
+
+
+
 
 
 
@@ -41,6 +142,8 @@ public class GeckoDisplay {
 
 
   @UiThread
+  @Deprecated
+  @DeprecationSchedule(id = "surfaceChanged", version = 104)
   public void surfaceChanged(@NonNull final Surface surface, final int width, final int height) {
     surfaceChanged(surface, 0, 0, width, height);
   }
@@ -59,7 +162,10 @@ public class GeckoDisplay {
 
 
 
+
   @UiThread
+  @Deprecated
+  @DeprecationSchedule(id = "surfaceChanged", version = 104)
   public void surfaceChanged(
       @NonNull final Surface surface,
       final int left,
@@ -72,7 +178,29 @@ public class GeckoDisplay {
       throw new IllegalArgumentException("Parameters can not be negative.");
     }
     if (mSession.getDisplay() == this) {
-      mSession.onSurfaceChanged(surface, left, top, width, height);
+      mSession.onSurfaceChanged(
+          new SurfaceInfo.Builder(surface).offset(left, top).size(width, height).build());
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  @UiThread
+  public void surfaceChanged(@NonNull final SurfaceInfo surfaceInfo) {
+    ThreadUtils.assertOnUiThread();
+
+    if (mSession.getDisplay() == this) {
+      mSession.onSurfaceChanged(surfaceInfo);
     }
   }
 
