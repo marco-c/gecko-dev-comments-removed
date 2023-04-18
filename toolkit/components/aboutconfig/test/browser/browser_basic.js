@@ -44,5 +44,9 @@ add_task(async function test_load_settings() {
       this.getRow("test.aboutconfig.userValueLikeLocalized").value,
       "chrome://test/locale/testing.properties"
     );
+
+    
+    
+    Assert.equal(this.getRow(PREF_STRING_LOCALIZED_MISSING).value, "");
   });
 });
