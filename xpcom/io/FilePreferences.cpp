@@ -21,12 +21,12 @@
 namespace mozilla {
 namespace FilePreferences {
 
-static StaticMutex sMutex MOZ_UNANNOTATED;
+static StaticMutex sMutex;
 
 static bool sBlockUNCPaths = false;
 typedef nsTArray<nsString> WinPaths;
 
-static WinPaths& PathWhitelist() {
+static WinPaths& PathAllowlist() REQUIRES(sMutex) {
   sMutex.AssertCurrentThreadOwns();
 
   static WinPaths sPaths;
@@ -80,8 +80,8 @@ static void AllowUNCDirectory(char const* directory) {
 
   StaticMutexAutoLock lock(sMutex);
 
-  if (!PathWhitelist().Contains(path)) {
-    PathWhitelist().AppendElement(path);
+  if (!PathAllowlist().Contains(path)) {
+    PathAllowlist().AppendElement(path);
   }
 }
 
@@ -119,7 +119,7 @@ void InitPrefs() {
       (sForbiddenPathsEmpty = ForbiddenPaths().Length() == 0);
 }
 
-void InitDirectoriesWhitelist() {
+void InitDirectoriesAllowlist() {
   
   AllowUNCDirectory(NS_GRE_DIR);
   
@@ -278,7 +278,7 @@ bool IsBlockedUNCPath(const nsAString& aFilePath) {
 
   StaticMutexAutoLock lock(sMutex);
 
-  for (const auto& allowedPrefix : PathWhitelist()) {
+  for (const auto& allowedPrefix : PathAllowlist()) {
     if (StringBeginsWith(normalized, allowedPrefix)) {
       if (normalized.Length() == allowedPrefix.Length()) {
         return false;
@@ -358,9 +358,9 @@ bool StartsWithDiskDesignatorAndBackslash(const nsAString& aAbsolutePath) {
 
 void testing::SetBlockUNCPaths(bool aBlock) { sBlockUNCPaths = aBlock; }
 
-void testing::AddDirectoryToWhitelist(nsAString const& aPath) {
+void testing::AddDirectoryToAllowlist(nsAString const& aPath) {
   StaticMutexAutoLock lock(sMutex);
-  PathWhitelist().AppendElement(aPath);
+  PathAllowlist().AppendElement(aPath);
 }
 
 bool testing::NormalizePath(nsAString const& aPath, nsAString& aNormalized) {
