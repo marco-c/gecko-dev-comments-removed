@@ -6,6 +6,7 @@
 const { Ci } = require("chrome");
 const Services = require("Services");
 
+loader.lazyRequireGetter(this, "ChromeUtils");
 loader.lazyRequireGetter(
   this,
   "isRemoteBrowserElement",
@@ -60,8 +61,63 @@ class NodePicker {
     
     
     
-    const node = event.originalTarget || event.target;
+    let node = event.originalTarget || event.target;
+
+    
+    
+    
+    if (event.shiftKey) {
+      node = this._findNodeAtMouseEventPosition(event) || node;
+    }
+
     return this._walker.attachElement(node);
+  }
+
+  
+
+
+
+
+
+
+
+  _findNodeAtMouseEventPosition(event) {
+    const winUtils = this._targetActor.window.windowUtils;
+    const rectSize = 1;
+    const elements = winUtils.nodesFromRect(
+      
+      event.clientX,
+      
+      event.clientY,
+      
+      rectSize,
+      
+      rectSize,
+      
+      rectSize,
+      
+      rectSize,
+      
+      true,
+      
+      false,
+      
+      true,
+      
+      1
+    );
+
+    
+    
+    
+    if (
+      elements.length > 1 &&
+      ChromeUtils.getClassName(elements[0]) == "HTMLHtmlElement"
+    ) {
+      return elements[1];
+    }
+
+    return elements[0];
   }
 
   
@@ -129,9 +185,9 @@ class NodePicker {
       return;
     }
 
-    // If Shift is pressed, this is only a preview click.
+    // If Ctrl (Or Cmd on OSX) is pressed, this is only a preview click.
     // Send the event to the client, but don't stop picking.
-    if (event.shiftKey) {
+    if ((IS_OSX && event.metaKey) || (!IS_OSX && event.ctrlKey)) {
       this._walker.emit(
         "picker-node-previewed",
         this._findAndAttachElement(event)
