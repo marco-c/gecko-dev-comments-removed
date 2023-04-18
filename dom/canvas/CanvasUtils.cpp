@@ -290,8 +290,12 @@ bool HasDrawWindowPrivilege(JSContext* aCx, JSObject* ) {
                                              nsGkAtoms::all_urlsPermission);
 }
 
-bool IsOffscreenCanvasEnabled(JSContext* aCx, JSObject* ) {
+bool IsOffscreenCanvasEnabled(JSContext* aCx, JSObject* aObj) {
   if (StaticPrefs::gfx_offscreencanvas_enabled()) {
+    return true;
+  }
+
+  if (OriginTrials::IsEnabled(aCx, aObj, OriginTrial::OffscreenCanvas)) {
     return true;
   }
 
