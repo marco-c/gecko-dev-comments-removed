@@ -480,6 +480,9 @@ class nsWindow final : public nsBaseWidget {
   };
 
   
+  class TaskbarConcealer;
+
+  
   
   enum { eFakeTrackPointScrollableID = 0x46545053 };
 

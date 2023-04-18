@@ -76,6 +76,7 @@
 #include <limits>
 
 #include "nsWindow.h"
+#include "nsWindowTaskbarConcealer.h"
 #include "nsAppRunner.h"
 
 #include <shellapi.h>
@@ -185,9 +186,6 @@
 #    include <winable.h>
 #  endif  
 #endif    
-
-#include "nsIWinTaskbar.h"
-#define NS_TASKBAR_CONTRACTID "@mozilla.org/windows-taskbar;1"
 
 #include "WindowsUIUtils.h"
 
@@ -3729,14 +3727,6 @@ void nsWindow::OnFullscreenWillChange(bool aFullScreen) {
 
 void nsWindow::OnFullscreenChanged(bool aFullScreen) {
   
-  nsCOMPtr<nsIWinTaskbar> taskbarInfo = do_GetService(NS_TASKBAR_CONTRACTID);
-
-  
-  if (aFullScreen && taskbarInfo) {
-    taskbarInfo->PrepareFullScreenHWND(mWnd, TRUE);
-  }
-
-  
   
   UpdateNonClientMargins(mFrameState->GetSizeMode(),  !aFullScreen);
 
@@ -3752,16 +3742,14 @@ void nsWindow::OnFullscreenChanged(bool aFullScreen) {
     DispatchFocusToTopLevelWindow(true);
   }
 
-  
-  if (!aFullScreen && taskbarInfo) {
-    taskbarInfo->PrepareFullScreenHWND(mWnd, FALSE);
-  }
-
   OnSizeModeChange(mFrameState->GetSizeMode());
 
   if (mWidgetListener) {
     mWidgetListener->FullscreenChanged(aFullScreen);
   }
+
+  
+  TaskbarConcealer::OnFullscreenChanged(this, aFullScreen);
 }
 
 nsresult nsWindow::MakeFullScreen(bool aFullScreen) {
@@ -6106,6 +6094,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       if (sJustGotActivate) {
         DispatchFocusToTopLevelWindow(true);
       }
+      TaskbarConcealer::OnFocusAcquired(this);
       break;
 
     case WM_KILLFOCUS:
@@ -6119,6 +6108,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
     case WM_WINDOWPOSCHANGED: {
       WINDOWPOS* wp = (LPWINDOWPOS)lParam;
       OnWindowPosChanged(wp);
+      TaskbarConcealer::OnWindowPosChanged(this);
       result = true;
     } break;
 
@@ -7347,6 +7337,12 @@ void nsWindow::OnDestroy() {
   mOnDestroyCalled = true;
 
   
+  
+  if (!mParent) {
+    TaskbarConcealer::OnWindowDestroyed(mWnd);
+  }
+
+  
   nsCOMPtr<nsIWidget> kungFuDeathGrip(this);
 
   
@@ -7626,9 +7622,15 @@ void nsWindow::OnCloakEvent(HWND aWnd, bool aCloaked) {
     }
   });
 
+  if (changedWindows.IsEmpty()) {
+    return;
+  }
+
   for (const Item& item : changedWindows) {
     item.win->OnCloakChanged(item.nowCloaked);
   }
+
+  nsWindow::TaskbarConcealer::OnCloakChanged();
 }
 
 void nsWindow::OnCloakChanged(bool aCloaked) {
