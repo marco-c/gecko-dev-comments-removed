@@ -4694,35 +4694,43 @@ MoveNodeResult HTMLEditor::MoveOneHardLineContents(
     MoveToEndOfContainer
         aMoveToEndOfContainer ) {
   MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(aPointToInsert.IsSetAndValid());
 
+  EditorDOMPoint pointToInsert(aPointToInsert);
   AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfContents;
-  nsresult rv = SplitInlinesAndCollectEditTargetNodesInOneHardLine(
-      aPointInHardLine, arrayOfContents, EditSubAction::eMergeBlockContents,
-      HTMLEditor::CollectNonEditableNodes::Yes);
-  if (NS_FAILED(rv)) {
-    NS_WARNING(
-        "HTMLEditor::SplitInlinesAndCollectEditTargetNodesInOneHardLine("
-        "eMergeBlockContents, CollectNonEditableNodes::Yes) failed");
-    return MoveNodeResult(rv);
+  {
+    AutoTrackDOMPoint tackPointToInsert(RangeUpdaterRef(), &pointToInsert);
+    nsresult rv = SplitInlinesAndCollectEditTargetNodesInOneHardLine(
+        aPointInHardLine, arrayOfContents, EditSubAction::eMergeBlockContents,
+        HTMLEditor::CollectNonEditableNodes::Yes);
+    if (NS_FAILED(rv)) {
+      NS_WARNING(
+          "HTMLEditor::SplitInlinesAndCollectEditTargetNodesInOneHardLine("
+          "eMergeBlockContents, CollectNonEditableNodes::Yes) failed");
+      return MoveNodeResult(rv);
+    }
+  }
+  if (!pointToInsert.IsSetAndValid()) {
+    return MoveNodeResult(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
   if (arrayOfContents.IsEmpty()) {
-    return MoveNodeIgnored(aPointToInsert);
+    return MoveNodeIgnored(pointToInsert);
   }
 
-  uint32_t offset = aPointToInsert.Offset();
+  uint32_t offset = pointToInsert.Offset();
   MoveNodeResult result;
   for (auto& content : arrayOfContents) {
     if (aMoveToEndOfContainer == MoveToEndOfContainer::Yes) {
       
       
-      offset = aPointToInsert.GetContainer()->Length();
+      offset = pointToInsert.GetContainer()->Length();
     }
     
     if (HTMLEditUtils::IsBlockElement(content)) {
       
       result |= MoveChildrenWithTransaction(
           MOZ_KnownLive(*content->AsElement()),
-          EditorDOMPoint(aPointToInsert.GetContainer(), offset));
+          EditorDOMPoint(pointToInsert.GetContainer(), offset));
       if (result.Failed()) {
         NS_WARNING("HTMLEditor::MoveChildrenWithTransaction() failed");
         return result;
@@ -4743,7 +4751,7 @@ MoveNodeResult HTMLEditor::MoveOneHardLineContents(
         
         
         
-        offset = std::min(offset, aPointToInsert.GetContainer()->Length());
+        offset = std::min(offset, pointToInsert.GetContainer()->Length());
       }
       continue;
     }
@@ -4752,7 +4760,7 @@ MoveNodeResult HTMLEditor::MoveOneHardLineContents(
     
     MoveNodeResult moveNodeResult = MoveNodeOrChildrenWithTransaction(
         MOZ_KnownLive(content),
-        EditorDOMPoint(aPointToInsert.GetContainer(), offset));
+        EditorDOMPoint(pointToInsert.GetContainer(), offset));
     if (NS_WARN_IF(moveNodeResult.EditorDestroyed())) {
       return MoveNodeResult(NS_ERROR_EDITOR_DESTROYED);
     }
