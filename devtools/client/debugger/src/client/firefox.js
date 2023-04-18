@@ -156,17 +156,6 @@ async function onSourceAvailable(sources) {
       })
       .map(async sourceFront => {
         const threadFront = await sourceFront.targetFront.getFront("thread");
-        
-        
-        if (
-          typeof sourceFront.sourceMapBaseURL === "undefined" &&
-          typeof sourceFront.introductionUrl !== "undefined"
-        ) {
-          sourceFront.sourceMapBaseURL =
-            sourceFront.url || sourceFront.introductionUrl || null;
-          delete sourceFront.introductionUrl;
-        }
-
         return { thread: threadFront.actor, sourceFront };
       })
   );

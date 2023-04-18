@@ -355,23 +355,7 @@ async function setEventListenerBreakpoints(ids) {
 }
 
 async function getEventListenerBreakpointTypes() {
-  let categories;
-  try {
-    categories = await currentThreadFront().getAvailableEventBreakpoints();
-
-    if (!Array.isArray(categories)) {
-      
-      
-      
-      
-      
-      
-      categories = null;
-    }
-  } catch (err) {
-    
-  }
-  return categories || [];
+  return currentThreadFront().getAvailableEventBreakpoints();
 }
 
 function pauseGrip(thread, func) {
@@ -407,24 +391,14 @@ async function getSourceActorBreakpointPositions({ thread, actor }, range) {
 }
 
 async function getSourceActorBreakableLines({ thread, actor }) {
-  let sourceFront;
   let actorLines = [];
   try {
     const sourceThreadFront = lookupThreadFront(thread);
-    sourceFront = sourceThreadFront.source({ actor });
+    const sourceFront = sourceThreadFront.source({ actor });
     actorLines = await sourceFront.getBreakableLines();
   } catch (e) {
     
-    if (
-      e.message &&
-      e.message.match(/does not recognize the packet type getBreakableLines/)
-    ) {
-      const pos = await sourceFront.getBreakpointPositionsCompressed();
-      actorLines = Object.keys(pos).map(line => Number(line));
-    } else {
-      
-      console.warn(`getSourceActorBreakableLines failed: ${e}`);
-    }
+    console.warn(`getSourceActorBreakableLines failed: ${e}`);
   }
 
   return actorLines;
