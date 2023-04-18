@@ -889,6 +889,7 @@ BrowserGlue.prototype = {
   _migrationImportsDefaultBookmarks: false,
   _placesBrowserInitComplete: false,
   _isNewProfile: undefined,
+  _defaultCookieBehaviorAtStartup: null,
 
   _setPrefToSaveSession: function BG__setPrefToSaveSession(aForce) {
     if (!this._saveSession && !aForce) {
@@ -1675,9 +1676,16 @@ BrowserGlue.prototype = {
     PlacesUtils.favicons.setDefaultIconURIPreferredSize(
       16 * aWindow.devicePixelRatio
     );
+
+    
+    
+    BrowserGlue._defaultCookieBehaviorAtStartup = Services.prefs
+      .getDefaultBranch("")
+      .getIntPref("network.cookie.cookieBehavior");
     
     
     this._setDefaultCookieBehavior();
+
     this._setPrefExpectationsAndUpdate();
     this._matchCBCategory();
 
@@ -1753,7 +1761,7 @@ BrowserGlue.prototype = {
       "network.cookie.cookieBehavior",
       dFPIEnabled
         ? Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
-        : Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER
+        : BrowserGlue._defaultCookieBehaviorAtStartup
     );
 
     Services.telemetry.scalarSet(

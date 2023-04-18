@@ -5,6 +5,12 @@ const { TelemetryTestUtils } = ChromeUtils.import(
   "resource://testing-common/TelemetryTestUtils.jsm"
 );
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "BrowserGlue",
+  "resource:///modules/BrowserGlue.jsm"
+);
+
 const PREF_DFPI_ENABLED_BY_DEFAULT =
   "privacy.restrict3rdpartystorage.rollout.enabledByDefault";
 const COOKIE_BEHAVIOR_PREF = "network.cookie.cookieBehavior";
@@ -24,14 +30,22 @@ const SEARCH_PREFS_OPT_OUT = [
   ["browser.search.param.bing_ptag", "MOZZ0000000032"],
 ];
 
-registerCleanupFunction(function() {
+function cleanup() {
+  [...SEARCH_PREFS_OPT_IN, ...SEARCH_PREFS_OPT_OUT].forEach(([key]) =>
+    Services.prefs.clearUserPref(key)
+  );
+
+  [COOKIE_BEHAVIOR_PREF, PREF_DFPI_ENABLED_BY_DEFAULT].forEach(
+    Services.prefs.clearUserPref
+  );
+
+  BrowserGlue._defaultCookieBehaviorAtStartup = previousDefaultCB;
   defaultPrefs.setIntPref(COOKIE_BEHAVIOR_PREF, previousDefaultCB);
-  [
-    PREF_DFPI_ENABLED_BY_DEFAULT,
-    ...SEARCH_PREFS_OPT_IN,
-    ...SEARCH_PREFS_OPT_OUT,
-  ].forEach(([key]) => Services.prefs.clearUserPref(key));
-});
+
+  
+  
+  Services.telemetry.scalarSet("privacy.dfpi_rollout_enabledByDefault", 2);
+}
 
 function testSearchPrefState(optIn) {
   let expectedPrefs = optIn ? SEARCH_PREFS_OPT_IN : SEARCH_PREFS_OPT_OUT;
@@ -68,6 +82,11 @@ function testTelemetryState(optIn) {
 
 
 add_task(async function testdFPIRolloutPref() {
+  
+  
+  
+  BrowserGlue._defaultCookieBehaviorAtStartup =
+    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER;
   defaultPrefs.setIntPref(
     COOKIE_BEHAVIOR_PREF,
     Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER
@@ -107,4 +126,77 @@ add_task(async function testdFPIRolloutPref() {
   );
   testSearchPrefState(true);
   testTelemetryState(true);
+
+  cleanup();
+});
+
+
+
+
+
+add_task(async function testdFPIRolloutPrefNonDefaultCookieBehavior() {
+  BrowserGlue._defaultCookieBehaviorAtStartup =
+    Ci.nsICookieService.BEHAVIOR_ACCEPT;
+  defaultPrefs.setIntPref(
+    COOKIE_BEHAVIOR_PREF,
+    Ci.nsICookieService.BEHAVIOR_ACCEPT
+  );
+
+  is(
+    Services.prefs.getIntPref(COOKIE_BEHAVIOR_PREF),
+    Ci.nsICookieService.BEHAVIOR_ACCEPT,
+    "Initial cookie behavior should be BEHAVIOR_ACCEPT"
+  );
+
+  Services.prefs.setBoolPref(PREF_DFPI_ENABLED_BY_DEFAULT, true);
+  is(
+    defaultPrefs.getIntPref(COOKIE_BEHAVIOR_PREF),
+    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+    "Default cookie behavior should be set to dFPI."
+  );
+
+  Services.prefs.setBoolPref(PREF_DFPI_ENABLED_BY_DEFAULT, false);
+  is(
+    defaultPrefs.getIntPref(COOKIE_BEHAVIOR_PREF),
+    Ci.nsICookieService.BEHAVIOR_ACCEPT,
+    "Default cookie behavior should be set to BEHAVIOR_ACCEPT."
+  );
+
+  cleanup();
+});
+
+
+
+
+
+add_task(async function testdFPIRolloutPrefDFPIAlreadyEnabled() {
+  
+  BrowserGlue._defaultCookieBehaviorAtStartup =
+    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN;
+  defaultPrefs.setIntPref(
+    COOKIE_BEHAVIOR_PREF,
+    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
+  );
+
+  is(
+    Services.prefs.getIntPref(COOKIE_BEHAVIOR_PREF),
+    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+    "Initial cookie behavior should be BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN"
+  );
+
+  Services.prefs.setBoolPref(PREF_DFPI_ENABLED_BY_DEFAULT, true);
+  is(
+    defaultPrefs.getIntPref(COOKIE_BEHAVIOR_PREF),
+    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+    "Default cookie behavior should still be BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN."
+  );
+
+  Services.prefs.setBoolPref(PREF_DFPI_ENABLED_BY_DEFAULT, false);
+  is(
+    defaultPrefs.getIntPref(COOKIE_BEHAVIOR_PREF),
+    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+    "Default cookie behavior should still be BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN."
+  );
+
+  cleanup();
 });
