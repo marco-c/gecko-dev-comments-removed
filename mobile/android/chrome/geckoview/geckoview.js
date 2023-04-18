@@ -13,6 +13,7 @@ var { XPCOMUtils } = ChromeUtils.import(
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  Blocklist: "resource://gre/modules/Blocklist.jsm",
   E10SUtils: "resource://gre/modules/E10SUtils.jsm",
   EventDispatcher: "resource://gre/modules/Messaging.jsm",
   GeckoViewActorManager: "resource://gre/modules/GeckoViewActorManager.jsm",
@@ -789,6 +790,12 @@ function startup() {
       
       
       Services.fog.registerCustomPings();
+    });
+
+    InitLater(() => {
+      
+      
+      Blocklist.loadBlocklistAsync();
     });
 
     

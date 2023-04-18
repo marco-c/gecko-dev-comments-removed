@@ -1435,7 +1435,11 @@ let Blocklist = {
 
   loadBlocklistAsync() {
     
-    GfxBlocklistRS.checkForEntries();
+    
+    
+    if (!GfxBlocklistRS._initialized) {
+      GfxBlocklistRS.checkForEntries();
+    }
     this.ExtensionBlocklist.ensureInitialized();
   },
 
