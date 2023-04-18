@@ -450,8 +450,9 @@ uint32_t TimeoutManager::GetTimeoutId(Timeout::Reason aReason) {
     case Timeout::Reason::eIdleCallbackTimeout:
       return ++mIdleCallbackTimeoutCounter;
     case Timeout::Reason::eTimeoutOrInterval:
-    default:
       return ++mTimeoutIdCounter;
+    case Timeout::Reason::eAbortSignalTimeout:
+      return std::numeric_limits<uint32_t>::max();  
   }
 }
 
@@ -491,9 +492,13 @@ nsresult TimeoutManager::SetTimeout(TimeoutHandler* aHandler, int32_t interval,
   
   timeout->mPopupState = PopupBlocker::openAbused;
 
-  timeout->mNestingLevel = sNestingLevel < DOM_CLAMP_TIMEOUT_NESTING_LEVEL
-                               ? sNestingLevel + 1
-                               : sNestingLevel;
+  
+  if (aReason == Timeout::Reason::eTimeoutOrInterval ||
+      aReason == Timeout::Reason::eIdleCallbackTimeout) {
+    timeout->mNestingLevel = sNestingLevel < DOM_CLAMP_TIMEOUT_NESTING_LEVEL
+                                 ? sNestingLevel + 1
+                                 : sNestingLevel;
+  }
 
   
   TimeDuration realInterval = CalculateDelay(timeout);
@@ -559,6 +564,10 @@ void TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason) {
 bool TimeoutManager::ClearTimeoutInternal(int32_t aTimerId,
                                           Timeout::Reason aReason,
                                           bool aIsIdle) {
+  MOZ_ASSERT(aReason == Timeout::Reason::eTimeoutOrInterval ||
+                 aReason == Timeout::Reason::eIdleCallbackTimeout,
+             "This timeout reason doesn't support cancellation.");
+
   uint32_t timerId = (uint32_t)aTimerId;
   Timeouts& timeouts = aIsIdle ? mIdleTimeouts : mTimeouts;
   RefPtr<TimeoutExecutor>& executor = aIsIdle ? mIdleExecutor : mExecutor;
