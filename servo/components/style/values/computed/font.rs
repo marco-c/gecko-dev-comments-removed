@@ -584,19 +584,11 @@ impl FontFamilyList {
     }
 
     
-    pub (crate) fn needs_user_font_prioritization(&self) -> bool {
-        self.iter().next().map_or(true, |f| match f {
-            SingleFontFamily::Generic(f) => !f.valid_for_user_font_prioritization(),
-            _ => true,
-        })
-    }
-
-    
     pub fn single_generic(&self) -> Option<GenericFontFamily> {
         let mut iter = self.iter();
         if let Some(SingleFontFamily::Generic(f)) = iter.next() {
             if iter.next().is_none() {
-                return Some(*f);
+                return Some(f.clone());
             }
         }
         None
