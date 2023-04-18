@@ -1710,10 +1710,11 @@ class nsIWidget : public nsISupports {
   
   
   
-  virtual nsRect GetPreferredPopupRect() {
+  virtual LayoutDeviceIntRect GetPreferredPopupRect() const {
     NS_WARNING("GetPreferredPopupRect implemented only for wayland");
-    return nsRect(0, 0, 0, 0);
+    return LayoutDeviceIntRect();
   }
+
   virtual void FlushPreferredPopupRect() {
     NS_WARNING("FlushPreferredPopupRect implemented only for wayland");
     return;

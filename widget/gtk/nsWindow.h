@@ -393,9 +393,11 @@ class nsWindow final : public nsBaseWidget {
       const LayoutDeviceIntPoint& aLockCenter) override;
   void LockNativePointer() override;
   void UnlockNativePointer() override;
-  nsRect GetPreferredPopupRect() override { return mPreferredPopupRect; };
+  LayoutDeviceIntRect GetPreferredPopupRect() const override {
+    return mPreferredPopupRect;
+  };
   void FlushPreferredPopupRect() override {
-    mPreferredPopupRect = nsRect(0, 0, 0, 0);
+    mPreferredPopupRect = LayoutDeviceIntRect();
     mPreferredPopupRectFlushed = true;
   };
 #endif
@@ -733,7 +735,7 @@ class nsWindow final : public nsBaseWidget {
   void ApplySizeConstraints(void);
 
   
-  void WaylandGetParentPosition(int* aX, int* aY);
+  GdkPoint WaylandGetParentPosition();
   bool WaylandPopupNeedsTrackInHierarchy();
   bool WaylandPopupIsAnchored();
   bool WaylandPopupIsMenu();
@@ -779,34 +781,25 @@ class nsWindow final : public nsBaseWidget {
 #endif
 
   
-
-
+  
   GdkPoint mPopupPosition{};
 
   
-
   GdkPoint mRelativePopupPosition{};
 
   
-
   GdkPoint mRelativePopupOffset{};
 
   
-
-  LayoutDeviceIntRect mPopupLastAnchor;
-
   
-
-
   RefPtr<nsWindow> mWaylandToplevel;
 
   
-
   RefPtr<nsWindow> mWaylandPopupNext;
   RefPtr<nsWindow> mWaylandPopupPrev;
 
   
-  nsRect mPreferredPopupRect;
+  LayoutDeviceIntRect mPreferredPopupRect;
 
   LayoutDeviceIntRect mNewBoundsAfterMoveToRect;
 
