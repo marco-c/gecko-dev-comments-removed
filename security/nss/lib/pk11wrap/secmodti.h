@@ -107,6 +107,7 @@ struct PK11SlotInfoStr {
     unsigned int lastState;
     
     NSSToken *nssToken;
+    PZLock *nssTokenLock;
     
     CK_TOKEN_INFO tokenInfo;
     

@@ -13,6 +13,7 @@
 #include "pki3hack.h"
 #include "secerr.h"
 #include "dev.h"
+#include "dev3hack.h"
 #include "utilpars.h"
 #include "pkcs11uri.h"
 
@@ -1266,8 +1267,14 @@ SECMOD_WaitForAnyTokenEvent(SECMODModule *mod, unsigned long flags,
     }
     
 
-    if (slot && slot->nssToken && slot->nssToken->slot) {
-        nssSlot_ResetDelay(slot->nssToken->slot);
+    if (slot) {
+        NSSToken *nssToken = PK11Slot_GetNSSToken(slot);
+        if (nssToken) {
+            if (nssToken->slot) {
+                nssSlot_ResetDelay(nssToken->slot);
+            }
+            (void)nssToken_Destroy(nssToken);
+        }
     }
     return slot;
 
@@ -1500,8 +1507,12 @@ SECMOD_OpenNewSlot(SECMODModule *mod, const char *moduleSpec)
     if (slot) {
         
 
-        if (slot->nssToken && slot->nssToken->slot) {
-            nssSlot_ResetDelay(slot->nssToken->slot);
+        NSSToken *nssToken = PK11Slot_GetNSSToken(slot);
+        if (nssToken) {
+            if (nssToken->slot) {
+                nssSlot_ResetDelay(nssToken->slot);
+            }
+            (void)nssToken_Destroy(nssToken);
         }
         
         (void)PK11_IsPresent(slot);
@@ -1631,8 +1642,12 @@ SECMOD_CloseUserDB(PK11SlotInfo *slot)
     PR_smprintf_free(sendSpec);
     
 
-    if (slot->nssToken && slot->nssToken->slot) {
-        nssSlot_ResetDelay(slot->nssToken->slot);
+    NSSToken *nssToken = PK11Slot_GetNSSToken(slot);
+    if (nssToken) {
+        if (nssToken->slot) {
+            nssSlot_ResetDelay(nssToken->slot);
+        }
+        (void)nssToken_Destroy(nssToken);
         
         (void)PK11_IsPresent(slot);
     }

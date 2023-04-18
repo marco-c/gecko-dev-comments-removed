@@ -72,12 +72,16 @@ STAN_InitTokenForSlotInfo(NSSTrustDomain *td, PK11SlotInfo *slot)
         }
     }
     token = nssToken_CreateFromPK11SlotInfo(td, slot);
-    PK11Slot_SetNSSToken(slot, token);
-    
     if (token) {
+        
+        PK11Slot_SetNSSToken(slot, token);
+
+        
         NSSRWLock_LockWrite(td->tokensLock);
         nssList_Add(td->tokenList, token);
         NSSRWLock_UnlockWrite(td->tokensLock);
+    } else {
+        PK11Slot_SetNSSToken(slot, NULL);
     }
     return PR_SUCCESS;
 }
@@ -188,7 +192,8 @@ STAN_RemoveModuleFromDefaultTrustDomain(
             nssList_Remove(td->tokenList, token);
             NSSRWLock_UnlockWrite(td->tokensLock);
             PK11Slot_SetNSSToken(module->slots[i], NULL);
-            nssToken_Destroy(token);
+            (void)nssToken_Destroy(token); 
+            (void)nssToken_Destroy(token); 
         }
     }
     NSSRWLock_LockWrite(td->tokensLock);
@@ -1076,7 +1081,11 @@ STAN_GetNSSCertificate(CERTCertificate *cc)
             nssArena_Destroy(arena);
             return NULL;
         }
-        instance->token = nssToken_AddRef(PK11Slot_GetNSSToken(cc->slot));
+        instance->token = PK11Slot_GetNSSToken(cc->slot);
+        if (!instance->token) {
+            nssArena_Destroy(arena);
+            return NULL;
+        }
         instance->handle = cc->pkcs11ID;
         instance->isTokenObject = PR_TRUE;
         if (cc->nickname) {
@@ -1269,6 +1278,10 @@ STAN_ChangeCertTrust(CERTCertificate *cc, CERTCertTrust *trust)
             NSSASCII7 *email = c->email;
             tok = PK11Slot_GetNSSToken(slot);
             PK11_FreeSlot(slot);
+            if (!tok) {
+                nssrv = PR_FAILURE;
+                goto done;
+            }
 
             newInstance = nssToken_ImportCertificate(tok, NULL,
                                                      NSSCertificateType_PKIX,
@@ -1283,6 +1296,7 @@ STAN_ChangeCertTrust(CERTCertificate *cc, CERTCertTrust *trust)
             nss_ZFreeIf(nickname);
             nickname = NULL;
             if (!newInstance) {
+                (void)nssToken_Destroy(tok);
                 nssrv = PR_FAILURE;
                 goto done;
             }
@@ -1294,6 +1308,7 @@ STAN_ChangeCertTrust(CERTCertificate *cc, CERTCertTrust *trust)
                                                nssTrust->codeSigning,
                                                nssTrust->emailProtection,
                                                nssTrust->stepUpApproved, PR_TRUE);
+            (void)nssToken_Destroy(tok);
         }
         if (newInstance) {
             nssCryptokiObject_Destroy(newInstance);
