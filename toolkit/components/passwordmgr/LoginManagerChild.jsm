@@ -393,7 +393,7 @@ const observer = {
           let [
             usernameField,
             passwordField,
-          ] = loginManagerChild.getUserNameAndPasswordFields(field);
+          ] = docState.getUserNameAndPasswordFields(field);
           if (field == usernameField && passwordField?.value) {
             loginManagerChild._passwordEditedOrGenerated(passwordField, {
               triggeredByFillingGenerated: docState.generatedPasswordFields.has(
@@ -1379,6 +1379,50 @@ class LoginFormState {
       newPasswordField,
       oldPasswordField,
     };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  getUserNameAndPasswordFields(aField) {
+    const noResult = [null, null, null];
+    if (!HTMLInputElement.isInstance(aField)) {
+      throw new Error("getUserNameAndPasswordFields: input element required");
+    }
+
+    if (aField.nodePrincipal.isNullPrincipal || !aField.isConnected) {
+      return noResult;
+    }
+
+    
+    if (
+      !aField.hasBeenTypePassword &&
+      !lazy.LoginHelper.isUsernameFieldType(aField)
+    ) {
+      return noResult;
+    }
+
+    const form = lazy.LoginFormFactory.createFromField(aField);
+    const doc = aField.ownerDocument;
+    const formOrigin = lazy.LoginHelper.getLoginOrigin(doc.documentURI);
+    const recipes = lazy.LoginRecipesContent.getRecipes(
+      formOrigin,
+      doc.defaultView
+    );
+    const {
+      usernameField,
+      newPasswordField,
+      oldPasswordField,
+    } = this._getFormFields(form, false, recipes);
+
+    return [usernameField, newPasswordField, oldPasswordField];
   }
 }
 
@@ -3119,51 +3163,6 @@ class LoginManagerChild extends JSWindowActorChild {
 
 
 
-  getUserNameAndPasswordFields(aField) {
-    let noResult = [null, null, null];
-    if (!HTMLInputElement.isInstance(aField)) {
-      throw new Error("getUserNameAndPasswordFields: input element required");
-    }
-
-    if (aField.nodePrincipal.isNullPrincipal || !aField.isConnected) {
-      return noResult;
-    }
-
-    
-    if (
-      !aField.hasBeenTypePassword &&
-      !lazy.LoginHelper.isUsernameFieldType(aField)
-    ) {
-      return noResult;
-    }
-
-    let form = lazy.LoginFormFactory.createFromField(aField);
-    let doc = aField.ownerDocument;
-    let formOrigin = lazy.LoginHelper.getLoginOrigin(doc.documentURI);
-    let recipes = lazy.LoginRecipesContent.getRecipes(
-      formOrigin,
-      doc.defaultView
-    );
-    const docState = this.stateForDocument(form.ownerDocument);
-    let {
-      usernameField,
-      newPasswordField,
-      oldPasswordField,
-    } = docState._getFormFields(form, false, recipes);
-
-    return [usernameField, newPasswordField, oldPasswordField];
-  }
-
-  
-
-
-
-
-
-
-
-
-
 
   getFieldContext(aField) {
     
@@ -3182,7 +3181,10 @@ class LoginManagerChild extends JSWindowActorChild {
     
     
     const LOGIN_FIELD_ORDER = ["username", "new-password", "current-password"];
-    let usernameAndPasswordFields = this.getUserNameAndPasswordFields(aField);
+    const docState = this.stateForDocument(aField.ownerDocument);
+    let usernameAndPasswordFields = docState.getUserNameAndPasswordFields(
+      aField
+    );
     let fieldNameHint;
     let indexOfFieldInUsernameAndPasswordFields = usernameAndPasswordFields.indexOf(
       aField
