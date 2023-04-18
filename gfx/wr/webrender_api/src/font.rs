@@ -105,7 +105,7 @@ impl FontKey {
 
 
 
-#[derive(Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub enum FontTemplate {
     Raw(Arc<Vec<u8>>, u32),
     Native(NativeFontHandle),

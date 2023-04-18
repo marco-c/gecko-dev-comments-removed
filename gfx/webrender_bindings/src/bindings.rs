@@ -1670,6 +1670,8 @@ pub extern "C" fn wr_window_new(
         precache_flags,
         namespace_alloc_by_client: true,
         
+        shared_font_namespace: Some(next_namespace_id()),
+        
         
         clear_caches_with_quads: !software && !allow_scissored_cache_clears,
         
