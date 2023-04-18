@@ -18,6 +18,7 @@
 #include "nsCOMPtr.h"
 #include "nsILoadInfo.h"  
 #include "nsINode.h"      
+#include "nsThreadUtils.h"  
 #include "nsURIHashKey.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/JSExecutionContext.h"
@@ -157,6 +158,10 @@ class ModuleLoaderBase : public nsISupports {
 
   
   
+  nsCOMPtr<nsISerialEventTarget> mEventTarget;
+
+  
+  
   
   bool mAcquiringImportMaps = true;
 
@@ -171,7 +176,9 @@ class ModuleLoaderBase : public nsISupports {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(ModuleLoaderBase)
   explicit ModuleLoaderBase(ScriptLoaderInterface* aLoader,
-                            nsIGlobalObject* aGlobalObject);
+                            nsIGlobalObject* aGlobalObject,
+                            nsISerialEventTarget* aEventTarget =
+                                mozilla::GetMainThreadSerialEventTarget());
 
   using LoadedScript = JS::loader::LoadedScript;
   using ScriptFetchOptions = JS::loader::ScriptFetchOptions;
