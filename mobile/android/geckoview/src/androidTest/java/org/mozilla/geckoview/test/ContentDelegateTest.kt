@@ -369,6 +369,16 @@ class ContentDelegateTest : BaseSessionTest() {
                 
             }
         })
+
+        val delegate = mainSession.contentDelegate
+        mainSession.contentDelegate = null
+        mainSession.evaluateJS("document.body.style.cursor = 'text'")
+        for (i in 51..70) {
+            mainSession.synthesizeMouseMove(i, 50)
+            
+            mainSession.waitForJS("new Promise(resolve => window.setTimeout(resolve, 100))")
+        }
+        mainSession.contentDelegate = delegate
     }
 
     
