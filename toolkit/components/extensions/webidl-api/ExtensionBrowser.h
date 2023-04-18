@@ -37,6 +37,23 @@ already_AddRefed<Runnable> CreateWorkerDestroyedRunnable(
     const uint64_t aServiceWorkerDescriptorId,
     const nsCOMPtr<nsIURI>& aWorkerBaseURI);
 
+
+
+
+
+class ExtensionEventWakeupMap final
+    : public nsTHashMap<nsStringHashKey, uint64_t> {
+  static void ToMapKey(const nsAString& aAPINamespace,
+                       const nsAString& aAPIName, nsAString& aResultMapKey);
+
+ public:
+  nsresult IncrementListeners(const nsAString& aAPINamespace,
+                              const nsAString& aAPIName);
+  nsresult DecrementListeners(const nsAString& aAPINamespace,
+                              const nsAString& aAPIName);
+  bool HasListener(const nsAString& aAPINamespace, const nsAString& aAPIName);
+};
+
 class ExtensionBrowser final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsIGlobalObject> mGlobal;
   JS::Heap<JS::Value> mLastError;
@@ -46,6 +63,9 @@ class ExtensionBrowser final : public nsISupports, public nsWrapperCache {
   RefPtr<ExtensionRuntime> mExtensionRuntime;
   RefPtr<ExtensionTest> mExtensionTest;
   nsTHashMap<nsStringHashKey, WeakPtr<ExtensionPort>> mPortsLookup;
+
+  
+  ExtensionEventWakeupMap mExpectedEventWakeupMap;
 
   ~ExtensionBrowser() = default;
 
@@ -64,6 +84,12 @@ class ExtensionBrowser final : public nsISupports, public nsWrapperCache {
 
   
   
+  nsresult TrackWakeupEventListener(JSContext* aCx,
+                                    const nsString& aAPINamespace,
+                                    const nsString& aAPIName);
+  nsresult UntrackWakeupEventListener(JSContext* aCx,
+                                      const nsString& aAPINamespace,
+                                      const nsString& aAPIName);
   bool HasWakeupEventListener(const nsString& aAPINamespace,
                               const nsString& aAPIName);
 
