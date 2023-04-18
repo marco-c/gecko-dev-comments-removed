@@ -143,6 +143,10 @@ void LSDatabase::NoteFinishedSnapshot(LSSnapshot* aSnapshot) {
   }
 }
 
+
+
+
+
 nsresult LSDatabase::GetLength(LSObject* aObject, uint32_t* aResult) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(aObject);
@@ -309,6 +313,14 @@ nsresult LSDatabase::EndExplicitSnapshot() {
   }
 
   return NS_OK;
+}
+
+bool LSDatabase::HasSnapshot() const {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(mActor);
+  MOZ_ASSERT(!mAllowedToClose);
+
+  return !!mSnapshot;
 }
 
 nsresult LSDatabase::EnsureSnapshot(LSObject* aObject, const nsAString& aKey,
