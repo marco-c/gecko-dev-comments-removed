@@ -68,6 +68,12 @@ const App = createFactory(
 
 const AboutDebugging = {
   async init() {
+    if (!Services.prefs.getBoolPref("devtools.enabled", true)) {
+      
+      window.location = "about:devtools?reason=AboutDebugging";
+      return;
+    }
+
     const direction = Services.locale.isAppLocaleRTL ? "rtl" : "ltr";
     document.documentElement.setAttribute("dir", direction);
 

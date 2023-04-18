@@ -27,6 +27,7 @@ const kDebuggerPrefs = [
   "devtools.chrome.enabled",
 ];
 
+const DEVTOOLS_ENABLED_PREF = "devtools.enabled";
 const DEVTOOLS_F12_DISABLED_PREF = "devtools.experiment.f12.shortcut_disabled";
 
 const DEVTOOLS_POLICY_DISABLED_PREF = "devtools.policy.disabled";
@@ -86,6 +87,11 @@ XPCOMUtils.defineLazyGetter(this, "Telemetry", function() {
   const Telemetry = require("devtools/client/shared/telemetry");
 
   return Telemetry;
+});
+
+XPCOMUtils.defineLazyGetter(this, "StartupBundle", function() {
+  const url = "chrome://devtools-startup/locale/startup.properties";
+  return Services.strings.createBundle(url);
 });
 
 XPCOMUtils.defineLazyGetter(this, "KeyShortcutsBundle", function() {
@@ -312,6 +318,7 @@ XPCOMUtils.defineLazyGetter(this, "ProfilerPopupBackground", function() {
 });
 
 function DevToolsStartup() {
+  this.onEnabledPrefChanged = this.onEnabledPrefChanged.bind(this);
   this.onWindowReady = this.onWindowReady.bind(this);
   this.addDevToolsItemsToSubview = this.addDevToolsItemsToSubview.bind(this);
   this.onMoreToolsViewShowing = this.onMoreToolsViewShowing.bind(this);
@@ -364,6 +371,10 @@ DevToolsStartup.prototype = {
     if (isInitialLaunch) {
       
       
+      Services.prefs.setBoolPref(DEVTOOLS_ENABLED_PREF, true);
+
+      
+      
       
       if (this.isDevToolsUser()) {
         Services.prefs.setBoolPref(DEVTOOLS_F12_DISABLED_PREF, false);
@@ -379,6 +390,12 @@ DevToolsStartup.prototype = {
       Services.obs.addObserver(
         this.onWindowReady,
         "browser-delayed-startup-finished"
+      );
+
+      
+      Services.prefs.addObserver(
+        DEVTOOLS_ENABLED_PREF,
+        this.onEnabledPrefChanged
       );
 
       
@@ -508,6 +525,9 @@ DevToolsStartup.prototype = {
     if (!this.initialized) {
       this.hookBrowserToolsMenu(window);
     }
+
+    this.createDevToolsEnableMenuItem(window);
+    this.updateDevToolsMenuItems(window);
   },
 
   
@@ -570,9 +590,11 @@ DevToolsStartup.prototype = {
   },
 
   addDevToolsItemsToSubview(subview) {
-    
-    
-    this.initDevTools("HamburgerMenu");
+    if (Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
+      
+      
+      this.initDevTools("HamburgerMenu");
+    }
 
     
     
@@ -674,10 +696,62 @@ DevToolsStartup.prototype = {
   hookBrowserToolsMenu(window) {
     const menu = window.document.getElementById("browserToolsMenu");
     const onPopupShowing = () => {
+      if (!Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
+        return;
+      }
       menu.removeEventListener("popupshowing", onPopupShowing);
       this.initDevTools("SystemMenu");
     };
     menu.addEventListener("popupshowing", onPopupShowing);
+  },
+
+  
+
+
+
+  createDevToolsEnableMenuItem(window) {
+    const { document } = window;
+
+    
+    const item = document.createXULElement("menuitem");
+    item.id = "enableDeveloperTools";
+    item.setAttribute(
+      "label",
+      StartupBundle.GetStringFromName("enableDevTools.label")
+    );
+    item.setAttribute(
+      "accesskey",
+      StartupBundle.GetStringFromName("enableDevTools.accesskey")
+    );
+
+    
+    item.addEventListener("command", () => {
+      this.openInstallPage("SystemMenu");
+    });
+
+    
+    const systemMenuItem = document.getElementById("menuWebDeveloperPopup");
+    systemMenuItem.appendChild(item);
+  },
+
+  
+
+
+  updateDevToolsMenuItems(window) {
+    const item = window.document.getElementById("enableDeveloperTools");
+    item.hidden = Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF);
+  },
+
+  
+
+
+
+  onEnabledPrefChanged() {
+    for (const window of Services.wm.getEnumerator("navigator:browser")) {
+      if (window.gBrowserInit && window.gBrowserInit.delayedStartupFinished) {
+        this.updateDevToolsMenuItems(window);
+      }
+    }
   },
 
   
@@ -790,16 +864,20 @@ DevToolsStartup.prototype = {
           return;
         }
       }
-
-      
-      
-      
-      const startTime = Cu.now();
-      const require = this.initDevTools("KeyShortcut", key);
-      const {
-        gDevToolsBrowser,
-      } = require("devtools/client/framework/devtools-browser");
-      await gDevToolsBrowser.onKeyShortcut(window, key, startTime);
+      if (!Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
+        const id = key.toolId || key.id;
+        this.openInstallPage("KeyShortcut", id);
+      } else {
+        
+        
+        
+        const startTime = Cu.now();
+        const require = this.initDevTools("KeyShortcut", key);
+        const {
+          gDevToolsBrowser,
+        } = require("devtools/client/framework/devtools-browser");
+        await gDevToolsBrowser.onKeyShortcut(window, key, startTime);
+      }
     } catch (e) {
       console.error(`Exception while trigerring key ${key}: ${e}\n${e.stack}`);
     }
@@ -837,6 +915,12 @@ DevToolsStartup.prototype = {
 
   initDevTools: function(reason, key = "") {
     
+    if (!Services.prefs.getBoolPref(DEVTOOLS_ENABLED_PREF)) {
+      this.openInstallPage(reason);
+      return null;
+    }
+
+    
     
     if (reason !== "CommandLine") {
       this.sendEntryPointTelemetry(reason, key);
@@ -850,6 +934,66 @@ DevToolsStartup.prototype = {
     
     require("devtools/client/framework/devtools-browser");
     return require;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  openInstallPage: function(reason, keyId) {
+    
+    
+    if (this.isDisabledByPolicy()) {
+      return;
+    }
+
+    const { gBrowser } = Services.wm.getMostRecentWindow("navigator:browser");
+
+    
+    for (const tab of gBrowser.tabs) {
+      const browser = tab.linkedBrowser;
+      
+      const location = browser.documentURI ? browser.documentURI.spec : "";
+      if (
+        location.startsWith("about:devtools") &&
+        !location.startsWith("about:devtools-toolbox")
+      ) {
+        
+        gBrowser.selectedTab = tab;
+        return;
+      }
+    }
+
+    let url = "about:devtools";
+
+    const params = [];
+    if (reason) {
+      params.push("reason=" + encodeURIComponent(reason));
+    }
+
+    const selectedBrowser = gBrowser.selectedBrowser;
+    if (selectedBrowser) {
+      params.push("tabid=" + selectedBrowser.outerWindowID);
+    }
+
+    if (keyId) {
+      params.push("keyid=" + keyId);
+    }
+
+    if (params.length > 0) {
+      url += "?" + params.join("&");
+    }
+
+    
+    gBrowser.selectedTab = gBrowser.addTrustedTab(url, {
+      relatedToCurrent: true,
+    });
   },
 
   handleConsoleFlag: function(cmdLine) {
