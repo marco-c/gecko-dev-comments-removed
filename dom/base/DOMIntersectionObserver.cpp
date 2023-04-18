@@ -379,32 +379,17 @@ static Maybe<nsRect> ComputeTheIntersection(
       
       
       
+      
+      
+      
       intersectionRect = EdgeInclusiveIntersection(
           intersectionRectRelativeToContainer, subFrameRect);
       if (!intersectionRect) {
         return Nothing();
       }
       target = containerFrame;
-    } else {
-      const auto& disp = *containerFrame->StyleDisplay();
-      auto clipAxes = containerFrame->ShouldApplyOverflowClipping(&disp);
-      
-      if (clipAxes != PhysicalAxes::None) {
-        
-        nsRect intersectionRectRelativeToContainer =
-            nsLayoutUtils::TransformFrameRectToAncestor(
-                target, intersectionRect.value(), containerFrame);
-        OverflowAreas::ApplyOverflowClippingOnRect(
-            intersectionRectRelativeToContainer,
-            containerFrame->GetRectRelativeToSelf(), clipAxes,
-            containerFrame->OverflowClipMargin(clipAxes));
-        if (intersectionRectRelativeToContainer.IsEmpty()) {
-          return Nothing();
-        }
-        intersectionRect = Some(intersectionRectRelativeToContainer);
-        target = containerFrame;
-      }
     }
+
     containerFrame =
         nsLayoutUtils::GetCrossDocParentFrameInProcess(containerFrame);
   }
