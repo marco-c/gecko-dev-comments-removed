@@ -7,7 +7,7 @@
 
 import React from "react";
 import ReactDOM from "react-dom";
-import PopularTopics from "../components/PopularTopics/PopularTopics";
+import PopularTopicsLegacy from "../components/PopularTopicsLegacy/PopularTopicsLegacy";
 import Home from "../components/Home/Home";
 import pktPanelMessaging from "../messages.js";
 
@@ -73,7 +73,7 @@ HomeOverlay.prototype = {
       
       if (locale.startsWith("en")) {
         ReactDOM.render(
-          <PopularTopics
+          <PopularTopicsLegacy
             pockethost={templateData.pockethost}
             utmsource={templateData.utmsource}
             topics={[

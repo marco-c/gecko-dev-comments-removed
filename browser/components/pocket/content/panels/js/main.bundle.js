@@ -2,7 +2,7 @@
  	"use strict";
  	var __webpack_modules__ = ({
 
- 318:
+ 707:
  ((__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) => {
 
 
@@ -16,7 +16,7 @@ var react_dom = __webpack_require__(935);
 
 
 
-function PopularTopics(props) {
+function PopularTopicsLegacy(props) {
   return react.createElement(react.Fragment, null, react.createElement("h3", {
     "data-l10n-id": "pocket-panel-home-explore-popular-topics"
   }), react.createElement("ul", null, props.topics.map(item => react.createElement("li", {
@@ -33,7 +33,7 @@ function PopularTopics(props) {
   }));
 }
 
- const PopularTopics_PopularTopics = (PopularTopics);
+ const PopularTopicsLegacy_PopularTopicsLegacy = (PopularTopicsLegacy);
 ;
 
 
@@ -189,7 +189,7 @@ HomeOverlay.prototype = {
       
 
       if (locale.startsWith("en")) {
-        react_dom.render( react.createElement(PopularTopics_PopularTopics, {
+        react_dom.render( react.createElement(PopularTopicsLegacy_PopularTopicsLegacy, {
           pockethost: templateData.pockethost,
           utmsource: templateData.utmsource,
           topics: [{
@@ -954,6 +954,25 @@ function ArticleList(props) {
 
 
 
+function PopularTopics(props) {
+  return react.createElement("ul", {
+    className: "stp_popular_topics"
+  }, props.topics.map(topic => react.createElement("li", {
+    key: `item-${topic.topic}`,
+    className: "stp_popular_topic"
+  }, react.createElement("a", {
+    className: "stp_popular_topic_link",
+    href: `https://${props.pockethost}/explore/${topic.topic}?utm_source=${props.utmsource}`
+  }, topic.title))));
+}
+
+ const PopularTopics_PopularTopics = (PopularTopics);
+;
+
+
+
+
+
 var StyleGuideOverlay = function (options) {};
 
 StyleGuideOverlay.prototype = {
@@ -1251,7 +1270,7 @@ window.pktPanelMessaging = messages;
  	
  	
  	
- 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(318)))
+ 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(707)))
  	__webpack_exports__ = __webpack_require__.O(__webpack_exports__);
  	
  })()
