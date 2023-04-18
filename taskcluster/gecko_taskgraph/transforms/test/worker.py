@@ -166,7 +166,8 @@ def set_worker_type(config, tasks):
         
         
         test_platform = task["test-platform"]
-        if task.get("worker-type"):
+        if task.get("worker-type") and task.get("worker-type") != "default":
+            
             
             pass
         elif test_platform.startswith("macosx1014-64"):
