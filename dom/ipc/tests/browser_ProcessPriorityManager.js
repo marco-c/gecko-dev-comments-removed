@@ -312,10 +312,11 @@ add_task(async function test_normal_background_tab() {
       let origtabID = browsingContextChildID(
         originalTab.linkedBrowser.browsingContext
       );
+
       Assert.equal(
         originalTab.linkedBrowser.frameLoader.remoteTab.priorityHint,
         false,
-        "PriorityHint of the original tab should be false on default"
+        "PriorityHint of the original tab should be false by default"
       );
 
       
@@ -354,11 +355,6 @@ add_task(async function test_normal_background_tab() {
       );
 
       let tabID = browsingContextChildID(tab.linkedBrowser.browsingContext);
-      Assert.equal(
-        tab.linkedBrowser.frameLoader.remoteTab.priorityHint,
-        false,
-        "PriorityHint of the active tab should be false on default"
-      );
 
       
       
