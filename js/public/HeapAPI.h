@@ -100,16 +100,6 @@ struct TenuredChunkInfo {
 
  public:
   
-  Arena* freeArenasHead;
-
-  
-
-
-
-
-  uint32_t lastDecommittedPageOffset;
-
-  
   uint32_t numArenasFree;
 
   
@@ -137,19 +127,24 @@ struct TenuredChunkInfo {
 
 
 
+
 const size_t BitsPerPageWithHeaders =
-    (ArenaSize + ArenaBitmapBytes) * ArenasPerPage * CHAR_BIT + 1;
+    (ArenaSize + ArenaBitmapBytes) * ArenasPerPage * CHAR_BIT + ArenasPerPage +
+    1;
 const size_t ChunkBitsAvailable =
     (ChunkSize - sizeof(ChunkBase) - sizeof(TenuredChunkInfo)) * CHAR_BIT;
 const size_t PagesPerChunk = ChunkBitsAvailable / BitsPerPageWithHeaders;
-const size_t DecommitBits = PagesPerChunk;
 const size_t ArenasPerChunk = PagesPerChunk * ArenasPerPage;
+const size_t FreeCommittedBits = ArenasPerChunk;
+const size_t DecommitBits = PagesPerChunk;
 const size_t BitsPerArenaWithHeaders =
-    (ArenaSize + ArenaBitmapBytes) * CHAR_BIT + (DecommitBits / ArenasPerChunk);
+    (ArenaSize + ArenaBitmapBytes) * CHAR_BIT +
+    (DecommitBits / ArenasPerChunk) + 1;
 
 const size_t CalculatedChunkSizeRequired =
     sizeof(ChunkBase) + sizeof(TenuredChunkInfo) +
     RoundUp(ArenasPerChunk * ArenaBitmapBytes, sizeof(uintptr_t)) +
+    RoundUp(FreeCommittedBits, sizeof(uint32_t) * CHAR_BIT) / CHAR_BIT +
     RoundUp(DecommitBits, sizeof(uint32_t) * CHAR_BIT) / CHAR_BIT +
     ArenasPerChunk * ArenaSize;
 static_assert(CalculatedChunkSizeRequired <= ChunkSize,
@@ -216,14 +211,18 @@ static_assert(ArenaBitmapBytes * ArenasPerChunk == sizeof(MarkBitmap),
               "Ensure our MarkBitmap actually covers all arenas.");
 
 
-using DecommitBitmap = mozilla::BitSet<PagesPerChunk, uint32_t>;
+using ChunkPageBitmap = mozilla::BitSet<PagesPerChunk, uint32_t>;
+
+
+using ChunkArenaBitmap = mozilla::BitSet<ArenasPerChunk, uint32_t>;
 
 
 class TenuredChunkBase : public ChunkBase {
  public:
   TenuredChunkInfo info;
   MarkBitmap markBits;
-  DecommitBitmap decommittedPages;
+  ChunkArenaBitmap freeCommittedArenas;
+  ChunkPageBitmap decommittedPages;
 
  protected:
   explicit TenuredChunkBase(JSRuntime* runtime) : ChunkBase(runtime, nullptr) {}

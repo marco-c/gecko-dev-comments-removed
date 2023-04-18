@@ -613,7 +613,8 @@ class TenuredChunk : public TenuredChunkBase {
     return offset >= offsetof(TenuredChunk, arenas) && offset < ChunkSize;
   }
 
-  static size_t arenaIndex(uintptr_t addr) {
+  static size_t arenaIndex(const Arena* arena) {
+    uintptr_t addr = arena->address();
     MOZ_ASSERT(!TenuredChunk::fromAddress(addr)->isNurseryChunk());
     MOZ_ASSERT(withinValidRange(addr));
     uintptr_t offset = addr & ChunkMask;
@@ -657,29 +658,20 @@ class TenuredChunk : public TenuredChunkBase {
 
 #ifdef DEBUG
   void verify() const;
+#else
+  void verify() const {}
 #endif
 
  private:
-  
-  unsigned findDecommittedPageOffset();
   void commitOnePage(GCRuntime* gc);
-
-  void addArenaToFreeList(GCRuntime* gc, Arena* arena);
-
-  
-  void addArenasInPageToFreeList(GCRuntime* gc, size_t pageIndex);
-  
-  void markArenasInPageDecommitted(size_t pageIndex);
 
   void updateChunkListAfterAlloc(GCRuntime* gc, const AutoLockGC& lock);
   void updateChunkListAfterFree(GCRuntime* gc, size_t numArenasFree,
                                 const AutoLockGC& lock);
 
   
-  void rebuildFreeArenasList();
+  bool canDecommitPage(size_t pageIndex) const;
 
-  
-  bool isPageFree(size_t pageIndex) const;
   
   
   
@@ -689,7 +681,7 @@ class TenuredChunk : public TenuredChunkBase {
 
   
   size_t pageIndex(const Arena* arena) const {
-    return pageIndex(arenaIndex(arena->address()));
+    return pageIndex(arenaIndex(arena));
   }
   size_t pageIndex(size_t arenaIndex) const {
     return arenaIndex / ArenasPerPage;
