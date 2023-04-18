@@ -2,10 +2,8 @@
 
 
 
-import {
-  getBreakpointsForSource,
-  initialBreakpointsState,
-} from "../breakpoints";
+import { initialBreakpointsState } from "../breakpoints";
+import { getBreakpointsForSource } from "../../selectors/breakpoints";
 
 import { makeMockBreakpoint, makeMockSource } from "../../utils/test-mockup";
 
