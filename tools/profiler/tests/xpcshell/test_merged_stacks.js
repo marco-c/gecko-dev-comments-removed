@@ -47,9 +47,11 @@ add_task(async () => {
       
       
       
-      /^functionA \(.+test_merged_stacks\.js:\d+:\d+\)$/,
-      /^functionB \(.+test_merged_stacks\.js:\d+:\d+\)$/,
-      /^functionC \(.+test_merged_stacks\.js:\d+:\d+\)$/,
+      
+      
+      /^functionA \(.*test_merged_stacks\.js:\d+:\d+\)$/,
+      /^functionB \(.*test_merged_stacks\.js:\d+:\d+\)$/,
+      /^functionC \(.*test_merged_stacks\.js:\d+:\d+\)$/,
       
       
       nativeStack,
