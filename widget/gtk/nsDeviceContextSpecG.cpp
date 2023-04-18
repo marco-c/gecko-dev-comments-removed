@@ -224,8 +224,7 @@ static GUniquePtr<GtkPaperSize> GetStandardGtkPaperSize(
 
 
 
-NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget* aWidget,
-                                           nsIPrintSettings* aPS,
+NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIPrintSettings* aPS,
                                            bool aIsPrintPreview) {
   RefPtr<nsPrintSettingsGTK> settings = do_QueryObject(aPS);
   if (!settings) {

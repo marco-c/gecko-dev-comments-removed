@@ -40,8 +40,7 @@ class nsIDeviceContextSpec : public nsISupports {
 
 
 
-  NS_IMETHOD Init(nsIWidget* aWidget, nsIPrintSettings* aPrintSettings,
-                  bool aIsPrintPreview) = 0;
+  NS_IMETHOD Init(nsIPrintSettings* aPrintSettings, bool aIsPrintPreview) = 0;
 
   virtual already_AddRefed<PrintTarget> MakePrintTarget() = 0;
 
