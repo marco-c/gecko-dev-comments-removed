@@ -32,15 +32,13 @@ MOZ_ALWAYS_INLINE bool AtomMarkingRuntime::inlinedMarkAtomInternal(
   static_assert(std::is_same_v<T, JSAtom> || std::is_same_v<T, JS::Symbol>,
                 "Should only be called with JSAtom* or JS::Symbol* argument");
 
+  MOZ_ASSERT(cx->isMainThreadContext());
+  MOZ_ASSERT(cx->zone());
+  MOZ_ASSERT(!cx->zone()->isAtomsZone());
+
   MOZ_ASSERT(thing);
   js::gc::TenuredCell* cell = &thing->asTenured();
   MOZ_ASSERT(cell->zoneFromAnyThread()->isAtomsZone());
-
-  
-  if (!cx->zone()) {
-    return true;
-  }
-  MOZ_ASSERT(!cx->zone()->isAtomsZone());
 
   
   
@@ -59,13 +57,11 @@ MOZ_ALWAYS_INLINE bool AtomMarkingRuntime::inlinedMarkAtomInternal(
     cx->zone()->markedAtoms().setBit(bit);
   }
 
-  if (!cx->isHelperThreadContext()) {
-    
-    
-    
-    
-    ReadBarrier(thing);
-  }
+  
+  
+  
+  
+  ReadBarrier(thing);
 
   
   
