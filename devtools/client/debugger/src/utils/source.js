@@ -70,6 +70,60 @@ export function shouldBlackbox(source) {
 
 
 
+
+
+
+
+export function isFrameBlackBoxed(frame, source, blackboxedRanges) {
+  return (
+    !!source?.isBlackBoxed &&
+    (!blackboxedRanges[source.url].length ||
+      !!findBlackBoxRange(source, blackboxedRanges, {
+        start: frame.location.line,
+        end: frame.location.line,
+      }))
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function findBlackBoxRange(source, blackboxedRanges, lineRange) {
+  const ranges = blackboxedRanges[source.url];
+  if (!ranges || !ranges.length) {
+    return null;
+  }
+
+  return ranges.find(
+    range =>
+      (lineRange.start >= range.start.line &&
+        lineRange.start <= range.end.line) ||
+      (lineRange.end >= range.start.line && lineRange.end <= range.end.line)
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
 export function isJavaScript(source, content) {
   const extension = getFileExtension(source).toLowerCase();
   const contentType = content.type === "wasm" ? null : content.contentType;

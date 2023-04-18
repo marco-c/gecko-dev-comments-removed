@@ -9,6 +9,7 @@ import {
   getRawSourceURL,
   getFilename,
   shouldBlackbox,
+  findBlackBoxRange,
 } from "../../../utils/source";
 import { toSourceLine } from "../../../utils/editor";
 import { downloadFile } from "../../../utils/utils";
@@ -90,27 +91,6 @@ const blackBoxMenuItem = (cx, selectedSource, editorActions) => ({
   disabled: !shouldBlackbox(selectedSource),
   click: () => editorActions.toggleBlackBox(cx, selectedSource),
 });
-
-
-
-
-
-
-
-
-
-function findBlackBoxRange(source, blackboxedRanges, line) {
-  const ranges = blackboxedRanges[source.url];
-  if (!ranges || !ranges.length) {
-    return null;
-  }
-
-  return ranges.find(
-    range =>
-      (line.start >= range.start.line && line.start <= range.end.line) ||
-      (line.end >= range.start.line && line.end <= range.end.line)
-  );
-}
 
 export const blackBoxLineMenuItem = (
   cx,
