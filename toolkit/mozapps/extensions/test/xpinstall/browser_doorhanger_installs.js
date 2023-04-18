@@ -474,7 +474,7 @@ var TESTS = [
       ],
     });
 
-    let notificationPromise = waitForNotification("addon-webext-permissions");
+    let notificationPromise = waitForNotification("addon-install-blocked");
     let triggers = encodeURIComponent(
       JSON.stringify({
         XPI: TESTROOT + "webmidi_permission.xpi",
@@ -485,7 +485,29 @@ var TESTS = [
       TESTROOT + "installtrigger.html?" + triggers
     );
     let panel = await notificationPromise;
+
     let notification = panel.childNodes[0];
+    is(
+      notification.button.label,
+      "Continue to Installation",
+      "Should have seen the right button"
+    );
+    let message = panel.ownerDocument.getElementById(
+      "addon-install-blocked-message"
+    );
+    is(
+      message.textContent,
+      "You are attempting to install an add-on from example.com. Make sure you trust this site before continuing.",
+      "Should have seen the right message"
+    );
+
+    
+    notificationPromise = waitForNotification("addon-webext-permissions");
+    
+    notification.button.click();
+    panel = await notificationPromise;
+    notification = panel.childNodes[0];
+
     is(notification.button.label, "Add", "Should have seen the right button");
 
     is(
@@ -604,7 +626,7 @@ var TESTS = [
 
     let dialogPromise = waitForInstallDialog();
     
-    notification.button.click();
+    EventUtils.synthesizeMouse(notification.button, 20, 10, {});
 
     let installDialog = await dialogPromise;
 
