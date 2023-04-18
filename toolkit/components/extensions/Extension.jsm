@@ -2009,12 +2009,6 @@ class BootstrapScope {
   async update(data, reason) {
     
     
-    
-    
-    
-    this.updateReason = this.BOOTSTRAP_REASON_TO_STRING_MAP[reason];
-    
-    
     if (data.oldPermissions) {
       
       
@@ -2039,8 +2033,7 @@ class BootstrapScope {
     
     this.extension = new Extension(
       data,
-      this.BOOTSTRAP_REASON_TO_STRING_MAP[reason],
-      this.updateReason
+      this.BOOTSTRAP_REASON_TO_STRING_MAP[reason]
     );
     return this.extension.startup();
   }
@@ -2134,7 +2127,7 @@ let pendingExtensions = new Map();
 
 
 class Extension extends ExtensionData {
-  constructor(addonData, startupReason, updateReason) {
+  constructor(addonData, startupReason) {
     super(addonData.resourceURI, addonData.isPrivileged);
 
     this.startupStates = new Set();
@@ -2165,12 +2158,8 @@ class Extension extends ExtensionData {
     this.addonData = addonData;
     this.startupData = addonData.startupData || {};
     this.startupReason = startupReason;
-    this.updateReason = updateReason;
 
-    if (
-      updateReason ||
-      ["ADDON_UPGRADE", "ADDON_DOWNGRADE"].includes(startupReason)
-    ) {
+    if (["ADDON_UPGRADE", "ADDON_DOWNGRADE"].includes(startupReason)) {
       StartupCache.clearAddonData(addonData.id);
     }
 
