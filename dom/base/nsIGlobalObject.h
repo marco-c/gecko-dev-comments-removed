@@ -12,6 +12,7 @@
 #include "mozilla/dom/ClientInfo.h"
 #include "mozilla/dom/DispatcherTrait.h"
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
+#include "mozilla/OriginTrials.h"
 #include "nsHashKeys.h"
 #include "nsISupports.h"
 #include "nsStringFwd.h"
@@ -195,6 +196,9 @@ class nsIGlobalObject : public nsISupports,
 
 
   virtual mozilla::StorageAccess GetStorageAccess();
+
+  
+  virtual mozilla::OriginTrials Trials() const = 0;
 
   
   
