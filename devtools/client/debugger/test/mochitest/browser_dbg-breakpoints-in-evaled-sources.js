@@ -13,8 +13,6 @@ const EVALED_SOURCE_TEXT = `setTimeout(function() {
 }, 10)`;
 
 
-const REGULAR_SOURCE_FILE = "doc-scripts.html";
-
 
 
 

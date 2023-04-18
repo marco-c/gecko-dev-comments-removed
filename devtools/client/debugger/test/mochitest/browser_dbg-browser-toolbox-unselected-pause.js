@@ -7,6 +7,7 @@
 
 requestLongerTimeout(4);
 
+
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/framework/browser-toolbox/test/helpers-browser-toolbox.js",
   this
@@ -42,6 +43,7 @@ add_task(async function() {
 
   
   await ToolboxTask.spawn(null, async () => {
+    
     await waitUntil(() => gToolbox.currentToolId == "jsdebugger");
   });
   ok(true, "Debugger selected");

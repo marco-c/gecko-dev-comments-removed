@@ -7,6 +7,7 @@
 
 requestLongerTimeout(4);
 
+
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/devtools/client/framework/browser-toolbox/test/helpers-browser-toolbox.js",
   this
@@ -26,20 +27,21 @@ add_task(async function() {
   await addTab(`${EXAMPLE_URL}doc-all-workers.html`);
 
   await ToolboxTask.spawn(null, async () => {
+    
     await gToolbox.selectTool("jsdebugger");
     const dbg = gToolbox.getCurrentPanel().panelWin.dbg;
 
     await waitUntil(() => {
       const threads = dbg.selectors.getThreads();
+      function hasWorker(workerName) {
+        
+        return threads.some(({ name }) => name == workerName);
+      }
       return (
         hasWorker("simple-worker.js") &&
         hasWorker("shared-worker.js") &&
         hasWorker("service-worker.sjs")
       );
-
-      function hasWorker(workerName) {
-        return threads.some(({ name }) => name == workerName);
-      }
     });
 
     await waitForAllTargetsToBeAttached(gToolbox.commands.targetCommand);

@@ -12,6 +12,9 @@
 
 
 
+
+
+
 function createDebuggerContext(toolbox) {
   const panel = toolbox.getPanel("jsdebugger");
   const win = panel.panelWin;
@@ -656,7 +659,7 @@ registerCleanupFunction(() => {
 
 function pauseTest() {
   info("Test paused. Invoke resumeTest to continue.");
-  return new Promise(resolve => (resumeTest = resolve));
+  return new Promise(resolve => (window.resumeTest = resolve));
 }
 
 
@@ -1181,29 +1184,25 @@ async function togglePauseOnExceptions(
 
 function invokeInTab(fnc, ...args) {
   info(`Invoking in tab: ${fnc}(${args.map(uneval).join(",")})`);
-  return ContentTask.spawn(
-    gBrowser.selectedBrowser,
-    { fnc, args },
-    ({ fnc, args }) => content.wrappedJSObject[fnc](...args)
+  return ContentTask.spawn(gBrowser.selectedBrowser, { fnc, args }, options =>
+    content.wrappedJSObject[options.fnc](...options.args)
   );
 }
 
 function clickElementInTab(selector) {
   info(`click element ${selector} in tab`);
 
-  return SpecialPowers.spawn(
-    gBrowser.selectedBrowser,
-    [{ selector }],
-    function({ selector }) {
-      const element = content.document.querySelector(selector);
-      
-      
-      
-      content.setTimeout(() => {
-        element.click();
-      });
-    }
-  );
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [selector], function(
+    _selector
+  ) {
+    const element = content.document.querySelector(_selector);
+    
+    
+    
+    content.setTimeout(() => {
+      element.click();
+    });
+  });
 }
 
 const isLinux = Services.appinfo.OS === "Linux";

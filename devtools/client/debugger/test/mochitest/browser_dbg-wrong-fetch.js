@@ -10,10 +10,7 @@ add_task(async function() {
 
   
   
-  const cacheStorageSrv = SpecialPowers.Cc[
-    "@mozilla.org/netwerk/cache-storage-service;1"
-  ].getService(Ci.nsICacheStorageService);
-  cacheStorageSrv.clear();
+  Services.cache2.clear();
 
   const toolbox = await openToolboxForTab(gBrowser.selectedTab, "jsdebugger");
   const dbg = createDebuggerContext(toolbox);

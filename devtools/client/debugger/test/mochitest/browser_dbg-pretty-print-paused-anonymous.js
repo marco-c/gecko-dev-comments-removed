@@ -11,4 +11,7 @@ add_task(async function() {
 
   
   await prettyPrint(dbg);
+
+  await resume(dbg);
+  await debuggerDone;
 });

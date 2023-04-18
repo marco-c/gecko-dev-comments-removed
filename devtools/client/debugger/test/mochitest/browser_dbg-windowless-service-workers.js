@@ -173,10 +173,10 @@ async function checkWorkerThreads(dbg, count) {
 
 async function checkWorkerStatus(dbg, status) {
   
-  return;
-  await waitUntil(() => {
-    const threads = dbg.selectors.getThreads();
-    return threads.some(t => t.serviceWorkerStatus == status);
-  });
-  ok(true, `Have thread with status ${status}`);
+
+
+
+
+
+
 }

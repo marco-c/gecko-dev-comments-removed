@@ -22,11 +22,7 @@ add_task(async function() {
 
 
 function getSplitConsole(dbg) {
-  const { toolbox, win } = dbg;
-
-  if (!win) {
-    win = toolbox.win;
-  }
+  const { toolbox } = dbg;
 
   if (!toolbox.splitConsole) {
     pressKey(dbg, "Escape");

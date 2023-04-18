@@ -14,7 +14,6 @@ add_task(async function() {
   );
   const {
     selectors: { getSelectedSource },
-    getState,
   } = dbg;
 
   
@@ -38,7 +37,6 @@ add_task(async function() {
   
   await waitForElementWithSelector(dbg, ".sources-list .focused");
 
-  const focusedNode = findElementWithSelector(dbg, ".sources-list .focused");
   const fourthNode = findElement(dbg, "sourceNode", 5);
   const selectedSource = getSelectedSource().url;
 

@@ -13,7 +13,7 @@ add_task(async function() {
     "simple2.js"
   );
   const {
-    selectors: { getSelectedSource, getIsPaused, getCurrentThread },
+    selectors: { getSelectedSource },
   } = dbg;
 
   
