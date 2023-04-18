@@ -131,8 +131,12 @@ if (
 
 
 
+if CONFIG["MOZ_MEMORY"]:
+    SOURCES += [
+        "TestAllocReplacement.cpp",
+    ]
+
 SOURCES += [
-    "TestAllocReplacement.cpp",
     "TestCOMArray.cpp",
     "TestCOMPtr.cpp",  
     "TestHashtables.cpp",  

@@ -5,10 +5,7 @@
 
 
 #include "mozilla/Attributes.h"
-#include "mozilla/mozalloc.h"
-#include "nsCOMPtr.h"
-#include "nsIMemoryReporter.h"
-#include "nsServiceManagerUtils.h"
+#include "mozmemory.h"
 #include "gtest/gtest.h"
 
 
@@ -24,113 +21,48 @@
 
 
 
-
-
-
-
-
-
-
-
-#if defined(MOZ_MEMORY)
-#  define ALLOCATION_ASSERT(b) ASSERT_TRUE((b))
-#else
-#  define ALLOCATION_ASSERT(b) (void)(b)
-#endif
-
 #define ASSERT_ALLOCATION_HAPPENED(lambda) \
-  ALLOCATION_ASSERT(ValidateHookedAllocation(lambda, free));
+  ASSERT_TRUE(ValidateHookedAllocation(lambda, free));
 
 
 
 const size_t kAllocAmount = 16;
 
+static bool ValidateHookedAllocation(void* (*aAllocator)(void),
+                                     void (*aFreeFunction)(void*)) {
+  void* p = aAllocator();
 
-
-
-
-
-
-
-
-
-
-
-
-static MOZ_NEVER_INLINE bool ValidateHookedAllocation(
-    void* (*aAllocator)(void), void (*aFreeFunction)(void*)) {
-  nsCOMPtr<nsIMemoryReporterManager> manager =
-      do_GetService("@mozilla.org/memory-reporter-manager;1");
-
-  int64_t before = 0;
-  nsresult rv = manager->GetHeapAllocated(&before);
-  if (NS_FAILED(rv)) {
+  if (!p) {
     return false;
   }
 
-  {
-    void* p = aAllocator();
-
-    if (!p) {
-      return false;
-    }
-
-    int64_t after = 0;
-    rv = manager->GetHeapAllocated(&after);
-
-    
-    
-    aFreeFunction(p);
-
-    if (NS_FAILED(rv)) {
-      return false;
-    }
-
-    
-    if ((before + int64_t(kAllocAmount)) != after) {
-      return false;
-    }
-  }
+  jemalloc_ptr_info_t info;
+  jemalloc_ptr_info(p, &info);
 
   
   
-  int64_t after = 0;
-  rv = manager->GetHeapAllocated(&after);
-  if (NS_FAILED(rv)) {
-    return false;
-  }
+  aFreeFunction(p);
 
-  return before == after;
+  return (info.tag == PtrInfoTag::TagLiveAlloc);
 }
 
-
-
-
-
-
-
-
-
-TEST(AllocReplacementDeathTest, malloc_check)
+TEST(AllocReplacement, malloc_check)
 {
   ASSERT_ALLOCATION_HAPPENED([] { return malloc(kAllocAmount); });
 }
 
-
-TEST(AllocReplacementDeathTest, calloc_check)
+TEST(AllocReplacement, calloc_check)
 {
   ASSERT_ALLOCATION_HAPPENED([] { return calloc(1, kAllocAmount); });
 }
 
-
-TEST(AllocReplacementDeathTest, realloc_check)
+TEST(AllocReplacement, realloc_check)
 {
   ASSERT_ALLOCATION_HAPPENED([] { return realloc(nullptr, kAllocAmount); });
 }
 
 #if defined(HAVE_POSIX_MEMALIGN)
-
-TEST(AllocReplacementDeathTest, posix_memalign_check)
+TEST(AllocReplacement, posix_memalign_check)
 {
   ASSERT_ALLOCATION_HAPPENED([] {
     void* p = nullptr;
@@ -147,12 +79,11 @@ TEST(AllocReplacementDeathTest, posix_memalign_check)
 #  include <windows.h>
 
 #  undef ASSERT_ALLOCATION_HAPPENED
-#  define ASSERT_ALLOCATION_HAPPENED(lambda)    \
-    ALLOCATION_ASSERT(ValidateHookedAllocation( \
+#  define ASSERT_ALLOCATION_HAPPENED(lambda) \
+    ASSERT_TRUE(ValidateHookedAllocation(    \
         lambda, [](void* p) { HeapFree(GetProcessHeap(), 0, p); }));
 
-
-TEST(AllocReplacementDeathTest, HeapAlloc_check)
+TEST(AllocReplacement, HeapAlloc_check)
 {
   ASSERT_ALLOCATION_HAPPENED([] {
     HANDLE h = GetProcessHeap();
@@ -160,8 +91,7 @@ TEST(AllocReplacementDeathTest, HeapAlloc_check)
   });
 }
 
-
-TEST(AllocReplacementDeathTest, HeapReAlloc_check)
+TEST(AllocReplacement, HeapReAlloc_check)
 {
   ASSERT_ALLOCATION_HAPPENED([] {
     HANDLE h = GetProcessHeap();
