@@ -167,6 +167,8 @@ const EXPECTED_HTTPS_RESULT = {
   },
 };
 
+let cleanUpQuickSuggest;
+
 add_task(async function init() {
   UrlbarPrefs.set("quicksuggest.enabled", true);
   UrlbarPrefs.set("quicksuggest.shouldShowOnboardingDialog", false);
@@ -177,7 +179,9 @@ add_task(async function init() {
   let engine = await addTestSuggestionsEngine();
   await Services.search.setDefault(engine);
 
-  await QuickSuggestTestUtils.ensureQuickSuggestInit(REMOTE_SETTINGS_DATA);
+  cleanUpQuickSuggest = await QuickSuggestTestUtils.ensureQuickSuggestInit(
+    REMOTE_SETTINGS_DATA
+  );
 });
 
 
@@ -1203,4 +1207,49 @@ add_task(async function block() {
   }
 
   await UrlbarProviderQuickSuggest.clearBlockedSuggestions();
+});
+
+
+
+add_task(async function remoteSettingsDataType() {
+  
+  
+  
+  await cleanUpQuickSuggest();
+
+  
+  
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+  await UrlbarQuickSuggest.readyPromise;
+
+  let sandbox = sinon.createSandbox();
+  let spy = sandbox.spy(UrlbarQuickSuggest._rs, "get");
+
+  for (let dataType of [undefined, "test-data-type"]) {
+    
+    let value = {};
+    if (dataType) {
+      value.quickSuggestRemoteSettingsDataType = dataType;
+    }
+    let cleanUpNimbus = await QuickSuggestTestUtils.initNimbusFeature(value);
+
+    
+    await UrlbarQuickSuggest._queueSettingsSync();
+
+    let expectedDataType = dataType || "data";
+    Assert.ok(
+      spy.calledWith({ filters: { type: expectedDataType } }),
+      "_rs.get() called with expected data type: " + expectedDataType
+    );
+
+    spy.resetHistory();
+    await cleanUpNimbus();
+  }
+
+  sandbox.restore();
+
+  
+  cleanUpQuickSuggest = await QuickSuggestTestUtils.ensureQuickSuggestInit(
+    REMOTE_SETTINGS_DATA
+  );
 });

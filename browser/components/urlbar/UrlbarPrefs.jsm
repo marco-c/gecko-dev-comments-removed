@@ -353,6 +353,7 @@ const PREF_OTHER_DEFAULTS = new Map([
 const NIMBUS_DEFAULTS = {
   experimentType: "",
   isBestMatchExperiment: false,
+  quickSuggestRemoteSettingsDataType: "data",
 };
 
 

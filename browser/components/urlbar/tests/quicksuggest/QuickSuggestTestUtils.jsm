@@ -207,7 +207,14 @@ class QSTestUtils {
 
 
 
-  async initNimbusFeature() {
+
+
+
+
+
+
+
+  async initNimbusFeature(value = {}) {
     this.info?.("initNimbusFeature awaiting ExperimentManager.onStartup");
     await ExperimentManager.onStartup();
 
@@ -217,12 +224,20 @@ class QSTestUtils {
     this.info?.("initNimbusFeature awaiting ExperimentFakes.enrollWithRollout");
     let doCleanup = await ExperimentFakes.enrollWithRollout({
       featureId: NimbusFeatures.urlbar.featureId,
-      value: { enabled: true },
+      value: { enabled: true, ...value },
     });
 
     this.info?.("initNimbusFeature done");
 
-    this.registerCleanupFunction(doCleanup);
+    this.registerCleanupFunction?.(() => {
+      
+      
+      try {
+        doCleanup();
+      } catch (error) {}
+    });
+
+    return doCleanup;
   }
 
   
