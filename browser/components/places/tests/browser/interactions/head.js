@@ -15,7 +15,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   60
 );
 
-add_task(async function global_setup() {
+add_setup(async function global_setup() {
   
   
   
