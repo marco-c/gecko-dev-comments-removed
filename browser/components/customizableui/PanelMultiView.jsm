@@ -295,12 +295,15 @@ var PanelMultiView = class extends AssociatedToNode {
 
 
 
-  static hidePopup(panelNode) {
+
+
+
+  static hidePopup(panelNode, animate = false) {
     let panelMultiViewNode = panelNode.querySelector("panelmultiview");
     if (panelMultiViewNode) {
-      this.forNode(panelMultiViewNode).hidePopup();
+      this.forNode(panelMultiViewNode).hidePopup(animate);
     } else {
-      panelNode.hidePopup();
+      panelNode.hidePopup(animate);
     }
   }
 
@@ -595,7 +598,13 @@ var PanelMultiView = class extends AssociatedToNode {
 
 
 
-  hidePopup() {
+
+
+
+
+
+
+  hidePopup(animate = false) {
     if (!this.node || !this.connected) {
       return;
     }
@@ -605,7 +614,7 @@ var PanelMultiView = class extends AssociatedToNode {
     
     
     if (["open", "showing"].includes(this._panel.state)) {
-      this._panel.hidePopup();
+      this._panel.hidePopup(animate);
     } else {
       this._openPopupCancelCallback();
     }
