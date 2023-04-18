@@ -78,6 +78,34 @@ class _RemoteImages {
 
 
 
+  async patchMessage(message, replaceWith = "imageURL") {
+    if (!!message && !!message.imageId) {
+      const { imageId } = message;
+      const blobURL = await this.load(imageId);
+
+      delete message.imageId;
+
+      message[replaceWith] = blobURL;
+
+      return () => this.unload(blobURL);
+    }
+
+    return null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
   async load(imageId) {
     let blob;
