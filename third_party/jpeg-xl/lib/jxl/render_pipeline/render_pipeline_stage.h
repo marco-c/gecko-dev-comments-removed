@@ -8,13 +8,21 @@
 
 #include <stdint.h>
 
-#include "lib/jxl/filters.h"
+#include "lib/jxl/base/arch_macros.h"
+#include "lib/jxl/frame_header.h"
 
 namespace jxl {
 
 
 
+
+
+
+#if JXL_ARCH_ARM
 constexpr size_t kRenderPipelineXOffset = 16;
+#else
+constexpr size_t kRenderPipelineXOffset = 32;
+#endif
 
 enum class RenderPipelineChannelMode {
   
@@ -33,9 +41,9 @@ class RenderPipelineStage {
  protected:
   using Row = float*;
   using ChannelRows = std::vector<Row>;
-  using RowInfo = std::vector<ChannelRows>;
 
  public:
+  using RowInfo = std::vector<ChannelRows>;
   struct Settings {
     
     
@@ -80,9 +88,6 @@ class RenderPipelineStage {
 
   virtual ~RenderPipelineStage() = default;
 
- protected:
-  virtual Status IsInitialized() const { return true; }
-
   
   
   
@@ -100,11 +105,19 @@ class RenderPipelineStage {
                           size_t xextra, size_t xsize, size_t xpos, size_t ypos,
                           float* JXL_RESTRICT temp) const = 0;
 
+ protected:
+  explicit RenderPipelineStage(Settings settings) : settings_(settings) {}
+
+  virtual Status IsInitialized() const { return true; }
+
+  
+  
+  virtual void SetInputSizes(
+      const std::vector<std::pair<size_t, size_t>>& input_sizes) {}
+
   
   
   virtual RenderPipelineChannelMode GetChannelMode(size_t c) const = 0;
-
-  explicit RenderPipelineStage(Settings settings) : settings_(settings) {}
 
   
   
@@ -126,6 +139,24 @@ class RenderPipelineStage {
     JXL_DASSERT(offset <= 1ul << settings_.shift_y);
     return output_rows[c][offset] + kRenderPipelineXOffset;
   }
+
+  
+  
+  
+  virtual bool SwitchToImageDimensions() const { return false; }
+
+  
+  
+  
+  virtual void GetImageDimensions(size_t* xsize, size_t* ysize,
+                                  FrameOrigin* frame_origin) const {}
+
+  
+  
+  virtual void ProcessPaddingRow(const RowInfo& output_rows, size_t xsize,
+                                 size_t xpos, size_t ypos) const {}
+
+  virtual const char* GetName() const = 0;
 
   Settings settings_;
   friend class RenderPipeline;

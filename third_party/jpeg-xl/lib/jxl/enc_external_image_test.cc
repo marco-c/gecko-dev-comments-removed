@@ -28,18 +28,18 @@ TEST(ExternalImageTest, InvalidSize) {
   const uint8_t buf[10 * 100 * 8] = {};
   EXPECT_FALSE(ConvertFromExternal(
       Span<const uint8_t>(buf, 10), 10, 100,
-      ColorEncoding::SRGB(), true,
+      ColorEncoding::SRGB(), 4,
       false, 16, JXL_BIG_ENDIAN,
       false, nullptr, &ib, false, 0));
   EXPECT_FALSE(ConvertFromExternal(
       Span<const uint8_t>(buf, sizeof(buf) - 1), 10, 100,
-      ColorEncoding::SRGB(), true,
+      ColorEncoding::SRGB(), 4,
       false, 16, JXL_BIG_ENDIAN,
       false, nullptr, &ib, false, 0));
   EXPECT_TRUE(ConvertFromExternal(
       Span<const uint8_t>(buf, sizeof(buf)), 10,
       100, ColorEncoding::SRGB(),
-      true, false,
+      4, false,
       16, JXL_BIG_ENDIAN,
       false, nullptr, &ib, false, 0));
 }
@@ -59,7 +59,7 @@ TEST(ExternalImageTest, AlphaMissing) {
   EXPECT_TRUE(ConvertFromExternal(
       Span<const uint8_t>(buf, sizeof(buf)), xsize, ysize,
       ColorEncoding::SRGB(),
-      true, false,
+      4, false,
       8, JXL_BIG_ENDIAN,
       false, nullptr, &ib, false, 0));
   EXPECT_FALSE(ib.HasAlpha());

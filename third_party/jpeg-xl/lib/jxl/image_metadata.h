@@ -5,6 +5,7 @@
 
 
 
+
 #ifndef LIB_JXL_IMAGE_METADATA_H_
 #define LIB_JXL_IMAGE_METADATA_H_
 
@@ -13,6 +14,7 @@
 
 #include <vector>
 
+#include "jxl/codestream_header.h"
 #include "lib/jxl/color_encoding_internal.h"
 #include "lib/jxl/fields.h"
 #include "lib/jxl/headers.h"
@@ -26,37 +28,39 @@ namespace jxl {
 
 enum class Orientation : uint32_t {
   
-  kIdentity = 1,
-  kFlipHorizontal,
-  kRotate180,
-  kFlipVertical,
-  kTranspose,
-  kRotate90,
-  kAntiTranspose,
-  kRotate270,
+  kIdentity = JXL_ORIENT_IDENTITY,
+  kFlipHorizontal = JXL_ORIENT_FLIP_HORIZONTAL,
+  kRotate180 = JXL_ORIENT_ROTATE_180,
+  kFlipVertical = JXL_ORIENT_FLIP_VERTICAL,
+  kTranspose = JXL_ORIENT_TRANSPOSE,
+  kRotate90 = JXL_ORIENT_ROTATE_90_CW,
+  kAntiTranspose = JXL_ORIENT_ANTI_TRANSPOSE,
+  kRotate270 = JXL_ORIENT_ROTATE_90_CCW,
 };
 
 
 enum class ExtraChannel : uint32_t {
   
-  kAlpha,
-  kDepth,
+  kAlpha = JXL_CHANNEL_ALPHA,
+  kDepth = JXL_CHANNEL_DEPTH,
 
-  kSpotColor,
-  kSelectionMask,
-  kBlack,  
-  kCFA,    
-  kThermal,
-  kReserved0,
-  kReserved1,
-  kReserved2,
-  kReserved3,
-  kReserved4,
-  kReserved5,
-  kReserved6,
-  kReserved7,
-  kUnknown,  
-  kOptional  
+  kSpotColor = JXL_CHANNEL_SPOT_COLOR,
+  kSelectionMask = JXL_CHANNEL_SELECTION_MASK,
+  kBlack = JXL_CHANNEL_BLACK,  
+  kCFA = JXL_CHANNEL_CFA,      
+  kThermal = JXL_CHANNEL_THERMAL,
+  kReserved0 = JXL_CHANNEL_RESERVED0,
+  kReserved1 = JXL_CHANNEL_RESERVED1,
+  kReserved2 = JXL_CHANNEL_RESERVED2,
+  kReserved3 = JXL_CHANNEL_RESERVED3,
+  kReserved4 = JXL_CHANNEL_RESERVED4,
+  kReserved5 = JXL_CHANNEL_RESERVED5,
+  kReserved6 = JXL_CHANNEL_RESERVED6,
+  kReserved7 = JXL_CHANNEL_RESERVED7,
+  
+  kUnknown = JXL_CHANNEL_UNKNOWN,
+  
+  kOptional = JXL_CHANNEL_OPTIONAL
 };
 static inline const char* EnumName(ExtraChannel ) {
   return "ExtraChannel";

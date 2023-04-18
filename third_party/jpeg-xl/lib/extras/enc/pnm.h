@@ -23,7 +23,8 @@ namespace extras {
 
 
 Status EncodeImagePNM(const PackedPixelFile& ppf, size_t bits_per_sample,
-                      ThreadPool* pool, std::vector<uint8_t>* bytes);
+                      ThreadPool* pool, size_t frame_index,
+                      std::vector<uint8_t>* bytes);
 
 }  
 }  

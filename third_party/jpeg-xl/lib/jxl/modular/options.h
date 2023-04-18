@@ -98,6 +98,7 @@ struct ModularOptions {
   
   
   enum class TreeKind {
+    kTrivialTreeNoPredictor,
     kLearn,
     kJpegTranscodeACMeta,
     kFalconACMeta,

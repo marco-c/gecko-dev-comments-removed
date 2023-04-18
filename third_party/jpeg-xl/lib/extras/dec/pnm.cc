@@ -19,8 +19,9 @@ namespace {
 struct HeaderPNM {
   size_t xsize;
   size_t ysize;
-  bool is_bit;   
-  bool is_gray;  
+  bool is_bit;     
+  bool is_gray;    
+  bool has_alpha;  
   size_t bits_per_sample;
   bool floating_point;
   bool big_endian;
@@ -55,7 +56,8 @@ class Parser {
         header->is_gray = false;
         return ParseHeaderPNM(header, pos);
 
-        
+      case '7':
+        return ParseHeaderPAM(header, pos);
 
       case 'F':
         header->is_gray = false;
@@ -167,15 +169,73 @@ class Parser {
     return true;
   }
 
-  Status ReadChar(char* out) {
-    
-    if (pos_ + 1 < pos_) return JXL_FAILURE("Y4M: overflow");
-
-    if (pos_ >= end_) {
-      return JXL_FAILURE("Y4M: unexpected end of input");
+  Status MatchString(const char* keyword) {
+    const uint8_t* ppos = pos_;
+    while (*keyword) {
+      if (ppos >= end_) return JXL_FAILURE("PAM: unexpected end of input");
+      if (*keyword != *ppos) return false;
+      ppos++;
+      keyword++;
     }
-    *out = *pos_;
-    pos_++;
+    pos_ = ppos;
+    JXL_RETURN_IF_ERROR(SkipWhitespace());
+    return true;
+  }
+
+  Status ParseHeaderPAM(HeaderPNM* header, const uint8_t** pos) {
+    size_t depth = 3;
+    size_t max_val = 255;
+    while (!MatchString("ENDHDR")) {
+      JXL_RETURN_IF_ERROR(SkipWhitespace());
+      if (MatchString("WIDTH")) {
+        JXL_RETURN_IF_ERROR(ParseUnsigned(&header->xsize));
+      } else if (MatchString("HEIGHT")) {
+        JXL_RETURN_IF_ERROR(ParseUnsigned(&header->ysize));
+      } else if (MatchString("DEPTH")) {
+        JXL_RETURN_IF_ERROR(ParseUnsigned(&depth));
+      } else if (MatchString("MAXVAL")) {
+        JXL_RETURN_IF_ERROR(ParseUnsigned(&max_val));
+      } else if (MatchString("TUPLTYPE")) {
+        if (MatchString("RGB_ALPHA")) {
+          header->has_alpha = true;
+        } else if (MatchString("RGB")) {
+        } else if (MatchString("GRAYSCALE_ALPHA")) {
+          header->has_alpha = true;
+          header->is_gray = true;
+        } else if (MatchString("GRAYSCALE")) {
+          header->is_gray = true;
+        } else if (MatchString("BLACKANDWHITE_ALPHA")) {
+          header->has_alpha = true;
+          header->is_gray = true;
+          max_val = 1;
+        } else if (MatchString("BLACKANDWHITE")) {
+          header->is_gray = true;
+          max_val = 1;
+        } else {
+          return JXL_FAILURE("PAM: unknown TUPLTYPE");
+        }
+      } else {
+        constexpr size_t kMaxHeaderLength = 20;
+        char unknown_header[kMaxHeaderLength + 1];
+        size_t len = std::min<size_t>(kMaxHeaderLength, end_ - pos_);
+        strncpy(unknown_header, reinterpret_cast<const char*>(pos_), len);
+        unknown_header[len] = 0;
+        return JXL_FAILURE("PAM: unknown header keyword: %s", unknown_header);
+      }
+    }
+    size_t num_channels = header->is_gray ? 1 : 3;
+    if (header->has_alpha) num_channels++;
+    if (num_channels != depth) {
+      return JXL_FAILURE("PAM: bad DEPTH");
+    }
+    if (max_val == 0 || max_val >= 65536) {
+      return JXL_FAILURE("PAM: bad MAXVAL");
+    }
+    header->bits_per_sample = CeilLog2Nonzero(max_val);
+
+    header->floating_point = false;
+    header->big_endian = true;
+    *pos = pos_;
     return true;
   }
 
@@ -252,6 +312,9 @@ Status DecodeImagePNM(const Span<const uint8_t> bytes,
     return JXL_FAILURE("PNM: bits_per_sample invalid");
   }
 
+  
+  
+  
   JXL_RETURN_IF_ERROR(ApplyColorHints(color_hints, false,
                                       header.is_gray, ppf));
 
@@ -268,9 +331,10 @@ Status DecodeImagePNM(const Span<const uint8_t> bytes,
   ppf->info.orientation = JXL_ORIENT_IDENTITY;
 
   
-  ppf->info.alpha_bits = 0;
+  ppf->info.alpha_bits = (header.has_alpha ? ppf->info.bits_per_sample : 0);
   ppf->info.alpha_exponent_bits = 0;
-  ppf->info.num_color_channels = header.is_gray ? 1 : 3;
+  ppf->info.num_color_channels = (header.is_gray ? 1 : 3);
+  ppf->info.num_extra_channels = (header.has_alpha ? 1 : 0);
 
   JxlDataType data_type;
   if (header.floating_point) {
@@ -289,7 +353,8 @@ Status DecodeImagePNM(const Span<const uint8_t> bytes,
   }
 
   const JxlPixelFormat format{
-      ppf->info.num_color_channels,
+      ppf->info.num_color_channels +
+          ppf->info.num_extra_channels,
       data_type,
       header.big_endian ? JXL_BIG_ENDIAN : JXL_LITTLE_ENDIAN,
       0,

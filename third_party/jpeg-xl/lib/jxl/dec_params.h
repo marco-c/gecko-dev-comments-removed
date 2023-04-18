@@ -30,9 +30,6 @@ struct DecompressParams {
   bool coalescing = true;
 
   
-  Override preview = Override::kDefault;
-
-  
   uint32_t max_passes = std::numeric_limits<uint32_t>::max();
   
   

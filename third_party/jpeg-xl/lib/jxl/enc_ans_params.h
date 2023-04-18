@@ -24,6 +24,7 @@ struct HistogramParams {
 
   enum class HybridUintMethod {
     kNone,        
+    k000,         
     kFast,        
     kContextMap,  
     kBest,

@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-#include "lib/jxl/filters.h"
+#include "lib/jxl/image.h"
 #include "lib/jxl/render_pipeline/render_pipeline_stage.h"
 
 namespace jxl {
@@ -63,10 +63,6 @@ class RenderPipeline {
 
     
     
-    void UsesNoise() { uses_noise_ = true; }
-
-    
-    
     std::unique_ptr<RenderPipeline> Finalize(
         FrameDimensions frame_dimensions) &&;
 
@@ -74,7 +70,6 @@ class RenderPipeline {
     std::vector<std::unique_ptr<RenderPipelineStage>> stages_;
     size_t num_c_;
     bool use_simple_implementation_ = false;
-    bool uses_noise_ = false;
   };
 
   friend class Builder;
@@ -89,7 +84,10 @@ class RenderPipeline {
   }
 
   
-  void PrepareForThreads(size_t num);
+  
+  
+  
+  void PrepareForThreads(size_t num, bool use_group_ids);
 
   
   
@@ -102,14 +100,18 @@ class RenderPipeline {
                              group_completed_passes_.end());
   }
 
+  virtual void ClearDone(size_t i) {}
+
  protected:
   std::vector<std::unique_ptr<RenderPipelineStage>> stages_;
   
   std::vector<std::vector<std::pair<size_t, size_t>>> channel_shifts_;
+
   
-  std::vector<size_t> padding_;
+  
+  std::vector<std::vector<std::pair<size_t, size_t>>> padding_;
+
   FrameDimensions frame_dimensions_;
-  bool uses_noise_;
 
   std::vector<uint8_t> group_completed_passes_;
 
@@ -129,7 +131,10 @@ class RenderPipeline {
 
   
   
-  virtual void PrepareForThreadsInternal(size_t num) = 0;
+  virtual void PrepareForThreadsInternal(size_t num, bool use_group_ids) = 0;
+
+  
+  virtual void Init() {}
 };
 
 }  

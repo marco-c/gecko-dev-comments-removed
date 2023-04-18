@@ -12,9 +12,11 @@ namespace jxl {
 
 
 
-
 class CodecInOut;
 void SetIntensityTarget(CodecInOut* io);
+
+struct ImageMetadata;
+void SetIntensityTarget(ImageMetadata* m);
 
 }  
 

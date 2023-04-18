@@ -61,6 +61,9 @@ struct FrameInfo {
 };
 
 
+Status ParamsPostInit(CompressParams* p);
+
+
 
 
 

@@ -534,9 +534,11 @@ JxlEncoderAddJPEGFrame(const JxlEncoderFrameSettings* frame_settings,
 
 
 
+
 JXL_EXPORT JxlEncoderStatus JxlEncoderAddImageFrame(
     const JxlEncoderFrameSettings* frame_settings,
     const JxlPixelFormat* pixel_format, const void* buffer, size_t size);
+
 
 
 

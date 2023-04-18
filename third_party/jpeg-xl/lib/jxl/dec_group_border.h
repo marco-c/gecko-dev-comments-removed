@@ -24,25 +24,12 @@ class GroupBorderAssigner {
   
   
   
-  void GroupDone(size_t group_id, size_t padding, Rect* rects_to_finalize,
-                 size_t* num_to_finalize);
+  void GroupDone(size_t group_id, size_t padx, size_t pady,
+                 Rect* rects_to_finalize, size_t* num_to_finalize);
   
   void ClearDone(size_t group_id);
 
   static constexpr size_t kMaxToFinalize = 3;
-
-  
-  
-#if defined(__ARM_NEON) || defined(__ARM_NEON__)
-  static constexpr size_t kPaddingXRound = 4;
-#else
-  static constexpr size_t kPaddingXRound = kBlockDim;
-#endif
-
-  
-  static size_t PaddingX(size_t padding) {
-    return RoundUpTo(padding, kPaddingXRound);
-  }
 
  private:
   FrameDimensions frame_dim_;

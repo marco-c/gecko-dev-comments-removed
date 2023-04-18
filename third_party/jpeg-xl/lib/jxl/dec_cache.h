@@ -17,15 +17,17 @@
 #include "lib/jxl/convolve.h"
 #include "lib/jxl/dec_group_border.h"
 #include "lib/jxl/dec_noise.h"
-#include "lib/jxl/dec_upsample.h"
-#include "lib/jxl/filters.h"
 #include "lib/jxl/image.h"
 #include "lib/jxl/passes_state.h"
 #include "lib/jxl/quant_weights.h"
 #include "lib/jxl/render_pipeline/render_pipeline.h"
+#include "lib/jxl/render_pipeline/stage_upsampling.h"
 #include "lib/jxl/sanitizers.h"
 
 namespace jxl {
+
+constexpr size_t kSigmaBorder = 1;
+constexpr size_t kSigmaPadding = 2;
 
 
 
@@ -35,16 +37,7 @@ struct PassesDecoderState {
   const PassesSharedState* JXL_RESTRICT shared = &shared_storage;
 
   
-  Upsampler upsamplers[3];
-
-  
-  Image3F noise;
-
-  
-  
-  Image3F pre_color_transform_frame;
-  
-  std::vector<ImageF> pre_color_transform_ec;
+  std::unique_ptr<RenderPipelineStage> upsampler8x;
 
   
   std::vector<ANSCode> code;
@@ -55,16 +48,7 @@ struct PassesDecoderState {
   float b_dm_multiplier;
 
   
-  Image3F decoded;
-  std::vector<ImageF> extra_channels;
-
-  
-  
-  
-  
-  
-  Image3F borders_horizontal;
-  Image3F borders_vertical;
+  ImageF sigma;
 
   
   
@@ -88,7 +72,8 @@ struct PassesDecoderState {
   std::vector<std::vector<float>> pixel_callback_rows;
 
   
-  size_t noise_seed = 0;
+  size_t visible_frame_index = 0;
+  size_t nonvisible_frame_index = 0;
 
   
   std::atomic<uint32_t> used_acs{0};
@@ -97,165 +82,18 @@ struct PassesDecoderState {
   std::unique_ptr<ACImage> coefficients = make_unique<ACImageT<int32_t>>(0, 0);
 
   
-  
-  std::vector<FilterPipeline> filter_pipelines;
-
-  
-  
-  FilterWeights filter_weights;
-
-  
-  GroupBorderAssigner group_border_assigner;
-
-  
-  
   std::unique_ptr<RenderPipeline> render_pipeline;
 
   
   ImageBundle frame_storage_for_referencing;
 
-  
-  
-  bool EagerFinalizeImageRect() const {
-    return shared->frame_header.encoding == FrameEncoding::kVarDCT &&
-           shared->frame_header.nonserialized_metadata->m.extra_channel_info
-               .empty();
-  }
+  struct PipelineOptions {
+    bool use_slow_render_pipeline;
+    bool coalescing;
+    bool render_spotcolors;
+  };
 
-  
-  
-  size_t FinalizeRectPadding() const {
-    size_t padding = shared->frame_header.loop_filter.Padding();
-    padding += shared->frame_header.upsampling == 1 ? 0 : 2;
-    JXL_DASSERT(padding <= kMaxFinalizeRectPadding);
-    for (auto ups : shared->frame_header.extra_channel_upsampling) {
-      if (ups > 1) {
-        padding = std::max(padding, size_t{2});
-      }
-    }
-    
-    
-    if (!shared->frame_header.chroma_subsampling.Is444()) {
-      padding = std::max(padding / 2 + 1, padding);
-    }
-    return padding;
-  }
-
-  
-  
-  std::vector<Image3F> filter_input_storage;
-  std::vector<Image3F> padded_upsampling_input_storage;
-  std::vector<Image3F> upsampling_input_storage;
-  size_t upsampler_arena_size = 0;
-  std::vector<hwy::AlignedFreeUniquePtr<float[]>> upsampler_storage;
-  
-  
-  std::vector<Image3F> output_pixel_data_storage[4] = {};
-  std::vector<ImageF> ec_temp_images;
-  std::vector<ImageF> ycbcr_temp_images;
-  std::vector<Image3F> ycbcr_out_images;
-
-  
-  std::vector<Image3F> group_data;
-  static constexpr size_t kGroupDataYBorder = kMaxFinalizeRectPadding * 2;
-  static constexpr size_t kGroupDataXBorder =
-      RoundUpToBlockDim(kMaxFinalizeRectPadding) * 2 + kBlockDim;
-
-  void EnsureStorage(size_t num_threads) {
-    
-    if (shared->frame_header.loop_filter.epf_iters != 0 ||
-        shared->frame_header.loop_filter.gab) {
-      if (filter_pipelines.size() < num_threads) {
-        filter_pipelines.resize(num_threads);
-      }
-    }
-    
-    
-    for (size_t _ = filter_input_storage.size(); _ < num_threads; _++) {
-      
-      
-      filter_input_storage.emplace_back(
-          kApplyImageFeaturesTileDim + 2 * kGroupDataXBorder,
-          kApplyImageFeaturesTileDim + 2 * kGroupDataYBorder);
-    }
-    if (shared->frame_header.upsampling != 1) {
-      for (size_t _ = upsampling_input_storage.size(); _ < num_threads; _++) {
-        
-        
-        upsampling_input_storage.emplace_back(
-            kApplyImageFeaturesTileDim + 2 * kBlockDim,
-            kApplyImageFeaturesTileDim + 4);
-        padded_upsampling_input_storage.emplace_back(
-            kApplyImageFeaturesTileDim + 2 * kBlockDim,
-            kApplyImageFeaturesTileDim + 4);
-      }
-    }
-    const size_t arena_size = Upsampler::GetArenaSize(
-        kApplyImageFeaturesTileDim * shared->frame_header.upsampling);
-    if (arena_size > upsampler_arena_size) upsampler_storage.clear();
-    for (size_t _ = upsampler_storage.size(); _ < num_threads; _++) {
-      upsampler_storage.emplace_back(hwy::AllocateAligned<float>(arena_size));
-    }
-    upsampler_arena_size = arena_size;
-    for (size_t _ = group_data.size(); _ < num_threads; _++) {
-      group_data.emplace_back(kGroupDim + 2 * kGroupDataXBorder,
-                              kGroupDim + 2 * kGroupDataYBorder);
-#if MEMORY_SANITIZER
-      
-      FillImage(msan::kSanitizerSentinel, &group_data.back());
-#endif
-    }
-    if (!shared->frame_header.chroma_subsampling.Is444()) {
-      for (size_t _ = ycbcr_temp_images.size(); _ < num_threads; _++) {
-        ycbcr_temp_images.emplace_back(kGroupDim + 2 * kGroupDataXBorder,
-                                       kGroupDim + 2 * kGroupDataYBorder);
-        ycbcr_out_images.emplace_back(kGroupDim + 2 * kGroupDataXBorder,
-                                      kGroupDim + 2 * kGroupDataYBorder);
-      }
-    }
-    if (rgb_output || pixel_callback) {
-      size_t log2_upsampling = CeilLog2Nonzero(shared->frame_header.upsampling);
-      for (size_t _ = output_pixel_data_storage[log2_upsampling].size();
-           _ < num_threads; _++) {
-        output_pixel_data_storage[log2_upsampling].emplace_back(
-            kApplyImageFeaturesTileDim << log2_upsampling,
-            kApplyImageFeaturesTileDim << log2_upsampling);
-      }
-      opaque_alpha.resize(
-          kApplyImageFeaturesTileDim * shared->frame_header.upsampling, 1.0f);
-      if (pixel_callback) {
-        pixel_callback_rows.resize(num_threads);
-        for (size_t i = 0; i < pixel_callback_rows.size(); ++i) {
-          pixel_callback_rows[i].resize(kApplyImageFeaturesTileDim *
-                                        shared->frame_header.upsampling *
-                                        (rgb_output_is_rgba ? 4 : 3));
-        }
-      }
-    }
-    if (shared->metadata->m.num_extra_channels * num_threads >
-        ec_temp_images.size()) {
-      ec_temp_images.resize(shared->metadata->m.num_extra_channels *
-                            num_threads);
-    }
-    for (size_t i = 0; i < shared->metadata->m.num_extra_channels; i++) {
-      if (shared->frame_header.extra_channel_upsampling[i] == 1) continue;
-      
-      
-      size_t xs = kApplyImageFeaturesTileDim * shared->frame_header.upsampling /
-                      shared->frame_header.extra_channel_upsampling[i] +
-                  2 * kBlockDim;
-      size_t ys = kApplyImageFeaturesTileDim * shared->frame_header.upsampling /
-                      shared->frame_header.extra_channel_upsampling[i] +
-                  4;
-      for (size_t t = 0; t < num_threads; t++) {
-        auto& eti =
-            ec_temp_images[t * shared->metadata->m.num_extra_channels + i];
-        if (eti.xsize() < xs || eti.ysize() < ys) {
-          eti = ImageF(xs, ys);
-        }
-      }
-    }
-  }
+  Status PreparePipeline(ImageBundle* decoded, PipelineOptions options);
 
   
   OutputEncodingInfo output_encoding_info;
@@ -273,15 +111,10 @@ struct PassesDecoderState {
     fast_xyb_srgb8_conversion = false;
     used_acs = 0;
 
-    group_border_assigner.Init(shared->frame_dim);
-    const LoopFilter& lf = shared->frame_header.loop_filter;
-    JXL_RETURN_IF_ERROR(filter_weights.Init(lf, shared->frame_dim));
-    for (auto& fp : filter_pipelines) {
-      
-      fp.num_filters = 0;
-    }
-    for (size_t i = 0; i < 3; i++) {
-      upsamplers[i].Init(2 << i, shared->metadata->transform_data);
+    upsampler8x = GetUpsamplingStage(shared->metadata->transform_data, 0, 3);
+    if (shared->frame_header.loop_filter.epf_iters > 0) {
+      sigma = ImageF(shared->frame_dim.xsize_blocks + 2 * kSigmaPadding,
+                     shared->frame_dim.ysize_blocks + 2 * kSigmaPadding);
     }
     return true;
   }
@@ -301,58 +134,13 @@ struct PassesDecoderState {
     if (sz > shared_storage.coeff_orders.size()) {
       shared_storage.coeff_orders.resize(sz);
     }
-    if (shared->frame_header.flags & FrameHeader::kNoise && !render_pipeline) {
-      noise = Image3F(shared->frame_dim.xsize_upsampled_padded,
-                      shared->frame_dim.ysize_upsampled_padded);
-      size_t num_x_groups = DivCeil(noise.xsize(), kGroupDim);
-      size_t num_y_groups = DivCeil(noise.ysize(), kGroupDim);
-      PROFILER_ZONE("GenerateNoise");
-      auto generate_noise = [&](const uint32_t group_index,
-                                size_t ) {
-        size_t gx = group_index % num_x_groups;
-        size_t gy = group_index / num_x_groups;
-        Rect rect(gx * kGroupDim, gy * kGroupDim, kGroupDim, kGroupDim,
-                  noise.xsize(), noise.ysize());
-        RandomImage3(noise_seed + group_index, rect, &noise);
-      };
-      JXL_RETURN_IF_ERROR(RunOnPool(pool, 0, num_x_groups * num_y_groups,
-                                    ThreadPool::NoInit, generate_noise,
-                                    "Generate noise"));
-      {
-        PROFILER_ZONE("High pass noise");
-        
-        WeightsSymmetric5 weights{{HWY_REP4(-3.84)}, {HWY_REP4(0.16)},
-                                  {HWY_REP4(0.16)},  {HWY_REP4(0.16)},
-                                  {HWY_REP4(0.16)},  {HWY_REP4(0.16)}};
-        
-        
-        ImageF noise_tmp(noise.xsize(), noise.ysize());
-        for (size_t c = 0; c < 3; c++) {
-          Symmetric5(noise.Plane(c), Rect(noise), weights, pool, &noise_tmp);
-          std::swap(noise.Plane(c), noise_tmp);
-        }
-        noise_seed += shared->frame_dim.num_groups;
-      }
-    }
-    EnsureBordersStorage();
-    if (!EagerFinalizeImageRect()) {
-      
-      
-      
-      decoded = Image3F(shared->frame_dim.xsize_padded,
-                        shared->frame_dim.ysize_padded);
-    }
-#if MEMORY_SANITIZER
-    
-    FillImage(msan::kSanitizerSentinel, &decoded);
-#endif
     return true;
   }
 
-  void EnsureBordersStorage();
-
-  Status FinalizeGroup(size_t group_idx, size_t thread, Image3F* pixel_data,
-                       ImageBundle* output);
+  
+  
+  
+  void ComputeSigma(const Rect& block_rect, PassesDecoderState* state);
 };
 
 
@@ -396,6 +184,13 @@ struct GroupDecCache {
     dec_group_qblock16 = int16_memory_.get();
   }
 
+  void InitDCBufferOnce() {
+    if (dc_buffer.xsize() == 0) {
+      dc_buffer = ImageF(kGroupDimInBlocks + kRenderPipelineXOffset * 2,
+                         kGroupDimInBlocks + 4);
+    }
+  }
+
   
   float* dec_group_block;
   int32_t* dec_group_qblock;
@@ -409,6 +204,9 @@ struct GroupDecCache {
 
   
   Image3I num_nzeroes[kMaxNumPasses];
+
+  
+  ImageF dc_buffer;
 
  private:
   hwy::AlignedFreeUniquePtr<float[]> float_memory_;

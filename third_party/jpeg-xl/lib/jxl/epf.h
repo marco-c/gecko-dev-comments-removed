@@ -13,7 +13,6 @@
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/dec_cache.h"
-#include "lib/jxl/filters.h"
 #include "lib/jxl/passes_state.h"
 
 namespace jxl {
@@ -28,30 +27,6 @@ constexpr float kMinSigma = -3.90524291751269967465540850526868f;
 
 
 void ComputeSigma(const Rect& block_rect, PassesDecoderState* state);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-FilterPipeline* PrepareFilterPipeline(
-    PassesDecoderState* dec_state, const Rect& image_rect, const Image3F& input,
-    const Rect& input_rect, size_t image_ysize, size_t thread,
-    Image3F* JXL_RESTRICT out, const Rect& output_rect);
 
 }  
 

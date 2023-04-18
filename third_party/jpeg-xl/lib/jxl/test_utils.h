@@ -369,9 +369,7 @@ jxl::CodecInOut SomeTestImageToCodecInOut(const std::vector<uint8_t>& buf,
       num_channels == 1 || num_channels == 2);
   EXPECT_TRUE(ConvertFromExternal(
       jxl::Span<const uint8_t>(buf.data(), buf.size()), xsize, ysize,
-      jxl::ColorEncoding::SRGB(num_channels == 1 ||
-                               num_channels == 2),
-      num_channels == 2 || num_channels == 4,
+      jxl::ColorEncoding::SRGB(num_channels < 3), num_channels,
       false, 16, JXL_BIG_ENDIAN,
       false, nullptr,
       &io.Main(), false, 0));
