@@ -14,9 +14,6 @@ const DOMAIN = "example.com";
 
 
 add_task(async function test() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["print.tab_modal.enabled", false]],
-  });
   
   let newTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
   let browser = newTab.linkedBrowser;
@@ -54,40 +51,30 @@ add_task(async function test() {
 
   
   ok(
-    !gInPrintPreviewMode,
+    !document.querySelector(".printPreviewBrowser"),
     "Should NOT be in print preview mode at the start of this test."
   );
 
   
-  let ppBrowser = PrintPreviewListener.getPrintPreviewBrowser();
-
-  const { PrintingParent } = ChromeUtils.import(
-    "resource://gre/actors/PrintingParent.jsm"
-  );
-  let printPreviewEntered = new Promise(resolve => {
-    PrintingParent.setTestListener(browserPreviewing => {
-      if (browserPreviewing == ppBrowser) {
-        PrintingParent.setTestListener(null);
-        resolve();
-      }
-    });
-  });
   document.getElementById("cmd_printPreview").doCommand();
-  await printPreviewEntered;
+  await BrowserTestUtils.waitForCondition(() => {
+    let preview = document.querySelector(".printPreviewBrowser");
+    return preview && BrowserTestUtils.is_visible(preview);
+  });
 
-  
-  await BrowserTestUtils.waitForCondition(
-    () => gInPrintPreviewMode,
-    "Should be in print preview mode now."
+  let ppBrowser = document.querySelector(
+    ".printPreviewBrowser[previewtype=source]"
   );
+  ok(ppBrowser, "Print preview browser was created");
+
   ok(true, "We did not crash.");
 
   
-  await BrowserTestUtils.switchTab(gBrowser, () => {
-    PrintUtils.exitPrintPreview();
-  });
+  gBrowser.getTabDialogBox(gBrowser.selectedBrowser).abortAllDialogs();
+  await BrowserTestUtils.waitForCondition(
+    () => !document.querySelector(".printPreviewBrowser")
+  );
 
-  await BrowserTestUtils.waitForCondition(() => !window.gInPrintPreviewMode);
   info("We are not in print preview anymore.");
 
   BrowserTestUtils.removeTab(newTab);
