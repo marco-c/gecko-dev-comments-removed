@@ -9,6 +9,13 @@ loadRelativeToScript('utility.js');
 loadRelativeToScript('annotations.js');
 loadRelativeToScript('loadCallgraph.js');
 
+function usage() {
+  throw "Usage: computeGCFunctions.js <rawcalls1.txt> <rawcalls2.txt>... --outputs <out:callgraph.txt> <out:gcFunctions.txt> <out:gcFunctions.lst> <out:gcEdges.txt> <out:limitedFunctions.lst>";
+}
+
+if (typeof scriptArgs[0] != 'string')
+  usage();
+
 var start = "Time: " + new Date;
 
 try {
@@ -36,11 +43,6 @@ try {
       name: 'gcFunctionsList',
       type: 'string',
       default: 'gcFunctions.lst'
-    },
-    {
-      name: 'gcEdges',
-      type: 'string',
-      default: 'gcEdges.txt'
     },
     {
       name: 'limitedFunctions',
@@ -90,24 +92,6 @@ for (var name in gcFunctions) {
     } else {
         print(name);
     }
-}
-
-
-
-
-
-
-
-
-
-
-printErr("Writing " + options.gcEdges);
-redirect(options.gcEdges);
-for (var block in gcEdges) {
-  for (var edge in gcEdges[block]) {
-      var func = gcEdges[block][edge];
-    print([ block, edge, func ].join(" || "));
-  }
 }
 
 printErr("Writing " + options.limitedFunctions);
