@@ -8512,7 +8512,6 @@ const gAccessibilityServiceIndicator = {
       );
       
       openTrustedLinkIn(a11yServicesSupportURL, "tab");
-      Services.telemetry.scalarSet("a11y.indicator_acted_on", true);
     }
   },
 
