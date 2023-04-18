@@ -35,13 +35,6 @@ struct CubebDestroyPolicy {
   }
 };
 
-enum class ShutdownCause {
-  
-  Regular,
-  
-  Muting
-};
-
 class AudioStream;
 class FrameHistory;
 class AudioConfig;
@@ -252,8 +245,7 @@ class AudioStream final {
   nsresult Init(AudioDeviceInfo* aSinkInfo);
 
   
-  Maybe<MozPromiseHolder<MediaSink::EndedPromise>> Shutdown(
-      ShutdownCause = ShutdownCause::Regular);
+  void Shutdown();
 
   void Reset();
 
@@ -264,7 +256,8 @@ class AudioStream final {
   void SetStreamName(const nsAString& aStreamName);
 
   
-  nsresult Start(MozPromiseHolder<MediaSink::EndedPromise>& aEndedPromise);
+  
+  Result<already_AddRefed<MediaSink::EndedPromise>, nsresult> Start();
 
   
   void Pause();
@@ -296,9 +289,6 @@ class AudioStream final {
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
 
   bool IsPlaybackCompleted() const;
-
-  
-  bool CallbackStarted() const { return mCallbacksStarted; }
 
  protected:
   friend class AudioClock;
@@ -389,7 +379,6 @@ class AudioStream final {
   std::atomic<bool> mPreservesPitch;
   
   bool mAudioThreadChanged = false;
-  Atomic<bool> mCallbacksStarted;
 };
 
 }  
