@@ -3816,6 +3816,109 @@ static const JSJitInfo array_splice_info = {
     JSVAL_TYPE_UNDEFINED,
 };
 
+enum class SearchKind {
+  
+  
+  IndexOf,
+  
+  
+  
+  Includes,
+};
+
+template <SearchKind Kind, typename Iter>
+static bool SearchElementDense(JSContext* cx, HandleValue val, Iter iterator,
+                               MutableHandleValue rval) {
+  
+  
+  AutoCheckCannotGC nogc;
+
+  
+  if (val.isString()) {
+    JSLinearString* str = val.toString()->ensureLinear(cx);
+    if (!str) {
+      return false;
+    }
+    const uint32_t strLen = str->length();
+    auto cmp = [str, strLen](JSContext* cx, const Value& element, bool* equal) {
+      if (!element.isString() || element.toString()->length() != strLen) {
+        *equal = false;
+        return true;
+      }
+      JSLinearString* s = element.toString()->ensureLinear(cx);
+      if (!s) {
+        return false;
+      }
+      *equal = EqualStrings(str, s);
+      return true;
+    };
+    return iterator(cx, cmp, rval);
+  }
+
+  
+  if (val.isNumber()) {
+    double dval = val.toNumber();
+    
+    
+    if (Kind == SearchKind::Includes && mozilla::IsNaN(dval)) {
+      auto cmp = [](JSContext*, const Value& element, bool* equal) {
+        *equal = (element.isDouble() && mozilla::IsNaN(element.toDouble()));
+        return true;
+      };
+      return iterator(cx, cmp, rval);
+    }
+    auto cmp = [dval](JSContext*, const Value& element, bool* equal) {
+      *equal = (element.isNumber() && element.toNumber() == dval);
+      return true;
+    };
+    return iterator(cx, cmp, rval);
+  }
+
+  
+  if (CanUseBitwiseCompareForStrictlyEqual(val)) {
+    
+    
+    if (Kind == SearchKind::Includes && val.isUndefined()) {
+      auto cmp = [](JSContext*, const Value& element, bool* equal) {
+        *equal = (element.isUndefined() || element.isMagic(JS_ELEMENTS_HOLE));
+        return true;
+      };
+      return iterator(cx, cmp, rval);
+    }
+    uint64_t bits = val.asRawBits();
+    auto cmp = [bits](JSContext*, const Value& element, bool* equal) {
+      *equal = (bits == element.asRawBits());
+      return true;
+    };
+    return iterator(cx, cmp, rval);
+  }
+
+  
+  RootedValue elementRoot(cx);
+  auto cmp = [val, &elementRoot](JSContext* cx, const Value& element,
+                                 bool* equal) {
+    if (MOZ_UNLIKELY(element.isMagic(JS_ELEMENTS_HOLE))) {
+      
+      
+      if constexpr (Kind == SearchKind::Includes) {
+        elementRoot.setUndefined();
+      } else {
+        static_assert(Kind == SearchKind::IndexOf);
+        *equal = false;
+        return true;
+      }
+    } else {
+      elementRoot = element;
+    }
+    
+    
+    
+    MOZ_ASSERT(!val.isNumber());
+    return StrictlyEqual(cx, val, elementRoot, equal);
+  };
+  return iterator(cx, cmp, rval);
+}
+
 
 
 bool js::array_indexOf(JSContext* cx, unsigned argc, Value* vp) {
@@ -3870,6 +3973,37 @@ bool js::array_indexOf(JSContext* cx, unsigned argc, Value* vp) {
   MOZ_ASSERT(k < len);
 
   HandleValue searchElement = args.get(0);
+
+  
+  if (CanOptimizeForDenseStorage<ArrayAccess::Read>(obj, len)) {
+    MOZ_ASSERT(len <= UINT32_MAX);
+
+    NativeObject* nobj = &obj->as<NativeObject>();
+    uint32_t start = uint32_t(k);
+    uint32_t length =
+        std::min(nobj->getDenseInitializedLength(), uint32_t(len));
+    const Value* elements = nobj->getDenseElements();
+
+    auto iterator = [elements, start, length](JSContext* cx, auto cmp,
+                                              MutableHandleValue rval) {
+      static_assert(NativeObject::MAX_DENSE_ELEMENTS_COUNT <= INT32_MAX,
+                    "code assumes dense index fits in Int32Value");
+      for (uint32_t i = start; i < length; i++) {
+        bool equal;
+        if (MOZ_UNLIKELY(!cmp(cx, elements[i], &equal))) {
+          return false;
+        }
+        if (equal) {
+          rval.setInt32(int32_t(i));
+          return true;
+        }
+      }
+      rval.setInt32(-1);
+      return true;
+    };
+    return SearchElementDense<SearchKind::IndexOf>(cx, searchElement, iterator,
+                                                   args.rval());
+  }
 
   
   RootedValue v(cx);
@@ -3951,6 +4085,41 @@ bool js::array_lastIndexOf(JSContext* cx, unsigned argc, Value* vp) {
   MOZ_ASSERT(k < len);
 
   HandleValue searchElement = args.get(0);
+
+  
+  if (CanOptimizeForDenseStorage<ArrayAccess::Read>(obj, k + 1)) {
+    MOZ_ASSERT(k <= UINT32_MAX);
+
+    NativeObject* nobj = &obj->as<NativeObject>();
+    uint32_t initLen = nobj->getDenseInitializedLength();
+    if (initLen == 0) {
+      args.rval().setInt32(-1);
+      return true;
+    }
+
+    uint32_t end = std::min(uint32_t(k), initLen - 1);
+    const Value* elements = nobj->getDenseElements();
+
+    auto iterator = [elements, end](JSContext* cx, auto cmp,
+                                    MutableHandleValue rval) {
+      static_assert(NativeObject::MAX_DENSE_ELEMENTS_COUNT <= INT32_MAX,
+                    "code assumes dense index fits in int32_t");
+      for (int32_t i = int32_t(end); i >= 0; i--) {
+        bool equal;
+        if (MOZ_UNLIKELY(!cmp(cx, elements[i], &equal))) {
+          return false;
+        }
+        if (equal) {
+          rval.setInt32(int32_t(i));
+          return true;
+        }
+      }
+      rval.setInt32(-1);
+      return true;
+    };
+    return SearchElementDense<SearchKind::IndexOf>(cx, searchElement, iterator,
+                                                   args.rval());
+  }
 
   
   RootedValue v(cx);
@@ -4035,6 +4204,35 @@ bool js::array_includes(JSContext* cx, unsigned argc, Value* vp) {
   MOZ_ASSERT(k < len);
 
   HandleValue searchElement = args.get(0);
+
+  
+  if (CanOptimizeForDenseStorage<ArrayAccess::Read>(obj, len)) {
+    MOZ_ASSERT(len <= UINT32_MAX);
+
+    NativeObject* nobj = &obj->as<NativeObject>();
+    uint32_t start = uint32_t(k);
+    uint32_t length =
+        std::min(nobj->getDenseInitializedLength(), uint32_t(len));
+    const Value* elements = nobj->getDenseElements();
+
+    auto iterator = [elements, start, length](JSContext* cx, auto cmp,
+                                              MutableHandleValue rval) {
+      for (uint32_t i = start; i < length; i++) {
+        bool equal;
+        if (MOZ_UNLIKELY(!cmp(cx, elements[i], &equal))) {
+          return false;
+        }
+        if (equal) {
+          rval.setBoolean(true);
+          return true;
+        }
+      }
+      rval.setBoolean(false);
+      return true;
+    };
+    return SearchElementDense<SearchKind::Includes>(cx, searchElement, iterator,
+                                                    args.rval());
+  }
 
   
   RootedValue v(cx);
