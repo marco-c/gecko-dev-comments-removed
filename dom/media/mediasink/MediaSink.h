@@ -60,8 +60,7 @@ class MediaSink {
   
   
   
-  virtual media::TimeUnit GetPosition(
-      TimeStamp* aTimeStamp = nullptr) const = 0;
+  virtual media::TimeUnit GetPosition(TimeStamp* aTimeStamp = nullptr) = 0;
 
   
   
