@@ -1,0 +1,26 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+
+
+
+if (!window.geoip2) {
+  const callback = (_, onError) => {
+    onError("");
+  };
+
+  window.geoip2 = {
+    country: callback,
+    city: callback,
+    insights: callback,
+  };
+}
