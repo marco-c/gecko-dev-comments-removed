@@ -36,6 +36,7 @@
 #include "mozilla/Unused.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Base64.h"
+#include "mozilla/VsyncDispatcher.h"
 
 #include "mozilla/Logging.h"
 #include "mozilla/Components.h"
@@ -1242,6 +1243,7 @@ void gfxPlatform::Shutdown() {
   }
 
   gPlatform->mVsyncSource = nullptr;
+  gPlatform->mVsyncDispatcher = nullptr;
 
   
   GLContextProvider::Shutdown();
@@ -2978,6 +2980,14 @@ bool gfxPlatform::UsesOffMainThreadCompositing() {
   return result;
 }
 
+RefPtr<mozilla::VsyncDispatcher> gfxPlatform::GetGlobalVsyncDispatcher() {
+  MOZ_ASSERT(mVsyncDispatcher != nullptr,
+             "mVsyncDispatcher should have been initialized by ReInitFrameRate "
+             "during gfxPlatform init");
+  MOZ_ASSERT(XRE_IsParentProcess());
+  return mVsyncDispatcher;
+}
+
 
 
 
@@ -3035,6 +3045,17 @@ void gfxPlatform::ReInitFrameRate() {
     if (oldSource) {
       oldSource->MoveListenersToNewSource(gPlatform->mVsyncSource);
       oldSource->Shutdown();
+    }
+
+    if (gPlatform->mVsyncDispatcher) {
+      
+      
+      MOZ_RELEASE_ASSERT(gPlatform->mVsyncDispatcher ==
+                         gPlatform->mVsyncSource->GetVsyncDispatcher());
+    } else {
+      
+      gPlatform->mVsyncDispatcher =
+          gPlatform->mVsyncSource->GetVsyncDispatcher();
     }
   }
 }
