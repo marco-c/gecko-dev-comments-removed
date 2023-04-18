@@ -1609,7 +1609,8 @@ RefPtr<ProcessHandlePromise> GeckoChildProcessHost::WhenProcessHandleReady() {
   return mHandlePromise;
 }
 
-void GeckoChildProcessHost::GetQueuedMessages(std::queue<UniquePtr<IPC::Message>>& queue) {
+void GeckoChildProcessHost::GetQueuedMessages(
+    std::queue<UniquePtr<IPC::Message>>& queue) {
   
   DCHECK(MessageLoopForIO::current());
   swap(queue, mQueue);
