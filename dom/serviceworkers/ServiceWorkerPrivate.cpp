@@ -49,6 +49,7 @@
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/Services.h"
+#include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/StaticPrefs_dom.h"
@@ -1671,16 +1672,31 @@ nsresult ServiceWorkerPrivate::SpawnWorkerIfNeeded(WakeUpReason aWhy,
 
   info.mPrincipal = mInfo->Principal();
   info.mLoadingPrincipal = info.mPrincipal;
-  
-  
-  info.mPartitionedPrincipal = info.mPrincipal;
+
   info.mCookieJarSettings =
       mozilla::net::CookieJarSettings::Create(info.mPrincipal);
 
   MOZ_ASSERT(info.mCookieJarSettings);
 
-  net::CookieJarSettings::Cast(info.mCookieJarSettings)
-      ->SetPartitionKey(info.mResolvedScriptURI);
+  
+  
+  
+  
+  
+  if (!info.mPrincipal->OriginAttributesRef().mPartitionKey.IsEmpty()) {
+    net::CookieJarSettings::Cast(info.mCookieJarSettings)
+        ->SetPartitionKey(info.mPrincipal->OriginAttributesRef().mPartitionKey);
+  } else {
+    net::CookieJarSettings::Cast(info.mCookieJarSettings)
+        ->SetPartitionKey(info.mResolvedScriptURI);
+  }
+
+  nsCOMPtr<nsIPrincipal> partitionedPrincipal;
+  StoragePrincipalHelper::CreatePartitionedPrincipalForServiceWorker(
+      info.mPrincipal, info.mCookieJarSettings,
+      getter_AddRefs(partitionedPrincipal));
+
+  info.mPartitionedPrincipal = partitionedPrincipal;
 
   info.mStorageAccess =
       StorageAllowedForServiceWorker(info.mPrincipal, info.mCookieJarSettings);

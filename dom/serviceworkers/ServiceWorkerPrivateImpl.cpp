@@ -160,7 +160,18 @@ nsresult ServiceWorkerPrivateImpl::Initialize() {
       net::CookieJarSettings::Create(principal);
   MOZ_ASSERT(cookieJarSettings);
 
-  net::CookieJarSettings::Cast(cookieJarSettings)->SetPartitionKey(uri);
+  
+  
+  
+  
+  
+  
+  if (!principal->OriginAttributesRef().mPartitionKey.IsEmpty()) {
+    net::CookieJarSettings::Cast(cookieJarSettings)
+        ->SetPartitionKey(principal->OriginAttributesRef().mPartitionKey);
+  } else {
+    net::CookieJarSettings::Cast(cookieJarSettings)->SetPartitionKey(uri);
+  }
 
   net::CookieJarSettingsArgs cjsData;
   net::CookieJarSettings::Cast(cookieJarSettings)->Serialize(cjsData);
