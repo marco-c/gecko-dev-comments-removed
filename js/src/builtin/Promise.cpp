@@ -3283,6 +3283,13 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
   return resultCapability.promise();
 }
 
+static bool CallDefaultPromiseResolveFunction(JSContext* cx,
+                                              Handle<PromiseObject*> promise,
+                                              HandleValue resolutionValue);
+static bool CallDefaultPromiseRejectFunction(
+    JSContext* cx, Handle<PromiseObject*> promise, HandleValue rejectionValue,
+    JS::Handle<SavedFrame*> unwrappedRejectionStack = nullptr);
+
 
 
 
@@ -3293,77 +3300,96 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
 
 [[nodiscard]] static bool RunFulfillFunction(JSContext* cx,
                                              HandleObject onFulfilledFunc,
-                                             HandleValue result,
+                                             HandleValue handlerResult,
                                              HandleObject promiseObj) {
   cx->check(onFulfilledFunc);
-  cx->check(result);
+  cx->check(handlerResult);
   cx->check(promiseObj);
 
   
   
-  
-  
-  
 
-  
-  
-
-  
-  
   if (onFulfilledFunc) {
     
     
     
     
+    
+    
     RootedValue calleeOrRval(cx, ObjectValue(*onFulfilledFunc));
-    return Call(cx, calleeOrRval, UndefinedHandleValue, result, &calleeOrRval);
+    return Call(cx, calleeOrRval, UndefinedHandleValue, handlerResult,
+                &calleeOrRval);
   }
 
+  
+  
+  
+  
+  
+  
   
   
   if (!promiseObj) {
     
     
+
+    
     return true;
   }
 
+  
   
   
   
   
   
   Handle<PromiseObject*> promise = promiseObj.as<PromiseObject>();
-  if (promise->state() != JS::PromiseState::Pending) {
-    return true;
-  }
-
-  
   if (IsPromiseWithDefaultResolvingFunction(promise)) {
-    return ResolvePromiseInternal(cx, promise, result);
+    return CallDefaultPromiseResolveFunction(cx, promise, handlerResult);
   }
 
-  
   return true;
 }
 
+
+
+
+
+
+
+
+
 [[nodiscard]] static bool RunRejectFunction(
-    JSContext* cx, HandleObject onRejectedFunc, HandleValue result,
+    JSContext* cx, HandleObject onRejectedFunc, HandleValue handlerResult,
     HandleObject promiseObj, HandleSavedFrame unwrappedRejectionStack,
     UnhandledRejectionBehavior behavior) {
   cx->check(onRejectedFunc);
-  cx->check(result);
+  cx->check(handlerResult);
   cx->check(promiseObj);
 
   
+  
+
   if (onRejectedFunc) {
+    
+    
+    
+    
     RootedValue calleeOrRval(cx, ObjectValue(*onRejectedFunc));
-    return Call(cx, calleeOrRval, UndefinedHandleValue, result, &calleeOrRval);
+    return Call(cx, calleeOrRval, UndefinedHandleValue, handlerResult,
+                &calleeOrRval);
   }
 
   
+  
+  
+  
+  
+  
+  
   if (!promiseObj) {
-    
     if (behavior == UnhandledRejectionBehavior::Ignore) {
+      
       return true;
     }
 
@@ -3376,22 +3402,24 @@ static bool PromiseAllResolveElementFunction(JSContext* cx, unsigned argc,
       return true;
     }
 
-    return RejectPromiseInternal(cx, temporaryPromise, result,
+    
+    
+    
+    
+    return RejectPromiseInternal(cx, temporaryPromise, handlerResult,
                                  unwrappedRejectionStack);
   }
 
   
+  
+  
+  
   Handle<PromiseObject*> promise = promiseObj.as<PromiseObject>();
-  if (promise->state() != JS::PromiseState::Pending) {
-    return true;
-  }
-
-  
   if (IsPromiseWithDefaultResolvingFunction(promise)) {
-    return RejectPromiseInternal(cx, promise, result, unwrappedRejectionStack);
+    return CallDefaultPromiseRejectFunction(cx, promise, handlerResult,
+                                            unwrappedRejectionStack);
   }
 
-  
   return true;
 }
 
@@ -6264,9 +6292,9 @@ bool PromiseObject::resolve(JSContext* cx, Handle<PromiseObject*> promise,
 
 
 
-static bool CallDefaultPromiseRejectFunction(JSContext* cx,
-                                             Handle<PromiseObject*> promise,
-                                             HandleValue rejectionValue) {
+static bool CallDefaultPromiseRejectFunction(
+    JSContext* cx, Handle<PromiseObject*> promise, HandleValue rejectionValue,
+    JS::Handle<SavedFrame*> unwrappedRejectionStack ) {
   MOZ_ASSERT(IsPromiseWithDefaultResolvingFunction(promise));
 
   
@@ -6281,7 +6309,8 @@ static bool CallDefaultPromiseRejectFunction(JSContext* cx,
   
   SetAlreadyResolvedPromiseWithDefaultResolvingFunction(promise);
 
-  return RejectPromiseInternal(cx, promise, rejectionValue);
+  return RejectPromiseInternal(cx, promise, rejectionValue,
+                               unwrappedRejectionStack);
 }
 
 
