@@ -166,22 +166,8 @@ class nsIParser : public nsParserBase {
 
 
 
-  NS_IMETHOD ParseFragment(const nsAString& aSourceBuffer,
-                           nsTArray<nsString>& aTagStack) = 0;
-
-  
-
-
-
-
-
-
-
-
 
   NS_IMETHOD CancelParsingEvents() = 0;
-
-  virtual void Reset() = 0;
 
   
 

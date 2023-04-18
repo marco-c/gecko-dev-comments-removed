@@ -139,18 +139,7 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
   
 
 
-  NS_IMETHOD ParseFragment(const nsAString& aSourceBuffer,
-                           nsTArray<nsString>& aTagStack) override;
-
-  
-
-
   NS_IMETHOD CancelParsingEvents() override;
-
-  
-
-
-  virtual void Reset() override;
 
   
 

@@ -143,8 +143,13 @@ class nsParser final : public nsIParser,
   
 
 
-  NS_IMETHOD ParseFragment(const nsAString& aSourceBuffer,
-                           nsTArray<nsString>& aTagStack) override;
+
+
+
+
+
+  nsresult ParseFragment(const nsAString& aSourceBuffer,
+                         nsTArray<nsString>& aTagStack);
 
   NS_IMETHOD ContinueInterruptedParsing() override;
   NS_IMETHOD_(void) BlockParser() override;
@@ -247,7 +252,7 @@ class nsParser final : public nsIParser,
 
   void HandleParserContinueEvent(class nsParserContinueEvent*);
 
-  virtual void Reset() override {
+  void Reset() {
     Cleanup();
     Initialize();
   }
