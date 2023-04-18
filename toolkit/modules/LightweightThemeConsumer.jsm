@@ -6,8 +6,6 @@ var EXPORTED_SYMBOLS = ["LightweightThemeConsumer"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-const DEFAULT_THEME_ID = "default-theme@mozilla.org";
-
 ChromeUtils.defineModuleGetter(
   this,
   "AppConstants",
@@ -25,6 +23,12 @@ ChromeUtils.defineModuleGetter(
   "ThemeVariableMap",
   "resource:///modules/ThemeVariableMap.jsm"
 );
+
+const DEFAULT_THEME_ID = "default-theme@mozilla.org";
+
+
+const DEFAULT_THEME_RESPECTS_SYSTEM_COLOR_SCHEME =
+  AppConstants.platform == "linux";
 
 const toolkitVariableMap = [
   [
@@ -263,13 +267,11 @@ LightweightThemeConsumer.prototype = {
   _update(themeData) {
     this._lastData = themeData;
 
-    
     const useDarkTheme =
       themeData.darkTheme &&
       this.darkThemeMediaQuery?.matches &&
       (themeData.darkTheme.id != DEFAULT_THEME_ID ||
-        AppConstants.platform != "linux");
-
+        !DEFAULT_THEME_RESPECTS_SYSTEM_COLOR_SCHEME);
     let theme = useDarkTheme ? themeData.darkTheme : themeData.theme;
     if (!theme) {
       theme = { id: DEFAULT_THEME_ID };
@@ -428,6 +430,9 @@ function _determineToolbarAndContentTheme(aDoc, aTheme) {
 
   let toolbarTheme = (function() {
     if (!aTheme) {
+      if (!DEFAULT_THEME_RESPECTS_SYSTEM_COLOR_SCHEME) {
+        return 1;
+      }
       return 2;
     }
     
