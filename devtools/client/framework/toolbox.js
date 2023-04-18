@@ -643,35 +643,43 @@ Toolbox.prototype = {
 
   _onThreadStateChanged(resource) {
     if (resource.state == "paused") {
-      const reason = resource.why.type;
-      
-      
-      if (reason === "interrupted") {
-        return;
-      }
-
-      this.highlightTool("jsdebugger");
-
-      if (
-        reason === "debuggerStatement" ||
-        reason === "mutationBreakpoint" ||
-        reason === "eventBreakpoint" ||
-        reason === "breakpoint" ||
-        reason === "exception" ||
-        reason === "resumeLimit" ||
-        reason === "XHR"
-      ) {
-        this.raise();
-        this.selectTool("jsdebugger", reason);
-        
-        
-        
-        this._pausedTargets++;
-        this.emit("toolbox-paused");
-      }
+      this._pauseToolbox(resource.why.type);
     } else if (resource.state == "resumed") {
-      this._pausedTargets--;
+      this._resumeToolbox();
+    }
+  },
 
+  _pauseToolbox(reason) {
+    
+    
+    if (reason === "interrupted") {
+      return;
+    }
+
+    this.highlightTool("jsdebugger");
+
+    if (
+      reason === "debuggerStatement" ||
+      reason === "mutationBreakpoint" ||
+      reason === "eventBreakpoint" ||
+      reason === "breakpoint" ||
+      reason === "exception" ||
+      reason === "resumeLimit" ||
+      reason === "XHR"
+    ) {
+      this.raise();
+      this.selectTool("jsdebugger", reason);
+      
+      
+      
+      this._pausedTargets++;
+      this.emit("toolbox-paused");
+    }
+  },
+
+  _resumeToolbox() {
+    if (this.isHighlighted("jsdebugger")) {
+      this._pausedTargets--;
       if (this._pausedTargets == 0) {
         this.emit("toolbox-resumed");
         this.unhighlightTool("jsdebugger");
@@ -730,6 +738,10 @@ Toolbox.prototype = {
         consoleFront.off("inspectObject", this._onInspectObject);
       }
       targetFront.off("frame-update", this._updateFrames);
+      
+      
+      
+      this._resumeToolbox();
     } else if (this.selection) {
       this.selection.onTargetDestroyed(targetFront);
     }

@@ -58,15 +58,11 @@ async function testDebuggerPauseStateOnNavigation() {
   await waitForPaused(dbg);
 
   ok(dbg.toolbox.isHighlighted("jsdebugger"), "Debugger is highlighted");
-  
+
   await goForward(EXAMPLE_URL + "doc-bfcache2.html");
 
-  
-  
-  if (!Services.appinfo.sessionHistoryInParent) {
-    await waitUntil(() => !dbg.toolbox.isHighlighted("jsdebugger"));
-    ok(true, "Debugger is not highlighted");
-  }
+  await waitUntil(() => !dbg.toolbox.isHighlighted("jsdebugger"));
+  ok(true, "Debugger is not highlighted");
 
   dbg.toolbox.closeToolbox();
 }
