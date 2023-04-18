@@ -24,6 +24,7 @@ namespace dom {
 struct WindowActorOptions;
 class JSWindowActorInfo;
 class EventTarget;
+class JSActorProtocolUtils;
 
 
 
@@ -87,6 +88,8 @@ class JSWindowActorProtocol final : public JSActorProtocol,
   nsTArray<nsString> mMatches;
   nsTArray<nsCString> mRemoteTypes;
   nsTArray<nsString> mMessageManagerGroups;
+
+  friend class JSActorProtocolUtils;
 
   ParentSide mParent;
   ChildSide mChild;
