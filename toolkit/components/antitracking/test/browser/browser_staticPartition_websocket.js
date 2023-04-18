@@ -2,7 +2,7 @@
 
 
 
-"use-strict";
+"use strict";
 
 const FIRST_PARTY_A = "http://example.com";
 const FIRST_PARTY_B = "http://example.org";
