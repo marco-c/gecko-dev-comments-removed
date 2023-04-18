@@ -340,17 +340,11 @@ class QSTestUtils {
 
 
 
-
-
-
-
   assertImpressionPing({
     index,
     spy,
     advertiser = "test-advertiser",
     block_id = 1,
-    search_query = undefined,
-    matched_keywords = search_query,
     reporting_url = "http://impression.reporting.test.com/",
     scenario = "offline",
   }) {
@@ -367,11 +361,9 @@ class QSTestUtils {
     let expectedPayload = {
       advertiser,
       block_id,
-      matched_keywords,
       position: index + 1,
       reporting_url,
       scenario,
-      search_query,
     };
     let actualPayload = {};
     for (let key of Object.keys(expectedPayload)) {
