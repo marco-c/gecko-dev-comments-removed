@@ -4625,6 +4625,33 @@ bool SetPropIRGenerator::canAttachAddSlotStub(HandleObject obj, HandleId id) {
   return true;
 }
 
+static PropertyFlags SetPropertyFlags(JSOp op, bool isFunctionPrototype) {
+  
+  if (IsLockedInitOp(op)) {
+    return {};
+  }
+
+  
+  if (IsHiddenInitOp(op)) {
+    return {
+        PropertyFlag::Writable,
+        PropertyFlag::Configurable,
+    };
+  }
+
+  
+  
+  
+  if (isFunctionPrototype) {
+    return {
+        PropertyFlag::Writable,
+    };
+  }
+
+  
+  return PropertyFlags::defaultDataPropFlags;
+}
+
 AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(HandleShape oldShape) {
   ValOperandId objValId(writer.setInputOperandId(0));
   ValOperandId rhsValId;
@@ -4683,10 +4710,11 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(HandleShape oldShape) {
   bool isFunctionPrototype = IsFunctionPrototype(cx_->names(), nobj, id);
 
   JSOp op = JSOp(*pc_);
+  PropertyFlags flags = SetPropertyFlags(op, isFunctionPrototype);
 
   
   if (newShape->isDictionary() || !propInfo.isDataProperty() ||
-      !propInfo.writable()) {
+      propInfo.flags() != flags) {
     return AttachDecision::NoAction;
   }
 
