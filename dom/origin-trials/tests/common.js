@@ -1,3 +1,5 @@
+
+
 function assertTestTrialActive(shouldBeActive) {
   is(
     !!navigator.testTrialGatedAttribute,
