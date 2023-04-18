@@ -581,6 +581,7 @@ void gfxShapedText::SetupClusterBoundaries(uint32_t aOffset,
 
   CompressedGlyph extendCluster = CompressedGlyph::MakeComplex(false, true);
 
+  const char16_t* const stringStart = aString;
   ClusterIterator iter(aString, aLength);
 
   
@@ -596,9 +597,20 @@ void gfxShapedText::SetupClusterBoundaries(uint32_t aOffset,
   }
 
   const char16_t kIdeographicSpace = 0x3000;
+  
+  
+  
+  
+  const char16_t kBengaliVirama = 0x09CD;
+  const char16_t kBengaliYa = 0x09AF;
   while (!iter.AtEnd()) {
     if (*iter == char16_t(' ') || *iter == kIdeographicSpace) {
       glyphs->SetIsSpace();
+    } else if (*iter == kBengaliYa) {
+      
+      if (aString > stringStart && *(aString - 1) == kBengaliVirama) {
+        *glyphs = extendCluster;
+      }
     }
     
     iter.Next();
