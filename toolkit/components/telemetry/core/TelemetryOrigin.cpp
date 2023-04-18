@@ -604,7 +604,7 @@ size_t TelemetryOrigin::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) {
   n += gMetricToOriginBag->ShallowSizeOfIncludingThis(aMallocSizeOf);
   for (const auto& origins : gMetricToOriginBag->Values()) {
     
-    n += origins.ShallowSizeOfIncludingThis(aMallocSizeOf);
+    n += origins.ShallowSizeOfExcludingThis(aMallocSizeOf);
   }
 
   
