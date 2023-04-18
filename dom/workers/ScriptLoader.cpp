@@ -360,8 +360,6 @@ struct ScriptLoadInfo {
 
   CacheStatus mCacheStatus = Uncached;
 
-  nsLoadFlags mLoadFlags = nsIRequest::LOAD_NORMAL;
-
   Maybe<bool> mMutedErrorFlag;
 
   bool Finished() const {
@@ -1022,7 +1020,7 @@ class ScriptLoaderRunnable final : public nsIRunnable, public nsINamed {
 
     nsresult& rv = aLoadInfo.mLoadResult;
 
-    nsLoadFlags loadFlags = aLoadInfo.mLoadFlags;
+    nsLoadFlags loadFlags = mWorkerPrivate->GetLoadFlags();
 
     
     WorkerPrivate* topWorkerPrivate = mWorkerPrivate;
@@ -2460,7 +2458,6 @@ void LoadMainScript(WorkerPrivate* aWorkerPrivate,
 
   ScriptLoadInfo* info = loadInfos.AppendElement();
   info->mURL = aScriptURL;
-  info->mLoadFlags = aWorkerPrivate->GetLoadFlags();
 
   
   
@@ -2490,12 +2487,10 @@ void Load(WorkerPrivate* aWorkerPrivate,
     return;
   }
 
-  nsTArray<ScriptLoadInfo> loadInfos = TransformIntoNewArray(
-      aScriptURLs,
-      [loadFlags = aWorkerPrivate->GetLoadFlags()](const auto& scriptURL) {
+  nsTArray<ScriptLoadInfo> loadInfos =
+      TransformIntoNewArray(aScriptURLs, [](const auto& scriptURL) {
         ScriptLoadInfo res;
         res.mURL = scriptURL;
-        res.mLoadFlags = loadFlags;
         return res;
       });
 
