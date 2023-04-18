@@ -11,6 +11,7 @@
 #include "mozilla/ProfilerRunnable.h"
 #include "mozilla/TaskQueue.h"
 #include "VideoUtils.h"
+#include "mozilla/media/MediaUtils.h"  
 
 namespace mozilla {
 
@@ -35,19 +36,37 @@ class TaskQueueWrapper : public webrtc::TaskQueueBase {
 
   void Delete() override {
     {
+      
+      
       auto hasShutdown = mHasShutdown.Lock();
       *hasShutdown = true;
-      mTaskQueue->BeginShutdown();
     }
 
     MOZ_RELEASE_ASSERT(Deletion == DeletionPolicy::NonBlocking ||
                        !mTaskQueue->IsOnCurrentThread());
 
-    if constexpr (Deletion == DeletionPolicy::Blocking) {
-      mTaskQueue->AwaitIdle();
+    nsCOMPtr<nsISerialEventTarget> backgroundTaskQueue;
+    NS_CreateBackgroundTaskQueue(__func__, getter_AddRefs(backgroundTaskQueue));
+    if (NS_WARN_IF(!backgroundTaskQueue)) {
+      
+      MOZ_ASSERT(false);
+      backgroundTaskQueue = GetMainThreadSerialEventTarget();
     }
 
-    delete this;
+    RefPtr<GenericPromise> shutdownPromise = mTaskQueue->BeginShutdown()->Then(
+        backgroundTaskQueue, __func__, [this] {
+          
+          
+          
+          
+          delete this;
+          return GenericPromise::CreateAndResolve(true, __func__);
+        });
+    if constexpr (Deletion == DeletionPolicy::Blocking) {
+      media::Await(backgroundTaskQueue.forget(), shutdownPromise);
+    } else {
+      Unused << shutdownPromise;
+    }
   }
 
   already_AddRefed<Runnable> CreateTaskRunner(
