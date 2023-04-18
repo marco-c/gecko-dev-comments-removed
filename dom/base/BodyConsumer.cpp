@@ -29,6 +29,7 @@
 #include "nsIStreamLoader.h"
 #include "nsNetUtil.h"
 #include "nsProxyRelease.h"
+#include "nsIInputStream.h"
 
 
 
