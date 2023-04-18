@@ -645,10 +645,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   uint32_t mActivePeerConnections = 0;
 
-  
-  
-  uint32_t mTotalActivePeerConnections = 0;
-
   bool mIsDocumentLoaded;
   bool mIsHandlingResizeEvent;
   bool mMayHavePaintEventListener;

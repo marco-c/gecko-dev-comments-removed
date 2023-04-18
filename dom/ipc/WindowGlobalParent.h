@@ -224,6 +224,8 @@ class WindowGlobalParent final : public WindowContext,
 
   uint32_t GetBFCacheStatus() { return mBFCacheStatus; }
 
+  bool HasActivePeerConnections();
+
  protected:
   already_AddRefed<JSActor> InitJSActor(JS::HandleObject aMaybeActor,
                                         const nsACString& aName,
@@ -294,6 +296,11 @@ class WindowGlobalParent final : public WindowContext,
 
   mozilla::ipc::IPCResult RecvUpdateBFCacheStatus(const uint32_t& aOnFlags,
                                                   const uint32_t& aOffFlags);
+
+  
+  
+  
+  mozilla::ipc::IPCResult RecvUpdateActivePeerConnectionStatus(bool aIsAdded);
 
  public:
   mozilla::ipc::IPCResult RecvSetSingleChannelId(
@@ -386,6 +393,11 @@ class WindowGlobalParent final : public WindowContext,
   bool mSentPageUseCounters = false;
 
   uint32_t mBFCacheStatus = 0;
+
+  
+  
+  
+  uint32_t mNumOfProcessesWithActivePeerConnections = 0;
 
   
   

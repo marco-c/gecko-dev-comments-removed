@@ -191,6 +191,10 @@ parent:
   async UpdateBFCacheStatus(uint32_t aOnFlags, uint32_t aOffFlags);
 
   
+  
+  async UpdateActivePeerConnectionStatus(bool aIsAdded);
+
+  
 
 
 
