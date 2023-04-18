@@ -6,7 +6,7 @@
 importScripts("/resources/testharness.js");
 importScripts("/html/canvas/resources/canvas-tests.js");
 
-var t = async_test("getImageData() returns non-premultiplied colours");
+var t = async_test("getImageData() returns non-premultiplied colors");
 var t_pass = t.done.bind(t);
 var t_fail = t.step_func(function(reason) {
     throw reason;

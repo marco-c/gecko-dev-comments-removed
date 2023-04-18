@@ -6,7 +6,7 @@
 importScripts("/resources/testharness.js");
 importScripts("/html/canvas/resources/canvas-tests.js");
 
-var t = async_test("Shadow colour alpha components are used");
+var t = async_test("Shadow color alpha components are used");
 var t_pass = t.done.bind(t);
 var t_fail = t.step_func(function(reason) {
     throw reason;
