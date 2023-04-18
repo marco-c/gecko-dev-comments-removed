@@ -79,6 +79,7 @@ const execute = (context, details, kind, method) => {
   }
 
   options.runAt = "document_idle";
+  options.matchAboutBlank = true;
   options.wantReturnValue = true;
   
   
