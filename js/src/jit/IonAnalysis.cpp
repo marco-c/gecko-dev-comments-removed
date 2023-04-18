@@ -703,16 +703,6 @@ static bool BlockIsSingleTest(MBasicBlock* phiBlock, MBasicBlock* testBlock,
   return true;
 }
 
-static bool MaybeFoldConditionBlock(MIRGraph& graph,
-                                    MBasicBlock* initialBlock) {
-  
-  
-  
-  
-  
-  
-
-  
 
 
 
@@ -724,39 +714,72 @@ static bool MaybeFoldConditionBlock(MIRGraph& graph,
 
 
 
-
-
-
-
-
+static bool IsDiamondPattern(MBasicBlock* initialBlock) {
   MInstruction* ins = initialBlock->lastIns();
   if (!ins->isTest()) {
-    return true;
+    return false;
   }
   MTest* initialTest = ins->toTest();
 
   MBasicBlock* trueBranch = initialTest->ifTrue();
   if (trueBranch->numPredecessors() != 1 || trueBranch->numSuccessors() != 1) {
-    return true;
+    return false;
   }
+
   MBasicBlock* falseBranch = initialTest->ifFalse();
   if (falseBranch->numPredecessors() != 1 ||
       falseBranch->numSuccessors() != 1) {
-    return true;
-  }
-  MBasicBlock* phiBlock = trueBranch->getSuccessor(0);
-  if (phiBlock != falseBranch->getSuccessor(0)) {
-    return true;
-  }
-  if (phiBlock->numPredecessors() != 2) {
-    return true;
+    return false;
   }
 
+  MBasicBlock* phiBlock = trueBranch->getSuccessor(0);
+  if (phiBlock != falseBranch->getSuccessor(0)) {
+    return false;
+  }
+  if (phiBlock->numPredecessors() != 2) {
+    return false;
+  }
+  return true;
+}
+
+static bool MaybeFoldDiamondConditionBlock(MIRGraph& graph,
+                                           MBasicBlock* initialBlock) {
+  MOZ_ASSERT(IsDiamondPattern(initialBlock));
+
+  
+  
+  
+  
+  
+  
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MTest* initialTest = initialBlock->lastIns()->toTest();
+
+  MBasicBlock* trueBranch = initialTest->ifTrue();
+  MBasicBlock* falseBranch = initialTest->ifFalse();
   if (initialBlock->isLoopBackedge() || trueBranch->isLoopBackedge() ||
       falseBranch->isLoopBackedge()) {
     return true;
   }
 
+  MBasicBlock* phiBlock = trueBranch->getSuccessor(0);
   MBasicBlock* testBlock = phiBlock;
   if (testBlock->numSuccessors() == 1) {
     if (testBlock->isLoopBackedge()) {
@@ -849,6 +872,14 @@ static bool MaybeFoldConditionBlock(MIRGraph& graph,
   finalTest->ifFalse()->removePredecessor(testBlock);
   graph.removeBlock(testBlock);
 
+  return true;
+}
+
+static bool MaybeFoldConditionBlock(MIRGraph& graph,
+                                    MBasicBlock* initialBlock) {
+  if (IsDiamondPattern(initialBlock)) {
+    return MaybeFoldDiamondConditionBlock(graph, initialBlock);
+  }
   return true;
 }
 
