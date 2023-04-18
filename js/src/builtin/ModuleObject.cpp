@@ -2724,7 +2724,7 @@ bool js::FinishDynamicModuleImport(JSContext* cx,
   auto releasePrivate = mozilla::MakeScopeExit(
       [&] { cx->runtime()->releaseScriptPrivate(referencingPrivate); });
 
-  if (!evaluationPromise) {
+  if (!evaluationPromise || !moduleRequest) {
     Handle<PromiseObject*> promise = promiseArg.as<PromiseObject>();
     return RejectPromiseWithPendingError(cx, promise);
   }
