@@ -172,6 +172,11 @@ class WebDriverBiDiConnection extends WebSocketConnection {
         assert.session(this.session);
 
         
+        if (command.startsWith("_")) {
+          throw new error.UnknownCommandError(method);
+        }
+
+        
         result = await this.session.execute(module, command, params);
       }
 
