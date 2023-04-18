@@ -918,6 +918,73 @@ static bool PromiseHasAnyFlag(PromiseObject& promise, int32_t flag) {
 static bool ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp);
 static bool RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp);
 
+static JSFunction* GetResolveFunctionFromReject(JSFunction* reject);
+static JSFunction* GetRejectFunctionFromResolve(JSFunction* resolve);
+
+#ifdef DEBUG
+
+
+
+
+static bool IsAlreadyResolvedMaybeWrappedResolveFunction(
+    JSObject* resolveFunObj) {
+  if (IsWrapper(resolveFunObj)) {
+    resolveFunObj = UncheckedUnwrap(resolveFunObj);
+  }
+
+  JSFunction* resolveFun = &resolveFunObj->as<JSFunction>();
+  MOZ_ASSERT(resolveFun->maybeNative() == ResolvePromiseFunction);
+
+  bool alreadyResolved =
+      resolveFun->getExtendedSlot(ResolveFunctionSlot_Promise).isUndefined();
+
+  
+  if (alreadyResolved) {
+    MOZ_ASSERT(resolveFun->getExtendedSlot(ResolveFunctionSlot_RejectFunction)
+                   .isUndefined());
+  } else {
+    JSFunction* rejectFun = GetRejectFunctionFromResolve(resolveFun);
+    MOZ_ASSERT(
+        !rejectFun->getExtendedSlot(RejectFunctionSlot_Promise).isUndefined());
+    MOZ_ASSERT(!rejectFun->getExtendedSlot(RejectFunctionSlot_ResolveFunction)
+                    .isUndefined());
+  }
+
+  return alreadyResolved;
+}
+
+
+
+
+static bool IsAlreadyResolvedMaybeWrappedRejectFunction(
+    JSObject* rejectFunObj) {
+  if (IsWrapper(rejectFunObj)) {
+    rejectFunObj = UncheckedUnwrap(rejectFunObj);
+  }
+
+  JSFunction* rejectFun = &rejectFunObj->as<JSFunction>();
+  MOZ_ASSERT(rejectFun->maybeNative() == RejectPromiseFunction);
+
+  bool alreadyResolved =
+      rejectFun->getExtendedSlot(RejectFunctionSlot_Promise).isUndefined();
+
+  
+  if (alreadyResolved) {
+    MOZ_ASSERT(rejectFun->getExtendedSlot(RejectFunctionSlot_ResolveFunction)
+                   .isUndefined());
+  } else {
+    JSFunction* resolveFun = GetResolveFunctionFromReject(rejectFun);
+    MOZ_ASSERT(!resolveFun->getExtendedSlot(ResolveFunctionSlot_Promise)
+                    .isUndefined());
+    MOZ_ASSERT(!resolveFun->getExtendedSlot(ResolveFunctionSlot_RejectFunction)
+                    .isUndefined());
+  }
+
+  return alreadyResolved;
+}
+
+#endif  
+
 
 
 
@@ -982,6 +1049,9 @@ static bool RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp);
   rejectFun->initExtendedSlot(RejectFunctionSlot_ResolveFunction,
                               ObjectValue(*resolveFun));
 
+  MOZ_ASSERT(!IsAlreadyResolvedMaybeWrappedResolveFunction(resolveFun));
+  MOZ_ASSERT(!IsAlreadyResolvedMaybeWrappedRejectFunction(rejectFun));
+
   
   return true;
 }
@@ -1029,13 +1099,14 @@ static bool RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
   
   
   
-  if (promiseVal.isUndefined()) {
+  bool alreadyResolved = promiseVal.isUndefined();
+  MOZ_ASSERT(IsAlreadyResolvedMaybeWrappedRejectFunction(reject) ==
+             alreadyResolved);
+  if (alreadyResolved) {
     args.rval().setUndefined();
     return true;
   }
 
-  
-  
   RootedObject promise(cx, &promiseVal.toObject());
 
   
@@ -1205,19 +1276,22 @@ static bool ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
   HandleValue resolutionVal = args.get(0);
 
   
+  const Value& promiseVal =
+      resolve->getExtendedSlot(ResolveFunctionSlot_Promise);
+
   
   
   
-  if (!resolve->getExtendedSlot(ResolveFunctionSlot_RejectFunction)
-           .isObject()) {
+  
+  bool alreadyResolved = promiseVal.isUndefined();
+  MOZ_ASSERT(IsAlreadyResolvedMaybeWrappedResolveFunction(resolve) ==
+             alreadyResolved);
+  if (alreadyResolved) {
     args.rval().setUndefined();
     return true;
   }
 
-  
-  
-  RootedObject promise(
-      cx, &resolve->getExtendedSlot(ResolveFunctionSlot_Promise).toObject());
+  RootedObject promise(cx, &promiseVal.toObject());
 
   
   
@@ -2498,6 +2572,9 @@ static void ClearResolutionFunctionSlots(JSFunction* resolutionFun) {
 
   reject->setExtendedSlot(RejectFunctionSlot_Promise, UndefinedValue());
   reject->setExtendedSlot(RejectFunctionSlot_ResolveFunction, UndefinedValue());
+
+  MOZ_ASSERT(IsAlreadyResolvedMaybeWrappedResolveFunction(resolve));
+  MOZ_ASSERT(IsAlreadyResolvedMaybeWrappedRejectFunction(reject));
 }
 
 
