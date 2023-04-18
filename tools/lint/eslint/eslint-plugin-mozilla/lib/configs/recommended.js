@@ -43,11 +43,12 @@ module.exports = {
     {
       
       
+      
       env: {
         browser: false,
         "mozilla/jsm": true,
       },
-      files: ["**/*.mjs", "**/*.jsm", "**/*.jsm.js"],
+      files: ["**/*.sys.mjs", "**/*.jsm", "**/*.jsm.js"],
       rules: {
         "mozilla/reject-top-level-await": "error",
         
@@ -57,6 +58,11 @@ module.exports = {
         
         
         "no-redeclare": ["error", { builtinGlobals: false }],
+      },
+    },
+    {
+      files: ["**/*.mjs", "**/*.jsm"],
+      rules: {
         
         
         "no-unused-vars": [
