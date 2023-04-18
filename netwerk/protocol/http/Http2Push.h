@@ -10,7 +10,7 @@
 
 
 #include "Http2Session.h"
-#include "Http2StreamBase.h"
+#include "Http2Stream.h"
 
 #include "mozilla/Attributes.h"
 #include "mozilla/TimeStamp.h"
@@ -25,20 +25,19 @@ namespace net {
 
 class Http2PushTransactionBuffer;
 
-class Http2PushedStream final : public Http2StreamBase {
+class Http2PushedStream final : public Http2Stream {
  public:
   Http2PushedStream(Http2PushTransactionBuffer* aTransaction,
-                    Http2Session* aSession, Http2StreamBase* aAssociatedStream,
+                    Http2Session* aSession, Http2Stream* aAssociatedStream,
                     uint32_t aID,
                     uint64_t aCurrentForegroundTabOuterContentWindowId);
 
-  Http2PushedStream* GetHttp2PushedStream() override { return this; }
   bool GetPushComplete();
 
   
-  Http2StreamBase* GetConsumerStream() { return mConsumerStream; };
+  virtual Http2Stream* GetConsumerStream() override { return mConsumerStream; };
 
-  void SetConsumerStream(Http2StreamBase* consumer);
+  void SetConsumerStream(Http2Stream* consumer);
   [[nodiscard]] bool GetHashKey(nsCString& key);
 
   
@@ -49,10 +48,10 @@ class Http2PushedStream final : public Http2StreamBase {
   void AdjustInitialWindow() override;
 
   nsIRequestContext* RequestContext() override { return mRequestContext; };
-  void ConnectPushedStream(Http2StreamBase* stream);
+  void ConnectPushedStream(Http2Stream* stream);
 
   [[nodiscard]] bool TryOnPush();
-  [[nodiscard]] static bool TestOnPush(Http2StreamBase* stream);
+  [[nodiscard]] static bool TestOnPush(Http2Stream* stream);
 
   virtual bool DeferCleanup(nsresult status) override;
   void SetDeferCleanupOnSuccess(bool val) { mDeferCleanupOnSuccess = val; }
@@ -68,20 +67,17 @@ class Http2PushedStream final : public Http2StreamBase {
 
   
   virtual bool HasSink() override { return !!mConsumerStream; }
-  void SetPushComplete() { mPushCompleted = true; }
+  virtual void SetPushComplete() override { mPushCompleted = true; }
   virtual void TopBrowsingContextIdChanged(uint64_t) override;
 
   nsCString& GetRequestString() { return mRequestString; }
   nsCString& GetResourceUrl() { return mResourceUrl; }
 
-  nsresult ConvertPushHeaders(Http2Decompressor* decompressor,
-                              nsACString& aHeadersIn, nsACString& aHeadersOut);
-
  private:
   virtual ~Http2PushedStream() = default;
   
   
-  Http2StreamBase* mConsumerStream{nullptr};
+  Http2Stream* mConsumerStream{nullptr};
 
   nsCOMPtr<nsIRequestContext> mRequestContext;
 
@@ -156,7 +152,7 @@ class Http2PushedStreamWrapper : public nsISupports {
   nsCString mRequestString;
   nsCString mResourceUrl;
   uint32_t mStreamID;
-  WeakPtr<Http2StreamBase> mStream;
+  WeakPtr<Http2Stream> mStream;
 };
 
 }  
