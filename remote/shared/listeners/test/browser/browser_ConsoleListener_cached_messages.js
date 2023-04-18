@@ -19,7 +19,9 @@ add_task(async function test_cached_javascript_errors() {
     const listener = new ConsoleListener(innerWindowId);
 
     const errors = [];
-    const onError = (evtName, error) => errors.push(error);
+    
+    
+    const onError = (evtName, error) => errors.push(error.message);
     listener.on("error", onError);
 
     const waitForMessage = listener.once("error");
@@ -32,6 +34,9 @@ add_task(async function test_cached_javascript_errors() {
     content.backup = { listener, errors, onError };
   });
 
+  
+  
+  await doGC();
   await createScriptNode(`(() => {throw "error2"})()`);
 
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
@@ -62,7 +67,7 @@ add_task(async function test_cached_javascript_errors() {
     const listener = new ConsoleListener(innerWindowId);
 
     const errors = [];
-    const onError = (evtName, error) => errors.push(error);
+    const onError = (evtName, error) => errors.push(error.message);
     listener.on("error", onError);
 
     const waitForMessage = listener.once("error");

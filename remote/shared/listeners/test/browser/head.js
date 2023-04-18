@@ -16,3 +16,18 @@ async function clearConsole() {
 registerCleanupFunction(async () => {
   await clearConsole();
 });
+
+async function doGC() {
+  
+  const numCycles = 3;
+  for (let i = 0; i < numCycles; i++) {
+    Cu.forceGC();
+    Cu.forceCC();
+    await new Promise(resolve => Cu.schedulePreciseShrinkingGC(resolve));
+  }
+
+  const MemoryReporter = Cc[
+    "@mozilla.org/memory-reporter-manager;1"
+  ].getService(Ci.nsIMemoryReporterManager);
+  await new Promise(resolve => MemoryReporter.minimizeMemoryUsage(resolve));
+}
