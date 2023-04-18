@@ -347,11 +347,14 @@ struct FrameMetrics {
 
   const CSSToParentLayerScale& GetZoom() const { return mZoom; }
 
-  void SetScrollGeneration(const ScrollGeneration& aScrollGeneration) {
+  void SetScrollGeneration(
+      const MainThreadScrollGeneration& aScrollGeneration) {
     mScrollGeneration = aScrollGeneration;
   }
 
-  ScrollGeneration GetScrollGeneration() const { return mScrollGeneration; }
+  MainThreadScrollGeneration GetScrollGeneration() const {
+    return mScrollGeneration;
+  }
 
   ViewID GetScrollId() const { return mScrollId; }
 
@@ -594,7 +597,7 @@ struct FrameMetrics {
   CSSToParentLayerScale mZoom;
 
   
-  ScrollGeneration mScrollGeneration;
+  MainThreadScrollGeneration mScrollGeneration;
 
   
   

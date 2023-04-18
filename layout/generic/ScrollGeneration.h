@@ -10,7 +10,22 @@
 
 namespace mozilla {
 
+struct ScrollGenerationCounter;
+
+class APZTag {};
+class MainThreadTag {};
+
+template <typename Tag>
+struct ScrollGeneration;
+
+template <typename Tag>
+std::ostream& operator<<(std::ostream& aStream,
+                         const ScrollGeneration<Tag>& aGen);
+
+template <typename Tag>
 struct ScrollGeneration {
+  friend struct ScrollGenerationCounter;
+
  private:
   
   explicit ScrollGeneration(uint64_t aValue);
@@ -19,19 +34,33 @@ struct ScrollGeneration {
   
   ScrollGeneration();
 
-  
-  static ScrollGeneration New();
+  bool operator<(const ScrollGeneration<Tag>& aOther) const;
+  bool operator==(const ScrollGeneration<Tag>& aOther) const;
+  bool operator!=(const ScrollGeneration<Tag>& aOther) const;
 
-  bool operator<(const ScrollGeneration& aOther) const;
-  bool operator==(const ScrollGeneration& aOther) const;
-  bool operator!=(const ScrollGeneration& aOther) const;
-
-  friend std::ostream& operator<<(std::ostream& aStream,
-                                  const ScrollGeneration& aGen);
+  friend std::ostream& operator<<<>(std::ostream& aStream,
+                                    const ScrollGeneration<Tag>& aGen);
 
  private:
-  static uint64_t sCounter;
   uint64_t mValue;
+};
+
+using APZScrollGeneration = ScrollGeneration<APZTag>;
+using MainThreadScrollGeneration = ScrollGeneration<MainThreadTag>;
+
+struct ScrollGenerationCounter {
+  MainThreadScrollGeneration NewMainThreadGeneration() {
+    uint64_t value = ++mCounter;
+    return MainThreadScrollGeneration(value);
+  }
+
+  APZScrollGeneration NewAPZGeneration() {
+    uint64_t value = ++mCounter;
+    return APZScrollGeneration(value);
+  }
+
+ private:
+  uint64_t mCounter = 0;
 };
 
 }  

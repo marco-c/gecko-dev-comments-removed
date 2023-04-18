@@ -1091,6 +1091,10 @@ class AsyncPanZoomController {
   
   Maybe<CompositionPayload> mScrollPayload;
 
+  
+  
+  APZScrollGeneration mScrollGeneration;
+
   friend class Axis;
 
  public:

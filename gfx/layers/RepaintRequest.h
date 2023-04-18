@@ -64,7 +64,8 @@ struct RepaintRequest {
   RepaintRequest(const FrameMetrics& aOther,
                  const ScreenMargin& aDisplayportMargins,
                  const ScrollOffsetUpdateType aScrollUpdateType,
-                 APZScrollAnimationType aScrollAnimationType)
+                 APZScrollAnimationType aScrollAnimationType,
+                 const APZScrollGeneration& aScrollGenerationOnApz)
       : mScrollId(aOther.GetScrollId()),
         mPresShellResolution(aOther.GetPresShellResolution()),
         mCompositionBounds(aOther.GetCompositionBounds()),
@@ -73,6 +74,7 @@ struct RepaintRequest {
         mScrollOffset(aOther.GetVisualScrollOffset()),
         mZoom(aOther.GetZoom()),
         mScrollGeneration(aOther.GetScrollGeneration()),
+        mScrollGenerationOnApz(aScrollGenerationOnApz),
         mDisplayPortMargins(aDisplayportMargins),
         mPresShellId(aOther.GetPresShellId()),
         mLayoutViewport(aOther.GetLayoutViewport()),
@@ -166,7 +168,13 @@ struct RepaintRequest {
 
   bool GetScrollOffsetUpdated() const { return mScrollUpdateType != eNone; }
 
-  ScrollGeneration GetScrollGeneration() const { return mScrollGeneration; }
+  MainThreadScrollGeneration GetScrollGeneration() const {
+    return mScrollGeneration;
+  }
+
+  APZScrollGeneration GetScrollGenerationOnApz() const {
+    return mScrollGenerationOnApz;
+  }
 
   ScrollableLayerGuid::ViewID GetScrollId() const { return mScrollId; }
 
@@ -247,7 +255,14 @@ struct RepaintRequest {
   CSSToParentLayerScale mZoom;
 
   
-  ScrollGeneration mScrollGeneration;
+  
+  MainThreadScrollGeneration mScrollGeneration;
+
+  
+  
+  
+  
+  APZScrollGeneration mScrollGenerationOnApz;
 
   
   

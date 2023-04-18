@@ -9,6 +9,8 @@
 
 #include "InputUtils.h"
 
+static ScrollGenerationCounter sGenerationCounter;
+
 TEST_F(APZCBasicTester, Overzoom) {
   
   FrameMetrics fm;
@@ -228,7 +230,8 @@ TEST_F(APZCBasicTester, ResumeInterruptedTouchDrag_Bug1592435) {
   mainThreadOffset.y -= 5;
   metadata = apzc->GetScrollMetadata();
   metadata.GetMetrics().SetVisualDestination(mainThreadOffset);
-  metadata.GetMetrics().SetScrollGeneration(ScrollGeneration::New());
+  metadata.GetMetrics().SetScrollGeneration(
+      sGenerationCounter.NewMainThreadGeneration());
   metadata.GetMetrics().SetVisualScrollUpdateType(FrameMetrics::eMainThread);
   scrollUpdates.Clear();
   metadata.SetScrollUpdates(scrollUpdates);

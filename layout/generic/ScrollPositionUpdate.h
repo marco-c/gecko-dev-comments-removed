@@ -71,7 +71,7 @@ class ScrollPositionUpdate {
 
   bool operator==(const ScrollPositionUpdate& aOther) const;
 
-  ScrollGeneration GetGeneration() const;
+  MainThreadScrollGeneration GetGeneration() const;
   ScrollUpdateType GetType() const;
   ScrollMode GetMode() const;
   ScrollOrigin GetOrigin() const;
@@ -94,7 +94,7 @@ class ScrollPositionUpdate {
                                   const ScrollPositionUpdate& aUpdate);
 
  private:
-  ScrollGeneration mScrollGeneration;
+  MainThreadScrollGeneration mScrollGeneration;
   
   
   ScrollUpdateType mType;
