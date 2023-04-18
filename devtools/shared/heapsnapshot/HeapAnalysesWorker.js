@@ -9,10 +9,11 @@
 
 
 
-
 "use strict";
 
+
 importScripts("resource://gre/modules/workers/require.js");
+
 importScripts("resource://devtools/shared/worker/helper.js");
 const {
   censusReportToCensusTreeNode,

@@ -12,6 +12,7 @@
 
 "use strict";
 
+
 importScripts(
   "resource://devtools/client/performance-new/profiler_get_symbols.js"
 );
