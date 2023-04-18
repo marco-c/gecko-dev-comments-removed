@@ -190,6 +190,18 @@ NS_IMETHODIMP JSWindowActorProtocol::HandleEvent(Event* aEvent) {
     return NS_ERROR_FAILURE;
   }
 
+  if (XRE_IsParentProcess()) {
+    EventTarget* currentTarget = aEvent->GetCurrentTarget();
+    if (NS_WARN_IF(!currentTarget)) {
+      return NS_ERROR_FAILURE;
+    }
+    
+    
+    if (currentTarget->IsRootWindow() && wgc->BrowsingContext()->IsContent()) {
+      return NS_OK;
+    }
+  }
+
   
   RefPtr<JSActor> actor = wgc->GetExistingActor(mName);
   if (!actor) {
