@@ -8,6 +8,7 @@ import math
 import os
 import shutil
 import sys
+from pathlib import Path
 
 if sys.version_info[0] < 3:
     import __builtin__ as builtins
@@ -150,6 +151,39 @@ def _activate_python_environment(topsrcdir, get_state_dir):
     mach_environment.activate()
 
 
+def _maybe_activate_mozillabuild_environment():
+    if sys.platform != "win32":
+        return
+
+    mozillabuild = Path(os.environ.get("MOZILLABUILD", r"C:\mozilla-build"))
+    assert mozillabuild.exists(), (
+        f'MozillaBuild was not found at "{mozillabuild}".\n'
+        "If it's installed in a different location, please "
+        'set the "MOZILLABUILD" environment variable '
+        "accordingly."
+    )
+
+    for entry in os.environ.get("PATH", "").split(":"):
+        entry = Path(entry)
+        if mozillabuild in entry.parents:
+            
+            
+            
+            return
+
+    use_msys2 = (mozillabuild / "msys2").exists()
+    if use_msys2:
+        mozillabuild_msys_tools_path = mozillabuild / "msys2" / "usr" / "bin"
+    else:
+        mozillabuild_msys_tools_path = mozillabuild / "msys" / "bin"
+
+    os.environ.setdefault("MOZILLABUILD", str(mozillabuild))
+    os.environ["PATH"] += (
+        f"{os.pathsep}{mozillabuild_msys_tools_path}"
+        f"{os.pathsep}{mozillabuild / 'bin'}"
+    )
+
+
 def initialize(topsrcdir):
     
     
@@ -178,6 +212,7 @@ def initialize(topsrcdir):
     _activate_python_environment(
         topsrcdir, lambda: os.path.normpath(get_state_dir(True, topsrcdir=topsrcdir))
     )
+    _maybe_activate_mozillabuild_environment()
 
     import mach.base
     import mach.main
