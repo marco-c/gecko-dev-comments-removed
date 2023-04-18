@@ -90,7 +90,8 @@ let gPrevTheme = AddonManager.getAddonsByTypes(["theme"]).then(addons => {
 
 async function enableTheme(id) {
   await BuiltInThemes.ensureBuiltInThemes();
-  (await AddonManager.getAddonByID(id)).enable();
+  
+  (await AddonManager.getAddonByID(id))?.enable();
 }
 
 
