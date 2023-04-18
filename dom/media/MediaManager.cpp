@@ -64,6 +64,7 @@
 
 
 #include "MediaEngineDefault.h"
+#include "MediaEngineSource.h"
 #if defined(MOZ_WEBRTC)
 #  include "MediaEngineWebRTC.h"
 #  include "MediaEngineWebRTCAudio.h"
