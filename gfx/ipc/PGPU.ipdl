@@ -50,13 +50,7 @@ struct LayerTreeIdMapping {
 
 sync protocol PGPU
 {
-  manages PAPZInputBridge;
-
 parent:
-  
-  
-  async PAPZInputBridge(LayersId aLayersId);
-
   
   async Init(GfxVarUpdate[] vars,
              DevicePrefs devicePrefs,
@@ -69,6 +63,8 @@ parent:
   async InitVideoBridge(Endpoint<PVideoBridgeParent> endpoint);
   async InitVRManager(Endpoint<PVRManagerParent> endpoint);
   async InitUiCompositorController(LayersId rootLayerTreeId, Endpoint<PUiCompositorControllerParent> endpoint);
+  async InitAPZInputBridge(LayersId layersId,
+                           Endpoint<PAPZInputBridgeParent> endpoint);
   async InitProfiler(Endpoint<PProfilerChild> endpoint);
   
   async InitVR(Endpoint<PVRGPUChild> endpoint);

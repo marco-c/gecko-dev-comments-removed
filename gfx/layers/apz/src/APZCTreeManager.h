@@ -243,7 +243,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-
   void SetTargetAPZC(uint64_t aInputBlockId,
                      const nsTArray<ScrollableLayerGuid>& aTargets) override;
 
@@ -287,7 +286,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
                            HitTestingTreeNodeAutoLock& aOutThumbNode);
 
   
-
 
 
 

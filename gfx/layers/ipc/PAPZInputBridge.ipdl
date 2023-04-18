@@ -18,8 +18,6 @@ using class mozilla::KeyboardInput from "InputData.h";
 
 using mozilla::layers::LayersId from "mozilla/layers/LayersTypes.h";
 
-include protocol PGPU;
-
 namespace mozilla {
 namespace layers {
 
@@ -31,10 +29,9 @@ namespace layers {
 
 
 
+
 [RefCounted] sync protocol PAPZInputBridge
 {
-manager PGPU;
-
 parent:
   
   
@@ -76,8 +73,6 @@ parent:
              ScrollableLayerGuid    aOutTargetGuid,
              uint64_t               aOutFocusSequenceNumber,
              LayersId               aOutLayersId);
-
-  async __delete__();
 };
 
 } 
