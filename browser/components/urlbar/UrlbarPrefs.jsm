@@ -47,6 +47,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["autoFill", true],
 
   
+  
   ["autoFill.adaptiveHistory.enabled", false],
 
   
