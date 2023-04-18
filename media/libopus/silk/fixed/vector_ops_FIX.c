@@ -87,7 +87,7 @@ opus_int32 silk_inner_prod_aligned(
 #endif
 }
 
-opus_int64 silk_inner_prod16_aligned_64_c(
+opus_int64 silk_inner_prod16_c(
     const opus_int16            *inVec1,            
     const opus_int16            *inVec2,            
     const opus_int              len                 

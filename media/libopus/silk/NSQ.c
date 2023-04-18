@@ -75,21 +75,21 @@ static OPUS_INLINE void silk_noise_shape_quantizer(
 
 void silk_NSQ_c
 (
-    const silk_encoder_state    *psEncC,                                    
-    silk_nsq_state              *NSQ,                                       
-    SideInfoIndices             *psIndices,                                 
+    const silk_encoder_state    *psEncC,                                      
+    silk_nsq_state              *NSQ,                                         
+    SideInfoIndices             *psIndices,                                   
     const opus_int16            x16[],                                        
-    opus_int8                   pulses[],                                   
-    const opus_int16            PredCoef_Q12[ 2 * MAX_LPC_ORDER ],          
-    const opus_int16            LTPCoef_Q14[ LTP_ORDER * MAX_NB_SUBFR ],    
+    opus_int8                   pulses[],                                     
+    const opus_int16            PredCoef_Q12[ 2 * MAX_LPC_ORDER ],            
+    const opus_int16            LTPCoef_Q14[ LTP_ORDER * MAX_NB_SUBFR ],      
     const opus_int16            AR_Q13[ MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER ], 
-    const opus_int              HarmShapeGain_Q14[ MAX_NB_SUBFR ],          
-    const opus_int              Tilt_Q14[ MAX_NB_SUBFR ],                   
-    const opus_int32            LF_shp_Q14[ MAX_NB_SUBFR ],                 
-    const opus_int32            Gains_Q16[ MAX_NB_SUBFR ],                  
-    const opus_int              pitchL[ MAX_NB_SUBFR ],                     
-    const opus_int              Lambda_Q10,                                 
-    const opus_int              LTP_scale_Q14                               
+    const opus_int              HarmShapeGain_Q14[ MAX_NB_SUBFR ],            
+    const opus_int              Tilt_Q14[ MAX_NB_SUBFR ],                     
+    const opus_int32            LF_shp_Q14[ MAX_NB_SUBFR ],                   
+    const opus_int32            Gains_Q16[ MAX_NB_SUBFR ],                    
+    const opus_int              pitchL[ MAX_NB_SUBFR ],                       
+    const opus_int              Lambda_Q10,                                   
+    const opus_int              LTP_scale_Q14                                 
 )
 {
     opus_int            k, lag, start_idx, LSF_interpolation_flag;
@@ -262,7 +262,7 @@ void silk_noise_shape_quantizer(
         tmp1 = silk_SUB32( tmp1, n_LF_Q12 );                                    
         if( lag > 0 ) {
             
-            n_LTP_Q13 = silk_SMULWB( silk_ADD32( shp_lag_ptr[ 0 ], shp_lag_ptr[ -2 ] ), HarmShapeFIRPacked_Q14 );
+            n_LTP_Q13 = silk_SMULWB( silk_ADD_SAT32( shp_lag_ptr[ 0 ], shp_lag_ptr[ -2 ] ), HarmShapeFIRPacked_Q14 );
             n_LTP_Q13 = silk_SMLAWT( n_LTP_Q13, shp_lag_ptr[ -1 ],                      HarmShapeFIRPacked_Q14 );
             n_LTP_Q13 = silk_LSHIFT( n_LTP_Q13, 1 );
             shp_lag_ptr++;

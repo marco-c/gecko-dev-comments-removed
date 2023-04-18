@@ -247,21 +247,21 @@ void silk_VQ_WMat_EC_c(
 
 
 void silk_NSQ_c(
-    const silk_encoder_state    *psEncC,                                    
-    silk_nsq_state              *NSQ,                                       
-    SideInfoIndices             *psIndices,                                 
-    const opus_int16            x16[],                                      
-    opus_int8                   pulses[],                                   
-    const opus_int16            PredCoef_Q12[ 2 * MAX_LPC_ORDER ],          
-    const opus_int16            LTPCoef_Q14[ LTP_ORDER * MAX_NB_SUBFR ],    
+    const silk_encoder_state    *psEncC,                                      
+    silk_nsq_state              *NSQ,                                         
+    SideInfoIndices             *psIndices,                                   
+    const opus_int16            x16[],                                        
+    opus_int8                   pulses[],                                     
+    const opus_int16            PredCoef_Q12[ 2 * MAX_LPC_ORDER ],            
+    const opus_int16            LTPCoef_Q14[ LTP_ORDER * MAX_NB_SUBFR ],      
     const opus_int16            AR_Q13[ MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER ], 
-    const opus_int              HarmShapeGain_Q14[ MAX_NB_SUBFR ],          
-    const opus_int              Tilt_Q14[ MAX_NB_SUBFR ],                   
-    const opus_int32            LF_shp_Q14[ MAX_NB_SUBFR ],                 
-    const opus_int32            Gains_Q16[ MAX_NB_SUBFR ],                  
-    const opus_int              pitchL[ MAX_NB_SUBFR ],                     
-    const opus_int              Lambda_Q10,                                 
-    const opus_int              LTP_scale_Q14                               
+    const opus_int              HarmShapeGain_Q14[ MAX_NB_SUBFR ],            
+    const opus_int              Tilt_Q14[ MAX_NB_SUBFR ],                     
+    const opus_int32            LF_shp_Q14[ MAX_NB_SUBFR ],                   
+    const opus_int32            Gains_Q16[ MAX_NB_SUBFR ],                    
+    const opus_int              pitchL[ MAX_NB_SUBFR ],                       
+    const opus_int              Lambda_Q10,                                   
+    const opus_int              LTP_scale_Q14                                 
 );
 
 #if !defined(OVERRIDE_silk_NSQ)
@@ -273,21 +273,21 @@ void silk_NSQ_c(
 
 
 void silk_NSQ_del_dec_c(
-    const silk_encoder_state    *psEncC,                                    
-    silk_nsq_state              *NSQ,                                       
-    SideInfoIndices             *psIndices,                                 
-    const opus_int16            x16[],                                      
-    opus_int8                   pulses[],                                   
-    const opus_int16            PredCoef_Q12[ 2 * MAX_LPC_ORDER ],          
-    const opus_int16            LTPCoef_Q14[ LTP_ORDER * MAX_NB_SUBFR ],    
+    const silk_encoder_state    *psEncC,                                      
+    silk_nsq_state              *NSQ,                                         
+    SideInfoIndices             *psIndices,                                   
+    const opus_int16            x16[],                                        
+    opus_int8                   pulses[],                                     
+    const opus_int16            PredCoef_Q12[ 2 * MAX_LPC_ORDER ],            
+    const opus_int16            LTPCoef_Q14[ LTP_ORDER * MAX_NB_SUBFR ],      
     const opus_int16            AR_Q13[ MAX_NB_SUBFR * MAX_SHAPE_LPC_ORDER ], 
-    const opus_int              HarmShapeGain_Q14[ MAX_NB_SUBFR ],          
-    const opus_int              Tilt_Q14[ MAX_NB_SUBFR ],                   
-    const opus_int32            LF_shp_Q14[ MAX_NB_SUBFR ],                 
-    const opus_int32            Gains_Q16[ MAX_NB_SUBFR ],                  
-    const opus_int              pitchL[ MAX_NB_SUBFR ],                     
-    const opus_int              Lambda_Q10,                                 
-    const opus_int              LTP_scale_Q14                               
+    const opus_int              HarmShapeGain_Q14[ MAX_NB_SUBFR ],            
+    const opus_int              Tilt_Q14[ MAX_NB_SUBFR ],                     
+    const opus_int32            LF_shp_Q14[ MAX_NB_SUBFR ],                   
+    const opus_int32            Gains_Q16[ MAX_NB_SUBFR ],                    
+    const opus_int              pitchL[ MAX_NB_SUBFR ],                       
+    const opus_int              Lambda_Q10,                                   
+    const opus_int              LTP_scale_Q14                                 
 );
 
 #if !defined(OVERRIDE_silk_NSQ_del_dec)

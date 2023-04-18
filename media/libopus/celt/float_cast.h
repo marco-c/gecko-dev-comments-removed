@@ -67,6 +67,38 @@
 #include <xmmintrin.h>
 static OPUS_INLINE opus_int32 float2int(float x) {return _mm_cvt_ss2si(_mm_set_ss(x));}
 
+#elif (defined(_MSC_VER) && _MSC_VER >= 1400) && (defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 1))
+
+        #include <xmmintrin.h>
+        static OPUS_INLINE opus_int32 float2int(float value)
+        {
+                
+
+
+
+                return _mm_cvtss_si32(_mm_load_ss(&value));
+        }
+
+#elif (defined(_MSC_VER) && _MSC_VER >= 1400) && defined (_M_IX86)
+
+        #include <math.h>
+
+        
+
+
+
+        static OPUS_INLINE opus_int32
+        float2int (float flt)
+        {       int intgr;
+
+                _asm
+                {       fld flt
+                        fistp intgr
+                } ;
+
+                return intgr ;
+        }
+
 #elif defined(HAVE_LRINTF)
 
 
@@ -95,32 +127,6 @@ static OPUS_INLINE opus_int32 float2int(float x) {return _mm_cvt_ss2si(_mm_set_s
 
 #include <math.h>
 #define float2int(x) lrint(x)
-
-#elif (defined(_MSC_VER) && _MSC_VER >= 1400) && defined (_M_X64)
-        #include <xmmintrin.h>
-
-        __inline long int float2int(float value)
-        {
-                return _mm_cvtss_si32(_mm_load_ss(&value));
-        }
-#elif (defined(_MSC_VER) && _MSC_VER >= 1400) && defined (_M_IX86)
-        #include <math.h>
-
-        
-
-
-
-        __inline long int
-        float2int (float flt)
-        {       int intgr;
-
-                _asm
-                {       fld flt
-                        fistp intgr
-                } ;
-
-                return intgr ;
-        }
 
 #else
 

@@ -64,7 +64,7 @@ extern "C" {
 
 
 #ifndef OPUS_EXPORT
-# if defined(WIN32)
+# if defined(_WIN32)
 #  if defined(OPUS_BUILD) && defined(DLL_EXPORT)
 #   define OPUS_EXPORT __declspec(dllexport)
 #  else
@@ -168,6 +168,7 @@ extern "C" {
 
 #define OPUS_SET_PHASE_INVERSION_DISABLED_REQUEST 4046
 #define OPUS_GET_PHASE_INVERSION_DISABLED_REQUEST 4047
+#define OPUS_GET_IN_DTX_REQUEST              4049
 
 
 #define OPUS_HAVE_OPUS_PROJECTION_H
@@ -715,6 +716,16 @@ extern "C" {
 
 
 #define OPUS_GET_PHASE_INVERSION_DISABLED(x) OPUS_GET_PHASE_INVERSION_DISABLED_REQUEST, __opus_check_int_ptr(x)
+
+
+
+
+
+
+
+
+
+#define OPUS_GET_IN_DTX(x) OPUS_GET_IN_DTX_REQUEST, __opus_check_int_ptr(x)
 
 
 

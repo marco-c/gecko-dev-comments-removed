@@ -49,7 +49,11 @@
 
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
+#if defined(_MSC_VER) && (_MSC_VER >= 1910)
+# include <intrin0.h> 
+#else
 # include <intrin.h>
+#endif
 
 # pragma intrinsic(_BitScanReverse)
 

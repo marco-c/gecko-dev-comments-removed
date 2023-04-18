@@ -63,6 +63,14 @@ opus_int silk_VAD_GetSA_Q8_sse4_1(
 
     SAVE_STACK;
 
+#ifdef OPUS_CHECK_ASM
+    silk_encoder_state psEncC_c;
+    opus_int ret_c;
+
+    silk_memcpy( &psEncC_c, psEncC, sizeof( psEncC_c ) );
+    ret_c = silk_VAD_GetSA_Q8_c( &psEncC_c, pIn );
+#endif
+
     
     silk_assert( VAD_N_BANDS == 4 );
     celt_assert( MAX_FRAME_LENGTH >= psEncC->frame_length );
@@ -233,15 +241,14 @@ opus_int silk_VAD_GetSA_Q8_sse4_1(
         speech_nrg += ( b + 1 ) * silk_RSHIFT( Xnrg[ b ] - psSilk_VAD->NL[ b ], 4 );
     }
 
+    if( psEncC->frame_length == 20 * psEncC->fs_kHz ) {
+        speech_nrg = silk_RSHIFT32( speech_nrg, 1 );
+    }
     
     if( speech_nrg <= 0 ) {
         SA_Q15 = silk_RSHIFT( SA_Q15, 1 );
-    } else if( speech_nrg < 32768 ) {
-        if( psEncC->frame_length == 10 * psEncC->fs_kHz ) {
-            speech_nrg = silk_LSHIFT_SAT32( speech_nrg, 16 );
-        } else {
-            speech_nrg = silk_LSHIFT_SAT32( speech_nrg, 15 );
-        }
+    } else if( speech_nrg < 16384 ) {
+        speech_nrg = silk_LSHIFT32( speech_nrg, 16 );
 
         
         speech_nrg = silk_SQRT_APPROX( speech_nrg );
@@ -271,6 +278,11 @@ opus_int silk_VAD_GetSA_Q8_sse4_1(
         
         psEncC->input_quality_bands_Q15[ b ] = silk_sigm_Q15( silk_RSHIFT( SNR_Q7 - 16 * 128, 4 ) );
     }
+
+#ifdef OPUS_CHECK_ASM
+    silk_assert( ret == ret_c );
+    silk_assert( !memcmp( &psEncC_c, psEncC, sizeof( psEncC_c ) ) );
+#endif
 
     RESTORE_STACK;
     return( ret );
