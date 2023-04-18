@@ -1866,7 +1866,7 @@ JSFunction* js::NewFunctionWithProto(
 
   const JSClass* clasp = FunctionClassForAllocKind(allocKind);
 
-  RootedShape shape(cx);
+  Rooted<Shape*> shape(cx);
   if (!proto) {
     bool extended = (allocKind == gc::AllocKind::FUNCTION_EXTENDED);
     shape = GlobalObject::getFunctionShapeWithDefaultProto(cx, extended);
@@ -1968,7 +1968,7 @@ static inline JSFunction* NewFunctionClone(JSContext* cx, HandleFunction fun,
 
   
   
-  RootedShape shape(cx);
+  Rooted<Shape*> shape(cx);
   if (fun->staticPrototype() == proto) {
     MOZ_ASSERT(fun->shape()->propMapLength() == 0);
     MOZ_ASSERT(fun->shape()->objectFlags().isEmpty());

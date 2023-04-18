@@ -92,7 +92,7 @@ ProxyObject* ProxyObject::New(JSContext* cx, const BaseProxyHandler* handler,
 
   AutoSetNewObjectMetadata metadata(cx);
   
-  RootedShape shape(cx);
+  Rooted<Shape*> shape(cx);
   if (!realm->newProxyCache.lookup(clasp, proto, shape.address())) {
     shape = SharedShape::getInitialShape(cx, clasp, realm, proto,
                                           0);

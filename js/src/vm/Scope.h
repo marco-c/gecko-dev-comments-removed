@@ -24,14 +24,14 @@
 #include "gc/Allocator.h"          
 #include "gc/Barrier.h"            
 #include "gc/Cell.h"               
-#include "gc/Rooting.h"      
-#include "js/GCPolicyAPI.h"  
-#include "js/HeapAPI.h"      
-#include "js/RootingAPI.h"   
-#include "js/TraceKind.h"    
-#include "js/TypeDecls.h"    
-#include "js/UbiNode.h"      
-#include "js/UniquePtr.h"    
+#include "gc/Rooting.h"            
+#include "js/GCPolicyAPI.h"        
+#include "js/HeapAPI.h"            
+#include "js/RootingAPI.h"         
+#include "js/TraceKind.h"          
+#include "js/TypeDecls.h"          
+#include "js/UbiNode.h"            
+#include "js/UniquePtr.h"          
 #include "util/Poison.h"  
 #include "vm/JSFunction.h"  
 #include "vm/ScopeKind.h"   
@@ -325,7 +325,7 @@ class Scope : public gc::TenuredCellWithNonGCPointer<BaseScopeData> {
         enclosingScope_(enclosing) {}
 
   static Scope* create(JSContext* cx, ScopeKind kind, HandleScope enclosing,
-                       HandleShape envShape);
+                       Handle<Shape*> envShape);
 
   template <typename ConcreteScope>
   void initData(
@@ -341,7 +341,7 @@ class Scope : public gc::TenuredCellWithNonGCPointer<BaseScopeData> {
   template <typename ConcreteScope>
   static ConcreteScope* create(
       JSContext* cx, ScopeKind kind, HandleScope enclosing,
-      HandleShape envShape,
+      Handle<Shape*> envShape,
       MutableHandle<UniquePtr<typename ConcreteScope::RuntimeData>> data);
 
   static const JS::TraceKind TraceKind = JS::TraceKind::Scope;

@@ -544,7 +544,7 @@ class SharedShape : public js::Shape {
 
 
 
-  static void insertInitialShape(JSContext* cx, HandleShape shape);
+  static void insertInitialShape(JSContext* cx, Handle<Shape*> shape);
 
   
 

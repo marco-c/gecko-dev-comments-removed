@@ -934,7 +934,7 @@ static bool array_addProperty(JSContext* cx, HandleObject obj, HandleId id,
   return true;
 }
 
-static Shape* AddLengthProperty(JSContext* cx, HandleShape shape) {
+static Shape* AddLengthProperty(JSContext* cx, Handle<Shape*> shape) {
   
 
   MOZ_ASSERT(shape->propMapLength() == 0);
@@ -4527,7 +4527,7 @@ static inline bool EnsureNewArrayElements(JSContext* cx, ArrayObject* obj,
 
 template <uint32_t maxLength>
 static MOZ_ALWAYS_INLINE ArrayObject* NewArrayWithShape(
-    JSContext* cx, HandleShape shape, uint32_t length, NewObjectKind newKind,
+    JSContext* cx, Handle<Shape*> shape, uint32_t length, NewObjectKind newKind,
     gc::AllocSite* site = nullptr) {
   
   MOZ_ASSERT(shape->propMapLength() == 1);
@@ -4560,7 +4560,7 @@ static MOZ_ALWAYS_INLINE ArrayObject* NewArrayWithShape(
 static Shape* GetArrayShapeWithProto(JSContext* cx, HandleObject proto) {
   
   
-  RootedShape shape(
+  Rooted<Shape*> shape(
       cx, SharedShape::getInitialShape(cx, &ArrayObject::class_, cx->realm(),
                                        TaggedProto(proto),  0));
   if (!shape) {
@@ -4605,7 +4605,7 @@ template <uint32_t maxLength>
 static MOZ_ALWAYS_INLINE ArrayObject* NewArray(JSContext* cx, uint32_t length,
                                                NewObjectKind newKind,
                                                gc::AllocSite* site = nullptr) {
-  RootedShape shape(cx, GlobalObject::getArrayShapeWithDefaultProto(cx));
+  Rooted<Shape*> shape(cx, GlobalObject::getArrayShapeWithDefaultProto(cx));
   if (!shape) {
     return nullptr;
   }
@@ -4618,7 +4618,7 @@ static MOZ_ALWAYS_INLINE ArrayObject* NewArrayWithProto(JSContext* cx,
                                                         uint32_t length,
                                                         HandleObject proto,
                                                         NewObjectKind newKind) {
-  RootedShape shape(cx);
+  Rooted<Shape*> shape(cx);
   if (!proto || proto == cx->global()->maybeGetArrayPrototype()) {
     shape = GlobalObject::getArrayShapeWithDefaultProto(cx);
   } else {
@@ -4787,7 +4787,7 @@ ArrayObject* js::NewDenseFullyAllocatedArrayWithTemplate(
   MOZ_ASSERT(CanChangeToBackgroundAllocKind(allocKind, &ArrayObject::class_));
   allocKind = ForegroundToBackgroundAllocKind(allocKind);
 
-  RootedShape shape(cx, templateObject->shape());
+  Rooted<Shape*> shape(cx, templateObject->shape());
 
   gc::InitialHeap heap = GetInitialHeap(GenericObject, &ArrayObject::class_);
   ArrayObject* arr = ArrayObject::create(cx, allocKind, heap, shape, length,
@@ -4807,7 +4807,7 @@ ArrayObject* js::NewDenseFullyAllocatedArrayWithTemplate(
 
 
 ArrayObject* js::NewArrayWithShape(JSContext* cx, uint32_t length,
-                                   HandleShape shape) {
+                                   Handle<Shape*> shape) {
   
   
   Maybe<AutoRealm> ar;
@@ -5062,7 +5062,7 @@ bool js::intrinsic_newList(JSContext* cx, unsigned argc, js::Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   MOZ_ASSERT(args.length() == 0);
 
-  RootedShape shape(cx, GetArrayShapeWithProto(cx, nullptr));
+  Rooted<Shape*> shape(cx, GetArrayShapeWithProto(cx, nullptr));
   if (!shape) {
     return false;
   }

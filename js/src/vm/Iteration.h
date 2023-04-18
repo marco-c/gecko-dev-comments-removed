@@ -36,7 +36,7 @@ struct NativeIterator {
   
   
   
-  GCPtrShape* shapesEnd_;  
+  GCPtr<Shape*>* shapesEnd_;  
 
   
   
@@ -135,31 +135,34 @@ struct NativeIterator {
 
   void changeObjectBeingIterated(JSObject& obj) { objectBeingIterated_ = &obj; }
 
-  GCPtrShape* shapesBegin() const {
-    static_assert(alignof(GCPtrShape) <= alignof(NativeIterator),
-                  "NativeIterator must be aligned to begin storing "
-                  "GCPtrShapes immediately after it with no required padding");
+  GCPtr<Shape*>* shapesBegin() const {
+    static_assert(
+        alignof(GCPtr<Shape*>) <= alignof(NativeIterator),
+        "NativeIterator must be aligned to begin storing "
+        "GCPtr<Shape*>s immediately after it with no required padding");
     const NativeIterator* immediatelyAfter = this + 1;
     auto* afterNonConst = const_cast<NativeIterator*>(immediatelyAfter);
-    return reinterpret_cast<GCPtrShape*>(afterNonConst);
+    return reinterpret_cast<GCPtr<Shape*>*>(afterNonConst);
   }
 
-  GCPtrShape* shapesEnd() const { return shapesEnd_; }
+  GCPtr<Shape*>* shapesEnd() const { return shapesEnd_; }
 
   uint32_t shapeCount() const {
     return mozilla::PointerRangeSize(shapesBegin(), shapesEnd());
   }
 
   GCPtrLinearString* propertiesBegin() const {
-    static_assert(alignof(GCPtrShape) >= alignof(GCPtrLinearString),
-                  "GCPtrLinearStrings for properties must be able to appear "
-                  "directly after any GCPtrShapes after this NativeIterator, "
-                  "with no padding space required for correct alignment");
-    static_assert(alignof(NativeIterator) >= alignof(GCPtrLinearString),
-                  "GCPtrLinearStrings for properties must be able to appear "
-                  "directly after this NativeIterator when no GCPtrShapes are "
-                  "present, with no padding space required for correct "
-                  "alignment");
+    static_assert(
+        alignof(GCPtr<Shape*>) >= alignof(GCPtrLinearString),
+        "GCPtrLinearStrings for properties must be able to appear "
+        "directly after any GCPtr<Shape*>s after this NativeIterator, "
+        "with no padding space required for correct alignment");
+    static_assert(
+        alignof(NativeIterator) >= alignof(GCPtrLinearString),
+        "GCPtrLinearStrings for properties must be able to appear "
+        "directly after this NativeIterator when no GCPtr<Shape*>s are "
+        "present, with no padding space required for correct "
+        "alignment");
 
     
     

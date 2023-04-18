@@ -36,10 +36,10 @@ template <class ObjectSubclass>
 
   
   
-  RootedShape emptyShape(cx, obj->shape());
+  Rooted<Shape*> emptyShape(cx, obj->shape());
 
   
-  RootedShape shape(cx, ObjectSubclass::assignInitialShape(cx, obj));
+  Rooted<Shape*> shape(cx, ObjectSubclass::assignInitialShape(cx, obj));
   if (!shape) {
     return false;
   }

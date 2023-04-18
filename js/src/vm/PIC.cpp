@@ -166,7 +166,7 @@ bool js::ForOfPIC::Chain::tryOptimizeArray(JSContext* cx,
   }
 
   
-  RootedShape shape(cx, array->shape());
+  Rooted<Shape*> shape(cx, array->shape());
   Stub* stub = cx->new_<Stub>(shape);
   if (!stub) {
     return false;
