@@ -140,7 +140,7 @@ async function run_test_1() {
   db.close();
 
   
-  Services.cookiemgr.add(
+  Services.cookies.add(
     cookie.host,
     cookie.path,
     cookie.name,
@@ -155,7 +155,7 @@ async function run_test_1() {
   );
 
   
-  Assert.equal(Services.cookiemgr.countCookiesFromHost(cookie.host), 1);
+  Assert.equal(Services.cookies.countCookiesFromHost(cookie.host), 1);
 
   let isRebuildingDone = false;
   let rebuildingObserve = function(subject, topic, data) {
@@ -169,7 +169,7 @@ async function run_test_1() {
   
   
   for (let i = 0; i < 10; ++i) {
-    Assert.equal(Services.cookiemgr.countCookiesFromHost(cookie.host), 1);
+    Assert.equal(Services.cookies.countCookiesFromHost(cookie.host), 1);
     await new Promise(resolve => executeSoon(resolve));
   }
 
@@ -182,8 +182,8 @@ async function run_test_1() {
   await new Promise(resolve => executeSoon(resolve));
 
   
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("foo.com"), 1);
-  Assert.equal(Services.cookiemgr.countCookiesFromHost(cookie.host), 1);
+  Assert.equal(Services.cookies.countCookiesFromHost("foo.com"), 1);
+  Assert.equal(Services.cookies.countCookiesFromHost(cookie.host), 1);
   Assert.equal(do_count_cookies(), 2);
 
   
@@ -199,8 +199,8 @@ async function run_test_1() {
   
   do_load_profile();
 
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("foo.com"), 1);
-  let cookies = Services.cookiemgr.getCookiesFromHost(cookie.host, {});
+  Assert.equal(Services.cookies.countCookiesFromHost("foo.com"), 1);
+  let cookies = Services.cookies.getCookiesFromHost(cookie.host, {});
   Assert.equal(cookies.length, 1);
   let dbcookie = cookies[0];
   Assert.equal(dbcookie.value, "hallo");
@@ -251,7 +251,7 @@ async function run_test_2() {
   Assert.ok(!do_get_backup_file(profile).exists());
 
   
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 0);
+  Assert.equal(Services.cookies.countCookiesFromHost("0.com"), 0);
   Assert.equal(do_count_cookies(), 0);
 
   
@@ -264,7 +264,7 @@ async function run_test_2() {
   db.close();
 
   do_load_profile();
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 0);
+  Assert.equal(Services.cookies.countCookiesFromHost("0.com"), 0);
   Assert.equal(do_count_cookies(), 0);
 
   
@@ -327,8 +327,8 @@ async function run_test_3() {
   Assert.ok(!do_get_backup_file(profile).exists());
 
   
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("hither.com"), 0);
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("haithur.com"), 0);
+  Assert.equal(Services.cookies.countCookiesFromHost("hither.com"), 0);
+  Assert.equal(Services.cookies.countCookiesFromHost("haithur.com"), 0);
 
   
   await promise_close_profile();
@@ -405,7 +405,7 @@ async function run_test_4() {
   Assert.ok(!do_get_backup_file(profile).exists());
 
   
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 0);
+  Assert.equal(Services.cookies.countCookiesFromHost("0.com"), 0);
 
   
   
@@ -415,7 +415,7 @@ async function run_test_4() {
   );
 
   
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
+  Assert.equal(Services.cookies.countCookiesFromHost("0.com"), 1);
   Assert.equal(do_count_cookies(), 1);
 
   
@@ -427,7 +427,7 @@ async function run_test_4() {
 
   
   do_load_profile();
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 1);
+  Assert.equal(Services.cookies.countCookiesFromHost("0.com"), 1);
   Assert.equal(do_count_cookies(), 1);
 
   
@@ -479,8 +479,8 @@ async function run_test_5() {
   Assert.ok(!do_get_backup_file(profile).exists());
 
   
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("bar.com"), 0);
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 0);
+  Assert.equal(Services.cookies.countCookiesFromHost("bar.com"), 0);
+  Assert.equal(Services.cookies.countCookiesFromHost("0.com"), 0);
   Assert.equal(do_count_cookies(), 0);
   Assert.ok(do_get_backup_file(profile).exists());
   Assert.equal(do_get_backup_file(profile).fileSize, size);
@@ -498,8 +498,8 @@ async function run_test_5() {
   Assert.ok(do_get_backup_file(profile).exists());
   Assert.equal(do_get_backup_file(profile).fileSize, size);
 
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("bar.com"), 0);
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("0.com"), 0);
+  Assert.equal(Services.cookies.countCookiesFromHost("bar.com"), 0);
+  Assert.equal(Services.cookies.countCookiesFromHost("0.com"), 0);
   Assert.equal(do_count_cookies(), 0);
 
   

@@ -25,7 +25,7 @@ function* do_run_test() {
 
   
   
-  Services.cookiemgr.sessionCookies;
+  Services.cookies.sessionCookies;
 
   
   do_close_profile(test_generator);
@@ -154,15 +154,15 @@ function* do_run_test() {
   do_load_profile();
 
   
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("foo.com"), 20);
+  Assert.equal(Services.cookies.countCookiesFromHost("foo.com"), 20);
 
   
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("bar.com"), 20);
+  Assert.equal(Services.cookies.countCookiesFromHost("bar.com"), 20);
 
   
   
-  Assert.equal(Services.cookiemgr.countCookiesFromHost("baz.com"), 1);
-  let cookies = Services.cookiemgr.getCookiesFromHost("baz.com", {});
+  Assert.equal(Services.cookies.countCookiesFromHost("baz.com"), 1);
+  let cookies = Services.cookies.getCookiesFromHost("baz.com", {});
   let cookie = cookies[0];
   Assert.equal(cookie.expiry, futureExpiry + 44);
 
