@@ -1179,7 +1179,7 @@ class nsCycleCollector : public nsIMemoryReporter {
   MOZ_CAN_RUN_SCRIPT
   void ShutdownCollect();
 
-  void FixGrayBits(bool aForceGC, TimeLog& aTimeLog);
+  void FixGrayBits(bool aIsShutdown, TimeLog& aTimeLog);
   bool IsIncrementalGCInProgress();
   void FinishAnyIncrementalGCInProgress();
   bool ShouldMergeZones(ccIsManual aIsManual);
@@ -3240,14 +3240,16 @@ void nsCycleCollector::CheckThreadSafety() {
 
 
 
-void nsCycleCollector::FixGrayBits(bool aForceGC, TimeLog& aTimeLog) {
+void nsCycleCollector::FixGrayBits(bool aIsShutdown, TimeLog& aTimeLog) {
   CheckThreadSafety();
 
   if (!mCCJSRuntime) {
     return;
   }
 
-  if (!aForceGC) {
+  
+  
+  if (!(aIsShutdown || (mLogger && mLogger->IsAllTraces()))) {
     mCCJSRuntime->FixWeakMappingGrayBits();
     aTimeLog.Checkpoint("FixWeakMappingGrayBits");
 
@@ -3257,13 +3259,14 @@ void nsCycleCollector::FixGrayBits(bool aForceGC, TimeLog& aTimeLog) {
     if (!needGC) {
       return;
     }
-    mResults.mForcedGC = true;
   }
+
+  mResults.mForcedGC = true;
 
   uint32_t count = 0;
   do {
-    mCCJSRuntime->GarbageCollect(aForceGC ? JS::GCReason::SHUTDOWN_CC
-                                          : JS::GCReason::CC_FORCED);
+    mCCJSRuntime->GarbageCollect(aIsShutdown ? JS::GCReason::SHUTDOWN_CC
+                                             : JS::GCReason::CC_FORCED);
 
     mCCJSRuntime->FixWeakMappingGrayBits();
 
@@ -3564,14 +3567,10 @@ void nsCycleCollector::BeginCollection(
 
   
   
-  bool forceGC = isShutdown || (mLogger && mLogger->IsAllTraces());
-
-  
-  
   FinishAnyIncrementalGCInProgress();
   timeLog.Checkpoint("Pre-FixGrayBits finish IGC");
 
-  FixGrayBits(forceGC, timeLog);
+  FixGrayBits(isShutdown, timeLog);
   if (mCCJSRuntime) {
     mCCJSRuntime->CheckGrayBits();
   }
