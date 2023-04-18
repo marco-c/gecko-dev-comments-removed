@@ -908,9 +908,8 @@ void FontList::SetFamilyNames(nsTArray<Family::InitData>& aFamilies) {
   
   
   if (count > 1) {
-    const nsCString* prevKey = &aFamilies[0].mKey;
     for (size_t i = 1; i < count; ++i) {
-      if (aFamilies[i].mKey.Equals(*prevKey)) {
+      if (aFamilies[i].mKey.Equals(aFamilies[i - 1].mKey)) {
         
         size_t discard =
             aFamilies[i].mBundled && !aFamilies[i - 1].mBundled ? i - 1 : i;
