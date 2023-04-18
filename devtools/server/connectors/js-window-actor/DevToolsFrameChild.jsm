@@ -313,17 +313,9 @@ class DevToolsFrameChild extends JSWindowActorChild {
       "Instantiate WindowGlobalTarget with prefix: " + forwardingPrefix
     );
 
-    
-    
-    
-    const browsingContext = this.manager.browsingContext;
-    const isTopLevelTarget =
-      !browsingContext.parent &&
-      browsingContext.browserId == sessionData.sessionContext.browserId;
-
     const { connection, targetActor } = this._createConnectionAndActor(
       forwardingPrefix,
-      isTopLevelTarget
+      sessionData
     );
     const form = targetActor.form();
     
@@ -388,7 +380,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
     }
   }
 
-  _createConnectionAndActor(forwardingPrefix, isTopLevelTarget) {
+  _createConnectionAndActor(forwardingPrefix, sessionData) {
     this.useCustomLoader = this.document.nodePrincipal.isSystemPrincipal;
 
     
@@ -421,6 +413,14 @@ class DevToolsFrameChild extends JSWindowActorChild {
     );
 
     
+    
+    
+    const browsingContext = this.manager.browsingContext;
+    const isTopLevelTarget =
+      !browsingContext.parent &&
+      browsingContext.browserId == sessionData.sessionContext.browserId;
+
+    
     const targetActor = new WindowGlobalTargetActor(connection, {
       docShell: this.docShell,
       
@@ -431,6 +431,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
       followWindowGlobalLifeCycle: true,
       isTopLevelTarget,
       ignoreSubFrames: isEveryFrameTargetEnabled,
+      sessionContext: sessionData.sessionContext,
     });
     targetActor.manage(targetActor);
     targetActor.createdFromJsWindowActor = true;

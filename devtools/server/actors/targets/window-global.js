@@ -261,9 +261,18 @@ const windowGlobalTargetPrototype = {
 
 
 
+
+
+
   initialize: function(
     connection,
-    { docShell, followWindowGlobalLifeCycle, isTopLevelTarget, ignoreSubFrames }
+    {
+      docShell,
+      followWindowGlobalLifeCycle,
+      isTopLevelTarget,
+      ignoreSubFrames,
+      sessionContext,
+    }
   ) {
     Actor.prototype.initialize.call(this, connection);
 
@@ -280,6 +289,7 @@ const windowGlobalTargetPrototype = {
     this.followWindowGlobalLifeCycle = followWindowGlobalLifeCycle;
     this.isTopLevelTarget = !!isTopLevelTarget;
     this.ignoreSubFrames = ignoreSubFrames;
+    this.sessionContext = sessionContext;
 
     
     this._extraActors = {};
