@@ -75,11 +75,7 @@ using namespace mozilla::a11y;
     return;
   }
 
-  if (LocalAccessible* acc = mGeckoAccessible->AsLocal()) {
-    acc->SetSelected([selected boolValue]);
-  } else {
-    mGeckoAccessible->AsRemote()->SetSelected([selected boolValue]);
-  }
+  mGeckoAccessible->SetSelected([selected boolValue]);
 
   
   

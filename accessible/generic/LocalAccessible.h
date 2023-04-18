@@ -427,12 +427,12 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual void SetSelected(bool aSelect);
+  virtual void SetSelected(bool aSelect) override;
 
   
 
 
-  void TakeSelection();
+  virtual void TakeSelection() override;
 
   
 
@@ -571,42 +571,42 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual void SelectedItems(nsTArray<LocalAccessible*>* aItems);
+  virtual void SelectedItems(nsTArray<Accessible*>* aItems) override;
 
   
 
 
-  virtual uint32_t SelectedItemCount();
+  virtual uint32_t SelectedItemCount() override;
 
   
 
 
-  virtual LocalAccessible* GetSelectedItem(uint32_t aIndex);
+  virtual Accessible* GetSelectedItem(uint32_t aIndex) override;
 
   
 
 
-  virtual bool IsItemSelected(uint32_t aIndex);
+  virtual bool IsItemSelected(uint32_t aIndex) override;
 
   
 
 
-  virtual bool AddItemToSelection(uint32_t aIndex);
+  virtual bool AddItemToSelection(uint32_t aIndex) override;
 
   
 
 
-  virtual bool RemoveItemFromSelection(uint32_t aIndex);
+  virtual bool RemoveItemFromSelection(uint32_t aIndex) override;
 
   
 
 
-  virtual bool SelectAll();
+  virtual bool SelectAll() override;
 
   
 
 
-  virtual bool UnselectAll();
+  virtual bool UnselectAll() override;
 
   
   

@@ -604,6 +604,25 @@ uint16_t PivotRoleRule::Match(Accessible* aAcc) {
 
 
 
+PivotStateRule::PivotStateRule(uint64_t aState) : mState(aState) {}
+
+uint16_t PivotStateRule::Match(Accessible* aAcc) {
+  uint16_t result = nsIAccessibleTraversalRule::FILTER_IGNORE;
+
+  if (nsAccUtils::MustPrune(aAcc)) {
+    result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+  }
+
+  if (aAcc && (aAcc->State() & mState)) {
+    result = nsIAccessibleTraversalRule::FILTER_MATCH |
+             nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
+  }
+
+  return result;
+}
+
+
+
 uint16_t LocalAccInSameDocRule::Match(Accessible* aAcc) {
   LocalAccessible* acc = aAcc ? aAcc->AsLocal() : nullptr;
   if (!acc) {

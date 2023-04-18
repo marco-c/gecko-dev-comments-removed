@@ -187,6 +187,29 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
   virtual bool DoAction(uint8_t aIndex) const override;
 
   
+  
+
+  virtual void SelectedItems(nsTArray<Accessible*>* aItems) override;
+
+  virtual uint32_t SelectedItemCount() override;
+
+  virtual Accessible* GetSelectedItem(uint32_t aIndex) override;
+
+  virtual bool IsItemSelected(uint32_t aIndex) override;
+
+  virtual bool AddItemToSelection(uint32_t aIndex) override;
+
+  virtual bool RemoveItemFromSelection(uint32_t aIndex) override;
+
+  virtual bool SelectAll() override;
+
+  virtual bool UnselectAll() override;
+
+  virtual void TakeSelection() override;
+
+  virtual void SetSelected(bool aSelect) override;
+
+  
 
   virtual void TakeFocus() const override;
 

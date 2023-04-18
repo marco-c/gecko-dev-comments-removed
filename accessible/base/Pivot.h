@@ -102,6 +102,19 @@ class PivotRoleRule : public PivotRule {
 
 
 
+class PivotStateRule : public PivotRule {
+ public:
+  explicit PivotStateRule(uint64_t aState);
+
+  virtual uint16_t Match(Accessible* aAcc) override;
+
+ protected:
+  uint64_t mState;
+};
+
+
+
+
 
 
 class LocalAccInSameDocRule : public PivotRule {
