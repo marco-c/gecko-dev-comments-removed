@@ -113,6 +113,8 @@ bool ShouldUsePortal(PortalKind aPortalKind) {
       case PortalKind::FilePicker:
         return StaticPrefs::widget_use_xdg_desktop_portal_file_picker();
       case PortalKind::MimeHandler:
+        
+        autoBehavior = IsRunningUnderFlatpak();
         return StaticPrefs::widget_use_xdg_desktop_portal_mime_handler();
       case PortalKind::Print:
         
