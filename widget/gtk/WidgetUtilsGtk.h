@@ -28,6 +28,9 @@ bool GdkIsX11Display(GdkDisplay* display);
 bool GdkIsWaylandDisplay();
 bool GdkIsX11Display();
 
+bool IsRunningUnderFlatpak();
+bool ShouldUsePortal();
+
 
 nsTArray<nsCString> ParseTextURIList(const nsACString& data);
 
