@@ -2058,7 +2058,8 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
     
     if (nsCSSRendering::IsCanvasFrame(aFrame) ||
         (aFrame->GetContent() &&
-         aFrame->GetContent()->IsHTMLElement(nsGkAtoms::body))) {
+         (aFrame->GetContent()->IsHTMLElement(nsGkAtoms::body) ||
+          aFrame->GetContent()->IsHTMLElement(nsGkAtoms::html)))) {
       return KeyframeEffect::MatchForCompositor::No;
     }
   }
