@@ -4224,10 +4224,6 @@ BrowserGlue.prototype = {
     
     if (!dialogReason) {
       Services.prefs.setIntPref(dialogVersionPref, dialogVersion);
-
-      
-      const { gBrowser } = BrowserWindowTracker.getTopWindow();
-      gBrowser.selectedTab = gBrowser.addTrustedTab("about:home");
       this._showUpgradeDialog();
       return;
     }
