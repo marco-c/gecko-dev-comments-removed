@@ -590,56 +590,7 @@ void ImageBridgeChild::IdentifyCompositorTextureHost(
 
 void ImageBridgeChild::UpdateTextureFactoryIdentifier(
     const TextureFactoryIdentifier& aIdentifier) {
-  
-  
-  bool disablingWebRender =
-      GetCompositorBackendType() == LayersBackend::LAYERS_WR &&
-      aIdentifier.mParentBackend != LayersBackend::LAYERS_WR;
-
-  
-  
-  
-  
-  
-  
-  if (disablingWebRender && gfxVars::UseWebRender()) {
-    return;
-  }
-
-  
-  
-
-  
-  
-  
-  
-  
-  bool initializingWebRender =
-      GetCompositorBackendType() != LayersBackend::LAYERS_WR &&
-      aIdentifier.mParentBackend == LayersBackend::LAYERS_WR;
-
-  bool needsDrop = disablingWebRender || initializingWebRender;
-
-#if defined(XP_WIN)
-  RefPtr<ID3D11Device> device = gfx::DeviceManagerDx::Get()->GetImageDevice();
-  mImageDevice = device;
-#endif
-
   IdentifyTextureHost(aIdentifier);
-  if (needsDrop) {
-    nsTArray<RefPtr<ImageContainerListener> > listeners;
-    {
-      MutexAutoLock lock(mContainerMapLock);
-      for (const auto& entry : mImageContainerListeners) {
-        listeners.AppendElement(entry.second);
-      }
-    }
-    
-    
-    for (auto container : listeners) {
-      container->DropImageClient();
-    }
-  }
 }
 
 RefPtr<ImageClient> ImageBridgeChild::CreateImageClient(
