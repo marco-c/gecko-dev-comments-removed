@@ -39,10 +39,10 @@
 
 
 
-use once_cell::sync::{Lazy, OnceCell};
+use once_cell::sync::OnceCell;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 pub use configuration::Configuration;
 use configuration::DEFAULT_GLEAN_ENDPOINT;
@@ -100,12 +100,6 @@ static PRE_INIT_PING_REGISTRATION: OnceCell<Mutex<Vec<private::PingType>>> = Onc
 
 
 static STATE: OnceCell<Mutex<RustBindingsState>> = OnceCell::new();
-
-
-
-
-static INIT_HANDLES: Lazy<Arc<Mutex<Vec<std::thread::JoinHandle<()>>>>> =
-    Lazy::new(|| Arc::new(Mutex::new(Vec::new())));
 
 
 
@@ -179,9 +173,16 @@ fn launch_with_glean_mut(callback: impl FnOnce(&mut Glean) + Send + 'static) {
 
 
 pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
+    initialize_internal(cfg, client_info);
+}
+
+fn initialize_internal(
+    cfg: Configuration,
+    client_info: ClientInfoMetrics,
+) -> Option<std::thread::JoinHandle<()>> {
     if was_initialize_called() {
         log::error!("Glean should not be initialized multiple times");
-        return;
+        return None;
     }
 
     let init_handle = std::thread::Builder::new()
@@ -351,20 +352,9 @@ pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
         .expect("Failed to spawn Glean's init thread");
 
     
-    INIT_HANDLES.lock().unwrap().push(init_handle);
-
-    
     
     INITIALIZE_CALLED.store(true, Ordering::SeqCst);
-}
-
-
-
-pub fn join_init() {
-    let mut handles = INIT_HANDLES.lock().unwrap();
-    for handle in handles.drain(..) {
-        handle.join().unwrap();
-    }
+    Some(init_handle)
 }
 
 
@@ -679,9 +669,6 @@ pub(crate) fn destroy_glean(clear_stores: bool) {
     
     if was_initialize_called() {
         
-        join_init();
-
-        
         dispatcher::reset_dispatcher();
 
         
@@ -722,8 +709,9 @@ pub(crate) fn destroy_glean(clear_stores: bool) {
 pub fn test_reset_glean(cfg: Configuration, client_info: ClientInfoMetrics, clear_stores: bool) {
     destroy_glean(clear_stores);
 
-    initialize(cfg, client_info);
-    join_init();
+    if let Some(handle) = initialize_internal(cfg, client_info) {
+        handle.join().unwrap();
+    }
 }
 
 
