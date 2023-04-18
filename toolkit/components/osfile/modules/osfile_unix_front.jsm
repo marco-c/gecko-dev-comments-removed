@@ -1042,34 +1042,8 @@
         unixGroup,
         unixMode
       );
-
-      
-      if ("OSFILE_OFFSETOF_STAT_ST_BIRTHTIME" in Const) {
-        let date = new Date(stat.st_birthtime * 1000);
-
-        
-
-
-
-
-
-
-
-
-        this.macBirthDate = date;
-      }
     };
     File.Info.prototype = Object.create(SysAll.AbstractInfo.prototype);
-
-    
-    Object.defineProperty(File.Info.prototype, "creationDate", {
-      get: function creationDate() {
-        
-        
-        
-        return this.macBirthDate || new Date(0);
-      },
-    });
 
     
 

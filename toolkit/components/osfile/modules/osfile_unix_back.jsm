@@ -186,15 +186,6 @@
           Type.time_t.implementation
         );
 
-        
-        if ("OSFILE_OFFSETOF_STAT_ST_BIRTHTIME" in Const) {
-          stat.add_field_at(
-            Const.OSFILE_OFFSETOF_STAT_ST_BIRTHTIME,
-            "st_birthtime",
-            Type.time_t.implementation
-          );
-        }
-
         stat.add_field_at(
           Const.OSFILE_OFFSETOF_STAT_ST_SIZE,
           "st_size",
