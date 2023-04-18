@@ -24,9 +24,6 @@ AddonTestUtils.createAppInfo(
 );
 
 
-Services.prefs.clearUserPref("services.settings.default_bucket");
-
-
 
 function topicObservable(topic, checkFn) {
   let deferred = PromiseUtils.defer();

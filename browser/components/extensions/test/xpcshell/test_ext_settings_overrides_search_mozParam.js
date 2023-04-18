@@ -23,9 +23,6 @@ AddonTestUtils.createAppInfo(
   "42"
 );
 
-
-Services.prefs.clearUserPref("services.settings.default_bucket");
-
 let { promiseShutdownManager, promiseStartupManager } = AddonTestUtils;
 
 

@@ -161,9 +161,6 @@ add_task(async function setup() {
   await AddonTestUtils.overrideBuiltIns({ system: [] });
   AddonTestUtils.addonStartup.remove(true);
   await AddonTestUtils.promiseStartupManager();
-  
-  
-  Services.prefs.clearUserPref("services.settings.default_bucket");
 
   
   gHttpServer = new HttpServer();

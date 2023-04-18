@@ -25,10 +25,6 @@ AddonTestUtils.createAppInfo(
 SearchTestUtils.init(this);
 SearchTestUtils.initXPCShellAddonManager(this, "system");
 
-
-
-Services.prefs.clearUserPref("services.settings.default_bucket");
-
 function promiseUninstallCompleted(extensionId) {
   return new Promise(resolve => {
     

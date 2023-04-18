@@ -81,6 +81,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "services.settings.server"
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gPreviewEnabled",
+  "services.settings.preview_enabled",
+  false
+);
+
 function _isUndefined(value) {
   return typeof value === "undefined";
 }
@@ -98,6 +105,49 @@ var Utils = {
 
 
   log,
+
+  get PREVIEW_MODE() {
+    
+    
+    if (_isUndefined(this._previewModeEnabled) && allowServerURLOverride) {
+      return gPreviewEnabled;
+    }
+    return !!this._previewModeEnabled;
+  },
+
+  
+
+
+
+  enablePreviewMode(enabled) {
+    const bool2str = v =>
+      
+      _isUndefined(v) ? "unset" : v ? "enabled" : "disabled";
+    this.log.debug(
+      `Preview mode: ${bool2str(this._previewModeEnabled)} -> ${bool2str(
+        enabled
+      )}`
+    );
+    this._previewModeEnabled = enabled;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  actualBucketName(bucketName) {
+    let actual = bucketName.replace("-preview", "");
+    if (this.PREVIEW_MODE) {
+      actual += "-preview";
+    }
+    return actual;
+  },
 
   
 

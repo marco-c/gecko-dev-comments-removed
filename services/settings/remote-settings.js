@@ -18,6 +18,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  AppConstants: "resource://gre/modules/AppConstants.jsm",
   UptakeTelemetry: "resource://services-common/uptake-telemetry.js",
   pushBroadcastService: "resource://gre/modules/PushBroadcastService.jsm",
   RemoteSettingsClient: "resource://services-settings/RemoteSettingsClient.jsm",
@@ -30,7 +31,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
-const PREF_SETTINGS_DEFAULT_BUCKET = "services.settings.default_bucket";
 const PREF_SETTINGS_BRANCH = "services.settings.";
 const PREF_SETTINGS_SERVER_BACKOFF = "server.backoff";
 const PREF_SETTINGS_LAST_UPDATE = "last_update_seconds";
@@ -99,7 +99,6 @@ function remoteSettingsFunction() {
 
   
   const defaultOptions = {
-    bucketNamePref: PREF_SETTINGS_DEFAULT_BUCKET,
     signerName: DEFAULT_SIGNER,
     filterFunc: jexlFilterFunc,
   };
@@ -145,7 +144,8 @@ function remoteSettingsFunction() {
     
     
     if (
-      bucketName == Services.prefs.getCharPref(PREF_SETTINGS_DEFAULT_BUCKET)
+      bucketName ==
+      Utils.actualBucketName(AppConstants.REMOTE_SETTINGS_DEFAULT_BUCKET)
     ) {
       const c = new RemoteSettingsClient(collectionName, defaultOptions);
       const [dbExists, localDump] = await Promise.all([
@@ -436,6 +436,22 @@ function remoteSettingsFunction() {
 
 
 
+
+
+
+  remoteSettings.enablePreviewMode = enabled => {
+    
+    Utils.enablePreviewMode(enabled);
+    
+    for (const client of _clients.values()) {
+      client.refreshBucketName();
+    }
+  };
+
+  
+
+
+
   remoteSettings.inspect = async () => {
     const {
       changes,
@@ -471,8 +487,11 @@ function remoteSettingsFunction() {
       serverTimestamp,
       localTimestamp: gPrefs.getCharPref(PREF_SETTINGS_LAST_ETAG, null),
       lastCheck: gPrefs.getIntPref(PREF_SETTINGS_LAST_UPDATE, 0),
-      mainBucket: Services.prefs.getCharPref(PREF_SETTINGS_DEFAULT_BUCKET),
+      mainBucket: Utils.actualBucketName(
+        AppConstants.REMOTE_SETTINGS_DEFAULT_BUCKET
+      ),
       defaultSigner: DEFAULT_SIGNER,
+      previewMode: Utils.PREVIEW_MODE,
       collections: collections.filter(c => !!c),
       history: {
         [TELEMETRY_SOURCE_SYNC]: await gSyncHistory.list(),

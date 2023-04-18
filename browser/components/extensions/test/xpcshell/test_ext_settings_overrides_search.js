@@ -25,9 +25,6 @@ AddonTestUtils.createAppInfo(
   "42"
 );
 
-
-Services.prefs.clearUserPref("services.settings.default_bucket");
-
 add_task(async function setup() {
   await AddonTestUtils.promiseStartupManager();
   await Services.search.init();
