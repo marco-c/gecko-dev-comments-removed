@@ -132,7 +132,8 @@ class ConsoleOutput extends Component {
     });
   }
 
-  componentWillUpdate(nextProps, nextState) {
+  
+  UNSAFE_componentWillUpdate(nextProps, nextState) {
     this.isUpdating = true;
     if (nextProps.cacheGeneration !== this.props.cacheGeneration) {
       this.messageIdsToKeepAlive = new Set();
