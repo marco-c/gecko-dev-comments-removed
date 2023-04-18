@@ -4665,10 +4665,8 @@ void nsFlexContainerFrame::Reflow(nsPresContext* aPresContext,
   const LogicalSize availableSizeForItems =
       ComputeAvailableSizeForItems(aReflowInput, borderPadding);
   const auto [maxBlockEndEdgeOfChildren, areChildrenComplete] = ReflowChildren(
-      aReflowInput, flr.mContentBoxMainSize, flr.mContentBoxCrossSize,
-      containerSize, availableSizeForItems, borderPadding,
-      sumOfChildrenBlockSize, flr.mAscent, flr.mLines, flr.mPlaceholders,
-      axisTracker, hasLineClampEllipsis);
+      aReflowInput, containerSize, availableSizeForItems, borderPadding,
+      sumOfChildrenBlockSize, axisTracker, hasLineClampEllipsis, flr);
 
   
   
@@ -5246,14 +5244,12 @@ nsFlexContainerFrame::FlexLayoutResult nsFlexContainerFrame::DoFlexLayout(
 }
 
 std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
-    const ReflowInput& aReflowInput, const nscoord aContentBoxMainSize,
-    const nscoord aContentBoxCrossSize, const nsSize& aContainerSize,
+    const ReflowInput& aReflowInput, const nsSize& aContainerSize,
     const LogicalSize& aAvailableSizeForItems,
     const LogicalMargin& aBorderPadding,
     const nscoord aSumOfPrevInFlowsChildrenBlockSize,
-    nscoord& aFlexContainerAscent, nsTArray<FlexLine>& aLines,
-    nsTArray<nsIFrame*>& aPlaceholders, const FlexboxAxisTracker& aAxisTracker,
-    bool aHasLineClampEllipsis) {
+    const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis,
+    FlexLayoutResult& aFlr) {
   
   
   
@@ -5264,7 +5260,7 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
   
   
   const FlexItem* firstItem =
-      aLines[0].IsEmpty() ? nullptr : &aLines[0].FirstItem();
+      aFlr.mLines[0].IsEmpty() ? nullptr : &aFlr.mLines[0].FirstItem();
 
   
   nscoord maxBlockEndEdgeOfChildren = containerContentBoxOrigin.B(flexWM);
@@ -5275,11 +5271,11 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
 
   
   
-  for (const FlexLine& line : aLines) {
+  for (const FlexLine& line : aFlr.mLines) {
     for (const FlexItem& item : line.Items()) {
       LogicalPoint framePos = aAxisTracker.LogicalPointFromFlexRelativePoint(
-          item.MainPosition(), item.CrossPosition(), aContentBoxMainSize,
-          aContentBoxCrossSize);
+          item.MainPosition(), item.CrossPosition(), aFlr.mContentBoxMainSize,
+          aFlr.mContentBoxCrossSize);
 
       if (item.Frame()->GetPrevInFlow()) {
         
@@ -5386,15 +5382,15 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
       
       
       
-      if (&item == firstItem && aFlexContainerAscent == nscoord_MIN) {
-        aFlexContainerAscent = itemNormalBPos + item.ResolvedAscent(true);
+      if (&item == firstItem && aFlr.mAscent == nscoord_MIN) {
+        aFlr.mAscent = itemNormalBPos + item.ResolvedAscent(true);
       }
     }
   }
 
-  if (!aPlaceholders.IsEmpty()) {
-    ReflowPlaceholders(aReflowInput, aPlaceholders, containerContentBoxOrigin,
-                       aContainerSize);
+  if (!aFlr.mPlaceholders.IsEmpty()) {
+    ReflowPlaceholders(aReflowInput, aFlr.mPlaceholders,
+                       containerContentBoxOrigin, aContainerSize);
   }
 
   const bool anyChildIncomplete = PushIncompleteChildren(

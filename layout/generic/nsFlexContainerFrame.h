@@ -575,18 +575,13 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-
-
-
   std::tuple<nscoord, bool> ReflowChildren(
-      const ReflowInput& aReflowInput, const nscoord aContentBoxMainSize,
-      const nscoord aContentBoxCrossSize, const nsSize& aContainerSize,
+      const ReflowInput& aReflowInput, const nsSize& aContainerSize,
       const mozilla::LogicalSize& aAvailableSizeForItems,
       const mozilla::LogicalMargin& aBorderPadding,
       const nscoord aSumOfPrevInFlowsChildrenBlockSize,
-      nscoord& aFlexContainerAscent, nsTArray<FlexLine>& aLines,
-      nsTArray<nsIFrame*>& aPlaceholders,
-      const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis);
+      const FlexboxAxisTracker& aAxisTracker, bool aHasLineClampEllipsis,
+      FlexLayoutResult& aFlr);
 
   
 
