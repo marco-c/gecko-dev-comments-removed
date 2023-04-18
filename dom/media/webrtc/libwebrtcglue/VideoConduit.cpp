@@ -866,6 +866,9 @@ void WebrtcVideoConduit::OnControlConfigChange() {
   
 
   if (mSendStream && encoderReconfigureNeeded) {
+    MOZ_DIAGNOSTIC_ASSERT(
+        mSendStreamConfig.rtp.ssrcs.size() == mEncoderConfig.number_of_streams,
+        "Each video substream must have a corresponding ssrc.");
     mSendStream->ReconfigureVideoEncoder(mEncoderConfig.Copy());
   }
 
@@ -922,7 +925,7 @@ void WebrtcVideoConduit::CreateSendStream() {
   mSendStreamConfig.encoder_settings.bitrate_allocator_factory =
       mCall->mVideoBitrateAllocatorFactory.get();
 
-  MOZ_ASSERT(
+  MOZ_DIAGNOSTIC_ASSERT(
       mSendStreamConfig.rtp.ssrcs.size() == mEncoderConfig.number_of_streams,
       "Each video substream must have a corresponding ssrc.");
 
