@@ -970,7 +970,8 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   
-  if (HTMLEditUtils::IsEmptyNode(
+  if (splitResult.GetPreviousContent() &&
+      HTMLEditUtils::IsEmptyNode(
           *splitResult.GetPreviousContent(),
           {EmptyCheckOption::TreatSingleBRElementAsVisible,
            EmptyCheckOption::TreatListItemAsVisible,
