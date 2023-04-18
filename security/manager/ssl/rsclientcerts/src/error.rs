@@ -19,6 +19,7 @@ macro_rules! error_here {
 
 
 
+#[derive(Debug)]
 pub struct Error {
     typ: ErrorType,
     file: &'static str,
@@ -65,7 +66,7 @@ impl Clone for Error {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum ErrorType {
     
     ExternalError,
