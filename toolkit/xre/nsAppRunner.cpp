@@ -712,7 +712,10 @@ nsIXULRuntime::ContentWin32kLockdownState GetLiveWin32kLockdownState() {
     return nsIXULRuntime::ContentWin32kLockdownState::DisabledByE10S;
   }
 
-  if (!IsWin8OrLater()) {
+  
+  
+  
+  if (!IsWin10FallCreatorsUpdateOrLater()) {
     return nsIXULRuntime::ContentWin32kLockdownState::
         OperatingSystemNotSupported;
   }
