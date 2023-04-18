@@ -205,11 +205,6 @@ void MIDIAccess::MaybeCreateMIDIPort(const MIDIPortInfo& aInfo,
 
 void MIDIAccess::Notify(const MIDIPortList& aEvent) {
   LOG("MIDIAcess::Notify");
-  if (!GetOwner()) {
-    
-    return;
-  }
-
   for (const auto& port : aEvent.ports()) {
     
     ErrorResult rv;
@@ -242,7 +237,6 @@ void MIDIAccess::DisconnectFromOwner() {
   IgnoreKeepAliveIfHasListenersFor(nsGkAtoms::onstatechange);
 
   DOMEventTargetHelper::DisconnectFromOwner();
-  MIDIAccessManager::Get()->SendRefresh();
 }
 
 }  
