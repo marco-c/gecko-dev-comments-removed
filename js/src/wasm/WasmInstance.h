@@ -60,7 +60,8 @@ struct TagDesc;
 
 
 
-struct TlsData;
+
+
 
 class alignas(16) Instance {
   
@@ -263,8 +264,8 @@ class alignas(16) Instance {
   JS::Realm* realm() const { return realm_; }
   bool debugEnabled() const { return !!maybeDebug_; }
   DebugState& debug() { return *maybeDebug_; }
-  TlsData* tlsData() const {
-    return reinterpret_cast<TlsData*>(const_cast<Instance*>(this));
+  Instance* tlsData() const {
+    return reinterpret_cast<Instance*>(const_cast<Instance*>(this));
   }
   uint8_t* globalData() const { return (uint8_t*)&globalArea_; }
   const SharedTableVector& tables() const { return tables_; }
@@ -435,19 +436,6 @@ class alignas(16) Instance {
   static int32_t intrI8VecMul(Instance* instance, uint32_t dest, uint32_t src1,
                               uint32_t src2, uint32_t len, uint8_t* memBase);
 };
-
-
-
-
-
-
-
-
-
-
-
-
-struct TlsData : public Instance {};
 
 bool ResultsToJSValue(JSContext* cx, ResultType type, void* registerResultLoc,
                       Maybe<char*> stackResultsLoc, MutableHandleValue rval,

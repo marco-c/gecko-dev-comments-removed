@@ -775,7 +775,7 @@ static void* BoxValue_Anyref(Value* rawVal) {
   return result.get().forCompiledCode();
 }
 
-static int32_t CoerceInPlace_JitEntry(int funcExportIndex, TlsData* tlsData,
+static int32_t CoerceInPlace_JitEntry(int funcExportIndex, Instance* tlsData,
                                       Value* argv) {
   JSContext* cx = TlsContext.get();  
 

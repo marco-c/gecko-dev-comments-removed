@@ -36,7 +36,7 @@ namespace wasm {
 class Code;
 class CodeRange;
 class DebugFrame;
-struct TlsData;
+class Instance;
 class TypeIdDesc;
 class Instance;
 
@@ -65,7 +65,7 @@ class WasmFrameIter {
   const CodeRange* codeRange_;
   unsigned lineOrBytecode_;
   Frame* fp_;
-  TlsData* tls_;
+  Instance* tls_;
   uint8_t* unwoundIonCallerFP_;
   jit::FrameType unwoundIonFrameType_;
   Unwind unwind_;
@@ -96,7 +96,7 @@ class WasmFrameIter {
   jit::FrameType unwoundIonFrameType() const;
   uint8_t* unwoundIonCallerFP() const { return unwoundIonCallerFP_; }
   Frame* frame() const { return fp_; }
-  TlsData* tls() const { return tls_; }
+  Instance* tls() const { return tls_; }
 
   
   
@@ -237,8 +237,8 @@ void GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed,
 
 
 
-const TlsData* GetNearestEffectiveTls(const Frame* fp);
-TlsData* GetNearestEffectiveTls(Frame* fp);
+const Instance* GetNearestEffectiveTls(const Frame* fp);
+Instance* GetNearestEffectiveTls(Frame* fp);
 
 
 

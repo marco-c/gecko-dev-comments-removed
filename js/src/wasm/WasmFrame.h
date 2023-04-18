@@ -162,7 +162,7 @@
 namespace js {
 namespace wasm {
 
-struct TlsData;
+class Instance;
 
 
 
@@ -264,12 +264,12 @@ class FrameWithTls : public Frame {
   
 
   
-  TlsData* calleeTls_;
-  TlsData* callerTls_;
+  Instance* calleeTls_;
+  Instance* callerTls_;
 
  public:
-  TlsData* calleeTls() { return calleeTls_; }
-  TlsData* callerTls() { return callerTls_; }
+  Instance* calleeTls() { return calleeTls_; }
+  Instance* callerTls() { return callerTls_; }
 
   constexpr static uint32_t sizeOf() {
     return sizeof(wasm::FrameWithTls) + js::jit::ShadowStackSpace;

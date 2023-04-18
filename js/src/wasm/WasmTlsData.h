@@ -38,7 +38,7 @@ struct ExportArg {
   uint64_t hi;
 };
 
-using ExportFuncPtr = int32_t (*)(ExportArg*, TlsData*);
+using ExportFuncPtr = int32_t (*)(ExportArg*, Instance*);
 
 
 
@@ -52,7 +52,7 @@ struct FuncImportTls {
 
   
   
-  TlsData* tls;
+  Instance* tls;
 
   
   JS::Realm* realm;
@@ -90,7 +90,7 @@ struct FunctionTableElem {
 
   
   
-  TlsData* tls;
+  Instance* tls;
 };
 
 }  
