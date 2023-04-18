@@ -562,6 +562,18 @@ uint64_t RemoteAccessibleBase<Derived>::State() {
         state |= states::COLLAPSED;
       }
     }
+
+    
+    auto opacity = Opacity();
+    if (opacity && *opacity == 1.0f) {
+      state |= states::OPAQUE1;
+    } else {
+      
+      
+      
+      
+      state &= ~states::OPAQUE1;
+    }
   }
   auto* browser = static_cast<dom::BrowserParent*>(Document()->Manager());
   if (browser == dom::BrowserParent::GetFocused()) {
@@ -633,6 +645,17 @@ already_AddRefed<nsAtom> RemoteAccessibleBase<Derived>::DisplayStyle() const {
     }
   }
   return nullptr;
+}
+
+template <class Derived>
+Maybe<float> RemoteAccessibleBase<Derived>::Opacity() const {
+  if (mCachedFields) {
+    
+    
+    return mCachedFields->GetAttribute<float>(nsGkAtoms::opacity);
+  }
+
+  return Nothing();
 }
 
 template <class Derived>
