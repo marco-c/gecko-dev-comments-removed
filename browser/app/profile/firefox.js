@@ -2217,16 +2217,6 @@ pref("app.normandy.onsync_skew_sec", 600);
 #endif
 
 
-
-
-
-
-pref("fission.frontend.simulate-events", false);
-
-
-pref("fission.frontend.simulate-messages", false);
-
-
 pref("toolkit.coverage.enabled", false);
 pref("toolkit.coverage.endpoint.base", "https://coverage.mozilla.org");
 
