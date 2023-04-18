@@ -53,22 +53,22 @@ class ServiceWorkerPrivateImpl final : public ServiceWorkerPrivate::Inner,
 
   RefPtr<GenericPromise> SetSkipWaitingFlag();
 
-  static void RunningShutdown() {
-    
-    UpdateRunning(0, 0);
+  static void ReportRunning();
+
+  static void CheckRunningShutdown() {
     MOZ_ASSERT(sRunningServiceWorkers == 0);
     MOZ_ASSERT(sRunningServiceWorkersFetch == 0);
   }
-
-  
-
-
-  static void UpdateRunning(int32_t aDelta, int32_t aFetchDelta);
 
  private:
   class RAIIActorPtrHolder;
 
   ~ServiceWorkerPrivateImpl();
+
+  
+
+
+  void UpdateRunning(int32_t aDelta, int32_t aFetchDelta);
 
   
 
