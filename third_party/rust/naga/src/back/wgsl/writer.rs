@@ -22,6 +22,35 @@ enum Attribute {
     WorkGroupSize([u32; 3]),
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug)]
+enum Indirection {
+    
+    
+    
+    
+    
+    Ordinary,
+
+    
+    
+    
+    
+    
+    Reference,
+}
+
 pub struct Writer<W> {
     out: W,
     names: crate::FastHashMap<NameKey, String>,
@@ -496,10 +525,13 @@ impl<W: Write> Writer<W> {
                         "storage_",
                         "",
                         storage_format_str(format),
-                        if access.contains(crate::StorageAccess::STORE) {
-                            ",write"
+                        if access.contains(crate::StorageAccess::LOAD | crate::StorageAccess::STORE)
+                        {
+                            ",read_write"
+                        } else if access.contains(crate::StorageAccess::LOAD) {
+                            ",read"
                         } else {
-                            ""
+                            ",write"
                         },
                     ),
                 };
@@ -551,16 +583,66 @@ impl<W: Write> Writer<W> {
             }
             TypeInner::Pointer { base, class } => {
                 let (storage, maybe_access) = storage_class_str(class);
+                
+                
+                
                 if let Some(class) = storage {
                     write!(self.out, "ptr<{}, ", class)?;
-                    if let Some(access) = maybe_access {
-                        write!(self.out, ", {}", access)?;
-                    }
                 }
                 self.write_type(module, base)?;
                 if storage.is_some() {
+                    if let Some(access) = maybe_access {
+                        write!(self.out, ", {}", access)?;
+                    }
                     write!(self.out, ">")?;
                 }
+            }
+            TypeInner::ValuePointer {
+                size: None,
+                kind,
+                width: _,
+                class,
+            } => {
+                let (storage, maybe_access) = storage_class_str(class);
+                if let Some(class) = storage {
+                    write!(self.out, "ptr<{}, {}", class, scalar_kind_str(kind))?;
+                    if let Some(access) = maybe_access {
+                        write!(self.out, ", {}", access)?;
+                    }
+                    write!(self.out, ">")?;
+                } else {
+                    return Err(Error::Unimplemented(format!(
+                        "ValuePointer to StorageClass::Handle {:?}",
+                        inner
+                    )));
+                }
+            }
+            TypeInner::ValuePointer {
+                size: Some(size),
+                kind,
+                width: _,
+                class,
+            } => {
+                let (storage, maybe_access) = storage_class_str(class);
+                if let Some(class) = storage {
+                    write!(
+                        self.out,
+                        "ptr<{}, vec{}<{}>",
+                        class,
+                        back::vector_size_str(size),
+                        scalar_kind_str(kind)
+                    )?;
+                    if let Some(access) = maybe_access {
+                        write!(self.out, ", {}", access)?;
+                    }
+                    write!(self.out, ">")?;
+                } else {
+                    return Err(Error::Unimplemented(format!(
+                        "ValuePointer to StorageClass::Handle {:?}",
+                        inner
+                    )));
+                }
+                write!(self.out, ">")?;
             }
             _ => {
                 return Err(Error::Unimplemented(format!(
@@ -588,12 +670,13 @@ impl<W: Write> Writer<W> {
         match *stmt {
             Statement::Emit(ref range) => {
                 for handle in range.clone() {
+                    let info = &func_ctx.info[handle];
                     let expr_name = if let Some(name) = func_ctx.named_expressions.get(&handle) {
                         
                         
                         
                         
-                        Some(self.namer.call_unique(name))
+                        Some(self.namer.call(name))
                     } else {
                         let expr = &func_ctx.expressions[handle];
                         let min_ref_count = expr.bake_ref_count();
@@ -604,8 +687,7 @@ impl<W: Write> Writer<W> {
                             | Expression::ImageSample { .. } => true,
                             _ => false,
                         };
-                        if min_ref_count <= func_ctx.info[handle].ref_count || required_baking_expr
-                        {
+                        if min_ref_count <= info.ref_count || required_baking_expr {
                             
                             if let Expression::Load { pointer } = func_ctx.expressions[handle] {
                                 if let Expression::AccessIndex { base, index } =
@@ -622,7 +704,7 @@ impl<W: Write> Writer<W> {
                                 }
                             }
 
-                            Some(format!("{}{}", back::BAKE_PREFIX, handle.index()))
+                            Some(format!("{}{}", super::BAKE_PREFIX, handle.index()))
                         } else {
                             None
                         }
@@ -693,28 +775,26 @@ impl<W: Write> Writer<W> {
                 }
                 write!(self.out, "{}", level)?;
 
-                let (is_ptr, is_atomic) = match *func_ctx.info[pointer].ty.inner_with(&module.types)
-                {
-                    crate::TypeInner::Pointer { base, .. } => (
-                        func_ctx.expressions[pointer].should_deref(),
-                        match module.types[base].inner {
-                            crate::TypeInner::Atomic { .. } => true,
-                            _ => false,
-                        },
-                    ),
-                    _ => (false, false),
+                let is_atomic = match *func_ctx.info[pointer].ty.inner_with(&module.types) {
+                    crate::TypeInner::Pointer { base, .. } => match module.types[base].inner {
+                        crate::TypeInner::Atomic { .. } => true,
+                        _ => false,
+                    },
+                    _ => false,
                 };
                 if is_atomic {
                     write!(self.out, "atomicStore(")?;
-                    if !is_ptr {
-                        write!(self.out, "&")?;
-                    }
                     self.write_expr(module, pointer, func_ctx)?;
                     write!(self.out, ", ")?;
                     self.write_expr(module, value, func_ctx)?;
                     write!(self.out, ")")?;
                 } else {
-                    self.write_expr(module, pointer, func_ctx)?;
+                    self.write_expr_with_indirection(
+                        module,
+                        pointer,
+                        func_ctx,
+                        Indirection::Reference,
+                    )?;
                     write!(self.out, " = ")?;
                     self.write_expr(module, value, func_ctx)?;
                 }
@@ -727,14 +807,14 @@ impl<W: Write> Writer<W> {
             } => {
                 write!(self.out, "{}", level)?;
                 if let Some(expr) = result {
-                    let name = format!("{}{}", back::BAKE_PREFIX, expr.index());
+                    let name = format!("{}{}", super::BAKE_PREFIX, expr.index());
                     self.start_named_expr(module, expr, func_ctx, &name)?;
                     self.named_expressions.insert(expr, name);
                 }
                 let func_name = &self.names[&NameKey::Function(function)];
                 write!(self.out, "{}(", func_name)?;
-                for (index, argument) in arguments.iter().enumerate() {
-                    self.write_expr(module, *argument, func_ctx)?;
+                for (index, &argument) in arguments.iter().enumerate() {
+                    self.write_expr(module, argument, func_ctx)?;
                     
                     if index != arguments.len().saturating_sub(1) {
                         
@@ -750,17 +830,12 @@ impl<W: Write> Writer<W> {
                 result,
             } => {
                 write!(self.out, "{}", level)?;
-                let res_name = format!("{}{}", back::BAKE_PREFIX, result.index());
+                let res_name = format!("{}{}", super::BAKE_PREFIX, result.index());
                 self.start_named_expr(module, result, func_ctx, &res_name)?;
                 self.named_expressions.insert(result, res_name);
 
-                let is_ptr = func_ctx.expressions[pointer].should_deref();
-
                 let fun_str = fun.to_wgsl();
                 write!(self.out, "atomic{}(", fun_str)?;
-                if !is_ptr {
-                    write!(self.out, "&")?;
-                }
                 self.write_expr(module, pointer, func_ctx)?;
                 if let crate::AtomicFunction::Exchange { compare: Some(cmp) } = *fun {
                     write!(self.out, ", ")?;
@@ -802,7 +877,6 @@ impl<W: Write> Writer<W> {
             Statement::Switch {
                 selector,
                 ref cases,
-                ref default,
             } => {
                 
                 write!(self.out, "{}", level)?;
@@ -810,25 +884,24 @@ impl<W: Write> Writer<W> {
                 self.write_expr(module, selector, func_ctx)?;
                 writeln!(self.out, ") {{")?;
 
-                
-                let mut write_case = true;
-                let all_fall_through = cases
-                    .iter()
-                    .all(|case| case.fall_through && case.body.is_empty());
+                let type_postfix = match *func_ctx.info[selector].ty.inner_with(&module.types) {
+                    crate::TypeInner::Scalar {
+                        kind: crate::ScalarKind::Uint,
+                        ..
+                    } => "u",
+                    _ => "",
+                };
 
                 let l2 = level.next();
                 if !cases.is_empty() {
                     for case in cases {
-                        if write_case {
-                            write!(self.out, "{}case ", l2)?;
-                        }
-                        if !all_fall_through && case.fall_through && case.body.is_empty() {
-                            write_case = false;
-                            write!(self.out, "{}, ", case.value)?;
-                            continue;
-                        } else {
-                            write_case = true;
-                            writeln!(self.out, "{}: {{", case.value)?;
+                        match case.value {
+                            crate::SwitchValue::Integer(value) => {
+                                writeln!(self.out, "{}case {}{}: {{", l2, value, type_postfix)?;
+                            }
+                            crate::SwitchValue::Default => {
+                                writeln!(self.out, "{}default: {{", l2)?;
+                            }
                         }
 
                         for sta in case.body.iter() {
@@ -841,16 +914,6 @@ impl<W: Write> Writer<W> {
 
                         writeln!(self.out, "{}}}", l2)?;
                     }
-                }
-
-                if !default.is_empty() {
-                    writeln!(self.out, "{}default: {{", l2)?;
-
-                    for sta in default {
-                        self.write_stmt(module, sta, func_ctx, l2.next())?;
-                    }
-
-                    writeln!(self.out, "{}}}", l2)?
                 }
 
                 writeln!(self.out, "{}}}", level)?
@@ -897,6 +960,65 @@ impl<W: Write> Writer<W> {
         Ok(())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn plain_form_indirection(
+        &self,
+        expr: Handle<crate::Expression>,
+        module: &Module,
+        func_ctx: &back::FunctionCtx<'_>,
+    ) -> Indirection {
+        use crate::Expression as Ex;
+
+        
+        
+        
+        if self.named_expressions.contains_key(&expr) {
+            return Indirection::Ordinary;
+        }
+
+        match func_ctx.expressions[expr] {
+            Ex::LocalVariable(_) => Indirection::Reference,
+            Ex::GlobalVariable(handle) => {
+                let global = &module.global_variables[handle];
+                match global.class {
+                    crate::StorageClass::Handle => Indirection::Ordinary,
+                    _ => Indirection::Reference,
+                }
+            }
+            Ex::Access { base, .. } | Ex::AccessIndex { base, .. } => {
+                let base_ty = func_ctx.info[base].ty.inner_with(&module.types);
+                match *base_ty {
+                    crate::TypeInner::Pointer { .. } | crate::TypeInner::ValuePointer { .. } => {
+                        Indirection::Reference
+                    }
+                    _ => Indirection::Ordinary,
+                }
+            }
+            _ => Indirection::Ordinary,
+        }
+    }
+
     fn start_named_expr(
         &mut self,
         module: &Module,
@@ -924,12 +1046,67 @@ impl<W: Write> Writer<W> {
     
     
     
-    
     fn write_expr(
         &mut self,
         module: &Module,
         expr: Handle<crate::Expression>,
         func_ctx: &back::FunctionCtx<'_>,
+    ) -> BackendResult {
+        self.write_expr_with_indirection(module, expr, func_ctx, Indirection::Ordinary)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn write_expr_with_indirection(
+        &mut self,
+        module: &Module,
+        expr: Handle<crate::Expression>,
+        func_ctx: &back::FunctionCtx<'_>,
+        requested: Indirection,
+    ) -> BackendResult {
+        
+        
+        let plain = self.plain_form_indirection(expr, module, func_ctx);
+        match (requested, plain) {
+            (Indirection::Ordinary, Indirection::Reference) => {
+                write!(self.out, "(&")?;
+                self.write_expr_plain_form(module, expr, func_ctx, plain)?;
+                write!(self.out, ")")?;
+            }
+            (Indirection::Reference, Indirection::Ordinary) => {
+                write!(self.out, "(*")?;
+                self.write_expr_plain_form(module, expr, func_ctx, plain)?;
+                write!(self.out, ")")?;
+            }
+            (_, _) => self.write_expr_plain_form(module, expr, func_ctx, plain)?,
+        }
+
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    fn write_expr_plain_form(
+        &mut self,
+        module: &Module,
+        expr: Handle<crate::Expression>,
+        func_ctx: &back::FunctionCtx<'_>,
+        indirection: Indirection,
     ) -> BackendResult {
         use crate::Expression;
 
@@ -940,6 +1117,14 @@ impl<W: Write> Writer<W> {
 
         let expression = &func_ctx.expressions[expr];
 
+        
+        
+        
+        
+        
+        
+        
+        
         match *expression {
             Expression::Constant(constant) => self.write_constant(module, constant)?,
             Expression::Compose { ty, ref components } => {
@@ -999,30 +1184,17 @@ impl<W: Write> Writer<W> {
                 self.write_expr(module, right, func_ctx)?;
                 write!(self.out, ")")?;
             }
-            
             Expression::Access { base, index } => {
-                self.write_expr(module, base, func_ctx)?;
+                self.write_expr_with_indirection(module, base, func_ctx, indirection)?;
                 write!(self.out, "[")?;
                 self.write_expr(module, index, func_ctx)?;
                 write!(self.out, "]")?
             }
-            
             Expression::AccessIndex { base, index } => {
                 let base_ty_res = &func_ctx.info[base].ty;
                 let mut resolved = base_ty_res.inner_with(&module.types);
 
-                let deref = match *resolved {
-                    TypeInner::Pointer { .. } => func_ctx.expressions[base].should_deref(),
-                    _ => false,
-                };
-
-                if deref {
-                    write!(self.out, "(*")?;
-                }
-                self.write_expr(module, base, func_ctx)?;
-                if deref {
-                    write!(self.out, ")")?;
-                }
+                self.write_expr_with_indirection(module, base, func_ctx, indirection)?;
 
                 let base_ty_handle = match *resolved {
                     TypeInner::Pointer { base, class: _ } => {
@@ -1182,12 +1354,17 @@ impl<W: Write> Writer<W> {
                         )?;
                     }
                     TypeInner::Vector { size, .. } => {
-                        write!(
-                            self.out,
-                            "vec{}<{}>",
-                            back::vector_size_str(size),
-                            scalar_kind_str(kind)
-                        )?;
+                        let vector_size_str = back::vector_size_str(size);
+                        let scalar_kind_str = scalar_kind_str(kind);
+                        if convert.is_some() {
+                            write!(self.out, "vec{}<{}>", vector_size_str, scalar_kind_str)?;
+                        } else {
+                            write!(
+                                self.out,
+                                "bitcast<vec{}<{}>>",
+                                vector_size_str, scalar_kind_str
+                            )?;
+                        }
                     }
                     TypeInner::Scalar { .. } => {
                         if convert.is_some() {
@@ -1226,30 +1403,25 @@ impl<W: Write> Writer<W> {
                 write!(self.out, ")")?;
             }
             Expression::Load { pointer } => {
-                let (is_pointer, is_atomic) =
-                    match *func_ctx.info[pointer].ty.inner_with(&module.types) {
-                        crate::TypeInner::Pointer { base, .. } => (
-                            func_ctx.expressions[pointer].should_deref(),
-                            match module.types[base].inner {
-                                crate::TypeInner::Atomic { .. } => true,
-                                _ => false,
-                            },
-                        ),
-                        _ => (false, false),
-                    };
+                let is_atomic = match *func_ctx.info[pointer].ty.inner_with(&module.types) {
+                    crate::TypeInner::Pointer { base, .. } => match module.types[base].inner {
+                        crate::TypeInner::Atomic { .. } => true,
+                        _ => false,
+                    },
+                    _ => false,
+                };
+
                 if is_atomic {
                     write!(self.out, "atomicLoad(")?;
-                    if !is_pointer {
-                        
-                        
-                        write!(self.out, "&")?;
-                    }
-                } else if is_pointer {
-                    write!(self.out, "*")?;
-                }
-                self.write_expr(module, pointer, func_ctx)?;
-                if is_atomic {
+                    self.write_expr(module, pointer, func_ctx)?;
                     write!(self.out, ")")?;
+                } else {
+                    self.write_expr_with_indirection(
+                        module,
+                        pointer,
+                        func_ctx,
+                        Indirection::Reference,
+                    )?;
                 }
             }
             Expression::LocalVariable(handle) => {
@@ -1257,9 +1429,6 @@ impl<W: Write> Writer<W> {
             }
             Expression::ArrayLength(expr) => {
                 write!(self.out, "arrayLength(")?;
-                if is_deref_required(expr, module, func_ctx.info) {
-                    write!(self.out, "&")?;
-                };
                 self.write_expr(module, expr, func_ctx)?;
                 write!(self.out, ")")?;
             }
@@ -1268,6 +1437,7 @@ impl<W: Write> Writer<W> {
                 arg,
                 arg1,
                 arg2,
+                arg3,
             } => {
                 use crate::MathFunction as Mf;
 
@@ -1335,6 +1505,20 @@ impl<W: Write> Writer<W> {
                     
                     Mf::CountOneBits => Function::Regular("countOneBits"),
                     Mf::ReverseBits => Function::Regular("reverseBits"),
+                    Mf::ExtractBits => Function::Regular("extractBits"),
+                    Mf::InsertBits => Function::Regular("insertBits"),
+                    
+                    Mf::Pack4x8snorm => Function::Regular("pack4x8snorm"),
+                    Mf::Pack4x8unorm => Function::Regular("pack4x8unorm"),
+                    Mf::Pack2x16snorm => Function::Regular("pack2x16snorm"),
+                    Mf::Pack2x16unorm => Function::Regular("pack2x16unorm"),
+                    Mf::Pack2x16float => Function::Regular("pack2x16float"),
+                    
+                    Mf::Unpack4x8snorm => Function::Regular("unpack4x8snorm"),
+                    Mf::Unpack4x8unorm => Function::Regular("unpack4x8unorm"),
+                    Mf::Unpack2x16snorm => Function::Regular("unpack2x16snorm"),
+                    Mf::Unpack2x16unorm => Function::Regular("unpack2x16unorm"),
+                    Mf::Unpack2x16float => Function::Regular("unpack2x16float"),
                     _ => {
                         return Err(Error::UnsupportedMathFunction(fun));
                     }
@@ -1368,6 +1552,10 @@ impl<W: Write> Writer<W> {
                             self.write_expr(module, arg, func_ctx)?;
                         }
                         if let Some(arg) = arg2 {
+                            write!(self.out, ", ")?;
+                            self.write_expr(module, arg, func_ctx)?;
+                        }
+                        if let Some(arg) = arg3 {
                             write!(self.out, ", ")?;
                             self.write_expr(module, arg, func_ctx)?;
                         }
@@ -1464,7 +1652,6 @@ impl<W: Write> Writer<W> {
         global: &crate::GlobalVariable,
         handle: Handle<crate::GlobalVariable>,
     ) -> BackendResult {
-        let name = self.names[&NameKey::GlobalVariable(handle)].clone();
         
         if let Some(ref binding) = global.binding {
             self.write_attributes(
@@ -1487,7 +1674,11 @@ impl<W: Write> Writer<W> {
             }
             write!(self.out, ">")?;
         }
-        write!(self.out, " {}: ", name)?;
+        write!(
+            self.out,
+            " {}: ",
+            &self.names[&NameKey::GlobalVariable(handle)]
+        )?;
 
         
         self.write_type(module, global.ty)?;
@@ -1577,7 +1768,7 @@ impl<W: Write> Writer<W> {
                 width: _,
                 ref value,
             } => {
-                let name = self.names[&NameKey::Constant(handle)].clone();
+                let name = &self.names[&NameKey::Constant(handle)];
                 
                 write!(self.out, "let {}: ", name)?;
                 
@@ -1601,7 +1792,7 @@ impl<W: Write> Writer<W> {
                 writeln!(self.out, ";")?;
             }
             crate::ConstantInner::Composite { ty, ref components } => {
-                let name = self.names[&NameKey::Constant(handle)].clone();
+                let name = &self.names[&NameKey::Constant(handle)];
                 
                 write!(self.out, "let {}: ", name)?;
                 
@@ -1632,21 +1823,6 @@ impl<W: Write> Writer<W> {
     }
 }
 
-impl crate::Expression {
-    
-    
-    fn should_deref(&self) -> bool {
-        match *self {
-            
-            
-            crate::Expression::LocalVariable(_) | crate::Expression::GlobalVariable(_)
-            
-            | crate::Expression::AccessIndex {..} | crate::Expression::Access {..} => false,
-            _ => true,
-        }
-    }
-}
-
 fn builtin_str(built_in: crate::BuiltIn) -> Option<&'static str> {
     use crate::BuiltIn as Bi;
 
@@ -1665,6 +1841,7 @@ fn builtin_str(built_in: crate::BuiltIn) -> Option<&'static str> {
         Bi::SampleIndex => Some("sample_index"),
         Bi::SampleMask => Some("sample_mask"),
         Bi::PrimitiveIndex => Some("primitive_index"),
+        Bi::ViewIndex => Some("view_index"),
         _ => None,
     }
 }
@@ -1794,23 +1971,6 @@ fn map_binding_to_attribute(
             ],
             _ => vec![Attribute::Location(location)],
         },
-    }
-}
-
-fn is_deref_required(
-    expr: Handle<crate::Expression>,
-    module: &Module,
-    info: &valid::FunctionInfo,
-) -> bool {
-    let base_ty_res = &info[expr].ty;
-    let resolved = base_ty_res.inner_with(&module.types);
-    match *resolved {
-        TypeInner::Pointer { base, class: _ } => match module.types[base].inner {
-            TypeInner::Scalar { .. } | TypeInner::Vector { .. } | TypeInner::Array { .. } => true,
-            _ => false,
-        },
-        TypeInner::ValuePointer { .. } => true,
-        _ => false,
     }
 }
 

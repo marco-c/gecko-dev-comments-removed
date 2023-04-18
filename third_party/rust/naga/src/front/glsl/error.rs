@@ -1,7 +1,5 @@
-use super::{
-    constants::ConstantSolvingError,
-    token::{SourceMetadata, TokenValue},
-};
+use super::{constants::ConstantSolvingError, token::TokenValue};
+use crate::Span;
 use pp_rs::token::PreprocessorError;
 use std::borrow::Cow;
 use thiserror::Error;
@@ -122,5 +120,5 @@ pub struct Error {
     
     pub kind: ErrorKind,
     
-    pub meta: SourceMetadata,
+    pub meta: Span,
 }

@@ -13,7 +13,8 @@ mod writer;
 
 pub use spirv::Capability;
 
-use crate::{arena::Handle, back::BoundsCheckPolicies, proc::TypeResolution};
+use crate::arena::Handle;
+use crate::proc::{BoundsCheckPolicies, TypeResolution};
 
 use spirv::Word;
 use std::ops;
@@ -231,6 +232,34 @@ impl LocalImageType {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug, PartialEq, Hash, Eq, Copy, Clone)]
 enum LocalType {
     
@@ -258,6 +287,28 @@ enum LocalType {
     },
     Sampler,
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[derive(Debug, PartialEq, Hash, Eq, Copy, Clone)]
 enum LookupType {
@@ -511,9 +562,15 @@ bitflags::bitflags! {
         const DEBUG = 0x1;
         /// Flip Y coordinate of `BuiltIn::Position` output.
         const ADJUST_COORDINATE_SPACE = 0x2;
-        /// Emit `OpLabel` for input/output locations.
-        /// Some drivers treat it as semantic, not allowing any conflicts.
+        /// Emit `OpName` for input/output locations.
+        /// Contrary to spec, some drivers treat it as semantic, not allowing
+        /// any conflicts.
         const LABEL_VARYINGS = 0x4;
+        /// Emit `PointSize` output builtin to vertex shaders, which is
+        /// required for drawing with `PointList` topology.
+        const FORCE_POINT_SIZE = 0x8;
+        /// Clamp `BuiltIn::FragDepth` output between 0 and 1.
+        const CLAMP_FRAG_DEPTH = 0x10;
     }
 }
 
@@ -538,7 +595,9 @@ pub struct Options {
 
 impl Default for Options {
     fn default() -> Self {
-        let mut flags = WriterFlags::ADJUST_COORDINATE_SPACE | WriterFlags::LABEL_VARYINGS;
+        let mut flags = WriterFlags::ADJUST_COORDINATE_SPACE
+            | WriterFlags::LABEL_VARYINGS
+            | WriterFlags::CLAMP_FRAG_DEPTH;
         if cfg!(debug_assertions) {
             flags |= WriterFlags::DEBUG;
         }
@@ -546,7 +605,7 @@ impl Default for Options {
             lang_version: (1, 0),
             flags,
             capabilities: None,
-            bounds_check_policies: super::BoundsCheckPolicies::default(),
+            bounds_check_policies: crate::proc::BoundsCheckPolicies::default(),
         }
     }
 }

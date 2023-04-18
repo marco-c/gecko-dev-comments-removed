@@ -170,6 +170,22 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![allow(
     renamed_and_removed_lints,
     unknown_lints, 
@@ -177,6 +193,7 @@
     clippy::unneeded_field_pattern,
     clippy::match_like_matches_macro,
     clippy::manual_strip,
+    clippy::if_same_then_else,
     clippy::unknown_clippy_lints,
 )]
 #![warn(
@@ -196,14 +213,9 @@ pub mod proc;
 mod span;
 pub mod valid;
 
-pub use crate::arena::{Arena, Handle, Range};
+pub use crate::arena::{Arena, Handle, Range, UniqueArena};
 
-use std::{
-    collections::{HashMap, HashSet},
-    hash::BuildHasherDefault,
-};
-
-pub use crate::span::Span;
+pub use crate::span::{Span, SpanContext, WithSpan};
 #[cfg(feature = "deserialize")]
 use serde::Deserialize;
 #[cfg(feature = "serialize")]
@@ -213,9 +225,9 @@ use serde::Serialize;
 pub const BOOL_WIDTH: Bytes = 1;
 
 
-pub type FastHashMap<K, T> = HashMap<K, T, BuildHasherDefault<fxhash::FxHasher>>;
+pub type FastHashMap<K, T> = rustc_hash::FxHashMap<K, T>;
 
-pub type FastHashSet<K> = HashSet<K, BuildHasherDefault<fxhash::FxHasher>>;
+pub type FastHashSet<K> = rustc_hash::FxHashSet<K>;
 
 
 pub(crate) type NamedExpressions = FastHashMap<Handle<Expression>, String>;
@@ -300,6 +312,7 @@ pub enum StorageClass {
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum BuiltIn {
     Position,
+    ViewIndex,
     
     BaseInstance,
     BaseVertex,
@@ -404,7 +417,7 @@ pub enum Sampling {
 
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub struct StructMember {
@@ -523,7 +536,7 @@ pub enum ImageClass {
 }
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub struct Type {
@@ -534,7 +547,7 @@ pub struct Type {
 }
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum TypeInner {
@@ -575,10 +588,27 @@ pub enum TypeInner {
     
     
     
+    
+    
+    
+    
+    
     Pointer {
         base: Handle<Type>,
         class: StorageClass,
     },
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     ValuePointer {
         size: Option<VectorSize>,
@@ -690,12 +720,28 @@ pub enum ConstantInner {
 }
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum Binding {
     
     BuiltIn(BuiltIn),
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     Location {
         location: u32,
@@ -763,6 +809,7 @@ pub enum BinaryOperator {
     Subtract,
     Multiply,
     Divide,
+    
     Modulo,
     Equal,
     NotEqual,
@@ -884,6 +931,20 @@ pub enum MathFunction {
     
     CountOneBits,
     ReverseBits,
+    ExtractBits,
+    InsertBits,
+    
+    Pack4x8snorm,
+    Pack4x8unorm,
+    Pack2x16snorm,
+    Pack2x16unorm,
+    Pack2x16float,
+    
+    Unpack4x8snorm,
+    Unpack4x8unorm,
+    Unpack2x16snorm,
+    Unpack2x16unorm,
+    Unpack2x16float,
 }
 
 
@@ -956,10 +1017,6 @@ bitflags::bitflags! {
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum Expression {
-    
-    
-    
-    
     
     
     
@@ -1209,6 +1266,7 @@ pub enum Expression {
         arg: Handle<Expression>,
         arg1: Option<Handle<Expression>>,
         arg2: Option<Handle<Expression>>,
+        arg3: Option<Handle<Expression>>,
     },
     
     As {
@@ -1243,9 +1301,19 @@ pub use block::Block;
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
+pub enum SwitchValue {
+    Integer(i32),
+    Default,
+}
+
+
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub struct SwitchCase {
     
-    pub value: i32,
+    pub value: SwitchValue,
     
     pub body: Block,
     
@@ -1278,7 +1346,6 @@ pub enum Statement {
     Switch {
         selector: Handle<Expression>, 
         cases: Vec<SwitchCase>,
-        default: Block,
     },
 
     
@@ -1383,6 +1450,8 @@ pub enum Statement {
         
         value: Handle<Expression>,
         
+        
+        
         result: Handle<Expression>,
     },
     
@@ -1436,6 +1505,9 @@ pub struct Function {
     
     pub local_variables: Arena<LocalVariable>,
     
+    
+    
+    
     pub expressions: Arena<Expression>,
     
     pub named_expressions: NamedExpressions,
@@ -1488,6 +1560,8 @@ pub struct Function {
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub struct EntryPoint {
     
+    
+    
     pub name: String,
     
     pub stage: ShaderStage,
@@ -1515,11 +1589,14 @@ pub struct EntryPoint {
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub struct Module {
     
-    pub types: Arena<Type>,
+    pub types: UniqueArena<Type>,
     
     pub constants: Arena<Constant>,
     
     pub global_variables: Arena<GlobalVariable>,
+    
+    
+    
     
     pub functions: Arena<Function>,
     

@@ -4,11 +4,6 @@
 
 #![allow(
     
-    
-    
-    
-    broken_intra_doc_links,
-    
     clippy::match_like_matches_macro,
 )]
 #![warn(missing_docs)]
@@ -138,6 +133,9 @@ pub struct RequestAdapterOptions<S> {
     pub power_preference: PowerPreference,
     
     
+    pub force_fallback_adapter: bool,
+    
+    
     pub compatible_surface: Option<S>,
 }
 
@@ -145,6 +143,7 @@ impl<S> Default for RequestAdapterOptions<S> {
     fn default() -> Self {
         Self {
             power_preference: PowerPreference::default(),
+            force_fallback_adapter: false,
             compatible_surface: None,
         }
     }
@@ -164,10 +163,10 @@ bitflags::bitflags! {
     #[repr(transparent)]
     #[derive(Default)]
     pub struct Features: u64 {
-        /// By default, polygon depth is clipped to 0-1 range. Anything outside of that range
-        /// is rejected, and respective fragments are not touched.
+        /// By default, polygon depth is clipped to 0-1 range before/during rasterization.
+        /// Anything outside of that range is rejected, and respective fragments are not touched.
         ///
-        /// With this extension, we can force clamping of the polygon depth to 0-1. That allows
+        /// With this extension, we can disabling clipping. That allows
         /// shadow map occluders to be rendered into a tighter depth range.
         ///
         /// Supported platforms:
@@ -175,7 +174,7 @@ bitflags::bitflags! {
         /// - some mobile chips
         ///
         /// This is a web and native feature.
-        const DEPTH_CLAMPING = 1 << 0;
+        const DEPTH_CLIP_CONTROL = 1 << 0;
         /// Enables BCn family of compressed textures. All BCn textures use 4x4 pixel blocks
         /// with 8 or 16 bytes per block.
         ///
@@ -190,6 +189,15 @@ bitflags::bitflags! {
         ///
         /// This is a web and native feature.
         const TEXTURE_COMPRESSION_BC = 1 << 1;
+        /// Allows non-zero value for the "first instance" in indirect draw calls.
+        ///
+        /// Supported Platforms:
+        /// - Vulkan (mostly)
+        /// - DX12
+        /// - Metal
+        ///
+        /// This is a web and native feature.
+        const INDIRECT_FIRST_INSTANCE = 1 << 2;
         /// Enables use of Timestamp Queries. These queries tell the current gpu timestamp when
         /// all work before the query is finished. Call [`CommandEncoder::write_timestamp`],
         /// [`RenderPassEncoder::write_timestamp`], or [`ComputePassEncoder::write_timestamp`] to
@@ -200,14 +208,14 @@ bitflags::bitflags! {
         /// to get the timestamp in nanoseconds. Multiple timestamps can then be diffed to get the
         /// time for operations between them to finish.
         ///
-        /// Due to gfx-hal limitations, this is only supported on vulkan for now.
+        /// Due to wgpu-hal limitations, this is only supported on vulkan for now.
         ///
         /// Supported Platforms:
         /// - Vulkan (works)
         /// - DX12 (works)
         ///
         /// This is a web and native feature.
-        const TIMESTAMP_QUERY = 1 << 2;
+        const TIMESTAMP_QUERY = 1 << 3;
         /// Enables use of Pipeline Statistics Queries. These queries tell the count of various operations
         /// performed between the start and stop call. Call [`RenderPassEncoder::begin_pipeline_statistics_query`] to start
         /// a query, then call [`RenderPassEncoder::end_pipeline_statistics_query`] to stop one.
@@ -215,14 +223,14 @@ bitflags::bitflags! {
         /// They must be resolved using [`CommandEncoder::resolve_query_sets`] into a buffer.
         /// The rules on how these resolve into buffers are detailed in the documentation for [`PipelineStatisticsTypes`].
         ///
-        /// Due to gfx-hal limitations, this is only supported on vulkan for now.
+        /// Due to wgpu-hal limitations, this is only supported on vulkan for now.
         ///
         /// Supported Platforms:
         /// - Vulkan (works)
         /// - DX12 (works)
         ///
         /// This is a web and native feature.
-        const PIPELINE_STATISTICS_QUERY = 1 << 3;
+        const PIPELINE_STATISTICS_QUERY = 1 << 4;
         /// Webgpu only allows the MAP_READ and MAP_WRITE buffer usage to be matched with
         /// COPY_DST and COPY_SRC respectively. This removes this requirement.
         ///
@@ -335,6 +343,10 @@ bitflags::bitflags! {
         ///
         /// This is a native only feature.
         const UNIFORM_BUFFER_AND_STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING = 1 << 21;
+        /// Allows the user to create bind groups continaing arrays with less bindings than the BindGroupLayout.
+        ///
+        /// This is a native only feature.
+        const PARTIALLY_BOUND_BINDING_ARRAY = 1 << 22;
         /// Allows the user to create unsized uniform arrays of bindings:
         ///
         /// eg. `uniform texture2D textures[]`.
@@ -344,7 +356,7 @@ bitflags::bitflags! {
         /// - Vulkan 1.2+ (or VK_EXT_descriptor_indexing)'s runtimeDescriptorArray feature
         ///
         /// This is a native only feature.
-        const UNSIZED_BINDING_ARRAY = 1 << 22;
+        const UNSIZED_BINDING_ARRAY = 1 << 23;
         /// Allows the user to call [`RenderPass::multi_draw_indirect`] and [`RenderPass::multi_draw_indexed_indirect`].
         ///
         /// Allows multiple indirect calls to be dispatched from a single buffer.
@@ -354,7 +366,7 @@ bitflags::bitflags! {
         /// - Vulkan
         ///
         /// This is a native only feature.
-        const MULTI_DRAW_INDIRECT = 1 << 23;
+        const MULTI_DRAW_INDIRECT = 1 << 24;
         /// Allows the user to call [`RenderPass::multi_draw_indirect_count`] and [`RenderPass::multi_draw_indexed_indirect_count`].
         ///
         /// This allows the use of a buffer containing the actual number of draw calls.
@@ -364,7 +376,7 @@ bitflags::bitflags! {
         /// - Vulkan 1.2+ (or VK_KHR_draw_indirect_count)
         ///
         /// This is a native only feature.
-        const MULTI_DRAW_INDIRECT_COUNT = 1 << 24;
+        const MULTI_DRAW_INDIRECT_COUNT = 1 << 25;
         /// Allows the use of push constants: small, fast bits of memory that can be updated
         /// inside a [`RenderPass`].
         ///
@@ -381,7 +393,7 @@ bitflags::bitflags! {
         /// - OpenGL (emulated with uniforms)
         ///
         /// This is a native only feature.
-        const PUSH_CONSTANTS = 1 << 25;
+        const PUSH_CONSTANTS = 1 << 26;
         /// Allows the use of [`AddressMode::ClampToBorder`].
         ///
         /// Supported platforms:
@@ -392,7 +404,7 @@ bitflags::bitflags! {
         /// - OpenGL
         ///
         /// This is a web and native feature.
-        const ADDRESS_MODE_CLAMP_TO_BORDER = 1 << 26;
+        const ADDRESS_MODE_CLAMP_TO_BORDER = 1 << 27;
         /// Allows the user to set [`PolygonMode::Line`] in [`PrimitiveState::polygon_mode`]
         ///
         /// This allows drawing polygons/triangles as lines (wireframe) instead of filled
@@ -403,7 +415,7 @@ bitflags::bitflags! {
         /// - Metal
         ///
         /// This is a native only feature.
-        const POLYGON_MODE_LINE= 1 << 27;
+        const POLYGON_MODE_LINE= 1 << 28;
         /// Allows the user to set [`PolygonMode::Point`] in [`PrimitiveState::polygon_mode`]
         ///
         /// This allows only drawing the vertices of polygons/triangles instead of filled
@@ -413,7 +425,7 @@ bitflags::bitflags! {
         /// - Vulkan
         ///
         /// This is a native only feature.
-        const POLYGON_MODE_POINT = 1 << 28;
+        const POLYGON_MODE_POINT = 1 << 29;
         /// Enables ETC family of compressed textures. All ETC textures use 4x4 pixel blocks.
         /// ETC2 RGB and RGBA1 are 8 bytes per block. RTC2 RGBA8 and EAC are 16 bytes per block.
         ///
@@ -428,7 +440,7 @@ bitflags::bitflags! {
         /// - Mobile (some)
         ///
         /// This is a native-only feature.
-        const TEXTURE_COMPRESSION_ETC2 = 1 << 29;
+        const TEXTURE_COMPRESSION_ETC2 = 1 << 30;
         /// Enables ASTC family of compressed textures. ASTC textures use pixel blocks varying from 4x4 to 12x12.
         /// Blocks are always 16 bytes.
         ///
@@ -443,7 +455,7 @@ bitflags::bitflags! {
         /// - Mobile (some)
         ///
         /// This is a native-only feature.
-        const TEXTURE_COMPRESSION_ASTC_LDR = 1 << 30;
+        const TEXTURE_COMPRESSION_ASTC_LDR = 1 << 31;
         /// Enables device specific texture format features.
         ///
         /// See `TextureFormatFeatures` for a listing of the features in question.
@@ -455,7 +467,7 @@ bitflags::bitflags! {
         /// This extension does not enable additional formats.
         ///
         /// This is a native-only feature.
-        const TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES = 1 << 31;
+        const TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES = 1 << 32;
         /// Enables 64-bit floating point types in SPIR-V shaders.
         ///
         /// Note: even when supported by GPU hardware, 64-bit floating point operations are
@@ -465,7 +477,7 @@ bitflags::bitflags! {
         /// - Vulkan
         ///
         /// This is a native-only feature.
-        const SHADER_FLOAT64 = 1 << 32;
+        const SHADER_FLOAT64 = 1 << 33;
         /// Enables using 64-bit types for vertex attributes.
         ///
         /// Requires SHADER_FLOAT64.
@@ -473,7 +485,7 @@ bitflags::bitflags! {
         /// Supported Platforms: N/A
         ///
         /// This is a native-only feature.
-        const VERTEX_ATTRIBUTE_64BIT = 1 << 33;
+        const VERTEX_ATTRIBUTE_64BIT = 1 << 34;
         /// Allows the user to set a overestimation-conservative-rasterization in [`PrimitiveState::conservative`]
         ///
         /// Processing of degenerate triangles/lines is hardware specific.
@@ -483,7 +495,7 @@ bitflags::bitflags! {
         /// - Vulkan
         ///
         /// This is a native only feature.
-        const CONSERVATIVE_RASTERIZATION = 1 << 34;
+        const CONSERVATIVE_RASTERIZATION = 1 << 35;
         /// Enables bindings of writable storage buffers and textures visible to vertex shaders.
         ///
         /// Note: some (tiled-based) platforms do not support vertex shaders with any side-effects.
@@ -492,14 +504,14 @@ bitflags::bitflags! {
         /// - All
         ///
         /// This is a native-only feature.
-        const VERTEX_WRITABLE_STORAGE = 1 << 35;
+        const VERTEX_WRITABLE_STORAGE = 1 << 36;
         /// Enables clear to zero for buffers & textures.
         ///
         /// Supported platforms:
         /// - All
         ///
         /// This is a native only feature.
-        const CLEAR_COMMANDS = 1 << 36;
+        const CLEAR_COMMANDS = 1 << 37;
         /// Enables creating shader modules from SPIR-V binary data (unsafe).
         ///
         /// SPIR-V data is not parsed or interpreted in any way; you can use
@@ -511,7 +523,7 @@ bitflags::bitflags! {
         /// Vulkan implementation.
         ///
         /// This is a native only feature.
-        const SPIRV_SHADER_PASSTHROUGH = 1 << 37;
+        const SPIRV_SHADER_PASSTHROUGH = 1 << 38;
         /// Enables `builtin(primitive_index)` in fragment shaders.
         ///
         /// Note: enables geometry processing for pipelines using the builtin.
@@ -522,7 +534,14 @@ bitflags::bitflags! {
         /// - Vulkan
         ///
         /// This is a native only feature.
-        const SHADER_PRIMITIVE_INDEX = 1 << 38;
+        const SHADER_PRIMITIVE_INDEX = 1 << 39;
+        /// Enables multiview render passes and `builtin(view_index)` in vertex shaders.
+        ///
+        /// Supported platforms:
+        /// - Vulkan
+        ///
+        /// This is a native only feature.
+        const MULTIVIEW = 1 << 40;
     }
 }
 
@@ -540,6 +559,9 @@ impl Features {
         Self::from_bits_truncate(0xFFFF_FFFF_FFFF_0000)
     }
 }
+
+
+
 
 
 
@@ -635,6 +657,19 @@ pub struct Limits {
     
     
     pub min_storage_buffer_offset_alignment: u32,
+
+    
+    
+    pub max_compute_workgroup_size_x: u32,
+    
+    
+    pub max_compute_workgroup_size_y: u32,
+    
+    
+    pub max_compute_workgroup_size_z: u32,
+    
+    
+    pub max_compute_workgroups_per_dimension: u32,
 }
 
 impl Default for Limits {
@@ -643,7 +678,7 @@ impl Default for Limits {
             max_texture_dimension_1d: 8192,
             max_texture_dimension_2d: 8192,
             max_texture_dimension_3d: 2048,
-            max_texture_array_layers: 2048,
+            max_texture_array_layers: 256,
             max_bind_groups: 4,
             max_dynamic_uniform_buffers_per_pipeline_layout: 8,
             max_dynamic_storage_buffers_per_pipeline_layout: 4,
@@ -652,7 +687,7 @@ impl Default for Limits {
             max_storage_buffers_per_shader_stage: 8,
             max_storage_textures_per_shader_stage: 8,
             max_uniform_buffers_per_shader_stage: 12,
-            max_uniform_buffer_binding_size: 16384,
+            max_uniform_buffer_binding_size: 64 << 10,
             max_storage_buffer_binding_size: 128 << 20,
             max_vertex_buffers: 8,
             max_vertex_attributes: 16,
@@ -660,6 +695,10 @@ impl Default for Limits {
             max_push_constant_size: 0,
             min_uniform_buffer_offset_alignment: 256,
             min_storage_buffer_offset_alignment: 256,
+            max_compute_workgroup_size_x: 256,
+            max_compute_workgroup_size_y: 256,
+            max_compute_workgroup_size_z: 64,
+            max_compute_workgroups_per_dimension: 65535,
         }
     }
 }
@@ -668,8 +707,8 @@ impl Limits {
     
     pub fn downlevel_defaults() -> Self {
         Self {
-            max_texture_dimension_1d: 2096,
-            max_texture_dimension_2d: 2096,
+            max_texture_dimension_1d: 2048,
+            max_texture_dimension_2d: 2048,
             max_texture_dimension_3d: 256,
             max_texture_array_layers: 256,
             max_bind_groups: 4,
@@ -680,7 +719,7 @@ impl Limits {
             max_storage_buffers_per_shader_stage: 4,
             max_storage_textures_per_shader_stage: 4,
             max_uniform_buffers_per_shader_stage: 12,
-            max_uniform_buffer_binding_size: 16384,
+            max_uniform_buffer_binding_size: 16 << 10,
             max_storage_buffer_binding_size: 128 << 20,
             max_vertex_buffers: 8,
             max_vertex_attributes: 16,
@@ -688,6 +727,24 @@ impl Limits {
             max_push_constant_size: 0,
             min_uniform_buffer_offset_alignment: 256,
             min_storage_buffer_offset_alignment: 256,
+            max_compute_workgroup_size_x: 256,
+            max_compute_workgroup_size_y: 256,
+            max_compute_workgroup_size_z: 64,
+            max_compute_workgroups_per_dimension: 65535,
+        }
+    }
+
+    
+    pub fn downlevel_webgl2_defaults() -> Self {
+        Self {
+            max_storage_buffers_per_shader_stage: 0,
+            max_storage_textures_per_shader_stage: 0,
+            max_dynamic_storage_buffers_per_pipeline_layout: 0,
+            max_storage_buffer_binding_size: 0,
+            max_vertex_buffer_array_stride: 255,
+
+            
+            ..Self::downlevel_defaults()
         }
     }
 
@@ -722,6 +779,8 @@ impl Limits {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DownlevelLimits {}
 
+#[allow(unknown_lints)] 
+#[allow(clippy::derivable_impls)]
 impl Default for DownlevelLimits {
     fn default() -> Self {
         DownlevelLimits {}
@@ -804,6 +863,9 @@ bitflags::bitflags! {
         /// WebGPU, the implementation is allowed to completely ignore aniso clamp. This flag is
         /// here for native backends so they can comunicate to the user of aniso is enabled.
         const ANISOTROPIC_FILTERING = 1 << 11;
+
+        /// Supports storage buffers in fragment shaders.
+        const FRAGMENT_STORAGE = 1 << 12;
     }
 }
 
@@ -1267,7 +1329,7 @@ pub struct PrimitiveState {
     
     
     #[cfg_attr(feature = "serde", serde(default))]
-    pub clamp_depth: bool,
+    pub unclipped_depth: bool,
     
     
     
@@ -1355,6 +1417,8 @@ pub struct TextureFormatInfo {
     pub block_dimensions: (u8, u8),
     
     pub block_size: u8,
+    
+    pub components: u8,
     
     pub srgb: bool,
     
@@ -1617,191 +1681,229 @@ pub enum TextureFormat {
     
     
     
-    Etc2RgbUnorm,
+    #[cfg_attr(feature = "serde", serde(rename = "etc2-rgb8unorm"))]
+    Etc2Rgb8Unorm,
     
     
     
     
-    Etc2RgbUnormSrgb,
+    #[cfg_attr(feature = "serde", serde(rename = "etc2-rgb8unorm-srgb"))]
+    Etc2Rgb8UnormSrgb,
     
     
     
     
-    Etc2RgbA1Unorm,
+    #[cfg_attr(feature = "serde", serde(rename = "etc2-rgb8a1unorm"))]
+    Etc2Rgb8A1Unorm,
     
     
     
     
-    Etc2RgbA1UnormSrgb,
+    #[cfg_attr(feature = "serde", serde(rename = "etc2-rgb8a1unorm-srgb"))]
+    Etc2Rgb8A1UnormSrgb,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "etc2-rgba8unorm"))]
+    Etc2Rgba8Unorm,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "etc2-rgba8unorm-srgb"))]
+    Etc2Rgba8UnormSrgb,
     
     
     
     
-    
-    
-    EacRUnorm,
-    
-    
-    
-    
-    EacRSnorm,
+    #[cfg_attr(feature = "serde", serde(rename = "eac-r11unorm"))]
+    EacR11Unorm,
     
     
     
     
-    EacRgUnorm,
+    #[cfg_attr(feature = "serde", serde(rename = "eac-r11snorm"))]
+    EacR11Snorm,
     
     
     
     
-    EacRgSnorm,
+    #[cfg_attr(feature = "serde", serde(rename = "eac-rg11unorm"))]
+    EacRg11Unorm,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "eac-rg11snorm"))]
+    EacRg11Snorm,
+    
+    
+    
+    
+    #[cfg_attr(feature = "serde", serde(rename = "astc-4x4-unorm"))]
     Astc4x4RgbaUnorm,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-4x4-unorm-srgb"))]
     Astc4x4RgbaUnormSrgb,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-5x4-unorm"))]
     Astc5x4RgbaUnorm,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-5x4-unorm-srgb"))]
     Astc5x4RgbaUnormSrgb,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-5x5-unorm"))]
     Astc5x5RgbaUnorm,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-5x5-unorm-srgb"))]
     Astc5x5RgbaUnormSrgb,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-6x5-unorm"))]
     Astc6x5RgbaUnorm,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-6x5-unorm-srgb"))]
     Astc6x5RgbaUnormSrgb,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-6x6-unorm"))]
     Astc6x6RgbaUnorm,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-6x6-unorm-srgb"))]
     Astc6x6RgbaUnormSrgb,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-8x5-unorm"))]
     Astc8x5RgbaUnorm,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-8x5-unorm-srgb"))]
     Astc8x5RgbaUnormSrgb,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-8x6-unorm"))]
     Astc8x6RgbaUnorm,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-8x6-unorm-srgb"))]
     Astc8x6RgbaUnormSrgb,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-10x5-unorm"))]
     Astc10x5RgbaUnorm,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-10x5-unorm-srgb"))]
     Astc10x5RgbaUnormSrgb,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-10x6-unorm"))]
     Astc10x6RgbaUnorm,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-10x6-unorm-srgb"))]
     Astc10x6RgbaUnormSrgb,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-8x8-unorm"))]
     Astc8x8RgbaUnorm,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-8x8-unorm-srgb"))]
     Astc8x8RgbaUnormSrgb,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-10x8-unorm"))]
     Astc10x8RgbaUnorm,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-10x8-unorm-srgb"))]
     Astc10x8RgbaUnormSrgb,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-10x10-unorm"))]
     Astc10x10RgbaUnorm,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-10x10-unorm-srgb"))]
     Astc10x10RgbaUnormSrgb,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-12x10-unorm"))]
     Astc12x10RgbaUnorm,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-12x10-unorm-srgb"))]
     Astc12x10RgbaUnormSrgb,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-12x12-unorm"))]
     Astc12x12RgbaUnorm,
     
     
     
     
+    #[cfg_attr(feature = "serde", serde(rename = "astc-12x12-unorm-srgb"))]
     Astc12x12RgbaUnormSrgb,
 }
 
@@ -1833,127 +1935,135 @@ impl TextureFormat {
         let all_flags = TextureUsages::all();
 
         
-        let (required_features, sample_type, srgb, block_dimensions, block_size, allowed_usages) =
-            match self {
-                
-                Self::R8Unorm => (native, float, linear, (1, 1), 1, attachment),
-                Self::R8Snorm => (native, float, linear, (1, 1), 1, basic),
-                Self::R8Uint => (native, uint, linear, (1, 1), 1, attachment),
-                Self::R8Sint => (native, sint, linear, (1, 1), 1, attachment),
+        let (
+            required_features,
+            sample_type,
+            srgb,
+            block_dimensions,
+            block_size,
+            allowed_usages,
+            components,
+        ) = match self {
+            
+            Self::R8Unorm => (native, float, linear, (1, 1), 1, attachment, 1),
+            Self::R8Snorm => (native, float, linear, (1, 1), 1, basic, 1),
+            Self::R8Uint => (native, uint, linear, (1, 1), 1, attachment, 1),
+            Self::R8Sint => (native, sint, linear, (1, 1), 1, attachment, 1),
 
-                
-                Self::R16Uint => (native, uint, linear, (1, 1), 2, attachment),
-                Self::R16Sint => (native, sint, linear, (1, 1), 2, attachment),
-                Self::R16Float => (native, float, linear, (1, 1), 2, attachment),
-                Self::Rg8Unorm => (native, float, linear, (1, 1), 2, attachment),
-                Self::Rg8Snorm => (native, float, linear, (1, 1), 2, attachment),
-                Self::Rg8Uint => (native, uint, linear, (1, 1), 2, attachment),
-                Self::Rg8Sint => (native, sint, linear, (1, 1), 2, basic),
+            
+            Self::R16Uint => (native, uint, linear, (1, 1), 2, attachment, 1),
+            Self::R16Sint => (native, sint, linear, (1, 1), 2, attachment, 1),
+            Self::R16Float => (native, float, linear, (1, 1), 2, attachment, 1),
+            Self::Rg8Unorm => (native, float, linear, (1, 1), 2, attachment, 2),
+            Self::Rg8Snorm => (native, float, linear, (1, 1), 2, attachment, 2),
+            Self::Rg8Uint => (native, uint, linear, (1, 1), 2, attachment, 2),
+            Self::Rg8Sint => (native, sint, linear, (1, 1), 2, basic, 2),
 
-                
-                Self::R32Uint => (native, uint, linear, (1, 1), 4, all_flags),
-                Self::R32Sint => (native, sint, linear, (1, 1), 4, all_flags),
-                Self::R32Float => (native, nearest, linear, (1, 1), 4, all_flags),
-                Self::Rg16Uint => (native, uint, linear, (1, 1), 4, attachment),
-                Self::Rg16Sint => (native, sint, linear, (1, 1), 4, attachment),
-                Self::Rg16Float => (native, float, linear, (1, 1), 4, attachment),
-                Self::Rgba8Unorm => (native, float, linear, (1, 1), 4, all_flags),
-                Self::Rgba8UnormSrgb => (native, float, srgb, (1, 1), 4, attachment),
-                Self::Rgba8Snorm => (native, float, linear, (1, 1), 4, storage),
-                Self::Rgba8Uint => (native, uint, linear, (1, 1), 4, all_flags),
-                Self::Rgba8Sint => (native, sint, linear, (1, 1), 4, all_flags),
-                Self::Bgra8Unorm => (native, float, linear, (1, 1), 4, attachment),
-                Self::Bgra8UnormSrgb => (native, float, srgb, (1, 1), 4, attachment),
+            
+            Self::R32Uint => (native, uint, linear, (1, 1), 4, all_flags, 1),
+            Self::R32Sint => (native, sint, linear, (1, 1), 4, all_flags, 1),
+            Self::R32Float => (native, nearest, linear, (1, 1), 4, all_flags, 1),
+            Self::Rg16Uint => (native, uint, linear, (1, 1), 4, attachment, 2),
+            Self::Rg16Sint => (native, sint, linear, (1, 1), 4, attachment, 2),
+            Self::Rg16Float => (native, float, linear, (1, 1), 4, attachment, 2),
+            Self::Rgba8Unorm => (native, float, linear, (1, 1), 4, all_flags, 4),
+            Self::Rgba8UnormSrgb => (native, float, srgb, (1, 1), 4, attachment, 4),
+            Self::Rgba8Snorm => (native, float, linear, (1, 1), 4, storage, 4),
+            Self::Rgba8Uint => (native, uint, linear, (1, 1), 4, all_flags, 4),
+            Self::Rgba8Sint => (native, sint, linear, (1, 1), 4, all_flags, 4),
+            Self::Bgra8Unorm => (native, float, linear, (1, 1), 4, attachment, 4),
+            Self::Bgra8UnormSrgb => (native, float, srgb, (1, 1), 4, attachment, 4),
 
-                
-                Self::Rgb10a2Unorm => (native, float, linear, (1, 1), 4, attachment),
-                Self::Rg11b10Float => (native, float, linear, (1, 1), 4, basic),
+            
+            Self::Rgb10a2Unorm => (native, float, linear, (1, 1), 4, attachment, 4),
+            Self::Rg11b10Float => (native, float, linear, (1, 1), 4, basic, 3),
 
-                
-                Self::Rg32Uint => (native, uint, linear, (1, 1), 8, all_flags),
-                Self::Rg32Sint => (native, sint, linear, (1, 1), 8, all_flags),
-                Self::Rg32Float => (native, nearest, linear, (1, 1), 8, all_flags),
-                Self::Rgba16Uint => (native, uint, linear, (1, 1), 8, all_flags),
-                Self::Rgba16Sint => (native, sint, linear, (1, 1), 8, all_flags),
-                Self::Rgba16Float => (native, float, linear, (1, 1), 8, all_flags),
+            
+            Self::Rg32Uint => (native, uint, linear, (1, 1), 8, all_flags, 2),
+            Self::Rg32Sint => (native, sint, linear, (1, 1), 8, all_flags, 2),
+            Self::Rg32Float => (native, nearest, linear, (1, 1), 8, all_flags, 2),
+            Self::Rgba16Uint => (native, uint, linear, (1, 1), 8, all_flags, 4),
+            Self::Rgba16Sint => (native, sint, linear, (1, 1), 8, all_flags, 4),
+            Self::Rgba16Float => (native, float, linear, (1, 1), 8, all_flags, 4),
 
-                
-                Self::Rgba32Uint => (native, uint, linear, (1, 1), 16, all_flags),
-                Self::Rgba32Sint => (native, sint, linear, (1, 1), 16, all_flags),
-                Self::Rgba32Float => (native, nearest, linear, (1, 1), 16, all_flags),
+            
+            Self::Rgba32Uint => (native, uint, linear, (1, 1), 16, all_flags, 4),
+            Self::Rgba32Sint => (native, sint, linear, (1, 1), 16, all_flags, 4),
+            Self::Rgba32Float => (native, nearest, linear, (1, 1), 16, all_flags, 4),
 
-                
-                Self::Depth32Float => (native, depth, linear, (1, 1), 4, attachment),
-                Self::Depth24Plus => (native, depth, linear, (1, 1), 4, attachment),
-                Self::Depth24PlusStencil8 => (native, depth, linear, (1, 1), 4, attachment),
+            
+            Self::Depth32Float => (native, depth, linear, (1, 1), 4, attachment, 1),
+            Self::Depth24Plus => (native, depth, linear, (1, 1), 4, attachment, 1),
+            Self::Depth24PlusStencil8 => (native, depth, linear, (1, 1), 4, attachment, 2),
 
-                
-                Self::Rgb9e5Ufloat => (native, float, linear, (1, 1), 4, basic),
+            
+            Self::Rgb9e5Ufloat => (native, float, linear, (1, 1), 4, basic, 3),
 
-                
-                Self::Bc1RgbaUnorm => (bc, float, linear, (4, 4), 8, basic),
-                Self::Bc1RgbaUnormSrgb => (bc, float, srgb, (4, 4), 8, basic),
-                Self::Bc2RgbaUnorm => (bc, float, linear, (4, 4), 16, basic),
-                Self::Bc2RgbaUnormSrgb => (bc, float, srgb, (4, 4), 16, basic),
-                Self::Bc3RgbaUnorm => (bc, float, linear, (4, 4), 16, basic),
-                Self::Bc3RgbaUnormSrgb => (bc, float, srgb, (4, 4), 16, basic),
-                Self::Bc4RUnorm => (bc, float, linear, (4, 4), 8, basic),
-                Self::Bc4RSnorm => (bc, float, linear, (4, 4), 8, basic),
-                Self::Bc5RgUnorm => (bc, float, linear, (4, 4), 16, basic),
-                Self::Bc5RgSnorm => (bc, float, linear, (4, 4), 16, basic),
-                Self::Bc6hRgbUfloat => (bc, float, linear, (4, 4), 16, basic),
-                Self::Bc6hRgbSfloat => (bc, float, linear, (4, 4), 16, basic),
-                Self::Bc7RgbaUnorm => (bc, float, linear, (4, 4), 16, basic),
-                Self::Bc7RgbaUnormSrgb => (bc, float, srgb, (4, 4), 16, basic),
+            
+            Self::Bc1RgbaUnorm => (bc, float, linear, (4, 4), 8, basic, 4),
+            Self::Bc1RgbaUnormSrgb => (bc, float, srgb, (4, 4), 8, basic, 4),
+            Self::Bc2RgbaUnorm => (bc, float, linear, (4, 4), 16, basic, 4),
+            Self::Bc2RgbaUnormSrgb => (bc, float, srgb, (4, 4), 16, basic, 4),
+            Self::Bc3RgbaUnorm => (bc, float, linear, (4, 4), 16, basic, 4),
+            Self::Bc3RgbaUnormSrgb => (bc, float, srgb, (4, 4), 16, basic, 4),
+            Self::Bc4RUnorm => (bc, float, linear, (4, 4), 8, basic, 1),
+            Self::Bc4RSnorm => (bc, float, linear, (4, 4), 8, basic, 1),
+            Self::Bc5RgUnorm => (bc, float, linear, (4, 4), 16, basic, 2),
+            Self::Bc5RgSnorm => (bc, float, linear, (4, 4), 16, basic, 2),
+            Self::Bc6hRgbUfloat => (bc, float, linear, (4, 4), 16, basic, 3),
+            Self::Bc6hRgbSfloat => (bc, float, linear, (4, 4), 16, basic, 3),
+            Self::Bc7RgbaUnorm => (bc, float, linear, (4, 4), 16, basic, 4),
+            Self::Bc7RgbaUnormSrgb => (bc, float, srgb, (4, 4), 16, basic, 4),
 
-                
-                Self::Etc2RgbUnorm => (etc2, float, linear, (4, 4), 8, basic),
-                Self::Etc2RgbUnormSrgb => (etc2, float, srgb, (4, 4), 8, basic),
-                Self::Etc2RgbA1Unorm => (etc2, float, linear, (4, 4), 8, basic),
-                Self::Etc2RgbA1UnormSrgb => (etc2, float, srgb, (4, 4), 8, basic),
-                
-                
-                Self::EacRUnorm => (etc2, float, linear, (4, 4), 8, basic),
-                Self::EacRSnorm => (etc2, float, linear, (4, 4), 8, basic),
-                Self::EacRgUnorm => (etc2, float, linear, (4, 4), 16, basic),
-                Self::EacRgSnorm => (etc2, float, linear, (4, 4), 16, basic),
+            
+            Self::Etc2Rgb8Unorm => (etc2, float, linear, (4, 4), 8, basic, 3),
+            Self::Etc2Rgb8UnormSrgb => (etc2, float, srgb, (4, 4), 8, basic, 3),
+            Self::Etc2Rgb8A1Unorm => (etc2, float, linear, (4, 4), 8, basic, 4),
+            Self::Etc2Rgb8A1UnormSrgb => (etc2, float, srgb, (4, 4), 8, basic, 4),
+            Self::Etc2Rgba8Unorm => (etc2, float, linear, (4, 4), 16, basic, 4),
+            Self::Etc2Rgba8UnormSrgb => (etc2, float, srgb, (4, 4), 16, basic, 4),
+            Self::EacR11Unorm => (etc2, float, linear, (4, 4), 8, basic, 1),
+            Self::EacR11Snorm => (etc2, float, linear, (4, 4), 8, basic, 1),
+            Self::EacRg11Unorm => (etc2, float, linear, (4, 4), 16, basic, 2),
+            Self::EacRg11Snorm => (etc2, float, linear, (4, 4), 16, basic, 2),
 
-                
-                Self::Astc4x4RgbaUnorm => (astc_ldr, float, linear, (4, 4), 16, basic),
-                Self::Astc4x4RgbaUnormSrgb => (astc_ldr, float, srgb, (4, 4), 16, basic),
-                Self::Astc5x4RgbaUnorm => (astc_ldr, float, linear, (5, 4), 16, basic),
-                Self::Astc5x4RgbaUnormSrgb => (astc_ldr, float, srgb, (5, 4), 16, basic),
-                Self::Astc5x5RgbaUnorm => (astc_ldr, float, linear, (5, 5), 16, basic),
-                Self::Astc5x5RgbaUnormSrgb => (astc_ldr, float, srgb, (5, 5), 16, basic),
-                Self::Astc6x5RgbaUnorm => (astc_ldr, float, linear, (6, 5), 16, basic),
-                Self::Astc6x5RgbaUnormSrgb => (astc_ldr, float, srgb, (6, 5), 16, basic),
-                Self::Astc6x6RgbaUnorm => (astc_ldr, float, linear, (6, 6), 16, basic),
-                Self::Astc6x6RgbaUnormSrgb => (astc_ldr, float, srgb, (6, 6), 16, basic),
-                Self::Astc8x5RgbaUnorm => (astc_ldr, float, linear, (8, 5), 16, basic),
-                Self::Astc8x5RgbaUnormSrgb => (astc_ldr, float, srgb, (8, 5), 16, basic),
-                Self::Astc8x6RgbaUnorm => (astc_ldr, float, linear, (8, 6), 16, basic),
-                Self::Astc8x6RgbaUnormSrgb => (astc_ldr, float, srgb, (8, 6), 16, basic),
-                Self::Astc10x5RgbaUnorm => (astc_ldr, float, linear, (10, 5), 16, basic),
-                Self::Astc10x5RgbaUnormSrgb => (astc_ldr, float, srgb, (10, 5), 16, basic),
-                Self::Astc10x6RgbaUnorm => (astc_ldr, float, linear, (10, 6), 16, basic),
-                Self::Astc10x6RgbaUnormSrgb => (astc_ldr, float, srgb, (10, 6), 16, basic),
-                Self::Astc8x8RgbaUnorm => (astc_ldr, float, linear, (8, 8), 16, basic),
-                Self::Astc8x8RgbaUnormSrgb => (astc_ldr, float, srgb, (8, 8), 16, basic),
-                Self::Astc10x8RgbaUnorm => (astc_ldr, float, linear, (10, 8), 16, basic),
-                Self::Astc10x8RgbaUnormSrgb => (astc_ldr, float, srgb, (10, 8), 16, basic),
-                Self::Astc10x10RgbaUnorm => (astc_ldr, float, linear, (10, 10), 16, basic),
-                Self::Astc10x10RgbaUnormSrgb => (astc_ldr, float, srgb, (10, 10), 16, basic),
-                Self::Astc12x10RgbaUnorm => (astc_ldr, float, linear, (12, 10), 16, basic),
-                Self::Astc12x10RgbaUnormSrgb => (astc_ldr, float, srgb, (12, 10), 16, basic),
-                Self::Astc12x12RgbaUnorm => (astc_ldr, float, linear, (12, 12), 16, basic),
-                Self::Astc12x12RgbaUnormSrgb => (astc_ldr, float, srgb, (12, 12), 16, basic),
-            };
+            
+            Self::Astc4x4RgbaUnorm => (astc_ldr, float, linear, (4, 4), 16, basic, 4),
+            Self::Astc4x4RgbaUnormSrgb => (astc_ldr, float, srgb, (4, 4), 16, basic, 4),
+            Self::Astc5x4RgbaUnorm => (astc_ldr, float, linear, (5, 4), 16, basic, 4),
+            Self::Astc5x4RgbaUnormSrgb => (astc_ldr, float, srgb, (5, 4), 16, basic, 4),
+            Self::Astc5x5RgbaUnorm => (astc_ldr, float, linear, (5, 5), 16, basic, 4),
+            Self::Astc5x5RgbaUnormSrgb => (astc_ldr, float, srgb, (5, 5), 16, basic, 4),
+            Self::Astc6x5RgbaUnorm => (astc_ldr, float, linear, (6, 5), 16, basic, 4),
+            Self::Astc6x5RgbaUnormSrgb => (astc_ldr, float, srgb, (6, 5), 16, basic, 4),
+            Self::Astc6x6RgbaUnorm => (astc_ldr, float, linear, (6, 6), 16, basic, 4),
+            Self::Astc6x6RgbaUnormSrgb => (astc_ldr, float, srgb, (6, 6), 16, basic, 4),
+            Self::Astc8x5RgbaUnorm => (astc_ldr, float, linear, (8, 5), 16, basic, 4),
+            Self::Astc8x5RgbaUnormSrgb => (astc_ldr, float, srgb, (8, 5), 16, basic, 4),
+            Self::Astc8x6RgbaUnorm => (astc_ldr, float, linear, (8, 6), 16, basic, 4),
+            Self::Astc8x6RgbaUnormSrgb => (astc_ldr, float, srgb, (8, 6), 16, basic, 4),
+            Self::Astc10x5RgbaUnorm => (astc_ldr, float, linear, (10, 5), 16, basic, 4),
+            Self::Astc10x5RgbaUnormSrgb => (astc_ldr, float, srgb, (10, 5), 16, basic, 4),
+            Self::Astc10x6RgbaUnorm => (astc_ldr, float, linear, (10, 6), 16, basic, 4),
+            Self::Astc10x6RgbaUnormSrgb => (astc_ldr, float, srgb, (10, 6), 16, basic, 4),
+            Self::Astc8x8RgbaUnorm => (astc_ldr, float, linear, (8, 8), 16, basic, 4),
+            Self::Astc8x8RgbaUnormSrgb => (astc_ldr, float, srgb, (8, 8), 16, basic, 4),
+            Self::Astc10x8RgbaUnorm => (astc_ldr, float, linear, (10, 8), 16, basic, 4),
+            Self::Astc10x8RgbaUnormSrgb => (astc_ldr, float, srgb, (10, 8), 16, basic, 4),
+            Self::Astc10x10RgbaUnorm => (astc_ldr, float, linear, (10, 10), 16, basic, 4),
+            Self::Astc10x10RgbaUnormSrgb => (astc_ldr, float, srgb, (10, 10), 16, basic, 4),
+            Self::Astc12x10RgbaUnorm => (astc_ldr, float, linear, (12, 10), 16, basic, 4),
+            Self::Astc12x10RgbaUnormSrgb => (astc_ldr, float, srgb, (12, 10), 16, basic, 4),
+            Self::Astc12x12RgbaUnorm => (astc_ldr, float, linear, (12, 12), 16, basic, 4),
+            Self::Astc12x12RgbaUnormSrgb => (astc_ldr, float, srgb, (12, 12), 16, basic, 4),
+        };
 
         TextureFormatInfo {
             required_features,
             sample_type,
             block_dimensions,
             block_size,
+            components,
             srgb,
             guaranteed_format_features: TextureFormatFeatures {
                 allowed_usages,
@@ -2715,6 +2825,7 @@ impl Extent3d {
     }
 
     
+    
     pub fn mip_level_size(&self, level: u32, is_3d_texture: bool) -> Extent3d {
         Extent3d {
             width: u32::max(1, self.width >> level),
@@ -3140,6 +3251,25 @@ pub enum StorageTextureAccess {
 
 
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "trace", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+pub enum SamplerBindingType {
+    
+    
+    Filtering,
+    
+    NonFiltering,
+    
+    
+    Comparison,
+}
+
+
+
+
 
 
 
@@ -3170,16 +3300,7 @@ pub enum BindingType {
     
     
     
-    Sampler {
-        
-        
-        
-        
-        filtering: bool,
-        
-        
-        comparison: bool,
-    },
+    Sampler(SamplerBindingType),
     
     
     
@@ -3298,6 +3419,30 @@ pub struct ImageSubresourceRange {
     
     
     pub array_layer_count: Option<NonZeroU32>,
+}
+
+impl ImageSubresourceRange {
+    
+    pub fn mip_range<L>(&self, texture_desc: &TextureDescriptor<L>) -> Range<u32> {
+        self.base_mip_level..match self.mip_level_count {
+            Some(mip_level_count) => self.base_mip_level + mip_level_count.get(),
+            None => texture_desc.mip_level_count,
+        }
+    }
+
+    
+    pub fn layer_range<L>(&self, texture_desc: &TextureDescriptor<L>) -> Range<u32> {
+        self.base_array_layer..match self.array_layer_count {
+            Some(array_layer_count) => self.base_array_layer + array_layer_count.get(),
+            None => {
+                if texture_desc.dimension == TextureDimension::D3 {
+                    self.base_array_layer + 1
+                } else {
+                    texture_desc.size.depth_or_array_layers
+                }
+            }
+        }
+    }
 }
 
 
@@ -3442,4 +3587,43 @@ pub struct DispatchIndirectArgs {
     pub group_size_y: u32,
     
     pub group_size_z: u32,
+}
+
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "trace", derive(serde::Serialize))]
+#[cfg_attr(feature = "replay", derive(serde::Deserialize))]
+pub struct ShaderBoundChecks {
+    runtime_checks: bool,
+}
+
+impl ShaderBoundChecks {
+    
+    pub fn new() -> Self {
+        ShaderBoundChecks {
+            runtime_checks: true,
+        }
+    }
+
+    
+    
+    
+    
+    
+    pub unsafe fn unchecked() -> Self {
+        ShaderBoundChecks {
+            runtime_checks: false,
+        }
+    }
+
+    
+    pub fn runtime_checks(&self) -> bool {
+        self.runtime_checks
+    }
+}
+
+impl Default for ShaderBoundChecks {
+    fn default() -> Self {
+        Self::new()
+    }
 }

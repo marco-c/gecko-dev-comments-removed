@@ -1,6 +1,142 @@
 
 
 use super::ProcError;
+use crate::valid;
+use crate::{Handle, UniqueArena};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug)]
+pub enum BoundsCheckPolicy {
+    
+    
+    
+    
+    
+    
+    Restrict,
+
+    
+    ReadZeroSkipWrite,
+
+    
+    
+    
+    Unchecked,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+
+pub struct BoundsCheckPolicies {
+    
+    
+    pub index: BoundsCheckPolicy,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub buffer: BoundsCheckPolicy,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub image: BoundsCheckPolicy,
+}
+
+
+impl Default for BoundsCheckPolicy {
+    fn default() -> Self {
+        BoundsCheckPolicy::Unchecked
+    }
+}
+
+impl BoundsCheckPolicies {
+    
+    
+    
+    
+    pub fn choose_policy(
+        &self,
+        pointer: Handle<crate::Expression>,
+        types: &UniqueArena<crate::Type>,
+        info: &valid::FunctionInfo,
+    ) -> BoundsCheckPolicy {
+        let is_buffer = match info[pointer].ty.inner_with(types).pointer_class() {
+            Some(crate::StorageClass::Storage { access: _ })
+            | Some(crate::StorageClass::Uniform) => true,
+            _ => false,
+        };
+
+        if is_buffer {
+            self.buffer
+        } else {
+            self.index
+        }
+    }
+}
 
 impl crate::TypeInner {
     
@@ -50,10 +186,6 @@ pub enum IndexableLength {
     Known(u32),
 
     
-    
-    Specializable(crate::Handle<crate::Constant>),
-
-    
     Dynamic,
 }
 
@@ -65,7 +197,11 @@ impl crate::ArraySize {
                 K {
                     specialization: Some(_),
                     ..
-                } => IndexableLength::Specializable(k),
+                } => {
+                    
+                    
+                    return Err(ProcError::InvalidArraySizeConstant(k));
+                }
                 ref unspecialized => {
                     let length = unspecialized
                         .to_array_length()
