@@ -969,9 +969,13 @@ bool DrawTargetWebgl::SharedContext::CreateShaders() {
 }
 
 void DrawTargetWebgl::ClearRect(const Rect& aRect) {
+  
+  
+  PushClipRect(aRect);
   ColorPattern pattern(
       DeviceColor(0.0f, 0.0f, 0.0f, IsOpaque(mFormat) ? 1.0f : 0.0f));
   DrawRect(aRect, pattern, DrawOptions(1.0f, CompositionOp::OP_SOURCE));
+  PopClip();
 }
 
 
