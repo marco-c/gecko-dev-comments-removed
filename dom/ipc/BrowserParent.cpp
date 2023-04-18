@@ -1928,8 +1928,8 @@ mozilla::ipc::IPCResult BrowserParent::RecvSynthesizeNativeMouseEvent(
 
 mozilla::ipc::IPCResult BrowserParent::RecvSynthesizeNativeMouseMove(
     const LayoutDeviceIntPoint& aPoint, const uint64_t& aObserverId) {
-  NS_ENSURE_TRUE(xpc::IsInAutomation(), IPC_FAIL(this, "Unexpected event"));
-
+  
+  
   AutoSynthesizedEventResponder responder(this, aObserverId, "mousemove");
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (widget) {

@@ -4774,6 +4774,9 @@ void EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
     
     
     sSynthCenteringPoint = center;
+    
+    
+    
     aMouseEvent->mWidget->SynthesizeNativeMouseMove(
         center + aMouseEvent->mWidget->WidgetToScreenOffset(), nullptr);
   } else if (aMouseEvent->mRefPoint == sSynthCenteringPoint) {
@@ -4906,6 +4909,9 @@ void EventStateManager::SetPointerLock(nsIWidget* aWidget,
     
     
     
+    
+    
+    
     sLastRefPoint = GetWindowClientRectCenter(aWidget);
     aWidget->SynthesizeNativeMouseMove(
         sLastRefPoint + aWidget->WidgetToScreenOffset(), nullptr);
@@ -4932,6 +4938,9 @@ void EventStateManager::SetPointerLock(nsIWidget* aWidget,
     
     sSynthCenteringPoint = kInvalidRefPoint;
     if (aWidget) {
+      
+      
+      
       aWidget->SynthesizeNativeMouseMove(
           sPreLockPoint + aWidget->WidgetToScreenOffset(), nullptr);
     }
