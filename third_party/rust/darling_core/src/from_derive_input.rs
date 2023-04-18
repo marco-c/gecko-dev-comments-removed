@@ -1,6 +1,6 @@
 use syn::DeriveInput;
 
-use Result;
+use crate::Result;
 
 
 

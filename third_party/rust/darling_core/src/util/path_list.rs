@@ -3,7 +3,7 @@ use std::string::ToString;
 
 use syn::{Meta, NestedMeta, Path};
 
-use {Error, FromMeta, Result};
+use crate::{Error, FromMeta, Result};
 
 
 
@@ -27,7 +27,16 @@ impl PathList {
 
     
     pub fn to_strings(&self) -> Vec<String> {
-        self.0.iter().map(|p| p.segments.iter().map(|s| s.ident.to_string()).collect::<Vec<String>>().join("::")).collect()
+        self.0
+            .iter()
+            .map(|p| {
+                p.segments
+                    .iter()
+                    .map(|s| s.ident.to_string())
+                    .collect::<Vec<String>>()
+                    .join("::")
+            })
+            .collect()
     }
 }
 
@@ -63,9 +72,9 @@ impl FromMeta for PathList {
 #[cfg(test)]
 mod tests {
     use super::PathList;
+    use crate::FromMeta;
     use proc_macro2::TokenStream;
     use syn::{Attribute, Meta};
-    use FromMeta;
 
     
     fn pm(tokens: TokenStream) -> ::std::result::Result<Meta, String> {

@@ -4,18 +4,16 @@
 
 
 
-#[macro_use]
-extern crate darling;
 
-extern crate syn;
 
 use darling::{FromDeriveInput, FromMeta};
 use syn::parse_str;
 
 #[derive(Debug, FromDeriveInput)]
-#[darling(attributes(my_trait), map = "MyInputReceiver::autocorrect")]
+#[darling(attributes(my_trait), and_then = "MyInputReceiver::autocorrect")]
 pub struct MyInputReceiver {
     
+    #[darling(map = "MyInputReceiver::make_string_shouty")]
     name: String,
 
     
@@ -34,7 +32,15 @@ impl MyInputReceiver {
     
     
     
-    fn autocorrect(self) -> Self {
+    fn make_string_shouty(s: String) -> String {
+        s.to_uppercase()
+    }
+
+    
+    
+    
+    
+    fn autocorrect(self) -> darling::Result<Self> {
         let Self {
             name,
             frequency,
@@ -45,28 +51,20 @@ impl MyInputReceiver {
         
         let amplitude = match amplitude {
             Ok(amp) => amp,
-            Err(mi) => {
-                let val: i64 = if let Ok(v) = FromMeta::from_meta(&mi) {
-                    v
-                } else {
-                    panic!(format!("amplitude should have been an integer"))
-                };
-
-                val.abs() as u64
-            }
+            Err(mi) => (i64::from_meta(&mi)?).abs() as u64,
         };
 
-        Self {
+        Ok(Self {
             name,
             frequency,
             amplitude: Ok(amplitude),
-        }
+        })
     }
 }
 
 fn main() {
     let input = r#"#[derive(MyTrait)]
-#[my_trait(name="Jon", amplitude = "-1", frequency = "1")]
+#[my_trait(name="Jon", amplitude = "-1", frequency = 1)]
 pub struct Foo;"#;
 
     let parsed = parse_str(input).unwrap();

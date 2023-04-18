@@ -1,6 +1,6 @@
 use syn::Generics;
 
-use Result;
+use crate::Result;
 
 
 

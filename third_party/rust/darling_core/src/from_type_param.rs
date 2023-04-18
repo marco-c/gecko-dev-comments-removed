@@ -1,6 +1,6 @@
-use syn::{self, TypeParam};
+use syn::TypeParam;
 
-use Result;
+use crate::Result;
 
 
 pub trait FromTypeParam: Sized {

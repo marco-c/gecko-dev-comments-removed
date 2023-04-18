@@ -2,12 +2,9 @@ use std::fmt;
 
 use syn::{Lit, NestedMeta};
 
-use {FromMeta, Result};
+use crate::{FromMeta, Result};
 
 use self::Override::*;
-
-
-
 
 
 
@@ -49,7 +46,7 @@ impl<T> Override<T> {
     
     
     
-    pub fn as_ref<'a>(&'a self) -> Override<&'a T> {
+    pub fn as_ref(&self) -> Override<&T> {
         match *self {
             Inherit => Inherit,
             Explicit(ref val) => Explicit(val),
@@ -59,7 +56,7 @@ impl<T> Override<T> {
     
     
     
-    pub fn as_mut<'a>(&'a mut self) -> Override<&'a mut T> {
+    pub fn as_mut(&mut self) -> Override<&mut T> {
         match *self {
             Inherit => Inherit,
             Explicit(ref mut val) => Explicit(val),

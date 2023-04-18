@@ -1,8 +1,8 @@
 use proc_macro2::Span;
 use std::ops::{Deref, DerefMut};
-use syn;
 use syn::spanned::Spanned;
-use {
+
+use crate::{
     FromDeriveInput, FromField, FromGenericParam, FromGenerics, FromMeta, FromTypeParam,
     FromVariant, Result,
 };
@@ -19,7 +19,7 @@ use {
 
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct SpannedValue<T> {
     value: T,
     span: Span,
@@ -33,6 +33,11 @@ impl<T> SpannedValue<T> {
     
     pub fn span(&self) -> Span {
         self.span
+    }
+
+    
+    pub fn map_ref<U>(&self, map_fn: impl FnOnce(&T) -> U) -> SpannedValue<U> {
+        SpannedValue::new(map_fn(&self.value), self.span)
     }
 }
 
@@ -59,6 +64,12 @@ impl<T> DerefMut for SpannedValue<T> {
 impl<T> AsRef<T> for SpannedValue<T> {
     fn as_ref(&self) -> &T {
         &self.value
+    }
+}
+
+impl<T> Spanned for SpannedValue<T> {
+    fn span(&self) -> Span {
+        self.span
     }
 }
 

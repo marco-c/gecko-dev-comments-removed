@@ -26,6 +26,34 @@ pub type Result<T> = ::std::result::Result<T, Error>;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 #[cfg_attr(test, derive(Clone))]
 pub struct Error {
@@ -37,12 +65,16 @@ pub struct Error {
 
 
 fn path_to_string(path: &syn::Path) -> String {
-    path.segments.iter().map(|s| s.ident.to_string()).collect::<Vec<String>>().join("::")
+    path.segments
+        .iter()
+        .map(|s| s.ident.to_string())
+        .collect::<Vec<String>>()
+        .join("::")
 }
 
 
 impl Error {
-    pub(in error) fn new(kind: ErrorKind) -> Self {
+    pub(in crate::error) fn new(kind: ErrorKind) -> Self {
         Error {
             kind,
             locations: Vec::new(),
@@ -172,14 +204,12 @@ impl Error {
     
     
     pub fn multiple(mut errors: Vec<Error>) -> Self {
-        if errors.len() > 1 {
-            Error::new(ErrorKind::Multiple(errors))
-        } else if errors.len() == 1 {
-            errors
+        match errors.len() {
+            1 => errors
                 .pop()
-                .expect("Error array of length 1 has a first item")
-        } else {
-            panic!("Can't deal with 0 errors")
+                .expect("Error array of length 1 has a first item"),
+            0 => panic!("Can't deal with 0 errors"),
+            _ => Error::new(ErrorKind::Multiple(errors)),
         }
     }
 }
@@ -194,6 +224,7 @@ impl Error {
 }
 
 
+#[allow(clippy::len_without_is_empty)] 
 impl Error {
     
     pub fn has_span(&self) -> bool {
@@ -327,7 +358,7 @@ impl Error {
         
         
         match self.kind {
-            ErrorKind::UnknownField(euf) => euf.to_diagnostic(self.span),
+            ErrorKind::UnknownField(euf) => euf.into_diagnostic(self.span),
             _ => match self.span {
                 Some(span) => span.unwrap().error(self.kind.to_string()),
                 None => Diagnostic::new(Level::Error, self.to_string()),
@@ -376,10 +407,10 @@ impl Error {
 
 impl StdError for Error {
     fn description(&self) -> &str {
-        &self.kind.description()
+        self.kind.description()
     }
 
-    fn cause(&self) -> Option<&StdError> {
+    fn cause(&self) -> Option<&dyn StdError> {
         None
     }
 }
@@ -392,6 +423,19 @@ impl fmt::Display for Error {
         }
 
         Ok(())
+    }
+}
+
+impl From<syn::Error> for Error {
+    fn from(e: syn::Error) -> Self {
+        
+        
+        
+        
+        Self {
+            span: Some(e.span()),
+            ..Self::custom(e)
+        }
     }
 }
 

@@ -1,6 +1,4 @@
-use syn;
-
-use Result;
+use crate::Result;
 
 
 

@@ -1,0 +1,27 @@
+use syn::Attribute;
+
+use crate::Result;
+
+
+
+
+
+pub trait FromAttributes: Sized {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from_attributes(attrs: &[Attribute]) -> Result<Self>;
+}

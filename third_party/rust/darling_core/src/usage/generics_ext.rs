@@ -1,6 +1,6 @@
 use syn::Generics;
 
-use usage::{IdentSet, LifetimeSet};
+use crate::usage::{IdentSet, LifetimeSet};
 
 
 pub trait GenericsExt {

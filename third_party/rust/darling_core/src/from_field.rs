@@ -1,6 +1,6 @@
-use syn::{self, Field};
+use syn::Field;
 
-use Result;
+use crate::Result;
 
 
 pub trait FromField: Sized {

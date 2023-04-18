@@ -1,7 +1,7 @@
 use syn::NestedMeta;
 
-use util::PathList;
-use {FromMeta, Result};
+use crate::util::PathList;
+use crate::{FromMeta, Result};
 
 
 #[derive(Debug, Clone, PartialEq, Eq)]

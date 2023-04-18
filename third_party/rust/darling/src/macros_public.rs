@@ -28,8 +28,6 @@
 
 
 
-
-
 #[macro_export]
 macro_rules! uses_type_params {
     ($impl_type:ty, $accessor:ident) => {

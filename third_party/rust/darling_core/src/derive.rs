@@ -5,7 +5,7 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::DeriveInput;
 
-use options;
+use crate::options;
 
 
 
@@ -28,8 +28,15 @@ pub fn from_meta(input: &DeriveInput) -> TokenStream {
 
 
 
+pub fn from_attributes(input: &DeriveInput) -> TokenStream {
+    emit_impl_or_error!(options::FromAttributesOptions::new(input))
+}
+
+
+
+
 pub fn from_derive_input(input: &DeriveInput) -> TokenStream {
-    emit_impl_or_error!(options::FdiOptions::new(&input))
+    emit_impl_or_error!(options::FdiOptions::new(input))
 }
 
 

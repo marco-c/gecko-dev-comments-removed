@@ -5,7 +5,7 @@ use proc_macro2::{Span, TokenStream};
 use quote::ToTokens;
 use syn::{Ident, Meta};
 
-use {FromMeta, Result};
+use crate::{FromMeta, Result};
 
 
 

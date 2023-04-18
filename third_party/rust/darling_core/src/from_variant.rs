@@ -1,6 +1,6 @@
-use syn::{self, Variant};
+use syn::Variant;
 
-use Result;
+use crate::Result;
 
 
 pub trait FromVariant: Sized {

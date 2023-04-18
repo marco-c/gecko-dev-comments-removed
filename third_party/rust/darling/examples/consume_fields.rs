@@ -1,16 +1,12 @@
 
 
-#[macro_use]
-extern crate darling;
-extern crate proc_macro2;
-#[macro_use]
-extern crate quote;
-extern crate syn;
+#![allow(dead_code)]
 
-use darling::ast;
-use darling::FromDeriveInput;
+
+
+use darling::{ast, FromDeriveInput, FromField, FromMeta};
 use proc_macro2::TokenStream;
-use quote::ToTokens;
+use quote::{quote, ToTokens};
 use syn::parse_str;
 
 
@@ -101,7 +97,10 @@ impl ToTokens for MyInputReceiver {
                 let field_ident = f.ident
                     .as_ref()
                     .map(|v| quote!(#v))
-                    .unwrap_or_else(|| quote!(#i));
+                    .unwrap_or_else(|| {
+                        let i = syn::Index::from(i);
+                        quote!(#i)
+                    });
 
                 match field_volume {
                     Volume::Normal => quote!(self.#field_ident),

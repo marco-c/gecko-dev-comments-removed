@@ -1,7 +1,7 @@
-use syn;
-
-use {FromDeriveInput, FromField, FromGenericParam, FromGenerics, FromMeta, FromTypeParam,
-     FromVariant, Result};
+use crate::{
+    FromDeriveInput, FromField, FromGenericParam, FromGenerics, FromMeta, FromTypeParam,
+    FromVariant, Result,
+};
 
 
 #[derive(Debug, Clone, PartialEq, Eq)]
