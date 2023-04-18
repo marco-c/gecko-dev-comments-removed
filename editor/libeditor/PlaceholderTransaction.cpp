@@ -243,16 +243,48 @@ NS_IMETHODIMP PlaceholderTransaction::Merge(nsITransaction* aOtherTransaction,
              nsAtomCString(mName ? mName.get() : nsGkAtoms::_empty).get()));
     return NS_OK;
   }
+
   
   
-  if (!otherPlaceholderTransaction->StartSelectionEquals(mEndSel)) {
+  
+  
+  
+
+  
+  
+  if (!otherPlaceholderTransaction->mStartSel.HasOnlyCollapsedRange()) {
     MOZ_LOG(GetLogModule(), LogLevel::Debug,
             ("%p PlaceholderTransaction::%s(aOtherTransaction=%p) this={ "
-             "mName=%s } returned false due to selection difference",
+             "mName=%s } returned false due to not collapsed selection at "
+             "start of new transactions",
              this, __FUNCTION__, aOtherTransaction,
              nsAtomCString(mName ? mName.get() : nsGkAtoms::_empty).get()));
     return NS_OK;
   }
+
+  
+  
+  if (!mEndSel.HasOnlyCollapsedRange()) {
+    MOZ_LOG(GetLogModule(), LogLevel::Debug,
+            ("%p PlaceholderTransaction::%s(aOtherTransaction=%p) this={ "
+             "mName=%s } returned false due to not collapsed selection at end "
+             "of previous transactions",
+             this, __FUNCTION__, aOtherTransaction,
+             nsAtomCString(mName ? mName.get() : nsGkAtoms::_empty).get()));
+    return NS_OK;
+  }
+
+  
+  
+  if (!otherPlaceholderTransaction->mStartSel.Equals(mEndSel)) {
+    MOZ_LOG(GetLogModule(), LogLevel::Debug,
+            ("%p PlaceholderTransaction::%s(aOtherTransaction=%p) this={ "
+             "mName=%s } returned false due to caret positions were different",
+             this, __FUNCTION__, aOtherTransaction,
+             nsAtomCString(mName ? mName.get() : nsGkAtoms::_empty).get()));
+    return NS_OK;
+  }
+
   mAbsorb = true;  
   otherPlaceholderTransaction->ForwardEndBatchTo(*this);
   
@@ -273,14 +305,6 @@ NS_IMETHODIMP PlaceholderTransaction::Merge(nsITransaction* aOtherTransaction,
            this, __FUNCTION__, aOtherTransaction,
            nsAtomCString(mName ? mName.get() : nsGkAtoms::_empty).get()));
   return NS_OK;
-}
-
-bool PlaceholderTransaction::StartSelectionEquals(
-    SelectionState& aSelectionState) {
-  
-  
-  return mStartSel.IsCollapsed() && aSelectionState.IsCollapsed() &&
-         mStartSel.Equals(aSelectionState);
 }
 
 nsresult PlaceholderTransaction::EndPlaceHolderBatch() {
