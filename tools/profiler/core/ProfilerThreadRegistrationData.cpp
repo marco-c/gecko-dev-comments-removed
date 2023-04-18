@@ -6,8 +6,6 @@
 
 #include "mozilla/ProfilerThreadRegistrationData.h"
 
-#include "mozilla/FOGIPC.h"
-#include "mozilla/glean/GleanMetrics.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "js/AllocationRecording.h"
 #include "js/ProfilingStack.h"
@@ -17,40 +15,6 @@
 #  include <windows.h>
 #elif defined(XP_DARWIN)
 #  include <pthread.h>
-#endif
-
-#ifdef NIGHTLY_BUILD
-namespace geckoprofiler::markers {
-
-using namespace mozilla;
-
-struct ThreadCpuUseMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("ThreadCpuUse");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   ProfilerThreadId aThreadId,
-                                   int64_t aCpuTimeMs, int64_t aWakeUps,
-                                   const ProfilerString8View& aThreadName) {
-    aWriter.IntProperty("threadId", static_cast<int64_t>(aThreadId.ToNumber()));
-    aWriter.IntProperty("time", aCpuTimeMs);
-    aWriter.IntProperty("wakeups", aWakeUps);
-    aWriter.StringProperty("label", aThreadName);
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("time", "CPU Time", MS::Format::Milliseconds);
-    schema.AddKeyLabelFormat("wakeups", "Wake ups", MS::Format::Integer);
-    schema.SetTooltipLabel("{marker.name} - {marker.data.label}");
-    schema.SetTableLabel(
-        "{marker.name} - {marker.data.label}: {marker.data.time} of CPU time, "
-        "{marker.data.wakeups} wake ups");
-    return schema;
-  }
-};
-
-}  
 #endif
 
 namespace mozilla::profiler {
@@ -249,58 +213,5 @@ void ThreadRegistrationLockedRWOnThread::PollJSSampling() {
     }
   }
 }
-
-#ifdef NIGHTLY_BUILD
-void ThreadRegistrationUnlockedConstReaderAndAtomicRW::RecordWakeCount() const {
-  uint64_t newWakeCount = mWakeCount - mAlreadyRecordedWakeCount;
-  if (newWakeCount == 0 && mSleep != AWAKE) {
-    
-    
-    
-    
-    return;
-  }
-
-  uint64_t cpuTimeNs;
-  if (!GetCpuTimeSinceThreadStartInNs(&cpuTimeNs, PlatformDataCRef())) {
-    cpuTimeNs = 0;
-  }
-
-  constexpr uint64_t NS_PER_MS = 1'000'000;
-  uint64_t cpuTimeMs = cpuTimeNs / NS_PER_MS;
-
-  uint64_t newCpuTimeMs = MOZ_LIKELY(cpuTimeMs > mAlreadyRecordedCpuTimeInMs)
-                              ? cpuTimeMs - mAlreadyRecordedCpuTimeInMs
-                              : 0;
-
-  if (!newWakeCount && !newCpuTimeMs) {
-    
-    return;
-  }
-
-  nsAutoCString threadName(mInfo.Name());
-  
-  for (size_t length = threadName.Length(); length > 0; --length) {
-    const char c = threadName.CharAt(length - 1);
-    if ((c < '0' || c > '9') && c != '#' && c != ' ') {
-      if (length != threadName.Length()) {
-        threadName.SetLength(length);
-      }
-      break;
-    }
-  }
-
-  mozilla::glean::RecordThreadCpuUse(threadName, newCpuTimeMs, newWakeCount);
-
-  
-  
-  
-  
-  PROFILER_MARKER("Thread CPU use", OTHER, {}, ThreadCpuUseMarker,
-                  mInfo.ThreadId(), newCpuTimeMs, newWakeCount, threadName);
-  mAlreadyRecordedCpuTimeInMs = cpuTimeMs;
-  mAlreadyRecordedWakeCount += newWakeCount;
-}
-#endif
 
 }  
