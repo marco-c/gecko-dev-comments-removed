@@ -732,7 +732,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-
   std::atomic<CubebUtils::AudioDeviceID> mInputDeviceID;
   CubebUtils::AudioDeviceID mOutputDeviceID;
 
@@ -740,8 +739,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
   
   
-  
-  nsTHashMap<CubebUtils::AudioDeviceID, NativeInputTrack*> mDeviceTrackMap;
+  RefPtr<NativeInputTrack> mNativeInputTrack;
 
   
 
