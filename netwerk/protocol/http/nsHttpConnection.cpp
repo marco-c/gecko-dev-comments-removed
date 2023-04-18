@@ -162,6 +162,12 @@ nsresult nsHttpConnection::Init(
   return NS_OK;
 }
 
+void nsHttpConnection::ChangeState(HttpConnectionState newState) {
+  LOG(("nsHttpConnection::ChanfeState %d -> %d [this=%p]", mState, newState,
+       this));
+  mState = newState;
+}
+
 nsresult nsHttpConnection::TryTakeSubTransactions(
     nsTArray<RefPtr<nsAHttpTransaction> >& list) {
   nsresult rv = mTransaction->TakeSubTransactions(list);
@@ -316,11 +322,7 @@ void nsHttpConnection::StartSpdy(nsISSLSocketControl* sslControl,
         ("nsHttpConnection::StartSpdy %p Connecting To a HTTP/2 "
          "Proxy and Need Connect",
          this));
-    MOZ_ASSERT(mProxyConnectStream);
-
-    mProxyConnectStream = nullptr;
-    mCompletedProxyConnect = true;
-    mProxyConnectInProgress = false;
+    SetTunnelSetupDone();
   }
 
   nsresult rv = NS_OK;
@@ -658,13 +660,8 @@ nsresult nsHttpConnection::Activate(nsAHttpTransaction* trans, uint32_t caps,
 
   
   
-  nsresult rv = NS_OK;
-  if (mTransaction->ConnectionInfo()->UsingConnect() &&
-      !mCompletedProxyConnect) {
-    rv = SetupProxyConnect();
-    if (NS_FAILED(rv)) goto failed_activation;
-    mProxyConnectInProgress = true;
-  }
+  nsresult rv = CheckTunnelIsNeeded();
+  if (NS_FAILED(rv)) goto failed_activation;
 
   
   mCurrentBytesRead = 0;
@@ -1187,77 +1184,101 @@ nsresult nsHttpConnection::OnHeadersAvailable(nsAHttpTransaction* trans,
     --mRemainingConnectionUses;
   }
 
-  
-  
-  
-  
-  bool itWasProxyConnect = !!mProxyConnectStream;
-  if (mProxyConnectStream) {
-    MOZ_ASSERT(mUsingSpdyVersion == SpdyVersion::NONE,
-               "SPDY NPN Complete while using proxy connect stream");
-    mProxyConnectStream = nullptr;
-    bool isHttps = mTransaction ? mTransaction->ConnectionInfo()->EndToEndSSL()
-                                : mConnInfo->EndToEndSSL();
-    bool onlyConnect = mTransactionCaps & NS_HTTP_CONNECT_ONLY;
-
-    mTransaction->OnProxyConnectComplete(responseStatus);
-    if (responseStatus == 200) {
-      LOG(("proxy CONNECT succeeded! endtoendssl=%d onlyconnect=%d\n", isHttps,
-           onlyConnect));
-      
-      
-      
-      if (!onlyConnect) {
-        *reset = true;
+  switch (mState) {
+    case HttpConnectionState::SETTING_UP_TUNNEL:
+      HandleTunnelResponse(responseStatus, reset);
+      break;
+    default:
+      if (requestHead->HasHeader(nsHttp::Upgrade)) {
+        HandleWebSocketResponse(requestHead, responseHead, responseStatus);
+      } else if (responseStatus == 101) {
+        
+        Close(NS_ERROR_ABORT);
       }
-      nsresult rv;
-      
-      
-      if (isHttps) {
-        if (!onlyConnect) {
-          if (mConnInfo->UsingHttpsProxy()) {
-            LOG(("%p new TLSFilterTransaction %s %d\n", this,
-                 mConnInfo->Origin(), mConnInfo->OriginPort()));
-            SetupSecondaryTLS();
-          }
-
-          rv = InitSSLParams(false, true);
-          LOG(("InitSSLParams [rv=%" PRIx32 "]\n", static_cast<uint32_t>(rv)));
-        } else {
-          
-          
-          
-          
-          
-          mNPNComplete = true;
-        }
-      }
-      mCompletedProxyConnect = true;
-      mProxyConnectInProgress = false;
-      rv = mSocketOut->AsyncWait(this, 0, 0, nullptr);
-      
-      MOZ_ASSERT(NS_SUCCEEDED(rv), "mSocketOut->AsyncWait failed");
-    } else {
-      LOG(("proxy CONNECT failed! endtoendssl=%d onlyconnect=%d\n", isHttps,
-           onlyConnect));
-      mTransaction->SetProxyConnectFailed();
-    }
   }
 
-  nsAutoCString upgradeReq;
-  bool hasUpgradeReq =
-      NS_SUCCEEDED(requestHead->GetHeader(nsHttp::Upgrade, upgradeReq));
+  mLastHttpResponseVersion = responseHead->Version();
+
+  return NS_OK;
+}
+
+void nsHttpConnection::HandleTunnelResponse(uint16_t responseStatus,
+                                            bool* reset) {
+  MOZ_ASSERT(TunnelSetupInProgress());
+  MOZ_ASSERT(mProxyConnectStream);
+  MOZ_ASSERT(mUsingSpdyVersion == SpdyVersion::NONE,
+             "SPDY NPN Complete while using proxy connect stream");
   
   
   
   
-  if (!itWasProxyConnect && hasUpgradeReq && responseStatus != 401 &&
-      responseStatus != 407 && !mSpdySession) {
+
+  if (responseStatus == 200) {
+    ChangeState(HttpConnectionState::TUNNEL_DONE);
+  }
+  mProxyConnectStream = nullptr;
+  bool isHttps = mTransaction ? mTransaction->ConnectionInfo()->EndToEndSSL()
+                              : mConnInfo->EndToEndSSL();
+  bool onlyConnect = mTransactionCaps & NS_HTTP_CONNECT_ONLY;
+
+  mTransaction->OnProxyConnectComplete(responseStatus);
+  if (responseStatus == 200) {
+    LOG(("proxy CONNECT succeeded! endtoendssl=%d onlyconnect=%d\n", isHttps,
+         onlyConnect));
+    
+    
+    
+    if (!onlyConnect) {
+      *reset = true;
+    }
+    nsresult rv;
+    
+    
+    if (isHttps) {
+      if (!onlyConnect) {
+        if (mConnInfo->UsingHttpsProxy()) {
+          LOG(("%p new TLSFilterTransaction %s %d\n", this, mConnInfo->Origin(),
+               mConnInfo->OriginPort()));
+          SetupSecondaryTLS();
+        }
+
+        rv = InitSSLParams(false, true);
+        LOG(("InitSSLParams [rv=%" PRIx32 "]\n", static_cast<uint32_t>(rv)));
+      } else {
+        
+        
+        
+        
+        
+        mNPNComplete = true;
+      }
+    }
+    rv = mSocketOut->AsyncWait(this, 0, 0, nullptr);
+    
+    MOZ_ASSERT(NS_SUCCEEDED(rv), "mSocketOut->AsyncWait failed");
+  } else {
+    LOG(("proxy CONNECT failed! endtoendssl=%d onlyconnect=%d\n", isHttps,
+         onlyConnect));
+    mTransaction->SetProxyConnectFailed();
+  }
+}
+
+void nsHttpConnection::HandleWebSocketResponse(nsHttpRequestHead* requestHead,
+                                               nsHttpResponseHead* responseHead,
+                                               uint16_t responseStatus) {
+  
+  
+  
+  
+  if (responseStatus != 401 && responseStatus != 407 && !mSpdySession) {
     LOG(("HTTP Upgrade in play - disable keepalive for http/1.x\n"));
     DontReuse();
   }
 
   if (responseStatus == 101) {
+    nsAutoCString upgradeReq;
+    bool hasUpgradeReq =
+        NS_SUCCEEDED(requestHead->GetHeader(nsHttp::Upgrade, upgradeReq));
     nsAutoCString upgradeResp;
     bool hasUpgradeResp =
         NS_SUCCEEDED(responseHead->GetHeader(nsHttp::Upgrade, upgradeResp));
@@ -1273,10 +1294,6 @@ nsresult nsHttpConnection::OnHeadersAvailable(nsAHttpTransaction* trans,
       LOG(("HTTP Upgrade Response to %s\n", upgradeResp.get()));
     }
   }
-
-  mLastHttpResponseVersion = responseHead->Version();
-
-  return NS_OK;
 }
 
 bool nsHttpConnection::IsReused() {
@@ -1681,14 +1698,6 @@ void nsHttpConnection::CloseTransaction(nsAHttpTransaction* trans,
   mIsReused = true;
 }
 
-nsresult nsHttpConnection::ReadFromStream(nsIInputStream* input, void* closure,
-                                          const char* buf, uint32_t offset,
-                                          uint32_t count, uint32_t* countRead) {
-  
-  nsHttpConnection* conn = (nsHttpConnection*)closure;
-  return conn->OnReadSegment(buf, count, countRead);
-}
-
 bool nsHttpConnection::CheckCanWrite0RTTData() {
   MOZ_ASSERT(EarlyDataAvailable());
   nsCOMPtr<nsISupports> securityInfo;
@@ -1753,7 +1762,7 @@ nsresult nsHttpConnection::OnReadSegment(const char* buf, uint32_t count,
   } else {
     mLastWriteTime = PR_IntervalNow();
     mSocketOutCondition = NS_OK;  
-    if (!mProxyConnectInProgress) mTotalBytesWritten += *countRead;
+    if (!TunnelSetupInProgress()) mTotalBytesWritten += *countRead;
   }
 
   return mSocketOutCondition;
@@ -1773,7 +1782,7 @@ nsresult nsHttpConnection::OnSocketWritable() {
   uint32_t writeAttempts = 0;
 
   if (mTransactionCaps & NS_HTTP_CONNECT_ONLY) {
-    if (!mCompletedProxyConnect && !mProxyConnectStream) {
+    if (!TunnelUsed()) {
       
       
       MOZ_ASSERT(false, "proxy connect will never happen");
@@ -1781,7 +1790,7 @@ nsresult nsHttpConnection::OnSocketWritable() {
       return NS_ERROR_FAILURE;
     }
 
-    if (mCompletedProxyConnect) {
+    if (TunnelCompleted()) {
       
       
       
@@ -1797,50 +1806,51 @@ nsresult nsHttpConnection::OnSocketWritable() {
     rv = mSocketOutCondition = NS_OK;
     transactionBytes = 0;
 
-    
-    
-    
-    
-    if (mConnInfo->UsingHttpsProxy() && !EnsureNPNComplete()) {
-      MOZ_DIAGNOSTIC_ASSERT(!EarlyDataAvailable());
-      mSocketOutCondition = NS_BASE_STREAM_WOULD_BLOCK;
-    } else if (mProxyConnectStream) {
-      
-      
-      LOG(("  writing CONNECT request stream\n"));
-      rv = mProxyConnectStream->ReadSegments(ReadFromStream, this,
-                                             nsIOService::gDefaultSegmentSize,
-                                             &transactionBytes);
-    } else if (!EnsureNPNComplete() &&
-               (!EarlyDataUsed() || mTlsHandshakeComplitionPending)) {
-      
-      
-      mSocketOutCondition = NS_BASE_STREAM_WOULD_BLOCK;
-    } else if (!mTransaction) {
-      rv = NS_ERROR_FAILURE;
-      LOG(("  No Transaction In OnSocketWritable\n"));
-    } else if (NS_SUCCEEDED(rv)) {
-      
-      if (!mReportedSpdy && mNPNComplete) {
-        mReportedSpdy = true;
-        MOZ_ASSERT(!mEverUsedSpdy);
-        gHttpHandler->ConnMgr()->ReportSpdyConnection(this, false);
-      }
-
-      LOG(("  writing transaction request stream\n"));
-      MOZ_DIAGNOSTIC_ASSERT(!mProxyConnectInProgress || !EarlyDataAvailable());
-      mProxyConnectInProgress = false;
-      rv = mTransaction->ReadSegmentsAgain(
-          this, nsIOService::gDefaultSegmentSize, &transactionBytes, &again);
-      if (EarlyDataUsed()) {
-        mContentBytesWritten0RTT += transactionBytes;
-        if (NS_FAILED(rv) && rv != NS_BASE_STREAM_WOULD_BLOCK) {
-          
-          
-          FinishNPNSetup(false, true);
+    switch (mState) {
+      case HttpConnectionState::SETTING_UP_TUNNEL:
+        if (mConnInfo->UsingHttpsProxy() && !EnsureNPNComplete()) {
+          MOZ_DIAGNOSTIC_ASSERT(!EarlyDataAvailable());
+          mSocketOutCondition = NS_BASE_STREAM_WOULD_BLOCK;
+        } else {
+          rv = SendConnectRequest(this, &transactionBytes);
         }
-      } else {
-        mContentBytesWritten += transactionBytes;
+        break;
+      default: {
+        
+        
+        
+        
+        if (!EnsureNPNComplete() &&
+            (!EarlyDataUsed() || mTlsHandshakeComplitionPending)) {
+          
+          
+          mSocketOutCondition = NS_BASE_STREAM_WOULD_BLOCK;
+        } else if (!mTransaction) {
+          rv = NS_ERROR_FAILURE;
+          LOG(("  No Transaction In OnSocketWritable\n"));
+        } else if (NS_SUCCEEDED(rv)) {
+          
+          if (!mReportedSpdy && mNPNComplete) {
+            mReportedSpdy = true;
+            MOZ_ASSERT(!mEverUsedSpdy);
+            gHttpHandler->ConnMgr()->ReportSpdyConnection(this, false);
+          }
+
+          LOG(("  writing transaction request stream\n"));
+          rv = mTransaction->ReadSegmentsAgain(this,
+                                               nsIOService::gDefaultSegmentSize,
+                                               &transactionBytes, &again);
+          if (EarlyDataUsed()) {
+            mContentBytesWritten0RTT += transactionBytes;
+            if (NS_FAILED(rv) && rv != NS_BASE_STREAM_WOULD_BLOCK) {
+              
+              
+              FinishNPNSetup(false, true);
+            }
+          } else {
+            mContentBytesWritten += transactionBytes;
+          }
+        }
       }
     }
 
@@ -1944,8 +1954,7 @@ nsresult nsHttpConnection::OnSocketReadable() {
   
   mResponseTimeoutEnabled = false;
 
-  if ((mTransactionCaps & NS_HTTP_CONNECT_ONLY) && !mCompletedProxyConnect &&
-      !mProxyConnectStream) {
+  if ((mTransactionCaps & NS_HTTP_CONNECT_ONLY) && !TunnelUsed()) {
     
     
     MOZ_ASSERT(false, "proxy connect will never happen");
@@ -1970,7 +1979,7 @@ nsresult nsHttpConnection::OnSocketReadable() {
   bool again = true;
 
   do {
-    if (!mProxyConnectInProgress && !EnsureNPNComplete()) {
+    if (!TunnelSetupInProgress() && !EnsureNPNComplete()) {
       
       
       
@@ -2059,9 +2068,7 @@ void nsHttpConnection::SetInSpdyTunnel(bool arg) {
   mInSpdyTunnel = arg;
 
   
-  mProxyConnectStream = nullptr;
-  mCompletedProxyConnect = true;
-  mProxyConnectInProgress = false;
+  SetTunnelSetupDone();
 }
 
 
@@ -2115,7 +2122,6 @@ nsresult nsHttpConnection::MakeConnectString(nsAHttpTransaction* trans,
     rv = request->SetHeader(nsHttp::Proxy_Authorization, val);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
-
   if ((trans->Caps() & NS_HTTP_CONNECT_ONLY) &&
       NS_SUCCEEDED(trans->RequestHead()->GetHeader(nsHttp::Upgrade, val))) {
     
@@ -2138,22 +2144,6 @@ nsresult nsHttpConnection::MakeConnectString(nsAHttpTransaction* trans,
 
   result.AppendLiteral("\r\n");
   return NS_OK;
-}
-
-nsresult nsHttpConnection::SetupProxyConnect() {
-  LOG(("nsHttpConnection::SetupProxyConnect [this=%p]\n", this));
-  NS_ENSURE_TRUE(!mProxyConnectStream, NS_ERROR_ALREADY_INITIALIZED);
-  MOZ_ASSERT(mUsingSpdyVersion == SpdyVersion::NONE,
-             "SPDY NPN Complete while using proxy connect stream");
-
-  nsAutoCString buf;
-  nsHttpRequestHead request;
-  nsresult rv = MakeConnectString(mTransaction, &request, buf, false);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  return NS_NewCStringInputStream(getter_AddRefs(mProxyConnectStream),
-                                  std::move(buf));
 }
 
 nsresult nsHttpConnection::StartShortLivedTCPKeepalives() {
@@ -2492,7 +2482,7 @@ bool nsHttpConnection::CanAcceptWebsocket() {
 }
 
 bool nsHttpConnection::IsProxyConnectInProgress() {
-  return mProxyConnectInProgress;
+  return mState == SETTING_UP_TUNNEL;
 }
 
 bool nsHttpConnection::LastTransactionExpectedNoContent() {
@@ -2680,6 +2670,73 @@ void nsHttpConnection::HandshakeDoneInternal() {
 
   FinishNPNSetup(true, true);
   return;
+}
+
+void nsHttpConnection::SetTunnelSetupDone() {
+  MOZ_ASSERT(mProxyConnectStream);
+  MOZ_ASSERT(mState == HttpConnectionState::SETTING_UP_TUNNEL);
+
+  ChangeState(HttpConnectionState::TUNNEL_DONE);
+  mProxyConnectStream = nullptr;
+}
+
+nsresult nsHttpConnection::CheckTunnelIsNeeded() {
+  switch (mState) {
+    case HttpConnectionState::UNINITIALIZED: {
+      
+      if (!mTransaction->ConnectionInfo()->UsingConnect()) {
+        ChangeState(HttpConnectionState::TUNNEL_NOT_USED);
+        return NS_OK;
+      }
+      ChangeState(HttpConnectionState::SETTING_UP_TUNNEL);
+    }
+      [[fallthrough]];
+    case HttpConnectionState::SETTING_UP_TUNNEL: {
+      
+      
+      
+      nsresult rv = SetupProxyConnectStream();
+      if (NS_FAILED(rv)) {
+        ChangeState(HttpConnectionState::UNINITIALIZED);
+      }
+      return rv;
+    }
+    case HttpConnectionState::TUNNEL_DONE:
+    case HttpConnectionState::TUNNEL_NOT_USED:
+      return NS_OK;
+  }
+}
+
+nsresult nsHttpConnection::SetupProxyConnectStream() {
+  LOG(("nsHttpConnection::SetupStream\n"));
+  NS_ENSURE_TRUE(!mProxyConnectStream, NS_ERROR_ALREADY_INITIALIZED);
+  MOZ_ASSERT(mState == HttpConnectionState::SETTING_UP_TUNNEL);
+
+  nsAutoCString buf;
+  nsHttpRequestHead request;
+  nsresult rv = MakeConnectString(mTransaction, &request, buf, false);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = NS_NewCStringInputStream(getter_AddRefs(mProxyConnectStream),
+                                std::move(buf));
+  return rv;
+}
+
+nsresult nsHttpConnection::ReadFromStream(nsIInputStream* input, void* closure,
+                                          const char* buf, uint32_t offset,
+                                          uint32_t count, uint32_t* countRead) {
+  
+  nsHttpConnection* conn = (nsHttpConnection*)closure;
+  return conn->OnReadSegment(buf, count, countRead);
+}
+
+nsresult nsHttpConnection::SendConnectRequest(void* closure,
+                                              uint32_t* transactionBytes) {
+  LOG(("  writing CONNECT request stream\n"));
+  return mProxyConnectStream->ReadSegments(ReadFromStream, closure,
+                                           nsIOService::gDefaultSegmentSize,
+                                           transactionBytes);
 }
 
 }  
