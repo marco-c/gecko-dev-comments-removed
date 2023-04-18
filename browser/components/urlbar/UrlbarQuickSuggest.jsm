@@ -235,6 +235,11 @@ class Suggestions {
 
     let win = BrowserWindowTracker.getTopWindow();
 
+    
+    if (win.gBrowser?.currentURI?.spec == "about:welcome") {
+      return false;
+    }
+
     let variationType;
     try {
       
