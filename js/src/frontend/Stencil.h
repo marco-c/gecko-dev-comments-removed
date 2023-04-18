@@ -32,7 +32,6 @@
 #include "js/Utility.h"                   
 #include "js/Vector.h"                    
 #include "util/Text.h"                    
-#include "vm/BigIntType.h"                
 #include "vm/FunctionFlags.h"             
 #include "vm/GeneratorAndAsyncKind.h"     
 #include "vm/Scope.h"  
@@ -205,15 +204,9 @@ class BigIntStencil {
   [[nodiscard]] bool init(JSContext* cx, LifoAlloc& alloc,
                           const mozilla::Span<const char16_t> buf);
 
-  BigInt* createBigInt(JSContext* cx) const {
-    mozilla::Range<const char16_t> source(source_.data(), source_.size());
-    return js::ParseBigIntLiteral(cx, source);
-  }
+  BigInt* createBigInt(JSContext* cx) const;
 
-  bool isZero() const {
-    mozilla::Range<const char16_t> source(source_.data(), source_.size());
-    return js::BigIntLiteralIsZero(source);
-  }
+  bool isZero() const;
 
   mozilla::Span<const char16_t> source() const { return source_; }
 

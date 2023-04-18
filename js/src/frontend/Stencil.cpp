@@ -33,7 +33,8 @@
 #include "js/Transcoding.h"             
 #include "js/Value.h"                   
 #include "js/WasmModule.h"              
-#include "vm/BindingKind.h"             
+#include "vm/BigIntType.h"   
+#include "vm/BindingKind.h"  
 #include "vm/EnvironmentObject.h"
 #include "vm/GeneratorAndAsyncKind.h"  
 #include "vm/HelperThreads.h"          
@@ -2750,6 +2751,16 @@ bool BigIntStencil::init(JSContext* cx, LifoAlloc& alloc,
   mozilla::PodCopy(p, buf.data(), length);
   source_ = mozilla::Span(p, length);
   return true;
+}
+
+BigInt* BigIntStencil::createBigInt(JSContext* cx) const {
+  mozilla::Range<const char16_t> source(source_.data(), source_.size());
+  return js::ParseBigIntLiteral(cx, source);
+}
+
+bool BigIntStencil::isZero() const {
+  mozilla::Range<const char16_t> source(source_.data(), source_.size());
+  return js::BigIntLiteralIsZero(source);
 }
 
 #ifdef DEBUG
