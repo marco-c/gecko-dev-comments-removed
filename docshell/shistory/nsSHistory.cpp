@@ -71,7 +71,18 @@ static const char* kObservedPrefs[] = {PREF_SHISTORY_SIZE,
 
 static int32_t gHistoryMaxSize = 50;
 
-static LinkedList<nsSHistory> gSHistoryList;
+
+
+
+struct ListHelper {
+#ifdef DEBUG
+  ~ListHelper() { mList.clear(); }
+#endif  
+
+  LinkedList<nsSHistory> mList;
+};
+
+static ListHelper gSHistoryList;
 
 
 int32_t nsSHistory::sHistoryMaxTotalViewers = -1;
@@ -248,7 +259,7 @@ nsSHistory::nsSHistory(BrowsingContext* aRootBC)
   }
 
   
-  gSHistoryList.insertBack(this);
+  gSHistoryList.mList.insertBack(this);
 
   
   
@@ -1595,7 +1606,7 @@ void nsSHistory::GloballyEvictContentViewers() {
 
   nsTArray<EntryAndDistance> entries;
 
-  for (auto shist : gSHistoryList) {
+  for (auto shist : gSHistoryList.mList) {
     
     
     
