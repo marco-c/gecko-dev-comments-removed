@@ -18,6 +18,7 @@
 #  include "prthread.h"
 #  include "prenv.h"
 #  include "nsDebug.h"
+#  include "nsString.h"
 #  include "nsXULAppAPI.h"
 
 #  if defined(LINUX)
@@ -123,13 +124,40 @@ MOZ_NEVER_INLINE void child_ah_crap_handler(int signum) {
 static GLogFunc orig_log_func = nullptr;
 
 extern "C" {
-static void my_glib_log_func(const gchar* log_domain, GLogLevelFlags log_level,
-                             const gchar* message, gpointer user_data);
+static void glib_log_func(const gchar* log_domain, GLogLevelFlags log_level,
+                          const gchar* message, gpointer user_data);
 }
 
- void my_glib_log_func(const gchar* log_domain,
-                                   GLogLevelFlags log_level,
-                                   const gchar* message, gpointer user_data) {
+
+
+static bool IsCrashyGtkMessage(const nsACString& aMessage) {
+  if (aMessage.EqualsLiteral("Lost connection to Wayland compositor.")) {
+    
+    return true;
+  }
+  if (StringBeginsWith(aMessage, "Error flushing display: "_ns)) {
+    
+    return true;
+  }
+  if (StringBeginsWith(aMessage, "Error reading events from display: "_ns)) {
+    
+    return true;
+  }
+  if (StringBeginsWith(aMessage, "Error "_ns) &&
+      StringEndsWith(aMessage, " dispatching to Wayland display."_ns)) {
+    
+    return true;
+  }
+  return false;
+}
+
+ void glib_log_func(const gchar* log_domain,
+                                GLogLevelFlags log_level, const gchar* message,
+                                gpointer user_data) {
+  if (MOZ_UNLIKELY(IsCrashyGtkMessage(nsDependentCString(message)))) {
+    MOZ_CRASH_UNSAFE(strdup(message));
+  }
+
   if (log_level &
       (G_LOG_LEVEL_ERROR | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION)) {
     NS_DebugBreak(NS_DEBUG_ASSERTION, message, "glib assertion", __FILE__,
@@ -291,14 +319,11 @@ void InstallSignalHandlers(const char* aProgname) {
 #  if defined(MOZ_WIDGET_GTK) && \
       (GLIB_MAJOR_VERSION > 2 || \
        (GLIB_MAJOR_VERSION == 2 && GLIB_MINOR_VERSION >= 6))
-  const char* assertString = PR_GetEnv("XPCOM_DEBUG_BREAK");
-  if (assertString &&
-      (!strcmp(assertString, "suspend") || !strcmp(assertString, "stack") ||
-       !strcmp(assertString, "abort") || !strcmp(assertString, "trap") ||
-       !strcmp(assertString, "break"))) {
-    
-    orig_log_func = g_log_set_default_handler(my_glib_log_func, nullptr);
-  }
+  
+  
+  
+  
+  orig_log_func = g_log_set_default_handler(glib_log_func, nullptr);
 #  endif
 }
 
