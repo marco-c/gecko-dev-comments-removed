@@ -2097,40 +2097,34 @@ void BrowserChild::UpdateRepeatedKeyEventEndTime(
 }
 
 mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
-    const WidgetKeyboardEvent& aEvent) {
-  if (SkipRepeatedKeyEvent(aEvent)) {
-    return IPC_OK();
-  }
-
-  MOZ_ASSERT(
-      aEvent.mMessage != eKeyPress || aEvent.AreAllEditCommandsInitialized(),
-      "eKeyPress event should have native key binding information");
+    const WidgetKeyboardEvent& aEvent, const nsID& aUUID) {
+  MOZ_ASSERT_IF(aEvent.mMessage == eKeyPress,
+                aEvent.AreAllEditCommandsInitialized());
 
   
   
-  if (aEvent.mMessage == eKeyPress && mIgnoreKeyPressEvent) {
-    return IPC_OK();
-  }
+  const bool isPrecedingKeyDownEventConsumed =
+      aEvent.mMessage == eKeyPress && mIgnoreKeyPressEvent;
 
   WidgetKeyboardEvent localEvent(aEvent);
   localEvent.mWidget = mPuppetWidget;
   localEvent.mUniqueId = aEvent.mUniqueId;
-  nsEventStatus status = DispatchWidgetEventViaAPZ(localEvent);
 
-  
-  
-  UpdateRepeatedKeyEventEndTime(localEvent);
+  if (!SkipRepeatedKeyEvent(aEvent) && !isPrecedingKeyDownEventConsumed) {
+    nsEventStatus status = DispatchWidgetEventViaAPZ(localEvent);
 
-  if (aEvent.mMessage == eKeyDown) {
-    mIgnoreKeyPressEvent = status == nsEventStatus_eConsumeNoDefault;
-  }
+    
+    
+    UpdateRepeatedKeyEventEndTime(localEvent);
 
-  if (localEvent.mFlags.mIsSuppressedOrDelayed) {
-    localEvent.PreventDefault();
-  }
+    if (aEvent.mMessage == eKeyDown) {
+      mIgnoreKeyPressEvent = status == nsEventStatus_eConsumeNoDefault;
+    }
 
-  
-  if (aEvent.WantReplyFromContentProcess()) {
+    if (localEvent.mFlags.mIsSuppressedOrDelayed) {
+      localEvent.PreventDefault();
+    }
+
     
     
     
@@ -2142,23 +2136,39 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealKeyEvent(
         status == nsEventStatus_eConsumeNoDefault) {
       localEvent.PreventDefault();
     }
-    
-    
-    
-    
-    
-    
-    
-    localEvent.mFlags.mNoRemoteProcessDispatch = false;
-    SendReplyKeyEvent(localEvent);
+
+    MOZ_DIAGNOSTIC_ASSERT(!localEvent.PropagationStopped());
   }
+  
+  
+  
+  
+  else {
+    localEvent.StopPropagation();
+  }
+
+  
+  
+  if (!aEvent.WantReplyFromContentProcess()) {
+    return IPC_OK();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  localEvent.mFlags.mNoRemoteProcessDispatch = false;
+  SendReplyKeyEvent(localEvent, aUUID);
 
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult BrowserChild::RecvNormalPriorityRealKeyEvent(
-    const WidgetKeyboardEvent& aEvent) {
-  return RecvRealKeyEvent(aEvent);
+    const WidgetKeyboardEvent& aEvent, const nsID& aUUID) {
+  return RecvRealKeyEvent(aEvent, aUUID);
 }
 
 mozilla::ipc::IPCResult BrowserChild::RecvCompositionEvent(

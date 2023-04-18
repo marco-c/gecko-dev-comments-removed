@@ -325,7 +325,10 @@ struct BaseEventFlags {
     
     
     
-    if (IsWaitingReplyFromRemoteProcess()) {
+    
+    
+    
+    if (!XRE_IsParentProcess() && IsWaitingReplyFromRemoteProcess()) {
       mPropagationStopped = mImmediatePropagationStopped = false;
     }
     

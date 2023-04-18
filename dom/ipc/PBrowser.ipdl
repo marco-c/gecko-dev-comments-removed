@@ -41,6 +41,7 @@ include "mozilla/layers/LayersMessageUtils.h";
 include "mozilla/ipc/TransportSecurityInfoUtils.h";
 include "mozilla/ipc/URIUtils.h";
 
+using struct nsID from "nsID.h";
 using mozilla::gfx::Matrix4x4 from "mozilla/gfx/Matrix.h";
 using mozilla::gfx::SurfaceFormat from "mozilla/gfx/Types.h";
 using mozilla::LayoutDeviceIntPoint from "Units.h";
@@ -472,7 +473,16 @@ parent:
 
     async __delete__();
 
-    async ReplyKeyEvent(WidgetKeyboardEvent event);
+    
+
+
+
+
+
+
+
+
+    async ReplyKeyEvent(WidgetKeyboardEvent aEvent, nsID aUUID);
 
     
 
@@ -785,9 +795,17 @@ child:
                                                       ScrollableLayerGuid aGuid,
                                                       uint64_t aInputBlockId);
 
+    
+
+
+
+
+
+
+
     [Priority=input]
-    async RealKeyEvent(WidgetKeyboardEvent event);
-    async NormalPriorityRealKeyEvent(WidgetKeyboardEvent event);
+    async RealKeyEvent(WidgetKeyboardEvent aEvent, nsID aUUID);
+    async NormalPriorityRealKeyEvent(WidgetKeyboardEvent aEvent, nsID aUUID);
 
     [Priority=input]
     async MouseWheelEvent(WidgetWheelEvent event,

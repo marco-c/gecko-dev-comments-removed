@@ -27,6 +27,7 @@
 #include "nsIDOMEventListener.h"
 #include "nsIRemoteTab.h"
 #include "nsIWidget.h"
+#include "nsTArray.h"
 #include "nsWeakReference.h"
 
 class imgIContainer;
@@ -276,7 +277,7 @@ class BrowserParent final : public PBrowserParent,
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvReplyKeyEvent(
-      const WidgetKeyboardEvent& aEvent);
+      const WidgetKeyboardEvent& aEvent, const nsID& aUUID);
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvAccessKeyNotHandled(
@@ -898,6 +899,22 @@ class BrowserParent final : public PBrowserParent,
 
   Maybe<LayoutDeviceToLayoutDeviceMatrix4x4> mChildToParentConversionMatrix;
   Maybe<ScreenRect> mRemoteDocumentRect;
+
+  
+  
+  
+  
+  
+  struct SentKeyEventData {
+    uint32_t mKeyCode;
+    uint32_t mCharCode;
+    uint32_t mPseudoCharCode;
+    KeyNameIndex mKeyNameIndex;
+    CodeNameIndex mCodeNameIndex;
+    Modifiers mModifiers;
+    nsID mUUID;
+  };
+  nsTArray<SentKeyEventData> mWaitingReplyKeyboardEvents;
 
   nsIntRect mRect;
   ScreenIntSize mDimensions;
