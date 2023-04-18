@@ -225,8 +225,9 @@ SafeRefPtr<IDBTransaction> IDBTransaction::Create(
           }
         });
     if (NS_WARN_IF(!workerRef)) {
-      
 #ifdef DEBUG
+      
+      transaction->mReadyState = ReadyState::Finished;
       transaction->mSentCommitOrAbort.Flip();
 #endif
       return nullptr;
@@ -350,11 +351,11 @@ void IDBTransaction::OnRequestFinished(
       return;
     }
 
-    if (mReadyState == ReadyState::Inactive) {
-      mReadyState = ReadyState::Committing;
-    }
-
     if (aRequestCompletedSuccessfully) {
+      if (mReadyState == ReadyState::Inactive) {
+        mReadyState = ReadyState::Committing;
+      }
+
       if (NS_SUCCEEDED(mAbortCode)) {
         SendCommit(true);
       } else {
@@ -363,6 +364,7 @@ void IDBTransaction::OnRequestFinished(
     } else {
       
       
+      mReadyState = ReadyState::Finished;
       mSentCommitOrAbort.Flip();
       IDB_LOG_MARK_CHILD_TRANSACTION(
           "Request actor was killed, transaction will be aborted",
