@@ -770,7 +770,6 @@ async function testDialog(url, testFn, arg = undefined) {
 
 
 async function setStorage(...items) {
-  await removeAllRecords();
   for (let item of items) {
     if (item["cc-number"]) {
       await saveCreditCard(item);
