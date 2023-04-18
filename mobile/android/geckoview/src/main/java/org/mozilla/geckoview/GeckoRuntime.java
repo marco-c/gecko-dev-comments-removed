@@ -27,6 +27,7 @@ import android.util.Log;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringDef;
 import androidx.annotation.UiThread;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
@@ -34,6 +35,8 @@ import androidx.lifecycle.OnLifecycleEvent;
 import androidx.lifecycle.ProcessLifecycleOwner;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.List;
 import java.util.Map;
 import org.mozilla.gecko.EventDispatcher;
@@ -98,7 +101,48 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
+
+  @Deprecated
+  @DeprecationSchedule(id = "crashreporter-fatal", version = 100)
   public static final String EXTRA_CRASH_FATAL = "fatal";
+
+  
+
+
+
+
+
+
+  public static final String EXTRA_CRASH_PROCESS_TYPE = "processType";
+
+  
+
+
+
+  public static final String CRASHED_PROCESS_TYPE_MAIN = "MAIN";
+
+  
+
+
+
+
+  public static final String CRASHED_PROCESS_TYPE_FOREGROUND_CHILD = "FOREGROUND_CHILD";
+
+  
+
+
+
+
+  public static final String CRASHED_PROCESS_TYPE_BACKGROUND_CHILD = "BACKGROUND_CHILD";
+
+  @Retention(RetentionPolicy.SOURCE)
+  @StringDef(
+      value = {
+        CRASHED_PROCESS_TYPE_MAIN,
+        CRASHED_PROCESS_TYPE_FOREGROUND_CHILD,
+        CRASHED_PROCESS_TYPE_BACKGROUND_CHILD
+      })
+   @interface CrashedProcessType {}
 
   private final class LifecycleListener implements LifecycleObserver {
     private boolean mPaused = false;
@@ -271,6 +315,7 @@ public final class GeckoRuntime implements Parcelable {
             i.putExtra(EXTRA_MINIDUMP_PATH, message.getString(EXTRA_MINIDUMP_PATH));
             i.putExtra(EXTRA_EXTRAS_PATH, message.getString(EXTRA_EXTRAS_PATH));
             i.putExtra(EXTRA_CRASH_FATAL, message.getBoolean(EXTRA_CRASH_FATAL, true));
+            i.putExtra(EXTRA_CRASH_PROCESS_TYPE, message.getString(EXTRA_CRASH_PROCESS_TYPE));
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
               context.startForegroundService(i);
