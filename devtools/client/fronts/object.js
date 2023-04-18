@@ -235,13 +235,6 @@ class ObjectFront extends FrontClassWithSpec(objectSpec) {
   
 
 
-  getDisplayString() {
-    return super.displayString();
-  }
-
-  
-
-
   async getPromiseState() {
     if (this._grip.class !== "Promise") {
       console.error("getPromiseState is only valid for promise grips.");
