@@ -42,12 +42,6 @@ TEST(FOG, FogInitDoesntCrash)
   ASSERT_EQ(NS_OK, fog_test_reset(&empty, &empty));
 }
 
-extern "C" void Rust_MeasureInitializeTime();
-
-
-TEST(FOG, DISABLED_TestMeasureInitializeTime)
-{ Rust_MeasureInitializeTime(); }
-
 TEST(FOG, BuiltinPingsRegistered)
 {
   Preferences::SetInt("telemetry.fog.test.localhost_port", -1);
