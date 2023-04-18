@@ -137,8 +137,8 @@ class TextComposition final {
 
 
 
-  RawRangeBoundary GetStartRef() const;
-  RawRangeBoundary GetEndRef() const;
+  RawRangeBoundary FirstIMESelectionStartRef() const;
+  RawRangeBoundary LastIMESelectionEndRef() const;
 
   
 

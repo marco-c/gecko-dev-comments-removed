@@ -1632,8 +1632,10 @@ class EditorBase : public nsIEditor,
 
 
 
-  EditorRawDOMPoint GetCompositionStartPoint() const;
-  EditorRawDOMPoint GetCompositionEndPoint() const;
+  template <typename EditorDOMPointType>
+  EditorDOMPointType GetFirstIMESelectionStartPoint() const;
+  template <typename EditorDOMPointType>
+  EditorDOMPointType GetLastIMESelectionEndPoint() const;
 
   
 
