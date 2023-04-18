@@ -20,6 +20,7 @@
 #include "jit/JitFrames.h"
 #include "jit/JitRuntime.h"
 #include "jit/JitSpewer.h"
+#include "jit/loong64/Simulator-loong64.h"
 #include "jit/mips32/Simulator-mips32.h"
 #include "jit/mips64/Simulator-mips64.h"
 #include "jit/RematerializedFrame.h"
@@ -460,7 +461,7 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
     return virtualPointerAtStackOffset(priorOffset);
 #elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) ||   \
     defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64) || \
-    defined(JS_CODEGEN_X64)
+    defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_LOONG64)
     
     
     BufferPointer<RectifierFrameLayout> priorFrame =

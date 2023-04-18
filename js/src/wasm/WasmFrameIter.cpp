@@ -375,6 +375,11 @@ static const unsigned PushedRetAddr = 8;
 static const unsigned PushedFP = 12;
 static const unsigned SetFP = 16;
 static const unsigned PoppedFP = 4;
+#elif defined(JS_CODEGEN_LOONG64)
+static const unsigned PushedRetAddr = 8;
+static const unsigned PushedFP = 12;
+static const unsigned SetFP = 16;
+static const unsigned PoppedFP = 4;
 #elif defined(JS_CODEGEN_NONE)
 
 static const unsigned PushedRetAddr = 0;
@@ -434,6 +439,18 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
   
 
 #if defined(JS_CODEGEN_MIPS64)
+  {
+    *entry = masm.currentOffset();
+
+    masm.subFromStackPtr(Imm32(sizeof(Frame)));
+    masm.storePtr(ra, Address(StackPointer, Frame::returnAddressOffset()));
+    MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
+    masm.storePtr(FramePointer, Address(StackPointer, Frame::callerFPOffset()));
+    MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
+    masm.moveStackPtrTo(FramePointer);
+    MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
+  }
+#elif defined(JS_CODEGEN_LOONG64)
   {
     *entry = masm.currentOffset();
 
@@ -519,6 +536,16 @@ static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
   *ret = masm.currentOffset();
   masm.as_jr(ra);
   masm.addToStackPtr(Imm32(sizeof(Frame)));
+
+#elif defined(JS_CODEGEN_LOONG64)
+
+  masm.loadPtr(Address(StackPointer, Frame::callerFPOffset()), FramePointer);
+  poppedFP = masm.currentOffset();
+  masm.loadPtr(Address(StackPointer, Frame::returnAddressOffset()), ra);
+
+  *ret = masm.currentOffset();
+  masm.addToStackPtr(Imm32(sizeof(Frame)));
+  masm.as_jirl(zero, ra, BOffImm16(0));
 
 #elif defined(JS_CODEGEN_ARM64)
 
@@ -785,6 +812,9 @@ void wasm::GenerateJitEntryPrologue(MacroAssembler& masm, Offsets* offsets) {
     static_assert(BeforePushRetAddr == 0);
     masm.push(lr);
 #elif defined(JS_CODEGEN_MIPS64)
+    offsets->begin = masm.currentOffset();
+    masm.push(ra);
+#elif defined(JS_CODEGEN_LOONG64)
     offsets->begin = masm.currentOffset();
     masm.push(ra);
 #elif defined(JS_CODEGEN_ARM64)
@@ -1084,6 +1114,25 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
         fixedFP = fp;
         AssertMatchesCallSite(fixedPC, fixedFP);
       } else
+#elif defined(JS_CODEGEN_LOONG64)
+      if (codeRange->isThunk()) {
+        
+        
+        fixedPC = pc;
+        fixedFP = fp;
+        *unwoundCaller = false;
+        AssertMatchesCallSite(
+            Frame::fromUntaggedWasmExitFP(fp)->returnAddress(),
+            Frame::fromUntaggedWasmExitFP(fp)->rawCaller());
+      } else if (offsetFromEntry < PushedFP) {
+        
+        
+        
+        
+        fixedPC = (uint8_t*)registers.lr;
+        fixedFP = fp;
+        AssertMatchesCallSite(fixedPC, fixedFP);
+      } else
 #elif defined(JS_CODEGEN_ARM64)
       if (offsetFromEntry < PushedFP || codeRange->isThunk()) {
         
@@ -1122,6 +1171,16 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
         fixedFP = fp;
         AssertMatchesCallSite(fixedPC, fixedFP);
 #if defined(JS_CODEGEN_MIPS64)
+      } else if (offsetInCode >= codeRange->ret() - PoppedFP &&
+                 offsetInCode <= codeRange->ret()) {
+        
+        
+        
+        MOZ_ASSERT(*sp == fp);
+        fixedPC = Frame::fromUntaggedWasmExitFP(sp)->returnAddress();
+        fixedFP = fp;
+        AssertMatchesCallSite(fixedPC, fixedFP);
+#elif defined(JS_CODEGEN_LOONG64)
       } else if (offsetInCode >= codeRange->ret() - PoppedFP &&
                  offsetInCode <= codeRange->ret()) {
         
@@ -1202,7 +1261,7 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
       
       
 #if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
-    defined(JS_CODEGEN_MIPS64)
+    defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
       if (offsetFromEntry < PushedRetAddr) {
         
         

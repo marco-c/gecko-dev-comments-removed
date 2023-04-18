@@ -11298,7 +11298,8 @@ void CodeGenerator::visitOutOfLineStoreElementHole(
   
   
   
-#if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
+#if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64) || \
+    defined(JS_CODEGEN_LOONG64)
   
   Address initLength(elements, ObjectElements::offsetOfInitializedLength());
   masm.branch32(Assembler::NotEqual, initLength, indexReg, ool->callStub());

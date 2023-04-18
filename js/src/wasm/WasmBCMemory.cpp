@@ -326,7 +326,7 @@ void BaseCompiler::boundsCheckBelow4GBAccess(RegPtr tls, RegI64 ptr,
 
 
 static inline void ToValidIndex(MacroAssembler& masm, RegI32 ptr) {
-#if defined(JS_CODEGEN_MIPS64)
+#if defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
   
   
   
@@ -516,6 +516,13 @@ void BaseCompiler::executeLoad(MemoryAccessDesc* access, AccessCheck* check,
   } else {
     masm.wasmLoad(*access, HeapReg, ptr, dest.any());
   }
+#elif defined(JS_CODEGEN_LOONG64)
+  MOZ_ASSERT(temp.isInvalid());
+  if (dest.tag == AnyReg::I64) {
+    masm.wasmLoadI64(*access, HeapReg, ptr, ptr, dest.i64());
+  } else {
+    masm.wasmLoad(*access, HeapReg, ptr, ptr, dest.any());
+  }
 #else
   MOZ_CRASH("BaseCompiler platform hook: load");
 #endif
@@ -545,7 +552,7 @@ void BaseCompiler::load(MemoryAccessDesc* access, AccessCheck* check,
   
   return executeLoad(access, check, tls, RegI32(ptr.reg), dest,
                      maybeFromI64(temp));
-#  elif defined(JS_CODEGEN_MIPS64)
+#  elif defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
   
   
   
@@ -633,6 +640,13 @@ void BaseCompiler::executeStore(MemoryAccessDesc* access, AccessCheck* check,
   } else {
     masm.wasmStore(*access, src.any(), HeapReg, ptr);
   }
+#elif defined(JS_CODEGEN_LOONG64)
+  MOZ_ASSERT(temp.isInvalid());
+  if (access->type() == Scalar::Int64) {
+    masm.wasmStoreI64(*access, src.i64(), HeapReg, ptr, ptr);
+  } else {
+    masm.wasmStore(*access, src.any(), HeapReg, ptr, ptr);
+  }
 #else
   MOZ_CRASH("BaseCompiler platform hook: store");
 #endif
@@ -655,7 +669,7 @@ void BaseCompiler::store(MemoryAccessDesc* access, AccessCheck* check,
   return executeStore(access, check, tls, RegI32(ptr.low), src,
                       maybeFromI64(temp));
 #  elif defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64) || \
-      defined(JS_CODEGEN_MIPS64)
+      defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
   return executeStore(access, check, tls, RegI32(ptr.reg), src,
                       maybeFromI64(temp));
 #  else
@@ -1134,7 +1148,7 @@ static void Deallocate(BaseCompiler* bc, RegI32 rv, const Temps& temps) {
   bc->freeI32(temps.t0);
 }
 
-#elif defined(JS_CODEGEN_MIPS64)
+#elif defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
 
 struct Temps {
   RegI32 t0, t1, t2;
@@ -1304,7 +1318,8 @@ static void Deallocate(BaseCompiler* bc, AtomicOp op, RegI64 rv, RegI64 temp) {
   bc->freeI64(temp);
 }
 
-#elif defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_MIPS64)
+#elif defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_MIPS64) || \
+    defined(JS_CODEGEN_LOONG64)
 
 static void PopAndAllocate(BaseCompiler* bc, AtomicOp op, RegI64* rd,
                            RegI64* rv, RegI64* temp) {
@@ -1464,7 +1479,7 @@ static void Deallocate(BaseCompiler* bc, RegI32 rv, const Temps&) {
   bc->freeI32(rv);
 }
 
-#elif defined(JS_CODEGEN_MIPS64)
+#elif defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
 
 struct Temps {
   RegI32 t0, t1, t2;
@@ -1593,7 +1608,8 @@ static void Deallocate(BaseCompiler* bc, RegI64 rd, RegI64 rv) {
   bc->freeI32(bc->specific_.ecx);
 }
 
-#elif defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_MIPS64)
+#elif defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_MIPS64) || \
+    defined(JS_CODEGEN_LOONG64)
 
 static void PopAndAllocate(BaseCompiler* bc, RegI64* rd, RegI64* rv) {
   *rv = bc->popI64();
@@ -1760,7 +1776,7 @@ static void Deallocate(BaseCompiler* bc, RegI32 rexpect, RegI32 rnew,
   bc->freeI32(rexpect);
 }
 
-#elif defined(JS_CODEGEN_MIPS64)
+#elif defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
 
 struct Temps {
   RegI32 t0, t1, t2;
@@ -1987,7 +2003,8 @@ static void Deallocate(BaseCompiler* bc, RegI64 rexpect, RegI64 rnew) {
   bc->freeI64(rnew);
 }
 
-#elif defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_MIPS64)
+#elif defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_MIPS64) || \
+    defined(JS_CODEGEN_LOONG64)
 
 template <typename RegIndexType>
 static void PopAndAllocate(BaseCompiler* bc, RegI64* rexpect, RegI64* rnew,
