@@ -9338,15 +9338,13 @@ bool nsIFrame::SetOverflowAreas(const OverflowAreas& aOverflowAreas) {
   }
 }
 
-enum class ApplyTransform : bool { No, Yes };
 
 
 
 
 
-
-static nsRect ComputeOutlineInnerRect(
-    nsIFrame* aFrame, ApplyTransform aApplyTransform, bool& aOutValid,
+static nsRect UnionBorderBoxes(
+    nsIFrame* aFrame, bool aApplyTransform, bool& aOutValid,
     const nsSize* aSizeOverride = nullptr,
     const OverflowAreas* aOverflowOverride = nullptr) {
   const nsRect bounds(nsPoint(0, 0),
@@ -9369,17 +9367,12 @@ static nsRect ComputeOutlineInnerRect(
 
   
   
-  bool doTransform =
-      aApplyTransform == ApplyTransform::Yes && aFrame->IsTransformed();
+  bool doTransform = aApplyTransform && aFrame->IsTransformed();
   TransformReferenceBox boundsRefBox(nullptr, bounds);
   if (doTransform) {
     u = nsDisplayTransform::TransformRect(bounds, aFrame, boundsRefBox);
   } else {
     u = bounds;
-  }
-
-  if (aOutValid && !StaticPrefs::layout_outline_include_overflow()) {
-    return u;
   }
 
   
@@ -9434,10 +9427,10 @@ static nsRect ComputeOutlineInnerRect(
       
       
       
+      
       bool validRect = true;
       nsRect childRect =
-          ComputeOutlineInnerRect(child, ApplyTransform::Yes, validRect) +
-          child->GetPosition();
+          UnionBorderBoxes(child, true, validRect) + child->GetPosition();
 
       if (!validRect) {
         continue;
@@ -9512,14 +9505,13 @@ static void ComputeAndIncludeOutlineArea(nsIFrame* aFrame,
   
   
   nsRect innerRect;
-  bool validRect = false;
+  bool validRect;
   if (frameForArea == aFrame) {
-    innerRect = ComputeOutlineInnerRect(aFrame, ApplyTransform::No, validRect,
-                                        &aNewSize, &aOverflowAreas);
+    innerRect =
+        UnionBorderBoxes(aFrame, false, validRect, &aNewSize, &aOverflowAreas);
   } else {
     for (; frameForArea; frameForArea = frameForArea->GetNextSibling()) {
-      nsRect r =
-          ComputeOutlineInnerRect(aFrame, ApplyTransform::Yes, validRect);
+      nsRect r(UnionBorderBoxes(frameForArea, true, validRect));
 
       
       
