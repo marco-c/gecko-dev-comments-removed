@@ -367,19 +367,6 @@ class DOMScriptLoadContext : public PreloaderBase {
   static void PrioritizeAsPreload(nsIChannel* aChannel);
   virtual void PrioritizeAsPreload() override;
 
-  void FireScriptAvailable(nsresult aResult) {
-    bool isInlineClassicScript = mIsInline && !mRequest->IsModuleRequest();
-    GetScriptElement()->ScriptAvailable(aResult, GetScriptElement(),
-                                        isInlineClassicScript, mRequest->mURI,
-                                        mLineNo);
-  }
-
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void FireScriptEvaluated(nsresult aResult) {
-    RefPtr<nsIScriptElement> scriptElement = GetScriptElement();
-    scriptElement->ScriptEvaluated(aResult, scriptElement, mIsInline);
-  }
-
   bool IsPreload() const;
 
   
