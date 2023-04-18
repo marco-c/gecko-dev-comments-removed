@@ -242,6 +242,8 @@ class JUnitTestRunner(MochitestDesktop):
             env["MOZ_WEBRENDER"] = "1"
         else:
             env["MOZ_WEBRENDER"] = "0"
+        
+        
         if self.options.enable_fission:
             env["MOZ_FORCE_ENABLE_FISSION"] = "1"
         

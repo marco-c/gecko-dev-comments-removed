@@ -707,6 +707,9 @@ static void EnsureFissionAutostartInitialized() {
   } else if (EnvHasValue("MOZ_FORCE_ENABLE_FISSION")) {
     gFissionAutostart = true;
     gFissionDecisionStatus = nsIXULRuntime::eFissionEnabledByEnv;
+  } else if (EnvHasValue("MOZ_FORCE_DISABLE_FISSION")) {
+    gFissionAutostart = false;
+    gFissionDecisionStatus = nsIXULRuntime::eFissionDisabledByEnv;
   } else {
     
     
@@ -1108,6 +1111,9 @@ nsXULAppInfo::GetFissionDecisionStatusString(nsACString& aResult) {
       break;
     case eFissionEnabledByEnv:
       aResult = "enabledByEnv";
+      break;
+    case eFissionDisabledByEnv:
+      aResult = "disabledByEnv";
       break;
     case eFissionDisabledBySafeMode:
       aResult = "disabledBySafeMode";

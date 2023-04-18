@@ -62,6 +62,9 @@ public class Environment {
   }
 
   public boolean isFission() {
+    
+    
+    
     return getEnvVar("MOZ_FORCE_ENABLE_FISSION").equals("1");
   }
 
