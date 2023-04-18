@@ -79,11 +79,11 @@ class SVGFilterInstance {
 
 
 
-  SVGFilterInstance(const StyleFilter& aFilter, nsIFrame* aTargetFrame,
-                    nsIContent* aTargetContent,
-                    const UserSpaceMetrics& aMetrics,
-                    const gfxRect& aTargetBBox,
-                    const gfxSize& aUserSpaceToFilterSpaceScale);
+  SVGFilterInstance(
+      const StyleFilter& aFilter, nsIFrame* aTargetFrame,
+      nsIContent* aTargetContent, const UserSpaceMetrics& aMetrics,
+      const gfxRect& aTargetBBox,
+      const gfx::MatrixScalesDouble& aUserSpaceToFilterSpaceScale);
 
   
 
@@ -233,7 +233,7 @@ class SVGFilterInstance {
   
 
 
-  gfxSize mUserSpaceToFilterSpaceScale;
+  gfx::MatrixScalesDouble mUserSpaceToFilterSpaceScale;
 
   
 

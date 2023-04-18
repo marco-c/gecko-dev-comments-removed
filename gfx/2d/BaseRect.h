@@ -14,6 +14,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/gfx/ScaleFactors2D.h"
 #include "Types.h"
 
 namespace mozilla {
@@ -584,6 +585,11 @@ struct BaseRect {
     height = y1 - y0;
   }
 
+  
+  template <class Src, class Dst>
+  void Scale(const BaseScaleFactors2D<Src, Dst, T>& aScale) {
+    Scale(aScale.xScale, aScale.yScale);
+  }
   
   void Scale(T aScale) { Scale(aScale, aScale); }
   

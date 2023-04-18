@@ -367,8 +367,8 @@ class FilterInstance {
   
 
 
-  gfxSize mUserSpaceToFilterSpaceScale;
-  gfxSize mFilterSpaceToUserSpaceScale;
+  gfx::MatrixScalesDouble mUserSpaceToFilterSpaceScale;
+  gfx::MatrixScalesDouble mFilterSpaceToUserSpaceScale;
 
   
 
