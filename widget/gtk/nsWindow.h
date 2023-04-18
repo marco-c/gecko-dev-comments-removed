@@ -409,6 +409,9 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntRect GetMoveToRectPopupRect() const override {
     return mMoveToRectPopupRect;
   };
+  void MoveToRectPopupRectClear() override {
+    mMoveToRectPopupRect = LayoutDeviceIntRect();
+  };
 #endif
 
   typedef enum {
@@ -790,9 +793,8 @@ class nsWindow final : public nsBaseWidget {
   void WaylandPopupMarkAsClosed();
   void WaylandPopupRemoveClosedPopups();
   void WaylandPopupSetDirectPosition();
-  bool WaylandPopupFitsToplevelWindow();
+  bool WaylandPopupFitsParentWindow(const GdkRectangle& aSize);
   const WaylandPopupMoveToRectParams WaylandPopupGetPositionFromLayout();
-  void WaylandPopupPropagateChangesToLayout(bool aMove, bool aResize);
   nsWindow* WaylandPopupFindLast(nsWindow* aPopup);
   GtkWindow* GetCurrentTopmostWindow();
   nsAutoCString GetFrameTag() const;
@@ -805,10 +807,8 @@ class nsWindow final : public nsBaseWidget {
 
   
   
-  
   GdkPoint mPopupPosition{};
 
-  
   
   GdkPoint mRelativePopupPosition{};
 
