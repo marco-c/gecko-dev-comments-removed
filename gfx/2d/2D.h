@@ -980,13 +980,11 @@ class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
 
 
 
-  PUSH_IGNORE_THREAD_SAFETY
-  bool Lock(void* aOwner = nullptr) {
+  bool Lock(void* aOwner = nullptr) CAPABILITY_ACQUIRE(mLock) {
     mLock.Lock();
     return !aOwner || mLastLockOwner.exchange(aOwner) == aOwner;
   }
-  void Unlock() { mLock.Unlock(); }
-  POP_THREAD_SAFETY
+  void Unlock() CAPABILITY_RELEASE(mLock) { mLock.Unlock(); }
 
   
 
@@ -1000,7 +998,7 @@ class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
  private:
   FT_Face mFace;
   SharedFTFaceData* mData;
-  Mutex mLock MOZ_UNANNOTATED;
+  Mutex mLock;
   
   
   
@@ -2013,7 +2011,7 @@ class GFX2D_API Factory {
 
  private:
   static FT_Library mFTLibrary;
-  static StaticMutex mFTLock MOZ_UNANNOTATED;
+  static StaticMutex mFTLock;
 
  public:
 #endif
@@ -2082,10 +2080,10 @@ class GFX2D_API Factory {
  protected:
   
   
-  static StaticMutex mDeviceLock MOZ_UNANNOTATED;
+  static StaticMutex mDeviceLock;
   
   
-  static StaticMutex mDTDependencyLock MOZ_UNANNOTATED;
+  static StaticMutex mDTDependencyLock;
 
   friend class DrawTargetD2D1;
 #endif  

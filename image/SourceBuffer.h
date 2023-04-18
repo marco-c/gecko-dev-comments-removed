@@ -438,19 +438,19 @@ class SourceBuffer final {
     char* mData;
   };
 
-  nsresult AppendChunk(Maybe<Chunk>&& aChunk);
+  nsresult AppendChunk(Maybe<Chunk>&& aChunk) REQUIRES(mMutex);
   Maybe<Chunk> CreateChunk(size_t aCapacity, size_t aExistingCapacity = 0,
                            bool aRoundUp = true);
-  nsresult Compact();
+  nsresult Compact() REQUIRES(mMutex);
   static size_t RoundedUpCapacity(size_t aCapacity);
-  size_t FibonacciCapacityWithMinimum(size_t aMinCapacity);
+  size_t FibonacciCapacityWithMinimum(size_t aMinCapacity) REQUIRES(mMutex);
 
   
   
   
 
-  void AddWaitingConsumer(IResumable* aConsumer);
-  void ResumeWaitingConsumers();
+  void AddWaitingConsumer(IResumable* aConsumer) REQUIRES(mMutex);
+  void ResumeWaitingConsumers() REQUIRES(mMutex);
 
   typedef SourceBufferIterator::State State;
 
@@ -466,31 +466,31 @@ class SourceBuffer final {
   
   
 
-  nsresult HandleError(nsresult aError);
-  bool IsEmpty();
-  bool IsLastChunk(uint32_t aChunk);
+  nsresult HandleError(nsresult aError) REQUIRES(mMutex);
+  bool IsEmpty() REQUIRES(mMutex);
+  bool IsLastChunk(uint32_t aChunk) REQUIRES(mMutex);
 
   
   
   
 
   
-  mutable Mutex mMutex MOZ_UNANNOTATED;
+  mutable Mutex mMutex;
 
   
-  AutoTArray<Chunk, 1> mChunks;
+  AutoTArray<Chunk, 1> mChunks GUARDED_BY(mMutex);
 
   
-  nsTArray<RefPtr<IResumable>> mWaitingConsumers;
+  nsTArray<RefPtr<IResumable>> mWaitingConsumers GUARDED_BY(mMutex);
 
   
-  Maybe<nsresult> mStatus;
+  Maybe<nsresult> mStatus GUARDED_BY(mMutex);
 
   
-  uint32_t mConsumerCount;
+  uint32_t mConsumerCount GUARDED_BY(mMutex);
 
   
-  bool mCompacted;
+  bool mCompacted GUARDED_BY(mMutex);
 };
 
 }  
