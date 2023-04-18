@@ -544,9 +544,12 @@ bool GPUProcessManager::DisableWebRenderConfig(wr::WebRenderError aError,
         gfx::FeatureStatus::Unavailable, "Failed to render WebRender",
         "FEATURE_FAILURE_WEBRENDER_RENDER"_ns);
   } else if (aError == wr::WebRenderError::NEW_SURFACE) {
+    
+    
     wantRestart = gfxPlatform::FallbackFromAcceleration(
         gfx::FeatureStatus::Unavailable, "Failed to create new surface",
-        "FEATURE_FAILURE_WEBRENDER_NEW_SURFACE"_ns);
+        "FEATURE_FAILURE_WEBRENDER_NEW_SURFACE"_ns,
+         true);
   } else if (aError == wr::WebRenderError::BEGIN_DRAW) {
     wantRestart = gfxPlatform::FallbackFromAcceleration(
         gfx::FeatureStatus::Unavailable, "BeginDraw() failed",

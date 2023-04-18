@@ -781,9 +781,13 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   static const char* WebRenderResourcePathOverride();
 
   
+  
+  
+  
   static bool FallbackFromAcceleration(mozilla::gfx::FeatureStatus aStatus,
                                        const char* aMessage,
-                                       const nsACString& aFailureId);
+                                       const nsACString& aFailureId,
+                                       bool aCrashAfterFinalFallback = false);
 
   void NotifyFrameStats(nsTArray<mozilla::layers::FrameStats>&& aFrameStats);
 
