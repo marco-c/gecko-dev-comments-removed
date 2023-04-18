@@ -110,14 +110,6 @@ export function resourceAsSourceActor({
   return sourceActor;
 }
 
-
-
-
-
-export function stringToSourceActorId(s) {
-  return s;
-}
-
 export function hasSourceActor(state, id) {
   return hasResource(state.sourceActors, id);
 }
