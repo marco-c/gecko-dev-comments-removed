@@ -8,6 +8,7 @@
 #define js_SliceBudget_h
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Variant.h"
 
@@ -44,31 +45,55 @@ struct UnlimitedBudget {};
 
 
 class JS_PUBLIC_API SliceBudget {
+ public:
+  using InterruptRequestFlag = mozilla::Atomic<bool>;
+
+ private:
   static const intptr_t UnlimitedCounter = INTPTR_MAX;
-  static const intptr_t DefaultStepsPerTimeCheck = 1000;
+
+  
+  
+  
+  static constexpr intptr_t StepsPerExpensiveCheck = 1000;
+
+  
 
   mozilla::Variant<TimeBudget, WorkBudget, UnlimitedBudget> budget;
-  int64_t stepsPerTimeCheck = DefaultStepsPerTimeCheck;
 
-  int64_t counter;
+  
+  
+  InterruptRequestFlag* interruptRequested = nullptr;
 
-  SliceBudget() : budget(UnlimitedBudget()), counter(UnlimitedCounter) {}
+  
+  
+  int64_t counter = StepsPerExpensiveCheck;
+
+  
+  
+  
+  bool interrupted = false;
+
+  explicit SliceBudget(InterruptRequestFlag* irqPtr)
+      : budget(UnlimitedBudget()),
+        interruptRequested(irqPtr),
+        counter(irqPtr ? StepsPerExpensiveCheck : UnlimitedCounter) {}
 
   [[nodiscard]] bool isOverBudgetSlow();
 
  public:
   
-  static SliceBudget unlimited() { return SliceBudget(); }
+  static SliceBudget unlimited() { return SliceBudget(nullptr); }
 
   
   explicit SliceBudget(TimeBudget time,
-                       int64_t stepsPerTimeCheck = DefaultStepsPerTimeCheck);
+                       InterruptRequestFlag* interrupt = nullptr);
+
+  explicit SliceBudget(mozilla::TimeDuration duration,
+                       InterruptRequestFlag* interrupt = nullptr)
+      : SliceBudget(TimeBudget(duration.ToMilliseconds()), interrupt) {}
 
   
   explicit SliceBudget(WorkBudget work);
-
-  explicit SliceBudget(mozilla::TimeDuration time)
-      : SliceBudget(TimeBudget(time.ToMilliseconds())) {}
 
   
   
@@ -91,8 +116,9 @@ class JS_PUBLIC_API SliceBudget {
   }
 
   void resetOverBudget() {
+    interrupted = false;
     if (isTimeBudget()) {
-      counter = stepsPerTimeCheck;
+      counter = StepsPerExpensiveCheck;
     } else if (isWorkBudget()) {
       counter = workBudget();
     }
