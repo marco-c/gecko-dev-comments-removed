@@ -91,7 +91,7 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   uint64_t GetProcessToken() const;
 
-  bool IsConnected() const { return !!mGPUChild; }
+  bool IsConnected() const { return !!mGPUChild && mChildProcessHandle != 0; }
 
   
   
