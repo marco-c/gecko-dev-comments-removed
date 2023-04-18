@@ -805,7 +805,7 @@ static nsresult CreateShortcutImpl(
   
   nsString arguments;
   for (auto& arg : aArguments) {
-    arguments.AppendPrintf("\"%S\" ", arg.get());
+    arguments.AppendPrintf("\"%S\" ", static_cast<const wchar_t*>(arg.get()));
   }
 
   link->SetArguments(arguments.get());
