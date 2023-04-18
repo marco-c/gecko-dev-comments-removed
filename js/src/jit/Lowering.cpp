@@ -6543,18 +6543,14 @@ void LIRGenerator::visitIonToWasmCall(MIonToWasmCall* ins) {
 
   
   
-  LDefinition fp = LDefinition::BogusTemp();
-
-  
-  
 
   LInstruction* lir;
   if (ins->type() == MIRType::Value) {
-    lir = allocateVariadic<LIonToWasmCallV>(ins->numOperands(), scratch, fp);
+    lir = allocateVariadic<LIonToWasmCallV>(ins->numOperands(), scratch);
   } else if (ins->type() == MIRType::Int64) {
-    lir = allocateVariadic<LIonToWasmCallI64>(ins->numOperands(), scratch, fp);
+    lir = allocateVariadic<LIonToWasmCallI64>(ins->numOperands(), scratch);
   } else {
-    lir = allocateVariadic<LIonToWasmCall>(ins->numOperands(), scratch, fp);
+    lir = allocateVariadic<LIonToWasmCall>(ins->numOperands(), scratch);
   }
   if (!lir) {
     abort(AbortReason::Alloc, "OOM: LIRGenerator::visitIonToWasmCall");
