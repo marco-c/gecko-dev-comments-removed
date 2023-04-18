@@ -52,7 +52,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
-  ["autoFill.adaptiveHistory.useCountThreshold", [0.1, "float"]],
+  
+  
+  ["autoFill.adaptiveHistory.useCountThreshold", [0.47, "float"]],
 
   
   

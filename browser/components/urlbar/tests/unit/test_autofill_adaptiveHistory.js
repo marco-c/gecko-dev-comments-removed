@@ -771,7 +771,7 @@ const TEST_DATA = [
   },
 ];
 
-add_task(async function() {
+add_task(async function inputTest() {
   for (const {
     description,
     pref,
@@ -827,4 +827,87 @@ add_task(async function() {
     UrlbarPrefs.clear("autoFill.adaptiveHistory.enabled");
     UrlbarPrefs.clear("autoFill.adaptiveHistory.useCountThreshold");
   }
+});
+
+add_task(async function decayTest() {
+  UrlbarPrefs.set("autoFill.adaptiveHistory.enabled", true);
+
+  await PlacesTestUtils.addVisits(["http://example.com/test"]);
+  await UrlbarUtils.addToInputHistory("http://example.com/test", "exa");
+
+  const initContext = createContext("exa", { isPrivate: false });
+  await check_results({
+    context: initContext,
+    autofilled: "example.com/test",
+    completed: "http://example.com/test",
+    matches: [
+      makeVisitResult(initContext, {
+        uri: "http://example.com/test",
+        title: "example.com/test",
+        heuristic: true,
+      }),
+    ],
+  });
+
+  
+  
+  
+  
+  UrlbarPrefs.set("autoFill.adaptiveHistory.useCountThreshold", 0.47);
+
+  
+  for (let i = 0; i < 29; i++) {
+    PlacesUtils.history
+      .QueryInterface(Ci.nsIObserver)
+      .observe(null, "idle-daily", "");
+    await PlacesTestUtils.waitForNotification(
+      "pages-rank-changed",
+      () => true,
+      "places"
+    );
+  }
+  const midContext = createContext("exa", { isPrivate: false });
+  await check_results({
+    context: midContext,
+    autofilled: "example.com/test",
+    completed: "http://example.com/test",
+    matches: [
+      makeVisitResult(midContext, {
+        uri: "http://example.com/test",
+        title: "example.com/test",
+        heuristic: true,
+      }),
+    ],
+  });
+
+  
+  PlacesUtils.history
+    .QueryInterface(Ci.nsIObserver)
+    .observe(null, "idle-daily", "");
+  await PlacesTestUtils.waitForNotification(
+    "pages-rank-changed",
+    () => true,
+    "places"
+  );
+  const context = createContext("exa", { isPrivate: false });
+  await check_results({
+    context,
+    autofilled: "example.com/",
+    completed: "http://example.com/",
+    matches: [
+      makeVisitResult(context, {
+        uri: "http://example.com/",
+        title: "example.com",
+        heuristic: true,
+      }),
+      makeVisitResult(context, {
+        uri: "http://example.com/test",
+        title: "test visit for http://example.com/test",
+      }),
+    ],
+  });
+
+  await cleanupPlaces();
+  UrlbarPrefs.clear("autoFill.adaptiveHistory.enabled");
+  UrlbarPrefs.clear("autoFill.adaptiveHistory.useCountThreshold");
 });
