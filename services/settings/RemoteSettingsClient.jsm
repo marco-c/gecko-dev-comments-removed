@@ -381,6 +381,10 @@ class RemoteSettingsClient extends EventEmitter {
               );
               await this.sync({ loadDump: false });
             }
+            
+            
+            
+            return true;
           })();
         } else {
           console.debug(`${this.identifier} Awaiting existing import.`);
@@ -398,7 +402,14 @@ class RemoteSettingsClient extends EventEmitter {
           );
           if (!this._importingPromise) {
             
-            this._importingPromise = this._importJSONDump();
+            this._importingPromise = (async () => {
+              const importedFromDump = await this._importJSONDump();
+              
+              
+              
+              
+              return importedFromDump >= 0;
+            })();
           } else {
             console.debug(`${this.identifier} Awaiting existing import.`);
           }
@@ -407,10 +418,11 @@ class RemoteSettingsClient extends EventEmitter {
 
       if (this._importingPromise) {
         try {
-          await this._importingPromise;
-          
-          
-          verifySignature = false;
+          if (await this._importingPromise) {
+            
+            
+            verifySignature = false;
+          }
         } catch (e) {
           
           
@@ -815,9 +827,6 @@ class RemoteSettingsClient extends EventEmitter {
     const result = await RemoteSettingsWorker.importJSONDump(
       this.bucketName,
       this.collectionName
-    );
-    console.info(
-      `${this.identifier} imported ${result} records from JSON dump`
     );
     if (gTimingEnabled) {
       const end = Cu.now() * 1000;

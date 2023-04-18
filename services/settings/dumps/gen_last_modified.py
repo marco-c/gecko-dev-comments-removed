@@ -4,6 +4,8 @@
 
 
 import json
+import glob
+import os
 
 import buildconfig
 import mozpack.path as mozpath
@@ -52,31 +54,30 @@ def main(output):
         "mobile/android",
         "comm/mail",
         "comm/suite",
+    ), (
+        "Cannot determine location of Remote Settings "
+        f"dumps for platform {buildconfig.substs['MOZ_BUILD_APP']}"
     )
 
-    remotesettings_dumps = {}
-
-    
-    
-    
-    if buildconfig.substs["MOZ_BUILD_APP"] != "mobile/android":
-        
-        remotesettings_dumps["blocklists/addons-bloomfilters"] = mozpath.join(
-            buildconfig.topsrcdir,
-            "services/settings/dumps/blocklists/addons-bloomfilters.json",
-        )
+    dumps_locations = []
     if buildconfig.substs["MOZ_BUILD_APP"] == "browser":
-        
-        remotesettings_dumps["main/search-config"] = mozpath.join(
-            buildconfig.topsrcdir,
-            "services/settings/dumps/main/search-config.json",
-        )
-    if buildconfig.substs["MOZ_BUILD_APP"] == "comm/mail":
-        
-        remotesettings_dumps["main/search-config"] = mozpath.join(
-            buildconfig.topsrcdir,
-            "comm/mail/app/settings/dumps/thunderbird/search-config.json",
-        )
+        dumps_locations += ["services/settings/dumps/"]
+    elif buildconfig.substs["MOZ_BUILD_APP"] == "mobile/android":
+        dumps_locations += ["services/settings/dumps/"]
+    elif buildconfig.substs["MOZ_BUILD_APP"] == "comm/mail":
+        dumps_locations += ["mozilla/services/settings/dumps/"]
+        dumps_locations += ["mail/app/settings/dumps/"]
+    elif buildconfig.substs["MOZ_BUILD_APP"] == "comm/suite":
+        dumps_locations += ["mozilla/services/settings/dumps/"]
+
+    remotesettings_dumps = {}
+    for dumps_location in dumps_locations:
+        dumps_root_dir = mozpath.join(buildconfig.topsrcdir, dumps_location)
+        for path in glob.iglob(mozpath.join(dumps_root_dir, "*/*.json")):
+            folder, filename = os.path.split(path)
+            bucket = os.path.basename(folder)
+            collection, _ = os.path.splitext(filename)
+            remotesettings_dumps[f"{bucket}/{collection}"] = path
 
     output_dict = {}
     input_files = set()
