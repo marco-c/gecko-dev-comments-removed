@@ -4,7 +4,7 @@
 
 
 use api::{ExternalScrollId, PipelineId, PropertyBinding, PropertyBindingId, ReferenceFrameKind};
-use api::{APZScrollGeneration, HasScrollLinkedEffect};
+use api::{APZScrollGeneration, HasScrollLinkedEffect, SampledScrollOffset};
 use api::{TransformStyle, StickyOffsetBounds, SpatialTreeItemKey};
 use api::units::*;
 use crate::internal_types::PipelineInstanceId;
@@ -325,7 +325,9 @@ impl SpatialNode {
         self.children.push(child);
     }
 
-    pub fn set_scroll_offset(&mut self, offset: &LayoutVector2D) -> bool {
+    pub fn set_scroll_offsets(&mut self, mut offsets: Vec<SampledScrollOffset>) -> bool {
+        debug_assert!(offsets.len() > 0);
+
         let scrolling = match self.node_type {
             SpatialNodeType::ScrollFrame(ref mut scrolling) => scrolling,
             _ => {
@@ -334,13 +336,15 @@ impl SpatialNode {
             }
         };
 
-        let new_offset = -*offset - scrolling.external_scroll_offset;
+        for element in offsets.iter_mut() {
+            element.offset = -element.offset - scrolling.external_scroll_offset;
+        }
 
-        if new_offset == scrolling.offset {
+        if scrolling.offsets == offsets {
             return false;
         }
 
-        scrolling.offset = new_offset;
+        scrolling.offsets = offsets;
         true
     }
 
@@ -690,12 +694,12 @@ impl SpatialNode {
                 state.scroll_offset = info.current_offset;
             }
             SpatialNodeType::ScrollFrame(ref scrolling) => {
-                state.parent_accumulated_scroll_offset += scrolling.offset;
-                state.nearest_scrolling_ancestor_offset = scrolling.offset;
+                state.parent_accumulated_scroll_offset += scrolling.offset();
+                state.nearest_scrolling_ancestor_offset = scrolling.offset();
                 state.nearest_scrolling_ancestor_viewport = scrolling.viewport_rect;
                 state.preserves_3d = false;
                 state.external_id = Some(scrolling.external_id);
-                state.scroll_offset = scrolling.offset + scrolling.external_scroll_offset;
+                state.scroll_offset = scrolling.offset() + scrolling.external_scroll_offset;
             }
             SpatialNodeType::ReferenceFrame(ref info) => {
                 state.external_id = None;
@@ -713,7 +717,7 @@ impl SpatialNode {
 
     pub fn scroll_offset(&self) -> LayoutVector2D {
         match self.node_type {
-            SpatialNodeType::ScrollFrame(ref scrolling) => scrolling.offset,
+            SpatialNodeType::ScrollFrame(ref scrolling) => scrolling.offset(),
             _ => LayoutVector2D::zero(),
         }
     }
@@ -789,7 +793,8 @@ pub struct ScrollFrameInfo {
     
     
     
-    pub offset: LayoutVector2D,
+    
+    pub offsets: Vec<SampledScrollOffset>,
 
     
     
@@ -814,13 +819,41 @@ impl ScrollFrameInfo {
     ) -> ScrollFrameInfo {
         ScrollFrameInfo {
             viewport_rect,
-            offset: -external_scroll_offset,
             scrollable_size,
             external_id,
             frame_kind,
             external_scroll_offset,
+            offsets: vec![SampledScrollOffset{
+                // If this scroll frame is a newly created one, using
+                // `external_scroll_offset` and `offset_generation` is correct.
+                // If this scroll frame is a result of updating an existing
+                // scroll frame and if there have already been sampled async
+                // scroll offsets by APZ, then these offsets will be replaced in
+                // SpatialTree::set_scroll_offsets via a
+                // RenderBackend::update_document call.
+                offset: -external_scroll_offset,
+                generation: offset_generation.clone(),
+            }],
             offset_generation,
             has_scroll_linked_effect,
+        }
+    }
+
+    pub fn offset(&self) -> LayoutVector2D {
+        debug_assert!(self.offsets.len() > 0, "There should be at least one sampled offset!");
+
+        if self.has_scroll_linked_effect == HasScrollLinkedEffect::No {
+            
+            return self.offsets.first().map_or(LayoutVector2D::zero(), |sampled| sampled.offset);
+        }
+
+        match self.offsets.iter().find(|sampled| sampled.generation == self.offset_generation) {
+            
+            Some(sampled) => sampled.offset,
+            
+            
+            
+            _ => self.offsets.first().map_or(LayoutVector2D::zero(), |sampled| sampled.offset),
         }
     }
 }

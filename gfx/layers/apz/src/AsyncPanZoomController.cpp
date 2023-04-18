@@ -4560,8 +4560,8 @@ LayoutDeviceToParentLayerScale AsyncPanZoomController::GetCurrentPinchZoomScale(
   return scale / Metrics().GetDevPixelsPerCSSPixel();
 }
 
-LayoutDevicePoint AsyncPanZoomController::GetAsyncScrollDeltaForSampling()
-    const {
+AutoTArray<wr::SampledScrollOffset, 2>
+AsyncPanZoomController::GetSampledScrollOffsets() const {
   AssertOnSamplerThread();
 
   RecursiveMutexAutoLock lock(mRecursiveMutex);
@@ -4570,10 +4570,6 @@ LayoutDevicePoint AsyncPanZoomController::GetAsyncScrollDeltaForSampling()
       GetZoomAnimationId()
           ? AsyncTransformComponents{AsyncTransformComponent::eLayout}
           : LayoutAndVisual;
-  ParentLayerPoint layerTranslation =
-      GetCurrentAsyncTransformWithOverscroll(
-          AsyncPanZoomController::eForCompositing, asyncTransformComponents)
-          .TransformPoint(ParentLayerPoint(0, 0));
 
   
   
@@ -4584,13 +4580,27 @@ LayoutDevicePoint AsyncPanZoomController::GetAsyncScrollDeltaForSampling()
   LayoutDeviceToParentLayerScale resolution =
       GetCumulativeResolution() * LayerToParentLayerScale(1.0f);
 
-  
-  
-  
-  
-  LayoutDevicePoint asyncScrollDelta = -layerTranslation / resolution;
+  AutoTArray<wr::SampledScrollOffset, 2> sampledOffsets;
 
-  return asyncScrollDelta;
+  for (std::deque<SampledAPZCState>::size_type index = 0;
+       index < mSampledState.size(); index++) {
+    ParentLayerPoint layerTranslation =
+        GetCurrentAsyncTransformWithOverscroll(
+            AsyncPanZoomController::eForCompositing, asyncTransformComponents,
+            index)
+            .TransformPoint(ParentLayerPoint(0, 0));
+
+    
+    
+    
+    
+    LayoutDevicePoint asyncScrollDelta = -layerTranslation / resolution;
+    sampledOffsets.AppendElement(wr::SampledScrollOffset{
+        wr::ToLayoutVector2D(asyncScrollDelta),
+        wr::ToWrAPZScrollGeneration(mSampledState[index].Generation())});
+  }
+
+  return sampledOffsets;
 }
 
 bool AsyncPanZoomController::SuppressAsyncScrollOffset() const {

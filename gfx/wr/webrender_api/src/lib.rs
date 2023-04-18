@@ -188,6 +188,12 @@ impl ExternalEvent {
 }
 
 pub type APZScrollGeneration = u64;
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, Default)]
+pub struct SampledScrollOffset {
+    pub offset: LayoutVector2D,
+    pub generation: APZScrollGeneration,
+}
 
 
 
