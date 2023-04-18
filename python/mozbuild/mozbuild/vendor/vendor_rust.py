@@ -551,12 +551,8 @@ license file's hash.
             self.log(logging.ERROR, "cargo_update_failed", {}, "Cargo update failed.")
             return False
 
-        with open(os.path.join(self.topsrcdir, "Cargo.lock")) as fh, open(
-            os.path.join(self.topsrcdir, "Cargo.toml")
-        ) as toml_fh:
+        with open(os.path.join(self.topsrcdir, "Cargo.lock")) as fh:
             cargo_lock = pytoml.load(fh)
-            cargo_toml = pytoml.load(toml_fh)
-            patches = cargo_toml.get("patch", {}).get("crates-io", {})
             failed = False
             for package in cargo_lock.get("patch", {}).get("unused", []):
                 self.log(
@@ -588,12 +584,14 @@ license file's hash.
                 grouped[package["name"]].append(package)
 
             for name, packages in grouped.items():
-                num = len(packages)
                 
-                
-                
-                if patches.get(name, {}).get("path", "").startswith("build/rust"):
-                    num -= 1
+                num = len(
+                    [
+                        p
+                        for p in packages
+                        if all(d.split()[0] != name for d in p.get("dependencies", []))
+                    ]
+                )
                 expected = TOLERATED_DUPES.get(name, 1)
                 if num > expected:
                     self.log(
