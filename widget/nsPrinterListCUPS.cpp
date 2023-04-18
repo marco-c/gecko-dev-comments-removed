@@ -6,7 +6,6 @@
 
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/StaticPrefs_print.h"
 #include "nsCUPSShim.h"
 #include "nsPrinterCUPS.h"
 #include "nsString.h"
@@ -91,26 +90,18 @@ nsTArray<PrinterInfo> nsPrinterListCUPS::Printers() const {
   }
 
   nsTArray<PrinterInfo> printerInfoList;
-  if (CupsShim().cupsEnumDests(
+  if (!CupsShim().cupsEnumDests(
           CUPS_DEST_FLAGS_NONE,
-          int(StaticPrefs::print_cups_enum_dests_timeout_ms()),
-          nullptr , CUPS_PRINTER_LOCAL,
-          CUPS_PRINTER_FAX | CUPS_PRINTER_SCANNER, &CupsDestCallback,
-          &printerInfoList)) {
-    return printerInfoList;
-  }
-  
-  
-  printerInfoList.Clear();
-  if (CupsShim().cupsEnumDests(
-          CUPS_DEST_FLAGS_NONE,
-          0 ,
+          0 
+
+          ,
           nullptr , CUPS_PRINTER_LOCAL,
           CUPS_PRINTER_FAX | CUPS_PRINTER_SCANNER | CUPS_PRINTER_DISCOVERED,
           &CupsDestCallback, &printerInfoList)) {
-    return printerInfoList;
+    return {};
   }
-  return {};
+
+  return printerInfoList;
 }
 
 RefPtr<nsIPrinter> nsPrinterListCUPS::CreatePrinter(PrinterInfo aInfo) const {
