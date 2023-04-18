@@ -638,7 +638,7 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
   
   if (mObservingState == eRefreshProcessing ||
       mObservingState == eRefreshProcessingForUpdate ||
-      mPresShell->IsReflowInterrupted() || !mPresShell->DidInitialize()) {
+      mPresShell->IsReflowInterrupted()) {
     return;
   }
 
@@ -659,7 +659,10 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
   if (!mDocument->HasLoadState(DocAccessible::eTreeConstructed)) {
     
     
-    if (!mDocument->IsBoundToParent()) {
+    
+    if (!mDocument->IsBoundToParent() ||
+        (!mPresShell->DidInitialize() &&
+         !mDocument->DocumentNode()->IsInitialDocument())) {
       mObservingState = eRefreshObserving;
       return;
     }
