@@ -4151,8 +4151,6 @@ already_AddRefed<nsIFile> Preferences::ReadSavedPrefs() {
   rv = openPrefFile(file, PrefValueKind::User);
   if (rv == NS_ERROR_FILE_NOT_FOUND) {
     
-    Telemetry::ScalarSet(
-        Telemetry::ScalarID::PREFERENCES_CREATED_NEW_USER_PREFS_FILE, true);
     rv = NS_OK;
   } else if (NS_FAILED(rv)) {
     
