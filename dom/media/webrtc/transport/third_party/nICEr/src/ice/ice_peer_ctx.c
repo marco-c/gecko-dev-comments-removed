@@ -422,9 +422,11 @@ int nr_ice_peer_ctx_pair_candidates(nr_ice_peer_ctx *pctx)
 
     stream=STAILQ_FIRST(&pctx->peer_streams);
     while(stream){
-      if(r=nr_ice_media_stream_pair_candidates(pctx, stream->local_stream,
-        stream))
-        ABORT(r);
+      if(!stream->local_stream->obsolete) {
+        if(r=nr_ice_media_stream_pair_candidates(pctx, stream->local_stream,
+          stream))
+          ABORT(r);
+      }
 
       stream=STAILQ_NEXT(stream,entry);
     }
@@ -557,25 +559,27 @@ int nr_ice_peer_ctx_start_checks2(nr_ice_peer_ctx *pctx, int allow_non_first)
       ABORT(R_FAILED);
 
     while (stream) {
-      assert(stream->ice_state != NR_ICE_MEDIA_STREAM_UNPAIRED);
+      if(!stream->local_stream->obsolete) {
+        assert(stream->ice_state != NR_ICE_MEDIA_STREAM_UNPAIRED);
 
-      if (stream->ice_state == NR_ICE_MEDIA_STREAM_CHECKS_FROZEN) {
-        if(!TAILQ_EMPTY(&stream->check_list))
-          break;
+        if (stream->ice_state == NR_ICE_MEDIA_STREAM_CHECKS_FROZEN) {
+          if(!TAILQ_EMPTY(&stream->check_list))
+            break;
 
-        if(!allow_non_first){
-          
-
-
-
+          if(!allow_non_first){
+            
 
 
 
 
 
 
-          r_log(LOG_ICE,LOG_ERR,"ICE(%s): peer (%s) first stream has empty check list",pctx->ctx->label,pctx->label);
-          ABORT(R_FAILED);
+
+
+
+            r_log(LOG_ICE,LOG_ERR,"ICE(%s): peer (%s) first stream has empty check list",pctx->ctx->label,pctx->label);
+            ABORT(R_FAILED);
+          }
         }
       }
 
