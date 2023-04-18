@@ -18,8 +18,11 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
 
   executeSoon: "chrome://remote/content/shared/Sync.jsm",
+  Log: "chrome://remote/content/shared/Log.jsm",
   RemoteAgent: "chrome://remote/content/components/RemoteAgent.jsm",
 });
+
+XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
 
 XPCOMUtils.defineLazyGetter(this, "CryptoHash", () => {
   return CC("@mozilla.org/security/hash;1", "nsICryptoHash", "initWithString");
@@ -29,18 +32,65 @@ XPCOMUtils.defineLazyGetter(this, "threadManager", () => {
   return Cc["@mozilla.org/thread-manager;1"].getService();
 });
 
+XPCOMUtils.defineLazyGetter(this, "allowedHosts", () => {
+  if (Services.prefs.prefHasUserValue("remote.hosts.allowed")) {
+    const allowedHostsPref = Services.prefs.getCharPref("remote.hosts.allowed");
+    return allowedHostsPref.split(",");
+  }
+
+  
+  
+  const hostUri = Services.io.newURI(`https://${RemoteAgent.host}`);
+
+  
+  
+  if (!isIPAddress(hostUri)) {
+    return [RemoteAgent.host];
+  }
+
+  
+  
+  
+  const loopbackAddresses = ["127.0.0.1", "[::1]"];
+
+  
+  
+  if (loopbackAddresses.includes(RemoteAgent.host)) {
+    return ["localhost"];
+  }
+
+  
+  return [];
+});
 
 
 
 
-const LOOPBACKS = ["localhost", "127.0.0.1", "[::1]"];
 
 
 
-let nullOriginAllowed = false;
-function allowNullOrigin(allowed) {
-  nullOriginAllowed = allowed;
-}
+XPCOMUtils.defineLazyGetter(this, "allowedOrigins", () =>
+  Services.prefs.getCharPref("remote.origins.allowed", "").split(",")
+);
+
+XPCOMUtils.defineLazyGetter(this, "allowedOriginURIs", () => {
+  return allowedOrigins
+    .map(origin => {
+      try {
+        const originURI = Services.io.newURI(origin);
+        
+        
+        return {
+          host: originURI.host,
+          port: originURI.port,
+          scheme: originURI.scheme,
+        };
+      } catch (e) {
+        return null;
+      }
+    })
+    .filter(uri => uri !== null);
+});
 
 
 
@@ -104,45 +154,64 @@ function isIPAddress(uri) {
   return false;
 }
 
+function isHostValid(hostHeader) {
+  try {
+    
+    const hostUri = Services.io.newURI(`https://${hostHeader}`);
+    const { host, port } = hostUri;
+    const isHostnameValid = isIPAddress(hostUri) || allowedHosts.includes(host);
+    
+    const isPortValid = [-1, RemoteAgent.port].includes(port);
+    return isHostnameValid && isPortValid;
+  } catch (e) {
+    return false;
+  }
+}
+
+function isOriginValid(originHeader) {
+  if (originHeader === undefined) {
+    
+    return true;
+  }
+
+  
+  if (originHeader === "null") {
+    return allowedOrigins.includes("null");
+  }
+
+  try {
+    
+    const { host, port, scheme } = Services.io.newURI(originHeader);
+    
+    return allowedOriginURIs.some(
+      uri => uri.host === host && uri.port === port && uri.scheme === scheme
+    );
+  } catch (e) {
+    
+    return false;
+  }
+}
+
 
 
 
 
 function processRequest({ requestLine, headers }) {
-  
-  
-  
-  if (RemoteAgent.webDriverBiDi) {
-    const origin = headers.get("origin");
-
-    
-    const isTestOrigin = origin === "null" && nullOriginAllowed;
-    if (headers.has("origin") && !isTestOrigin) {
-      throw new Error(
-        `The handshake request has incorrect Origin header ${origin}`
-      );
-    }
-  }
-
-  const hostHeader = headers.get("host");
-
-  let hostUri, host, port;
-  try {
-    
-    hostUri = Services.io.newURI(`https://${hostHeader}`);
-    ({ host, port } = hostUri);
-  } catch (e) {
+  if (!isOriginValid(headers.get("origin"))) {
+    logger.debug(
+      `Incorrect Origin header, allowed origins: [${allowedOrigins}]`
+    );
     throw new Error(
-      `The handshake request Host header must be a well-formed host: ${hostHeader}`
+      `The handshake request has incorrect Origin header ${headers.get(
+        "origin"
+      )}`
     );
   }
 
-  const isHostnameValid = LOOPBACKS.includes(host) || isIPAddress(hostUri);
-  
-  const isPortValid = port === -1 || port == RemoteAgent.port;
-  if (!isHostnameValid || !isPortValid) {
+  if (!isHostValid(headers.get("host"))) {
+    logger.debug(`Incorrect Host header, allowed hosts: [${allowedHosts}]`);
     throw new Error(
-      `The handshake request has incorrect Host header ${hostHeader}`
+      `The handshake request has incorrect Host header ${headers.get("host")}`
     );
   }
 
