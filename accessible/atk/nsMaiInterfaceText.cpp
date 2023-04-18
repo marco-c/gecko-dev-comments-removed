@@ -69,6 +69,12 @@ void ConvertTextAttributeToAtkAttribute(const nsACString& aName,
 
 static AtkAttributeSet* ConvertToAtkTextAttributeSet(
     AccAttributes* aAttributes) {
+  if (!aAttributes) {
+    
+    
+    return nullptr;
+  }
+
   AtkAttributeSet* objAttributeSet = nullptr;
 
   for (auto iter : *aAttributes) {
