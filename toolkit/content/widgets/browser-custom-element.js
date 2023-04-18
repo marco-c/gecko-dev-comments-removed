@@ -1291,7 +1291,12 @@
       let screenManager = Cc["@mozilla.org/gfx/screenmanager;1"].getService(
         Ci.nsIScreenManager
       );
-      let screen = screenManager.screenForRect(screenX, screenY, 1, 1);
+      let screen = screenManager.screenForRect(
+        screenX * window.devicePixelRatio,
+        screenY * window.devicePixelRatio,
+        1,
+        1
+      );
 
       
       if (screen.colorDepth > 8) {

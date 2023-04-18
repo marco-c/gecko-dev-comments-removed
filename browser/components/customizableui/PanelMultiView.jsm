@@ -1168,11 +1168,14 @@ var PanelMultiView = class extends AssociatedToNode {
     let anchor = this._panel.anchorNode;
     let anchorRect = anchor.getBoundingClientRect();
 
+    
+    
+    let devicePixelRatio = this.window.devicePixelRatio;
     let screen = this._screenManager.screenForRect(
-      anchor.screenX,
-      anchor.screenY,
-      anchorRect.width,
-      anchorRect.height
+      anchor.screenX * devicePixelRatio,
+      anchor.screenY * devicePixelRatio,
+      anchorRect.width * devicePixelRatio,
+      anchorRect.height * devicePixelRatio
     );
     let availTop = {},
       availHeight = {};
