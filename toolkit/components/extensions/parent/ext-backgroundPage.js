@@ -475,6 +475,12 @@ this.backgroundPage = class extends ExtensionAPI {
     let { extension } = this;
     extension.backgroundState = BACKGROUND_STATE.STOPPED;
 
+    
+    
+    extension.once("background-script-started", () => {
+      extension.emit("background-first-run");
+    });
+
     await this.primeBackground();
 
     ExtensionParent.browserStartupPromise.then(() => {
@@ -488,7 +494,11 @@ this.backgroundPage = class extends ExtensionAPI {
       
       if (
         extension.persistentBackground ||
-        !extension.persistentListeners?.size
+        !extension.persistentListeners?.size ||
+        
+        
+        (extension.startupReason == "APP_STARTUP" &&
+          extension.persistentListeners?.get("runtime").has("onStartup"))
       ) {
         extension.emit("start-background-script");
       } else {

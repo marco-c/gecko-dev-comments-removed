@@ -30,6 +30,7 @@ createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "42", "42");
 function background() {
   let onInstalledDetails = null;
   let onStartupFired = false;
+  let eventPage = browser.runtime.getManifest().background.persistent === false;
 
   browser.runtime.onInstalled.addListener(details => {
     onInstalledDetails = details;
@@ -54,6 +55,16 @@ function background() {
     browser.test.sendMessage("reloading");
     browser.runtime.reload();
   });
+
+  if (eventPage) {
+    browser.runtime.onSuspend.addListener(() => {
+      browser.test.sendMessage("suspended");
+    });
+    
+    browser.browserSettings.homepageOverride.onChange.addListener(() => {
+      browser.test.sendMessage("homepageOverride");
+    });
+  }
 }
 
 async function expectEvents(
@@ -357,7 +368,7 @@ add_task(async function test_should_not_fire_on_restart() {
     onInstalledFired: false,
   });
 
-  await extension.markUnloaded();
+  await extension.unload();
   await promiseShutdownManager();
 });
 
@@ -392,3 +403,118 @@ add_task(async function test_temporary_installation() {
   await extension.unload();
   await promiseShutdownManager();
 });
+
+add_task(
+  {
+    pref_set: [["extensions.eventPages.enabled", true]],
+  },
+  async function test_runtime_eventpage() {
+    const EXTENSION_ID = "test_runtime_eventpage@tests.mozilla.org";
+
+    await promiseStartupManager("1");
+
+    let extension = ExtensionTestUtils.loadExtension({
+      useAddonManager: "permanent",
+      manifest: {
+        version: "1.0",
+        applications: {
+          gecko: {
+            id: EXTENSION_ID,
+          },
+        },
+        permissions: ["browserSettings"],
+        background: {
+          persistent: false,
+        },
+      },
+      background,
+    });
+
+    await extension.startup();
+
+    await expectEvents(extension, {
+      onStartupFired: false,
+      onInstalledFired: true,
+      onInstalledReason: "install",
+      onInstalledTemporary: false,
+    });
+
+    info(`test onInstall does not fire after suspend`);
+    
+    
+    extension.terminateBackground();
+    await extension.awaitMessage("suspended");
+    await promiseExtensionEvent(extension, "shutdown-background-script");
+
+    Services.prefs.setStringPref(
+      "browser.startup.homepage",
+      "http://test.example.com"
+    );
+    await extension.awaitMessage("homepageOverride");
+    
+    assertPersistentListeners(extension, "runtime", "onStartup", {
+      primed: false,
+      persisted: true,
+    });
+
+    await expectEvents(extension, {
+      onStartupFired: false,
+      onInstalledFired: false,
+    });
+
+    info("test onStartup is not primed but background starts automatically");
+    await promiseRestartManager();
+    
+    
+    assertPersistentListeners(extension, "runtime", "onStartup", {
+      primed: false,
+      persisted: true,
+    });
+    await extension.awaitBackgroundStarted();
+
+    info("test expectEvents");
+    await expectEvents(extension, {
+      onStartupFired: true,
+      onInstalledFired: false,
+    });
+
+    info("test onInstalled fired during browser update");
+    await promiseRestartManager("2");
+    assertPersistentListeners(extension, "runtime", "onStartup", {
+      primed: false,
+      persisted: true,
+    });
+    await extension.awaitBackgroundStarted();
+
+    await expectEvents(extension, {
+      onStartupFired: true,
+      onInstalledFired: true,
+      onInstalledReason: "browser_update",
+      onInstalledTemporary: false,
+    });
+
+    info(`test onStarted does not fire after suspend`);
+    extension.terminateBackground();
+    await extension.awaitMessage("suspended");
+    await promiseExtensionEvent(extension, "shutdown-background-script");
+
+    Services.prefs.setStringPref(
+      "browser.startup.homepage",
+      "http://homepage.example.com"
+    );
+    await extension.awaitMessage("homepageOverride");
+    
+    assertPersistentListeners(extension, "runtime", "onStartup", {
+      primed: false,
+      persisted: true,
+    });
+
+    await expectEvents(extension, {
+      onStartupFired: false,
+      onInstalledFired: false,
+    });
+
+    await extension.unload();
+    await promiseShutdownManager();
+  }
+);

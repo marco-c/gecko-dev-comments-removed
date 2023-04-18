@@ -314,3 +314,9 @@ const optionalPermissionsPromptHandler = {
     }
   },
 };
+
+function promiseExtensionEvent(wrapper, event) {
+  return new Promise(resolve => {
+    wrapper.extension.once(event, resolve);
+  });
+}

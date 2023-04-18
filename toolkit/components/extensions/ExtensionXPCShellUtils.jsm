@@ -276,22 +276,6 @@ class ExtensionWrapper {
     return this.extension.terminateBackground();
   }
 
-  
-
-
-
-
-
-
-  markUnloaded() {
-    if (this.state != "running") {
-      throw new Error("Extension not running");
-    }
-    this.state = "unloaded";
-
-    return Promise.resolve();
-  }
-
   sendMessage(...args) {
     this.extension.testMessage(...args);
   }
