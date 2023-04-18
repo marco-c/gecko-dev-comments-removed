@@ -2446,9 +2446,15 @@ void ScrollFrameHelper::ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
   
   
   
+
+  auto scrollAnimationState = ScrollAnimationState();
+  bool isScrollAnimating =
+      scrollAnimationState.contains(AnimationState::MainThread) ||
+      scrollAnimationState.contains(AnimationState::APZPending) ||
+      scrollAnimationState.contains(AnimationState::APZRequested);
   if (mCurrentAPZScrollAnimationType ==
           APZScrollAnimationType::TriggeredByUserInput &&
-      !IsScrollAnimating(IncludeApzAnimation::PendingAndRequestedOnly)) {
+      !isScrollAnimating) {
     CSSIntPoint delta = aScrollPosition - currentCSSPixels;
     ScrollByCSSPixels(delta, aMode);
     return;
@@ -6581,7 +6587,7 @@ bool ScrollFrameHelper::ReflowFinished() {
     nsPoint currentScrollPos = GetScrollPosition();
     ScrollToImpl(currentScrollPos, nsRect(currentScrollPos, nsSize(0, 0)),
                  ScrollOrigin::Clamp);
-    if (!IsScrollAnimating()) {
+    if (ScrollAnimationState().isEmpty()) {
       
       
       
@@ -7325,16 +7331,22 @@ bool ScrollFrameHelper::IsLastScrollUpdateAnimating() const {
   return false;
 }
 
-bool ScrollFrameHelper::IsScrollAnimating(
-    IncludeApzAnimation aIncludeApz) const {
-  if (aIncludeApz == IncludeApzAnimation::Yes && IsApzAnimationInProgress()) {
-    return true;
+using AnimationState = nsIScrollableFrame::AnimationState;
+EnumSet<AnimationState> ScrollFrameHelper::ScrollAnimationState() const {
+  EnumSet<AnimationState> retval;
+  if (IsApzAnimationInProgress()) {
+    retval += AnimationState::APZInProgress;
   }
-  if (aIncludeApz != IncludeApzAnimation::No && IsLastScrollUpdateAnimating()) {
-    return true;
+  if (mApzAnimationRequested) {
+    retval += AnimationState::APZRequested;
   }
-  return (aIncludeApz != IncludeApzAnimation::No && mApzAnimationRequested) ||
-         mAsyncScroll || mAsyncSmoothMSDScroll;
+  if (IsLastScrollUpdateAnimating()) {
+    retval += AnimationState::APZPending;
+  }
+  if (mAsyncScroll || mAsyncSmoothMSDScroll) {
+    retval += AnimationState::MainThread;
+  }
+  return retval;
 }
 
 void ScrollFrameHelper::ResetScrollInfoIfNeeded(
@@ -7361,8 +7373,11 @@ UniquePtr<PresState> ScrollFrameHelper::SaveState() const {
 
   
   
+  auto scrollAnimationState = ScrollAnimationState();
   bool isScrollAnimating =
-      IsScrollAnimating(IncludeApzAnimation::PendingAndRequestedOnly);
+      scrollAnimationState.contains(AnimationState::MainThread) ||
+      scrollAnimationState.contains(AnimationState::APZPending) ||
+      scrollAnimationState.contains(AnimationState::APZRequested);
   if (!mHasBeenScrolled && !mDidHistoryRestore && !isScrollAnimating) {
     return nullptr;
   }

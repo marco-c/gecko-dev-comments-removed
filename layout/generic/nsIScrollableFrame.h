@@ -422,17 +422,14 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-
-
-
-
-
-
-
-
-  enum class IncludeApzAnimation : uint8_t { No, PendingAndRequestedOnly, Yes };
-  virtual bool IsScrollAnimating(
-      IncludeApzAnimation = IncludeApzAnimation::Yes) = 0;
+  enum class AnimationState {
+    MainThread,    
+    APZPending,    
+    APZRequested,  
+    APZInProgress  
+                   
+  };
+  virtual mozilla::EnumSet<AnimationState> ScrollAnimationState() const = 0;
 
   
 
