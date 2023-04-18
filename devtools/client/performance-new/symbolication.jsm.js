@@ -29,7 +29,7 @@ ChromeUtils.defineModuleGetter(
 );
 
 
-const global = this;
+const global = globalThis;
 
 
 
