@@ -8768,20 +8768,17 @@ void QuotaClient::InitiateShutdown() {
   
   
 
-  if (gPrivateDatastores) {
-    gPrivateDatastores->Clear();
-    gPrivateDatastores = nullptr;
+  if (gPreparedDatastores) {
+    gPreparedDatastores = nullptr;
   }
 
-  if (gPreparedDatastores) {
-    gPreparedDatastores->Clear();
-    gPreparedDatastores = nullptr;
+  if (gPrivateDatastores) {
+    gPrivateDatastores = nullptr;
   }
 
   RequestAllowToCloseDatabasesMatching([](const auto&) { return true; });
 
   if (gPreparedObsevers) {
-    gPreparedObsevers->Clear();
     gPreparedObsevers = nullptr;
   }
 }
