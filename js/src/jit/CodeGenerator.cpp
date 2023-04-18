@@ -3478,7 +3478,7 @@ void CodeGenerator::visitLambda(LLambda* lir) {
   masm.createGCObject(output, tempReg, templateObject, gc::DefaultHeap,
                       ool->entry());
 
-  emitLambdaInit(output, envChain, info);
+  emitLambdaInit(output, envChain);
 
   masm.bind(ool->rejoin());
 }
@@ -3500,7 +3500,7 @@ void CodeGenerator::visitLambdaArrow(LLambdaArrow* lir) {
   masm.createGCObject(output, temp, templateObject, gc::DefaultHeap,
                       ool->entry());
 
-  emitLambdaInit(output, envChain, info);
+  emitLambdaInit(output, envChain);
 
   
   MOZ_ASSERT(info.flags.isExtended());
@@ -3512,24 +3512,11 @@ void CodeGenerator::visitLambdaArrow(LLambdaArrow* lir) {
   masm.bind(ool->rejoin());
 }
 
-void CodeGenerator::emitLambdaInit(Register output, Register envChain,
-                                   const LambdaFunctionInfo& info) {
-  uint32_t flagsAndArgs =
-      info.flags.toRaw() | (info.nargs << JSFunction::ArgCountShift);
-  masm.storeValue(JS::PrivateUint32Value(flagsAndArgs),
-                  Address(output, JSFunction::offsetOfFlagsAndArgCount()));
-  masm.storePrivateValue(
-      ImmGCPtr(info.baseScript),
-      Address(output, JSFunction::offsetOfJitInfoOrScript()));
-
+void CodeGenerator::emitLambdaInit(Register output, Register envChain) {
   masm.storeValue(JSVAL_TYPE_OBJECT, envChain,
                   Address(output, JSFunction::offsetOfEnvironment()));
   
   
-
-  JSAtom* atom = info.funUnsafe()->displayAtom();
-  JS::Value atomValue = atom ? JS::StringValue(atom) : JS::UndefinedValue();
-  masm.storeValue(atomValue, Address(output, JSFunction::offsetOfAtom()));
 }
 
 void CodeGenerator::visitFunctionWithProto(LFunctionWithProto* lir) {
