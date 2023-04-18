@@ -782,7 +782,6 @@ struct JSRuntime {
   
   js::MainThreadOrGCTaskData<js::SymbolRegistry> symbolRegistry_;
 
-  js::WriteOnceData<js::AtomSet*> permanentAtomsDuringInit_;
   js::WriteOnceData<js::FrozenAtomSet*> permanentAtoms_;
 
  public:
@@ -790,9 +789,7 @@ struct JSRuntime {
   bool initializeParserAtoms(JSContext* cx);
   void finishAtoms();
   void finishParserAtoms();
-  bool atomsAreFinished() const {
-    return !atoms_ && !permanentAtomsDuringInit_;
-  }
+  bool atomsAreFinished() const { return !atoms_; }
 
   js::AtomsTable* atomsForSweeping() {
     MOZ_ASSERT(JS::RuntimeHeapIsCollecting());
@@ -844,15 +841,6 @@ struct JSRuntime {
 
   
   bool permanentAtomsPopulated() const { return permanentAtoms_; }
-
-  
-  
-  js::AtomSet* permanentAtomsDuringInit() const {
-    MOZ_ASSERT(!permanentAtoms_);
-    return permanentAtomsDuringInit_.ref();
-  }
-
-  void tracePermanentThingsDuringInit(JSTracer* trc);
 
   
   

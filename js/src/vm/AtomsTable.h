@@ -33,7 +33,15 @@ struct AtomHasher {
   }
 };
 
-using AtomSet = JS::GCHashSet<WeakHeapPtrAtom, AtomHasher, SystemAllocPolicy>;
+
+class AtomSet
+    : public JS::GCHashSet<WeakHeapPtrAtom, AtomHasher, SystemAllocPolicy> {
+  using Base = JS::GCHashSet<WeakHeapPtrAtom, AtomHasher, SystemAllocPolicy>;
+
+ public:
+  AtomSet() = default;
+  explicit AtomSet(size_t length) : Base(length){};
+};
 
 
 
