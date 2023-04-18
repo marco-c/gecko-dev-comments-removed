@@ -762,6 +762,22 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
                        "mismatched parent window context?");
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!mSupportsRedirectToRealChannel && aLoadState->TriggeringPrincipal() &&
+      aLoadState->TriggeringPrincipal()->IsSystemPrincipal()) {
+    WindowContext* topWc = loadingContext->GetTopWindowContext();
+    if (topWc && !topWc->IsDiscarded()) {
+      MOZ_ALWAYS_SUCCEEDS(topWc->SetSHEntryHasUserInteraction(true));
+    }
+  }
+
   *aRv = NS_OK;
   mOpenPromise = new OpenPromise::Private(__func__);
   
