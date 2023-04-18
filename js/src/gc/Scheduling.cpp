@@ -421,6 +421,27 @@ void GCSchedulingTunables::resetParameter(JSGCParamKey key,
   }
 }
 
+void GCSchedulingState::updateHighFrequencyMode(
+    const mozilla::TimeStamp& lastGCTime, const mozilla::TimeStamp& currentTime,
+    const GCSchedulingTunables& tunables) {
+  if (js::SupportDifferentialTesting()) {
+    return;
+  }
+
+  inHighFrequencyGCMode_ =
+      !lastGCTime.IsNull() &&
+      lastGCTime + tunables.highFrequencyThreshold() > currentTime;
+}
+
+void GCSchedulingState::updateHighFrequencyModeForReason(JS::GCReason reason) {
+  
+  
+  if (reason == JS::GCReason::ALLOC_TRIGGER ||
+      reason == JS::GCReason::TOO_MUCH_MALLOC) {
+    inHighFrequencyGCMode_ = true;
+  }
+}
+
 
 
 static inline size_t ToClampedSize(uint64_t bytes) {

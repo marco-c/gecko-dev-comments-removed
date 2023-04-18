@@ -330,7 +330,7 @@ static void FreeChunkPool(ChunkPool& pool) {
     TenuredChunk* chunk = iter.get();
     iter.next();
     pool.remove(chunk);
-    MOZ_ASSERT(!chunk->info.numArenasFreeCommitted);
+    MOZ_ASSERT(chunk->unused());
     UnmapPages(static_cast<void*>(chunk), ChunkSize);
   }
   MOZ_ASSERT(pool.count() == 0);
@@ -1631,6 +1631,18 @@ bool GCRuntime::checkEagerAllocTrigger(const HeapSize& size,
   return true;
 }
 
+bool GCRuntime::shouldDecommit() const {
+  
+  
+  if (cleanUpEverything) {
+    return true;
+  }
+
+  
+  
+  return !schedulingState.inHighFrequencyGCMode();
+}
+
 void GCRuntime::startDecommit() {
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::DECOMMIT);
 
@@ -1647,22 +1659,19 @@ void GCRuntime::startDecommit() {
     
     for (ChunkPool::Iter chunk(emptyChunks(lock)); !chunk.done();
          chunk.next()) {
-      MOZ_ASSERT(chunk->info.numArenasFreeCommitted == 0);
+      MOZ_ASSERT(chunk->unused());
     }
   }
 #endif
 
-  
-  
-  
-  
-  if (schedulingState.inHighFrequencyGCMode() && !cleanUpEverything) {
+  if (!shouldDecommit()) {
     return;
   }
 
   {
     AutoLockGC lock(this);
-    if (availableChunks(lock).empty() && !tooManyEmptyChunks(lock)) {
+    if (availableChunks(lock).empty() && !tooManyEmptyChunks(lock) &&
+        emptyChunks(lock).empty()) {
       return;  
     }
   }
@@ -1708,6 +1717,45 @@ void js::gc::BackgroundDecommitTask::run(AutoLockHelperThreadState& lock) {
   }
 
   gc->maybeRequestGCAfterBackgroundTask(lock);
+}
+
+static inline bool CanDecommitWholeChunk(TenuredChunk* chunk) {
+  return chunk->unused() && chunk->info.numArenasFreeCommitted != 0;
+}
+
+
+
+void GCRuntime::decommitEmptyChunks(const bool& cancel, AutoLockGC& lock) {
+  Vector<TenuredChunk*, 0, SystemAllocPolicy> chunksToDecommit;
+  for (ChunkPool::Iter chunk(emptyChunks(lock)); !chunk.done(); chunk.next()) {
+    if (CanDecommitWholeChunk(chunk) && !chunksToDecommit.append(chunk)) {
+      onOutOfMallocMemory(lock);
+      return;
+    }
+  }
+
+  for (TenuredChunk* chunk : chunksToDecommit) {
+    if (cancel) {
+      break;
+    }
+
+    
+    if (!CanDecommitWholeChunk(chunk)) {
+      continue;
+    }
+
+    
+    
+    emptyChunks(lock).remove(chunk);
+
+    {
+      AutoUnlockGC unlock(lock);
+      chunk->decommitAllArenas();
+      MOZ_ASSERT(chunk->info.numArenasFreeCommitted == 0);
+    }
+
+    emptyChunks(lock).push(chunk);
+  }
 }
 
 
@@ -3781,6 +3829,8 @@ void GCRuntime::collect(bool nonincrementalByAPI, const SliceBudget& budget,
   AutoStopVerifyingBarriers av(rt, IsShutdownReason(reason));
   AutoMaybeLeaveAtomsZone leaveAtomsZone(rt->mainContextFromOwnThread());
   AutoSetZoneSliceThresholds sliceThresholds(this);
+
+  schedulingState.updateHighFrequencyModeForReason(reason);
 
 #ifdef DEBUG
   if (IsShutdownReason(reason)) {
