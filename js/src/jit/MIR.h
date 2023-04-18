@@ -1201,6 +1201,9 @@ class MVariadicT : public T {
   }
 };
 
+
+
+
 using MVariadicInstruction = MVariadicT<MInstruction>;
 
 MIR_OPCODE_CLASS_GENERATED
