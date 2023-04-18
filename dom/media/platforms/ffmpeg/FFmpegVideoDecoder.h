@@ -171,6 +171,14 @@ class FFmpegVideoDecoder<LIBAV_VER>
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
   nsTHashSet<RefPtr<ImageBufferWrapper>> mAllocatedImages;
 #endif
 };
@@ -189,29 +197,11 @@ class ImageBufferWrapper final {
     MOZ_ASSERT(mDecoder);
   }
 
-  Image* AsImage() {
-    return mImage;
-  }
+  Image* AsImage() { return mImage; }
 
   void ReleaseBuffer() {
-    auto clear = MakeScopeExit([&]() {
-      auto* decoder = static_cast<FFmpegVideoDecoder<LIBAV_VER>*>(mDecoder);
-      decoder->ReleaseAllocatedImage(this);
-    });
-    if (!mImage) {
-      return;
-    }
-    RefPtr<layers::TextureClient> texture = mImage->GetTextureClient(nullptr);
-    
-    
-    
-    
-    
-    if (!texture) {
-      NS_WARNING("Failed to get the texture client during release!");
-    } else if (texture->IsLocked()) {
-      texture->Unlock();
-    }
+    auto* decoder = static_cast<FFmpegVideoDecoder<LIBAV_VER>*>(mDecoder);
+    decoder->ReleaseAllocatedImage(this);
   }
 
  private:
