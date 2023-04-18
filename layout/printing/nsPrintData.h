@@ -14,7 +14,6 @@
 #include "nsDeviceContext.h"
 #include "nsIPrintSettings.h"
 #include "nsISupportsImpl.h"
-#include "nsTArray.h"
 #include "nsCOMArray.h"
 
 class nsPrintObject;
@@ -47,11 +46,6 @@ class nsPrintData {
   
   
   nsPrintObject* mSelectionRoot = nullptr;
-
-  
-  
-  
-  nsTArray<nsPrintObject*> mPrintDocList;
 
   bool mOnStartSent;
   bool mIsAborted;  

@@ -15,6 +15,7 @@
 #include "nsHashKeys.h"
 #include "nsIFrame.h"  
 #include "nsSize.h"
+#include "nsTArray.h"
 #include "nsTHashtable.h"
 #include "nsWeakReference.h"
 
@@ -253,6 +254,11 @@ class nsPrintJob final : public nsIWebProgressListener,
 
   
   RefPtr<RemotePrintJobChild> mRemotePrintJob;
+
+  
+  
+  
+  nsTArray<nsPrintObject*> mPrintDocList;
 
   
   
