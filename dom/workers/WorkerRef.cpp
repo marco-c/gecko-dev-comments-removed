@@ -92,11 +92,9 @@ void WorkerRef::Notify() {
     return;
   }
 
-  std::function<void()> callback = mCallback;
-  
-  
-  
-  mCallback = nullptr;
+  std::function<void()> callback = std::move(mCallback);
+  MOZ_ASSERT(!mCallback);
+
   callback();
 }
 
