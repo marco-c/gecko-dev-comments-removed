@@ -245,11 +245,13 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
 
 
-  void ScrollTo(nsPoint aScrollPosition, ScrollMode aMode,
-                ScrollOrigin aOrigin = ScrollOrigin::NotSpecified,
-                const nsRect* aRange = nullptr,
-                nsIScrollbarMediator::ScrollSnapMode aSnap =
-                    nsIScrollbarMediator::DISABLE_SNAP);
+  void ScrollTo(
+      nsPoint aScrollPosition, ScrollMode aMode,
+      ScrollOrigin aOrigin = ScrollOrigin::NotSpecified,
+      const nsRect* aRange = nullptr,
+      nsIScrollbarMediator::ScrollSnapMode aSnap =
+          nsIScrollbarMediator::DISABLE_SNAP,
+      ScrollTriggeredByScript aTriggeredByScript = ScrollTriggeredByScript::No);
   
 
 
@@ -266,8 +268,10 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
 
 
-  void ScrollToImpl(nsPoint aScrollPosition, const nsRect& aRange,
-                    ScrollOrigin aOrigin = ScrollOrigin::NotSpecified);
+  void ScrollToImpl(
+      nsPoint aPt, const nsRect& aRange,
+      ScrollOrigin aOrigin = ScrollOrigin::NotSpecified,
+      ScrollTriggeredByScript aTriggeredByScript = ScrollTriggeredByScript::No);
   void ScrollVisual();
   
 
@@ -764,10 +768,12 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
 
 
-  void ScrollToWithOrigin(nsPoint aScrollPosition, ScrollMode aMode,
-                          ScrollOrigin aOrigin, const nsRect* aRange,
-                          nsIScrollbarMediator::ScrollSnapMode aSnap =
-                              nsIScrollbarMediator::DISABLE_SNAP);
+  void ScrollToWithOrigin(
+      nsPoint aScrollPosition, ScrollMode aMode, ScrollOrigin aOrigin,
+      const nsRect* aRange,
+      nsIScrollbarMediator::ScrollSnapMode aSnap =
+          nsIScrollbarMediator::DISABLE_SNAP,
+      ScrollTriggeredByScript aTriggeredByScript = ScrollTriggeredByScript::No);
 
   void CompleteAsyncScroll(const nsRect& aRange,
                            ScrollOrigin aOrigin = ScrollOrigin::NotSpecified);
@@ -780,7 +786,8 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   
   
-  void ApzSmoothScrollTo(const nsPoint& aDestination, ScrollOrigin aOrigin);
+  void ApzSmoothScrollTo(const nsPoint& aDestination, ScrollOrigin aOrigin,
+                         ScrollTriggeredByScript aTriggeredByScript);
 
   
   void RemoveObservers();

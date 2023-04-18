@@ -29,6 +29,8 @@ enum class ScrollUpdateType {
   PureRelative,
 };
 
+enum class ScrollTriggeredByScript : bool { No, Yes };
+
 struct ScrollGeneration {
  private:
   
@@ -80,8 +82,9 @@ class ScrollPositionUpdate {
   
   
   
-  static ScrollPositionUpdate NewSmoothScroll(ScrollOrigin aOrigin,
-                                              nsPoint aDestination);
+  static ScrollPositionUpdate NewSmoothScroll(
+      ScrollOrigin aOrigin, nsPoint aDestination,
+      ScrollTriggeredByScript aTriggeredByScript);
   
   
   
@@ -103,6 +106,13 @@ class ScrollPositionUpdate {
   
   CSSPoint GetDelta() const;
 
+  ScrollTriggeredByScript GetScrollTriggeredByScript() const {
+    return mTriggeredByScript;
+  }
+  bool WasTriggeredByScript() const {
+    return mTriggeredByScript == ScrollTriggeredByScript::Yes;
+  }
+
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const ScrollPositionUpdate& aUpdate);
 
@@ -119,6 +129,7 @@ class ScrollPositionUpdate {
   CSSPoint mSource;
   
   CSSPoint mDelta;
+  ScrollTriggeredByScript mTriggeredByScript;
 };
 
 }  
