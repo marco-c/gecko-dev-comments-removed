@@ -2351,6 +2351,24 @@ static bool ScrollbarGenerationChanged(const nsStyleDisplay& aOld,
          changed(aOld.mOverflowY, aNew.mOverflowY);
 }
 
+static bool AppearanceValueAffectsFrames(StyleAppearance aDefaultAppearance,
+                                         StyleAppearance aAppearance) {
+  switch (aAppearance) {
+    case StyleAppearance::Textfield:
+      
+      
+      
+      
+      
+      return aDefaultAppearance == StyleAppearance::NumberInput;
+    case StyleAppearance::Menulist:
+      
+      return aDefaultAppearance == StyleAppearance::Menulist;
+    default:
+      return false;
+  }
+}
+
 nsChangeHint nsStyleDisplay::CalcDifference(
     const nsStyleDisplay& aNewData, const nsStylePosition& aOldPosition) const {
   if (mDisplay != aNewData.mDisplay || mContain != aNewData.mContain ||
@@ -2368,20 +2386,14 @@ nsChangeHint nsStyleDisplay::CalcDifference(
 
   auto oldAppearance = EffectiveAppearance();
   auto newAppearance = aNewData.EffectiveAppearance();
-
-  if ((oldAppearance == StyleAppearance::Textfield &&
-       newAppearance != StyleAppearance::Textfield) ||
-      (oldAppearance != StyleAppearance::Textfield &&
-       newAppearance == StyleAppearance::Textfield)) {
+  if (oldAppearance != newAppearance) {
     
     
     
-    
-    
-    
-    
-    
-    return nsChangeHint_ReconstructFrame;
+    if (AppearanceValueAffectsFrames(oldAppearance, mDefaultAppearance) ||
+        AppearanceValueAffectsFrames(newAppearance, mDefaultAppearance)) {
+      return nsChangeHint_ReconstructFrame;
+    }
   }
 
   auto hint = nsChangeHint(0);

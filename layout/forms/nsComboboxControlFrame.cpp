@@ -406,7 +406,7 @@ void nsComboboxControlFrame::Reflow(nsPresContext* aPresContext,
   
   
 
-  if (!mDisplayFrame || !mButtonFrame) {
+  if (!mDisplayFrame) {
     NS_ERROR("Why did the frame constructor allow this to happen?  Fix it!!");
     return;
   }
@@ -435,15 +435,17 @@ void nsComboboxControlFrame::Reflow(nsPresContext* aPresContext,
 
   
   
-  LogicalRect buttonRect(wm);
-  buttonRect.IStart(wm) = borderPadding.IStart(wm) + mMaxDisplayISize;
-  buttonRect.BStart(wm) = border.BStart(wm);
+  if (mButtonFrame) {
+    LogicalRect buttonRect(wm);
+    buttonRect.IStart(wm) = borderPadding.IStart(wm) + mMaxDisplayISize;
+    buttonRect.BStart(wm) = border.BStart(wm);
 
-  buttonRect.ISize(wm) = buttonISize;
-  buttonRect.BSize(wm) = mDisplayFrame->BSize(wm) + padding.BStartEnd(wm);
+    buttonRect.ISize(wm) = buttonISize;
+    buttonRect.BSize(wm) = mDisplayFrame->BSize(wm) + padding.BStartEnd(wm);
 
-  const nsSize containerSize = aDesiredSize.PhysicalSize();
-  mButtonFrame->SetRect(buttonRect, containerSize);
+    const nsSize containerSize = aDesiredSize.PhysicalSize();
+    mButtonFrame->SetRect(buttonRect, containerSize);
+  }
 
   if (!aStatus.IsInlineBreakBefore() && !aStatus.IsFullyComplete()) {
     
@@ -681,30 +683,28 @@ nsresult nsComboboxControlFrame::CreateAnonymousContent(
   }
   ActuallyDisplayText(false);
 
-  
-  
   aElements.AppendElement(mDisplayContent);
+  if (HasDropDownButton()) {
+    mButtonContent = mContent->OwnerDoc()->CreateHTMLElement(nsGkAtoms::button);
+    if (!mButtonContent) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
 
-  mButtonContent = mContent->OwnerDoc()->CreateHTMLElement(nsGkAtoms::button);
-  if (!mButtonContent) return NS_ERROR_OUT_OF_MEMORY;
-
-  
-  mButtonContent->SetAttr(kNameSpaceID_None, nsGkAtoms::type, u"button"_ns,
-                          false);
-  
-  mButtonContent->SetAttr(kNameSpaceID_None, nsGkAtoms::tabindex, u"-1"_ns,
-                          false);
-
-  WritingMode wm = GetWritingMode();
-  if (wm.IsVertical()) {
-    mButtonContent->SetAttr(kNameSpaceID_None, nsGkAtoms::orientation,
-                            wm.IsVerticalRL() ? u"left"_ns : u"right"_ns,
+    
+    mButtonContent->SetAttr(kNameSpaceID_None, nsGkAtoms::type, u"button"_ns,
                             false);
-  }
+    
+    mButtonContent->SetAttr(kNameSpaceID_None, nsGkAtoms::tabindex, u"-1"_ns,
+                            false);
 
-  
-  
-  aElements.AppendElement(mButtonContent);
+    WritingMode wm = GetWritingMode();
+    if (wm.IsVertical()) {
+      mButtonContent->SetAttr(kNameSpaceID_None, nsGkAtoms::orientation,
+                              wm.IsVerticalRL() ? u"left"_ns : u"right"_ns,
+                              false);
+    }
+    aElements.AppendElement(mButtonContent);
+  }
 
   return NS_OK;
 }
@@ -888,7 +888,6 @@ void nsComboboxControlFrame::SetInitialChildList(ChildListID aListID,
         break;
       }
     }
-    NS_ASSERTION(mButtonFrame, "missing button frame in initial child list");
     nsBlockFrame::SetInitialChildList(aListID, aChildList);
   }
 }
