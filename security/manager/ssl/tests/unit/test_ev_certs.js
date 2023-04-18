@@ -223,6 +223,11 @@ add_task(async function plainExpectSuccessEVTests() {
   
   
   await ensureVerifiesAsEV("cabforum-and-test-oid-ee-cabforum-oid-int-path");
+  
+  
+  
+  
+  await ensureVerifiesAsEV("test-and-cabforum-oid-ee-cabforum-oid-int-path");
 });
 
 
@@ -236,11 +241,6 @@ add_task(async function expectDVFallbackTests() {
   
   
   await ensureVerifiesAsDV("test-oid-ee-cabforum-oid-int-path");
-  
-  
-  
-  
-  await ensureVerifiesAsDV("test-and-cabforum-oid-ee-cabforum-oid-int-path");
 });
 
 

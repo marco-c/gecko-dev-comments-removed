@@ -28,12 +28,9 @@ nsresult LoadExtendedValidationInfo();
 
 
 
-
-
-
-
-bool GetFirstEVPolicy(const nsTArray<uint8_t>& cert,
-                       mozilla::pkix::CertPolicyId& policy);
+void GetKnownEVPolicies(
+    const nsTArray<uint8_t>& cert,
+     nsTArray<mozilla::pkix::CertPolicyId>& policies);
 
 
 
