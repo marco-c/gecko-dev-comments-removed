@@ -182,8 +182,8 @@ class IMEStateManager {
   
 
   
-  static nsresult GetFocusSelectionAndRoot(dom::Selection** aSel,
-                                           nsIContent** aRoot);
+  static nsresult GetFocusSelectionAndRootElement(dom::Selection** aSel,
+                                                  dom::Element** aRootElement);
   
   
   
@@ -296,8 +296,8 @@ class IMEStateManager {
   static nsresult NotifyIME(IMEMessage aMessage, nsPresContext* aPresContext,
                             BrowserParent* aBrowserParent = nullptr);
 
-  static nsINode* GetRootEditableNode(const nsPresContext* aPresContext,
-                                      const nsIContent* aContent);
+  static nsINode* GetRootEditableNode(const nsPresContext& aPresContext,
+                                      const dom::Element* aElement);
 
   
 

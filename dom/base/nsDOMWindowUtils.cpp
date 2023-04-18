@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsDOMWindowUtils.h"
 
@@ -48,8 +48,8 @@
 #include "nsCharsetSource.h"
 #include "nsJSEnvironment.h"
 #include "nsJSUtils.h"
-#include "js/experimental/PCCountProfiling.h"  // JS::{Start,Stop}PCCountProfiling, JS::PurgePCCounts, JS::GetPCCountScript{Count,Summary,Contents}
-#include "js/Object.h"                         // JS::GetClass
+#include "js/experimental/PCCountProfiling.h"  
+#include "js/Object.h"                         
 
 #include "mozilla/ChaosMode.h"
 #include "mozilla/CheckedInt.h"
@@ -100,7 +100,7 @@
 #include "nsPrintfCString.h"
 #include "nsViewportInfo.h"
 #include "nsIFormControl.h"
-//#include "nsWidgetsCID.h"
+
 #include "nsDisplayList.h"
 #include "nsROCSSPrimitiveValue.h"
 #include "nsIBaseWindow.h"
@@ -108,12 +108,12 @@
 #include "nsIInterfaceRequestorUtils.h"
 #include "mozilla/Preferences.h"
 #include "nsContentPermissionHelper.h"
-#include "nsCSSPseudoElements.h"  // for PseudoStyleType
+#include "nsCSSPseudoElements.h"  
 #include "nsNetUtil.h"
 #include "HTMLImageElement.h"
 #include "HTMLCanvasElement.h"
 #include "mozilla/css/ImageLoader.h"
-#include "mozilla/layers/IAPZCTreeManager.h"  // for layers::ZoomToRectBehavior
+#include "mozilla/layers/IAPZCTreeManager.h"  
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/ServoBindings.h"
@@ -200,7 +200,7 @@ NativeInputRunnable::NativeInputRunnable(already_AddRefed<nsIRunnable>&& aEvent)
     : PrioritizableRunnable(std::move(aEvent),
                             nsIRunnablePriority::PRIORITY_INPUT_HIGH) {}
 
-/* static */
+
 already_AddRefed<nsIRunnable> NativeInputRunnable::Create(
     already_AddRefed<nsIRunnable>&& aEvent) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -208,7 +208,7 @@ already_AddRefed<nsIRunnable> NativeInputRunnable::Create(
   return event.forget();
 }
 
-}  // unnamed namespace
+}  
 
 LinkedList<OldWindowSize> OldWindowSize::sList;
 
@@ -358,11 +358,11 @@ nsDOMWindowUtils::GetDocumentMetadata(const nsAString& aName,
 NS_IMETHODIMP
 nsDOMWindowUtils::UpdateLayerTree() {
   if (RefPtr<PresShell> presShell = GetPresShell()) {
-    // Don't flush throttled animations since it might fire MozAfterPaint event
-    // (in WebRender it constantly does), thus the reftest harness can't take
-    // any snapshot until the throttled animations finished.
+    
+    
+    
     presShell->FlushPendingNotifications(
-        ChangesToFlush(FlushType::Display, false /* flush animations */));
+        ChangesToFlush(FlushType::Display, false ));
     RefPtr<nsViewManager> vm = presShell->GetViewManager();
     if (nsView* view = vm->GetRootView()) {
       nsAutoScriptBlocker scriptBlocker;
@@ -492,9 +492,9 @@ nsDOMWindowUtils::SetDisplayPortForElement(float aXPx, float aYPx,
   if (rootFrame) {
     rootFrame->SchedulePaint();
 
-    // If we are hiding something that is a display root then send empty paint
-    // transaction in order to release retained layers because it won't get
-    // any more paint requests when it is hidden.
+    
+    
+    
     if (displayport.IsEmpty() &&
         rootFrame == nsLayoutUtils::GetDisplayRootFrame(rootFrame)) {
       nsCOMPtr<nsIWidget> widget = GetWidget();
@@ -527,8 +527,8 @@ nsDOMWindowUtils::SetDisplayPortMarginsForElement(
     return NS_ERROR_INVALID_ARG;
   }
 
-  // Note order change of arguments between our function signature and
-  // ScreenMargin constructor.
+  
+  
   ScreenMargin displayportMargins(aTopMargin, aRightMargin, aBottomMargin,
                                   aLeftMargin);
 
@@ -720,7 +720,7 @@ nsDOMWindowUtils::SendWheelEvent(float aX, float aY, double aDeltaX,
                                  uint32_t aDeltaMode, int32_t aModifiers,
                                  int32_t aLineOrPageDeltaX,
                                  int32_t aLineOrPageDeltaY, uint32_t aOptions) {
-  // get the widget to send the event to
+  
   nsPoint offset;
   nsCOMPtr<nsIWidget> widget = GetWidget(&offset);
   if (!widget) {
@@ -752,8 +752,8 @@ nsDOMWindowUtils::SendWheelEvent(float aX, float aY, double aDeltaX,
   widget->DispatchInputEvent(&wheelEvent);
 
   if (widget->AsyncPanZoomEnabled()) {
-    // Computing overflow deltas is not compatible with APZ, so if APZ is
-    // enabled, we skip testing it.
+    
+    
     return NS_OK;
   }
 
@@ -831,7 +831,7 @@ nsresult nsDOMWindowUtils::SendTouchEventCommon(
     const nsTArray<float>& aRotationAngles, const nsTArray<float>& aForces,
     int32_t aModifiers, bool aIgnoreRootScrollFrame, bool aToWindow,
     bool* aPreventDefault) {
-  // get the widget to send the event to
+  
   nsPoint offset;
   nsCOMPtr<nsIWidget> widget = GetWidget(&offset);
   if (!widget) {
@@ -995,7 +995,7 @@ nsDOMWindowUtils::SendNativeKeyEvent(int32_t aNativeKeyboardLayout,
                                      const nsAString& aCharacters,
                                      const nsAString& aUnmodifiedCharacters,
                                      nsIObserver* aObserver) {
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget) return NS_ERROR_FAILURE;
 
@@ -1015,7 +1015,7 @@ nsDOMWindowUtils::SendNativeMouseEvent(int32_t aScreenX, int32_t aScreenY,
                                        uint32_t aModifierFlags,
                                        Element* aElementOnWidget,
                                        nsIObserver* aObserver) {
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidgetForElement(aElementOnWidget);
   if (!widget) {
     return NS_ERROR_FAILURE;
@@ -1058,7 +1058,7 @@ nsDOMWindowUtils::SendNativeMouseScrollEvent(
     int32_t aScreenX, int32_t aScreenY, uint32_t aNativeMessage, double aDeltaX,
     double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
     uint32_t aAdditionalFlags, Element* aElement, nsIObserver* aObserver) {
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidgetForElement(aElement);
   if (!widget) {
     return NS_ERROR_FAILURE;
@@ -1245,7 +1245,7 @@ nsDOMWindowUtils::ClearNativeTouchSequence(nsIObserver* aObserver) {
 
 NS_IMETHODIMP
 nsDOMWindowUtils::ActivateNativeMenuItemAt(const nsAString& indexString) {
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget) return NS_ERROR_FAILURE;
 
@@ -1254,7 +1254,7 @@ nsDOMWindowUtils::ActivateNativeMenuItemAt(const nsAString& indexString) {
 
 NS_IMETHODIMP
 nsDOMWindowUtils::ForceUpdateNativeMenuAt(const nsAString& indexString) {
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget) return NS_ERROR_FAILURE;
 
@@ -1263,7 +1263,7 @@ nsDOMWindowUtils::ForceUpdateNativeMenuAt(const nsAString& indexString) {
 
 NS_IMETHODIMP
 nsDOMWindowUtils::GetSelectionAsPlaintext(nsAString& aResult) {
-  // Get the widget to send the event to.
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget) {
     return NS_ERROR_FAILURE;
@@ -1363,7 +1363,7 @@ nsDOMWindowUtils::SendSimpleGestureEvent(const nsAString& aType, float aX,
                                          float aY, uint32_t aDirection,
                                          double aDelta, int32_t aModifiers,
                                          uint32_t aClickCount) {
-  // get the widget to send the event to
+  
   nsPoint offset;
   nsCOMPtr<nsIWidget> widget = GetWidget(&offset);
   if (!widget) return NS_ERROR_FAILURE;
@@ -1447,8 +1447,8 @@ nsDOMWindowUtils::NodesFromRect(float aX, float aY, float aTopSize,
 
   auto list = MakeRefPtr<nsSimpleContentList>(doc);
 
-  // The visible threshold was omitted or given a zero value (which makes no
-  // sense), so give a reasonable default.
+  
+  
   if (aVisibleThreshold == 0.0f) {
     aVisibleThreshold = 1.0f;
   }
@@ -1484,15 +1484,15 @@ nsDOMWindowUtils::GetTranslationNodes(nsINode* aRoot,
 
   uint32_t limit = 15000;
 
-  // We begin iteration with content->GetNextNode because we want to explictly
-  // skip the root tag from being a translation node.
+  
+  
   nsIContent* content = root;
   while ((limit > 0) && (content = content->GetNextNode(root))) {
     if (!content->IsHTMLElement()) {
       continue;
     }
 
-    // Skip elements that usually contain non-translatable text content.
+    
     if (content->IsAnyOfHTMLElements(nsGkAtoms::script, nsGkAtoms::iframe,
                                      nsGkAtoms::frameset, nsGkAtoms::frame,
                                      nsGkAtoms::code, nsGkAtoms::noscript,
@@ -1500,9 +1500,9 @@ nsDOMWindowUtils::GetTranslationNodes(nsINode* aRoot,
       continue;
     }
 
-    // An element is a translation node if it contains
-    // at least one text node that has meaningful data
-    // for translation
+    
+    
+    
     for (nsIContent* child = content->GetFirstChild(); child;
          child = child->GetNextSibling()) {
       if (child->IsText() && child->GetAsText()->HasTextForTranslation()) {
@@ -1511,10 +1511,10 @@ nsDOMWindowUtils::GetTranslationNodes(nsINode* aRoot,
         nsIFrame* frame = content->GetPrimaryFrame();
         bool isTranslationRoot = frame && frame->IsBlockFrameOrSubclass();
         if (!isTranslationRoot) {
-          // If an element is not a block element, it still
-          // can be considered a translation root if the parent
-          // of this element didn't make into the list of nodes
-          // to be translated.
+          
+          
+          
+          
           bool parentInList = false;
           nsIContent* parent = content->GetParent();
           if (parent) {
@@ -1564,7 +1564,7 @@ nsDOMWindowUtils::CompareCanvases(nsISupports* aCanvas1, nsISupports* aCanvas2,
   }
 
   if (img1->Equals(img2)) {
-    // They point to the same underlying content.
+    
     return NS_OK;
   }
 
@@ -1580,7 +1580,7 @@ nsDOMWindowUtils::CompareCanvases(nsISupports* aCanvas1, nsISupports* aCanvas2,
   int32_t stride1 = map1.GetStride();
   int32_t stride2 = map2.GetStride();
 
-  // we can optimize for the common all-pass case
+  
   if (stride1 == stride2 && stride1 == size.width * 4) {
     v = memcmp(map1.GetData(), map2.GetData(), size.width * size.height * 4);
     if (v == 0) {
@@ -1715,7 +1715,7 @@ nsDOMWindowUtils::ScrollToVisual(float aOffsetX, float aOffsetY,
   nsPresContext* presContext = doc->GetPresContext();
   NS_ENSURE_TRUE(presContext, NS_ERROR_NOT_AVAILABLE);
 
-  // This should only be called on the root content document.
+  
   NS_ENSURE_TRUE(presContext->IsRootContentDocumentCrossProcess(),
                  NS_ERROR_INVALID_ARG);
 
@@ -1824,23 +1824,23 @@ Result<mozilla::ScreenRect, nsresult> nsDOMWindowUtils::ConvertToScreenRect(
     return Err(NS_ERROR_NOT_AVAILABLE);
   }
 
-  // Note that if the document is NOT in OOP iframes, i.e. it's in the top level
-  // content subtree in the same process,
-  // nsIWidget::WidgetToTopLevelWidgetTransform() doesn't include the desktop
-  // zoom value, so for documents in the top level content document subtree,
-  // this ViewportUtils::DocumentRelativeLayoutToVisual call applies the desktop
-  // zoom value via PresShell::GetResolution() in the function.
+  
+  
+  
+  
+  
+  
   CSSRect rect(aX, aY, aWidth, aHeight);
   rect = ViewportUtils::DocumentRelativeLayoutToVisual(rect, presShell);
 
   nsPresContext* presContext = presShell->GetPresContext();
   MOZ_ASSERT(presContext);
 
-  // For OOP iframe documents, we don't have desktop zoom value specifically in
-  // each iframe documents (i.e. the in-process root presshell's resolution is
-  // 1.0), instead nsIWidget::WidgetToTopLevelWidgetTransform() includes the
-  // desktop zoom scale value along with translations by ancestor scroll
-  // containers, ancestor CSS transforms, etc.
+  
+  
+  
+  
+  
   nsRect appUnitsRect = CSSPixel::ToAppUnits(rect);
   LayoutDeviceRect devPixelsRect = LayoutDeviceRect::FromAppUnits(
       appUnitsRect, presContext->AppUnitsPerDevPixel());
@@ -2029,7 +2029,7 @@ nsDOMWindowUtils::FlushLayoutWithoutThrottledAnimations() {
   nsCOMPtr<Document> doc = GetDocument();
   if (doc) {
     doc->FlushPendingNotifications(
-        ChangesToFlush(FlushType::Layout, false /* flush animations */));
+        ChangesToFlush(FlushType::Layout, false ));
   }
 
   return NS_OK;
@@ -2070,7 +2070,7 @@ nsDOMWindowUtils::GetIMEIsOpen(bool* aState) {
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget) return NS_ERROR_FAILURE;
 
-  // Open state should not be available when IME is not enabled.
+  
   InputContext context = widget->GetInputContext();
   if (context.mIMEState.mEnabled != IMEEnabled::Enabled) {
     return NS_ERROR_NOT_AVAILABLE;
@@ -2124,7 +2124,7 @@ nsDOMWindowUtils::GetNodeObservedByIMEContentObserver(nsINode** aNode) {
     *aNode = nullptr;
     return NS_OK;
   }
-  *aNode = do_AddRef(observer->GetObservingContent()).take();
+  *aNode = do_AddRef(observer->GetObservingElement()).take();
   return NS_OK;
 }
 
@@ -2211,8 +2211,8 @@ NS_IMETHODIMP nsDOMWindowUtils::DispatchDOMEventViaPresShellForTesting(
   aEvent->SetTrusted(true);
   WidgetEvent* internalEvent = aEvent->WidgetEventPtr();
   NS_ENSURE_STATE(internalEvent);
-  // This API is currently used only by EventUtils.js.  Thus we should always
-  // set mIsSynthesizedForTests to true.
+  
+  
   internalEvent->mFlags.mIsSynthesizedForTests = true;
   nsCOMPtr<nsIContent> content = nsIContent::FromNodeOrNull(aTarget);
   NS_ENSURE_STATE(content);
@@ -2261,7 +2261,7 @@ nsDOMWindowUtils::SendQueryContentEvent(uint32_t aType, int64_t aOffset,
   nsPresContext* presContext = presShell->GetPresContext();
   NS_ENSURE_TRUE(presContext, NS_ERROR_FAILURE);
 
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget) {
     return NS_ERROR_FAILURE;
@@ -2367,18 +2367,18 @@ nsDOMWindowUtils::SendQueryContentEvent(uint32_t aType, int64_t aOffset,
   }
 
   if (message == eQueryCharacterAtPoint) {
-    // Looking for the widget at the point.
+    
     nsIFrame* popupFrame = nsLayoutUtils::GetPopupFrameForPoint(
         presContext->GetRootPresContext(), widget, pt);
 
     LayoutDeviceIntRect widgetBounds = widget->GetClientBounds();
     widgetBounds.MoveTo(0, 0);
 
-    // There is no popup frame at the point and the point isn't in our widget,
-    // we cannot process this request.
+    
+    
     NS_ENSURE_TRUE(popupFrame || widgetBounds.Contains(pt), NS_ERROR_FAILURE);
 
-    // Fire the event on the widget at the point
+    
     if (popupFrame) {
       targetWidget = popupFrame->GetNearestWidget();
     }
@@ -2426,7 +2426,7 @@ nsDOMWindowUtils::SendSelectionSetEvent(uint32_t aOffset, uint32_t aLength,
                                         bool* aResult) {
   *aResult = false;
 
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget) {
     return NS_ERROR_FAILURE;
@@ -2453,7 +2453,7 @@ NS_IMETHODIMP
 nsDOMWindowUtils::SendContentCommandEvent(const nsAString& aType,
                                           nsITransferable* aTransferable,
                                           const nsAString& aString) {
-  // get the widget to send the event to
+  
   nsCOMPtr<nsIWidget> widget = GetWidget();
   if (!widget) return NS_ERROR_FAILURE;
 
@@ -2493,7 +2493,7 @@ nsDOMWindowUtils::SendContentCommandEvent(const nsAString& aType,
 NS_IMETHODIMP
 nsDOMWindowUtils::GetClassName(JS::Handle<JS::Value> aObject, JSContext* aCx,
                                char** aName) {
-  // Our argument must be a non-null object.
+  
   if (aObject.isPrimitive()) {
     return NS_ERROR_XPC_BAD_CONVERT_JS;
   }
@@ -2732,8 +2732,8 @@ nsDOMWindowUtils::StartFrameTimeRecording(uint32_t* startIndex) {
   WindowRenderer* renderer = widget->GetWindowRenderer();
   if (!renderer) return NS_ERROR_FAILURE;
 
-  const uint32_t kRecordingMinSize = 60 * 10;       // 10 seconds @60 fps.
-  const uint32_t kRecordingMaxSize = 60 * 60 * 60;  // One hour
+  const uint32_t kRecordingMinSize = 60 * 10;       
+  const uint32_t kRecordingMaxSize = 60 * 60 * 60;  
   uint32_t bufferSize =
       Preferences::GetUint("toolkit.framesRecording.bufferSize", uint32_t(0));
   bufferSize = std::min(bufferSize, kRecordingMaxSize);
@@ -2759,13 +2759,13 @@ nsDOMWindowUtils::StopFrameTimeRecording(uint32_t startIndex,
 
 NS_IMETHODIMP
 nsDOMWindowUtils::AdvanceTimeAndRefresh(int64_t aMilliseconds) {
-  // Before we advance the time, we should trigger any animations that are
-  // waiting to start. This is because there are many tests that call this
-  // which expect animations to start immediately. Ideally, we should make
-  // all these tests do an asynchronous wait on the corresponding animation's
-  // 'ready' promise before continuing. Then we could remove the special
-  // handling here and the code path followed when testing would more closely
-  // match the code path during regular operation. Filed as bug 1112957.
+  
+  
+  
+  
+  
+  
+  
   nsCOMPtr<Document> doc = GetDocument();
   if (doc) {
     PendingAnimationTracker* tracker = doc->GetPendingAnimationTracker();
@@ -2813,9 +2813,9 @@ nsDOMWindowUtils::GetLastTransactionId(uint64_t* aLastTransactionId) {
 
 NS_IMETHODIMP
 nsDOMWindowUtils::RestoreNormalRefresh() {
-  // Kick the compositor out of test mode before the refresh driver, so that
-  // the refresh driver doesn't send an update that gets ignored by the
-  // compositor.
+  
+  
+  
   if (WebRenderBridgeChild* wrbc = GetWebRenderBridge()) {
     wrbc->SendLeaveTestMode();
   }
@@ -2911,7 +2911,7 @@ nsDOMWindowUtils::FlushApzRepaints(bool* aOutResult) {
     *aOutResult = false;
     return NS_OK;
   }
-  // If APZ is not enabled, this function is a no-op.
+  
   if (!widget->AsyncPanZoomEnabled()) {
     *aOutResult = false;
     return NS_OK;
@@ -2980,10 +2980,10 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
     return NS_OK;
   }
 
-  // If APZ is not enabled, this function is a no-op.
-  //
-  // FIXME(emilio): This is not quite true anymore now that we also
-  // ScrollIntoView() too...
+  
+  
+  
+  
   if (!widget->AsyncPanZoomEnabled()) {
     return NS_OK;
   }
@@ -3010,17 +3010,17 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
       return true;
     }
 
-    // Skip zooming to focused inputs in fixed subtrees, as we'd scroll to the
-    // top unnecessarily, see bug 1627734.
-    //
-    // We could try to teach apz to zoom to a rect only without panning, or
-    // maybe we could give it a rect offsetted by the root scroll position, if
-    // we wanted to do this.
+    
+    
+    
+    
+    
+    
     for (; frame; frame = nsLayoutUtils::GetCrossDocParentFrame(frame)) {
       if (frame->PresShell() == presShell) {
-        // Note that we only do this if the frame belongs to `presShell` (that
-        // is, we still zoom in fixed elements in subdocuments, as they're not
-        // fixed to the root content document).
+        
+        
+        
         return nsLayoutUtils::IsInPositionFixedSubtree(frame);
       }
       frame = frame->PresShell()->GetRootFrame();
@@ -3029,10 +3029,10 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
     return false;
   }();
 
-  // The content may be inside a scrollable subframe inside a non-scrollable
-  // root content document. In this scenario, we want to ensure that the
-  // main-thread side knows to scroll the content into view before we get
-  // the bounding content rect and ask APZ to adjust the visual viewport.
+  
+  
+  
+  
   presShell->ScrollContentIntoView(
       element, ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
       ScrollAxis(kScrollMinimum, WhenToScroll::IfNotVisible),
@@ -3057,7 +3057,7 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
   uint32_t flags = layers::DISABLE_ZOOM_OUT;
   if (!Preferences::GetBool("formhelper.autozoom") ||
       Preferences::GetBool("formhelper.autozoom.force-disable.test-only",
-                           /* aFallback = */ false)) {
+                            false)) {
     flags |= layers::PAN_INTO_VIEW_ONLY;
   } else {
     flags |= layers::ONLY_ZOOM_TO_DEFAULT_SCALE;
@@ -3073,8 +3073,8 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
   if (element->IsHTMLElement(nsGkAtoms::input)) {
     bounds = nsLayoutUtils::GetBoundingContentRect(element, rootScrollFrame);
   } else {
-    // When focused elment is content editable or <textarea> element,
-    // focused element will have multi-line content.
+    
+    
     nsIFrame* frame = element->GetPrimaryFrame();
     if (frame) {
       RefPtr<nsCaret> caret = frame->PresShell()->GetCaret();
@@ -3086,13 +3086,13 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
       }
     }
     if (bounds.IsEmpty()) {
-      // Fallback if no caret frame.
+      
       bounds = nsLayoutUtils::GetBoundingContentRect(element, rootScrollFrame);
     }
   }
 
   if (bounds.IsEmpty()) {
-    // Do not zoom on empty bounds. Bail out.
+    
     return NS_OK;
   }
 
@@ -3239,8 +3239,8 @@ nsDOMWindowUtils::CheckAndClearPaintedState(Element* aElement, bool* aResult) {
     return NS_OK;
   }
 
-  // Get the outermost frame for the content node, so that we can test
-  // canvasframe invalidations by observing the documentElement.
+  
+  
   for (;;) {
     nsIFrame* parentFrame = frame->GetParent();
     if (parentFrame && parentFrame->GetContent() == aElement) {
@@ -3275,8 +3275,8 @@ nsDOMWindowUtils::CheckAndClearDisplayListState(Element* aElement,
     return NS_OK;
   }
 
-  // Get the outermost frame for the content node, so that we can test
-  // canvasframe invalidations by observing the documentElement.
+  
+  
   for (;;) {
     nsIFrame* parentFrame = frame->GetParent();
     if (parentFrame && parentFrame->GetContent() == aElement) {
@@ -3564,9 +3564,9 @@ static void PrepareForFullscreenChange(nsIDocShell* aDocShell,
   }
   if (nsRefreshDriver* rd = presShell->GetRefreshDriver()) {
     rd->SetIsResizeSuppressed();
-    // Since we are suppressing the resize reflow which would originally
-    // be triggered by view manager, we need to ensure that the refresh
-    // driver actually schedules a flush, otherwise it may get stuck.
+    
+    
+    
     rd->ScheduleViewManagerFlush();
   }
   if (!aSize.IsEmpty()) {
@@ -3595,10 +3595,10 @@ nsDOMWindowUtils::HandleFullscreenRequests(bool* aRetVal) {
   nsCOMPtr<Document> doc = GetDocument();
   NS_ENSURE_STATE(doc);
 
-  // Notify the pres shell that we are starting fullscreen change, and
-  // set the window dimensions in advance. Since the resize message
-  // comes after the fullscreen change call, doing so could avoid an
-  // extra resize reflow after this point.
+  
+  
+  
+  
   nsRect screenRect;
   if (nsPresContext* presContext = GetPresContext()) {
     presContext->DeviceContext()->GetRect(screenRect);
@@ -3616,17 +3616,17 @@ nsresult nsDOMWindowUtils::ExitFullscreen(bool aDontRestoreViewSize) {
   nsCOMPtr<Document> doc = GetDocument();
   NS_ENSURE_STATE(doc);
 
-  // Although we would not use the old size if we have already exited
-  // fullscreen, we still want to cleanup in case we haven't.
+  
+  
   nsSize oldSize = OldWindowSize::GetAndRemove(mWindow);
   if (!doc->GetFullscreenElement()) {
     return NS_OK;
   }
 
-  // Notify the pres shell that we are starting fullscreen change, and
-  // set the window dimensions in advance. Since the resize message
-  // comes after the fullscreen change call, doing so could avoid an
-  // extra resize reflow after this point.
+  
+  
+  
+  
   PrepareForFullscreenChange(GetDocShell(),
                              aDontRestoreViewSize ? nsSize() : oldSize);
   Document::ExitFullscreenInDocTree(doc);
@@ -3673,13 +3673,13 @@ nsDOMWindowUtils::SelectAtPoint(float aX, float aY, uint32_t aSelectBehavior,
     return NS_ERROR_UNEXPECTED;
   }
 
-  // The root frame for this content window
+  
   nsIFrame* rootFrame = presShell->GetRootFrame();
   if (!rootFrame) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  // Get the target frame at the client coordinates passed to us
+  
   nsPoint offset;
   nsCOMPtr<nsIWidget> widget = GetWidget(&offset);
   LayoutDeviceIntPoint pt =
@@ -3688,14 +3688,14 @@ nsDOMWindowUtils::SelectAtPoint(float aX, float aY, uint32_t aSelectBehavior,
       widget, pt, RelativeTo{rootFrame});
   nsIFrame* targetFrame =
       nsLayoutUtils::GetFrameForPoint(RelativeTo{rootFrame}, ptInRoot);
-  // This can happen if the page hasn't loaded yet or if the point
-  // is outside the frame.
+  
+  
   if (!targetFrame) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  // Convert point to coordinates relative to the target frame, which is
-  // what targetFrame's SelectByTypeAtPoint expects.
+  
+  
   nsPoint relPoint = nsLayoutUtils::GetEventCoordinatesRelativeTo(
       widget, pt, RelativeTo{targetFrame});
 
@@ -3716,7 +3716,7 @@ static Document::additionalSheetType convertSheetType(uint32_t aSheetType) {
       return Document::eAuthorSheet;
     default:
       NS_ASSERTION(false, "wrong type");
-      // we must return something although this should never happen
+      
       return Document::AdditionalSheetTypeCount;
   }
 }
@@ -3830,8 +3830,8 @@ nsDOMWindowUtils::GetIsParentWindowMainWidgetVisible(bool* aIsVisible) {
         "process");
   }
 
-  // this should reflect the "is parent window visible" logic in
-  // nsWindowWatcher::OpenWindowInternal()
+  
+  
   nsCOMPtr<nsPIDOMWindowOuter> window = do_QueryReferent(mWindow);
   NS_ENSURE_STATE(window);
 
@@ -4024,7 +4024,7 @@ HandlingUserInputHelper::HandlingUserInputHelper(bool aHandlingUserInput)
 }
 
 HandlingUserInputHelper::~HandlingUserInputHelper() {
-  // We assert, but just in case, make sure we notify the ESM.
+  
   MOZ_ASSERT(mDestructCalled);
   if (!mDestructCalled) {
     Destruct();
@@ -4045,7 +4045,7 @@ HandlingUserInputHelper::Destruct() {
   return NS_OK;
 }
 
-}  // unnamed namespace
+}  
 
 NS_IMETHODIMP
 nsDOMWindowUtils::SetHandlingUserInput(bool aHandlingUserInput,
@@ -4184,7 +4184,7 @@ nsDOMWindowUtils::GetFrameUniformityTestData(
 
 NS_IMETHODIMP
 nsDOMWindowUtils::XpconnectArgument(nsISupports* aObj) {
-  // Do nothing.
+  
   return NS_OK;
 }
 
@@ -4323,7 +4323,7 @@ struct StateTableEntry {
 
 static constexpr StateTableEntry kManuallyManagedStates[] = {
     {"autofill", NS_EVENT_STATE_AUTOFILL},
-    // :-moz-autofill-preview implies :autofill.
+    
     {"-moz-autofill-preview",
      NS_EVENT_STATE_AUTOFILL_PREVIEW | NS_EVENT_STATE_AUTOFILL},
     {nullptr, EventStates()},
@@ -4610,9 +4610,9 @@ nsDOMWindowUtils::StopCompositionRecording(bool aWriteToDisk,
 
             Span<const char> dataUri = buffer.First(length);
 
-            // We have to do a fallible AppendElement() because WebIDL
-            // dictionaries use FallibleTArray. However, this cannot fail due to
-            // the pre-allocation earlier.
+            
+            
+            
             DOMCollectedFrame* domFrame =
                 domFrames.mFrames.AppendElement(fallible);
             MOZ_ASSERT(domFrame);
@@ -4738,7 +4738,7 @@ nsDOMWindowUtils::ResetMobileViewportManager() {
       return NS_OK;
     }
   }
-  // Unable to reset, so let's error out
+  
   return NS_ERROR_FAILURE;
 }
 

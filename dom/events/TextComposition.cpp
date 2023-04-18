@@ -545,7 +545,7 @@ uint32_t TextComposition::GetSelectionStartOffset() {
       IMEStateManager::GetActiveContentObserver();
   bool doQuerySelection = true;
   if (contentObserver) {
-    if (contentObserver->IsManaging(this)) {
+    if (contentObserver->IsManaging(*this)) {
       doQuerySelection = false;
       contentObserver->HandleQueryContentEvent(&querySelectedTextEvent);
     }
@@ -621,7 +621,7 @@ void TextComposition::MaybeNotifyIMEOfCompositionEventHandled(
   
   
   
-  if (contentObserver && contentObserver->IsManaging(this)) {
+  if (contentObserver && contentObserver->IsManaging(*this)) {
     contentObserver->MaybeNotifyCompositionEventHandled();
     return;
   }
