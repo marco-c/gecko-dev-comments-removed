@@ -16,21 +16,6 @@ namespace a11y {
 namespace utils {
 
 
-template <typename AccArray>
-NSArray<mozAccessible*>* ConvertToNSArray(AccArray& aArray) {
-  NSMutableArray* nativeArray = [[[NSMutableArray alloc] init] autorelease];
-
-  
-  for (Accessible* curAccessible : aArray) {
-    mozAccessible* curNative = GetNativeFromGeckoAccessible(curAccessible);
-    if (curNative)
-      [nativeArray addObject:GetObjectOrRepresentedView(curNative)];
-  }
-
-  return nativeArray;
-}
-
-
 
 
 
