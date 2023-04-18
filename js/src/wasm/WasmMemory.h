@@ -173,11 +173,24 @@ extern uint64_t RoundUpToNextValidARMImmediate(uint64_t i);
 
 
 
+
 static const uint64_t HugeIndexRange = uint64_t(UINT32_MAX) + 1;
-static const uint64_t HugeOffsetGuardLimit = uint64_t(INT32_MAX) + 1;
+
+
+
+
+static const uint64_t HugeOffsetGuardLimit = 1 << 25;
+
 static const uint64_t HugeUnalignedGuardPage = PageSize;
+
+
 static const uint64_t HugeMappedSize =
     HugeIndexRange + HugeOffsetGuardLimit + HugeUnalignedGuardPage;
+
+
+
+static_assert(HugeMappedSize % PageSize == 0);
+
 #endif
 
 
