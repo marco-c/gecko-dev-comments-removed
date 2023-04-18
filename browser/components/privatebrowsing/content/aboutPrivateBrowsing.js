@@ -125,6 +125,7 @@ async function renderPromo({
       type: "BLOCK_MESSAGE_BY_ID",
       data: { id: messageId },
     });
+    window.PrivateBrowsingRecordClick("dismiss_button");
     container.remove();
   };
 
@@ -190,6 +191,8 @@ function recordOnceVisible(message) {
         type: "IMPRESSION",
         data: message,
       });
+      
+      window.PrivateBrowsingExposureTelemetry();
       document.removeEventListener("visibilitychange", recordImpression);
     }
   };
@@ -199,6 +202,8 @@ function recordOnceVisible(message) {
       type: "IMPRESSION",
       data: message,
     });
+    
+    window.PrivateBrowsingExposureTelemetry();
   } else {
     document.addEventListener("visibilitychange", recordImpression);
   }
@@ -236,8 +241,6 @@ async function setupFeatureConfig() {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-  setupFeatureConfig();
-
   if (!RPMIsWindowPrivate()) {
     document.documentElement.classList.remove("private");
     document.documentElement.classList.add("normal");
@@ -248,6 +251,10 @@ document.addEventListener("DOMContentLoaded", function() {
       });
     return;
   }
+
+  
+  
+  setupFeatureConfig();
 
   
   const privateSearchBanner = document.getElementById("search-banner");

@@ -3,10 +3,7 @@
 
 
 
-var EXPORTED_SYMBOLS = [
-  "AboutPrivateBrowsingChild",
-  "AboutPrivateBrowsingTelemetryHelper",
-];
+var EXPORTED_SYMBOLS = ["AboutPrivateBrowsingChild"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
@@ -35,15 +32,25 @@ class AboutPrivateBrowsingChild extends RemotePageChild {
     Cu.exportFunction(this.PrivateBrowsingRecordClick.bind(this), window, {
       defineAs: "PrivateBrowsingRecordClick",
     });
+    Cu.exportFunction(
+      this.PrivateBrowsingExposureTelemetry.bind(this),
+      window,
+      { defineAs: "PrivateBrowsingExposureTelemetry" }
+    );
   }
 
   PrivateBrowsingRecordClick(source) {
-    const experiment = ExperimentAPI.getExperimentMetaData({
-      featureId: "privatebrowsing",
-    });
+    const experiment =
+      ExperimentAPI.getExperimentMetaData({
+        featureId: "privatebrowsing",
+      }) || ExperimentAPI.getExperimentMetaData({ featureId: "pbNewtab" });
     if (experiment) {
       Services.telemetry.recordEvent("aboutprivatebrowsing", "click", source);
     }
+  }
+
+  PrivateBrowsingExposureTelemetry() {
+    NimbusFeatures.pbNewtab.recordExposureEvent({ once: false });
   }
 
   PrivateBrowsingFeatureConfig() {
