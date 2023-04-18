@@ -928,17 +928,17 @@ void nsIFrame::DestroyFrom(nsIFrame* aDestructRoot,
     nsIFrame* rootFrame = presShell->GetRootFrame();
     MOZ_ASSERT(rootFrame);
     if (this != rootFrame) {
-      const RetainedDisplayListData* data =
-          GetRetainedDisplayListData(rootFrame);
+      auto* builder = nsLayoutUtils::GetRetainedDisplayListBuilder(rootFrame);
+      auto* data = builder ? builder->Data() : nullptr;
 
-      const bool inModifiedList = data && data->IsModified(this);
+      const bool inData =
+          data && (data->IsModified(this) || data->HasProps(this));
 
-      if (inModifiedList) {
-        DL_LOG(LogLevel::Warning, "Frame %p found in modified list", this);
+      if (inData) {
+        DL_LOG(LogLevel::Warning, "Frame %p found in retained data", this);
       }
 
-      MOZ_ASSERT(!inModifiedList,
-                 "A dtor added this frame to modified frames list!");
+      MOZ_ASSERT(!inData, "Deleted frame in retained data!");
     }
   }
 #endif
@@ -1041,15 +1041,6 @@ static void DiscardOldItems(nsIFrame* aFrame) {
 }
 
 void nsIFrame::RemoveDisplayItemDataForDeletion() {
-  nsAutoString name;
-#ifdef DEBUG_FRAME_DUMP
-  if (DL_LOG_TEST(LogLevel::Debug)) {
-    GetFrameName(name);
-  }
-#endif
-  DL_LOGV("Removing display item data for frame %p (%s)", this,
-          NS_ConvertUTF16toUTF8(name).get());
-
   
   
   
@@ -1066,6 +1057,19 @@ void nsIFrame::RemoveDisplayItemDataForDeletion() {
     delete userDataTable;
   }
 
+  if (!nsLayoutUtils::AreRetainedDisplayListsEnabled()) {
+    
+    
+    return;
+  }
+
+  auto* builder = nsLayoutUtils::GetRetainedDisplayListBuilder(this);
+  if (!builder) {
+    MOZ_ASSERT(DisplayItems().IsEmpty());
+    MOZ_ASSERT(!IsFrameModified());
+    return;
+  }
+
   for (nsDisplayItem* i : DisplayItems()) {
     if (i->GetDependentFrame() == this && !i->HasDeletedFrame()) {
       i->Frame()->MarkNeedsDisplayItemRebuild();
@@ -1075,38 +1079,21 @@ void nsIFrame::RemoveDisplayItemDataForDeletion() {
 
   DisplayItems().Clear();
 
-  if (!nsLayoutUtils::AreRetainedDisplayListsEnabled()) {
-    
-    
-    return;
+  nsAutoString name;
+#ifdef DEBUG_FRAME_DUMP
+  if (DL_LOG_TEST(LogLevel::Debug)) {
+    GetFrameName(name);
   }
+#endif
+  DL_LOGV("Removing display item data for frame %p (%s)", this,
+          NS_ConvertUTF16toUTF8(name).get());
 
-  nsIFrame* rootFrame = PresShell()->GetRootFrame();
-  MOZ_ASSERT(rootFrame);
-
-  RetainedDisplayListData* data = GetOrSetRetainedDisplayListData(rootFrame);
-
-  const bool updateData = IsFrameModified() || HasOverrideDirtyRegion() ||
-                          MayHaveWillChangeBudget();
-
-  if (!updateData) {
-    
-    MOZ_DIAGNOSTIC_ASSERT(!data->IsModified(this),
-                          "Deleted frame is in modified frame list");
-    return;
-  }
-
+  auto* data = builder->Data();
   if (MayHaveWillChangeBudget()) {
     
     data->Flags(this) = RetainedDisplayListData::FrameFlag::HadWillChange;
-    return;
-  }
-
-  if (IsFrameModified() || HasOverrideDirtyRegion()) {
-    
-    DebugOnly<bool> removed = data->Remove(this);
-    MOZ_ASSERT(removed,
-               "Frame had flags set, but it was not found in DisplayListData!");
+  } else {
+    data->Remove(this);
   }
 }
 
@@ -1126,14 +1113,26 @@ void nsIFrame::MarkNeedsDisplayItemRebuild() {
     return;
   }
 
-  if (!nsLayoutUtils::DisplayRootHasRetainedDisplayListBuilder(this)) {
+  nsIFrame* rootFrame = PresShell()->GetRootFrame();
+
+  if (rootFrame->IsFrameModified()) {
+    
     return;
   }
 
-  nsIFrame* rootFrame = PresShell()->GetRootFrame();
-  MOZ_ASSERT(rootFrame);
+  auto* builder = nsLayoutUtils::GetRetainedDisplayListBuilder(this);
+  if (!builder) {
+    MOZ_ASSERT(DisplayItems().IsEmpty());
+    return;
+  }
 
-  if (rootFrame->IsFrameModified()) {
+  RetainedDisplayListData* data = builder->Data();
+  MOZ_ASSERT(data);
+
+  if (data->AtModifiedFrameLimit()) {
+    
+    
+    data->AddModifiedFrame(rootFrame);
     return;
   }
 
@@ -1147,18 +1146,7 @@ void nsIFrame::MarkNeedsDisplayItemRebuild() {
   DL_LOGV("RDL - Rebuilding display items for frame %p (%s)", this,
           NS_ConvertUTF16toUTF8(name).get());
 
-  RetainedDisplayListData* data = GetOrSetRetainedDisplayListData(rootFrame);
-  if (data->ModifiedFramesCount() >
-      StaticPrefs::layout_display_list_rebuild_frame_limit()) {
-    
-    
-    data->AddModifiedFrame(rootFrame);
-    rootFrame->SetFrameIsModified(true);
-    return;
-  }
-
   data->AddModifiedFrame(this);
-  SetFrameIsModified(true);
 
   MOZ_ASSERT(
       PresContext()->LayoutPhaseCount(nsLayoutPhase::DisplayListBuilding) == 0);

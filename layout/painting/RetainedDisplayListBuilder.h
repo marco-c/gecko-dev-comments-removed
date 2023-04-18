@@ -22,15 +22,14 @@ class nsDisplayList;
 
 
 
-
 struct RetainedDisplayListData {
-  NS_DECLARE_FRAME_PROPERTY_DELETABLE(DisplayListData, RetainedDisplayListData)
-
   enum class FrameFlag : uint8_t { Modified, HasProps, HadWillChange };
-
   using FrameFlags = mozilla::EnumSet<FrameFlag, uint8_t>;
 
-  RetainedDisplayListData() : mModifiedFramesCount(0) {}
+  RetainedDisplayListData() : mModifiedFrameCount(0) {
+    mModifiedFrameLimit =
+        StaticPrefs::layout_display_list_rebuild_frame_limit();
+  }
 
   
 
@@ -42,7 +41,7 @@ struct RetainedDisplayListData {
 
   void Clear() {
     mFrames.Clear();
-    mModifiedFramesCount = 0;
+    mModifiedFrameCount = 0;
   }
 
   
@@ -76,7 +75,9 @@ struct RetainedDisplayListData {
   
 
 
-  uint32_t ModifiedFramesCount() const { return mModifiedFramesCount; }
+  bool AtModifiedFrameLimit() {
+    return mModifiedFrameCount >= mModifiedFrameLimit;
+  }
 
   
 
@@ -85,20 +86,9 @@ struct RetainedDisplayListData {
 
  private:
   nsTHashMap<nsPtrHashKey<nsIFrame>, FrameFlags> mFrames;
-  uint32_t mModifiedFramesCount;
+  uint32_t mModifiedFrameCount;
+  uint32_t mModifiedFrameLimit;
 };
-
-
-
-
-
-RetainedDisplayListData* GetRetainedDisplayListData(nsIFrame* aRootFrame);
-
-
-
-
-
-RetainedDisplayListData* GetOrSetRetainedDisplayListData(nsIFrame* aRootFrame);
 
 enum class PartialUpdateResult { Failed, NoChange, Updated };
 
@@ -174,7 +164,8 @@ struct RetainedDisplayListMetrics {
   PartialUpdateResult mPartialUpdateResult;
 };
 
-struct RetainedDisplayListBuilder {
+class RetainedDisplayListBuilder {
+ public:
   RetainedDisplayListBuilder(nsIFrame* aReferenceFrame,
                              nsDisplayListBuilderMode aMode, bool aBuildCaret)
       : mBuilder(aReferenceFrame, aMode, aBuildCaret, true), mList(&mBuilder) {}
@@ -186,15 +177,16 @@ struct RetainedDisplayListBuilder {
 
   RetainedDisplayListMetrics* Metrics() { return &mMetrics; }
 
+  RetainedDisplayListData* Data() { return &mData; }
+
   PartialUpdateResult AttemptPartialUpdate(nscolor aBackstop);
 
   
 
 
-
-
-
   void ClearFramesWithProps();
+
+  void ClearRetainedData();
 
   void ClearReuseableDisplayItems() { mBuilder.ClearReuseableDisplayItems(); }
 
@@ -203,6 +195,9 @@ struct RetainedDisplayListBuilder {
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(Cached, RetainedDisplayListBuilder)
 
  private:
+  void GetModifiedAndFramesWithProps(nsTArray<nsIFrame*>* aOutModifiedFrames,
+                                     nsTArray<nsIFrame*>* aOutFramesWithProps);
+
   void IncrementSubDocPresShellPaintCount(nsDisplayItem* aItem);
 
   
@@ -275,6 +270,7 @@ struct RetainedDisplayListBuilder {
   RetainedDisplayList mList;
   WeakFrame mPreviousCaret;
   RetainedDisplayListMetrics mMetrics;
+  RetainedDisplayListData mData;
 };
 
 namespace RDLUtils {

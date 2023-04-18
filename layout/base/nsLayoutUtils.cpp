@@ -534,9 +534,25 @@ bool nsLayoutUtils::AreRetainedDisplayListsEnabled() {
 }
 
 bool nsLayoutUtils::DisplayRootHasRetainedDisplayListBuilder(nsIFrame* aFrame) {
-  const nsIFrame* displayRoot = nsLayoutUtils::GetDisplayRootFrame(aFrame);
-  MOZ_ASSERT(displayRoot);
-  return displayRoot->HasProperty(RetainedDisplayListBuilder::Cached());
+  return GetRetainedDisplayListBuilder(aFrame) != nullptr;
+}
+
+RetainedDisplayListBuilder* nsLayoutUtils::GetRetainedDisplayListBuilder(
+    nsIFrame* aFrame) {
+  MOZ_ASSERT(aFrame);
+  MOZ_ASSERT(aFrame->PresShell());
+
+  
+  
+  const nsIFrame* rootFrame = aFrame->PresShell()->GetRootFrame();
+  if (!rootFrame) {
+    return nullptr;
+  }
+
+  const nsIFrame* displayRootFrame = GetDisplayRootFrame(rootFrame);
+  MOZ_ASSERT(displayRootFrame);
+
+  return displayRootFrame->GetProperty(RetainedDisplayListBuilder::Cached());
 }
 
 bool nsLayoutUtils::GPUImageScalingEnabled() {
@@ -2913,30 +2929,6 @@ void nsLayoutUtils::AddExtraBackgroundItems(nsDisplayListBuilder* aBuilder,
 }
 
 
-
-
-
-
-
-static RetainedDisplayListBuilder* GetOrCreateRetainedDisplayListBuilder(
-    nsIFrame* aFrame, bool aRetainingEnabled, bool aBuildCaret) {
-  RetainedDisplayListBuilder* retainedBuilder =
-      aFrame->GetProperty(RetainedDisplayListBuilder::Cached());
-
-  if (retainedBuilder) {
-    return retainedBuilder;
-  }
-
-  if (aRetainingEnabled) {
-    retainedBuilder = new RetainedDisplayListBuilder(
-        aFrame, nsDisplayListBuilderMode::Painting, aBuildCaret);
-    aFrame->SetProperty(RetainedDisplayListBuilder::Cached(), retainedBuilder);
-  }
-
-  return retainedBuilder;
-}
-
-
 #ifdef PRINT_HITTESTINFO_STATS
 void PrintHitTestInfoStatsInternal(nsDisplayList* aList, int& aTotal,
                                    int& aHitTest, int& aVisible,
@@ -3098,9 +3090,11 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
   AutoNestedPaintCount nestedPaintCount;
 #endif
 
+  nsIFrame* displayRoot = GetDisplayRootFrame(aFrame);
+
   if (aFlags & PaintFrameFlags::WidgetLayers) {
     nsView* view = aFrame->GetView();
-    if (!(view && view->GetWidget() && GetDisplayRootFrame(aFrame) == aFrame)) {
+    if (!(view && view->GetWidget() && displayRoot == aFrame)) {
       aFlags &= ~PaintFrameFlags::WidgetLayers;
       NS_ASSERTION(aRenderingContext, "need a rendering context");
     }
@@ -3122,24 +3116,26 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
 
   
   
-  const bool retainingEnabled =
+  const bool retainDisplayList =
       isForPainting && AreRetainedDisplayListsEnabled() && !aFrame->GetParent();
 
-  RetainedDisplayListBuilder* retainedBuilder =
-      GetOrCreateRetainedDisplayListBuilder(aFrame, retainingEnabled,
-                                            buildCaret);
-
-  
-  
-  
-  const bool useRetainedBuilder = retainedBuilder && retainingEnabled;
-
+  RetainedDisplayListBuilder* retainedBuilder = nullptr;
   Maybe<TemporaryDisplayListBuilder> temporaryBuilder;
+
   nsDisplayListBuilder* builder = nullptr;
   nsDisplayList* list = nullptr;
   RetainedDisplayListMetrics* metrics = nullptr;
 
-  if (useRetainedBuilder) {
+  if (retainDisplayList) {
+    MOZ_ASSERT(aFrame == displayRoot);
+    retainedBuilder = aFrame->GetProperty(RetainedDisplayListBuilder::Cached());
+    if (!retainedBuilder) {
+      retainedBuilder =
+          new RetainedDisplayListBuilder(aFrame, aBuilderMode, buildCaret);
+      aFrame->SetProperty(RetainedDisplayListBuilder::Cached(),
+                          retainedBuilder);
+    }
+
     builder = retainedBuilder->Builder();
     list = retainedBuilder->List();
     metrics = retainedBuilder->Metrics();
@@ -3151,6 +3147,22 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
   }
 
   MOZ_ASSERT(builder && list && metrics);
+
+  nsAutoString uri;
+  Document* doc = presContext->Document();
+  MOZ_ASSERT(doc);
+  Unused << doc->GetDocumentURI(uri);
+
+  nsAutoString frameName, displayRootName;
+#ifdef DEBUG_FRAME_DUMP
+  aFrame->GetFrameName(frameName);
+  displayRoot->GetFrameName(displayRootName);
+#endif
+
+  DL_LOGI("PaintFrame: %p (%s), DisplayRoot: %p (%s), Builder: %p, URI: %s",
+          aFrame, NS_ConvertUTF16toUTF8(frameName).get(), displayRoot,
+          NS_ConvertUTF16toUTF8(displayRootName).get(), retainedBuilder,
+          NS_ConvertUTF16toUTF8(uri).get());
 
   metrics->Reset();
   metrics->StartBuild();
@@ -3287,107 +3299,104 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
     AUTO_PROFILER_TRACING_MARKER("Paint", "DisplayList", GRAPHICS);
     PerfStats::AutoMetricRecording<PerfStats::Metric::DisplayListBuilding>
         autoRecording;
-    {
-      ViewID id = ScrollableLayerGuid::NULL_SCROLL_ID;
-      if (presShell->GetDocument() &&
-          presShell->GetDocument()->IsRootDisplayDocument() &&
-          !presShell->GetRootScrollFrame()) {
-        
-        
-        
-        
-        if (dom::Element* element =
-                presShell->GetDocument()->GetDocumentElement()) {
-          id = nsLayoutUtils::FindOrCreateIDFor(element);
+
+    ViewID id = ScrollableLayerGuid::NULL_SCROLL_ID;
+    if (presShell->GetDocument() &&
+        presShell->GetDocument()->IsRootDisplayDocument() &&
+        !presShell->GetRootScrollFrame()) {
+      
+      
+      
+      
+      if (dom::Element* element =
+              presShell->GetDocument()->GetDocumentElement()) {
+        id = nsLayoutUtils::FindOrCreateIDFor(element);
+      }
+      
+      
+      
+      
+      
+      
+      
+      
+    } else if (XRE_IsParentProcess() && presContext->IsRoot() &&
+               presShell->GetDocument() != nullptr &&
+               presShell->GetRootScrollFrame() != nullptr &&
+               nsLayoutUtils::UsesAsyncScrolling(
+                   presShell->GetRootScrollFrame())) {
+      if (dom::Element* element =
+              presShell->GetDocument()->GetDocumentElement()) {
+        if (!DisplayPortUtils::HasNonMinimalDisplayPort(element)) {
+          APZCCallbackHelper::InitializeRootDisplayport(presShell);
         }
-        
-        
-        
-        
-        
-        
-        
-        
-      } else if (XRE_IsParentProcess() && presContext->IsRoot() &&
-                 presShell->GetDocument() != nullptr &&
-                 presShell->GetRootScrollFrame() != nullptr &&
-                 nsLayoutUtils::UsesAsyncScrolling(
-                     presShell->GetRootScrollFrame())) {
-        if (dom::Element* element =
-                presShell->GetDocument()->GetDocumentElement()) {
-          if (!DisplayPortUtils::HasNonMinimalDisplayPort(element)) {
-            APZCCallbackHelper::InitializeRootDisplayport(presShell);
-          }
-        }
       }
+    }
 
-      nsDisplayListBuilder::AutoCurrentScrollParentIdSetter idSetter(builder,
-                                                                     id);
+    nsDisplayListBuilder::AutoCurrentScrollParentIdSetter idSetter(builder, id);
 
-      builder->SetVisibleRect(visibleRect);
-      builder->SetIsBuilding(true);
-      builder->SetAncestorHasApzAwareEventHandler(
-          gfxPlatform::AsyncPanZoomEnabled() &&
-          nsLayoutUtils::HasDocumentLevelListenersForApzAwareEvents(presShell));
+    builder->SetVisibleRect(visibleRect);
+    builder->SetIsBuilding(true);
+    builder->SetAncestorHasApzAwareEventHandler(
+        gfxPlatform::AsyncPanZoomEnabled() &&
+        nsLayoutUtils::HasDocumentLevelListenersForApzAwareEvents(presShell));
 
+    
+    
+    
+    if (retainDisplayList &&
+        !builder->ShouldRebuildDisplayListDueToPrefChange()) {
       
       
       
-      if (useRetainedBuilder &&
-          !builder->ShouldRebuildDisplayListDueToPrefChange()) {
-        
-        
-        
-        updateState = retainedBuilder->AttemptPartialUpdate(aBackstop);
-        metrics->EndPartialBuild(updateState);
-      } else {
-        
-        DL_LOGI("Partial updates are disabled");
-        metrics->mPartialUpdateResult = PartialUpdateResult::Failed;
-        metrics->mPartialUpdateFailReason = PartialUpdateFailReason::Disabled;
-      }
-
+      updateState = retainedBuilder->AttemptPartialUpdate(aBackstop);
+      metrics->EndPartialBuild(updateState);
+    } else {
       
-      bool doFullRebuild = updateState == PartialUpdateResult::Failed;
+      DL_LOGI("Partial updates are disabled");
+      metrics->mPartialUpdateResult = PartialUpdateResult::Failed;
+      metrics->mPartialUpdateFailReason = PartialUpdateFailReason::Disabled;
+    }
 
-      if (StaticPrefs::layout_display_list_build_twice()) {
-        
-        
-        metrics->StartBuild();
-        doFullRebuild = true;
-      }
+    
+    bool doFullRebuild = updateState == PartialUpdateResult::Failed;
 
-      if (doFullRebuild) {
-        if (useRetainedBuilder) {
-          retainedBuilder->ClearFramesWithProps();
-          retainedBuilder->ClearReuseableDisplayItems();
+    if (StaticPrefs::layout_display_list_build_twice()) {
+      
+      
+      metrics->StartBuild();
+      doFullRebuild = true;
+    }
+
+    if (doFullRebuild) {
+      if (retainDisplayList) {
+        retainedBuilder->ClearRetainedData();
 #ifdef DEBUG
-          mozilla::RDLUtils::AssertFrameSubtreeUnmodified(
-              builder->RootReferenceFrame());
+        mozilla::RDLUtils::AssertFrameSubtreeUnmodified(
+            builder->RootReferenceFrame());
 #endif
-        }
-
-        list->DeleteAll(builder);
-
-        builder->ClearRetainedWindowRegions();
-        builder->ClearWillChangeBudgets();
-
-        builder->EnterPresShell(aFrame);
-        builder->SetDirtyRect(visibleRect);
-
-        DL_LOGI("Starting full display list build, root frame: %p",
-                builder->RootReferenceFrame());
-
-        aFrame->BuildDisplayListForStackingContext(builder, list);
-        AddExtraBackgroundItems(builder, list, aFrame, canvasArea,
-                                visibleRegion, aBackstop);
-
-        builder->LeavePresShell(aFrame, list);
-        metrics->EndFullBuild();
-
-        DL_LOGI("Finished full display list build");
-        updateState = PartialUpdateResult::Updated;
       }
+
+      list->DeleteAll(builder);
+
+      builder->ClearRetainedWindowRegions();
+      builder->ClearWillChangeBudgets();
+
+      builder->EnterPresShell(aFrame);
+      builder->SetDirtyRect(visibleRect);
+
+      DL_LOGI("Starting full display list build, root frame: %p",
+              builder->RootReferenceFrame());
+
+      aFrame->BuildDisplayListForStackingContext(builder, list);
+      AddExtraBackgroundItems(builder, list, aFrame, canvasArea, visibleRegion,
+                              aBackstop);
+
+      builder->LeavePresShell(aFrame, list);
+      metrics->EndFullBuild();
+
+      DL_LOGI("Finished full display list build");
+      updateState = PartialUpdateResult::Updated;
     }
 
     builder->SetIsBuilding(false);
@@ -3412,11 +3421,7 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
   UniquePtr<std::stringstream> ss;
   if (consoleNeedsDisplayList) {
     ss = MakeUnique<std::stringstream>();
-    Document* doc = presContext->Document();
-    nsAutoString uri;
-    if (doc && doc->GetDocumentURI(uri) == NS_OK) {
-      *ss << "Display list for " << uri << "\n";
-    }
+    *ss << "Display list for " << uri << "\n";
     DumpBeforePaintDisplayList(ss, builder, list, visibleRect);
   }
 
@@ -3491,7 +3496,7 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
 
     builder->EndFrame();
 
-    if (!useRetainedBuilder) {
+    if (temporaryBuilder) {
       temporaryBuilder.reset();
     }
   }
