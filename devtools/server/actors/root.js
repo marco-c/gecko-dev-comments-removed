@@ -272,7 +272,13 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
     return tabDescriptorActors;
   },
 
-  getTab: async function({ outerWindowID, tabId }) {
+  
+
+
+
+
+
+  getTab: async function({ browserId, outerWindowID, tabId }) {
     const tabList = this._parameters.tabList;
     if (!tabList) {
       throw {
@@ -289,7 +295,11 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
     let descriptorActor;
     try {
-      descriptorActor = await tabList.getTab({ outerWindowID, tabId });
+      descriptorActor = await tabList.getTab({
+        browserId,
+        outerWindowID,
+        tabId,
+      });
     } catch (error) {
       if (error.error) {
         
