@@ -82,11 +82,14 @@ class nsJAR final : public nsIZipReader {
 
   
   mozilla::RecursiveMutex mLock;
-  nsCString mOuterZipEntry;    
-  nsCOMPtr<nsIFile> mZipFile;  
-  RefPtr<nsZipArchive> mZip;   
-  nsZipReaderCache*
-      mCache;  
+  
+  nsCString mOuterZipEntry GUARDED_BY(mLock);
+  
+  nsCOMPtr<nsIFile> mZipFile GUARDED_BY(mLock);
+  
+  RefPtr<nsZipArchive> mZip GUARDED_BY(mLock);
+  
+  nsZipReaderCache* mCache GUARDED_BY(mLock);
 };
 
 
@@ -168,15 +171,15 @@ class nsZipReaderCache : public nsIZipReaderCache,
 
   virtual ~nsZipReaderCache();
 
-  mozilla::Mutex mLock MOZ_UNANNOTATED;
-  uint32_t mCacheSize;
-  ZipsHashtable mZips;
+  mozilla::Mutex mLock;
+  uint32_t mCacheSize GUARDED_BY(mLock);
+  ZipsHashtable mZips GUARDED_BY(mLock);
 
 #ifdef ZIP_CACHE_HIT_RATE
-  uint32_t mZipCacheLookups;
-  uint32_t mZipCacheHits;
-  uint32_t mZipCacheFlushes;
-  uint32_t mZipSyncMisses;
+  uint32_t mZipCacheLookups GUARDED_BY(mLock);
+  uint32_t mZipCacheHits GUARDED_BY(mLock);
+  uint32_t mZipCacheFlushes GUARDED_BY(mLock);
+  uint32_t mZipSyncMisses GUARDED_BY(mLock);
 #endif
 
  private:

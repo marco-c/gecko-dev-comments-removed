@@ -150,9 +150,9 @@ class ZipArchiveLogger {
   }
 
  private:
-  static StaticMutex sLock MOZ_UNANNOTATED;
-  int mRefCnt;
-  PRFileDesc* mFd;
+  static StaticMutex sLock;
+  int mRefCnt GUARDED_BY(sLock);
+  PRFileDesc* mFd GUARDED_BY(sLock);
 };
 
 StaticMutex ZipArchiveLogger::sLock;
@@ -600,7 +600,10 @@ nsZipItem* nsZipArchive::CreateZipItem() {
 
 
 
-nsresult nsZipArchive::BuildFileList(PRFileDesc* aFd) {
+nsresult nsZipArchive::BuildFileList(PRFileDesc* aFd)
+    NO_THREAD_SAFETY_ANALYSIS {
+  
+  
   
   
 
