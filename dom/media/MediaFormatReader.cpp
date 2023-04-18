@@ -2380,11 +2380,13 @@ void MediaFormatReader::Update(TrackType aTrack) {
     
     if (decoder.mError.ref() == NS_ERROR_DOM_MEDIA_DECODE_ERR &&
         decoder.mDecoder->IsHardwareAccelerated(error)) {
+      LOG("Error: decode error, disable HW acceleration");
       needsNewDecoder = true;
       decoder.mHardwareDecodingDisabled = true;
     }
     
     if (decoder.mError.ref() == NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_ERR) {
+      LOG("Error: remote decoder crashed, disable HW acceleration");
       decoder.mHardwareDecodingDisabled = true;
     }
 #endif
