@@ -1867,7 +1867,8 @@ bool HyperTextAccessible::SelectionBoundsAt(int32_t aSelectionNum,
   
   nsINode* startNode = range->GetStartContainer();
   nsINode* endNode = range->GetEndContainer();
-  int32_t startOffset = range->StartOffset(), endOffset = range->EndOffset();
+  uint32_t startOffset = range->StartOffset();
+  uint32_t endOffset = range->EndOffset();
 
   
   
@@ -1880,24 +1881,22 @@ bool HyperTextAccessible::SelectionBoundsAt(int32_t aSelectionNum,
   }
 
   if (*order < 0) {
-    nsINode* tempNode = startNode;
-    startNode = endNode;
-    endNode = tempNode;
-    int32_t tempOffset = startOffset;
-    startOffset = endOffset;
-    endOffset = tempOffset;
+    std::swap(startNode, endNode);
+    std::swap(startOffset, endOffset);
   }
 
   if (!startNode->IsInclusiveDescendantOf(mContent)) {
     *aStartOffset = 0;
   } else {
-    *aStartOffset = DOMPointToOffset(startNode, startOffset);
+    *aStartOffset =
+        DOMPointToOffset(startNode, AssertedCast<int32_t>(startOffset));
   }
 
   if (!endNode->IsInclusiveDescendantOf(mContent)) {
     *aEndOffset = CharacterCount();
   } else {
-    *aEndOffset = DOMPointToOffset(endNode, endOffset, true);
+    *aEndOffset =
+        DOMPointToOffset(endNode, AssertedCast<int32_t>(endOffset), true);
   }
   return true;
 }
@@ -2336,8 +2335,9 @@ void HyperTextAccessible::GetSpellTextAttr(nsINode* aNode, int32_t aNodeOffset,
     
     
     nsINode* endNode = range->GetEndContainer();
-    int32_t endNodeOffset = range->EndOffset();
-    Maybe<int32_t> order = nsContentUtils::ComparePoints(
+    uint32_t endNodeOffset = range->EndOffset();
+    
+    Maybe<int32_t> order = nsContentUtils::ComparePoints_FixOffset1(
         aNode, aNodeOffset, endNode, endNodeOffset);
     if (NS_WARN_IF(!order)) {
       continue;
@@ -2353,8 +2353,9 @@ void HyperTextAccessible::GetSpellTextAttr(nsINode* aNode, int32_t aNodeOffset,
     
     nsINode* startNode = range->GetStartContainer();
     int32_t startNodeOffset = range->StartOffset();
-    order = nsContentUtils::ComparePoints(startNode, startNodeOffset, aNode,
-                                          aNodeOffset);
+    
+    order = nsContentUtils::ComparePoints_FixOffset2(startNode, startNodeOffset,
+                                                     aNode, aNodeOffset);
     if (!order) {
       
       

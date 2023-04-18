@@ -138,7 +138,8 @@ nsresult RangeUtils::CompareNodeToRange(nsINode* aNode,
   
 
   
-  int32_t nodeStart, nodeEnd;
+  int32_t nodeStart;
+  uint32_t nodeEnd;
   nsINode* parent = aNode->GetParentNode();
   if (!parent) {
     
@@ -146,14 +147,15 @@ nsresult RangeUtils::CompareNodeToRange(nsINode* aNode,
     
     parent = aNode;
     nodeStart = 0;
-    uint32_t childCount = aNode->GetChildCount();
-    MOZ_ASSERT(childCount <= INT32_MAX,
-               "There shouldn't be over INT32_MAX children");
-    nodeEnd = static_cast<int32_t>(childCount);
+    nodeEnd = aNode->GetChildCount();
   } else {
     nodeStart = parent->ComputeIndexOf(aNode);
-    nodeEnd = nodeStart + 1;
-    MOZ_ASSERT(nodeStart < nodeEnd, "nodeStart shouldn't be INT32_MAX");
+    NS_WARNING_ASSERTION(
+        nodeStart >= 0,
+        "aNode has the parent node but it does not have aNode!");
+    nodeEnd = nodeStart + 1u;
+    MOZ_ASSERT(nodeStart < 0 || static_cast<uint32_t>(nodeStart) < nodeEnd,
+               "nodeStart should be less than nodeEnd");
   }
 
   
@@ -170,7 +172,7 @@ nsresult RangeUtils::CompareNodeToRange(nsINode* aNode,
   
 
   
-  Maybe<int32_t> order = nsContentUtils::ComparePoints(
+  Maybe<int32_t> order = nsContentUtils::ComparePoints_FixOffset2(
       aAbstractRange->StartRef().Container(),
       *aAbstractRange->StartRef().Offset(
           RangeBoundary::OffsetFilter::kValidOrInvalidOffsets),

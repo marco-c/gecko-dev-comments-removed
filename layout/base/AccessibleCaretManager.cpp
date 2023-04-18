@@ -1154,8 +1154,10 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
 
   
   
-  const Maybe<int32_t> cmpToInactiveCaretPos = nsContentUtils::ComparePoints(
-      aOffsets.content, aOffsets.StartOffset(), content, contentOffset);
+  NS_ASSERTION(contentOffset >= 0, "contentOffset should not be negative");
+  const Maybe<int32_t> cmpToInactiveCaretPos =
+      nsContentUtils::ComparePoints_FixBothOffsets(
+          aOffsets.content, aOffsets.StartOffset(), content, contentOffset);
   if (NS_WARN_IF(!cmpToInactiveCaretPos)) {
     
     
@@ -1174,9 +1176,12 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
   }
 
   
+  NS_ASSERTION(limit.mContentOffset >= 0,
+               "limit.mContentOffset should not be negative");
   const Maybe<int32_t> cmpToLimit =
-      nsContentUtils::ComparePoints(aOffsets.content, aOffsets.StartOffset(),
-                                    limit.mResultContent, limit.mContentOffset);
+      nsContentUtils::ComparePoints_FixBothOffsets(
+          aOffsets.content, aOffsets.StartOffset(), limit.mResultContent,
+          limit.mContentOffset);
   if (NS_WARN_IF(!cmpToLimit)) {
     
     

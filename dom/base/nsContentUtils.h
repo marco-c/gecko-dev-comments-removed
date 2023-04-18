@@ -547,14 +547,9 @@ class nsContentUtils {
 
 
 
-
-
-
-
-
   static mozilla::Maybe<int32_t> ComparePoints(
-      const nsINode* aParent1, int32_t aOffset1, const nsINode* aParent2,
-      int32_t aOffset2, ComparePointsCache* aParent1Cache = nullptr);
+      const nsINode* aParent1, uint32_t aOffset1, const nsINode* aParent2,
+      uint32_t aOffset2, ComparePointsCache* aParent1Cache = nullptr);
   template <typename FPT, typename FRT, typename SPT, typename SRT>
   static mozilla::Maybe<int32_t> ComparePoints(
       const mozilla::RangeBoundaryBase<FPT, FRT>& aFirstBoundary,
@@ -572,22 +567,91 @@ class nsContentUtils {
 
 
 
-
-
-
-
-
-
-
   static int32_t ComparePoints_Deprecated(
-      const nsINode* aParent1, int32_t aOffset1, const nsINode* aParent2,
-      int32_t aOffset2, bool* aDisconnected = nullptr,
+      const nsINode* aParent1, uint32_t aOffset1, const nsINode* aParent2,
+      uint32_t aOffset2, bool* aDisconnected = nullptr,
       ComparePointsCache* aParent1Cache = nullptr);
   template <typename FPT, typename FRT, typename SPT, typename SRT>
   static int32_t ComparePoints_Deprecated(
       const mozilla::RangeBoundaryBase<FPT, FRT>& aFirstBoundary,
       const mozilla::RangeBoundaryBase<SPT, SRT>& aSecondBoundary,
       bool* aDisconnected = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+  static mozilla::Maybe<int32_t> ComparePoints_FixOffset1(
+      const nsINode* aParent1, int32_t aOffset1, const nsINode* aParent2,
+      uint32_t aOffset2) {
+    if (MOZ_UNLIKELY(aOffset1 < 0)) {
+      
+      if (aParent1 == aParent2) {
+        return mozilla::Some(-1);
+      }
+      
+      
+      if (aParent2->IsInclusiveDescendantOf(aParent1)) {
+        return mozilla::Some(-1);
+      }
+      
+      return ComparePoints(aParent1, UINT32_MAX, aParent2, aOffset2);
+    }
+    return ComparePoints(aParent1, aOffset1, aParent2, aOffset2);
+  }
+  static mozilla::Maybe<int32_t> ComparePoints_FixOffset2(
+      const nsINode* aParent1, uint32_t aOffset1, const nsINode* aParent2,
+      int32_t aOffset2) {
+    if (MOZ_UNLIKELY(aOffset2 < 0)) {
+      
+      if (aParent1 == aParent2) {
+        return mozilla::Some(1);
+      }
+      
+      
+      if (aParent1->IsInclusiveDescendantOf(aParent2)) {
+        return mozilla::Some(1);
+      }
+      
+      return ComparePoints(aParent1, aOffset1, aParent2, UINT32_MAX);
+    }
+    return ComparePoints(aParent1, aOffset1, aParent2, aOffset2);
+  }
+  static mozilla::Maybe<int32_t> ComparePoints_FixBothOffsets(
+      const nsINode* aParent1, int32_t aOffset1, const nsINode* aParent2,
+      int32_t aOffset2) {
+    if (MOZ_UNLIKELY(aOffset1 < 0 || aOffset2 < 0)) {
+      
+      if (aParent1 == aParent2) {
+        const int32_t compOffsets =
+            aOffset1 == aOffset2 ? 0 : (aOffset1 < aOffset2 ? -1 : 1);
+        return mozilla::Some(compOffsets);
+      }
+      
+      
+      if (aOffset1 < 0 && aParent2->IsInclusiveDescendantOf(aParent1)) {
+        return mozilla::Some(-1);
+      }
+      
+      
+      if (aOffset2 < 0 && aParent1->IsInclusiveDescendantOf(aParent2)) {
+        return mozilla::Some(1);
+      }
+      
+      
+      return ComparePoints(
+          aParent1, aOffset1 < 0 ? UINT32_MAX : static_cast<uint32_t>(aOffset1),
+          aParent2,
+          aOffset2 < 0 ? UINT32_MAX : static_cast<uint32_t>(aOffset2));
+    }
+    return ComparePoints(aParent1, aOffset1, aParent2, aOffset2);
+  }
 
   
 
