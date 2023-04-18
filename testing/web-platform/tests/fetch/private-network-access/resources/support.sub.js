@@ -134,16 +134,21 @@ function sourceResolveOptions({ server, treatAsPublic }) {
 
 
 
-function targetResolveOptions({ server, behavior }) {
+
+function preflightUrl({ server, behavior }) {
   const options = {...server};
   if (behavior) {
-    const { preflight, response } = behavior;
+    const { preflight, response, redirect } = behavior;
     options.searchParams = {
       ...preflight,
       ...response,
     };
+    if (redirect !== undefined) {
+      options.searchParams.redirect = redirect;
+    }
   }
-  return options;
+
+  return resolveUrl("resources/preflight.py", options);
 }
 
 
@@ -220,8 +225,7 @@ async function fetchTest(t, { source, target, fetchOptions, expected }) {
   const sourceUrl =
       resolveUrl("resources/fetcher.html", sourceResolveOptions(source));
 
-  const targetUrl =
-      resolveUrl("resources/preflight.py", targetResolveOptions(target));
+  const targetUrl = preflightUrl(target);
 
   const iframe = await appendIframe(t, document, sourceUrl);
   const reply = futureMessage();
@@ -278,8 +282,7 @@ async function xhrTest(t, { source, target, method, expected }) {
   const sourceUrl =
       resolveUrl("resources/xhr-sender.html", sourceResolveOptions(source));
 
-  const targetUrl =
-      resolveUrl("resources/preflight.py", targetResolveOptions(target));
+  const targetUrl = preflightUrl(target);
 
   const iframe = await appendIframe(t, document, sourceUrl);
   const reply = futureMessage();
@@ -344,8 +347,7 @@ const WorkerScriptTestResult = {
 };
 
 function workerScriptUrl(target) {
-  const url =
-    resolveUrl("resources/preflight.py", targetResolveOptions(target));
+  const url = preflightUrl(target);
 
   url.searchParams.append("body", "postMessage({ loaded: true })")
   url.searchParams.append("mime-type", "application/javascript")
@@ -395,8 +397,7 @@ async function sharedWorkerScriptTest(t, { source, target, expected }) {
   const sourceUrl = resolveUrl("resources/shared-worker-fetcher.html",
                                sourceResolveOptions(source));
 
-  const targetUrl =
-      resolveUrl("resources/preflight.py", targetResolveOptions(target));
+  const targetUrl = preflightUrl(target);
   targetUrl.searchParams.append(
       "body", "onconnect = (e) => e.ports[0].postMessage({ loaded: true })")
 
@@ -418,8 +419,7 @@ const WorkerFetchTestResult = {
 };
 
 async function workerFetchTest(t, { source, target, expected }) {
-  const targetUrl =
-      resolveUrl("resources/preflight.py", targetResolveOptions(target));
+  const targetUrl = preflightUrl(target);
 
   const sourceUrl =
       resolveUrl("resources/fetcher.js", sourceResolveOptions(source));
@@ -439,8 +439,7 @@ async function workerFetchTest(t, { source, target, expected }) {
 }
 
 async function sharedWorkerFetchTest(t, { source, target, expected }) {
-  const targetUrl =
-      resolveUrl("resources/preflight.py", targetResolveOptions(target));
+  const targetUrl = preflightUrl(target);
 
   const sourceUrl =
       resolveUrl("resources/shared-fetcher.js", sourceResolveOptions(source));
