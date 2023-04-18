@@ -101,12 +101,19 @@ add_task(async function() {
     );
   }
 
-  targetCommand.destroy();
-
   
   await waitForAllTargetsToBeAttached(targetCommand);
 
+  ok(
+    !targetCommand.isDestroyed(),
+    "TargetCommand isn't destroyed before calling commands.destroy()"
+  );
   await commands.destroy();
+  ok(
+    targetCommand.isDestroyed(),
+    "TargetCommand is destroyed after calling commands.destroy()"
+  );
+
   await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
     
     const registration = await content.wrappedJSObject.registrationPromise;

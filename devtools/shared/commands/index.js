@@ -38,6 +38,8 @@ async function createCommandsDictionary(descriptorFront) {
   }
   const { client } = descriptorFront;
 
+  const allInstantiatedCommands = new Set();
+
   const dictionary = {
     
     
@@ -52,6 +54,12 @@ async function createCommandsDictionary(descriptorFront) {
 
     
     async destroy() {
+      for (const command of allInstantiatedCommands) {
+        if (typeof command.destroy == "function") {
+          command.destroy();
+        }
+      }
+      allInstantiatedCommands.clear();
       await descriptorFront.destroy();
       await client.close();
     },
@@ -60,7 +68,7 @@ async function createCommandsDictionary(descriptorFront) {
   for (const name in Commands) {
     loader.lazyGetter(dictionary, name, () => {
       const Constructor = require(Commands[name]);
-      return new Constructor({
+      const command = new Constructor({
         
         commands: dictionary,
 
@@ -75,6 +83,8 @@ async function createCommandsDictionary(descriptorFront) {
         
         
       });
+      allInstantiatedCommands.add(command);
+      return command;
     });
   }
 

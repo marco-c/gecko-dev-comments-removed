@@ -553,7 +553,9 @@ class TargetCommand extends EventEmitter {
         
         
         
-        if (!isTargetSwitching) {
+        
+        
+        if (!isTargetSwitching && !this.watcherFront.isDestroyed()) {
           this.watcherFront.unwatchTargets(type);
         }
       } else if (this.legacyImplementation[type]) {
