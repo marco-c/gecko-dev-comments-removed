@@ -1,7 +1,6 @@
 
 
 gczeal(0);
-offThreadCompileToStencil("");
+offThreadCompileScript("");
 startgc(0);
-var stencil = finishOffThreadCompileToStencil();
-evalStencil(stencil);
+runOffThreadScript();

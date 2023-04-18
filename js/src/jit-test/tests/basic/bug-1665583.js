@@ -1,9 +1,8 @@
 
 
 function parseModule(source) {
-  offThreadCompileModuleToStencil(source);
-  var stencil = finishOffThreadCompileModuleToStencil();
-  return instantiateModuleStencil(stencil);
+  offThreadCompileModule(source);
+  return finishOffThreadModule();
 }
 function loadFile(lfVarx) {
   oomTest(function() {

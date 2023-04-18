@@ -9,9 +9,10 @@ function testCompile(sourceIsLazy1, sourceIsLazy2,
                      forceFullParse1, forceFullParse2) {
   const stencil = compileToStencil(code, { sourceIsLazy: sourceIsLazy1,
                                            forceFullParse: forceFullParse1 });
-  
-  evalStencil(stencil, { sourceIsLazy: sourceIsLazy2,
-                         forceFullParse: forceFullParse2 });
+  assertThrowsInstanceOf(() => {
+    evalStencil(stencil, { sourceIsLazy: sourceIsLazy2,
+                           forceFullParse: forceFullParse2 });
+  }, Error);
 }
 
 function testOffThreadCompile(sourceIsLazy1, sourceIsLazy2,
@@ -19,9 +20,10 @@ function testOffThreadCompile(sourceIsLazy1, sourceIsLazy2,
   offThreadCompileToStencil(code, { sourceIsLazy: sourceIsLazy1,
                                     forceFullParse: forceFullParse1 });
   const stencil = finishOffThreadCompileToStencil();
-  
-  evalStencil(stencil, { sourceIsLazy: sourceIsLazy2,
-                         forceFullParse: forceFullParse2 });
+  assertThrowsInstanceOf(() => {
+    evalStencil(stencil, { sourceIsLazy: sourceIsLazy2,
+                           forceFullParse: forceFullParse2 });
+  }, Error);
 }
 
 function testXDR(sourceIsLazy1, sourceIsLazy2,
@@ -39,15 +41,10 @@ function testOffThreadXDR(sourceIsLazy1, sourceIsLazy2,
   evaluate(t, { sourceIsLazy: sourceIsLazy1,
                 forceFullParse: forceFullParse1,
                 saveIncrementalBytecode: true });
-
-  
-  offThreadDecodeStencil(t, { sourceIsLazy: sourceIsLazy2,
+  offThreadDecodeScript(t, { sourceIsLazy: sourceIsLazy2,
                              forceFullParse: forceFullParse2 });
-  const stencil = finishOffThreadDecodeStencil();
-
   
-  evalStencil(stencil, { sourceIsLazy: sourceIsLazy2,
-                         forceFullParse: forceFullParse2 });
+  runOffThreadDecodedScript();
 }
 
 const optionsList = [

@@ -3,6 +3,6 @@
 
 verifyprebarriers();
 var lfGlobal = newGlobal();
-lfGlobal.offThreadCompileToStencil(`
+lfGlobal.offThreadCompileScript(`
   version(185);
 `);

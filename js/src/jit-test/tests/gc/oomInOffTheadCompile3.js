@@ -1,7 +1,7 @@
 
 
 oomTest(() => {
-    offThreadCompileToStencil(`
+    offThreadCompileScript(`
         function f(x) {
             class of extends ("ABCDEFGHIJK") {
                 test() { return true; };
@@ -12,6 +12,5 @@ oomTest(() => {
         }
         return g("try{}catch(e){}", n);
         `);
-    var stencil = finishOffThreadCompileToStencil();
-    evalStencil(stencil);
+    runOffThreadScript();
 });

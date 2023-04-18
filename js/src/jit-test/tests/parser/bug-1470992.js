@@ -1,4 +1,4 @@
 
 
-offThreadCompileModuleToStencil("export { x };");
+offThreadCompileModule("export { x };");
 gcslice(10);

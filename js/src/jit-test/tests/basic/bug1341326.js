@@ -1,6 +1,6 @@
 
 function eval(source) {
-    offThreadCompileModuleToStencil(source);
+    offThreadCompileModule(source);
 }
 var N = 10000;
 var left = repeat_str('(1&', N);

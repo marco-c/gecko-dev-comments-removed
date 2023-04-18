@@ -52,17 +52,21 @@ struct Tier2GeneratorTask;
 
 enum class ParseTaskKind {
   
+  Script,
+
+  
   ScriptStencil,
 
   
-  ModuleStencil,
+  Module,
 
   
-  StencilDecode,
+  ScriptDecode,
 
   
   MultiStencilsDecode,
 };
+enum class StartEncoding { No, Yes };
 
 namespace wasm {
 
@@ -378,9 +382,11 @@ class GlobalHelperThreadState {
   UniquePtr<ParseTask> finishParseTaskCommon(JSContext* cx, ParseTaskKind kind,
                                              JS::OffThreadToken* token);
 
-  already_AddRefed<frontend::CompilationStencil> finishCompileToStencilTask(
+  JSScript* finishSingleParseTask(
       JSContext* cx, ParseTaskKind kind, JS::OffThreadToken* token,
-      JS::InstantiationStorage* storage);
+      StartEncoding startEncoding = StartEncoding::No);
+  already_AddRefed<frontend::CompilationStencil> finishCompileToStencilTask(
+      JSContext* cx, ParseTaskKind kind, JS::OffThreadToken* token);
   bool finishMultiParseTask(JSContext* cx, ParseTaskKind kind,
                             JS::OffThreadToken* token,
                             mozilla::Vector<RefPtr<JS::Stencil>>* stencils);
@@ -392,18 +398,19 @@ class GlobalHelperThreadState {
 
   void trace(JSTracer* trc);
 
+  JSScript* finishScriptParseTask(
+      JSContext* cx, JS::OffThreadToken* token,
+      StartEncoding startEncoding = StartEncoding::No);
   already_AddRefed<frontend::CompilationStencil> finishCompileToStencilTask(
-      JSContext* cx, JS::OffThreadToken* token,
-      JS::InstantiationStorage* storage);
-  already_AddRefed<frontend::CompilationStencil>
-  finishCompileModuleToStencilTask(JSContext* cx, JS::OffThreadToken* token,
-                                   JS::InstantiationStorage* storage);
-  already_AddRefed<frontend::CompilationStencil> finishDecodeStencilTask(
-      JSContext* cx, JS::OffThreadToken* token,
-      JS::InstantiationStorage* storage);
+      JSContext* cx, JS::OffThreadToken* token);
+  JSScript* finishScriptDecodeTask(JSContext* cx, JS::OffThreadToken* token);
   bool finishMultiStencilsDecodeTask(
       JSContext* cx, JS::OffThreadToken* token,
       mozilla::Vector<RefPtr<JS::Stencil>>* stencils);
+  JSObject* finishModuleParseTask(JSContext* cx, JS::OffThreadToken* token);
+
+  already_AddRefed<frontend::CompilationStencil> finishStencilParseTask(
+      JSContext* cx, JS::OffThreadToken* token);
 
   bool hasActiveThreads(const AutoLockHelperThreadState&);
   bool canStartTasks(const AutoLockHelperThreadState& locked);
@@ -511,7 +518,10 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
   
   RefPtr<frontend::CompilationStencil> stencil_;
 
-  UniquePtr<frontend::CompilationGCOutput> gcOutput_;
+  
+  UniquePtr<frontend::ExtensibleCompilationStencil> extensibleStencil_;
+
+  frontend::CompilationGCOutput gcOutput_;
 
   
   OffThreadFrontendErrors errors;
@@ -522,12 +532,11 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
 
   bool init(JSContext* cx, const JS::ReadOnlyCompileOptions& options);
 
-  void moveGCOutputInto(JS::InstantiationStorage& storage);
-
   void activate(JSRuntime* rt);
   void deactivate(JSRuntime* rt);
 
   virtual void parse(JSContext* cx) = 0;
+  bool instantiateStencils(JSContext* cx);
 
   bool runtimeMatches(JSRuntime* rt) { return runtime == rt; }
 
@@ -541,6 +550,23 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
   void runHelperThreadTask(AutoLockHelperThreadState& locked) override;
   void runTask(AutoLockHelperThreadState& lock);
   ThreadType threadType() override { return ThreadType::THREAD_TYPE_PARSE; }
+};
+
+struct ScriptDecodeTask : public ParseTask {
+  const JS::TranscodeRange range;
+
+  ScriptDecodeTask(JSContext* cx, const JS::TranscodeRange& range,
+                   JS::OffThreadCompileCallback callback, void* callbackData);
+  void parse(JSContext* cx) override;
+};
+
+struct MultiStencilsDecodeTask : public ParseTask {
+  JS::TranscodeSources* sources;
+
+  MultiStencilsDecodeTask(JSContext* cx, JS::TranscodeSources& sources,
+                          JS::OffThreadCompileCallback callback,
+                          void* callbackData);
+  void parse(JSContext* cx) override;
 };
 
 

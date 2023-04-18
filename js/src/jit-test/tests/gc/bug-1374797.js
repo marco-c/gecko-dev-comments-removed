@@ -12,7 +12,7 @@ gcparam('allocationThreshold', 1);
 gc();
 
 
-offThreadCompileToStencil("print('Finished')");
+offThreadCompileScript("print('Finished')");
 
 
 for (let i = 0; i < 10; i++) {
@@ -23,5 +23,4 @@ for (let i = 0; i < 10; i++) {
 }
 
 
-var stencil = finishOffThreadCompileToStencil();
-evalStencil(stencil);
+runOffThreadScript();

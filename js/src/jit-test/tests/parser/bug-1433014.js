@@ -1,5 +1,5 @@
 
 evaluate(`
     oomTest(() => {
-        offThreadCompileToStencil("");
+        offThreadCompileScript("");
     });`);

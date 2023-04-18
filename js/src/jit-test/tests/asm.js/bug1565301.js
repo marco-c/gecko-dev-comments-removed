@@ -5,7 +5,7 @@ const maxSize = Math.pow(2, 29) - 1;
 
 
 evaluate(`
-  offThreadCompileToStencil("\\
+  offThreadCompileScript("\\
     g = (function(t,foreign){\\
         \\"use asm\\";\\
         var ff = foreign.ff;\\
@@ -17,7 +17,7 @@ evaluate(`
 `);
 
 evaluate(`
-  offThreadCompileToStencil("\\
+  offThreadCompileScript("\\
     g = (function(t,foreign){\\
         \\"use asm\\";\\
         var ff = foreign.ff;\\

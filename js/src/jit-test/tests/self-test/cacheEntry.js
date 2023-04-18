@@ -3,11 +3,11 @@
 var caught = 0;
 var code = cacheEntry("");
 try {
-    offThreadDecodeStencil(code);
+    offThreadDecodeScript(code);
 }
 catch (e) {
     
-    assertEq(e.message.includes("CacheEntry") || e.message.includes("offThreadDecodeStencil"), true);
+    assertEq(e.message.includes("CacheEntry") || e.message.includes("offThreadDecodeScript"), true);
     caught++;
 }
 

@@ -64,13 +64,11 @@ assertEq(log, 'd');
 
 dbg.onDebuggerStatement = function (frame) {
   log += 'd';
-  assertEq(frame.script.source.introductionType,
-           "js shell offThreadCompileToStencil");
+  assertEq(frame.script.source.introductionType, "js shell offThreadCompileScript");
 };
 log = '';
-g.offThreadCompileToStencil('debugger;');
-var stencil = g.finishOffThreadCompileToStencil();
-g.evalStencil(stencil);
+g.offThreadCompileScript('debugger;');
+g.runOffThreadScript();
 assertEq(log, 'd');
 
 

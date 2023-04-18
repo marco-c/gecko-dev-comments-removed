@@ -1,6 +1,6 @@
 
 
 oomTest(function() {
-    offThreadCompileToStencil("");
+    offThreadCompileScript("");
 });
 "".match();

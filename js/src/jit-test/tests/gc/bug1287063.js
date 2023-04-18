@@ -1,4 +1,4 @@
 
 
 schedulezone("");
-offThreadCompileToStencil("");
+offThreadCompileScript("");

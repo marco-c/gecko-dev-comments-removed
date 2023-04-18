@@ -1,6 +1,6 @@
 
 function eval(source) {
-    offThreadCompileModuleToStencil(source);
+    offThreadCompileModule(source);
     let get = (eval("function w(){}") ++);
 };
 gczeal(21, 10);
