@@ -8,6 +8,7 @@
 XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarProviderQuickSuggest:
     "resource:///modules/UrlbarProviderQuickSuggest.jsm",
+  UrlbarQuickSuggest: "resource:///modules/UrlbarQuickSuggest.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(this, "QuickSuggestTestUtils", () => {
@@ -126,12 +127,16 @@ async function doVisibilityTest({
 }) {
   info(
     "Running visibility test: " +
-      JSON.stringify({
-        initialScenario,
-        initialExpectedVisibility,
-        newScenario,
-        newExpectedVisibility,
-      })
+      JSON.stringify(
+        {
+          initialScenario,
+          initialExpectedVisibility,
+          newScenario,
+          newExpectedVisibility,
+        },
+        null,
+        2
+      )
   );
 
   
@@ -502,15 +507,25 @@ add_task(async function clickLearnMore() {
 
 
 
-add_task(async function bestMatchVisibility_falseToTrue() {
-  await doBestMatchVisibilityTest(false, true);
+add_task(async function bestMatchVisibility() {
+  for (let initialQuickSuggest of [false, true]) {
+    for (let initialBestMatch of [false, true]) {
+      for (let newQuickSuggest of [false, true]) {
+        for (let newBestMatch of [false, true]) {
+          await doBestMatchVisibilityTest({
+            initialQuickSuggest,
+            initialBestMatch,
+            newQuickSuggest,
+            newBestMatch,
+          });
+        }
+      }
+    }
+  }
 });
 
 
 
-add_task(async function bestMatchVisibility_trueToFalse() {
-  await doBestMatchVisibilityTest(true, false);
-});
 
 
 
@@ -525,44 +540,73 @@ add_task(async function bestMatchVisibility_trueToFalse() {
 
 
 
-async function doBestMatchVisibilityTest(initialEnabled, newEnabled) {
+
+
+
+
+
+
+async function doBestMatchVisibilityTest({
+  initialQuickSuggest,
+  initialBestMatch,
+  newQuickSuggest,
+  newBestMatch,
+}) {
   info(
     "Running best match visibility test: " +
-      JSON.stringify({ initialEnabled, newEnabled })
+      JSON.stringify(
+        {
+          initialQuickSuggest,
+          initialBestMatch,
+          newQuickSuggest,
+          newBestMatch,
+        },
+        null,
+        2
+      )
   );
 
   
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.bestMatch.enabled", initialEnabled]],
-  });
+  Services.prefs.setBoolPref(
+    "browser.urlbar.quicksuggest.enabled",
+    initialQuickSuggest
+  );
+  Services.prefs.setBoolPref(
+    "browser.urlbar.bestMatch.enabled",
+    initialBestMatch
+  );
+  await UrlbarQuickSuggest.readyPromise;
 
   
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
-
   let doc = gBrowser.selectedBrowser.contentDocument;
   let container = doc.getElementById(BEST_MATCH_CONTAINER_ID);
   Assert.equal(
     BrowserTestUtils.is_visible(container),
-    initialEnabled,
+    initialBestMatch,
     "The checkbox container has the expected initial visibility"
   );
 
   
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.bestMatch.enabled", newEnabled]],
-  });
+  Services.prefs.setBoolPref(
+    "browser.urlbar.quicksuggest.enabled",
+    newQuickSuggest
+  );
+  Services.prefs.setBoolPref("browser.urlbar.bestMatch.enabled", newBestMatch);
+  await UrlbarQuickSuggest.readyPromise;
 
   
   Assert.equal(
     BrowserTestUtils.is_visible(container),
-    newEnabled,
-    "The checkbox container has the expected visibility after setting enabled status"
+    newBestMatch,
+    "The checkbox container has the expected visibility after setting prefs"
   );
 
   
   gBrowser.removeCurrentTab();
-  await SpecialPowers.popPrefEnv();
-  await SpecialPowers.popPrefEnv();
+  Services.prefs.clearUserPref("browser.urlbar.quicksuggest.enabled");
+  Services.prefs.clearUserPref("browser.urlbar.bestMatch.enabled");
+  await UrlbarQuickSuggest.readyPromise;
 }
 
 
@@ -661,6 +705,7 @@ add_task(async function bestMatchToggle() {
   gBrowser.removeCurrentTab();
   await SpecialPowers.popPrefEnv();
 });
+
 
 
 add_task(async function clickBestMatchLearnMore() {
