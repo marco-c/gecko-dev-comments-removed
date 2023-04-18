@@ -429,12 +429,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
 
   if (aIsPrintPreview) {
     mIsCreatingPrintPreview = true;
-
-    
-    
-    
-    mPrtPreview = nullptr;
-
     SetIsPrintPreview(true);
   } else {
     SetIsPrinting(true);
@@ -527,23 +521,14 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
 }
 
 
-nsresult nsPrintJob::Print(Document* aSourceDoc,
-                           nsIPrintSettings* aPrintSettings,
+nsresult nsPrintJob::Print(Document* aDoc, nsIPrintSettings* aPrintSettings,
                            RemotePrintJobChild* aRemotePrintJob,
                            nsIWebProgressListener* aWebProgressListener) {
   mRemotePrintJob = aRemotePrintJob;
-
-  
-  
-  
-  RefPtr<Document> doc = mPrtPreview && mPrtPreview->mPrintObject
-                             ? mPrtPreview->mPrintObject->mDocument.get()
-                             : aSourceDoc;
-
-  return CommonPrint(false, aPrintSettings, aWebProgressListener, doc);
+  return CommonPrint(false, aPrintSettings, aWebProgressListener, aDoc);
 }
 
-nsresult nsPrintJob::PrintPreview(Document* aSourceDoc,
+nsresult nsPrintJob::PrintPreview(Document* aDoc,
                                   nsIPrintSettings* aPrintSettings,
                                   nsIWebProgressListener* aWebProgressListener,
                                   PrintPreviewResolver&& aCallback) {
@@ -551,8 +536,7 @@ nsresult nsPrintJob::PrintPreview(Document* aSourceDoc,
   
   mPrintPreviewCallback = std::move(aCallback);
 
-  nsresult rv =
-      CommonPrint(true, aPrintSettings, aWebProgressListener, aSourceDoc);
+  nsresult rv = CommonPrint(true, aPrintSettings, aWebProgressListener, aDoc);
   if (NS_FAILED(rv)) {
     if (mPrintPreviewCallback) {
       
