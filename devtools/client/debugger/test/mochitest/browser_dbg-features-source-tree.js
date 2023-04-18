@@ -10,7 +10,14 @@
 
 
 
+
+
 "use strict";
+
+const testServer = createVersionizedHttpTestServer(
+  "examples/sourcemaps-reload-uncompressed"
+);
+const TEST_URL = testServer.urlFor("index.html");
 
 
 
@@ -211,92 +218,77 @@ add_task(async function testSimpleSourcesWithManualKeyShortcutsExpand() {
 
 
 
-add_task(async function testSourceTreeWithQueryStrings() {
-  const dbg = await initDebugger(
-    "doc-sources-querystring.html",
-    "simple1.js?x=1",
-    "simple1.js?x=2"
+
+add_task(async function testSourceTreeOnTheIntegrationTestPage() {
+  
+  
+  
+  
+  const dbg = await initDebuggerWithAbsoluteURL("about:blank");
+
+  await navigateToAbsoluteURL(
+    dbg,
+    TEST_URL,
+    "index.html",
+    "script.js",
+    "query.js?x=1",
+    "query.js?x=2",
+    "bundle.js",
+    "original.js",
+    "replaced-bundle.js",
+    "removed-original.js",
+    "named-eval.js"
   );
 
-  
-  await waitForSourcesInSourceTree(dbg, [], { noExpand: true });
-  await clickElement(dbg, "sourceDirectoryLabel", 3);
-  await waitForSourcesInSourceTree(dbg, ["simple1.js?x=1", "simple1.js?x=2"], {
-    noExpand: true,
-  });
+  await waitForSourcesInSourceTree(dbg, [
+    "index.html",
+    "script.js",
+    "query.js?x=1",
+    "query.js?x=2",
+    "bundle.js",
+    "original.js",
+    "replaced-bundle.js",
+    "removed-original.js",
+    "named-eval.js",
+    "bootstrap 6fda1f7ea9ecbc1a2d5b",
+    "bootstrap 450f2ed5071212525ef7",
+  ]);
 
-  is(getLabel(dbg, 4), "simple1.js?x=1", "simple1.js?x=1 exists");
-  is(getLabel(dbg, 5), "simple1.js?x=2", "simple1.js?x=2 exists");
+  info("Assert the content of the named eval");
+  await selectSource(dbg, "named-eval.js");
+  assertTextContentOnLine(dbg, 3, `console.log("named-eval");`);
 
-  await selectSource(dbg, "simple1.js?x=1");
+  info("Assert the content of sources with query string");
+  await selectSource(dbg, "query.js?x=1");
   const tab = findElement(dbg, "activeTab");
-  is(tab.innerText, "simple1.js?x=1", "Tab label is simple1.js?x=1");
-  await addBreakpoint(dbg, "simple1.js?x=1", 6);
-  assertBreakpointHeading(dbg, "simple1.js?x=1", 0);
+  is(tab.innerText, "query.js?x=1", "Tab label is query.js?x=1");
+  assertTextContentOnLine(
+    dbg,
+    1,
+    `function query() {console.log("query x=1");}`
+  );
+  await addBreakpoint(dbg, "query.js?x=1", 1);
+  assertBreakpointHeading(dbg, "query.js?x=1", 0);
 
   
   clickElement(dbg, "prettyPrintButton");
-  await waitForSource(dbg, "simple1.js?x=1:formatted");
+  await waitForSource(dbg, "query.js?x=1:formatted");
+  await waitForSelectedSource(dbg, "query.js?x=1:formatted");
 
   const prettyTab = findElement(dbg, "activeTab");
-  is(prettyTab.innerText, "simple1.js?x=1", "Tab label is simple1.js?x=1");
+  is(prettyTab.innerText, "query.js?x=1", "Tab label is query.js?x=1");
   ok(prettyTab.querySelector(".img.prettyPrint"));
-  assertBreakpointHeading(dbg, "simple1.js?x=1", 0);
+  assertBreakpointHeading(dbg, "query.js?x=1", 0);
+  assertTextContentOnLine(dbg, 1, `function query() {`);
+  
+  assertTextContentOnLine(dbg, 2, `console.log('query x=1');`);
 
   
   pressKey(dbg, "quickOpen");
-  type(dbg, "simple1.js?x");
+  type(dbg, "query.js?x");
 
   const resultItems = await waitForAllElements(dbg, "resultItems");
-  ok(resultItems[0].innerText.includes("simple1.js?x=1"));
-});
-
-
-
-
-
-add_task(async function testSourceTreeWithNamedEval() {
-  const dbg = await initDebugger(
-    "doc-sources.html",
-    "simple1.js",
-    "simple2.js",
-    "nested-source.js",
-    "long.js"
-  );
-
-  info("Assert that all page sources appear in the source tree");
-  await waitForSourcesInSourceTree(dbg, [
-    "doc-sources.html",
-    "simple1.js",
-    "simple2.js",
-    "nested-source.js",
-    "long.js",
-  ]);
-
-  info(`>>> contentTask: evaluate evaled.js`);
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
-    content.eval(
-      `window.evaledFunc = function() {};
-//# sourceURL=evaled.js
-`
-    );
-  });
-
-  info("Assert that the evaled source appear in the source tree");
-  await waitForSourcesInSourceTree(dbg, [
-    "doc-sources.html",
-    "simple1.js",
-    "simple2.js",
-    "nested-source.js",
-    "long.js",
-    "evaled.js",
-  ]);
-
-  info("Wait for the evaled source");
-  await waitForSource(dbg, "evaled.js");
-  await selectSource(dbg, "evaled.js");
-
-  assertTextContentOnLine(dbg, 1, "window.evaledFunc = function() {};");
+  ok(resultItems[0].innerText.includes("query.js?x=1"));
 });
 
 
