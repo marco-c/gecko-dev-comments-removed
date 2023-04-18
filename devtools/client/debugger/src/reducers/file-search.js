@@ -67,19 +67,4 @@ function update(state = initialFileSearchState(), action) {
   }
 }
 
-
-
-
-export function getFileSearchQuery(state) {
-  return state.fileSearch.query;
-}
-
-export function getFileSearchModifiers(state) {
-  return state.fileSearch.modifiers;
-}
-
-export function getFileSearchResults(state) {
-  return state.fileSearch.searchResults;
-}
-
 export default update;
