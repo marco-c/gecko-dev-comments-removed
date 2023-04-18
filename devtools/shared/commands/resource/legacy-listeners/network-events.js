@@ -17,7 +17,7 @@ module.exports = async function({
   
   
   
-  const listenForFrames = targetCommand.descriptorFront.isTabDescriptor;
+  const listenForFrames = targetCommand.descriptorFront.isLocalTab;
   const isAllowed =
     targetFront.isTopLevel ||
     targetFront.targetType === targetCommand.TYPES.PROCESS ||

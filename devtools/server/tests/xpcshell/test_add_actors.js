@@ -48,15 +48,7 @@ add_task(async function() {
 
   let actors = await client.mainRoot.rootForm;
   const tabs = await client.mainRoot.listTabs();
-  const tabDescriptor = tabs[0];
-
-  
-  
-  
-  tabDescriptor.disableTargetSwitching();
-
-  const tabTarget = await tabDescriptor.getTarget();
-
+  const tabTarget = await tabs[0].getTarget();
   Assert.equal(tabs.length, 1);
 
   let reply = await client.request({

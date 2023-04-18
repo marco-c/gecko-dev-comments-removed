@@ -87,12 +87,6 @@ async function createTargetForFakeTab(title) {
 
   const tabs = await listTabs(client);
   const tabDescriptor = findTab(tabs, title);
-
-  
-  
-  
-  tabDescriptor.disableTargetSwitching();
-
   return tabDescriptor.getTarget();
 }
 
@@ -385,12 +379,6 @@ async function getTestTab(client, title) {
 
 async function attachTestTab(client, title) {
   const descriptorFront = await getTestTab(client, title);
-
-  
-  
-  
-  descriptorFront.disableTargetSwitching();
-
   const commands = await createCommandsDictionary(descriptorFront);
   await commands.targetCommand.startListening();
   return commands;
@@ -823,12 +811,6 @@ async function setupTestFromUrl(url) {
 
   const tabs = await listTabs(devToolsClient);
   const descriptorFront = findTab(tabs, "test");
-
-  
-  
-  
-  descriptorFront.disableTargetSwitching();
-
   const targetFront = await descriptorFront.getTarget();
   await targetFront.attach();
 

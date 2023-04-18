@@ -47,22 +47,10 @@ class TabDescriptorFront extends DescriptorMixin(
     
     
     this._localTab = null;
-
-    
-    this._disableTargetSwitching = false;
+    this._isForWebExtension = false;
 
     this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
     this._handleTabEvent = this._handleTabEvent.bind(this);
-
-    
-    
-    
-    
-    if (this.isServerTargetSwitchingEnabled()) {
-      this._targetFrontPromise = new Promise(
-        r => (this._resolveTargetFrontPromise = r)
-      );
-    }
   }
 
   form(json) {
@@ -111,6 +99,16 @@ class TabDescriptorFront extends DescriptorMixin(
     
     
     this.shouldCloseClient = true;
+
+    
+    
+    
+    
+    if (this.isServerTargetSwitchingEnabled()) {
+      this._targetFrontPromise = new Promise(
+        r => (this._resolveTargetFrontPromise = r)
+      );
+    }
   }
 
   get isTabDescriptor() {
@@ -143,7 +141,9 @@ class TabDescriptorFront extends DescriptorMixin(
       SERVER_TARGET_SWITCHING_ENABLED_PREF,
       false
     );
-    const enabled = isEnabled && !this._disableTargetSwitching;
+    
+    
+    const enabled = isEnabled && this.isLocalTab && !this._isForWebExtension;
     return enabled;
   }
 
@@ -154,19 +154,7 @@ class TabDescriptorFront extends DescriptorMixin(
 
 
   setIsForWebExtension() {
-    this.disableTargetSwitching();
-  }
-
-  
-
-
-
-  disableTargetSwitching() {
-    this._disableTargetSwitching = true;
-    
-    
-    delete this._targetFrontPromise;
-    delete this._resolveTargetFrontPromise;
+    this._isForWebExtension = true;
   }
 
   get isZombieTab() {
@@ -211,6 +199,14 @@ class TabDescriptorFront extends DescriptorMixin(
     
     
     this._targetFront = null;
+
+    
+    
+    
+    
+    if (!this.isLocalTab) {
+      this.destroy();
+    }
   }
 
   
