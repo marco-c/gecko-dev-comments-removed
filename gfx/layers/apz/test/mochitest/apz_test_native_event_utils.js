@@ -316,21 +316,14 @@ async function coordinatesRelativeToScreen(aParams) {
   
   
   if (target instanceof Window && window.parent == window) {
-    
-    
-    
-    
-    
-    const utils = SpecialPowers.getDOMWindowUtils(window);
     const resolution = await getResolution();
     const deviceScale = window.devicePixelRatio;
-    const deviceScaleNoOverride = utils.screenPixelsPerCSSPixelNoOverride;
     return {
       x:
-        window.mozInnerScreenX * deviceScaleNoOverride +
+        window.mozInnerScreenX * deviceScale +
         (atCenter ? 0 : offsetX) * resolution * deviceScale,
       y:
-        window.mozInnerScreenY * deviceScaleNoOverride +
+        window.mozInnerScreenY * deviceScale +
         (atCenter ? 0 : offsetY) * resolution * deviceScale,
     };
   }

@@ -1058,7 +1058,6 @@ function synthesizeNativeMouseEvent(aParams, aCallback = null) {
     screenY, 
     
     
-    
     scale = "screenPixelsPerCSSPixel",
     button = 0, 
     modifiers = {}, 
@@ -1118,9 +1117,6 @@ function synthesizeNativeMouseEvent(aParams, aCallback = null) {
     }
     if (scale === "screenPixelsPerCSSPixel") {
       return win.devicePixelRatio;
-    }
-    if (scale === "screenPixelsPerCSSPixelNoOverride") {
-      return utils.screenPixelsPerCSSPixelNoOverride;
     }
     throw Error(`invalid scale value (${scale}) is specified`);
   })();

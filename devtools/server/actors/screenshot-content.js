@@ -56,7 +56,13 @@ exports.ScreenshotContentActor = ActorClassWithSpec(screenshotContentSpec, {
 
   prepareCapture({ fullpage, selector, nodeActorID }) {
     const { window } = this.targetActor;
-    const windowDpr = window.devicePixelRatio;
+    
+    
+    
+    
+    
+    const windowDpr =
+      window.browsingContext.top.overrideDPPX || window.devicePixelRatio;
     const windowZoom = getCurrentZoom(window);
     const messages = [];
 

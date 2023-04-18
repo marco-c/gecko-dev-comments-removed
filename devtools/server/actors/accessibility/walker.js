@@ -1069,13 +1069,8 @@ const AccessibleWalkerActor = ActorClassWithSpec(accessibleWalkerSpec, {
     return accessible;
   },
 
-  
-
-
-
-
   get pixelRatio() {
-    return this.rootWin.windowUtils.screenPixelsPerCSSPixelNoOverride;
+    return this.rootWin.devicePixelRatio;
   },
 
   

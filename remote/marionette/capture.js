@@ -78,7 +78,9 @@ capture.canvas = async function(
   height,
   { canvas = null, flags = null, dX = 0, dY = 0, readback = false } = {}
 ) {
-  const scale = win.devicePixelRatio;
+  
+  
+  const scale = win.browsingContext.overrideDPPX || win.devicePixelRatio;
 
   let canvasHeight = height * scale;
   let canvasWidth = width * scale;
