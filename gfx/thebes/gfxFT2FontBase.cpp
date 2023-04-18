@@ -636,7 +636,14 @@ bool gfxFT2FontBase::GetFTGlyphExtents(uint16_t aGID, int32_t* aAdvance,
     return false;
   }
 
+  
   bool hintMetrics = ShouldHintMetrics();
+  
+  bool roundX = ShouldRoundXOffset(nullptr);
+  
+  bool unhintedY = (mFTLoadFlags & FT_LOAD_NO_HINTING) != 0;
+  bool unhintedX =
+      unhintedY || FT_LOAD_TARGET_MODE(mFTLoadFlags) == FT_RENDER_MODE_LIGHT;
 
   
   
@@ -649,7 +656,7 @@ bool gfxFT2FontBase::GetFTGlyphExtents(uint16_t aGID, int32_t* aAdvance,
   
   if (aAdvance) {
     FT_Fixed advance;
-    if (!ShouldRoundXOffset(nullptr) || FT_HAS_MULTIPLE_MASTERS(face.get())) {
+    if (!roundX || FT_HAS_MULTIPLE_MASTERS(face.get())) {
       advance = face.get()->glyph->linearHoriAdvance;
     } else {
       advance = face.get()->glyph->advance.x << 10;  
@@ -661,7 +668,7 @@ bool gfxFT2FontBase::GetFTGlyphExtents(uint16_t aGID, int32_t* aAdvance,
     
     
     
-    if (hintMetrics && (mFTLoadFlags & FT_LOAD_NO_HINTING)) {
+    if (hintMetrics && roundX && unhintedX) {
       advance = (advance + 0x8000) & 0xffff0000u;
     }
     *aAdvance = NS_lround(advance * extentsScale);
@@ -676,11 +683,15 @@ bool gfxFT2FontBase::GetFTGlyphExtents(uint16_t aGID, int32_t* aAdvance,
     
     y -= bold.y;
     x2 += bold.x;
-    if (hintMetrics && (mFTLoadFlags & FT_LOAD_NO_HINTING)) {
-      x &= -64;
-      y &= -64;
-      x2 = (x2 + 63) & -64;
-      y2 = (y2 + 63) & -64;
+    if (hintMetrics) {
+      if (roundX && unhintedX) {
+        x &= -64;
+        x2 = (x2 + 63) & -64;
+      }
+      if (unhintedY) {
+        y &= -64;
+        y2 = (y2 + 63) & -64;
+      }
     }
     *aBounds = IntRect(x, y, x2 - x, y2 - y);
   }
