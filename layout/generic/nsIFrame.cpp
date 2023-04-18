@@ -5773,7 +5773,11 @@ void nsIFrame::DisassociateImage(const StyleImage& aImage) {
 StyleImageRendering nsIFrame::UsedImageRendering() const {
   ComputedStyle* style;
   if (nsCSSRendering::IsCanvasFrame(this)) {
-    nsCSSRendering::FindBackground(this, &style);
+    
+    
+    
+    
+    style = nsCSSRendering::FindBackground(this);
   } else {
     style = Style();
   }

@@ -1286,14 +1286,12 @@ bool nsCSSRendering::FindBackgroundFrame(const nsIFrame* aForFrame,
   return FindElementBackground(aForFrame, rootElementFrame);
 }
 
-bool nsCSSRendering::FindBackground(const nsIFrame* aForFrame,
-                                    ComputedStyle** aBackgroundSC) {
+ComputedStyle* nsCSSRendering::FindBackground(const nsIFrame* aForFrame) {
   nsIFrame* backgroundFrame = nullptr;
   if (FindBackgroundFrame(aForFrame, &backgroundFrame)) {
-    *aBackgroundSC = backgroundFrame->Style();
-    return true;
+    return backgroundFrame->Style();
   }
-  return false;
+  return nullptr;
 }
 
 void nsCSSRendering::BeginFrameTreesLocked() { ++gFrameTreeLockCount; }
@@ -1791,8 +1789,8 @@ ImgDrawResult nsCSSRendering::PaintStyleImageLayer(const PaintBGParams& aParams,
   MOZ_ASSERT(aParams.frame,
              "Frame is expected to be provided to PaintStyleImageLayer");
 
-  ComputedStyle* sc;
-  if (!FindBackground(aParams.frame, &sc)) {
+  ComputedStyle* sc = FindBackground(aParams.frame);
+  if (!sc) {
     
     
     
@@ -1879,8 +1877,8 @@ ImgDrawResult nsCSSRendering::BuildWebRenderDisplayItemsForStyleImageLayer(
              "Frame is expected to be provided to "
              "BuildWebRenderDisplayItemsForStyleImageLayer");
 
-  ComputedStyle* sc;
-  if (!FindBackground(aParams.frame, &sc)) {
+  ComputedStyle* sc = FindBackground(aParams.frame);
+  if (!sc) {
     
     
     
