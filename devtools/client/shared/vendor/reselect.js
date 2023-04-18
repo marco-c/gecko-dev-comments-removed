@@ -1,57 +1,155 @@
 (function (global, factory) {
-  if (typeof define === "function" && define.amd) {
-    define('Reselect', ['exports'], factory);
-  } else if (typeof exports !== "undefined") {
-    factory(exports);
-  } else {
-    var mod = {
-      exports: {}
-    };
-    factory(mod.exports);
-    global.Reselect = mod.exports;
-  }
-})(this, function (exports) {
-  'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.Reselect = {}));
+})(this, (function (exports) { 'use strict';
 
-  exports.__esModule = true;
-  exports.defaultMemoize = defaultMemoize;
-  exports.createSelectorCreator = createSelectorCreator;
-  exports.createStructuredSelector = createStructuredSelector;
-  function defaultEqualityCheck(a, b) {
-    return a === b;
-  }
+  
+  
+  var NOT_FOUND = 'NOT_FOUND';
 
-  function areArgumentsShallowlyEqual(equalityCheck, prev, next) {
-    if (prev === null || next === null || prev.length !== next.length) {
-      return false;
-    }
+  function createSingletonCache(equals) {
+    var entry;
+    return {
+      get: function get(key) {
+        if (entry && equals(entry.key, key)) {
+          return entry.value;
+        }
 
-    
-    var length = prev.length;
-    for (var i = 0; i < length; i++) {
-      if (!equalityCheck(prev[i], next[i])) {
-        return false;
+        return NOT_FOUND;
+      },
+      put: function put(key, value) {
+        entry = {
+          key: key,
+          value: value
+        };
+      },
+      getEntries: function getEntries() {
+        return entry ? [entry] : [];
+      },
+      clear: function clear() {
+        entry = undefined;
       }
-    }
-
-    return true;
+    };
   }
 
-  function defaultMemoize(func) {
-    var equalityCheck = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : defaultEqualityCheck;
+  function createLruCache(maxSize, equals) {
+    var entries = [];
 
-    var lastArgs = null;
-    var lastResult = null;
-    
-    return function () {
-      if (!areArgumentsShallowlyEqual(equalityCheck, lastArgs, arguments)) {
+    function get(key) {
+      var cacheIndex = entries.findIndex(function (entry) {
+        return equals(key, entry.key);
+      }); 
+
+      if (cacheIndex > -1) {
+        var entry = entries[cacheIndex]; 
+
+        if (cacheIndex > 0) {
+          entries.splice(cacheIndex, 1);
+          entries.unshift(entry);
+        }
+
+        return entry.value;
+      } 
+
+
+      return NOT_FOUND;
+    }
+
+    function put(key, value) {
+      if (get(key) === NOT_FOUND) {
         
-        lastResult = func.apply(null, arguments);
+        entries.unshift({
+          key: key,
+          value: value
+        });
+
+        if (entries.length > maxSize) {
+          entries.pop();
+        }
+      }
+    }
+
+    function getEntries() {
+      return entries;
+    }
+
+    function clear() {
+      entries = [];
+    }
+
+    return {
+      get: get,
+      put: put,
+      getEntries: getEntries,
+      clear: clear
+    };
+  }
+
+  var defaultEqualityCheck = function defaultEqualityCheck(a, b) {
+    return a === b;
+  };
+  function createCacheKeyComparator(equalityCheck) {
+    return function areArgumentsShallowlyEqual(prev, next) {
+      if (prev === null || next === null || prev.length !== next.length) {
+        return false;
+      } 
+
+
+      var length = prev.length;
+
+      for (var i = 0; i < length; i++) {
+        if (!equalityCheck(prev[i], next[i])) {
+          return false;
+        }
       }
 
-      lastArgs = arguments;
-      return lastResult;
+      return true;
     };
+  }
+  
+  
+  function defaultMemoize(func, equalityCheckOrOptions) {
+    var providedOptions = typeof equalityCheckOrOptions === 'object' ? equalityCheckOrOptions : {
+      equalityCheck: equalityCheckOrOptions
+    };
+    var _providedOptions$equa = providedOptions.equalityCheck,
+        equalityCheck = _providedOptions$equa === void 0 ? defaultEqualityCheck : _providedOptions$equa,
+        _providedOptions$maxS = providedOptions.maxSize,
+        maxSize = _providedOptions$maxS === void 0 ? 1 : _providedOptions$maxS,
+        resultEqualityCheck = providedOptions.resultEqualityCheck;
+    var comparator = createCacheKeyComparator(equalityCheck);
+    var cache = maxSize === 1 ? createSingletonCache(comparator) : createLruCache(maxSize, comparator); 
+
+    function memoized() {
+      var value = cache.get(arguments);
+
+      if (value === NOT_FOUND) {
+        
+        value = func.apply(null, arguments);
+
+        if (resultEqualityCheck) {
+          var entries = cache.getEntries();
+          var matchingEntry = entries.find(function (entry) {
+            return resultEqualityCheck(entry.value, value);
+          });
+
+          if (matchingEntry) {
+            value = matchingEntry.value;
+          }
+        }
+
+        cache.put(arguments, value);
+      }
+
+      return value;
+    }
+
+    memoized.clearCache = function () {
+      return cache.clear();
+    };
+
+    return memoized;
   }
 
   function getDependencies(funcs) {
@@ -61,72 +159,116 @@
       return typeof dep === 'function';
     })) {
       var dependencyTypes = dependencies.map(function (dep) {
-        return typeof dep;
+        return typeof dep === 'function' ? "function " + (dep.name || 'unnamed') + "()" : typeof dep;
       }).join(', ');
-      throw new Error('Selector creators expect all input-selectors to be functions, ' + ('instead received the following types: [' + dependencyTypes + ']'));
+      throw new Error("createSelector expects all input-selectors to be functions, but received the following types: [" + dependencyTypes + "]");
     }
 
     return dependencies;
   }
 
   function createSelectorCreator(memoize) {
-    for (var _len = arguments.length, memoizeOptions = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-      memoizeOptions[_key - 1] = arguments[_key];
+    for (var _len = arguments.length, memoizeOptionsFromArgs = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+      memoizeOptionsFromArgs[_key - 1] = arguments[_key];
     }
 
-    return function () {
-      for (var _len2 = arguments.length, funcs = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+    var createSelector = function createSelector() {
+      for (var _len2 = arguments.length, funcs = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
         funcs[_key2] = arguments[_key2];
       }
 
-      var recomputations = 0;
-      var resultFunc = funcs.pop();
-      var dependencies = getDependencies(funcs);
+      var _recomputations = 0;
 
-      var memoizedResultFunc = memoize.apply(undefined, [function () {
-        recomputations++;
-        
-        return resultFunc.apply(null, arguments);
-      }].concat(memoizeOptions));
-
+      var _lastResult; 
       
-      var selector = defaultMemoize(function () {
+      
+
+
+      var directlyPassedOptions = {
+        memoizeOptions: undefined
+      }; 
+
+      var resultFunc = funcs.pop(); 
+
+      if (typeof resultFunc === 'object') {
+        directlyPassedOptions = resultFunc; 
+
+        resultFunc = funcs.pop();
+      }
+
+      if (typeof resultFunc !== 'function') {
+        throw new Error("createSelector expects an output function after the inputs, but received: [" + typeof resultFunc + "]");
+      } 
+      
+
+
+      var _directlyPassedOption = directlyPassedOptions,
+          _directlyPassedOption2 = _directlyPassedOption.memoizeOptions,
+          memoizeOptions = _directlyPassedOption2 === void 0 ? memoizeOptionsFromArgs : _directlyPassedOption2; 
+      
+      
+      
+      
+
+      var finalMemoizeOptions = Array.isArray(memoizeOptions) ? memoizeOptions : [memoizeOptions];
+      var dependencies = getDependencies(funcs);
+      var memoizedResultFunc = memoize.apply(void 0, [function () {
+        _recomputations++; 
+
+        return resultFunc.apply(null, arguments);
+      }].concat(finalMemoizeOptions)); 
+
+      var selector = memoize(function () {
         var params = [];
         var length = dependencies.length;
 
         for (var i = 0; i < length; i++) {
           
+          
           params.push(dependencies[i].apply(null, arguments));
-        }
+        } 
 
-        
-        return memoizedResultFunc.apply(null, params);
+
+        _lastResult = memoizedResultFunc.apply(null, params);
+        return _lastResult;
       });
-
-      selector.resultFunc = resultFunc;
-      selector.recomputations = function () {
-        return recomputations;
-      };
-      selector.resetRecomputations = function () {
-        return recomputations = 0;
-      };
+      Object.assign(selector, {
+        resultFunc: resultFunc,
+        memoizedResultFunc: memoizedResultFunc,
+        dependencies: dependencies,
+        lastResult: function lastResult() {
+          return _lastResult;
+        },
+        recomputations: function recomputations() {
+          return _recomputations;
+        },
+        resetRecomputations: function resetRecomputations() {
+          return _recomputations = 0;
+        }
+      });
       return selector;
-    };
+    }; 
+
+
+    return createSelector;
   }
-
-  var createSelector = exports.createSelector = createSelectorCreator(defaultMemoize);
-
-  function createStructuredSelector(selectors) {
-    var selectorCreator = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : createSelector;
+  var createSelector = createSelectorCreator(defaultMemoize);
+  
+  var createStructuredSelector = function createStructuredSelector(selectors, selectorCreator) {
+    if (selectorCreator === void 0) {
+      selectorCreator = createSelector;
+    }
 
     if (typeof selectors !== 'object') {
-      throw new Error('createStructuredSelector expects first argument to be an object ' + ('where each property is a selector, instead received a ' + typeof selectors));
+      throw new Error('createStructuredSelector expects first argument to be an object ' + ("where each property is a selector, instead received a " + typeof selectors));
     }
+
     var objectKeys = Object.keys(selectors);
-    return selectorCreator(objectKeys.map(function (key) {
+    var resultSelector = selectorCreator( 
+    objectKeys.map(function (key) {
       return selectors[key];
     }), function () {
-      for (var _len3 = arguments.length, values = Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+      for (var _len3 = arguments.length, values = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
         values[_key3] = arguments[_key3];
       }
 
@@ -135,5 +277,15 @@
         return composition;
       }, {});
     });
-  }
-});
+    return resultSelector;
+  };
+
+  exports.createSelector = createSelector;
+  exports.createSelectorCreator = createSelectorCreator;
+  exports.createStructuredSelector = createStructuredSelector;
+  exports.defaultEqualityCheck = defaultEqualityCheck;
+  exports.defaultMemoize = defaultMemoize;
+
+  Object.defineProperty(exports, '__esModule', { value: true });
+
+}));
