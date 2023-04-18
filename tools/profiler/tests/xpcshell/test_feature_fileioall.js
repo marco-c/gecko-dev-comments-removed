@@ -113,7 +113,12 @@ async function startProfilerAndTriggerFileIO({
 }) {
   const entries = 10000;
   const interval = 10;
-  Services.profiler.StartProfiler(entries, interval, features, threadsFilter);
+  await Services.profiler.StartProfiler(
+    entries,
+    interval,
+    features,
+    threadsFilter
+  );
 
   const tmpDir = OS.Constants.Path.tmpDir;
   const path = OS.Path.join(tmpDir, filename);
@@ -142,10 +147,12 @@ async function startProfilerAndTriggerFileIO({
 
   
   
+  
+  
   Services.profiler.Pause();
 
   const profile = await Services.profiler.getProfileDataAsync();
-  Services.profiler.StopProfiler();
+  await Services.profiler.StopProfiler();
   return profile;
 }
 

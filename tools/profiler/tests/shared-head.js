@@ -25,6 +25,9 @@ const defaultSettings = {
   threads: ["GeckoMain"],
 };
 
+
+
+
 function startProfiler(callersSettings) {
   if (Services.profiler.IsActive()) {
     throw new Error(
@@ -32,7 +35,7 @@ function startProfiler(callersSettings) {
     );
   }
   const settings = Object.assign({}, defaultSettings, callersSettings);
-  Services.profiler.StartProfiler(
+  return Services.profiler.StartProfiler(
     settings.entries,
     settings.interval,
     settings.features,
@@ -43,7 +46,7 @@ function startProfiler(callersSettings) {
 }
 
 function startProfilerForMarkerTests() {
-  startProfiler({
+  return startProfiler({
     features: ["nostacksampling", "js"],
     threads: ["GeckoMain", "DOM Worker"],
   });
@@ -222,9 +225,11 @@ function captureAtLeastOneJsSample() {
 
 
 async function stopAndGetProfile() {
+  
+  
   Services.profiler.Pause();
   const profile = await Services.profiler.getProfileDataAsync();
-  Services.profiler.StopProfiler();
+  await Services.profiler.StopProfiler();
   return profile;
 }
 

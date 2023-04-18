@@ -2,77 +2,125 @@
 
 
 
-function run_test() {
+add_task(async () => {
   Assert.ok(!Services.profiler.IsActive());
   Assert.ok(!Services.profiler.IsPaused());
 
-  Services.profiler.StartProfiler(1000, 10, []);
+  let startPromise = Services.profiler.StartProfiler(1000, 10, []);
 
   
   Assert.ok(Services.profiler.IsActive());
   Assert.ok(!Services.profiler.IsPaused());
   Assert.ok(!Services.profiler.IsSamplingPaused());
 
-  
-  Services.profiler.Pause();
-
-  Assert.ok(Services.profiler.IsActive());
-  Assert.ok(Services.profiler.IsPaused());
-  Assert.ok(Services.profiler.IsSamplingPaused());
-
-  
-  Services.profiler.PauseSampling();
-
-  Assert.ok(Services.profiler.IsActive());
-  Assert.ok(Services.profiler.IsPaused());
-  Assert.ok(Services.profiler.IsSamplingPaused());
-
-  Services.profiler.ResumeSampling();
-
-  Assert.ok(Services.profiler.IsActive());
-  Assert.ok(Services.profiler.IsPaused());
-  Assert.ok(Services.profiler.IsSamplingPaused());
-
-  
-  Services.profiler.Resume();
-
+  await startPromise;
   Assert.ok(Services.profiler.IsActive());
   Assert.ok(!Services.profiler.IsPaused());
   Assert.ok(!Services.profiler.IsSamplingPaused());
 
   
-  Services.profiler.PauseSampling();
-
-  Assert.ok(Services.profiler.IsActive());
-  Assert.ok(!Services.profiler.IsPaused());
-  Assert.ok(Services.profiler.IsSamplingPaused());
-
-  
-  Services.profiler.Pause();
+  let pausePromise = Services.profiler.Pause();
 
   Assert.ok(Services.profiler.IsActive());
   Assert.ok(Services.profiler.IsPaused());
   Assert.ok(Services.profiler.IsSamplingPaused());
 
-  
-  Services.profiler.Resume();
-
+  await pausePromise;
   Assert.ok(Services.profiler.IsActive());
-  Assert.ok(!Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsPaused());
   Assert.ok(Services.profiler.IsSamplingPaused());
 
   
-  Services.profiler.ResumeSampling();
+  let pauseSamplingPromise = Services.profiler.PauseSampling();
+
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsSamplingPaused());
+
+  await pauseSamplingPromise;
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsSamplingPaused());
+
+  let resumeSamplingPromise = Services.profiler.ResumeSampling();
+
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsSamplingPaused());
+
+  await resumeSamplingPromise;
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsSamplingPaused());
+
+  
+  let resumePromise = Services.profiler.Resume();
 
   Assert.ok(Services.profiler.IsActive());
   Assert.ok(!Services.profiler.IsPaused());
   Assert.ok(!Services.profiler.IsSamplingPaused());
 
-  Services.profiler.StopProfiler();
+  await resumePromise;
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(!Services.profiler.IsPaused());
+  Assert.ok(!Services.profiler.IsSamplingPaused());
+
+  
+  let pauseSampling2Promise = Services.profiler.PauseSampling();
+
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(!Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsSamplingPaused());
+
+  await pauseSampling2Promise;
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(!Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsSamplingPaused());
+
+  
+  let pause2Promise = Services.profiler.Pause();
+
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsSamplingPaused());
+
+  await pause2Promise;
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsSamplingPaused());
+
+  
+  let resume2promise = Services.profiler.Resume();
+
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(!Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsSamplingPaused());
+
+  await resume2promise;
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(!Services.profiler.IsPaused());
+  Assert.ok(Services.profiler.IsSamplingPaused());
+
+  
+  let resumeSampling2Promise = Services.profiler.ResumeSampling();
+
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(!Services.profiler.IsPaused());
+  Assert.ok(!Services.profiler.IsSamplingPaused());
+
+  await resumeSampling2Promise;
+  Assert.ok(Services.profiler.IsActive());
+  Assert.ok(!Services.profiler.IsPaused());
+  Assert.ok(!Services.profiler.IsSamplingPaused());
+
+  let stopPromise = Services.profiler.StopProfiler();
   Assert.ok(!Services.profiler.IsActive());
   
   Assert.ok(!Services.profiler.IsPaused());
   Assert.ok(!Services.profiler.IsSamplingPaused());
 
-  do_test_finished();
-}
+  await stopPromise;
+  Assert.ok(!Services.profiler.IsActive());
+  Assert.ok(!Services.profiler.IsPaused());
+  Assert.ok(!Services.profiler.IsSamplingPaused());
+});

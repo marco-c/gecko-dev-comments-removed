@@ -1,5 +1,5 @@
 
-function run_test() {
+add_task(async () => {
   
   
   
@@ -11,7 +11,7 @@ function run_test() {
   }
 
   const ms = 10;
-  Services.profiler.StartProfiler(10000, ms, ["js"]);
+  await Services.profiler.StartProfiler(10000, ms, ["js"]);
 
   let stack = null;
   function ffi_function() {
@@ -72,5 +72,5 @@ function run_test() {
   Assert.ok(i2 < i3);
   Assert.ok(i3 < i4);
 
-  Services.profiler.StopProfiler();
-}
+  await Services.profiler.StopProfiler();
+});
