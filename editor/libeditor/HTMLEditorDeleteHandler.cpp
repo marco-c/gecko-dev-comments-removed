@@ -3127,8 +3127,10 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
       HTMLEditUtils::ClosestEditableBlockElement);
   
   
-  if (mLeftContent == mRightContent) {
-    MOZ_ASSERT_IF(!mLeftContent,
+  
+  
+  if (mLeftContent == mRightContent || !mLeftContent || !mRightContent) {
+    MOZ_ASSERT_IF(!mLeftContent || !mRightContent,
                   aRangesToDelete.FirstRangeRef()
                           ->GetStartContainer()
                           ->AsContent()
@@ -3139,12 +3141,6 @@ bool HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     mMode = Mode::DeleteContentInRanges;
     return true;
   }
-  if (NS_WARN_IF(!mLeftContent) || NS_WARN_IF(!mRightContent)) {
-    return false;
-  }
-  NS_ASSERTION(
-      mLeftContent->GetEditingHost() == mRightContent->GetEditingHost(),
-      "Trying to delete across editing host boundaries");
 
   
   
@@ -3229,7 +3225,6 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
                                            ->GetEndContainer()
                                            ->AsContent()
                                            ->GetEditingHost());
-  MOZ_ASSERT(mLeftContent == mRightContent);
   MOZ_ASSERT_IF(mLeftContent, mLeftContent->IsElement());
   MOZ_ASSERT_IF(mLeftContent, aRangesToDelete.FirstRangeRef()
                                   ->GetStartContainer()
