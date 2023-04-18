@@ -73,9 +73,6 @@ var SelectParentHelper = {
 
 
 
-
-
-
   populate(
     menulist,
     items,
@@ -85,6 +82,8 @@ var SelectParentHelper = {
     uaStyle,
     selectStyle
   ) {
+    let doc = menulist.ownerDocument;
+
     
     menulist.menupopup.textContent = "";
     let stylesheet = menulist.querySelector("#ContentSelectDropdownStylesheet");
@@ -92,15 +91,14 @@ var SelectParentHelper = {
       stylesheet.remove();
     }
 
-    let doc = menulist.ownerDocument;
-    let sheet;
-    if (customStylingEnabled) {
-      stylesheet = doc.createElementNS("http://www.w3.org/1999/xhtml", "style");
-      stylesheet.setAttribute("id", "ContentSelectDropdownStylesheet");
-      stylesheet.hidden = true;
-      stylesheet = menulist.appendChild(stylesheet);
-      sheet = stylesheet.sheet;
-    } else {
+    stylesheet = doc.createElementNS("http://www.w3.org/1999/xhtml", "style");
+    stylesheet.setAttribute("id", "ContentSelectDropdownStylesheet");
+    stylesheet.hidden = true;
+    stylesheet = menulist.appendChild(stylesheet);
+
+    let sheet = stylesheet.sheet;
+
+    if (!customStylingEnabled) {
       selectStyle = uaStyle;
     }
 
@@ -121,7 +119,7 @@ var SelectParentHelper = {
     if (customStylingEnabled) {
       if (selectStyle["text-shadow"] != "none") {
         sheet.insertRule(
-          `#ContentSelectDropdown > menupopup > [_moz-menuactive="true"] {
+          `#ContentSelectDropdown > menupopup > :is(menuitem, menucaption)[_moz-menuactive="true"] {
           text-shadow: none;
         }`,
           0
@@ -184,11 +182,71 @@ var SelectParentHelper = {
       }
       if (addedRule) {
         sheet.insertRule(
-          `#ContentSelectDropdown > menupopup > :not([_moz-menuactive="true"]) {
+          `#ContentSelectDropdown > menupopup > :is(menuitem, menucaption):not([_moz-menuactive="true"]) {
             color: inherit;
         }`,
           0
         );
+      }
+    }
+
+    for (let i = 0, len = uniqueItemStyles.length; i < len; ++i) {
+      sheet.insertRule(
+        `#ContentSelectDropdown .ContentSelectDropdown-item-${i} {}`,
+        0
+      );
+      let style = uniqueItemStyles[i];
+      let rule = sheet.cssRules[0].style;
+      rule.direction = style.direction;
+      rule.fontSize = zoom * parseFloat(style["font-size"], 10) + "px";
+
+      if (customStylingEnabled) {
+        let optionBackgroundIsTransparent =
+          style["background-color"] == "rgba(0, 0, 0, 0)";
+        let optionBackgroundSet =
+          !optionBackgroundIsTransparent || style.color != selectStyle.color;
+
+        if (optionBackgroundIsTransparent && style.color != selectStyle.color) {
+          style["background-color"] = selectStyle["background-color"];
+        }
+
+        if (style.color == style["background-color"]) {
+          style.color = selectStyle.color;
+        }
+
+        let inactiveRule = null;
+        for (const property of SUPPORTED_OPTION_OPTGROUP_PROPERTIES) {
+          let shouldSkip = (function() {
+            if (property == "direction" || property == "font-size") {
+              
+              return true;
+            }
+            if (!style[property]) {
+              return true;
+            }
+            if (property == "background-color" || property == "color") {
+              
+              return !optionBackgroundSet;
+            }
+            return style[property] == selectStyle[property];
+          })();
+          if (shouldSkip) {
+            continue;
+          }
+          if (PROPERTIES_RESET_WHEN_ACTIVE.includes(property)) {
+            if (!inactiveRule) {
+              sheet.insertRule(
+                `#ContentSelectDropdown .ContentSelectDropdown-item-${i}:not([_moz-menuactive="true"]) {}`,
+                0
+              );
+              inactiveRule = sheet.cssRules[0].style;
+            }
+            inactiveRule[property] = style[property];
+          } else {
+            rule[property] = style[property];
+          }
+        }
+        style.customStyling = selectBackgroundSet || optionBackgroundSet;
       }
     }
 
@@ -203,16 +261,7 @@ var SelectParentHelper = {
 
     this._currentZoom = zoom;
     this._currentMenulist = menulist;
-    this.populateChildren(
-      menulist,
-      items,
-      uniqueItemStyles,
-      selectedIndex,
-      zoom,
-      selectStyle,
-      selectBackgroundSet,
-      sheet
-    );
+    this.populateChildren(menulist, items, uniqueItemStyles, selectedIndex);
   },
 
   open(browser, menulist, rect, isOpenedViaTouch, selectParentActor) {
@@ -422,21 +471,11 @@ var SelectParentHelper = {
 
 
 
-
-
-
-
-
-
   populateChildren(
     menulist,
     options,
     uniqueOptionStyles,
     selectedIndex,
-    zoom,
-    selectStyle,
-    selectBackgroundSet,
-    sheet,
     parentElement = null,
     isGroupDisabled = false,
     addSearch = true,
@@ -453,11 +492,8 @@ var SelectParentHelper = {
       if (isOptGroup) {
         item.setAttribute("role", "group");
       }
-      let style = uniqueOptionStyles[option.styleIndex];
-
       item.setAttribute("label", option.textContent);
-      item.style.direction = style.direction;
-      item.style.fontSize = zoom * parseFloat(style["font-size"], 10) + "px";
+      item.className = `ContentSelectDropdown-item-${option.styleIndex}`;
       item.hidden =
         option.display == "none" || (parentElement && parentElement.hidden);
       
@@ -465,75 +501,7 @@ var SelectParentHelper = {
       item.hiddenByContent = item.hidden;
       item.setAttribute("tooltiptext", option.tooltip);
 
-      let optionBackgroundIsTransparent =
-        style["background-color"] == "rgba(0, 0, 0, 0)";
-      let optionBackgroundSet =
-        !optionBackgroundIsTransparent || style.color != selectStyle.color;
-
-      if (optionBackgroundIsTransparent && style.color != selectStyle.color) {
-        style["background-color"] = selectStyle["background-color"];
-      }
-
-      if (style.color == style["background-color"]) {
-        style.color = selectStyle.color;
-      }
-
-      if (customStylingEnabled) {
-        let addedRule = false;
-        for (const property of SUPPORTED_OPTION_OPTGROUP_PROPERTIES) {
-          let shouldSkip = (function() {
-            if (property == "direction" || property == "font-size") {
-              
-              return true;
-            }
-            if (!style[property]) {
-              return true;
-            }
-            if (property == "background-color" || property == "color") {
-              
-              return !optionBackgroundSet;
-            }
-            return style[property] == selectStyle[property];
-          })();
-          if (shouldSkip) {
-            continue;
-          }
-          if (PROPERTIES_RESET_WHEN_ACTIVE.includes(property)) {
-            if (!addedRule) {
-              sheet.insertRule(
-                `#ContentSelectDropdown > menupopup > :nth-child(${nthChildIndex}):not([_moz-menuactive="true"]) {
-              }`,
-                0
-              );
-              addedRule = true;
-            }
-            sheet.cssRules[0].style[property] = style[property];
-          } else {
-            item.style.setProperty(property, style[property]);
-          }
-        }
-
-        if (
-          addedRule &&
-          style["text-shadow"] != "none" &&
-          style["text-shadow"] != selectStyle["text-shadow"]
-        ) {
-          
-          
-          
-          sheet.insertRule(
-            `#ContentSelectDropdown > menupopup > :nth-child(${nthChildIndex})[_moz-menuactive="true"] {
-            text-shadow: none;
-          }`,
-            0
-          );
-        }
-      }
-
-      if (
-        customStylingEnabled &&
-        (optionBackgroundSet || selectBackgroundSet)
-      ) {
+      if (uniqueOptionStyles[option.styleIndex].customStyling) {
         item.setAttribute("customoptionstyling", "true");
       } else {
         item.removeAttribute("customoptionstyling");
@@ -564,10 +532,6 @@ var SelectParentHelper = {
           option.children,
           uniqueOptionStyles,
           selectedIndex,
-          zoom,
-          selectStyle,
-          selectBackgroundSet,
-          sheet,
           item,
           isDisabled,
           false,
