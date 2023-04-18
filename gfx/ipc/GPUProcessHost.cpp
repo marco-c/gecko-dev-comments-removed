@@ -170,7 +170,7 @@ void GPUProcessHost::InitAfterConnect(bool aSucceeded) {
   }
 }
 
-void GPUProcessHost::Shutdown() {
+void GPUProcessHost::Shutdown(bool aUnexpectedShutdown) {
   MOZ_ASSERT(!mShutdownRequested);
 
   mListener = nullptr;
@@ -179,6 +179,10 @@ void GPUProcessHost::Shutdown() {
     
     
     mShutdownRequested = true;
+
+    if (aUnexpectedShutdown) {
+      mGPUChild->OnUnexpectedShutdown();
+    }
 
     
     if (!mChannelClosed) {

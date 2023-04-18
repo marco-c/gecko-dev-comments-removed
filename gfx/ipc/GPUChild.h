@@ -36,6 +36,13 @@ class GPUChild final : public ipc::CrashReporterHelper<GeckoProcessType_GPU>,
   base::ProcessHandle GetChildProcessHandle();
 
   
+  
+  
+  
+  
+  void OnUnexpectedShutdown();
+
+  
   void OnVarChanged(const GfxVarUpdate& aVar) override;
 
   
@@ -85,6 +92,7 @@ class GPUChild final : public ipc::CrashReporterHelper<GeckoProcessType_GPU>,
   GPUProcessHost* mHost;
   UniquePtr<MemoryReportRequestHost> mMemoryReportRequest;
   bool mGPUReady;
+  bool mUnexpectedShutdown = false;
 };
 
 }  

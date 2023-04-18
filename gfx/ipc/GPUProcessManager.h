@@ -252,7 +252,11 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
 
   
   void CleanShutdown();
-  void DestroyProcess();
+  
+  
+  
+  
+  void DestroyProcess(bool aUnexpectedShutdown = false);
 
   void HandleProcessLost();
 

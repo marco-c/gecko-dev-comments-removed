@@ -77,7 +77,11 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   
   
-  void Shutdown();
+  
+  
+  
+  
+  void Shutdown(bool aUnexpectedShutdown = false);
 
   
   
