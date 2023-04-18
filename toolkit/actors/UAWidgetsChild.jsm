@@ -88,6 +88,7 @@ class UAWidgetsChild extends JSWindowActorChild {
         uri = "chrome://global/content/elements/videocontrols.js";
         widgetName = "VideoControlsWidget";
         prefKeys = [
+          "media.videocontrols.picture-in-picture.enabled",
           "media.videocontrols.picture-in-picture.video-toggle.enabled",
           "media.videocontrols.picture-in-picture.video-toggle.always-show",
           "media.videocontrols.picture-in-picture.video-toggle.min-video-secs",
@@ -99,11 +100,6 @@ class UAWidgetsChild extends JSWindowActorChild {
       case "input":
         uri = "chrome://global/content/elements/datetimebox.js";
         widgetName = "DateTimeBoxWidget";
-        break;
-      case "embed":
-      case "object":
-        uri = "chrome://global/content/elements/pluginProblem.js";
-        widgetName = "PluginProblemWidget";
         break;
       case "marquee":
         uri = "chrome://global/content/elements/marquee.js";
