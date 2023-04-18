@@ -248,6 +248,14 @@ void TaskController::RunPoolThread() {
         task->mIterator = mThreadableTasks.end();
         task->mInProgress = true;
 
+        if (!mThreadableTasks.empty()) {
+          
+          
+          
+          
+          mThreadPoolCV.Notify();
+        }
+
         bool taskCompleted = false;
         {
           MutexAutoUnlock unlock(mGraphMutex);
@@ -815,9 +823,7 @@ bool TaskController::DoExecuteNextTaskOnlyMainThreadInternal(
           
           
           
-          
-          
-          mThreadPoolCV.NotifyAll();
+          mThreadPoolCV.Notify();
         }
       }
 
