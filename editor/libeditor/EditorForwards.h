@@ -100,6 +100,7 @@ class InterCiter;
 class JoinNodesResult;              
 class JoinNodesTransaction;         
 class MoveNodeResult;               
+class MoveNodeTransaction;          
 class PlaceholderTransaction;       
 class ReplaceTextTransaction;       
 class SplitNodeResult;              

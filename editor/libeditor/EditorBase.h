@@ -1193,6 +1193,7 @@ class EditorBase : public nsIEditor,
       TopLevelEditSubActionDataRef().Clear();
       switch (mTopLevelEditSubAction) {
         case EditSubAction::eInsertNode:
+        case EditSubAction::eMoveNode:
         case EditSubAction::eCreateNode:
         case EditSubAction::eSplitNode:
         case EditSubAction::eInsertText:
@@ -2874,6 +2875,7 @@ class EditorBase : public nsIEditor,
                                                
   friend class ListItemElementSelectionState;  
                                                
+  friend class MoveNodeTransaction;            
   friend class ParagraphStateAtSelection;      
                                                
   friend class ReplaceTextTransaction;  

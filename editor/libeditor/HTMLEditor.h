@@ -4637,6 +4637,9 @@ class HTMLEditor final : public EditorBase,
                             
                             
                             
+  friend class MoveNodeTransaction;   
+                                      
+                                      
   friend class JoinNodesTransaction;  
                                       
   friend class

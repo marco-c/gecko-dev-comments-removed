@@ -386,6 +386,10 @@ enum class EditSubAction : int32_t {
   eDeleteNode,
 
   
+  
+  eMoveNode,
+
+  
   eSplitNode,
 
   
