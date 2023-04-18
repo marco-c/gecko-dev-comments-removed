@@ -36,6 +36,13 @@ XPCOMUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
   return module;
 });
 
+const DEFAULT_CONFIG = {
+  best_match: {
+    blocked_suggestion_ids: [],
+    min_search_string_length: 4,
+  },
+};
+
 const LEARN_MORE_URL =
   Services.urlFormatter.formatURLPref("app.support.baseURL") +
   "firefox-suggest";
@@ -83,6 +90,11 @@ class QSTestUtils {
 
   get UPDATE_TOPIC() {
     return UPDATE_TOPIC;
+  }
+
+  get DEFAULT_CONFIG() {
+    
+    return Cu.cloneInto(DEFAULT_CONFIG, this);
   }
 
   
@@ -133,7 +145,9 @@ class QSTestUtils {
 
 
 
-  async ensureQuickSuggestInit(results = null) {
+
+
+  async ensureQuickSuggestInit(results = null, config = DEFAULT_CONFIG) {
     this.info?.(
       "ensureQuickSuggestInit awaiting UrlbarQuickSuggest.readyPromise"
     );
@@ -151,6 +165,9 @@ class QSTestUtils {
 
     if (results) {
       UrlbarQuickSuggest._addResults(results);
+    }
+    if (config) {
+      this.setConfig(config);
     }
 
     return cleanup;
@@ -176,6 +193,29 @@ class QSTestUtils {
     this.info?.("initNimbusFeature done");
 
     this.registerCleanupFunction(doCleanup);
+  }
+
+  
+
+
+
+
+
+  setConfig(config) {
+    UrlbarQuickSuggest._config = config;
+  }
+
+  
+
+
+
+
+
+
+  async withConfig({ config, callback }) {
+    this.setConfig(config);
+    await callback();
+    this.setConfig(DEFAULT_CONFIG);
   }
 
   
