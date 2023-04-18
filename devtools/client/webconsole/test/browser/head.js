@@ -1578,7 +1578,7 @@ async function checkConsoleOutputForWarningGroup(hud, expectedMessages) {
 
   for (let [i, expectedMessage] of expectedMessages.entries()) {
     
-    const message = await findMessageVirtualized({
+    const message = await findMessageVirtualizedById({
       hud,
       messageId: messages[i].getAttribute("data-message-id"),
     });

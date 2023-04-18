@@ -27,14 +27,13 @@
 
 
 
+async function findMessageVirtualizedById({ hud, messageId }) {
+  if (!messageId) {
+    throw new Error("messageId parameter is required");
+  }
 
-
-
-async function findMessageVirtualized({ hud, text, selector, messageId }) {
   const elements = await findMessagesVirtualized({
     hud,
-    text,
-    selector,
     expectedCount: 1,
     messageId,
   });

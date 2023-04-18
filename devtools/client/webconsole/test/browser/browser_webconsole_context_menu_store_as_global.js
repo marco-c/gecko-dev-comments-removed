@@ -84,7 +84,7 @@ add_task(async function() {
 
 async function storeAsVariable(hud, msg, type, varIdx, equalTo) {
   
-  msg = await findMessageVirtualized({
+  msg = await findMessageVirtualizedById({
     hud,
     messageId: msg.getAttribute("data-message-id"),
   });
