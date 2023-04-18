@@ -20,7 +20,6 @@ struct PrintSettingsInitializer;
 native nsNativeIntMargin(nsIntMargin);
 [ref] native nsNativeIntMarginRef(nsIntMargin);
 
-interface nsIPrintSession;
 interface nsIOutputStream;
 
 
@@ -212,11 +211,6 @@ interface nsIPrintSettings : nsISupports
 
 
   bool equivalentTo(in nsIPrintSettings aPrintSettings);
-
-  
-
-
-  [noscript] attribute nsIPrintSession printSession; 
 
   
 

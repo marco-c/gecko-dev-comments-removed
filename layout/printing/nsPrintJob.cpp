@@ -45,7 +45,6 @@
 
 #include "nsIPrintSettings.h"
 #include "nsIPrintSettingsService.h"
-#include "nsIPrintSession.h"
 #include "nsGkAtoms.h"
 #include "nsXPCOM.h"
 
@@ -494,6 +493,11 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   if (aWebProgressListener) {
     printData->mPrintProgressListeners.AppendObject(aWebProgressListener);
   }
+  if (mRemotePrintJob) {
+    
+    
+    printData->mPrintProgressListeners.AppendElement(mRemotePrintJob);
+  }
 
   
   nsCOMPtr<nsIDocShell> docShell(do_QueryReferent(mDocShell, &rv));
@@ -537,26 +541,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   MOZ_TRY(EnsureSettingsHasPrinterNameSet(printData->mPrintSettings));
 
   printData->mPrintSettings->GetShrinkToFit(&printData->mShrinkToFit);
-
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIPrintSession> printSession;
-  if (!mIsCreatingPrintPreview) {
-    rv = printData->mPrintSettings->GetPrintSession(
-        getter_AddRefs(printSession));
-    if (NS_FAILED(rv) || !printSession) {
-      printSession = do_CreateInstance("@mozilla.org/gfx/printsession;1", &rv);
-      NS_ENSURE_SUCCESS(rv, rv);
-      printData->mPrintSettings->SetPrintSession(printSession);
-    } else if (mRemotePrintJob) {
-      
-      
-      printData->mPrintProgressListeners.AppendElement(mRemotePrintJob);
-    }
-  }
 
   bool printingViaParent =
       XRE_IsContentProcess() && StaticPrefs::print_print_via_parent();

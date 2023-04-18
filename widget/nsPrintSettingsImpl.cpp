@@ -9,8 +9,6 @@
 #include "nsCoord.h"
 #include "nsPaper.h"
 #include "nsReadableUtils.h"
-#include "nsIPrintSession.h"
-#include "mozilla/ArrayUtils.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/RefPtr.h"
 
@@ -83,33 +81,6 @@ void nsPrintSettings::InitWithInitializer(
 nsPrintSettings::nsPrintSettings(const nsPrintSettings& aPS) { *this = aPS; }
 
 nsPrintSettings::~nsPrintSettings() = default;
-
-NS_IMETHODIMP nsPrintSettings::GetPrintSession(
-    nsIPrintSession** aPrintSession) {
-  NS_ENSURE_ARG_POINTER(aPrintSession);
-  *aPrintSession = nullptr;
-
-  nsCOMPtr<nsIPrintSession> session = do_QueryReferent(mSession);
-  if (!session) return NS_ERROR_NOT_INITIALIZED;
-  *aPrintSession = session;
-  NS_ADDREF(*aPrintSession);
-  return NS_OK;
-}
-
-NS_IMETHODIMP nsPrintSettings::SetPrintSession(nsIPrintSession* aPrintSession) {
-  
-  
-  NS_ENSURE_ARG(aPrintSession);
-
-  mSession = do_GetWeakReference(aPrintSession);
-  if (!mSession) {
-    
-    
-    NS_ERROR("Could not get a weak reference from aPrintSession");
-    return NS_ERROR_FAILURE;
-  }
-  return NS_OK;
-}
 
 NS_IMETHODIMP nsPrintSettings::GetPrintReversed(bool* aPrintReversed) {
   *aPrintReversed = mPrintReversed;
