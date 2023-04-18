@@ -126,6 +126,9 @@ class Storage : public nsISupports, public nsWrapperCache {
     return false;
   }
 
+  virtual int64_t GetSnapshotUsage(nsIPrincipal& aSubjectPrincipal,
+                                   ErrorResult& aRv);
+
   
 
   
