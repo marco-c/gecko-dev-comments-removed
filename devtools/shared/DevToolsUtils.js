@@ -493,10 +493,6 @@ DevToolsUtils.defineLazyGetter(this, "NetUtil", () => {
   return require("resource://gre/modules/NetUtil.jsm").NetUtil;
 });
 
-DevToolsUtils.defineLazyGetter(this, "OS", () => {
-  return require("resource://gre/modules/osfile.jsm").OS;
-});
-
 DevToolsUtils.defineLazyGetter(this, "NetworkHelper", () => {
   return require("devtools/shared/webconsole/network-helper");
 });
@@ -674,7 +670,7 @@ function mainThreadFetch(
           
 
           uri.QueryInterface(Ci.nsIFileURL);
-          const result = OS.File.read(uri.file.path).then(bytes => {
+          const result = IOUtils.read(uri.file.path).then(bytes => {
             
             const decoder = new TextDecoder();
             const content = decoder.decode(bytes);
@@ -846,7 +842,7 @@ exports.saveAs = async function(
     return;
   }
 
-  await OS.File.writeAtomic(returnFile.path, dataArray, {
+  await IOUtils.write(returnFile.path, dataArray, {
     tmpPath: returnFile.path + ".tmp",
   });
 };

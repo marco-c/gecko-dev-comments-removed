@@ -12,7 +12,6 @@ const {
   testSetup,
   testTeardown,
 } = require("damp-test/tests/head");
-const { OS } = require("resource://gre/modules/osfile.jsm");
 const { Downloads } = require("resource://gre/modules/Downloads.jsm");
 const Services = require("Services");
 
@@ -33,7 +32,7 @@ module.exports = async function() {
   test.done();
 
   
-  await OS.File.remove(filePath);
+  await IOUtils.remove(filePath);
 
   
   
