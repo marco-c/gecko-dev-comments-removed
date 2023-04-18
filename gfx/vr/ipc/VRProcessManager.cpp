@@ -221,7 +221,8 @@ void VRProcessManager::OnPreferenceChange(const char16_t* aData) {
     return;
   }
 
-  mozilla::dom::Pref pref(strData,  false, Nothing(), Nothing());
+  mozilla::dom::Pref pref(strData,  false,
+                           false, Nothing(), Nothing());
   Preferences::GetPreference(&pref);
   if (!!mVRChild) {
     MOZ_ASSERT(mQueuedPrefs.IsEmpty());
