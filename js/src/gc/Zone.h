@@ -107,26 +107,6 @@ class MOZ_NON_TEMPORARY_CLASS FunctionToStringCache {
   MOZ_ALWAYS_INLINE void put(BaseScript* script, JSString* string);
 };
 
-
-class WeakRefHeapPtrVector
-    : public GCVector<js::HeapPtrObject, 1, js::ZoneAllocPolicy> {
- public:
-  
-  
-  using GCVector::GCVector;
-  void traceWeak(JSTracer* trc, JSObject* target);
-};
-
-
-
-class WeakRefMap
-    : public GCHashMap<HeapPtrObject, WeakRefHeapPtrVector,
-                       MovableCellHasher<HeapPtrObject>, ZoneAllocPolicy> {
- public:
-  using GCHashMap::GCHashMap;
-  void traceWeak(JSTracer* trc, gc::StoreBuffer* sbToLock);
-};
-
 }  
 
 namespace JS {
@@ -304,8 +284,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadOrGCTaskData<Zone*> listNext_;
   static Zone* const NotOnList;
   friend class js::gc::ZoneList;
-
-  js::ZoneOrGCTaskData<js::WeakRefMap> weakRefMap_;
 
   using KeptAliveSet =
       JS::GCHashSet<js::HeapPtrObject, js::MovableCellHasher<js::HeapPtrObject>,
@@ -631,8 +609,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   bool isOnList() const;
   Zone* nextZone() const;
-
-  js::WeakRefMap& weakRefMap() { return weakRefMap_.ref(); }
 
   friend bool js::CurrentThreadCanAccessZone(Zone* zone);
   friend class js::gc::GCRuntime;

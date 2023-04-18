@@ -17,8 +17,29 @@ namespace js {
 
 class FinalizationRegistryObject;
 class FinalizationRecordObject;
+class WeakRefObject;
 
 namespace gc {
+
+
+class WeakRefHeapPtrVector
+    : public GCVector<js::HeapPtrObject, 1, js::ZoneAllocPolicy> {
+ public:
+  
+  
+  using GCVector::GCVector;
+  void traceWeak(JSTracer* trc, JSObject* target);
+};
+
+
+
+class WeakRefMap
+    : public GCHashMap<HeapPtrObject, WeakRefHeapPtrVector,
+                       MovableCellHasher<HeapPtrObject>, ZoneAllocPolicy> {
+ public:
+  using GCHashMap::GCHashMap;
+  void traceWeak(JSTracer* trc);
+};
 
 
 class FinalizationObservers {
@@ -48,20 +69,29 @@ class FinalizationObservers {
   using WrapperWeakSet = ObjectValueWeakMap;
   WrapperWeakSet crossZoneWrappers;
 
+  
+  
+  WeakRefMap weakRefMap;
+
  public:
   explicit FinalizationObservers(Zone* zone);
   ~FinalizationObservers();
 
+  
   bool addRegistry(Handle<FinalizationRegistryObject*> registry);
   bool addRecord(HandleObject target, HandleObject record);
-
   void clearRecords();
-
-  void traceRoots(JSTracer* trc);
-  void traceWeakEdges(JSTracer* trc);
 
   void updateForRemovedRecord(JSObject* wrapper,
                               FinalizationRecordObject* record);
+
+  
+  bool addWeakRefTarget(HandleObject target, HandleObject weakRef);
+
+  bool unregisterWeakRefWrapper(JSObject* wrapper, WeakRefObject* weakRef);
+
+  void traceRoots(JSTracer* trc);
+  void traceWeakEdges(JSTracer* trc);
 
  private:
   bool addCrossZoneWrapper(JSObject* wrapper);
