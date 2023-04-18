@@ -342,26 +342,6 @@ bool RemoteAccessibleBase<Derived>::ApplyTransform(nsRect& aBounds) const {
 }
 
 template <class Derived>
-void RemoteAccessibleBase<Derived>::ApplyScrollOffset(nsRect& aBounds) const {
-  Maybe<const nsTArray<int32_t>&> maybeScrollPosition =
-      mCachedFields->GetAttribute<nsTArray<int32_t>>(nsGkAtoms::scrollPosition);
-
-  if (!maybeScrollPosition || maybeScrollPosition->Length() != 2) {
-    return;
-  }
-  
-  
-  const nsTArray<int32_t>& scrollPosition = *maybeScrollPosition;
-
-  
-  
-  
-  nsPoint scrollOffset(-scrollPosition[0], -scrollPosition[1]);
-
-  aBounds.MoveBy(scrollOffset.x, scrollOffset.y);
-}
-
-template <class Derived>
 LayoutDeviceIntRect RemoteAccessibleBase<Derived>::Bounds() const {
   if (mCachedFields) {
     Maybe<nsRect> maybeBounds = RetrieveCachedBounds();
@@ -374,8 +354,6 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::Bounds() const {
       dom::BrowserParent* bp = cbc->GetBrowserParent();
       nsPresContext* presContext =
           bp->GetOwnerElement()->OwnerDoc()->GetPresContext();
-
-      ApplyScrollOffset(bounds);
 
       Unused << ApplyTransform(bounds);
 
@@ -431,10 +409,6 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::Bounds() const {
             bounds.ScaleRoundOut(res.valueOr(1.0f));
           }
 
-          
-          remoteAcc->ApplyScrollOffset(remoteBounds);
-
-          
           
           
           bounds.MoveBy(remoteBounds.X(), remoteBounds.Y());
