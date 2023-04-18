@@ -666,9 +666,6 @@ class NonLocalExitControl {
  public:
   enum Kind {
     
-    Throw,
-
-    
     
     Continue,
 
@@ -747,10 +744,7 @@ bool NonLocalExitControl::prepareForNonLocalJump(NestableControl* target) {
 
   
   
-  
-  bool emitIteratorClose =
-      kind_ == Continue || kind_ == Break || kind_ == Return;
-  bool emitIteratorCloseAtTarget = emitIteratorClose && kind_ != Continue;
+  bool emitIteratorCloseAtTarget = kind_ != Continue;
 
   auto flushPops = [&npops](BytecodeEmitter* bce) {
     if (npops && !bce->emitPopN(npops)) {
@@ -805,28 +799,23 @@ bool NonLocalExitControl::prepareForNonLocalJump(NestableControl* target) {
         break;
       }
 
-      case StatementKind::ForOfLoop:
-        if (emitIteratorClose) {
-          if (!flushPops(bce_)) {
-            return false;
-          }
-          BytecodeOffset tryNoteStart;
-          ForOfLoopControl& loopinfo = control->as<ForOfLoopControl>();
-          if (!loopinfo.emitPrepareForNonLocalJumpFromScope(
-                  bce_, *es,
-                   false, &tryNoteStart)) {
-            
-            return false;
-          }
-          if (!forOfIterCloseScopeStarts.append(tryNoteStart)) {
-            return false;
-          }
-        } else {
+      case StatementKind::ForOfLoop: {
+        if (!flushPops(bce_)) {
+          return false;
+        }
+        BytecodeOffset tryNoteStart;
+        ForOfLoopControl& loopinfo = control->as<ForOfLoopControl>();
+        if (!loopinfo.emitPrepareForNonLocalJumpFromScope(
+                bce_, *es,
+                 false, &tryNoteStart)) {
           
-          
-          npops += 3;
+          return false;
+        }
+        if (!forOfIterCloseScopeStarts.append(tryNoteStart)) {
+          return false;
         }
         break;
+      }
 
       case StatementKind::ForInLoop:
         if (!flushPops(bce_)) {
