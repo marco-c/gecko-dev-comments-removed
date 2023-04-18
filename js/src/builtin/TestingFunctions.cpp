@@ -6171,6 +6171,7 @@ static bool CompileAndDelazifyAllToStencil(JSContext* cx, uint32_t argc,
 
   CompileOptions options(cx);
   UniqueChars fileNameBytes;
+  bool fillRuntimeCache = false;
   if (args.length() == 2) {
     if (!args[1].isObject()) {
       JS_ReportErrorASCII(
@@ -6182,6 +6183,16 @@ static bool CompileAndDelazifyAllToStencil(JSContext* cx, uint32_t argc,
 
     if (!js::ParseCompileOptions(cx, options, opts, &fileNameBytes)) {
       return false;
+    }
+
+    
+    
+    RootedValue v(cx);
+    if (!JS_GetProperty(cx, opts, "fillRuntimeCache", &v)) {
+      return false;
+    }
+    if (v.isBoolean() && v.toBoolean()) {
+      fillRuntimeCache = true;
     }
   }
   if (options.forceFullParse()) {
@@ -6202,6 +6213,38 @@ static bool CompileAndDelazifyAllToStencil(JSContext* cx, uint32_t argc,
                                              scopeKind);
   if (!topLevelStencil) {
     return false;
+  }
+
+  Rooted<js::StencilObject*> stencilObj(cx);
+  if (fillRuntimeCache) {
+    StencilCache& cache = cx->runtime()->caches().delazificationCache;
+    RefPtr<ScriptSource> source(input.get().source);
+    if (!cache.startCaching(std::move(source))) {
+      return false;
+    }
+
+    
+    
+    UniquePtr<ExtensibleCompilationStencil> tempResult =
+        cx->make_unique<ExtensibleCompilationStencil>(cx, input.get());
+    if (!tempResult) {
+      return false;
+    }
+    if (!tempResult->cloneFrom(cx, *topLevelStencil)) {
+      return false;
+    }
+
+    
+    RefPtr<CompilationStencil> result =
+        cx->new_<CompilationStencil>(std::move(tempResult));
+    if (!result) {
+      return false;
+    }
+
+    stencilObj = js::StencilObject::create(cx, result);
+    if (!stencilObj) {
+      return false;
+    }
   }
 
   
@@ -6231,6 +6274,16 @@ static bool CompileAndDelazifyAllToStencil(JSContext* cx, uint32_t argc,
       if (!innerStencil) {
         return false;
       }
+
+      if (fillRuntimeCache) {
+        StencilCache& cache = cx->runtime()->caches().delazificationCache;
+        StencilContext key(input.get().source, scriptRef.scriptExtra().extent);
+        if (auto guard = cache.isSourceCached(input.get().source)) {
+          if (!cache.putNew(guard, key, innerStencil.get())) {
+            return false;
+          }
+        }
+      }
     }
 
     if (!merger.addDelazification(cx, *innerStencil)) {
@@ -6238,16 +6291,17 @@ static bool CompileAndDelazifyAllToStencil(JSContext* cx, uint32_t argc,
     }
   }
 
-  RefPtr<CompilationStencil> result =
-      cx->new_<CompilationStencil>(merger.takeResult());
-  if (!result) {
-    return false;
-  }
+  if (!fillRuntimeCache) {
+    RefPtr<CompilationStencil> result =
+        cx->new_<CompilationStencil>(merger.takeResult());
+    if (!result) {
+      return false;
+    }
 
-  Rooted<js::StencilObject*> stencilObj(cx,
-                                        js::StencilObject::create(cx, result));
-  if (!stencilObj) {
-    return false;
+    stencilObj = js::StencilObject::create(cx, result);
+    if (!stencilObj) {
+      return false;
+    }
   }
 
   args.rval().setObject(*stencilObj);
