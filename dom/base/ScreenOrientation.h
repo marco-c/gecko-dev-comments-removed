@@ -11,7 +11,6 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/ScreenOrientationBinding.h"
 #include "mozilla/HalScreenConfiguration.h"
-#include "mozilla/MozPromise.h"
 
 class nsScreen;
 
@@ -75,8 +74,8 @@ class ScreenOrientation final
 
   
   
-  RefPtr<MozPromise<bool, bool, false>> LockDeviceOrientation(
-      hal::ScreenOrientation aOrientation, bool aIsFullscreen);
+  bool LockDeviceOrientation(hal::ScreenOrientation aOrientation,
+                             bool aIsFullscreen, ErrorResult& aRv);
 
   
   
