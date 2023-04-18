@@ -1227,7 +1227,7 @@ void nsHttpConnection::HandleTunnelResponse(uint16_t responseStatus,
   
 
   if (responseStatus == 200) {
-    ChangeState(HttpConnectionState::TUNNEL_DONE);
+    ChangeState(HttpConnectionState::REQUEST);
   }
   mProxyConnectStream = nullptr;
   bool isHttps = mTransaction ? mTransaction->ConnectionInfo()->EndToEndSSL()
@@ -1793,7 +1793,7 @@ nsresult nsHttpConnection::OnSocketWritable() {
   uint32_t writeAttempts = 0;
 
   if (mTransactionCaps & NS_HTTP_CONNECT_ONLY) {
-    if (!TunnelUsed()) {
+    if (!mConnInfo->UsingConnect()) {
       
       
       MOZ_ASSERT(false, "proxy connect will never happen");
@@ -1801,7 +1801,7 @@ nsresult nsHttpConnection::OnSocketWritable() {
       return NS_ERROR_FAILURE;
     }
 
-    if (TunnelCompleted()) {
+    if (mState == HttpConnectionState::REQUEST) {
       
       
       
@@ -1965,7 +1965,7 @@ nsresult nsHttpConnection::OnSocketReadable() {
   
   mResponseTimeoutEnabled = false;
 
-  if ((mTransactionCaps & NS_HTTP_CONNECT_ONLY) && !TunnelUsed()) {
+  if ((mTransactionCaps & NS_HTTP_CONNECT_ONLY) && !mConnInfo->UsingConnect()) {
     
     
     MOZ_ASSERT(false, "proxy connect will never happen");
@@ -2688,7 +2688,7 @@ void nsHttpConnection::SetTunnelSetupDone() {
   MOZ_ASSERT(mProxyConnectStream);
   MOZ_ASSERT(mState == HttpConnectionState::SETTING_UP_TUNNEL);
 
-  ChangeState(HttpConnectionState::TUNNEL_DONE);
+  ChangeState(HttpConnectionState::REQUEST);
   mProxyConnectStream = nullptr;
 }
 
@@ -2697,7 +2697,7 @@ nsresult nsHttpConnection::CheckTunnelIsNeeded() {
     case HttpConnectionState::UNINITIALIZED: {
       
       if (!mTransaction->ConnectionInfo()->UsingConnect()) {
-        ChangeState(HttpConnectionState::TUNNEL_NOT_USED);
+        ChangeState(HttpConnectionState::REQUEST);
         return NS_OK;
       }
       ChangeState(HttpConnectionState::SETTING_UP_TUNNEL);
@@ -2713,8 +2713,7 @@ nsresult nsHttpConnection::CheckTunnelIsNeeded() {
       }
       return rv;
     }
-    case HttpConnectionState::TUNNEL_DONE:
-    case HttpConnectionState::TUNNEL_NOT_USED:
+    case HttpConnectionState::REQUEST:
       return NS_OK;
   }
 }
