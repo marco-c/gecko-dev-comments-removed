@@ -4976,10 +4976,33 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
 
     
     
-    if (!styleBSize.IsAuto() ||
-        !(styleMinBSize.IsAuto() || (styleMinBSize.ConvertsToLength() &&
-                                     styleMinBSize.ToLength() == 0)) ||
-        !styleMaxBSize.IsNone()) {
+    
+    
+    
+    
+    
+    
+    const bool mightHaveBlockAxisConstraintToTransfer = [&] {
+      if (!styleBSize.BehavesLikeInitialValueOnBlockAxis()) {
+        return true;  
+      }
+      
+      
+      
+      
+      bool minBSizeHasNoConstraintToTransfer =
+          styleMinBSize.BehavesLikeInitialValueOnBlockAxis() ||
+          (styleMinBSize.IsLengthPercentage() &&
+           styleMinBSize.AsLengthPercentage().IsDefinitelyZero());
+      if (!minBSizeHasNoConstraintToTransfer) {
+        return true;  
+      }
+      if (!styleMaxBSize.BehavesLikeInitialValueOnBlockAxis()) {
+        return true;  
+      }
+      return false;
+    }();
+    if (mightHaveBlockAxisConstraintToTransfer) {
       if (AspectRatio ratio = aFrame->GetAspectRatio()) {
         AddStateBitToAncestors(
             aFrame, NS_FRAME_DESCENDANT_INTRINSIC_ISIZE_DEPENDS_ON_BSIZE);
