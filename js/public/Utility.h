@@ -66,6 +66,8 @@ enum ThreadType {
   THREAD_TYPE_ION_FREE,              
   THREAD_TYPE_WASM_GENERATOR_TIER2,  
   THREAD_TYPE_WORKER,                
+  THREAD_TYPE_DELAZIFY,              
+  THREAD_TYPE_DELAZIFY_FREE,         
   THREAD_TYPE_MAX                    
 };
 

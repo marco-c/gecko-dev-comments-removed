@@ -202,6 +202,12 @@ void CancelOffThreadParses(JSRuntime* runtime);
 
 
 
+void CancelOffThreadDelazify(JSRuntime* runtime);
+
+
+
+
+
 
 JS::OffThreadToken* StartOffThreadCompileToStencil(
     JSContext* cx, const JS::ReadOnlyCompileOptions& options,

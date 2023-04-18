@@ -38,6 +38,8 @@ class AutoLockHelperThreadState;
 class AutoUnlockHelperThreadState;
 class CompileError;
 struct ParseTask;
+struct DelazifyTask;
+struct FreeDelazifyTask;
 struct PromiseHelperTask;
 class PromiseObject;
 
@@ -108,6 +110,9 @@ class GlobalHelperThreadState {
       Vector<js::UniquePtr<jit::IonFreeTask>, 0, SystemAllocPolicy>;
   typedef Vector<UniquePtr<ParseTask>, 0, SystemAllocPolicy> ParseTaskVector;
   using ParseTaskList = mozilla::LinkedList<ParseTask>;
+  using DelazifyTaskList = mozilla::LinkedList<DelazifyTask>;
+  using FreeDelazifyTaskVector =
+      Vector<js::UniquePtr<FreeDelazifyTask>, 1, SystemAllocPolicy>;
   typedef Vector<UniquePtr<SourceCompressionTask>, 0, SystemAllocPolicy>
       SourceCompressionTaskVector;
   using GCParallelTaskList = mozilla::LinkedList<GCParallelTask>;
@@ -145,6 +150,19 @@ class GlobalHelperThreadState {
   
   ParseTaskVector parseWorklist_;
   ParseTaskList parseFinishedList_;
+
+  
+  DelazifyTaskList delazifyWorklist_;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  FreeDelazifyTaskVector freeDelazifyTaskVector_;
 
   
   SourceCompressionTaskVector compressionPendingList_;
@@ -299,6 +317,15 @@ class GlobalHelperThreadState {
     return parseFinishedList_;
   }
 
+  DelazifyTaskList& delazifyWorklist(const AutoLockHelperThreadState&) {
+    return delazifyWorklist_;
+  }
+
+  FreeDelazifyTaskVector& freeDelazifyTaskVector(
+      const AutoLockHelperThreadState&) {
+    return freeDelazifyTaskVector_;
+  }
+
   SourceCompressionTaskVector& compressionPendingList(
       const AutoLockHelperThreadState&) {
     return compressionPendingList_;
@@ -339,6 +366,8 @@ class GlobalHelperThreadState {
   bool canStartIonCompileTask(const AutoLockHelperThreadState& lock);
   bool canStartIonFreeTask(const AutoLockHelperThreadState& lock);
   bool canStartParseTask(const AutoLockHelperThreadState& lock);
+  bool canStartFreeDelazifyTask(const AutoLockHelperThreadState& lock);
+  bool canStartDelazifyTask(const AutoLockHelperThreadState& lock);
   bool canStartCompressionTask(const AutoLockHelperThreadState& lock);
   bool canStartGCParallelTask(const AutoLockHelperThreadState& lock);
 
@@ -359,6 +388,9 @@ class GlobalHelperThreadState {
       const AutoLockHelperThreadState& lock);
   HelperThreadTask* maybeGetIonFreeTask(const AutoLockHelperThreadState& lock);
   HelperThreadTask* maybeGetParseTask(const AutoLockHelperThreadState& lock);
+  HelperThreadTask* maybeGetFreeDelazifyTask(
+      const AutoLockHelperThreadState& lock);
+  HelperThreadTask* maybeGetDelazifyTask(const AutoLockHelperThreadState& lock);
   HelperThreadTask* maybeGetCompressionTask(
       const AutoLockHelperThreadState& lock);
   HelperThreadTask* maybeGetGCParallelTask(
@@ -440,6 +472,9 @@ class GlobalHelperThreadState {
   bool submitTask(UniquePtr<SourceCompressionTask> task,
                   const AutoLockHelperThreadState& locked);
   bool submitTask(JSRuntime* rt, UniquePtr<ParseTask> task,
+                  const AutoLockHelperThreadState& locked);
+  void submitTask(DelazifyTask* task, const AutoLockHelperThreadState& locked);
+  bool submitTask(UniquePtr<FreeDelazifyTask> task,
                   const AutoLockHelperThreadState& locked);
   bool submitTask(PromiseHelperTask* task);
   bool submitTask(GCParallelTask* task,
@@ -540,7 +575,124 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
 
   void runHelperThreadTask(AutoLockHelperThreadState& locked) override;
   void runTask(AutoLockHelperThreadState& lock);
+  void scheduleDelazifyTask(AutoLockHelperThreadState& lock);
   ThreadType threadType() override { return ThreadType::THREAD_TYPE_PARSE; }
+};
+
+
+
+
+
+
+
+struct DelazifyStrategy {
+  using ScriptIndex = frontend::ScriptIndex;
+  virtual ~DelazifyStrategy() = default;
+
+  
+  
+  virtual bool done() const = 0;
+
+  
+  
+  virtual ScriptIndex next() = 0;
+
+  
+  
+  virtual void clear() = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  [[nodiscard]] virtual bool add(JSContext* cx,
+                                 const frontend::CompilationStencil& stencil,
+                                 ScriptIndex index) = 0;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+struct DepthFirstDelazification final : public DelazifyStrategy {
+  Vector<ScriptIndex, 0, SystemAllocPolicy> stack;
+
+  bool done() const override { return stack.empty(); }
+  ScriptIndex next() override { return stack.popCopy(); }
+  void clear() override { return stack.clear(); }
+  [[nodiscard]] bool add(JSContext* cx,
+                         const frontend::CompilationStencil& stencil,
+                         ScriptIndex index) override;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
+                      public HelperThreadTask {
+  
+  
+  JSRuntime* runtime = nullptr;
+
+  
+  UniquePtr<DelazifyStrategy> strategy;
+
+  
+  
+  frontend::CompilationStencilMerger merger;
+
+  
+  OffThreadFrontendErrors errors_;
+
+  explicit DelazifyTask(JSRuntime* runtime);
+
+  [[nodiscard]] bool init(
+      JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+      UniquePtr<frontend::ExtensibleCompilationStencil>&& initial);
+
+  bool runtimeMatches(JSRuntime* rt) { return runtime == rt; }
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
+  }
+
+  void runHelperThreadTask(AutoLockHelperThreadState& locked) override;
+  [[nodiscard]] bool runTask(JSContext* cx);
+  ThreadType threadType() override { return ThreadType::THREAD_TYPE_DELAZIFY; }
+};
+
+
+
+
+
+
+struct FreeDelazifyTask : public HelperThreadTask {
+  DelazifyTask* task;
+
+  explicit FreeDelazifyTask(DelazifyTask* t) : task(t) {}
+  void runHelperThreadTask(AutoLockHelperThreadState& locked) override;
+  ThreadType threadType() override {
+    return ThreadType::THREAD_TYPE_DELAZIFY_FREE;
+  }
 };
 
 
