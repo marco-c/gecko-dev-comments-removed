@@ -641,7 +641,7 @@ void MatchGlob::Init(JSContext* aCx, const nsAString& aGlob,
   mGlob = aGlob;
 
   
-  auto index = mGlob.FindCharInSet(aAllowQuestion ? "*?" : "*");
+  auto index = mGlob.FindCharInSet(aAllowQuestion ? u"*?" : u"*");
   if (index < 0) {
     mPathLiteral = mGlob;
     return;

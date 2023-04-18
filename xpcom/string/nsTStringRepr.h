@@ -16,6 +16,7 @@
 #include "mozilla/fallible.h"
 #include "nsStringBuffer.h"
 #include "nsStringFlags.h"
+#include "nsStringFwd.h"
 #include "nsStringIterator.h"
 #include "nsCharTraits.h"
 
@@ -217,11 +218,6 @@ class nsTStringRepr {
 
   char_type Last() const;
 
-  size_type NS_FASTCALL CountChar(char_type) const;
-  int32_t NS_FASTCALL FindChar(char_type, index_type aOffset = 0) const;
-
-  bool Contains(char_type aChar) const;
-
   
   bool NS_FASTCALL Equals(const self_type&) const;
   bool NS_FASTCALL Equals(const self_type&, comparator_type) const;
@@ -357,27 +353,58 @@ class nsTStringRepr {
 
 
 
+  int32_t Find(const string_view& aString, index_type aOffset = 0) const;
 
-
-
-  int32_t Find(const nsTStringRepr<char>& aString, bool aIgnoreCase = false,
-               int32_t aOffset = 0, int32_t aCount = -1) const;
-  int32_t Find(const char* aString, bool aIgnoreCase = false,
-               int32_t aOffset = 0, int32_t aCount = -1) const;
-
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  int32_t Find(const self_type& aString, int32_t aOffset = 0,
-               int32_t aCount = -1) const;
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  int32_t Find(const char_type* aString, int32_t aOffset = 0,
-               int32_t aCount = -1) const;
-#ifdef MOZ_USE_CHAR16_WRAPPER
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  int32_t Find(char16ptr_t aString, int32_t aOffset = 0,
-               int32_t aCount = -1) const {
-    return Find(static_cast<const char16_t*>(aString), aOffset, aCount);
+  
+  
+  
+  template <typename I,
+            typename = std::enable_if_t<!std::is_same_v<I, index_type> &&
+                                        std::is_convertible_v<I, index_type>>>
+  int32_t Find(const string_view& aString, I aOffset) const {
+    static_assert(!std::is_same_v<I, bool>, "offset must not be `bool`");
+    return Find(aString, static_cast<index_type>(aOffset));
   }
-#endif
+
+  
+
+
+
+
+
+
+  int32_t LowerCaseFindASCII(const std::string_view& aString,
+                             index_type aOffset = 0) const;
+
+  
+
+
+
+
+
+  int32_t RFind(const string_view& aString) const;
+
+  size_type CountChar(char_type) const;
+
+  bool Contains(char_type aChar) const { return FindChar(aChar) != kNotFound; }
+
+  
+
+
+
+
+
+
+  int32_t FindChar(char_type aChar, index_type aOffset = 0) const;
+
+  
+
+
+
+
+
+
+  int32_t RFindChar(char_type aChar, int32_t aOffset = -1) const;
 
   
 
@@ -389,20 +416,7 @@ class nsTStringRepr {
 
 
 
-
-
-  
-  int32_t RFind(const nsTStringRepr<char>& aString, bool aIgnoreCase = false,
-                int32_t aOffset = -1, int32_t aCount = -1) const;
-  int32_t RFind(const char* aCString, bool aIgnoreCase = false,
-                int32_t aOffset = -1, int32_t aCount = -1) const;
-
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  int32_t RFind(const self_type& aString, int32_t aOffset = -1,
-                int32_t aCount = -1) const;
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  int32_t RFind(const char_type* aString, int32_t aOffset = -1,
-                int32_t aCount = -1) const;
+  int32_t FindCharInSet(const string_view& aSet, index_type aOffset = 0) const;
 
   
 
@@ -414,36 +428,7 @@ class nsTStringRepr {
 
 
 
-  
-  
-  int32_t RFindChar(char16_t aChar, int32_t aOffset = -1,
-                    int32_t aCount = -1) const;
-
-  
-
-
-
-
-
-
-
-
-
-  int32_t FindCharInSet(const char_type* aString, int32_t aOffset = 0) const;
-  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  int32_t FindCharInSet(const char* aSet, int32_t aOffset = 0) const;
-
-  
-
-
-
-
-
-
-
-
-
-  int32_t RFindCharInSet(const char_type* aString, int32_t aOffset = -1) const;
+  int32_t RFindCharInSet(const string_view& aSet, int32_t aOffset = -1) const;
 
  protected:
   nsTStringRepr() = delete;  

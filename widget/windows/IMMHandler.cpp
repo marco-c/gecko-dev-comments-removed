@@ -1479,8 +1479,11 @@ bool IMMHandler::HandleDocumentFeed(nsWindow* aWindow, LPARAM lParam,
 
   
   
-  int32_t paragraphStart = str.RFind("\n", false, targetOffset, -1) + 1;
-  int32_t paragraphEnd = str.Find("\r", false, targetOffset + targetLength, -1);
+  int32_t paragraphStart = 0;
+  if (targetOffset > 0) {
+    paragraphStart = Substring(str, 0, targetOffset).RFind(u"\n") + 1;
+  }
+  int32_t paragraphEnd = str.Find(u"\r", targetOffset + targetLength);
   if (paragraphEnd < 0) {
     paragraphEnd = str.Length();
   }

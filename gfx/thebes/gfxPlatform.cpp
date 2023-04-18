@@ -2857,7 +2857,7 @@ void gfxPlatform::InitWebGLConfig() {
     
     nsAutoString renderer;
     gfxInfo->GetAdapterDeviceID(renderer);
-    if (renderer.Find("Adreno (TM) 630") != -1) {
+    if (renderer.Find(u"Adreno (TM) 630") != -1) {
       gfxVars::SetAllowEglRbab(false);
     }
   }

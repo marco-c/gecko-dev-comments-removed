@@ -974,10 +974,10 @@ gfxPlatformGtk::CreateGlobalHardwareVsyncSource() {
   nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
   nsString windowProtocol;
   gfxInfo->GetWindowProtocol(windowProtocol);
-  bool isXwayland = windowProtocol.Find("xwayland") != -1;
+  bool isXwayland = windowProtocol.Find(u"xwayland") != -1;
   nsString adapterDriverVendor;
   gfxInfo->GetAdapterDriverVendor(adapterDriverVendor);
-  bool isMesa = adapterDriverVendor.Find("mesa") != -1;
+  bool isMesa = adapterDriverVendor.Find(u"mesa") != -1;
 
   
   
