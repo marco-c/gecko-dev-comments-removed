@@ -165,11 +165,8 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
   
   if (mIsEarlyBlankWindow) {
     
-    
-    RECT rect;
-    if (::GetUpdateRect(mWnd, &rect, FALSE)) {
-      ::ValidateRect(mWnd, &rect);
-    }
+    ::BeginPaint(mWnd, &ps);
+    ::EndPaint(mWnd, &ps);
     return true;
   }
 
@@ -207,10 +204,9 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
     
     
     
-    RECT rect;
-    if (::GetUpdateRect(mWnd, &rect, FALSE)) {
-      ::ValidateRect(mWnd, &rect);
-    }
+    
+    ::BeginPaint(mWnd, &ps);
+    ::EndPaint(mWnd, &ps);
 
     
     
