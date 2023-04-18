@@ -131,7 +131,7 @@ class DataStorage : public nsIObserver {
   
   void GetAll(nsTArray<DataStorageItem>* aItems);
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
   
   bool IsReady();

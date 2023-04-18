@@ -23,7 +23,7 @@ class nsProtectedAuthThread : public nsIProtectedAuthThread {
   bool mIAmRunning;
   bool mLoginReady;
 
-  PRThread* mThreadHandle;
+  PRThread* mThreadHandle;  
 
   
   PK11SlotInfo* mSlot;
