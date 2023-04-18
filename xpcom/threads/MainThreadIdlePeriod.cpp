@@ -48,8 +48,11 @@ MainThreadIdlePeriod::GetIdlePeriodHint(TimeStamp* aIdleDeadline) {
 
   
   
-  TimeDuration minIdlePeriod =
-      TimeDuration::FromMilliseconds(StaticPrefs::idle_period_min());
+  
+  
+  
+  TimeDuration minIdlePeriod = TimeDuration::FromMilliseconds(
+      nsRefreshDriver::IsInHighRateMode() ? 1 : StaticPrefs::idle_period_min());
   bool busySoon = currentGuess.IsNull() ||
                   (now >= (currentGuess - minIdlePeriod)) ||
                   currentGuess < mLastIdleDeadline;

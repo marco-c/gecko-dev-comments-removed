@@ -242,21 +242,26 @@ class RefreshDriverTimer {
     TimeStamp mostRecentRefresh = MostRecentRefresh();
     TimeDuration refreshPeriod = GetTimerRate();
     TimeStamp idleEnd = mostRecentRefresh + refreshPeriod;
+    bool inHighRateMode = nsRefreshDriver::IsInHighRateMode();
 
     
     
     
-    if (idleEnd +
-            refreshPeriod *
-                StaticPrefs::layout_idle_period_required_quiescent_frames() <
-        TimeStamp::Now()) {
+    if (!inHighRateMode &&
+        (idleEnd +
+             refreshPeriod *
+                 StaticPrefs::layout_idle_period_required_quiescent_frames() <
+         TimeStamp::Now())) {
       return aDefault;
     }
 
     
     
-    idleEnd = idleEnd - TimeDuration::FromMilliseconds(
-                            StaticPrefs::layout_idle_period_time_limit());
+    
+    idleEnd =
+        idleEnd -
+        TimeDuration::FromMilliseconds(
+            inHighRateMode ? 0 : StaticPrefs::layout_idle_period_time_limit());
     return idleEnd < aDefault ? idleEnd : aDefault;
   }
 
@@ -3099,22 +3104,11 @@ TimeStamp nsRefreshDriver::GetIdleDeadlineHint(TimeStamp aDefault,
     }
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   TimeStamp hint = TimeStamp();
   if (sRegularRateTimerList) {
     for (RefreshDriverTimer* timer : *sRegularRateTimerList) {
       TimeStamp newHint = timer->GetIdleDeadlineHint(aDefault);
-      if (newHint < aDefault && (hint.IsNull() || newHint > hint)) {
+      if (newHint < aDefault && (hint.IsNull() || newHint < hint)) {
         hint = newHint;
       }
     }
