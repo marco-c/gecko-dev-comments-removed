@@ -24,6 +24,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   SearchSERPTelemetry: "resource:///modules/SearchSERPTelemetry.jsm",
   Services: "resource://gre/modules/Services.jsm",
+  WindowsInstallsInfo:
+    "resource://gre/modules/components-utils/WindowsInstallsInfo.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
   setInterval: "resource://gre/modules/Timer.jsm",
   clearTimeout: "resource://gre/modules/Timer.jsm",
@@ -1200,68 +1202,144 @@ let BrowserUsageTelemetry = {
 
 
 
-  async reportInstallationTelemetry(dataPathOverride) {
+
+
+
+  async reportInstallationTelemetry(
+    dataPathOverride,
+    msixPackagePrefixes = ["Mozilla.Firefox", "Mozilla.MozillaFirefox"]
+  ) {
     if (AppConstants.platform != "win") {
       
       return;
     }
 
-    let dataPath = dataPathOverride;
-    if (!dataPath) {
-      dataPath = Services.dirsvc.get("GreD", Ci.nsIFile);
-      dataPath.append("installation_telemetry.json");
+    const TIMESTAMP_PREF = "app.installation.timestamp";
+    const lastInstallTime = Services.prefs.getStringPref(TIMESTAMP_PREF, null);
+    const wpm = Cc["@mozilla.org/windows-package-manager;1"].createInstance(
+      Ci.nsIWindowsPackageManager
+    );
+    let installer_type = "";
+    let pfn;
+    try {
+      pfn = Services.sysinfo.getProperty("winPackageFamilyName");
+    } catch (e) {}
+
+    function getInstallData() {
+      
+      
+      const installPaths = WindowsInstallsInfo.getInstallPaths(
+        1,
+        new Set([Services.dirsvc.get("GreBinD", Ci.nsIFile).path])
+      );
+      const msixInstalls = new Set();
+      
+      
+      try {
+        wpm
+          .findUserInstalledPackages(msixPackagePrefixes)
+          .forEach(i => msixInstalls.add(i));
+        if (pfn) {
+          msixInstalls.delete(pfn);
+        }
+      } catch (ex) {}
+      return {
+        installPaths,
+        msixInstalls,
+      };
     }
 
-    let dataBytes;
-    try {
-      dataBytes = await IOUtils.read(dataPath.path);
-    } catch (ex) {
-      if (ex.name == "NotFoundError") {
-        
+    let extra = {};
+
+    if (pfn) {
+      if (lastInstallTime != null) {
         
         return;
       }
-      throw ex;
-    }
-    const dataString = new TextDecoder("utf-16").decode(dataBytes);
-    const data = JSON.parse(dataString);
 
-    const TIMESTAMP_PREF = "app.installation.timestamp";
-    const lastInstallTime = Services.prefs.getStringPref(TIMESTAMP_PREF, null);
-
-    if (lastInstallTime && data.install_timestamp == lastInstallTime) {
       
-      return;
+      Services.prefs.setStringPref(TIMESTAMP_PREF, wpm.getInstalledDate());
+      let install_data = getInstallData();
+
+      installer_type = "msix";
+
+      
+      extra.version = AppConstants.MOZ_APP_VERSION;
+      extra.build_id = AppConstants.MOZ_BUILDID;
+      
+      
+      extra.admin_user = "false";
+      
+      
+      extra.profdir_existed = "false";
+      
+      extra.from_msi = "false";
+      
+      
+      extra.silent = "false";
+      
+      extra.default_path = "true";
+      extra.install_existed = install_data.msixInstalls.has(pfn).toString();
+      install_data.msixInstalls.delete(pfn);
+      extra.other_inst = (!!install_data.installPaths.size).toString();
+      extra.other_msix_inst = (!!install_data.msixInstalls.size).toString();
+    } else {
+      let dataPath = dataPathOverride;
+      if (!dataPath) {
+        dataPath = Services.dirsvc.get("GreD", Ci.nsIFile);
+        dataPath.append("installation_telemetry.json");
+      }
+
+      let dataBytes;
+      try {
+        dataBytes = await IOUtils.read(dataPath.path);
+      } catch (ex) {
+        if (ex.name == "NotFoundError") {
+          
+          
+          return;
+        }
+        throw ex;
+      }
+      const dataString = new TextDecoder("utf-16").decode(dataBytes);
+      const data = JSON.parse(dataString);
+
+      if (lastInstallTime && data.install_timestamp == lastInstallTime) {
+        
+        return;
+      }
+
+      
+      Services.prefs.setStringPref(TIMESTAMP_PREF, data.install_timestamp);
+      let install_data = getInstallData();
+
+      installer_type = data.installer_type;
+
+      
+      
+      delete data.install_timestamp;
+
+      
+      extra.version = data.version;
+      extra.build_id = data.build_id;
+      extra.admin_user = data.admin_user.toString();
+      extra.install_existed = data.install_existed.toString();
+      extra.profdir_existed = data.profdir_existed.toString();
+      extra.other_inst = (!!install_data.installPaths.size).toString();
+      extra.other_msix_inst = (!!install_data.msixInstalls.size).toString();
+
+      if (data.installer_type == "full") {
+        extra.silent = data.silent.toString();
+        extra.from_msi = data.from_msi.toString();
+        extra.default_path = data.default_path.toString();
+      }
     }
-
-    
-    Services.prefs.setStringPref(TIMESTAMP_PREF, data.install_timestamp);
-
-    
-    
-    delete data.install_timestamp;
-
-    
-    let extra = {
-      version: data.version,
-      build_id: data.build_id,
-      admin_user: data.admin_user.toString(),
-      install_existed: data.install_existed.toString(),
-      profdir_existed: data.profdir_existed.toString(),
-    };
-
-    if (data.installer_type == "full") {
-      extra.silent = data.silent.toString();
-      extra.from_msi = data.from_msi.toString();
-      extra.default_path = data.default_path.toString();
-    }
-
     
     Services.telemetry.setEventRecordingEnabled("installation", true);
     Services.telemetry.recordEvent(
       "installation",
       "first_seen",
-      data.installer_type,
+      installer_type,
       null,
       extra
     );
