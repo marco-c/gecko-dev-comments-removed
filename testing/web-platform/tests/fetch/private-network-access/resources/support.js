@@ -32,8 +32,6 @@ function futureMessage() {
   });
 };
 
-const kTreatAsPublicAddressSuffix =
-      "?pipe=header(Content-Security-Policy,treat-as-public-address)";
 
 
 
@@ -59,24 +57,42 @@ function resolveUrl(url, options) {
     return result;
   }
 
-  const { port, protocol, treatAsPublicAddress } = options;
+  const { port, protocol, headers, searchParams } = options;
   if (port !== undefined) {
     result.port = port;
   }
   if (protocol !== undefined) {
     result.protocol = protocol;
   }
-  if (treatAsPublicAddress) {
-    result.searchParams.append(
-        "pipe", "header(Content-Security-Policy,treat-as-public-address)");
+  if (headers !== undefined) {
+    const pipes = [];
+    for (key in headers) {
+      pipes.push(`header(${key},${headers[key]})`);
+    }
+    result.searchParams.append("pipe", pipes.join("|"));
+  }
+  if (searchParams !== undefined) {
+    for (key in searchParams) {
+      result.searchParams.append(key, searchParams[key]);
+    }
   }
 
   return result;
 }
 
 const kFetchTestResult = {
-  success: true,
-  failure: "TypeError: Failed to fetch",
+  success: {
+    ok: true,
+    body: "success",
+  },
+  opaque: {
+    ok: false,
+    type: "opaque",
+    body: "",
+  },
+  failure: {
+    error: "TypeError: Failed to fetch",
+  },
 }
 
 
@@ -94,14 +110,34 @@ const kFetchTestResult = {
 
 
 
-async function fetchTest(t, { source, target, expected }) {
+
+
+
+
+
+async function fetchTest(t, { source, target, fetchOptions, expected }) {
   const sourceUrl = resolveUrl("resources/fetcher.html", source);
   const iframe = await appendIframe(t, document, sourceUrl);
 
-  const targetUrl = resolveUrl("/common/blank-with-cors.html", target);
+  const targetUrl = resolveUrl("resources/preflight.py", target);
+  const message = {
+    url: targetUrl.href,
+    options: fetchOptions,
+  };
+
   const reply = futureMessage();
-  iframe.contentWindow.postMessage(targetUrl.href, "*");
-  assert_equals(await reply, expected);
+  iframe.contentWindow.postMessage(message, "*");
+
+  const { error, ok, type, body } = await reply;
+
+  assert_equals(error, expected.error, "error");
+
+  assert_equals(ok, expected.ok, "response ok");
+  assert_equals(body, expected.body, "response body");
+
+  if (expected.type !== undefined) {
+    assert_equals(type, expected.type, "response type");
+  }
 }
 
 const kWebsocketTestResult = {
