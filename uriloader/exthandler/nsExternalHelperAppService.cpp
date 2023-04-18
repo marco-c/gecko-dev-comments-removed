@@ -96,8 +96,6 @@
 #include "nsPIDOMWindow.h"
 #include "ExternalHelperAppChild.h"
 
-#include "mozilla/dom/nsHTTPSOnlyUtils.h"
-
 #ifdef XP_WIN
 #  include "nsWindowsHelpers.h"
 #endif
@@ -1743,17 +1741,6 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
   
   if (aChannel) {
     aChannel->GetURI(getter_AddRefs(mSourceUrl));
-    
-    
-    
-    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
-    bool isPrivateWin = loadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-    if (nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(isPrivateWin) ||
-        nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled(isPrivateWin)) {
-      uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
-      httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_DOWNLOAD_IN_PROGRESS;
-      loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
-    }
   }
 
   if (!mForceSave && StaticPrefs::browser_download_enable_spam_prevention() &&
