@@ -20,7 +20,6 @@ DIRS += [
     "mozapps/downloads",
     "mozapps/extensions",
     "mozapps/preferences",
-    "pluginproblem",
     "profile",
     "themes",
 ]
@@ -48,7 +47,11 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
     DIRS += ["system/osxproxy"]
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
-    DIRS += ["system/windowsproxy", "system/windowsDHCPClient"]
+    DIRS += [
+        "system/windowsproxy",
+        "system/windowsDHCPClient",
+        "system/windowsPackageManager",
+    ]
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
     DIRS += ["system/androidproxy"]
 
@@ -73,9 +76,6 @@ with Files("mozapps/installer/windows/**"):
 
 with Files("mozapps/preferences/**"):
     BUG_COMPONENT = ("Toolkit", "Preferences")
-
-with Files("pluginproblem/**"):
-    BUG_COMPONENT = ("Core", "Plug-ins")
 
 with Files("l10n-registry.manifest"):
     BUG_COMPONENT = ("Core", "Localization")
