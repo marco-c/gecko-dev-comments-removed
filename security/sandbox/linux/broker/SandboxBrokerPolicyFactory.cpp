@@ -856,8 +856,7 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
   }
 
   
-  policy->AddDir(rdwr, "/dev/dri");
-  AddDriPaths(policy.get());
+  AddGLDependencies(policy.get());
 
   
   AddLdconfigPaths(policy.get());

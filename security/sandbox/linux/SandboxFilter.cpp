@@ -1785,6 +1785,7 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
   explicit RDDSandboxPolicy(SandboxBrokerClient* aBroker) {
     mBroker = aBroker;
     mMayCreateShmem = true;
+    mBrokeredConnect = true;
   }
 
 #ifndef ANDROID
@@ -1821,10 +1822,10 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
                                        bool aHasArgs) const override {
     switch (aCall) {
       
-      
-      
-      case SYS_SOCKET:
-        return Some(Error(EACCES));
+      case SYS_GETSOCKNAME:
+      case SYS_GETPEERNAME:
+      case SYS_SHUTDOWN:
+        return Some(Allow());
 
       default:
         return SandboxPolicyCommon::EvaluateSocketCall(aCall, aHasArgs);
