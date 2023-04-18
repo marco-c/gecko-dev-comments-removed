@@ -197,29 +197,25 @@ struct nsContentListKey {
 
 
 
-#define LIST_UP_TO_DATE 0
-
-
-
-
-
-#define LIST_DIRTY 1
-
-
-
-
-
-
-
-#define LIST_LAZY 2
-
-
-
-
-
 class nsContentList : public nsBaseContentList,
                       public nsIHTMLCollection,
                       public nsStubMutationObserver {
+ protected:
+  enum class State : uint8_t {
+    
+    
+    UpToDate = 0,
+    
+    
+    Dirty,
+    
+    
+    
+    
+    
+    Lazy,
+  };
+
  public:
   NS_DECL_ISUPPORTS_INHERITED
 
@@ -348,7 +344,7 @@ class nsContentList : public nsBaseContentList,
 
 
   void SetDirty() {
-    mState = LIST_DIRTY;
+    mState = State::Dirty;
     Reset();
   }
 
@@ -432,45 +428,38 @@ class nsContentList : public nsBaseContentList,
 
 
   void* mData;
-  
-
-
-
-  uint8_t mState;
 
   
-  
-  
-  
+  State mState;
 
   
 
 
-  uint8_t mMatchAll : 1;
+  bool mMatchAll : 1;
   
 
 
 
-  uint8_t mDeep : 1;
+  bool mDeep : 1;
   
 
 
 
-  uint8_t mFuncMayDependOnAttr : 1;
+  bool mFuncMayDependOnAttr : 1;
   
 
 
-  uint8_t mFlushesNeeded : 1;
+  bool mFlushesNeeded : 1;
   
 
 
 
 
-  uint8_t mIsHTMLDocument : 1;
+  bool mIsHTMLDocument : 1;
   
 
 
-  const uint8_t mIsLiveList : 1;
+  const bool mIsLiveList : 1;
 
 #ifdef DEBUG_CONTENT_LIST
   void AssertInSync();
