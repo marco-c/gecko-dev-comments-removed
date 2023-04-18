@@ -1493,22 +1493,15 @@ const updatedAddonFluentIds = new Map([
     ) {
       
       let addonIdPrefix = addon.id.replace("@mozilla.org", "");
-      const colorwaySuffix = "colorway";
-      if (addonIdPrefix.endsWith(colorwaySuffix)) {
+      if (addonIdPrefix.endsWith("colorway")) {
+        
+        
+        
         if (aProp == "description") {
           
           return null;
         }
-        
-        
-        
-        
-        
         let [colorName, variantName] = addonIdPrefix.split("-", 2);
-        if (variantName == colorwaySuffix) {
-          
-          return addon.defaultLocale.name;
-        }
         
         
         colorName = colorName[0].toUpperCase() + colorName.slice(1);
