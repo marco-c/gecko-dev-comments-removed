@@ -494,6 +494,33 @@ bool CookieCommons::IsSafeTopLevelNav(nsIChannel* aChannel) {
   return NS_IsSafeMethodNav(aChannel);
 }
 
+
+
+
+
+
+
+
+
+
+bool IsSameSiteSchemeEqual(const nsACString& aFirstScheme,
+                           const nsACString& aSecondScheme) {
+  if (!StaticPrefs::network_cookie_sameSite_schemeful()) {
+    return true;
+  }
+
+  auto isSchemeHttpOrHttps = [](const nsACString& scheme) -> bool {
+    return scheme.EqualsLiteral("http") || scheme.EqualsLiteral("https");
+  };
+
+  if (!isSchemeHttpOrHttps(aFirstScheme) ||
+      !isSchemeHttpOrHttps(aSecondScheme)) {
+    return true;
+  }
+
+  return aFirstScheme.Equals(aSecondScheme);
+}
+
 bool CookieCommons::IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI) {
   if (!aChannel) {
     return false;
@@ -509,6 +536,9 @@ bool CookieCommons::IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI) {
     return false;
   }
 
+  nsAutoCString hostScheme, otherScheme;
+  aHostURI->GetScheme(hostScheme);
+
   bool isForeign = true;
   nsresult rv;
   if (loadInfo->GetExternalContentPolicyType() ==
@@ -519,6 +549,8 @@ bool CookieCommons::IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI) {
     
     
     rv = triggeringPrincipal->IsThirdPartyChannel(aChannel, &isForeign);
+
+    triggeringPrincipal->GetScheme(otherScheme);
   } else {
     nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
         do_GetService(THIRDPARTYUTIL_CONTRACTID);
@@ -526,10 +558,18 @@ bool CookieCommons::IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI) {
       return true;
     }
     rv = thirdPartyUtil->IsThirdPartyChannel(aChannel, aHostURI, &isForeign);
+
+    channelURI->GetScheme(otherScheme);
   }
   
   
   if (NS_FAILED(rv) || isForeign) {
+    return true;
+  }
+
+  if (!IsSameSiteSchemeEqual(otherScheme, hostScheme)) {
+    
+    
     return true;
   }
 
@@ -558,6 +598,14 @@ bool CookieCommons::IsSameSiteForeign(nsIChannel* aChannel, nsIURI* aHostURI) {
       rv = redirectPrincipal->IsThirdPartyChannel(aChannel, &isForeign);
       
       if (NS_FAILED(rv) || isForeign) {
+        return true;
+      }
+
+      nsAutoCString redirectScheme;
+      redirectPrincipal->GetScheme(redirectScheme);
+      if (!IsSameSiteSchemeEqual(redirectScheme, hostScheme)) {
+        
+        
         return true;
       }
     }
