@@ -183,6 +183,11 @@ function Editor(config) {
   this.config.extraKeys["Alt-F"] = false;
 
   
+  
+  
+  this.config.extraKeys[Editor.accel("U")] = false;
+
+  
   Object.keys(config).forEach(k => {
     if (k != "extraKeys") {
       this.config[k] = config[k];
