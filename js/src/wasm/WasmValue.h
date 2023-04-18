@@ -22,6 +22,7 @@
 #include "js/Class.h"  
 #include "vm/JSObject.h"
 #include "vm/NativeObject.h"  
+#include "wasm/WasmSerialize.h"
 #include "wasm/WasmValType.h"
 
 namespace js {
@@ -31,6 +32,8 @@ namespace wasm {
 
 struct V128 {
   uint8_t bytes[16];  
+
+  WASM_CHECK_CACHEABLE_POD(bytes);
 
   V128() { memset(bytes, 0, sizeof(bytes)); }
 
@@ -63,6 +66,8 @@ struct V128 {
 
   bool operator!=(const V128& rhs) const { return !(*this == rhs); }
 };
+
+WASM_DECLARE_CACHEABLE_POD(V128);
 
 static_assert(sizeof(V128) == 16, "Invariant");
 
@@ -268,6 +273,7 @@ class LitVal {
     double f64_;
     wasm::V128 v128_;
     wasm::AnyRef ref_;
+
     Cell() : v128_() {}
     ~Cell() = default;
   };
@@ -275,6 +281,15 @@ class LitVal {
  protected:
   ValType type_;
   Cell cell_;
+
+  
+  
+  
+  WASM_CHECK_CACHEABLE_POD(type_, cell_.i32_, cell_.i64_, cell_.f32_,
+                           cell_.f64_, cell_.v128_);
+  WASM_ALLOW_NON_CACHEABLE_POD_FIELD(
+      cell_.ref_,
+      "The pointer value in ref_ is guaranteed to always be null in a LitVal.");
 
  public:
   LitVal() : type_(ValType()), cell_{} {}
@@ -358,6 +373,8 @@ class LitVal {
     return cell_.v128_;
   }
 };
+
+WASM_DECLARE_CACHEABLE_POD(LitVal);
 
 
 
