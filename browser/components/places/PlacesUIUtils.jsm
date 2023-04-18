@@ -1816,8 +1816,8 @@ var PlacesUIUtils = {
     }
   },
 
-  getImageURL(aItem) {
-    let iconURL = aItem.image;
+  getImageURL(icon) {
+    let iconURL = icon;
     
     if (/^https?:/.test(iconURL)) {
       iconURL = "moz-anno:favicon:" + iconURL;
