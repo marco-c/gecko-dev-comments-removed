@@ -2,7 +2,7 @@
 
 "use strict";
 
-async function testPrintPreview() {
+add_task(async function testPrintPreview() {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, "http://example.net/");
 
   let extension = ExtensionTestUtils.loadExtension({
@@ -25,55 +25,20 @@ async function testPrintPreview() {
 
   await extension.startup();
 
-  if (!Services.prefs.getBoolPref("print.tab_modal.enabled")) {
-    await extension.awaitFinish("tabs.printPreview");
+  
+  await BrowserTestUtils.waitForCondition(() => {
+    let preview = document.querySelector(".printPreviewBrowser");
+    return preview && BrowserTestUtils.is_visible(preview);
+  });
 
-    let ppTab = PrintUtils.shouldSimplify
-      ? PrintPreviewListener._simplifiedPrintPreviewTab
-      : PrintPreviewListener._printPreviewTab;
+  gBrowser.getTabDialogBox(gBrowser.selectedBrowser).abortAllDialogs();
+  
+  await BrowserTestUtils.waitForCondition(
+    () => !document.querySelector(".printPreviewBrowser")
+  );
 
-    let ppToolbar = document.getElementById("print-preview-toolbar");
-
-    is(window.gInPrintPreviewMode, true, "window in print preview mode");
-
-    isnot(ppTab, null, "print preview tab created");
-    isnot(ppTab.linkedBrowser, null, "print preview browser created");
-    isnot(ppToolbar, null, "print preview toolbar created");
-
-    is(ppTab, gBrowser.selectedTab, "print preview tab selected");
-    is(
-      ppTab.linkedBrowser.currentURI.spec,
-      "about:printpreview",
-      "print preview browser url correct"
-    );
-    PrintUtils.exitPrintPreview();
-    await BrowserTestUtils.waitForCondition(() => !window.gInPrintPreviewMode);
-  } else {
-    
-    await BrowserTestUtils.waitForCondition(() => {
-      let preview = document.querySelector(".printPreviewBrowser");
-      return preview && BrowserTestUtils.is_visible(preview);
-    });
-
-    gBrowser.getTabDialogBox(gBrowser.selectedBrowser).abortAllDialogs();
-    
-    await BrowserTestUtils.waitForCondition(
-      () => !document.querySelector(".printPreviewBrowser")
-    );
-
-    await extension.awaitFinish("tabs.printPreview");
-  }
+  await extension.awaitFinish("tabs.printPreview");
 
   await extension.unload();
   BrowserTestUtils.removeTab(gBrowser.tabs[1]);
-}
-
-add_task(async function() {
-  for (let prefValue of [false, true]) {
-    info("Testing with tab modal enabled: " + prefValue);
-    await SpecialPowers.pushPrefEnv({
-      set: [["print.tab_modal.enabled", prefValue]],
-    });
-    await testPrintPreview();
-  }
 });
