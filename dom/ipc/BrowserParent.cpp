@@ -448,14 +448,10 @@ a11y::DocAccessibleParent* BrowserParent::GetTopLevelDocAccessible() const {
     
     
     
-    if (doc->IsTopLevelInContentProcess()) {
+    if (doc->IsTopLevelInContentProcess() && !doc->IsShutdown()) {
       return doc;
     }
   }
-
-  MOZ_ASSERT(docs.Count() == 0,
-             "If there isn't a top level accessible doc "
-             "there shouldn't be an accessible doc at all!");
 #endif
   return nullptr;
 }
