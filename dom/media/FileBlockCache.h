@@ -140,7 +140,7 @@ class FileBlockCache : public MediaBlockCacheBase {
   
   
   
-  Mutex mFileMutex MOZ_UNANNOTATED;
+  Mutex mFileMutex;
   
   nsresult MoveBlockInFile(int32_t aSourceBlockIndex, int32_t aDestBlockIndex);
   
@@ -151,15 +151,15 @@ class FileBlockCache : public MediaBlockCacheBase {
   nsresult WriteBlockToFile(int32_t aBlockIndex, const uint8_t* aBlockData);
   
   
-  PRFileDesc* mFD;
+  PRFileDesc* mFD PT_GUARDED_BY(mFileMutex);
   
-  int64_t mFDCurrentPos;
+  int64_t mFDCurrentPos GUARDED_BY(mFileMutex);
 
   
   
   
   
-  Mutex mDataMutex MOZ_UNANNOTATED;
+  Mutex mDataMutex;
   
   
   
@@ -170,22 +170,22 @@ class FileBlockCache : public MediaBlockCacheBase {
   
   
   
-  nsTArray<RefPtr<BlockChange> > mBlockChanges;
+  nsTArray<RefPtr<BlockChange> > mBlockChanges GUARDED_BY(mDataMutex);
   
   
-  nsCOMPtr<nsISerialEventTarget> mBackgroundET;
+  nsCOMPtr<nsISerialEventTarget> mBackgroundET GUARDED_BY(mDataMutex);
   
-  std::deque<int32_t> mChangeIndexList;
-  
-  
-  bool mIsWriteScheduled;
+  std::deque<int32_t> mChangeIndexList GUARDED_BY(mDataMutex);
   
   
-  bool mIsReading;
+  bool mIsWriteScheduled GUARDED_BY(mDataMutex);
+  
+  
+  bool mIsReading GUARDED_BY(mDataMutex);
   
   
   
-  bool mInitialized = false;
+  bool mInitialized GUARDED_BY(mDataMutex) = false;
 };
 
 }  

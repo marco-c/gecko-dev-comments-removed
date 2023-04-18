@@ -90,39 +90,42 @@ class FileMediaResource : public BaseMediaResource {
   
   
   
-  nsresult UnsafeRead(char* aBuffer, uint32_t aCount, uint32_t* aBytes);
-  nsresult UnsafeSeek(int32_t aWhence, int64_t aOffset);
+  nsresult UnsafeRead(char* aBuffer, uint32_t aCount, uint32_t* aBytes)
+      REQUIRES(mLock);
+  nsresult UnsafeSeek(int32_t aWhence, int64_t aOffset) REQUIRES(mLock);
 
  private:
   
   
-  void EnsureSizeInitialized();
+  void EnsureSizeInitialized() REQUIRES(mLock);
   already_AddRefed<MediaByteBuffer> UnsafeMediaReadAt(int64_t aOffset,
-                                                      uint32_t aCount);
-
-  
-  
-  int64_t mSize;
-
-  
-  
-  
-  
-  
-  Mutex mLock MOZ_UNANNOTATED;
-
-  
-  
-  nsCOMPtr<nsISeekableStream> mSeekable;
-
-  
-  
-  nsCOMPtr<nsIInputStream> mInput;
+                                                      uint32_t aCount)
+      REQUIRES(mLock);
 
   
   
   
-  bool mSizeInitialized;
+  int64_t mSize GUARDED_BY(mLock);
+
+  
+  
+  
+  
+  
+  Mutex mLock;
+
+  
+  
+  nsCOMPtr<nsISeekableStream> mSeekable GUARDED_BY(mLock);
+
+  
+  
+  nsCOMPtr<nsIInputStream> mInput GUARDED_BY(mLock);
+
+  
+  
+  
+  bool mSizeInitialized GUARDED_BY(mLock);
   
   
   bool mNotifyDataEndedProcessed = false;

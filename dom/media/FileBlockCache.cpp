@@ -367,12 +367,12 @@ void FileBlockCache::PerformBlockIOs() {
         MoveBlockInFile(change->mSourceBlockIndex, blockIndex);
       }
     }
-    mChangeIndexList.pop_front();
+    mChangeIndexList.pop_front();  
     
     
     
-    if (mBlockChanges[blockIndex] == change) {
-      mBlockChanges[blockIndex] = nullptr;
+    if (mBlockChanges[blockIndex] == change) {  
+      mBlockChanges[blockIndex] = nullptr;      
     }
   }
 
@@ -389,6 +389,7 @@ nsresult FileBlockCache::Read(int64_t aOffset, uint8_t* aData, int32_t aLength,
 
   mIsReading = true;
   auto exitRead = MakeScopeExit([&] {
+    mDataMutex.AssertCurrentThreadOwns();
     mIsReading = false;
     if (!mChangeIndexList.empty()) {
       
