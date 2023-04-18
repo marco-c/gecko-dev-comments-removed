@@ -220,13 +220,25 @@ ProcessedModuleLoadEvent::ProcessedModuleLoadEvent(
     return;
   }
 
+  mRequestedDllName = aModLoadInfo.mNtLoadInfo.mRequestedDllName.AsString();
+
   
   
-  nsAutoString strRequested(
-      aModLoadInfo.mNtLoadInfo.mRequestedDllName.AsString());
-  if (!strRequested.IsEmpty() &&
-      widget::WinUtils::PreparePathForTelemetry(strRequested)) {
-    mRequestedDllName = strRequested;
+  
+  
+  
+  
+  if (XRE_IsParentProcess()) {
+    SanitizeRequestedDllName();
+  }
+}
+
+void ProcessedModuleLoadEvent::SanitizeRequestedDllName() {
+  if (!mRequestedDllName.IsEmpty() &&
+      !widget::WinUtils::PreparePathForTelemetry(mRequestedDllName)) {
+    
+    
+    mRequestedDllName.Truncate();
   }
 }
 
