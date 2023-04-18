@@ -10,7 +10,6 @@
 #include "mozilla/glean/bindings/DistributionData.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
-#include "mozilla/TimeStamp.h"
 #include "nsIGleanMetrics.h"
 #include "nsTArray.h"
 
@@ -41,22 +40,6 @@ class TimingDistributionMetric {
 
 
   void StopAndAccumulate(const TimerId&& aId) const;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void AccumulateRawDuration(const TimeDuration& aDuration) const;
 
   
 
