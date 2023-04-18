@@ -1130,6 +1130,10 @@ class DownloadsViewItem extends DownloadsViewUI.DownloadElementShell {
         let partFile = new FileUtils.File(this.download.target.partFilePath);
         return partFile.exists();
       }
+      case "downloadsCmd_deleteFile": {
+        let { target } = this.download;
+        return target.exists || target.partFileExists;
+      }
       case "cmd_delete":
       case "downloadsCmd_copyLocation":
       case "downloadsCmd_doDefault":
@@ -1218,6 +1222,22 @@ class DownloadsViewItem extends DownloadsViewUI.DownloadElementShell {
     
     
     DownloadsPanel.hidePanel();
+  }
+
+  async downloadsCmd_deleteFile() {
+    await super.downloadsCmd_deleteFile();
+    
+    
+    
+    
+    
+    
+    
+    for (let viewItem of DownloadsView._visibleViewItems.values()) {
+      viewItem.download.refresh().catch(Cu.reportError);
+    }
+    
+    
   }
 
   downloadsCmd_showBlockedInfo() {

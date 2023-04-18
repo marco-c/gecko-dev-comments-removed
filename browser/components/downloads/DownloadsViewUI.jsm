@@ -226,6 +226,11 @@ var DownloadsViewUI = {
     let { preferredAction, useSystemDefault } = mimeInfo ? mimeInfo : {};
 
     
+    contextMenu.querySelector(".downloadDeleteFileMenuItem").hidden = !(
+      download.target?.exists || download.target?.partFileExists
+    );
+
+    
     
     let useSystemViewerItem = contextMenu.querySelector(
       ".downloadUseSystemDefaultMenuItem"
@@ -972,7 +977,9 @@ DownloadsViewUI.DownloadElementShell.prototype = {
       case "downloadsCmd_alwaysOpenSimilarFiles":
         
         return this.download.target.exists;
+
       case "downloadsCmd_show":
+      case "downloadsCmd_deleteFile":
         let { target } = this.download;
         return target.exists || target.partFileExists;
 
@@ -1063,6 +1070,21 @@ DownloadsViewUI.DownloadElementShell.prototype = {
 
   cmd_delete() {
     DownloadsCommon.deleteDownload(this.download).catch(Cu.reportError);
+  },
+
+  async downloadsCmd_deleteFile() {
+    let { download } = this;
+    let { path } = download.target;
+    let { succeeded } = download;
+    
+    await DownloadsCommon.deleteDownload(download);
+    
+    if (succeeded) {
+      
+      
+      await IOUtils.setPermissions(path, 0o660);
+      await IOUtils.remove(path, { ignoreAbsent: true });
+    }
   },
 
   downloadsCmd_openInSystemViewer() {
