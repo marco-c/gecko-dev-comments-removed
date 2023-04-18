@@ -111,6 +111,8 @@ const kSafeSchemes = [
   "xmpp",
 ];
 
+const STANDARD_SAFE_PROTOCOLS = kSafeSchemes;
+
 
 
 
@@ -275,6 +277,7 @@ var E10SUtils = {
   PRIVILEGEDMOZILLA_REMOTE_TYPE,
   FISSION_WEB_REMOTE_TYPE,
   SERVICEWORKER_REMOTE_TYPE,
+  STANDARD_SAFE_PROTOCOLS,
 
   
 

@@ -3,6 +3,10 @@
 
 "use strict";
 
+var { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
+
 let gHandlerService = Cc["@mozilla.org/uriloader/handler-service;1"].getService(
   Ci.nsIHandlerService
 );
@@ -71,7 +75,6 @@ function initTestHandlers() {
     let handlerInfo = HandlerServiceTestUtils.getBlankHandlerInfo(scheme);
     handlerInfo.possibleApplicationHandlers.appendElement(webHandler);
     handlerInfo.preferredApplicationHandler = webHandler;
-
     gHandlerService.store(handlerInfo);
   });
 }
@@ -128,6 +131,7 @@ async function triggerOpenProto(
     useJSRedirect = false,
     serverRedirect = "",
     linkToRedirect = false,
+    customHandlerInfo,
   } = {}
 ) {
   let uri = `${scheme}://test`;
@@ -169,7 +173,8 @@ async function triggerOpenProto(
       "@mozilla.org/content-dispatch-chooser;1"
     ].createInstance(Ci.nsIContentDispatchChooser);
 
-    let handler = HandlerServiceTestUtils.getHandlerInfo(scheme);
+    let handler =
+      customHandlerInfo || HandlerServiceTestUtils.getHandlerInfo(scheme);
 
     contentDispatchChooser.handleURI(
       handler,
@@ -328,6 +333,7 @@ async function testOpenProto(
     
     
     let acceptBtnLabel = dialogEl.getButton("accept")?.label;
+
     if (chooserIsNext) {
       is(
         acceptBtnLabel,
@@ -827,6 +833,37 @@ add_task(async function test_no_principal() {
       chooserDialogOptions: {
         hasCheckbox: true,
         actionConfirm: false, 
+      },
+    });
+  });
+});
+
+
+
+
+
+add_task(async function test_non_standard_protocol() {
+  let scheme = null;
+  
+  if (AppConstants.platform == "macosx") {
+    scheme = "itunes";
+  } else {
+    info(
+      "Skipping this test since there isn't a suitable default protocol on this platform"
+    );
+    return;
+  }
+
+  await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
+    await testOpenProto(browser, scheme, {
+      loadOptions: {
+        customHandlerInfo: HandlerServiceTestUtils.getHandlerInfo(scheme),
+      },
+      permDialogOptions: {
+        hasCheckbox: true,
+        hasChangeApp: true,
+        chooserIsNext: false,
+        actionChangeApp: false,
       },
     });
   });
