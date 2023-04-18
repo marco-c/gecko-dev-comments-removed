@@ -14607,7 +14607,7 @@ void Document::GetWireframeWithoutFlushing(bool aIncludeNodes,
   if (!rects.SetCapacity(frames.Length(), fallible)) {
     return;
   }
-  for (nsIFrame* frame : frames) {
+  for (nsIFrame* frame : Reversed(frames)) {
     
     auto& taggedRect = *rects.AppendElement(fallible);
     const auto r =
