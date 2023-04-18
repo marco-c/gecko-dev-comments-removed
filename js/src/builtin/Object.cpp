@@ -39,6 +39,10 @@
 #include "vm/ToSource.h"       
 #include "vm/WellKnownAtom.h"  
 
+#ifdef ENABLE_RECORD_TUPLE
+#  include "builtin/RecordObject.h"
+#endif
+
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/Shape-inl.h"
@@ -1534,9 +1538,67 @@ static bool TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
       properties[i].set(value);
     }
   }
+#ifdef ENABLE_RECORD_TUPLE
+  else {
+    Rooted<RecordType*> rec(cx);
+    if (RecordObject::maybeUnbox(obj, &rec)) {
+      RootedArrayObject keys(cx, rec->keys());
+      RootedId keyId(cx);
+      RootedString keyStr(cx);
 
-  
-  
+      MOZ_ASSERT(properties.empty(), "records cannot have dense elements");
+      if (!properties.resize(keys->length())) {
+        return false;
+      }
+
+      for (size_t i = 0; i < keys->length(); i++) {
+        MOZ_ASSERT(keys->getDenseElement(i).isString());
+        if (kind == EnumerableOwnPropertiesKind::Keys ||
+            kind == EnumerableOwnPropertiesKind::Names) {
+          value.set(keys->getDenseElement(i));
+        } else if (kind == EnumerableOwnPropertiesKind::Values) {
+          keyStr.set(keys->getDenseElement(i).toString());
+
+          if (!JS_StringToId(cx, keyStr, &keyId)) {
+            return false;
+          }
+          if (!GetProperty(cx, obj, obj, keyId, &value)) {
+            return false;
+          }
+        } else {
+          MOZ_ASSERT(kind == EnumerableOwnPropertiesKind::KeysAndValues);
+
+          key.set(keys->getDenseElement(i));
+          keyStr.set(key.toString());
+
+          if (!JS_StringToId(cx, keyStr, &keyId)) {
+            return false;
+          }
+          if (!GetProperty(cx, obj, obj, keyId, &value)) {
+            return false;
+          }
+
+          if (!NewValuePair(cx, key, value, &value)) {
+            return false;
+          }
+        }
+
+        properties[i].set(value);
+      }
+
+      
+      
+      
+      
+      
+      
+      goto end;
+    }
+  }
+#endif
+
+
+
   MOZ_ASSERT(obj->is<NativeObject>());
 
   if (kind == EnumerableOwnPropertiesKind::Keys ||
@@ -1654,6 +1716,10 @@ static bool TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
       }
     }
   }
+
+#ifdef ENABLE_RECORD_TUPLE
+end:
+#endif
 
   JSObject* array =
       NewDenseCopiedArray(cx, properties.length(), properties.begin());
@@ -1785,7 +1851,8 @@ static bool obj_keys(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
-  RootedObject obj(cx, ToObject(cx, args.get(0)));
+  RootedObject obj(cx, IF_RECORD_TUPLE(ToObjectOrGetObjectPayload, ToObject)(
+                           cx, args.get(0)));
   if (!obj) {
     return false;
   }
