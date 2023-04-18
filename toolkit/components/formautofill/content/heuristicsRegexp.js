@@ -47,7 +47,10 @@ var HeuristicsRegExp = {
       "address-line3": "addrline3|address_3",
       "address-level1": "land", 
       "additional-name": "apellido.?materno|lastlastname",
-      "cc-name": "titulaire", 
+      "cc-name":
+        
+        "titulaire" + 
+        "|(name auf der karte)", 
       "cc-number": "(cc|kk)nr", 
       "cc-exp-month": "(cc|kk)month", 
       "cc-exp-year": "(cc|kk)year", 
