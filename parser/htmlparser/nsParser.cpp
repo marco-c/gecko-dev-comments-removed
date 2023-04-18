@@ -338,59 +338,6 @@ nsParser::CancelParsingEvents() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define PREFER_LATTER_ERROR_CODE(EXPR1, EXPR2, RV) \
-  {                                                \
-    nsresult RV##__temp = EXPR1;                   \
-    RV = EXPR2;                                    \
-    if (NS_FAILED(RV)) {                           \
-      RV = RV##__temp;                             \
-    }                                              \
-  }
-
-
-
-
-
-
-
-
 nsresult nsParser::WillBuildModel() {
   if (!mParserContext) return NS_ERROR_HTMLPARSER_INVALIDPARSERCONTEXT;
 
