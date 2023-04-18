@@ -478,8 +478,7 @@ AcquireReadableStreamDefaultReader(ReadableStream* aStream, ErrorResult& aRv) {
 }
 
 
-void ReadableStream::GetReader(JSContext* aCx,
-                               const ReadableStreamGetReaderOptions& aOptions,
+void ReadableStream::GetReader(const ReadableStreamGetReaderOptions& aOptions,
                                OwningReadableStreamReader& resultReader,
                                ErrorResult& aRv) {
   
