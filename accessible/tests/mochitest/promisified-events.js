@@ -18,7 +18,6 @@
 
 
 
-
 const EVENT_ANNOUNCEMENT = nsIAccessibleEvent.EVENT_ANNOUNCEMENT;
 const EVENT_DOCUMENT_LOAD_COMPLETE =
   nsIAccessibleEvent.EVENT_DOCUMENT_LOAD_COMPLETE;
@@ -26,7 +25,6 @@ const EVENT_HIDE = nsIAccessibleEvent.EVENT_HIDE;
 const EVENT_REORDER = nsIAccessibleEvent.EVENT_REORDER;
 const EVENT_SCROLLING = nsIAccessibleEvent.EVENT_SCROLLING;
 const EVENT_SCROLLING_END = nsIAccessibleEvent.EVENT_SCROLLING_END;
-const EVENT_SELECTION = nsIAccessibleEvent.EVENT_SELECTION;
 const EVENT_SHOW = nsIAccessibleEvent.EVENT_SHOW;
 const EVENT_STATE_CHANGE = nsIAccessibleEvent.EVENT_STATE_CHANGE;
 const EVENT_TEXT_ATTRIBUTE_CHANGED =
@@ -216,22 +214,13 @@ class UnexpectedEvents {
 
 
 
-
-
-
-async function waitForEvents(
-  events,
-  message,
-  ordered = false,
-  invokerOrWindow = null
-) {
+async function waitForEvents(events, message, ordered = false) {
   let expected = events.expected || events;
+  let unexpected = events.unexpected || [];
   
   let currentIdx = 0;
 
-  let unexpectedListener = events.unexpected
-    ? new UnexpectedEvents(events.unexpected)
-    : null;
+  let unexpectedListener = new UnexpectedEvents(unexpected);
 
   let results = await Promise.all(
     expected.map((evt, idx) => {
@@ -242,35 +231,7 @@ async function waitForEvents(
     })
   );
 
-  if (unexpectedListener) {
-    let flushQueue = async win => {
-      
-      win.windowUtils.advanceTimeAndRefresh(100);
-
-      
-      await new Promise(r => win.setTimeout(r, 0));
-
-      
-      win.windowUtils.advanceTimeAndRefresh(100);
-
-      
-      win.windowUtils.advanceTimeAndRefresh(100);
-
-      
-      win.windowUtils.restoreNormalRefresh();
-    };
-
-    if (invokerOrWindow instanceof Function) {
-      await invokerOrWindow([flushQueue.toString()], async _flushQueue => {
-        
-        await eval(_flushQueue)(content);
-      });
-    } else {
-      await flushQueue(invokerOrWindow ? invokerOrWindow : window);
-    }
-
-    unexpectedListener.stop();
-  }
+  unexpectedListener.stop();
 
   if (ordered) {
     ok(
@@ -284,27 +245,6 @@ async function waitForEvents(
 
 function waitForOrderedEvents(events, message) {
   return waitForEvents(events, message, true);
-}
-
-function stateChangeEventArgs(id, state, isEnabled, isExtra = false) {
-  return [
-    EVENT_STATE_CHANGE,
-    e => {
-      e.QueryInterface(nsIAccessibleStateChangeEvent);
-      return (
-        e.state == state &&
-        e.isExtraState == isExtra &&
-        isEnabled == e.isEnabled &&
-        (typeof id == "string"
-          ? id == getAccessibleDOMNodeID(e.accessible)
-          : getAccessible(id) == e.accessible)
-      );
-    },
-  ];
-}
-
-function waitForStateChange(id, state, isEnabled, isExtra = false) {
-  return waitForEvent(...stateChangeEventArgs(id, state, isEnabled, isExtra));
 }
 
 
