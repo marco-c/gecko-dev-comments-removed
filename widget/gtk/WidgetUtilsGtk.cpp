@@ -84,6 +84,12 @@ bool GdkIsX11Display() {
   return isX11Display;
 }
 
+GdkDevice* GdkGetPointer() {
+  GdkDisplay* display = gdk_display_get_default();
+  GdkDeviceManager* deviceManager = gdk_display_get_device_manager(display);
+  return gdk_device_manager_get_client_pointer(deviceManager);
+}
+
 bool IsRunningUnderFlatpak() {
   
   static bool sRunning = [] {
