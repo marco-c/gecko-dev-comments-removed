@@ -3,7 +3,6 @@
 
 
 import { Component } from "react";
-import { isEmpty } from "lodash";
 import { connect } from "../../utils/connect";
 import { getHighlightedLineRange } from "../../selectors";
 
@@ -29,7 +28,7 @@ class HighlightLines extends Component {
 
     const { codeMirror } = editor;
 
-    if (isEmpty(highlightedLineRange) || !codeMirror) {
+    if (!highlightedLineRange || !codeMirror) {
       return;
     }
 
@@ -46,7 +45,7 @@ class HighlightLines extends Component {
 
     const { codeMirror } = editor;
 
-    if (isEmpty(highlightedLineRange) || !codeMirror) {
+    if (!highlightedLineRange || !codeMirror) {
       return;
     }
 

@@ -8524,8 +8524,6 @@ var babelParser = _interopRequireWildcard(__webpack_require__(685));
 
 var t = _interopRequireWildcard(__webpack_require__(2));
 
-var _isEmpty = _interopRequireDefault(__webpack_require__(686));
-
 var _sources = __webpack_require__(687);
 
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
@@ -8681,7 +8679,7 @@ function clearASTs() {
 function traverseAst(sourceId, visitor, state) {
   const ast = getAst(sourceId);
 
-  if ((0, _isEmpty.default)(ast)) {
+  if (!ast || Object.keys(ast).length == 0) {
     return null;
   }
 
@@ -31257,89 +31255,7 @@ exports.tokTypes = tokTypes;
 
 
  }),
-
- (function(module, exports, __webpack_require__) {
-
-var baseKeys = __webpack_require__(656),
-    getTag = __webpack_require__(578),
-    isArguments = __webpack_require__(618),
-    isArray = __webpack_require__(563),
-    isArrayLike = __webpack_require__(599),
-    isBuffer = __webpack_require__(595),
-    isPrototype = __webpack_require__(598),
-    isTypedArray = __webpack_require__(621);
-
-
-var mapTag = '[object Map]',
-    setTag = '[object Set]';
-
-
-var objectProto = Object.prototype;
-
-
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isEmpty(value) {
-  if (value == null) {
-    return true;
-  }
-  if (isArrayLike(value) &&
-      (isArray(value) || typeof value == 'string' || typeof value.splice == 'function' ||
-        isBuffer(value) || isTypedArray(value) || isArguments(value))) {
-    return !value.length;
-  }
-  var tag = getTag(value);
-  if (tag == mapTag || tag == setTag) {
-    return !value.size;
-  }
-  if (isPrototype(value)) {
-    return !baseKeys(value).length;
-  }
-  for (var key in value) {
-    if (hasOwnProperty.call(value, key)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-module.exports = isEmpty;
-
-
- }),
+,
 
  (function(module, exports, __webpack_require__) {
 
@@ -46611,19 +46527,17 @@ Object.defineProperty(exports, "__esModule", {
 exports.parseSourceScopes = parseSourceScopes;
 exports.buildScopeList = buildScopeList;
 
-var _isEmpty = _interopRequireDefault(__webpack_require__(686));
-
 var t = _interopRequireWildcard(__webpack_require__(2));
 
 var _getFunctionName = _interopRequireDefault(__webpack_require__(691));
 
 var _ast = __webpack_require__(572);
 
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function _getRequireWildcardCache(nodeInterop) { if (typeof WeakMap !== "function") return null; var cacheBabelInterop = new WeakMap(); var cacheNodeInterop = new WeakMap(); return (_getRequireWildcardCache = function (nodeInterop) { return nodeInterop ? cacheNodeInterop : cacheBabelInterop; })(nodeInterop); }
 
 function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(nodeInterop); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (key !== "default" && Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 
 
@@ -46658,7 +46572,7 @@ function isGeneratedId(id) {
 function parseSourceScopes(sourceId) {
   const ast = (0, _ast.getAst)(sourceId);
 
-  if ((0, _isEmpty.default)(ast)) {
+  if (!ast || Object.keys(ast).length == 0) {
     return null;
   }
 

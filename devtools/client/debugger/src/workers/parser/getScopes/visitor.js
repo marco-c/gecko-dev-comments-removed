@@ -2,7 +2,6 @@
 
 
 
-import isEmpty from "lodash/isEmpty";
 import * as t from "@babel/types";
 
 import getFunctionName from "../utils/getFunctionName";
@@ -38,7 +37,7 @@ function isGeneratedId(id) {
 
 export function parseSourceScopes(sourceId) {
   const ast = getAst(sourceId);
-  if (isEmpty(ast)) {
+  if (!ast || Object.keys(ast).length == 0) {
     return null;
   }
 
