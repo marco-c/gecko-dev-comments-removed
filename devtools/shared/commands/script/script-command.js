@@ -49,6 +49,14 @@ class ScriptCommand {
       selectedTargetFront,
     } = options;
 
+    
+    
+    
+    
+    
+    
+    
+    
     let targetFront = this._commands.targetCommand.selectedTargetFront;
 
     const selectedActor =

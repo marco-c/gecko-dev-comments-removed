@@ -35,9 +35,6 @@ function autocompleteUpdate(force, getterPath, expressionVars) {
     const mappedVars = hud.getMappedVariables() ?? {};
     const allVars = (expressionVars ?? []).concat(Object.keys(mappedVars));
     const frameActorId = await webConsoleUI.getFrameActor();
-    const webconsoleFront = await webConsoleUI.getWebconsoleFront({
-      frameActorId,
-    });
 
     const cursor = webConsoleUI.getInputCursor();
 
@@ -72,15 +69,13 @@ function autocompleteUpdate(force, getterPath, expressionVars) {
     const { input, originalExpression } = await getMappedInput(
       rawInput,
       mappedVars,
-      hud,
-      webconsoleFront
+      hud
     );
 
     return dispatch(
       autocompleteDataFetch({
         input,
         frameActorId,
-        webconsoleFront,
         authorizedEvaluations,
         force,
         allVars,
@@ -151,8 +146,7 @@ function updateAuthorizedEvaluations(
 
 
 
-
-async function getMappedInput(rawInput, mappedVars, hud, webconsoleFront) {
+async function getMappedInput(rawInput, mappedVars, hud) {
   if (!mappedVars || Object.keys(mappedVars).length == 0) {
     return { input: rawInput, originalExpression: undefined };
   }
@@ -232,19 +226,43 @@ function generateRequestId() {
 
 
 
-
 function autocompleteDataFetch({
   input,
   frameActorId,
   force,
-  webconsoleFront,
   authorizedEvaluations,
   allVars,
   mappedVars,
   originalExpression,
 }) {
-  return async ({ dispatch, webConsoleUI }) => {
-    const selectedNodeActor = webConsoleUI.getSelectedNodeActorID();
+  return async ({ dispatch, commands, webConsoleUI, hud }) => {
+    
+    
+    
+    
+    
+    
+    
+    const selectedNodeActorId = webConsoleUI.getSelectedNodeActorID();
+
+    let targetFront = commands.targetCommand.selectedTargetFront;
+    
+    
+    const contextSelectorTargetFront = hud.toolbox
+      ? hud.toolbox.getSelectedTargetFront()
+      : null;
+    const selectedActorId = selectedNodeActorId || frameActorId;
+    if (contextSelectorTargetFront) {
+      targetFront = contextSelectorTargetFront;
+    } else if (selectedActorId) {
+      const selectedFront = commands.client.getFrontByID(selectedActorId);
+      if (selectedFront) {
+        targetFront = selectedFront.targetFront;
+      }
+    }
+
+    const webconsoleFront = await targetFront.getFront("console");
+
     const id = generateRequestId();
     dispatch({ type: AUTOCOMPLETE_PENDING_REQUEST, id });
 
@@ -253,7 +271,7 @@ function autocompleteDataFetch({
         input,
         undefined,
         frameActorId,
-        selectedNodeActor,
+        selectedNodeActorId,
         authorizedEvaluations,
         allVars
       )
