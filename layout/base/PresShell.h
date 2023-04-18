@@ -236,6 +236,13 @@ class PresShell final : public nsStubDocumentObserver,
   static nsAccessibilityService* GetAccessibilityService();
 #endif  
 
+  
+
+
+  const nsPoint& GetLastOverWindowMouseLocation() const {
+    return mLastOverWindowMouseLocation;
+  }
+
   void Init(nsPresContext*, nsViewManager*);
 
   
@@ -2994,6 +3001,8 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   nsPoint mMouseLocation;
+  
+  nsPoint mLastOverWindowMouseLocation;
   
   
   
