@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_MIDIPortChild_h
 #define mozilla_dom_MIDIPortChild_h
 
-#include "mozilla/dom/PMIDIPortChild.h"
 #include "mozilla/dom/MIDIPortInterface.h"
+#include "mozilla/dom/PMIDIPortChild.h"
 
 namespace mozilla::dom {
 
@@ -33,6 +33,8 @@ class MIDIPortChild final : public PMIDIPortChild, public MIDIPortInterface {
 
   MIDIPortChild(const MIDIPortInfo& aPortInfo, bool aSysexEnabled,
                 MIDIPort* aPort);
+  nsresult GenerateStableId(const nsACString& aOrigin);
+  const nsString& StableId() { return mStableId; };
   
   void SetActorAlive();
 
@@ -43,6 +45,7 @@ class MIDIPortChild final : public PMIDIPortChild, public MIDIPortInterface {
   
   
   MIDIPort* mDOMPort;
+  nsString mStableId;
   bool mActorWasAlive;
 };
 }  
