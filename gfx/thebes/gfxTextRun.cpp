@@ -1878,10 +1878,6 @@ void gfxFontGroup::BuildFontList() {
   AutoTArray<FamilyAndGeneric, 10> fonts;
   gfxPlatformFontList* pfl = gfxPlatformFontList::PlatformFontList();
 
-  auto defaultLanguageGeneric = GetDefaultGeneric(mLanguage);
-
-  bool hasDefaultLanguageGeneric = false;
-
   
   for (const StyleSingleFontFamily& name : mFamilyList.list.AsSpan()) {
     if (name.IsFamilyName()) {
@@ -1898,9 +1894,6 @@ void gfxFontGroup::BuildFontList() {
           generic != StyleGenericFontFamily::SystemUi) {
         mFallbackGeneric = generic;
       }
-      if (generic == defaultLanguageGeneric) {
-        hasDefaultLanguageGeneric = true;
-      }
       pfl->AddGenericFonts(mPresContext, generic, mLanguage, fonts);
       if (mTextPerf) {
         mTextPerf->current.genericLookups++;
@@ -1909,8 +1902,9 @@ void gfxFontGroup::BuildFontList() {
   }
 
   
-  if (defaultLanguageGeneric != StyleGenericFontFamily::None &&
-      !hasDefaultLanguageGeneric && !mStyle.systemFont) {
+  if (mFallbackGeneric == StyleGenericFontFamily::None && !mStyle.systemFont) {
+    auto defaultLanguageGeneric = GetDefaultGeneric(mLanguage);
+
     pfl->AddGenericFonts(mPresContext, defaultLanguageGeneric, mLanguage,
                          fonts);
     if (mTextPerf) {
