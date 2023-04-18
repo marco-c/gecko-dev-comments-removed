@@ -2790,32 +2790,58 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
           });
 };
 
-
-RefPtr<LocalMediaDeviceSetRefCnt> MediaManager::AnonymizeDevices(
-    const MediaDeviceSet& aDevices, const nsACString& aOriginKey,
-    const uint64_t aWindowId) {
-  MOZ_ASSERT(!aOriginKey.IsEmpty());
-  RefPtr anonymized = new LocalMediaDeviceSetRefCnt();
-  for (const RefPtr<MediaDevice>& device : aDevices) {
-    nsString id = device->mRawID;
-    AnonymizeId(id, aOriginKey);
-
-    nsString groupId = device->mRawGroupID;
-    
-    
-    
-    
-    
-    groupId.AppendInt(aWindowId);
-    AnonymizeId(groupId, aOriginKey);
-
-    nsString name = device->mRawName;
-    if (name.Find(u"AirPods"_ns) != -1) {
-      name = u"AirPods"_ns;
-    }
-    anonymized->EmplaceBack(new LocalMediaDevice(device, id, groupId, name));
+RefPtr<LocalDeviceSetPromise> MediaManager::AnonymizeDevices(
+    nsPIDOMWindowInner* aWindow, RefPtr<const MediaDeviceSetRefCnt> aDevices) {
+  
+  MOZ_ASSERT(NS_IsMainThread());
+  uint64_t windowId = aWindow->WindowID();
+  nsCOMPtr<nsIPrincipal> principal =
+      nsGlobalWindowInner::Cast(aWindow)->GetPrincipal();
+  MOZ_ASSERT(principal);
+  ipc::PrincipalInfo principalInfo;
+  nsresult rv = PrincipalToPrincipalInfo(principal, &principalInfo);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return LocalDeviceSetPromise::CreateAndReject(
+        MakeRefPtr<MediaMgrError>(MediaMgrError::Name::NotAllowedError),
+        __func__);
   }
-  return anonymized;
+  bool persist = IsActivelyCapturingOrHasAPermission(windowId);
+  return media::GetPrincipalKey(principalInfo, persist)
+      ->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [rawDevices = std::move(aDevices),
+           windowId](const nsCString& aOriginKey) {
+            MOZ_ASSERT(!aOriginKey.IsEmpty());
+            RefPtr anonymized = new LocalMediaDeviceSetRefCnt();
+            for (const RefPtr<MediaDevice>& device : *rawDevices) {
+              nsString id = device->mRawID;
+              AnonymizeId(id, aOriginKey);
+
+              nsString groupId = device->mRawGroupID;
+              
+              
+              
+              
+              
+              groupId.AppendInt(windowId);
+              AnonymizeId(groupId, aOriginKey);
+
+              nsString name = device->mRawName;
+              if (name.Find(u"AirPods"_ns) != -1) {
+                name = u"AirPods"_ns;
+              }
+              anonymized->EmplaceBack(
+                  new LocalMediaDevice(device, id, groupId, name));
+            }
+            return LocalDeviceSetPromise::CreateAndResolve(anonymized,
+                                                           __func__);
+          },
+          [](nsresult rs) {
+            NS_WARNING("AnonymizeDevices failed to get Principal Key");
+            return LocalDeviceSetPromise::CreateAndReject(
+                MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError),
+                __func__);
+          });
 }
 
 
@@ -2878,19 +2904,6 @@ RefPtr<LocalDeviceSetPromise> MediaManager::EnumerateDevicesImpl(
   
   
   
-  
-
-  nsCOMPtr<nsIPrincipal> principal =
-      nsGlobalWindowInner::Cast(aWindow)->GetPrincipal();
-  MOZ_ASSERT(principal);
-
-  ipc::PrincipalInfo principalInfo;
-  nsresult rv = PrincipalToPrincipalInfo(principal, &principalInfo);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return LocalDeviceSetPromise::CreateAndReject(
-        MakeRefPtr<MediaMgrError>(MediaMgrError::Name::NotAllowedError),
-        __func__);
-  }
 
   
   
@@ -2902,42 +2915,11 @@ RefPtr<LocalDeviceSetPromise> MediaManager::EnumerateDevicesImpl(
   auto placeholderListener = MakeRefPtr<DeviceListener>();
   windowListener->Register(placeholderListener);
 
-  bool persist = IsActivelyCapturingOrHasAPermission(windowId);
-
-  
-  
-  
-  
-  auto originKey = MakeRefPtr<Refcountable<nsCString>>();
-  return media::GetPrincipalKey(principalInfo, persist)
+  return EnumerateRawDevices(aVideoInputType, aAudioInputType, aFlags)
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
-          [windowId, aVideoInputType, aAudioInputType, aFlags,
-           originKey](const nsCString& aOriginKey) {
-            MOZ_ASSERT(NS_IsMainThread());
-            originKey->Assign(aOriginKey);
-            MediaManager* mgr = MediaManager::GetIfExists();
-            MOZ_ASSERT(mgr);
-            if (!mgr->IsWindowStillActive(windowId)) {
-              return DeviceSetPromise::CreateAndReject(
-                  MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError),
-                  __func__);
-            }
-            return mgr->EnumerateRawDevices(aVideoInputType, aAudioInputType,
-                                            aFlags);
-          },
-          [](nsresult rs) {
-            NS_WARNING(
-                "EnumerateDevicesImpl failed to get Principal Key. Enumeration "
-                "will not continue.");
-            return DeviceSetPromise::CreateAndReject(
-                MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError),
-                __func__);
-          })
-      ->Then(
-          GetMainThreadSerialEventTarget(), __func__,
-          [windowId, placeholderListener,
-           originKey](RefPtr<MediaDeviceSetRefCnt> aDevices) {
+          [self = RefPtr(this), this, window = nsCOMPtr(aWindow),
+           placeholderListener](RefPtr<MediaDeviceSetRefCnt> aDevices) mutable {
             
             MediaManager* mgr = MediaManager::GetIfExists();
             if (!mgr || placeholderListener->Stopped()) {
@@ -2947,10 +2929,9 @@ RefPtr<LocalDeviceSetPromise> MediaManager::EnumerateDevicesImpl(
                   MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError),
                   __func__);
             }
-            MOZ_ASSERT(mgr->IsWindowStillActive(windowId));
+            MOZ_ASSERT(mgr->IsWindowStillActive(window->WindowID()));
             placeholderListener->Stop();
-            return LocalDeviceSetPromise::CreateAndResolve(
-                AnonymizeDevices(*aDevices, *originKey, windowId), __func__);
+            return AnonymizeDevices(window, aDevices);
           },
           [placeholderListener](RefPtr<MediaMgrError>&& aError) {
             
