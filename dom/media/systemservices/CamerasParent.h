@@ -73,6 +73,7 @@ class CamerasParent final : public PCamerasParent,
   static already_AddRefed<CamerasParent> Create();
 
   
+  mozilla::ipc::IPCResult RecvPCamerasConstructor();
   mozilla::ipc::IPCResult RecvAllocateCapture(
       const CaptureEngine& aEngine, const nsCString& aUnique_idUTF8,
       const uint64_t& aWindowID) override;
