@@ -11,6 +11,7 @@
 #include "frontend/BytecodeEmitter.h"  
 #include "frontend/IfEmitter.h"        
 #include "frontend/SharedContext.h"    
+#include "vm/BytecodeUtil.h"           
 #include "vm/Opcodes.h"                
 
 using namespace js;
@@ -58,20 +59,50 @@ bool TryEmitter::emitTry() {
   return true;
 }
 
+bool TryEmitter::emitJumpToFinallyWithFallthrough() {
+  
+  
+  
+  
+  
+  BytecodeOffset off;
+  if (!bce_->emitN(JSOp::ResumeIndex, 3, &off)) {
+    return false;
+  }
+  if (!controlInfo_->defaultResumeIndexOffsets_.append(off)) {
+    return false;
+  }
+
+  
+  if (!bce_->emit1(JSOp::False)) {
+    return false;
+  }
+
+  
+  if (!bce_->emitJumpNoFallthrough(JSOp::Goto, &controlInfo_->finallyJumps_)) {
+    return false;
+  }
+
+  
+  uint32_t stackDepthForNextBlock = bce_->bytecodeSection().stackDepth() - 2;
+  bce_->bytecodeSection().setStackDepth(stackDepthForNextBlock);
+
+  return true;
+}
+
 bool TryEmitter::emitTryEnd() {
   MOZ_ASSERT(state_ == State::Try);
   MOZ_ASSERT(depth_ == bce_->bytecodeSection().stackDepth());
 
-  
   if (hasFinally() && controlInfo_) {
-    if (!bce_->emitJumpToFinally(&controlInfo_->finallyJumps_)) {
+    if (!emitJumpToFinallyWithFallthrough()) {
       return false;
     }
-  }
-
-  
-  if (!bce_->emitJump(JSOp::Goto, &catchAndFinallyJump_)) {
-    return false;
+  } else {
+    
+    if (!bce_->emitJump(JSOp::Goto, &catchAndFinallyJump_)) {
+      return false;
+    }
   }
 
   if (!bce_->emitJumpTarget(&tryEnd_)) {
@@ -121,13 +152,7 @@ bool TryEmitter::emitCatchEnd() {
 
   
   if (hasFinally()) {
-    if (!bce_->emitJumpToFinally(&controlInfo_->finallyJumps_)) {
-      return false;
-    }
-    MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == depth_);
-
-    
-    if (!bce_->emitJump(JSOp::Goto, &catchAndFinallyJump_)) {
+    if (!emitJumpToFinallyWithFallthrough()) {
       return false;
     }
   }
@@ -264,8 +289,27 @@ bool TryEmitter::emitEnd() {
   MOZ_ASSERT(bce_->bytecodeSection().stackDepth() == depth_);
 
   
-  if (!bce_->emitJumpTargetAndPatch(catchAndFinallyJump_)) {
-    return false;
+  if (hasFinally() && controlInfo_) {
+    MOZ_ASSERT(!catchAndFinallyJump_.offset.valid());
+
+    JumpTarget target;
+    if (!bce_->emitJumpTarget(&target)) {
+      return false;
+    }
+
+    uint32_t resumeIndex;
+    if (!bce_->allocateResumeIndex(target.offset, &resumeIndex)) {
+      return false;
+    }
+
+    for (BytecodeOffset offset : controlInfo_->defaultResumeIndexOffsets_) {
+      SET_RESUMEINDEX(bce_->bytecodeSection().code(offset), resumeIndex);
+    }
+  } else {
+    
+    if (!bce_->emitJumpTargetAndPatch(catchAndFinallyJump_)) {
+      return false;
+    }
   }
 
   
