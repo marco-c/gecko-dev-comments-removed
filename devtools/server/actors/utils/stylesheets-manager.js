@@ -269,8 +269,13 @@ class StyleSheetsManager extends EventEmitter {
     }
 
     if (!styleSheet.href) {
+      if (styleSheet.ownerNode) {
+        
+        return styleSheet.ownerNode.textContent;
+      }
       
-      return styleSheet.ownerNode.textContent;
+      
+      return "";
     }
 
     return this._fetchStyleSheet(styleSheet);
@@ -366,8 +371,8 @@ class StyleSheetsManager extends EventEmitter {
 
   _startTransition(resourceId, kind, cause) {
     const styleSheet = this._styleSheetMap.get(resourceId);
-    const document = styleSheet.ownerNode.ownerDocument;
-    const window = styleSheet.ownerNode.ownerGlobal;
+    const document = styleSheet.associatedDocument;
+    const window = document.ownerGlobal;
 
     if (!this._transitionSheetLoaded) {
       this._transitionSheetLoaded = true;
@@ -399,7 +404,7 @@ class StyleSheetsManager extends EventEmitter {
 
   _onTransitionEnd(resourceId, kind, cause) {
     const styleSheet = this._styleSheetMap.get(resourceId);
-    const document = styleSheet.ownerNode.ownerDocument;
+    const document = styleSheet.associatedDocument;
 
     this._transitionTimeout = null;
     removePseudoClassLock(document.documentElement, TRANSITION_PSEUDO_CLASS);
@@ -774,14 +779,15 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
+
   _onApplicableStateChanged({ applicable, stylesheet: styleSheet }) {
     if (
       
       applicable &&
-      
-      styleSheet.ownerNode &&
+      styleSheet.associatedDocument &&
       (!this._targetActor.ignoreSubFrames ||
-        styleSheet.ownerNode.ownerGlobal === this._targetActor.window) &&
+        styleSheet.associatedDocument.ownerGlobal ===
+          this._targetActor.window) &&
       this._shouldListSheet(styleSheet) &&
       !this._haveAncestorWithSameURL(styleSheet)
     ) {

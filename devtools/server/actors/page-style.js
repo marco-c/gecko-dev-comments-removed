@@ -581,8 +581,12 @@ var PageStyleActor = protocol.ActorClassWithSpec(pageStyleSpec, {
 
     const result = this.getAppliedProps(node, entries, options);
     for (const rule of result.rules) {
-      
-      await rule.getAuthoredCssText();
+      try {
+        
+        
+        
+        await rule.getAuthoredCssText();
+      } catch (ex) {}
     }
 
     
