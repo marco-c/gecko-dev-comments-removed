@@ -190,26 +190,26 @@ bool nsNativeThemeGTK::GetGtkWidgetAndState(StyleAppearance aAppearance,
     *aWidgetFlags = 0;
   }
 
-  ElementState eventState = GetContentState(aFrame, aAppearance);
+  ElementState elementState = GetContentState(aFrame, aAppearance);
   if (aState) {
     memset(aState, 0, sizeof(GtkWidgetState));
 
     
     
     if (aWidgetFlags) {
-      if (eventState.HasState(ElementState::CHECKED)) {
+      if (elementState.HasState(ElementState::CHECKED)) {
         *aWidgetFlags |= MOZ_GTK_WIDGET_CHECKED;
       }
-      if (eventState.HasState(ElementState::INDETERMINATE)) {
+      if (elementState.HasState(ElementState::INDETERMINATE)) {
         *aWidgetFlags |= MOZ_GTK_WIDGET_INCONSISTENT;
       }
     }
 
     aState->disabled =
-        eventState.HasState(ElementState::DISABLED) || IsReadOnly(aFrame);
-    aState->active = eventState.HasState(ElementState::ACTIVE);
-    aState->focused = eventState.HasState(ElementState::FOCUS);
-    aState->inHover = eventState.HasState(ElementState::HOVER);
+        elementState.HasState(ElementState::DISABLED) || IsReadOnly(aFrame);
+    aState->active = elementState.HasState(ElementState::ACTIVE);
+    aState->focused = elementState.HasState(ElementState::FOCUS);
+    aState->inHover = elementState.HasState(ElementState::HOVER);
     aState->isDefault = IsDefaultButton(aFrame);
     aState->canDefault = FALSE;  
 
@@ -245,7 +245,7 @@ bool nsNativeThemeGTK::GetGtkWidgetAndState(StyleAppearance aAppearance,
       
       
       
-      aState->focused = eventState.HasState(ElementState::FOCUSRING);
+      aState->focused = elementState.HasState(ElementState::FOCUSRING);
       if (aAppearance == StyleAppearance::Radio ||
           aAppearance == StyleAppearance::Checkbox) {
         
@@ -489,9 +489,9 @@ bool nsNativeThemeGTK::GetGtkWidgetAndState(StyleAppearance aAppearance,
       break;
     case StyleAppearance::Progresschunk: {
       nsIFrame* stateFrame = aFrame->GetParent();
-      ElementState eventStates = GetContentState(stateFrame, aAppearance);
+      ElementState elementState = GetContentState(stateFrame, aAppearance);
 
-      aGtkWidgetType = eventStates.HasState(ElementState::INDETERMINATE)
+      aGtkWidgetType = elementState.HasState(ElementState::INDETERMINATE)
                            ? IsVerticalProgress(stateFrame)
                                  ? MOZ_GTK_PROGRESS_CHUNK_VERTICAL_INDETERMINATE
                                  : MOZ_GTK_PROGRESS_CHUNK_INDETERMINATE
