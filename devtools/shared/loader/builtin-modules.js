@@ -29,6 +29,7 @@ const {
   DOMRect,
   HeapSnapshot,
   L10nRegistry,
+  Localization,
   NamedNodeMap,
   NodeFilter,
   StructuredCloneHolder,
@@ -276,6 +277,7 @@ exports.globals = {
     
     id: null,
   },
+  Localization,
   Node,
   reportError: Cu.reportError,
   StructuredCloneHolder,

@@ -95,8 +95,7 @@ XPCOMUtils.defineLazyGetter(this, "StartupBundle", function() {
 });
 
 XPCOMUtils.defineLazyGetter(this, "KeyShortcutsBundle", function() {
-  const url = "chrome://devtools-startup/locale/key-shortcuts.properties";
-  return Services.strings.createBundle(url);
+  return new Localization(["devtools/startup/key-shortcuts.ftl"], true);
 });
 
 
@@ -114,7 +113,7 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcutsBundle", function() {
 
 function getLocalizedKeyShortcut(id) {
   try {
-    return KeyShortcutsBundle.GetStringFromName(id);
+    return KeyShortcutsBundle.formatValueSync(id);
   } catch (e) {
     console.error("Failed to retrieve DevTools localized shortcut for id", id);
     return null;
@@ -137,31 +136,35 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
     
     {
       id: "toggleToolbox",
-      shortcut: getLocalizedKeyShortcut("toggleToolbox.commandkey"),
+      shortcut: getLocalizedKeyShortcut("devtools-commandkey-toggle-toolbox"),
       modifiers,
     },
     
     {
       id: "toggleToolboxF12",
-      shortcut: getLocalizedKeyShortcut("toggleToolboxF12.commandkey"),
+      shortcut: getLocalizedKeyShortcut(
+        "devtools-commandkey-toggle-toolbox-f12"
+      ),
       modifiers: "", 
     },
     
     {
       id: "browserToolbox",
-      shortcut: getLocalizedKeyShortcut("browserToolbox.commandkey"),
+      shortcut: getLocalizedKeyShortcut("devtools-commandkey-browser-toolbox"),
       modifiers: "accel,alt,shift",
     },
     
     {
       id: "browserConsole",
-      shortcut: getLocalizedKeyShortcut("browserConsole.commandkey"),
+      shortcut: getLocalizedKeyShortcut("devtools-commandkey-browser-console"),
       modifiers: "accel,shift",
     },
     
     {
       id: "responsiveDesignMode",
-      shortcut: getLocalizedKeyShortcut("responsiveDesignMode.commandkey"),
+      shortcut: getLocalizedKeyShortcut(
+        "devtools-commandkey-responsive-design-mode"
+      ),
       modifiers,
     },
     
@@ -170,55 +173,57 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
     
     {
       toolId: "inspector",
-      shortcut: getLocalizedKeyShortcut("inspector.commandkey"),
+      shortcut: getLocalizedKeyShortcut("devtools-commandkey-inspector"),
       modifiers,
     },
     
     {
       toolId: "webconsole",
-      shortcut: getLocalizedKeyShortcut("webconsole.commandkey"),
+      shortcut: getLocalizedKeyShortcut("devtools-commandkey-webconsole"),
       modifiers,
     },
     
     {
       toolId: "jsdebugger",
-      shortcut: getLocalizedKeyShortcut("jsdebugger.commandkey2"),
+      shortcut: getLocalizedKeyShortcut("devtools-commandkey-jsdebugger"),
       modifiers,
     },
     
     {
       toolId: "netmonitor",
-      shortcut: getLocalizedKeyShortcut("netmonitor.commandkey"),
+      shortcut: getLocalizedKeyShortcut("devtools-commandkey-netmonitor"),
       modifiers,
     },
     
     {
       toolId: "styleeditor",
-      shortcut: getLocalizedKeyShortcut("styleeditor.commandkey"),
+      shortcut: getLocalizedKeyShortcut("devtools-commandkey-styleeditor"),
       modifiers: "shift",
     },
     
     {
       toolId: "performance",
-      shortcut: getLocalizedKeyShortcut("performance.commandkey"),
+      shortcut: getLocalizedKeyShortcut("devtools-commandkey-performance"),
       modifiers: "shift",
     },
     
     {
       toolId: "storage",
-      shortcut: getLocalizedKeyShortcut("storage.commandkey"),
+      shortcut: getLocalizedKeyShortcut("devtools-commandkey-storage"),
       modifiers: "shift",
     },
     
     {
       toolId: "dom",
-      shortcut: getLocalizedKeyShortcut("dom.commandkey"),
+      shortcut: getLocalizedKeyShortcut("devtools-commandkey-dom"),
       modifiers,
     },
     
     {
       toolId: "accessibility",
-      shortcut: getLocalizedKeyShortcut("accessibilityF12.commandkey"),
+      shortcut: getLocalizedKeyShortcut(
+        "devtools-commandkey-accessibility-f12"
+      ),
       modifiers: "shift",
     },
   ];
@@ -229,7 +234,7 @@ XPCOMUtils.defineLazyGetter(this, "KeyShortcuts", function() {
     shortcuts.push({
       id: "inspectorMac",
       toolId: "inspector",
-      shortcut: getLocalizedKeyShortcut("inspector.commandkey"),
+      shortcut: getLocalizedKeyShortcut("devtools-commandkey-inspector"),
       modifiers: "accel,shift",
     });
   }
@@ -246,13 +251,15 @@ function getProfilerKeyShortcuts() {
     
     {
       id: "profilerStartStop",
-      shortcut: getLocalizedKeyShortcut("profilerStartStop.commandkey"),
+      shortcut: getLocalizedKeyShortcut(
+        "devtools-commandkey-profiler-start-stop"
+      ),
       modifiers: "control,shift",
     },
     
     {
       id: "profilerCapture",
-      shortcut: getLocalizedKeyShortcut("profilerCapture.commandkey"),
+      shortcut: getLocalizedKeyShortcut("devtools-commandkey-profiler-capture"),
       modifiers: "control,shift",
     },
   ];
