@@ -16,6 +16,11 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 Services.prefs.setBoolPref("extensions.webextensions.remote", false);
 
+
+
+
+Services.prefs.setBoolPref("dom.security.https_first", false);
+
 ExtensionTestUtils.init(this);
 
 Services.io.offline = true;
