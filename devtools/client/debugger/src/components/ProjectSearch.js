@@ -2,8 +2,8 @@
 
 
 
-import PropTypes from "prop-types";
 import React, { Component } from "react";
+import PropTypes from "prop-types";
 import { connect } from "../utils/connect";
 import classnames from "classnames";
 import actions from "../actions";
@@ -47,6 +47,28 @@ export class ProjectSearch extends Component {
       inputValue: this.props.query || "",
       inputFocused: false,
       focusedItem: null,
+    };
+  }
+
+  static get propTypes() {
+    return {
+      activeSearch: PropTypes.string,
+      clearSearch: PropTypes.func.isRequired,
+      closeProjectSearch: PropTypes.func.isRequired,
+      cx: PropTypes.object.isRequired,
+      doSearchForHighlight: PropTypes.func.isRequired,
+      query: PropTypes.string.isRequired,
+      results: PropTypes.array.isRequired,
+      searchSources: PropTypes.func.isRequired,
+      selectSpecificLocation: PropTypes.func.isRequired,
+      setActiveSearch: PropTypes.func.isRequired,
+      status: PropTypes.oneOf([
+        "INITIAL",
+        "FETCHING",
+        "CANCELED",
+        "DONE",
+        "ERROR",
+      ]).isRequired,
     };
   }
 
@@ -278,6 +300,7 @@ export class ProjectSearch extends Component {
     );
   }
 }
+
 ProjectSearch.contextTypes = {
   shortcuts: PropTypes.object,
 };

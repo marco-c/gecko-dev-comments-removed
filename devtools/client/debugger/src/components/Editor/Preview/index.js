@@ -2,6 +2,7 @@
 
 
 
+import PropTypes from "prop-types";
 import React, { PureComponent } from "react";
 import { connect } from "../../../utils/connect";
 
@@ -23,6 +24,20 @@ class Preview extends PureComponent {
   constructor(props) {
     super(props);
     this.state = { selecting: false };
+  }
+
+  static get propTypes() {
+    return {
+      clearPreview: PropTypes.func.isRequired,
+      cx: PropTypes.object.isRequired,
+      editor: PropTypes.object.isRequired,
+      editorRef: PropTypes.object.isRequired,
+      highlightedCalls: PropTypes.array,
+      isPaused: PropTypes.bool.isRequired,
+      preview: PropTypes.object,
+      setExceptionPreview: PropTypes.func.isRequired,
+      updatePreview: PropTypes.func.isRequired,
+    };
   }
 
   componentDidMount() {

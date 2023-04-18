@@ -3,6 +3,7 @@
 
 
 import React, { PureComponent } from "react";
+import PropTypes from "prop-types";
 import Reps from "devtools/client/shared/components/reps/index";
 
 const {
@@ -15,6 +16,16 @@ const {
 
 
 class InlinePreview extends PureComponent {
+  static get propTypes() {
+    return {
+      highlightDomElement: PropTypes.func.isRequired,
+      openElementInInspector: PropTypes.func.isRequired,
+      unHighlightDomElement: PropTypes.func.isRequired,
+      value: PropTypes.any.isRequired,
+      variable: PropTypes.string.isRequired,
+    };
+  }
+
   showInScopes(variable) {
     
     
