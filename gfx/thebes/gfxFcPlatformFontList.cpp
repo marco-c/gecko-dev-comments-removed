@@ -2294,28 +2294,23 @@ void gfxFcPlatformFontList::AddGenericFonts(
   if ((!mAlwaysUseFontconfigGenerics && aLanguage) ||
       aLanguage == nsGkAtoms::x_math) {
     nsAtom* langGroup = GetLangGroup(aLanguage);
-    nsAutoString fontlistValue;
-    Preferences::GetString(NamePref(generic, langGroup).get(), fontlistValue);
-    nsresult rv;
+    nsAutoCString fontlistValue;
+    mFontPrefs->LookupName(PrefName(generic, langGroup), fontlistValue);
     if (fontlistValue.IsEmpty()) {
       
       
       
       
-      rv = Preferences::GetString(NameListPref(generic, langGroup).get(),
-                                  fontlistValue);
-    } else {
-      rv = NS_OK;
+      mFontPrefs->LookupNameList(PrefName(generic, langGroup), fontlistValue);
     }
-    if (NS_SUCCEEDED(rv)) {
+    if (!fontlistValue.IsEmpty()) {
       if (!fontlistValue.EqualsLiteral("serif") &&
           !fontlistValue.EqualsLiteral("sans-serif") &&
           !fontlistValue.EqualsLiteral("monospace")) {
         usePrefFontList = true;
       } else {
         
-        genericToLookup.Truncate();
-        AppendUTF16toUTF8(fontlistValue, genericToLookup);
+        genericToLookup = fontlistValue;
       }
     }
   }
@@ -2435,49 +2430,37 @@ gfxPlatformFontList::PrefFontList* gfxFcPlatformFontList::FindGenericFamilies(
 }
 
 bool gfxFcPlatformFontList::PrefFontListsUseOnlyGenerics() {
-  static const char kFontNamePrefix[] = "font.name.";
+  for (auto iter = mFontPrefs->NameIter(); !iter.Done(); iter.Next()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const nsACString* prefValue = &iter.Data();
+    nsAutoCString listValue;
+    if (iter.Data().IsEmpty()) {
+      
+      
+      
+      
+      mFontPrefs->LookupNameList(iter.Key(), listValue);
+      prefValue = &listValue;
+    }
 
-  bool prefFontsUseOnlyGenerics = true;
-  nsTArray<nsCString> names;
-  nsresult rv =
-      Preferences::GetRootBranch()->GetChildList(kFontNamePrefix, names);
-  if (NS_SUCCEEDED(rv)) {
-    for (auto& name : names) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
+    nsCCharSeparatedTokenizer tokenizer(iter.Key(), '.');
+    const nsDependentCSubstring& generic = tokenizer.nextToken();
+    const nsDependentCSubstring& langGroup = tokenizer.nextToken();
 
-      nsDependentCSubstring prefName =
-          Substring(name, ArrayLength(kFontNamePrefix) - 1);
-      nsCCharSeparatedTokenizer tokenizer(prefName, '.');
-      const nsDependentCSubstring& generic = tokenizer.nextToken();
-      const nsDependentCSubstring& langGroup = tokenizer.nextToken();
-      nsAutoCString fontPrefValue;
-      Preferences::GetCString(name.get(), fontPrefValue);
-      if (fontPrefValue.IsEmpty()) {
-        
-        
-        
-        
-        Preferences::GetCString(NameListPref(generic, langGroup).get(),
-                                fontPrefValue);
-      }
-
-      if (!langGroup.EqualsLiteral("x-math") &&
-          !generic.Equals(fontPrefValue)) {
-        prefFontsUseOnlyGenerics = false;
-        break;
-      }
+    if (!langGroup.EqualsLiteral("x-math") && !generic.Equals(*prefValue)) {
+      return false;
     }
   }
-  return prefFontsUseOnlyGenerics;
+  return true;
 }
 
 

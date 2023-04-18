@@ -3331,7 +3331,7 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
   gfxFont* font = WhichPrefFontSupportsChar(aCh, aNextCh, presentation);
   if (font) {
     if (PrefersColor(presentation) &&
-        Preferences::HasUserValue("font.name-list.emoji")) {
+        gfxPlatformFontList::PlatformFontList()->EmojiPrefHasUserValue()) {
       
       
       

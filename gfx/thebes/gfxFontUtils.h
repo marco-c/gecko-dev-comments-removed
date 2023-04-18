@@ -1165,11 +1165,6 @@ class gfxFontUtils {
                             nsTArray<nsCString>& aFontList);
 
   
-  static void AppendPrefsFontList(const char* aPrefName,
-                                  nsTArray<nsCString>& aFontList,
-                                  bool aLocalized = false);
-
-  
   static void GetPrefsFontList(const char* aPrefName,
                                nsTArray<nsCString>& aFontList,
                                bool aLocalized = false);
