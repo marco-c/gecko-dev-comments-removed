@@ -951,6 +951,15 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
 
     
     
+    
+    if (request->IsModuleRequest()) {
+      LOG(("ScriptLoadRequest (%p): Set acquiring import maps to false",
+           request.get()));
+      mModuleLoader->SetAcquiringImportMaps(false);
+    }
+
+    
+    
     request->GetScriptLoadContext()->SetScriptMode(
         aElement->GetScriptDeferred(), aElement->GetScriptAsync(), false);
 
@@ -1168,6 +1177,23 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
   }
 
   if (request->IsImportMapRequest()) {
+    
+    
+    
+    
+    
+    
+    if (!mModuleLoader->GetAcquiringImportMaps()) {
+      NS_WARNING("ScriptLoader: acquiring import maps is false.");
+      NS_DispatchToCurrentThread(
+          NewRunnableMethod("nsIScriptElement::FireErrorEvent", aElement,
+                            &nsIScriptElement::FireErrorEvent));
+      return false;
+    }
+
+    
+    mModuleLoader->SetAcquiringImportMaps(false);
+
     UniquePtr<ImportMap> importMap = mModuleLoader->ParseImportMap(request);
 
     
