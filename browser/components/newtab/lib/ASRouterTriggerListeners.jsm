@@ -9,10 +9,11 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AboutReaderParent: "resource:///actors/AboutReaderParent.jsm",
-  BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
-  EveryWindow: "resource:///modules/EveryWindow.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
+  Region: "resource://gre/modules/Region.jsm",
+  EveryWindow: "resource:///modules/EveryWindow.jsm",
+  AboutReaderParent: "resource:///actors/AboutReaderParent.jsm",
+  ASRouterPreferences: "resource://activity-stream/lib/ASRouterPreferences.jsm",
 });
 
 const FEW_MINUTES = 15 * 60 * 1000; 
@@ -594,8 +595,25 @@ this.ASRouterTriggerListeners = new Map([
       _initialized: false,
       _triggerHandler: null,
 
+      
+      
+      
+      
+      
+      
+      
+      
       _shouldShowCaptivePortalVPNPromo() {
-        return BrowserUtils.shouldShowVPNPromo();
+        const disablePromoPref =
+          ASRouterPreferences.disableCaptivePortalVPNPromo;
+        const homeRegion = Region.home || "";
+        const currentRegion = Region.current || "";
+
+        return (
+          !disablePromoPref &&
+          homeRegion.toLowerCase() !== "cn" &&
+          currentRegion.toLowerCase() !== "cn"
+        );
       },
 
       init(triggerHandler) {
