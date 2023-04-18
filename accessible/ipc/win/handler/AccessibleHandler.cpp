@@ -422,8 +422,9 @@ AccessibleHandler::QueryHandlerInterface(IUnknown* aProxyUnknown, REFIID aIid,
     if (mCachedData.mDynamicData.mChildCount == 0) {
       return E_NOINTERFACE;
     }
-    if (mCachedData.mDynamicData.mIA2Role == IA2_ROLE_INTERNAL_FRAME &&
+    if (!mCachedData.mStaticData.mIAHypertext &&
         mCachedData.mDynamicData.mChildCount == 1) {
+      
       
       
       
