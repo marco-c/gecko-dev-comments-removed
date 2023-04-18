@@ -452,7 +452,7 @@ TimerThread::Run() {
         
         
         
-        double microseconds = (timeout - now).ToMilliseconds() * 1000;
+        double microseconds = (timeout - now).ToMicroseconds();
 
         if (ChaosMode::isActive(ChaosFeature::TimerScheduling)) {
           
