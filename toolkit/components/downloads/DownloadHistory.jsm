@@ -482,22 +482,6 @@ HistoryDownload.prototype = {
 
     this.slot.list._notifyAllViews("onDownloadChanged", this);
   },
-
-  
-
-
-  async manuallyRemoveData() {
-    let { path } = this.target;
-    if (this.target.path && this.succeeded) {
-      
-      
-      
-      await IOUtils.setPermissions(path, 0o660);
-      await IOUtils.remove(path, { ignoreAbsent: true });
-    }
-    this.deleted = true;
-    await this.refresh();
-  },
 };
 
 
