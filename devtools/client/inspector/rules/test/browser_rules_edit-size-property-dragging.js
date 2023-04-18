@@ -224,6 +224,34 @@ async function testWidthIncrements(view) {
       distance: 200,
       description: "Increasing value with long distance",
     },
+    {
+      startValue: "402px",
+      expectedEndValue: "402px",
+      distance: marginPropEditor._DRAGGING_DEADZONE_DISTANCE - 1,
+      description: "No change in the deadzone (positive value)",
+      deadzoneIncluded: true,
+    },
+    {
+      startValue: "402px",
+      expectedEndValue: "402px",
+      distance: -1 * (marginPropEditor._DRAGGING_DEADZONE_DISTANCE - 1),
+      description: "No change in the deadzone (negative value)",
+      deadzoneIncluded: true,
+    },
+    {
+      startValue: "402px",
+      expectedEndValue: "403px",
+      distance: marginPropEditor._DRAGGING_DEADZONE_DISTANCE + 1,
+      description: "Changed by 1 when leaving the deadzone (positive value)",
+      deadzoneIncluded: true,
+    },
+    {
+      startValue: "403px",
+      expectedEndValue: "402px",
+      distance: -1 * (marginPropEditor._DRAGGING_DEADZONE_DISTANCE + 1),
+      description: "Changed by 1 when leaving the deadzone (negative value)",
+      deadzoneIncluded: true,
+    },
   ]);
 }
 
@@ -308,6 +336,9 @@ async function runIncrementTest(editor, view, tests) {
 
 
 
+
+
+
 async function testIncrement(editor, options, view) {
   info("Running subtest: " + options.description);
 
@@ -349,12 +380,23 @@ async function testIncrement(editor, options, view) {
 
 
 
+
 async function synthesizeMouseDragging(editor, distance, options = {}) {
   info(`Start to synthesize mouse dragging (from ${1} to ${1 + distance})`);
 
   const styleWindow = editor.ruleView.styleWindow;
   const elm = editor.valueSpan;
   const startPosition = [1, 1];
+
+  
+  const deadzone = editor._DRAGGING_DEADZONE_DISTANCE;
+  if (!options.deadzoneIncluded) {
+    
+    
+    distance = distance + Math.sign(distance) * deadzone;
+  }
+  const updateExpected = Math.abs(options.distance) > deadzone;
+
   const endPosition = [startPosition[0] + distance, startPosition[1]];
 
   EventUtils.synthesizeMouse(
@@ -365,9 +407,11 @@ async function synthesizeMouseDragging(editor, distance, options = {}) {
     styleWindow
   );
 
-  const onPropertyUpdated = editor.ruleView.once(
-    "property-updated-by-dragging"
-  );
+  
+  
+  const updated = updateExpected
+    ? editor.ruleView.once("property-updated-by-dragging")
+    : wait(100);
 
   EventUtils.synthesizeMouse(
     elm,
@@ -385,7 +429,7 @@ async function synthesizeMouseDragging(editor, distance, options = {}) {
   
   
   info("waiting for event property-updated-by-dragging");
-  await onPropertyUpdated;
+  await updated;
   ok(true, "received event property-updated-by-dragging");
 
   if (options.escape) {
@@ -397,7 +441,11 @@ async function synthesizeMouseDragging(editor, distance, options = {}) {
     EventUtils.synthesizeKey("VK_ESCAPE", {}, styleWindow);
   }
 
-  const ruleviewChanged = editor.ruleView.once("ruleview-changed");
+  
+  
+  const done = updateExpected
+    ? editor.ruleView.once("ruleview-changed")
+    : wait(100);
 
   EventUtils.synthesizeMouse(
     elm,
@@ -408,7 +456,19 @@ async function synthesizeMouseDragging(editor, distance, options = {}) {
     },
     styleWindow
   );
-  await ruleviewChanged;
+  await done;
+
+  
+  
+  const inplaceEditor = styleWindow.document.querySelector(
+    ".styleinspector-propertyeditor"
+  );
+  if (inplaceEditor) {
+    const onBlur = once(inplaceEditor, "blur");
+    EventUtils.synthesizeKey("VK_ESCAPE", {}, styleWindow);
+    await onBlur;
+  }
+
   info("Finish to synthesize mouse dragging");
 }
 
