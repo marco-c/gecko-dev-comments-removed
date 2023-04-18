@@ -839,10 +839,9 @@ void nsContentList::RemoveFromHashtable() {
 }
 
 void nsContentList::BringSelfUpToDate(bool aDoFlush) {
-  if (mRootNode && aDoFlush && mFlushesNeeded) {
+  if (mFlushesNeeded && mRootNode && aDoFlush) {
     
-    Document* doc = mRootNode->GetUncomposedDoc();
-    if (doc) {
+    if (Document* doc = mRootNode->GetUncomposedDoc()) {
       
       doc->FlushPendingNotifications(FlushType::ContentAndNotify);
     }
