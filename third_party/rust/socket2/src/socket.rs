@@ -6,43 +6,24 @@
 
 
 
+
+
+#[cfg(target_os = "linux")]
+use std::ffi::{CStr, CString};
 use std::fmt;
 use std::io::{self, Read, Write};
-#[cfg(not(target_os = "redox"))]
-use std::io::{IoSlice, IoSliceMut};
-use std::mem::MaybeUninit;
 use std::net::{self, Ipv4Addr, Ipv6Addr, Shutdown};
-#[cfg(unix)]
-use std::os::unix::io::{FromRawFd, IntoRawFd};
-#[cfg(windows)]
-use std::os::windows::io::{FromRawSocket, IntoRawSocket};
+#[cfg(all(unix, feature = "unix"))]
+use std::os::unix::net::{UnixDatagram, UnixListener, UnixStream};
 use std::time::Duration;
 
-use crate::sys::{self, c_int, getsockopt, setsockopt, Bool};
-use crate::{Domain, Protocol, SockAddr, TcpKeepalive, Type};
-#[cfg(not(target_os = "redox"))]
-use crate::{MaybeUninitSlice, RecvFlags};
+#[cfg(any(unix, target_os = "redox"))]
+use libc::MSG_OOB;
+#[cfg(windows)]
+use winapi::um::winsock2::MSG_OOB;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+use crate::sys;
+use crate::{Domain, Protocol, SockAddr, Type};
 
 
 
@@ -70,11 +51,9 @@ use crate::{MaybeUninitSlice, RecvFlags};
 
 
 pub struct Socket {
-    inner: Inner,
+    
+    pub(crate) inner: sys::Socket,
 }
-
-
-pub(crate) type Inner = std::net::TcpStream;
 
 impl Socket {
     
@@ -82,60 +61,11 @@ impl Socket {
     
     
     
-    
-    pub(crate) fn from_raw(raw: sys::Socket) -> Socket {
-        Socket {
-            inner: unsafe {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                #[cfg(unix)]
-                assert!(raw >= 0, "tried to create a `Socket` with an invalid fd");
-                sys::socket_from_raw(raw)
-            },
-        }
-    }
-
-    pub(crate) fn as_raw(&self) -> sys::Socket {
-        sys::socket_as_raw(&self.inner)
-    }
-
-    pub(crate) fn into_raw(self) -> sys::Socket {
-        sys::socket_into_raw(self.inner)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn new(domain: Domain, ty: Type, protocol: Option<Protocol>) -> io::Result<Socket> {
-        let ty = set_common_type(ty);
-        Socket::new_raw(domain, ty, protocol).and_then(set_common_flags)
-    }
-
-    
-    
-    
-    
-    pub fn new_raw(domain: Domain, ty: Type, protocol: Option<Protocol>) -> io::Result<Socket> {
+    pub fn new(domain: Domain, type_: Type, protocol: Option<Protocol>) -> io::Result<Socket> {
         let protocol = protocol.map(|p| p.0).unwrap_or(0);
-        sys::socket(domain.0, ty.0, protocol).map(Socket::from_raw)
+        Ok(Socket {
+            inner: sys::Socket::new(domain.0, type_.0, protocol)?,
+        })
     }
 
     
@@ -144,41 +74,57 @@ impl Socket {
     
     
     
-    #[cfg(any(doc, all(feature = "all", unix)))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", unix))))]
+    #[cfg(all(unix, feature = "pair"))]
     pub fn pair(
         domain: Domain,
-        ty: Type,
-        protocol: Option<Protocol>,
-    ) -> io::Result<(Socket, Socket)> {
-        let ty = set_common_type(ty);
-        let (a, b) = Socket::pair_raw(domain, ty, protocol)?;
-        let a = set_common_flags(a)?;
-        let b = set_common_flags(b)?;
-        Ok((a, b))
-    }
-
-    
-    
-    
-    #[cfg(any(doc, all(feature = "all", unix)))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", unix))))]
-    pub fn pair_raw(
-        domain: Domain,
-        ty: Type,
+        type_: Type,
         protocol: Option<Protocol>,
     ) -> io::Result<(Socket, Socket)> {
         let protocol = protocol.map(|p| p.0).unwrap_or(0);
-        sys::socketpair(domain.0, ty.0, protocol)
-            .map(|[a, b]| (Socket::from_raw(a), Socket::from_raw(b)))
+        let sockets = sys::Socket::pair(domain.0, type_.0, protocol)?;
+        Ok((Socket { inner: sockets.0 }, Socket { inner: sockets.1 }))
+    }
+
+    
+    pub fn into_tcp_stream(self) -> net::TcpStream {
+        self.into()
+    }
+
+    
+    pub fn into_tcp_listener(self) -> net::TcpListener {
+        self.into()
+    }
+
+    
+    pub fn into_udp_socket(self) -> net::UdpSocket {
+        self.into()
     }
 
     
     
     
     
-    pub fn bind(&self, address: &SockAddr) -> io::Result<()> {
-        sys::bind(self.as_raw(), address)
+    #[cfg(all(unix, feature = "unix"))]
+    pub fn into_unix_stream(self) -> UnixStream {
+        self.into()
+    }
+
+    
+    
+    
+    
+    #[cfg(all(unix, feature = "unix"))]
+    pub fn into_unix_listener(self) -> UnixListener {
+        self.into()
+    }
+
+    
+    
+    
+    
+    #[cfg(all(unix, feature = "unix"))]
+    pub fn into_unix_datagram(self) -> UnixDatagram {
+        self.into()
     }
 
     
@@ -188,15 +134,8 @@ impl Socket {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    pub fn connect(&self, address: &SockAddr) -> io::Result<()> {
-        sys::connect(self.as_raw(), address)
+    pub fn connect(&self, addr: &SockAddr) -> io::Result<()> {
+        self.inner.connect(addr)
     }
 
     
@@ -219,19 +158,15 @@ impl Socket {
     
     
     pub fn connect_timeout(&self, addr: &SockAddr, timeout: Duration) -> io::Result<()> {
-        self.set_nonblocking(true)?;
-        let res = self.connect(addr);
-        self.set_nonblocking(false)?;
+        self.inner.connect_timeout(addr, timeout)
+    }
 
-        match res {
-            Ok(()) => return Ok(()),
-            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {}
-            #[cfg(unix)]
-            Err(ref e) if e.raw_os_error() == Some(libc::EINPROGRESS) => {}
-            Err(e) => return Err(e),
-        }
-
-        sys::poll_connect(self, timeout)
+    
+    
+    
+    
+    pub fn bind(&self, addr: &SockAddr) -> io::Result<()> {
+        self.inner.bind(addr)
     }
 
     
@@ -242,97 +177,31 @@ impl Socket {
     
     
     
-    pub fn listen(&self, backlog: c_int) -> io::Result<()> {
-        sys::listen(self.as_raw(), backlog)
+    pub fn listen(&self, backlog: i32) -> io::Result<()> {
+        self.inner.listen(backlog)
     }
 
-    
-    
     
     
     
     
     
     pub fn accept(&self) -> io::Result<(Socket, SockAddr)> {
-        
-        #[cfg(any(
-            target_os = "android",
-            target_os = "dragonfly",
-            target_os = "freebsd",
-            target_os = "fuchsia",
-            target_os = "illumos",
-            target_os = "linux",
-            target_os = "netbsd",
-            target_os = "openbsd",
-        ))]
-        return self._accept4(libc::SOCK_CLOEXEC);
-
-        
-        #[cfg(not(any(
-            target_os = "android",
-            target_os = "dragonfly",
-            target_os = "freebsd",
-            target_os = "fuchsia",
-            target_os = "illumos",
-            target_os = "linux",
-            target_os = "netbsd",
-            target_os = "openbsd",
-        )))]
-        {
-            let (socket, addr) = self.accept_raw()?;
-            let socket = set_common_flags(socket)?;
-            
-            
-            #[cfg(windows)]
-            socket._set_no_inherit(true)?;
-            Ok((socket, addr))
-        }
+        self.inner
+            .accept()
+            .map(|(socket, addr)| (Socket { inner: socket }, addr))
     }
 
-    
-    
-    
-    
-    pub fn accept_raw(&self) -> io::Result<(Socket, SockAddr)> {
-        sys::accept(self.as_raw()).map(|(inner, addr)| (Socket::from_raw(inner), addr))
-    }
-
-    
-    
-    
-    
-    
-    
-    
     
     pub fn local_addr(&self) -> io::Result<SockAddr> {
-        sys::getsockname(self.as_raw())
+        self.inner.local_addr()
     }
 
-    
-    
-    
-    
-    
-    
     
     pub fn peer_addr(&self) -> io::Result<SockAddr> {
-        sys::getpeername(self.as_raw())
+        self.inner.peer_addr()
     }
 
-    
-    
-    pub fn r#type(&self) -> io::Result<Type> {
-        unsafe { getsockopt::<c_int>(self.as_raw(), sys::SOL_SOCKET, sys::SO_TYPE).map(Type) }
-    }
-
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -340,7 +209,7 @@ impl Socket {
     
     
     pub fn try_clone(&self) -> io::Result<Socket> {
-        sys::try_clone(self.as_raw()).map(Socket::from_raw)
+        self.inner.try_clone().map(|s| Socket { inner: s })
     }
 
     
@@ -348,11 +217,16 @@ impl Socket {
     
     
     
+    pub fn take_error(&self) -> io::Result<Option<io::Error>> {
+        self.inner.take_error()
+    }
+
+    
     
     
     
     pub fn set_nonblocking(&self, nonblocking: bool) -> io::Result<()> {
-        sys::set_nonblocking(self.as_raw(), nonblocking)
+        self.inner.set_nonblocking(nonblocking)
     }
 
     
@@ -360,7 +234,7 @@ impl Socket {
     
     
     pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
-        sys::shutdown(self.as_raw(), how)
+        self.inner.shutdown(how)
     }
 
     
@@ -370,21 +244,16 @@ impl Socket {
     
     
     
+    pub fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
+        self.inner.recv(buf, 0)
+    }
+
     
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn recv(&self, buf: &mut [MaybeUninit<u8>]) -> io::Result<usize> {
-        self.recv_with_flags(buf, 0)
+    pub fn recv_with_flags(&self, buf: &mut [u8], flags: i32) -> io::Result<usize> {
+        self.inner.recv(buf, flags)
     }
 
     
@@ -394,20 +263,8 @@ impl Socket {
     
     
     
-    pub fn recv_out_of_band(&self, buf: &mut [MaybeUninit<u8>]) -> io::Result<usize> {
-        self.recv_with_flags(buf, sys::MSG_OOB)
-    }
-
-    
-    
-    
-    
-    pub fn recv_with_flags(
-        &self,
-        buf: &mut [MaybeUninit<u8>],
-        flags: sys::c_int,
-    ) -> io::Result<usize> {
-        sys::recv(self.as_raw(), buf, flags)
+    pub fn recv_out_of_band(&self, buf: &mut [u8]) -> io::Result<usize> {
+        self.inner.recv(buf, MSG_OOB)
     }
 
     
@@ -416,83 +273,14 @@ impl Socket {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(not(target_os = "redox"))))]
-    pub fn recv_vectored(
-        &self,
-        bufs: &mut [MaybeUninitSlice<'_>],
-    ) -> io::Result<(usize, RecvFlags)> {
-        self.recv_vectored_with_flags(bufs, 0)
+    pub fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
+        self.inner.peek(buf)
     }
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(not(target_os = "redox"))))]
-    pub fn recv_vectored_with_flags(
-        &self,
-        bufs: &mut [MaybeUninitSlice<'_>],
-        flags: c_int,
-    ) -> io::Result<(usize, RecvFlags)> {
-        sys::recv_vectored(self.as_raw(), bufs, flags)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn peek(&self, buf: &mut [MaybeUninit<u8>]) -> io::Result<usize> {
-        self.recv_with_flags(buf, sys::MSG_PEEK)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn recv_from(&self, buf: &mut [MaybeUninit<u8>]) -> io::Result<(usize, SockAddr)> {
-        self.recv_from_with_flags(buf, 0)
+    pub fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SockAddr)> {
+        self.inner.recv_from(buf, 0)
     }
 
     
@@ -501,10 +289,10 @@ impl Socket {
     
     pub fn recv_from_with_flags(
         &self,
-        buf: &mut [MaybeUninit<u8>],
-        flags: c_int,
+        buf: &mut [u8],
+        flags: i32,
     ) -> io::Result<(usize, SockAddr)> {
-        sys::recv_from(self.as_raw(), buf, flags)
+        self.inner.recv_from(buf, flags)
     }
 
     
@@ -514,57 +302,8 @@ impl Socket {
     
     
     
-    
-    
-    
-    
-    
-    #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(not(target_os = "redox"))))]
-    pub fn recv_from_vectored(
-        &self,
-        bufs: &mut [MaybeUninitSlice<'_>],
-    ) -> io::Result<(usize, RecvFlags, SockAddr)> {
-        self.recv_from_vectored_with_flags(bufs, 0)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(not(target_os = "redox"))))]
-    pub fn recv_from_vectored_with_flags(
-        &self,
-        bufs: &mut [MaybeUninitSlice<'_>],
-        flags: c_int,
-    ) -> io::Result<(usize, RecvFlags, SockAddr)> {
-        sys::recv_from_vectored(self.as_raw(), bufs, flags)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn peek_from(&self, buf: &mut [MaybeUninit<u8>]) -> io::Result<(usize, SockAddr)> {
-        self.recv_from_with_flags(buf, sys::MSG_PEEK)
+    pub fn peek_from(&self, buf: &mut [u8]) -> io::Result<(usize, SockAddr)> {
+        self.inner.peek_from(buf)
     }
 
     
@@ -574,36 +313,15 @@ impl Socket {
     
     
     pub fn send(&self, buf: &[u8]) -> io::Result<usize> {
-        self.send_with_flags(buf, 0)
+        self.inner.send(buf, 0)
     }
 
     
     
     
     
-    pub fn send_with_flags(&self, buf: &[u8], flags: c_int) -> io::Result<usize> {
-        sys::send(self.as_raw(), buf, flags)
-    }
-
-    
-    #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(not(target_os = "redox"))))]
-    pub fn send_vectored(&self, bufs: &[IoSlice<'_>]) -> io::Result<usize> {
-        self.send_vectored_with_flags(bufs, 0)
-    }
-
-    
-    
-    
-    
-    #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(not(target_os = "redox"))))]
-    pub fn send_vectored_with_flags(
-        &self,
-        bufs: &[IoSlice<'_>],
-        flags: c_int,
-    ) -> io::Result<usize> {
-        sys::send_vectored(self.as_raw(), bufs, flags)
+    pub fn send_with_flags(&self, buf: &[u8], flags: i32) -> io::Result<usize> {
+        self.inner.send(buf, flags)
     }
 
     
@@ -614,656 +332,27 @@ impl Socket {
     
     
     pub fn send_out_of_band(&self, buf: &[u8]) -> io::Result<usize> {
-        self.send_with_flags(buf, sys::MSG_OOB)
+        self.inner.send(buf, MSG_OOB)
     }
 
+    
     
     
     
     
     pub fn send_to(&self, buf: &[u8], addr: &SockAddr) -> io::Result<usize> {
-        self.send_to_with_flags(buf, addr, 0)
+        self.inner.send_to(buf, 0, addr)
     }
 
     
     
     
     
-    pub fn send_to_with_flags(
-        &self,
-        buf: &[u8],
-        addr: &SockAddr,
-        flags: c_int,
-    ) -> io::Result<usize> {
-        sys::send_to(self.as_raw(), buf, addr, flags)
+    pub fn send_to_with_flags(&self, buf: &[u8], addr: &SockAddr, flags: i32) -> io::Result<usize> {
+        self.inner.send_to(buf, flags, addr)
     }
 
     
-    
-    #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(not(target_os = "redox"))))]
-    pub fn send_to_vectored(&self, bufs: &[IoSlice<'_>], addr: &SockAddr) -> io::Result<usize> {
-        self.send_to_vectored_with_flags(bufs, addr, 0)
-    }
-
-    
-    
-    
-    
-    #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(not(target_os = "redox"))))]
-    pub fn send_to_vectored_with_flags(
-        &self,
-        bufs: &[IoSlice<'_>],
-        addr: &SockAddr,
-        flags: c_int,
-    ) -> io::Result<usize> {
-        sys::send_to_vectored(self.as_raw(), bufs, addr, flags)
-    }
-}
-
-
-
-#[inline(always)]
-fn set_common_type(ty: Type) -> Type {
-    
-    #[cfg(any(
-        target_os = "android",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "fuchsia",
-        target_os = "illumos",
-        target_os = "linux",
-        target_os = "netbsd",
-        target_os = "openbsd",
-    ))]
-    let ty = ty._cloexec();
-
-    
-    #[cfg(windows)]
-    let ty = ty._no_inherit();
-
-    ty
-}
-
-
-#[inline(always)]
-#[allow(clippy::unnecessary_wraps)]
-fn set_common_flags(socket: Socket) -> io::Result<Socket> {
-    
-    #[cfg(all(
-        unix,
-        not(any(
-            target_os = "android",
-            target_os = "dragonfly",
-            target_os = "freebsd",
-            target_os = "fuchsia",
-            target_os = "illumos",
-            target_os = "linux",
-            target_os = "netbsd",
-            target_os = "openbsd",
-        ))
-    ))]
-    socket._set_cloexec(true)?;
-
-    
-    #[cfg(target_vendor = "apple")]
-    socket._set_nosigpipe(true)?;
-
-    Ok(socket)
-}
-
-
-
-
-
-#[cfg(not(any(
-    target_os = "haiku",
-    target_os = "illumos",
-    target_os = "netbsd",
-    target_os = "redox",
-    target_os = "solaris",
-)))]
-#[derive(Debug)]
-pub enum InterfaceIndexOrAddress {
-    
-    Index(u32),
-    
-    Address(Ipv4Addr),
-}
-
-
-
-
-
-
-impl Socket {
-    
-    
-    
-    
-    
-    pub fn broadcast(&self) -> io::Result<bool> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::SOL_SOCKET, sys::SO_BROADCAST)
-                .map(|broadcast| broadcast != 0)
-        }
-    }
-
-    
-    
-    
-    
-    pub fn set_broadcast(&self, broadcast: bool) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::SOL_SOCKET,
-                sys::SO_BROADCAST,
-                broadcast as c_int,
-            )
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn take_error(&self) -> io::Result<Option<io::Error>> {
-        match unsafe { getsockopt::<c_int>(self.as_raw(), sys::SOL_SOCKET, sys::SO_ERROR) } {
-            Ok(0) => Ok(None),
-            Ok(errno) => Ok(Some(io::Error::from_raw_os_error(errno))),
-            Err(err) => Err(err),
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn keepalive(&self) -> io::Result<bool> {
-        unsafe {
-            getsockopt::<Bool>(self.as_raw(), sys::SOL_SOCKET, sys::SO_KEEPALIVE)
-                .map(|keepalive| keepalive != 0)
-        }
-    }
-
-    
-    
-    
-    pub fn set_keepalive(&self, keepalive: bool) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::SOL_SOCKET,
-                sys::SO_KEEPALIVE,
-                keepalive as c_int,
-            )
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn linger(&self) -> io::Result<Option<Duration>> {
-        unsafe {
-            getsockopt::<sys::linger>(self.as_raw(), sys::SOL_SOCKET, sys::SO_LINGER)
-                .map(from_linger)
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn set_linger(&self, linger: Option<Duration>) -> io::Result<()> {
-        let linger = into_linger(linger);
-        unsafe { setsockopt(self.as_raw(), sys::SOL_SOCKET, sys::SO_LINGER, linger) }
-    }
-
-    
-    
-    
-    
-    
-    #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(not(target_os = "redox"))))]
-    pub fn out_of_band_inline(&self) -> io::Result<bool> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::SOL_SOCKET, sys::SO_OOBINLINE)
-                .map(|oob_inline| oob_inline != 0)
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    #[cfg(not(target_os = "redox"))]
-    #[cfg_attr(docsrs, doc(cfg(not(target_os = "redox"))))]
-    pub fn set_out_of_band_inline(&self, oob_inline: bool) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::SOL_SOCKET,
-                sys::SO_OOBINLINE,
-                oob_inline as c_int,
-            )
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn recv_buffer_size(&self) -> io::Result<usize> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::SOL_SOCKET, sys::SO_RCVBUF)
-                .map(|size| size as usize)
-        }
-    }
-
-    
-    
-    
-    
-    pub fn set_recv_buffer_size(&self, size: usize) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::SOL_SOCKET,
-                sys::SO_RCVBUF,
-                size as c_int,
-            )
-        }
-    }
-
-    
-    
-    
-    
-    pub fn read_timeout(&self) -> io::Result<Option<Duration>> {
-        sys::timeout_opt(self.as_raw(), sys::SOL_SOCKET, sys::SO_RCVTIMEO)
-    }
-
-    
-    
-    
-    
-    pub fn set_read_timeout(&self, duration: Option<Duration>) -> io::Result<()> {
-        sys::set_timeout_opt(self.as_raw(), sys::SOL_SOCKET, sys::SO_RCVTIMEO, duration)
-    }
-
-    
-    
-    
-    
-    
-    pub fn reuse_address(&self) -> io::Result<bool> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::SOL_SOCKET, sys::SO_REUSEADDR)
-                .map(|reuse| reuse != 0)
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn set_reuse_address(&self, reuse: bool) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::SOL_SOCKET,
-                sys::SO_REUSEADDR,
-                reuse as c_int,
-            )
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn send_buffer_size(&self) -> io::Result<usize> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::SOL_SOCKET, sys::SO_SNDBUF)
-                .map(|size| size as usize)
-        }
-    }
-
-    
-    
-    
-    
-    pub fn set_send_buffer_size(&self, size: usize) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::SOL_SOCKET,
-                sys::SO_SNDBUF,
-                size as c_int,
-            )
-        }
-    }
-
-    
-    
-    
-    
-    pub fn write_timeout(&self) -> io::Result<Option<Duration>> {
-        sys::timeout_opt(self.as_raw(), sys::SOL_SOCKET, sys::SO_SNDTIMEO)
-    }
-
-    
-    
-    
-    
-    pub fn set_write_timeout(&self, duration: Option<Duration>) -> io::Result<()> {
-        sys::set_timeout_opt(self.as_raw(), sys::SOL_SOCKET, sys::SO_SNDTIMEO, duration)
-    }
-}
-
-fn from_linger(linger: sys::linger) -> Option<Duration> {
-    if linger.l_onoff == 0 {
-        None
-    } else {
-        Some(Duration::from_secs(linger.l_linger as u64))
-    }
-}
-
-fn into_linger(duration: Option<Duration>) -> sys::linger {
-    match duration {
-        Some(duration) => sys::linger {
-            l_onoff: 1,
-            l_linger: duration.as_secs() as _,
-        },
-        None => sys::linger {
-            l_onoff: 0,
-            l_linger: 0,
-        },
-    }
-}
-
-
-
-
-
-
-impl Socket {
-    
-    
-    
-    
-    
-    #[cfg(all(feature = "all", not(target_os = "redox")))]
-    #[cfg_attr(docsrs, doc(all(feature = "all", not(target_os = "redox"))))]
-    pub fn header_included(&self) -> io::Result<bool> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IP, sys::IP_HDRINCL)
-                .map(|included| included != 0)
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(all(feature = "all", not(target_os = "redox")))]
-    #[cfg_attr(docsrs, doc(all(feature = "all", not(target_os = "redox"))))]
-    pub fn set_header_included(&self, included: bool) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IP,
-                sys::IP_HDRINCL,
-                included as c_int,
-            )
-        }
-    }
-
-    
-    
-    
-    
-    
-    #[cfg(any(doc, all(feature = "all", target_os = "linux")))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", target_os = "linux"))))]
-    pub fn ip_transparent(&self) -> io::Result<bool> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IP, libc::IP_TRANSPARENT)
-                .map(|transparent| transparent != 0)
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(any(doc, all(feature = "all", target_os = "linux")))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "all", target_os = "linux"))))]
-    pub fn set_ip_transparent(&self, transparent: bool) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IP,
-                libc::IP_TRANSPARENT,
-                transparent as c_int,
-            )
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub fn join_multicast_v4(&self, multiaddr: &Ipv4Addr, interface: &Ipv4Addr) -> io::Result<()> {
-        let mreq = sys::IpMreq {
-            imr_multiaddr: sys::to_in_addr(multiaddr),
-            imr_interface: sys::to_in_addr(interface),
-        };
-        unsafe { setsockopt(self.as_raw(), sys::IPPROTO_IP, sys::IP_ADD_MEMBERSHIP, mreq) }
-    }
-
-    
-    
-    
-    
-    
-    pub fn leave_multicast_v4(&self, multiaddr: &Ipv4Addr, interface: &Ipv4Addr) -> io::Result<()> {
-        let mreq = sys::IpMreq {
-            imr_multiaddr: sys::to_in_addr(multiaddr),
-            imr_interface: sys::to_in_addr(interface),
-        };
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IP,
-                sys::IP_DROP_MEMBERSHIP,
-                mreq,
-            )
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    #[cfg(not(any(
-        target_os = "haiku",
-        target_os = "illumos",
-        target_os = "netbsd",
-        target_os = "redox",
-        target_os = "solaris",
-    )))]
-    pub fn join_multicast_v4_n(
-        &self,
-        multiaddr: &Ipv4Addr,
-        interface: &InterfaceIndexOrAddress,
-    ) -> io::Result<()> {
-        let mreqn = sys::to_mreqn(multiaddr, interface);
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IP,
-                sys::IP_ADD_MEMBERSHIP,
-                mreqn,
-            )
-        }
-    }
-
-    
-    
-    
-    
-    
-    #[cfg(not(any(
-        target_os = "haiku",
-        target_os = "illumos",
-        target_os = "netbsd",
-        target_os = "redox",
-        target_os = "solaris",
-    )))]
-    pub fn leave_multicast_v4_n(
-        &self,
-        multiaddr: &Ipv4Addr,
-        interface: &InterfaceIndexOrAddress,
-    ) -> io::Result<()> {
-        let mreqn = sys::to_mreqn(multiaddr, interface);
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IP,
-                sys::IP_DROP_MEMBERSHIP,
-                mreqn,
-            )
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn multicast_if_v4(&self) -> io::Result<Ipv4Addr> {
-        unsafe {
-            getsockopt(self.as_raw(), sys::IPPROTO_IP, sys::IP_MULTICAST_IF).map(sys::from_in_addr)
-        }
-    }
-
-    
-    
-    
-    pub fn set_multicast_if_v4(&self, interface: &Ipv4Addr) -> io::Result<()> {
-        let interface = sys::to_in_addr(interface);
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IP,
-                sys::IP_MULTICAST_IF,
-                interface,
-            )
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn multicast_loop_v4(&self) -> io::Result<bool> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IP, sys::IP_MULTICAST_LOOP)
-                .map(|loop_v4| loop_v4 != 0)
-        }
-    }
-
-    
-    
-    
-    
-    pub fn set_multicast_loop_v4(&self, loop_v4: bool) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IP,
-                sys::IP_MULTICAST_LOOP,
-                loop_v4 as c_int,
-            )
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn multicast_ttl_v4(&self) -> io::Result<u32> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IP, sys::IP_MULTICAST_TTL)
-                .map(|ttl| ttl as u32)
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub fn set_multicast_ttl_v4(&self, ttl: u32) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IP,
-                sys::IP_MULTICAST_TTL,
-                ttl as c_int,
-            )
-        }
-    }
 
     
     
@@ -1271,9 +360,7 @@ impl Socket {
     
     
     pub fn ttl(&self) -> io::Result<u32> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IP, sys::IP_TTL).map(|ttl| ttl as u32)
-        }
+        self.inner.ttl()
     }
 
     
@@ -1281,7 +368,25 @@ impl Socket {
     
     
     pub fn set_ttl(&self, ttl: u32) -> io::Result<()> {
-        unsafe { setsockopt(self.as_raw(), sys::IPPROTO_IP, sys::IP_TTL, ttl as c_int) }
+        self.inner.set_ttl(ttl)
+    }
+
+    
+    
+    
+    
+    #[cfg(all(unix, not(target_os = "redox")))]
+    pub fn mss(&self) -> io::Result<u32> {
+        self.inner.mss()
+    }
+
+    
+    
+    
+    
+    #[cfg(all(unix, not(target_os = "redox")))]
+    pub fn set_mss(&self, mss: u32) -> io::Result<()> {
+        self.inner.set_mss(mss)
     }
 
     
@@ -1291,14 +396,9 @@ impl Socket {
     
     
     
-    #[cfg(not(any(
-        target_os = "fuschia",
-        target_os = "redox",
-        target_os = "solaris",
-        target_os = "illumos",
-    )))]
-    pub fn set_tos(&self, tos: u32) -> io::Result<()> {
-        unsafe { setsockopt(self.as_raw(), sys::IPPROTO_IP, sys::IP_TOS, tos as c_int) }
+    #[cfg(target_os = "linux")]
+    pub fn mark(&self) -> io::Result<u32> {
+        self.inner.mark()
     }
 
     
@@ -1309,46 +409,19 @@ impl Socket {
     
     
     
-    #[cfg(not(any(
-        target_os = "fuschia",
-        target_os = "redox",
-        target_os = "solaris",
-        target_os = "illumos",
-    )))]
-    pub fn tos(&self) -> io::Result<u32> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IP, sys::IP_TOS).map(|tos| tos as u32)
-        }
+    #[cfg(target_os = "linux")]
+    pub fn set_mark(&self, mark: u32) -> io::Result<()> {
+        self.inner.set_mark(mark)
     }
-}
 
-
-
-
-
-
-impl Socket {
     
     
     
     
     
-    
-    
-    pub fn join_multicast_v6(&self, multiaddr: &Ipv6Addr, interface: u32) -> io::Result<()> {
-        let mreq = sys::Ipv6Mreq {
-            ipv6mr_multiaddr: sys::to_in6_addr(multiaddr),
-            
-            ipv6mr_interface: interface as _,
-        };
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IPV6,
-                sys::IPV6_ADD_MEMBERSHIP,
-                mreq,
-            )
-        }
+    #[cfg(target_os = "linux")]
+    pub fn device(&self) -> io::Result<Option<CString>> {
+        self.inner.device()
     }
 
     
@@ -1358,127 +431,25 @@ impl Socket {
     
     
     
-    pub fn leave_multicast_v6(&self, multiaddr: &Ipv6Addr, interface: u32) -> io::Result<()> {
-        let mreq = sys::Ipv6Mreq {
-            ipv6mr_multiaddr: sys::to_in6_addr(multiaddr),
-            
-            ipv6mr_interface: interface as _,
-        };
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IPV6,
-                sys::IPV6_DROP_MEMBERSHIP,
-                mreq,
-            )
-        }
-    }
-
     
     
-    
-    
-    
-    pub fn multicast_hops_v6(&self) -> io::Result<u32> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IPV6, sys::IPV6_MULTICAST_HOPS)
-                .map(|hops| hops as u32)
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn set_multicast_hops_v6(&self, hops: u32) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IPV6,
-                sys::IPV6_MULTICAST_HOPS,
-                hops as c_int,
-            )
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn multicast_if_v6(&self) -> io::Result<u32> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IPV6, sys::IPV6_MULTICAST_IF)
-                .map(|interface| interface as u32)
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn set_multicast_if_v6(&self, interface: u32) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IPV6,
-                sys::IPV6_MULTICAST_IF,
-                interface as c_int,
-            )
-        }
-    }
-
-    
-    
-    
-    
-    
-    pub fn multicast_loop_v6(&self) -> io::Result<bool> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IPV6, sys::IPV6_MULTICAST_LOOP)
-                .map(|loop_v6| loop_v6 != 0)
-        }
-    }
-
-    
-    
-    
-    
-    pub fn set_multicast_loop_v6(&self, loop_v6: bool) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IPV6,
-                sys::IPV6_MULTICAST_LOOP,
-                loop_v6 as c_int,
-            )
-        }
+    #[cfg(target_os = "linux")]
+    pub fn bind_device(&self, interface: Option<&CStr>) -> io::Result<()> {
+        self.inner.bind_device(interface)
     }
 
     
     
     
     pub fn unicast_hops_v6(&self) -> io::Result<u32> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IPV6, sys::IPV6_UNICAST_HOPS)
-                .map(|hops| hops as u32)
-        }
+        self.inner.unicast_hops_v6()
     }
 
     
     
     
-    pub fn set_unicast_hops_v6(&self, hops: u32) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IPV6,
-                sys::IPV6_UNICAST_HOPS,
-                hops as c_int,
-            )
-        }
+    pub fn set_unicast_hops_v6(&self, ttl: u32) -> io::Result<()> {
+        self.inner.set_unicast_hops_v6(ttl)
     }
 
     
@@ -1487,10 +458,7 @@ impl Socket {
     
     
     pub fn only_v6(&self) -> io::Result<bool> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_IPV6, sys::IPV6_V6ONLY)
-                .map(|only_v6| only_v6 != 0)
-        }
+        self.inner.only_v6()
     }
 
     
@@ -1502,43 +470,14 @@ impl Socket {
     
     
     pub fn set_only_v6(&self, only_v6: bool) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_IPV6,
-                sys::IPV6_V6ONLY,
-                only_v6 as c_int,
-            )
-        }
+        self.inner.set_only_v6(only_v6)
     }
-}
 
-
-
-
-
-
-impl Socket {
     
     
     
-    
-    #[cfg(any(
-        doc,
-        all(
-            feature = "all",
-            not(any(windows, target_os = "haiku", target_os = "openbsd"))
-        )
-    ))]
-    #[cfg_attr(
-        docsrs,
-        doc(cfg(all(
-            feature = "all",
-            not(any(windows, target_os = "haiku", target_os = "openbsd"))
-        )))
-    )]
-    pub fn keepalive_time(&self) -> io::Result<Duration> {
-        sys::keepalive_time(self.as_raw())
+    pub fn read_timeout(&self) -> io::Result<Option<Duration>> {
+        self.inner.read_timeout()
     }
 
     
@@ -1546,41 +485,15 @@ impl Socket {
     
     
     
-    #[cfg(all(
-        feature = "all",
-        any(
-            doc,
-            target_os = "android",
-            target_os = "dragonfly",
-            target_os = "freebsd",
-            target_os = "fuchsia",
-            target_os = "illumos",
-            target_os = "linux",
-            target_os = "netbsd",
-            target_vendor = "apple",
-        )
-    ))]
-    #[cfg_attr(
-        docsrs,
-        doc(cfg(all(
-            feature = "all",
-            any(
-                target_os = "android",
-                target_os = "dragonfly",
-                target_os = "freebsd",
-                target_os = "fuchsia",
-                target_os = "illumos",
-                target_os = "linux",
-                target_os = "netbsd",
-                target_vendor = "apple",
-            )
-        )))
-    )]
-    pub fn keepalive_interval(&self) -> io::Result<Duration> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_TCP, sys::TCP_KEEPINTVL)
-                .map(|secs| Duration::from_secs(secs as u64))
-        }
+    pub fn set_read_timeout(&self, dur: Option<Duration>) -> io::Result<()> {
+        self.inner.set_read_timeout(dur)
+    }
+
+    
+    
+    
+    pub fn write_timeout(&self) -> io::Result<Option<Duration>> {
+        self.inner.write_timeout()
     }
 
     
@@ -1588,84 +501,8 @@ impl Socket {
     
     
     
-    #[cfg(all(
-        feature = "all",
-        any(
-            doc,
-            target_os = "android",
-            target_os = "dragonfly",
-            target_os = "freebsd",
-            target_os = "fuchsia",
-            target_os = "illumos",
-            target_os = "linux",
-            target_os = "netbsd",
-            target_vendor = "apple",
-        )
-    ))]
-    #[cfg_attr(
-        docsrs,
-        doc(cfg(all(
-            feature = "all",
-            any(
-                target_os = "android",
-                target_os = "dragonfly",
-                target_os = "freebsd",
-                target_os = "fuchsia",
-                target_os = "illumos",
-                target_os = "linux",
-                target_os = "netbsd",
-                target_vendor = "apple",
-            )
-        )))
-    )]
-    pub fn keepalive_retries(&self) -> io::Result<u32> {
-        unsafe {
-            getsockopt::<c_int>(self.as_raw(), sys::IPPROTO_TCP, sys::TCP_KEEPCNT)
-                .map(|retries| retries as u32)
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn set_tcp_keepalive(&self, params: &TcpKeepalive) -> io::Result<()> {
-        self.set_keepalive(true)?;
-        sys::set_tcp_keepalive(self.as_raw(), params)
+    pub fn set_write_timeout(&self, dur: Option<Duration>) -> io::Result<()> {
+        self.inner.set_write_timeout(dur)
     }
 
     
@@ -1674,10 +511,7 @@ impl Socket {
     
     
     pub fn nodelay(&self) -> io::Result<bool> {
-        unsafe {
-            getsockopt::<Bool>(self.as_raw(), sys::IPPROTO_TCP, sys::TCP_NODELAY)
-                .map(|nodelay| nodelay != 0)
-        }
+        self.inner.nodelay()
     }
 
     
@@ -1688,94 +522,607 @@ impl Socket {
     
     
     pub fn set_nodelay(&self, nodelay: bool) -> io::Result<()> {
-        unsafe {
-            setsockopt(
-                self.as_raw(),
-                sys::IPPROTO_TCP,
-                sys::TCP_NODELAY,
-                nodelay as c_int,
-            )
-        }
+        self.inner.set_nodelay(nodelay)
+    }
+
+    
+    
+    
+    
+    pub fn broadcast(&self) -> io::Result<bool> {
+        self.inner.broadcast()
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn set_broadcast(&self, broadcast: bool) -> io::Result<()> {
+        self.inner.set_broadcast(broadcast)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn multicast_loop_v4(&self) -> io::Result<bool> {
+        self.inner.multicast_loop_v4()
+    }
+
+    
+    
+    
+    
+    pub fn set_multicast_loop_v4(&self, multicast_loop_v4: bool) -> io::Result<()> {
+        self.inner.set_multicast_loop_v4(multicast_loop_v4)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn multicast_ttl_v4(&self) -> io::Result<u32> {
+        self.inner.multicast_ttl_v4()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_multicast_ttl_v4(&self, multicast_ttl_v4: u32) -> io::Result<()> {
+        self.inner.set_multicast_ttl_v4(multicast_ttl_v4)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn multicast_hops_v6(&self) -> io::Result<u32> {
+        self.inner.multicast_hops_v6()
+    }
+
+    
+    
+    
+    
+    
+    pub fn set_multicast_hops_v6(&self, hops: u32) -> io::Result<()> {
+        self.inner.set_multicast_hops_v6(hops)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn multicast_if_v4(&self) -> io::Result<Ipv4Addr> {
+        self.inner.multicast_if_v4()
+    }
+
+    
+    
+    
+    pub fn set_multicast_if_v4(&self, interface: &Ipv4Addr) -> io::Result<()> {
+        self.inner.set_multicast_if_v4(interface)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn multicast_if_v6(&self) -> io::Result<u32> {
+        self.inner.multicast_if_v6()
+    }
+
+    
+    
+    
+    
+    
+    pub fn set_multicast_if_v6(&self, interface: u32) -> io::Result<()> {
+        self.inner.set_multicast_if_v6(interface)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn multicast_loop_v6(&self) -> io::Result<bool> {
+        self.inner.multicast_loop_v6()
+    }
+
+    
+    
+    
+    
+    pub fn set_multicast_loop_v6(&self, multicast_loop_v6: bool) -> io::Result<()> {
+        self.inner.set_multicast_loop_v6(multicast_loop_v6)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn join_multicast_v4(&self, multiaddr: &Ipv4Addr, interface: &Ipv4Addr) -> io::Result<()> {
+        self.inner.join_multicast_v4(multiaddr, interface)
+    }
+
+    
+    
+    
+    
+    
+    pub fn join_multicast_v6(&self, multiaddr: &Ipv6Addr, interface: u32) -> io::Result<()> {
+        self.inner.join_multicast_v6(multiaddr, interface)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn leave_multicast_v4(&self, multiaddr: &Ipv4Addr, interface: &Ipv4Addr) -> io::Result<()> {
+        self.inner.leave_multicast_v4(multiaddr, interface)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn leave_multicast_v6(&self, multiaddr: &Ipv6Addr, interface: u32) -> io::Result<()> {
+        self.inner.leave_multicast_v6(multiaddr, interface)
+    }
+
+    
+    
+    pub fn linger(&self) -> io::Result<Option<Duration>> {
+        self.inner.linger()
+    }
+
+    
+    pub fn set_linger(&self, dur: Option<Duration>) -> io::Result<()> {
+        self.inner.set_linger(dur)
+    }
+
+    
+    pub fn reuse_address(&self) -> io::Result<bool> {
+        self.inner.reuse_address()
+    }
+
+    
+    
+    
+    
+    
+    pub fn set_reuse_address(&self, reuse: bool) -> io::Result<()> {
+        self.inner.set_reuse_address(reuse)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn recv_buffer_size(&self) -> io::Result<usize> {
+        self.inner.recv_buffer_size()
+    }
+
+    
+    
+    
+    
+    pub fn set_recv_buffer_size(&self, size: usize) -> io::Result<()> {
+        self.inner.set_recv_buffer_size(size)
+    }
+
+    
+    
+    
+    
+    
+    pub fn send_buffer_size(&self) -> io::Result<usize> {
+        self.inner.send_buffer_size()
+    }
+
+    
+    
+    
+    
+    pub fn set_send_buffer_size(&self, size: usize) -> io::Result<()> {
+        self.inner.set_send_buffer_size(size)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn keepalive(&self) -> io::Result<Option<Duration>> {
+        self.inner.keepalive()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_keepalive(&self, keepalive: Option<Duration>) -> io::Result<()> {
+        self.inner.set_keepalive(keepalive)
+    }
+
+    
+    
+    
+    
+    pub fn out_of_band_inline(&self) -> io::Result<bool> {
+        self.inner.out_of_band_inline()
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn set_out_of_band_inline(&self, oob_inline: bool) -> io::Result<()> {
+        self.inner.set_out_of_band_inline(oob_inline)
+    }
+
+    
+    
+    
+    
+    #[cfg(all(
+        unix,
+        not(any(target_os = "solaris", target_os = "illumos")),
+        feature = "reuseport"
+    ))]
+    pub fn reuse_port(&self) -> io::Result<bool> {
+        self.inner.reuse_port()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(all(
+        unix,
+        not(any(target_os = "solaris", target_os = "illumos")),
+        feature = "reuseport"
+    ))]
+    pub fn set_reuse_port(&self, reuse: bool) -> io::Result<()> {
+        self.inner.set_reuse_port(reuse)
     }
 }
 
 impl Read for Socket {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        
-        
-        let buf = unsafe { &mut *(buf as *mut [u8] as *mut [MaybeUninit<u8>]) };
-        self.recv(buf)
-    }
-
-    #[cfg(not(target_os = "redox"))]
-    fn read_vectored(&mut self, bufs: &mut [IoSliceMut<'_>]) -> io::Result<usize> {
-        
-        
-        
-        
-        let bufs = unsafe { &mut *(bufs as *mut [IoSliceMut<'_>] as *mut [MaybeUninitSlice<'_>]) };
-        self.recv_vectored(bufs).map(|(n, _)| n)
+        self.inner.read(buf)
     }
 }
 
 impl<'a> Read for &'a Socket {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        
-        let buf = unsafe { &mut *(buf as *mut [u8] as *mut [MaybeUninit<u8>]) };
-        self.recv(buf)
-    }
-
-    #[cfg(not(target_os = "redox"))]
-    fn read_vectored(&mut self, bufs: &mut [IoSliceMut<'_>]) -> io::Result<usize> {
-        
-        let bufs = unsafe { &mut *(bufs as *mut [IoSliceMut<'_>] as *mut [MaybeUninitSlice<'_>]) };
-        self.recv_vectored(bufs).map(|(n, _)| n)
+        (&self.inner).read(buf)
     }
 }
 
 impl Write for Socket {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.send(buf)
-    }
-
-    #[cfg(not(target_os = "redox"))]
-    fn write_vectored(&mut self, bufs: &[IoSlice<'_>]) -> io::Result<usize> {
-        self.send_vectored(bufs)
+        self.inner.write(buf)
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        Ok(())
+        self.inner.flush()
     }
 }
 
 impl<'a> Write for &'a Socket {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.send(buf)
-    }
-
-    #[cfg(not(target_os = "redox"))]
-    fn write_vectored(&mut self, bufs: &[IoSlice<'_>]) -> io::Result<usize> {
-        self.send_vectored(bufs)
+        (&self.inner).write(buf)
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        Ok(())
+        (&self.inner).flush()
     }
 }
 
 impl fmt::Debug for Socket {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Socket")
-            .field("raw", &self.as_raw())
-            .field("local_addr", &self.local_addr().ok())
-            .field("peer_addr", &self.peer_addr().ok())
-            .finish()
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.inner.fmt(f)
     }
 }
 
-from!(net::TcpStream, Socket);
-from!(net::TcpListener, Socket);
-from!(net::UdpSocket, Socket);
-from!(Socket, net::TcpStream);
-from!(Socket, net::TcpListener);
-from!(Socket, net::UdpSocket);
+impl From<net::TcpStream> for Socket {
+    fn from(socket: net::TcpStream) -> Socket {
+        Socket {
+            inner: socket.into(),
+        }
+    }
+}
+
+impl From<net::TcpListener> for Socket {
+    fn from(socket: net::TcpListener) -> Socket {
+        Socket {
+            inner: socket.into(),
+        }
+    }
+}
+
+impl From<net::UdpSocket> for Socket {
+    fn from(socket: net::UdpSocket) -> Socket {
+        Socket {
+            inner: socket.into(),
+        }
+    }
+}
+
+#[cfg(all(unix, feature = "unix"))]
+impl From<UnixStream> for Socket {
+    fn from(socket: UnixStream) -> Socket {
+        Socket {
+            inner: socket.into(),
+        }
+    }
+}
+
+#[cfg(all(unix, feature = "unix"))]
+impl From<UnixListener> for Socket {
+    fn from(socket: UnixListener) -> Socket {
+        Socket {
+            inner: socket.into(),
+        }
+    }
+}
+
+#[cfg(all(unix, feature = "unix"))]
+impl From<UnixDatagram> for Socket {
+    fn from(socket: UnixDatagram) -> Socket {
+        Socket {
+            inner: socket.into(),
+        }
+    }
+}
+
+impl From<Socket> for net::TcpStream {
+    fn from(socket: Socket) -> net::TcpStream {
+        socket.inner.into()
+    }
+}
+
+impl From<Socket> for net::TcpListener {
+    fn from(socket: Socket) -> net::TcpListener {
+        socket.inner.into()
+    }
+}
+
+impl From<Socket> for net::UdpSocket {
+    fn from(socket: Socket) -> net::UdpSocket {
+        socket.inner.into()
+    }
+}
+
+#[cfg(all(unix, feature = "unix"))]
+impl From<Socket> for UnixStream {
+    fn from(socket: Socket) -> UnixStream {
+        socket.inner.into()
+    }
+}
+
+#[cfg(all(unix, feature = "unix"))]
+impl From<Socket> for UnixListener {
+    fn from(socket: Socket) -> UnixListener {
+        socket.inner.into()
+    }
+}
+
+#[cfg(all(unix, feature = "unix"))]
+impl From<Socket> for UnixDatagram {
+    fn from(socket: Socket) -> UnixDatagram {
+        socket.inner.into()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::net::SocketAddr;
+
+    use super::*;
+
+    #[test]
+    fn connect_timeout_unrouteable() {
+        
+        let addr = "10.255.255.1:80".parse::<SocketAddr>().unwrap().into();
+
+        let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+        match socket.connect_timeout(&addr, Duration::from_millis(250)) {
+            Ok(_) => panic!("unexpected success"),
+            Err(ref e) if e.kind() == io::ErrorKind::TimedOut => {}
+            Err(e) => panic!("unexpected error {}", e),
+        }
+    }
+
+    #[test]
+    fn connect_timeout_unbound() {
+        
+        let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+        let addr = "127.0.0.1:0".parse::<SocketAddr>().unwrap().into();
+        socket.bind(&addr).unwrap();
+        let addr = socket.local_addr().unwrap();
+        drop(socket);
+
+        let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+        match socket.connect_timeout(&addr, Duration::from_millis(250)) {
+            Ok(_) => panic!("unexpected success"),
+            Err(ref e)
+                if e.kind() == io::ErrorKind::ConnectionRefused
+                    || e.kind() == io::ErrorKind::TimedOut => {}
+            Err(e) => panic!("unexpected error {}", e),
+        }
+    }
+
+    #[test]
+    fn connect_timeout_valid() {
+        let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+        socket
+            .bind(&"127.0.0.1:0".parse::<SocketAddr>().unwrap().into())
+            .unwrap();
+        socket.listen(128).unwrap();
+
+        let addr = socket.local_addr().unwrap();
+
+        let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+        socket
+            .connect_timeout(&addr, Duration::from_millis(250))
+            .unwrap();
+    }
+
+    #[test]
+    #[cfg(all(unix, feature = "pair", feature = "unix"))]
+    fn pair() {
+        let (mut a, mut b) = Socket::pair(Domain::unix(), Type::stream(), None).unwrap();
+        a.write_all(b"hello world").unwrap();
+        let mut buf = [0; 11];
+        b.read_exact(&mut buf).unwrap();
+        assert_eq!(buf, &b"hello world"[..]);
+    }
+
+    #[test]
+    #[cfg(all(unix, feature = "unix"))]
+    fn unix() {
+        use tempdir::TempDir;
+
+        let dir = TempDir::new("unix").unwrap();
+        let addr = SockAddr::unix(dir.path().join("sock")).unwrap();
+
+        let listener = Socket::new(Domain::unix(), Type::stream(), None).unwrap();
+        listener.bind(&addr).unwrap();
+        listener.listen(10).unwrap();
+
+        let mut a = Socket::new(Domain::unix(), Type::stream(), None).unwrap();
+        a.connect(&addr).unwrap();
+
+        let mut b = listener.accept().unwrap().0;
+
+        a.write_all(b"hello world").unwrap();
+        let mut buf = [0; 11];
+        b.read_exact(&mut buf).unwrap();
+        assert_eq!(buf, &b"hello world"[..]);
+    }
+
+    #[test]
+    fn keepalive() {
+        let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+        socket.set_keepalive(Some(Duration::from_secs(7))).unwrap();
+        
+        #[cfg(unix)]
+        assert_eq!(socket.keepalive().unwrap(), Some(Duration::from_secs(7)));
+        socket.set_keepalive(None).unwrap();
+        #[cfg(unix)]
+        assert_eq!(socket.keepalive().unwrap(), None);
+    }
+
+    #[test]
+    fn nodelay() {
+        let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+
+        assert!(socket.set_nodelay(true).is_ok());
+
+        let result = socket.nodelay();
+
+        assert!(result.is_ok());
+        assert!(result.unwrap());
+    }
+
+    #[test]
+    fn out_of_band_inline() {
+        let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+
+        assert_eq!(socket.out_of_band_inline().unwrap(), false);
+
+        socket.set_out_of_band_inline(true).unwrap();
+        assert_eq!(socket.out_of_band_inline().unwrap(), true);
+    }
+
+    #[test]
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
+    fn out_of_band_send_recv() {
+        let s1 = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+        s1.bind(&"127.0.0.1:0".parse::<SocketAddr>().unwrap().into())
+            .unwrap();
+        let s1_addr = s1.local_addr().unwrap();
+        s1.listen(1).unwrap();
+
+        let s2 = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+        s2.connect(&s1_addr).unwrap();
+
+        let (s3, _) = s1.accept().unwrap();
+
+        let mut buf = [0; 10];
+        
+        s2.send(&mut buf).unwrap();
+        
+        assert_eq!(s2.send_out_of_band(&mut [b"!"[0]]).unwrap(), 1);
+        
+        assert_eq!(s3.recv_out_of_band(&mut buf).unwrap(), 1);
+        assert_eq!(buf[0], b"!"[0]);
+        assert_eq!(s3.recv(&mut buf).unwrap(), 10);
+    }
+
+    #[test]
+    fn tcp() {
+        let s1 = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+        s1.bind(&"127.0.0.1:0".parse::<SocketAddr>().unwrap().into())
+            .unwrap();
+        let s1_addr = s1.local_addr().unwrap();
+        s1.listen(1).unwrap();
+
+        let s2 = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+        s2.connect(&s1_addr).unwrap();
+
+        let (s3, _) = s1.accept().unwrap();
+
+        let mut buf = [0; 11];
+        assert_eq!(s2.send(&mut buf).unwrap(), 11);
+        assert_eq!(s3.recv(&mut buf).unwrap(), 11);
+    }
+}

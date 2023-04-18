@@ -15,16 +15,6 @@ use std::fmt;
 
 
 
-
-
-
-
-
-
-
-
-
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SameSite {
     
@@ -102,7 +92,7 @@ impl fmt::Display for SameSite {
         match *self {
             SameSite::Strict => write!(f, "Strict"),
             SameSite::Lax => write!(f, "Lax"),
-            SameSite::None => write!(f, "None"),
+            SameSite::None => Ok(()),
         }
     }
 }

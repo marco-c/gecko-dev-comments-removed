@@ -1,6 +1,5 @@
 
 
-use futures_core::ready;
 use pin_project_lite::pin_project;
 use std::io;
 use std::pin::Pin;
@@ -13,7 +12,6 @@ pin_project! {
     pub struct Compat<T> {
         #[pin]
         inner: T,
-        seek_pos: Option<io::SeekFrom>,
     }
 }
 
@@ -49,7 +47,7 @@ impl<T: futures_io::AsyncWrite> FuturesAsyncWriteCompatExt for T {}
 
 
 
-pub trait TokioAsyncReadCompatExt: tokio::io::AsyncRead {
+pub trait Tokio02AsyncReadCompatExt: tokio::io::AsyncRead {
     
     
     fn compat(self) -> Compat<Self>
@@ -60,11 +58,11 @@ pub trait TokioAsyncReadCompatExt: tokio::io::AsyncRead {
     }
 }
 
-impl<T: tokio::io::AsyncRead> TokioAsyncReadCompatExt for T {}
+impl<T: tokio::io::AsyncRead> Tokio02AsyncReadCompatExt for T {}
 
 
 
-pub trait TokioAsyncWriteCompatExt: tokio::io::AsyncWrite {
+pub trait Tokio02AsyncWriteCompatExt: tokio::io::AsyncWrite {
     
     
     fn compat_write(self) -> Compat<Self>
@@ -75,16 +73,13 @@ pub trait TokioAsyncWriteCompatExt: tokio::io::AsyncWrite {
     }
 }
 
-impl<T: tokio::io::AsyncWrite> TokioAsyncWriteCompatExt for T {}
+impl<T: tokio::io::AsyncWrite> Tokio02AsyncWriteCompatExt for T {}
 
 
 
 impl<T> Compat<T> {
     fn new(inner: T) -> Self {
-        Self {
-            inner,
-            seek_pos: None,
-        }
+        Self { inner }
     }
 
     
@@ -112,18 +107,9 @@ where
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut tokio::io::ReadBuf<'_>,
-    ) -> Poll<io::Result<()>> {
-        
-        
-        let slice = buf.initialize_unfilled();
-        let n = ready!(futures_io::AsyncRead::poll_read(
-            self.project().inner,
-            cx,
-            slice
-        ))?;
-        buf.advance(n);
-        Poll::Ready(Ok(()))
+        buf: &mut [u8],
+    ) -> Poll<io::Result<usize>> {
+        futures_io::AsyncRead::poll_read(self.project().inner, cx, buf)
     }
 }
 
@@ -134,15 +120,9 @@ where
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        slice: &mut [u8],
+        buf: &mut [u8],
     ) -> Poll<io::Result<usize>> {
-        let mut buf = tokio::io::ReadBuf::new(slice);
-        ready!(tokio::io::AsyncRead::poll_read(
-            self.project().inner,
-            cx,
-            &mut buf
-        ))?;
-        Poll::Ready(Ok(buf.filled().len()))
+        tokio::io::AsyncRead::poll_read(self.project().inner, cx, buf)
     }
 }
 
@@ -217,58 +197,5 @@ where
 
     fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         tokio::io::AsyncWrite::poll_shutdown(self.project().inner, cx)
-    }
-}
-
-impl<T: tokio::io::AsyncSeek> futures_io::AsyncSeek for Compat<T> {
-    fn poll_seek(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        pos: io::SeekFrom,
-    ) -> Poll<io::Result<u64>> {
-        if self.seek_pos != Some(pos) {
-            self.as_mut().project().inner.start_seek(pos)?;
-            *self.as_mut().project().seek_pos = Some(pos);
-        }
-        let res = ready!(self.as_mut().project().inner.poll_complete(cx));
-        *self.as_mut().project().seek_pos = None;
-        Poll::Ready(res.map(|p| p as u64))
-    }
-}
-
-impl<T: futures_io::AsyncSeek> tokio::io::AsyncSeek for Compat<T> {
-    fn start_seek(mut self: Pin<&mut Self>, pos: io::SeekFrom) -> io::Result<()> {
-        *self.as_mut().project().seek_pos = Some(pos);
-        Ok(())
-    }
-
-    fn poll_complete(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<u64>> {
-        let pos = match self.seek_pos {
-            None => {
-                
-                
-                
-                
-                return Poll::Ready(Ok(0));
-            }
-            Some(pos) => pos,
-        };
-        let res = ready!(self.as_mut().project().inner.poll_seek(cx, pos));
-        *self.as_mut().project().seek_pos = None;
-        Poll::Ready(res.map(|p| p as u64))
-    }
-}
-
-#[cfg(unix)]
-impl<T: std::os::unix::io::AsRawFd> std::os::unix::io::AsRawFd for Compat<T> {
-    fn as_raw_fd(&self) -> std::os::unix::io::RawFd {
-        self.inner.as_raw_fd()
-    }
-}
-
-#[cfg(windows)]
-impl<T: std::os::windows::io::AsRawHandle> std::os::windows::io::AsRawHandle for Compat<T> {
-    fn as_raw_handle(&self) -> std::os::windows::io::RawHandle {
-        self.inner.as_raw_handle()
     }
 }

@@ -18,7 +18,7 @@ impl ByteStr {
     }
 
     #[inline]
-    pub const fn from_static(val: &'static str) -> ByteStr {
+    pub fn from_static(val: &'static str) -> ByteStr {
         ByteStr {
             
             bytes: Bytes::from_static(val.as_bytes()),

@@ -4,6 +4,11 @@
 
 
 
+#![doc(html_logo_url = "https://developer.actyx.com/img/logo.svg")]
+#![doc(html_favicon_url = "https://developer.actyx.com/img/favicon.ico")]
+
+
+
 
 
 
@@ -41,7 +46,7 @@
 
 
 #[repr(transparent)]
-pub(crate) struct SyncWrapper<T>(T);
+pub struct SyncWrapper<T>(T);
 
 impl<T> SyncWrapper<T> {
     
@@ -53,7 +58,7 @@ impl<T> SyncWrapper<T> {
     
     
     
-    pub(crate) fn new(value: T) -> Self {
+    pub fn new(value: T) -> Self {
         Self(value)
     }
 
@@ -77,7 +82,7 @@ impl<T> SyncWrapper<T> {
     
     
     
-    pub(crate) fn get_mut(&mut self) -> &mut T {
+    pub fn get_mut(&mut self) -> &mut T {
         &mut self.0
     }
 
@@ -100,7 +105,7 @@ impl<T> SyncWrapper<T> {
     
     
     #[allow(dead_code)]
-    pub(crate) fn into_inner(self) -> T {
+    pub fn into_inner(self) -> T {
         self.0
     }
 }

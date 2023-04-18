@@ -3,7 +3,7 @@ use pin_project::pin_project;
 #[pin_project(PinnedDrop)] 
 struct Struct {
     #[pin]
-    f: u8,
+    field: u8,
 }
 
 fn main() {}

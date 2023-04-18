@@ -115,9 +115,9 @@
 
 
 
-use crate::codec::{Codec, UserError};
+use crate::codec::{Codec, RecvError, UserError};
 use crate::frame::{self, Pseudo, PushPromiseHeaderError, Reason, Settings, StreamId};
-use crate::proto::{self, Config, Error, Prioritized};
+use crate::proto::{self, Config, Prioritized};
 use crate::{FlowControl, PingPong, RecvStream, SendStream};
 
 use bytes::{Buf, Bytes};
@@ -126,9 +126,8 @@ use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
-use std::{fmt, io};
-use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
-use tracing::instrument::{Instrument, Instrumented};
+use std::{convert, fmt, io, mem};
+use tokio::io::{AsyncRead, AsyncWrite};
 
 
 
@@ -150,11 +149,7 @@ pub struct Handshake<T, B: Buf = Bytes> {
     builder: Builder,
     
     state: Handshaking<T, B>,
-    
-    span: tracing::Span,
 }
-
-
 
 
 
@@ -245,9 +240,6 @@ pub struct Builder {
 
     
     initial_target_connection_window_size: Option<u32>,
-
-    
-    max_send_buffer_size: usize,
 }
 
 
@@ -298,11 +290,11 @@ impl<B: Buf + fmt::Debug> fmt::Debug for SendPushedResponse<B> {
 
 enum Handshaking<T, B: Buf> {
     
-    Flushing(Instrumented<Flush<T, Prioritized<B>>>),
+    Flushing(Flush<T, Prioritized<B>>),
     
-    ReadingPreface(Instrumented<ReadPreface<T, Prioritized<B>>>),
+    ReadingPreface(ReadPreface<T, Prioritized<B>>),
     
-    Done,
+    Empty,
 }
 
 
@@ -367,9 +359,6 @@ where
     B: Buf + 'static,
 {
     fn handshake2(io: T, builder: Builder) -> Handshake<T, B> {
-        let span = tracing::trace_span!("server_handshake");
-        let entered = span.enter();
-
         
         let mut codec = Codec::new(io);
 
@@ -387,16 +376,9 @@ where
             .expect("invalid SETTINGS frame");
 
         
-        let state =
-            Handshaking::Flushing(Flush::new(codec).instrument(tracing::trace_span!("flush")));
+        let state = Handshaking::from(codec);
 
-        drop(entered);
-
-        Handshake {
-            builder,
-            state,
-            span,
-        }
+        Handshake { builder, state }
     }
 
     
@@ -420,7 +402,7 @@ where
         }
 
         if let Some(inner) = self.connection.next_incoming() {
-            tracing::trace!("received incoming");
+            log::trace!("received incoming");
             let (head, _) = inner.take_request().into_parts();
             let body = RecvStream::new(FlowControl::new(inner.clone_to_opaque()));
 
@@ -471,19 +453,6 @@ where
     pub fn set_initial_window_size(&mut self, size: u32) -> Result<(), crate::Error> {
         assert!(size <= proto::MAX_WINDOW_SIZE);
         self.connection.set_initial_window_size(size)?;
-        Ok(())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn enable_connect_protocol(&mut self) -> Result<(), crate::Error> {
-        self.connection.set_enable_connect_protocol()?;
         Ok(())
     }
 
@@ -548,34 +517,6 @@ where
     pub fn ping_pong(&mut self) -> Option<PingPong> {
         self.connection.take_user_pings().map(PingPong::new)
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn max_concurrent_send_streams(&self) -> usize {
-        self.connection.max_send_streams()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn max_concurrent_recv_streams(&self) -> usize {
-        self.connection.max_recv_streams()
-    }
 }
 
 #[cfg(feature = "stream")]
@@ -637,7 +578,6 @@ impl Builder {
             reset_stream_max: proto::DEFAULT_RESET_STREAM_MAX,
             settings: Settings::default(),
             initial_target_connection_window_size: None,
-            max_send_buffer_size: proto::DEFAULT_MAX_SEND_BUFFER_SIZE,
         }
     }
 
@@ -887,24 +827,6 @@ impl Builder {
     
     
     
-    pub fn max_send_buffer_size(&mut self, max: usize) -> &mut Self {
-        assert!(max <= std::u32::MAX as usize);
-        self.max_send_buffer_size = max;
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -937,14 +859,6 @@ impl Builder {
     
     pub fn reset_stream_duration(&mut self, dur: Duration) -> &mut Self {
         self.reset_stream_duration = dur;
-        self
-    }
-
-    
-    
-    
-    pub fn enable_connect_protocol(&mut self) -> &mut Self {
-        self.settings.set_enable_connect_protocol(Some(1));
         self
     }
 
@@ -1232,10 +1146,8 @@ where
         let mut rem = PREFACE.len() - self.pos;
 
         while rem > 0 {
-            let mut buf = ReadBuf::new(&mut buf[..rem]);
-            ready!(Pin::new(self.inner_mut()).poll_read(cx, &mut buf))
+            let n = ready!(Pin::new(self.inner_mut()).poll_read(cx, &mut buf[..rem]))
                 .map_err(crate::Error::from_io)?;
-            let n = buf.filled().len();
             if n == 0 {
                 return Poll::Ready(Err(crate::Error::from_io(io::Error::new(
                     io::ErrorKind::UnexpectedEof,
@@ -1243,10 +1155,10 @@ where
                 ))));
             }
 
-            if &PREFACE[self.pos..self.pos + n] != buf.filled() {
+            if PREFACE[self.pos..self.pos + n] != buf[..n] {
                 proto_err!(conn: "read_preface: invalid preface");
                 
-                return Poll::Ready(Err(Error::library_go_away(Reason::PROTOCOL_ERROR).into()));
+                return Poll::Ready(Err(Reason::PROTOCOL_ERROR.into()));
             }
 
             self.pos += n;
@@ -1267,61 +1179,63 @@ where
     type Output = Result<Connection<T, B>, crate::Error>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let span = self.span.clone(); 
-        let _e = span.enter();
-        tracing::trace!(state = ?self.state);
+        log::trace!("Handshake::poll(); state={:?};", self.state);
+        use crate::server::Handshaking::*;
 
-        loop {
-            match &mut self.state {
-                Handshaking::Flushing(flush) => {
-                    
-                    
-                    
-                    let codec = match Pin::new(flush).poll(cx)? {
-                        Poll::Pending => {
-                            tracing::trace!(flush.poll = %"Pending");
-                            return Poll::Pending;
-                        }
-                        Poll::Ready(flushed) => {
-                            tracing::trace!(flush.poll = %"Ready");
-                            flushed
-                        }
-                    };
-                    self.state = Handshaking::ReadingPreface(
-                        ReadPreface::new(codec).instrument(tracing::trace_span!("read_preface")),
-                    );
+        self.state = if let Flushing(ref mut flush) = self.state {
+            
+            
+            
+            let codec = match Pin::new(flush).poll(cx)? {
+                Poll::Pending => {
+                    log::trace!("Handshake::poll(); flush.poll()=Pending");
+                    return Poll::Pending;
                 }
-                Handshaking::ReadingPreface(read) => {
-                    let codec = ready!(Pin::new(read).poll(cx)?);
-
-                    self.state = Handshaking::Done;
-
-                    let connection = proto::Connection::new(
-                        codec,
-                        Config {
-                            next_stream_id: 2.into(),
-                            
-                            initial_max_send_streams: 0,
-                            max_send_buffer_size: self.builder.max_send_buffer_size,
-                            reset_stream_duration: self.builder.reset_stream_duration,
-                            reset_stream_max: self.builder.reset_stream_max,
-                            settings: self.builder.settings.clone(),
-                        },
-                    );
-
-                    tracing::trace!("connection established!");
-                    let mut c = Connection { connection };
-                    if let Some(sz) = self.builder.initial_target_connection_window_size {
-                        c.set_target_window_size(sz);
-                    }
-
-                    return Poll::Ready(Ok(c));
+                Poll::Ready(flushed) => {
+                    log::trace!("Handshake::poll(); flush.poll()=Ready");
+                    flushed
                 }
-                Handshaking::Done => {
-                    panic!("Handshaking::poll() called again after handshaking was complete")
-                }
+            };
+            Handshaking::from(ReadPreface::new(codec))
+        } else {
+            
+            
+            
+            
+            mem::replace(&mut self.state, Handshaking::Empty)
+        };
+        let poll = if let ReadingPreface(ref mut read) = self.state {
+            
+            
+            
+            Pin::new(read).poll(cx)
+        
+        
+        
+        
+        } else {
+            unreachable!("Handshake::poll() state was not advanced completely!")
+        };
+        poll?.map(|codec| {
+            let connection = proto::Connection::new(
+                codec,
+                Config {
+                    next_stream_id: 2.into(),
+                    
+                    initial_max_send_streams: 0,
+                    reset_stream_duration: self.builder.reset_stream_duration,
+                    reset_stream_max: self.builder.reset_stream_max,
+                    settings: self.builder.settings.clone(),
+                },
+            );
+
+            log::trace!("Handshake::poll(); connection established!");
+            let mut c = Connection { connection };
+            if let Some(sz) = self.builder.initial_target_connection_window_size {
+                c.set_target_window_size(sz);
             }
-        }
+            Ok(c)
+        })
     }
 }
 
@@ -1375,15 +1289,15 @@ impl Peer {
         if let Err(e) = frame::PushPromise::validate_request(&request) {
             use PushPromiseHeaderError::*;
             match e {
-                NotSafeAndCacheable => tracing::debug!(
-                    ?promised_id,
-                    "convert_push_message: method {} is not safe and cacheable",
+                NotSafeAndCacheable => log::debug!(
+                    "convert_push_message: method {} is not safe and cacheable; promised_id={:?}",
                     request.method(),
+                    promised_id,
                 ),
-                InvalidContentLength(e) => tracing::debug!(
-                    ?promised_id,
-                    "convert_push_message; promised request has invalid content-length {:?}",
+                InvalidContentLength(e) => log::debug!(
+                    "convert_push_message; promised request has invalid content-length {:?}; promised_id={:?}",
                     e,
+                    promised_id,
                 ),
             }
             return Err(UserError::MalformedHeaders);
@@ -1400,7 +1314,7 @@ impl Peer {
             _,
         ) = request.into_parts();
 
-        let pseudo = Pseudo::request(method, uri, None);
+        let pseudo = Pseudo::request(method, uri);
 
         Ok(frame::PushPromise::new(
             stream_id,
@@ -1414,8 +1328,6 @@ impl Peer {
 impl proto::Peer for Peer {
     type Poll = Request<()>;
 
-    const NAME: &'static str = "Server";
-
     fn is_server() -> bool {
         true
     }
@@ -1428,17 +1340,20 @@ impl proto::Peer for Peer {
         pseudo: Pseudo,
         fields: HeaderMap,
         stream_id: StreamId,
-    ) -> Result<Self::Poll, Error> {
+    ) -> Result<Self::Poll, RecvError> {
         use http::{uri, Version};
 
         let mut b = Request::builder();
 
         macro_rules! malformed {
             ($($arg:tt)*) => {{
-                tracing::debug!($($arg)*);
-                return Err(Error::library_reset(stream_id, Reason::PROTOCOL_ERROR));
+                log::debug!($($arg)*);
+                return Err(RecvError::Stream {
+                    id: stream_id,
+                    reason: Reason::PROTOCOL_ERROR,
+                });
             }}
-        }
+        };
 
         b = b.version(Version::HTTP_2);
 
@@ -1450,13 +1365,10 @@ impl proto::Peer for Peer {
             malformed!("malformed headers: missing method");
         }
 
-        let has_protocol = pseudo.protocol.is_some();
-        if !is_connect && has_protocol {
-            malformed!("malformed headers: :protocol on non-CONNECT request");
-        }
-
+        
         if pseudo.status.is_some() {
-            malformed!("malformed headers: :status field on request");
+            log::trace!("malformed headers: :status field on request; PROTOCOL_ERROR");
+            return Err(RecvError::Connection(Reason::PROTOCOL_ERROR));
         }
 
         
@@ -1477,7 +1389,7 @@ impl proto::Peer for Peer {
 
         
         if let Some(scheme) = pseudo.scheme {
-            if is_connect && !has_protocol {
+            if is_connect {
                 malformed!(":scheme in CONNECT");
             }
             let maybe_scheme = scheme.parse();
@@ -1495,12 +1407,12 @@ impl proto::Peer for Peer {
             if parts.authority.is_some() {
                 parts.scheme = Some(scheme);
             }
-        } else if !is_connect || has_protocol {
+        } else if !is_connect {
             malformed!("malformed headers: missing scheme");
         }
 
         if let Some(path) = pseudo.path {
-            if is_connect && !has_protocol {
+            if is_connect {
                 malformed!(":path in CONNECT");
             }
 
@@ -1513,8 +1425,6 @@ impl proto::Peer for Peer {
             parts.path_and_query = Some(maybe_path.or_else(|why| {
                 malformed!("malformed headers: malformed path ({:?}): {}", path, why,)
             })?);
-        } else if is_connect && has_protocol {
-            malformed!("malformed headers: missing path in extended CONNECT");
         }
 
         b = b.uri(parts);
@@ -1525,7 +1435,10 @@ impl proto::Peer for Peer {
                 
                 
                 proto_err!(stream: "error building request: {}; stream={:?}", e, stream_id);
-                return Err(Error::library_reset(stream_id, Reason::PROTOCOL_ERROR));
+                return Err(RecvError::Stream {
+                    id: stream_id,
+                    reason: Reason::PROTOCOL_ERROR,
+                });
             }
         };
 
@@ -1544,9 +1457,42 @@ where
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match *self {
-            Handshaking::Flushing(_) => f.write_str("Flushing(_)"),
-            Handshaking::ReadingPreface(_) => f.write_str("ReadingPreface(_)"),
-            Handshaking::Done => f.write_str("Done"),
+            Handshaking::Flushing(_) => write!(f, "Handshaking::Flushing(_)"),
+            Handshaking::ReadingPreface(_) => write!(f, "Handshaking::ReadingPreface(_)"),
+            Handshaking::Empty => write!(f, "Handshaking::Empty"),
         }
+    }
+}
+
+impl<T, B> convert::From<Flush<T, Prioritized<B>>> for Handshaking<T, B>
+where
+    T: AsyncRead + AsyncWrite,
+    B: Buf,
+{
+    #[inline]
+    fn from(flush: Flush<T, Prioritized<B>>) -> Self {
+        Handshaking::Flushing(flush)
+    }
+}
+
+impl<T, B> convert::From<ReadPreface<T, Prioritized<B>>> for Handshaking<T, B>
+where
+    T: AsyncRead + AsyncWrite,
+    B: Buf,
+{
+    #[inline]
+    fn from(read: ReadPreface<T, Prioritized<B>>) -> Self {
+        Handshaking::ReadingPreface(read)
+    }
+}
+
+impl<T, B> convert::From<Codec<T, Prioritized<B>>> for Handshaking<T, B>
+where
+    T: AsyncRead + AsyncWrite,
+    B: Buf,
+{
+    #[inline]
+    fn from(codec: Codec<T, Prioritized<B>>) -> Self {
+        Handshaking::from(Flush::new(codec))
     }
 }

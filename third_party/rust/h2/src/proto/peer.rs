@@ -1,6 +1,7 @@
+use crate::codec::RecvError;
 use crate::error::Reason;
 use crate::frame::{Pseudo, StreamId};
-use crate::proto::{Error, Open};
+use crate::proto::Open;
 
 use http::{HeaderMap, Request, Response};
 
@@ -10,7 +11,6 @@ use std::fmt;
 pub(crate) trait Peer {
     
     type Poll: fmt::Debug;
-    const NAME: &'static str;
 
     fn r#dyn() -> Dyn;
 
@@ -20,7 +20,7 @@ pub(crate) trait Peer {
         pseudo: Pseudo,
         fields: HeaderMap,
         stream_id: StreamId,
-    ) -> Result<Self::Poll, Error>;
+    ) -> Result<Self::Poll, RecvError>;
 
     fn is_local_init(id: StreamId) -> bool {
         assert!(!id.is_zero());
@@ -60,7 +60,7 @@ impl Dyn {
         pseudo: Pseudo,
         fields: HeaderMap,
         stream_id: StreamId,
-    ) -> Result<PollMessage, Error> {
+    ) -> Result<PollMessage, RecvError> {
         if self.is_server() {
             crate::server::Peer::convert_poll_message(pseudo, fields, stream_id)
                 .map(PollMessage::Server)
@@ -71,12 +71,12 @@ impl Dyn {
     }
 
     
-    pub fn ensure_can_open(&self, id: StreamId, mode: Open) -> Result<(), Error> {
+    pub fn ensure_can_open(&self, id: StreamId, mode: Open) -> Result<(), RecvError> {
         if self.is_server() {
             
             if mode.is_push_promise() || !id.is_client_initiated() {
                 proto_err!(conn: "cannot open stream {:?} - not client initiated", id);
-                return Err(Error::library_go_away(Reason::PROTOCOL_ERROR));
+                return Err(RecvError::Connection(Reason::PROTOCOL_ERROR));
             }
 
             Ok(())
@@ -84,7 +84,7 @@ impl Dyn {
             
             if !mode.is_push_promise() || !id.is_server_initiated() {
                 proto_err!(conn: "cannot open stream {:?} - not server initiated", id);
-                return Err(Error::library_go_away(Reason::PROTOCOL_ERROR));
+                return Err(RecvError::Connection(Reason::PROTOCOL_ERROR));
             }
 
             Ok(())

@@ -2,9 +2,10 @@
 
 
 #![deny(warnings)]
-#![allow(dead_code)]
 
-use serde_derive::Deserialize;
+extern crate toml;
+#[macro_use]
+extern crate serde_derive;
 
 
 #[derive(Debug, Deserialize)]

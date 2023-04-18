@@ -5,8 +5,8 @@ use pin_project::pin_project;
 #[pin_project] 
 struct Foo<T, U> {
     #[pin]
-    f1: T,
-    f2: U,
+    future: T,
+    field: U,
 }
 
 
@@ -17,8 +17,8 @@ impl<T, U> Unpin for Foo<T, U> where T: Unpin {}
 #[pin_project] 
 struct Bar<T, U> {
     #[pin]
-    f1: T,
-    f2: U,
+    future: T,
+    field: U,
 }
 
 
@@ -27,8 +27,8 @@ impl<T, U> Unpin for Bar<T, U> {}
 #[pin_project] 
 struct Baz<T, U> {
     #[pin]
-    f1: T,
-    f2: U,
+    future: T,
+    field: U,
 }
 
 

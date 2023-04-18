@@ -92,4 +92,13 @@ impl Deque {
             None => None,
         }
     }
+
+    
+
+
+
+
+
+
+
 }

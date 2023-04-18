@@ -1,7 +1,6 @@
-use std::{marker::PhantomPinned, pin::Pin};
-
 use auxiliary_macro::remove_attr;
 use pin_project::pin_project;
+use std::{marker::PhantomPinned, pin::Pin};
 
 fn is_unpin<T: Unpin>() {}
 
@@ -9,26 +8,26 @@ fn is_unpin<T: Unpin>() {}
 #[remove_attr(struct_all)]
 struct A {
     #[pin] 
-    f: PhantomPinned,
+    field: PhantomPinned,
 }
 
 #[remove_attr(struct_all)]
 #[pin_project]
 struct B {
     #[pin] 
-    f: PhantomPinned,
+    field: PhantomPinned,
 }
 
 #[pin_project] 
 #[remove_attr(struct_pin)]
 struct C {
-    f: PhantomPinned,
+    field: PhantomPinned,
 }
 
 #[remove_attr(struct_pin)]
 #[pin_project] 
 struct D {
-    f: PhantomPinned,
+    field: PhantomPinned,
 }
 
 fn main() {
@@ -36,12 +35,12 @@ fn main() {
     is_unpin::<B>(); 
     is_unpin::<D>(); 
 
-    let mut x = A { f: PhantomPinned };
+    let mut x = A { field: PhantomPinned };
     let _ = Pin::new(&mut x).project(); 
 
-    let mut x = B { f: PhantomPinned };
+    let mut x = B { field: PhantomPinned };
     let _ = Pin::new(&mut x).project(); 
 
-    let mut x = D { f: PhantomPinned };
+    let mut x = D { field: PhantomPinned };
     let _ = Pin::new(&mut x).project(); 
 }
