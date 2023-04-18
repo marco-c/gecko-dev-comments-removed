@@ -29,50 +29,152 @@ const webProgressListeners = new Set();
 
 function waitForInitialNavigationCompleted(browsingContext) {
   
+  const listener = new ProgressListener(browsingContext.webProgress);
+  const navigated = listener.start();
+
   
-  const webProgress = browsingContext.webProgress;
+  
+  
+  let isInitial = true;
+  if (browsingContext.currentWindowGlobal) {
+    isInitial = browsingContext.currentWindowGlobal.isInitialDocument;
+  }
 
-  let listener;
-  return new Promise(resolve => {
-    listener = new ProgressListener(resolve);
-    
-    webProgressListeners.add(listener);
-
-    
-    
-    webProgress.addProgressListener(
-      listener,
-      Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
-        Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
+  
+  
+  if (!isInitial && !listener.isLoadingDocument) {
+    logger.trace(
+      `[${browsingContext.id}] Document already finished loading: ${browsingContext.currentURI?.spec}`
     );
 
-    
-    const isInitial = !browsingContext.currentWindowGlobal;
+    listener.stop();
+    return Promise.resolve();
+  }
 
-    if (!webProgress.isLoadingDocument && !isInitial) {
-      logger.trace("Initial navigation already completed");
-      resolve();
-    }
-  }).finally(() => {
-    webProgress.removeProgressListener(
-      listener,
-      Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
-        Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
-    );
-    webProgressListeners.delete(listener);
-  });
+  return navigated;
 }
 
+
+
+
+
+
+
+
+
+
 class ProgressListener {
-  constructor(resolve) {
-    this.resolve = resolve;
+  #resolve;
+  #unloadTimeout;
+  #unloadTimer;
+  #webProgress;
+
+  constructor(webProgress, options = {}) {
+    const { unloadTimeout = 200 } = options;
+
+    this.#resolve = null;
+    this.#unloadTimeout = unloadTimeout;
+    this.#unloadTimer = null;
+    this.#webProgress = webProgress;
+  }
+
+  get browsingContext() {
+    return this.#webProgress.browsingContext;
+  }
+
+  get currentURI() {
+    return this.#webProgress.browsingContext.currentURI;
+  }
+
+  get isLoadingDocument() {
+    return this.#webProgress.isLoadingDocument;
   }
 
   onStateChange(progress, request, flag, status) {
+    const isStart = flag & Ci.nsIWebProgressListener.STATE_START;
     const isStop = flag & Ci.nsIWebProgressListener.STATE_STOP;
-    if (isStop) {
-      this.resolve();
+
+    if (isStart) {
+      this.#unloadTimer?.cancel();
+      logger.trace(
+        `[${this.browsingContext.id}] Web progress state=start: ${this.currentURI?.spec}`
+      );
     }
+
+    if (isStop) {
+      logger.trace(
+        `[${this.browsingContext.id}] Web progress state=stop: ${this.currentURI?.spec}`
+      );
+
+      this.#resolve();
+      this.stop();
+    }
+  }
+
+  
+
+
+
+
+
+  start() {
+    if (this.#resolve) {
+      throw new Error(`Progress listener already started`);
+    }
+
+    const promise = new Promise(resolve => (this.#resolve = resolve));
+
+    this.#webProgress.addProgressListener(
+      this,
+      Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
+        Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
+    );
+
+    webProgressListeners.add(this);
+
+    if (!this.#webProgress.isLoadingDocument) {
+      
+      
+      this.#unloadTimer = Cc["@mozilla.org/timer;1"].createInstance(
+        Ci.nsITimer
+      );
+      this.#unloadTimer.initWithCallback(
+        () => {
+          logger.trace("No initial navigation detected");
+          this.#resolve();
+          this.stop();
+        },
+        this.#unloadTimeout,
+        Ci.nsITimer.TYPE_ONE_SHOT
+      );
+    }
+
+    return promise;
+  }
+
+  
+
+
+  stop() {
+    if (!this.#resolve) {
+      throw new Error(`Progress listener not yet started`);
+    }
+
+    this.#unloadTimer?.cancel();
+    this.#unloadTimer = null;
+
+    this.#resolve = null;
+
+    this.#webProgress.removeProgressListener(
+      this,
+      Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
+        Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
+    );
+    webProgressListeners.delete(this);
+  }
+
+  get toString() {
+    return `[object ${this.constructor.name}]`;
   }
 
   get QueryInterface() {
