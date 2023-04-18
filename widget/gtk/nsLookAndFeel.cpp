@@ -1273,9 +1273,18 @@ void nsLookAndFeel::ConfigureAndInitializeAltTheme() {
   if (mSystemTheme.mIsDark == GetThemeIsDark()) {
     
     
-    g_object_set(settings, "gtk-theme-name",
-                 mSystemTheme.mIsDark ? "Adwaita" : "Adwaita-dark", nullptr);
+    g_object_set(settings, "gtk-theme-name", "Adwaita",
+                 "gtk-application-prefer-dark-theme", !mSystemTheme.mIsDark,
+                 nullptr);
     moz_gtk_refresh();
+
+    
+    
+    if (!mSystemTheme.mIsDark && !GetThemeIsDark()) {
+      g_object_set(settings, "gtk-theme-name", "Adwaita-dark", nullptr);
+      moz_gtk_refresh();
+    }
+
     fellBackToDefaultTheme = true;
   }
 
