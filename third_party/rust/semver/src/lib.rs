@@ -60,123 +60,474 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#![doc(html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
-       html_favicon_url = "https://www.rust-lang.org/favicon.ico")]
-#![deny(missing_docs)]
-#![cfg_attr(test, deny(warnings))]
-
-extern crate semver_parser;
-
+#![doc(html_root_url = "https://docs.rs/semver/1.0.9")]
+#![cfg_attr(doc_cfg, feature(doc_cfg))]
+#![cfg_attr(all(not(feature = "std"), not(no_alloc_crate)), no_std)]
+#![cfg_attr(not(no_unsafe_op_in_unsafe_fn_lint), deny(unsafe_op_in_unsafe_fn))]
+#![cfg_attr(no_unsafe_op_in_unsafe_fn_lint, allow(unused_unsafe))]
+#![cfg_attr(no_str_strip_prefix, allow(unstable_name_collisions))]
+#![allow(
+    clippy::cast_lossless,
+    clippy::cast_possible_truncation,
+    clippy::doc_markdown,
+    clippy::items_after_statements,
+    clippy::manual_map,
+    clippy::match_bool,
+    clippy::missing_errors_doc,
+    clippy::must_use_candidate,
+    clippy::needless_doctest_main,
+    clippy::option_if_let_else,
+    clippy::ptr_as_ptr,
+    clippy::redundant_else,
+    clippy::semicolon_if_nothing_returned, 
+    clippy::similar_names,
+    clippy::unnested_or_patterns,
+    clippy::unseparated_literal_suffix,
+    clippy::wildcard_imports
+)]
+
+#[cfg(not(no_alloc_crate))]
+extern crate alloc;
+
+mod backport;
+mod display;
+mod error;
+mod eval;
+mod identifier;
+mod impls;
+mod parse;
 
 #[cfg(feature = "serde")]
-extern crate serde;
+mod serde;
+
+use crate::alloc::vec::Vec;
+use crate::identifier::Identifier;
+use core::str::FromStr;
+
+#[allow(unused_imports)]
+use crate::backport::*;
+
+pub use crate::parse::Error;
 
 
 
 
-pub use version::{Version, Identifier, SemVerError};
-pub use version::Identifier::{Numeric, AlphaNumeric};
-pub use version_req::{VersionReq, ReqParseError};
 
 
-mod version;
 
 
-mod version_req;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct Version {
+    pub major: u64,
+    pub minor: u64,
+    pub patch: u64,
+    pub pre: Prerelease,
+    pub build: BuildMetadata,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
+#[cfg_attr(no_const_vec_new, derive(Default))]
+pub struct VersionReq {
+    pub comparators: Vec<Comparator>,
+}
+
+
+
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
+pub struct Comparator {
+    pub op: Op,
+    pub major: u64,
+    pub minor: Option<u64>,
+    
+    pub patch: Option<u64>,
+    
+    pub pre: Prerelease,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+#[cfg_attr(not(no_non_exhaustive), non_exhaustive)]
+pub enum Op {
+    Exact,
+    Greater,
+    GreaterEq,
+    Less,
+    LessEq,
+    Tilde,
+    Caret,
+    Wildcard,
+
+    #[cfg(no_non_exhaustive)] 
+    #[doc(hidden)]
+    __NonExhaustive,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Default, Clone, Eq, PartialEq, Hash)]
+pub struct Prerelease {
+    identifier: Identifier,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Default, Clone, Eq, PartialEq, Hash)]
+pub struct BuildMetadata {
+    identifier: Identifier,
+}
+
+impl Version {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const fn new(major: u64, minor: u64, patch: u64) -> Self {
+        Version {
+            major,
+            minor,
+            patch,
+            pre: Prerelease::EMPTY,
+            build: BuildMetadata::EMPTY,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn parse(text: &str) -> Result<Self, Error> {
+        Version::from_str(text)
+    }
+}
+
+impl VersionReq {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(not(no_const_vec_new))] 
+    pub const STAR: Self = VersionReq {
+        comparators: Vec::new(),
+    };
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn parse(text: &str) -> Result<Self, Error> {
+        VersionReq::from_str(text)
+    }
+
+    
+    
+    pub fn matches(&self, version: &Version) -> bool {
+        eval::matches_req(self, version)
+    }
+}
+
+
+#[cfg(not(no_const_vec_new))]
+impl Default for VersionReq {
+    fn default() -> Self {
+        VersionReq::STAR
+    }
+}
+
+impl Comparator {
+    pub fn parse(text: &str) -> Result<Self, Error> {
+        Comparator::from_str(text)
+    }
+
+    pub fn matches(&self, version: &Version) -> bool {
+        eval::matches_comparator(self, version)
+    }
+}
+
+impl Prerelease {
+    pub const EMPTY: Self = Prerelease {
+        identifier: Identifier::empty(),
+    };
+
+    pub fn new(text: &str) -> Result<Self, Error> {
+        Prerelease::from_str(text)
+    }
+
+    pub fn as_str(&self) -> &str {
+        self.identifier.as_str()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.identifier.is_empty()
+    }
+}
+
+impl BuildMetadata {
+    pub const EMPTY: Self = BuildMetadata {
+        identifier: Identifier::empty(),
+    };
+
+    pub fn new(text: &str) -> Result<Self, Error> {
+        BuildMetadata::from_str(text)
+    }
+
+    pub fn as_str(&self) -> &str {
+        self.identifier.as_str()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.identifier.is_empty()
+    }
+}
