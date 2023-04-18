@@ -657,16 +657,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
-  virtual mozilla::gfx::VsyncSource* GetGlobalVsync() {
-    MOZ_ASSERT(mVsyncSource != nullptr);
-    MOZ_ASSERT(XRE_IsParentProcess());
-    return mVsyncSource;
-  }
-
-  
-
-
-
 
   RefPtr<mozilla::VsyncDispatcher> GetGlobalVsyncDispatcher();
 

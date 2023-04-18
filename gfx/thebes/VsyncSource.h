@@ -7,6 +7,7 @@
 #define GFX_VSYNCSOURCE_H
 
 #include "nsTArray.h"
+#include "mozilla/DataMutex.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
@@ -52,7 +53,10 @@ class VsyncSource {
   virtual void NotifyVsync(const TimeStamp& aVsyncTimestamp,
                            const TimeStamp& aOutputTimestamp);
 
-  void NotifyVsyncDispatcherVsyncStatus(bool aEnable);
+  
+  void AddVsyncDispatcher(VsyncDispatcher* aDispatcher);
+  void RemoveVsyncDispatcher(VsyncDispatcher* aDispatcher);
+
   virtual TimeDuration GetVsyncRate();
 
   
@@ -61,10 +65,6 @@ class VsyncSource {
   virtual bool IsVsyncEnabled() = 0;
   virtual void Shutdown() = 0;
 
-  void MoveListenersToNewSource(const RefPtr<VsyncSource>& aNewSource);
-
-  RefPtr<VsyncDispatcher> GetVsyncDispatcher();
-
   
   static Maybe<TimeDuration> GetFastestVsyncRate();
 
@@ -72,12 +72,21 @@ class VsyncSource {
   virtual ~VsyncSource();
 
  private:
+  
   void UpdateVsyncStatus();
 
-  Mutex mDispatcherLock MOZ_UNANNOTATED;
-  bool mVsyncDispatcherNeedsVsync;
-  RefPtr<VsyncDispatcher> mVsyncDispatcher;
-  VsyncId mVsyncId;
+  struct State {
+    
+    
+    
+    
+    nsTArray<RefPtr<VsyncDispatcher>> mDispatchers;
+
+    
+    VsyncId mVsyncId;
+  };
+
+  DataMutex<State> mState;
 };
 
 }  
