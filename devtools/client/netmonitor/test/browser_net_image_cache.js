@@ -21,7 +21,7 @@ add_task(async function() {
   const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
   store.dispatch(Actions.batchEnable(false));
 
-  const waitForEvents = waitForNetworkEvents(monitor, 4, {
+  const waitForEvents = waitForNetworkEvents(monitor, 2, {
     expectedEventTimings: 0,
     expectedPayloadReady: 1,
   });
@@ -37,7 +37,12 @@ add_task(async function() {
   await waitForEvents;
 
   const requests = document.querySelectorAll(".request-list-item");
-  is(requests.length, 4, "There should be 4 requests");
+
+  
+  
+  
+  
+  is(requests.length, 2, "There should be 2 requests");
 
   const requestData = {
     uri: HTTPS_EXAMPLE_URL + "test-image.png",
