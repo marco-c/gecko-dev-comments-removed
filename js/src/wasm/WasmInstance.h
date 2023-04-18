@@ -147,6 +147,10 @@ class Instance {
 
   
 
+  void setPendingException(HandleAnyRef exn);
+
+  
+
   [[nodiscard]] bool constantRefFunc(uint32_t funcIndex,
                                      MutableHandleFuncRef result);
   [[nodiscard]] bool constantRttCanon(JSContext* cx, uint32_t sourceTypeIndex,
@@ -263,7 +267,6 @@ class Instance {
   static void* exceptionNew(Instance* instance, uint32_t exnIndex,
                             uint32_t nbytes);
   static int32_t throwException(Instance* instance, JSObject* exn);
-  static uint32_t consumePendingException(Instance* instance);
   static int32_t pushRefIntoExn(Instance* instance, JSObject* exn,
                                 JSObject* ref);
 #endif

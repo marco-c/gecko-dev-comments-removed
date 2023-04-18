@@ -1421,8 +1421,22 @@ bool BaseCompiler::throwFrom(RegRef exn, uint32_t lineOrBytecode) {
   return emitInstanceCall(lineOrBytecode, SASigThrowException);
 }
 
-void BaseCompiler::loadPendingException(Register dest) {
-  masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, pendingException)), dest);
+void BaseCompiler::consumePendingException(RegRef* exnDst, RegI32* tagDst) {
+  RegPtr pendingExceptionAddr = RegPtr(PreBarrierReg);
+  needPtr(pendingExceptionAddr);
+  masm.computeEffectiveAddress(
+      Address(WasmTlsReg, offsetof(TlsData, pendingException)),
+      pendingExceptionAddr);
+  *exnDst = needRef();
+  masm.loadPtr(Address(pendingExceptionAddr, 0), *exnDst);
+  emitBarrieredClear(pendingExceptionAddr);
+  freePtr(pendingExceptionAddr);
+
+  *tagDst = needI32();
+  masm.load32(Address(WasmTlsReg, offsetof(TlsData, pendingExceptionTagIndex)),
+              *tagDst);
+  masm.store32(Imm32(-1), Address(WasmTlsReg,
+                                  offsetof(TlsData, pendingExceptionTagIndex)));
 }
 #endif
 
@@ -3769,17 +3783,10 @@ bool BaseCompiler::emitBodyDelegateThrowPad() {
 
     
     
-    RegRef exn = needRef();
-    loadPendingException(exn);
-    pushRef(exn);
-
-    
-    if (!emitInstanceCall(lineOrBytecode, SASigConsumePendingException)) {
-      return false;
-    }
-    freeI32(popI32());
-    exn = popRef();
-
+    RegRef exn;
+    RegI32 tagIndex;
+    consumePendingException(&exn, &tagIndex);
+    freeI32(tagIndex);
     if (!throwFrom(exn, lineOrBytecode)) {
       return false;
     }
@@ -3927,22 +3934,13 @@ bool BaseCompiler::endTryCatch(ResultType type) {
 
   
   
-  RegRef exn = needRef();
-  loadPendingException(exn);
+  RegRef exn;
+  RegI32 index;
+  consumePendingException(&exn, &index);
+
+  
+  
   pushRef(exn);
-
-  if (!emitInstanceCall(lineOrBytecode, SASigConsumePendingException)) {
-    return false;
-  }
-
-  
-  RegI32 temp = popI32();
-  RegI32 index = needI32();
-  moveI32(temp, index);
-  freeI32(temp);
-
-  
-  
   ResultType exnResult = ResultType::Single(RefType::extern_());
   popBlockResults(exnResult, tryCatch.stackHeight, ContinuationKind::Jump);
   freeResultRegisters(exnResult);
@@ -5732,6 +5730,17 @@ bool BaseCompiler::emitBarrieredStore(const Maybe<RegRef>& object,
 
   masm.bind(&skipBarrier);
   return true;
+}
+
+
+
+void BaseCompiler::emitBarrieredClear(RegPtr valueAddr) {
+  
+  
+  ASSERT_ANYREF_IS_JSOBJECT;
+
+  emitPreBarrier(valueAddr);  
+  masm.storePtr(ImmWord(0), Address(valueAddr, 0));
 }
 
 

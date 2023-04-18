@@ -1223,7 +1223,7 @@ struct BaseCompiler final {
   [[nodiscard]] bool throwFrom(RegRef exn, uint32_t lineOrBytecode);
 
   
-  void loadPendingException(Register dest);
+  void consumePendingException(RegRef* exnDst, RegI32* tagDst);
 #endif
 
   
@@ -1250,6 +1250,10 @@ struct BaseCompiler final {
   
   [[nodiscard]] bool emitBarrieredStore(const Maybe<RegRef>& object,
                                         RegPtr valueAddr, RegRef value);
+
+  
+  
+  void emitBarrieredClear(RegPtr valueAddr);
 
   
   

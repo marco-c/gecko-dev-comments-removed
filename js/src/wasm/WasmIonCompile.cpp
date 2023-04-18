@@ -2717,19 +2717,41 @@ class FunctionCompiler {
     return inTryBlock(&relativeDepth);
   }
 
-  bool clearExceptionGetTag(MDefinition** tagIndex) {
+  MDefinition* loadPendingException() {
+    MWasmLoadTls* exn = MWasmLoadTls::New(
+        alloc(), tlsPointer_, offsetof(wasm::TlsData, pendingException),
+        MIRType::RefOrNull, AliasSet::Load(AliasSet::WasmPendingException));
+    curBlock_->add(exn);
+    return exn;
+  }
+
+  MDefinition* loadPendingExceptionTagIndex() {
+    MWasmLoadTls* tagIndex = MWasmLoadTls::New(
+        alloc(), tlsPointer_, offsetof(wasm::TlsData, pendingExceptionTagIndex),
+        MIRType::Int32, AliasSet::Load(AliasSet::WasmPendingException));
+    curBlock_->add(tagIndex);
+    return tagIndex;
+  }
+
+  void clearPendingExceptionState() {
     
+    auto* pendingExceptionLoc = MWasmDerivedPointer::New(
+        alloc(), tlsPointer_, offsetof(TlsData, pendingException));
+    curBlock_->add(pendingExceptionLoc);
+    auto* null = nullRefConstant();
+    auto* clearObject =
+        MWasmStoreRef::New(alloc(), tlsPointer_, pendingExceptionLoc, null,
+                           AliasSet::WasmPendingException);
+    curBlock_->add(clearObject);
     
-    uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
-    const SymbolicAddressSignature& callee = SASigConsumePendingException;
-    CallCompileState args;
-    if (!passInstance(callee.argTypes[0], &args)) {
-      return false;
-    }
-    if (!finishCall(&args)) {
-      return false;
-    }
-    return builtinInstanceMethodCall(callee, lineOrBytecode, args, tagIndex);
+
+    
+    auto* nullTagIndex = constant(Int32Value(-1), MIRType::Int32);
+    auto* clearTagIndex = MWasmStoreTls::New(
+        alloc(), tlsPointer_, nullTagIndex,
+        offsetof(TlsData, pendingExceptionTagIndex), MIRType::Int32,
+        AliasSet::Store(AliasSet::WasmPendingException));
+    curBlock_->add(clearTagIndex);
   }
 
   bool addPadPatch(MControlInstruction* ins, size_t relativeTryDepth) {
@@ -2767,12 +2789,6 @@ class FunctionCompiler {
     MOZ_ASSERT(inTryCode());
 
     
-    MWasmLoadTls* pendingException = MWasmLoadTls::New(
-        alloc(), tlsPointer_, offsetof(wasm::TlsData, pendingException),
-        MIRType::RefOrNull, AliasSet::Load(AliasSet::WasmPendingException));
-    curBlock_->add(pendingException);
-
-    
     MBasicBlock* fallthroughBlock = nullptr;
     if (!newBlock(curBlock_, &fallthroughBlock)) {
       return false;
@@ -2781,25 +2797,21 @@ class FunctionCompiler {
     if (!newBlock(curBlock_, &prePadBlock)) {
       return false;
     }
+    MDefinition* pendingException = loadPendingException();
     MDefinition* nullVal = nullRefConstant();
     
     MDefinition* pendingExceptionIsNotNull = compare(
         pendingException, nullVal, JSOp::Ne, MCompare::Compare_RefOrNull);
-
-    
-    
-
     MTest* branchIfNull = MTest::New(alloc(), pendingExceptionIsNotNull,
                                      prePadBlock, fallthroughBlock);
     curBlock_->end(branchIfNull);
-    curBlock_ = prePadBlock;
 
     
-    MDefinition* tagIndex = nullptr;
-    if (!clearExceptionGetTag(&tagIndex)) {
-      return false;
-    }
-
+    curBlock_ = prePadBlock;
+    
+    MDefinition* tagIndex = loadPendingExceptionTagIndex();
+    
+    clearPendingExceptionState();
     
     if (!endWithPadPatch(prePadBlock, pendingException, tagIndex,
                          relativeTryDepth)) {
