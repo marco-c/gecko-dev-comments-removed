@@ -130,7 +130,7 @@ struct CustomElementData {
 
 
 struct CustomElementDefinition {
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(CustomElementDefinition)
+  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(CustomElementDefinition)
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(CustomElementDefinition)
 
   CustomElementDefinition(nsAtom* aType, nsAtom* aLocalName,
