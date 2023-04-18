@@ -3,7 +3,7 @@
 
 
 
-interface nsIVariant;
+typedef (unrestricted double or boolean or DOMString or Node or sequence<Node> or XPathResult) XSLTParameterValue;
 
 [Exposed=Window]
 interface XSLTProcessor {
@@ -58,7 +58,7 @@ interface XSLTProcessor {
     [Throws]
     void setParameter([LegacyNullToEmptyString] DOMString namespaceURI,
                       DOMString localName,
-                      any value);
+                      XSLTParameterValue value);
 
     
 
@@ -69,8 +69,8 @@ interface XSLTProcessor {
 
 
     [Throws]
-    nsIVariant? getParameter([LegacyNullToEmptyString] DOMString namespaceURI,
-                             DOMString localName);
+    XSLTParameterValue? getParameter([LegacyNullToEmptyString] DOMString namespaceURI,
+                                     DOMString localName);
     
 
 
