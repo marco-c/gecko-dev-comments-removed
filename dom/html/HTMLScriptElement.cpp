@@ -20,8 +20,11 @@
 #include "nsISupportsImpl.h"
 #include "mozilla/dom/HTMLScriptElement.h"
 #include "mozilla/dom/HTMLScriptElementBinding.h"
+#include "mozilla/StaticPrefs_dom.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(Script)
+
+using JS::loader::ScriptKind;
 
 namespace mozilla::dom {
 
@@ -167,13 +170,27 @@ void HTMLScriptElement::FreezeExecutionAttrs(Document* aOwnerDoc) {
     return;
   }
 
-  MOZ_ASSERT(!mIsModule && !mAsync && !mDefer && !mExternal);
+  MOZ_ASSERT((mKind != ScriptKind::eModule) &&
+             (mKind != ScriptKind::eImportMap) && !mAsync && !mDefer &&
+             !mExternal);
 
   
   nsAutoString type;
   GetScriptType(type);
-  mIsModule = aOwnerDoc->ModuleScriptsEnabled() && !type.IsEmpty() &&
-              type.LowerCaseEqualsASCII("module");
+  if (!type.IsEmpty()) {
+    if (aOwnerDoc->ModuleScriptsEnabled() &&
+        type.LowerCaseEqualsASCII("module")) {
+      mKind = ScriptKind::eModule;
+    }
+
+    
+    
+    
+    if (aOwnerDoc->ImportMapsEnabled() &&
+        type.LowerCaseEqualsASCII("importmap")) {
+      mKind = ScriptKind::eImportMap;
+    }
+  }
 
   
   
@@ -206,7 +223,7 @@ void HTMLScriptElement::FreezeExecutionAttrs(Document* aOwnerDoc) {
     mExternal = true;
   }
 
-  bool async = (mExternal || mIsModule) && Async();
+  bool async = (mExternal || mKind == ScriptKind::eModule) && Async();
   bool defer = mExternal && Defer();
 
   mDefer = !async && defer;
@@ -232,7 +249,10 @@ bool HTMLScriptElement::HasScriptContent() {
 
 bool HTMLScriptElement::Supports(const GlobalObject& aGlobal,
                                  const nsAString& aType) {
-  return aType.EqualsLiteral("classic") || aType.EqualsLiteral("module");
+  nsAutoString type(aType);
+  return aType.EqualsLiteral("classic") || aType.EqualsLiteral("module") ||
+         (StaticPrefs::dom_importMaps_enabled() &&
+          aType.EqualsLiteral("importmap"));
 }
 
 }  
