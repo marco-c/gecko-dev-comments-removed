@@ -257,9 +257,6 @@ already_AddRefed<SharedMessageBody>
 SharedMessageBody::FromMessageToSharedParent(
     MessageData& aMessage,
     StructuredCloneHolder::TransferringSupport aSupportsTransferring) {
-  
-  
-  
   RefPtr<SharedMessageBody> data =
       new SharedMessageBody(aSupportsTransferring, aMessage.agentClusterId());
 
