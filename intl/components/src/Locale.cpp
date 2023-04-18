@@ -30,65 +30,65 @@ namespace mozilla::intl {
 using namespace intl::LanguageTagLimits;
 
 template <typename CharT>
-bool IsStructurallyValidLanguageTag(Span<const CharT> aLanguage) {
+bool IsStructurallyValidLanguageTag(Span<const CharT> language) {
   
-  size_t length = aLanguage.size();
-  const CharT* str = aLanguage.data();
+  size_t length = language.size();
+  const CharT* str = language.data();
   return ((2 <= length && length <= 3) || (5 <= length && length <= 8)) &&
          std::all_of(str, str + length, IsAsciiAlpha<CharT>);
 }
 
-template bool IsStructurallyValidLanguageTag(Span<const char> aLanguage);
-template bool IsStructurallyValidLanguageTag(Span<const Latin1Char> aLanguage);
-template bool IsStructurallyValidLanguageTag(Span<const char16_t> aLanguage);
+template bool IsStructurallyValidLanguageTag(Span<const char> language);
+template bool IsStructurallyValidLanguageTag(Span<const Latin1Char> language);
+template bool IsStructurallyValidLanguageTag(Span<const char16_t> language);
 
 template <typename CharT>
-bool IsStructurallyValidScriptTag(Span<const CharT> aScript) {
+bool IsStructurallyValidScriptTag(Span<const CharT> script) {
   
-  size_t length = aScript.size();
-  const CharT* str = aScript.data();
+  size_t length = script.size();
+  const CharT* str = script.data();
   return length == 4 && std::all_of(str, str + length, IsAsciiAlpha<CharT>);
 }
 
-template bool IsStructurallyValidScriptTag(Span<const char> aScript);
-template bool IsStructurallyValidScriptTag(Span<const Latin1Char> aScript);
-template bool IsStructurallyValidScriptTag(Span<const char16_t> aScript);
+template bool IsStructurallyValidScriptTag(Span<const char> script);
+template bool IsStructurallyValidScriptTag(Span<const Latin1Char> script);
+template bool IsStructurallyValidScriptTag(Span<const char16_t> script);
 
 template <typename CharT>
-bool IsStructurallyValidRegionTag(Span<const CharT> aRegion) {
+bool IsStructurallyValidRegionTag(Span<const CharT> region) {
   
-  size_t length = aRegion.size();
-  const CharT* str = aRegion.data();
+  size_t length = region.size();
+  const CharT* str = region.data();
   return (length == 2 && std::all_of(str, str + length, IsAsciiAlpha<CharT>)) ||
          (length == 3 && std::all_of(str, str + length, IsAsciiDigit<CharT>));
 }
 
-template bool IsStructurallyValidRegionTag(Span<const char> aRegion);
-template bool IsStructurallyValidRegionTag(Span<const Latin1Char> aRegion);
-template bool IsStructurallyValidRegionTag(Span<const char16_t> aRegion);
+template bool IsStructurallyValidRegionTag(Span<const char> region);
+template bool IsStructurallyValidRegionTag(Span<const Latin1Char> region);
+template bool IsStructurallyValidRegionTag(Span<const char16_t> region);
 
 #ifdef DEBUG
-bool IsStructurallyValidVariantTag(Span<const char> aVariant) {
+bool IsStructurallyValidVariantTag(Span<const char> variant) {
   
-  size_t length = aVariant.size();
-  const char* str = aVariant.data();
+  size_t length = variant.size();
+  const char* str = variant.data();
   return ((5 <= length && length <= 8) ||
           (length == 4 && IsAsciiDigit(str[0]))) &&
          std::all_of(str, str + length, IsAsciiAlphanumeric<char>);
 }
 
-bool IsStructurallyValidUnicodeExtensionTag(Span<const char> aExtension) {
-  return LocaleParser::CanParseUnicodeExtension(aExtension).isOk();
+bool IsStructurallyValidUnicodeExtensionTag(Span<const char> extension) {
+  return LocaleParser::canParseUnicodeExtension(extension).isOk();
 }
 
-static bool IsStructurallyValidExtensionTag(Span<const char> aExtension) {
+static bool IsStructurallyValidExtensionTag(Span<const char> extension) {
   
   
   
 
-  size_t length = aExtension.size();
-  const char* str = aExtension.data();
-  const char* const end = aExtension.data() + length;
+  size_t length = extension.size();
+  const char* str = extension.data();
+  const char* const end = extension.data() + length;
   if (length <= 2) {
     return false;
   }
@@ -114,12 +114,12 @@ static bool IsStructurallyValidExtensionTag(Span<const char> aExtension) {
   }
 }
 
-bool IsStructurallyValidPrivateUseTag(Span<const char> aPrivateUse) {
+bool IsStructurallyValidPrivateUseTag(Span<const char> privateUse) {
   
 
-  size_t length = aPrivateUse.size();
-  const char* str = aPrivateUse.data();
-  const char* const end = aPrivateUse.data() + length;
+  size_t length = privateUse.size();
+  const char* str = privateUse.data();
+  const char* const end = privateUse.data() + length;
   if (length <= 2) {
     return false;
   }
@@ -146,53 +146,53 @@ bool IsStructurallyValidPrivateUseTag(Span<const char> aPrivateUse) {
 }
 #endif
 
-ptrdiff_t Locale::UnicodeExtensionIndex() const {
+ptrdiff_t Locale::unicodeExtensionIndex() const {
   
   
   auto p = std::find_if(
-      mExtensions.begin(), mExtensions.end(),
+      extensions_.begin(), extensions_.end(),
       [](const auto& ext) { return ext[0] == 'u' || ext[0] == 'U'; });
-  if (p != mExtensions.end()) {
-    return std::distance(mExtensions.begin(), p);
+  if (p != extensions_.end()) {
+    return std::distance(extensions_.begin(), p);
   }
   return -1;
 }
 
-Maybe<Span<const char>> Locale::GetUnicodeExtension() const {
-  ptrdiff_t index = UnicodeExtensionIndex();
+Maybe<Span<const char>> Locale::unicodeExtension() const {
+  ptrdiff_t index = unicodeExtensionIndex();
   if (index >= 0) {
-    return Some(MakeStringSpan(mExtensions[index].get()));
+    return Some(MakeStringSpan(extensions_[index].get()));
   }
   return Nothing();
 }
 
-ICUResult Locale::SetUnicodeExtension(Span<const char> aExtension) {
-  MOZ_ASSERT(IsStructurallyValidUnicodeExtensionTag(aExtension));
+ICUResult Locale::setUnicodeExtension(Span<const char> extension) {
+  MOZ_ASSERT(IsStructurallyValidUnicodeExtensionTag(extension));
 
-  auto duplicated = DuplicateStringToUniqueChars(aExtension);
+  auto duplicated = DuplicateStringToUniqueChars(extension);
 
   
-  ptrdiff_t index = UnicodeExtensionIndex();
+  ptrdiff_t index = unicodeExtensionIndex();
   if (index >= 0) {
-    mExtensions[index] = std::move(duplicated);
+    extensions_[index] = std::move(duplicated);
     return Ok();
   }
-  if (!mExtensions.append(std::move(duplicated))) {
+  if (!extensions_.append(std::move(duplicated))) {
     return Err(ICUError::OutOfMemory);
   }
   return Ok();
 }
 
-void Locale::ClearUnicodeExtension() {
-  ptrdiff_t index = UnicodeExtensionIndex();
+void Locale::clearUnicodeExtension() {
+  ptrdiff_t index = unicodeExtensionIndex();
   if (index >= 0) {
-    mExtensions.erase(mExtensions.begin() + index);
+    extensions_.erase(extensions_.begin() + index);
   }
 }
 
 template <size_t InitialCapacity>
-static bool SortAlphabetically(Vector<UniqueChars, InitialCapacity>& aSubtags) {
-  size_t length = aSubtags.length();
+static bool SortAlphabetically(Vector<UniqueChars, InitialCapacity>& subtags) {
+  size_t length = subtags.length();
 
   
   if (length < 2) {
@@ -201,8 +201,8 @@ static bool SortAlphabetically(Vector<UniqueChars, InitialCapacity>& aSubtags) {
 
   
   if (length == 2) {
-    if (strcmp(aSubtags[0].get(), aSubtags[1].get()) > 0) {
-      aSubtags[0].swap(aSubtags[1]);
+    if (strcmp(subtags[0].get(), subtags[1].get()) > 0) {
+      subtags[0].swap(subtags[1]);
     }
     return true;
   }
@@ -212,7 +212,7 @@ static bool SortAlphabetically(Vector<UniqueChars, InitialCapacity>& aSubtags) {
     return false;
   }
   for (size_t i = 0; i < length; i++) {
-    scratch[i] = aSubtags[i].release();
+    scratch[i] = subtags[i].release();
   }
 
   std::stable_sort(
@@ -220,33 +220,33 @@ static bool SortAlphabetically(Vector<UniqueChars, InitialCapacity>& aSubtags) {
       [](const char* a, const char* b) { return strcmp(a, b) < 0; });
 
   for (size_t i = 0; i < length; i++) {
-    aSubtags[i] = UniqueChars(scratch[i]);
+    subtags[i] = UniqueChars(scratch[i]);
   }
   return true;
 }
 
-Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeBaseName() {
+Result<Ok, Locale::CanonicalizationError> Locale::canonicalizeBaseName() {
   
   
   
 
   
-  mLanguage.ToLowerCase();
-  MOZ_ASSERT(IsStructurallyValidLanguageTag(Language().Span()));
+  language_.toLowerCase();
+  MOZ_ASSERT(IsStructurallyValidLanguageTag(language().span()));
 
   
   
-  mScript.ToTitleCase();
-  MOZ_ASSERT(Script().Missing() ||
-             IsStructurallyValidScriptTag(Script().Span()));
+  script_.toTitleCase();
+  MOZ_ASSERT(script().missing() ||
+             IsStructurallyValidScriptTag(script().span()));
 
   
-  mRegion.ToUpperCase();
-  MOZ_ASSERT(Region().Missing() ||
-             IsStructurallyValidRegionTag(Region().Span()));
+  region_.toUpperCase();
+  MOZ_ASSERT(region().missing() ||
+             IsStructurallyValidRegionTag(region().span()));
 
   
-  for (UniqueChars& variant : mVariants) {
+  for (UniqueChars& variant : variants_) {
     char* variantChars = variant.get();
     size_t variantLength = strlen(variantChars);
     AsciiToLowerCase(variantChars, variantLength, variantChars);
@@ -259,19 +259,19 @@ Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeBaseName() {
 
   
 
-  if (mVariants.length() > 1) {
+  if (variants_.length() > 1) {
     
-    if (!SortAlphabetically(mVariants)) {
+    if (!SortAlphabetically(variants_)) {
       return Err(CanonicalizationError::OutOfMemory);
     }
 
     
     
     const UniqueChars* duplicate = std::adjacent_find(
-        mVariants.begin(), mVariants.end(), [](const auto& a, const auto& b) {
+        variants_.begin(), variants_.end(), [](const auto& a, const auto& b) {
           return strcmp(a.get(), b.get()) == 0;
         });
-    if (duplicate != mVariants.end()) {
+    if (duplicate != variants_.end()) {
       return Err(CanonicalizationError::DuplicateVariant);
     }
   }
@@ -296,29 +296,29 @@ Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeBaseName() {
   
   
 
-  if (!UpdateLegacyMappings()) {
+  if (!updateLegacyMappings()) {
     return Err(CanonicalizationError::OutOfMemory);
   }
 
   
-  if (!LanguageMapping(mLanguage) && ComplexLanguageMapping(mLanguage)) {
-    PerformComplexLanguageMappings();
+  if (!languageMapping(language_) && complexLanguageMapping(language_)) {
+    performComplexLanguageMappings();
   }
 
   
-  if (Script().Present()) {
-    ScriptMapping(mScript);
+  if (script().present()) {
+    scriptMapping(script_);
   }
 
   
-  if (Region().Present()) {
-    if (!RegionMapping(mRegion) && ComplexRegionMapping(mRegion)) {
-      PerformComplexRegionMappings();
+  if (region().present()) {
+    if (!regionMapping(region_) && complexRegionMapping(region_)) {
+      performComplexRegionMappings();
     }
   }
 
   
-  if (!PerformVariantMappings()) {
+  if (!performVariantMappings()) {
     return Err(CanonicalizationError::OutOfMemory);
   }
 
@@ -332,18 +332,18 @@ Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeBaseName() {
 }
 
 #ifdef DEBUG
-static bool IsAsciiLowercaseAlphanumericOrDash(Span<const char> aSpan) {
-  const char* ptr = aSpan.data();
-  size_t length = aSpan.size();
+static bool IsAsciiLowercaseAlphanumericOrDash(Span<const char> span) {
+  const char* ptr = span.data();
+  size_t length = span.size();
   return std::all_of(ptr, ptr + length, [](auto c) {
     return IsAsciiLowercaseAlpha(c) || IsAsciiDigit(c) || c == '-';
   });
 }
 #endif
 
-Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeExtensions() {
+Result<Ok, Locale::CanonicalizationError> Locale::canonicalizeExtensions() {
   
-  for (UniqueChars& extension : mExtensions) {
+  for (UniqueChars& extension : extensions_) {
     char* extensionChars = extension.get();
     size_t extensionLength = strlen(extensionChars);
     AsciiToLowerCase(extensionChars, extensionLength, extensionChars);
@@ -354,15 +354,15 @@ Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeExtensions() {
 
   
   
-  if (!SortAlphabetically(mExtensions)) {
+  if (!SortAlphabetically(extensions_)) {
     return Err(CanonicalizationError::OutOfMemory);
   }
 
-  for (UniqueChars& extension : mExtensions) {
+  for (UniqueChars& extension : extensions_) {
     if (extension[0] == 'u') {
-      MOZ_TRY(CanonicalizeUnicodeExtension(extension));
+      MOZ_TRY(canonicalizeUnicodeExtension(extension));
     } else if (extension[0] == 't') {
-      MOZ_TRY(CanonicalizeTransformExtension(extension));
+      MOZ_TRY(canonicalizeTransformExtension(extension));
     }
 
     MOZ_ASSERT(
@@ -370,7 +370,7 @@ Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeExtensions() {
   }
 
   
-  if (char* privateuse = mPrivateUse.get()) {
+  if (char* privateuse = privateuse_.get()) {
     size_t privateuseLength = strlen(privateuse);
     AsciiToLowerCase(privateuse, privateuseLength, privateuse);
 
@@ -381,8 +381,8 @@ Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeExtensions() {
 }
 
 template <size_t N>
-static inline bool AppendSpan(Vector<char, N>& vector, Span<const char> aSpan) {
-  return vector.append(aSpan.data(), aSpan.size());
+static inline bool AppendSpan(Vector<char, N>& vector, Span<const char> span) {
+  return vector.append(span.data(), span.size());
 }
 
 
@@ -401,9 +401,9 @@ static inline bool AppendSpan(Vector<char, N>& vector, Span<const char> aSpan) {
 
 
 
-Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeUnicodeExtension(
-    UniqueChars& aUnicodeExtension) {
-  Span<const char> extension = MakeStringSpan(aUnicodeExtension.get());
+Result<Ok, Locale::CanonicalizationError> Locale::canonicalizeUnicodeExtension(
+    UniqueChars& unicodeExtension) {
+  Span<const char> extension = MakeStringSpan(unicodeExtension.get());
   MOZ_ASSERT(extension[0] == 'u');
   MOZ_ASSERT(extension[1] == '-');
   MOZ_ASSERT(IsStructurallyValidExtensionTag(extension));
@@ -414,15 +414,15 @@ Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeUnicodeExtension(
   using Attribute = LocaleParser::AttributesVector::ElementType;
   using Keyword = LocaleParser::KeywordsVector::ElementType;
 
-  if (LocaleParser::ParseUnicodeExtension(extension, attributes, keywords)
+  if (LocaleParser::parseUnicodeExtension(extension, attributes, keywords)
           .isErr()) {
     MOZ_ASSERT_UNREACHABLE("unexpected invalid Unicode extension subtag");
     return Err(CanonicalizationError::InternalError);
   }
 
   auto attributesLess = [extension](const Attribute& a, const Attribute& b) {
-    auto astr = extension.Subspan(a.Begin(), a.Length());
-    auto bstr = extension.Subspan(b.Begin(), b.Length());
+    auto astr = extension.Subspan(a.begin(), a.length());
+    auto bstr = extension.Subspan(b.begin(), b.length());
     return astr < bstr;
   };
 
@@ -432,8 +432,8 @@ Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeUnicodeExtension(
   }
 
   auto keywordsLess = [extension](const Keyword& a, const Keyword& b) {
-    auto astr = extension.Subspan(a.Begin(), UnicodeKeyLength);
-    auto bstr = extension.Subspan(b.Begin(), UnicodeKeyLength);
+    auto astr = extension.Subspan(a.begin(), UnicodeKeyLength);
+    auto bstr = extension.Subspan(b.begin(), UnicodeKeyLength);
     return astr < bstr;
   };
 
@@ -457,13 +457,13 @@ Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeUnicodeExtension(
   
   for (size_t i = 0; i < attributes.length(); i++) {
     const auto& attribute = attributes[i];
-    auto span = extension.Subspan(attribute.Begin(), attribute.Length());
+    auto span = extension.Subspan(attribute.begin(), attribute.length());
 
     
     if (i > 0) {
       const auto& lastAttribute = attributes[i - 1];
       if (span ==
-          extension.Subspan(lastAttribute.Begin(), lastAttribute.Length())) {
+          extension.Subspan(lastAttribute.begin(), lastAttribute.length())) {
         continue;
       }
       MOZ_ASSERT(attributesLess(lastAttribute, attribute));
@@ -490,8 +490,8 @@ Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeUnicodeExtension(
     
     if (i > 0) {
       const auto& lastKeyword = keywords[i - 1];
-      if (extension.Subspan(keyword.Begin(), UnicodeKeyLength) ==
-          extension.Subspan(lastKeyword.Begin(), UnicodeKeyLength)) {
+      if (extension.Subspan(keyword.begin(), UnicodeKeyLength) ==
+          extension.Subspan(lastKeyword.begin(), UnicodeKeyLength)) {
         continue;
       }
       MOZ_ASSERT(keywordsLess(lastKeyword, keyword));
@@ -501,7 +501,7 @@ Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeUnicodeExtension(
       return Err(CanonicalizationError::OutOfMemory);
     }
 
-    StringSpan span = extension.Subspan(keyword.Begin(), keyword.Length());
+    StringSpan span = extension.Subspan(keyword.begin(), keyword.length());
     if (span.size() == UnicodeKeyLength) {
       
       if (!AppendSpan(sb, span)) {
@@ -512,7 +512,7 @@ Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeUnicodeExtension(
       StringSpan type = span.From(UnicodeKeyWithSepLength);
 
       
-      if (const char* replacement = ReplaceUnicodeExtensionType(key, type)) {
+      if (const char* replacement = replaceUnicodeExtensionType(key, type)) {
         StringSpan repl = MakeStringSpan(replacement);
         if (repl == True) {
           
@@ -555,28 +555,28 @@ Result<Ok, Locale::CanonicalizationError> Locale::CanonicalizeUnicodeExtension(
     if (!canonical) {
       return Err(CanonicalizationError::OutOfMemory);
     }
-    aUnicodeExtension = std::move(canonical);
+    unicodeExtension = std::move(canonical);
   }
 
   return Ok();
 }
 
 template <class Buffer>
-static bool LocaleToString(const Locale& aTag, Buffer& aBuffer) {
-  auto appendSubtag = [&aBuffer](const auto& subtag) {
-    auto span = subtag.Span();
+static bool LocaleToString(const Locale& tag, Buffer& sb) {
+  auto appendSubtag = [&sb](const auto& subtag) {
+    auto span = subtag.span();
     MOZ_ASSERT(!span.empty());
-    return aBuffer.append(span.data(), span.size());
+    return sb.append(span.data(), span.size());
   };
 
-  auto appendSubtagSpan = [&aBuffer](Span<const char> subtag) {
+  auto appendSubtagSpan = [&sb](Span<const char> subtag) {
     MOZ_ASSERT(!subtag.empty());
-    return aBuffer.append(subtag.data(), subtag.size());
+    return sb.append(subtag.data(), subtag.size());
   };
 
-  auto appendSubtags = [&aBuffer, &appendSubtagSpan](const auto& subtags) {
+  auto appendSubtags = [&sb, &appendSubtagSpan](const auto& subtags) {
     for (const auto& subtag : subtags) {
-      if (!aBuffer.append('-') || !appendSubtagSpan(subtag)) {
+      if (!sb.append('-') || !appendSubtagSpan(subtag)) {
         return false;
       }
     }
@@ -584,37 +584,37 @@ static bool LocaleToString(const Locale& aTag, Buffer& aBuffer) {
   };
 
   
-  if (!appendSubtag(aTag.Language())) {
+  if (!appendSubtag(tag.language())) {
     return false;
   }
 
   
-  if (aTag.Script().Present()) {
-    if (!aBuffer.append('-') || !appendSubtag(aTag.Script())) {
+  if (tag.script().present()) {
+    if (!sb.append('-') || !appendSubtag(tag.script())) {
       return false;
     }
   }
 
   
-  if (aTag.Region().Present()) {
-    if (!aBuffer.append('-') || !appendSubtag(aTag.Region())) {
+  if (tag.region().present()) {
+    if (!sb.append('-') || !appendSubtag(tag.region())) {
       return false;
     }
   }
 
   
-  if (!appendSubtags(aTag.Variants())) {
+  if (!appendSubtags(tag.variants())) {
     return false;
   }
 
   
-  if (!appendSubtags(aTag.Extensions())) {
+  if (!appendSubtags(tag.extensions())) {
     return false;
   }
 
   
-  if (auto privateuse = aTag.PrivateUse()) {
-    if (!aBuffer.append('-') || !appendSubtagSpan(privateuse.value())) {
+  if (auto privateuse = tag.privateuse()) {
+    if (!sb.append('-') || !appendSubtagSpan(privateuse.value())) {
       return false;
     }
   }
@@ -637,8 +637,8 @@ static bool LocaleToString(const Locale& aTag, Buffer& aBuffer) {
 
 
 Result<Ok, Locale::CanonicalizationError>
-Locale::CanonicalizeTransformExtension(UniqueChars& aTransformExtension) {
-  Span<const char> extension = MakeStringSpan(aTransformExtension.get());
+Locale::canonicalizeTransformExtension(UniqueChars& transformExtension) {
+  Span<const char> extension = MakeStringSpan(transformExtension.get());
   MOZ_ASSERT(extension[0] == 't');
   MOZ_ASSERT(extension[1] == '-');
   MOZ_ASSERT(IsStructurallyValidExtensionTag(extension));
@@ -648,14 +648,14 @@ Locale::CanonicalizeTransformExtension(UniqueChars& aTransformExtension) {
 
   using TField = LocaleParser::TFieldVector::ElementType;
 
-  if (LocaleParser::ParseTransformExtension(extension, tag, fields).isErr()) {
+  if (LocaleParser::parseTransformExtension(extension, tag, fields).isErr()) {
     MOZ_ASSERT_UNREACHABLE("unexpected invalid transform extension subtag");
     return Err(CanonicalizationError::InternalError);
   }
 
   auto tfieldLess = [extension](const TField& a, const TField& b) {
-    auto astr = extension.Subspan(a.Begin(), TransformKeyLength);
-    auto bstr = extension.Subspan(b.Begin(), TransformKeyLength);
+    auto astr = extension.Subspan(a.begin(), TransformKeyLength);
+    auto bstr = extension.Subspan(b.begin(), TransformKeyLength);
     return astr < bstr;
   };
 
@@ -673,18 +673,18 @@ Locale::CanonicalizeTransformExtension(UniqueChars& aTransformExtension) {
   
   
   
-  if (tag.Language().Present()) {
+  if (tag.language().present()) {
     if (!sb.append('-')) {
       return Err(CanonicalizationError::OutOfMemory);
     }
 
-    MOZ_TRY(tag.CanonicalizeBaseName());
+    MOZ_TRY(tag.canonicalizeBaseName());
 
     
     
     
-    tag.mScript.ToLowerCase();
-    tag.mRegion.ToLowerCase();
+    tag.script_.toLowerCase();
+    tag.region_.toLowerCase();
 
     if (!LocaleToString(tag, sb)) {
       return Err(CanonicalizationError::OutOfMemory);
@@ -708,12 +708,12 @@ Locale::CanonicalizeTransformExtension(UniqueChars& aTransformExtension) {
       return Err(CanonicalizationError::OutOfMemory);
     }
 
-    StringSpan span = extension.Subspan(field.Begin(), field.Length());
+    StringSpan span = extension.Subspan(field.begin(), field.length());
     StringSpan key = span.To(TransformKeyLength);
     StringSpan value = span.From(TransformKeyWithSepLength);
 
     
-    if (const char* replacement = ReplaceTransformExtensionType(key, value)) {
+    if (const char* replacement = replaceTransformExtensionType(key, value)) {
       if (!AppendSpan(sb, span.To(TransformKeyWithSepLength))) {
         return Err(CanonicalizationError::OutOfMemory);
       }
@@ -737,7 +737,7 @@ Locale::CanonicalizeTransformExtension(UniqueChars& aTransformExtension) {
     if (!canonical) {
       return Err(CanonicalizationError::OutOfMemory);
     }
-    aTransformExtension = std::move(canonical);
+    transformExtension = std::move(canonical);
   }
 
   return Ok();
@@ -750,60 +750,59 @@ using LocaleId =
 enum class LikelySubtags : bool { Add, Remove };
 
 
-static bool HasLikelySubtags(LikelySubtags aLikelySubtags, const Locale& aTag) {
+static bool HasLikelySubtags(LikelySubtags likelySubtags, const Locale& tag) {
   
   
   
-  if (aLikelySubtags == LikelySubtags::Add) {
-    return !aTag.Language().EqualTo("und") &&
-           (aTag.Script().Present() && !aTag.Script().EqualTo("Zzzz")) &&
-           (aTag.Region().Present() && !aTag.Region().EqualTo("ZZ"));
+  if (likelySubtags == LikelySubtags::Add) {
+    return !tag.language().equalTo("und") &&
+           (tag.script().present() && !tag.script().equalTo("Zzzz")) &&
+           (tag.region().present() && !tag.region().equalTo("ZZ"));
   }
 
   
   
-  return !aTag.Language().EqualTo("und") && aTag.Script().Missing() &&
-         aTag.Region().Missing();
+  return !tag.language().equalTo("und") && tag.script().missing() &&
+         tag.region().missing();
 }
 
 
-static bool CreateLocaleForLikelySubtags(const Locale& aTag,
-                                         LocaleId& aLocale) {
-  MOZ_ASSERT(aLocale.length() == 0);
+static bool CreateLocaleForLikelySubtags(const Locale& tag, LocaleId& locale) {
+  MOZ_ASSERT(locale.length() == 0);
 
-  auto appendSubtag = [&aLocale](const auto& subtag) {
-    auto span = subtag.Span();
+  auto appendSubtag = [&locale](const auto& subtag) {
+    auto span = subtag.span();
     MOZ_ASSERT(!span.empty());
-    return aLocale.append(span.data(), span.size());
+    return locale.append(span.data(), span.size());
   };
 
   
-  if (!appendSubtag(aTag.Language())) {
+  if (!appendSubtag(tag.language())) {
     return false;
   }
 
   
-  if (aTag.Script().Present()) {
-    if (!aLocale.append('_') || !appendSubtag(aTag.Script())) {
+  if (tag.script().present()) {
+    if (!locale.append('_') || !appendSubtag(tag.script())) {
       return false;
     }
   }
 
   
-  if (aTag.Region().Present()) {
-    if (!aLocale.append('_') || !appendSubtag(aTag.Region())) {
+  if (tag.region().present()) {
+    if (!locale.append('_') || !appendSubtag(tag.region())) {
       return false;
     }
   }
 
   
-  return aLocale.append('\0');
+  return locale.append('\0');
 }
 
-static ICUError ParserErrorToICUError(LocaleParser::ParserError aErr) {
+static ICUError ParserErrorToICUError(LocaleParser::ParserError err) {
   using ParserError = LocaleParser::ParserError;
 
-  switch (aErr) {
+  switch (err) {
     case ParserError::NotParseable:
       return ICUError::InternalError;
     case ParserError::OutOfMemory:
@@ -813,10 +812,10 @@ static ICUError ParserErrorToICUError(LocaleParser::ParserError aErr) {
 }
 
 static ICUError CanonicalizationErrorToICUError(
-    Locale::CanonicalizationError aErr) {
+    Locale::CanonicalizationError err) {
   using CanonicalizationError = Locale::CanonicalizationError;
 
-  switch (aErr) {
+  switch (err) {
     case CanonicalizationError::DuplicateVariant:
     case CanonicalizationError::InternalError:
       return ICUError::InternalError;
@@ -831,49 +830,48 @@ static ICUError CanonicalizationErrorToICUError(
 
 
 
-static ICUResult AssignFromLocaleId(LocaleId& aLocaleId, Locale& aTag) {
+static ICUResult AssignFromLocaleId(LocaleId& localeId, Locale& tag) {
   
-  std::replace(aLocaleId.begin(), aLocaleId.end(), '_', '-');
+  std::replace(localeId.begin(), localeId.end(), '_', '-');
 
   
   
-  if (aLocaleId.empty() || aLocaleId[0] == '-') {
+  if (localeId.empty() || localeId[0] == '-') {
     static constexpr auto und = MakeStringSpan("und");
     constexpr size_t length = und.size();
 
     
-    if (!aLocaleId.growBy(length)) {
+    if (!localeId.growBy(length)) {
       return Err(ICUError::OutOfMemory);
     }
-    memmove(aLocaleId.begin() + length, aLocaleId.begin(), aLocaleId.length());
-    memmove(aLocaleId.begin(), und.data(), length);
+    memmove(localeId.begin() + length, localeId.begin(), localeId.length());
+    memmove(localeId.begin(), und.data(), length);
   }
 
   
   Locale localeTag;
-  MOZ_TRY(LocaleParser::TryParseBaseName(aLocaleId, localeTag)
+  MOZ_TRY(LocaleParser::tryParseBaseName(localeId, localeTag)
               .mapErr(ParserErrorToICUError));
 
-  aTag.SetLanguage(localeTag.Language());
-  aTag.SetScript(localeTag.Script());
-  aTag.SetRegion(localeTag.Region());
+  tag.setLanguage(localeTag.language());
+  tag.setScript(localeTag.script());
+  tag.setRegion(localeTag.region());
 
   return Ok();
 }
 
 template <decltype(uloc_addLikelySubtags) likelySubtagsFn>
-static ICUResult CallLikelySubtags(const LocaleId& aLocaleId,
-                                   LocaleId& aResult) {
+static ICUResult CallLikelySubtags(const LocaleId& localeId, LocaleId& result) {
   
-  MOZ_ASSERT(aLocaleId.back() == '\0');
-  MOZ_ASSERT(aResult.length() == 0);
+  MOZ_ASSERT(localeId.back() == '\0');
+  MOZ_ASSERT(result.length() == 0);
 
   
-  MOZ_ALWAYS_TRUE(aResult.resize(LocaleId::InlineLength));
+  MOZ_ALWAYS_TRUE(result.resize(LocaleId::InlineLength));
 
   return FillBufferWithICUCall(
-      aResult, [&aLocaleId](char* chars, int32_t size, UErrorCode* status) {
-        return likelySubtagsFn(aLocaleId.begin(), chars, size, status);
+      result, [&localeId](char* chars, int32_t size, UErrorCode* status) {
+        return likelySubtagsFn(localeId.begin(), chars, size, status);
       });
 }
 
@@ -892,21 +890,21 @@ static ICUResult CallLikelySubtags(const LocaleId& aLocaleId,
 
 
 
-static ICUResult LikelySubtags(LikelySubtags aLikelySubtags, Locale& aTag) {
+static ICUResult LikelySubtags(LikelySubtags likelySubtags, Locale& tag) {
   
-  if (HasLikelySubtags(aLikelySubtags, aTag)) {
+  if (HasLikelySubtags(likelySubtags, tag)) {
     return Ok();
   }
 
   
   LocaleId locale;
-  if (!CreateLocaleForLikelySubtags(aTag, locale)) {
+  if (!CreateLocaleForLikelySubtags(tag, locale)) {
     return Err(ICUError::OutOfMemory);
   }
 
   
   LocaleId localeLikelySubtags;
-  if (aLikelySubtags == LikelySubtags::Add) {
+  if (likelySubtags == LikelySubtags::Add) {
     MOZ_TRY(
         CallLikelySubtags<uloc_addLikelySubtags>(locale, localeLikelySubtags));
   } else {
@@ -915,43 +913,43 @@ static ICUResult LikelySubtags(LikelySubtags aLikelySubtags, Locale& aTag) {
   }
 
   
-  MOZ_TRY(AssignFromLocaleId(localeLikelySubtags, aTag));
+  MOZ_TRY(AssignFromLocaleId(localeLikelySubtags, tag));
 
   
-  MOZ_TRY(aTag.CanonicalizeBaseName().mapErr(CanonicalizationErrorToICUError));
+  MOZ_TRY(tag.canonicalizeBaseName().mapErr(CanonicalizationErrorToICUError));
 
   return Ok();
 }
 
-ICUResult Locale::AddLikelySubtags() {
+ICUResult Locale::addLikelySubtags() {
   return LikelySubtags(LikelySubtags::Add, *this);
 }
 
-ICUResult Locale::RemoveLikelySubtags() {
+ICUResult Locale::removeLikelySubtags() {
   return LikelySubtags(LikelySubtags::Remove, *this);
 }
 
-UniqueChars Locale::DuplicateStringToUniqueChars(const char* aStr) {
-  size_t length = strlen(aStr) + 1;
+UniqueChars Locale::DuplicateStringToUniqueChars(const char* s) {
+  size_t length = strlen(s) + 1;
   auto duplicate = MakeUnique<char[]>(length);
-  memcpy(duplicate.get(), aStr, length);
+  memcpy(duplicate.get(), s, length);
   return duplicate;
 }
 
-UniqueChars Locale::DuplicateStringToUniqueChars(Span<const char> aStr) {
-  size_t length = aStr.size();
+UniqueChars Locale::DuplicateStringToUniqueChars(Span<const char> s) {
+  size_t length = s.size();
   auto duplicate = MakeUnique<char[]>(length + 1);
-  memcpy(duplicate.get(), aStr.data(), length);
+  memcpy(duplicate.get(), s.data(), length);
   duplicate[length] = '\0';
   return duplicate;
 }
 
-size_t Locale::ToStringCapacity() const {
+size_t Locale::toStringCapacity() const {
   
   
   
   auto lengthSubtag = [](const auto& subtag) {
-    auto span = subtag.Span();
+    auto span = subtag.span();
     MOZ_ASSERT(!span.empty());
     return span.size();
   };
@@ -973,45 +971,45 @@ size_t Locale::ToStringCapacity() const {
   
   size_t capacity = 0;
 
-  capacity += lengthSubtag(mLanguage);
+  capacity += lengthSubtag(language_);
 
-  if (mScript.Present()) {
-    capacity += lengthSubtag(mScript) + 1;
+  if (script_.present()) {
+    capacity += lengthSubtag(script_) + 1;
   }
 
-  if (mRegion.Present()) {
-    capacity += lengthSubtag(mRegion) + 1;
+  if (region_.present()) {
+    capacity += lengthSubtag(region_) + 1;
   }
 
-  capacity += lengthSubtagsZ(mVariants);
+  capacity += lengthSubtagsZ(variants_);
 
-  capacity += lengthSubtagsZ(mExtensions);
+  capacity += lengthSubtagsZ(extensions_);
 
-  if (mPrivateUse.get()) {
-    capacity += lengthSubtagZ(mPrivateUse.get()) + 1;
+  if (privateuse_.get()) {
+    capacity += lengthSubtagZ(privateuse_.get()) + 1;
   }
 
   return capacity;
 }
 
-size_t Locale::ToStringAppend(char* aBuffer) const {
+size_t Locale::toStringAppend(char* buffer) const {
   
   size_t offset = 0;
 
-  auto appendHyphen = [&offset, &aBuffer]() {
-    aBuffer[offset] = '-';
+  auto appendHyphen = [&offset, &buffer]() {
+    buffer[offset] = '-';
     offset += 1;
   };
 
-  auto appendSubtag = [&offset, &aBuffer](const auto& subtag) {
-    auto span = subtag.Span();
-    memcpy(aBuffer + offset, span.data(), span.size());
+  auto appendSubtag = [&offset, &buffer](const auto& subtag) {
+    auto span = subtag.span();
+    memcpy(buffer + offset, span.data(), span.size());
     offset += span.size();
   };
 
-  auto appendSubtagZ = [&offset, &aBuffer](const char* subtag) {
+  auto appendSubtagZ = [&offset, &buffer](const char* subtag) {
     size_t length = strlen(subtag);
-    memcpy(aBuffer + offset, subtag, length);
+    memcpy(buffer + offset, subtag, length);
     offset += length;
   };
 
@@ -1023,50 +1021,50 @@ size_t Locale::ToStringAppend(char* aBuffer) const {
   };
 
   
-  appendSubtag(mLanguage);
+  appendSubtag(language_);
 
   
-  if (mScript.Present()) {
+  if (script_.present()) {
     appendHyphen();
-    appendSubtag(mScript);
+    appendSubtag(script_);
   }
 
   
-  if (mRegion.Present()) {
+  if (region_.present()) {
     appendHyphen();
-    appendSubtag(mRegion);
+    appendSubtag(region_);
   }
 
   
-  appendSubtagsZ(mVariants);
+  appendSubtagsZ(variants_);
 
   
-  appendSubtagsZ(mExtensions);
+  appendSubtagsZ(extensions_);
 
   
-  if (mPrivateUse.get()) {
+  if (privateuse_.get()) {
     appendHyphen();
-    appendSubtagZ(mPrivateUse.get());
+    appendSubtagZ(privateuse_.get());
   }
 
   return offset;
 }
 
-LocaleParser::Token LocaleParser::NextToken() {
-  MOZ_ASSERT(mIndex <= mLength + 1, "called after 'None' token was read");
+LocaleParser::Token LocaleParser::nextToken() {
+  MOZ_ASSERT(index_ <= length_ + 1, "called after 'None' token was read");
 
   TokenKind kind = TokenKind::None;
   size_t tokenLength = 0;
-  for (size_t i = mIndex; i < mLength; i++) {
+  for (size_t i = index_; i < length_; i++) {
     
     
     
-    char c = CharAt(i);
+    char c = charAt(i);
     if (IsAsciiAlpha(c)) {
       kind |= TokenKind::Alpha;
     } else if (IsAsciiDigit(c)) {
       kind |= TokenKind::Digit;
-    } else if (c == '-' && i > mIndex && i + 1 < mLength) {
+    } else if (c == '-' && i > index_ && i + 1 < length_) {
       break;
     } else {
       return {TokenKind::Error, 0, 0};
@@ -1074,17 +1072,17 @@ LocaleParser::Token LocaleParser::NextToken() {
     tokenLength += 1;
   }
 
-  Token token{kind, mIndex, tokenLength};
-  mIndex += tokenLength + 1;
+  Token token{kind, index_, tokenLength};
+  index_ += tokenLength + 1;
   return token;
 }
 
-UniqueChars LocaleParser::Chars(size_t aIndex, size_t aLength) const {
+UniqueChars LocaleParser::chars(size_t index, size_t length) const {
   
-  auto chars = MakeUnique<char[]>(aLength + 1);
+  auto chars = MakeUnique<char[]>(length + 1);
   char* dest = chars.get();
-  std::copy_n(mLocale + aIndex, aLength, dest);
-  dest[aLength] = '\0';
+  std::copy_n(locale_ + index, length, dest);
+  dest[length] = '\0';
   return chars;
 }
 
@@ -1109,53 +1107,53 @@ UniqueChars LocaleParser::Chars(size_t aIndex, size_t aLength) const {
 
 
 
-Result<Ok, LocaleParser::ParserError> LocaleParser::InternalParseBaseName(
-    LocaleParser& aLocaleParser, Locale& aTag, Token& aTok) {
-  if (aLocaleParser.IsLanguage(aTok)) {
-    aLocaleParser.CopyChars(aTok, aTag.mLanguage);
+Result<Ok, LocaleParser::ParserError> LocaleParser::internalParseBaseName(
+    LocaleParser& ts, Locale& tag, Token& tok) {
+  if (ts.isLanguage(tok)) {
+    ts.copyChars(tok, tag.language_);
 
-    aTok = aLocaleParser.NextToken();
+    tok = ts.nextToken();
   } else {
     
     return Err(ParserError::NotParseable);
   }
 
-  if (aLocaleParser.IsScript(aTok)) {
-    aLocaleParser.CopyChars(aTok, aTag.mScript);
+  if (ts.isScript(tok)) {
+    ts.copyChars(tok, tag.script_);
 
-    aTok = aLocaleParser.NextToken();
+    tok = ts.nextToken();
   }
 
-  if (aLocaleParser.IsRegion(aTok)) {
-    aLocaleParser.CopyChars(aTok, aTag.mRegion);
+  if (ts.isRegion(tok)) {
+    ts.copyChars(tok, tag.region_);
 
-    aTok = aLocaleParser.NextToken();
+    tok = ts.nextToken();
   }
 
-  auto& variants = aTag.mVariants;
+  auto& variants = tag.variants_;
   MOZ_ASSERT(variants.length() == 0);
-  while (aLocaleParser.IsVariant(aTok)) {
-    auto variant = aLocaleParser.Chars(aTok);
+  while (ts.isVariant(tok)) {
+    auto variant = ts.chars(tok);
     if (!variants.append(std::move(variant))) {
       return Err(ParserError::OutOfMemory);
     }
 
-    aTok = aLocaleParser.NextToken();
+    tok = ts.nextToken();
   }
 
   return Ok();
 }
 
-Result<Ok, LocaleParser::ParserError> LocaleParser::TryParse(
-    mozilla::Span<const char> aLocale, Locale& aTag) {
+Result<Ok, LocaleParser::ParserError> LocaleParser::tryParse(
+    mozilla::Span<const char> locale, Locale& tag) {
   
   
   
 
-  LocaleParser ts(aLocale);
-  Token tok = ts.NextToken();
+  LocaleParser ts(locale);
+  Token tok = ts.nextToken();
 
-  MOZ_TRY(ParseBaseName(ts, aTag, tok));
+  MOZ_TRY(parseBaseName(ts, tag, tok));
 
   
   
@@ -1164,9 +1162,9 @@ Result<Ok, LocaleParser::ParserError> LocaleParser::TryParse(
   
   uint64_t seenSingletons = 0;
 
-  auto& extensions = aTag.mExtensions;
-  while (ts.IsExtensionStart(tok)) {
-    char singleton = ts.SingletonKey(tok);
+  auto& extensions = tag.extensions_;
+  while (ts.isExtensionStart(tok)) {
+    char singleton = ts.singletonKey(tok);
 
     
     uint64_t hash = 1ULL << (AsciiAlphanumericToNumber(singleton) + 1);
@@ -1176,15 +1174,15 @@ Result<Ok, LocaleParser::ParserError> LocaleParser::TryParse(
     seenSingletons |= hash;
 
     Token start = tok;
-    tok = ts.NextToken();
+    tok = ts.nextToken();
 
     
     
-    size_t startValue = tok.Index();
+    size_t startValue = tok.index();
 
     if (singleton == 'u') {
-      while (ts.IsUnicodeExtensionPart(tok)) {
-        tok = ts.NextToken();
+      while (ts.isUnicodeExtensionPart(tok)) {
+        tok = ts.nextToken();
       }
     } else if (singleton == 't') {
       
@@ -1195,87 +1193,87 @@ Result<Ok, LocaleParser::ParserError> LocaleParser::TryParse(
       
       
       
-      if (ts.IsLanguage(tok)) {
-        tok = ts.NextToken();
+      if (ts.isLanguage(tok)) {
+        tok = ts.nextToken();
 
-        if (ts.IsScript(tok)) {
-          tok = ts.NextToken();
+        if (ts.isScript(tok)) {
+          tok = ts.nextToken();
         }
 
-        if (ts.IsRegion(tok)) {
-          tok = ts.NextToken();
+        if (ts.isRegion(tok)) {
+          tok = ts.nextToken();
         }
 
-        while (ts.IsVariant(tok)) {
-          tok = ts.NextToken();
+        while (ts.isVariant(tok)) {
+          tok = ts.nextToken();
         }
       }
 
       
-      while (ts.IsTransformExtensionKey(tok)) {
-        tok = ts.NextToken();
+      while (ts.isTransformExtensionKey(tok)) {
+        tok = ts.nextToken();
 
-        size_t startTValue = tok.Index();
-        while (ts.IsTransformExtensionPart(tok)) {
-          tok = ts.NextToken();
+        size_t startTValue = tok.index();
+        while (ts.isTransformExtensionPart(tok)) {
+          tok = ts.nextToken();
         }
 
         
-        if (tok.Index() <= startTValue) {
+        if (tok.index() <= startTValue) {
           return Err(ParserError::NotParseable);
         }
       }
     } else {
-      while (ts.IsOtherExtensionPart(tok)) {
-        tok = ts.NextToken();
+      while (ts.isOtherExtensionPart(tok)) {
+        tok = ts.nextToken();
       }
     }
 
     
     
-    if (tok.Index() <= startValue) {
+    if (tok.index() <= startValue) {
       return Err(ParserError::NotParseable);
     }
 
-    UniqueChars extension = ts.Extension(start, tok);
+    UniqueChars extension = ts.extension(start, tok);
     if (!extensions.append(std::move(extension))) {
       return Err(ParserError::OutOfMemory);
     }
   }
 
   
-  if (ts.IsPrivateUseStart(tok)) {
+  if (ts.isPrivateUseStart(tok)) {
     Token start = tok;
-    tok = ts.NextToken();
+    tok = ts.nextToken();
 
-    size_t startValue = tok.Index();
-    while (ts.IsPrivateUsePart(tok)) {
-      tok = ts.NextToken();
+    size_t startValue = tok.index();
+    while (ts.isPrivateUsePart(tok)) {
+      tok = ts.nextToken();
     }
 
     
-    if (tok.Index() <= startValue) {
+    if (tok.index() <= startValue) {
       return Err(ParserError::NotParseable);
     }
 
-    UniqueChars privateUse = ts.Extension(start, tok);
-    aTag.mPrivateUse = std::move(privateUse);
+    UniqueChars privateUse = ts.extension(start, tok);
+    tag.privateuse_ = std::move(privateUse);
   }
 
-  if (!tok.IsNone()) {
+  if (!tok.isNone()) {
     return Err(ParserError::NotParseable);
   }
 
   return Ok();
 }
 
-Result<Ok, LocaleParser::ParserError> LocaleParser::TryParseBaseName(
-    Span<const char> aLocale, Locale& aTag) {
-  LocaleParser ts(aLocale);
-  Token tok = ts.NextToken();
+Result<Ok, LocaleParser::ParserError> LocaleParser::tryParseBaseName(
+    Span<const char> locale, Locale& tag) {
+  LocaleParser ts(locale);
+  Token tok = ts.nextToken();
 
-  MOZ_TRY(ParseBaseName(ts, aTag, tok));
-  if (!tok.IsNone()) {
+  MOZ_TRY(parseBaseName(ts, tag, tok));
+  if (!tok.isNone()) {
     return Err(ParserError::NotParseable);
   }
 
@@ -1284,58 +1282,58 @@ Result<Ok, LocaleParser::ParserError> LocaleParser::TryParseBaseName(
 
 
 
-Result<Ok, LocaleParser::ParserError> LocaleParser::ParseTransformExtension(
-    Span<const char> aExtension, Locale& aTag, TFieldVector& aFields) {
-  LocaleParser ts(aExtension);
-  Token tok = ts.NextToken();
+Result<Ok, LocaleParser::ParserError> LocaleParser::parseTransformExtension(
+    Span<const char> extension, Locale& tag, TFieldVector& fields) {
+  LocaleParser ts(extension);
+  Token tok = ts.nextToken();
 
-  if (!ts.IsExtensionStart(tok) || ts.SingletonKey(tok) != 't') {
+  if (!ts.isExtensionStart(tok) || ts.singletonKey(tok) != 't') {
     return Err(ParserError::NotParseable);
   }
 
-  tok = ts.NextToken();
+  tok = ts.nextToken();
 
-  if (tok.IsNone()) {
+  if (tok.isNone()) {
     return Err(ParserError::NotParseable);
   }
 
-  if (ts.IsLanguage(tok)) {
+  if (ts.isLanguage(tok)) {
     
     
     
-    MOZ_TRY(ParseTlangInTransformExtension(ts, aTag, tok));
+    MOZ_TRY(parseTlangInTransformExtension(ts, tag, tok));
 
     
     
-    MOZ_ASSERT(ts.IsTransformExtensionKey(tok) || tok.IsNone());
+    MOZ_ASSERT(ts.isTransformExtensionKey(tok) || tok.isNone());
   } else {
     
-    MOZ_ASSERT(ts.IsTransformExtensionKey(tok));
+    MOZ_ASSERT(ts.isTransformExtensionKey(tok));
   }
 
   
   
-  while (ts.IsTransformExtensionKey(tok)) {
-    size_t begin = tok.Index();
-    tok = ts.NextToken();
+  while (ts.isTransformExtensionKey(tok)) {
+    size_t begin = tok.index();
+    tok = ts.nextToken();
 
-    size_t startTValue = tok.Index();
-    while (ts.IsTransformExtensionPart(tok)) {
-      tok = ts.NextToken();
+    size_t startTValue = tok.index();
+    while (ts.isTransformExtensionPart(tok)) {
+      tok = ts.nextToken();
     }
 
     
-    if (tok.Index() <= startTValue) {
+    if (tok.index() <= startTValue) {
       return Err(ParserError::NotParseable);
     }
 
-    size_t length = tok.Index() - 1 - begin;
-    if (!aFields.emplaceBack(begin, length)) {
+    size_t length = tok.index() - 1 - begin;
+    if (!fields.emplaceBack(begin, length)) {
       return Err(ParserError::OutOfMemory);
     }
   }
 
-  if (!tok.IsNone()) {
+  if (!tok.isNone()) {
     return Err(ParserError::NotParseable);
   }
 
@@ -1345,95 +1343,95 @@ Result<Ok, LocaleParser::ParserError> LocaleParser::ParseTransformExtension(
 
 
 
-Result<Ok, LocaleParser::ParserError> LocaleParser::ParseUnicodeExtension(
-    Span<const char> aExtension, AttributesVector& aAttributes,
-    KeywordsVector& aKeywords) {
-  LocaleParser ts(aExtension);
-  Token tok = ts.NextToken();
+Result<Ok, LocaleParser::ParserError> LocaleParser::parseUnicodeExtension(
+    Span<const char> extension, AttributesVector& attributes,
+    KeywordsVector& keywords) {
+  LocaleParser ts(extension);
+  Token tok = ts.nextToken();
 
   
   
 
-  if (!ts.IsExtensionStart(tok) || ts.SingletonKey(tok) != 'u') {
+  if (!ts.isExtensionStart(tok) || ts.singletonKey(tok) != 'u') {
     return Err(ParserError::NotParseable);
   }
 
-  tok = ts.NextToken();
+  tok = ts.nextToken();
 
-  if (tok.IsNone()) {
+  if (tok.isNone()) {
     return Err(ParserError::NotParseable);
   }
 
-  while (ts.IsUnicodeExtensionAttribute(tok)) {
-    if (!aAttributes.emplaceBack(tok.Index(), tok.Length())) {
+  while (ts.isUnicodeExtensionAttribute(tok)) {
+    if (!attributes.emplaceBack(tok.index(), tok.length())) {
       return Err(ParserError::OutOfMemory);
     }
 
-    tok = ts.NextToken();
+    tok = ts.nextToken();
   }
 
   
-  while (ts.IsUnicodeExtensionKey(tok)) {
-    size_t begin = tok.Index();
-    tok = ts.NextToken();
+  while (ts.isUnicodeExtensionKey(tok)) {
+    size_t begin = tok.index();
+    tok = ts.nextToken();
 
-    while (ts.IsUnicodeExtensionType(tok)) {
-      tok = ts.NextToken();
+    while (ts.isUnicodeExtensionType(tok)) {
+      tok = ts.nextToken();
     }
 
-    if (tok.IsError()) {
+    if (tok.isError()) {
       return Err(ParserError::NotParseable);
     }
 
-    size_t length = tok.Index() - 1 - begin;
-    if (!aKeywords.emplaceBack(begin, length)) {
+    size_t length = tok.index() - 1 - begin;
+    if (!keywords.emplaceBack(begin, length)) {
       return Err(ParserError::OutOfMemory);
     }
   }
 
-  if (!tok.IsNone()) {
+  if (!tok.isNone()) {
     return Err(ParserError::NotParseable);
   }
 
   return Ok();
 }
 
-Result<Ok, LocaleParser::ParserError> LocaleParser::CanParseUnicodeExtension(
-    Span<const char> aExtension) {
-  LocaleParser ts(aExtension);
-  Token tok = ts.NextToken();
+Result<Ok, LocaleParser::ParserError> LocaleParser::canParseUnicodeExtension(
+    Span<const char> extension) {
+  LocaleParser ts(extension);
+  Token tok = ts.nextToken();
 
   
   
 
-  if (!ts.IsExtensionStart(tok) || ts.SingletonKey(tok) != 'u') {
+  if (!ts.isExtensionStart(tok) || ts.singletonKey(tok) != 'u') {
     return Err(ParserError::NotParseable);
   }
 
-  tok = ts.NextToken();
+  tok = ts.nextToken();
 
-  if (tok.IsNone()) {
+  if (tok.isNone()) {
     return Err(ParserError::NotParseable);
   }
 
-  while (ts.IsUnicodeExtensionAttribute(tok)) {
-    tok = ts.NextToken();
+  while (ts.isUnicodeExtensionAttribute(tok)) {
+    tok = ts.nextToken();
   }
 
   
-  while (ts.IsUnicodeExtensionKey(tok)) {
-    tok = ts.NextToken();
+  while (ts.isUnicodeExtensionKey(tok)) {
+    tok = ts.nextToken();
 
-    while (ts.IsUnicodeExtensionType(tok)) {
-      tok = ts.NextToken();
+    while (ts.isUnicodeExtensionType(tok)) {
+      tok = ts.nextToken();
     }
 
-    if (tok.IsError()) {
+    if (tok.isError()) {
       return Err(ParserError::NotParseable);
     }
   }
 
-  if (!tok.IsNone()) {
+  if (!tok.isNone()) {
     return Err(ParserError::OutOfMemory);
   }
 
@@ -1441,17 +1439,17 @@ Result<Ok, LocaleParser::ParserError> LocaleParser::CanParseUnicodeExtension(
 }
 
 Result<Ok, LocaleParser::ParserError>
-LocaleParser::CanParseUnicodeExtensionType(Span<const char> aUnicodeType) {
-  MOZ_ASSERT(!aUnicodeType.empty(), "caller must exclude empty strings");
+LocaleParser::canParseUnicodeExtensionType(Span<const char> unicodeType) {
+  MOZ_ASSERT(!unicodeType.empty(), "caller must exclude empty strings");
 
-  LocaleParser ts(aUnicodeType);
-  Token tok = ts.NextToken();
+  LocaleParser ts(unicodeType);
+  Token tok = ts.nextToken();
 
-  while (ts.IsUnicodeExtensionType(tok)) {
-    tok = ts.NextToken();
+  while (ts.isUnicodeExtensionType(tok)) {
+    tok = ts.nextToken();
   }
 
-  if (!tok.IsNone()) {
+  if (!tok.isNone()) {
     return Err(ParserError::NotParseable);
   }
 

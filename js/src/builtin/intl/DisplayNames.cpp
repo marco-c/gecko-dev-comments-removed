@@ -346,7 +346,7 @@ static bool TryParseBaseName(JSContext* cx, HandleLinearString languageStr,
       return false;
     }
 
-    if (LocaleParser::TryParseBaseName(chars, tag).isOk()) {
+    if (LocaleParser::tryParseBaseName(chars, tag).isOk()) {
       return true;
     }
   }
@@ -367,7 +367,7 @@ static JSString* GetLanguageDisplayName(
   
   
   
-  if (auto result = tag.CanonicalizeBaseName(); result.isErr()) {
+  if (auto result = tag.canonicalizeBaseName(); result.isErr()) {
     if (result.unwrapErr() ==
         mozilla::intl::Locale::CanonicalizationError::DuplicateVariant) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
@@ -380,7 +380,7 @@ static JSString* GetLanguageDisplayName(
   }
 
   intl::FormatBuffer<char> buffer(cx);
-  if (auto result = tag.ToString(buffer); result.isErr()) {
+  if (auto result = tag.toString(buffer); result.isErr()) {
     intl::ReportInternalError(cx, result.unwrapErr());
     return nullptr;
   }
@@ -434,18 +434,18 @@ static JSString* GetScriptDisplayName(JSContext* cx,
   }
 
   mozilla::intl::Locale tag;
-  tag.SetLanguage("und");
-  tag.SetScript(script);
+  tag.setLanguage("und");
+  tag.setScript(script);
 
   
   
   
-  if (tag.CanonicalizeBaseName().isErr()) {
+  if (tag.canonicalizeBaseName().isErr()) {
     intl::ReportInternalError(cx);
     return nullptr;
   }
 
-  MOZ_ASSERT(tag.Script().Present());
+  MOZ_ASSERT(tag.script().present());
 
   
   
@@ -455,7 +455,7 @@ static JSString* GetScriptDisplayName(JSContext* cx,
   if (displayStyle == DisplayNamesStyle::Long) {
     
     intl::FormatBuffer<char> buffer(cx);
-    if (auto result = tag.ToString(buffer); result.isErr()) {
+    if (auto result = tag.toString(buffer); result.isErr()) {
       intl::ReportInternalError(cx, result.unwrapErr());
       return nullptr;
     }
@@ -485,18 +485,18 @@ static JSString* GetScriptDisplayName(JSContext* cx,
 
     
     if (str->empty() && fallback == DisplayNamesFallback::Code) {
-      script.ToTitleCase();
-      return NewStringCopy<CanGC>(cx, script.Span());
+      script.toTitleCase();
+      return NewStringCopy<CanGC>(cx, script.span());
     }
 
     return str;
   }
 
   
-  const mozilla::intl::ScriptSubtag& canonicalScript = tag.Script();
+  const mozilla::intl::ScriptSubtag& canonicalScript = tag.script();
 
   char scriptChars[mozilla::intl::LanguageTagLimits::ScriptLength + 1] = {};
-  std::copy_n(canonicalScript.Span().data(), canonicalScript.Length(),
+  std::copy_n(canonicalScript.span().data(), canonicalScript.length(),
               scriptChars);
 
   ULocaleDisplayNames* ldn =
@@ -523,8 +523,8 @@ static JSString* GetScriptDisplayName(JSContext* cx,
 
   
   if (str->empty() && fallback == DisplayNamesFallback::Code) {
-    script.ToTitleCase();
-    return NewStringCopy<CanGC>(cx, script.Span());
+    script.toTitleCase();
+    return NewStringCopy<CanGC>(cx, script.span());
   }
 
   return str;
@@ -543,24 +543,24 @@ static JSString* GetRegionDisplayName(JSContext* cx,
   }
 
   mozilla::intl::Locale tag;
-  tag.SetLanguage("und");
-  tag.SetRegion(region);
+  tag.setLanguage("und");
+  tag.setRegion(region);
 
   
   
   
-  if (tag.CanonicalizeBaseName().isErr()) {
+  if (tag.canonicalizeBaseName().isErr()) {
     intl::ReportInternalError(cx);
     return nullptr;
   }
 
-  MOZ_ASSERT(tag.Region().Present());
+  MOZ_ASSERT(tag.region().present());
 
   
-  const mozilla::intl::RegionSubtag& canonicalRegion = tag.Region();
+  const mozilla::intl::RegionSubtag& canonicalRegion = tag.region();
 
   char regionChars[mozilla::intl::LanguageTagLimits::RegionLength + 1] = {};
-  std::copy_n(canonicalRegion.Span().data(), canonicalRegion.Length(),
+  std::copy_n(canonicalRegion.span().data(), canonicalRegion.length(),
               regionChars);
 
   ULocaleDisplayNames* ldn =
@@ -587,8 +587,8 @@ static JSString* GetRegionDisplayName(JSContext* cx,
 
   
   if (str->empty() && fallback == DisplayNamesFallback::Code) {
-    region.ToUpperCase();
-    return NewStringCopy<CanGC>(cx, region.Span());
+    region.toUpperCase();
+    return NewStringCopy<CanGC>(cx, region.span());
   }
 
   return str;
@@ -666,7 +666,7 @@ static JSString* GetCalendarDisplayName(
     return nullptr;
   }
 
-  if (LocaleParser::CanParseUnicodeExtensionType(
+  if (LocaleParser::canParseUnicodeExtensionType(
           mozilla::Span(calendar.get(), calendarStr->length()))
           .isErr()) {
     ReportInvalidOptionError(cx, "calendar", calendarStr);
@@ -683,7 +683,7 @@ static JSString* GetCalendarDisplayName(
   
   const char* canonicalCalendar = calendar.get();
   if (const char* replacement =
-          mozilla::intl::Locale::ReplaceUnicodeExtensionType(key, type)) {
+          mozilla::intl::Locale::replaceUnicodeExtensionType(key, type)) {
     canonicalCalendar = replacement;
   }
 
@@ -785,7 +785,7 @@ static ListObject* GetDateTimeDisplayNames(
   }
 
   mozilla::intl::Locale tag;
-  if (LocaleParser::TryParse(mozilla::MakeStringSpan(locale), tag).isErr()) {
+  if (LocaleParser::tryParse(mozilla::MakeStringSpan(locale), tag).isErr()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_INVALID_LANGUAGE_TAG, locale);
     return nullptr;
@@ -801,7 +801,7 @@ static ListObject* GetDateTimeDisplayNames(
   }
 
   intl::FormatBuffer<char> buffer(cx);
-  if (auto result = tag.ToString(buffer); result.isErr()) {
+  if (auto result = tag.toString(buffer); result.isErr()) {
     intl::ReportInternalError(cx, result.unwrapErr());
     return nullptr;
   }

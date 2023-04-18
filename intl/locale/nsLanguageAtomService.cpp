@@ -189,26 +189,26 @@ nsStaticAtom* nsLanguageAtomService::GetUncachedLanguageGroup(
     }
 
     Locale loc;
-    auto result = LocaleParser::TryParse(langStr, loc);
-    if (result.isOk() && loc.Canonicalize().isOk()) {
+    auto result = LocaleParser::tryParse(langStr, loc);
+    if (result.isOk() && loc.canonicalize().isOk()) {
       
-      if (loc.Script().Missing()) {
-        if (loc.AddLikelySubtags().isErr()) {
+      if (loc.script().missing()) {
+        if (loc.addLikelySubtags().isErr()) {
           
           return nsGkAtoms::Unicode;
         }
       }
       
       
-      if (loc.Script().EqualTo("Hant")) {
-        if (loc.Region().EqualTo("HK")) {
+      if (loc.script().equalTo("Hant")) {
+        if (loc.region().equalTo("HK")) {
           return nsGkAtoms::HongKongChinese;
         }
         return nsGkAtoms::Taiwanese;
       }
       
       size_t foundIndex;
-      Span<const char> scriptAsSpan = loc.Script().Span();
+      Span<const char> scriptAsSpan = loc.script().span();
       nsDependentCSubstring script(scriptAsSpan.data(), scriptAsSpan.size());
       if (BinarySearchIf(
               kScriptLangGroup, 0, ArrayLength(kScriptLangGroup),
@@ -221,19 +221,19 @@ nsStaticAtom* nsLanguageAtomService::GetUncachedLanguageGroup(
       
       
       
-      if (loc.Language().EqualTo("zh")) {
-        if (loc.Region().EqualTo("HK")) {
+      if (loc.language().equalTo("zh")) {
+        if (loc.region().equalTo("HK")) {
           return nsGkAtoms::HongKongChinese;
         }
-        if (loc.Region().EqualTo("TW")) {
+        if (loc.region().equalTo("TW")) {
           return nsGkAtoms::Taiwanese;
         }
         return nsGkAtoms::Chinese;
       }
-      if (loc.Language().EqualTo("ja")) {
+      if (loc.language().equalTo("ja")) {
         return nsGkAtoms::Japanese;
       }
-      if (loc.Language().EqualTo("ko")) {
+      if (loc.language().equalTo("ko")) {
         return nsGkAtoms::ko;
       }
     }

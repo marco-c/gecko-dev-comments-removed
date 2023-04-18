@@ -242,7 +242,7 @@ static mozilla::intl::Collator* NewIntlCollator(
     if (StringEqualsLiteral(usage, "search")) {
       
       mozilla::intl::Locale tag;
-      if (mozilla::intl::LocaleParser::TryParse(
+      if (mozilla::intl::LocaleParser::tryParse(
               mozilla::MakeStringSpan(locale.get()), tag)
               .isErr()) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
@@ -265,7 +265,7 @@ static mozilla::intl::Collator* NewIntlCollator(
       }
 
       intl::FormatBuffer<char> buffer(cx);
-      if (auto result = tag.ToString(buffer); result.isErr()) {
+      if (auto result = tag.toString(buffer); result.isErr()) {
         intl::ReportInternalError(cx, result.unwrapErr());
         return nullptr;
       }
