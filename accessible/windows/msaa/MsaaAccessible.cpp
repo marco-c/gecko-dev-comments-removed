@@ -1681,11 +1681,8 @@ MsaaAccessible::accDoDefaultAction(
   if (accessible) {
     return accessible->accDoDefaultAction(kVarChildIdSelf);
   }
-  if (mAcc->IsRemote()) {
-    return E_NOTIMPL;  
-  }
 
-  return LocalAcc()->DoAction(0) ? S_OK : E_INVALIDARG;
+  return mAcc->DoAction(0) ? S_OK : E_INVALIDARG;
 }
 
 STDMETHODIMP
