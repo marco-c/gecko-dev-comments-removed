@@ -151,20 +151,9 @@ var gIdentityHandler = {
     );
   },
 
-  get _isPDFViewer() {
-    return gBrowser.contentPrincipal?.originNoSuffix == "resource://pdf.js";
-  },
-
   get _isPotentiallyTrustworthy() {
-    
-    
-    
-    
-    
-    
     return (
       !this._isBrokenConnection &&
-      !this._isPDFViewer &&
       (this._isSecureContext ||
         gBrowser.selectedBrowser.documentURI?.scheme == "chrome")
     );
@@ -629,6 +618,32 @@ var gIdentityHandler = {
     return result;
   },
 
+  _getIsSecureContext() {
+    if (gBrowser.contentPrincipal?.originNoSuffix != "resource://pdf.js") {
+      return gBrowser.securityUI.isSecureContext;
+    }
+
+    
+    
+    
+    
+
+    let principal;
+    try {
+      principal = Services.scriptSecurityManager.createContentPrincipal(
+        gBrowser.selectedBrowser.documentURI,
+        {}
+      );
+      return principal.isOriginPotentiallyTrustworthy;
+    } catch (error) {
+      Cu.reportError(
+        "Error while computing isPotentiallyTrustWorthy for pdf viewer page: " +
+          error
+      );
+      return false;
+    }
+  },
+
   
 
 
@@ -649,7 +664,7 @@ var gIdentityHandler = {
     
     this.setURI(uri);
     this._secInfo = gBrowser.securityUI.secInfo;
-    this._isSecureContext = gBrowser.securityUI.isSecureContext;
+    this._isSecureContext = this._getIsSecureContext();
 
     
     this.refreshIdentityBlock();
