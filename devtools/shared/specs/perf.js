@@ -86,6 +86,8 @@ const perfDescription = {
       response: { value: RetVal("boolean") },
     },
 
+    
+    
     isLockedForPrivateBrowsing: {
       request: {},
       response: { value: RetVal("boolean") },
