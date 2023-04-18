@@ -524,7 +524,9 @@ class Dumper:
         return ""
 
     
-    def CopyDebug(self, file, debug_file, guid, code_file, code_id):
+    def CopyExeAndDebugInfo(self, file, debug_file, guid, code_file, code_id):
+        """This function will copy a library or executable and the file holding the
+        debug information to |symbol_path|"""
         pass
 
     def Process(self, file_to_process, count_ctors=False):
@@ -669,7 +671,7 @@ class Dumper:
                     )
                 
                 if self.copy_debug and arch_num == 0:
-                    self.CopyDebug(file, debug_file, guid, code_file, code_id)
+                    self.CopyExeAndDebugInfo(file, debug_file, guid, code_file, code_id)
             else:
                 
                 
@@ -764,12 +766,13 @@ class Dumper_Win32(Dumper):
                 return True
         return False
 
-    def CopyDebug(self, file, debug_file, guid, code_file, code_id):
-        file = locate_pdb(file)
+    def CopyExeAndDebugInfo(self, file, debug_file, guid, code_file, code_id):
+        """This function will copy the executable or dll and pdb files to |symbol_path|"""
+        pdb_file = locate_pdb(file)
 
         rel_path = os.path.join(debug_file, guid, debug_file).replace("\\", "/")
         full_path = os.path.normpath(os.path.join(self.symbol_path, rel_path))
-        shutil.copyfile(file, full_path)
+        shutil.copyfile(pdb_file, full_path)
         print(rel_path)
 
         
@@ -828,7 +831,7 @@ class Dumper_Linux(Dumper):
             return self.RunFileCommand(file).startswith("ELF")
         return False
 
-    def CopyDebug(self, file, debug_file, guid, code_file, code_id):
+    def CopyExeAndDebugInfo(self, file, debug_file, guid, code_file, code_id):
         
         
         
@@ -977,7 +980,7 @@ class Dumper_Mac(Dumper):
         print("Finished processing %s in %.2fs" % (file, elapsed), file=sys.stderr)
         return dsymbundle
 
-    def CopyDebug(self, file, debug_file, guid, code_file, code_id):
+    def CopyExeAndDebugInfo(self, file, debug_file, guid, code_file, code_id):
         """ProcessFile has already produced a dSYM bundle, so we should just
         copy that to the destination directory. However, we'll package it
         into a .tar because it's a bundle, so it's a directory. |file| here is
