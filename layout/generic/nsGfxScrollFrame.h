@@ -766,6 +766,11 @@ class ScrollFrameHelper : public nsIReflowCallback {
   
   bool mMayScheduleScrollAnimations : 1;
 
+#ifdef MOZ_WIDGET_ANDROID
+  
+  bool mHasVerticalOverflowForDynamicToolbar : 1;
+#endif
+
   mozilla::layout::ScrollVelocityQueue mVelocityQueue;
 
  protected:
