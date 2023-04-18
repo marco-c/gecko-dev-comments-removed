@@ -52,18 +52,6 @@ interface nsIUploadChannel2 : nsISupports
 
 
 
-
-
-    [noscript]
-    void ensureUploadStreamIsCloneable(in nsIRunnable aCallback);
-
-    
-
-
-
-
-
-
     [noscript]
     nsIInputStream cloneUploadStream(out long long aContentLength);
 };
