@@ -23,7 +23,7 @@ def main():
 
     
     
-    file = re.sub(r' *"CR_XCODE_VERSION=[0-9]+",\n', r"", file)
+    file = re.sub(r' *"CR_XCODE_VERSION=([0-9.]+)",\n', r"", file)
     file = re.sub(r' *"CR_SYSROOT_HASH=[0-9a-f]+",\n', r"", file)
     file = re.sub(r',\n *"(.\:)?/.*/third_party/libwebrtc/gn-output/gen/"', r"", file)
 
@@ -34,9 +34,8 @@ def main():
     
     
     file = re.sub(
-        r' *"-isysroot",\n *"[\./]*/Applications/Xcode\.app/Contents'
-        "/Developer/Platforms/MacOSX\.platform/Developer/SDKs/"
-        'MacOSX([0-9][0-9]\.[0-9])?\.sdk",\n',
+        r' *"-isysroot",\n *".*/Contents/Developer/Platforms/MacOSX\.platform/Developer/SDKs/'
+        'MacOSX([0-9]+\.[0-9]+)?\.sdk",\n',
         r"",
         file,
     )
