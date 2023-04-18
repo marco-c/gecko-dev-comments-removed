@@ -207,12 +207,6 @@ class FilterNodeSoftware : public FilterNode,
 
 
 
-  Mutex mCacheMutex;
-
-  
-
-
-
   IntRect mRequestedRect;
 
   
