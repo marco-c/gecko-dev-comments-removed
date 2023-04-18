@@ -71,22 +71,6 @@ struct MozGtkSize {
 
 typedef struct {
   bool initialized;
-  struct {
-    MozGtkSize scrollbar;
-    MozGtkSize thumb;
-    MozGtkSize button;
-  } size;
-  struct {
-    GtkBorder scrollbar;
-    GtkBorder track;
-  } border;
-  struct {
-    GtkBorder thumb;
-  } margin;
-} ScrollbarGTKMetrics;
-
-typedef struct {
-  bool initialized;
   MozGtkSize minSizeWithBorder;
   GtkBorder borderAndPadding;
 } ToggleGTKMetrics;
@@ -111,14 +95,6 @@ typedef struct {
   bool initialized;
   GtkBorder decorationSize;
 } CSDWindowDecorationSize;
-
-typedef enum {
-  MOZ_GTK_STEPPER_DOWN = 1 << 0,
-  MOZ_GTK_STEPPER_BOTTOM = 1 << 1,
-  MOZ_GTK_STEPPER_VERTICAL = 1 << 2
-} GtkScrollbarButtonFlags;
-
-typedef enum { MOZ_GTK_TRACK_OPAQUE = 1 << 0 } GtkScrollbarTrackFlags;
 
 
 typedef enum {
@@ -163,20 +139,6 @@ enum WidgetNodeType : int {
   MOZ_GTK_RADIOBUTTON,
   
   MOZ_GTK_RADIOBUTTON_LABEL,
-  
-
-
-
-  MOZ_GTK_SCROLLBAR_BUTTON,
-
-  
-  MOZ_GTK_SCROLLBAR_HORIZONTAL,
-  MOZ_GTK_SCROLLBAR_CONTENTS_HORIZONTAL,
-  
-  MOZ_GTK_SCROLLBAR_TROUGH_HORIZONTAL,
-  
-  MOZ_GTK_SCROLLBAR_THUMB_HORIZONTAL,
-
   
   MOZ_GTK_SCROLLBAR_VERTICAL,
   MOZ_GTK_SCROLLBAR_CONTENTS_VERTICAL,
@@ -509,20 +471,6 @@ void moz_gtk_get_scale_metrics(GtkOrientation orient, gint* scale_width,
 
 gint moz_gtk_get_scalethumb_metrics(GtkOrientation orient, gint* thumb_length,
                                     gint* thumb_height);
-
-
-
-
-
-const ScrollbarGTKMetrics* GetScrollbarMetrics(GtkOrientation aOrientation);
-
-
-
-
-
-
-const ScrollbarGTKMetrics* GetActiveScrollbarMetrics(
-    GtkOrientation aOrientation);
 
 
 

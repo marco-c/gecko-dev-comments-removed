@@ -75,9 +75,6 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed {
   bool IsButtonTypeMenu(nsIFrame* aFrame);
 
   
-  int32_t GetScrollbarButtonType(nsIFrame* aFrame);
-
-  
   bool IsSelectedTab(nsIFrame* aFrame) {
     return CheckBooleanAttr(aFrame, nsGkAtoms::visuallyselected);
   }
