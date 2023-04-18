@@ -12,6 +12,7 @@
 namespace mozilla::a11y {
 class Accessible;
 class TextLeafPoint;
+class TextRange;
 
 
 
@@ -159,6 +160,23 @@ class HyperTextAccessibleBase {
 
   virtual already_AddRefed<AccAttributes> DefaultTextAttributes() = 0;
 
+  
+
+
+
+  virtual void SelectionRanges(nsTArray<TextRange>* aRanges) const = 0;
+
+  
+
+
+  virtual int32_t SelectionCount();
+
+  
+
+
+  virtual bool SelectionBoundsAt(int32_t aSelectionNum, int32_t* aStartOffset,
+                                 int32_t* aEndOffset);
+
  protected:
   virtual const Accessible* Acc() const = 0;
   Accessible* Acc() {
@@ -189,6 +207,12 @@ class HyperTextAccessibleBase {
   void AdjustOriginIfEndBoundary(TextLeafPoint& aOrigin,
                                  AccessibleTextBoundary aBoundaryType,
                                  bool aAtOffset = false) const;
+
+  
+
+
+
+  virtual void CroppedSelectionRanges(nsTArray<TextRange>& aRanges) const;
 };
 
 }  
