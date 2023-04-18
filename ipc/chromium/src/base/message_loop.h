@@ -423,7 +423,7 @@ class MessageLoop : public base::MessagePump::Delegate {
   
   TaskQueue incoming_queue_;
   
-  mozilla::Mutex incoming_queue_lock_;
+  mozilla::Mutex incoming_queue_lock_ MOZ_UNANNOTATED;
 
   RunState* state_;
   int run_depth_base_;

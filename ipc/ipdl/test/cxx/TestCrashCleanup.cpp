@@ -37,7 +37,7 @@ void DeleteTheWorld() {
 
   
   
-  Mutex mutex("TestCrashCleanup.DeleteTheWorld.mutex");
+  Mutex mutex MOZ_UNANNOTATED("TestCrashCleanup.DeleteTheWorld.mutex");
   CondVar cvar(mutex, "TestCrashCleanup.DeleteTheWorld.cvar");
 
   MutexAutoLock lock(mutex);

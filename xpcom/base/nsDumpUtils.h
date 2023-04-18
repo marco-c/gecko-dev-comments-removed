@@ -125,7 +125,7 @@ class FifoWatcher : public FdWatcher {
   explicit FifoWatcher(nsCString aPath)
       : mDirPath(aPath), mFifoInfoLock("FifoWatcher.mFifoInfoLock") {}
 
-  mozilla::Mutex mFifoInfoLock;  
+  mozilla::Mutex mFifoInfoLock MOZ_UNANNOTATED;  
   FifoInfoArray mFifoInfo;
 };
 
@@ -159,7 +159,7 @@ class SignalPipeWatcher : public FdWatcher {
     MOZ_ASSERT(NS_IsMainThread());
   }
 
-  mozilla::Mutex mSignalInfoLock;  
+  mozilla::Mutex mSignalInfoLock MOZ_UNANNOTATED;  
   SignalInfoArray mSignalInfo;
 };
 

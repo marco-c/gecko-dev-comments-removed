@@ -58,6 +58,6 @@ class nsWebPEncoder final : public imgIEncoder {
   
   
   
-  ReentrantMonitor mReentrantMonitor;
+  ReentrantMonitor mReentrantMonitor MOZ_UNANNOTATED;
 };
 #endif  

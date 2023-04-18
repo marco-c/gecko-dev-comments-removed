@@ -66,7 +66,7 @@ class SandboxReporter final : public PlatformThread::Delegate {
   int mServerFd;
   PlatformThreadHandle mThread;
 
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
   
   UniquePtr<SandboxReport[]> mBuffer;
   uint64_t mCount;

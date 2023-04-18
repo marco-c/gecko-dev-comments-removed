@@ -175,7 +175,7 @@ struct DDMediaLogs {
   nsTArray<DDObjectLink> mObjectLinks;
 
   
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
 
   
   nsCOMPtr<nsIThread> mThread;

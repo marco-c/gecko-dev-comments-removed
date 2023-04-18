@@ -251,7 +251,7 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
 
   
   
-  mozilla::Mutex mPendingLookupLock;
+  mozilla::Mutex mPendingLookupLock MOZ_UNANNOTATED;
 
   class PendingLookup {
    public:

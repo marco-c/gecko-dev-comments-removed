@@ -941,7 +941,7 @@ D3D11DXVA2Manager::CopyToImage(IMFSample* aVideoSample,
 
   if (!mutex && mDevice != DeviceManagerDx::Get()->GetCompositorDevice() &&
       mSyncObject) {
-    static StaticMutex sMutex;
+    static StaticMutex sMutex MOZ_UNANNOTATED;
     
     
     

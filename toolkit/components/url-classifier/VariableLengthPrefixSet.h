@@ -55,7 +55,7 @@ class VariableLengthPrefixSet final : public nsIMemoryReporter {
   
   
   
-  mutable mozilla::Mutex mLock;
+  mutable mozilla::Mutex mLock MOZ_UNANNOTATED;
 
   const RefPtr<nsUrlClassifierPrefixSet> mFixedPrefixSet;
   mozilla::safebrowsing::PrefixStringMap mVLPrefixSet;

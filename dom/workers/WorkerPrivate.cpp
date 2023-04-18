@@ -935,7 +935,7 @@ nsString ComputeWorkerPrivateId() {
 class WorkerPrivate::EventTarget final : public nsISerialEventTarget {
   
   
-  mozilla::Mutex mMutex;
+  mozilla::Mutex mMutex MOZ_UNANNOTATED;
   WorkerPrivate* mWorkerPrivate;
   nsIEventTarget* mWeakNestedEventTarget;
   nsCOMPtr<nsIEventTarget> mNestedEventTarget;

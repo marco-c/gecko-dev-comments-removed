@@ -211,7 +211,7 @@ class GeckoMediaPluginServiceParent final
 
   
   
-  Monitor mInitPromiseMonitor;
+  Monitor mInitPromiseMonitor MOZ_UNANNOTATED;
   MozMonitoredPromiseHolder<GenericPromise> mInitPromise;
   bool mLoadPluginsFromDiskComplete;
 

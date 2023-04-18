@@ -185,7 +185,7 @@ class IPCStreamDestination::DelayedStartInputStream final
   nsCOMPtr<nsIInputStreamCallback> mAsyncWaitCallback;
 
   
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
 
   class HelperRunnable;
 };

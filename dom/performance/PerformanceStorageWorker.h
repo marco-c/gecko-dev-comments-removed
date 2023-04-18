@@ -37,7 +37,7 @@ class PerformanceStorageWorker final : public PerformanceStorage {
   PerformanceStorageWorker();
   ~PerformanceStorageWorker();
 
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
 
   
   

@@ -108,7 +108,7 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
   Atomic<bool> mIPCOpened;
 
   
-  Mutex mBgThreadMutex;
+  Mutex mBgThreadMutex MOZ_UNANNOTATED;
 
   nsCOMPtr<nsISerialEventTarget> mBackgroundThread;
 

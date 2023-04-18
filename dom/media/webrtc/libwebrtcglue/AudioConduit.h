@@ -246,7 +246,7 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   
   bool mDtmfEnabled;
 
-  mutable RWLock mLock;
+  mutable RWLock mLock MOZ_UNANNOTATED;
 
   
   const RefPtr<AbstractThread> mCallThread;

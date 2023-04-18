@@ -138,7 +138,7 @@ class FocusState final {
  private:
   
   
-  mutable Mutex mMutex;
+  mutable Mutex mMutex MOZ_UNANNOTATED;
 
   
   std::unordered_map<LayersId, FocusTarget, LayersId::HashFn> mFocusTree;

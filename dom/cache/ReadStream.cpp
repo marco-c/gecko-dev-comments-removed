@@ -105,7 +105,7 @@ class ReadStream::Inner final : public ReadStream::Controllable {
   
   
   
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
   CondVar mCondVar;
   nsCOMPtr<nsIInputStream> mStream;
   nsCOMPtr<nsIInputStream> mSnappyStream;

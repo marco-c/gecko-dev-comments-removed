@@ -274,7 +274,7 @@ class HttpChannelChild final : public PHttpChannelChild,
   nsCOMPtr<nsIInputStream> mAltDataInputStream;
 
   
-  Mutex mBgChildMutex{"HttpChannelChild::BgChildMutex"};
+  Mutex mBgChildMutex MOZ_UNANNOTATED{"HttpChannelChild::BgChildMutex"};
 
   
   RefPtr<HttpBackgroundChannelChild> mBgChild;
@@ -289,7 +289,7 @@ class HttpChannelChild final : public PHttpChannelChild,
   
   nsCOMPtr<nsIEventTarget> mODATarget;
   
-  Mutex mEventTargetMutex{"HttpChannelChild::EventTargetMutex"};
+  Mutex mEventTargetMutex MOZ_UNANNOTATED{"HttpChannelChild::EventTargetMutex"};
 
   TimeStamp mLastStatusReported;
 

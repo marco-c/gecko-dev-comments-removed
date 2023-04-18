@@ -49,7 +49,7 @@ class MIDIMessageQueue {
   
   nsTArray<MIDIMessage> mMessageQueue;
   
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
 };
 
 }  

@@ -95,7 +95,7 @@ class BackgroundHangManager : public nsIObserver {
   static bool sDisabled;
 
   
-  Monitor mLock;
+  Monitor mLock MOZ_UNANNOTATED;
   
   TimeStamp mNow;
   

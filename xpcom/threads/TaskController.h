@@ -371,10 +371,10 @@ class TaskController {
   void RunPoolThread();
 
   static std::unique_ptr<TaskController> sSingleton;
-  static StaticMutex sSingletonMutex;
+  static StaticMutex sSingletonMutex MOZ_UNANNOTATED;
 
   
-  Mutex mGraphMutex;
+  Mutex mGraphMutex MOZ_UNANNOTATED;
 
   
   

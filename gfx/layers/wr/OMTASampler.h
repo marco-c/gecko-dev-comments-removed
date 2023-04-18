@@ -119,7 +119,7 @@ class OMTASampler final {
   RefPtr<OMTAController> mController;
   
   RefPtr<CompositorAnimationStorage> mAnimStorage;
-  mutable Mutex mStorageLock;
+  mutable Mutex mStorageLock MOZ_UNANNOTATED;
 
   
   
@@ -127,19 +127,19 @@ class OMTASampler final {
   
   
   
-  static StaticMutex sWindowIdLock;
+  static StaticMutex sWindowIdLock MOZ_UNANNOTATED;
   static StaticAutoPtr<std::unordered_map<uint64_t, RefPtr<OMTASampler>>>
       sWindowIdMap;
   Maybe<wr::WrWindowId> mWindowId;
 
   
-  mutable Mutex mThreadIdLock;
+  mutable Mutex mThreadIdLock MOZ_UNANNOTATED;
   
   
   
   Maybe<PlatformThreadId> mSamplerThreadId;
 
-  Mutex mSampleTimeLock;
+  Mutex mSampleTimeLock MOZ_UNANNOTATED;
   
   TimeStamp mSampleTime;
   

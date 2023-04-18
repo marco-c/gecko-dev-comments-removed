@@ -70,7 +70,7 @@ class nsMacUtilsImpl final : public nsIMacUtils {
   
   static StaticAutoPtr<nsCString> sCachedAppPath;
   
-  static StaticMutex sCachedAppPathMutex;
+  static StaticMutex sCachedAppPathMutex MOZ_UNANNOTATED;
   
   static nsresult ClearCachedAppPathOnShutdown();
 #endif

@@ -190,10 +190,10 @@ class ChannelEventQueue final {
   nsISupports* mOwner;
 
   
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
 
   
-  RecursiveMutex mRunningMutex;
+  RecursiveMutex mRunningMutex MOZ_UNANNOTATED;
 
   friend class AutoEventEnqueuer;
 };

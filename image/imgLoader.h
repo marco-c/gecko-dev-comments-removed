@@ -417,7 +417,7 @@ class imgLoader final : public imgILoader,
   
   
   
-  Mutex mUncachedImagesMutex;
+  Mutex mUncachedImagesMutex MOZ_UNANNOTATED;
 
   static double sCacheTimeWeight;
   static uint32_t sCacheMaxSize;

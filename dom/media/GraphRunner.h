@@ -80,7 +80,7 @@ class GraphRunner final : public Runnable {
 
   
   
-  Monitor mMonitor;
+  Monitor mMonitor MOZ_UNANNOTATED;
   
   
   MediaTrackGraphImpl* const mGraph;

@@ -62,7 +62,7 @@ class SharedSSLState {
   
   
   
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
   bool mSocketCreated;
   bool mOCSPStaplingEnabled;
   bool mOCSPMustStapleEnabled;

@@ -92,7 +92,7 @@ class MutableBlobStorage final {
   [[nodiscard]] nsresult DispatchToIOThread(
       already_AddRefed<nsIRunnable> aRunnable);
 
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
 
   
   

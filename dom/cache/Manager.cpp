@@ -1101,7 +1101,7 @@ class Manager::CachePutAllAction final : public DBAction {
   nsTArray<nsID> mDeletedBodyIdList;
 
   
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
   nsTArray<nsCOMPtr<nsISupports>> mCopyContextList;
 
   Maybe<CacheDirectoryMetadata> mDirectoryMetadata;

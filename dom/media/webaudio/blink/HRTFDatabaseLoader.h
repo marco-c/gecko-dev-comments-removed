@@ -143,7 +143,7 @@ class HRTFDatabaseLoader {
   nsAutoRef<HRTFDatabase> m_hrtfDatabase;
 
   
-  mozilla::Mutex m_threadLock;
+  mozilla::Mutex m_threadLock MOZ_UNANNOTATED;
   PRThread* m_databaseLoaderThread;
 
   float m_databaseSampleRate;

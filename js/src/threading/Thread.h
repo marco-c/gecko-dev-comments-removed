@@ -188,7 +188,7 @@ class ThreadTrampoline {
   mozilla::Tuple<std::decay_t<Args>...> args;
 
   
-  Mutex createMutex;
+  Mutex createMutex MOZ_UNANNOTATED;
 
   
   friend class js::Thread;

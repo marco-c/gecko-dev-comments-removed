@@ -71,7 +71,7 @@ class VolatileBuffer {
 
 
 
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
 
   void* mBuf;
   size_t mSize;

@@ -148,7 +148,7 @@ class HangMonitorChild : public PProcessHangMonitorChild,
   static Atomic<HangMonitorChild*, SequentiallyConsistent> sInstance;
 
   const RefPtr<ProcessHangMonitor> mHangMonitor;
-  Monitor mMonitor;
+  Monitor mMonitor MOZ_UNANNOTATED;
 
   
   bool mSentReport;
@@ -282,7 +282,7 @@ class HangMonitorParent : public PProcessHangMonitorParent,
   
   bool mIPCOpen;
 
-  Monitor mMonitor;
+  Monitor mMonitor MOZ_UNANNOTATED;
 
   
   RefPtr<HangMonitoredProcess> mProcess;
@@ -290,7 +290,7 @@ class HangMonitorParent : public PProcessHangMonitorParent,
   
   
   nsTHashMap<nsUint32HashKey, nsString> mBrowserCrashDumpIds;
-  Mutex mBrowserCrashDumpHashLock;
+  Mutex mBrowserCrashDumpHashLock MOZ_UNANNOTATED;
   mozilla::ipc::TaskFactory<HangMonitorParent> mMainThreadTaskFactory;
 };
 
