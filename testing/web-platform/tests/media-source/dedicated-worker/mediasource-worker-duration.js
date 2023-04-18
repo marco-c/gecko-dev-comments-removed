@@ -58,7 +58,6 @@ let phase = testPhase.kInitial;
 
 
 util.mediaSource.addEventListener("sourceopen", () => {
-  URL.revokeObjectURL(util.mediaSourceObjectUrl);
   assert(phase === testPhase.kAttaching, "Unexpected sourceopen received by Worker mediaSource.");
   phase = testPhase.kRequestNaNDurationCheck;
   processPhase();
@@ -181,7 +180,7 @@ function processPhase(isResponseToAck = false) {
     case testPhase.kInitial:
       assert(Number.isNaN(util.mediaSource.duration), "Initial unattached MediaSource duration must be NaN, but instead is " + util.mediaSource.duration);
       phase = testPhase.kAttaching;
-      postMessage({ subject: messageSubject.OBJECT_URL, info: util.mediaSourceObjectUrl });
+      postMessage({ subject: messageSubject.HANDLE, info: util.mediaSource.getHandle() });
       break;
 
     case testPhase.kAttaching:
