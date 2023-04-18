@@ -753,18 +753,13 @@ static MOZ_ALWAYS_INLINE void ExposeGCThingToActiveJS(JS::GCCellPtr thing) {
     return;
   }
 
-  
-  
-  if (thing.mayBeOwnedByOtherRuntime()) {
-    return;
-  }
-
-  
-  
   auto* cell = reinterpret_cast<TenuredCell*>(thing.asCell());
   if (detail::TenuredCellIsMarkedBlack(cell)) {
     return;
   }
+
+  
+  MOZ_ASSERT(!thing.mayBeOwnedByOtherRuntime());
 
   auto* zone = JS::shadow::Zone::from(JS::GetTenuredGCThingZone(thing));
   if (zone->needsIncrementalBarrier()) {
@@ -780,7 +775,7 @@ static MOZ_ALWAYS_INLINE void IncrementalReadBarrier(JS::GCCellPtr thing) {
   
   
 
-  if (IsInsideNursery(thing.asCell()) || thing.mayBeOwnedByOtherRuntime()) {
+  if (IsInsideNursery(thing.asCell())) {
     return;
   }
 
@@ -788,6 +783,8 @@ static MOZ_ALWAYS_INLINE void IncrementalReadBarrier(JS::GCCellPtr thing) {
   auto* cell = reinterpret_cast<TenuredCell*>(thing.asCell());
   if (zone->needsIncrementalBarrier() &&
       !detail::TenuredCellIsMarkedBlack(cell)) {
+    
+    MOZ_ASSERT(!thing.mayBeOwnedByOtherRuntime());
     PerformIncrementalReadBarrier(thing);
   }
 }
