@@ -375,7 +375,12 @@ this.shot = (function() {
       let filenameTitle = this.title;
       const date = new Date(this.createdDate);
       
-      filenameTitle = filenameTitle.replace(/[:\\<>/!@&?"*.|\x00-\x1F]/g, " ");
+      filenameTitle = filenameTitle
+        .replace(/[\\/]/g, "_")
+        .replace(/[\u200e\u200f\u202a-\u202e]/g, "")
+        .replace(/[\x00-\x1f\x7f-\x9f:*?|"<>;,+=\[\]]+/g, " ")
+        .replace(/^[\s\u180e.]+|[\s\u180e.]+$/g, "");
+      
       filenameTitle = filenameTitle.replace(/\s{1,4000}/g, " ");
       const currentDateTime = new Date(
         date.getTime() - date.getTimezoneOffset() * 60 * 1000
@@ -383,16 +388,26 @@ this.shot = (function() {
       const filenameDate = currentDateTime.substring(0, 10);
       const filenameTime = currentDateTime.substring(11, 19).replace(/:/g, "-");
       let clipFilename = `Screenshot ${filenameDate} at ${filenameTime} ${filenameTitle}`;
-      const clipFilenameBytesSize = clipFilename.length * 2; 
-      if (clipFilenameBytesSize > 251) {
-        
-        const excedingchars = (clipFilenameBytesSize - 246) / 2; 
-        clipFilename = clipFilename.substring(
-          0,
-          clipFilename.length - excedingchars
-        );
-        clipFilename = clipFilename + "[...]";
+
+      
+      
+      
+      
+      
+      
+      
+      let suffix = "";
+      for (let cropSize = 246; cropSize >= 0; cropSize -= 32) {
+        if (new Blob([clipFilename]).size > 246) {
+          clipFilename = clipFilename.substring(0, cropSize);
+          suffix = "[...]";
+        } else {
+          break;
+        }
       }
+
+      clipFilename += suffix;
+
       const clip = this.getClip(this.clipNames()[0]);
       let extension = ".png";
       if (clip && clip.image && clip.image.type) {
