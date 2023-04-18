@@ -428,19 +428,31 @@ void nsThread::ThreadFunc(void* aArg) {
   MOZ_ASSERT(context->mTerminatingThread == self);
   nsCOMPtr<nsIRunnable> event =
       do_QueryObject(new nsThreadShutdownAckEvent(context));
-  nsresult dispatch_ack_rv;
   if (context->mIsMainThreadJoining) {
-    dispatch_ack_rv =
+    DebugOnly<nsresult> dispatch_ack_rv =
         SchedulerGroup::Dispatch(TaskCategory::Other, event.forget());
+#ifdef DEBUG
+    
+    
+    
+    
+    
+    
+    if (NS_FAILED(dispatch_ack_rv)) {
+      NS_WARNING(
+          "Thread shudown ack dispatch failed, the main thread may no longer "
+          "be waiting.");
+    }
+#endif
   } else {
-    dispatch_ack_rv =
+    nsresult dispatch_ack_rv =
         context->mJoiningThread->Dispatch(event, NS_DISPATCH_NORMAL);
+    
+    
+    
+    
+    MOZ_RELEASE_ASSERT(NS_SUCCEEDED(dispatch_ack_rv));
   }
-  
-  
-  
-  
-  MOZ_RELEASE_ASSERT(NS_SUCCEEDED(dispatch_ack_rv));
 
   
   self->SetObserver(nullptr);
