@@ -590,14 +590,10 @@ nsComputedDOMStyle::DoGetComputedStyleNoFlush(const Element* aElement,
   if (inDocWithShell && aStyleType == StyleType::All &&
       !aElement->IsHTMLElement(nsGkAtoms::area)) {
     if (const Element* element = GetRenderedElement(aElement, aPseudo)) {
-      if (nsIFrame* styleFrame = nsLayoutUtils::GetStyleFrame(element)) {
-        ComputedStyle* result = styleFrame->Style();
-        
-        
-        if (!MustReresolveStyle(result)) {
-          RefPtr<ComputedStyle> ret = result;
-          return ret.forget();
-        }
+      if (element->HasServoData()) {
+        const ComputedStyle* result =
+            Servo_Element_GetMaybeOutOfDateStyle(element);
+        return do_AddRef(result);
       }
     }
   }
@@ -1101,7 +1097,6 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(nsCSSPropertyID aPropID) {
 
   mComputedStyle = nullptr;
 
-  
   
   
   if (mStyleType == StyleType::All &&
