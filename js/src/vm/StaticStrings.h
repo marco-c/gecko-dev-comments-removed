@@ -7,17 +7,17 @@
 #ifndef vm_StaticStrings_h
 #define vm_StaticStrings_h
 
-#include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/TextUtils.h"
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
+#include "mozilla/TextUtils.h"  
 
-#include <stddef.h>
-#include <stdint.h>
-#include <type_traits>
+#include <stddef.h>     
+#include <stdint.h>     
+#include <type_traits>  
 
-#include "jstypes.h"
+#include "jstypes.h"  
 
-#include "js/TypeDecls.h"
+#include "js/TypeDecls.h"  
 
 struct JS_PUBLIC_API JSContext;
 

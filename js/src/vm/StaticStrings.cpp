@@ -6,22 +6,18 @@
 
 #include "vm/StaticStrings.h"
 
-#include "mozilla/Assertions.h"
-#include "mozilla/HashFunctions.h"
-#include "mozilla/Range.h"
+#include "mozilla/HashFunctions.h"  
 
-#include <stddef.h>
-#include <stdint.h>
+#include <stddef.h>  
+#include <stdint.h>  
 
-#include "NamespaceImports.h"
+#include "js/HashTable.h"   
+#include "js/TypeDecls.h"   
+#include "vm/Realm.h"       
+#include "vm/StringType.h"  
 
-#include "gc/Allocator.h"
-#include "gc/AllocKind.h"
-#include "js/HashTable.h"
-#include "js/TypeDecls.h"
-
-#include "vm/Realm-inl.h"
-#include "vm/StringType-inl.h"
+#include "vm/Realm-inl.h"       
+#include "vm/StringType-inl.h"  
 
 using namespace js;
 
