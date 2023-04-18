@@ -617,7 +617,8 @@ class PeerConnectionImpl final
 
   class StunAddrsHandler : public net::StunAddrsListener {
    public:
-    explicit StunAddrsHandler(PeerConnectionImpl* aPc) : pc_(aPc) {}
+    explicit StunAddrsHandler(PeerConnectionImpl* aPc)
+        : mPcHandle(aPc->GetHandle()) {}
 
     void OnMDNSQueryComplete(const nsCString& hostname,
                              const Maybe<nsCString>& address) override;
@@ -626,7 +627,9 @@ class PeerConnectionImpl final
         const mozilla::net::NrIceStunAddrArray& addrs) override;
 
    private:
-    RefPtr<PeerConnectionImpl> pc_;
+    
+    
+    const std::string mPcHandle;
     virtual ~StunAddrsHandler() {}
   };
 
