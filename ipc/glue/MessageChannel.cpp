@@ -853,6 +853,20 @@ bool MessageChannel::Send(UniquePtr<Message> aMsg) {
     Telemetry::Accumulate(Telemetry::IPC_MESSAGE_SIZE2, aMsg->size());
   }
 
+  
+  
+  
+  
+  if (NS_IsMainThread() && aMsg->create_time()) {
+    uint32_t latencyMs = round(
+        (mozilla::TimeStamp::Now() - aMsg->create_time()).ToMilliseconds());
+    if (latencyMs >= kMinTelemetryIPCWriteLatencyMs) {
+      mozilla::Telemetry::Accumulate(
+          mozilla::Telemetry::IPC_WRITE_MAIN_THREAD_LATENCY_MS,
+          nsDependentCString(aMsg->name()), latencyMs);
+    }
+  }
+
   MOZ_RELEASE_ASSERT(!aMsg->is_sync());
   MOZ_RELEASE_ASSERT(aMsg->nested_level() != IPC::Message::NESTED_INSIDE_SYNC);
 
