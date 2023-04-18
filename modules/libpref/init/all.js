@@ -1002,18 +1002,6 @@ pref("print.print_edge_bottom", 0);
 #endif
 
 
-
-pref("editor.use_div_for_default_newlines",  true);
-
-
-
-pref("editor.use_custom_colors", false);
-pref("editor.use_css",                       false);
-pref("editor.css.default_length_unit",       "px");
-pref("editor.resizing.preserve_ratio",       true);
-pref("editor.positioning.offset",            0);
-
-
 pref("dom.beforeunload_timeout_ms",         1000);
 pref("dom.disable_window_flip",             false);
 pref("dom.disable_window_move_resize",      false);
@@ -2384,9 +2372,6 @@ pref("plugin.override_internal_types", false);
 
 
 pref("gestures.enable_single_finger_input", true);
-
-pref("editor.resizing.preserve_ratio",       true);
-pref("editor.positioning.offset",            0);
 
 pref("dom.use_watchdog", true);
 
