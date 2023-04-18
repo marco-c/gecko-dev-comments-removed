@@ -402,27 +402,52 @@ const Snapshots = new (class Snapshots {
 
 
 
-  async delete(url) {
-    url = this.stripFragments(url);
-    await PlacesUtils.withConnectionWrapper("Snapshots: delete", async db => {
-      let placeId = (
-        await db.executeCached(
+
+
+
+
+
+  async delete(urls, removeFromStore = false) {
+    if (!Array.isArray(urls)) {
+      urls = [urls];
+    }
+    urls = urls.map(this.stripFragments);
+
+    let placeIdsSQLFragment = `
+    SELECT id FROM moz_places
+    WHERE url_hash IN (${PlacesUtils.sqlBindPlaceholders(
+      urls,
+      "hash(",
+      ")"
+    )}) AND url IN (${PlacesUtils.sqlBindPlaceholders(urls)})`;
+    let queryArgs = removeFromStore
+      ? [
+          `DELETE FROM moz_places_metadata_snapshots
+         WHERE place_id IN (${placeIdsSQLFragment})
+         RETURNING place_id`,
+          [...urls, ...urls],
+        ]
+      : [
           `UPDATE moz_places_metadata_snapshots
-           SET removed_at = :removedAt
-           WHERE place_id = (SELECT id FROM moz_places WHERE url_hash = hash(:url) AND url = :url)
-           RETURNING place_id`,
-          { removedAt: Date.now(), url }
-        )
-      )[0].getResultByName("place_id");
+         SET removed_at = ?
+         WHERE place_id IN (${placeIdsSQLFragment})
+         RETURNING place_id`,
+          [Date.now(), ...urls, ...urls],
+        ];
+
+    await PlacesUtils.withConnectionWrapper("Snapshots: delete", async db => {
+      let placeIds = (await db.executeCached(...queryArgs)).map(r =>
+        r.getResultByName("place_id")
+      );
       
       await db.executeCached(
         `DELETE FROM moz_places_metadata_snapshots_extra
-         WHERE place_id = :placeId`,
-        { placeId }
+         WHERE place_id IN (${PlacesUtils.sqlBindPlaceholders(placeIds)})`,
+        placeIds
       );
     });
 
-    this.#notify("places-snapshots-deleted", [url]);
+    this.#notify("places-snapshots-deleted", urls);
   }
 
   
@@ -491,12 +516,19 @@ const Snapshots = new (class Snapshots {
 
 
 
+
+
+
+
+
   async query({
     limit = 100,
     includeTombstones = false,
     type = undefined,
     group = undefined,
     includeHiddenInGroup = false,
+    includeUserPersisted = true,
+    lastInteractionBefore = undefined,
     sortDescending = true,
     sortBy = "last_interaction_at",
   } = {}) {
@@ -511,12 +543,26 @@ const Snapshots = new (class Snapshots {
       clauses.push("removed_at IS NULL");
     }
 
+    if (!includeUserPersisted) {
+      clauses.push("user_persisted = :user_persisted");
+      bindings.user_persisted = this.USER_PERSISTED.NO;
+    }
+    if (lastInteractionBefore) {
+      clauses.push("last_interaction_at < :last_interaction_before");
+      bindings.last_interaction_before = lastInteractionBefore;
+    }
+
     if (type) {
       clauses.push("type = :type");
       bindings.type = type;
     }
 
-    if (group) {
+    if (group === null) {
+      clauses.push("group_id IS NULL");
+      joins.push(
+        "LEFT JOIN moz_places_metadata_groups_to_snapshots g USING(place_id)"
+      );
+    } else if (group) {
       clauses.push("group_id = :group");
       if (!includeHiddenInGroup) {
         clauses.push("g.hidden = 0");

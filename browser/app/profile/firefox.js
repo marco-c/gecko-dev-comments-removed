@@ -2709,3 +2709,8 @@ pref("browser.snapshots.score.InNavigation", 3);
 pref("browser.snapshots.score.IsOverlappingVisit", 3);
 pref("browser.snapshots.score.IsUserPersisted", 1);
 pref("browser.snapshots.score.IsUsedRemoved", -10);
+
+
+pref("browser.places.snapshots.expiration.days", 210);
+
+pref("browser.places.snapshots.expiration.userManaged.days", 420);

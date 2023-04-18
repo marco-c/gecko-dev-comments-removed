@@ -20,15 +20,37 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "SNAPSHOT_ADDED_TIMER_DELAY",
-  "browser.places.snapshot.monitorDelayAdded",
+  "browser.places.snapshots.monitorDelayAdded",
   5000
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "SNAPSHOT_REMOVED_TIMER_DELAY",
-  "browser.places.snapshot.monitorDelayRemoved",
+  "browser.places.snapshots.monitorDelayRemoved",
   1000
 );
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "SNAPSHOT_EXPIRE_DAYS",
+  "browser.places.snapshots.expiration.days",
+  210
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "SNAPSHOT_USERMANAGED_EXPIRE_DAYS",
+  "browser.places.snapshots.expiration.userManaged.days",
+  420
+);
+
+
+
+
+const EXPIRE_EVERY_MIN_MS = 60 * 60000; 
+const EXPIRE_EVERY_MAX_MS = 120 * 60000; 
+
+const EXPIRE_CHUNK_SIZE = 10;
 
 
 
@@ -80,6 +102,15 @@ const SnapshotMonitor = new (class SnapshotMonitor {
 
 
   testGroupBuilders = null;
+
+  
+
+
+  #lastExpirationTime = 0;
+  
+
+
+  #expirationChunkSize = EXPIRE_CHUNK_SIZE;
 
   
 
@@ -176,6 +207,81 @@ const SnapshotMonitor = new (class SnapshotMonitor {
 
 
 
+
+
+
+
+
+
+
+
+
+  async #expireSnapshotsChunk(onIdle = false) {
+    let now = Date.now();
+    if (now - this.#lastExpirationTime < EXPIRE_EVERY_MIN_MS) {
+      return;
+    }
+    let instance = (this._expireInstance = {});
+    let skip = false;
+    if (!onIdle) {
+      
+      skip = await new Promise(resolve =>
+        ChromeUtils.idleDispatch(deadLine => {
+          
+          resolve(
+            deadLine.didTimeout &&
+              now - this.#lastExpirationTime < EXPIRE_EVERY_MAX_MS
+          );
+        })
+      );
+    }
+    if (skip || instance != this._expireInstance) {
+      return;
+    }
+
+    this.#lastExpirationTime = now;
+    let urls = (
+      await Snapshots.query({
+        includeUserPersisted: false,
+        includeTombstones: false,
+        group: null,
+        lastInteractionBefore: now - SNAPSHOT_EXPIRE_DAYS * 86400000,
+        limit: this.#expirationChunkSize,
+      })
+    ).map(s => s.url);
+    if (instance != this._expireInstance) {
+      return;
+    }
+
+    if (urls.length < this.#expirationChunkSize) {
+      
+      
+      urls.push(
+        ...(
+          await Snapshots.query({
+            includeUserPersisted: true,
+            includeTombstones: false,
+            lastInteractionBefore:
+              now - SNAPSHOT_USERMANAGED_EXPIRE_DAYS * 86400000,
+            limit: this.#expirationChunkSize - urls.length,
+          })
+        ).map(s => s.url)
+      );
+    }
+    if (instance != this._expireInstance) {
+      return;
+    }
+
+    await Snapshots.delete([...new Set(urls)], true);
+  }
+
+  
+
+
+
+
+
+
   #setTimer(timeout) {
     let targetTime = Date.now() + timeout;
     if (this.#currentTargetTime && targetTime >= this.#currentTargetTime) {
@@ -188,10 +294,10 @@ const SnapshotMonitor = new (class SnapshotMonitor {
     }
 
     this.#currentTargetTime = targetTime;
-    this.#timer = setTimeout(
-      () => this.#triggerBuilders().catch(console.error),
-      timeout
-    );
+    this.#timer = setTimeout(() => {
+      this.#expireSnapshotsChunk().catch(console.error);
+      this.#triggerBuilders().catch(console.error);
+    }, timeout);
   }
 
   
@@ -203,12 +309,24 @@ const SnapshotMonitor = new (class SnapshotMonitor {
 
 
   async observe(subject, topic, data) {
-    if (topic == "places-snapshots-added") {
-      this.#onSnapshotAdded(JSON.parse(data));
-    } else if (topic == "places-snapshots-deleted") {
-      this.#onSnapshotRemoved(JSON.parse(data));
-    } else if (topic == "idle-daily") {
-      await this.#triggerBuilders(true);
+    switch (topic) {
+      case "places-snapshots-added":
+        this.#onSnapshotAdded(JSON.parse(data));
+        break;
+      case "places-snapshots-deleted":
+        this.#onSnapshotRemoved(JSON.parse(data));
+        break;
+      case "idle-daily":
+        await this.#expireSnapshotsChunk(true);
+        await this.#triggerBuilders(true);
+        break;
+      case "test-expiration":
+        this.#lastExpirationTime =
+          subject.lastExpirationTime || this.#lastExpirationTime;
+        this.#expirationChunkSize =
+          subject.expirationChunkSize || this.#expirationChunkSize;
+        await this.#expireSnapshotsChunk(subject.onIdle);
+        break;
     }
   }
 
