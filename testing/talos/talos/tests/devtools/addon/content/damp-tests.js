@@ -120,12 +120,13 @@ module.exports = [
     description:
       "Measure open/close toolbox on style editor panel against complicated document",
   },
-  {
-    name: "complicated.netmonitor",
-    path: "netmonitor/complicated.js",
-    description:
-      "Measure open/close toolbox on network monitor panel against complicated document",
-  },
+  
+  
+  
+  
+  
+  
+  
   
   {
     name: "custom.webconsole",
