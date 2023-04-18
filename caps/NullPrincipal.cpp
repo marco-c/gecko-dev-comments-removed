@@ -76,18 +76,17 @@ already_AddRefed<NullPrincipal> NullPrincipal::CreateWithoutOriginAttributes() {
   return NullPrincipal::Create(OriginAttributes(), nullptr);
 }
 
-static void EscapePrecursorQuery(nsACString& aPrecursorQuery) {
+void NullPrincipal::EscapePrecursorQuery(nsACString& aPrecursorQuery) {
   
   
   
   nsCString modified;
-  if (NS_EscapeURLSpan(aPrecursorQuery, esc_OnlyNonASCII | esc_Forced,
-                       modified)) {
+  if (NS_EscapeURLSpan(aPrecursorQuery, esc_Query | esc_Forced, modified)) {
     aPrecursorQuery.Assign(std::move(modified));
   }
 }
 
-static void UnescapePrecursorQuery(nsACString& aPrecursorQuery) {
+void NullPrincipal::UnescapePrecursorQuery(nsACString& aPrecursorQuery) {
   nsCString modified;
   if (NS_UnescapeURL(aPrecursorQuery.BeginReading(), aPrecursorQuery.Length(),
                       0, modified)) {

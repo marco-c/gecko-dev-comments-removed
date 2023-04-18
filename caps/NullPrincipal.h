@@ -116,6 +116,10 @@ class NullPrincipal final : public BasePrincipal {
 
  private:
   FRIEND_TEST(OriginAttributes, NullPrincipal);
+  FRIEND_TEST(NullPrincipalPrecursor, EscapingRoundTrips);
+
+  static void EscapePrecursorQuery(nsACString& aPrecursorQuery);
+  static void UnescapePrecursorQuery(nsACString& aPrecursorQuery);
 
   
   
