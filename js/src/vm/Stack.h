@@ -365,8 +365,7 @@ class InterpreterFrame {
 
   
   void initExecuteFrame(JSContext* cx, HandleScript script,
-                        AbstractFramePtr prev, HandleValue newTargetValue,
-                        HandleObject envChain);
+                        AbstractFramePtr prev, HandleObject envChain);
 
  public:
   
@@ -609,18 +608,9 @@ class InterpreterFrame {
 
 
 
-
-
   Value newTarget() const {
-    if (isEvalFrame()) {
-      return ((Value*)this)[-1];
-    }
-
     MOZ_ASSERT(isFunctionFrame());
-
-    if (callee().isArrow()) {
-      return NullValue();
-    }
+    MOZ_ASSERT(!callee().isArrow());
 
     if (isConstructing()) {
       unsigned pushedArgs = std::max(numFormalArgs(), numActualArgs());
@@ -832,7 +822,6 @@ class InterpreterStack {
 
   
   InterpreterFrame* pushExecuteFrame(JSContext* cx, HandleScript script,
-                                     HandleValue newTargetValue,
                                      HandleObject envChain,
                                      AbstractFramePtr evalInFrame);
 
