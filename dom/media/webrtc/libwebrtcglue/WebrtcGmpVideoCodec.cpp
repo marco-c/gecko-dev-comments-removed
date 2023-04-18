@@ -624,6 +624,8 @@ void WebrtcGmpVideoEncoder::Encoded(
   unit.SetTimestamp(timestamp);
   unit.capture_time_ms_ = capture_time.ms();
   unit._completeFrame = true;
+  unit._encodedWidth = aEncodedFrame->EncodedWidth();
+  unit._encodedHeight = aEncodedFrame->EncodedHeight();
 
   
   mH264BitstreamParser.ParseBitstream(unit.data(), unit.size());
