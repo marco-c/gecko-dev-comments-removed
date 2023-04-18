@@ -75,7 +75,6 @@ class TPSTestRunner(object):
         "extensions.update.notifyUser": False,
         "services.sync.firstSync": "notReady",
         "services.sync.lastversion": "1.0",
-        "services.sync.autoconnectDelay": 60 * 60 * 10,
         "toolkit.startup.max_resumed_crashes": -1,
         
         "xpinstall.signatures.required": False,

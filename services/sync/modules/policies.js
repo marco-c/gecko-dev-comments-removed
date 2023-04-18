@@ -282,7 +282,6 @@ SyncScheduler.prototype = {
     Svc.Obs.add("weave:service:logout:finish", this);
     Svc.Obs.add("weave:service:sync:error", this);
     Svc.Obs.add("weave:service:backoff:interval", this);
-    Svc.Obs.add("weave:service:ready", this);
     Svc.Obs.add("weave:engine:sync:applied", this);
     Svc.Obs.add("weave:service:setup-complete", this);
     Svc.Obs.add("weave:service:start-over", this);
@@ -449,14 +448,6 @@ SyncScheduler.prototype = {
         Status.backoffInterval = interval;
         Status.minimumNextSync = Date.now() + requested_interval;
         this._log.debug("Fuzzed minimum next sync: " + Status.minimumNextSync);
-        break;
-      case "weave:service:ready":
-        
-        
-        let delay = Svc.Prefs.get("autoconnectDelay");
-        if (delay) {
-          this.delayedAutoConnect(delay);
-        }
         break;
       case "weave:engine:sync:applied":
         let numItems = subject.succeeded;
@@ -768,36 +759,12 @@ SyncScheduler.prototype = {
     this.scheduleNextSync(interval, { why: "client-backoff-schedule" });
   },
 
-  
-
-
-
-
-
-
-
-  delayedAutoConnect: function delayedAutoConnect(delay) {
-    if (this.service._checkSetup() == STATUS_OK) {
-      CommonUtils.namedTimer(
-        this.autoConnect,
-        delay * 1000,
-        this,
-        "_autoTimer"
-      );
-    }
-  },
-
   autoConnect: function autoConnect() {
     if (this.service._checkSetup() == STATUS_OK && !this.service._checkSync()) {
       
       
       
       this.scheduleNextSync(this.nextSync - Date.now(), { why: "startup" });
-    }
-
-    
-    if (this._autoTimer) {
-      this._autoTimer.clear();
     }
   },
 
