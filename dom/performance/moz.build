@@ -5,7 +5,7 @@
 
 
 with Files("**"):
-    BUG_COMPONENT = ("Core", "Performance")
+    BUG_COMPONENT = ("Core", "DOM: Performance")
 
 EXPORTS.mozilla.dom += [
     "EventCounts.h",
