@@ -275,14 +275,12 @@ LightweightThemeConsumer.prototype = {
     
     
     
-    if (
-      useDarkTheme &&
-      !updateGlobalThemeData &&
-      this._win.browsingContext == this._win.browsingContext.top
-    ) {
-      this._win.browsingContext.prefersColorSchemeOverride = "dark";
-    } else {
-      this._win.browsingContext.prefersColorSchemeOverride = "none";
+    if (this._win.browsingContext == this._win.browsingContext.top) {
+      if (useDarkTheme && !updateGlobalThemeData) {
+        this._win.browsingContext.prefersColorSchemeOverride = "dark";
+      } else {
+        this._win.browsingContext.prefersColorSchemeOverride = "none";
+      }
     }
 
     let theme = useDarkTheme ? themeData.darkTheme : themeData.theme;
