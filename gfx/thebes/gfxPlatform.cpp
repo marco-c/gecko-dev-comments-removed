@@ -2446,15 +2446,6 @@ void gfxPlatform::InitGPUProcessPrefs() {
 
   FeatureState& gpuProc = gfxConfig::GetFeature(Feature::GPU_PROCESS);
 
-  nsCString message;
-  nsCString failureId;
-  if (!gfxPlatform::IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_GPU_PROCESS,
-                                        &message, failureId)) {
-    gpuProc.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
-    
-    
-  }
-
   
   
   
@@ -2470,6 +2461,14 @@ void gfxPlatform::InitGPUProcessPrefs() {
 
   if (StaticPrefs::layers_gpu_process_force_enabled_AtStartup()) {
     gpuProc.UserForceEnable("User force-enabled via pref");
+  }
+
+  nsCString message;
+  nsCString failureId;
+  if (!gfxPlatform::IsGfxInfoStatusOkay(nsIGfxInfo::FEATURE_GPU_PROCESS,
+                                        &message, failureId)) {
+    gpuProc.Disable(FeatureStatus::Blocklisted, message.get(), failureId);
+    return;
   }
 
   if (IsHeadless()) {
