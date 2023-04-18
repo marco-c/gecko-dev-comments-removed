@@ -151,10 +151,12 @@ async function assertTopicNotObserved(topic, task) {
 
 
 
-function assertRecentDate(date) {
+
+
+function assertRecentDate(date, threshold = 1) {
   Assert.greater(
     date.getTime(),
-    Date.now() - 1000 * 60 * 60 * 24,
+    Date.now() - 1000 * 60 * 60 * 24 * threshold,
     "Should have a reasonable value for the date"
   );
 }
@@ -194,13 +196,13 @@ function assertSnapshot(actual, expected) {
     expected.documentType ?? Interactions.DOCUMENT_TYPE.GENERIC,
     "Should have the expected document type"
   );
-  assertRecentDate(actual.createdAt);
-  assertRecentDate(actual.lastInteractionAt);
+  assertRecentDate(actual.createdAt, expected.daysThreshold);
+  assertRecentDate(actual.lastInteractionAt, expected.daysThreshold);
   if (actual.firstInteractionAt || !actual.userPersisted) {
     
     
     
-    assertRecentDate(actual.firstInteractionAt);
+    assertRecentDate(actual.firstInteractionAt, expected.daysThreshold);
   }
   if (expected.lastUpdated) {
     Assert.greaterOrEqual(
@@ -374,6 +376,22 @@ async function assertOverlappingSnapshots(expected, context) {
 
 async function assertCommonReferrerSnapshots(expected, context) {
   let recommendations = await Snapshots.recommendationSources.CommonReferrer(
+    context
+  );
+
+  await assertSnapshotList(recommendations, expected);
+}
+
+
+
+
+
+
+
+
+
+async function assertTimeOfDaySnapshots(expected, context) {
+  let recommendations = await Snapshots.recommendationSources.TimeOfDay(
     context
   );
 

@@ -30,24 +30,24 @@ add_task(async function test_snapshot_selection_fragments() {
 
   
   snapshotPromise = selector.once("snapshots-updated");
-  selector.setUrl(TEST_URL2);
+  selector.updateDetailsAndRebuild({ url: TEST_URL2 });
   snapshots = await snapshotPromise;
   await assertSnapshotList(snapshots, [{ url: TEST_URL1 }]);
 
   
   snapshotPromise = selector.once("snapshots-updated");
-  selector.setUrl(TEST_FRAGMENT_URL1);
+  selector.updateDetailsAndRebuild({ url: TEST_FRAGMENT_URL1 });
   snapshots = await snapshotPromise;
   await assertSnapshotList(snapshots, []);
 
   snapshotPromise = selector.once("snapshots-updated");
-  selector.setUrl(TEST_FRAGMENT_URL2);
+  selector.updateDetailsAndRebuild({ url: TEST_FRAGMENT_URL2 });
   snapshots = await snapshotPromise;
   await assertSnapshotList(snapshots, [{ url: TEST_URL1 }]);
 
   
   snapshotPromise = selector.once("snapshots-updated");
-  selector.setUrl(TEST_URL1);
+  selector.updateDetailsAndRebuild({ url: TEST_URL1 });
   snapshots = await snapshotPromise;
   await assertSnapshotList(snapshots, []);
 

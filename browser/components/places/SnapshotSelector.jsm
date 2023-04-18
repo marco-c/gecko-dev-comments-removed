@@ -99,6 +99,7 @@ class SnapshotSelector extends EventEmitter {
     filterAdult: false,
     sourceWeights: null,
     url: undefined,
+    time: Date.now(),
     type: undefined,
     getCurrentSessionUrls: undefined,
   };
@@ -338,6 +339,45 @@ class SnapshotSelector extends EventEmitter {
 
     this.#context.type = type;
     this.rebuild();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  updateDetailsAndRebuild({ url, time, type, rebuildImmediately = false }) {
+    let rebuild = false;
+    if (url !== undefined) {
+      url = Snapshots.stripFragments(url);
+      if (url != this.#context.url) {
+        this.#context.url = url;
+        rebuild = true;
+      }
+    }
+    if (time !== undefined && time != this.#context.time) {
+      this.#context.time = time;
+      rebuild = true;
+    }
+    if (type !== undefined && type != this.#context.type) {
+      this.#context.type = type;
+      rebuild = true;
+    }
+    if (rebuild) {
+      if (rebuildImmediately) {
+        this.#buildSnapshots();
+      } else {
+        this.rebuild();
+      }
+    }
   }
 }
 

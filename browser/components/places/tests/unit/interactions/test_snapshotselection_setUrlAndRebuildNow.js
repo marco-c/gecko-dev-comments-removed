@@ -10,7 +10,7 @@ const TEST_URL1 = "https://example.com/";
 const TEST_URL2 = "https://example.com/12345";
 const TEST_URL3 = "https://example.com/14235";
 
-add_task(async function test_setUrlCoalescing() {
+add_task(async function test_coalescing() {
   let now = Date.now();
   await addInteractions([
     { url: TEST_URL1, created_at: now - 2000 },
@@ -32,7 +32,7 @@ add_task(async function test_setUrlCoalescing() {
   await Snapshots.add({ url: TEST_URL3 });
   
   
-  selector.setUrl(TEST_URL1);
+  selector.updateDetailsAndRebuild({ url: TEST_URL1 });
   snapshots = await snapshotPromise;
 
   await assertSnapshotList(snapshots, [{ url: TEST_URL2 }, { url: TEST_URL3 }]);
@@ -40,8 +40,8 @@ add_task(async function test_setUrlCoalescing() {
   snapshotPromise = selector.once("snapshots-updated");
   
   
-  selector.setUrl(TEST_URL2);
-  selector.setUrl(TEST_URL3);
+  selector.updateDetailsAndRebuild({ url: TEST_URL2 });
+  selector.updateDetailsAndRebuild({ url: TEST_URL3 });
   snapshots = await snapshotPromise;
   await assertSnapshotList(snapshots, [{ url: TEST_URL2 }, { url: TEST_URL1 }]);
 
@@ -49,8 +49,11 @@ add_task(async function test_setUrlCoalescing() {
   
   
   snapshotPromise = selector.once("snapshots-updated");
-  selector.setUrlAndRebuildNow(TEST_URL2);
-  selector.setUrl(TEST_URL1);
+  selector.updateDetailsAndRebuild({
+    url: TEST_URL2,
+    rebuildImmediately: true,
+  });
+  selector.updateDetailsAndRebuild({ url: TEST_URL1 });
   snapshots = await snapshotPromise;
   snapshotPromise = selector.once("snapshots-updated");
   await assertSnapshotList(snapshots, [{ url: TEST_URL1 }, { url: TEST_URL3 }]);

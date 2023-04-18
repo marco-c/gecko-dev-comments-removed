@@ -2695,6 +2695,10 @@ pref("browser.snapshots.score.IsUsedRemoved", -10);
 
 pref("browser.snapshots.source.CommonReferrer", 3);
 pref("browser.snapshots.source.Overlapping", 3);
+pref("browser.snapshots.source.TimeOfDay", 3);
+
+
+pref("browser.snapshots.relevancy.timeOfDayIntervalSeconds", 3600);
 
 
 pref("browser.places.snapshots.expiration.days", 210);
