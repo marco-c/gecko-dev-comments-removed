@@ -112,6 +112,12 @@ var DownloadsPanel = {
 
 
 
+  _delayTimeout: null,
+
+  
+
+
+
   _state: 0,
 
   
@@ -239,7 +245,7 @@ var DownloadsPanel = {
 
 
 
-  showPanel() {
+  showPanel(openedManually = false) {
     Services.telemetry.scalarAdd("downloads.panel_shown", 1);
     DownloadsCommon.log("Opening the downloads panel.");
 
@@ -257,7 +263,7 @@ var DownloadsPanel = {
     
     
     
-    setTimeout(() => this._openPopupIfDataReady(), 0);
+    setTimeout(() => this._openPopupIfDataReady(openedManually), 0);
 
     DownloadsCommon.log("Waiting for the downloads panel to appear.");
     this._state = this.kStateWaitingData;
@@ -379,6 +385,12 @@ var DownloadsPanel = {
     }
 
     DownloadsCommon.log("Downloads panel has hidden.");
+
+    if (this._delayTimeout) {
+      DownloadsView.richListBox.removeAttribute("disabled");
+      clearTimeout(this._delayTimeout);
+      this._delayTimeout = null;
+    }
 
     
     
@@ -556,10 +568,27 @@ var DownloadsPanel = {
     }
   },
 
+  _delayPopupItems() {
+    let delay = Services.prefs.getIntPref("security.dialog_enable_delay");
+    let richListBox = DownloadsView.richListBox;
+    richListBox.setAttribute("disabled", true);
+
+    
+    if (this._delayTimeout) {
+      clearTimeout(this._delayTimeout);
+    }
+
+    this._delayTimeout = setTimeout(() => {
+      richListBox.removeAttribute("disabled");
+      this._focusPanel();
+      this._delayTimeout = null;
+    }, delay);
+  },
+
   
 
 
-  _openPopupIfDataReady() {
+  _openPopupIfDataReady(openedManually) {
     
     
     if (this._state != this.kStateWaitingData || DownloadsView.loading) {
@@ -601,19 +630,21 @@ var DownloadsPanel = {
     
     
     
-    setTimeout(
-      () =>
-        PanelMultiView.openPopup(
-          this.panel,
-          anchor,
-          "bottomcenter topright",
-          0,
-          0,
-          false,
-          null
-        ).catch(Cu.reportError),
-      0
-    );
+    setTimeout(() => {
+      PanelMultiView.openPopup(
+        this.panel,
+        anchor,
+        "bottomcenter topright",
+        0,
+        0,
+        false,
+        null
+      ).catch(Cu.reportError);
+
+      if (!openedManually) {
+        this._delayPopupItems();
+      }
+    }, 0);
   },
 };
 
@@ -915,7 +946,10 @@ var DownloadsView = {
     }
 
     if (aEvent.keyCode == KeyEvent.DOM_VK_RETURN) {
-      goDoCommand("downloadsCmd_doDefault");
+      let readyToDownload = !DownloadsView.richListBox.disabled;
+      if (readyToDownload) {
+        goDoCommand("downloadsCmd_doDefault");
+      }
     }
   },
 

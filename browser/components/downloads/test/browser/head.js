@@ -37,9 +37,13 @@ ChromeUtils.defineModuleGetter(
 
 var gTestTargetFile = FileUtils.getFile("TmpD", ["dm-ui-test.file"]);
 gTestTargetFile.createUnique(Ci.nsIFile.NORMAL_FILE_TYPE, FileUtils.PERMS_FILE);
+Services.prefs.setIntPref("security.dialog_enable_delay", 0);
+
 
 
 registerCleanupFunction(async () => {
+  Services.prefs.clearUserPref("security.dialog_enable_delay");
+
   if (await IOUtils.exists(gTestTargetFile.path)) {
     info("removing " + gTestTargetFile.path);
     if (Services.appinfo.OS === "WINNT") {
@@ -187,6 +191,12 @@ async function task_resetState() {
     await publicList.remove(download);
     if (await IOUtils.exists(download.target.path)) {
       await download.finalize(true);
+      info("removing " + download.target.path);
+      if (Services.appinfo.OS === "WINNT") {
+        
+        await IOUtils.setPermissions(download.target.path, 0o600);
+      }
+      await IOUtils.remove(download.target.path);
     }
   }
 
