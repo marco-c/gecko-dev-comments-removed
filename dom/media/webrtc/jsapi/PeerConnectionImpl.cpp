@@ -3123,11 +3123,12 @@ void PeerConnectionImpl::StoreConfigurationForAboutWebrtc(
       if (!mJsConfiguration.mIceServers.AppendElement(internal, fallible)) {
         mozalloc_handle_oom(0);
       }
-      if (aConfig.mSdpSemantics.WasPassed()) {
-        mJsConfiguration.mSdpSemantics.Construct(aConfig.mSdpSemantics.Value());
-      }
     }
   }
+  if (aConfig.mSdpSemantics.WasPassed()) {
+    mJsConfiguration.mSdpSemantics.Construct(aConfig.mSdpSemantics.Value());
+  }
+
   mJsConfiguration.mIceTransportPolicy.Construct(aConfig.mIceTransportPolicy);
   mJsConfiguration.mBundlePolicy.Construct(aConfig.mBundlePolicy);
   mJsConfiguration.mPeerIdentityProvided = !aConfig.mPeerIdentity.IsEmpty();
