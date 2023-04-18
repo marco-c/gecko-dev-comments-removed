@@ -582,14 +582,6 @@ class nsChildView final : public nsBaseWidget {
 
   RefPtr<mozilla::CancelableRunnable> mUnsuspendAsyncCATransactionsRunnable;
 
-  
-  
-  
-  
-  
-  
-  bool mCurrentPanGestureBelongsToSwipe;
-
   static uint32_t sLastInputEventCount;
 
   

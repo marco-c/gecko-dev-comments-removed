@@ -222,8 +222,7 @@ nsChildView::nsChildView()
       mBackingScaleFactor(0.0),
       mVisible(false),
       mDrawing(false),
-      mIsDispatchPaint(false),
-      mCurrentPanGestureBelongsToSwipe{false} {}
+      mIsDispatchPaint(false) {}
 
 nsChildView::~nsChildView() {
   

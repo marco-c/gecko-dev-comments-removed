@@ -703,6 +703,14 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   bool mIMEHasFocus;
   bool mIMEHasQuit;
   bool mIsFullyOccluded;
+  
+  
+  
+  
+  
+  
+  bool mCurrentPanGestureBelongsToSwipe;
+
   static nsIRollupListener* gRollupListener;
 
   struct InitialZoomConstraints {
