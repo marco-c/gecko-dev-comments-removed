@@ -648,8 +648,6 @@
       var position = event.alignmentPosition;
       var offset = event.alignmentOffset;
 
-      this.setAttribute("arrowposition", position);
-
       
       arrowbox.style.removeProperty("transform");
       if (position.indexOf("start_") == 0 || position.indexOf("end_") == 0) {
