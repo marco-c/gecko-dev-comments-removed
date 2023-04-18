@@ -31,7 +31,7 @@ async function translateElements(container, items) {
 }
 
 async function renderInfo({
-  infoEnabled,
+  infoEnabled = false,
   infoTitle,
   infoTitleEnabled,
   infoBody,
@@ -75,6 +75,7 @@ async function renderInfo({
 }
 
 async function renderPromo({
+  messageId = null,
   promoEnabled = false,
   promoTitle,
   promoTitleEnabled,
@@ -89,15 +90,8 @@ async function renderPromo({
   const container = document.querySelector(".promo");
   if (promoEnabled === false) {
     container.remove();
-    return;
+    return false;
   }
-
-  
-  RPMSendQuery("ShouldShowVPNPromo", {}).then(shouldShow => {
-    if (!shouldShow) {
-      container.remove();
-    }
-  });
 
   const titleEl = document.getElementById("private-browsing-vpn-text");
   let linkEl = document.getElementById("private-browsing-vpn-link");
@@ -105,6 +99,7 @@ async function renderPromo({
   const infoContainerEl = document.querySelector(".info");
   const promoImageLargeEl = document.querySelector(".promo-image-large img");
   const promoImageSmallEl = document.querySelector(".promo-image-small img");
+  const dismissBtn = document.querySelector("#dismiss-btn");
 
   
   const vpnPromoUrl =
@@ -122,7 +117,19 @@ async function renderPromo({
   } else {
     
     container.remove();
-    return;
+    return false;
+  }
+
+  const onDismissBtnClick = () => {
+    window.ASRouterMessage({
+      type: "BLOCK_MESSAGE_BY_ID",
+      data: { id: messageId },
+    });
+    container.remove();
+  };
+
+  if (dismissBtn && messageId) {
+    dismissBtn.addEventListener("click", onDismissBtnClick, { once: true });
   }
 
   if (promoSectionStyle) {
@@ -168,10 +175,38 @@ async function renderPromo({
   
   
   container.classList.add("promo-visible");
+  return true;
+}
+
+
+
+
+
+
+function recordOnceVisible(message) {
+  const recordImpression = () => {
+    if (document.visibilityState === "visible") {
+      window.ASRouterMessage({
+        type: "IMPRESSION",
+        data: message,
+      });
+      document.removeEventListener("visibilitychange", recordImpression);
+    }
+  };
+
+  if (document.visibilityState === "visible") {
+    window.ASRouterMessage({
+      type: "IMPRESSION",
+      data: message,
+    });
+  } else {
+    document.addEventListener("visibilitychange", recordImpression);
+  }
 }
 
 async function setupFeatureConfig() {
   let config = null;
+  let message = null;
   try {
     config = window.PrivateBrowsingFeatureConfig();
   } catch (e) {}
@@ -181,13 +216,21 @@ async function setupFeatureConfig() {
         type: "PBNEWTAB_MESSAGE_REQUEST",
         data: {},
       });
-      config = response?.message?.content;
+      message = response?.message;
+      config = message?.content;
+      config.messageId = message?.id;
     } catch (e) {}
   }
 
   await renderInfo(config);
-  await renderPromo(config);
-
+  
+  const shouldShow = await RPMSendQuery("ShouldShowVPNPromo", {});
+  if (shouldShow) {
+    let hasRendered = await renderPromo(config);
+    if (hasRendered && message) {
+      recordOnceVisible(message);
+    }
+  }
   
   document.documentElement.setAttribute("PrivateBrowsingRenderComplete", true);
 }
