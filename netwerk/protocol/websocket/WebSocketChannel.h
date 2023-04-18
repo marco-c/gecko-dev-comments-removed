@@ -238,6 +238,7 @@ class WebSocketChannel : public BaseWebSocketChannel,
   nsString mEffectiveURL;
 
   
+  
   nsCOMPtr<nsISocketTransport> mTransport;
   nsCOMPtr<nsIAsyncInputStream> mSocketIn;
   nsCOMPtr<nsIAsyncOutputStream> mSocketOut;
@@ -305,6 +306,8 @@ class WebSocketChannel : public BaseWebSocketChannel,
   Atomic<bool> mDecrementedSessionCount;
 
   int32_t mMaxMessageSize;  
+                            
+  
   
   nsresult mStopOnClose;
   uint16_t mServerCloseCode;     
@@ -339,7 +342,7 @@ class WebSocketChannel : public BaseWebSocketChannel,
   uint32_t mHdrOutToSend;
   uint8_t* mHdrOut;
   uint8_t mOutHeader[kCopyBreak + 16]{0};
-  
+
   
   
   
