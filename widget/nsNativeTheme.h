@@ -139,9 +139,6 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed {
   
   bool IsSubmenu(nsIFrame* aFrame, bool* aLeftOfParent);
 
-  
-  bool IsRegularMenuItem(nsIFrame* aFrame);
-
   static bool CheckBooleanAttr(nsIFrame* aFrame, nsAtom* aAtom);
   static int32_t CheckIntAttr(nsIFrame* aFrame, nsAtom* aAtom,
                               int32_t defaultValue);

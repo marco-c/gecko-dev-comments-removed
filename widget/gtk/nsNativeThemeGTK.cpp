@@ -1098,6 +1098,11 @@ LayoutDeviceIntMargin nsNativeThemeGTK::GetWidgetBorder(
       
       
       break;
+    case StyleAppearance::Menuitem:
+    case StyleAppearance::Checkmenuitem:
+    case StyleAppearance::Radiomenuitem:
+      
+      break;
     case StyleAppearance::Dualbutton:
       
       
@@ -1118,14 +1123,6 @@ LayoutDeviceIntMargin nsNativeThemeGTK::GetWidgetBorder(
                              &result.bottom, direction, (GtkTabFlags)flags,
                              gtkWidgetType);
     } break;
-    case StyleAppearance::Menuitem:
-    case StyleAppearance::Checkmenuitem:
-    case StyleAppearance::Radiomenuitem:
-      
-      
-      
-      if (IsRegularMenuItem(aFrame)) break;
-      [[fallthrough]];
     default: {
       GetCachedWidgetBorder(aFrame, aAppearance, direction, &result);
     }
@@ -1171,13 +1168,10 @@ bool nsNativeThemeGTK::GetWidgetPadding(nsDeviceContext* aContext,
     case StyleAppearance::Menuitem:
     case StyleAppearance::Checkmenuitem:
     case StyleAppearance::Radiomenuitem: {
-      
-      if (!IsRegularMenuItem(aFrame)) return false;
-
       GetCachedWidgetBorder(aFrame, aAppearance, GetTextDirection(aFrame),
                             aResult);
 
-      gint horizontal_padding;
+      gint horizontal_padding = 0;
       if (aAppearance == StyleAppearance::Menuitem)
         moz_gtk_menuitem_get_horizontal_padding(&horizontal_padding);
       else
