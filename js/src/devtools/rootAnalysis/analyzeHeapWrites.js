@@ -147,6 +147,10 @@ function treatAsSafeArgument(entry, varName, csuName)
         [/^Gecko_/, null, /FontFamilyList/],
 
         
+        ["Gecko_SetNodeFlags", "aNode", null],
+        ["Gecko_UnsetNodeFlags", "aNode", null],
+
+        
         
         
         ["Gecko_CopyAnimationNames", "aDest", null],

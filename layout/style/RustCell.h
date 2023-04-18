@@ -25,16 +25,8 @@ template <typename T>
 class RustCell {
  public:
   RustCell() : mValue() {}
-  explicit RustCell(T aValue) : mValue(aValue) {}
 
   T Get() const { return mValue; }
-  void Set(T aValue) { mValue = aValue; }
-
-  
-  
-  
-  T* AsPtr() { return &mValue; }
-  const T* AsPtr() const { return &mValue; }
 
  private:
   T mValue;
