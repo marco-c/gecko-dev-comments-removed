@@ -17,12 +17,7 @@ function test() {
 
   
   SpecialPowers.pushPrefEnv({
-    set: [
-      ["extensions.postDownloadThirdPartyPrompt", false],
-      ["extensions.InstallTrigger.requireUserInput", false],
-      
-      ["xpinstall.userActivation.required", false],
-    ],
+    set: [["extensions.postDownloadThirdPartyPrompt", false]],
   });
 
   Harness.installConfirmCallback = confirm_install;

@@ -1464,8 +1464,6 @@ add_task(async function() {
       
       ["extensions.InstallTrigger.enabled", true],
       ["extensions.InstallTriggerImpl.enabled", true],
-      
-      ["xpinstall.userActivation.required", false],
     ],
   });
 

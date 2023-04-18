@@ -1,19 +1,6 @@
 
 
 function test() {
-  waitForExplicitFinish();
-  SpecialPowers.pushPrefEnv(
-    {
-      set: [
-        
-        ["xpinstall.userActivation.required", false],
-      ],
-    },
-    runTest
-  );
-}
-
-function runTest() {
   Harness.installConfirmCallback = confirm_install;
   Harness.installEndedCallback = install_ended;
   Harness.installsCompletedCallback = finish_test;
