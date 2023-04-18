@@ -38,7 +38,7 @@ const TOPIC_TABS_CHANGED = "services.sync.tabs.changed";
 
 
 
-const TABS_FRESH_ENOUGH_INTERVAL = 30;
+const TABS_FRESH_ENOUGH_INTERVAL_SECONDS = 30;
 
 XPCOMUtils.defineLazyGetter(lazy, "log", function() {
   let log = Log.repository.getLogger("Sync.RemoteTabs");
@@ -143,7 +143,7 @@ let SyncedTabsInternal = {
       
       let lastFetch = Preferences.get("services.sync.lastTabFetch", 0);
       let now = Math.floor(Date.now() / 1000);
-      if (now - lastFetch < TABS_FRESH_ENOUGH_INTERVAL) {
+      if (now - lastFetch < TABS_FRESH_ENOUGH_INTERVAL_SECONDS) {
         lazy.log.info("_refetchTabs was done recently, do not doing it again");
         return false;
       }
@@ -228,6 +228,9 @@ var SyncedTabs = {
 
   
   TOPIC_TABS_CHANGED,
+
+  
+  TABS_FRESH_ENOUGH_INTERVAL_SECONDS,
 
   
   get isConfiguredToSyncTabs() {
