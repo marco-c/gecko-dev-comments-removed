@@ -1498,9 +1498,34 @@ const DebugUtils = {
     
     if (this.hasPersistentBackgroundScript(addonId) === false) {
       const policy = WebExtensionPolicy.getByID(addonId);
-      return policy.extension.terminateBackground();
+      
+      
+      
+      return policy.extension.terminateBackground({
+        ignoreDevToolsAttached: true,
+      });
     }
     throw Error(`Unable to terminate background script for ${addonId}`);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  hasDevToolsAttached(id) {
+    return this.debugBrowserPromises.has(id);
   },
 
   

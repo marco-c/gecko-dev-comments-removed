@@ -394,7 +394,9 @@ this.backgroundPage = class extends ExtensionAPI {
     
     extension.once("background-script-started", resetBackgroundIdle);
 
-    extension.terminateBackground = async () => {
+    extension.terminateBackground = async ({
+      ignoreDevToolsAttached = false,
+    } = {}) => {
       await bgStartupPromise;
       if (!this.extension) {
         
@@ -403,6 +405,15 @@ this.backgroundPage = class extends ExtensionAPI {
       if (extension.backgroundState != BACKGROUND_STATE.RUNNING) {
         return;
       }
+
+      if (
+        !ignoreDevToolsAttached &&
+        ExtensionParent.DebugUtils.hasDevToolsAttached(extension.id)
+      ) {
+        extension.emit("background-script-suspend-ignored");
+        return;
+      }
+
       extension.backgroundState = BACKGROUND_STATE.SUSPENDING;
       this.clearIdleTimer();
       
