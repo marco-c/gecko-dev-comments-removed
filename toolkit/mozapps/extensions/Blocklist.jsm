@@ -87,13 +87,12 @@ const kRegExpRemovalRegExp = /^\/\^\(\(?|\\|\)\)?\$\/$/g;
 
 
 
-const kXPIAddonTypes = [
-  "extension",
-  "theme",
-  "locale",
-  "dictionary",
-  "sitepermission",
-];
+XPCOMUtils.defineLazyGetter(this, "kXPIAddonTypes", () => {
+  
+  
+  
+  return AddonManagerPrivate.getAddonTypesByProvider("XPIProvider");
+});
 
 
 

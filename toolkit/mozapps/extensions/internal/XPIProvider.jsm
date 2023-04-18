@@ -170,8 +170,6 @@ const BOOTSTRAP_REASONS = {
 
 
 
-
-
 const ALL_XPI_TYPES = new Set([
   "dictionary",
   "extension",
