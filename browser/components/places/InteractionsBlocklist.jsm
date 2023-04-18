@@ -37,6 +37,13 @@ XPCOMUtils.defineLazyGetter(this, "logConsole", function() {
 
 
 let HOST_BLOCKLIST = {
+  auth0: [
+    
+    
+    
+    
+    "^https:\\/\\/.*\\.auth0\\.com\\/login",
+  ],
   baidu: [
     
     "^(https?:\\/\\/)?(www\\.)?baidu\\.com\\/s.*(\\?|&)wd=.*",
@@ -52,6 +59,13 @@ let HOST_BLOCKLIST = {
   google: [
     
     "^(https?:\\/\\/)?(www\\.)?google\\.(\\w|\\.){2,}\\/search.*(\\?|&)q=.*",
+    
+    "^https:\\/\\/accounts\\.google\\.com\\/o\\/oauth2\\/v2\\/auth\\/identifier",
+    "^https:\\/\\/accounts\\.google\\.com\\/signin\\/oauth\\/consent",
+  ],
+  microsoftonline: [
+    
+    "^https:\\/\\/login\\.microsoftonline\\.com\\/common\\/oauth2\\/v2\\.0\\/authorize",
   ],
   yandex: [
     
