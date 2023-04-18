@@ -47,14 +47,14 @@ use crate::{
     error::{ErrorFormatter, PrettyError},
     hub::{GlobalIdentityHandlerFactory, HalApi, Hub, Resource, Storage, Token},
     id,
-    init_tracker::{BufferInitTrackerAction, MemoryInitKind, TextureInitTrackerAction},
+    init_tracker::{BufferInitTrackerAction, MemoryInitKind},
     pipeline::PipelineFlags,
     track::{TrackerSet, UsageConflict},
     validation::check_buffer_usage,
     Label, LabelHelpers, LifeGuard, Stored,
 };
 use arrayvec::ArrayVec;
-use std::{borrow::Cow, mem, num::NonZeroU32, ops::Range};
+use std::{borrow::Cow, mem, ops::Range};
 use thiserror::Error;
 
 use hal::CommandEncoder as _;
@@ -75,8 +75,6 @@ pub struct RenderBundleEncoderDescriptor<'a> {
     
     
     pub sample_count: u32,
-    
-    pub multiview: Option<NonZeroU32>,
 }
 
 #[derive(Debug)]
@@ -99,11 +97,7 @@ impl RenderBundleEncoder {
             parent_id,
             context: RenderPassContext {
                 attachments: AttachmentData {
-                    colors: if desc.color_formats.len() > hal::MAX_COLOR_TARGETS {
-                        return Err(CreateRenderBundleError::TooManyColorAttachments);
-                    } else {
-                        desc.color_formats.iter().cloned().collect()
-                    },
+                    colors: desc.color_formats.iter().cloned().collect(),
                     resolves: ArrayVec::new(),
                     depth_stencil: desc.depth_stencil.map(|ds| ds.format),
                 },
@@ -114,7 +108,6 @@ impl RenderBundleEncoder {
                     }
                     sc
                 },
-                multiview: desc.multiview,
             },
             is_ds_read_only: match desc.depth_stencil {
                 Some(ds) => {
@@ -138,7 +131,6 @@ impl RenderBundleEncoder {
                     depth_stencil: None,
                 },
                 sample_count: 0,
-                multiview: None,
             },
             is_ds_read_only: false,
         }
@@ -184,7 +176,6 @@ impl RenderBundleEncoder {
         let mut base = self.base.as_ref();
         let mut pipeline_layout_id = None::<id::Valid<id::PipelineLayoutId>>;
         let mut buffer_memory_init_actions = Vec::new();
-        let mut texture_memory_init_actions = Vec::new();
 
         for &command in base.commands {
             match command {
@@ -238,7 +229,6 @@ impl RenderBundleEncoder {
                     }
 
                     buffer_memory_init_actions.extend_from_slice(&bind_group.used_buffer_ranges);
-                    texture_memory_init_actions.extend_from_slice(&bind_group.used_texture_ranges);
 
                     state.set_bind_group(index, bind_group_id, bind_group.layout_id, offsets);
                     state
@@ -529,7 +519,6 @@ impl RenderBundleEncoder {
             },
             used: state.trackers,
             buffer_memory_init_actions,
-            texture_memory_init_actions,
             context: self.context,
             life_guard: LifeGuard::new(desc.label.borrow_or_default()),
         })
@@ -556,8 +545,6 @@ impl RenderBundleEncoder {
 pub enum CreateRenderBundleError {
     #[error("invalid number of samples {0}")]
     InvalidSampleCount(u32),
-    #[error("number of color attachments exceeds the limit")]
-    TooManyColorAttachments,
 }
 
 
@@ -594,7 +581,6 @@ pub struct RenderBundle {
     pub(crate) device_id: Stored<id::DeviceId>,
     pub(crate) used: TrackerSet,
     pub(super) buffer_memory_init_actions: Vec<BufferInitTrackerAction>,
-    pub(super) texture_memory_init_actions: Vec<TextureInitTrackerAction>,
     pub(super) context: RenderPassContext,
     pub(crate) life_guard: LifeGuard,
 }

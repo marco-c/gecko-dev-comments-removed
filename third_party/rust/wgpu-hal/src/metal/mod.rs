@@ -141,7 +141,7 @@ impl crate::Instance<Api> for Instance {
 struct PrivateCapabilities {
     family_check: bool,
     msl_version: mtl::MTLLanguageVersion,
-    fragment_rw_storage: bool,
+    exposed_queues: usize,
     read_write_texture_tier: mtl::MTLReadWriteTextureTier,
     resource_heaps: bool,
     argument_buffers: bool,
@@ -222,7 +222,7 @@ struct PrivateCapabilities {
     supports_arrays_of_textures: bool,
     supports_arrays_of_textures_write: bool,
     supports_mutability: bool,
-    supports_depth_clip_control: bool,
+    supports_depth_clamping: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -238,11 +238,17 @@ struct Settings {
     retain_command_buffer_references: bool,
 }
 
+
+
+
+const ZERO_BUFFER_SIZE: wgt::BufferAddress = 32767 * 16; 
+
 struct AdapterShared {
     device: Mutex<mtl::Device>,
     disabilities: PrivateDisabilities,
     private_caps: PrivateCapabilities,
     settings: Settings,
+    zero_buffer: mtl::Buffer,
 }
 
 unsafe impl Send for AdapterShared {}
@@ -253,11 +259,20 @@ impl AdapterShared {
         let private_caps = PrivateCapabilities::new(&device);
         log::debug!("{:#?}", private_caps);
 
+        
+        
+        let zero_buffer = device.new_buffer(
+            ZERO_BUFFER_SIZE,
+            mtl::MTLResourceOptions::CPUCacheModeWriteCombined
+                | mtl::MTLResourceOptions::StorageModePrivate,
+        );
+
         Self {
             disabilities: PrivateDisabilities::new(&device),
             private_caps: PrivateCapabilities::new(&device),
             device: Mutex::new(device),
             settings: Settings::default(),
+            zero_buffer,
         }
     }
 }
@@ -281,6 +296,7 @@ pub struct Device {
 pub struct Surface {
     view: Option<NonNull<objc::runtime::Object>>,
     render_layer: Mutex<mtl::MetalLayer>,
+    swapchain_format: wgt::TextureFormat,
     raw_swapchain_format: mtl::MTLPixelFormat,
     extent: wgt::Extent3d,
     main_thread_id: thread::ThreadId,
@@ -406,6 +422,7 @@ impl Buffer {
 #[derive(Debug)]
 pub struct Texture {
     raw: mtl::Texture,
+    format: wgt::TextureFormat,
     raw_format: mtl::MTLPixelFormat,
     raw_type: mtl::MTLTextureType,
     array_layers: u32,
@@ -693,7 +710,7 @@ struct IndexState {
 
 #[derive(Default)]
 struct Temp {
-    binding_sizes: Vec<u32>,
+    binding_sizes: Vec<wgt::BufferSize>,
 }
 
 struct CommandState {

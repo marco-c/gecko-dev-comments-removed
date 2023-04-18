@@ -235,17 +235,10 @@ impl<S: ResourceState> ResourceTracker<S> {
         let (index, epoch, backend) = id.0.unzip();
         debug_assert_eq!(backend, self.backend);
         match self.map.entry(index) {
-            
-            
-            
-            
-            
-            
-            
             Entry::Occupied(e) => {
-                
-                if e.get().epoch == epoch && e.get().ref_count.load() == 1 {
-                    e.remove();
+                if e.get().ref_count.load() == 1 {
+                    let res = e.remove();
+                    assert_eq!(res.epoch, epoch, "Epoch mismatch for {:?}", id);
                     true
                 } else {
                     false

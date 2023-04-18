@@ -123,6 +123,117 @@ impl<'a> FunctionCtx<'_> {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug)]
+pub enum BoundsCheckPolicy {
+    
+    
+    
+    
+    
+    
+    Restrict,
+
+    
+    ReadZeroSkipWrite,
+
+    
+    
+    
+    Unchecked,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+
+
+
+pub struct BoundsCheckPolicies {
+    
+    
+    pub index: BoundsCheckPolicy,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub buffer: BoundsCheckPolicy,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub image: BoundsCheckPolicy,
+}
+
+
+impl Default for BoundsCheckPolicy {
+    fn default() -> Self {
+        BoundsCheckPolicy::Unchecked
+    }
+}
+
 impl crate::Expression {
     
     
@@ -196,21 +307,6 @@ impl crate::TypeInner {
     fn is_handle(&self) -> bool {
         match *self {
             crate::TypeInner::Image { .. } | crate::TypeInner::Sampler { .. } => true,
-            _ => false,
-        }
-    }
-}
-
-impl crate::Statement {
-    
-    
-    
-    pub fn is_terminator(&self) -> bool {
-        match *self {
-            crate::Statement::Break
-            | crate::Statement::Continue
-            | crate::Statement::Return { .. }
-            | crate::Statement::Kill => true,
             _ => false,
         }
     }

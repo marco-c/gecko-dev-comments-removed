@@ -1,98 +1,12 @@
-use crate::arena::{Arena, Handle, UniqueArena};
+use crate::arena::{Arena, Handle};
 
 use thiserror::Error;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
 pub enum TypeResolution {
-    
     Handle(Handle<crate::Type>),
-
-    
-    
-    
-    
-    
     Value(crate::TypeInner),
 }
 
@@ -104,7 +18,7 @@ impl TypeResolution {
         }
     }
 
-    pub fn inner_with<'a>(&'a self, arena: &'a UniqueArena<crate::Type>) -> &'a crate::TypeInner {
+    pub fn inner_with<'a>(&'a self, arena: &'a Arena<crate::Type>) -> &'a crate::TypeInner {
         match *self {
             Self::Handle(handle) => &arena[handle].inner,
             Self::Value(ref inner) => inner,
@@ -197,7 +111,7 @@ pub enum ResolveError {
 
 pub struct ResolveContext<'a> {
     pub constants: &'a Arena<crate::Constant>,
-    pub types: &'a UniqueArena<crate::Type>,
+    pub types: &'a Arena<crate::Type>,
     pub global_vars: &'a Arena<crate::GlobalVariable>,
     pub local_vars: &'a Arena<crate::LocalVariable>,
     pub functions: &'a Arena<crate::Function>,
@@ -205,21 +119,6 @@ pub struct ResolveContext<'a> {
 }
 
 impl<'a> ResolveContext<'a> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn resolve(
         &self,
         expr: &crate::Expression,
@@ -626,40 +525,15 @@ impl<'a> ResolveContext<'a> {
             }
             crate::Expression::Select { accept, .. } => past(accept).clone(),
             crate::Expression::Derivative { axis: _, expr } => past(expr).clone(),
-            crate::Expression::Relational { fun, argument } => match fun {
-                crate::RelationalFunction::All | crate::RelationalFunction::Any => {
-                    TypeResolution::Value(Ti::Scalar {
-                        kind: crate::ScalarKind::Bool,
-                        width: crate::BOOL_WIDTH,
-                    })
-                }
-                crate::RelationalFunction::IsNan
-                | crate::RelationalFunction::IsInf
-                | crate::RelationalFunction::IsFinite
-                | crate::RelationalFunction::IsNormal => match *past(argument).inner_with(types) {
-                    Ti::Scalar { .. } => TypeResolution::Value(Ti::Scalar {
-                        kind: crate::ScalarKind::Bool,
-                        width: crate::BOOL_WIDTH,
-                    }),
-                    Ti::Vector { size, .. } => TypeResolution::Value(Ti::Vector {
-                        kind: crate::ScalarKind::Bool,
-                        width: crate::BOOL_WIDTH,
-                        size,
-                    }),
-                    ref other => {
-                        return Err(ResolveError::IncompatibleOperands(format!(
-                            "{:?}({:?})",
-                            fun, other
-                        )))
-                    }
-                },
-            },
+            crate::Expression::Relational { .. } => TypeResolution::Value(Ti::Scalar {
+                kind: crate::ScalarKind::Bool,
+                width: crate::BOOL_WIDTH,
+            }),
             crate::Expression::Math {
                 fun,
                 arg,
                 arg1,
                 arg2: _,
-                arg3: _,
             } => {
                 use crate::MathFunction as Mf;
                 let res_arg = past(arg);
@@ -782,21 +656,7 @@ impl<'a> ResolveContext<'a> {
                     },
                     
                     Mf::CountOneBits |
-                    Mf::ReverseBits |
-                    Mf::ExtractBits |
-                    Mf::InsertBits => res_arg.clone(),
-                    
-                    Mf::Pack4x8snorm |
-                    Mf::Pack4x8unorm |
-                    Mf::Pack2x16snorm |
-                    Mf::Pack2x16unorm |
-                    Mf::Pack2x16float => TypeResolution::Value(Ti::Scalar { kind: crate::ScalarKind::Uint, width: 4 }),
-                    
-                    Mf::Unpack4x8snorm |
-                    Mf::Unpack4x8unorm => TypeResolution::Value(Ti::Vector { size: crate::VectorSize::Quad, kind: crate::ScalarKind::Float, width: 4 }),
-                    Mf::Unpack2x16snorm |
-                    Mf::Unpack2x16unorm |
-                    Mf::Unpack2x16float => TypeResolution::Value(Ti::Vector { size: crate::VectorSize::Bi, kind: crate::ScalarKind::Float, width: 4 }),
+                    Mf::ReverseBits => res_arg.clone(),
                 }
             }
             crate::Expression::As {

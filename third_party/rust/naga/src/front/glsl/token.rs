@@ -1,11 +1,82 @@
-pub use pp_rs::token::{Float, Integer, Location, PreprocessorError, Token as PPToken};
+use pp_rs::token::Location;
+pub use pp_rs::token::{Float, Integer, PreprocessorError, Token as PPToken};
 
 use super::ast::Precision;
-use crate::{Interpolation, Sampling, Span, Type};
+use crate::{Interpolation, Sampling, Type};
+use std::ops::Range;
 
-impl From<Location> for Span {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug, Clone, Copy, Default)]
+#[cfg_attr(test, derive(PartialEq))]
+pub struct SourceMetadata {
+    
+    pub start: usize,
+    
+    
+    pub end: usize,
+}
+
+impl SourceMetadata {
+    pub(crate) fn union(&self, other: &Self) -> Self {
+        SourceMetadata {
+            start: self.start.min(other.start),
+            end: self.end.max(other.end),
+        }
+    }
+
+    pub fn as_span(&self) -> crate::Span {
+        crate::Span::ByteRange(self.start..self.end)
+    }
+
+    pub(crate) fn none() -> Self {
+        SourceMetadata::default()
+    }
+}
+
+impl From<Location> for SourceMetadata {
     fn from(loc: Location) -> Self {
-        Span::new(loc.start, loc.end)
+        SourceMetadata {
+            start: loc.start as usize,
+            end: loc.end as usize,
+        }
+    }
+}
+
+impl From<SourceMetadata> for Range<usize> {
+    fn from(meta: SourceMetadata) -> Self {
+        meta.start..meta.end
     }
 }
 
@@ -13,7 +84,7 @@ impl From<Location> for Span {
 #[cfg_attr(test, derive(PartialEq))]
 pub struct Token {
     pub value: TokenValue,
-    pub meta: Span,
+    pub meta: SourceMetadata,
 }
 
 

@@ -1,8 +1,7 @@
 use crate::{arena::Handle, FastHashMap, FastHashSet};
-use std::borrow::Cow;
+use std::collections::hash_map::Entry;
 
 pub type EntryPointIndex = u16;
-const SEPARATOR: char = '_';
 
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub enum NameKey {
@@ -22,49 +21,30 @@ pub enum NameKey {
 
 #[derive(Default)]
 pub struct Namer {
-    
-    unique: FastHashMap<String, u32>,
+    unique: FastHashMap<(String, u32), u32>,
     keywords: FastHashSet<String>,
+    
+    namespace_index: u32,
     reserved_prefixes: Vec<String>,
 }
 
 impl Namer {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn sanitize<'s>(&self, string: &'s str) -> Cow<'s, str> {
-        let string = string
-            .trim_start_matches(|c: char| c.is_numeric())
-            .trim_end_matches(SEPARATOR);
-
-        let base = if !string.is_empty()
-            && string
-                .chars()
-                .all(|c: char| c.is_ascii_alphanumeric() || c == '_')
-        {
-            Cow::Borrowed(string)
-        } else {
-            let mut filtered = string
-                .chars()
-                .filter(|&c| c.is_ascii_alphanumeric() || c == '_')
-                .collect::<String>();
-            let stripped_len = filtered.trim_end_matches(SEPARATOR).len();
-            filtered.truncate(stripped_len);
-            if filtered.is_empty() {
-                filtered.push_str("unnamed");
-            }
-            Cow::Owned(filtered)
+    fn sanitize(&self, string: &str) -> String {
+        let mut base = string
+            .chars()
+            .skip_while(|c| c.is_numeric())
+            .filter(|&c| c.is_ascii_alphanumeric() || c == '_')
+            .collect::<String>();
+        
+        
+        match base.chars().next_back() {
+            Some(c) if !c.is_numeric() => {}
+            _ => base.push('_'),
         };
 
         for prefix in &self.reserved_prefixes {
             if base.starts_with(prefix) {
-                return format!("gen_{}", base).into();
+                return format!("gen_{}", base);
             }
         }
 
@@ -73,64 +53,61 @@ impl Namer {
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn call(&mut self, label_raw: &str) -> String {
-        use std::fmt::Write as _; 
-
-        let base = self.sanitize(label_raw);
-        debug_assert!(!base.is_empty() && !base.ends_with(SEPARATOR));
-
-        
-        
-        
-        
-        
-        match self.unique.get_mut(base.as_ref()) {
-            Some(count) => {
-                *count += 1;
-                
-                let mut suffixed = base.into_owned();
-                write!(&mut suffixed, "{}{}", SEPARATOR, *count).unwrap();
-                suffixed
+    pub fn call_unique(&mut self, string: &str) -> String {
+        let base = self.sanitize(string);
+        match self.unique.entry((base, self.namespace_index)) {
+            Entry::Occupied(mut e) => {
+                *e.get_mut() += 1;
+                format!("{}{}", e.key().0, e.get())
             }
-            None => {
-                let mut suffixed = base.to_string();
-                if base.ends_with(char::is_numeric) || self.keywords.contains(base.as_ref()) {
-                    suffixed.push(SEPARATOR);
+            Entry::Vacant(e) => {
+                let name = &e.key().0;
+                if self.keywords.contains(&e.key().0) {
+                    let name = format!("{}1", name);
+                    e.insert(1);
+                    name
+                } else {
+                    name.to_string()
                 }
-                debug_assert!(!self.keywords.contains(&suffixed));
-                
-                
-                self.unique.insert(base.into_owned(), 0);
-                suffixed
             }
         }
     }
 
-    pub fn call_or(&mut self, label: &Option<String>, fallback: &str) -> String {
+    pub fn call(&mut self, label_raw: &str) -> String {
+        let base = self.sanitize(label_raw);
+        match self.unique.entry((base, self.namespace_index)) {
+            Entry::Occupied(mut e) => {
+                *e.get_mut() += 1;
+                format!("{}{}", e.key().0, e.get())
+            }
+            Entry::Vacant(e) => {
+                let name = &e.key().0;
+                if self.keywords.contains(&e.key().0) {
+                    let name = format!("{}1", name);
+                    e.insert(1);
+                    name
+                } else {
+                    let name = name.to_string();
+                    e.insert(0);
+                    name
+                }
+            }
+        }
+    }
+
+    fn call_or(&mut self, label: &Option<String>, fallback: &str) -> String {
         self.call(match *label {
             Some(ref name) => name,
             None => fallback,
         })
     }
 
-    
-    
-    
-    
-    
-    fn namespace(&mut self, capacity: usize, body: impl FnOnce(&mut Self)) {
-        let fresh = FastHashMap::with_capacity_and_hasher(capacity, Default::default());
-        let outer = std::mem::replace(&mut self.unique, fresh);
-        body(self);
-        self.unique = outer;
+    fn namespace(&mut self, f: impl FnOnce(&mut Self)) {
+        self.namespace_index += 1;
+        f(self);
+        let current_ns = self.namespace_index;
+        self.unique.retain(|&(_, ns), _| ns != current_ns);
+        self.namespace_index -= 1;
     }
 
     pub fn reset(
@@ -156,7 +133,7 @@ impl Namer {
 
             if let crate::TypeInner::Struct { ref members, .. } = ty.inner {
                 
-                self.namespace(members.len(), |namer| {
+                self.namespace(|namer| {
                     for (index, member) in members.iter().enumerate() {
                         let name = namer.call_or(&member.name, "member");
                         output.insert(NameKey::StructMember(ty_handle, index as u32), name);
@@ -250,12 +227,4 @@ impl Namer {
             output.insert(NameKey::Constant(handle), name);
         }
     }
-}
-
-#[test]
-fn test() {
-    let mut namer = Namer::default();
-    assert_eq!(namer.call("x"), "x");
-    assert_eq!(namer.call("x"), "x_1");
-    assert_eq!(namer.call("x1"), "x1_");
 }
