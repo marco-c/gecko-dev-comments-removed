@@ -35,8 +35,8 @@ class EncoderHeuristics {
   
   virtual Status LossyFrameHeuristics(
       PassesEncoderState* enc_state, ModularFrameEncoder* modular_frame_encoder,
-      const ImageBundle* original_pixels, Image3F* opsin, ThreadPool* pool,
-      AuxOut* aux_out) = 0;
+      const ImageBundle* original_pixels, Image3F* opsin,
+      const JxlCmsInterface& cms, ThreadPool* pool, AuxOut* aux_out) = 0;
 
   
   
@@ -61,8 +61,8 @@ class DefaultEncoderHeuristics : public EncoderHeuristics {
   Status LossyFrameHeuristics(PassesEncoderState* enc_state,
                               ModularFrameEncoder* modular_frame_encoder,
                               const ImageBundle* original_pixels,
-                              Image3F* opsin, ThreadPool* pool,
-                              AuxOut* aux_out) override;
+                              Image3F* opsin, const JxlCmsInterface& cms,
+                              ThreadPool* pool, AuxOut* aux_out) override;
   bool HandlesColorConversion(const CompressParams& cparams,
                               const ImageBundle& ib) override;
 };
@@ -72,7 +72,8 @@ class FastEncoderHeuristics : public EncoderHeuristics {
   Status LossyFrameHeuristics(PassesEncoderState* enc_state,
                               ModularFrameEncoder* modular_frame_encoder,
                               const ImageBundle* linear, Image3F* opsin,
-                              ThreadPool* pool, AuxOut* aux_out) override;
+                              const JxlCmsInterface& cms, ThreadPool* pool,
+                              AuxOut* aux_out) override;
 };
 
 

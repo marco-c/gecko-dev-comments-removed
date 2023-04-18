@@ -49,7 +49,7 @@ TEST(PatchDictionaryTest, GrayscaleVarDCT) {
   
   EXPECT_LE(Roundtrip(&io, cparams, dparams, pool, &io2), 14000u);
   
-  EXPECT_LE(ButteraugliDistance(io, io2, cparams.ba_params,
+  EXPECT_LE(ButteraugliDistance(io, io2, cparams.ba_params, GetJxlCms(),
                                 nullptr, pool),
             1.1);
 }

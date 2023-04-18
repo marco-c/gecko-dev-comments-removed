@@ -30,7 +30,8 @@ class ModularFrameEncoder {
                              Image3F* JXL_RESTRICT color,
                              const std::vector<ImageF>& extra_channels,
                              PassesEncoderState* JXL_RESTRICT enc_state,
-                             ThreadPool* pool, AuxOut* aux_out, bool do_color);
+                             const JxlCmsInterface& cms, ThreadPool* pool,
+                             AuxOut* aux_out, bool do_color);
   
   Status EncodeGlobalInfo(BitWriter* writer, AuxOut* aux_out);
   

@@ -124,8 +124,12 @@ class PatchDictionary {
 
   
   
-  Status AddTo(Image3F* opsin, const Rect& opsin_rect,
-               float* const* extra_channels, const Rect& image_rect) const;
+  void AddOneRow(float* const* inout, size_t y, size_t x0, size_t xsize) const;
+
+  
+  
+  void AddTo(Image3F* opsin, const Rect& opsin_rect,
+             float* const* extra_channels, const Rect& image_rect) const;
 
   
   
