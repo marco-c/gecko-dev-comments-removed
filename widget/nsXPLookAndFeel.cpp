@@ -1124,18 +1124,20 @@ void LookAndFeel::DoHandleGlobalThemeChange() {
       }));
 }
 
+
+
+
 static bool ShouldUseStandinsForNativeColorForNonNativeTheme(
     const dom::Document& aDoc, LookAndFeel::ColorID aColor,
     const PreferenceSheet::Prefs& aPrefs) {
   using ColorID = LookAndFeel::ColorID;
-  if (!aDoc.ShouldAvoidNativeTheme()) {
+  if (!aDoc.ShouldAvoidNativeTheme() ||
+      aPrefs.NonNativeThemeShouldBeHighContrast()) {
     return false;
   }
 
-  
-  
-  
   switch (aColor) {
+    
     case ColorID::Buttonface:
     case ColorID::Buttontext:
     case ColorID::MozButtonhoverface:
@@ -1144,25 +1146,29 @@ static bool ShouldUseStandinsForNativeColorForNonNativeTheme(
     case ColorID::MozButtonactivetext:
     case ColorID::MozButtondisabledface:
 
+    
     case ColorID::Threedlightshadow:
+    
     case ColorID::Threeddarkshadow:
+    
     case ColorID::Threedface:
 
+    
     case ColorID::MozCombobox:
     case ColorID::MozComboboxtext:
 
+    
     case ColorID::Field:
-    case ColorID::MozDisabledfield:
     case ColorID::Fieldtext:
 
+    
+    case ColorID::MozDisabledfield:
     case ColorID::Graytext:
-      return !aPrefs.NonNativeThemeShouldBeHighContrast();
+      return true;
 
     default:
-      break;
+      return false;
   }
-
-  return false;
 }
 
 ColorScheme LookAndFeel::sChromeColorScheme;
