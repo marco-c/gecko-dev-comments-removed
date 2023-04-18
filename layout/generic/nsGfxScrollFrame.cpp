@@ -6110,18 +6110,6 @@ bool ScrollFrameHelper::IsScrollingActive() const {
          nsContentUtils::HasScrollgrab(content);
 }
 
-bool ScrollFrameHelper::IsScrollingActiveNotMinimalDisplayPort() const {
-  const nsStyleDisplay* disp = mOuter->StyleDisplay();
-  if (disp->mWillChange.bits & StyleWillChangeBits::SCROLL) {
-    return true;
-  }
-
-  nsIContent* content = mOuter->GetContent();
-  return mHasBeenScrolledRecently || IsAlwaysActive() ||
-         DisplayPortUtils::HasNonMinimalDisplayPort(content) ||
-         nsContentUtils::HasScrollgrab(content);
-}
-
 
 
 
