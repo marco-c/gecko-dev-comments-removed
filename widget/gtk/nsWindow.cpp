@@ -4979,7 +4979,10 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
         LOG("  start window dragging window\n");
         gdk_window_begin_move_drag(gdk_window, 1, aEvent->x_root,
                                    aEvent->y_root, aEvent->time);
-        return TRUE;
+
+        
+        
+        msg = eTouchCancel;
       }
       break;
     case GDK_TOUCH_END:
@@ -5013,14 +5016,13 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
   KeymapWrapper::InitInputEvent(event, aEvent->state);
   event.mTime = aEvent->time;
 
-  if (aEvent->type == GDK_TOUCH_BEGIN || aEvent->type == GDK_TOUCH_UPDATE) {
+  if (msg == eTouchStart || msg == eTouchMove) {
     mTouches.InsertOrUpdate(aEvent->sequence, std::move(touch));
     
     for (const auto& data : mTouches.Values()) {
       event.mTouches.AppendElement(new dom::Touch(*data));
     }
-  } else if (aEvent->type == GDK_TOUCH_END ||
-             aEvent->type == GDK_TOUCH_CANCEL) {
+  } else if (msg == eTouchEnd || msg == eTouchCancel) {
     *event.mTouches.AppendElement() = std::move(touch);
   }
 
@@ -5030,8 +5032,7 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
   
   LayoutDeviceIntPoint refPoint =
       GdkEventCoordsToDevicePixels(aEvent->x, aEvent->y);
-  if (aEvent->type == GDK_TOUCH_BEGIN &&
-      mDraggableRegion.Contains(refPoint.x, refPoint.y) &&
+  if (msg == eTouchStart && mDraggableRegion.Contains(refPoint.x, refPoint.y) &&
       eventStatus.mApzStatus != nsEventStatus_eConsumeNoDefault) {
     mWindowShouldStartDragging = true;
   }
