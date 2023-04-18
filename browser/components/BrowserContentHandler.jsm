@@ -41,6 +41,9 @@ XPCOMUtils.defineLazyGlobalGetters(this, [URL]);
 const ONCE_DOMAINS = ["mozilla.org", "firefox.com"];
 const ONCE_PREF = "browser.startup.homepage_override.once";
 
+
+
+const PRIVATE_BROWSING_ICON_INDEX = 5;
 const PRIVACY_SEGMENTATION_PREF = "browser.privacySegmentation.enabled";
 
 function shouldLoadURI(aURI) {
@@ -277,6 +280,13 @@ function openBrowserWindow(
           
           
           WinTaskbar.setGroupIdForWindow(win, WinTaskbar.defaultPrivateGroupId);
+          WindowsUIUtils.setWindowIconFromExe(
+            win,
+            Services.dirsvc.get("XREExeF", Ci.nsIFile).path,
+            
+            
+            PRIVATE_BROWSING_ICON_INDEX
+          );
         }
       }
 
