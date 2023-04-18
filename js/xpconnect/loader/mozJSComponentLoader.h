@@ -65,10 +65,15 @@ class mozJSComponentLoader final : public nsIMemoryReporter {
                       JS::HandleValue aTargetObj, JSContext* aCx, uint8_t aArgc,
                       JS::MutableHandleValue aRetval);
 
+  
   nsresult Import(JSContext* aCx, const nsACString& aResourceURI,
                   JS::MutableHandleObject aModuleGlobal,
                   JS::MutableHandleObject aModuleExports,
                   bool aIgnoreExports = false);
+
+  
+  nsresult ImportModule(JSContext* aCx, const nsACString& aResourceURI,
+                        JS::MutableHandleObject aModuleNamespace);
 
   nsresult Unload(const nsACString& aResourceURI);
   nsresult IsModuleLoaded(const nsACString& aResourceURI, bool* aRetval);
