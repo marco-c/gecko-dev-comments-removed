@@ -515,6 +515,17 @@ bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
     if (NS_FAILED(csp->GetAllowsWasmEval(&reportViolation, &evalOK))) {
       return false;
     }
+    if (!evalOK) {
+      
+      
+      
+      
+      auto* addonPolicy = BasePrincipal::Cast(subjectPrincipal)->AddonPolicy();
+      if (addonPolicy && addonPolicy->ManifestVersion() == 2) {
+        reportViolation = true;
+        evalOK = true;
+      }
+    }
   }
 
   if (reportViolation) {
