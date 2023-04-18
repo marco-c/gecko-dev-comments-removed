@@ -2139,6 +2139,7 @@ WorkerThreadPrimaryRunnable::Run() {
 
     
     nsWeakPtr globalScopeSentinel;
+    nsWeakPtr debuggerScopeSentinel;
 
     {
       nsCycleCollector_startup();
@@ -2177,9 +2178,6 @@ WorkerThreadPrimaryRunnable::Run() {
       }
 
       
-      globalScopeSentinel = do_GetWeakReference(mWorkerPrivate->GlobalScope());
-
-      
       
       
       
@@ -2191,6 +2189,15 @@ WorkerThreadPrimaryRunnable::Run() {
       
       
       NS_ProcessPendingEvents(nullptr);
+
+      
+      
+      globalScopeSentinel = do_GetWeakReference(mWorkerPrivate->GlobalScope());
+      debuggerScopeSentinel =
+          do_GetWeakReference(mWorkerPrivate->DebuggerGlobalScope());
+      MOZ_ASSERT(!mWorkerPrivate->GlobalScope() || globalScopeSentinel);
+      MOZ_ASSERT(!mWorkerPrivate->DebuggerGlobalScope() ||
+                 debuggerScopeSentinel);
 
       
       
@@ -2212,9 +2219,17 @@ WorkerThreadPrimaryRunnable::Run() {
     nsCOMPtr<DOMEventTargetHelper> globalScopeAlive =
         do_QueryReferent(globalScopeSentinel);
     MOZ_ASSERT(!globalScopeAlive);
+    nsCOMPtr<DOMEventTargetHelper> debuggerScopeAlive =
+        do_QueryReferent(debuggerScopeSentinel);
+    MOZ_ASSERT(!debuggerScopeAlive);
+
     
     if (globalScopeAlive) {
-      static_cast<WorkerGlobalScope*>(globalScopeAlive.get())
+      static_cast<WorkerGlobalScopeBase*>(globalScopeAlive.get())
+          ->NoteWorkerTerminated();
+    }
+    if (debuggerScopeAlive) {
+      static_cast<WorkerGlobalScopeBase*>(debuggerScopeAlive.get())
           ->NoteWorkerTerminated();
     }
   }
