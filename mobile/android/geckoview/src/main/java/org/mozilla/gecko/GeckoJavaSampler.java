@@ -7,11 +7,17 @@ package org.mozilla.gecko;
 
 import android.os.Build;
 import android.os.Looper;
+import android.os.Process;
 import android.os.SystemClock;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -28,11 +34,26 @@ import org.mozilla.gecko.mozglue.JNIObject;
 
 
 
-
-
-
 public class GeckoJavaSampler {
   private static final String LOGTAG = "GeckoJavaSampler";
+
+  
+
+
+
+
+
+
+
+
+  private static final long REPLACEMENT_MAIN_THREAD_ID = 1;
+  
+
+
+
+
+
+  private static final String REPLACEMENT_MAIN_THREAD_NAME = "AndroidUI";
 
   @GuardedBy("GeckoJavaSampler.class")
   private static SamplingRunnable sSamplingRunnable;
@@ -42,7 +63,8 @@ public class GeckoJavaSampler {
 
   
   @GuardedBy("GeckoJavaSampler.class")
-  private static AtomicReference<ScheduledFuture<?>> sSamplingFuture = new AtomicReference<>();
+  private static final AtomicReference<ScheduledFuture<?>> sSamplingFuture =
+      new AtomicReference<>();
 
   private static final MarkerStorage sMarkerStorage = new MarkerStorage();
 
@@ -86,11 +108,13 @@ public class GeckoJavaSampler {
 
 
   private static class Sample {
+    public final long mThreadId;
     public final Frame[] mFrames;
     public final double mTime;
     public final long mJavaTime; 
 
-    public Sample(final StackTraceElement[] aStack) {
+    public Sample(final long aThreadId, final StackTraceElement[] aStack) {
+      mThreadId = aThreadId;
       mFrames = new Frame[aStack.length];
       mTime = GeckoThread.isStateAtLeast(GeckoThread.State.JNI_READY) ? getProfilerTime() : 0;
 
@@ -116,6 +140,27 @@ public class GeckoJavaSampler {
     private Frame(final String methodName, final String className) {
       this.methodName = methodName;
       this.className = className;
+    }
+  }
+
+  
+  private static class ThreadInfo {
+    private final long mId;
+    private final String mName;
+
+    public ThreadInfo(final long mId, final String mName) {
+      this.mId = mId;
+      this.mName = mName;
+    }
+
+    @WrapForJNI
+    public long getId() {
+      return mId;
+    }
+
+    @WrapForJNI
+    public String getName() {
+      return mName;
     }
   }
 
@@ -259,6 +304,8 @@ public class GeckoJavaSampler {
 
 
   private static class SamplingRunnable implements Runnable {
+    private final long mMainThreadId = Looper.getMainLooper().getThread().getId();
+
     
     public final int mInterval;
     private final int mSampleCount;
@@ -266,7 +313,8 @@ public class GeckoJavaSampler {
     @GuardedBy("GeckoJavaSampler.class")
     private boolean mBufferOverflowed = false;
 
-    private final Thread mMainThread;
+    @GuardedBy("GeckoJavaSampler.class")
+    private @NonNull final List<Thread> mThreadsToProfile;
 
     @GuardedBy("GeckoJavaSampler.class")
     private final Sample[] mSamples;
@@ -274,34 +322,44 @@ public class GeckoJavaSampler {
     @GuardedBy("GeckoJavaSampler.class")
     private int mSamplePos;
 
-    public SamplingRunnable(final int aInterval, final int aSampleCount) {
+    public SamplingRunnable(
+        @NonNull final List<Thread> aThreadsToProfile,
+        final int aInterval,
+        final int aSampleCount) {
+      mThreadsToProfile = aThreadsToProfile;
       
       mInterval = Math.max(1, aInterval);
       mSampleCount = aSampleCount;
       mSamples = new Sample[mSampleCount];
       mSamplePos = 0;
-
-      
-      mMainThread = Looper.getMainLooper().getThread();
-      if (mMainThread == null) {
-        Log.e(LOGTAG, "Main thread not found");
-      }
     }
 
     @Override
     public void run() {
       synchronized (GeckoJavaSampler.class) {
-        if (mMainThread == null) {
-          return;
-        }
-        final StackTraceElement[] bt = mMainThread.getStackTrace();
-        mSamples[mSamplePos] = new Sample(bt);
-        mSamplePos += 1;
-        if (mSamplePos == mSampleCount) {
+        
+        
+        
+        
+        
+        for (int i = 0; i < mThreadsToProfile.size(); i++) {
+          final Thread thread = mThreadsToProfile.get(i);
+
           
           
-          mSamplePos = 0;
-          mBufferOverflowed = true;
+          final StackTraceElement[] stackTrace = thread.getStackTrace();
+          if (stackTrace.length == 0) {
+            continue;
+          }
+
+          mSamples[mSamplePos] = new Sample(thread.getId(), stackTrace);
+          mSamplePos += 1;
+          if (mSamplePos == mSampleCount) {
+            
+            
+            mSamplePos = 0;
+            mBufferOverflowed = true;
+          }
         }
       }
     }
@@ -344,6 +402,37 @@ public class GeckoJavaSampler {
   @WrapForJNI
   public static Marker pollNextMarker() {
     return sMarkerStorage.pollNextMarker();
+  }
+
+  @WrapForJNI
+  public static synchronized int getRegisteredThreadCount() {
+    return sSamplingRunnable.mThreadsToProfile.size();
+  }
+
+  @WrapForJNI
+  public static synchronized ThreadInfo getRegisteredThreadInfo(final int aIndex) {
+    final Thread thread = sSamplingRunnable.mThreadsToProfile.get(aIndex);
+
+    
+    String adjustedThreadName =
+        thread.getId() == sSamplingRunnable.mMainThreadId
+            ? REPLACEMENT_MAIN_THREAD_NAME
+            : thread.getName();
+
+    
+    adjustedThreadName += " (JVM)";
+    return new ThreadInfo(getAdjustedThreadId(thread.getId()), adjustedThreadName);
+  }
+
+  @WrapForJNI
+  public static synchronized long getThreadId(final int aSampleId) {
+    final Sample sample = getSample(aSampleId);
+    return getAdjustedThreadId(sample != null ? sample.mThreadId : 0);
+  }
+
+  private static synchronized long getAdjustedThreadId(final long threadId) {
+    
+    return threadId == sSamplingRunnable.mMainThreadId ? REPLACEMENT_MAIN_THREAD_ID : threadId;
   }
 
   @WrapForJNI
@@ -446,7 +535,8 @@ public class GeckoJavaSampler {
   }
 
   @WrapForJNI
-  public static void start(final int aInterval, final int aEntryCount) {
+  public static void start(
+      @NonNull final Object[] aFilters, final int aInterval, final int aEntryCount) {
     synchronized (GeckoJavaSampler.class) {
       if (sSamplingRunnable != null) {
         return;
@@ -460,13 +550,140 @@ public class GeckoJavaSampler {
       
       
       final int limitedEntryCount = Math.min(aEntryCount, 120000);
-      sSamplingRunnable = new SamplingRunnable(aInterval, limitedEntryCount);
+      sSamplingRunnable =
+          new SamplingRunnable(getThreadsToProfile(aFilters), aInterval, limitedEntryCount);
       sMarkerStorage.start(limitedEntryCount);
       sSamplingScheduler = Executors.newSingleThreadScheduledExecutor();
       sSamplingFuture.set(
           sSamplingScheduler.scheduleAtFixedRate(
               sSamplingRunnable, 0, sSamplingRunnable.mInterval, TimeUnit.MILLISECONDS));
     }
+  }
+
+  private static @NonNull List<Thread> getThreadsToProfile(final Object[] aFilters) {
+    
+    final List<String> cleanedFilters = new ArrayList<>();
+    for (final Object rawFilter : aFilters) {
+      
+      
+      
+      
+      
+      final String filter = ((String) rawFilter).trim().toLowerCase(Locale.US);
+
+      
+      if (filter.isEmpty()) {
+        continue;
+      }
+
+      cleanedFilters.add(filter);
+    }
+
+    final ThreadGroup rootThreadGroup = getRootThreadGroup();
+    final Thread[] activeThreads = getActiveThreads(rootThreadGroup);
+    final Thread mainThread = Looper.getMainLooper().getThread();
+
+    
+    
+    if (cleanedFilters.contains("*") || doAnyFiltersMatchPid(cleanedFilters, Process.myPid())) {
+      final List<Thread> activeThreadList = new ArrayList<>();
+      Collections.addAll(activeThreadList, activeThreads);
+      if (!activeThreadList.contains(mainThread)) {
+        activeThreadList.add(mainThread); 
+      }
+      return activeThreadList;
+    }
+
+    
+    
+    
+    
+    final List<Thread> threadsToProfile = new ArrayList<>();
+    threadsToProfile.add(mainThread);
+
+    for (final Thread thread : activeThreads) {
+      if (shouldProfileThread(thread, cleanedFilters, mainThread)) {
+        threadsToProfile.add(thread);
+      }
+    }
+    return threadsToProfile;
+  }
+
+  private static boolean shouldProfileThread(
+      final Thread aThread, final List<String> aFilters, final Thread aMainThread) {
+    final String threadName = aThread.getName().trim().toLowerCase(Locale.US);
+    if (threadName.isEmpty()) {
+      return false; 
+    }
+
+    if (aThread.equals(aMainThread)) {
+      return false; 
+    }
+
+    for (final String filter : aFilters) {
+      
+      
+      
+      if (threadName.contains(filter)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private static boolean doAnyFiltersMatchPid(
+      @NonNull final List<String> aFilters, final long aPid) {
+    final String prefix = "pid:";
+    for (final String filter : aFilters) {
+      if (!filter.startsWith(prefix)) {
+        continue;
+      }
+
+      try {
+        final long filterPid = Long.parseLong(filter.substring(prefix.length()));
+        if (filterPid == aPid) {
+          return true;
+        }
+      } catch (final NumberFormatException e) {
+        
+      }
+    }
+
+    return false;
+  }
+
+  private static @NonNull Thread[] getActiveThreads(final @NonNull ThreadGroup rootThreadGroup) {
+    
+    
+    
+    
+    
+    
+    
+    Thread[] allThreads;
+    int threadsFound;
+    do {
+      allThreads = new Thread[rootThreadGroup.activeCount() + 15];
+      threadsFound = rootThreadGroup.enumerate(allThreads,  true);
+    } while (threadsFound >= allThreads.length);
+
+    
+    
+    return Arrays.copyOfRange(allThreads, 0, threadsFound);
+  }
+
+  private static @NonNull ThreadGroup getRootThreadGroup() {
+    
+    
+    ThreadGroup parentGroup = Objects.requireNonNull(Thread.currentThread().getThreadGroup());
+
+    ThreadGroup group = null;
+    while (parentGroup != null) {
+      group = parentGroup;
+      parentGroup = group.getParent();
+    }
+    return group;
   }
 
   @WrapForJNI

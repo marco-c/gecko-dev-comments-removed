@@ -709,6 +709,7 @@ public class GeckoThread extends Thread {
     final String startupEnv = "MOZ_PROFILER_STARTUP=";
     final String intervalEnv = "MOZ_PROFILER_STARTUP_INTERVAL=";
     final String capacityEnv = "MOZ_PROFILER_STARTUP_ENTRIES=";
+    final String filtersEnv = "MOZ_PROFILER_STARTUP_FILTERS=";
     boolean isStartupProfiling = false;
     
     
@@ -727,6 +728,10 @@ public class GeckoThread extends Thread {
     
     
     final int minCapacity = 65536;
+
+    
+    
+    String[] filters = new String[0];
 
     
     for (final String envItem : env) {
@@ -766,11 +771,13 @@ public class GeckoThread extends Thread {
         } catch (final NumberFormatException err) {
           
         }
+      } else if (envItem.startsWith(filtersEnv)) {
+        filters = envItem.substring(filtersEnv.length()).split(",");
       }
     }
 
     if (isStartupProfiling) {
-      GeckoJavaSampler.start(interval, capacity);
+      GeckoJavaSampler.start(filters, interval, capacity);
     }
   }
 
