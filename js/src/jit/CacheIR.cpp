@@ -416,6 +416,7 @@ AttachDecision GetPropIRGenerator::tryAttachStub() {
       TRY_ATTACH(tryAttachDenseElementHole(obj, objId, index, indexId));
       TRY_ATTACH(tryAttachSparseElement(obj, objId, index, indexId));
       TRY_ATTACH(tryAttachArgumentsObjectArg(obj, objId, index, indexId));
+      TRY_ATTACH(tryAttachArgumentsObjectArgHole(obj, objId, index, indexId));
       TRY_ATTACH(tryAttachGenericElement(obj, objId, index, indexId));
 
       trackAttached(IRGenerator::NotAttached);
@@ -2262,7 +2263,8 @@ static bool ClassCanHaveExtraProperties(const JSClass* clasp) {
 }
 
 static bool CanAttachDenseElementHole(NativeObject* obj, bool ownProp,
-                                      bool allowIndexedReceiver = false) {
+                                      bool allowIndexedReceiver = false,
+                                      bool allowExtraProperties = false) {
   
   
   
@@ -2274,9 +2276,10 @@ static bool CanAttachDenseElementHole(NativeObject* obj, bool ownProp,
     }
     allowIndexedReceiver = false;
 
-    if (ClassCanHaveExtraProperties(obj->getClass())) {
+    if (!allowExtraProperties && ClassCanHaveExtraProperties(obj->getClass())) {
       return false;
     }
+    allowExtraProperties = false;
 
     
     if (ownProp) {
@@ -2337,6 +2340,51 @@ AttachDecision GetPropIRGenerator::tryAttachArgumentsObjectArg(
   writer.returnFromIC();
 
   trackAttached("ArgumentsObjectArg");
+  return AttachDecision::Attach;
+}
+
+AttachDecision GetPropIRGenerator::tryAttachArgumentsObjectArgHole(
+    HandleObject obj, ObjOperandId objId, uint32_t index,
+    Int32OperandId indexId) {
+  if (!obj->is<ArgumentsObject>()) {
+    return AttachDecision::NoAction;
+  }
+  auto* args = &obj->as<ArgumentsObject>();
+
+  
+  if (args->hasOverriddenElement()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (index < args->initialLength() && args->argIsForwarded(index)) {
+    return AttachDecision::NoAction;
+  }
+
+  if (!CanAttachDenseElementHole(args, false, true, true)) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  
+  
+  
+  
+
+  if (args->is<MappedArgumentsObject>()) {
+    writer.guardClass(objId, GuardClassKind::MappedArguments);
+  } else {
+    MOZ_ASSERT(args->is<UnmappedArgumentsObject>());
+    writer.guardClass(objId, GuardClassKind::UnmappedArguments);
+  }
+
+  GeneratePrototypeHoleGuards(writer, args, objId,
+                               true);
+
+  writer.loadArgumentsObjectArgHoleResult(objId, indexId);
+  writer.returnFromIC();
+
+  trackAttached("ArgumentsObjectArgHole");
   return AttachDecision::Attach;
 }
 
