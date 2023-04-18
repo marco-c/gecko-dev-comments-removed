@@ -177,6 +177,9 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   void KillProcess();
 
   
+  void CrashProcess();
+
+  
   base::ProcessId GPUProcessPid();
 
   

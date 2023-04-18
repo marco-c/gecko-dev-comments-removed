@@ -239,6 +239,8 @@ uint64_t GPUProcessHost::GetProcessToken() const { return mProcessToken; }
 
 void GPUProcessHost::KillProcess() { KillHard("DiagnosticKill"); }
 
+void GPUProcessHost::CrashProcess() { mGPUChild->SendCrashProcess(); }
+
 void GPUProcessHost::DestroyProcess() {
   
   

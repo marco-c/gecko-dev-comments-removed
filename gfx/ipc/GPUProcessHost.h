@@ -108,6 +108,9 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   void KillProcess();
 
+  
+  void CrashProcess();
+
 #ifdef MOZ_WIDGET_ANDROID
   java::CompositorSurfaceManager::Param GetCompositorSurfaceManager();
 #endif

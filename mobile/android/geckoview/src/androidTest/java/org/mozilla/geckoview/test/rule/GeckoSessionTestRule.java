@@ -2417,6 +2417,16 @@ public class GeckoSessionTestRule implements TestRule {
     webExtensionApiCall(session, "PromiseAllPaintsDone", null);
   }
 
+  
+  public boolean usingGpuProcess() {
+    return (Boolean) webExtensionApiCall("UsingGpuProcess", null);
+  }
+
+  
+  public void crashGpuProcess() {
+    webExtensionApiCall("CrashGpuProcess", null);
+  }
+
   private Object webExtensionApiCall(
       final @NonNull String apiName, final @NonNull SetArgs argsSetter) {
     return webExtensionApiCall(null, apiName, argsSetter);

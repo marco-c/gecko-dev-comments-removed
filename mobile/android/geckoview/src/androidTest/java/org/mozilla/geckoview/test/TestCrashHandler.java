@@ -264,6 +264,10 @@ public class TestCrashHandler extends Service {
   public synchronized int onStartCommand(final Intent intent, final int flags, final int startId) {
     if (mMsgHandler != null) {
       mMsgHandler.reportResult(evalCrashInfo(intent));
+      
+      
+      
+      stopSelf();
       return Service.START_NOT_STICKY;
     }
 

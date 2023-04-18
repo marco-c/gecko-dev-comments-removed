@@ -122,6 +122,9 @@ parent:
   
   async TestTriggerMetrics();
 
+  
+  async CrashProcess();
+
 child:
   
   
