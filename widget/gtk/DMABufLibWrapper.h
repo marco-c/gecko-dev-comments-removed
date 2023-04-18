@@ -56,9 +56,9 @@ typedef void (*DestroySurfaceFunc)(struct gbm_surface*);
 
 class nsGbmLib {
  public:
-  static bool Load();
-  static bool IsLoaded();
-  static bool IsAvailable();
+  static bool IsAvailable() {
+    return sLoaded || Load();
+  }
   static bool IsModifierAvailable();
 
   static struct gbm_device* CreateDevice(int fd) {
@@ -147,6 +147,9 @@ class nsGbmLib {
   }
 
  private:
+  static bool Load();
+  static bool IsLoaded();
+
   static CreateDeviceFunc sCreateDevice;
   static DestroyDeviceFunc sDestroyDevice;
   static CreateFunc sCreate;
@@ -165,11 +168,11 @@ class nsGbmLib {
   static DrmPrimeHandleToFDFunc sDrmPrimeHandleToFD;
   static CreateSurfaceFunc sCreateSurface;
   static DestroySurfaceFunc sDestroySurface;
+  static bool sLoaded;
 
   static void* sGbmLibHandle;
   static void* sXf86DrmLibHandle;
   static mozilla::StaticMutex sDRILock MOZ_UNANNOTATED;
-  static bool sLibLoaded;
 };
 
 struct GbmFormat {
