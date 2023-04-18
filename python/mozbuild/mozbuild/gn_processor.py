@@ -328,7 +328,6 @@ def process_gn_config(
         context_attrs["LOCAL_INCLUDES"] += [
             "!/ipc/ipdl/_ipdlheaders",
             "/ipc/chromium/src",
-            "/ipc/glue",
             "/tools/profiler/public",
         ]
         

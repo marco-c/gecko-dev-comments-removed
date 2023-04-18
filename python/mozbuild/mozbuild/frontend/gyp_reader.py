@@ -364,7 +364,6 @@ def process_gyp_result(
             context["LOCAL_INCLUDES"] += [
                 "!/ipc/ipdl/_ipdlheaders",
                 "/ipc/chromium/src",
-                "/ipc/glue",
             ]
             
             if config.substs["OS_TARGET"] == "WINNT":
