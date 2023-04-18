@@ -267,10 +267,10 @@ void XPCWrappedNativeScope::SuspectAllWrappers(
   }
 }
 
-void XPCWrappedNativeScope::UpdateWeakPointersAfterGC() {
+void XPCWrappedNativeScope::UpdateWeakPointersAfterGC(JSTracer* trc) {
   
   if (mWaiverWrapperMap) {
-    mWaiverWrapperMap->Sweep();
+    mWaiverWrapperMap->UpdateWeakPointers(trc);
   }
 
   if (!js::IsCompartmentZoneSweepingOrCompacting(mCompartment)) {
