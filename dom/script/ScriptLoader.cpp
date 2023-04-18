@@ -1106,6 +1106,13 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
       }
     }
 
+    {
+      
+      
+      
+      mozilla::nsAutoMicroTask mt;
+    }
+
     nsresult rv = mModuleLoader->ProcessFetchedModuleSource(modReq);
     if (NS_FAILED(rv)) {
       ReportErrorToConsole(modReq, rv);
