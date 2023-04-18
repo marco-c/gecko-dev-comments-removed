@@ -100,6 +100,10 @@ class Table : public ShareableBase<Table> {
   [[nodiscard]] bool getFuncRef(JSContext* cx, uint32_t index,
                                 MutableHandleFunction fun) const;
   void setFuncRef(uint32_t index, void* code, const Instance* instance);
+
+  
+  
+  
   [[nodiscard]] bool fillFuncRef(Maybe<Tier> tier, uint32_t index,
                                  uint32_t fillCount, FuncRef ref,
                                  JSContext* cx);
