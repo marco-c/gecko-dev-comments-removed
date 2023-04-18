@@ -29,7 +29,7 @@ add_task(async function testBreakableLinesOverReloads() {
 
   info("Wait for script.js to be ready");
   await waitForSelectedSource(dbg, "script.js");
- 
+
   info("Assert breakable lines of the more complex second load of script.js");
   await assertBreakableLines(dbg, "script.js", 23, [[2], [13,23]]);
 
@@ -37,6 +37,7 @@ add_task(async function testBreakableLinesOverReloads() {
   await assertBreakableLines(dbg, "index.html", 21, [[15], [17]]);
 
   info("Assert breakable lines of the second orignal file");
+  await waitForSource(dbg, "original.js");
   
   
   await assertBreakableLines(dbg, "original.js", 18, [[1,3], [8,11], [13]]);
