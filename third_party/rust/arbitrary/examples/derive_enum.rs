@@ -2,6 +2,10 @@
 
 
 
+
+
+#![allow(dead_code)]
+
 use arbitrary::{Arbitrary, Unstructured};
 
 #[derive(Arbitrary, Debug)]

@@ -236,19 +236,20 @@ impl<'a> Unstructured<'a> {
 
             
             
-            let len = if self.data.len() <= std::u8::MAX as usize + 1 {
+            
+            let len = if self.data.len() as u64 <= std::u8::MAX as u64 + 1 {
                 let bytes = 1;
                 let max_size = self.data.len() - bytes;
                 let (rest, for_size) = self.data.split_at(max_size);
                 self.data = rest;
                 Self::int_in_range_impl(0..=max_size as u8, for_size.iter().copied())?.0 as usize
-            } else if self.data.len() <= std::u16::MAX as usize + 1 {
+            } else if self.data.len() as u64 <= std::u16::MAX as u64 + 2 {
                 let bytes = 2;
                 let max_size = self.data.len() - bytes;
                 let (rest, for_size) = self.data.split_at(max_size);
                 self.data = rest;
                 Self::int_in_range_impl(0..=max_size as u16, for_size.iter().copied())?.0 as usize
-            } else if self.data.len() <= std::u32::MAX as usize + 1 {
+            } else if self.data.len() as u64 <= std::u32::MAX as u64 + 4 {
                 let bytes = 4;
                 let max_size = self.data.len() - bytes;
                 let (rest, for_size) = self.data.split_at(max_size);
@@ -376,11 +377,53 @@ impl<'a> Unstructured<'a> {
     
     
     pub fn choose<'b, T>(&mut self, choices: &'b [T]) -> Result<&'b T> {
-        if choices.is_empty() {
+        let idx = self.choose_index(choices.len())?;
+        Ok(&choices[idx])
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn choose_index(&mut self, len: usize) -> Result<usize> {
+        if len == 0 {
             return Err(Error::EmptyChoose);
         }
-        let idx = self.int_in_range(0..=choices.len() - 1)?;
-        Ok(&choices[idx])
+        let idx = self.int_in_range(0..=len - 1)?;
+        Ok(idx)
     }
 
     

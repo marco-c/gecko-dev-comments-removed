@@ -2,6 +2,10 @@
 
 
 
+#![allow(dead_code)]
+
+
+
 #[derive(arbitrary::Arbitrary, Clone, Debug)]
 pub struct Struct {
     x: u8,
