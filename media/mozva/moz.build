@@ -5,7 +5,7 @@
 
 
 SOURCES += [
-    'mozva.c',
+    "mozva.c",
 ]
 
-Library('mozva')
+Library("mozva")
