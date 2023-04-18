@@ -355,22 +355,6 @@ static bool IsAcceptableWordStart(Accessible* aAcc, const nsAutoString& aText,
   return true;
 }
 
-class BlockRule : public PivotRule {
- public:
-  virtual uint16_t Match(Accessible* aAcc) override {
-    if (RefPtr{aAcc->DisplayStyle()} == nsGkAtoms::block ||
-        aAcc->IsHTMLListItem() ||
-        
-        
-        
-        
-        (aAcc->IsText() && aAcc->Role() == roles::LISTITEM_MARKER)) {
-      return nsIAccessibleTraversalRule::FILTER_MATCH;
-    }
-    return nsIAccessibleTraversalRule::FILTER_IGNORE;
-  }
-};
-
 
 
 TextLeafPoint::TextLeafPoint(Accessible* aAcc, int32_t aOffset) {
@@ -391,7 +375,39 @@ bool TextLeafPoint::operator<(const TextLeafPoint& aPoint) const {
   if (mAcc == aPoint.mAcc) {
     return mOffset < aPoint.mOffset;
   }
-  return mAcc->IsBefore(aPoint.mAcc);
+
+  
+  Accessible* thisP = mAcc;
+  Accessible* otherP = aPoint.mAcc;
+  AutoTArray<Accessible*, 30> thisParents, otherParents;
+  do {
+    thisParents.AppendElement(thisP);
+    thisP = thisP->Parent();
+  } while (thisP);
+  do {
+    otherParents.AppendElement(otherP);
+    otherP = otherP->Parent();
+  } while (otherP);
+
+  
+  uint32_t thisPos = thisParents.Length(), otherPos = otherParents.Length();
+  for (uint32_t len = std::min(thisPos, otherPos); len > 0; --len) {
+    Accessible* thisChild = thisParents.ElementAt(--thisPos);
+    Accessible* otherChild = otherParents.ElementAt(--otherPos);
+    if (thisChild != otherChild) {
+      return thisChild->IndexInParent() < otherChild->IndexInParent();
+    }
+  }
+
+  
+  
+  MOZ_ASSERT(thisPos != 0 || otherPos != 0);
+  
+  
+  MOZ_ASSERT(thisPos != otherPos);
+  
+  
+  return otherPos > 0;
 }
 
 bool TextLeafPoint::IsEmptyLastLine() const {
@@ -740,8 +756,7 @@ TextLeafPoint TextLeafPoint::FindBoundary(AccessibleTextBoundary aBoundaryType,
   if (aBoundaryType == nsIAccessibleText::BOUNDARY_WORD_END) {
     return FindWordEnd(aDirection, aIncludeOrigin);
   }
-  if ((aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_START ||
-       aBoundaryType == nsIAccessibleText::BOUNDARY_PARAGRAPH) &&
+  if (aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_START &&
       aIncludeOrigin && aDirection == eDirPrevious && IsEmptyLastLine()) {
     
     
@@ -783,9 +798,6 @@ TextLeafPoint TextLeafPoint::FindBoundary(AccessibleTextBoundary aBoundaryType,
         break;
       case nsIAccessibleText::BOUNDARY_LINE_START:
         boundary = searchFrom.FindLineStartSameAcc(aDirection, includeOrigin);
-        break;
-      case nsIAccessibleText::BOUNDARY_PARAGRAPH:
-        boundary = searchFrom.FindParagraphSameAcc(aDirection, includeOrigin);
         break;
       default:
         MOZ_ASSERT_UNREACHABLE();
@@ -919,74 +931,6 @@ TextLeafPoint TextLeafPoint::FindWordEnd(nsDirection aDirection,
     boundary = prev;
   }
   return boundary;
-}
-
-TextLeafPoint TextLeafPoint::FindParagraphSameAcc(nsDirection aDirection,
-                                                  bool aIncludeOrigin) const {
-  if (mAcc->IsTextLeaf() &&
-      
-      
-      ((aIncludeOrigin && mOffset > 0) || aDirection == eDirNext ||
-       mOffset >= 2)) {
-    
-    nsAutoString text;
-    mAcc->AppendTextTo(text);
-    if (aIncludeOrigin && mOffset > 0 && text.CharAt(mOffset - 1) == '\n') {
-      return TextLeafPoint(mAcc, mOffset);
-    }
-    int32_t lfOffset = -1;
-    if (aDirection == eDirNext) {
-      lfOffset = text.FindChar('\n', mOffset);
-    } else if (mOffset >= 2) {
-      
-      
-      
-      lfOffset = text.RFindChar('\n', mOffset - 2);
-    }
-    if (lfOffset != -1 && lfOffset + 1 < static_cast<int32_t>(text.Length())) {
-      return TextLeafPoint(mAcc, lfOffset + 1);
-    }
-  }
-
-  
-  if ((!aIncludeOrigin && mOffset == 0) ||
-      (aDirection == eDirNext && mOffset > 0)) {
-    
-    
-    return TextLeafPoint();
-  }
-  Accessible* prevLeaf = PrevLeaf(mAcc);
-  BlockRule blockRule;
-  Pivot pivot(DocumentFor(mAcc));
-  Accessible* prevBlock = pivot.Prev(mAcc, blockRule);
-  
-  if (prevBlock &&
-      
-      (!prevLeaf ||
-       
-       prevBlock == prevLeaf ||
-       
-       
-       
-       !prevBlock->IsAncestorOf(mAcc) ||
-       
-       
-       !prevBlock->IsAncestorOf(prevLeaf))) {
-    return TextLeafPoint(mAcc, 0);
-  }
-  if (!prevLeaf || prevLeaf->IsHTMLBr()) {
-    
-    return TextLeafPoint(mAcc, 0);
-  }
-  if (prevLeaf->IsTextLeaf()) {
-    
-    nsAutoString text;
-    prevLeaf->AppendTextTo(text, nsAccUtils::TextLength(prevLeaf) - 1, 1);
-    if (text.CharAt(0) == '\n') {
-      return TextLeafPoint(mAcc, 0);
-    }
-  }
-  return TextLeafPoint();
 }
 
 already_AddRefed<AccAttributes> TextLeafPoint::GetTextAttributesLocalAcc(
