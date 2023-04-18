@@ -8,6 +8,8 @@ const { ComponentUtils } = ChromeUtils.import(
   "resource://gre/modules/ComponentUtils.jsm"
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
+  AboutHomeStartupCache: "resource:///modules/BrowserGlue.jsm",
+  AboutNewTab: "resource:///modules/AboutNewTab.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   PerTestCoverageUtils: "resource://testing-common/PerTestCoverageUtils.jsm",
@@ -264,7 +266,10 @@ TalosPowersService.prototype = {
   },
 
   async forceQuit(messageData) {
-    if (messageData && messageData.waitForSafeBrowsing) {
+    if (messageData && messageData.waitForStartupFinished) {
+      
+      
+      
       let SafeBrowsing = ChromeUtils.import(
         "resource://gre/modules/SafeBrowsing.jsm",
         {}
@@ -278,6 +283,21 @@ TalosPowersService.prototype = {
       } catch (e) {
         
       }
+
+      
+      
+      
+      
+      
+      
+      
+      AboutNewTab.onBrowserReady();
+      let feed = AboutNewTab.activityStream.store.feeds.get(
+        "feeds.system.topsites"
+      );
+      await feed._contile.refresh();
+      await feed.refresh({ broadcast: true });
+      await AboutHomeStartupCache.cacheNow();
     }
 
     
