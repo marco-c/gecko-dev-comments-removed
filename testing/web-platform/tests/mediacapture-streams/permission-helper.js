@@ -7,10 +7,18 @@ async function setMediaPermission(status="granted", scope=["camera", "microphone
       await test_driver.set_permission({ name: s }, status, true);
     }
   } catch (e) {
-    if (!(typeof e === "string" && e.match(/set_permission not implemented/))) {
-      throw e
+    const noSetPermissionSupport = typeof e === "string" && e.match(/set_permission not implemented/);
+    if (!(noSetPermissionSupport ||
+          (e instanceof Error && e.message.match("unimplemented")) )) {
+      throw e;
     }
     
     
+
+    
+    
+    if (status === "denied") {
+      assert_implements_optional(!noSetPermissionSupport, "Unable to set permission to denied for this test");
+    }
   }
 }
