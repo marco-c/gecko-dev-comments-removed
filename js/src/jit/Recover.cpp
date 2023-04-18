@@ -139,6 +139,9 @@ bool RResumePoint::recover(JSContext* cx, SnapshotIterator& iter) const {
 }
 
 bool MBitNot::writeRecoverData(CompactBufferWriter& writer) const {
+  
+  
+  MOZ_ASSERT(type() != MIRType::Int64);
   MOZ_ASSERT(canRecoverOnBailout());
   writer.writeUnsigned(uint32_t(RInstruction::Recover_BitNot));
   return true;
