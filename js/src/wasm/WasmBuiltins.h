@@ -164,7 +164,7 @@ enum class FailureMode : uint8_t {
 
 
 
-static constexpr size_t SymbolicAddressSignatureMaxArgs = 6;
+static constexpr size_t SymbolicAddressSignatureMaxArgs = 14;
 
 struct SymbolicAddressSignature {
   
@@ -189,7 +189,7 @@ struct SymbolicAddressSignature {
 
 
 
-static_assert(sizeof(SymbolicAddressSignature) <= 16,
+static_assert(sizeof(SymbolicAddressSignature) <= 32,
               "SymbolicAddressSignature unexpectedly large");
 
 
@@ -256,7 +256,10 @@ extern const SymbolicAddressSignature SASigPushRefIntoExn;
 extern const SymbolicAddressSignature SASigArrayNew;
 extern const SymbolicAddressSignature SASigRefTest;
 extern const SymbolicAddressSignature SASigRttSub;
-extern const SymbolicAddressSignature SASigIntrI8VecMul;
+#define EXT_INTR_SA_DECL(op, export, sa_name, abitype, entry, idx) \
+  extern const SymbolicAddressSignature SASig##sa_name;
+FOR_EACH_INTRINSIC(EXT_INTR_SA_DECL)
+#undef EXT_INTR_SA_DECL
 
 bool IsRoundingFunction(SymbolicAddress callee, jit::RoundingMode* mode);
 
