@@ -63,7 +63,7 @@ add_task(async function() {
   
   
   const summary = await ui.getEditorSummary(longEditor);
-  ui._view.setActiveSummary(summary);
+  summary.click();
 
   info("Waiting for doc_long.css to be selected.");
   await selectEventPromise;
