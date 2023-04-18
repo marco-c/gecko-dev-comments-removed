@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "nsDragServiceProxy.h"
 #include "mozilla/dom/Document.h"
@@ -66,14 +66,14 @@ nsresult nsDragServiceProxy::InvokeDragSessionImpl(
         size_t length;
         int32_t stride;
         Maybe<Shmem> maybeShm = nsContentUtils::GetSurfaceData(
-            dataSurface, &length, &stride, child);
+            *dataSurface, &length, &stride, child);
         if (maybeShm.isNothing()) {
           return NS_ERROR_FAILURE;
         }
 
         auto surfaceData = maybeShm.value();
 
-        // Save the surface data to shared memory.
+        
         if (!surfaceData.IsReadable() || !surfaceData.get<char>()) {
           NS_WARNING("Failed to create shared memory for drag session.");
           return NS_ERROR_FAILURE;
