@@ -46,8 +46,6 @@ struct PRFileDesc;
 
 
 
-
-
 class nsZipItem final {
  public:
   nsZipItem();
@@ -88,14 +86,7 @@ class nsZipArchive final {
   static const char* sFileCorruptedReason;
 
   
-
-
-
-
-
-
-  static already_AddRefed<nsZipArchive> OpenArchive(nsZipHandle* aZipHandle,
-                                                    PRFileDesc* aFd = nullptr);
+  nsZipArchive();
 
   
 
@@ -105,7 +96,20 @@ class nsZipArchive final {
 
 
 
-  static already_AddRefed<nsZipArchive> OpenArchive(nsIFile* aFile);
+
+
+
+  nsresult OpenArchive(nsZipHandle* aZipHandle, PRFileDesc* aFd = nullptr);
+
+  
+
+
+
+
+
+
+
+  nsresult OpenArchive(nsIFile* aFile);
 
   
 
@@ -117,6 +121,11 @@ class nsZipArchive final {
 
 
   nsresult Test(const char* aEntryName);
+
+  
+
+
+  nsresult CloseArchive();
 
   
 
@@ -154,7 +163,7 @@ class nsZipArchive final {
   
 
 
-  nsZipHandle* GetFD() const;
+  nsZipHandle* GetFD();
 
   
 
@@ -170,6 +179,8 @@ class nsZipArchive final {
 
   const uint8_t* GetData(nsZipItem* aItem);
 
+  bool GetComment(nsACString& aComment);
+
   
 
 
@@ -183,28 +194,30 @@ class nsZipArchive final {
   NS_METHOD_(MozExternalRefCountType) Release(void);
 
  private:
-  nsZipArchive(nsZipHandle* aZipHandle, PRFileDesc* aFd, nsresult& aRv);
-
   
   mozilla::ThreadSafeAutoRefCnt mRefCnt; 
   NS_DECL_OWNINGTHREAD
 
+  nsZipItem* mFiles[ZIP_TABSIZE];
+  mozilla::ArenaAllocator<1024, sizeof(void*)> mArena;
+
+  const char* mCommentPtr;
+  uint16_t mCommentLen;
+
   
+  bool mBuiltSynthetics;
+
   
-  const RefPtr<nsZipHandle> mFd;
+  RefPtr<nsZipHandle> mFd;
+
   
   nsCString mURI;
-  
+
   
   
   bool mUseZipLog;
 
   mozilla::Mutex mLock{"nsZipArchive"};
-  
-  nsZipItem* mFiles[ZIP_TABSIZE];
-  mozilla::ArenaAllocator<1024, sizeof(void*)> mArena;
-  
-  bool mBuiltSynthetics;
 
  private:
   

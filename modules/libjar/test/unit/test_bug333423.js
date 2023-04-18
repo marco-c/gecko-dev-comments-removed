@@ -15,10 +15,6 @@ function run_test() {
   );
   zipreader.open(file);
   zipreader.close();
-  
-  Assert.throws(
-    () => zipreader.findEntries("*.*"),
-    /NS_ERROR_FAILURE/,
-    "Should error out on a closed zipreader"
-  );
+  var entries = zipreader.findEntries("*.*");
+  Assert.ok(!entries.hasMore()); 
 }

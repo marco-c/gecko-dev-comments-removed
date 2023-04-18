@@ -7,6 +7,9 @@
 
 
 
+
+
+
 #define READTYPE int32_t
 #include "zlib.h"
 #include "nsISupportsUtils.h"
@@ -64,18 +67,6 @@
 
 using namespace mozilla;
 
-static LazyLogModule gZipLog("nsZipArchive");
-
-#ifdef LOG
-#  undef LOG
-#endif
-#ifdef LOG_ENABLED
-#  undef LOG_ENABLED
-#endif
-
-#define LOG(args) MOZ_LOG(gZipLog, mozilla::LogLevel::Debug, args)
-#define LOG_ENABLED() MOZ_LOG_TEST(gZipLog, mozilla::LogLevel::Debug)
-
 static const uint32_t kMaxNameLength = PATH_MAX; 
 
 static const uint16_t kSyntheticTime = 0;
@@ -119,8 +110,8 @@ class ZipArchiveLogger {
       file = PR_ImportFile((PROsfd)handle);
       if (!file) return;
 #else
-      rv = logFile->OpenNSPRFileDesc(
-          PR_WRONLY | PR_CREATE_FILE | PR_APPEND | PR_SYNC, 0644, &file);
+      rv = logFile->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_APPEND,
+                                     0644, &file);
       if (NS_FAILED(rv)) return;
 #endif
       mFd = file;
@@ -189,7 +180,6 @@ nsresult nsZipHandle::Init(nsIFile* file, nsZipHandle** ret, PRFileDesc** aFd) {
 #if defined(XP_WIN)
   flags |= nsIFile::OS_READAHEAD;
 #endif
-  LOG(("ZipHandle::Init %s", file->HumanReadablePath().get()));
   nsresult rv = file->OpenNSPRFileDesc(flags, 0000, &fd.rwget());
   if (NS_FAILED(rv)) return rv;
 
@@ -241,7 +231,6 @@ nsresult nsZipHandle::Init(nsZipArchive* zip, const char* entry,
   RefPtr<nsZipHandle> handle = new nsZipHandle();
   if (!handle) return NS_ERROR_OUT_OF_MEMORY;
 
-  LOG(("ZipHandle::Init entry %s", entry));
   handle->mBuf = MakeUnique<nsZipItemPtr<uint8_t>>(zip, entry);
   if (!handle->mBuf) return NS_ERROR_OUT_OF_MEMORY;
 
@@ -348,20 +337,65 @@ nsZipHandle::~nsZipHandle() {
 
 
 
+nsresult nsZipArchive::OpenArchive(nsZipHandle* aZipHandle, PRFileDesc* aFd) {
+  mFd = aZipHandle;
 
-already_AddRefed<nsZipArchive> nsZipArchive::OpenArchive(
-    nsZipHandle* aZipHandle, PRFileDesc* aFd) {
-  nsresult rv;
-  RefPtr<nsZipArchive> self(new nsZipArchive(aZipHandle, aFd, rv));
-  LOG(("ZipHandle::OpenArchive[%p]", self.get()));
-  if (NS_FAILED(rv)) {
-    self = nullptr;
+  
+  nsresult rv = BuildFileList(aFd);
+  if (NS_SUCCEEDED(rv)) {
+    if (aZipHandle->mFile && XRE_IsParentProcess()) {
+      static char* env = PR_GetEnv("MOZ_JAR_LOG_FILE");
+      if (env) {
+        mUseZipLog = true;
+
+        zipLog.Init(env);
+        
+        
+        
+        
+        
+        
+        if (aZipHandle->mFile.IsZip()) {
+          
+          aZipHandle->mFile.GetPath(mURI);
+        } else if (nsDirectoryService::gService) {
+          
+          
+          
+          
+          
+          nsCOMPtr<nsIFile> dir = aZipHandle->mFile.GetBaseFile();
+          nsCOMPtr<nsIFile> gre_dir;
+          nsAutoCString path;
+          if (NS_SUCCEEDED(nsDirectoryService::gService->Get(
+                  NS_GRE_DIR, NS_GET_IID(nsIFile), getter_AddRefs(gre_dir)))) {
+            nsAutoCString leaf;
+            nsCOMPtr<nsIFile> parent;
+            while (NS_SUCCEEDED(dir->GetNativeLeafName(leaf)) &&
+                   NS_SUCCEEDED(dir->GetParent(getter_AddRefs(parent)))) {
+              if (!parent) {
+                break;
+              }
+              dir = parent;
+              if (path.Length()) {
+                path.Insert('/', 0);
+              }
+              path.Insert(leaf, 0);
+              bool equals;
+              if (NS_SUCCEEDED(dir->Equals(gre_dir, &equals)) && equals) {
+                mURI.Assign(path);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
   }
-  return self.forget();
+  return rv;
 }
 
-
-already_AddRefed<nsZipArchive> nsZipArchive::OpenArchive(nsIFile* aFile) {
+nsresult nsZipArchive::OpenArchive(nsIFile* aFile) {
   RefPtr<nsZipHandle> handle;
 #if defined(XP_WIN)
   mozilla::AutoFDClose fd;
@@ -369,7 +403,7 @@ already_AddRefed<nsZipArchive> nsZipArchive::OpenArchive(nsIFile* aFile) {
 #else
   nsresult rv = nsZipHandle::Init(aFile, getter_AddRefs(handle));
 #endif
-  if (NS_FAILED(rv)) return nullptr;
+  if (NS_FAILED(rv)) return rv;
 
 #if defined(XP_WIN)
   return OpenArchive(handle, fd.get());
@@ -409,10 +443,31 @@ nsresult nsZipArchive::Test(const char* aEntryName) {
 
 
 
+nsresult nsZipArchive::CloseArchive() {
+  MutexAutoLock lock(mLock);
+  if (mFd) {
+    mArena.Clear();
+    mFd = nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  memset(mFiles, 0, sizeof(mFiles));
+  mBuiltSynthetics = false;
+  return NS_OK;
+}
+
+
+
+
 nsZipItem* nsZipArchive::GetItem(const char* aEntryName) {
   MutexAutoLock lock(mLock);
 
-  LOG(("ZipHandle::GetItem[%p] %s", this, aEntryName));
   if (aEntryName) {
     uint32_t len = strlen(aEntryName);
     
@@ -449,8 +504,6 @@ nsZipItem* nsZipArchive::GetItem(const char* aEntryName) {
 
 nsresult nsZipArchive::ExtractFile(nsZipItem* item, nsIFile* outFile,
                                    PRFileDesc* aFd) {
-  MutexAutoLock lock(mLock);
-  LOG(("ZipHandle::ExtractFile[%p]", this));
   if (!item) return NS_ERROR_ILLEGAL_VALUE;
   if (!mFd) return NS_ERROR_FAILURE;
 
@@ -500,7 +553,6 @@ nsresult nsZipArchive::FindInit(const char* aPattern, nsZipFind** aFind) {
 
   MutexAutoLock lock(mLock);
 
-  LOG(("ZipHandle::FindInit[%p]", this));
   
   *aFind = nullptr;
 
@@ -576,12 +628,10 @@ nsresult nsZipFind::FindNext(const char** aResult, uint16_t* aNameLen) {
       
       *aResult = mItem->Name();
       *aNameLen = mItem->nameLength;
-      LOG(("ZipHandle::FindNext[%p] %s", this, *aResult));
       return NS_OK;
     }
   }
   MMAP_FAULT_HANDLER_CATCH(NS_ERROR_FAILURE)
-  LOG(("ZipHandle::FindNext[%p] not found %s", this, mPattern));
   return NS_ERROR_FILE_TARGET_DOES_NOT_EXIST;
 }
 
@@ -601,8 +651,7 @@ nsZipItem* nsZipArchive::CreateZipItem() {
 
 
 nsresult nsZipArchive::BuildFileList(PRFileDesc* aFd) {
-  
-  
+  MutexAutoLock lock(mLock);
 
   
   const uint8_t* buf;
@@ -610,7 +659,6 @@ nsresult nsZipArchive::BuildFileList(PRFileDesc* aFd) {
   const uint8_t* endp = startp + mFd->mLen;
   MMAP_FAULT_HANDLER_BEGIN_HANDLE(mFd)
   uint32_t centralOffset = 4;
-  LOG(("ZipHandle::BuildFileList[%p]", this));
   
   
   
@@ -679,7 +727,6 @@ nsresult nsZipArchive::BuildFileList(PRFileDesc* aFd) {
     item->isSynthetic = false;
 
     
-    LOG(("   %s", item->Name()));
     uint32_t hash = HashName(item->Name(), namelen);
     item->next = mFiles[hash];
     mFiles[hash] = item;
@@ -689,6 +736,18 @@ nsresult nsZipArchive::BuildFileList(PRFileDesc* aFd) {
 
   if (sig != ENDSIG) {
     return NS_ERROR_FILE_CORRUPTED;
+  }
+
+  
+  if ((endp >= buf) && (endp - buf >= ZIPEND_SIZE)) {
+    ZipEnd* zipend = (ZipEnd*)buf;
+
+    buf += ZIPEND_SIZE;
+    uint16_t commentlen = xtoint(zipend->commentfield_len);
+    if (endp - buf >= commentlen) {
+      mCommentPtr = (const char*)buf;
+      mCommentLen = commentlen;
+    }
   }
 
   MMAP_FAULT_HANDLER_CATCH(NS_ERROR_FAILURE)
@@ -762,10 +821,10 @@ nsresult nsZipArchive::BuildSynthetics() {
   return NS_OK;
 }
 
-
-
-
-nsZipHandle* nsZipArchive::GetFD() const { return mFd.get(); }
+nsZipHandle* nsZipArchive::GetFD() {
+  if (!mFd) return nullptr;
+  return mFd.get();
+}
 
 
 
@@ -817,6 +876,14 @@ const uint8_t* nsZipArchive::GetData(nsZipItem* aItem) {
 }
 
 
+bool nsZipArchive::GetComment(nsACString& aComment) {
+  MMAP_FAULT_HANDLER_BEGIN_BUFFER(mCommentPtr, mCommentLen)
+  aComment.Assign(mCommentPtr, mCommentLen);
+  MMAP_FAULT_HANDLER_CATCH(false)
+  return true;
+}
+
+
 
 
 int64_t nsZipArchive::SizeOfMapping() { return mFd ? mFd->SizeOfMapping() : 0; }
@@ -825,72 +892,22 @@ int64_t nsZipArchive::SizeOfMapping() { return mFd ? mFd->SizeOfMapping() : 0; }
 
 
 
-nsZipArchive::nsZipArchive(nsZipHandle* aZipHandle, PRFileDesc* aFd,
-                           nsresult& aRv)
-    : mRefCnt(0), mFd(aZipHandle), mUseZipLog(false), mBuiltSynthetics(false) {
+nsZipArchive::nsZipArchive()
+    : mRefCnt(0),
+      mCommentPtr(nullptr),
+      mCommentLen(0),
+      mBuiltSynthetics(false),
+      mUseZipLog(false) {
   
   memset(mFiles, 0, sizeof(mFiles));
-
-  
-  aRv = BuildFileList(aFd);
-  if (NS_FAILED(aRv)) {
-    return;  
-  }
-  if (aZipHandle->mFile && XRE_IsParentProcess()) {
-    static char* env = PR_GetEnv("MOZ_JAR_LOG_FILE");
-    if (env) {
-      mUseZipLog = true;
-
-      zipLog.Init(env);
-      
-      
-      
-      
-      
-      
-      if (aZipHandle->mFile.IsZip()) {
-        
-        aZipHandle->mFile.GetPath(mURI);
-      } else if (nsDirectoryService::gService) {
-        
-        
-        
-        
-        
-        nsCOMPtr<nsIFile> dir = aZipHandle->mFile.GetBaseFile();
-        nsCOMPtr<nsIFile> gre_dir;
-        nsAutoCString path;
-        if (NS_SUCCEEDED(nsDirectoryService::gService->Get(
-                NS_GRE_DIR, NS_GET_IID(nsIFile), getter_AddRefs(gre_dir)))) {
-          nsAutoCString leaf;
-          nsCOMPtr<nsIFile> parent;
-          while (NS_SUCCEEDED(dir->GetNativeLeafName(leaf)) &&
-                 NS_SUCCEEDED(dir->GetParent(getter_AddRefs(parent)))) {
-            if (!parent) {
-              break;
-            }
-            dir = parent;
-            if (path.Length()) {
-              path.Insert('/', 0);
-            }
-            path.Insert(leaf, 0);
-            bool equals;
-            if (NS_SUCCEEDED(dir->Equals(gre_dir, &equals)) && equals) {
-              mURI.Assign(path);
-              break;
-            }
-          }
-        }
-      }
-    }
-  }
 }
 
 NS_IMPL_ADDREF(nsZipArchive)
 NS_IMPL_RELEASE(nsZipArchive)
 
 nsZipArchive::~nsZipArchive() {
-  LOG(("Closing nsZipArchive[%p]", this));
+  CloseArchive();
+
   if (mUseZipLog) {
     zipLog.Release();
   }
