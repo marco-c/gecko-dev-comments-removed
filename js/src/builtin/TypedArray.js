@@ -1783,6 +1783,20 @@ function SharedArrayBufferSlice(start, end) {
 #ifdef ENABLE_CHANGE_ARRAY_BY_COPY
 
 
+function TypedArrayCreateSameType(exemplar, length) {
+
+    
+    let contentType = GetTypedArrayKind(exemplar);
+    assert(contentType !== undefined, "in TypedArrayCreateSameType, exemplar does not have a [[ContentType]] internal slot");
+
+    
+    let constructor = GetTypedArrayConstructorFromKind(contentType);
+
+    
+    return TypedArrayCreateWithLength(constructor, length);
+}
+
+
 
 function TypedArrayWithReversed() {
     
@@ -1797,8 +1811,7 @@ function TypedArrayWithReversed() {
     var len = TypedArrayLength(O);
 
     
-    var A = TypedArraySpeciesCreateWithLength(O, len);
-
+    var A = TypedArrayCreateSameType(O, len);
     
     for (var k = 0; k < len; k++) {
         var from = len - k - 1;
@@ -1830,26 +1843,31 @@ function TypedArrayWithAt(index, value) {
     }
 
     
-    var O = this;
+    let O = this;
 
     
-    var len = TypedArrayLength(O);
+    let len = TypedArrayLength(O);
 
     
-    if (!Number_isInteger(index)) {
+    let relativeIndex = ToInteger(index);
+
+    
+    var actualIndex;
+    if (relativeIndex >= 0) {
+        actualIndex = relativeIndex;
+    } else {
+        
+        actualIndex = len + relativeIndex;
+    }
+
+    
+    
+    if (actualIndex >= len || actualIndex < 0) {
         ThrowRangeError(JSMSG_BAD_INDEX);
     }
 
     
-    var actualIndex = index < 0 ? (len + index) : index;
-
-    
-    if (!isValidIntegerIndex(O, actualIndex)) {
-        ThrowRangeError(JSMSG_BAD_INDEX);
-    }
-
-    
-    var A = TypedArraySpeciesCreateWithLength(O, len);
+    var A = TypedArrayCreateSameType(O, len);
 
     
     for (var k = 0; k < len; k++) {
@@ -1882,7 +1900,7 @@ function TypedArrayWithSorted(comparefn) {
     
     var len = TypedArrayLength(O);
 
-    var A = TypedArraySpeciesCreateWithLength(O, len);
+    var A = TypedArrayCreateSameType(O, len);
     for(var k = 0; k < len; k++) {
         A[k] = O[k];
     }
@@ -1898,13 +1916,13 @@ function TypedArrayWithSpliced(start, deleteCount, ...items) {
     }
 
     
-    var O = this;
+    let O = this;
 
     
-    var len = TypedArrayLength(O);
+    let len = TypedArrayLength(O);
 
     
-    var relativeStart = ToInteger(start);
+    let relativeStart = ToInteger(start);
 
     
     var actualStart;
@@ -1918,49 +1936,52 @@ function TypedArrayWithSpliced(start, deleteCount, ...items) {
         actualStart = std_Math_min(relativeStart, len);
     }
 
-    var insertCount;
-    var actualDeleteCount;
     
-    if (start === undefined) {
-        insertCount = 0;
+    let insertCount = items.length;
+
+    
+    var actualDeleteCount;
+    if (arguments.length < 1) {
         actualDeleteCount = 0;
-    } else if (deleteCount === undefined) {
+    } else if (arguments.length < 2) {
         
-        insertCount = 0;
         actualDeleteCount = len - actualStart;
     } else {
         
-        insertCount = items === undefined ? 0 : items.length;
         var dc = ToInteger(deleteCount);
         actualDeleteCount = std_Math_min(len - actualStart, std_Math_max(0, dc));
     }
 
     
-    var newLen = len + insertCount - actualDeleteCount;
+    let newLen = len + insertCount - actualDeleteCount;
 
     
-    var A = TypedArraySpeciesCreateWithLength(O, newLen);
+    let A = TypedArrayCreateSameType(O, newLen);
+
+    
+    var i = 0;
+
+    
+    var r = actualStart + actualDeleteCount;
 
     
     
-    for(var k = 0; k < actualStart; k++) {
-        var kValue = O[k];
-        DefineDataProperty(A, k, kValue);
+    while (i < actualStart) {
+        var iValue = O[i];
+        DefineDataProperty(A, i++, iValue);
     }
 
     
     
-    var k = actualStart;
-    for(var i = 0; i < insertCount; i++) {
-        DefineDataProperty(A, k++, items[i]);
+    for(var j = 0; j < insertCount; j++) {
+        DefineDataProperty(A, i++, items[j]);
     }
 
     
     
-    while(k < newLen) {
-        var from = k + actualDeleteCount - insertCount;
-        var fromValue = O[from];
-        DefineDataProperty(A, k++, fromValue);
+    while(i < newLen) {
+        let fromValue = O[r++];
+        DefineDataProperty(A, i++, fromValue);
     }
 
     
