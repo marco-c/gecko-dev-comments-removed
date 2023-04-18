@@ -8,6 +8,7 @@
 #define NSLINEBREAKER_H_
 
 #include "mozilla/intl/LineBreaker.h"
+#include "mozilla/intl/Segmenter.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
@@ -197,19 +198,18 @@ class nsLineBreaker {
 
 
 
-
-  void SetStrictness(mozilla::intl::LineBreaker::Strictness aMode) {
-    if (aMode != mStrictness && !mCurrentWord.IsEmpty()) {
+  void SetStrictness(mozilla::intl::LineBreakRule aMode) {
+    if (aMode != mLineBreak && !mCurrentWord.IsEmpty()) {
       nsresult rv = FlushCurrentWord();
       if (NS_FAILED(rv)) {
         NS_WARNING("FlushCurrentWord failed, line-breaks may be wrong");
       }
       
-      if (mStrictness == mozilla::intl::LineBreaker::Strictness::Anywhere) {
+      if (mLineBreak == mozilla::intl::LineBreakRule::Anywhere) {
         mBreakHere = true;
       }
     }
-    mStrictness = aMode;
+    mLineBreak = aMode;
   }
 
   
@@ -274,7 +274,7 @@ class nsLineBreaker {
   
   mozilla::intl::WordBreakRule mWordBreak;
   
-  mozilla::intl::LineBreaker::Strictness mStrictness;
+  mozilla::intl::LineBreakRule mLineBreak;
   
   
   
