@@ -298,10 +298,6 @@ class ProviderAutofill extends UrlbarProvider {
     );
     this._strippedPrefix = this._strippedPrefix.toLowerCase();
 
-    if (!this._searchString || !this._searchString.length) {
-      return false;
-    }
-
     
     
     
@@ -783,6 +779,15 @@ class ProviderAutofill extends UrlbarProvider {
     
     
     
+    
+    
+    if (!this._searchString.length) {
+      return null;
+    }
+
+    
+    
+    
     let query, params;
     if (
       UrlbarTokenizer.looksLikeOrigin(this._searchString, {
@@ -805,7 +810,10 @@ class ProviderAutofill extends UrlbarProvider {
   }
 
   async _matchSearchEngineDomain(queryContext) {
-    if (!UrlbarPrefs.get("autoFill.searchEngines")) {
+    if (
+      !UrlbarPrefs.get("autoFill.searchEngines") ||
+      !this._searchString.length
+    ) {
       return null;
     }
 
