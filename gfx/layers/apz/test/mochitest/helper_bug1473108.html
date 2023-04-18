@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1473108
+-->
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width; initial-scale=1.0">
@@ -36,13 +36,13 @@
 
   <script type="application/javascript">
 
-  waitUntilApzStable().then(() => {
+  waitUntilApzStable().then(async () => {
     let target = document.getElementById("target");
     target.addEventListener("click", function(e) {
       is(e.target, target, `Clicked on at (${e.clientX}, ${e.clientY})`);
       subtestDone();
     });
-    synthesizeNativeTap(target, 5, 5);
+    await synthesizeNativeTap(target, 5, 5);
   });
 
 </script>

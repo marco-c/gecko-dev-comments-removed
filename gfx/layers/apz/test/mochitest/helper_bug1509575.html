@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1509575
+-->
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,7 +20,7 @@
 
 async function test() {
   let transformEndPromise = promiseTransformEnd();
-  synthesizeNativeTouchDrag(document.body, 10, 100, -100, 0);
+  await synthesizeNativeTouchDrag(document.body, 10, 100, -100, 0);
   dump("Finished native drag, waiting for transform-end observer...\n");
 
   // Wait for the APZ:TransformEnd to be fired after touch events are processed.

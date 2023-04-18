@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1638458
+-->
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -50,7 +50,7 @@ async function test() {
       resolve();
     });
   });
-  synthesizeNativeTouch(target, 10, 10, SpecialPowers.DOMWindowUtils.TOUCH_CONTACT);
+  await synthesizeNativeTouch(target, 10, 10, SpecialPowers.DOMWindowUtils.TOUCH_CONTACT);
   await contextmenuPromise;
 
   // Check that the "contextmenu" event targets the correct element.

@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1637135
+-->
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=400px">
@@ -37,7 +37,7 @@ async function test() {
     });
   });
 
-  synthesizeNativeTap(target, 10, 10);
+  await synthesizeNativeTap(target, 10, 10);
   await mouseDownPromise;
 
   is(mouseDownEvent.target, target, "mousedown event targeted the correct element");
