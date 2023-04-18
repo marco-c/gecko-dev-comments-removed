@@ -66,6 +66,14 @@ var Readerable = {
       
       let { host } = uri;
       if (this._blockedHosts.some(blockedHost => host.endsWith(blockedHost))) {
+        
+        if (
+          host == "github.com" &&
+          !uri.filePath.includes("/projects") &&
+          !uri.filePath.includes("/issues")
+        ) {
+          return true;
+        }
         return false;
       }
 
