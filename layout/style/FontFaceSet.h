@@ -32,8 +32,7 @@ class Promise;
 }  
 }  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class FontFaceSet final : public DOMEventTargetHelper,
                           public nsIDOMEventListener,
@@ -406,7 +405,6 @@ class FontFaceSet final : public DOMEventTargetHelper,
   bool mPrivateBrowsing;
 };
 
-}  
 }  
 
 #endif  

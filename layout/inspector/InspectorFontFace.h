@@ -16,8 +16,7 @@
 class gfxFontEntry;
 class gfxFontGroup;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -72,7 +71,6 @@ class InspectorFontFace final : public NonRefcountedDOMObject {
   nsTArray<RefPtr<nsRange>> mRanges;
 };
 
-}  
 }  
 
 #endif  

@@ -11,8 +11,7 @@
 #include "mozilla/css/Rule.h"
 #include "nsWrapperCache.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class CSSRuleList : public nsISupports, public nsWrapperCache {
  public:
@@ -35,7 +34,6 @@ class CSSRuleList : public nsISupports, public nsWrapperCache {
   virtual ~CSSRuleList() = default;
 };
 
-}  
 }  
 
 #endif 

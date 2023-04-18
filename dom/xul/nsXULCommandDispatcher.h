@@ -23,11 +23,9 @@
 class nsPIDOMWindowOuter;
 class nsPIWindowRoot;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class Document;
 class Element;
-}  
 }  
 
 class nsXULCommandDispatcher : public nsIDOMXULCommandDispatcher,

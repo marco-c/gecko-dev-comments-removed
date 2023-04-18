@@ -32,8 +32,7 @@ class UTF8StringOrArrayBufferOrArrayBufferView;
 }  
 }  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class FontFace final : public nsISupports, public nsWrapperCache {
   friend class mozilla::PostTraversalTask;
@@ -316,7 +315,6 @@ class FontFace final : public nsISupports, public nsWrapperCache {
   bool mInFontFaceSet;
 };
 
-}  
 }  
 
 #endif  

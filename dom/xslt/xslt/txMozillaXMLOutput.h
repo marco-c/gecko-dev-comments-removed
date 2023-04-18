@@ -21,12 +21,10 @@ class nsITransformObserver;
 class nsNodeInfoManager;
 class nsINode;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class Document;
 class DocumentFragment;
 class Element;
-}  
 }  
 
 class txTransformNotifier final : public nsIScriptLoaderObserver,

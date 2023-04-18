@@ -13,10 +13,8 @@
 #define kTXWrapper "transformiix:result"
 
 class txOutputFormat;
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class Document;
-}
 }  
 
 
