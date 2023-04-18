@@ -373,7 +373,6 @@ class JitcodeGlobalEntry {
 
   
   
-  
   struct QueryEntry : public BaseEntry {
     void init(void* addr) { BaseEntry::init(Query, nullptr, addr, addr); }
     uint8_t* addr() const {
