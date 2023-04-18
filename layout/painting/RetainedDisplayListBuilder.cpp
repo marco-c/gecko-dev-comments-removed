@@ -968,6 +968,12 @@ static void GetModifiedAndFramesWithProps(
 
 static nsDisplayItem* GetFirstDisplayItemWithChildren(nsIFrame* aFrame) {
   for (nsDisplayItem* i : aFrame->DisplayItems()) {
+    if (i->HasDeletedFrame() || i->Frame() != aFrame) {
+      
+      
+      continue;
+    }
+
     if (i->HasChildren()) {
       return static_cast<nsDisplayItem*>(i);
     }
