@@ -112,8 +112,9 @@ class IOUtils final {
       GlobalObject& aGlobal, const nsAString& aPath,
       const Optional<int64_t>& aModification);
 
-  static already_AddRefed<Promise> GetChildren(GlobalObject& aGlobal,
-                                               const nsAString& aPath);
+  static already_AddRefed<Promise> GetChildren(
+      GlobalObject& aGlobal, const nsAString& aPath,
+      const GetChildrenOptions& aOptions);
 
   static already_AddRefed<Promise> SetPermissions(GlobalObject& aGlobal,
                                                   const nsAString& aPath,
@@ -339,7 +340,8 @@ class IOUtils final {
 
 
 
-  static Result<nsTArray<nsString>, IOError> GetChildrenSync(nsIFile* aFile);
+  static Result<nsTArray<nsString>, IOError> GetChildrenSync(
+      nsIFile* aFile, bool aIgnoreAbsent);
 
   
 
