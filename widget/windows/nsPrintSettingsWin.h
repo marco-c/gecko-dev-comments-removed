@@ -24,6 +24,15 @@ class nsPrintSettingsWin : public nsPrintSettings, public nsIPrintSettingsWin {
   nsPrintSettingsWin();
   nsPrintSettingsWin(const nsPrintSettingsWin& aPS);
 
+  
+
+
+
+
+
+  static void PaperSizeUnitFromDmPaperSize(short aPaperSize,
+                                           int16_t& aPaperSizeUnit);
+
   void InitWithInitializer(const PrintSettingsInitializer& aSettings) final;
 
   

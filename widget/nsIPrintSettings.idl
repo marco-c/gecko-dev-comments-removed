@@ -9,6 +9,10 @@
 %{ C++
 #include "nsMargin.h"
 #include "nsTArray.h"
+
+namespace mozilla {
+struct PrintSettingsInitializer;
+}
 %}
 
 
@@ -205,6 +209,13 @@ interface nsIPrintSettings : nsISupports
   
 
 
+
+
+  bool equivalentTo(in nsIPrintSettings aPrintSettings);
+
+  
+
+
   [noscript] attribute nsIPrintSession printSession; 
 
   
@@ -267,7 +278,7 @@ interface nsIPrintSettings : nsISupports
   attribute boolean isCancelled;         
   readonly attribute boolean saveOnCancel;        
   attribute boolean printSilent;         
-  attribute boolean shrinkToFit;         
+  [infallible] attribute boolean shrinkToFit; 
   attribute boolean showPrintProgress;   
 
   
@@ -359,14 +370,15 @@ interface nsIPrintSettings : nsISupports
   attribute Array<long> pageRanges;
 
 %{C++
+  
+
+
+  virtual mozilla::PrintSettingsInitializer GetSettingsInitializer() = 0;
+
   static bool IsPageSkipped(int32_t aPageNum, const nsTArray<int32_t>& aRanges);
 %}
 };
 
 %{ C++
-namespace mozilla {
-struct PrintSettingsInitializer;
-}
-
 already_AddRefed<nsIPrintSettings> CreatePlatformPrintSettings(const mozilla::PrintSettingsInitializer&);
 %}

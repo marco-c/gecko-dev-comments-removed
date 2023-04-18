@@ -11,6 +11,7 @@
 #include "nsIWeakReferenceUtils.h"
 #include "nsMargin.h"
 #include "nsPaper.h"
+#include "nsProxyRelease.h"
 #include "nsString.h"
 
 #define NUM_HEAD_FOOT 3
@@ -18,6 +19,8 @@
 
 
 
+
+class nsPrintSettings;
 
 namespace mozilla {
 
@@ -28,11 +31,21 @@ namespace mozilla {
 struct PrintSettingsInitializer {
   nsString mPrinter;
   PaperInfo mPaperInfo;
+  int16_t mPaperSizeUnit = nsIPrintSettings::kPaperSizeInches;
   
   
   
   bool mPrintInColor = true;
   int mResolution = 0;
+  int mSheetOrientation = nsIPrintSettings::kPortraitOrientation;
+  int mNumCopies = 1;
+  int mDuplex = nsIPrintSettings::kDuplexNone;
+
+  
+  
+  
+  nsMainThreadPtrHandle<nsPrintSettings> mPrintSettings;
+
 #ifdef XP_WIN
   CopyableTArray<uint8_t> mDevmodeWStorage;
 #endif
@@ -55,6 +68,8 @@ class nsPrintSettings : public nsIPrintSettings {
 
 
   virtual void InitWithInitializer(const PrintSettingsInitializer& aSettings);
+
+  PrintSettingsInitializer GetSettingsInitializer() final;
 
   nsPrintSettings& operator=(const nsPrintSettings& rhs);
 
