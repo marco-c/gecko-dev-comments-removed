@@ -221,6 +221,12 @@ class WebRenderLayerScrollData final {
   Maybe<uint64_t> mStickyPositionAnimationId;
   Maybe<uint64_t> mZoomAnimationId;
   Maybe<ViewID> mAsyncZoomContainerId;
+
+#if defined(DEBUG) || defined(MOZ_DUMP_PAINTING)
+  
+  
+  nsDisplayItem* mInitializedFrom = nullptr;
+#endif
 };
 
 
