@@ -23,7 +23,7 @@ util.mediaSource.addEventListener("sourceopen", () => {
     
     sourceBuffer.remove(0.5, Infinity);
     sourceBuffer.onupdateend = () => {
-      sourceBuffer.duration = 0.5;
+      util.mediaSource.duration = 0.5;
       
       
       sourceBuffer.changeType(util.mediaMetadata.type);
