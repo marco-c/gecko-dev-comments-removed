@@ -41,8 +41,7 @@ class nsAutoCompleteController final : public nsIAutoCompleteController,
   
 
 
-
-  void SetValueOfInputTo(const nsString& aValue, uint16_t aReason);
+  void SetValueOfInputTo(const nsString& aValue);
 
   
 
