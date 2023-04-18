@@ -110,8 +110,6 @@ interface nsISHEntry : nsISupports
     
     [infallible] attribute nsIContentViewer contentViewer;
 
-    [infallible] readonly attribute boolean isInBFCache;
-
     
     [infallible] attribute boolean sticky;
 
