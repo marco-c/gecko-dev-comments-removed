@@ -1236,11 +1236,11 @@ js::Nursery::CollectionResult js::Nursery::doCollection(JS::GCReason reason) {
   
   
   startProfile(ProfileKey::CollectToObjFP);
-  collectToObjectFixedPoint(mover);
+  mover.collectToObjectFixedPoint();
   endProfile(ProfileKey::CollectToObjFP);
 
   startProfile(ProfileKey::CollectToStrFP);
-  collectToStringFixedPoint(mover);
+  mover.collectToStringFixedPoint();
   endProfile(ProfileKey::CollectToStrFP);
 
   

@@ -643,23 +643,6 @@ class Nursery {
                        bool validPromotionRate, double promotionRate);
 
   
-  void collectToObjectFixedPoint(TenuringTracer& mover);
-
-  
-  
-  
-  void collectToStringFixedPoint(TenuringTracer& mover);
-
-  
-  
-  template <typename CharT>
-  void relocateDependentStringChars(JSDependentString* tenuredDependentStr,
-                                    JSLinearString* baseOrRelocOverlay,
-                                    size_t* offset,
-                                    bool* rootBaseNotYetForwarded,
-                                    JSLinearString** rootBase);
-
-  
   inline void setForwardingPointer(void* oldData, void* newData, bool direct);
 
   inline void setDirectForwardingPointer(void* oldData, void* newData);

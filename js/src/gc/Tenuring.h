@@ -22,7 +22,6 @@ class StringRelocationOverlay;
 }  
 
 class TenuringTracer final : public GenericTracer {
-  friend class Nursery;
   Nursery& nursery_;
 
   
@@ -38,8 +37,6 @@ class TenuringTracer final : public GenericTracer {
   gc::StringRelocationOverlay* stringHead;
   gc::StringRelocationOverlay** stringTail;
 
-  TenuringTracer(JSRuntime* rt, Nursery* nursery);
-
   JSObject* onObjectEdge(JSObject* obj) override;
   JSString* onStringEdge(JSString* str) override;
   JS::Symbol* onSymbolEdge(JS::Symbol* sym) override;
@@ -54,7 +51,18 @@ class TenuringTracer final : public GenericTracer {
   js::Scope* onScopeEdge(Scope* scope) override;
 
  public:
+  TenuringTracer(JSRuntime* rt, Nursery* nursery);
+
   Nursery& nursery() { return nursery_; }
+
+  
+  
+  void collectToObjectFixedPoint();
+
+  
+  
+  
+  void collectToStringFixedPoint();
 
   size_t getTenuredSize() const;
   size_t getTenuredCells() const;
@@ -69,6 +77,15 @@ class TenuringTracer final : public GenericTracer {
   void traceBigInt(JS::BigInt* src);
 
  private:
+  
+  
+  template <typename CharT>
+  void relocateDependentStringChars(JSDependentString* tenuredDependentStr,
+                                    JSLinearString* baseOrRelocOverlay,
+                                    size_t* offset,
+                                    bool* rootBaseNotYetForwarded,
+                                    JSLinearString** rootBase);
+
   inline void insertIntoObjectFixupList(gc::RelocationOverlay* entry);
   inline void insertIntoStringFixupList(gc::StringRelocationOverlay* entry);
 
