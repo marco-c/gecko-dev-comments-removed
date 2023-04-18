@@ -2,6 +2,7 @@
 
 
 
+
 "use strict";
 
 const { XPCOMUtils } = ChromeUtils.import(
@@ -34,6 +35,8 @@ class ScreenshotsUI extends HTMLElement {
     let templateContent = template.content;
     this.appendChild(templateContent.cloneNode(true));
 
+    this._retryButton = this.querySelector(".highlight-button-retry");
+    this._retryButton.addEventListener("click", this);
     this._cancelButton = this.querySelector(".highlight-button-cancel");
     this._cancelButton.addEventListener("click", this);
     this._copyButton = this.querySelector(".highlight-button-copy");
@@ -57,6 +60,12 @@ class ScreenshotsUI extends HTMLElement {
     } else if (event.type == "click" && event.target == this._downloadButton) {
       await this.saveToFile(
         this.ownerDocument.getElementById("placeholder-image").src
+      );
+    } else if (event.type == "click" && event.target == this._retryButton) {
+      Services.obs.notifyObservers(
+        window.parent.ownerGlobal,
+        "menuitem-screenshot",
+        "retry"
       );
     }
   }

@@ -29,34 +29,18 @@ var ScreenshotsUtils = {
     let { gBrowser } = subj;
     let browser = gBrowser.selectedBrowser;
 
-    let currDialogBox = browser.tabDialogBox;
-
     let zoom = subj.ZoomManager.getZoomForBrowser(browser);
 
     switch (topic) {
       case "menuitem-screenshot":
-        
-        if (currDialogBox) {
-          let manager = currDialogBox.getTabDialogManager();
-          let dialogs = manager.hasDialogs && manager.dialogs;
-          if (dialogs.length) {
-            for (let dialog of dialogs) {
-              if (
-                dialog._openedURL.endsWith(
-                  `browsingContextId=${browser.browsingContext.id}`
-                ) &&
-                dialog._openedURL.includes("screenshots.html")
-              ) {
-                dialog.close();
-                return null;
-              }
-            }
-          }
+        let success = this.closeDialogBox(browser);
+        if (!success || data === "retry") {
+          
+          
+          
+          
+          this.togglePreview(browser);
         }
-        
-        
-        
-        this.togglePreview(browser);
         break;
       case "screenshots-take-screenshot":
         
@@ -120,6 +104,45 @@ var ScreenshotsUtils = {
       return actor.sendQuery("Screenshots:HideOverlay");
     }
     return this.createOrDisplayButtons(browser);
+  },
+  
+
+
+
+
+  getDialog(browser) {
+    let currTabDialogBox = browser.tabDialogBox;
+    let browserContextId = browser.browsingContext.id;
+    if (currTabDialogBox) {
+      currTabDialogBox.getTabDialogManager();
+      let manager = currTabDialogBox.getTabDialogManager();
+      let dialogs = manager.hasDialogs && manager.dialogs;
+      if (dialogs.length) {
+        for (let dialog of dialogs) {
+          if (
+            dialog._openedURL.endsWith(
+              `browsingContextId=${browserContextId}`
+            ) &&
+            dialog._openedURL.includes("screenshots.html")
+          ) {
+            return dialog;
+          }
+        }
+      }
+    }
+    return null;
+  },
+  
+
+
+
+  closeDialogBox(browser) {
+    let dialog = this.getDialog(browser);
+    if (dialog) {
+      dialog.close();
+      return true;
+    }
+    return false;
   },
   
 
