@@ -12,14 +12,6 @@
 
 const EXPORTED_SYMBOLS = ["PasswordGenerator"];
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
-
-const lazy = {};
-
-XPCOMUtils.defineLazyGlobalGetters(lazy, ["crypto"]);
-
 const DEFAULT_PASSWORD_LENGTH = 15;
 const MAX_UINT8 = Math.pow(2, 8) - 1;
 const MAX_UINT32 = Math.pow(2, 32) - 1;
@@ -169,7 +161,7 @@ const PasswordGenerator = {
 
     const randomValueArr = new Uint8Array(1);
     do {
-      lazy.crypto.getRandomValues(randomValueArr);
+      crypto.getRandomValues(randomValueArr);
     } while (randomValueArr[0] > MAX_ACCEPTABLE_VALUE);
     return randomValueArr[0] % range;
   },
@@ -183,7 +175,7 @@ const PasswordGenerator = {
     let arr = Array.from(str);
     
     const randomValues = new Uint32Array(arr.length - 1);
-    lazy.crypto.getRandomValues(randomValues);
+    crypto.getRandomValues(randomValues);
 
     
     

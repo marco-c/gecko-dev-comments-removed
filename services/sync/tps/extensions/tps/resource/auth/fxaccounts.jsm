@@ -21,13 +21,7 @@ const { FxAccountsConfig } = ChromeUtils.import(
   "resource://gre/modules/FxAccountsConfig.jsm"
 );
 const { Logger } = ChromeUtils.import("resource://tps/logger.jsm");
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
-const lazy = {};
-XPCOMUtils.defineLazyGlobalGetters(lazy, ["fetch"]);
 
 
 
@@ -98,7 +92,7 @@ var Authentication = {
     const tries = 10;
     const normalWait = 2000;
     for (let i = 0; i < tries; ++i) {
-      let resp = await lazy.fetch(restmailURI);
+      let resp = await fetch(restmailURI);
       let messages = await resp.json();
       
       messages.sort((a, b) => new Date(b.receivedAt) - new Date(a.receivedAt));
@@ -145,7 +139,7 @@ var Authentication = {
     )}`;
     try {
       
-      let deleteResult = await lazy.fetch(restmailURI, { method: "DELETE" });
+      let deleteResult = await fetch(restmailURI, { method: "DELETE" });
       if (!deleteResult.ok) {
         Logger.logInfo(
           `Warning: Got non-success status ${deleteResult.status} when deleting emails`

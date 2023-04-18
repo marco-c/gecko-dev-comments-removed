@@ -22,8 +22,6 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
     "resource://gre/modules/components-utils/WindowsVersionInfo.jsm",
 });
 
-XPCOMUtils.defineLazyGlobalGetters(lazy, ["fetch"]);
-
 const PER_INSTALLATION_PREFS_PLATFORMS = ["win"];
 
 
@@ -131,7 +129,7 @@ var UpdateUtils = {
       const url = "resource://" + res + "/" + FILE_UPDATE_LOCALE;
       let data;
       try {
-        data = await lazy.fetch(url);
+        data = await fetch(url);
       } catch (e) {
         continue;
       }
