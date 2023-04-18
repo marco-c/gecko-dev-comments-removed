@@ -628,6 +628,12 @@ bool Compartment::findSweepGroupEdges() {
 }
 
 bool Zone::findSweepGroupEdges(Zone* atomsZone) {
+#ifdef DEBUG
+  if (FinalizationObservers* observers = finalizationObservers()) {
+    observers->checkTables();
+  }
+#endif
+
   
   
   if (atomsZone->wasGCStarted() && !addSweepGroupEdgeTo(atomsZone)) {
