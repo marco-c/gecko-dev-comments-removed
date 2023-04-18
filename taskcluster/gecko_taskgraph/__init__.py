@@ -17,3 +17,14 @@ MAX_DEPENDENCIES = 99
 
 
 fast = False
+
+
+def register(graph_config):
+    """Used to register Gecko specific extensions.
+
+    Args:
+        graph_config: The graph configuration object.
+    """
+    from gecko_taskgraph.parameters import register_parameters
+
+    register_parameters()
