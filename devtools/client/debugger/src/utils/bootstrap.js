@@ -64,20 +64,13 @@ export function teardownWorkers() {
   search.stop();
 }
 
-
-
-
-
-
-
-
-
-
-export function bootstrapApp(store, toolboxStore, appComponentAttributes = {}) {
+export function bootstrapApp(store, panel) {
   const mount = getMountElement();
   if (!mount) {
     return;
   }
+
+  const toolboxDoc = panel.panelWin.parent.document;
 
   ReactDOM.render(
     React.createElement(
@@ -85,8 +78,8 @@ export function bootstrapApp(store, toolboxStore, appComponentAttributes = {}) {
       { store },
       React.createElement(
         ToolboxProvider,
-        { store: toolboxStore },
-        React.createElement(App, appComponentAttributes)
+        { store: panel.getToolboxStore() },
+        React.createElement(App, { toolboxDoc })
       )
     ),
     mount

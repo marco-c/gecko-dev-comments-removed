@@ -2,7 +2,31 @@
 
 
 
-import { DEBUGGER_PAUSED_REASONS_L10N_MAPPING } from "devtools/shared/constants";
+
+
+
+
+const reasons = {
+  debuggerStatement: "whyPaused.debuggerStatement",
+  breakpoint: "whyPaused.breakpoint",
+  exception: "whyPaused.exception",
+  resumeLimit: "whyPaused.resumeLimit",
+  breakpointConditionThrown: "whyPaused.breakpointConditionThrown",
+  eventBreakpoint: "whyPaused.eventBreakpoint",
+  getWatchpoint: "whyPaused.getWatchpoint",
+  setWatchpoint: "whyPaused.setWatchpoint",
+  mutationBreakpoint: "whyPaused.mutationBreakpoint",
+  interrupted: "whyPaused.interrupted",
+
+  
+  DOM: "whyPaused.breakpoint",
+  EventListener: "whyPaused.pauseOnDOMEvents",
+  XHR: "whyPaused.XHR",
+  promiseRejection: "whyPaused.promiseRejection",
+  assert: "whyPaused.assert",
+  debugCommand: "whyPaused.debugCommand",
+  other: "whyPaused.other",
+};
 
 export function getPauseReason(why) {
   if (!why) {
@@ -10,11 +34,11 @@ export function getPauseReason(why) {
   }
 
   const reasonType = why.type;
-  if (!DEBUGGER_PAUSED_REASONS_L10N_MAPPING[reasonType]) {
+  if (!reasons[reasonType]) {
     console.log("Please file an issue: reasonType=", reasonType);
   }
 
-  return DEBUGGER_PAUSED_REASONS_L10N_MAPPING[reasonType];
+  return reasons[reasonType];
 }
 
 export function isException(why) {

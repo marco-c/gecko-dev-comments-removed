@@ -2,13 +2,7 @@
 
 
 
-const {
-  LocalizationProvider,
-  Localized,
-} = require("devtools/client/shared/vendor/fluent-react");
-
 import React, { PureComponent } from "react";
-import PropTypes from "prop-types";
 import { connect } from "../../utils/connect";
 import AccessibleImage from "../shared/AccessibleImage";
 import actions from "../../actions";
@@ -104,13 +98,9 @@ class WhyPaused extends PureComponent {
             {ancestorRep}
             {ancestorGrip ? (
               <span className="why-paused-ancestor">
-                <Localized
-                  id={
-                    action === "remove"
-                      ? "whypaused-mutation-breakpoint-removed"
-                      : "whypaused-mutation-breakpoint-added"
-                  }
-                ></Localized>
+                {action === "remove"
+                  ? L10N.getStr("whyPaused.mutationBreakpointRemoved")
+                  : L10N.getStr("whyPaused.mutationBreakpointAdded")}
                 {targetRep}
               </span>
             ) : (
@@ -130,35 +120,27 @@ class WhyPaused extends PureComponent {
 
   render() {
     const { endPanelCollapsed, why } = this.props;
-    const { fluentBundles } = this.context;
     const reason = getPauseReason(why);
 
     if (!why || !reason || endPanelCollapsed) {
       return <div className={this.state.hideWhyPaused} />;
     }
+
     return (
-      
-      
-      
-      
-      <LocalizationProvider bundles={fluentBundles || []}>
-        <div className="pane why-paused">
-          <div>
-            <div className="info icon">
-              <AccessibleImage className="info" />
-            </div>
-            <div className="pause reason">
-              <Localized id={reason}></Localized>
-              {this.renderMessage(why)}
-            </div>
+      <div className="pane why-paused">
+        <div>
+          <div className="info icon">
+            <AccessibleImage className="info" />
+          </div>
+          <div className="pause reason">
+            {L10N.getStr(reason)}
+            {this.renderMessage(why)}
           </div>
         </div>
-      </LocalizationProvider>
+      </div>
     );
   }
 }
-
-WhyPaused.contextTypes = { fluentBundles: PropTypes.array };
 
 const mapStateToProps = state => ({
   endPanelCollapsed: getPaneCollapse(state, "end"),

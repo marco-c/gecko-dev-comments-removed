@@ -8,19 +8,11 @@ const {
   CanvasFrameAnonymousContentHelper,
 } = require("devtools/server/actors/highlighters/utils/markup");
 
-loader.lazyGetter(this, "PausedReasonsBundle", () => {
-  return new Localization(
-    ["devtools/shared/debugger-paused-reasons.ftl"],
-    true
-  );
+loader.lazyGetter(this, "L10N", () => {
+  const { LocalizationHelper } = require("devtools/shared/l10n");
+  const STRINGS_URI = "devtools/client/locales/debugger.properties";
+  return new LocalizationHelper(STRINGS_URI);
 });
-
-loader.lazyRequireGetter(
-  this,
-  "DEBUGGER_PAUSED_REASONS_L10N_MAPPING",
-  "devtools/shared/constants",
-  true
-);
 
 
 
@@ -214,6 +206,17 @@ PausedDebuggerOverlay.prototype = {
       return false;
     }
 
+    try {
+      reason = L10N.getStr(`whyPaused.${reason}`);
+    } catch (e) {
+      
+      
+      
+      
+      
+      return false;
+    }
+
     
     
     const { pageListenerTarget } = this.env;
@@ -226,11 +229,7 @@ PausedDebuggerOverlay.prototype = {
 
     
     const toolbar = this.getElement("toolbar");
-    this.getElement("reason").setTextContent(
-      PausedReasonsBundle.formatValueSync(
-        DEBUGGER_PAUSED_REASONS_L10N_MAPPING[reason]
-      )
-    );
+    this.getElement("reason").setTextContent(reason);
     toolbar.removeAttribute("hidden");
 
     
@@ -251,9 +250,6 @@ PausedDebuggerOverlay.prototype = {
 
     
     this.getElement("root").setAttribute("hidden", "true");
-    
-    this.getElement("step-button-wrapper").classList.remove("hover");
-    this.getElement("resume-button-wrapper").classList.remove("hover");
   },
 };
 exports.PausedDebuggerOverlay = PausedDebuggerOverlay;
