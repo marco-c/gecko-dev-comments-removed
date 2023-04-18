@@ -252,12 +252,14 @@ OffscreenCanvasDisplayHelper::GetSurfaceSnapshot() {
   Maybe<int32_t> childId;
   HTMLCanvasElement* canvasElement;
   RefPtr<gfx::SourceSurface> surface;
+  layers::CompositableHandle handle;
 
   {
     MutexAutoLock lock(mMutex);
     hasAlpha = !mData.mIsOpaque;
     isAlphaPremult = mData.mIsAlphaPremult;
     originPos = mData.mOriginPos;
+    handle = mData.mHandle;
     managerId = mContextManagerId;
     childId = mContextChildId;
     canvasElement = mCanvasElement;
@@ -311,7 +313,9 @@ OffscreenCanvasDisplayHelper::GetSurfaceSnapshot() {
     
     
     return gfx::CanvasManagerChild::Get()->GetSnapshot(
-        managerId.value(), childId.value(), hasAlpha);
+        managerId.value(), childId.value(), handle,
+        hasAlpha ? gfx::SurfaceFormat::R8G8B8A8 : gfx::SurfaceFormat::R8G8B8X8,
+        hasAlpha && !isAlphaPremult, originPos == gl::OriginPos::BottomLeft);
   }
 
   
