@@ -403,10 +403,16 @@ var {
 
     
     
-    const sandbox = Cu.Sandbox(principal, {});
+    const sandbox = Cu.Sandbox(principal, {
+      wantGlobalProperties: ["ChromeUtils"],
+    });
     Cu.evalInSandbox(
-      "Components.utils.import('resource://gre/modules/jsdebugger.jsm');" +
-        "addDebuggerToGlobal(this);",
+      `
+const { addDebuggerToGlobal } = ChromeUtils.import(
+  'resource://gre/modules/jsdebugger.jsm'
+);
+addDebuggerToGlobal(this);
+`,
       sandbox
     );
     const Debugger = sandbox.Debugger;

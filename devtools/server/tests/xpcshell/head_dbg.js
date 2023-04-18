@@ -166,10 +166,15 @@ function createLongStringFront(conn, form) {
   return front;
 }
 
-function createTestGlobal(name) {
-  const sandbox = Cu.Sandbox(
-    Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal)
+function createTestGlobal(name, options) {
+  const principal = Cc["@mozilla.org/systemprincipal;1"].createInstance(
+    Ci.nsIPrincipal
   );
+  
+  
+  const sandbox = options
+    ? Cu.Sandbox(principal, options)
+    : Cu.Sandbox(principal);
   sandbox.__name = name;
   
   
