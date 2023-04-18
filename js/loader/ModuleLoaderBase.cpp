@@ -1025,11 +1025,13 @@ nsresult ModuleLoaderBase::EvaluateModule(ModuleLoadRequest* aRequest) {
   mozilla::nsAutoMicroTask mt;
   mozilla::dom::AutoEntryScript aes(mGlobalObject, "EvaluateModule", true);
 
-  return EvaluateModuleInContext(aes.cx(), aRequest);
+  return EvaluateModuleInContext(aes.cx(), aRequest,
+                                 JS::ReportModuleErrorsAsync);
 }
 
 nsresult ModuleLoaderBase::EvaluateModuleInContext(
-    JSContext* aCx, ModuleLoadRequest* aRequest) {
+    JSContext* aCx, ModuleLoadRequest* aRequest,
+    JS::ModuleErrorBehaviour errorBehaviour) {
   MOZ_ASSERT(aRequest->mLoader == this);
 
   AUTO_PROFILER_LABEL("ModuleLoaderBase::EvaluateModule", JS);
@@ -1081,31 +1083,33 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
 
   mLoader->MaybePrepareModuleForBytecodeEncodingBeforeExecute(aCx, request);
 
-  if (JS::ModuleEvaluate(aCx, module, &rval)) {
-    
-    
-    
-    MOZ_ASSERT(!JS_IsExceptionPending(aCx));
-  } else {
+  bool ok = JS::ModuleEvaluate(aCx, module, &rval);
+
+  
+  
+  MOZ_ASSERT_IF(ok, !JS_IsExceptionPending(aCx));
+
+  if (!ok) {
     LOG(("ScriptLoadRequest (%p):   evaluation failed", aRequest));
     
     
   }
 
-  JS::Rooted<JSObject*> aEvaluationPromise(aCx);
+  
+  
+  
+  JS::Rooted<JSObject*> evaluationPromise(aCx);
   if (rval.isObject()) {
-    
-    
-    
-    
-    aEvaluationPromise.set(&rval.toObject());
+    evaluationPromise.set(&rval.toObject());
   }
+
   if (request->IsDynamicImport()) {
-    FinishDynamicImport(aCx, request, NS_OK, aEvaluationPromise);
+    FinishDynamicImport(aCx, request, NS_OK, evaluationPromise);
   } else {
     
     
-    if (!JS::ThrowOnModuleEvaluationFailure(aCx, aEvaluationPromise)) {
+    if (!JS::ThrowOnModuleEvaluationFailure(aCx, evaluationPromise,
+                                            errorBehaviour)) {
       LOG(("ScriptLoadRequest (%p):   evaluation failed on throw", aRequest));
       
       
