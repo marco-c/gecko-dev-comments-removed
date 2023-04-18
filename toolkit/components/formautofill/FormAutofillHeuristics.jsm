@@ -8,7 +8,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["FormAutofillHeuristics"];
+var EXPORTED_SYMBOLS = ["FormAutofillHeuristics", "FieldScanner"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
@@ -26,7 +26,8 @@ ChromeUtils.defineModuleGetter(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   CreditCard: "resource://gre/modules/CreditCard.jsm",
-  creditCardRuleset: "resource://autofill/CreditCardRuleset.jsm",
+  creditCardRulesets: "resource://autofill/CreditCardRuleset.jsm",
+  FormAutofillUtils: "resource://autofill/FormAutofillUtils.jsm",
   LabelUtils: "resource://autofill/FormAutofillUtils.jsm",
 });
 
@@ -192,6 +193,7 @@ class FieldScanner {
     }
     return { mergeNextNFields, createNewSection };
   }
+
   _classifySections() {
     let fieldDetails = this._sections[0].fieldDetails;
     this._sections = [];
@@ -315,7 +317,7 @@ class FieldScanner {
       throw new Error("Try to push the non-existing element info.");
     }
     let element = this._elements[elementIndex];
-    let info = FormAutofillHeuristics.getInfo(element);
+    let info = FormAutofillHeuristics.getInfo(element, this);
     let fieldInfo = {
       section: info ? info.section : "",
       addressType: info ? info.addressType : "",
@@ -452,6 +454,117 @@ class FieldScanner {
 
   elementExisting(index) {
     return index < this._elements.length;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  getFathomField(element, fields) {
+    if (!fields.length) {
+      return null;
+    }
+
+    if (!this._fathomConfidences?.get(element)) {
+      this._fathomConfidences = new Map();
+
+      let elements = [];
+      if (this._elements?.includes(element)) {
+        elements = this._elements;
+      } else {
+        elements = [element];
+      }
+
+      
+      
+      let confidences = FieldScanner.getFormAutofillConfidences(elements);
+      for (let i = 0; i < elements.length; i++) {
+        this._fathomConfidences.set(elements[i], confidences[i]);
+      }
+    }
+
+    let elementConfidences = this._fathomConfidences.get(element);
+    if (!elementConfidences) {
+      return null;
+    }
+
+    let highestField = null;
+    let highestConfidence = FormAutofillUtils.ccHeuristicsThreshold; 
+    for (let [key, value] of Object.entries(elementConfidences)) {
+      if (!fields.includes(key)) {
+        
+        continue;
+      }
+
+      if (value > highestConfidence) {
+        highestConfidence = value;
+        highestField = key;
+      }
+    }
+
+    return highestField;
+  }
+
+  
+
+
+
+  static getFormAutofillConfidences(elements) {
+    if (
+      FormAutofillUtils.ccHeuristicsMode == FormAutofillUtils.CC_FATHOM_NATIVE
+    ) {
+      let confidences = ChromeUtils.getFormAutofillConfidences(elements);
+      
+      const fieldNameMap = {
+        ccNumber: "cc-number",
+        ccName: "cc-name",
+        ccType: "cc-type",
+        ccExp: "cc-exp",
+        ccExpMonth: "cc-exp-month",
+        ccExpYear: "cc-exp-year",
+      };
+      return confidences.map(c => {
+        let result = {};
+        for (let [fieldName, confidence] of Object.entries(c)) {
+          result[fieldNameMap[fieldName]] = confidence;
+        }
+        return result;
+      });
+    }
+
+    return elements.map(element => {
+      
+
+
+
+
+
+
+
+
+      function confidence(fieldName) {
+        const ruleset = creditCardRulesets[fieldName];
+        const fnodes = ruleset.against(element).get(fieldName);
+
+        
+        
+        return fnodes.length ? fnodes[0].scoreFor(fieldName) : 0;
+      }
+
+      
+      let confidences = {};
+      creditCardRulesets.types.map(fieldName => {
+        confidences[fieldName] = confidence(fieldName);
+      });
+
+      return confidences;
+    });
   }
 }
 
@@ -770,6 +883,12 @@ this.FormAutofillHeuristics = {
       return false;
     }
 
+    
+    
+    if (FormAutofillUtils.isFathomCreditCardsEnabled()) {
+      return true;
+    }
+
     const element = detail.elementWeakRef.get();
 
     
@@ -976,7 +1095,7 @@ this.FormAutofillHeuristics = {
     return this._regexpList[this._regExpTableHashValue(b0, b1, b2)] || null;
   },
 
-  _getRegExpList(isAutoCompleteOff, elementTagName) {
+  _getPossibleFieldNames(isAutoCompleteOff, elementTagName) {
     let isSelectElem = elementTagName == "SELECT";
     let regExpListCache = this._getRegExpListCache(
       isAutoCompleteOff,
@@ -1029,54 +1148,7 @@ this.FormAutofillHeuristics = {
     return regexps;
   },
 
-  
-
-
-
-
-
-
-  _topFathomField(element) {
-    
-    const fieldNames = [
-      "cc-name",
-      "cc-number",
-      "cc-exp-month",
-      "cc-exp-year",
-      "cc-exp",
-      "cc-type",
-    ];
-
-    
-
-
-
-
-
-
-
-
-    function confidence(fieldName) {
-      const fnodes = creditCardRuleset.against(element).get(fieldName);
-      
-      
-      return fnodes.length ? fnodes[0].scoreFor(fieldName) : 0;
-    }
-
-    
-    const fieldsAndConfidences = fieldNames.map(fieldName => [
-      fieldName,
-      confidence(fieldName),
-    ]);
-
-    
-    fieldsAndConfidences.sort(
-      ([_1, confidence1], [_2, confidence2]) => confidence2 - confidence1
-    );
-    return fieldsAndConfidences[0];
-  },
-
-  getInfo(element) {
+  getInfo(element, sacnner) {
     function infoRecordWithFieldName(fieldName) {
       return {
         fieldName,
@@ -1115,20 +1187,31 @@ this.FormAutofillHeuristics = {
       return infoRecordWithFieldName("email");
     }
 
-    
-    const [mostConfidentFieldName, mostConfidentScore] = this._topFathomField(
-      element
+    let fields = this._getPossibleFieldNames(
+      isAutoCompleteOff,
+      element.tagName
     );
-    if (mostConfidentScore > 0.5) {
-      return infoRecordWithFieldName(mostConfidentFieldName);
+
+    if (FormAutofillUtils.isFathomCreditCardsEnabled()) {
+      
+      let fathomFields = fields.filter(r =>
+        creditCardRulesets.types.includes(r)
+      );
+      let fathomField = sacnner.getFathomField(element, fathomFields);
+      
+      if (fathomField) {
+        return infoRecordWithFieldName(fathomField);
+      }
+
+      
+      
+      
+      
+      fields = fields.filter(r => !creditCardRulesets.types.includes(r));
     }
 
-    
-    
-    
-    let regexps = this._getRegExpList(isAutoCompleteOff, element.tagName);
-    if (regexps.length) {
-      let matchedFieldName = this._findMatchedFieldName(element, regexps);
+    if (fields.length) {
+      let matchedFieldName = this._findMatchedFieldName(element, fields);
       if (matchedFieldName) {
         return infoRecordWithFieldName(matchedFieldName);
       }
