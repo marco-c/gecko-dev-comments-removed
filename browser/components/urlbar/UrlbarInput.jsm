@@ -383,10 +383,7 @@ class UrlbarInput {
     this.valueIsTyped = !valid;
     this.removeAttribute("usertyping");
 
-    if (!this.focused) {
-      
-      this.selectionStart = this.selectionEnd = 0;
-    } else if (value != previousUntrimmedValue) {
+    if (this.focused && value != previousUntrimmedValue) {
       if (
         previousSelectionStart != previousSelectionEnd &&
         value.substring(previousSelectionStart, previousSelectionEnd) ===
@@ -397,8 +394,10 @@ class UrlbarInput {
       ) {
         
         
-        this.selectionStart = previousSelectionStart;
-        this.selectionEnd = previousSelectionEnd;
+        this.inputField.setSelectionRange(
+          previousSelectionStart,
+          previousSelectionEnd
+        );
       } else if (
         previousSelectionEnd &&
         (previousUntrimmedValue.length === previousSelectionEnd ||
@@ -407,11 +406,14 @@ class UrlbarInput {
         
         
         
-        this.selectionStart = this.selectionEnd = value.length;
+        this.inputField.setSelectionRange(value.length, value.length);
       } else {
         
         
-        this.selectionStart = this.selectionEnd = previousSelectionEnd;
+        this.inputField.setSelectionRange(
+          previousSelectionEnd,
+          previousSelectionEnd
+        );
       }
     }
 
