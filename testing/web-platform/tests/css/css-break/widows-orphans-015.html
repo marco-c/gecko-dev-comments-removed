@@ -8,19 +8,18 @@
   <link rel="help" href="https://www.w3.org/TR/css-break-3/#widows-orphans">
   <link rel="match" href="reference/widows-orphans-016-ref.html">
 
-  
+  <!--
+  Date created: November 26th 2020
+  Last modified: December 6th 2020
+  -->
 
+  <!--
 
+  Bug 137367: Implement orphans and widows
+  https://bugzilla.mozilla.org/show_bug.cgi?id=137367
 
+  -->
 
-  
-
-
-
-
-
-
-  <meta name="flags" content="">
   <meta name="assert" content="This test checks that 'widows' applies to multi-column containers and that the initial value of 'widows' is '2'. When an UA succeeds at applying 'widows', then there is 2 line boxes at the top of the 3rd column box.">
 
   <style>
@@ -62,4 +61,4 @@
 
   <div id="reference">1<br>2<br>3<br>4<br>5<br>6<br>7<br><br>8<br>9</div>
 
-  
+  <!--          Same as div#test except 1 extra br here   ^    -->

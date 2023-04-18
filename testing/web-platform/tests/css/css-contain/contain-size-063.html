@@ -4,7 +4,6 @@
 <link rel="author" title="Florian Rivoal" href="https://florian.rivoal.net">
 <link rel="help" href="https://www.w3.org/TR/css-contain-1/#containment-size">
 <link rel="match" href="reference/contain-size-063-ref.html">
-<meta name="flags" content="">
 <meta name="asserts" content="the intrinsic size of a size-contained element is treated as 0 in various scenarios involving intrinsic sizing.">
 
 <style>
@@ -38,13 +37,13 @@ td {
 
 <p>Test passes if there is no red below.
 
-
+<!-- max content sized-->
 <div class="red abs"><div class="contained">Arbitrary content content<br>that takes up size.<br>Block Layout</div></div>
 
-
+<!-- max content sized-->
 <div class="red float"><div class="contained">Arbitrary content content<br>that takes up size.<br>Float</div></div>
 
-
+<!-- min content sized-->
 <div class=zero><div class="red float"><div class="contained">Arbitrary content content<br>that takes up size.<br>Float in narrow wrapper</div></div></div>
 
 <div class="grid red">

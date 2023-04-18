@@ -8,7 +8,6 @@
   <link rel="help" href="https://www.w3.org/TR/css-contain-1/#containment-style">
   <link rel="match" href="reference/contain-style-counters-004-ref.html">
 
-  <meta name="flags" content="">
 
   <style>
   body
@@ -63,9 +62,9 @@
 
   <p> <span></span> <span></span> <span></span> <span></span>
 
-  
-
-
+  <!-- 4 span inside the <p>. However, since div isn't a sibling of spans,
+       it creates a new counter.
+  -->
 
   <p>Test passes if there is the number 0.
 

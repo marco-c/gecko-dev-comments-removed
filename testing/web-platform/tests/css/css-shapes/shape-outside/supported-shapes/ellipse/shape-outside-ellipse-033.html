@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-
-
+<!-- Any copyright is dedicated to the Public Domain.
+   - http://creativecommons.org/publicdomain/zero/1.0/ -->
 
 <html>
   <meta charset="utf-8">
@@ -9,7 +9,6 @@
   <link rel="author" title="Mozilla" href="http://www.mozilla.org/">
   <link rel="help" href="https://drafts.csswg.org/css-shapes-1/#supported-basic-shapes">
   <link rel="match" href="reference/shape-outside-ellipse-033-ref.html">
-  <meta name="flags" content="">
   <meta name="assert" content="Test the boxes are wrapping around the left float shape defined by the basic shape ellipse(40px 60px at right bottom) value.">
   <style>
   .container {
@@ -43,11 +42,11 @@
   <main class="container">
     <div class="shape"></div>
     <div class="shape"></div>
-    <div class="long box" style="height: 60px;"></div> 
+    <div class="long box" style="height: 60px;"></div> <!-- Fill the space above the first float -->
     <div class="box" style="height: 36px;"></div>
     <div class="box" style="height: 12px;"></div>
     <div class="box" style="height: 12px;"></div>
-    <div class="long box" style="height: 60px;"></div> 
+    <div class="long box" style="height: 60px;"></div> <!-- Fill the space between two floats -->
     <div class="box" style="height: 36px;"></div>
     <div class="box" style="height: 12px;"></div>
     <div class="box" style="height: 12px;"></div>
