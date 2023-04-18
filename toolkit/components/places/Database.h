@@ -18,7 +18,7 @@
 
 
 
-#define DATABASE_SCHEMA_VERSION 65
+#define DATABASE_SCHEMA_VERSION 66
 
 
 #define TOPIC_PLACES_INIT_COMPLETE "places-init-complete"
@@ -338,6 +338,7 @@ class Database final : public nsIObserver, public nsSupportsWeakReference {
   nsresult MigrateV63Up();
   nsresult MigrateV64Up();
   nsresult MigrateV65Up();
+  nsresult MigrateV66Up();
 
   void MigrateV52OriginFrecencies();
 
