@@ -60,17 +60,6 @@ def ancestors(path):
         path = newpath
 
 
-def samepath(path1, path2):
-    
-    
-    
-    if hasattr(os.path, "samefile") and os.name != "nt":
-        return os.path.samefile(path1, path2)
-    return os.path.normcase(os.path.realpath(path1)) == os.path.normcase(
-        os.path.realpath(path2)
-    )
-
-
 class BadEnvironmentException(Exception):
     """Base class for errors raised when the build environment is not sane."""
 
@@ -902,7 +891,9 @@ class MachCommandBase(MozbuildObject):
                 
                 config_topobjdir = dummy.resolve_mozconfig_topobjdir()
 
-                if config_topobjdir and not samepath(topobjdir, config_topobjdir):
+                if config_topobjdir and not Path(topobjdir).samefile(
+                    Path(config_topobjdir)
+                ):
                     raise ObjdirMismatchException(topobjdir, config_topobjdir)
         except BuildEnvironmentNotFoundException:
             pass
