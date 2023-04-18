@@ -611,7 +611,7 @@ bool ExtractAV1CodecDetails(const nsAString& aCodec, uint8_t& aProfile,
 
   
   
-  if (aProfile > 2 || aLevel > 23) {
+  if (aProfile > 2 || (aLevel > 23 && aLevel != 31)) {
     return false;
   }
 
