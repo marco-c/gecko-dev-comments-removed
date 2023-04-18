@@ -174,11 +174,51 @@ use proc_macro::TokenStream;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[proc_macro_attribute]
 #[cfg(not(test))] 
 pub fn main(args: TokenStream, item: TokenStream) -> TokenStream {
     entry::main(args, item, true)
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -266,17 +306,14 @@ pub fn main_rt(args: TokenStream, item: TokenStream) -> TokenStream {
 
 
 
+
+
+
+
 #[proc_macro_attribute]
 pub fn test(args: TokenStream, item: TokenStream) -> TokenStream {
     entry::test(args, item, true)
 }
-
-
-
-
-
-
-
 
 
 
