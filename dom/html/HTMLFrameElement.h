@@ -11,8 +11,7 @@
 #include "nsGenericHTMLFrameElement.h"
 #include "nsGkAtoms.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class HTMLFrameElement final : public nsGenericHTMLFrameElement {
  public:
@@ -101,7 +100,6 @@ class HTMLFrameElement final : public nsGenericHTMLFrameElement {
                                     MappedDeclarations&);
 };
 
-}  
 }  
 
 #endif  

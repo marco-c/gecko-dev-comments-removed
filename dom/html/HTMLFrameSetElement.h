@@ -38,8 +38,7 @@ struct nsFramesetSpec {
 
 
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class OnBeforeUnloadEventHandlerNonNull;
 
@@ -151,7 +150,6 @@ class HTMLFrameSetElement final : public nsGenericHTMLElement {
   UniquePtr<nsFramesetSpec[]> mColSpecs;  
 };
 
-}  
 }  
 
 #endif  

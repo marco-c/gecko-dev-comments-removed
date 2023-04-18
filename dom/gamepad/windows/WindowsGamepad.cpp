@@ -1092,8 +1092,7 @@ class StopWindowsGamepadServiceRunnable final : public Runnable {
 
 }  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 using namespace mozilla::ipc;
 
@@ -1134,5 +1133,4 @@ void SetGamepadLightIndicatorColor(const Tainted<GamepadHandle>& aGamepadHandle,
                                    aGreen, aBlue);
 }
 
-}  
 }  

@@ -35,14 +35,12 @@
 class nsGeolocationService;
 class nsGeolocationRequest;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class Geolocation;
 using GeoPositionCallback =
     CallbackObjectHolder<PositionCallback, nsIDOMGeoPositionCallback>;
 using GeoPositionErrorCallback =
     CallbackObjectHolder<PositionErrorCallback, nsIDOMGeoPositionErrorCallback>;
-}  
 }  
 
 struct CachedPositionAndAccuracy {
@@ -110,8 +108,7 @@ class nsGeolocationService final : public nsIGeolocationUpdate,
   bool mHigherAccuracy = false;
 };
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -247,7 +244,6 @@ class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
   static mozilla::StaticRefPtr<Geolocation> sNonWindowSingleton;
 };
 
-}  
 }  
 
 #endif 

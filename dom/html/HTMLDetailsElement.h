@@ -11,8 +11,7 @@
 #include "mozilla/Attributes.h"
 #include "nsGenericHTMLElement.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -66,7 +65,6 @@ class HTMLDetailsElement final : public nsGenericHTMLElement {
   RefPtr<AsyncEventDispatcher> mToggleEventDispatcher;
 };
 
-}  
 }  
 
 #endif 

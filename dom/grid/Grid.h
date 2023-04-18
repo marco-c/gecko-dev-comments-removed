@@ -12,8 +12,7 @@
 #include "nsISupports.h"
 #include "nsWrapperCache.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Element;
 class GridDimension;
@@ -44,7 +43,6 @@ class Grid : public nsISupports, public nsWrapperCache {
   nsTArray<RefPtr<GridArea>> mAreas;
 };
 
-}  
 }  
 
 #endif 

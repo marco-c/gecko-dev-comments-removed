@@ -14,8 +14,7 @@
 
 class nsAtom;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class GridLines;
 
@@ -59,7 +58,6 @@ class GridLine : public nsISupports, public nsWrapperCache {
   int32_t mNegativeNumber;
 };
 
-}  
 }  
 
 #endif 

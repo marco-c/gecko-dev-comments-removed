@@ -41,8 +41,7 @@
 
 using namespace mozilla::net;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class NoOpDNSListener final : public nsIDNSListener {
   
@@ -645,5 +644,4 @@ DeferredDNSPrefetches::Observe(nsISupports* subject, const char* topic,
   return NS_OK;
 }
 
-}  
 }  
