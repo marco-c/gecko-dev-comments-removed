@@ -790,6 +790,22 @@ impl CompositeState {
         }
     }
 
+    
+    
+    pub fn update_dirty_rect_validity(
+        &mut self,
+        old_descriptor: &CompositeDescriptor,
+    ) {
+        
+        
+        
+        
+
+        if old_descriptor.surfaces.len() != self.descriptor.surfaces.len() {
+            self.dirty_rects_are_valid = false;
+        }
+    }
+
     fn compute_external_surface_dependencies(
         &mut self,
         external_surface: &ExternalSurfaceDescriptor,
