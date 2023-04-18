@@ -13,7 +13,9 @@
 #include "nsIPrintingPromptService.h"
 #include "nsIPrintSettingsService.h"
 #include "nsServiceManagerUtils.h"
+#include "nsIWebProgressListener.h"
 #include "PrintingParent.h"
+#include "PrintProgressDialogParent.h"
 #include "PrintSettingsDialogParent.h"
 #include "mozilla/layout/RemotePrintJobParent.h"
 #include "mozilla/StaticPrefs_print.h"
@@ -24,6 +26,60 @@ using namespace mozilla::layout;
 
 namespace mozilla {
 namespace embedding {
+mozilla::ipc::IPCResult PrintingParent::RecvShowProgress(
+    PBrowserParent* parent, PPrintProgressDialogParent* printProgressDialog,
+    PRemotePrintJobParent* remotePrintJob, const bool& isForPrinting) {
+  bool notifyOnOpen = false;
+
+  nsCOMPtr<nsPIDOMWindowOuter> parentWin = DOMWindowFromBrowserParent(parent);
+  nsCOMPtr<nsIPrintingPromptService> pps(
+      do_GetService("@mozilla.org/embedcomp/printingprompt-service;1"));
+
+  PrintProgressDialogParent* dialogParent =
+      static_cast<PrintProgressDialogParent*>(printProgressDialog);
+  nsCOMPtr<nsIObserver> observer = dialogParent;
+
+  nsCOMPtr<nsIWebProgressListener> printProgressListener;
+  nsCOMPtr<nsIPrintProgressParams> printProgressParams;
+
+  nsresult rv = NS_ERROR_INVALID_ARG;
+  if (parentWin && pps) {
+    rv = pps->ShowPrintProgressDialog(
+        parentWin, nullptr, observer, isForPrinting,
+        getter_AddRefs(printProgressListener),
+        getter_AddRefs(printProgressParams), &notifyOnOpen);
+  }
+
+  if (NS_SUCCEEDED(rv)) {
+    if (remotePrintJob) {
+      
+      
+      static_cast<RemotePrintJobParent*>(remotePrintJob)
+          ->RegisterListener(printProgressListener);
+    } else {
+      dialogParent->SetWebProgressListener(printProgressListener);
+    }
+
+    dialogParent->SetPrintProgressParams(printProgressParams);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!notifyOnOpen) {
+    observer->Observe(nullptr, nullptr, nullptr);
+  }
+  return IPC_OK();
+}
+
 nsresult PrintingParent::ShowPrintDialog(PBrowserParent* aParent,
                                          const PrintData& aData,
                                          PrintData* aResult) {
@@ -142,6 +198,24 @@ mozilla::ipc::IPCResult PrintingParent::RecvSavePrintSettings(
       settings, aUsePrinterNamePrefix, aFlags);
 
   return IPC_OK();
+}
+
+PPrintProgressDialogParent* PrintingParent::AllocPPrintProgressDialogParent() {
+  PrintProgressDialogParent* actor = new PrintProgressDialogParent();
+  NS_ADDREF(actor);  
+                     
+  return actor;
+}
+
+bool PrintingParent::DeallocPPrintProgressDialogParent(
+    PPrintProgressDialogParent* doomed) {
+  
+  
+  
+  PrintProgressDialogParent* actor =
+      static_cast<PrintProgressDialogParent*>(doomed);
+  NS_RELEASE(actor);
+  return true;
 }
 
 PPrintSettingsDialogParent* PrintingParent::AllocPPrintSettingsDialogParent() {

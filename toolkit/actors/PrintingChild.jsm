@@ -361,6 +361,9 @@ class PrintingChild extends JSWindowActorChild {
       let printSettings = this.getPrintSettings(lastUsedPrinterName);
 
       
+      printSettings.showPrintProgress = false;
+
+      
       
       
       if (printSettings && simplifiedMode) {

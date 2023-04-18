@@ -454,14 +454,54 @@ var PrintUtils = {
         ? this._listener.getSimplifiedPrintPreviewBrowser()
         : this._listener.getPrintPreviewBrowser();
       this._sourceBrowser.collapsed = true;
+
+      
+      
+      this.ensureProgressDialogClosed();
     }
+
+    this._webProgressPP = {};
+    let ppParams = {};
+    let notifyOnOpen = {};
+    let printSettings = this.getPrintSettings();
+    
+    
+    
+    
+    
+    let PPROMPTSVC = Cc[
+      "@mozilla.org/embedcomp/printingprompt-service;1"
+    ].getService(Ci.nsIPrintingPromptService);
 
     let promise = new Promise((resolve, reject) => {
       this._onEntered.push({ resolve, reject });
     });
 
-    this._enterPrintPreview();
+    
+    
+    try {
+      PPROMPTSVC.showPrintProgressDialog(
+        window,
+        printSettings,
+        this._obsPP,
+        false,
+        this._webProgressPP,
+        ppParams,
+        notifyOnOpen
+      );
+      if (ppParams.value) {
+        ppParams.value.docTitle = this._originalTitle;
+        ppParams.value.docURL = this._originalURL;
+      }
 
+      
+      
+      if (!notifyOnOpen.value.valueOf() || this._webProgressPP.value == null) {
+        this._enterPrintPreview();
+      }
+    } catch (e) {
+      this._enterPrintPreview();
+    }
     return promise;
   },
 
@@ -469,6 +509,7 @@ var PrintUtils = {
 
   _listener: null,
   _closeHandlerPP: null,
+  _webProgressPP: null,
   _sourceBrowser: null,
   _originalTitle: "",
   _originalURL: "",
@@ -602,6 +643,26 @@ var PrintUtils = {
     return printSettings;
   },
 
+  
+  _obsPP: {
+    observe(aSubject, aTopic, aData) {
+      
+      if (aTopic) {
+        return;
+      }
+
+      
+      setTimeout(function() {
+        PrintUtils._enterPrintPreview();
+      }, 0);
+    },
+
+    QueryInterface: ChromeUtils.generateQI([
+      "nsIObserver",
+      "nsISupportsWeakReference",
+    ]),
+  },
+
   get shouldSimplify() {
     return this._shouldSimplify;
   },
@@ -629,6 +690,9 @@ var PrintUtils = {
   _enterPrintPreview() {
     
     
+    
+    
+    
     let ppBrowser = this._shouldSimplify
       ? this._listener.getSimplifiedPrintPreviewBrowser()
       : this._listener.getPrintPreviewBrowser();
@@ -645,7 +709,12 @@ var PrintUtils = {
     }
     this._currentPPBrowser = ppBrowser;
 
-    gPendingPrintPreviews.set(ppBrowser, false);
+    let waitForPrintProgressToEnableToolbar = false;
+    if (this._webProgressPP.value) {
+      waitForPrintProgressToEnableToolbar = true;
+    }
+
+    gPendingPrintPreviews.set(ppBrowser, waitForPrintProgressToEnableToolbar);
 
     
     
@@ -878,6 +947,8 @@ var PrintUtils = {
 
     this.setSimplifiedMode(false);
 
+    this.ensureProgressDialogClosed();
+
     this._listener.onExit();
 
     this._originalTitle = "";
@@ -929,6 +1000,21 @@ var PrintUtils = {
     if (isModif) {
       aEvent.preventDefault();
       aEvent.stopPropagation();
+    }
+  },
+
+  
+
+
+
+  ensureProgressDialogClosed() {
+    if (this._webProgressPP && this._webProgressPP.value) {
+      this._webProgressPP.value.onStateChange(
+        null,
+        null,
+        Ci.nsIWebProgressListener.STATE_STOP,
+        0
+      );
     }
   },
 };

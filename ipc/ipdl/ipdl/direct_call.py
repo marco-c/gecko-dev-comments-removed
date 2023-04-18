@@ -682,6 +682,8 @@ VIRTUAL_CALL_CLASSES = set(
         
         ("PPrinting", "child"),
         ("PPrinting", "parent"),
+        ("PPrintProgressDialog", "child"),
+        ("PPrintProgressDialog", "parent"),
         ("PPrintSettingsDialog", "child"),
         ("PPrintSettingsDialog", "parent"),
         ("PQuota", "child"),

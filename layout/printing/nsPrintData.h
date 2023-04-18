@@ -18,6 +18,7 @@
 #include "nsCOMArray.h"
 
 class nsPrintObject;
+class nsIPrintProgressParams;
 class nsIWebProgressListener;
 
 
@@ -49,6 +50,7 @@ class nsPrintData {
   mozilla::UniquePtr<nsPrintObject> mPrintObject;
 
   nsCOMArray<nsIWebProgressListener> mPrintProgressListeners;
+  nsCOMPtr<nsIPrintProgressParams> mPrintProgressParams;
 
   
   

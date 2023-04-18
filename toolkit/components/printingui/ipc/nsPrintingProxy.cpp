@@ -18,6 +18,7 @@
 #include "nsPIDOMWindow.h"
 #include "nsPrintSettingsService.h"
 #include "nsServiceManagerUtils.h"
+#include "PrintProgressDialogChild.h"
 #include "PrintSettingsDialogChild.h"
 
 using namespace mozilla;
@@ -118,6 +119,60 @@ nsPrintingProxy::ShowPrintDialog(mozIDOMWindowProxy* parent,
 }
 
 NS_IMETHODIMP
+nsPrintingProxy::ShowPrintProgressDialog(
+    mozIDOMWindowProxy* parent,
+    nsIPrintSettings* printSettings,  
+    nsIObserver* openDialogObserver,  
+    bool isForPrinting, nsIWebProgressListener** webProgressListener,
+    nsIPrintProgressParams** printProgressParams, bool* notifyOnOpen) {
+  NS_ENSURE_ARG(parent);
+  NS_ENSURE_ARG(webProgressListener);
+  NS_ENSURE_ARG(printProgressParams);
+  NS_ENSURE_ARG(notifyOnOpen);
+
+  
+  
+  nsCOMPtr<nsPIDOMWindowOuter> pwin = nsPIDOMWindowOuter::From(parent);
+  NS_ENSURE_STATE(pwin);
+  nsCOMPtr<nsIDocShell> docShell = pwin->GetDocShell();
+  NS_ENSURE_STATE(docShell);
+  nsCOMPtr<nsIBrowserChild> tabchild = docShell->GetBrowserChild();
+  BrowserChild* pBrowser = static_cast<BrowserChild*>(tabchild.get());
+
+  RefPtr<PrintProgressDialogChild> dialogChild =
+      new PrintProgressDialogChild(openDialogObserver, printSettings);
+
+  SendPPrintProgressDialogConstructor(dialogChild);
+
+  
+  RefPtr<RemotePrintJobChild> remotePrintJob;
+  if (printSettings) {
+    nsCOMPtr<nsIPrintSession> printSession;
+    nsresult rv = printSettings->GetPrintSession(getter_AddRefs(printSession));
+    if (NS_SUCCEEDED(rv) && printSession) {
+      remotePrintJob = printSession->GetRemotePrintJob();
+    }
+  }
+
+  
+  
+  
+  *notifyOnOpen = true;
+  mozilla::Unused << SendShowProgress(pBrowser, dialogChild, remotePrintJob,
+                                      isForPrinting);
+
+  
+  
+  
+  if (!remotePrintJob) {
+    NS_ADDREF(*webProgressListener = dialogChild);
+  }
+  NS_ADDREF(*printProgressParams = dialogChild);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsPrintingProxy::ShowPageSetupDialog(mozIDOMWindowProxy* parent,
                                      nsIPrintSettings* printSettings) {
   return NS_ERROR_NOT_IMPLEMENTED;
@@ -137,6 +192,22 @@ nsresult nsPrintingProxy::SavePrintSettings(nsIPrintSettings* aPS,
 
   Unused << SendSavePrintSettings(settings, aUsePrinterNamePrefix, aFlags, &rv);
   return rv;
+}
+
+PPrintProgressDialogChild* nsPrintingProxy::AllocPPrintProgressDialogChild() {
+  
+  
+  MOZ_ASSERT_UNREACHABLE(
+      "Allocator for PPrintProgressDialogChild should not "
+      "be called on nsPrintingProxy.");
+  return nullptr;
+}
+
+bool nsPrintingProxy::DeallocPPrintProgressDialogChild(
+    PPrintProgressDialogChild* aActor) {
+  
+  
+  return true;
 }
 
 PPrintSettingsDialogChild* nsPrintingProxy::AllocPPrintSettingsDialogChild() {
