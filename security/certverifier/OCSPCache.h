@@ -120,14 +120,14 @@ class OCSPCache {
                      size_t& index, const MutexAutoLock& aProofOfLock);
   void MakeMostRecentlyUsed(size_t aIndex, const MutexAutoLock& aProofOfLock);
 
-  Mutex mMutex MOZ_UNANNOTATED;
+  Mutex mMutex;
   static const size_t MaxEntries = 1024;
   
   
   
   
   
-  Vector<Entry*, 256> mEntries;
+  Vector<Entry*, 256> mEntries GUARDED_BY(mMutex);
 };
 
 }  

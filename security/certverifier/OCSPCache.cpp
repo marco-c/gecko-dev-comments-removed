@@ -173,6 +173,7 @@ bool OCSPCache::FindInternal(const CertID& aCertID,
                              const OriginAttributes& aOriginAttributes,
                               size_t& index,
                              const MutexAutoLock& ) {
+  mMutex.AssertCurrentThreadOwns();
   if (mEntries.length() == 0) {
     return false;
   }
@@ -206,6 +207,7 @@ static inline void LogWithCertID(const char* aMessage, const CertID& aCertID,
 
 void OCSPCache::MakeMostRecentlyUsed(size_t aIndex,
                                      const MutexAutoLock& ) {
+  mMutex.AssertCurrentThreadOwns();
   Entry* entry = mEntries[aIndex];
   
   
