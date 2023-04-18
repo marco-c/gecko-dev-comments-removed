@@ -20,13 +20,11 @@ NS_IMPL_ISUPPORTS(RemotePrintJobChild, nsIWebProgressListener)
 RemotePrintJobChild::RemotePrintJobChild() = default;
 
 nsresult RemotePrintJobChild::InitializePrint(const nsString& aDocumentTitle,
-                                              const nsString& aPrintToFile,
                                               const int32_t& aStartPage,
                                               const int32_t& aEndPage) {
   
   
-  Unused << SendInitializePrint(aDocumentTitle, aPrintToFile, aStartPage,
-                                aEndPage);
+  Unused << SendInitializePrint(aDocumentTitle, aStartPage, aEndPage);
   mozilla::SpinEventLoopUntil("RemotePrintJobChild::InitializePrint"_ns,
                               [&]() { return mPrintInitialized; });
 

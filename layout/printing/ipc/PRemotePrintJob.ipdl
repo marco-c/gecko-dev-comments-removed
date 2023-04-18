@@ -20,7 +20,7 @@ both:
 
 parent:
   
-  async InitializePrint(nsString aDocumentTitle, nsString aPrintToFile,
+  async InitializePrint(nsString aDocumentTitle,
                         int32_t aStartPage, int32_t aEndPage);
 
   

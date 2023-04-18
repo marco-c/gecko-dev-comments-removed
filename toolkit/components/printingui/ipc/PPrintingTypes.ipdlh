@@ -57,10 +57,14 @@ struct PrintData {
   int32_t numPagesPerSheet;
 
   
+  
+  
+  
+
+  
   short outputDestination;
   short outputFormat;
   nsString printerName;
-  nsString toFileName;
 
   int32_t printPageDelay;
   int32_t resolution;

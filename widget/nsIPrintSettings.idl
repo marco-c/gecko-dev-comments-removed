@@ -292,7 +292,15 @@ interface nsIPrintSettings : nsISupports
   [infallible] attribute short outputFormat;
 
   attribute AString printerName;          
-  attribute AString toFileName;           
+
+  
+
+
+
+
+
+  attribute AString toFileName;
+
   attribute nsIOutputStream outputStream; 
 
   [infallible] attribute long printPageDelay; 

@@ -104,8 +104,8 @@ nsDeviceContextSpecProxy::BeginDocument(const nsAString& aTitle,
   }
 
   mRecorder = new mozilla::layout::DrawEventRecorderPRFileDesc();
-  nsresult rv = mRemotePrintJob->InitializePrint(
-      nsString(aTitle), nsString(aPrintToFileName), aStartPage, aEndPage);
+  nsresult rv =
+      mRemotePrintJob->InitializePrint(nsString(aTitle), aStartPage, aEndPage);
   if (NS_FAILED(rv)) {
     
     
