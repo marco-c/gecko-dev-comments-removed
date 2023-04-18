@@ -545,11 +545,11 @@ bool Event::IsDispatchStopped() { return mEvent->PropagationStopped(); }
 WidgetEvent* Event::WidgetEventPtr() { return mEvent; }
 
 
-CSSIntPoint Event::GetScreenCoords(nsPresContext* aPresContext,
-                                   WidgetEvent* aEvent,
-                                   LayoutDeviceIntPoint aPoint) {
+Maybe<CSSIntPoint> Event::GetScreenCoords(nsPresContext* aPresContext,
+                                          WidgetEvent* aEvent,
+                                          LayoutDeviceIntPoint aPoint) {
   if (PointerLockManager::IsLocked()) {
-    return EventStateManager::sLastScreenPoint;
+    return Some(EventStateManager::sLastScreenPoint);
   }
 
   if (!aEvent || (aEvent->mClass != eMouseEventClass &&
@@ -559,14 +559,14 @@ CSSIntPoint Event::GetScreenCoords(nsPresContext* aPresContext,
                   aEvent->mClass != eTouchEventClass &&
                   aEvent->mClass != eDragEventClass &&
                   aEvent->mClass != eSimpleGestureEventClass)) {
-    return CSSIntPoint(0, 0);
+    return Nothing();
   }
 
   
   
   WidgetGUIEvent* guiEvent = aEvent->AsGUIEvent();
   if (!aPresContext || !(guiEvent && guiEvent->mWidget)) {
-    return CSSIntPoint(aPoint.x, aPoint.y);
+    return Some(CSSIntPoint(aPoint.x, aPoint.y));
   }
 
   
@@ -587,7 +587,7 @@ CSSIntPoint Event::GetScreenCoords(nsPresContext* aPresContext,
       guiEvent->mWidget->TopLevelWidgetToScreenOffset(),
       aPresContext->DeviceContext()->AppUnitsPerDevPixel());
 
-  return CSSPixel::FromAppUnitsRounded(pt);
+  return Some(CSSPixel::FromAppUnitsRounded(pt));
 }
 
 

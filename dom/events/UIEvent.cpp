@@ -197,7 +197,8 @@ void UIEvent::DuplicatePrivateData() {
                                     mDefaultClientPoint);
   
   CSSIntPoint screenPoint =
-      Event::GetScreenCoords(mPresContext, mEvent, mEvent->mRefPoint);
+      Event::GetScreenCoords(mPresContext, mEvent, mEvent->mRefPoint)
+          .valueOr(CSSIntPoint{0, 0});
 
   Event::DuplicatePrivateData();
 
