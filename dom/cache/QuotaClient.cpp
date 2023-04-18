@@ -64,8 +64,8 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
 
         if (dirEntryKind != nsIFileKind::ExistsAsDirectory) {
           if (dirEntryKind == nsIFileKind::ExistsAsFile) {
-            const DebugOnly<nsresult> result = RemoveNsIFile(
-                ClientMetadata{}, *bodyDir,  false);
+            const DebugOnly<nsresult> result =
+                RemoveNsIFile(Nothing(), *bodyDir,  false);
             
             
             
@@ -108,8 +108,7 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
         
         QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
             
-            MOZ_TO_RESULT(BodyTraverseFiles(ClientMetadata{}, *bodyDir,
-                                            getUsage,
+            MOZ_TO_RESULT(BodyTraverseFiles(Nothing(), *bodyDir, getUsage,
                                              true,
                                              false)),
             
@@ -123,8 +122,7 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
 
 Result<int64_t, nsresult> GetPaddingSizeFromDB(
     nsIFile& aDir, nsIFile& aDBFile, const OriginMetadata& aOriginMetadata) {
-  ClientMetadata clientMetadata;
-  static_cast<OriginMetadata&>(clientMetadata) = aOriginMetadata;
+  ClientMetadata clientMetadata(aOriginMetadata);
   
   
   
@@ -217,9 +215,8 @@ Result<UsageInfo, nsresult> CacheQuotaClient::InitOrigin(
           QM_TRY_INSPECT(const auto& morgueDir,
                          CloneFileAndAppend(*dir, kMorgueDirectoryFilename));
 
-          ClientMetadata dummy;
           QM_TRY(MOZ_TO_RESULT(mozilla::dom::cache::RemoveNsIFileRecursively(
-              dummy, *morgueDir,
+              Nothing(), *morgueDir,
                false)));
 
           return nsCOMPtr<nsIFile>{nullptr};
