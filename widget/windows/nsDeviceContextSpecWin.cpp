@@ -334,15 +334,6 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecWin::MakePrintTarget() {
   return nullptr;
 }
 
-float nsDeviceContextSpecWin::GetDPI() {
-  if (mOutputFormat == nsIPrintSettings::kOutputFormatPDF || mPrintViaSkPDF) {
-    return nsIDeviceContextSpec::GetDPI();
-  }
-  
-  
-  return 144.0f;
-}
-
 float nsDeviceContextSpecWin::GetPrintingScale() {
   MOZ_ASSERT(mPrintSettings);
   if (mOutputFormat == nsIPrintSettings::kOutputFormatPDF || mPrintViaSkPDF) {
