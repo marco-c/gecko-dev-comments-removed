@@ -22,7 +22,9 @@ const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   AppUpdater: "resource:///modules/AppUpdater.jsm",
   BackgroundTasksUtils: "resource://gre/modules/BackgroundTasksUtils.jsm",
   BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.jsm",
@@ -32,13 +34,13 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 XPCOMUtils.defineLazyServiceGetter(
-  this,
+  lazy,
   "UpdateService",
   "@mozilla.org/updates/update-service;1",
   "nsIApplicationUpdateService"
 );
 
-XPCOMUtils.defineLazyGetter(this, "log", () => {
+XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   let { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
   let consoleOptions = {
     
@@ -72,21 +74,21 @@ async function _attemptBackgroundUpdate() {
   
   
   
-  log.debug(
+  lazy.log.debug(
     `${SLUG}: creating UpdateServiceStub() for "post-update-processing"`
   );
   Cc["@mozilla.org/updates/update-service-stub;1"].createInstance(
     Ci.nsISupports
   );
 
-  log.debug(
+  lazy.log.debug(
     `${SLUG}: checking for preconditions necessary to update this installation`
   );
-  let reasons = await BackgroundUpdate._reasonsToNotUpdateInstallation();
+  let reasons = await lazy.BackgroundUpdate._reasonsToNotUpdateInstallation();
 
-  if (BackgroundUpdate._force()) {
+  if (lazy.BackgroundUpdate._force()) {
     
-    log.debug(
+    lazy.log.debug(
       `${SLUG}: app.update.background.force=true, ignoring reasons: ${JSON.stringify(
         reasons
       )}`
@@ -101,7 +103,7 @@ async function _attemptBackgroundUpdate() {
 
   let enabled = !reasons.length;
   if (!enabled) {
-    log.info(
+    lazy.log.info(
       `${SLUG}: not running background update task: '${JSON.stringify(
         reasons
       )}'`
@@ -111,32 +113,32 @@ async function _attemptBackgroundUpdate() {
   }
 
   let result = new Promise(resolve => {
-    let appUpdater = new AppUpdater();
+    let appUpdater = new lazy.AppUpdater();
 
     let _appUpdaterListener = (status, progress, progressMax) => {
-      let stringStatus = AppUpdater.STATUS.debugStringFor(status);
+      let stringStatus = lazy.AppUpdater.STATUS.debugStringFor(status);
       Glean.backgroundUpdate.states.add(stringStatus);
       Glean.backgroundUpdate.finalState.set(stringStatus);
 
-      if (AppUpdater.STATUS.isTerminalStatus(status)) {
-        log.debug(
+      if (lazy.AppUpdater.STATUS.isTerminalStatus(status)) {
+        lazy.log.debug(
           `${SLUG}: background update transitioned to terminal status ${status}: ${stringStatus}`
         );
         appUpdater.removeListener(_appUpdaterListener);
         resolve(true);
-      } else if (status == AppUpdater.STATUS.CHECKING) {
+      } else if (status == lazy.AppUpdater.STATUS.CHECKING) {
         
         
         
         
         
-        log.debug(
+        lazy.log.debug(
           `${SLUG}: This session will be limited to downloading updates only.`
         );
-        UpdateService.onlyDownloadUpdatesThisSession = true;
+        lazy.UpdateService.onlyDownloadUpdatesThisSession = true;
       } else if (
-        status == AppUpdater.STATUS.DOWNLOADING &&
-        (UpdateService.onlyDownloadUpdatesThisSession ||
+        status == lazy.AppUpdater.STATUS.DOWNLOADING &&
+        (lazy.UpdateService.onlyDownloadUpdatesThisSession ||
           (progress !== undefined && progressMax !== undefined))
       ) {
         
@@ -146,25 +148,25 @@ async function _attemptBackgroundUpdate() {
         
         
         if (
-          UpdateService.onlyDownloadUpdatesThisSession ||
+          lazy.UpdateService.onlyDownloadUpdatesThisSession ||
           progressMax < 0 ||
           progress != progressMax
         ) {
-          log.debug(
+          lazy.log.debug(
             `${SLUG}: Download in progress. Exiting task while download ` +
               `transfers`
           );
           
           
-          UpdateService.onlyDownloadUpdatesThisSession = true;
+          lazy.UpdateService.onlyDownloadUpdatesThisSession = true;
 
           appUpdater.removeListener(_appUpdaterListener);
           resolve(true);
         } else {
-          log.debug(`${SLUG}: Download has completed!`);
+          lazy.log.debug(`${SLUG}: Download has completed!`);
         }
       } else {
-        log.debug(
+        lazy.log.debug(
           `${SLUG}: background update transitioned to status ${status}: ${stringStatus}`
         );
       }
@@ -193,12 +195,12 @@ async function maybeSubmitBackgroundUpdatePing() {
 
   GleanPings.backgroundUpdate.submit();
 
-  log.info(`${SLUG}: submitted "background-update" ping`);
+  lazy.log.info(`${SLUG}: submitted "background-update" ping`);
 }
 
 async function runBackgroundTask() {
   let SLUG = "runBackgroundTask";
-  log.error(`${SLUG}: backgroundupdate`);
+  lazy.log.error(`${SLUG}: backgroundupdate`);
 
   
   
@@ -216,10 +218,10 @@ async function runBackgroundTask() {
     distributionID: Services.prefs
       .getDefaultBranch("")
       .getCharPref("distribution.id", ""),
-    updateChannel: UpdateUtils.UpdateChannel,
+    updateChannel: lazy.UpdateUtils.UpdateChannel,
     UpdRootD: Services.dirsvc.get("UpdRootD", Ci.nsIFile).path,
   };
-  log.debug(`${SLUG}: current configuration`, data);
+  lazy.log.debug(`${SLUG}: current configuration`, data);
 
   
   
@@ -230,12 +232,12 @@ async function runBackgroundTask() {
   
   
   
-  log.debug(`${SLUG}: checking if other instance is running`);
+  lazy.log.debug(`${SLUG}: checking if other instance is running`);
   let syncManager = Cc["@mozilla.org/updates/update-sync-manager;1"].getService(
     Ci.nsIUpdateSyncManager
   );
   if (syncManager.isOtherInstanceRunning()) {
-    log.error(`${SLUG}: another instance is running`);
+    lazy.log.error(`${SLUG}: another instance is running`);
     return EXIT_CODE.OTHER_INSTANCE;
   }
 
@@ -247,7 +249,7 @@ async function runBackgroundTask() {
   
   try {
     let defaultProfilePrefs;
-    await BackgroundTasksUtils.withProfileLock(async lock => {
+    await lazy.BackgroundTasksUtils.withProfileLock(async lock => {
       let predicate = name => {
         return (
           name.startsWith("app.update.") || 
@@ -258,11 +260,11 @@ async function runBackgroundTask() {
         );
       };
 
-      defaultProfilePrefs = await BackgroundTasksUtils.readPreferences(
+      defaultProfilePrefs = await lazy.BackgroundTasksUtils.readPreferences(
         predicate,
         lock
       );
-      let telemetryClientID = await BackgroundTasksUtils.readTelemetryClientID(
+      let telemetryClientID = await lazy.BackgroundTasksUtils.readTelemetryClientID(
         lock
       );
       Glean.backgroundUpdate.clientId.set(telemetryClientID);
@@ -286,17 +288,20 @@ async function runBackgroundTask() {
       }
     }
   } catch (e) {
-    if (!BackgroundTasksUtils.hasDefaultProfile()) {
-      log.error(`${SLUG}: caught exception; no default profile exists`, e);
+    if (!lazy.BackgroundTasksUtils.hasDefaultProfile()) {
+      lazy.log.error(`${SLUG}: caught exception; no default profile exists`, e);
       return EXIT_CODE.DEFAULT_PROFILE_DOES_NOT_EXIST;
     }
 
     if (e.name == "CannotLockProfileError") {
-      log.error(`${SLUG}: caught exception; could not lock default profile`, e);
+      lazy.log.error(
+        `${SLUG}: caught exception; could not lock default profile`,
+        e
+      );
       return EXIT_CODE.DEFAULT_PROFILE_CANNOT_BE_LOCKED;
     }
 
-    log.error(
+    lazy.log.error(
       `${SLUG}: caught exception reading preferences and telemetry client ID from default profile`,
       e
     );
@@ -308,12 +313,12 @@ async function runBackgroundTask() {
   
   
   
-  await BackgroundUpdate.recordUpdateEnvironment();
+  await lazy.BackgroundUpdate.recordUpdateEnvironment();
 
   
   
   
-  let gleanRoot = FileUtils.getFile("UpdRootD", [
+  let gleanRoot = lazy.FileUtils.getFile("UpdRootD", [
     "backgroundupdate",
     "datareporting",
     "glean",
@@ -339,8 +344,8 @@ async function runBackgroundTask() {
 
   let result = EXIT_CODE.SUCCESS;
 
-  let stringStatus = AppUpdater.STATUS.debugStringFor(
-    AppUpdater.STATUS.NEVER_CHECKED
+  let stringStatus = lazy.AppUpdater.STATUS.debugStringFor(
+    lazy.AppUpdater.STATUS.NEVER_CHECKED
   );
   Glean.backgroundUpdate.states.add(stringStatus);
   Glean.backgroundUpdate.finalState.set(stringStatus);
@@ -348,12 +353,12 @@ async function runBackgroundTask() {
   try {
     await _attemptBackgroundUpdate();
 
-    log.info(`${SLUG}: attempted background update`);
+    lazy.log.info(`${SLUG}: attempted background update`);
     Glean.backgroundUpdate.exitCodeSuccess.set(true);
   } catch (e) {
     
     
-    log.error(`${SLUG}: caught exception attempting background update`, e);
+    lazy.log.error(`${SLUG}: caught exception attempting background update`, e);
 
     result = EXIT_CODE.EXCEPTION;
     Glean.backgroundUpdate.exitCodeException.set(true);
@@ -365,7 +370,7 @@ async function runBackgroundTask() {
 
   
   
-  await ExtensionUtils.promiseTimeout(500);
+  await lazy.ExtensionUtils.promiseTimeout(500);
 
   return result;
 }
