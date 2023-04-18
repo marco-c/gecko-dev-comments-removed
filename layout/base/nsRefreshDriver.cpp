@@ -449,8 +449,8 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     RefPtr<gfx::VsyncSource> vsyncSource =
         gfxPlatform::GetPlatform()->GetHardwareVsync();
     RefPtr<VsyncDispatcher> vsyncDispatcher = vsyncSource->GetVsyncDispatcher();
-    RefPtr<VsyncRefreshDriverTimer> timer = new VsyncRefreshDriverTimer(
-        std::move(vsyncSource), std::move(vsyncDispatcher), nullptr);
+    RefPtr<VsyncRefreshDriverTimer> timer =
+        new VsyncRefreshDriverTimer(std::move(vsyncDispatcher), nullptr);
     return timer.forget();
   }
 
@@ -464,8 +464,8 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     MOZ_RELEASE_ASSERT(NS_IsMainThread());
     RefPtr<VsyncDispatcher> vsyncDispatcher =
         aVsyncSource->GetVsyncDispatcher();
-    RefPtr<VsyncRefreshDriverTimer> timer = new VsyncRefreshDriverTimer(
-        std::move(aVsyncSource), std::move(vsyncDispatcher), nullptr);
+    RefPtr<VsyncRefreshDriverTimer> timer =
+        new VsyncRefreshDriverTimer(std::move(vsyncDispatcher), nullptr);
     return timer.forget();
   }
 
@@ -475,13 +475,13 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     MOZ_RELEASE_ASSERT(XRE_IsContentProcess());
     MOZ_RELEASE_ASSERT(NS_IsMainThread());
     RefPtr<VsyncRefreshDriverTimer> timer =
-        new VsyncRefreshDriverTimer(nullptr, nullptr, std::move(aVsyncChild));
+        new VsyncRefreshDriverTimer(nullptr, std::move(aVsyncChild));
     return timer.forget();
   }
 
   TimeDuration GetTimerRate() override {
-    if (mVsyncSource) {
-      mVsyncRate = mVsyncSource->GetVsyncRate();
+    if (mVsyncDispatcher) {
+      mVsyncRate = mVsyncDispatcher->GetVsyncRate();
     } else if (mVsyncChild) {
       mVsyncRate = mVsyncChild->GetVsyncRate();
     }
@@ -617,11 +617,9 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
 
   };  
 
-  VsyncRefreshDriverTimer(RefPtr<gfx::VsyncSource>&& aVsyncSource,
-                          RefPtr<VsyncDispatcher>&& aVsyncDispatcher,
+  VsyncRefreshDriverTimer(RefPtr<VsyncDispatcher>&& aVsyncDispatcher,
                           RefPtr<VsyncMainChild>&& aVsyncChild)
-      : mVsyncSource(aVsyncSource),
-        mVsyncDispatcher(aVsyncDispatcher),
+      : mVsyncDispatcher(aVsyncDispatcher),
         mVsyncChild(aVsyncChild),
         mVsyncRate(TimeDuration::Forever()),
         mRecentVsync(TimeStamp::Now()),
@@ -896,12 +894,9 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
   }
 
   
-  
-  RefPtr<gfx::VsyncSource> mVsyncSource;
-
-  
   RefPtr<RefreshDriverVsyncObserver> mVsyncObserver;
 
+  
   
   
   RefPtr<VsyncDispatcher> mVsyncDispatcher;

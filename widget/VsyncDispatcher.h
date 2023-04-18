@@ -95,6 +95,8 @@ class VsyncDispatcher final {
 
   void MoveToSource(gfx::VsyncSource* aVsyncSource);
 
+  TimeDuration GetVsyncRate() { return mVsyncSource->GetVsyncRate(); }
+
   
   
   void AddVsyncObserver(VsyncObserver* aVsyncObserver);
