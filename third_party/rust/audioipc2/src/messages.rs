@@ -11,6 +11,7 @@ use cubeb::{self, ffi};
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use std::ffi::{CStr, CString};
+use std::io;
 use std::os::raw::{c_char, c_int, c_uint};
 use std::ptr;
 
@@ -410,129 +411,110 @@ impl serde::de::Visitor<'_> for SerializableHandleVisitor {
     }
 }
 
-pub trait AssocRawPlatformHandle {
+pub trait AssociateHandleForMessage {
     
     
-    fn take_handle_for_send(&mut self) -> Option<(PlatformHandleType, u32)> {
-        None
-    }
-
     
     
-    fn set_remote_handle_value<F>(&mut self, f: F)
+    fn prepare_send_message_handle<F>(&mut self, _f: F) -> io::Result<()>
     where
-        F: FnOnce() -> Option<PlatformHandleType>,
+        F: FnOnce(PlatformHandleType, u32) -> io::Result<PlatformHandleType>,
     {
-        assert!(f().is_none());
+        Ok(())
     }
 
     
     
     #[cfg(unix)]
-    fn set_owned_handle<F>(&mut self, f: F)
+    fn receive_owned_message_handle<F>(&mut self, _: F)
     where
-        F: FnOnce() -> Option<PlatformHandleType>,
+        F: FnOnce() -> PlatformHandleType,
     {
-        assert!(f().is_none());
     }
 }
 
-impl AssocRawPlatformHandle for ServerMessage {}
+impl AssociateHandleForMessage for ServerMessage {}
 
-impl AssocRawPlatformHandle for ClientMessage {
-    fn take_handle_for_send(&mut self) -> Option<(PlatformHandleType, u32)> {
+impl AssociateHandleForMessage for ClientMessage {
+    fn prepare_send_message_handle<F>(&mut self, f: F) -> io::Result<()>
+    where
+        F: FnOnce(PlatformHandleType, u32) -> io::Result<PlatformHandleType>,
+    {
         unsafe {
             match *self {
                 ClientMessage::StreamCreated(ref mut data) => {
-                    Some(data.platform_handle.take_handle_for_send())
+                    let handle = data.platform_handle.take_handle_for_send();
+                    data.platform_handle =
+                        SerializableHandle::new_serializable_value(f(handle.0, handle.1)?);
+                    trace!(
+                        "StreamCreated handle: {:?} remote_handle: {:?}",
+                        handle,
+                        data.platform_handle
+                    );
                 }
                 ClientMessage::ContextSetupDeviceCollectionCallback(ref mut data) => {
-                    Some(data.platform_handle.take_handle_for_send())
+                    let handle = data.platform_handle.take_handle_for_send();
+                    data.platform_handle =
+                        SerializableHandle::new_serializable_value(f(handle.0, handle.1)?);
+                    trace!(
+                        "ContextSetupDeviceCollectionCallback handle: {:?} remote_handle: {:?}",
+                        handle,
+                        data.platform_handle
+                    );
                 }
-                _ => None,
+                _ => {}
             }
         }
-    }
-
-    fn set_remote_handle_value<F>(&mut self, f: F)
-    where
-        F: FnOnce() -> Option<PlatformHandleType>,
-    {
-        match *self {
-            ClientMessage::StreamCreated(ref mut data) => {
-                let handle =
-                    f().expect("platform_handle must be available when processing StreamCreated");
-                data.platform_handle = SerializableHandle::new_serializable_value(handle);
-            }
-            ClientMessage::ContextSetupDeviceCollectionCallback(ref mut data) => {
-                let handle = f().expect("platform_handle must be available when processing ContextSetupDeviceCollectionCallback");
-                data.platform_handle = SerializableHandle::new_serializable_value(handle);
-            }
-            _ => assert!(f().is_none()),
-        }
+        Ok(())
     }
 
     #[cfg(unix)]
-    fn set_owned_handle<F>(&mut self, f: F)
+    fn receive_owned_message_handle<F>(&mut self, f: F)
     where
-        F: FnOnce() -> Option<PlatformHandleType>,
+        F: FnOnce() -> PlatformHandleType,
     {
         match *self {
             ClientMessage::StreamCreated(ref mut data) => {
-                let handle =
-                    f().expect("platform_handle must be available when processing StreamCreated");
-                data.platform_handle = SerializableHandle::new_owned(handle);
+                data.platform_handle = SerializableHandle::new_owned(f());
             }
             ClientMessage::ContextSetupDeviceCollectionCallback(ref mut data) => {
-                let handle = f().expect("platform_handle must be available when processing ContextSetupDeviceCollectionCallback");
-                data.platform_handle = SerializableHandle::new_owned(handle);
+                data.platform_handle = SerializableHandle::new_owned(f());
             }
-            _ => assert!(f().is_none()),
+            _ => {}
         }
     }
 }
 
-impl AssocRawPlatformHandle for DeviceCollectionReq {}
-impl AssocRawPlatformHandle for DeviceCollectionResp {}
+impl AssociateHandleForMessage for DeviceCollectionReq {}
+impl AssociateHandleForMessage for DeviceCollectionResp {}
 
-impl AssocRawPlatformHandle for CallbackReq {
-    fn take_handle_for_send(&mut self) -> Option<(PlatformHandleType, u32)> {
+impl AssociateHandleForMessage for CallbackReq {
+    fn prepare_send_message_handle<F>(&mut self, f: F) -> io::Result<()>
+    where
+        F: FnOnce(PlatformHandleType, u32) -> io::Result<PlatformHandleType>,
+    {
         unsafe {
             if let CallbackReq::SharedMem(ref mut data, _) = *self {
-                Some(data.take_handle_for_send())
-            } else {
-                None
+                let handle = data.take_handle_for_send();
+                *data = SerializableHandle::new_serializable_value(f(handle.0, handle.1)?);
+                trace!("SharedMem handle: {:?} remote_handle: {:?}", handle, data);
             }
         }
-    }
-
-    fn set_remote_handle_value<F>(&mut self, f: F)
-    where
-        F: FnOnce() -> Option<PlatformHandleType>,
-    {
-        if let CallbackReq::SharedMem(ref mut data, _) = *self {
-            let handle = f().expect("platform_handle must be available when processing SharedMem");
-            *data = SerializableHandle::new_serializable_value(handle);
-        } else {
-            assert!(f().is_none());
-        }
+        Ok(())
     }
 
     #[cfg(unix)]
-    fn set_owned_handle<F>(&mut self, f: F)
+    fn receive_owned_message_handle<F>(&mut self, f: F)
     where
-        F: FnOnce() -> Option<PlatformHandleType>,
+        F: FnOnce() -> PlatformHandleType,
     {
         if let CallbackReq::SharedMem(ref mut data, _) = *self {
-            let handle = f().expect("platform_handle must be available when processing SharedMem");
-            *data = SerializableHandle::new_owned(handle);
-        } else {
-            assert!(f().is_none());
+            *data = SerializableHandle::new_owned(f());
         }
     }
 }
 
-impl AssocRawPlatformHandle for CallbackResp {}
+impl AssociateHandleForMessage for CallbackResp {}
 
 #[cfg(test)]
 mod test {
