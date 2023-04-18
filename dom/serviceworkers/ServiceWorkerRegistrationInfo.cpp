@@ -509,7 +509,7 @@ void ServiceWorkerRegistrationInfo::MaybeScheduleUpdate() {
 
   
   
-  if (mActiveWorker) {
+  if (mActiveWorker && !mUnregistered) {
     uint32_t navigationFaultCount;
     mActiveWorker->GetNavigationFaultCount(&navigationFaultCount);
     const auto navigationFaultThreshold = StaticPrefs::
