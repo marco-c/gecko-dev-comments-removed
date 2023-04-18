@@ -22,22 +22,12 @@ namespace ipc {
 
 
 
-
-
-
-
 class FileDescriptor {
  public:
   typedef base::ProcessId ProcessId;
 
   using UniquePlatformHandle = mozilla::UniqueFileHandle;
   using PlatformHandleType = UniquePlatformHandle::ElementType;
-
-#ifdef XP_WIN
-  typedef PlatformHandleType PickleType;
-#else
-  typedef UniquePlatformHandle PickleType;
-#endif
 
   
   struct IPDLPrivate {};
@@ -56,20 +46,11 @@ class FileDescriptor {
 
   explicit FileDescriptor(UniquePlatformHandle&& aHandle);
 
-  
-  
-  FileDescriptor(const IPDLPrivate&, PickleType aPickle);
-
   ~FileDescriptor();
 
   FileDescriptor& operator=(const FileDescriptor& aOther);
 
   FileDescriptor& operator=(FileDescriptor&& aOther);
-
-  
-  
-  
-  PickleType ShareTo(const IPDLPrivate&, ProcessId aTargetPid) const;
 
   
   
