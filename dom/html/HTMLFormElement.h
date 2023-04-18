@@ -245,16 +245,6 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
 
 
-  bool GetValidity() const { return !mInvalidElementsCount; }
-
-  
-
-
-
-
-
-
-
 
 
 
@@ -592,7 +582,6 @@ class HTMLFormElement final : public nsGenericHTMLElement,
   PopupBlocker::PopupControlState mSubmitPopupState;
 
   
-
 
 
 

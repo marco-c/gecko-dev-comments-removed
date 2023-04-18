@@ -2020,37 +2020,6 @@ void HTMLFormElement::UpdateValidity(bool aElementValidity) {
     return;
   }
 
-  
-
-
-
-
-
-
-  nsAutoScriptBlocker scriptBlocker;
-
-  
-  for (uint32_t i = 0, length = mControls->mElements.Length(); i < length;
-       ++i) {
-    nsCOMPtr<nsIFormControl> fc = do_QueryInterface(mControls->mElements[i]);
-    MOZ_ASSERT(fc);
-    if (fc->IsSubmitControl()) {
-      mControls->mElements[i]->UpdateState(true);
-    }
-  }
-
-  
-  
-  uint32_t length = mControls->mNotInElements.Length();
-  for (uint32_t i = 0; i < length; ++i) {
-    nsCOMPtr<nsIFormControl> fc =
-        do_QueryInterface(mControls->mNotInElements[i]);
-    MOZ_ASSERT(fc);
-    if (fc->IsSubmitControl()) {
-      mControls->mNotInElements[i]->UpdateState(true);
-    }
-  }
-
   UpdateState(true);
 }
 
