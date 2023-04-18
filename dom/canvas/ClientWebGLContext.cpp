@@ -753,14 +753,7 @@ ClientWebGLContext::SetContextOptions(JSContext* cx,
   newOpts.enableDebugRendererInfo =
       StaticPrefs::webgl_enable_debug_renderer_info();
   MOZ_ASSERT(mCanvasElement || mOffscreenCanvas);
-  newOpts.shouldResistFingerprinting =
-      mCanvasElement ?
-                     
-          nsContentUtils::ShouldResistFingerprinting(GetOwnerDoc())
-                     :
-                     
-          nsContentUtils::ShouldResistFingerprinting(
-              mOffscreenCanvas->GetOwnerGlobal()->PrincipalOrNull());
+  newOpts.shouldResistFingerprinting = ShouldResistFingerprinting();
 
   if (attributes.mAlpha.WasPassed()) {
     newOpts.alpha = attributes.mAlpha.Value();
@@ -5283,22 +5276,16 @@ void ClientWebGLContext::GetSupportedProfilesASTC(
 
 
 bool ClientWebGLContext::ShouldResistFingerprinting() const {
-  if (NS_IsMainThread()) {
-    if (mCanvasElement) {
-      
-      return nsContentUtils::ShouldResistFingerprinting(GetOwnerDoc());
-    }
+  if (mCanvasElement) {
     
-    
-    
-    
-    
-    
-    return nsContentUtils::ShouldResistFingerprinting();
+    return nsContentUtils::ShouldResistFingerprinting(GetOwnerDoc());
   }
-  dom::WorkerPrivate* workerPrivate = dom::GetCurrentThreadWorkerPrivate();
-  MOZ_ASSERT(workerPrivate);
-  return nsContentUtils::ShouldResistFingerprinting(workerPrivate);
+  if (mOffscreenCanvas) {
+    
+    return mOffscreenCanvas->ShouldResistFingerprinting();
+  }
+  
+  return nsContentUtils::ShouldResistFingerprinting();
 }
 
 

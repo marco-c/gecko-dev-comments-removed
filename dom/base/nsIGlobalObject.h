@@ -209,6 +209,12 @@ class nsIGlobalObject : public nsISupports,
 
   void RemoveReportRecords();
 
+  
+
+
+
+  virtual bool ShouldResistFingerprinting() const;
+
  protected:
   virtual ~nsIGlobalObject();
 

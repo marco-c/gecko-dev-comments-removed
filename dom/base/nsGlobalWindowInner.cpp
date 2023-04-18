@@ -1618,6 +1618,13 @@ bool nsGlobalWindowInner::IsBlackForCC(bool aTracingNeeded) {
 
 
 
+bool nsGlobalWindowInner::ShouldResistFingerprinting() const {
+  if (mDoc) {
+    return nsContentUtils::ShouldResistFingerprinting(mDoc);
+  }
+  return nsIScriptGlobalObject::ShouldResistFingerprinting();
+}
+
 nsresult nsGlobalWindowInner::EnsureScriptEnvironment() {
   
   

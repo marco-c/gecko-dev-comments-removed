@@ -2130,6 +2130,15 @@ bool nsContentUtils::ShouldResistFingerprinting() {
   return StaticPrefs::privacy_resistFingerprinting();
 }
 
+
+bool nsContentUtils::ShouldResistFingerprinting(
+    nsIGlobalObject* aGlobalObject) {
+  if (!aGlobalObject) {
+    return ShouldResistFingerprinting();
+  }
+  return aGlobalObject->ShouldResistFingerprinting();
+}
+
 bool nsContentUtils::ShouldResistFingerprinting(nsIDocShell* aDocShell) {
   if (!aDocShell) {
     return ShouldResistFingerprinting();
@@ -2159,19 +2168,6 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIPrincipal* aPrincipal) {
   }
   bool isChrome = aPrincipal->IsSystemPrincipal();
   return !isChrome && ShouldResistFingerprinting();
-}
-
-
-bool nsContentUtils::ShouldResistFingerprinting(WorkerPrivate* aWorkerPrivate) {
-  if (!aWorkerPrivate) {
-    
-    return ShouldResistFingerprinting();
-  }
-  bool isChrome = aWorkerPrivate->UsesSystemPrincipal();
-  if (isChrome) {
-    return false;
-  }
-  return ShouldResistFingerprinting(aWorkerPrivate->GetDocument());
 }
 
 inline void LogDomainAndPrefList(const char* exemptedDomainsPrefName,
