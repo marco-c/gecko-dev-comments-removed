@@ -72,6 +72,17 @@ class FrecencyComparator {
 
 }  
 
+CacheIndexRecordWrapper::~CacheIndexRecordWrapper() {
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  CacheIndex::sLock.AssertCurrentThreadOwns();
+  RefPtr<CacheIndex> index = CacheIndex::gInstance;
+  if (index) {
+    bool found = index->mFrecencyArray.RecordExistedUnlocked(this);
+    MOZ_DIAGNOSTIC_ASSERT(!found);
+  }
+#endif
+}
+
 
 
 
@@ -3370,6 +3381,11 @@ void CacheIndex::FrecencyArray::SortIfNeeded(
       mRemovedElements = 0;
     }
   }
+}
+
+bool CacheIndex::FrecencyArray::RecordExistedUnlocked(
+    CacheIndexRecordWrapper* aRecord) {
+  return mRecs.Contains(aRecord);
 }
 
 void CacheIndex::AddRecordToIterators(CacheIndexRecordWrapper* aRecord,
