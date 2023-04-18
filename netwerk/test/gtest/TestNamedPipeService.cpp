@@ -209,6 +209,7 @@ BOOL ConnectToNewClient(HANDLE aPipe, LPOVERLAPPED aOverlapped) {
     case ERROR_PIPE_CONNECTED:
       if (SetEvent(aOverlapped->hEvent)) break;
 
+      [[fallthrough]];
     default:  
       ADD_FAILURE() << "ConnectNamedPipe failed " << GetLastError();
       break;

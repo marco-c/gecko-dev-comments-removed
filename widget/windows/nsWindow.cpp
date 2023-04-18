@@ -1334,7 +1334,7 @@ DWORD nsWindow::WindowStyle() {
 
     default:
       NS_ERROR("unknown border style");
-      
+      [[fallthrough]];
 
     case eWindowType_toplevel:
     case eWindowType_invisible:
@@ -1417,7 +1417,7 @@ DWORD nsWindow::WindowExStyle() {
     }
     default:
       NS_ERROR("unknown border style");
-      
+      [[fallthrough]];
 
     case eWindowType_toplevel:
     case eWindowType_invisible:
@@ -3388,7 +3388,7 @@ void nsWindow::UpdateGlass() {
         margins.cxRightWidth += kGlassMarginAdjustment;
         margins.cyBottomHeight += kGlassMarginAdjustment;
       }
-      
+      [[fallthrough]];
     case eTransparencyGlass:
       policy = DWMNCRP_ENABLED;
       break;
@@ -5604,6 +5604,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       }
       
       
+      [[fallthrough]];
     }
     case WM_MOUSELEAVE: {
       if (!mMousePresent) break;
