@@ -93,6 +93,9 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   
   
+  
+  
+  
   bool EnsureGPUReady();
 
   already_AddRefed<CompositorSession> CreateTopLevelCompositor(
@@ -230,8 +233,8 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   void RegisterInProcessSession(InProcessCompositorSession* aSession);
   void UnregisterInProcessSession(InProcessCompositorSession* aSession);
 
-  void RebuildRemoteSessions();
-  void RebuildInProcessSessions();
+  void DestroyRemoteCompositorSessions();
+  void DestroyInProcessCompositorSessions();
 
   
   
@@ -262,6 +265,8 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   void DestroyProcess(bool aUnexpectedShutdown = false);
 
   void HandleProcessLost();
+  
+  void ReinitializeRendering();
 
   void EnsureVsyncIOThread();
   void ShutdownVsyncIOThread();
@@ -317,6 +322,12 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
 
   uint32_t mDeviceResetCount;
   TimeStamp mDeviceResetLastTime;
+
+  
+  bool mAppInForeground;
+  
+  
+  bool mNeedsRenderingReinit;
 
   
   GPUProcessHost* mProcess;
