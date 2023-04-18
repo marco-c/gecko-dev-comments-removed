@@ -69,7 +69,8 @@ class AccessibilityTree extends Component {
   
 
 
-  componentWillMount() {
+  
+  UNSAFE_componentWillMount() {
     this.props.startListeningForAccessibilityEvents({
       reorder: this.onReorder,
       "name-change": this.onNameChange,

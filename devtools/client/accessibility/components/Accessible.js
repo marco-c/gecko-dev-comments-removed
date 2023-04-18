@@ -138,14 +138,16 @@ class Accessible extends Component {
     this.update = this.update.bind(this);
   }
 
-  componentWillMount() {
+  
+  UNSAFE_componentWillMount() {
     window.on(
       EVENTS.NEW_ACCESSIBLE_FRONT_INSPECTED,
       this.onAccessibleInspected
     );
   }
 
-  componentWillReceiveProps({ accessibleFront }) {
+  
+  UNSAFE_componentWillReceiveProps({ accessibleFront }) {
     const oldAccessibleFront = this.props.accessibleFront;
 
     if (oldAccessibleFront) {

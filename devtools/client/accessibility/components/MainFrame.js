@@ -89,7 +89,8 @@ class MainFrame extends Component {
     this.onCanBeDisabledChange = this.onCanBeDisabledChange.bind(this);
   }
 
-  componentWillMount() {
+  
+  UNSAFE_componentWillMount() {
     this.props.startListeningForLifecycleEvents({
       init: this.resetAccessibility,
       shutdown: this.resetAccessibility,
