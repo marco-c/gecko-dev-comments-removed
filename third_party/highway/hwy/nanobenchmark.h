@@ -47,6 +47,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "hwy/highway_export.h"
+
 
 
 #ifndef NANOBENCHMARK_ENABLE_CHECKS
@@ -72,23 +74,23 @@ namespace platform {
 
 
 
-double InvariantTicksPerSecond();
+HWY_DLLEXPORT double InvariantTicksPerSecond();
 
 
 
 
-double Now();
+HWY_DLLEXPORT double Now();
 
 
 
 
-uint64_t TimerResolution();
+HWY_DLLEXPORT uint64_t TimerResolution();
 
 }  
 
 
 
-int Unpredictable1();
+HWY_DLLEXPORT int Unpredictable1();
 
 
 using FuncInput = size_t;
@@ -164,9 +166,9 @@ struct Result {
 
 
 
-size_t Measure(const Func func, const uint8_t* arg, const FuncInput* inputs,
-               const size_t num_inputs, Result* results,
-               const Params& p = Params());
+HWY_DLLEXPORT size_t Measure(const Func func, const uint8_t* arg,
+                             const FuncInput* inputs, const size_t num_inputs,
+                             Result* results, const Params& p = Params());
 
 
 template <class Closure>

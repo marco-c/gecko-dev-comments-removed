@@ -15,17 +15,19 @@
 #include "hwy/targets.h"
 
 #include <stdarg.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
 #include <atomic>
-#include <cstddef>
-#include <limits>
 
-#if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER) || \
-    defined(THREAD_SANITIZER)
+#include "hwy/base.h"
+
+#if HWY_IS_ASAN || HWY_IS_MSAN || HWY_IS_TSAN
 #include "sanitizer/common_interface_defs.h"  
-#endif                                        
+#endif
+
+#include <stdlib.h>  
 
 #if HWY_ARCH_X86
 #include <xmmintrin.h>
@@ -93,7 +95,7 @@ std::atomic<uint32_t> supported_{0};
 uint32_t supported_targets_for_test_ = 0;
 
 
-uint32_t supported_mask_{std::numeric_limits<uint32_t>::max()};
+uint32_t supported_mask_{LimitsMax<uint32_t>()};
 
 #if HWY_ARCH_X86
 
@@ -190,21 +192,22 @@ HWY_NORETURN void HWY_FORMAT(3, 4)
   va_end(args);
 
   fprintf(stderr, "Abort at %s:%d: %s\n", file, line, buf);
-#if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER) || \
-    defined(THREAD_SANITIZER)
-  
-  
-  
+
+
+#if HWY_IS_ASAN || HWY_IS_MSAN || HWY_IS_TSAN
   __sanitizer_print_stack_trace();
 #endif  
   fflush(stderr);
 
-#if HWY_COMPILER_MSVC
-  abort();  
-#elif HWY_ARCH_RVV
+
+#if HWY_ARCH_RVV
   exit(1);  
-#else
+#elif HWY_IS_DEBUG_BUILD && !HWY_COMPILER_MSVC
+  
+  
   __builtin_trap();
+#else
+  abort();  
 #endif
 }
 
@@ -213,7 +216,7 @@ void DisableTargets(uint32_t disabled_targets) {
   
   
   
-  chosen_target.DeInit();
+  GetChosenTarget().DeInit();
 }
 
 void SetSupportedTargetsForTest(uint32_t targets) {
@@ -222,7 +225,7 @@ void SetSupportedTargetsForTest(uint32_t targets) {
   
   supported_.store(0, std::memory_order_release);
   supported_targets_for_test_ = targets;
-  chosen_target.DeInit();
+  GetChosenTarget().DeInit();
 }
 
 bool SupportedTargetsCalledForTest() {
@@ -344,8 +347,10 @@ uint32_t SupportedTargets() {
   return bits & supported_mask_;
 }
 
-
-ChosenTarget chosen_target;
+HWY_DLLEXPORT ChosenTarget& GetChosenTarget() {
+  static ChosenTarget chosen_target;
+  return chosen_target;
+}
 
 void ChosenTarget::Update() {
   

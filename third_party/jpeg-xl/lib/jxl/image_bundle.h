@@ -178,6 +178,10 @@ class ImageBundle {
   ImageF* alpha();
 
   
+  bool HasBlack() const {
+    return metadata_->Find(ExtraChannel::kBlack) != nullptr;
+  }
+  const ImageF& black() const;
 
   
   void SetExtraChannels(std::vector<ImageF>&& extra_channels);

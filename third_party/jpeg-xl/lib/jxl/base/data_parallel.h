@@ -56,7 +56,6 @@ class ThreadPool {
   static Status NoInit(size_t num_threads) { return true; }
 
  private:
-
   
   
   template <class InitFunc, class DataFunc>
