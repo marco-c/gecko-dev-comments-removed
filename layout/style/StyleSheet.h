@@ -516,11 +516,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   void FixUpAfterInnerClone();
 
-  
-  
-  
-  void FixUpRuleListAfterContentsChangeIfNeeded(bool aFromClone = false);
-
   void DropRuleList();
 
   
