@@ -471,10 +471,8 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
     
     REQUEST_IS_TRACKED = 1 << 1,
     
-    REQUEST_IS_ANIMATED = 1 << 2,
     
-    
-    REQUEST_IS_IMAGESET = 1 << 3,
+    REQUEST_IS_IMAGESET = 1 << 2,
   };
 
   

@@ -274,10 +274,8 @@ void nsImageLoadingContent::OnUnlockedDraw() {
   
   
   
-  if (!(mCurrentRequestFlags & REQUEST_IS_ANIMATED) &&
-      !(mPendingRequestFlags & REQUEST_IS_ANIMATED)) {
-    return;
-  }
+  
+  
 
   nsIFrame* frame = GetOurPrimaryFrame();
   if (!frame) {
@@ -305,10 +303,8 @@ void nsImageLoadingContent::OnUnlockedDraw() {
 void nsImageLoadingContent::OnImageIsAnimated(imgIRequest* aRequest) {
   bool* requestFlag = nullptr;
   if (aRequest == mCurrentRequest) {
-    mCurrentRequestFlags |= REQUEST_IS_ANIMATED;
     requestFlag = &mCurrentRequestRegistered;
   } else if (aRequest == mPendingRequest) {
-    mPendingRequestFlags |= REQUEST_IS_ANIMATED;
     requestFlag = &mPendingRequestRegistered;
   } else {
     MOZ_ASSERT_UNREACHABLE("Which image is this?");
