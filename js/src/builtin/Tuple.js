@@ -230,8 +230,8 @@ function TupleIncludes(valueToFind ) {
 
 function TupleIndexOf(valueToFind ) {
     var fromIndex = arguments.length > 1 ? arguments[1] : undefined;
-    return callContentFunction(ArrayIndexOf, ThisTupleValue(this),
-                               valueToFind, fromIndex);
+    return callFunction(std_Array_indexOf, ThisTupleValue(this),
+                        valueToFind, fromIndex);
 }
 
 
