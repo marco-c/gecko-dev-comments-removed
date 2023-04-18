@@ -569,7 +569,7 @@ class LoginFormState {
 
 
 
-  isProbablyAUsernameLoginForm(formElement, inputElement) {
+  #isProbablyAUsernameLoginForm(formElement, inputElement) {
     let result = this.#cachedIsInferredLoginForm.get(formElement);
     if (result === undefined) {
       
@@ -826,6 +826,66 @@ class LoginFormState {
         once: true,
       }
     );
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getUsernameFieldFromUsernameOnlyForm(formElement, recipe = null) {
+    if (!HTMLFormElement.isInstance(formElement)) {
+      return null;
+    }
+
+    let candidate = null;
+    for (let element of formElement.elements) {
+      
+      
+      if (element.hasBeenTypePassword) {
+        return null;
+      }
+
+      
+      if (!lazy.LoginHelper.isUsernameFieldType(element)) {
+        continue;
+      }
+
+      if (
+        recipe?.notUsernameSelector &&
+        element.matches(recipe.notUsernameSelector)
+      ) {
+        continue;
+      }
+
+      
+      
+      if (candidate) {
+        return null;
+      }
+      candidate = element;
+    }
+
+    if (
+      candidate &&
+      this.#isProbablyAUsernameLoginForm(formElement, candidate)
+    ) {
+      return candidate;
+    }
+
+    return null;
   }
 }
 
@@ -1354,7 +1414,8 @@ class LoginManagerChild extends JSWindowActorChild {
     
     
     
-    let usernameField = this.getUsernameFieldFromUsernameOnlyForm(form, {});
+    let docState = this.stateForDocument(form.ownerDocument);
+    let usernameField = docState.getUsernameFieldFromUsernameOnlyForm(form, {});
     if (usernameField) {
       
       lazy.log(
@@ -1853,6 +1914,8 @@ class LoginManagerChild extends JSWindowActorChild {
       });
     }
 
+    const docState = this.stateForDocument(form.ownerDocument);
+
     
     
     
@@ -1861,7 +1924,7 @@ class LoginManagerChild extends JSWindowActorChild {
         return emptyResult;
       }
 
-      usernameField = this.getUsernameFieldFromUsernameOnlyForm(
+      usernameField = docState.getUsernameFieldFromUsernameOnlyForm(
         form.rootElement,
         fieldOverrideRecipe
       );
@@ -1885,8 +1948,6 @@ class LoginManagerChild extends JSWindowActorChild {
         usernameField,
       };
     }
-
-    const docState = this.stateForDocument(form.ownerDocument);
 
     if (!usernameField) {
       
@@ -3149,66 +3210,5 @@ class LoginManagerChild extends JSWindowActorChild {
           (newPasswordField.disabled || newPasswordField.readOnly),
       },
     };
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  getUsernameFieldFromUsernameOnlyForm(formElement, recipe = null) {
-    if (!HTMLFormElement.isInstance(formElement)) {
-      return null;
-    }
-
-    let candidate = null;
-    for (let element of formElement.elements) {
-      
-      
-      if (element.hasBeenTypePassword) {
-        return null;
-      }
-
-      
-      if (!lazy.LoginHelper.isUsernameFieldType(element)) {
-        continue;
-      }
-
-      if (
-        recipe?.notUsernameSelector &&
-        element.matches(recipe.notUsernameSelector)
-      ) {
-        continue;
-      }
-
-      
-      
-      if (candidate) {
-        return null;
-      }
-      candidate = element;
-    }
-
-    let docState = this.stateForDocument(formElement.ownerDocument);
-    if (
-      candidate &&
-      docState.isProbablyAUsernameLoginForm(formElement, candidate)
-    ) {
-      return candidate;
-    }
-
-    return null;
   }
 }

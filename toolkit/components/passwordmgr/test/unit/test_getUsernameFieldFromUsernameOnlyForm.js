@@ -162,8 +162,9 @@ for (let tc of TESTCASES) {
           form.setAttribute("name", "login");
         }
 
-        let lmc = new LoginManagerChild();
-        let element = lmc.getUsernameFieldFromUsernameOnlyForm(
+        const lmc = new LoginManagerChild();
+        const docState = lmc.stateForDocument(form.ownerDocument);
+        const element = docState.getUsernameFieldFromUsernameOnlyForm(
           form,
           testcase.fieldOverrideRecipe
         );
