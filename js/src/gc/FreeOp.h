@@ -77,12 +77,10 @@ class JSFreeOp {
   void free_(Cell* cell, void* p, size_t nbytes, MemoryUse use);
 
   bool appendJitPoisonRange(const js::jit::JitPoisonRange& range) {
-    
-    
-    MOZ_ASSERT(!isDefaultFreeOp());
-
     return jitPoisonRanges.append(range);
   }
+  bool hasJitCodeToPoison() const { return !jitPoisonRanges.empty(); }
+  void poisonJitCode();
 
   
   
