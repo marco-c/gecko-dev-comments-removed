@@ -320,16 +320,17 @@ nsresult nsEditingSession::SetupEditorOnWindow(nsPIDOMWindowOuter& aWindow) {
   }
 
   
-  mComposerCommandsUpdater = new ComposerCommandsUpdater();
+  RefPtr<ComposerCommandsUpdater> commandsUpdater =
+      new ComposerCommandsUpdater();
+  mComposerCommandsUpdater = commandsUpdater;
 
   
   
   
-  mComposerCommandsUpdater->Init(aWindow);
+  commandsUpdater->Init(aWindow);
 
   if (mEditorStatus != eEditorCreationInProgress) {
-    RefPtr<ComposerCommandsUpdater> updater = mComposerCommandsUpdater;
-    updater->OnHTMLEditorCreated();
+    commandsUpdater->OnHTMLEditorCreated();
 
     
     
@@ -403,24 +404,17 @@ nsresult nsEditingSession::SetupEditorOnWindow(nsPIDOMWindowOuter& aWindow) {
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  htmlEditor->SetComposerCommandsUpdater(mComposerCommandsUpdater);
-
-  rv = htmlEditor->Init(*doc, mEditorFlags);
+  MOZ_DIAGNOSTIC_ASSERT(commandsUpdater == mComposerCommandsUpdater);
+  if (MOZ_UNLIKELY(commandsUpdater != mComposerCommandsUpdater)) {
+    commandsUpdater = mComposerCommandsUpdater;
+  }
+  rv = htmlEditor->Init(*doc, *commandsUpdater, mEditorFlags);
   NS_ENSURE_SUCCESS(rv, rv);
 
   RefPtr<Selection> selection = htmlEditor->GetSelection();
   if (NS_WARN_IF(!selection)) {
     return NS_ERROR_FAILURE;
   }
-
-  
-  MOZ_ASSERT(mComposerCommandsUpdater);
-  DebugOnly<bool> addedTransactionListener =
-      htmlEditor->AddTransactionListener(*mComposerCommandsUpdater);
-  NS_WARNING_ASSERTION(addedTransactionListener,
-                       "Failed to add transaction listener to the editor");
 
   
   rv = SetEditorOnControllers(aWindow, htmlEditor);
@@ -444,10 +438,7 @@ void nsEditingSession::RemoveListenersAndControllers(
   RefPtr<ComposerCommandsUpdater> composertCommandsUpdater =
       std::move(mComposerCommandsUpdater);
   MOZ_ASSERT(!mComposerCommandsUpdater);
-  aHTMLEditor->SetComposerCommandsUpdater(nullptr);
-  if (!aHTMLEditor->RemoveTransactionListener(*composertCommandsUpdater)) {
-    NS_WARNING("Failed to remove transaction listener from the editor");
-  }
+  aHTMLEditor->Detach(*composertCommandsUpdater);
 
   
   

@@ -10,10 +10,9 @@
 #include "nsCOMPtr.h"  
 #include "nsCycleCollectionParticipant.h"
 #include "nsINamed.h"
-#include "nsISupportsImpl.h"         
-#include "nsITimer.h"                
-#include "nsITransactionListener.h"  
-#include "nscore.h"                  
+#include "nsISupportsImpl.h"  
+#include "nsITimer.h"         
+#include "nscore.h"           
 
 class nsCommandManager;
 class nsIDocShell;
@@ -23,25 +22,22 @@ class nsPIDOMWindowOuter;
 
 namespace mozilla {
 
-class ComposerCommandsUpdater final : public nsITransactionListener,
-                                      public nsITimerCallback,
-                                      public nsINamed {
+class TransactionManager;
+
+class ComposerCommandsUpdater final : public nsITimerCallback, public nsINamed {
  public:
   ComposerCommandsUpdater();
 
   
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(ComposerCommandsUpdater,
-                                           nsITransactionListener)
+                                           nsITimerCallback)
 
   
   NS_DECL_NSITIMERCALLBACK
 
   
   NS_DECL_NSINAMED
-
-  
-  NS_DECL_NSITRANSACTIONLISTENER
 
   void Init(nsPIDOMWindowOuter& aDOMWindow);
 
@@ -86,6 +82,20 @@ class ComposerCommandsUpdater final : public nsITransactionListener,
     UpdateCommandGroup(CommandGroup::Undo);
     mDirtyState = aNowDirty;
   }
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT void DidDoTransaction(
+      TransactionManager& aTransactionManager, nsITransaction* aTransaction,
+      nsresult aDoTransactionResult);
+  MOZ_CAN_RUN_SCRIPT void DidUndoTransaction(
+      TransactionManager& aTransactionManager, nsITransaction* aTransaction,
+      nsresult aUndoTransactionResult);
+  MOZ_CAN_RUN_SCRIPT void DidRedoTransaction(
+      TransactionManager& aTransactionManager, nsITransaction* aTransaction,
+      nsresult aRedoTransactionResult);
 
  protected:
   virtual ~ComposerCommandsUpdater();

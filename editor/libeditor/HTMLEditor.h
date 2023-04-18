@@ -129,7 +129,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult Init(Document& aDocument, uint32_t aFlags);
+
+  MOZ_CAN_RUN_SCRIPT nsresult
+  Init(Document& aDocument, ComposerCommandsUpdater& aComposerCommandsUpdater,
+       uint32_t aFlags);
 
   
 
@@ -148,25 +151,6 @@ class HTMLEditor final : public EditorBase,
   }
   static const HTMLEditor* GetFrom(const nsIEditor* aEditor) {
     return aEditor ? aEditor->GetAsHTMLEditor() : nullptr;
-  }
-
-  
-
-
-
-
-
-  bool AddTransactionListener(nsITransactionListener& aListener) {
-    if (!mTransactionManager) {
-      return false;
-    }
-    return mTransactionManager->AddTransactionListener(aListener);
-  }
-  bool RemoveTransactionListener(nsITransactionListener& aListener) {
-    if (!mTransactionManager) {
-      return false;
-    }
-    return mTransactionManager->RemoveTransactionListener(aListener);
   }
 
   bool GetReturnInParagraphCreatesNewParagraph();
@@ -592,14 +576,7 @@ class HTMLEditor final : public EditorBase,
   
 
 
-
-
-  void SetComposerCommandsUpdater(
-      ComposerCommandsUpdater* aComposerCommandsUpdater) {
-    MOZ_ASSERT(!aComposerCommandsUpdater || !mComposerCommandsUpdater ||
-               aComposerCommandsUpdater == mComposerCommandsUpdater);
-    mComposerCommandsUpdater = aComposerCommandsUpdater;
-  }
+  void Detach(const ComposerCommandsUpdater& aComposerCommandsUpdater);
 
   nsStaticAtom& DefaultParagraphSeparatorTagName() const {
     return HTMLEditor::ToParagraphSeparatorTagName(mDefaultParagraphSeparator);
@@ -4447,6 +4424,36 @@ class HTMLEditor final : public EditorBase,
     return do_AddRef(mChangedRangeForTopLevelEditSubAction);
   }
 
+  MOZ_CAN_RUN_SCRIPT void DidDoTransaction(
+      TransactionManager& aTransactionManager, nsITransaction* aTransaction,
+      nsresult aDoTransactionResult) {
+    if (mComposerCommandsUpdater) {
+      RefPtr<ComposerCommandsUpdater> updater(mComposerCommandsUpdater);
+      updater->DidDoTransaction(aTransactionManager, aTransaction,
+                                aDoTransactionResult);
+    }
+  }
+
+  MOZ_CAN_RUN_SCRIPT void DidUndoTransaction(
+      TransactionManager& aTransactionManager, nsITransaction* aTransaction,
+      nsresult aUndoTransactionResult) {
+    if (mComposerCommandsUpdater) {
+      RefPtr<ComposerCommandsUpdater> updater(mComposerCommandsUpdater);
+      updater->DidUndoTransaction(aTransactionManager, aTransaction,
+                                  aUndoTransactionResult);
+    }
+  }
+
+  MOZ_CAN_RUN_SCRIPT void DidRedoTransaction(
+      TransactionManager& aTransactionManager, nsITransaction* aTransaction,
+      nsresult aRedoTransactionResult) {
+    if (mComposerCommandsUpdater) {
+      RefPtr<ComposerCommandsUpdater> updater(mComposerCommandsUpdater);
+      updater->DidRedoTransaction(aTransactionManager, aTransaction,
+                                  aRedoTransactionResult);
+    }
+  }
+
  protected:
   
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
@@ -4668,6 +4675,8 @@ class HTMLEditor final : public EditorBase,
   friend class SlurpBlobEventListener;  
   friend class SplitNodeResult;         
   friend class SplitNodeTransaction;    
+  friend class TransactionManager;      
+                                        
   friend class
       WhiteSpaceVisibilityKeeper;  
                                    
