@@ -11,7 +11,6 @@
 #include <type_traits>
 #include <utility>
 #include "mozilla/Attributes.h"
-#include "mozilla/BitSet.h"
 #include "mozilla/EnumSet.h"
 #include "nsStringFwd.h"
 #include "nscore.h"
@@ -44,11 +43,11 @@ namespace syncedcontext {
 template <size_t I>
 using Index = typename std::integral_constant<size_t, I>;
 
+using IndexSet = EnumSet<size_t, uint64_t>;
+
 template <typename Context>
 class Transaction {
  public:
-  using IndexSet = EnumSet<size_t, BitSet<Context::FieldValues::count>>;
-
   
   
   
@@ -123,6 +122,9 @@ class FieldValues : public Base {
  public:
   
   static constexpr size_t count = Count;
+  static_assert(count < 64,
+                "At most 64 synced fields are supported. Please file a bug if "
+                "you need additional fields.");
 
   
   
