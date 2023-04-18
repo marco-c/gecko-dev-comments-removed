@@ -3642,25 +3642,6 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
   return result;
 }
 
-void GCRuntime::waitForBackgroundTasksBeforeSlice() {
-  gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::WAIT_BACKGROUND_THREAD);
-
-  
-  
-  if (!isIncrementalGCInProgress()) {
-    assertBackgroundSweepingFinished();
-    MOZ_ASSERT(decommitTask.isIdle());
-  }
-
-  
-  
-  
-  
-  
-  
-  allocTask.cancelAndWait();
-}
-
 inline bool GCRuntime::mightSweepInThisSlice(bool nonIncremental) {
   MOZ_ASSERT(incrementalState < State::Sweep);
   return nonIncremental || lastMarkSlice || hasIncrementalTwoSliceZealMode();
