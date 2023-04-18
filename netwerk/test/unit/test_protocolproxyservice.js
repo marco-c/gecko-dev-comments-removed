@@ -1047,8 +1047,7 @@ function localhost_callback(pi) {
 
   prefs.setIntPref("network.proxy.type", 0);
 
-  
-  if (mozinfo.socketprocess_networking && again && mozinfo.os != "win") {
+  if (mozinfo.socketprocess_networking && again) {
     info("run test again");
     again = false;
     cleanUp();

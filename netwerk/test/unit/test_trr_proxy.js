@@ -144,8 +144,7 @@ add_task(async function test_pac_dnsResolve() {
 
   await do_test_pac_dnsResolve();
 
-  
-  if (mozinfo.socketprocess_networking && mozinfo.os != "win") {
+  if (mozinfo.socketprocess_networking) {
     info("run test again");
     Services.prefs.clearUserPref("network.proxy.type");
     trr_clear_prefs();
