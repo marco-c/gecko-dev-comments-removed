@@ -30,8 +30,7 @@ class AutoSetInstantiatingToFalse;
 class nsIPrincipal;
 class nsFrameLoader;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 struct BindContext;
 template <typename T>
 class Sequence;
@@ -41,7 +40,6 @@ template <typename T>
 struct Nullable;
 class WindowProxyHolder;
 class XULFrameElement;
-}  
 }  
 
 class nsObjectLoadingContent : public nsImageLoadingContent,

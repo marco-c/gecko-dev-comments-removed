@@ -19,8 +19,7 @@ class nsPIDOMWindowInner;
 template <class T>
 struct already_AddRefed;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Exception;
 
@@ -59,7 +58,6 @@ already_AddRefed<nsIStackFrame> CreateStack(JSContext* aCx,
 already_AddRefed<nsIStackFrame> CreateStack(JSContext* aCx,
                                             JS::Handle<JSObject*> aStack);
 
-}  
 }  
 }  
 

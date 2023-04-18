@@ -10,8 +10,7 @@
 #include "js/TypeDecls.h"
 #include "js/Wrapper.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -102,7 +101,6 @@ inline const ObservableArrayProxyHandler* GetObservableArrayProxyHandler(
       js::GetProxyHandler(obj));
 }
 
-}  
 }  
 
 #endif 

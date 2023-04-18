@@ -17,12 +17,10 @@
 #include "nsISupports.h"
 #include "nsISupportsUtils.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class ContentProcessMessageManager;
 class InProcessBrowserChildMessageManager;
 class BrowserChildMessageManager;
-}  
 }  
 class SandboxPrivate;
 class nsWindowRoot;

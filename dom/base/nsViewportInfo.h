@@ -9,14 +9,12 @@
 #include "mozilla/Attributes.h"
 #include "Units.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 enum class ViewportFitType : uint8_t {
   Auto,
   Contain,
   Cover,
 };
-}
 }  
 
 

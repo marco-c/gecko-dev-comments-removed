@@ -16,8 +16,7 @@
 
 class nsCycleCollectionTraversalCallback;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 template <typename T>
@@ -104,7 +103,6 @@ void ImplCycleCollectionUnlink(Nullable<T>& aNullable) {
   }
 }
 
-}  
 }  
 
 #endif 

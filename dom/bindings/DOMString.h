@@ -15,8 +15,7 @@
 #include "nsDOMString.h"
 #include "nsAtom.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -328,7 +327,6 @@ class MOZ_STACK_CLASS DOMString {
   State mState;
 };
 
-}  
 }  
 
 #endif  

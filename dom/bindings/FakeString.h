@@ -14,9 +14,7 @@
 #include "js/String.h"
 #include "nsTStringRepr.h"
 
-namespace mozilla {
-namespace dom {
-namespace binding_detail {
+namespace mozilla::dom::binding_detail {
 
 
 
@@ -257,8 +255,6 @@ struct FakeString {
     }
   };
 };
-}  
-}  
 }  
 
 template <typename CharT>

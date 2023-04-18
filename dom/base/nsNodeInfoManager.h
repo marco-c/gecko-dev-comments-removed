@@ -26,10 +26,8 @@ class nsWindowSizes;
 template <class T>
 struct already_AddRefed;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class Document;
-}  
 }  
 
 class nsNodeInfoManager final {

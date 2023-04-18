@@ -19,8 +19,7 @@
 #include "nsTArray.h"
 #include "nsTHashtable.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 namespace binding_detail {
 template <typename KeyType, typename ValueType>
@@ -72,7 +71,6 @@ class Record {
   nsTArray<EntryType> mEntries;
 };
 
-}  
 }  
 
 template <typename K, typename V>

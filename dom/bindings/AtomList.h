@@ -11,8 +11,7 @@
 #include "js/Context.h"
 #include "mozilla/dom/GeneratedAtomList.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 template <class T>
 T* GetAtomCache(JSContext* aCx) {
@@ -21,7 +20,6 @@ T* GetAtomCache(JSContext* aCx) {
   return static_cast<T*>(atomCache);
 }
 
-}  
 }  
 
 #endif  

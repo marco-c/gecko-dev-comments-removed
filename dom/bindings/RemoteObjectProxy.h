@@ -13,8 +13,7 @@
 #include "mozilla/dom/PrototypeList.h"
 #include "xpcpublic.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class BrowsingContext;
 
@@ -196,7 +195,6 @@ inline bool IsRemoteObjectProxy(JSObject* aObj) {
 
 BrowsingContext* GetBrowsingContext(JSObject* aProxy);
 
-}  
 }  
 
 #endif 

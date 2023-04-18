@@ -19,8 +19,7 @@
 
 #include "jsfriendapi.h"  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 extern jsid s_length_id;
 
@@ -58,7 +57,6 @@ inline uint32_t GetArrayIndexFromId(JS::Handle<jsid> id) {
 
 inline bool IsArrayIndex(uint32_t index) { return index < UINT32_MAX; }
 
-}  
 }  
 
 #endif 

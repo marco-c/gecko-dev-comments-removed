@@ -17,8 +17,7 @@ namespace hal {
 class BatteryInformation;
 }  
 
-namespace dom {
-namespace battery {
+namespace dom::battery {
 
 class BatteryManager : public DOMEventTargetHelper,
                        public hal::BatteryObserver {
@@ -73,7 +72,6 @@ class BatteryManager : public DOMEventTargetHelper,
   double mRemainingTime;
 };
 
-}  
 }  
 }  
 

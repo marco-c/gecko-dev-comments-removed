@@ -11,17 +11,13 @@
 
 
 
-namespace mozilla {
-namespace dom {
-namespace battery {
+namespace mozilla::dom::battery {
 
 static const double kDefaultLevel = 1.0;
 static const bool kDefaultCharging = true;
 static const double kDefaultRemainingTime = 0;
 static const double kUnknownRemainingTime = -1;
 
-}  
-}  
 }  
 
 #endif  

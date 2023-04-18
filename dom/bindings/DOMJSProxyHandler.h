@@ -14,8 +14,7 @@
 #include "js/Object.h"  
 #include "js/Proxy.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -165,7 +164,6 @@ inline const DOMProxyHandler* GetDOMProxyHandler(JSObject* obj) {
   return static_cast<const DOMProxyHandler*>(js::GetProxyHandler(obj));
 }
 
-}  
 }  
 
 #endif 
