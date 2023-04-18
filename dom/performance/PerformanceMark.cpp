@@ -103,6 +103,7 @@ void PerformanceMark::GetDetail(JSContext* aCx,
   
   
   
+  
   aRetval.set(mDetail);
 }
 
