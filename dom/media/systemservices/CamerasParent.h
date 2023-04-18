@@ -147,6 +147,11 @@ class CamerasParent final : public PCamerasParent,
   static StaticRefPtr<VideoEngine> sEngines[CaptureEngine::MaxEngine];
   static int32_t sNumOfOpenCamerasParentEngines;
   static int32_t sNumOfCamerasParents;
+  static StaticMutex sMutex;
+  static Monitor* sThreadMonitor;
+  
+  static base::Thread* sVideoCaptureThread;
+
   nsTArray<CallbackHelper*> mCallbacks;
   nsString mName;
 
@@ -154,13 +159,7 @@ class CamerasParent final : public PCamerasParent,
   ShmemPool mShmemPool;
 
   
-  nsCOMPtr<nsISerialEventTarget> mPBackgroundEventTarget;
-
-  static StaticMutex sMutex;
-  static Monitor* sThreadMonitor;
-
-  
-  static base::Thread* sVideoCaptureThread;
+  const nsCOMPtr<nsISerialEventTarget> mPBackgroundEventTarget;
 
   
   bool mChildIsAlive;
