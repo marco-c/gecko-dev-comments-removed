@@ -39,9 +39,7 @@ interface nsIPrintSettingsService : nsISupports
 
 
 
-
-
-  readonly attribute nsIPrintSettings newPrintSettings;
+  nsIPrintSettings createNewPrintSettings();
 
   
 

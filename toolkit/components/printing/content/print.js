@@ -1193,7 +1193,7 @@ var PrintSettingsViewProxy = {
       printerInfo.defaultSettings = basePrinterInfo.defaultSettings;
     } else if (printerName == PrintUtils.SAVE_TO_PDF_PRINTER) {
       
-      printerInfo.defaultSettings = PSSVC.newPrintSettings;
+      printerInfo.defaultSettings = PSSVC.createNewPrintSettings();
       printerInfo.defaultSettings.printerName = printerName;
       printerInfo.defaultSettings.toFileName = "";
       printerInfo.defaultSettings.outputFormat =

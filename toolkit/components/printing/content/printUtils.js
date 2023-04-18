@@ -545,7 +545,7 @@ var PrintUtils = {
         ).systemDefaultPrinterName;
       })();
 
-      printSettings = PSSVC.newPrintSettings;
+      printSettings = PSSVC.createNewPrintSettings();
       printSettings.printerName = printerName;
 
       
