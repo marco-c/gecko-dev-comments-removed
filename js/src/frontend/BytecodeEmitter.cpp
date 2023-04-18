@@ -1270,6 +1270,12 @@ restart:
       }
       return true;
 
+#ifdef ENABLE_RECORD_TUPLE
+    case ParseNodeKind::RecordExpr:
+    case ParseNodeKind::TupleExpr:
+      MOZ_CRASH("Record and Tuple are not supported yet");
+#endif
+
     
     
     
@@ -11671,6 +11677,12 @@ bool BytecodeEmitter::emitTree(
         return false;
       }
       break;
+
+#ifdef ENABLE_RECORD_TUPLE
+    case ParseNodeKind::RecordExpr:
+    case ParseNodeKind::TupleExpr:
+      MOZ_CRASH("Record and Tuple are not supported yet");
+#endif
 
     case ParseNodeKind::PropertyNameExpr:
     case ParseNodeKind::PosHolder:
