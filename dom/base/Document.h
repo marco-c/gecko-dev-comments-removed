@@ -4825,9 +4825,6 @@ class Document : public nsINode,
   uint32_t mOnloadBlockCount;
 
   
-  uint32_t mAsyncOnloadBlockCount;
-
-  
   
   
   

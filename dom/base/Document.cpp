@@ -1380,7 +1380,6 @@ Document::Document(const char* aContentType)
       mPendingFullscreenRequests(0),
       mXMLDeclarationBits(0),
       mOnloadBlockCount(0),
-      mAsyncOnloadBlockCount(0),
       mWriteLevel(0),
       mLazyLoadImageCount(0),
       mLazyLoadImageStarted(0),
@@ -11420,13 +11419,6 @@ void Document::EnsureOnloadBlocker() {
   }
 }
 
-void Document::AsyncBlockOnload() {
-  while (mAsyncOnloadBlockCount) {
-    --mAsyncOnloadBlockCount;
-    BlockOnload();
-  }
-}
-
 void Document::BlockOnload() {
   if (mDisplayDocument) {
     mDisplayDocument->BlockOnload();
@@ -11436,18 +11428,7 @@ void Document::BlockOnload() {
   
   
   if (mOnloadBlockCount == 0 && mScriptGlobalObject) {
-    if (!nsContentUtils::IsSafeToRunScript()) {
-      
-      
-      ++mAsyncOnloadBlockCount;
-      if (mAsyncOnloadBlockCount == 1) {
-        nsContentUtils::AddScriptRunner(NewRunnableMethod(
-            "Document::AsyncBlockOnload", this, &Document::AsyncBlockOnload));
-      }
-      return;
-    }
-    nsCOMPtr<nsILoadGroup> loadGroup = GetDocumentLoadGroup();
-    if (loadGroup) {
+    if (nsCOMPtr<nsILoadGroup> loadGroup = GetDocumentLoadGroup()) {
       loadGroup->AddRequest(mOnloadBlocker, nullptr);
     }
   }
@@ -11460,20 +11441,13 @@ void Document::UnblockOnload(bool aFireSync) {
     return;
   }
 
-  if (mOnloadBlockCount == 0 && mAsyncOnloadBlockCount == 0) {
-    MOZ_ASSERT_UNREACHABLE(
-        "More UnblockOnload() calls than BlockOnload() "
-        "calls; dropping call");
-    return;
-  }
-
   --mOnloadBlockCount;
 
   if (mOnloadBlockCount == 0) {
     if (mScriptGlobalObject) {
       
       
-      if (aFireSync && mAsyncOnloadBlockCount == 0) {
+      if (aFireSync) {
         
         ++mOnloadBlockCount;
         DoUnblockOnload();
@@ -11534,18 +11508,10 @@ void Document::DoUnblockOnload() {
     return;
   }
 
-  if (mAsyncOnloadBlockCount != 0) {
-    
-    
-    
-    PostUnblockOnloadEvent();
-  }
-
   
   
   if (mScriptGlobalObject) {
-    nsCOMPtr<nsILoadGroup> loadGroup = GetDocumentLoadGroup();
-    if (loadGroup) {
+    if (nsCOMPtr<nsILoadGroup> loadGroup = GetDocumentLoadGroup()) {
       loadGroup->RemoveRequest(mOnloadBlocker, nullptr, NS_OK);
     }
   }
