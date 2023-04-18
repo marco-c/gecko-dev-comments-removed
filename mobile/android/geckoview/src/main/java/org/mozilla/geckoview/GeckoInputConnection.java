@@ -377,7 +377,7 @@ import org.mozilla.gecko.util.ThreadUtils;
 
   @TargetApi(21)
   @Override 
-  public void updateCompositionRects(final RectF[] rects) {
+  public void updateCompositionRects(final RectF[] rects, final RectF caretRect) {
     if (!(Build.VERSION.SDK_INT >= 21)) {
       return;
     }
@@ -407,14 +407,14 @@ import org.mozilla.gecko.util.ThreadUtils;
         new Runnable() {
           @Override
           public void run() {
-            updateCompositionRectsOnUi(view, rects, composition);
+            updateCompositionRectsOnUi(view, rects, caretRect, composition);
           }
         });
   }
 
   @TargetApi(21)
    void updateCompositionRectsOnUi(
-      final View view, final RectF[] rects, final CharSequence composition) {
+      final View view, final RectF[] rects, final RectF caretRect, final CharSequence composition) {
     if (mCursorAnchorInfoBuilder == null) {
       mCursorAnchorInfoBuilder = new CursorAnchorInfo.Builder();
     }
@@ -435,6 +435,16 @@ import org.mozilla.gecko.util.ThreadUtils;
     }
 
     mCursorAnchorInfoBuilder.setComposingText(0, composition);
+
+    if (!caretRect.isEmpty()) {
+      
+      mCursorAnchorInfoBuilder.setInsertionMarkerLocation(
+          caretRect.left,
+          caretRect.top,
+          caretRect.bottom,
+          caretRect.bottom,
+          CursorAnchorInfo.FLAG_HAS_VISIBLE_REGION);
+    }
 
     final CursorAnchorInfo info = mCursorAnchorInfoBuilder.build();
     getView()
