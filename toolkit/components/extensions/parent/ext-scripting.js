@@ -40,8 +40,9 @@ const execute = (tab, context, details, kind, method) => {
     host => host.pattern
   );
 
-  if (details.code) {
-    options[`${kind}Code`] = details.code;
+  
+  if (details.codeToExecute) {
+    options[`${kind}Code`] = details.codeToExecute;
   }
 
   if (details.files) {
@@ -56,13 +57,24 @@ const execute = (tab, context, details, kind, method) => {
     }
   }
 
-  
-  if (details.frameId) {
-    options.frameID = details.frameId;
+  let { frameIds, allFrames } = details.target;
+
+  if (allFrames && frameIds) {
+    throw new ExtensionError("Cannot specify both 'allFrames' and 'frameIds'.");
+  }
+
+  if (allFrames) {
+    options.allFrames = allFrames;
+  } else if (frameIds) {
+    options.frameIds = frameIds;
   }
 
   options.runAt = "document_idle";
   options.wantReturnValue = true;
+  
+  
+  
+  options.returnResultsWithFrameIds = kind === "js";
 
   
   
@@ -80,50 +92,10 @@ this.scripting = class extends ExtensionAPI {
     return {
       scripting: {
         executeScriptInternal: async details => {
-          let { tabId, frameIds } = details.target;
-
+          let { tabId } = details.target;
           let tab = tabManager.get(tabId);
 
-          let executeDetails = {
-            
-            code: details.codeToExecute,
-            files: details.files,
-          };
-
-          const promises = [];
-
-          if (!frameIds) {
-            
-            frameIds = [0];
-          }
-
-          for (const frameId of frameIds) {
-            const details = { ...executeDetails, frameId };
-            promises.push(
-              execute(tab, context, details, "js", "executeScript")
-                
-                .then(results => ({ frameId, result: results[0] || null }))
-                .catch(error => ({ frameId, result: null, error }))
-            );
-          }
-
-          const results = await Promise.all(promises);
-
-          return results.map(({ frameId, result, error }) => {
-            if (error) {
-              
-              
-              
-              
-              if (error instanceof ExtensionError) {
-                throw error;
-              }
-
-              Cu.reportError(error.message || error);
-            }
-
-            return { frameId, result };
-          });
+          return execute(tab, context, details, "js", "executeScript");
         },
       },
     };

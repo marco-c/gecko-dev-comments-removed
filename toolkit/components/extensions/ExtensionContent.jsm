@@ -1138,6 +1138,17 @@ var ExtensionContent = {
   
   async handleActorExecute({ options, windows }) {
     let policy = WebExtensionPolicy.getByID(options.extensionId);
+    
+    
+    
+    
+    
+    
+    
+    
+    if (options.frameIds) {
+      options.allFrames = true;
+    }
     let matcher = new WebExtensionContentScript(policy, options);
 
     Object.assign(matcher, {
@@ -1155,12 +1166,35 @@ var ExtensionContent = {
     const executeInWin = innerId => {
       let wg = WindowGlobalChild.getByInnerWindowId(innerId);
       if (wg?.isCurrentGlobal && script.matchesWindowGlobal(wg)) {
-        return script.injectInto(wg.browsingContext.window);
+        let bc = wg.browsingContext;
+
+        return {
+          frameId: bc.parent ? bc.id : 0,
+          promise: script.injectInto(bc.window),
+        };
       }
     };
 
-    let all = Promise.all(windows.map(executeInWin).filter(p => p));
-    let result = await all.catch(e => Promise.reject({ message: e.message }));
+    let promisesWithFrameIds = windows.map(executeInWin).filter(obj => obj);
+
+    let result = await Promise.all(
+      promisesWithFrameIds.map(async ({ frameId, promise }) => {
+        if (!options.returnResultsWithFrameIds) {
+          return promise;
+        }
+
+        try {
+          const result = await promise;
+
+          return { frameId, result };
+        } catch ({ message }) {
+          
+          
+          
+          return { frameId, error: { message } };
+        }
+      })
+    ).catch(e => Promise.reject({ message: e.message }));
 
     try {
       
