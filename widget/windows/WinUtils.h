@@ -96,7 +96,7 @@ typedef struct {
   const char* mStr;
   UINT mId;
 } EventMsgInfo;
-extern EventMsgInfo gAllEvents[];
+extern std::unordered_map<UINT, EventMsgInfo> gAllEvents;
 
 
 

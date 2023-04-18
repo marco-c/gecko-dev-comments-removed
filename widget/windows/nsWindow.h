@@ -554,6 +554,9 @@ class nsWindow final : public nsBaseWidget {
   void RelayMouseEvent(UINT aMsg, WPARAM wParam, LPARAM lParam);
   bool ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
                       LRESULT* aRetValue);
+  
+  bool ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
+                              LRESULT* aRetValue);
   bool ExternalHandlerProcessMessage(UINT aMessage, WPARAM& aWParam,
                                      LPARAM& aLParam, MSGResult& aResult);
   LRESULT ProcessCharMessage(const MSG& aMsg, bool* aEventDispatched);

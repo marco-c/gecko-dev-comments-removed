@@ -5015,14 +5015,23 @@ bool nsWindow::ExternalHandlerProcessMessage(UINT aMessage, WPARAM& aWParam,
 }
 
 
+
 bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
                               LRESULT* aRetValue) {
-#if defined(EVENT_DEBUG_OUTPUT)
-  
-  
-  PrintEvent(msg, SHOW_REPEAT_EVENTS, SHOW_MOUSEMOVE_EVENTS);
-#endif
+  bool result = ProcessMessageInternal(msg, wParam, lParam, aRetValue);
 
+  
+  
+  
+  PrintEvent(msg, wParam, lParam, *aRetValue, result, SHOW_REPEAT_EVENTS,
+             SHOW_MOUSEMOVE_EVENTS);
+
+  return result;
+}
+
+
+bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
+                                      LRESULT* aRetValue) {
   MSGResult msgResult(aRetValue);
   if (ExternalHandlerProcessMessage(msg, wParam, lParam, msgResult)) {
     return (msgResult.mConsumed || !mWnd);
