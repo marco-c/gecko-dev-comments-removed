@@ -3032,14 +3032,6 @@ static nsresult SelectProfile(nsToolkitProfileService* aProfileSvc,
   if (EnvHasValue("MOZ_RESET_PROFILE_RESTART")) {
     gDoProfileReset = true;
     gDoMigration = true;
-    SaveToEnv("MOZ_RESET_PROFILE_RESTART=");
-    
-    
-    
-    
-    
-    
-    SaveToEnv("MOZ_RESET_PROFILE_MIGRATE_SESSION=1");
   }
 
   
@@ -5078,6 +5070,16 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   }
 
   if (gDoProfileReset) {
+    if (EnvHasValue("MOZ_RESET_PROFILE_RESTART")) {
+      SaveToEnv("MOZ_RESET_PROFILE_RESTART=");
+      
+      
+      
+      
+      
+      
+      SaveToEnv("MOZ_RESET_PROFILE_MIGRATE_SESSION=1");
+    }
     
     mProfileLock->Unlock();
 
