@@ -1027,7 +1027,7 @@ class XPCNativeMember final {
   
   
   uint16_t mIndexInInterface : 12;
-} JS_HAZ_NON_GC_POINTER;  
+};
 
 
 
@@ -1066,6 +1066,8 @@ class XPCNativeInterface final {
   void DebugDump(int16_t depth);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf);
+
+  void Trace(JSTracer* trc);
 
  protected:
   static already_AddRefed<XPCNativeInterface> NewInstance(
