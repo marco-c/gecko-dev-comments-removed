@@ -83,7 +83,7 @@ if (!window.FB) {
     
     
 
-    if (target.hasAttribute("fb-xfbml-state")) {
+    if (target.textContent || target.hasAttribute("fb-xfbml-state")) {
       return;
     }
     target.setAttribute("fb-xfbml-state", "");
