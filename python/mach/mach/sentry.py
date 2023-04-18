@@ -6,7 +6,8 @@ from __future__ import absolute_import
 
 import abc
 import re
-from os.path import expanduser
+
+from pathlib import Path
 from threading import Thread
 
 import sentry_sdk
@@ -48,7 +49,7 @@ class NoopErrorReporter(ErrorReporter):
         return None
 
 
-def register_sentry(argv, settings, topsrcdir):
+def register_sentry(argv, settings, topsrcdir: Path):
     if not is_telemetry_enabled(settings):
         return NoopErrorReporter()
 
@@ -67,7 +68,7 @@ def register_sentry(argv, settings, topsrcdir):
     return SentryErrorReporter()
 
 
-def _process_event(sentry_event, topsrcdir):
+def _process_event(sentry_event, topsrcdir: Path):
     
     
     repo = _get_repository_object(topsrcdir)
@@ -113,7 +114,7 @@ def _settle_mach_module_id(sentry_event, _):
     return sentry_event
 
 
-def _patch_absolute_paths(sentry_event, topsrcdir):
+def _patch_absolute_paths(sentry_event, topsrcdir: Path):
     
     
     
@@ -138,8 +139,8 @@ def _patch_absolute_paths(sentry_event, topsrcdir):
 
     for (target_path, replacement) in (
         (get_state_dir(), "<statedir>"),
-        (topsrcdir, "<topsrcdir>"),
-        (expanduser("~"), "~"),
+        (str(topsrcdir), "<topsrcdir>"),
+        (str(Path.home()), "~"),
     ):
         
         
@@ -183,14 +184,14 @@ def _delete_server_name(sentry_event, _):
     return sentry_event
 
 
-def _get_repository_object(topsrcdir):
+def _get_repository_object(topsrcdir: Path):
     try:
-        return get_repository_object(topsrcdir)
+        return get_repository_object(str(topsrcdir))
     except (InvalidRepoPath, MissingVCSTool):
         return None
 
 
-def _is_unmodified_mach_core(topsrcdir):
+def _is_unmodified_mach_core(topsrcdir: Path):
     """True if mach is unmodified compared to the public tree.
 
     To avoid submitting Sentry events for errors caused by user's
