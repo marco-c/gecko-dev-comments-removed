@@ -493,6 +493,15 @@ struct MOZ_RAII AutoSetContextRuntime {
   ~AutoSetContextRuntime() { TlsContext.get()->setRuntime(nullptr); }
 };
 
+struct OffThreadFrontendErrors {
+  OffThreadFrontendErrors() : overRecursed(false), outOfMemory(false) {}
+  
+  
+  Vector<UniquePtr<CompileError>, 0, SystemAllocPolicy> errors;
+  bool overRecursed;
+  bool outOfMemory;
+};
+
 struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
                    public JS::OffThreadToken,
                    public HelperThreadTask {
@@ -534,10 +543,7 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
   frontend::CompilationGCOutput gcOutput_;
 
   
-  
-  Vector<UniquePtr<CompileError>, 0, SystemAllocPolicy> errors;
-  bool overRecursed;
-  bool outOfMemory;
+  OffThreadFrontendErrors errors;
 
   ParseTask(ParseTaskKind kind, JSContext* cx,
             JS::OffThreadCompileCallback callback, void* callbackData);
