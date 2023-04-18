@@ -344,7 +344,7 @@ class Accessible {
   virtual bool IsRemote() const = 0;
   RemoteAccessible* AsRemote();
 
-  bool IsLocal() { return !IsRemote(); }
+  bool IsLocal() const { return !IsRemote(); }
   LocalAccessible* AsLocal();
 
   virtual HyperTextAccessibleBase* AsHyperTextBase() { return nullptr; }
@@ -389,6 +389,12 @@ class Accessible {
 
 
   virtual void GetPositionAndSetSize(int32_t* aPosInSet, int32_t* aSetSize);
+
+
+  
+
+
+  const Accessible* ActionAncestor() const;
 
   
 
