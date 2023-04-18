@@ -118,7 +118,7 @@ nsCString MapInternalContentPolicyTypeToDest(nsContentPolicyType aType) {
 
 void IsExpandedPrincipalSameOrigin(
     nsCOMPtr<nsIExpandedPrincipal> aExpandedPrincipal, nsIURI* aURI,
-    bool aIsPrivateWin, bool* aRes) {
+    bool* aRes) {
   *aRes = false;
   for (const auto& principal : aExpandedPrincipal->AllowList()) {
     
@@ -126,8 +126,7 @@ void IsExpandedPrincipalSameOrigin(
     if (!mozilla::BasePrincipal::Cast(principal)->AddonPolicy()) {
       
       
-      mozilla::BasePrincipal::Cast(principal)->IsSameOrigin(aURI, aIsPrivateWin,
-                                                            aRes);
+      mozilla::BasePrincipal::Cast(principal)->IsSameOrigin(aURI, aRes);
       return;
     }
   }
@@ -149,16 +148,13 @@ bool IsSameOrigin(nsIHttpChannel* aHTTPChannel) {
         ->AddonAllowsLoad(channelURI);
   }
 
-  bool isPrivateWin = loadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
   bool isSameOrigin = false;
   if (nsContentUtils::IsExpandedPrincipal(loadInfo->TriggeringPrincipal())) {
     nsCOMPtr<nsIExpandedPrincipal> ep =
         do_QueryInterface(loadInfo->TriggeringPrincipal());
-    IsExpandedPrincipalSameOrigin(ep, channelURI, isPrivateWin, &isSameOrigin);
+    IsExpandedPrincipalSameOrigin(ep, channelURI, &isSameOrigin);
   } else {
-    nsresult rv = loadInfo->TriggeringPrincipal()->IsSameOrigin(
-        channelURI, isPrivateWin, &isSameOrigin);
-    mozilla::Unused << NS_WARN_IF(NS_FAILED(rv));
+    isSameOrigin = loadInfo->TriggeringPrincipal()->IsSameOrigin(channelURI);
   }
 
   
@@ -172,13 +168,8 @@ bool IsSameOrigin(nsIHttpChannel* aHTTPChannel) {
   nsCOMPtr<nsIPrincipal> redirectPrincipal;
   for (nsIRedirectHistoryEntry* entry : loadInfo->RedirectChain()) {
     entry->GetPrincipal(getter_AddRefs(redirectPrincipal));
-    if (redirectPrincipal) {
-      nsresult rv = redirectPrincipal->IsSameOrigin(channelURI, isPrivateWin,
-                                                    &isSameOrigin);
-      mozilla::Unused << NS_WARN_IF(NS_FAILED(rv));
-      if (!isSameOrigin) {
-        return false;
-      }
+    if (redirectPrincipal && !redirectPrincipal->IsSameOrigin(channelURI)) {
+      return false;
     }
   }
 

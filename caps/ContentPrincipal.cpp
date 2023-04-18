@@ -229,7 +229,6 @@ bool ContentPrincipal::SubsumesInternal(
   
   
   
-  nsresult rv;
   if (aConsideration == ConsiderDocumentDomain) {
     
     nsCOMPtr<nsIURI> thisDomain, otherDomain;
@@ -256,10 +255,7 @@ bool ContentPrincipal::SubsumesInternal(
   }
 
   
-  bool isSameOrigin = false;
-  rv = aOther->IsSameOrigin(mURI, false, &isSameOrigin);
-  NS_ENSURE_SUCCESS(rv, false);
-  return isSameOrigin;
+  return aOther->IsSameOrigin(mURI);
 }
 
 NS_IMETHODIMP

@@ -331,7 +331,8 @@ interface nsIPrincipal : nsISupports
 
 
 
-    bool isSameOrigin(in nsIURI otherURI, in bool aIsPrivateWin);
+    [infallible]
+    boolean isSameOrigin(in nsIURI otherURI);
 
     
 
@@ -354,8 +355,8 @@ interface nsIPrincipal : nsISupports
 
 
     bool hasFirstpartyStorageAccess(in mozIDOMWindow aWindow, out uint32_t rejectedReason);
-    
-    
+
+
     
 
 

@@ -17089,11 +17089,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
   
   if (!CookieJarSettings()->GetRejectThirdPartyContexts()) {
     
-    bool isSameOrigin = false;
-    NodePrincipal()->IsSameOrigin(thirdPartyURI,
-                                  nsContentUtils::IsInPrivateBrowsing(this),
-                                  &isSameOrigin);
-    if (isSameOrigin) {
+    if (NodePrincipal()->IsSameOrigin(thirdPartyURI)) {
       promise->MaybeResolveWithUndefined();
       return promise.forget();
     }

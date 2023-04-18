@@ -104,12 +104,7 @@ bool FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
     }
 
     if (checkSameOrigin) {
-      bool isPrivateWin = false;
-      bool isSameOrigin = false;
-      if (principal) {
-        isPrivateWin = principal->OriginAttributesRef().mPrivateBrowsingId > 0;
-        principal->IsSameOrigin(uri, isPrivateWin, &isSameOrigin);
-      }
+      bool isSameOrigin = principal && principal->IsSameOrigin(uri);
       
       if (!isSameOrigin) {
         ReportError("XFrameOptionsDeny", aHttpChannel, uri, aPolicy);
