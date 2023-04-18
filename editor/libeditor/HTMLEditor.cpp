@@ -6003,8 +6003,15 @@ Element* HTMLEditor::GetActiveEditingHost(
   if (!content->HasFlag(NODE_IS_EDITABLE)) {
     return nullptr;
   }
+
   
   
+  
+  
+  if (MOZ_UNLIKELY(content->IsInNativeAnonymousSubtree())) {
+    return nullptr;
+  }
+
   
   
   Element* candidateEditingHost = content->GetEditingHost();
