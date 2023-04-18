@@ -1474,33 +1474,38 @@ this.LoginHelper = {
 
 
   async maybeImportLogins(loginDatas) {
-    const processor = new ImportRowProcessor();
-    for (let rawLoginData of loginDatas) {
-      
-      let loginData = ChromeUtils.shallowClone(rawLoginData);
-      if (processor.checkNonUniqueGuidError(loginData)) {
-        continue;
+    this.importing = true;
+    try {
+      const processor = new ImportRowProcessor();
+      for (let rawLoginData of loginDatas) {
+        
+        let loginData = ChromeUtils.shallowClone(rawLoginData);
+        if (processor.checkNonUniqueGuidError(loginData)) {
+          continue;
+        }
+        if (processor.checkMissingMandatoryFieldsError(loginData)) {
+          continue;
+        }
+        processor.cleanupActionAndRealmFields(loginData);
+        if (await processor.checkExistingEntry(loginData)) {
+          continue;
+        }
+        let login = processor.createNewLogin(loginData);
+        if (processor.checkLoginValuesError(login, loginData)) {
+          continue;
+        }
+        if (processor.checkConflictingOriginWithPreviousRows(login)) {
+          continue;
+        }
+        if (processor.checkConflictingWithExistingLogins(login)) {
+          continue;
+        }
+        processor.addLoginToSummary(login, "added");
       }
-      if (processor.checkMissingMandatoryFieldsError(loginData)) {
-        continue;
-      }
-      processor.cleanupActionAndRealmFields(loginData);
-      if (await processor.checkExistingEntry(loginData)) {
-        continue;
-      }
-      let login = processor.createNewLogin(loginData);
-      if (processor.checkLoginValuesError(login, loginData)) {
-        continue;
-      }
-      if (processor.checkConflictingOriginWithPreviousRows(login)) {
-        continue;
-      }
-      if (processor.checkConflictingWithExistingLogins(login)) {
-        continue;
-      }
-      processor.addLoginToSummary(login, "added");
+      return await processor.processLoginsAndBuildSummary();
+    } finally {
+      this.importing = false;
     }
-    return processor.processLoginsAndBuildSummary();
   },
 
   
@@ -1689,6 +1694,10 @@ this.LoginHelper = {
 
 
   notifyStorageChanged(changeType, data) {
+    if (this.importing) {
+      return;
+    }
+
     let dataObject = data;
     
     if (Array.isArray(data)) {
