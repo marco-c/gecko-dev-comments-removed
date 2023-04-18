@@ -489,7 +489,7 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.set_enrollment_status(ExperimentStatus.ENROLLED_TREATMENT)
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByTreatmentGroup,
+            status=ContentWin32kLockdownState.EnabledByDefault,
             sessionStatus=ContentWin32kLockdownState.EnabledByDefault,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=True,
@@ -1015,7 +1015,7 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.set_enrollment_status(ExperimentStatus.ENROLLED_TREATMENT)
 
         self.check_win32k_status(
-            status=ContentWin32kLockdownState.EnabledByTreatmentGroup,
+            status=ContentWin32kLockdownState.EnabledByDefault,
             sessionStatus=ContentWin32kLockdownState.EnabledByDefault,
             experimentStatus=ExperimentStatus.UNENROLLED,
             pref=True,
@@ -1525,7 +1525,7 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.check_win32k_status(
             status=ContentWin32kLockdownState.DisabledByUserPref,
             sessionStatus=ContentWin32kLockdownState.DisabledByControlGroup,
-            experimentStatus=ExperimentStatus.DISQUALIFIED,
+            experimentStatus=ExperimentStatus.ENROLLED_CONTROL,
             pref=False,
             enrollmentStatusPref=ExperimentStatus.DISQUALIFIED,
         )
@@ -1563,7 +1563,7 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.check_win32k_status(
             status=ContentWin32kLockdownState.MissingRemoteWebGL,
             sessionStatus=ContentWin32kLockdownState.DisabledByControlGroup,
-            experimentStatus=ExperimentStatus.UNENROLLED,
+            experimentStatus=ExperimentStatus.ENROLLED_CONTROL,
             pref=True,
             enrollmentStatusPref=ExperimentStatus.ENROLLED_CONTROL,
         )
@@ -1967,7 +1967,7 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.check_win32k_status(
             status=ContentWin32kLockdownState.EnabledByTreatmentGroup,
             sessionStatus=ContentWin32kLockdownState.EnabledByTreatmentGroup,
-            experimentStatus=ExperimentStatus.UNENROLLED,
+            experimentStatus=ExperimentStatus.ENROLLED_TREATMENT,
             pref=True,
             enrollmentStatusPref=ExperimentStatus.ENROLLED_TREATMENT,
         )
@@ -2015,7 +2015,7 @@ class TestWin32kAutostart(MarionetteTestCase):
         self.check_win32k_status(
             status=ContentWin32kLockdownState.DisabledByUserPref,
             sessionStatus=ContentWin32kLockdownState.EnabledByTreatmentGroup,
-            experimentStatus=ExperimentStatus.DISQUALIFIED,
+            experimentStatus=ExperimentStatus.ENROLLED_TREATMENT,
             pref=False,
             enrollmentStatusPref=ExperimentStatus.DISQUALIFIED,
         )
