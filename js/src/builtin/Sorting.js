@@ -166,17 +166,30 @@ function MergeSortTypedArray(array, len, comparefn) {
            "MergeSortTypedArray works only with typed arrays.");
 
     
+    var C = ConstructorForTypedArray(array);
+
+    var lBuffer = new C(len);
+
+    
+    
+    for (var i = 0; i < len; i++) {
+        lBuffer[i] = array[i];
+    }
+
+    
     
     if (len < 8) {
-        InsertionSort(array, 0, len - 1, comparefn);
+        InsertionSort(lBuffer, 0, len - 1, comparefn);
+
+        
+        for (var i = 0; i < len; i++) {
+            array[i] = lBuffer[i];
+        }
+
         return array;
     }
 
     
-    var C = ConstructorForTypedArray(array);
-
-    
-    var lBuffer = array;
     var rBuffer = new C(len);
 
     
@@ -204,10 +217,8 @@ function MergeSortTypedArray(array, len, comparefn) {
     }
 
     
-    if (lBuffer !== array) {
-        for (var i = 0; i < len; i++) {
-            array[i] = lBuffer[i];
-        }
+    for (var i = 0; i < len; i++) {
+        array[i] = lBuffer[i];
     }
 
     return array;
