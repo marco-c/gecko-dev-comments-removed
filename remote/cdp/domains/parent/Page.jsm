@@ -117,7 +117,26 @@ class Page extends Domain {
       });
     }
 
+    const currentURI = this.session.browsingContext.currentURI;
+
+    const isSameDocumentNavigation =
+      
+      
+      
+      hitsNetwork &&
+      ["https", "http"].includes(currentURI.scheme) &&
+      currentURI.host === validURL.host &&
+      currentURI.query === validURL.query &&
+      !!validURL.ref;
+
     const requestDone = new Promise(resolve => {
+      if (isSameDocumentNavigation) {
+        
+        
+        resolve({});
+        return;
+      }
+
       if (!hitsNetwork) {
         
         resolve({ navigationRequestId: networkLessLoaderId });
