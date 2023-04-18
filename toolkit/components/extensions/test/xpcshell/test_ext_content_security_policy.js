@@ -2,6 +2,12 @@
 
 Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
 
+
+Services.prefs.setBoolPref(
+  "extensions.webextensions.background-delayed-startup",
+  false
+);
+
 const server = createHttpServer({ hosts: ["example.com"] });
 
 server.registerPathHandler("/dummy", (request, response) => {
