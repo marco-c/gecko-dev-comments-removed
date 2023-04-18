@@ -380,8 +380,6 @@ class IMMHandler final {
   class Selection {
    public:
     Selection() = default;
-    Selection(const Selection& aOther) = delete;
-    void operator=(const Selection& aOther) = delete;
 
     void ClearRange() {
       mOffsetAndData.reset();
@@ -399,35 +397,34 @@ class IMMHandler final {
     bool HasRange() const { return mOffsetAndData.isSome(); }
     void Update(
         const IMENotification::SelectionChangeDataBase& aSelectionChangeData);
-    
 
-
-
-
-    bool EnsureSelectionRange(nsWindow* aWindow);
+    static Maybe<Selection> QuerySelection(nsWindow* aWindow);
 
    private:
-    void QuerySelection(nsWindow* aWindow);
-
     Maybe<OffsetAndData<uint32_t>> mOffsetAndData;
     WritingMode mWritingMode;
   };
   
   
   
-  Selection mSelection;
+  Maybe<Selection> mSelection;
 
-  Selection& GetSelection() {
+  const Maybe<Selection>& GetSelectionWithQueryIfNothing(nsWindow* aWindow) {
     
     
     if (sHasFocus) {
+      if (mSelection.isNothing()) {
+        
+        
+        mSelection = Selection::QuerySelection(aWindow);
+      }
       return mSelection;
     }
     
     
     
-    static Selection sTempSelection;
-    sTempSelection.ClearRange();
+    static Maybe<Selection> sTempSelection;
+    sTempSelection = Selection::QuerySelection(aWindow);
     return sTempSelection;
   }
 
