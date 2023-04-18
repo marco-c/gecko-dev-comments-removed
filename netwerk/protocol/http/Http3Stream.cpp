@@ -169,7 +169,8 @@ void Http3Stream::TopBrowsingContextIdChanged(uint64_t id) {
   mCurrentTopBrowsingContextId = id;
   bool nowFocused = (mCurrentTopBrowsingContextId == mTransactionTabId);
 
-  if (!StaticPrefs::network_http_http3_send_background_tabs_depriorization() ||
+  if (!StaticPrefs::
+          network_http_http3_send_background_tabs_deprioritization() ||
       previouslyFocused == nowFocused) {
     return;
   }
@@ -537,12 +538,12 @@ nsresult Http3Stream::Finish0RTT(bool aRestart) {
 }
 
 uint8_t Http3Stream::PriorityUrgency() {
-  if (!StaticPrefs::network_http_http3_priorization()) {
+  if (!StaticPrefs::network_http_http3_priority()) {
     
     return 3;
   }
 
-  if (StaticPrefs::network_http_http3_send_background_tabs_depriorization() &&
+  if (StaticPrefs::network_http_http3_send_background_tabs_deprioritization() &&
       mCurrentTopBrowsingContextId != mTransactionTabId) {
     
     return 6;
@@ -551,7 +552,7 @@ uint8_t Http3Stream::PriorityUrgency() {
 }
 
 bool Http3Stream::PriorityIncremental() {
-  if (!StaticPrefs::network_http_http3_priorization()) {
+  if (!StaticPrefs::network_http_http3_priority()) {
     
     return false;
   }
