@@ -50,11 +50,15 @@ const ContentProcessTargetActor = TargetActorMixin(
   Targets.TYPES.PROCESS,
   contentProcessTargetSpec,
   {
-    initialize: function(connection, { isXpcShellTarget = false } = {}) {
+    initialize: function(
+      connection,
+      { isXpcShellTarget = false, sessionContext } = {}
+    ) {
       Actor.prototype.initialize.call(this, connection);
       this.conn = connection;
       this.threadActor = null;
       this.isXpcShellTarget = isXpcShellTarget;
+      this.sessionContext = sessionContext;
 
       
       this.makeDebugger = makeDebugger.bind(null, {

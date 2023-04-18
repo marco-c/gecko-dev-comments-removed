@@ -105,15 +105,30 @@ try {
         const {
           WindowGlobalTargetActor,
         } = require("devtools/server/actors/targets/window-global");
+        const {
+          createBrowserElementSessionContext,
+        } = require("devtools/server/actors/watcher/session-context");
+
         const { docShell } = chromeGlobal;
         
         
         
         
         
+        
+        
+        const fakeBrowserElement = {
+          browserId: docShell.browsingContext.browserId,
+        };
         actor = new WindowGlobalTargetActor(conn, {
           docShell,
           isTopLevelTarget: true,
+          
+          
+          sessionContext: createBrowserElementSessionContext(
+            fakeBrowserElement,
+            {}
+          ),
         });
       }
       actor.manage(actor);

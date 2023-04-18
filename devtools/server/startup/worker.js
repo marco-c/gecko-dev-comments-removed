@@ -75,7 +75,8 @@ this.addEventListener("message", async function(event) {
       const workerTargetActor = new WorkerTargetActor(
         connection,
         global,
-        packet.workerDebuggerData
+        packet.workerDebuggerData,
+        packet.options.sessionContext
       );
       
       workerTargetActor.manage(workerTargetActor);
@@ -104,7 +105,7 @@ this.addEventListener("message", async function(event) {
       );
 
       
-      if (packet.options?.sessionData) {
+      if (packet.options.sessionData) {
         const promises = [];
         for (const [type, entries] of Object.entries(
           packet.options.sessionData

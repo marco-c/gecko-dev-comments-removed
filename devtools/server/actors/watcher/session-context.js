@@ -22,6 +22,14 @@
 
 
 
+const SESSION_TYPES = {
+  ALL: "all",
+  BROWSER_ELEMENT: "browser-element",
+  CONTENT_PROCESS: "content-process",
+  WEBEXTENSION: "webextension",
+  WORKER: "worker",
+};
+
 
 
 
@@ -33,7 +41,7 @@
 
 function createBrowserSessionContext() {
   return {
-    type: "all",
+    type: SESSION_TYPES.ALL,
     
     
     isServerTargetSwitchingEnabled: false,
@@ -51,7 +59,7 @@ function createBrowserSessionContext() {
 
 function createBrowserElementSessionContext(browserElement, config) {
   return {
-    type: "browser-element",
+    type: SESSION_TYPES.BROWSER_ELEMENT,
     browserId: browserElement.browserId,
     
     
@@ -86,7 +94,7 @@ function createWebExtensionSessionContext(
   config
 ) {
   return {
-    type: "webextension",
+    type: SESSION_TYPES.WEBEXTENSION,
     addonId: addonId,
     addonBrowsingContextID: browsingContextID,
     addonInnerWindowId: innerWindowId,
@@ -96,8 +104,30 @@ function createWebExtensionSessionContext(
   };
 }
 
+
+
+
+
+function createContentProcessSessionContext() {
+  return {
+    type: SESSION_TYPES.CONTENT_PROCESS,
+  };
+}
+
+
+
+
+
+function createWorkerSessionContext() {
+  return {
+    type: SESSION_TYPES.WORKER,
+  };
+}
+
 module.exports = {
   createBrowserSessionContext,
   createBrowserElementSessionContext,
   createWebExtensionSessionContext,
+  createContentProcessSessionContext,
+  createWorkerSessionContext,
 };

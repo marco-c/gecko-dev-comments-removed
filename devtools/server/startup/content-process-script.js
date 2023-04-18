@@ -196,7 +196,7 @@ class ContentProcessStartup {
   createTargetActor(
     watcherActorID,
     parentConnectionPrefix,
-    initialData,
+    sessionData,
     ignoreAlreadyCreated = false
   ) {
     if (this._connections.get(watcherActorID)) {
@@ -224,6 +224,7 @@ class ContentProcessStartup {
         watcherActorID,
         parentConnectionPrefix,
         prefix,
+        sessionContext: sessionData.sessionContext,
       },
     });
     this._connections.set(watcherActorID, {
@@ -232,8 +233,8 @@ class ContentProcessStartup {
     });
 
     
-    for (const type in initialData) {
-      actor.addSessionDataEntry(type, initialData[type]);
+    for (const type in sessionData) {
+      actor.addSessionDataEntry(type, sessionData[type]);
     }
   }
 

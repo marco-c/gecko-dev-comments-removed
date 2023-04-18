@@ -10,6 +10,7 @@ const { Cc, Ci } = require("chrome");
 
 const {
   createBrowserSessionContext,
+  createContentProcessSessionContext,
 } = require("devtools/server/actors/watcher/session-context");
 const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
 const {
@@ -88,6 +89,7 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
       
       targetActor = new ContentProcessTargetActor(this.conn, {
         isXpcShellTarget: true,
+        sessionContext: createContentProcessSessionContext(),
       });
     } else {
       
