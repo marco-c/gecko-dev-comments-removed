@@ -114,6 +114,7 @@ class ScriptLoader final : public nsISupports {
 
   friend class ModuleLoadRequest;
   friend class ScriptRequestProcessor;
+  friend class ModuleLoader;
   friend class ScriptLoadHandler;
   friend class AutoCurrentScriptUpdater;
 
@@ -401,45 +402,6 @@ class ScriptLoader final : public nsISupports {
 
   void Destroy();
 
-  void StartDynamicImport(ModuleLoadRequest* aRequest);
-
-  
-
-
-
-
-
-
-
-
-
-
-  void FinishDynamicImportAndReject(ModuleLoadRequest* aRequest,
-                                    nsresult aResult);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void FinishDynamicImport(JSContext* aCx, ModuleLoadRequest* aRequest,
-                           nsresult aResult,
-                           JS::Handle<JSObject*> aEvaluationPromise);
-
   
 
 
@@ -585,7 +547,6 @@ class ScriptLoader final : public nsISupports {
   nsresult AttemptAsyncScriptCompile(ScriptLoadRequest* aRequest,
                                      bool* aCouldCompileOut);
   nsresult ProcessRequest(ScriptLoadRequest* aRequest);
-  void ProcessDynamicImport(ModuleLoadRequest* aRequest);
   nsresult CompileOffThreadOrProcessRequest(ScriptLoadRequest* aRequest);
   void FireScriptAvailable(nsresult aResult, ScriptLoadRequest* aRequest);
   void FireScriptEvaluated(nsresult aResult, ScriptLoadRequest* aRequest);
@@ -661,6 +622,7 @@ class ScriptLoader final : public nsISupports {
   nsresult PrepareLoadedRequest(ScriptLoadRequest* aRequest,
                                 nsIIncrementalStreamLoader* aLoader,
                                 nsresult aStatus);
+  void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest);
 
   void AddDeferRequest(ScriptLoadRequest* aRequest);
   void AddAsyncRequest(ScriptLoadRequest* aRequest);
@@ -684,14 +646,6 @@ class ScriptLoader final : public nsISupports {
   
   static bool ShouldCacheBytecode(ScriptLoadRequest* aRequest);
 
-  nsresult CreateModuleScript(ModuleLoadRequest* aRequest);
-  nsresult ProcessFetchedModuleSource(ModuleLoadRequest* aRequest);
-  void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest);
-  void StartFetchingModuleDependencies(ModuleLoadRequest* aRequest);
-
-  RefPtr<mozilla::GenericPromise> StartFetchingModuleAndDependencies(
-      ModuleLoadRequest* aParent, nsIURI* aURI);
-
   void RunScriptWhenSafe(ScriptLoadRequest* aRequest);
 
   
@@ -709,7 +663,6 @@ class ScriptLoader final : public nsISupports {
   ScriptLoadRequestList mLoadedAsyncRequests;
   ScriptLoadRequestList mDeferRequests;
   ScriptLoadRequestList mXSLTRequests;
-  ScriptLoadRequestList mDynamicImportRequests;
   RefPtr<ScriptLoadRequest> mParserBlockingRequest;
   ScriptLoadRequestList mOffThreadCompilingRequests;
 
@@ -780,10 +733,17 @@ class ModuleLoader : public nsISupports {
   nsRefPtrHashtable<ModuleMapKey, mozilla::GenericNonExclusivePromise::Private>
       mFetchingModules;
   nsRefPtrHashtable<ModuleMapKey, ModuleScript> mFetchedModules;
+  RefPtr<ScriptLoader> mLoader;
 
  public:
+  ScriptLoadRequestList mDynamicImportRequests;
+
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(ModuleLoader)
+  explicit ModuleLoader(ScriptLoader* aLoader);
+
+  using MaybeSourceText =
+      mozilla::MaybeOneOf<JS::SourceText<char16_t>, JS::SourceText<Utf8Unit>>;
 
   void SetModuleFetchStarted(ModuleLoadRequest* aRequest);
   void SetModuleFetchFinishedAndResumeWaitingRequests(
@@ -808,6 +768,57 @@ class ModuleLoader : public nsISupports {
 
   static already_AddRefed<nsIURI> ResolveModuleSpecifier(
       ScriptLoader* loader, LoadedScript* aScript, const nsAString& aSpecifier);
+
+  void StartFetchingModuleDependencies(ModuleLoadRequest* aRequest);
+
+  RefPtr<mozilla::GenericPromise> StartFetchingModuleAndDependencies(
+      ModuleLoadRequest* aParent, nsIURI* aURI);
+
+  void StartDynamicImport(ModuleLoadRequest* aRequest);
+
+  
+
+
+
+
+
+
+
+
+
+
+  void FinishDynamicImportAndReject(ModuleLoadRequest* aRequest,
+                                    nsresult aResult);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void FinishDynamicImport(JSContext* aCx, ModuleLoadRequest* aRequest,
+                           nsresult aResult,
+                           JS::Handle<JSObject*> aEvaluationPromise);
+
+  void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest);
+
+  nsresult CreateModuleScript(ModuleLoadRequest* aRequest);
+  nsresult ProcessFetchedModuleSource(ModuleLoadRequest* aRequest);
+  void ProcessDynamicImport(ModuleLoadRequest* aRequest);
+  void CancelAndClearDynamicImports();
 };
 
 class nsAutoScriptLoaderDisabler {
