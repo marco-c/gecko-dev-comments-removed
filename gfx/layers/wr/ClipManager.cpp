@@ -13,7 +13,6 @@
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "nsDisplayList.h"
-#include "nsRefreshDriver.h"
 #include "nsStyleStructInlines.h"
 #include "UnitTransforms.h"
 
@@ -337,9 +336,8 @@ Maybe<wr::WrSpatialId> ClipManager::DefineScrollLayers(
   
   
   
-  nsPresContext* presContext = aItem->Frame()->PresContext();
   const bool hasScrollLinkedEffect =
-      presContext->Document()->HasScrollLinkedEffect();
+      aItem->Frame()->PresContext()->Document()->HasScrollLinkedEffect();
 
   return Some(mBuilder->DefineScrollLayer(
       viewId, parent, wr::ToLayoutRect(contentRect),

@@ -3683,8 +3683,8 @@ class Document : public nsINode,
 
   bool HasScriptsBlockedBySandbox();
 
-  void ReportHasScrollLinkedEffect(const TimeStamp& aTimeStamp);
-  bool HasScrollLinkedEffect() const;
+  void ReportHasScrollLinkedEffect();
+  bool HasScrollLinkedEffect() const { return mHasScrollLinkedEffect; }
 
 #ifdef DEBUG
   void AssertDocGroupMatchesKey() const;
@@ -4496,9 +4496,6 @@ class Document : public nsINode,
   
   TimeStamp mLastFocusTime;
 
-  
-  TimeStamp mLastScrollLinkedEffectDetectionTime;
-
   EventStates mDocumentState{NS_DOCUMENT_STATE_LTR_LOCALE};
 
   RefPtr<Promise> mReadyForIdle;
@@ -4656,6 +4653,9 @@ class Document : public nsINode,
   
   
   bool mDidFireDOMContentLoaded : 1;
+
+  
+  bool mHasScrollLinkedEffect : 1;
 
   
   

@@ -11,7 +11,6 @@
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/TypedEnumBits.h"
-#include "nsCSSPropertyID.h"
 #include "nsCoord.h"
 #include "X11UndefineNone.h"
 
@@ -142,8 +141,7 @@ class ServoStyleSetSizes {
 
 struct DeclarationBlockMutationClosure {
   
-  
-  void (*function)(void*, nsCSSPropertyID) = nullptr;
+  void (*function)(void*) = nullptr;
   void* data = nullptr;
 };
 

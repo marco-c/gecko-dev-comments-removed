@@ -5864,8 +5864,7 @@ void ScrollFrameHelper::FireScrollEvent() {
   
   
   mozilla::layers::ScrollLinkedEffectDetector detector(
-      content->GetComposedDoc(),
-      presContext->RefreshDriver()->MostRecentRefresh());
+      content->GetComposedDoc());
   if (mIsRoot) {
     if (RefPtr<Document> doc = content->GetUncomposedDoc()) {
       

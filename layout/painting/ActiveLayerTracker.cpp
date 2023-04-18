@@ -266,6 +266,23 @@ void ActiveLayerTracker::NotifyRestyle(nsIFrame* aFrame,
   }
 }
 
+
+void ActiveLayerTracker::NotifyAnimated(nsIFrame* aFrame,
+                                        nsCSSPropertyID aProperty,
+                                        const nsACString& aNewValue,
+                                        nsDOMCSSDeclaration* aDOMCSSDecl) {
+  LayerActivity* layerActivity = GetLayerActivityForUpdate(aFrame);
+  uint8_t& mutationCount = layerActivity->RestyleCountForProperty(aProperty);
+  if (mutationCount != 0xFF) {
+    nsAutoCString oldValue;
+    aDOMCSSDecl->GetPropertyValue(aProperty, oldValue);
+    if (oldValue != aNewValue) {
+      
+      mutationCount = 0xFF;
+    }
+  }
+}
+
 static bool IsPresContextInScriptAnimationCallback(
     nsPresContext* aPresContext) {
   if (aPresContext->RefreshDriver()->IsInRefresh()) {
@@ -279,11 +296,10 @@ static bool IsPresContextInScriptAnimationCallback(
 
 
 void ActiveLayerTracker::NotifyInlineStyleRuleModified(
-    nsIFrame* aFrame, nsCSSPropertyID aProperty) {
+    nsIFrame* aFrame, nsCSSPropertyID aProperty, const nsACString& aNewValue,
+    nsDOMCSSDeclaration* aDOMCSSDecl) {
   if (IsPresContextInScriptAnimationCallback(aFrame->PresContext())) {
-    LayerActivity* layerActivity = GetLayerActivityForUpdate(aFrame);
-    
-    layerActivity->RestyleCountForProperty(aProperty) = 0xff;
+    NotifyAnimated(aFrame, aProperty, aNewValue, aDOMCSSDecl);
   }
 }
 
