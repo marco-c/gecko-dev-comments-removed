@@ -1045,6 +1045,13 @@ static nsresult PinCurrentAppToTaskbarWin7(bool aCheckOnly,
   
   
   
+  
+  
+  return NS_ERROR_ABORT;
+
+  
+  
+  
   VARIANT dir;
   RefPtr<Folder> folder = nullptr;
   RefPtr<FolderItem> folderItem = nullptr;
