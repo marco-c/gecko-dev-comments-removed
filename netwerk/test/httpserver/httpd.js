@@ -49,8 +49,6 @@ var DEBUG = false;
 
 var DEBUG_TIMESTAMP = false; 
 
-var gGlobalObject = Cu.getGlobalForObject(this);
-
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
@@ -2879,7 +2877,7 @@ ServerHandler.prototype = {
         
         
         
-        var s = Cu.Sandbox(gGlobalObject);
+        var s = Cu.Sandbox(globalThis);
         s.importFunction(dump, "dump");
         s.importFunction(atob, "atob");
         s.importFunction(btoa, "btoa");

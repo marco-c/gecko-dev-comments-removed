@@ -28,7 +28,7 @@ XPCOMUtils.defineLazyGetter(this, "ConsoleAPIStorage", () => {
 });
 
 
-addDebuggerToGlobal(Cu.getGlobalForObject(this));
+addDebuggerToGlobal(globalThis);
 
 const CONSOLE_API_LEVEL_MAP = {
   warn: "warning",
