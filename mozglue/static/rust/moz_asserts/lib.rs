@@ -19,10 +19,10 @@
 
 
 
-pub const NIGHTLY_BUILD: bool = cfg!(feature = "nightly");
+pub use mozbuild::config::NIGHTLY_BUILD;
 
 
-pub const MOZ_DIAGNOSTIC_ASSERT_ENABLED: bool = cfg!(feature = "diagnostic");
+pub use mozbuild::config::MOZ_DIAGNOSTIC_ASSERT_ENABLED;
 
 
 #[macro_export]
