@@ -92,7 +92,9 @@ nsGIFDecoder2::nsGIFDecoder2(RasterImage* aImage)
       mSawTransparency(false),
       mSwizzleFn(nullptr) {
   
+  
   memset(&mGIFStruct, 0, sizeof(mGIFStruct));
+  memset(mGIFStruct.global_colormap, 0xFF, sizeof(mGIFStruct.global_colormap));
 
   
   mSwizzleFn = SwizzleRow(SurfaceFormat::R8G8B8, SurfaceFormat::OS_RGBA);
@@ -855,6 +857,8 @@ LexerTransition<nsGIFDecoder2::State> nsGIFDecoder2::FinishImageDescriptor(
         mGIFStruct.local_colormap_buffer_size = mColormapSize;
         mGIFStruct.local_colormap =
             static_cast<uint32_t*>(moz_xmalloc(mColormapSize));
+        
+        memset(mGIFStruct.local_colormap, 0xFF, mColormapSize);
       } else {
         mColormapSize = mGIFStruct.local_colormap_buffer_size;
       }
