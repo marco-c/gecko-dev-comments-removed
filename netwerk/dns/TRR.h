@@ -54,8 +54,7 @@ class TRR : public Runnable,
   explicit TRR(AHostResolver* aResolver, bool aPB);
   
   explicit TRR(AHostResolver* aResolver, nsACString& aHost, enum TrrType aType,
-               const nsACString& aOriginSuffix, bool aPB,
-               bool aUseFreshConnection);
+               const nsACString& aOriginSuffix, bool aPB);
 
   NS_IMETHOD Run() override;
   void Cancel(nsresult aStatus);
@@ -145,9 +144,6 @@ class TRR : public Runnable,
 
   
   const nsCString mOriginSuffix;
-
-  
-  bool mUseFreshConnection = false;
 };
 
 }  
