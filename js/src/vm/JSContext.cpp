@@ -269,7 +269,6 @@ bool AutoResolving::alreadyStartedSlow() const {
 
 
 
-
 JS_PUBLIC_API void js::ReportOutOfMemory(JSContext* cx) {
   
 
