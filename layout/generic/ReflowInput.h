@@ -850,6 +850,15 @@ struct ReflowInput : public SizeComputationInput {
       const mozilla::LogicalSize& aCBSize);
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static void ApplyRelativePositioning(nsIFrame* aFrame,
                                        const nsMargin& aComputedOffsets,
                                        nsPoint* aPosition);
