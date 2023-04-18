@@ -747,8 +747,9 @@ HttpObserverManager = {
       
       
       
-      Services.tm.dispatchToMainThread(() => {
-        channel.errorCheck();
+      
+      let onStart = function() {
+        channel.removeEventListener("start", onStart);
         if (!channel.errorString) {
           this.runChannelListener(channel, "onErrorOccurred", {
             error:
@@ -756,7 +757,8 @@ HttpObserverManager = {
               `NS_ERROR_NET_UNKNOWN_${lastActivity}`,
           });
         }
-      });
+      };
+      channel.addEventListener("start", onStart);
     } else if (
       lastActivity !== this.GOOD_LAST_ACTIVITY &&
       lastActivity !==
