@@ -12,9 +12,6 @@ pub extern crate uuid;
 
 pub use private::{DistributionData, ErrorType, RecordedEvent};
 
-use std::collections::hash_map::DefaultHasher;
-use std::hash::BuildHasher;
-
 
 #[macro_use]
 mod ffi;
@@ -27,19 +24,3 @@ pub mod ipc;
 
 #[cfg(test)]
 mod common_test;
-
-
-
-
-
-
-#[derive(Debug, Default)]
-pub struct HashState;
-
-impl BuildHasher for HashState {
-    type Hasher = DefaultHasher;
-    #[inline]
-    fn build_hasher(&self) -> DefaultHasher {
-        DefaultHasher::new()
-    }
-}
