@@ -15,6 +15,7 @@
 #include "gfxRect.h"
 #include "gfxTypes.h"
 #include "harfbuzz/hb.h"
+#include "ipc/EnumSerializer.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/FontPropertyTypes.h"
@@ -832,6 +833,14 @@ struct GlobalFontMatch {
   uint32_t mCmapsTested = 0;         
   double mMatchDistance = INFINITY;  
 };
+
+
+namespace IPC {
+template <>
+struct ParamTraits<FontVisibility>
+    : public ContiguousEnumSerializer<FontVisibility, FontVisibility::Unknown,
+                                      FontVisibility::Count> {};
+}  
 
 class gfxFontFamily {
  public:
