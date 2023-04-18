@@ -264,24 +264,6 @@ void DocAccessible::ApplyARIAState(uint64_t* aState) const {
   if (mParent) mParent->ApplyARIAState(aState);
 }
 
-already_AddRefed<AccAttributes> DocAccessible::Attributes() {
-  RefPtr<AccAttributes> attributes = HyperTextAccessibleWrap::Attributes();
-
-  
-  
-  if (!mParent || IsRoot()) return attributes.forget();
-
-  
-  aria::AttrIterator attribIter(mParent->GetContent());
-  while (attribIter.Next()) {
-    nsString value;
-    attribIter.AttrValue(value);
-    attributes->SetAttribute(attribIter.AttrName(), std::move(value));
-  }
-
-  return attributes.forget();
-}
-
 LocalAccessible* DocAccessible::FocusedChild() {
   
   
