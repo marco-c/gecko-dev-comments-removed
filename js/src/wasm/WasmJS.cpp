@@ -2048,7 +2048,7 @@ WasmInstanceObject* WasmInstanceObject::create(
     MOZ_ASSERT(obj->isNewborn());
 
     
-    UniqueTlsData tlsData = CreateTlsData(globalDataLength);
+    UniqueTlsData tlsData = TlsData::create(globalDataLength);
     if (!tlsData) {
       ReportOutOfMemory(cx);
       return nullptr;

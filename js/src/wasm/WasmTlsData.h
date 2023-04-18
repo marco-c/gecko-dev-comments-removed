@@ -33,6 +33,7 @@ namespace wasm {
 
 using mozilla::Atomic;
 
+class Instance;
 
 
 
@@ -44,29 +45,94 @@ using mozilla::Atomic;
 
 
 
+
+
+struct TlsData;
+struct TlsDataDeleter {
+  void operator()(TlsData* tlsData);
+};
+using UniqueTlsData = UniquePtr<TlsData, TlsDataDeleter>;
 
 struct TlsData {
+  static constexpr size_t offsetOfMemoryBase() {
+    return offsetof(TlsData, memoryBase_);
+  }
+  static constexpr size_t offsetOfBoundsCheckLimit() {
+    return offsetof(TlsData, boundsCheckLimit_);
+  }
+  static constexpr size_t offsetOfInstance() {
+    return offsetof(TlsData, instance_);
+  }
+  static constexpr size_t offsetOfRealm() { return offsetof(TlsData, realm_); }
+  static constexpr size_t offsetOfCx() { return offsetof(TlsData, cx_); }
+  static constexpr size_t offsetOfValueBoxClass() {
+    return offsetof(TlsData, valueBoxClass_);
+  }
+  static constexpr size_t offsetOfPendingException() {
+    return offsetof(TlsData, pendingException_);
+  }
+  static constexpr size_t offsetOfPendingExceptionTag() {
+    return offsetof(TlsData, pendingExceptionTag_);
+  }
+  static constexpr size_t offsetOfStackLimit() {
+    return offsetof(TlsData, stackLimit_);
+  }
+  static constexpr size_t offsetOfInterrupt() {
+    return offsetof(TlsData, interrupt_);
+  }
+  static constexpr size_t offsetOfAddressOfNeedsIncrementalBarrier() {
+    return offsetof(TlsData, addressOfNeedsIncrementalBarrier_);
+  }
+  static constexpr size_t offsetOfJumpTable() {
+    return offsetof(TlsData, jumpTable_);
+  }
+  static constexpr size_t offsetOfBaselineScratch() {
+    return offsetof(TlsData, baselineScratch_);
+  }
+  static constexpr size_t sizeOfBaselineScratch() {
+    return sizeof(baselineScratch_);
+  }
+  static constexpr size_t offsetOfGlobalArea() {
+    return offsetof(TlsData, globalArea_);
+  }
+
+  static UniqueTlsData create(uint32_t globalDataLength);
+
   
-  uint8_t* memoryBase;
+  
+  void setInterrupt();
+  bool isInterrupted() const;
+  void resetInterrupt(JSContext* cx);
+
+  JSContext* cx() const { return cx_; }
+
+  Instance* instance() const { return instance_; }
+
+ protected:
+  friend class Instance;
+  friend struct TlsDataDeleter;
+
+  
+  uint8_t* memoryBase_;
 
   
   
   
   
   
-  uintptr_t boundsCheckLimit;
+  uintptr_t boundsCheckLimit_;
 
   
-  Instance* instance;
+  Instance* instance_;
 
   
-  JS::Realm* realm;
+  JS::Realm* realm_;
 
   
-  JSContext* cx;
+  JSContext* cx_;
 
   
-  const JSClass* valueBoxClass;
+  const JSClass* valueBoxClass_;
 
 #ifdef ENABLE_WASM_EXCEPTIONS
   
@@ -76,54 +142,40 @@ struct TlsData {
   
   
   
-  GCPtrObject pendingException;
+  GCPtrObject pendingException_;
   
-  GCPtrObject pendingExceptionTag;
+  GCPtrObject pendingExceptionTag_;
 #endif
 
   
   
   
-  Atomic<uintptr_t, mozilla::Relaxed> stackLimit;
+  Atomic<uintptr_t, mozilla::Relaxed> stackLimit_;
 
   
-  Atomic<uint32_t, mozilla::Relaxed> interrupt;
+  Atomic<uint32_t, mozilla::Relaxed> interrupt_;
 
-  const JS::shadow::Zone::BarrierState* addressOfNeedsIncrementalBarrier;
-
-  
-  
-  void setInterrupt();
-  bool isInterrupted() const;
-  void resetInterrupt(JSContext* cx);
+  const JS::shadow::Zone::BarrierState* addressOfNeedsIncrementalBarrier_;
 
   
-  void* allocatedBase;
+  void* allocatedBase_;
 
   
   
-  void** jumpTable;
+  void** jumpTable_;
 
   
   
-  uint32_t baselineScratch[2];
+  uint32_t baselineScratch_[2];
 
   
   
   
-  MOZ_ALIGNED_DECL(16, char globalArea);
+  MOZ_ALIGNED_DECL(16, char globalArea_);
 };
 
 static const size_t TlsDataAlign = 16;  
-static_assert(offsetof(TlsData, globalArea) % TlsDataAlign == 0, "aligned");
-
-struct TlsDataDeleter {
-  void operator()(TlsData* tlsData) { js_free(tlsData->allocatedBase); }
-};
-
-using UniqueTlsData = UniquePtr<TlsData, TlsDataDeleter>;
-
-extern UniqueTlsData CreateTlsData(uint32_t globalDataLength);
+static_assert(TlsData::offsetOfGlobalArea() % TlsDataAlign == 0, "aligned");
 
 
 

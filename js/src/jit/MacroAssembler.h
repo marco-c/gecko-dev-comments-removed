@@ -3700,8 +3700,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   void loadWasmGlobalPtr(uint32_t globalDataOffset, Register dest);
 
-  void loadWasmPinnedRegsFromTls();
-
   
   
   CodeOffset wasmCallImport(const wasm::CallSiteDesc& desc,
