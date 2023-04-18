@@ -42,6 +42,11 @@ def gen_seqcst(fun_name):
 
 
 def gen_load(fun_name, cpp_type, size, barrier):
+    
+    
+    
+    
+    
     if cpu_arch in ("x86", "x86_64"):
         insns = ""
         if barrier:
@@ -128,6 +133,11 @@ def gen_load(fun_name, cpp_type, size, barrier):
 
 
 def gen_store(fun_name, cpp_type, size, barrier):
+    
+    
+    
+    
+    
     if cpu_arch in ("x86", "x86_64"):
         insns = ""
         if barrier:
@@ -208,6 +218,9 @@ def gen_store(fun_name, cpp_type, size, barrier):
 
 
 def gen_exchange(fun_name, cpp_type, size):
+    
+    
+    
     if cpu_arch in ("x86", "x86_64"):
         
         
@@ -301,6 +314,9 @@ def gen_exchange(fun_name, cpp_type, size):
 
 
 def gen_cmpxchg(fun_name, cpp_type, size):
+    
+    
+    
     if cpu_arch == "x86" and size == 64:
         
         
@@ -468,6 +484,9 @@ def gen_cmpxchg(fun_name, cpp_type, size):
 
 
 def gen_fetchop(fun_name, cpp_type, size, op):
+    
+    
+    
     if cpu_arch in ("x86", "x86_64"):
         
         if op == "add":
