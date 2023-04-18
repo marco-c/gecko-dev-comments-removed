@@ -44,7 +44,7 @@ class APZTaskRunnable final : public Runnable {
 
  private:
   void EnsureRegisterAsEarlyRunner();
-  bool IsRegistereddWithCurrentPresShell() const;
+  bool IsRegisteredWithCurrentPresShell() const;
   bool IsTestControllingRefreshesEnabled() const;
 
   
