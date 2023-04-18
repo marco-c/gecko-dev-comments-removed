@@ -224,7 +224,7 @@ var interfaceNamesInGlobalScope = [
   
   "MessagePort",
   
-  { name: "NetworkInformation", disabled: true },
+  { name: "NetworkInformation", android: true },
   
   "Notification",
   

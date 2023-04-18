@@ -799,7 +799,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "Navigator", insecureContext: true },
   
-  { name: "NetworkInformation", insecureContext: true, disabled: true },
+  { name: "NetworkInformation", insecureContext: true, desktop: false },
   
   { name: "Node", insecureContext: true },
   
