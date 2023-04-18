@@ -406,8 +406,8 @@ class nsWindow final : public nsBaseWidget {
       const LayoutDeviceIntPoint& aLockCenter) override;
   void LockNativePointer() override;
   void UnlockNativePointer() override;
-  LayoutDeviceIntRect GetMoveToRectPopupRect() const override {
-    return mMoveToRectPopupRect;
+  LayoutDeviceIntSize GetMoveToRectPopupSize() const override {
+    return mMoveToRectPopupSize;
   };
 #endif
 
@@ -823,7 +823,7 @@ class nsWindow final : public nsBaseWidget {
   
   
   
-  LayoutDeviceIntRect mMoveToRectPopupRect;
+  LayoutDeviceIntSize mMoveToRectPopupSize;
 
   LayoutDeviceIntRect mNewBoundsAfterMoveToRect;
 
