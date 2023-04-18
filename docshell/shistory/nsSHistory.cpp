@@ -1214,26 +1214,27 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
       do_QueryInterface(aBrowsingContext->GetEmbedderElement());
   if (frameLoaderOwner && aFrameLoader->GetMaybePendingBrowsingContext() &&
       indexOfHistoryLoad >= 0) {
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIURI> nextURI = aEntry->GetURI();
-    nsCOMPtr<nsIURI> nextOriginalURI = aEntry->GetOriginalURI();
-    nsCOMPtr<nsIRequest> request = MakeAndAddRef<RemoteWebProgressRequest>(
-        nextURI, nextOriginalURI ? nextOriginalURI : nextURI,
-        ""_ns );
-    BrowsingContextWebProgress* webProgress =
+    RefPtr<BrowsingContextWebProgress> webProgress =
         aBrowsingContext->GetWebProgress();
-    webProgress->OnStateChange(webProgress, request,
-                               nsIWebProgressListener::STATE_START |
-                                   nsIWebProgressListener::STATE_IS_DOCUMENT |
-                                   nsIWebProgressListener::STATE_IS_REQUEST |
-                                   nsIWebProgressListener::STATE_IS_WINDOW |
-                                   nsIWebProgressListener::STATE_IS_NETWORK,
-                               NS_OK);
+    if (webProgress) {
+      
+      
+      
+      
+      
+      nsCOMPtr<nsIURI> nextURI = aEntry->GetURI();
+      nsCOMPtr<nsIURI> nextOriginalURI = aEntry->GetOriginalURI();
+      nsCOMPtr<nsIRequest> request = MakeAndAddRef<RemoteWebProgressRequest>(
+          nextURI, nextOriginalURI ? nextOriginalURI : nextURI,
+          ""_ns );
+      webProgress->OnStateChange(webProgress, request,
+                                 nsIWebProgressListener::STATE_START |
+                                     nsIWebProgressListener::STATE_IS_DOCUMENT |
+                                     nsIWebProgressListener::STATE_IS_REQUEST |
+                                     nsIWebProgressListener::STATE_IS_WINDOW |
+                                     nsIWebProgressListener::STATE_IS_NETWORK,
+                                 NS_OK);
+    }
 
     RefPtr<CanonicalBrowsingContext> loadingBC =
         aFrameLoader->GetMaybePendingBrowsingContext()->Canonical();
