@@ -6871,6 +6871,9 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
           NS_SUCCEEDED(mStatus));
       StoreHasHTTPSRR(true);
     }
+
+    StoreLoadedBySocketProcess(mTransaction->AsHttpTransactionParent() !=
+                               nullptr);
   }
 
   
