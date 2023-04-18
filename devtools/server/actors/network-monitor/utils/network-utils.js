@@ -4,6 +4,7 @@
 
 "use strict";
 const { Ci, Cr } = require("chrome");
+const Services = require("Services");
 
 const {
   wildcardToRegExp,
@@ -16,7 +17,6 @@ loader.lazyRequireGetter(
 );
 
 loader.lazyGetter(this, "tpFlagsMask", () => {
-  const Services = require("Services");
   const trackingProtectionLevel2Enabled = Services.prefs
     .getStringPref("urlclassifier.trackingTable")
     .includes("content-track-digest256");
@@ -303,3 +303,83 @@ exports.fetchRequestHeadersAndCookies = function(
   owner.addRequestHeaders(headers, extraStringData);
   owner.addRequestCookies(cookies);
 };
+
+
+
+
+
+
+
+
+
+
+
+
+function matchRequest(channel, filters) {
+  
+  if (!filters.browserId && !filters.window && !filters.addonId) {
+    return true;
+  }
+
+  
+  
+  if (
+    channel.loadInfo &&
+    channel.loadInfo.loadingDocument === null &&
+    (channel.loadInfo.loadingPrincipal ===
+      Services.scriptSecurityManager.getSystemPrincipal() ||
+      channel.loadInfo.isInDevToolsContext)
+  ) {
+    return false;
+  }
+
+  if (filters.window) {
+    let win = NetworkHelper.getWindowForRequest(channel);
+    if (filters.matchExactWindow) {
+      return win == filters.window;
+    }
+
+    
+    
+    while (win) {
+      if (win == filters.window) {
+        return true;
+      }
+      if (win.parent == win) {
+        break;
+      }
+      win = win.parent;
+    }
+    return false;
+  }
+
+  if (filters.browserId) {
+    const topFrame = NetworkHelper.getTopFrameForRequest(channel);
+    
+    
+    
+    if (topFrame?.browsingContext?.browserId == filters.browserId) {
+      return true;
+    }
+
+    
+    
+    if (
+      channel.loadInfo &&
+      channel.loadInfo.browsingContext &&
+      channel.loadInfo.browsingContext.browserId == filters.browserId
+    ) {
+      return true;
+    }
+  }
+
+  if (
+    filters.addonId &&
+    channel?.loadInfo.loadingPrincipal.addonId === filters.addonId
+  ) {
+    return true;
+  }
+
+  return false;
+}
+exports.matchRequest = matchRequest;

@@ -262,7 +262,11 @@ var NetworkHelper = {
       
       
     }
-    return null;
+    
+    
+    
+    
+    return request.loadInfo.loadingDocument?.defaultView;
   },
 
   

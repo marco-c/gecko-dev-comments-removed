@@ -76,19 +76,19 @@ class NetworkEventContentWatcher {
       return;
     }
 
-    const event = NetworkUtils.createNetworkEvent(channel, {
-      blockedReason: channel.loadInfo.requestBlockingReason,
-    });
-
-    
-    
     
     if (
-      this.targetActor.ignoreSubFrames &&
-      event.browsingContextID !== this.targetActor.browsingContext.id
+      !NetworkUtils.matchRequest(channel, {
+        window: this.targetActor.window,
+        matchExactWindow: this.targetActor.ignoreSubFrames,
+      })
     ) {
       return;
     }
+
+    const event = NetworkUtils.createNetworkEvent(channel, {
+      blockedReason: channel.loadInfo.requestBlockingReason,
+    });
 
     const actor = new NetworkEventActor(
       this,
@@ -122,6 +122,16 @@ class NetworkEventContentWatcher {
     }
 
     const channel = subject.QueryInterface(Ci.nsIHttpChannel);
+
+    
+    if (
+      !NetworkUtils.matchRequest(channel, {
+        window: this.targetActor.window,
+        matchExactWindow: this.targetActor.ignoreSubFrames,
+      })
+    ) {
+      return;
+    }
 
     const event = NetworkUtils.createNetworkEvent(channel, {
       fromCache: true,

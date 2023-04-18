@@ -88,86 +88,6 @@ const HTTP_TEMPORARY_REDIRECT = 307;
 
 
 
-function matchRequest(channel, filters) {
-  
-  if (!filters.browserId && !filters.window && !filters.addonId) {
-    return true;
-  }
-
-  
-  
-  if (
-    channel.loadInfo &&
-    channel.loadInfo.loadingDocument === null &&
-    (channel.loadInfo.loadingPrincipal ===
-      Services.scriptSecurityManager.getSystemPrincipal() ||
-      channel.loadInfo.isInDevToolsContext)
-  ) {
-    return false;
-  }
-
-  if (filters.window) {
-    let win = NetworkHelper.getWindowForRequest(channel);
-    if (filters.matchExactWindow) {
-      return win == filters.window;
-    }
-
-    
-    
-    while (win) {
-      if (win == filters.window) {
-        return true;
-      }
-      if (win.parent == win) {
-        break;
-      }
-      win = win.parent;
-    }
-    return false;
-  }
-
-  if (filters.browserId) {
-    const topFrame = NetworkHelper.getTopFrameForRequest(channel);
-    
-    
-    
-    if (topFrame?.browsingContext?.browserId == filters.browserId) {
-      return true;
-    }
-
-    
-    
-    if (
-      channel.loadInfo &&
-      channel.loadInfo.browsingContext &&
-      channel.loadInfo.browsingContext.browserId == filters.browserId
-    ) {
-      return true;
-    }
-  }
-
-  if (
-    filters.addonId &&
-    channel?.loadInfo.loadingPrincipal.addonId === filters.addonId
-  ) {
-    return true;
-  }
-
-  return false;
-}
-exports.matchRequest = matchRequest;
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -326,7 +246,7 @@ NetworkObserver.prototype = {
   _serviceWorkerRequest: function(subject, topic, data) {
     const channel = subject.QueryInterface(Ci.nsIHttpChannel);
 
-    if (!matchRequest(channel, this.filters)) {
+    if (!NetworkUtils.matchRequest(channel, this.filters)) {
       return;
     }
 
@@ -353,7 +273,7 @@ NetworkObserver.prototype = {
     }
 
     const channel = subject.QueryInterface(Ci.nsIHttpChannel);
-    if (!matchRequest(channel, this.filters)) {
+    if (!NetworkUtils.matchRequest(channel, this.filters)) {
       return;
     }
 
@@ -380,7 +300,7 @@ NetworkObserver.prototype = {
     }
 
     const channel = subject.QueryInterface(Ci.nsIHttpChannel);
-    if (!matchRequest(channel, this.filters)) {
+    if (!NetworkUtils.matchRequest(channel, this.filters)) {
       return;
     }
 
@@ -465,7 +385,7 @@ NetworkObserver.prototype = {
     subject.QueryInterface(Ci.nsIClassifiedChannel);
     const channel = subject.QueryInterface(Ci.nsIHttpChannel);
 
-    if (!matchRequest(channel, this.filters)) {
+    if (!NetworkUtils.matchRequest(channel, this.filters)) {
       return;
     }
 
@@ -594,7 +514,7 @@ NetworkObserver.prototype = {
     const throttler = this._getThrottler();
     if (throttler) {
       const channel = subject.QueryInterface(Ci.nsIHttpChannel);
-      if (matchRequest(channel, this.filters)) {
+      if (NetworkUtils.matchRequest(channel, this.filters)) {
         logPlatformEvent("http-on-modify-request", channel);
 
         
@@ -834,7 +754,7 @@ NetworkObserver.prototype = {
 
 
   _onRequestHeader: function(channel, timestamp, extraStringData) {
-    if (!matchRequest(channel, this.filters)) {
+    if (!NetworkUtils.matchRequest(channel, this.filters)) {
       return;
     }
 
