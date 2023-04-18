@@ -94,6 +94,9 @@ void Device::CleanupUnregisteredInParent() {
   mValid = false;
 }
 
+
+
+
 void Device::GenerateError(const nsCString& aMessage) {
   if (mBridge->CanSend()) {
     mBridge->SendGenerateError(mId, aMessage);

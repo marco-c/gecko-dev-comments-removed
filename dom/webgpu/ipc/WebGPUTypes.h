@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include "mozilla/Maybe.h"
+#include "nsString.h"
 
 namespace mozilla::webgpu {
 
@@ -15,7 +16,12 @@ using RawId = uint64_t;
 using BufferAddress = uint64_t;
 
 struct ScopedError {
+  
+  
   bool operationError = false;
+
+  
+  
   nsCString validationMessage;
 };
 using MaybeScopedError = Maybe<ScopedError>;

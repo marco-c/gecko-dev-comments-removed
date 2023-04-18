@@ -47,6 +47,11 @@ class ErrorBuffer {
     return errorBuf;
   }
 
+  
+  
+  
+  
+  
   Maybe<nsCString> GetError() {
     mGuard = false;
     if (!mUtf8[0]) {
@@ -243,6 +248,8 @@ bool WebGPUParent::ForwardError(RawId aDeviceId, ErrorBuffer& aError) {
 
   return true;
 }
+
+
 
 void WebGPUParent::ReportError(RawId aDeviceId, const nsCString& aMessage) {
   
