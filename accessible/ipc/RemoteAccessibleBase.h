@@ -188,6 +188,8 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
 
   virtual void ActionNameAt(uint8_t aIndex, nsAString& aName) override;
 
+  virtual bool DoAction(uint8_t aIndex) const override;
+
   
 
   virtual void TakeFocus() const override;
