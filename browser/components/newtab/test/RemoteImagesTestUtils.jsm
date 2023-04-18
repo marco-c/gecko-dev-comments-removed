@@ -7,7 +7,7 @@ const { BrowserUtils } = ChromeUtils.import(
   "resource://gre/modules/BrowserUtils.jsm"
 );
 const { HttpServer } = ChromeUtils.import("resource://testing-common/httpd.js");
-const { RemoteImages } = ChromeUtils.import(
+const { RemoteImages, REMOTE_IMAGES_PATH } = ChromeUtils.import(
   "resource://activity-stream/lib/RemoteImages.jsm"
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -27,7 +27,7 @@ const RemoteImagesTestUtils = {
 
 
   async serveRemoteImages(imageInfo) {
-    const { imageId, recordId, mimetype, hash, url, size } = imageInfo;
+    const { filename, recordId, mimetype, hash, url, size } = imageInfo;
 
     const server = new HttpServer();
     server.start(-1);
@@ -60,8 +60,8 @@ const RemoteImagesTestUtils = {
           JSON.stringify({
             data: {
               attachment: {
-                filename: imageId,
-                location: `main/ms-images/${imageId}`,
+                filename,
+                location: `main/ms-images/${recordId}`,
                 hash,
                 mimetype,
                 size,
@@ -78,7 +78,7 @@ const RemoteImagesTestUtils = {
     );
 
     server.registerPathHandler(
-      `/cdn/main/ms-images/${imageId}`,
+      `/cdn/main/ms-images/${recordId}`,
       async (request, response) => {
         const stream = Cc[
           "@mozilla.org/io/arraybuffer-input-stream;1"
@@ -104,7 +104,9 @@ const RemoteImagesTestUtils = {
 
 
   async wipeCache() {
-    const children = await IOUtils.getChildren(RemoteImages.imagesDir);
+    await RemoteImages.reset();
+
+    const children = await IOUtils.getChildren(REMOTE_IMAGES_PATH);
     for (const child of children) {
       await IOUtils.remove(child);
     }
@@ -124,9 +126,51 @@ const RemoteImagesTestUtils = {
   
 
 
+
+
+
+
+
+
+  async writeImage(imageInfo, filename = undefined) {
+    const data = new Uint8Array(
+      await fetch(imageInfo.url, { credentials: "omit" }).then(rsp =>
+        rsp.arrayBuffer()
+      )
+    );
+
+    await IOUtils.write(
+      PathUtils.join(REMOTE_IMAGES_PATH, filename ?? imageInfo.recordId),
+      data
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+  dbEntryFor(imageInfo, lastLoaded = undefined) {
+    return {
+      [imageInfo.recordId]: {
+        recordId: imageInfo.recordId,
+        hash: imageInfo.hash,
+        mimetype: imageInfo.mimetype,
+        lastLoaded: lastLoaded ?? Date.UTC(),
+      },
+    };
+  },
+
+  
+
+
   images: {
     AboutRobots: {
-      imageId: "about-robots.png",
+      filename: "about-robots.png",
       recordId: "about-robots",
       mimetype: "image/png",
       hash: "29f1fe2cb5181152d2c01c0b2f12e5d9bb3379a61b94fb96de0f734eb360da62",

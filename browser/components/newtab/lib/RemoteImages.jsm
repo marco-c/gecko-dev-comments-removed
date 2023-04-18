@@ -3,6 +3,12 @@
 
 "use strict";
 
+const { JSONFile } = ChromeUtils.import("resource://gre/modules/JSONFile.jsm");
+const { PromiseUtils } = ChromeUtils.import(
+  "resource://gre/modules/PromiseUtils.jsm"
+);
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 ChromeUtils.defineModuleGetter(
   this,
   "Downloader",
@@ -15,32 +21,28 @@ ChromeUtils.defineModuleGetter(
   "resource://services-common/kinto-http-client.js"
 );
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "Services",
-  "resource://gre/modules/Services.jsm"
-);
-
 const RS_SERVER_PREF = "services.settings.server";
 const RS_MAIN_BUCKET = "main";
 const RS_COLLECTION = "ms-images";
 const RS_DOWNLOAD_MAX_RETRIES = 2;
 
+const REMOTE_IMAGES_PATH = PathUtils.join(
+  PathUtils.localProfileDir,
+  "settings",
+  RS_MAIN_BUCKET,
+  RS_COLLECTION
+);
+const REMOTE_IMAGES_DB_PATH = PathUtils.join(REMOTE_IMAGES_PATH, "db.json");
+
 const CLEANUP_FINISHED_TOPIC = "remote-images:cleanup-finished";
 
 const IMAGE_EXPIRY_DURATION = 30 * 24 * 60 * 60; 
 
-const EXTENSIONS = new Map([
-  ["avif", "image/avif"],
-  ["png", "image/png"],
-  ["svg", "image/svg+xml"],
-]);
-
 class _RemoteImages {
-  #cleaningUp;
+  #dbPromise;
 
   constructor() {
-    this.#cleaningUp = false;
+    this.#dbPromise = null;
 
     
     
@@ -48,21 +50,73 @@ class _RemoteImages {
       () => this.#cleanup(),
       "remote-settings:changes-poll-end"
     );
+
+    
+    this.withDb(() => {});
   }
 
   
 
 
-  get imagesDir() {
-    const value = PathUtils.join(
-      PathUtils.localProfileDir,
-      "settings",
-      RS_MAIN_BUCKET,
-      RS_COLLECTION
-    );
 
-    Object.defineProperty(this, "imagesDir", { value });
-    return value;
+
+
+
+
+
+  async #loadDB() {
+    let db;
+
+    if (!(await IOUtils.exists(REMOTE_IMAGES_DB_PATH))) {
+      db = await this.#migrate();
+    } else {
+      db = new JSONFile({ path: REMOTE_IMAGES_DB_PATH });
+      await db.load();
+    }
+
+    return db;
+  }
+
+  
+
+
+
+
+
+
+
+  reset() {
+    return this.withDb(async db => {
+      await db._save();
+      this.#dbPromise = null;
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  async withDb(fn) {
+    const dbPromise = this.#dbPromise ?? this.#loadDB();
+
+    const { resolve, promise } = PromiseUtils.defer();
+    
+    
+    this.#dbPromise = promise;
+
+    const db = await dbPromise;
+
+    try {
+      return await fn(db);
+    } finally {
+      resolve(db);
+    }
   }
 
   
@@ -89,7 +143,6 @@ class _RemoteImages {
 
       return () => this.unload(blobURL);
     }
-
     return null;
   }
 
@@ -107,26 +160,37 @@ class _RemoteImages {
 
 
 
-  async load(imageId) {
-    let blob;
-    try {
-      blob = await this.#readFromDisk(imageId);
-    } catch (e) {
-      if (
-        !(
-          e instanceof Components.Exception &&
-          e.name === "NS_ERROR_FILE_NOT_FOUND"
-        )
-      ) {
-        throw e;
+
+
+  load(imageId) {
+    return this.withDb(async db => {
+      const recordId = this.#getRecordId(imageId);
+
+      let blob;
+      if (db.data.images[recordId]) {
+        
+        try {
+          blob = await this.#readFromDisk(db, recordId);
+        } catch (e) {
+          if (
+            !(
+              e instanceof Components.Exception &&
+              e.name === "NS_ERROR_FILE_NOT_FOUND"
+            )
+          ) {
+            throw e;
+          }
+        }
+
+        
       }
 
-      
-      
-      blob = await this.#download(imageId);
-    }
+      if (typeof blob === "undefined") {
+        blob = await this.#download(db, recordId);
+      }
 
-    return URL.createObjectURL(blob);
+      return URL.createObjectURL(blob);
+    });
   }
 
   
@@ -141,27 +205,31 @@ class _RemoteImages {
   
 
 
-  async #cleanup() {
-    
-    if (this.#cleaningUp) {
-      return;
-    }
-    this.#cleaningUp = true;
 
-    try {
+
+
+  #cleanup() {
+    return this.withDb(async db => {
       const now = Date.now();
-      const children = await IOUtils.getChildren(this.imagesDir);
-      for (const child of children) {
-        const stat = await IOUtils.stat(child);
+      await Promise.all(
+        Object.values(db.data.images)
+          .filter(entry => now - entry.lastLoaded >= IMAGE_EXPIRY_DURATION)
+          .map(entry => {
+            const path = PathUtils.join(REMOTE_IMAGES_PATH, entry.recordId);
+            delete db.data.images[entry.recordId];
 
-        if (now - stat.lastModified >= IMAGE_EXPIRY_DURATION) {
-          await IOUtils.remove(child);
-        }
-      }
-    } finally {
-      this.#cleaningUp = false;
+            return IOUtils.remove(path).catch(e => {
+              Cu.reportError(
+                `Could not remove remote image ${entry.recordId}: ${e}`
+              );
+            });
+          })
+      );
+
+      db.saveSoon();
+
       Services.obs.notifyObservers(null, CLEANUP_FINISHED_TOPIC);
-    }
+    });
   }
 
   
@@ -172,45 +240,12 @@ class _RemoteImages {
 
 
 
-
-
-
-
-  #getRecordIdAndMimetype(imageId) {
+  #getRecordId(imageId) {
     const idx = imageId.lastIndexOf(".");
     if (idx === -1) {
-      throw new TypeError("imageId must include extension");
+      return imageId;
     }
-
-    const recordId = imageId.substring(0, idx);
-    const ext = imageId.substring(idx + 1);
-    const mimetype = EXTENSIONS.get(ext);
-
-    if (!mimetype) {
-      throw new TypeError(
-        `Unsupported extension '.${ext}' for remote image ${imageId}`
-      );
-    }
-
-    return { recordId, mimetype };
-  }
-
-  
-
-
-
-
-
-
-  async #readFromDisk(imageId) {
-    const { mimetype } = this.#getRecordIdAndMimetype(imageId);
-    const path = PathUtils.join(this.imagesDir, imageId);
-    const blob = await File.createFromFileName(path, { type: mimetype });
-
-    
-    await IOUtils.setModificationTime(path);
-
-    return blob;
+    return imageId.substring(0, idx);
   }
 
   
@@ -221,12 +256,40 @@ class _RemoteImages {
 
 
 
-  async #download(imageId) {
+  async #readFromDisk(db, recordId) {
+    const path = PathUtils.join(REMOTE_IMAGES_PATH, recordId);
+
+    try {
+      const blob = await File.createFromFileName(path, {
+        type: db.data.images[recordId].mimetype,
+      });
+      db.data.images[recordId].lastLoaded = Date.now();
+
+      return blob;
+    } catch (e) {
+      
+      delete db.data.images[recordId];
+
+      throw e;
+    } finally {
+      db.saveSoon();
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  async #download(db, recordId) {
     const client = new KintoHttpClient(
       Services.prefs.getStringPref(RS_SERVER_PREF)
     );
 
-    const { recordId } = this.#getRecordIdAndMimetype(imageId);
     const record = await client
       .bucket(RS_MAIN_BUCKET)
       .collection(RS_COLLECTION)
@@ -239,17 +302,64 @@ class _RemoteImages {
     });
 
     
-    const path = PathUtils.join(this.imagesDir, imageId);
+    const path = PathUtils.join(REMOTE_IMAGES_PATH, recordId);
 
     
     
     
     IOUtils.write(path, new Uint8Array(arrayBuffer));
 
+    db.data.images[recordId] = {
+      recordId,
+      mimetype: record.data.attachment.mimetype,
+      hash: record.data.attachment.hash,
+      lastLoaded: Date.now(),
+    };
+
+    db.saveSoon();
+
     return new Blob([arrayBuffer], { type: record.data.attachment.mimetype });
+  }
+
+  
+
+
+  async #migrate() {
+    let children;
+    try {
+      children = await IOUtils.getChildren(REMOTE_IMAGES_PATH);
+
+      
+      await Promise.all(
+        children.map(async path => {
+          try {
+            await IOUtils.remove(path);
+          } catch (e) {
+            Cu.reportError(`RemoteImages could not delete ${path}: ${e}`);
+          }
+        })
+      );
+    } catch (e) {
+      if (!(DOMException.isInstance(e) && e.name === "NotFoundError")) {
+        throw e;
+      }
+    }
+
+    await IOUtils.makeDirectory(REMOTE_IMAGES_PATH);
+    const db = new JSONFile({ path: REMOTE_IMAGES_DB_PATH });
+    db.data = {
+      version: 1,
+      images: {},
+    };
+    db.saveSoon();
+    return db;
   }
 }
 
 const RemoteImages = new _RemoteImages();
 
-const EXPORTED_SYMBOLS = ["RemoteImages"];
+const EXPORTED_SYMBOLS = [
+  "RemoteImages",
+  "REMOTE_IMAGES_PATH",
+  "REMOTE_IMAGES_DB_PATH",
+];
