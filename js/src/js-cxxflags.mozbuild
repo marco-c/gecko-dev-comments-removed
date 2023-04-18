@@ -9,9 +9,6 @@ CXXFLAGS += CONFIG['MOZ_ICU_CFLAGS']
 
 if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
     
-    
-    CXXFLAGS += ['-fno-strict-aliasing']
-    
     CXXFLAGS += ['-Werror=format']
 
 
