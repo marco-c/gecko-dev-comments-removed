@@ -261,7 +261,10 @@ mozilla::ipc::IPCResult ProfilerChild::RecvDestroyReleasedChunksAtOrBefore(
 
 mozilla::ipc::IPCResult ProfilerChild::RecvGatherProfile(
     GatherProfileResolver&& aResolve) {
+  
+  mozilla::ProgressLogger progressLogger{};
   mozilla::ipc::Shmem shmem;
+  using namespace mozilla::literals::ProportionValue_literals;  
   profiler_get_profile_json_into_lazily_allocated_buffer(
       [&](size_t allocationSize) -> char* {
         if (AllocShmem(allocationSize,
@@ -271,7 +274,12 @@ mozilla::ipc::IPCResult ProfilerChild::RecvGatherProfile(
         return nullptr;
       },
        0,
-       false);
+       false,
+      progressLogger.CreateSubLoggerFromTo(
+          1_pc,
+          "profiler_get_profile_json_into_lazily_allocated_buffer started",
+          99_pc,
+          "profiler_get_profile_json_into_lazily_allocated_buffer done"));
   aResolve(std::move(shmem));
   return IPC_OK();
 }

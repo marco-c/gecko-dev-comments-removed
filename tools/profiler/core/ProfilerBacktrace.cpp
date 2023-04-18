@@ -85,7 +85,7 @@ ProfilerThreadId ProfilerBacktrace::StreamJSON(
         ""_ns, aProcessStartTime,
          mozilla::TimeStamp(),
          mozilla::TimeStamp(),
-         0, aUniqueStacks);
+         0, aUniqueStacks, mozilla::ProgressLogger{});
   } else if (mProfileChunkedBuffer) {
     ProfileBuffer profileBuffer(*mProfileChunkedBuffer);
     processedThreadId = StreamSamplesAndMarkers(
@@ -93,7 +93,7 @@ ProfilerThreadId ProfilerBacktrace::StreamJSON(
         aProcessStartTime,
          mozilla::TimeStamp(),
          mozilla::TimeStamp(),
-         0, aUniqueStacks);
+         0, aUniqueStacks, mozilla::ProgressLogger{});
   }
   
 

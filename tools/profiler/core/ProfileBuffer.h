@@ -54,8 +54,8 @@ class ProfileBuffer final {
   
   
   void AddJITInfoForRange(uint64_t aRangeStart, ProfilerThreadId aThreadId,
-                          JSContext* aContext,
-                          JITFrameInfo& aJITFrameInfo) const;
+                          JSContext* aContext, JITFrameInfo& aJITFrameInfo,
+                          mozilla::ProgressLogger aProgressLogger) const;
 
   
   
@@ -67,30 +67,34 @@ class ProfileBuffer final {
   
   
   
-  ProfilerThreadId StreamSamplesToJSON(SpliceableJSONWriter& aWriter,
-                                       ProfilerThreadId aThreadId,
-                                       double aSinceTime,
-                                       UniqueStacks& aUniqueStacks) const;
+  ProfilerThreadId StreamSamplesToJSON(
+      SpliceableJSONWriter& aWriter, ProfilerThreadId aThreadId,
+      double aSinceTime, UniqueStacks& aUniqueStacks,
+      mozilla::ProgressLogger aProgressLogger) const;
 
   void StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
                            ProfilerThreadId aThreadId,
                            const mozilla::TimeStamp& aProcessStartTime,
-                           double aSinceTime,
-                           UniqueStacks& aUniqueStacks) const;
+                           double aSinceTime, UniqueStacks& aUniqueStacks,
+                           mozilla::ProgressLogger aProgressLogger) const;
 
   
   
   void StreamSamplesAndMarkersToJSON(
-      ProcessStreamingContext& aProcessStreamingContext) const;
+      ProcessStreamingContext& aProcessStreamingContext,
+      mozilla::ProgressLogger aProgressLogger) const;
 
   void StreamPausedRangesToJSON(SpliceableJSONWriter& aWriter,
-                                double aSinceTime) const;
-  void StreamProfilerOverheadToJSON(SpliceableJSONWriter& aWriter,
-                                    const mozilla::TimeStamp& aProcessStartTime,
-                                    double aSinceTime) const;
+                                double aSinceTime,
+                                mozilla::ProgressLogger aProgressLogger) const;
+  void StreamProfilerOverheadToJSON(
+      SpliceableJSONWriter& aWriter,
+      const mozilla::TimeStamp& aProcessStartTime, double aSinceTime,
+      mozilla::ProgressLogger aProgressLogger) const;
   void StreamCountersToJSON(SpliceableJSONWriter& aWriter,
                             const mozilla::TimeStamp& aProcessStartTime,
-                            double aSinceTime) const;
+                            double aSinceTime,
+                            mozilla::ProgressLogger aProgressLogger) const;
 
   
   
@@ -197,8 +201,8 @@ class ProfileBuffer final {
   ProfilerThreadId DoStreamSamplesAndMarkersToJSON(
       GetStreamingParametersForThreadCallback&&
           aGetStreamingParametersForThreadCallback,
-      double aSinceTime,
-      ProcessStreamingContext* aStreamingContextForMarkers) const;
+      double aSinceTime, ProcessStreamingContext* aStreamingContextForMarkers,
+      mozilla::ProgressLogger aProgressLogger) const;
 
   double mFirstSamplingTimeUs = 0.0;
   double mLastSamplingTimeUs = 0.0;
