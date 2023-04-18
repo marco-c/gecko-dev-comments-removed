@@ -246,14 +246,10 @@ void DMABufSurface::FenceSet() {
 }
 
 void DMABufSurface::FenceWait() {
-  if (!mGL) {
+  if (!mGL || mSyncFd < 0) {
     return;
   }
-  if (mSyncFd < 0) {
-    NS_WARNING(
-        "DMABufSurface::FenceWait(): We're missing fence file descriptor!");
-    return;
-  }
+
   const auto& gle = gl::GLContextEGL::Cast(mGL);
   const auto& egl = gle->mEgl;
 
