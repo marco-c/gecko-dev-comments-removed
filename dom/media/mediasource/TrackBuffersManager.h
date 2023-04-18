@@ -8,7 +8,6 @@
 #define MOZILLA_TRACKBUFFERSMANAGER_H_
 
 #include "mozilla/Atomics.h"
-#include "mozilla/EventTargetCapability.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/NotNull.h"
@@ -153,8 +152,7 @@ class TrackBuffersManager final
                                            const media::TimeUnit& aFuzz,
                                            MediaResult& aResult);
   int32_t FindCurrentPosition(TrackInfo::TrackType aTrack,
-                              const media::TimeUnit& aFuzz) const
-      REQUIRES(mTaskQueueCapability);
+                              const media::TimeUnit& aFuzz) const;
 
   
   
@@ -162,8 +160,7 @@ class TrackBuffersManager final
   
   
   nsresult SetNextGetSampleIndexIfNeeded(TrackInfo::TrackType aTrack,
-                                         const media::TimeUnit& aFuzz)
-      REQUIRES(mTaskQueueCapability);
+                                         const media::TimeUnit& aFuzz);
 
   media::TimeUnit GetNextRandomAccessPoint(TrackInfo::TrackType aTrack,
                                            const media::TimeUnit& aFuzz);
@@ -183,103 +180,92 @@ class TrackBuffersManager final
   
   RefPtr<AppendPromise> DoAppendData(already_AddRefed<MediaByteBuffer> aData,
                                      const SourceBufferAttributes& aAttributes);
-  void ScheduleSegmentParserLoop() REQUIRES(mTaskQueueCapability);
-  void SegmentParserLoop() REQUIRES(mTaskQueueCapability);
-  void InitializationSegmentReceived() REQUIRES(mTaskQueueCapability);
-  void ShutdownDemuxers() REQUIRES(mTaskQueueCapability);
-  void CreateDemuxerforMIMEType() REQUIRES(mTaskQueueCapability);
-  void ResetDemuxingState() REQUIRES(mTaskQueueCapability);
-  void NeedMoreData() REQUIRES(mTaskQueueCapability);
-  void RejectAppend(const MediaResult& aRejectValue, const char* aName)
-      REQUIRES(mTaskQueueCapability);
+  void ScheduleSegmentParserLoop();
+  void SegmentParserLoop();
+  void InitializationSegmentReceived();
+  void ShutdownDemuxers();
+  void CreateDemuxerforMIMEType();
+  void ResetDemuxingState();
+  void NeedMoreData();
+  void RejectAppend(const MediaResult& aRejectValue, const char* aName);
   
   
-  RefPtr<CodedFrameProcessingPromise> CodedFrameProcessing()
-      REQUIRES(mTaskQueueCapability);
-  void CompleteCodedFrameProcessing() REQUIRES(mTaskQueueCapability);
+  RefPtr<CodedFrameProcessingPromise> CodedFrameProcessing();
+  void CompleteCodedFrameProcessing();
   
-  void CompleteResetParserState() REQUIRES(mTaskQueueCapability);
+  void CompleteResetParserState();
   RefPtr<RangeRemovalPromise> CodedFrameRemovalWithPromise(
-      media::TimeInterval aInterval) REQUIRES(mTaskQueueCapability);
-  bool CodedFrameRemoval(media::TimeInterval aInterval)
-      REQUIRES(mTaskQueueCapability);
+      media::TimeInterval aInterval);
+  bool CodedFrameRemoval(media::TimeInterval aInterval);
   
   
-  void RemoveAllCodedFrames() REQUIRES(mTaskQueueCapability);
-  void SetAppendState(SourceBufferAttributes::AppendState aAppendState)
-      REQUIRES(mTaskQueueCapability);
+  void RemoveAllCodedFrames();
+  void SetAppendState(SourceBufferAttributes::AppendState aAppendState);
 
   bool HasVideo() const { return mVideoTracks.mNumTracks > 0; }
   bool HasAudio() const { return mAudioTracks.mNumTracks > 0; }
 
   
   
-  Maybe<MediaSpan> mInputBuffer GUARDED_BY(mTaskQueueCapability);
+  Maybe<MediaSpan> mInputBuffer;
   
   
   
   Atomic<bool> mBufferFull;
-  bool mFirstInitializationSegmentReceived GUARDED_BY(mTaskQueueCapability);
-  bool mChangeTypeReceived GUARDED_BY(mTaskQueueCapability);
+  bool mFirstInitializationSegmentReceived;
+  bool mChangeTypeReceived;
   
-  bool mNewMediaSegmentStarted GUARDED_BY(mTaskQueueCapability);
-  bool mActiveTrack GUARDED_BY(mTaskQueueCapability);
-  MediaContainerType mType GUARDED_BY(mTaskQueueCapability);
+  bool mNewMediaSegmentStarted;
+  bool mActiveTrack;
+  MediaContainerType mType;
 
   
   
 
   
   
-  void RecreateParser(bool aReuseInitData) REQUIRES(mTaskQueueCapability);
+  void RecreateParser(bool aReuseInitData);
   UniquePtr<ContainerParser> mParser;
 
   
-  void AppendDataToCurrentInputBuffer(const MediaSpan& aData)
-      REQUIRES(mTaskQueueCapability);
+  void AppendDataToCurrentInputBuffer(const MediaSpan& aData);
 
-  RefPtr<MediaByteBuffer> mInitData GUARDED_BY(mTaskQueueCapability);
-
-  
-  
-  
-  
-  
-  bool IsRepeatInitData(const MediaInfo& aNewMediaInfo) const
-      REQUIRES(mTaskQueueCapability);
+  RefPtr<MediaByteBuffer> mInitData;
 
   
   
   
   
-  Maybe<MediaSpan> mPendingInputBuffer GUARDED_BY(mTaskQueueCapability);
-  RefPtr<SourceBufferResource> mCurrentInputBuffer
-      GUARDED_BY(mTaskQueueCapability);
-  RefPtr<MediaDataDemuxer> mInputDemuxer GUARDED_BY(mTaskQueueCapability);
   
-  uint64_t mProcessedInput GUARDED_BY(mTaskQueueCapability);
-  Maybe<media::TimeUnit> mLastParsedEndTime GUARDED_BY(mTaskQueueCapability);
+  bool IsRepeatInitData(const MediaInfo& aNewMediaInfo) const;
+
+  
+  
+  
+  
+  Maybe<MediaSpan> mPendingInputBuffer;
+  RefPtr<SourceBufferResource> mCurrentInputBuffer;
+  RefPtr<MediaDataDemuxer> mInputDemuxer;
+  
+  uint64_t mProcessedInput;
+  Maybe<media::TimeUnit> mLastParsedEndTime;
 
   void OnDemuxerInitDone(const MediaResult& aResult);
   void OnDemuxerInitFailed(const MediaResult& aFailure);
-  void OnDemuxerResetDone(const MediaResult& aResult)
-      REQUIRES(mTaskQueueCapability);
+  void OnDemuxerResetDone(const MediaResult& aResult);
   MozPromiseRequestHolder<MediaDataDemuxer::InitPromise> mDemuxerInitRequest;
 
-  void OnDemuxFailed(TrackType aTrack, const MediaResult& aError)
-      REQUIRES(mTaskQueueCapability);
-  void DoDemuxVideo() REQUIRES(mTaskQueueCapability);
+  void OnDemuxFailed(TrackType aTrack, const MediaResult& aError);
+  void DoDemuxVideo();
   void OnVideoDemuxCompleted(RefPtr<MediaTrackDemuxer::SamplesHolder> aSamples);
   void OnVideoDemuxFailed(const MediaResult& aError) {
     mVideoTracks.mDemuxRequest.Complete();
-    mTaskQueueCapability->AssertOnCurrentThread();
     OnDemuxFailed(TrackType::kVideoTrack, aError);
   }
-  void DoDemuxAudio() REQUIRES(mTaskQueueCapability);
+  void DoDemuxAudio();
   void OnAudioDemuxCompleted(RefPtr<MediaTrackDemuxer::SamplesHolder> aSamples);
   void OnAudioDemuxFailed(const MediaResult& aError) {
     mAudioTracks.mDemuxRequest.Complete();
-    mTaskQueueCapability->AssertOnCurrentThread();
     OnDemuxFailed(TrackType::kAudioTrack, aError);
   }
 
@@ -288,11 +274,9 @@ class TrackBuffersManager final
   void MaybeDispatchEncryptedEvent(
       const nsTArray<RefPtr<MediaRawData>>& aSamples);
 
-  void DoEvictData(const media::TimeUnit& aPlaybackTime, int64_t aSizeToEvict)
-      REQUIRES(mTaskQueueCapability);
+  void DoEvictData(const media::TimeUnit& aPlaybackTime, int64_t aSizeToEvict);
 
-  void GetDebugInfo(dom::TrackBuffersManagerDebugInfo& aInfo) const
-      REQUIRES(mTaskQueueCapability);
+  void GetDebugInfo(dom::TrackBuffersManagerDebugInfo& aInfo) const;
 
   struct TrackData {
     TrackData() : mNumTracks(0), mNeedRandomAccessPoint(true), mSizeBuffer(0) {}
@@ -415,21 +399,16 @@ class TrackBuffersManager final
     void AddSizeOfResources(MediaSourceDecoder::ResourceSizes* aSizes) const;
   };
 
-  void CheckSequenceDiscontinuity(const media::TimeUnit& aPresentationTime)
-      REQUIRES(mTaskQueueCapability);
-  void ProcessFrames(TrackBuffer& aSamples, TrackData& aTrackData)
-      REQUIRES(mTaskQueueCapability);
-  media::TimeInterval PresentationInterval(const TrackBuffer& aSamples) const
-      REQUIRES(mTaskQueueCapability);
+  void CheckSequenceDiscontinuity(const media::TimeUnit& aPresentationTime);
+  void ProcessFrames(TrackBuffer& aSamples, TrackData& aTrackData);
+  media::TimeInterval PresentationInterval(const TrackBuffer& aSamples) const;
   bool CheckNextInsertionIndex(TrackData& aTrackData,
-                               const media::TimeUnit& aSampleTime)
-      REQUIRES(mTaskQueueCapability);
+                               const media::TimeUnit& aSampleTime);
   void InsertFrames(TrackBuffer& aSamples,
                     const media::TimeIntervals& aIntervals,
-                    TrackData& aTrackData) REQUIRES(mTaskQueueCapability);
+                    TrackData& aTrackData);
   void UpdateHighestTimestamp(TrackData& aTrackData,
-                              const media::TimeUnit& aHighestTime)
-      REQUIRES(mTaskQueueCapability);
+                              const media::TimeUnit& aHighestTime);
   
   
   
@@ -507,15 +486,14 @@ class TrackBuffersManager final
   void ProcessTasks();
   
   
-  RefPtr<SourceBufferTask> mCurrentTask GUARDED_BY(mTaskQueueCapability);
+  RefPtr<SourceBufferTask> mCurrentTask;
   
   
   
-  UniquePtr<SourceBufferAttributes> mSourceBufferAttributes
-      GUARDED_BY(mTaskQueueCapability);
+  UniquePtr<SourceBufferAttributes> mSourceBufferAttributes;
   
   
-  media::TimeInterval mAppendWindow GUARDED_BY(mTaskQueueCapability);
+  media::TimeInterval mAppendWindow;
 
   
   nsMainThreadPtrHandle<MediaSourceDecoder> mParentDecoder;
@@ -552,14 +530,6 @@ class TrackBuffersManager final
   media::TimeIntervals mAudioBufferedRanges;
   
   MediaInfo mInfo;
-  
-
-  
-  
-  
-  
-  
-  Maybe<EventTargetCapability<TaskQueue>> mTaskQueueCapability;
 };
 
 }  
