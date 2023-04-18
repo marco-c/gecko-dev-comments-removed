@@ -837,10 +837,18 @@ ClientWebGLContext::SetContextOptions(JSContext* cx,
     newOpts.antialias = attributes.mAntialias.Value();
   }
 
+  if (attributes.mColorSpace.WasPassed()) {
+    newOpts.colorSpace = Some(attributes.mColorSpace.Value());
+  } else if (StaticPrefs::gfx_color_management_native_srgb()) {
+    newOpts.colorSpace = Some(dom::PredefinedColorSpace::Srgb);
+  }
+
   
   if (!StaticPrefs::webgl_msaa_samples()) {
     newOpts.antialias = false;
   }
+
+  
 
   if (mInitialOptions && *mInitialOptions != newOpts) {
     

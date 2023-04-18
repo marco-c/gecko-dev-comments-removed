@@ -1322,8 +1322,6 @@ bool NativeLayerCA::Representation::EnqueueSurface(IOSurfaceRef aSurfaceRef) {
     CFTypeRefPtr<CGColorSpaceRef> colorSpace =
         CFTypeRefPtr<CGColorSpaceRef>::WrapUnderGetRule(CVImageBufferGetColorSpace(pixelBuffer));
     if (!colorSpace) {
-      printf("VIDEO_LOG: pixel buffer created by EnqueueSurface has no color space.\n");
-
       
       colorSpace = CFTypeRefPtr<CGColorSpaceRef>::WrapUnderCreateRule(
           CGDisplayCopyColorSpace(CGMainDisplayID()));
