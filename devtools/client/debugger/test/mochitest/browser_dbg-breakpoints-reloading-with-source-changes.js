@@ -100,6 +100,16 @@ add_task(async function testBreakpointInFunctionRelocation() {
   );
   assertTextContentOnLine(dbg, 3, 'return prefix + "bar";');
 
+  info("Check that only one breakpoint is set");
+  is(dbg.selectors.getBreakpointCount(), 1, "Only one breakpoint exists");
+
+  info("Check that only one breakpoint exist on the server");
+  is(
+    dbg.client.getServerBreakpointsList().length,
+    1,
+    "Only one breakpoint exists on the server"
+  );
+
   info(
     "Reload should change the source content to CONTENT 2 i.e 2 functions foo() and bar()"
   );
@@ -127,6 +137,13 @@ add_task(async function testBreakpointInFunctionRelocation() {
   info("Check that only one breakpoint currently exists");
   is(dbg.selectors.getBreakpointCount(), 1, "One breakpoint exists");
 
+  info("Check that only one breakpoint exist on the server");
+  is(
+    dbg.client.getServerBreakpointsList().length,
+    1,
+    "Only one breakpoint exists on the server"
+  );
+
   await resume(dbg);
 
   info(
@@ -138,12 +155,12 @@ add_task(async function testBreakpointInFunctionRelocation() {
   if (IS_BREAKPOINT_SHIFTING_ENABLED) {
     
     
-    await assertNotPaused(dbg);
+    assertNotPaused(dbg);
 
     info("Assert that the breakpoint is visible on line 7");
     await assertBreakpoint(dbg, 7);
   } else {
-    await assertNotPaused(dbg);
+    assertNotPaused(dbg);
 
     info(
       "Assert that the breakpoint is still visible on line 3 which is a non-breakable line"
@@ -159,17 +176,37 @@ add_task(async function testBreakpointInFunctionRelocation() {
   info("Check that only one breakpoint still exists");
   is(dbg.selectors.getBreakpointCount(), 1, "Only one breakpoint exists");
 
+  info("Check that one breakpoint exist on the server");
+  is(
+    dbg.client.getServerBreakpointsList().length,
+    1,
+    "One breakpoint exists on the server"
+  );
+
   info(
     "Reload should change the source content to CONTENT 4 which is just a one comment line"
   );
   await reload(dbg);
   await waitForSelectedSource(dbg, "script.js");
 
-  await assertNotPaused(dbg);
+  
+  
+  await wait(1000);
+  assertNotPaused(dbg);
 
   info("Assert that the source content is one comment line");
   assertTextContentOnLine(dbg, 1, "// one line comment");
 
   info("Check that the breakpoint has been removed");
   is(dbg.selectors.getBreakpointCount(), 0, "No breakpoint exists");
+
+  
+  
+  
+  info("Check that one breakpoint exists on the server");
+  is(
+    dbg.client.getServerBreakpointsList().length,
+    1,
+    "One breakpoint exists on the server"
+  );
 });
