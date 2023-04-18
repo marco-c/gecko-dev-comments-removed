@@ -139,8 +139,7 @@ void ChannelMediaDecoder::NotifyPrincipalChanged() {
     mInitialChannelPrincipalKnown = true;
     return;
   }
-  if (!mSameOriginMedia &&
-      Preferences::GetBool("media.block-midflight-redirects", true)) {
+  if (!mSameOriginMedia) {
     
     
     LOG("ChannnelMediaDecoder prohibited cross origin redirect blocked.");
