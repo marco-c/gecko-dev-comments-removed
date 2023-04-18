@@ -734,18 +734,6 @@ var DownloadIntegration = {
       fileExtension &&
       fileExtension.toLowerCase() == "exe";
 
-    let isExemptExecutableExtension = false;
-    try {
-      let url = new URL(aDownload.source.url);
-      isExemptExecutableExtension = Services.policies.isExemptExecutableExtension(
-        url.origin,
-        fileExtension?.toLowerCase()
-      );
-    } catch (e) {
-      
-    }
-
-    
     
     
     
@@ -756,7 +744,6 @@ var DownloadIntegration = {
     if (
       file.isExecutable() &&
       !isWindowsExe &&
-      !isExemptExecutableExtension &&
       !(await this.confirmLaunchExecutable(file.path))
     ) {
       return;
