@@ -2542,6 +2542,12 @@
     },
 
     
+
+
+
+
+
+    
     addTab(
       aURI,
       {
@@ -2824,15 +2830,9 @@
           
           
           if (openerBrowser && !openWindowInfo) {
-            try {
-              b.browsingContext.setCrossGroupOpener(
-                openerBrowser.browsingContext
-              );
-            } catch (ex) {
-              
-              
-              Cu.reportError(ex);
-            }
+            b.browsingContext.setCrossGroupOpener(
+              openerBrowser.browsingContext
+            );
           }
         }
       } catch (e) {
@@ -2844,7 +2844,7 @@
           this._tabListeners.delete(t);
           this.getPanel(t.linkedBrowser).remove();
         }
-        throw e;
+        return null;
       }
 
       
