@@ -23,10 +23,10 @@
 #include "mozilla/dom/LoadedScript.h"
 #include "mozilla/dom/JSExecutionContext.h"  
 #include "mozilla/dom/ScriptLoadRequest.h"
+#include "ModuleLoaderBase.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MozPromise.h"
 #include "ScriptKind.h"
-#include "ModuleLoader.h"
 
 class nsCycleCollectionTraversalCallback;
 class nsIChannel;
@@ -56,8 +56,8 @@ namespace dom {
 class AutoJSAPI;
 class DocGroup;
 class Document;
-class LoadedScript;
 class ModuleLoader;
+class LoadedScript;
 class ScriptLoaderInterface;
 class ModuleLoadRequest;
 class ModuleScript;
@@ -131,8 +131,6 @@ class ScriptLoader final : public ScriptLoaderInterface {
 
 
   void DropDocumentReference() { mDocument = nullptr; }
-
-  void EnsureModuleHooksInitialized() override;
 
   
 
@@ -470,23 +468,12 @@ class ScriptLoader final : public ScriptLoaderInterface {
   
 
 
-  nsresult StartLoad(ScriptLoadRequest* aRequest) {
-    return aRequest->IsModuleRequest() ? StartModuleLoad(aRequest)
-                                       : StartClassicLoad(aRequest);
-  }
-
+  nsresult StartLoad(ScriptLoadRequest* aRequest);
   
 
 
 
   nsresult StartClassicLoad(ScriptLoadRequest* aRequest);
-
-  
-
-
-
-
-  nsresult StartModuleLoad(ScriptLoadRequest* aRequest) override;
 
   
 
@@ -547,7 +534,7 @@ class ScriptLoader final : public ScriptLoaderInterface {
 
   nsresult AttemptAsyncScriptCompile(ScriptLoadRequest* aRequest,
                                      bool* aCouldCompileOut);
-  nsresult ProcessRequest(ScriptLoadRequest* aRequest) override;
+  nsresult ProcessRequest(ScriptLoadRequest* aRequest);
   nsresult CompileOffThreadOrProcessRequest(ScriptLoadRequest* aRequest);
   void FireScriptAvailable(nsresult aResult, ScriptLoadRequest* aRequest);
   
@@ -556,12 +543,6 @@ class ScriptLoader final : public ScriptLoaderInterface {
 
   
   nsresult EvaluateScriptElement(ScriptLoadRequest* aRequest);
-
-  
-  nsresult CompileOrFinishModuleScript(
-      JSContext* aCx, JS::Handle<JSObject*> aGlobal,
-      JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
-      JS::MutableHandle<JSObject*> aModule) override;
 
   
   
@@ -624,7 +605,6 @@ class ScriptLoader final : public ScriptLoaderInterface {
   nsresult PrepareLoadedRequest(ScriptLoadRequest* aRequest,
                                 nsIIncrementalStreamLoader* aLoader,
                                 nsresult aStatus);
-  void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest) override;
 
   void AddDeferRequest(ScriptLoadRequest* aRequest);
   void AddAsyncRequest(ScriptLoadRequest* aRequest);
@@ -642,7 +622,7 @@ class ScriptLoader final : public ScriptLoaderInterface {
   
   static bool ShouldCacheBytecode(ScriptLoadRequest* aRequest);
 
-  void RunScriptWhenSafe(ScriptLoadRequest* aRequest) override;
+  void RunScriptWhenSafe(ScriptLoadRequest* aRequest);
 
   
 
@@ -729,6 +709,52 @@ class nsAutoScriptLoaderDisabler {
 
   bool mWasEnabled;
   RefPtr<ScriptLoader> mLoader;
+};
+
+class ModuleLoader final : public ModuleLoaderBase {
+ private:
+  virtual ~ModuleLoader();
+
+ public:
+  explicit ModuleLoader(ScriptLoader* aLoader);
+
+  ScriptLoader* GetScriptLoader() {
+    return static_cast<ScriptLoader*>(mLoader.get());
+  }
+
+  
+  void EnsureModuleHooksInitialized() override;
+
+  
+
+
+
+
+  nsresult StartModuleLoad(ScriptLoadRequest* aRequest) override;
+
+  void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest) override;
+
+  nsresult CompileOrFinishModuleScript(
+      JSContext* aCx, JS::Handle<JSObject*> aGlobal,
+      JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
+      JS::MutableHandle<JSObject*> aModuleScript) override;
+
+  
+  static already_AddRefed<ModuleLoadRequest> CreateTopLevel(
+      nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
+      const SRIMetadata& aIntegrity, nsIURI* aReferrer, ScriptLoader* aLoader,
+      DOMScriptLoadContext* aContext);
+
+  
+  already_AddRefed<ModuleLoadRequest> CreateStaticImport(
+      nsIURI* aURI, ModuleLoadRequest* aParent) override;
+
+  
+  static already_AddRefed<ModuleLoadRequest> CreateDynamicImport(
+      nsIURI* aURI, ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL,
+      DOMScriptLoadContext* aContext, ScriptLoader* aLoader,
+      JS::Handle<JS::Value> aReferencingPrivate,
+      JS::Handle<JSString*> aSpecifier, JS::Handle<JSObject*> aPromise);
 };
 
 }  

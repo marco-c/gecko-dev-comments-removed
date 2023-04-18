@@ -18,8 +18,7 @@ namespace mozilla {
 namespace dom {
 
 class ModuleScript;
-class ModuleLoader;
-class ScriptLoader;
+class ModuleLoaderBase;
 
 
 
@@ -40,33 +39,18 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   ModuleLoadRequest(const ModuleLoadRequest& aOther) = delete;
   ModuleLoadRequest(ModuleLoadRequest&& aOther) = delete;
 
-  ModuleLoadRequest(nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
-                    const SRIMetadata& aIntegrity, nsIURI* aReferrer,
-                    DOMScriptLoadContext* aContext, bool aIsTopLevel,
-                    bool aIsDynamicImport, ModuleLoader* aLoader,
-                    VisitedURLSet* aVisitedSet, ModuleLoadRequest* aRootModule);
-
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(ModuleLoadRequest,
                                                          ScriptLoadRequest)
 
-  
-  static already_AddRefed<ModuleLoadRequest> CreateTopLevel(
-      nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
-      const SRIMetadata& aIntegrity, nsIURI* aReferrer, ScriptLoader* aLoader,
-      DOMScriptLoadContext* aContext);
+  ModuleLoadRequest(nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
+                    const SRIMetadata& aIntegrity, nsIURI* aReferrer,
+                    DOMScriptLoadContext* aContext, bool aIsTopLevel,
+                    bool aIsDynamicImport, ModuleLoaderBase* aLoader,
+                    VisitedURLSet* aVisitedSet, ModuleLoadRequest* aRootModule);
 
-  
-  static already_AddRefed<ModuleLoadRequest> CreateStaticImport(
-      nsIURI* aURI, ModuleLoadRequest* aParent);
-
-  
-  static already_AddRefed<ModuleLoadRequest> CreateDynamicImport(
-      nsIURI* aURI, ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL,
-      DOMScriptLoadContext* aContext, ScriptLoader* aLoader,
-      JS::Handle<JS::Value> aReferencingPrivate,
-      JS::Handle<JSString*> aSpecifier, JS::Handle<JSObject*> aPromise);
+  static VisitedURLSet* NewVisitedSetForTopLevelImport(nsIURI* aURI);
 
   bool IsTopLevel() const override { return mIsTopLevel; }
 
@@ -102,7 +86,7 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
 
   
   
-  RefPtr<ModuleLoader> mLoader;
+  RefPtr<ModuleLoaderBase> mLoader;
 
   
   
