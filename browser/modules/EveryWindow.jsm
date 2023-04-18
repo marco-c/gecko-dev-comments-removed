@@ -42,7 +42,7 @@ function callForEveryWindow(callback) {
   }
 }
 
-this.EveryWindow = {
+const EveryWindow = {
   
 
 

@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["OpenInTabsUtils"];
+const EXPORTED_SYMBOLS = ["OpenInTabsUtils"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -21,7 +21,7 @@ XPCOMUtils.defineLazyGetter(this, "bundle", function() {
 
 
 
-this.OpenInTabsUtils = {
+const OpenInTabsUtils = {
   getString(key) {
     return bundle.GetStringFromName(key);
   },
