@@ -706,6 +706,8 @@ class BrowserParent final : public PBrowserParent,
   bool GetHasLayers();
   bool GetRenderLayers();
   void SetRenderLayers(bool aRenderLayers);
+  bool GetPriorityHint();
+  void SetPriorityHint(bool aPriorityHint);
   void PreserveLayers(bool aPreserveLayers);
   void NotifyResolutionChanged();
 
@@ -962,6 +964,9 @@ class BrowserParent final : public PBrowserParent,
   
   
   bool mRenderLayers : 1;
+
+  
+  bool mPriorityHint : 1;
 
   
   
