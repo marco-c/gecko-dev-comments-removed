@@ -20,7 +20,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PageThumbs: "resource://gre/modules/PageThumbs.jsm",
   PageThumbsStorage: "resource://gre/modules/PageThumbs.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
-  PlacesPreviews: "resource://gre/modules/PlacesPreviews.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
 
@@ -137,9 +136,7 @@ const Snapshots = new (class Snapshots {
     
     
 
-    if (!PlacesPreviews.enabled) {
-      PageThumbs.addExpirationFilter(this);
-    }
+    PageThumbs.addExpirationFilter(this);
   }
 
   
@@ -282,11 +279,7 @@ const Snapshots = new (class Snapshots {
       
       
       
-      if (PlacesPreviews.enabled) {
-        PlacesPreviews.update(url).catch(console.error);
-      } else {
-        BackgroundPageThumbs.captureIfMissing(url).catch(console.error);
-      }
+      BackgroundPageThumbs.captureIfMissing(url).catch(console.error);
     }
   }
 
@@ -704,16 +697,12 @@ const Snapshots = new (class Snapshots {
       return snapshot.image;
     }
     const url = snapshot.url;
-    if (PlacesPreviews.enabled) {
-      if (await PlacesPreviews.update(url).catch(console.error)) {
-        return PlacesPreviews.getPageThumbURL(url);
-      }
-    } else {
-      await BackgroundPageThumbs.captureIfMissing(url).catch(console.error);
-      if (await PageThumbsStorage.fileExistsForURL(url)) {
-        return PageThumbs.getThumbnailURL(url);
-      }
+    await BackgroundPageThumbs.captureIfMissing(url).catch(console.error);
+    const exists = await PageThumbsStorage.fileExistsForURL(url);
+    if (exists) {
+      return PageThumbs.getThumbnailURL(url);
     }
+
     return null;
   }
 

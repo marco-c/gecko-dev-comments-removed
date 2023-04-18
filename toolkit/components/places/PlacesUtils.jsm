@@ -28,10 +28,6 @@ XPCOMUtils.defineLazyGetter(this, "MOZ_ACTION_REGEX", () => {
   return /^moz-action:([^,]+),(.*)$/;
 });
 
-XPCOMUtils.defineLazyGetter(this, "gCryptoHash", () => {
-  return Cc["@mozilla.org/security/hash;1"].createInstance(Ci.nsICryptoHash);
-});
-
 
 
 
@@ -1920,37 +1916,6 @@ var PlacesUtils = {
     let startIndex = 0;
     while (startIndex < array.length) {
       yield array.slice(startIndex, (startIndex += chunkLength));
-    }
-  },
-
-  
-
-
-
-
-
-
-
-  md5(data, { format = "ascii" } = {}) {
-    gCryptoHash.init(gCryptoHash.MD5);
-
-    
-    gCryptoHash.update(
-      data.split("").map(c => c.charCodeAt(0)),
-      data.length
-    );
-    switch (format) {
-      case "hex":
-        let hash = gCryptoHash.finish(false);
-        return Array.from(hash, (c, i) =>
-          hash
-            .charCodeAt(i)
-            .toString(16)
-            .padStart(2, "0")
-        ).join("");
-      case "ascii":
-      default:
-        return gCryptoHash.finish(true);
     }
   },
 };

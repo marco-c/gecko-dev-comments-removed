@@ -63,16 +63,6 @@ const BackgroundPageThumbs = {
 
 
 
-
-
-
-
-
-
-
-
-
-
   capture(url, options = {}) {
     if (!PageThumbs._prefEnabled()) {
       if (options.onDone) {
@@ -670,13 +660,10 @@ Capture.prototype = {
 
     let canvasDrawTime = new Date() - canvasDrawStartTime;
 
-    let contentType =
-      (this.options.dontStore && this.options.contentType) ||
-      PageThumbs.contentType;
     let imageData = await new Promise(resolve => {
       canvas.toBlob(blob => {
-        resolve(blob, contentType);
-      }, contentType);
+        resolve(blob, this.contentType);
+      });
     });
 
     this._done(aBrowser, imageData, TEL_CAPTURE_DONE_OK, {
@@ -728,11 +715,11 @@ Capture.prototype = {
       }
     }
 
-    let done = (info = null) => {
+    let done = () => {
       captureCallback(this, reason);
       for (let callback of doneCallbacks) {
         try {
-          callback.call(options, this.url, reason, info);
+          callback.call(options, this.url, reason);
         } catch (err) {
           Cu.reportError(err);
         }
@@ -757,19 +744,10 @@ Capture.prototype = {
     }
 
     this.readBlob(imageData).then(buffer => {
-      if (options.dontStore) {
-        done({
-          data: buffer,
-          originalUrl: this.url,
-          finalUrl: browser.currentURI.spec,
-          contentType: options.contentType || PageThumbs.contentType,
-        });
-      } else {
-        PageThumbs._store(this.url, browser.currentURI.spec, buffer, true).then(
-          done,
-          done
-        );
-      }
+      PageThumbs._store(this.url, browser.currentURI.spec, buffer, true).then(
+        done,
+        done
+      );
     });
   },
 };

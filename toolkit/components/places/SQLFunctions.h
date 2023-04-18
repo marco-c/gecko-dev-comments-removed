@@ -384,34 +384,6 @@ class HashFunction final : public mozIStorageFunction {
 
 
 
-class MD5HexFunction final : public mozIStorageFunction {
- public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_MOZISTORAGEFUNCTION
-
-  
-
-
-
-
-
-  static nsresult create(mozIStorageConnection* aDBConn);
-
- private:
-  ~MD5HexFunction() = default;
-};
-
-
-
-
-
-
-
-
-
-
-
-
 class GetQueryParamFunction final : public mozIStorageFunction {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS

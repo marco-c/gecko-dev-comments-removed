@@ -570,7 +570,7 @@ var PageThumbsStorage = {
 
   
   
-  updateRevision(aURL) {
+  _updateRevision(aURL) {
     
     
     let rev = this._revisionTable[aURL];
@@ -599,7 +599,7 @@ var PageThumbsStorage = {
   getRevision(aURL) {
     let rev = this._revisionTable[aURL];
     if (rev == null) {
-      this.updateRevision(aURL);
+      this._updateRevision(aURL);
       rev = this._revisionTable[aURL];
     }
     return rev;
@@ -636,7 +636,7 @@ var PageThumbsStorage = {
 
 
     ).then(
-      () => this.updateRevision(aURL),
+      () => this._updateRevision(aURL),
       this._eatNoOverwriteError(aNoOverwrite)
     );
   },
@@ -661,7 +661,7 @@ var PageThumbsStorage = {
       targetFile,
       options,
     ]).then(
-      () => this.updateRevision(aTargetURL),
+      () => this._updateRevision(aTargetURL),
       this._eatNoOverwriteError(aNoOverwrite)
     );
   },
