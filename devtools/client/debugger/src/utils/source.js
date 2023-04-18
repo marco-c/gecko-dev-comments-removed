@@ -522,20 +522,33 @@ export function getRelativeUrl(source, root) {
   return url.slice(url.indexOf(root) + root.length + 1);
 }
 
-export function underRoot(source, root, threads) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function isDescendantOfRoot(source, rootUrl, threads) {
   
   threads.forEach(thread => {
-    if (root.includes(thread.actor)) {
-      root = root.slice(thread.actor.length + 1);
+    if (rootUrl.includes(thread.actor)) {
+      rootUrl = rootUrl.slice(thread.actor.length + 1);
     }
   });
 
   if (source.url && source.url.includes("chrome://")) {
     const { group, path } = getURL(source);
-    return (group + path).includes(root);
+    return (group + path).includes(rootUrl);
   }
 
-  return !!source.url && source.url.includes(root);
+  return !!source.url && source.url.includes(rootUrl);
 }
 
 export function isGenerated(source) {
