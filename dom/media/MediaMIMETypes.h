@@ -172,10 +172,6 @@ class MediaExtendedMIMEType {
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-  
-  
-  static Maybe<double> ComputeFractionalString(const nsAString& aFrac);
-
  private:
   friend Maybe<MediaExtendedMIMEType> MakeMediaExtendedMIMEType(
       const nsAString& aType);
