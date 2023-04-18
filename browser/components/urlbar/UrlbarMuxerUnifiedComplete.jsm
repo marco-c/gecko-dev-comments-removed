@@ -83,6 +83,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       canAddTabToSearch: true,
       hasUnitConversionResult: false,
       maxHeuristicResultSpan: 0,
+      maxTabToSearchResultSpan: 0,
       
     };
 
@@ -106,6 +107,13 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     }
 
     
+    if (state.maxTabToSearchResultSpan) {
+      
+      state.availableResultSpan = Math.max(
+        state.availableResultSpan - state.maxTabToSearchResultSpan,
+        0
+      );
+    }
     if (state.maxHeuristicResultSpan) {
       if (UrlbarPrefs.get("experimental.hideHeuristic")) {
         
@@ -704,7 +712,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       return false;
     }
 
-    if (result.providerName == "TabToSearch") {
+    if (result.providerName == UrlbarProviderTabToSearch.name) {
       
       if (!state.canAddTabToSearch) {
         return false;
@@ -914,15 +922,26 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     
     
+    
+    
+    
     if (
       result.hasSuggestedIndex &&
       !result.isSuggestedIndexRelativeToGroup &&
       this._canAddResult(result, state)
     ) {
-      state.availableResultSpan = Math.max(
-        state.availableResultSpan - UrlbarUtils.getSpanForResult(result),
-        0
-      );
+      let span = UrlbarUtils.getSpanForResult(result);
+      if (result.providerName == UrlbarProviderTabToSearch.name) {
+        state.maxTabToSearchResultSpan = Math.max(
+          state.maxTabToSearchResultSpan,
+          span
+        );
+      } else {
+        state.availableResultSpan = Math.max(
+          state.availableResultSpan - span,
+          0
+        );
+      }
     }
 
     
@@ -1046,7 +1065,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     
     
-    if (result.providerName == "TabToSearch") {
+    if (result.providerName == UrlbarProviderTabToSearch.name) {
       state.canAddTabToSearch = false;
       
       

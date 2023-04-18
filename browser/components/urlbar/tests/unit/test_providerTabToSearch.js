@@ -330,8 +330,29 @@ add_task(async function multipleEnginesForHostname() {
     },
     true
   );
-  await PlacesTestUtils.addVisits(["https://example.com/"]);
+
   let context = createContext("examp", { isPrivate: false });
+  let maxResultCount = UrlbarPrefs.get("maxRichResults");
+
+  
+  for (let i = 0; i < maxResultCount; i++) {
+    await PlacesTestUtils.addVisits("https://example.com/");
+  }
+
+  
+  
+  let otherVisitResults = [];
+  for (let i = 0; i < maxResultCount; i++) {
+    let url = "https://mochi.test:8888/example/" + i;
+    await PlacesTestUtils.addVisits(url);
+    otherVisitResults.unshift(
+      makeVisitResult(context, {
+        uri: url,
+        title: "test visit for " + url,
+      })
+    );
+  }
+
   await check_results({
     context,
     autofilled: "example.com/",
@@ -353,6 +374,12 @@ add_task(async function multipleEnginesForHostname() {
         query: "",
         providerName: "TabToSearch",
       }),
+      
+      
+      
+      
+      
+      ...otherVisitResults.slice(0, maxResultCount - 2),
     ],
   });
   await cleanupPlaces();
