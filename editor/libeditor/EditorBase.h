@@ -1709,6 +1709,8 @@ class EditorBase : public nsIEditor,
 
 
 
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   InsertPaddingBRElementForEmptyLastLineWithTransaction(
       const EditorDOMPoint& aPointToInsert);
