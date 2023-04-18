@@ -1086,10 +1086,9 @@ void nsImageFrame::MaybeDecodeForPredictedSize() {
 
   
   if (BrowserChild* browserChild = BrowserChild::GetFrom(presShell)) {
-    resolutionToScreen.xScale *=
-        browserChild->GetEffectsInfo().mRasterScale.xScale;
-    resolutionToScreen.yScale *=
-        browserChild->GetEffectsInfo().mRasterScale.yScale;
+    resolutionToScreen =
+        resolutionToScreen * ViewAs<ScreenToScreenScale2D>(
+                                 browserChild->GetEffectsInfo().mRasterScale);
   }
 
   

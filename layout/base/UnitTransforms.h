@@ -229,6 +229,10 @@ gfx::IntRegionTyped<TargetUnits> ViewAs(const nsIntRegion& aRegion) {
 
 
 
+template <class TypedScale>
+TypedScale ViewAs(const Scale2D& aScale) {
+  return TypedScale(aScale.xScale, aScale.yScale);
+}
 template <class TypedMatrix>
 TypedMatrix ViewAs(const gfx::Matrix4x4& aMatrix) {
   return TypedMatrix::FromUnknownMatrix(aMatrix);
