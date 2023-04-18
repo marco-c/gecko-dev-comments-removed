@@ -344,6 +344,10 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 
+void profiler_record_wakeup_count(const nsACString& aProcessType);
+
+
+
 
 
 
