@@ -94,7 +94,12 @@ add_task(async function() {
   const allResources = {};
   const onAvailable = resources => {
     for (const resource of resources) {
-      allResources[resource.resourceType] = resource;
+      
+      if (allResources[resource.resourceType]) {
+        allResources[resource.resourceType].push(resource);
+      } else {
+        allResources[resource.resourceType] = [resource];
+      }
     }
   };
   const parentProcessStorages = [TYPES.COOKIE, TYPES.INDEXED_DB];
@@ -134,20 +139,31 @@ function testWindowsBeforeReload(resources) {
   for (const storageType in beforeReload) {
     ok(resources[storageType], `${storageType} storage actor is present`);
 
+    const hosts = {};
+    for (const resource of resources[storageType]) {
+      for (const [hostType, hostValues] of Object.entries(resource.hosts)) {
+        if (!hosts[hostType]) {
+          hosts[hostType] = [];
+        }
+
+        hosts[hostType].push(hostValues);
+      }
+    }
+
     
     
     
     if (storageType == "indexedDB") {
-      delete resources[storageType].hosts.chrome;
+      delete hosts.chrome;
     }
 
     is(
-      Object.keys(resources[storageType].hosts).length,
+      Object.keys(hosts).length,
       Object.keys(beforeReload[storageType]).length,
       `Number of hosts for ${storageType} match`
     );
     for (const host in beforeReload[storageType]) {
-      ok(resources[storageType].hosts[host], `Host ${host} is present`);
+      ok(hosts[host], `Host ${host} is present`);
     }
   }
 }
@@ -206,7 +222,10 @@ function waitForResourceUpdates(resources, resourceTypes) {
   const allUpdates = {};
   const promises = [];
   for (const type of resourceTypes) {
-    const promise = resources[type].once("single-store-update");
+    
+    const promise = Promise.any(
+      resources[type].map(resource => resource.once("single-store-update"))
+    );
     promise.then(update => {
       ok(true, `Got updates for ${type}`);
       allUpdates[type] = update;
