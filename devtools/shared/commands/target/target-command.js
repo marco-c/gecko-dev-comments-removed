@@ -831,6 +831,16 @@ class TargetCommand extends EventEmitter {
     await this._onTargetAvailable(newTarget);
   }
 
+  
+
+
+
+
+
+  selectTarget(targetFront) {
+    console.warn("Not implemented yet");
+  }
+
   isTargetRegistered(targetFront) {
     return this._targets.has(targetFront);
   }
