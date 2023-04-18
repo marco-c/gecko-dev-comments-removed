@@ -295,9 +295,8 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-  virtual void ScrollToCSSPixelsApproximate(
-      const mozilla::CSSPoint& aScrollPosition,
-      ScrollOrigin aOrigin = ScrollOrigin::NotSpecified) = 0;
+  virtual void ScrollToCSSPixelsForApz(
+      const mozilla::CSSPoint& aScrollPosition) = 0;
 
   
 

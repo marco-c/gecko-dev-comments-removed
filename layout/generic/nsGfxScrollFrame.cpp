@@ -2423,13 +2423,13 @@ void ScrollFrameHelper::ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
   
 }
 
-void ScrollFrameHelper::ScrollToCSSPixelsApproximate(
-    const CSSPoint& aScrollPosition, ScrollOrigin aOrigin) {
+void ScrollFrameHelper::ScrollToCSSPixelsForApz(
+    const CSSPoint& aScrollPosition) {
   nsPoint pt = CSSPoint::ToAppUnits(aScrollPosition);
   nscoord halfRange = nsPresContext::CSSPixelsToAppUnits(1000);
   nsRect range(pt.x - halfRange, pt.y - halfRange, 2 * halfRange - 1,
                2 * halfRange - 1);
-  ScrollToWithOrigin(pt, ScrollMode::Instant, aOrigin, &range);
+  ScrollToWithOrigin(pt, ScrollMode::Instant, ScrollOrigin::Apz, &range);
   
 }
 
