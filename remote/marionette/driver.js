@@ -462,13 +462,49 @@ GeckoDriver.prototype.newSession = async function(cmd) {
       const browsingContext = this.curBrowser.contentBrowser.browsingContext;
       this.currentSession.contentBrowsingContext = browsingContext;
 
+      let resolveNavigation;
+
       
-      if (browsingContext.webProgress.isLoadingDocument) {
-        await navigate.waitForNavigationCompleted(this, () => {}, {
-          loadEventExpected: true,
-          unknownState: true,
-        });
+      const onProgressListenerNavigation = new Promise(
+        resolve => (resolveNavigation = resolve)
+      );
+
+      
+      
+      const navigationListener = {
+        onStateChange: (progress, request, flag, status) => {
+          const isStop = flag & Ci.nsIWebProgressListener.STATE_STOP;
+          if (isStop) {
+            resolveNavigation();
+          }
+        },
+
+        QueryInterface: ChromeUtils.generateQI([
+          "nsIWebProgressListener",
+          "nsISupportsWeakReference",
+        ]),
+      };
+
+      
+      
+      browsingContext.webProgress.addProgressListener(
+        navigationListener,
+        Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
+          Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
+      );
+
+      if (
+        browsingContext.webProgress.isLoadingDocument ||
+        browsingContext.currentWindowGlobal.isInitialDocument
+      ) {
+        await onProgressListenerNavigation;
       }
+
+      browsingContext.webProgress.removeProgressListener(
+        navigationListener,
+        Ci.nsIWebProgress.NOTIFY_STATE_WINDOW |
+          Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
+      );
 
       this.curBrowser.contentBrowser.focus();
     }
