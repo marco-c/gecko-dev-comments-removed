@@ -1343,17 +1343,13 @@ void* BaselineStackBuilder::getStubReturnAddress() {
   return code.bailoutReturnAddr(BailoutReturnKind::Call);
 }
 
-static inline jsbytecode* GetNextNonLoopHeadPc(jsbytecode* pc,
-                                               jsbytecode** skippedLoopHead) {
+static inline jsbytecode* GetNextNonLoopHeadPc(jsbytecode* pc) {
   JSOp op = JSOp(*pc);
   switch (op) {
     case JSOp::Goto:
       return pc + GET_JUMP_OFFSET(pc);
 
     case JSOp::LoopHead:
-      *skippedLoopHead = pc;
-      return GetNextPc(pc);
-
     case JSOp::Nop:
       return GetNextPc(pc);
 
@@ -1373,13 +1369,20 @@ jsbytecode* BaselineStackBuilder::getResumePC() {
   
   
   
-  jsbytecode* skippedLoopHead = nullptr;
+  
+  
+  
+  
+  
   jsbytecode* slowerPc = pc_;
   jsbytecode* fasterPc = pc_;
   while (true) {
-    slowerPc = GetNextNonLoopHeadPc(slowerPc, &skippedLoopHead);
-    fasterPc = GetNextNonLoopHeadPc(fasterPc, &skippedLoopHead);
-    fasterPc = GetNextNonLoopHeadPc(fasterPc, &skippedLoopHead);
+    
+    slowerPc = GetNextNonLoopHeadPc(slowerPc);
+    fasterPc = GetNextNonLoopHeadPc(fasterPc);
+    fasterPc = GetNextNonLoopHeadPc(fasterPc);
+
+    
     if (fasterPc == slowerPc) {
       break;
     }
