@@ -1241,7 +1241,6 @@ namespace jit {
 class JitCode;
 }  
 
-using GCPtrFunction = GCPtr<JSFunction*>;
 using GCPtrLinearString = GCPtr<JSLinearString*>;
 using GCPtrObject = GCPtr<JSObject*>;
 using GCPtrValue = GCPtr<Value>;

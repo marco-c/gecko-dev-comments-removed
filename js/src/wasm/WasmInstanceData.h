@@ -59,8 +59,8 @@ struct FuncImportInstanceData {
 
   
   
-  GCPtrFunction fun;
-  static_assert(sizeof(GCPtrFunction) == sizeof(void*), "for JIT access");
+  GCPtr<JSFunction*> fun;
+  static_assert(sizeof(GCPtr<JSFunction*>) == sizeof(void*), "for JIT access");
 };
 
 
