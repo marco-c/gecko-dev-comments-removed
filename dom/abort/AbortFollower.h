@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_AbortFollower_h
 #define mozilla_dom_AbortFollower_h
 
+#include "jsapi.h"
 #include "nsISupportsImpl.h"
 #include "nsTObserverArray.h"
 
@@ -47,11 +48,16 @@ class AbortFollower : public nsISupports {
 
 class AbortSignalImpl : public nsISupports {
  public:
-  explicit AbortSignalImpl(bool aAborted);
+  explicit AbortSignalImpl(bool aAborted, JS::Handle<JS::Value> aReason);
 
   bool Aborted() const;
 
-  virtual void SignalAbort();
+  
+  void GetReason(JSContext* aCx, JS::MutableHandle<JS::Value> aReason);
+  
+  JS::Value RawReason() const;
+
+  virtual void SignalAbort(JS::Handle<JS::Value> aReason);
 
  protected:
   
@@ -59,14 +65,16 @@ class AbortSignalImpl : public nsISupports {
   static void Traverse(AbortSignalImpl* aSignal,
                        nsCycleCollectionTraversalCallback& cb);
 
-  static void Unlink(AbortSignalImpl* aSignal) {
-    
-  }
+  static void Unlink(AbortSignalImpl* aSignal);
 
   virtual ~AbortSignalImpl() = default;
 
+  JS::Heap<JS::Value> mReason;
+
  private:
   friend class AbortFollower;
+
+  void MaybeAssignAbortError(JSContext* aCx);
 
   
   
