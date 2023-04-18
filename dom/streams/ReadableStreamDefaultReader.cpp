@@ -402,8 +402,7 @@ already_AddRefed<Promise> ReadableStreamGenericReader::Cancel(
 }
 
 
-void SetUpReadableStreamDefaultReader(JSContext* aCx,
-                                      ReadableStreamDefaultReader* aReader,
+void SetUpReadableStreamDefaultReader(ReadableStreamDefaultReader* aReader,
                                       ReadableStream* aStream,
                                       ErrorResult& aRv) {
   
