@@ -5,6 +5,9 @@
 
 package org.mozilla.gecko;
 
+import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
+
 import android.content.Context;
 import android.content.res.Configuration;
 import android.util.Log;
@@ -225,7 +228,7 @@ public class GeckoScreenOrientation {
   private ScreenOrientation getScreenOrientation(
       final int aAndroidOrientation, final int aRotation) {
     final boolean isPrimary = aRotation == Surface.ROTATION_0 || aRotation == Surface.ROTATION_90;
-    if (aAndroidOrientation == Configuration.ORIENTATION_PORTRAIT) {
+    if (aAndroidOrientation == ORIENTATION_PORTRAIT) {
       if (isPrimary) {
         
         
@@ -233,7 +236,7 @@ public class GeckoScreenOrientation {
       }
       return ScreenOrientation.PORTRAIT_SECONDARY;
     }
-    if (aAndroidOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+    if (aAndroidOrientation == ORIENTATION_LANDSCAPE) {
       if (isPrimary) {
         
         

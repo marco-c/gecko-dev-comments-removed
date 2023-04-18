@@ -797,7 +797,7 @@ public class GeckoResult<T> {
 
 
 
-  private void completeFrom(final GeckoResult<T> other) {
+  public void completeFrom(final @Nullable GeckoResult<T> other) {
     if (other == null) {
       complete(null);
       return;
