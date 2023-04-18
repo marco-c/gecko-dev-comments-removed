@@ -207,7 +207,7 @@ void ReadableStreamDefaultControllerClose(
   }
 
   
-  ReadableStream* stream = aController->GetStream();
+  RefPtr<ReadableStream> stream = aController->GetStream();
 
   
   aController->SetCloseRequested(true);
@@ -248,7 +248,7 @@ void ReadableStreamDefaultControllerEnqueue(
   }
 
   
-  ReadableStream* stream = aController->GetStream();
+  RefPtr<ReadableStream> stream = aController->GetStream();
 
   
   if (IsReadableStreamLocked(stream) &&
@@ -679,7 +679,7 @@ void ReadableStreamDefaultController::PullSteps(JSContext* aCx,
                                                 ReadRequest* aReadRequest,
                                                 ErrorResult& aRv) {
   
-  ReadableStream* stream = mStream;
+  RefPtr<ReadableStream> stream = mStream;
 
   
   if (!mQueue.isEmpty()) {
