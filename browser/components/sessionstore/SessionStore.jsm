@@ -231,17 +231,19 @@ const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "SessionHistory",
   "resource://gre/modules/sessionstore/SessionHistory.jsm"
 );
 
-XPCOMUtils.defineLazyServiceGetters(this, {
+XPCOMUtils.defineLazyServiceGetters(lazy, {
   gScreenManager: ["@mozilla.org/gfx/screenmanager;1", "nsIScreenManager"],
 });
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   DevToolsShim: "chrome://devtools-startup/content/DevToolsShim.jsm",
@@ -604,7 +606,7 @@ var SessionStoreInternal = {
     "nsISupportsWeakReference",
   ]),
 
-  _globalState: new GlobalState(),
+  _globalState: new lazy.GlobalState(),
 
   
   _nextClosedId: 0,
@@ -823,7 +825,7 @@ var SessionStoreInternal = {
   initSession() {
     TelemetryStopwatch.start("FX_SESSION_RESTORE_STARTUP_INIT_SESSION_MS");
     let state;
-    let ss = SessionStartup;
+    let ss = lazy.SessionStartup;
 
     if (ss.willRestore() || ss.sessionType == ss.DEFER_SESSION) {
       state = ss.state;
@@ -877,7 +879,7 @@ var SessionStoreInternal = {
               let entry = {
                 url,
                 triggeringPrincipal_base64:
-                  E10SUtils.SERIALIZED_SYSTEMPRINCIPAL,
+                  lazy.E10SUtils.SERIALIZED_SYSTEMPRINCIPAL,
               };
               state = { windows: [{ tabs: [{ entries: [entry], formdata }] }] };
             } else if (
@@ -892,7 +894,7 @@ var SessionStoreInternal = {
               
               state.windows[0].tabs[0].entries[0].url = "about:sessionrestore";
               state.windows[0].tabs[0].entries[0].triggeringPrincipal_base64 =
-                E10SUtils.SERIALIZED_SYSTEMPRINCIPAL;
+                lazy.E10SUtils.SERIALIZED_SYSTEMPRINCIPAL;
             } else {
               restoreAsCrashed = false;
             }
@@ -933,7 +935,7 @@ var SessionStoreInternal = {
     
     
     if (
-      !RunState.isQuitting &&
+      !lazy.RunState.isQuitting &&
       this._prefBranch.getBoolPref("sessionstore.resume_session_once")
     ) {
       this._prefBranch.setBoolPref("sessionstore.resume_session_once", false);
@@ -990,18 +992,18 @@ var SessionStoreInternal = {
     }
 
     
-    RunState.setClosing();
+    lazy.RunState.setClosing();
 
     
     if (this._sessionInitialized) {
-      SessionSaver.run();
+      lazy.SessionSaver.run();
     }
 
     
     TabRestoreQueue.reset();
 
     
-    SessionSaver.cancel();
+    lazy.SessionSaver.cancel();
   },
 
   
@@ -1123,7 +1125,7 @@ var SessionStoreInternal = {
         let fromIndex = collectFull ? -1 : this._fromIndex;
         this._fromIndex = kNoIndex;
 
-        let historychange = SessionHistory.collectFromParent(
+        let historychange = lazy.SessionHistory.collectFromParent(
           browsingContext.currentURI?.spec,
           true, 
           browsingContext.sessionHistory,
@@ -1225,7 +1227,7 @@ var SessionStoreInternal = {
       return;
     }
 
-    TabState.update(permanentKey, update);
+    lazy.TabState.update(permanentKey, update);
     this.saveStateDelayed(win);
 
     
@@ -1235,7 +1237,7 @@ var SessionStoreInternal = {
     if (closedTab) {
       
       
-      TabState.copyFromCache(permanentKey, closedTab.tabData.state);
+      lazy.TabState.copyFromCache(permanentKey, closedTab.tabData.state);
     }
   },
 
@@ -1275,7 +1277,7 @@ var SessionStoreInternal = {
     
     
     
-    TabStateFlusher.resolveAll(browser);
+    lazy.TabStateFlusher.resolveAll(browser);
 
     this._browserSHistoryListener.get(permanentKey)?.unregister();
     this._restoreListeners.get(permanentKey)?.unregister();
@@ -1388,7 +1390,7 @@ var SessionStoreInternal = {
           
           
           
-          TabStateFlusher.resolve(browser, data.flushID);
+          lazy.TabStateFlusher.resolve(browser, data.flushID);
         }
 
         break;
@@ -1402,7 +1404,7 @@ var SessionStoreInternal = {
         this._restoreTabContentComplete(browser, data);
         break;
       case "SessionStore:error":
-        TabStateFlusher.resolveAll(
+        lazy.TabStateFlusher.resolveAll(
           browser,
           false,
           "Received error from the content process"
@@ -1499,7 +1501,7 @@ var SessionStoreInternal = {
     }
 
     
-    if (RunState.isQuitting) {
+    if (lazy.RunState.isQuitting) {
       return;
     }
 
@@ -1575,20 +1577,20 @@ var SessionStoreInternal = {
     let isPrivateWindow = PrivateBrowsingUtils.isWindowPrivate(aWindow);
 
     
-    if (RunState.isStopped) {
-      RunState.setRunning();
+    if (lazy.RunState.isStopped) {
+      lazy.RunState.setRunning();
 
       
       if (aInitialState) {
         
         
-        SessionSaver.updateLastSaveTime();
+        lazy.SessionSaver.updateLastSaveTime();
 
         if (isPrivateWindow) {
           
           
           
-          this._deferredInitialState = SessionStartup.state;
+          this._deferredInitialState = lazy.SessionStartup.state;
 
           
           Services.obs.notifyObservers(null, NOTIFY_WINDOWS_RESTORED);
@@ -1608,7 +1610,7 @@ var SessionStoreInternal = {
           this._globalState.setFromState(aInitialState);
 
           
-          SessionCookies.restore(aInitialState.cookies || []);
+          lazy.SessionCookies.restore(aInitialState.cookies || []);
 
           let overwrite = this._isCmdLineEmpty(aWindow, aInitialState);
           let options = { firstWindow: true, overwriteTabs: overwrite };
@@ -1670,7 +1672,7 @@ var SessionStoreInternal = {
         let newWindowState;
         if (
           AppConstants.platform == "macosx" ||
-          !SessionStartup.willRestore()
+          !lazy.SessionStartup.willRestore()
         ) {
           
           
@@ -1766,7 +1768,7 @@ var SessionStoreInternal = {
       
       this._promiseReadyForInitialization = Promise.all([
         promise,
-        SessionStartup.onceInitialized,
+        lazy.SessionStartup.onceInitialized,
       ]);
     }
 
@@ -1861,7 +1863,7 @@ var SessionStoreInternal = {
     let winData = this._windows[aWindow.__SSi];
 
     
-    if (RunState.isRunning) {
+    if (lazy.RunState.isRunning) {
       
       
       let tabMap = this._collectWindowData(aWindow);
@@ -1930,11 +1932,11 @@ var SessionStoreInternal = {
       
       if (!winData.isPrivate) {
         
-        PrivacyFilter.filterPrivateTabs(winData);
+        lazy.PrivacyFilter.filterPrivateTabs(winData);
         this.maybeSaveClosedWindow(winData, isLastWindow);
       }
 
-      completionPromise = TabStateFlusher.flushWindow(aWindow).then(() => {
+      completionPromise = lazy.TabStateFlusher.flushWindow(aWindow).then(() => {
         
         
         
@@ -1944,7 +1946,7 @@ var SessionStoreInternal = {
         for (let browser of browsers) {
           if (this._closedWindowTabs.has(browser.permanentKey)) {
             let tabData = this._closedWindowTabs.get(browser.permanentKey);
-            TabState.copyFromCache(browser.permanentKey, tabData);
+            lazy.TabState.copyFromCache(browser.permanentKey, tabData);
             this._closedWindowTabs.delete(browser.permanentKey);
           }
         }
@@ -1954,7 +1956,7 @@ var SessionStoreInternal = {
         if (!winData.isPrivate) {
           
           
-          PrivacyFilter.filterPrivateTabs(winData);
+          lazy.PrivacyFilter.filterPrivateTabs(winData);
           this.maybeSaveClosedWindow(winData, isLastWindow);
         }
 
@@ -1997,7 +1999,7 @@ var SessionStoreInternal = {
     
     
     for (let browser of browsers) {
-      TabStateFlusher.resolveAll(browser);
+      lazy.TabStateFlusher.resolveAll(browser);
     }
 
     
@@ -2030,7 +2032,10 @@ var SessionStoreInternal = {
   maybeSaveClosedWindow(winData, isLastWindow) {
     
     
-    if (RunState.isRunning && this._saveableClosedWindowData.has(winData)) {
+    if (
+      lazy.RunState.isRunning &&
+      this._saveableClosedWindowData.has(winData)
+    ) {
       
       let hasSaveableTabs = winData.tabs.some(this._shouldSaveTabState);
 
@@ -2099,7 +2104,7 @@ var SessionStoreInternal = {
 
     
     
-    RunState.setQuitting();
+    lazy.RunState.setQuitting();
 
     if (!syncShutdown) {
       
@@ -2110,7 +2115,7 @@ var SessionStoreInternal = {
       
       
       
-      AsyncShutdown.quitApplicationGranted.addBlocker(
+      lazy.AsyncShutdown.quitApplicationGranted.addBlocker(
         "SessionStore: flushing all windows",
         () => {
           
@@ -2119,7 +2124,7 @@ var SessionStoreInternal = {
           let promises = [this.flushAllWindowsAsync(progress)];
 
           const observeTopic = topic => {
-            let deferred = PromiseUtils.defer();
+            let deferred = lazy.PromiseUtils.defer();
             const observer = subject => {
               
               subject.QueryInterface(Ci.nsIPropertyBag2);
@@ -2146,7 +2151,10 @@ var SessionStoreInternal = {
           
           
           
-          let waitTimeMaxMs = Math.max(0, AsyncShutdown.DELAY_CRASH_MS - 10000);
+          let waitTimeMaxMs = Math.max(
+            0,
+            lazy.AsyncShutdown.DELAY_CRASH_MS - 10000
+          );
           let defers = [
             this.looseTimer(waitTimeMaxMs),
 
@@ -2198,7 +2206,7 @@ var SessionStoreInternal = {
     
     
     for (let window of this._browserWindows) {
-      windowPromises.set(window, TabStateFlusher.flushWindow(window));
+      windowPromises.set(window, lazy.TabStateFlusher.flushWindow(window));
 
       
       
@@ -2285,11 +2293,11 @@ var SessionStoreInternal = {
 
 
   onPurgeSessionHistory: function ssi_onPurgeSessionHistory() {
-    SessionFile.wipe();
+    lazy.SessionFile.wipe();
     
     
     
-    if (RunState.isQuitting) {
+    if (lazy.RunState.isQuitting) {
       return;
     }
     LastSession.clear();
@@ -2319,9 +2327,9 @@ var SessionStoreInternal = {
     
     var win = this._getTopWindow();
     if (win) {
-      win.setTimeout(() => SessionSaver.run(), 0);
-    } else if (RunState.isRunning) {
-      SessionSaver.run();
+      win.setTimeout(() => lazy.SessionSaver.run(), 0);
+    } else if (lazy.RunState.isRunning) {
+      lazy.SessionSaver.run();
     }
 
     this._clearRestoringWindows();
@@ -2390,8 +2398,8 @@ var SessionStoreInternal = {
       }
     }
 
-    if (RunState.isRunning) {
-      SessionSaver.run();
+    if (lazy.RunState.isRunning) {
+      lazy.SessionSaver.run();
     }
 
     this._clearRestoringWindows();
@@ -2469,9 +2477,9 @@ var SessionStoreInternal = {
     if (
       TAB_LAZY_STATES.has(aTab) &&
       !TAB_STATE_FOR_BROWSER.has(browser) &&
-      TabStateCache.get(browser.permanentKey)
+      lazy.TabStateCache.get(browser.permanentKey)
     ) {
-      let tabState = TabState.clone(aTab, TAB_CUSTOM_VALUES.get(aTab));
+      let tabState = lazy.TabState.clone(aTab, TAB_CUSTOM_VALUES.get(aTab));
       this.restoreTab(aTab, tabState);
     }
 
@@ -2516,7 +2524,7 @@ var SessionStoreInternal = {
     }
 
     
-    let tabState = TabState.collect(aTab, TAB_CUSTOM_VALUES.get(aTab));
+    let tabState = lazy.TabState.collect(aTab, TAB_CUSTOM_VALUES.get(aTab));
 
     
     this.maybeSaveClosedTab(aWindow, aTab, tabState);
@@ -2599,7 +2607,7 @@ var SessionStoreInternal = {
     let { userTypedValue = null, userTypedClear = 0 } = browser;
     let hasStartedLoad = browser.didStartLoadSinceLastUserTyping();
 
-    let cacheState = TabStateCache.get(browser.permanentKey);
+    let cacheState = lazy.TabStateCache.get(browser.permanentKey);
 
     
     
@@ -2625,7 +2633,7 @@ var SessionStoreInternal = {
       
       
       
-      TabStateCache.update(browser.permanentKey, {
+      lazy.TabStateCache.update(browser.permanentKey, {
         userTypedValue,
         userTypedClear: 1,
       });
@@ -2784,7 +2792,7 @@ var SessionStoreInternal = {
 
 
   onTabSelect: function ssi_onTabSelect(aWindow) {
-    if (RunState.isRunning) {
+    if (lazy.RunState.isRunning) {
       this._windows[aWindow.__SSi].selected =
         aWindow.gBrowser.tabContainer.selectedIndex;
 
@@ -2801,7 +2809,7 @@ var SessionStoreInternal = {
         
         
         
-        if (TabCrashHandler.willShowCrashedTab(browser)) {
+        if (lazy.TabCrashHandler.willShowCrashedTab(browser)) {
           this.enterCrashedState(browser);
         } else {
           this.restoreTabContent(tab);
@@ -2854,7 +2862,7 @@ var SessionStoreInternal = {
     this.enterCrashedState(aBrowser);
     
     
-    TabStateFlusher.resolveAll(aBrowser);
+    lazy.TabStateFlusher.resolveAll(aBrowser);
   },
 
   
@@ -2990,7 +2998,7 @@ var SessionStoreInternal = {
     this._globalState.setFromState(state);
 
     
-    SessionCookies.restore(state.cookies || []);
+    lazy.SessionCookies.restore(state.cookies || []);
 
     
     this.restoreWindows(window, state, { overwriteTabs: true });
@@ -3040,7 +3048,7 @@ var SessionStoreInternal = {
       );
     }
 
-    let tabState = TabState.collect(aTab, TAB_CUSTOM_VALUES.get(aTab));
+    let tabState = lazy.TabState.collect(aTab, TAB_CUSTOM_VALUES.get(aTab));
 
     return JSON.stringify(tabState);
   },
@@ -3148,11 +3156,11 @@ var SessionStoreInternal = {
     aWindow.gBrowser.setDefaultIcon(newTab, uriObj);
 
     
-    let tabState = TabState.collect(aTab, TAB_CUSTOM_VALUES.get(aTab));
+    let tabState = lazy.TabState.collect(aTab, TAB_CUSTOM_VALUES.get(aTab));
 
     
     let browser = aTab.linkedBrowser;
-    TabStateFlusher.flush(browser).then(() => {
+    lazy.TabStateFlusher.flush(browser).then(() => {
       
       if (newTab.closing || !newTab.linkedBrowser) {
         return;
@@ -3169,7 +3177,7 @@ var SessionStoreInternal = {
       
       
       let options = { includePrivateData: true };
-      TabState.copyFromCache(browser.permanentKey, tabState, options);
+      lazy.TabState.copyFromCache(browser.permanentKey, tabState, options);
 
       tabState.index += aDelta;
       tabState.index = Math.max(
@@ -3269,19 +3277,19 @@ var SessionStoreInternal = {
 
     
     
-    let preferredRemoteType = E10SUtils.DEFAULT_REMOTE_TYPE;
+    let preferredRemoteType = lazy.E10SUtils.DEFAULT_REMOTE_TYPE;
     if (state.entries?.length) {
       let activeIndex = (state.index || state.entries.length) - 1;
       activeIndex = Math.min(activeIndex, state.entries.length - 1);
       activeIndex = Math.max(activeIndex, 0);
 
-      preferredRemoteType = E10SUtils.getRemoteTypeForURI(
+      preferredRemoteType = lazy.E10SUtils.getRemoteTypeForURI(
         state.entries[activeIndex].url,
         aWindow.gMultiProcessBrowser,
         aWindow.gFissionBrowser,
-        E10SUtils.DEFAULT_REMOTE_TYPE,
+        lazy.E10SUtils.DEFAULT_REMOTE_TYPE,
         null,
-        E10SUtils.predictOriginAttributes({
+        lazy.E10SUtils.predictOriginAttributes({
           window: aWindow,
           userContextId: state.userContextId,
         })
@@ -3502,7 +3510,7 @@ var SessionStoreInternal = {
   },
 
   persistTabAttribute: function ssi_persistTabAttribute(aName) {
-    if (TabAttributes.persist(aName)) {
+    if (lazy.TabAttributes.persist(aName)) {
       this.saveStateDelayed();
     }
   },
@@ -3564,7 +3572,7 @@ var SessionStoreInternal = {
     let win = browser.ownerGlobal;
 
     if (!tabData) {
-      tabData = TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
+      tabData = lazy.TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
       if (!tabData) {
         throw new Error("tabData not found for given tab");
       }
@@ -3601,7 +3609,7 @@ var SessionStoreInternal = {
           tabData.iconLoadingPrincipal
         );
       }
-      TabStateCache.update(browser.permanentKey, {
+      lazy.TabStateCache.update(browser.permanentKey, {
         image: null,
         iconLoadingPrincipal: null,
       });
@@ -3686,7 +3694,7 @@ var SessionStoreInternal = {
     let windowsToOpen = [];
 
     
-    SessionCookies.restore(lastSessionState.cookies || []);
+    lazy.SessionCookies.restore(lastSessionState.cookies || []);
 
     
     for (let i = 0; i < lastSessionState.windows.length; i++) {
@@ -3751,7 +3759,7 @@ var SessionStoreInternal = {
       this._closedObjectsChanged = true;
     }
 
-    DevToolsShim.restoreDevToolsSession(lastSessionState);
+    lazy.DevToolsShim.restoreDevToolsSession(lastSessionState);
 
     
     this._recentCrashes =
@@ -3807,10 +3815,10 @@ var SessionStoreInternal = {
       triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal({
         userContextId: aTab.userContextId,
       }),
-      remoteTypeOverride: E10SUtils.NOT_REMOTE,
+      remoteTypeOverride: lazy.E10SUtils.NOT_REMOTE,
     });
 
-    let data = TabState.collect(aTab, TAB_CUSTOM_VALUES.get(aTab));
+    let data = lazy.TabState.collect(aTab, TAB_CUSTOM_VALUES.get(aTab));
     this.restoreTab(aTab, data, {
       forceOnDemand: true,
     });
@@ -3840,7 +3848,7 @@ var SessionStoreInternal = {
 
   getSessionHistory(tab, updatedCallback) {
     if (updatedCallback) {
-      TabStateFlusher.flush(tab.linkedBrowser).then(() => {
+      lazy.TabStateFlusher.flush(tab.linkedBrowser).then(() => {
         let sessionHistory = this.getSessionHistory(tab);
         if (sessionHistory) {
           updatedCallback(sessionHistory);
@@ -3850,7 +3858,7 @@ var SessionStoreInternal = {
 
     
     if (tab.linkedBrowser) {
-      let tabState = TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
+      let tabState = lazy.TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
       return { index: tabState.index - 1, entries: tabState.entries };
     }
     return null;
@@ -3885,7 +3893,7 @@ var SessionStoreInternal = {
     let tabbrowser = aWindow.gBrowser;
     let startupPref = this._prefBranch.getIntPref("startup.page");
     if (startupPref == 1) {
-      homePages = homePages.concat(HomePage.get(aWindow).split("|"));
+      homePages = homePages.concat(lazy.HomePage.get(aWindow).split("|"));
     }
 
     for (let i = tabbrowser._numPinnedTabs; i < tabbrowser.tabs.length; i++) {
@@ -3961,7 +3969,7 @@ var SessionStoreInternal = {
     var activeWindow = this._getTopWindow();
 
     TelemetryStopwatch.start("FX_SESSION_RESTORE_COLLECT_ALL_WINDOWS_DATA_MS");
-    if (RunState.isRunning) {
+    if (lazy.RunState.isRunning) {
       
       let index = 0;
       for (let window of this._orderedBrowserWindows) {
@@ -4024,7 +4032,7 @@ var SessionStoreInternal = {
       if (
         nonPopupCount == 0 &&
         !!lastClosedWindowsCopy.length &&
-        RunState.isQuitting
+        lazy.RunState.isQuitting
       ) {
         
         
@@ -4060,9 +4068,9 @@ var SessionStoreInternal = {
     };
 
     
-    state.cookies = SessionCookies.collect();
+    state.cookies = lazy.SessionCookies.collect();
 
-    DevToolsShim.saveDevToolsSession(state);
+    lazy.DevToolsShim.saveDevToolsSession(state);
 
     
     if (LastSession.canRestore) {
@@ -4090,7 +4098,7 @@ var SessionStoreInternal = {
       return this._statesToRestore[WINDOW_RESTORE_IDS.get(aWindow)];
     }
 
-    if (RunState.isRunning) {
+    if (lazy.RunState.isRunning) {
       this._collectWindowData(aWindow);
     }
 
@@ -4123,7 +4131,7 @@ var SessionStoreInternal = {
       if (tab == aWindow.gFirefoxViewTab) {
         continue;
       }
-      let tabData = TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
+      let tabData = lazy.TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
       tabMap.set(tab, tabData);
       tabsData.push(tabData);
     }
@@ -4278,7 +4286,7 @@ var SessionStoreInternal = {
     }
 
     
-    SessionCookies.restore(winData.cookies || []);
+    lazy.SessionCookies.restore(winData.cookies || []);
 
     if (winData.extData) {
       if (!this._windows[aWindow.__SSi].extData) {
@@ -4499,7 +4507,7 @@ var SessionStoreInternal = {
       this._restoreWindowsInReversedZOrder(windows);
     });
 
-    DevToolsShim.restoreDevToolsSession(aState);
+    lazy.DevToolsShim.restoreDevToolsSession(aState);
   },
 
   
@@ -4608,7 +4616,9 @@ var SessionStoreInternal = {
 
     if ("attributes" in tabData) {
       
-      Object.keys(tabData.attributes).forEach(a => TabAttributes.persist(a));
+      Object.keys(tabData.attributes).forEach(a =>
+        lazy.TabAttributes.persist(a)
+      );
     }
 
     if (!tabData.entries) {
@@ -4649,7 +4659,7 @@ var SessionStoreInternal = {
     }
 
     
-    TabStateCache.update(browser.permanentKey, {
+    lazy.TabStateCache.update(browser.permanentKey, {
       
       
       history: { entries: [...tabData.entries], index: tabData.index },
@@ -4671,7 +4681,7 @@ var SessionStoreInternal = {
 
     
     if ("attributes" in tabData) {
-      TabAttributes.set(tab, tabData.attributes);
+      lazy.TabAttributes.set(tab, tabData.attributes);
     }
 
     if (isBrowserInserted) {
@@ -4781,7 +4791,7 @@ var SessionStoreInternal = {
     let browser = aTab.linkedBrowser;
     let window = aTab.ownerGlobal;
     let tabbrowser = window.gBrowser;
-    let tabData = TabState.clone(aTab, TAB_CUSTOM_VALUES.get(aTab));
+    let tabData = lazy.TabState.clone(aTab, TAB_CUSTOM_VALUES.get(aTab));
     let activeIndex = tabData.index - 1;
     let activePageData = tabData.entries[activeIndex] || null;
     let uri = activePageData ? activePageData.url || null : null;
@@ -4866,7 +4876,7 @@ var SessionStoreInternal = {
 
   restoreNextTab: function ssi_restoreNextTab() {
     
-    if (RunState.isQuitting) {
+    if (lazy.RunState.isQuitting) {
       return;
     }
 
@@ -4955,7 +4965,12 @@ var SessionStoreInternal = {
 
     const dwu = win.windowUtils;
     
-    let screen = gScreenManager.screenForRect(aLeft, aTop, aWidth, aHeight);
+    let screen = lazy.gScreenManager.screenForRect(
+      aLeft,
+      aTop,
+      aWidth,
+      aHeight
+    );
     if (screen) {
       let screenLeft = {},
         screenTop = {},
@@ -5105,7 +5120,7 @@ var SessionStoreInternal = {
       DirtyWindows.add(aWindow);
     }
 
-    SessionSaver.runDelayed();
+    lazy.SessionSaver.runDelayed();
   },
 
   
@@ -5134,7 +5149,7 @@ var SessionStoreInternal = {
       return;
     }
     this._closedObjectsChanged = false;
-    setTimeout(() => {
+    lazy.setTimeout(() => {
       Services.obs.notifyObservers(null, NOTIFY_CLOSED_OBJECTS_CHANGED);
     }, 0);
   },
@@ -5161,7 +5176,7 @@ var SessionStoreInternal = {
 
   _browserWindows: {
     *[Symbol.iterator]() {
-      for (let window of BrowserWindowTracker.orderedWindows) {
+      for (let window of lazy.BrowserWindowTracker.orderedWindows) {
         if (window.__SSi && !window.closed) {
           yield window;
         }
@@ -5176,7 +5191,7 @@ var SessionStoreInternal = {
 
   _orderedBrowserWindows: {
     *[Symbol.iterator]() {
-      let windows = BrowserWindowTracker.orderedWindows;
+      let windows = lazy.BrowserWindowTracker.orderedWindows;
       windows.sort((a, b) => {
         if (
           a.windowState == a.STATE_MINIMIZED &&
@@ -5205,7 +5220,7 @@ var SessionStoreInternal = {
 
 
   _getTopWindow: function ssi_getTopWindow() {
-    return BrowserWindowTracker.getTopWindow({ allowPopups: true });
+    return lazy.BrowserWindowTracker.getTopWindow({ allowPopups: true });
   },
 
   
@@ -5312,7 +5327,7 @@ var SessionStoreInternal = {
     );
 
     this._updateWindowRestoreState(window, aState);
-    WINDOW_SHOWING_PROMISES.set(window, PromiseUtils.defer());
+    WINDOW_SHOWING_PROMISES.set(window, lazy.PromiseUtils.defer());
 
     return window;
   },
@@ -5945,7 +5960,7 @@ var SessionStoreInternal = {
     let DELAY_BEAT = 1000;
     let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
     let beats = Math.ceil(delay / DELAY_BEAT);
-    let deferred = PromiseUtils.defer();
+    let deferred = lazy.PromiseUtils.defer();
     timer.initWithCallback(
       function() {
         if (beats <= 0) {
@@ -6051,7 +6066,7 @@ var SessionStoreInternal = {
   },
 
   _waitForStateStop(browser, expectedURL = null) {
-    const deferred = PromiseUtils.defer();
+    const deferred = lazy.PromiseUtils.defer();
 
     const listener = {
       unregister(reject = true) {
@@ -6174,7 +6189,7 @@ var SessionStoreInternal = {
     
     browser.stop();
 
-    SessionHistory.restoreFromParent(
+    lazy.SessionHistory.restoreFromParent(
       browser.browsingContext.sessionHistory,
       data.tabData
     );
@@ -6296,7 +6311,7 @@ var SessionStoreInternal = {
     }
 
     
-    let tabData = TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
+    let tabData = lazy.TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
 
     
     this.updateTabLabelAndIcon(tab, tabData);
@@ -6331,10 +6346,10 @@ var SessionStoreInternal = {
     
     
     
-    let cacheState = TabStateCache.get(browser.permanentKey);
+    let cacheState = lazy.TabStateCache.get(browser.permanentKey);
     if (cacheState.searchMode) {
       if (!initiatedBySessionStore || isNavigateAndRestore) {
-        TabStateCache.update(browser.permanentKey, {
+        lazy.TabStateCache.update(browser.permanentKey, {
           searchMode: null,
           userTypedValue: null,
         });
@@ -6355,7 +6370,7 @@ var SessionStoreInternal = {
       
       
       
-      let tabData = TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
+      let tabData = lazy.TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));
       if (
         tabData.userTypedValue &&
         !tabData.userTypedClear &&
@@ -6368,7 +6383,7 @@ var SessionStoreInternal = {
       }
 
       
-      TabStateCache.update(browser.permanentKey, {
+      lazy.TabStateCache.update(browser.permanentKey, {
         userTypedValue: null,
         userTypedClear: null,
       });
@@ -6383,14 +6398,14 @@ var SessionStoreInternal = {
     }
     
     
-    let cacheState = TabStateCache.get(browser.permanentKey);
+    let cacheState = lazy.TabStateCache.get(browser.permanentKey);
     if (cacheState.searchMode) {
       win.gURLBar.setSearchMode(cacheState.searchMode, browser);
       browser.userTypedValue = cacheState.userTypedValue;
       if (tab.selected) {
         win.gURLBar.setURI();
       }
-      TabStateCache.update(browser.permanentKey, {
+      lazy.TabStateCache.update(browser.permanentKey, {
         searchMode: null,
         userTypedValue: null,
       });
@@ -6453,7 +6468,7 @@ var SessionStoreInternal = {
     aBrowser.messageManager.sendAsyncMessage(
       "SessionStore:prepareForProcessChange"
     );
-    await TabStateFlusher.flush(aBrowser);
+    await lazy.TabStateFlusher.flush(aBrowser);
   },
 
   
@@ -6468,7 +6483,7 @@ var SessionStoreInternal = {
       return;
     }
 
-    let tabState = TabState.clone(aTab, TAB_CUSTOM_VALUES.get(aTab));
+    let tabState = lazy.TabState.clone(aTab, TAB_CUSTOM_VALUES.get(aTab));
     let options = {
       restoreImmediately: true,
       restoreContentReason: RESTORE_TAB_CONTENT_REASON.NAVIGATE_AND_RESTORE,

@@ -8,13 +8,15 @@ var EXPORTED_SYMBOLS = ["ContentRestore"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "SessionHistory",
   "resource://gre/modules/sessionstore/SessionHistory.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "Utils",
   "resource://gre/modules/sessionstore/Utils.jsm"
 );
@@ -125,7 +127,7 @@ ContentRestoreInternal.prototype = {
       webNavigation.setCurrentURIForSessionStore(Services.io.newURI(uri));
     }
 
-    SessionHistory.restore(this.docShell, tabData);
+    lazy.SessionHistory.restore(this.docShell, tabData);
 
     
     let listener = new HistoryListener(this.docShell, () => {
@@ -282,7 +284,7 @@ ContentRestoreInternal.prototype = {
     let window = this.docShell.domWindow;
 
     
-    Utils.restoreFrameTreeData(window, formdata, (frame, data) => {
+    lazy.Utils.restoreFrameTreeData(window, formdata, (frame, data) => {
       
       
       
@@ -290,7 +292,7 @@ ContentRestoreInternal.prototype = {
     });
 
     
-    Utils.restoreFrameTreeData(window, scrollPositions, (frame, data) => {
+    lazy.Utils.restoreFrameTreeData(window, scrollPositions, (frame, data) => {
       if (data.scroll) {
         SessionStoreUtils.restoreScrollPosition(frame, data);
       }

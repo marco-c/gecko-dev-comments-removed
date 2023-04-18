@@ -6,18 +6,20 @@
 
 var EXPORTED_SYMBOLS = ["TabState"];
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "PrivacyFilter",
   "resource://gre/modules/sessionstore/PrivacyFilter.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "TabStateCache",
   "resource:///modules/sessionstore/TabStateCache.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "TabAttributes",
   "resource:///modules/sessionstore/TabAttributes.jsm"
 );
@@ -48,7 +50,7 @@ var TabStateInternal = {
 
 
   update(permanentKey, { data }) {
-    TabStateCache.update(permanentKey, data);
+    lazy.TabStateCache.update(permanentKey, data);
   },
 
   
@@ -115,7 +117,7 @@ var TabStateInternal = {
     tabData.userContextId = tab.userContextId || 0;
 
     
-    tabData.attributes = TabAttributes.get(tab);
+    tabData.attributes = lazy.TabAttributes.get(tab);
 
     if (options.extData) {
       tabData.extData = options.extData;
@@ -166,7 +168,7 @@ var TabStateInternal = {
 
 
   copyFromCache(permanentKey, tabData, options = {}) {
-    let data = TabStateCache.get(permanentKey);
+    let data = lazy.TabStateCache.get(permanentKey);
     if (!data) {
       return;
     }
@@ -180,9 +182,9 @@ var TabStateInternal = {
       
       if (!includePrivateData) {
         if (key === "storage") {
-          value = PrivacyFilter.filterSessionStorageData(value);
+          value = lazy.PrivacyFilter.filterSessionStorageData(value);
         } else if (key === "formdata") {
-          value = PrivacyFilter.filterFormData(value);
+          value = lazy.PrivacyFilter.filterFormData(value);
         }
       }
 
