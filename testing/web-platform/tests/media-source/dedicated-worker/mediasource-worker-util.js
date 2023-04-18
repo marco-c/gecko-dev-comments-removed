@@ -22,6 +22,7 @@ let MEDIA_LIST = [
 class MediaSourceWorkerUtil {
   constructor() {
     this.mediaSource = new MediaSource();
+    this.mediaSourceObjectUrl = URL.createObjectURL(this.mediaSource);
 
     
     this.foundSupportedMedia = false;

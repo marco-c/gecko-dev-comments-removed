@@ -4,7 +4,6 @@
 const messageSubject = {
   ERROR: "error",  
   OBJECT_URL: "object url", 
-  HANDLE: "handle", 
   STARTED_BUFFERING: "started buffering",
   FINISHED_BUFFERING: "finished buffering",
   VERIFY_DURATION: "verify duration", 
