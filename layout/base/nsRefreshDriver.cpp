@@ -1521,7 +1521,11 @@ void nsRefreshDriver::NotifyDOMContentLoaded() {
   
   
   if (!HasObservers()) {
-    GetPresContext()->NotifyDOMContentFlushed();
+    if (nsPresContext* pc = GetPresContext()) {
+      pc->NotifyDOMContentFlushed();
+    }
+    
+    
   } else {
     mNotifyDOMContentFlushed = true;
   }
