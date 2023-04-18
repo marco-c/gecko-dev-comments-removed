@@ -8,9 +8,6 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
-const { E10SUtils } = ChromeUtils.import(
-  "resource://gre/modules/E10SUtils.jsm"
-);
 
 const DIALOG_URL_APP_CHOOSER =
   "chrome://mozapps/content/handling/appChooser.xhtml";
@@ -313,14 +310,12 @@ class nsContentDispatchChooser {
     }
 
     let shouldOpenHandler = false;
-
     try {
       shouldOpenHandler = await this._prompt(
         aHandler,
         aPrincipal,
         callerHasPermission,
-        aBrowsingContext,
-        aURI
+        aBrowsingContext
       );
     } catch (error) {
       Cu.reportError(error.message);
@@ -363,29 +358,9 @@ class nsContentDispatchChooser {
 
 
 
-  async _prompt(aHandler, aPrincipal, aHasPermission, aBrowsingContext, aURI) {
+  async _prompt(aHandler, aPrincipal, aHasPermission, aBrowsingContext) {
     let shouldOpenHandler = false;
     let resetHandlerChoice = false;
-    let updateHandlerData = false;
-
-    const isStandardProtocol = E10SUtils.STANDARD_SAFE_PROTOCOLS.includes(aURI);
-    const {
-      hasDefaultHandler,
-      preferredApplicationHandler,
-      alwaysAskBeforeHandling,
-    } = aHandler;
-
-    
-    
-    if (
-      !isStandardProtocol &&
-      hasDefaultHandler &&
-      preferredApplicationHandler == null &&
-      alwaysAskBeforeHandling
-    ) {
-      aHandler.alwaysAskBeforeHandling = false;
-      updateHandlerData = true;
-    }
 
     
     if (!aHasPermission) {
@@ -471,15 +446,12 @@ class nsContentDispatchChooser {
         ]) {
           aHandler[prop] = outArgs.getProperty(prop);
         }
-        updateHandlerData = true;
-      }
-    }
 
-    if (updateHandlerData) {
-      
-      Cc["@mozilla.org/uriloader/handler-service;1"]
-        .getService(Ci.nsIHandlerService)
-        .store(aHandler);
+        
+        Cc["@mozilla.org/uriloader/handler-service;1"]
+          .getService(Ci.nsIHandlerService)
+          .store(aHandler);
+      }
     }
 
     return shouldOpenHandler;
