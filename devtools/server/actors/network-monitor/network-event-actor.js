@@ -23,14 +23,18 @@ const { LongStringActor } = require("devtools/server/actors/string");
 
 
 
+
+
+
 const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
   initialize(
-    networkEventWatcher,
+    conn,
+    sessionContext,
     { onNetworkEventUpdate, onNetworkEventDestroy },
     networkEvent
   ) {
-    this._networkEventWatcher = networkEventWatcher;
-    this._conn = networkEventWatcher.conn;
+    this._sessionContext = sessionContext;
+    this._conn = conn;
     this._onNetworkEventUpdate = onNetworkEventUpdate;
     this._onNetworkEventDestroy = onNetworkEventDestroy;
 
@@ -100,7 +104,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
   asResource() {
     
     
-    if (!this._browsingContextID && this._networkEventWatcher.browserId) {
+    if (!this._browsingContextID && this._sessionContext.type != "all") {
       throw new Error(
         `Got a request ${this._request.url} without a browsingContextID set`
       );
@@ -113,7 +117,7 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
     
     
     const browsingContextID =
-      this._browsingContextID && this._networkEventWatcher.browserId
+      this._browsingContextID && this._sessionContext.type == "browser-element"
         ? this._browsingContextID
         : -1;
 
@@ -148,13 +152,11 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
 
 
   destroy(conn) {
-    if (!this._networkEventWatcher) {
+    if (!this._channelId) {
       return;
     }
-    if (this._channelId) {
-      this._onNetworkEventDestroy(this._channelId);
-    }
-    this._networkEventWatcher = null;
+    this._onNetworkEventDestroy(this._channelId);
+    this._channelId = null;
     protocol.Actor.prototype.destroy.call(this, conn);
   },
 
