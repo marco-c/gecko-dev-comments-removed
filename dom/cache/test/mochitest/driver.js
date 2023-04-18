@@ -17,7 +17,16 @@
 
 
 function runTests(testFile, order) {
-  function setupPrefs() {
+  async function setupPrefs() {
+    
+    
+    SpecialPowers.wrap(document).notifyUserGestureActivation();
+    await SpecialPowers.addPermission(
+      "storageAccessAPI",
+      true,
+      window.location.href
+    );
+    await SpecialPowers.wrap(document).requestStorageAccess();
     return SpecialPowers.pushPrefEnv({
       set: [
         ["dom.caches.enabled", true],
@@ -31,13 +40,21 @@ function runTests(testFile, order) {
 
   
   function clearStorage() {
-    return new Promise(function(resolve, reject) {
+    var clearUnpartitionedStorage = new Promise(function(resolve, reject) {
       var qms = SpecialPowers.Services.qms;
       var principal = SpecialPowers.wrap(document).nodePrincipal;
       var request = qms.clearStoragesForPrincipal(principal);
       var cb = SpecialPowers.wrapCallback(resolve);
       request.callback = cb;
     });
+    var clearPartitionedStorage = new Promise(function(resolve, reject) {
+      var qms = SpecialPowers.Services.qms;
+      var principal = SpecialPowers.wrap(document).partitionedPrincipal;
+      var request = qms.clearStoragesForPrincipal(principal);
+      var cb = SpecialPowers.wrapCallback(resolve);
+      request.callback = cb;
+    });
+    return Promise.all([clearUnpartitionedStorage, clearPartitionedStorage]);
   }
 
   function loadScript(script) {
