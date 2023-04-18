@@ -1300,6 +1300,23 @@ class nsIFrame : public nsQueryFrame {
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(UsedPaddingProperty, nsMargin)
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(UsedBorderProperty, nsMargin)
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  struct PageValues {
+    
+    
+    RefPtr<const nsAtom> mStartPageValue = nullptr;
+    RefPtr<const nsAtom> mEndPageValue = nullptr;
+  };
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(PageValuesProperty, PageValues)
+
   NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(LineBaselineOffset, nscoord)
 
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(InvalidationRect, nsRect)

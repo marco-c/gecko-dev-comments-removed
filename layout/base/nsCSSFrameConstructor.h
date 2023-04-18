@@ -1251,6 +1251,34 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
 
+
+
+
+
+
+
+  class MOZ_RAII AutoFrameConstructionPageName final {
+    nsCSSFrameConstructor& mFCtor;
+    nsFrameConstructorState& mState;
+    FrameConstructionItemList& mItems;
+    const nsIFrame* const mFrame;
+    const nsAtom* mNameToRestore;
+
+   public:
+    AutoFrameConstructionPageName(nsCSSFrameConstructor& aFCtor,
+                                  nsFrameConstructorState& aState,
+                                  FrameConstructionItemList& aItems,
+                                  nsIFrame* const aFrame);
+    ~AutoFrameConstructionPageName();
+  };
+
+  
+
+
+
+
+
+
   void CreateNeededAnonFlexOrGridItems(nsFrameConstructorState& aState,
                                        FrameConstructionItemList& aItems,
                                        nsIFrame* aParentFrame);
@@ -1392,8 +1420,18 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   void ReframeTextIfNeeded(nsIContent* aContent);
 
-  void AddPageBreakItem(nsIContent* aContent,
-                        FrameConstructionItemList& aItems);
+  enum InsertPageBreakLocation { eBefore, eAfter };
+  inline void AppendPageBreakItem(nsIContent* aContent,
+                                  FrameConstructionItemList& aItems) {
+    InsertPageBreakItem(aContent, aItems, InsertPageBreakLocation::eAfter);
+  }
+  inline void PrependPageBreakItem(nsIContent* aContent,
+                                   FrameConstructionItemList& aItems) {
+    InsertPageBreakItem(aContent, aItems, InsertPageBreakLocation::eBefore);
+  }
+  void InsertPageBreakItem(nsIContent* aContent,
+                           FrameConstructionItemList& aItems,
+                           InsertPageBreakLocation location);
 
   
   
