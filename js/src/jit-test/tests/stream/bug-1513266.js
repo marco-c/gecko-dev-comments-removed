@@ -5,7 +5,7 @@ ignoreUnhandledRejections();
 function test() {
   let controller;
   let stream = new ReadableStream({
-    start(c) {}
+    start(c) { }
   });
   stream.getReader();
   drainJobQueue();
@@ -13,4 +13,4 @@ function test() {
 
 
 test();
-oomTest(test, {verbose: true, keepFailing: false});
+oomTest(test, { verbose: true, keepFailing: false });

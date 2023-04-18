@@ -12,6 +12,6 @@ for (let n = 1; n < 1000; n++) {
   try {
     reader.read();
     n = 1000;
-  } catch {}
+  } catch { }
   resetOOMFailure();
 }

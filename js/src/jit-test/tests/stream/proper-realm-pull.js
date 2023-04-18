@@ -1,3 +1,4 @@
+
 ignoreUnhandledRejections();
 
 var g = newGlobal({ newCompartment: true });
