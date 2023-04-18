@@ -8031,8 +8031,8 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
   
   
   
-  bool reloadRegs = true;
-  bool switchRealm = true;
+  bool reloadRegs = false;
+  bool switchRealm = false;
 
   const wasm::CallSiteDesc& desc = mir->desc();
   const wasm::CalleeDesc& callee = mir->callee();
@@ -8040,27 +8040,24 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
   switch (callee.which()) {
     case wasm::CalleeDesc::Func:
       retOffset = masm.call(desc, callee.funcIndex());
-      reloadRegs = false;
-      switchRealm = false;
       break;
     case wasm::CalleeDesc::Import:
       retOffset = masm.wasmCallImport(desc, callee);
+      reloadRegs = true;
+      switchRealm = true;
       break;
     case wasm::CalleeDesc::AsmJSTable:
     case wasm::CalleeDesc::WasmTable:
       retOffset = masm.wasmCallIndirect(desc, callee, needsBoundsCheck);
-      reloadRegs = switchRealm = callee.which() == wasm::CalleeDesc::WasmTable;
       break;
     case wasm::CalleeDesc::Builtin:
       retOffset = masm.call(desc, callee.builtin());
-      reloadRegs = false;
-      switchRealm = false;
       break;
     case wasm::CalleeDesc::BuiltinInstanceMethod:
       retOffset = masm.wasmCallBuiltinInstanceMethod(
           desc, mir->instanceArg(), callee.builtin(),
           mir->builtinMethodFailureMode());
-      switchRealm = false;
+      reloadRegs = true;
       break;
   }
 

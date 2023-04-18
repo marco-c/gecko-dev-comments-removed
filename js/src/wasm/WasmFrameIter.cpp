@@ -210,7 +210,9 @@ void WasmFrameIter::popFrame() {
   const CallSite* callsite = code_->lookupCallSite(returnAddress);
   MOZ_ASSERT(callsite);
 
-  if (callsite->mightBeCrossInstance()) {
+  if (callsite->isImportCall()) {
+    tls_ = ExtractCallerTlsFromFrameWithTls(prevFP);
+  } else if (callsite->isIndirectCall() && prevFP->callerIsTrampolineFP()) {
     tls_ = ExtractCallerTlsFromFrameWithTls(prevFP);
   }
 
@@ -976,10 +978,14 @@ const TlsData* js::wasm::GetNearestEffectiveTls(const Frame* fp) {
       return ExtractCalleeTlsFromFrameWithTls(fp);
     }
 
+    if (codeRange->isIndirectStub()) {
+      return ExtractCalleeTlsFromFrameWithTls(fp->wasmCaller());
+    }
+
     MOZ_ASSERT(codeRange->kind() == CodeRange::Function);
     MOZ_ASSERT(code);
     const CallSite* callsite = code->lookupCallSite(returnAddress);
-    if (callsite->mightBeCrossInstance()) {
+    if (callsite->isImportCall()) {
       return ExtractCalleeTlsFromFrameWithTls(fp);
     }
 
@@ -1198,8 +1204,16 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
       
       
       break;
-    case CodeRange::IndirectStub:
-      MOZ_CRASH("NYI");
+    case CodeRange::IndirectStub: {
+      
+      
+      fixedPC = pc;
+      fixedFP = fp;
+      *unwoundCaller = false;
+      AssertMatchesCallSite(Frame::fromUntaggedWasmExitFP(fp)->returnAddress(),
+                            Frame::fromUntaggedWasmExitFP(fp)->rawCaller());
+      break;
+    }
     case CodeRange::JitEntry:
       
       
