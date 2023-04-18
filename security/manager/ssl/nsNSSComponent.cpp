@@ -6,6 +6,7 @@
 
 #include "nsNSSComponent.h"
 
+#include "BinaryPath.h"
 #include "CryptoTask.h"
 #include "EnterpriseRoots.h"
 #include "ExtendedValidation.h"
@@ -21,6 +22,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
 #include "mozilla/EndianUtils.h"
+#include "mozilla/FilePreferences.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerLabels.h"
@@ -102,6 +104,38 @@ nsresult CommonInit();
 
 
 
+
+
+
+
+
+nsresult FileToCString(const nsCOMPtr<nsIFile>& file, nsACString& result) {
+#ifdef XP_WIN
+  
+  
+  nsCOMPtr<nsILocalFileWin> fileWin = do_QueryInterface(file);
+  if (!fileWin) {
+    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("couldn't get nsILocalFileWin"));
+    return NS_ERROR_FAILURE;
+  }
+  return fileWin->GetNativeCanonicalPath(result);
+#else
+  return file->GetNativePath(result);
+#endif
+}
+
+void TruncateFromLastDirectorySeparator(nsCString& path) {
+  static const nsAutoCString kSeparatorString(
+      mozilla::FilePreferences::kPathSeparator);
+  int32_t index = path.RFind(kSeparatorString);
+  if (index == kNotFound) {
+    return;
+  }
+  path.Truncate(index);
+}
+
+
+
 bool EnsureNSSInitializedChromeOrContent() {
   static Atomic<bool> initialized(false);
 
@@ -147,6 +181,36 @@ bool EnsureNSSInitializedChromeOrContent() {
 
   if (XRE_IsSocketProcess()) {
     if (NS_FAILED(CommonInit())) {
+      return false;
+    }
+    
+    
+    UniqueFreePtr<char> pluginContainerPath(BinaryPath::Get());
+    if (!pluginContainerPath) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+              ("failed to get get plugin-container path"));
+      return false;
+    }
+    nsAutoCString ipcClientCertsDirString(pluginContainerPath.get());
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    TruncateFromLastDirectorySeparator(ipcClientCertsDirString);
+#ifdef XP_MACOSX
+    TruncateFromLastDirectorySeparator(ipcClientCertsDirString);
+    TruncateFromLastDirectorySeparator(ipcClientCertsDirString);
+    TruncateFromLastDirectorySeparator(ipcClientCertsDirString);
+#endif
+    if (!LoadIPCClientCertsModule(ipcClientCertsDirString)) {
+      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
+              ("failed to load ipcclientcerts from '%s'",
+               ipcClientCertsDirString.get()));
       return false;
     }
     initialized = true;
@@ -750,18 +814,7 @@ static nsresult GetDirectoryPath(const char* directoryKey, nsCString& result) {
             ("could not get '%s' from directory service", directoryKey));
     return rv;
   }
-#ifdef XP_WIN
-  
-  
-  nsCOMPtr<nsILocalFileWin> directoryWin = do_QueryInterface(directory);
-  if (!directoryWin) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("couldn't get nsILocalFileWin"));
-    return NS_ERROR_FAILURE;
-  }
-  return directoryWin->GetNativeCanonicalPath(result);
-#else
-  return directory->GetNativePath(result);
-#endif
+  return FileToCString(directory, result);
 }
 
 class BackgroundLoadOSClientCertsModuleTask final : public CryptoTask {
@@ -840,8 +893,6 @@ nsNSSComponent::HasActiveSmartCards(bool* result) {
 NS_IMETHODIMP
 nsNSSComponent::HasUserCertsInstalled(bool* result) {
   NS_ENSURE_ARG_POINTER(result);
-
-  BlockUntilLoadableCertsLoaded();
 
   
   
@@ -941,18 +992,7 @@ static nsresult GetNSS3Directory(nsCString& result) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("couldn't get parent directory?"));
     return rv;
   }
-#ifdef XP_WIN
-  
-  
-  nsCOMPtr<nsILocalFileWin> nss3DirectoryWin = do_QueryInterface(nss3Directory);
-  if (!nss3DirectoryWin) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("couldn't get nsILocalFileWin"));
-    return NS_ERROR_FAILURE;
-  }
-  return nss3DirectoryWin->GetNativeCanonicalPath(result);
-#else
-  return nss3Directory->GetNativePath(result);
-#endif
+  return FileToCString(nss3Directory, result);
 }
 
 
@@ -2620,6 +2660,9 @@ UniqueCERTCertList FindClientCertificatesWithPrivateKeys() {
   });
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
           ("FindClientCertificatesWithPrivateKeys"));
+
+  BlockUntilLoadableCertsLoaded();
+
   UniqueCERTCertList certsWithPrivateKeys(CERT_NewCertList());
   if (!certsWithPrivateKeys) {
     return nullptr;
