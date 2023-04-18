@@ -97,7 +97,8 @@ struct GCPointerPolicy {
   static void trace(JSTracer* trc, T* vp, const char* name) {
     
     
-    UnsafeTraceRoot(trc, vp, name);
+    
+    TraceRoot(trc, vp, name);
   }
   static bool isTenured(T v) { return !js::gc::IsInsideNursery(v); }
   static bool isValid(T v) { return js::gc::IsCellPointerValidOrNull(v); }

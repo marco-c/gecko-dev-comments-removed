@@ -401,7 +401,7 @@ JS_PUBLIC_API void js::UnsafeTraceManuallyBarrieredEdge(JSTracer* trc,
 }
 
 template <typename T>
-static void UnsafeTraceRootHelper(JSTracer* trc, T* thingp, const char* name) {
+static void TraceRootHelper(JSTracer* trc, T* thingp, const char* name) {
   MOZ_ASSERT(thingp);
   js::TraceNullableRoot(trc, thingp, name);
 }
@@ -423,10 +423,10 @@ JS_FOR_EACH_PUBLIC_TAGGED_GC_POINTER_TYPE(DEFINE_TRACE_EXTERNAL_EDGE_FUNCTION)
 
 #undef DEFINE_TRACE_EXTERNAL_EDGE_FUNCTION
 
-#define DEFINE_UNSAFE_TRACE_ROOT_FUNCTION(type)                       \
-  JS_PUBLIC_API void JS::UnsafeTraceRoot(JSTracer* trc, type* thingp, \
-                                         const char* name) {          \
-    UnsafeTraceRootHelper(trc, thingp, name);                         \
+#define DEFINE_UNSAFE_TRACE_ROOT_FUNCTION(type)                 \
+  JS_PUBLIC_API void JS::TraceRoot(JSTracer* trc, type* thingp, \
+                                   const char* name) {          \
+    TraceRootHelper(trc, thingp, name);                         \
   }
 
 

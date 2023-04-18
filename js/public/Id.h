@@ -228,7 +228,8 @@ struct GCPolicy<jsid> {
   static void trace(JSTracer* trc, jsid* idp, const char* name) {
     
     
-    UnsafeTraceRoot(trc, idp, name);
+    
+    TraceRoot(trc, idp, name);
   }
   static bool isValid(jsid id) {
     return !id.isGCThing() ||

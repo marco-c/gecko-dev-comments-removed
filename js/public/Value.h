@@ -1082,7 +1082,8 @@ struct GCPolicy<JS::Value> {
   static void trace(JSTracer* trc, Value* v, const char* name) {
     
     
-    UnsafeTraceRoot(trc, v, name);
+    
+    TraceRoot(trc, v, name);
   }
   static bool isTenured(const Value& thing) {
     return !thing.isGCThing() || !IsInsideNursery(thing.toGCThing());
