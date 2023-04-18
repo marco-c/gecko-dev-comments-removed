@@ -184,11 +184,6 @@ interface nsIAccessible : nsISupports
   
 
 
-  readonly attribute nsIPersistentProperties cache;
-
-  
-
-
   readonly attribute nsISupports nativeInterface;
 
   

@@ -25,6 +25,14 @@ loadScripts(
   { name: "role.js", dir: MOCHITESTS_DIR }
 );
 
+const isCacheEnabled = Services.prefs.getBoolPref(
+  "accessibility.cache.enabled",
+  false
+);
+
+
+const isWinNoCache = !isCacheEnabled && AppConstants.platform == "win";
+
 
 
 function multipleSelectionChanged(widget, changedChildren, selected) {

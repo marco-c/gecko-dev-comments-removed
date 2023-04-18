@@ -342,26 +342,6 @@ bool RemoteAccessibleBase<Derived>::ApplyTransform(nsRect& aBounds) const {
 }
 
 template <class Derived>
-void RemoteAccessibleBase<Derived>::ApplyScrollOffset(nsRect& aBounds) const {
-  Maybe<const nsTArray<int32_t>&> maybeScrollPosition =
-      mCachedFields->GetAttribute<nsTArray<int32_t>>(nsGkAtoms::scrollPosition);
-
-  if (!maybeScrollPosition || maybeScrollPosition->Length() != 2) {
-    return;
-  }
-  
-  
-  const nsTArray<int32_t>& scrollPosition = *maybeScrollPosition;
-
-  
-  
-  
-  nsPoint scrollOffset(-scrollPosition[0], -scrollPosition[1]);
-
-  aBounds.MoveBy(scrollOffset.x, scrollOffset.y);
-}
-
-template <class Derived>
 LayoutDeviceIntRect RemoteAccessibleBase<Derived>::Bounds() const {
   if (mCachedFields) {
     Maybe<nsRect> maybeBounds = RetrieveCachedBounds();
@@ -378,7 +358,7 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::Bounds() const {
       Unused << ApplyTransform(bounds);
 
       LayoutDeviceIntRect devPxBounds;
-      const Accessible* acc = Parent();
+      const Accessible* acc = this;
 
       while (acc) {
         if (LocalAccessible* localAcc =
@@ -404,9 +384,12 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::Bounds() const {
         }
 
         RemoteAccessible* remoteAcc = const_cast<Accessible*>(acc)->AsRemote();
+        
+        
+        Maybe<nsRect> maybeRemoteBounds =
+            (remoteAcc == this) ? Nothing() : remoteAcc->RetrieveCachedBounds();
 
-        if (Maybe<nsRect> maybeRemoteBounds =
-                remoteAcc->RetrieveCachedBounds()) {
+        if (maybeRemoteBounds) {
           nsRect remoteBounds = *maybeRemoteBounds;
           
           
@@ -426,13 +409,6 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::Bounds() const {
             bounds.ScaleRoundOut(res.valueOr(1.0f));
           }
 
-          
-          
-          
-          
-          remoteAcc->ApplyScrollOffset(remoteBounds);
-
-          
           
           
           bounds.MoveBy(remoteBounds.X(), remoteBounds.Y());
