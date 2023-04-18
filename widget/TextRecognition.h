@@ -8,43 +8,41 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/gfx/Point.h"
 #include "nsTArray.h"
-#include "nsITextRecognition.h"
 
 class imgIContainer;
-namespace mozilla::gfx {
+namespace mozilla {
+
+namespace dom {
+class ShadowRoot;
+class TextRecognitionResultOrError;
+class TextRecognitionResult;
+}  
+
+namespace gfx {
 class SourceSurface;
-}
+class DataSourceSurface;
+}  
 
-namespace mozilla::widget {
+namespace widget {
 
-struct TextRecognitionQuad {
-  gfx::Point mPoints[4];
-  nsString mString;
-  
-  float mConfidence = 0.0f;
-};
-
-struct TextRecognitionResult {
-  nsTArray<TextRecognitionQuad> mQuads;
-};
-
-class TextRecognition final : public nsITextRecognition {
+class TextRecognition final {
  public:
-  using NativePromise = MozPromise<TextRecognitionResult, nsCString,
+  using NativePromise = MozPromise<dom::TextRecognitionResult, nsCString,
                                     true>;
-
-  NS_DECL_NSITEXTRECOGNITION
-  NS_DECL_ISUPPORTS
 
   TextRecognition() = default;
 
-  
-  static RefPtr<NativePromise> FindText(gfx::SourceSurface&);
+  static RefPtr<NativePromise> FindText(imgIContainer&);
+  static RefPtr<NativePromise> FindText(gfx::DataSourceSurface&);
 
  protected:
+  
+  static RefPtr<NativePromise> DoFindText(gfx::DataSourceSurface&);
+
   ~TextRecognition() = default;
 };
 
+}  
 }  
 
 #endif
