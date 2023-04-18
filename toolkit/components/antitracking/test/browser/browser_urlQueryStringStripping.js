@@ -35,6 +35,11 @@ const TEST_CASES = [
     testQueryString: "paramToKeep=123",
     strippedQueryString: "paramToKeep=123",
   },
+  
+  {
+    testQueryString: "paramToStrip1=123&paramToKeep=?$!%",
+    strippedQueryString: "paramToKeep=?$!%",
+  },
 ];
 
 function observeChannel(uri, expected) {
