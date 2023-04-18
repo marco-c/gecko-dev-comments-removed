@@ -244,6 +244,7 @@ static void moz_container_wayland_frame_callback_handler(
   {
     
     MutexAutoLock lock(*wl_container->container_lock);
+    g_clear_pointer(&wl_container->frame_callback_handler, wl_callback_destroy);
     
     if (!wl_container->surface) {
       LOGWAYLAND("  container in unmapped, quit.");
@@ -251,7 +252,6 @@ static void moz_container_wayland_frame_callback_handler(
                             "MozContainer should be unmapped.");
       return;
     }
-    g_clear_pointer(&wl_container->frame_callback_handler, wl_callback_destroy);
     if (wl_container->ready_to_draw) {
       return;
     }
