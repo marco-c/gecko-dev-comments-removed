@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsDragServiceProxy.h"
 #include "mozilla/dom/Document.h"
@@ -51,8 +51,8 @@ nsresult nsDragServiceProxy::InvokeDragSessionImpl(
 
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
   cookieJarSettings = mSourceDocument->CookieJarSettings();
-  net::CookieJarSettingsArgs csArgs;
-  net::CookieJarSettings::Cast(cookieJarSettings)->Serialize(csArgs);
+  mozilla::net::CookieJarSettingsArgs csArgs;
+  mozilla::net::CookieJarSettings::Cast(cookieJarSettings)->Serialize(csArgs);
 
   LayoutDeviceIntRect dragRect;
   if (mHasImage || mSelection) {
@@ -73,7 +73,7 @@ nsresult nsDragServiceProxy::InvokeDragSessionImpl(
 
         auto surfaceData = maybeShm.value();
 
-        
+        // Save the surface data to shared memory.
         if (!surfaceData.IsReadable() || !surfaceData.get<char>()) {
           NS_WARNING("Failed to create shared memory for drag session.");
           return NS_ERROR_FAILURE;

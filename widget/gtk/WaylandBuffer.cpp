@@ -28,6 +28,8 @@ extern mozilla::LazyLogModule gWidgetWaylandLog;
 #  define LOGWAYLAND(args)
 #endif 
 
+using namespace mozilla::gl;
+
 namespace mozilla::widget {
 
 #define BUFFER_BPP 4

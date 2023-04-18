@@ -7,6 +7,7 @@
 #include "nsClipboardHelper.h"
 
 
+#include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
 #include "nsXPCOM.h"
 #include "nsISupportsPrimitives.h"
