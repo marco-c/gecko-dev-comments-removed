@@ -13,22 +13,10 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/MouseEvents.h"
 #include "nsContentUtils.h"
-#include "nsDocShell.h"
-#include "nsIBaseWindow.h"
 #include "nsICSSDeclaration.h"
-#include "nsIDocShellTreeOwner.h"
 #include "nsIFrame.h"
-#include "nsIScreenManager.h"
-#include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsStyledElement.h"
-
-#ifdef MOZ_WAYLAND
-#  include "mozilla/WidgetUtilsGtk.h"
-#  define IS_WAYLAND_DISPLAY() mozilla::widget::GdkIsWaylandDisplay()
-#else
-#  define IS_WAYLAND_DISPLAY() false
-#endif
 
 namespace mozilla::dom {
 
@@ -129,45 +117,25 @@ void XULResizerElement::PostHandleEventInternal(
       if (event.mClass == eTouchEventClass ||
           (event.mClass == eMouseEventClass &&
            event.AsMouseEvent()->mButton == MouseButton::ePrimary)) {
-        nsCOMPtr<nsIBaseWindow> window;
-        nsIContent* contentToResize =
-            GetContentToResize(getter_AddRefs(window));
-        if (!window && !contentToResize) {
+        nsIContent* contentToResize = GetContentToResize();
+        if (!contentToResize) {
           break;  
         }
         auto* guiEvent = event.AsGUIEvent();
-        if (contentToResize) {
-          nsIFrame* frame = contentToResize->GetPrimaryFrame();
-          if (!frame) {
-            break;
-          }
-          
-          
-          
-          nsRect rect = frame->GetScreenRectInAppUnits();
-          if (frame->StylePosition()->mBoxSizing == StyleBoxSizing::Content) {
-            rect.Deflate(frame->GetUsedBorderAndPadding());
-          }
-
-          mMouseDownRect = LayoutDeviceIntRect::FromAppUnitsToNearest(
-              rect, frame->PresContext()->AppUnitsPerDevPixel());
-        } else {
-          
-          Direction direction = GetDirection();
-          nsresult rv = guiEvent->mWidget->BeginResizeDrag(
-              const_cast<WidgetGUIEvent*>(guiEvent), direction.mHorizontal,
-              direction.mVertical);
-          
-          if (rv != NS_ERROR_NOT_IMPLEMENTED) {
-            break;
-          }
-
-          
-          
-          window->GetPositionAndSize(&mMouseDownRect.x, &mMouseDownRect.y,
-                                     &mMouseDownRect.width,
-                                     &mMouseDownRect.height);
+        nsIFrame* frame = contentToResize->GetPrimaryFrame();
+        if (!frame) {
+          break;
         }
+        
+        
+        
+        nsRect rect = frame->GetScreenRectInAppUnits();
+        if (frame->StylePosition()->mBoxSizing == StyleBoxSizing::Content) {
+          rect.Deflate(frame->GetUsedBorderAndPadding());
+        }
+
+        mMouseDownRect = LayoutDeviceIntRect::FromAppUnitsToNearest(
+            rect, frame->PresContext()->AppUnitsPerDevPixel());
 
         
         LayoutDeviceIntPoint refPoint;
@@ -184,14 +152,11 @@ void XULResizerElement::PostHandleEventInternal(
     case eTouchMove:
     case eMouseMove: {
       if (mTrackingMouseMove) {
-        nsCOMPtr<nsIBaseWindow> window;
-        nsCOMPtr<nsIContent> contentToResize =
-            GetContentToResize(getter_AddRefs(window));
-        if (!window && !contentToResize) {
+        nsCOMPtr<nsIContent> contentToResize = GetContentToResize();
+        if (!contentToResize) {
           break;  
         }
-        nsIFrame* frame = contentToResize ? contentToResize->GetPrimaryFrame()
-                                          : GetPrimaryFrame();
+        nsIFrame* frame = contentToResize->GetPrimaryFrame();
         if (!frame) {
           break;
         }
@@ -218,74 +183,31 @@ void XULResizerElement::PostHandleEventInternal(
         LayoutDeviceIntRect rect = mMouseDownRect;
 
         
-        widget::SizeConstraints sizeConstraints;
-        if (window) {
-          nsCOMPtr<nsIWidget> widget;
-          window->GetMainWidget(getter_AddRefs(widget));
-          sizeConstraints = widget->GetSizeConstraints();
-        }
-
-        AdjustDimensions(&rect.x, &rect.width, sizeConstraints.mMinSize.width,
-                         sizeConstraints.mMaxSize.width, mouseMove.x,
+        AdjustDimensions(&rect.x, &rect.width, mouseMove.x,
                          direction.mHorizontal);
-        AdjustDimensions(&rect.y, &rect.height, sizeConstraints.mMinSize.height,
-                         sizeConstraints.mMaxSize.height, mouseMove.y,
+        AdjustDimensions(&rect.y, &rect.height, mouseMove.y,
                          direction.mVertical);
 
         
         
         
         
-        if (window && !IS_WAYLAND_DISPLAY()) {
-          nsCOMPtr<nsIScreen> screen;
-          nsCOMPtr<nsIScreenManager> sm(
-              do_GetService("@mozilla.org/gfx/screenmanager;1"));
-          if (sm) {
-            CSSIntRect frameRect = frame->GetScreenRect();
-            
-            double scale;
-            window->GetUnscaledDevicePixelsPerCSSPixel(&scale);
-            sm->ScreenForRect(NSToIntRound(frameRect.x / scale),
-                              NSToIntRound(frameRect.y / scale), 1, 1,
-                              getter_AddRefs(screen));
-            if (screen) {
-              LayoutDeviceIntRect screenRect;
-              screen->GetRect(&screenRect.x, &screenRect.y, &screenRect.width,
-                              &screenRect.height);
-              rect.IntersectRect(rect, screenRect);
-            }
-          }
+        nsRect appUnitsRect = ToAppUnits(
+            rect.ToUnknownRect(), frame->PresContext()->AppUnitsPerDevPixel());
+        if (auto* resizerFrame = GetPrimaryFrame()) {
+          nsRect frameRect = resizerFrame->GetRect();
+          if (appUnitsRect.width < frameRect.width && mouseMove.x)
+            appUnitsRect.width = frameRect.width;
+          if (appUnitsRect.height < frameRect.height && mouseMove.y)
+            appUnitsRect.height = frameRect.height;
         }
+        nsIntRect cssRect = appUnitsRect.ToInsidePixels(AppUnitsPerCSSPixel());
 
-        if (contentToResize) {
-          
-          
-          
-          
-          nsRect appUnitsRect =
-              ToAppUnits(rect.ToUnknownRect(),
-                         frame->PresContext()->AppUnitsPerDevPixel());
-          if (auto* resizerFrame = GetPrimaryFrame()) {
-            nsRect frameRect = resizerFrame->GetRect();
-            if (appUnitsRect.width < frameRect.width && mouseMove.x)
-              appUnitsRect.width = frameRect.width;
-            if (appUnitsRect.height < frameRect.height && mouseMove.y)
-              appUnitsRect.height = frameRect.height;
-          }
-          nsIntRect cssRect =
-              appUnitsRect.ToInsidePixels(AppUnitsPerCSSPixel());
-
-          SizeInfo sizeInfo, originalSizeInfo;
-          sizeInfo.width.AppendInt(cssRect.width);
-          sizeInfo.height.AppendInt(cssRect.height);
-          ResizeContent(contentToResize, direction, sizeInfo,
-                        &originalSizeInfo);
-          MaybePersistOriginalSize(contentToResize, originalSizeInfo);
-        } else {
-          window->SetPositionAndSize(
-              rect.x, rect.y, rect.width, rect.height,
-              nsIBaseWindow::eRepaint);  
-        }
+        SizeInfo sizeInfo, originalSizeInfo;
+        sizeInfo.width.AppendInt(cssRect.width);
+        sizeInfo.height.AppendInt(cssRect.height);
+        ResizeContent(contentToResize, direction, sizeInfo, &originalSizeInfo);
+        MaybePersistOriginalSize(contentToResize, originalSizeInfo);
 
         doDefault = false;
       }
@@ -315,10 +237,7 @@ void XULResizerElement::PostHandleEventInternal(
 
     case eMouseDoubleClick: {
       if (event.AsMouseEvent()->mButton == MouseButton::ePrimary) {
-        nsCOMPtr<nsIBaseWindow> window;
-        nsIContent* contentToResize =
-            GetContentToResize(getter_AddRefs(window));
-        if (contentToResize) {
+        if (nsIContent* contentToResize = GetContentToResize()) {
           RestoreOriginalSize(contentToResize);
         }
       }
@@ -333,67 +252,32 @@ void XULResizerElement::PostHandleEventInternal(
   }
 }
 
-nsIContent* XULResizerElement::GetContentToResize(nsIBaseWindow** aWindow) {
-  *aWindow = nullptr;
-
-  Document* doc = GetComposedDoc();
-  if (!doc) {
+nsIContent* XULResizerElement::GetContentToResize() const {
+  if (!IsInComposedDoc()) {
     return nullptr;
   }
-  nsAutoString elementid;
-  GetAttr(kNameSpaceID_None, nsGkAtoms::element, elementid);
-  if (elementid.IsEmpty()) {
-    
-    if (nsPresContext* presContext = doc->GetPresContext();
-        presContext && !presContext->IsChrome()) {
-      
-      
-      nsIContent* nonNativeAnon = FindFirstNonChromeOnlyAccessContent();
-      if (!nonNativeAnon || nonNativeAnon->GetParent()) {
-        return nullptr;
-      }
-    }
-
-    
-    nsPIDOMWindowOuter* win = OwnerDoc()->GetWindow();
-    nsCOMPtr<nsIDocShell> docShell = win ? win->GetDocShell() : nullptr;
-    if (docShell) {
-      nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
-      docShell->GetTreeOwner(getter_AddRefs(treeOwner));
-      if (treeOwner) {
-        CallQueryInterface(treeOwner, aWindow);
-      }
-    }
-
-    return nullptr;
-  }
-
-  if (elementid.EqualsLiteral("_parent")) {
-    
-    nsIContent* parent = GetParent();
-    return parent ? parent->FindFirstNonChromeOnlyAccessContent() : nullptr;
-  }
-
-  return doc->GetElementById(elementid);
+  
+  nsIContent* parent = GetParent();
+  return parent ? parent->FindFirstNonChromeOnlyAccessContent() : nullptr;
 }
 
 
 void XULResizerElement::AdjustDimensions(int32_t* aPos, int32_t* aSize,
-                                         int32_t aMinSize, int32_t aMaxSize,
                                          int32_t aMovement,
                                          int8_t aResizerDirection) {
   int32_t oldSize = *aSize;
 
   *aSize += aResizerDirection * aMovement;
   
-  if (*aSize < 1) *aSize = 1;
+  if (*aSize < 1) {
+    *aSize = 1;
+  }
 
   
-  *aSize = std::max(aMinSize, std::min(aMaxSize, *aSize));
-
   
-  
-  if (aResizerDirection == -1) *aPos += oldSize - *aSize;
+  if (aResizerDirection == -1) {
+    *aPos += oldSize - *aSize;
+  }
 }
 
 
