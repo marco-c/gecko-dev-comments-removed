@@ -342,6 +342,8 @@ pref("browser.warnOnQuit", true);
 
 pref("browser.overlink-delay", 80);
 
+pref("browser.theme.colorway-closet", false);
+
 
 
 
