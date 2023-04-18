@@ -201,10 +201,20 @@ static void paste_clipboard_cb(GtkWidget* w, gpointer user_data) {
 }
 
 
-static void select_all_cb(GtkWidget* w, gboolean select, gpointer user_data) {
-  AddCommand(Command::SelectAll);
-  g_signal_stop_emission_by_name(w, "select_all");
-  gHandled = true;
+static void select_all_cb(GtkWidget* aWidget, gboolean aSelect,
+                          gpointer aUserData) {
+  
+  
+  
+  if (aSelect) {
+    AddCommand(Command::SelectAll);
+  }
+  g_signal_stop_emission_by_name(aWidget, "select_all");
+  
+  
+  
+  
+  gHandled |= aSelect;
 }
 
 NativeKeyBindings* NativeKeyBindings::sInstanceForSingleLineEditor = nullptr;
@@ -248,15 +258,8 @@ void NativeKeyBindings::Init(NativeKeyBindingsType aType) {
       break;
     default:
       mNativeTarget = gtk_text_view_new();
-      if (gtk_major_version > 2 ||
-          (gtk_major_version == 2 &&
-           (gtk_minor_version > 2 ||
-            (gtk_minor_version == 2 && gtk_micro_version >= 2)))) {
-        
-        
-        g_signal_connect(mNativeTarget, "select_all", G_CALLBACK(select_all_cb),
-                         this);
-      }
+      g_signal_connect(mNativeTarget, "select_all", G_CALLBACK(select_all_cb),
+                       this);
       break;
   }
 
