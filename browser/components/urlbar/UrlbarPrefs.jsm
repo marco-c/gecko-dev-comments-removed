@@ -598,10 +598,7 @@ class Preferences {
 
 
 
-
-
-
-  async updateFirefoxSuggestScenario(isStartup, testOverrides = null) {
+  async updateFirefoxSuggestScenario(testOverrides = null) {
     
     
     
@@ -609,6 +606,10 @@ class Preferences {
     if (this._updatingFirefoxSuggestScenario) {
       return;
     }
+
+    let isStartup =
+      !this._updateFirefoxSuggestScenarioCalled || !!testOverrides?.isStartup;
+    this._updateFirefoxSuggestScenarioCalled = true;
 
     try {
       this._updatingFirefoxSuggestScenario = true;
@@ -620,6 +621,7 @@ class Preferences {
       
       await Region.init();
       await NimbusFeatures.urlbar.ready();
+      this._clearNimbusCache();
 
       this._updateFirefoxSuggestScenarioHelper(isStartup, testOverrides);
     } finally {
@@ -1117,12 +1119,17 @@ class Preferences {
 
 
   _onNimbusUpdate() {
-    for (let key of Object.keys(this._nimbus)) {
-      this._map.delete(key);
-    }
-    this.__nimbus = null;
+    this._clearNimbusCache();
+    this.updateFirefoxSuggestScenario();
+  }
 
-    this.updateFirefoxSuggestScenario(false);
+  _clearNimbusCache() {
+    if (this.__nimbus) {
+      for (let key of Object.keys(this.__nimbus)) {
+        this._map.delete(key);
+      }
+      this.__nimbus = null;
+    }
   }
 
   get _nimbus() {

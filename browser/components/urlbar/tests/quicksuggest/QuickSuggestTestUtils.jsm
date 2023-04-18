@@ -182,7 +182,7 @@ class QSTestUtils {
     
     
     await this.waitForScenarioUpdated();
-    await UrlbarPrefs.updateFirefoxSuggestScenario(false, { scenario });
+    await UrlbarPrefs.updateFirefoxSuggestScenario({ scenario });
   }
 
   

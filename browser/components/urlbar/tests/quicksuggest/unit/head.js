@@ -116,9 +116,10 @@ async function doMigrateTest({
     info(`Calling updateFirefoxSuggestScenario, i=${i}`);
 
     
-    await UrlbarPrefs.updateFirefoxSuggestScenario(true, {
+    await UrlbarPrefs.updateFirefoxSuggestScenario({
       ...testOverrides,
       scenario,
+      isStartup: true,
     });
 
     
