@@ -194,6 +194,9 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   bool HasRemoteContent() const;
 
   
+  bool ShouldCreateWidgetUpfront() const;
+
+  
   
   bool IsNoAutoHide() const;
 
@@ -206,8 +209,6 @@ class nsMenuPopupFrame final : public nsBoxFrame,
 
   nsresult CreateWidgetForView(nsView* aView);
   mozilla::StyleWindowShadow GetShadowStyle();
-
-  bool IsLeafDynamic() const override;
 
   void DidSetComputedStyle(ComputedStyle* aOldStyle) override;
 
@@ -223,9 +224,6 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   nsresult SetPopupPosition(nsIFrame* aAnchorFrame, bool aIsMove,
                             bool aSizedToPopup);
-
-  
-  void GenerateFrames();
 
   
   
@@ -615,7 +613,6 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   bool mIsContextMenu;  
   
   bool mAdjustOffsetForContextMenu;
-  bool mGeneratedChildren;  
 
   bool mMenuCanOverlapOSBar;  
   bool mShouldAutoPosition;   

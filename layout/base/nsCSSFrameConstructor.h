@@ -276,9 +276,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
       mozilla::dom::CharacterData* aContent);
 
   
-  void GenerateChildFrames(nsContainerFrame* aFrame);
-
-  
   
   void NotifyDestroyingFrame(nsIFrame* aFrame);
 

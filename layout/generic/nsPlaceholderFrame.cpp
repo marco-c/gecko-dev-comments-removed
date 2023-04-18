@@ -113,7 +113,13 @@ void nsPlaceholderFrame::Reflow(nsPresContext* aPresContext,
   
   
   
+  
+  
+  
+  
+  
   if (HasAnyStateBits(NS_FRAME_FIRST_REFLOW) &&
+      !HasAnyStateBits(PLACEHOLDER_FOR_POPUP) &&
       !mOutOfFlowFrame->HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
     
     

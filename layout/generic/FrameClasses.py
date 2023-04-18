@@ -3,7 +3,7 @@
 
 
 
-from FrameClass import Frame, AbstractFrame, LEAF, NOT_LEAF, DYNAMIC_LEAF
+from FrameClass import Frame, AbstractFrame, LEAF, NOT_LEAF
 
 FRAME_CLASSES = [
     Frame("BRFrame", "Br", LEAF),
@@ -68,7 +68,7 @@ FRAME_CLASSES = [
     Frame("nsMathMLTokenFrame", "None", NOT_LEAF),
     Frame("nsMenuBarFrame", "Box", NOT_LEAF),
     Frame("nsMenuFrame", "Menu", NOT_LEAF),
-    Frame("nsMenuPopupFrame", "MenuPopup", DYNAMIC_LEAF),
+    Frame("nsMenuPopupFrame", "MenuPopup", NOT_LEAF),
     Frame("nsMeterFrame", "Meter", LEAF),
     Frame("nsNumberControlFrame", "TextInput", LEAF),
     Frame("nsPageBreakFrame", "PageBreak", LEAF),

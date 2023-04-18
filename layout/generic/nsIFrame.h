@@ -3364,9 +3364,6 @@ class nsIFrame : public nsQueryFrame {
   bool IsLeaf() const {
     MOZ_ASSERT(uint8_t(mClass) < mozilla::ArrayLength(sFrameClassBits));
     FrameClassBits bits = sFrameClassBits[uint8_t(mClass)];
-    if (MOZ_UNLIKELY(bits & eFrameClassBitsDynamicLeaf)) {
-      return IsLeafDynamic();
-    }
     return bits & eFrameClassBitsLeaf;
   }
 
@@ -4965,13 +4962,6 @@ class nsIFrame : public nsQueryFrame {
                            nsView* aOldParentView);
 
   
-
-
-
-
-  virtual bool IsLeafDynamic() const { return false; }
-
-  
   nsRect mRect;
   nsCOMPtr<nsIContent> mContent;
   RefPtr<ComputedStyle> mComputedStyle;
@@ -5385,7 +5375,6 @@ class nsIFrame : public nsQueryFrame {
   enum FrameClassBits {
     eFrameClassBitsNone = 0x0,
     eFrameClassBitsLeaf = 0x1,
-    eFrameClassBitsDynamicLeaf = 0x2,
   };
   
   static const FrameClassBits sFrameClassBits[

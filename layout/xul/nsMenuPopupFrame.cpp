@@ -117,7 +117,6 @@ nsMenuPopupFrame::nsMenuPopupFrame(ComputedStyle* aStyle,
       mIsOpenChanged(false),
       mIsContextMenu(false),
       mAdjustOffsetForContextMenu(false),
-      mGeneratedChildren(false),
       mMenuCanOverlapOSBar(false),
       mShouldAutoPosition(true),
       mInContentShell(true),
@@ -135,6 +134,41 @@ nsMenuPopupFrame::nsMenuPopupFrame(ComputedStyle* aStyle,
 }  
 
 nsMenuPopupFrame::~nsMenuPopupFrame() = default;
+
+bool nsMenuPopupFrame::ShouldCreateWidgetUpfront() const {
+  if (mPopupType != ePopupTypeMenu) {
+    
+    
+    return mContent->AsElement()->HasAttr(nsGkAtoms::type);
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  nsIContent* parentContent = mContent->GetParent();
+  if (!parentContent) {
+    return true;
+  }
+
+  if (parentContent->IsXULElement(nsGkAtoms::menulist)) {
+    Element* parent = parentContent->AsElement();
+    nsAutoString sizedToPopup;
+    if (!parent->GetAttr(nsGkAtoms::sizetopopup, sizedToPopup)) {
+      
+      
+      return true;
+    }
+    
+    return !sizedToPopup.EqualsLiteral("none");
+  }
+
+  return parentContent->IsElement() &&
+         parentContent->AsElement()->HasAttr(nsGkAtoms::sizetopopup);
+}
 
 void nsMenuPopupFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                             nsIFrame* aPrevInFlow) {
@@ -178,10 +212,13 @@ void nsMenuPopupFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
       mInContentShell = false;
     }
   }
+
   
   
   
-  if (!IsLeaf() && !ourView->HasWidget()) {
+  
+  
+  if (!ourView->HasWidget() && ShouldCreateWidgetUpfront()) {
     CreateWidgetForView(ourView);
   }
 
@@ -267,9 +304,6 @@ void nsMenuPopupFrame::EnsureWidget(bool aRecreate) {
     ourView->DestroyWidget();
   }
   if (!ourView->HasWidget()) {
-    NS_ASSERTION(aRecreate || (!mGeneratedChildren &&
-                               !PrincipalChildList().FirstChild()),
-                 "Creating widget for MenuPopupFrame with children");
     CreateWidgetForView(ourView);
   }
 }
@@ -449,49 +483,6 @@ void nsXULPopupShownEvent::CancelListener() {
 NS_IMPL_ISUPPORTS_INHERITED(nsXULPopupShownEvent, Runnable,
                             nsIDOMEventListener);
 
-bool nsMenuPopupFrame::IsLeafDynamic() const {
-  if (mGeneratedChildren) return false;
-
-  if (mPopupType != ePopupTypeMenu) {
-    
-    
-    return !mContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::type);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsIContent* parentContent = mContent->GetParent();
-  if (!parentContent) {
-    return false;
-  }
-
-  if (parentContent->IsXULElement(nsGkAtoms::menulist)) {
-    Element* parent = parentContent->AsElement();
-    if (!parent->HasAttr(kNameSpaceID_None, nsGkAtoms::sizetopopup)) {
-      
-      
-      return false;
-    }
-
-    nsAutoString sizedToPopup;
-    parent->GetAttr(kNameSpaceID_None, nsGkAtoms::sizetopopup, sizedToPopup);
-    
-    return sizedToPopup.EqualsLiteral("none");
-  }
-
-  return (!parentContent->IsElement() ||
-          !parentContent->AsElement()->HasAttr(kNameSpaceID_None,
-                                               nsGkAtoms::sizetopopup));
-}
-
 void nsMenuPopupFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
   nsBoxFrame::DidSetComputedStyle(aOldStyle);
 
@@ -529,7 +520,7 @@ void nsMenuPopupFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
 
 void nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState,
                                    nsIFrame* aParentMenu, bool aSizedToPopup) {
-  if (IsLeaf() || IsNativeMenu()) {
+  if (IsNativeMenu()) {
     return;
   }
 
@@ -1787,17 +1778,6 @@ void nsMenuPopupFrame::WidgetPositionOrSizeDidChange() {
         browserParent->NotifyPositionUpdatedForContentsInPopup();
       }
     }
-  }
-}
-
-void nsMenuPopupFrame::GenerateFrames() {
-  const bool generateFrames = IsLeaf();
-  MOZ_ASSERT_IF(generateFrames, !mGeneratedChildren);
-  mGeneratedChildren = true;
-  if (generateFrames) {
-    MOZ_ASSERT(PrincipalChildList().IsEmpty());
-    RefPtr<mozilla::PresShell> presShell = PresContext()->PresShell();
-    presShell->FrameConstructor()->GenerateChildFrames(this);
   }
 }
 
