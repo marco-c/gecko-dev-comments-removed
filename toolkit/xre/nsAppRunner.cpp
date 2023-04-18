@@ -4302,9 +4302,10 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
   
   
 #ifndef FUZZING
-#  ifdef DEBUG
+#  ifndef ANDROID
+#    ifdef DEBUG
   mozilla::Telemetry::InitIOReporting(gAppData->xreDirectory);
-#  else
+#    else
   {
     const char* releaseChannel = MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL);
     if (strcmp(releaseChannel, "nightly") == 0 ||
@@ -4312,8 +4313,9 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
       mozilla::Telemetry::InitIOReporting(gAppData->xreDirectory);
     }
   }
-#  endif 
-#endif   
+#    endif 
+#  endif   
+#endif     
 
 #if defined(XP_WIN)
   
