@@ -16,10 +16,6 @@ const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
-
 const PLAYER_URI = "chrome://global/content/pictureinpicture/player.xhtml";
 var PLAYER_FEATURES =
   "chrome,titlebar=yes,alwaysontop,lockaspectratio,resizable";
@@ -29,8 +25,6 @@ if (!AppConstants.MOZ_WIDGET_GTK) {
 }
 const WINDOW_TYPE = "Toolkit:PictureInPicture";
 const PIP_ENABLED_PREF = "media.videocontrols.picture-in-picture.enabled";
-const MULTI_PIP_ENABLED_PREF =
-  "media.videocontrols.picture-in-picture.allow-multiple";
 const TOGGLE_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.enabled";
 const TOGGLE_POSITION_PREF =
@@ -100,12 +94,7 @@ class PictureInPictureParent extends JSWindowActorParent {
 
 
         let reason = aMessage.data.reason;
-
-        if (PictureInPicture.isMultiPipEnabled) {
-          PictureInPicture.closeSinglePipWindow({ reason, actorRef: this });
-        } else {
-          PictureInPicture.closeAllPipWindows({ reason });
-        }
+        PictureInPicture.closeSinglePipWindow({ reason, actorRef: this });
         break;
       }
       case "PictureInPicture:Playing": {
@@ -321,35 +310,6 @@ var PictureInPicture = {
 
 
 
-  async closeAllPipWindows(closeData) {
-    const { reason } = closeData;
-
-    
-    
-    for (let win of Services.wm.getEnumerator(WINDOW_TYPE)) {
-      if (win.closed) {
-        continue;
-      }
-      this._focusPipBrowserWindow(win);
-      let closedPromise = new Promise(resolve => {
-        win.addEventListener("unload", resolve, { once: true });
-      });
-      gCloseReasons.set(win, reason);
-      win.close();
-      await closedPromise;
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
 
 
 
@@ -362,18 +322,7 @@ var PictureInPicture = {
 
 
   async handlePictureInPictureRequest(wgp, videoData) {
-    if (!this.isMultiPipEnabled) {
-      
-      
-      await this.closeAllPipWindows({ reason: "new-pip" });
-
-      gCurrentPlayerCount = 1;
-    } else {
-      
-      
-
-      gCurrentPlayerCount += 1;
-    }
+    gCurrentPlayerCount += 1;
 
     Services.telemetry.scalarSetMaximum(
       "pictureinpicture.most_concurrent_players",
@@ -918,10 +867,3 @@ var PictureInPicture = {
     return { top, left, width, height };
   },
 };
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  PictureInPicture,
-  "isMultiPipEnabled",
-  MULTI_PIP_ENABLED_PREF,
-  false
-);

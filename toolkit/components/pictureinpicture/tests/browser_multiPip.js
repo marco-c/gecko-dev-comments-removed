@@ -21,15 +21,6 @@ function getTelemetryMaxPipCount(resetMax = false) {
 
 
 add_task(async () => {
-  return SpecialPowers.pushPrefEnv({
-    set: [["media.videocontrols.picture-in-picture.allow-multiple", true]],
-  });
-});
-
-
-
-
-add_task(async () => {
   await BrowserTestUtils.withNewTab(
     {
       url: TEST_PAGE,
