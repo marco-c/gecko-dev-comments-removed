@@ -507,6 +507,14 @@ function createBrowser() {
   browser.setAttribute("remoteType", E10SUtils.DEFAULT_REMOTE_TYPE);
   browser.setAttribute("messagemanagergroup", "browsers");
 
+  
+  
+  
+  browser.setAttribute(
+    "style",
+    "color-scheme: env(-moz-content-preferred-color-scheme)"
+  );
+
   return browser;
 }
 

@@ -432,7 +432,9 @@ static constexpr struct {
 } kMediaQueryPrefs[] = {
     {"browser.display.windows.native_menus"_ns},
     {"browser.proton.places-tooltip.enabled"_ns},
-    {"layout.css.prefers-color-scheme.content-override"_ns},
+    
+    {"layout.css.prefers-color-scheme.content-override"_ns,
+     widget::ThemeChangeKind::Style},
     
     {"widget.gtk.overlay-scrollbars.enabled"_ns,
      widget::ThemeChangeKind::StyleAndLayout},
