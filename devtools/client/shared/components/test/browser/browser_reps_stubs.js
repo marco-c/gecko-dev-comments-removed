@@ -16,6 +16,16 @@ const TEST_URI = "data:text/html;charset=utf-8,stub generation";
 
 
 const EXPRESSIONS_BY_FILE = {
+  "attribute.js": new Map([
+    [
+      "Attribute",
+      `{
+          const a = document.createAttribute("class")
+          a.value = "autocomplete-suggestions";
+          a;
+      }`,
+    ],
+  ]),
   "infinity.js": new Map([
     ["Infinity", `Infinity`],
     ["NegativeInfinity", `-Infinity`],
@@ -29,7 +39,6 @@ const EXPRESSIONS_BY_FILE = {
     ["NegZeroGrip", `1 / -Infinity`],
   ]),
   "undefined.js": new Map([["Undefined", `undefined`]]),
-  
   
   
   
@@ -87,9 +96,13 @@ add_task(async function() {
     }
 
     for (const [key, packet] of generatedStubs) {
-      const packetStr = getSerializedPacket(packet, { sortKeys: true });
+      const packetStr = getSerializedPacket(packet, {
+        sortKeys: true,
+        replaceActorIds: true,
+      });
       const grip = getSerializedPacket(existingStubs.get(key), {
         sortKeys: true,
+        replaceActorIds: true,
       });
       is(packetStr, grip, `"${key}" packet has expected value`);
       failed = failed || packetStr !== grip;
@@ -115,14 +128,44 @@ async function generateStubs(commands, stubFile) {
 
   for (const [key, expression] of EXPRESSIONS_BY_FILE[stubFile]) {
     const { result } = await commands.scriptCommand.execute(expression);
-    stubs.set(key, getCleanedPacket(key, result));
+    stubs.set(key, getCleanedPacket(stubFile, key, result));
   }
 
   return stubs;
 }
 
-function getCleanedPacket(key, packet) {
+function getCleanedPacket(stubFile, key, packet) {
   
+  
+  delete packet.targetFront;
+
+  const existingStubs = getStubFile(stubFile);
+  if (!existingStubs) {
+    return packet;
+  }
+
+  
+  const safeKey = key
+    .replace(/\\n/g, "\n")
+    .replace(/\\r/g, "\r")
+    .replace(/\\\"/g, `\"`)
+    .replace(/\\\'/g, `\'`);
+  if (!existingStubs.has(safeKey)) {
+    return packet;
+  }
+
+  
+  
+  const existingPacket = existingStubs.get(safeKey);
+
+  
+  if (
+    packet._grip?.contentDomReference?.id &&
+    existingPacket._grip?.contentDomReference?.id
+  ) {
+    packet._grip.contentDomReference = existingPacket._grip.contentDomReference;
+  }
+
   return packet;
 }
 
@@ -198,17 +241,36 @@ function sortObjectKeys(obj) {
 
 
 
-function getSerializedPacket(packet, { sortKeys = false } = {}) {
+
+
+
+function getSerializedPacket(
+  packet,
+  { sortKeys = false, replaceActorIds = false } = {}
+) {
   if (sortKeys) {
     packet = sortObjectKeys(packet);
   }
 
+  const actorIdPlaceholder = "XXX";
+
   return JSON.stringify(
     packet,
-    function(_, value) {
+    function(key, value) {
       
       if (value && value._grip) {
-        return { _grip: value._grip, actorID: value.actorID };
+        return {
+          _grip: value._grip,
+          actorID: replaceActorIds ? actorIdPlaceholder : value.actorID,
+        };
+      }
+
+      if (
+        replaceActorIds &&
+        (key === "actor" || key === "actorID" || key === "sourceId") &&
+        typeof value === "string"
+      ) {
+        return actorIdPlaceholder;
       }
 
       return value;
