@@ -44,6 +44,25 @@ class nsHashPropertyBag : public nsHashPropertyBagBase {
 };
 
 
+
+
+
+
+
+
+
+class nsHashPropertyBagOMT final : public nsHashPropertyBagBase {
+ public:
+  nsHashPropertyBagOMT();
+  NS_DECL_ISUPPORTS
+
+ protected:
+  
+  
+  virtual ~nsHashPropertyBagOMT() = default;
+};
+
+
 class nsHashPropertyBagCC final : public nsHashPropertyBagBase {
  public:
   nsHashPropertyBagCC() = default;
