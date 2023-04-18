@@ -1,8 +1,5 @@
-use crate::loom::{
-    cell::UnsafeCell,
-    sync::atomic::{AtomicPtr, AtomicUsize},
-    thread,
-};
+use crate::loom::cell::UnsafeCell;
+use crate::loom::sync::atomic::{AtomicPtr, AtomicUsize};
 
 use std::mem::MaybeUninit;
 use std::ops;
@@ -260,13 +257,15 @@ impl<T> Block<T> {
     pub(crate) unsafe fn try_push(
         &self,
         block: &mut NonNull<Block<T>>,
-        ordering: Ordering,
+        success: Ordering,
+        failure: Ordering,
     ) -> Result<(), NonNull<Block<T>>> {
         block.as_mut().start_index = self.start_index.wrapping_add(BLOCK_CAP);
 
         let next_ptr = self
             .next
-            .compare_and_swap(ptr::null_mut(), block.as_ptr(), ordering);
+            .compare_exchange(ptr::null_mut(), block.as_ptr(), success, failure)
+            .unwrap_or_else(|x| x);
 
         match NonNull::new(next_ptr) {
             Some(next_ptr) => Err(next_ptr),
@@ -308,11 +307,11 @@ impl<T> Block<T> {
         
         
         
-        let next = NonNull::new(self.next.compare_and_swap(
-            ptr::null_mut(),
-            new_block.as_ptr(),
-            AcqRel,
-        ));
+        let next = NonNull::new(
+            self.next
+                .compare_exchange(ptr::null_mut(), new_block.as_ptr(), AcqRel, Acquire)
+                .unwrap_or_else(|x| x),
+        );
 
         let next = match next {
             Some(next) => next,
@@ -335,7 +334,7 @@ impl<T> Block<T> {
 
         
         loop {
-            let actual = unsafe { curr.as_ref().try_push(&mut new_block, AcqRel) };
+            let actual = unsafe { curr.as_ref().try_push(&mut new_block, AcqRel, Acquire) };
 
             curr = match actual {
                 Ok(_) => {
@@ -344,8 +343,7 @@ impl<T> Block<T> {
                 Err(curr) => curr,
             };
 
-            
-            thread::yield_now();
+            crate::loom::thread::yield_now();
         }
     }
 }

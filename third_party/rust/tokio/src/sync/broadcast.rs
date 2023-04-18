@@ -108,6 +108,7 @@
 
 
 
+
 use crate::loom::cell::UnsafeCell;
 use crate::loom::sync::atomic::AtomicUsize;
 use crate::loom::sync::{Arc, Mutex, RwLock, RwLockReadGuard};
@@ -188,63 +189,109 @@ pub struct Sender<T> {
 
 
 
+
+
+
+
+
 pub struct Receiver<T> {
     
     shared: Arc<Shared<T>>,
 
     
     next: u64,
-
-    
-    waiter: Option<Pin<Box<UnsafeCell<Waiter>>>>,
 }
 
-
-
-
-
-
-#[derive(Debug)]
-pub struct SendError<T>(pub T);
-
-
-
-
-
-#[derive(Debug, PartialEq)]
-pub enum RecvError {
+pub mod error {
     
-    
-    Closed,
+
+    use std::fmt;
 
     
     
     
     
-    Lagged(u64),
+    
+    
+    
+    
+    #[derive(Debug)]
+    pub struct SendError<T>(pub T);
+
+    impl<T> fmt::Display for SendError<T> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "channel closed")
+        }
+    }
+
+    impl<T: fmt::Debug> std::error::Error for SendError<T> {}
+
+    
+    
+    
+    
+    #[derive(Debug, PartialEq)]
+    pub enum RecvError {
+        
+        
+        Closed,
+
+        
+        
+        
+        
+        Lagged(u64),
+    }
+
+    impl fmt::Display for RecvError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                RecvError::Closed => write!(f, "channel closed"),
+                RecvError::Lagged(amt) => write!(f, "channel lagged by {}", amt),
+            }
+        }
+    }
+
+    impl std::error::Error for RecvError {}
+
+    
+    
+    
+    
+    #[derive(Debug, PartialEq)]
+    pub enum TryRecvError {
+        
+        
+        
+        
+        Empty,
+
+        
+        
+        Closed,
+
+        
+        
+        
+        
+        
+        Lagged(u64),
+    }
+
+    impl fmt::Display for TryRecvError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                TryRecvError::Empty => write!(f, "channel empty"),
+                TryRecvError::Closed => write!(f, "channel closed"),
+                TryRecvError::Lagged(amt) => write!(f, "channel lagged by {}", amt),
+            }
+        }
+    }
+
+    impl std::error::Error for TryRecvError {}
 }
 
-
-
-
-
-#[derive(Debug, PartialEq)]
-pub enum TryRecvError {
-    
-    
-    Empty,
-
-    
-    
-    Closed,
-
-    
-    
-    
-    
-    
-    Lagged(u64),
-}
+use self::error::*;
 
 
 struct Shared<T> {
@@ -273,7 +320,7 @@ struct Tail {
     closed: bool,
 
     
-    waiters: LinkedList<Waiter>,
+    waiters: LinkedList<Waiter, <Waiter as linked_list::Link>::Target>,
 }
 
 
@@ -319,38 +366,16 @@ struct RecvGuard<'a, T> {
 }
 
 
-struct Recv<R, T>
-where
-    R: AsMut<Receiver<T>>,
-{
+struct Recv<'a, T> {
     
-    receiver: R,
+    receiver: &'a mut Receiver<T>,
 
     
     waiter: UnsafeCell<Waiter>,
-
-    _p: std::marker::PhantomData<T>,
 }
 
-
-
-
-struct Borrow<T>(T);
-
-impl<T> AsMut<Receiver<T>> for Borrow<Receiver<T>> {
-    fn as_mut(&mut self) -> &mut Receiver<T> {
-        &mut self.0
-    }
-}
-
-impl<'a, T> AsMut<Receiver<T>> for Borrow<&'a mut Receiver<T>> {
-    fn as_mut(&mut self) -> &mut Receiver<T> {
-        &mut *self.0
-    }
-}
-
-unsafe impl<R: AsMut<Receiver<T>> + Send, T: Send> Send for Recv<R, T> {}
-unsafe impl<R: AsMut<Receiver<T>> + Sync, T: Send> Sync for Recv<R, T> {}
+unsafe impl<'a, T: Send> Send for Recv<'a, T> {}
+unsafe impl<'a, T: Send> Sync for Recv<'a, T> {}
 
 
 const MAX_RECEIVERS: usize = usize::MAX >> 2;
@@ -400,7 +425,7 @@ const MAX_RECEIVERS: usize = usize::MAX >> 2;
 
 
 
-pub fn channel<T>(mut capacity: usize) -> (Sender<T>, Receiver<T>) {
+pub fn channel<T: Clone>(mut capacity: usize) -> (Sender<T>, Receiver<T>) {
     assert!(capacity > 0, "capacity is empty");
     assert!(capacity <= usize::MAX >> 1, "requested capacity too large");
 
@@ -433,7 +458,6 @@ pub fn channel<T>(mut capacity: usize) -> (Sender<T>, Receiver<T>) {
     let rx = Receiver {
         shared: shared.clone(),
         next: 0,
-        waiter: None,
     };
 
     let tx = Sender { shared };
@@ -528,23 +552,7 @@ impl<T> Sender<T> {
     
     pub fn subscribe(&self) -> Receiver<T> {
         let shared = self.shared.clone();
-
-        let mut tail = shared.tail.lock().unwrap();
-
-        if tail.rx_cnt == MAX_RECEIVERS {
-            panic!("max receivers");
-        }
-
-        tail.rx_cnt = tail.rx_cnt.checked_add(1).expect("overflow");
-        let next = tail.pos;
-
-        drop(tail);
-
-        Receiver {
-            shared,
-            next,
-            waiter: None,
-        }
+        new_receiver(shared)
     }
 
     
@@ -584,12 +592,12 @@ impl<T> Sender<T> {
     
     
     pub fn receiver_count(&self) -> usize {
-        let tail = self.shared.tail.lock().unwrap();
+        let tail = self.shared.tail.lock();
         tail.rx_cnt
     }
 
     fn send2(&self, value: Option<T>) -> Result<usize, SendError<Option<T>>> {
-        let mut tail = self.shared.tail.lock().unwrap();
+        let mut tail = self.shared.tail.lock();
 
         if tail.rx_cnt == 0 {
             return Err(SendError(value));
@@ -632,6 +640,22 @@ impl<T> Sender<T> {
 
         Ok(rem)
     }
+}
+
+fn new_receiver<T>(shared: Arc<Shared<T>>) -> Receiver<T> {
+    let mut tail = shared.tail.lock();
+
+    if tail.rx_cnt == MAX_RECEIVERS {
+        panic!("max receivers");
+    }
+
+    tail.rx_cnt = tail.rx_cnt.checked_add(1).expect("overflow");
+
+    let next = tail.pos;
+
+    drop(tail);
+
+    Receiver { shared, next }
 }
 
 impl Tail {
@@ -695,7 +719,7 @@ impl<T> Receiver<T> {
             
             drop(slot);
 
-            let mut tail = self.shared.tail.lock().unwrap();
+            let mut tail = self.shared.tail.lock();
 
             
             slot = self.shared.buffer[idx].read().unwrap();
@@ -784,10 +808,7 @@ impl<T> Receiver<T> {
     }
 }
 
-impl<T> Receiver<T>
-where
-    T: Clone,
-{
+impl<T: Clone> Receiver<T> {
     
     
     
@@ -796,95 +817,6 @@ where
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn try_recv(&mut self) -> Result<T, TryRecvError> {
-        let guard = self.recv_ref(None)?;
-        guard.clone_value().ok_or(TryRecvError::Closed)
-    }
-
-    #[doc(hidden)]
-    #[deprecated(since = "0.2.21", note = "use async fn recv()")]
-    pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Result<T, RecvError>> {
-        use Poll::{Pending, Ready};
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        struct Guard<'a, T> {
-            waiter: Option<Pin<Box<UnsafeCell<Waiter>>>>,
-            receiver: &'a mut Receiver<T>,
-        }
-
-        impl<'a, T> Drop for Guard<'a, T> {
-            fn drop(&mut self) {
-                self.receiver.waiter = self.waiter.take();
-            }
-        }
-
-        let waiter = self.waiter.take().or_else(|| {
-            Some(Box::pin(UnsafeCell::new(Waiter {
-                queued: false,
-                waker: None,
-                pointers: linked_list::Pointers::new(),
-                _p: PhantomPinned,
-            })))
-        });
-
-        let guard = Guard {
-            waiter,
-            receiver: self,
-        };
-        let res = guard
-            .receiver
-            .recv_ref(Some((&guard.waiter.as_ref().unwrap(), cx.waker())));
-
-        match res {
-            Ok(guard) => Ready(guard.clone_value().ok_or(RecvError::Closed)),
-            Err(TryRecvError::Closed) => Ready(Err(RecvError::Closed)),
-            Err(TryRecvError::Lagged(n)) => Ready(Err(RecvError::Lagged(n))),
-            Err(TryRecvError::Empty) => Pending,
-        }
-    }
-
     
     
     
@@ -950,59 +882,66 @@ where
     
     
     pub async fn recv(&mut self) -> Result<T, RecvError> {
-        let fut = Recv::<_, T>::new(Borrow(self));
+        let fut = Recv::new(self);
         fut.await
     }
-}
 
-#[cfg(feature = "stream")]
-#[doc(hidden)]
-impl<T> crate::stream::Stream for Receiver<T>
-where
-    T: Clone,
-{
-    type Item = Result<T, RecvError>;
-
-    fn poll_next(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<Option<Result<T, RecvError>>> {
-        #[allow(deprecated)]
-        self.poll_recv(cx).map(|v| match v {
-            Ok(v) => Some(Ok(v)),
-            lag @ Err(RecvError::Lagged(_)) => Some(lag),
-            Err(RecvError::Closed) => None,
-        })
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_recv(&mut self) -> Result<T, TryRecvError> {
+        let guard = self.recv_ref(None)?;
+        guard.clone_value().ok_or(TryRecvError::Closed)
     }
 }
 
 impl<T> Drop for Receiver<T> {
     fn drop(&mut self) {
-        let mut tail = self.shared.tail.lock().unwrap();
-
-        if let Some(waiter) = &self.waiter {
-            
-            let queued = waiter.with(|ptr| unsafe { (*ptr).queued });
-
-            if queued {
-                
-                
-                
-                
-                unsafe {
-                    waiter.with_mut(|ptr| {
-                        tail.waiters.remove((&mut *ptr).into());
-                    });
-                }
-            }
-        }
+        let mut tail = self.shared.tail.lock();
 
         tail.rx_cnt -= 1;
         let until = tail.pos;
 
         drop(tail);
 
-        while self.next != until {
+        while self.next < until {
             match self.recv_ref(None) {
                 Ok(_) => {}
                 
@@ -1016,11 +955,8 @@ impl<T> Drop for Receiver<T> {
     }
 }
 
-impl<R, T> Recv<R, T>
-where
-    R: AsMut<Receiver<T>>,
-{
-    fn new(receiver: R) -> Recv<R, T> {
+impl<'a, T> Recv<'a, T> {
+    fn new(receiver: &'a mut Receiver<T>) -> Recv<'a, T> {
         Recv {
             receiver,
             waiter: UnsafeCell::new(Waiter {
@@ -1029,7 +965,6 @@ where
                 pointers: linked_list::Pointers::new(),
                 _p: PhantomPinned,
             }),
-            _p: std::marker::PhantomData,
         }
     }
 
@@ -1041,14 +976,13 @@ where
             is_unpin::<&mut Receiver<T>>();
 
             let me = self.get_unchecked_mut();
-            (me.receiver.as_mut(), &me.waiter)
+            (me.receiver, &me.waiter)
         }
     }
 }
 
-impl<R, T> Future for Recv<R, T>
+impl<'a, T> Future for Recv<'a, T>
 where
-    R: AsMut<Receiver<T>>,
     T: Clone,
 {
     type Output = Result<T, RecvError>;
@@ -1067,81 +1001,11 @@ where
     }
 }
 
-cfg_stream! {
-    use futures_core::Stream;
-
-    impl<T: Clone> Receiver<T> {
-        /// Convert the receiver into a `Stream`.
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        pub fn into_stream(self) -> impl Stream<Item = Result<T, RecvError>> {
-            Recv::new(Borrow(self))
-        }
-    }
-
-    impl<R, T: Clone> Stream for Recv<R, T>
-    where
-        R: AsMut<Receiver<T>>,
-        T: Clone,
-    {
-        type Item = Result<T, RecvError>;
-
-        fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-            let (receiver, waiter) = self.project();
-
-            let guard = match receiver.recv_ref(Some((waiter, cx.waker()))) {
-                Ok(value) => value,
-                Err(TryRecvError::Empty) => return Poll::Pending,
-                Err(TryRecvError::Lagged(n)) => return Poll::Ready(Some(Err(RecvError::Lagged(n)))),
-                Err(TryRecvError::Closed) => return Poll::Ready(None),
-            };
-
-            Poll::Ready(guard.clone_value().map(Ok))
-        }
-    }
-}
-
-impl<R, T> Drop for Recv<R, T>
-where
-    R: AsMut<Receiver<T>>,
-{
+impl<'a, T> Drop for Recv<'a, T> {
     fn drop(&mut self) {
         
         
-        let mut tail = self.receiver.as_mut().shared.tail.lock().unwrap();
+        let mut tail = self.receiver.shared.tail.lock();
 
         
         let queued = self.waiter.with(|ptr| unsafe { (*ptr).queued });
@@ -1210,28 +1074,5 @@ impl<'a, T> Drop for RecvGuard<'a, T> {
         }
     }
 }
-
-impl fmt::Display for RecvError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            RecvError::Closed => write!(f, "channel closed"),
-            RecvError::Lagged(amt) => write!(f, "channel lagged by {}", amt),
-        }
-    }
-}
-
-impl std::error::Error for RecvError {}
-
-impl fmt::Display for TryRecvError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            TryRecvError::Empty => write!(f, "channel empty"),
-            TryRecvError::Closed => write!(f, "channel closed"),
-            TryRecvError::Lagged(amt) => write!(f, "channel lagged by {}", amt),
-        }
-    }
-}
-
-impl std::error::Error for TryRecvError {}
 
 fn is_unpin<T: Unpin>() {}

@@ -4,10 +4,13 @@
 
 
 
-use crate::time::{delay_until, Delay, Duration, Instant};
+use crate::{
+    coop,
+    time::{error::Elapsed, sleep_until, Duration, Instant, Sleep},
+    util::trace,
+};
 
 use pin_project_lite::pin_project;
-use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{self, Poll};
@@ -46,11 +49,36 @@ use std::task::{self, Poll};
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[track_caller]
 pub fn timeout<T>(duration: Duration, future: T) -> Timeout<T>
 where
     T: Future,
 {
-    let delay = Delay::new_timeout(Instant::now() + duration, duration);
+    let location = trace::caller_location();
+
+    let deadline = Instant::now().checked_add(duration);
+    let delay = match deadline {
+        Some(deadline) => Sleep::new_timeout(deadline, location),
+        None => Sleep::far_future(location),
+    };
     Timeout::new_with_delay(future, delay)
 }
 
@@ -92,7 +120,7 @@ pub fn timeout_at<T>(deadline: Instant, future: T) -> Timeout<T>
 where
     T: Future,
 {
-    let delay = delay_until(deadline);
+    let delay = sleep_until(deadline);
 
     Timeout {
         value: future,
@@ -108,24 +136,12 @@ pin_project! {
         #[pin]
         value: T,
         #[pin]
-        delay: Delay,
-    }
-}
-
-
-#[derive(Debug, PartialEq)]
-pub struct Elapsed(());
-
-impl Elapsed {
-    
-    #[allow(unused)]
-    pub(crate) fn new() -> Self {
-        Elapsed(())
+        delay: Sleep,
     }
 }
 
 impl<T> Timeout<T> {
-    pub(crate) fn new_with_delay(value: T, delay: Delay) -> Timeout<T> {
+    pub(crate) fn new_with_delay(value: T, delay: Sleep) -> Timeout<T> {
         Timeout { value, delay }
     }
 
@@ -154,31 +170,33 @@ where
     fn poll(self: Pin<&mut Self>, cx: &mut task::Context<'_>) -> Poll<Self::Output> {
         let me = self.project();
 
+        let had_budget_before = coop::has_budget_remaining();
+
         
         if let Poll::Ready(v) = me.value.poll(cx) {
             return Poll::Ready(Ok(v));
         }
 
-        
-        match me.delay.poll(cx) {
-            Poll::Ready(()) => Poll::Ready(Err(Elapsed(()))),
-            Poll::Pending => Poll::Pending,
+        let has_budget_now = coop::has_budget_remaining();
+
+        let delay = me.delay;
+
+        let poll_delay = || -> Poll<Self::Output> {
+            match delay.poll(cx) {
+                Poll::Ready(()) => Poll::Ready(Err(Elapsed::new())),
+                Poll::Pending => Poll::Pending,
+            }
+        };
+
+        if let (true, false) = (had_budget_before, has_budget_now) {
+            
+            
+            
+            
+            
+            coop::with_unconstrained(poll_delay)
+        } else {
+            poll_delay()
         }
-    }
-}
-
-
-
-impl fmt::Display for Elapsed {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        "deadline has elapsed".fmt(fmt)
-    }
-}
-
-impl std::error::Error for Elapsed {}
-
-impl From<Elapsed> for std::io::Error {
-    fn from(_err: Elapsed) -> std::io::Error {
-        std::io::ErrorKind::TimedOut.into()
     }
 }

@@ -1,10 +1,26 @@
 #![warn(rust_2018_idioms)]
 #![cfg(feature = "full")]
 
-use tokio::time::{self, Duration, Instant};
+use tokio::time::{self, Duration, Instant, MissedTickBehavior};
 use tokio_test::{assert_pending, assert_ready_eq, task};
 
 use std::task::Poll;
+
+
+
+
+
+macro_rules! check_interval_poll {
+    ($i:ident, $start:ident, $($delta:expr),*$(,)?) => {
+        $(
+            assert_ready_eq!(poll_next(&mut $i), $start + ms($delta));
+        )*
+        assert_pending!(poll_next(&mut $i));
+    };
+    ($i:ident, $start:ident) => {
+        check_interval_poll!($i, $start,);
+    };
+}
 
 #[tokio::test]
 #[should_panic]
@@ -12,49 +28,178 @@ async fn interval_zero_duration() {
     let _ = time::interval_at(Instant::now(), ms(0));
 }
 
-#[tokio::test]
-async fn usage() {
-    time::pause();
 
+
+
+
+
+
+
+
+
+#[tokio::test(start_paused = true)]
+async fn burst() {
     let start = Instant::now();
 
+    
+    
     
     time::advance(ms(1)).await;
 
     let mut i = task::spawn(time::interval_at(start, ms(300)));
 
-    assert_ready_eq!(poll_next(&mut i), start);
-    assert_pending!(poll_next(&mut i));
+    check_interval_poll!(i, start, 0);
 
     time::advance(ms(100)).await;
-    assert_pending!(poll_next(&mut i));
+    check_interval_poll!(i, start);
 
     time::advance(ms(200)).await;
-    assert_ready_eq!(poll_next(&mut i), start + ms(300));
-    assert_pending!(poll_next(&mut i));
+    check_interval_poll!(i, start, 300);
 
-    time::advance(ms(400)).await;
-    assert_ready_eq!(poll_next(&mut i), start + ms(600));
-    assert_pending!(poll_next(&mut i));
+    time::advance(ms(650)).await;
+    check_interval_poll!(i, start, 600, 900);
 
-    time::advance(ms(500)).await;
-    assert_ready_eq!(poll_next(&mut i), start + ms(900));
-    assert_ready_eq!(poll_next(&mut i), start + ms(1200));
-    assert_pending!(poll_next(&mut i));
+    time::advance(ms(200)).await;
+    check_interval_poll!(i, start);
+
+    time::advance(ms(100)).await;
+    check_interval_poll!(i, start, 1200);
+
+    time::advance(ms(250)).await;
+    check_interval_poll!(i, start, 1500);
+
+    time::advance(ms(300)).await;
+    check_interval_poll!(i, start, 1800);
 }
 
-#[tokio::test]
-async fn usage_stream() {
-    use tokio::stream::StreamExt;
 
+
+
+
+
+
+
+
+
+#[tokio::test(start_paused = true)]
+async fn delay() {
     let start = Instant::now();
-    let mut interval = time::interval(ms(10));
 
-    for _ in 0..3 {
-        interval.next().await.unwrap();
-    }
+    
+    
+    
+    time::advance(ms(1)).await;
 
-    assert!(start.elapsed() > ms(20));
+    let mut i = task::spawn(time::interval_at(start, ms(300)));
+    i.set_missed_tick_behavior(MissedTickBehavior::Delay);
+
+    check_interval_poll!(i, start, 0);
+
+    time::advance(ms(100)).await;
+    check_interval_poll!(i, start);
+
+    time::advance(ms(200)).await;
+    check_interval_poll!(i, start, 300);
+
+    time::advance(ms(650)).await;
+    check_interval_poll!(i, start, 600);
+
+    time::advance(ms(100)).await;
+    check_interval_poll!(i, start);
+
+    
+    
+    
+    
+    time::advance(ms(201)).await;
+    
+    
+    
+    check_interval_poll!(i, start, 1251);
+
+    time::advance(ms(300)).await;
+    
+    check_interval_poll!(i, start, 1551);
+
+    time::advance(ms(300)).await;
+    check_interval_poll!(i, start, 1851);
+}
+
+
+
+
+
+
+
+
+
+#[tokio::test(start_paused = true)]
+async fn skip() {
+    let start = Instant::now();
+
+    
+    
+    
+    time::advance(ms(1)).await;
+
+    let mut i = task::spawn(time::interval_at(start, ms(300)));
+    i.set_missed_tick_behavior(MissedTickBehavior::Skip);
+
+    check_interval_poll!(i, start, 0);
+
+    time::advance(ms(100)).await;
+    check_interval_poll!(i, start);
+
+    time::advance(ms(200)).await;
+    check_interval_poll!(i, start, 300);
+
+    time::advance(ms(650)).await;
+    check_interval_poll!(i, start, 600);
+
+    time::advance(ms(250)).await;
+    check_interval_poll!(i, start, 1200);
+
+    time::advance(ms(300)).await;
+    check_interval_poll!(i, start, 1500);
+
+    time::advance(ms(300)).await;
+    check_interval_poll!(i, start, 1800);
+}
+
+#[tokio::test(start_paused = true)]
+async fn reset() {
+    let start = Instant::now();
+
+    
+    
+    
+    time::advance(ms(1)).await;
+
+    let mut i = task::spawn(time::interval_at(start, ms(300)));
+
+    check_interval_poll!(i, start, 0);
+
+    time::advance(ms(100)).await;
+    check_interval_poll!(i, start);
+
+    time::advance(ms(200)).await;
+    check_interval_poll!(i, start, 300);
+
+    time::advance(ms(100)).await;
+    check_interval_poll!(i, start);
+
+    i.reset();
+
+    time::advance(ms(250)).await;
+    check_interval_poll!(i, start);
+
+    time::advance(ms(50)).await;
+    
+    
+    check_interval_poll!(i, start, 701);
+
+    time::advance(ms(300)).await;
+    check_interval_poll!(i, start, 1001);
 }
 
 fn poll_next(interval: &mut task::Spawn<time::Interval>) -> Poll<Instant> {

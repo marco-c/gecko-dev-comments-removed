@@ -29,12 +29,15 @@ const LIFECYCLE_MASK: usize = 0b11;
 const NOTIFIED: usize = 0b100;
 
 
+#[allow(clippy::unusual_byte_groupings)] 
 const JOIN_INTEREST: usize = 0b1_000;
 
 
+#[allow(clippy::unusual_byte_groupings)] 
 const JOIN_WAKER: usize = 0b10_000;
 
 
+#[allow(clippy::unusual_byte_groupings)] 
 const CANCELLED: usize = 0b100_000;
 
 
@@ -55,16 +58,46 @@ const REF_ONE: usize = 1 << REF_COUNT_SHIFT;
 
 
 
-const INITIAL_STATE: usize = (REF_ONE * 2) | JOIN_INTEREST | NOTIFIED;
+
+
+
+
+const INITIAL_STATE: usize = (REF_ONE * 3) | JOIN_INTEREST | NOTIFIED;
+
+#[must_use]
+pub(super) enum TransitionToRunning {
+    Success,
+    Cancelled,
+    Failed,
+    Dealloc,
+}
+
+#[must_use]
+pub(super) enum TransitionToIdle {
+    Ok,
+    OkNotified,
+    OkDealloc,
+    Cancelled,
+}
+
+#[must_use]
+pub(super) enum TransitionToNotifiedByVal {
+    DoNothing,
+    Submit,
+    Dealloc,
+}
+
+#[must_use]
+pub(super) enum TransitionToNotifiedByRef {
+    DoNothing,
+    Submit,
+}
 
 
 
 impl State {
     
     pub(super) fn new() -> State {
-        
-        
-        
         
         
         State {
@@ -79,26 +112,33 @@ impl State {
 
     
     
-    
-    
-    
-    pub(super) fn transition_to_running(&self, ref_inc: bool) -> UpdateResult {
-        self.fetch_update(|curr| {
-            assert!(curr.is_notified());
-
-            let mut next = curr;
+    pub(super) fn transition_to_running(&self) -> TransitionToRunning {
+        self.fetch_update_action(|mut next| {
+            let action;
+            assert!(next.is_notified());
 
             if !next.is_idle() {
-                return None;
-            }
+                
+                
+                
+                next.ref_dec();
+                if next.ref_count() == 0 {
+                    action = TransitionToRunning::Dealloc;
+                } else {
+                    action = TransitionToRunning::Failed;
+                }
+            } else {
+                
+                next.set_running();
+                next.unset_notified();
 
-            if ref_inc {
-                next.ref_inc();
+                if next.is_cancelled() {
+                    action = TransitionToRunning::Cancelled;
+                } else {
+                    action = TransitionToRunning::Success;
+                }
             }
-
-            next.set_running();
-            next.unset_notified();
-            Some(next)
+            (action, Some(next))
         })
     }
 
@@ -107,27 +147,35 @@ impl State {
     
     
     
-    
-    
-    
-    pub(super) fn transition_to_idle(&self) -> UpdateResult {
-        self.fetch_update(|curr| {
+    pub(super) fn transition_to_idle(&self) -> TransitionToIdle {
+        self.fetch_update_action(|curr| {
             assert!(curr.is_running());
 
             if curr.is_cancelled() {
-                return None;
+                return (TransitionToIdle::Cancelled, None);
             }
 
             let mut next = curr;
+            let action;
             next.unset_running();
 
-            if next.is_notified() {
+            if !next.is_notified() {
+                
+                next.ref_dec();
+                if next.ref_count() == 0 {
+                    action = TransitionToIdle::OkDealloc;
+                } else {
+                    action = TransitionToIdle::Ok;
+                }
+            } else {
+                
                 
                 
                 next.ref_inc();
+                action = TransitionToIdle::OkNotified;
             }
 
-            Some(next)
+            (action, Some(next))
         })
     }
 
@@ -146,35 +194,116 @@ impl State {
     
     
     
-    
-    pub(super) fn transition_to_terminal(&self, complete: bool, ref_dec: bool) -> Snapshot {
-        self.fetch_update(|mut snapshot| {
-            if complete {
-                snapshot.set_complete();
-            } else {
-                assert!(snapshot.is_complete());
-            }
-
-            
-            snapshot.ref_dec();
-
-            if ref_dec {
-                
-                snapshot.ref_dec();
-            }
-
-            Some(snapshot)
-        })
-        .unwrap()
+    pub(super) fn transition_to_terminal(&self, count: usize) -> bool {
+        let prev = Snapshot(self.val.fetch_sub(count * REF_ONE, AcqRel));
+        assert!(
+            prev.ref_count() >= count,
+            "current: {}, sub: {}",
+            prev.ref_count(),
+            count
+        );
+        prev.ref_count() == count
     }
 
     
     
     
     
-    pub(super) fn transition_to_notified(&self) -> bool {
-        let prev = Snapshot(self.val.fetch_or(NOTIFIED, AcqRel));
-        prev.will_need_queueing()
+    
+    
+    pub(super) fn transition_to_notified_by_val(&self) -> TransitionToNotifiedByVal {
+        self.fetch_update_action(|mut snapshot| {
+            let action;
+
+            if snapshot.is_running() {
+                
+                
+                
+                snapshot.set_notified();
+                snapshot.ref_dec();
+
+                
+                assert!(snapshot.ref_count() > 0);
+
+                action = TransitionToNotifiedByVal::DoNothing;
+            } else if snapshot.is_complete() || snapshot.is_notified() {
+                
+                
+                snapshot.ref_dec();
+
+                if snapshot.ref_count() == 0 {
+                    action = TransitionToNotifiedByVal::Dealloc;
+                } else {
+                    action = TransitionToNotifiedByVal::DoNothing;
+                }
+            } else {
+                
+                
+                snapshot.set_notified();
+                snapshot.ref_inc();
+                action = TransitionToNotifiedByVal::Submit;
+            }
+
+            (action, Some(snapshot))
+        })
+    }
+
+    
+    pub(super) fn transition_to_notified_by_ref(&self) -> TransitionToNotifiedByRef {
+        self.fetch_update_action(|mut snapshot| {
+            if snapshot.is_complete() || snapshot.is_notified() {
+                
+                (TransitionToNotifiedByRef::DoNothing, None)
+            } else if snapshot.is_running() {
+                
+                
+                
+                snapshot.set_notified();
+                (TransitionToNotifiedByRef::DoNothing, Some(snapshot))
+            } else {
+                
+                
+                snapshot.set_notified();
+                snapshot.ref_inc();
+                (TransitionToNotifiedByRef::Submit, Some(snapshot))
+            }
+        })
+    }
+
+    
+    
+    
+    
+    pub(super) fn transition_to_notified_and_cancel(&self) -> bool {
+        self.fetch_update_action(|mut snapshot| {
+            if snapshot.is_cancelled() || snapshot.is_complete() {
+                
+                (false, None)
+            } else if snapshot.is_running() {
+                
+                
+                
+                
+                
+                
+                
+                snapshot.set_notified();
+                snapshot.set_cancelled();
+                (false, Some(snapshot))
+            } else {
+                
+                
+                
+                snapshot.set_cancelled();
+                if !snapshot.is_notified() {
+                    snapshot.set_notified();
+                    snapshot.ref_inc();
+                    (true, Some(snapshot))
+                } else {
+                    (false, Some(snapshot))
+                }
+            }
+        })
     }
 
     
@@ -188,17 +317,11 @@ impl State {
 
             if snapshot.is_idle() {
                 snapshot.set_running();
-
-                if snapshot.is_notified() {
-                    
-                    
-                    
-                    
-                    
-                    snapshot.ref_inc();
-                }
             }
 
+            
+            
+            
             snapshot.set_cancelled();
             Some(snapshot)
         });
@@ -306,7 +429,7 @@ impl State {
         let prev = self.val.fetch_add(REF_ONE, Relaxed);
 
         
-        if prev > isize::max_value() as usize {
+        if prev > isize::MAX as usize {
             process::abort();
         }
     }
@@ -314,7 +437,37 @@ impl State {
     
     pub(super) fn ref_dec(&self) -> bool {
         let prev = Snapshot(self.val.fetch_sub(REF_ONE, AcqRel));
+        assert!(prev.ref_count() >= 1);
         prev.ref_count() == 1
+    }
+
+    
+    pub(super) fn ref_dec_twice(&self) -> bool {
+        let prev = Snapshot(self.val.fetch_sub(2 * REF_ONE, AcqRel));
+        assert!(prev.ref_count() >= 2);
+        prev.ref_count() == 2
+    }
+
+    fn fetch_update_action<F, T>(&self, mut f: F) -> T
+    where
+        F: FnMut(Snapshot) -> (T, Option<Snapshot>),
+    {
+        let mut curr = self.load();
+
+        loop {
+            let (output, next) = f(curr);
+            let next = match next {
+                Some(next) => next,
+                None => return output,
+            };
+
+            let res = self.val.compare_exchange(curr.0, next.0, AcqRel, Acquire);
+
+            match res {
+                Ok(_) => return output,
+                Err(actual) => curr = Snapshot(actual),
+            }
+        }
     }
 
     fn fetch_update<F>(&self, mut f: F) -> Result<Snapshot, Snapshot>
@@ -356,6 +509,10 @@ impl Snapshot {
         self.0 &= !NOTIFIED
     }
 
+    fn set_notified(&mut self) {
+        self.0 |= NOTIFIED
+    }
+
     pub(super) fn is_running(self) -> bool {
         self.0 & RUNNING == RUNNING
     }
@@ -374,10 +531,6 @@ impl Snapshot {
 
     fn set_cancelled(&mut self) {
         self.0 |= CANCELLED;
-    }
-
-    fn set_complete(&mut self) {
-        self.0 |= COMPLETE;
     }
 
     
@@ -410,17 +563,13 @@ impl Snapshot {
     }
 
     fn ref_inc(&mut self) {
-        assert!(self.0 <= isize::max_value() as usize);
+        assert!(self.0 <= isize::MAX as usize);
         self.0 += REF_ONE;
     }
 
     pub(super) fn ref_dec(&mut self) {
         assert!(self.ref_count() > 0);
         self.0 -= REF_ONE
-    }
-
-    fn will_need_queueing(self) -> bool {
-        !self.is_notified() && self.is_idle()
     }
 }
 

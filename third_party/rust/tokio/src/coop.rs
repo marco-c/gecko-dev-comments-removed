@@ -1,24 +1,4 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#![cfg_attr(not(feature = "full"), allow(dead_code))]
 
 
 
@@ -79,13 +59,9 @@ impl Budget {
     const fn unconstrained() -> Budget {
         Budget(None)
     }
-}
 
-cfg_rt_threaded! {
-    impl Budget {
-        fn has_remaining(self) -> bool {
-            self.0.map(|budget| budget > 0).unwrap_or(true)
-        }
+    fn has_remaining(self) -> bool {
+        self.0.map(|budget| budget > 0).unwrap_or(true)
     }
 }
 
@@ -96,12 +72,11 @@ pub(crate) fn budget<R>(f: impl FnOnce() -> R) -> R {
     with_budget(Budget::initial(), f)
 }
 
-cfg_rt_threaded! {
-    /// Set the current task's budget
-    #[cfg(feature = "blocking")]
-    pub(crate) fn set(budget: Budget) {
-        CURRENT.with(|cell| cell.set(budget))
-    }
+
+
+#[inline(always)]
+pub(crate) fn with_unconstrained<R>(f: impl FnOnce() -> R) -> R {
+    with_budget(Budget::unconstrained(), f)
 }
 
 #[inline(always)]
@@ -128,15 +103,20 @@ fn with_budget<R>(budget: Budget, f: impl FnOnce() -> R) -> R {
     })
 }
 
-cfg_rt_threaded! {
-    #[inline(always)]
-    pub(crate) fn has_budget_remaining() -> bool {
-        CURRENT.with(|cell| cell.get().has_remaining())
+#[inline(always)]
+pub(crate) fn has_budget_remaining() -> bool {
+    CURRENT.with(|cell| cell.get().has_remaining())
+}
+
+cfg_rt_multi_thread! {
+    /// Sets the current task's budget.
+    pub(crate) fn set(budget: Budget) {
+        CURRENT.with(|cell| cell.set(budget))
     }
 }
 
-cfg_blocking_impl! {
-    /// Forcibly remove the budgeting constraints early.
+cfg_rt! {
+    /// Forcibly removes the budgeting constraints early.
     ///
     /// Returns the remaining budget
     pub(crate) fn stop() -> Budget {
@@ -202,7 +182,7 @@ cfg_coop! {
     }
 
     impl Budget {
-        /// Decrement the budget. Returns `true` if successful. Decrementing fails
+        /// Decrements the budget. Returns `true` if successful. Decrementing fails
         /// when there is not enough remaining budget.
         fn decrement(&mut self) -> bool {
             if let Some(num) = &mut self.0 {
@@ -226,6 +206,9 @@ cfg_coop! {
 #[cfg(all(test, not(loom)))]
 mod test {
     use super::*;
+
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen_test::wasm_bindgen_test as test;
 
     fn get() -> Budget {
         CURRENT.with(|cell| cell.get())

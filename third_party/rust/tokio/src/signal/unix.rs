@@ -4,18 +4,21 @@
 
 
 #![cfg(unix)]
+#![cfg_attr(docsrs, doc(cfg(all(unix, feature = "signal"))))]
 
-use crate::io::{AsyncRead, PollEvented};
 use crate::signal::registry::{globals, EventId, EventInfo, Globals, Init, Storage};
-use crate::sync::mpsc::{channel, Receiver};
+use crate::signal::RxFuture;
+use crate::sync::watch;
 
-use libc::c_int;
-use mio_uds::UnixStream;
+use mio::net::UnixStream;
 use std::io::{self, Error, ErrorKind, Write};
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Once;
 use std::task::{Context, Poll};
+
+pub(crate) mod driver;
+use self::driver::Handle;
 
 pub(crate) type OsStorage = Vec<SignalInfo>;
 
@@ -58,7 +61,7 @@ impl Init for OsExtraData {
 
 
 #[derive(Debug, Clone, Copy)]
-pub struct SignalKind(c_int);
+pub struct SignalKind(libc::c_int);
 
 impl SignalKind {
     
@@ -71,8 +74,14 @@ impl SignalKind {
     
     
     
-    pub fn from_raw(signum: c_int) -> Self {
-        Self(signum)
+    
+    
+    
+    
+    
+    
+    pub fn from_raw(signum: std::os::raw::c_int) -> Self {
+        Self(signum as libc::c_int)
     }
 
     
@@ -205,7 +214,7 @@ impl Default for SignalInfo {
 
 
 
-fn action(globals: Pin<&'static Globals>, signal: c_int) {
+fn action(globals: Pin<&'static Globals>, signal: libc::c_int) {
     globals.record_event(signal as EventId);
 
     
@@ -219,13 +228,17 @@ fn action(globals: Pin<&'static Globals>, signal: c_int) {
 
 
 
-fn signal_enable(signal: c_int) -> io::Result<()> {
+fn signal_enable(signal: SignalKind, handle: &Handle) -> io::Result<()> {
+    let signal = signal.0;
     if signal < 0 || signal_hook_registry::FORBIDDEN.contains(&signal) {
         return Err(Error::new(
             ErrorKind::Other,
             format!("Refusing to register signal {}", signal),
         ));
     }
+
+    
+    handle.check_inner()?;
 
     let globals = globals();
     let siginfo = match globals.storage().get(signal as EventId) {
@@ -251,63 +264,6 @@ fn signal_enable(signal: c_int) -> io::Result<()> {
             ErrorKind::Other,
             "Failed to register signal handler",
         ))
-    }
-}
-
-#[derive(Debug)]
-struct Driver {
-    wakeup: PollEvented<UnixStream>,
-}
-
-impl Driver {
-    fn poll(&mut self, cx: &mut Context<'_>) -> Poll<()> {
-        
-        self.drain(cx);
-        
-        globals().broadcast();
-
-        Poll::Pending
-    }
-}
-
-impl Driver {
-    fn new() -> io::Result<Driver> {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        let stream = globals().receiver.try_clone()?;
-        let wakeup = PollEvented::new(stream)?;
-
-        Ok(Driver { wakeup })
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    fn drain(&mut self, cx: &mut Context<'_>) {
-        loop {
-            match Pin::new(&mut self.wakeup).poll_read(cx, &mut [0; 128]) {
-                Poll::Ready(Ok(0)) => panic!("EOF on self-pipe"),
-                Poll::Ready(Ok(_)) => {}
-                Poll::Ready(Err(e)) => panic!("Bad read on self-pipe: {}", e),
-                Poll::Pending => break,
-            }
-        }
     }
 }
 
@@ -376,8 +332,7 @@ impl Driver {
 #[must_use = "streams do nothing unless polled"]
 #[derive(Debug)]
 pub struct Signal {
-    driver: Driver,
-    rx: Receiver<()>,
+    inner: RxFuture,
 }
 
 
@@ -403,21 +358,21 @@ pub struct Signal {
 
 
 pub fn signal(kind: SignalKind) -> io::Result<Signal> {
-    let signal = kind.0;
+    let rx = signal_with_handle(kind, &Handle::current())?;
 
-    
-    signal_enable(signal)?;
+    Ok(Signal {
+        inner: RxFuture::new(rx),
+    })
+}
 
+pub(crate) fn signal_with_handle(
+    kind: SignalKind,
+    handle: &Handle,
+) -> io::Result<watch::Receiver<()>> {
     
-    
-    let driver = Driver::new()?;
+    signal_enable(kind, handle)?;
 
-    
-    
-    let (tx, rx) = channel(1);
-    globals().register_listener(signal as EventId, tx);
-
-    Ok(Signal { driver, rx })
+    Ok(globals().register_listener(kind.0 as EventId))
 }
 
 impl Signal {
@@ -445,10 +400,15 @@ impl Signal {
     
     
     pub async fn recv(&mut self) -> Option<()> {
-        use crate::future::poll_fn;
-        poll_fn(|cx| self.poll_recv(cx)).await
+        self.inner.recv().await
     }
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -478,18 +438,18 @@ impl Signal {
     
     
     pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<()>> {
-        let _ = self.driver.poll(cx);
-        self.rx.poll_recv(cx)
+        self.inner.poll_recv(cx)
     }
 }
 
-cfg_stream! {
-    impl crate::stream::Stream for Signal {
-        type Item = ();
 
-        fn poll_next(mut self: std::pin::Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<()>> {
-            self.poll_recv(cx)
-        }
+pub(crate) trait InternalStream {
+    fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<()>>;
+}
+
+impl InternalStream for Signal {
+    fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<()>> {
+        self.poll_recv(cx)
     }
 }
 
@@ -503,11 +463,15 @@ mod tests {
 
     #[test]
     fn signal_enable_error_on_invalid_input() {
-        signal_enable(-1).unwrap_err();
+        signal_enable(SignalKind::from_raw(-1), &Handle::default()).unwrap_err();
     }
 
     #[test]
     fn signal_enable_error_on_forbidden_input() {
-        signal_enable(signal_hook_registry::FORBIDDEN[0]).unwrap_err();
+        signal_enable(
+            SignalKind::from_raw(signal_hook_registry::FORBIDDEN[0]),
+            &Handle::default(),
+        )
+        .unwrap_err();
     }
 }

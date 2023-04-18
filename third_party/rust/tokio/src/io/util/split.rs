@@ -8,7 +8,11 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 
 pin_project! {
-    /// Stream for the [`split`](crate::io::AsyncBufReadExt::split) method.
+    /// Splitter for the [`split`](crate::io::AsyncBufReadExt::split) method.
+    ///
+    /// A `Split` can be turned into a `Stream` with [`SplitStream`].
+    ///
+    /// [`SplitStream`]: https://docs.rs/tokio-stream/0.1/tokio_stream/wrappers/struct.SplitStream.html
     #[derive(Debug)]
     #[must_use = "streams do nothing unless polled"]
     #[cfg_attr(docsrs, doc(cfg(feature = "io-util")))]
@@ -65,7 +69,23 @@ impl<R> Split<R>
 where
     R: AsyncBufRead,
 {
-    #[doc(hidden)]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn poll_next_segment(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
@@ -86,20 +106,7 @@ where
             me.buf.pop();
         }
 
-        Poll::Ready(Ok(Some(mem::replace(me.buf, Vec::new()))))
-    }
-}
-
-#[cfg(feature = "stream")]
-impl<R: AsyncBufRead> crate::stream::Stream for Split<R> {
-    type Item = io::Result<Vec<u8>>;
-
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        Poll::Ready(match ready!(self.poll_next_segment(cx)) {
-            Ok(Some(segment)) => Some(Ok(segment)),
-            Ok(None) => None,
-            Err(err) => Some(Err(err)),
-        })
+        Poll::Ready(Ok(Some(mem::take(me.buf))))
     }
 }
 

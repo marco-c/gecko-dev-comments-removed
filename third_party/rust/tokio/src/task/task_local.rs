@@ -2,6 +2,7 @@ use pin_project_lite::pin_project;
 use std::cell::RefCell;
 use std::error::Error;
 use std::future::Future;
+use std::marker::PhantomPinned;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::{fmt, thread};
@@ -31,7 +32,7 @@ use std::{fmt, thread};
 
 
 #[macro_export]
-#[cfg_attr(docsrs, doc(cfg(all(feature = "rt-util", feature = "rt-core"))))]
+#[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
 macro_rules! task_local {
      
     () => {};
@@ -91,7 +92,7 @@ macro_rules! __task_local_inner {
 
 
 
-#[cfg_attr(docsrs, doc(cfg(all(feature = "rt-util", feature = "rt-core"))))]
+#[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
 pub struct LocalKey<T: 'static> {
     #[doc(hidden)]
     pub inner: thread::LocalKey<RefCell<Option<T>>>,
@@ -115,16 +116,47 @@ impl<T: 'static> LocalKey<T> {
     
     
     
-    pub async fn scope<F>(&'static self, value: T, f: F) -> F::Output
+    pub fn scope<F>(&'static self, value: T, f: F) -> TaskLocalFuture<T, F>
     where
         F: Future,
     {
         TaskLocalFuture {
-            local: &self,
+            local: self,
             slot: Some(value),
             future: f,
+            _pinned: PhantomPinned,
         }
-        .await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn sync_scope<F, R>(&'static self, value: T, f: F) -> R
+    where
+        F: FnOnce() -> R,
+    {
+        let scope = TaskLocalFuture {
+            local: self,
+            slot: Some(value),
+            future: (),
+            _pinned: PhantomPinned,
+        };
+        crate::pin!(scope);
+        scope.with_task(|_| f())
     }
 
     
@@ -177,18 +209,42 @@ impl<T: 'static> fmt::Debug for LocalKey<T> {
 }
 
 pin_project! {
-    struct TaskLocalFuture<T: StaticLifetime, F> {
+    /// A future that sets a value `T` of a task local for the future `F` during
+    /// its execution.
+    ///
+    /// The value of the task-local must be `'static` and will be dropped on the
+    /// completion of the future.
+    ///
+    /// Created by the function [`LocalKey::scope`](self::LocalKey::scope).
+    ///
+    /// ### Examples
+    ///
+    /// ```
+    /// # async fn dox() {
+    /// tokio::task_local! {
+    ///     static NUMBER: u32;
+    /// }
+    ///
+    /// NUMBER.scope(1, async move {
+    ///     println!("task local value: {}", NUMBER.get());
+    /// }).await;
+    /// # }
+    /// ```
+    pub struct TaskLocalFuture<T, F>
+    where
+        T: 'static
+    {
         local: &'static LocalKey<T>,
         slot: Option<T>,
         #[pin]
         future: F,
+        #[pin]
+        _pinned: PhantomPinned,
     }
 }
 
-impl<T: 'static, F: Future> Future for TaskLocalFuture<T, F> {
-    type Output = F::Output;
-
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+impl<T: 'static, F> TaskLocalFuture<T, F> {
+    fn with_task<F2: FnOnce(Pin<&mut F>) -> R, R>(self: Pin<&mut Self>, f: F2) -> R {
         struct Guard<'a, T: 'static> {
             local: &'static LocalKey<T>,
             slot: &'a mut Option<T>,
@@ -202,24 +258,28 @@ impl<T: 'static, F: Future> Future for TaskLocalFuture<T, F> {
             }
         }
 
-        let mut project = self.project();
+        let project = self.project();
         let val = project.slot.take();
 
         let prev = project.local.inner.with(|c| c.replace(val));
 
         let _guard = Guard {
             prev,
-            slot: &mut project.slot,
+            slot: project.slot,
             local: *project.local,
         };
 
-        project.future.poll(cx)
+        f(project.future)
     }
 }
 
+impl<T: 'static, F: Future> Future for TaskLocalFuture<T, F> {
+    type Output = F::Output;
 
-trait StaticLifetime: 'static {}
-impl<T: 'static> StaticLifetime for T {}
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        self.with_task(|f| f.poll(cx))
+    }
+}
 
 
 #[derive(Clone, Copy, Eq, PartialEq)]

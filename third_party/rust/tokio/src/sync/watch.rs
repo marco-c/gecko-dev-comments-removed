@@ -1,3 +1,4 @@
+#![cfg_attr(not(feature = "sync"), allow(dead_code, unreachable_pub))]
 
 
 
@@ -51,16 +52,19 @@
 
 
 
-use crate::future::poll_fn;
-use crate::sync::task::AtomicWaker;
 
-use fnv::FnvHashSet;
+use crate::sync::notify::Notify;
+
+use crate::loom::sync::atomic::AtomicUsize;
+use crate::loom::sync::atomic::Ordering::Relaxed;
+use crate::loom::sync::{Arc, RwLock, RwLockReadGuard};
+use std::mem;
 use std::ops;
-use std::sync::atomic::AtomicUsize;
-use std::sync::atomic::Ordering::{Relaxed, SeqCst};
-use std::sync::{Arc, Mutex, RwLock, RwLockReadGuard, Weak};
-use std::task::Poll::{Pending, Ready};
-use std::task::{Context, Poll};
+
+
+
+
+
 
 
 
@@ -71,7 +75,7 @@ pub struct Receiver<T> {
     shared: Arc<Shared<T>>,
 
     
-    inner: Watcher,
+    version: Version,
 }
 
 
@@ -79,8 +83,25 @@ pub struct Receiver<T> {
 
 #[derive(Debug)]
 pub struct Sender<T> {
-    shared: Weak<Shared<T>>,
+    shared: Arc<Shared<T>>,
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -92,6 +113,27 @@ pub struct Ref<'a, T> {
     inner: RwLockReadGuard<'a, T>,
 }
 
+#[derive(Debug)]
+struct Shared<T> {
+    
+    value: RwLock<T>,
+
+    
+    
+    
+    
+    state: AtomicState,
+
+    
+    ref_count_rx: AtomicUsize,
+
+    
+    notify_rx: Notify,
+
+    
+    notify_tx: Notify,
+}
+
 pub mod error {
     
 
@@ -99,9 +141,7 @@ pub mod error {
 
     
     #[derive(Debug)]
-    pub struct SendError<T> {
-        pub(crate) inner: T,
-    }
+    pub struct SendError<T>(pub T);
 
     
 
@@ -112,40 +152,89 @@ pub mod error {
     }
 
     impl<T: fmt::Debug> std::error::Error for SendError<T> {}
+
+    
+    #[derive(Debug)]
+    pub struct RecvError(pub(super) ());
+
+    
+
+    impl fmt::Display for RecvError {
+        fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(fmt, "channel closed")
+        }
+    }
+
+    impl std::error::Error for RecvError {}
 }
 
-#[derive(Debug)]
-struct Shared<T> {
+use self::state::{AtomicState, Version};
+mod state {
+    use crate::loom::sync::atomic::AtomicUsize;
+    use crate::loom::sync::atomic::Ordering::SeqCst;
+
+    const CLOSED: usize = 1;
+
     
-    value: RwLock<T>,
+    #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+    pub(super) struct Version(usize);
 
     
     
     
     
-    version: AtomicUsize,
+    
+    #[derive(Copy, Clone, Debug)]
+    pub(super) struct StateSnapshot(usize);
 
     
-    watchers: Mutex<Watchers>,
+    #[derive(Debug)]
+    pub(super) struct AtomicState(AtomicUsize);
 
-    
-    cancel: AtomicWaker,
+    impl Version {
+        
+        pub(super) fn initial() -> Self {
+            Version(0)
+        }
+    }
+
+    impl StateSnapshot {
+        
+        pub(super) fn version(self) -> Version {
+            Version(self.0 & !CLOSED)
+        }
+
+        
+        pub(super) fn is_closed(self) -> bool {
+            (self.0 & CLOSED) == CLOSED
+        }
+    }
+
+    impl AtomicState {
+        
+        
+        pub(super) fn new() -> Self {
+            AtomicState(AtomicUsize::new(0))
+        }
+
+        
+        pub(super) fn load(&self) -> StateSnapshot {
+            StateSnapshot(self.0.load(SeqCst))
+        }
+
+        
+        pub(super) fn increment_version(&self) {
+            
+            self.0.fetch_add(2, SeqCst);
+        }
+
+        
+        pub(super) fn set_closed(&self) {
+            self.0.fetch_or(CLOSED, SeqCst);
+        }
+    }
 }
 
-type Watchers = FnvHashSet<Watcher>;
-
-
-#[derive(Clone, Debug)]
-struct Watcher(Arc<WatchInner>);
-
-#[derive(Debug)]
-struct WatchInner {
-    
-    version: AtomicUsize,
-    waker: AtomicWaker,
-}
-
-const CLOSED: usize = 1;
 
 
 
@@ -173,35 +262,59 @@ const CLOSED: usize = 1;
 
 
 
-
-pub fn channel<T: Clone>(init: T) -> (Sender<T>, Receiver<T>) {
-    const VERSION_0: usize = 0;
-    const VERSION_1: usize = 2;
-
-    
-    let inner = Watcher::new_version(VERSION_0);
-
-    
-    let mut watchers = FnvHashSet::with_capacity_and_hasher(0, Default::default());
-    watchers.insert(inner.clone());
-
+pub fn channel<T>(init: T) -> (Sender<T>, Receiver<T>) {
     let shared = Arc::new(Shared {
         value: RwLock::new(init),
-        version: AtomicUsize::new(VERSION_1),
-        watchers: Mutex::new(watchers),
-        cancel: AtomicWaker::new(),
+        state: AtomicState::new(),
+        ref_count_rx: AtomicUsize::new(1),
+        notify_rx: Notify::new(),
+        notify_tx: Notify::new(),
     });
 
     let tx = Sender {
-        shared: Arc::downgrade(&shared),
+        shared: shared.clone(),
     };
 
-    let rx = Receiver { shared, inner };
+    let rx = Receiver {
+        shared,
+        version: Version::initial(),
+    };
 
     (tx, rx)
 }
 
 impl<T> Receiver<T> {
+    fn from_shared(version: Version, shared: Arc<Shared<T>>) -> Self {
+        
+        
+        shared.ref_count_rx.fetch_add(1, Relaxed);
+
+        Self { shared, version }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -222,122 +335,198 @@ impl<T> Receiver<T> {
     }
 
     
-    #[doc(hidden)]
-    pub fn poll_recv_ref<'a>(&'a mut self, cx: &mut Context<'_>) -> Poll<Option<Ref<'a, T>>> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn borrow_and_update(&mut self) -> Ref<'_, T> {
+        let inner = self.shared.value.read().unwrap();
+        self.version = self.shared.state.load().version();
+        Ref { inner }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn has_changed(&self) -> Result<bool, error::RecvError> {
         
-        self.inner.waker.register_by_ref(cx.waker());
-
-        let state = self.shared.version.load(SeqCst);
-        let version = state & !CLOSED;
-
-        if self.inner.version.swap(version, Relaxed) != version {
-            let inner = self.shared.value.read().unwrap();
-
-            return Ready(Some(Ref { inner }));
-        }
-
-        if CLOSED == state & CLOSED {
+        let state = self.shared.state.load();
+        if state.is_closed() {
             
-            return Ready(None);
+            return Err(error::RecvError(()));
         }
+        let new_version = state.version();
 
-        Pending
+        Ok(self.version != new_version)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn changed(&mut self) -> Result<(), error::RecvError> {
+        loop {
+            
+            
+            
+            let notified = self.shared.notify_rx.notified();
+
+            if let Some(ret) = maybe_changed(&self.shared, &mut self.version) {
+                return ret;
+            }
+
+            notified.await;
+            
+        }
+    }
+
+    cfg_process_driver! {
+        pub(crate) fn try_has_changed(&mut self) -> Option<Result<(), error::RecvError>> {
+            maybe_changed(&self.shared, &mut self.version)
+        }
     }
 }
 
-impl<T: Clone> Receiver<T> {
+fn maybe_changed<T>(
+    shared: &Shared<T>,
+    version: &mut Version,
+) -> Option<Result<(), error::RecvError>> {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub async fn recv(&mut self) -> Option<T> {
-        poll_fn(|cx| {
-            let v_ref = ready!(self.poll_recv_ref(cx));
-            Poll::Ready(v_ref.map(|v_ref| (*v_ref).clone()))
-        })
-        .await
+    let state = shared.state.load();
+    let new_version = state.version();
+
+    if *version != new_version {
+        
+        *version = new_version;
+        return Some(Ok(()));
     }
-}
 
-#[cfg(feature = "stream")]
-impl<T: Clone> crate::stream::Stream for Receiver<T> {
-    type Item = T;
-
-    fn poll_next(mut self: std::pin::Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<T>> {
-        let v_ref = ready!(self.poll_recv_ref(cx));
-
-        Poll::Ready(v_ref.map(|v_ref| (*v_ref).clone()))
+    if state.is_closed() {
+        
+        return Some(Err(error::RecvError(())));
     }
+
+    None
 }
 
 impl<T> Clone for Receiver<T> {
     fn clone(&self) -> Self {
-        let ver = self.inner.version.load(Relaxed);
-        let inner = Watcher::new_version(ver);
+        let version = self.version;
         let shared = self.shared.clone();
 
-        shared.watchers.lock().unwrap().insert(inner.clone());
-
-        Receiver { shared, inner }
+        Self::from_shared(version, shared)
     }
 }
 
 impl<T> Drop for Receiver<T> {
     fn drop(&mut self) {
-        self.shared.watchers.lock().unwrap().remove(&self.inner);
+        
+        
+        if 1 == self.shared.ref_count_rx.fetch_sub(1, Relaxed) {
+            
+            self.shared.notify_tx.notify_waiters();
+        }
     }
 }
 
 impl<T> Sender<T> {
     
-    pub fn broadcast(&self, value: T) -> Result<(), error::SendError<T>> {
-        let shared = match self.shared.upgrade() {
-            Some(shared) => shared,
-            
-            None => return Err(error::SendError { inner: value }),
-        };
-
+    
+    
+    
+    pub fn send(&self, value: T) -> Result<(), error::SendError<T>> {
         
-        {
-            let mut lock = shared.value.write().unwrap();
-            *lock = value;
+        if 0 == self.receiver_count() {
+            return Err(error::SendError(value));
         }
 
-        
-        shared.version.fetch_add(2, SeqCst);
-
-        
-        notify_all(&*shared);
-
+        self.send_replace(value);
         Ok(())
     }
 
@@ -345,37 +534,211 @@ impl<T> Sender<T> {
     
     
     
-    pub async fn closed(&mut self) {
-        poll_fn(|cx| self.poll_close(cx)).await
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn send_replace(&self, value: T) -> T {
+        let old = {
+            
+            let mut lock = self.shared.value.write().unwrap();
+            let old = mem::replace(&mut *lock, value);
+
+            self.shared.state.increment_version();
+
+            
+            
+            
+            
+            
+            drop(lock);
+
+            old
+        };
+
+        
+        self.shared.notify_rx.notify_waiters();
+
+        old
     }
 
-    fn poll_close(&mut self, cx: &mut Context<'_>) -> Poll<()> {
-        match self.shared.upgrade() {
-            Some(shared) => {
-                shared.cancel.register_by_ref(cx.waker());
-                Pending
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn borrow(&self) -> Ref<'_, T> {
+        let inner = self.shared.value.read().unwrap();
+        Ref { inner }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn is_closed(&self) -> bool {
+        self.receiver_count() == 0
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn closed(&self) {
+        while self.receiver_count() > 0 {
+            let notified = self.shared.notify_tx.notified();
+
+            if self.receiver_count() == 0 {
+                return;
             }
-            None => Ready(()),
+
+            notified.await;
+            
+            
         }
     }
-}
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn subscribe(&self) -> Receiver<T> {
+        let shared = self.shared.clone();
+        let version = shared.state.load().version();
 
-fn notify_all<T>(shared: &Shared<T>) {
-    let watchers = shared.watchers.lock().unwrap();
-
-    for watcher in watchers.iter() {
         
-        watcher.waker.wake();
+        
+        Receiver::from_shared(version, shared)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn receiver_count(&self) -> usize {
+        self.shared.ref_count_rx.load(Relaxed)
     }
 }
 
 impl<T> Drop for Sender<T> {
     fn drop(&mut self) {
-        if let Some(shared) = self.shared.upgrade() {
-            shared.version.fetch_or(CLOSED, SeqCst);
-            notify_all(&*shared);
-        }
+        self.shared.state.set_closed();
+        self.shared.notify_rx.notify_waiters();
     }
 }
 
@@ -389,43 +752,83 @@ impl<T> ops::Deref for Ref<'_, T> {
     }
 }
 
+#[cfg(all(test, loom))]
+mod tests {
+    use futures::future::FutureExt;
+    use loom::thread;
 
+    
+    #[test]
+    fn watch_spurious_wakeup() {
+        loom::model(|| {
+            let (send, mut recv) = crate::sync::watch::channel(0i32);
 
-impl<T> Drop for Shared<T> {
-    fn drop(&mut self) {
-        self.cancel.wake();
+            send.send(1).unwrap();
+
+            let send_thread = thread::spawn(move || {
+                send.send(2).unwrap();
+                send
+            });
+
+            recv.changed().now_or_never();
+
+            let send = send_thread.join().unwrap();
+            let recv_thread = thread::spawn(move || {
+                recv.changed().now_or_never();
+                recv.changed().now_or_never();
+                recv
+            });
+
+            send.send(3).unwrap();
+
+            let mut recv = recv_thread.join().unwrap();
+            let send_thread = thread::spawn(move || {
+                send.send(2).unwrap();
+            });
+
+            recv.changed().now_or_never();
+
+            send_thread.join().unwrap();
+        });
     }
-}
 
+    #[test]
+    fn watch_borrow() {
+        loom::model(|| {
+            let (send, mut recv) = crate::sync::watch::channel(0i32);
 
+            assert!(send.borrow().eq(&0));
+            assert!(recv.borrow().eq(&0));
 
-impl Watcher {
-    fn new_version(version: usize) -> Self {
-        Watcher(Arc::new(WatchInner {
-            version: AtomicUsize::new(version),
-            waker: AtomicWaker::new(),
-        }))
-    }
-}
+            send.send(1).unwrap();
+            assert!(send.borrow().eq(&1));
 
-impl std::cmp::PartialEq for Watcher {
-    fn eq(&self, other: &Watcher) -> bool {
-        Arc::ptr_eq(&self.0, &other.0)
-    }
-}
+            let send_thread = thread::spawn(move || {
+                send.send(2).unwrap();
+                send
+            });
 
-impl std::cmp::Eq for Watcher {}
+            recv.changed().now_or_never();
 
-impl std::hash::Hash for Watcher {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        (&*self.0 as *const WatchInner).hash(state)
-    }
-}
+            let send = send_thread.join().unwrap();
+            let recv_thread = thread::spawn(move || {
+                recv.changed().now_or_never();
+                recv.changed().now_or_never();
+                recv
+            });
 
-impl std::ops::Deref for Watcher {
-    type Target = WatchInner;
+            send.send(3).unwrap();
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
+            let recv = recv_thread.join().unwrap();
+            assert!(recv.borrow().eq(&3));
+            assert!(send.borrow().eq(&3));
+
+            send.send(2).unwrap();
+
+            thread::spawn(move || {
+                assert!(recv.borrow().eq(&2));
+            });
+            assert!(send.borrow().eq(&2));
+        });
     }
 }

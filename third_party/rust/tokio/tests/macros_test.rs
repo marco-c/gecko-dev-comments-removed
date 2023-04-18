@@ -1,19 +1,72 @@
+#![cfg(feature = "full")]
+
 use tokio::test;
 
 #[test]
 async fn test_macro_can_be_used_via_use() {
-    tokio::spawn(async {
-        assert_eq!(1 + 1, 2);
-    })
-    .await
-    .unwrap();
+    tokio::spawn(async {}).await.unwrap();
 }
 
 #[tokio::test]
 async fn test_macro_is_resilient_to_shadowing() {
-    tokio::spawn(async {
-        assert_eq!(1 + 1, 2);
-    })
-    .await
-    .unwrap();
+    tokio::spawn(async {}).await.unwrap();
+}
+
+
+#[rustfmt::skip] 
+#[tokio::main]
+pub async fn unused_braces_main() { println!("hello") }
+#[rustfmt::skip] 
+#[tokio::test]
+async fn unused_braces_test() { assert_eq!(1 + 1, 2) }
+
+
+#[std::prelude::v1::test]
+fn trait_method() {
+    trait A {
+        fn f(self);
+    }
+    impl A for () {
+        #[tokio::main]
+        async fn f(self) {}
+    }
+    ().f()
+}
+
+
+#[tokio::main]
+pub async fn issue_4175_main_1() -> ! {
+    panic!();
+}
+#[tokio::main]
+pub async fn issue_4175_main_2() -> std::io::Result<()> {
+    panic!();
+}
+#[allow(unreachable_code)]
+#[tokio::test]
+pub async fn issue_4175_test() -> std::io::Result<()> {
+    return Ok(());
+    panic!();
+}
+
+
+pub mod clippy_semicolon_if_nothing_returned {
+    #![deny(clippy::semicolon_if_nothing_returned)]
+
+    #[tokio::main]
+    pub async fn local() {
+        let _x = ();
+    }
+    #[tokio::main]
+    pub async fn item() {
+        fn _f() {}
+    }
+    #[tokio::main]
+    pub async fn semi() {
+        panic!();
+    }
+    #[tokio::main]
+    pub async fn empty() {
+        
+    }
 }

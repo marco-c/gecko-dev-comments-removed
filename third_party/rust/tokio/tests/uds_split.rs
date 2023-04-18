@@ -2,8 +2,8 @@
 #![cfg(feature = "full")]
 #![cfg(unix)]
 
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::net::UnixStream;
-use tokio::prelude::*;
 
 
 

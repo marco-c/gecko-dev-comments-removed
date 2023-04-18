@@ -1,10 +1,10 @@
 use crate::runtime::handle::Handle;
-use crate::runtime::shell::Shell;
-use crate::runtime::{blocking, io, time, Callback, Runtime, Spawner};
+use crate::runtime::{blocking, driver, Callback, Runtime, Spawner};
 
 use std::fmt;
-#[cfg(not(loom))]
-use std::sync::Arc;
+use std::io;
+use std::time::Duration;
+
 
 
 
@@ -48,15 +48,18 @@ pub struct Builder {
     enable_time: bool,
 
     
-    
-    
-    core_threads: Option<usize>,
+    start_paused: bool,
 
     
-    max_threads: usize,
+    
+    
+    worker_threads: Option<usize>,
 
     
-    pub(super) thread_name: String,
+    max_blocking_threads: usize,
+
+    
+    pub(super) thread_name: ThreadNameFn,
 
     
     pub(super) thread_stack_size: Option<usize>,
@@ -66,15 +69,23 @@ pub struct Builder {
 
     
     pub(super) before_stop: Option<Callback>,
+
+    
+    pub(super) before_park: Option<Callback>,
+
+    
+    pub(super) after_unpark: Option<Callback>,
+
+    
+    pub(super) keep_alive: Option<Duration>,
 }
 
-#[derive(Debug, Clone, Copy)]
-enum Kind {
-    Shell,
-    #[cfg(feature = "rt-core")]
-    Basic,
-    #[cfg(feature = "rt-threaded")]
-    ThreadPool,
+pub(crate) type ThreadNameFn = std::sync::Arc<dyn Fn() -> String + Send + Sync + 'static>;
+
+pub(crate) enum Kind {
+    CurrentThread,
+    #[cfg(feature = "rt-multi-thread")]
+    MultiThread,
 }
 
 impl Builder {
@@ -82,10 +93,30 @@ impl Builder {
     
     
     
-    pub fn new() -> Builder {
+    
+    
+    
+    
+    pub fn new_current_thread() -> Builder {
+        Builder::new(Kind::CurrentThread)
+    }
+
+    
+    
+    
+    #[cfg(feature = "rt-multi-thread")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rt-multi-thread")))]
+    pub fn new_multi_thread() -> Builder {
+        Builder::new(Kind::MultiThread)
+    }
+
+    
+    
+    
+    
+    pub(crate) fn new(kind: Kind) -> Builder {
         Builder {
-            
-            kind: Kind::Shell,
+            kind,
 
             
             enable_io: false,
@@ -94,12 +125,15 @@ impl Builder {
             enable_time: false,
 
             
-            core_threads: None,
-
-            max_threads: 512,
+            start_paused: false,
 
             
-            thread_name: "tokio-runtime-worker".into(),
+            worker_threads: None,
+
+            max_blocking_threads: 512,
+
+            
+            thread_name: std::sync::Arc::new(|| "tokio-runtime-worker".into()),
 
             
             thread_stack_size: None,
@@ -107,6 +141,10 @@ impl Builder {
             
             after_start: None,
             before_stop: None,
+            before_park: None,
+            after_unpark: None,
+
+            keep_alive: None,
         }
     }
 
@@ -126,9 +164,8 @@ impl Builder {
     
     
     
-    
     pub fn enable_all(&mut self) -> &mut Self {
-        #[cfg(feature = "io-driver")]
+        #[cfg(any(feature = "net", feature = "process", all(unix, feature = "signal")))]
         self.enable_io();
         #[cfg(feature = "time")]
         self.enable_time();
@@ -136,15 +173,58 @@ impl Builder {
         self
     }
 
-    #[deprecated(note = "In future will be replaced by core_threads method")]
     
     
     
     
     
     
-    pub fn num_threads(&mut self, val: usize) -> &mut Self {
-        self.core_threads = Some(val);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn worker_threads(&mut self, val: usize) -> &mut Self {
+        assert!(val > 0, "Worker threads cannot be set to 0");
+        self.worker_threads = Some(val);
         self
     }
 
@@ -168,29 +248,11 @@ impl Builder {
     
     
     
-    pub fn core_threads(&mut self, val: usize) -> &mut Self {
-        assert_ne!(val, 0, "Core threads cannot be zero");
-        self.core_threads = Some(val);
-        self
-    }
-
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn max_threads(&mut self, val: usize) -> &mut Self {
-        assert_ne!(val, 0, "Thread limit cannot be zero");
-        self.max_threads = val;
+    #[cfg_attr(docsrs, doc(alias = "max_threads"))]
+    pub fn max_blocking_threads(&mut self, val: usize) -> &mut Self {
+        assert!(val > 0, "Max blocking threads cannot be set to 0");
+        self.max_blocking_threads = val;
         self
     }
 
@@ -210,11 +272,39 @@ impl Builder {
     
     
     pub fn thread_name(&mut self, val: impl Into<String>) -> &mut Self {
-        self.thread_name = val.into();
+        let val = val.into();
+        self.thread_name = std::sync::Arc::new(move || val.clone());
         self
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn thread_name_fn<F>(&mut self, f: F) -> &mut Self
+    where
+        F: Fn() -> String + Send + Sync + 'static,
+    {
+        self.thread_name = std::sync::Arc::new(f);
+        self
+    }
+
     
     
     
@@ -257,17 +347,15 @@ impl Builder {
     
     
     
-    
     #[cfg(not(loom))]
     pub fn on_thread_start<F>(&mut self, f: F) -> &mut Self
     where
         F: Fn() + Send + Sync + 'static,
     {
-        self.after_start = Some(Arc::new(f));
+        self.after_start = Some(std::sync::Arc::new(f));
         self
     }
 
-    
     
     
     
@@ -290,7 +378,121 @@ impl Builder {
     where
         F: Fn() + Send + Sync + 'static,
     {
-        self.before_stop = Some(Arc::new(f));
+        self.before_stop = Some(std::sync::Arc::new(f));
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(not(loom))]
+    pub fn on_thread_park<F>(&mut self, f: F) -> &mut Self
+    where
+        F: Fn() + Send + Sync + 'static,
+    {
+        self.before_park = Some(std::sync::Arc::new(f));
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(not(loom))]
+    pub fn on_thread_unpark<F>(&mut self, f: F) -> &mut Self
+    where
+        F: Fn() + Send + Sync + 'static,
+    {
+        self.after_unpark = Some(std::sync::Arc::new(f));
         self
     }
 
@@ -310,36 +512,73 @@ impl Builder {
     
     
     pub fn build(&mut self) -> io::Result<Runtime> {
-        match self.kind {
-            Kind::Shell => self.build_shell_runtime(),
-            #[cfg(feature = "rt-core")]
-            Kind::Basic => self.build_basic_runtime(),
-            #[cfg(feature = "rt-threaded")]
-            Kind::ThreadPool => self.build_threaded_runtime(),
+        match &self.kind {
+            Kind::CurrentThread => self.build_basic_runtime(),
+            #[cfg(feature = "rt-multi-thread")]
+            Kind::MultiThread => self.build_threaded_runtime(),
         }
     }
 
-    fn build_shell_runtime(&mut self) -> io::Result<Runtime> {
-        use crate::runtime::Kind;
+    fn get_cfg(&self) -> driver::Cfg {
+        driver::Cfg {
+            enable_pause_time: match self.kind {
+                Kind::CurrentThread => true,
+                #[cfg(feature = "rt-multi-thread")]
+                Kind::MultiThread => false,
+            },
+            enable_io: self.enable_io,
+            enable_time: self.enable_time,
+            start_paused: self.start_paused,
+        }
+    }
 
-        let clock = time::create_clock();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn thread_keep_alive(&mut self, duration: Duration) -> &mut Self {
+        self.keep_alive = Some(duration);
+        self
+    }
+
+    fn build_basic_runtime(&mut self) -> io::Result<Runtime> {
+        use crate::runtime::{BasicScheduler, Kind};
+
+        let (driver, resources) = driver::Driver::new(self.get_cfg())?;
 
         
-        let (io_driver, io_handle) = io::create_driver(self.enable_io)?;
-        let (driver, time_handle) = time::create_driver(self.enable_time, io_driver, clock.clone());
+        
+        
+        
+        let scheduler =
+            BasicScheduler::new(driver, self.before_park.clone(), self.after_unpark.clone());
+        let spawner = Spawner::Basic(scheduler.spawner().clone());
 
-        let spawner = Spawner::Shell;
-
-        let blocking_pool = blocking::create_blocking_pool(self, self.max_threads);
+        
+        let blocking_pool = blocking::create_blocking_pool(self, self.max_blocking_threads);
         let blocking_spawner = blocking_pool.spawner().clone();
 
         Ok(Runtime {
-            kind: Kind::Shell(Shell::new(driver)),
+            kind: Kind::CurrentThread(scheduler),
             handle: Handle {
                 spawner,
-                io_handle,
-                time_handle,
-                clock,
+                io_handle: resources.io_handle,
+                time_handle: resources.time_handle,
+                signal_handle: resources.signal_handle,
+                clock: resources.clock,
                 blocking_spawner,
             },
             blocking_pool,
@@ -359,7 +598,7 @@ cfg_io_driver! {
         /// ```
         /// use tokio::runtime;
         ///
-        /// let rt = runtime::Builder::new()
+        /// let rt = runtime::Builder::new_multi_thread()
         ///     .enable_io()
         ///     .build()
         ///     .unwrap();
@@ -382,7 +621,7 @@ cfg_time! {
         /// ```
         /// use tokio::runtime;
         ///
-        /// let rt = runtime::Builder::new()
+        /// let rt = runtime::Builder::new_multi_thread()
         ///     .enable_time()
         ///     .build()
         ///     .unwrap();
@@ -394,103 +633,62 @@ cfg_time! {
     }
 }
 
-cfg_rt_core! {
+cfg_test_util! {
     impl Builder {
-        /// Sets runtime to use a simpler scheduler that runs all tasks on the current-thread.
+        /// Controls if the runtime's clock starts paused or advancing.
         ///
-        /// The executor and all necessary drivers will all be run on the current
-        /// thread during [`block_on`] calls.
+        /// Pausing time requires the current-thread runtime; construction of
+        /// the runtime will panic otherwise.
         ///
-        /// See also [the module level documentation][1], which has a section on scheduler
-        /// types.
+        /// # Examples
         ///
-        /// [1]: index.html#runtime-configurations
-        /// [`block_on`]: Runtime::block_on
-        pub fn basic_scheduler(&mut self) -> &mut Self {
-            self.kind = Kind::Basic;
+        /// ```
+        /// use tokio::runtime;
+        ///
+        /// let rt = runtime::Builder::new_current_thread()
+        ///     .enable_time()
+        ///     .start_paused(true)
+        ///     .build()
+        ///     .unwrap();
+        /// ```
+        pub fn start_paused(&mut self, start_paused: bool) -> &mut Self {
+            self.start_paused = start_paused;
             self
-        }
-
-        fn build_basic_runtime(&mut self) -> io::Result<Runtime> {
-            use crate::runtime::{BasicScheduler, Kind};
-
-            let clock = time::create_clock();
-
-            // Create I/O driver
-            let (io_driver, io_handle) = io::create_driver(self.enable_io)?;
-
-            let (driver, time_handle) = time::create_driver(self.enable_time, io_driver, clock.clone());
-
-            // And now put a single-threaded scheduler on top of the timer. When
-            // there are no futures ready to do something, it'll let the timer or
-            // the reactor to generate some new stimuli for the futures to continue
-            // in their life.
-            let scheduler = BasicScheduler::new(driver);
-            let spawner = Spawner::Basic(scheduler.spawner().clone());
-
-            // Blocking pool
-            let blocking_pool = blocking::create_blocking_pool(self, self.max_threads);
-            let blocking_spawner = blocking_pool.spawner().clone();
-
-            Ok(Runtime {
-                kind: Kind::Basic(scheduler),
-                handle: Handle {
-                    spawner,
-                    io_handle,
-                    time_handle,
-                    clock,
-                    blocking_spawner,
-                },
-                blocking_pool,
-            })
         }
     }
 }
 
-cfg_rt_threaded! {
+cfg_rt_multi_thread! {
     impl Builder {
-        /// Sets runtime to use a multi-threaded scheduler for executing tasks.
-        ///
-        /// See also [the module level documentation][1], which has a section on scheduler
-        /// types.
-        ///
-        /// [1]: index.html#runtime-configurations
-        pub fn threaded_scheduler(&mut self) -> &mut Self {
-            self.kind = Kind::ThreadPool;
-            self
-        }
-
         fn build_threaded_runtime(&mut self) -> io::Result<Runtime> {
             use crate::loom::sys::num_cpus;
             use crate::runtime::{Kind, ThreadPool};
             use crate::runtime::park::Parker;
-            use std::cmp;
 
-            let core_threads = self.core_threads.unwrap_or_else(|| cmp::min(self.max_threads, num_cpus()));
-            assert!(core_threads <= self.max_threads, "Core threads number cannot be above max limit");
+            let core_threads = self.worker_threads.unwrap_or_else(num_cpus);
 
-            let clock = time::create_clock();
+            let (driver, resources) = driver::Driver::new(self.get_cfg())?;
 
-            let (io_driver, io_handle) = io::create_driver(self.enable_io)?;
-            let (driver, time_handle) = time::create_driver(self.enable_time, io_driver, clock.clone());
-            let (scheduler, launch) = ThreadPool::new(core_threads, Parker::new(driver));
+            let (scheduler, launch) = ThreadPool::new(core_threads, Parker::new(driver), self.before_park.clone(), self.after_unpark.clone());
             let spawner = Spawner::ThreadPool(scheduler.spawner().clone());
 
             // Create the blocking pool
-            let blocking_pool = blocking::create_blocking_pool(self, self.max_threads);
+            let blocking_pool = blocking::create_blocking_pool(self, self.max_blocking_threads + core_threads);
             let blocking_spawner = blocking_pool.spawner().clone();
 
             // Create the runtime handle
             let handle = Handle {
                 spawner,
-                io_handle,
-                time_handle,
-                clock,
+                io_handle: resources.io_handle,
+                time_handle: resources.time_handle,
+                signal_handle: resources.signal_handle,
+                clock: resources.clock,
                 blocking_spawner,
             };
 
             // Spawn the thread pool workers
-            handle.enter(|| launch.launch());
+            let _enter = crate::runtime::context::enter(handle.clone());
+            launch.launch();
 
             Ok(Runtime {
                 kind: Kind::ThreadPool(scheduler),
@@ -501,22 +699,20 @@ cfg_rt_threaded! {
     }
 }
 
-impl Default for Builder {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl fmt::Debug for Builder {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt.debug_struct("Builder")
-            .field("kind", &self.kind)
-            .field("core_threads", &self.core_threads)
-            .field("max_threads", &self.max_threads)
-            .field("thread_name", &self.thread_name)
+            .field("worker_threads", &self.worker_threads)
+            .field("max_blocking_threads", &self.max_blocking_threads)
+            .field(
+                "thread_name",
+                &"<dyn Fn() -> String + Send + Sync + 'static>",
+            )
             .field("thread_stack_size", &self.thread_stack_size)
             .field("after_start", &self.after_start.as_ref().map(|_| "..."))
-            .field("before_stop", &self.after_start.as_ref().map(|_| "..."))
+            .field("before_stop", &self.before_stop.as_ref().map(|_| "..."))
+            .field("before_park", &self.before_park.as_ref().map(|_| "..."))
+            .field("after_unpark", &self.after_unpark.as_ref().map(|_| "..."))
             .finish()
     }
 }

@@ -1,24 +1,20 @@
-use crate::io::driver::platform;
-use crate::io::{AsyncRead, AsyncWrite, Registration};
+use crate::io::driver::{Handle, Interest, Registration};
 
-use mio::event::Evented;
+use mio::event::Source;
 use std::fmt;
-use std::io::{self, Read, Write};
-use std::marker::Unpin;
-use std::pin::Pin;
-use std::sync::atomic::AtomicUsize;
-use std::sync::atomic::Ordering::Relaxed;
-use std::task::{Context, Poll};
+use std::io;
+use std::ops::Deref;
+use std::panic::{RefUnwindSafe, UnwindSafe};
 
 cfg_io_driver! {
     /// Associates an I/O resource that implements the [`std::io::Read`] and/or
     /// [`std::io::Write`] traits with the reactor that drives it.
     ///
     /// `PollEvented` uses [`Registration`] internally to take a type that
-    /// implements [`mio::Evented`] as well as [`std::io::Read`] and or
+    /// implements [`mio::event::Source`] as well as [`std::io::Read`] and or
     /// [`std::io::Write`] and associate it with a reactor that will drive it.
     ///
-    /// Once the [`mio::Evented`] type is wrapped by `PollEvented`, it can be
+    /// Once the [`mio::event::Source`] type is wrapped by `PollEvented`, it can be
     /// used from within the future's execution model. As such, the
     /// `PollEvented` type provides [`AsyncRead`] and [`AsyncWrite`]
     /// implementations using the underlying I/O resource as well as readiness
@@ -45,44 +41,12 @@ cfg_io_driver! {
     /// [`poll_read_ready`] again will also indicate read readiness.
     ///
     /// When the operation is attempted and is unable to succeed due to the I/O
-    /// resource not being ready, the caller must call [`clear_read_ready`] or
-    /// [`clear_write_ready`]. This clears the readiness state until a new
-    /// readiness event is received.
+    /// resource not being ready, the caller must call `clear_readiness`.
+    /// This clears the readiness state until a new readiness event is received.
     ///
     /// This allows the caller to implement additional functions. For example,
     /// [`TcpListener`] implements poll_accept by using [`poll_read_ready`] and
-    /// [`clear_read_ready`].
-    ///
-    /// ```rust
-    /// use tokio::io::PollEvented;
-    ///
-    /// use futures::ready;
-    /// use mio::Ready;
-    /// use mio::net::{TcpStream, TcpListener};
-    /// use std::io;
-    /// use std::task::{Context, Poll};
-    ///
-    /// struct MyListener {
-    ///     poll_evented: PollEvented<TcpListener>,
-    /// }
-    ///
-    /// impl MyListener {
-    ///     pub fn poll_accept(&mut self, cx: &mut Context<'_>) -> Poll<Result<TcpStream, io::Error>> {
-    ///         let ready = Ready::readable();
-    ///
-    ///         ready!(self.poll_evented.poll_read_ready(cx, ready))?;
-    ///
-    ///         match self.poll_evented.get_ref().accept() {
-    ///             Ok((socket, _)) => Poll::Ready(Ok(socket)),
-    ///             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
-    ///                 self.poll_evented.clear_read_ready(cx, ready)?;
-    ///                 Poll::Pending
-    ///             }
-    ///             Err(e) => Poll::Ready(Err(e)),
-    ///         }
-    ///     }
-    /// }
-    /// ```
+    /// `clear_read_ready`.
     ///
     /// ## Platform-specific events
     ///
@@ -90,81 +54,20 @@ cfg_io_driver! {
     /// These events are included as part of the read readiness event stream. The
     /// write readiness event stream is only for `Ready::writable()` events.
     ///
-    /// [`std::io::Read`]: trait@std::io::Read
-    /// [`std::io::Write`]: trait@std::io::Write
-    /// [`AsyncRead`]: trait@AsyncRead
-    /// [`AsyncWrite`]: trait@AsyncWrite
-    /// [`mio::Evented`]: trait@mio::Evented
-    /// [`Registration`]: struct@Registration
-    /// [`TcpListener`]: struct@crate::net::TcpListener
-    /// [`clear_read_ready`]: method@Self::clear_read_ready
-    /// [`clear_write_ready`]: method@Self::clear_write_ready
-    /// [`poll_read_ready`]: method@Self::poll_read_ready
-    /// [`poll_write_ready`]: method@Self::poll_write_ready
-    pub struct PollEvented<E: Evented> {
+    /// [`AsyncRead`]: crate::io::AsyncRead
+    /// [`AsyncWrite`]: crate::io::AsyncWrite
+    /// [`TcpListener`]: crate::net::TcpListener
+    /// [`poll_read_ready`]: Registration::poll_read_ready
+    /// [`poll_write_ready`]: Registration::poll_write_ready
+    pub(crate) struct PollEvented<E: Source> {
         io: Option<E>,
-        inner: Inner,
+        registration: Registration,
     }
 }
 
-struct Inner {
-    registration: Registration,
-
-    
-    read_readiness: AtomicUsize,
-
-    
-    write_readiness: AtomicUsize,
-}
 
 
-
-macro_rules! poll_ready {
-    ($me:expr, $mask:expr, $cache:ident, $take:ident, $poll:expr) => {{
-        // Load cached & encoded readiness.
-        let mut cached = $me.inner.$cache.load(Relaxed);
-        let mask = $mask | platform::hup() | platform::error();
-
-        // See if the current readiness matches any bits.
-        let mut ret = mio::Ready::from_usize(cached) & $mask;
-
-        if ret.is_empty() {
-            // Readiness does not match, consume the registration's readiness
-            // stream. This happens in a loop to ensure that the stream gets
-            // drained.
-            loop {
-                let ready = match $poll? {
-                    Poll::Ready(v) => v,
-                    Poll::Pending => return Poll::Pending,
-                };
-                cached |= ready.as_usize();
-
-                // Update the cache store
-                $me.inner.$cache.store(cached, Relaxed);
-
-                ret |= ready & mask;
-
-                if !ret.is_empty() {
-                    return Poll::Ready(Ok(ret));
-                }
-            }
-        } else {
-            // Check what's new with the registration stream. This will not
-            // request to be notified
-            if let Some(ready) = $me.inner.registration.$take()? {
-                cached |= ready.as_usize();
-                $me.inner.$cache.store(cached, Relaxed);
-            }
-
-            Poll::Ready(Ok(mio::Ready::from_usize(cached)))
-        }
-    }};
-}
-
-impl<E> PollEvented<E>
-where
-    E: Evented,
-{
+impl<E: Source> PollEvented<E> {
     
     
     
@@ -174,8 +77,9 @@ where
     
     
     
-    pub fn new(io: E) -> io::Result<Self> {
-        PollEvented::new_with_ready(io, mio::Ready::all())
+    #[cfg_attr(feature = "signal", allow(unused))]
+    pub(crate) fn new(io: E) -> io::Result<Self> {
+        PollEvented::new_with_interest(io, Interest::READABLE | Interest::WRITABLE)
     }
 
     
@@ -193,269 +97,118 @@ where
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn new_with_ready(io: E, ready: mio::Ready) -> io::Result<Self> {
-        let registration = Registration::new_with_ready(&io, ready)?;
+    #[cfg_attr(feature = "signal", allow(unused))]
+    pub(crate) fn new_with_interest(io: E, interest: Interest) -> io::Result<Self> {
+        Self::new_with_interest_and_handle(io, interest, Handle::current())
+    }
+
+    pub(crate) fn new_with_interest_and_handle(
+        mut io: E,
+        interest: Interest,
+        handle: Handle,
+    ) -> io::Result<Self> {
+        let registration = Registration::new_with_interest_and_handle(&mut io, interest, handle)?;
         Ok(Self {
             io: Some(io),
-            inner: Inner {
-                registration,
-                read_readiness: AtomicUsize::new(0),
-                write_readiness: AtomicUsize::new(0),
-            },
+            registration,
         })
     }
 
     
+    #[cfg(any(
+        feature = "net",
+        all(unix, feature = "process"),
+        all(unix, feature = "signal"),
+    ))]
+    pub(crate) fn registration(&self) -> &Registration {
+        &self.registration
+    }
+
     
-    pub fn get_ref(&self) -> &E {
+    #[cfg(any(feature = "net", feature = "process"))]
+    pub(crate) fn into_inner(mut self) -> io::Result<E> {
+        let mut inner = self.io.take().unwrap(); 
+        self.registration.deregister(&mut inner)?;
+        Ok(inner)
+    }
+}
+
+feature! {
+    #![any(feature = "net", feature = "process")]
+
+    use crate::io::ReadBuf;
+    use std::task::{Context, Poll};
+
+    impl<E: Source> PollEvented<E> {
+        // Safety: The caller must ensure that `E` can read into uninitialized memory
+        pub(crate) unsafe fn poll_read<'a>(
+            &'a self,
+            cx: &mut Context<'_>,
+            buf: &mut ReadBuf<'_>,
+        ) -> Poll<io::Result<()>>
+        where
+            &'a E: io::Read + 'a,
+        {
+            use std::io::Read;
+
+            let n = ready!(self.registration.poll_read_io(cx, || {
+                let b = &mut *(buf.unfilled_mut() as *mut [std::mem::MaybeUninit<u8>] as *mut [u8]);
+                self.io.as_ref().unwrap().read(b)
+            }))?;
+
+            // Safety: We trust `TcpStream::read` to have filled up `n` bytes in the
+            // buffer.
+            buf.assume_init(n);
+            buf.advance(n);
+            Poll::Ready(Ok(()))
+        }
+
+        pub(crate) fn poll_write<'a>(&'a self, cx: &mut Context<'_>, buf: &[u8]) -> Poll<io::Result<usize>>
+        where
+            &'a E: io::Write + 'a,
+        {
+            use std::io::Write;
+            self.registration.poll_write_io(cx, || self.io.as_ref().unwrap().write(buf))
+        }
+
+        #[cfg(feature = "net")]
+        pub(crate) fn poll_write_vectored<'a>(
+            &'a self,
+            cx: &mut Context<'_>,
+            bufs: &[io::IoSlice<'_>],
+        ) -> Poll<io::Result<usize>>
+        where
+            &'a E: io::Write + 'a,
+        {
+            use std::io::Write;
+            self.registration.poll_write_io(cx, || self.io.as_ref().unwrap().write_vectored(bufs))
+        }
+    }
+}
+
+impl<E: Source> UnwindSafe for PollEvented<E> {}
+
+impl<E: Source> RefUnwindSafe for PollEvented<E> {}
+
+impl<E: Source> Deref for PollEvented<E> {
+    type Target = E;
+
+    fn deref(&self) -> &E {
         self.io.as_ref().unwrap()
     }
-
-    
-    
-    pub fn get_mut(&mut self) -> &mut E {
-        self.io.as_mut().unwrap()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn into_inner(mut self) -> io::Result<E> {
-        let io = self.io.take().unwrap();
-        self.inner.registration.deregister(&io)?;
-        Ok(io)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn poll_read_ready(
-        &self,
-        cx: &mut Context<'_>,
-        mask: mio::Ready,
-    ) -> Poll<io::Result<mio::Ready>> {
-        assert!(!mask.is_writable(), "cannot poll for write readiness");
-        poll_ready!(
-            self,
-            mask,
-            read_readiness,
-            take_read_ready,
-            self.inner.registration.poll_read_ready(cx)
-        )
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn clear_read_ready(&self, cx: &mut Context<'_>, ready: mio::Ready) -> io::Result<()> {
-        
-        assert!(!ready.is_writable(), "cannot clear write readiness");
-        assert!(!platform::is_hup(ready), "cannot clear HUP readiness");
-
-        self.inner
-            .read_readiness
-            .fetch_and(!ready.as_usize(), Relaxed);
-
-        if self.poll_read_ready(cx, ready)?.is_ready() {
-            
-            cx.waker().wake_by_ref();
-        }
-
-        Ok(())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn poll_write_ready(&self, cx: &mut Context<'_>) -> Poll<io::Result<mio::Ready>> {
-        poll_ready!(
-            self,
-            mio::Ready::writable(),
-            write_readiness,
-            take_write_ready,
-            self.inner.registration.poll_write_ready(cx)
-        )
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn clear_write_ready(&self, cx: &mut Context<'_>) -> io::Result<()> {
-        let ready = mio::Ready::writable();
-
-        self.inner
-            .write_readiness
-            .fetch_and(!ready.as_usize(), Relaxed);
-
-        if self.poll_write_ready(cx)?.is_ready() {
-            
-            cx.waker().wake_by_ref();
-        }
-
-        Ok(())
-    }
 }
 
-
-
-impl<E> AsyncRead for PollEvented<E>
-where
-    E: Evented + Read + Unpin,
-{
-    fn poll_read(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<io::Result<usize>> {
-        ready!(self.poll_read_ready(cx, mio::Ready::readable()))?;
-
-        let r = (*self).get_mut().read(buf);
-
-        if is_wouldblock(&r) {
-            self.clear_read_ready(cx, mio::Ready::readable())?;
-            return Poll::Pending;
-        }
-
-        Poll::Ready(r)
-    }
-}
-
-impl<E> AsyncWrite for PollEvented<E>
-where
-    E: Evented + Write + Unpin,
-{
-    fn poll_write(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &[u8],
-    ) -> Poll<io::Result<usize>> {
-        ready!(self.poll_write_ready(cx))?;
-
-        let r = (*self).get_mut().write(buf);
-
-        if is_wouldblock(&r) {
-            self.clear_write_ready(cx)?;
-            return Poll::Pending;
-        }
-
-        Poll::Ready(r)
-    }
-
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        ready!(self.poll_write_ready(cx))?;
-
-        let r = (*self).get_mut().flush();
-
-        if is_wouldblock(&r) {
-            self.clear_write_ready(cx)?;
-            return Poll::Pending;
-        }
-
-        Poll::Ready(r)
-    }
-
-    fn poll_shutdown(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Poll::Ready(Ok(()))
-    }
-}
-
-fn is_wouldblock<T>(r: &io::Result<T>) -> bool {
-    match *r {
-        Ok(_) => false,
-        Err(ref e) => e.kind() == io::ErrorKind::WouldBlock,
-    }
-}
-
-impl<E: Evented + fmt::Debug> fmt::Debug for PollEvented<E> {
+impl<E: Source + fmt::Debug> fmt::Debug for PollEvented<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PollEvented").field("io", &self.io).finish()
     }
 }
 
-impl<E: Evented> Drop for PollEvented<E> {
+impl<E: Source> Drop for PollEvented<E> {
     fn drop(&mut self) {
-        if let Some(io) = self.io.take() {
+        if let Some(mut io) = self.io.take() {
             
-            let _ = self.inner.registration.deregister(&io);
+            let _ = self.registration.deregister(&mut io);
         }
     }
 }

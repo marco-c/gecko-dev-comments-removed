@@ -3,6 +3,13 @@ use crate::fs::{asyncify, File};
 use std::io;
 use std::path::Path;
 
+#[cfg(test)]
+mod mock_open_options;
+#[cfg(test)]
+use mock_open_options::MockOpenOptions as StdOpenOptions;
+#[cfg(not(test))]
+use std::fs::OpenOptions as StdOpenOptions;
+
 
 
 
@@ -69,7 +76,7 @@ use std::path::Path;
 
 
 #[derive(Clone, Debug)]
-pub struct OpenOptions(std::fs::OpenOptions);
+pub struct OpenOptions(StdOpenOptions);
 
 impl OpenOptions {
     
@@ -89,7 +96,7 @@ impl OpenOptions {
     
     
     pub fn new() -> OpenOptions {
-        OpenOptions(std::fs::OpenOptions::new())
+        OpenOptions(StdOpenOptions::new())
     }
 
     
@@ -384,14 +391,269 @@ impl OpenOptions {
     }
 
     
-    #[cfg(unix)]
-    pub(super) fn as_inner_mut(&mut self) -> &mut std::fs::OpenOptions {
+    pub(super) fn as_inner_mut(&mut self) -> &mut StdOpenOptions {
         &mut self.0
     }
 }
 
-impl From<std::fs::OpenOptions> for OpenOptions {
-    fn from(options: std::fs::OpenOptions) -> OpenOptions {
+feature! {
+    #![unix]
+
+    use std::os::unix::fs::OpenOptionsExt;
+
+    impl OpenOptions {
+        /// Sets the mode bits that a new file will be created with.
+        ///
+        /// If a new file is created as part of an `OpenOptions::open` call then this
+        /// specified `mode` will be used as the permission bits for the new file.
+        /// If no `mode` is set, the default of `0o666` will be used.
+        /// The operating system masks out bits with the system's `umask`, to produce
+        /// the final permissions.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use tokio::fs::OpenOptions;
+        /// use std::io;
+        ///
+        /// #[tokio::main]
+        /// async fn main() -> io::Result<()> {
+        ///     let mut options = OpenOptions::new();
+        ///     options.mode(0o644); // Give read/write for owner and read for others.
+        ///     let file = options.open("foo.txt").await?;
+        ///
+        ///     Ok(())
+        /// }
+        /// ```
+        pub fn mode(&mut self, mode: u32) -> &mut OpenOptions {
+            self.as_inner_mut().mode(mode);
+            self
+        }
+
+        /// Passes custom flags to the `flags` argument of `open`.
+        ///
+        /// The bits that define the access mode are masked out with `O_ACCMODE`, to
+        /// ensure they do not interfere with the access mode set by Rusts options.
+        ///
+        /// Custom flags can only set flags, not remove flags set by Rusts options.
+        /// This options overwrites any previously set custom flags.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use libc;
+        /// use tokio::fs::OpenOptions;
+        /// use std::io;
+        ///
+        /// #[tokio::main]
+        /// async fn main() -> io::Result<()> {
+        ///     let mut options = OpenOptions::new();
+        ///     options.write(true);
+        ///     if cfg!(unix) {
+        ///         options.custom_flags(libc::O_NOFOLLOW);
+        ///     }
+        ///     let file = options.open("foo.txt").await?;
+        ///
+        ///     Ok(())
+        /// }
+        /// ```
+        pub fn custom_flags(&mut self, flags: i32) -> &mut OpenOptions {
+            self.as_inner_mut().custom_flags(flags);
+            self
+        }
+    }
+}
+
+feature! {
+    #![windows]
+
+    use std::os::windows::fs::OpenOptionsExt;
+
+    impl OpenOptions {
+        /// Overrides the `dwDesiredAccess` argument to the call to [`CreateFile`]
+        /// with the specified value.
+        ///
+        /// This will override the `read`, `write`, and `append` flags on the
+        /// `OpenOptions` structure. This method provides fine-grained control over
+        /// the permissions to read, write and append data, attributes (like hidden
+        /// and system), and extended attributes.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use tokio::fs::OpenOptions;
+        ///
+        /// # #[tokio::main]
+        /// # async fn main() -> std::io::Result<()> {
+        /// // Open without read and write permission, for example if you only need
+        /// // to call `stat` on the file
+        /// let file = OpenOptions::new().access_mode(0).open("foo.txt").await?;
+        /// # Ok(())
+        /// # }
+        /// ```
+        
+        
+        pub fn access_mode(&mut self, access: u32) -> &mut OpenOptions {
+            self.as_inner_mut().access_mode(access);
+            self
+        }
+
+        /// Overrides the `dwShareMode` argument to the call to [`CreateFile`] with
+        /// the specified value.
+        ///
+        /// By default `share_mode` is set to
+        /// `FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE`. This allows
+        /// other processes to read, write, and delete/rename the same file
+        /// while it is open. Removing any of the flags will prevent other
+        /// processes from performing the corresponding operation until the file
+        /// handle is closed.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use tokio::fs::OpenOptions;
+        ///
+        /// # #[tokio::main]
+        /// # async fn main() -> std::io::Result<()> {
+        /// // Do not allow others to read or modify this file while we have it open
+        /// // for writing.
+        /// let file = OpenOptions::new()
+        ///     .write(true)
+        ///     .share_mode(0)
+        ///     .open("foo.txt").await?;
+        /// # Ok(())
+        /// # }
+        /// ```
+        
+        
+        pub fn share_mode(&mut self, share: u32) -> &mut OpenOptions {
+            self.as_inner_mut().share_mode(share);
+            self
+        }
+
+        /// Sets extra flags for the `dwFileFlags` argument to the call to
+        /// [`CreateFile2`] to the specified value (or combines it with
+        /// `attributes` and `security_qos_flags` to set the `dwFlagsAndAttributes`
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pub fn custom_flags(&mut self, flags: u32) -> &mut OpenOptions {
+            self.as_inner_mut().custom_flags(flags);
+            self
+        }
+
+        /// Sets the `dwFileAttributes` argument to the call to [`CreateFile2`] to
+        /// the specified value (or combines it with `custom_flags` and
+        /// `security_qos_flags` to set the `dwFlagsAndAttributes` for
+        /// [`CreateFile`]).
+        ///
+        /// If a _new_ file is created because it does not yet exist and
+        /// `.create(true)` or `.create_new(true)` are specified, the new file is
+        /// given the attributes declared with `.attributes()`.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pub fn attributes(&mut self, attributes: u32) -> &mut OpenOptions {
+            self.as_inner_mut().attributes(attributes);
+            self
+        }
+
+        /// Sets the `dwSecurityQosFlags` argument to the call to [`CreateFile2`] to
+        /// the specified value (or combines it with `custom_flags` and `attributes`
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        pub fn security_qos_flags(&mut self, flags: u32) -> &mut OpenOptions {
+            self.as_inner_mut().security_qos_flags(flags);
+            self
+        }
+    }
+}
+
+impl From<StdOpenOptions> for OpenOptions {
+    fn from(options: StdOpenOptions) -> OpenOptions {
         OpenOptions(options)
     }
 }

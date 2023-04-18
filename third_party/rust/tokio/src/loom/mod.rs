@@ -1,6 +1,8 @@
 
 
 
+#![allow(unused)]
+
 #[cfg(not(all(test, loom)))]
 mod std;
 #[cfg(not(all(test, loom)))]

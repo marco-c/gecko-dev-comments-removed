@@ -9,14 +9,13 @@
 
 
 
+use crate::future::Future;
 use crate::loom::cell::UnsafeCell;
 use crate::runtime::task::raw::{self, Vtable};
 use crate::runtime::task::state::State;
-use crate::runtime::task::waker::waker_ref;
-use crate::runtime::task::{Notified, Schedule, Task};
+use crate::runtime::task::Schedule;
 use crate::util::linked_list;
 
-use std::future::Future;
 use std::pin::Pin;
 use std::ptr::NonNull;
 use std::task::{Context, Poll, Waker};
@@ -37,15 +36,19 @@ pub(super) struct Cell<T: Future, S> {
     pub(super) trailer: Trailer,
 }
 
+pub(super) struct CoreStage<T: Future> {
+    stage: UnsafeCell<Stage<T>>,
+}
+
 
 
 
 pub(super) struct Core<T: Future, S> {
     
-    pub(super) scheduler: UnsafeCell<Option<S>>,
+    pub(super) scheduler: S,
 
     
-    pub(super) stage: UnsafeCell<Stage<T>>,
+    pub(super) stage: CoreStage<T>,
 }
 
 
@@ -54,16 +57,30 @@ pub(crate) struct Header {
     
     pub(super) state: State,
 
-    pub(crate) owned: UnsafeCell<linked_list::Pointers<Header>>,
+    pub(super) owned: UnsafeCell<linked_list::Pointers<Header>>,
 
     
-    pub(crate) queue_next: UnsafeCell<Option<NonNull<Header>>>,
-
-    
-    pub(super) stack_next: UnsafeCell<Option<NonNull<Header>>>,
+    pub(super) queue_next: UnsafeCell<Option<NonNull<Header>>>,
 
     
     pub(super) vtable: &'static Vtable,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(super) owner_id: UnsafeCell<u64>,
+
+    
+    #[cfg(all(tokio_unstable, feature = "tracing"))]
+    pub(super) id: Option<tracing::Id>,
 }
 
 unsafe impl Send for Header {}
@@ -85,18 +102,24 @@ pub(super) enum Stage<T: Future> {
 impl<T: Future, S: Schedule> Cell<T, S> {
     
     
-    pub(super) fn new(future: T, state: State) -> Box<Cell<T, S>> {
+    pub(super) fn new(future: T, scheduler: S, state: State) -> Box<Cell<T, S>> {
+        #[cfg(all(tokio_unstable, feature = "tracing"))]
+        let id = future.id();
         Box::new(Cell {
             header: Header {
                 state,
                 owned: UnsafeCell::new(linked_list::Pointers::new()),
                 queue_next: UnsafeCell::new(None),
-                stack_next: UnsafeCell::new(None),
                 vtable: raw::vtable::<T, S>(),
+                owner_id: UnsafeCell::new(0),
+                #[cfg(all(tokio_unstable, feature = "tracing"))]
+                id,
             },
             core: Core {
-                scheduler: UnsafeCell::new(None),
-                stage: UnsafeCell::new(Stage::Running(future)),
+                scheduler,
+                stage: CoreStage {
+                    stage: UnsafeCell::new(Stage::Running(future)),
+                },
             },
             trailer: Trailer {
                 waker: UnsafeCell::new(None),
@@ -105,39 +128,9 @@ impl<T: Future, S: Schedule> Cell<T, S> {
     }
 }
 
-impl<T: Future, S: Schedule> Core<T, S> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub(super) fn bind_scheduler(&self, task: Task<S>) {
-        
-        
-        
-        
-        
-        
-        
-        debug_assert!(!self.is_bound());
-
-        
-        let scheduler = S::bind(task);
-
-        
-        self.scheduler.with_mut(|ptr| unsafe {
-            *ptr = Some(scheduler);
-        });
-    }
-
-    
-    pub(super) fn is_bound(&self) -> bool {
-        
-        self.scheduler.with(|ptr| unsafe { (*ptr).is_some() })
+impl<T: Future> CoreStage<T> {
+    pub(super) fn with_mut<R>(&self, f: impl FnOnce(*mut Stage<T>) -> R) -> R {
+        self.stage.with_mut(f)
     }
 
     
@@ -153,7 +146,7 @@ impl<T: Future, S: Schedule> Core<T, S> {
     
     
     
-    pub(super) fn poll(&self, header: &Header) -> Poll<T::Output> {
+    pub(super) fn poll(&self, mut cx: Context<'_>) -> Poll<T::Output> {
         let res = {
             self.stage.with_mut(|ptr| {
                 
@@ -164,11 +157,6 @@ impl<T: Future, S: Schedule> Core<T, S> {
 
                 
                 let future = unsafe { Pin::new_unchecked(future) };
-
-                
-                
-                let waker_ref = waker_ref::<T, S>(header);
-                let mut cx = Context::from_waker(&*waker_ref);
 
                 future.poll(&mut cx)
             })
@@ -187,10 +175,10 @@ impl<T: Future, S: Schedule> Core<T, S> {
     
     
     pub(super) fn drop_future_or_output(&self) {
-        self.stage.with_mut(|ptr| {
-            
-            unsafe { *ptr = Stage::Consumed };
-        });
+        
+        unsafe {
+            self.set_stage(Stage::Consumed);
+        }
     }
 
     
@@ -199,10 +187,10 @@ impl<T: Future, S: Schedule> Core<T, S> {
     
     
     pub(super) fn store_output(&self, output: super::Result<T::Output>) {
-        self.stage.with_mut(|ptr| {
-            
-            unsafe { *ptr = Stage::Finished(output) };
-        });
+        
+        unsafe {
+            self.set_stage(Stage::Finished(output));
+        }
     }
 
     
@@ -217,66 +205,56 @@ impl<T: Future, S: Schedule> Core<T, S> {
             
             match mem::replace(unsafe { &mut *ptr }, Stage::Consumed) {
                 Stage::Finished(output) => output,
-                _ => panic!("unexpected task state"),
+                _ => panic!("JoinHandle polled after completion"),
             }
         })
     }
 
-    
-    pub(super) fn schedule(&self, task: Notified<S>) {
-        self.scheduler.with(|ptr| {
-            
-            
-            match unsafe { &*ptr } {
-                Some(scheduler) => scheduler.schedule(task),
-                None => panic!("no scheduler set"),
-            }
-        });
-    }
-
-    
-    
-    pub(super) fn yield_now(&self, task: Notified<S>) {
-        self.scheduler.with(|ptr| {
-            
-            
-            match unsafe { &*ptr } {
-                Some(scheduler) => scheduler.yield_now(task),
-                None => panic!("no scheduler set"),
-            }
-        });
-    }
-
-    
-    
-    
-    
-    
-    pub(super) fn release(&self, task: Task<S>) -> Option<Task<S>> {
-        use std::mem::ManuallyDrop;
-
-        let task = ManuallyDrop::new(task);
-
-        self.scheduler.with(|ptr| {
-            
-            
-            match unsafe { &*ptr } {
-                Some(scheduler) => scheduler.release(&*task),
-                
-                None => None,
-            }
-        })
+    unsafe fn set_stage(&self, stage: Stage<T>) {
+        self.stage.with_mut(|ptr| *ptr = stage)
     }
 }
 
-cfg_rt_threaded! {
+cfg_rt_multi_thread! {
     impl Header {
-        pub(crate) fn shutdown(&self) {
-            use crate::runtime::task::RawTask;
-
-            let task = unsafe { RawTask::from_raw(self.into()) };
-            task.shutdown();
+        pub(super) unsafe fn set_next(&self, next: Option<NonNull<Header>>) {
+            self.queue_next.with_mut(|ptr| *ptr = next);
         }
+    }
+}
+
+impl Header {
+    
+    
+    
+    pub(super) unsafe fn set_owner_id(&self, owner: u64) {
+        self.owner_id.with_mut(|ptr| *ptr = owner);
+    }
+
+    pub(super) fn get_owner_id(&self) -> u64 {
+        
+        
+        unsafe { self.owner_id.with(|ptr| *ptr) }
+    }
+}
+
+impl Trailer {
+    pub(super) unsafe fn set_waker(&self, waker: Option<Waker>) {
+        self.waker.with_mut(|ptr| {
+            *ptr = waker;
+        });
+    }
+
+    pub(super) unsafe fn will_wake(&self, waker: &Waker) -> bool {
+        self.waker
+            .with(|ptr| (*ptr).as_ref().unwrap().will_wake(waker))
+    }
+
+    pub(super) fn wake_join(&self) {
+        self.waker.with(|ptr| match unsafe { &*ptr } {
+            Some(waker) => waker.wake_by_ref(),
+            None => panic!("waker missing"),
+        });
     }
 }
 

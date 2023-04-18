@@ -1,22 +1,12 @@
 use std::fmt;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub(crate) struct Pack {
     mask: usize,
     shift: u32,
 }
 
 impl Pack {
-    
-    pub(crate) const fn most_significant(width: u32) -> Pack {
-        let mask = mask_for(width).reverse_bits();
-
-        Pack {
-            mask,
-            shift: mask.trailing_zeros(),
-        }
-    }
-
     
     pub(crate) const fn least_significant(width: u32) -> Pack {
         let mask = mask_for(width);
@@ -33,12 +23,6 @@ impl Pack {
     }
 
     
-    #[cfg(all(test, loom))]
-    pub(crate) const fn mask(&self) -> usize {
-        self.mask
-    }
-
-    
     pub(crate) const fn width(&self) -> u32 {
         pointer_width() - (self.mask >> self.shift).leading_zeros()
     }
@@ -51,6 +35,14 @@ impl Pack {
     pub(crate) fn pack(&self, value: usize, base: usize) -> usize {
         assert!(value <= self.max_value());
         (base & !self.mask) | (value << self.shift)
+    }
+
+    
+    
+    
+    
+    pub(crate) fn pack_lossy(&self, value: usize, base: usize) -> usize {
+        self.pack(value & self.max_value(), base)
     }
 
     pub(crate) fn unpack(&self, src: usize) -> usize {

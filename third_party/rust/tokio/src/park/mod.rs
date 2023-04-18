@@ -34,18 +34,14 @@
 
 
 
-cfg_resource_drivers! {
-    mod either;
-    pub(crate) use self::either::Either;
+cfg_rt! {
+    pub(crate) mod either;
 }
 
-mod thread;
-pub(crate) use self::thread::ParkThread;
+#[cfg(any(feature = "rt", feature = "sync"))]
+pub(crate) mod thread;
 
-cfg_block_on! {
-    pub(crate) use self::thread::{CachedParkThread, ParkError};
-}
-
+use std::fmt::Debug;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -55,7 +51,7 @@ pub(crate) trait Park {
     type Unpark: Unpark;
 
     
-    type Error;
+    type Error: Debug;
 
     
     fn unpark(&self) -> Self::Unpark;

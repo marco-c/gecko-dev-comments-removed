@@ -2,22 +2,32 @@
 
 use crate::signal::os::{OsExtraData, OsStorage};
 
-use crate::sync::mpsc::Sender;
+use crate::sync::watch;
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use std::ops;
 use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Mutex;
 
 pub(crate) type EventId = usize;
 
 
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub(crate) struct EventInfo {
     pending: AtomicBool,
-    recipients: Mutex<Vec<Sender<()>>>,
+    tx: watch::Sender<()>,
+}
+
+impl Default for EventInfo {
+    fn default() -> Self {
+        let (tx, _rx) = watch::channel(());
+
+        Self {
+            pending: AtomicBool::new(false),
+            tx,
+        }
+    }
 }
 
 
@@ -67,14 +77,12 @@ impl<S> Registry<S> {
 
 impl<S: Storage> Registry<S> {
     
-    fn register_listener(&self, event_id: EventId, listener: Sender<()>) {
+    fn register_listener(&self, event_id: EventId) -> watch::Receiver<()> {
         self.storage
             .event_info(event_id)
             .unwrap_or_else(|| panic!("invalid event_id: {}", event_id))
-            .recipients
-            .lock()
-            .unwrap()
-            .push(listener);
+            .tx
+            .subscribe()
     }
 
     
@@ -89,8 +97,6 @@ impl<S: Storage> Registry<S> {
     
     
     fn broadcast(&self) -> bool {
-        use crate::sync::mpsc::error::TrySendError;
-
         let mut did_notify = false;
         self.storage.for_each(|event_info| {
             
@@ -98,23 +104,9 @@ impl<S: Storage> Registry<S> {
                 return;
             }
 
-            let mut recipients = event_info.recipients.lock().unwrap();
-
             
-            
-            
-            
-            for i in (0..recipients.len()).rev() {
-                match recipients[i].try_send(()) {
-                    Ok(()) => did_notify = true,
-                    Err(TrySendError::Closed(..)) => {
-                        recipients.swap_remove(i);
-                    }
-
-                    
-                    
-                    Err(_) => {}
-                }
+            if event_info.tx.send(()).is_ok() {
+                did_notify = true;
             }
         });
 
@@ -137,8 +129,8 @@ impl ops::Deref for Globals {
 
 impl Globals {
     
-    pub(crate) fn register_listener(&self, event_id: EventId, listener: Sender<()>) {
-        self.registry.register_listener(event_id, listener);
+    pub(crate) fn register_listener(&self, event_id: EventId) -> watch::Receiver<()> {
+        self.registry.register_listener(event_id)
     }
 
     
@@ -165,12 +157,12 @@ where
     OsExtraData: 'static + Send + Sync + Init,
     OsStorage: 'static + Send + Sync + Init,
 {
-    lazy_static! {
-        static ref GLOBALS: Pin<Box<Globals>> = Box::pin(Globals {
+    static GLOBALS: Lazy<Pin<Box<Globals>>> = Lazy::new(|| {
+        Box::pin(Globals {
             extra: OsExtraData::init(),
             registry: Registry::new(OsStorage::init()),
-        });
-    }
+        })
+    });
 
     GLOBALS.as_ref()
 }
@@ -179,13 +171,13 @@ where
 mod tests {
     use super::*;
     use crate::runtime::{self, Runtime};
-    use crate::sync::{mpsc, oneshot};
+    use crate::sync::{oneshot, watch};
 
     use futures::future;
 
     #[test]
     fn smoke() {
-        let mut rt = rt();
+        let rt = rt();
         rt.block_on(async move {
             let registry = Registry::new(vec![
                 EventInfo::default(),
@@ -193,13 +185,9 @@ mod tests {
                 EventInfo::default(),
             ]);
 
-            let (first_tx, first_rx) = mpsc::channel(3);
-            let (second_tx, second_rx) = mpsc::channel(3);
-            let (third_tx, third_rx) = mpsc::channel(3);
-
-            registry.register_listener(0, first_tx);
-            registry.register_listener(1, second_tx);
-            registry.register_listener(2, third_tx);
+            let first = registry.register_listener(0);
+            let second = registry.register_listener(1);
+            let third = registry.register_listener(2);
 
             let (fire, wait) = oneshot::channel();
 
@@ -214,6 +202,14 @@ mod tests {
                 registry.broadcast();
 
                 
+                
+                
+                
+                for _ in 0..100 {
+                    crate::task::yield_now().await;
+                }
+
+                
                 registry.record_event(0);
                 registry.broadcast();
 
@@ -221,7 +217,7 @@ mod tests {
             });
 
             let _ = fire.send(());
-            let all = future::join3(collect(first_rx), collect(second_rx), collect(third_rx));
+            let all = future::join3(collect(first), collect(second), collect(third));
 
             let (first_results, second_results, third_results) = all.await;
             assert_eq!(2, first_results.len());
@@ -235,8 +231,7 @@ mod tests {
     fn register_panics_on_invalid_input() {
         let registry = Registry::new(vec![EventInfo::default()]);
 
-        let (tx, _) = mpsc::channel(1);
-        registry.register_listener(1, tx);
+        registry.register_listener(1);
     }
 
     #[test]
@@ -246,73 +241,36 @@ mod tests {
     }
 
     #[test]
-    fn broadcast_cleans_up_disconnected_listeners() {
-        let mut rt = Runtime::new().unwrap();
-
-        rt.block_on(async {
-            let registry = Registry::new(vec![EventInfo::default()]);
-
-            let (first_tx, first_rx) = mpsc::channel(1);
-            let (second_tx, second_rx) = mpsc::channel(1);
-            let (third_tx, third_rx) = mpsc::channel(1);
-
-            registry.register_listener(0, first_tx);
-            registry.register_listener(0, second_tx);
-            registry.register_listener(0, third_tx);
-
-            drop(first_rx);
-            drop(second_rx);
-
-            let (fire, wait) = oneshot::channel();
-
-            crate::spawn(async {
-                wait.await.expect("wait failed");
-
-                registry.record_event(0);
-                registry.broadcast();
-
-                assert_eq!(1, registry.storage[0].recipients.lock().unwrap().len());
-                drop(registry);
-            });
-
-            let _ = fire.send(());
-            let results = collect(third_rx).await;
-
-            assert_eq!(1, results.len());
-        });
-    }
-
-    #[test]
     fn broadcast_returns_if_at_least_one_event_fired() {
-        let registry = Registry::new(vec![EventInfo::default()]);
+        let registry = Registry::new(vec![EventInfo::default(), EventInfo::default()]);
 
         registry.record_event(0);
-        assert_eq!(false, registry.broadcast());
+        assert!(!registry.broadcast());
 
-        let (first_tx, first_rx) = mpsc::channel(1);
-        let (second_tx, second_rx) = mpsc::channel(1);
-
-        registry.register_listener(0, first_tx);
-        registry.register_listener(0, second_tx);
+        let first = registry.register_listener(0);
+        let second = registry.register_listener(1);
 
         registry.record_event(0);
-        assert_eq!(true, registry.broadcast());
+        assert!(registry.broadcast());
 
-        drop(first_rx);
+        drop(first);
         registry.record_event(0);
-        assert_eq!(false, registry.broadcast());
+        assert!(!registry.broadcast());
 
-        drop(second_rx);
+        drop(second);
     }
 
     fn rt() -> Runtime {
-        runtime::Builder::new().basic_scheduler().build().unwrap()
+        runtime::Builder::new_current_thread()
+            .enable_time()
+            .build()
+            .unwrap()
     }
 
-    async fn collect(mut rx: crate::sync::mpsc::Receiver<()>) -> Vec<()> {
+    async fn collect(mut rx: watch::Receiver<()>) -> Vec<()> {
         let mut ret = vec![];
 
-        while let Some(v) = rx.recv().await {
+        while let Ok(v) = rx.changed().await {
             ret.push(v);
         }
 

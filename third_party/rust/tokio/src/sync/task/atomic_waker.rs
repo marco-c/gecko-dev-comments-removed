@@ -1,9 +1,11 @@
 #![cfg_attr(any(loom, not(feature = "sync")), allow(dead_code, unreachable_pub))]
 
 use crate::loom::cell::UnsafeCell;
-use crate::loom::sync::atomic::{self, AtomicUsize};
+use crate::loom::hint;
+use crate::loom::sync::atomic::AtomicUsize;
 
 use std::fmt;
+use std::panic::{resume_unwind, AssertUnwindSafe, RefUnwindSafe, UnwindSafe};
 use std::sync::atomic::Ordering::{AcqRel, Acquire, Release};
 use std::task::Waker;
 
@@ -26,6 +28,9 @@ pub(crate) struct AtomicWaker {
     state: AtomicUsize,
     waker: UnsafeCell<Option<Waker>>,
 }
+
+impl RefUnwindSafe for AtomicWaker {}
+impl UnwindSafe for AtomicWaker {}
 
 
 
@@ -142,12 +147,11 @@ impl AtomicWaker {
     }
 
     
-    
-    
-    #[cfg(feature = "io-driver")]
-    pub(crate) fn register(&self, waker: Waker) {
-        self.do_register(waker);
-    }
+
+
+
+
+
 
     
     
@@ -172,11 +176,35 @@ impl AtomicWaker {
     where
         W: WakerRef,
     {
-        match self.state.compare_and_swap(WAITING, REGISTERING, Acquire) {
+        fn catch_unwind<F: FnOnce() -> R, R>(f: F) -> std::thread::Result<R> {
+            std::panic::catch_unwind(AssertUnwindSafe(f))
+        }
+
+        match self
+            .state
+            .compare_exchange(WAITING, REGISTERING, Acquire, Acquire)
+            .unwrap_or_else(|x| x)
+        {
             WAITING => {
                 unsafe {
                     
-                    self.waker.with_mut(|t| *t = Some(waker.into_waker()));
+                    
+                    
+                    
+                    
+                    let new_waker_or_panic = catch_unwind(move || waker.into_waker());
+
+                    
+                    
+                    let mut maybe_panic = None;
+                    let mut old_waker = None;
+                    match new_waker_or_panic {
+                        Ok(new_waker) => {
+                            old_waker = self.waker.with_mut(|t| (*t).take());
+                            self.waker.with_mut(|t| *t = Some(new_waker));
+                        }
+                        Err(panic) => maybe_panic = Some(panic),
+                    }
 
                     
                     
@@ -190,7 +218,13 @@ impl AtomicWaker {
                         .compare_exchange(REGISTERING, WAITING, AcqRel, Acquire);
 
                     match res {
-                        Ok(_) => {}
+                        Ok(_) => {
+                            
+                            
+                            let _ = catch_unwind(move || {
+                                drop(old_waker);
+                            });
+                        }
                         Err(actual) => {
                             
                             
@@ -200,7 +234,7 @@ impl AtomicWaker {
 
                             
                             
-                            let waker = self.waker.with_mut(|t| (*t).take()).unwrap();
+                            let mut waker = self.waker.with_mut(|t| (*t).take());
 
                             
                             
@@ -208,8 +242,33 @@ impl AtomicWaker {
 
                             
                             
-                            waker.wake();
+                            if maybe_panic.is_some() {
+                                old_waker = waker.take();
+                            }
+
+                            
+                            
+                            if let Some(old_waker) = old_waker {
+                                let _ = catch_unwind(move || {
+                                    old_waker.wake();
+                                });
+                            }
+
+                            
+                            
+                            
+                            
+                            
+                            if let Some(waker) = waker {
+                                debug_assert!(maybe_panic.is_none());
+                                waker.wake();
+                            }
                         }
+                    }
+
+                    if let Some(panic) = maybe_panic {
+                        
+                        resume_unwind(panic);
                     }
                 }
             }
@@ -217,10 +276,13 @@ impl AtomicWaker {
                 
                 
                 
+                
+                
+                
                 waker.wake();
 
                 
-                atomic::spin_loop_hint();
+                hint::spin_loop();
             }
             state => {
                 
@@ -240,6 +302,8 @@ impl AtomicWaker {
     
     pub(crate) fn wake(&self) {
         if let Some(waker) = self.take_waker() {
+            
+            
             waker.wake();
         }
     }

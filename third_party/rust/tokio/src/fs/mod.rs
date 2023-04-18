@@ -48,8 +48,6 @@ pub use self::metadata::metadata;
 mod open_options;
 pub use self::open_options::OpenOptions;
 
-pub mod os;
-
 mod read;
 pub use self::read::read;
 
@@ -86,27 +84,43 @@ pub use self::write::write;
 mod copy;
 pub use self::copy::copy;
 
+#[cfg(test)]
+mod mocks;
+
+feature! {
+    #![unix]
+
+    mod symlink;
+    pub use self::symlink::symlink;
+}
+
+feature! {
+    #![windows]
+
+    mod symlink_dir;
+    pub use self::symlink_dir::symlink_dir;
+
+    mod symlink_file;
+    pub use self::symlink_file::symlink_file;
+}
+
 use std::io;
+
+#[cfg(not(test))]
+use crate::blocking::spawn_blocking;
+#[cfg(test)]
+use mocks::spawn_blocking;
 
 pub(crate) async fn asyncify<F, T>(f: F) -> io::Result<T>
 where
     F: FnOnce() -> io::Result<T> + Send + 'static,
     T: Send + 'static,
 {
-    match sys::run(f).await {
+    match spawn_blocking(f).await {
         Ok(res) => res,
         Err(_) => Err(io::Error::new(
             io::ErrorKind::Other,
             "background task failed",
         )),
     }
-}
-
-
-mod sys {
-    pub(crate) use std::fs::File;
-
-    
-    pub(crate) use crate::runtime::spawn_blocking as run;
-    pub(crate) use crate::task::JoinHandle as Blocking;
 }

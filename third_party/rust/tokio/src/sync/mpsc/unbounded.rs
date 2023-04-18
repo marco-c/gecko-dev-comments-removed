@@ -33,6 +33,10 @@ impl<T> fmt::Debug for UnboundedSender<T> {
 
 
 
+
+
+
+
 pub struct UnboundedReceiver<T> {
     
     chan: chan::Rx<T, Semaphore>,
@@ -73,11 +77,13 @@ impl<T> UnboundedReceiver<T> {
         UnboundedReceiver { chan }
     }
 
-    #[doc(hidden)] 
-    pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<T>> {
-        self.chan.recv(cx)
-    }
-
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -134,8 +140,67 @@ impl<T> UnboundedReceiver<T> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn try_recv(&mut self) -> Result<T, TryRecvError> {
         self.chan.try_recv()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "sync")]
+    pub fn blocking_recv(&mut self) -> Option<T> {
+        crate::future::block_on(self.recv())
     }
 
     
@@ -145,14 +210,30 @@ impl<T> UnboundedReceiver<T> {
     pub fn close(&mut self) {
         self.chan.close();
     }
-}
 
-#[cfg(feature = "stream")]
-impl<T> crate::stream::Stream for UnboundedReceiver<T> {
-    type Item = T;
-
-    fn poll_next(mut self: std::pin::Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<T>> {
-        self.poll_recv(cx)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<T>> {
+        self.chan.recv(cx)
     }
 }
 
@@ -174,7 +255,119 @@ impl<T> UnboundedSender<T> {
     
     
     pub fn send(&self, message: T) -> Result<(), SendError<T>> {
-        self.chan.send_unbounded(message)?;
+        if !self.inc_num_messages() {
+            return Err(SendError(message));
+        }
+
+        self.chan.send(message);
         Ok(())
+    }
+
+    fn inc_num_messages(&self) -> bool {
+        use std::process;
+        use std::sync::atomic::Ordering::{AcqRel, Acquire};
+
+        let mut curr = self.chan.semaphore().load(Acquire);
+
+        loop {
+            if curr & 1 == 1 {
+                return false;
+            }
+
+            if curr == usize::MAX ^ 1 {
+                
+                
+                process::abort()
+            }
+
+            match self
+                .chan
+                .semaphore()
+                .compare_exchange(curr, curr + 2, AcqRel, Acquire)
+            {
+                Ok(_) => return true,
+                Err(actual) => {
+                    curr = actual;
+                }
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn closed(&self) {
+        self.chan.closed().await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn is_closed(&self) -> bool {
+        self.chan.is_closed()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn same_channel(&self, other: &Self) -> bool {
+        self.chan.same_channel(&other.chan)
     }
 }

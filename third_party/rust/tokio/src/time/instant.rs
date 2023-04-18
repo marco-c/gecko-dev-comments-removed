@@ -6,6 +6,30 @@ use std::time::Duration;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash)]
 pub struct Instant {
     std: std::time::Instant,
@@ -30,6 +54,14 @@ impl Instant {
         Instant { std }
     }
 
+    pub(crate) fn far_future() -> Instant {
+        
+        
+        
+        
+        Self::now() + Duration::from_secs(86400 * 365 * 30)
+    }
+
     
     pub fn into_std(self) -> std::time::Instant {
         self.std
@@ -37,11 +69,8 @@ impl Instant {
 
     
     
-    
-    
-    
     pub fn duration_since(&self, earlier: Instant) -> Duration {
-        self.std.duration_since(earlier.std)
+        self.std.saturating_duration_since(earlier.std)
     }
 
     
@@ -102,13 +131,8 @@ impl Instant {
     
     
     
-    
-    
-    
-    
-    
     pub fn elapsed(&self) -> Duration {
-        Instant::now() - *self
+        Instant::now().saturating_duration_since(*self)
     }
 
     
@@ -156,7 +180,7 @@ impl ops::Sub for Instant {
     type Output = Duration;
 
     fn sub(self, rhs: Instant) -> Duration {
-        self.std - rhs.std
+        self.std.saturating_duration_since(rhs.std)
     }
 }
 

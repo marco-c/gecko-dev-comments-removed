@@ -110,9 +110,131 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[path = "unix/mod.rs"]
 #[cfg(unix)]
 mod imp;
+
+#[cfg(unix)]
+pub(crate) mod unix {
+    pub(crate) use super::imp::*;
+}
 
 #[path = "windows.rs"]
 #[cfg(windows)]
@@ -120,14 +242,17 @@ mod imp;
 
 mod kill;
 
-use crate::io::{AsyncRead, AsyncWrite};
+use crate::io::{AsyncRead, AsyncWrite, ReadBuf};
 use crate::process::kill::Kill;
 
+use std::convert::TryInto;
 use std::ffi::OsStr;
 use std::future::Future;
 use std::io;
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
+#[cfg(windows)]
+use std::os::windows::io::{AsRawHandle, RawHandle};
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 use std::path::Path;
@@ -153,9 +278,9 @@ pub struct Command {
 
 pub(crate) struct SpawnedChild {
     child: imp::Child,
-    stdin: Option<imp::ChildStdin>,
-    stdout: Option<imp::ChildStdout>,
-    stderr: Option<imp::ChildStderr>,
+    stdin: Option<imp::ChildStdio>,
+    stdout: Option<imp::ChildStdio>,
+    stderr: Option<imp::ChildStdio>,
 }
 
 impl Command {
@@ -190,6 +315,12 @@ impl Command {
     
     pub fn new<S: AsRef<OsStr>>(program: S) -> Command {
         Self::from(StdCommand::new(program))
+    }
+
+    
+    
+    pub fn as_std(&self) -> &StdCommand {
+        &self.std
     }
 
     
@@ -450,6 +581,26 @@ impl Command {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn kill_on_drop(&mut self, kill_on_drop: bool) -> &mut Command {
         self.kill_on_drop = kill_on_drop;
         self
@@ -461,6 +612,7 @@ impl Command {
     
     
     #[cfg(windows)]
+    #[cfg_attr(docsrs, doc(cfg(windows)))]
     pub fn creation_flags(&mut self, flags: u32) -> &mut Command {
         self.std.creation_flags(flags);
         self
@@ -470,6 +622,7 @@ impl Command {
     
     
     #[cfg(unix)]
+    #[cfg_attr(docsrs, doc(cfg(unix)))]
     pub fn uid(&mut self, id: u32) -> &mut Command {
         self.std.uid(id);
         self
@@ -478,6 +631,7 @@ impl Command {
     
     
     #[cfg(unix)]
+    #[cfg_attr(docsrs, doc(cfg(unix)))]
     pub fn gid(&mut self, id: u32) -> &mut Command {
         self.std.gid(id);
         self
@@ -487,6 +641,20 @@ impl Command {
     
     
     
+    #[cfg(unix)]
+    #[cfg_attr(docsrs, doc(cfg(unix)))]
+    pub fn arg0<S>(&mut self, arg: S) -> &mut Command
+    where
+        S: AsRef<OsStr>,
+    {
+        self.std.arg0(arg);
+        self
+    }
+
+    
+    
+    
+    
     
     
     
@@ -513,6 +681,7 @@ impl Command {
     
     
     #[cfg(unix)]
+    #[cfg_attr(docsrs, doc(cfg(unix)))]
     pub unsafe fn pre_exec<F>(&mut self, f: F) -> &mut Command
     where
         F: FnMut() -> io::Result<()> + Send + Sync + 'static,
@@ -559,18 +728,54 @@ impl Command {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn spawn(&mut self) -> io::Result<Child> {
         imp::spawn_child(&mut self.std).map(|spawned_child| Child {
-            child: ChildDropGuard {
+            child: FusedChild::Child(ChildDropGuard {
                 inner: spawned_child.child,
                 kill_on_drop: self.kill_on_drop,
-            },
+            }),
             stdin: spawned_child.stdin.map(|inner| ChildStdin { inner }),
             stdout: spawned_child.stdout.map(|inner| ChildStdout { inner }),
             stderr: spawned_child.stderr.map(|inner| ChildStderr { inner }),
         })
     }
 
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -615,10 +820,21 @@ impl Command {
             child.stdout.take();
             child.stderr.take();
 
-            child.await
+            child.wait().await
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -727,6 +943,11 @@ where
 
 
 
+#[derive(Debug)]
+enum FusedChild {
+    Child(ChildDropGuard<imp::Child>),
+    Done(ExitStatus),
+}
 
 
 
@@ -738,20 +959,41 @@ where
 
 
 
-
-#[must_use = "futures do nothing unless polled"]
 #[derive(Debug)]
 pub struct Child {
-    child: ChildDropGuard<imp::Child>,
+    child: FusedChild,
 
+    
+    
+    
+    
+    
+    
+    
     
     
     pub stdin: Option<ChildStdin>,
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     pub stdout: Option<ChildStdout>,
 
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     pub stderr: Option<ChildStderr>,
@@ -759,8 +1001,74 @@ pub struct Child {
 
 impl Child {
     
-    pub fn id(&self) -> u32 {
-        self.child.inner.id()
+    
+    
+    
+    
+    
+    pub fn id(&self) -> Option<u32> {
+        match &self.child {
+            FusedChild::Child(child) => Some(child.inner.id()),
+            FusedChild::Done(_) => None,
+        }
+    }
+
+    
+    
+    #[cfg(windows)]
+    pub fn raw_handle(&self) -> Option<RawHandle> {
+        match &self.child {
+            FusedChild::Child(c) => Some(c.inner.as_raw_handle()),
+            FusedChild::Done(_) => None,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn start_kill(&mut self) -> io::Result<()> {
+        match &mut self.child {
+            FusedChild::Child(child) => child.kill(),
+            FusedChild::Done(_) => Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "invalid argument: can't kill an exited process",
+            )),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn kill(&mut self) -> io::Result<()> {
+        self.start_kill()?;
+        self.wait().await?;
+        Ok(())
     }
 
     
@@ -791,27 +1099,69 @@ impl Child {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn wait(&mut self) -> io::Result<ExitStatus> {
+        
+        
+        drop(self.stdin.take());
 
-    pub fn kill(&mut self) -> io::Result<()> {
-        self.child.kill()
+        match &mut self.child {
+            FusedChild::Done(exit) => Ok(*exit),
+            FusedChild::Child(child) => {
+                let ret = child.await;
+
+                if let Ok(exit) = ret {
+                    self.child = FusedChild::Done(exit);
+                }
+
+                ret
+            }
+        }
     }
 
-    #[doc(hidden)]
-    #[deprecated(note = "please use `child.stdin` instead")]
-    pub fn stdin(&mut self) -> &mut Option<ChildStdin> {
-        &mut self.stdin
-    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_wait(&mut self) -> io::Result<Option<ExitStatus>> {
+        match &mut self.child {
+            FusedChild::Done(exit) => Ok(Some(*exit)),
+            FusedChild::Child(guard) => {
+                let ret = guard.inner.try_wait();
 
-    #[doc(hidden)]
-    #[deprecated(note = "please use `child.stdout` instead")]
-    pub fn stdout(&mut self) -> &mut Option<ChildStdout> {
-        &mut self.stdout
-    }
+                if let Ok(Some(exit)) = ret {
+                    
+                    guard.kill_on_drop = false;
+                    self.child = FusedChild::Done(exit);
+                }
 
-    #[doc(hidden)]
-    #[deprecated(note = "please use `child.stderr` instead")]
-    pub fn stderr(&mut self) -> &mut Option<ChildStderr> {
-        &mut self.stderr
+                ret
+            }
+        }
     }
 
     
@@ -833,19 +1183,25 @@ impl Child {
     pub async fn wait_with_output(mut self) -> io::Result<Output> {
         use crate::future::try_join3;
 
-        async fn read_to_end<A: AsyncRead + Unpin>(io: Option<A>) -> io::Result<Vec<u8>> {
+        async fn read_to_end<A: AsyncRead + Unpin>(io: &mut Option<A>) -> io::Result<Vec<u8>> {
             let mut vec = Vec::new();
-            if let Some(mut io) = io {
-                crate::io::util::read_to_end(&mut io, &mut vec).await?;
+            if let Some(io) = io.as_mut() {
+                crate::io::util::read_to_end(io, &mut vec).await?;
             }
             Ok(vec)
         }
 
-        drop(self.stdin.take());
-        let stdout_fut = read_to_end(self.stdout.take());
-        let stderr_fut = read_to_end(self.stderr.take());
+        let mut stdout_pipe = self.stdout.take();
+        let mut stderr_pipe = self.stderr.take();
 
-        let (status, stdout, stderr) = try_join3(self, stdout_fut, stderr_fut).await?;
+        let stdout_fut = read_to_end(&mut stdout_pipe);
+        let stderr_fut = read_to_end(&mut stderr_pipe);
+
+        let (status, stdout, stderr) = try_join3(self.wait(), stdout_fut, stderr_fut).await?;
+
+        
+        drop(stdout_pipe);
+        drop(stderr_pipe);
 
         Ok(Output {
             status,
@@ -855,21 +1211,13 @@ impl Child {
     }
 }
 
-impl Future for Child {
-    type Output = io::Result<ExitStatus>;
-
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        Pin::new(&mut self.child).poll(cx)
-    }
-}
-
 
 
 
 
 #[derive(Debug)]
 pub struct ChildStdin {
-    inner: imp::ChildStdin,
+    inner: imp::ChildStdio,
 }
 
 
@@ -878,7 +1226,7 @@ pub struct ChildStdin {
 
 #[derive(Debug)]
 pub struct ChildStdout {
-    inner: imp::ChildStdout,
+    inner: imp::ChildStdio,
 }
 
 
@@ -887,54 +1235,115 @@ pub struct ChildStdout {
 
 #[derive(Debug)]
 pub struct ChildStderr {
-    inner: imp::ChildStderr,
+    inner: imp::ChildStdio,
+}
+
+impl ChildStdin {
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_std(inner: std::process::ChildStdin) -> io::Result<Self> {
+        Ok(Self {
+            inner: imp::stdio(inner)?,
+        })
+    }
+}
+
+impl ChildStdout {
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_std(inner: std::process::ChildStdout) -> io::Result<Self> {
+        Ok(Self {
+            inner: imp::stdio(inner)?,
+        })
+    }
+}
+
+impl ChildStderr {
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_std(inner: std::process::ChildStderr) -> io::Result<Self> {
+        Ok(Self {
+            inner: imp::stdio(inner)?,
+        })
+    }
 }
 
 impl AsyncWrite for ChildStdin {
     fn poll_write(
-        mut self: Pin<&mut Self>,
+        self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        Pin::new(&mut self.inner).poll_write(cx, buf)
+        self.inner.poll_write(cx, buf)
     }
 
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Pin::new(&mut self.inner).poll_flush(cx)
+    fn poll_flush(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Poll::Ready(Ok(()))
     }
 
-    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Pin::new(&mut self.inner).poll_shutdown(cx)
+    fn poll_shutdown(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Poll::Ready(Ok(()))
     }
 }
 
 impl AsyncRead for ChildStdout {
-    unsafe fn prepare_uninitialized_buffer(&self, _buf: &mut [std::mem::MaybeUninit<u8>]) -> bool {
-        
-        false
-    }
-
     fn poll_read(
-        mut self: Pin<&mut Self>,
+        self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<io::Result<usize>> {
-        Pin::new(&mut self.inner).poll_read(cx, buf)
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<io::Result<()>> {
+        
+        unsafe { self.inner.poll_read(cx, buf) }
     }
 }
 
 impl AsyncRead for ChildStderr {
-    unsafe fn prepare_uninitialized_buffer(&self, _buf: &mut [std::mem::MaybeUninit<u8>]) -> bool {
-        
-        false
-    }
-
     fn poll_read(
-        mut self: Pin<&mut Self>,
+        self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<io::Result<usize>> {
-        Pin::new(&mut self.inner).poll_read(cx, buf)
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<io::Result<()>> {
+        
+        unsafe { self.inner.poll_read(cx, buf) }
+    }
+}
+
+impl TryInto<Stdio> for ChildStdin {
+    type Error = io::Error;
+
+    fn try_into(self) -> Result<Stdio, Self::Error> {
+        imp::convert_to_stdio(self.inner)
+    }
+}
+
+impl TryInto<Stdio> for ChildStdout {
+    type Error = io::Error;
+
+    fn try_into(self) -> Result<Stdio, Self::Error> {
+        imp::convert_to_stdio(self.inner)
+    }
+}
+
+impl TryInto<Stdio> for ChildStderr {
+    type Error = io::Error;
+
+    fn try_into(self) -> Result<Stdio, Self::Error> {
+        imp::convert_to_stdio(self.inner)
     }
 }
 
@@ -946,19 +1355,19 @@ mod sys {
 
     impl AsRawFd for ChildStdin {
         fn as_raw_fd(&self) -> RawFd {
-            self.inner.get_ref().as_raw_fd()
+            self.inner.as_raw_fd()
         }
     }
 
     impl AsRawFd for ChildStdout {
         fn as_raw_fd(&self) -> RawFd {
-            self.inner.get_ref().as_raw_fd()
+            self.inner.as_raw_fd()
         }
     }
 
     impl AsRawFd for ChildStderr {
         fn as_raw_fd(&self) -> RawFd {
-            self.inner.get_ref().as_raw_fd()
+            self.inner.as_raw_fd()
         }
     }
 }
@@ -971,19 +1380,19 @@ mod sys {
 
     impl AsRawHandle for ChildStdin {
         fn as_raw_handle(&self) -> RawHandle {
-            self.inner.get_ref().as_raw_handle()
+            self.inner.as_raw_handle()
         }
     }
 
     impl AsRawHandle for ChildStdout {
         fn as_raw_handle(&self) -> RawHandle {
-            self.inner.get_ref().as_raw_handle()
+            self.inner.as_raw_handle()
         }
     }
 
     impl AsRawHandle for ChildStderr {
         fn as_raw_handle(&self) -> RawHandle {
-            self.inner.get_ref().as_raw_handle()
+            self.inner.as_raw_handle()
         }
     }
 }

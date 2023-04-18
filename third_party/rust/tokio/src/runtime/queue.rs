@@ -1,14 +1,14 @@
 
 
 use crate::loom::cell::UnsafeCell;
-use crate::loom::sync::atomic::{AtomicU16, AtomicU32, AtomicUsize};
-use crate::loom::sync::{Arc, Mutex};
-use crate::runtime::task;
+use crate::loom::sync::atomic::{AtomicU16, AtomicU32};
+use crate::loom::sync::Arc;
+use crate::runtime::task::{self, Inject};
+use crate::runtime::MetricsBatch;
 
-use std::marker::PhantomData;
 use std::mem::MaybeUninit;
-use std::ptr::{self, NonNull};
-use std::sync::atomic::Ordering::{AcqRel, Acquire, Release};
+use std::ptr;
+use std::sync::atomic::Ordering::{AcqRel, Acquire, Relaxed, Release};
 
 
 pub(super) struct Local<T: 'static> {
@@ -17,19 +17,6 @@ pub(super) struct Local<T: 'static> {
 
 
 pub(super) struct Steal<T: 'static>(Arc<Inner<T>>);
-
-
-
-pub(super) struct Inject<T: 'static> {
-    
-    pointers: Mutex<Pointers>,
-
-    
-    
-    len: AtomicUsize,
-
-    _p: PhantomData<T>,
-}
 
 pub(super) struct Inner<T: 'static> {
     
@@ -49,24 +36,11 @@ pub(super) struct Inner<T: 'static> {
     tail: AtomicU16,
 
     
-    buffer: Box<[UnsafeCell<MaybeUninit<task::Notified<T>>>]>,
-}
-
-struct Pointers {
-    
-    is_closed: bool,
-
-    
-    head: Option<NonNull<task::Header>>,
-
-    
-    tail: Option<NonNull<task::Header>>,
+    buffer: Box<[UnsafeCell<MaybeUninit<task::Notified<T>>>; LOCAL_QUEUE_CAPACITY]>,
 }
 
 unsafe impl<T> Send for Inner<T> {}
 unsafe impl<T> Sync for Inner<T> {}
-unsafe impl<T> Send for Inject<T> {}
-unsafe impl<T> Sync for Inject<T> {}
 
 #[cfg(not(loom))]
 const LOCAL_QUEUE_CAPACITY: usize = 256;
@@ -80,6 +54,17 @@ const LOCAL_QUEUE_CAPACITY: usize = 4;
 const MASK: usize = LOCAL_QUEUE_CAPACITY - 1;
 
 
+
+
+
+fn make_fixed_size<T>(buffer: Box<[T]>) -> Box<[T; LOCAL_QUEUE_CAPACITY]> {
+    assert_eq!(buffer.len(), LOCAL_QUEUE_CAPACITY);
+
+    
+    unsafe { Box::from_raw(Box::into_raw(buffer).cast()) }
+}
+
+
 pub(super) fn local<T: 'static>() -> (Steal<T>, Local<T>) {
     let mut buffer = Vec::with_capacity(LOCAL_QUEUE_CAPACITY);
 
@@ -90,7 +75,7 @@ pub(super) fn local<T: 'static>() -> (Steal<T>, Local<T>) {
     let inner = Arc::new(Inner {
         head: AtomicU32::new(0),
         tail: AtomicU16::new(0),
-        buffer: buffer.into(),
+        buffer: make_fixed_size(buffer.into_boxed_slice()),
     });
 
     let local = Local {
@@ -109,7 +94,20 @@ impl<T> Local<T> {
     }
 
     
-    pub(super) fn push_back(&mut self, mut task: task::Notified<T>, inject: &Inject<T>) {
+    
+    
+    
+    pub(super) fn has_tasks(&self) -> bool {
+        !self.inner.is_empty()
+    }
+
+    
+    pub(super) fn push_back(
+        &mut self,
+        mut task: task::Notified<T>,
+        inject: &Inject<T>,
+        metrics: &mut MetricsBatch,
+    ) {
         let tail = loop {
             let head = self.inner.head.load(Acquire);
             let (steal, real) = unpack(head);
@@ -128,7 +126,7 @@ impl<T> Local<T> {
             } else {
                 
                 
-                match self.push_overflow(task, real, tail, inject) {
+                match self.push_overflow(task, real, tail, inject, metrics) {
                     Ok(_) => return,
                     
                     Err(v) => {
@@ -170,10 +168,14 @@ impl<T> Local<T> {
         head: u16,
         tail: u16,
         inject: &Inject<T>,
+        metrics: &mut MetricsBatch,
     ) -> Result<(), task::Notified<T>> {
-        const BATCH_LEN: usize = LOCAL_QUEUE_CAPACITY / 2 + 1;
+        
+        
+        
+        
+        const NUM_TASKS_TAKEN: u16 = (LOCAL_QUEUE_CAPACITY / 2) as u16;
 
-        let n = (LOCAL_QUEUE_CAPACITY / 2) as u16;
         assert_eq!(
             tail.wrapping_sub(head) as usize,
             LOCAL_QUEUE_CAPACITY,
@@ -194,13 +196,20 @@ impl<T> Local<T> {
         
         
         
-        let actual = self.inner.head.compare_and_swap(
-            prev,
-            pack(head.wrapping_add(n), head.wrapping_add(n)),
-            Release,
-        );
-
-        if actual != prev {
+        if self
+            .inner
+            .head
+            .compare_exchange(
+                prev,
+                pack(
+                    head.wrapping_add(NUM_TASKS_TAKEN),
+                    head.wrapping_add(NUM_TASKS_TAKEN),
+                ),
+                Release,
+                Relaxed,
+            )
+            .is_err()
+        {
             
             
             
@@ -208,40 +217,43 @@ impl<T> Local<T> {
         }
 
         
-        for i in 0..n {
-            let j = i + 1;
+        struct BatchTaskIter<'a, T: 'static> {
+            buffer: &'a [UnsafeCell<MaybeUninit<task::Notified<T>>>; LOCAL_QUEUE_CAPACITY],
+            head: u32,
+            i: u32,
+        }
+        impl<'a, T: 'static> Iterator for BatchTaskIter<'a, T> {
+            type Item = task::Notified<T>;
 
-            let i_idx = i.wrapping_add(head) as usize & MASK;
-            let j_idx = j.wrapping_add(head) as usize & MASK;
+            #[inline]
+            fn next(&mut self) -> Option<task::Notified<T>> {
+                if self.i == u32::from(NUM_TASKS_TAKEN) {
+                    None
+                } else {
+                    let i_idx = self.i.wrapping_add(self.head) as usize & MASK;
+                    let slot = &self.buffer[i_idx];
 
-            
-            let next = if j == n {
-                
-                task.header().into()
-            } else {
-                
-                
-                self.inner.buffer[j_idx].with(|ptr| unsafe {
-                    let value = (*ptr).as_ptr();
-                    (*value).header().into()
-                })
-            };
+                    
+                    
+                    let task = slot.with(|ptr| unsafe { ptr::read((*ptr).as_ptr()) });
 
-            
-            
-            self.inner.buffer[i_idx].with_mut(|ptr| unsafe {
-                let ptr = (*ptr).as_ptr();
-                (*ptr).header().queue_next.with_mut(|ptr| *ptr = Some(next));
-            });
+                    self.i += 1;
+                    Some(task)
+                }
+            }
         }
 
         
         
-        let head = self.inner.buffer[head as usize & MASK]
-            .with(|ptr| unsafe { ptr::read((*ptr).as_ptr()) });
+        let batch_iter = BatchTaskIter {
+            buffer: &*self.inner.buffer,
+            head: head as u32,
+            i: 0,
+        };
+        inject.push_batch(batch_iter.chain(std::iter::once(task)));
 
         
-        inject.push_batch(head, task, BATCH_LEN);
+        metrics.incr_overflow_count();
 
         Ok(())
     }
@@ -294,7 +306,11 @@ impl<T> Steal<T> {
     }
 
     
-    pub(super) fn steal_into(&self, dst: &mut Local<T>) -> Option<task::Notified<T>> {
+    pub(super) fn steal_into(
+        &self,
+        dst: &mut Local<T>,
+        dst_metrics: &mut MetricsBatch,
+    ) -> Option<task::Notified<T>> {
         
         
         let dst_tail = unsafe { dst.inner.tail.unsync_load() };
@@ -318,6 +334,8 @@ impl<T> Steal<T> {
             
             return None;
         }
+
+        dst_metrics.incr_steal_count(n);
 
         
         n -= 1;
@@ -438,6 +456,14 @@ impl<T> Steal<T> {
     }
 }
 
+cfg_metrics! {
+    impl<T> Steal<T> {
+        pub(crate) fn len(&self) -> usize {
+            self.0.len() as _
+        }
+    }
+}
+
 impl<T> Clone for Steal<T> {
     fn clone(&self) -> Steal<T> {
         Steal(self.0.clone())
@@ -453,167 +479,22 @@ impl<T> Drop for Local<T> {
 }
 
 impl<T> Inner<T> {
-    fn is_empty(&self) -> bool {
+    fn len(&self) -> u16 {
         let (_, head) = unpack(self.head.load(Acquire));
         let tail = self.tail.load(Acquire);
 
-        head == tail
-    }
-}
-
-impl<T: 'static> Inject<T> {
-    pub(super) fn new() -> Inject<T> {
-        Inject {
-            pointers: Mutex::new(Pointers {
-                is_closed: false,
-                head: None,
-                tail: None,
-            }),
-            len: AtomicUsize::new(0),
-            _p: PhantomData,
-        }
+        tail.wrapping_sub(head)
     }
 
-    pub(super) fn is_empty(&self) -> bool {
+    fn is_empty(&self) -> bool {
         self.len() == 0
-    }
-
-    
-    
-    pub(super) fn close(&self) -> bool {
-        let mut p = self.pointers.lock().unwrap();
-
-        if p.is_closed {
-            return false;
-        }
-
-        p.is_closed = true;
-        true
-    }
-
-    pub(super) fn is_closed(&self) -> bool {
-        self.pointers.lock().unwrap().is_closed
-    }
-
-    pub(super) fn len(&self) -> usize {
-        self.len.load(Acquire)
-    }
-
-    
-    pub(super) fn push(&self, task: task::Notified<T>) {
-        
-        let mut p = self.pointers.lock().unwrap();
-
-        if p.is_closed {
-            
-            
-            drop(p);
-            drop(task);
-            return;
-        }
-
-        
-        let len = unsafe { self.len.unsync_load() };
-        let task = task.into_raw();
-
-        
-        debug_assert!(get_next(task).is_none());
-
-        if let Some(tail) = p.tail {
-            set_next(tail, Some(task));
-        } else {
-            p.head = Some(task);
-        }
-
-        p.tail = Some(task);
-
-        self.len.store(len + 1, Release);
-    }
-
-    pub(super) fn push_batch(
-        &self,
-        batch_head: task::Notified<T>,
-        batch_tail: task::Notified<T>,
-        num: usize,
-    ) {
-        let batch_head = batch_head.into_raw();
-        let batch_tail = batch_tail.into_raw();
-
-        debug_assert!(get_next(batch_tail).is_none());
-
-        let mut p = self.pointers.lock().unwrap();
-
-        if let Some(tail) = p.tail {
-            set_next(tail, Some(batch_head));
-        } else {
-            p.head = Some(batch_head);
-        }
-
-        p.tail = Some(batch_tail);
-
-        
-        
-        
-        
-        let len = unsafe { self.len.unsync_load() };
-
-        self.len.store(len + num, Release);
-    }
-
-    pub(super) fn pop(&self) -> Option<task::Notified<T>> {
-        
-        if self.is_empty() {
-            return None;
-        }
-
-        let mut p = self.pointers.lock().unwrap();
-
-        
-        
-        let task = p.head?;
-
-        p.head = get_next(task);
-
-        if p.head.is_none() {
-            p.tail = None;
-        }
-
-        set_next(task, None);
-
-        
-        
-        
-        
-        self.len
-            .store(unsafe { self.len.unsync_load() } - 1, Release);
-
-        
-        Some(unsafe { task::Notified::from_raw(task) })
-    }
-}
-
-impl<T: 'static> Drop for Inject<T> {
-    fn drop(&mut self) {
-        if !std::thread::panicking() {
-            assert!(self.pop().is_none(), "queue not empty");
-        }
-    }
-}
-
-fn get_next(header: NonNull<task::Header>) -> Option<NonNull<task::Header>> {
-    unsafe { header.as_ref().queue_next.with(|ptr| *ptr) }
-}
-
-fn set_next(header: NonNull<task::Header>, val: Option<NonNull<task::Header>>) {
-    unsafe {
-        header.as_ref().queue_next.with_mut(|ptr| *ptr = val);
     }
 }
 
 
 
 fn unpack(n: u32) -> (u16, u16) {
-    let real = n & u16::max_value() as u32;
+    let real = n & u16::MAX as u32;
     let steal = n >> 16;
 
     (steal as u16, real as u16)
@@ -626,5 +507,5 @@ fn pack(steal: u16, real: u16) -> u32 {
 
 #[test]
 fn test_local_queue_capacity() {
-    assert!(LOCAL_QUEUE_CAPACITY - 1 <= u8::max_value() as usize);
+    assert!(LOCAL_QUEUE_CAPACITY - 1 <= u8::MAX as usize);
 }

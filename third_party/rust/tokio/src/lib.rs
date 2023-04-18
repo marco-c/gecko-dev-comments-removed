@@ -1,10 +1,7 @@
-#![doc(html_root_url = "https://docs.rs/tokio/0.2.25")]
 #![allow(
     clippy::cognitive_complexity,
     clippy::large_enum_variant,
-    clippy::needless_doctest_main,
-    clippy::match_like_matches_macro,
-    clippy::stable_sort_primitive
+    clippy::needless_doctest_main
 )]
 #![warn(
     missing_debug_implementations,
@@ -12,12 +9,13 @@
     rust_2018_idioms,
     unreachable_pub
 )]
-#![cfg_attr(docsrs, deny(broken_intra_doc_links))]
+#![deny(unused_must_use)]
 #![doc(test(
     no_crate_inject,
     attr(deny(warnings, rust_2018_idioms), allow(dead_code, unused_variables))
 ))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, allow(unused_attributes))]
 
 
 
@@ -338,6 +336,31 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(not(any(
+    target_pointer_width = "32",
+    target_pointer_width = "64",
+    target_pointer_width = "128"
+)))]
+compile_error! {
+    "Tokio requires the platform pointer width to be 32, 64, or 128 bits"
+}
 
 
 
@@ -351,8 +374,7 @@ cfg_fs! {
     pub mod fs;
 }
 
-#[doc(hidden)]
-pub mod future;
+mod future;
 
 pub mod io;
 pub mod net;
@@ -360,13 +382,16 @@ pub mod net;
 mod loom;
 mod park;
 
-pub mod prelude;
-
 cfg_process! {
     pub mod process;
 }
 
-pub mod runtime;
+#[cfg(any(feature = "net", feature = "fs", feature = "io-std"))]
+mod blocking;
+
+cfg_rt! {
+    pub mod runtime;
+}
 
 pub(crate) mod coop;
 
@@ -374,8 +399,11 @@ cfg_signal! {
     pub mod signal;
 }
 
-cfg_stream! {
-    pub mod stream;
+cfg_signal_internal! {
+    #[cfg(not(feature = "signal"))]
+    #[allow(dead_code)]
+    #[allow(unreachable_pub)]
+    pub(crate) mod signal;
 }
 
 cfg_sync! {
@@ -385,8 +413,8 @@ cfg_not_sync! {
     mod sync;
 }
 
-cfg_rt_core! {
-    pub mod task;
+pub mod task;
+cfg_rt! {
     pub use task::spawn;
 }
 
@@ -396,6 +424,67 @@ cfg_time! {
 
 mod util;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub mod stream {}
+
+
+
+
+#[cfg(docsrs)]
+pub mod doc;
+
+#[cfg(docsrs)]
+#[allow(unused)]
+pub(crate) use self::doc::os;
+
+#[cfg(not(docsrs))]
+#[allow(unused)]
+pub(crate) use std::os;
+
+#[cfg(docsrs)]
+#[allow(unused)]
+pub(crate) use self::doc::winapi;
+
+#[cfg(all(not(docsrs), windows, feature = "net"))]
+#[allow(unused)]
+pub(crate) use ::winapi;
+
 cfg_macros! {
     /// Implementation detail of the `select!` macro. This macro is **not**
     /// intended to be used as part of the public API and is permitted to
@@ -403,31 +492,42 @@ cfg_macros! {
     #[doc(hidden)]
     pub use tokio_macros::select_priv_declare_output_enum;
 
-    doc_rt_core! {
-        cfg_rt_threaded! {
-            // This is the docs.rs case (with all features) so make sure macros
-            // is included in doc(cfg).
+    /// Implementation detail of the `select!` macro. This macro is **not**
+    /// intended to be used as part of the public API and is permitted to
+    /// change.
+    #[doc(hidden)]
+    pub use tokio_macros::select_priv_clean_pattern;
 
+    cfg_rt! {
+        #[cfg(feature = "rt-multi-thread")]
+        #[cfg(not(test))] // Work around for rust-lang/rust#62127
+        #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
+        #[doc(inline)]
+        pub use tokio_macros::main;
+
+        #[cfg(feature = "rt-multi-thread")]
+        #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
+        #[doc(inline)]
+        pub use tokio_macros::test;
+
+        cfg_not_rt_multi_thread! {
             #[cfg(not(test))] // Work around for rust-lang/rust#62127
-            #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
-            pub use tokio_macros::main_threaded as main;
+            #[doc(inline)]
+            pub use tokio_macros::main_rt as main;
 
-            #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
-            pub use tokio_macros::test_threaded as test;
-        }
-
-        cfg_not_rt_threaded! {
-            #[cfg(not(test))] // Work around for rust-lang/rust#62127
-            pub use tokio_macros::main_basic as main;
-            pub use tokio_macros::test_basic as test;
+            #[doc(inline)]
+            pub use tokio_macros::test_rt as test;
         }
     }
 
-    // Maintains old behavior
-    cfg_not_rt_core! {
+    // Always fail if rt is not enabled.
+    cfg_not_rt! {
         #[cfg(not(test))]
-        pub use tokio_macros::main;
-        pub use tokio_macros::test;
+        #[doc(inline)]
+        pub use tokio_macros::main_fail as main;
+
+        #[doc(inline)]
+        pub use tokio_macros::test_fail as test;
     }
 }
 

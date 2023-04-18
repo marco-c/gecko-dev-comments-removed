@@ -8,17 +8,20 @@
 
 
 
-use crate::io::{AsyncRead, AsyncWrite};
+use crate::io::{AsyncRead, AsyncWrite, Interest, ReadBuf, Ready};
 use crate::net::UnixStream;
 
+use crate::net::unix::SocketAddr;
 use std::error::Error;
-use std::mem::MaybeUninit;
 use std::net::Shutdown;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::{fmt, io};
 
+cfg_io_util! {
+    use bytes::BufMut;
+}
 
 
 
@@ -32,8 +35,6 @@ use std::{fmt, io};
 pub struct OwnedReadHalf {
     inner: Arc<UnixStream>,
 }
-
-
 
 
 
@@ -106,18 +107,132 @@ impl OwnedReadHalf {
     pub fn reunite(self, other: OwnedWriteHalf) -> Result<UnixStream, ReuniteError> {
         reunite(self, other)
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn ready(&self, interest: Interest) -> io::Result<Ready> {
+        self.inner.ready(interest).await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn readable(&self) -> io::Result<()> {
+        self.inner.readable().await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_read(&self, buf: &mut [u8]) -> io::Result<usize> {
+        self.inner.try_read(buf)
+    }
+
+    cfg_io_util! {
+        /// Tries to read data from the stream into the provided buffer, advancing the
+        /// buffer's internal cursor, returning how many bytes were read.
+        ///
+        /// Receives any pending data from the socket but does not wait for new data
+        /// to arrive. On success, returns the number of bytes read. Because
+        /// `try_read_buf()` is non-blocking, the buffer does not have to be stored by
+        /// the async task and can exist entirely on the stack.
+        ///
+        /// Usually, [`readable()`] or [`ready()`] is used with this function.
+        ///
+        /// [`readable()`]: Self::readable()
+        /// [`ready()`]: Self::ready()
+        ///
+        /// # Return
+        ///
+        /// If data is successfully read, `Ok(n)` is returned, where `n` is the
+        /// number of bytes read. `Ok(0)` indicates the stream's read half is closed
+        /// and will no longer yield data. If the stream is not ready to read data
+        /// `Err(io::ErrorKind::WouldBlock)` is returned.
+        pub fn try_read_buf<B: BufMut>(&self, buf: &mut B) -> io::Result<usize> {
+            self.inner.try_read_buf(buf)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_read_vectored(&self, bufs: &mut [io::IoSliceMut<'_>]) -> io::Result<usize> {
+        self.inner.try_read_vectored(bufs)
+    }
+
+    
+    pub fn peer_addr(&self) -> io::Result<SocketAddr> {
+        self.inner.peer_addr()
+    }
+
+    
+    pub fn local_addr(&self) -> io::Result<SocketAddr> {
+        self.inner.local_addr()
+    }
 }
 
 impl AsyncRead for OwnedReadHalf {
-    unsafe fn prepare_uninitialized_buffer(&self, _: &mut [MaybeUninit<u8>]) -> bool {
-        false
-    }
-
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<io::Result<usize>> {
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<io::Result<()>> {
         self.inner.poll_read_priv(cx, buf)
     }
 }
@@ -139,12 +254,91 @@ impl OwnedWriteHalf {
         self.shutdown_on_drop = false;
         drop(self);
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn ready(&self, interest: Interest) -> io::Result<Ready> {
+        self.inner.ready(interest).await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn writable(&self) -> io::Result<()> {
+        self.inner.writable().await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_write(&self, buf: &[u8]) -> io::Result<usize> {
+        self.inner.try_write(buf)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_write_vectored(&self, buf: &[io::IoSlice<'_>]) -> io::Result<usize> {
+        self.inner.try_write_vectored(buf)
+    }
+
+    
+    pub fn peer_addr(&self) -> io::Result<SocketAddr> {
+        self.inner.peer_addr()
+    }
+
+    
+    pub fn local_addr(&self) -> io::Result<SocketAddr> {
+        self.inner.local_addr()
+    }
 }
 
 impl Drop for OwnedWriteHalf {
     fn drop(&mut self) {
         if self.shutdown_on_drop {
-            let _ = self.inner.shutdown(Shutdown::Write);
+            let _ = self.inner.shutdown_std(Shutdown::Write);
         }
     }
 }
@@ -158,6 +352,18 @@ impl AsyncWrite for OwnedWriteHalf {
         self.inner.poll_write_priv(cx, buf)
     }
 
+    fn poll_write_vectored(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        bufs: &[io::IoSlice<'_>],
+    ) -> Poll<io::Result<usize>> {
+        self.inner.poll_write_vectored_priv(cx, bufs)
+    }
+
+    fn is_write_vectored(&self) -> bool {
+        self.inner.is_write_vectored()
+    }
+
     #[inline]
     fn poll_flush(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<()>> {
         
@@ -166,7 +372,7 @@ impl AsyncWrite for OwnedWriteHalf {
 
     
     fn poll_shutdown(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<()>> {
-        let res = self.inner.shutdown(Shutdown::Write);
+        let res = self.inner.shutdown_std(Shutdown::Write);
         if res.is_ok() {
             Pin::into_inner(self).shutdown_on_drop = false;
         }

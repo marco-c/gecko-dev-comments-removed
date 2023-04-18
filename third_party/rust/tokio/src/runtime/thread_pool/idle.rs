@@ -55,7 +55,7 @@ impl Idle {
         }
 
         
-        let mut sleepers = self.sleepers.lock().unwrap();
+        let mut sleepers = self.sleepers.lock();
 
         
         if !self.notify_should_wakeup() {
@@ -64,7 +64,7 @@ impl Idle {
 
         
         
-        State::unpark_one(&self.state);
+        State::unpark_one(&self.state, 1);
 
         
         let ret = sleepers.pop();
@@ -77,7 +77,7 @@ impl Idle {
     
     pub(super) fn transition_worker_to_parked(&self, worker: usize, is_searching: bool) -> bool {
         
-        let mut sleepers = self.sleepers.lock().unwrap();
+        let mut sleepers = self.sleepers.lock();
 
         
         let ret = State::dec_num_unparked(&self.state, is_searching);
@@ -111,24 +111,28 @@ impl Idle {
 
     
     
-    pub(super) fn unpark_worker_by_id(&self, worker_id: usize) {
-        let mut sleepers = self.sleepers.lock().unwrap();
+    
+    
+    pub(super) fn unpark_worker_by_id(&self, worker_id: usize) -> bool {
+        let mut sleepers = self.sleepers.lock();
 
         for index in 0..sleepers.len() {
             if sleepers[index] == worker_id {
                 sleepers.swap_remove(index);
 
                 
-                State::unpark_one(&self.state);
+                State::unpark_one(&self.state, 0);
 
-                return;
+                return true;
             }
         }
+
+        false
     }
 
     
     pub(super) fn is_parked(&self, worker_id: usize) -> bool {
-        let sleepers = self.sleepers.lock().unwrap();
+        let sleepers = self.sleepers.lock();
         sleepers.contains(&worker_id)
     }
 
@@ -151,8 +155,8 @@ impl State {
         State(cell.load(ordering))
     }
 
-    fn unpark_one(cell: &AtomicUsize) {
-        cell.fetch_add(1 | (1 << UNPARK_SHIFT), SeqCst);
+    fn unpark_one(cell: &AtomicUsize, num_searching: usize) {
+        cell.fetch_add(num_searching | (1 << UNPARK_SHIFT), SeqCst);
     }
 
     fn inc_num_searching(cell: &AtomicUsize, ordering: Ordering) {

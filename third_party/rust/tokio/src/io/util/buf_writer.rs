@@ -1,10 +1,9 @@
 use crate::io::util::DEFAULT_BUF_SIZE;
-use crate::io::{AsyncBufRead, AsyncRead, AsyncWrite};
+use crate::io::{AsyncBufRead, AsyncRead, AsyncSeek, AsyncWrite, ReadBuf};
 
 use pin_project_lite::pin_project;
 use std::fmt;
-use std::io::{self, Write};
-use std::mem::MaybeUninit;
+use std::io::{self, IoSlice, SeekFrom, Write};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
@@ -20,21 +19,22 @@ pin_project! {
     /// help when writing very large amounts at once, or writing just one or a few
     /// times. It also provides no advantage when writing to a destination that is
     /// in memory, like a `Vec<u8>`.
-    ///
-    /// When the `BufWriter` is dropped, the contents of its buffer will be
-    /// discarded. Creating multiple instances of a `BufWriter` on the same
-    /// stream can cause data loss. If you need to write out the contents of its
-    /// buffer, you must manually call flush before the writer is dropped.
-    ///
-    /// [`AsyncWrite`]: AsyncWrite
-    /// [`flush`]: super::AsyncWriteExt::flush
-    ///
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg_attr(docsrs, doc(cfg(feature = "io-util")))]
     pub struct BufWriter<W> {
         #[pin]
         pub(super) inner: W,
         pub(super) buf: Vec<u8>,
         pub(super) written: usize,
+        pub(super) seek_state: SeekState,
     }
 }
 
@@ -51,6 +51,7 @@ impl<W: AsyncWrite> BufWriter<W> {
             inner,
             buf: Vec::with_capacity(cap),
             written: 0,
+            seek_state: SeekState::Init,
         }
     }
 
@@ -132,6 +133,72 @@ impl<W: AsyncWrite> AsyncWrite for BufWriter<W> {
         }
     }
 
+    fn poll_write_vectored(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        mut bufs: &[IoSlice<'_>],
+    ) -> Poll<io::Result<usize>> {
+        if self.inner.is_write_vectored() {
+            let total_len = bufs
+                .iter()
+                .fold(0usize, |acc, b| acc.saturating_add(b.len()));
+            if total_len > self.buf.capacity() - self.buf.len() {
+                ready!(self.as_mut().flush_buf(cx))?;
+            }
+            let me = self.as_mut().project();
+            if total_len >= me.buf.capacity() {
+                
+                
+                
+                
+                me.inner.poll_write_vectored(cx, bufs)
+            } else {
+                bufs.iter().for_each(|b| me.buf.extend_from_slice(b));
+                Poll::Ready(Ok(total_len))
+            }
+        } else {
+            
+            while bufs.first().map(|buf| buf.len()) == Some(0) {
+                bufs = &bufs[1..];
+            }
+            if bufs.is_empty() {
+                return Poll::Ready(Ok(0));
+            }
+            
+            let first_len = bufs[0].len();
+            if first_len > self.buf.capacity() - self.buf.len() {
+                ready!(self.as_mut().flush_buf(cx))?;
+                debug_assert!(self.buf.is_empty());
+            }
+            let me = self.as_mut().project();
+            if first_len >= me.buf.capacity() {
+                
+                
+                debug_assert!(me.buf.is_empty());
+                return me.inner.poll_write(cx, &bufs[0]);
+            } else {
+                me.buf.extend_from_slice(&bufs[0]);
+                bufs = &bufs[1..];
+            }
+            let mut total_written = first_len;
+            debug_assert!(total_written != 0);
+            
+            for buf in bufs {
+                if buf.len() > me.buf.capacity() - me.buf.len() {
+                    break;
+                } else {
+                    me.buf.extend_from_slice(buf);
+                    total_written += buf.len();
+                }
+            }
+            Poll::Ready(Ok(total_written))
+        }
+    }
+
+    fn is_write_vectored(&self) -> bool {
+        true
+    }
+
     fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         ready!(self.as_mut().flush_buf(cx))?;
         self.get_pin_mut().poll_flush(cx)
@@ -143,18 +210,69 @@ impl<W: AsyncWrite> AsyncWrite for BufWriter<W> {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub(super) enum SeekState {
+    
+    Init,
+    
+    Start(SeekFrom),
+    
+    Pending,
+}
+
+
+
+
+impl<W: AsyncWrite + AsyncSeek> AsyncSeek for BufWriter<W> {
+    fn start_seek(self: Pin<&mut Self>, pos: SeekFrom) -> io::Result<()> {
+        
+        
+        
+        *self.project().seek_state = SeekState::Start(pos);
+        Ok(())
+    }
+
+    fn poll_complete(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<u64>> {
+        let pos = match self.seek_state {
+            SeekState::Init => {
+                return self.project().inner.poll_complete(cx);
+            }
+            SeekState::Start(pos) => Some(pos),
+            SeekState::Pending => None,
+        };
+
+        
+        ready!(self.as_mut().flush_buf(cx))?;
+
+        let mut me = self.project();
+        if let Some(pos) = pos {
+            
+            ready!(me.inner.as_mut().poll_complete(cx))?;
+            if let Err(e) = me.inner.as_mut().start_seek(pos) {
+                *me.seek_state = SeekState::Init;
+                return Poll::Ready(Err(e));
+            }
+        }
+        match me.inner.poll_complete(cx) {
+            Poll::Ready(res) => {
+                *me.seek_state = SeekState::Init;
+                Poll::Ready(res)
+            }
+            Poll::Pending => {
+                *me.seek_state = SeekState::Pending;
+                Poll::Pending
+            }
+        }
+    }
+}
+
 impl<W: AsyncWrite + AsyncRead> AsyncRead for BufWriter<W> {
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<io::Result<usize>> {
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<io::Result<()>> {
         self.get_pin_mut().poll_read(cx, buf)
-    }
-
-    
-    unsafe fn prepare_uninitialized_buffer(&self, buf: &mut [MaybeUninit<u8>]) -> bool {
-        self.get_ref().prepare_uninitialized_buffer(buf)
     }
 }
 

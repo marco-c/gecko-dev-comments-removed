@@ -1,9 +1,7 @@
 
 
-use crate::loom::{
-    sync::atomic::{AtomicPtr, AtomicUsize},
-    thread,
-};
+use crate::loom::sync::atomic::{AtomicPtr, AtomicUsize};
+use crate::loom::thread;
 use crate::sync::mpsc::block::{self, Block};
 
 use std::fmt;
@@ -30,6 +28,18 @@ pub(crate) struct Rx<T> {
 
     
     free_head: NonNull<Block<T>>,
+}
+
+
+pub(crate) enum TryPopResult<T> {
+    
+    Ok(T),
+    
+    Empty,
+    
+    Closed,
+    
+    Busy,
 }
 
 pub(crate) fn channel<T>() -> (Tx<T>, Rx<T>) {
@@ -142,11 +152,11 @@ impl<T> Tx<T> {
                 
                 
                 
-                let actual =
-                    self.block_tail
-                        .compare_and_swap(block_ptr, next_block.as_ptr(), Release);
-
-                if actual == block_ptr {
+                if self
+                    .block_tail
+                    .compare_exchange(block_ptr, next_block.as_ptr(), Release, Relaxed)
+                    .is_ok()
+                {
                     
                     let tail_position = self.tail_position.fetch_add(0, Release);
 
@@ -193,7 +203,7 @@ impl<T> Tx<T> {
 
         
         for _ in 0..3 {
-            match curr.as_ref().try_push(&mut block, AcqRel) {
+            match curr.as_ref().try_push(&mut block, AcqRel, Acquire) {
                 Ok(_) => {
                     reused = true;
                     break;
@@ -239,6 +249,26 @@ impl<T> Rx<T> {
             }
 
             ret
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) fn try_pop(&mut self, tx: &Tx<T>) -> TryPopResult<T> {
+        let tail_position = tx.tail_position.load(Acquire);
+        let result = self.pop(tx);
+
+        match result {
+            Some(block::Read::Value(t)) => TryPopResult::Ok(t),
+            Some(block::Read::Closed) => TryPopResult::Closed,
+            None if tail_position == self.index => TryPopResult::Empty,
+            None => TryPopResult::Busy,
         }
     }
 

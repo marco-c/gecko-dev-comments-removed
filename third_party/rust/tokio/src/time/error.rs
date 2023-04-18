@@ -1,3 +1,5 @@
+
+
 use self::Kind::*;
 use std::error;
 use std::fmt;
@@ -21,16 +23,33 @@ use std::fmt;
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Error(Kind);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 #[repr(u8)]
-enum Kind {
+pub(crate) enum Kind {
     Shutdown = 1,
     AtCapacity = 2,
     Invalid = 3,
 }
+
+impl From<Kind> for Error {
+    fn from(k: Kind) -> Self {
+        Error(k)
+    }
+}
+
+
+#[derive(Debug, PartialEq)]
+pub struct Elapsed(());
+
+#[derive(Debug)]
+pub(crate) enum InsertError {
+    Elapsed,
+}
+
+
 
 impl Error {
     
@@ -40,10 +59,7 @@ impl Error {
 
     
     pub fn is_shutdown(&self) -> bool {
-        match self.0 {
-            Kind::Shutdown => true,
-            _ => false,
-        }
+        matches!(self.0, Kind::Shutdown)
     }
 
     
@@ -53,10 +69,7 @@ impl Error {
 
     
     pub fn is_at_capacity(&self) -> bool {
-        match self.0 {
-            Kind::AtCapacity => true,
-            _ => false,
-        }
+        matches!(self.0, Kind::AtCapacity)
     }
 
     
@@ -66,23 +79,7 @@ impl Error {
 
     
     pub fn is_invalid(&self) -> bool {
-        match self.0 {
-            Kind::Invalid => true,
-            _ => false,
-        }
-    }
-
-    pub(crate) fn as_u8(&self) -> u8 {
-        self.0 as u8
-    }
-
-    pub(crate) fn from_u8(n: u8) -> Self {
-        Error(match n {
-            1 => Shutdown,
-            2 => AtCapacity,
-            3 => Invalid,
-            _ => panic!("u8 does not correspond to any time error variant"),
-        })
+        matches!(self.0, Kind::Invalid)
     }
 }
 
@@ -97,5 +94,27 @@ impl fmt::Display for Error {
             Invalid => "timer duration exceeds maximum duration",
         };
         write!(fmt, "{}", descr)
+    }
+}
+
+
+
+impl Elapsed {
+    pub(crate) fn new() -> Self {
+        Elapsed(())
+    }
+}
+
+impl fmt::Display for Elapsed {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        "deadline has elapsed".fmt(fmt)
+    }
+}
+
+impl std::error::Error for Elapsed {}
+
+impl From<Elapsed> for std::io::Error {
+    fn from(_err: Elapsed) -> std::io::Error {
+        std::io::ErrorKind::TimedOut.into()
     }
 }

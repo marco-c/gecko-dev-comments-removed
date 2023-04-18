@@ -5,60 +5,22 @@
 
 
 
-#![cfg(windows)]
+#![cfg(any(windows, docsrs))]
+#![cfg_attr(docsrs, doc(cfg(all(windows, feature = "signal"))))]
 
-use crate::signal::registry::{globals, EventId, EventInfo, Init, Storage};
-use crate::sync::mpsc::{channel, Receiver};
-
-use std::convert::TryFrom;
+use crate::signal::RxFuture;
 use std::io;
-use std::sync::Once;
 use std::task::{Context, Poll};
-use winapi::shared::minwindef::*;
-use winapi::um::consoleapi::SetConsoleCtrlHandler;
-use winapi::um::wincon::*;
 
-#[derive(Debug)]
-pub(crate) struct OsStorage {
-    ctrl_c: EventInfo,
-    ctrl_break: EventInfo,
-}
+#[cfg(not(docsrs))]
+#[path = "windows/sys.rs"]
+mod imp;
+#[cfg(not(docsrs))]
+pub(crate) use self::imp::{OsExtraData, OsStorage};
 
-impl Init for OsStorage {
-    fn init() -> Self {
-        Self {
-            ctrl_c: EventInfo::default(),
-            ctrl_break: EventInfo::default(),
-        }
-    }
-}
-
-impl Storage for OsStorage {
-    fn event_info(&self, id: EventId) -> Option<&EventInfo> {
-        match DWORD::try_from(id) {
-            Ok(CTRL_C_EVENT) => Some(&self.ctrl_c),
-            Ok(CTRL_BREAK_EVENT) => Some(&self.ctrl_break),
-            _ => None,
-        }
-    }
-
-    fn for_each<'a, F>(&'a self, mut f: F)
-    where
-        F: FnMut(&'a EventInfo),
-    {
-        f(&self.ctrl_c);
-        f(&self.ctrl_break);
-    }
-}
-
-#[derive(Debug)]
-pub(crate) struct OsExtraData {}
-
-impl Init for OsExtraData {
-    fn init() -> Self {
-        Self {}
-    }
-}
+#[cfg(docsrs)]
+#[path = "windows/stub.rs"]
+mod imp;
 
 
 
@@ -73,66 +35,19 @@ impl Init for OsExtraData {
 
 
 
-#[must_use = "streams do nothing unless polled"]
-#[derive(Debug)]
-pub(crate) struct Event {
-    rx: Receiver<()>,
-}
 
-pub(crate) fn ctrl_c() -> io::Result<Event> {
-    Event::new(CTRL_C_EVENT)
-}
 
-impl Event {
-    fn new(signum: DWORD) -> io::Result<Self> {
-        global_init()?;
 
-        let (tx, rx) = channel(1);
-        globals().register_listener(signum as EventId, tx);
 
-        Ok(Event { rx })
-    }
 
-    pub(crate) async fn recv(&mut self) -> Option<()> {
-        use crate::future::poll_fn;
-        poll_fn(|cx| self.rx.poll_recv(cx)).await
-    }
-}
 
-fn global_init() -> io::Result<()> {
-    static INIT: Once = Once::new();
 
-    let mut init = None;
 
-    INIT.call_once(|| unsafe {
-        let rc = SetConsoleCtrlHandler(Some(handler), TRUE);
-        let ret = if rc == 0 {
-            Err(io::Error::last_os_error())
-        } else {
-            Ok(())
-        };
 
-        init = Some(ret);
-    });
-
-    init.unwrap_or_else(|| Ok(()))
-}
-
-unsafe extern "system" fn handler(ty: DWORD) -> BOOL {
-    let globals = globals();
-    globals.record_event(ty as EventId);
-
-    
-    
-    
-    
-    if globals.broadcast() {
-        TRUE
-    } else {
-        
-        
-        FALSE
-    }
+pub fn ctrl_c() -> io::Result<CtrlC> {
+    Ok(CtrlC {
+        inner: self::imp::ctrl_c()?,
+    })
 }
 
 
@@ -144,11 +59,13 @@ unsafe extern "system" fn handler(ty: DWORD) -> BOOL {
 
 #[must_use = "streams do nothing unless polled"]
 #[derive(Debug)]
-pub struct CtrlBreak {
-    inner: Event,
+pub struct CtrlC {
+    inner: RxFuture,
 }
 
-impl CtrlBreak {
+impl CtrlC {
+    
+    
     
     
     
@@ -171,8 +88,7 @@ impl CtrlBreak {
     
     
     pub async fn recv(&mut self) -> Option<()> {
-        use crate::future::poll_fn;
-        poll_fn(|cx| self.poll_recv(cx)).await
+        self.inner.recv().await
     }
 
     
@@ -204,17 +120,79 @@ impl CtrlBreak {
     
     
     pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<()>> {
-        self.inner.rx.poll_recv(cx)
+        self.inner.poll_recv(cx)
     }
 }
 
-cfg_stream! {
-    impl crate::stream::Stream for CtrlBreak {
-        type Item = ();
 
-        fn poll_next(mut self: std::pin::Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<()>> {
-            self.poll_recv(cx)
-        }
+
+
+
+
+
+
+#[must_use = "streams do nothing unless polled"]
+#[derive(Debug)]
+pub struct CtrlBreak {
+    inner: RxFuture,
+}
+
+impl CtrlBreak {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn recv(&mut self) -> Option<()> {
+        self.inner.recv().await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<()>> {
+        self.inner.poll_recv(cx)
     }
 }
 
@@ -239,59 +217,7 @@ cfg_stream! {
 
 
 pub fn ctrl_break() -> io::Result<CtrlBreak> {
-    Event::new(CTRL_BREAK_EVENT).map(|inner| CtrlBreak { inner })
-}
-
-#[cfg(all(test, not(loom)))]
-mod tests {
-    use super::*;
-    use crate::runtime::Runtime;
-    use crate::stream::StreamExt;
-
-    use tokio_test::{assert_ok, assert_pending, assert_ready_ok, task};
-
-    #[test]
-    fn ctrl_c() {
-        let rt = rt();
-
-        rt.enter(|| {
-            let mut ctrl_c = task::spawn(crate::signal::ctrl_c());
-
-            assert_pending!(ctrl_c.poll());
-
-            
-            
-            
-            unsafe {
-                super::handler(CTRL_C_EVENT);
-            }
-
-            assert_ready_ok!(ctrl_c.poll());
-        });
-    }
-
-    #[test]
-    fn ctrl_break() {
-        let mut rt = rt();
-
-        rt.block_on(async {
-            let mut ctrl_break = assert_ok!(super::ctrl_break());
-
-            
-            
-            
-            unsafe {
-                super::handler(CTRL_BREAK_EVENT);
-            }
-
-            ctrl_break.next().await.unwrap();
-        });
-    }
-
-    fn rt() -> Runtime {
-        crate::runtime::Builder::new()
-            .basic_scheduler()
-            .build()
-            .unwrap()
-    }
+    Ok(CtrlBreak {
+        inner: self::imp::ctrl_break()?,
+    })
 }

@@ -1,21 +1,16 @@
 
 
-mod atomic_cell;
-use atomic_cell::AtomicCell;
-
 mod idle;
 use self::idle::Idle;
 
 mod worker;
 pub(crate) use worker::Launch;
 
-cfg_blocking! {
-    pub(crate) use worker::block_in_place;
-}
+pub(crate) use worker::block_in_place;
 
 use crate::loom::sync::Arc;
-use crate::runtime::task::{self, JoinHandle};
-use crate::runtime::Parker;
+use crate::runtime::task::JoinHandle;
+use crate::runtime::{Callback, Parker};
 
 use std::fmt;
 use std::future::Future;
@@ -45,8 +40,13 @@ pub(crate) struct Spawner {
 
 
 impl ThreadPool {
-    pub(crate) fn new(size: usize, parker: Parker) -> (ThreadPool, Launch) {
-        let (shared, launch) = worker::create(size, parker);
+    pub(crate) fn new(
+        size: usize,
+        parker: Parker,
+        before_park: Option<Callback>,
+        after_unpark: Option<Callback>,
+    ) -> (ThreadPool, Launch) {
+        let (shared, launch) = worker::create(size, parker, before_park, after_unpark);
         let spawner = Spawner { shared };
         let thread_pool = ThreadPool { spawner };
 
@@ -59,15 +59,6 @@ impl ThreadPool {
     
     pub(crate) fn spawner(&self) -> &Spawner {
         &self.spawner
-    }
-
-    
-    pub(crate) fn spawn<F>(&self, future: F) -> JoinHandle<F::Output>
-    where
-        F: Future + Send + 'static,
-        F::Output: Send + 'static,
-    {
-        self.spawner.spawn(future)
     }
 
     
@@ -101,16 +92,40 @@ impl Spawner {
     
     pub(crate) fn spawn<F>(&self, future: F) -> JoinHandle<F::Output>
     where
-        F: Future + Send + 'static,
+        F: crate::future::Future + Send + 'static,
         F::Output: Send + 'static,
     {
-        let (task, handle) = task::joinable(future);
-        self.shared.schedule(task, false);
-        handle
+        worker::Shared::bind_new_task(&self.shared, future)
     }
 
     pub(crate) fn shutdown(&mut self) {
         self.shared.close();
+    }
+}
+
+cfg_metrics! {
+    use crate::runtime::{SchedulerMetrics, WorkerMetrics};
+
+    impl Spawner {
+        pub(crate) fn num_workers(&self) -> usize {
+            self.shared.worker_metrics.len()
+        }
+
+        pub(crate) fn scheduler_metrics(&self) -> &SchedulerMetrics {
+            &self.shared.scheduler_metrics
+        }
+
+        pub(crate) fn worker_metrics(&self, worker: usize) -> &WorkerMetrics {
+            &self.shared.worker_metrics[worker]
+        }
+
+        pub(crate) fn injection_queue_depth(&self) -> usize {
+            self.shared.injection_queue_depth()
+        }
+
+        pub(crate) fn worker_local_queue_depth(&self, worker: usize) -> usize {
+            self.shared.worker_local_queue_depth(worker)
+        }
     }
 }
 

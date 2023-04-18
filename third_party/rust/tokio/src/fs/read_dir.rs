@@ -1,16 +1,28 @@
-use crate::fs::{asyncify, sys};
+use crate::fs::asyncify;
 
 use std::ffi::OsString;
 use std::fs::{FileType, Metadata};
 use std::future::Future;
 use std::io;
-#[cfg(unix)]
-use std::os::unix::fs::DirEntryExt;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::Context;
 use std::task::Poll;
+
+#[cfg(test)]
+use super::mocks::spawn_blocking;
+#[cfg(test)]
+use super::mocks::JoinHandle;
+#[cfg(not(test))]
+use crate::blocking::spawn_blocking;
+#[cfg(not(test))]
+use crate::blocking::JoinHandle;
+
+
+
+
+
 
 
 
@@ -38,6 +50,8 @@ pub async fn read_dir(path: impl AsRef<Path>) -> io::Result<ReadDir> {
 
 
 
+
+
 #[derive(Debug)]
 #[must_use = "streams do nothing unless polled"]
 pub struct ReadDir(State);
@@ -45,24 +59,45 @@ pub struct ReadDir(State);
 #[derive(Debug)]
 enum State {
     Idle(Option<std::fs::ReadDir>),
-    Pending(sys::Blocking<(Option<io::Result<std::fs::DirEntry>>, std::fs::ReadDir)>),
+    Pending(JoinHandle<(Option<io::Result<std::fs::DirEntry>>, std::fs::ReadDir)>),
 }
 
 impl ReadDir {
+    
+    
+    
+    
     
     pub async fn next_entry(&mut self) -> io::Result<Option<DirEntry>> {
         use crate::future::poll_fn;
         poll_fn(|cx| self.poll_next_entry(cx)).await
     }
 
-    #[doc(hidden)]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn poll_next_entry(&mut self, cx: &mut Context<'_>) -> Poll<io::Result<Option<DirEntry>>> {
         loop {
             match self.0 {
                 State::Idle(ref mut std) => {
                     let mut std = std.take().unwrap();
 
-                    self.0 = State::Pending(sys::run(move || {
+                    self.0 = State::Pending(spawn_blocking(move || {
                         let ret = std.next();
                         (ret, std)
                     }));
@@ -84,16 +119,33 @@ impl ReadDir {
     }
 }
 
-#[cfg(feature = "stream")]
-impl crate::stream::Stream for ReadDir {
-    type Item = io::Result<DirEntry>;
+feature! {
+    #![unix]
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        Poll::Ready(match ready!(self.poll_next_entry(cx)) {
-            Ok(Some(entry)) => Some(Ok(entry)),
-            Ok(None) => None,
-            Err(err) => Some(Err(err)),
-        })
+    use std::os::unix::fs::DirEntryExt;
+
+    impl DirEntry {
+        /// Returns the underlying `d_ino` field in the contained `dirent`
+        /// structure.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use tokio::fs;
+        ///
+        /// # #[tokio::main]
+        /// # async fn main() -> std::io::Result<()> {
+        /// let mut entries = fs::read_dir(".").await?;
+        /// while let Some(entry) = entries.next_entry().await? {
+        ///     // Here, `entry` is a `DirEntry`.
+        ///     println!("{:?}: {}", entry.file_name(), entry.ino());
+        /// }
+        /// # Ok(())
+        /// # }
+        /// ```
+        pub fn ino(&self) -> u64 {
+            self.as_inner().ino()
+        }
     }
 }
 
@@ -234,11 +286,10 @@ impl DirEntry {
         let std = self.0.clone();
         asyncify(move || std.file_type()).await
     }
-}
 
-#[cfg(unix)]
-impl DirEntryExt for DirEntry {
-    fn ino(&self) -> u64 {
-        self.0.ino()
+    
+    #[cfg(unix)]
+    pub(super) fn as_inner(&self) -> &std::fs::DirEntry {
+        &self.0
     }
 }

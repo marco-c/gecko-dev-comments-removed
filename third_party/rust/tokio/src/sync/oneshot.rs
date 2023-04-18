@@ -2,9 +2,128 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use crate::loom::cell::UnsafeCell;
 use crate::loom::sync::atomic::AtomicUsize;
 use crate::loom::sync::Arc;
+#[cfg(all(tokio_unstable, feature = "tracing"))]
+use crate::util::trace;
 
 use std::fmt;
 use std::future::Future;
@@ -17,10 +136,172 @@ use std::task::{Context, Poll, Waker};
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub struct Sender<T> {
     inner: Option<Arc<Inner<T>>>,
+    #[cfg(all(tokio_unstable, feature = "tracing"))]
+    resource_span: tracing::Span,
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -28,6 +309,12 @@ pub struct Sender<T> {
 #[derive(Debug)]
 pub struct Receiver<T> {
     inner: Option<Arc<Inner<T>>>,
+    #[cfg(all(tokio_unstable, feature = "tracing"))]
+    resource_span: tracing::Span,
+    #[cfg(all(tokio_unstable, feature = "tracing"))]
+    async_op_span: tracing::Span,
+    #[cfg(all(tokio_unstable, feature = "tracing"))]
+    async_op_poll_span: tracing::Span,
 }
 
 pub mod error {
@@ -84,10 +371,52 @@ struct Inner<T> {
     value: UnsafeCell<Option<T>>,
 
     
-    tx_task: UnsafeCell<MaybeUninit<Waker>>,
+    
+    
+    
+    
+    
+    tx_task: Task,
 
     
-    rx_task: UnsafeCell<MaybeUninit<Waker>>,
+    
+    
+    
+    
+    
+    rx_task: Task,
+}
+
+struct Task(UnsafeCell<MaybeUninit<Waker>>);
+
+impl Task {
+    unsafe fn will_wake(&self, cx: &mut Context<'_>) -> bool {
+        self.with_task(|w| w.will_wake(cx.waker()))
+    }
+
+    unsafe fn with_task<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce(&Waker) -> R,
+    {
+        self.0.with(|ptr| {
+            let waker: *const Waker = (&*ptr).as_ptr();
+            f(&*waker)
+        })
+    }
+
+    unsafe fn drop_task(&self) {
+        self.0.with_mut(|ptr| {
+            let ptr: *mut Waker = (&mut *ptr).as_mut_ptr();
+            ptr.drop_in_place();
+        });
+    }
+
+    unsafe fn set_task(&self, cx: &mut Context<'_>) {
+        self.0.with_mut(|ptr| {
+            let ptr: *mut Waker = (&mut *ptr).as_mut_ptr();
+            ptr.write(cx.waker().clone());
+        });
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -123,19 +452,86 @@ struct State(usize);
 
 
 
+#[track_caller]
 pub fn channel<T>() -> (Sender<T>, Receiver<T>) {
-    #[allow(deprecated)]
+    #[cfg(all(tokio_unstable, feature = "tracing"))]
+    let resource_span = {
+        let location = std::panic::Location::caller();
+
+        let resource_span = tracing::trace_span!(
+            "runtime.resource",
+            concrete_type = "Sender|Receiver",
+            kind = "Sync",
+            loc.file = location.file(),
+            loc.line = location.line(),
+            loc.col = location.column(),
+        );
+
+        resource_span.in_scope(|| {
+            tracing::trace!(
+            target: "runtime::resource::state_update",
+            tx_dropped = false,
+            tx_dropped.op = "override",
+            )
+        });
+
+        resource_span.in_scope(|| {
+            tracing::trace!(
+            target: "runtime::resource::state_update",
+            rx_dropped = false,
+            rx_dropped.op = "override",
+            )
+        });
+
+        resource_span.in_scope(|| {
+            tracing::trace!(
+            target: "runtime::resource::state_update",
+            value_sent = false,
+            value_sent.op = "override",
+            )
+        });
+
+        resource_span.in_scope(|| {
+            tracing::trace!(
+            target: "runtime::resource::state_update",
+            value_received = false,
+            value_received.op = "override",
+            )
+        });
+
+        resource_span
+    };
+
     let inner = Arc::new(Inner {
         state: AtomicUsize::new(State::new().as_usize()),
         value: UnsafeCell::new(None),
-        tx_task: UnsafeCell::new(MaybeUninit::uninit()),
-        rx_task: UnsafeCell::new(MaybeUninit::uninit()),
+        tx_task: Task(UnsafeCell::new(MaybeUninit::uninit())),
+        rx_task: Task(UnsafeCell::new(MaybeUninit::uninit())),
     });
 
     let tx = Sender {
         inner: Some(inner.clone()),
+        #[cfg(all(tokio_unstable, feature = "tracing"))]
+        resource_span: resource_span.clone(),
     };
-    let rx = Receiver { inner: Some(inner) };
+
+    #[cfg(all(tokio_unstable, feature = "tracing"))]
+    let async_op_span = resource_span
+        .in_scope(|| tracing::trace_span!("runtime.resource.async_op", source = "Receiver::await"));
+
+    #[cfg(all(tokio_unstable, feature = "tracing"))]
+    let async_op_poll_span =
+        async_op_span.in_scope(|| tracing::trace_span!("runtime.resource.async_op.poll"));
+
+    let rx = Receiver {
+        inner: Some(inner),
+        #[cfg(all(tokio_unstable, feature = "tracing"))]
+        resource_span: resource_span,
+        #[cfg(all(tokio_unstable, feature = "tracing"))]
+        async_op_span,
+        #[cfg(all(tokio_unstable, feature = "tracing"))]
+        async_op_poll_span,
+    };
 
     (tx, rx)
 }
@@ -185,65 +581,38 @@ impl<T> Sender<T> {
         let inner = self.inner.take().unwrap();
 
         inner.value.with_mut(|ptr| unsafe {
+            
+            
+            
+            
+            
+            
+            
             *ptr = Some(t);
         });
 
         if !inner.complete() {
-            return Err(inner
-                .value
-                .with_mut(|ptr| unsafe { (*ptr).take() }.unwrap()));
+            unsafe {
+                
+                
+                
+                
+                
+                
+                return Err(inner.consume_value().unwrap());
+            }
         }
+
+        #[cfg(all(tokio_unstable, feature = "tracing"))]
+        self.resource_span.in_scope(|| {
+            tracing::trace!(
+            target: "runtime::resource::state_update",
+            value_sent = true,
+            value_sent.op = "override",
+            )
+        });
 
         Ok(())
-    }
-
-    #[doc(hidden)] 
-    pub fn poll_closed(&mut self, cx: &mut Context<'_>) -> Poll<()> {
-        
-        let coop = ready!(crate::coop::poll_proceed(cx));
-
-        let inner = self.inner.as_ref().unwrap();
-
-        let mut state = State::load(&inner.state, Acquire);
-
-        if state.is_closed() {
-            coop.made_progress();
-            return Poll::Ready(());
-        }
-
-        if state.is_tx_task_set() {
-            let will_notify = unsafe { inner.with_tx_task(|w| w.will_wake(cx.waker())) };
-
-            if !will_notify {
-                state = State::unset_tx_task(&inner.state);
-
-                if state.is_closed() {
-                    
-                    State::set_tx_task(&inner.state);
-                    coop.made_progress();
-                    return Ready(());
-                } else {
-                    unsafe { inner.drop_tx_task() };
-                }
-            }
-        }
-
-        if !state.is_tx_task_set() {
-            
-            unsafe {
-                inner.set_tx_task(cx);
-            }
-
-            
-            state = State::set_tx_task(&inner.state);
-
-            if state.is_closed() {
-                coop.made_progress();
-                return Ready(());
-            }
-        }
-
-        Pending
     }
 
     
@@ -316,7 +685,20 @@ impl<T> Sender<T> {
     pub async fn closed(&mut self) {
         use crate::future::poll_fn;
 
-        poll_fn(|cx| self.poll_closed(cx)).await
+        #[cfg(all(tokio_unstable, feature = "tracing"))]
+        let resource_span = self.resource_span.clone();
+        #[cfg(all(tokio_unstable, feature = "tracing"))]
+        let closed = trace::async_op(
+            || poll_fn(|cx| self.poll_closed(cx)),
+            resource_span,
+            "Sender::closed",
+            "poll_closed",
+            false,
+        );
+        #[cfg(not(all(tokio_unstable, feature = "tracing")))]
+        let closed = poll_fn(|cx| self.poll_closed(cx));
+
+        closed.await
     }
 
     
@@ -352,12 +734,108 @@ impl<T> Sender<T> {
         let state = State::load(&inner.state, Acquire);
         state.is_closed()
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn poll_closed(&mut self, cx: &mut Context<'_>) -> Poll<()> {
+        
+        let coop = ready!(crate::coop::poll_proceed(cx));
+
+        let inner = self.inner.as_ref().unwrap();
+
+        let mut state = State::load(&inner.state, Acquire);
+
+        if state.is_closed() {
+            coop.made_progress();
+            return Poll::Ready(());
+        }
+
+        if state.is_tx_task_set() {
+            let will_notify = unsafe { inner.tx_task.will_wake(cx) };
+
+            if !will_notify {
+                state = State::unset_tx_task(&inner.state);
+
+                if state.is_closed() {
+                    
+                    State::set_tx_task(&inner.state);
+                    coop.made_progress();
+                    return Ready(());
+                } else {
+                    unsafe { inner.tx_task.drop_task() };
+                }
+            }
+        }
+
+        if !state.is_tx_task_set() {
+            
+            unsafe {
+                inner.tx_task.set_task(cx);
+            }
+
+            
+            state = State::set_tx_task(&inner.state);
+
+            if state.is_closed() {
+                coop.made_progress();
+                return Ready(());
+            }
+        }
+
+        Pending
+    }
 }
 
 impl<T> Drop for Sender<T> {
     fn drop(&mut self) {
         if let Some(inner) = self.inner.as_ref() {
             inner.complete();
+            #[cfg(all(tokio_unstable, feature = "tracing"))]
+            self.resource_span.in_scope(|| {
+                tracing::trace!(
+                target: "runtime::resource::state_update",
+                tx_dropped = true,
+                tx_dropped.op = "override",
+                )
+            });
         }
     }
 }
@@ -419,9 +897,21 @@ impl<T> Receiver<T> {
     
     
     
+    
+    
+    
     pub fn close(&mut self) {
-        let inner = self.inner.as_ref().unwrap();
-        inner.close();
+        if let Some(inner) = self.inner.as_ref() {
+            inner.close();
+            #[cfg(all(tokio_unstable, feature = "tracing"))]
+            self.resource_span.in_scope(|| {
+                tracing::trace!(
+                target: "runtime::resource::state_update",
+                rx_dropped = true,
+                rx_dropped.op = "override",
+                )
+            });
+        }
     }
 
     
@@ -492,8 +982,23 @@ impl<T> Receiver<T> {
             let state = State::load(&inner.state, Acquire);
 
             if state.is_complete() {
+                
+                
+                
+                
+                
                 match unsafe { inner.consume_value() } {
-                    Some(value) => Ok(value),
+                    Some(value) => {
+                        #[cfg(all(tokio_unstable, feature = "tracing"))]
+                        self.resource_span.in_scope(|| {
+                            tracing::trace!(
+                            target: "runtime::resource::state_update",
+                            value_received = true,
+                            value_received.op = "override",
+                            )
+                        });
+                        Ok(value)
+                    }
                     None => Err(TryRecvError::Closed),
                 }
             } else if state.is_closed() {
@@ -503,11 +1008,41 @@ impl<T> Receiver<T> {
                 return Err(TryRecvError::Empty);
             }
         } else {
-            panic!("called after complete");
+            Err(TryRecvError::Closed)
         };
 
         self.inner = None;
         result
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "sync")]
+    pub fn blocking_recv(self) -> Result<T, RecvError> {
+        crate::future::block_on(self)
     }
 }
 
@@ -515,6 +1050,14 @@ impl<T> Drop for Receiver<T> {
     fn drop(&mut self) {
         if let Some(inner) = self.inner.as_ref() {
             inner.close();
+            #[cfg(all(tokio_unstable, feature = "tracing"))]
+            self.resource_span.in_scope(|| {
+                tracing::trace!(
+                target: "runtime::resource::state_update",
+                rx_dropped = true,
+                rx_dropped.op = "override",
+                )
+            });
         }
     }
 }
@@ -524,8 +1067,21 @@ impl<T> Future for Receiver<T> {
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         
+        #[cfg(all(tokio_unstable, feature = "tracing"))]
+        let _res_span = self.resource_span.clone().entered();
+        #[cfg(all(tokio_unstable, feature = "tracing"))]
+        let _ao_span = self.async_op_span.clone().entered();
+        #[cfg(all(tokio_unstable, feature = "tracing"))]
+        let _ao_poll_span = self.async_op_poll_span.clone().entered();
+
         let ret = if let Some(inner) = self.as_ref().get_ref().inner.as_ref() {
-            ready!(inner.poll_recv(cx))?
+            #[cfg(all(tokio_unstable, feature = "tracing"))]
+            let res = ready!(trace_poll_op!("poll_recv", inner.poll_recv(cx)))?;
+
+            #[cfg(any(not(tokio_unstable), not(feature = "tracing")))]
+            let res = ready!(inner.poll_recv(cx))?;
+
+            res
         } else {
             panic!("called after complete");
         };
@@ -546,7 +1102,7 @@ impl<T> Inner<T> {
         if prev.is_rx_task_set() {
             
             unsafe {
-                self.with_rx_task(Waker::wake_by_ref);
+                self.rx_task.with_task(Waker::wake_by_ref);
             }
         }
 
@@ -571,7 +1127,7 @@ impl<T> Inner<T> {
             Ready(Err(RecvError(())))
         } else {
             if state.is_rx_task_set() {
-                let will_notify = unsafe { self.with_rx_task(|w| w.will_wake(cx.waker())) };
+                let will_notify = unsafe { self.rx_task.will_wake(cx) };
 
                 
                 if !will_notify {
@@ -582,12 +1138,17 @@ impl<T> Inner<T> {
                         State::set_rx_task(&self.state);
 
                         coop.made_progress();
+                        
+                        
+                        
+                        
+                        
                         return match unsafe { self.consume_value() } {
                             Some(value) => Ready(Ok(value)),
                             None => Ready(Err(RecvError(()))),
                         };
                     } else {
-                        unsafe { self.drop_rx_task() };
+                        unsafe { self.rx_task.drop_task() };
                     }
                 }
             }
@@ -595,7 +1156,7 @@ impl<T> Inner<T> {
             if !state.is_rx_task_set() {
                 
                 unsafe {
-                    self.set_rx_task(cx);
+                    self.rx_task.set_task(cx);
                 }
 
                 
@@ -622,81 +1183,45 @@ impl<T> Inner<T> {
 
         if prev.is_tx_task_set() && !prev.is_complete() {
             unsafe {
-                self.with_tx_task(Waker::wake_by_ref);
+                self.tx_task.with_task(Waker::wake_by_ref);
             }
         }
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn consume_value(&self) -> Option<T> {
         self.value.with_mut(|ptr| (*ptr).take())
-    }
-
-    unsafe fn with_rx_task<F, R>(&self, f: F) -> R
-    where
-        F: FnOnce(&Waker) -> R,
-    {
-        self.rx_task.with(|ptr| {
-            let waker: *const Waker = (&*ptr).as_ptr();
-            f(&*waker)
-        })
-    }
-
-    unsafe fn with_tx_task<F, R>(&self, f: F) -> R
-    where
-        F: FnOnce(&Waker) -> R,
-    {
-        self.tx_task.with(|ptr| {
-            let waker: *const Waker = (&*ptr).as_ptr();
-            f(&*waker)
-        })
-    }
-
-    unsafe fn drop_rx_task(&self) {
-        self.rx_task.with_mut(|ptr| {
-            let ptr: *mut Waker = (&mut *ptr).as_mut_ptr();
-            ptr.drop_in_place();
-        });
-    }
-
-    unsafe fn drop_tx_task(&self) {
-        self.tx_task.with_mut(|ptr| {
-            let ptr: *mut Waker = (&mut *ptr).as_mut_ptr();
-            ptr.drop_in_place();
-        });
-    }
-
-    unsafe fn set_rx_task(&self, cx: &mut Context<'_>) {
-        self.rx_task.with_mut(|ptr| {
-            let ptr: *mut Waker = (&mut *ptr).as_mut_ptr();
-            ptr.write(cx.waker().clone());
-        });
-    }
-
-    unsafe fn set_tx_task(&self, cx: &mut Context<'_>) {
-        self.tx_task.with_mut(|ptr| {
-            let ptr: *mut Waker = (&mut *ptr).as_mut_ptr();
-            ptr.write(cx.waker().clone());
-        });
     }
 }
 
 unsafe impl<T: Send> Send for Inner<T> {}
 unsafe impl<T: Send> Sync for Inner<T> {}
 
+fn mut_load(this: &mut AtomicUsize) -> usize {
+    this.with_mut(|v| *v)
+}
+
 impl<T> Drop for Inner<T> {
     fn drop(&mut self) {
-        let state = State(self.state.with_mut(|v| *v));
+        let state = State(mut_load(&mut self.state));
 
         if state.is_rx_task_set() {
             unsafe {
-                self.drop_rx_task();
+                self.rx_task.drop_task();
             }
         }
 
         if state.is_tx_task_set() {
             unsafe {
-                self.drop_tx_task();
+                self.tx_task.drop_task();
             }
         }
     }
@@ -712,9 +1237,28 @@ impl<T: fmt::Debug> fmt::Debug for Inner<T> {
     }
 }
 
+
+
+
+
+
 const RX_TASK_SET: usize = 0b00001;
+
+
+
+
+
+
+
+
 const VALUE_SENT: usize = 0b00010;
 const CLOSED: usize = 0b00100;
+
+
+
+
+
+
 const TX_TASK_SET: usize = 0b01000;
 
 impl State {
@@ -730,8 +1274,35 @@ impl State {
         
         
         
-        let val = cell.fetch_or(VALUE_SENT, AcqRel);
-        State(val)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let mut state = cell.load(Ordering::Relaxed);
+        loop {
+            if State(state).is_closed() {
+                break;
+            }
+            
+            
+            
+            match cell.compare_exchange_weak(
+                state,
+                state | VALUE_SENT,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            ) {
+                Ok(_) => break,
+                Err(actual) => state = actual,
+            }
+        }
+        State(state)
     }
 
     fn is_rx_task_set(self) -> bool {

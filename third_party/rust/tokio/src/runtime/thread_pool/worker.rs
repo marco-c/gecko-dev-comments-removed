@@ -4,15 +4,70 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use crate::coop;
+use crate::future::Future;
 use crate::loom::rand::seed;
 use crate::loom::sync::{Arc, Mutex};
 use crate::park::{Park, Unpark};
 use crate::runtime;
+use crate::runtime::enter::EnterContext;
 use crate::runtime::park::{Parker, Unparker};
-use crate::runtime::thread_pool::{AtomicCell, Idle};
-use crate::runtime::{queue, task};
-use crate::util::linked_list::LinkedList;
+use crate::runtime::task::{Inject, JoinHandle, OwnedTasks};
+use crate::runtime::thread_pool::Idle;
+use crate::runtime::{queue, task, Callback, MetricsBatch, SchedulerMetrics, WorkerMetrics};
+use crate::util::atomic_cell::AtomicCell;
 use crate::util::FastRand;
 
 use std::cell::RefCell;
@@ -43,7 +98,7 @@ struct Core {
     lifo_slot: Option<Notified>,
 
     
-    run_queue: queue::Local<Arc<Worker>>,
+    run_queue: queue::Local<Arc<Shared>>,
 
     
     
@@ -53,13 +108,13 @@ struct Core {
     is_shutdown: bool,
 
     
-    tasks: LinkedList<Task>,
-
-    
     
     
     
     park: Option<Parker>,
+
+    
+    metrics: MetricsBatch,
 
     
     rand: FastRand,
@@ -72,26 +127,36 @@ pub(super) struct Shared {
     remotes: Box<[Remote]>,
 
     
-    inject: queue::Inject<Arc<Worker>>,
+    inject: Inject<Arc<Shared>>,
 
     
     idle: Idle,
 
     
+    owned: OwnedTasks<Arc<Shared>>,
+
     
     
     
-    shutdown_workers: Mutex<Vec<(Box<Core>, Arc<Worker>)>>,
+    
+    #[allow(clippy::vec_box)] 
+    shutdown_cores: Mutex<Vec<Box<Core>>>,
+
+    
+    before_park: Option<Callback>,
+    
+    after_unpark: Option<Callback>,
+
+    
+    pub(super) scheduler_metrics: SchedulerMetrics,
+
+    pub(super) worker_metrics: Box<[WorkerMetrics]>,
 }
 
 
 struct Remote {
     
-    steal: queue::Steal<Arc<Worker>>,
-
-    
-    
-    pending_drop: task::TransferStack<Arc<Worker>>,
+    steal: queue::Steal<Arc<Shared>>,
 
     
     unpark: Unparker,
@@ -115,17 +180,23 @@ pub(crate) struct Launch(Vec<Arc<Worker>>);
 type RunResult = Result<Box<Core>, ()>;
 
 
-type Task = task::Task<Arc<Worker>>;
+type Task = task::Task<Arc<Shared>>;
 
 
-type Notified = task::Notified<Arc<Worker>>;
+type Notified = task::Notified<Arc<Shared>>;
 
 
 scoped_thread_local!(static CURRENT: Context);
 
-pub(super) fn create(size: usize, park: Parker) -> (Arc<Shared>, Launch) {
+pub(super) fn create(
+    size: usize,
+    park: Parker,
+    before_park: Option<Callback>,
+    after_unpark: Option<Callback>,
+) -> (Arc<Shared>, Launch) {
     let mut cores = vec![];
     let mut remotes = vec![];
+    let mut worker_metrics = vec![];
 
     
     for _ in 0..size {
@@ -140,23 +211,25 @@ pub(super) fn create(size: usize, park: Parker) -> (Arc<Shared>, Launch) {
             run_queue,
             is_searching: false,
             is_shutdown: false,
-            tasks: LinkedList::new(),
             park: Some(park),
+            metrics: MetricsBatch::new(),
             rand: FastRand::new(seed()),
         }));
 
-        remotes.push(Remote {
-            steal,
-            pending_drop: task::TransferStack::new(),
-            unpark,
-        });
+        remotes.push(Remote { steal, unpark });
+        worker_metrics.push(WorkerMetrics::new());
     }
 
     let shared = Arc::new(Shared {
         remotes: remotes.into_boxed_slice(),
-        inject: queue::Inject::new(),
+        inject: Inject::new(),
         idle: Idle::new(size),
-        shutdown_workers: Mutex::new(vec![]),
+        owned: OwnedTasks::new(),
+        shutdown_cores: Mutex::new(vec![]),
+        before_park,
+        after_unpark,
+        scheduler_metrics: SchedulerMetrics::new(),
+        worker_metrics: worker_metrics.into_boxed_slice(),
     });
 
     let mut launch = Launch(vec![]);
@@ -172,100 +245,98 @@ pub(super) fn create(size: usize, park: Parker) -> (Arc<Shared>, Launch) {
     (shared, launch)
 }
 
-cfg_blocking! {
-    use crate::runtime::enter::EnterContext;
+pub(crate) fn block_in_place<F, R>(f: F) -> R
+where
+    F: FnOnce() -> R,
+{
+    
+    struct Reset(coop::Budget);
 
-    pub(crate) fn block_in_place<F, R>(f: F) -> R
-    where
-        F: FnOnce() -> R,
-    {
-        // Try to steal the worker core back
-        struct Reset(coop::Budget);
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            CURRENT.with(|maybe_cx| {
+                if let Some(cx) = maybe_cx {
+                    let core = cx.worker.core.take();
+                    let mut cx_core = cx.core.borrow_mut();
+                    assert!(cx_core.is_none());
+                    *cx_core = core;
 
-        impl Drop for Reset {
-            fn drop(&mut self) {
-                CURRENT.with(|maybe_cx| {
-                    if let Some(cx) = maybe_cx {
-                        let core = cx.worker.core.take();
-                        let mut cx_core = cx.core.borrow_mut();
-                        assert!(cx_core.is_none());
-                        *cx_core = core;
-
-                        // Reset the task budget as we are re-entering the
-                        // runtime.
-                        coop::set(self.0);
-                    }
-                });
-            }
+                    
+                    
+                    coop::set(self.0);
+                }
+            });
         }
+    }
 
-        let mut had_entered = false;
+    let mut had_entered = false;
 
-        CURRENT.with(|maybe_cx| {
-            match (crate::runtime::enter::context(),  maybe_cx.is_some()) {
-                (EnterContext::Entered { .. }, true) => {
-                    // We are on a thread pool runtime thread, so we just need to set up blocking.
+    CURRENT.with(|maybe_cx| {
+        match (crate::runtime::enter::context(), maybe_cx.is_some()) {
+            (EnterContext::Entered { .. }, true) => {
+                
+                
+                had_entered = true;
+            }
+            (EnterContext::Entered { allow_blocking }, false) => {
+                
+                
+                
+                if allow_blocking {
                     had_entered = true;
-                }
-                (EnterContext::Entered { allow_blocking }, false) => {
-                    // We are on an executor, but _not_ on the thread pool.
-                    // That is _only_ okay if we are in a thread pool runtime's block_on method:
-                    if allow_blocking {
-                        had_entered = true;
-                        return;
-                    } else {
-                        // This probably means we are on the basic_scheduler or in a LocalSet,
-                        // where it is _not_ okay to block.
-                        panic!("can call blocking only when running on the multi-threaded runtime");
-                    }
-                }
-                (EnterContext::NotEntered, true) => {
-                    // This is a nested call to block_in_place (we already exited).
-                    // All the necessary setup has already been done.
                     return;
-                }
-                (EnterContext::NotEntered, false) => {
-                    // We are outside of the tokio runtime, so blocking is fine.
-                    // We can also skip all of the thread pool blocking setup steps.
-                    return;
+                } else {
+                    
+                    
+                    panic!("can call blocking only when running on the multi-threaded runtime");
                 }
             }
-
-            let cx = maybe_cx.expect("no .is_some() == false cases above should lead here");
-
-            // Get the worker core. If none is set, then blocking is fine!
-            let core = match cx.core.borrow_mut().take() {
-                Some(core) => core,
-                None => return,
-            };
-
-            // The parker should be set here
-            assert!(core.park.is_some());
-
-            // In order to block, the core must be sent to another thread for
-            // execution.
-            //
-            // First, move the core back into the worker's shared core slot.
-            cx.worker.core.set(core);
-
-            // Next, clone the worker handle and send it to a new thread for
-            // processing.
-            //
-            // Once the blocking task is done executing, we will attempt to
-            // steal the core back.
-            let worker = cx.worker.clone();
-            runtime::spawn_blocking(move || run(worker));
-        });
-
-        if had_entered {
-            // Unset the current task's budget. Blocking sections are not
-            // constrained by task budgets.
-            let _reset = Reset(coop::stop());
-
-            crate::runtime::enter::exit(f)
-        } else {
-            f()
+            (EnterContext::NotEntered, true) => {
+                
+                
+                return;
+            }
+            (EnterContext::NotEntered, false) => {
+                
+                
+                return;
+            }
         }
+
+        let cx = maybe_cx.expect("no .is_some() == false cases above should lead here");
+
+        
+        let core = match cx.core.borrow_mut().take() {
+            Some(core) => core,
+            None => return,
+        };
+
+        
+        assert!(core.park.is_some());
+
+        
+        
+        
+        
+        cx.worker.core.set(core);
+
+        
+        
+        
+        
+        
+        let worker = cx.worker.clone();
+        runtime::spawn_blocking(move || run(worker));
+    });
+
+    if had_entered {
+        
+        
+        let _reset = Reset(coop::stop());
+
+        crate::runtime::enter::exit(f)
+    } else {
+        f()
     }
 }
 
@@ -331,17 +402,22 @@ impl Context {
             }
         }
 
+        core.pre_shutdown(&self.worker);
+
         
-        self.worker.shared.shutdown(core, self.worker.clone());
+        self.worker.shared.shutdown(core);
         Err(())
     }
 
     fn run_task(&self, task: Notified, mut core: Box<Core>) -> RunResult {
+        let task = self.worker.shared.owned.assert_owner(task);
+
         
         
         core.transition_from_searching(&self.worker);
 
         
+        core.metrics.incr_poll_count();
         *self.core.borrow_mut() = Some(core);
 
         
@@ -366,12 +442,15 @@ impl Context {
 
                 if coop::has_budget_remaining() {
                     
+                    core.metrics.incr_poll_count();
                     *self.core.borrow_mut() = Some(core);
+                    let task = self.worker.shared.owned.assert_owner(task);
                     task.run();
                 } else {
                     
                     
-                    core.run_queue.push_back(task, self.worker.inject());
+                    core.run_queue
+                        .push_back(task, self.worker.inject(), &mut core.metrics);
                     return Ok(core);
                 }
             }
@@ -392,19 +471,28 @@ impl Context {
     }
 
     fn park(&self, mut core: Box<Core>) -> Box<Core> {
-        core.transition_to_parked(&self.worker);
+        if let Some(f) = &self.worker.shared.before_park {
+            f();
+        }
 
-        while !core.is_shutdown {
-            core = self.park_timeout(core, None);
+        if core.transition_to_parked(&self.worker) {
+            while !core.is_shutdown {
+                core.metrics.about_to_park();
+                core = self.park_timeout(core, None);
+                core.metrics.returned_from_park();
 
-            
-            core.maintenance(&self.worker);
+                
+                core.maintenance(&self.worker);
 
-            if core.transition_from_parked(&self.worker) {
-                return core;
+                if core.transition_from_parked(&self.worker) {
+                    break;
+                }
             }
         }
 
+        if let Some(f) = &self.worker.shared.after_unpark {
+            f();
+        }
         core
     }
 
@@ -429,7 +517,8 @@ impl Context {
         core.park = Some(park);
 
         
-        if core.run_queue.is_stealable() {
+        
+        if !core.is_searching && core.run_queue.is_stealable() {
             self.worker.shared.notify_parked();
         }
 
@@ -474,7 +563,10 @@ impl Core {
             }
 
             let target = &worker.shared.remotes[i];
-            if let Some(task) = target.steal.steal_into(&mut self.run_queue) {
+            if let Some(task) = target
+                .steal
+                .steal_into(&mut self.run_queue, &mut self.metrics)
+            {
                 return Some(task);
             }
         }
@@ -501,7 +593,14 @@ impl Core {
     }
 
     
-    fn transition_to_parked(&mut self, worker: &Worker) {
+    
+    
+    fn transition_to_parked(&mut self, worker: &Worker) -> bool {
+        
+        if self.lifo_slot.is_some() || self.run_queue.has_tasks() {
+            return false;
+        }
+
         
         
         
@@ -517,6 +616,8 @@ impl Core {
         if is_last_searcher {
             worker.shared.notify_if_work_pending();
         }
+
+        true
     }
 
     
@@ -524,8 +625,11 @@ impl Core {
         
         
         if self.lifo_slot.is_some() {
-            worker.shared.idle.unpark_worker_by_id(worker.index);
-            self.is_searching = true;
+            
+            
+            
+            
+            self.is_searching = !worker.shared.idle.unpark_worker_by_id(worker.index);
             return true;
         }
 
@@ -539,9 +643,9 @@ impl Core {
     }
 
     
-    
     fn maintenance(&mut self, worker: &Worker) {
-        self.drain_pending_drop(worker);
+        self.metrics
+            .submit(&worker.shared.worker_metrics[worker.index]);
 
         if !self.is_shutdown {
             
@@ -550,146 +654,63 @@ impl Core {
     }
 
     
-    fn shutdown(&mut self, worker: &Worker) {
+    
+    fn pre_shutdown(&mut self, worker: &Worker) {
+        
+        worker.shared.owned.close_and_shutdown_all();
+
+        self.metrics
+            .submit(&worker.shared.worker_metrics[worker.index]);
+    }
+
+    
+    fn shutdown(&mut self) {
         
         let mut park = self.park.take().expect("park missing");
-
-        
-        for header in self.tasks.iter() {
-            header.shutdown();
-        }
-
-        loop {
-            self.drain_pending_drop(worker);
-
-            if self.tasks.is_empty() {
-                break;
-            }
-
-            
-            park.park().expect("park failed");
-        }
 
         
         while self.next_local_task().is_some() {}
 
         park.shutdown();
     }
-
-    fn drain_pending_drop(&mut self, worker: &Worker) {
-        use std::mem::ManuallyDrop;
-
-        for task in worker.remote().pending_drop.drain() {
-            let task = ManuallyDrop::new(task);
-
-            
-            
-            
-            
-            
-            
-            unsafe {
-                self.tasks.remove(task.header().into());
-            }
-        }
-    }
 }
 
 impl Worker {
     
-    fn inject(&self) -> &queue::Inject<Arc<Worker>> {
+    fn inject(&self) -> &Inject<Arc<Shared>> {
         &self.shared.inject
-    }
-
-    
-    fn remote(&self) -> &Remote {
-        &self.shared.remotes[self.index]
-    }
-
-    fn eq(&self, other: &Worker) -> bool {
-        self.shared.ptr_eq(&other.shared) && self.index == other.index
     }
 }
 
-impl task::Schedule for Arc<Worker> {
-    fn bind(task: Task) -> Arc<Worker> {
-        CURRENT.with(|maybe_cx| {
-            let cx = maybe_cx.expect("scheduler context missing");
-
-            
-            cx.core
-                .borrow_mut()
-                .as_mut()
-                .expect("scheduler core missing")
-                .tasks
-                .push_front(task);
-
-            
-            cx.worker.clone()
-        })
-    }
-
+impl task::Schedule for Arc<Shared> {
     fn release(&self, task: &Task) -> Option<Task> {
-        use std::ptr::NonNull;
-
-        CURRENT.with(|maybe_cx| {
-            let cx = maybe_cx.expect("scheduler context missing");
-
-            if self.eq(&cx.worker) {
-                let mut maybe_core = cx.core.borrow_mut();
-
-                if let Some(core) = &mut *maybe_core {
-                    
-                    
-                    
-                    unsafe {
-                        let ptr = NonNull::from(task.header());
-                        return core.tasks.remove(ptr);
-                    }
-                }
-            }
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let task = unsafe { Task::from_raw(task.header().into()) };
-
-            self.remote().pending_drop.push(task);
-
-            if cx.core.borrow().is_some() {
-                return None;
-            }
-
-            
-            
-            
-            
-            if self.inject().is_closed() {
-                self.remote().unpark.unpark();
-            }
-
-            None
-        })
+        self.owned.remove(task)
     }
 
     fn schedule(&self, task: Notified) {
-        self.shared.schedule(task, false);
+        (**self).schedule(task, false);
     }
 
     fn yield_now(&self, task: Notified) {
-        self.shared.schedule(task, true);
+        (**self).schedule(task, true);
     }
 }
 
 impl Shared {
+    pub(super) fn bind_new_task<T>(me: &Arc<Self>, future: T) -> JoinHandle<T::Output>
+    where
+        T: Future + Send + 'static,
+        T::Output: Send + 'static,
+    {
+        let (handle, notified) = me.owned.bind(future, me.clone());
+
+        if let Some(notified) = notified {
+            me.schedule(notified, false);
+        }
+
+        handle
+    }
+
     pub(super) fn schedule(&self, task: Notified, is_yield: bool) {
         CURRENT.with(|maybe_cx| {
             if let Some(cx) = maybe_cx {
@@ -705,17 +726,21 @@ impl Shared {
 
             
             self.inject.push(task);
+            self.scheduler_metrics.inc_remote_schedule_count();
             self.notify_parked();
-        });
+        })
     }
 
     fn schedule_local(&self, core: &mut Core, task: Notified, is_yield: bool) {
+        core.metrics.inc_local_schedule_count();
+
         
         
         
         
         let should_notify = if is_yield {
-            core.run_queue.push_back(task, &self.inject);
+            core.run_queue
+                .push_back(task, &self.inject, &mut core.metrics);
             true
         } else {
             
@@ -723,7 +748,8 @@ impl Shared {
             let ret = prev.is_some();
 
             if let Some(prev) = prev {
-                core.run_queue.push_back(prev, &self.inject);
+                core.run_queue
+                    .push_back(prev, &self.inject, &mut core.metrics);
             }
 
             core.lifo_slot = Some(task);
@@ -782,23 +808,41 @@ impl Shared {
     
     
     
-    fn shutdown(&self, core: Box<Core>, worker: Arc<Worker>) {
-        let mut workers = self.shutdown_workers.lock().unwrap();
-        workers.push((core, worker));
+    fn shutdown(&self, core: Box<Core>) {
+        let mut cores = self.shutdown_cores.lock();
+        cores.push(core);
 
-        if workers.len() != self.remotes.len() {
+        if cores.len() != self.remotes.len() {
             return;
         }
 
-        for (mut core, worker) in workers.drain(..) {
-            core.shutdown(&worker);
+        debug_assert!(self.owned.is_empty());
+
+        for mut core in cores.drain(..) {
+            core.shutdown();
         }
 
         
-        while self.inject.pop().is_some() {}
+        
+        
+        while let Some(task) = self.inject.pop() {
+            drop(task);
+        }
     }
 
     fn ptr_eq(&self, other: &Shared) -> bool {
-        self as *const _ == other as *const _
+        std::ptr::eq(self, other)
+    }
+}
+
+cfg_metrics! {
+    impl Shared {
+        pub(super) fn injection_queue_depth(&self) -> usize {
+            self.inject.len()
+        }
+
+        pub(super) fn worker_local_queue_depth(&self, worker: usize) -> usize {
+            self.remotes[worker].steal.len()
+        }
     }
 }

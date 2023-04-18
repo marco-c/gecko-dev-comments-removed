@@ -214,29 +214,104 @@
 
 
 
-cfg_blocking! {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+cfg_rt! {
+    pub use crate::runtime::task::{JoinError, JoinHandle};
+
     mod blocking;
     pub use blocking::spawn_blocking;
-
-    cfg_rt_threaded! {
-        pub use blocking::block_in_place;
-    }
-}
-
-cfg_rt_core! {
-    pub use crate::runtime::task::{JoinError, JoinHandle};
 
     mod spawn;
     pub use spawn::spawn;
 
+    cfg_rt_multi_thread! {
+        pub use blocking::block_in_place;
+    }
+
     mod yield_now;
     pub use yield_now::yield_now;
-}
 
-cfg_rt_util! {
     mod local;
     pub use local::{spawn_local, LocalSet};
 
     mod task_local;
     pub use task_local::LocalKey;
+
+    mod unconstrained;
+    pub use unconstrained::{unconstrained, Unconstrained};
+
+    cfg_unstable! {
+        mod join_set;
+        pub use join_set::JoinSet;
+    }
+
+    cfg_trace! {
+        mod builder;
+        pub use builder::Builder;
+    }
+
+    /// Task-related futures.
+    pub mod futures {
+        pub use super::task_local::TaskLocalFuture;
+    }
 }

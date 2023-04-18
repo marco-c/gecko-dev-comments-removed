@@ -1,7 +1,6 @@
-use crate::future::poll_fn;
-use crate::io::PollEvented;
-use crate::net::tcp::{Incoming, TcpStream};
-use crate::net::ToSocketAddrs;
+use crate::io::{Interest, PollEvented};
+use crate::net::tcp::TcpStream;
+use crate::net::{to_socket_addrs, ToSocketAddrs};
 
 use std::convert::TryFrom;
 use std::fmt;
@@ -9,13 +8,15 @@ use std::io;
 use std::net::{self, SocketAddr};
 use std::task::{Context, Poll};
 
-cfg_tcp! {
+cfg_net! {
     /// A TCP socket server, listening for connections.
     ///
-    /// You can accept a new connection by using the [`accept`](`TcpListener::accept`) method. Alternatively `TcpListener`
-    /// implements the [`Stream`](`crate::stream::Stream`) trait, which allows you to use the listener in places that want a
-    /// stream. The stream will never return `None` and will also not yield the peer's `SocketAddr` structure.  Iterating over
-    /// it is equivalent to calling accept in a loop.
+    /// You can accept a new connection by using the [`accept`](`TcpListener::accept`)
+    /// method.
+    ///
+    /// A `TcpListener` can be turned into a `Stream` with [`TcpListenerStream`].
+    ///
+    /// [`TcpListenerStream`]: https://docs.rs/tokio-stream/0.1/tokio_stream/wrappers/struct.TcpListenerStream.html
     ///
     /// # Errors
     ///
@@ -40,29 +41,11 @@ cfg_tcp! {
     ///
     /// #[tokio::main]
     /// async fn main() -> io::Result<()> {
-    ///     let mut listener = TcpListener::bind("127.0.0.1:8080").await?;
+    ///     let listener = TcpListener::bind("127.0.0.1:8080").await?;
     ///
     ///     loop {
     ///         let (socket, _) = listener.accept().await?;
     ///         process_socket(socket).await;
-    ///     }
-    /// }
-    /// ```
-    ///
-    /// Using `impl Stream`:
-    /// ```no_run
-    /// use tokio::{net::TcpListener, stream::StreamExt};
-    ///
-    /// #[tokio::main]
-    /// async fn main() {
-    ///     let mut listener = TcpListener::bind("127.0.0.1:8080").await.unwrap();
-    ///     while let Some(stream) = listener.next().await {
-    ///         match stream {
-    ///             Ok(stream) => {
-    ///                 println!("new client!");
-    ///             }
-    ///             Err(e) => { /* connection failed */ }
-    ///         }
     ///     }
     /// }
     /// ```
@@ -111,26 +94,8 @@ impl TcpListener {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub async fn bind<A: ToSocketAddrs>(addr: A) -> io::Result<TcpListener> {
-        let addrs = addr.to_socket_addrs().await?;
+        let addrs = to_socket_addrs(addr).await?;
 
         let mut last_err = None;
 
@@ -150,7 +115,7 @@ impl TcpListener {
     }
 
     fn bind_addr(addr: SocketAddr) -> io::Result<TcpListener> {
-        let listener = mio::net::TcpListener::bind(&addr)?;
+        let listener = mio::net::TcpListener::bind(addr)?;
         TcpListener::new(listener)
     }
 
@@ -181,54 +146,47 @@ impl TcpListener {
     
     
     
-    pub async fn accept(&mut self) -> io::Result<(TcpStream, SocketAddr)> {
-        poll_fn(|cx| self.poll_accept(cx)).await
+    
+    
+    
+    
+    
+    
+    
+    pub async fn accept(&self) -> io::Result<(TcpStream, SocketAddr)> {
+        let (mio, addr) = self
+            .io
+            .registration()
+            .async_io(Interest::READABLE, || self.io.accept())
+            .await?;
+
+        let stream = TcpStream::new(mio)?;
+        Ok((stream, addr))
     }
 
     
     
     
     
-    pub fn poll_accept(
-        &mut self,
-        cx: &mut Context<'_>,
-    ) -> Poll<io::Result<(TcpStream, SocketAddr)>> {
-        let (io, addr) = ready!(self.poll_accept_std(cx))?;
+    
+    
+    pub fn poll_accept(&self, cx: &mut Context<'_>) -> Poll<io::Result<(TcpStream, SocketAddr)>> {
+        loop {
+            let ev = ready!(self.io.registration().poll_read_ready(cx))?;
 
-        let io = mio::net::TcpStream::from_stream(io)?;
-        let io = TcpStream::new(io)?;
-
-        Poll::Ready(Ok((io, addr)))
-    }
-
-    fn poll_accept_std(
-        &mut self,
-        cx: &mut Context<'_>,
-    ) -> Poll<io::Result<(net::TcpStream, SocketAddr)>> {
-        ready!(self.io.poll_read_ready(cx, mio::Ready::readable()))?;
-
-        match self.io.get_ref().accept_std() {
-            Ok(pair) => Poll::Ready(Ok(pair)),
-            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
-                self.io.clear_read_ready(cx, mio::Ready::readable())?;
-                Poll::Pending
+            match self.io.accept() {
+                Ok((io, addr)) => {
+                    let io = TcpStream::new(io)?;
+                    return Poll::Ready(Ok((io, addr)));
+                }
+                Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                    self.io.registration().clear_readiness(ev);
+                }
+                Err(e) => return Poll::Ready(Err(e)),
             }
-            Err(e) => Poll::Ready(Err(e)),
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -264,12 +222,54 @@ impl TcpListener {
     
     
     pub fn from_std(listener: net::TcpListener) -> io::Result<TcpListener> {
-        let io = mio::net::TcpListener::from_std(listener)?;
+        let io = mio::net::TcpListener::from_std(listener);
         let io = PollEvented::new(io)?;
         Ok(TcpListener { io })
     }
 
-    fn new(listener: mio::net::TcpListener) -> io::Result<TcpListener> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_std(self) -> io::Result<std::net::TcpListener> {
+        #[cfg(unix)]
+        {
+            use std::os::unix::io::{FromRawFd, IntoRawFd};
+            self.io
+                .into_inner()
+                .map(|io| io.into_raw_fd())
+                .map(|raw_fd| unsafe { std::net::TcpListener::from_raw_fd(raw_fd) })
+        }
+
+        #[cfg(windows)]
+        {
+            use std::os::windows::io::{FromRawSocket, IntoRawSocket};
+            self.io
+                .into_inner()
+                .map(|io| io.into_raw_socket())
+                .map(|raw_socket| unsafe { std::net::TcpListener::from_raw_socket(raw_socket) })
+        }
+    }
+
+    pub(crate) fn new(listener: mio::net::TcpListener) -> io::Result<TcpListener> {
         let io = PollEvented::new(listener)?;
         Ok(TcpListener { io })
     }
@@ -298,47 +298,7 @@ impl TcpListener {
     
     
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
-        self.io.get_ref().local_addr()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn incoming(&mut self) -> Incoming<'_> {
-        Incoming::new(self)
+        self.io.local_addr()
     }
 
     
@@ -365,7 +325,7 @@ impl TcpListener {
     
     
     pub fn ttl(&self) -> io::Result<u32> {
-        self.io.get_ref().ttl()
+        self.io.ttl()
     }
 
     
@@ -390,34 +350,7 @@ impl TcpListener {
     
     
     pub fn set_ttl(&self, ttl: u32) -> io::Result<()> {
-        self.io.get_ref().set_ttl(ttl)
-    }
-}
-
-#[cfg(feature = "stream")]
-impl crate::stream::Stream for TcpListener {
-    type Item = io::Result<TcpStream>;
-
-    fn poll_next(
-        mut self: std::pin::Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<Option<Self::Item>> {
-        let (socket, _) = ready!(self.poll_accept(cx))?;
-        Poll::Ready(Some(Ok(socket)))
-    }
-}
-
-impl TryFrom<TcpListener> for mio::net::TcpListener {
-    type Error = io::Error;
-
-    
-    
-    
-    
-    
-    
-    fn try_from(value: TcpListener) -> Result<Self, Self::Error> {
-        value.io.into_inner()
+        self.io.set_ttl(ttl)
     }
 }
 
@@ -435,7 +368,7 @@ impl TryFrom<net::TcpListener> for TcpListener {
 
 impl fmt::Debug for TcpListener {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.io.get_ref().fmt(f)
+        self.io.fmt(f)
     }
 }
 
@@ -446,21 +379,19 @@ mod sys {
 
     impl AsRawFd for TcpListener {
         fn as_raw_fd(&self) -> RawFd {
-            self.io.get_ref().as_raw_fd()
+            self.io.as_raw_fd()
         }
     }
 }
 
 #[cfg(windows)]
 mod sys {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    use super::TcpListener;
+    use std::os::windows::prelude::*;
+
+    impl AsRawSocket for TcpListener {
+        fn as_raw_socket(&self) -> RawSocket {
+            self.io.as_raw_socket()
+        }
+    }
 }

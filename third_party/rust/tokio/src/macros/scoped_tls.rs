@@ -23,9 +23,7 @@ macro_rules! scoped_thread_local {
 
 
 pub(crate) struct ScopedKey<T> {
-    #[doc(hidden)]
     pub(crate) inner: &'static LocalKey<Cell<*const ()>>,
-    #[doc(hidden)]
     pub(crate) _marker: marker::PhantomData<T>,
 }
 

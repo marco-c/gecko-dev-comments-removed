@@ -1,9 +1,9 @@
-use bytes::BufMut;
+use super::ReadBuf;
 use std::io;
-use std::mem::MaybeUninit;
 use std::ops::DerefMut;
 use std::pin::Pin;
 use std::task::{Context, Poll};
+
 
 
 
@@ -50,101 +50,20 @@ pub trait AsyncRead {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    unsafe fn prepare_uninitialized_buffer(&self, buf: &mut [MaybeUninit<u8>]) -> bool {
-        for x in buf {
-            *x = MaybeUninit::new(0);
-        }
-
-        true
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<io::Result<usize>>;
-
-    
-    
-    
-    
-    
-    
-    fn poll_read_buf<B: BufMut>(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut B,
-    ) -> Poll<io::Result<usize>>
-    where
-        Self: Sized,
-    {
-        if !buf.has_remaining_mut() {
-            return Poll::Ready(Ok(0));
-        }
-
-        unsafe {
-            let n = {
-                let b = buf.bytes_mut();
-
-                self.prepare_uninitialized_buffer(b);
-
-                
-                let b = &mut *(b as *mut [MaybeUninit<u8>] as *mut [u8]);
-
-                let n = ready!(self.poll_read(cx, b))?;
-                assert!(n <= b.len(), "Bad AsyncRead implementation, more bytes were reported as read than the buffer can hold");
-                n
-            };
-
-            buf.advance_mut(n);
-            Poll::Ready(Ok(n))
-        }
-    }
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<io::Result<()>>;
 }
 
 macro_rules! deref_async_read {
     () => {
-        unsafe fn prepare_uninitialized_buffer(&self, buf: &mut [MaybeUninit<u8>]) -> bool {
-            (**self).prepare_uninitialized_buffer(buf)
-        }
-
         fn poll_read(
             mut self: Pin<&mut Self>,
             cx: &mut Context<'_>,
-            buf: &mut [u8],
-        ) -> Poll<io::Result<usize>> {
+            buf: &mut ReadBuf<'_>,
+        ) -> Poll<io::Result<()>> {
             Pin::new(&mut **self).poll_read(cx, buf)
         }
     };
@@ -163,43 +82,50 @@ where
     P: DerefMut + Unpin,
     P::Target: AsyncRead,
 {
-    unsafe fn prepare_uninitialized_buffer(&self, buf: &mut [MaybeUninit<u8>]) -> bool {
-        (**self).prepare_uninitialized_buffer(buf)
-    }
-
     fn poll_read(
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<io::Result<usize>> {
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<io::Result<()>> {
         self.get_mut().as_mut().poll_read(cx, buf)
     }
 }
 
 impl AsyncRead for &[u8] {
-    unsafe fn prepare_uninitialized_buffer(&self, _buf: &mut [MaybeUninit<u8>]) -> bool {
-        false
-    }
-
     fn poll_read(
-        self: Pin<&mut Self>,
+        mut self: Pin<&mut Self>,
         _cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<io::Result<usize>> {
-        Poll::Ready(io::Read::read(self.get_mut(), buf))
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<io::Result<()>> {
+        let amt = std::cmp::min(self.len(), buf.remaining());
+        let (a, b) = self.split_at(amt);
+        buf.put_slice(a);
+        *self = b;
+        Poll::Ready(Ok(()))
     }
 }
 
 impl<T: AsRef<[u8]> + Unpin> AsyncRead for io::Cursor<T> {
-    unsafe fn prepare_uninitialized_buffer(&self, _buf: &mut [MaybeUninit<u8>]) -> bool {
-        false
-    }
-
     fn poll_read(
-        self: Pin<&mut Self>,
+        mut self: Pin<&mut Self>,
         _cx: &mut Context<'_>,
-        buf: &mut [u8],
-    ) -> Poll<io::Result<usize>> {
-        Poll::Ready(io::Read::read(self.get_mut(), buf))
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<io::Result<()>> {
+        let pos = self.position();
+        let slice: &[u8] = (*self).get_ref().as_ref();
+
+        
+        if pos > slice.len() as u64 {
+            return Poll::Ready(Ok(()));
+        }
+
+        let start = pos as usize;
+        let amt = std::cmp::min(slice.len() - start, buf.remaining());
+        
+        let end = start + amt;
+        buf.put_slice(&slice[start..end]);
+        self.set_position(end as u64);
+
+        Poll::Ready(Ok(()))
     }
 }

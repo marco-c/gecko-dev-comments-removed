@@ -1,358 +1,633 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+use crate::loom::cell::UnsafeCell;
 use crate::loom::sync::atomic::AtomicU64;
+use crate::loom::sync::atomic::Ordering;
+
 use crate::sync::AtomicWaker;
-use crate::time::driver::{Handle, Inner};
-use crate::time::{Duration, Error, Instant};
+use crate::time::Instant;
+use crate::util::linked_list;
 
-use std::cell::UnsafeCell;
-use std::ptr;
-use std::sync::atomic::Ordering::SeqCst;
-use std::sync::atomic::{AtomicBool, AtomicU8};
-use std::sync::{Arc, Weak};
-use std::task::{self, Poll};
-use std::u64;
+use super::Handle;
 
+use std::cell::UnsafeCell as StdUnsafeCell;
+use std::task::{Context, Poll, Waker};
+use std::{marker::PhantomPinned, pin::Pin, ptr::NonNull};
 
+type TimerResult = Result<(), crate::time::error::Error>;
 
-
-
-
+const STATE_DEREGISTERED: u64 = u64::MAX;
+const STATE_PENDING_FIRE: u64 = STATE_DEREGISTERED - 1;
+const STATE_MIN_VALUE: u64 = STATE_PENDING_FIRE;
 
 
 
 
 
 
-#[derive(Debug)]
-pub(crate) struct Entry {
-    
-    time: CachePadded<UnsafeCell<Time>>,
 
-    
-    
-    
-    
-    
-    inner: Weak<Inner>,
 
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+pub(super) struct StateCell {
     
     
     state: AtomicU64,
-
-    
-    
-    
-    error: AtomicU8,
-
-    
-    waker: AtomicWaker,
-
     
     
     
     
-    pub(super) queued: AtomicBool,
-
+    result: UnsafeCell<TimerResult>,
     
-    
-    
-    
-    
-    pub(super) next_atomic: UnsafeCell<*mut Entry>,
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    when: UnsafeCell<Option<u64>>,
-
-    
-    
-    
-    pub(super) next_stack: UnsafeCell<Option<Arc<Entry>>>,
-
-    
-    
-    
-    
-    
-    
-    pub(super) prev_stack: UnsafeCell<*const Entry>,
+    waker: CachePadded<AtomicWaker>,
 }
+
+impl Default for StateCell {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl std::fmt::Debug for StateCell {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "StateCell({:?})", self.read_state())
+    }
+}
+
+impl StateCell {
+    fn new() -> Self {
+        Self {
+            state: AtomicU64::new(STATE_DEREGISTERED),
+            result: UnsafeCell::new(Ok(())),
+            waker: CachePadded(AtomicWaker::new()),
+        }
+    }
+
+    fn is_pending(&self) -> bool {
+        self.state.load(Ordering::Relaxed) == STATE_PENDING_FIRE
+    }
+
+    
+    fn when(&self) -> Option<u64> {
+        let cur_state = self.state.load(Ordering::Relaxed);
+
+        if cur_state == u64::MAX {
+            None
+        } else {
+            Some(cur_state)
+        }
+    }
+
+    
+    
+    fn poll(&self, waker: &Waker) -> Poll<TimerResult> {
+        
+        
+        
+        self.waker.0.register_by_ref(waker);
+
+        self.read_state()
+    }
+
+    fn read_state(&self) -> Poll<TimerResult> {
+        let cur_state = self.state.load(Ordering::Acquire);
+
+        if cur_state == STATE_DEREGISTERED {
+            
+            
+            
+            Poll::Ready(unsafe { self.result.with(|p| *p) })
+        } else {
+            Poll::Pending
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn mark_pending(&self, not_after: u64) -> Result<(), u64> {
+        
+        
+        
+        
+        let mut cur_state = self.state.load(Ordering::Relaxed);
+
+        loop {
+            debug_assert!(cur_state < STATE_MIN_VALUE);
+
+            if cur_state > not_after {
+                break Err(cur_state);
+            }
+
+            match self.state.compare_exchange(
+                cur_state,
+                STATE_PENDING_FIRE,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            ) {
+                Ok(_) => {
+                    break Ok(());
+                }
+                Err(actual_state) => {
+                    cur_state = actual_state;
+                }
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn fire(&self, result: TimerResult) -> Option<Waker> {
+        
+        
+        
+        
+        let cur_state = self.state.load(Ordering::Relaxed);
+        if cur_state == STATE_DEREGISTERED {
+            return None;
+        }
+
+        
+        
+        
+        
+        
+        unsafe { self.result.with_mut(|p| *p = result) };
+
+        self.state.store(STATE_DEREGISTERED, Ordering::Release);
+
+        self.waker.0.take_waker()
+    }
+
+    
+    
+    
+    
+    
+    fn set_expiration(&self, timestamp: u64) {
+        debug_assert!(timestamp < STATE_MIN_VALUE);
+
+        
+        
+        self.state.store(timestamp, Ordering::Relaxed);
+    }
+
+    
+    
+    
+    
+    
+    
+    fn extend_expiration(&self, new_timestamp: u64) -> Result<(), ()> {
+        let mut prior = self.state.load(Ordering::Relaxed);
+        loop {
+            if new_timestamp < prior || prior >= STATE_MIN_VALUE {
+                return Err(());
+            }
+
+            match self.state.compare_exchange_weak(
+                prior,
+                new_timestamp,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            ) {
+                Ok(_) => {
+                    return Ok(());
+                }
+                Err(true_prior) => {
+                    prior = true_prior;
+                }
+            }
+        }
+    }
+
+    
+    
+    
+    
+    pub(super) fn might_be_registered(&self) -> bool {
+        self.state.load(Ordering::Relaxed) != u64::MAX
+    }
+}
+
+
+
+
 
 
 #[derive(Debug)]
-pub(crate) struct Time {
-    pub(crate) deadline: Instant,
-    pub(crate) duration: Duration,
+pub(super) struct TimerEntry {
+    
+    
+    driver: Handle,
+    
+    
+    
+    
+    
+    
+    inner: StdUnsafeCell<TimerShared>,
+    
+    
+    initial_deadline: Option<Instant>,
+    
+    _m: std::marker::PhantomPinned,
+}
+
+unsafe impl Send for TimerEntry {}
+unsafe impl Sync for TimerEntry {}
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub(crate) struct TimerHandle {
+    inner: NonNull<TimerShared>,
+}
+
+pub(super) type EntryList = crate::util::linked_list::LinkedList<TimerShared, TimerShared>;
+
+
+
+
+
+#[derive(Debug)]
+#[repr(C)] 
+pub(crate) struct TimerShared {
+    
+    driver_state: CachePadded<TimerSharedPadded>,
+
+    
+    
+    
+    state: StateCell,
+
+    _p: PhantomPinned,
+}
+
+impl TimerShared {
+    pub(super) fn new() -> Self {
+        Self {
+            state: StateCell::default(),
+            driver_state: CachePadded(TimerSharedPadded::new()),
+            _p: PhantomPinned,
+        }
+    }
+
+    
+    pub(super) fn cached_when(&self) -> u64 {
+        
+        self.driver_state.0.cached_when.load(Ordering::Relaxed)
+    }
+
+    
+    
+    
+    
+    
+    pub(super) unsafe fn sync_when(&self) -> u64 {
+        let true_when = self.true_when();
+
+        self.driver_state
+            .0
+            .cached_when
+            .store(true_when, Ordering::Relaxed);
+
+        true_when
+    }
+
+    
+    
+    
+    
+    unsafe fn set_cached_when(&self, when: u64) {
+        self.driver_state
+            .0
+            .cached_when
+            .store(when, Ordering::Relaxed);
+    }
+
+    
+    pub(super) fn true_when(&self) -> u64 {
+        self.state.when().expect("Timer already fired")
+    }
+
+    
+    
+    
+    
+    
+    pub(super) unsafe fn set_expiration(&self, t: u64) {
+        self.state.set_expiration(t);
+        self.driver_state.0.cached_when.store(t, Ordering::Relaxed);
+    }
+
+    
+    pub(super) fn extend_expiration(&self, t: u64) -> Result<(), ()> {
+        self.state.extend_expiration(t)
+    }
+
+    
+    pub(super) fn handle(&self) -> TimerHandle {
+        TimerHandle {
+            inner: NonNull::from(self),
+        }
+    }
+
+    
+    
+    
+    
+    pub(super) fn might_be_registered(&self) -> bool {
+        self.state.might_be_registered()
+    }
 }
 
 
-const ELAPSED: u64 = 1 << 63;
-
-
-const ERROR: u64 = u64::MAX;
 
 
 
-impl Entry {
-    pub(crate) fn new(handle: &Handle, deadline: Instant, duration: Duration) -> Arc<Entry> {
-        let inner = handle.inner().unwrap();
-        let entry: Entry;
-
-        
-        if let Err(err) = inner.increment() {
-            entry = Entry::new2(deadline, duration, Weak::new(), ERROR);
-            entry.error(err);
-        } else {
-            let when = inner.normalize_deadline(deadline);
-            let state = if when <= inner.elapsed() {
-                ELAPSED
-            } else {
-                when
-            };
-            entry = Entry::new2(deadline, duration, Arc::downgrade(&inner), state);
-        }
-
-        let entry = Arc::new(entry);
-        if let Err(err) = inner.queue(&entry) {
-            entry.error(err);
-        }
-
-        entry
-    }
-
+#[repr(C)] 
+struct TimerSharedPadded {
     
-    pub(crate) fn time_ref(&self) -> &Time {
-        unsafe { &*self.time.0.get() }
-    }
-
     
-    #[allow(clippy::mut_from_ref)] 
-    pub(crate) unsafe fn time_mut(&self) -> &mut Time {
-        &mut *self.time.0.get()
-    }
+    
+    
+    pointers: linked_list::Pointers<TimerShared>,
 
     
     
-    pub(crate) fn when_internal(&self) -> Option<u64> {
-        unsafe { *self.when.get() }
-    }
+    
+    cached_when: AtomicU64,
 
-    pub(crate) fn set_when_internal(&self, when: Option<u64>) {
-        unsafe {
-            *self.when.get() = when;
+    
+    true_when: AtomicU64,
+}
+
+impl std::fmt::Debug for TimerSharedPadded {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TimerSharedPadded")
+            .field("when", &self.true_when.load(Ordering::Relaxed))
+            .field("cached_when", &self.cached_when.load(Ordering::Relaxed))
+            .finish()
+    }
+}
+
+impl TimerSharedPadded {
+    fn new() -> Self {
+        Self {
+            cached_when: AtomicU64::new(0),
+            true_when: AtomicU64::new(0),
+            pointers: linked_list::Pointers::new(),
         }
     }
+}
 
-    
-    pub(crate) fn load_state(&self) -> Option<u64> {
-        let state = self.state.load(SeqCst);
+unsafe impl Send for TimerShared {}
+unsafe impl Sync for TimerShared {}
 
-        if is_elapsed(state) {
-            None
-        } else {
-            Some(state)
+unsafe impl linked_list::Link for TimerShared {
+    type Handle = TimerHandle;
+
+    type Target = TimerShared;
+
+    fn as_raw(handle: &Self::Handle) -> NonNull<Self::Target> {
+        handle.inner
+    }
+
+    unsafe fn from_raw(ptr: NonNull<Self::Target>) -> Self::Handle {
+        TimerHandle { inner: ptr }
+    }
+
+    unsafe fn pointers(
+        target: NonNull<Self::Target>,
+    ) -> NonNull<linked_list::Pointers<Self::Target>> {
+        target.cast()
+    }
+}
+
+
+
+impl TimerEntry {
+    pub(crate) fn new(handle: &Handle, deadline: Instant) -> Self {
+        let driver = handle.clone();
+
+        Self {
+            driver,
+            inner: StdUnsafeCell::new(TimerShared::new()),
+            initial_deadline: Some(deadline),
+            _m: std::marker::PhantomPinned,
         }
+    }
+
+    fn inner(&self) -> &TimerShared {
+        unsafe { &*self.inner.get() }
     }
 
     pub(crate) fn is_elapsed(&self) -> bool {
-        let state = self.state.load(SeqCst);
-        is_elapsed(state)
-    }
-
-    pub(crate) fn fire(&self, when: u64) {
-        let mut curr = self.state.load(SeqCst);
-
-        loop {
-            if is_elapsed(curr) || curr > when {
-                return;
-            }
-
-            let next = ELAPSED | curr;
-            let actual = self.state.compare_and_swap(curr, next, SeqCst);
-
-            if curr == actual {
-                break;
-            }
-
-            curr = actual;
-        }
-
-        self.waker.wake();
-    }
-
-    pub(crate) fn error(&self, error: Error) {
-        
-        
-        
-        self.error.compare_and_swap(0, error.as_u8(), SeqCst);
-
-        
-        let mut curr = self.state.load(SeqCst);
-
-        loop {
-            if is_elapsed(curr) {
-                return;
-            }
-
-            let next = ERROR;
-
-            let actual = self.state.compare_and_swap(curr, next, SeqCst);
-
-            if curr == actual {
-                break;
-            }
-
-            curr = actual;
-        }
-
-        self.waker.wake();
-    }
-
-    pub(crate) fn cancel(entry: &Arc<Entry>) {
-        let state = entry.state.fetch_or(ELAPSED, SeqCst);
-
-        if is_elapsed(state) {
-            
-            return;
-        }
-
-        
-        let inner = match entry.upgrade_inner() {
-            Some(inner) => inner,
-            None => return,
-        };
-
-        let _ = inner.queue(entry);
-    }
-
-    pub(crate) fn poll_elapsed(&self, cx: &mut task::Context<'_>) -> Poll<Result<(), Error>> {
-        let mut curr = self.state.load(SeqCst);
-
-        if is_elapsed(curr) {
-            return Poll::Ready(if curr == ERROR {
-                Err(Error::from_u8(self.error.load(SeqCst)))
-            } else {
-                Ok(())
-            });
-        }
-
-        self.waker.register_by_ref(cx.waker());
-
-        curr = self.state.load(SeqCst);
-
-        if is_elapsed(curr) {
-            return Poll::Ready(if curr == ERROR {
-                Err(Error::from_u8(self.error.load(SeqCst)))
-            } else {
-                Ok(())
-            });
-        }
-
-        Poll::Pending
+        !self.inner().state.might_be_registered() && self.initial_deadline.is_none()
     }
 
     
-    pub(crate) fn reset(entry: &mut Arc<Entry>) {
-        let inner = match entry.upgrade_inner() {
-            Some(inner) => inner,
-            None => return,
-        };
+    pub(crate) fn cancel(self: Pin<&mut Self>) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        unsafe { self.driver.clear_entry(NonNull::from(self.inner())) };
+    }
 
-        let deadline = entry.time_ref().deadline;
-        let when = inner.normalize_deadline(deadline);
-        let elapsed = inner.elapsed();
+    pub(crate) fn reset(mut self: Pin<&mut Self>, new_time: Instant) {
+        unsafe { self.as_mut().get_unchecked_mut() }.initial_deadline = None;
 
-        let next = if when <= elapsed { ELAPSED } else { when };
+        let tick = self.driver.time_source().deadline_to_tick(new_time);
 
-        let mut curr = entry.state.load(SeqCst);
-
-        loop {
-            
-            
-            
-            
-            if curr == ERROR || curr == when {
-                return;
-            }
-
-            let actual = entry.state.compare_and_swap(curr, next, SeqCst);
-
-            if curr == actual {
-                break;
-            }
-
-            curr = actual;
+        if self.inner().extend_expiration(tick).is_ok() {
+            return;
         }
 
-        
-        
-        if !is_elapsed(curr) && is_elapsed(next) {
-            entry.waker.wake();
-        }
-
-        
-        
-        
-        if !is_elapsed(curr) || !is_elapsed(next) {
-            let _ = inner.queue(entry);
+        unsafe {
+            self.driver.reregister(tick, self.inner().into());
         }
     }
 
-    fn new2(deadline: Instant, duration: Duration, inner: Weak<Inner>, state: u64) -> Self {
-        Self {
-            time: CachePadded(UnsafeCell::new(Time { deadline, duration })),
-            inner,
-            waker: AtomicWaker::new(),
-            state: AtomicU64::new(state),
-            queued: AtomicBool::new(false),
-            error: AtomicU8::new(0),
-            next_atomic: UnsafeCell::new(ptr::null_mut()),
-            when: UnsafeCell::new(None),
-            next_stack: UnsafeCell::new(None),
-            prev_stack: UnsafeCell::new(ptr::null_mut()),
+    pub(crate) fn poll_elapsed(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Result<(), super::Error>> {
+        if self.driver.is_shutdown() {
+            panic!("{}", crate::util::error::RUNTIME_SHUTTING_DOWN_ERROR);
         }
-    }
 
-    fn upgrade_inner(&self) -> Option<Arc<Inner>> {
-        self.inner.upgrade()
+        if let Some(deadline) = self.initial_deadline {
+            self.as_mut().reset(deadline);
+        }
+
+        let this = unsafe { self.get_unchecked_mut() };
+
+        this.inner().state.poll(cx.waker())
     }
 }
 
-fn is_elapsed(state: u64) -> bool {
-    state & ELAPSED == ELAPSED
+impl TimerHandle {
+    pub(super) unsafe fn cached_when(&self) -> u64 {
+        unsafe { self.inner.as_ref().cached_when() }
+    }
+
+    pub(super) unsafe fn sync_when(&self) -> u64 {
+        unsafe { self.inner.as_ref().sync_when() }
+    }
+
+    pub(super) unsafe fn is_pending(&self) -> bool {
+        unsafe { self.inner.as_ref().state.is_pending() }
+    }
+
+    
+    
+    
+    
+    pub(super) unsafe fn set_expiration(&self, tick: u64) {
+        self.inner.as_ref().set_expiration(tick);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(super) unsafe fn mark_pending(&self, not_after: u64) -> Result<(), u64> {
+        match self.inner.as_ref().state.mark_pending(not_after) {
+            Ok(()) => {
+                
+                self.inner.as_ref().set_cached_when(u64::MAX);
+                Ok(())
+            }
+            Err(tick) => {
+                self.inner.as_ref().set_cached_when(tick);
+                Err(tick)
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(super) unsafe fn fire(self, completed_state: TimerResult) -> Option<Waker> {
+        self.inner.as_ref().state.fire(completed_state)
+    }
 }
 
-impl Drop for Entry {
+impl Drop for TimerEntry {
     fn drop(&mut self) {
-        let inner = match self.upgrade_inner() {
-            Some(inner) => inner,
-            None => return,
-        };
-
-        inner.decrement();
+        unsafe { Pin::new_unchecked(self) }.as_mut().cancel()
     }
 }
-
-unsafe impl Send for Entry {}
-unsafe impl Sync for Entry {}
 
 #[cfg_attr(target_arch = "x86_64", repr(align(128)))]
 #[cfg_attr(not(target_arch = "x86_64"), repr(align(64)))]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct CachePadded<T>(T);

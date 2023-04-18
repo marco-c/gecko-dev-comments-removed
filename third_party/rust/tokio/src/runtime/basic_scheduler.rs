@@ -1,29 +1,48 @@
+use crate::future::poll_fn;
+use crate::loom::sync::atomic::AtomicBool;
+use crate::loom::sync::{Arc, Mutex};
 use crate::park::{Park, Unpark};
-use crate::runtime;
-use crate::runtime::task::{self, JoinHandle, Schedule, Task};
-use crate::util::linked_list::LinkedList;
-use crate::util::{waker_ref, Wake};
+use crate::runtime::context::EnterGuard;
+use crate::runtime::driver::Driver;
+use crate::runtime::task::{self, JoinHandle, OwnedTasks, Schedule, Task};
+use crate::runtime::Callback;
+use crate::runtime::{MetricsBatch, SchedulerMetrics, WorkerMetrics};
+use crate::sync::notify::Notify;
+use crate::util::atomic_cell::AtomicCell;
+use crate::util::{waker_ref, Wake, WakerRef};
 
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::fmt;
 use std::future::Future;
-use std::sync::{Arc, Mutex};
-use std::task::Poll::Ready;
+use std::sync::atomic::Ordering::{AcqRel, Release};
+use std::task::Poll::{Pending, Ready};
 use std::time::Duration;
 
 
-pub(crate) struct BasicScheduler<P>
-where
-    P: Park,
-{
+pub(crate) struct BasicScheduler {
+    
+    core: AtomicCell<Core>,
+
+    
+    
+    notify: Notify,
+
+    
+    spawner: Spawner,
+
     
     
     
     
+    context_guard: Option<EnterGuard>,
+}
+
+
+
+struct Core {
     
-    
-    tasks: Option<Tasks>,
+    tasks: VecDeque<task::Notified<Arc<Shared>>>,
 
     
     spawner: Spawner,
@@ -32,7 +51,12 @@ where
     tick: u8,
 
     
-    park: P,
+    
+    
+    driver: Option<Driver>,
+
+    
+    metrics: MetricsBatch,
 }
 
 #[derive(Clone)]
@@ -40,38 +64,50 @@ pub(crate) struct Spawner {
     shared: Arc<Shared>,
 }
 
-struct Tasks {
-    
-    owned: LinkedList<Task<Arc<Shared>>>,
-
-    
-    
-    
-    queue: VecDeque<task::Notified<Arc<Shared>>>,
-}
-
 
 struct Shared {
     
-    queue: Mutex<VecDeque<task::Notified<Arc<Shared>>>>,
+    queue: Mutex<Option<VecDeque<task::Notified<Arc<Shared>>>>>,
 
     
-    unpark: Box<dyn Unpark>,
+    owned: OwnedTasks<Arc<Shared>>,
+
+    
+    unpark: <Driver as Park>::Unpark,
+
+    
+    woken: AtomicBool,
+
+    
+    before_park: Option<Callback>,
+
+    
+    after_unpark: Option<Callback>,
+
+    
+    scheduler_metrics: SchedulerMetrics,
+
+    
+    worker_metrics: WorkerMetrics,
 }
 
 
 struct Context {
     
-    shared: Arc<Shared>,
+    spawner: Spawner,
 
     
-    tasks: RefCell<Tasks>,
+    
+    core: RefCell<Option<Box<Core>>>,
 }
 
 
 const INITIAL_CAPACITY: usize = 64;
 
 
+#[cfg(loom)]
+const MAX_TASKS_PER_TICK: usize = 4;
+#[cfg(not(loom))]
 const MAX_TASKS_PER_TICK: usize = 61;
 
 
@@ -80,26 +116,40 @@ const REMOTE_FIRST_INTERVAL: u8 = 31;
 
 scoped_thread_local!(static CURRENT: Context);
 
-impl<P> BasicScheduler<P>
-where
-    P: Park,
-{
-    pub(crate) fn new(park: P) -> BasicScheduler<P> {
-        let unpark = Box::new(park.unpark());
+impl BasicScheduler {
+    pub(crate) fn new(
+        driver: Driver,
+        before_park: Option<Callback>,
+        after_unpark: Option<Callback>,
+    ) -> BasicScheduler {
+        let unpark = driver.unpark();
+
+        let spawner = Spawner {
+            shared: Arc::new(Shared {
+                queue: Mutex::new(Some(VecDeque::with_capacity(INITIAL_CAPACITY))),
+                owned: OwnedTasks::new(),
+                unpark,
+                woken: AtomicBool::new(false),
+                before_park,
+                after_unpark,
+                scheduler_metrics: SchedulerMetrics::new(),
+                worker_metrics: WorkerMetrics::new(),
+            }),
+        };
+
+        let core = AtomicCell::new(Some(Box::new(Core {
+            tasks: VecDeque::with_capacity(INITIAL_CAPACITY),
+            spawner: spawner.clone(),
+            tick: 0,
+            driver: Some(driver),
+            metrics: MetricsBatch::new(),
+        })));
 
         BasicScheduler {
-            tasks: Some(Tasks {
-                owned: LinkedList::new(),
-                queue: VecDeque::with_capacity(INITIAL_CAPACITY),
-            }),
-            spawner: Spawner {
-                shared: Arc::new(Shared {
-                    queue: Mutex::new(VecDeque::with_capacity(INITIAL_CAPACITY)),
-                    unpark: unpark as Box<dyn Unpark>,
-                }),
-            },
-            tick: 0,
-            park,
+            core,
+            notify: Notify::new(),
+            spawner,
+            context_guard: None,
         }
     }
 
@@ -107,147 +157,207 @@ where
         &self.spawner
     }
 
-    
-    pub(crate) fn spawn<F>(&self, future: F) -> JoinHandle<F::Output>
-    where
-        F: Future + Send + 'static,
-        F::Output: Send + 'static,
-    {
-        self.spawner.spawn(future)
-    }
+    pub(crate) fn block_on<F: Future>(&self, future: F) -> F::Output {
+        pin!(future);
 
-    pub(crate) fn block_on<F>(&mut self, future: F) -> F::Output
-    where
-        F: Future,
-    {
-        enter(self, |scheduler, context| {
-            let _enter = runtime::enter(false);
-            let waker = waker_ref(&scheduler.spawner.shared);
-            let mut cx = std::task::Context::from_waker(&waker);
+        
+        
+        
+        loop {
+            if let Some(core) = self.take_core() {
+                return core.block_on(future);
+            } else {
+                let mut enter = crate::runtime::enter(false);
 
-            pin!(future);
+                let notified = self.notify.notified();
+                pin!(notified);
 
-            'outer: loop {
-                if let Ready(v) = crate::coop::budget(|| future.as_mut().poll(&mut cx)) {
-                    return v;
-                }
-
-                for _ in 0..MAX_TASKS_PER_TICK {
-                    
-                    let tick = scheduler.tick;
-                    scheduler.tick = scheduler.tick.wrapping_add(1);
-
-                    let next = if tick % REMOTE_FIRST_INTERVAL == 0 {
-                        scheduler
-                            .spawner
-                            .pop()
-                            .or_else(|| context.tasks.borrow_mut().queue.pop_front())
-                    } else {
-                        context
-                            .tasks
-                            .borrow_mut()
-                            .queue
-                            .pop_front()
-                            .or_else(|| scheduler.spawner.pop())
-                    };
-
-                    match next {
-                        Some(task) => crate::coop::budget(|| task.run()),
-                        None => {
-                            
-                            scheduler.park.park().ok().expect("failed to park");
-
-                            
-                            continue 'outer;
+                if let Some(out) = enter
+                    .block_on(poll_fn(|cx| {
+                        if notified.as_mut().poll(cx).is_ready() {
+                            return Ready(None);
                         }
-                    }
+
+                        if let Ready(out) = future.as_mut().poll(cx) {
+                            return Ready(Some(out));
+                        }
+
+                        Pending
+                    }))
+                    .expect("Failed to `Enter::block_on`")
+                {
+                    return out;
                 }
-
-                
-                
-                scheduler
-                    .park
-                    .park_timeout(Duration::from_millis(0))
-                    .ok()
-                    .expect("failed to park");
             }
-        })
-    }
-}
-
-
-
-fn enter<F, R, P>(scheduler: &mut BasicScheduler<P>, f: F) -> R
-where
-    F: FnOnce(&mut BasicScheduler<P>, &Context) -> R,
-    P: Park,
-{
-    
-    
-    struct Guard<'a, P: Park> {
-        context: Option<Context>,
-        scheduler: &'a mut BasicScheduler<P>,
-    }
-
-    impl<P: Park> Drop for Guard<'_, P> {
-        fn drop(&mut self) {
-            let Context { tasks, .. } = self.context.take().expect("context missing");
-            self.scheduler.tasks = Some(tasks.into_inner());
         }
     }
 
-    
-    let tasks = scheduler.tasks.take().expect("invalid state");
+    fn take_core(&self) -> Option<CoreGuard<'_>> {
+        let core = self.core.take()?;
 
-    let guard = Guard {
-        context: Some(Context {
-            shared: scheduler.spawner.shared.clone(),
-            tasks: RefCell::new(tasks),
-        }),
-        scheduler,
-    };
+        Some(CoreGuard {
+            context: Context {
+                spawner: self.spawner.clone(),
+                core: RefCell::new(Some(core)),
+            },
+            basic_scheduler: self,
+        })
+    }
 
-    let context = guard.context.as_ref().unwrap();
-    let scheduler = &mut *guard.scheduler;
-
-    CURRENT.set(context, || f(scheduler, context))
+    pub(super) fn set_context_guard(&mut self, guard: EnterGuard) {
+        self.context_guard = Some(guard);
+    }
 }
 
-impl<P> Drop for BasicScheduler<P>
-where
-    P: Park,
-{
+impl Drop for BasicScheduler {
     fn drop(&mut self) {
-        enter(self, |scheduler, context| {
-            
-            #[allow(clippy::while_let_loop)]
-            loop {
-                let task = match context.tasks.borrow_mut().owned.pop_back() {
-                    Some(task) => task,
-                    None => break,
-                };
+        
+        
 
-                task.shutdown();
+        let core = match self.take_core() {
+            Some(core) => core,
+            None if std::thread::panicking() => return,
+            None => panic!("Oh no! We never placed the Core back, this is a bug!"),
+        };
+
+        core.enter(|mut core, context| {
+            
+            
+            
+            context.spawner.shared.owned.close_and_shutdown_all();
+
+            
+            
+            while let Some(task) = core.pop_task() {
+                drop(task);
             }
 
             
-            for task in context.tasks.borrow_mut().queue.drain(..) {
-                task.shutdown();
-            }
+            let remote_queue = core.spawner.shared.queue.lock().take();
 
             
-            for task in scheduler.spawner.shared.queue.lock().unwrap().drain(..) {
-                task.shutdown();
+            
+            if let Some(remote_queue) = remote_queue {
+                for task in remote_queue {
+                    drop(task);
+                }
             }
 
-            assert!(context.tasks.borrow().owned.is_empty());
+            assert!(context.spawner.shared.owned.is_empty());
+
+            
+            core.metrics.submit(&core.spawner.shared.worker_metrics);
+
+            (core, ())
         });
     }
 }
 
-impl<P: Park> fmt::Debug for BasicScheduler<P> {
+impl fmt::Debug for BasicScheduler {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt.debug_struct("BasicScheduler").finish()
+    }
+}
+
+
+
+impl Core {
+    fn pop_task(&mut self) -> Option<task::Notified<Arc<Shared>>> {
+        let ret = self.tasks.pop_front();
+        self.spawner
+            .shared
+            .worker_metrics
+            .set_queue_depth(self.tasks.len());
+        ret
+    }
+
+    fn push_task(&mut self, task: task::Notified<Arc<Shared>>) {
+        self.tasks.push_back(task);
+        self.metrics.inc_local_schedule_count();
+        self.spawner
+            .shared
+            .worker_metrics
+            .set_queue_depth(self.tasks.len());
+    }
+}
+
+
+
+impl Context {
+    
+    
+    fn run_task<R>(&self, mut core: Box<Core>, f: impl FnOnce() -> R) -> (Box<Core>, R) {
+        core.metrics.incr_poll_count();
+        self.enter(core, || crate::coop::budget(f))
+    }
+
+    
+    
+    fn park(&self, mut core: Box<Core>) -> Box<Core> {
+        let mut driver = core.driver.take().expect("driver missing");
+
+        if let Some(f) = &self.spawner.shared.before_park {
+            
+            
+            #[allow(clippy::redundant_closure)]
+            let (c, _) = self.enter(core, || f());
+            core = c;
+        }
+
+        
+        
+        if core.tasks.is_empty() {
+            
+            core.metrics.about_to_park();
+            core.metrics.submit(&core.spawner.shared.worker_metrics);
+
+            let (c, _) = self.enter(core, || {
+                driver.park().expect("failed to park");
+            });
+
+            core = c;
+            core.metrics.returned_from_park();
+        }
+
+        if let Some(f) = &self.spawner.shared.after_unpark {
+            
+            
+            #[allow(clippy::redundant_closure)]
+            let (c, _) = self.enter(core, || f());
+            core = c;
+        }
+
+        core.driver = Some(driver);
+        core
+    }
+
+    
+    fn park_yield(&self, mut core: Box<Core>) -> Box<Core> {
+        let mut driver = core.driver.take().expect("driver missing");
+
+        core.metrics.submit(&core.spawner.shared.worker_metrics);
+        let (mut core, _) = self.enter(core, || {
+            driver
+                .park_timeout(Duration::from_millis(0))
+                .expect("failed to park");
+        });
+
+        core.driver = Some(driver);
+        core
+    }
+
+    fn enter<R>(&self, core: Box<Core>, f: impl FnOnce() -> R) -> (Box<Core>, R) {
+        
+        
+        
+        *self.core.borrow_mut() = Some(core);
+
+        
+        let ret = f();
+
+        
+        let core = self.core.borrow_mut().take().expect("core missing");
+        (core, ret)
     }
 }
 
@@ -257,16 +367,57 @@ impl Spawner {
     
     pub(crate) fn spawn<F>(&self, future: F) -> JoinHandle<F::Output>
     where
-        F: Future + Send + 'static,
+        F: crate::future::Future + Send + 'static,
         F::Output: Send + 'static,
     {
-        let (task, handle) = task::joinable(future);
-        self.shared.schedule(task);
+        let (handle, notified) = self.shared.owned.bind(future, self.shared.clone());
+
+        if let Some(notified) = notified {
+            self.shared.schedule(notified);
+        }
+
         handle
     }
 
     fn pop(&self) -> Option<task::Notified<Arc<Shared>>> {
-        self.shared.queue.lock().unwrap().pop_front()
+        match self.shared.queue.lock().as_mut() {
+            Some(queue) => queue.pop_front(),
+            None => None,
+        }
+    }
+
+    fn waker_ref(&self) -> WakerRef<'_> {
+        
+        
+        self.shared.woken.store(true, Release);
+        waker_ref(&self.shared)
+    }
+
+    
+    pub(crate) fn reset_woken(&self) -> bool {
+        self.shared.woken.swap(false, AcqRel)
+    }
+}
+
+cfg_metrics! {
+    impl Spawner {
+        pub(crate) fn scheduler_metrics(&self) -> &SchedulerMetrics {
+            &self.shared.scheduler_metrics
+        }
+
+        pub(crate) fn injection_queue_depth(&self) -> usize {
+            // TODO: avoid having to lock. The multi-threaded injection queue
+            // could probably be used here.
+            self.shared.queue.lock()
+                .as_ref()
+                .map(|queue| queue.len())
+                .unwrap_or(0)
+        }
+
+        pub(crate) fn worker_metrics(&self, worker: usize) -> &WorkerMetrics {
+            assert_eq!(0, worker);
+            &self.shared.worker_metrics
+        }
     }
 }
 
@@ -279,48 +430,145 @@ impl fmt::Debug for Spawner {
 
 
 impl Schedule for Arc<Shared> {
-    fn bind(task: Task<Self>) -> Arc<Shared> {
-        CURRENT.with(|maybe_cx| {
-            let cx = maybe_cx.expect("scheduler context missing");
-            cx.tasks.borrow_mut().owned.push_front(task);
-            cx.shared.clone()
-        })
-    }
-
     fn release(&self, task: &Task<Self>) -> Option<Task<Self>> {
-        use std::ptr::NonNull;
-
-        CURRENT.with(|maybe_cx| {
-            let cx = maybe_cx.expect("scheduler context missing");
-
-            
-            unsafe {
-                let ptr = NonNull::from(task.header());
-                cx.tasks.borrow_mut().owned.remove(ptr)
-            }
-        })
+        self.owned.remove(task)
     }
 
     fn schedule(&self, task: task::Notified<Self>) {
         CURRENT.with(|maybe_cx| match maybe_cx {
-            Some(cx) if Arc::ptr_eq(self, &cx.shared) => {
-                cx.tasks.borrow_mut().queue.push_back(task);
+            Some(cx) if Arc::ptr_eq(self, &cx.spawner.shared) => {
+                let mut core = cx.core.borrow_mut();
+
+                
+                
+                if let Some(core) = core.as_mut() {
+                    core.push_task(task);
+                }
             }
             _ => {
-                self.queue.lock().unwrap().push_back(task);
-                self.unpark.unpark();
+                
+                self.scheduler_metrics.inc_remote_schedule_count();
+
+                
+                
+                let mut guard = self.queue.lock();
+                if let Some(queue) = guard.as_mut() {
+                    queue.push_back(task);
+                    drop(guard);
+                    self.unpark.unpark();
+                }
             }
         });
     }
 }
 
 impl Wake for Shared {
-    fn wake(self: Arc<Self>) {
-        Wake::wake_by_ref(&self)
+    fn wake(arc_self: Arc<Self>) {
+        Wake::wake_by_ref(&arc_self)
     }
 
     
     fn wake_by_ref(arc_self: &Arc<Self>) {
+        arc_self.woken.store(true, Release);
         arc_self.unpark.unpark();
+    }
+}
+
+
+
+
+
+struct CoreGuard<'a> {
+    context: Context,
+    basic_scheduler: &'a BasicScheduler,
+}
+
+impl CoreGuard<'_> {
+    fn block_on<F: Future>(self, future: F) -> F::Output {
+        self.enter(|mut core, context| {
+            let _enter = crate::runtime::enter(false);
+            let waker = context.spawner.waker_ref();
+            let mut cx = std::task::Context::from_waker(&waker);
+
+            pin!(future);
+
+            'outer: loop {
+                if core.spawner.reset_woken() {
+                    let (c, res) = context.enter(core, || {
+                        crate::coop::budget(|| future.as_mut().poll(&mut cx))
+                    });
+
+                    core = c;
+
+                    if let Ready(v) = res {
+                        return (core, v);
+                    }
+                }
+
+                for _ in 0..MAX_TASKS_PER_TICK {
+                    
+                    let tick = core.tick;
+                    core.tick = core.tick.wrapping_add(1);
+
+                    let entry = if tick % REMOTE_FIRST_INTERVAL == 0 {
+                        core.spawner.pop().or_else(|| core.tasks.pop_front())
+                    } else {
+                        core.tasks.pop_front().or_else(|| core.spawner.pop())
+                    };
+
+                    let task = match entry {
+                        Some(entry) => entry,
+                        None => {
+                            core = context.park(core);
+
+                            
+                            continue 'outer;
+                        }
+                    };
+
+                    let task = context.spawner.shared.owned.assert_owner(task);
+
+                    let (c, _) = context.run_task(core, || {
+                        task.run();
+                    });
+
+                    core = c;
+                }
+
+                
+                
+                core = context.park_yield(core);
+            }
+        })
+    }
+
+    
+    
+    fn enter<F, R>(self, f: F) -> R
+    where
+        F: FnOnce(Box<Core>, &Context) -> (Box<Core>, R),
+    {
+        
+        let core = self.context.core.borrow_mut().take().expect("core missing");
+
+        
+        let (core, ret) = CURRENT.set(&self.context, || f(core, &self.context));
+
+        *self.context.core.borrow_mut() = Some(core);
+
+        ret
+    }
+}
+
+impl Drop for CoreGuard<'_> {
+    fn drop(&mut self) {
+        if let Some(core) = self.context.core.borrow_mut().take() {
+            
+            
+            self.basic_scheduler.core.set(core);
+
+            
+            self.basic_scheduler.notify.notify_one()
+        }
     }
 }
