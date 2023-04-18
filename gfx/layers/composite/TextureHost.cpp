@@ -364,6 +364,13 @@ void TextureHost::Finalize() {
   }
 }
 
+void TextureHost::UnbindTextureSource() {
+  if (mReadLocked) {
+    ReadUnlock();
+    MaybeNotifyUnlocked();
+  }
+}
+
 void TextureHost::RecycleTexture(TextureFlags aFlags) {
   MOZ_ASSERT(GetFlags() & TextureFlags::RECYCLE);
   MOZ_ASSERT(aFlags & TextureFlags::RECYCLE);
@@ -627,6 +634,14 @@ bool TextureHost::NeedsYFlip() const {
 }
 
 void BufferTextureHost::MaybeNotifyUnlocked() {}
+
+void BufferTextureHost::UnbindTextureSource() {
+  
+  
+  
+  ReadUnlock();
+  MaybeNotifyUnlocked();
+}
 
 gfx::SurfaceFormat BufferTextureHost::GetFormat() const { return mFormat; }
 
