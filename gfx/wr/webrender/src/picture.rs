@@ -3346,36 +3346,43 @@ impl TileCacheInstance {
             PrimitiveInstanceKind::BackdropRender { pic_index, .. } => {
                 
                 
-                scratch.required_sub_graphs.insert(pic_index);
-
                 
                 
-
                 
-                
-                debug_assert_eq!(sub_slice_index, 0);
-                let sub_slice = &mut self.sub_slices[sub_slice_index];
+                if !pic_coverage_rect.is_empty() {
+                    
+                    
+                    scratch.required_sub_graphs.insert(pic_index);
 
-                let mut surface_info = Vec::new();
-                for (pic_index, surface_index) in surface_stack.iter().rev() {
-                    let pic = &pictures[pic_index.0];
-                    surface_info.push((pic.composite_mode.as_ref().unwrap().clone(), *surface_index));
-                }
+                    
+                    
 
-                for y in p0.y .. p1.y {
-                    for x in p0.x .. p1.x {
-                        let key = TileOffset::new(x, y);
-                        let tile = sub_slice.tiles.get_mut(&key).expect("bug: no tile");
-                        tile.sub_graphs.push((pic_coverage_rect, surface_info.clone()));
+                    
+                    
+                    debug_assert_eq!(sub_slice_index, 0);
+                    let sub_slice = &mut self.sub_slices[sub_slice_index];
+
+                    let mut surface_info = Vec::new();
+                    for (pic_index, surface_index) in surface_stack.iter().rev() {
+                        let pic = &pictures[pic_index.0];
+                        surface_info.push((pic.composite_mode.as_ref().unwrap().clone(), *surface_index));
                     }
-                }
 
-                
-                
-                self.deferred_dirty_tests.push(DeferredDirtyTest {
-                    tile_rect: TileRect::new(p0, p1),
-                    prim_rect: pic_coverage_rect,
-                });
+                    for y in p0.y .. p1.y {
+                        for x in p0.x .. p1.x {
+                            let key = TileOffset::new(x, y);
+                            let tile = sub_slice.tiles.get_mut(&key).expect("bug: no tile");
+                            tile.sub_graphs.push((pic_coverage_rect, surface_info.clone()));
+                        }
+                    }
+
+                    
+                    
+                    self.deferred_dirty_tests.push(DeferredDirtyTest {
+                        tile_rect: TileRect::new(p0, p1),
+                        prim_rect: pic_coverage_rect,
+                    });
+                }
             }
             PrimitiveInstanceKind::LineDecoration { .. } |
             PrimitiveInstanceKind::NormalBorder { .. } |
