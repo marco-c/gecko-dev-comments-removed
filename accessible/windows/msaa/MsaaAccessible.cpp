@@ -339,6 +339,28 @@ AccessibleWrap* MsaaAccessible::LocalAcc() {
 
 
 
+static already_AddRefed<IDispatch> MaybeGetOOPIframeDocCOMProxy(
+    Accessible* aAcc) {
+  if (!XRE_IsContentProcess() || !aAcc->IsOuterDoc()) {
+    return nullptr;
+  }
+  MOZ_ASSERT(!StaticPrefs::accessibility_cache_enabled_AtStartup());
+  LocalAccessible* outerDoc = aAcc->AsLocal();
+  auto bridge = dom::BrowserBridgeChild::GetFrom(outerDoc->GetContent());
+  if (!bridge) {
+    
+    return nullptr;
+  }
+  return bridge->GetEmbeddedDocAccessible();
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -372,6 +394,11 @@ MsaaAccessible::ResolveChild(const VARIANT& aVarChild,
 
   if (aVarChild.lVal == CHILDID_SELF) {
     return S_OK;
+  }
+
+  if (aVarChild.lVal == 1 && RefPtr{MaybeGetOOPIframeDocCOMProxy(mAcc)}) {
+    
+    return E_FAIL;
   }
 
   bool isDefunct = false;
@@ -460,28 +487,6 @@ static already_AddRefed<IDispatch> GetProxiedAccessibleInSubtree(
   }
 
   return disp.forget();
-}
-
-
-
-
-
-
-
-
-static already_AddRefed<IDispatch> MaybeGetOOPIframeDocCOMProxy(
-    Accessible* aAcc) {
-  if (!XRE_IsContentProcess() || !aAcc->IsOuterDoc()) {
-    return nullptr;
-  }
-  MOZ_ASSERT(!StaticPrefs::accessibility_cache_enabled_AtStartup());
-  LocalAccessible* outerDoc = aAcc->AsLocal();
-  auto bridge = dom::BrowserBridgeChild::GetFrom(outerDoc->GetContent());
-  if (!bridge) {
-    
-    return nullptr;
-  }
-  return bridge->GetEmbeddedDocAccessible();
 }
 
 already_AddRefed<IAccessible> MsaaAccessible::GetIAccessibleFor(
