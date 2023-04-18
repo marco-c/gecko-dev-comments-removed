@@ -19,6 +19,7 @@ namespace mozilla {
 namespace a11y {
 
 class AccAttributes;
+class AccGroupInfo;
 class HyperTextAccessibleBase;
 class LocalAccessible;
 class RemoteAccessible;
@@ -303,6 +304,16 @@ class Accessible {
   
 
 
+  virtual AccGroupInfo* GetGroupInfo() const { return nullptr; }
+
+  
+
+
+  virtual AccGroupInfo* GetOrCreateGroupInfo() { return nullptr; }
+
+  
+
+
 
 
 
@@ -320,6 +331,7 @@ class Accessible {
   uint8_t mRoleMapEntryIndex;
 
   friend class DocAccessibleChildBase;
+  friend class AccGroupInfo;
 };
 
 }  

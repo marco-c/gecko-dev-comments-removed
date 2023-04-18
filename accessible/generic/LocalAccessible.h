@@ -734,13 +734,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  inline bool HasDirtyGroupInfo() const {
-    return mStateFlags & eGroupInfoDirty;
-  }
-
-  
-
-
   bool HasOwnContent() const {
     return mContent && !(mStateFlags & eSharedNode);
   }
@@ -1024,10 +1017,9 @@ class LocalAccessible : public nsISupports, public Accessible {
 
   uint32_t GetActionRule() const;
 
-  
+  virtual AccGroupInfo* GetGroupInfo() const override;
 
-
-  AccGroupInfo* GetGroupInfo() const;
+  virtual AccGroupInfo* GetOrCreateGroupInfo() override;
 
   virtual void ARIAGroupPosition(int32_t* aLevel, int32_t* aSetSize,
                                  int32_t* aPosInSet) const override;
