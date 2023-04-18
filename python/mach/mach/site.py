@@ -17,7 +17,7 @@ import shutil
 import subprocess
 import sys
 from collections import OrderedDict
-from distutils import dist
+import sysconfig
 from pathlib import Path
 import tempfile
 from contextlib import contextmanager
@@ -743,15 +743,24 @@ class PythonVirtualenv:
 
     @functools.lru_cache(maxsize=None)
     def site_packages_dir(self):
-        normalized_venv_root = os.path.normpath(self.prefix)
-
-        distribution = dist.Distribution({"script_args": "--no-user-cfg"})
-        installer = distribution.get_command_obj("install")
-        installer.prefix = normalized_venv_root
-        installer.finalize_options()
-
         
-        path = installer.install_purelib
+        
+        
+        
+        
+        if os.name == "posix":
+            scheme = "posix_prefix"
+        else:
+            scheme = os.name
+
+        sysconfig_paths = sysconfig.get_paths(scheme)
+        data_path = Path(sysconfig_paths["data"])
+        purelib_path = Path(sysconfig_paths["purelib"])
+        relative_purelib_path = purelib_path.relative_to(data_path)
+
+        normalized_venv_root = os.path.normpath(self.prefix)
+        
+        path = os.path.join(normalized_venv_root, relative_purelib_path)
         local_folder = os.path.join(normalized_venv_root, "local")
         
         if path.startswith(local_folder):
