@@ -202,7 +202,6 @@ var Utils = {
 
   async hasLocalData(client) {
     const timestamp = await client.db.getLastModified();
-    
     return timestamp !== null;
   },
 
