@@ -167,6 +167,7 @@ const kObserverTopics = [
   "network:offline-about-to-go-offline",
   "network:offline-status-changed",
   "xpcom-will-shutdown",
+  "blocked-automatic-download",
 ];
 
 
@@ -970,11 +971,8 @@ var DownloadIntegration = {
 
 
 
-  getDownloadSpamProtection() {
-    if (!this._downloadSpamProtection) {
-      this._downloadSpamProtection = new DownloadSpamProtection();
-    }
-    return this._downloadSpamProtection;
+  _initializeDownloadSpamProtection() {
+    this.downloadSpamProtection = new DownloadSpamProtection();
   },
 
   
@@ -994,12 +992,6 @@ var DownloadIntegration = {
       DownloadObserver.observersAdded = true;
       for (let topic of kObserverTopics) {
         Services.obs.addObserver(DownloadObserver, topic);
-      }
-      if (AppConstants.MOZ_BUILD_APP == "browser") {
-        Services.obs.addObserver(
-          this.getDownloadSpamProtection(),
-          DownloadSpamProtection.TOPIC
-        );
       }
     }
     return Promise.resolve();
@@ -1230,15 +1222,15 @@ var DownloadObserver = {
         for (let topic of kObserverTopics) {
           Services.obs.removeObserver(this, topic);
         }
+        break;
+      case "blocked-automatic-download":
         if (
           AppConstants.MOZ_BUILD_APP == "browser" &&
-          this._downloadSpamProtection
+          !DownloadIntegration.downloadSpamProtection
         ) {
-          Services.obs.removeObserver(
-            this._downloadSpamProtection,
-            DownloadSpamProtection.TOPIC
-          );
+          DownloadIntegration._initializeDownloadSpamProtection();
         }
+        DownloadIntegration.downloadSpamProtection.update(aData);
         break;
     }
   },
