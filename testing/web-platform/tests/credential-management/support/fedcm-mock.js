@@ -1,4 +1,4 @@
-import { RequestMode, RequestIdTokenStatus, LogoutRpsStatus, RevokeStatus, FederatedAuthRequest, FederatedAuthRequestReceiver } from '/gen/third_party/blink/public/mojom/webid/federated_auth_request.mojom.m.js';
+import { RequestIdTokenStatus, LogoutRpsStatus, RevokeStatus, FederatedAuthRequest, FederatedAuthRequestReceiver } from '/gen/third_party/blink/public/mojom/webid/federated_auth_request.mojom.m.js';
 
 function toMojoIdTokenStatus(status) {
   return RequestIdTokenStatus["k" + status];
@@ -61,7 +61,7 @@ export class MockFederatedAuthRequest {
 
   
   
-  async requestIdToken(provider, idRequest, mode) {
+  async requestIdToken(provider, idRequest) {
     if (this.returnPending_) {
       this.pendingPromise_ = new Promise((resolve, reject) => {
         this.pendingPromiseResolve_ = resolve;
