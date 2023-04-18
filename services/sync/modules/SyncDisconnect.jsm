@@ -9,7 +9,9 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   Services: "resource://gre/modules/Services.jsm",
   Log: "resource://gre/modules/Log.jsm",
   Sanitizer: "resource:///modules/Sanitizer.jsm",
@@ -18,13 +20,13 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Utils: "resource://services-sync/util.js",
 });
 
-XPCOMUtils.defineLazyGetter(this, "fxAccounts", () => {
+XPCOMUtils.defineLazyGetter(lazy, "fxAccounts", () => {
   return ChromeUtils.import(
     "resource://gre/modules/FxAccounts.jsm"
   ).getFxAccountsSingleton();
 });
 
-XPCOMUtils.defineLazyGetter(this, "FxAccountsCommon", function() {
+XPCOMUtils.defineLazyGetter(lazy, "FxAccountsCommon", function() {
   return ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js");
 });
 
@@ -48,7 +50,7 @@ const SyncDisconnectInternal = {
   
   async promiseNotSyncing(abortController) {
     let weave = this.getWeave();
-    let log = Log.repository.getLogger("Sync.Service");
+    let log = lazy.Log.repository.getLogger("Sync.Service");
     
     
     return new Promise(resolve => {
@@ -75,7 +77,7 @@ const SyncDisconnectInternal = {
           return;
         }
         log.debug("Waiting a couple of seconds to get the sync lock");
-        setTimeout(checkLock, this.lockRetryInterval);
+        lazy.setTimeout(checkLock, this.lockRetryInterval);
       };
       checkLock();
     });
@@ -86,7 +88,7 @@ const SyncDisconnectInternal = {
     let weave = this.getWeave();
     
     
-    let log = Log.repository.getLogger("Sync.Service");
+    let log = lazy.Log.repository.getLogger("Sync.Service");
     log.info("Starting santitize of Sync data");
     try {
       
@@ -107,7 +109,9 @@ const SyncDisconnectInternal = {
       
       
       
-      Services.prefs.clearUserPref(FxAccountsCommon.PREF_LAST_FXA_USER);
+      lazy.Services.prefs.clearUserPref(
+        lazy.FxAccountsCommon.PREF_LAST_FXA_USER
+      );
 
       log.info("Finished wiping sync data");
     } catch (ex) {
@@ -128,10 +132,10 @@ const SyncDisconnectInternal = {
       
       
       
-      let itemsToClear = Object.keys(Sanitizer.items).filter(
+      let itemsToClear = Object.keys(lazy.Sanitizer.items).filter(
         k => k != "openWindows"
       );
-      await Sanitizer.sanitize(itemsToClear);
+      await lazy.Sanitizer.sanitize(itemsToClear);
     } catch (ex) {
       console.error("Failed to sanitize other data", ex);
     }
@@ -144,7 +148,7 @@ const SyncDisconnectInternal = {
     let Weave = this.getWeave();
     await Weave.Service.promiseInitialized;
     await Weave.Service.startOver();
-    await fxAccounts.signOut();
+    await lazy.fxAccounts.signOut();
     
     
     
@@ -167,12 +171,12 @@ const SyncDisconnectInternal = {
     
     
     
-    let log = Log.repository.getLogger("Sync.Service");
+    let log = lazy.Log.repository.getLogger("Sync.Service");
 
     
     
     log.info("checking master-password state");
-    if (!Utils.ensureMPUnlocked()) {
+    if (!lazy.Utils.ensureMPUnlocked()) {
       log.warn(
         "The master-password needs to be unlocked to fully disconnect from sync"
       );
@@ -216,7 +220,7 @@ const SyncDisconnectInternal = {
       abortController.abort();
       return promiseDisconnectFinished;
     };
-    AsyncShutdown.quitApplicationGranted.addBlocker(
+    lazy.AsyncShutdown.quitApplicationGranted.addBlocker(
       "SyncDisconnect: removing requested data",
       shutdownBlocker
     );
@@ -227,7 +231,7 @@ const SyncDisconnectInternal = {
 
     
     
-    AsyncShutdown.quitApplicationGranted.removeBlocker(shutdownBlocker);
+    lazy.AsyncShutdown.quitApplicationGranted.removeBlocker(shutdownBlocker);
   },
 };
 

@@ -28,39 +28,41 @@ const {
   STATUS_OK,
 } = ChromeUtils.import("resource://services-sync/constants.js");
 
+const lazy = {};
+
 
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "Weave",
   "resource://services-sync/main.js"
 );
 
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "BulkKeyBundle",
   "resource://services-sync/keys.js"
 );
 
-XPCOMUtils.defineLazyGetter(this, "fxAccounts", () => {
+XPCOMUtils.defineLazyGetter(lazy, "fxAccounts", () => {
   return ChromeUtils.import(
     "resource://gre/modules/FxAccounts.jsm"
   ).getFxAccountsSingleton();
 });
 
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "CommonUtils",
   "resource://services-common/utils.js"
 );
 
-XPCOMUtils.defineLazyGetter(this, "log", function() {
+XPCOMUtils.defineLazyGetter(lazy, "log", function() {
   let log = Log.repository.getLogger("Sync.SyncAuthManager");
   log.manageLevelFromPref("services.sync.log.logger.identity");
   return log;
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
-  this,
+  lazy,
   "IGNORE_CACHED_AUTH_CREDENTIALS",
   "services.sync.debug.ignoreCachedAuthCredentials"
 );
@@ -107,17 +109,17 @@ AuthenticationError.prototype = {
 function SyncAuthManager() {
   
   
-  this._fxaService = fxAccounts;
+  this._fxaService = lazy.fxAccounts;
   this._tokenServerClient = new TokenServerClient();
   this._tokenServerClient.observerPrefix = "weave:service";
-  this._log = log;
+  this._log = lazy.log;
   XPCOMUtils.defineLazyPreferenceGetter(
     this,
     "_username",
     "services.sync.username"
   );
 
-  this.asyncObserver = Async.asyncObserver(this, log);
+  this.asyncObserver = Async.asyncObserver(this, lazy.log);
   for (let topic of OBSERVER_TOPICS) {
     Services.obs.addObserver(this.asyncObserver, topic);
   }
@@ -209,14 +211,14 @@ SyncAuthManager.prototype = {
       
       case fxAccountsCommon.ONVERIFIED_NOTIFICATION: {
         this._log.info("The user became verified");
-        Weave.Status.login = LOGIN_SUCCEEDED;
+        lazy.Weave.Status.login = LOGIN_SUCCEEDED;
 
         
         
         
         
         let isFirstSync =
-          !Weave.Service.locked && !Svc.Prefs.get("client.syncID", null);
+          !lazy.Weave.Service.locked && !Svc.Prefs.get("client.syncID", null);
         if (isFirstSync) {
           this._log.info("Doing initial sync actions");
           Svc.Prefs.set("firstSync", "resetClient");
@@ -225,13 +227,13 @@ SyncAuthManager.prototype = {
         
         
         if (!Svc.Prefs.get("testing.tps", false)) {
-          Weave.Service.sync({ why: "login" });
+          lazy.Weave.Service.sync({ why: "login" });
         }
         break;
       }
 
       case fxAccountsCommon.ONLOGOUT_NOTIFICATION:
-        Weave.Service.startOver()
+        lazy.Weave.Service.startOver()
           .then(() => {
             this._log.trace("startOver completed");
           })
@@ -288,7 +290,7 @@ SyncAuthManager.prototype = {
     this._token = null;
     
     
-    Weave.Service.clusterURL = null;
+    lazy.Weave.Service.clusterURL = null;
   },
 
   
@@ -311,21 +313,23 @@ SyncAuthManager.prototype = {
     let data = await this.getSignedInUser();
     const fxa = this._fxaService;
     if (!data) {
-      log.debug("unlockAndVerifyAuthState has no FxA user");
+      lazy.log.debug("unlockAndVerifyAuthState has no FxA user");
       return LOGIN_FAILED_NO_USERNAME;
     }
     if (!this.username) {
-      log.debug("unlockAndVerifyAuthState finds that sync isn't configured");
+      lazy.log.debug(
+        "unlockAndVerifyAuthState finds that sync isn't configured"
+      );
       return LOGIN_FAILED_NO_USERNAME;
     }
     if (!data.verified) {
       
       
-      log.debug("unlockAndVerifyAuthState has an unverified user");
+      lazy.log.debug("unlockAndVerifyAuthState has an unverified user");
       return LOGIN_FAILED_LOGIN_REJECTED;
     }
     if (await fxa.keys.canGetKeyForScope(SCOPE_OLD_SYNC)) {
-      log.debug(
+      lazy.log.debug(
         "unlockAndVerifyAuthState already has (or can fetch) sync keys"
       );
       return STATUS_OK;
@@ -333,7 +337,7 @@ SyncAuthManager.prototype = {
     
     if (!Utils.ensureMPUnlocked()) {
       
-      log.debug(
+      lazy.log.debug(
         "unlockAndVerifyAuthState: user declined to unlock master-password"
       );
       return MASTER_PASSWORD_LOCKED;
@@ -347,7 +351,7 @@ SyncAuthManager.prototype = {
     } else {
       result = LOGIN_FAILED_LOGIN_REJECTED;
     }
-    log.debug(
+    lazy.log.debug(
       "unlockAndVerifyAuthState re-fetched credentials and is returning",
       result
     );
@@ -361,7 +365,7 @@ SyncAuthManager.prototype = {
   _hasValidToken() {
     
     
-    if (IGNORE_CACHED_AUTH_CREDENTIALS) {
+    if (lazy.IGNORE_CACHED_AUTH_CREDENTIALS) {
       return false;
     }
     if (!this._token) {
@@ -440,9 +444,9 @@ SyncAuthManager.prototype = {
       
       token.expiration = this._now() + token.duration * 1000 * 0.8;
       if (!this._syncKeyBundle) {
-        this._syncKeyBundle = BulkKeyBundle.fromJWK(key);
+        this._syncKeyBundle = lazy.BulkKeyBundle.fromJWK(key);
       }
-      Weave.Status.login = LOGIN_SUCCEEDED;
+      lazy.Weave.Status.login = LOGIN_SUCCEEDED;
       this._token = token;
       return token;
     } catch (caughtErr) {
@@ -467,12 +471,12 @@ SyncAuthManager.prototype = {
       if (err instanceof AuthenticationError) {
         this._log.error("Authentication error in _fetchTokenForUser", err);
         
-        Weave.Status.login = LOGIN_FAILED_LOGIN_REJECTED;
+        lazy.Weave.Status.login = LOGIN_FAILED_LOGIN_REJECTED;
       } else {
         this._log.error("Non-authentication error in _fetchTokenForUser", err);
         
         
-        Weave.Status.login = LOGIN_FAILED_NETWORK_ERROR;
+        lazy.Weave.Status.login = LOGIN_FAILED_NETWORK_ERROR;
       }
       throw err;
     }
@@ -617,12 +621,12 @@ SyncAuthManager.prototype = {
     
     cluster = cluster.toString();
     
-    if (cluster == Weave.Service.clusterURL) {
+    if (cluster == lazy.Weave.Service.clusterURL) {
       return false;
     }
 
     this._log.debug("Setting cluster to " + cluster);
-    Weave.Service.clusterURL = cluster;
+    lazy.Weave.Service.clusterURL = cluster;
 
     return true;
   },
@@ -635,7 +639,7 @@ SyncAuthManager.prototype = {
       
       
       let forceNewToken = false;
-      if (Weave.Service.clusterURL) {
+      if (lazy.Weave.Service.clusterURL) {
         this._log.debug(
           "_findCluster has a pre-existing clusterURL, so fetching a new token token"
         );

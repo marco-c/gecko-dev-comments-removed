@@ -112,10 +112,12 @@ function getEngineModules() {
   return result;
 }
 
+const lazy = {};
 
 
 
-XPCOMUtils.defineLazyGetter(this, "browserSessionID", Utils.makeGUID);
+
+XPCOMUtils.defineLazyGetter(lazy, "browserSessionID", Utils.makeGUID);
 
 function Sync11Service() {
   this._notify = Utils.notify("weave:service:");
@@ -1318,7 +1320,7 @@ Sync11Service.prototype = {
     this._log.debug("User-Agent: " + Utils.userAgent);
     await this.promiseInitialized;
     this._log.info(
-      `Starting sync at ${dateStr} in browser session ${browserSessionID}`
+      `Starting sync at ${dateStr} in browser session ${lazy.browserSessionID}`
     );
     return this._catch(async function() {
       
