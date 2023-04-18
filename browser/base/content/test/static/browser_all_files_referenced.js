@@ -37,11 +37,6 @@ var gExceptionPaths = [
   "chrome://browser/content/assets/klar-qr-code.svg",
 
   
-  
-  "chrome://activity-stream/content/data/content/assets/app-marketplace-icons/en-US/ios.svg",
-  "chrome://activity-stream/content/data/content/assets/app-marketplace-icons/en-US/android.png",
-
-  
   "resource://pdf.js/web/images/",
 
   
