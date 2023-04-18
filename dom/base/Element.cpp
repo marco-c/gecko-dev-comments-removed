@@ -88,6 +88,7 @@
 #include "mozilla/dom/HTMLTemplateElement.h"
 #include "mozilla/dom/KeyframeAnimationOptionsBinding.h"
 #include "mozilla/dom/KeyframeEffect.h"
+#include "mozilla/dom/MouseEvent.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/MutationObservers.h"
@@ -100,6 +101,7 @@
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/dom/WindowBinding.h"
+#include "mozilla/dom/XULCommandEvent.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/gfx/BasePoint.h"
 #include "mozilla/gfx/BaseRect.h"
@@ -3068,12 +3070,51 @@ void Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor) {
   }
 }
 
+
+
+
+
+void Element::DispatchChromeOnlyLinkClickEvent(
+    EventChainPostVisitor& aVisitor) {
+  MOZ_ASSERT(aVisitor.mEvent->mMessage == eMouseAuxClick ||
+                 aVisitor.mEvent->mMessage == eMouseClick,
+             "DispatchChromeOnlyLinkClickEvent supports only click and "
+             "auxclick source events");
+  Document* doc = OwnerDoc();
+  RefPtr<XULCommandEvent> event =
+      new XULCommandEvent(doc, aVisitor.mPresContext, nullptr);
+  RefPtr<dom::Event> mouseDOMEvent = aVisitor.mDOMEvent;
+  if (!mouseDOMEvent) {
+    mouseDOMEvent = EventDispatcher::CreateEvent(
+        aVisitor.mEvent->mOriginalTarget, aVisitor.mPresContext,
+        aVisitor.mEvent, u""_ns);
+    NS_ADDREF(aVisitor.mDOMEvent = mouseDOMEvent);
+  }
+
+  MouseEvent* mouseEvent = mouseDOMEvent->AsMouseEvent();
+  event->InitCommandEvent(
+      u"chromelinkclick"_ns,  true,
+       true, nsGlobalWindowInner::Cast(doc->GetInnerWindow()),
+      0, mouseEvent->CtrlKey(), mouseEvent->AltKey(), mouseEvent->ShiftKey(),
+      mouseEvent->MetaKey(), mouseEvent->Button(), mouseDOMEvent,
+      mouseEvent->MozInputSource(), IgnoreErrors());
+  
+  
+  
+  
+  
+  event->SetTrusted(true);
+  event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
+  DispatchEvent(*event);
+}
+
 nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
   
   
   switch (aVisitor.mEvent->mMessage) {
     case eMouseDown:
     case eMouseClick:
+    case eMouseAuxClick:
     case eLegacyDOMActivate:
     case eKeyPress:
       break;
@@ -3128,24 +3169,28 @@ nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
     case eMouseClick: {
       WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
       if (mouseEvent->IsLeftClickEvent()) {
-        if (mouseEvent->IsControl() || mouseEvent->IsMeta() ||
-            mouseEvent->IsAlt() || mouseEvent->IsShift()) {
-          break;
+        if (!mouseEvent->IsControl() && !mouseEvent->IsMeta() &&
+            !mouseEvent->IsAlt() && !mouseEvent->IsShift()) {
+          
+          nsEventStatus status = nsEventStatus_eIgnore;
+          
+          
+          InternalUIEvent actEvent(true, eLegacyDOMActivate, mouseEvent);
+          actEvent.mDetail = 1;
+
+          rv = EventDispatcher::Dispatch(this, aVisitor.mPresContext, &actEvent,
+                                         nullptr, &status);
+          if (NS_SUCCEEDED(rv)) {
+            aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+          }
         }
 
-        
-        nsEventStatus status = nsEventStatus_eIgnore;
-        
-        
-        InternalUIEvent actEvent(true, eLegacyDOMActivate, mouseEvent);
-        actEvent.mDetail = 1;
-
-        rv = EventDispatcher::Dispatch(this, aVisitor.mPresContext, &actEvent,
-                                       nullptr, &status);
-        if (NS_SUCCEEDED(rv)) {
-          aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-        }
+        DispatchChromeOnlyLinkClickEvent(aVisitor);
       }
+      break;
+    }
+    case eMouseAuxClick: {
+      DispatchChromeOnlyLinkClickEvent(aVisitor);
       break;
     }
     case eLegacyDOMActivate: {

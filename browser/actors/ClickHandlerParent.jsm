@@ -5,9 +5,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["ClickHandlerParent"];
-
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+var EXPORTED_SYMBOLS = ["ClickHandlerParent", "MiddleMousePasteHandlerParent"];
 
 ChromeUtils.defineModuleGetter(
   this,
@@ -26,6 +24,22 @@ ChromeUtils.defineModuleGetter(
 );
 
 let gContentClickListeners = new Set();
+
+class MiddleMousePasteHandlerParent extends JSWindowActorParent {
+  receiveMessage(message) {
+    if (message.name == "MiddleClickPaste") {
+      
+      
+      let browser = this.manager.browsingContext.top.embedderElement;
+      if (!browser) {
+        
+        
+        return;
+      }
+      browser.ownerGlobal.middleMousePaste(message.data);
+    }
+  }
+}
 
 class ClickHandlerParent extends JSWindowActorParent {
   static addContentClickListener(listener) {
@@ -61,17 +75,6 @@ class ClickHandlerParent extends JSWindowActorParent {
       return;
     }
     let window = browser.ownerGlobal;
-
-    if (!data.href) {
-      
-      if (
-        Services.prefs.getBoolPref("middlemouse.contentLoadURL") &&
-        !Services.prefs.getBoolPref("general.autoScroll")
-      ) {
-        window.middleMousePaste(data);
-      }
-      return;
-    }
 
     
     
