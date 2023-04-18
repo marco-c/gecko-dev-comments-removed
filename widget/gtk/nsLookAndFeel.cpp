@@ -1620,7 +1620,7 @@ static void EnsureColorPairIsOpaque(nscolor& aBg, nscolor& aFg) {
   
   
   aBg = NS_ComposeColors(NS_RGB(0xff, 0xff, 0xff), aBg);
-  aFg = NS_ComposeColors(NS_RGB(0xff, 0xff, 0xff), aFg);
+  aFg = NS_ComposeColors(aBg, aFg);
 }
 
 static void PreferDarkerBackground(nscolor& aBg, nscolor& aFg) {
@@ -1903,7 +1903,6 @@ void nsLookAndFeel::PerThemeData::Init() {
       mSelectedItemText = mTextSelectedText;
     }
 
-    PreferDarkerBackground(mSelectedItem, mSelectedItemText);
     EnsureColorPairIsOpaque(mSelectedItem, mSelectedItemText);
 
     
@@ -1919,8 +1918,8 @@ void nsLookAndFeel::PerThemeData::Init() {
       mAccentColorForeground = mSelectedItemText;
     }
 
-    PreferDarkerBackground(mAccentColor, mAccentColorForeground);
     EnsureColorPairIsOpaque(mAccentColor, mAccentColorForeground);
+    PreferDarkerBackground(mAccentColor, mAccentColorForeground);
   }
 
   
