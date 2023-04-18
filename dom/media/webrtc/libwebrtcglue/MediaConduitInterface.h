@@ -116,6 +116,10 @@ class MediaSessionConduit {
   virtual Type type() const = 0;
 
   
+  virtual Maybe<int> ActiveSendPayloadType() const = 0;
+  virtual Maybe<int> ActiveRecvPayloadType() const = 0;
+
+  
   virtual void SetTransportActive(bool aActive) = 0;
 
   

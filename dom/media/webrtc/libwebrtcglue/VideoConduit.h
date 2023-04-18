@@ -71,6 +71,9 @@ class WebrtcVideoConduit
   
   static bool HasH264Hardware();
 
+  Maybe<int> ActiveSendPayloadType() const override;
+  Maybe<int> ActiveRecvPayloadType() const override;
+
   
 
 
