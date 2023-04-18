@@ -65,6 +65,18 @@ function nativeHorizontalWheelEventMsg() {
   );
 }
 
+function nativeArrowDownKey() {
+  switch (getPlatform()) {
+    case "windows":
+      return WIN_VK_DOWN;
+    case "mac":
+      return MAC_VK_DownArrow;
+  }
+  throw new Error(
+    "Native key events not supported on platform " + getPlatform()
+  );
+}
+
 
 function windowForTarget(aTarget) {
   if (aTarget.Window && aTarget instanceof aTarget.Window) {
