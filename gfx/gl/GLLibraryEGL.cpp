@@ -812,6 +812,11 @@ std::shared_ptr<EglDisplay> GLLibraryEGL::CreateDisplayLocked(
         NS_WARNING("Failed to get wl_display.");
         return nullptr;
       }
+    } else if (!gdkDisplay) {
+      
+      
+      
+      nativeDisplay = GetDMABufDevice()->GetGbmDevice();
     }
 #endif
     ret = GetAndInitDisplay(*this, nativeDisplay, aProofOfLock);
