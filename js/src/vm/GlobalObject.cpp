@@ -865,12 +865,7 @@ bool GlobalObject::getSelfHostedFunction(JSContext* cx,
                                          HandlePropertyName selfHostedName,
                                          HandleAtom name, unsigned nargs,
                                          MutableHandleValue funVal) {
-  bool exists = false;
-  if (!GlobalObject::maybeGetIntrinsicValue(cx, global, selfHostedName, funVal,
-                                            &exists)) {
-    return false;
-  }
-  if (exists) {
+  if (global->maybeGetIntrinsicValue(selfHostedName, funVal, cx)) {
     RootedFunction fun(cx, &funVal.toObject().as<JSFunction>());
     if (fun->explicitName() == name) {
       return true;
@@ -940,11 +935,7 @@ bool GlobalObject::getIntrinsicValueSlow(JSContext* cx,
   
   
   
-  bool exists = false;
-  if (!GlobalObject::maybeGetIntrinsicValue(cx, global, name, value, &exists)) {
-    return false;
-  }
-  if (exists) {
+  if (global->maybeGetIntrinsicValue(name, value, cx)) {
     return true;
   }
 
