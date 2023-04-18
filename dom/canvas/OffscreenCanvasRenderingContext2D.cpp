@@ -101,15 +101,9 @@ static void SerializeFontForCanvas(const StyleFontFamilyList& aList,
   
   aUsedFont.Truncate();
 
-  if (aStyle.style.IsItalic()) {
-    aUsedFont.Append("italic ");
-  } else if (aStyle.style.IsOblique()) {
-    aUsedFont.Append("oblique ");
-    
-    if (aStyle.style != FontSlantStyle::Oblique()) {
-      aUsedFont.AppendFloat(aStyle.style.ObliqueAngle());
-      aUsedFont.Append("deg ");
-    }
+  if (!aStyle.style.IsNormal()) {
+    aStyle.style.ToString(aUsedFont);
+    aUsedFont.Append(" ");
   }
 
   
@@ -118,24 +112,9 @@ static void SerializeFontForCanvas(const StyleFontFamilyList& aList,
   }
 
   
-  if (!aStyle.stretch.IsNormal()) {
-    if (aStyle.stretch == FontStretch::UltraCondensed()) {
-      aUsedFont.Append("ultra-condensed ");
-    } else if (aStyle.stretch == FontStretch::ExtraCondensed()) {
-      aUsedFont.Append("extra-condensed ");
-    } else if (aStyle.stretch == FontStretch::Condensed()) {
-      aUsedFont.Append("condensed ");
-    } else if (aStyle.stretch == FontStretch::SemiCondensed()) {
-      aUsedFont.Append("semi-condensed ");
-    } else if (aStyle.stretch == FontStretch::SemiExpanded()) {
-      aUsedFont.Append("semi-expanded ");
-    } else if (aStyle.stretch == FontStretch::Expanded()) {
-      aUsedFont.Append("expanded ");
-    } else if (aStyle.stretch == FontStretch::ExtraExpanded()) {
-      aUsedFont.Append("extra-expanded ");
-    } else if (aStyle.stretch == FontStretch::UltraExpanded()) {
-      aUsedFont.Append("ultra-expanded ");
-    }
+  if (!aStyle.stretch.IsNormal() &&
+      Servo_FontStretch_SerializeKeyword(&aStyle.stretch, &aUsedFont)) {
+    aUsedFont.Append(" ");
   }
 
   
@@ -149,31 +128,18 @@ bool OffscreenCanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
   
   
   
-  float stretch = FontStretch::Normal().Percentage(),
-        weight = FontWeight::Normal().ToFloat(), size = 10.0;
   StyleComputedFontStyleDescriptor style(
       StyleComputedFontStyleDescriptor::Normal());
   StyleFontFamilyList list;
+  gfxFontStyle fontStyle;
+  float size = 0.0f;
   if (!ServoCSSParser::ParseFontShorthandForMatching(
-          aFont, nullptr, list, style, stretch, weight, &size)) {
+          aFont, nullptr, list, fontStyle.style, fontStyle.stretch,
+          fontStyle.weight, &size)) {
     return false;
   }
 
-  gfxFontStyle fontStyle;
   fontStyle.size = size;
-  fontStyle.weight = FontWeight(weight);
-  fontStyle.stretch = FontStretch::FromStyle(stretch);
-  switch (style.tag) {
-    case StyleComputedFontStyleDescriptor::Tag::Normal:
-      fontStyle.style = FontSlantStyle::Normal();
-      break;
-    case StyleComputedFontStyleDescriptor::Tag::Italic:
-      fontStyle.style = FontSlantStyle::Italic();
-      break;
-    case StyleComputedFontStyleDescriptor::Tag::Oblique:
-      fontStyle.style = FontSlantStyle::Oblique(style.AsOblique()._0);
-      break;
-  }
 
   
   
@@ -189,9 +155,8 @@ bool OffscreenCanvasRenderingContext2D::SetFontInternal(const nsACString& aFont,
                                                   1.0);     
   CurrentState().fontGroup = fontGroup;
   SerializeFontForCanvas(list, fontStyle, CurrentState().font);
-  CurrentState().fontFont =
-      nsFont(StyleFontFamily{list, false, false},
-             StyleCSSPixelLength::FromPixels(float(fontStyle.size)));
+  CurrentState().fontFont = nsFont(StyleFontFamily{list, false, false},
+                                   StyleCSSPixelLength::FromPixels(size));
   CurrentState().fontLanguage = nullptr;
   CurrentState().fontExplicitLanguage = false;
   return true;

@@ -10,7 +10,6 @@
 #include <cstdint>
 #include "gfxFontConstants.h"  
 #include "gfxFontVariations.h"
-#include "mozilla/FontPropertyTypes.h"
 #include "mozilla/ServoStyleConstsInlines.h"
 #include "mozilla/StyleColorInlines.h"  
 #include "nsTArray.h"                   
@@ -54,9 +53,9 @@ struct nsFont final {
 
   
   
-  FontSlantStyle style = FontSlantStyle::Normal();
-  FontWeight weight = FontWeight::Normal();
-  FontStretch stretch = FontStretch::Normal();
+  FontSlantStyle style = FontSlantStyle::NORMAL;
+  FontWeight weight = FontWeight::NORMAL;
+  FontStretch stretch = FontStretch::NORMAL;
 
   
   

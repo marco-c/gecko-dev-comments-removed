@@ -22,9 +22,6 @@ use std::ops::Add;
 
 
 
-
-
-
 pub trait ComputeSquaredDistance {
     
     fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()>;
@@ -53,6 +50,13 @@ impl ComputeSquaredDistance for u16 {
     }
 }
 
+impl ComputeSquaredDistance for i16 {
+    #[inline]
+    fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()> {
+        Ok(SquaredDistance::from_sqrt((*self - *other).abs() as f64))
+    }
+}
+
 impl ComputeSquaredDistance for i32 {
     #[inline]
     fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()> {
@@ -78,6 +82,16 @@ impl ComputeSquaredDistance for Au {
     #[inline]
     fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()> {
         self.0.compute_squared_distance(&other.0)
+    }
+}
+
+impl<T> ComputeSquaredDistance for Box<T>
+where
+    T: ComputeSquaredDistance,
+{
+    #[inline]
+    fn compute_squared_distance(&self, other: &Self) -> Result<SquaredDistance, ()> {
+        (**self).compute_squared_distance(&**other)
     }
 }
 

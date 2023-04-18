@@ -280,7 +280,7 @@ bool GDIFontEntry::TestCharacterMap(uint32_t aCh) {
     
     gfxFontStyle fakeStyle;
     if (!IsUpright()) {
-      fakeStyle.style = FontSlantStyle::Italic();
+      fakeStyle.style = FontSlantStyle::ITALIC;
     }
     fakeStyle.weight = Weight().Min();
 
@@ -432,7 +432,7 @@ int CALLBACK GDIFontFamily::FamilyAddStylesProc(
   for (uint32_t i = 0; i < ff->mAvailableFonts.Length(); ++i) {
     fe = static_cast<GDIFontEntry*>(ff->mAvailableFonts[i].get());
     
-    if (fe->Weight().Min() == FontWeight(int32_t(logFont.lfWeight)) &&
+    if (fe->Weight().Min() == FontWeight::FromInt(int32_t(logFont.lfWeight)) &&
         fe->IsItalic() == (logFont.lfItalic == 0xFF)) {
       
       
@@ -445,13 +445,13 @@ int CALLBACK GDIFontFamily::FamilyAddStylesProc(
   
   
   
-  auto italicStyle = (logFont.lfItalic == 0xFF ? FontSlantStyle::Italic()
-                                               : FontSlantStyle::Normal());
+  auto italicStyle = (logFont.lfItalic == 0xFF ? FontSlantStyle::ITALIC
+                                               : FontSlantStyle::NORMAL);
   fe = GDIFontEntry::CreateFontEntry(
       NS_ConvertUTF16toUTF8(lpelfe->elfFullName), feType,
       SlantStyleRange(italicStyle),
-      WeightRange(FontWeight(int32_t(logFont.lfWeight))),
-      StretchRange(FontStretch::Normal()), nullptr);
+      WeightRange(FontWeight::FromInt(int32_t(logFont.lfWeight))),
+      StretchRange(FontStretch::NORMAL), nullptr);
   if (!fe) {
     return 1;
   }
