@@ -3318,6 +3318,18 @@ class nsContentUtils {
 
   static nsCString TruncatedURLForDisplay(nsIURI* aURL, size_t aMaxLen = 128);
 
+  
+
+
+
+  enum class OriginFormat {
+    Base64,
+    Plain,
+  };
+
+  static nsresult AnonymizeId(nsAString& aId, const nsACString& aOriginKey,
+                              OriginFormat aFormat = OriginFormat::Base64);
+
  private:
   static bool InitializeEventTable();
 
