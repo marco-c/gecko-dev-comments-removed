@@ -691,6 +691,12 @@ bool js::TestIntegrityLevel(JSContext* cx, HandleObject obj,
       if (iter->configurable() ||
           (level == IntegrityLevel::Frozen && iter->isDataDescriptor() &&
            iter->writable())) {
+        
+        
+        if (iter->key().isPrivateName()) {
+          continue;
+        }
+
         *result = false;
         return true;
       }
@@ -723,6 +729,9 @@ bool js::TestIntegrityLevel(JSContext* cx, HandleObject obj,
       if (desc->configurable() ||
           (level == IntegrityLevel::Frozen && desc->isDataDescriptor() &&
            desc->writable())) {
+        
+        
+        MOZ_ASSERT(!id.isPrivateName());
         *result = false;
         return true;
       }
