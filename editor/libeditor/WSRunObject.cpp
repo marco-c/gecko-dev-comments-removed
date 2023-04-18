@@ -464,6 +464,7 @@ EditActionResult WhiteSpaceVisibilityKeeper::
       
       moveNodeResult.IgnoreCaretPointSuggestion();
       ret |= moveNodeResult;
+
 #ifdef DEBUG
       MOZ_ASSERT(!rightBlockHasContent.isErr());
       if (rightBlockHasContent.inspect()) {

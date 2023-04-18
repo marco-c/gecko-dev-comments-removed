@@ -4782,13 +4782,23 @@ MoveNodeResult HTMLEditor::MoveOneHardLineContents(
         NS_WARNING("HTMLEditor::MoveChildrenWithTransaction() failed");
         return moveContentsInLineResult;
       }
+      nsresult rv = moveContentsInLineResult.SuggestCaretPointTo(
+          *this, {SuggestCaret::OnlyIfHasSuggestion,
+                  SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
+                  SuggestCaret::AndIgnoreTrivialError});
+      if (NS_FAILED(rv)) {
+        NS_WARNING("MoveNodeResult::SuggestCaretPointTo() failed");
+        return MoveNodeResult(rv);
+      }
+      NS_WARNING_ASSERTION(
+          rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+          "MoveNodeResult::SuggestCaretPointTo() failed, but ignored");
       offset = moveContentsInLineResult.NextInsertionPointRef().Offset();
       
       
       DebugOnly<nsresult> rvIgnored =
           DeleteNodeWithTransaction(MOZ_KnownLive(*content));
       if (NS_WARN_IF(Destroyed())) {
-        moveContentsInLineResult.IgnoreCaretPointSuggestion();
         return MoveNodeResult(NS_ERROR_EDITOR_DESTROYED);
       }
       NS_WARNING_ASSERTION(
@@ -4819,6 +4829,17 @@ MoveNodeResult HTMLEditor::MoveOneHardLineContents(
           "ignored");
       continue;
     }
+    nsresult rv = moveNodeResult.SuggestCaretPointTo(
+        *this, {SuggestCaret::OnlyIfHasSuggestion,
+                SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
+                SuggestCaret::AndIgnoreTrivialError});
+    if (NS_FAILED(rv)) {
+      NS_WARNING("MoveNodeResult::SuggestCaretPointTo() failed");
+      return MoveNodeResult(rv);
+    }
+    NS_WARNING_ASSERTION(
+        rv != NS_ERROR_EDITOR_NO_EDITABLE_RANGE,
+        "MoveNodeResult::SuggestCaretPointTo() failed, but ignored");
     offset = moveNodeResult.NextInsertionPointRef().Offset();
     moveContentsInLineResult |= moveNodeResult;
   }
@@ -4841,31 +4862,19 @@ Result<bool, nsresult> HTMLEditor::CanMoveNodeOrChildren(
 }
 
 MoveNodeResult HTMLEditor::MoveNodeOrChildrenWithTransaction(
-    nsIContent& aContent, const EditorDOMPoint& aPointToInsert) {
+    nsIContent& aContentToMove, const EditorDOMPoint& aPointToInsert) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aPointToInsert.IsSet());
 
   
-  if (HTMLEditUtils::CanNodeContain(*aPointToInsert.GetContainer(), aContent)) {
+  if (HTMLEditUtils::CanNodeContain(*aPointToInsert.GetContainer(),
+                                    aContentToMove)) {
     
     EditorDOMPoint pointToInsert(aPointToInsert);
     MoveNodeResult moveNodeResult =
-        MoveNodeWithTransaction(aContent, pointToInsert);
-    if (moveNodeResult.isErr()) {
-      NS_WARNING("HTMLEditor::MoveNodeWithTransaction() failed");
-      return MoveNodeResult(moveNodeResult.unwrapErr());
-    }
-    nsresult rv = moveNodeResult.SuggestCaretPointTo(
-        *this, {SuggestCaret::OnlyIfHasSuggestion,
-                SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-                SuggestCaret::AndIgnoreTrivialError});
-    if (NS_FAILED(rv)) {
-      NS_WARNING("MoveNodeResult::SuggestCaretPointTo() failed");
-      return MoveNodeResult(rv);
-    }
-    NS_WARNING_ASSERTION(
-        rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-        "MoveNodeResult::SuggestCaretPointTo() failed, but ignored");
+        MoveNodeWithTransaction(aContentToMove, pointToInsert);
+    NS_WARNING_ASSERTION(moveNodeResult.isOk(),
+                         "HTMLEditor::MoveNodeWithTransaction() failed");
     
     
     
@@ -4874,19 +4883,21 @@ MoveNodeResult HTMLEditor::MoveNodeOrChildrenWithTransaction(
   }
 
   
-  MoveNodeResult moveNodeResult;
-  if (aContent.IsElement()) {
-    moveNodeResult = MoveChildrenWithTransaction(
-        MOZ_KnownLive(*aContent.AsElement()), aPointToInsert);
-    if (moveNodeResult.isErr()) {
-      NS_WARNING("HTMLEditor::MoveChildrenWithTransaction() failed");
-      return moveNodeResult;
+  MoveNodeResult moveNodeResult = [&]() MOZ_CAN_RUN_SCRIPT {
+    if (!aContentToMove.IsElement()) {
+      return MoveNodeHandled(aPointToInsert);
     }
-  } else {
-    moveNodeResult = MoveNodeHandled(aPointToInsert);
+    MoveNodeResult moveChildrenResult = MoveChildrenWithTransaction(
+        MOZ_KnownLive(*aContentToMove.AsElement()), aPointToInsert);
+    NS_WARNING_ASSERTION(moveChildrenResult.isOk(),
+                         "HTMLEditor::MoveChildrenWithTransaction() failed");
+    return moveChildrenResult;
+  }();
+  if (moveNodeResult.isErr()) {
+    return moveNodeResult;  
   }
 
-  nsresult rv = DeleteNodeWithTransaction(aContent);
+  nsresult rv = DeleteNodeWithTransaction(aContentToMove);
   if (NS_WARN_IF(Destroyed())) {
     moveNodeResult.IgnoreCaretPointSuggestion();
     return MoveNodeResult(NS_ERROR_EDITOR_DESTROYED);
@@ -4896,16 +4907,18 @@ MoveNodeResult HTMLEditor::MoveNodeOrChildrenWithTransaction(
     moveNodeResult.IgnoreCaretPointSuggestion();
     return MoveNodeResult(rv);
   }
-  if (MayHaveMutationEventListeners()) {
-    
-    
-    
-    if (!moveNodeResult.NextInsertionPointRef().IsSetAndValid()) {
-      moveNodeResult = MoveNodeHandled(
-          EditorDOMPoint::AtEndOf(*aPointToInsert.GetContainer()));
-    }
+  if (!MayHaveMutationEventListeners()) {
+    return moveNodeResult;
   }
-  return moveNodeResult;
+  
+  
+  
+  if (moveNodeResult.NextInsertionPointRef().IsSetAndValid()) {
+    return moveNodeResult;
+  }
+  moveNodeResult.IgnoreCaretPointSuggestion();
+  return MoveNodeHandled(
+      EditorDOMPoint::AtEndOf(*aPointToInsert.GetContainer()));
 }
 
 Result<bool, nsresult> HTMLEditor::CanMoveChildren(
