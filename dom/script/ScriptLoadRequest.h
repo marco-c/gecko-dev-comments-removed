@@ -9,6 +9,7 @@
 
 #include "js/AllocPolicy.h"
 #include "js/RootingAPI.h"
+#include "js/SourceText.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Assertions.h"
@@ -16,6 +17,7 @@
 #include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/MaybeOneOf.h"
 #include "mozilla/PreloaderBase.h"
 #include "mozilla/Utf8.h"  
 #include "mozilla/Variant.h"
@@ -247,6 +249,13 @@ class ScriptLoadRequest
   nsIGlobalObject* GetWebExtGlobal() const {
     return mFetchOptions->mWebExtGlobal;
   }
+
+  using MaybeSourceText =
+      mozilla::MaybeOneOf<JS::SourceText<char16_t>, JS::SourceText<Utf8Unit>>;
+
+  
+  
+  nsresult GetScriptSource(JSContext* aCx, MaybeSourceText* aMaybeSource);
 
   
   void SetIsPreloadRequest() {

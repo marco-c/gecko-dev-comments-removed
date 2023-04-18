@@ -631,12 +631,6 @@ class ScriptLoader final : public nsISupports {
 
   
   
-  [[nodiscard]] nsresult GetScriptSource(JSContext* aCx,
-                                         ScriptLoadRequest* aRequest,
-                                         MaybeSourceText* aMaybeSource);
-
-  
-  
   static bool ShouldCacheBytecode(ScriptLoadRequest* aRequest);
 
   void RunScriptWhenSafe(ScriptLoadRequest* aRequest);
