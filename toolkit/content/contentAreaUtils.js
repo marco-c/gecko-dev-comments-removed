@@ -1021,7 +1021,12 @@ function getDefaultFileName(
       } catch (e) {}
     }
     if (fileName) {
-      return validateFileName(Services.textToSubURI.unEscapeURIForUI(fileName));
+      return validateFileName(
+        Services.textToSubURI.unEscapeURIForUI(
+          fileName,
+           true
+        )
+      );
     }
   }
 
@@ -1047,7 +1052,10 @@ function getDefaultFileName(
     if (url.fileName != "") {
       
       return validateFileName(
-        Services.textToSubURI.unEscapeURIForUI(url.fileName)
+        Services.textToSubURI.unEscapeURIForUI(
+          url.fileName,
+           true
+        )
       );
     }
   } catch (e) {
