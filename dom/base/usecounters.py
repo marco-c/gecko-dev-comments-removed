@@ -8,7 +8,7 @@ import re
 
 def read_conf(conf_filename):
     
-    stream = open(conf_filename, "rU")
+    stream = open(conf_filename, "r")
 
     def parse_counters(stream):
         for line_num, line in enumerate(stream):
