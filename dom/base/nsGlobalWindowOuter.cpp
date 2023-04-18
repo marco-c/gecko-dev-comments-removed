@@ -34,6 +34,7 @@
 #include "mozilla/dom/ContentFrameMessageManager.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/EventTarget.h"
+#include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/LocalStorage.h"
 #include "mozilla/dom/LSObject.h"
 #include "mozilla/dom/Storage.h"
@@ -5014,6 +5015,14 @@ void nsGlobalWindowOuter::FocusOuter(CallerType aCallerType,
 
   if (!mDocShell) {
     return;
+  }
+
+  
+  
+  if (nsIContent* content = GetFocusedElement()) {
+    if (HTMLIFrameElement::FromNode(content)) {
+      fm->ClearFocus(this);
+    }
   }
 
   RefPtr<BrowsingContext> parent;
