@@ -54,7 +54,9 @@ var HeuristicsRegExp = {
       "cc-number": "(cc|kk)nr", 
       "cc-exp-month": "(cc|kk)month", 
       "cc-exp-year": "(cc|kk)year", 
-      "cc-type": "type",
+      
+      "cc-type": "type" + 
+        "|kartenmarke", 
     },
 
     
