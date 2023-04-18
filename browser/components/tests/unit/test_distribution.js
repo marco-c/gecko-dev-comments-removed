@@ -5,8 +5,6 @@
 
 
 
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
-
 const { PromiseTestUtils } = ChromeUtils.import(
   "resource://testing-common/PromiseTestUtils.jsm"
 );
@@ -26,9 +24,12 @@ const TOPIC_BROWSERGLUE_TEST = "browser-glue-test";
 registerCleanupFunction(async function() {
   
   
-  let folderPath = OS.Path.join(OS.Constants.Path.profileDir, "distribution");
-  await OS.File.removeDir(folderPath, { ignoreAbsent: true });
-  Assert.ok(!(await OS.File.exists(folderPath)));
+  let folderPath = PathUtils.join(
+    await PathUtils.getProfileDir(),
+    "distribution"
+  );
+  await IOUtils.remove(folderPath, { ignoreAbsent: true, recursive: true });
+  Assert.ok(!(await IOUtils.exists(folderPath)));
   Services.prefs.clearUserPref("distribution.testing.loadFromProfile");
 });
 
