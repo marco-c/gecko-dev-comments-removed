@@ -10,7 +10,11 @@
 const testServer = createVersionizedHttpTestServer("sourcemaps-reload");
 const TEST_URL = testServer.urlFor("index.html");
 
-add_task(async function() {
+
+
+
+
+add_task(async function testReloadingStableOriginalSource() {
   const dbg = await initDebuggerWithAbsoluteURL(TEST_URL, "original.js");
 
   info("Add initial breakpoint");
@@ -104,4 +108,56 @@ add_task(async function() {
 
   assertNotPaused(dbg);
   is(dbg.selectors.getBreakpointCount(dbg), 0, "No breakpoints");
+});
+
+
+
+
+
+
+
+add_task(async function testReloadingReplacedOriginalSource() {
+  testServer.backToFirstVersion();
+
+  const dbg = await initDebuggerWithAbsoluteURL(TEST_URL, "removed-original.js");
+
+  info("Add initial breakpoint");
+  await selectSource(dbg, "removed-original.js");
+  await addBreakpoint(dbg, "removed-original.js", 2);
+
+  
+  invokeInTab("removedOriginal");
+  await waitForPaused(dbg);
+  const replacedSource = findSource(dbg, "removed-original.js");
+  assertPausedAtSourceAndLine(dbg, replacedSource.id, 2);
+  assertTextContentOnLine(dbg, 2, 'console.log("Removed original");');
+  await assertBreakpoint(dbg, 2);
+  is(dbg.selectors.getBreakpointCount(), 1, "One breakpoint exists");
+  let breakpoint = dbg.selectors.getBreakpointsList()[0];
+  is(breakpoint.location.sourceUrl, replacedSource.url);
+  is(breakpoint.location.line, 2);
+  is(breakpoint.generatedLocation.line, 78);
+
+  await resume(dbg);
+
+  info("Reload, which should remove the original file and a add a new original file which will replace its content in the  generated file");
+  const syncBp = waitForDispatch(dbg.store, "SET_BREAKPOINT");
+  testServer.switchToNextVersion();
+  await reload(dbg);
+  await syncBp;
+
+  
+  
+  
+  
+  await waitForPaused(dbg);
+  const newSource = findSource(dbg, "new-original.js");
+  assertPausedAtSourceAndLine(dbg, newSource.id, 2);
+  assertTextContentOnLine(dbg, 2, 'console.log("New original");');
+  await assertBreakpoint(dbg, 2);
+  is(dbg.selectors.getBreakpointCount(), 1, "One breakpoint exists");
+  breakpoint = dbg.selectors.getBreakpointsList()[0];
+  is(breakpoint.location.sourceUrl, newSource.url);
+  is(breakpoint.location.line, 2);
+  is(breakpoint.generatedLocation.line, 78);
 });

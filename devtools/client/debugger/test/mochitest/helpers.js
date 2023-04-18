@@ -2302,6 +2302,8 @@ async function setLogPoint(dbg, index, value) {
 
 
 
+
+
 function createVersionizedHttpTestServer(testFolderName) {
   const httpServer = createTestHTTPServer();
 
@@ -2329,6 +2331,9 @@ function createVersionizedHttpTestServer(testFolderName) {
   return {
     switchToNextVersion() {
       currentVersion++;
+    },
+    backToFirstVersion() {
+      currentVersion = 1;
     },
     urlFor(path) {
       const port = httpServer.identity.primaryPort;
