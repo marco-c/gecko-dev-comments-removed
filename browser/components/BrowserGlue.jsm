@@ -3334,11 +3334,21 @@ BrowserGlue.prototype = {
     });
   },
 
+  _migrateHashedKeysForXULStoreForDocument(docUrl) {
+    Array.from(Services.xulStore.getIDsEnumerator(docUrl))
+      .filter(id => id.startsWith("place:"))
+      .forEach(id => {
+        Services.xulStore.removeValue(docUrl, id, "open");
+        let hashedId = PlacesUtils.obfuscateUrlForXulStore(id);
+        Services.xulStore.setValue(docUrl, hashedId, "open", "true");
+      });
+  },
+
   
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 120;
+    const UI_VERSION = 121;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     const PROFILE_DIR = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
@@ -4027,6 +4037,17 @@ BrowserGlue.prototype = {
         }
         Services.prefs.clearUserPref(oldPref);
       }
+    }
+
+    if (currentUIVersion < 121) {
+      
+      this._migrateHashedKeysForXULStoreForDocument(BROWSER_DOCURL);
+      this._migrateHashedKeysForXULStoreForDocument(
+        "chrome://browser/content/places/bookmarksSidebar.xhtml"
+      );
+      this._migrateHashedKeysForXULStoreForDocument(
+        "chrome://browser/content/places/historySidebar.xhtml"
+      );
     }
 
     

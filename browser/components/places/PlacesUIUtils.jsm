@@ -295,6 +295,25 @@ var PlacesUIUtils = {
 
 
 
+  obfuscateUrlForXulStore(url) {
+    if (!url.startsWith("place:")) {
+      throw new Error("Method must be used to only obfuscate place: uris!");
+    }
+    let urlNoProtocol = url.substring(url.indexOf(":") + 1);
+    let hashedURL = md5Hash(urlNoProtocol);
+
+    return `place:${hashedURL}`;
+  },
+
+  
+
+
+
+
+
+
+
+
 
 
 
@@ -1857,4 +1876,31 @@ function getBrowserWindow(aWindow) {
       "navigator:browser"
     ? aWindow
     : BrowserWindowTracker.getTopWindow();
+}
+
+
+let gCryptoHash = null;
+
+
+
+
+
+
+function md5Hash(data) {
+  
+  if (gCryptoHash === null) {
+    gCryptoHash = Cc["@mozilla.org/security/hash;1"].createInstance(
+      Ci.nsICryptoHash
+    );
+  }
+
+  gCryptoHash.init(gCryptoHash.MD5);
+
+  
+  gCryptoHash.update(
+    data.split("").map(c => c.charCodeAt(0)),
+    data.length
+  );
+  
+  return gCryptoHash.finish(true);
 }
