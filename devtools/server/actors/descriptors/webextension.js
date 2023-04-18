@@ -135,8 +135,6 @@ const WebExtensionDescriptorActor = protocol.ActorClassWithSpec(
       return Object.assign(form, {
         iconURL: this.addon.iconURL,
         id: this.addon.id,
-        
-        isOOP: this.isOOP,
         name: this.addon.name,
       });
     },
@@ -241,11 +239,6 @@ const WebExtensionDescriptorActor = protocol.ActorClassWithSpec(
         console.warn(`Failed to create data url from [${this.addon.iconURL}]`);
         return null;
       }
-    },
-
-    
-    get isOOP() {
-      return this._browser ? this._browser.isRemoteBrowser : undefined;
     },
 
     
