@@ -29,7 +29,7 @@ class PromptFactory {
     switch (aEvent.type) {
       case "mozshowdropdown":
       case "mozshowdropdown-sourcetouch":
-        this._handleSelect(aEvent);
+        this._handleSelect(aEvent.composedTarget);
         break;
       case "click":
         this._handleClick(aEvent);
@@ -47,7 +47,8 @@ class PromptFactory {
   
   _handleClick(aEvent) {
     const target = aEvent.composedTarget;
-    if (ChromeUtils.getClassName(target) !== "HTMLInputElement") {
+    const className = ChromeUtils.getClassName(target);
+    if (className !== "HTMLInputElement" && className !== "HTMLSelectElement") {
       return;
     }
 
@@ -58,6 +59,14 @@ class PromptFactory {
       !target.willValidate
     ) {
       
+      
+      return;
+    }
+
+    if (className === "HTMLSelectElement") {
+      if (target.multiple) {
+        return this._handleSelect(target);
+      }
       
       return;
     }
