@@ -40,6 +40,13 @@ class ImageAccessible : public LinkableAccessible,
   LayoutDeviceIntPoint Position(uint32_t aCoordType);
   LayoutDeviceIntSize Size();
 
+ protected:
+  virtual ~ImageAccessible();
+
+  
+  virtual ENameValueFlag NativeName(nsString& aName) const override;
+
+ private:
   
 
 
@@ -48,18 +55,6 @@ class ImageAccessible : public LinkableAccessible,
     return uri;
   }
 
- protected:
-  virtual ~ImageAccessible();
-
-  
-  virtual ENameValueFlag NativeName(nsString& aName) const override;
-
-  virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                   int32_t aModType,
-                                   const nsAttrValue* aOldValue,
-                                   uint64_t aOldState) override;
-
- private:
   
 
 
