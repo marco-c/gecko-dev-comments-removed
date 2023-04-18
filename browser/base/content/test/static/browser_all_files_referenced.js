@@ -57,6 +57,9 @@ var gExceptionPaths = [
   
   
   "resource://usercontext-content/builtin-themes/",
+
+  
+  "chrome://browser/content/pagedata/schemas/",
 ];
 
 
@@ -266,6 +269,9 @@ var whitelist = [
 
   
   { file: "resource://gre/localization/en-US/toolkit/global/run-from-dmg.ftl" },
+
+  
+  { file: "resource://app/modules/pagedata/PageDataSchema.jsm" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD && AppConstants.platform != "win") {
