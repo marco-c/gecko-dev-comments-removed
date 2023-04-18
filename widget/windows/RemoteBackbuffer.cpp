@@ -149,12 +149,13 @@ class SharedImage {
                               0 );
   }
 
-  HANDLE CreateRemoteFileMapping(DWORD aTargetProcessId) {
-    MOZ_ASSERT(aTargetProcessId);
+  HANDLE CreateRemoteFileMapping(HANDLE aTargetProcess) {
+    MOZ_ASSERT(aTargetProcess);
 
     HANDLE fileMapping = nullptr;
-    if (!ipc::DuplicateHandle(mFileMapping, aTargetProcessId, &fileMapping,
-                              0 , DUPLICATE_SAME_ACCESS)) {
+    if (!::DuplicateHandle(GetCurrentProcess(), mFileMapping, aTargetProcess,
+                           &fileMapping, 0 ,
+                           FALSE , DUPLICATE_SAME_ACCESS)) {
       return nullptr;
     }
     return fileMapping;
@@ -314,8 +315,8 @@ class PresentableSharedImage {
     return result;
   }
 
-  HANDLE CreateRemoteFileMapping(DWORD aTargetProcessId) {
-    return mSharedImage.CreateRemoteFileMapping(aTargetProcessId);
+  HANDLE CreateRemoteFileMapping(HANDLE aTargetProcess) {
+    return mSharedImage.CreateRemoteFileMapping(aTargetProcess);
   }
 
   already_AddRefed<gfx::DrawTarget> CreateDrawTarget() {
@@ -344,7 +345,7 @@ class PresentableSharedImage {
 
 Provider::Provider()
     : mWindowHandle(nullptr),
-      mTargetProcessId(0),
+      mTargetProcess(nullptr),
       mFileMapping(nullptr),
       mRequestReadyEvent(nullptr),
       mResponseReadyEvent(nullptr),
@@ -377,6 +378,10 @@ Provider::~Provider() {
   if (mFileMapping) {
     MOZ_ALWAYS_TRUE(::CloseHandle(mFileMapping));
   }
+
+  if (mTargetProcess) {
+    MOZ_ALWAYS_TRUE(::CloseHandle(mTargetProcess));
+  }
 }
 
 bool Provider::Initialize(HWND aWindowHandle, DWORD aTargetProcessId,
@@ -385,7 +390,12 @@ bool Provider::Initialize(HWND aWindowHandle, DWORD aTargetProcessId,
   MOZ_ASSERT(aTargetProcessId);
 
   mWindowHandle = aWindowHandle;
-  mTargetProcessId = aTargetProcessId;
+
+  mTargetProcess = ::OpenProcess(PROCESS_DUP_HANDLE, FALSE ,
+                                 aTargetProcessId);
+  if (!mTargetProcess) {
+    return false;
+  }
 
   mFileMapping = ::CreateFileMappingW(
       INVALID_HANDLE_VALUE, nullptr , PAGE_READWRITE, 0 ,
@@ -532,7 +542,7 @@ void Provider::HandleBorrowRequest(BorrowResponseData* aResponseData,
   }
 
   HANDLE remoteFileMapping =
-      newBackbuffer->CreateRemoteFileMapping(mTargetProcessId);
+      newBackbuffer->CreateRemoteFileMapping(mTargetProcess);
   if (!remoteFileMapping) {
     return;
   }
