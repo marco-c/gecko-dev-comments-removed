@@ -322,8 +322,8 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   bool IsCombobox() const { return !Multiple() && Size() <= 1; }
 
-  bool OpenInParentProcess();
-  void SetOpenInParentProcess(bool aVal);
+  bool OpenInParentProcess() const { return mIsOpenInParentProcess; }
+  void SetOpenInParentProcess(bool aVal) { mIsOpenInParentProcess = aVal; }
 
   void GetPreviewValue(nsAString& aValue) { aValue = mPreviewValue; }
   void SetPreviewValue(const nsAString& aValue);
@@ -486,33 +486,36 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   nsContentUtils::AutocompleteAttrState mAutocompleteAttrState;
   nsContentUtils::AutocompleteAttrState mAutocompleteInfoState;
   
-  bool mIsDoneAddingChildren;
+  bool mIsDoneAddingChildren : 1;
   
-  bool mDisabledChanged;
-  
-
-
-  bool mMutating;
+  bool mDisabledChanged : 1;
   
 
 
-  bool mInhibitStateRestoration;
+  bool mMutating : 1;
   
 
 
-  bool mSelectionHasChanged;
+  bool mInhibitStateRestoration : 1;
   
 
 
-  bool mDefaultSelectionSet;
+  bool mSelectionHasChanged : 1;
   
 
 
-  bool mCanShowInvalidUI;
+  bool mDefaultSelectionSet : 1;
   
 
 
-  bool mCanShowValidUI;
+  bool mCanShowInvalidUI : 1;
+  
+
+
+  bool mCanShowValidUI : 1;
+
+  
+  bool mIsOpenInParentProcess : 1;
 
   
   uint32_t mNonOptionChildren;
