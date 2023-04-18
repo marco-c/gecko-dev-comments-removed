@@ -41,19 +41,6 @@ class L10nOverlays {
   
 
 
-
-
-
-
-
-
-
-  static bool IsAttrNameLocalizable(const nsAtom* nameAtom, Element* aElement,
-                                    nsTArray<nsString>* aExplicitlyAllowed);
-
-  
-
-
   static already_AddRefed<nsINode> CreateTextNodeFromTextContent(
       Element* aElement, ErrorResult& aRv);
 
