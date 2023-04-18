@@ -445,6 +445,12 @@ class ModuleEnvironmentObject : public EnvironmentObject {
   bool lookupImport(jsid name, ModuleEnvironmentObject** envOut,
                     mozilla::Maybe<PropertyInfo>* propOut);
 
+  
+  
+  
+  
+  static ModuleEnvironmentObject* find(JSObject* env);
+
  private:
   static bool lookupProperty(JSContext* cx, HandleObject obj, HandleId id,
                              MutableHandleObject objp, PropertyResult* propp);
@@ -1020,6 +1026,7 @@ class DebugEnvironmentProxy : public ProxyObject {
   EnvironmentObject& environment() const;
   JSObject& enclosingEnvironment() const;
 
+  
   
   ArrayObject* maybeSnapshot() const;
   void initSnapshot(ArrayObject& snapshot);
