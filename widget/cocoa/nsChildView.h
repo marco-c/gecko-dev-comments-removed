@@ -524,13 +524,6 @@ class nsChildView final : public nsBaseWidget {
 
   nsIWidget* GetWidgetForListenerEvents();
 
-  struct SwipeInfo {
-    bool wantsSwipe;
-    uint32_t allowedDirections;
-  };
-
-  SwipeInfo SendMayStartSwipe(const mozilla::PanGestureInput& aSwipeStartEvent);
-
  protected:
   ChildView* mView;  
   RefPtr<mozilla::widget::TextInputHandler> mTextInputHandler;
