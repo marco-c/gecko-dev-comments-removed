@@ -4781,8 +4781,6 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 
-  
-  StoreTimingEnabled(false);
   return NS_OK;
 }
 

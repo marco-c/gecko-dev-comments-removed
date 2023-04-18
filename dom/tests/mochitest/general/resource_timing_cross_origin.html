@@ -1,7 +1,7 @@
-
-
-
-
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
 
 <!DOCTYPE HTML>
 <html>
@@ -143,9 +143,13 @@ function checkRedirectedSameOrigin(entry) {
 }
 
 // The final entry passes the timing-allow-check,
-// but one of the redirects does not. redirectStart/End are 0.
+// but one of the redirects does not. redirectStart/End and the rest of the
+// attributes are 0 because all redirects need to pass TAO check.
 function checkRedirectCrossOriginResourceSameOrigin(entry) {
-  const checks = { "redirectStart": 0, "redirectEnd": 0 };
+  const checks = { "redirectStart": 0, "redirectEnd": 0,
+                   "domainLookupStart": 0, "domainLookupEnd": 0,
+                   "connectStart": 0, "connectEnd": 0,
+                   "requestStart": 0, "responseStart": 0 };
   checkEntry(entry, checks);
 }
 
@@ -170,17 +174,17 @@ function finishTests() {
   </a>
   <p id="display"></p>
   <div id="content">
-    <object data="http://mochi.test:8888/tests/dom/tests/mochitest/general/res0.resource"></object> 
-    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res0.resource"></object> 
-    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res1.resource"></object> 
-    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res2.resource"></object> 
-    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res3.resource"></object> 
-    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res4.resource"></object> 
-    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res5.resource"></object> 
-    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res6.resource"></object> 
-    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res7.resource"></object> 
-    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res8.resource"></object> 
-    <script type="text/javascript" src="http://mochi.test:8888/tests/dom/tests/mochitest/general/resource_timing.js"></script> 
+    <object data="http://mochi.test:8888/tests/dom/tests/mochitest/general/res0.resource"></object> <!-- same origin, no header -->
+    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res0.resource"></object> <!-- cross origin, no header -->
+    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res1.resource"></object> <!-- cross origin, Timing-Allow-Origin: * header -->
+    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res2.resource"></object> <!-- cross origin redirect to test2.example.com, no header -->
+    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res3.resource"></object> <!-- cross origin, Timing-Allow-Origin: http://mochi.test:8888 header -->
+    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res4.resource"></object> <!-- cross origin redirect to mochi.test:8888/.../res1.resource, Timing-Allow-Origin: * -->
+    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res5.resource"></object> <!-- cross origin, Timing-Allow-Origin: http://mochi.test:8889 -->
+    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res6.resource"></object> <!-- cross origin, Timing-Allow-Origin: "" (empty string) -->
+    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res7.resource"></object> <!-- cross origin, Timing-Allow-Origin: http://mochi.test:8888 http://test1.com header -->
+    <object data="http://test1.example.com/tests/dom/tests/mochitest/general/res8.resource"></object> <!-- double cross origin redirect -->
+    <script type="text/javascript" src="http://mochi.test:8888/tests/dom/tests/mochitest/general/resource_timing.js"></script> <!-- same origin script -->
   </div>
 </body>
 
