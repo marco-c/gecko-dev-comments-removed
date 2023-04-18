@@ -663,13 +663,19 @@ const windowGlobalTargetPrototype = {
 
 
   destroy({ isTargetSwitching = false } = {}) {
-    if (this.isDestroyed()) {
+    
+    
+    if (this.destroying) {
       return;
     }
+    this.destroying = true;
+
     
     
     
-    this.threadActor._parentClosed = true;
+    if (this.threadActor) {
+      this.threadActor._parentClosed = true;
+    }
 
     if (this._touchSimulator) {
       this._touchSimulator.stop();
@@ -721,6 +727,10 @@ const windowGlobalTargetPrototype = {
       this._onConsoleApiProfilerEvent,
       "console-api-profiler"
     );
+
+    
+    
+    this.emit("destroyed");
 
     Actor.prototype.destroy.call(this);
     TargetActorRegistry.unregisterTargetActor(this);
@@ -787,7 +797,7 @@ const windowGlobalTargetPrototype = {
     if (this._docShellsObserved) {
       Services.obs.removeObserver(this, "webnavigation-create");
       Services.obs.removeObserver(this, "webnavigation-destroy");
-      this._docShellsObserved = true;
+      this._docShellsObserved = false;
     }
   },
 
@@ -1106,8 +1116,10 @@ const windowGlobalTargetPrototype = {
 
 
   _destroyThreadActor() {
-    this.threadActor.destroy();
-    this.threadActor = null;
+    if (this.threadActor) {
+      this.threadActor.destroy();
+      this.threadActor = null;
+    }
 
     if (this._sourcesManager) {
       this._sourcesManager.destroy();

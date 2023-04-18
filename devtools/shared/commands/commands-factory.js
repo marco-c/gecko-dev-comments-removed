@@ -80,8 +80,16 @@ exports.CommandsFactory = {
 
 
 
-  async forRemoteTabInTest({ outerWindowID }) {
-    const client = await createLocalClient();
+
+
+
+
+
+
+  async forRemoteTabInTest({ outerWindowID, client }) {
+    if (!client) {
+      client = await createLocalClient();
+    }
 
     const descriptor = await client.mainRoot.getTab({ outerWindowID });
     const commands = await createCommandsDictionary(descriptor);

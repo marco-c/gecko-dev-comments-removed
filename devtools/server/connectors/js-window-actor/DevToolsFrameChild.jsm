@@ -325,7 +325,22 @@ class DevToolsFrameChild extends JSWindowActorChild {
       forwardingPrefix,
       isTopLevelTarget
     );
-    targetActor.createdFromJsWindowActor = true;
+    const form = targetActor.form();
+    
+    
+    targetActor.once("destroyed", () => {
+      
+      this._destroyTargetActor(watcherActorID);
+      
+      this.sendAsyncMessage("DevToolsFrameChild:destroy", {
+        actors: [
+          {
+            watcherActorID,
+            form,
+          },
+        ],
+      });
+    });
     this._connections.set(watcherActorID, {
       connection,
       actor: targetActor,
@@ -762,6 +777,13 @@ class DevToolsFrameChild extends JSWindowActorChild {
         "devtools/server/devtools-server"
       );
       DevToolsServer.off("connectionchange", this._onConnectionChange);
+
+      
+      
+      
+      
+      
+      this._onConnectionChange();
     }
     if (this.useCustomLoader) {
       this.loader.destroy();
