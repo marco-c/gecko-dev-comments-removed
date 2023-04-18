@@ -458,18 +458,12 @@ struct TilePreUpdateContext {
 }
 
 
-struct TilePostUpdateContext<'a> {
+struct TileUpdateDirtyContext<'a> {
     
     pic_to_world_mapper: SpaceMapper<PicturePixel, WorldPixel>,
 
     
     global_device_pixel_scale: DevicePixelScale,
-
-    
-    local_clip_rect: PictureRect,
-
-    
-    backdrop: Option<BackdropInfo>,
 
     
     opacity_bindings: &'a FastHashMap<PropertyBindingId, OpacityBindingInfo>,
@@ -478,13 +472,7 @@ struct TilePostUpdateContext<'a> {
     color_bindings: &'a FastHashMap<PropertyBindingId, ColorBindingInfo>,
 
     
-    current_tile_size: DeviceIntSize,
-
-    
     local_rect: PictureRect,
-
-    
-    z_id: ZBufferId,
 
     
     
@@ -492,7 +480,7 @@ struct TilePostUpdateContext<'a> {
 }
 
 
-struct TilePostUpdateState<'a> {
+struct TileUpdateDirtyState<'a> {
     
     resource_cache: &'a mut ResourceCache,
 
@@ -504,6 +492,30 @@ struct TilePostUpdateState<'a> {
 
     
     spatial_node_comparer: &'a mut SpatialNodeComparer,
+}
+
+
+struct TilePostUpdateContext {
+    
+    local_clip_rect: PictureRect,
+
+    
+    backdrop: Option<BackdropInfo>,
+
+    
+    current_tile_size: DeviceIntSize,
+
+    
+    z_id: ZBufferId,
+}
+
+
+struct TilePostUpdateState<'a> {
+    
+    resource_cache: &'a mut ResourceCache,
+
+    
+    composite_state: &'a mut CompositeState,
 }
 
 
@@ -723,6 +735,8 @@ pub enum InvalidationReason {
     ValidRectChanged,
     
     ScaleChanged,
+    
+    SurfaceContentChanged,
 }
 
 
@@ -823,8 +837,8 @@ impl Tile {
     
     fn update_dirty_rects(
         &mut self,
-        ctx: &TilePostUpdateContext,
-        state: &mut TilePostUpdateState,
+        ctx: &TileUpdateDirtyContext,
+        state: &mut TileUpdateDirtyState,
         invalidation_reason: &mut Option<InvalidationReason>,
         frame_context: &FrameVisibilityContext,
     ) -> PictureRect {
@@ -857,8 +871,8 @@ impl Tile {
     
     fn update_content_validity(
         &mut self,
-        ctx: &TilePostUpdateContext,
-        state: &mut TilePostUpdateState,
+        ctx: &TileUpdateDirtyContext,
+        state: &mut TileUpdateDirtyState,
         frame_context: &FrameVisibilityContext,
     ) {
         
@@ -1061,12 +1075,12 @@ impl Tile {
 
     
     
-    fn post_update(
+    fn update_dirty_and_valid_rects(
         &mut self,
-        ctx: &TilePostUpdateContext,
-        state: &mut TilePostUpdateState,
+        ctx: &TileUpdateDirtyContext,
+        state: &mut TileUpdateDirtyState,
         frame_context: &FrameVisibilityContext,
-    ) -> bool {
+    ) {
         
         
         
@@ -1077,7 +1091,7 @@ impl Tile {
         
         
         if !self.is_visible {
-            return false;
+            return;
         }
 
         
@@ -1116,6 +1130,22 @@ impl Tile {
 
         
         self.update_content_validity(ctx, state, frame_context);
+    }
+
+    
+    
+    fn post_update(
+        &mut self,
+        ctx: &TilePostUpdateContext,
+        state: &mut TilePostUpdateState,
+        frame_context: &FrameVisibilityContext,
+    ) {
+        
+        
+        
+        if !self.is_visible {
+            return;
+        }
 
         
         
@@ -1132,7 +1162,7 @@ impl Tile {
             }
 
             self.is_visible = false;
-            return false;
+            return;
         }
 
         
@@ -1278,8 +1308,6 @@ impl Tile {
 
         
         self.surface = Some(surface);
-
-        true
     }
 }
 
@@ -1892,6 +1920,9 @@ pub struct TileCacheInstance {
     current_raster_scale: f32,
     
     current_surface_traversal_depth: usize,
+    
+    
+    deferred_dirty_tests: Vec<DeferredDirtyTest>,
 }
 
 enum SurfacePromotionResult {
@@ -1950,6 +1981,7 @@ impl TileCacheInstance {
             invalidate_all_tiles: true,
             current_raster_scale: 1.0,
             current_surface_traversal_depth: 0,
+            deferred_dirty_tests: Vec::new(),
         }
     }
 
@@ -2068,6 +2100,7 @@ impl TileCacheInstance {
         self.surface_index = surface_index;
         self.local_rect = pic_rect;
         self.local_clip_rect = PictureRect::max_rect();
+        self.deferred_dirty_tests.clear();
 
         for sub_slice in &mut self.sub_slices {
             sub_slice.reset();
@@ -3297,6 +3330,13 @@ impl TileCacheInstance {
                         tile.sub_graphs.push((pic_coverage_rect, surface_info.clone()));
                     }
                 }
+
+                
+                
+                self.deferred_dirty_tests.push(DeferredDirtyTest {
+                    tile_rect: TileRect::new(p0, p1),
+                    prim_rect: pic_coverage_rect,
+                });
             }
             PrimitiveInstanceKind::LineDecoration { .. } |
             PrimitiveInstanceKind::NormalBorder { .. } |
@@ -3549,20 +3589,16 @@ impl TileCacheInstance {
             frame_context.spatial_tree,
         );
 
-        let mut ctx = TilePostUpdateContext {
+        let ctx = TileUpdateDirtyContext {
             pic_to_world_mapper,
             global_device_pixel_scale: frame_context.global_device_pixel_scale,
-            local_clip_rect: self.local_clip_rect,
-            backdrop: None,
             opacity_bindings: &self.opacity_bindings,
             color_bindings: &self.color_bindings,
-            current_tile_size: self.current_tile_size,
             local_rect: self.local_rect,
-            z_id: ZBufferId::invalid(),
             invalidate_all: self.invalidate_all_tiles,
         };
 
-        let mut state = TilePostUpdateState {
+        let mut state = TileUpdateDirtyState {
             resource_cache: frame_state.resource_cache,
             composite_state: frame_state.composite_state,
             compare_cache: &mut self.compare_cache,
@@ -3571,6 +3607,60 @@ impl TileCacheInstance {
 
         
         
+        for sub_slice in &mut self.sub_slices {
+            for tile in sub_slice.tiles.values_mut() {
+                tile.update_dirty_and_valid_rects(&ctx, &mut state, frame_context);
+            }
+        }
+
+        
+        for sub_slice in &mut self.sub_slices {
+            for dirty_test in self.deferred_dirty_tests.drain(..) {
+                
+                let mut total_dirty_rect = PictureRect::zero();
+
+                for y in dirty_test.tile_rect.min.y .. dirty_test.tile_rect.max.y {
+                    for x in dirty_test.tile_rect.min.x .. dirty_test.tile_rect.max.x {
+                        let key = TileOffset::new(x, y);
+                        let tile = sub_slice.tiles.get_mut(&key).expect("bug: no tile");
+                        total_dirty_rect = total_dirty_rect.union(&tile.local_dirty_rect);
+                    }
+                }
+
+                
+                
+                
+                
+                
+                
+                
+                if total_dirty_rect.intersects(&dirty_test.prim_rect) {
+                    for y in dirty_test.tile_rect.min.y .. dirty_test.tile_rect.max.y {
+                        for x in dirty_test.tile_rect.min.x .. dirty_test.tile_rect.max.x {
+                            let key = TileOffset::new(x, y);
+                            let tile = sub_slice.tiles.get_mut(&key).expect("bug: no tile");
+                            tile.invalidate(
+                                Some(dirty_test.prim_rect),
+                                InvalidationReason::SurfaceContentChanged,
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        let mut ctx = TilePostUpdateContext {
+            local_clip_rect: self.local_clip_rect,
+            backdrop: None,
+            current_tile_size: self.current_tile_size,
+            z_id: ZBufferId::invalid(),
+        };
+
+        let mut state = TilePostUpdateState {
+            resource_cache: frame_state.resource_cache,
+            composite_state: frame_state.composite_state,
+        };
+
         for (i, sub_slice) in self.sub_slices.iter_mut().enumerate().rev() {
             
             if i == 0 {
@@ -6155,6 +6245,16 @@ impl ImageDependency {
         key: ImageKey::DUMMY,
         generation: ImageGeneration::INVALID,
     };
+}
+
+
+
+#[derive(Debug)]
+struct DeferredDirtyTest {
+    
+    tile_rect: TileRect,
+    
+    prim_rect: PictureRect,
 }
 
 
