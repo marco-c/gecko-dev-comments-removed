@@ -904,6 +904,9 @@ void Animation::TriggerNow() {
   
   
   
+  
+  
+  
   if (!mTimeline || mTimeline->GetCurrentTimeAsDuration().IsNull()) {
     NS_WARNING("Failed to trigger an animation with an active timeline");
     return;
@@ -1434,12 +1437,18 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   
   mSyncWithGeometricAnimations = false;
 
-  if (Document* doc = GetRenderedDocument()) {
-    PendingAnimationTracker* tracker =
-        doc->GetOrCreatePendingAnimationTracker();
-    tracker->AddPlayPending(*this);
+  
+  
+  if (HasFiniteTimeline()) {
+    TriggerNow();
   } else {
-    TriggerOnNextTick(Nullable<TimeDuration>());
+    if (Document* doc = GetRenderedDocument()) {
+      PendingAnimationTracker* tracker =
+          doc->GetOrCreatePendingAnimationTracker();
+      tracker->AddPlayPending(*this);
+    } else {
+      TriggerOnNextTick(Nullable<TimeDuration>());
+    }
   }
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
@@ -1490,12 +1499,18 @@ void Animation::Pause(ErrorResult& aRv) {
 
   mPendingState = PendingState::PausePending;
 
-  if (Document* doc = GetRenderedDocument()) {
-    PendingAnimationTracker* tracker =
-        doc->GetOrCreatePendingAnimationTracker();
-    tracker->AddPausePending(*this);
+  
+  
+  if (HasFiniteTimeline()) {
+    TriggerNow();
   } else {
-    TriggerOnNextTick(Nullable<TimeDuration>());
+    if (Document* doc = GetRenderedDocument()) {
+      PendingAnimationTracker* tracker =
+          doc->GetOrCreatePendingAnimationTracker();
+      tracker->AddPausePending(*this);
+    } else {
+      TriggerOnNextTick(Nullable<TimeDuration>());
+    }
   }
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);

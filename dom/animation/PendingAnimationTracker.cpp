@@ -63,6 +63,10 @@ void PendingAnimationTracker::TriggerPendingAnimationsOnNextTick(
         continue;
       }
 
+      MOZ_ASSERT(timeline->IsMonotonicallyIncreasing(),
+                 "Don't put non-MonotoniciallyIncreasing timeline into "
+                 "PendingAnimationTracker");
+
       
       
       
@@ -142,15 +146,6 @@ void PendingAnimationTracker::MarkAnimationsThatMightNeedSynchronization() {
   mHasPlayPendingGeometricAnimations = CheckState::Absent;
   for (const auto& animation : mPlayPendingSet) {
     if (animation->GetEffect() && animation->GetEffect()->AffectsGeometry()) {
-      if (animation->UsingScrollTimeline()) {
-        
-        
-        
-        
-        
-        
-        continue;
-      }
       mHasPlayPendingGeometricAnimations &= ~CheckState::Absent;
       mHasPlayPendingGeometricAnimations |= IsTransition(*animation)
                                                 ? CheckState::TransitionsPresent

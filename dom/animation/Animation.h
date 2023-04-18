@@ -229,6 +229,12 @@ class Animation : public DOMEventTargetHelper,
 
 
 
+
+
+
+
+
+
   void TriggerNow();
   
 
