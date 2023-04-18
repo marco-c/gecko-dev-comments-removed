@@ -1467,7 +1467,7 @@ GroupPos LocalAccessible::GroupPosition() {
 
   
   if (groupPos.level == 0) {
-    int32_t level = GetLevelInternal();
+    int32_t level = GetLevel(false);
     if (level != 0) {
       groupPos.level = level;
     } else {
@@ -3316,83 +3316,6 @@ void LocalAccessible::GetPositionAndSizeInternal(int32_t* aPosInSet,
     *aPosInSet = groupInfo->PosInSet();
     *aSetSize = groupInfo->SetSize();
   }
-}
-
-int32_t LocalAccessible::GetLevelInternal() {
-  int32_t level = nsAccUtils::GetDefaultLevel(this);
-
-  if (!IsBoundToParent()) return level;
-
-  roles::Role role = Role();
-  if (role == roles::OUTLINEITEM) {
-    
-    
-    
-    level = 1;
-
-    LocalAccessible* parent = this;
-    while ((parent = parent->LocalParent())) {
-      roles::Role parentRole = parent->Role();
-
-      if (parentRole == roles::OUTLINE) break;
-      if (parentRole == roles::GROUPING) ++level;
-    }
-
-  } else if (role == roles::LISTITEM) {
-    
-    
-    
-    
-    
-
-    
-    level = 0;
-    LocalAccessible* parent = this;
-    while ((parent = parent->LocalParent())) {
-      roles::Role parentRole = parent->Role();
-
-      if (parentRole == roles::LISTITEM) {
-        ++level;
-      } else if (parentRole != roles::LIST && parentRole != roles::GROUPING) {
-        break;
-      }
-    }
-
-    if (level == 0) {
-      
-      
-      parent = LocalParent();
-      uint32_t siblingCount = parent->ChildCount();
-      for (uint32_t siblingIdx = 0; siblingIdx < siblingCount; siblingIdx++) {
-        LocalAccessible* sibling = parent->LocalChildAt(siblingIdx);
-
-        LocalAccessible* siblingChild = sibling->LocalLastChild();
-        if (siblingChild) {
-          roles::Role lastChildRole = siblingChild->Role();
-          if (lastChildRole == roles::LIST ||
-              lastChildRole == roles::GROUPING) {
-            return 1;
-          }
-        }
-      }
-    } else {
-      ++level;  
-    }
-  } else if (role == roles::COMMENT) {
-    
-    
-    level = 1;
-
-    LocalAccessible* parent = this;
-    while ((parent = parent->LocalParent())) {
-      roles::Role parentRole = parent->Role();
-      if (parentRole == roles::COMMENT) {
-        ++level;
-      }
-    }
-  }
-
-  return level;
 }
 
 nsAtom* LocalAccessible::TagName() const {

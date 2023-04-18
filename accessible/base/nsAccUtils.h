@@ -40,17 +40,6 @@ class nsAccUtils {
   
 
 
-  static int32_t GetDefaultLevel(const LocalAccessible* aAcc);
-
-  
-
-
-
-  static int32_t GetARIAOrDefaultLevel(const LocalAccessible* aAccessible);
-
-  
-
-
   static int32_t GetLevelForXULContainerItem(nsIContent* aContent);
 
   

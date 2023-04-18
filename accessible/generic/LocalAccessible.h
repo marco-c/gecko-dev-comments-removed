@@ -274,11 +274,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual int32_t GetLevelInternal();
-
-  
-
-
 
 
 

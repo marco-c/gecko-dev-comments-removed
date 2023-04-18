@@ -300,6 +300,14 @@ class Accessible {
   virtual void ARIAGroupPosition(int32_t* aLevel, int32_t* aSetSize,
                                  int32_t* aPosInSet) const = 0;
 
+  
+
+
+
+
+
+  virtual int32_t GetLevel(bool aFast) const;
+
  private:
   static const uint8_t kTypeBits = 6;
   static const uint8_t kGenericTypesBits = 18;
