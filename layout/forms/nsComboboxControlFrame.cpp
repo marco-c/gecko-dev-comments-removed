@@ -322,7 +322,8 @@ nscoord nsComboboxControlFrame::GetIntrinsicISize(gfxContext* aRenderingContext,
                                                   IntrinsicISizeType aType) {
   nscoord displayISize = mDisplayFrame->IntrinsicISizeOffsets().padding;
 
-  if (!StyleDisplay()->IsContainSize() && !StyleContent()->mContent.IsNone()) {
+  if (!StyleDisplay()->GetContainSizeAxes().mIContained &&
+      !StyleContent()->mContent.IsNone()) {
     
     
     nscoord maxOptionSize = 0;

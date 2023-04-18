@@ -783,7 +783,7 @@ nscoord nsBlockFrame::GetMinISize(gfxContext* aRenderingContext) {
     return mCachedMinISize;
   }
 
-  if (StyleDisplay()->IsContainSize()) {
+  if (StyleDisplay()->GetContainSizeAxes().mIContained) {
     mCachedMinISize = 0;
     return mCachedMinISize;
   }
@@ -873,7 +873,7 @@ nscoord nsBlockFrame::GetPrefISize(gfxContext* aRenderingContext) {
     return mCachedPrefISize;
   }
 
-  if (StyleDisplay()->IsContainSize()) {
+  if (StyleDisplay()->GetContainSizeAxes().mIContained) {
     mCachedPrefISize = 0;
     return mCachedPrefISize;
   }
@@ -1947,7 +1947,7 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     
     aMetrics.mCarriedOutBEndMargin.Zero();
   } else if (!IsComboboxControlFrame() &&
-             aReflowInput.mStyleDisplay->IsContainSize()) {
+             aReflowInput.mStyleDisplay->GetContainSizeAxes().mBContained) {
     
     
     

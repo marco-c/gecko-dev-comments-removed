@@ -306,7 +306,7 @@ void nsVideoFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
         
         
         
-        if (aReflowInput.mStyleDisplay->IsContainSize()) {
+        if (aReflowInput.mStyleDisplay->GetContainSizeAxes().mBContained) {
           contentBoxBSize = 0;
         } else {
           contentBoxBSize = myWM.IsOrthogonalTo(wm) ? kidDesiredSize.ISize(wm)
@@ -389,20 +389,25 @@ nsIFrame::SizeComputationResult nsVideoFrame::ComputeSize(
 
 nscoord nsVideoFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord result;
+  
+  
   DISPLAY_MIN_INLINE_SIZE(this, result);
-
-  nsSize size = kFallbackIntrinsicSize;
+  nsSize size;
+  const auto wm = GetWritingMode();
   if (HasVideoElement()) {
+    
     size = GetVideoIntrinsicSize();
   } else {
+    const auto containAxes = StyleDisplay()->GetContainSizeAxes();
     
     
-    if (StyleDisplay()->IsContainSize() || !mFrames.LastChild()) {
+    if (containAxes.IsBoth() || !mFrames.LastChild()) {
       size = nsSize();
+    } else {
+      size = containAxes.ContainSize(kFallbackIntrinsicSize, wm);
     }
   }
-
-  result = GetWritingMode().IsVertical() ? size.height : size.width;
+  result = wm.IsVertical() ? size.height : size.width;
   return result;
 }
 
@@ -424,7 +429,7 @@ AspectRatio nsVideoFrame::GetIntrinsicRatio() const {
   }
 
   
-  if (StyleDisplay()->IsContainSize()) {
+  if (StyleDisplay()->GetContainSizeAxes().IsAny()) {
     return AspectRatio();
   }
 
@@ -470,23 +475,25 @@ nsSize nsVideoFrame::GetVideoIntrinsicSize() const {
     return nsSize(0, 0);
   }
 
+  const auto containAxes = StyleDisplay()->GetContainSizeAxes();
   
-  if (StyleDisplay()->IsContainSize()) {
+  if (containAxes.IsBoth()) {
     return nsSize(0, 0);
   }
 
   HTMLVideoElement* element = static_cast<HTMLVideoElement*>(GetContent());
   if (Maybe<CSSIntSize> size = element->GetVideoSize()) {
-    return CSSPixel::ToAppUnits(*size);
+    return containAxes.ContainSize(CSSPixel::ToAppUnits(*size),
+                                   GetWritingMode());
   }
 
   if (ShouldDisplayPoster()) {
     if (Maybe<nsSize> imgSize = PosterImageSize()) {
-      return *imgSize;
+      return containAxes.ContainSize(*imgSize, GetWritingMode());
     }
   }
 
-  return kFallbackIntrinsicSize;
+  return containAxes.ContainSize(kFallbackIntrinsicSize, GetWritingMode());
 }
 
 IntrinsicSize nsVideoFrame::GetIntrinsicSize() {

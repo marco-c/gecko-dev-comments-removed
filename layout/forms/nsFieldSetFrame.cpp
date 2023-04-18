@@ -353,7 +353,7 @@ nscoord nsFieldSetFrame::GetIntrinsicISize(gfxContext* aRenderingContext,
                                            IntrinsicISizeType aType) {
   nscoord legendWidth = 0;
   nscoord contentWidth = 0;
-  if (!StyleDisplay()->IsContainSize()) {
+  if (!StyleDisplay()->GetContainSizeAxes().mIContained) {
     
     
     if (nsIFrame* legend = GetLegend()) {
@@ -743,7 +743,7 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
   LogicalSize finalSize(
       wm, contentRect.ISize(wm) + border.IStartEnd(wm),
       mLegendSpace + border.BStartEnd(wm) + (inner ? inner->BSize(wm) : 0));
-  if (aReflowInput.mStyleDisplay->IsContainSize()) {
+  if (aReflowInput.mStyleDisplay->GetContainSizeAxes().mBContained) {
     
     
     

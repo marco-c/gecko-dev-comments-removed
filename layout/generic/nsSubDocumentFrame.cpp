@@ -618,7 +618,8 @@ nscoord nsSubDocumentFrame::GetPrefISize(gfxContext* aRenderingContext) {
 
 
 IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
-  if (StyleDisplay()->IsContainSize()) {
+  const auto containAxes = StyleDisplay()->GetContainSizeAxes();
+  if (containAxes.IsBoth()) {
     
     return IntrinsicSize(0, 0);
   }
@@ -628,7 +629,7 @@ IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
 
     if (auto size = olc->GetSubdocumentIntrinsicSize()) {
       
-      return *size;
+      return containAxes.ContainIntrinsicSize(*size, GetWritingMode());
     }
   }
 
@@ -641,7 +642,8 @@ IntrinsicSize nsSubDocumentFrame::GetIntrinsicSize() {
   }
 
   
-  return IntrinsicSize(kFallbackIntrinsicSize);
+  return containAxes.ContainIntrinsicSize(IntrinsicSize(kFallbackIntrinsicSize),
+                                          GetWritingMode());
 }
 
 

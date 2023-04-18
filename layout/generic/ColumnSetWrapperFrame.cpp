@@ -154,7 +154,7 @@ nscoord ColumnSetWrapperFrame::GetMinISize(gfxContext* aRenderingContext) {
   nscoord iSize = 0;
   DISPLAY_MIN_INLINE_SIZE(this, iSize);
 
-  if (StyleDisplay()->IsContainSize()) {
+  if (StyleDisplay()->GetContainSizeAxes().mIContained) {
     
     
     
@@ -189,7 +189,7 @@ nscoord ColumnSetWrapperFrame::GetPrefISize(gfxContext* aRenderingContext) {
   nscoord iSize = 0;
   DISPLAY_PREF_INLINE_SIZE(this, iSize);
 
-  if (StyleDisplay()->IsContainSize()) {
+  if (StyleDisplay()->GetContainSizeAxes().mIContained) {
     const nsStyleColumn* colStyle = StyleColumn();
     nscoord colISize;
     if (colStyle->mColumnWidth.IsLength()) {
