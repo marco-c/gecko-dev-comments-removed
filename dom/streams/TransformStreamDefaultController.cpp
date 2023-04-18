@@ -154,7 +154,11 @@ void TransformStreamDefaultController::Error(JSContext* aCx,
   
 
   
-  TransformStreamError(aCx, mStream, aError, aRv);
+  
+  
+  
+  
+  TransformStreamError(aCx, MOZ_KnownLive(mStream), aError, aRv);
 }
 
 
