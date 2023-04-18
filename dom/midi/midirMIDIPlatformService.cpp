@@ -35,10 +35,6 @@ class SendRunnable : public MIDIBackgroundRunnable {
   ~SendRunnable() = default;
   virtual void RunInternal() {
     AssertIsOnBackgroundThread();
-    if (!MIDIPlatformService::IsRunning()) {
-      
-      return;
-    }
     midirMIDIPlatformService* srv =
         static_cast<midirMIDIPlatformService*>(MIDIPlatformService::Get());
     srv->SendMessage(mPortID, mMessage);
