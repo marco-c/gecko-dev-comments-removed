@@ -18,7 +18,7 @@ loader.lazyRequireGetter(this, "asyncStorage", "devtools/shared/async-storage");
 
 
 
-function historyPersistenceMiddleware(store) {
+function historyPersistenceMiddleware(webConsoleUI, store) {
   let historyLoaded = false;
   asyncStorage.getItem("webConsoleHistory").then(
     value => {
@@ -44,7 +44,14 @@ function historyPersistenceMiddleware(store) {
 
     
     
-    if (historyLoaded && triggerStoreActions.includes(action.type)) {
+    const { isPrivate } =
+      webConsoleUI.hud?.commands?.targetCommand?.targetFront?.targetForm || {};
+
+    if (
+      !isPrivate &&
+      historyLoaded &&
+      triggerStoreActions.includes(action.type)
+    ) {
       const state = store.getState();
       asyncStorage
         .setItem("webConsoleHistory", state.history.entries)
