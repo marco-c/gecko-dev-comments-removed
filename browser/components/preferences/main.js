@@ -328,7 +328,7 @@ var gMainPane = {
     initializeProxyUI(gMainPane);
 
     if (Services.prefs.getBoolPref("intl.multilingual.enabled")) {
-      gMainPane.initBrowserLocale();
+      gMainPane.initPrimaryBrowserLanguageUI();
     }
 
     
@@ -396,7 +396,7 @@ var gMainPane = {
       Services.prefs.clearUserPref("browser.ctrlTab.migrated");
     });
     setEventListener("manageBrowserLanguagesButton", "command", function() {
-      gMainPane.showBrowserLanguages({ search: false });
+      gMainPane.showBrowserLanguagesSubDialog({ search: false });
     });
     if (AppConstants.MOZ_UPDATER) {
       
@@ -986,7 +986,7 @@ var gMainPane = {
     document.getElementById("zoomBox").hidden = false;
   },
 
-  initBrowserLocale() {
+  initPrimaryBrowserLanguageUI() {
     
     Services.telemetry.setEventRecordingEnabled(
       "intl.ui.browserLanguage",
@@ -994,12 +994,12 @@ var gMainPane = {
     );
 
     
-    let menulist = document.getElementById("defaultBrowserLanguage");
+    let menulist = document.getElementById("primaryBrowserLocale");
     new SelectionChangedMenulist(menulist, event => {
-      gMainPane.onBrowserLanguageChange(event);
+      gMainPane.onPrimaryBrowserLanguageMenuChange(event);
     });
 
-    gMainPane.setBrowserLocales(Services.locale.appLocaleAsBCP47);
+    gMainPane.updatePrimaryBrowserLanguageUI(Services.locale.appLocaleAsBCP47);
   },
 
   
@@ -1007,7 +1007,7 @@ var gMainPane = {
 
 
 
-  async setBrowserLocales(selected) {
+  async updatePrimaryBrowserLanguageUI(selected) {
     let available = await getAvailableLocales();
     let localeNames = Services.intl.getLocaleDisplayNames(
       undefined,
@@ -1028,7 +1028,7 @@ var gMainPane = {
     
     if (Services.prefs.getBoolPref("intl.multilingual.downloadEnabled")) {
       let menuitem = document.createXULElement("menuitem");
-      menuitem.id = "defaultBrowserLanguageSearch";
+      menuitem.id = "primaryBrowserLocaleSearch";
       menuitem.setAttribute(
         "label",
         await document.l10n.formatValue("browser-languages-search")
@@ -1037,7 +1037,7 @@ var gMainPane = {
       fragment.appendChild(menuitem);
     }
 
-    let menulist = document.getElementById("defaultBrowserLanguage");
+    let menulist = document.getElementById("primaryBrowserLocale");
     let menupopup = menulist.querySelector("menupopup");
     menupopup.textContent = "";
     menupopup.appendChild(fragment);
@@ -1114,7 +1114,7 @@ var gMainPane = {
     }
 
     messageBar.hidden = false;
-    gMainPane.selectedLocales = locales;
+    gMainPane.selectedLocalesForRestart = locales;
   },
 
   hideConfirmLanguageChangeMessageBar() {
@@ -1156,11 +1156,11 @@ var gMainPane = {
   },
 
   
-  onBrowserLanguageChange(event) {
+  onPrimaryBrowserLanguageMenuChange(event) {
     let locale = event.target.value;
 
     if (locale == "search") {
-      gMainPane.showBrowserLanguages({ search: true });
+      gMainPane.showBrowserLanguagesSubDialog({ search: true });
       return;
     } else if (locale == Services.locale.appLocaleAsBCP47) {
       this.hideConfirmLanguageChangeMessageBar();
@@ -1341,7 +1341,7 @@ var gMainPane = {
     );
   },
 
-  showBrowserLanguages({ search }) {
+  showBrowserLanguagesSubDialog({ search }) {
     
     let telemetryId = parseInt(
       Services.telemetry.msSinceProcessStart(),
@@ -1350,7 +1350,11 @@ var gMainPane = {
     let method = search ? "search" : "manage";
     gMainPane.recordBrowserLanguagesTelemetry(method, telemetryId);
 
-    let opts = { selected: gMainPane.selectedLocales, search, telemetryId };
+    let opts = {
+      selectedLocalesForRestart: gMainPane.selectedLocalesForRestart,
+      search,
+      telemetryId,
+    };
     gSubDialog.open(
       "chrome://browser/content/preferences/dialogs/browserLanguages.xhtml",
       { closingCallback: this.browserLanguagesClosed },
@@ -1370,12 +1374,12 @@ var gMainPane = {
     
     if (selected && selected.join(",") != active.join(",")) {
       gMainPane.showConfirmLanguageChangeMessageBar(selected);
-      gMainPane.setBrowserLocales(selected[0]);
+      gMainPane.updatePrimaryBrowserLanguageUI(selected[0]);
       return;
     }
 
     
-    gMainPane.setBrowserLocales(Services.locale.appLocaleAsBCP47);
+    gMainPane.updatePrimaryBrowserLanguageUI(Services.locale.appLocaleAsBCP47);
     gMainPane.hideConfirmLanguageChangeMessageBar();
   },
 
