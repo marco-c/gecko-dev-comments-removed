@@ -1,0 +1,17 @@
+
+
+
+
+#include <cstdint>
+
+
+
+
+
+
+
+
+
+
+void RunOnTemporaryStack(void (*func)(void*), void* param,
+                         size_t reserved_stack_size);
