@@ -28,7 +28,6 @@
 #include "mozilla/UseCounter.h"
 #include "mozilla/dom/ClientSource.h"
 #include "mozilla/dom/FlippedOnce.h"
-#include "mozilla/dom/RemoteWorkerChild.h"
 #include "mozilla/dom/quota/CheckedUnsafePtr.h"
 #include "mozilla/dom/Worker.h"
 #include "mozilla/dom/WorkerCommon.h"
@@ -36,6 +35,7 @@
 #include "mozilla/dom/WorkerStatus.h"
 #include "mozilla/dom/workerinternals/JSSettings.h"
 #include "mozilla/dom/workerinternals/Queue.h"
+#include "mozilla/dom/JSExecutionManager.h"
 #include "mozilla/StaticPrefs_extensions.h"
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
@@ -46,9 +46,15 @@
 
 class nsIThreadInternal;
 
+namespace JS {
+struct RuntimeStats;
+}
+
 namespace mozilla {
 class ThrottledEventQueue;
 namespace dom {
+
+class RemoteWorkerChild;
 
 
 
@@ -1418,8 +1424,8 @@ class WorkerPrivate final
   
   bool mIsInAutomation;
 
-  const RefPtr<mozilla::PerformanceCounter> mPerformanceCounter =
-      MakeRefPtr<mozilla::PerformanceCounter>(nsPrintfCString(
+  const RefPtr<PerformanceCounter> mPerformanceCounter =
+      MakeRefPtr<PerformanceCounter>(nsPrintfCString(
           "Worker:%s", NS_ConvertUTF16toUTF8(mWorkerName).get()));
 
   nsString mId;
