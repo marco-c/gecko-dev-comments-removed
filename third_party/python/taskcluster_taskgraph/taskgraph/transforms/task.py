@@ -72,6 +72,8 @@ task_description_schema = Schema(
         },
         
         Optional("soft-dependencies"): [str],
+        
+        Optional("if-dependencies"): [str],
         Optional("requires"): Any("all-completed", "all-resolved"),
         
         
@@ -607,15 +609,20 @@ def build_generic_worker_payload(config, task, task_def):
         "maxRunTime": worker["max-run-time"],
     }
 
+    on_exit_status = {}
+    if "retry-exit-status" in worker:
+        on_exit_status["retry"] = worker["retry-exit-status"]
     if worker["os"] == "windows":
-        task_def["payload"]["onExitStatus"] = {
-            "retry": [
+        on_exit_status.setdefault("retry", []).extend(
+            [
                 
                 
                 1073807364,  
                 3221225786,  
             ]
-        }
+        )
+    if on_exit_status:
+        task_def["payload"]["onExitStatus"] = on_exit_status
 
     env = worker.get("env", {})
 
@@ -1088,10 +1095,27 @@ def build_task(config, tasks):
                 env = payload.setdefault("env", {})
                 env["MOZ_AUTOMATION"] = "1"
 
+        dependencies = task.get("dependencies", {})
+        if_dependencies = task.get("if-dependencies", [])
+        if if_dependencies:
+            for i, dep in enumerate(if_dependencies):
+                if dep in dependencies:
+                    if_dependencies[i] = dependencies[dep]
+                    continue
+
+                raise Exception(
+                    "{label} specifies '{dep}' in if-dependencies, "
+                    "but {dep} is not a dependency!".format(
+                        label=task["label"], dep=dep
+                    )
+                )
+
         yield {
             "label": task["label"],
+            "description": task["description"],
             "task": task_def,
-            "dependencies": task.get("dependencies", {}),
+            "dependencies": dependencies,
+            "if-dependencies": if_dependencies,
             "soft-dependencies": task.get("soft-dependencies", []),
             "attributes": attributes,
             "optimization": task.get("optimization", None),

@@ -110,32 +110,14 @@ worker_defaults = {
 
 
 def script_url(config, script):
+    if "MOZ_AUTOMATION" in os.environ and "TASK_ID" not in os.environ:
+        raise Exception("TASK_ID must be defined to use run-task on generic-worker")
+    task_id = os.environ.get("TASK_ID", "<TASK_ID>")
     
     
+    tc_url = taskcluster.get_root_url(False)
     
-    
-    
-    
-    
-    
-    
-    
-    if "TASK_ID" in os.environ and not taskcluster.testing:
-        if (
-            "TASKGRAPH_HEAD_REPOSITORY" not in os.environ
-            or "TASKGRAPH_HEAD_REV" not in os.environ
-        ):
-            raise Exception(
-                "Must specify 'TASKGRAPH_HEAD_REPOSITORY' and 'TASKGRAPH_HEAD_REV' "
-                "to use run-task on generic-worker."
-            )
-    taskgraph_repo = os.environ.get(
-        "TASKGRAPH_HEAD_REPOSITORY", "https://hg.mozilla.org/ci/taskgraph"
-    )
-    taskgraph_rev = os.environ.get("TASKGRAPH_HEAD_REV", "default")
-    return "{}/raw-file/{}/src/taskgraph/run-task/{}".format(
-        taskgraph_repo, taskgraph_rev, script
-    )
+    return f"{tc_url}/api/queue/v1/task/{task_id}/artifacts/public/{script}"
 
 
 @run_job_using(
