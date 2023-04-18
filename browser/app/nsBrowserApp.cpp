@@ -297,7 +297,17 @@ int main(int argc, char* argv[], char* envp[]) {
     DllBlocklist_Initialize(gBlocklistInitFlags |
                             eDllBlocklistInitFlagIsChildProcess);
 #  endif
+#  if defined(XP_WIN) && defined(MOZ_SANDBOX)
+    
+    
+    if (IsSandboxedProcess() && !sandboxing::GetInitializedTargetServices()) {
+      Output("Failed to initialize the sandbox target services.");
+      return 255;
+    }
+#  endif
 #  if defined(XP_WIN)
+    
+    
     
     
     
@@ -308,14 +318,6 @@ int main(int argc, char* argv[], char* envp[]) {
     {
       auto result = mozilla::WindowsDpiInitialization();
       (void)result;  
-    }
-#  endif
-#  if defined(XP_WIN) && defined(MOZ_SANDBOX)
-    
-    
-    if (IsSandboxedProcess() && !sandboxing::GetInitializedTargetServices()) {
-      Output("Failed to initialize the sandbox target services.");
-      return 255;
     }
 #  endif
 
