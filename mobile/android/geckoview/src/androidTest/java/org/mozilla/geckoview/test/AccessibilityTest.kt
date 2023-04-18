@@ -40,6 +40,7 @@ import org.junit.runner.RunWith
 import org.mozilla.geckoview.AllowOrDeny
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
+import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.ShouldContinue
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.Setting
 
 const val DISPLAY_WIDTH = 480
@@ -1238,8 +1239,6 @@ class AccessibilityTest : BaseSessionTest() {
         
         sessionRule.setPrefsUntilTestEnd(mapOf(
                 "fission.bfcacheInParent" to false))
-        
-        assumeThat(sessionRule.env.isDebugBuild, equalTo(false))
         fun countAutoFillNodes(cond: (AccessibilityNodeInfo) -> Boolean =
                                        { it.className == "android.widget.EditText" },
                                id: Int = View.NO_ID): Int {
@@ -1253,6 +1252,17 @@ class AccessibilityTest : BaseSessionTest() {
         
         mainSession.loadTestPath(FORMS_HTML_PATH)
         waitForInitialFocus()
+        
+        
+        sessionRule.waitUntilCalled(object : EventDelegate, ShouldContinue {
+            var haveAllAutoFills = countAutoFillNodes() == 18
+
+            override fun shouldContinue(): Boolean = !haveAllAutoFills
+
+            override fun onWinContentChanged(event: AccessibilityEvent) {
+                haveAllAutoFills = countAutoFillNodes() == 18
+            }
+        })
 
         assertThat("Initial auto-fill count should match",
                    countAutoFillNodes(), equalTo(18))
@@ -1268,6 +1278,15 @@ class AccessibilityTest : BaseSessionTest() {
         
         mainSession.goBack()
         waitForInitialFocus()
+        sessionRule.waitUntilCalled(object : EventDelegate, ShouldContinue {
+            var haveAllAutoFills = countAutoFillNodes() == 18
+
+            override fun shouldContinue(): Boolean = !haveAllAutoFills
+
+            override fun onWinContentChanged(event: AccessibilityEvent) {
+                haveAllAutoFills = countAutoFillNodes() == 18
+            }
+        })
         assertThat("Should have auto-fill fields again",
                    countAutoFillNodes(), equalTo(18))
         assertThat("Should not have focused field",
