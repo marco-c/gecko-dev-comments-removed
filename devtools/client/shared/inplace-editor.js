@@ -620,8 +620,18 @@ InplaceEditor.prototype = {
     } else {
       if (type === "rgb" || type === "hsl" || type === "hwb") {
         info = {};
+        const isCSS4Color = !value.includes(",");
+        
+        
+        
+        
+        
+        
+        
         const part =
-          value.substring(range.start, selStart).split(",").length - 1;
+          value
+            .substring(range.start, selStart)
+            .split(isCSS4Color ? / ?\/ ?| / : ",").length - 1;
         if (part === 3) {
           
           info.minValue = 0;
