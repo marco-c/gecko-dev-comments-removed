@@ -311,6 +311,70 @@ function ArrayFilter(callbackfn) {
 
 
 
+function ArrayGroupBy(callbackfn) {
+    
+    var O = ToObject(this);
+
+    
+    var len = ToLength(O.length);
+
+    
+    if (!IsCallable(callbackfn)) {
+        ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
+    }
+
+    
+    var groups = new_List();
+
+    var T = arguments.length > 1 ? arguments[1] : void 0;
+
+    
+    for (var k = 0; k < len; k++) {
+
+        
+
+
+
+        
+        var kValue = O[k];
+
+        
+
+
+
+        var propertyKey = TO_PROPERTY_KEY(
+          callContentFunction(callbackfn, T, kValue, k, O)
+        );
+
+        
+        if (!groups[propertyKey]) {
+            var elements = [ kValue ];
+            DefineDataProperty(groups, propertyKey, elements);
+        } else {
+            var lenElements = groups[propertyKey].length;
+            DefineDataProperty(groups[propertyKey], lenElements, kValue);
+        }
+    }
+
+    
+    var object = {};
+
+    
+
+
+
+    for (var propertyKey in groups) {
+        DefineDataProperty(object, propertyKey, groups[propertyKey])
+    }
+
+    
+    return object;
+}
+
+
+
+
+
 function ArrayGroupByToMap(callbackfn) {
 
     
@@ -344,7 +408,7 @@ function ArrayGroupByToMap(callbackfn) {
 
 
 
-    for(var k = 0; k<len; k++){
+    for (var k = 0; k < len; k++) {
         
 
 
@@ -370,7 +434,7 @@ function ArrayGroupByToMap(callbackfn) {
 
 
 
-        if(!callFunction(std_Map_get, map, propertyKey)){
+        if (!callFunction(std_Map_get, map, propertyKey)) {
             var elements = [ kValue ];
             callFunction(std_Map_set, map, propertyKey, elements);
         } else {
@@ -1313,7 +1377,7 @@ function ArrayWithSorted(comparefn) {
     var items = std_Array(len);
 
     
-    for(var k = 0; k < len; k++) {
+    for (var k = 0; k < len; k++) {
         DefineDataProperty(items, k, O[k]);
     }
 
