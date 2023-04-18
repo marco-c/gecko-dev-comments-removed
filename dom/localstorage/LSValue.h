@@ -23,8 +23,7 @@ template <typename>
 struct ParamTraits;
 }
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -131,7 +130,6 @@ const LSValue& VoidLSValue();
 
 bool PutCStringBytesToString(const nsACString& aSrc, nsString& aDest);
 
-}  
 }  
 
 #endif  

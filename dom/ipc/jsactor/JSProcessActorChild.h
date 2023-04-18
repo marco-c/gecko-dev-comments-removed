@@ -10,8 +10,7 @@
 #include "mozilla/dom/JSActor.h"
 #include "nsIDOMProcessChild.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 class JSProcessActorChild final : public JSActor {
@@ -51,7 +50,6 @@ class JSProcessActorChild final : public JSActor {
   nsCOMPtr<nsIDOMProcessChild> mManager;
 };
 
-}  
 }  
 
 #endif  

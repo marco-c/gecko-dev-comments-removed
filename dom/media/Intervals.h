@@ -12,11 +12,9 @@
 #include "nsTArray.h"
 
 
-namespace mozilla {
-namespace media {
+namespace mozilla::media {
 template <class T>
 class IntervalSet;
-}  
 }  
 
 template <class E>
@@ -25,8 +23,7 @@ struct nsTArray_RelocationStrategy<mozilla::media::IntervalSet<E>> {
       Type;
 };
 
-namespace mozilla {
-namespace media {
+namespace mozilla::media {
 
 
 
@@ -753,7 +750,6 @@ IntervalSet<T> Intersection(const IntervalSet<T>& aIntervals1,
   return intersection;
 }
 
-}  
 }  
 
 #endif  

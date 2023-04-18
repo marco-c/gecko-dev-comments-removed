@@ -18,8 +18,7 @@
 #include "nsStringFwd.h"
 #include "nsTArrayForwardDeclare.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -190,7 +189,6 @@ class LSWriteOptimizer<T, U>::UpdateItemInfo final : public InsertItemInfo {
   WriteInfo::Type GetType() const override { return WriteInfo::UpdateItem; }
 };
 
-}  
 }  
 
 #endif  

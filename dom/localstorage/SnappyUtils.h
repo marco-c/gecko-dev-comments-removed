@@ -9,14 +9,12 @@
 
 #include "nsStringFwd.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 bool SnappyCompress(const nsACString& aSource, nsACString& aDest);
 
 bool SnappyUncompress(const nsACString& aSource, nsACString& aDest);
 
-}  
 }  
 
 #endif  

@@ -20,8 +20,7 @@
 
 #include "nsINode.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Element;
 class L10nMutations;
@@ -129,7 +128,6 @@ class DOMLocalization : public intl::Localization {
   nsTHashSet<RefPtr<nsINode>> mRoots;
 };
 
-}  
 }  
 
 #endif

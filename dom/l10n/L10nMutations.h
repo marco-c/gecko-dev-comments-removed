@@ -16,8 +16,7 @@
 
 class nsRefreshDriver;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -84,7 +83,6 @@ class L10nMutations final : public nsStubMutationObserver,
   bool IsInRoots(nsINode* aNode);
 };
 
-}  
 }  
 
 #endif  

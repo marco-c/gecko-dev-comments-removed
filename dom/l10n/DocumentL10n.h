@@ -11,8 +11,7 @@
 
 class nsIContentSink;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Document;
 
@@ -84,7 +83,6 @@ class DocumentL10n final : public DOMLocalization {
   static bool mIsFirstBrowserWindow;
 };
 
-}  
 }  
 
 #endif  

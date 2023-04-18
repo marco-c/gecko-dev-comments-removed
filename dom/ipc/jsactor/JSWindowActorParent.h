@@ -25,8 +25,7 @@ class WindowGlobalParent;
 }  
 }  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class JSWindowActorParent final : public JSActor {
  public:
@@ -63,7 +62,6 @@ class JSWindowActorParent final : public JSActor {
   RefPtr<WindowGlobalParent> mManager;
 };
 
-}  
 }  
 
 #endif  

@@ -10,8 +10,7 @@
 #include "MediaTrack.h"
 #include "MediaTrackList.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class AudioTrack;
 
@@ -34,7 +33,6 @@ class AudioTrackList : public MediaTrackList {
   AudioTrackList* AsAudioTrackList() override { return this; }
 };
 
-}  
 }  
 
 #endif  
