@@ -16826,6 +16826,8 @@ Selection* Document::GetSelection(ErrorResult& aRv) {
 }
 
 nsresult Document::HasStorageAccessSync(bool& aHasStorageAccess) {
+  
+  
   nsCOMPtr<nsPIDOMWindowInner> inner = this->GetInnerWindow();
   if (!inner) {
     aHasStorageAccess = false;
@@ -16844,6 +16846,8 @@ nsresult Document::HasStorageAccessSync(bool& aHasStorageAccess) {
     }
   }
 
+  
+  
   bool isThirdPartyDocument = AntiTrackingUtils::IsThirdPartyDocument(this);
   Maybe<bool> resultBecauseBrowserSettings =
       ContentBlocking::CheckBrowserSettingsDecidesStorageAccessAPI(
@@ -16858,6 +16862,8 @@ nsresult Document::HasStorageAccessSync(bool& aHasStorageAccess) {
     }
   }
 
+  
+  
   Maybe<bool> resultBecauseCallContext =
       ContentBlocking::CheckCallingContextDecidesStorageAccessAPI(this, false);
   if (resultBecauseCallContext.isSome()) {
@@ -16870,6 +16876,8 @@ nsresult Document::HasStorageAccessSync(bool& aHasStorageAccess) {
     }
   }
 
+  
+  
   Maybe<bool> resultBecausePreviousPermission =
       ContentBlocking::CheckExistingPermissionDecidesStorageAccessAPI(this);
   if (resultBecausePreviousPermission.isSome()) {
@@ -16882,6 +16890,7 @@ nsresult Document::HasStorageAccessSync(bool& aHasStorageAccess) {
     }
   }
 
+  
   aHasStorageAccess = false;
   return NS_OK;
 }
@@ -16944,7 +16953,11 @@ RefPtr<MozPromise<int, bool, true>> Document::RequestStorageAccessAsyncHelper(
   RefPtr<Document> self(this);
   RefPtr<nsPIDOMWindowInner> inner(aInnerWindow);
   RefPtr<nsIPrincipal> principal(aPrincipal);
+
+  
+  
   auto performFinalChecks = [inner, self, principal, aHasUserInteraction]() {
+    
     RefPtr<ContentBlocking::StorageAccessFinalCheckPromise::Private> p =
         new ContentBlocking::StorageAccessFinalCheckPromise::Private(__func__);
     RefPtr<StorageAccessPermissionRequest> sapr =
@@ -16972,9 +16985,11 @@ RefPtr<MozPromise<int, bool, true>> Document::RequestStorageAccessAsyncHelper(
           Telemetry::LABELS_STORAGE_ACCESS_API_UI::Request);
     }
 
+    
     self->AutomaticStorageAccessPermissionCanBeGranted(aHasUserInteraction)
         ->Then(
             GetCurrentSerialEventTarget(), __func__,
+            
             [p, pr, sapr, inner](
                 const Document::AutomaticStorageAccessPermissionGrantPromise::
                     ResolveOrRejectValue& aValue) -> void {
@@ -16982,9 +16997,10 @@ RefPtr<MozPromise<int, bool, true>> Document::RequestStorageAccessAsyncHelper(
               
               PromptResult pr2 = pr;
 
+              
+              
               bool storageAccessCanBeGrantedAutomatically =
                   aValue.IsResolve() && aValue.ResolveValue();
-
               bool autoGrant = false;
               if (pr2 == PromptResult::Pending &&
                   storageAccessCanBeGrantedAutomatically) {
@@ -16996,6 +17012,7 @@ RefPtr<MozPromise<int, bool, true>> Document::RequestStorageAccessAsyncHelper(
                         AllowAutomatically);
               }
 
+              
               if (pr2 != PromptResult::Pending) {
                 MOZ_ASSERT_IF(pr2 != PromptResult::Granted,
                               pr2 == PromptResult::Denied);
@@ -17019,6 +17036,8 @@ RefPtr<MozPromise<int, bool, true>> Document::RequestStorageAccessAsyncHelper(
                 return;
               }
 
+              
+              
               sapr->RequestDelayedTask(
                   inner->EventTargetFor(TaskCategory::Other),
                   ContentPermissionRequestBase::DelayedTaskType::Request);
@@ -17027,6 +17046,7 @@ RefPtr<MozPromise<int, bool, true>> Document::RequestStorageAccessAsyncHelper(
     return p;
   };
 
+  
   return ContentBlocking::AllowAccessFor(principal, aBrowsingContext, aNotifier,
                                          performFinalChecks);
 }
@@ -17132,6 +17152,10 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   this->ConsumeTransientUserGestureActivation();
 
+  
+  
+  
+  
   RequestStorageAccessAsyncHelper(inner, bc, NodePrincipal(), true,
                                   ContentBlockingNotifier::eStorageAccessAPI)
       ->Then(
@@ -17166,6 +17190,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
     return nullptr;
   }
 
+  
   nsCOMPtr<nsIURI> thirdPartyURI;
   nsresult rv = NS_NewURI(getter_AddRefs(thirdPartyURI), aThirdPartyOrigin);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -17191,6 +17216,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
     return promise.forget();
   }
 
+  
+  
   Maybe<bool> resultBecauseCallContext =
       ContentBlocking::CheckSameSiteCallingContextDecidesStorageAccessAPI(
           this, aRequireUserActivation);
@@ -17204,6 +17231,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
     return promise.forget();
   }
 
+  
+  
   RefPtr<BrowsingContext> bc = this->GetBrowsingContext();
   nsCOMPtr<nsPIDOMWindowInner> inner = this->GetInnerWindow();
   if (!inner) {
@@ -17218,10 +17247,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
     promise->MaybeRejectWithUndefined();
     return promise.forget();
   }
-
   nsCOMPtr<nsIPrincipal> principal = BasePrincipal::CreateContentPrincipal(
       thirdPartyURI, NodePrincipal()->OriginAttributesRef());
-
   if (!principal) {
     this->ConsumeTransientUserGestureActivation();
     promise->MaybeRejectWithUndefined();
@@ -17235,12 +17262,18 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
   
   this->ConsumeTransientUserGestureActivation();
 
+  
+  
+  
+  
   ContentBlocking::AsyncCheckCookiesPermittedDecidesStorageAccessAPI(
       GetBrowsingContext(), principal)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [inner, thirdPartyURI, bc, principal, hasUserActivation, self,
            promise](Maybe<bool> cookieResult) {
+            
+            
             if (cookieResult.isSome()) {
               if (cookieResult.value()) {
                 return MozPromise<int, bool, true>::CreateAndResolve(true,
@@ -17265,22 +17298,33 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
                                                                    __func__);
             }
 
+            
+            
+            
             return self->RequestStorageAccessAsyncHelper(
                 inner, bc, principal, hasUserActivation,
                 ContentBlockingNotifier::ePrivilegeStorageAccessForOriginAPI);
           },
+          
+          
           [promise]() {
             return MozPromise<int, bool, true>::CreateAndReject(false,
                                                                 __func__);
           })
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
+          
+          
           [self, promise] {
             self->NotifyUserGestureActivation();
             promise->MaybeResolveWithUndefined();
           },
+          
+          
           [promise] { promise->MaybeRejectWithUndefined(); });
 
+  
+  
   return promise.forget();
 }
 
