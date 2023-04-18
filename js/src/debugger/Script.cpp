@@ -20,7 +20,6 @@
 #include "debugger/Debugger.h"     
 #include "debugger/DebugScript.h"  
 #include "debugger/Source.h"       
-#include "gc/Barrier.h"            
 #include "gc/GC.h"                 
 #include "gc/Tracer.h"         
 #include "gc/Zone.h"           
