@@ -216,25 +216,39 @@ let HeadlessShell = {
         }
       }
 
-      
-      
+      let urlOrFileToSave = null;
       try {
-        var path = cmdLine.handleFlagWithParam("screenshot", true);
-        if (!cmdLine.length && !URLlist.length) {
-          URLlist.push(path); 
-
-          path = PathUtils.join(
-            cmdLine.workingDirectory.path,
-            "screenshot.png"
-          );
-        }
+        urlOrFileToSave = cmdLine.handleFlagWithParam("screenshot", true);
       } catch (e) {
-        path = PathUtils.join(cmdLine.workingDirectory.path, "screenshot.png");
+        
         cmdLine.handleFlag("screenshot", true); 
       }
 
+      
+      
       for (let i = 0; i < cmdLine.length; ++i) {
-        URLlist.push(cmdLine.getArgument(i)); 
+        const argument = cmdLine.getArgument(i);
+        if (argument.startsWith("-")) {
+          dump(`Warning: unrecognized command line flag ${argument}\n`);
+          
+          
+          ++i;
+        } else {
+          URLlist.push(argument);
+        }
+      }
+
+      let path = null;
+      if (urlOrFileToSave && !URLlist.length) {
+        
+        
+        URLlist.push(urlOrFileToSave);
+      } else {
+        path = urlOrFileToSave;
+      }
+
+      if (!path) {
+        path = PathUtils.join(cmdLine.workingDirectory.path, "screenshot.png");
       }
 
       if (URLlist.length == 1) {
