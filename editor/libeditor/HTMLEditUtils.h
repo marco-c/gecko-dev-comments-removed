@@ -421,6 +421,7 @@ class HTMLEditUtils final {
     TreatSingleBRElementAsVisible,
     TreatListItemAsVisible,
     TreatTableCellAsVisible,
+    IgnoreEditableState,  
     SafeToAskLayout,
   };
   using EmptyCheckOptions = EnumSet<EmptyCheckOption, uint32_t>;

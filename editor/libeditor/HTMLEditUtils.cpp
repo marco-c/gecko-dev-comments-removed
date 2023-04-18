@@ -589,16 +589,20 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
 
   
   
-  
-  
-  
-  
-  
-  
-  if (!aNode.IsContent() || !IsContainerNode(*aNode.AsContent()) ||
-      IsNamedAnchor(&aNode) || IsFormWidget(&aNode) ||
+  if (!aNode.IsContent() ||
+      
+      
+      !IsContainerNode(*aNode.AsContent()) ||
+      
+      
+      IsNamedAnchor(&aNode) ||
+      
+      
+      IsFormWidget(&aNode) ||
+      
       (aOptions.contains(EmptyCheckOption::TreatListItemAsVisible) &&
        IsListItem(&aNode)) ||
+      
       (aOptions.contains(EmptyCheckOption::TreatTableCellAsVisible) &&
        IsTableCell(&aNode))) {
     return false;
@@ -607,13 +611,12 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
   const bool isListItem = IsListItem(&aNode);
   const bool isTableCell = IsTableCell(&aNode);
 
-  
-  
   bool seenBR = aSeenBR && *aSeenBR;
   for (nsIContent* childContent = aNode.GetFirstChild(); childContent;
        childContent = childContent->GetNextSibling()) {
     
-    if (!EditorUtils::IsEditableContent(*childContent, EditorType::HTML)) {
+    if (!aOptions.contains(EmptyCheckOption::IgnoreEditableState) &&
+        !EditorUtils::IsEditableContent(*childContent, EditorType::HTML)) {
       continue;
     }
 

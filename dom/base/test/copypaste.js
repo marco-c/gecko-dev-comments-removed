@@ -332,15 +332,15 @@ async function testCopyPaste(isXHTML) {
     var ul = $("ul1");
     var parent = ul.parentNode;
     r.setStart(parent, 0);
-    r.setEnd(parent.firstChild, 15); 
-    sel.addRange(r);
+    r.setEnd(parent.firstChild, 15);
+    sel.addRange(r); 
 
     r = document.createRange();
-    r.setStart(ul, 1); 
-    r.setEnd(parent, 2); 
-    sel.addRange(r);
+    r.setStart(ul, 1);
+    r.setEnd(parent, 2);
+    sel.addRange(r); 
     await copySelectionToClipboard(true);
-    testPasteHTML("contentEditable1", "Copy1then Paste");
+    testPasteHTML("contentEditable1", "Copy1then Paste"); 
 
     
     var sel = window.getSelection();
@@ -349,15 +349,15 @@ async function testCopyPaste(isXHTML) {
     var ul = $("ul2");
     var parent = ul.parentNode;
     r.setStart(parent, 0);
-    r.setEnd(ul, 1); 
-    sel.addRange(r);
+    r.setEnd(ul, 1);
+    sel.addRange(r); 
 
     r = document.createRange();
-    r.setStart(parent.childNodes[1], 0); 
+    r.setStart(parent.childNodes[1], 0);
     r.setEnd(parent, 2);
-    sel.addRange(r);
+    sel.addRange(r); 
     await copySelectionToClipboard(true);
-    testPasteHTML("contentEditable2", "Copy2then Paste");
+    testPasteHTML("contentEditable2", "Copy2then Paste"); 
 
     
     var sel = window.getSelection();
@@ -366,17 +366,17 @@ async function testCopyPaste(isXHTML) {
     var ul = $("ul3");
     var parent = ul.parentNode;
     r.setStart(parent, 0);
-    r.setEnd(ul, 1); 
-    sel.addRange(r);
+    r.setEnd(ul, 1);
+    sel.addRange(r); 
 
     r = document.createRange();
-    r.setStart(parent.childNodes[1], 0); 
+    r.setStart(parent.childNodes[1], 0);
     r.setEnd(parent, 2);
-    sel.addRange(r);
+    sel.addRange(r); 
     await copySelectionToClipboard(true);
     testPasteHTML(
       "contentEditable3",
-      '<ul id="ul3"><li>\n<br></li></ul>Copy3then Paste'
+      '<ul id="ul3"><li>\n<br></li></ul>Copy3then Paste' 
     );
 
     

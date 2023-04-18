@@ -83,6 +83,7 @@ class nsILoadContext;
 namespace mozilla {
 
 using namespace dom;
+using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
 using LeafNodeType = HTMLEditUtils::LeafNodeType;
 
 #define kInsertCookie "_moz_Insert Here_moz_"
@@ -363,6 +364,18 @@ class MOZ_STACK_CLASS
       DocumentFragment& aDocumentFragmentForContext);
 
   static void RemoveHeadChildAndStealBodyChildsChildren(nsINode& aNode);
+
+  
+
+
+
+
+
+
+
+
+
+  static void RemoveIncompleteDescendantsFromInsertingFragment(nsINode& aNode);
 
   enum class NodesToRemove {
     eAll,
@@ -3239,6 +3252,51 @@ void HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
 }
 
 
+void HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
+    RemoveIncompleteDescendantsFromInsertingFragment(nsINode& aNode) {
+  nsIContent* child = aNode.GetFirstChild();
+  while (child) {
+    bool isEmptyNodeShouldNotInserted = false;
+    if (HTMLEditUtils::IsAnyListElement(child)) {
+      
+      
+      
+      
+      
+      
+      isEmptyNodeShouldNotInserted = HTMLEditUtils::IsEmptyNode(
+          *child,
+          {
+           
+           
+           
+           EmptyCheckOption::TreatListItemAsVisible,
+           
+           
+           
+           
+           
+           
+           EmptyCheckOption::IgnoreEditableState});
+    }
+    
+    
+    
+    if (isEmptyNodeShouldNotInserted) {
+      nsIContent* nextChild = child->GetNextSibling();
+      OwningNonNull<nsIContent> removingChild(*child);
+      removingChild->Remove();
+      child = nextChild;
+      continue;
+    }
+    if (child->HasChildNodes()) {
+      RemoveIncompleteDescendantsFromInsertingFragment(*child);
+    }
+    child = child->GetNextSibling();
+  }
+}
+
+
 bool HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
     IsInsertionCookie(const nsIContent& aContent) {
   
@@ -3389,6 +3447,9 @@ nsresult HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
   FragmentFromPasteCreator::RemoveHeadChildAndStealBodyChildsChildren(
       aDocumentFragmentForPastedHTML);
 
+  FragmentFromPasteCreator::RemoveIncompleteDescendantsFromInsertingFragment(
+      aDocumentFragmentForPastedHTML);
+
   
   IgnoredErrorResult ignoredError;
   aTargetContentOfContextForPastedHTML.AppendChild(
@@ -3415,6 +3476,9 @@ nsresult HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
     PostProcessFragmentForPastedHTMLWithoutContext(
         DocumentFragment& aDocumentFragmentForPastedHTML) {
   FragmentFromPasteCreator::RemoveHeadChildAndStealBodyChildsChildren(
+      aDocumentFragmentForPastedHTML);
+
+  FragmentFromPasteCreator::RemoveIncompleteDescendantsFromInsertingFragment(
       aDocumentFragmentForPastedHTML);
 
   const nsresult rv = FragmentFromPasteCreator::
