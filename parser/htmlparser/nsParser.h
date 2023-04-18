@@ -286,10 +286,7 @@ class nsParser final : public nsIParser,
   
 
 
-
-
-
-  nsresult DidBuildModel(nsresult anErrorCode);
+  void DidBuildModel();
 
  private:
   

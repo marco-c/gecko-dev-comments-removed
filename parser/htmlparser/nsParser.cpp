@@ -383,33 +383,21 @@ nsresult nsParser::WillBuildModel() {
 
 
 
-nsresult nsParser::DidBuildModel(nsresult anErrorCode) {
-  nsresult result = anErrorCode;
-
+void nsParser::DidBuildModel() {
   if (IsComplete()) {
     if (mParserContext && !mParserContext->mPrevContext) {
       
       
       bool terminated = mInternalState == NS_ERROR_HTMLPARSER_STOPPARSING;
       if (mDTD && mSink) {
-        nsresult dtdResult = mDTD->DidBuildModel(anErrorCode),
-                 sinkResult = mSink->DidBuildModel(terminated);
-        
-        
-        
-        
-        
-        
-        
-        result = NS_FAILED(sinkResult) ? sinkResult : dtdResult;
+        mDTD->DidBuildModel();
+        mSink->DidBuildModel(terminated);
       }
 
       
       mParserContext->mRequest = nullptr;
     }
   }
-
-  return result;
 }
 
 
@@ -489,7 +477,7 @@ nsParser::Terminate(void) {
 
   if (mDTD) {
     mDTD->Terminate();
-    DidBuildModel(result);
+    DidBuildModel();
   } else if (mSink) {
     
     
@@ -935,7 +923,7 @@ nsresult nsParser::ResumeParse(bool allowIteration, bool aIsFinalChunk,
         if (NS_ERROR_HTMLPARSER_STOPPARSING == result) {
           
           if (mInternalState != NS_ERROR_HTMLPARSER_STOPPARSING) {
-            DidBuildModel(mStreamStatus);
+            DidBuildModel();
             mInternalState = result;
           }
 
@@ -951,7 +939,7 @@ nsresult nsParser::ResumeParse(bool allowIteration, bool aIsFinalChunk,
               !mParserContext->mMultipart || theContextIsStringBased) {
             if (!mParserContext->mPrevContext) {
               if (mParserContext->mStreamListenerState == eOnStop) {
-                DidBuildModel(mStreamStatus);
+                DidBuildModel();
                 return NS_OK;
               }
             } else {
