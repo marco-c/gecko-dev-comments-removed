@@ -4262,11 +4262,12 @@ nsresult EditorBase::DeleteSelectionAsSubAction(
   if (!TopLevelEditSubActionDataRef().mDidExplicitlySetInterLine) {
     
     
-    ErrorResult error;
-    SelectionRef().SetInterlinePosition(true, error);
-    if (error.Failed()) {
-      NS_WARNING("Selection::SetInterlinePosition(true) failed");
-      return error.StealNSResult();
+    if (MOZ_UNLIKELY(NS_FAILED(SelectionRef().SetInterlinePosition(
+            InterlinePosition::StartOfNextLine)))) {
+      NS_WARNING(
+          "Selection::SetInterlinePosition(InterlinePosition::StartOfNextLine) "
+          "failed");
+      return NS_ERROR_FAILURE;  
     }
   }
 

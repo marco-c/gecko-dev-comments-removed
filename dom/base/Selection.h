@@ -422,8 +422,24 @@ class Selection final : public nsSupportsWeakReference,
                           nsINode& aFocusNode, uint32_t aFocusOffset,
                           mozilla::ErrorResult& aRv);
 
-  bool GetInterlinePosition(mozilla::ErrorResult& aRv);
-  void SetInterlinePosition(bool aValue, mozilla::ErrorResult& aRv);
+  bool GetInterlinePositionJS(mozilla::ErrorResult& aRv) const;
+  void SetInterlinePositionJS(bool aHintRight, mozilla::ErrorResult& aRv);
+
+  enum class InterlinePosition : uint8_t {
+    
+    EndOfLine,
+    
+    StartOfNextLine,
+    
+    
+    
+    
+    
+    
+    Undefined,
+  };
+  InterlinePosition GetInterlinePosition() const;
+  nsresult SetInterlinePosition(InterlinePosition aInterlinePosition);
 
   Nullable<int16_t> GetCaretBidiLevel(mozilla::ErrorResult& aRv) const;
   void SetCaretBidiLevel(const Nullable<int16_t>& aCaretBidiLevel,
@@ -1038,6 +1054,22 @@ inline SelectionTypeMask ToSelectionTypeMask(SelectionType aSelectionType) {
              ? 0
              : static_cast<SelectionTypeMask>(
                    1 << (static_cast<uint8_t>(aSelectionType) - 1));
+}
+
+inline std::ostream& operator<<(
+    std::ostream& aStream, const dom::Selection::InterlinePosition& aPosition) {
+  using InterlinePosition = dom::Selection::InterlinePosition;
+  switch (aPosition) {
+    case InterlinePosition::EndOfLine:
+      return aStream << "InterlinePosition::EndOfLine";
+    case InterlinePosition::StartOfNextLine:
+      return aStream << "InterlinePosition::StartOfNextLine";
+    case InterlinePosition::Undefined:
+      return aStream << "InterlinePosition::Undefined";
+    default:
+      MOZ_ASSERT_UNREACHABLE("Illegal value");
+      return aStream << "<Illegal value>";
+  }
 }
 
 }  

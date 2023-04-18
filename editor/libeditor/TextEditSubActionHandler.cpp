@@ -255,11 +255,11 @@ EditActionResult TextEditor::InsertLineFeedCharacterAtSelection() {
     
     
     
-    IgnoredErrorResult ignoredError;
-    SelectionRef().SetInterlinePosition(true, ignoredError);
-    NS_WARNING_ASSERTION(
-        !ignoredError.Failed(),
-        "Selection::SetInterlinePosition(true) failed, but ignored");
+    DebugOnly<nsresult> rvIgnored =
+        SelectionRef().SetInterlinePosition(InterlinePosition::StartOfNextLine);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "Selection::SetInterlinePosition(InterlinePosition::"
+                         "StartOfNextLine) failed, but ignored");
   }
 
   return EditActionHandled();
@@ -506,19 +506,20 @@ EditActionResult TextEditor::HandleInsertText(
     if (pointAfterStringInserted.IsSet()) {
       
       
-      bool endsWithLF =
+      const bool endsWithLF =
           !insertionString.IsEmpty() && insertionString.Last() == nsCRT::LF;
-      IgnoredErrorResult ignoredError;
-      SelectionRef().SetInterlinePosition(endsWithLF, ignoredError);
+      DebugOnly<nsresult> rvIgnored = SelectionRef().SetInterlinePosition(
+          endsWithLF ? InterlinePosition::StartOfNextLine
+                     : InterlinePosition::EndOfLine);
       NS_WARNING_ASSERTION(
-          !ignoredError.Failed(),
+          NS_SUCCEEDED(rvIgnored),
           "Selection::SetInterlinePosition() failed, but ignored");
 
       MOZ_ASSERT(
           !pointAfterStringInserted.GetChild(),
           "After inserting text into a text node, pointAfterStringInserted."
           "GetChild() should be nullptr");
-      ignoredError = IgnoredErrorResult();
+      IgnoredErrorResult ignoredError;
       SelectionRef().CollapseInLimiter(pointAfterStringInserted, ignoredError);
       if (NS_WARN_IF(Destroyed())) {
         return EditActionHandled(NS_ERROR_EDITOR_DESTROYED);

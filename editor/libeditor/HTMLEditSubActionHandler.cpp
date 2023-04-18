@@ -1351,10 +1351,11 @@ EditActionResult HTMLEditor::HandleInsertText(
     
   }
 
-  IgnoredErrorResult ignoredError;
-  SelectionRef().SetInterlinePosition(false, ignoredError);
-  NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                       "Failed to unset interline position");
+  DebugOnly<nsresult> rvIgnored =
+      SelectionRef().SetInterlinePosition(InterlinePosition::EndOfLine);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                       "Selection::SetInterlinePosition(InterlinePosition::"
+                       "EndOfLine) failed, but ignored");
 
   if (currentPoint.IsSet()) {
     nsresult rv = CollapseSelectionTo(currentPoint);
@@ -1603,11 +1604,11 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
         return EditActionHandled(atNewBRElementOrError.unwrapErr());
       }
       MOZ_ASSERT(atNewBRElementOrError.inspect().IsSet());
-      IgnoredErrorResult ignoredError;
-      SelectionRef().SetInterlinePosition(true, ignoredError);
-      NS_WARNING_ASSERTION(
-          !ignoredError.Failed(),
-          "Selection::SetInterlinePosition(true) failed, but ignored");
+      DebugOnly<nsresult> rvIgnored = SelectionRef().SetInterlinePosition(
+          InterlinePosition::StartOfNextLine);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                           "Selection::SetInterlinePosition(InterlinePosition::"
+                           "StartOfNextLine) failed, but ignored");
       MOZ_ASSERT(atNewBRElementOrError.inspect().GetChild());
       MOZ_ASSERT(atNewBRElementOrError.inspect().GetChild()->IsHTMLElement(
           nsGkAtoms::br));
@@ -1978,11 +1979,11 @@ nsresult HTMLEditor::HandleInsertBRElement(const EditorDOMPoint& aPointToBreak,
     
     
     
-    IgnoredErrorResult ignoredError;
-    SelectionRef().SetInterlinePosition(true, ignoredError);
-    NS_WARNING_ASSERTION(
-        !ignoredError.Failed(),
-        "Selection::SetInterlinePosition(true) failed, but ignored");
+    DebugOnly<nsresult> rvIgnored =
+        SelectionRef().SetInterlinePosition(InterlinePosition::StartOfNextLine);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "Selection::SetInterlinePosition(InterlinePosition::"
+                         "StartOfNextLine) failed, but ignored");
     nsresult rv = CollapseSelectionTo(EditorRawDOMPoint(brElement));
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "HTMLEditor::CollapseSelectionTo() failed");
@@ -2026,17 +2027,16 @@ nsresult HTMLEditor::HandleInsertBRElement(const EditorDOMPoint& aPointToBreak,
   
   
   
-  
 
   
   
   nsIContent* nextSiblingOfBRElement = brElement->GetNextSibling();
-  IgnoredErrorResult ignoredError;
-  SelectionRef().SetInterlinePosition(
-      !(nextSiblingOfBRElement &&
-        HTMLEditUtils::IsBlockElement(*nextSiblingOfBRElement)),
-      ignoredError);
-  NS_WARNING_ASSERTION(!ignoredError.Failed(),
+  DebugOnly<nsresult> rvIgnored = SelectionRef().SetInterlinePosition(
+      nextSiblingOfBRElement &&
+              HTMLEditUtils::IsBlockElement(*nextSiblingOfBRElement)
+          ? InterlinePosition::EndOfLine
+          : InterlinePosition::StartOfNextLine);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "Selection::SetInterlinePosition() failed, but ignored");
   nsresult rv = CollapseSelectionTo(afterBRElement);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -2146,10 +2146,11 @@ nsresult HTMLEditor::HandleInsertLinefeed(const EditorDOMPoint& aPointToBreak,
     }
   }
 
-  IgnoredErrorResult ignoredError;
-  SelectionRef().SetInterlinePosition(false, ignoredError);
-  NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                       "Failed to unset interline position, but ignored");
+  DebugOnly<nsresult> rvIgnored =
+      SelectionRef().SetInterlinePosition(InterlinePosition::EndOfLine);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                       "Selection::SetInterlinePosition(InterlinePosition::"
+                       "EndOfLine) failed, but ignored");
 
   
   
@@ -8624,11 +8625,12 @@ void HTMLEditor::SetSelectionInterlinePosition() {
                  WalkTreeOption::StopAtBlockBoundary},
                 editingHost)) {
       if (previousEditableContentInBlock->IsHTMLElement(nsGkAtoms::br)) {
-        IgnoredErrorResult ignoredError;
-        SelectionRef().SetInterlinePosition(true, ignoredError);
+        DebugOnly<nsresult> rvIgnored = SelectionRef().SetInterlinePosition(
+            InterlinePosition::StartOfNextLine);
         NS_WARNING_ASSERTION(
-            !ignoredError.Failed(),
-            "Selection::SetInterlinePosition(true) failed, but ignored");
+            NS_SUCCEEDED(rvIgnored),
+            "Selection::SetInterlinePosition(InterlinePosition::"
+            "StartOfNextLine) failed, but ignored");
         return;
       }
     }
@@ -8646,11 +8648,11 @@ void HTMLEditor::SetSelectionInterlinePosition() {
           HTMLEditUtils::GetPreviousSibling(
               *atCaret.GetChild(), {WalkTreeOption::IgnoreNonEditableNode})) {
     if (HTMLEditUtils::IsBlockElement(*previousEditableContentInBlockAtCaret)) {
-      IgnoredErrorResult ignoredError;
-      SelectionRef().SetInterlinePosition(true, ignoredError);
-      NS_WARNING_ASSERTION(
-          !ignoredError.Failed(),
-          "Selection::SetInterlinePosition(true) failed, but ignored");
+      DebugOnly<nsresult> rvIgnored = SelectionRef().SetInterlinePosition(
+          InterlinePosition::StartOfNextLine);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                           "Selection::SetInterlinePosition(InterlinePosition::"
+                           "StartOfNextLine) failed, but ignored");
       return;
     }
   }
@@ -8663,11 +8665,11 @@ void HTMLEditor::SetSelectionInterlinePosition() {
           HTMLEditUtils::GetNextSibling(
               *atCaret.GetChild(), {WalkTreeOption::IgnoreNonEditableNode})) {
     if (HTMLEditUtils::IsBlockElement(*nextEditableContentInBlockAtCaret)) {
-      IgnoredErrorResult ignoredError;
-      SelectionRef().SetInterlinePosition(false, ignoredError);
-      NS_WARNING_ASSERTION(
-          !ignoredError.Failed(),
-          "Selection::SetInterlinePosition(false) failed, but ignored");
+      DebugOnly<nsresult> rvIgnored =
+          SelectionRef().SetInterlinePosition(InterlinePosition::EndOfLine);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                           "Selection::SetInterlinePosition(InterlinePosition::"
+                           "EndOfLine) failed, but ignored");
     }
   }
 }
@@ -8780,14 +8782,12 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
         point.Set(createPaddingBRResult.GetNewNode());
         
         
-        IgnoredErrorResult ignoredError;
-        SelectionRef().SetInterlinePosition(true, ignoredError);
-        if (NS_WARN_IF(Destroyed())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
+        DebugOnly<nsresult> rvIgnored = SelectionRef().SetInterlinePosition(
+            InterlinePosition::StartOfNextLine);
         NS_WARNING_ASSERTION(
-            !ignoredError.Failed(),
-            "Selection::SetInterlinePosition(true) failed, but ignored");
+            NS_SUCCEEDED(rvIgnored),
+            "Selection::SetInterlinePosition(InterlinePosition::"
+            "StartOfNextLine) failed, but ignored");
         nsresult rv = CollapseSelectionTo(point);
         if (NS_FAILED(rv)) {
           NS_WARNING("HTMLEditor::CollapseSelectionTo() failed");
@@ -8806,11 +8806,12 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
                 *nextEditableContentInBlock)) {
           
           
-          IgnoredErrorResult ignoredError;
-          SelectionRef().SetInterlinePosition(true, ignoredError);
+          DebugOnly<nsresult> rvIgnored = SelectionRef().SetInterlinePosition(
+              InterlinePosition::StartOfNextLine);
           NS_WARNING_ASSERTION(
-              !ignoredError.Failed(),
-              "Selection::SetInterlinePosition(true) failed, but ignored");
+              NS_SUCCEEDED(rvIgnored),
+              "Selection::SetInterlinePosition(InterlinePosition::"
+              "StartOfNextLine) failed, but ignored");
         }
       }
     }
