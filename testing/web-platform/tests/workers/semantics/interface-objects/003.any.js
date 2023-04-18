@@ -20,9 +20,10 @@ var expected = [
   "Path2D",
   "PromiseRejectionEvent",
   "EventSource",
+  "BroadcastChannel",
+  
   "WebSocket",
   "CloseEvent",
-  "BroadcastChannel",
   
   "ArrayBuffer",
   "Int8Array",
