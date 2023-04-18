@@ -431,16 +431,10 @@ function accessibleTask(doc, task, options = {}) {
     gIsRemoteIframe = options.remoteIframe;
     gIsIframe = options.iframe || gIsRemoteIframe;
     let url;
-    if (options.chrome) {
+    if (options.chrome && doc.endsWith("html")) {
       
       
-      if (doc.endsWith("html")) {
-        url = `${CURRENT_DIR}${doc}`;
-      } else {
-        const urlObj = new URL(`${CURRENT_DIR}chrome-document-builder.html`);
-        urlObj.searchParams.append("html", doc);
-        url = urlObj.href;
-      }
+      url = `${CURRENT_DIR}${doc}`;
     } else if (doc.endsWith("html") && !gIsIframe) {
       url = `${CURRENT_CONTENT_DIR}${doc}`;
     } else {
@@ -474,7 +468,22 @@ function accessibleTask(doc, task, options = {}) {
     await BrowserTestUtils.withNewTab(
       {
         gBrowser,
-        url,
+        
+        opening: !options.chrome
+          ? url
+          : () => {
+              
+              
+              
+              
+              gBrowser.selectedTab = BrowserTestUtils.addTab(
+                gBrowser,
+                "about:blank",
+                {
+                  forceNotRemote: true,
+                }
+              );
+            },
       },
       async function(browser) {
         registerCleanupFunction(() => {
@@ -485,6 +494,16 @@ function accessibleTask(doc, task, options = {}) {
             }
           }
         });
+
+        if (options.chrome) {
+          await SpecialPowers.pushPrefEnv({
+            set: [["security.allow_unsafe_parent_loads", true]],
+          });
+          
+          browser.removeAttribute("maychangeremoteness");
+          
+          browser.setAttribute("src", url);
+        }
 
         await SimpleTest.promiseFocus(browser);
         await loadContentScripts(browser, "Common.jsm");
