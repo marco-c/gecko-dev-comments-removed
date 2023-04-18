@@ -520,7 +520,7 @@ nsWindowWatcher::OpenWindowWithRemoteTab(nsIRemoteTab* aRemoteTab,
   SizeSpec sizeSpec;
   CalcSizeSpec(features, false, sizeSpec);
 
-  uint32_t chromeFlags = CalculateChromeFlagsForContent(features, sizeSpec);
+  uint32_t chromeFlags = CalculateChromeFlagsForContent(features);
 
   if (isPrivateBrowsingWindow) {
     chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
@@ -707,7 +707,7 @@ nsresult nsWindowWatcher::OpenWindowInternal(
   } else {
     MOZ_DIAGNOSTIC_ASSERT(parentBC && parentBC->IsContent(),
                           "content caller must provide content parent");
-    chromeFlags = CalculateChromeFlagsForContent(features, sizeSpec);
+    chromeFlags = CalculateChromeFlagsForContent(features);
 
     if (aDialog) {
       MOZ_ASSERT(XRE_IsParentProcess());
@@ -839,11 +839,10 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
       nsCOMPtr<nsIWindowProvider> provider = do_GetInterface(parentTreeOwner);
       if (provider) {
-        rv = provider->ProvideWindow(openWindowInfo, chromeFlags, aCalledFromJS,
-                                     sizeSpec.WidthSpecified(), uriToLoad, name,
-                                     featuresStr, aForceNoOpener,
-                                     aForceNoReferrer, aLoadState, &windowIsNew,
-                                     getter_AddRefs(newBC));
+        rv = provider->ProvideWindow(
+            openWindowInfo, chromeFlags, aCalledFromJS, uriToLoad, name,
+            featuresStr, aForceNoOpener, aForceNoReferrer, aLoadState,
+            &windowIsNew, getter_AddRefs(newBC));
 
         if (NS_SUCCEEDED(rv) && newBC) {
           nsCOMPtr<nsIDocShell> newDocShell = newBC->GetDocShell();
@@ -1723,14 +1722,17 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsHelper(
 }
 
 
-bool nsWindowWatcher::ShouldOpenPopup(const WindowFeatures& aFeatures,
-                                      const SizeSpec& aSizeSpec) {
+bool nsWindowWatcher::ShouldOpenPopup(const WindowFeatures& aFeatures) {
   if (aFeatures.IsEmpty()) {
     return false;
   }
 
   
   
+  if (aFeatures.Exists("popup")) {
+    return aFeatures.GetBool("popup");
+  }
+
   if (!aFeatures.GetBoolWithDefault("location", false) &&
       !aFeatures.GetBoolWithDefault("toolbar", false)) {
     return true;
@@ -1752,11 +1754,6 @@ bool nsWindowWatcher::ShouldOpenPopup(const WindowFeatures& aFeatures,
     return true;
   }
 
-  
-  if (aSizeSpec.WidthSpecified()) {
-    return true;
-  }
-
   return false;
 }
 
@@ -1768,10 +1765,9 @@ bool nsWindowWatcher::ShouldOpenPopup(const WindowFeatures& aFeatures,
 
 
 
-
 uint32_t nsWindowWatcher::CalculateChromeFlagsForContent(
-    const WindowFeatures& aFeatures, const SizeSpec& aSizeSpec) {
-  if (aFeatures.IsEmpty() || !ShouldOpenPopup(aFeatures, aSizeSpec)) {
+    const WindowFeatures& aFeatures) {
+  if (aFeatures.IsEmpty() || !ShouldOpenPopup(aFeatures)) {
     
     
     return nsIWebBrowserChrome::CHROME_ALL;
@@ -2404,7 +2400,6 @@ void nsWindowWatcher::SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
 int32_t nsWindowWatcher::GetWindowOpenLocation(nsPIDOMWindowOuter* aParent,
                                                uint32_t aChromeFlags,
                                                bool aCalledFromJS,
-                                               bool aWidthSpecified,
                                                bool aIsForPrinting) {
   
   
@@ -2469,7 +2464,7 @@ int32_t nsWindowWatcher::GetWindowOpenLocation(nsPIDOMWindowOuter* aParent,
                          nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW |
                          nsIWebBrowserChrome::CHROME_NON_PRIVATE_WINDOW |
                          nsIWebBrowserChrome::CHROME_PRIVATE_LIFETIME);
-      if (uiChromeFlags != nsIWebBrowserChrome::CHROME_ALL || aWidthSpecified) {
+      if (uiChromeFlags != nsIWebBrowserChrome::CHROME_ALL) {
         return nsIBrowserDOMWindow::OPEN_NEWWINDOW;
       }
     }
