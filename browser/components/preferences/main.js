@@ -3051,6 +3051,18 @@ var gMainPane = {
   },
 
   async displayDownloadDirPrefTask() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let token = {};
+    this._downloadDisplayToken = token;
+
     var folderListPref = Preferences.get("browser.download.folderList");
     var downloadFolder = document.getElementById("downloadFolder");
     var currentDirPref = Preferences.get("browser.download.dir");
@@ -3073,28 +3085,35 @@ var gMainPane = {
     }
 
     
-    
+    let folderValue;
     if (folderIndex == 2) {
       
-      downloadFolder.value = currentDirPref.value
+      folderValue = currentDirPref.value
         ? `\u2066${currentDirPref.value.path}\u2069`
         : "";
       iconUrlSpec = fph.getURLSpecFromDir(currentDirPref.value);
     } else if (folderIndex == 1) {
       
-      [downloadFolder.value] = await document.l10n.formatValues([
+      [folderValue] = await document.l10n.formatValues([
         { id: "downloads-folder-name" },
       ]);
       iconUrlSpec = fph.getURLSpecFromDir(await this._indexToFolder(1));
     } else {
       
-      [downloadFolder.value] = await document.l10n.formatValues([
+      [folderValue] = await document.l10n.formatValues([
         { id: "desktop-folder-name" },
       ]);
       iconUrlSpec = fph.getURLSpecFromDir(
         await this._getDownloadsFolder("Desktop")
       );
     }
+    
+    
+    if (this._downloadDisplayToken != token) {
+      return;
+    }
+    
+    downloadFolder.value = folderValue;
     downloadFolder.style.backgroundImage =
       "url(moz-icon://" + iconUrlSpec + "?size=16)";
   },
