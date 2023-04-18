@@ -601,7 +601,6 @@ Result<UniquePtr<DateTimeFormat>, ICUError>
 DateTimeFormat::TryCreateFromSkeleton(
     Span<const char> aLocale, Span<const char> aSkeleton,
     DateTimePatternGenerator* aDateTimePatternGenerator,
-    Maybe<DateTimeFormat::HourCycle> aHourCycle,
     Maybe<Span<const char>> aTimeZoneOverride) {
   
   DateTimeFormat::SkeletonVector skeletonUtf16Buffer;
@@ -622,8 +621,7 @@ DateTimeFormat::TryCreateFromSkeleton(
   }
 
   auto result = DateTimeFormat::TryCreateFromSkeleton(
-      aLocale, skeletonUtf16Buffer, aDateTimePatternGenerator, aHourCycle,
-      timeZone);
+      aLocale, skeletonUtf16Buffer, aDateTimePatternGenerator, timeZone);
   if (result.isErr()) {
     return result;
   }
