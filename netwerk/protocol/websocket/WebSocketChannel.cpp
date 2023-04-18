@@ -553,8 +553,8 @@ class nsWSAdmissionManager {
 
   FailDelayManager mFailures;
 
-  static nsWSAdmissionManager* sManager;
-  static StaticMutex sLock MOZ_UNANNOTATED;
+  static nsWSAdmissionManager* sManager GUARDED_BY(sLock);
+  static StaticMutex sLock;
 };
 
 nsWSAdmissionManager* nsWSAdmissionManager::sManager;
@@ -3263,11 +3263,14 @@ WebSocketChannel::Notify(nsITimer* timer) {
     }
 
     AbortSession(NS_ERROR_NET_TIMEOUT_EXTERNAL);
+    PUSH_IGNORE_THREAD_SAFETY
     
-  } else if (timer == mReconnectDelayTimer) {
+    
+    
+  } else if (NS_IsMainThread() && timer == mReconnectDelayTimer) {
+    POP_THREAD_SAFETY
     MOZ_ASSERT(mConnecting == CONNECTING_DELAYED,
                "woke up from delay w/o being delayed?");
-    MOZ_ASSERT(NS_IsMainThread(), "not main thread");
 
     {
       MutexAutoLock lock(mMutex);

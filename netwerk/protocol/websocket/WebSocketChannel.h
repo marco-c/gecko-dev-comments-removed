@@ -216,7 +216,7 @@ class WebSocketChannel : public BaseWebSocketChannel,
   nsCOMPtr<nsIHttpChannelInternal> mChannel;
   nsCOMPtr<nsIHttpChannel> mHttpChannel;
 
-  nsCOMPtr<nsICancelable> mCancelable;
+  nsCOMPtr<nsICancelable> mCancelable GUARDED_BY(mMutex);
   
   nsCOMPtr<nsIAsyncVerifyRedirectCallback> mRedirectCallback;
   
@@ -256,7 +256,7 @@ class WebSocketChannel : public BaseWebSocketChannel,
   wsConnectingState mConnecting; 
   
   
-  nsCOMPtr<nsITimer> mReconnectDelayTimer;
+  nsCOMPtr<nsITimer> mReconnectDelayTimer GUARDED_BY(mMutex);
 
   
   
@@ -312,8 +312,8 @@ class WebSocketChannel : public BaseWebSocketChannel,
   nsresult mStopOnClose;
   uint16_t mServerCloseCode;     
   nsCString mServerCloseReason;  
-  uint16_t mScriptCloseCode;
-  nsCString mScriptCloseReason;
+  uint16_t mScriptCloseCode GUARDED_BY(mMutex);
+  nsCString mScriptCloseReason GUARDED_BY(mMutex);
 
   
   const static uint32_t kIncomingBufferInitialSize = 16 * 1024;
@@ -357,7 +357,7 @@ class WebSocketChannel : public BaseWebSocketChannel,
   nsCOMPtr<nsIDashboardEventNotifier>
       mConnectionLogService;  
 
-  mozilla::Mutex mMutex MOZ_UNANNOTATED;
+  mozilla::Mutex mMutex;
 };
 
 class WebSocketSSLChannel : public WebSocketChannel {
