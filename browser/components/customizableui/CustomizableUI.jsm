@@ -2138,105 +2138,62 @@ var CustomizableUIInternal = {
 
 
   _isOnInteractiveElement(aEvent) {
-    function getMenuPopupForDescendant(aNode) {
-      let lastPopup = null;
-      while (
-        aNode &&
-        aNode.parentNode &&
-        aNode.parentNode.localName.startsWith("menu")
-      ) {
-        lastPopup = aNode.localName == "menupopup" ? aNode : lastPopup;
-        aNode = aNode.parentNode;
-      }
-      return lastPopup;
-    }
-
-    let target = aEvent.originalTarget;
     let panel = this._getPanelForNode(aEvent.currentTarget);
     
     
     if (!panel) {
       return true;
     }
-    
-    
-    let inInput = false;
-    
-    let inMenu = false;
-    
-    let inItem = false;
-    
-    let menuitemCloseMenu = "auto";
 
-    
-    
-    
-    while (true && target) {
-      
+    function getNextTarget(target) {
       if (target.nodeType == target.DOCUMENT_NODE) {
         if (!target.defaultView) {
           
-          break;
+          return null;
         }
         
-        target = target.defaultView.docShell.chromeEventHandler;
-        if (!target) {
-          break;
-        }
+        return target.defaultView.docShell.chromeEventHandler;
       }
-      let tagName = target.localName;
-      inInput = tagName == "input" || tagName == "searchbar";
-      inItem = tagName == "toolbaritem" || tagName == "toolbarbutton";
-      let isMenuItem = tagName == "menuitem";
-      inMenu = inMenu || isMenuItem;
+      
+      return target.parentNode?.host?.parentNode || target.parentNode;
+    }
 
-      if (isMenuItem && target.hasAttribute("closemenu")) {
-        let closemenuVal = target.getAttribute("closemenu");
-        menuitemCloseMenu =
-          closemenuVal == "single" || closemenuVal == "none"
-            ? closemenuVal
-            : "auto";
+    
+    
+    
+    for (
+      let target = aEvent.originalTarget;
+      target && target != panel;
+      target = getNextTarget(target)
+    ) {
+      if (target.nodeType == target.DOCUMENT_NODE) {
+        
+        continue;
       }
+
       
       
       if (target.getAttribute("disabled") == "true") {
         return true;
       }
 
-      
-      
-      if (inInput || inItem || target == panel) {
-        break;
+      let tagName = target.localName;
+      if (tagName == "input" || tagName == "searchbar") {
+        return true;
       }
-      
-      
-      if (isMenuItem) {
-        let topmostMenuPopup = getMenuPopupForDescendant(target);
-        target =
-          (topmostMenuPopup && topmostMenuPopup.triggerNode) ||
-          target.parentNode;
-      } else {
+      if (tagName == "toolbaritem" || tagName == "toolbarbutton") {
         
-        target = target.parentNode?.host?.parentNode || target.parentNode;
+        
+        return target.getAttribute("type") == "menu";
+      }
+      if (tagName == "menuitem") {
+        
+        return true;
       }
     }
 
     
-    if (inMenu) {
-      
-      
-      if (inInput || menuitemCloseMenu != "auto") {
-        return true;
-      }
-      
-      return false;
-    }
-    
-    
-    if (inItem && target.getAttribute("type") == "menu") {
-      return true;
-    }
-    return inInput || !inItem;
+    return true;
   },
 
   hidePanelForNode(aNode) {
@@ -2247,24 +2204,25 @@ var CustomizableUIInternal = {
   },
 
   maybeAutoHidePanel(aEvent) {
-    if (aEvent.type == "keypress") {
-      if (aEvent.keyCode != aEvent.DOM_VK_RETURN) {
-        return;
-      }
-      
-      
-      
-      
-    } else if (aEvent.type != "command") {
-      
-      if (aEvent.defaultPrevented || aEvent.button != 0) {
-        return;
-      }
-      let isInteractive = this._isOnInteractiveElement(aEvent);
-      log.debug("maybeAutoHidePanel: interactive ? " + isInteractive);
-      if (isInteractive) {
-        return;
-      }
+    let eventType = aEvent.type;
+    if (eventType == "keypress" && aEvent.keyCode != aEvent.DOM_VK_RETURN) {
+      return;
+    }
+
+    
+    
+    
+    
+    if (
+      eventType != "command" &&
+      eventType != "keypress" &&
+      (aEvent.defaultPrevented || aEvent.button != 0)
+    ) {
+      return;
+    }
+
+    if (eventType != "command" && this._isOnInteractiveElement(aEvent)) {
+      return;
     }
 
     
