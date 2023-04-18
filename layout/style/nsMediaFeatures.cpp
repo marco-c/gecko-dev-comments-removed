@@ -292,11 +292,30 @@ StylePrefersContrast Gecko_MediaFeatures_PrefersContrast(
 }
 
 StyleDynamicRange Gecko_MediaFeatures_DynamicRange(const Document* aDocument) {
+  
+  
+  
   return StyleDynamicRange::Standard;
 }
 
 StyleDynamicRange Gecko_MediaFeatures_VideoDynamicRange(
     const Document* aDocument) {
+  if (nsContentUtils::ShouldResistFingerprinting(aDocument)) {
+    return StyleDynamicRange::Standard;
+  }
+  
+  
+  
+  
+  
+  
+  if (nsDeviceContext* dx = GetDeviceContextFor(aDocument)) {
+    if (dx->GetDepth() > 24 &&
+        LookAndFeel::GetInt(LookAndFeel::IntID::VideoDynamicRange)) {
+      return StyleDynamicRange::High;
+    }
+  }
+
   return StyleDynamicRange::Standard;
 }
 
