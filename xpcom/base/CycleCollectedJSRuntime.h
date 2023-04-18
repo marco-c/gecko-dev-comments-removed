@@ -394,7 +394,7 @@ class CycleCollectedJSRuntime {
   void FixWeakMappingGrayBits() const;
   void CheckGrayBits() const;
   bool AreGCGrayBitsValid() const;
-  void GarbageCollect(JS::GCReason aReason) const;
+  void GarbageCollect(JS::GCOptions options, JS::GCReason aReason) const;
 
   
   

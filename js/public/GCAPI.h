@@ -48,7 +48,20 @@ enum class GCOptions : uint32_t {
   
   
   
+  
+  
   Shrink = 1,
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Shutdown = 2
 };
 
 }  

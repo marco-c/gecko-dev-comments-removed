@@ -2183,7 +2183,9 @@ WorkerThreadPrimaryRunnable::Run() {
 
       
       
-      JS_GC(cx, JS::GCReason::WORKER_SHUTDOWN);
+      JS::PrepareForFullGC(cx);
+      JS::NonIncrementalGC(cx, JS::GCOptions::Shutdown,
+                           JS::GCReason::WORKER_SHUTDOWN);
 
       
       

@@ -109,7 +109,11 @@ nsXPConnect::~nsXPConnect() {
   
   
   
-  mRuntime->GarbageCollect(JS::GCReason::XPCONNECT_SHUTDOWN);
+  
+  
+  
+  mRuntime->GarbageCollect(JS::GCOptions::Normal,
+                           JS::GCReason::XPCONNECT_SHUTDOWN);
 
   XPCWrappedNativeScope::SystemIsBeingShutDown();
   mRuntime->SystemIsBeingShutDown();
@@ -118,7 +122,8 @@ nsXPConnect::~nsXPConnect() {
   
   
   
-  mRuntime->GarbageCollect(JS::GCReason::XPCONNECT_SHUTDOWN);
+  mRuntime->GarbageCollect(JS::GCOptions::Normal,
+                           JS::GCReason::XPCONNECT_SHUTDOWN);
 
   NS_RELEASE(gSystemPrincipal);
   gScriptSecurityManager = nullptr;
