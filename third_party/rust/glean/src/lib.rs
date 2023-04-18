@@ -131,21 +131,6 @@ pub fn shutdown() {
 
 
 
-
-
-
-
-
-#[no_mangle]
-#[inline(never)]
-pub extern "C" fn rlb_flush_dispatcher() {
-    log::trace!("FLushing RLB dispatcher through the FFI");
-    glean_core::rlb_flush_dispatcher()
-}
-
-
-
-
 pub fn set_upload_enabled(enabled: bool) {
     glean_core::glean_set_upload_enabled(enabled)
 }

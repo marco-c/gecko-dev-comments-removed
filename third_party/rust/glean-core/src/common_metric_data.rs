@@ -7,12 +7,14 @@ use std::convert::TryFrom;
 use crate::error::{Error, ErrorKind};
 use crate::metrics::labeled::validate_dynamic_label;
 use crate::Glean;
+use serde::{Deserialize, Serialize};
 
 
 
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[repr(i32)] 
+#[serde(rename_all = "lowercase")]
 pub enum Lifetime {
     
     Ping,
@@ -53,7 +55,7 @@ impl TryFrom<i32> for Lifetime {
 }
 
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, Deserialize, Serialize)]
 pub struct CommonMetricData {
     
     pub name: String,
