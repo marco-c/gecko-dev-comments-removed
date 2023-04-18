@@ -838,6 +838,13 @@ var PanelMultiView = class extends AssociatedToNode {
     panelView.node.panelMultiView = this.node;
     this.openViews.push(panelView);
 
+    
+    
+    
+    if (panelView.node.getAttribute("remote") == "true") {
+      this._panel.setAttribute("remote", "true");
+    }
+
     let canceled = await panelView.dispatchAsyncEvent("ViewShowing");
 
     
