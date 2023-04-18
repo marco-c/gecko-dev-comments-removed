@@ -883,7 +883,8 @@ static void DoFramePointerStackWalk(MozWalkStackCallback aCallback,
   
   
   static const uintptr_t kMaxStackSize = 8 * 1024 * 1024;
-  if (uintptr_t(aBp) < uintptr_t(aStackEnd) - std::min(kMaxStackSize, uintptr_t(aStackEnd)) ||
+  if (uintptr_t(aBp) < uintptr_t(aStackEnd) -
+                           std::min(kMaxStackSize, uintptr_t(aStackEnd)) ||
       aBp >= aStackEnd || (uintptr_t(aBp) & 3)) {
     return;
   }

@@ -1143,7 +1143,7 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         Arg<unsigned long> request(1);
 #ifdef MOZ_ASAN
         Arg<int> fd(0);
-#endif 
+#endif  
         
         
         
@@ -1156,7 +1156,7 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
 #ifdef MOZ_ASAN
             
             .ElseIf(fd == STDERR_FILENO, Error(ENOTTY))
-#endif 
+#endif  
             .Else(SandboxPolicyBase::EvaluateSyscall(sysno));
       }
 
@@ -1177,7 +1177,7 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         
       CASES_FOR_stat:
         return Error(ENOENT);
-#endif 
+#endif  
 
       default:
         return SandboxPolicyBase::EvaluateSyscall(sysno);

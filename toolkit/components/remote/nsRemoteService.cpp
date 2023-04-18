@@ -5,7 +5,6 @@
 
 
 
-
 #ifdef MOZ_WIDGET_GTK
 #  ifdef MOZ_ENABLE_DBUS
 #    include "nsDBusRemoteServer.h"

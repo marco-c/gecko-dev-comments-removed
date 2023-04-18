@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "WMFAudioMFTManager.h"
 #include "MediaInfo.h"
@@ -26,55 +26,55 @@ static void AACAudioSpecificConfigToUserData(uint8_t aAACProfileLevelIndication,
                                              nsTArray<BYTE>& aOutUserData) {
   MOZ_ASSERT(aOutUserData.IsEmpty());
 
-  // The MF_MT_USER_DATA for AAC is defined here:
-  // http://msdn.microsoft.com/en-us/library/windows/desktop/dd742784%28v=vs.85%29.aspx
-  //
-  // For MFAudioFormat_AAC, MF_MT_USER_DATA contains the portion of
-  // the HEAACWAVEINFO structure that appears after the WAVEFORMATEX
-  // structure (that is, after the wfx member). This is followed by
-  // the AudioSpecificConfig() data, as defined by ISO/IEC 14496-3.
-  // [...]
-  // The length of the AudioSpecificConfig() data is 2 bytes for AAC-LC
-  // or HE-AAC with implicit signaling of SBR/PS. It is more than 2 bytes
-  // for HE-AAC with explicit signaling of SBR/PS.
-  //
-  // The value of audioObjectType as defined in AudioSpecificConfig()
-  // must be 2, indicating AAC-LC. The value of extensionAudioObjectType
-  // must be 5 for SBR or 29 for PS.
-  //
-  // HEAACWAVEINFO structure:
-  //    typedef struct heaacwaveinfo_tag {
-  //      WAVEFORMATEX wfx;
-  //      WORD         wPayloadType;
-  //      WORD         wAudioProfileLevelIndication;
-  //      WORD         wStructType;
-  //      WORD         wReserved1;
-  //      DWORD        dwReserved2;
-  //    }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   const UINT32 heeInfoLen = 4 * sizeof(WORD) + sizeof(DWORD);
 
-  // The HEAACWAVEINFO must have payload and profile set,
-  // the rest can be all 0x00.
+  
+  
   BYTE heeInfo[heeInfoLen] = {0};
   WORD* w = (WORD*)heeInfo;
-  w[0] = 0x0;  // Payload type raw AAC packet
+  w[0] = 0x0;  
   w[1] = aAACProfileLevelIndication;
 
   aOutUserData.AppendElements(heeInfo, heeInfoLen);
 
   if (aAACProfileLevelIndication == 2 && aConfigLength > 2) {
-    // The AudioSpecificConfig is TTTTTFFF|FCCCCGGG
-    // (T=ObjectType, F=Frequency, C=Channel, G=GASpecificConfig)
-    // If frequency = 0xf, then the frequency is explicitly defined on 24 bits.
+    
+    
+    
     int8_t frequency =
         (aAudioSpecConfig[0] & 0x7) << 1 | (aAudioSpecConfig[1] & 0x80) >> 7;
     int8_t channels = (aAudioSpecConfig[1] & 0x78) >> 3;
     int8_t gasc = aAudioSpecConfig[1] & 0x7;
     if (frequency != 0xf && channels && !gasc) {
-      // We enter this condition if the AudioSpecificConfig should theorically
-      // be 2 bytes long but it's not.
-      // The WMF AAC decoder will error if unknown extensions are found,
-      // so remove them.
+      
+      
+      
+      
       aConfigLength = 2;
     }
   }
@@ -94,19 +94,22 @@ WMFAudioMFTManager::WMFAudioMFTManager(const AudioInfo& aConfig)
     uint32_t configLength;
     if (aConfig.mCodecSpecificConfig.is<AacCodecSpecificData>()) {
       const AacCodecSpecificData& aacCodecSpecificData =
-        aConfig.mCodecSpecificConfig.as<AacCodecSpecificData>();
-      audioSpecConfig = aacCodecSpecificData.mDecoderConfigDescriptorBinaryBlob->Elements();
-      configLength = aacCodecSpecificData.mDecoderConfigDescriptorBinaryBlob->Length();
+          aConfig.mCodecSpecificConfig.as<AacCodecSpecificData>();
+      audioSpecConfig =
+          aacCodecSpecificData.mDecoderConfigDescriptorBinaryBlob->Elements();
+      configLength =
+          aacCodecSpecificData.mDecoderConfigDescriptorBinaryBlob->Length();
     } else {
-      // Gracefully handle failure to cover all codec specific cases above. Once
-      // we're confident there is no fall through from these cases above, we should
-      // remove this code.
+      
+      
+      
       RefPtr<MediaByteBuffer> audioCodecSpecificBinaryBlob =
-        GetAudioCodecSpecificBlob(aConfig.mCodecSpecificConfig);
+          GetAudioCodecSpecificBlob(aConfig.mCodecSpecificConfig);
       audioSpecConfig = audioCodecSpecificBinaryBlob->Elements();
       configLength = audioCodecSpecificBinaryBlob->Length();
     }
-    AACAudioSpecificConfigToUserData(aConfig.mExtendedProfile, audioSpecConfig, configLength, mUserData);
+    AACAudioSpecificConfigToUserData(aConfig.mExtendedProfile, audioSpecConfig,
+                                     configLength, mUserData);
   }
 }
 
@@ -130,12 +133,12 @@ bool WMFAudioMFTManager::Init() {
   NS_ENSURE_TRUE(WMFDecoderModule::StreamTypeIsAudio(mStreamType), false);
 
   RefPtr<MFTDecoder> decoder(new MFTDecoder());
-  // Note: MP3 MFT isn't registered as supporting Float output, but it works.
-  // Find PCM output MFTs as this is the common type.
+  
+  
   HRESULT hr = WMFDecoderModule::CreateMFTDecoder(mStreamType, decoder);
   NS_ENSURE_TRUE(SUCCEEDED(hr), false);
 
-  // Setup input/output media types
+  
   RefPtr<IMFMediaType> inputType;
 
   hr = wmf::MFCreateMediaType(getter_AddRefs(inputType));
@@ -154,7 +157,7 @@ bool WMFAudioMFTManager::Init() {
   NS_ENSURE_TRUE(SUCCEEDED(hr), false);
 
   if (mStreamType == WMFStreamType::AAC) {
-    hr = inputType->SetUINT32(MF_MT_AAC_PAYLOAD_TYPE, 0x0);  // Raw AAC packet
+    hr = inputType->SetUINT32(MF_MT_AAC_PAYLOAD_TYPE, 0x0);  
     NS_ENSURE_TRUE(SUCCEEDED(hr), false);
 
     hr = inputType->SetBlob(MF_MT_USER_DATA, mUserData.Elements(),
@@ -234,9 +237,9 @@ WMFAudioMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
       NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
       hr = UpdateOutputType();
       NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-      // Catch infinite loops, but some decoders perform at least 2 stream
-      // changes on consecutive calls, so be permissive.
-      // 100 is arbitrarily > 2.
+      
+      
+      
       NS_ENSURE_TRUE(typeChangeCount < 100, MF_E_TRANSFORM_STREAM_CHANGE);
       ++typeChangeCount;
       continue;
@@ -254,10 +257,10 @@ WMFAudioMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
   UINT32 discontinuity = false;
   sample->GetUINT32(MFSampleExtension_Discontinuity, &discontinuity);
   if (mFirstFrame || discontinuity) {
-    // Update the output type, in case this segment has a different
-    // rate. This also triggers on the first sample, which can have a
-    // different rate than is advertised in the container, and sometimes we
-    // don't get a MF_E_TRANSFORM_STREAM_CHANGE when the rate changes.
+    
+    
+    
+    
     hr = UpdateOutputType();
     NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
     mFirstFrame = false;
@@ -270,20 +273,20 @@ WMFAudioMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
   hr = sample->ConvertToContiguousBuffer(getter_AddRefs(buffer));
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
-  BYTE* data = nullptr;  // Note: *data will be owned by the IMFMediaBuffer, we
-                         // don't need to free it.
+  BYTE* data = nullptr;  
+                         
   DWORD maxLength = 0, currentLength = 0;
   hr = buffer->Lock(&data, &maxLength, &currentLength);
   NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
-  // Output is made of floats.
+  
   int32_t numSamples = currentLength / sizeof(float);
   int32_t numFrames = numSamples / mAudioChannels;
   MOZ_ASSERT(numFrames >= 0);
   MOZ_ASSERT(numSamples >= 0);
   if (numFrames == 0) {
-    // All data from this chunk stripped, loop back and try to output the next
-    // frame, if possible.
+    
+    
     return S_OK;
   }
 
@@ -328,14 +331,14 @@ WMFAudioMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
 bool WMFAudioMFTManager::IsPartialOutput(
     const media::TimeUnit& aNewOutputDuration,
     const bool aIsRateChangedToHigher) const {
-  // This issue was found in Windows11, where AAC MFT decoder would incorrectly
-  // output partial output samples to us, even if MS's documentation said it
-  // won't happen [1]. More details are described in bug 1731430 comment 26.
-  // If the audio rate isn't changed to higher, which would result in shorter
-  // duration, but the new output duration is still shorter than the last one,
-  // then new output is possible an incorrect partial output.
-  // [1]
-  // https://docs.microsoft.com/en-us/windows/win32/medfound/mft-message-command-drain
+  
+  
+  
+  
+  
+  
+  
+  
   if (mStreamType != WMFStreamType::AAC) {
     return false;
   }
@@ -347,6 +350,6 @@ bool WMFAudioMFTManager::IsPartialOutput(
 
 void WMFAudioMFTManager::Shutdown() { mDecoder = nullptr; }
 
-}  // namespace mozilla
+}  
 
 #undef LOG

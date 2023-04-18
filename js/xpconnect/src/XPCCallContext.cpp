@@ -23,9 +23,8 @@ static inline bool IsTearoffClass(const JSClass* clazz) {
 XPCCallContext::XPCCallContext(
     JSContext* cx, HandleObject obj ,
     HandleObject funobj ,
-    HandleId name ,
-    unsigned argc , Value* argv ,
-    Value* rval )
+    HandleId name , unsigned argc ,
+    Value* argv , Value* rval )
     : mState(INIT_FAILED),
       mXPC(nsXPConnect::XPConnect()),
       mXPCJSContext(nullptr),

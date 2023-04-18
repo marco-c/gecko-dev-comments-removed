@@ -28,8 +28,8 @@ class SystemPrincipal;
 }  
 
 namespace JS {
-  enum class RuntimeCode;
-} 
+enum class RuntimeCode;
+}  
 
 
 
