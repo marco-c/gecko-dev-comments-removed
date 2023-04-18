@@ -2,6 +2,10 @@
 
 
 
+XPCOMUtils.defineLazyModuleGetters(this, {
+  BuiltInThemes: "resource:///modules/BuiltInThemes.jsm",
+});
+
 
 
 const updatedAddonFluentIds = new Map([
@@ -38,24 +42,19 @@ add_task(async function test_ensure_bundled_addons_are_localized() {
     }
   }
 
-  
-  
-  let colorwayBuiltInThemes = addons.filter(
-    addon =>
-      addon.isBuiltin &&
-      addon.type === "theme" &&
-      addon.id.endsWith("colorway@mozilla.org")
-  );
-  ok(!!colorwayBuiltInThemes.length, "Colorway themes should exist");
-  for (let colorwayTheme of colorwayBuiltInThemes) {
-    let l10nId = colorwayTheme.id.replace("@mozilla.org", "");
+  let colorwayThemes = Array.from(
+    BuiltInThemes.builtInThemeMap.keys()
+  ).filter(id => id.endsWith("colorway@mozilla.org"));
+  ok(!!colorwayThemes.length, "Colorway themes should exist");
+  for (let id of colorwayThemes) {
+    let l10nId = id.replace("@mozilla.org", "");
     let [, variantName] = l10nId.split("-", 2);
     let defaultFluentId = `extension-colorways-${variantName}-name`;
     let fluentId =
       updatedAddonFluentIds.get(defaultFluentId) || defaultFluentId;
     ok(
       bundle.hasMessage(fluentId),
-      `l10n id for ${colorwayTheme.id} \"name\" attribute should exist`
+      `l10n id for ${id} \"name\" attribute should exist`
     );
   }
 });
