@@ -1528,9 +1528,20 @@ nsExpatDriver::WillBuildModel(const CParserContext& aParserContext,
     }
   }
 
+  mURISpec = aParserContext.mScanner->GetFilename();
+
   
+  
+  
+  
+  
+  
+  uint64_t minSandboxSize =
+      mURISpec.Length() * sizeof(decltype(mURISpec)::char_type) +
+      (2 * 1024 * 1024);
   MOZ_ASSERT(!mSandboxPoolData);
-  mSandboxPoolData = RLBoxExpatSandboxPool::sSingleton->PopOrCreate();
+  mSandboxPoolData =
+      RLBoxExpatSandboxPool::sSingleton->PopOrCreate(minSandboxSize);
   NS_ENSURE_TRUE(mSandboxPoolData, NS_ERROR_OUT_OF_MEMORY);
 
   MOZ_ASSERT(SandboxData());
@@ -1559,8 +1570,6 @@ nsExpatDriver::WillBuildModel(const CParserContext& aParserContext,
   RLBOX_EXPAT_MCALL(MOZ_XML_SetParamEntityParsing,
                     XML_PARAM_ENTITY_PARSING_ALWAYS);
 #endif
-
-  mURISpec = aParserContext.mScanner->GetFilename();
 
   const XML_Char* uriStr = mURISpec.get();
   auto uri = TransferBuffer<XML_Char>(Sandbox(), uriStr, mURISpec.Length() + 1);
