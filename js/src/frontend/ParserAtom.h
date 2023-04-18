@@ -59,9 +59,11 @@ class SpecificParserAtomLookup;
 
 enum class Length1StaticParserString : uint8_t;
 enum class Length2StaticParserString : uint16_t;
+enum class Length3StaticParserString : uint8_t;
 
 class ParserAtom;
 using ParserAtomIndex = TypedIndex<ParserAtom>;
+
 
 
 
@@ -109,6 +111,7 @@ class TaggedParserAtomIndex {
   static constexpr uint32_t WellKnownSubTag = 0 << SubTagShift;
   static constexpr uint32_t Length1StaticSubTag = 1 << SubTagShift;
   static constexpr uint32_t Length2StaticSubTag = 2 << SubTagShift;
+  static constexpr uint32_t Length3StaticSubTag = 3 << SubTagShift;
 
  public:
   static constexpr uint32_t IndexLimit = Bit(IndexBit);
@@ -117,6 +120,7 @@ class TaggedParserAtomIndex {
   static constexpr size_t Length1StaticLimit = 256U;
   static constexpr size_t Length2StaticLimit =
       StaticStrings::NUM_LENGTH2_ENTRIES;
+  static constexpr size_t Length3StaticLimit = 256U;
 
  private:
   explicit TaggedParserAtomIndex(uint32_t data) : data_(data) {}
@@ -141,6 +145,8 @@ class TaggedParserAtomIndex {
       : data_(uint32_t(index) | WellKnownTag | Length1StaticSubTag) {}
   explicit constexpr TaggedParserAtomIndex(Length2StaticParserString index)
       : data_(uint32_t(index) | WellKnownTag | Length2StaticSubTag) {}
+  explicit constexpr TaggedParserAtomIndex(Length3StaticParserString index)
+      : data_(uint32_t(index) | WellKnownTag | Length3StaticSubTag) {}
 
   class WellKnown {
    public:
@@ -260,6 +266,10 @@ class TaggedParserAtomIndex {
     return (data_ & (TagMask | SubTagMask)) ==
            (WellKnownTag | Length2StaticSubTag);
   }
+  bool isLength3StaticParserString() const {
+    return (data_ & (TagMask | SubTagMask)) ==
+           (WellKnownTag | Length3StaticSubTag);
+  }
   bool isNull() const {
     bool result = !data_;
     MOZ_ASSERT_IF(result, (data_ & TagMask) == NullTag);
@@ -281,6 +291,10 @@ class TaggedParserAtomIndex {
   Length2StaticParserString toLength2StaticParserString() const {
     MOZ_ASSERT(isLength2StaticParserString());
     return Length2StaticParserString(data_ & SmallIndexMask);
+  }
+  Length3StaticParserString toLength3StaticParserString() const {
+    MOZ_ASSERT(isLength3StaticParserString());
+    return Length3StaticParserString(data_ & SmallIndexMask);
   }
 
   uint32_t* rawDataRef() { return &data_; }
@@ -602,6 +616,15 @@ class WellKnownParserAtoms {
               StaticStrings::getLength2Index(chars[0], chars[1])));
         }
         break;
+
+      case 3: {
+        int i;
+        if (StaticStrings::fitsInLength3Static(chars[0], chars[1], chars[2],
+                                               &i)) {
+          return TaggedParserAtomIndex(Length3StaticParserString(i));
+        }
+        break;
+      }
     }
 
     
@@ -763,6 +786,8 @@ class ParserAtomsTable {
                                Length1StaticParserString index);
   static void dumpCharsNoQuote(js::GenericPrinter& out,
                                Length2StaticParserString index);
+  static void dumpCharsNoQuote(js::GenericPrinter& out,
+                               Length3StaticParserString index);
 #endif
 
   static void getLength1Content(Length1StaticParserString s,
@@ -773,6 +798,12 @@ class ParserAtomsTable {
   static void getLength2Content(Length2StaticParserString s, char contents[2]) {
     contents[0] = StaticStrings::firstCharOfLength2(size_t(s));
     contents[1] = StaticStrings::secondCharOfLength2(size_t(s));
+  }
+
+  static void getLength3Content(Length3StaticParserString s, char contents[3]) {
+    contents[0] = StaticStrings::firstCharOfLength3(int32_t(s));
+    contents[1] = StaticStrings::secondCharOfLength3(int32_t(s));
+    contents[2] = StaticStrings::thirdCharOfLength3(int32_t(s));
   }
 };
 
