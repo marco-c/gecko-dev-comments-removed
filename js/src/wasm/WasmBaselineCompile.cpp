@@ -3929,6 +3929,14 @@ bool BaseCompiler::emitCatch() {
 
   
   
+  
+  
+  if (!stk_.reserve(stk_.length() + params.length())) {
+    return false;
+  }
+
+  
+  
   pushRef(exn);
 
   for (uint32_t i = 0; i < params.length(); i++) {
@@ -4497,6 +4505,7 @@ bool BaseCompiler::pushStackResultsForCall(const ResultType& type, RegPtr temp,
     return true;
   }
 
+  
   
   
   
