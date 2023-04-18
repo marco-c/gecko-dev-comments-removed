@@ -31,14 +31,14 @@ const { ObjectUtils } = ChromeUtils.import(
 
 
 
-var Assert = (this.Assert = function(reporterFunc, isDefault) {
+function Assert(reporterFunc, isDefault) {
   if (reporterFunc) {
     this.setReporter(reporterFunc);
   }
   if (isDefault) {
     Assert.setReporter(reporterFunc);
   }
-});
+}
 
 
 Object.setPrototypeOf(Assert, Assert.prototype);
