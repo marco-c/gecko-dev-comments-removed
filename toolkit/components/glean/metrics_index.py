@@ -21,6 +21,7 @@ metrics_yamls = [
     "toolkit/xre/metrics.yaml",
     "browser/modules/metrics.yaml",
     "browser/components/metrics.yaml",
+    "toolkit/components/telemetry/metrics.yaml",
 ]
 
 
