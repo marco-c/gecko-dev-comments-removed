@@ -11,8 +11,8 @@
 #include "js/RootingAPI.h"
 #include "js/SourceText.h"
 #include "js/TypeDecls.h"
+#include "js/loader/LoadContextBase.h"
 #include "js/loader/ScriptKind.h"
-#include "js/loader/ScriptLoadRequest.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CORSMode.h"
@@ -28,15 +28,11 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIScriptElement.h"
-#include "js/loader/ScriptKind.h"
 
 class nsICacheInfoChannel;
 
 namespace JS {
 class OffThreadToken;
-namespace loader {
-class ScriptLoadRequest;
-}
 }  
 
 namespace mozilla {
@@ -79,17 +75,17 @@ class Element;
 
 
 
-class ScriptLoadContext : public PreloaderBase {
+class ScriptLoadContext : public JS::loader::LoadContextBase,
+                          public PreloaderBase {
  protected:
   virtual ~ScriptLoadContext();
 
  public:
   explicit ScriptLoadContext();
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ScriptLoadContext)
-
-  void SetRequest(JS::loader::ScriptLoadRequest* aRequest);
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ScriptLoadContext,
+                                           JS::loader::LoadContextBase)
 
   
   static void PrioritizeAsPreload(nsIChannel* aChannel);
@@ -154,7 +150,7 @@ class ScriptLoadContext : public PreloaderBase {
   }
 
   
-  void GetProfilerLabel(nsACString& aOutString);
+  void GetProfilerLabel(nsACString& aOutString) override;
 
   void MaybeCancelOffThreadScript();
 
@@ -187,8 +183,6 @@ class ScriptLoadContext : public PreloaderBase {
 
   
   bool mIsPreload;
-
-  RefPtr<JS::loader::ScriptLoadRequest> mRequest;
 
   
   RefPtr<Document> mLoadBlockedDocument;
