@@ -10,20 +10,21 @@
 
 
 
+assert(
+  Function.prototype.toString.hasOwnProperty('length'),
+  'Function.prototype.toString.hasOwnProperty(\'length\') must return true'
+);
+
+assert(
+  delete Function.prototype.toString.length,
+  'The value of delete Function.prototype.toString.length is expected to be true'
+);
+
+assert(
+  !Function.prototype.toString.hasOwnProperty('length'),
+  'The value of !Function.prototype.toString.hasOwnProperty(\'length\') is expected to be true'
+);
 
 
-if (!(Function.prototype.toString.hasOwnProperty('length'))) {
-  throw new Test262Error('#0: the Function.prototype.toString has length property');
-}
-
-
-if (!delete Function.prototype.toString.length) {
-  throw new Test262Error('#1: The Function.prototype.toString.length property does not have the attributes DontDelete');
-}
-
-
-if (Function.prototype.toString.hasOwnProperty('length')) {
-  throw new Test262Error('#2: The Function.prototype.toString.length property does not have the attributes DontDelete');
-}
 
 reportCompare(0, 0);

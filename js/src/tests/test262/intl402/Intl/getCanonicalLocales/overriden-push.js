@@ -16,6 +16,6 @@ Array.prototype.push = function() { throw 42; };
 
 var arr = Intl.getCanonicalLocales(["en-US"]);
 
-assert(compareArray(arr, ["en-US"]));
+assert.compareArray(arr, ["en-US"]);
 
 reportCompare(0, 0);

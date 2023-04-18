@@ -9,9 +9,9 @@
 
 
 for (var prop in this) {
-  if (prop === "NaN") {
-    throw new Test262Error('#1: The NaN is DontEnum');
-  }
+  assert.notSameValue(prop, "NaN", 'The value of prop is not "NaN"');
 }
+
+
 
 reportCompare(0, 0);

@@ -7,19 +7,22 @@
 
 
 
-
-
-if (RegExp.prototype.test.hasOwnProperty('length') !== true) {
-  throw new Test262Error('#1: RegExp.prototype.test.hasOwnProperty(\'length\') === true');
-}
+assert.sameValue(
+  RegExp.prototype.test.hasOwnProperty('length'),
+  true,
+  'RegExp.prototype.test.hasOwnProperty(\'length\') must return true'
+);
 
 var __obj = RegExp.prototype.test.length;
 
 verifyNotWritable(RegExp.prototype.test, "length", null, function(){return "shifted";});
 
+assert.sameValue(
+  RegExp.prototype.test.length,
+  __obj,
+  'The value of RegExp.prototype.test.length is expected to equal the value of __obj'
+);
 
-if (RegExp.prototype.test.length !== __obj) {
-  throw new Test262Error('#2: __obj = RegExp.prototype.test.length; RegExp.prototype.test.length = function(){return "shifted";}; RegExp.prototype.test.length === __obj. Actual: ' + (RegExp.prototype.test.length));
-}
+
 
 reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Temporal.Duration.from,
+  "function",
+  "`typeof Duration.from` is `function`"
+);
+
+verifyProperty(Temporal.Duration, "from", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

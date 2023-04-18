@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+verifyWritable(Object, "assign");
+verifyNotEnumerable(Object, "assign");
+verifyConfigurable(Object, "assign");
+
+reportCompare(0, 0);

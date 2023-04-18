@@ -6,25 +6,23 @@
 
 
 
+assert.sameValue(RegExp.hasOwnProperty('prototype'), true, 'RegExp.hasOwnProperty(\'prototype\') must return true');
 
+assert.sameValue(
+  RegExp.propertyIsEnumerable('prototype'),
+  false,
+  'RegExp.propertyIsEnumerable(\'prototype\') must return false'
+);
 
-if (RegExp.hasOwnProperty('prototype') !== true) {
-	throw new Test262Error('#0: RegExp.hasOwnProperty(\'prototype\') === true');
-}
-
- 
-if (RegExp.propertyIsEnumerable('prototype') !== false) {
-	throw new Test262Error('#1: RegExp.propertyIsEnumerable(\'prototype\') === false');
-}
-
- 
 var count=0;
 for (var p in RegExp){
-	if (p==="prototype") count++;
+    if (p==="prototype") {
+      count++;
+    }
 }
 
-if (count !== 0) {
-	throw new Test262Error('#2: count=0; for (p in RegExp){ if (p==="prototype") count++; } count === 0. Actual: ' + (count));
-}
+assert.sameValue(count, 0, 'The value of count is expected to be 0');
+
+
 
 reportCompare(0, 0);

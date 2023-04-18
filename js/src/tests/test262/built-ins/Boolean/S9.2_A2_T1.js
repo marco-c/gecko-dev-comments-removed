@@ -6,10 +6,6 @@
 
 
 
-
-
-if (Boolean(null) !== false) {
-  throw new Test262Error('#1: Boolean(null) === false. Actual: ' + (Boolean(null)));
-}
+assert.sameValue(Boolean(null), false, 'Boolean(null) must return false');
 
 reportCompare(0, 0);

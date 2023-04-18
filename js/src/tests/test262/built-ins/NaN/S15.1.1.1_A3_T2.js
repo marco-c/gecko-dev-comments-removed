@@ -7,10 +7,8 @@
 
 
 
+assert.sameValue(delete NaN, false, 'The value of `delete NaN` is expected to be false');
 
 
-if (delete NaN !== false) {
-  throw new Test262Error('#1: delete NaN === false. Actual: ' + (delete NaN));
-}
 
 reportCompare(0, 0);

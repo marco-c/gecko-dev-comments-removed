@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Temporal.PlainDate.from,
+  "function",
+  "`typeof PlainDate.from` is `function`"
+);
+
+verifyProperty(Temporal.PlainDate, "from", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

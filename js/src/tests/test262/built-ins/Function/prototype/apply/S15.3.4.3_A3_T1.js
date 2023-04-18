@@ -11,9 +11,6 @@
 
 Function("this.field=\"strawberry\"").apply();
 
-
-if (this["field"] !== "strawberry") {
-  throw new Test262Error('#1: If thisArg is null or undefined, the called function is passed the global object as the this value');
-}
+assert.sameValue(this["field"], "strawberry", 'The value of this["field"] is expected to be "strawberry"');
 
 reportCompare(0, 0);

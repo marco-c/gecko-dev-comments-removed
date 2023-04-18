@@ -14,34 +14,33 @@
 
 
 
-
-
-if (typeof Object.prototype.propertyIsEnumerable !== "function") {
-  throw new Test262Error('#1: propertyIsEnumerable method is defined');
-}
+assert.sameValue(
+  typeof Object.prototype.propertyIsEnumerable,
+  "function",
+  'The value of `typeof Object.prototype.propertyIsEnumerable` is expected to be "function"'
+);
 
 var obj = {
   the_property: true
 };
 
+assert.sameValue(
+  typeof obj.propertyIsEnumerable,
+  "function",
+  'The value of `typeof obj.propertyIsEnumerable` is expected to be "function"'
+);
 
-if (typeof obj.propertyIsEnumerable !== "function") {
-  throw new Test262Error('#2: propertyIsEnumerable method is accessed');
-}
-
-
-if (!(obj.propertyIsEnumerable("the_property"))) {
-  throw new Test262Error('#3: propertyIsEnumerable method works properly');
-}
-
+assert(
+  !!obj.propertyIsEnumerable("the_property"),
+  'The value of !!obj.propertyIsEnumerable("the_property") is expected to be true'
+);
 
 var accum = "";
 for (var prop in obj) {
   accum += prop;
 }
-if (accum.indexOf("the_property") !== 0) {
-  throw new Test262Error('#4: enumerating works properly');
-}
+assert.sameValue(accum.indexOf("the_property"), 0, 'accum.indexOf("the_property") must return 0');
+
 
 
 reportCompare(0, 0);

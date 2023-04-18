@@ -7,9 +7,6 @@
 
 
 
-
-if ((typeof Promise.all) !== "function") {
-  throw new Test262Error('Expected Promise.all to be a function');
-}
+assert.sameValue(typeof Promise.all, "function", 'The value of `typeof Promise.all` is expected to be "function"');
 
 reportCompare(0, 0);

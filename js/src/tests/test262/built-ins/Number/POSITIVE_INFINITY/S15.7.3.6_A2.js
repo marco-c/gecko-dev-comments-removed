@@ -10,12 +10,12 @@
 
 
 verifyNotWritable(Number, "POSITIVE_INFINITY", null, 1);
-if (isFinite(Number.POSITIVE_INFINITY)) {
-  throw new Test262Error('#1: Number.POSITIVE_INFINITY = 1; Number.POSITIVE_INFINITY === +Infinity');
-} else {
-  if (Number.POSITIVE_INFINITY <= 0) {
-    throw new Test262Error('#1: Number.POSITIVE_INFINITY = 1; Number.POSITIVE_INFINITY === +Infinity');
-  }
-}
+
+assert(
+  !isFinite(Number.POSITIVE_INFINITY),
+  'The value of !isFinite(Number.POSITIVE_INFINITY) is expected to be true'
+);
+
+
 
 reportCompare(0, 0);

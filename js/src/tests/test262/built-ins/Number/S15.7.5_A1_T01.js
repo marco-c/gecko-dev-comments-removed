@@ -8,15 +8,16 @@
 
 
 
+assert.sameValue(
+  (new Number()).hasOwnProperty("constructor"),
+  false,
+  '(new Number()).hasOwnProperty("constructor") must return false'
+);
 
-
-if ((new Number()).hasOwnProperty("constructor") !== false) {
-  throw new Test262Error('#1: Number instance must have no special property "constructor"');
-}
-
-
-if ((new Number()).constructor !== Number.prototype.constructor) {
-  throw new Test262Error('#2: Number instance property "constructor" must be inherited from Number prototype object');
-}
+assert.sameValue(
+  (new Number()).constructor,
+  Number.prototype.constructor,
+  'The value of (new Number()).constructor is expected to equal the value of Number.prototype.constructor'
+);
 
 reportCompare(0, 0);

@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+$DONOTEVALUATE();
+
+label: {
+  for ( ;; ) {
+    continue label;
+  }
+}

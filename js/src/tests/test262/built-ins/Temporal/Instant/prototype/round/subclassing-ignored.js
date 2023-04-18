@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+TemporalHelpers.checkSubclassingIgnored(
+  Temporal.Instant,
+  [10n],
+  "round",
+  [{ smallestUnit: 'second', roundingMode: 'ceil' }],
+  (result) => {
+    assert.sameValue(result.epochNanoseconds, 1_000_000_000n, "epochNanoseconds result");
+  },
+);
+
+reportCompare(0, 0);

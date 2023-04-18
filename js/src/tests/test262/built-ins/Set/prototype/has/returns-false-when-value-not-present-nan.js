@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var s = new Set();
+
+assert.sameValue(s.has(NaN), false, "`s.has(NaN)` returns `false`");
+
+reportCompare(0, 0);

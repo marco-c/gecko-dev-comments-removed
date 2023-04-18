@@ -16,58 +16,28 @@
 
 
 
-var myObj = function(val) {
+function PoisonedValueOf(val) {
   this.value = val;
   this.valueOf = function() {
-    throw "valueOf-" + this.value;
+    throw new Test262Error();
   };
-  this.toString = function() {
-    throw "toString-" + this.value;
-  };
-};
-
-
-try {
-  var x1 = new Date(new myObj(1), new myObj(2), new myObj(3), new myObj(4));
-  throw new Test262Error("#1: The 1st step is calling ToNumber(year)");
-}
-catch (e) {
-  if (e !== "valueOf-1") {
-    throw new Test262Error("#1: The 1st step is calling ToNumber(year)");
-  }
+  this.toString = function() {};
 }
 
+assert.throws(Test262Error, () => {
+  new Date(new PoisonedValueOf(1), new PoisonedValueOf(2), new PoisonedValueOf(3), new PoisonedValueOf(4));
+}, '`new Date(new PoisonedValueOf(1), new PoisonedValueOf(2), new PoisonedValueOf(3), new PoisonedValueOf(4))` throws a Test262Error exception');
 
-try {
-  var x2 = new Date(1, new myObj(2), new myObj(3), new myObj(4));
-  throw new Test262Error("#2: The 2nd step is calling ToNumber(month)");
-}
-catch (e) {
-  if (e !== "valueOf-2") {
-    throw new Test262Error("#2: The 2nd step is calling ToNumber(month)");
-  }
-}
+assert.throws(Test262Error, () => {
+  new Date(1, new PoisonedValueOf(2), new PoisonedValueOf(3), new PoisonedValueOf(4));
+}, '`new Date(1, new PoisonedValueOf(2), new PoisonedValueOf(3), new PoisonedValueOf(4))` throws a Test262Error exception');
 
+assert.throws(Test262Error, () => {
+  new Date(1, 2, new PoisonedValueOf(3), new PoisonedValueOf(4));
+}, '`new Date(1, 2, new PoisonedValueOf(3), new PoisonedValueOf(4))` throws a Test262Error exception');
 
-try {
-  var x3 = new Date(1, 2, new myObj(3), new myObj(4));
-  throw new Test262Error("#3: The 3rd step is calling ToNumber(date)");
-}
-catch (e) {
-  if (e !== "valueOf-3") {
-    throw new Test262Error("#3: The 3rd step is calling ToNumber(date)");
-  }
-}
-
-
-try {
-  var x4 = new Date(1, 2, 3, new myObj(4));
-  throw new Test262Error("#4: The 4th step is calling ToNumber(hours)");
-}
-catch (e) {
-  if (e !== "valueOf-4") {
-    throw new Test262Error("#4: The 4th step is calling ToNumber(hours)");
-  }
-}
+assert.throws(Test262Error, () => {
+  new Date(1, 2, 3, new PoisonedValueOf(4));
+}, '`new Date(1, 2, 3, new PoisonedValueOf(4))` throws a Test262Error exception');
 
 reportCompare(0, 0);

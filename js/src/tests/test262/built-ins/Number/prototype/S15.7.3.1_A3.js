@@ -6,12 +6,6 @@
 
 
 
-
-
-if (Number.prototype != 0) {
-  throw new Test262Error('#2: Number.prototype == +0');
-} else if (1 / Number.prototype != Number.POSITIVE_INFINITY) {
-  throw new Test262Error('#2: Number.prototype == +0');
-}
+assert(Number.prototype == 0, 'The value of Number.prototype is expected to be 0');
 
 reportCompare(0, 0);

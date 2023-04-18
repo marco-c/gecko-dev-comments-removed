@@ -37,7 +37,7 @@
 
 
 
-var result = eval('class C {}[];;');
+var result = eval('class C {}[];');
 
 assert.sameValue(Object.getPrototypeOf(result), Array.prototype);
 assert.sameValue(result.length, 0);

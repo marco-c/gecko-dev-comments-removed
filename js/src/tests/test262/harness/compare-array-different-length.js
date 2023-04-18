@@ -7,12 +7,13 @@
 
 
 
-if (compareArray([], [undefined]) !== false) {
-  throw new Error('Arrays of differing lengths are not equivalent.');
-}
 
-if (compareArray([undefined], []) !== false) {
-  throw new Error('Arrays of differing lengths are not equivalent.');
-}
+assert.throws(Test262Error, () => {
+  assert.compareArray([], [undefined]);
+}, 'Arrays of differing lengths are not equivalent.');
+
+assert.throws(Test262Error, () => {
+  assert.compareArray([undefined], []);
+}, 'Arrays of differing lengths are not equivalent.');
 
 reportCompare(0, 0);

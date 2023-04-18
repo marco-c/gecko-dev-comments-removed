@@ -8,22 +8,21 @@
 
 
 
+assert(
+  Function.prototype.toString.hasOwnProperty('length'),
+  'Function.prototype.toString.hasOwnProperty(\'length\') must return true'
+);
 
-
-if (!(Function.prototype.toString.hasOwnProperty('length'))) {
-  throw new Test262Error('#0: the Function.prototype.toString has length property.');
-}
-
-
-
-if (Function.prototype.toString.propertyIsEnumerable('length')) {
-  throw new Test262Error('#1: the Function.prototype.toString.length property has the attributes DontEnum');
-}
+assert(
+  !Function.prototype.toString.propertyIsEnumerable('length'),
+  'The value of !Function.prototype.toString.propertyIsEnumerable(\'length\') is expected to be true'
+);
 
 
 for (var p in Function.prototype.toString){
-  if (p==="length")
-      throw new Test262Error('#2: the Function.prototype.toString.length property has the attributes DontEnum');
+  assert.notSameValue(p, "length", 'The value of p is not "length"');
 }
+
+
 
 reportCompare(0, 0);

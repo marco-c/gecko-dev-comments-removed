@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.PlainDate.prototype.equals();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.PlainDate.prototype.equals), false,
+  "isConstructor(Temporal.PlainDate.prototype.equals)");
+
+reportCompare(0, 0);

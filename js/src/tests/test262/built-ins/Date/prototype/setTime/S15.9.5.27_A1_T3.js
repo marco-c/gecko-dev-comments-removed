@@ -6,15 +6,15 @@
 
 
 
-
-if (Date.prototype.propertyIsEnumerable('setTime')) {
-  throw new Test262Error('#1: The Date.prototype.setTime property has the attribute DontEnum');
-}
+assert(
+  !Date.prototype.propertyIsEnumerable('setTime'),
+  'The value of !Date.prototype.propertyIsEnumerable(\'setTime\') is expected to be true'
+);
 
 for (var x in Date.prototype) {
-  if (x === "setTime") {
-    throw new Test262Error('#2: The Date.prototype.setTime has the attribute DontEnum');
-  }
+  assert.notSameValue(x, "setTime", 'The value of x is not "setTime"');
 }
+
+
 
 reportCompare(0, 0);

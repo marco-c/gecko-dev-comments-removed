@@ -7,20 +7,17 @@
 
 
 
-
 var x = [];
 x[0] = undefined;
 if (x.join() !== "") {
   throw new Test262Error('#1: x = []; x[0] = undefined; x.join() === "". Actual: ' + (x.join()));
 }
 
-
 x = [];
 x[0] = null;
 if (x.join() !== "") {
   throw new Test262Error('#2: x = []; x[0] = null; x.join() === "". Actual: ' + (x.join()));
 }
-
 
 x = Array(undefined, 1, null, 3);
 if (x.join() !== ",1,,3") {

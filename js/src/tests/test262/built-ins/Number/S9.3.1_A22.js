@@ -6,20 +6,8 @@
 
 
 
-
-
-if (Number("6") !== 6) {
-  throw new Test262Error('#1: Number("6") === 6. Actual: ' + (Number("6")));
-}
-
-
-if (+("0x6") !== 6) {
-  throw new Test262Error('#2: +("0x6") === 6. Actual: ' + (+("0x6")));
-}
-
-
-if (Number("0X6") !== 6) {
-  throw new Test262Error('#3: Number("0X6") === 6. Actual: ' + (Number("0X6")));
-}
+assert.sameValue(Number("6"), 6, 'Number("6") must return 6');
+assert.sameValue(+("0x6"), 6, 'The value of `+("0x6")` is expected to be 6');
+assert.sameValue(Number("0X6"), 6, 'Number("0X6") must return 6');
 
 reportCompare(0, 0);

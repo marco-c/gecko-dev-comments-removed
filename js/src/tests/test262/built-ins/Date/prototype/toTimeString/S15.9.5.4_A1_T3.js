@@ -6,15 +6,15 @@
 
 
 
-
-if (Date.prototype.propertyIsEnumerable('toTimeString')) {
-  throw new Test262Error('#1: The Date.prototype.toTimeString property has the attribute DontEnum');
-}
+assert(
+  !Date.prototype.propertyIsEnumerable('toTimeString'),
+  'The value of !Date.prototype.propertyIsEnumerable(\'toTimeString\') is expected to be true'
+);
 
 for (var x in Date.prototype) {
-  if (x === "toTimeString") {
-    throw new Test262Error('#2: The Date.prototype.toTimeString has the attribute DontEnum');
-  }
+  assert.notSameValue(x, "toTimeString", 'The value of x is not "toTimeString"');
 }
+
+
 
 reportCompare(0, 0);

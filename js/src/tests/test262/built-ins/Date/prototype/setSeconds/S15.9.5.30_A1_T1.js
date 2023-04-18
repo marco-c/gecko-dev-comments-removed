@@ -8,12 +8,18 @@
 
 
 var x = Date.prototype.setSeconds;
-if (x === 1)
+if (x === 1) {
   Date.prototype.setSeconds = 2;
-else
+} else {
   Date.prototype.setSeconds = 1;
-if (Date.prototype.setSeconds === x) {
-  throw new Test262Error('#1: The Date.prototype.setSeconds has not the attribute ReadOnly');
 }
+
+assert.notSameValue(
+  Date.prototype.setSeconds,
+  x,
+  'The value of Date.prototype.setSeconds is expected to not equal the value of `x`'
+);
+
+
 
 reportCompare(0, 0);

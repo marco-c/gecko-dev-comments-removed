@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => Temporal.PlainTime());
+
+reportCompare(0, 0);

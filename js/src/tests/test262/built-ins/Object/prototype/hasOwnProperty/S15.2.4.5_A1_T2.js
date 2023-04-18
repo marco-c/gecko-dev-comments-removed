@@ -11,30 +11,30 @@
 
 
 
-
-
-if (typeof Object.prototype.hasOwnProperty !== "function") {
-  throw new Test262Error('#1: hasOwnProperty method is defined');
-}
+assert.sameValue(
+  typeof Object.prototype.hasOwnProperty,
+  "function",
+  'The value of `typeof Object.prototype.hasOwnProperty` is expected to be "function"'
+);
 
 var obj = {
   the_property: true
 };
 
+assert.sameValue(
+  typeof obj.hasOwnProperty,
+  "function",
+  'The value of `typeof obj.hasOwnProperty` is expected to be "function"'
+);
 
-if (typeof obj.hasOwnProperty !== "function") {
-  throw new Test262Error('#2: hasOwnProperty method is accessed');
-}
+assert(
+  !obj.hasOwnProperty("hasOwnProperty"),
+  'The value of !obj.hasOwnProperty("hasOwnProperty") is expected to be true'
+);
 
-
-if (obj.hasOwnProperty("hasOwnProperty")) {
-  throw new Test262Error('#3: hasOwnProperty method works properly');
-}
-
-
-if (!(obj.hasOwnProperty("the_property"))) {
-  throw new Test262Error('#4: hasOwnProperty method works properly');
-}
-
+assert(
+  !!obj.hasOwnProperty("the_property"),
+  'The value of !!obj.hasOwnProperty("the_property") is expected to be true'
+);
 
 reportCompare(0, 0);

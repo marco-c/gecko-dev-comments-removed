@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.ZonedDateTime.prototype.toJSON();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.ZonedDateTime.prototype.toJSON), false,
+  "isConstructor(Temporal.ZonedDateTime.prototype.toJSON)");
+
+reportCompare(0, 0);

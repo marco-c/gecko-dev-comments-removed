@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.Calendar.prototype.daysInYear();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.Calendar.prototype.daysInYear), false,
+  "isConstructor(Temporal.Calendar.prototype.daysInYear)");
+
+reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.TimeZone.prototype.getPreviousTransition();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.TimeZone.prototype.getPreviousTransition), false,
+  "isConstructor(Temporal.TimeZone.prototype.getPreviousTransition)");
+
+reportCompare(0, 0);

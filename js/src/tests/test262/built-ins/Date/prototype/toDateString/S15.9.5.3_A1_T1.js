@@ -8,12 +8,18 @@
 
 
 var x = Date.prototype.toDateString;
-if (x === 1)
+if (x === 1) {
   Date.prototype.toDateString = 2;
-else
+} else {
   Date.prototype.toDateString = 1;
-if (Date.prototype.toDateString === x) {
-  throw new Test262Error('#1: The Date.prototype.toDateString has not the attribute ReadOnly');
 }
+
+assert.notSameValue(
+  Date.prototype.toDateString,
+  x,
+  'The value of Date.prototype.toDateString is expected to not equal the value of `x`'
+);
+
+
 
 reportCompare(0, 0);

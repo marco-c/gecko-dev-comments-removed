@@ -6,9 +6,6 @@
 
 
 
-
-if (!Number.hasOwnProperty("NaN")) {
-  throw new Test262Error('#1: The Number constructor has the property "NaN"');
-}
+assert(Number.hasOwnProperty("NaN"), 'Number.hasOwnProperty("NaN") must return true');
 
 reportCompare(0, 0);

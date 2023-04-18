@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.Instant.prototype.toJSON();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.Instant.prototype.toJSON), false,
+  "isConstructor(Temporal.Instant.prototype.toJSON)");
+
+reportCompare(0, 0);

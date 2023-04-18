@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const duration = new Temporal.Duration(0, 0, 0, 1);
+TemporalHelpers.checkStringOptionWrongType("unit", "hour",
+  (unit) => duration.total({ unit }),
+  (result, descr) => assert.sameValue(result, 24, descr),
+);
+
+reportCompare(0, 0);

@@ -6,10 +6,10 @@
 
 
 
-
-
-if (Number.prototype.hasOwnProperty("toExponential") !== true) {
-  throw new Test262Error('#1: The Number prototype object has the property toExponential');
-}
+assert.sameValue(
+  Number.prototype.hasOwnProperty("toExponential"),
+  true,
+  'Number.prototype.hasOwnProperty("toExponential") must return true'
+);
 
 reportCompare(0, 0);

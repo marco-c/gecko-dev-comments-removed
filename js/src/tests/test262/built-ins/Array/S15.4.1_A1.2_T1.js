@@ -7,11 +7,9 @@
 
 
 
-
 var x = Array();
 x.getClass = Object.prototype.toString;
 assert.sameValue(x.getClass(), "[object Array]", 'x.getClass() must return "[object Array]"');
-
 
 var x = Array(0, 1, 2);
 x.getClass = Object.prototype.toString;

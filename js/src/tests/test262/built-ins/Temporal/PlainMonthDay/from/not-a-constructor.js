@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.PlainMonthDay.from();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.PlainMonthDay.from), false,
+  "isConstructor(Temporal.PlainMonthDay.from)");
+
+reportCompare(0, 0);

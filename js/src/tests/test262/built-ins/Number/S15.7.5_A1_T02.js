@@ -8,15 +8,16 @@
 
 
 
+assert.sameValue(
+  (new Number()).hasOwnProperty("toString"),
+  false,
+  '(new Number()).hasOwnProperty("toString") must return false'
+);
 
-
-if ((new Number()).hasOwnProperty("toString") !== false) {
-  throw new Test262Error('#1: Number instance must have no special property "toString"');
-}
-
-
-if ((new Number()).toString !== Number.prototype.toString) {
-  throw new Test262Error('#2: Number instance property "toString" must be inherited from Number prototype object');
-}
+assert.sameValue(
+  (new Number()).toString,
+  Number.prototype.toString,
+  'The value of (new Number()).toString is expected to equal the value of Number.prototype.toString'
+);
 
 reportCompare(0, 0);

@@ -12,7 +12,6 @@
 
 
 
-
 Array.prototype.myproperty = 42;
 var x = Array();
 assert.sameValue(x.myproperty, 42, 'The value of x.myproperty is expected to be 42');

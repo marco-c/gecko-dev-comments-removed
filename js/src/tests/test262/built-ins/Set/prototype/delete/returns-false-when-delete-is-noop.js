@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+var s = new Set();
+
+assert.sameValue(s.delete(1), false, "`s.delete(1)` returns `false`");
+
+reportCompare(0, 0);

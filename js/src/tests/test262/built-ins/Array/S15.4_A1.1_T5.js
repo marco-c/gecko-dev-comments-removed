@@ -9,12 +9,10 @@
 
 
 
-
 var x = [];
 x[null] = 0;
 assert.sameValue(x[0], undefined, 'The value of x[0] is expected to equal undefined');
 assert.sameValue(x["null"], 0, 'The value of x["null"] is expected to be 0');
-
 
 var y = [];
 y[undefined] = 0;

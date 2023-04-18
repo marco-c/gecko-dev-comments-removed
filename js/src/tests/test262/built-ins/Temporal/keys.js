@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+const keys = Object.keys(Temporal);
+assert.compareArray(keys, []);
+
+reportCompare(0, 0);

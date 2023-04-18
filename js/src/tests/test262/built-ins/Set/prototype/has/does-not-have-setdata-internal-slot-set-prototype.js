@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Set.prototype.has.call(Set.prototype, 1);
+});
+
+assert.throws(TypeError, function() {
+  var s = new Set();
+  s.has.call(Set.prototype, 1);
+});
+
+reportCompare(0, 0);

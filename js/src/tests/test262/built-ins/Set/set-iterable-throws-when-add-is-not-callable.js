@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Set.prototype.add = null;
+
+assert.throws(TypeError, function() {
+  new Set([1, 2]);
+});
+
+reportCompare(0, 0);

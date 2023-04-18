@@ -9,10 +9,7 @@
 
 var __re = /[a-f]d/;
 
-
-if (__re.test(x) !== (__re.exec(x) !== null)) {
-	throw new Test262Error('#0: __re = /[a-f]d/; __re.test(x) === (__re.exec(x) !== null); var x;');
-}
+assert.sameValue(__re.test(x), __re.exec(x) !== null, '__re.test() must return __re.exec(x) !== null');
 
 var x;
 

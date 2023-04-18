@@ -17,18 +17,34 @@
 
 
 
+
+
+
+
+
+
 let cal = new Temporal.Calendar("iso8601")
+let i = 0;
 const fields = {
   *[Symbol.iterator]() {
-      let i = 0;
-      while (i++ < 1000001) {
-        yield "garbage " + i;
-      }
+      
+      yield "year";
+      i++;
+      yield "month";
+      i++;
+      yield "monthCode";
+      i++;
+      
+      yield "garbage";
+      
+      
+      i++;
+      yield "hour";
+      i++;
   }
 }
-assert(
-  compareArray(cal.fields(fields), Array.from(fields)),
-  'compareArray(cal.fields(fields), Array.from(fields)) must return true'
-);
+assert.throws(RangeError, () => cal.fields(fields), "Garbage content");
+
+assert.sameValue(i, 3);
 
 reportCompare(0, 0);

@@ -11,14 +11,12 @@
 
 
 
-var obj = {};
+var arg = {};
 
-var p = Promise.resolve(obj);
+var p = Promise.resolve(arg);
 
 p.catch(function() {
   throw new Test262Error("Should not be called - promise is fulfilled");
-}).then(function(arg) {
-  if (arg !== obj) {
-    throw new Test262Error("Expected promise to be fulfilled with obj, got " + arg);
-  }
+}).then(function(result) {
+  assert.sameValue(result, arg, 'The value of result is expected to equal the value of arg');
 }).then($DONE, $DONE);

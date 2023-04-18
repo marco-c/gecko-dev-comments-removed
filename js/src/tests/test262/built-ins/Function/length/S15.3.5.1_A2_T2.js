@@ -11,21 +11,13 @@
 
 var f = Function("arg1,arg2,arg3", "arg4,arg5", null);
 
-
-if (!(f.hasOwnProperty('length'))) {
-  throw new Test262Error('#1: the function has length property.');
-}
+assert(f.hasOwnProperty('length'), 'f.hasOwnProperty(\'length\') must return true');
 
 delete f.length;
 
-
-if (f.hasOwnProperty('length')) {
-  throw new Test262Error('#2: the function.length property does not have the attributes DontDelete.');
-}
+assert(!f.hasOwnProperty('length'), 'The value of !f.hasOwnProperty(\'length\') is expected to be true');
+assert.notSameValue(f.length, 5, 'The value of f.length is not 5');
 
 
-if (f.length === 5) {
-  throw new Test262Error('#3: the length property does not have the attributes { DontDelete }');
-}
 
 reportCompare(0, 0);

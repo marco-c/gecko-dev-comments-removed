@@ -8,10 +8,9 @@
 
 
 
-
-
-if (!(Function.prototype.isPrototypeOf(Number))) {
-  throw new Test262Error('#1: the value of the internal [[Prototype]] property of the Number constructor is the Function prototype object.');
-}
+assert(
+  Function.prototype.isPrototypeOf(Number),
+  'Function.prototype.isPrototypeOf(Number) must return true'
+);
 
 reportCompare(0, 0);

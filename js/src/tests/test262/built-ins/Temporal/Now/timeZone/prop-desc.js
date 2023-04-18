@@ -13,6 +13,8 @@
 
 
 
+assert.sameValue(typeof Temporal.Now.timeZone, "function", "typeof is function");
+
 verifyProperty(Temporal.Now, 'timeZone', {
   enumerable: false,
   writable: true,

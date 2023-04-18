@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(Test262Error, function() {
+  new Intl.NumberFormat('en', {
+    get roundingMode() {
+      throw new Test262Error();
+    }
+  });
+});
+
+reportCompare(0, 0);

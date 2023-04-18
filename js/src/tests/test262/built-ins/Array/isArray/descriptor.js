@@ -7,7 +7,6 @@
 
 
 
-
 verifyWritable(Array, "isArray");
 verifyNotEnumerable(Array, "isArray");
 verifyConfigurable(Array, "isArray");

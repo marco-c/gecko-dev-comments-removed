@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => Temporal.TimeZone());
+
+reportCompare(0, 0);

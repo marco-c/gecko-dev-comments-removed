@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Temporal.PlainYearMonth.prototype.subtract,
+  "function",
+  "`typeof PlainYearMonth.prototype.subtract` is `function`"
+);
+
+verifyProperty(Temporal.PlainYearMonth.prototype, "subtract", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

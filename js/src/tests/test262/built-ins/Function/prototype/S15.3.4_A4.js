@@ -9,20 +9,22 @@
 
 
 
+assert.sameValue(
+  Function.prototype.hasOwnProperty("valueOf"),
+  false,
+  'Function.prototype.hasOwnProperty("valueOf") must return false'
+);
 
+assert.notSameValue(
+  typeof Function.prototype.valueOf,
+  "undefined",
+  'The value of typeof Function.prototype.valueOf is not "undefined"'
+);
 
-if (Function.prototype.hasOwnProperty("valueOf") !== false) {
-  throw new Test262Error('#1: The Function prototype object does not have a valueOf property of its own');
-}
-
-
-if (typeof Function.prototype.valueOf === "undefined") {
-  throw new Test262Error('#2: however, it inherits the valueOf property from the Object prototype Object');
-}
-
-
-if (Function.prototype.valueOf !== Object.prototype.valueOf) {
-  throw new Test262Error('#3: however, it inherits the valueOf property from the Object prototype Object');
-}
+assert.sameValue(
+  Function.prototype.valueOf,
+  Object.prototype.valueOf,
+  'The value of Function.prototype.valueOf is expected to equal the value of Object.prototype.valueOf'
+);
 
 reportCompare(0, 0);

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+const d = Temporal.Now.plainDateISO();
+assert(d instanceof Temporal.PlainDate);
+assert.sameValue(d.calendar.id, "iso8601");
+
+reportCompare(0, 0);

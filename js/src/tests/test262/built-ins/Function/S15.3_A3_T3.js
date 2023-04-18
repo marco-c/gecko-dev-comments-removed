@@ -12,32 +12,24 @@
 var f = Function.call(this, "return planet;");
 var g = Function.call(this, "return color;");
 
-
-if (f() !== undefined) {
-  throw new Test262Error('#1: ');
-}
+assert.sameValue(f(), undefined, 'f() returns undefined');
 
 var planet = "mars";
 
-
-if (f() !== "mars") {
-  throw new Test262Error('#2: ');
-}
-
+assert.sameValue(f(), "mars", 'f() must return "mars"');
 
 try {
   g();
   throw new Test262Error('#3: ');
 } catch (e) {
-  if (!(e instanceof ReferenceError))
-    throw new Test262Error('#3.1: ');
+  assert(
+    e instanceof ReferenceError,
+    'The result of evaluating (e instanceof ReferenceError) is expected to be true'
+  );
 }
 
 this.color = "red";
 
-
-if (g() !== "red") {
-  throw new Test262Error('#4: ');
-}
+assert.sameValue(g(), "red", 'g() must return "red"');
 
 reportCompare(0, 0);

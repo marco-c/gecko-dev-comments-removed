@@ -12,25 +12,19 @@
 
 
 
-function FACTORY() {};
+function FACTORY() {}
 
 FACTORY.prototype = Function.prototype;
 
 var obj = new FACTORY;
 
-
-if (typeof obj.call !== "function") {
-  throw new Test262Error('#1: call method accessed');
-}
-
+assert.sameValue(typeof obj.call, "function", 'The value of `typeof obj.call` is expected to be "function"');
 
 try {
   obj.call();
   throw new Test262Error('#2: If the object does not have a [[Call]] property, a TypeError exception is thrown');
 } catch (e) {
-  if (!(e instanceof TypeError)) {
-    throw new Test262Error('#2.1: If the object does not have a [[Call]] property, a TypeError exception is thrown');
-  }
+  assert(e instanceof TypeError, 'The result of evaluating (e instanceof TypeError) is expected to be true');
 }
 
 reportCompare(0, 0);

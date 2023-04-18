@@ -8,15 +8,16 @@
 
 
 
+assert.sameValue(
+  (new Number()).hasOwnProperty("valueOf"),
+  false,
+  '(new Number()).hasOwnProperty("valueOf") must return false'
+);
 
-
-if ((new Number()).hasOwnProperty("valueOf") !== false) {
-  throw new Test262Error('#1: Number instance must have no special property "valueOf"');
-}
-
-
-if ((new Number()).valueOf !== Number.prototype.valueOf) {
-  throw new Test262Error('#2: Number instance property "valueOf" must be inherited from Number prototype object');
-}
+assert.sameValue(
+  (new Number()).valueOf,
+  Number.prototype.valueOf,
+  'The value of (new Number()).valueOf is expected to equal the value of Number.prototype.valueOf'
+);
 
 reportCompare(0, 0);

@@ -9,75 +9,65 @@
 
 
 
+assert.sameValue(typeof Date(), "string", 'The value of `typeof Date()` is expected to be "string"');
+assert.sameValue(typeof Date(1), "string", 'The value of `typeof Date(1)` is expected to be "string"');
+assert.sameValue(typeof Date(1970, 1), "string", 'The value of `typeof Date(1970, 1)` is expected to be "string"');
 
+assert.sameValue(
+  typeof Date(1970, 1, 1),
+  "string",
+  'The value of `typeof Date(1970, 1, 1)` is expected to be "string"'
+);
 
-if (typeof Date() !== "string") {
-  throw new Test262Error('#1: typeof Date() should be "string", actual is ' + (typeof Date()));
-}
+assert.sameValue(
+  typeof Date(1970, 1, 1, 1),
+  "string",
+  'The value of `typeof Date(1970, 1, 1, 1)` is expected to be "string"'
+);
 
+assert.sameValue(
+  typeof Date(1970, 1, 1, 1),
+  "string",
+  'The value of `typeof Date(1970, 1, 1, 1)` is expected to be "string"'
+);
 
-if (typeof Date(1) !== "string") {
-  throw new Test262Error('#2: typeof Date(1) should be "string", actual is ' + (typeof Date(1)));
-}
+assert.sameValue(
+  typeof Date(1970, 1, 1, 1, 0),
+  "string",
+  'The value of `typeof Date(1970, 1, 1, 1, 0)` is expected to be "string"'
+);
 
+assert.sameValue(
+  typeof Date(1970, 1, 1, 1, 0, 0),
+  "string",
+  'The value of `typeof Date(1970, 1, 1, 1, 0, 0)` is expected to be "string"'
+);
 
-if (typeof Date(1970, 1) !== "string") {
-  throw new Test262Error('#3: typeof Date(1970, 1) should be "string", actual is ' + (typeof Date(1970, 1)));
-}
+assert.sameValue(
+  typeof Date(1970, 1, 1, 1, 0, 0, 0),
+  "string",
+  'The value of `typeof Date(1970, 1, 1, 1, 0, 0, 0)` is expected to be "string"'
+);
 
+assert.sameValue(
+  typeof Date(Number.NaN),
+  "string",
+  'The value of `typeof Date(Number.NaN)` is expected to be "string"'
+);
 
-if (typeof Date(1970, 1, 1) !== "string") {
-  throw new Test262Error('#4: typeof Date(1970, 1, 1) should be "string", actual is ' + (typeof Date(1970, 1, 1)));
-}
+assert.sameValue(
+  typeof Date(Number.POSITIVE_INFINITY),
+  "string",
+  'The value of `typeof Date(Number.POSITIVE_INFINITY)` is expected to be "string"'
+);
 
+assert.sameValue(
+  typeof Date(Number.NEGATIVE_INFINITY),
+  "string",
+  'The value of `typeof Date(Number.NEGATIVE_INFINITY)` is expected to be "string"'
+);
 
-if (typeof Date(1970, 1, 1, 1) !== "string") {
-  throw new Test262Error('#5: typeof Date(1970, 1, 1, 1) should be "string", actual is ' + (typeof Date(1970, 1, 1, 1)));
-}
-
-
-if (typeof Date(1970, 1, 1, 1) !== "string") {
-  throw new Test262Error('#7: typeof Date(1970, 1, 1, 1) should be "string", actual is ' + (typeof Date(1970, 1, 1, 1)));
-}
-
-
-if (typeof Date(1970, 1, 1, 1, 0) !== "string") {
-  throw new Test262Error('#8: typeof Date(1970, 1, 1, 1, 0) should be "string", actual is ' + (typeof Date(1970, 1, 1, 1, 0)));
-}
-
-
-if (typeof Date(1970, 1, 1, 1, 0, 0) !== "string") {
-  throw new Test262Error('#9: typeof Date(1970, 1, 1, 1, 0, 0) should be "string", actual is ' + (typeof Date(1970, 1, 1, 1, 0, 0)));
-}
-
-
-if (typeof Date(1970, 1, 1, 1, 0, 0, 0) !== "string") {
-  throw new Test262Error('#10: typeof Date(1970, 1, 1, 1, 0, 0, 0) should be "string", actual is ' + (typeof Date(1970, 1, 1, 1, 0, 0, 0)));
-}
-
-
-if (typeof Date(Number.NaN) !== "string") {
-  throw new Test262Error('#11: typeof Date(Number.NaN) should be "string", actual is ' + (typeof Date(Number.NaN)));
-}
-
-
-if (typeof Date(Number.POSITIVE_INFINITY) !== "string") {
-  throw new Test262Error('#12: typeof Date(Number.POSITIVE_INFINITY) should be "string", actual is ' + (typeof Date(Number.POSITIVE_INFINITY)));
-}
-
-
-if (typeof Date(Number.NEGATIVE_INFINITY) !== "string") {
-  throw new Test262Error('#13: typeof Date(Number.NEGATIVE_INFINITY) should be "string", actual is ' + (typeof Date(Number.NEGATIVE_INFINITY)));
-}
-
-
-if (typeof Date(undefined) !== "string") {
-  throw new Test262Error('#14: typeof Date(undefined) should be "string", actual is ' + (typeof Date(undefined)));
-}
-
-
-if (typeof Date(null) !== "string") {
-  throw new Test262Error('#15: typeof Date(null) should be "string", actual is ' + (typeof Date(null)));
-}
+assert.sameValue(typeof Date(undefined), "string", 'The value of `typeof Date(undefined)` is expected to be "string"');
+assert.sameValue(typeof Date(null), "string", 'The value of `typeof Date(null)` is expected to be "string"');
 
 reportCompare(0, 0);

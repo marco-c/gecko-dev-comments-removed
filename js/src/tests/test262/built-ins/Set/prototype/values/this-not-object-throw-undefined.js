@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Set.prototype.values.call(undefined);
+});
+
+assert.throws(TypeError, function() {
+  var s = new Set();
+  s.values.call(undefined);
+});
+
+reportCompare(0, 0);

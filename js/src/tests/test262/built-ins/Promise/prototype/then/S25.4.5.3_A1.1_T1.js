@@ -8,9 +8,9 @@
 
 
 
-
-if (!(Promise.prototype.then instanceof Function)) {
-  throw new Test262Error("Expected Promise.prototype.then to be a function");
-}
+assert(
+  !!(Promise.prototype.then instanceof Function),
+  'The value of !!(Promise.prototype.then instanceof Function) is expected to be true'
+);
 
 reportCompare(0, 0);

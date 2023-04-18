@@ -6,20 +6,8 @@
 
 
 
-
-
-if (+("2") !== 2) {
-  throw new Test262Error('#1: +("2") === 2. Actual: ' + (+("2")));
-}
-
-
-if (Number("0x2") !== 2) {
-  throw new Test262Error('#2: Number("0x2") === 2. Actual: ' + (Number("0x2")));
-}
-
-
-if (Number("0X2") !== 2) {
-  throw new Test262Error('#3: Number("0X2") === 2. Actual: ' + (Number("0X2")));
-}
+assert.sameValue(+("2"), 2, 'The value of `+("2")` is expected to be 2');
+assert.sameValue(Number("0x2"), 2, 'Number("0x2") must return 2');
+assert.sameValue(Number("0X2"), 2, 'Number("0X2") must return 2');
 
 reportCompare(0, 0);

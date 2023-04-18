@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+assert(
+  Object.isExtensible(Temporal.Now.zonedDateTime),
+  'Object.isExtensible(Temporal.Now.zonedDateTime) must return true'
+);
+
+reportCompare(0, 0);

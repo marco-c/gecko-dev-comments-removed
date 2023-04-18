@@ -8,6 +8,8 @@
 
 
 
+assert.sameValue(typeof Temporal.Now.plainDateTime, "function", "typeof is function");
+
 verifyProperty(Temporal.Now, 'plainDateTime', {
   enumerable: false,
   writable: true,

@@ -13,18 +13,11 @@
 
 function FACTORY() {
   Function("this.feat=\"in da haus\"").call();
-};
+}
 
 var obj = new FACTORY;
 
-
-if (this["feat"] !== "in da haus") {
-  throw new Test262Error('#1: If thisArg is null or undefined, the called function is passed the global object as the this value');
-}
-
-
-if (typeof obj.feat !== "undefined") {
-  throw new Test262Error('#1: If thisArg is null or undefined, the called function is passed the global object as the this value');
-}
+assert.sameValue(this["feat"], "in da haus", 'The value of this["feat"] is expected to be "in da haus"');
+assert.sameValue(typeof obj.feat, "undefined", 'The value of `typeof obj.feat` is expected to be "undefined"');
 
 reportCompare(0, 0);

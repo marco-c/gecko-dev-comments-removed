@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = new Set();
+
+s.add("")
+
+assert.sameValue(s.has(""), true, "`s.has('')` returns `true`");
+
+reportCompare(0, 0);

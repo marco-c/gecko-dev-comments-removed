@@ -13,6 +13,12 @@
 
 
 
+
+
+
+
+
+
 var pairs = [
   
   ["o\u0308", "ö"],
@@ -49,26 +55,12 @@ var pairs = [
   
 ];
 
-
-if ("a".localeCompare("Z") < 0) {
-  
-  var i;
-  for (i = 0; i < pairs.length; i++) {
-    var pair = pairs[i];
-    if (pair[0].localeCompare(pair[1]) !== 0) {
-      throw new Test262Error("String.prototype.localeCompare considers " + pair[0] + " (" + toU(pair[0]) +
-        ") ≠ " + pair[1] + " (" + toU(pair[1]) + ").");
-    }
-  }
-} else {
-  
-  var i;
-  for (i = 0; i < pairs.length; i++) {
-    var pair = pairs[i];
-    if (pair[0].localeCompare(pair[1]) === 0) {
-      throw new Test262Error("String.prototype.localeCompare considers " + pair[0] + " (" + toU(pair[0]) +
-        ") = " + pair[1] + " (" + toU(pair[1]) + ").");
-    }
+var i;
+for (i = 0; i < pairs.length; i++) {
+  var pair = pairs[i];
+  if (pair[0].localeCompare(pair[1]) !== 0) {
+    throw new Test262Error("String.prototype.localeCompare considers " + pair[0] + " (" + toU(pair[0]) +
+      ") ≠ " + pair[1] + " (" + toU(pair[1]) + ").");
   }
 }
 

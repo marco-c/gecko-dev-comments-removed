@@ -8,9 +8,9 @@
 
 
 
-
-if (!(Promise.prototype.catch instanceof Function)) {
-  throw new Test262Error("Expected Promise.prototype.catch to be a function");
-}
+assert(
+  !!(Promise.prototype.catch instanceof Function),
+  'The value of !!(Promise.prototype.catch instanceof Function) is expected to be true'
+);
 
 reportCompare(0, 0);

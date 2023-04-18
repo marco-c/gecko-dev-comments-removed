@@ -8,7 +8,6 @@
 
 
 
-
 try {
   var x = [];
   x.length = NaN;
@@ -20,7 +19,6 @@ try {
     'The result of evaluating (e instanceof RangeError) is expected to be true'
   );
 }
-
 
 try {
   x = [];
@@ -34,7 +32,6 @@ try {
   );
 }
 
-
 try {
   x = [];
   x.length = Number.NEGATIVE_INFINITY;
@@ -46,7 +43,6 @@ try {
     'The result of evaluating (e instanceof RangeError) is expected to be true'
   );
 }
-
 
 try {
   x = [];

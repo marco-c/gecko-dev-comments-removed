@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Temporal.ZonedDateTime.prototype.toPlainDate,
+  "function",
+  "`typeof ZonedDateTime.prototype.toPlainDate` is `function`"
+);
+
+verifyProperty(Temporal.ZonedDateTime.prototype, "toPlainDate", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

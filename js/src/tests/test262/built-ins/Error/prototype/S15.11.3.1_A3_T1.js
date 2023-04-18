@@ -7,14 +7,7 @@
 
 
 
-
-
-
-if (!(Error.hasOwnProperty('prototype'))) {
-  throw new Test262Error('#1: Error.hasOwnProperty(\'prototype\') return true. Actual: ' + Error.hasOwnProperty('prototype'));
-}
-
-
+assert(Error.hasOwnProperty('prototype'));
 
 var __obj = Error.prototype;
 
@@ -22,22 +15,8 @@ verifyNotWritable(Error, "prototype", null, function() {
   return "shifted";
 });
 
+assert.sameValue(Error.prototype, __obj);
 
-
-if (Error.prototype !== __obj) {
-  throw new Test262Error('#2: __obj = Error.prototype; Error.prototype = function(){return "shifted";}; Error.prototype === __obj. Actual: ' + Error.prototype);
-}
-
-
-
-
-
-try {
-  Error.prototype();
-  throw new Test262Error('#3: "Error.prototype()" lead to throwing exception');
-} catch (e) {
-  if (e instanceof Test262Error) throw e;
-}
 
 
 

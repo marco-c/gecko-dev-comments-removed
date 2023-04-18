@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.TimeZone.prototype.getInstantFor();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.TimeZone.prototype.getInstantFor), false,
+  "isConstructor(Temporal.TimeZone.prototype.getInstantFor)");
+
+reportCompare(0, 0);

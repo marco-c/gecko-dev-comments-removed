@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Temporal.Now,
+  "object",
+  "`typeof Now` is `object`"
+);
+
+verifyProperty(Temporal, "Now", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

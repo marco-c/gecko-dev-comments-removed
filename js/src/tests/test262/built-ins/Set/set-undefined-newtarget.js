@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Set();
+});
+
+assert.throws(TypeError, function() {
+  Set([]);
+});
+
+reportCompare(0, 0);

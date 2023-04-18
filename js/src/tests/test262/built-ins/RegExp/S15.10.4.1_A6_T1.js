@@ -10,9 +10,6 @@
 var __re = new RegExp;
 __re.toString = Object.prototype.toString;
 
-
-if (__re.toString() !== "[object "+"RegExp"+"]") {
-	throw new Test262Error('#1: __re = new RegExp; __re.toString = Object.prototype.toString; __re.toString() === "[object "+"RegExp"+"]". Actual: ' + (__re.toString()));
-}
+assert.sameValue(__re.toString(), "[object "+"RegExp"+"]", '__re.toString() must return "[object "+"RegExp"+"]"');
 
 reportCompare(0, 0);

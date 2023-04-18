@@ -8,13 +8,17 @@
 
 
 
+assert.notSameValue(
+  delete Date.prototype.getUTCMilliseconds,
+  false,
+  'The value of delete Date.prototype.getUTCMilliseconds is not false'
+);
 
-if (delete Date.prototype.getUTCMilliseconds === false) {
-  throw new Test262Error('#1: The Date.prototype.getUTCMilliseconds property has not the attributes DontDelete');
-}
+assert(
+  !Date.prototype.hasOwnProperty('getUTCMilliseconds'),
+  'The value of !Date.prototype.hasOwnProperty(\'getUTCMilliseconds\') is expected to be true'
+);
 
-if (Date.prototype.hasOwnProperty('getUTCMilliseconds')) {
-  throw new Test262Error('#2: The Date.prototype.getUTCMilliseconds property has not the attributes DontDelete');
-}
+
 
 reportCompare(0, 0);

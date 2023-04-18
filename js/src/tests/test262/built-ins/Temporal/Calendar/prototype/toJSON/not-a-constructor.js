@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.Calendar.prototype.toJSON();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.Calendar.prototype.toJSON), false,
+  "isConstructor(Temporal.Calendar.prototype.toJSON)");
+
+reportCompare(0, 0);

@@ -9,14 +9,7 @@
 
 
 
-
-try {
-  if (Function.prototype(x) !== undefined) {
-    var x;
-    throw new Test262Error('#1: The Function prototype object is itself a Function object that, when invoked, accepts any arguments and returns undefined');
-  }
-} catch (e) {
-  throw new Test262Error('#1.1: The Function prototype object is itself a Function object that, when invoked, accepts any arguments and returns undefined: ' + e);
-}
+var x;
+assert.sameValue(Function.prototype(x), undefined, 'Function.prototype(x) returns undefined');
 
 reportCompare(0, 0);

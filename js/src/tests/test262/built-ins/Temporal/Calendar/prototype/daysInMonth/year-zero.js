@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+const arg = "-000000-10-31";
+const instance = new Temporal.Calendar("iso8601");
+
+assert.throws(
+    RangeError,
+    () => { instance.daysInMonth(arg); },
+    "reject minus zero as extended year"
+);
+
+reportCompare(0, 0);

@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+const result = Temporal.PlainTime.from(1523);
+TemporalHelpers.assertPlainTime(result, 15, 23, 0, 0, 0, 0);
+
+reportCompare(0, 0);

@@ -9,11 +9,9 @@
 
 
 
-
 var x = Array(100);
 x[100] = 1;
 assert.sameValue(x.length, 101, 'The value of x.length is expected to be 101');
-
 
 x[199] = 1;
 assert.sameValue(x.length, 200, 'The value of x.length is expected to be 200');

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.PlainDate.prototype.toLocaleString();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.PlainDate.prototype.toLocaleString), false,
+  "isConstructor(Temporal.PlainDate.prototype.toLocaleString)");
+
+reportCompare(0, 0);

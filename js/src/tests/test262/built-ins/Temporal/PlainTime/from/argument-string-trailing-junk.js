@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+const arg = "15:23:30.100junk";
+assert.throws(RangeError, () => Temporal.PlainTime.from(arg));
+
+reportCompare(0, 0);

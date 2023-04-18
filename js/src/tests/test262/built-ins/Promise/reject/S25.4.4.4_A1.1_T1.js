@@ -8,9 +8,10 @@
 
 
 
-
-if ((typeof Promise.reject) !== "function") {
-  throw new Test262Error("Expected Promise.reject to be a function");
-}
+assert.sameValue(
+  typeof Promise.reject,
+  "function",
+  'The value of `typeof Promise.reject` is expected to be "function"'
+);
 
 reportCompare(0, 0);

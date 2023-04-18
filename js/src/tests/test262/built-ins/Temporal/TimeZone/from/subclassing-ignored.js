@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+TemporalHelpers.checkSubclassingIgnoredStatic(
+  Temporal.TimeZone,
+  "from",
+  ["UTC"],
+  (result) => {
+    assert.sameValue(result.id, "UTC", "id property of result");
+    assert.sameValue(result.toString(), "UTC", "toString() of result");
+  },
+);
+
+reportCompare(0, 0);

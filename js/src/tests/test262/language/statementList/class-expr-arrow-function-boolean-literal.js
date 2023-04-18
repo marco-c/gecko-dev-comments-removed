@@ -49,6 +49,6 @@
 
 
 
-class C {}() => 1, 42;;
+class C {}() => 1, 42;
 
 reportCompare(0, 0);

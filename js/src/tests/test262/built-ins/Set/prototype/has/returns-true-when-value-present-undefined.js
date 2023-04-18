@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = new Set();
+
+s.add(undefined)
+
+assert.sameValue(s.has(undefined), true, "`s.has(undefined)` returns `true`");
+
+reportCompare(0, 0);

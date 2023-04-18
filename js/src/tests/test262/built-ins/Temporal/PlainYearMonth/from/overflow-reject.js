@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+const bad = { year: 2019, month: 13 };
+assert.throws(RangeError, () => Temporal.PlainYearMonth.from(bad, { overflow: "reject" }));
+
+reportCompare(0, 0);

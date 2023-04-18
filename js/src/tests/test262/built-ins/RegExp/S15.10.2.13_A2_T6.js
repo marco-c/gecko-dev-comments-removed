@@ -12,9 +12,6 @@
 
 var __executed = /a[^b]c/.test("abc");
 
-
-if (__executed) {
-	throw new Test262Error('#1: /a[^b]c/.test("abc") === false');
-}
+assert(!__executed, 'The value of !__executed is expected to be true');
 
 reportCompare(0, 0);

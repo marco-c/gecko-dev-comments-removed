@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Map, 'function', 'typeof Map is "function"');
+
+reportCompare(0, 0);

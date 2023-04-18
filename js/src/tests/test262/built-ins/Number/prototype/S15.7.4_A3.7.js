@@ -6,10 +6,10 @@
 
 
 
-
-
-if (Number.prototype.hasOwnProperty("toPrecision") !== true) {
-  throw new Test262Error('#1: The Number prototype object has the property toPrecision');
-}
+assert.sameValue(
+  Number.prototype.hasOwnProperty("toPrecision"),
+  true,
+  'Number.prototype.hasOwnProperty("toPrecision") must return true'
+);
 
 reportCompare(0, 0);

@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, () => Temporal.Now.zonedDateTime(), "implicit");
+assert.throws(RangeError, () => Temporal.Now.zonedDateTime(undefined), "implicit");
+
+reportCompare(0, 0);

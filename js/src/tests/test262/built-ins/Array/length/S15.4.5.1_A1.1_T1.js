@@ -8,7 +8,6 @@
 
 
 
-
 try {
   var x = [];
   x.length = 4294967296;
@@ -21,7 +20,6 @@ try {
   );
 }
 
-
 try {
   x = [];
   x.length = -1;
@@ -33,7 +31,6 @@ try {
     'The result of evaluating (e instanceof RangeError) is expected to be true'
   );
 }
-
 
 try {
   x = [];

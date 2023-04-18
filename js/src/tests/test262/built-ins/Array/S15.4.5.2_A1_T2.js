@@ -10,11 +10,9 @@
 
 
 
-
 var x = [];
 x[4294967295] = 1;
 assert.sameValue(x.length, 0, 'The value of x.length is expected to be 0');
-
 
 var y = [];
 y[1] = 1;

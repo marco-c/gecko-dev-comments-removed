@@ -19,14 +19,12 @@ function FACTORY() {
 
 var obj = new FACTORY("", 1, 2);
 
+assert.sameValue(
+  typeof this["shifted"],
+  "undefined",
+  'The value of `typeof this["shifted"]` is expected to be "undefined"'
+);
 
-if (typeof this["shifted"] !== "undefined") {
-  throw new Test262Error('#1: If argArray is either an array or an arguments object, the function is passed the...');
-}
-
-
-if (obj.shifted !== "12") {
-  throw new Test262Error('#2: If argArray is either an array or an arguments object, the function is passed the...');
-}
+assert.sameValue(obj.shifted, "12", 'The value of obj.shifted is expected to be "12"');
 
 reportCompare(0, 0);

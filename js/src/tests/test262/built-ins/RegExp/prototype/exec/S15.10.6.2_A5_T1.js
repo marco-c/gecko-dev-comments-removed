@@ -19,38 +19,35 @@ var __expected = ["ab4"];
 __expected.index = 21;
 __expected.input = "aac1dz2233a1bz12nm444ab42";
 
+assert.sameValue(
+  __executed.length,
+  __expected.length,
+  'The value of __executed.length is expected to equal the value of __expected.length'
+);
 
-if (__executed.length !== __expected.length) {
-	throw new Test262Error('#1: __re = /(?:ab|cd)\\d?/g; __executed = __re.exec("aac1dz2233a1bz12nm444ab42"); __executed.length === ' + __expected.length + '. Actual: ' + __executed.length);
-}
+assert.sameValue(
+  __executed.index,
+  __expected.index,
+  'The value of __executed.index is expected to equal the value of __expected.index'
+);
 
-
-if (__executed.index !== __expected.index) {
-	throw new Test262Error('#2: __re = /(?:ab|cd)\\d?/g; __executed = __re.exec("aac1dz2233a1bz12nm444ab42"); __executed.index === ' + __expected.index + '. Actual: ' + __executed.index);
-}
-
-
-if (__executed.input !== __expected.input) {
-	throw new Test262Error('#3: __re = /(?:ab|cd)\\d?/g; __executed = __re.exec("aac1dz2233a1bz12nm444ab42"); __executed.input === ' + __expected.input + '. Actual: ' + __executed.input);
-}
-
+assert.sameValue(
+  __executed.input,
+  __expected.input,
+  'The value of __executed.input is expected to equal the value of __expected.input'
+);
 
 for(var index=0; index<__expected.length; index++) {
-	if (__executed[index] !== __expected[index]) {
-		throw new Test262Error('#4: __re = /(?:ab|cd)\\d?/g; __executed = __re.exec("aac1dz2233a1bz12nm444ab42"); __executed[' + index + '] === ' + __expected[index] + '. Actual: ' + __executed[index]);
-	}
+  assert.sameValue(
+    __executed[index],
+    __expected[index],
+    'The value of __executed[index] is expected to equal the value of __expected[index]'
+  );
 }
 
 __executed = __re.exec("aacd22");
 
-
-if (__executed) {
-	throw new Test262Error('#5: __re = /(?:ab|cd)\\d?/g; __executed = __re.exec("aacd22"); __executed === true');
-}
-
-
-if (__re.lastIndex !== 0) {
-	throw new Test262Error('#6: __re = /(?:ab|cd)\\d?/g; __executed = __re.exec("aacd22"); __re.lastIndex === 0. Actual: ' + (__re.lastIndex));
-}
+assert(!__executed, 'The value of !__executed is expected to be true');
+assert.sameValue(__re.lastIndex, 0, 'The value of __re.lastIndex is expected to be 0');
 
 reportCompare(0, 0);

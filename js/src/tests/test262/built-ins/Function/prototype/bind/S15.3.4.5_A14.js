@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Function.prototype.bind.call(null, {});
+}, 'Function.prototype.bind.call(null, {}) throws a TypeError exception');
+
+reportCompare(0, 0);

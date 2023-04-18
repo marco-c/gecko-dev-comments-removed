@@ -9,12 +9,10 @@
 
 
 
-
 var x = [];
 x[new Boolean(true)] = 1;
 assert.sameValue(x[1], undefined, 'The value of x[1] is expected to equal undefined');
 assert.sameValue(x["true"], 1, 'The value of x["true"] is expected to be 1');
-
 
 x[new Boolean(false)] = 0;
 assert.sameValue(x[0], undefined, 'The value of x[0] is expected to equal undefined');

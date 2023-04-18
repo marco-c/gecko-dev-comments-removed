@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Temporal.TimeZone.from,
+  "function",
+  "`typeof TimeZone.from` is `function`"
+);
+
+verifyProperty(Temporal.TimeZone, "from", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

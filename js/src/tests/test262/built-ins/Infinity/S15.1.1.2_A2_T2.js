@@ -10,8 +10,8 @@
 
 
 Infinity = true;
-if (typeof(Infinity) === "boolean") {
-  throw new Test262Error('#1: Infinity = true; typeof(Infinity) !== "boolean". Actual: ' + (typeof(Infinity)));
-}
+assert.notSameValue(typeof(Infinity), "boolean", 'The value of typeof(Infinity) is not "boolean"');
+
+
 
 reportCompare(0, 0);

@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Set.prototype.add = null;
+
+var s = new Set();
+
+assert.sameValue(s.size, 0, "The value of `s.size` is `0`");
+
+reportCompare(0, 0);

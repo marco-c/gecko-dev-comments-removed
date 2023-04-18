@@ -11,24 +11,14 @@
 
 var n_obj = new Object((1 === 1) && !(false));
 
+assert.sameValue(
+  n_obj.constructor,
+  Boolean,
+  'The value of n_obj.constructor is expected to equal the value of Boolean'
+);
 
-if (n_obj.constructor !== Boolean) {
-  throw new Test262Error('#2: When the Object constructor is called with Boolean argument return ToObject(boolean)');
-}
-
-
-if (typeof n_obj !== 'object') {
-  throw new Test262Error('#3: When the Object constructor is called with Boolean argument return ToObject(boolean)');
-}
-
-
-if (n_obj != true) {
-  throw new Test262Error('#4: When the Object constructor is called with Boolean argument return ToObject(boolean)');
-}
-
-
-if (n_obj === true) {
-  throw new Test262Error('#5: When the Object constructor is called with Boolean argument return ToObject(boolean)');
-}
+assert.sameValue(typeof n_obj, 'object', 'The value of `typeof n_obj` is expected to be "object"');
+assert(n_obj == true, 'The result of evaluating (n_obj == true) is expected to be true');
+assert.notSameValue(n_obj, true, 'The value of n_obj is not true');
 
 reportCompare(0, 0);

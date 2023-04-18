@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Temporal.Instant.prototype, "object");
+assert.notSameValue(Temporal.Instant.prototype, null);
+
+verifyProperty(Temporal.Instant, "prototype", {
+  writable: false,
+  enumerable: false,
+  configurable: false,
+});
+
+reportCompare(0, 0);

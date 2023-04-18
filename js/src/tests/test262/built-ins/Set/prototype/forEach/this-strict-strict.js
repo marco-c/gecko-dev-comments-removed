@@ -1,0 +1,26 @@
+'use strict';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = new Set([1]);
+var counter = 0;
+
+s.forEach(function() {
+  assert.sameValue(this, undefined, "`this` is `undefined` in strict mode code");
+  counter++;
+});
+
+assert.sameValue(counter, 1, "`forEach` is not a no-op");
+
+reportCompare(0, 0);

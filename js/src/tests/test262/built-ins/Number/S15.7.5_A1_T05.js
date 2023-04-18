@@ -8,15 +8,16 @@
 
 
 
+assert.sameValue(
+  (new Number()).hasOwnProperty("toFixed"),
+  false,
+  '(new Number()).hasOwnProperty("toFixed") must return false'
+);
 
-
-if ((new Number()).hasOwnProperty("toFixed") !== false) {
-  throw new Test262Error('#1: Number instance must have no special property "toFixed"');
-}
-
-
-if ((new Number()).toFixed !== Number.prototype.toFixed) {
-  throw new Test262Error('#2: Number instance property "toFixed" must be inherited from Number prototype object');
-}
+assert.sameValue(
+  (new Number()).toFixed,
+  Number.prototype.toFixed,
+  'The value of (new Number()).toFixed is expected to equal the value of Number.prototype.toFixed'
+);
 
 reportCompare(0, 0);

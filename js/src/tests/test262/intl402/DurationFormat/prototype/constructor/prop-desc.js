@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl.DurationFormat.prototype, "constructor");
+verifyWritable(Intl.DurationFormat.prototype, "constructor");
+verifyConfigurable(Intl.DurationFormat.prototype, "constructor");
+
+reportCompare(0, 0);

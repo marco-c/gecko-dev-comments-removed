@@ -6,13 +6,17 @@
 
 
 
+assert.notSameValue(
+  delete Date.prototype.setMilliseconds,
+  false,
+  'The value of delete Date.prototype.setMilliseconds is not false'
+);
 
-if (delete Date.prototype.setMilliseconds === false) {
-  throw new Test262Error('#1: The Date.prototype.setMilliseconds property has not the attributes DontDelete');
-}
+assert(
+  !Date.prototype.hasOwnProperty('setMilliseconds'),
+  'The value of !Date.prototype.hasOwnProperty(\'setMilliseconds\') is expected to be true'
+);
 
-if (Date.prototype.hasOwnProperty('setMilliseconds')) {
-  throw new Test262Error('#2: The Date.prototype.setMilliseconds property has not the attributes DontDelete');
-}
+
 
 reportCompare(0, 0);

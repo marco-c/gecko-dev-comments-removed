@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.TimeZone.prototype.getOffsetNanosecondsFor();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.TimeZone.prototype.getOffsetNanosecondsFor), false,
+  "isConstructor(Temporal.TimeZone.prototype.getOffsetNanosecondsFor)");
+
+reportCompare(0, 0);

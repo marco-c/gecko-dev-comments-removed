@@ -12,11 +12,9 @@
 
 
 
-
 var x = [0, , 2, , 4];
 x.length = 4;
 assert.sameValue(x[4], undefined, 'The value of x[4] is expected to equal undefined');
-
 
 x.length = 3;
 assert.sameValue(x[3], undefined, 'The value of x[3] is expected to equal undefined');

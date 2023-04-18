@@ -15,9 +15,8 @@
 
 
 
-assert(compareArray(["fst", "snd"],
-             Object.getOwnPropertyNames(
-                 /(?<fst>.)|(?<snd>.)/u.exec("abcd").groups)));
+assert.compareArray(["fst", "snd"], Object.getOwnPropertyNames(
+    /(?<fst>.)|(?<snd>.)/u.exec("abcd").groups));
 
 
 let counter = 0;

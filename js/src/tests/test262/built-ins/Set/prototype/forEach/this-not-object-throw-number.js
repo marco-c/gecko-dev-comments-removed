@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Set.prototype.forEach.call(0, function() {});
+});
+
+assert.throws(TypeError, function() {
+  var s = new Set();
+  s.forEach.call(0, function() {});
+});
+
+reportCompare(0, 0);

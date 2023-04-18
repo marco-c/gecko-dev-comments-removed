@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Object.getPrototypeOf(ShadowRealm.prototype), Object.prototype);
+
+reportCompare(0, 0);

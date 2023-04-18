@@ -7,8 +7,7 @@
 
 
 
-
-var result = true; 
+var result = true;
 for (var alpha = 0x0041; alpha <= 0x005A; alpha++) {
   var str = String.fromCharCode(alpha % 32);
   var arr = (new RegExp("\\c" + String.fromCharCode(alpha))).exec(str);  
@@ -17,8 +16,6 @@ for (var alpha = 0x0041; alpha <= 0x005A; alpha++) {
   }
 }
 
-if (result !== true) {
-  throw new Test262Error('#1: CharacterEscape :: c A - Z');
-}
+assert.sameValue(result, true, 'The value of result is expected to be true');
 
 reportCompare(0, 0);

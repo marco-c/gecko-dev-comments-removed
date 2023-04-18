@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.TimeZone.from();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.TimeZone.from), false,
+  "isConstructor(Temporal.TimeZone.from)");
+
+reportCompare(0, 0);

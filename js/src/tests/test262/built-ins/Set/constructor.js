@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof Set, "function", "`typeof Set` is `'function'`");
+
+reportCompare(0, 0);

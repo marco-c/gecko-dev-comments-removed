@@ -8,45 +8,28 @@
 
 
 
+assert.sameValue(Number.prototype.toString(22), "0", 'Number.prototype.toString(22) must return "0"');
+assert.sameValue((new Number()).toString(22), "0", '(new Number()).toString(22) must return "0"');
+assert.sameValue((new Number(0)).toString(22), "0", '(new Number(0)).toString(22) must return "0"');
+assert.sameValue((new Number(-1)).toString(22), "-1", '(new Number(-1)).toString(22) must return "-1"');
+assert.sameValue((new Number(1)).toString(22), "1", '(new Number(1)).toString(22) must return "1"');
 
+assert.sameValue(
+  (new Number(Number.NaN)).toString(22),
+  "NaN",
+  '(new Number(Number.NaN)).toString(22) must return "NaN"'
+);
 
-if (Number.prototype.toString(22) !== "0") {
-  throw new Test262Error('#1: Number.prototype.toString(22) === "0"');
-}
+assert.sameValue(
+  (new Number(Number.POSITIVE_INFINITY)).toString(22),
+  "Infinity",
+  '(new Number(Number.POSITIVE_INFINITY)).toString(22) must return "Infinity"'
+);
 
-
-if ((new Number()).toString(22) !== "0") {
-  throw new Test262Error('#2: (new Number()).toString(22) === "0"');
-}
-
-
-if ((new Number(0)).toString(22) !== "0") {
-  throw new Test262Error('#3: (new Number(0)).toString(22) === "0"');
-}
-
-
-if ((new Number(-1)).toString(22) !== "-1") {
-  throw new Test262Error('#4: (new Number(-1)).toString(22) === "-1"');
-}
-
-
-if ((new Number(1)).toString(22) !== "1") {
-  throw new Test262Error('#5: (new Number(1)).toString(22) === "1"');
-}
-
-
-if ((new Number(Number.NaN)).toString(22) !== "NaN") {
-  throw new Test262Error('#6: (new Number(Number.NaN)).toString(22) === "NaN"');
-}
-
-
-if ((new Number(Number.POSITIVE_INFINITY)).toString(22) !== "Infinity") {
-  throw new Test262Error('#7: (new Number(Number.POSITIVE_INFINITY)).toString(22) === "Infinity"');
-}
-
-
-if ((new Number(Number.NEGATIVE_INFINITY)).toString(22) !== "-Infinity") {
-  throw new Test262Error('#8: (new Number(Number.NEGATIVE_INFINITY)).toString(22) === "-Infinity"');
-}
+assert.sameValue(
+  (new Number(Number.NEGATIVE_INFINITY)).toString(22),
+  "-Infinity",
+  '(new Number(Number.NEGATIVE_INFINITY)).toString(22) must return "-Infinity"'
+);
 
 reportCompare(0, 0);

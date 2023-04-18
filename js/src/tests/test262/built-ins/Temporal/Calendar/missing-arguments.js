@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, () => new Temporal.Calendar());
+assert.throws(RangeError, () => new Temporal.Calendar(undefined));
+
+reportCompare(0, 0);

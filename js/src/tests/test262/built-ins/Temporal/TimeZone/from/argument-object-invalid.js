@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, () => Temporal.TimeZone.from({ timeZone: "local" }));
+assert.throws(RangeError, () => Temporal.TimeZone.from({ timeZone: { timeZone: "UTC" } }));
+
+reportCompare(0, 0);

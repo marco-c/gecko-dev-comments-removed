@@ -11,19 +11,15 @@
 
 var f = new Function("arg1,arg2,arg3", null);
 
-
-if (!(f.hasOwnProperty('length'))) {
-  throw new Test262Error('#1: the function has length property.');
-}
+assert(f.hasOwnProperty('length'), 'f.hasOwnProperty(\'length\') must return true');
 
 for (var key in f) {
   if (key == "length") {
     var lengthenumed = true;
   }
 }
+assert(!lengthenumed, 'The value of !lengthenumed is expected to be true');
 
-if (lengthenumed) {
-  throw new Test262Error('#2: the length property has the attributes { DontEnum }');
-}
+
 
 reportCompare(0, 0);

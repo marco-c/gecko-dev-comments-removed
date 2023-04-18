@@ -6,10 +6,6 @@
 
 
 
-
-
-if (RegExp.length !== 2) {
-	throw new Test262Error('#1: RegExp.length === 2. Actual: ' + (RegExp.length));
-}
+assert.sameValue(RegExp.length, 2, 'The value of RegExp.length is expected to be 2');
 
 reportCompare(0, 0);

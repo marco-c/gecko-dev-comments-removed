@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Intl.DurationFormat, "prototype");
+verifyNotWritable(Intl.DurationFormat, "prototype");
+verifyNotConfigurable(Intl.DurationFormat, "prototype");
+
+reportCompare(0, 0);

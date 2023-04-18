@@ -11,15 +11,11 @@
 
 
 
+assert.sameValue(+('12345')*1e1, 0.12345e6);
 
-
-if (Number(".12345e6") !== +("12345") * 1e1) {
-  throw new Test262Error('#1: Number(".12345e6") === +("12345")*1e1');
-}
-
-
-if (Number(".12345e-3") !== Number("12345") * 1e-8) {
-  throw new Test262Error('#2: Number(".12345e-3") === Number("12345")*1e-8');
-}
+assert.sameValue(
+  Number(".12345e-3"),
+  0.00012345
+);
 
 reportCompare(0, 0);

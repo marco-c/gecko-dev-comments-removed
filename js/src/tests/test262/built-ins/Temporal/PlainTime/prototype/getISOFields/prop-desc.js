@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Temporal.PlainTime.prototype.getISOFields,
+  "function",
+  "`typeof PlainTime.prototype.getISOFields` is `function`"
+);
+
+verifyProperty(Temporal.PlainTime.prototype, "getISOFields", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

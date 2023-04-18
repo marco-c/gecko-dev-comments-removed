@@ -6,15 +6,12 @@
 
 
 
+assert.sameValue(
+  RegExp.prototype.test.hasOwnProperty("length"),
+  true,
+  'RegExp.prototype.test.hasOwnProperty("length") must return true'
+);
 
-
-if (RegExp.prototype.test.hasOwnProperty("length") !== true) {
-  throw new Test262Error('#1: RegExp.prototype.test.hasOwnProperty(\'length\') === true');
-}
-
-
-if (RegExp.prototype.test.length !== 1) {
-  throw new Test262Error('#2: RegExp.prototype.test.length === 1. Actual: ' + (RegExp.prototype.test.length));
-}
+assert.sameValue(RegExp.prototype.test.length, 1, 'The value of RegExp.prototype.test.length is expected to be 1');
 
 reportCompare(0, 0);

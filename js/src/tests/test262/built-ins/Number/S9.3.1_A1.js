@@ -6,14 +6,6 @@
 
 
 
-
-
-if (Number("") !== 0) {
-  throw new Test262Error('#1.1: Number("") === 0. Actual: ' + (Number("")));
-} else {
-  if (1 / Number("") !== Number.POSITIVE_INFINITY) {
-    throw new Test262Error('#1.2: Number("") == +0. Actual: -0');
-  }
-}
+assert.sameValue(Number(""), 0, 'Number("") must return 0');
 
 reportCompare(0, 0);

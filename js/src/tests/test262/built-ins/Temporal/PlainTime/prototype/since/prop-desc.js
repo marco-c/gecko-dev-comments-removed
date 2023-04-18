@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Temporal.PlainTime.prototype.since,
+  "function",
+  "`typeof PlainTime.prototype.since` is `function`"
+);
+
+verifyProperty(Temporal.PlainTime.prototype, "since", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

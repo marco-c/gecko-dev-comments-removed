@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+verifyNotEnumerable(Set.prototype, "constructor");
+verifyWritable(Set.prototype, "constructor");
+verifyConfigurable(Set.prototype, "constructor");
+
+reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Temporal.Instant.prototype.until,
+  "function",
+  "`typeof Instant.prototype.until` is `function`"
+);
+
+verifyProperty(Temporal.Instant.prototype, "until", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Temporal.Instant.prototype.since,
+  "function",
+  "`typeof Instant.prototype.since` is `function`"
+);
+
+verifyProperty(Temporal.Instant.prototype, "since", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

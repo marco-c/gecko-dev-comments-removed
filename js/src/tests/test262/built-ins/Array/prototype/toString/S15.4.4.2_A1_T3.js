@@ -10,7 +10,6 @@
 
 
 
-
 var x = new Array("", "", "");
 if (x.toString() !== x.join()) {
   throw new Test262Error('#0.1: var x = new Array("","",""); x.toString() === x.join(). Actual: ' + (x.toString()));
@@ -19,7 +18,6 @@ if (x.toString() !== x.join()) {
     throw new Test262Error('#0.2: var x = new Array("","",""); x.toString() === ",,". Actual: ' + (x.toString()));
   }
 }
-
 
 var x = new Array("\\", "\\", "\\");
 if (x.toString() !== x.join()) {
@@ -30,7 +28,6 @@ if (x.toString() !== x.join()) {
   }
 }
 
-
 var x = new Array("&", "&", "&");
 if (x.toString() !== x.join()) {
   throw new Test262Error('#2.1: var x = new Array("&", "&", "&"); x.toString() === x.join(). Actual: ' + (x.toString()));
@@ -39,7 +36,6 @@ if (x.toString() !== x.join()) {
     throw new Test262Error('#2.2: var x = new Array("&", "&", "&"); x.toString() === "&,&,&". Actual: ' + (x.toString()));
   }
 }
-
 
 var x = new Array(true, true, true);
 if (x.toString() !== x.join()) {
@@ -50,7 +46,6 @@ if (x.toString() !== x.join()) {
   }
 }
 
-
 var x = new Array(null, null, null);
 if (x.toString() !== x.join()) {
   throw new Test262Error('#4.1: var x = new Array(null,null,null); x.toString(null,null,null) === x.join(). Actual: ' + (x.toString(null, null, null)));
@@ -59,7 +54,6 @@ if (x.toString() !== x.join()) {
     throw new Test262Error('#4.2: var x = new Array(null,null,null); x.toString(null,null,null) === ",,". Actual: ' + (x.toString(null, null, null)));
   }
 }
-
 
 var x = new Array(undefined, undefined, undefined);
 if (x.toString() !== x.join()) {
@@ -70,7 +64,6 @@ if (x.toString() !== x.join()) {
   }
 }
 
-
 var x = new Array(Infinity, Infinity, Infinity);
 if (x.toString() !== x.join()) {
   throw new Test262Error('#6.1: var x = new Array(Infinity,Infinity,Infinity); x.toString(Infinity,Infinity,Infinity) === x.join(). Actual: ' + (x.toString(Infinity, Infinity, Infinity)));
@@ -79,7 +72,6 @@ if (x.toString() !== x.join()) {
     throw new Test262Error('#6.2: var x = new Array(Infinity,Infinity,Infinity); x.toString(Infinity,Infinity,Infinity) === "Infinity,Infinity,Infinity". Actual: ' + (x.toString(Infinity, Infinity, Infinity)));
   }
 }
-
 
 var x = new Array(NaN, NaN, NaN);
 if (x.toString() !== x.join()) {

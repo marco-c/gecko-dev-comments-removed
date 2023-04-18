@@ -10,11 +10,9 @@
 
 
 
-
 Array.prototype.toString = Object.prototype.toString;
 var x = new Array();
 assert.sameValue(x.toString(), "[object Array]", 'x.toString() must return "[object Array]"');
-
 
 Array.prototype.toString = Object.prototype.toString;
 var x = new Array(0, 1, 2);

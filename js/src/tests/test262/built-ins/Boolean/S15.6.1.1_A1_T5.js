@@ -11,44 +11,33 @@
 
 var x;
 
+assert.sameValue(typeof Boolean(x = 0), "boolean", 'The value of `typeof Boolean(x = 0)` is expected to be "boolean"');
+assert.sameValue(Boolean(x = 0), false, 'Boolean(x = 0) must return false');
+assert.sameValue(typeof Boolean(x = 1), "boolean", 'The value of `typeof Boolean(x = 1)` is expected to be "boolean"');
+assert.sameValue(Boolean(x = 1), true, 'Boolean(x = 1) must return true');
 
-if (typeof Boolean(x = 0) !== "boolean") {
-  throw new Test262Error('#1.1: typeof Boolean(x=0) should be "boolean", actual is "' + typeof Boolean(x = 0) + '"');
-}
-if (Boolean(x = 0) !== false) {
-  throw new Test262Error('#1.2: Boolean(x=0) should be false');
-}
+assert.sameValue(
+  typeof Boolean(x = false),
+  "boolean",
+  'The value of `typeof Boolean(x = false)` is expected to be "boolean"'
+);
 
+assert.sameValue(Boolean(x = false), false, 'Boolean(x = false) must return false');
 
-if (typeof Boolean(x = 1) !== "boolean") {
-  throw new Test262Error('#2.1: typeof Boolean(x=1) should be "boolean", actual is "' + typeof Boolean(x = 1) + '"');
-}
-if (Boolean(x = 1) !== true) {
-  throw new Test262Error('#2.2: Boolean(x=1) should be true');
-}
+assert.sameValue(
+  typeof Boolean(x = true),
+  "boolean",
+  'The value of `typeof Boolean(x = true)` is expected to be "boolean"'
+);
 
+assert.sameValue(Boolean(x = true), true, 'Boolean(x = true) must return true');
 
-if (typeof Boolean(x = false) !== "boolean") {
-  throw new Test262Error('#3.1: typeof Boolean(x=false) should be "boolean", actual is "' + typeof Boolean(x = false) + '"');
-}
-if (Boolean(x = false) !== false) {
-  throw new Test262Error('#3.2: Boolean(x=false) should be false');
-}
+assert.sameValue(
+  typeof Boolean(x = null),
+  "boolean",
+  'The value of `typeof Boolean(x = null)` is expected to be "boolean"'
+);
 
-
-if (typeof Boolean(x = true) !== "boolean") {
-  throw new Test262Error('#4.1: typeof Boolean(x=true) should be "boolean", actual is "' + typeof Boolean(x = true) + '"');
-}
-if (Boolean(x = true) !== true) {
-  throw new Test262Error('#4.2: Boolean(x=true) should be true');
-}
-
-
-if (typeof Boolean(x = null) !== "boolean") {
-  throw new Test262Error('#5.1: typeof Boolean(x=null) should be "boolean", actual is "' + typeof Boolean(x = null) + '"');
-}
-if (Boolean(x = null) !== false) {
-  throw new Test262Error('#5.2: Boolean(x=null) should be false');
-}
+assert.sameValue(Boolean(x = null), false, 'Boolean(x = null) must return false');
 
 reportCompare(0, 0);

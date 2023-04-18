@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => Temporal.PlainYearMonth(1970, 1));
+
+reportCompare(0, 0);

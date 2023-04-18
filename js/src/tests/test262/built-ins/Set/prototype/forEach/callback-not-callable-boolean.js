@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var s = new Set([1]);
+
+assert.throws(TypeError, function() {
+  s.forEach(false);
+});
+
+reportCompare(0, 0);

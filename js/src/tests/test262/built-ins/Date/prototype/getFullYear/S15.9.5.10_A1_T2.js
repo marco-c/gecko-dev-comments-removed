@@ -7,13 +7,17 @@
 
 
 
+assert.notSameValue(
+  delete Date.prototype.getFullYear,
+  false,
+  'The value of delete Date.prototype.getFullYear is not false'
+);
 
-if (delete Date.prototype.getFullYear === false) {
-  throw new Test262Error('#1: The Date.prototype.getFullYear property has not the attributes DontDelete');
-}
+assert(
+  !Date.prototype.hasOwnProperty('getFullYear'),
+  'The value of !Date.prototype.hasOwnProperty(\'getFullYear\') is expected to be true'
+);
 
-if (Date.prototype.hasOwnProperty('getFullYear')) {
-  throw new Test262Error('#2: The Date.prototype.getFullYear property has not the attributes DontDelete');
-}
+
 
 reportCompare(0, 0);

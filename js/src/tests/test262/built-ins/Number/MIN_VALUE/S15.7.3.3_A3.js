@@ -10,14 +10,15 @@
 
 verifyNotConfigurable(Number, "MIN_VALUE");
 
-
 try {
-  if (delete Number.MIN_VALUE !== false) {
-    throw new Test262Error('#1: delete Number.MIN_VALUE === false');
-  }
+  assert.sameValue(delete Number.MIN_VALUE, false);
 } catch (e) {
-  if (e instanceof Test262Error) throw e;
+  if (e instanceof Test262Error) {
+    throw e;
+  }
   assert(e instanceof TypeError);
 }
+
+
 
 reportCompare(0, 0);

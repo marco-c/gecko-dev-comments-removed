@@ -10,7 +10,6 @@
 
 
 
-
 try {
   new Array(NaN);
   throw new Test262Error('#1.1: new Array(NaN) throw RangeError. Actual: ' + (new Array(NaN)));
@@ -22,7 +21,6 @@ try {
   );
 }
 
-
 try {
   new Array(Number.POSITIVE_INFINITY);
   throw new Test262Error('#2.1: new Array(Number.POSITIVE_INFINITY) throw RangeError. Actual: ' + (new Array(Number.POSITIVE_INFINITY)));
@@ -33,7 +31,6 @@ try {
     'The result of evaluating (e instanceof RangeError) is expected to be true'
   );
 }
-
 
 try {
   new Array(Number.NEGATIVE_INFINITY);

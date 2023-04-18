@@ -9,12 +9,13 @@
 
 
 
-
 var non_w = "\f\n\r\t\v~`!@#$%^&*()-+={[}]|\\:;'<,>./? " + '"';
-if (/\w/.exec(non_w) !== null) {
-   throw new Test262Error('#1: non-w');
-}
 
+assert.sameValue(
+  /\w/.exec(non_w),
+  null,
+  '/w/.exec(""fnrtv~`!@#$%^&*()-+={[}]|:;\'<,>./? " + \'"\'") must return null'
+);
 
 var non_W = "_0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 var regexp_w = /\w/g;
@@ -23,8 +24,6 @@ while (regexp_w.exec(non_W) !== null) {
    k++;
 }
 
-if (non_W.length !== k) {
-   throw new Test262Error('#2: non-W');
-}
+assert.sameValue(non_W.length, k, 'The value of non_W.length is expected to equal the value of k');
 
 reportCompare(0, 0);

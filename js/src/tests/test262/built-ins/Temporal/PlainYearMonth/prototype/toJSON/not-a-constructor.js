@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.PlainYearMonth.prototype.toJSON();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.PlainYearMonth.prototype.toJSON), false,
+  "isConstructor(Temporal.PlainYearMonth.prototype.toJSON)");
+
+reportCompare(0, 0);

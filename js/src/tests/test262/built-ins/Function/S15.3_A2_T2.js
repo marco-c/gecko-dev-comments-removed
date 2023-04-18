@@ -10,13 +10,13 @@
 
 
 
-
 try {
   Function.call(this, "var #x  = 1;");
 } catch (e) {
-  if (!(e instanceof SyntaxError)) {
-    throw new Test262Error('#1: function body must be valid');
-  }
+  assert(
+    e instanceof SyntaxError,
+    'The result of evaluating (e instanceof SyntaxError) is expected to be true'
+  );
 }
 
 reportCompare(0, 0);

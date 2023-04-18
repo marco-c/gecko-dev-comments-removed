@@ -11,14 +11,7 @@
 
 var f = new Function("arg1,arg2,arg3", null);
 
-
-if (!(f.hasOwnProperty('length'))) {
-  throw new Test262Error('#1: the function has length property.');
-}
-
-
-if (f.length !== 3) {
-  throw new Test262Error('#2: The value of the length property is usually an integer that indicates the "typical" number of arguments expected by the function');
-}
+assert(f.hasOwnProperty('length'), 'f.hasOwnProperty(\'length\') must return true');
+assert.sameValue(f.length, 3, 'The value of f.length is expected to be 3');
 
 reportCompare(0, 0);

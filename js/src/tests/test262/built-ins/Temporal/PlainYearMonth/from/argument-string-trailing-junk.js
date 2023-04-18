@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(RangeError, () => Temporal.PlainYearMonth.from("1976-11junk"));
+
+reportCompare(0, 0);

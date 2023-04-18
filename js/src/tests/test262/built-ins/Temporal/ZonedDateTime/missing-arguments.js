@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => new Temporal.ZonedDateTime());
+
+reportCompare(0, 0);

@@ -13,11 +13,11 @@ var proto = Error.prototype;
 
 verifyNotConfigurable(Error, "prototype");
 try {
-  if ((delete Error.prototype) !== false) {
-    throw new Test262Error('#1: Error.prototype has the attribute DontDelete');
-  }
+  assert.sameValue(delete Error.prototype, false);
 } catch (e) {
-  if (e instanceof Test262Error) throw e;
+  if (e instanceof Test262Error) {
+    throw e;
+  }
   assert(e instanceof TypeError);
 }
 
@@ -28,6 +28,8 @@ try {
 if (Error.prototype !== proto) {
   throw new Test262Error('#2: var proto=Error.prototype; delete Error.prototype; Error.prototype===proto. Actual: ' + Error.prototype);
 }
+
+
 
 
 

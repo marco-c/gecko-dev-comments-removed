@@ -36,6 +36,6 @@
 
 
 
-function fn() {}/1/g;;
+function fn() {}/1/g;
 
 reportCompare(0, 0);

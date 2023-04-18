@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const value = new Intl.DurationFormat();
+assert.sameValue(
+  Object.getPrototypeOf(value),
+  Intl.DurationFormat.prototype,
+  "Object.getPrototypeOf(value) equals the value of Intl.DurationFormat.prototype"
+);
+
+reportCompare(0, 0);

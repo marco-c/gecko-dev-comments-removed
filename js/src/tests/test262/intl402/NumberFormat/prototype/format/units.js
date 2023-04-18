@@ -7,57 +7,14 @@
 
 
 
+
 function check(unit) {
   const s1 = (123).toLocaleString(undefined, { style: "unit", unit: unit });
   const s2 = (123).toLocaleString();
   assert.notSameValue(s1, s2);
 }
 
-const units = [
-  "acre",
-  "bit",
-  "byte",
-  "celsius",
-  "centimeter",
-  "day",
-  "degree",
-  "fahrenheit",
-  "fluid-ounce",
-  "foot",
-  "gallon",
-  "gigabit",
-  "gigabyte",
-  "gram",
-  "hectare",
-  "hour",
-  "inch",
-  "kilobit",
-  "kilobyte",
-  "kilogram",
-  "kilometer",
-  "liter",
-  "megabit",
-  "megabyte",
-  "meter",
-  "mile",
-  "mile-scandinavian",
-  "millimeter",
-  "milliliter",
-  "millisecond",
-  "minute",
-  "month",
-  "ounce",
-  "percent",
-  "petabyte",
-  "pound",
-  "second",
-  "stone",
-  "terabit",
-  "terabyte",
-  "week",
-  "yard",
-  "year",
-];
+const units = allSimpleSanctionedUnits();
 
 for (const simpleUnit of units) {
   check(simpleUnit);

@@ -7,12 +7,13 @@
 
 
 
-if (delete Date.prototype.valueOf === false) {
-  throw new Test262Error('#1: The Date.prototype.valueOf property has not the attributes DontDelete');
-}
+assert.notSameValue(delete Date.prototype.valueOf, false, 'The value of delete Date.prototype.valueOf is not false');
 
-if (Date.prototype.hasOwnProperty('valueOf')) {
-  throw new Test262Error('#2: The Date.prototype.valueOf property has not the attributes DontDelete');
-}
+assert(
+  !Date.prototype.hasOwnProperty('valueOf'),
+  'The value of !Date.prototype.hasOwnProperty(\'valueOf\') is expected to be true'
+);
+
+
 
 reportCompare(0, 0);

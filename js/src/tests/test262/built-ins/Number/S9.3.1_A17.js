@@ -6,20 +6,8 @@
 
 
 
-
-
-if (Number("1") !== 1) {
-  throw new Test262Error('#1: Number("1") === 1. Actual: ' + (Number("1")));
-}
-
-
-if (Number("0x1") !== 1) {
-  throw new Test262Error('#2: Number("0x1") === 1. Actual: ' + (Number("0x1")));
-}
-
-
-if (+("0X1") !== 1) {
-  throw new Test262Error('#3: +("0X1") === 1. Actual: ' + (+("0X1")));
-}
+assert.sameValue(Number("1"), 1, 'Number("1") must return 1');
+assert.sameValue(Number("0x1"), 1, 'Number("0x1") must return 1');
+assert.sameValue(+("0X1"), 1, 'The value of `+("0X1")` is expected to be 1');
 
 reportCompare(0, 0);

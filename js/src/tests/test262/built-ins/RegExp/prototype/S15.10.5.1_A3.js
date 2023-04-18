@@ -7,27 +7,24 @@
 
 
 
-
-
-if (RegExp.hasOwnProperty('prototype') !== true) {
-	throw new Test262Error('#0: RegExp.hasOwnProperty(\'prototype\') === true');
-}
+assert.sameValue(RegExp.hasOwnProperty('prototype'), true);
 
 verifyNotConfigurable(RegExp, "prototype");
 
-
 try {
-  if (delete RegExp.prototype !== false) {
-    throw new Test262Error('#1: delete RegExp.prototype === false');
-  }
+  assert.sameValue(delete RegExp.prototype, false);
 } catch (e) {
-  if (e instanceof Test262Error) throw e;
+  if (e instanceof Test262Error) {
+    throw e;
+  }
   assert(e instanceof TypeError);
 }
 
-
 if (RegExp.hasOwnProperty('prototype') !== true) {
-	throw new Test262Error('#2: delete RegExp.prototype; RegExp.hasOwnProperty(\'prototype\') === true');
+    throw new Test262Error('#2: delete RegExp.prototype; RegExp.hasOwnProperty(\'prototype\') === true');
 }
+
+
+
 
 reportCompare(0, 0);

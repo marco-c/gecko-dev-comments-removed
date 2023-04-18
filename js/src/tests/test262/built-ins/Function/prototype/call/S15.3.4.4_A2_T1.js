@@ -6,20 +6,18 @@
 
 
 
+assert.sameValue(
+  typeof Function.prototype.call,
+  "function",
+  'The value of `typeof Function.prototype.call` is expected to be "function"'
+);
 
+assert.notSameValue(
+  typeof Function.prototype.call.length,
+  "undefined",
+  'The value of typeof Function.prototype.call.length is not "undefined"'
+);
 
-if (typeof Function.prototype.call !== "function") {
-  throw new Test262Error('#1: call method defined');
-}
-
-
-if (typeof Function.prototype.call.length === "undefined") {
-  throw new Test262Error('#2: length property of call method defined');
-}
-
-
-if (Function.prototype.call.length !== 1) {
-  throw new Test262Error('#3: The length property of the call method is 1');
-}
+assert.sameValue(Function.prototype.call.length, 1, 'The value of Function.prototype.call.length is expected to be 1');
 
 reportCompare(0, 0);

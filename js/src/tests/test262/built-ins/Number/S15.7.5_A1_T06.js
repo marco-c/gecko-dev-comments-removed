@@ -8,15 +8,16 @@
 
 
 
+assert.sameValue(
+  (new Number()).hasOwnProperty("toExponential"),
+  false,
+  '(new Number()).hasOwnProperty("toExponential") must return false'
+);
 
-
-if ((new Number()).hasOwnProperty("toExponential") !== false) {
-  throw new Test262Error('#1: Number instance must have no special property "toExponential"');
-}
-
-
-if ((new Number()).toExponential !== Number.prototype.toExponential) {
-  throw new Test262Error('#2: Number instance property "toExponential" must be inherited from Number prototype object');
-}
+assert.sameValue(
+  (new Number()).toExponential,
+  Number.prototype.toExponential,
+  'The value of (new Number()).toExponential is expected to equal the value of Number.prototype.toExponential'
+);
 
 reportCompare(0, 0);

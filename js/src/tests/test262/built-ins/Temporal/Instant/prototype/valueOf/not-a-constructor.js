@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, () => {
+  new Temporal.Instant.prototype.valueOf();
+}, "Calling as constructor");
+
+assert.sameValue(isConstructor(Temporal.Instant.prototype.valueOf), false,
+  "isConstructor(Temporal.Instant.prototype.valueOf)");
+
+reportCompare(0, 0);
