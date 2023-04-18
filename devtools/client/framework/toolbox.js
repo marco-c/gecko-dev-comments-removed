@@ -92,12 +92,6 @@ loader.lazyRequireGetter(
 loader.lazyRequireGetter(this, "ZoomKeys", "devtools/client/shared/zoom-keys");
 loader.lazyRequireGetter(
   this,
-  "settleAll",
-  "devtools/shared/ThreadSafeDevToolsUtils",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   "ToolboxButtons",
   "devtools/client/definitions",
   true
@@ -3978,13 +3972,17 @@ Toolbox.prototype = {
     }
     this.destroyHarAutomation();
 
-    const outstanding = [];
     for (const [id, panel] of this._toolPanels) {
       try {
         gDevTools.emit(id + "-destroy", this, panel);
         this.emit(id + "-destroy", panel);
 
-        outstanding.push(panel.destroy());
+        const rv = panel.destroy();
+        if (rv) {
+          console.error(
+            `Panel ${id}'s destroy method returned something whereas it shouldn't (and should be synchronous).`
+          );
+        }
       } catch (e) {
         
         console.error("Panel " + id + ":", e);
@@ -3995,11 +3993,9 @@ Toolbox.prototype = {
     this._toolNames = null;
 
     
-    outstanding.push(
-      this.resetPreference().then(() => {
-        this._preferenceFrontRequest = null;
-      })
-    );
+    const onResetPreference = this.resetPreference().then(() => {
+      this._preferenceFrontRequest = null;
+    });
 
     this.commands.targetCommand.unwatchTargets({
       types: this.commands.targetCommand.ALL_TYPES,
@@ -4048,11 +4044,9 @@ Toolbox.prototype = {
     });
 
     
-    
-    
     const onceDestroyed = new Promise(resolve => {
       resolve(
-        settleAll(outstanding)
+        onResetPreference
           .catch(console.error)
           .then(async () => {
             
