@@ -1,11 +1,9 @@
 
 
-const newAnonymousIframe = (child_origin, opt_headers) => {
-  opt_headers ||= "";
+const newAnonymousIframe = (child_origin) => {
   const sub_document_token = token();
   let iframe = document.createElement('iframe');
-  iframe.src = child_origin + executor_path + opt_headers +
-    `&uuid=${sub_document_token}`;
+  iframe.src = child_origin + executor_path + `&uuid=${sub_document_token}`;
   iframe.anonymous = true;
   document.body.appendChild(iframe);
   return sub_document_token;

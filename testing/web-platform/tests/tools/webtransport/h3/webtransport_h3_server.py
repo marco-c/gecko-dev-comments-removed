@@ -14,8 +14,7 @@ from aioquic.asyncio.client import connect
 from aioquic.h3.connection import H3_ALPN, FrameType, H3Connection, ProtocolError, Setting  
 from aioquic.h3.events import H3Event, HeadersReceived, WebTransportStreamDataReceived, DatagramReceived, DataReceived  
 from aioquic.quic.configuration import QuicConfiguration  
-from aioquic.quic.connection import logger as quic_connection_logger  
-from aioquic.quic.connection import stream_is_unidirectional
+from aioquic.quic.connection import stream_is_unidirectional  
 from aioquic.quic.events import QuicEvent, ProtocolNegotiated, ConnectionTerminated, StreamReset  
 from aioquic.tls import SessionTicket  
 
@@ -35,10 +34,6 @@ SERVER_NAME = 'webtransport-h3-server'
 
 _logger: logging.Logger = logging.getLogger(__name__)
 _doc_root: str = ""
-
-
-
-quic_connection_logger.setLevel(logging.WARNING)
 
 
 class H3ConnectionWithDatagram04(H3Connection):

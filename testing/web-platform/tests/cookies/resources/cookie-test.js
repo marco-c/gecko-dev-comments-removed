@@ -143,15 +143,3 @@ function getCtlCharacters() {
 function cookieStringWithNameAndValueLengths(nameLength, valueLength) {
   return `${"t".repeat(nameLength)}=${"1".repeat(valueLength)}`;
 }
-
-
-
-
-
-function setTestContextUsingRootWindow() {
-  let test_window = window.top;
-  while (test_window.opener && !test_window.opener.closed) {
-    test_window = test_window.opener.top;
-  }
-  test_driver.set_test_context(test_window);
-}

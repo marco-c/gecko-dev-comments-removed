@@ -1,2 +1,0 @@
-
-idl_test_shadowrealm(["compression"], ["streams"]);

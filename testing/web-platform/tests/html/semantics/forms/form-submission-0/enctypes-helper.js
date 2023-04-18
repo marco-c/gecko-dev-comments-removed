@@ -1,36 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 (() => {
   
   
@@ -51,9 +18,6 @@
       .replace(/\\\\/g, "\\");
   }
 
-  
-  
-  
   
   
   
@@ -131,20 +95,7 @@
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  window.formSubmissionTemplate = (
-    enctype,
-    expectedBuilder = (expected) => expected
-  ) => {
+  window.formSubmissionTemplate = (enctype, expectedBuilder) => {
     function form({
       name,
       value,
