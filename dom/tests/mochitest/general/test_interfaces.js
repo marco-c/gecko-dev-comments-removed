@@ -217,9 +217,9 @@ var interfaceNamesInGlobalScope = [
   
   { name: "BroadcastChannel", insecureContext: true },
   
-  { name: "Cache", insecureContext: true },
+  "Cache",
   
-  { name: "CacheStorage", insecureContext: true },
+  "CacheStorage",
   
   { name: "CanvasCaptureMediaStream", insecureContext: true },
   

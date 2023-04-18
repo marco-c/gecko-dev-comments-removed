@@ -4,8 +4,8 @@ var name = "keys" + context;
 var c;
 
 var tests = [
-  "//mochi.test:8888/?page" + context,
-  "//mochi.test:8888/?another" + context,
+  `${location.origin}/?page${context}`,
+  `${location.origin}/?another${context}`,
 ];
 
 caches
@@ -16,14 +16,13 @@ caches
   })
   .then(function() {
     
-    var another = "//mochi.test:8888/?yetanother" + context;
+    var another = `${location.origin}/?yetanother${context}`;
     tests.push(another);
     return c.add(another);
   })
   .then(function() {
     
-    var anotherWithFragment =
-      "//mochi.test:8888/?fragment" + context + "#fragment";
+    var anotherWithFragment = `${location.origin}/?fragment${context}#fragment`;
     tests.push(anotherWithFragment);
     return c.add(anotherWithFragment);
   })
@@ -44,7 +43,7 @@ caches
     is(keys.length, 1, "One match should be found");
     ok(keys[0].url.includes(tests[1]), "Valid URL");
     
-    return c.keys(new Request("//mochi.test:8888/?foo"), {
+    return c.keys(new Request(`${location.origin}/?foo`), {
       ignoreSearch: true,
     });
   })
