@@ -52,7 +52,6 @@ const { WorkerTargetActor } = worker.require(
 );
 const { DevToolsServer } = worker.require("devtools/server/devtools-server");
 
-DevToolsServer.init();
 DevToolsServer.createRootActor = function() {
   throw new Error("Should never get here!");
 };
@@ -67,6 +66,11 @@ this.addEventListener("message", async function(event) {
   switch (packet.type) {
     case "connect":
       const { forwardingPrefix } = packet;
+
+      
+      
+      
+      DevToolsServer.init();
 
       
       const connection = DevToolsServer.connectToParent(forwardingPrefix, this);
