@@ -4,7 +4,7 @@
 
 
 use api::{ExternalScrollId, PipelineId, PropertyBinding, PropertyBindingId, ReferenceFrameKind};
-use api::{APZScrollGeneration, HasScrollLinkedEffect, ScrollLocation};
+use api::{APZScrollGeneration, HasScrollLinkedEffect};
 use api::{TransformStyle, StickyOffsetBounds, SpatialTreeItemKey};
 use api::units::*;
 use crate::internal_types::PipelineInstanceId;
@@ -709,60 +709,6 @@ impl SpatialNode {
                        .translate(translation);
             }
         }
-    }
-
-    pub fn scroll(&mut self, scroll_location: ScrollLocation) -> bool {
-        
-        
-        
-        
-        
-
-        let scrolling = match self.node_type {
-            SpatialNodeType::ScrollFrame(ref mut scrolling) => scrolling,
-            _ => return false,
-        };
-
-        let delta = match scroll_location {
-            ScrollLocation::Delta(delta) => delta,
-            ScrollLocation::Start => {
-                if scrolling.offset.y.round() >= 0.0 {
-                    
-                    return false;
-                }
-
-                scrolling.offset.y = 0.0;
-                return true;
-            }
-            ScrollLocation::End => {
-                let end_pos = -scrolling.scrollable_size.height;
-                if scrolling.offset.y.round() <= end_pos {
-                    
-                    return false;
-                }
-
-                scrolling.offset.y = end_pos;
-                return true;
-            }
-        };
-
-        let scrollable_width = scrolling.scrollable_size.width;
-        let scrollable_height = scrolling.scrollable_size.height;
-        let original_layer_scroll_offset = scrolling.offset;
-
-        if scrollable_width > 0. {
-            scrolling.offset.x = (scrolling.offset.x + delta.x)
-                .min(0.0)
-                .max(-scrollable_width);
-        }
-
-        if scrollable_height > 0. {
-            scrolling.offset.y = (scrolling.offset.y + delta.y)
-                .min(0.0)
-                .max(-scrollable_height);
-        }
-
-        scrolling.offset != original_layer_scroll_offset
     }
 
     pub fn scroll_offset(&self) -> LayoutVector2D {
