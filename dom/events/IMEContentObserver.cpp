@@ -1177,6 +1177,16 @@ void IMEContentObserver::PostTextChangeNotification() {
   MOZ_ASSERT(mTextChangeData.IsValid(),
              "mTextChangeData must have text change data");
   mNeedsToNotifyIMEOfTextChange = true;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mNeedsToNotifyIMEOfSelectionChange = true;
 }
 
 void IMEContentObserver::PostSelectionChangeNotification() {
@@ -1608,14 +1618,6 @@ IMEContentObserver::IMENotificationSender::Run() {
   if (observer->mNeedsToNotifyIMEOfTextChange) {
     observer->mNeedsToNotifyIMEOfTextChange = false;
     SendTextChange();
-    
-    
-    
-    
-    
-    
-    
-    observer->mNeedsToNotifyIMEOfSelectionChange = true;
   }
 
   
