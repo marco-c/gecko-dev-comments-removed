@@ -1261,6 +1261,13 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
 
       
 
+      if (currentSchemaVersion < 67) {
+        rv = MigrateV67Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
       
       
       
@@ -2514,6 +2521,25 @@ nsresult Database::MigrateV66Up() {
         "ADD COLUMN title TEXT"_ns);
     NS_ENSURE_SUCCESS(rv, rv);
   }
+  return NS_OK;
+}
+
+nsresult Database::MigrateV67Up() {
+  
+  
+  
+  nsCOMPtr<mozIStorageStatement> stmt;
+  nsresult rv = mMainConn->ExecuteSimpleSQL(
+      "INSERT INTO moz_inputhistory "
+      "SELECT place_id, LOWER(input), use_count FROM moz_inputhistory "
+      "  WHERE LOWER(input) <> input "
+      "ON CONFLICT DO "
+      "  UPDATE SET use_count = MAX(use_count, EXCLUDED.use_count)"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = mMainConn->ExecuteSimpleSQL(
+      "DELETE FROM moz_inputhistory WHERE LOWER(input) <> input"_ns);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   return NS_OK;
 }
 
