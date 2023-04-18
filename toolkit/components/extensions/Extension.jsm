@@ -1000,6 +1000,21 @@ class ExtensionData {
     return !this.eventPagesEnabled || manifest.background.persistent;
   }
 
+  
+
+
+
+
+
+
+  set backgroundState(state) {
+    this._backgroundState = state;
+  }
+
+  get backgroundState() {
+    return this._backgroundState;
+  }
+
   async getExtensionVersionWithoutValidation() {
     return (await this.readJSON("manifest.json")).version;
   }
