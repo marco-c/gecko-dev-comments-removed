@@ -1863,7 +1863,10 @@ var PlacesUIUtils = {
 
     for (let candidate of candidates) {
       
-      if (candidate.title.length < this.similarTitlesMinChars) {
+      if (
+        !candidate.title ||
+        candidate.title.length < this.similarTitlesMinChars
+      ) {
         continue;
       }
       let titleBeginning = candidate.title.slice(0, this.similarTitlesMinChars);
