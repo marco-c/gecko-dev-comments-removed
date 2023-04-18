@@ -16,6 +16,13 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Snapshots: "resource:///modules/Snapshots.jsm",
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "MIN_GROUP_SIZE",
+  "browser.places.snapshots.minGroupSize",
+  5
+);
+
 
 
 
@@ -95,7 +102,7 @@ const SnapshotGroups = new (class SnapshotGroups {
         await db.execute(
           `
           INSERT INTO moz_places_metadata_groups_to_snapshots (group_id, place_id)
-          SELECT :id, s.place_id 
+          SELECT :id, s.place_id
           FROM moz_places h
           JOIN moz_places_metadata_snapshots s
           ON h.id = s.place_id
@@ -186,8 +193,19 @@ const SnapshotGroups = new (class SnapshotGroups {
 
 
 
-  async query({ limit = 50, builder = "" } = {}) {
+
+
+
+
+  async query({ limit = 50, builder = "", skipMinimum = false } = {}) {
     let db = await PlacesUtils.promiseDBConnection();
+
+    let params = { builder, limit };
+    let sizeFragment = "";
+    if (!skipMinimum) {
+      sizeFragment = "HAVING snapshot_count >= :minGroupSize";
+      params.minGroupSize = MIN_GROUP_SIZE;
+    }
 
     let rows = await db.executeCached(
       `
@@ -196,11 +214,11 @@ const SnapshotGroups = new (class SnapshotGroups {
       LEFT JOIN moz_places_metadata_groups_to_snapshots s ON s.group_id = g.id
       LEFT JOIN moz_places h ON h.id = s.place_id
       WHERE builder = :builder OR :builder = ""
-      GROUP BY g.id
+      GROUP BY g.id ${sizeFragment}
       ORDER BY last_access DESC
       LIMIT :limit
         `,
-      { builder, limit }
+      params
     );
 
     return rows.map(row => this.#translateSnapshotGroupRow(row));
@@ -226,7 +244,7 @@ const SnapshotGroups = new (class SnapshotGroups {
 
 
   async getSnapshots({
-    id = "",
+    id,
     startIndex = 0,
     count = 50,
     sortDescending = true,
