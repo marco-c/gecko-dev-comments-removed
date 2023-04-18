@@ -4,7 +4,7 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = ["CONTEXT_DESCRIPTOR_TYPES", "MessageHandler"];
+const EXPORTED_SYMBOLS = ["MessageHandler"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -19,34 +19,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const CONTEXT_DESCRIPTOR_TYPES = {
-  ALL: "all",
-};
 
 
 
