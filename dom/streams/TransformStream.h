@@ -29,6 +29,13 @@ class TransformStream final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(TransformStream)
 
+  
+  bool Backpressure() const { return mBackpressure; }
+  void SetBackpressure(bool aBackpressure) { mBackpressure = aBackpressure; }
+  Promise* BackpressureChangePromise() { return mBackpressureChangePromise; }
+  void SetBackpressureChangePromise(Promise* aPromise) {
+    mBackpressureChangePromise = aPromise;
+  }
   TransformStreamDefaultController* Controller() { return mController; }
   void SetController(TransformStreamDefaultController* aController) {
     mController = aController;
@@ -37,6 +44,12 @@ class TransformStream final : public nsISupports, public nsWrapperCache {
  protected:
   ~TransformStream();
   explicit TransformStream(nsIGlobalObject* aGlobal);
+
+  MOZ_CAN_RUN_SCRIPT void Initialize(
+      JSContext* aCx, Promise* aStartPromise, double aWritableHighWaterMark,
+      QueuingStrategySize* aWritableSizeAlgorithm,
+      double aReadableHighWaterMark,
+      QueuingStrategySize* aReadableSizeAlgorithm, ErrorResult& aRv);
 
  public:
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
@@ -58,7 +71,11 @@ class TransformStream final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsIGlobalObject> mGlobal;
 
   
+  bool mBackpressure;
+  RefPtr<Promise> mBackpressureChangePromise;
   RefPtr<TransformStreamDefaultController> mController;
+  RefPtr<ReadableStream> mReadable;
+  RefPtr<WritableStream> mWritable;
 };
 
 }  
