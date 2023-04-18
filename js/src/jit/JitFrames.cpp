@@ -806,14 +806,13 @@ void HandleException(ResumeFromException* rfe) {
 }
 
 
-
-void EnsureBareExitFrame(JitActivation* act, JitFrameLayout* frame) {
+void EnsureUnwoundJitExitFrame(JitActivation* act, JitFrameLayout* frame) {
   ExitFrameLayout* exitFrame = reinterpret_cast<ExitFrameLayout*>(frame);
 
   if (act->jsExitFP() == (uint8_t*)frame) {
     
     
-    MOZ_ASSERT(exitFrame->isBareExit());
+    MOZ_ASSERT(exitFrame->isUnwoundJitExit());
     return;
   }
 
@@ -830,8 +829,8 @@ void EnsureBareExitFrame(JitActivation* act, JitFrameLayout* frame) {
 #endif
 
   act->setJSExitFP((uint8_t*)frame);
-  exitFrame->footer()->setBareExitFrame();
-  MOZ_ASSERT(exitFrame->isBareExit());
+  exitFrame->footer()->setUnwoundJitExitFrame();
+  MOZ_ASSERT(exitFrame->isUnwoundJitExit());
 }
 
 JSScript* MaybeForwardedScriptFromCalleeToken(CalleeToken token) {
@@ -1225,7 +1224,7 @@ static void TraceJitExitFrame(JSTracer* trc, const JSJitFrameIter& frame) {
     return;
   }
 
-  if (frame.isBareExit()) {
+  if (frame.isBareExit() || frame.isUnwoundJitExit()) {
     
     
     return;
