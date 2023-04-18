@@ -96,6 +96,13 @@ static RunningTimes GetThreadRunningTimesDiff(
   return diff;
 }
 
+static void DiscardSuspendedThreadRunningTimes(
+    PSLockRef aLock,
+    ThreadRegistration::UnlockedRWForLockedProfiler& aThreadData) {
+  
+  
+}
+
 template <typename Func>
 void Sampler::SuspendAndSampleAndResumeThread(
     PSLockRef aLock,

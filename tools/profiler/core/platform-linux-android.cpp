@@ -329,6 +329,39 @@ static RunningTimes GetThreadRunningTimesDiff(
   return diff;
 }
 
+static void DiscardSuspendedThreadRunningTimes(
+    PSLockRef aLock,
+    ThreadRegistration::UnlockedRWForLockedProfiler& aThreadData) {
+  AUTO_PROFILER_STATS(DiscardSuspendedThreadRunningTimes);
+
+  
+  
+  
+  
+
+  const mozilla::profiler::PlatformData& platformData =
+      aThreadData.PlatformDataCRef();
+  Maybe<clockid_t> maybeCid = platformData.GetClockId();
+
+  if (MOZ_UNLIKELY(!maybeCid)) {
+    
+    return;
+  }
+
+  ProfiledThreadData* profiledThreadData =
+      aThreadData.GetProfiledThreadData(aLock);
+  MOZ_ASSERT(profiledThreadData);
+  RunningTimes& previousRunningTimes =
+      profiledThreadData->PreviousThreadRunningTimesRef();
+
+  if (timespec ts; clock_gettime(*maybeCid, &ts) == 0) {
+    previousRunningTimes.ResetThreadCPUDelta(
+        uint64_t(ts.tv_sec) * 1'000'000'000u + uint64_t(ts.tv_nsec));
+  } else {
+    previousRunningTimes.ClearThreadCPUDelta();
+  }
+}
+
 template <typename Func>
 void Sampler::SuspendAndSampleAndResumeThread(
     PSLockRef aLock,

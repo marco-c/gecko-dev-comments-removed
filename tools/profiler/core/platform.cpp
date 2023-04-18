@@ -3320,6 +3320,13 @@ static RunningTimes GetThreadRunningTimesDiff(
 
 
 
+static void DiscardSuspendedThreadRunningTimes(
+    PSLockRef aLock,
+    ThreadRegistration::UnlockedRWForLockedProfiler& aThreadData);
+
+
+
+
 
 
 
@@ -3943,6 +3950,13 @@ void SamplerThread::Run() {
                         Some(currentEventDelay.ToMilliseconds() +
                              currentEventRunning.ToMilliseconds());
                   });
+
+              if (cpuUtilization) {
+                
+                
+                
+                DiscardSuspendedThreadRunningTimes(lock, unlockedThreadData);
+              }
 
               
               
