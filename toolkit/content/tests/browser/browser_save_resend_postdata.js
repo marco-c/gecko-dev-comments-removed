@@ -77,6 +77,7 @@ function test() {
     
     internalSave(
       docToSave.location.href,
+      null,
       docToSave,
       null,
       null,

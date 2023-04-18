@@ -368,6 +368,7 @@ function promiseStartLegacyDownload(aSourceUrl, aOptions) {
         
         transfer.init(
           sourceURI,
+          null,
           NetUtil.newURI(targetFile),
           null,
           mimeInfo,

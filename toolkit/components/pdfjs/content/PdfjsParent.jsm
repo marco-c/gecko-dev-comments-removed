@@ -99,6 +99,7 @@ class PdfjsParent extends JSWindowActorParent {
     const data = aMsg.data;
     this.browser.ownerGlobal.saveURL(
       data.blobUrl ,
+      data.originalUrl ,
       data.filename ,
       null ,
       true ,

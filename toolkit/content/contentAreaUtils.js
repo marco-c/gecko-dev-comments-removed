@@ -71,6 +71,7 @@ function urlSecurityCheck(
 
 function saveURL(
   aURL,
+  aOriginalURL,
   aFileName,
   aFilePickerTitleKey,
   aShouldBypassCache,
@@ -83,6 +84,7 @@ function saveURL(
 ) {
   internalSave(
     aURL,
+    aOriginalURL,
     null,
     aFileName,
     null,
@@ -122,6 +124,7 @@ function saveBrowser(aBrowser, aSkipPrompt, aBrowsingContext = null) {
 
       internalSave(
         document.documentURI,
+        null, 
         document,
         null, 
         document.contentDisposition,
@@ -254,8 +257,12 @@ XPCOMUtils.defineConstant(this, "kSaveAsType_Text", kSaveAsType_Text);
 
 
 
+
+
+
 function internalSave(
   aURL,
+  aOriginalURL,
   aDocument,
   aDefaultFileName,
   aContentDisposition,
@@ -368,8 +375,11 @@ function internalSave(
       (aDocument && (aDocument.nodePrincipal || aDocument.principal)) ||
       (aInitiatingDocument && aInitiatingDocument.nodePrincipal);
 
+    let sourceOriginalURI = aOriginalURL ? makeURI(aOriginalURL) : null;
+
     var persistArgs = {
       sourceURI,
+      sourceOriginalURI,
       sourcePrincipal,
       sourceReferrerInfo: aReferrerInfo,
       sourceDocument: useSaveDocument ? aDocument : null,
@@ -447,6 +457,7 @@ function internalPersist(persistArgs) {
   var tr = Cc["@mozilla.org/transfer;1"].createInstance(Ci.nsITransfer);
   tr.init(
     persistArgs.sourceURI,
+    persistArgs.sourceOriginalURI,
     targetFileURL,
     "",
     null,

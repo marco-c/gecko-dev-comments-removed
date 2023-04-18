@@ -1440,6 +1440,11 @@ DownloadSource.prototype = {
   
 
 
+  originalUrl: null,
+
+  
+
+
 
 
   isPrivate: false,
@@ -1598,6 +1603,9 @@ DownloadSource.fromSerializable = function(aSerializable) {
         source[propName] = aSerializable[propName];
       }
     }
+    if ("originalUrl" in aSerializable) {
+      source.originalUrl = aSerializable.originalUrl;
+    }
     if ("referrerInfo" in aSerializable) {
       
       
@@ -1647,6 +1655,7 @@ DownloadSource.fromSerializable = function(aSerializable) {
       aSerializable,
       property =>
         property != "url" &&
+        property != "originalUrl" &&
         property != "isPrivate" &&
         property != "referrerInfo" &&
         property != "cookieJarSettings" &&

@@ -41,6 +41,7 @@ add_task(async function preferred_API() {
       internalSave(
         url,
         null, 
+        null, 
         "image.jpg",
         null, 
         "image/jpeg",

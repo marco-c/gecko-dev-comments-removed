@@ -61,7 +61,11 @@ interface nsITransfer : nsIWebProgressListener2 {
 
 
 
+
+
+
     void init(in nsIURI aSource,
+              in nsIURI aSourceOriginalURI,
               in nsIURI aTarget,
               in AString aDisplayName,
               in nsIMIMEInfo aMIMEInfo,

@@ -1550,6 +1550,7 @@ class nsContextMenu {
       internalSave(
         dataURL,
         null, 
+        null, 
         name,
         null, 
         "image/jpeg", 
@@ -1737,6 +1738,7 @@ class nsContextMenu {
           
           saveURL(
             linkURL,
+            null,
             linkText,
             dialogTitle,
             bypassCache,
@@ -1888,6 +1890,7 @@ class nsContextMenu {
         internalSave(
           blobURL,
           null, 
+          null, 
           "canvas.png",
           null, 
           "image/png", 
@@ -1907,6 +1910,7 @@ class nsContextMenu {
       urlSecurityCheck(this.mediaURL, this.principal);
       internalSave(
         this.mediaURL,
+        null, 
         null, 
         null, 
         this.contentData.contentDisposition,
