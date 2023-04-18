@@ -3359,8 +3359,6 @@ void MediaManager::Shutdown() {
   sHasShutdown = true;
 
   
-  
-
   class ShutdownTask : public Runnable {
    public:
     ShutdownTask(RefPtr<MediaManager> aManager, RefPtr<Runnable> aReply)
@@ -3381,8 +3379,6 @@ void MediaManager::Shutdown() {
           mManager->mDeviceListChangeListener.DisconnectIfExists();
         }
       }
-      
-      
       mManager->mBackend =
           nullptr;  
 
@@ -3397,10 +3393,6 @@ void MediaManager::Shutdown() {
     RefPtr<Runnable> mReply;
   };
 
-  
-  
-  
-  
   
   
 
@@ -3418,7 +3410,7 @@ void MediaManager::Shutdown() {
   auto shutdown = MakeRefPtr<ShutdownTask>(
       this, media::NewRunnableFrom([]() {
         LOG("MediaManager shutdown lambda running, releasing MediaManager "
-            "singleton and thread");
+            "singleton");
         StaticMutexAutoLock lock(sSingletonMutex);
         
         media::MustGetShutdownBarrier()->RemoveBlocker(
