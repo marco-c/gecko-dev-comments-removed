@@ -646,11 +646,8 @@ void nsIOService::NotifySocketProcessPrefsChanged(const char* aName) {
     return;
   }
 
-  dom::Pref pref(nsCString(aName),  false,
-                  false, Nothing(), Nothing());
-
-  Preferences::GetPreference(&pref, GeckoProcessType_Socket,
-                              ""_ns);
+  dom::Pref pref(nsCString(aName),  false, Nothing(), Nothing());
+  Preferences::GetPreference(&pref);
   auto sendPrefUpdate = [pref]() {
     Unused << gIOService->mSocketProcess->GetActor()->SendPreferenceUpdate(
         pref);
