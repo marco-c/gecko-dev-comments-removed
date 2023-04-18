@@ -250,13 +250,13 @@ var openCubicBezierAndChangeCoords = async function(
 
 
 
+
 var addProperty = async function(
   view,
   ruleIndex,
   name,
   value,
-  commitValueWith = "VK_RETURN",
-  blurNewProperty = true
+  { commitValueWith = "VK_RETURN", blurNewProperty = true } = {}
 ) {
   info("Adding new property " + name + ":" + value + " to rule " + ruleIndex);
 
@@ -267,6 +267,10 @@ var addProperty = async function(
   const onMutations = new Promise(r => {
     
     
+    
+    
+    
+    
     if (ruleIndex !== 0) {
       r();
     }
@@ -274,12 +278,19 @@ var addProperty = async function(
     
     
     
-    let receivedMutations = 0;
+    
+    const expectedAttributeValue = `${CSS.escape(name)}: ${value}`;
     view.inspector.walker.on("mutations", function onWalkerMutations(
       mutations
     ) {
-      receivedMutations += mutations.length;
-      if (receivedMutations >= 2) {
+      
+      
+      const receivedLastMutation = mutations.some(
+        mut =>
+          mut.attributeName === "style" &&
+          mut.newValue.includes(expectedAttributeValue)
+      );
+      if (receivedLastMutation) {
         view.inspector.walker.off("mutations", onWalkerMutations);
         r();
       }
