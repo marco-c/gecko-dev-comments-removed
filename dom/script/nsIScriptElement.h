@@ -7,6 +7,7 @@
 #ifndef nsIScriptElement_h___
 #define nsIScriptElement_h___
 
+#include "js/loader/ScriptKind.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CORSMode.h"
@@ -55,10 +56,10 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
         mForceAsync(aFromParser == mozilla::dom::NOT_FROM_PARSER ||
                     aFromParser == mozilla::dom::FROM_PARSER_FRAGMENT),
         mFrozen(false),
-        mIsModule(false),
         mDefer(false),
         mAsync(false),
         mExternal(false),
+        mKind(JS::loader::ScriptKind::eClassic),
         mParserCreated(aFromParser == mozilla::dom::FROM_PARSER_FRAGMENT
                            ? mozilla::dom::NOT_FROM_PARSER
                            : aFromParser),
@@ -103,6 +104,7 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
 
 
 
+
   virtual void FreezeExecutionAttrs(mozilla::dom::Document*) = 0;
 
   
@@ -110,7 +112,15 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
 
   bool GetScriptIsModule() {
     MOZ_ASSERT(mFrozen, "Not ready for this call yet!");
-    return mIsModule;
+    return mKind == JS::loader::ScriptKind::eModule;
+  }
+
+  
+
+
+  bool GetScriptIsImportMap() {
+    MOZ_ASSERT(mFrozen, "Not ready for this call yet!");
+    return mKind == JS::loader::ScriptKind::eImportMap;
   }
 
   
@@ -166,10 +176,10 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
 
     
     mFrozen = false;
-    mIsModule = false;
     mExternal = false;
     mAsync = false;
     mDefer = false;
+    mKind = JS::loader::ScriptKind::eClassic;
   }
 
   void SetCreatorParser(nsIParser* aParser);
@@ -299,11 +309,6 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
   
 
 
-  bool mIsModule;
-
-  
-
-
   bool mDefer;
 
   
@@ -316,6 +321,11 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
 
 
   bool mExternal;
+
+  
+
+
+  JS::loader::ScriptKind mKind;
 
   
 
