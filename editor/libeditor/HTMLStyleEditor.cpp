@@ -2156,6 +2156,11 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
               NS_WARNING("HTMLEditor::RemoveStyleInside() failed");
               return rv;
             }
+            
+            
+            if (!content->GetParentNode()) {
+              continue;
+            }
           }
 
           Result<bool, nsresult> isRemovableParentStyleOrError =
@@ -2222,6 +2227,8 @@ nsresult HTMLEditor::RemoveInlinePropertyInternal(
           
           AutoTArray<OwningNonNull<Text>, 32> leafTextNodes;
           for (OwningNonNull<nsIContent>& content : arrayOfContents) {
+            
+            
             if (content->IsElement()) {
               CollectEditableLeafTextNodes(*content->AsElement(),
                                            leafTextNodes);
