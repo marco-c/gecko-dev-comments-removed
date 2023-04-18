@@ -1240,7 +1240,7 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
           aElement->OwnerDoc()->NodePrincipal());
 
   RefPtr<JS::loader::EventScript> eventScript =
-      new JS::loader::EventScript(fetchOptions, uri, aElement);
+      new JS::loader::EventScript(fetchOptions, uri);
 
   JS::CompileOptions options(cx);
   
