@@ -660,18 +660,19 @@ nsresult RTCRtpReceiver::UpdateVideoConduit() {
                            : mJsepTransceiver->mRecvTrack.GetRtxSsrcs().front();
     mSsrc = mJsepTransceiver->mRecvTrack.GetSsrcs().front();
     mVideoRtxSsrc = rtxSsrc;
-  }
 
-  
-  
-  
-  if (mJsepTransceiver->HasBundleLevel() &&
-      (!mJsepTransceiver->mRecvTrack.GetNegotiatedDetails() ||
-       !mJsepTransceiver->mRecvTrack.GetNegotiatedDetails()->GetExt(
-           webrtc::RtpExtension::kMidUri))) {
-    mCallThread->Dispatch(
-        NewRunnableMethod("VideoSessionConduit::DisableSsrcChanges", conduit,
-                          &VideoSessionConduit::DisableSsrcChanges));
+    
+    
+    
+    
+    if (mJsepTransceiver->HasBundleLevel() &&
+        (!mJsepTransceiver->mRecvTrack.GetNegotiatedDetails() ||
+         !mJsepTransceiver->mRecvTrack.GetNegotiatedDetails()->GetExt(
+             webrtc::RtpExtension::kMidUri))) {
+      mCallThread->Dispatch(
+          NewRunnableMethod("VideoSessionConduit::DisableSsrcChanges", conduit,
+                            &VideoSessionConduit::DisableSsrcChanges));
+    }
   }
 
   if (mJsepTransceiver->mRecvTrack.GetNegotiatedDetails() &&
@@ -717,18 +718,19 @@ nsresult RTCRtpReceiver::UpdateAudioConduit() {
              GetMid().c_str(), __FUNCTION__,
              mJsepTransceiver->mRecvTrack.GetSsrcs().front()));
     mSsrc = mJsepTransceiver->mRecvTrack.GetSsrcs().front();
-  }
 
-  
-  
-  
-  if (mJsepTransceiver->HasBundleLevel() &&
-      (!mJsepTransceiver->mRecvTrack.GetNegotiatedDetails() ||
-       !mJsepTransceiver->mRecvTrack.GetNegotiatedDetails()->GetExt(
-           webrtc::RtpExtension::kMidUri))) {
-    mCallThread->Dispatch(
-        NewRunnableMethod("AudioSessionConduit::DisableSsrcChanges", conduit,
-                          &AudioSessionConduit::DisableSsrcChanges));
+    
+    
+    
+    
+    if (mJsepTransceiver->HasBundleLevel() &&
+        (!mJsepTransceiver->mRecvTrack.GetNegotiatedDetails() ||
+         !mJsepTransceiver->mRecvTrack.GetNegotiatedDetails()->GetExt(
+             webrtc::RtpExtension::kMidUri))) {
+      mCallThread->Dispatch(
+          NewRunnableMethod("AudioSessionConduit::DisableSsrcChanges", conduit,
+                            &AudioSessionConduit::DisableSsrcChanges));
+    }
   }
 
   if (mJsepTransceiver->mRecvTrack.GetNegotiatedDetails() &&
