@@ -719,6 +719,8 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://bethesda.net/*", 
         "*://cdn-vzn.yottaa.net/*", 
         "*://citoyens.telerecours.fr/*", 
+        "*://www.connexus.com/*", 
+        "*://dsae.co.za/*", 
         "*://genehmigung.ahs-vwa.at/*", 
         "*://moje.pzu.pl/*", 
         "*://mon.allianzbanque.fr/*", 
@@ -809,6 +811,7 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://www.southportvisiter.co.uk/*", 
         "*://www.staffordshire-live.co.uk/*", 
         "*://www.stokesentinel.co.uk/*", 
+        "*://survey.sogosurvey.com/*", 
         "*://www.sussexlive.co.uk/*", 
         "*://www.tm-awx.com/*", 
         "*://www.twitch.tv/*", 
@@ -868,25 +871,6 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://nordjyske.dk/*"],
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA("97.0.4692.9", "Pixel 4");
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-    id: "bug1753631",
-    platform: "android",
-    domain: "expertflyer.com",
-    bug: "1753631",
-    config: {
-      matches: ["*://*.expertflyer.com/*"],
-      uaTransformer: originalUA => {
-        return originalUA + " AppleWebKit";
       },
     },
   },
