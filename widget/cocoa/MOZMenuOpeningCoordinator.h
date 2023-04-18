@@ -32,7 +32,8 @@ class Runnable;
 
 - (NSInteger)asynchronouslyOpenMenu:(NSMenu*)aMenu
                    atScreenPosition:(NSPoint)aPosition
-                            forView:(NSView*)aView;
+                            forView:(NSView*)aView
+                     withAppearance:(NSAppearance*)aAppearance;
 
 
 

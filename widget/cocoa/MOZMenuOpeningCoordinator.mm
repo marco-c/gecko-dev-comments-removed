@@ -28,6 +28,7 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
 @property(retain) NSMenu* menu;
 @property NSPoint position;
 @property(retain) NSView* view;
+@property(retain) NSAppearance* appearance;
 @end
 
 @implementation MOZMenuOpeningInfo
@@ -69,7 +70,8 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
 
 - (NSInteger)asynchronouslyOpenMenu:(NSMenu*)aMenu
                    atScreenPosition:(NSPoint)aPosition
-                            forView:(NSView*)aView {
+                            forView:(NSView*)aView
+                     withAppearance:(NSAppearance*)aAppearance {
   MOZ_RELEASE_ASSERT(!mPendingOpening,
                      "A menu is already waiting to open. Before opening the next one, either wait "
                      "for this one to open or cancel the request.");
@@ -81,6 +83,7 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
   info.menu = aMenu;
   info.position = aPosition;
   info.view = aView;
+  info.appearance = aAppearance;
   mPendingOpening = [info retain];
   [info release];
 
@@ -103,7 +106,7 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
     mPendingOpening = nil;
 
     @try {
-      [self _openMenu:info.menu atScreenPosition:info.position forView:info.view];
+      [self _openMenu:info.menu atScreenPosition:info.position forView:info.view withAppearance:info.appearance];
     } @catch (NSException* exception) {
       nsObjCExceptionLog(exception);
     }
@@ -139,7 +142,7 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
   }
 }
 
-- (void)_openMenu:(NSMenu*)aMenu atScreenPosition:(NSPoint)aPosition forView:(NSView*)aView {
+- (void)_openMenu:(NSMenu*)aMenu atScreenPosition:(NSPoint)aPosition forView:(NSView*)aView withAppearance:(NSAppearance*)aAppearance {
   
   
   
@@ -164,6 +167,20 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
   
   
   
+
+  if (aAppearance) {
+#if !defined(MAC_OS_VERSION_11_0) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_11_0
+    if (nsCocoaFeatures::OnBigSurOrLater()) {
+#else
+    if (@available(macOS 11.0, *)) {
+#endif
+      
+      
+      
+      aMenu.appearance = aAppearance;
+    }
+  }
+
   if (aView) {
     NSWindow* window = aView.window;
     
