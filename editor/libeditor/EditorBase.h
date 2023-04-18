@@ -620,6 +620,13 @@ class EditorBase : public nsIEditor,
 
 
 
+
+  nsresult OnBlur(const dom::EventTarget* aEventTarget);
+
+  
+
+
+
   void SyncRealTimeSpell();
 
   

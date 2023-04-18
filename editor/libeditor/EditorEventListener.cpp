@@ -446,7 +446,11 @@ NS_IMETHODIMP EditorEventListener::HandleEvent(Event* aEvent) {
     }
     
     case eBlur: {
-      nsresult rv = Blur(internalEvent->AsFocusEvent());
+      const InternalFocusEvent* blurEvent = internalEvent->AsFocusEvent();
+      if (NS_WARN_IF(!blurEvent)) {
+        return NS_ERROR_FAILURE;
+      }
+      nsresult rv = Blur(*blurEvent);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                            "EditorEventListener::Blur() failed");
       return rv;
@@ -1115,37 +1119,14 @@ nsresult EditorEventListener::Focus(const InternalFocusEvent& aFocusEvent) {
   return NS_OK;  
 }
 
-nsresult EditorEventListener::Blur(InternalFocusEvent* aBlurEvent) {
-  if (NS_WARN_IF(!aBlurEvent) || DetachedFromEditor()) {
+nsresult EditorEventListener::Blur(const InternalFocusEvent& aBlurEvent) {
+  if (DetachedFromEditor()) {
     return NS_OK;
   }
 
-  
-  
-  nsFocusManager* focusManager = nsFocusManager::GetFocusManager();
-  if (NS_WARN_IF(!focusManager)) {
-    return NS_OK;
-  }
-
-  Element* focusedElement = focusManager->GetFocusedElement();
-  if (!focusedElement) {
-    
-    
-    
-    
-    
-    if (mEditorBase->IsHTMLEditor() &&
-        mEditorBase->AsHTMLEditor()->IsInDesignMode()) {
-      if (Element::FromEventTargetOrNull(aBlurEvent->mTarget)) {
-        return NS_OK;
-      }
-    }
-    RefPtr<EditorBase> editorBase(mEditorBase);
-    DebugOnly<nsresult> rvIgnored = editorBase->FinalizeSelection();
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                         "EditorBase::FinalizeSelection() failed, but ignored");
-  }
-  return NS_OK;
+  DebugOnly<nsresult> rvIgnored = mEditorBase->OnBlur(aBlurEvent.mTarget);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored), "EditorBase::OnBlur() failed");
+  return NS_OK;  
 }
 
 bool EditorEventListener::IsFileControlTextBox() {

@@ -5716,6 +5716,35 @@ nsresult EditorBase::OnFocus(const nsINode& aOriginalEventTargetNode) {
   return NS_OK;
 }
 
+nsresult EditorBase::OnBlur(const EventTarget* aEventTarget) {
+  
+  
+  nsFocusManager* focusManager = nsFocusManager::GetFocusManager();
+  if (MOZ_UNLIKELY(!focusManager)) {
+    return NS_OK;
+  }
+
+  
+  
+  if (focusManager->GetFocusedElement()) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  
+  if (IsHTMLEditor() && AsHTMLEditor()->IsInDesignMode() &&
+      Element::FromEventTargetOrNull(aEventTarget)) {
+    return NS_OK;
+  }
+  nsresult rv = FinalizeSelection();
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "EditorBase::FinalizeSelection() failed");
+  return rv;
+}
+
 void EditorBase::HideCaret(bool aHide) {
   if (mHidingCaret == aHide) {
     return;
