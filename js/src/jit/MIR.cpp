@@ -1674,6 +1674,11 @@ MDefinition* MStringLength::foldsTo(TempAllocator& alloc) {
     return MConstant::New(alloc, Int32Value(str->length()));
   }
 
+  
+  if (string()->isFromCharCode()) {
+    return MConstant::New(alloc, Int32Value(1));
+  }
+
   return this;
 }
 
@@ -1691,7 +1696,7 @@ MDefinition* MConcat::foldsTo(TempAllocator& alloc) {
 
 MDefinition* MCharCodeAt::foldsTo(TempAllocator& alloc) {
   MDefinition* string = this->string();
-  if (!string->isConstant()) {
+  if (!string->isConstant() && !string->isFromCharCode()) {
     return this;
   }
 
@@ -1702,9 +1707,25 @@ MDefinition* MCharCodeAt::foldsTo(TempAllocator& alloc) {
   if (!index->isConstant()) {
     return this;
   }
+  int32_t idx = index->toConstant()->toInt32();
+
+  
+  if (string->isFromCharCode()) {
+    if (idx != 0) {
+      return this;
+    }
+
+    
+    
+    auto* charCode = string->toFromCharCode()->code();
+    if (!charCode->isCharCodeAt()) {
+      return this;
+    }
+
+    return charCode;
+  }
 
   JSLinearString* str = &string->toConstant()->toString()->asLinear();
-  int32_t idx = index->toConstant()->toInt32();
   if (idx < 0 || uint32_t(idx) >= str->length()) {
     return this;
   }
