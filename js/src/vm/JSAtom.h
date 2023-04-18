@@ -30,12 +30,10 @@ class PropertyName;
 
 namespace js {
 
-class AutoAccessAtomsZone;
 
 
 
-
-void TraceAtoms(JSTracer* trc, const AutoAccessAtomsZone& access);
+void TraceAtoms(JSTracer* trc);
 
 void TraceWellKnownSymbols(JSTracer* trc);
 

@@ -148,7 +148,7 @@ class AtomsTable {
 
   void maybePinExistingAtom(JSContext* cx, JSAtom* atom);
 
-  void tracePinnedAtoms(JSTracer* trc, const AutoAccessAtomsZone& access);
+  void tracePinnedAtoms(JSTracer* trc);
 
   
   void traceWeak(JSTracer* trc);

@@ -22,10 +22,6 @@
 #include "vm/Printer.h"
 #include "vm/StringType.h"
 
-namespace js {
-class AutoAccessAtomsZone;
-}  
-
 namespace JS {
 
 class Symbol
