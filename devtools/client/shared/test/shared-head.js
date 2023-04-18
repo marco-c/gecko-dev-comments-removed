@@ -64,6 +64,12 @@ loader.lazyRequireGetter(
   "devtools/client/responsive/manager"
 );
 
+loader.lazyRequireGetter(
+  this,
+  "FluentReact",
+  "devtools/client/shared/vendor/fluent-react"
+);
+
 const TEST_DIR = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
 const CHROME_URL_ROOT = TEST_DIR + "/";
 const URL_ROOT = CHROME_URL_ROOT.replace(
@@ -1899,3 +1905,45 @@ const waitForPresShell = function(context) {
     }, "Waiting for a valid presShell");
   });
 };
+
+
+
+
+
+
+
+
+
+
+
+async function getFluentStringHelper(resourceIds) {
+  const locales = Services.locale.appLocalesAsBCP47;
+  const generator = L10nRegistry.getInstance().generateBundles(
+    locales,
+    resourceIds
+  );
+
+  const bundles = [];
+  for await (const bundle of generator) {
+    bundles.push(bundle);
+  }
+
+  const reactLocalization = new FluentReact.ReactLocalization(bundles);
+
+  
+
+
+
+
+
+
+  return (id, args) => {
+    const string = reactLocalization.getString(id, args);
+    if (!string) {
+      throw new Error(
+        `Could not find a string for "${id}". Was the correct resource bundle loaded?`
+      );
+    }
+    return string;
+  };
+}
