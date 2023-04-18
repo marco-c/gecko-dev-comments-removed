@@ -939,6 +939,7 @@ nsresult nsHostResolver::TrrLookup(nsHostRecord* aRec,
   }
 
   rec->mResolving++;
+  rec->mTrrAttempts++;
   return NS_OK;
 }
 
@@ -1081,6 +1082,8 @@ nsresult nsHostResolver::NameLookup(nsHostRecord* rec,
   
   
   rec->mTRRSkippedReason = TRRSkippedReason::TRR_UNSET;
+
+  rec->mTrrAttempts = 0;
 
   ComputeEffectiveTRRMode(rec);
 
@@ -1300,6 +1303,62 @@ void nsHostResolver::AddToEvictionQ(nsHostRecord* rec,
 
 
 
+
+
+
+
+
+
+bool nsHostResolver::MaybeRetryTRRLookup(
+    AddrHostRecord* aAddrRec, nsresult aFirstAttemptStatus,
+    TRRSkippedReason aFirstAttemptSkipReason, const MutexAutoLock& aLock) {
+  if (NS_SUCCEEDED(aFirstAttemptStatus) ||
+      aAddrRec->mEffectiveTRRMode != nsIRequest::TRR_FIRST_MODE ||
+      aFirstAttemptStatus == NS_ERROR_DEFINITIVE_UNKNOWN_HOST) {
+    return false;
+  }
+
+  MOZ_ASSERT(!aAddrRec->mResolving);
+  if (!StaticPrefs::network_trr_strict_native_fallback()) {
+    LOG(("nsHostResolver::MaybeRetryTRRLookup retrying with native"));
+    NativeLookup(aAddrRec, aLock);
+    return true;
+  }
+
+  if (aFirstAttemptSkipReason == TRRSkippedReason::TRR_NXDOMAIN ||
+      aFirstAttemptSkipReason == TRRSkippedReason::TRR_DISABLED_FLAG ||
+      aFirstAttemptSkipReason == TRRSkippedReason::TRR_NOT_CONFIRMED) {
+    LOG(
+        ("nsHostResolver::MaybeRetryTRRLookup retrying with native in strict "
+         "mode, skip reason was %d",
+         static_cast<uint32_t>(aFirstAttemptSkipReason)));
+    NativeLookup(aAddrRec, aLock);
+    return true;
+  }
+
+  if (aAddrRec->mTrrAttempts > 1) {
+    LOG(("nsHostResolver::MaybeRetryTRRLookup mTrrAttempts>1, not retrying."));
+    return false;
+  }
+
+  LOG(
+      ("nsHostResolver::MaybeRetryTRRLookup triggering Confirmation and "
+       "retrying with TRR, skip reason was %d",
+       static_cast<uint32_t>(aFirstAttemptSkipReason)));
+  TRRService::Get()->StrictModeConfirm();
+
+  {
+    
+    auto trrQuery = aAddrRec->mTRRQuery.Lock();
+    trrQuery.ref() = nullptr;
+  }
+  TrrLookup(aAddrRec, aLock, nullptr );
+  return true;
+}
+
+
+
+
 nsHostResolver::LookupStatus nsHostResolver::CompleteLookup(
     nsHostRecord* rec, nsresult status, AddrInfo* aNewRRSet, bool pb,
     const nsACString& aOriginsuffix, TRRSkippedReason aReason,
@@ -1366,17 +1425,7 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupLocked(
       addrRec->RecordReason(TRRSkippedReason::TRR_OK);
     }
 
-    bool shouldAttemptNative =
-        !StaticPrefs::network_trr_strict_native_fallback() ||
-        aReason == TRRSkippedReason::TRR_NXDOMAIN ||
-        aReason == TRRSkippedReason::TRR_DISABLED_FLAG ||
-        aReason == TRRSkippedReason::TRR_NOT_CONFIRMED;
-
-    if (NS_FAILED(status) &&
-        addrRec->mEffectiveTRRMode == nsIRequest::TRR_FIRST_MODE &&
-        status != NS_ERROR_DEFINITIVE_UNKNOWN_HOST && shouldAttemptNative) {
-      MOZ_ASSERT(!addrRec->mResolving);
-      NativeLookup(addrRec, aLock);
+    if (MaybeRetryTRRLookup(addrRec, status, aReason, aLock)) {
       MOZ_ASSERT(addrRec->mResolving);
       return LOOKUP_OK;
     }

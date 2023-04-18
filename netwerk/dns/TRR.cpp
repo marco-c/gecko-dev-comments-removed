@@ -85,14 +85,15 @@ TRR::TRR(AHostResolver* aResolver, bool aPB)
 
 
 TRR::TRR(AHostResolver* aResolver, nsACString& aHost, enum TrrType aType,
-         const nsACString& aOriginSuffix, bool aPB)
+         const nsACString& aOriginSuffix, bool aPB, bool aUseFreshConnection)
     : mozilla::Runnable("TRR"),
       mHost(aHost),
       mRec(nullptr),
       mHostResolver(aResolver),
       mType(aType),
       mPB(aPB),
-      mOriginSuffix(aOriginSuffix) {
+      mOriginSuffix(aOriginSuffix),
+      mUseFreshConnection(aUseFreshConnection) {
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess() || XRE_IsSocketProcess(),
                         "TRR must be in parent or socket process");
 }
@@ -167,8 +168,10 @@ bool TRR::MaybeBlockRequest() {
       return true;
     }
 
-    if (UseDefaultServer() && TRRService::Get()->IsTemporarilyBlocked(
-                                  mHost, mOriginSuffix, mPB, true)) {
+    if (!StaticPrefs::network_trr_strict_native_fallback() &&
+        UseDefaultServer() &&
+        TRRService::Get()->IsTemporarilyBlocked(mHost, mOriginSuffix, mPB,
+                                                true)) {
       if (mType == TRRTYPE_A) {
         
         Telemetry::Accumulate(Telemetry::DNS_TRR_BLACKLISTED3,
@@ -264,9 +267,15 @@ nsresult TRR::SendHTTPRequest() {
     return rv;
   }
 
-  channel->SetLoadFlags(
-      nsIRequest::LOAD_ANONYMOUS | nsIRequest::INHIBIT_CACHING |
-      nsIRequest::LOAD_BYPASS_CACHE | nsIChannel::LOAD_BYPASS_URL_CLASSIFIER);
+  auto loadFlags = nsIRequest::LOAD_ANONYMOUS | nsIRequest::INHIBIT_CACHING |
+                   nsIRequest::LOAD_BYPASS_CACHE |
+                   nsIChannel::LOAD_BYPASS_URL_CLASSIFIER;
+  if (mUseFreshConnection) {
+    
+    
+    loadFlags |= nsIRequest::LOAD_FRESH_CONNECTION;
+  }
+  channel->SetLoadFlags(loadFlags);
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = channel->SetNotificationCallbacks(this);

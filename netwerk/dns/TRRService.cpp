@@ -778,8 +778,9 @@ void TRRService::ConfirmationContext::HandleEvent(ConfirmationEvent aEvent,
 
     MOZ_ASSERT(mode == nsIDNSService::MODE_TRRFIRST,
                "Should only confirm in TRR first mode");
-    mTask =
-        new TRR(service, service->mConfirmationNS, TRRTYPE_NS, ""_ns, false);
+    
+    mTask = new TRR(service, service->mConfirmationNS, TRRTYPE_NS, ""_ns, false,
+                    StaticPrefs::network_trr_strict_native_fallback());
     mTask->SetTimeout(StaticPrefs::network_trr_confirmation_timeout_ms());
     mTask->SetPurpose(TRR::Confirmation);
 
@@ -816,6 +817,10 @@ void TRRService::ConfirmationContext::HandleEvent(ConfirmationEvent aEvent,
     case ConfirmationEvent::FailedLookups:
       MOZ_ASSERT(mState == CONFIRM_OK);
       maybeConfirm("failed-lookups");
+      break;
+    case ConfirmationEvent::StrictMode:
+      MOZ_ASSERT(mState == CONFIRM_OK);
+      maybeConfirm("strict-mode");
       break;
     case ConfirmationEvent::URIChange:
       resetConfirmation();
@@ -1030,8 +1035,8 @@ void TRRService::AddToBlocklist(const nsACString& aHost,
       LOG(("TRR: verify if '%s' resolves as NS\n", check.get()));
 
       
-      RefPtr<TRR> trr =
-          new TRR(this, check, TRRTYPE_NS, aOriginSuffix, privateBrowsing);
+      RefPtr<TRR> trr = new TRR(this, check, TRRTYPE_NS, aOriginSuffix,
+                                privateBrowsing, false);
       trr->SetPurpose(TRR::Blocklist);
       DispatchTRRRequest(trr);
     }
@@ -1095,6 +1100,13 @@ static char StatusToChar(nsresult aLookupStatus, nsresult aChannelStatus) {
   return '?';
 }
 
+void TRRService::StrictModeConfirm() {
+  if (mConfirmation.State() == CONFIRM_OK) {
+    LOG(("TRRService::StrictModeConfirm triggering confirmation"));
+    mConfirmation.HandleEvent(ConfirmationEvent::StrictMode);
+  }
+}
+
 void TRRService::RecordTRRStatus(nsresult aChannelStatus) {
   MOZ_ASSERT_IF(XRE_IsParentProcess(), NS_IsMainThread() || IsOnTRRThread());
   MOZ_ASSERT_IF(XRE_IsSocketProcess(), NS_IsMainThread());
@@ -1122,6 +1134,15 @@ void TRRService::ConfirmationContext::RecordTRRStatus(nsresult aChannelStatus) {
 
   
   if (State() != CONFIRM_OK) {
+    return;
+  }
+
+  
+  
+  
+  
+  if (StaticPrefs::network_trr_strict_native_fallback()) {
+    LOG(("TRRService not counting failures in strict mode"));
     return;
   }
 
