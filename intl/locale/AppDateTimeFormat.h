@@ -21,6 +21,9 @@ namespace mozilla::intl {
 
 
 
+
+
+
 class AppDateTimeFormat {
  public:
   
@@ -72,8 +75,8 @@ class AppDateTimeFormat {
   static void BuildTimeZoneString(const PRTimeParameters& aTimeParameters,
                                   nsAString& aStringOut);
 
-  static nsCString* mLocale;
-  static nsTHashMap<nsCStringHashKey, UniquePtr<DateTimeFormat>>* mFormatCache;
+  static nsCString* sLocale;
+  static nsTHashMap<nsCStringHashKey, UniquePtr<DateTimeFormat>>* sFormatCache;
 };
 
 }  
