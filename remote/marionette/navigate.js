@@ -202,6 +202,9 @@ navigate.refresh = async function(browsingContext) {
 
 
 
+
+
+
 navigate.waitForNavigationCompleted = async function waitForNavigationCompleted(
   driver,
   callback,
@@ -211,6 +214,7 @@ navigate.waitForNavigationCompleted = async function waitForNavigationCompleted(
     browsingContextFn = driver.getBrowsingContext.bind(driver),
     loadEventExpected = true,
     requireBeforeUnload = true,
+    unknownState = false,
   } = options;
 
   const chromeWindow = browsingContextFn().topChromeWindow;
@@ -227,7 +231,9 @@ navigate.waitForNavigationCompleted = async function waitForNavigationCompleted(
 
   let browsingContextChanged = false;
   let seenBeforeUnload = false;
-  let seenUnload = false;
+
+  
+  let seenUnload = unknownState;
 
   let unloadTimer;
 
