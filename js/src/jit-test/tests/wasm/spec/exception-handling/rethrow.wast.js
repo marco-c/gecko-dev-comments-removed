@@ -79,6 +79,13 @@ let $0 = instantiate(`(module
       )
     )
   )
+
+  (func (export "rethrow-stack-polymorphism")
+    (try
+      (do (throw $$e0))
+      (catch $$e0 (i32.const 1) (rethrow 0))
+    )
+  )
 )`);
 
 
@@ -113,3 +120,24 @@ assert_return(() => invoke($0, `rethrow-recatch`, [0]), [value("i32", 23)]);
 
 
 assert_return(() => invoke($0, `rethrow-recatch`, [1]), [value("i32", 42)]);
+
+
+assert_exception(() => invoke($0, `rethrow-stack-polymorphism`, []));
+
+
+assert_invalid(
+  () => instantiate(`(module (func (rethrow 0)))`),
+  `invalid rethrow label`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module (func (block (rethrow 0))))`),
+  `invalid rethrow label`,
+);
+
+
+assert_invalid(
+  () => instantiate(`(module (func (try (do (rethrow 0)) (delegate 0))))`),
+  `invalid rethrow label`,
+);

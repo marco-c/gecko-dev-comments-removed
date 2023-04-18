@@ -54,31 +54,6 @@ let $0 = instantiate(`(module
     (select (result externref) (local.get 0) (local.get 1) (local.get 2))
   )
 
-  ;; Check that both sides of the select are evaluated
-  (func (export "select-trap-left") (param $$cond i32) (result i32)
-    (select (unreachable) (i32.const 0) (local.get $$cond))
-  )
-  (func (export "select-trap-right") (param $$cond i32) (result i32)
-    (select (i32.const 0) (unreachable) (local.get $$cond))
-  )
-
-  (func (export "select-unreached")
-    (unreachable) (select)
-    (unreachable) (i32.const 0) (select)
-    (unreachable) (i32.const 0) (i32.const 0) (select)
-    (unreachable) (i32.const 0) (i32.const 0) (i32.const 0) (select)
-    (unreachable) (f32.const 0) (i32.const 0) (select)
-    (unreachable)
-  )
-
-  (func (export "select_unreached_result_1") (result i32)
-    (unreachable) (i32.add (select))
-  )
-
-  (func (export "select_unreached_result_2") (result i64)
-    (unreachable) (i64.add (select (i64.const 0) (i32.const 0)))
-  )
-
   ;; As the argument of control constructs and instructions
 
   (func (export "as-select-first") (param i32) (result i32)
@@ -220,19 +195,6 @@ let $0 = instantiate(`(module
     (block (result i32)
       (i32.wrap_i64 (select (i64.const 1) (i64.const 0) (local.get 0)))
     )
-  )
-
-  (func (export "unreachable-num")
-    (unreachable)
-    (select)
-    (i32.eqz)
-    (drop)
-  )
-  (func (export "unreachable-ref")
-    (unreachable)
-    (select)
-    (ref.is_null)
-    (drop)
   )
 )`);
 
@@ -680,18 +642,6 @@ assert_return(
 );
 
 
-assert_trap(() => invoke($0, `select-trap-left`, [1]), `unreachable`);
-
-
-assert_trap(() => invoke($0, `select-trap-left`, [0]), `unreachable`);
-
-
-assert_trap(() => invoke($0, `select-trap-right`, [1]), `unreachable`);
-
-
-assert_trap(() => invoke($0, `select-trap-right`, [0]), `unreachable`);
-
-
 assert_return(() => invoke($0, `as-select-first`, [0]), [value("i32", 1)]);
 
 
@@ -772,6 +722,11 @@ assert_return(() => invoke($0, `as-br_table-last`, [1]), [value("i32", 2)]);
 
 assert_return(() => invoke($0, `as-call_indirect-first`, [0]), [
   value("i32", 3),
+]);
+
+
+assert_return(() => invoke($0, `as-call_indirect-first`, [1]), [
+  value("i32", 2),
 ]);
 
 
@@ -1132,63 +1087,5 @@ assert_invalid(
     instantiate(
       `(module (func (result i32) (select (i64.const 1) (i64.const 1) (i32.const 1))))`,
     ),
-  `type mismatch`,
-);
-
-
-assert_invalid(
-  () =>
-    instantiate(
-      `(module (func (unreachable) (select (i32.const 1) (i64.const 1) (i32.const 1)) (drop)))`,
-    ),
-  `type mismatch`,
-);
-
-
-assert_invalid(
-  () =>
-    instantiate(
-      `(module (func (unreachable) (select (i64.const 1) (i32.const 1) (i32.const 1)) (drop)))`,
-    ),
-  `type mismatch`,
-);
-
-
-assert_invalid(
-  () =>
-    instantiate(
-      `(module (func (unreachable) (select (i32.const 1) (i32.const 1) (i64.const 1)) (drop)))`,
-    ),
-  `type mismatch`,
-);
-
-
-assert_invalid(
-  () =>
-    instantiate(
-      `(module (func (unreachable) (select (i32.const 1) (i64.const 1)) (drop)))`,
-    ),
-  `type mismatch`,
-);
-
-
-assert_invalid(
-  () =>
-    instantiate(`(module (func (unreachable) (select (i64.const 1)) (drop)))`),
-  `type mismatch`,
-);
-
-
-assert_invalid(
-  () =>
-    instantiate(
-      `(module (func (result i32) (unreachable) (select (i64.const 1) (i32.const 1))))`,
-    ),
-  `type mismatch`,
-);
-
-
-assert_invalid(
-  () => instantiate(`(module (func (unreachable) (select)))`),
   `type mismatch`,
 );
