@@ -28,8 +28,7 @@ define(function(require, exports, module) {
 
   ObjectRep.propTypes = {
     object: PropTypes.object.isRequired,
-    
-    mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+    mode: PropTypes.oneOf(Object.values(MODE)),
     title: PropTypes.string,
     shouldRenderTooltip: PropTypes.bool,
   };

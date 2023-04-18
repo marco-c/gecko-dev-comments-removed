@@ -32,8 +32,7 @@ define(function(require, exports, module) {
 
   GripMapEntry.propTypes = {
     object: PropTypes.object,
-    
-    mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+    mode: PropTypes.oneOf(Object.values(MODE)),
     onDOMNodeMouseOver: PropTypes.func,
     onDOMNodeMouseOut: PropTypes.func,
     onInspectIconClick: PropTypes.func,

@@ -16,10 +16,7 @@ define(function(require, exports, module) {
     MODE,
   } = require("devtools/client/shared/components/reps/reps/constants");
 
-  const ModePropType = PropTypes.oneOf(
-    
-    Object.keys(MODE).map(key => MODE[key])
-  );
+  const ModePropType = PropTypes.oneOf(Object.values(MODE));
 
   
 
@@ -169,6 +166,5 @@ define(function(require, exports, module) {
     supportsObject,
     maxLengthMap,
     getLength,
-    ModePropType,
   };
 });

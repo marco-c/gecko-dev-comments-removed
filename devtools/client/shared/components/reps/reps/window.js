@@ -27,8 +27,7 @@ define(function(require, exports, module) {
 
 
   WindowRep.propTypes = {
-    
-    mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+    mode: PropTypes.oneOf(Object.values(MODE)),
     object: PropTypes.object.isRequired,
     shouldRenderTooltip: PropTypes.bool,
   };

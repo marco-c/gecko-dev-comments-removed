@@ -33,8 +33,7 @@ define(function(require, exports, module) {
 
   TextNode.propTypes = {
     object: PropTypes.object.isRequired,
-    
-    mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+    mode: PropTypes.oneOf(Object.values(MODE)),
     onDOMNodeMouseOver: PropTypes.func,
     onDOMNodeMouseOut: PropTypes.func,
     onInspectIconClick: PropTypes.func,

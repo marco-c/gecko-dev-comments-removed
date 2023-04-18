@@ -35,8 +35,7 @@ define(function(require, exports, module) {
 
   ErrorRep.propTypes = {
     object: PropTypes.object.isRequired,
-    
-    mode: PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+    mode: PropTypes.oneOf(Object.values(MODE)),
     
     renderStacktrace: PropTypes.func,
     shouldRenderTooltip: PropTypes.bool,

@@ -23,9 +23,6 @@ define(function(require, exports, module) {
   const {
     MODE,
   } = require("devtools/client/shared/components/reps/reps/constants");
-  const {
-    ModePropType,
-  } = require("devtools/client/shared/components/reps/reps/array");
 
   
 
@@ -34,8 +31,7 @@ define(function(require, exports, module) {
 
   GripMap.propTypes = {
     object: PropTypes.object,
-    
-    mode: ModePropType,
+    mode: PropTypes.oneOf(Object.values(MODE)),
     isInterestingEntry: PropTypes.func,
     onDOMNodeMouseOver: PropTypes.func,
     onDOMNodeMouseOut: PropTypes.func,
