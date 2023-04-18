@@ -255,7 +255,7 @@ class MockCubeb {
   static MockCubeb* AsMock(cubeb* aContext);
   
   int EnumerateDevices(cubeb_device_type aType,
-                       cubeb_device_collection* collection);
+                       cubeb_device_collection* aCollection);
 
   
   
