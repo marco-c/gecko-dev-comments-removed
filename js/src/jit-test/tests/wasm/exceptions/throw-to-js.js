@@ -152,9 +152,6 @@ assertThrowsValue(
   42
 );
 
-if (wasmCompileMode() === "baseline") {
-  
-
 
 assertThrowsValue(
   () =>
@@ -177,7 +174,6 @@ assertThrowsValue(
     ).exports.f(),
   42
 );
-}
 
 
 {

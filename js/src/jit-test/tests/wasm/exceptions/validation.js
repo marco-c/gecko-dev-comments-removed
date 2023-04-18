@@ -658,10 +658,9 @@ testValidateTryCatch();
 testValidateCatch();
 testValidateCatchAll();
 testValidateExnPayload();
-
+testValidateRethrow();
 
 if (wasmCompileMode() === "baseline") {
   
-testValidateRethrow();
 testValidateDelegate();
 }

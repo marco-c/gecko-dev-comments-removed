@@ -62,6 +62,31 @@ function generateLocalThrows(types, baseThrow) {
 
   
 
+  let baseRethrow =
+      `(rethrow 0)`;
+
+  let nestedRethrow =
+      `(try (param ${types})
+         (do
+           ${baseThrow})
+         (catch $exn
+           (rethrow 1))
+         (catch_all
+           (rethrow 0)))`;
+
+  let catchAllRethrowOriginal =
+      `(try (param ${types})
+         (do
+           ${baseThrow})
+         (catch_all
+           (rethrow 1)))`;
+
+  let secondaryThrows =
+      [].concat(basicThrows,
+                [baseRethrow, nestedRethrow, catchAllRethrowOriginal]);
+
+  
+
   function basicNesting (basicThrow, secondaryThrow) {
     return `(try (param ${types})
               (do ${basicThrow})
@@ -74,7 +99,7 @@ function generateLocalThrows(types, baseThrow) {
 
   for (let basicThrow of basicThrows) {
     result.push(basicThrow);
-    for (let secondaryThrow of basicThrows) {
+    for (let secondaryThrow of secondaryThrows) {
       result.push(basicNesting(basicThrow, secondaryThrow));
     }
   }

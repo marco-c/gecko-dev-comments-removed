@@ -351,6 +351,10 @@ struct Control {
 
 
 
+
+
+
+
 struct IonCompilePolicy {
   
   using Value = MDefinition*;
@@ -2901,9 +2905,14 @@ class FunctionCompiler {
       
       
       if (tagIndex == CatchAllIndex) {
+        MBasicBlock* catchAllBlock = nullptr;
+        if (!goToNewBlock(curBlock_, &catchAllBlock)) {
+          return false;
+        }
+        control.catchAllBlock = catchAllBlock;
+        curBlock_ = catchAllBlock;
         curBlock_->pop();
         curBlock_->pop();
-        control.catchAllBlock = curBlock_;
         return true;
       }
 
@@ -3036,7 +3045,7 @@ class FunctionCompiler {
     
     if (control.tryCatches.empty()) {
       MOZ_ASSERT(kind == LabelKind::CatchAll);
-      MOZ_ASSERT(control.catchAllBlock == padBlock);
+      MOZ_ASSERT(padBlock->hasLastIns());
       return true;
     }
 
@@ -3252,6 +3261,27 @@ class FunctionCompiler {
 
     curBlock_ = nullptr;
     return true;
+  }
+
+  bool rethrow(uint32_t relativeDepth) {
+    if (inDeadCode()) {
+      return true;
+    }
+
+    Control& control = iter().controlItem(relativeDepth);
+    MBasicBlock* pad = control.block;
+    MOZ_ASSERT(pad);
+    MOZ_ASSERT(pad->nslots() > 1);
+    MOZ_ASSERT(iter().controlKind(relativeDepth) == LabelKind::Catch ||
+               iter().controlKind(relativeDepth) == LabelKind::CatchAll);
+
+    
+    size_t exnSlotPosition = pad->nslots() - 2;
+    MDefinition* tagIndex = pad->getSlot(exnSlotPosition + 1);
+    MDefinition* exn = pad->getSlot(exnSlotPosition);
+    MOZ_ASSERT(exn->type() == MIRType::RefOrNull &&
+               tagIndex->type() == MIRType::Int32);
+    return throwFrom(exn, tagIndex);
   }
 #endif
 
@@ -3732,7 +3762,7 @@ static bool EmitRethrow(FunctionCompiler& f) {
     return false;
   }
 
-  MOZ_CRASH("NYI");
+  return f.rethrow(relativeDepth);
 }
 #endif
 
