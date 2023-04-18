@@ -54,12 +54,19 @@ struct RangeItem final {
   already_AddRefed<nsRange> GetRange();
 
   
-  nsINode* GetRoot() const;
-  bool Collapsed() const {
+  [[nodiscard]] nsINode* GetRoot() const;
+  [[nodiscard]] bool Collapsed() const {
     return mStartContainer == mEndContainer && mStartOffset == mEndOffset;
   }
-  bool IsPositioned() const { return mStartContainer && mEndContainer; }
-
+  [[nodiscard]] bool IsPositioned() const {
+    return mStartContainer && mEndContainer;
+  }
+  [[nodiscard]] bool Equals(const RangeItem& aOther) const {
+    return mStartContainer == aOther.mStartContainer &&
+           mEndContainer == aOther.mEndContainer &&
+           mStartOffset == aOther.mStartOffset &&
+           mEndOffset == aOther.mEndOffset;
+  }
   EditorDOMPoint StartPoint() const {
     return EditorDOMPoint(mStartContainer, mStartOffset);
   }
@@ -92,22 +99,74 @@ struct RangeItem final {
 
 class SelectionState final {
  public:
-  SelectionState();
-  ~SelectionState() { Clear(); }
+  
+
+
+  [[nodiscard]] bool IsCollapsed() const {
+    if (mArray.Length() != 1) {
+      return false;
+    }
+    return mArray[0]->Collapsed();
+  }
+
+  void RemoveAllRanges() {
+    mArray.Clear();
+    mDirection = eDirNext;
+  }
+
+  [[nodiscard]] uint32_t RangeCount() const { return mArray.Length(); }
+
+  
+
 
   void SaveSelection(dom::Selection& aSelection);
+
+  
+
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
   RestoreSelection(dom::Selection& aSelection);
-  bool IsCollapsed() const;
-  bool HasOnlyCollapsedRange() const;
-  bool Equals(const SelectionState& aOther) const;
-  void Clear();
-  bool IsEmpty() const;
-  nsINode* GetCommonRootNode() const;
+
+  
+
+
+
+  [[nodiscard]] bool HasOnlyCollapsedRange() const {
+    if (mArray.Length() != 1) {
+      return false;
+    }
+    if (!mArray[0]->IsPositioned() || !mArray[0]->Collapsed()) {
+      return false;
+    }
+    return true;
+  }
+
+  
+
+
+
+
+  [[nodiscard]] bool Equals(const SelectionState& aOther) const;
+
+  
+
+
+
+  [[nodiscard]] nsINode* GetCommonRootNode() const {
+    nsINode* rootNode = nullptr;
+    for (const RefPtr<RangeItem>& rangeItem : mArray) {
+      nsINode* newRootNode = rangeItem->GetRoot();
+      if (!newRootNode || (rootNode && rootNode != newRootNode)) {
+        return nullptr;
+      }
+      rootNode = newRootNode;
+    }
+    return rootNode;
+  }
 
  private:
   CopyableAutoTArray<RefPtr<RangeItem>, 1> mArray;
-  nsDirection mDirection;
+  nsDirection mDirection = eDirNext;
 
   friend class RangeUpdater;
   friend void ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback&,
