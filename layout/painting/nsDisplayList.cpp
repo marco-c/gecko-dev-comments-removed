@@ -5027,12 +5027,37 @@ bool nsDisplayBlendMode::CreateWebRenderCommands(
 
 void nsDisplayBlendMode::Paint(nsDisplayListBuilder* aBuilder,
                                gfxContext* aCtx) {
-  aCtx->GetDrawTarget()->PushLayerWithBlend(false, 1.0, nullptr,
-                                            mozilla::gfx::Matrix(), IntRect(),
-                                            false, BlendMode());
-  GetChildren()->Paint(aBuilder, aCtx,
+  
+  
+  DrawTarget* dt = aCtx->GetDrawTarget();
+  int32_t appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
+  Rect rect = NSRectToRect(GetPaintRect(aBuilder, aCtx), appUnitsPerDevPixel);
+  rect.RoundOut();
+
+  
+  
+  
+  RefPtr<DrawTarget> temp =
+      dt->CreateClippedDrawTarget(rect, SurfaceFormat::B8G8R8A8);
+  if (!temp) {
+    return;
+  }
+
+  RefPtr<gfxContext> ctx = gfxContext::CreatePreservingTransformOrNull(temp);
+
+  GetChildren()->Paint(aBuilder, ctx,
                        mFrame->PresContext()->AppUnitsPerDevPixel());
-  aCtx->GetDrawTarget()->PopLayer();
+
+  
+  
+  temp->Flush();
+  RefPtr<SourceSurface> surface = temp->Snapshot();
+  gfxContextMatrixAutoSaveRestore saveMatrix(aCtx);
+  dt->SetTransform(Matrix());
+  dt->DrawSurface(
+      surface, Rect(surface->GetRect()), Rect(surface->GetRect()),
+      DrawSurfaceOptions(),
+      DrawOptions(1.0f, nsCSSRendering::GetGFXBlendMode(mBlendMode)));
 }
 
 gfx::CompositionOp nsDisplayBlendMode::BlendMode() {
