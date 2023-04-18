@@ -5058,6 +5058,20 @@ public class GeckoSession {
 
 
 
+  @UiThread
+   void getClientToScreenOffsetMatrix(@NonNull final Matrix matrix) {
+    ThreadUtils.assertOnUiThread();
+
+    matrix.postTranslate(mLeft, mTop);
+  }
+
+  
+
+
+
+
+
+
 
 
   @UiThread
