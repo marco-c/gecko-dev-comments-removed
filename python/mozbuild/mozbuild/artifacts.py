@@ -762,9 +762,16 @@ class ThunderbirdMixin(object):
     product = "thunderbird"
     try_tree = "try-comm-central"
 
-    @property
-    def candidate_trees(self):
-        return ["comm-central"]
+    nightly_candidate_trees = [
+        "comm-central",
+    ]
+    beta_candidate_trees = [
+        "releases/comm-beta",
+    ]
+    
+    esr_candidate_trees = [
+        "releases/comm-esr91",
+    ]
 
 
 class LinuxThunderbirdArtifactJob(ThunderbirdMixin, LinuxArtifactJob):
