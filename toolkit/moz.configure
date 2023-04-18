@@ -2822,3 +2822,16 @@ option(
 
 set_config("MOZ_SANDBOX", True, when="--enable-sandbox")
 set_define("MOZ_SANDBOX", True, when="--enable-sandbox")
+
+
+
+
+
+
+option(
+    "--disable-system-extension-dirs",
+    help="Disable searching system- and account-global directories for extensions"
+    " of any kind; use only profile-specific extension directories",
+)
+
+set_define("ENABLE_SYSTEM_EXTENSION_DIRS", True, when="--enable-system-extension-dirs")
