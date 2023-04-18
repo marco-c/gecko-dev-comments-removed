@@ -1764,6 +1764,21 @@ void ContentParent::MaybeAsyncSendShutDownMessage() {
       &ContentParent::ShutDownProcess, SEND_SHUTDOWN_MESSAGE));
 }
 
+void LogShutdownDiagnostics(ContentParent* aSelf, const char* aMsg,
+                            const char* aFile, int32_t aLine) {
+#if defined(MOZ_DIAGNOSTIC_ASSERT_ENABLED)
+  nsAutoCString logmsg;
+  logmsg.AppendPrintf("ContentParent: id=%p | BlockShutdown: ", aSelf);
+  logmsg.Append(aMsg);
+  NS_DebugBreak(NS_DEBUG_WARNING, logmsg.get(), nullptr, aFile, aLine);
+#else
+  Unused << aSelf;
+  Unused << aMsg;
+  Unused << aFile;
+  Unused << aLine;
+#endif
+}
+
 void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
           ("ShutDownProcess: %p", this));
@@ -1775,18 +1790,33 @@ void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
   
   
   if (aMethod == SEND_SHUTDOWN_MESSAGE) {
-    if (CanSend() && !mShutdownPending) {
-      
-      SetInputPriorityEventEnabled(false);
-      
-      
-      Unused << SendShutdownConfirmedHP();
-      
-      if (SendShutdown()) {
-        mShutdownPending = true;
+    if (!mShutdownPending) {
+      if (CanSend()) {
         
-        StartForceKillTimer();
+        SetInputPriorityEventEnabled(false);
+        
+        
+        Unused << SendShutdownConfirmedHP();
+        
+        if (SendShutdown()) {
+          LogShutdownDiagnostics(this,
+                                 "ShutDownProcess: Sent shutdown message.",
+                                 __FILE__, __LINE__);
+          mShutdownPending = true;
+          
+          StartForceKillTimer();
+        } else {
+          LogShutdownDiagnostics(
+              this, "ShutDownProcess: >>> Send shutdown message failed! <<<",
+              __FILE__, __LINE__);
+        }
+      } else {
+        LogShutdownDiagnostics(this, "ShutDownProcess: >>> !CanSend <<<",
+                               __FILE__, __LINE__);
       }
+    } else {
+      LogShutdownDiagnostics(this, "ShutDownProcess: Shutdown already pending.",
+                             __FILE__, __LINE__);
     }
     
     
@@ -1802,11 +1832,18 @@ void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
   
   
 
-  if (aMethod == CLOSE_CHANNEL && !mCalledClose) {
-    
-    
-    mCalledClose = true;
-    Close();
+  if (aMethod == CLOSE_CHANNEL) {
+    if (!mCalledClose) {
+      LogShutdownDiagnostics(this, "ShutDownProcess: Closing channel.",
+                             __FILE__, __LINE__);
+      
+      
+      mCalledClose = true;
+      Close();
+    } else {
+      LogShutdownDiagnostics(this, "ShutDownProcess: Close already called.",
+                             __FILE__, __LINE__);
+    }
   }
 
   
@@ -3558,6 +3595,8 @@ ContentParent::BlockShutdown(nsIAsyncShutdownClient* aClient) {
 #endif
 
   if (CanSend()) {
+    LogShutdownDiagnostics(this, "CanSend.", __FILE__, __LINE__);
+
     
     ProcessPriorityManager::SetProcessPriority(this,
                                                PROCESS_PRIORITY_FOREGROUND);
@@ -3567,6 +3606,9 @@ ContentParent::BlockShutdown(nsIAsyncShutdownClient* aClient) {
     
     ShutDownProcess(SEND_SHUTDOWN_MESSAGE);
   } else if (IsLaunching()) {
+    LogShutdownDiagnostics(this, "!CanSend && IsLaunching.", __FILE__,
+                           __LINE__);
+
     
     
     
@@ -3574,6 +3616,14 @@ ContentParent::BlockShutdown(nsIAsyncShutdownClient* aClient) {
     MarkAsDead();
   } else {
     MOZ_ASSERT(IsDead());
+    if (!IsDead()) {
+      LogShutdownDiagnostics(this,
+                             ">>> !CanSend && !IsLaunching && !IsDead <<<",
+                             __FILE__, __LINE__);
+    } else {
+      LogShutdownDiagnostics(this, "!CanSend && !IsLaunching && IsDead.",
+                             __FILE__, __LINE__);
+    }
     
     
     
