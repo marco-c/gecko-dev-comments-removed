@@ -181,7 +181,6 @@ class AudioInputProcessing : public AudioDataListener {
   Maybe<AudioPacketizer<AudioDataValue, float>> mPacketizerOutput;
   
   
-  
   uint32_t mRequestedInputChannelCount;
   
   
