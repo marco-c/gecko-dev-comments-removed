@@ -1286,6 +1286,7 @@ bool MWasmBinarySimd128::specializeForConstantRhs() {
     case wasm::SimdOp::I32x4Ne:
     case wasm::SimdOp::I32x4GtS:
     case wasm::SimdOp::I32x4LeS:
+    case wasm::SimdOp::I64x2Mul:
     case wasm::SimdOp::F32x4Eq:
     case wasm::SimdOp::F32x4Ne:
     case wasm::SimdOp::F32x4Lt:
@@ -1321,19 +1322,29 @@ void LIRGenerator::visitWasmBinarySimd128WithConstant(
   MOZ_ASSERT(lhs->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->type() == MIRType::Simd128);
 
+  
+  LDefinition tempReg = LDefinition::BogusTemp();
+  switch (ins->simdOp()) {
+    case wasm::SimdOp::I64x2Mul:
+      tempReg = tempSimd128();
+      break;
+    default:
+      break;
+  }
+
   if (isThreeOpAllowed()) {
     
     
     LAllocation lhsAlloc = useRegisterAtStart(lhs);
-    auto* lir =
-        new (alloc()) LWasmBinarySimd128WithConstant(lhsAlloc, ins->rhs());
+    auto* lir = new (alloc())
+        LWasmBinarySimd128WithConstant(lhsAlloc, ins->rhs(), tempReg);
     define(lir, ins);
   } else {
     
     
     LAllocation lhsDestAlloc = useRegisterAtStart(lhs);
-    auto* lir =
-        new (alloc()) LWasmBinarySimd128WithConstant(lhsDestAlloc, ins->rhs());
+    auto* lir = new (alloc())
+        LWasmBinarySimd128WithConstant(lhsDestAlloc, ins->rhs(), tempReg);
     defineReuseInput(lir, ins, LWasmBinarySimd128WithConstant::LhsDest);
   }
 #else
