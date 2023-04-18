@@ -241,7 +241,6 @@ void CompositorBridgeParent::FinishShutdown() {
   }
 
   
-  MonitorAutoLock lock(sIndirectLayerTreesLock);
   sIndirectLayerTrees.clear();
 }
 
