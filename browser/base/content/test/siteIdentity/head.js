@@ -422,3 +422,18 @@ async function loadBadCertPage(url) {
   });
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 }
+
+
+
+
+function getTestServerCertificate() {
+  const certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
+    Ci.nsIX509CertDB
+  );
+  for (const cert of certDB.getCerts()) {
+    if (cert.commonName == "Mochitest client") {
+      return cert;
+    }
+  }
+  return null;
+}
