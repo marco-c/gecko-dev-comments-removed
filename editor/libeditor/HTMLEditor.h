@@ -1483,9 +1483,15 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
-  CreateAndInsertElementWithTransaction(nsAtom& aTagName,
-                                        const EditorDOMPoint& aPointToInsert);
+  CreateAndInsertElementWithTransaction(
+      nsAtom& aTagName, const EditorDOMPoint& aPointToInsert,
+      std::function<nsresult(Element&)>&& aInitializer);
 
   
 
