@@ -27,6 +27,9 @@ class WriteFinishedPromiseHandler;
 class ShutdownActionFinishedPromiseHandler;
 
 
+using ::ImplCycleCollectionUnlink;
+
+
 
 
 
@@ -381,15 +384,13 @@ class WriteFinishedPromiseHandler final : public PromiseNativeHandler {
   }
 };
 
-NS_IMPL_CYCLE_COLLECTION(WriteFinishedPromiseHandler, mPipeToPump)
+NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(WriteFinishedPromiseHandler,
+                                         (mPipeToPump), (mError))
 NS_IMPL_CYCLE_COLLECTING_ADDREF(WriteFinishedPromiseHandler)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(WriteFinishedPromiseHandler)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(WriteFinishedPromiseHandler)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
-NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(WriteFinishedPromiseHandler)
-  NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mError)
-NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 
 
@@ -476,15 +477,13 @@ class ShutdownActionFinishedPromiseHandler final : public PromiseNativeHandler {
   }
 };
 
-NS_IMPL_CYCLE_COLLECTION(ShutdownActionFinishedPromiseHandler, mPipeToPump)
+NS_IMPL_CYCLE_COLLECTION_WITH_JS_MEMBERS(ShutdownActionFinishedPromiseHandler,
+                                         (mPipeToPump), (mError))
 NS_IMPL_CYCLE_COLLECTING_ADDREF(ShutdownActionFinishedPromiseHandler)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(ShutdownActionFinishedPromiseHandler)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ShutdownActionFinishedPromiseHandler)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
-NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(ShutdownActionFinishedPromiseHandler)
-  NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mError)
-NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 
 
