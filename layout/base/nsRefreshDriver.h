@@ -360,18 +360,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
 
 
-
-
-
-
-
-
-
-
-
-  enum IdleCheck { OnlyThisProcessRefreshDriver, AllVsyncListeners };
-  static mozilla::TimeStamp GetIdleDeadlineHint(mozilla::TimeStamp aDefault,
-                                                IdleCheck aCheckType);
+  static mozilla::TimeStamp GetIdleDeadlineHint(mozilla::TimeStamp aDefault);
 
   
 

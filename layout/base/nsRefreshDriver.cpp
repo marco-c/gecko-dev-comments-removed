@@ -2927,8 +2927,7 @@ void nsRefreshDriver::CancelPendingAnimationEvents(
 }
 
 
-TimeStamp nsRefreshDriver::GetIdleDeadlineHint(TimeStamp aDefault,
-                                               IdleCheck aCheckType) {
+TimeStamp nsRefreshDriver::GetIdleDeadlineHint(TimeStamp aDefault) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!aDefault.IsNull());
 
@@ -2939,14 +2938,9 @@ TimeStamp nsRefreshDriver::GetIdleDeadlineHint(TimeStamp aDefault,
   
   
   if (sRegularRateTimer) {
-    TimeStamp retVal = sRegularRateTimer->GetIdleDeadlineHint(aDefault);
-    if (retVal != aDefault) {
-      return retVal;
-    }
+    return sRegularRateTimer->GetIdleDeadlineHint(aDefault);
   }
 
-  
-  
   
   
   
@@ -2966,23 +2960,7 @@ TimeStamp nsRefreshDriver::GetIdleDeadlineHint(TimeStamp aDefault,
     }
   }
 
-  if (!hint.IsNull()) {
-    return hint;
-  }
-
-  if (aCheckType == IdleCheck::AllVsyncListeners && XRE_IsParentProcess()) {
-    Maybe<TimeDuration> rate = mozilla::gfx::VsyncSource::GetFastestVsyncRate();
-    if (rate.isSome()) {
-      TimeStamp newHint = TimeStamp::Now() + *rate -
-                          TimeDuration::FromMilliseconds(
-                              StaticPrefs::layout_idle_period_time_limit());
-      if (newHint < aDefault) {
-        return newHint;
-      }
-    }
-  }
-
-  return aDefault;
+  return hint.IsNull() ? aDefault : hint;
 }
 
 
