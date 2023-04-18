@@ -276,6 +276,7 @@ class NativeLayerCA : public NativeLayer {
   CALayer* UnderlyingCALayer(WhichRepresentation aRepresentation);
   void ApplyChanges(WhichRepresentation aRepresentation);
   bool HasUpdate(WhichRepresentation aRepresentation);
+  bool HasUpdateAffectingLayers(WhichRepresentation aRepresentation);
   void SetBackingScale(float aBackingScale);
 
   
