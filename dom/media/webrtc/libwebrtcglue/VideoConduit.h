@@ -128,7 +128,7 @@ class WebrtcVideoConduit
 
   bool HasCodecPluginID(uint64_t aPluginID) const override;
 
-  void Shutdown() override;
+  RefPtr<GenericPromise> Shutdown() override;
 
   bool Denoising() const { return mDenoising; }
 
@@ -151,8 +151,6 @@ class WebrtcVideoConduit
 
   
   MediaConduitErrorCode Init();
-  
-  void InitCall();
 
   Ssrcs GetLocalSSRCs() const override;
   Maybe<Ssrc> GetRemoteSSRC() const override;
