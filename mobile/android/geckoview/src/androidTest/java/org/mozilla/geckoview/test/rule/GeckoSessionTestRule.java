@@ -2333,13 +2333,12 @@ public class GeckoSessionTestRule implements TestRule {
 
 
 
-
-  public String getLinkColor(final String uri, final String selector) {
+  public String getLinkColor(final GeckoSession session, final String selector) {
     return (String)
         webExtensionApiCall(
+            session,
             "GetLinkColor",
             args -> {
-              args.put("uri", uri);
               args.put("selector", selector);
             });
   }
