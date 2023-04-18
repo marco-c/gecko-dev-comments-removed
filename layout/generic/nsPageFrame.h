@@ -121,6 +121,26 @@ class nsPageFrame final : public nsContainerFrame {
   
   nsSharedPageData* mPD = nullptr;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   nsMargin mPageContentMargin;
 };
 
