@@ -2925,8 +2925,6 @@ class PresShell final : public nsStubDocumentObserver,
   
   nsCOMPtr<nsITimer> mPaintSuppressionTimer;
 
-  nsCOMPtr<nsITimer> mDelayedPaintTimer;
-
   
   
   
