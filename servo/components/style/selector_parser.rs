@@ -76,8 +76,7 @@ impl<'a> SelectorParser<'a> {
     
     
     pub fn chrome_rules_enabled(&self) -> bool {
-        self.url_data.chrome_rules_enabled() ||
-            self.stylesheet_origin == Origin::User
+        self.url_data.chrome_rules_enabled() || self.stylesheet_origin == Origin::User
     }
 }
 

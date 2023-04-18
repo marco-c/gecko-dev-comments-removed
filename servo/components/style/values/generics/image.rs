@@ -131,9 +131,7 @@ pub struct GenericImageSet<Image, Resolution> {
 }
 
 
-#[derive(
-    Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem,
-)]
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToResolvedValue, ToShmem)]
 #[repr(C)]
 pub struct GenericImageSetItem<Image, Resolution> {
     
@@ -151,8 +149,7 @@ pub struct GenericImageSetItem<Image, Resolution> {
     pub has_mime_type: bool,
 }
 
-impl<I: style_traits::ToCss, R: style_traits::ToCss> ToCss for GenericImageSetItem<I, R>
-{
+impl<I: style_traits::ToCss, R: style_traits::ToCss> ToCss for GenericImageSetItem<I, R> {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: fmt::Write,
