@@ -53,11 +53,17 @@ auto TextRecognition::DoFindText(gfx::DataSourceSurface& aSurface) -> RefPtr<Nat
                           VNRecognizedText* recognizedText = [obj topCandidates:1].firstObject;
 
                           
-                          
-                          
                           auto& quad = *pResult->quads().AppendElement();
                           CopyCocoaStringToXPCOMString(recognizedText.string, quad.string());
                           quad.confidence() = recognizedText.confidence;
+
+                          auto ToImagePoint = [](CGPoint aPoint) -> ImagePoint {
+                            return {static_cast<float>(aPoint.x), static_cast<float>(aPoint.y)};
+                          };
+                          *quad.points().AppendElement() = ToImagePoint(obj.bottomLeft);
+                          *quad.points().AppendElement() = ToImagePoint(obj.topLeft);
+                          *quad.points().AppendElement() = ToImagePoint(obj.topRight);
+                          *quad.points().AppendElement() = ToImagePoint(obj.bottomRight);
                         }];
                   }];
 
