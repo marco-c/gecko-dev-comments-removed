@@ -174,11 +174,6 @@ class Instance {
                                uint32_t len);
 
   
-  
-  void* getIndirectStub(uint32_t funcIndex, TlsData* targetTlsData,
-                        const Tier tier) const;
-
-  
 
   JSString* createDisplayURL(JSContext* cx);
   WasmBreakpointSite* getOrCreateBreakpointSite(JSContext* cx, uint32_t offset);
