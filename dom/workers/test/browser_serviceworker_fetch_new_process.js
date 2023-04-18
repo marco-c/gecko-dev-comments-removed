@@ -297,7 +297,40 @@ async function makeFileBlob(blobContents) {
   return fileBlob;
 }
 
+function getSWTelemetrySums() {
+  let telemetry = Cc["@mozilla.org/base/telemetry;1"].getService(
+    Ci.nsITelemetry
+  );
+  let keyedhistograms = telemetry.getSnapshotForKeyedHistograms("main", false)
+    .parent;
+  let keyedscalars = telemetry.getSnapshotForKeyedScalars("main", false).parent;
+  
+  return {
+    SERVICE_WORKER_RUNNING_All: keyedhistograms.SERVICE_WORKER_RUNNING
+      ? keyedhistograms.SERVICE_WORKER_RUNNING.All.sum
+      : 0,
+    SERVICE_WORKER_RUNNING_Fetch: keyedhistograms.SERVICE_WORKER_RUNNING
+      ? keyedhistograms.SERVICE_WORKER_RUNNING.Fetch.sum
+      : 0,
+    SERVICEWORKER_RUNNING_MAX_All: keyedscalars["serviceworker.running_max"]
+      ? keyedscalars["serviceworker.running_max"].All
+      : 0,
+    SERVICEWORKER_RUNNING_MAX_Fetch: keyedscalars["serviceworker.running_max"]
+      ? keyedscalars["serviceworker.running_max"].Fetch
+      : 0,
+  };
+}
+
 add_task(async function test() {
+  
+  let oldCanRecord = Services.telemetry.canRecordExtended;
+  Services.telemetry.canRecordExtended = true;
+  registerCleanupFunction(() => {
+    Services.telemetry.canRecordExtended = oldCanRecord;
+  });
+
+  let initialSums = getSWTelemetrySums();
+
   
   
   
@@ -328,4 +361,43 @@ add_task(async function test() {
     await do_test_sw(isolateUrl, isolateRemoteType, "synthetic", null);
     await do_test_sw(isolateUrl, isolateRemoteType, "synthetic", fileBlob);
   }
+  let telemetrySums = getSWTelemetrySums();
+  info(JSON.stringify(telemetrySums));
+  info(
+    "Initial Running All: " +
+      initialSums.SERVICE_WORKER_RUNNING_All +
+      ", Fetch: " +
+      initialSums.SERVICE_WORKER_RUNNING_Fetch
+  );
+  info(
+    "Initial Max Running All: " +
+      initialSums.SERVICEWORKER_RUNNING_MAX_All +
+      ", Fetch: " +
+      initialSums.SERVICEWORKER_RUNNING_MAX_Fetch
+  );
+  info(
+    "Running All: " +
+      telemetrySums.SERVICE_WORKER_RUNNING_All +
+      ", Fetch: " +
+      telemetrySums.SERVICE_WORKER_RUNNING_Fetch
+  );
+  info(
+    "Max Running All: " +
+      telemetrySums.SERVICEWORKER_RUNNING_MAX_All +
+      ", Fetch: " +
+      telemetrySums.SERVICEWORKER_RUNNING_MAX_Fetch
+  );
+  ok(
+    telemetrySums.SERVICE_WORKER_RUNNING_All >
+      initialSums.SERVICE_WORKER_RUNNING_All,
+    "ServiceWorker running count changed"
+  );
+  ok(
+    telemetrySums.SERVICE_WORKER_RUNNING_Fetch >
+      initialSums.SERVICE_WORKER_RUNNING_Fetch,
+    "ServiceWorker running count changed"
+  );
+  
+  
+  
 });

@@ -432,8 +432,6 @@ NS_IMPL_RELEASE(ServiceWorkerManager)
 NS_INTERFACE_MAP_BEGIN(ServiceWorkerManager)
   NS_INTERFACE_MAP_ENTRY(nsIServiceWorkerManager)
   NS_INTERFACE_MAP_ENTRY(nsIObserver)
-  NS_INTERFACE_MAP_ENTRY(nsITimerCallback)
-  NS_INTERFACE_MAP_ENTRY(nsINamed)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIServiceWorkerManager)
 NS_INTERFACE_MAP_END
 
@@ -443,9 +441,6 @@ ServiceWorkerManager::ServiceWorkerManager()
 ServiceWorkerManager::~ServiceWorkerManager() {
   
   mRegistrationInfos.Clear();
-  if (mTelemetryTimer) {
-    mTelemetryTimer->Cancel();
-  }
 
   
   
@@ -510,22 +505,45 @@ void ServiceWorkerManager::Init(ServiceWorkerRegistrar* aRegistrar) {
   }
 
   mActor = static_cast<ServiceWorkerManagerChild*>(actor);
-  constexpr uint32_t period_ms = 10 * 1000;
 
-  NS_NewTimerWithCallback(getter_AddRefs(mTelemetryTimer), this, period_ms,
-                          nsITimer::TYPE_REPEATING_SLACK);
+  mTelemetryLastChange = TimeStamp::Now();
 }
 
-NS_IMETHODIMP
-ServiceWorkerManager::Notify(nsITimer* aTimer) {
-  ServiceWorkerPrivateImpl::ReportRunning();
-  return NS_OK;
-}
+void ServiceWorkerManager::RecordTelemetry(uint32_t aNumber, uint32_t aFetch) {
+  
+  auto now = TimeStamp::Now();
+  
+  
+  uint32_t repeats = (uint32_t)((now - mTelemetryLastChange).ToMilliseconds()) /
+                     mTelemetryPeriodMs;
+  mTelemetryLastChange = now;
+  if (repeats == 0) {
+    repeats = 1;
+  }
+  nsCOMPtr<nsIRunnable> runnable = NS_NewRunnableFunction(
+      "ServiceWorkerTelemetryRunnable", [aNumber, aFetch, repeats]() {
+        LOG(("ServiceWorkers running: %u samples of %u/%u", repeats, aNumber,
+             aFetch));
+        
+        
+        
+        uint32_t num_repeats = std::min(repeats, 1000000U);  
+        nsTArray<uint32_t> values;
 
+        uint32_t* array = values.AppendElements(num_repeats);
+        for (uint32_t i = 0; i < num_repeats; i++) {
+          array[i] = aNumber;
+        }
+        Telemetry::Accumulate(Telemetry::SERVICE_WORKER_RUNNING, "All"_ns,
+                              values);
 
-NS_IMETHODIMP ServiceWorkerManager::GetName(nsACString& aNameOut) {
-  aNameOut.AssignLiteral("ServiceWorkerManager");
-  return NS_OK;
+        for (uint32_t i = 0; i < num_repeats; i++) {
+          array[i] = aFetch;
+        }
+        Telemetry::Accumulate(Telemetry::SERVICE_WORKER_RUNNING, "Fetch"_ns,
+                              values);
+      });
+  NS_DispatchBackgroundTask(runnable.forget(), nsIEventTarget::DISPATCH_NORMAL);
 }
 
 RefPtr<GenericErrorResultPromise> ServiceWorkerManager::StartControllingClient(
@@ -700,7 +718,9 @@ void ServiceWorkerManager::MaybeFinishShutdown() {
   nsresult rv = NS_DispatchToMainThread(runnable);
   Unused << NS_WARN_IF(NS_FAILED(rv));
   mActor = nullptr;
-  ServiceWorkerPrivateImpl::CheckRunningShutdown();
+
+  
+  ServiceWorkerPrivateImpl::RunningShutdown();
 }
 
 class ServiceWorkerResolveWindowPromiseOnRegisterCallback final
