@@ -30,6 +30,11 @@ using FetchEventRespondWithResult =
 using FetchEventRespondWithPromise =
     MozPromise<FetchEventRespondWithResult, CancelInterceptionArgs, true>;
 
+
+
+using FetchEventPreloadResponsePromise =
+    MozPromise<SafeRefPtr<InternalResponse>, int, true>;
+
 using ServiceWorkerOpPromise =
     MozPromise<ServiceWorkerOpResult, nsresult, true>;
 

@@ -1,0 +1,30 @@
+
+
+
+
+
+#ifndef _mozilla_dom_FetchService_h
+#define _mozilla_dom_FetchService_h
+
+#include "mozilla/MozPromise.h"
+#include "mozilla/dom/SafeRefPtr.h"
+
+
+
+
+
+namespace mozilla {
+
+class CopyableErrorResult;
+
+namespace dom {
+
+class InternalResponse;
+
+using FetchServiceResponsePromise =
+    MozPromise<SafeRefPtr<InternalResponse>, CopyableErrorResult, true>;
+
+}  
+}  
+
+#endif  

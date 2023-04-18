@@ -44,11 +44,6 @@
 #include "mozilla/net/NeckoChannelParams.h"
 
 namespace mozilla {
-
-using ipc::AutoIPCStream;
-using ipc::BackgroundChild;
-using ipc::PBackgroundChild;
-
 namespace dom {
 
 namespace {
@@ -189,6 +184,7 @@ NS_IMPL_ISUPPORTS(SynthesizeResponseWatcher, nsIInterceptedBodyCallback)
     ServiceWorkerFetchEventOpArgs&& aArgs,
     nsCOMPtr<nsIInterceptedChannel> aInterceptedChannel,
     RefPtr<ServiceWorkerRegistrationInfo> aRegistration,
+    RefPtr<FetchServiceResponsePromise>&& aPreloadResponseReadyPromise,
     RefPtr<KeepAliveToken>&& aKeepAliveToken) {
   AssertIsOnMainThread();
   MOZ_ASSERT(aManager);
@@ -197,8 +193,10 @@ NS_IMPL_ISUPPORTS(SynthesizeResponseWatcher, nsIInterceptedBodyCallback)
 
   FetchEventOpChild* actor = new FetchEventOpChild(
       std::move(aArgs), std::move(aInterceptedChannel),
-      std::move(aRegistration), std::move(aKeepAliveToken));
+      std::move(aRegistration), std::move(aPreloadResponseReadyPromise),
+      std::move(aKeepAliveToken));
 
+  actor->mWasSent = true;
   Unused << aManager->SendPFetchEventOpConstructor(actor, actor->mArgs);
 
   return actor->mPromiseHolder.Ensure(__func__);
@@ -214,11 +212,42 @@ FetchEventOpChild::FetchEventOpChild(
     ServiceWorkerFetchEventOpArgs&& aArgs,
     nsCOMPtr<nsIInterceptedChannel>&& aInterceptedChannel,
     RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
+    RefPtr<FetchServiceResponsePromise>&& aPreloadResponseReadyPromise,
     RefPtr<KeepAliveToken>&& aKeepAliveToken)
     : mArgs(std::move(aArgs)),
       mInterceptedChannel(std::move(aInterceptedChannel)),
       mRegistration(std::move(aRegistration)),
-      mKeepAliveToken(std::move(aKeepAliveToken)) {}
+      mKeepAliveToken(std::move(aKeepAliveToken)) {
+  if (aPreloadResponseReadyPromise) {
+    
+    
+    
+    
+    
+    
+    aPreloadResponseReadyPromise
+        ->Then(
+            GetCurrentSerialEventTarget(), __func__,
+            [this](SafeRefPtr<InternalResponse> aInternalResponse) {
+              
+              IPCInternalResponse ipcPreloadResponse;
+              if (!mWasSent) {
+                
+                
+                mArgs.preloadResponse() = Some(ipcPreloadResponse);
+              } else {
+                
+                
+                SendPreloadResponse(ipcPreloadResponse);
+              }
+              mPreloadResponseReadyPromiseRequestHolder.Complete();
+            },
+            [this](const CopyableErrorResult&) {
+              mPreloadResponseReadyPromiseRequestHolder.Complete();
+            })
+        ->Track(mPreloadResponseReadyPromiseRequestHolder);
+  }
+}
 
 mozilla::ipc::IPCResult FetchEventOpChild::RecvAsyncLog(
     const nsCString& aScriptSpec, const uint32_t& aLineNumber,
@@ -236,6 +265,10 @@ mozilla::ipc::IPCResult FetchEventOpChild::RecvAsyncLog(
 mozilla::ipc::IPCResult FetchEventOpChild::RecvRespondWith(
     IPCFetchEventRespondWithResult&& aResult) {
   AssertIsOnMainThread();
+
+  
+  
+  mPreloadResponseReadyPromiseRequestHolder.DisconnectIfExists();
 
   switch (aResult.type()) {
     case IPCFetchEventRespondWithResult::TIPCSynthesizeResponseArgs:
@@ -292,6 +325,7 @@ mozilla::ipc::IPCResult FetchEventOpChild::Recv__delete__(
   }
 
   mPromiseHolder.ResolveIfExists(true, __func__);
+  mPreloadResponseReadyPromiseRequestHolder.DisconnectIfExists();
 
   
 

@@ -9,12 +9,11 @@
 
 #include "nsISupports.h"
 
+#include "mozilla/dom/FetchEventOpProxyParent.h"
 #include "mozilla/dom/PFetchEventOpParent.h"
 
 namespace mozilla {
 namespace dom {
-
-class ServiceWorkerFetchEventOpArgs;
 
 class FetchEventOpParent final : public PFetchEventOpParent {
   friend class PFetchEventOpParent;
@@ -24,10 +23,44 @@ class FetchEventOpParent final : public PFetchEventOpParent {
 
   FetchEventOpParent() = default;
 
+  
+  
+  Maybe<IPCInternalResponse> OnStart(
+      MovingNotNull<RefPtr<FetchEventOpProxyParent>> aFetchEventOpProxyParent);
+
+  
+  void OnFinish();
+
  private:
   ~FetchEventOpParent() = default;
 
+  
+
+  mozilla::ipc::IPCResult RecvPreloadResponse(IPCInternalResponse&& aResponse);
+
   void ActorDestroy(ActorDestroyReason) override;
+
+  struct Pending {
+    Maybe<IPCInternalResponse> mPreloadResponse;
+  };
+
+  struct Started {
+    NotNull<RefPtr<FetchEventOpProxyParent>> mFetchEventOpProxyParent;
+  };
+
+  struct Finished {};
+
+  using State = Variant<Pending, Started, Finished>;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  State mState = AsVariant(Pending());
 };
 
 }  

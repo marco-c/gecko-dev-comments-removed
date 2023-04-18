@@ -73,10 +73,23 @@ nsresult MaybeDeserializeAndWrapForMainThread(
   MOZ_ASSERT(aManager);
   MOZ_ASSERT(aReal);
 
+  ServiceWorkerFetchEventOpArgs copyArgs = aArgs;
+
   FetchEventOpProxyParent* actor =
       new FetchEventOpProxyParent(std::move(aReal), std::move(aPromise));
 
-  ServiceWorkerFetchEventOpArgs copyArgs = aArgs;
+  
+  
+  
+  
+  
+  
+  Maybe<IPCInternalResponse> preloadResponse =
+      actor->mReal->OnStart(WrapNotNull(actor));
+  if (copyArgs.preloadResponse().isNothing()) {
+    copyArgs.preloadResponse() = std::move(preloadResponse);
+  }
+
   IPCInternalRequest& copyRequest = copyArgs.internalRequest();
 
   if (aBodyStream) {
@@ -135,6 +148,7 @@ mozilla::ipc::IPCResult FetchEventOpProxyParent::RecvRespondWith(
     
     if (!originalResponse.body() && !originalResponse.alternativeBody()) {
       Unused << mReal->SendRespondWith(aResult);
+      mReal->OnFinish();
       return IPC_OK();
     }
 
@@ -159,6 +173,7 @@ mozilla::ipc::IPCResult FetchEventOpProxyParent::RecvRespondWith(
     Unused << mReal->SendRespondWith(aResult);
   }
 
+  mReal->OnFinish();
   return IPC_OK();
 }
 

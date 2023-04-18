@@ -9,6 +9,7 @@
 
 #include <functional>
 
+#include "mozilla/dom/ServiceWorkerOpPromise.h"
 #include "nsISupportsImpl.h"
 
 #include "ServiceWorkerEvents.h"
@@ -173,6 +174,14 @@ class FetchEventOp final : public ExtendableEventOp,
   
   
   RefPtr<Promise> mHandled;
+
+  
+  
+  RefPtr<Promise> mPreloadResponse;
+
+  
+  MozPromiseRequestHolder<FetchEventPreloadResponsePromise>
+      mPreloadResponsePromiseRequestHolder;
 
   TimeStamp mFetchHandlerStart;
   TimeStamp mFetchHandlerFinish;

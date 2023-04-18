@@ -11,6 +11,7 @@
 
 #include "ServiceWorkerOp.h"
 #include "ServiceWorkerOpPromise.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/InternalRequest.h"
 #include "mozilla/dom/PFetchEventOpProxyChild.h"
@@ -19,6 +20,7 @@ namespace mozilla {
 namespace dom {
 
 class InternalRequest;
+class InternalResponse;
 class ServiceWorkerFetchEventOpArgs;
 
 class FetchEventOpProxyChild final : public PFetchEventOpProxyChild {
@@ -34,8 +36,12 @@ class FetchEventOpProxyChild final : public PFetchEventOpProxyChild {
   
   SafeRefPtr<InternalRequest> ExtractInternalRequest();
 
+  RefPtr<FetchEventPreloadResponsePromise> GetPreloadResponsePromise();
+
  private:
   ~FetchEventOpProxyChild() = default;
+
+  mozilla::ipc::IPCResult RecvPreloadResponse(IPCInternalResponse&& aResponse);
 
   void ActorDestroy(ActorDestroyReason) override;
 
@@ -46,6 +52,8 @@ class FetchEventOpProxyChild final : public PFetchEventOpProxyChild {
 
   
   SafeRefPtr<InternalRequest> mInternalRequest;
+
+  RefPtr<FetchEventPreloadResponsePromise::Private> mPreloadResponsePromise;
 };
 
 }  
