@@ -26,10 +26,93 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 class InteractionsChild extends JSWindowActorChild {
+  #progressListener;
+  #currentURL;
+
   actorCreated() {
     this.isContentWindowPrivate = PrivateBrowsingUtils.isContentWindowPrivate(
       this.contentWindow
     );
+
+    if (this.isContentWindowPrivate) {
+      return;
+    }
+
+    this.#progressListener = {
+      onLocationChange: (webProgress, request, location, flags) => {
+        this.onLocationChange(webProgress, request, location, flags);
+      },
+
+      QueryInterface: ChromeUtils.generateQI([
+        "nsIWebProgressListener2",
+        "nsIWebProgressListener",
+        "nsISupportsWeakReference",
+      ]),
+    };
+
+    let webProgress = this.docShell
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIWebProgress);
+    webProgress.addProgressListener(
+      this.#progressListener,
+      Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT |
+        Ci.nsIWebProgress.NOTIFY_LOCATION
+    );
+  }
+
+  didDestroy() {
+    
+    if (!this.#progressListener || !this.docShell) {
+      return;
+    }
+
+    let webProgress = this.docShell
+      .QueryInterface(Ci.nsIInterfaceRequestor)
+      .getInterface(Ci.nsIWebProgress);
+    webProgress.removeProgressListener(this.#progressListener);
+  }
+
+  onLocationChange(webProgress, request, location, flags) {
+    
+    if (!webProgress.isTopLevel) {
+      return;
+    }
+
+    
+    
+    if (!(flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT)) {
+      return;
+    }
+
+    this.#recordNewPage();
+  }
+
+  #recordNewPage() {
+    let docInfo = this.#getDocumentInfo();
+    if (!docInfo || !this.docShell.currentDocumentChannel) {
+      
+      
+      
+      this.sendAsyncMessage("Interactions:PageHide");
+      return;
+    }
+
+    
+    
+    if (docInfo.url == this.#currentURL) {
+      return;
+    }
+
+    this.#currentURL = docInfo.url;
+
+    if (
+      this.docShell.currentDocumentChannel instanceof Ci.nsIHttpChannel &&
+      !this.docShell.currentDocumentChannel.requestSucceeded
+    ) {
+      return;
+    }
+
+    this.sendAsyncMessage("Interactions:PageLoaded", docInfo);
   }
 
   async handleEvent(event) {
@@ -39,23 +122,7 @@ class InteractionsChild extends JSWindowActorChild {
     }
     switch (event.type) {
       case "DOMContentLoaded": {
-        let docInfo = this.#getDocumentInfo();
-        if (!docInfo || !this.docShell.currentDocumentChannel) {
-          
-          
-          
-          this.sendAsyncMessage("Interactions:PageHide");
-          return;
-        }
-
-        if (
-          this.docShell.currentDocumentChannel instanceof Ci.nsIHttpChannel &&
-          !this.docShell.currentDocumentChannel.requestSucceeded
-        ) {
-          return;
-        }
-
-        this.sendAsyncMessage("Interactions:PageLoaded", docInfo);
+        this.#recordNewPage();
         break;
       }
       case "pagehide": {
