@@ -2048,8 +2048,7 @@ bool CanonicalBrowsingContext::LoadInParent(nsDocShellLoadState* aLoadState,
   
   
   if (!IsTopContent() || !GetContentParent() ||
-      !StaticPrefs::browser_tabs_documentchannel_parent_controlled() ||
-      !mozilla::SessionHistoryInParent()) {
+      !StaticPrefs::browser_tabs_documentchannel_parent_controlled()) {
     return false;
   }
 
@@ -2077,8 +2076,7 @@ bool CanonicalBrowsingContext::AttemptSpeculativeLoadInParent(
   
   
   if (!IsTopContent() || !GetContentParent() ||
-      (StaticPrefs::browser_tabs_documentchannel_parent_controlled() &&
-       mozilla::SessionHistoryInParent())) {
+      (StaticPrefs::browser_tabs_documentchannel_parent_controlled())) {
     return false;
   }
 
@@ -2098,7 +2096,7 @@ bool CanonicalBrowsingContext::StartDocumentLoad(
   
   
   if (StaticPrefs::browser_tabs_documentchannel_parent_controlled() &&
-      mozilla::SessionHistoryInParent() && mCurrentLoad) {
+      mCurrentLoad) {
     
     MOZ_ASSERT(!aLoad->IsLoadingJSURI());
 

@@ -10,8 +10,18 @@ const TEST_PAGE =
   ) + "dummy_page.html";
 
 async function runTest(privilegedLoad) {
+  let prefVals;
   
-  for (let requireUserInteraction of [true, false]) {
+  
+  if (
+    Services.prefs.getBoolPref("browser.tabs.documentchannel.parent-controlled")
+  ) {
+    prefVals = [false];
+  } else {
+    prefVals = [true, false];
+  }
+
+  for (let requireUserInteraction of prefVals) {
     Services.prefs.setBoolPref(
       "browser.navigation.requireUserInteraction",
       requireUserInteraction
