@@ -12,7 +12,6 @@ const EXPORTED_SYMBOLS = [
   "assert",
   "log",
   "text",
-  "wire",
   "showFilePicker",
   "optionsPopupMenu",
 ];
@@ -126,50 +125,6 @@ function forEach(object, callback) {
 
 function log() {
   console.logStringMessage(Array.prototype.slice.call(arguments).join(" "));
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function wire(root, selectorOrElement, descriptor) {
-  let matches;
-  if (typeof selectorOrElement == "string") {
-    
-    matches = root.querySelectorAll(selectorOrElement);
-    if (!matches.length) {
-      return;
-    }
-  } else {
-    
-    matches = [selectorOrElement];
-  }
-
-  if (typeof descriptor == "function") {
-    descriptor = { events: { click: descriptor } };
-  }
-
-  for (let i = 0; i < matches.length; i++) {
-    const element = matches[i];
-    forEach(descriptor.events, function(name, handler) {
-      element.addEventListener(name, handler);
-    });
-    forEach(descriptor.attributes, element.setAttribute);
-  }
 }
 
 
