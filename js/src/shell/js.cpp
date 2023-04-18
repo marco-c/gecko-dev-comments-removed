@@ -60,8 +60,8 @@
 #  include <sys/prctl.h>
 #endif
 #ifdef XP_DARWIN
-#  include <spawn.h>        
 #  include <crt_externs.h>  
+#  include <spawn.h>        
 #endif
 
 #include "jsapi.h"
