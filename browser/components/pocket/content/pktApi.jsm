@@ -361,6 +361,10 @@ var pktApi = (function() {
     setSetting("premium_status", undefined);
     setSetting("latestSince", undefined);
     setSetting("tags", undefined);
+    
+    
+    
+    
     setSetting("usedTags", undefined);
 
     setSetting("fsv1", undefined);
@@ -616,32 +620,6 @@ var pktApi = (function() {
     action = extend(action, actionPart);
 
     
-    var finalSuccessCallback = options.success;
-
-    
-    options.success = function(data) {
-      
-      var usedTagsJSON = getSetting("usedTags");
-      var usedTags = usedTagsJSON ? JSON.parse(usedTagsJSON) : {};
-
-      
-      for (var i = 0; i < tags.length; i++) {
-        var tagToSave = tags[i].trim();
-        var newUsedTagObject = {
-          tag: tagToSave,
-          timestamp: new Date().getTime(),
-        };
-        usedTags[tagToSave] = newUsedTagObject;
-      }
-      setSetting("usedTags", JSON.stringify(usedTags));
-
-      
-      if (finalSuccessCallback) {
-        finalSuccessCallback(data);
-      }
-    };
-
-    
     return sendAction(action, options);
   }
 
@@ -657,40 +635,8 @@ var pktApi = (function() {
       return [];
     };
 
-    var sortedUsedTagsFromSettings = function() {
-      
-      var usedTags = [];
-
-      var usedTagsJSON = getSetting("usedTags");
-      if (typeof usedTagsJSON !== "undefined") {
-        var usedTagsObject = JSON.parse(usedTagsJSON);
-        var usedTagsObjectArray = [];
-        for (var tagKey in usedTagsObject) {
-          usedTagsObjectArray.push(usedTagsObject[tagKey]);
-        }
-
-        
-        usedTagsObjectArray.sort(function(usedTagA, usedTagB) {
-          var a = usedTagA.timestamp;
-          var b = usedTagB.timestamp;
-          return a - b;
-        });
-
-        
-        for (var j = 0; j < usedTagsObjectArray.length; j++) {
-          usedTags.push(usedTagsObjectArray[j].tag);
-        }
-
-        
-        usedTags.reverse();
-      }
-
-      return usedTags;
-    };
-
     return {
       tags: tagsFromSettings(),
-      usedTags: sortedUsedTagsFromSettings(),
     };
   }
 
