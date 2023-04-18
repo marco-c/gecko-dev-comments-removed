@@ -1494,10 +1494,26 @@ void nsLookAndFeel::PerThemeData::Init() {
   mThemedScrollbarThumbInactive = GDK_RGBA_TO_NS_RGBA(color);
 
   
-  const bool fallbackToUnthemedColors = !ShouldHonorThemeScrollbarColors() ||
-                                        !NS_GET_A(mThemedScrollbarThumb) ||
-                                        !NS_GET_A(mThemedScrollbarThumbHover) ||
-                                        !NS_GET_A(mThemedScrollbarThumbActive);
+  const bool fallbackToUnthemedColors = [&] {
+    if (!ShouldHonorThemeScrollbarColors()) {
+      return true;
+    }
+    
+    
+    if (!NS_GET_A(mThemedScrollbarThumb) ||
+        !NS_GET_A(mThemedScrollbarThumbHover) ||
+        !NS_GET_A(mThemedScrollbarThumbActive)) {
+      return true;
+    }
+    
+    
+    if (mThemedScrollbar == mThemedScrollbarThumb &&
+        NS_GET_A(mThemedScrollbar) == 0xff) {
+      return true;
+    }
+    return false;
+  }();
+
   if (fallbackToUnthemedColors) {
     mMozScrollbar = mThemedScrollbar = widget::sScrollbarColor.ToABGR();
     mThemedScrollbarInactive = widget::sScrollbarColor.ToABGR();
