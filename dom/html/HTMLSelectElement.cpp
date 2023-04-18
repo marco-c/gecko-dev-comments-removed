@@ -1231,7 +1231,7 @@ ElementState HTMLSelectElement::IntrinsicState() const {
 
       if (GetValidityState(VALIDITY_STATE_CUSTOM_ERROR) ||
           (mCanShowInvalidUI && ShouldShowValidityUI())) {
-        state |= ElementState::MOZ_UI_INVALID;
+        state |= ElementState::USER_INVALID;
       }
     }
 
@@ -1243,9 +1243,9 @@ ElementState HTMLSelectElement::IntrinsicState() const {
     
     
     if (mCanShowValidUI && ShouldShowValidityUI() &&
-        (IsValid() || (state.HasState(ElementState::MOZ_UI_INVALID) &&
-                       !mCanShowInvalidUI))) {
-      state |= ElementState::MOZ_UI_VALID;
+        (IsValid() ||
+         (state.HasState(ElementState::USER_INVALID) && !mCanShowInvalidUI))) {
+      state |= ElementState::USER_VALID;
     }
   }
 
