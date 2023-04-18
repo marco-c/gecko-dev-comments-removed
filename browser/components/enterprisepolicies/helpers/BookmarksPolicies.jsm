@@ -63,9 +63,9 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
   });
 });
 
-this.EXPORTED_SYMBOLS = ["BookmarksPolicies"];
+const EXPORTED_SYMBOLS = ["BookmarksPolicies"];
 
-this.BookmarksPolicies = {
+const BookmarksPolicies = {
   
   
   BOOKMARK_GUID_PREFIX: "PolB-",
