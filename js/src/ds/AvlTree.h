@@ -111,6 +111,29 @@ class AvlTreeImpl {
   LifoAlloc* alloc_;
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t nextAllocSize_;  
+
+  
   static const size_t MAX_TREE_DEPTH = 48;
 
   AvlTreeImpl(const AvlTreeImpl&) = delete;
@@ -119,32 +142,75 @@ class AvlTreeImpl {
   
 
   explicit AvlTreeImpl(LifoAlloc* alloc = nullptr)
-      : root_(nullptr), freeList_(nullptr), alloc_(alloc) {}
+      : root_(nullptr), freeList_(nullptr), alloc_(alloc), nextAllocSize_(1) {}
 
   void setAllocator(LifoAlloc* alloc) { alloc_ = alloc; }
 
   
-  
-  Node* allocateNode(const T& v) {
-    Node* node = freeList_;
-    if (node) {
-      MOZ_ASSERT(node->tag == Tag::Free);
-      freeList_ = node->left;
-      new (node) Node(v);
-    } else {
-      node = alloc_->new_<Node>(v);
-      
-    }
-    return node;
-  }
-
-  
-  void freeNode(Node* node) {
-    MOZ_ASSERT(node->tag != Tag::Free);
+  inline void addToFreeList(Node* node) {
     node->left = freeList_;
     node->right = nullptr;  
     node->tag = Tag::Free;
     freeList_ = node;
+  }
+
+  
+  inline void freeNode(Node* node) {
+    MOZ_ASSERT(node->tag != Tag::Free);
+    addToFreeList(node);
+  }
+
+  
+  
+  
+  MOZ_NEVER_INLINE Node* allocateNodeOOL(const T& v) {
+    switch (nextAllocSize_) {
+      case 1: {
+        nextAllocSize_ = 2;
+        Node* node = alloc_->new_<Node>(v);
+        
+        return node;
+      }
+      case 2: {
+        nextAllocSize_ = 4;
+        Node* nodes = alloc_->newArrayUninitialized<Node>(2);
+        if (!nodes) {
+          return nullptr;
+        }
+        Node* node0 = &nodes[0];
+        addToFreeList(&nodes[1]);
+        new (node0) Node(v);
+        return node0;
+      }
+      case 4: {
+        Node* nodes = alloc_->newArrayUninitialized<Node>(4);
+        if (!nodes) {
+          return nullptr;
+        }
+        Node* node0 = &nodes[0];
+        addToFreeList(&nodes[3]);
+        addToFreeList(&nodes[2]);
+        addToFreeList(&nodes[1]);
+        new (node0) Node(v);
+        return node0;
+      }
+      default: {
+        MOZ_CRASH();
+      }
+    }
+  }
+
+  
+  
+  inline Node* allocateNode(const T& v) {
+    Node* node = freeList_;
+    if (MOZ_LIKELY(node)) {
+      MOZ_ASSERT(node->tag == Tag::Free);
+      freeList_ = node->left;
+      new (node) Node(v);
+      return node;
+    }
+    return allocateNodeOOL(v);
   }
 
   
