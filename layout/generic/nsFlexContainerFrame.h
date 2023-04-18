@@ -447,10 +447,6 @@ class nsFlexContainerFrame final : public nsContainerFrame {
   void GenerateFlexLines(const SharedFlexData& aData,
                          nsTArray<FlexLine>& aLines);
 
-  nscoord GetMainSizeFromReflowInput(const ReflowInput& aReflowInput,
-                                     const FlexboxAxisTracker& aAxisTracker,
-                                     nscoord aConsumedBSize);
-
   
 
 
