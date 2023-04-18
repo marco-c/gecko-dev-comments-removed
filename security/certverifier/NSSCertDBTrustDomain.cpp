@@ -757,10 +757,16 @@ Result NSSCertDBTrustDomain::CheckRevocation(
           crliteResult != Result::ERROR_REVOKED_CERTIFICATE) {
         return crliteResult;
       }
-      
-      
-      if (mCRLiteMode == CRLiteMode::Enforce && crliteFilterCoversCertificate) {
-        return crliteResult;
+      if (crliteFilterCoversCertificate) {
+        
+        
+        
+        
+        if (mCRLiteMode == CRLiteMode::Enforce ||
+            (mCRLiteMode == CRLiteMode::ConfirmRevocations &&
+             crliteResult == Success)) {
+          return crliteResult;
+        }
       }
     }
   }

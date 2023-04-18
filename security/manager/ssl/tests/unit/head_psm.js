@@ -129,6 +129,7 @@ const NO_FLAGS = 0;
 const CRLiteModeDisabledPrefValue = 0;
 const CRLiteModeTelemetryOnlyPrefValue = 1;
 const CRLiteModeEnforcePrefValue = 2;
+const CRLiteModeConfirmRevocationsValue = 3;
 
 
 
