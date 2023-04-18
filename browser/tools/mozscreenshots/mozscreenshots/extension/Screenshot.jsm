@@ -11,7 +11,6 @@ const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 
 
@@ -60,7 +59,7 @@ var Screenshot = {
   },
 
   _buildImagePath(baseName) {
-    return OS.Path.join(
+    return PathUtils.join(
       this._path,
       this._imagePrefix + baseName + this._imageExtension
     );
@@ -123,11 +122,7 @@ var Screenshot = {
     };
 
     function readWindowID() {
-      let decoder = new TextDecoder();
-      let promise = OS.File.read("/tmp/mozscreenshots-windowid");
-      return promise.then(function onSuccess(array) {
-        return decoder.decode(array);
-      });
+      return IOUtils.readUTF8("/tmp/mozscreenshots-windowid");
     }
 
     let promiseWindowID = () => {
