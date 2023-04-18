@@ -142,6 +142,11 @@ class H264ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       mCurrentConfig.mDisplay.height = spsdata.display_height;
       mCurrentConfig.mColorDepth = spsdata.ColorDepth();
       mCurrentConfig.mColorSpace = Some(spsdata.ColorSpace());
+      
+      
+      mCurrentConfig.mTransferFunction = gfxUtils::CicpToTransferFunction(
+          static_cast<gfx::CICP::TransferCharacteristics>(
+              spsdata.transfer_characteristics));
       mCurrentConfig.mColorRange = spsdata.video_full_range_flag
                                        ? gfx::ColorRange::FULL
                                        : gfx::ColorRange::LIMITED;
@@ -267,6 +272,14 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
 
     mCurrentConfig.mColorDepth = gfx::ColorDepthForBitDepth(info.mBitDepth);
     mCurrentConfig.mColorSpace = Some(info.ColorSpace());
+
+    
+    
+    
+    
+    
+    
+
     mCurrentConfig.mColorRange = info.ColorRange();
     if (mCodec == VPXDecoder::Codec::VP9) {
       mCurrentConfig.mExtraData->ClearAndRetainStorage();
@@ -333,6 +346,8 @@ class AV1ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
     mCurrentConfig.mColorSpace = gfxUtils::CicpToColorSpace(
         aInfo.mColorSpace.mMatrix, aInfo.mColorSpace.mPrimaries,
         gMediaDecoderLog);
+    mCurrentConfig.mTransferFunction =
+        gfxUtils::CicpToTransferFunction(aInfo.mColorSpace.mTransfer);
     mCurrentConfig.mColorRange = aInfo.mColorSpace.mRange;
 
     if (mCurrentConfig.mImage != mInfo->mImage) {

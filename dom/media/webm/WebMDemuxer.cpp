@@ -14,6 +14,7 @@
 #include "WebMDemuxer.h"
 #include "WebMBufferedParser.h"
 #include "gfx2DGlue.h"
+#include "gfxUtils.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/SharedThreadPool.h"
 #include "MediaDataDemuxer.h"
@@ -305,6 +306,15 @@ nsresult WebMDemuxer::ReadMetadata() {
           NS_WARNING("Unknown WebM video codec");
           return NS_ERROR_FAILURE;
       }
+
+      
+      
+      
+      
+      mInfo.mVideo.mTransferFunction = gfxUtils::CicpToTransferFunction(
+          static_cast<gfx::CICP::TransferCharacteristics>(
+              params.transfer_characteristics));
+
       
       
       unsigned int cropH = params.crop_right + params.crop_left;

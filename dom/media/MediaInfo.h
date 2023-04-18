@@ -244,7 +244,15 @@ class VideoInfo : public TrackInfo {
   
   gfx::ColorDepth mColorDepth = gfx::ColorDepth::COLOR_8;
 
+  
   Maybe<gfx::YUVColorSpace> mColorSpace;
+
+  
+
+  
+  
+  
+  Maybe<gfx::TransferFunction> mTransferFunction;
 
   
   
