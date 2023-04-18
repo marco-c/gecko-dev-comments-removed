@@ -32,30 +32,11 @@ function waitForAcceptButtonToGetEnabled(doc) {
   );
 }
 
-async function waitForPdfJS(browser, url) {
-  await SpecialPowers.pushPrefEnv({
-    set: [["pdfjs.eventBusDispatchToDOM", true]],
-  });
-  
-  let loadPromise = BrowserTestUtils.waitForContentEvent(
-    browser,
-    "documentloaded",
-    false,
-    null,
-    true
-  );
-  await SpecialPowers.spawn(browser, [url], contentUrl => {
-    content.location = contentUrl;
-  });
-  return loadPromise;
-}
-
 add_task(async function setup() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
       ["security.dialog_enable_delay", 0],
-      ["browser.helperApps.showOpenOptionForPdfJS", true],
       ["browser.helperApps.showOpenOptionForViewableInternally", true],
     ],
   });
@@ -72,7 +53,7 @@ add_task(async function setup() {
       }
     });
   };
-  registerRestoreHandler("application/pdf", "pdf");
+  registerRestoreHandler("image/svg+xml", "svg");
 });
 
 const kTestCasesPrefDisabled = [
@@ -167,7 +148,7 @@ const kTestCasesPrefDisabled = [
 ];
 
 function ensureMIMEState({ preferredAction, alwaysAskBeforeHandling }) {
-  const mimeInfo = gMimeSvc.getFromTypeAndExtension("application/pdf", "pdf");
+  const mimeInfo = gMimeSvc.getFromTypeAndExtension("image/svg+xml", "svg");
   mimeInfo.preferredAction = preferredAction;
   mimeInfo.alwaysAskBeforeHandling = alwaysAskBeforeHandling;
   gHandlerSvc.store(mimeInfo);
@@ -186,7 +167,7 @@ add_task(async function test_check_saving_handler_choices() {
     await publicList.removeFinished();
   });
   for (let testCase of kTestCasesPrefDisabled) {
-    let file = "file_pdf_application_pdf.pdf";
+    let file = "file_image_svgxml.svg";
     info("Testing with " + file + "; " + testCase.description);
     ensureMIMEState(testCase.preDialogState);
 
@@ -206,7 +187,7 @@ add_task(async function test_check_saving_handler_choices() {
 
     await waitForAcceptButtonToGetEnabled(doc);
 
-    ok(!internalHandlerRadio.hidden, "The option should be visible for PDF");
+    ok(!internalHandlerRadio.hidden, "The option should be visible for SVG");
     ok(
       internalHandlerRadio.selected,
       "The Firefox option should be selected by default"
@@ -255,7 +236,7 @@ add_task(async function test_check_saving_handler_choices() {
     );
 
     
-    const mimeInfo = gMimeSvc.getFromTypeAndExtension("application/pdf", "pdf");
+    const mimeInfo = gMimeSvc.getFromTypeAndExtension("image/svg+xml", "svg");
     gHandlerSvc.fillHandlerInfo(mimeInfo, "");
     is(
       mimeInfo.preferredAction,
@@ -385,7 +366,7 @@ add_task(
     registerCleanupFunction(async () => {
       await publicList.removeFinished();
     });
-    let file = "file_pdf_application_pdf.pdf";
+    let file = "file_image_svgxml.svg";
 
     for (let testCase of kTestCasesPrefEnabled) {
       info("Testing with " + file + "; " + testCase.description);
@@ -439,7 +420,7 @@ add_task(
 
         ok(
           !internalHandlerRadio.hidden,
-          "The option should be visible for PDF"
+          "The option should be visible for SVG"
         );
 
         info("Running UCT dialog options before downloading file");
@@ -475,7 +456,7 @@ add_task(
 
       is(
         download.contentType,
-        "application/pdf",
+        "image/svg+xml",
         "File contentType should be correct"
       );
       is(
@@ -490,10 +471,7 @@ add_task(
       );
 
       
-      const mimeInfo = gMimeSvc.getFromTypeAndExtension(
-        "application/pdf",
-        "pdf"
-      );
+      const mimeInfo = gMimeSvc.getFromTypeAndExtension("image/svg+xml", "svg");
       gHandlerSvc.fillHandlerInfo(mimeInfo, "");
       is(
         mimeInfo.preferredAction,
