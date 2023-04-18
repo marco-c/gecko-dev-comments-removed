@@ -37,8 +37,13 @@ class ProfilerParent final : public PProfilerParent {
       base::ProcessId aOtherPid);
 
 #ifdef MOZ_GECKO_PROFILER
-  typedef MozPromise<Shmem, ResponseRejectReason, true>
-      SingleProcessProfilePromise;
+  using SingleProcessProfilePromise =
+      MozPromise<Shmem, ResponseRejectReason, true>;
+
+  struct SingleProcessProfilePromiseAndChildPid {
+    RefPtr<SingleProcessProfilePromise> profilePromise;
+    base::ProcessId childPid;
+  };
 
   
   
@@ -52,9 +57,7 @@ class ProfilerParent final : public PProfilerParent {
   
 
   
-  
-  
-  static nsTArray<RefPtr<SingleProcessProfilePromise>> GatherProfiles();
+  static nsTArray<SingleProcessProfilePromiseAndChildPid> GatherProfiles();
 
   static void ProfilerStarted(nsIProfilerStartParams* aParams);
   static void ProfilerWillStopIfStarted();
