@@ -179,7 +179,13 @@ add_task(async function test_privilege_api_with_reject_tracker() {
   );
 
   
-  await SpecialPowers.spawn(browser, [], async _ => {
+  let shownPromise = BrowserTestUtils.waitForEvent(
+    PopupNotifications.panel,
+    "popupshown"
+  );
+
+  
+  let callAPIPromise = SpecialPowers.spawn(browser, [], async _ => {
     
     
     content.document.notifyUserGestureActivation();
@@ -194,6 +200,13 @@ add_task(async function test_privilege_api_with_reject_tracker() {
 
     content.document.clearUserGestureActivation();
   });
+
+  await shownPromise;
+
+  
+  triggerMainCommand();
+
+  await callAPIPromise;
 
   
   await storagePermissionPromise;
@@ -273,7 +286,13 @@ add_task(async function test_privilege_api_with_dFPI() {
   );
 
   
-  await SpecialPowers.spawn(browser, [], async _ => {
+  let shownPromise = BrowserTestUtils.waitForEvent(
+    PopupNotifications.panel,
+    "popupshown"
+  );
+
+  
+  let callAPIPromise = SpecialPowers.spawn(browser, [], async _ => {
     
     
     content.document.notifyUserGestureActivation();
@@ -288,6 +307,13 @@ add_task(async function test_privilege_api_with_dFPI() {
 
     content.document.clearUserGestureActivation();
   });
+
+  await shownPromise;
+
+  
+  triggerMainCommand();
+
+  await callAPIPromise;
 
   
   await storagePermissionPromise;
