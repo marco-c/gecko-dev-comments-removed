@@ -14,10 +14,6 @@ const handler = Symbol("EventEmitter/event-handler");
 loader.lazyRequireGetter(this, "flags", "devtools/shared/flags");
 
 class EventEmitter {
-  constructor() {
-    this[eventListeners] = new Map();
-  }
-
   
 
 
