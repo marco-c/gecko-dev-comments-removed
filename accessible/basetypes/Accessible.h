@@ -158,6 +158,11 @@ class Accessible {
   
 
 
+  virtual uint32_t EmbeddedChildCount() = 0;
+
+  
+
+
   virtual Accessible* EmbeddedChildAt(uint32_t aIndex) = 0;
 
   

@@ -361,10 +361,7 @@ class LocalAccessible : public nsISupports, public Accessible {
     return childCount != 0 ? LocalChildAt(childCount - 1) : nullptr;
   }
 
-  
-
-
-  uint32_t EmbeddedChildCount();
+  virtual uint32_t EmbeddedChildCount() override;
 
   
 
