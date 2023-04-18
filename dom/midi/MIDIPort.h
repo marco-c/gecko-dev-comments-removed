@@ -63,6 +63,7 @@ class MIDIPort : public DOMEventTargetHelper,
 
   void FireStateChangeEvent();
 
+  virtual void StateChange();
   virtual void Receive(const nsTArray<MIDIMessage>& aMsg);
 
   
@@ -70,11 +71,17 @@ class MIDIPort : public DOMEventTargetHelper,
   void UnsetIPCPort();
 
   IMPL_EVENT_HANDLER(statechange)
+
+  void DisconnectFromOwner() override;
+
  protected:
   
   RefPtr<MIDIPortChild> mPort;
 
  private:
+  void KeepAliveOnStatechange();
+  void DontKeepAliveOnStatechange();
+
   
   
   
@@ -88,6 +95,8 @@ class MIDIPort : public DOMEventTargetHelper,
   
   
   RefPtr<Promise> mClosingPromise;
+  
+  bool mKeepAlive;
 };
 
 }  

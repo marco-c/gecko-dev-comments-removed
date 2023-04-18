@@ -30,20 +30,23 @@ class MIDIInput final : public MIDIPort {
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  
-  
-  
+  IMPL_EVENT_HANDLER(midimessage);
 
-  
-  EventHandlerNonNull* GetOnmidimessage();
-  
-  void SetOnmidimessage(EventHandlerNonNull* aCallback);
+  void StateChange() override;
+  void EventListenerAdded(nsAtom* aType) override;
+  void DisconnectFromOwner() override;
 
  private:
   MIDIInput(nsPIDOMWindowInner* aWindow, MIDIAccess* aMIDIAccessParent);
   
   
   void Receive(const nsTArray<MIDIMessage>& aMsgs) override;
+
+  void KeepAliveOnMidimessage();
+  void DontKeepAliveOnMidimessage();
+
+  
+  bool mKeepAlive;
 };
 
 }  
