@@ -568,6 +568,7 @@ void CacheLoadHandler::DataReceived() {
       
       mWorkerPrivate->SetCSP(parent->GetCSP());
       mWorkerPrivate->SetEvalAllowed(parent->IsEvalAllowed());
+      mWorkerPrivate->SetWasmEvalAllowed(parent->IsWasmEvalAllowed());
     }
   }
 }

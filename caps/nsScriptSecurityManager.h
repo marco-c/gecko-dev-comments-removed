@@ -27,6 +27,10 @@ class OriginAttributes;
 class SystemPrincipal;
 }  
 
+namespace JS {
+  enum class RuntimeCode;
+} 
+
 
 
 
@@ -90,7 +94,8 @@ class nsScriptSecurityManager final : public nsIScriptSecurityManager {
 
   
   static bool ContentSecurityPolicyPermitsJSAction(JSContext* cx,
-                                                   JS::HandleString aCode);
+                                                   JS::RuntimeCode kind,
+                                                   JS::Handle<JSString*> aCode);
 
   static bool JSPrincipalsSubsume(JSPrincipals* first, JSPrincipals* second);
 
