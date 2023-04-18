@@ -168,6 +168,21 @@ class ModuleCache {
     return module;
   }
 
+  
+
+
+
+
+
+
+
+
+
+  hasModule(moduleName, destination) {
+    const classes = this.getAllModuleClasses(moduleName, destination);
+    return classes.length != 0;
+  }
+
   toString() {
     return `[object ${this.constructor.name} ${this.messageHandler.name}]`;
   }

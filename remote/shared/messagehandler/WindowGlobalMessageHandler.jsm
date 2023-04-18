@@ -72,6 +72,10 @@ class WindowGlobalMessageHandler extends MessageHandler {
       return;
     }
 
+    const destination = {
+      type: WindowGlobalMessageHandler.type,
+    };
+
     for (const sessionDataItem of sessionDataItems) {
       const {
         moduleName,
@@ -80,6 +84,12 @@ class WindowGlobalMessageHandler extends MessageHandler {
         value,
       } = sessionDataItem;
       if (this._isRelevantContext(contextDescriptor)) {
+        
+        
+        if (!this._moduleCache.hasModule(moduleName, destination)) {
+          continue;
+        }
+
         await this.handleCommand({
           moduleName,
           commandName: "_applySessionData",
@@ -91,9 +101,7 @@ class WindowGlobalMessageHandler extends MessageHandler {
             
             added: [value],
           },
-          destination: {
-            type: WindowGlobalMessageHandler.type,
-          },
+          destination,
         });
       }
     }
