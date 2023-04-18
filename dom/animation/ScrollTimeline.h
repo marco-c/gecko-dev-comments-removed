@@ -13,8 +13,6 @@
 #include "mozilla/TimingParams.h"
 #include "mozilla/WritingModes.h"
 
-#define SCROLL_TIMELINE_DURATION_MILLISEC 100000
-
 namespace mozilla {
 namespace dom {
 
@@ -99,18 +97,7 @@ class ScrollTimeline final : public AnimationTimeline {
     Tick();
   }
 
-  static const TimingParams& GetTiming() {
-    
-    
-    
-    
-    
-    
-    static TimingParams sTiming =
-        TimingParams(SCROLL_TIMELINE_DURATION_MILLISEC, 0.0, 1.0,
-                     PlaybackDirection::Normal, FillMode::Both);
-    return sTiming;
-  }
+  static constexpr const TimingParams& GetTiming() { return sTiming; }
 
  protected:
   virtual ~ScrollTimeline() { Teardown(); }
@@ -152,6 +139,11 @@ class ScrollTimeline final : public AnimationTimeline {
   
   RefPtr<Element> mSource;
   StyleScrollDirection mDirection;
+
+  
+  
+  
+  static TimingParams sTiming;
 };
 
 
