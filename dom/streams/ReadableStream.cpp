@@ -78,8 +78,25 @@ JSObject* ReadableStream::WrapObject(JSContext* aCx,
   return ReadableStream_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-void ReadableStream::SetReader(ReadableStreamDefaultReader* aReader) {
+ReadableStreamDefaultReader* ReadableStream::GetDefaultReader() {
+  return mReader->AsDefault();
+}
+
+void ReadableStream::SetReader(ReadableStreamGenericReader* aReader) {
   mReader = aReader;
+}
+
+bool ReadableStreamHasDefaultReader(ReadableStream* aStream) {
+  
+  ReadableStreamGenericReader* reader = aStream->GetReader();
+
+  
+  if (!reader) {
+    return false;
+  }
+
+  
+  return reader->IsDefault();
 }
 
 
@@ -230,7 +247,7 @@ void ReadableStreamClose(JSContext* aCx, ReadableStream* aStream,
 
   
 
-  ReadableStreamDefaultReader* reader = aStream->GetReader();
+  ReadableStreamGenericReader* reader = aStream->GetReader();
   
   if (!reader) {
     return;
@@ -240,18 +257,20 @@ void ReadableStreamClose(JSContext* aCx, ReadableStream* aStream,
   reader->ClosedPromise()->MaybeResolveWithUndefined();
 
   
-
-  
-  for (ReadRequest* readRequest : reader->ReadRequests()) {
+  if (reader->IsDefault()) {
     
-    readRequest->CloseSteps(aCx, aRv);
-    if (aRv.Failed()) {
-      return;
+    ReadableStreamDefaultReader* defaultReader = reader->AsDefault();
+    for (ReadRequest* readRequest : defaultReader->ReadRequests()) {
+      
+      readRequest->CloseSteps(aCx, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
     }
-  }
 
-  
-  reader->ReadRequests().clear();
+    
+    defaultReader->ReadRequests().clear();
+  }
 }
 
 
@@ -292,7 +311,13 @@ already_AddRefed<Promise> ReadableStreamCancel(JSContext* aCx,
   }
 
   
+  ReadableStreamGenericReader* reader = aStream->GetReader();
+
   
+  if (reader && reader->IsBYOB()) {
+    MOZ_CRASH(
+        "NYI: Implement read into request clearing when BYOB readers exist");
+  }
 
   
   RefPtr<ReadableStreamController> controller(aStream->Controller());
@@ -388,7 +413,7 @@ double ReadableStreamGetNumReadRequests(ReadableStream* aStream) {
   MOZ_ASSERT(ReadableStreamHasDefaultReader(aStream));
 
   
-  return double(aStream->GetReader()->ReadRequests().length());
+  return double(aStream->GetDefaultReader()->ReadRequests().length());
 }
 
 
@@ -404,7 +429,7 @@ void ReadableStreamError(JSContext* aCx, ReadableStream* aStream,
   aStream->SetStoredError(aValue);
 
   
-  ReadableStreamDefaultReader* reader = aStream->GetReader();
+  ReadableStreamGenericReader* reader = aStream->GetReader();
 
   
   if (!reader) {
@@ -419,19 +444,22 @@ void ReadableStreamError(JSContext* aCx, ReadableStream* aStream,
 
   
   
-
-  
-  for (ReadRequest* readRequest : reader->ReadRequests()) {
-    readRequest->ErrorSteps(aCx, aValue, aRv);
-    if (aRv.Failed()) {
-      return;
+  if (reader->IsDefault()) {
+    
+    ReadableStreamDefaultReader* defaultReader = reader->AsDefault();
+    for (ReadRequest* readRequest : defaultReader->ReadRequests()) {
+      readRequest->ErrorSteps(aCx, aValue, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
     }
+    
+    defaultReader->ReadRequests().clear();
+  } else {
+    MOZ_ASSERT(reader->IsBYOB());
+    
+    MOZ_CRASH("BYOBReader not yet implemented");
   }
-
-  
-  reader->ReadRequests().clear();
-
-  
 }
 
 
@@ -442,7 +470,7 @@ void ReadableStreamFulfillReadRequest(JSContext* aCx, ReadableStream* aStream,
   MOZ_ASSERT(ReadableStreamHasDefaultReader(aStream));
 
   
-  ReadableStreamDefaultReader* reader = aStream->GetReader();
+  ReadableStreamDefaultReader* reader = aStream->GetDefaultReader();
 
   
   MOZ_ASSERT(!reader->ReadRequests().isEmpty());
@@ -462,13 +490,15 @@ void ReadableStreamFulfillReadRequest(JSContext* aCx, ReadableStream* aStream,
   readRequest->ChunkSteps(aCx, aChunk, aRv);
 }
 
+
 void ReadableStreamAddReadRequest(ReadableStream* aStream,
                                   ReadRequest* aReadRequest) {
   
+  MOZ_ASSERT(aStream->GetReader()->IsDefault());
   
   MOZ_ASSERT(aStream->State() == ReadableStream::ReaderState::Readable);
   
-  aStream->GetReader()->ReadRequests().insertBack(aReadRequest);
+  aStream->GetDefaultReader()->ReadRequests().insertBack(aReadRequest);
 }
 
 class ReadableStreamDefaultTeeCancelAlgorithm final

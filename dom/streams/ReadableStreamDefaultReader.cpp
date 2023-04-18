@@ -204,7 +204,7 @@ NS_INTERFACE_MAP_END_INHERITING(ReadRequest)
 
 MOZ_CAN_RUN_SCRIPT
 void ReadableStreamDefaultReaderRead(JSContext* aCx,
-                                     ReadableStreamDefaultReader* aReader,
+                                     ReadableStreamGenericReader* aReader,
                                      ReadRequest* aRequest, ErrorResult& aRv) {
   
   ReadableStream* stream = aReader->GetStream();
