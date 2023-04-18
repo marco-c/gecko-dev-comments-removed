@@ -1984,7 +1984,7 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
       }
     } else if (!(type.EqualsLiteral("text/xml") ||
                  type.EqualsLiteral("application/xml") ||
-                 StringEndsWith(type, "+xml"_ns))) {
+                 type.RFind("+xml", true, -1, 4) != kNotFound)) {
       
       
       

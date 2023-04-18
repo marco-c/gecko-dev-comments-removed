@@ -481,9 +481,9 @@ nsresult GfxInfo::GetFeatureStatusImpl(
                                                       
                                                       
 
-        if (cModel.LowerCaseFindASCII("sgh-i717") != -1 ||
-            cModel.LowerCaseFindASCII("sgh-i727") != -1 ||
-            cModel.LowerCaseFindASCII("sgh-i757") != -1) {
+        if (cModel.Find("SGH-I717", true) != -1 ||
+            cModel.Find("SGH-I727", true) != -1 ||
+            cModel.Find("SGH-I757", true) != -1) {
           isWhitelisted = false;
         }
 
@@ -498,13 +498,13 @@ nsresult GfxInfo::GetFeatureStatusImpl(
         
         
         
-        bool isBlocklisted = cModel.LowerCaseFindASCII("gt-p3100") != -1 ||
-                             cModel.LowerCaseFindASCII("gt-p3110") != -1 ||
-                             cModel.LowerCaseFindASCII("gt-p3113") != -1 ||
-                             cModel.LowerCaseFindASCII("gt-p5100") != -1 ||
-                             cModel.LowerCaseFindASCII("gt-p5110") != -1 ||
-                             cModel.LowerCaseFindASCII("gt-p5113") != -1 ||
-                             cModel.LowerCaseFindASCII("xt890") != -1;
+        bool isBlocklisted = cModel.Find("GT-P3100", true) != -1 ||
+                             cModel.Find("GT-P3110", true) != -1 ||
+                             cModel.Find("GT-P3113", true) != -1 ||
+                             cModel.Find("GT-P5100", true) != -1 ||
+                             cModel.Find("GT-P5110", true) != -1 ||
+                             cModel.Find("GT-P5113", true) != -1 ||
+                             cModel.Find("XT890", true) != -1;
 
         if (isBlocklisted) {
           *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
@@ -513,7 +513,7 @@ nsresult GfxInfo::GetFeatureStatusImpl(
         }
       } else if (CompareVersions(mOSVersion.get(), "4.3.0") < 0) {
         
-        if (cManufacturer.LowerCaseFindASCII("sony") != -1) {
+        if (cManufacturer.Find("Sony", true) != -1) {
           *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
           aFailureId = "FEATURE_FAILURE_4_3_SONY";
           return NS_OK;
@@ -560,25 +560,27 @@ nsresult GfxInfo::GetFeatureStatusImpl(
 
     if (aFeature == FEATURE_WEBRENDER) {
       const bool isMali4xx =
-          mGLStrings->Renderer().LowerCaseFindASCII("mali-4") >= 0;
+          mGLStrings->Renderer().Find("Mali-4",  true) >= 0;
 
       const bool isPowerVrG6110 =
-          mGLStrings->Renderer().LowerCaseFindASCII("powervr rogue g6110") >= 0;
+          mGLStrings->Renderer().Find("PowerVR Rogue G6110",
+                                       true) >= 0;
 
       const bool isVivanteGC7000UL =
-          mGLStrings->Renderer().LowerCaseFindASCII("vivante gc7000ul") >= 0;
+          mGLStrings->Renderer().Find("Vivante GC7000UL",
+                                       true) >= 0;
 
       const bool isPowerVrFenceSyncCrash =
-          (mGLStrings->Renderer().LowerCaseFindASCII("powervr rogue g6200") >=
-               0 ||
-           mGLStrings->Renderer().LowerCaseFindASCII("powervr rogue g6430") >=
-               0 ||
-           mGLStrings->Renderer().LowerCaseFindASCII("powervr rogue gx6250") >=
-               0) &&
-          (mGLStrings->Version().Find("3283119") >= 0 ||
-           mGLStrings->Version().Find("3443629") >= 0 ||
-           mGLStrings->Version().Find("3573678") >= 0 ||
-           mGLStrings->Version().Find("3830101") >= 0);
+          (mGLStrings->Renderer().Find("PowerVR Rogue G6200",
+                                        true) >= 0 ||
+           mGLStrings->Renderer().Find("PowerVR Rogue G6430",
+                                        true) >= 0 ||
+           mGLStrings->Renderer().Find("PowerVR Rogue GX6250",
+                                        true) >= 0) &&
+          (mGLStrings->Version().Find("3283119",  true) >= 0 ||
+           mGLStrings->Version().Find("3443629",  true) >= 0 ||
+           mGLStrings->Version().Find("3573678",  true) >= 0 ||
+           mGLStrings->Version().Find("3830101",  true) >= 0);
 
       if (isMali4xx) {
         
@@ -623,8 +625,8 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       
       
       
-      const bool isAdreno3xx =
-          mGLStrings->Renderer().LowerCaseFindASCII("adreno (tm) 3") >= 0;
+      const bool isAdreno3xx = mGLStrings->Renderer().Find(
+                                   "Adreno (TM) 3",  true) >= 0;
       if (isAdreno3xx) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
         aFailureId = "FEATURE_FAILURE_ADRENO_3XX";
@@ -640,7 +642,7 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       
       
       const bool isMaliT =
-          mGLStrings->Renderer().LowerCaseFindASCII("mali-t") >= 0;
+          mGLStrings->Renderer().Find("Mali-T",  true) >= 0;
       if (isMaliT) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
         aFailureId = "FEATURE_FAILURE_BUG_1689064";
@@ -655,9 +657,9 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       
       
       const bool isMaliT =
-          mGLStrings->Renderer().LowerCaseFindASCII("mali-t") >= 0;
-      const bool isAdreno3xx =
-          mGLStrings->Renderer().LowerCaseFindASCII("adreno (tm) 3") >= 0;
+          mGLStrings->Renderer().Find("Mali-T",  true) >= 0;
+      const bool isAdreno3xx = mGLStrings->Renderer().Find(
+                                   "Adreno (TM) 3",  true) >= 0;
       if (isMaliT || isAdreno3xx) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
         aFailureId = "FEATURE_FAILURE_BUG_1680087_1695771_1707815";
@@ -672,7 +674,7 @@ nsresult GfxInfo::GetFeatureStatusImpl(
     
     
     const bool isPowerVRRogue =
-        mGLStrings->Renderer().LowerCaseFindASCII("powervr rogue") >= 0;
+        mGLStrings->Renderer().Find("PowerVR Rogue",  true) >= 0;
     if (isPowerVRRogue) {
       *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
       aFailureId = "FEATURE_FAILURE_POWERVR_ROGUE";

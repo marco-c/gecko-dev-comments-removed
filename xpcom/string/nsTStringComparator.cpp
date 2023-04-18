@@ -5,7 +5,6 @@
 
 
 #include "nsString.h"
-#include "plstr.h"
 
 template <typename T>
 int NS_FASTCALL Compare(const mozilla::detail::nsTStringRepr<T>& aLhs,
@@ -62,30 +61,3 @@ template int nsTDefaultStringComparator(const char*, const char*, size_t,
                                         size_t);
 template int nsTDefaultStringComparator(const char16_t*, const char16_t*,
                                         size_t, size_t);
-
-int nsCaseInsensitiveCStringComparator(const char* aLhs, const char* aRhs,
-                                       size_t aLhsLength, size_t aRhsLength) {
-#if defined(LIBFUZZER) && defined(LINUX)
-  
-  
-  
-  
-  int32_t result =
-      int32_t(strncasecmp(aLhs, aRhs, std::min(aLhsLength, aRhsLength)));
-
-  if (aLhsLength != aRhsLength) {
-    return (aLhsLength > aRhsLength) ? 1 : -1;
-  }
-#else
-  if (aLhsLength != aRhsLength) {
-    return (aLhsLength > aRhsLength) ? 1 : -1;
-  }
-  int32_t result = int32_t(PL_strncasecmp(aLhs, aRhs, aLhsLength));
-#endif
-  
-  
-  if (result < 0) {
-    result = -1;
-  }
-  return result;
-}

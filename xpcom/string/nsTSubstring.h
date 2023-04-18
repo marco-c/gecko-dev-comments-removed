@@ -34,7 +34,6 @@
 
 const size_t kNsStringBufferMaxPoison = 16;
 
-class nsStringBuffer;
 template <typename T>
 class nsTSubstringSplitter;
 template <typename T>
@@ -286,7 +285,6 @@ class BulkWriteHandle final {
 template <typename T>
 class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
   friend class mozilla::BulkWriteHandle<T>;
-  friend class nsStringBuffer;
 
  public:
   typedef nsTSubstring<T> self_type;
@@ -311,8 +309,6 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
   typedef typename base_string_type::comparator_type comparator_type;
 
   typedef typename base_string_type::const_char_iterator const_char_iterator;
-
-  typedef typename base_string_type::string_view string_view;
 
   typedef typename base_string_type::index_type index_type;
   typedef typename base_string_type::size_type size_type;
@@ -637,7 +633,10 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
 
 
   void ReplaceChar(char_type aOldChar, char_type aNewChar);
-  void ReplaceChar(const string_view& aSet, char_type aNewChar);
+  void ReplaceChar(const char_type* aSet, char_type aNewChar);
+
+  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
+  void ReplaceChar(const char* aSet, char16_t aNewChar);
 
   
 
@@ -663,8 +662,8 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
 
 
 
-  void Trim(const std::string_view& aSet, bool aTrimLeading = true,
-            bool aTrimTrailing = true, bool aIgnoreQuotes = false);
+  void Trim(const char* aSet, bool aEliminateLeading = true,
+            bool aEliminateTrailing = true, bool aIgnoreQuotes = false);
 
   
 
@@ -674,7 +673,8 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
 
 
 
-  void CompressWhitespace(bool aTrimLeading = true, bool aTrimTrailing = true);
+  void CompressWhitespace(bool aEliminateLeading = true,
+                          bool aEliminateTrailing = true);
 
   void Append(char_type aChar);
 

@@ -274,8 +274,8 @@ nsContentAreaDragDropDataProvider::GetFlavorData(nsITransferable* aTransferable,
           nsIMIMEService::VALIDATE_DEFAULT, targetFilename);
     } else {
       
-      targetFilename.ReplaceChar(
-          u"" FILE_PATH_SEPARATOR FILE_ILLEGAL_CHARACTERS, u'-');
+      targetFilename.ReplaceChar(FILE_PATH_SEPARATOR FILE_ILLEGAL_CHARACTERS,
+                                 '-');
     }
 #endif 
 
@@ -745,7 +745,7 @@ nsresult DragDataProducer::AddStringsToDataTransfer(
     
     nsAutoString title(mTitleString);
     title.Trim("\r\n");
-    title.ReplaceChar(u"\r\n", ' ');
+    title.ReplaceChar("\r\n", ' ');
     dragData += title;
 
     AddString(aDataTransfer, NS_LITERAL_STRING_FROM_CSTRING(kURLMime), dragData,

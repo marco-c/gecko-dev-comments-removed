@@ -214,8 +214,6 @@ using mozilla::net::MozURL;
 
 
 const char QuotaManager::kReplaceChars[] = CONTROL_CHARACTERS "/:*?\"<>|\\";
-const char16_t QuotaManager::kReplaceChars16[] =
-    u"" CONTROL_CHARACTERS "/:*?\"<>|\\";
 
 namespace {
 

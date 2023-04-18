@@ -1135,7 +1135,7 @@ mozTXTToHTMLConv::ScanHTML(const nsAString& input, uint32_t whattodo,
       
       
       {
-        i = aInString.LowerCaseFindASCII("</a>", i);
+        i = aInString.Find("</a>", true, i);
         if (i == kNotFound) {
           i = lengthOfInString;
         } else {
@@ -1144,7 +1144,7 @@ mozTXTToHTMLConv::ScanHTML(const nsAString& input, uint32_t whattodo,
       } else if (Substring(aInString, i + 1, 3).LowerCaseEqualsASCII("!--"))
       
       {
-        i = aInString.Find(u"-->", i);
+        i = aInString.Find("-->", false, i);
         if (i == kNotFound) {
           i = lengthOfInString;
         } else {
@@ -1155,7 +1155,7 @@ mozTXTToHTMLConv::ScanHTML(const nsAString& input, uint32_t whattodo,
                  canFollow.FindChar(aInString[i + 6]) != kNotFound)
       
       {
-        i = aInString.LowerCaseFindASCII("</style>", i);
+        i = aInString.Find("</style>", true, i);
         if (i == kNotFound) {
           i = lengthOfInString;
         } else {
@@ -1167,7 +1167,7 @@ mozTXTToHTMLConv::ScanHTML(const nsAString& input, uint32_t whattodo,
                  canFollow.FindChar(aInString[i + 7]) != kNotFound)
       
       {
-        i = aInString.LowerCaseFindASCII("</script>", i);
+        i = aInString.Find("</script>", true, i);
         if (i == kNotFound) {
           i = lengthOfInString;
         } else {
@@ -1179,7 +1179,7 @@ mozTXTToHTMLConv::ScanHTML(const nsAString& input, uint32_t whattodo,
       
       
       {
-        i = aInString.LowerCaseFindASCII("</head>", i);
+        i = aInString.Find("</head>", true, i);
         if (i == kNotFound) {
           i = lengthOfInString;
         } else {

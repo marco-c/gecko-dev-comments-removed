@@ -3810,7 +3810,7 @@ nsresult NS_HasRootDomain(const nsACString& aInput, const nsACString& aHost,
   }
 
   
-  int32_t index = nsAutoCString(aInput).Find(aHost);
+  int32_t index = nsAutoCString(aInput).Find(aHost.BeginReading());
   if (index == kNotFound) {
     return NS_OK;
   }

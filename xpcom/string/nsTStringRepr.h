@@ -8,7 +8,6 @@
 #define nsTStringRepr_h
 
 #include <limits>
-#include <string_view>
 #include <type_traits>  
 
 #include "mozilla/Char16.h"
@@ -16,7 +15,6 @@
 #include "mozilla/fallible.h"
 #include "nsStringBuffer.h"
 #include "nsStringFlags.h"
-#include "nsStringFwd.h"
 #include "nsStringIterator.h"
 #include "nsCharTraits.h"
 
@@ -133,8 +131,6 @@ class nsTStringRepr {
 
   typedef const char_type* const_char_iterator;
 
-  typedef std::basic_string_view<char_type> string_view;
-
   typedef size_t index_type;
   typedef size_t size_type;
 
@@ -183,13 +179,9 @@ class nsTStringRepr {
 #endif
 
   
-  constexpr typename raw_type<T, int>::type Data() const { return mData; }
+  constexpr const typename raw_type<T, int>::type Data() const { return mData; }
 
   constexpr size_type Length() const { return static_cast<size_type>(mLength); }
-
-  constexpr string_view View() const { return string_view(Data(), Length()); }
-
-  constexpr operator string_view() const { return View(); }
 
   constexpr DataFlags GetDataFlags() const { return mDataFlags; }
 
@@ -218,6 +210,11 @@ class nsTStringRepr {
 
   char_type Last() const;
 
+  size_type NS_FASTCALL CountChar(char_type) const;
+  int32_t NS_FASTCALL FindChar(char_type, index_type aOffset = 0) const;
+
+  bool Contains(char_type aChar) const;
+
   
   bool NS_FASTCALL Equals(const self_type&) const;
   bool NS_FASTCALL Equals(const self_type&, comparator_type) const;
@@ -235,7 +232,12 @@ class nsTStringRepr {
 
 
 
-  int32_t Compare(const string_view& aString) const;
+
+
+  template <typename Q = T, typename EnableIfChar = mozilla::CharOnlyT<Q>>
+  int32_t Compare(
+      const char_type* aString, bool aIgnoreCase = false,
+      size_type aCount = std::numeric_limits<size_type>::max()) const;
 
   
 
@@ -244,11 +246,18 @@ class nsTStringRepr {
 
 
 
-  bool EqualsIgnoreCase(const std::string_view& aString) const;
-  bool EqualsIgnoreCase(const char* aString, size_type aCount) const {
-    MOZ_DIAGNOSTIC_ASSERT(aCount != std::numeric_limits<size_type>::max());
-    return EqualsIgnoreCase(std::string_view(aString, aCount));
+
+  template <typename Q = T, typename EnableIfChar = mozilla::CharOnlyT<Q>>
+  bool EqualsIgnoreCase(
+      const char_type* aString,
+      size_type aCount = std::numeric_limits<size_type>::max()) const {
+    return Compare(aString, true, aCount) == 0;
   }
+
+  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
+  bool EqualsIgnoreCase(
+      const incompatible_char_type* aString,
+      size_type aCount = std::numeric_limits<size_type>::max()) const;
 
 #if defined(MOZ_USE_CHAR16_WRAPPER)
   template <typename Q = T, typename EnableIfChar16 = Char16OnlyT<Q>>
@@ -353,58 +362,27 @@ class nsTStringRepr {
 
 
 
-  int32_t Find(const string_view& aString, index_type aOffset = 0) const;
 
-  
-  
-  
-  template <typename I,
-            typename = std::enable_if_t<!std::is_same_v<I, index_type> &&
-                                        std::is_convertible_v<I, index_type>>>
-  int32_t Find(const string_view& aString, I aOffset) const {
-    static_assert(!std::is_same_v<I, bool>, "offset must not be `bool`");
-    return Find(aString, static_cast<index_type>(aOffset));
+
+
+  int32_t Find(const nsTStringRepr<char>& aString, bool aIgnoreCase = false,
+               int32_t aOffset = 0, int32_t aCount = -1) const;
+  int32_t Find(const char* aString, bool aIgnoreCase = false,
+               int32_t aOffset = 0, int32_t aCount = -1) const;
+
+  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
+  int32_t Find(const self_type& aString, int32_t aOffset = 0,
+               int32_t aCount = -1) const;
+  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
+  int32_t Find(const char_type* aString, int32_t aOffset = 0,
+               int32_t aCount = -1) const;
+#ifdef MOZ_USE_CHAR16_WRAPPER
+  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
+  int32_t Find(char16ptr_t aString, int32_t aOffset = 0,
+               int32_t aCount = -1) const {
+    return Find(static_cast<const char16_t*>(aString), aOffset, aCount);
   }
-
-  
-
-
-
-
-
-
-  int32_t LowerCaseFindASCII(const std::string_view& aString,
-                             index_type aOffset = 0) const;
-
-  
-
-
-
-
-
-  int32_t RFind(const string_view& aString) const;
-
-  size_type CountChar(char_type) const;
-
-  bool Contains(char_type aChar) const { return FindChar(aChar) != kNotFound; }
-
-  
-
-
-
-
-
-
-  int32_t FindChar(char_type aChar, index_type aOffset = 0) const;
-
-  
-
-
-
-
-
-
-  int32_t RFindChar(char_type aChar, int32_t aOffset = -1) const;
+#endif
 
   
 
@@ -416,7 +394,20 @@ class nsTStringRepr {
 
 
 
-  int32_t FindCharInSet(const string_view& aSet, index_type aOffset = 0) const;
+
+
+  
+  int32_t RFind(const nsTStringRepr<char>& aString, bool aIgnoreCase = false,
+                int32_t aOffset = -1, int32_t aCount = -1) const;
+  int32_t RFind(const char* aCString, bool aIgnoreCase = false,
+                int32_t aOffset = -1, int32_t aCount = -1) const;
+
+  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
+  int32_t RFind(const self_type& aString, int32_t aOffset = -1,
+                int32_t aCount = -1) const;
+  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
+  int32_t RFind(const char_type* aString, int32_t aOffset = -1,
+                int32_t aCount = -1) const;
 
   
 
@@ -428,7 +419,36 @@ class nsTStringRepr {
 
 
 
-  int32_t RFindCharInSet(const string_view& aSet, int32_t aOffset = -1) const;
+  
+  
+  int32_t RFindChar(char16_t aChar, int32_t aOffset = -1,
+                    int32_t aCount = -1) const;
+
+  
+
+
+
+
+
+
+
+
+
+  int32_t FindCharInSet(const char_type* aString, int32_t aOffset = 0) const;
+  template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
+  int32_t FindCharInSet(const char* aSet, int32_t aOffset = 0) const;
+
+  
+
+
+
+
+
+
+
+
+
+  int32_t RFindCharInSet(const char_type* aString, int32_t aOffset = -1) const;
 
  protected:
   nsTStringRepr() = delete;  
