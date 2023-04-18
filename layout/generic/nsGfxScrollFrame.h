@@ -835,17 +835,17 @@ class nsHTMLScrollFrame : public nsContainerFrame,
     mHelper.BuildDisplayList(aBuilder, aLists);
   }
 
-  bool TryLayout(ScrollReflowInput* aState, ReflowOutput* aKidMetrics,
-                 bool aAssumeVScroll, bool aAssumeHScroll, bool aForce);
+  bool TryLayout(ScrollReflowInput& aState, ReflowOutput* aKidMetrics,
+                 bool aAssumeHScroll, bool aAssumeVScroll, bool aForce);
 
   
   
   
-  bool ScrolledContentDependsOnBSize(ScrollReflowInput* aState) const;
+  bool ScrolledContentDependsOnBSize(const ScrollReflowInput& aState) const;
 
-  void ReflowScrolledFrame(ScrollReflowInput* aState, bool aAssumeHScroll,
+  void ReflowScrolledFrame(ScrollReflowInput& aState, bool aAssumeHScroll,
                            bool aAssumeVScroll, ReflowOutput* aMetrics);
-  void ReflowContents(ScrollReflowInput* aState,
+  void ReflowContents(ScrollReflowInput& aState,
                       const ReflowOutput& aDesiredSize);
   void PlaceScrollArea(ScrollReflowInput& aState,
                        const nsPoint& aScrollPosition);
