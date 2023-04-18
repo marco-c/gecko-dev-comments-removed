@@ -51,6 +51,8 @@
 
 
 const Services = require("Services");
+
+const { setTimeout } = require("resource://gre/modules/Timer.jsm");
 const protocol = require("devtools/shared/protocol");
 const { LongStringActor } = require("devtools/server/actors/string");
 
@@ -142,10 +144,26 @@ exports.InspectorActor = protocol.ActorClassWithSpec(inspectorSpec, {
       };
 
       if (this.window.document.readyState === "loading") {
-        this.window.addEventListener("DOMContentLoaded", domReady, {
-          capture: true,
-          once: true,
-        });
+        
+        
+        const abortController = new AbortController();
+        Promise.race([
+          new Promise(r => {
+            this.window.addEventListener("DOMContentLoaded", r, {
+              capture: true,
+              once: true,
+              signal: abortController.signal,
+            });
+          }),
+          
+          
+          
+          
+          
+          new Promise(r => setTimeout(r, 500)),
+        ])
+          .then(domReady)
+          .finally(() => abortController.abort());
       } else {
         domReady();
       }
