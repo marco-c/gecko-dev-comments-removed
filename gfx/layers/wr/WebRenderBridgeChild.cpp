@@ -508,6 +508,10 @@ mozilla::ipc::IPCResult WebRenderBridgeChild::RecvWrReleasedImages(
 void WebRenderBridgeChild::BeginClearCachedResources() {
   mSentDisplayList = false;
   mIsInClearCachedResources = true;
+  
+  
+  
+  SendClearCachedResources();
 }
 
 void WebRenderBridgeChild::EndClearCachedResources() {
@@ -515,9 +519,7 @@ void WebRenderBridgeChild::EndClearCachedResources() {
     mIsInClearCachedResources = false;
     return;
   }
-  SendClearCachedResources(mParentCommands);
-  mParentCommands.Clear();
-
+  ProcessWebRenderParentCommands();
   mIsInClearCachedResources = false;
 }
 
