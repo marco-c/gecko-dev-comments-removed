@@ -230,6 +230,11 @@ class Accessible {
   virtual nsAtom* TagName() const = 0;
 
   
+
+
+  virtual nsAtom* LandmarkRole() const;
+
+  
   
 
   

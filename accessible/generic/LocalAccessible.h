@@ -175,11 +175,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual nsAtom* LandmarkRole() const;
-
-  
-
-
 
   virtual mozilla::a11y::role NativeRole() const;
 
