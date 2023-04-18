@@ -1498,6 +1498,11 @@ pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", true)
 
 
 
+
+pref("browser.newtabpage.activity-stream.asrouter.disable-captive-portal-vpn-promo", false);
+
+
+
 pref("browser.newtabpage.activity-stream.asrouter.useRemoteL10n", true);
 
 
@@ -1892,9 +1897,9 @@ pref("browser.vpn_promo.disallowed_regions", "ae,by,cn,cu,iq,ir,kp,om,ru,sd,sy,t
 pref("browser.vpn_promo.enabled", true);
 
 
-pref("browser.contentblocking.report.vpn_regions", "at,be,ca,ch,de,fr,ie,it,my,nl,nz,sg,es,uk,us"
-);
+pref("browser.contentblocking.report.vpn.enabled", true);
 
+pref("browser.contentblocking.report.vpn_regions", "us,ca,nz,sg,my,gb,de,fr");
 
 pref("browser.contentblocking.report.vpn_platforms", "win,mac,linux");
 pref("browser.contentblocking.report.hide_vpn_banner", false);
