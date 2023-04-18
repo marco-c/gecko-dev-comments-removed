@@ -13,7 +13,6 @@
 #include "jstypes.h"            
 #include "NamespaceImports.h"   
 #include "debugger/Debugger.h"  
-#include "gc/Rooting.h"         
 #include "js/PropertySpec.h"    
 #include "js/RootingAPI.h"      
 #include "vm/NativeObject.h"    

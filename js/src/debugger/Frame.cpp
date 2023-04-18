@@ -35,7 +35,6 @@
 #include "gc/GC.h"                         
 #include "gc/GCContext.h"                  
 #include "gc/Marking.h"                    
-#include "gc/Rooting.h"                    
 #include "gc/Tracer.h"                     
 #include "gc/ZoneAllocator.h"              
 #include "jit/JSJitFrameIter.h"            

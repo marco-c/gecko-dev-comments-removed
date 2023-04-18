@@ -15,7 +15,6 @@
 
 #include "builtin/SelfHostingDefines.h"  
 #include "gc/Barrier.h"                  
-#include "gc/Rooting.h"                  
 #include "gc/ZoneAllocator.h"            
 #include "js/Class.h"                    
 #include "js/GCVector.h"                 

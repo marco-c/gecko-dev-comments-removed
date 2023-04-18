@@ -26,7 +26,6 @@
 #include "debugger/Script.h"     
 #include "debugger/Source.h"     
 #include "gc/Barrier.h"          
-#include "gc/Rooting.h"          
 #include "gc/Tracer.h"  
 #include "js/CompilationAndEvaluation.h"  
 #include "js/Conversions.h"               

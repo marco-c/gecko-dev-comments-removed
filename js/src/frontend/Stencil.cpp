@@ -24,7 +24,6 @@
 #include "frontend/SharedContext.h"
 #include "frontend/StencilXdr.h"        
 #include "gc/AllocKind.h"               
-#include "gc/Rooting.h"                 
 #include "gc/Tracer.h"                  
 #include "js/CallArgs.h"                
 #include "js/CompileOptions.h"          

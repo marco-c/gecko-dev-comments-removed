@@ -48,7 +48,6 @@
 #include "gc/HashUtil.h"                  
 #include "gc/Marking.h"                   
 #include "gc/PublicIterators.h"           
-#include "gc/Rooting.h"                   
 #include "gc/Statistics.h"                
 #include "gc/Tracer.h"                    
 #include "gc/Zone.h"                      

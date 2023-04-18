@@ -9,7 +9,6 @@
 
 #include "NamespaceImports.h"   
 #include "debugger/Debugger.h"  
-#include "gc/Rooting.h"         
 #include "vm/NativeObject.h"    
 
 namespace js {

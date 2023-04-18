@@ -15,7 +15,6 @@
 #include "jstypes.h"           
 #include "NamespaceImports.h"  
 
-#include "gc/Rooting.h"       
 #include "js/Promise.h"       
 #include "js/Proxy.h"         
 #include "vm/JSObject.h"      

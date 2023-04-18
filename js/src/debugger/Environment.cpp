@@ -17,7 +17,6 @@
 #include "debugger/Object.h"            
 #include "debugger/Script.h"            
 #include "frontend/BytecodeCompiler.h"  
-#include "gc/Rooting.h"                 
 #include "gc/Tracer.h"    
 #include "js/CallArgs.h"  
 #include "js/friend/ErrorMessages.h"  

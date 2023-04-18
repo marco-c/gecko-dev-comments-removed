@@ -13,7 +13,6 @@
 #include "NamespaceImports.h"
 
 #include "frontend/FunctionSyntaxKind.h"
-#include "gc/Rooting.h"
 #include "js/SourceText.h"
 #include "js/UniquePtr.h"  
 #include "vm/TraceLogging.h"
