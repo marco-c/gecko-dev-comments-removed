@@ -354,7 +354,12 @@ nscoord nsComboboxControlFrame::GetIntrinsicISize(gfxContext* aRenderingContext,
           maxOptionSize, nsLayoutUtils::AppUnitWidthOfStringBidi(
                              *stringToUse, this, *fm, *aRenderingContext));
     }
-
+    if (maxOptionSize) {
+      
+      
+      
+      maxOptionSize += 1;
+    }
     displayISize += maxOptionSize;
   }
 
