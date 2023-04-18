@@ -10,6 +10,7 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/RefPtr.h"      
 #include "mozilla/layers/KnowsCompositor.h"
+#include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/RefCounted.h"
 #include "mozilla/gfx/Types.h"
@@ -65,12 +66,16 @@ class PersistentBufferProvider : public RefCounted<PersistentBufferProvider>,
 
   virtual already_AddRefed<gfx::SourceSurface> BorrowSnapshot() = 0;
 
+  
+
+
+
+  virtual bool CopySnapshotTo(gfx::DrawTarget* aDT) { return false; }
+
   virtual void ReturnSnapshot(
       already_AddRefed<gfx::SourceSurface> aSnapshot) = 0;
 
   virtual TextureClient* GetTextureClient() { return nullptr; }
-
-  virtual ClientWebGLContext* AsWebgl() { return nullptr; }
 
   virtual void OnShutdown() {}
 
@@ -88,6 +93,13 @@ class PersistentBufferProvider : public RefCounted<PersistentBufferProvider>,
 
 
   virtual bool PreservesDrawingState() const = 0;
+
+  
+
+
+  virtual Maybe<layers::SurfaceDescriptor> GetFrontBuffer() {
+    return Nothing();
+  }
 };
 
 class PersistentBufferProviderBasic : public PersistentBufferProvider {
@@ -133,7 +145,9 @@ class PersistentBufferProviderAccelerated
 
   bool IsAccelerated() const override { return true; }
 
-  ClientWebGLContext* AsWebgl() override;
+  Maybe<layers::SurfaceDescriptor> GetFrontBuffer() override;
+
+  bool CopySnapshotTo(gfx::DrawTarget* aDT) override;
 
  protected:
   ~PersistentBufferProviderAccelerated() override;

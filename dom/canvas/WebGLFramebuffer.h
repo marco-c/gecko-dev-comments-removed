@@ -144,8 +144,10 @@ class WebGLFramebuffer final : public WebGLContextBoundObject,
   const GLuint mGLName;
   bool mHasBeenBound = false;
   const UniquePtr<gl::MozFramebuffer> mOpaque;
-  gl::SwapChain mOpaqueSwapChain;
   bool mInOpaqueRAF = false;
+  
+  
+  gl::SwapChain mSwapChain;
 
  private:
   mutable uint64_t mNumFBStatusInvals = 0;

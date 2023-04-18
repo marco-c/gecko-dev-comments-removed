@@ -353,9 +353,11 @@ bool DrawTargetWebgl::SharedContext::SetTarget(DrawTargetWebgl* aDT) {
   }
   if (aDT != mCurrentTarget) {
     mCurrentTarget = aDT;
-    mWebgl->BindFramebuffer(LOCAL_GL_FRAMEBUFFER, aDT->mFramebuffer);
-    mViewportSize = aDT->GetSize();
-    mWebgl->Viewport(0, 0, mViewportSize.width, mViewportSize.height);
+    if (aDT) {
+      mWebgl->BindFramebuffer(LOCAL_GL_FRAMEBUFFER, aDT->mFramebuffer);
+      mViewportSize = aDT->GetSize();
+      mWebgl->Viewport(0, 0, mViewportSize.width, mViewportSize.height);
+    }
   }
   return true;
 }
@@ -646,6 +648,34 @@ already_AddRefed<DataSourceSurface> DrawTargetWebgl::ReadSnapshot() {
 
 already_AddRefed<SourceSurface> DrawTargetWebgl::GetBackingSurface() {
   return Snapshot();
+}
+
+bool DrawTargetWebgl::CopySnapshotTo(DrawTarget* aDT) {
+  if (mSkiaValid ||
+      (mSnapshot &&
+       (mSnapshot->GetType() != SurfaceType::WEBGL ||
+        static_cast<SourceSurfaceWebgl*>(mSnapshot.get())->HasReadData()))) {
+    
+    return false;
+  }
+  
+  
+  if (!PrepareContext(false)) {
+    return false;
+  }
+  uint8_t* data = nullptr;
+  IntSize size;
+  int32_t stride = 0;
+  SurfaceFormat format = SurfaceFormat::UNKNOWN;
+  if (!aDT->LockBits(&data, &size, &stride, &format)) {
+    return false;
+  }
+  bool result =
+      mSharedContext->ReadInto(data, stride, format,
+                               {0, 0, std::min(size.width, mSize.width),
+                                std::min(size.height, mSize.height)});
+  aDT->ReleaseBits(data);
+  return result;
 }
 
 void DrawTargetWebgl::MarkChanged() {
@@ -1476,7 +1506,7 @@ void StandaloneTexture::Cleanup(DrawTargetWebgl::SharedContext& aContext) {
 
 
 void DrawTargetWebgl::SharedContext::PruneTextureHandle(
-    RefPtr<TextureHandle> aHandle) {
+    const RefPtr<TextureHandle>& aHandle) {
   
   aHandle->Invalidate();
   
@@ -2384,9 +2414,25 @@ void DrawTargetWebgl::Flush() {
     FlushFromSkia();
   }
   
-  mSharedContext->mWebgl->OnBeforePaintTransaction();
+  mSharedContext->mWebgl->Present(mFramebuffer);
+  
+  mSharedContext->ClearTarget();
+  mSharedContext->ClearLastTexture();
   
   mSharedContext->PruneTextureMemory();
+}
+
+Maybe<layers::SurfaceDescriptor> DrawTargetWebgl::GetFrontBuffer() {
+  if (mSkiaValid && !mSkiaLayer) {
+    
+    
+    
+    return Nothing();
+  }
+  if (!mWebglValid) {
+    FlushFromSkia();
+  }
+  return mSharedContext->mWebgl->GetFrontBuffer(mFramebuffer);
 }
 
 already_AddRefed<DrawTarget> DrawTargetWebgl::CreateSimilarDrawTarget(
