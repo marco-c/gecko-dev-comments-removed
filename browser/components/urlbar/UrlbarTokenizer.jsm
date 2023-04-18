@@ -48,7 +48,7 @@ var UrlbarTokenizer = {
   
   REGEXP_PERCENT_ENCODED_START: /^(%[0-9a-f]{2}){2,}/i,
   
-  REGEXP_PREFIX: /^[a-z]+:(?:\/){0,2}/i,
+  REGEXP_PREFIX: /^[a-z-]+:(?:\/){0,2}/i,
 
   TYPE: {
     TEXT: 1,

@@ -227,6 +227,19 @@ var UrlbarUtils = {
 
   
   
+  
+  
+  
+  PROTOCOLS_WITHOUT_AUTHORITY: [
+    "about:",
+    "data:",
+    "file:",
+    "javascript:",
+    "view-source:",
+  ],
+
+  
+  
   get LOCAL_SEARCH_MODES() {
     return [
       {
@@ -948,6 +961,7 @@ var UrlbarUtils = {
 
 
 
+
   stripURLPrefix(str) {
     let match = UrlbarTokenizer.REGEXP_PREFIX.exec(str);
     if (!match) {
@@ -955,9 +969,19 @@ var UrlbarUtils = {
     }
     let prefix = match[0];
     if (prefix.length < str.length && str[prefix.length] == " ") {
+      
+      
       return ["", str];
     }
-    return [prefix, str.substr(prefix.length)];
+    if (
+      prefix.endsWith(":") &&
+      !UrlbarUtils.PROTOCOLS_WITHOUT_AUTHORITY.includes(prefix)
+    ) {
+      
+      
+      return ["", str];
+    }
+    return [prefix, str.substring(prefix.length)];
   },
 
   
