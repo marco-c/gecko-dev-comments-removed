@@ -14,11 +14,11 @@ use std::task::{Context, Poll};
 
 #[cfg_attr(docsrs, doc(cfg(feature = "sync")))]
 pub struct BroadcastStream<T> {
-    inner: ReusableBoxFuture<(Result<T, RecvError>, Receiver<T>)>,
+    inner: ReusableBoxFuture<'static, (Result<T, RecvError>, Receiver<T>)>,
 }
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum BroadcastStreamRecvError {
     
     

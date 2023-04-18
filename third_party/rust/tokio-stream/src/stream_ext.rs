@@ -1,3 +1,4 @@
+use core::future::Future;
 use futures_core::Stream;
 
 mod all;
@@ -27,6 +28,9 @@ use fuse::Fuse;
 mod map;
 use map::Map;
 
+mod map_while;
+use map_while::MapWhile;
+
 mod merge;
 use merge::Merge;
 
@@ -39,17 +43,20 @@ use skip::Skip;
 mod skip_while;
 use skip_while::SkipWhile;
 
-mod try_next;
-use try_next::TryNext;
-
 mod take;
 use take::Take;
 
 mod take_while;
 use take_while::TakeWhile;
 
+mod then;
+use then::Then;
+
+mod try_next;
+use try_next::TryNext;
+
 cfg_time! {
-    mod timeout;
+    pub(crate) mod timeout;
     use timeout::Timeout;
     use tokio::time::Duration;
     mod throttle;
@@ -121,6 +128,12 @@ pub trait StreamExt: Stream {
     
     
     
+    
+    
+    
+    
+    
+    
     fn next(&mut self) -> Next<'_, Self>
     where
         Self: Unpin,
@@ -128,6 +141,12 @@ pub trait StreamExt: Stream {
         Next::new(self)
     }
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -195,6 +214,93 @@ pub trait StreamExt: Stream {
         Self: Sized,
     {
         Map::new(self, f)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn map_while<T, F>(self, f: F) -> MapWhile<Self, F>
+    where
+        F: FnMut(Self::Item) -> Option<T>,
+        Self: Sized,
+    {
+        MapWhile::new(self, f)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn then<F, Fut>(self, f: F) -> Then<Self, Fut, F>
+    where
+        F: FnMut(Self::Item) -> Fut,
+        Fut: Future,
+        Self: Sized,
+    {
+        Then::new(self, f)
     }
 
     
