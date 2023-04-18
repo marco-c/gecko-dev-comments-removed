@@ -1079,21 +1079,24 @@
               popup.setAttribute("position", "after_end");
               parent.prepend(popup);
               parent.setAttribute("type", "menu");
-              if (newTabLeftClickOpensContainersMenu) {
-                gClickAndHoldListenersOnElement.remove(parent);
-                
-                nodeToTooltipMap[parent.id] = "newTabAlwaysContainer.tooltip";
-              } else {
-                gClickAndHoldListenersOnElement.add(parent);
-                nodeToTooltipMap[parent.id] = "newTabContainer.tooltip";
-              }
+              
+              nodeToTooltipMap[parent.id] = newTabLeftClickOpensContainersMenu
+                ? "newTabAlwaysContainer.tooltip"
+                : "newTabContainer.tooltip";
             } else {
               nodeToTooltipMap[parent.id] = "newTabButton.tooltip";
               parent.removeAttribute("context", "new-tab-button-popup");
             }
-
             
             gDynamicTooltipCache.delete(parent.id);
+
+            
+            
+            if (containersEnabled && !newTabLeftClickOpensContainersMenu) {
+              gClickAndHoldListenersOnElement.add(parent);
+            } else {
+              gClickAndHoldListenersOnElement.remove(parent);
+            }
           }
 
           break;
