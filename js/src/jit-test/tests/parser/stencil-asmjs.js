@@ -1,3 +1,5 @@
+
+
 let source = `
   var m = function() {
     "use asm"
