@@ -245,6 +245,14 @@ class MOZ_STACK_CLASS AutoRangeArray final {
 
 
   void EnsureOnlyEditableRanges(const dom::Element& aEditingHost);
+
+  
+
+
+
+
+  void EnsureRangesInTextNode(const dom::Text& aTextNode);
+
   static bool IsEditableRange(const dom::AbstractRange& aRange,
                               const dom::Element& aEditingHost);
 

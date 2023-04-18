@@ -213,38 +213,7 @@ nsresult DeleteRangeTransaction::CreateTxnsToDeleteBetween(
     return NS_OK;
   }
 
-  if (mEditorBase->IsTextEditor()) {
-    
-    
-    
-    MOZ_ASSERT(aStart.Container() == mEditorBase->GetRoot() &&
-               aEnd.Container() == mEditorBase->GetRoot());
-    MOZ_ASSERT(
-        aStart.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets).value() ==
-        0);
-    MOZ_ASSERT(
-        aEnd.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets).value() ==
-        mEditorBase->GetRoot()->Length());
-
-    RefPtr<Text> textNode =
-        Text::FromNodeOrNull(aStart.Container()->GetFirstChild());
-    MOZ_ASSERT(textNode);
-
-    RefPtr<DeleteTextTransaction> deleteTextTransaction =
-        DeleteTextTransaction::MaybeCreate(*mEditorBase, *textNode, 0,
-                                           textNode->TextDataLength());
-    
-    
-    if (!deleteTextTransaction) {
-      NS_WARNING("DeleteTextTransaction::MaybeCreate() failed");
-      return NS_ERROR_FAILURE;
-    }
-    DebugOnly<nsresult> rvIgnored = AppendChild(deleteTextTransaction);
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rvIgnored),
-        "DeleteRangeTransaction::AppendChild() failed, but ignored");
-    return NS_OK;
-  }
+  MOZ_ASSERT(mEditorBase->IsHTMLEditor());
 
   
   
