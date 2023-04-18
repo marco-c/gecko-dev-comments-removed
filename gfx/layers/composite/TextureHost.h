@@ -69,7 +69,6 @@ class TextureHostOGL;
 class TextureReadLock;
 class TextureSourceOGL;
 class TextureSourceD3D11;
-class TextureSourceBasic;
 class DataTextureSource;
 class PTextureParent;
 class TextureParent;
@@ -140,22 +139,16 @@ class TextureSource : public RefCounted<TextureSource> {
     return nullptr;
   }
   virtual TextureSourceD3D11* AsSourceD3D11() { return nullptr; }
-  virtual TextureSourceBasic* AsSourceBasic() { return nullptr; }
   
 
 
   virtual DataTextureSource* AsDataTextureSource() { return nullptr; }
-  virtual WrappingTextureSourceYCbCrBasic* AsWrappingTextureSourceYCbCrBasic() {
-    return nullptr;
-  }
 
   
 
 
 
   virtual BigImageIterator* AsBigImageIterator() { return nullptr; }
-
-  virtual void SetTextureSourceProvider(TextureSourceProvider* aProvider) {}
 
   virtual void Unbind() {}
 
@@ -195,9 +188,6 @@ class TextureSource : public RefCounted<TextureSource> {
 
   int NumCompositableRefs() const { return mCompositableCount; }
 
-  
-  
-  virtual bool IsDirectMap() { return false; }
   
   
   
@@ -416,16 +406,6 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
   
 
 
-  virtual bool Lock() { return true; }
-  
-
-
-
-  virtual void Unlock() {}
-
-  
-
-
   virtual bool LockWithoutCompositor() { return true; }
   
 
@@ -463,35 +443,6 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
     return gfx::ColorRange::LIMITED;
   }
 
-  
-
-
-
-
-
-  virtual void PrepareTextureSource(CompositableTextureSourceRef& aTexture) {}
-
-  
-
-
-
-
-
-  virtual bool BindTextureSource(CompositableTextureSourceRef& aTexture) = 0;
-
-  
-
-
-
-  virtual bool AcquireTextureSource(CompositableTextureSourceRef& aTexture) {
-    return false;
-  }
-
-  
-
-
-  virtual void UnbindTextureSource();
-
   virtual bool IsValid() { return true; }
 
   
@@ -504,17 +455,6 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
 
 
   void Updated(const nsIntRegion* aRegion = nullptr);
-
-  
-
-
-
-
-
-
-
-
-  virtual void SetTextureSourceProvider(TextureSourceProvider* aProvider) {}
 
   
 
@@ -633,7 +573,6 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
     --mCompositableCount;
     MOZ_ASSERT(mCompositableCount >= 0);
     if (mCompositableCount == 0) {
-      UnbindTextureSource();
       
       NotifyNotUsed();
     }
@@ -722,11 +661,7 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
 
   virtual MacIOSurface* GetMacIOSurface() { return nullptr; }
 
-  virtual bool IsDirectMap() { return false; }
-
   virtual bool NeedsYFlip() const;
-
-  TextureSourceProvider* GetProvider() const { return mProvider; }
 
   virtual void SetAcquireFence(mozilla::ipc::FileDescriptor&& aFenceFd) {}
 
@@ -788,7 +723,6 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
   void CallNotifyNotUsed();
 
   PTextureParent* mActor;
-  RefPtr<TextureSourceProvider> mProvider;
   RefPtr<TextureReadLock> mReadLock;
   TextureFlags mFlags;
   int mCompositableCount;
@@ -826,20 +760,7 @@ class BufferTextureHost : public TextureHost {
 
   virtual size_t GetBufferSize() = 0;
 
-  bool Lock() override;
-
-  void Unlock() override;
-
-  void PrepareTextureSource(CompositableTextureSourceRef& aTexture) override;
-
-  bool BindTextureSource(CompositableTextureSourceRef& aTexture) override;
-  bool AcquireTextureSource(CompositableTextureSourceRef& aTexture) override;
-
-  void UnbindTextureSource() override;
-
   void DeallocateDeviceData() override;
-
-  void SetTextureSourceProvider(TextureSourceProvider* aProvider) override;
 
   
 
@@ -886,12 +807,6 @@ class BufferTextureHost : public TextureHost {
                         const Range<wr::ImageKey>& aImageKeys,
                         PushDisplayItemFlagSet aFlags) override;
 
-  void ReadUnlock() override;
-  bool IsDirectMap() override {
-    return mFirstSource && mFirstSource->IsDirectMap();
-  };
-
-  bool CanUnlock() { return !mFirstSource || mFirstSource->Sync(false); }
   void DisableExternalTextures() { mUseExternalTextures = false; }
 
  protected:
@@ -899,14 +814,12 @@ class BufferTextureHost : public TextureHost {
   bool Upload(nsIntRegion* aRegion = nullptr);
   bool UploadIfNeeded();
   bool MaybeUpload(nsIntRegion* aRegion);
-  bool EnsureWrappingTextureSource();
 
   void UpdatedInternal(const nsIntRegion* aRegion = nullptr) override;
   void MaybeNotifyUnlocked() override;
 
   BufferDescriptor mDescriptor;
   RefPtr<Compositor> mCompositor;
-  RefPtr<DataTextureSource> mFirstSource;
   nsIntRegion mMaybeUpdatedRegion;
   gfx::IntSize mSize;
   gfx::SurfaceFormat mFormat;
@@ -978,25 +891,6 @@ class MemoryTextureHost : public BufferTextureHost {
 
  protected:
   uint8_t* mBuffer;
-};
-
-class MOZ_STACK_CLASS AutoLockTextureHost {
- public:
-  explicit AutoLockTextureHost(TextureHost* aTexture) : mTexture(aTexture) {
-    mLocked = mTexture ? mTexture->Lock() : false;
-  }
-
-  ~AutoLockTextureHost() {
-    if (mTexture && mLocked) {
-      mTexture->Unlock();
-    }
-  }
-
-  bool Failed() { return mTexture && !mLocked; }
-
- private:
-  RefPtr<TextureHost> mTexture;
-  bool mLocked;
 };
 
 class MOZ_STACK_CLASS AutoLockTextureHostWithoutCompositor {

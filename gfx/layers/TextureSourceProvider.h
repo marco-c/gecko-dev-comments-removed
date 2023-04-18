@@ -25,7 +25,6 @@ namespace layers {
 
 class TextureHost;
 class DataTextureSource;
-class BasicCompositor;
 class Compositor;
 class CompositorOGL;
 
@@ -38,58 +37,16 @@ class TextureSourceProvider {
   virtual already_AddRefed<DataTextureSource> CreateDataTextureSource(
       TextureFlags aFlags = TextureFlags::NO_FLAGS) = 0;
 
-  virtual already_AddRefed<DataTextureSource> CreateDataTextureSourceAround(
-      gfx::DataSourceSurface* aSurface) {
-    return nullptr;
-  }
-
-  virtual already_AddRefed<DataTextureSource>
-  CreateDataTextureSourceAroundYCbCr(TextureHost* aTexture) {
-    return nullptr;
-  }
-
   virtual TimeStamp GetLastCompositionEndTime() const = 0;
 
-  
-  
-  
-  
-  
-  virtual bool SupportsEffect(EffectTypes aEffect) { return true; }
-
-  
-  
-  
-  
-  
-  
-  virtual void UnlockAfterComposition(TextureHost* aTexture);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual bool NotifyNotUsedAfterComposition(TextureHost* aTextureHost);
-
-  virtual void MaybeUnlockBeforeNextComposition(TextureHost* aTextureHost) {}
   virtual void TryUnlockTextures() {}
 
   
   virtual void Destroy();
 
-  void FlushPendingNotifyNotUsed();
-
   
   
   virtual Compositor* AsCompositor() { return nullptr; }
-
-  
-  
-  virtual BasicCompositor* AsBasicCompositor() { return nullptr; }
 
   
   
@@ -109,30 +66,8 @@ class TextureSourceProvider {
   
   virtual bool IsValid() const = 0;
 
- public:
-  class MOZ_STACK_CLASS AutoReadUnlockTextures final {
-   public:
-    explicit AutoReadUnlockTextures(TextureSourceProvider* aProvider)
-        : mProvider(aProvider) {}
-    ~AutoReadUnlockTextures() { mProvider->ReadUnlockTextures(); }
-
-   private:
-    RefPtr<TextureSourceProvider> mProvider;
-  };
-
  protected:
-  
-  void ReadUnlockTextures();
-
   virtual ~TextureSourceProvider();
-
- private:
-  
-  nsTArray<RefPtr<TextureHost>> mUnlockAfterComposition;
-
-  
-  
-  nsTArray<RefPtr<TextureHost>> mNotifyNotUsedAfterComposition;
 };
 
 }  

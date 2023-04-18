@@ -816,13 +816,10 @@ Maybe<IntRect> CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
   if (mWidget->IsHidden()) {
     
     
-    ReadUnlockTextures();
     return Nothing();
   }
 
   if (mDevice->GetDeviceRemovedReason() != S_OK) {
-    ReadUnlockTextures();
-
     if (!mAttachments->IsDeviceReset()) {
       gfxCriticalNote << "GFX: D3D11 skip BeginFrame with device-removed.";
 
@@ -876,7 +873,6 @@ Maybe<IntRect> CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
   
   if (!UpdateRenderTarget() || !mDefaultRT || !mDefaultRT->mRTView ||
       mSize.width <= 0 || mSize.height <= 0) {
-    ReadUnlockTextures();
     return Nothing();
   }
 
@@ -1066,7 +1062,6 @@ void CompositorD3D11::Present() {
 }
 
 void CompositorD3D11::CancelFrame(bool aNeedFlush) {
-  ReadUnlockTextures();
   
   
   if (aNeedFlush) {

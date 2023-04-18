@@ -153,24 +153,6 @@ void TestTextureClientSurface(TextureClient* texture,
 
   ASSERT_TRUE(host.get() != nullptr);
   ASSERT_EQ(host->GetFlags(), texture->GetFlags());
-
-  
-
-  
-  
-  
-  
-  if (host->Lock()) {
-    RefPtr<mozilla::gfx::DataSourceSurface> hostDataSurface =
-        host->GetAsSurface();
-
-    DataSourceSurface::ScopedMap map(hostDataSurface, DataSourceSurface::READ);
-    RefPtr<gfxImageSurface> hostSurface = new gfxImageSurface(
-        map.GetData(), hostDataSurface->GetSize(), map.GetStride(),
-        SurfaceFormatToImageFormat(hostDataSurface->GetFormat()));
-    AssertSurfacesEqual(surface, hostSurface.get());
-    host->Unlock();
-  }
 }
 
 
@@ -201,14 +183,6 @@ void TestTextureClientYCbCr(TextureClient* client, PlanarYCbCrData& ycbcrData) {
 
   ASSERT_TRUE(host.get() != nullptr);
   ASSERT_EQ(host->GetFlags(), client->GetFlags());
-
-  
-
-  if (host->Lock()) {
-    
-    ASSERT_EQ(host->GetFormat(), mozilla::gfx::SurfaceFormat::YUV);
-    host->Unlock();
-  }
 }
 
 }  

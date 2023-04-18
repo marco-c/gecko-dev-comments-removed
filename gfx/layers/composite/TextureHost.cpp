@@ -367,24 +367,6 @@ void TextureHost::Finalize() {
   }
 }
 
-void TextureHost::UnbindTextureSource() {
-  if (mReadLocked) {
-    
-    
-    
-    
-    
-    if (mProvider) {
-      mProvider->UnlockAfterComposition(this);
-    } else {
-      
-      
-      ReadUnlock();
-      MaybeNotifyUnlocked();
-    }
-  }
-}
-
 void TextureHost::RecycleTexture(TextureFlags aFlags) {
   MOZ_ASSERT(GetFlags() & TextureFlags::RECYCLE);
   MOZ_ASSERT(aFlags & TextureFlags::RECYCLE);
@@ -403,17 +385,7 @@ void TextureHost::NotifyNotUsed() {
     return;
   }
 
-  
-  
-  
-  
-  
-  
-  if (!mProvider || HasIntermediateBuffer() ||
-      !mProvider->NotifyNotUsedAfterComposition(this)) {
-    static_cast<TextureParent*>(mActor)->NotifyNotUsed(mFwdTransactionId);
-    return;
-  }
+  static_cast<TextureParent*>(mActor)->NotifyNotUsed(mFwdTransactionId);
 }
 
 void TextureHost::CallNotifyNotUsed() {
@@ -530,61 +502,7 @@ void BufferTextureHost::UpdatedInternal(const nsIntRegion* aRegion) {
   }
 }
 
-void BufferTextureHost::SetTextureSourceProvider(
-    TextureSourceProvider* aProvider) {
-  if (mProvider == aProvider) {
-    return;
-  }
-  if (mFirstSource && mFirstSource->IsOwnedBy(this)) {
-    mFirstSource->SetOwner(nullptr);
-  }
-  if (mFirstSource) {
-    mFirstSource = nullptr;
-    mNeedsFullUpdate = true;
-  }
-  mProvider = aProvider;
-}
-
-void BufferTextureHost::DeallocateDeviceData() {
-  if (mFirstSource && mFirstSource->NumCompositableRefs() > 0) {
-    
-    
-    
-    if (mFirstSource->AsWrappingTextureSourceYCbCrBasic() &&
-        mFirstSource->IsOwnedBy(this)) {
-      mFirstSource->SetOwner(nullptr);
-      mFirstSource->DeallocateDeviceData();
-    }
-    return;
-  }
-
-  if (!mFirstSource || !mFirstSource->IsOwnedBy(this)) {
-    mFirstSource = nullptr;
-    return;
-  }
-
-  mFirstSource->SetOwner(nullptr);
-
-  RefPtr<TextureSource> it = mFirstSource;
-  while (it) {
-    it->DeallocateDeviceData();
-    it = it->GetNextSibling();
-  }
-}
-
-bool BufferTextureHost::Lock() {
-  MOZ_ASSERT(!mLocked);
-  if (!UploadIfNeeded()) {
-    return false;
-  }
-  mLocked = !!mFirstSource;
-  return mLocked;
-}
-
-void BufferTextureHost::Unlock() {
-  MOZ_ASSERT(mLocked);
-  mLocked = false;
-}
+void BufferTextureHost::DeallocateDeviceData() {}
 
 void BufferTextureHost::CreateRenderTexture(
     const wr::ExternalImageId& aExternalImageId) {
@@ -698,9 +616,6 @@ void TextureHost::SetReadLocked() {
   
   MOZ_ASSERT(!mReadLocked);
   mReadLocked = true;
-  if (mProvider) {
-    mProvider->MaybeUnlockBeforeNextComposition(this);
-  }
 }
 
 void TextureHost::ReadUnlock() {
@@ -714,171 +629,6 @@ bool TextureHost::NeedsYFlip() const {
   return bool(mFlags & TextureFlags::ORIGIN_BOTTOM_LEFT);
 }
 
-bool BufferTextureHost::EnsureWrappingTextureSource() {
-  MOZ_ASSERT(!mHasIntermediateBuffer);
-
-  if (mFirstSource && mFirstSource->IsOwnedBy(this)) {
-    return true;
-  }
-  
-  if (mFirstSource) {
-    mNeedsFullUpdate = true;
-    mFirstSource = nullptr;
-  }
-
-  if (!mProvider) {
-    return false;
-  }
-
-  if (mFormat == gfx::SurfaceFormat::YUV) {
-    mFirstSource = mProvider->CreateDataTextureSourceAroundYCbCr(this);
-  } else {
-    uint8_t* data = GetBuffer();
-    if (!data) {
-      return false;
-    }
-    RefPtr<gfx::DataSourceSurface> surf =
-        gfx::Factory::CreateWrappingDataSourceSurface(
-            data, ImageDataSerializer::ComputeRGBStride(mFormat, mSize.width),
-            mSize, mFormat);
-    if (!surf) {
-      return false;
-    }
-    mFirstSource = mProvider->CreateDataTextureSourceAround(surf);
-  }
-
-  if (!mFirstSource) {
-    
-    
-    
-    
-    
-    NS_WARNING("Failed to use a BufferTextureHost without intermediate buffer");
-    return false;
-  }
-
-  mFirstSource->SetUpdateSerial(mUpdateSerial);
-  mFirstSource->SetOwner(this);
-
-  return true;
-}
-
-static bool IsCompatibleTextureSource(TextureSource* aTexture,
-                                      const BufferDescriptor& aDescriptor,
-                                      TextureSourceProvider* aProvider) {
-  if (!aProvider) {
-    return false;
-  }
-
-  switch (aDescriptor.type()) {
-    case BufferDescriptor::TYCbCrDescriptor: {
-      const YCbCrDescriptor& ycbcr = aDescriptor.get_YCbCrDescriptor();
-
-      if (!aProvider->SupportsEffect(EffectTypes::YCBCR)) {
-        return aTexture->GetFormat() == gfx::SurfaceFormat::B8G8R8X8 &&
-               aTexture->GetSize() == ycbcr.ySize();
-      }
-
-      if (aTexture->GetFormat() != gfx::SurfaceFormat::A8 ||
-          aTexture->GetSize() != ycbcr.ySize()) {
-        return false;
-      }
-
-      auto cbTexture = aTexture->GetSubSource(1);
-      if (!cbTexture || cbTexture->GetFormat() != gfx::SurfaceFormat::A8 ||
-          cbTexture->GetSize() != ycbcr.cbCrSize()) {
-        return false;
-      }
-
-      auto crTexture = aTexture->GetSubSource(2);
-      if (!crTexture || crTexture->GetFormat() != gfx::SurfaceFormat::A8 ||
-          crTexture->GetSize() != ycbcr.cbCrSize()) {
-        return false;
-      }
-
-      return true;
-    }
-    case BufferDescriptor::TRGBDescriptor: {
-      const RGBDescriptor& rgb = aDescriptor.get_RGBDescriptor();
-      return aTexture->GetFormat() == rgb.format() &&
-             aTexture->GetSize() == rgb.size();
-    }
-    default: {
-      return false;
-    }
-  }
-}
-
-void BufferTextureHost::PrepareTextureSource(
-    CompositableTextureSourceRef& aTexture) {
-  if (!mHasIntermediateBuffer) {
-    EnsureWrappingTextureSource();
-  }
-
-  if (mFirstSource && mFirstSource->IsOwnedBy(this)) {
-    
-    
-    aTexture = mFirstSource.get();
-    return;
-  }
-
-  
-  if (mFirstSource) {
-    mNeedsFullUpdate = true;
-    mFirstSource = nullptr;
-  }
-
-  DataTextureSource* texture =
-      aTexture.get() ? aTexture->AsDataTextureSource() : nullptr;
-
-  bool compatibleFormats =
-      texture && IsCompatibleTextureSource(texture, mDescriptor, mProvider);
-
-  bool shouldCreateTexture = !compatibleFormats ||
-                             texture->NumCompositableRefs() > 1 ||
-                             texture->HasOwner();
-
-  if (!shouldCreateTexture) {
-    mFirstSource = texture;
-    mFirstSource->SetOwner(this);
-    mNeedsFullUpdate = true;
-
-    
-    
-    
-    RefPtr<TextureSource> it = mFirstSource;
-    while (it) {
-      it->SetTextureSourceProvider(mProvider);
-      it = it->GetNextSibling();
-    }
-  }
-}
-
-bool BufferTextureHost::BindTextureSource(
-    CompositableTextureSourceRef& aTexture) {
-  MOZ_ASSERT(mLocked);
-  MOZ_ASSERT(mFirstSource);
-  aTexture = mFirstSource;
-  return !!aTexture;
-}
-
-bool BufferTextureHost::AcquireTextureSource(
-    CompositableTextureSourceRef& aTexture) {
-  if (!UploadIfNeeded()) {
-    return false;
-  }
-  aTexture = mFirstSource;
-  return !!mFirstSource;
-}
-
-void BufferTextureHost::ReadUnlock() {
-  if (mFirstSource) {
-    mFirstSource->Sync(true);
-  }
-
-  TextureHost::ReadUnlock();
-}
-
 void BufferTextureHost::MaybeNotifyUnlocked() {
 #ifdef XP_DARWIN
   auto actor = GetIPDLActor();
@@ -890,34 +640,7 @@ void BufferTextureHost::MaybeNotifyUnlocked() {
 #endif
 }
 
-void BufferTextureHost::UnbindTextureSource() {
-  if (mFirstSource && mFirstSource->IsOwnedBy(this)) {
-    mFirstSource->Unbind();
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  ReadUnlock();
-  MaybeNotifyUnlocked();
-}
-
-gfx::SurfaceFormat BufferTextureHost::GetFormat() const {
-  
-  
-  
-  
-  
-  if (mFormat == gfx::SurfaceFormat::YUV && mProvider &&
-      !mProvider->SupportsEffect(EffectTypes::YCBCR)) {
-    return gfx::SurfaceFormat::R8G8B8X8;
-  }
-  return mFormat;
-}
+gfx::SurfaceFormat BufferTextureHost::GetFormat() const { return mFormat; }
 
 gfx::YUVColorSpace BufferTextureHost::GetYUVColorSpace() const {
   if (mFormat == gfx::SurfaceFormat::YUV) {
@@ -948,156 +671,11 @@ bool BufferTextureHost::UploadIfNeeded() {
 }
 
 bool BufferTextureHost::MaybeUpload(nsIntRegion* aRegion) {
-  auto serial = mFirstSource ? mFirstSource->GetUpdateSerial() : 0;
-
-  if (serial == mUpdateSerial) {
-    return true;
-  }
-
-  if (serial == 0) {
-    
-    aRegion = nullptr;
-  }
-
-  if (!Upload(aRegion)) {
-    return false;
-  }
-
-  if (mHasIntermediateBuffer) {
-    
-    
-    ReadUnlock();
-    MaybeNotifyUnlocked();
-  }
-
-  
-  mNeedsFullUpdate = false;
-  mMaybeUpdatedRegion.SetEmpty();
-
-  
-  mFirstSource->SetUpdateSerial(mUpdateSerial);
-  return true;
+  MOZ_ASSERT(!aRegion);
+  return false;
 }
 
-bool BufferTextureHost::Upload(nsIntRegion* aRegion) {
-  uint8_t* buf = GetBuffer();
-  if (!buf) {
-    
-    
-    
-    
-    
-    return false;
-  }
-  if (!mProvider) {
-    
-    
-    return false;
-  }
-  if (!mHasIntermediateBuffer && EnsureWrappingTextureSource()) {
-    if (!mFirstSource || !mFirstSource->IsDirectMap()) {
-      return true;
-    }
-  }
-
-  if (mFormat == gfx::SurfaceFormat::UNKNOWN) {
-    NS_WARNING("BufferTextureHost: unsupported format!");
-    return false;
-  } else if (mFormat == gfx::SurfaceFormat::YUV) {
-    const YCbCrDescriptor& desc = mDescriptor.get_YCbCrDescriptor();
-
-    if (!mProvider->SupportsEffect(EffectTypes::YCBCR)) {
-      RefPtr<gfx::DataSourceSurface> surf =
-          ImageDataSerializer::DataSourceSurfaceFromYCbCrDescriptor(
-              buf, mDescriptor.get_YCbCrDescriptor());
-      if (NS_WARN_IF(!surf)) {
-        return false;
-      }
-      if (!mFirstSource) {
-        mFirstSource = mProvider->CreateDataTextureSource(
-            mFlags | TextureFlags::RGB_FROM_YCBCR);
-        mFirstSource->SetOwner(this);
-      }
-      return mFirstSource->Update(surf, aRegion);
-    }
-
-    RefPtr<DataTextureSource> srcY;
-    RefPtr<DataTextureSource> srcU;
-    RefPtr<DataTextureSource> srcV;
-    if (!mFirstSource) {
-      
-      srcY = mProvider->CreateDataTextureSource(
-          mFlags | TextureFlags::DISALLOW_BIGIMAGE);
-      srcU = mProvider->CreateDataTextureSource(
-          mFlags | TextureFlags::DISALLOW_BIGIMAGE);
-      srcV = mProvider->CreateDataTextureSource(
-          mFlags | TextureFlags::DISALLOW_BIGIMAGE);
-      mFirstSource = srcY;
-      mFirstSource->SetOwner(this);
-      srcY->SetNextSibling(srcU);
-      srcU->SetNextSibling(srcV);
-    } else {
-      
-      
-      
-      
-      MOZ_ASSERT(mFirstSource->GetNextSibling());
-      MOZ_ASSERT(mFirstSource->GetNextSibling()->GetNextSibling());
-      srcY = mFirstSource;
-      srcU = mFirstSource->GetNextSibling()->AsDataTextureSource();
-      srcV = mFirstSource->GetNextSibling()
-                 ->GetNextSibling()
-                 ->AsDataTextureSource();
-    }
-
-    RefPtr<gfx::DataSourceSurface> tempY =
-        gfx::Factory::CreateWrappingDataSourceSurface(
-            ImageDataSerializer::GetYChannel(buf, desc), desc.yStride(),
-            desc.ySize(), SurfaceFormatForColorDepth(desc.colorDepth()));
-    RefPtr<gfx::DataSourceSurface> tempCb =
-        gfx::Factory::CreateWrappingDataSourceSurface(
-            ImageDataSerializer::GetCbChannel(buf, desc), desc.cbCrStride(),
-            desc.cbCrSize(), SurfaceFormatForColorDepth(desc.colorDepth()));
-    RefPtr<gfx::DataSourceSurface> tempCr =
-        gfx::Factory::CreateWrappingDataSourceSurface(
-            ImageDataSerializer::GetCrChannel(buf, desc), desc.cbCrStride(),
-            desc.cbCrSize(), SurfaceFormatForColorDepth(desc.colorDepth()));
-    
-    NS_ASSERTION(!aRegion, "Unsupported partial updates for YCbCr textures");
-    if (!tempY || !tempCb || !tempCr || !srcY->Update(tempY) ||
-        !srcU->Update(tempCb) || !srcV->Update(tempCr)) {
-      NS_WARNING("failed to update the DataTextureSource");
-      return false;
-    }
-  } else {
-    
-    nsIntRegion* regionToUpdate = aRegion;
-    if (!mFirstSource) {
-      mFirstSource = mProvider->CreateDataTextureSource(mFlags);
-      mFirstSource->SetOwner(this);
-      if (mFlags & TextureFlags::COMPONENT_ALPHA) {
-        
-        regionToUpdate = nullptr;
-      }
-    }
-
-    RefPtr<gfx::DataSourceSurface> surf =
-        gfx::Factory::CreateWrappingDataSourceSurface(
-            GetBuffer(),
-            ImageDataSerializer::ComputeRGBStride(mFormat, mSize.width), mSize,
-            mFormat);
-    if (!surf) {
-      return false;
-    }
-
-    if (!mFirstSource->Update(surf.get(), regionToUpdate)) {
-      NS_WARNING("failed to update the DataTextureSource");
-      return false;
-    }
-  }
-  MOZ_ASSERT(mFirstSource);
-  return true;
-}
+bool BufferTextureHost::Upload(nsIntRegion* aRegion) { return false; }
 
 already_AddRefed<gfx::DataSourceSurface> BufferTextureHost::GetAsSurface() {
   RefPtr<gfx::DataSourceSurface> result;

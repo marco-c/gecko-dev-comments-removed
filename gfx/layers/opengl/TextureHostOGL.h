@@ -175,8 +175,6 @@ class TextureImageTextureSourceOGL final : public DataTextureSource,
 
   bool IsValid() const override { return !!mTexImage; }
 
-  void SetTextureSourceProvider(TextureSourceProvider* aProvider) override;
-
   GLenum GetWrapMode() const override { return mTexImage->GetWrapMode(); }
 
   
@@ -248,8 +246,6 @@ class GLTextureSource : public DataTextureSource, public TextureSourceOGL {
 
   void DeallocateDeviceData() override;
 
-  void SetTextureSourceProvider(TextureSourceProvider* aProvider) override;
-
   void SetSize(gfx::IntSize aSize) { mSize = aSize; }
 
   void SetFormat(gfx::SurfaceFormat aFormat) { mFormat = aFormat; }
@@ -294,8 +290,6 @@ class DirectMapTextureSource : public GLTextureSource {
               gfx::IntPoint* aSrcOffset = nullptr,
               gfx::IntPoint* aDstOffset = nullptr) override;
 
-  bool IsDirectMap() override { return true; }
-
   
   
   
@@ -321,18 +315,7 @@ class GLTextureHost : public TextureHost {
   
   void DeallocateDeviceData() override {}
 
-  void SetTextureSourceProvider(TextureSourceProvider* aProvider) override;
-
-  bool Lock() override;
-
-  void Unlock() override {}
-
   gfx::SurfaceFormat GetFormat() const override;
-
-  bool BindTextureSource(CompositableTextureSourceRef& aTexture) override {
-    aTexture = mTextureSource;
-    return !!aTexture;
-  }
 
   already_AddRefed<gfx::DataSourceSurface> GetAsSurface() override {
     return nullptr;  
@@ -387,8 +370,6 @@ class SurfaceTextureSource : public TextureSource, public TextureSourceOGL {
 
   void DeallocateDeviceData() override;
 
-  void SetTextureSourceProvider(TextureSourceProvider* aProvider) override;
-
   gl::GLContext* gl() const { return mGL; }
 
  protected:
@@ -410,22 +391,11 @@ class SurfaceTextureHost : public TextureHost {
 
   virtual ~SurfaceTextureHost();
 
-  void PrepareTextureSource(CompositableTextureSourceRef& aTexture) override;
-
   void DeallocateDeviceData() override;
-
-  void SetTextureSourceProvider(TextureSourceProvider* aProvider) override;
-
-  bool Lock() override;
 
   gfx::SurfaceFormat GetFormat() const override;
 
   void NotifyNotUsed() override;
-
-  bool BindTextureSource(CompositableTextureSourceRef& aTexture) override {
-    aTexture = mTextureSource;
-    return !!aTexture;
-  }
 
   already_AddRefed<gfx::DataSourceSurface> GetAsSurface() override {
     return nullptr;  
@@ -484,16 +454,7 @@ class AndroidHardwareBufferTextureHost : public TextureHost {
 
   virtual ~AndroidHardwareBufferTextureHost();
 
-  void PrepareTextureSource(
-      CompositableTextureSourceRef& aTextureSource) override;
-
-  bool BindTextureSource(CompositableTextureSourceRef& aTexture) override;
-
   void DeallocateDeviceData() override;
-
-  void SetTextureSourceProvider(TextureSourceProvider* aProvider) override;
-
-  bool Lock() override;
 
   gfx::SurfaceFormat GetFormat() const override;
 
@@ -585,8 +546,6 @@ class EGLImageTextureSource : public TextureSource, public TextureSourceOGL {
   
   void DeallocateDeviceData() override {}
 
-  void SetTextureSourceProvider(TextureSourceProvider* aProvider) override;
-
   gl::GLContext* gl() const { return mGL; }
 
  protected:
@@ -609,18 +568,7 @@ class EGLImageTextureHost final : public TextureHost {
   
   void DeallocateDeviceData() override {}
 
-  void SetTextureSourceProvider(TextureSourceProvider* aProvider) override;
-
-  bool Lock() override;
-
-  void Unlock() override;
-
   gfx::SurfaceFormat GetFormat() const override;
-
-  bool BindTextureSource(CompositableTextureSourceRef& aTexture) override {
-    aTexture = mTextureSource;
-    return !!aTexture;
-  }
 
   already_AddRefed<gfx::DataSourceSurface> GetAsSurface() override {
     return nullptr;  
