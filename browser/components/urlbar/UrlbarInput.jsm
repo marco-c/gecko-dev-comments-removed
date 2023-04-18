@@ -377,22 +377,39 @@ class UrlbarInput {
     const previousSelectionStart = this.selectionStart;
     const previousSelectionEnd = this.selectionEnd;
 
-    let isDifferentValidValue = valid && value != this.untrimmedValue;
     this.value = value;
     this.valueIsTyped = !valid;
     this.removeAttribute("usertyping");
-    if (isDifferentValidValue) {
+
+    if (!this.focused) {
       
-      
-      
-      const isCaretPositionEnd =
-        previousUntrimmedValue.length === previousSelectionEnd ||
-        value.length <= previousSelectionEnd;
-      if (isCaretPositionEnd) {
-        this.selectionStart = this.selectionEnd = value.length;
-      } else {
+      this.selectionStart = this.selectionEnd = 0;
+    } else if (value != previousUntrimmedValue) {
+      if (
+        previousSelectionStart != previousSelectionEnd &&
+        value.substring(previousSelectionStart, previousSelectionEnd) ===
+          previousUntrimmedValue.substring(
+            previousSelectionStart,
+            previousSelectionEnd
+          )
+      ) {
+        
+        
         this.selectionStart = previousSelectionStart;
         this.selectionEnd = previousSelectionEnd;
+      } else if (
+        previousSelectionEnd &&
+        (previousUntrimmedValue.length === previousSelectionEnd ||
+          value.length <= previousSelectionEnd)
+      ) {
+        
+        
+        
+        this.selectionStart = this.selectionEnd = value.length;
+      } else {
+        
+        
+        this.selectionStart = this.selectionEnd = previousSelectionEnd;
       }
     }
 
