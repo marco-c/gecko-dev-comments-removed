@@ -127,6 +127,14 @@ function setPrefDefaults() {
 
   
   Services.prefs.setBoolPref("devtools.performance.enabled", true);
+
+  
+  
+  Services.prefs.setBoolPref("browser.sessionstore.resume_from_crash", false);
+
+  
+  
+  Services.prefs.setIntPref("toolkit.startup.max_resumed_crashes", -1);
 }
 
 window.addEventListener(
