@@ -269,7 +269,7 @@ static void nr_ice_candidate_pair_stun_cb(NR_SOCKET s, int how, void *cb_arg)
 
           if(!cand) {
             
-            if (pair->pctx->ctx->flags & NR_ICE_CTX_FLAGS_RELAY_ONLY) {
+            if (pair->local->stream->flags & NR_ICE_CTX_FLAGS_RELAY_ONLY) {
               
 
               goto done;
