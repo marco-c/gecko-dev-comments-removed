@@ -128,7 +128,7 @@ function getAnnotations(functionName, body) {
 
 
 
-function processBody(functionName, body)
+function processBody(functionName, body, functionBodies)
 {
     if (!('PEdge' in body))
         return;
@@ -161,6 +161,13 @@ function processBody(functionName, body)
         var edgeAttrs = body.attrs[edge.Index[0]] | 0;
 
         for (var callee of getCallees(edge)) {
+            
+            
+            if (callee.kind === "direct" && edgeIsNonReleasingDtor(body, edge, callee.name, functionBodies)) {
+                const block = blockIdentifier(body);
+                addToKeyedList(gcEdges, block, { Index: edge.Index, attrs: ATTR_GC_SUPPRESSED | ATTR_NONRELEASING });
+            }
+
             
             
             
@@ -300,7 +307,7 @@ function process(functionName, functionBodies)
     }
 
     for (var body of functionBodies)
-        processBody(functionName, body);
+        processBody(functionName, body, functionBodies);
 
     
     
