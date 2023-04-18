@@ -93,11 +93,15 @@ extern "C" {
 #define TH_DECCTL_SET_STRIPE_CB (7)
 
 
+
 #define TH_DECCTL_SET_TELEMETRY_MBMODE (9)
+
 
 #define TH_DECCTL_SET_TELEMETRY_MV (11)
 
+
 #define TH_DECCTL_SET_TELEMETRY_QI (13)
+
 
 #define TH_DECCTL_SET_TELEMETRY_BITS (15)
 
@@ -260,6 +264,9 @@ extern th_dec_ctx *th_decode_alloc(const th_info *_info,
 
 
 extern void th_setup_free(th_setup_info *_setup);
+
+
+
 
 
 

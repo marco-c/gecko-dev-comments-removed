@@ -19,6 +19,7 @@
 
 #if defined(OC_X86_ASM)
 
+#if defined(OC_STATE_USE_VTABLE)
 
 
 static const unsigned char OC_FZIG_ZAG_MMX[128]={
@@ -39,6 +40,7 @@ static const unsigned char OC_FZIG_ZAG_MMX[128]={
   64,64,64,64,64,64,64,64,
   64,64,64,64,64,64,64,64
 };
+#endif
 
 
 

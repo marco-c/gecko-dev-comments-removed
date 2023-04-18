@@ -14,13 +14,16 @@
 
 
 
-#define HAVE_MEMORY_H 1
+
 
 
 
 
 
 #define HAVE_STDINT_H 1
+
+
+#define HAVE_STDIO_H 1
 
 
 #define HAVE_STDLIB_H 1
@@ -47,7 +50,7 @@
 
 
 
- 
+
 
 
 
@@ -77,13 +80,18 @@
 #define PACKAGE_NAME "libtheora"
 
 
-#define PACKAGE_STRING "libtheora 1.2.0alpha1+svn"
+#define PACKAGE_STRING "libtheora 1.2.0alpha1+git"
 
 
 #define PACKAGE_TARNAME "libtheora"
 
 
-#define PACKAGE_VERSION "1.2.0alpha1+svn"
+#define PACKAGE_URL ""
+
+
+#define PACKAGE_VERSION "1.2.0alpha1+git"
+
+
 
 
 #define STDC_HEADERS 1
@@ -92,7 +100,4 @@
 
 
 
-
-
-
-#define VERSION "1.2.0alpha1+svn"
+#define VERSION "1.2.0alpha1+git"

@@ -499,6 +499,10 @@ extern int theora_encode_header(theora_state *t, ogg_packet *op);
 
 
 
+
+
+
+
 extern int theora_encode_comment(theora_comment *tc, ogg_packet *op);
 
 
@@ -658,8 +662,6 @@ int theora_granule_shift(theora_info *ti);
 
 
 extern ogg_int64_t theora_granule_frame(theora_state *th,ogg_int64_t granulepos);
-
-
 
 
 

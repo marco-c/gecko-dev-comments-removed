@@ -59,6 +59,9 @@
 
 
 
+
+
+
 #if !defined(_O_THEORA_CODEC_H_)
 # define _O_THEORA_CODEC_H_ (1)
 # include <ogg/ogg.h>
@@ -453,6 +456,12 @@ typedef struct{
 
 
 
+
+
+
+
+
+
 extern const char *th_version_string(void);
 
 
@@ -516,6 +525,11 @@ extern int th_packet_iskeyframe(ogg_packet *_op);
 
 
 
+
+
+
+
+
 extern void th_info_init(th_info *_info);
 
 
@@ -537,7 +551,7 @@ extern void th_comment_init(th_comment *_tc);
 
 
 
-extern void th_comment_add(th_comment *_tc, char *_comment);
+extern void th_comment_add(th_comment *_tc,const char *_comment);
 
 
 
@@ -548,7 +562,8 @@ extern void th_comment_add(th_comment *_tc, char *_comment);
 
 
 
-extern void th_comment_add_tag(th_comment *_tc,char *_tag,char *_val);
+extern void th_comment_add_tag(th_comment *_tc,const char *_tag,
+ const char *_val);
 
 
 
@@ -564,7 +579,7 @@ extern void th_comment_add_tag(th_comment *_tc,char *_tag,char *_val);
 
 
 
-extern char *th_comment_query(th_comment *_tc,char *_tag,int _count);
+extern char *th_comment_query(th_comment *_tc,const char *_tag,int _count);
 
 
 
@@ -572,7 +587,7 @@ extern char *th_comment_query(th_comment *_tc,char *_tag,int _count);
 
 
 
-extern int th_comment_query_count(th_comment *_tc,char *_tag);
+extern int th_comment_query_count(th_comment *_tc,const char *_tag);
 
 
 

@@ -21,6 +21,11 @@
 #include "decint.h"
 
 
+#if defined(HAVE_MEMORY_CONSTRAINT)
+static const int MAX_FUZZING_WIDTH = 16384;
+static const int MAX_FUZZING_HEIGHT = 16384;
+#endif
+
 
 
 
@@ -55,8 +60,8 @@ static int oc_info_unpack(oc_pack_buf *_opb,th_info *_info){
   
 
   if(_info->version_major>TH_VERSION_MAJOR||
-   _info->version_major==TH_VERSION_MAJOR&&
-   _info->version_minor>TH_VERSION_MINOR){
+   (_info->version_major==TH_VERSION_MAJOR&&
+   _info->version_minor>TH_VERSION_MINOR)){
     return TH_EVERSION;
   }
   
@@ -82,6 +87,11 @@ static int oc_info_unpack(oc_pack_buf *_opb,th_info *_info){
    _info->fps_numerator==0||_info->fps_denominator==0){
     return TH_EBADHEADER;
   }
+#if defined(HAVE_MEMORY_CONSTRAINT)
+  if(_info->frame_width>=MAX_FUZZING_WIDTH&&_info->frame_height>=MAX_FUZZING_HEIGHT){
+    return TH_EBADHEADER;
+  }
+#endif
   
 
 
@@ -173,8 +183,22 @@ static int oc_dec_headerin(oc_pack_buf *_opb,th_info *_info,
   val=oc_pack_read(_opb,8);
   packtype=(int)val;
   
+  if(!(packtype&0x80)){
+    
 
-  if(!(packtype&0x80)&&_info->frame_width>0&&_tc->vendor!=NULL&&*_setup!=NULL){
+
+    if(_info->frame_width<=0)return TH_ENOTFORMAT;
+    
+
+    if(_tc==NULL)return TH_EFAULT;
+    
+
+    if(_tc->vendor==NULL)return TH_EBADHEADER;
+    
+
+    if(_setup==NULL)return TH_EFAULT;
+    if(*_setup==NULL)return TH_EBADHEADER;
+    
     return 0;
   }
   

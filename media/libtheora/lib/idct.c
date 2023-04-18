@@ -242,7 +242,7 @@ static void oc_idct8x8_3(ogg_int16_t _y[64],ogg_int16_t _x[64]){
   
   for(i=0;i<64;i++)_y[i]=(ogg_int16_t)(_y[i]+8>>4);
   
-  if(_x!=_y)_x[0]=_x[1]=_x[8]=0;
+  _x[0]=_x[1]=_x[8]=0;
 }
 
 
@@ -273,7 +273,7 @@ static void oc_idct8x8_10(ogg_int16_t _y[64],ogg_int16_t _x[64]){
   
   for(i=0;i<64;i++)_y[i]=(ogg_int16_t)(_y[i]+8>>4);
   
-  if(_x!=_y)_x[0]=_x[1]=_x[2]=_x[3]=_x[8]=_x[9]=_x[10]=_x[16]=_x[17]=_x[24]=0;
+  _x[0]=_x[1]=_x[2]=_x[3]=_x[8]=_x[9]=_x[10]=_x[16]=_x[17]=_x[24]=0;
 }
 
 
@@ -291,7 +291,8 @@ static void oc_idct8x8_slow(ogg_int16_t _y[64],ogg_int16_t _x[64]){
   for(i=0;i<8;i++)idct8(_y+i,w+i*8);
   
   for(i=0;i<64;i++)_y[i]=(ogg_int16_t)(_y[i]+8>>4);
-  if(_x!=_y)for(i=0;i<64;i++)_x[i]=0;
+  
+  for(i=0;i<64;i++)_x[i]=0;
 }
 
 

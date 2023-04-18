@@ -21,6 +21,7 @@
 #if defined(OC_DUMP_IMAGES)
 # include <stdio.h>
 # include "png.h"
+# include "zlib.h"
 #endif
 
 
@@ -254,9 +255,13 @@ static void oc_mb_fill_cmapping10(oc_mb_map_plane _mb_map[3],
 
 
 
+
+
 static void oc_mb_fill_cmapping11(oc_mb_map_plane _mb_map[3],
- const oc_fragment_plane _fplanes[3]){
+ const oc_fragment_plane _fplanes[3],int _xfrag0,int _yfrag0){
   int k;
+  (void)_xfrag0;
+  (void)_yfrag0;
   for(k=0;k<4;k++){
     _mb_map[1][k]=_mb_map[0][k]+_fplanes[1].froffset;
     _mb_map[2][k]=_mb_map[0][k]+_fplanes[2].froffset;
@@ -278,7 +283,7 @@ static const oc_mb_fill_cmapping_func OC_MB_FILL_CMAPPING_TABLE[4]={
   oc_mb_fill_cmapping00,
   oc_mb_fill_cmapping01,
   oc_mb_fill_cmapping10,
-  (oc_mb_fill_cmapping_func)oc_mb_fill_cmapping11
+  oc_mb_fill_cmapping11
 };
 
 
@@ -703,6 +708,7 @@ int oc_state_init(oc_theora_state *_state,const th_info *_info,int _nrefs){
 
 
 
+
   if((_info->frame_width&0xF)||(_info->frame_height&0xF)||
    _info->frame_width<=0||_info->frame_width>=0x100000||
    _info->frame_height<=0||_info->frame_height>=0x100000||
@@ -715,7 +721,8 @@ int oc_state_init(oc_theora_state *_state,const th_info *_info,int _nrefs){
 
 
    _info->colorspace<0||_info->colorspace>=TH_CS_NSPACES||
-   _info->pixel_fmt<0||_info->pixel_fmt>=TH_PF_NFORMATS){
+   _info->pixel_fmt<0||_info->pixel_fmt>=TH_PF_NFORMATS||
+   _info->fps_numerator<1||_info->fps_denominator<1){
     return TH_EINVAL;
   }
   memset(_state,0,sizeof(*_state));
