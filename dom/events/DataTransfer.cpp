@@ -605,6 +605,12 @@ already_AddRefed<DataTransfer> DataTransfer::MozCloneForEvent(
 }
 
 
+
+static const char* kNonPlainTextExternalFormats[] = {
+    kCustomTypesMime, kFileMime,    kHTMLMime,    kRTFMime,
+    kURLMime,         kURLDataMime, kUnicodeMime, kPNGImageMime};
+
+
 void DataTransfer::GetExternalClipboardFormats(const int32_t& aWhichClipboard,
                                                const bool& aPlainTextOnly,
                                                nsTArray<nsCString>* aResult) {
@@ -633,18 +639,16 @@ void DataTransfer::GetExternalClipboardFormats(const int32_t& aWhichClipboard,
   }
 
   
-  static const char* formats[] = {kCustomTypesMime, kFileMime,    kHTMLMime,
-                                  kRTFMime,         kURLMime,     kURLDataMime,
-                                  kUnicodeMime,     kPNGImageMime};
-
-  for (uint32_t f = 0; f < mozilla::ArrayLength(formats); ++f) {
+  for (uint32_t f = 0; f < mozilla::ArrayLength(kNonPlainTextExternalFormats);
+       ++f) {
     bool hasType;
-    AutoTArray<nsCString, 1> format = {nsDependentCString(formats[f])};
+    AutoTArray<nsCString, 1> format = {
+        nsDependentCString(kNonPlainTextExternalFormats[f])};
     nsresult rv =
         clipboard->HasDataMatchingFlavors(format, aWhichClipboard, &hasType);
     NS_SUCCEEDED(rv);
     if (hasType) {
-      aResult->AppendElement(formats[f]);
+      aResult->AppendElement(kNonPlainTextExternalFormats[f]);
     }
   }
 }
@@ -674,11 +678,7 @@ void DataTransfer::GetExternalTransferableFormats(
   }
 
   
-  static const char* formats[] = {kCustomTypesMime, kFileMime,    kHTMLMime,
-                                  kRTFMime,         kURLMime,     kURLDataMime,
-                                  kUnicodeMime,     kPNGImageMime};
-
-  for (const char* format : formats) {
+  for (const char* format : kNonPlainTextExternalFormats) {
     auto index = flavors.IndexOf(nsCString(format));
     if (index != flavors.NoIndex) {
       aResult->AppendElement(nsCString(format));
@@ -1340,8 +1340,9 @@ void DataTransfer::CacheExternalDragFormats() {
   
   
   
-  const char* formats[] = {kFileMime,    kHTMLMime,    kURLMime,
-                           kURLDataMime, kUnicodeMime, kPNGImageMime};
+  
+  static const char* formats[] = {kFileMime,    kHTMLMime,    kURLMime,
+                                  kURLDataMime, kUnicodeMime, kPNGImageMime};
 
   uint32_t count;
   dragSession->GetNumDropItems(&count);
