@@ -2037,6 +2037,8 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
                                      uint32_t funcImportIndex,
                                      Label* throwLabel,
                                      CallableOffsets* offsets) {
+  AutoCreatedBy acb(masm, "GenerateImportInterpExit");
+
   AssertExpectedSP(masm);
   masm.setFramePushed(0);
 
@@ -2065,6 +2067,10 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
   GenerateExitPrologue(masm, framePushed, ExitReason::Fixed::ImportInterp,
                        offsets);
 
+  
+  
+  
+  
   
   unsigned offsetFromFPToCallerStackArgs = sizeof(FrameWithTls);
   Register scratch = ABINonArgReturnReg0;
@@ -2215,6 +2221,8 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
 static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
                                   unsigned funcImportIndex, Label* throwLabel,
                                   JitExitOffsets* offsets) {
+  AutoCreatedBy acb(masm, "GenerateImportJitExit");
+
   AssertExpectedSP(masm);
   masm.setFramePushed(0);
 
@@ -2272,6 +2280,10 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   masm.storeValue(UndefinedValue(), Address(masm.getStackPointer(), argOffset));
   argOffset += sizeof(Value);
 
+  
+  
+  
+  
   
   const uint32_t offsetFromFPToCallerStackArgs = sizeof(FrameWithTls);
   Register scratch = ABINonArgReturnReg1;   

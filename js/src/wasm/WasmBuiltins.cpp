@@ -1362,26 +1362,37 @@ bool wasm::IsRoundingFunction(SymbolicAddress callee, jit::RoundingMode* mode) {
 }
 
 bool wasm::NeedsBuiltinThunk(SymbolicAddress sym) {
-  
-  
   switch (sym) {
-    case SymbolicAddress::HandleDebugTrap:        
-    case SymbolicAddress::HandleThrow:            
-    case SymbolicAddress::HandleTrap:             
-    case SymbolicAddress::CallImport_General:     
-    case SymbolicAddress::CoerceInPlace_ToInt32:  
-    case SymbolicAddress::CoerceInPlace_ToNumber:
-    case SymbolicAddress::CoerceInPlace_ToBigInt:
-    case SymbolicAddress::BoxValue_Anyref:
+    
     case SymbolicAddress::InlineTypedObjectClass:
+      return false;
+
+    
+    case SymbolicAddress::HandleDebugTrap:  
+    case SymbolicAddress::HandleThrow:      
+    case SymbolicAddress::HandleTrap:       
+      return false;
+
+    
+    case SymbolicAddress::CallImport_General:      
+    case SymbolicAddress::CoerceInPlace_ToInt32:   
+    case SymbolicAddress::CoerceInPlace_ToNumber:  
+    case SymbolicAddress::CoerceInPlace_ToBigInt:  
+    case SymbolicAddress::BoxValue_Anyref:         
+      return false;
+
 #ifdef WASM_CODEGEN_DEBUG
-    case SymbolicAddress::PrintI32:
+    
+    
+    case SymbolicAddress::PrintI32:  
     case SymbolicAddress::PrintPtr:
     case SymbolicAddress::PrintF32:
     case SymbolicAddress::PrintF64:
-    case SymbolicAddress::PrintText:  
-#endif
+    case SymbolicAddress::PrintText:
       return false;
+#endif
+
+    
     case SymbolicAddress::ToInt32:
     case SymbolicAddress::DivI64:
     case SymbolicAddress::UDivI64:
@@ -1469,6 +1480,7 @@ bool wasm::NeedsBuiltinThunk(SymbolicAddress sym) {
       FOR_EACH_INTRINSIC(OP)
 #undef OP
       return true;
+
     case SymbolicAddress::Limit:
       break;
   }
