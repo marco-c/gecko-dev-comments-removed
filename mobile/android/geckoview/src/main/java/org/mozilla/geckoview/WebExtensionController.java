@@ -1087,7 +1087,7 @@ public class WebExtensionController {
 
     if (environmentType == WebExtension.MessageSender.ENV_TYPE_UNKNOWN) {
       if (BuildConfig.DEBUG) {
-        throw new RuntimeException("Missing or unknown envType.");
+        throw new RuntimeException("Missing or unknown envType: " + envType);
       }
 
       return null;
@@ -1102,13 +1102,14 @@ public class WebExtensionController {
       
       
       
-      if (!sender.containsKey("frameId")
-          || !sender.containsKey("url")
-          ||
-          
-          sender.getInt("frameId", -1) == -1) {
+      
+      final boolean hasFrameId =
+          sender.containsKey("frameId") && sender.getInt("frameId", -1) != -1;
+      final boolean hasUrl = sender.containsKey("url");
+      if (!hasFrameId || !hasUrl) {
         if (BuildConfig.DEBUG) {
-          throw new RuntimeException("Missing sender information.");
+          throw new RuntimeException(
+              "Missing sender information. hasFrameId: " + hasFrameId + " hasUrl: " + hasUrl);
         }
 
         
