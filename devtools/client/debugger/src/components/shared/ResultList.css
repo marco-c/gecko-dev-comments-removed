@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 .result-list {
   list-style: none;
@@ -46,10 +46,6 @@
   color: white;
 }
 
-.theme-dark .result-list.small li.selected {
-  background-color: var(--theme-body-background);
-}
-
 .theme-dark .result-list li:hover {
   background: var(--grey-70);
 }
@@ -81,12 +77,12 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 
-  
+  /** https://searchfox.org/mozilla-central/source/devtools/client/themes/variables.css **/
   color: var(--grey-90);
 }
 
 .theme-dark .result-list li .title {
-  
+  /** https://searchfox.org/mozilla-central/source/devtools/client/themes/variables.css **/
   color: var(--grey-30);
 }
 
@@ -110,7 +106,7 @@
 
 .result-list.big li .subtitle {
   word-break: break-all;
-  
+  /** https://searchfox.org/mozilla-central/source/devtools/client/themes/variables.css **/
   color: var(--grey-40);
   margin-left: 15px;
   text-overflow: ellipsis;
