@@ -12,9 +12,10 @@ let AVAILABLE_PIP_OVERRIDES;
   
   
   const TOGGLE_POLICIES = browser.pictureInPictureChild.getPolicies();
-  const KEYBOARD_CONTROLS = browser.pictureInPictureChild.getKeyboardControls();
 
   AVAILABLE_PIP_OVERRIDES = {
+    
+    
     
     
     
@@ -73,7 +74,6 @@ let AVAILABLE_PIP_OVERRIDES;
 
     netflix: {
       "https://*.netflix.com/*": {
-        keyboardControls: ~KEYBOARD_CONTROLS.SEEK,
         videoWrapperScriptPath: "video-wrappers/netflix.js",
       },
       "https://*.netflix.com/browse*": { policy: TOGGLE_POLICIES.HIDDEN },
