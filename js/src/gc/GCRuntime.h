@@ -926,6 +926,12 @@ class GCRuntime {
   
   AtomMarkingRuntime atomMarking;
 
+  
+
+
+
+  MainThreadData<JS::CreateSliceBudgetCallback> createBudgetCallback;
+
  private:
   
   

@@ -594,8 +594,7 @@ js::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
 
   if (aCCBeginTime.IsNull()) {
     
-    return js::SliceBudget(js::TimeBudget(baseBudget),
-                           kNumCCNodesBetweenTimeChecks);
+    return js::SliceBudget(js::TimeBudget(baseBudget));
   }
 
   
@@ -624,9 +623,8 @@ js::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
   
   
   
-  return js::SliceBudget(js::TimeBudget(std::max(
-                             {delaySliceBudget, laterSliceBudget, baseBudget})),
-                         kNumCCNodesBetweenTimeChecks);
+  return js::SliceBudget(js::TimeBudget(
+      std::max({delaySliceBudget, laterSliceBudget, baseBudget})));
 }
 
 TimeDuration CCGCScheduler::ComputeInterSliceGCBudget(TimeStamp aDeadline,
