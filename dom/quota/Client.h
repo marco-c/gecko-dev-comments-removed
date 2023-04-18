@@ -158,6 +158,14 @@ class Client {
   virtual void StopIdleMaintenance() = 0;
 
   
+  
+  
+  
+  
+  static bool IsShuttingDownOnBackgroundThread();
+  static bool IsShuttingDownOnNonBackgroundThread();
+
+  
   bool InitiateShutdownWorkThreads();
   void FinalizeShutdownWorkThreads();
 
