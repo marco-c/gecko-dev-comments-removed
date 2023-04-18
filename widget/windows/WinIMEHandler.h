@@ -221,6 +221,7 @@ class IMEHandler final {
   static bool IsInTabletMode();
   static bool AutoInvokeOnScreenKeyboardInDesktopMode();
   static bool NeedsToAssociateIMC();
+  static bool NeedsSearchInputScope();
 
   
 

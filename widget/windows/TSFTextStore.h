@@ -271,6 +271,11 @@ class TSFTextStore final : public ITextStoreACP,
   
 
 
+  static bool IsATOKActive();
+
+  
+
+
 
   static bool ShouldSetInputScopeOfURLBarToDefault();
 
