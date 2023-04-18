@@ -139,11 +139,6 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
   
 
 
-  NS_IMETHOD CancelParsingEvents() override;
-
-  
-
-
   virtual bool IsInsertionPointDefined() override;
 
   

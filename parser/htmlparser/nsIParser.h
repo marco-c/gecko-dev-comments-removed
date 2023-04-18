@@ -160,18 +160,6 @@ class nsIParser : public nsParserBase {
   
 
 
-
-
-
-
-
-
-
-  NS_IMETHOD CancelParsingEvents() = 0;
-
-  
-
-
   virtual bool IsInsertionPointDefined() = 0;
 
   

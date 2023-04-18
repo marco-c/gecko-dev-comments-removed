@@ -210,13 +210,6 @@ class nsParser final : public nsIParser,
   
 
 
-
-
-  NS_IMETHOD CancelParsingEvents() override;
-
-  
-
-
   virtual bool IsInsertionPointDefined() override;
 
   

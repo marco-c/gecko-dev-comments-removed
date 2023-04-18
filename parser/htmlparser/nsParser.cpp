@@ -270,17 +270,6 @@ nsParser::SetContentSink(nsIContentSink* aSink) {
 NS_IMETHODIMP_(nsIContentSink*)
 nsParser::GetContentSink() { return mSink; }
 
-NS_IMETHODIMP
-nsParser::CancelParsingEvents() {
-  if (mFlags & NS_PARSER_FLAG_PENDING_CONTINUE_EVENT) {
-    NS_ASSERTION(mContinueEvent, "mContinueEvent is null");
-    
-    mContinueEvent = nullptr;
-    mFlags &= ~NS_PARSER_FLAG_PENDING_CONTINUE_EVENT;
-  }
-  return NS_OK;
-}
-
 
 
 
@@ -375,9 +364,12 @@ nsParser::Terminate(void) {
   
   
   
-  
-  
-  CancelParsingEvents();
+  if (mFlags & NS_PARSER_FLAG_PENDING_CONTINUE_EVENT) {
+    NS_ASSERTION(mContinueEvent, "mContinueEvent is null");
+    
+    mContinueEvent = nullptr;
+    mFlags &= ~NS_PARSER_FLAG_PENDING_CONTINUE_EVENT;
+  }
 
   if (mDTD) {
     mDTD->Terminate();
