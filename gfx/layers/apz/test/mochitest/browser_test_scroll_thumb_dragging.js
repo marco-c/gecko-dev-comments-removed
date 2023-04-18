@@ -20,6 +20,35 @@ add_task(async function() {
     await content.wrappedJSObject.waitUntilApzStable();
   });
 
+  
+  
+  
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    
+    
+    
+    const moveParams = content.window.eval(`({
+      target: window,
+      type: "mousemove",
+      offsetX: 10,
+      offsetY: 10
+    })`);
+    const clickParams = content.window.eval(`({
+      target: window,
+      type: "click",
+      offsetX: 10,
+      offsetY: 10
+    })`);
+    
+    
+    await content.wrappedJSObject.promiseNativeMouseEventWithAPZAndWaitForEvent(
+      moveParams
+    );
+    await content.wrappedJSObject.promiseNativeMouseEventWithAPZAndWaitForEvent(
+      clickParams
+    );
+  });
+
   await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
     const scrollPromise = new Promise(resolve => {
       content.window.addEventListener("scroll", resolve, { once: true });
