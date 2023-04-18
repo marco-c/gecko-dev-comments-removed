@@ -8,11 +8,6 @@ pub unsafe fn syscall1(_a: usize, _b: usize) -> Result<usize> {
     Err(Error::new(ENOSYS))
 }
 
-
-pub unsafe fn syscall1_clobber(_a: usize, _b: usize) -> Result<usize> {
-    Err(Error::new(ENOSYS))
-}
-
 pub unsafe fn syscall2(_a: usize, _b: usize, _c: usize) -> Result<usize> {
     Err(Error::new(ENOSYS))
 }

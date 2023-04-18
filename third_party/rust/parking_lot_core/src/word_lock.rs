@@ -154,7 +154,7 @@ impl WordLock {
                 if let Err(x) = self.state.compare_exchange_weak(
                     state,
                     state.with_queue_head(thread_data),
-                    Ordering::Release,
+                    Ordering::AcqRel,
                     Ordering::Relaxed,
                 ) {
                     return x;
@@ -238,7 +238,7 @@ impl WordLock {
                 }
 
                 
-                fence(Ordering::Acquire);
+                fence_acquire(&self.state);
                 continue;
             }
 
@@ -263,7 +263,7 @@ impl WordLock {
                         continue;
                     } else {
                         
-                        fence(Ordering::Acquire);
+                        fence_acquire(&self.state);
                         continue 'outer;
                     }
                 }
@@ -283,6 +283,17 @@ impl WordLock {
             }
             break;
         }
+    }
+}
+
+
+
+#[inline]
+fn fence_acquire(a: &AtomicUsize) {
+    if cfg!(tsan_enabled) {
+        let _ = a.load(Ordering::Acquire);
+    } else {
+        fence(Ordering::Acquire);
     }
 }
 

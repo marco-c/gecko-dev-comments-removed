@@ -9,6 +9,7 @@
 
 
 use remove_dir_all::remove_dir_all;
+use std::mem;
 use std::path::{self, Path, PathBuf};
 use std::{fmt, fs, io};
 
@@ -192,7 +193,7 @@ pub fn tempdir_in<P: AsRef<Path>>(dir: P) -> io::Result<TempDir> {
 
 
 pub struct TempDir {
-    path: Option<PathBuf>,
+    path: Box<Path>,
 }
 
 impl TempDir {
@@ -292,7 +293,7 @@ impl TempDir {
     
     
     pub fn path(&self) -> &path::Path {
-        self.path.as_ref().unwrap()
+        self.path.as_ref()
     }
 
     
@@ -322,8 +323,13 @@ impl TempDir {
     
     
     
-    pub fn into_path(mut self) -> PathBuf {
-        self.path.take().unwrap()
+    pub fn into_path(self) -> PathBuf {
+        
+        let mut this = mem::ManuallyDrop::new(self);
+
+        
+        
+        mem::replace(&mut this.path, PathBuf::new().into_boxed_path()).into()
     }
 
     
@@ -370,7 +376,11 @@ impl TempDir {
         let result = remove_dir_all(self.path()).with_err_path(|| self.path());
 
         
-        self.path = None;
+        
+        self.path = PathBuf::new().into_boxed_path();
+
+        
+        mem::forget(self);
 
         result
     }
@@ -392,15 +402,14 @@ impl fmt::Debug for TempDir {
 
 impl Drop for TempDir {
     fn drop(&mut self) {
-        
-        if let Some(ref p) = self.path {
-            let _ = remove_dir_all(p);
-        }
+        let _ = remove_dir_all(self.path());
     }
 }
 
 pub(crate) fn create(path: PathBuf) -> io::Result<TempDir> {
     fs::create_dir(&path)
         .with_err_path(|| &path)
-        .map(|_| TempDir { path: Some(path) })
+        .map(|_| TempDir {
+            path: path.into_boxed_path(),
+        })
 }

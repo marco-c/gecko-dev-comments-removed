@@ -26,6 +26,8 @@ fn test_cleanup() {
     assert!(num_files == 0);
 }
 
+
+#[cfg(target_os = "linux")]
 #[test]
 fn test_pathological_cleaner() {
     let tmpdir = tempfile::tempdir().unwrap();

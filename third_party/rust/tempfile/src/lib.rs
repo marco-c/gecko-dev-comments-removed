@@ -117,6 +117,42 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
     html_favicon_url = "https://www.rust-lang.org/favicon.ico",
@@ -124,9 +160,11 @@
 )]
 #![cfg_attr(test, deny(warnings))]
 #![deny(rust_2018_idioms)]
+#![allow(clippy::redundant_field_names)]
+#![cfg_attr(feature = "nightly", feature(wasi_ext))]
 
-#[macro_use]
-extern crate cfg_if;
+#[cfg(doctest)]
+doc_comment::doctest!("../README.md");
 
 const NUM_RETRIES: u32 = 1 << 31;
 const NUM_RAND_CHARS: usize = 6;
@@ -143,7 +181,9 @@ mod spooled;
 mod util;
 
 pub use crate::dir::{tempdir, tempdir_in, TempDir};
-pub use crate::file::{tempfile, tempfile_in, NamedTempFile, PathPersistError, PersistError, TempPath};
+pub use crate::file::{
+    tempfile, tempfile_in, NamedTempFile, PathPersistError, PersistError, TempPath,
+};
 pub use crate::spooled::{spooled_tempfile, SpooledTempFile};
 
 

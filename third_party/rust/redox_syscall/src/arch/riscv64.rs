@@ -1,5 +1,4 @@
 use core::{mem, slice};
-use core::arch::asm;
 use core::ops::{Deref, DerefMut};
 
 use super::error::{Error, Result};
@@ -7,31 +6,32 @@ use super::error::{Error, Result};
 macro_rules! syscall {
     ($($name:ident($a:ident, $($b:ident, $($c:ident, $($d:ident, $($e:ident, $($f:ident, )?)?)?)?)?);)+) => {
         $(
-            pub unsafe fn $name(mut $a: usize, $($b: usize, $($c: usize, $($d: usize, $($e: usize, $($f: usize)?)?)?)?)?) -> Result<usize> {
+            pub unsafe fn $name($a: usize, $($b: usize, $($c: usize, $($d: usize, $($e: usize, $($f: usize)?)?)?)?)?) -> Result<usize> {
+                let ret: usize;
+
                 asm!(
-                    "syscall",
-                    inout("rax") $a,
+                    "ecall",
+                    in("a7") $a,
                     $(
-                        in("rdi") $b,
+                        in("a0") $b,
                         $(
-                            in("rsi") $c,
+                            in("a1") $c,
                             $(
-                                in("rdx") $d,
+                                in("a2") $d,
                                 $(
-                                    in("r10") $e,
+                                    in("a3") $e,
                                     $(
-                                        in("r8") $f,
+                                        in("a4") $f,
                                     )?
                                 )?
                             )?
                         )?
                     )?
-                    out("rcx") _,
-                    out("r11") _,
+                    lateout("a0") ret,
                     options(nostack),
                 );
 
-                Error::demux($a)
+                Error::demux(ret)
             }
         )+
     };
@@ -49,34 +49,6 @@ syscall! {
 #[derive(Copy, Clone, Debug, Default)]
 #[repr(C)]
 pub struct IntRegisters {
-    
-
-    pub r15: usize,
-    pub r14: usize,
-    pub r13: usize,
-    pub r12: usize,
-    pub rbp: usize,
-    pub rbx: usize,
-    pub r11: usize,
-    pub r10: usize,
-    pub r9: usize,
-    pub r8: usize,
-    pub rax: usize,
-    pub rcx: usize,
-    pub rdx: usize,
-    pub rsi: usize,
-    pub rdi: usize,
-    
-    pub rip: usize,
-    pub cs: usize,
-    pub rflags: usize,
-    pub rsp: usize,
-    pub ss: usize,
-    
-    
-    
-    
-    pub fs: usize,
     
 }
 
@@ -100,17 +72,6 @@ impl DerefMut for IntRegisters {
 #[derive(Clone, Copy, Debug, Default)]
 #[repr(packed)]
 pub struct FloatRegisters {
-    pub fcw: u16,
-    pub fsw: u16,
-    pub ftw: u8,
-    pub _reserved: u8,
-    pub fop: u16,
-    pub fip: u64,
-    pub fdp: u64,
-    pub mxcsr: u32,
-    pub mxcsr_mask: u32,
-    pub st_space: [u128; 8],
-    pub xmm_space: [u128; 16],
     
 }
 
@@ -127,29 +88,6 @@ impl DerefMut for FloatRegisters {
     fn deref_mut(&mut self) -> &mut [u8] {
         unsafe {
             slice::from_raw_parts_mut(self as *mut FloatRegisters as *mut u8, mem::size_of::<FloatRegisters>())
-        }
-    }
-}
-#[derive(Clone, Copy, Debug, Default)]
-#[repr(packed)]
-pub struct EnvRegisters {
-    pub fsbase: u64,
-    pub gsbase: u64,
-    
-}
-impl Deref for EnvRegisters {
-    type Target = [u8];
-    fn deref(&self) -> &[u8] {
-        unsafe {
-            slice::from_raw_parts(self as *const EnvRegisters as *const u8, mem::size_of::<EnvRegisters>())
-        }
-    }
-}
-
-impl DerefMut for EnvRegisters {
-    fn deref_mut(&mut self) -> &mut [u8] {
-        unsafe {
-            slice::from_raw_parts_mut(self as *mut EnvRegisters as *mut u8, mem::size_of::<EnvRegisters>())
         }
     }
 }

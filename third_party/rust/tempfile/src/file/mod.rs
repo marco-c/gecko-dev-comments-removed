@@ -1,4 +1,3 @@
-use std;
 use std::env;
 use std::error;
 use std::ffi::OsStr;
@@ -139,7 +138,7 @@ impl error::Error for PathPersistError {
 
 
 pub struct TempPath {
-    path: PathBuf,
+    path: Box<Path>,
 }
 
 impl TempPath {
@@ -177,12 +176,15 @@ impl TempPath {
     
     
     pub fn close(mut self) -> io::Result<()> {
-        let result = fs::remove_file(&self.path).with_err_path(|| &self.path);
-        mem::replace(&mut self.path, PathBuf::new());
+        let result = fs::remove_file(&self.path).with_err_path(|| &*self.path);
+        self.path = PathBuf::new().into_boxed_path();
         mem::forget(self);
         result
     }
 
+    
+    
+    
     
     
     
@@ -229,7 +231,7 @@ impl TempPath {
                 
                 
                 
-                mem::replace(&mut self.path, PathBuf::new());
+                self.path = PathBuf::new().into_boxed_path();
                 mem::forget(self);
                 Ok(())
             }
@@ -291,7 +293,7 @@ impl TempPath {
                 
                 
                 
-                mem::replace(&mut self.path, PathBuf::new());
+                self.path = PathBuf::new().into_boxed_path();
                 mem::forget(self);
                 Ok(())
             }
@@ -339,15 +341,26 @@ impl TempPath {
                 
                 
                 
-                let mut path = PathBuf::new();
-                mem::swap(&mut self.path, &mut path);
+                let path = mem::replace(&mut self.path, PathBuf::new().into_boxed_path());
                 mem::forget(self);
-                Ok(path)
+                Ok(path.into())
             }
             Err(e) => Err(PathPersistError {
                 error: e,
                 path: self,
             }),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn from_path(path: impl Into<PathBuf>) -> Self {
+        Self {
+            path: path.into().into_boxed_path(),
         }
     }
 }
@@ -695,6 +708,9 @@ impl NamedTempFile {
     
     
     
+    
+    
+    
     pub fn persist<P: AsRef<Path>>(self, new_path: P) -> Result<File, PersistError> {
         let NamedTempFile { path, file } = self;
         match path.persist(new_path) {
@@ -949,7 +965,9 @@ pub(crate) fn create_named(
     imp::create_named(&path, open_options)
         .with_err_path(|| path.clone())
         .map(|file| NamedTempFile {
-            path: TempPath { path },
+            path: TempPath {
+                path: path.into_boxed_path(),
+            },
             file,
         })
 }
