@@ -347,7 +347,14 @@ async function gotoPref(
     subcategory
   ) {
     let friendlyName = internalPrefCategoryNameToFriendlyName(category);
-    document.location.hash = friendlyName;
+    
+    
+    
+    if (
+      !(!document.location.hash && category == kDefaultCategoryInternalName)
+    ) {
+      document.location.hash = friendlyName;
+    }
   }
   
   
