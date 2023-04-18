@@ -48,6 +48,10 @@ typedef unsigned char Latin1Char;
 
 class JS_PUBLIC_API Symbol;
 class JS_PUBLIC_API BigInt;
+#ifdef ENABLE_RECORD_TUPLE
+class JS_PUBLIC_API RecordType;
+class JS_PUBLIC_API TupleType;
+#endif
 class JS_PUBLIC_API Value;
 
 class JS_PUBLIC_API Compartment;
@@ -126,5 +130,16 @@ using MutableHandleVector = MutableHandle<StackGCVector<T>>;
 }  
 
 using jsid = JS::PropertyKey;
+
+#ifdef ENABLE_RECORD_TUPLE
+
+
+
+
+
+#  define IF_RECORD_TUPLE(x, ...) x
+#else
+#  define IF_RECORD_TUPLE(x, ...) __VA_ARGS__
+#endif
 
 #endif 
