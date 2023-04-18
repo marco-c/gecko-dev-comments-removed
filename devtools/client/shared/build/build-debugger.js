@@ -12,7 +12,6 @@ const mappings = {
   "./source-editor": "devtools/client/shared/sourceeditor/editor",
   "../editor/source-editor": "devtools/client/shared/sourceeditor/editor",
   immutable: "devtools/client/shared/vendor/immutable",
-  lodash: "devtools/client/shared/vendor/lodash",
   react: "devtools/client/shared/vendor/react",
   "react-dom": "devtools/client/shared/vendor/react-dom",
   "react-dom-factories": "devtools/client/shared/vendor/react-dom-factories",
@@ -91,18 +90,6 @@ function transformMC({ types: t }) {
         
         if (Object.keys(mappings).includes(value)) {
           path.replaceWith(t.stringLiteral(mappings[value]));
-          return;
-        }
-
-        
-        
-        
-        if (value.startsWith("lodash/")) {
-          const lodashSubModule = value.split("/").pop();
-          path.replaceWith(t.stringLiteral(mappings.lodash));
-          path.parentPath.replaceWith(
-            t.memberExpression(path.parent, t.identifier(lodashSubModule))
-          );
           return;
         }
 
