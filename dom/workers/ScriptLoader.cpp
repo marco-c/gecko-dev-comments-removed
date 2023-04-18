@@ -1338,14 +1338,12 @@ class ScriptLoaderRunnable final : public nsIRunnable, public nsINamed {
       nsCOMPtr<nsIContentSecurityPolicy> csp = mWorkerPrivate->GetCSP();
       
       
-      if (StaticPrefs::security_csp_enable()) {
-        if (!csp) {
-          rv = mWorkerPrivate->SetCSPFromHeaderValues(tCspHeaderValue,
-                                                      tCspROHeaderValue);
-          NS_ENSURE_SUCCESS(rv, rv);
-        } else {
-          csp->EnsureEventTarget(mWorkerPrivate->MainThreadEventTarget());
-        }
+      if (!csp) {
+        rv = mWorkerPrivate->SetCSPFromHeaderValues(tCspHeaderValue,
+                                                    tCspROHeaderValue);
+        NS_ENSURE_SUCCESS(rv, rv);
+      } else {
+        csp->EnsureEventTarget(mWorkerPrivate->MainThreadEventTarget());
       }
 
       mWorkerPrivate->UpdateReferrerInfoFromHeader(tRPHeaderCValue);

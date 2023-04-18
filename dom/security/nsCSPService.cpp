@@ -132,8 +132,7 @@ bool subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   
   
   
-  if (!StaticPrefs::security_csp_enable() ||
-      !subjectToCSP(aContentLocation, contentType)) {
+  if (!subjectToCSP(aContentLocation, contentType)) {
     return NS_OK;
   }
 
@@ -342,8 +341,7 @@ nsresult CSPService::ConsultCSPForRedirect(nsIURI* aOriginalURI,
   
   
   nsContentPolicyType policyType = aLoadInfo->InternalContentPolicyType();
-  if (!StaticPrefs::security_csp_enable() ||
-      !subjectToCSP(aNewURI, policyType)) {
+  if (!subjectToCSP(aNewURI, policyType)) {
     return NS_OK;
   }
 
