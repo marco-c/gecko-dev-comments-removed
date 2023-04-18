@@ -952,19 +952,17 @@ MenuItem.prototype = {
 
     let targetPattern = this.targetUrlMatchPattern;
     if (targetPattern) {
-      let targetUrls = [];
+      let targetURIs = [];
       if (contextData.onImage || contextData.onAudio || contextData.onVideo) {
         
-        targetUrls.push(contextData.srcUrl);
+        targetURIs.push(Services.io.newURI(contextData.srcUrl));
       }
-      if (contextData.onLink) {
-        targetUrls.push(contextData.linkUrl);
+      
+      
+      if (contextData.onLink && contextData.linkURI) {
+        targetURIs.push(contextData.linkURI);
       }
-      if (
-        !targetUrls.some(targetUrl =>
-          targetPattern.matches(Services.io.newURI(targetUrl))
-        )
-      ) {
+      if (!targetURIs.some(targetURI => targetPattern.matches(targetURI))) {
         return false;
       }
     }
