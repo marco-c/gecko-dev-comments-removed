@@ -72,7 +72,7 @@ const Agent = {
 
 
   async importJSONDump(bucket, collection) {
-    const { data: records, timestamp } = await SharedUtils.loadJSONDump(
+    const { data: records } = await SharedUtils.loadJSONDump(
       bucket,
       collection
     );
@@ -83,7 +83,7 @@ const Agent = {
     if (gShutdown) {
       throw new Error("Can't import when we've started shutting down.");
     }
-    await importDumpIDB(bucket, collection, records, timestamp);
+    await importDumpIDB(bucket, collection, records);
     return records.length;
   },
 
@@ -121,8 +121,8 @@ const Agent = {
     }
   },
 
-  _test_only_import(bucket, collection, records, timestamp) {
-    return importDumpIDB(bucket, collection, records, timestamp);
+  _test_only_import(bucket, collection, records) {
+    return importDumpIDB(bucket, collection, records);
   },
 };
 
@@ -154,8 +154,7 @@ let gPendingTransactions = new Set();
 
 
 
-
-async function importDumpIDB(bucket, collection, records, timestamp) {
+async function importDumpIDB(bucket, collection, records) {
   
   
   const db = await IDBHelpers.openIDB(false );
@@ -174,6 +173,10 @@ async function importDumpIDB(bucket, collection, records, timestamp) {
       item._cid = cid;
     });
     
+    const timestamp =
+      records.length === 0
+        ? 0
+        : Math.max(...records.map(record => record.last_modified));
     let { transaction, promise } = IDBHelpers.executeIDB(
       db,
       [IDB_RECORDS_STORE, IDB_TIMESTAMPS_STORE],
