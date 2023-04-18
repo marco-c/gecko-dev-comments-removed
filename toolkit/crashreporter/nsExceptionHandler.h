@@ -344,9 +344,6 @@ void SetNotificationPipeForChild(FileHandle childCrashFd);
 void SetCrashAnnotationPipeForChild(FileHandle childCrashAnnotationFd);
 #endif
 
-
-void SetCurrentThreadName(const char* aName);
-
 }  
 
 #endif 
