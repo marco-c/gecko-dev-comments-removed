@@ -14,32 +14,49 @@
 
 
 
+
+
+
+requestLongerTimeout(2);
+
 add_task(async function() {
   await setup();
 
   
-
-
+  let testSet = [];
 
   
-  await runTest({
-    queryString: "test1.1",
-    topLevelScheme: "http",
 
-    expectedTopLevel: "http",
-    expectedSameOrigin: "http",
-    expectedCrossOrigin: "http",
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.security.https_only_mode", false]],
   });
+
   
-  await runTest({
-    queryString: "test1.2",
-    topLevelScheme: "https",
+  testSet.push(
+    runTest({
+      queryString: "test1.1",
+      topLevelScheme: "http",
 
-    expectedTopLevel: "https",
-    expectedSameOrigin: "fail",
-    expectedCrossOrigin: "fail",
-  });
+      expectedTopLevel: "http",
+      expectedSameOrigin: "http",
+      expectedCrossOrigin: "http",
+    })
+  );
+  
+  testSet.push(
+    runTest({
+      queryString: "test1.2",
+      topLevelScheme: "https",
 
+      expectedTopLevel: "https",
+      expectedSameOrigin: "fail",
+      expectedCrossOrigin: "fail",
+    })
+  );
+
+  await Promise.all(testSet);
+  testSet = [];
   
 
 
@@ -48,25 +65,33 @@ add_task(async function() {
   });
 
   
-  await runTest({
-    queryString: "test2.1",
-    topLevelScheme: "http",
+  testSet.push(
+    runTest({
+      queryString: "test2.1",
+      topLevelScheme: "http",
 
-    expectedTopLevel: "https",
-    expectedSameOrigin: "https",
-    expectedCrossOrigin: "https",
-  });
+      expectedTopLevel: "https",
+      expectedSameOrigin: "https",
+      expectedCrossOrigin: "https",
+    })
+  );
   
-  await runTest({
-    queryString: "test2.2",
-    topLevelScheme: "https",
+  testSet.push(
+    runTest({
+      queryString: "test2.2",
+      topLevelScheme: "https",
 
-    expectedTopLevel: "https",
-    expectedSameOrigin: "https",
-    expectedCrossOrigin: "https",
-  });
+      expectedTopLevel: "https",
+      expectedSameOrigin: "https",
+      expectedCrossOrigin: "https",
+    })
+  );
+
+  await Promise.all(testSet);
+  testSet = [];
 
   
+
 
 
   
