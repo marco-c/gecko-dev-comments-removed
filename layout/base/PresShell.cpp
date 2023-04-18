@@ -3319,9 +3319,11 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
       animationElement->ActivateByHyperlink();
     }
 
+#ifdef ACCESSIBILITY
     if (nsAccessibilityService* accService = GetAccessibilityService()) {
       accService->NotifyOfAnchorJumpTo(target);
     }
+#endif
   } else if (nsContentUtils::EqualsIgnoreASCIICase(aAnchorName, u"top"_ns)) {
     
     nsIScrollableFrame* sf = GetRootScrollFrameAsScrollable();
