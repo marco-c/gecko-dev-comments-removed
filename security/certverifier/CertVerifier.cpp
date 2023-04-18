@@ -774,7 +774,7 @@ Result CertVerifier::VerifyCert(
       
       
       
-      if (sha1ModeResult && mSHA1Mode == SHA1Mode::ImportedRoot) {
+      if (sha1ModeResult && mSHA1Mode == SHA1Mode::Forbidden) {
         *sha1ModeResult = SHA1ModeResult::Failed;
       }
 

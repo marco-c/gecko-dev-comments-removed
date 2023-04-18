@@ -96,7 +96,7 @@ pref("security.pki.cert_short_lifetime_in_days", 10);
 
 
 
-pref("security.pki.sha1_enforcement_level", 3);
+pref("security.pki.sha1_enforcement_level", 1);
 
 
 
