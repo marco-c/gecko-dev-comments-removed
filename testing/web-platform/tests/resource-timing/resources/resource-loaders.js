@@ -98,9 +98,6 @@ const load = {
     const object = document.createElement("object");
     const loaded = new Promise(resolve => {
       object.onload = object.onerror = resolve;
-      
-      
-      (new PerformanceObserver(resolve)).observe({type: "resource"});
     });
     object.data = load.cache_bust(path);
     if (type) {
