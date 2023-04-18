@@ -205,26 +205,16 @@ InputStreamLengthWrapper::AsyncWait(nsIInputStreamCallback* aCallback,
   NS_ENSURE_STATE(mInputStream);
   NS_ENSURE_STATE(mWeakAsyncInputStream);
 
-  nsCOMPtr<nsIInputStreamCallback> callback = this;
+  nsCOMPtr<nsIInputStreamCallback> callback = aCallback ? this : nullptr;
   {
     MutexAutoLock lock(mMutex);
 
-    if (mAsyncWaitCallback && aCallback) {
+    if (NS_WARN_IF(mAsyncWaitCallback && aCallback &&
+                   mAsyncWaitCallback != aCallback)) {
       return NS_ERROR_FAILURE;
     }
 
-    bool hadCallback = !!mAsyncWaitCallback;
     mAsyncWaitCallback = aCallback;
-
-    if (!mAsyncWaitCallback) {
-      if (!hadCallback) {
-        
-        return NS_OK;
-      }
-
-      
-      callback = nullptr;
-    }
   }
 
   return mWeakAsyncInputStream->AsyncWait(callback, aFlags, aRequestedCount,
