@@ -747,7 +747,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult> InsertBRElement(
+  MOZ_CAN_RUN_SCRIPT CreateElementResult InsertBRElement(
       WithTransaction aWithTransaction, const EditorDOMPoint& aPointToInsert,
       EDirection aSelect = eNone);
 
