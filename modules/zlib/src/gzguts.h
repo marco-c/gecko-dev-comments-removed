@@ -37,11 +37,9 @@
 
 #if defined(__TURBOC__) || defined(_MSC_VER) || defined(_WIN32)
 #  include <io.h>
-#else
-#  include <unistd.h>
 #endif
 
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(_WIN32)
 #  define WIDECHAR
 #endif
 
@@ -192,6 +190,7 @@ typedef struct {
         
     int level;              
     int strategy;           
+    int reset;              
         
     z_off64_t skip;         
     int seek;               

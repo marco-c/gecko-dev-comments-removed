@@ -477,6 +477,7 @@ void FAR *out_desc;
             }
             Tracev((stderr, "inflate:       codes ok\n"));
             state->mode = LEN;
+                
 
         case LEN:
             
