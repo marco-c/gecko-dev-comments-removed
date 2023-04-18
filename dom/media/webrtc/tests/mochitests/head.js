@@ -435,7 +435,6 @@ function setupEnvironment() {
       ["media.peerconnection.identity.timeout", 120000],
       ["media.peerconnection.ice.stun_client_maximum_transmits", 14],
       ["media.peerconnection.ice.trickle_grace_period", 30000],
-      ["media.peerconnection.rtpsourcesapi.enabled", true],
       ["media.navigator.permission.disabled", true],
       
       
