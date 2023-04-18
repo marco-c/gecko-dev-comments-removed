@@ -404,15 +404,17 @@ function executeAndWaitForErrorMessage(hud, input, matchingText) {
 
 
 
-function keyboardExecuteAndWaitForMessage(
+
+
+function keyboardExecuteAndWaitForMessageByType(
   hud,
   input,
   matchingText,
-  selector = ".message"
+  typeSelector
 ) {
   hud.jsterm.focus();
   setInputValue(hud, input);
-  const onMessage = waitForMessage(hud, matchingText, selector);
+  const onMessage = waitForMessageByType(hud, matchingText, typeSelector);
   if (isEditorModeEnabled(hud)) {
     EventUtils.synthesizeKey("KEY_Enter", {
       [Services.appinfo.OS === "Darwin" ? "metaKey" : "ctrlKey"]: true,
@@ -421,6 +423,23 @@ function keyboardExecuteAndWaitForMessage(
     EventUtils.synthesizeKey("VK_RETURN");
   }
   return onMessage;
+}
+
+
+
+
+
+
+
+
+
+function keyboardExecuteAndWaitForResultMessage(hud, input, matchingText) {
+  return keyboardExecuteAndWaitForMessageByType(
+    hud,
+    input,
+    matchingText,
+    ".result"
+  );
 }
 
 
