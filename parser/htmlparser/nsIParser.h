@@ -112,14 +112,6 @@ class nsIParser : public nsParserBase {
   
 
 
-
-
-
-  NS_IMETHOD GetDTD(nsIDTD** aDTD) = 0;
-
-  
-
-
   virtual nsIStreamListener* GetStreamListener() = 0;
 
   
@@ -190,12 +182,5 @@ class nsIParser : public nsParserBase {
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIParser, NS_IPARSER_IID)
-
-
-
-
-
-#define NS_IPARSER_FLAG_XML 0x00000200
-#define NS_IPARSER_FLAG_HTML 0x00000400
 
 #endif

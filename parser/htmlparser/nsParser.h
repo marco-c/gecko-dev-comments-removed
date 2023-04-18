@@ -49,6 +49,7 @@
 #include "nsCOMArray.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWeakReference.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/UniquePtr.h"
 
 class nsIDTD;
@@ -195,14 +196,6 @@ class nsParser final : public nsIParser,
   
 
 
-
-
-
-  NS_IMETHOD GetDTD(nsIDTD** aDTD) override;
-
-  
-
-
   virtual nsIStreamListener* GetStreamListener() override;
 
   void SetSinkCharset(NotNull<const Encoding*> aCharset);
@@ -254,6 +247,16 @@ class nsParser final : public nsIParser,
 
   bool IsOkToProcessNetworkData() {
     return !IsScriptExecuting() && !mProcessingNetworkData;
+  }
+
+  
+  
+  mozilla::Maybe<bool> IsForParsingXML() {
+    if (!mParserContext || mParserContext->mDTDMode == eDTDMode_autodetect) {
+      return mozilla::Nothing();
+    }
+
+    return mozilla::Some(mParserContext->mDocType == eXML);
   }
 
  protected:

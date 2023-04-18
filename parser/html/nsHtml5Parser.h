@@ -78,11 +78,6 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
   
 
 
-  NS_IMETHOD GetDTD(nsIDTD** aDTD) override;
-
-  
-
-
   virtual nsIStreamListener* GetStreamListener() override;
 
   
