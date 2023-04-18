@@ -118,7 +118,10 @@ var PrivacyFilter = Object.freeze({
     for (let i = winState.tabs.length - 1; i >= 0; i--) {
       let tab = winState.tabs[i];
 
-      if (tab.isPrivate) {
+      
+      
+      
+      if (!tab || tab.isPrivate) {
         winState.tabs.splice(i, 1);
 
         if (winState.selected >= i) {
