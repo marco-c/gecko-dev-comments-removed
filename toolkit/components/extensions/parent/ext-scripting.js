@@ -233,6 +233,38 @@ this.scripting = class extends ExtensionAPI {
           
           extension.updateContentScripts();
         },
+
+        getRegisteredContentScripts: async details => {
+          
+          const scriptIdsMap = gScriptIdsMap.get(extension);
+
+          return Array.from(scriptIdsMap.entries())
+            .filter(
+              ([id, scriptId]) => !details?.ids || details.ids.includes(id)
+            )
+            .map(([id, scriptId]) => {
+              const options = extension.registeredContentScripts.get(scriptId);
+
+              if (!options) {
+                
+                
+                
+                
+                return;
+              }
+
+              return {
+                id,
+                allFrames: options.allFrames,
+                excludeMatches: options.excludeMatches || undefined,
+                js: options.jsPaths.map(jsPath =>
+                  jsPath.replace(extension.baseURL, "")
+                ),
+                matches: options.matches,
+              };
+            })
+            .filter(script => script);
+        },
       },
     };
   }
