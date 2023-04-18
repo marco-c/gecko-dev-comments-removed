@@ -6400,9 +6400,8 @@ void nsCSSFrameConstructor::IssueSingleInsertNofications(
        child = child->GetNextSibling()) {
     
     
-    MOZ_ASSERT(
-        !child->GetPrimaryFrame() ||
-            child->GetPrimaryFrame()->GetContent() != child);
+    MOZ_ASSERT(!child->GetPrimaryFrame() ||
+               child->GetPrimaryFrame()->GetContent() != child);
 
     
     ContentRangeInserted(child, child->GetNextSibling(), aInsertionKind);
