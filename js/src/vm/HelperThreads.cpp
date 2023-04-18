@@ -687,7 +687,9 @@ void ParseTask::scheduleDelazifyTask(AutoLockHelperThreadState& lock) {
   }
 
   
-  HelperThreadState().submitTask(task.release(), lock);
+  if (!task->strategy->done()) {
+    HelperThreadState().submitTask(task.release(), lock);
+  }
 }
 
 template <typename Unit>
