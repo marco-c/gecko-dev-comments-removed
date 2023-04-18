@@ -2,11 +2,10 @@
 
 
 
-import { makeMockDisplaySource } from "../../../utils/test-mockup";
+import { makeMockDisplaySource, formatTree } from "../../../utils/test-mockup";
 
 import {
   collapseTree,
-  formatTree,
   addToTree,
   createDirectoryNode,
 } from "../index";
