@@ -511,11 +511,6 @@ const BackgroundPageThumbs = {
 };
 
 BackgroundPageThumbs._init();
-Object.defineProperty(this, "BackgroundPageThumbs", {
-  value: BackgroundPageThumbs,
-  enumerable: true,
-  writable: false,
-});
 
 
 
