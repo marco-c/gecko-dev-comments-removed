@@ -59,12 +59,15 @@ const DomainGroupBuilder = new (class DomainGroupBuilder {
       }
     }
 
-    for (let domain of [
-      ...changedDomains.values(),
-      
-      
-      ...untouchedDomains.values(),
-    ]) {
+    
+    
+    for (let domain of [...untouchedDomains.values()]) {
+      let group = this.#currentGroups.get(domain);
+      await SnapshotGroups.delete(group.id);
+      this.#currentGroups.delete(domain);
+    }
+
+    for (let domain of [...changedDomains.values()]) {
       await this.#checkDomain(domain);
     }
   }
@@ -163,7 +166,7 @@ const DomainGroupBuilder = new (class DomainGroupBuilder {
 
     for (let group of groups) {
       this.#currentGroups.set(group.builderMetadata.domain, group);
-      group.urls = new Set(await SnapshotGroups.getUrls(group.id));
+      group.urls = new Set(await SnapshotGroups.getUrls({ id: group.id }));
     }
   }
 
