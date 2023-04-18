@@ -3139,7 +3139,7 @@ void BrowserChild::ReinitRendering() {
 
   
   
-  if (mLayersConnected.isNothing() || !*mLayersConnected) {
+  if (mLayersConnected.isNothing()) {
     return;
   }
 
