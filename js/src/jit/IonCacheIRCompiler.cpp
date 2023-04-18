@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jit/IonCacheIRCompiler.h"
 #include "mozilla/Maybe.h"
@@ -41,7 +41,7 @@ using JS::ExpandoAndGeneration;
 namespace js {
 namespace jit {
 
-
+// IonCacheIRCompiler compiles CacheIR to IonIC native code.
 IonCacheIRCompiler::IonCacheIRCompiler(JSContext* cx,
                                        const CacheIRWriter& writer, IonIC* ic,
                                        IonScript* ionScript,
@@ -78,9 +78,9 @@ void IonCacheIRCompiler::pushStubCodePointer() {
   stubJitCodeOffset_.emplace(masm.PushWithPatch(ImmPtr((void*)-1)));
 }
 
-
-
-
+// AutoSaveLiveRegisters must be used when we make a call that can GC. The
+// constructor ensures all live registers are stored on the stack (where the GC
+// expects them) and the destructor restores these registers.
 AutoSaveLiveRegisters::AutoSaveLiveRegisters(IonCacheIRCompiler& compiler)
     : compiler_(compiler) {
   MOZ_ASSERT(compiler_.liveRegs_.isSome());
@@ -98,29 +98,29 @@ AutoSaveLiveRegisters::~AutoSaveLiveRegisters() {
   MOZ_ASSERT(compiler_.masm.framePushed() == compiler_.ionScript_->frameSize());
 }
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
 void CacheRegisterAllocator::saveIonLiveRegisters(MacroAssembler& masm,
                                                   LiveRegisterSet liveRegs,
                                                   Register scratch,
                                                   IonScript* ionScript) {
-  
-  
-  
-  
+  // We have to push all registers in liveRegs on the stack. It's possible we
+  // stored other values in our live registers and stored operands on the
+  // stack (where our live registers should go), so this requires some careful
+  // work. Try to keep it simple by taking one small step at a time.
 
-  
+  // Step 1. Discard any dead operands so we can reuse their registers.
   freeDeadOperandLocations(masm);
 
-  
-  
-  
+  // Step 2. Figure out the size of our live regs.  This is consistent with
+  // the fact that we're using storeRegsInMask to generate the save code and
+  // PopRegsInMask to generate the restore code.
   size_t sizeOfLiveRegsInBytes = masm.PushRegsInMaskSizeInBytes(liveRegs);
 
   MOZ_ASSERT(sizeOfLiveRegsInBytes > 0);
 
-  
+  // Step 3. Ensure all non-input operands are on the stack.
   size_t numInputs = writer_.numInputOperands();
   for (size_t i = numInputs; i < operandLocations_.length(); i++) {
     OperandLocation& loc = operandLocations_[i];
@@ -129,12 +129,12 @@ void CacheRegisterAllocator::saveIonLiveRegisters(MacroAssembler& masm,
     }
   }
 
-  
-  
-  restoreInputState(masm,  false);
+  // Step 4. Restore the register state, but don't discard the stack as
+  // non-input operands are stored there.
+  restoreInputState(masm, /* shouldDiscardStack = */ false);
 
-  
-  
+  // We just restored the input state, so no input operands should be stored
+  // on the stack.
 #ifdef DEBUG
   for (size_t i = 0; i < numInputs; i++) {
     const OperandLocation& loc = operandLocations_[i];
@@ -142,9 +142,9 @@ void CacheRegisterAllocator::saveIonLiveRegisters(MacroAssembler& masm,
   }
 #endif
 
-  
-  
-  
+  // Step 5. At this point our register state is correct. Stack values,
+  // however, may cover the space where we have to store the live registers.
+  // Move them out of the way.
 
   bool hasOperandOnStack = false;
   for (size_t i = numInputs; i < operandLocations_.length(); i++) {
@@ -161,14 +161,14 @@ void CacheRegisterAllocator::saveIonLiveRegisters(MacroAssembler& masm,
     MOZ_ASSERT(stackPushed_ >= operandStackPushed);
     MOZ_ASSERT(operandStackPushed >= operandSize);
 
-    
-    
+    // If this operand doesn't cover the live register space, there's
+    // nothing to do.
     if (operandStackPushed - operandSize >= sizeOfLiveRegsInBytes) {
       MOZ_ASSERT(stackPushed_ > sizeOfLiveRegsInBytes);
       continue;
     }
 
-    
+    // Reserve stack space for the live registers if needed.
     if (sizeOfLiveRegsInBytes > stackPushed_) {
       size_t extraBytes = sizeOfLiveRegsInBytes - stackPushed_;
       MOZ_ASSERT((extraBytes % sizeof(uintptr_t)) == 0);
@@ -176,7 +176,7 @@ void CacheRegisterAllocator::saveIonLiveRegisters(MacroAssembler& masm,
       stackPushed_ += extraBytes;
     }
 
-    
+    // Push the operand below the live register space.
     if (loc.kind() == OperandLocation::PayloadStack) {
       masm.push(
           Address(masm.getStackPointer(), stackPushed_ - operandStackPushed));
@@ -191,9 +191,9 @@ void CacheRegisterAllocator::saveIonLiveRegisters(MacroAssembler& masm,
     loc.setValueStack(stackPushed_);
   }
 
-  
-  
-  
+  // Step 6. If we have any operands on the stack, adjust their stackPushed
+  // values to not include sizeOfLiveRegsInBytes (this simplifies code down
+  // the line). Then push/store the live registers.
   if (hasOperandOnStack) {
     MOZ_ASSERT(stackPushed_ > sizeOfLiveRegsInBytes);
     stackPushed_ -= sizeOfLiveRegsInBytes;
@@ -210,7 +210,7 @@ void CacheRegisterAllocator::saveIonLiveRegisters(MacroAssembler& masm,
                          scratch);
     masm.setFramePushed(masm.framePushed() + sizeOfLiveRegsInBytes);
   } else {
-    
+    // If no operands are on the stack, discard the unused stack space.
     if (stackPushed_ > 0) {
       masm.addToStackPtr(Imm32(stackPushed_));
       stackPushed_ = 0;
@@ -223,14 +223,14 @@ void CacheRegisterAllocator::saveIonLiveRegisters(MacroAssembler& masm,
   MOZ_ASSERT(masm.framePushed() ==
              ionScript->frameSize() + sizeOfLiveRegsInBytes);
 
-  
-  
-  
+  // Step 7. All live registers and non-input operands are stored on the stack
+  // now, so at this point all registers except for the input registers are
+  // available.
   availableRegs_.set() = GeneralRegisterSet::Not(inputRegisterSet());
   availableRegsAfterSpill_.set() = GeneralRegisterSet();
 
-  
-  
+  // Step 8. We restored our input state, so we have to fix up aliased input
+  // registers again.
   fixupAliasedInputs(masm);
 }
 
@@ -256,7 +256,7 @@ static void* GetReturnAddressToIonCode(JSContext* cx) {
   return returnAddr;
 }
 
-
+// The AutoSaveLiveRegisters parameter is used to ensure registers were saved
 void IonCacheIRCompiler::enterStubFrame(MacroAssembler& masm,
                                         const AutoSaveLiveRegisters&) {
   MOZ_ASSERT(!enteredStubFrame_);
@@ -569,7 +569,7 @@ JitCode* IonCacheIRCompiler::compile(IonICStub* stub) {
 
   masm.assumeUnreachable("Should have returned from IC");
 
-  
+  // Done emitting the main IC code. Now emit the failure paths.
   for (size_t i = 0; i < failurePaths.length(); i++) {
     if (!emitFailurePath(i)) {
       return nullptr;
@@ -624,13 +624,13 @@ void IonCacheIRCompiler::assertFloatRegisterAvailable(FloatRegister reg) {
       MOZ_CRASH("No float registers available");
     case CacheKind::SetProp:
     case CacheKind::SetElem:
-      
+      // FloatReg0 is available per LIRGenerator::visitSetPropertyCache.
       MOZ_ASSERT(reg == FloatReg0);
       break;
     case CacheKind::BinaryArith:
     case CacheKind::Compare:
-      
-      
+      // FloatReg0 and FloatReg1 are available per
+      // LIRGenerator::visitBinaryCache.
       MOZ_ASSERT(reg == FloatReg0 || reg == FloatReg1);
       break;
     case CacheKind::Call:
@@ -706,8 +706,8 @@ bool IonCacheIRCompiler::emitGuardCompartment(ObjOperandId objId,
     return false;
   }
 
-  
-  
+  // Verify that the global wrapper is still valid, as
+  // it is pre-requisite for doing the compartment check.
   masm.movePtr(ImmGCPtr(globalWrapper), scratch);
   Address handlerAddr(scratch, ProxyObject::offsetOfHandler());
   masm.branchPtr(Assembler::Equal, handlerAddr,
@@ -870,9 +870,9 @@ bool IonCacheIRCompiler::emitCallScriptedGetterResult(
 
   enterStubFrame(masm, save);
 
-  
-  
-  
+  // The JitFrameLayout pushed below will be aligned to JitStackAlignment,
+  // so we just have to make sure the stack is aligned after we push the
+  // |this| + argument Values.
   uint32_t argSize = (target->nargs() + 1) * sizeof(Value);
   uint32_t padding =
       ComputeByteAlignment(masm.framePushed() + argSize, JitStackAlignment);
@@ -893,11 +893,11 @@ bool IonCacheIRCompiler::emitCallScriptedGetterResult(
 
   uint32_t descriptor = MakeFrameDescriptor(
       argSize + padding, FrameType::IonICCall, JitFrameLayout::Size());
-  masm.Push(Imm32(0));  
+  masm.Push(Imm32(0));  // argc
   masm.Push(scratch);
   masm.Push(Imm32(descriptor));
 
-  
+  // Check stack alignment. Add sizeof(uintptr_t) for the return address.
   MOZ_ASSERT(((masm.framePushed() + sizeof(uintptr_t)) % JitStackAlignment) ==
              0);
 
@@ -941,23 +941,23 @@ bool IonCacheIRCompiler::emitCallNativeGetterResult(
 
   allocator.discardStack(masm);
 
-  
-  
-  
-  
+  // Native functions have the signature:
+  //  bool (*)(JSContext*, unsigned, Value* vp)
+  // Where vp[0] is space for an outparam, vp[1] is |this|, and vp[2] onward
+  // are the function arguments.
 
-  
-  
+  // Construct vp array:
+  // Push receiver value for |this|
   masm.Push(receiver);
-  
+  // Push callee/outparam.
   masm.Push(ObjectValue(*target));
 
-  
+  // Preload arguments into registers.
   masm.loadJSContext(argJSContext);
   masm.move32(Imm32(0), argUintN);
   masm.moveStackPtrTo(argVp.get());
 
-  
+  // Push marking data for later use.
   masm.Push(argUintN);
   pushStubCodePointer();
 
@@ -970,7 +970,7 @@ bool IonCacheIRCompiler::emitCallNativeGetterResult(
     masm.switchToRealm(target->realm(), scratch);
   }
 
-  
+  // Construct and execute call.
   masm.setupUnalignedABICall(scratch);
   masm.passABIArg(argJSContext);
   masm.passABIArg(argUintN);
@@ -978,14 +978,14 @@ bool IonCacheIRCompiler::emitCallNativeGetterResult(
   masm.callWithABI(DynamicFunction<JSNative>(target->native()), MoveOp::GENERAL,
                    CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
-  
+  // Test for failure.
   masm.branchIfFalseBool(ReturnReg, masm.exceptionLabel());
 
   if (!sameRealm) {
     masm.switchToRealm(cx_->realm(), ReturnReg);
   }
 
-  
+  // Load the outparam vp[0] into output register(s).
   Address outparam(masm.getStackPointer(),
                    IonOOLNativeExitFrameLayout::offsetOfResult());
   masm.loadValue(outparam, output.valueReg());
@@ -1054,8 +1054,8 @@ bool IonCacheIRCompiler::emitProxyGetResult(ObjOperandId objId,
   Register obj = allocator.useRegister(masm, objId);
   jsid id = idStubField(idOffset);
 
-  
-  
+  // ProxyGetProperty(JSContext* cx, HandleObject proxy, HandleId id,
+  //                  MutableHandleValue vp)
   AutoScratchRegisterMaybeOutput argJSContext(allocator, masm, output);
   AutoScratchRegisterMaybeOutputType argProxy(allocator, masm, output);
   AutoScratchRegister argId(allocator, masm);
@@ -1064,17 +1064,17 @@ bool IonCacheIRCompiler::emitProxyGetResult(ObjOperandId objId,
 
   allocator.discardStack(masm);
 
-  
+  // Push stubCode for marking.
   pushStubCodePointer();
 
-  
+  // Push args on stack first so we can take pointers to make handles.
   masm.Push(UndefinedValue());
   masm.moveStackPtrTo(argVp.get());
 
   masm.Push(id, scratch);
   masm.moveStackPtrTo(argId.get());
 
-  
+  // Push the proxy. Also used as receiver.
   masm.Push(obj);
   masm.moveStackPtrTo(argProxy.get());
 
@@ -1085,7 +1085,7 @@ bool IonCacheIRCompiler::emitProxyGetResult(ObjOperandId objId,
   }
   masm.enterFakeExitFrame(argJSContext, scratch, ExitFrameType::IonOOLProxy);
 
-  
+  // Make the call.
   using Fn = bool (*)(JSContext * cx, HandleObject proxy, HandleId id,
                       MutableHandleValue vp);
   masm.setupUnalignedABICall(scratch);
@@ -1096,20 +1096,20 @@ bool IonCacheIRCompiler::emitProxyGetResult(ObjOperandId objId,
   masm.callWithABI<Fn, ProxyGetProperty>(
       MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
-  
+  // Test for failure.
   masm.branchIfFalseBool(ReturnReg, masm.exceptionLabel());
 
-  
+  // Load the outparam vp[0] into output register(s).
   Address outparam(masm.getStackPointer(),
                    IonOOLProxyExitFrameLayout::offsetOfResult());
   masm.loadValue(outparam, output.valueReg());
 
-  
+  // Spectre mitigation in case of speculative execution within C++ code.
   if (JitOptions.spectreJitToCxxCalls) {
     masm.speculationBarrier();
   }
 
-  
+  // masm.leaveExitFrame & pop locals
   masm.adjustStack(IonOOLProxyExitFrameLayout::Size());
   return true;
 }
@@ -1130,11 +1130,11 @@ bool IonCacheIRCompiler::emitLoadEnvironmentFixedSlotResult(
     return false;
   }
 
-  
+  // Check for uninitialized lexicals.
   Address slot(obj, offset);
   masm.branchTestMagic(Assembler::Equal, slot, failure->label());
 
-  
+  // Load the value.
   masm.loadTypedOrValue(slot, output);
   return true;
 }
@@ -1154,11 +1154,11 @@ bool IonCacheIRCompiler::emitLoadEnvironmentDynamicSlotResult(
 
   masm.loadPtr(Address(obj, NativeObject::offsetOfSlots()), scratch);
 
-  
+  // Check for uninitialized lexicals.
   Address slot(scratch, offset);
   masm.branchTestMagic(Assembler::Equal, slot, failure->label());
 
-  
+  // Load the value.
   masm.loadTypedOrValue(slot, output);
   return true;
 }
@@ -1188,9 +1188,9 @@ bool IonCacheIRCompiler::emitCompareStringResult(JSOp op, StringOperandId lhsId,
 
   enterStubFrame(masm, save);
 
-  
-  
-  
+  // Push the operands in reverse order for JSOp::Le and JSOp::Gt:
+  // - |left <= right| is implemented as |right >= left|.
+  // - |left > right| is implemented as |right < left|.
   if (op == JSOp::Le || op == JSOp::Gt) {
     masm.Push(left);
     masm.Push(right);
@@ -1267,9 +1267,9 @@ bool IonCacheIRCompiler::emitAddAndStoreSlotShared(
   Shape* newShape = shapeStubField(newShapeOffset);
 
   if (op == CacheOp::AllocateAndStoreDynamicSlot) {
-    
-    
-    
+    // We have to (re)allocate dynamic slots. Do this first, as it's the
+    // only fallible operation here. Note that growSlotsPure is
+    // fallible but does not GC.
 
     FailurePath* failure;
     if (!addFailurePath(&failure)) {
@@ -1300,14 +1300,14 @@ bool IonCacheIRCompiler::emitAddAndStoreSlotShared(
     masm.branchIfFalseBool(scratch1, failure->label());
   }
 
-  
+  // Update the object's shape.
   masm.storeObjShape(newShape, obj,
                      [](MacroAssembler& masm, const Address& addr) {
                        EmitPreBarrier(masm, addr, MIRType::Shape);
                      });
 
-  
-  
+  // Perform the store. No pre-barrier required since this is a new
+  // initialization.
   if (op == CacheOp::AddAndStoreFixedSlot) {
     Address slot(obj, offset);
     masm.storeConstantOrRegister(val, slot);
@@ -1369,12 +1369,12 @@ bool IonCacheIRCompiler::emitLoadStringCharResult(StringOperandId strId,
     return false;
   }
 
-  
+  // Bounds check, load string char.
   masm.spectreBoundsCheck32(index, Address(str, JSString::offsetOfLength()),
                             scratch1, failure->label());
   masm.loadStringChar(str, index, scratch1, scratch2, failure->label());
 
-  
+  // Load StaticString for this char. For larger code units perform a VM call.
   Label vmCall;
   masm.boundsCheck32PowerOfTwo(scratch1, StaticStrings::UNIT_STATIC_LIMIT,
                                &vmCall);
@@ -1387,9 +1387,9 @@ bool IonCacheIRCompiler::emitLoadStringCharResult(StringOperandId strId,
   {
     masm.bind(&vmCall);
 
-    
-    
-    
+    // FailurePath and AutoSaveLiveRegisters don't get along very well. Both are
+    // modifying the stack and expect that no other stack manipulations are
+    // made. Therefore we need to use an ABI call instead of a VM call here.
 
     LiveRegisterSet volatileRegs(GeneralRegisterSet::Volatile(),
                                  liveVolatileFloatRegs());
@@ -1435,29 +1435,29 @@ bool IonCacheIRCompiler::emitCallNativeSetter(ObjOperandId receiverId,
 #ifndef JS_CODEGEN_X86
   AutoScratchRegister scratch(allocator, masm);
 #else
-  
+  // Not enough registers on x86.
   Register scratch = argUintN;
 #endif
 
   allocator.discardStack(masm);
 
-  
-  
-  
-  
-  
+  // Set up the call:
+  //  bool (*)(JSContext*, unsigned, Value* vp)
+  // vp[0] is callee/outparam
+  // vp[1] is |this|
+  // vp[2] is the value
 
-  
+  // Build vp and move the base into argVpReg.
   masm.Push(val);
   masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(receiver)));
   masm.Push(ObjectValue(*target));
   masm.moveStackPtrTo(argVp.get());
 
-  
+  // Preload other regs.
   masm.loadJSContext(argJSContext);
   masm.move32(Imm32(1), argUintN);
 
-  
+  // Push marking data for later use.
   masm.Push(argUintN);
   pushStubCodePointer();
 
@@ -1470,10 +1470,10 @@ bool IonCacheIRCompiler::emitCallNativeSetter(ObjOperandId receiverId,
     masm.switchToRealm(target->realm(), scratch);
   }
 
-  
+  // Make the call.
   masm.setupUnalignedABICall(scratch);
 #ifdef JS_CODEGEN_X86
-  
+  // Reload argUintN because it was clobbered.
   masm.move32(Imm32(1), argUintN);
 #endif
   masm.passABIArg(argJSContext);
@@ -1482,7 +1482,7 @@ bool IonCacheIRCompiler::emitCallNativeSetter(ObjOperandId receiverId,
   masm.callWithABI(DynamicFunction<JSNative>(target->native()), MoveOp::GENERAL,
                    CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
-  
+  // Test for failure.
   masm.branchIfFalseBool(ReturnReg, masm.exceptionLabel());
 
   if (!sameRealm) {
@@ -1515,9 +1515,9 @@ bool IonCacheIRCompiler::emitCallScriptedSetter(ObjOperandId receiverId,
 
   enterStubFrame(masm, save);
 
-  
-  
-  
+  // The JitFrameLayout pushed below will be aligned to JitStackAlignment,
+  // so we just have to make sure the stack is aligned after we push the
+  // |this| + argument Values.
   size_t numArgs = std::max<size_t>(1, target->nargs());
   uint32_t argSize = (numArgs + 1) * sizeof(Value);
   uint32_t padding =
@@ -1540,11 +1540,11 @@ bool IonCacheIRCompiler::emitCallScriptedSetter(ObjOperandId receiverId,
 
   uint32_t descriptor = MakeFrameDescriptor(
       argSize + padding, FrameType::IonICCall, JitFrameLayout::Size());
-  masm.Push(Imm32(1));  
+  masm.Push(Imm32(1));  // argc
   masm.Push(scratch);
   masm.Push(Imm32(descriptor));
 
-  
+  // Check stack alignment. Add sizeof(uintptr_t) for the return address.
   MOZ_ASSERT(((masm.framePushed() + sizeof(uintptr_t)) % JitStackAlignment) ==
              0);
 
@@ -1716,30 +1716,30 @@ bool IonCacheIRCompiler::emitGuardAndGetIterator(ObjOperandId objId,
     return false;
   }
 
-  
+  // Load our PropertyIteratorObject* and its NativeIterator.
   masm.movePtr(ImmGCPtr(iterobj), output);
 
   Address slotAddr(output, PropertyIteratorObject::offsetOfIteratorSlot());
   masm.loadPrivate(slotAddr, niScratch);
 
-  
+  // Ensure the iterator is reusable: see NativeIterator::isReusable.
   masm.branchIfNativeIteratorNotReusable(niScratch, failure->label());
 
-  
+  // Pre-write barrier for store to 'objectBeingIterated_'.
   Address iterObjAddr(niScratch, NativeIterator::offsetOfObjectBeingIterated());
   EmitPreBarrier(masm, iterObjAddr, MIRType::Object);
 
-  
+  // Mark iterator as active.
   Address iterFlagsAddr(niScratch, NativeIterator::offsetOfFlagsAndCount());
   masm.storePtr(obj, iterObjAddr);
   masm.or32(Imm32(NativeIterator::Flags::Active), iterFlagsAddr);
 
-  
+  // Post-write barrier for stores to 'objectBeingIterated_'.
   emitPostBarrierSlot(output,
                       TypedOrValueRegister(MIRType::Object, AnyRegister(obj)),
                       scratch1);
 
-  
+  // Chain onto the active iterator stack.
   masm.loadPtr(AbsoluteAddress(enumerators), scratch1);
   emitRegisterEnumerator(scratch1, niScratch, scratch2);
 
@@ -1764,8 +1764,8 @@ bool IonCacheIRCompiler::emitGuardDOMExpandoMissingOrGuardShape(
 
   masm.debugAssertIsObject(val);
   masm.unboxObject(val, objScratch);
-  
-  
+  // The expando object is not used in this case, so we don't need Spectre
+  // mitigations.
   masm.branchTestObjShapeNoSpectreMitigations(Assembler::NotEqual, objScratch,
                                               shape, failure->label());
 
@@ -1797,14 +1797,14 @@ bool IonCacheIRCompiler::emitLoadDOMExpandoValueGuardGeneration(
 void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
                               CacheKind kind, IonScript* ionScript,
                               bool* attached) {
-  
+  // We shouldn't GC or report OOM (or any other exception) here.
   AutoAssertNoPendingException aanpe(cx);
   JS::AutoCheckCannotGC nogc;
 
   MOZ_ASSERT(!*attached);
 
-  
-  
+  // Do nothing if the IR generator failed or triggered a GC that invalidated
+  // the script.
   if (writer.failed() || ionScript->invalidated()) {
     return;
   }
@@ -1815,17 +1815,17 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
   static_assert(stubDataOffset % sizeof(uint64_t) == 0,
                 "Stub fields must be aligned");
 
-  
+  // Try to reuse a previously-allocated CacheIRStubInfo.
   CacheIRStubKey::Lookup lookup(kind, ICStubEngine::IonIC, writer.codeStart(),
                                 writer.codeLength());
   CacheIRStubInfo* stubInfo = jitZone->getIonCacheIRStubInfo(lookup);
   if (!stubInfo) {
-    
-    
-    
-    
+    // Allocate the shared CacheIRStubInfo. Note that the
+    // putIonCacheIRStubInfo call below will transfer ownership to
+    // the stub info HashSet, so we don't have to worry about freeing
+    // it below.
 
-    
+    // For Ion ICs, we don't track/use the makesGCCalls flag, so just pass true.
     bool makesGCCalls = true;
     stubInfo = CacheIRStubInfo::New(kind, ICStubEngine::IonIC, makesGCCalls,
                                     stubDataOffset, writer);
@@ -1841,9 +1841,9 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
 
   MOZ_ASSERT(stubInfo);
 
-  
-  
-  
+  // Ensure we don't attach duplicate stubs. This can happen if a stub failed
+  // for some reason and the IR generator doesn't check for exactly the same
+  // conditions.
   for (IonICStub* stub = firstStub_; stub; stub = stub->next()) {
     if (stub->stubInfo() != stubInfo) {
       continue;
@@ -1856,11 +1856,11 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
 
   size_t bytesNeeded = stubInfo->stubDataOffset() + stubInfo->stubDataSize();
 
-  
-  
-  
-  
-  
+  // Allocate the IonICStub in the optimized stub space. Ion stubs and
+  // CacheIRStubInfo instances for Ion stubs can be purged on GC. That's okay
+  // because the stub code is rooted separately when we make a VM call, and
+  // stub code should never access the IonICStub after making a VM call. The
+  // IonICStub::poison method poisons the stub to catch bugs in this area.
   ICStubSpace* stubSpace = cx->zone()->jitZone()->optimizedStubSpace();
   void* newStubMem = stubSpace->alloc(bytesNeeded);
   if (!newStubMem) {
@@ -1910,7 +1910,8 @@ bool IonCacheIRCompiler::emitCallStringObjectConcatResult(ValOperandId lhsId,
 
 bool IonCacheIRCompiler::emitCloseIterScriptedResult(ObjOperandId iterId,
                                                      ObjOperandId calleeId,
-                                                     CompletionKind kind) {
+                                                     CompletionKind kind,
+                                                     uint32_t calleeNargs) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   AutoSaveLiveRegisters save(*this);
 
@@ -1921,25 +1922,29 @@ bool IonCacheIRCompiler::emitCloseIterScriptedResult(ObjOperandId iterId,
 
   uint32_t framePushedBefore = masm.framePushed();
 
-  
+  // Construct IonICCallFrameLayout.
   enterStubFrame(masm, save);
 
   uint32_t stubFramePushed = masm.framePushed();
 
-  
-  
-  uint32_t thisSize = sizeof(Value);
+  // The JitFrameLayout pushed below will be aligned to JitStackAlignment,
+  // so we just have to make sure the stack is aligned after we push |this|
+  // and |calleeNargs| undefined arguments.
+  uint32_t argSize = (calleeNargs + 1) * sizeof(Value);
   uint32_t padding =
-      ComputeByteAlignment(masm.framePushed() + thisSize, JitStackAlignment);
+      ComputeByteAlignment(masm.framePushed() + argSize, JitStackAlignment);
   MOZ_ASSERT(padding % sizeof(uintptr_t) == 0);
   MOZ_ASSERT(padding < JitStackAlignment);
   masm.reserveStack(padding);
 
+  for (uint32_t i = 0; i < calleeNargs; i++) {
+    masm.Push(UndefinedValue());
+  }
   masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(iter)));
 
   uint32_t descriptor = MakeFrameDescriptor(
-      padding + thisSize, FrameType::IonICCall, JitFrameLayout::Size());
-  masm.Push(Imm32(0));  
+      padding + argSize, FrameType::IonICCall, JitFrameLayout::Size());
+  masm.Push(Imm32(0));  // argc
   masm.Push(callee);
   masm.Push(Imm32(descriptor));
 
@@ -1947,12 +1952,12 @@ bool IonCacheIRCompiler::emitCloseIterScriptedResult(ObjOperandId iterId,
   masm.callJit(callee);
 
   if (kind != CompletionKind::Throw) {
-    
+    // Verify that the return value is an object.
     Label success;
     masm.branchTestObject(Assembler::Equal, JSReturnOperand, &success);
 
-    
-    
+    // We can reuse the same stub frame, but we first have to pop the arguments
+    // from the previous call.
     uint32_t framePushedAfterCall = masm.framePushed();
     masm.freeStack(masm.framePushed() - stubFramePushed);
 

@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "jit/BaselineCacheIRCompiler.h"
 
@@ -14,8 +14,8 @@
 #include "jit/Linker.h"
 #include "jit/SharedICHelpers.h"
 #include "jit/VMFunctions.h"
-#include "js/experimental/JitInfo.h"  
-#include "js/friend/DOMProxy.h"       
+#include "js/experimental/JitInfo.h"  // JSJitInfo
+#include "js/friend/DOMProxy.h"       // JS::ExpandoAndGeneration
 #include "proxy/DeadObjectProxy.h"
 #include "proxy/Proxy.h"
 #include "util/Unicode.h"
@@ -50,7 +50,7 @@ BaseValueIndex CacheRegisterAllocator::addressOf(MacroAssembler& masm,
   return BaseValueIndex(masm.getStackPointer(), argcReg, offset);
 }
 
-
+// BaselineCacheIRCompiler compiles CacheIR to BaselineIC native code.
 BaselineCacheIRCompiler::BaselineCacheIRCompiler(JSContext* cx,
                                                  const CacheIRWriter& writer,
                                                  uint32_t stubDataOffset)
@@ -58,7 +58,7 @@ BaselineCacheIRCompiler::BaselineCacheIRCompiler(JSContext* cx,
                       StubFieldPolicy::Address),
       makesGCCalls_(false) {}
 
-
+// AutoStubFrame methods
 AutoStubFrame::AutoStubFrame(BaselineCacheIRCompiler& compiler)
     : compiler(compiler)
 #ifdef DEBUG
@@ -90,7 +90,7 @@ void AutoStubFrame::leave(MacroAssembler& masm, bool calledIntoIon) {
 #ifdef DEBUG
   masm.setFramePushed(framePushedAtEnterStubFrame_);
   if (calledIntoIon) {
-    masm.adjustFrame(sizeof(intptr_t));  
+    masm.adjustFrame(sizeof(intptr_t));  // Calls into ion have this extra.
   }
 #endif
 
@@ -101,8 +101,8 @@ void AutoStubFrame::leave(MacroAssembler& masm, bool calledIntoIon) {
 AutoStubFrame::~AutoStubFrame() { MOZ_ASSERT(!compiler.enteredStubFrame_); }
 #endif
 
-}  
-}  
+}  // namespace jit
+}  // namespace js
 
 bool BaselineCacheIRCompiler::makesGCCalls() const { return makesGCCalls_; }
 
@@ -138,15 +138,15 @@ JitCode* BaselineCacheIRCompiler::compile() {
   AutoCreatedBy acb(masm, "BaselineCacheIRCompiler::compile");
 
 #ifndef JS_USE_LINK_REGISTER
-  
-  
+  // The first value contains the return addres,
+  // which we pull into ICTailCallReg for tail calls.
   masm.adjustFrame(sizeof(intptr_t));
 #endif
 #ifdef JS_CODEGEN_ARM
   masm.setSecondScratchReg(BaselineSecondScratchReg);
 #endif
-  
-  
+  // Count stub entries: We count entries rather than successes as it much
+  // easier to ensure ICStubReg is valid at entry than at exit.
   Address enteredCount(ICStubReg, ICCacheIRStub::offsetOfEnteredCount());
   masm.add32(Imm32(1), enteredCount);
 
@@ -169,7 +169,7 @@ JitCode* BaselineCacheIRCompiler::compile() {
   MOZ_ASSERT(!enteredStubFrame_);
   masm.assumeUnreachable("Should have returned from IC");
 
-  
+  // Done emitting the main IC code. Now emit the failure paths.
   for (size_t i = 0; i < failurePaths.length(); i++) {
     if (!emitFailurePath(i)) {
       return nullptr;
@@ -247,8 +247,8 @@ bool BaselineCacheIRCompiler::emitGuardCompartment(ObjOperandId objId,
     return false;
   }
 
-  
-  
+  // Verify that the global wrapper is still valid, as
+  // it is pre-requisite for doing the compartment check.
   Address globalWrapper(stubAddress(globalOffset));
   masm.loadPtr(globalWrapper, scratch);
   Address handlerAddr(scratch, ProxyObject::offsetOfHandler());
@@ -358,19 +358,19 @@ bool BaselineCacheIRCompiler::emitGuardSpecificAtom(StringOperandId strId,
   Label done;
   masm.branchPtr(Assembler::Equal, atomAddr, str, &done);
 
-  
-  
+  // The pointers are not equal, so if the input string is also an atom it
+  // must be a different string.
   masm.branchTest32(Assembler::NonZero, Address(str, JSString::offsetOfFlags()),
                     Imm32(JSString::ATOM_BIT), failure->label());
 
-  
+  // Check the length.
   masm.loadPtr(atomAddr, scratch);
   masm.loadStringLength(scratch, scratch);
   masm.branch32(Assembler::NotEqual, Address(str, JSString::offsetOfLength()),
                 scratch, failure->label());
 
-  
-  
+  // We have a non-atomized string with the same length. Call a helper
+  // function to do the comparison.
   LiveRegisterSet volatileRegs(GeneralRegisterSet::Volatile(),
                                liveVolatileFloatRegs());
   masm.PushRegsInMask(volatileRegs);
@@ -428,7 +428,7 @@ bool BaselineCacheIRCompiler::emitLoadFixedSlotResult(ObjOperandId objId,
 
 bool BaselineCacheIRCompiler::emitLoadFixedSlotTypedResult(
     ObjOperandId objId, uint32_t offsetOffset, ValueType) {
-  
+  // The type is only used by Warp.
   return emitLoadFixedSlotResult(objId, offsetOffset);
 }
 
@@ -458,7 +458,7 @@ bool BaselineCacheIRCompiler::emitCallScriptedGetterShared(
 
   bool isInlined = icScriptOffset.isSome();
 
-  
+  // First, retrieve raw jitcode for getter.
   masm.loadPtr(getterAddr, callee);
   if (isInlined) {
     FailurePath* failure;
@@ -479,33 +479,33 @@ bool BaselineCacheIRCompiler::emitCallScriptedGetterShared(
     masm.switchToObjectRealm(callee, scratch);
   }
 
-  
-  
+  // Align the stack such that the JitFrameLayout is aligned on
+  // JitStackAlignment.
   masm.alignJitStackBasedOnNArgs(0);
 
-  
-  
-  
+  // Getter is called with 0 arguments, just |receiver| as thisv.
+  // Note that we use Push, not push, so that callJit will align the stack
+  // properly on ARM.
   masm.Push(receiver);
 
   if (isInlined) {
-    
+    // Store icScript in the context.
     Address icScriptAddr(stubAddress(*icScriptOffset));
     masm.loadPtr(icScriptAddr, scratch);
     masm.storeICScriptInJSContext(scratch);
   }
 
   EmitBaselineCreateStubFrameDescriptor(masm, scratch, JitFrameLayout::Size());
-  masm.Push(Imm32(0));  
+  masm.Push(Imm32(0));  // ActualArgc is 0
   masm.Push(callee);
   masm.Push(scratch);
 
-  
+  // Handle arguments underflow.
   Label noUnderflow;
   masm.loadFunctionArgCount(callee, callee);
   masm.branch32(Assembler::Equal, callee, Imm32(0), &noUnderflow);
 
-  
+  // Call the arguments rectifier.
   ArgumentsRectifierKind kind = isInlined
                                     ? ArgumentsRectifierKind::TrialInlining
                                     : ArgumentsRectifierKind::Normal;
@@ -558,7 +558,7 @@ bool BaselineCacheIRCompiler::emitCallNativeGetterResult(
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, scratch);
 
-  
+  // Load the callee in the scratch register.
   masm.loadPtr(getterAddr, scratch);
 
   masm.Push(receiver);
@@ -586,7 +586,7 @@ bool BaselineCacheIRCompiler::emitCallDOMGetterResult(ObjOperandId objId,
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, scratch);
 
-  
+  // Load the JSJitInfo in the scratch register.
   masm.loadPtr(jitInfoAddr, scratch);
 
   masm.Push(obj);
@@ -613,7 +613,7 @@ bool BaselineCacheIRCompiler::emitProxyGetResult(ObjOperandId objId,
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, scratch);
 
-  
+  // Load the jsid in the scratch register.
   masm.loadPtr(idAddr, scratch);
 
   masm.Push(scratch);
@@ -632,12 +632,12 @@ bool BaselineCacheIRCompiler::emitFrameIsConstructingResult() {
   AutoOutputRegister output(*this);
   Register outputScratch = output.valueReg().scratchReg();
 
-  
+  // Load the CalleeToken.
   Address tokenAddr(FramePointer, BaselineFrame::offsetOfCalleeToken());
   masm.loadPtr(tokenAddr, outputScratch);
 
-  
-  
+  // The low bit indicates whether this call is constructing, just clear the
+  // other bits.
   static_assert(CalleeToken_Function == 0x0);
   static_assert(CalleeToken_FunctionConstructing == 0x1);
   masm.andPtr(Imm32(0x1), outputScratch);
@@ -661,10 +661,10 @@ bool BaselineCacheIRCompiler::emitLoadEnvironmentFixedSlotResult(
   masm.load32(stubAddress(offsetOffset), scratch);
   BaseIndex slot(obj, scratch, TimesOne);
 
-  
+  // Check for uninitialized lexicals.
   masm.branchTestMagic(Assembler::Equal, slot, failure->label());
 
-  
+  // Load the value.
   masm.loadValue(slot, output.valueReg());
   return true;
 }
@@ -685,11 +685,11 @@ bool BaselineCacheIRCompiler::emitLoadEnvironmentDynamicSlotResult(
   masm.load32(stubAddress(offsetOffset), scratch);
   masm.loadPtr(Address(obj, NativeObject::offsetOfSlots()), scratch2);
 
-  
+  // Check for uninitialized lexicals.
   BaseIndex slot(scratch2, scratch, TimesOne);
   masm.branchTestMagic(Assembler::Equal, slot, failure->label());
 
-  
+  // Load the value.
   masm.loadValue(slot, output.valueReg());
   return true;
 }
@@ -725,9 +725,9 @@ bool BaselineCacheIRCompiler::emitCompareStringResult(JSOp op,
     AutoStubFrame stubFrame(*this);
     stubFrame.enter(masm, scratch);
 
-    
-    
-    
+    // Push the operands in reverse order for JSOp::Le and JSOp::Gt:
+    // - |left <= right| is implemented as |right >= left|.
+    // - |left > right| is implemented as |right < left|.
     if (op == JSOp::Le || op == JSOp::Gt) {
       masm.Push(left);
       masm.Push(right);
@@ -764,7 +764,7 @@ bool BaselineCacheIRCompiler::emitSameValueResult(ValOperandId lhsId,
   AutoScratchRegister scratch(allocator, masm);
   ValueOperand lhs = allocator.useValueRegister(masm, lhsId);
 #ifdef JS_CODEGEN_X86
-  
+  // Use the output to avoid running out of registers.
   allocator.copyToScratchValueRegister(masm, rhsId, output.valueReg());
   ValueOperand rhs = output.valueReg();
 #else
@@ -776,9 +776,9 @@ bool BaselineCacheIRCompiler::emitSameValueResult(ValOperandId lhsId,
   Label done;
   Label call;
 
-  
-  
-  
+  // Check to see if the values have identical bits.
+  // This is correct for SameValue because SameValue(NaN,NaN) is true,
+  // and SameValue(0,-0) is false.
   masm.branch64(Assembler::NotEqual, lhs.toRegister64(), rhs.toRegister64(),
                 &call);
   masm.moveValue(BooleanValue(true), output.valueReg());
@@ -863,9 +863,9 @@ bool BaselineCacheIRCompiler::emitAddAndStoreSlotShared(
   Address offsetAddr = stubAddress(offsetOffset);
 
   if (op == CacheOp::AllocateAndStoreDynamicSlot) {
-    
-    
-    
+    // We have to (re)allocate dynamic slots. Do this first, as it's the
+    // only fallible operation here. Note that growSlotsPure is fallible but
+    // does not GC.
     Address numNewSlotsAddr = stubAddress(*numNewSlotsOffset);
 
     FailurePath* failure;
@@ -894,15 +894,15 @@ bool BaselineCacheIRCompiler::emitAddAndStoreSlotShared(
     masm.branchIfFalseBool(scratch1, failure->label());
   }
 
-  
+  // Update the object's shape.
   masm.loadPtr(newShapeAddr, scratch1);
   masm.storeObjShape(scratch1, obj,
                      [](MacroAssembler& masm, const Address& addr) {
                        EmitPreBarrier(masm, addr, MIRType::Shape);
                      });
 
-  
-  
+  // Perform the store. No pre-barrier required since this is a new
+  // initialization.
   masm.load32(offsetAddr, scratch1);
   if (op == CacheOp::AddAndStoreFixedSlot) {
     BaseIndex slot(obj, scratch1, TimesOne);
@@ -959,11 +959,11 @@ bool BaselineCacheIRCompiler::emitArrayJoinResult(ObjOperandId objId,
 
   allocator.discardStack(masm);
 
-  
+  // Load obj->elements in scratch.
   masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratch);
   Address lengthAddr(scratch, ObjectElements::offsetOfLength());
 
-  
+  // If array length is 0, return empty string.
   Label finished;
 
   {
@@ -977,22 +977,22 @@ bool BaselineCacheIRCompiler::emitArrayJoinResult(ObjOperandId objId,
 
   Label vmCall;
 
-  
+  // Otherwise, handle array length 1 case.
   masm.branch32(Assembler::NotEqual, lengthAddr, Imm32(1), &vmCall);
 
-  
+  // But only if initializedLength is also 1.
   Address initLength(scratch, ObjectElements::offsetOfInitializedLength());
   masm.branch32(Assembler::NotEqual, initLength, Imm32(1), &vmCall);
 
-  
+  // And only if elem0 is a string.
   Address elementAddr(scratch, 0);
   masm.branchTestString(Assembler::NotEqual, elementAddr, &vmCall);
 
-  
+  // Store the value.
   masm.loadValue(elementAddr, output.valueReg());
   masm.jump(&finished);
 
-  
+  // Otherwise call into the VM.
   {
     masm.bind(&vmCall);
 
@@ -1040,8 +1040,8 @@ bool BaselineCacheIRCompiler::emitPackedArraySliceResult(
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, scratch1);
 
-  
-  
+  // Don't attempt to pre-allocate the object, instead always use the slow
+  // path.
   ImmPtr result(nullptr);
 
   masm.Push(result);
@@ -1076,7 +1076,7 @@ bool BaselineCacheIRCompiler::emitArgumentsSliceResult(
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, scratch);
 
-  
+  // Don't attempt to pre-allocate the object, instead always use the slow path.
   ImmPtr result(nullptr);
 
   masm.Push(result);
@@ -1106,14 +1106,14 @@ bool BaselineCacheIRCompiler::emitIsArrayResult(ValOperandId inputId) {
   allocator.discardStack(masm);
 
   Label isNotArray;
-  
+  // Primitives are never Arrays.
   masm.fallibleUnboxObject(val, scratch1, &isNotArray);
 
   Label isArray;
   masm.branchTestObjClass(Assembler::Equal, scratch1, &ArrayObject::class_,
                           scratch2, scratch1, &isArray);
 
-  
+  // isArray can also return true for Proxy wrapped Arrays.
   masm.branchTestObjectIsProxy(false, scratch1, scratch2, &isNotArray);
   Label done;
   {
@@ -1200,14 +1200,14 @@ bool BaselineCacheIRCompiler::emitLoadStringCharResult(StringOperandId strId,
     return false;
   }
 
-  
+  // Bounds check, load string char.
   masm.spectreBoundsCheck32(index, Address(str, JSString::offsetOfLength()),
                             scratch1, failure->label());
   masm.loadStringChar(str, index, scratch1, scratch2, failure->label());
 
   allocator.discardStack(masm);
 
-  
+  // Load StaticString for this char. For larger code units perform a VM call.
   Label vmCall;
   masm.boundsCheck32PowerOfTwo(scratch1, StaticStrings::UNIT_STATIC_LIMIT,
                                &vmCall);
@@ -1253,16 +1253,16 @@ bool BaselineCacheIRCompiler::emitStringFromCodeResult(Int32OperandId codeId,
   }
 
   if (stringCode == StringCode::CodePoint) {
-    
-    
+    // Note: This condition must match tryAttachStringFromCodePoint to prevent
+    // failure loops.
     masm.branch32(Assembler::Above, code, Imm32(unicode::NonBMPMax),
                   failure->label());
   }
 
   allocator.discardStack(masm);
 
-  
-  
+  // We pre-allocate atoms for the first UNIT_STATIC_LIMIT characters.
+  // For code units larger than that, we must do a VM call.
   Label vmCall;
   masm.boundsCheck32PowerOfTwo(code, StaticStrings::UNIT_STATIC_LIMIT, &vmCall);
 
@@ -1346,7 +1346,7 @@ bool BaselineCacheIRCompiler::emitReflectGetPrototypeOfResult(
   Label hasProto;
   masm.branchPtr(Assembler::Above, scratch, ImmWord(1), &hasProto);
 
-  
+  // Call into the VM for lazy prototypes.
   Label slow, done;
   masm.branchPtr(Assembler::Equal, scratch, ImmWord(1), &slow);
 
@@ -1516,7 +1516,7 @@ bool BaselineCacheIRCompiler::emitCallNativeSetter(
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, scratch);
 
-  
+  // Load the callee in the scratch register.
   masm.loadPtr(setterAddr, scratch);
 
   masm.Push(val);
@@ -1548,12 +1548,12 @@ bool BaselineCacheIRCompiler::emitCallScriptedSetterShared(
 
   bool isInlined = icScriptOffset.isSome();
 
-  
+  // First, load the callee.
   masm.loadPtr(setterAddr, callee);
 
   if (isInlined) {
-    
-    
+    // If we are calling a trial-inlined setter, guard that the
+    // target has a BaselineScript.
     FailurePath* failure;
     if (!addFailurePath(&failure)) {
       return false;
@@ -1570,36 +1570,36 @@ bool BaselineCacheIRCompiler::emitCallScriptedSetterShared(
     masm.switchToObjectRealm(callee, scratch);
   }
 
-  
-  
+  // Align the stack such that the JitFrameLayout is aligned on
+  // JitStackAlignment.
   masm.alignJitStackBasedOnNArgs(1);
 
-  
-  
+  // Setter is called with 1 argument, and |receiver| as thisv. Note that we use
+  // Push, not push, so that callJit will align the stack properly on ARM.
   masm.Push(val);
   masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(receiver)));
 
   EmitBaselineCreateStubFrameDescriptor(masm, scratch, JitFrameLayout::Size());
-  masm.Push(Imm32(1));  
+  masm.Push(Imm32(1));  // ActualArgc
 
-  
+  // Push callee.
   masm.Push(callee);
 
-  
+  // Push frame descriptor.
   masm.Push(scratch);
 
   if (isInlined) {
-    
+    // Store icScript in the context.
     Address icScriptAddr(stubAddress(*icScriptOffset));
     masm.loadPtr(icScriptAddr, scratch);
     masm.storeICScriptInJSContext(scratch);
   }
 
-  
+  // Load the jitcode pointer.
   if (isInlined) {
-    
-    
-    
+    // On non-x86 platforms, this pointer is still in a register
+    // after guarding on it above. On x86, we don't have enough
+    // registers and have to reload it here.
 #ifdef JS_CODEGEN_X86
     masm.loadBaselineJitCodeRaw(callee, code);
 #endif
@@ -1607,14 +1607,14 @@ bool BaselineCacheIRCompiler::emitCallScriptedSetterShared(
     masm.loadJitCodeRaw(callee, code);
   }
 
-  
-  
+  // Handle arguments underflow. The rhs value is no longer needed and
+  // can be used as scratch.
   Label noUnderflow;
   Register scratch2 = val.scratchReg();
   masm.loadFunctionArgCount(callee, scratch2);
   masm.branch32(Assembler::BelowOrEqual, scratch2, Imm32(1), &noUnderflow);
 
-  
+  // Call the arguments rectifier.
   ArgumentsRectifierKind kind = isInlined
                                     ? ArgumentsRectifierKind::TrialInlining
                                     : ArgumentsRectifierKind::Normal;
@@ -1668,7 +1668,7 @@ bool BaselineCacheIRCompiler::emitCallDOMSetter(ObjOperandId objId,
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, scratch);
 
-  
+  // Load the JSJitInfo in the scratch register.
   masm.loadPtr(jitInfoAddr, scratch);
 
   masm.Push(val);
@@ -1722,7 +1722,7 @@ bool BaselineCacheIRCompiler::emitProxySet(ObjOperandId objId,
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, scratch);
 
-  
+  // Load the jsid in the scratch register.
   masm.loadPtr(idAddr, scratch);
 
   masm.Push(Imm32(strict));
@@ -1748,16 +1748,16 @@ bool BaselineCacheIRCompiler::emitProxySetByValue(ObjOperandId objId,
 
   allocator.discardStack(masm);
 
-  
-  
+  // We need a scratch register but we don't have any registers available on
+  // x86, so temporarily store |obj| in the frame's scratch slot.
   int scratchOffset = BaselineFrame::reverseOffsetOfScratchValue();
   masm.storePtr(obj, Address(FramePointer, scratchOffset));
 
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, obj);
 
-  
-  
+  // Restore |obj|. Because we entered a stub frame we first have to load
+  // the original frame pointer.
   masm.loadPtr(Address(FramePointer, 0), obj);
   masm.loadPtr(Address(obj, scratchOffset), obj);
 
@@ -1810,16 +1810,16 @@ bool BaselineCacheIRCompiler::emitMegamorphicSetElement(ObjOperandId objId,
 
   allocator.discardStack(masm);
 
-  
-  
+  // We need a scratch register but we don't have any registers available on
+  // x86, so temporarily store |obj| in the frame's scratch slot.
   int scratchOffset = BaselineFrame::reverseOffsetOfScratchValue();
   masm.storePtr(obj, Address(FramePointer, scratchOffset));
 
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, obj);
 
-  
-  
+  // Restore |obj|. Because we entered a stub frame we first have to load
+  // the original frame pointer.
   masm.loadPtr(Address(FramePointer, 0), obj);
   masm.loadPtr(Address(obj, scratchOffset), obj);
 
@@ -1885,32 +1885,32 @@ bool BaselineCacheIRCompiler::emitGuardAndGetIterator(
     return false;
   }
 
-  
+  // Load our PropertyIteratorObject* and its NativeIterator.
   masm.loadPtr(iterAddr, output);
 
   Address slotAddr(output, PropertyIteratorObject::offsetOfIteratorSlot());
   masm.loadPrivate(slotAddr, niScratch);
 
-  
+  // Ensure the iterator is reusable: see NativeIterator::isReusable.
   masm.branchIfNativeIteratorNotReusable(niScratch, failure->label());
 
-  
+  // Pre-write barrier for store to 'objectBeingIterated_'.
   Address iterObjAddr(niScratch, NativeIterator::offsetOfObjectBeingIterated());
   EmitPreBarrier(masm, iterObjAddr, MIRType::Object);
 
-  
+  // Mark iterator as active.
   Address iterFlagsAddr(niScratch, NativeIterator::offsetOfFlagsAndCount());
   masm.storePtr(obj, iterObjAddr);
   masm.or32(Imm32(NativeIterator::Flags::Active), iterFlagsAddr);
 
-  
+  // Post-write barrier for stores to 'objectBeingIterated_'.
   emitPostBarrierSlot(output,
                       TypedOrValueRegister(MIRType::Object, AnyRegister(obj)),
                       scratch1);
 
-  
-  
-  
+  // Chain onto the active iterator stack. Note that Baseline CacheIR stub
+  // code is shared across compartments within a Zone, so we can't bake in
+  // compartment->enumerators here.
   masm.loadPtr(enumeratorsAddr, scratch1);
   masm.loadPtr(Address(scratch1, 0), scratch1);
   emitRegisterEnumerator(scratch1, niScratch, scratch2);
@@ -1937,8 +1937,8 @@ bool BaselineCacheIRCompiler::emitGuardDOMExpandoMissingOrGuardShape(
   masm.debugAssertIsObject(val);
   masm.loadPtr(shapeAddr, shapeScratch);
   masm.unboxObject(val, objScratch);
-  
-  
+  // The expando object is not used in this case, so we don't need Spectre
+  // mitigations.
   masm.branchTestObjShapeNoSpectreMitigations(Assembler::NotEqual, objScratch,
                                               shapeScratch, failure->label());
 
@@ -1966,19 +1966,19 @@ bool BaselineCacheIRCompiler::emitLoadDOMExpandoValueGuardGeneration(
   Address expandoAddr(scratch,
                       js::detail::ProxyReservedSlots::offsetOfPrivateSlot());
 
-  
-  
+  // Load the ExpandoAndGeneration* in the output scratch register and guard
+  // it matches the proxy's ExpandoAndGeneration.
   masm.loadPtr(expandoAndGenerationAddr, output.scratchReg());
   masm.branchPrivatePtr(Assembler::NotEqual, expandoAddr, output.scratchReg(),
                         failure->label());
 
-  
+  // Guard expandoAndGeneration->generation matches the expected generation.
   masm.branch64(
       Assembler::NotEqual,
       Address(output.scratchReg(), ExpandoAndGeneration::offsetOfGeneration()),
       generationAddr, scratch, failure->label());
 
-  
+  // Load expandoAndGeneration->expando into the output Value register.
   masm.loadValue(
       Address(output.scratchReg(), ExpandoAndGeneration::offsetOfExpando()),
       output);
@@ -1993,8 +1993,8 @@ bool BaselineCacheIRCompiler::init(CacheKind kind) {
   size_t numInputs = writer_.numInputOperands();
   MOZ_ASSERT(numInputs == NumInputsForCacheKind(kind));
 
-  
-  
+  // Baseline passes the first 2 inputs in R0/R1, other Values are stored on
+  // the stack.
   size_t numInputsInRegs = std::min(numInputs, size_t(2));
   AllocatableGeneralRegisterSet available =
       BaselineICAvailableGeneralRegs(numInputsInRegs);
@@ -2053,8 +2053,8 @@ bool BaselineCacheIRCompiler::init(CacheKind kind) {
       MOZ_ASSERT(numInputs == 1);
       allocator.initInputLocation(0, R0.scratchReg(), JSVAL_TYPE_OBJECT);
 #if defined(JS_NUNBOX32)
-      
-      
+      // availableGeneralRegs can't know that GetName/BindName is only using
+      // the payloadReg and not typeReg on x86.
       available.add(R0.typeReg());
 #endif
       outputUnchecked_.emplace(R0);
@@ -2063,8 +2063,8 @@ bool BaselineCacheIRCompiler::init(CacheKind kind) {
       MOZ_ASSERT(numInputs == 1);
       allocator.initInputLocation(0, R0.scratchReg(), JSVAL_TYPE_INT32);
 #if defined(JS_NUNBOX32)
-      
-      
+      // availableGeneralRegs can't know that Call is only using
+      // the payloadReg and not typeReg on x86.
       available.add(R0.typeReg());
 #endif
       outputUnchecked_.emplace(R0);
@@ -2075,7 +2075,7 @@ bool BaselineCacheIRCompiler::init(CacheKind kind) {
       break;
   }
 
-  
+  // Baseline doesn't allocate float registers so none of them are live.
   liveFloatRegs_ = LiveFloatRegisterSet(FloatRegisterSet());
 
   allocator.initAvailableRegs(available);
@@ -2104,7 +2104,7 @@ static ICStubSpace* StubSpaceForStub(bool makesGCCalls, JSScript* script,
 ICAttachResult js::jit::AttachBaselineCacheIRStub(
     JSContext* cx, const CacheIRWriter& writer, CacheKind kind,
     JSScript* outerScript, ICScript* icScript, ICFallbackStub* stub) {
-  
+  // We shouldn't GC or report OOM (or any other exception) here.
   AutoAssertNoPendingException aanpe(cx);
   JS::AutoCheckCannotGC nogc;
 
@@ -2116,8 +2116,8 @@ ICAttachResult js::jit::AttachBaselineCacheIRStub(
   }
   MOZ_ASSERT(!writer.failed());
 
-  
-  
+  // Just a sanity check: the caller should ensure we don't attach an
+  // unlimited number of stubs.
 #ifdef DEBUG
   static const size_t MaxOptimizedCacheIRStubs = 16;
   MOZ_ASSERT(stub->numOptimizedStubs() < MaxOptimizedCacheIRStubs);
@@ -2129,13 +2129,13 @@ ICAttachResult js::jit::AttachBaselineCacheIRStub(
 
   JitZone* jitZone = cx->zone()->jitZone();
 
-  
+  // Check if we already have JitCode for this stub.
   CacheIRStubInfo* stubInfo;
   CacheIRStubKey::Lookup lookup(kind, ICStubEngine::Baseline,
                                 writer.codeStart(), writer.codeLength());
   JitCode* code = jitZone->getBaselineCacheIRStubCode(lookup, &stubInfo);
   if (!code) {
-    
+    // We have to generate stub code.
     JitContext jctx(cx, nullptr);
     BaselineCacheIRCompiler comp(cx, writer, stubDataOffset);
     if (!comp.init(kind)) {
@@ -2147,10 +2147,10 @@ ICAttachResult js::jit::AttachBaselineCacheIRStub(
       return ICAttachResult::OOM;
     }
 
-    
-    
-    
-    
+    // Allocate the shared CacheIRStubInfo. Note that the
+    // putBaselineCacheIRStubCode call below will transfer ownership
+    // to the stub code HashMap, so we don't have to worry about freeing
+    // it below.
     MOZ_ASSERT(!stubInfo);
     stubInfo =
         CacheIRStubInfo::New(kind, ICStubEngine::Baseline, comp.makesGCCalls(),
@@ -2171,9 +2171,9 @@ ICAttachResult js::jit::AttachBaselineCacheIRStub(
 
   ICEntry* icEntry = icScript->icEntryForStub(stub);
 
-  
-  
-  
+  // Ensure we don't attach duplicate stubs. This can happen if a stub failed
+  // for some reason and the IR generator doesn't check for exactly the same
+  // conditions.
   for (ICStub* iter = icEntry->firstStub(); iter != stub;
        iter = iter->toCacheIRStub()->next()) {
     auto otherStub = iter->toCacheIRStub();
@@ -2184,9 +2184,9 @@ ICAttachResult js::jit::AttachBaselineCacheIRStub(
       continue;
     }
 
-    
-    
-    
+    // We found a stub that's exactly the same as the stub we're about to
+    // attach. Just return nullptr, the caller should do nothing in this
+    // case.
     JitSpew(JitSpew_BaselineICFallback,
             "Tried attaching identical stub for (%s:%u:%u)",
             outerScript->filename(), outerScript->lineno(),
@@ -2194,7 +2194,7 @@ ICAttachResult js::jit::AttachBaselineCacheIRStub(
     return ICAttachResult::DuplicateStub;
   }
 
-  
+  // Time to allocate and attach a new stub.
 
   size_t bytesNeeded = stubInfo->stubDataOffset() + stubInfo->stubDataSize();
 
@@ -2205,8 +2205,8 @@ ICAttachResult js::jit::AttachBaselineCacheIRStub(
     return ICAttachResult::OOM;
   }
 
-  
-  
+  // Resetting the entered counts on the IC chain makes subsequent reasoning
+  // about the chain much easier.
   ResetEnteredCounts(icEntry);
 
   switch (stub->trialInliningState()) {
@@ -2240,7 +2240,7 @@ bool BaselineCacheIRCompiler::emitCallStringObjectConcatResult(
 
   allocator.discardStack(masm);
 
-  
+  // For the expression decompiler
   EmitRestoreTailCallReg(masm);
   masm.pushValue(lhs);
   masm.pushValue(rhs);
@@ -2254,39 +2254,39 @@ bool BaselineCacheIRCompiler::emitCallStringObjectConcatResult(
   return true;
 }
 
-
-
-
-
-
-
-
+// The value of argc entering the call IC is not always the value of
+// argc entering the callee. (For example, argc for a spread call IC
+// is always 1, but argc for the callee is the length of the array.)
+// In these cases, we update argc as part of the call op itself, to
+// avoid modifying input operands while it is still possible to fail a
+// guard. We also limit callee argc to a reasonable value to avoid
+// blowing the stack limit.
 bool BaselineCacheIRCompiler::updateArgc(CallFlags flags, Register argcReg,
                                          Register scratch) {
   CallFlags::ArgFormat format = flags.getArgFormat();
   switch (format) {
     case CallFlags::Standard:
-      
+      // Standard calls have no extra guards, and argc is already correct.
       return true;
     case CallFlags::FunCall:
-      
-      
+      // fun_call has no extra guards, and argc will be corrected in
+      // pushFunCallArguments.
       return true;
     default:
       break;
   }
 
-  
+  // We need to guard the length of the arguments.
   FailurePath* failure;
   if (!addFailurePath(&failure)) {
     return false;
   }
 
-  
+  // Load callee argc into scratch.
   switch (flags.getArgFormat()) {
     case CallFlags::Spread:
     case CallFlags::FunApplyArray: {
-      
+      // Load the length of the elements.
       BaselineFrameSlot slot(flags.isConstructing());
       masm.unboxObject(allocator.addressOf(masm, slot), scratch);
       masm.loadPtr(Address(scratch, NativeObject::offsetOfElements()), scratch);
@@ -2294,7 +2294,7 @@ bool BaselineCacheIRCompiler::updateArgc(CallFlags flags, Register argcReg,
       break;
     }
     case CallFlags::FunApplyArgsObj: {
-      
+      // Load the arguments object length.
       BaselineFrameSlot slot(0);
       masm.unboxObject(allocator.addressOf(masm, slot), scratch);
       masm.loadArgumentsObjectLength(scratch, scratch, failure->label());
@@ -2304,11 +2304,11 @@ bool BaselineCacheIRCompiler::updateArgc(CallFlags flags, Register argcReg,
       MOZ_CRASH("Unknown arg format");
   }
 
-  
+  // Ensure that callee argc does not exceed the limit.
   masm.branch32(Assembler::Above, scratch, Imm32(JIT_ARGS_LENGTH_MAX),
                 failure->label());
 
-  
+  // We're past the final guard. Update argc with the new value.
   masm.move32(scratch, argcReg);
 
   return true;
@@ -2335,7 +2335,7 @@ void BaselineCacheIRCompiler::pushArguments(Register argcReg,
       break;
     case CallFlags::FunApplyArray:
       pushArrayArguments(argcReg, scratch, scratch2, isJitCall,
-                         false);
+                         /*isConstructing =*/false);
       break;
     default:
       MOZ_CRASH("Invalid arg format");
@@ -2347,32 +2347,32 @@ void BaselineCacheIRCompiler::pushStandardArguments(Register argcReg,
                                                     Register scratch2,
                                                     bool isJitCall,
                                                     bool isConstructing) {
-  
-  
-  
+  // The arguments to the call IC are pushed on the stack left-to-right.
+  // Our calling conventions want them right-to-left in the callee, so
+  // we duplicate them on the stack in reverse order.
 
-  
-  
-  
-  
-  
-  
+  // countReg contains the total number of arguments to copy.
+  // In addition to the actual arguments, we have to copy hidden arguments.
+  // We always have to copy |this|.
+  // If we are constructing, we have to copy |newTarget|.
+  // If we are not a jit call, we have to copy |callee|.
+  // We use a scratch register to avoid clobbering argc, which is an input reg.
   Register countReg = scratch;
   masm.move32(argcReg, countReg);
   masm.add32(Imm32(1 + !isJitCall + isConstructing), countReg);
 
-  
+  // argPtr initially points to the last argument. Skip the stub frame.
   Register argPtr = scratch2;
   Address argAddress(masm.getStackPointer(), STUB_FRAME_SIZE);
   masm.computeEffectiveAddress(argAddress, argPtr);
 
-  
-  
+  // Align the stack such that the JitFrameLayout is aligned on the
+  // JitStackAlignment.
   if (isJitCall) {
-    masm.alignJitStackBasedOnNArgs(countReg,  true);
+    masm.alignJitStackBasedOnNArgs(countReg, /*countIncludesThis = */ true);
   }
 
-  
+  // Push all values, starting at the last one.
   Label loop, done;
   masm.branchTest32(Assembler::Zero, countReg, countReg, &done);
   masm.bind(&loop);
@@ -2390,36 +2390,36 @@ void BaselineCacheIRCompiler::pushArrayArguments(Register argcReg,
                                                  Register scratch2,
                                                  bool isJitCall,
                                                  bool isConstructing) {
-  
+  // Pull the array off the stack before aligning.
   Register startReg = scratch;
   masm.unboxObject(Address(masm.getStackPointer(),
                            (isConstructing * sizeof(Value)) + STUB_FRAME_SIZE),
                    startReg);
   masm.loadPtr(Address(startReg, NativeObject::offsetOfElements()), startReg);
 
-  
-  
+  // Align the stack such that the JitFrameLayout is aligned on the
+  // JitStackAlignment.
   if (isJitCall) {
     Register alignReg = argcReg;
     if (isConstructing) {
-      
+      // If we are constructing, we must take newTarget into account.
       alignReg = scratch2;
       masm.computeEffectiveAddress(Address(argcReg, 1), alignReg);
     }
-    masm.alignJitStackBasedOnNArgs(alignReg, false);
+    masm.alignJitStackBasedOnNArgs(alignReg, /*countIncludesThis =*/false);
   }
 
-  
+  // Push newTarget, if necessary
   if (isConstructing) {
     masm.pushValue(Address(FramePointer, STUB_FRAME_SIZE));
   }
 
-  
+  // Push arguments: set up endReg to point to &array[argc]
   Register endReg = scratch2;
   BaseValueIndex endAddr(startReg, argcReg);
   masm.computeEffectiveAddress(endAddr, endReg);
 
-  
+  // Copying pre-decrements endReg by 8 until startReg is reached
   Label copyDone;
   Label copyStart;
   masm.bind(&copyStart);
@@ -2429,11 +2429,11 @@ void BaselineCacheIRCompiler::pushArrayArguments(Register argcReg,
   masm.jump(&copyStart);
   masm.bind(&copyDone);
 
-  
+  // Push |this|.
   masm.pushValue(Address(
       FramePointer, STUB_FRAME_SIZE + (1 + isConstructing) * sizeof(Value)));
 
-  
+  // Push |callee| if needed.
   if (!isJitCall) {
     masm.pushValue(Address(
         FramePointer, STUB_FRAME_SIZE + (2 + isConstructing) * sizeof(Value)));
@@ -2448,47 +2448,47 @@ void BaselineCacheIRCompiler::pushFunCallArguments(Register argcReg,
   Label zeroArgs, done;
   masm.branchTest32(Assembler::Zero, argcReg, argcReg, &zeroArgs);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // When we call fun_call, the stack looks like the left column (note
+  // that newTarget will not be present, because fun_call cannot be a
+  // constructor call):
+  //
+  // ***Arguments to fun_call***
+  // callee (fun_call)               ***Arguments to target***
+  // this (target function)   -----> callee
+  // arg0 (this of target)    -----> this
+  // arg1 (arg0 of target)    -----> arg0
+  // argN (argN-1 of target)  -----> arg1
+  //
+  // As demonstrated in the right column, this is exactly what we need
+  // the stack to look like when calling pushStandardArguments for target,
+  // except with one more argument. If we subtract 1 from argc,
+  // everything works out correctly.
   masm.sub32(Imm32(1), argcReg);
 
   pushStandardArguments(argcReg, scratch, scratch2, isJitCall,
-                        false);
+                        /*isConstructing =*/false);
 
   masm.jump(&done);
   masm.bind(&zeroArgs);
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // The exception is the case where argc == 0:
+  //
+  // ***Arguments to fun_call***
+  // callee (fun_call)               ***Arguments to target***
+  // this (target function)   -----> callee
+  // <nothing>                -----> this
+  //
+  // In this case, we push |undefined| for |this|.
 
   if (isJitCall) {
-    
+    // Align the stack to 0 args.
     masm.alignJitStackBasedOnNArgs(0);
   }
 
-  
+  // Store the new |this|.
   masm.pushValue(UndefinedValue());
 
-  
+  // Store |callee| if needed.
   if (!isJitCall) {
     masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(calleeReg)));
   }
@@ -2501,29 +2501,29 @@ void BaselineCacheIRCompiler::pushFunApplyArgsObj(Register argcReg,
                                                   Register scratch,
                                                   Register scratch2,
                                                   bool isJitCall) {
-  
+  // Load the arguments object off the stack before aligning.
   Register argsReg = scratch;
   masm.unboxObject(Address(masm.getStackPointer(), STUB_FRAME_SIZE), argsReg);
 
-  
-  
+  // Align the stack such that the JitFrameLayout is aligned on the
+  // JitStackAlignment.
   if (isJitCall) {
-    masm.alignJitStackBasedOnNArgs(argcReg, false);
+    masm.alignJitStackBasedOnNArgs(argcReg, /*countIncludesThis =*/false);
   }
 
-  
+  // Load ArgumentsData.
   masm.loadPrivate(Address(argsReg, ArgumentsObject::getDataSlotOffset()),
                    argsReg);
 
-  
-  
+  // We push the arguments onto the stack last-to-first.
+  // Compute the bounds of the arguments array.
   Register currReg = scratch2;
   Address argsStartAddr(argsReg, ArgumentsData::offsetOfArgs());
   masm.computeEffectiveAddress(argsStartAddr, argsReg);
   BaseValueIndex argsEndAddr(argsReg, argcReg);
   masm.computeEffectiveAddress(argsEndAddr, currReg);
 
-  
+  // Loop until all arguments have been pushed.
   Label done, loop;
   masm.bind(&loop);
   masm.branchPtr(Assembler::Equal, currReg, argsReg, &done);
@@ -2531,8 +2531,8 @@ void BaselineCacheIRCompiler::pushFunApplyArgsObj(Register argcReg,
 
   Address currArgAddr(currReg, 0);
 #ifdef DEBUG
-  
-  
+  // Arguments are forwarded to the call object if they are closed over.
+  // In this case, OVERRIDDEN_ELEMENTS_BIT should be set.
   Label notForwarded;
   masm.branchTestMagic(Assembler::NotEqual, currArgAddr, &notForwarded);
   masm.assumeUnreachable("Should have checked for overridden elements");
@@ -2543,10 +2543,10 @@ void BaselineCacheIRCompiler::pushFunApplyArgsObj(Register argcReg,
   masm.jump(&loop);
   masm.bind(&done);
 
-  
+  // Push arg0 as |this| for call
   masm.pushValue(Address(FramePointer, STUB_FRAME_SIZE + sizeof(Value)));
 
-  
+  // Push |callee| if needed.
   if (!isJitCall) {
     masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(calleeReg)));
   }
@@ -2572,8 +2572,8 @@ bool BaselineCacheIRCompiler::emitCallNativeShared(
 
   allocator.discardStack(masm);
 
-  
-  
+  // Push a stub frame so that we can perform a non-tail call.
+  // Note that this leaves the return address in TailCallReg.
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, scratch);
 
@@ -2582,19 +2582,19 @@ bool BaselineCacheIRCompiler::emitCallNativeShared(
   }
 
   pushArguments(argcReg, calleeReg, scratch, scratch2, flags,
-                false);
+                /*isJitCall =*/false);
 
-  
-  
-  
-  
-  
-  
+  // Native functions have the signature:
+  //
+  //    bool (*)(JSContext*, unsigned, Value* vp)
+  //
+  // Where vp[0] is space for callee/return value, vp[1] is |this|, and vp[2]
+  // onward are the function arguments.
 
-  
+  // Initialize vp.
   masm.moveStackPtrTo(scratch2.get());
 
-  
+  // Construct a native exit frame.
   masm.push(argcReg);
 
   EmitBaselineCreateStubFrameDescriptor(masm, scratch, ExitFrameLayout::Size());
@@ -2603,7 +2603,7 @@ bool BaselineCacheIRCompiler::emitCallNativeShared(
   masm.loadJSContext(scratch);
   masm.enterFakeExitFrameForNative(scratch, scratch, isConstructing);
 
-  
+  // Execute call.
   masm.setupUnalignedABICall(scratch);
   masm.loadJSContext(scratch);
   masm.passABIArg(scratch);
@@ -2613,10 +2613,10 @@ bool BaselineCacheIRCompiler::emitCallNativeShared(
   switch (callType) {
     case NativeCallType::Native: {
 #ifdef JS_SIMULATOR
-      
-      
-      
-      
+      // The simulator requires VM calls to be redirected to a special
+      // swi instruction to handle them, so we store the redirected
+      // pointer in the stub and use that instead of the original one.
+      // (See CacheIRWriter::callNativeFunction.)
       Address redirectedAddr(stubAddress(*targetOffset));
       masm.callWithABI(redirectedAddr);
 #else
@@ -2627,8 +2627,8 @@ bool BaselineCacheIRCompiler::emitCallNativeShared(
         masm.callWithABI(
             Address(calleeReg, JSJitInfo::offsetOfIgnoresReturnValueNative()));
       } else {
-        
-        
+        // This depends on the native function pointer being stored unchanged as
+        // a PrivateValue.
         masm.callWithABI(Address(calleeReg, JSFunction::offsetOfNativeOrEnv()));
       }
 #endif
@@ -2639,10 +2639,10 @@ bool BaselineCacheIRCompiler::emitCallNativeShared(
     } break;
   }
 
-  
+  // Test for failure.
   masm.branchIfFalseBool(ReturnReg, masm.exceptionLabel());
 
-  
+  // Load the return value.
   masm.loadValue(
       Address(masm.getStackPointer(), NativeExitFrameLayout::offsetOfResult()),
       output.valueReg());
@@ -2714,12 +2714,12 @@ bool BaselineCacheIRCompiler::emitCallClassHook(ObjOperandId calleeId,
                               flags, ignoresReturnValue, targetOffset_);
 }
 
-
-
-
-
-
-
+// Helper function for loading call arguments from the stack.  Loads
+// and unboxes an object from a specific slot. |stackPushed| is the
+// size of the data pushed on top of the call arguments in the current
+// frame. It must be tracked manually by the caller. (createThis is
+// currently the only caller. If more callers are added, it might be
+// worth improving the stack depth story.)
 void BaselineCacheIRCompiler::loadStackObject(ArgumentKind kind,
                                               CallFlags flags,
                                               size_t stackPushed,
@@ -2744,15 +2744,15 @@ void BaselineCacheIRCompiler::storeThis(const T& newThis, Register argcReg,
   switch (flags.getArgFormat()) {
     case CallFlags::Standard: {
       BaseValueIndex thisAddress(masm.getStackPointer(),
-                                 argcReg,               
-                                 1 * sizeof(Value) +    
-                                     STUB_FRAME_SIZE);  
+                                 argcReg,               // Arguments
+                                 1 * sizeof(Value) +    // NewTarget
+                                     STUB_FRAME_SIZE);  // Stub frame
       masm.storeValue(newThis, thisAddress);
     } break;
     case CallFlags::Spread: {
       Address thisAddress(masm.getStackPointer(),
-                          2 * sizeof(Value) +    
-                              STUB_FRAME_SIZE);  
+                          2 * sizeof(Value) +    // Arg array, NewTarget
+                              STUB_FRAME_SIZE);  // Stub frame
       masm.storeValue(newThis, thisAddress);
     } break;
     default:
@@ -2760,17 +2760,17 @@ void BaselineCacheIRCompiler::storeThis(const T& newThis, Register argcReg,
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * Scripted constructors require a |this| object to be created prior to the
+ * call. When this function is called, the stack looks like (bottom->top):
+ *
+ * [..., Callee, ThisV, Arg0V, ..., ArgNV, NewTarget, StubFrameHeader]
+ *
+ * At this point, |ThisV| is JSWhyMagic::JS_IS_CONSTRUCTING.
+ *
+ * This function calls CreateThis to generate a new |this| object, then
+ * overwrites the magic ThisV on the stack.
+ */
 void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
                                          Register scratch, CallFlags flags) {
   MOZ_ASSERT(flags.isConstructing());
@@ -2782,25 +2782,25 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
 
   size_t depth = STUB_FRAME_SIZE;
 
-  
+  // Save live registers that don't have to be traced.
   LiveGeneralRegisterSet liveNonGCRegs;
   liveNonGCRegs.add(argcReg);
   liveNonGCRegs.add(ICStubReg);
   masm.PushRegsInMask(liveNonGCRegs);
   depth += sizeof(uintptr_t) * liveNonGCRegs.set().size();
 
-  
+  // CreateThis takes two arguments: callee, and newTarget.
 
-  
+  // Push newTarget:
   loadStackObject(ArgumentKind::NewTarget, flags, depth, argcReg, scratch);
   masm.push(scratch);
   depth += sizeof(JSObject*);
 
-  
+  // Push callee:
   loadStackObject(ArgumentKind::Callee, flags, depth, argcReg, scratch);
   masm.push(scratch);
 
-  
+  // Call CreateThisFromIC.
   using Fn =
       bool (*)(JSContext*, HandleObject, HandleObject, MutableHandleValue);
   callVM<Fn, CreateThisFromIC>(masm);
@@ -2814,16 +2814,16 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
   masm.bind(&createdThisOK);
 #endif
 
-  
+  // Restore saved registers.
   masm.PopRegsInMask(liveNonGCRegs);
 
-  
+  // Save |this| value back into pushed arguments on stack.
   MOZ_ASSERT(!liveNonGCRegs.aliases(JSReturnOperand));
   storeThis(JSReturnOperand, argcReg, flags);
 
-  
-  
-  
+  // Restore calleeReg. CreateThisFromIC may trigger a GC, so we reload the
+  // callee from the stub frame (which is traced) instead of spilling it to
+  // the stack.
   depth = STUB_FRAME_SIZE;
   loadStackObject(ArgumentKind::Callee, flags, depth, argcReg, calleeReg);
 }
@@ -2832,19 +2832,19 @@ void BaselineCacheIRCompiler::updateReturnValue() {
   Label skipThisReplace;
   masm.branchTestObject(Assembler::Equal, JSReturnOperand, &skipThisReplace);
 
-  
-  
+  // If a constructor does not explicitly return an object, the return value
+  // of the constructor is |this|. We load it out of the baseline stub frame.
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  // At this point, the stack looks like this:
+  //  newTarget
+  //  ArgN
+  //  ...
+  //  Arg0
+  //  ThisVal         <---- We want this value.
+  //  argc                  ^
+  //  Callee token          | Skip three stack slots.
+  //  Frame descriptor      v
+  //  [Top of stack]
   Address thisAddress(masm.getStackPointer(), 3 * sizeof(size_t));
   masm.loadValue(thisAddress, JSReturnOperand);
 
@@ -2875,8 +2875,8 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction(ObjOperandId calleeId,
 
   allocator.discardStack(masm);
 
-  
-  
+  // Push a stub frame so that we can perform a non-tail call.
+  // Note that this leaves the return address in TailCallReg.
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, scratch);
 
@@ -2889,26 +2889,26 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction(ObjOperandId calleeId,
   }
 
   pushArguments(argcReg, calleeReg, scratch, scratch2, flags,
-                true);
+                /*isJitCall =*/true);
 
-  
+  // Load the start of the target JitCode.
   Register code = scratch2;
   masm.loadJitCodeRaw(calleeReg, code);
 
   EmitBaselineCreateStubFrameDescriptor(masm, scratch, JitFrameLayout::Size());
 
-  
-  
+  // Note that we use Push, not push, so that callJit will align the stack
+  // properly on ARM.
   masm.Push(argcReg);
   masm.PushCalleeToken(calleeReg, isConstructing);
   masm.Push(scratch);
 
-  
+  // Handle arguments underflow.
   Label noUnderflow;
   masm.loadFunctionArgCount(calleeReg, calleeReg);
   masm.branch32(Assembler::AboveOrEqual, argcReg, calleeReg, &noUnderflow);
   {
-    
+    // Call the arguments rectifier.
     TrampolinePtr argumentsRectifier =
         cx_->runtime()->jitRuntime()->getArgumentsRectifier();
     masm.movePtr(argumentsRectifier, code);
@@ -2917,8 +2917,8 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction(ObjOperandId calleeId,
   masm.bind(&noUnderflow);
   masm.callJit(code);
 
-  
-  
+  // If this is a constructing call, and the callee returns a non-object,
+  // replace it with the |this| object passed in.
   if (isConstructing) {
     updateReturnValue();
   }
@@ -2969,8 +2969,8 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
 
   allocator.discardStack(masm);
 
-  
-  
+  // Push a stub frame so that we can perform a non-tail call.
+  // Note that this leaves the return address in TailCallReg.
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, scratch);
 
@@ -2982,14 +2982,14 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
   if (isConstructing) {
     createThis(argcReg, calleeReg, scratch, flags);
 
-    
-    
-    
-    
+    // CreateThisFromIC may trigger a GC and discard the BaselineScript.
+    // We have already called discardStack, so we can't use a FailurePath.
+    // Instead, we skip storing the ICScript in the JSContext and use a
+    // normal non-inlined call.
     masm.loadBaselineJitCodeRaw(calleeReg, codeReg, &baselineScriptDiscarded);
   }
 
-  
+  // Store icScript in the context.
   Address icScriptAddr(stubAddress(icScriptOffset));
   masm.loadPtr(icScriptAddr, scratch);
   masm.storeICScriptInJSContext(scratch);
@@ -3003,22 +3003,22 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
   }
 
   pushArguments(argcReg, calleeReg, scratch, scratch2, flags,
-                true);
+                /*isJitCall =*/true);
 
   EmitBaselineCreateStubFrameDescriptor(masm, scratch, JitFrameLayout::Size());
 
-  
-  
+  // Note that we use Push, not push, so that callJit will align the stack
+  // properly on ARM.
   masm.Push(argcReg);
   masm.PushCalleeToken(calleeReg, isConstructing);
   masm.Push(scratch);
 
-  
+  // Handle arguments underflow.
   Label noUnderflow;
   masm.loadFunctionArgCount(calleeReg, calleeReg);
   masm.branch32(Assembler::AboveOrEqual, argcReg, calleeReg, &noUnderflow);
 
-  
+  // Call the trial-inlining arguments rectifier.
   ArgumentsRectifierKind kind = ArgumentsRectifierKind::TrialInlining;
   TrampolinePtr argumentsRectifier =
       cx_->runtime()->jitRuntime()->getArgumentsRectifier(kind);
@@ -3027,8 +3027,8 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
   masm.bind(&noUnderflow);
   masm.callJit(codeReg);
 
-  
-  
+  // If this is a constructing call, and the callee returns a non-object,
+  // replace it with the |this| object passed in.
   if (isConstructing) {
     updateReturnValue();
   }
@@ -3080,9 +3080,9 @@ bool BaselineCacheIRCompiler::emitNewArrayObjectResult(uint32_t arrayLength,
   {
     masm.bind(&fail);
 
-    
-    
-    
+    // We get here if the nursery is full (unlikely) but also for tenured
+    // allocations if the current arena is full and we need to allocate a new
+    // one (fairly common).
 
     AutoStubFrame stubFrame(*this);
     stubFrame.enter(masm, scratch);
@@ -3136,16 +3136,16 @@ bool BaselineCacheIRCompiler::emitNewPlainObjectResult(uint32_t numFixedSlots,
   {
     masm.bind(&fail);
 
-    
-    
-    
+    // We get here if the nursery is full (unlikely) but also for tenured
+    // allocations if the current arena is full and we need to allocate a new
+    // one (fairly common).
 
     AutoStubFrame stubFrame(*this);
     stubFrame.enter(masm, scratch);
 
     masm.Push(site);
     masm.Push(Imm32(int32_t(allocKind)));
-    masm.loadPtr(shapeAddr, shape);  
+    masm.loadPtr(shapeAddr, shape);  // This might have been overwritten.
     masm.Push(shape);
 
     using Fn =
@@ -3161,9 +3161,9 @@ bool BaselineCacheIRCompiler::emitNewPlainObjectResult(uint32_t numFixedSlots,
   return true;
 }
 
-bool BaselineCacheIRCompiler::emitCloseIterScriptedResult(ObjOperandId iterId,
-                                                          ObjOperandId calleeId,
-                                                          CompletionKind kind) {
+bool BaselineCacheIRCompiler::emitCloseIterScriptedResult(
+    ObjOperandId iterId, ObjOperandId calleeId, CompletionKind kind,
+    uint32_t calleeNargs) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
   Register iter = allocator.useRegister(masm, iterId);
   Register callee = allocator.useRegister(masm, calleeId);
@@ -3178,18 +3178,21 @@ bool BaselineCacheIRCompiler::emitCloseIterScriptedResult(ObjOperandId iterId,
   AutoStubFrame stubFrame(*this);
   stubFrame.enter(masm, scratch);
 
-  
-  masm.alignJitStackBasedOnNArgs(0);
+  // Call the return method.
+  masm.alignJitStackBasedOnNArgs(calleeNargs);
+  for (uint32_t i = 0; i < calleeNargs; i++) {
+    masm.pushValue(UndefinedValue());
+  }
   masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(iter)));
   EmitBaselineCreateStubFrameDescriptor(masm, scratch, JitFrameLayout::Size());
-  masm.Push(Imm32(0));  
+  masm.Push(Imm32(0));  // argc is 0
   masm.Push(callee);
   masm.Push(scratch);
 
   masm.callJit(code);
 
   if (kind != CompletionKind::Throw) {
-    
+    // Verify that the return value is an object.
     Label success;
     masm.branchTestObject(Assembler::Equal, JSReturnOperand, &success);
 
