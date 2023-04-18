@@ -8403,6 +8403,16 @@ const gRemoteControl = {
   },
 
   updateVisualCue() {
+    
+    
+    const disableRemoteControlCue = Services.prefs.getBoolPref(
+      "browser.chrome.disableRemoteControlCueForTests",
+      false
+    );
+    if (disableRemoteControlCue && Cu.isInAutomation) {
+      return;
+    }
+
     const mainWindow = document.documentElement;
     const remoteControlComponent = this.getRemoteControlComponent();
     if (remoteControlComponent) {
