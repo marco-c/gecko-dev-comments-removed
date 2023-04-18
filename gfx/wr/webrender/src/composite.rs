@@ -37,10 +37,6 @@ pub enum NativeSurfaceOperationDetails {
         id: NativeSurfaceId,
         is_opaque: bool,
     },
-    CreateBackdropSurface {
-        id: NativeSurfaceId,
-        color: ColorF,
-    },
     DestroySurface {
         id: NativeSurfaceId,
     },
@@ -645,20 +641,6 @@ impl CompositeState {
             ImageRendering::CrispEdges
         };
 
-        if let Some(backdrop_surface) = &tile_cache.backdrop_surface {
-            
-            self.descriptor.surfaces.push(
-                CompositeSurfaceDescriptor {
-                    surface_id: Some(backdrop_surface.id),
-                    clip_rect: backdrop_surface.device_rect,
-                    transform: slice_transform,
-                    image_dependencies: [ImageDependency::INVALID; 3],
-                    image_rendering,
-                    tile_descriptors: Vec::new(),
-                }
-            );
-        }
-
         for sub_slice in &tile_cache.sub_slices {
             let mut surface_device_rect = DeviceRect::zero();
 
@@ -692,34 +674,31 @@ impl CompositeState {
                 .unwrap_or(DeviceRect::zero());
 
             
-            if !surface_clip_rect.is_empty() {
-                
-                if !sub_slice.opaque_tile_descriptors.is_empty() {
-                    self.descriptor.surfaces.push(
-                        CompositeSurfaceDescriptor {
-                            surface_id: sub_slice.native_surface.as_ref().map(|s| s.opaque),
-                            clip_rect: surface_clip_rect,
-                            transform: slice_transform,
-                            image_dependencies: [ImageDependency::INVALID; 3],
-                            image_rendering,
-                            tile_descriptors: sub_slice.opaque_tile_descriptors.clone(),
-                        }
-                    );
-                }
-    
-                
-                if !sub_slice.alpha_tile_descriptors.is_empty() {
-                    self.descriptor.surfaces.push(
-                        CompositeSurfaceDescriptor {
-                            surface_id: sub_slice.native_surface.as_ref().map(|s| s.alpha),
-                            clip_rect: surface_clip_rect,
-                            transform: slice_transform,
-                            image_dependencies: [ImageDependency::INVALID; 3],
-                            image_rendering,
-                            tile_descriptors: sub_slice.alpha_tile_descriptors.clone(),
-                        }
-                    );
-                }
+            if !sub_slice.opaque_tile_descriptors.is_empty() {
+                self.descriptor.surfaces.push(
+                    CompositeSurfaceDescriptor {
+                        surface_id: sub_slice.native_surface.as_ref().map(|s| s.opaque),
+                        clip_rect: surface_clip_rect,
+                        transform: slice_transform,
+                        image_dependencies: [ImageDependency::INVALID; 3],
+                        image_rendering,
+                        tile_descriptors: sub_slice.opaque_tile_descriptors.clone(),
+                    }
+                );
+            }
+
+            
+            if !sub_slice.alpha_tile_descriptors.is_empty() {
+                self.descriptor.surfaces.push(
+                    CompositeSurfaceDescriptor {
+                        surface_id: sub_slice.native_surface.as_ref().map(|s| s.alpha),
+                        clip_rect: surface_clip_rect,
+                        transform: slice_transform,
+                        image_dependencies: [ImageDependency::INVALID; 3],
+                        image_rendering,
+                        tile_descriptors: sub_slice.alpha_tile_descriptors.clone(),
+                    }
+                );
             }
 
             
@@ -731,11 +710,6 @@ impl CompositeState {
                     .clip_rect
                     .intersection(&device_clip_rect)
                     .unwrap_or_else(DeviceRect::zero);
-                    
-                
-                if clip_rect.is_empty() {
-                    continue;
-                }
 
                 let required_plane_count =
                     match external_surface.dependency {
@@ -1018,8 +992,6 @@ pub struct CompositorCapabilities {
     
     
     pub max_update_rects: usize,
-    
-    pub supports_surface_for_backdrop: bool,
 }
 
 impl Default for CompositorCapabilities {
@@ -1034,7 +1006,6 @@ impl Default for CompositorCapabilities {
             
             
             max_update_rects: 1,
-            supports_surface_for_backdrop: false,
         }
     }
 }
@@ -1095,13 +1066,6 @@ pub trait Compositor {
         &mut self,
         id: NativeSurfaceId,
         is_opaque: bool,
-    );
-
-    
-    fn create_backdrop_surface(
-        &mut self,
-        id: NativeSurfaceId,
-        color: ColorF,
     );
 
     
