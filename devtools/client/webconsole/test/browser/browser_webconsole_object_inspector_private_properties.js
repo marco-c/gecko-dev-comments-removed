@@ -33,6 +33,9 @@ add_task(async function() {
       #privateMethod() {
         return Math.random();
       }
+      get #privateGetter() {
+        return 42;
+      }
       getPrivateProperty() {
         return this.#privateProperty;
       }
@@ -78,13 +81,16 @@ add_task(async function() {
 
 
 
-  is(oiNodes.length, 7, "There is the expected number of nodes in the tree");
+
+  is(oiNodes.length, 8, "There is the expected number of nodes in the tree");
 
   const [
     publicDisguisedAsPrivateNodeEl,
     publicNodeEl,
     firstSymbolNodeEl,
     secondSymbolNodeEl,
+    
+    privateGetterNodeEl,
     privatePropertyNodeEl,
   ] = Array.from(oiNodes).slice(1);
 
@@ -109,8 +115,13 @@ add_task(async function() {
     "second symbol has expected text"
   );
   checkOiNodeText(
+    privateGetterNodeEl,
+    `#privateGetter: undefined`,
+    "private getter is rendered (at the wrong place with the wrong content, see Bug 1759823)"
+  );
+  checkOiNodeText(
     privatePropertyNodeEl,
-    `#privateProperty: Object { publicProperty: "public property", "#privateProperty": {…}, #privateProperty: null, Symbol(): "first Symbol", … }`,
+    `#privateProperty: Object { publicProperty: "public property", "#privateProperty": {…}, #privateGetter: undefined, Symbol(): "first Symbol", … }`,
     "private property is rendered as expected"
   );
 
@@ -176,6 +187,8 @@ add_task(async function() {
 
 
 
+
+
   checkOiNodeText(
     privatePropChildren[0],
     `"#privateProperty": Object { content: "actually this is a public property" }`,
@@ -198,19 +211,27 @@ add_task(async function() {
   );
   checkOiNodeText(
     privatePropChildren[4],
-    `#privateProperty: null`,
-    "private property of private property object has expected text"
+    `#privateGetter: undefined`,
+    "private getter of private property object is displayed (even though it shouldn't, see Bug 1759823)"
   );
   checkOiNodeText(
     privatePropChildren[5],
+    `#privateProperty: null`,
+    "private property of private property object has expected text"
+  );
+  const privatePropertyPrototypeEl = privatePropChildren[6];
+  checkOiNodeText(
+    privatePropertyPrototypeEl,
     `<prototype>: Object { … }`,
     "prototype of private property object has expected text"
   );
 
   info("Expand private property prototype");
-  expandObjectInspectorNode(privatePropChildren[5]);
+  expandObjectInspectorNode(privatePropertyPrototypeEl);
   const privatePropertyPrototypeChildren = await waitFor(() => {
-    const children = getObjectInspectorChildrenNodes(privatePropChildren[5]);
+    const children = getObjectInspectorChildrenNodes(
+      privatePropertyPrototypeEl
+    );
     if (children.length === 0) {
       return null;
     }
@@ -219,6 +240,8 @@ add_task(async function() {
   ok(true, "private property prototype was expanded");
 
   
+
+
 
 
 
@@ -251,6 +274,18 @@ add_task(async function() {
     "private method is displayed as expected"
   );
 
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
   
   
   
