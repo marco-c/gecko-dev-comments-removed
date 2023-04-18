@@ -561,6 +561,7 @@ SearchService.prototype = {
     
     let prevMetaData = { ...settings?.metaData };
     let prevCurrentEngine = prevMetaData.current;
+    let prevAppDefaultEngine = prevMetaData?.appDefaultEngine;
 
     logConsole.debug("_loadEngines: start");
     let { engines, privateDefault } = await this._fetchEngineSelectorEngines();
@@ -595,26 +596,85 @@ SearchService.prototype = {
 
     logConsole.debug("_loadEngines: done");
 
-    
-    
     let newCurrentEngine = this._getEngineDefault(false)?.name;
+    this._settings.setAttribute(
+      "appDefaultEngine",
+      this.originalDefaultEngine?.name
+    );
 
     if (
-      prevCurrentEngine &&
-      newCurrentEngine &&
-      newCurrentEngine !== prevCurrentEngine &&
-      prevMetaData &&
-      settings.metaData &&
-      !this._hasUserMetaDataChanged(prevMetaData) &&
-      Services.prefs.getBoolPref("browser.search.removeEngineInfobar.enabled")
+      this._shouldDisplayRemovalOfEngineNotificationBox(
+        settings,
+        prevMetaData,
+        newCurrentEngine,
+        prevCurrentEngine,
+        prevAppDefaultEngine
+      )
     ) {
       this._showRemovalOfSearchEngineNotificationBox(
-        prevCurrentEngine,
+        prevCurrentEngine || prevAppDefaultEngine,
         newCurrentEngine
       );
     }
   },
+  
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _shouldDisplayRemovalOfEngineNotificationBox(
+    settings,
+    prevMetaData,
+    newCurrentEngine,
+    prevCurrentEngine,
+    prevAppDefaultEngine
+  ) {
+    if (
+      !Services.prefs.getBoolPref("browser.search.removeEngineInfobar.enabled")
+    ) {
+      return false;
+    }
+
+    
+    
+    if (!newCurrentEngine) {
+      return false;
+    }
+
+    
+    
+    
+    
+    if (
+      (prevCurrentEngine && prevCurrentEngine !== newCurrentEngine) ||
+      (!prevCurrentEngine &&
+        prevAppDefaultEngine &&
+        prevAppDefaultEngine !== newCurrentEngine)
+    ) {
+      
+      
+      
+      
+      if (!this._didSettingsMetaDataUpdate(prevMetaData)) {
+        return true;
+      }
+    }
+
+    return false;
+  },
   
 
 
@@ -840,7 +900,7 @@ SearchService.prototype = {
       if (
         prevMetaData &&
         settings.metaData &&
-        !this._hasUserMetaDataChanged(prevMetaData) &&
+        !this._didSettingsMetaDataUpdate(prevMetaData) &&
         Services.prefs.getBoolPref("browser.search.removeEngineInfobar.enabled")
       ) {
         this._showRemovalOfSearchEngineNotificationBox(
@@ -902,6 +962,13 @@ SearchService.prototype = {
       }
       SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.REMOVED);
     }
+
+    
+    
+    this._settings.setAttribute(
+      "appDefaultEngine",
+      this.originalDefaultEngine?.name
+    );
 
     this._dontSetUseSavedOrder = false;
     
@@ -2875,7 +2942,7 @@ SearchService.prototype = {
 
 
 
-  _hasUserMetaDataChanged(metaData) {
+  _didSettingsMetaDataUpdate(metaData) {
     let metaDataProperties = [
       "locale",
       "region",
