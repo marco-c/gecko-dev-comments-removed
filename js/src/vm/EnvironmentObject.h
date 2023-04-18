@@ -273,10 +273,6 @@ class EnvironmentObject : public NativeObject {
 
   inline void setAliasedBinding(uint32_t slot, const Value& v);
 
-  void setEnclosingEnvironment(JSObject* enclosing) {
-    setReservedSlot(ENCLOSING_ENV_SLOT, ObjectOrNullValue(enclosing));
-  }
-
  public:
   
   
