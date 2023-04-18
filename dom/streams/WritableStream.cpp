@@ -699,35 +699,6 @@ AcquireWritableStreamDefaultWriter(WritableStream* aStream, ErrorResult& aRv) {
   return writer.forget();
 }
 
-
-already_AddRefed<WritableStream> CreateWritableStream(
-    JSContext* aCx, nsIGlobalObject* aGlobal,
-    UnderlyingSinkAlgorithmsBase* aAlgorithms, double aHighWaterMark,
-    QueuingStrategySize* aSizeAlgorithm, ErrorResult& aRv) {
-  
-  MOZ_ASSERT(IsNonNegativeNumber(aHighWaterMark));
-
-  
-  
-  auto stream = MakeRefPtr<WritableStream>(aGlobal);
-
-  
-  auto controller =
-      MakeRefPtr<WritableStreamDefaultController>(aGlobal, *stream);
-
-  
-  
-  
-  SetUpWritableStreamDefaultController(aCx, stream, controller, aAlgorithms,
-                                       aHighWaterMark, aSizeAlgorithm, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  
-  return stream.forget();
-}
-
 already_AddRefed<WritableStreamDefaultWriter> WritableStream::GetWriter(
     ErrorResult& aRv) {
   return AcquireWritableStreamDefaultWriter(this, aRv);

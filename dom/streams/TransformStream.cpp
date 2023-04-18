@@ -6,9 +6,6 @@
 
 #include "mozilla/dom/TransformStream.h"
 
-#include "UnderlyingSourceCallbackHelpers.h"
-#include "js/TypeDecls.h"
-#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WritableStream.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/RootedDictionary.h"
@@ -19,9 +16,7 @@
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TransformStream, mGlobal,
-                                      mBackpressureChangePromise, mController,
-                                      mReadable, mWritable)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TransformStream, mGlobal, mController)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(TransformStream)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(TransformStream)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TransformStream)
@@ -38,216 +33,6 @@ TransformStream::~TransformStream() { mozilla::DropJSObjects(this); }
 JSObject* TransformStream::WrapObject(JSContext* aCx,
                                       JS::Handle<JSObject*> aGivenProto) {
   return TransformStream_Binding::Wrap(aCx, this, aGivenProto);
-}
-
-
-class TransformStreamUnderlyingSinkAlgorithms final
-    : public UnderlyingSinkAlgorithmsBase {
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(
-      TransformStreamUnderlyingSinkAlgorithms, UnderlyingSinkAlgorithmsBase)
-
-  TransformStreamUnderlyingSinkAlgorithms(Promise* aStartPromise,
-                                          TransformStream* aStream)
-      : mStartPromise(aStartPromise), mStream(aStream) {}
-
-  void StartCallback(JSContext* aCx,
-                     WritableStreamDefaultController& aController,
-                     JS::MutableHandle<JS::Value> aRetVal,
-                     ErrorResult& aRv) override {
-    
-    
-    aRetVal.setObject(*mStartPromise->PromiseObj());
-  }
-
-  already_AddRefed<Promise> WriteCallback(
-      JSContext* aCx, JS::Handle<JS::Value> aChunk,
-      WritableStreamDefaultController& aController, ErrorResult& aRv) override {
-    
-    
-    
-    
-    
-    return Promise::CreateResolvedWithUndefined(mStream->GetParentObject(),
-                                                aRv);
-  }
-
-  already_AddRefed<Promise> AbortCallback(
-      JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
-      ErrorResult& aRv) override {
-    
-    
-    
-    
-    
-    return Promise::CreateResolvedWithUndefined(mStream->GetParentObject(),
-                                                aRv);
-  }
-
-  already_AddRefed<Promise> CloseCallback(JSContext* aCx,
-                                          ErrorResult& aRv) override {
-    
-
-    
-    
-    return Promise::CreateResolvedWithUndefined(mStream->GetParentObject(),
-                                                aRv);
-  }
-
- protected:
-  ~TransformStreamUnderlyingSinkAlgorithms() override = default;
-
- private:
-  RefPtr<Promise> mStartPromise;
-  RefPtr<TransformStream> mStream;
-};
-
-NS_IMPL_CYCLE_COLLECTION_INHERITED(TransformStreamUnderlyingSinkAlgorithms,
-                                   UnderlyingSinkAlgorithmsBase, mStartPromise,
-                                   mStream)
-NS_IMPL_ADDREF_INHERITED(TransformStreamUnderlyingSinkAlgorithms,
-                         UnderlyingSinkAlgorithmsBase)
-NS_IMPL_RELEASE_INHERITED(TransformStreamUnderlyingSinkAlgorithms,
-                          UnderlyingSinkAlgorithmsBase)
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TransformStreamUnderlyingSinkAlgorithms)
-NS_INTERFACE_MAP_END_INHERITING(TransformStreamUnderlyingSinkAlgorithms)
-
-
-class TransformStreamUnderlyingSourceAlgorithms final
-    : public UnderlyingSourceAlgorithmsBase {
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(
-      TransformStreamUnderlyingSourceAlgorithms, UnderlyingSourceAlgorithmsBase)
-
-  TransformStreamUnderlyingSourceAlgorithms(Promise* aStartPromise,
-                                            TransformStream* aStream)
-      : mStartPromise(aStartPromise), mStream(aStream) {}
-
-  void StartCallback(JSContext* aCx, ReadableStreamController& aController,
-                     JS::MutableHandle<JS::Value> aRetVal,
-                     ErrorResult& aRv) override {
-    
-    
-    aRetVal.setObject(*mStartPromise->PromiseObj());
-  }
-
-  already_AddRefed<Promise> PullCallback(JSContext* aCx,
-                                         ReadableStreamController& aController,
-                                         ErrorResult& aRv) override {
-    
-    
-    
-    return Promise::CreateResolvedWithUndefined(mStream->GetParentObject(),
-                                                aRv);
-  }
-
-  already_AddRefed<Promise> CancelCallback(
-      JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
-      ErrorResult& aRv) override {
-    
-    
-    
-    
-    
-    
-    return Promise::CreateResolvedWithUndefined(mStream->GetParentObject(),
-                                                aRv);
-  }
-
-  void ErrorCallback() override {}
-
- protected:
-  ~TransformStreamUnderlyingSourceAlgorithms() override = default;
-
- private:
-  RefPtr<Promise> mStartPromise;
-  RefPtr<TransformStream> mStream;
-};
-
-NS_IMPL_CYCLE_COLLECTION_INHERITED(TransformStreamUnderlyingSourceAlgorithms,
-                                   UnderlyingSourceAlgorithmsBase,
-                                   mStartPromise, mStream)
-NS_IMPL_ADDREF_INHERITED(TransformStreamUnderlyingSourceAlgorithms,
-                         UnderlyingSourceAlgorithmsBase)
-NS_IMPL_RELEASE_INHERITED(TransformStreamUnderlyingSourceAlgorithms,
-                          UnderlyingSourceAlgorithmsBase)
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(
-    TransformStreamUnderlyingSourceAlgorithms)
-NS_INTERFACE_MAP_END_INHERITING(TransformStreamUnderlyingSourceAlgorithms)
-
-
-static void TransformStreamSetBackpressure(TransformStream* aStream,
-                                           bool aBackpressure,
-                                           ErrorResult& aRv) {
-  
-  MOZ_ASSERT(aStream->Backpressure() != aBackpressure);
-
-  
-  
-  if (Promise* promise = aStream->BackpressureChangePromise()) {
-    promise->MaybeResolveWithUndefined();
-  }
-
-  
-  RefPtr<Promise> promise = Promise::Create(aStream->GetParentObject(), aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-  aStream->SetBackpressureChangePromise(promise);
-
-  
-  aStream->SetBackpressure(aBackpressure);
-}
-
-
-void TransformStream::Initialize(JSContext* aCx, Promise* aStartPromise,
-                                 double aWritableHighWaterMark,
-                                 QueuingStrategySize* aWritableSizeAlgorithm,
-                                 double aReadableHighWaterMark,
-                                 QueuingStrategySize* aReadableSizeAlgorithm,
-                                 ErrorResult& aRv) {
-  
-  auto sinkAlgorithms =
-      MakeRefPtr<TransformStreamUnderlyingSinkAlgorithms>(aStartPromise, this);
-
-  
-  
-  
-  mWritable =
-      CreateWritableStream(aCx, MOZ_KnownLive(mGlobal), sinkAlgorithms,
-                           aWritableHighWaterMark, aWritableSizeAlgorithm, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
-  
-  auto sourceAlgorithms = MakeRefPtr<TransformStreamUnderlyingSourceAlgorithms>(
-      aStartPromise, this);
-
-  
-  
-  
-  mReadable = CreateReadableStream(
-      aCx, MOZ_KnownLive(mGlobal), sourceAlgorithms,
-      Some(aReadableHighWaterMark), aReadableSizeAlgorithm, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
-  
-  
-  mBackpressureChangePromise = nullptr;
-
-  
-  TransformStreamSetBackpressure(this, true, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-
-  
-  mController = nullptr;
 }
 
 
@@ -294,35 +79,19 @@ already_AddRefed<TransformStream> TransformStream::Constructor(
 
   
   
-  double readableHighWaterMark =
-      ExtractHighWaterMark(aReadableStrategy, 0, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
+  
 
   
   
   
-  
-  RefPtr<QueuingStrategySize> readableSizeAlgorithm =
-      aReadableStrategy.mSize.WasPassed() ? &aReadableStrategy.mSize.Value()
-                                          : nullptr;
-
-  
-  
-  double writableHighWaterMark =
-      ExtractHighWaterMark(aWritableStrategy, 1, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
 
   
   
   
+
   
-  RefPtr<QueuingStrategySize> writableSizeAlgorithm =
-      aWritableStrategy.mSize.WasPassed() ? &aWritableStrategy.mSize.Value()
-                                          : nullptr;
+  
+  
 
   
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
@@ -335,9 +104,7 @@ already_AddRefed<TransformStream> TransformStream::Constructor(
   
   
   RefPtr<TransformStream> transformStream = new TransformStream(global);
-  transformStream->Initialize(
-      aGlobal.Context(), startPromise, writableHighWaterMark,
-      writableSizeAlgorithm, readableHighWaterMark, readableSizeAlgorithm, aRv);
+  
   if (aRv.Failed()) {
     return nullptr;
   }
@@ -351,22 +118,7 @@ already_AddRefed<TransformStream> TransformStream::Constructor(
   
   
   
-  if (transformerDict.mStart.WasPassed()) {
-    RefPtr<TransformerStartCallback> callback = transformerDict.mStart.Value();
-    RefPtr<TransformStreamDefaultController> controller =
-        transformStream->Controller();
-    JS::Rooted<JS::Value> retVal(aGlobal.Context());
-    callback->Call(transformerObj, *controller, &retVal, aRv,
-                   "Transformer.start", CallbackFunction::eRethrowExceptions);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
-
-    startPromise->MaybeResolve(retVal);
-  } else {
-    
-    startPromise->MaybeResolveWithUndefined();
-  }
+  
 
   return transformStream.forget();
 }
