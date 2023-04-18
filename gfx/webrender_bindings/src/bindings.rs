@@ -1110,6 +1110,13 @@ pub extern "C" fn wr_thread_pool_new(low_priority: bool) -> *mut WrThreadPool {
 
     let workers = Arc::new(worker.unwrap());
 
+    
+    
+    
+    
+    
+    mem::forget(Arc::clone(&workers));
+
     Box::into_raw(Box::new(WrThreadPool(workers)))
 }
 
