@@ -2488,7 +2488,7 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
     return true;
   }
   
-  xformBounds.Inflate(1);
+  xformBounds.Inflate(2);
   IntRect intBounds = RoundedOut(xformBounds);
 
   
