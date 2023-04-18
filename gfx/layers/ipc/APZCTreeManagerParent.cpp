@@ -74,56 +74,6 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvContentReceivedInputBlock(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult APZCTreeManagerParent::RecvAddInputBlockCallback(
-    uint64_t aInputBlockId) {
-  
-  
-  
-  
-  IAPZCTreeManager::InputBlockCallback callback =
-      [layersId = mLayersId](uint64_t inputBlockId,
-                             const APZHandledResult& handledResult) {
-        
-        
-        CallInputBlockCallback(layersId, inputBlockId, handledResult);
-      };
-
-  mUpdater->RunOnControllerThread(
-      mLayersId,
-      NewRunnableMethod<
-          uint64_t, StoreCopyPassByRRef<IAPZCTreeManager::InputBlockCallback>>(
-          "layers::APZCTreeManager::AddInputBlockCallback", mTreeManager,
-          &APZCTreeManager::AddInputBlockCallback, aInputBlockId, callback));
-
-  return IPC_OK();
-}
-
-
-void APZCTreeManagerParent::CallInputBlockCallback(
-    LayersId aLayersId, uint64_t aInputBlockId,
-    const APZHandledResult& aHandledResult) {
-  
-  
-  if (!NS_IsInCompositorThread()) {
-    CompositorThread()->Dispatch(NS_NewRunnableFunction(
-        "layers::APZCTreeManagerParent::CallInputBlockCallback",
-        [aLayersId, aInputBlockId, aHandledResult]() {
-          CallInputBlockCallback(aLayersId, aInputBlockId, aHandledResult);
-        }));
-    return;
-  }
-
-  
-  
-  MOZ_ASSERT(NS_IsInCompositorThread());
-  CompositorBridgeParent::LayerTreeState* state =
-      CompositorBridgeParent::GetIndirectShadowTree(aLayersId);
-  if (state && state->mApzcTreeManagerParent) {
-    Unused << state->mApzcTreeManagerParent->SendCallInputBlockCallback(
-        aInputBlockId, aHandledResult);
-  }
-}
-
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetTargetAPZC(
     const uint64_t& aInputBlockId, nsTArray<ScrollableLayerGuid>&& aTargets) {
   mUpdater->RunOnUpdaterThread(

@@ -200,7 +200,9 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  APZEventResult ReceiveInputEvent(InputData& aEvent) override;
+  APZEventResult ReceiveInputEvent(
+      InputData& aEvent,
+      InputBlockCallback&& aCallback = InputBlockCallback()) override;
 
   
 
@@ -417,8 +419,19 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   APZInputBridge* InputBridge() override { return this; }
 
+  
+
+
+
+
+
+
+
+
+
+
   void AddInputBlockCallback(uint64_t aInputBlockId,
-                             InputBlockCallback&& aCallback) override;
+                             InputBlockCallback&& aCallback);
 
   
   
@@ -638,7 +651,10 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
     
     
-    APZEventResult Finish();
+    
+    
+    APZEventResult Finish(APZCTreeManager& aTreeManager,
+                          InputBlockCallback&& aCallback);
   };
 
   void ProcessTouchInput(InputHandlingState& aState, MultiTouchInput& aInput);

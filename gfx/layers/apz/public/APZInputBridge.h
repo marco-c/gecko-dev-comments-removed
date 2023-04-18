@@ -126,6 +126,11 @@ struct APZEventResult {
     return mHandledResult;
   }
 
+  bool WillHaveDelayedResult() const {
+    return GetStatus() != nsEventStatus_eConsumeNoDefault &&
+           !GetHandledResult();
+  }
+
  private:
   
 
@@ -184,22 +189,8 @@ struct APZEventResult {
 
 class APZInputBridge {
  public:
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual APZEventResult ReceiveInputEvent(InputData& aEvent) = 0;
+  using InputBlockCallback = std::function<void(
+      uint64_t aInputBlockId, const APZHandledResult& aHandledResult)>;
 
   
 
@@ -217,7 +208,30 @@ class APZInputBridge {
 
 
 
-  APZEventResult ReceiveInputEvent(WidgetInputEvent& aEvent);
+
+  virtual APZEventResult ReceiveInputEvent(
+      InputData& aEvent,
+      InputBlockCallback&& aCallback = InputBlockCallback()) = 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  APZEventResult ReceiveInputEvent(
+      WidgetInputEvent& aEvent,
+      InputBlockCallback&& aCallback = InputBlockCallback());
 
   
   

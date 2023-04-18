@@ -133,27 +133,6 @@ class IAPZCTreeManager {
 
   virtual APZInputBridge* InputBridge() = 0;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  using InputBlockCallback = std::function<void(
-      uint64_t aInputBlockId, const APZHandledResult& aHandledResult)>;
-  virtual void AddInputBlockCallback(uint64_t aInputBlockId,
-                                     InputBlockCallback&& aCallback) = 0;
-
  protected:
   
 
