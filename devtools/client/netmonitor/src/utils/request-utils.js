@@ -693,6 +693,30 @@ function parseJSON(payloadUnclean) {
   };
 }
 
+
+
+
+
+
+
+
+
+
+
+
+function updateTextareaRows(element, maxRows = 5, lineHeight = 14) {
+  const minRows = 1;
+  
+  
+  element.rows = minRows;
+
+  const currentRows = Math.ceil(
+    
+    (element.scrollHeight - 8) / lineHeight
+  );
+  element.rows = currentRows <= maxRows ? currentRows : maxRows;
+}
+
 module.exports = {
   decodeUnicodeBase64,
   getFormDataSections,
@@ -723,4 +747,5 @@ module.exports = {
   propertiesEqual,
   ipToLong,
   parseJSON,
+  updateTextareaRows,
 };
