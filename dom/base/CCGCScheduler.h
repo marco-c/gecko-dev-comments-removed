@@ -109,7 +109,10 @@ struct CCRunnerStep {
 
 class CCGCScheduler {
  public:
-  CCGCScheduler() : mInterruptRequested(false) {}
+  CCGCScheduler()
+      : mAskParentBeforeMajorGC(XRE_IsContentProcess()),
+        mReadyForMajorGC(!mAskParentBeforeMajorGC),
+        mInterruptRequested(false) {}
 
   static bool CCRunnerFired(TimeStamp aDeadline);
 
@@ -436,10 +439,14 @@ class CCGCScheduler {
 
   
   
+  const bool mAskParentBeforeMajorGC;
+
+  
+  
   bool mHaveAskedParent = false;
 
   
-  bool mReadyForMajorGC = false;
+  bool mReadyForMajorGC;
 
   
   

@@ -113,7 +113,7 @@ void CCGCScheduler::NoteGCBegin() {
   
   
   mInIncrementalGC = true;
-  mReadyForMajorGC = false;
+  mReadyForMajorGC = !mAskParentBeforeMajorGC;
 
   
   
@@ -129,7 +129,7 @@ void CCGCScheduler::NoteGCEnd() {
 
   mInIncrementalGC = false;
   mCCBlockStart = TimeStamp();
-  mReadyForMajorGC = false;
+  mReadyForMajorGC = !mAskParentBeforeMajorGC;
   mWantAtLeastRegularGC = false;
   mNeedsFullCC = CCReason::GC_FINISHED;
   mHasRunGC = true;
@@ -203,7 +203,7 @@ void CCGCScheduler::NoteCCEnd(TimeStamp aWhen) {
 }
 
 void CCGCScheduler::NoteWontGC() {
-  mReadyForMajorGC = false;
+  mReadyForMajorGC = !mAskParentBeforeMajorGC;
   mMajorGCReason = JS::GCReason::NO_REASON;
   mWantAtLeastRegularGC = false;
   
@@ -365,7 +365,13 @@ RefPtr<CCGCScheduler::MayGCPromise> CCGCScheduler::MayGCNow(
       break;
   }
 
-  return MayGCPromise::CreateAndResolve(true, __func__);
+  
+  
+  
+  RefPtr<MayGCPromise::Private> p = MakeRefPtr<MayGCPromise::Private>(__func__);
+  p->UseSynchronousTaskDispatch(__func__);
+  p->Resolve(true, __func__);
+  return p;
 }
 
 void CCGCScheduler::RunNextCollectorTimer(JS::GCReason aReason,
