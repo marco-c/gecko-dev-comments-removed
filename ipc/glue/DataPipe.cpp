@@ -328,7 +328,7 @@ nsresult DataPipeBase::ProcessSegmentsInternal(
     
     char* start = static_cast<char*>(link->mShmem->memory()) + link->mOffset;
     char* iter = start;
-    char* end = start + std::min({aCount, link->mAvailable,
+    char* end = start + std::min({aCount - *aProcessedCount, link->mAvailable,
                                   link->mCapacity - link->mOffset});
 
     
@@ -373,6 +373,8 @@ nsresult DataPipeBase::ProcessSegmentsInternal(
       }
     }
   }
+  MOZ_DIAGNOSTIC_ASSERT(*aProcessedCount == aCount,
+                        "Must have processed exactly aCount");
   return NS_OK;
 }
 
