@@ -326,7 +326,6 @@ class ScriptLoadRequest
 
   
   
-  
   mozilla::Vector<uint8_t> mScriptBytecode;
   uint32_t mBytecodeOffset;  
 
