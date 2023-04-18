@@ -47,9 +47,9 @@ AVD_MANIFEST_ARM64 = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "android-avds/arm64.json")
 )
 
-JAVA_VERSION_MAJOR = "17"
-JAVA_VERSION_MINOR = "0.1"
-JAVA_VERSION_PATCH = "12"
+JAVA_VERSION_MAJOR = "8"
+JAVA_VERSION_MINOR = "u312"
+JAVA_VERSION_PATCH = "b07"
 
 ANDROID_NDK_EXISTS = """
 Looks like you have the correct version of the Android NDK installed at:
@@ -840,12 +840,8 @@ def ensure_java(os_name, os_arch):
     else:
         os_tag = os_name
 
-    if os_arch == "x86_64":
-        arch = "x64"
-    elif os_arch == "arm64":
-        arch = "aarch64"
-    else:
-        arch = os_arch
+    
+    arch = "x64"
 
     ext = "zip" if os_name == "windows" else "tar.gz"
 
@@ -858,8 +854,8 @@ def ensure_java(os_name, os_arch):
         
         java_url = (
             "https://github.com/adoptium/temurin{major}-binaries/releases/"
-            "download/jdk-{major}.{minor}%2B{patch}/"
-            "OpenJDK{major}U-jdk_{arch}_{os}_hotspot_{major}.{minor}_{patch}.{ext}"
+            "download/jdk{major}{minor}-{patch}/"
+            "OpenJDK{major}U-jdk_{arch}_{os}_hotspot_{major}{minor}{patch}.{ext}"
         ).format(
             major=JAVA_VERSION_MAJOR,
             minor=JAVA_VERSION_MINOR,
@@ -873,8 +869,7 @@ def ensure_java(os_name, os_arch):
 
 
 def java_bin_path(os_name, toolchain_path):
-    
-    jdk_folder = "jdk-{major}.{minor}+{patch}".format(
+    jdk_folder = "jdk{major}{minor}-{patch}".format(
         major=JAVA_VERSION_MAJOR, minor=JAVA_VERSION_MINOR, patch=JAVA_VERSION_PATCH
     )
 
