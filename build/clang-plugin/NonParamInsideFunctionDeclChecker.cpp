@@ -14,7 +14,8 @@ protected:
   
   
   
-  std::string getImplicitReason(const TagDecl *D) const override {
+  std::string getImplicitReason(const TagDecl *D,
+                                VisitFlags &ToVisit) const override {
     
     for (const Attr *A : D->attrs()) {
       if (isa<AlignedAttr>(A)) {
