@@ -13,6 +13,7 @@
 #include "mozilla/ProfilerState.h"
 #include "mozilla/ProfilerThreadRegistration.h"
 #include "mozilla/ProfilerThreadRegistry.h"
+#include "mozilla/ProfilerThreadSleep.h"
 
 
 
@@ -83,5 +84,36 @@
              },
              false);
 }
+
+
+
+#define AUTO_PROFILER_THREAD_WAKE mozilla::AutoProfilerThreadWake PROFILER_RAII
+
+namespace mozilla {
+
+
+
+
+class MOZ_RAII AutoProfilerThreadWake {
+ public:
+  explicit AutoProfilerThreadWake()
+      : mIssuedWake(profiler_thread_is_sleeping()) {
+    if (mIssuedWake) {
+      profiler_thread_wake();
+    }
+  }
+
+  ~AutoProfilerThreadWake() {
+    if (mIssuedWake) {
+      MOZ_ASSERT(!profiler_thread_is_sleeping());
+      profiler_thread_sleep();
+    }
+  }
+
+ private:
+  bool mIssuedWake;
+};
+
+}  
 
 #endif  

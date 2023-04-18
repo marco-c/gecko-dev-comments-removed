@@ -26,6 +26,7 @@
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ProfilerState.h"
+#include "mozilla/ProfilerThreadSleep.h"
 #include "mozilla/ProfilerThreadState.h"
 #include "mozilla/ProgressLogger.h"
 
@@ -41,9 +42,6 @@
 #  define PROFILER_REGISTER_THREAD(name)
 #  define PROFILER_UNREGISTER_THREAD()
 #  define AUTO_PROFILER_REGISTER_THREAD(name)
-
-#  define AUTO_PROFILER_THREAD_SLEEP
-#  define AUTO_PROFILER_THREAD_WAKE
 
 #  define PROFILER_JS_INTERRUPT_CALLBACK()
 
@@ -94,10 +92,6 @@ static inline void profiler_unregister_page(uint64_t aRegisteredInnerWindowID) {
 
 static inline void GetProfilerEnvVarsForChildProcess(
     std::function<void(const char* key, const char* value)>&& aSetEnv) {}
-
-static inline void profiler_thread_sleep() {}
-
-static inline void profiler_thread_wake() {}
 
 #else  
 
@@ -209,19 +203,6 @@ using PostSamplingCallback = std::function<void(SamplingState)>;
 
 [[nodiscard]] bool profiler_callback_after_sampling(
     PostSamplingCallback&& aCallback);
-
-
-
-
-
-void profiler_thread_sleep();
-void profiler_thread_wake();
-
-
-#  define AUTO_PROFILER_THREAD_SLEEP \
-    mozilla::AutoProfilerThreadSleep PROFILER_RAII
-#  define AUTO_PROFILER_THREAD_WAKE \
-    mozilla::AutoProfilerThreadWake PROFILER_RAII
 
 
 
@@ -418,37 +399,6 @@ class MOZ_RAII AutoProfilerRegisterThread final {
   AutoProfilerRegisterThread(const AutoProfilerRegisterThread&) = delete;
   AutoProfilerRegisterThread& operator=(const AutoProfilerRegisterThread&) =
       delete;
-};
-
-class MOZ_RAII AutoProfilerThreadSleep {
- public:
-  explicit AutoProfilerThreadSleep() { profiler_thread_sleep(); }
-
-  ~AutoProfilerThreadSleep() { profiler_thread_wake(); }
-
- private:
-};
-
-
-
-class MOZ_RAII AutoProfilerThreadWake {
- public:
-  explicit AutoProfilerThreadWake()
-      : mIssuedWake(profiler_thread_is_sleeping()) {
-    if (mIssuedWake) {
-      profiler_thread_wake();
-    }
-  }
-
-  ~AutoProfilerThreadWake() {
-    if (mIssuedWake) {
-      MOZ_ASSERT(!profiler_thread_is_sleeping());
-      profiler_thread_sleep();
-    }
-  }
-
- private:
-  bool mIssuedWake;
 };
 
 
