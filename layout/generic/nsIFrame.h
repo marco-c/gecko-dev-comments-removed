@@ -4449,6 +4449,24 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+
+  void ClearPresShellsFromLastPaint() { PaintedPresShellList()->Clear(); }
+
+  
+
+
+
+  void AddPaintedPresShell(mozilla::PresShell* aPresShell);
+
+  
+
+
+
+  void UpdatePaintCountForPaintedPresShells();
+
+  
+
+
   bool IsAbsoluteContainer() const {
     return !!(mState & NS_FRAME_HAS_ABSPOS_CHILDREN);
   }
@@ -4996,6 +5014,27 @@ class nsIFrame : public nsQueryFrame {
   DisplayItemArray mDisplayItems;
 
   void MarkAbsoluteFramesForDisplayList(nsDisplayListBuilder* aBuilder);
+
+  
+  
+  
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(PaintedPresShellsProperty,
+                                      nsTArray<nsWeakPtr>)
+
+  nsTArray<nsWeakPtr>* PaintedPresShellList() {
+    bool found;
+    nsTArray<nsWeakPtr>* list =
+        GetProperty(PaintedPresShellsProperty(), &found);
+
+    if (!found) {
+      list = new nsTArray<nsWeakPtr>();
+      AddProperty(PaintedPresShellsProperty(), list);
+    } else {
+      MOZ_ASSERT(list, "this property should only store non-null values");
+    }
+
+    return list;
+  }
 
  protected:
   void MarkInReflow() {
