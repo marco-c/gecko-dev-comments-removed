@@ -1321,7 +1321,6 @@ void CodeGenerator::emitOOLTestObject(Register objreg,
 
 
 
-
 class OutOfLineTestObject : public OutOfLineCodeBase<CodeGenerator> {
   Register objreg_;
   Register scratch_;
