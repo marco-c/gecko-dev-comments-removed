@@ -51,9 +51,17 @@ nsString nsQuoteNode::Text() {
 
   if (quotesProp.IsAuto()) {
     
+    const nsIFrame* frame = mPseudoFrame->GetParent();
     
+    
+    
+    if (!frame->Style()->IsRootElementStyle()) {
+      frame = frame->GetParent();
+    }
     const intl::Quotes* quotes =
-        intl::QuotesForLang(mPseudoFrame->StyleFont()->mLanguage);
+        intl::QuotesForLang(frame->StyleFont()->mLanguage);
+    
+    
     if (!quotes) {
       static const intl::Quotes sDefaultQuotes = {
           {0x201c, 0x201d, 0x2018, 0x2019}};
