@@ -4,8 +4,14 @@ function assertTestTrialActive(shouldBeActive) {
     shouldBeActive,
     "Should match active status for Navigator.testTrialControlledAttribute"
   );
-  
-  
+  is(
+    !!self.TestTrialInterface,
+    shouldBeActive,
+    "Should match active status for TestTrialInterface"
+  );
+  if (shouldBeActive) {
+    ok(new self.TestTrialInterface(), "Should be able to construct interface");
+  }
   
   
 }
