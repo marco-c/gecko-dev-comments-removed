@@ -309,11 +309,6 @@ var interfaceNamesInGlobalScope = [
   
   "WorkerNavigator",
   
-  "WritableStream",
-  
-  "WritableStreamDefaultController",
-  
-  "WritableStreamDefaultWriter",
 ];
 
 
