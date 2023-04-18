@@ -42,6 +42,7 @@ class nsIClipboard;
 class nsRange;
 class nsStaticAtom;
 class nsStyledElement;
+class nsTableCellFrame;
 class nsTableWrapperFrame;
 
 namespace mozilla {
@@ -3017,6 +3018,8 @@ class HTMLEditor final : public EditorBase,
 
    private:
     CellIndexes() : mRow(-1), mColumn(-1) {}
+    CellIndexes(int32_t aRowIndex, int32_t aColumnIndex)
+        : mRow(aRowIndex), mColumn(aColumnIndex) {}
 
     friend struct CellData;
   };
@@ -3031,64 +3034,35 @@ class HTMLEditor final : public EditorBase,
     
     
     
-    int32_t mRowSpan;
-    int32_t mColSpan;
+    int32_t mRowSpan = -1;
+    int32_t mColSpan = -1;
     
     
     
     
-    int32_t mEffectiveRowSpan;
-    int32_t mEffectiveColSpan;
+    int32_t mEffectiveRowSpan = -1;
+    int32_t mEffectiveColSpan = -1;
     
     
     
-    bool mIsSelected;
+    bool mIsSelected = false;
 
-    CellData()
-        : mRowSpan(-1),
-          mColSpan(-1),
-          mEffectiveRowSpan(-1),
-          mEffectiveColSpan(-1),
-          mIsSelected(false) {}
+    CellData() = delete;
 
     
 
 
 
-    CellData(HTMLEditor& aHTMLEditor, Element& aTableElement, int32_t aRowIndex,
-             int32_t aColumnIndex) {
-      Update(aHTMLEditor, aTableElement, aRowIndex, aColumnIndex);
-    }
-
-    CellData(HTMLEditor& aHTMLEditor, Element& aTableElement,
-             const CellIndexes& aIndexes) {
-      Update(aHTMLEditor, aTableElement, aIndexes);
-    }
-
-    
-
-
-
-    void Update(HTMLEditor& aHTMLEditor, Element& aTableElement,
-                int32_t aRowIndex, int32_t aColumnIndex) {
-      mCurrent.mRow = aRowIndex;
-      mCurrent.mColumn = aColumnIndex;
-      Update(aHTMLEditor, aTableElement);
-    }
-
-    void Update(HTMLEditor& aHTMLEditor, Element& aTableElement,
-                const CellIndexes& aIndexes) {
-      mCurrent = aIndexes;
-      Update(aHTMLEditor, aTableElement);
-    }
-
-    void Update(HTMLEditor& aHTMLEditor, Element& aTableElement);
+    [[nodiscard]] static CellData AtIndexInTableElement(
+        const HTMLEditor& aHTMLEditor, const Element& aTableElement,
+        int32_t aRowIndex, int32_t aColumnIndex);
 
     
 
 
 
 
+    [[nodiscard]] bool isOk() const { return !isErr(); }
     [[nodiscard]] bool isErr() const { return mFirst.isErr(); }
 
     
@@ -3182,6 +3156,24 @@ class HTMLEditor final : public EditorBase,
         return -1;
       }
       return mEffectiveRowSpan - 1;
+    }
+
+   private:
+    explicit CellData(int32_t aCurrentRowIndex, int32_t aCurrentColumnIndex,
+                      int32_t aFirstRowIndex, int32_t aFirstColumnIndex)
+        : mCurrent(aCurrentRowIndex, aCurrentColumnIndex),
+          mFirst(aFirstRowIndex, aFirstColumnIndex) {}
+    explicit CellData(Element& aElement, int32_t aRowIndex,
+                      int32_t aColumnIndex, nsTableCellFrame& aTableCellFrame,
+                      nsTableWrapperFrame& aTableWrapperFrame);
+
+    [[nodiscard]] static CellData Error(int32_t aRowIndex,
+                                        int32_t aColumnIndex) {
+      return CellData(aRowIndex, aColumnIndex, -1, -1);
+    }
+    [[nodiscard]] static CellData NotFound(int32_t aRowIndex,
+                                           int32_t aColumnIndex) {
+      return CellData(aRowIndex, aColumnIndex, aRowIndex, aColumnIndex);
     }
   };
 
@@ -3765,7 +3757,7 @@ class HTMLEditor final : public EditorBase,
   
 
 
-  static nsTableWrapperFrame* GetTableFrame(Element* aTable);
+  static nsTableWrapperFrame* GetTableFrame(const Element* aTable);
 
   
 
