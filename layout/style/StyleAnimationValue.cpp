@@ -195,7 +195,7 @@ AnimationValue AnimationValue::FromString(nsCSSPropertyID aProperty,
 
   
   
-  RefPtr<ComputedStyle> computedStyle =
+  RefPtr<const ComputedStyle> computedStyle =
       nsComputedDOMStyle::GetComputedStyle(aElement);
   MOZ_ASSERT(computedStyle);
 

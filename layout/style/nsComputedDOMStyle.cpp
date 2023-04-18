@@ -508,7 +508,7 @@ nsresult nsComputedDOMStyle::GetPropertyValue(
 }
 
 
-already_AddRefed<ComputedStyle> nsComputedDOMStyle::GetComputedStyle(
+already_AddRefed<const ComputedStyle> nsComputedDOMStyle::GetComputedStyle(
     Element* aElement, PseudoStyleType aPseudo, StyleType aStyleType) {
   if (Document* doc = aElement->GetComposedDoc()) {
     doc->FlushPendingNotifications(FlushType::Style);
@@ -524,7 +524,7 @@ already_AddRefed<ComputedStyle> nsComputedDOMStyle::GetComputedStyle(
 
 
 
-static bool MustReresolveStyle(const mozilla::ComputedStyle* aStyle) {
+static bool MustReresolveStyle(const ComputedStyle* aStyle) {
   MOZ_ASSERT(aStyle);
 
   
@@ -549,9 +549,11 @@ static bool IsInFlatTree(const Element& aElement) {
   return root && root->IsDocument();
 }
 
-already_AddRefed<ComputedStyle> nsComputedDOMStyle::DoGetComputedStyleNoFlush(
-    const Element* aElement, PseudoStyleType aPseudo, PresShell* aPresShell,
-    StyleType aStyleType) {
+already_AddRefed<const ComputedStyle>
+nsComputedDOMStyle::DoGetComputedStyleNoFlush(const Element* aElement,
+                                              PseudoStyleType aPseudo,
+                                              PresShell* aPresShell,
+                                              StyleType aStyleType) {
   MOZ_ASSERT(aElement, "NULL element");
 
   
@@ -612,10 +614,11 @@ already_AddRefed<ComputedStyle> nsComputedDOMStyle::DoGetComputedStyleNoFlush(
   return result.forget();
 }
 
-already_AddRefed<ComputedStyle>
+already_AddRefed<const ComputedStyle>
 nsComputedDOMStyle::GetUnanimatedComputedStyleNoFlush(Element* aElement,
                                                       PseudoStyleType aPseudo) {
-  RefPtr<ComputedStyle> style = GetComputedStyleNoFlush(aElement, aPseudo);
+  RefPtr<const ComputedStyle> style =
+      GetComputedStyleNoFlush(aElement, aPseudo);
   if (!style) {
     return nullptr;
   }
@@ -792,7 +795,7 @@ void nsComputedDOMStyle::ClearComputedStyle() {
 }
 
 void nsComputedDOMStyle::SetResolvedComputedStyle(
-    RefPtr<ComputedStyle>&& aContext, uint64_t aGeneration) {
+    RefPtr<const ComputedStyle>&& aContext, uint64_t aGeneration) {
   if (!mResolvedComputedStyle) {
     mResolvedComputedStyle = true;
     mElement->AddMutationObserver(this);
@@ -1087,9 +1090,6 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(nsCSSPropertyID aPropID) {
   
   
   
-  
-  
-  
   uint64_t currentGeneration =
       mPresShell->GetPresContext()->GetUndisplayedRestyleGeneration();
 
@@ -1118,9 +1118,10 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(nsCSSPropertyID aPropID) {
   if (!mComputedStyle || MustReresolveStyle(mComputedStyle)) {
     PresShell* presShellForContent = mElement->OwnerDoc()->GetPresShell();
     
-    RefPtr<ComputedStyle> resolvedComputedStyle = DoGetComputedStyleNoFlush(
-        mElement, mPseudo,
-        presShellForContent ? presShellForContent : mPresShell, mStyleType);
+    RefPtr<const ComputedStyle> resolvedComputedStyle =
+        DoGetComputedStyleNoFlush(
+            mElement, mPseudo,
+            presShellForContent ? presShellForContent : mPresShell, mStyleType);
     if (!resolvedComputedStyle) {
       ClearComputedStyle();
       return;

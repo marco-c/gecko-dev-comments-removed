@@ -79,7 +79,7 @@ class SMILCompositor : public PLDHashEntryHdr {
   
   
   
-  UniquePtr<SMILAttr> CreateSMILAttr(ComputedStyle* aBaseComputedStyle);
+  UniquePtr<SMILAttr> CreateSMILAttr(const ComputedStyle* aBaseComputedStyle);
 
   
   

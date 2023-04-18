@@ -400,8 +400,7 @@ class KeyframeEffect : public AnimationEffect {
     Style,
     None,
   };
-  already_AddRefed<ComputedStyle> GetTargetComputedStyle(
-      Flush aFlushType) const;
+  already_AddRefed<const ComputedStyle> GetTargetComputedStyle(Flush) const;
 
   
   
@@ -413,7 +412,7 @@ class KeyframeEffect : public AnimationEffect {
   void EnsureBaseStyle(const AnimationProperty& aProperty,
                        nsPresContext* aPresContext,
                        const ComputedStyle* aComputedValues,
-                       RefPtr<ComputedStyle>& aBaseComputedValues);
+                       RefPtr<const ComputedStyle>& aBaseComputedValues);
 
   OwningAnimationTarget mTarget;
 
@@ -468,7 +467,7 @@ class KeyframeEffect : public AnimationEffect {
                         const AnimationPropertySegment& aSegment,
                         const ComputedTiming& aComputedTiming);
 
-  already_AddRefed<ComputedStyle> CreateComputedStyleForAnimationValue(
+  already_AddRefed<const ComputedStyle> CreateComputedStyleForAnimationValue(
       nsCSSPropertyID aProperty, const AnimationValue& aValue,
       nsPresContext* aPresContext, const ComputedStyle* aBaseComputedStyle);
 

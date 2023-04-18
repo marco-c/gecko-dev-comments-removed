@@ -711,7 +711,7 @@ void nsMenuX::OnWillActivateItem(NSMenuItem* aItem) {
 static NSUserInterfaceLayoutDirection DirectionForElement(dom::Element* aElement) {
   
   
-  RefPtr<ComputedStyle> sc = nsComputedDOMStyle::GetComputedStyle(aElement);
+  RefPtr<const ComputedStyle> sc = nsComputedDOMStyle::GetComputedStyle(aElement);
   if (!sc) {
     return NSApp.userInterfaceLayoutDirection;
   }

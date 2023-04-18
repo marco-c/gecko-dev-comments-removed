@@ -38,7 +38,7 @@ class SMILCSSProperty : public SMILAttr {
 
 
   SMILCSSProperty(nsCSSPropertyID aPropID, dom::Element* aElement,
-                  ComputedStyle* aBaseComputedStyle);
+                  const ComputedStyle* aBaseComputedStyle);
 
   
   virtual nsresult ValueFromString(
@@ -71,7 +71,7 @@ class SMILCSSProperty : public SMILAttr {
   
   
   
-  ComputedStyle* mBaseComputedStyle;
+  const ComputedStyle* mBaseComputedStyle;
 };
 
 }  
