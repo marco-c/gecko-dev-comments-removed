@@ -18,6 +18,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   420
 );
 
+const now = Date.now();
+const MS_PER_DAY = 86400000;
+let groupSerial = 0;
+
+
+
+
 
 
 
@@ -26,72 +33,71 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 let gSnapshots = [
   {
+    
+    
     url: "https://example.com/1",
-    type: "manual",
-    expired: true,
-    tombstone: false,
+    userPersisted: Snapshots.USER_PERSISTED.MANUAL,
+    created_at: now - (1 + SNAPSHOT_USERMANAGED_EXPIRE_DAYS) * MS_PER_DAY,
+    shouldExpire: true,
   },
   {
+    
+    
     url: "https://example.com/2",
-    type: "manual",
-    expired: false,
-    tombstone: false,
+    userPersisted: Snapshots.USER_PERSISTED.MANUAL,
+    created_at: now - (1 + SNAPSHOT_EXPIRE_DAYS) * MS_PER_DAY,
+    shouldExpire: false,
   },
   {
+    
+    
     url: "https://example.com/3",
-    type: "group",
-    expired: true,
-    tombstone: false,
+    created_at: now - (1 + SNAPSHOT_USERMANAGED_EXPIRE_DAYS) * MS_PER_DAY,
+    group: `test-group-${groupSerial++}`,
+    shouldExpire: true,
   },
   {
+    
+    
     url: "https://example.com/4",
-    type: "auto",
-    expired: true,
-    tombstone: false,
+    created_at: now - (1 + SNAPSHOT_EXPIRE_DAYS) * MS_PER_DAY,
+    group: `test-group-${groupSerial++}`,
+    shouldExpire: false,
   },
   {
+    
+    
     url: "https://example.com/5",
-    type: "auto",
-    expired: false,
-    tombstone: false,
+    created_at: now - (1 + SNAPSHOT_EXPIRE_DAYS) * MS_PER_DAY,
+    shouldExpire: true,
   },
   {
+    
+    
     url: "https://example.com/6",
-    type: "auto",
-    expired: true,
+    created_at: now - MS_PER_DAY,
+    shouldExpire: false,
+  },
+  {
+    
+    
+    url: "https://example.com/7",
+    created_at: now - (1 + SNAPSHOT_USERMANAGED_EXPIRE_DAYS) * MS_PER_DAY,
     tombstone: true,
+    shouldExpire: false,
   },
 ];
 
 add_task(async function setup() {
-  let now = Date.now();
-  let interactions = gSnapshots.map(s => {
-    if (s.expired) {
-      s.created_at =
-        now -
-        (1 + s.type != "auto"
-          ? SNAPSHOT_USERMANAGED_EXPIRE_DAYS
-          : SNAPSHOT_EXPIRE_DAYS) *
-          86400000;
-    } else {
-      s.created_at =
-        now - (s.type != "auto" ? SNAPSHOT_EXPIRE_DAYS : 1) * 86400000;
-    }
-    return s;
-  });
-  await addInteractions(interactions);
+  await addInteractions(gSnapshots);
 
-  let groupSerial = 1;
   for (let snapshot of gSnapshots) {
-    if (snapshot.type == "manual") {
-      snapshot.userPersisted = Snapshots.USER_PERSISTED.MANUAL;
-    }
     await Snapshots.add(snapshot);
-    if (snapshot.type == "group") {
-      snapshot.group = await SnapshotGroups.add(
+    if (snapshot.group) {
+      await SnapshotGroups.add(
         {
-          title: `test-group-${groupSerial++}`,
-          builder: "test",
+          title: snapshot.group,
+          builder: "user",
         },
         [snapshot.url]
       );
@@ -103,7 +109,26 @@ add_task(async function setup() {
 
   Services.prefs.setBoolPref("browser.places.interactions.enabled", true);
 
-  SnapshotMonitor.init();
+  
+  
+  
+  
+  
+  
+  
+  await SnapshotMonitor.observe(null, "test-trigger-builders");
+  let groups = await SnapshotGroups.query({ skipMinimum: true });
+  Assert.equal(
+    groups.length,
+    1 + groupSerial,
+    "Should return the expected number of snapshot groups"
+  );
+  assertSnapshotGroup(groups[0], {
+    title: "example",
+    builder: "domain",
+    builderMetadata: { domain: "example.com", title: "example" },
+    snapshotCount: gSnapshots.filter(s => !s.tombstone).length,
+  });
 });
 
 add_task(async function test_idle_expiration() {
@@ -112,11 +137,11 @@ add_task(async function test_idle_expiration() {
   let remaining = await Snapshots.query({ includeTombstones: true });
   for (let snapshot of gSnapshots) {
     let index = remaining.findIndex(s => s.url == snapshot.url);
-    if (!snapshot.expired || snapshot.tombstone) {
+    if (snapshot.shouldExpire) {
+      Assert.equal(index, -1, `${snapshot.url} should have been removed`);
+    } else {
       Assert.greater(index, -1, `${snapshot.url} should not have been removed`);
       remaining.splice(index, 1);
-    } else {
-      Assert.equal(index, -1, `${snapshot.url} should have been removed`);
     }
   }
   Assert.ok(
@@ -127,14 +152,13 @@ add_task(async function test_idle_expiration() {
 
 add_task(async function test_active_limited_expiration() {
   
-  let now = Date.now();
   let expiredSnapshots = [
     {
-      url: "https://example.com/7",
+      url: "https://example.com/8",
       created_at: now - (SNAPSHOT_USERMANAGED_EXPIRE_DAYS + 1) * 86400000,
     },
     {
-      url: "https://example.com/8",
+      url: "https://example.com/9",
       created_at: now - (SNAPSHOT_USERMANAGED_EXPIRE_DAYS + 1) * 86400000,
     },
   ];

@@ -535,11 +535,16 @@ const Snapshots = new (class Snapshots {
 
 
 
+
+
+
+
   async query({
     limit = 100,
     includeTombstones = false,
     type = undefined,
     group = undefined,
+    includeSnapshotsInUserManagedGroups = true,
     includeHiddenInGroup = false,
     includeUserPersisted = true,
     lastInteractionBefore = undefined,
@@ -571,20 +576,23 @@ const Snapshots = new (class Snapshots {
       bindings.type = type;
     }
 
-    if (group === null) {
-      clauses.push("group_id IS NULL");
-      joins.push(
-        "LEFT JOIN moz_places_metadata_groups_to_snapshots g USING(place_id)"
-      );
-    } else if (group) {
+    if (group) {
       clauses.push("group_id = :group");
       if (!includeHiddenInGroup) {
-        clauses.push("g.hidden = 0");
+        clauses.push("gs.hidden = 0");
       }
       bindings.group = group;
       joins.push(
-        "LEFT JOIN moz_places_metadata_groups_to_snapshots g USING(place_id)"
+        "LEFT JOIN moz_places_metadata_groups_to_snapshots gs USING(place_id)"
       );
+    } else if (!includeSnapshotsInUserManagedGroups) {
+      
+      
+      clauses.push(`NOT EXISTS(
+        SELECT 1 FROM moz_places_metadata_snapshots_groups g
+        JOIN moz_places_metadata_groups_to_snapshots gs ON g.id = gs.group_id
+        WHERE gs.place_id = h.id AND builder == 'user'
+      )`);
     }
 
     if (limit != -1) {
@@ -603,7 +611,7 @@ const Snapshots = new (class Snapshots {
              h.visit_count
       FROM moz_places_metadata_snapshots s
       JOIN moz_places h ON h.id = s.place_id
-      LEFT JOIN moz_places_metadata_snapshots_extra e ON e.place_id = s.place_id
+      LEFT JOIN moz_places_metadata_snapshots_extra e USING(place_id)
       ${joins.join(" ")}
       ${whereStatement}
       GROUP BY s.place_id
