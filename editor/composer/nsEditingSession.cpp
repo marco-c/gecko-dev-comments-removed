@@ -441,11 +441,13 @@ void nsEditingSession::RemoveListenersAndControllers(
   }
 
   
+  RefPtr<ComposerCommandsUpdater> composertCommandsUpdater =
+      std::move(mComposerCommandsUpdater);
+  MOZ_ASSERT(!mComposerCommandsUpdater);
   aHTMLEditor->SetComposerCommandsUpdater(nullptr);
-  DebugOnly<bool> removedTransactionListener =
-      aHTMLEditor->RemoveTransactionListener(*mComposerCommandsUpdater);
-  NS_WARNING_ASSERTION(removedTransactionListener,
-                       "Failed to remove transaction listener from the editor");
+  if (!aHTMLEditor->RemoveTransactionListener(*composertCommandsUpdater)) {
+    NS_WARNING("Failed to remove transaction listener from the editor");
+  }
 
   
   
