@@ -1170,13 +1170,16 @@ var PanelMultiView = class extends AssociatedToNode {
 
     
     
-    let devicePixelRatio = this.window.devicePixelRatio;
+    let cssToDesktopPixels =
+      this.window.devicePixelRatio / this.window.desktopToDeviceScale;
     let screen = this._screenManager.screenForRect(
-      anchor.screenX * devicePixelRatio,
-      anchor.screenY * devicePixelRatio,
-      anchorRect.width * devicePixelRatio,
-      anchorRect.height * devicePixelRatio
+      anchor.screenX * cssToDesktopPixels,
+      anchor.screenY * cssToDesktopPixels,
+      anchorRect.width * cssToDesktopPixels,
+      anchorRect.height * cssToDesktopPixels
     );
+    
+    
     let availTop = {},
       availHeight = {};
     screen.GetAvailRect({}, availTop, {}, availHeight);
