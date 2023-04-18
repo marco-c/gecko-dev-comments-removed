@@ -65,6 +65,19 @@ interface nsIObserverService : nsISupports
                           in string aTopic,
                           [optional] in wstring someData );
 
+    
+
+
+
+
+
+
+
+
+
+
+    [noscript, notxpcom, nostdcall] boolean hasObservers(in string aTopic);
+
     %{C++
     
 
