@@ -36,35 +36,3 @@ function waitUntilState(store, predicate) {
     check();
   });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-function waitUntilAction(store, actionType, count = 1) {
-  return new Promise(resolve => {
-    const unsubscribe = store.subscribe(check);
-    const history = store.history;
-    let index = history.length;
-
-    info(`Waiting for action "${actionType}"`);
-    function check() {
-      const action = history[index++];
-      if (action && action.type === actionType) {
-        info(`Found action "${actionType}"`);
-        count--;
-        if (count === 0) {
-          unsubscribe();
-          resolve(store.getState());
-        }
-      }
-    }
-  });
-}

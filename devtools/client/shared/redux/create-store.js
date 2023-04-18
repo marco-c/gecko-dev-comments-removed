@@ -18,17 +18,10 @@ const flags = require("devtools/shared/flags");
 
 loader.lazyRequireGetter(
   this,
-  "history",
-  "devtools/client/shared/redux/middleware/history",
-  true
-);
-loader.lazyRequireGetter(
-  this,
   "log",
   "devtools/client/shared/redux/middleware/log",
   true
 );
-
 
 
 
@@ -58,10 +51,6 @@ const createStoreWithMiddleware = (opts = {}) => {
     waitUntilService
   );
 
-  if (opts.history) {
-    middleware.push(history(opts.history));
-  }
-
   if (opts.middleware) {
     opts.middleware.forEach(fn => middleware.push(fn));
   }
@@ -85,24 +74,11 @@ module.exports = (
   const reducer =
     typeof reducers === "function" ? reducers : combineReducers(reducers);
 
-  let historyEntries;
-
-  
-  
-  if (flags.testing) {
-    historyEntries = [];
-  }
-
   const store = createStoreWithMiddleware({
     enableTaskMiddleware,
     log: flags.testing && shouldLog,
-    history: historyEntries,
     thunkOptions,
   })(reducer, initialState);
-
-  if (history) {
-    store.history = historyEntries;
-  }
 
   return store;
 };
