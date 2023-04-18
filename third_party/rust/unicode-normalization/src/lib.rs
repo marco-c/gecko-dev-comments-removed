@@ -38,77 +38,99 @@
 
 
 #![deny(missing_docs, unsafe_code)]
-#![doc(html_logo_url = "https://unicode-rs.github.io/unicode-rs_sm.png",
-       html_favicon_url = "https://unicode-rs.github.io/unicode-rs_sm.png")]
+#![doc(
+    html_logo_url = "https://unicode-rs.github.io/unicode-rs_sm.png",
+    html_favicon_url = "https://unicode-rs.github.io/unicode-rs_sm.png"
+)]
+#![cfg_attr(not(feature = "std"), no_std)]
 
-pub use tables::UNICODE_VERSION;
-pub use decompose::Decompositions;
-pub use quick_check::{
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+#[cfg(feature = "std")]
+extern crate core;
+
+extern crate tinyvec;
+
+pub use crate::decompose::Decompositions;
+pub use crate::quick_check::{
+    is_nfc, is_nfc_quick, is_nfc_stream_safe, is_nfc_stream_safe_quick, is_nfd, is_nfd_quick,
+    is_nfd_stream_safe, is_nfd_stream_safe_quick, is_nfkc, is_nfkc_quick, is_nfkd, is_nfkd_quick,
     IsNormalized,
-    is_nfc,
-    is_nfc_quick,
-    is_nfc_stream_safe,
-    is_nfc_stream_safe_quick,
-    is_nfd,
-    is_nfd_quick,
-    is_nfd_stream_safe,
-    is_nfd_stream_safe_quick,
 };
-pub use recompose::Recompositions;
-pub use stream_safe::StreamSafe;
-use std::str::Chars;
+pub use crate::recompose::Recompositions;
+pub use crate::replace::Replacements;
+pub use crate::stream_safe::StreamSafe;
+pub use crate::tables::UNICODE_VERSION;
+use core::str::Chars;
+
+mod no_std_prelude;
 
 mod decompose;
+mod lookups;
 mod normalize;
-mod recompose;
+mod perfect_hash;
 mod quick_check;
+mod recompose;
+mod replace;
 mod stream_safe;
+
+#[rustfmt::skip]
 mod tables;
 
+#[doc(hidden)]
+pub mod __test_api;
 #[cfg(test)]
 mod test;
-#[cfg(test)]
-mod normalization_tests;
 
 
 pub mod char {
-    pub use normalize::{decompose_canonical, decompose_compatible, compose};
+    pub use crate::normalize::{
+        compose, decompose_canonical, decompose_cjk_compat_variants, decompose_compatible,
+    };
+
+    pub use crate::lookups::{canonical_combining_class, is_combining_mark};
 
     
-    pub use tables::canonical_combining_class;
-
     
-    pub use tables::is_combining_mark;
+    
+    pub use crate::tables::is_public_assigned;
 }
 
 
 
 
-
-pub trait UnicodeNormalization<I: Iterator<Item=char>> {
+pub trait UnicodeNormalization<I: Iterator<Item = char>> {
     
     
-    #[inline]
     fn nfd(self) -> Decompositions<I>;
 
     
     
-    #[inline]
     fn nfkd(self) -> Decompositions<I>;
 
     
     
-    #[inline]
     fn nfc(self) -> Recompositions<I>;
 
     
     
-    #[inline]
     fn nfkc(self) -> Recompositions<I>;
 
     
     
-    #[inline]
+    
+    
+    
+    
+    
+    
+    
+    
+    fn cjk_compat_variants(self) -> Replacements<I>;
+
+    
+    
     fn stream_safe(self) -> StreamSafe<I>;
 }
 
@@ -134,12 +156,17 @@ impl<'a> UnicodeNormalization<Chars<'a>> for &'a str {
     }
 
     #[inline]
+    fn cjk_compat_variants(self) -> Replacements<Chars<'a>> {
+        replace::new_cjk_compat_variants(self.chars())
+    }
+
+    #[inline]
     fn stream_safe(self) -> StreamSafe<Chars<'a>> {
         StreamSafe::new(self.chars())
     }
 }
 
-impl<I: Iterator<Item=char>> UnicodeNormalization<I> for I {
+impl<I: Iterator<Item = char>> UnicodeNormalization<I> for I {
     #[inline]
     fn nfd(self) -> Decompositions<I> {
         decompose::new_canonical(self)
@@ -158,6 +185,11 @@ impl<I: Iterator<Item=char>> UnicodeNormalization<I> for I {
     #[inline]
     fn nfkc(self) -> Recompositions<I> {
         recompose::new_compatible(self)
+    }
+
+    #[inline]
+    fn cjk_compat_variants(self) -> Replacements<I> {
+        replace::new_cjk_compat_variants(self)
     }
 
     #[inline]
