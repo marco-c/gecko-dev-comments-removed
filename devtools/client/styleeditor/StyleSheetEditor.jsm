@@ -543,13 +543,21 @@ StyleSheetEditor.prototype = {
   
 
 
-  onShow: function() {
+
+
+
+  onShow: function(options = {}) {
     if (this.sourceEditor) {
       
       
       this.sourceEditor.refresh();
     }
-    this.focus();
+
+    
+    
+    if (options.reason !== "filter-auto") {
+      this.focus();
+    }
   },
 
   
