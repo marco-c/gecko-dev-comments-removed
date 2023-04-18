@@ -3493,11 +3493,7 @@ nsresult HTMLInputElement::MaybeInitPickers(EventChainPostVisitor& aVisitor) {
   
   
   
-  
-  
-  if (aVisitor.mEvent->DefaultPrevented()) {
-    return NS_OK;
-  }
+  MOZ_ASSERT(IsMutable());
   WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
   if (!(mouseEvent && mouseEvent->IsLeftClickEvent())) {
     return NS_OK;
@@ -4055,7 +4051,10 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
     PostHandleEventForRangeThumb(aVisitor);
   }
 
-  return MaybeInitPickers(aVisitor);
+  if (!preventDefault) {
+    MOZ_TRY(MaybeInitPickers(aVisitor));
+  }
+  return NS_OK;
 }
 
 enum class RadioButtonMove { Back, Forward, None };
