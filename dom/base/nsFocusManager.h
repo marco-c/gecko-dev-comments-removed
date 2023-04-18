@@ -225,19 +225,21 @@ class nsFocusManager final : public nsIFocusManager,
   
 
 
-  void RaiseWindow(nsPIDOMWindowOuter* aWindow,
-                   mozilla::dom::CallerType aCallerType, uint64_t aActionId);
+  MOZ_CAN_RUN_SCRIPT void RaiseWindow(nsPIDOMWindowOuter* aWindow,
+                                      mozilla::dom::CallerType aCallerType,
+                                      uint64_t aActionId);
 
   
 
 
-  void WindowRaised(mozIDOMWindowProxy* aWindow, uint64_t aActionId);
+  MOZ_CAN_RUN_SCRIPT void WindowRaised(mozIDOMWindowProxy* aWindow,
+                                       uint64_t aActionId);
 
   
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void WindowLowered(mozIDOMWindowProxy* aWindow,
-                                                 uint64_t aActionId);
+  MOZ_CAN_RUN_SCRIPT void WindowLowered(mozIDOMWindowProxy* aWindow,
+                                        uint64_t aActionId);
 
   
 
