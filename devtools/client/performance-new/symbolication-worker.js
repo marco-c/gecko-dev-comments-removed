@@ -200,3 +200,20 @@ onmessage = async e => {
   }
   close();
 };
+
+onunhandledrejection = e => {
+  
+  
+  
+  
+  
+  
+  
+  e.preventDefault();
+  postMessage({ error: createPlainErrorObject(e.reason) });
+};
+
+
+onerror = e => {
+  postMessage({ error: createPlainErrorObject(e) });
+};
