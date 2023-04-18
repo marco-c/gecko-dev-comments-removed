@@ -40,11 +40,11 @@ async function testNativeMessaging({
     },
   });
 
-  
+  // Run background script.
   await extension.startup();
   await extension.awaitMessage("background_done");
 
-  
+  // Run content script.
   const page = await ExtensionTestUtils.loadContentPage(
     "http://example.com/dummy"
   );
@@ -54,8 +54,8 @@ async function testNativeMessaging({
   await extension.unload();
 }
 
-
-
+// Checks that unprivileged extensions cannot use any of the nativeMessaging
+// APIs on Android.
 add_task(async function test_nativeMessaging_unprivileged() {
   function testScript() {
     browser.test.assertEq(
@@ -91,17 +91,17 @@ add_task(async function test_nativeMessaging_unprivileged() {
   });
 });
 
-
-
+// Checks that privileged extensions can still not use native messaging without
+// the geckoViewAddons permission.
 add_task(async function test_geckoViewAddons_missing() {
   const ERROR_NATIVE_MESSAGE_FROM_BACKGROUND =
     "Native manifests are not supported on android";
-  const ERROR_NATIVE_MESSAGE_FROM_CONTENT = /^Native messaging not allowed: \{.*"envType":"content_child","frameId":0,"url":"http:\/\/example\.com\/dummy"\}$/;
+  const ERROR_NATIVE_MESSAGE_FROM_CONTENT = /^Native messaging not allowed: \{.*"envType":"content_child","url":"http:\/\/example\.com\/dummy"\}$/;
 
   async function testBackground() {
     await browser.test.assertRejects(
       browser.runtime.sendNativeMessage("dummy_nativeApp", "DummyMsg"),
-      
+      // Redacted error: ERROR_NATIVE_MESSAGE_FROM_BACKGROUND
       "An unexpected error occurred",
       "Background script cannot use nativeMessaging without geckoViewAddons"
     );
@@ -109,7 +109,7 @@ add_task(async function test_geckoViewAddons_missing() {
   async function testContent() {
     await browser.test.assertRejects(
       browser.runtime.sendNativeMessage("dummy_nativeApp", "DummyMsg"),
-      
+      // Redacted error: ERROR_NATIVE_MESSAGE_FROM_CONTENT
       "An unexpected error occurred",
       "Content script cannot use nativeMessaging without geckoViewAddons"
     );
@@ -131,21 +131,21 @@ add_task(async function test_geckoViewAddons_missing() {
   });
 });
 
-
-
+// Checks that privileged extensions cannot use native messaging from content
+// without the nativeMessagingFromContent permission.
 add_task(async function test_nativeMessagingFromContent_missing() {
-  const ERROR_NATIVE_MESSAGE_FROM_CONTENT_NO_PERM = /^Unexpected messaging sender: \{.*"envType":"content_child","frameId":0,"url":"http:\/\/example\.com\/dummy"\}$/;
+  const ERROR_NATIVE_MESSAGE_FROM_CONTENT_NO_PERM = /^Unexpected messaging sender: \{.*"envType":"content_child","url":"http:\/\/example\.com\/dummy"\}$/;
   function testBackground() {
-    
-    
-    
-    
-    
+    // sendNativeMessage / connectNative are expected to succeed, but we
+    // are not testing that here because XpcshellTestRunnerService does not
+    // have a WebExtension.MessageDelegate that handles the message.
+    // There are plenty of mochitests that rely on connectNative, so we are
+    // not testing that here.
   }
   async function testContent() {
     await browser.test.assertRejects(
       browser.runtime.sendNativeMessage("dummy_nativeApp", "DummyMsg"),
-      
+      // Redacted error: ERROR_NATIVE_MESSAGE_FROM_CONTENT_NO_PERM
       "An unexpected error occurred",
       "Trying to get through to native messaging but without luck"
     );
