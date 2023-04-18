@@ -26,7 +26,11 @@ if (!window._gaq) {
       if (!Array.isArray(a)) {
         return;
       }
-      if (a[0] === "_link" && typeof a[1] === "string") {
+      if (
+        typeof a[0] === "string" &&
+        /(^|\.)_link$/.test(a[0]) &&
+        typeof a[1] === "string"
+      ) {
         window.location.assign(a[1]);
       }
       if (
