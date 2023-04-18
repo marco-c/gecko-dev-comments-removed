@@ -35,12 +35,6 @@ var gMoreFromMozillaPane = {
     return this._option;
   },
 
-  
-  sendToDeviceEmailsSupported() {
-    const userLocale = Services.locale.appLocaleAsBCP47.toLowerCase();
-    return this.emailSupportedLocales.includes(userLocale);
-  },
-
   getURL(url, region, option, hasEmail) {
     const URL_PARAMS = {
       utm_source: "about-prefs",
@@ -256,7 +250,7 @@ var gMoreFromMozillaPane = {
         qrc_link.id = `${this.option}-${product.qrcode.button.id}`;
 
         
-        if (!this.sendToDeviceEmailsSupported()) {
+        if (!BrowserUtils.sendToDeviceEmailsSupported()) {
           qrc_link.classList.add("hidden");
         } else {
           qrc_link.setAttribute(
@@ -292,15 +286,3 @@ var gMoreFromMozillaPane = {
     this.renderProducts();
   },
 };
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  gMoreFromMozillaPane,
-  "emailSupportedLocales",
-  "browser.send_to_device_locales",
-  "",
-  null,
-  prefVal => {
-    
-    return prefVal.toLowerCase().split(/\s*,\s*/g);
-  }
-);
