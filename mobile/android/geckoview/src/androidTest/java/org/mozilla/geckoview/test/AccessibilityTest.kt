@@ -1382,9 +1382,6 @@ class AccessibilityTest : BaseSessionTest() {
     }
 
     @Test fun testRemoteAccessibilityFocusIframe() {
-        
-        assumeThat(sessionRule.env.isFission, equalTo(false))
-
         testAccessibilityFocusIframe(REMOTE_IFRAME);
     }
 
@@ -1418,9 +1415,6 @@ class AccessibilityTest : BaseSessionTest() {
 
     @Setting(key = Setting.Key.FULL_ACCESSIBILITY_TREE, value = "true")
     @Test fun testRemoteIframeTree() {
-        
-        assumeThat(sessionRule.env.isFission, equalTo(false))
-
         testIframeTree(REMOTE_IFRAME);
     }
 
