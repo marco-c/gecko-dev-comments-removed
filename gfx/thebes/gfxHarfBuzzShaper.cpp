@@ -54,6 +54,7 @@ gfxHarfBuzzShaper::gfxHarfBuzzShaper(gfxFont* aFont)
       mNumLongVMetrics(0),
       mDefaultVOrg(-1.0),
       mUseFontGetGlyph(aFont->ProvidesGetGlyph()),
+      mIsSymbolFont(false),
       mUseFontGlyphWidths(aFont->ProvidesGlyphWidths()),
       mInitialized(false),
       mVerticalInitialized(false),
@@ -114,6 +115,16 @@ hb_codepoint_t gfxHarfBuzzShaper::GetNominalGlyph(
   }
 
   if (!gid) {
+    if (mIsSymbolFont) {
+      
+      
+      if (auto pua = gfxFontUtils::MapLegacySymbolFontCharToPUA(unicode)) {
+        gid = GetNominalGlyph(pua);
+      }
+      if (gid) {
+        return gid;
+      }
+    }
     switch (unicode) {
       case 0xA0:
         
@@ -1123,7 +1134,7 @@ bool gfxHarfBuzzShaper::Initialize() {
     uint32_t len;
     const uint8_t* data = (const uint8_t*)hb_blob_get_data(mCmapTable, &len);
     mCmapFormat = gfxFontUtils::FindPreferredSubtable(
-        data, len, &mSubtableOffset, &mUVSTableOffset);
+        data, len, &mSubtableOffset, &mUVSTableOffset, &mIsSymbolFont);
     if (mCmapFormat <= 0) {
       return false;
     }
