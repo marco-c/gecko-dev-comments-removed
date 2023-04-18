@@ -796,18 +796,15 @@ class HeapThreshold {
         sliceBytes_(SIZE_MAX) {}
 
   
-  
-  
-  
-  AtomicByteCount startBytes_;
+  MainThreadOrGCTaskData<size_t> startBytes_;
 
   
   
-  size_t incrementalLimitBytes_;
+  MainThreadData<size_t> incrementalLimitBytes_;
 
   
   
-  size_t sliceBytes_;
+  MainThreadData<size_t> sliceBytes_;
 
  public:
   size_t startBytes() const { return startBytes_; }
