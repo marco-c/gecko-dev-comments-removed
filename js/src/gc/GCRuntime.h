@@ -340,8 +340,6 @@ class GCRuntime {
   void startDebugGC(JS::GCOptions options, SliceBudget& budget);
   void debugGCSlice(SliceBudget& budget);
 
-  void triggerFullGCForAtoms(JSContext* cx);
-
   void runDebugGC();
   void notifyRootsRemoved();
 
@@ -520,8 +518,6 @@ class GCRuntime {
   bool majorGCRequested() const {
     return majorGCTriggerReason != JS::GCReason::NO_REASON;
   }
-
-  bool fullGCForAtomsRequested() const { return fullGCForAtomsRequested_; }
 
   double computeHeapGrowthFactor(size_t lastBytes);
   size_t computeTriggerBytes(double growthFactor, size_t lastBytes);
@@ -999,9 +995,6 @@ class GCRuntime {
   mozilla::Atomic<JS::GCReason, mozilla::ReleaseAcquire> majorGCTriggerReason;
 
  private:
-  
-  MainThreadData<bool> fullGCForAtomsRequested_;
-
   
   MainThreadData<uint64_t> minorGCNumber;
 
