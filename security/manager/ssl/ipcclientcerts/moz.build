@@ -1,0 +1,9 @@
+
+
+
+
+
+
+DIRS += ["dynamic-library"]
+
+RustLibrary("ipcclientcerts-static")

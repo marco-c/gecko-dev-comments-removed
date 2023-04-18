@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+#include "IPCClientCertsChild.h"
+
+#include "mozilla/ipc/BackgroundChild.h"
+#include "mozilla/ipc/PBackgroundChild.h"
+
+namespace mozilla::psm {
+
+IPCClientCertsChild::IPCClientCertsChild() = default;
+
+}  
