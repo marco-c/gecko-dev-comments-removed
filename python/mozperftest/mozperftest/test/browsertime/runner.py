@@ -300,11 +300,6 @@ class BrowsertimeRunner(NodeRunner):
 
         args_list = [
             "--android",
-            
-            
-            
-            "--firefox.binaryPath",
-            self.node_path,
             "--firefox.android.package",
             app_name,
         ]
