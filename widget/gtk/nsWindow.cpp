@@ -2372,7 +2372,7 @@ void nsWindow::WaylandPopupMove() {
                       mRelativePopupPosition.y);
     }
     
-    WaylandPopupPropagateChangesToLayout( true,  false);
+    
     return;
   }
 
