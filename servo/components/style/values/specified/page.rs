@@ -5,9 +5,9 @@
 
 
 use crate::parser::{Parse, ParserContext};
-use crate::values::{generics, CustomIdent};
 use crate::values::generics::size::Size2D;
 use crate::values::specified::length::NonNegativeLength;
+use crate::values::{generics, CustomIdent};
 use cssparser::Parser;
 use style_traits::ParseError;
 
@@ -50,7 +50,17 @@ impl Parse for PageSize {
 
 
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToComputedValue, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToCss,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[repr(C, u8)]
 pub enum PageName {
     
