@@ -346,6 +346,9 @@ class ThreadRegistration {
   
   bool mIsOnHeap = false;
 
+  
+  bool mIsRegistryLockedSharedOnThisThread = false;
+
   static MOZ_THREAD_LOCAL(ThreadRegistration*) tlsThreadRegistration;
 
   [[nodiscard]] static decltype(tlsThreadRegistration)* GetTLS() {
