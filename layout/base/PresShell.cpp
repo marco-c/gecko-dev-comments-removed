@@ -4692,12 +4692,10 @@ nsRect PresShell::ClipListToRange(nsDisplayListBuilder* aBuilder,
   
   
   nsRect surfaceRect;
-  nsDisplayList tmpList;
 
-  nsDisplayItem* i;
-  while ((i = aList->RemoveBottom())) {
+  for (nsDisplayItem* i : aList->TakeItems()) {
     if (i->GetType() == DisplayItemType::TYPE_CONTAINER) {
-      tmpList.AppendToTop(i);
+      aList->AppendToTop(i);
       surfaceRect.UnionRect(
           surfaceRect, ClipListToRange(aBuilder, i->GetChildren(), aRange));
       continue;
@@ -4778,7 +4776,7 @@ nsRect PresShell::ClipListToRange(nsDisplayListBuilder* aBuilder,
     
     nsDisplayList* sublist = i->GetSameCoordinateSystemChildren();
     if (itemToInsert || sublist) {
-      tmpList.AppendToTop(itemToInsert ? itemToInsert : i);
+      aList->AppendToTop(itemToInsert ? itemToInsert : i);
       
       if (sublist)
         surfaceRect.UnionRect(surfaceRect,
@@ -4788,9 +4786,6 @@ nsRect PresShell::ClipListToRange(nsDisplayListBuilder* aBuilder,
       i->Destroy(aBuilder);
     }
   }
-
-  
-  aList->AppendToTop(&tmpList);
 
   return surfaceRect;
 }
