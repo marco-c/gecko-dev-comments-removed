@@ -986,6 +986,11 @@ var Policies = {
     },
   },
 
+  ExemptDomainFileTypePairsFromFileTypeDownloadWarnings: {
+    
+    
+  },
+
   ExtensionSettings: {
     onBeforeAddons(manager, param) {
       try {
