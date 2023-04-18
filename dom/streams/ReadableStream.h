@@ -156,6 +156,12 @@ inline bool ReadableStreamHasBYOBReader(ReadableStream* aStream) {
 
 extern bool ReadableStreamHasDefaultReader(ReadableStream* aStream);
 
+extern already_AddRefed<ReadableStream> CreateReadableByteStream(
+    JSContext* aCx, nsIGlobalObject* aGlobal,
+    UnderlyingSourceStartCallbackHelper* aStartAlgorithm,
+    UnderlyingSourcePullCallbackHelper* aPullAlgorithm,
+    UnderlyingSourceCancelCallbackHelper* aCancelAlgorithm, ErrorResult& aRv);
+
 }  
 }  
 

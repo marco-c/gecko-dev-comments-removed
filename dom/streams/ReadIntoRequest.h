@@ -30,6 +30,7 @@ struct ReadIntoRequest : public nsISupports,
 
   
   
+  MOZ_CAN_RUN_SCRIPT
   virtual void CloseSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
                           ErrorResult& errorResult) = 0;
 

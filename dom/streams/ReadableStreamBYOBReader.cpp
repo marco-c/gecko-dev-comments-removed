@@ -275,5 +275,22 @@ void ReadableStreamBYOBReader::ReleaseLock(ErrorResult& aRv) {
   ReadableStreamReaderGenericRelease(this, aRv);
 }
 
+
+already_AddRefed<ReadableStreamBYOBReader> AcquireReadableStreamBYOBReader(
+    JSContext* aCx, ReadableStream* aStream, ErrorResult& aRv) {
+  
+  RefPtr<ReadableStreamBYOBReader> reader =
+      new ReadableStreamBYOBReader(aStream->GetParentObject());
+
+  
+  SetUpReadableStreamBYOBReader(aCx, reader, *aStream, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  
+  return reader.forget();
+}
+
 }  
 }  

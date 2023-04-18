@@ -65,8 +65,7 @@ bool CanTransferArrayBuffer(JSContext* aCx, JS::Handle<JSObject*> aObject,
 }
 
 
-JSObject* CloneAsUint8Array(JSContext* aCx, JS::HandleObject aObject,
-                            ErrorResult& aRv) {
+JSObject* CloneAsUint8Array(JSContext* aCx, JS::HandleObject aObject) {
   
   
   MOZ_ASSERT(JS_IsArrayBufferViewObject(aObject));
@@ -76,7 +75,6 @@ JSObject* CloneAsUint8Array(JSContext* aCx, JS::HandleObject aObject,
   JS::RootedObject viewedArrayBuffer(
       aCx, JS_GetArrayBufferViewBuffer(aCx, aObject, &isShared));
   if (!viewedArrayBuffer) {
-    aRv.StealExceptionFromJSContext(aCx);
     return nullptr;
   }
   MOZ_ASSERT(!JS::IsDetachedArrayBufferObject(viewedArrayBuffer));
@@ -85,7 +83,6 @@ JSObject* CloneAsUint8Array(JSContext* aCx, JS::HandleObject aObject,
   
   JS::RootedObject buffer(aCx, JS::CopyArrayBuffer(aCx, aObject));
   if (!buffer) {
-    aRv.StealExceptionFromJSContext(aCx);
     return nullptr;
   }
 
@@ -95,7 +92,6 @@ JSObject* CloneAsUint8Array(JSContext* aCx, JS::HandleObject aObject,
   JS::RootedObject array(aCx, JS_NewUint8ArrayWithBuffer(
                                   aCx, buffer, byteOffset, (int64_t)length));
   if (!array) {
-    aRv.StealExceptionFromJSContext(aCx);
     return nullptr;
   }
 

@@ -22,7 +22,10 @@ JSObject* TransferArrayBuffer(JSContext* aCx, JS::Handle<JSObject*> aObject);
 bool CanTransferArrayBuffer(JSContext* aCx, JS::Handle<JSObject*> aObject,
                             ErrorResult& aRv);
 
-JSObject* CloneAsUint8Array(JS::HandleObject O, ErrorResult& aRv);
+
+
+
+JSObject* CloneAsUint8Array(JSContext* aCx, JS::HandleObject O);
 
 }  
 }  

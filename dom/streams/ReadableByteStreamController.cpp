@@ -14,6 +14,7 @@
 #include "js/friend/ErrorMessages.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/dom/ByteStreamHelpers.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
@@ -27,6 +28,7 @@
 #include "mozilla/dom/ReadableStreamDefaultController.h"
 #include "mozilla/dom/ReadableStreamGenericReader.h"
 #include "mozilla/dom/ToJSValue.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIGlobalObject.h"
 #include "nsISupports.h"
@@ -489,6 +491,7 @@ JSObject* ReadableByteStreamControllerConvertPullIntoDescriptor(
     JSContext* aCx, PullIntoDescriptor* pullIntoDescriptor, ErrorResult& aRv);
 
 
+MOZ_CAN_RUN_SCRIPT
 void ReadableStreamFulfillReadIntoRequest(JSContext* aCx,
                                           ReadableStream* aStream,
                                           JS::HandleValue aChunk, bool done,
@@ -519,6 +522,7 @@ void ReadableStreamFulfillReadIntoRequest(JSContext* aCx,
 }
 
 
+MOZ_CAN_RUN_SCRIPT
 void ReadableByteStreamControllerCommitPullIntoDescriptor(
     JSContext* aCx, ReadableStream* aStream,
     PullIntoDescriptor* pullIntoDescriptor, ErrorResult& aRv) {
@@ -565,6 +569,7 @@ void ReadableByteStreamControllerCommitPullIntoDescriptor(
 }
 
 
+MOZ_CAN_RUN_SCRIPT
 void ReadableByteStreamControllerProcessPullIntoDescriptorsUsingQueue(
     JSContext* aCx, ReadableByteStreamController* aController,
     ErrorResult& aRv) {
@@ -579,7 +584,7 @@ void ReadableByteStreamControllerProcessPullIntoDescriptorsUsingQueue(
     }
 
     
-    PullIntoDescriptor* pullIntoDescriptor =
+    RefPtr<PullIntoDescriptor> pullIntoDescriptor =
         aController->PendingPullIntos().getFirst();
 
     
@@ -600,8 +605,9 @@ void ReadableByteStreamControllerProcessPullIntoDescriptorsUsingQueue(
       
       
       
+      RefPtr<ReadableStream> stream(aController->Stream());
       ReadableByteStreamControllerCommitPullIntoDescriptor(
-          aCx, aController->Stream(), pullIntoDescriptor, aRv);
+          aCx, stream, pullIntoDescriptor, aRv);
       if (aRv.Failed()) {
         return;
       }
@@ -1012,6 +1018,7 @@ JSObject* ReadableByteStreamControllerConvertPullIntoDescriptor(
 }
 
 
+MOZ_CAN_RUN_SCRIPT
 static void ReadableByteStreamControllerRespondInClosedState(
     JSContext* aCx, ReadableByteStreamController* aController,
     RefPtr<PullIntoDescriptor>& aFirstDescriptor, ErrorResult& aRv) {
@@ -1019,7 +1026,7 @@ static void ReadableByteStreamControllerRespondInClosedState(
   MOZ_ASSERT(aFirstDescriptor->BytesFilled() == 0);
 
   
-  ReadableStream* stream = aController->Stream();
+  RefPtr<ReadableStream> stream = aController->Stream();
 
   
   if (ReadableStreamHasBYOBReader(stream)) {
@@ -1619,6 +1626,140 @@ void ReadableByteStreamControllerPullInto(
   
   
   ReadableByteStreamControllerCallPullIfNeeded(aCx, aController, aRv);
+}
+
+class ByteStreamStartPromiseNativeHandler final : public PromiseNativeHandler {
+  ~ByteStreamStartPromiseNativeHandler() = default;
+
+  RefPtr<ReadableByteStreamController> mController;
+
+ public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS(ByteStreamStartPromiseNativeHandler)
+
+  explicit ByteStreamStartPromiseNativeHandler(
+      ReadableByteStreamController* aController)
+      : PromiseNativeHandler(), mController(aController) {}
+
+  MOZ_CAN_RUN_SCRIPT
+  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+    MOZ_ASSERT(mController);
+
+    
+    
+    
+    mController->SetStarted(true);
+
+    
+    mController->SetPulling(false);
+
+    
+    mController->SetPullAgain(false);
+
+    
+    ErrorResult rv;
+    RefPtr<ReadableByteStreamController> stackController = mController;
+    ReadableByteStreamControllerCallPullIfNeeded(aCx, stackController, rv);
+    (void)rv.MaybeSetPendingException(aCx, "StartPromise Resolve Error");
+  }
+
+  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
+    
+    
+    ErrorResult rv;
+    ReadableByteStreamControllerError(mController, aValue, rv);
+    (void)rv.MaybeSetPendingException(aCx, "StartPromise Rejected Error");
+  }
+};
+
+
+NS_IMPL_CYCLE_COLLECTION(ByteStreamStartPromiseNativeHandler, mController)
+NS_IMPL_CYCLE_COLLECTING_ADDREF(ByteStreamStartPromiseNativeHandler)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(ByteStreamStartPromiseNativeHandler)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ByteStreamStartPromiseNativeHandler)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
+NS_INTERFACE_MAP_END
+
+
+MOZ_CAN_RUN_SCRIPT
+void SetUpReadableByteStreamController(
+    JSContext* aCx, ReadableStream* aStream,
+    ReadableByteStreamController* aController,
+    UnderlyingSourceStartCallbackHelper* aStartAlgorithm,
+    UnderlyingSourcePullCallbackHelper* aPullAlgorithm,
+    UnderlyingSourceCancelCallbackHelper* aCancelAlgorithm,
+    double aHighWaterMark, Maybe<uint64_t> aAutoAllocateChunkSize,
+    ErrorResult& aRv) {
+  
+  MOZ_ASSERT(!aStream->Controller());
+
+  
+  if (aAutoAllocateChunkSize) {
+    
+    
+    MOZ_ASSERT(*aAutoAllocateChunkSize >= 0);
+  }
+
+  
+  aController->SetStream(aStream);
+
+  
+  aController->SetPullAgain(false);
+  aController->SetPulling(false);
+
+  
+  aController->SetByobRequest(nullptr);
+
+  
+  ResetQueue(aController);
+
+  
+  
+  aController->SetCloseRequested(false);
+  aController->SetStarted(false);
+
+  
+  aController->SetStrategyHWM(aHighWaterMark);
+
+  
+  aController->SetPullAlgorithm(aPullAlgorithm);
+
+  
+  aController->SetCancelAlgorithm(aCancelAlgorithm);
+
+  
+  aController->SetAutoAllocateChunkSize(aAutoAllocateChunkSize);
+
+  
+  aController->PendingPullIntos().clear();
+
+  
+  aStream->SetController(aController);
+
+  
+  
+  JS::RootedValue startResult(aCx, JS::UndefinedValue());
+  if (aStartAlgorithm) {
+    
+    RefPtr<UnderlyingSourceStartCallbackHelper> startAlgorithm(aStartAlgorithm);
+    RefPtr<ReadableStreamController> controller(aController);
+
+    startAlgorithm->StartCallback(aCx, *controller, &startResult, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+  }
+
+  
+  RefPtr<Promise> startPromise = Promise::Create(GetIncumbentGlobal(), aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+  startPromise->MaybeResolve(startResult);
+
+  
+  startPromise->AppendNativeHandler(
+      new ByteStreamStartPromiseNativeHandler(aController));
 }
 
 }  
