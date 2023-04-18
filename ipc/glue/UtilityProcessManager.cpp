@@ -207,64 +207,75 @@ RefPtr<GenericNonExclusivePromise> UtilityProcessManager::LaunchProcess(
   return p->mLaunchPromise;
 }
 
+template <typename Actor>
+RefPtr<GenericNonExclusivePromise> UtilityProcessManager::StartUtility(
+    RefPtr<Actor> aActor, SandboxingKind aSandbox) {
+  if (!aActor) {
+    MOZ_ASSERT(false, "Actor singleton failure");
+    return GenericNonExclusivePromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                       __func__);
+  }
+
+  if (aActor->CanSend()) {
+    
+    
+    
+    return GenericNonExclusivePromise::CreateAndResolve(true, __func__);
+  }
+
+  RefPtr<UtilityProcessManager> self = this;
+  return LaunchProcess(aSandbox)->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [self, aActor, aSandbox]() {
+        RefPtr<UtilityProcessParent> utilityParent =
+            self->GetProcessParent(aSandbox);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        if (!aActor->CanSend()) {
+          nsresult rv = aActor->BindToUtilityProcess(utilityParent);
+          if (NS_FAILED(rv)) {
+            MOZ_ASSERT(false, "Protocol endpoints failure");
+            return GenericNonExclusivePromise::CreateAndReject(rv, __func__);
+          }
+
+          MOZ_DIAGNOSTIC_ASSERT(aActor->CanSend(), "IPC established for actor");
+        }
+
+        return GenericNonExclusivePromise::CreateAndResolve(true, __func__);
+      },
+      [](nsresult aError) {
+        MOZ_ASSERT_UNREACHABLE("Failure when starting actor");
+        return GenericNonExclusivePromise::CreateAndReject(aError, __func__);
+      });
+}
+
 RefPtr<UtilityProcessManager::AudioDecodingPromise>
 UtilityProcessManager::StartAudioDecoding(base::ProcessId aOtherProcess) {
   RefPtr<UtilityProcessManager> self = this;
-  return LaunchProcess(SandboxingKind::UTILITY_AUDIO_DECODING)
+  RefPtr<UtilityAudioDecoderChild> uadc =
+      UtilityAudioDecoderChild::GetSingleton();
+  return StartUtility(uadc, SandboxingKind::UTILITY_AUDIO_DECODING)
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
-          [self, aOtherProcess]() {
-            RefPtr<UtilityProcessParent> utilityParent =
-                self->GetProcessParent(SandboxingKind::UTILITY_AUDIO_DECODING);
-
-            RefPtr<UtilityAudioDecoderChild> uadc =
-                UtilityAudioDecoderChild::GetSingleton();
-            if (!uadc) {
-              MOZ_ASSERT(false, "UtilityAudioDecoderChild singleton failure");
-              return AudioDecodingPromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                           __func__);
-            }
-
-            if (!uadc->CanSend()) {
-              NS_WARNING(
-                  "UtilityProcessManager::StartAudioDecoding: "
-                  "!uadc->CanSend()");
-
-              Endpoint<PUtilityAudioDecoderChild> utilityAudioDecoderChildEnd;
-              Endpoint<PUtilityAudioDecoderParent> utilityAudioDecoderParentEnd;
-              nsresult rv = PUtilityAudioDecoder::CreateEndpoints(
-                  utilityParent->OtherPid(), base::GetCurrentProcId(),
-                  &utilityAudioDecoderParentEnd, &utilityAudioDecoderChildEnd);
-
-              if (NS_FAILED(rv)) {
-                MOZ_ASSERT(false, "PUtilityAudioDecoder endpoints failure");
-                return AudioDecodingPromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                             __func__);
-              }
-
-              if (!utilityParent->SendStartUtilityAudioDecoderService(
-                      std::move(utilityAudioDecoderParentEnd))) {
-                MOZ_ASSERT(false, "StartUtilityAudioDecoder service failure");
-                return AudioDecodingPromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                             __func__);
-              }
-
-              uadc->Bind(std::move(utilityAudioDecoderChildEnd));
-            }
-
-            MOZ_DIAGNOSTIC_ASSERT(uadc->CanSend(),
-                                  "IPC established for UtilityAudioDecoder");
+          [self, uadc, aOtherProcess]() {
+            base::ProcessId process =
+                self->GetProcessParent(SandboxingKind::UTILITY_AUDIO_DECODING)
+                    ->OtherPid();
 
             Endpoint<PRemoteDecoderManagerChild> childPipe;
             Endpoint<PRemoteDecoderManagerParent> parentPipe;
-
             nsresult rv = PRemoteDecoderManager::CreateEndpoints(
-                utilityParent->OtherPid(), aOtherProcess, &parentPipe,
-                &childPipe);
+                process, aOtherProcess, &parentPipe, &childPipe);
             if (NS_FAILED(rv)) {
               MOZ_ASSERT(false, "Could not create content remote decoder");
-              return AudioDecodingPromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                           __func__);
+              return AudioDecodingPromise::CreateAndReject(rv, __func__);
             }
 
             if (!uadc->SendNewContentRemoteDecoderManager(
