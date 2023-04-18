@@ -1,8 +1,3 @@
-
-
-
-
-
 def main(request, response):
     if request.method == u'POST':
         request.server.stash.put(request.GET[b"id"], request.body)
