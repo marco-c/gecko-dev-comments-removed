@@ -14,6 +14,9 @@ export function scrollList(resultList, index) {
     
     requestAnimationFrame(() => {
       setTimeout(() => {
+        if (!resultEl.scrollIntoView) {
+          return;
+        }
         resultEl.scrollIntoView({ block: "nearest", behavior: "auto" });
       });
     });

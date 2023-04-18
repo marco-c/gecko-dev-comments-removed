@@ -2,7 +2,7 @@
 
 
 
-import { throttle } from "lodash";
+const { throttle } = require("devtools/shared/throttle");
 
 
 let newOriginalQueuedSources;
