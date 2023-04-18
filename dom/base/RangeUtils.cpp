@@ -172,7 +172,7 @@ nsresult RangeUtils::CompareNodeToRange(nsINode* aNode,
   
 
   
-  Maybe<int32_t> order = nsContentUtils::ComparePoints_FixOffset2(
+  Maybe<int32_t> order = nsContentUtils::ComparePoints_AllowNegativeOffsets(
       aAbstractRange->StartRef().Container(),
       *aAbstractRange->StartRef().Offset(
           RangeBoundary::OffsetFilter::kValidOrInvalidOffsets),
