@@ -133,26 +133,28 @@ PacketBuffer::InsertResult PacketBuffer::InsertPacket(
   return result;
 }
 
-void PacketBuffer::ClearTo(uint16_t seq_num) {
+uint32_t PacketBuffer::ClearTo(uint16_t seq_num) {
   MutexLock lock(&mutex_);
   
   if (is_cleared_to_first_seq_num_ &&
       AheadOf<uint16_t>(first_seq_num_, seq_num)) {
-    return;
+    return 0;
   }
 
   
   if (!first_packet_received_)
-    return;
+    return 0;
 
   
   
   ++seq_num;
+  uint32_t num_cleared_packets = 0;
   size_t diff = ForwardDiff<uint16_t>(first_seq_num_, seq_num);
   size_t iterations = std::min(diff, buffer_.size());
   for (size_t i = 0; i < iterations; ++i) {
     auto& stored = buffer_[first_seq_num_ % buffer_.size()];
     if (stored != nullptr && AheadOf<uint16_t>(seq_num, stored->seq_num)) {
+      ++num_cleared_packets;
       stored = nullptr;
     }
     ++first_seq_num_;
@@ -168,6 +170,8 @@ void PacketBuffer::ClearTo(uint16_t seq_num) {
     --clear_to_it;
     missing_packets_.erase(missing_packets_.begin(), clear_to_it);
   }
+
+  return num_cleared_packets;
 }
 
 void PacketBuffer::Clear() {

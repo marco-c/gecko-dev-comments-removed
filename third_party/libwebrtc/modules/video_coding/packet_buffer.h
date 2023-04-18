@@ -86,7 +86,10 @@ class PacketBuffer {
       RTC_LOCKS_EXCLUDED(mutex_);
   ABSL_MUST_USE_RESULT InsertResult InsertPadding(uint16_t seq_num)
       RTC_LOCKS_EXCLUDED(mutex_);
-  void ClearTo(uint16_t seq_num) RTC_LOCKS_EXCLUDED(mutex_);
+
+  
+  
+  uint32_t ClearTo(uint16_t seq_num) RTC_LOCKS_EXCLUDED(mutex_);
   void Clear() RTC_LOCKS_EXCLUDED(mutex_);
 
   
