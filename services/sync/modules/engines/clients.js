@@ -237,7 +237,24 @@ ClientEngine.prototype = {
       return this.localName;
     }
     let client = this._store._remoteClients[id];
-    return client ? client.name : "";
+    if (!client) {
+      return "";
+    }
+    
+    
+    let fxaDevice = this.fxAccounts.device.recentDeviceList.find(
+      device => device.id === client.fxaDeviceId
+    );
+
+    
+    
+    if (!fxaDevice) {
+      this.log.warn(
+        "Couldn't find associated FxA device, falling back to client name"
+      );
+      return client.name;
+    }
+    return fxaDevice.name;
   },
 
   getClientFxaDeviceId(id) {
