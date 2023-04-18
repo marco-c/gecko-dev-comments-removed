@@ -503,7 +503,8 @@ void SetUpReadableStreamDefaultController(
   }
 
   
-  RefPtr<Promise> startPromise = Promise::Create(GetIncumbentGlobal(), aRv);
+  RefPtr<Promise> startPromise =
+      Promise::Create(aStream->GetParentObject(), aRv);
   if (aRv.Failed()) {
     return;
   }
