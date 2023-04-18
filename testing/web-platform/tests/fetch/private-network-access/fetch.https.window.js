@@ -7,6 +7,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 setup(() => {
   
   assert_true(window.isSecureContext);
@@ -16,16 +26,13 @@ setup(() => {
 
 
 
-
-
-
-promise_test(t => fetchTest(t, {
+subsetTestByKey("from-local", promise_test, t => fetchTest(t, {
   source: { port: kPorts.httpsLocal },
   target: { port: kPorts.httpsLocal },
   expected: kFetchTestResult.success,
 }), "local to local: no preflight required.");
 
-promise_test(t => fetchTest(t, {
+subsetTestByKey("from-local", promise_test, t => fetchTest(t, {
   source: { port: kPorts.httpsLocal },
   target: {
     port: kPorts.httpsPrivate,
@@ -35,7 +42,7 @@ promise_test(t => fetchTest(t, {
 }), "local to private: no preflight required.");
 
 
-promise_test(t => fetchTest(t, {
+subsetTestByKey("from-local", promise_test, t => fetchTest(t, {
   source: { port: kPorts.httpsLocal },
   target: {
     port: kPorts.httpsPublic,
@@ -48,7 +55,7 @@ promise_test(t => fetchTest(t, {
 
 
 
-promise_test(t => fetchTest(t, {
+subsetTestByKey("baseline", promise_test, t => fetchTest(t, {
   source: { port: kPorts.httpsLocal },
   target: {
     port: kPorts.httpsPublic,
@@ -62,7 +69,7 @@ promise_test(t => fetchTest(t, {
   expected: kFetchTestResult.failure,
 }), "local to public: PUT preflight failure.");
 
-promise_test(t => fetchTest(t, {
+subsetTestByKey("baseline", promise_test, t => fetchTest(t, {
   source: { port: kPorts.httpsLocal },
   target: {
     port: kPorts.httpsPublic,
@@ -81,7 +88,20 @@ promise_test(t => fetchTest(t, {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 function makePreflightTests({
+  subsetKey,
   source,
   sourceDescription,
   targetPort,
@@ -90,7 +110,7 @@ function makePreflightTests({
   const prefix =
       `${sourceDescription} to ${targetDescription}: `;
 
-  promise_test(t => fetchTest(t, {
+  subsetTestByKey(subsetKey, promise_test, t => fetchTest(t, {
     source,
     target: {
       port: targetPort,
@@ -103,7 +123,7 @@ function makePreflightTests({
     expected: kFetchTestResult.failure,
   }), prefix + "failed preflight.");
 
-  promise_test(t => fetchTest(t, {
+  subsetTestByKey(subsetKey, promise_test, t => fetchTest(t, {
     source,
     target: {
       port: targetPort,
@@ -114,7 +134,7 @@ function makePreflightTests({
     expected: kFetchTestResult.failure,
   }), prefix + "missing CORS headers on preflight response.");
 
-  promise_test(t => fetchTest(t, {
+  subsetTestByKey(subsetKey, promise_test, t => fetchTest(t, {
     source,
     target: {
       port: targetPort,
@@ -126,7 +146,7 @@ function makePreflightTests({
     expected: kFetchTestResult.failure,
   }), prefix + "missing PNA header on preflight response.");
 
-  promise_test(t => fetchTest(t, {
+  subsetTestByKey(subsetKey, promise_test, t => fetchTest(t, {
     source,
     target: {
       port: targetPort,
@@ -138,7 +158,7 @@ function makePreflightTests({
     expected: kFetchTestResult.failure,
   }), prefix + "missing CORS headers on final response.");
 
-  promise_test(t => fetchTest(t, {
+  subsetTestByKey(subsetKey, promise_test, t => fetchTest(t, {
     source,
     target: {
       port: targetPort,
@@ -151,7 +171,7 @@ function makePreflightTests({
     expected: kFetchTestResult.success,
   }), prefix + "success.");
 
-  promise_test(t => fetchTest(t, {
+  subsetTestByKey(subsetKey, promise_test, t => fetchTest(t, {
     source,
     target: {
       port: targetPort,
@@ -165,14 +185,14 @@ function makePreflightTests({
     expected: kFetchTestResult.success,
   }), prefix + "PUT success.");
 
-  promise_test(t => fetchTest(t, {
+  subsetTestByKey(subsetKey, promise_test, t => fetchTest(t, {
     source,
     target: { port: targetPort },
     fetchOptions: { mode: "no-cors" },
     expected: kFetchTestResult.failure,
   }), prefix + "no-CORS mode failed preflight.");
 
-  promise_test(t => fetchTest(t, {
+  subsetTestByKey(subsetKey, promise_test, t => fetchTest(t, {
     source,
     target: {
       port: targetPort,
@@ -182,7 +202,7 @@ function makePreflightTests({
     expected: kFetchTestResult.failure,
   }), prefix + "no-CORS mode missing CORS headers on preflight response.");
 
-  promise_test(t => fetchTest(t, {
+  subsetTestByKey(subsetKey, promise_test, t => fetchTest(t, {
     source,
     target: {
       port: targetPort,
@@ -195,7 +215,7 @@ function makePreflightTests({
     expected: kFetchTestResult.failure,
   }), prefix + "no-CORS mode missing PNA header on preflight response.");
 
-  promise_test(t => fetchTest(t, {
+  subsetTestByKey(subsetKey, promise_test, t => fetchTest(t, {
     source,
     target: {
       port: targetPort,
@@ -209,20 +229,26 @@ function makePreflightTests({
   }), prefix + "no-CORS mode success.");
 }
 
+
+
+
+
+
 makePreflightTests({
+  subsetKey: "from-private",
   source: { port: kPorts.httpsPrivate },
   sourceDescription: "private",
   targetPort: kPorts.httpsLocal,
   targetDescription: "local",
 });
 
-promise_test(t => fetchTest(t, {
+subsetTestByKey("from-private", promise_test, t => fetchTest(t, {
   source: { port: kPorts.httpsPrivate },
   target: { port: kPorts.httpsPrivate },
   expected: kFetchTestResult.success,
 }), "private to private: no preflight required.");
 
-promise_test(t => fetchTest(t, {
+subsetTestByKey("from-private", promise_test, t => fetchTest(t, {
   source: { port: kPorts.httpsPrivate },
   target: {
     port: kPorts.httpsPublic,
@@ -237,6 +263,7 @@ promise_test(t => fetchTest(t, {
 
 
 makePreflightTests({
+  subsetKey: "from-public",
   source: { port: kPorts.httpsPublic },
   sourceDescription: "public",
   targetPort: kPorts.httpsLocal,
@@ -244,13 +271,14 @@ makePreflightTests({
 });
 
 makePreflightTests({
+  subsetKey: "from-public",
   source: { port: kPorts.httpsPublic },
   sourceDescription: "public",
   targetPort: kPorts.httpsPrivate,
   targetDescription: "private",
 });
 
-promise_test(t => fetchTest(t, {
+subsetTestByKey("from-public", promise_test, t => fetchTest(t, {
   source: { port: kPorts.httpsPublic },
   target: { port: kPorts.httpsPublic },
   expected: kFetchTestResult.success,
@@ -260,7 +288,7 @@ promise_test(t => fetchTest(t, {
 
 
 
-promise_test(t => fetchTest(t, {
+subsetTestByKey("from-treat-as-public", promise_test, t => fetchTest(t, {
   source: {
     port: kPorts.httpsLocal,
     headers: { "Content-Security-Policy": "treat-as-public-address" },
@@ -269,7 +297,7 @@ promise_test(t => fetchTest(t, {
   expected: kFetchTestResult.failure,
 }), "treat-as-public-address to local: failed preflight.");
 
-promise_test(t => fetchTest(t, {
+subsetTestByKey("from-treat-as-public", promise_test, t => fetchTest(t, {
   source: {
     port: kPorts.httpsLocal,
     headers: { "Content-Security-Policy": "treat-as-public-address" },
@@ -285,7 +313,7 @@ promise_test(t => fetchTest(t, {
   expected: kFetchTestResult.success,
 }), "treat-as-public-address to local: success.");
 
-promise_test(t => fetchTest(t, {
+subsetTestByKey("from-treat-as-public", promise_test, t => fetchTest(t, {
   source: {
     port: kPorts.httpsLocal,
     headers: { "Content-Security-Policy": "treat-as-public-address" },
@@ -294,7 +322,7 @@ promise_test(t => fetchTest(t, {
   expected: kFetchTestResult.failure,
 }), "treat-as-public-address to private: failed preflight.");
 
-promise_test(t => fetchTest(t, {
+subsetTestByKey("from-treat-as-public", promise_test, t => fetchTest(t, {
   source: {
     port: kPorts.httpsLocal,
     headers: { "Content-Security-Policy": "treat-as-public-address" },
@@ -310,7 +338,7 @@ promise_test(t => fetchTest(t, {
   expected: kFetchTestResult.success,
 }), "treat-as-public-address to private: success.");
 
-promise_test(t => fetchTest(t, {
+subsetTestByKey("from-treat-as-public", promise_test, t => fetchTest(t, {
   source: {
     port: kPorts.httpsLocal,
     headers: { "Content-Security-Policy": "treat-as-public-address" },
@@ -323,54 +351,3 @@ promise_test(t => fetchTest(t, {
   },
   expected: kFetchTestResult.success,
 }), "treat-as-public-address to public: no preflight required.");
-
-
-
-promise_test(t => websocketTest(t, {
-  source: {
-    protocol: "https:",
-    port: kPorts.httpsLocal,
-  },
-  target: {
-    protocol: "wss:",
-    port: kPorts.wssLocal,
-  },
-  expected: kWebsocketTestResult.success,
-}), "local to local: websocket success.");
-
-promise_test(t => websocketTest(t, {
-  source: {
-    protocol: "https:",
-    port: kPorts.httpsPrivate,
-  },
-  target: {
-    protocol: "wss:",
-    port: kPorts.wssLocal,
-  },
-  expected: kWebsocketTestResult.success,
-}), "private to local: websocket success.");
-
-promise_test(t => websocketTest(t, {
-  source: {
-    protocol: "https:",
-    port: kPorts.httpsPublic,
-  },
-  target: {
-    protocol: "wss:",
-    port: kPorts.wssLocal,
-  },
-  expected: kWebsocketTestResult.success,
-}), "public to local: websocket success.");
-
-promise_test(t => websocketTest(t, {
-  source: {
-    protocol: "https:",
-    port: kPorts.httpsLocal,
-    treatAsPublicAddress: true,
-  },
-  target: {
-    protocol: "wss:",
-    port: kPorts.wssLocal,
-  },
-  expected: kWebsocketTestResult.success,
-}), "treat-as-public to local: websocket success.");

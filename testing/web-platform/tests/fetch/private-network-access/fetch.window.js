@@ -7,13 +7,13 @@
 
 
 
+
+
+
 setup(() => {
   
   assert_false(window.isSecureContext);
 });
-
-
-
 
 promise_test(t => fetchTest(t, {
   source: { port: kPorts.httpLocal },
@@ -202,50 +202,3 @@ promise_test(t => fetchTest(t, {
   },
   expected: kFetchTestResult.failure,
 }), "public https to private: failure.");
-
-
-
-promise_test(t => websocketTest(t, {
-  source: {
-    port: kPorts.httpLocal,
-  },
-  target: {
-    protocol: "ws:",
-    port: kPorts.wsLocal,
-  },
-  expected: kWebsocketTestResult.success,
-}), "local to local: websocket success.");
-
-promise_test(t => websocketTest(t, {
-  source: {
-    port: kPorts.httpPrivate,
-  },
-  target: {
-    protocol: "ws:",
-    port: kPorts.wsLocal,
-  },
-  expected: kWebsocketTestResult.failure,
-}), "private to local: websocket failure.");
-
-promise_test(t => websocketTest(t, {
-  source: {
-    port: kPorts.httpPublic,
-  },
-  target: {
-    protocol: "ws:",
-    port: kPorts.wsLocal,
-  },
-  expected: kWebsocketTestResult.failure,
-}), "public to local: websocket failure.");
-
-promise_test(t => websocketTest(t, {
-  source: {
-    port: kPorts.httpLocal,
-    treatAsPublicAddress: true,
-  },
-  target: {
-    protocol: "ws:",
-    port: kPorts.wsLocal,
-  },
-  expected: kWebsocketTestResult.failure,
-}), "treat-as-public to local: websocket failure.");
