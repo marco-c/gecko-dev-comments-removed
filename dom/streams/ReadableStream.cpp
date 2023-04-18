@@ -295,8 +295,9 @@ already_AddRefed<Promise> ReadableStreamCancel(JSContext* aCx,
   
 
   
+  RefPtr<ReadableStreamController> controller(aStream->Controller());
   RefPtr<Promise> sourceCancelPromise =
-      aStream->Controller()->CancelSteps(aCx, aError, aRv);
+      controller->CancelSteps(aCx, aError, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
@@ -380,24 +381,6 @@ bool IsReadableStreamLocked(ReadableStream* aStream) {
   
   return aStream->Locked();
 }
-
-#ifdef DEBUG  
-
-static bool ReadableStreamHasDefaultReader(ReadableStream* aStream) {
-  
-  ReadableStreamDefaultReader* reader = aStream->GetReader();
-
-  
-  if (!reader) {
-    return false;
-  }
-
-  
-  return true;
-
-  
-}
-#endif
 
 
 double ReadableStreamGetNumReadRequests(ReadableStream* aStream) {
@@ -612,7 +595,7 @@ class ReadableStreamTeeClosePromiseHandler final : public PromiseNativeHandler {
     
     ErrorResult rv;
     ReadableStreamDefaultControllerError(
-        aCx, mTeeState->Branch1()->Controller(), aReason, rv);
+        aCx, mTeeState->Branch1()->DefaultController(), aReason, rv);
     if (rv.MaybeSetPendingException(
             aCx, "ReadableStreamDefaultTee Error During Promise Rejection")) {
       return;
@@ -620,7 +603,7 @@ class ReadableStreamTeeClosePromiseHandler final : public PromiseNativeHandler {
 
     
     ReadableStreamDefaultControllerError(
-        aCx, mTeeState->Branch2()->Controller(), aReason, rv);
+        aCx, mTeeState->Branch2()->DefaultController(), aReason, rv);
     if (rv.MaybeSetPendingException(
             aCx, "ReadableStreamDefaultTee Error During Promise Rejection")) {
       return;

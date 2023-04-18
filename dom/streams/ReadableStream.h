@@ -46,8 +46,12 @@ class ReadableStream final : public nsISupports, public nsWrapperCache {
 
   
  public:
-  ReadableStreamDefaultController* Controller() { return mController; }
-  void SetController(ReadableStreamDefaultController* aController) {
+  ReadableStreamController* Controller() { return mController; }
+  ReadableStreamDefaultController* DefaultController() {
+    MOZ_ASSERT(mController && mController->IsDefault());
+    return mController->AsDefault();
+  }
+  void SetController(ReadableStreamController* aController) {
     mController = aController;
   }
 
@@ -91,7 +95,7 @@ class ReadableStream final : public nsISupports, public nsWrapperCache {
 
   
  private:
-  RefPtr<ReadableStreamDefaultController> mController;
+  RefPtr<ReadableStreamController> mController;
   bool mDisturbed = false;
   RefPtr<ReadableStreamDefaultReader> mReader;
   ReaderState mState = ReaderState::Readable;
@@ -122,6 +126,27 @@ extern already_AddRefed<Promise> ReadableStreamCancel(
 extern already_AddRefed<ReadableStreamDefaultReader>
 AcquireReadableStreamDefaultReader(JSContext* aCx, ReadableStream* aStream,
                                    ErrorResult& aRv);
+
+
+inline bool ReadableStreamHasBYOBReader(ReadableStream* aStream) {
+  return false;
+}
+
+
+inline bool ReadableStreamHasDefaultReader(ReadableStream* aStream) {
+  
+  ReadableStreamDefaultReader* reader = aStream->GetReader();
+
+  
+  if (!reader) {
+    return false;
+  }
+
+  
+  return true;
+
+  
+}
 
 }  
 }  
