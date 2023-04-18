@@ -34,6 +34,8 @@ struct ScrollGeneration {
   
   ScrollGeneration();
 
+  uint64_t Raw() const { return mValue; }
+
   bool operator<(const ScrollGeneration<Tag>& aOther) const;
   bool operator==(const ScrollGeneration<Tag>& aOther) const;
   bool operator!=(const ScrollGeneration<Tag>& aOther) const;
