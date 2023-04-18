@@ -100,7 +100,11 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   
   
   
-  mozilla::Maybe<Pickle::BufferList::IterImpl> partial_write_iter_;
+  struct PartialWrite {
+    Pickle::BufferList::IterImpl iter_;
+    mozilla::Span<const mozilla::UniqueFileHandle> handles_;
+  };
+  mozilla::Maybe<PartialWrite> partial_write_;
 
   int server_listen_pipe_;
   int pipe_;
@@ -128,10 +132,11 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   
   
   
+  
+  static constexpr size_t kControlBufferMaxFds = 200;
   static constexpr size_t kControlBufferHeaderSize = 32;
   static constexpr size_t kControlBufferSize =
-      IPC::Message::MAX_DESCRIPTORS_PER_MESSAGE * sizeof(int) +
-      kControlBufferHeaderSize;
+      kControlBufferMaxFds * sizeof(int) + kControlBufferHeaderSize;
 
   
   
