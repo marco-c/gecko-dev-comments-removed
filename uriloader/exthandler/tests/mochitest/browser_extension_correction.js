@@ -110,7 +110,7 @@ async function checkDownloadWithExtensionState(
 
     let backPromise = BrowserTestUtils.waitForLocationChange(gBrowser);
     gBrowser.goBack();
-    await backPromise; 
+    await backPromise;
   } else {
     
     let download = await downloadFinishedPromise;
