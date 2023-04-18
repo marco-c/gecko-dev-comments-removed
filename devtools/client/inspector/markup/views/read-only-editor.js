@@ -62,6 +62,18 @@ ReadOnlyEditor.prototype = {
   
 
 
+
+
+  setOverflowHighlight: function(showOverflowHighlight) {
+    this.container.tagState.classList.toggle(
+      "overflow-causing-highlighted",
+      showOverflowHighlight
+    );
+  },
+
+  
+
+
   getInfoAtNode: function() {
     return null;
   },
