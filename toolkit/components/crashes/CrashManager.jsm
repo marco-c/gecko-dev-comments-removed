@@ -20,7 +20,14 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TelemetryController: "resource://gre/modules/TelemetryController.jsm",
 });
 
-var EXPORTED_SYMBOLS = ["CrashManager", "getCrashManager"];
+var EXPORTED_SYMBOLS = [
+  "CrashManager",
+  "getCrashManager",
+  
+  "CrashStore",
+  "dateToDays",
+  "getCrashManagerNoCreate",
+];
 
 
 
@@ -1567,4 +1574,13 @@ XPCOMUtils.defineLazyGetter(CrashManager, "Singleton", function() {
 
 function getCrashManager() {
   return CrashManager.Singleton;
+}
+
+
+
+
+
+
+function getCrashManagerNoCreate() {
+  return gCrashManager;
 }
