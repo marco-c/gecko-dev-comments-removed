@@ -3986,8 +3986,6 @@ class Document : public nsINode,
 
   bool ModuleScriptsEnabled();
 
-  bool ImportMapsEnabled();
-
   
 
 

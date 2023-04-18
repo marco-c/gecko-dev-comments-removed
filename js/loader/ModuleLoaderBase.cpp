@@ -8,7 +8,6 @@
 #include "LoadedScript.h"
 #include "ModuleLoadRequest.h"
 #include "ScriptLoadRequest.h"
-#include "mozilla/dom/ScriptSettings.h"  
 #include "mozilla/dom/ScriptTrace.h"
 
 #include "js/Array.h"  
@@ -30,11 +29,8 @@
 #include "nsThreadUtils.h"        
 #include "xpcpublic.h"
 
-using mozilla::Err;
 using mozilla::GetMainThreadSerialEventTarget;
 using mozilla::Preferences;
-using mozilla::UniquePtr;
-using mozilla::WrapNotNull;
 using mozilla::dom::AutoJSAPI;
 
 namespace JS::loader {
@@ -138,11 +134,10 @@ JSObject* ModuleLoaderBase::HostResolveImportedModule(
       return nullptr;
     }
 
-    auto result = loader->ResolveModuleSpecifier(script, string);
+    nsCOMPtr<nsIURI> uri = loader->ResolveModuleSpecifier(script, string);
+
     
     
-    MOZ_ASSERT(result.isOk());
-    nsCOMPtr<nsIURI> uri = result.unwrap();
     MOZ_ASSERT(uri, "Failed to resolve previously-resolved module specifier");
 
     
@@ -204,11 +199,11 @@ bool ModuleLoaderBase::HostImportModuleDynamically(
     return false;
   }
 
-  auto result = loader->ResolveModuleSpecifier(script, specifier);
-  if (result.isErr()) {
+  nsCOMPtr<nsIURI> uri = loader->ResolveModuleSpecifier(script, specifier);
+  if (!uri) {
     JS::Rooted<JS::Value> error(aCx);
-    nsresult rv = HandleResolveFailure(aCx, script, specifier,
-                                       result.unwrapErr(), 0, 0, &error);
+    nsresult rv = ModuleLoaderBase::HandleResolveFailure(aCx, script, specifier,
+                                                         0, 0, &error);
     if (NS_FAILED(rv)) {
       JS_ReportOutOfMemory(aCx);
       return false;
@@ -219,7 +214,6 @@ bool ModuleLoaderBase::HostImportModuleDynamically(
   }
 
   
-  nsCOMPtr<nsIURI> uri = result.unwrap();
   RefPtr<ModuleLoadRequest> request = loader->CreateDynamicImport(
       aCx, uri, script, aReferencingPrivate, specifierString, aPromise);
 
@@ -539,8 +533,8 @@ nsresult ModuleLoaderBase::CreateModuleScript(ModuleLoadRequest* aRequest) {
 
 nsresult ModuleLoaderBase::HandleResolveFailure(
     JSContext* aCx, LoadedScript* aScript, const nsAString& aSpecifier,
-    ResolveError aError, uint32_t aLineNumber, uint32_t aColumnNumber,
-    JS::MutableHandle<JS::Value> aErrorOut) {
+    uint32_t aLineNumber, uint32_t aColumnNumber,
+    JS::MutableHandle<JS::Value> errorOut) {
   JS::Rooted<JSString*> filename(aCx);
   if (aScript) {
     nsAutoCString url;
@@ -559,8 +553,8 @@ nsresult ModuleLoaderBase::HandleResolveFailure(
 
   nsAutoString errorText;
   nsresult rv = nsContentUtils::FormatLocalizedString(
-      nsContentUtils::eDOM_PROPERTIES, ResolveErrorInfo::GetString(aError),
-      errorParams, errorText);
+      nsContentUtils::eDOM_PROPERTIES, "ModuleResolveFailure", errorParams,
+      errorText);
   NS_ENSURE_SUCCESS(rv, rv);
 
   JS::Rooted<JSString*> string(aCx, JS_NewUCStringCopyZ(aCx, errorText.get()));
@@ -570,27 +564,16 @@ nsresult ModuleLoaderBase::HandleResolveFailure(
 
   if (!JS::CreateError(aCx, JSEXN_TYPEERR, nullptr, filename, aLineNumber,
                        aColumnNumber, nullptr, string, JS::NothingHandleValue,
-                       aErrorOut)) {
+                       errorOut)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
   return NS_OK;
 }
 
-ResolveResult ModuleLoaderBase::ResolveModuleSpecifier(
+already_AddRefed<nsIURI> ModuleLoaderBase::ResolveModuleSpecifier(
     LoadedScript* aScript, const nsAString& aSpecifier) {
-  bool importMapsEnabled = Preferences::GetBool("dom.importMaps.enabled");
   
-  
-  
-  
-  
-  
-  if (importMapsEnabled) {
-    return ImportMap::ResolveModuleSpecifier(mImportMap.get(), mLoader, aScript,
-                                             aSpecifier);
-  }
-
   
   
   
@@ -600,17 +583,17 @@ ResolveResult ModuleLoaderBase::ResolveModuleSpecifier(
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_NewURI(getter_AddRefs(uri), aSpecifier);
   if (NS_SUCCEEDED(rv)) {
-    return WrapNotNull(uri);
+    return uri.forget();
   }
 
   if (rv != NS_ERROR_MALFORMED_URI) {
-    return Err(ResolveError::ModuleResolveFailure);
+    return nullptr;
   }
 
   if (!StringBeginsWith(aSpecifier, u"/"_ns) &&
       !StringBeginsWith(aSpecifier, u"./"_ns) &&
       !StringBeginsWith(aSpecifier, u"../"_ns)) {
-    return Err(ResolveError::ModuleResolveFailure);
+    return nullptr;
   }
 
   
@@ -623,10 +606,10 @@ ResolveResult ModuleLoaderBase::ResolveModuleSpecifier(
 
   rv = NS_NewURI(getter_AddRefs(uri), aSpecifier, nullptr, baseURL);
   if (NS_SUCCEEDED(rv)) {
-    return WrapNotNull(uri);
+    return uri.forget();
   }
 
-  return Err(ResolveError::ModuleResolveFailure);
+  return nullptr;
 }
 
 nsresult ModuleLoaderBase::ResolveRequestedModules(
@@ -649,14 +632,13 @@ nsresult ModuleLoaderBase::ResolveRequestedModules(
     return NS_ERROR_FAILURE;
   }
 
-  JS::Rooted<JS::Value> requestedModule(cx);
+  JS::Rooted<JS::Value> element(cx);
   for (uint32_t i = 0; i < length; i++) {
-    if (!JS_GetElement(cx, requestedModules, i, &requestedModule)) {
+    if (!JS_GetElement(cx, requestedModules, i, &element)) {
       return NS_ERROR_FAILURE;
     }
 
-    JS::Rooted<JSString*> str(
-        cx, JS::GetRequestedModuleSpecifier(cx, requestedModule));
+    JS::Rooted<JSString*> str(cx, JS::GetRequestedModuleSpecifier(cx, element));
     MOZ_ASSERT(str);
 
     nsAutoJSString specifier;
@@ -667,23 +649,21 @@ nsresult ModuleLoaderBase::ResolveRequestedModules(
     
     
     ModuleLoaderBase* loader = aRequest->mLoader;
-    auto result = loader->ResolveModuleSpecifier(ms, specifier);
-    if (result.isErr()) {
+    nsCOMPtr<nsIURI> uri = loader->ResolveModuleSpecifier(ms, specifier);
+    if (!uri) {
       uint32_t lineNumber = 0;
       uint32_t columnNumber = 0;
-      JS::GetRequestedModuleSourcePos(cx, requestedModule, &lineNumber,
-                                      &columnNumber);
+      JS::GetRequestedModuleSourcePos(cx, element, &lineNumber, &columnNumber);
 
       JS::Rooted<JS::Value> error(cx);
-      nsresult rv = HandleResolveFailure(cx, ms, specifier, result.unwrapErr(),
-                                         lineNumber, columnNumber, &error);
+      nsresult rv = HandleResolveFailure(cx, ms, specifier, lineNumber,
+                                         columnNumber, &error);
       NS_ENSURE_SUCCESS(rv, rv);
 
       ms->SetParseError(error);
       return NS_ERROR_FAILURE;
     }
 
-    nsCOMPtr<nsIURI> uri = result.unwrap();
     if (aUrlsOut) {
       aUrlsOut->AppendElement(uri.forget());
     }
@@ -1117,50 +1097,6 @@ void ModuleLoaderBase::CancelAndClearDynamicImports() {
     FinishDynamicImportAndReject(req->AsModuleRequest(), NS_ERROR_ABORT);
   }
   mDynamicImportRequests.CancelRequestsAndClear();
-}
-
-UniquePtr<ImportMap> ModuleLoaderBase::ParseImportMap(
-    ScriptLoadRequest* aRequest) {
-  AutoJSAPI jsapi;
-  if (!jsapi.Init(GetGlobalObject())) {
-    return nullptr;
-  }
-
-  MOZ_ASSERT(aRequest->IsTextSource());
-  MaybeSourceText maybeSource;
-  nsresult rv = aRequest->GetScriptSource(jsapi.cx(), &maybeSource);
-  if (NS_FAILED(rv)) {
-    return nullptr;
-  }
-
-  JS::SourceText<char16_t>& text = maybeSource.ref<SourceText<char16_t>>();
-  ReportWarningHelper warning{mLoader, aRequest};
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  return ImportMap::ParseString(jsapi.cx(), text, aRequest->mBaseURL, warning);
-}
-
-void ModuleLoaderBase::RegisterImportMap(UniquePtr<ImportMap> aImportMap) {
-  
-  MOZ_ASSERT(aImportMap);
-
-  
-  
-  mImportMap = std::move(aImportMap);
 }
 
 #undef LOG
