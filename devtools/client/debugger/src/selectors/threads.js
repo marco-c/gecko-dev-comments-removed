@@ -3,6 +3,7 @@
 
 
 import { createSelector } from "reselect";
+import { parse } from "../utils/url";
 
 export const getThreads = createSelector(
   state => state.threads.threads,
@@ -31,8 +32,19 @@ export function getMainThread(state) {
   return state.threads.threads.find(isMainThread);
 }
 
-export function getDebuggeeUrl(state) {
-  return getMainThread(state)?.url || "";
+
+
+
+export function getMainThreadHost(state) {
+  const url = getMainThread(state)?.url;
+  if (!url) {
+    return null;
+  }
+  const { host } = parse(url);
+  if (!host) {
+    return null;
+  }
+  return host.startsWith("www.") ? host.substring("www.".length) : host;
 }
 
 export function getThread(state, threadActor) {

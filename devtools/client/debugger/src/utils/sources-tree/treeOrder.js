@@ -2,31 +2,15 @@
 
 
 
-import { parse } from "../url";
-
 import { nodeHasChildren } from "./utils";
 
 
 
 
-export function getDomain(url) {
-  if (!url) {
-    return null;
-  }
-  const { host } = parse(url);
-  if (!host) {
-    return null;
-  }
-  return host.startsWith("www.") ? host.substr("www.".length) : host;
-}
-
-
-
-
-function isExactDomainMatch(part, debuggeeHost) {
+function isExactDomainMatch(part, mainThreadHost) {
   return part.startsWith("www.")
-    ? part.substr("www.".length) === debuggeeHost
-    : part === debuggeeHost;
+    ? part.substr("www.".length) === mainThreadHost
+    : part === mainThreadHost;
 }
 
 
@@ -92,28 +76,28 @@ const matcherFunctions = [isIndexName, isExactDomainMatch];
 export function createTreeNodeMatcher(
   part,
   isDir,
-  debuggeeHost,
+  mainThreadHost,
   source,
   sortByUrl
 ) {
   return node => {
     for (let i = 0; i < matcherFunctions.length; i++) {
       
-      if (matcherFunctions[i](part, debuggeeHost)) {
+      if (matcherFunctions[i](part, mainThreadHost)) {
         for (let j = 0; j < i; j++) {
           
-          if (matcherFunctions[j](node.name, debuggeeHost)) {
+          if (matcherFunctions[j](node.name, mainThreadHost)) {
             return -1;
           }
         }
         
-        if (matcherFunctions[i](node.name, debuggeeHost)) {
+        if (matcherFunctions[i](node.name, mainThreadHost)) {
           return 0;
         }
         return 1;
       }
       
-      if (matcherFunctions[i](node.name, debuggeeHost)) {
+      if (matcherFunctions[i](node.name, mainThreadHost)) {
         return -1;
       }
     }
