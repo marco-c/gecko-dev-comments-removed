@@ -339,9 +339,7 @@ class AppWindow final : public nsIBaseWindow,
   uint32_t mChromeFlags;
   nsCOMPtr<nsIOpenWindowInfo> mInitialOpenWindowInfo;
   nsString mTitle;
-
-  
-  mozilla::DesktopIntRect mOpenerScreenRect;
+  nsIntRect mOpenerScreenRect;  
 
   nsCOMPtr<nsIRemoteTab> mPrimaryBrowserParent;
 
