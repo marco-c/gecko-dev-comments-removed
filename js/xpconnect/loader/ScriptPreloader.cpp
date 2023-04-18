@@ -1132,6 +1132,7 @@ void ScriptPreloader::DecodeNextBatch(size_t chunkSize,
 
   
   
+  options.borrowBuffer = true;
   options.usePinnedBytecode = true;
 
   if (!JS::CanCompileOffThread(cx, options, size) ||

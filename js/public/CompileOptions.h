@@ -87,6 +87,16 @@ class JS_PUBLIC_API TransitiveCompileOptions {
  protected:
   
 
+  const char* filename_ = nullptr;
+  const char* introducerFilename_ = nullptr;
+  const char16_t* sourceMapURL_ = nullptr;
+
+  
+  
+  
+
+  
+
 
 
 
@@ -112,10 +122,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   
   bool sourcePragmas_ = true;
 
-  const char* filename_ = nullptr;
-  const char* introducerFilename_ = nullptr;
-  const char16_t* sourceMapURL_ = nullptr;
-
   
   
   bool skipFilenameValidation_ = false;
@@ -132,7 +138,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   friend class JS_PUBLIC_API InstantiateOptions;
 
  public:
-  
   bool selfHostingMode = false;
   AsmJSOption asmJSOption = AsmJSOption::DisabledByAsmJSPref;
   bool throwOnAsmJSValidationFailureOption = false;
@@ -140,13 +145,13 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool discardSource = false;
   bool sourceIsLazy = false;
   bool allowHTMLComments = true;
-
   bool nonSyntacticScope = false;
+
   bool privateClassFields = false;
   bool privateClassMethods = false;
   bool topLevelAwait = true;
-
   bool classStaticBlocks = false;
+  bool useFdlibmForSinCosTan = false;
 
   bool importAssertions = false;
 
@@ -184,7 +189,8 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   uint32_t introductionOffset = 0;
   bool hasIntroductionInfo = false;
 
-  bool useFdlibmForSinCosTan = false;
+  
+  
 
  protected:
   TransitiveCompileOptions() = default;
