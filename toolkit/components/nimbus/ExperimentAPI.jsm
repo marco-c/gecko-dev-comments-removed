@@ -70,20 +70,6 @@ function featuresCompat(branch) {
   return features;
 }
 
-const experimentBranchAccessor = {
-  get: (target, prop) => {
-    
-    
-    
-    
-    if (!(prop in target)) {
-      return target.features.find(f => f.featureId === prop);
-    }
-
-    return target[prop];
-  },
-};
-
 const ExperimentAPI = {
   
 
@@ -120,7 +106,7 @@ const ExperimentAPI = {
       return {
         slug: experimentData.slug,
         active: experimentData.active,
-        branch: new Proxy(experimentData.branch, experimentBranchAccessor),
+        branch: this.activateBranch({ slug, featureId }),
       };
     }
 
@@ -277,9 +263,7 @@ const ExperimentAPI = {
     }
 
     const recipe = await this.getRecipe(slug);
-    return recipe?.branches.map(
-      branch => new Proxy(branch, experimentBranchAccessor)
-    );
+    return recipe?.branches;
   },
 
   recordExposureEvent({ featureId, experimentSlug, branchSlug }) {
