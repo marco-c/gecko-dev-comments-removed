@@ -179,17 +179,19 @@ void FetchService::FetchInstance::OnResponseEnd(
   }
 
   
+  IPCPerformanceTimingData ipcPerformanceTiming;
   nsString initiatorType;
   nsString entryName;
   UniquePtr<PerformanceTimingData> performanceTiming(
       mFetchDriver->GetPerformanceTimingData(initiatorType, entryName));
-  MOZ_ASSERT(performanceTiming);
+  if (performanceTiming != nullptr) {
+    ipcPerformanceTiming = performanceTiming->ToIPC();
+  }
 
   initiatorType = u"navigation"_ns;
 
-  FetchServiceResponse response =
-      MakeTuple(std::move(mResponse), performanceTiming->ToIPC(), initiatorType,
-                entryName);
+  FetchServiceResponse response = MakeTuple(
+      std::move(mResponse), ipcPerformanceTiming, initiatorType, entryName);
 
   
   mResponsePromiseHolder.ResolveIfExists(std::move(response), __func__);
