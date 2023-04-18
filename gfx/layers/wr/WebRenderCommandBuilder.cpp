@@ -1367,24 +1367,7 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
         auto spaceAndClipChain =
             mClipManager.SwitchItem(aDisplayListBuilder, item);
         wr::SpaceAndClipChainHelper saccHelper(aBuilder, spaceAndClipChain);
-        bool hasHitTest = mHitTestInfoManager.ProcessItem(item, aBuilder,
-                                                          aDisplayListBuilder);
-        
-        
-        
-        
-        
-        
-        
-        if (!hasHitTest &&
-            currentGroup->mHitInfo != gfx::CompositorHitTestInvisibleToHit) {
-          auto hitTestRect = item->GetBuildingRect();
-          if (!hitTestRect.IsEmpty()) {
-            currentGroup->PushHitTest(
-                aBuilder, LayoutDeviceRect::FromAppUnits(
-                              hitTestRect, currentGroup->mAppUnitsPerDevPixel));
-          }
-        }
+        mHitTestInfoManager.ProcessItem(item, aBuilder, aDisplayListBuilder);
 
         sIndent++;
         
