@@ -22,21 +22,18 @@
 #include <stdatomic.h>
 #include <stdint.h>
 
+#include "internal.h"
 #include "buffer.h"
 #include "thread.h"
 
 
 
 
-#define BUFFER_FLAG_READONLY      (1 << 0)
-
-
-
-#define BUFFER_FLAG_REALLOCATABLE (1 << 1)
+#define BUFFER_FLAG_REALLOCATABLE (1 << 0)
 
 struct AVBuffer {
     uint8_t *data; 
-    int      size; 
+    buffer_size_t size; 
 
     
 
@@ -57,6 +54,11 @@ struct AVBuffer {
 
 
     int flags;
+
+    
+
+
+    int flags_internal;
 };
 
 typedef struct BufferPoolEntry {
@@ -88,10 +90,10 @@ struct AVBufferPool {
 
     atomic_uint refcount;
 
-    int size;
+    buffer_size_t size;
     void *opaque;
-    AVBufferRef* (*alloc)(int size);
-    AVBufferRef* (*alloc2)(void *opaque, int size);
+    AVBufferRef* (*alloc)(buffer_size_t size);
+    AVBufferRef* (*alloc2)(void *opaque, buffer_size_t size);
     void         (*pool_free)(void *opaque);
 };
 

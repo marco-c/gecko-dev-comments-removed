@@ -147,6 +147,7 @@ typedef struct AVPixFmtDescriptor {
 
 #define AV_PIX_FMT_FLAG_RGB          (1 << 5)
 
+#if FF_API_PSEUDOPAL
 
 
 
@@ -164,6 +165,7 @@ typedef struct AVPixFmtDescriptor {
 
 
 #define AV_PIX_FMT_FLAG_PSEUDOPAL    (1 << 6)
+#endif
 
 
 

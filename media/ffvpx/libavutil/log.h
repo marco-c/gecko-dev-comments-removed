@@ -112,6 +112,7 @@ typedef struct AVClass {
 
     void* (*child_next)(void *obj, void *prev);
 
+#if FF_API_CHILD_CLASS_NEXT
     
 
 
@@ -120,7 +121,9 @@ typedef struct AVClass {
 
 
 
+    attribute_deprecated
     const struct AVClass* (*child_class_next)(const struct AVClass *prev);
+#endif
 
     
 
@@ -140,6 +143,21 @@ typedef struct AVClass {
 
 
     int (*query_ranges)(struct AVOptionRanges **, void *obj, const char *key, int flags);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    const struct AVClass* (*child_class_iterate)(void **iter);
 } AVClass;
 
 
@@ -232,6 +250,27 @@ typedef struct AVClass {
 
 
 void av_log(void *avcl, int level, const char *fmt, ...) av_printf_format(3, 4);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void av_log_once(void* avcl, int initial_level, int subsequent_level, int *state, const char *fmt, ...) av_printf_format(5, 6);
 
 
 

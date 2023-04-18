@@ -71,6 +71,9 @@
 #define AV_CPU_FLAG_VFP_VM       (1 << 7) ///< VFPv2 vector mode, deprecated in ARMv7-A and unavailable in various CPUs implementations
 #define AV_CPU_FLAG_SETEND       (1 <<16)
 
+#define AV_CPU_FLAG_MMI          (1 << 0)
+#define AV_CPU_FLAG_MSA          (1 << 1)
+
 
 
 
