@@ -1,6 +1,11 @@
 
 
-struct MeasureUnit {
+#ifndef intl_components_MeasureUnitGenerated_h
+#define intl_components_MeasureUnitGenerated_h
+
+namespace mozilla::intl {
+
+struct SimpleMeasureUnit {
   const char* const type;
   const char* const name;
 };
@@ -10,7 +15,7 @@ struct MeasureUnit {
 
 
 
-inline constexpr MeasureUnit simpleMeasureUnits[] = {
+inline constexpr SimpleMeasureUnit simpleMeasureUnits[] = {
     
   {"area", "acre"},
   {"digital", "bit"},
@@ -57,3 +62,7 @@ inline constexpr MeasureUnit simpleMeasureUnits[] = {
   {"duration", "year"},
     
 };
+
+}  
+
+#endif
