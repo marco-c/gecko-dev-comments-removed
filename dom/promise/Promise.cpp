@@ -699,6 +699,7 @@ already_AddRefed<PromiseWorkerProxy> PromiseWorkerProxy::Create(
   if (NS_WARN_IF(!workerRef)) {
     
     
+    
     proxy->CleanUp();
     return nullptr;
   }
@@ -787,8 +788,10 @@ void PromiseWorkerProxy::CleanUp() {
       return;
     }
 
-    MOZ_ASSERT(mWorkerRef);
-    mWorkerRef->Private()->AssertIsOnWorkerThread();
+    
+    if (mWorkerRef) {
+      mWorkerRef->Private()->AssertIsOnWorkerThread();
+    }
 
     
     
