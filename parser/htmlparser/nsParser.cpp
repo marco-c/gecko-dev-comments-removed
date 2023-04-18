@@ -748,10 +748,7 @@ nsresult nsParser::ResumeParse(bool allowIteration, bool aIsFinalChunk,
         
         if (NS_ERROR_HTMLPARSER_BLOCK == result) {
           mSink->WillInterrupt();
-          if (!mBlocked) {
-            
-            BlockParser();
-          }
+          BlockParser();
           return NS_OK;
         }
         if (NS_ERROR_HTMLPARSER_STOPPARSING == result) {
