@@ -2,9 +2,6 @@
 
 
 
-
-
-
 var { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -389,6 +386,8 @@ var gEditItemOverlay = {
   
 
 
+
+
   _getCommonTags() {
     if ("_cachedCommonTags" in this._paneInfo) {
       return this._paneInfo._cachedCommonTags;
@@ -440,6 +439,8 @@ var gEditItemOverlay = {
   },
 
   
+
+
 
 
 
@@ -613,6 +614,11 @@ var gEditItemOverlay = {
   },
 
   
+
+
+
+
+
 
 
 
@@ -867,6 +873,8 @@ var gEditItemOverlay = {
 
 
 
+
+
   _getFolderMenuItem(aFolderGuid, aTitle) {
     let menupopup = this._folderMenuList.menupopup;
     let menuItem = Array.prototype.find.call(
@@ -1067,6 +1075,7 @@ var gEditItemOverlay = {
   },
 
   
+
 
 
 
