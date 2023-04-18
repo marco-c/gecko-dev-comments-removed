@@ -1,6 +1,7 @@
 import errno
 import logging
 import os
+import sys
 import shutil
 import stat
 import subprocess
@@ -55,9 +56,39 @@ def unzip(fileobj, dest=None, limit=None):
         for info in zip_data.infolist():
             if limit is not None and info.filename not in limit:
                 continue
-            zip_data.extract(info, path=dest)
-            perm = info.external_attr >> 16 & 0x1FF
-            os.chmod(os.path.join(dest, info.filename), perm)
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if info.create_system == 0 or sys.platform == 'win32':
+                zip_data.extract(info, path=dest)
+            else:
+                stat_st_mode = info.external_attr >> 16
+                info_dst_path = os.path.join(dest, info.filename)
+                if stat.S_ISLNK(stat_st_mode):
+                    
+                    
+                    link_src_path = zip_data.read(info)
+                    link_dst_dir = os.path.dirname(info_dst_path)
+                    if not os.path.isdir(link_dst_dir):
+                        os.makedirs(link_dst_dir)
+                    os.symlink(link_src_path, info_dst_path)
+                else:
+                    zip_data.extract(info, path=dest)
+                    
+                    perm = stat_st_mode & 0x1FF
+                    os.chmod(info_dst_path, perm)
 
 
 def get(url):
