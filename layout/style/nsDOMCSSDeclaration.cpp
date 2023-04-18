@@ -135,8 +135,8 @@ void nsDOMCSSDeclaration::SetCssText(const nsACString& aCssText,
   
   
   
-  if (closureData.mClosure) {
-    closureData.mClosure(&closureData);
+  if (closure.function && !closureData.mWasCalled) {
+    closure.function(&closureData);
   }
 
   RefPtr<DeclarationBlock> newdecl = DeclarationBlock::FromCssText(

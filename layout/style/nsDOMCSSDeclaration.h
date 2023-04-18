@@ -36,16 +36,13 @@ class Element;
 }  
 
 struct MutationClosureData {
-  MutationClosureData() : mClosure(nullptr), mElement(nullptr), mModType(0) {}
+  MutationClosureData() = default;
 
-  
-  
-  
-  
-  void (*mClosure)(void*);
-  mozilla::dom::Element* mElement;
+  mozilla::dom::Element* mElement = nullptr;
   Maybe<nsAttrValue> mOldValue;
-  uint8_t mModType;
+  uint8_t mModType = 0;
+  bool mWasCalled = false;
+  bool mShouldBeCalled = false;
 };
 
 }  
