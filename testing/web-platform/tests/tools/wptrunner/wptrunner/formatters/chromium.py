@@ -121,10 +121,19 @@ class ChromiumFormatter(base.BaseFormatter):
         cur_dict = self.tests
         for name_part in name_parts:
             cur_dict = cur_dict.setdefault(name_part, {})
-        cur_dict["actual"] = actual
+        
+        
+        
+        
+        statuses = cur_dict.get("actual", "").split()
+        statuses.append(actual)
+        cur_dict["actual"] = " ".join(statuses)
         cur_dict["expected"] = expected
         if duration is not None:
-            cur_dict["time"] = duration
+            
+            cur_dict.setdefault("time", duration)
+            durations = cur_dict.setdefault("times", [])
+            durations.append(duration)
         if subtest_failure:
             self._append_artifact(cur_dict, "wpt_subtest_failure", "true")
         if wpt_actual != actual:
@@ -152,6 +161,13 @@ class ChromiumFormatter(base.BaseFormatter):
                 cur_dict["is_unexpected"] = True
                 if actual != "PASS":
                     cur_dict["is_regression"] = True
+            if len(set(statuses)) > 1:
+                cur_dict["is_flaky"] = True
+
+        
+        
+        if len(statuses) == 1:
+            self.num_failures_by_status[actual] += 1
 
     def _map_status_name(self, status):
         """
@@ -287,9 +303,6 @@ class ChromiumFormatter(base.BaseFormatter):
         
         self.actual_metadata.pop(test_name)
         self.messages.pop(test_name)
-
-        
-        self.num_failures_by_status[actual_status] += 1
 
         
         self.browser_log = []
