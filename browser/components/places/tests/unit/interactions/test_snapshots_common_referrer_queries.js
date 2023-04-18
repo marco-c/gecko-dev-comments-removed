@@ -89,12 +89,10 @@ add_task(async function test_query_no_common_referrer() {
 
   await assertCommonReferrerSnapshots([], {
     url: "https://example.com/product_a",
-    referrerUrl: "https://example.com/product_search",
   });
 
   await assertCommonReferrerSnapshots([], {
     url: "https://example.com/product_b",
-    referrerUrl: "https://example.com/",
   });
 });
 
@@ -114,44 +112,137 @@ add_task(async function test_query_common_referrer() {
     referrer: "https://example.com/product_search",
   });
 
+  
+  let context = {
+    url: "https://example.com/product_a",
+  };
+  await assertCommonReferrerSnapshots([], context);
+
   await create_interaction_and_snapshot({
     url: "https://example.com/product_b",
     referrer: "https://example.com/product_search",
   });
 
-  
   await create_interaction_and_snapshot({
     url: "https://example.com/product_c",
+    referrer: "https://example.com/product_search",
   });
 
-  let context = {
+  context = {
     url: "https://example.com/product_a",
-    referrerUrl: "https://example.com/product_search",
   };
   await assertCommonReferrerSnapshots(
-    [{ url: "https://example.com/product_b", commonReferrerScoreEqualTo: 1.0 }],
+    [
+      { url: "https://example.com/product_b", commonReferrerScoreEqualTo: 1.0 },
+      { url: "https://example.com/product_c", commonReferrerScoreEqualTo: 1.0 },
+    ],
     context
   );
 
   context = {
     url: "https://example.com/product_b",
-    referrerUrl: "https://example.com/product_search",
   };
   await assertCommonReferrerSnapshots(
-    [{ url: "https://example.com/product_a", commonReferrerScoreEqualTo: 1.0 }],
+    [
+      { url: "https://example.com/product_a", commonReferrerScoreEqualTo: 1.0 },
+      { url: "https://example.com/product_c", commonReferrerScoreEqualTo: 1.0 },
+    ],
     context
   );
 
-  
   context = {
     url: "https://example.com/product_c",
-    referrerUrl: "https://example.com/product_search",
   };
   await assertCommonReferrerSnapshots(
     [
       { url: "https://example.com/product_a", commonReferrerScoreEqualTo: 1.0 },
       { url: "https://example.com/product_b", commonReferrerScoreEqualTo: 1.0 },
     ],
+    context
+  );
+
+  
+  context = {
+    url: "https://example.com/product_search",
+  };
+  await assertCommonReferrerSnapshots([], context);
+});
+
+
+add_task(async function test_query_common_referrer_hierarchical() {
+  await reset_interactions_snapshots();
+
+  await create_interaction_and_snapshot({
+    url: "https://example.com/top_level_search",
+  });
+
+  await create_interaction_and_snapshot({
+    url: "https://example.com/product_search",
+    referrer: "https://example.com/top_level_search",
+  });
+
+  await create_interaction_and_snapshot({
+    url: "https://example.com/services_search",
+    referrer: "https://example.com/top_level_search",
+  });
+
+  await create_interaction_and_snapshot({
+    url: "https://example.com/product_a",
+    referrer: "https://example.com/product_search",
+  });
+
+  await create_interaction_and_snapshot({
+    url: "https://example.com/product_b",
+    referrer: "https://example.com/product_search",
+  });
+
+  
+  let context = {
+    url: "https://example.com/top_level_search",
+  };
+
+  await assertCommonReferrerSnapshots([], context);
+
+  
+  context = {
+    url: "https://example.com/services_search",
+  };
+  await assertCommonReferrerSnapshots(
+    [
+      {
+        url: "https://example.com/product_search",
+        commonReferrerScoreEqualTo: 1.0,
+      },
+    ],
+    context
+  );
+
+  context = {
+    url: "https://example.com/product_search",
+  };
+  await assertCommonReferrerSnapshots(
+    [
+      {
+        url: "https://example.com/services_search",
+        commonReferrerScoreEqualTo: 1.0,
+      },
+    ],
+    context
+  );
+
+  
+  context = {
+    url: "https://example.com/product_a",
+  };
+  await assertCommonReferrerSnapshots(
+    [{ url: "https://example.com/product_b", commonReferrerScoreEqualTo: 1.0 }],
+    context
+  );
+  context = {
+    url: "https://example.com/product_b",
+  };
+  await assertCommonReferrerSnapshots(
+    [{ url: "https://example.com/product_a", commonReferrerScoreEqualTo: 1.0 }],
     context
   );
 });
@@ -203,7 +294,6 @@ add_task(async function test_query_common_referrer_multiple_interaction() {
   
   let context = {
     url: "https://example.com/product_b",
-    referrerUrl: "https://example.com/product_search",
   };
   await assertCommonReferrerSnapshots(
     [{ url: "https://example.com/product_a", commonReferrerScoreEqualTo: 1.0 }],
@@ -212,7 +302,6 @@ add_task(async function test_query_common_referrer_multiple_interaction() {
 
   context = {
     url: "https://example.com/product_b",
-    referrerUrl: "https://example.com/top_level_search",
   };
   await assertCommonReferrerSnapshots(
     [{ url: "https://example.com/product_a", commonReferrerScoreEqualTo: 1.0 }],
@@ -220,9 +309,15 @@ add_task(async function test_query_common_referrer_multiple_interaction() {
   );
 
   
+  await addInteractions([
+    {
+      url: "https://example.com/product_c",
+      referrer: "https://example.com/unrelated_search",
+    },
+  ]);
+
   context = {
-    url: "https://example.com/product_b",
-    referrerUrl: "https://example.com/different_path",
+    url: "https://example.com/product_c",
   };
   await assertCommonReferrerSnapshots([], context);
 });
@@ -291,13 +386,9 @@ add_task(
 
     let context = {
       url: "https://example.com/product_b",
-      referrerUrl: "https://example.com/product_search",
     };
 
-    let snapshot = await Snapshots.queryCommonReferrer(
-      context.url,
-      context.referrerUrl
-    );
+    let snapshot = await Snapshots.queryCommonReferrer(context.url);
 
     Assert.equal(snapshot.length, 1, "One shapshot should be found");
     Assert.equal(

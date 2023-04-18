@@ -92,11 +92,6 @@ class SnapshotSelector extends EventEmitter {
 
 
 
-    referrerUrl: undefined,
-    
-
-
-
     type: undefined,
 
     
@@ -253,14 +248,9 @@ class SnapshotSelector extends EventEmitter {
       );
     }
 
-    if (
-      context.selectCommonReferrer &&
-      context.referrerUrl &&
-      context.referrerUrl != ""
-    ) {
+    if (context.selectCommonReferrer) {
       let commonReferrerSnapshots = await Snapshots.queryCommonReferrer(
-        context.url,
-        context.referrerUrl
+        context.url
       );
 
       logConsole.debug(
@@ -298,15 +288,12 @@ class SnapshotSelector extends EventEmitter {
 
 
 
-
-
-  setUrl(url, referrerUrl) {
-    if (this.#context.url == url && this.#context.referrerUrl == referrerUrl) {
+  setUrl(url) {
+    if (this.#context.url == url) {
       return;
     }
 
     this.#context.url = url;
-    this.#context.referrerUrl = referrerUrl;
     this.rebuild();
   }
 
@@ -317,15 +304,12 @@ class SnapshotSelector extends EventEmitter {
 
 
 
-
-
-  setUrlAndRebuildNow(url, referrerUrl) {
-    if (this.#context.url == url && this.#context.referrerUrl == referrerUrl) {
+  setUrlAndRebuildNow(url) {
+    if (this.#context.url == url) {
       return;
     }
 
     this.#context.url = url;
-    this.#context.referrerUrl = referrerUrl;
     this.#buildSnapshots();
   }
 
