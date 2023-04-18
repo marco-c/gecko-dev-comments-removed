@@ -3,8 +3,6 @@
 
 
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 const LOCK_FILE_NAME = "Telemetry.FailedProfileLocks.txt";
 const N_FAILED_LOCKS = 10;
 
