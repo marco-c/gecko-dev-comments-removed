@@ -52,7 +52,6 @@
 #include "mozilla/dom/WorkerBinding.h"
 #include "mozilla/dom/JSExecutionManager.h"
 #include "mozilla/dom/WindowContext.h"
-#include "mozilla/extensions/ExtensionBrowser.h"  
 #include "mozilla/extensions/WebExtensionPolicy.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/StoragePrincipalHelper.h"
@@ -369,20 +368,6 @@ class CompileScriptRunnable final : public WorkerDebuggeeRunnable {
     ErrorResult rv;
     workerinternals::LoadMainScript(aWorkerPrivate, std::move(mOriginStack),
                                     mScriptURL, WorkerScript, rv);
-
-    if (aWorkerPrivate->ExtensionAPIAllowed()) {
-      MOZ_ASSERT(aWorkerPrivate->IsServiceWorker());
-      RefPtr<Runnable> extWorkerRunnable =
-          extensions::CreateWorkerLoadedRunnable(
-              aWorkerPrivate->ServiceWorkerID(), aWorkerPrivate->GetBaseURI());
-      
-      if (NS_FAILED(aWorkerPrivate->DispatchToMainThreadForMessaging(
-              extWorkerRunnable.forget()))) {
-        NS_WARNING(
-            "Failed to dispatch runnable to notify extensions worker loaded");
-      }
-    }
-
     rv.WouldReportJSException();
     
     
@@ -3343,10 +3328,6 @@ void WorkerPrivate::ExecutionReady() {
   }
 
   data->mScope->MutableClientSourceRef().WorkerExecutionReady(this);
-
-  if (ExtensionAPIAllowed()) {
-    extensions::CreateAndDispatchInitWorkerContextRunnable();
-  }
 }
 
 void WorkerPrivate::InitializeGCTimers() {
@@ -3547,20 +3528,6 @@ void WorkerPrivate::ScheduleDeletion(WorkerRanOrNot aRanOrNot) {
       NS_WARNING("Failed to dispatch runnable!");
     }
   } else {
-    if (ExtensionAPIAllowed()) {
-      MOZ_ASSERT(IsServiceWorker());
-      RefPtr<Runnable> extWorkerRunnable =
-          extensions::CreateWorkerDestroyedRunnable(ServiceWorkerID(),
-                                                    GetBaseURI());
-      
-      if (NS_FAILED(
-              DispatchToMainThreadForMessaging(extWorkerRunnable.forget()))) {
-        NS_WARNING(
-            "Failed to dispatch runnable to notify extensions worker "
-            "destroyed");
-      }
-    }
-
     
     
     
@@ -3569,12 +3536,6 @@ void WorkerPrivate::ScheduleDeletion(WorkerRanOrNot aRanOrNot) {
     if (NS_FAILED(DispatchToMainThreadForMessaging(runnable.forget()))) {
       NS_WARNING("Failed to dispatch runnable!");
     }
-
-    
-    
-    
-    
-    
   }
 }
 

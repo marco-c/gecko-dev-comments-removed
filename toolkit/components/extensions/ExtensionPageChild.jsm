@@ -166,11 +166,6 @@ function getContextChildManagerGetter(
         viewType: this.viewType,
         url: this.uri.spec,
         incognito: this.incognito,
-        
-        
-        
-        
-        ...this.getCreateProxyContextData?.(),
       }
     );
 

@@ -7,11 +7,7 @@
 var { ExtensionParent } = ChromeUtils.import(
   "resource://gre/modules/ExtensionParent.jsm"
 );
-var {
-  HiddenExtensionPage,
-  promiseExtensionViewLoaded,
-  watchExtensionWorkerContextLoaded,
-} = ExtensionParent;
+var { HiddenExtensionPage, promiseExtensionViewLoaded } = ExtensionParent;
 
 ChromeUtils.defineModuleGetter(
   this,
@@ -83,7 +79,7 @@ class BackgroundPage extends HiddenExtensionPage {
       if (extension.persistentListeners) {
         EventManager.clearPrimedListeners(this.extension, false);
       }
-      extension.emit("background-script-aborted");
+      extension.emit("background-page-aborted");
       return;
     }
 
@@ -103,7 +99,7 @@ class BackgroundPage extends HiddenExtensionPage {
       EventManager.clearPrimedListeners(extension, !!this.extension);
     }
 
-    extension.emit("background-script-started");
+    extension.emit("background-page-started");
   }
 
   shutdown() {
@@ -115,6 +111,7 @@ class BackgroundPage extends HiddenExtensionPage {
 
 class BackgroundWorker {
   constructor(extension, options) {
+    this.registrationInfo = null;
     this.extension = extension;
     this.workerScript = options.service_worker;
 
@@ -123,48 +120,21 @@ class BackgroundWorker {
     }
   }
 
-  get registrationInfo() {
-    const { principal } = this.extension;
-    return serviceWorkerManager.getRegistrationForAddonPrincipal(principal);
-  }
-
-  getWorkerInfo(descriptorId) {
-    return this.registrationInfo?.getWorkerByID(descriptorId);
-  }
-
-  validateWorkerInfoForContext(context) {
-    const { extension } = this;
-    if (!this.getWorkerInfo(context.workerDescriptorId)) {
-      throw new Error(
-        `ServiceWorkerInfo not found for ${extension.policy.debugName} contextId ${context.contextId}`
-      );
-    }
-  }
-
   async build() {
     const { extension } = this;
 
-    let context;
     try {
-      const contextPromise = new Promise(resolve => {
-        let unwatch = watchExtensionWorkerContextLoaded(
-          { extension, viewType: "background_worker" },
-          context => {
-            unwatch();
-            this.validateWorkerInfoForContext(context);
-            resolve(context);
-          }
-        );
-      });
-
       
       
-      await serviceWorkerManager.registerForAddonPrincipal(
+      const regInfo = await serviceWorkerManager.registerForAddonPrincipal(
         this.extension.principal
       );
+      this.registrationInfo = regInfo.QueryInterface(
+        Ci.nsIServiceWorkerRegistrationInfo
+      );
 
-      context = await contextPromise;
-
+      
+      
       await this.waitForActiveWorker();
     } catch (e) {
       
@@ -175,16 +145,15 @@ class BackgroundWorker {
         EventManager.clearPrimedListeners(this.extension, false);
       }
 
-      extension.emit("background-script-aborted");
+      
+      extension.emit("background-page-aborted");
       return;
     }
 
-    if (context) {
-      
-      
-      await Promise.all(context.listenerPromises);
-      context.listenerPromises = null;
-    }
+    
+    
+    
+    
 
     if (extension.persistentListeners) {
       
@@ -193,7 +162,8 @@ class BackgroundWorker {
       EventManager.clearPrimedListeners(extension, !!this.extension);
     }
 
-    extension.emit("background-script-started");
+    
+    extension.emit("background-page-started");
   }
 
   shutdown(isAppShutdown) {
@@ -205,6 +175,8 @@ class BackgroundWorker {
     if (!isAppShutdown) {
       this.registrationInfo?.forceShutdown();
     }
+
+    this.registrationInfo = null;
   }
 
   waitForActiveWorker() {
@@ -284,18 +256,18 @@ this.backgroundPage = class extends ExtensionAPI {
     
     let bgStartupPromise = new Promise(resolve => {
       let done = () => {
-        extension.off("background-script-started", done);
-        extension.off("background-script-aborted", done);
+        extension.off("background-page-started", done);
+        extension.off("background-page-aborted", done);
         extension.off("shutdown", done);
         resolve();
       };
-      extension.on("background-script-started", done);
-      extension.on("background-script-aborted", done);
+      extension.on("background-page-started", done);
+      extension.on("background-page-aborted", done);
       extension.on("shutdown", done);
     });
 
     extension.wakeupBackground = () => {
-      extension.emit("background-script-event");
+      extension.emit("background-page-event");
       extension.wakeupBackground = () => bgStartupPromise;
       return bgStartupPromise;
     };
@@ -306,7 +278,7 @@ this.backgroundPage = class extends ExtensionAPI {
 
     EventManager.primeListeners(extension);
 
-    extension.once("start-background-script", async () => {
+    extension.once("start-background-page", async () => {
       if (!this.extension) {
         
         
@@ -322,13 +294,13 @@ this.backgroundPage = class extends ExtensionAPI {
     
     
     
-    extension.once("background-script-event", async () => {
+    extension.once("background-page-event", async () => {
       await ExtensionParent.browserPaintedPromise;
-      extension.emit("start-background-script");
+      extension.emit("start-background-page");
     });
 
     ExtensionParent.browserStartupPromise.then(() => {
-      extension.emit("start-background-script");
+      extension.emit("start-background-page");
     });
   }
 

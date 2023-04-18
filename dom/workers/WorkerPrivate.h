@@ -170,9 +170,11 @@ class WorkerPrivate final : public RelativeTimeline {
   }
 
   bool ExtensionAPIAllowed() {
-    return (
-        StaticPrefs::extensions_backgroundServiceWorker_enabled_AtStartup() &&
-        mExtensionAPIAllowed);
+    
+    
+    MOZ_ASSERT(
+        StaticPrefs::extensions_backgroundServiceWorker_enabled_AtStartup());
+    return mExtensionAPIAllowed;
   }
 
   void SetIsDebuggerRegistered(bool aDebuggerRegistered) {
