@@ -755,22 +755,6 @@ const proto = {
   
 
 
-
-
-  decompile: function(pretty) {
-    if (this.obj.class !== "Function") {
-      return this.throwError(
-        "objectNotFunction",
-        "decompile request is only valid for grips  with a 'Function' class."
-      );
-    }
-
-    return { decompiledCode: this.obj.decompile(!!pretty) };
-  },
-
-  
-
-
   parameterNames: function() {
     if (this.obj.class !== "Function") {
       return this.throwError(
