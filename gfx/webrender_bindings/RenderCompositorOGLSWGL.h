@@ -69,8 +69,6 @@ class RenderCompositorOGLSWGL : public RenderCompositorLayersSWGL {
   void DestroyEGLSurface();
 
   EGLSurface mEGLSurface = EGL_NO_SURFACE;
-  
-  Maybe<LayoutDeviceIntSize> mEGLSurfaceSize;
   bool mFullRender = false;
 
   class TileOGL : public RenderCompositorLayersSWGL::Tile {

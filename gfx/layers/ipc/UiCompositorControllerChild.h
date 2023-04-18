@@ -14,6 +14,10 @@
 #include "mozilla/layers/UiCompositorControllerParent.h"
 #include "mozilla/RefPtr.h"
 #include "nsThread.h"
+#ifdef MOZ_WIDGET_ANDROID
+#  include "SurfaceTexture.h"
+#  include "mozilla/java/CompositorSurfaceManagerWrappers.h"
+#endif
 
 class nsBaseWidget;
 
@@ -50,6 +54,26 @@ class UiCompositorControllerChild final
   void SetBaseWidget(nsBaseWidget* aWidget);
   bool DeallocPixelBuffer(Shmem& aMem);
 
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  
+  
+  void SetCompositorSurfaceManager(
+      java::CompositorSurfaceManager::Param aCompositorSurfaceManager);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  void OnCompositorSurfaceChanged(int32_t aWidgetId,
+                                  java::sdk::Surface::Param aSurface);
+#endif
+
  protected:
   void ActorDestroy(ActorDestroyReason aWhy) override;
   void ActorDealloc() override;
@@ -79,6 +103,15 @@ class UiCompositorControllerChild final
   RefPtr<nsBaseWidget> mWidget;
   
   RefPtr<UiCompositorControllerParent> mParent;
+
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  
+  
+  
+  mozilla::java::CompositorSurfaceManager::GlobalRef mCompositorSurfaceManager;
+#endif
 };
 
 }  

@@ -62,7 +62,7 @@ class CompositorWidgetDelegate {
 };
 
 
-#if defined(XP_WIN) || defined(MOZ_X11)
+#if defined(XP_WIN) || defined(MOZ_X11) || defined(MOZ_WIDGET_ANDROID)
 
 
 class CompositorWidgetParent;
@@ -189,6 +189,14 @@ class CompositorWidget {
 
 
   virtual bool InitCompositor(layers::Compositor* aCompositor) { return true; }
+
+  
+
+
+
+
+
+  virtual void OnResumeComposition() {}
 
   
 

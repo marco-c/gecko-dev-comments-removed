@@ -13,6 +13,10 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/ipc/TaskFactory.h"
 
+#ifdef MOZ_WIDGET_ANDROID
+#  include "mozilla/java/CompositorSurfaceManagerWrappers.h"
+#endif
+
 namespace mozilla {
 namespace ipc {
 class SharedPreferenceSerializer;
@@ -100,6 +104,10 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   void KillProcess();
 
+#ifdef MOZ_WIDGET_ANDROID
+  java::CompositorSurfaceManager::Param GetCompositorSurfaceManager();
+#endif
+
  private:
   ~GPUProcessHost();
 
@@ -135,6 +143,13 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   bool mChannelClosed;
 
   TimeStamp mLaunchTime;
+
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  
+  java::CompositorSurfaceManager::GlobalRef mCompositorSurfaceManager;
+#endif
 };
 
 }  
