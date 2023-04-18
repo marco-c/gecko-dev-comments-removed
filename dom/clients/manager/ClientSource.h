@@ -139,7 +139,9 @@ class ClientSource final : public ClientThing<ClientSourceChild> {
   
   void NoteDOMContentLoaded();
 
-  RefPtr<ClientOpPromise> Focus(const ClientFocusArgs& aArgs);
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY RefPtr<ClientOpPromise> Focus(
+      const ClientFocusArgs& aArgs);
 
   RefPtr<ClientOpPromise> PostMessage(const ClientPostMessageArgs& aArgs);
 

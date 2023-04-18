@@ -38,7 +38,8 @@ class MOZ_STACK_CLASS ContentPlaybackController {
   explicit ContentPlaybackController(BrowsingContext* aContext);
   ~ContentPlaybackController() = default;
 
-  void Focus();
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Focus();
   void Play();
   void Pause();
   void SeekBackward();

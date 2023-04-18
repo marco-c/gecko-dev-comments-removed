@@ -89,7 +89,7 @@ Maybe<uint64_t> ContentPlaybackController::GetActiveMediaSessionId() const {
 void ContentPlaybackController::Focus() {
   
   
-  if (RefPtr<nsPIDOMWindowOuter> win = mBC->GetDOMWindow()) {
+  if (nsCOMPtr<nsPIDOMWindowOuter> win = mBC->GetDOMWindow()) {
     nsFocusManager::FocusWindow(win, CallerType::System);
   }
 }

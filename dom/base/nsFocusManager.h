@@ -61,8 +61,8 @@ class nsFocusManager final : public nsIFocusManager,
   
   
   
-  static void FocusWindow(nsPIDOMWindowOuter* aWindow,
-                          mozilla::dom::CallerType aCallerType);
+  MOZ_CAN_RUN_SCRIPT static void FocusWindow(
+      nsPIDOMWindowOuter* aWindow, mozilla::dom::CallerType aCallerType);
 
   static void PrefChanged(const char* aPref, void* aSelf);
   void PrefChanged(const char* aPref);
@@ -212,7 +212,7 @@ class nsFocusManager final : public nsIFocusManager,
   
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult SetFocusedWindowWithCallerType(
+  MOZ_CAN_RUN_SCRIPT nsresult SetFocusedWindowWithCallerType(
       mozIDOMWindowProxy* aWindowToFocus, mozilla::dom::CallerType aCallerType,
       uint64_t aActionId);
 

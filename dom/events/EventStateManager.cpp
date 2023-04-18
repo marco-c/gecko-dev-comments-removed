@@ -3514,7 +3514,9 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
               
               
               if (XRE_IsParentProcess() || IsInActiveTab(mDocument)) {
-                fm->SetFocusedWindow(mDocument->GetWindow());
+                nsCOMPtr<nsPIDOMWindowOuter> outerWindow =
+                    mDocument->GetWindow();
+                fm->SetFocusedWindow(outerWindow);
               }
             }
           }
