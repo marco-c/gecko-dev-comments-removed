@@ -62,6 +62,8 @@ let { XPCOMUtils: _XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+let { OS: _OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
+
 
 var { Assert: AssertCls } = ChromeUtils.import(
   "resource://testing-common/Assert.jsm"
@@ -499,12 +501,19 @@ function _initDebugging(port) {
 
 function _execute_test() {
   if (typeof _TEST_CWD != "undefined") {
-    try {
-      changeTestShellDir(_TEST_CWD);
-    } catch (e) {
-      _testLogger.error(_exception_message(e));
-    }
+    let cwd_complete = false;
+    _OS.File.setCurrentDirectory(_TEST_CWD)
+      .then(_ => (cwd_complete = true))
+      .catch(e => {
+        _testLogger.error(_exception_message(e));
+        cwd_complete = true;
+      });
+    _Services.tm.spinEventLoopUntil(
+      "Test(xpcshell/head.js:setCurrentDirectory)",
+      () => cwd_complete
+    );
   }
+
   if (runningInParent && _AppConstants.platform == "android") {
     try {
       

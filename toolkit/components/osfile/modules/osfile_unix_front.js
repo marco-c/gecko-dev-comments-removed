@@ -1125,6 +1125,13 @@
     
 
 
+    File.setCurrentDirectory = function setCurrentDirectory(path) {
+      throw_on_negative("setCurrentDirectory", UnixFile.chdir(path), path);
+    };
+
+    
+
+
     Object.defineProperty(File, "curDir", {
       set(path) {
         this.setCurrentDirectory(path);

@@ -1240,6 +1240,17 @@
     
 
 
+    File.setCurrentDirectory = function setCurrentDirectory(path) {
+      throw_on_zero(
+        "setCurrentDirectory",
+        WinFile.SetCurrentDirectory(path),
+        path
+      );
+    };
+
+    
+
+
     Object.defineProperty(File, "curDir", {
       set(path) {
         this.setCurrentDirectory(path);
