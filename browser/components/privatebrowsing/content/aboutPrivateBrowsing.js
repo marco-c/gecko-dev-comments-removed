@@ -217,6 +217,24 @@ function recordOnceVisible(message) {
   }
 }
 
+
+async function handlePromoOnPreload(message) {
+  async function removePromoIfBlocked() {
+    if (document.visibilityState === "visible") {
+      let blocked = await RPMSendQuery("IsPromoBlocked", message);
+      if (blocked) {
+        const container = document.querySelector(".promo");
+        container.remove();
+      }
+    }
+    document.removeEventListener("visibilitychange", removePromoIfBlocked);
+  }
+  
+  if (document.visibilityState !== "visible") {
+    document.addEventListener("visibilitychange", removePromoIfBlocked);
+  }
+}
+
 async function setupFeatureConfig() {
   let config = null;
   let message = null;
@@ -239,6 +257,7 @@ async function setupFeatureConfig() {
   let hasRendered = await renderPromo(config);
   if (hasRendered && message) {
     recordOnceVisible(message);
+    await handlePromoOnPreload(message);
   }
   
   document.documentElement.setAttribute("PrivateBrowsingRenderComplete", true);
