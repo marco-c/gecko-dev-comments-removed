@@ -60,13 +60,6 @@ static const char sPrintSettingsServiceContractID[] =
 #include "nsIWebBrowserPrint.h"
 
 
-
-
-#include "nsIObserver.h"
-
-
-
-
 #include "nsIPrintingPromptService.h"
 static const char kPrintingPromptService[] =
     "@mozilla.org/embedcomp/printingprompt-service;1";
@@ -340,8 +333,7 @@ static nsresult GetDefaultPrintSettings(nsIPrintSettings** aSettings) {
 
 
 
-NS_IMPL_ISUPPORTS(nsPrintJob, nsIWebProgressListener, nsISupportsWeakReference,
-                  nsIObserver)
+NS_IMPL_ISUPPORTS(nsPrintJob, nsIWebProgressListener, nsISupportsWeakReference)
 
 
 nsPrintJob::nsPrintJob() = default;
@@ -498,7 +490,6 @@ nsresult nsPrintJob::CommonPrint(bool aIsPrintPreview,
     } else {
       SetIsPrinting(false);
     }
-    if (mProgressDialogIsShown) CloseProgressDialog(aWebProgressListener);
     if (rv != NS_ERROR_ABORT && rv != NS_ERROR_OUT_OF_MEMORY) {
       FirePrintingErrorEvent(rv);
     }
@@ -524,12 +515,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   RefPtr<nsPrintData> printData = mPrt;
 
   if (aIsPrintPreview) {
-    
-    
-    nsCOMPtr<nsIPrintingPromptService> pps(
-        do_QueryInterface(aWebProgressListener));
-    mProgressDialogIsShown = pps != nullptr;
-
     mIsCreatingPrintPreview = true;
 
     
@@ -539,8 +524,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
 
     SetIsPrintPreview(true);
   } else {
-    mProgressDialogIsShown = false;
-
     SetIsPrinting(true);
   }
 
@@ -784,25 +767,10 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
 
   MOZ_TRY(EnablePOsForPrinting());
 
-  if (mIsCreatingPrintPreview) {
-    bool notifyOnInit = false;
-    ShowPrintProgress(false, notifyOnInit, aDoc);
-
-    if (!notifyOnInit) {
-      rv = InitPrintDocConstruction(false);
-    } else {
-      rv = NS_OK;
-    }
-  } else {
-    bool doNotify;
-    ShowPrintProgress(true, doNotify, aDoc);
-    if (!doNotify) {
-      
-      printData->OnStartPrinting();
-
-      rv = InitPrintDocConstruction(false);
-    }
+  if (!mIsCreatingPrintPreview) {
+    printData->OnStartPrinting();
   }
+  InitPrintDocConstruction(false);
 
   return NS_OK;
 }
@@ -907,66 +875,6 @@ already_AddRefed<nsIPrintSettings> nsPrintJob::GetCurrentPrintSettings() {
 
 
 
-
-
-
-void nsPrintJob::ShowPrintProgress(bool aIsForPrinting, bool& aDoNotify,
-                                   Document* aDoc) {
-  
-  
-  
-  aDoNotify = false;
-
-  
-  
-  
-  RefPtr<nsPrintData> printData = mPrt;
-
-  bool showProgresssDialog =
-      !mProgressDialogIsShown && StaticPrefs::print_show_print_progress();
-
-  
-  
-  
-  if (showProgresssDialog) {
-    printData->mPrintSettings->GetShowPrintProgress(&showProgresssDialog);
-  }
-
-  
-  
-  if (showProgresssDialog) {
-    nsCOMPtr<nsIPrintingPromptService> printPromptService(
-        do_GetService(kPrintingPromptService));
-    if (printPromptService) {
-      if (mIsForModalWindow) {
-        
-        
-        return;
-      }
-
-      nsPIDOMWindowOuter* domWin = aDoc->GetOriginalDocument()->GetWindow();
-      if (!domWin) return;
-
-      nsCOMPtr<nsIWebProgressListener> printProgressListener;
-
-      nsresult rv = printPromptService->ShowPrintProgressDialog(
-          domWin, printData->mPrintSettings, this, aIsForPrinting,
-          getter_AddRefs(printProgressListener),
-          getter_AddRefs(printData->mPrintProgressParams), &aDoNotify);
-      if (NS_SUCCEEDED(rv)) {
-        if (printProgressListener) {
-          printData->mPrintProgressListeners.AppendObject(
-              printProgressListener);
-        }
-
-        if (printData->mPrintProgressParams) {
-          SetURLAndTitleOnProgressParams(printData->mPrintObject,
-                                         printData->mPrintProgressParams);
-        }
-      }
-    }
-  }
-}
 
 
 void nsPrintJob::GetDisplayTitleAndURL(Document& aDoc,
@@ -2147,10 +2055,6 @@ nsresult nsPrintJob::DoPrint(const UniquePtr<nsPrintObject>& aPO) {
     return NS_ERROR_FAILURE;
   }
 
-  if (printData->mPrintProgressParams) {
-    SetURLAndTitleOnProgressParams(aPO, printData->mPrintProgressParams);
-  }
-
   {
     
     nsPageSequenceFrame* seqFrame = poPresShell->GetPageSequenceFrame();
@@ -2227,48 +2131,6 @@ nsresult nsPrintJob::DoPrint(const UniquePtr<nsPrintObject>& aPO) {
   }
 
   return NS_OK;
-}
-
-
-void nsPrintJob::SetURLAndTitleOnProgressParams(
-    const UniquePtr<nsPrintObject>& aPO, nsIPrintProgressParams* aParams) {
-  NS_ASSERTION(aPO, "Must have valid nsPrintObject");
-  NS_ASSERTION(aParams, "Must have valid nsIPrintProgressParams");
-
-  if (!aPO || !aPO->mDocShell || !aParams) {
-    return;
-  }
-  const uint32_t kTitleLength = 64;
-
-  nsAutoString docTitleStr;
-  nsAutoString docURLStr;
-  GetDisplayTitleAndURL(*aPO->mDocument, mPrt->mPrintSettings,
-                        DocTitleDefault::eDocURLElseFallback, docTitleStr,
-                        docURLStr);
-
-  
-  EllipseLongString(docTitleStr, kTitleLength, false);
-  EllipseLongString(docURLStr, kTitleLength, true);
-
-  aParams->SetDocTitle(docTitleStr);
-  aParams->SetDocURL(docURLStr);
-}
-
-
-void nsPrintJob::EllipseLongString(nsAString& aStr, const uint32_t aLen,
-                                   bool aDoFront) {
-  
-  if (aLen >= 3 && aStr.Length() > aLen) {
-    if (aDoFront) {
-      nsAutoString newStr;
-      newStr.AppendLiteral("...");
-      newStr += Substring(aStr, aStr.Length() - (aLen - 3), aLen - 3);
-      aStr = newStr;
-    } else {
-      aStr.SetLength(aLen - 3);
-      aStr.AppendLiteral("...");
-    }
-  }
 }
 
 
@@ -2590,18 +2452,6 @@ nsPrintObject* nsPrintJob::FindSmallestSTF() {
 
 
 
-void nsPrintJob::CloseProgressDialog(
-    nsIWebProgressListener* aWebProgressListener) {
-  if (aWebProgressListener) {
-    aWebProgressListener->OnStateChange(
-        nullptr, nullptr,
-        nsIWebProgressListener::STATE_STOP |
-            nsIWebProgressListener::STATE_IS_DOCUMENT,
-        NS_OK);
-  }
-}
-
-
 nsresult nsPrintJob::FinishPrintPreview() {
   nsresult rv = NS_OK;
 
@@ -2705,27 +2555,6 @@ nsresult nsPrintJob::StartPagePrintTimer(const UniquePtr<nsPrintObject>& aPO) {
   }
 
   return mPagePrintTimer->Start(aPO.get());
-}
-
-
-MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP nsPrintJob::Observe(
-    nsISupports* aSubject, const char* aTopic, const char16_t* aData) {
-  
-  
-  
-  
-
-  if (aTopic) {
-    return NS_OK;
-  }
-
-  nsresult rv = InitPrintDocConstruction(true);
-  if (!mIsDoingPrinting && mPrtPreview) {
-    RefPtr<nsPrintData> printDataOfPrintPreview = mPrtPreview;
-    printDataOfPrintPreview->OnEndPrinting();
-  }
-
-  return rv;
 }
 
 

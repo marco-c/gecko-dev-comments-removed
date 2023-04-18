@@ -8,7 +8,6 @@
 #include "nsISupports.idl"
 #include "nsIWebBrowserPrint.idl"
 #include "nsIWebProgressListener.idl"
-#include "nsIPrintProgressParams.idl"
 #include "nsIPrintSettings.idl"
 #include "nsIObserver.idl"
 
@@ -16,9 +15,6 @@
 interface nsIPrintingPromptService : nsISupports
 {
    
-
-
-
 
 
 
@@ -91,28 +87,6 @@ interface nsIPrintingPromptService : nsISupports
 
   void showPrintDialog(in mozIDOMWindowProxy parent,
                        in nsIPrintSettings printSettings);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void showPrintProgressDialog(in mozIDOMWindowProxy parent,
-                               in nsIPrintSettings printSettings,
-                               in nsIObserver openDialogObserver,
-                               in boolean isForPrinting,
-                               out nsIWebProgressListener webProgressListener,
-                               out nsIPrintProgressParams printProgressParams,
-                               out boolean notifyOnOpen);
 
   
 

@@ -33,7 +33,6 @@ class PrintingParent extends JSWindowActorParent {
       return undefined;
     }
 
-    let listener = PrintUtils._webProgressPP?.value;
     let data = message.data;
 
     switch (message.name) {
@@ -68,29 +67,11 @@ class PrintingParent extends JSWindowActorParent {
       }
 
       case "Printing:Preview:ProgressChange": {
-        if (!PrintUtils._webProgressPP.value) {
-          
-          
-          return undefined;
-        }
-
-        return listener.onProgressChange(
-          null,
-          null,
-          data.curSelfProgress,
-          data.maxSelfProgress,
-          data.curTotalProgress,
-          data.maxTotalProgress
-        );
+        
+        return undefined;
       }
 
       case "Printing:Preview:StateChange": {
-        if (!PrintUtils._webProgressPP.value) {
-          
-          
-          return undefined;
-        }
-
         if (data.stateFlags & Ci.nsIWebProgressListener.STATE_STOP) {
           
           
@@ -104,7 +85,8 @@ class PrintingParent extends JSWindowActorParent {
           printPreviewTB.disableUpdateTriggers(false);
         }
 
-        return listener.onStateChange(null, null, data.stateFlags, data.status);
+        
+        return undefined;
       }
     }
 

@@ -279,7 +279,6 @@ interface nsIPrintSettings : nsISupports
   readonly attribute boolean saveOnCancel;        
   attribute boolean printSilent;         
   [infallible] attribute boolean shrinkToFit; 
-  attribute boolean showPrintProgress;   
 
   
   attribute AString paperId;       
