@@ -1,0 +1,8 @@
+use crate::Arg;
+
+
+#[test]
+fn arg_send_sync() {
+    fn foo<T: Send + Sync>(_: T) {}
+    foo(Arg::new("test"))
+}
