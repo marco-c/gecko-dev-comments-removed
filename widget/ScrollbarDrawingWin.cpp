@@ -35,14 +35,24 @@ LayoutDeviceIntSize ScrollbarDrawingWin::GetMinimumWidgetSize(
         return LayoutDeviceIntSize{};
       }
       [[fallthrough]];
+    case StyleAppearance::ScrollbarVertical:
+    case StyleAppearance::ScrollbarHorizontal:
     case StyleAppearance::ScrollbarthumbVertical:
     case StyleAppearance::ScrollbarthumbHorizontal: {
       auto* style = nsLayoutUtils::StyleForScrollbar(aFrame);
       auto width = style->StyleUIReset()->mScrollbarWidth;
-      auto sizes = GetScrollbarSizes(aPresContext, width, Overlay::No);
+      auto overlay =
+          aPresContext->UseOverlayScrollbars() ? Overlay::Yes : Overlay::No;
+      auto sizes = GetScrollbarSizes(aPresContext, width, overlay);
+      if (overlay == Overlay::No &&
+          (aAppearance == StyleAppearance::ScrollbarHorizontal ||
+           aAppearance == StyleAppearance::ScrollbarVertical)) {
+        return LayoutDeviceIntSize{};
+      }
       
       
       const bool isHorizontal =
+          aAppearance == StyleAppearance::ScrollbarHorizontal ||
           aAppearance == StyleAppearance::ScrollbarthumbHorizontal ||
           aAppearance == StyleAppearance::ScrollbarbuttonLeft ||
           aAppearance == StyleAppearance::ScrollbarbuttonRight;
@@ -77,6 +87,9 @@ Maybe<nsITheme::Transparency> ScrollbarDrawingWin::GetScrollbarPartTransparency(
           break;
       }
     }
+    if (aFrame->PresContext()->UseOverlayScrollbars()) {
+      return Some(nsITheme::eTransparent);
+    }
   }
 
   switch (aAppearance) {
@@ -84,6 +97,8 @@ Maybe<nsITheme::Transparency> ScrollbarDrawingWin::GetScrollbarPartTransparency(
     case StyleAppearance::ScrollbarVertical:
     case StyleAppearance::Scrollcorner:
     case StyleAppearance::Statusbar:
+      
+      
       
       
       
