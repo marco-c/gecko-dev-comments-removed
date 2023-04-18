@@ -87,8 +87,9 @@ bool nsImageRenderer::PrepareImage() {
     MOZ_DIAGNOSTIC_ASSERT(isImageRequest);
 
     
-    bool frameComplete =
-        request->StartDecodingWithResult(imgIContainer::FLAG_ASYNC_NOTIFY);
+    bool frameComplete = request->StartDecodingWithResult(
+        imgIContainer::FLAG_ASYNC_NOTIFY |
+        imgIContainer::FLAG_AVOID_REDECODE_FOR_SIZE);
 
     
     if (mFlags & nsImageRenderer::FLAG_PAINTING_TO_WINDOW) {
