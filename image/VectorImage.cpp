@@ -1080,6 +1080,12 @@ already_AddRefed<SourceSurface> VectorImage::CreateSurface(
       aParams.context ? aParams.context->GetDrawTarget()->GetBackendType()
                       : gfxPlatform::GetPlatform()->GetDefaultContentBackend();
 
+  if (backend == BackendType::DIRECT2D1_1) {
+    
+    
+    backend = BackendType::SKIA;
+  }
+
   
   
   auto frame = MakeNotNull<RefPtr<imgFrame>>();
