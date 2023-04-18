@@ -277,8 +277,6 @@ var interfaceNamesInGlobalScope = [
   
   "Response",
   
-  { name: "Scheduler", nightly: true },
-  
   "ServiceWorker",
   
   "ServiceWorkerGlobalScope",
@@ -288,12 +286,6 @@ var interfaceNamesInGlobalScope = [
   { name: "StorageManager", fennec: false },
   
   "SubtleCrypto",
-  
-  { name: "TaskController", nightly: true },
-  
-  { name: "TaskPriorityChangeEvent", nightly: true },
-  
-  { name: "TaskSignal", nightly: true },
   
   "TextDecoder",
   

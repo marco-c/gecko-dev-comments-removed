@@ -1006,8 +1006,6 @@ var interfaceNamesInGlobalScope = [
   
   { name: "Sanitizer", disabled: true },
   
-  { name: "Scheduler", insecureContext: true, nightly: true },
-  
   { name: "Screen", insecureContext: true },
   
   { name: "ScreenOrientation", insecureContext: true },
@@ -1263,12 +1261,6 @@ var interfaceNamesInGlobalScope = [
   { name: "SVGUseElement", insecureContext: true },
   
   { name: "SVGViewElement", insecureContext: true },
-  
-  { name: "TaskController", insecureContext: true, nightly: true },
-  
-  { name: "TaskPriorityChangeEvent", insecureContext: true, nightly: true },
-  
-  { name: "TaskSignal", insecureContext: true, nightly: true },
   
   { name: "Text", insecureContext: true },
   

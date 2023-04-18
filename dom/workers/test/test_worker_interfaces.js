@@ -277,19 +277,11 @@ var interfaceNamesInGlobalScope = [
   
   { name: "Response", insecureContext: true },
   
-  { name: "Scheduler", insecureContext: true, nightly: true },
-  
   { name: "ServiceWorkerRegistration", insecureContext: true },
   
   { name: "StorageManager", fennec: false },
   
   { name: "SubtleCrypto" },
-  
-  { name: "TaskController", insecureContext: true, nightly: true },
-  
-  { name: "TaskPriorityChangeEvent", insecureContext: true, nightly: true },
-  
-  { name: "TaskSignal", insecureContext: true, nightly: true },
   
   { name: "TextDecoder", insecureContext: true },
   
