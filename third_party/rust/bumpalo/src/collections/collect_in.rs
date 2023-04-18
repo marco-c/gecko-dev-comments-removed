@@ -1,3 +1,5 @@
+#[cfg(feature = "boxed")]
+use crate::boxed::Box;
 use crate::collections::{String, Vec};
 use crate::Bump;
 
@@ -5,14 +7,42 @@ use crate::Bump;
 pub trait FromIteratorIn<A> {
     
     type Alloc;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     fn from_iter_in<I>(iter: I, alloc: Self::Alloc) -> Self
     where
         I: IntoIterator<Item = A>;
 }
 
+#[cfg(feature = "boxed")]
+impl<'bump, T> FromIteratorIn<T> for Box<'bump, [T]> {
+    type Alloc = &'bump Bump;
+
+    fn from_iter_in<I>(iter: I, alloc: Self::Alloc) -> Self
+    where
+        I: IntoIterator<Item = T>,
+    {
+        Box::from_iter_in(iter, alloc)
+    }
+}
+
 impl<'bump, T> FromIteratorIn<T> for Vec<'bump, T> {
     type Alloc = &'bump Bump;
+
     fn from_iter_in<I>(iter: I, alloc: Self::Alloc) -> Self
     where
         I: IntoIterator<Item = T>,
@@ -21,8 +51,71 @@ impl<'bump, T> FromIteratorIn<T> for Vec<'bump, T> {
     }
 }
 
-impl<'a> FromIteratorIn<char> for String<'a> {
-    type Alloc = &'a Bump;
+impl<T, V: FromIteratorIn<T>> FromIteratorIn<Option<T>> for Option<V> {
+    type Alloc = V::Alloc;
+    fn from_iter_in<I>(iter: I, alloc: Self::Alloc) -> Self
+    where
+        I: IntoIterator<Item = Option<T>>,
+    {
+        iter.into_iter()
+            .map(|x| x.ok_or(()))
+            .collect_in::<Result<_, _>>(alloc)
+            .ok()
+    }
+}
+
+impl<T, E, V: FromIteratorIn<T>> FromIteratorIn<Result<T, E>> for Result<V, E> {
+    type Alloc = V::Alloc;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from_iter_in<I>(iter: I, alloc: Self::Alloc) -> Self
+    where
+        I: IntoIterator<Item = Result<T, E>>,
+    {
+        let mut iter = iter.into_iter();
+        let mut error = None;
+        let container = core::iter::from_fn(|| match iter.next() {
+            Some(Ok(x)) => Some(x),
+            Some(Err(e)) => {
+                error = Some(e);
+                None
+            }
+            None => None,
+        })
+        .collect_in(alloc);
+
+        match error {
+            Some(e) => Err(e),
+            None => Ok(container),
+        }
+    }
+}
+
+impl<'bump> FromIteratorIn<char> for String<'bump> {
+    type Alloc = &'bump Bump;
+
     fn from_iter_in<I>(iter: I, alloc: Self::Alloc) -> Self
     where
         I: IntoIterator<Item = char>,
@@ -33,6 +126,7 @@ impl<'a> FromIteratorIn<char> for String<'a> {
 
 
 pub trait CollectIn: Iterator + Sized {
+    
     
     
     

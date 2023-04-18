@@ -52,13 +52,6 @@
 
 
 
-
-
-
-
-
-
-
 use crate::collections::str::lossy;
 use crate::collections::vec::Vec;
 use crate::Bump;
@@ -88,6 +81,8 @@ use core_alloc::borrow::Cow;
 
 
 
+
+
 #[macro_export]
 macro_rules! format {
     ( in $bump:expr, $fmt:expr, $($args:expr),* ) => {{
@@ -102,31 +97,6 @@ macro_rules! format {
         $crate::format!(in $bump, $fmt, $($args),*)
     };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -419,7 +389,6 @@ pub struct FromUtf8Error<'bump> {
 
 
 
-
 #[derive(Debug)]
 pub struct FromUtf16Error(());
 
@@ -686,9 +655,6 @@ impl<'bump> String<'bump> {
     
     
     
-    
-    
-    
     pub fn from_utf16_in(v: &[u16], bump: &'bump Bump) -> Result<String<'bump>, FromUtf16Error> {
         let mut ret = String::with_capacity_in(v.len(), bump);
         for c in decode_utf16(v.iter().cloned()) {
@@ -849,12 +815,13 @@ impl<'bump> String<'bump> {
     
     
     
-    
     #[inline]
     pub fn into_bytes(self) -> Vec<'bump, u8> {
         self.vec
     }
 
+    
+    
     
     
     
@@ -2093,9 +2060,6 @@ impl<'bump> BorrowMut<str> for String<'bump> {
         &mut self[..]
     }
 }
-
-
-
 
 
 

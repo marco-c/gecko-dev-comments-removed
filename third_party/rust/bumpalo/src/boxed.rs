@@ -214,16 +214,11 @@ impl<'a, T: ?Sized> Box<'a, T> {
     
     
     
-    
-    
-    
     #[inline]
     pub unsafe fn from_raw(raw: *mut T) -> Self {
         Box(&mut *raw)
     }
 
-    
-    
     
     
     
@@ -272,8 +267,6 @@ impl<'a, T: ?Sized> Box<'a, T> {
         ptr
     }
 
-    
-    
     
     
     
@@ -589,6 +582,8 @@ impl<'a, I: FusedIterator + ?Sized> FusedIterator for Box<'a, I> {}
 
 #[cfg(feature = "collections")]
 impl<'a, A> Box<'a, [A]> {
+    
+    
     
     
     

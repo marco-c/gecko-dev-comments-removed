@@ -83,6 +83,11 @@
 
 
 
+
+
+
+
+
 use super::raw_vec::RawVec;
 use crate::collections::CollectionAllocErr;
 use crate::Bump;
@@ -206,8 +211,6 @@ where
     let d = isize::wrapping_sub(p as _, origin as _);
     d / (pointee_size as isize)
 }
-
-
 
 
 
@@ -1188,7 +1191,25 @@ impl<'bump, T: 'bump> Vec<'bump, T> {
         self.drain_filter(|x| !f(x));
     }
 
-    fn drain_filter<'a, F>(&'a mut self, filter: F) -> DrainFilter<'a, 'bump, T, F>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn drain_filter<'a, F>(&'a mut self, filter: F) -> DrainFilter<'a, 'bump, T, F>
     where
         F: FnMut(&mut T) -> bool,
     {
@@ -1293,7 +1314,7 @@ impl<'bump, T: 'bump> Vec<'bump, T> {
             self.reserve(1);
         }
         unsafe {
-            let end = self.as_mut_ptr().add(self.len);
+            let end = self.buf.ptr().add(self.len);
             ptr::write(end, value);
             self.len += 1;
         }
@@ -2108,7 +2129,6 @@ impl<'bump, T> Drop for Vec<'bump, T> {
 
 
 
-
 pub struct IntoIter<T> {
     phantom: PhantomData<T>,
     ptr: *const T,
@@ -2235,9 +2255,6 @@ impl<'bump, T: 'bump> FusedIterator for IntoIter<T> {}
 
 
 
-
-
-
 pub struct Drain<'a, 'bump, T: 'a + 'bump> {
     
     tail_start: usize,
@@ -2306,9 +2323,6 @@ impl<'a, 'bump, T> Drop for Drain<'a, 'bump, T> {
 impl<'a, 'bump, T> ExactSizeIterator for Drain<'a, 'bump, T> {}
 
 impl<'a, 'bump, T> FusedIterator for Drain<'a, 'bump, T> {}
-
-
-
 
 
 

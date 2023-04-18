@@ -29,11 +29,13 @@ use core_alloc::alloc::{alloc, dealloc, Layout};
 #[cfg(feature = "allocator_api")]
 use core_alloc::alloc::{AllocError, Allocator};
 
+pub use alloc::AllocErr;
+
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum AllocOrInitError<E> {
     
-    Alloc(alloc::AllocErr),
+    Alloc(AllocErr),
     
     
     
@@ -41,8 +43,8 @@ pub enum AllocOrInitError<E> {
     
     Init(E),
 }
-impl<E> From<alloc::AllocErr> for AllocOrInitError<E> {
-    fn from(e: alloc::AllocErr) -> Self {
+impl<E> From<AllocErr> for AllocOrInitError<E> {
+    fn from(e: AllocErr) -> Self {
         Self::Alloc(e)
     }
 }
@@ -54,6 +56,12 @@ impl<E: Display> Display for AllocOrInitError<E> {
         }
     }
 }
+
+
+
+
+
+
 
 
 
@@ -261,22 +269,65 @@ struct ChunkFooter {
     layout: Layout,
 
     
-    prev: Cell<Option<NonNull<ChunkFooter>>>,
+    
+    
+    
+    prev: Cell<NonNull<ChunkFooter>>,
 
     
     ptr: Cell<NonNull<u8>>,
+}
+
+
+
+
+
+
+#[repr(transparent)]
+struct EmptyChunkFooter(ChunkFooter);
+
+unsafe impl Sync for EmptyChunkFooter {}
+
+static EMPTY_CHUNK: EmptyChunkFooter = EmptyChunkFooter(ChunkFooter {
+    
+    layout: Layout::new::<ChunkFooter>(),
+
+    
+    data: unsafe { NonNull::new_unchecked(&EMPTY_CHUNK as *const EmptyChunkFooter as *mut u8) },
+
+    
+    ptr: Cell::new(unsafe {
+        NonNull::new_unchecked(&EMPTY_CHUNK as *const EmptyChunkFooter as *mut u8)
+    }),
+
+    
+    
+    prev: Cell::new(unsafe {
+        NonNull::new_unchecked(&EMPTY_CHUNK as *const EmptyChunkFooter as *mut ChunkFooter)
+    }),
+});
+
+impl EmptyChunkFooter {
+    fn get(&'static self) -> NonNull<ChunkFooter> {
+        unsafe { NonNull::new_unchecked(&self.0 as *const ChunkFooter as *mut ChunkFooter) }
+    }
 }
 
 impl ChunkFooter {
     
     
     fn as_raw_parts(&self) -> (*const u8, usize) {
-        let data = self.data.as_ptr() as usize;
-        let ptr = self.ptr.get().as_ptr() as usize;
+        let data = self.data.as_ptr() as *const u8;
+        let ptr = self.ptr.get().as_ptr() as *const u8;
         debug_assert!(data <= ptr);
-        debug_assert!(ptr <= self as *const _ as usize);
-        let len = self as *const _ as usize - ptr;
-        (ptr as *const u8, len)
+        debug_assert!(ptr <= self as *const ChunkFooter as *const u8);
+        let len = unsafe { (self as *const ChunkFooter as *const u8).offset_from(ptr) as usize };
+        (ptr, len)
+    }
+
+    
+    fn is_empty(&self) -> bool {
+        ptr::eq(self, EMPTY_CHUNK.get().as_ptr())
     }
 }
 
@@ -289,14 +340,15 @@ impl Default for Bump {
 impl Drop for Bump {
     fn drop(&mut self) {
         unsafe {
-            dealloc_chunk_list(Some(self.current_chunk_footer.get()));
+            dealloc_chunk_list(self.current_chunk_footer.get());
         }
     }
 }
 
 #[inline]
-unsafe fn dealloc_chunk_list(mut footer: Option<NonNull<ChunkFooter>>) {
-    while let Some(f) = footer {
+unsafe fn dealloc_chunk_list(mut footer: NonNull<ChunkFooter>) {
+    while !footer.as_ref().is_empty() {
+        let f = footer;
         footer = f.as_ref().prev.get();
         dealloc(f.as_ref().data.as_ptr(), f.as_ref().layout);
     }
@@ -313,6 +365,13 @@ pub(crate) fn round_up_to(n: usize, divisor: usize) -> Option<usize> {
     debug_assert!(divisor > 0);
     debug_assert!(divisor.is_power_of_two());
     Some(n.checked_add(divisor - 1)? & !(divisor - 1))
+}
+
+#[inline]
+pub(crate) fn round_down_to(n: usize, divisor: usize) -> usize {
+    debug_assert!(divisor > 0);
+    debug_assert!(divisor.is_power_of_two());
+    n & !(divisor - 1)
 }
 
 
@@ -384,7 +443,7 @@ impl Bump {
     
     
     
-    pub fn try_new() -> Result<Bump, alloc::AllocErr> {
+    pub fn try_new() -> Result<Bump, AllocErr> {
         Bump::try_with_capacity(0)
     }
 
@@ -408,13 +467,19 @@ impl Bump {
     
     
     
-    pub fn try_with_capacity(capacity: usize) -> Result<Self, alloc::AllocErr> {
+    pub fn try_with_capacity(capacity: usize) -> Result<Self, AllocErr> {
+        if capacity == 0 {
+            return Ok(Bump {
+                current_chunk_footer: Cell::new(EMPTY_CHUNK.get()),
+            });
+        }
+
         let chunk_footer = Self::new_chunk(
             None,
-            Some(unsafe { layout_from_size_align(capacity, 1) }),
-            None,
+            unsafe { layout_from_size_align(capacity, 1) },
+            EMPTY_CHUNK.get(),
         )
-        .ok_or(alloc::AllocErr {})?;
+        .ok_or(AllocErr)?;
 
         Ok(Bump {
             current_chunk_footer: Cell::new(chunk_footer),
@@ -428,8 +493,8 @@ impl Bump {
     
     fn new_chunk(
         new_size_without_footer: Option<usize>,
-        requested_layout: Option<Layout>,
-        prev: Option<NonNull<ChunkFooter>>,
+        requested_layout: Layout,
+        prev: NonNull<ChunkFooter>,
     ) -> Option<NonNull<ChunkFooter>> {
         unsafe {
             let mut new_size_without_footer =
@@ -440,12 +505,10 @@ impl Bump {
 
             
             
-            if let Some(requested_layout) = requested_layout {
-                align = align.max(requested_layout.align());
-                let requested_size = round_up_to(requested_layout.size(), align)
-                    .unwrap_or_else(allocation_size_overflow);
-                new_size_without_footer = new_size_without_footer.max(requested_size);
-            }
+            align = align.max(requested_layout.align());
+            let requested_size = round_up_to(requested_layout.size(), align)
+                .unwrap_or_else(allocation_size_overflow);
+            new_size_without_footer = new_size_without_footer.max(requested_size);
 
             
             
@@ -469,15 +532,15 @@ impl Bump {
                 .unwrap_or_else(allocation_size_overflow);
             let layout = layout_from_size_align(size, align);
 
-            debug_assert!(requested_layout.map_or(true, |layout| size >= layout.size()));
+            debug_assert!(size >= requested_layout.size());
 
             let data = alloc(layout);
             let data = NonNull::new(data)?;
 
             
-            let footer_ptr = data.as_ptr() as usize + new_size_without_footer;
+            let footer_ptr = data.as_ptr().add(new_size_without_footer);
             debug_assert_eq!((data.as_ptr() as usize) % align, 0);
-            debug_assert_eq!(footer_ptr % CHUNK_ALIGN, 0);
+            debug_assert_eq!(footer_ptr as usize % CHUNK_ALIGN, 0);
             let footer_ptr = footer_ptr as *mut ChunkFooter;
 
             
@@ -529,15 +592,18 @@ impl Bump {
     
     
     
-    
     pub fn reset(&mut self) {
         
         
         unsafe {
+            if self.current_chunk_footer.get().as_ref().is_empty() {
+                return;
+            }
+
             let cur_chunk = self.current_chunk_footer.get();
 
             
-            let prev_chunk = cur_chunk.as_ref().prev.replace(None);
+            let prev_chunk = cur_chunk.as_ref().prev.replace(EMPTY_CHUNK.get());
             dealloc_chunk_list(prev_chunk);
 
             
@@ -549,7 +615,8 @@ impl Bump {
                     .as_ref()
                     .prev
                     .get()
-                    .is_none(),
+                    .as_ref()
+                    .is_empty(),
                 "We should only have a single chunk"
             );
             debug_assert_eq!(
@@ -596,7 +663,7 @@ impl Bump {
     
     #[inline(always)]
     #[allow(clippy::mut_from_ref)]
-    pub fn try_alloc<T>(&self, val: T) -> Result<&mut T, alloc::AllocErr> {
+    pub fn try_alloc<T>(&self, val: T) -> Result<&mut T, AllocErr> {
         self.try_alloc_with(|| val)
     }
 
@@ -674,7 +741,7 @@ impl Bump {
     
     #[inline(always)]
     #[allow(clippy::mut_from_ref)]
-    pub fn try_alloc_with<F, T>(&self, f: F) -> Result<&mut T, alloc::AllocErr>
+    pub fn try_alloc_with<F, T>(&self, f: F) -> Result<&mut T, AllocErr>
     where
         F: FnOnce() -> T,
     {
@@ -708,6 +775,10 @@ impl Bump {
         }
     }
 
+    
+    
+    
+    
     
     
     
@@ -812,6 +883,10 @@ impl Bump {
         }
     }
 
+    
+    
+    
+    
     
     
     
@@ -1143,6 +1218,8 @@ impl Bump {
     
     
     
+    
+    
     #[inline(always)]
     #[allow(clippy::mut_from_ref)]
     pub fn alloc_slice_fill_default<T: Default>(&self, len: usize) -> &mut [T] {
@@ -1174,11 +1251,11 @@ impl Bump {
     
     
     #[inline(always)]
-    pub fn try_alloc_layout(&self, layout: Layout) -> Result<NonNull<u8>, alloc::AllocErr> {
+    pub fn try_alloc_layout(&self, layout: Layout) -> Result<NonNull<u8>, AllocErr> {
         if let Some(p) = self.try_alloc_layout_fast(layout) {
             Ok(p)
         } else {
-            self.alloc_layout_slow(layout).ok_or(alloc::AllocErr {})
+            self.alloc_layout_slow(layout).ok_or(AllocErr)
         }
     }
 
@@ -1191,13 +1268,18 @@ impl Bump {
         unsafe {
             let footer = self.current_chunk_footer.get();
             let footer = footer.as_ref();
-            let ptr = footer.ptr.get().as_ptr() as usize;
-            let start = footer.data.as_ptr() as usize;
+            let ptr = footer.ptr.get().as_ptr();
+            let start = footer.data.as_ptr();
             debug_assert!(start <= ptr);
-            debug_assert!(ptr <= footer as *const _ as usize);
+            debug_assert!(ptr as *const u8 <= footer as *const _ as *const u8);
 
-            let ptr = ptr.checked_sub(layout.size())?;
-            let aligned_ptr = ptr & !(layout.align() - 1);
+            if (ptr as usize) < layout.size() {
+                return None;
+            }
+
+            let ptr = ptr.wrapping_sub(layout.size());
+            let rem = ptr as usize % layout.align();
+            let aligned_ptr = ptr.wrapping_sub(rem);
 
             if aligned_ptr >= start {
                 let aligned_ptr = NonNull::new_unchecked(aligned_ptr as *mut u8);
@@ -1258,7 +1340,7 @@ impl Bump {
             });
 
             let new_footer = sizes
-                .filter_map(|size| Bump::new_chunk(Some(size), Some(layout), Some(current_footer)))
+                .filter_map(|size| Bump::new_chunk(Some(size), layout, current_footer))
                 .next()?;
 
             debug_assert_eq!(
@@ -1274,14 +1356,14 @@ impl Bump {
             
             
             
-            let ptr = new_footer.ptr.get().as_ptr() as usize - size;
+            let mut ptr = new_footer.ptr.get().as_ptr().sub(size);
             
-            let ptr = ptr & !(layout.align() - 1);
+            ptr = ptr.sub(ptr as usize % layout.align());
             debug_assert!(
-                ptr <= new_footer as *const _ as usize,
-                "{:#x} <= {:#x}",
+                ptr as *const _ <= new_footer,
+                "{:p} <= {:p}",
                 ptr,
-                new_footer as *const _ as usize
+                new_footer
             );
             let ptr = NonNull::new_unchecked(ptr as *mut u8);
             new_footer.ptr.set(ptr);
@@ -1402,7 +1484,7 @@ impl Bump {
     
     pub unsafe fn iter_allocated_chunks_raw(&self) -> ChunkRawIter<'_> {
         ChunkRawIter {
-            footer: Some(self.current_chunk_footer.get()),
+            footer: self.current_chunk_footer.get(),
             bump: PhantomData,
         }
     }
@@ -1426,19 +1508,21 @@ impl Bump {
     
     
     pub fn allocated_bytes(&self) -> usize {
-        let mut footer = Some(self.current_chunk_footer.get());
+        let mut footer = self.current_chunk_footer.get();
 
         let mut bytes = 0;
 
-        while let Some(f) = footer {
-            let foot = unsafe { f.as_ref() };
+        unsafe {
+            while !footer.as_ref().is_empty() {
+                let foot = footer.as_ref();
 
-            let ptr = foot.ptr.get().as_ptr() as usize;
-            debug_assert!(ptr <= foot as *const _ as usize);
+                let ptr = foot.ptr.get().as_ptr() as usize;
+                debug_assert!(ptr <= foot as *const _ as usize);
 
-            bytes += foot as *const _ as usize - ptr;
+                bytes += foot as *const _ as usize - ptr;
 
-            footer = foot.prev.get();
+                footer = foot.prev.get();
+            }
         }
 
         bytes
@@ -1465,26 +1549,39 @@ impl Bump {
     unsafe fn shrink(
         &self,
         ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
-    ) -> Result<NonNull<u8>, alloc::AllocErr> {
-        let old_size = layout.size();
+        old_layout: Layout,
+        new_layout: Layout,
+    ) -> Result<NonNull<u8>, AllocErr> {
+        let old_size = old_layout.size();
+        let new_size = new_layout.size();
+        let align_is_compatible = old_layout.align() >= new_layout.align();
+
+        if !align_is_compatible {
+            return Err(AllocErr);
+        }
+
+        
+        
+        let delta = round_down_to(old_size - new_size, new_layout.align());
+
         if self.is_last_allocation(ptr)
                 
                 
                 
-                && new_size <= old_size / 2
+                && delta >= old_size / 2
         {
-            let delta = old_size - new_size;
             let footer = self.current_chunk_footer.get();
             let footer = footer.as_ref();
-            footer
-                .ptr
-                .set(NonNull::new_unchecked(footer.ptr.get().as_ptr().add(delta)));
-            let new_ptr = footer.ptr.get();
+
+            
+            
+            let new_ptr = NonNull::new_unchecked(footer.ptr.get().as_ptr().add(delta));
+            footer.ptr.set(new_ptr);
+
             
             
             ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_ptr(), new_size);
+
             return Ok(new_ptr);
         } else {
             return Ok(ptr);
@@ -1495,16 +1592,19 @@ impl Bump {
     unsafe fn grow(
         &self,
         ptr: NonNull<u8>,
-        layout: Layout,
-        new_size: usize,
-    ) -> Result<NonNull<u8>, alloc::AllocErr> {
-        let old_size = layout.size();
-        if self.is_last_allocation(ptr) {
+        old_layout: Layout,
+        new_layout: Layout,
+    ) -> Result<NonNull<u8>, AllocErr> {
+        let old_size = old_layout.size();
+        let new_size = new_layout.size();
+        let align_is_compatible = old_layout.align() >= new_layout.align();
+
+        if align_is_compatible && self.is_last_allocation(ptr) {
             
             
             let delta = new_size - old_size;
             if let Some(p) =
-                self.try_alloc_layout_fast(layout_from_size_align(delta, layout.align()))
+                self.try_alloc_layout_fast(layout_from_size_align(delta, old_layout.align()))
             {
                 ptr::copy(ptr.as_ptr(), p.as_ptr(), old_size);
                 return Ok(p);
@@ -1512,7 +1612,6 @@ impl Bump {
         }
 
         
-        let new_layout = layout_from_size_align(new_size, layout.align());
         let new_ptr = self.try_alloc_layout(new_layout)?;
         ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_ptr(), old_size);
         Ok(new_ptr)
@@ -1565,7 +1664,7 @@ impl<'a> iter::FusedIterator for ChunkIter<'a> {}
 
 #[derive(Debug)]
 pub struct ChunkRawIter<'a> {
-    footer: Option<NonNull<ChunkFooter>>,
+    footer: NonNull<ChunkFooter>,
     bump: PhantomData<&'a Bump>,
 }
 
@@ -1573,8 +1672,10 @@ impl Iterator for ChunkRawIter<'_> {
     type Item = (*mut u8, usize);
     fn next(&mut self) -> Option<(*mut u8, usize)> {
         unsafe {
-            let foot = self.footer?;
-            let foot = foot.as_ref();
+            let foot = self.footer.as_ref();
+            if foot.is_empty() {
+                return None;
+            }
             let (ptr, len) = foot.as_raw_parts();
             self.footer = foot.prev.get();
             Some((ptr as *mut u8, len))
@@ -1592,7 +1693,7 @@ fn oom() -> ! {
 
 unsafe impl<'a> alloc::Alloc for &'a Bump {
     #[inline(always)]
-    unsafe fn alloc(&mut self, layout: Layout) -> Result<NonNull<u8>, alloc::AllocErr> {
+    unsafe fn alloc(&mut self, layout: Layout) -> Result<NonNull<u8>, AllocErr> {
         self.try_alloc_layout(layout)
     }
 
@@ -1607,17 +1708,18 @@ unsafe impl<'a> alloc::Alloc for &'a Bump {
         ptr: NonNull<u8>,
         layout: Layout,
         new_size: usize,
-    ) -> Result<NonNull<u8>, alloc::AllocErr> {
+    ) -> Result<NonNull<u8>, AllocErr> {
         let old_size = layout.size();
 
         if old_size == 0 {
             return self.try_alloc_layout(layout);
         }
 
+        let new_layout = layout_from_size_align(new_size, layout.align());
         if new_size <= old_size {
-            self.shrink(ptr, layout, new_size)
+            self.shrink(ptr, layout, new_layout)
         } else {
-            self.grow(ptr, layout, new_size)
+            self.grow(ptr, layout, new_layout)
         }
     }
 }
@@ -1640,9 +1742,8 @@ unsafe impl<'a> Allocator for &'a Bump {
         old_layout: Layout,
         new_layout: Layout,
     ) -> Result<NonNull<[u8]>, AllocError> {
-        let new_size = new_layout.size();
-        Bump::shrink(self, ptr, old_layout, new_size)
-            .map(|p| NonNull::slice_from_raw_parts(p, new_size))
+        Bump::shrink(self, ptr, old_layout, new_layout)
+            .map(|p| NonNull::slice_from_raw_parts(p, new_layout.size()))
             .map_err(|_| AllocError)
     }
 
@@ -1652,9 +1753,8 @@ unsafe impl<'a> Allocator for &'a Bump {
         old_layout: Layout,
         new_layout: Layout,
     ) -> Result<NonNull<[u8]>, AllocError> {
-        let new_size = new_layout.size();
-        Bump::grow(self, ptr, old_layout, new_size)
-            .map(|p| NonNull::slice_from_raw_parts(p, new_size))
+        Bump::grow(self, ptr, old_layout, new_layout)
+            .map(|p| NonNull::slice_from_raw_parts(p, new_layout.size()))
             .map_err(|_| AllocError)
     }
 
