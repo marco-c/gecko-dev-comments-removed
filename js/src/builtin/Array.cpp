@@ -898,6 +898,26 @@ static inline bool ObjectMayHaveExtraIndexedOwnProperties(JSObject* obj) {
                            obj->getClass(), PropertyKey::Int(0), obj);
 }
 
+bool js::PrototypeMayHaveIndexedProperties(NativeObject* obj) {
+  do {
+    MOZ_ASSERT(obj->hasStaticPrototype(),
+               "dynamic-prototype objects must be non-native");
+
+    JSObject* proto = obj->staticPrototype();
+    if (!proto) {
+      return false;  
+    }
+
+    if (ObjectMayHaveExtraIndexedOwnProperties(proto)) {
+      return true;
+    }
+    obj = &proto->as<NativeObject>();
+    if (obj->getDenseInitializedLength() != 0) {
+      return true;
+    }
+  } while (true);
+}
+
 
 
 
@@ -910,23 +930,7 @@ bool js::ObjectMayHaveExtraIndexedProperties(JSObject* obj) {
     return true;
   }
 
-  do {
-    MOZ_ASSERT(obj->hasStaticPrototype(),
-               "dynamic-prototype objects must be non-native, ergo must "
-               "have failed ObjectMayHaveExtraIndexedOwnProperties");
-
-    obj = obj->staticPrototype();
-    if (!obj) {
-      return false;  
-    }
-
-    if (ObjectMayHaveExtraIndexedOwnProperties(obj)) {
-      return true;
-    }
-    if (obj->as<NativeObject>().getDenseInitializedLength() != 0) {
-      return true;
-    }
-  } while (true);
+  return PrototypeMayHaveIndexedProperties(&obj->as<NativeObject>());
 }
 
 static Shape* AddLengthProperty(JSContext* cx, HandleShape shape) {
