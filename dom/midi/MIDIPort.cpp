@@ -163,6 +163,10 @@ void MIDIPort::Notify(const void_t& aVoid) {
 }
 
 void MIDIPort::FireStateChangeEvent() {
+  if (!GetOwner()) {
+    return;  
+  }
+
   StateChange();
 
   MOZ_ASSERT(mPort);
