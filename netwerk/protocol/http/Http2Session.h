@@ -30,8 +30,10 @@ namespace mozilla {
 namespace net {
 
 class Http2PushedStream;
-class Http2Stream;
+class Http2StreamBase;
 class nsHttpTransaction;
+
+enum Http2StreamBaseType { Normal, WebSocket, Tunnel, ServerPush };
 
 
 #define NS_HTTP2SESSION_IID                          \
@@ -78,7 +80,7 @@ class Http2Session final : public ASpdySession,
   PRIntervalTime IdleTime() override;
 
   
-  uint32_t RegisterStreamID(Http2Stream*, uint32_t aNewID = 0);
+  uint32_t RegisterStreamID(Http2StreamBase*, uint32_t aNewID = 0);
 
   
 
@@ -224,7 +226,7 @@ class Http2Session final : public ASpdySession,
                          uint8_t frameFlags, uint32_t streamID);
 
   
-  static void LogIO(Http2Session*, Http2Stream*, const char*, const char*,
+  static void LogIO(Http2Session*, Http2StreamBase*, const char*, const char*,
                     uint32_t);
 
   
@@ -232,7 +234,7 @@ class Http2Session final : public ASpdySession,
   void TransactionHasDataToRecv(nsAHttpTransaction*) override;
 
   
-  void TransactionHasDataToWrite(Http2Stream*);
+  void TransactionHasDataToWrite(Http2StreamBase*);
 
   
   [[nodiscard]] virtual nsresult CommitToSegmentSize(
@@ -245,9 +247,9 @@ class Http2Session final : public ASpdySession,
 
   uint32_t GetServerInitialStreamWindow() { return mServerInitialStreamWindow; }
 
-  [[nodiscard]] bool TryToActivate(Http2Stream* stream);
-  void ConnectPushedStream(Http2Stream* stream);
-  void ConnectSlowConsumer(Http2Stream* stream);
+  [[nodiscard]] bool TryToActivate(Http2StreamBase* stream);
+  void ConnectPushedStream(Http2StreamBase* stream);
+  void ConnectSlowConsumer(Http2StreamBase* stream);
 
   [[nodiscard]] nsresult ConfirmTLSProfile();
   [[nodiscard]] static bool ALPNCallback(nsISupports* securityInfo);
@@ -309,6 +311,9 @@ class Http2Session final : public ASpdySession,
 
   static const uint8_t kMagicHello[24];
 
+  void CreateStream(nsAHttpTransaction* aHttpTransaction, int32_t aPriority,
+                    Http2StreamBaseType streamType);
+
   [[nodiscard]] nsresult ResponseHeadersComplete();
   uint32_t GetWriteQueueSize();
   void ChangeDownstreamState(enum internalStateType);
@@ -320,38 +325,38 @@ class Http2Session final : public ASpdySession,
   void GeneratePriority(uint32_t, uint8_t);
   void GenerateRstStream(uint32_t, uint32_t);
   void GenerateGoAway(uint32_t);
-  void CleanupStream(Http2Stream*, nsresult, errorType);
+  void CleanupStream(Http2StreamBase*, nsresult, errorType);
   void CleanupStream(uint32_t, nsresult, errorType);
-  void CloseStream(Http2Stream*, nsresult);
+  void CloseStream(Http2StreamBase*, nsresult);
   void SendHello();
-  void RemoveStreamFromQueues(Http2Stream*);
+  void RemoveStreamFromQueues(Http2StreamBase*);
   [[nodiscard]] nsresult ParsePadding(uint8_t&, uint16_t&);
 
   void SetWriteCallbacks();
   void RealignOutputQueue();
 
   void ProcessPending();
-  [[nodiscard]] nsresult ProcessConnectedPush(Http2Stream*,
+  [[nodiscard]] nsresult ProcessConnectedPush(Http2StreamBase*,
                                               nsAHttpSegmentWriter*, uint32_t,
                                               uint32_t*);
-  [[nodiscard]] nsresult ProcessSlowConsumer(Http2Stream*,
+  [[nodiscard]] nsresult ProcessSlowConsumer(Http2StreamBase*,
                                              nsAHttpSegmentWriter*, uint32_t,
                                              uint32_t*);
 
   [[nodiscard]] nsresult SetInputFrameDataStream(uint32_t);
   void CreatePriorityNode(uint32_t, uint32_t, uint8_t, const char*);
   char* CreatePriorityFrame(uint32_t, uint32_t, uint8_t);
-  bool VerifyStream(Http2Stream*, uint32_t);
+  bool VerifyStream(Http2StreamBase*, uint32_t);
   void SetNeedsCleanup();
 
-  void UpdateLocalRwin(Http2Stream* stream, uint32_t bytes);
-  void UpdateLocalStreamWindow(Http2Stream* stream, uint32_t bytes);
+  void UpdateLocalRwin(Http2StreamBase* stream, uint32_t bytes);
+  void UpdateLocalStreamWindow(Http2StreamBase* stream, uint32_t bytes);
   void UpdateLocalSessionWindow(uint32_t bytes);
 
-  void MaybeDecrementConcurrent(Http2Stream* stream);
+  void MaybeDecrementConcurrent(Http2StreamBase* stream);
   bool RoomForMoreConcurrent();
-  void IncrementConcurrent(Http2Stream* stream);
-  void QueueStream(Http2Stream* stream);
+  void IncrementConcurrent(Http2StreamBase* stream);
+  void QueueStream(Http2StreamBase* stream);
 
   
   
@@ -388,14 +393,14 @@ class Http2Session final : public ASpdySession,
   
   
   
-  nsTHashMap<nsUint32HashKey, Http2Stream*> mStreamIDHash;
-  nsRefPtrHashtable<nsPtrHashKey<nsAHttpTransaction>, Http2Stream>
+  nsTHashMap<nsUint32HashKey, Http2StreamBase*> mStreamIDHash;
+  nsRefPtrHashtable<nsPtrHashKey<nsAHttpTransaction>, Http2StreamBase>
       mStreamTransactionHash;
 
-  nsTArray<WeakPtr<Http2Stream>> mReadyForWrite;
-  nsTArray<WeakPtr<Http2Stream>> mQueuedStreams;
-  nsTArray<WeakPtr<Http2Stream>> mPushesReadyForRead;
-  nsTArray<WeakPtr<Http2Stream>> mSlowConsumersReadyForRead;
+  nsTArray<WeakPtr<Http2StreamBase>> mReadyForWrite;
+  nsTArray<WeakPtr<Http2StreamBase>> mQueuedStreams;
+  nsTArray<WeakPtr<Http2StreamBase>> mPushesReadyForRead;
+  nsTArray<WeakPtr<Http2StreamBase>> mSlowConsumersReadyForRead;
   nsTArray<Http2PushedStream*> mPushedStreams;
 
   
@@ -430,14 +435,14 @@ class Http2Session final : public ASpdySession,
   
   
   
-  Http2Stream* mInputFrameDataStream;
+  Http2StreamBase* mInputFrameDataStream;
 
   
   
   
   
   
-  Http2Stream* mNeedsCleanup;
+  Http2StreamBase* mNeedsCleanup;
 
   
   uint32_t mDownstreamRstReason;
@@ -538,7 +543,7 @@ class Http2Session final : public ASpdySession,
   bool mPreviousUsed;                     
 
   
-  nsDeque<Http2Stream> mGoAwayStreamsToRestart;
+  nsDeque<Http2StreamBase> mGoAwayStreamsToRestart;
 
   
   
@@ -559,10 +564,10 @@ class Http2Session final : public ASpdySession,
 
   bool mAttemptingEarlyData;
   
-  nsTArray<WeakPtr<Http2Stream>> m0RTTStreams;
+  nsTArray<WeakPtr<Http2StreamBase>> m0RTTStreams;
   
   
-  nsTArray<WeakPtr<Http2Stream>> mCannotDo0RTTStreams;
+  nsTArray<WeakPtr<Http2StreamBase>> mCannotDo0RTTStreams;
 
   bool RealJoinConnection(const nsACString& hostname, int32_t port,
                           bool justKidding);
@@ -589,8 +594,8 @@ class Http2Session final : public ASpdySession,
   void DispatchOnTunnel(nsAHttpTransaction*, nsIInterfaceRequestor*);
   void CreateTunnel(nsHttpTransaction*, nsHttpConnectionInfo*,
                     nsIInterfaceRequestor*);
-  void RegisterTunnel(Http2Stream*);
-  void UnRegisterTunnel(Http2Stream*);
+  void RegisterTunnel(Http2StreamBase*);
+  void UnRegisterTunnel(Http2StreamBase*);
   uint32_t FindTunnelCount(nsHttpConnectionInfo*);
   uint32_t FindTunnelCount(nsCString const&);
   nsTHashMap<nsCStringHashKey, uint32_t> mTunnelHash;

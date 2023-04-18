@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef mozilla_net_Http2StreamWebSocket_h
+#define mozilla_net_Http2StreamWebSocket_h
+
+#include "Http2StreamBase.h"
+
+namespace mozilla {
+namespace net {
+
+class Http2StreamWebSocket : public Http2StreamBase {
+ public:
+  Http2StreamWebSocket(nsAHttpTransaction* httpTransaction,
+                       Http2Session* session, int32_t priority, uint64_t bcId)
+      : Http2StreamBase(httpTransaction, session, priority, bcId) {}
+};
+
+}  
+}  
+
+#endif  
