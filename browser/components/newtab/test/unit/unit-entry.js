@@ -74,6 +74,14 @@ class Logger {
   warn() {}
 }
 
+function ConsoleAPI() {}
+ConsoleAPI.prototype.debug = () => {};
+ConsoleAPI.prototype.trace = () => {};
+
+
+
+
+
 
 
 
@@ -117,6 +125,9 @@ const TEST_GLOBAL = {
     },
     platform: "win",
   },
+  ASRouterPreferences: {
+    console: new ConsoleAPI(),
+  },
   UpdateUtils: { getUpdateChannel() {} },
   BasePromiseWorker: class {
     constructor() {
@@ -154,6 +165,7 @@ const TEST_GLOBAL = {
     },
     isSuccessCode: () => true,
   },
+  ConsoleAPI,
   
   
   ContentSearchUIController: function() {},
