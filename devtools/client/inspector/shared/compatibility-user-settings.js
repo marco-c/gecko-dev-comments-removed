@@ -30,7 +30,13 @@ const TARGET_BROWSER_PREF = "devtools.inspector.compatibility.target-browsers";
 
 
 
-async function getDefaultTargetBrowsers() {
+
+
+
+
+
+
+async function getBrowsersList() {
   const records = await RemoteSettings("devtools-compatibility-browsers", {
     filterFunc: record => {
       if (
@@ -80,17 +86,53 @@ async function getDefaultTargetBrowsers() {
 
 
 
+
+
+
+
+
 async function getTargetBrowsers() {
   const targetsString = Services.prefs.getCharPref(TARGET_BROWSER_PREF, "");
-  return targetsString ? JSON.parse(targetsString) : getDefaultTargetBrowsers();
+  const browsers = await getBrowsersList();
+
+  
+  
+  if (!targetsString) {
+    return browsers;
+  }
+
+  const selectedBrowsersAndStatuses = JSON.parse(targetsString);
+  return browsers.filter(
+    browser =>
+      !!selectedBrowsersAndStatuses.find(
+        ({ id, status }) => browser.id == id && browser.status == status
+      )
+  );
 }
 
-function setTargetBrowsers(targets) {
-  Services.prefs.setCharPref(TARGET_BROWSER_PREF, JSON.stringify(targets));
+
+
+
+
+
+
+
+
+function setTargetBrowsers(browsers) {
+  Services.prefs.setCharPref(
+    TARGET_BROWSER_PREF,
+    JSON.stringify(
+      
+      browsers.map(browser => ({
+        id: browser.id,
+        status: browser.status,
+      }))
+    )
+  );
 }
 
 module.exports = {
-  getDefaultTargetBrowsers,
+  getBrowsersList,
   getTargetBrowsers,
   setTargetBrowsers,
 };
