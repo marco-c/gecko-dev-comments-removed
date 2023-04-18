@@ -13,9 +13,30 @@
 #ifndef BaseAndGeckoProfilerDetail_h
 #define BaseAndGeckoProfilerDetail_h
 
+#include "mozilla/BaseProfilerUtils.h"
+#include "mozilla/Span.h"
+#include "mozilla/Types.h"
+
 namespace mozilla::profiler::detail {
 
-;  
+
+[[nodiscard]] MFBT_API bool FilterHasPid(
+    const char* aFilter, baseprofiler::BaseProfilerProcessId aPid =
+                             baseprofiler::profiler_current_process_id());
+
+
+
+
+
+
+
+
+
+
+[[nodiscard]] MFBT_API bool FiltersExcludePid(
+    Span<const char* const> aFilters,
+    baseprofiler::BaseProfilerProcessId aPid =
+        baseprofiler::profiler_current_process_id());
 
 }  
 
