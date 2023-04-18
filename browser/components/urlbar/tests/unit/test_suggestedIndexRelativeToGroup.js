@@ -9,33 +9,33 @@ const MAX_RESULTS = 10;
 const RESULT_GROUPS_PREF = "browser.urlbar.resultGroups";
 const MAX_RICH_RESULTS_PREF = "browser.urlbar.maxRichResults";
 
+
+const RESULT_GROUPS = {
+  children: [
+    {
+      group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+      flexChildren: true,
+      children: [
+        {
+          flex: 1,
+          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+        },
+        {
+          flex: 1,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        },
+        {
+          flex: 1,
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+        },
+      ],
+    },
+  ],
+};
+
 add_task(async function test() {
   
   Services.prefs.setIntPref(MAX_RICH_RESULTS_PREF, MAX_RESULTS);
-
-  
-  setResultGroups({
-    children: [
-      {
-        group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
-        flexChildren: true,
-        children: [
-          {
-            flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
-          },
-          {
-            flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.GENERAL,
-          },
-          {
-            flex: 1,
-            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
-          },
-        ],
-      },
-    ],
-  });
 
   
   
@@ -45,6 +45,11 @@ add_task(async function test() {
     ...makeRemoteSuggestionResults(),
   ];
 
+  
+  
+  
+  
+  
   
   
   
@@ -305,15 +310,166 @@ add_task(async function test() {
         },
       ],
     },
+
+    {
+      desc: "Results in sibling group, no other results in same group",
+      otherResults: makeFormHistoryResults(),
+      suggestedIndexResults: [
+        {
+          suggestedIndex: -1,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+        },
+      ],
+      expected: [
+        {
+          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+          count: 9,
+        },
+        {
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          suggestedIndex: -1,
+        },
+      ],
+    },
+
+    {
+      desc:
+        "Results in sibling group, no other results in same group, has child group",
+      resultGroups: {
+        flexChildren: true,
+        children: [
+          {
+            flex: 2,
+            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          },
+          {
+            flex: 1,
+            group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+            children: [{ group: UrlbarUtils.RESULT_GROUP.GENERAL }],
+          },
+        ],
+      },
+      otherResults: makeRemoteSuggestionResults(),
+      suggestedIndexResults: [
+        {
+          suggestedIndex: -1,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+        },
+      ],
+      expected: [
+        {
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          count: 9,
+        },
+        {
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          suggestedIndex: -1,
+        },
+      ],
+    },
+
+    {
+      desc: "Complex group nesting with global suggestedIndex with resultSpan",
+      resultGroups: {
+        children: [
+          {
+            maxResultCount: 1,
+            children: [{ group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST }],
+          },
+          {
+            flexChildren: true,
+            children: [
+              {
+                flex: 2,
+                group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+              },
+              {
+                flex: 1,
+                group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+                children: [{ group: UrlbarUtils.RESULT_GROUP.GENERAL }],
+              },
+            ],
+          },
+        ],
+      },
+      otherResults: [
+        
+        Object.assign(
+          new UrlbarResult(
+            UrlbarUtils.RESULT_TYPE.SEARCH,
+            UrlbarUtils.RESULT_SOURCE.SEARCH,
+            {
+              engine: "test",
+              suggestion: "foo",
+              lowerCaseSuggestion: "foo",
+            }
+          ),
+          {
+            heuristic: true,
+            group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
+          }
+        ),
+        
+        Object.assign(
+          new UrlbarResult(
+            UrlbarUtils.RESULT_TYPE.SEARCH,
+            UrlbarUtils.RESULT_SOURCE.SEARCH,
+            {
+              engine: "test",
+            }
+          ),
+          {
+            suggestedIndex: 1,
+            resultSpan: 2,
+          }
+        ),
+        
+        ...makeRemoteSuggestionResults(),
+      ],
+      suggestedIndexResults: [
+        {
+          suggestedIndex: -1,
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+        },
+      ],
+      expected: [
+        {
+          group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
+          count: 1,
+        },
+        {
+          group: UrlbarUtils.RESULT_GROUP.SUGGESTED_INDEX,
+          suggestedIndex: 1,
+          resultSpan: 2,
+          count: 1,
+        },
+        {
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          count: 6,
+        },
+        {
+          group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+          suggestedIndex: -1,
+        },
+      ],
+    },
   ];
 
   let controller = UrlbarTestUtils.newMockController();
 
-  for (let { desc, suggestedIndexResults, expected } of tests) {
+  for (let {
+    desc,
+    suggestedIndexResults,
+    expected,
+    resultGroups,
+    otherResults,
+  } of tests) {
     info(`Running test: ${desc}`);
 
+    setResultGroups(resultGroups || RESULT_GROUPS);
+
     
-    let results = basicResults.concat(
+    let results = (otherResults || basicResults).concat(
       makeSuggestedIndexResults(suggestedIndexResults)
     );
     let provider = registerBasicTestProvider(results);

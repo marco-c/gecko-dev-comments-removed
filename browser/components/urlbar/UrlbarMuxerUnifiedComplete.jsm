@@ -207,14 +207,11 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
 
 
-
-
-
-  _fillGroup(group, limits, state, flexDataArray = null) {
+  _fillGroup(group, limits, state) {
+    
     
     let suggestedIndexResults;
     if ("group" in group) {
-      
       suggestedIndexResults = state.suggestedIndexResultsByGroup.get(
         group.group
       );
@@ -225,6 +222,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
           sum += UrlbarUtils.getSpanForResult(result);
           return sum;
         }, 0);
+        limits = { ...limits };
         limits.availableSpan = Math.max(limits.availableSpan - span, 0);
         limits.maxResultCount = Math.max(
           limits.maxResultCount - suggestedIndexResults.length,
@@ -234,14 +232,42 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     }
 
     
-    if (!group.children) {
-      let [results, ...rest] = this._addResults(group.group, limits, state);
-      if (suggestedIndexResults) {
-        this._addSuggestedIndexResults(suggestedIndexResults, results, state);
+    
+    let [results, usedLimits, hasMoreResults] = group.children
+      ? this._fillGroupChildren(group, limits, state)
+      : this._addResults(group.group, limits, state);
+
+    
+    if (suggestedIndexResults) {
+      let suggestedIndexUsedLimits = this._addSuggestedIndexResults(
+        suggestedIndexResults,
+        results,
+        state
+      );
+      for (let [key, value] of Object.entries(suggestedIndexUsedLimits)) {
+        usedLimits[key] += value;
       }
-      return [results, ...rest];
     }
 
+    return [results, usedLimits, hasMoreResults];
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _fillGroupChildren(group, limits, state, flexDataArray = null) {
     
     
     
@@ -320,7 +346,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     
     
     if (anyChildUnderfilled && anyChildHasMoreResults) {
-      [results, usedLimits, anyChildHasMoreResults] = this._fillGroup(
+      [results, usedLimits, anyChildHasMoreResults] = this._fillGroupChildren(
         group,
         limits,
         stateCopy,
@@ -331,10 +357,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       for (let [key, value] of Object.entries(stateCopy)) {
         state[key] = value;
       }
-    }
-
-    if (suggestedIndexResults) {
-      this._addSuggestedIndexResults(suggestedIndexResults, results, state);
     }
 
     return [results, usedLimits, anyChildHasMoreResults];
@@ -520,10 +542,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
 
   _addResults(groupConst, limits, state) {
-    
-    
-    limits = { ...limits };
-
     let usedLimits = {};
     for (let key of Object.keys(limits)) {
       usedLimits[key] = 0;
@@ -537,6 +555,8 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       groupConst == UrlbarUtils.RESULT_GROUP.FORM_HISTORY &&
       !UrlbarPrefs.get("maxHistoricalSearchSuggestions")
     ) {
+      
+      limits = { ...limits };
       limits.maxResultCount = 0;
     }
 
@@ -1038,10 +1058,18 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
 
 
+
+
+
   _addSuggestedIndexResults(suggestedIndexResults, sortedResults, state) {
+    let usedLimits = {
+      availableSpan: 0,
+      maxResultCount: 0,
+    };
+
     if (!suggestedIndexResults?.length) {
       
-      return;
+      return usedLimits;
     }
 
     
@@ -1075,10 +1103,14 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
               ? Math.min(result.suggestedIndex, sortedResults.length)
               : Math.max(result.suggestedIndex + sortedResults.length + 1, 0);
           sortedResults.splice(index, 0, result);
+          usedLimits.availableSpan += UrlbarUtils.getSpanForResult(result);
+          usedLimits.maxResultCount++;
           this._updateStatePostAdd(result, state);
         }
       }
     }
+
+    return usedLimits;
   }
 }
 
