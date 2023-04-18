@@ -111,6 +111,31 @@ def test_chrome_webdriver_supports_browser():
     assert chrome.webdriver_supports_browser('/usr/bin/chromedriver', '/usr/bin/chrome', 'dev')
 
 
+def test_chromium_webdriver_supports_browser():
+    
+    chromium = browser.Chromium(logger)
+    chromium.webdriver_version = mock.MagicMock(return_value=None)
+    assert not chromium.webdriver_supports_browser('/usr/bin/chromedriver', '/usr/bin/chrome')
+
+    
+    chromium = browser.Chromium(logger)
+    chromium.webdriver_version = mock.MagicMock(return_value='70.0.1')
+    chromium.version = mock.MagicMock(return_value=None)
+    assert chromium.webdriver_supports_browser('/usr/bin/chromedriver', '/usr/bin/chrome')
+
+    
+    chromium = browser.Chromium(logger)
+    chromium.webdriver_version = mock.MagicMock(return_value='70.0.1')
+    chromium.version = mock.MagicMock(return_value='70.0.1')
+    assert chromium.webdriver_supports_browser('/usr/bin/chromedriver', '/usr/bin/chrome')
+
+    
+    chromium = browser.Chromium(logger)
+    chromium.webdriver_version = mock.MagicMock(return_value='70.0.1')
+    chromium.version = mock.MagicMock(return_value='69.0.1')
+    assert not chromium.webdriver_supports_browser('/usr/bin/chromedriver', '/usr/bin/chrome', 'stable')
+
+
 
 
 @pytest.mark.skipif(sys.platform.startswith('win'), reason='just uses _get_fileversion on Windows')
