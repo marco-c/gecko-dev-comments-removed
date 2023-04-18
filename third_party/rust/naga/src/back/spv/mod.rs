@@ -287,6 +287,14 @@ enum LocalType {
         image_type_id: Word,
     },
     Sampler,
+    PointerToBindingArray {
+        base: Handle<crate::Type>,
+        size: u64,
+    },
+    BindingArray {
+        base: Handle<crate::Type>,
+        size: u64,
+    },
 }
 
 
@@ -567,6 +575,9 @@ pub struct Writer {
     
     capabilities_used: crate::FastHashSet<Capability>,
 
+    
+    extensions_used: crate::FastHashSet<&'static str>,
+
     debugs: Vec<Instruction>,
     annotations: Vec<Instruction>,
     flags: WriterFlags,
@@ -579,6 +590,7 @@ pub struct Writer {
     constant_ids: Vec<Word>,
     cached_constants: crate::FastHashMap<(crate::ScalarValue, crate::Bytes), Word>,
     global_variables: Vec<GlobalVariable>,
+    binding_map: BindingMap,
 
     
     
@@ -607,6 +619,17 @@ bitflags::bitflags! {
     }
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+pub struct BindingInfo {
+    
+    pub binding_array_size: Option<u32>,
+}
+
+
+pub type BindingMap = std::collections::BTreeMap<crate::ResourceBinding, BindingInfo>;
+
 #[derive(Debug, Clone)]
 pub struct Options {
     
@@ -614,6 +637,9 @@ pub struct Options {
 
     
     pub flags: WriterFlags,
+
+    
+    pub binding_map: BindingMap,
 
     
     
@@ -637,6 +663,7 @@ impl Default for Options {
         Options {
             lang_version: (1, 0),
             flags,
+            binding_map: BindingMap::default(),
             capabilities: None,
             bounds_check_policies: crate::proc::BoundsCheckPolicies::default(),
         }
