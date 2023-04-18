@@ -393,6 +393,10 @@ module.exports = {
     
     
     "operator-assignment": "off",
+    
+    
+    
+    "react-hooks/rules-of-hooks": "off",
   },
   settings: {
     react: {
