@@ -311,6 +311,10 @@ class IonICCallFrameLayout : public CommonFrameLayout {
   JitCode* stubCode_;
 
  public:
+  
+  
+  static constexpr size_t FramePointerOffset = sizeof(void*);
+
   JitCode** stubCode() { return &stubCode_; }
   static size_t Size() { return sizeof(IonICCallFrameLayout); }
 };
