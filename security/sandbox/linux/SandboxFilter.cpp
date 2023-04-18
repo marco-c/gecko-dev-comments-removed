@@ -1141,6 +1141,9 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
 
       case __NR_ioctl: {
         Arg<unsigned long> request(1);
+#ifdef MOZ_ASAN
+        Arg<int> fd(0);
+#endif 
         
         
         
@@ -1150,6 +1153,10 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         
         return If(AnyOf(request == TCGETS, request == TIOCGWINSZ),
                   Error(ENOTTY))
+#ifdef MOZ_ASAN
+            
+            .ElseIf(fd == STDERR_FILENO, Error(ENOTTY))
+#endif 
             .Else(SandboxPolicyBase::EvaluateSyscall(sysno));
       }
 
@@ -1161,12 +1168,6 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
 
 #ifdef MOZ_ASAN
         
-      case __NR_ioctl: {
-        Arg<int> fd(0);
-        return If(fd == STDERR_FILENO, Error(ENOTTY)).Else(InvalidSyscall());
-      }
-
-        
         
       case __NR_readlink:
       case __NR_readlinkat:
@@ -1176,7 +1177,7 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         
       CASES_FOR_stat:
         return Error(ENOENT);
-#endif
+#endif 
 
       default:
         return SandboxPolicyBase::EvaluateSyscall(sysno);
