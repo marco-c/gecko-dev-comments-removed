@@ -104,6 +104,12 @@ var DevToolsServer = {
 
 
 
+  autoDestroy: false,
+
+  
+
+
+
 
   get rootlessServer() {
     return !this.createRootActor;
@@ -421,11 +427,7 @@ var DevToolsServer = {
 
     
     
-    
-    
-    
-    
-    if (this.hasConnection() || this.keepAlive) {
+    if (!this.autoDestroy || this.hasConnection() || this.keepAlive) {
       return;
     }
 

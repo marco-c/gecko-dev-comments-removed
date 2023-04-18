@@ -26,10 +26,12 @@ try {
     let loader,
       customLoader = false;
     if (content.document.nodePrincipal.isSystemPrincipal) {
-      const { useDistinctSystemPrincipalLoader } = ChromeUtils.import(
+      const { DevToolsLoader } = ChromeUtils.import(
         "resource://devtools/shared/loader/Loader.jsm"
       );
-      loader = useDistinctSystemPrincipalLoader(chromeGlobal);
+      loader = new DevToolsLoader({
+        invisibleToDebugger: true,
+      });
       customLoader = true;
     } else {
       
@@ -167,23 +169,21 @@ try {
 
     
     
-    function destroyLoader() {
+    function destroyServer() {
       
       
       if (DevToolsServer.hasConnection() || DevToolsServer.keepAlive) {
         return;
       }
-      DevToolsServer.off("connectionchange", destroyLoader);
+      DevToolsServer.off("connectionchange", destroyServer);
+      DevToolsServer.destroy();
 
       
       if (customLoader) {
-        const { releaseDistinctSystemPrincipalLoader } = ChromeUtils.import(
-          "resource://devtools/shared/loader/Loader.jsm"
-        );
-        releaseDistinctSystemPrincipalLoader(chromeGlobal);
+        loader.destroy();
       }
     }
-    DevToolsServer.on("connectionchange", destroyLoader);
+    DevToolsServer.on("connectionchange", destroyServer);
   })();
 } catch (e) {
   dump(`Exception in DevTools frame startup: ${e}\n`);

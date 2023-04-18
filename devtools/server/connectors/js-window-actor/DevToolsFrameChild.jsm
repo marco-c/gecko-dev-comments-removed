@@ -332,6 +332,10 @@ class DevToolsFrameChild extends JSWindowActorChild {
 
     
     
+    DevToolsServer.autoDestroy = true;
+
+    
+    
     
     DevToolsServer.registerActors({ target: true });
 

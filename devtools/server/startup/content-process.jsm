@@ -16,26 +16,27 @@
 
 const EXPORTED_SYMBOLS = ["initContentProcessTarget"];
 
-function initContentProcessTarget(msg) {
-  const mm = msg.target;
-  const prefix = msg.data.prefix;
-  const watcherActorID = msg.data.watcherActorID;
+let gLoader;
+
+function setupServer(mm) {
+  
+  
+  if (gLoader) {
+    return gLoader;
+  }
 
   
-  const {
-    useDistinctSystemPrincipalLoader,
-    releaseDistinctSystemPrincipalLoader,
-  } = ChromeUtils.import("resource://devtools/shared/loader/Loader.jsm");
-
-  
-  const loaderRequester = {};
+  const { DevToolsLoader } = ChromeUtils.import(
+    "resource://devtools/shared/loader/Loader.jsm"
+  );
 
   
   
   
-  const loader = useDistinctSystemPrincipalLoader(loaderRequester);
-
-  const { DevToolsServer } = loader.require("devtools/server/devtools-server");
+  gLoader = new DevToolsLoader({
+    invisibleToDebugger: true,
+  });
+  const { DevToolsServer } = gLoader.require("devtools/server/devtools-server");
 
   DevToolsServer.init();
   
@@ -45,6 +46,34 @@ function initContentProcessTarget(msg) {
 
   
   
+  function destroyServer() {
+    
+    
+    if (DevToolsServer.hasConnection()) {
+      return;
+    }
+    DevToolsServer.off("connectionchange", destroyServer);
+
+    DevToolsServer.destroy();
+    gLoader.destroy();
+    gLoader = null;
+  }
+  DevToolsServer.on("connectionchange", destroyServer);
+
+  return gLoader;
+}
+
+function initContentProcessTarget(msg) {
+  const mm = msg.target;
+  const prefix = msg.data.prefix;
+  const watcherActorID = msg.data.watcherActorID;
+
+  
+  const loader = setupServer(mm);
+
+  
+  
+  const { DevToolsServer } = loader.require("devtools/server/devtools-server");
   const conn = DevToolsServer.connectToParent(prefix, mm);
   conn.parentMessageManager = mm;
 
@@ -77,13 +106,6 @@ function initContentProcessTarget(msg) {
     
     conn.close();
   });
-
-  
-  
-  actor.once("destroyed", () => {
-    releaseDistinctSystemPrincipalLoader(loaderRequester);
-  });
-
   return {
     actor,
     connection: conn,
