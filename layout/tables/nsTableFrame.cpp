@@ -2289,7 +2289,7 @@ void nsTableFrame::HomogenousInsertFrames(ChildListID aListID,
       }
       nsCOMPtr<nsIContent> container = content->GetParent();
       if (MOZ_LIKELY(container)) {  
-        const int32_t newIndex = container->ComputeIndexOf_Deprecated(content);
+        const Maybe<uint32_t> newIndex = container->ComputeIndexOf(content);
         nsIFrame* kidFrame;
         nsTableColGroupFrame* lastColGroup = nullptr;
         if (isColGroup) {
@@ -2299,7 +2299,7 @@ void nsTableFrame::HomogenousInsertFrames(ChildListID aListID,
           kidFrame = mFrames.FirstChild();
         }
         
-        int32_t lastIndex = -1;
+        Maybe<uint32_t> lastIndex;
         while (kidFrame) {
           if (isColGroup) {
             if (kidFrame == lastColGroup) {
@@ -2313,8 +2313,13 @@ void nsTableFrame::HomogenousInsertFrames(ChildListID aListID,
                  (parentContent == (content = pseudoFrame->GetContent()))) {
             pseudoFrame = pseudoFrame->PrincipalChildList().FirstChild();
           }
-          const int32_t index = container->ComputeIndexOf_Deprecated(content);
-          if (index > lastIndex && index < newIndex) {
+          const Maybe<uint32_t> index = container->ComputeIndexOf(content);
+          
+          
+          if ((index.isSome() &&
+               (lastIndex.isNothing() || *index > *lastIndex)) &&
+              (newIndex.isSome() &&
+               (index.isNothing() || *index < *newIndex))) {
             lastIndex = index;
             aPrevFrame = kidFrame;
           }

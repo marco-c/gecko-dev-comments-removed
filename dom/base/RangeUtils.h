@@ -62,11 +62,11 @@ class RangeUtils final {
     
     
     
-    const int32_t indexInParent = parentNode->ComputeIndexOf_Deprecated(aNode);
-    if (NS_WARN_IF(indexInParent < 0)) {
+    const Maybe<uint32_t> indexInParent = parentNode->ComputeIndexOf(aNode);
+    if (MOZ_UNLIKELY(NS_WARN_IF(indexInParent.isNothing()))) {
       return RawRangeBoundary();
     }
-    return RawRangeBoundary(parentNode, indexInParent);
+    return RawRangeBoundary(parentNode, *indexInParent);
   }
 
   

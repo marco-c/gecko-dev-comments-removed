@@ -2258,15 +2258,20 @@ static void EnsureAllowedAsChild(nsINode* aNewChild, nsINode* aParent,
         return;
       }
 
-      const int32_t doctypeIndex =
-          aParent->ComputeIndexOf_Deprecated(docTypeContent);
-      const int32_t insertIndex = aParent->ComputeIndexOf_Deprecated(aRefChild);
+      
+      
+      const Maybe<uint32_t> doctypeIndex =
+          aParent->ComputeIndexOf(docTypeContent);
+      MOZ_ASSERT(doctypeIndex.isSome());
+      
+      const Maybe<uint32_t> insertIndex = aParent->ComputeIndexOf(aRefChild);
 
       
       
       
-      bool ok = aIsReplace ? (insertIndex >= doctypeIndex)
-                           : insertIndex > doctypeIndex;
+      const bool ok = MOZ_LIKELY(insertIndex.isSome()) &&
+                      (aIsReplace ? *insertIndex >= *doctypeIndex
+                                  : *insertIndex > *doctypeIndex);
       if (!ok) {
         aRv.ThrowHierarchyRequestError(
             "Cannot insert a root element before the doctype");
@@ -2308,13 +2313,16 @@ static void EnsureAllowedAsChild(nsINode* aNewChild, nsINode* aParent,
         return;
       }
 
-      const int32_t rootIndex = aParent->ComputeIndexOf_Deprecated(rootElement);
-      const int32_t insertIndex = aParent->ComputeIndexOf_Deprecated(aRefChild);
+      
+      
+      const Maybe<uint32_t> rootIndex = aParent->ComputeIndexOf(rootElement);
+      MOZ_ASSERT(rootIndex.isSome());
+      const Maybe<uint32_t> insertIndex = aParent->ComputeIndexOf(aRefChild);
 
       
       
       
-      if (insertIndex > rootIndex) {
+      if (MOZ_LIKELY(insertIndex.isSome()) && *insertIndex > *rootIndex) {
         aRv.ThrowHierarchyRequestError(
             "Cannot have a DocumentType node after the root element");
       }

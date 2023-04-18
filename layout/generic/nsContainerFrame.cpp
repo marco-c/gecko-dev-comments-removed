@@ -499,7 +499,7 @@ void nsContainerFrame::DisplaySelectionOverlay(nsDisplayListBuilder* aBuilder,
 
   
   
-  uint32_t offset =
+  int32_t offset =
       newContent ? newContent->ComputeIndexOf_Deprecated(mContent) : 0;
 
   
