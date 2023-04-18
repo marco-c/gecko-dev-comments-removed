@@ -13,9 +13,7 @@
 #include "mozilla/CheckedInt.h"  
 #include "mozilla/Encoding.h"    
 #include "mozilla/Span.h"        
-#include "mozilla/Tuple.h"       
 #include "mozilla/UniquePtr.h"   
-#include "mozilla/Unused.h"      
 
 #include <stddef.h>     
 #include <stdint.h>     
@@ -44,7 +42,7 @@ struct ScriptDecoding<char16_t> {
     uint32_t result;
     size_t read;
     size_t written;
-    Tie(result, read, written, Ignore) =
+    std::tie(result, read, written, std::ignore) =
         aDecoder->DecodeToUTF16(aSrc, aDest, aEndOfSource);
     MOZ_ASSERT(result == kInputEmpty);
     MOZ_ASSERT(read == aSrc.Length());
@@ -76,7 +74,7 @@ struct ScriptDecoding<Utf8Unit> {
     
     
     
-    Tie(result, read, written, Ignore) =
+    std::tie(result, read, written, std::ignore) =
         aDecoder->DecodeToUTF8(aSrc, AsWritableBytes(aDest), aEndOfSource);
     MOZ_ASSERT(result == kInputEmpty);
     MOZ_ASSERT(read == aSrc.Length());

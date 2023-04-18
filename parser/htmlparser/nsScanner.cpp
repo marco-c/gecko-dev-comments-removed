@@ -227,7 +227,8 @@ nsresult nsScanner::Append(const char* aBuffer, uint32_t aLen) {
     uint32_t result;
     size_t read;
     size_t written;
-    Tie(result, read, written) =
+    
+    std::tie(result, read, written) =
         mUnicodeDecoder->DecodeToUTF16WithoutReplacement(
             AsBytes(Span(aBuffer, aLen)), Span(unichars, needed.value()),
             false);  
