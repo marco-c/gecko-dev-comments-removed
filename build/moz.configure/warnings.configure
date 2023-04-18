@@ -75,6 +75,13 @@ add_gcc_warning("-Wunreachable-code")
 check_and_add_gcc_warning("-Wunreachable-code-return")
 
 
+
+check_and_add_gcc_warning(
+    "-Wunused-but-set-parameter",
+    when=depends(c_compiler)(lambda c: c.type == "clang"),
+)
+
+
 add_gcc_warning("-Wno-invalid-offsetof", cxx_compiler)
 
 
