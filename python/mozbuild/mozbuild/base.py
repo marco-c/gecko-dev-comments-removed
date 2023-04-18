@@ -186,24 +186,28 @@ class MozbuildObject(ProcessExecutionMixin):
                 topsrcdir, topobjdir, mozconfig = load_mozinfo(mozinfo_path)
                 break
 
+        if not topsrcdir:
             
             
-            our_path = os.path.join(
-                dir_path, "python", "mozbuild", "mozbuild", "base.py"
-            )
-            if os.path.isfile(our_path):
-                topsrcdir = dir_path
-                break
-
-        
-        mozinfo_path = os.path.join(os.path.dirname(sys.prefix), "../mozinfo.json")
-        if detect_virtualenv_mozinfo and os.path.isfile(mozinfo_path):
-            topsrcdir, topobjdir, mozconfig = load_mozinfo(mozinfo_path)
+            
+            
+            
+            
+            mozinfo_path = os.path.join(sys.prefix, "..", "..", "mozinfo.json")
+            if detect_virtualenv_mozinfo and os.path.isfile(mozinfo_path):
+                topsrcdir, topobjdir, mozconfig = load_mozinfo(mozinfo_path)
 
         if not topsrcdir:
-            topsrcdir = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), "..", "..", "..")
+            topsrcdir = os.path.normcase(
+                os.path.abspath(
+                    os.path.join(os.path.dirname(__file__), "..", "..", "..")
+                )
             )
+            if sys.platform.startswith("win"):
+                
+                
+                
+                topsrcdir = topsrcdir.capitalize()
 
         topsrcdir = mozpath.normsep(topsrcdir)
         if topobjdir:
