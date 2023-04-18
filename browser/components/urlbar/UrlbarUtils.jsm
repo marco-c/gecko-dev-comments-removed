@@ -133,7 +133,7 @@ var UrlbarUtils = {
 
 
   SELECTED_RESULT_TYPES: {
-    autofill: 0,
+    autofill: 0, 
     bookmark: 1,
     history: 2,
     keyword: 3,
@@ -151,6 +151,9 @@ var UrlbarUtils = {
     dynamic: 15,
     tabtosearch: 16,
     quicksuggest: 17,
+    autofill_adaptive: 18,
+    autofill_origin: 19,
+    autofill_url: 20,
     
   },
 
@@ -1184,7 +1187,7 @@ var UrlbarUtils = {
         return result.payload.suggestion ? "searchsuggestion" : "searchengine";
       case UrlbarUtils.RESULT_TYPE.URL:
         if (result.autofill) {
-          return "autofill";
+          return `autofill_${result.autofill.type}`;
         }
         if (
           result.source == UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL &&
