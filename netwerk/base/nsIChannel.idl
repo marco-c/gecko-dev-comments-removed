@@ -305,9 +305,12 @@ interface nsIChannel : nsIRequest
 
 
 
+
+
     attribute unsigned long contentDisposition;
     const unsigned long DISPOSITION_INLINE = 0;
     const unsigned long DISPOSITION_ATTACHMENT = 1;
+    const unsigned long DISPOSITION_FORCE_INLINE = 2;
 
     
 

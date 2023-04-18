@@ -658,7 +658,11 @@ HttpBaseChannel::GetContentDisposition(uint32_t* aContentDisposition) {
   
   
   
-  if (mContentDispositionHint == nsIChannel::DISPOSITION_ATTACHMENT) {
+  
+  
+  
+  if (mContentDispositionHint == nsIChannel::DISPOSITION_ATTACHMENT ||
+      mContentDispositionHint == nsIChannel::DISPOSITION_FORCE_INLINE) {
     *aContentDisposition = mContentDispositionHint;
     return NS_OK;
   }
