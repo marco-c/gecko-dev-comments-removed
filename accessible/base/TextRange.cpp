@@ -203,7 +203,7 @@ bool TextRange::Crop(Accessible* aContainer) {
         
         container = aContainer;
       }
-    } else if (containerPos != 0) {
+    } else {
       
       boundary = boundaryParents[boundaryPos];
       container = containerParents[containerPos];
@@ -243,7 +243,7 @@ bool TextRange::Crop(Accessible* aContainer) {
     } else {
       container = aContainer;
     }
-  } else if (containerPos != 0) {
+  } else {
     boundary = boundaryParents[boundaryPos];
     container = containerParents[containerPos];
   }
