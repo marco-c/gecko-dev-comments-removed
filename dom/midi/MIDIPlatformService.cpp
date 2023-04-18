@@ -7,6 +7,9 @@
 #include "MIDIPlatformService.h"
 #include "MIDIMessageQueue.h"
 #include "TestMIDIPlatformService.h"
+#ifndef MOZ_WIDGET_ANDROID
+#  include "midirMIDIPlatformService.h"
+#endif  
 #include "mozilla/ErrorResult.h"
 #include "mozilla/StaticPrefs_midi.h"
 #include "mozilla/StaticPtr.h"
@@ -179,10 +182,14 @@ MIDIPlatformService* MIDIPlatformService::Get() {
   MOZ_ASSERT(XRE_IsParentProcess());
   ::mozilla::ipc::AssertIsOnBackgroundThread();
   if (!IsRunning()) {
-    
-    
-    
-    gMIDIPlatformService = new TestMIDIPlatformService();
+    if (StaticPrefs::midi_testing()) {
+      gMIDIPlatformService = new TestMIDIPlatformService();
+    }
+#ifndef MOZ_WIDGET_ANDROID
+    else {
+      gMIDIPlatformService = new midirMIDIPlatformService();
+    }
+#endif  
     gMIDIPlatformService->Init();
   }
   return gMIDIPlatformService;

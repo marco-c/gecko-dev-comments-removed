@@ -4,6 +4,9 @@
 
 
 
+if CONFIG["OS_TARGET"] != "Android":
+    DIRS += ["midir_impl"]
+
 IPDL_SOURCES += [
     "MIDITypes.ipdlh",
     "PMIDIManager.ipdl",
@@ -31,7 +34,7 @@ EXPORTS.mozilla.dom += [
     "MIDIUtils.h",
 ]
 
-UNIFIED_SOURCES = [
+UNIFIED_SOURCES += [
     "MIDIAccess.cpp",
     "MIDIAccessManager.cpp",
     "MIDIInput.cpp",
@@ -56,7 +59,14 @@ UNIFIED_SOURCES = [
 include("/ipc/chromium/chromium-config.mozbuild")
 
 if CONFIG["OS_TARGET"] == "Linux":
+    OS_LIBS += ["asound"]  
     UNIFIED_SOURCES += ["AlsaCompatibility.cpp"]
+
+
+if CONFIG["OS_TARGET"] != "Android":
+    UNIFIED_SOURCES += [
+        "midirMIDIPlatformService.cpp",
+    ]
 
 FINAL_LIBRARY = "xul"
 LOCAL_INCLUDES += [
