@@ -115,38 +115,12 @@ class gfxContext final {
   
 
 
-
-
-  void ClosePath();
-
-  
-
-
   already_AddRefed<Path> GetPath();
 
   
 
 
   void SetPath(Path* path);
-
-  
-
-
-  void MoveTo(const gfxPoint& pt);
-
-  
-
-
-
-
-  void LineTo(const gfxPoint& pt);
-
-  
-  
-
-
-  void Line(const gfxPoint& start,
-            const gfxPoint& end);  
 
   
 
