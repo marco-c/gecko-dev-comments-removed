@@ -17,6 +17,8 @@ namespace mozilla {
 #endif
 #define LOGTAG "WebrtcVideoSessionConduit"
 
+#define DEFAULT_VIDEO_MAX_FRAMERATE 30u
+
 #define MB_OF(w, h) \
   ((unsigned int)((((w + 15) >> 4)) * ((unsigned int)((h + 15) >> 4))))
 
@@ -115,8 +117,9 @@ void VideoStreamFactory::SetCodecMode(webrtc::VideoCodecMode aCodecMode) {
   mCodecMode = aCodecMode;
 }
 
-void VideoStreamFactory::SetSendingFramerate(unsigned int aSendingFramerate) {
-  mSendingFramerate = aSendingFramerate;
+void VideoStreamFactory::SetMaxFramerateForAllStreams(
+    unsigned int aMaxFramerate) {
+  mMaxFramerateForAllStreams = aMaxFramerate;
 }
 
 std::vector<webrtc::VideoStream> VideoStreamFactory::CreateEncoderStreams(
@@ -211,7 +214,24 @@ std::vector<webrtc::VideoStream> VideoStreamFactory::CreateEncoderStreams(
     }
 
     
-    video_stream.max_framerate = mSendingFramerate;
+    
+    
+    
+    
+    
+    unsigned int max_framerate = mMaxFramerateForAllStreams;
+    max_framerate = std::min(WebrtcVideoConduit::ToLibwebrtcMaxFramerate(
+                                 encoding.constraints.maxFps),
+                             max_framerate);
+    if (max_framerate >= std::numeric_limits<int>::max()) {
+      
+      
+      max_framerate = DEFAULT_VIDEO_MAX_FRAMERATE;
+    }
+    video_stream.max_framerate = static_cast<int>(max_framerate);
+    CSFLogInfo(LOGTAG, "%s Stream with RID %s maxFps=%d (global max fps = %u)",
+               __FUNCTION__, encoding.rid.c_str(), video_stream.max_framerate,
+               (unsigned)mMaxFramerateForAllStreams);
 
     SelectBitrates(video_stream.width, video_stream.height, mMinBitrate,
                    mStartBitrate, encoding.constraints.maxBr, mPrefMaxBitrate,

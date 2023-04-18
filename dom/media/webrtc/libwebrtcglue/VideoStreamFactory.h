@@ -34,9 +34,9 @@ class VideoStreamFactory
   VideoStreamFactory(VideoCodecConfig aConfig,
                      webrtc::VideoCodecMode aCodecMode, int aMinBitrate,
                      int aStartBitrate, int aPrefMaxBitrate,
-                     int aNegotiatedMaxBitrate, unsigned int aSendingFramerate)
+                     int aNegotiatedMaxBitrate, unsigned int aMaxFramerate)
       : mCodecMode(aCodecMode),
-        mSendingFramerate(aSendingFramerate),
+        mMaxFramerateForAllStreams(aMaxFramerate),
         mCodecConfig(std::forward<VideoCodecConfig>(aConfig)),
         mMinBitrate(aMinBitrate),
         mStartBitrate(aStartBitrate),
@@ -45,7 +45,7 @@ class VideoStreamFactory
         mSimulcastAdapter(MakeUnique<cricket::VideoAdapter>()) {}
 
   void SetCodecMode(webrtc::VideoCodecMode aCodecMode);
-  void SetSendingFramerate(unsigned int aSendingFramerate);
+  void SetMaxFramerateForAllStreams(unsigned int aMaxFramerate);
 
   
   
@@ -57,7 +57,7 @@ class VideoStreamFactory
   Atomic<webrtc::VideoCodecMode> mCodecMode;
 
   
-  Atomic<unsigned int> mSendingFramerate;
+  Atomic<unsigned int> mMaxFramerateForAllStreams;
 
   
   const VideoCodecConfig mCodecConfig;
