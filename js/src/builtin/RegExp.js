@@ -1222,8 +1222,8 @@ function IsRegExpStringIteratorNextOptimizable() {
 
 function RegExpStringIteratorNext() {
     
-    var obj;
-    if (!IsObject(this) || (obj = GuardToRegExpStringIterator(this)) === null) {
+    var obj = this;
+    if (!IsObject(obj) || (obj = GuardToRegExpStringIterator(obj)) === null) {
         return callFunction(CallRegExpStringIteratorMethodIfWrapped, this,
                             "RegExpStringIteratorNext");
     }

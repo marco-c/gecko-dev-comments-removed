@@ -665,8 +665,8 @@ function CreateArrayIterator(obj, kind) {
 
 function ArrayIteratorNext() {
     
-    var obj;
-    if (!IsObject(this) || (obj = GuardToArrayIterator(this)) === null) {
+    var obj = this;
+    if (!IsObject(obj) || (obj = GuardToArrayIterator(obj)) === null) {
         return callFunction(CallArrayIteratorMethodIfWrapped, this,
                             "ArrayIteratorNext");
     }
