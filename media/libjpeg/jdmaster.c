@@ -417,7 +417,7 @@ prepare_range_limit_table(j_decompress_ptr cinfo)
   table += (MAXJSAMPLE + 1);    
   cinfo->sample_range_limit = table;
   
-  MEMZERO(table - (MAXJSAMPLE + 1), (MAXJSAMPLE + 1) * sizeof(JSAMPLE));
+  memset(table - (MAXJSAMPLE + 1), 0, (MAXJSAMPLE + 1) * sizeof(JSAMPLE));
   
   for (i = 0; i <= MAXJSAMPLE; i++)
     table[i] = (JSAMPLE)i;
@@ -426,10 +426,10 @@ prepare_range_limit_table(j_decompress_ptr cinfo)
   for (i = CENTERJSAMPLE; i < 2 * (MAXJSAMPLE + 1); i++)
     table[i] = MAXJSAMPLE;
   
-  MEMZERO(table + (2 * (MAXJSAMPLE + 1)),
-          (2 * (MAXJSAMPLE + 1) - CENTERJSAMPLE) * sizeof(JSAMPLE));
-  MEMCOPY(table + (4 * (MAXJSAMPLE + 1) - CENTERJSAMPLE),
-          cinfo->sample_range_limit, CENTERJSAMPLE * sizeof(JSAMPLE));
+  memset(table + (2 * (MAXJSAMPLE + 1)), 0,
+         (2 * (MAXJSAMPLE + 1) - CENTERJSAMPLE) * sizeof(JSAMPLE));
+  memcpy(table + (4 * (MAXJSAMPLE + 1) - CENTERJSAMPLE),
+         cinfo->sample_range_limit, CENTERJSAMPLE * sizeof(JSAMPLE));
 }
 
 

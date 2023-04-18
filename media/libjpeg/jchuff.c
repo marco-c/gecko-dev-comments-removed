@@ -200,12 +200,12 @@ start_pass_huff(j_compress_ptr cinfo, boolean gather_statistics)
         entropy->dc_count_ptrs[dctbl] = (long *)
           (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                       257 * sizeof(long));
-      MEMZERO(entropy->dc_count_ptrs[dctbl], 257 * sizeof(long));
+      memset(entropy->dc_count_ptrs[dctbl], 0, 257 * sizeof(long));
       if (entropy->ac_count_ptrs[actbl] == NULL)
         entropy->ac_count_ptrs[actbl] = (long *)
           (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                       257 * sizeof(long));
-      MEMZERO(entropy->ac_count_ptrs[actbl], 257 * sizeof(long));
+      memset(entropy->ac_count_ptrs[actbl], 0, 257 * sizeof(long));
 #endif
     } else {
       
@@ -315,8 +315,8 @@ jpeg_make_c_derived_tbl(j_compress_ptr cinfo, boolean isDC, int tblno,
 
 
 
-  MEMZERO(dtbl->ehufco, sizeof(dtbl->ehufco));
-  MEMZERO(dtbl->ehufsi, sizeof(dtbl->ehufsi));
+  memset(dtbl->ehufco, 0, sizeof(dtbl->ehufco));
+  memset(dtbl->ehufsi, 0, sizeof(dtbl->ehufsi));
 
   
 
@@ -478,7 +478,7 @@ dump_buffer(working_state *state)
     buffer = _buffer; \
     while (bytes > 0) { \
       bytestocopy = MIN(bytes, state->free_in_buffer); \
-      MEMCOPY(state->next_output_byte, buffer, bytestocopy); \
+      memcpy(state->next_output_byte, buffer, bytestocopy); \
       state->next_output_byte += bytestocopy; \
       buffer += bytestocopy; \
       state->free_in_buffer -= bytestocopy; \
@@ -941,8 +941,8 @@ jpeg_gen_optimal_table(j_compress_ptr cinfo, JHUFF_TBL *htbl, long freq[])
 
   
 
-  MEMZERO(bits, sizeof(bits));
-  MEMZERO(codesize, sizeof(codesize));
+  memset(bits, 0, sizeof(bits));
+  memset(codesize, 0, sizeof(codesize));
   for (i = 0; i < 257; i++)
     others[i] = -1;             
 
@@ -1044,7 +1044,7 @@ jpeg_gen_optimal_table(j_compress_ptr cinfo, JHUFF_TBL *htbl, long freq[])
   bits[i]--;
 
   
-  MEMCOPY(htbl->bits, bits, sizeof(htbl->bits));
+  memcpy(htbl->bits, bits, sizeof(htbl->bits));
 
   
   
@@ -1083,8 +1083,8 @@ finish_pass_gather(j_compress_ptr cinfo)
   
 
 
-  MEMZERO(did_dc, sizeof(did_dc));
-  MEMZERO(did_ac, sizeof(did_ac));
+  memset(did_dc, 0, sizeof(did_dc));
+  memset(did_ac, 0, sizeof(did_ac));
 
   for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
     compptr = cinfo->cur_comp_info[ci];

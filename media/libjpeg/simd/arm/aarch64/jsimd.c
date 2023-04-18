@@ -125,7 +125,7 @@ LOCAL(void)
 init_simd(void)
 {
 #ifndef NO_GETENV
-  char *env = NULL;
+  char env[2] = { 0 };
 #endif
 #if defined(__linux__) || defined(ANDROID) || defined(__ANDROID__)
   int bufsize = 1024; 
@@ -147,24 +147,19 @@ init_simd(void)
 
 #ifndef NO_GETENV
   
-  env = getenv("JSIMD_FORCENEON");
-  if ((env != NULL) && (strcmp(env, "1") == 0))
+  if (!GETENV_S(env, 2, "JSIMD_FORCENEON") && !strcmp(env, "1"))
     simd_support = JSIMD_NEON;
-  env = getenv("JSIMD_FORCENONE");
-  if ((env != NULL) && (strcmp(env, "1") == 0))
+  if (!GETENV_S(env, 2, "JSIMD_FORCENONE") && !strcmp(env, "1"))
     simd_support = 0;
-  env = getenv("JSIMD_NOHUFFENC");
-  if ((env != NULL) && (strcmp(env, "1") == 0))
+  if (!GETENV_S(env, 2, "JSIMD_NOHUFFENC") && !strcmp(env, "1"))
     simd_huffman = 0;
-  env = getenv("JSIMD_FASTLD3");
-  if ((env != NULL) && (strcmp(env, "1") == 0))
+  if (!GETENV_S(env, 2, "JSIMD_FASTLD3") && !strcmp(env, "1"))
     simd_features |= JSIMD_FASTLD3;
-  if ((env != NULL) && (strcmp(env, "0") == 0))
+  if (!GETENV_S(env, 2, "JSIMD_FASTLD3") && !strcmp(env, "0"))
     simd_features &= ~JSIMD_FASTLD3;
-  env = getenv("JSIMD_FASTST3");
-  if ((env != NULL) && (strcmp(env, "1") == 0))
+  if (!GETENV_S(env, 2, "JSIMD_FASTST3") && !strcmp(env, "1"))
     simd_features |= JSIMD_FASTST3;
-  if ((env != NULL) && (strcmp(env, "0") == 0))
+  if (!GETENV_S(env, 2, "JSIMD_FASTST3") && !strcmp(env, "0"))
     simd_features &= ~JSIMD_FASTST3;
 #endif
 }

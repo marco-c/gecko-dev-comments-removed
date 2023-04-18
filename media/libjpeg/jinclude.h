@@ -17,10 +17,13 @@
 
 
 
+#ifndef __JINCLUDE_H__
+#define __JINCLUDE_H__
 
 
 
 #include "jconfig.h"            
+#include "jconfigint.h"
 #define JCONFIG_INCLUDED
 
 
@@ -30,23 +33,10 @@
 
 
 
-
-
-
-
-#ifdef HAVE_STDDEF_H
 #include <stddef.h>
-#endif
-
-#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#endif
-
-#ifdef NEED_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-
 #include <stdio.h>
+#include <string.h>
 
 
 
@@ -55,34 +45,89 @@
 
 
 
+#ifndef NO_GETENV
 
+#ifdef _MSC_VER
 
+static INLINE int GETENV_S(char *buffer, size_t buffer_size, const char *name)
+{
+  size_t required_size;
 
-#ifdef NEED_BSD_STRINGS
-
-#include <strings.h>
-#define MEMZERO(target, size) \
-  bzero((void *)(target), (size_t)(size))
-#define MEMCOPY(dest, src, size) \
-  bcopy((const void *)(src), (void *)(dest), (size_t)(size))
+  return (int)getenv_s(&required_size, buffer, buffer_size, name);
+}
 
 #else 
 
-#include <string.h>
-#define MEMZERO(target, size) \
-  memset((void *)(target), 0, (size_t)(size))
-#define MEMCOPY(dest, src, size) \
-  memcpy((void *)(dest), (const void *)(src), (size_t)(size))
-
-#endif
+#include <errno.h>
 
 
 
 
 
+static INLINE int GETENV_S(char *buffer, size_t buffer_size, const char *name)
+{
+  char *env;
+
+  if (!buffer) {
+    if (buffer_size == 0)
+      return 0;
+    else
+      return (errno = EINVAL);
+  }
+  if (buffer_size == 0)
+    return (errno = EINVAL);
+  if (!name) {
+    *buffer = 0;
+    return 0;
+  }
+
+  env = getenv(name);
+  if (!env)
+  {
+    *buffer = 0;
+    return 0;
+  }
+
+  if (strlen(env) + 1 > buffer_size) {
+    *buffer = 0;
+    return ERANGE;
+  }
+
+  strncpy(buffer, env, buffer_size);
+
+  return 0;
+}
+
+#endif 
+
+#endif 
 
 
-#define JFREAD(file, buf, sizeofbuf) \
-  ((size_t)fread((void *)(buf), (size_t)1, (size_t)(sizeofbuf), (file)))
-#define JFWRITE(file, buf, sizeofbuf) \
-  ((size_t)fwrite((const void *)(buf), (size_t)1, (size_t)(sizeofbuf), (file)))
+#ifndef NO_PUTENV
+
+#ifdef _WIN32
+
+#define PUTENV_S(name, value)  _putenv_s(name, value)
+
+#else
+
+
+
+
+
+static INLINE int PUTENV_S(const char *name, const char *value)
+{
+  if (!name || !value)
+    return (errno = EINVAL);
+
+  setenv(name, value, 1);
+
+  return errno;
+}
+
+#endif 
+
+#endif 
+
+
+#endif 

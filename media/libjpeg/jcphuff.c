@@ -275,7 +275,7 @@ start_pass_phuff(j_compress_ptr cinfo, boolean gather_statistics)
         entropy->count_ptrs[tbl] = (long *)
           (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                       257 * sizeof(long));
-      MEMZERO(entropy->count_ptrs[tbl], 257 * sizeof(long));
+      memset(entropy->count_ptrs[tbl], 0, 257 * sizeof(long));
     } else {
       
       
@@ -584,8 +584,8 @@ encode_mcu_DC_first(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
       continue; \
     /* For a negative coef, want temp2 = bitwise complement of abs(coef) */ \
     temp2 ^= temp; \
-    values[k] = temp; \
-    values[k + DCTSIZE2] = temp2; \
+    values[k] = (JCOEF)temp; \
+    values[k + DCTSIZE2] = (JCOEF)temp2; \
     zerobits |= ((size_t)1U) << k; \
   } \
 }
@@ -1062,7 +1062,7 @@ finish_pass_gather_phuff(j_compress_ptr cinfo)
   
 
 
-  MEMZERO(did, sizeof(did));
+  memset(did, 0, sizeof(did));
 
   for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
     compptr = cinfo->cur_comp_info[ci];

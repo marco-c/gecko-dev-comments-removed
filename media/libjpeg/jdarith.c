@@ -210,13 +210,13 @@ process_restart(j_decompress_ptr cinfo)
   for (ci = 0; ci < cinfo->comps_in_scan; ci++) {
     compptr = cinfo->cur_comp_info[ci];
     if (!cinfo->progressive_mode || (cinfo->Ss == 0 && cinfo->Ah == 0)) {
-      MEMZERO(entropy->dc_stats[compptr->dc_tbl_no], DC_STAT_BINS);
+      memset(entropy->dc_stats[compptr->dc_tbl_no], 0, DC_STAT_BINS);
       
       entropy->last_dc_val[ci] = 0;
       entropy->dc_context[ci] = 0;
     }
     if (!cinfo->progressive_mode || cinfo->Ss) {
-      MEMZERO(entropy->ac_stats[compptr->ac_tbl_no], AC_STAT_BINS);
+      memset(entropy->ac_stats[compptr->ac_tbl_no], 0, AC_STAT_BINS);
     }
   }
 
@@ -471,17 +471,17 @@ decode_mcu_AC_refine(j_decompress_ptr cinfo, JBLOCKROW *MCU_data)
       if (*thiscoef) {                          
         if (arith_decode(cinfo, st + 2)) {
           if (*thiscoef < 0)
-            *thiscoef += m1;
+            *thiscoef += (JCOEF)m1;
           else
-            *thiscoef += p1;
+            *thiscoef += (JCOEF)p1;
         }
         break;
       }
       if (arith_decode(cinfo, st + 1)) {        
         if (arith_decode(cinfo, entropy->fixed_bin))
-          *thiscoef = m1;
+          *thiscoef = (JCOEF)m1;
         else
-          *thiscoef = p1;
+          *thiscoef = (JCOEF)p1;
         break;
       }
       st += 3;  k++;
@@ -698,8 +698,8 @@ bad:
     
 
 
-    if (cinfo->Ss != 0 || cinfo->Ah != 0 || cinfo->Al != 0 ||
-        (cinfo->Se < DCTSIZE2 && cinfo->Se != DCTSIZE2 - 1))
+    if (cinfo->Ss != 0 || cinfo->Se != DCTSIZE2 - 1 ||
+        cinfo->Ah != 0 || cinfo->Al != 0)
       WARNMS(cinfo, JWRN_NOT_SEQUENTIAL);
     
     entropy->pub.decode_mcu = decode_mcu;
@@ -715,7 +715,7 @@ bad:
       if (entropy->dc_stats[tbl] == NULL)
         entropy->dc_stats[tbl] = (unsigned char *)(*cinfo->mem->alloc_small)
           ((j_common_ptr)cinfo, JPOOL_IMAGE, DC_STAT_BINS);
-      MEMZERO(entropy->dc_stats[tbl], DC_STAT_BINS);
+      memset(entropy->dc_stats[tbl], 0, DC_STAT_BINS);
       
       entropy->last_dc_val[ci] = 0;
       entropy->dc_context[ci] = 0;
@@ -727,7 +727,7 @@ bad:
       if (entropy->ac_stats[tbl] == NULL)
         entropy->ac_stats[tbl] = (unsigned char *)(*cinfo->mem->alloc_small)
           ((j_common_ptr)cinfo, JPOOL_IMAGE, AC_STAT_BINS);
-      MEMZERO(entropy->ac_stats[tbl], AC_STAT_BINS);
+      memset(entropy->ac_stats[tbl], 0, AC_STAT_BINS);
     }
   }
 

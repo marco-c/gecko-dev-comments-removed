@@ -264,7 +264,7 @@ latch_quant_tables(j_decompress_ptr cinfo)
     qtbl = (JQUANT_TBL *)
       (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_IMAGE,
                                   sizeof(JQUANT_TBL));
-    MEMCOPY(qtbl, cinfo->quant_tbl_ptrs[qtblno], sizeof(JQUANT_TBL));
+    memcpy(qtbl, cinfo->quant_tbl_ptrs[qtblno], sizeof(JQUANT_TBL));
     compptr->quant_table = qtbl;
   }
 }

@@ -22,11 +22,6 @@
 #include "jpeglib.h"
 #include "jmemsys.h"            
 
-#ifndef HAVE_STDLIB_H           
-extern void *malloc(size_t size);
-extern void free(void *ptr);
-#endif
-
 
 
 

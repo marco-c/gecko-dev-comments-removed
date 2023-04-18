@@ -159,6 +159,7 @@ jpeg_crop_scanline(j_decompress_ptr cinfo, JDIMENSION *xoffset,
   JDIMENSION input_xoffset;
   boolean reinit_upsampler = FALSE;
   jpeg_component_info *compptr;
+  my_master_ptr master = (my_master_ptr)cinfo->master;
 
   if (cinfo->global_state != DSTATE_SCANNING || cinfo->output_scanline != 0)
     ERREXIT1(cinfo, JERR_BAD_STATE, cinfo->global_state);
@@ -208,6 +209,11 @@ jpeg_crop_scanline(j_decompress_ptr cinfo, JDIMENSION *xoffset,
 
   *width = *width + input_xoffset - *xoffset;
   cinfo->output_width = *width;
+  if (master->using_merged_upsample && cinfo->max_v_samp_factor == 2) {
+    my_merged_upsample_ptr upsample = (my_merged_upsample_ptr)cinfo->upsample;
+    upsample->out_row_width =
+      cinfo->output_width * cinfo->out_color_components;
+  }
 
   
 

@@ -59,6 +59,17 @@ ALIGN(16) static const uint8_t jsimd_huff_encode_one_block_consts[] = {
    14,  15,  30,  31,  44,  45,  46,  47
 };
 
+
+
+
+
+
+
+#if defined(__has_feature)
+#if __has_feature(undefined_behavior_sanitizer)
+__attribute__((no_sanitize("alignment")))
+#endif
+#endif
 JOCTET *jsimd_huff_encode_one_block_neon(void *state, JOCTET *buffer,
                                          JCOEFPTR block, int last_dc_val,
                                          c_derived_tbl *dctbl,
@@ -158,73 +169,43 @@ JOCTET *jsimd_huff_encode_one_block_neon(void *state, JOCTET *buffer,
                                   7), row6, 5);
 
   
-  int16x8_t abs_row0 = vabsq_s16(row0);
-  int16x8_t abs_row1 = vabsq_s16(row1);
-  int16x8_t abs_row2 = vabsq_s16(row2);
-  int16x8_t abs_row3 = vabsq_s16(row3);
-  int16x8_t abs_row4 = vabsq_s16(row4);
-  int16x8_t abs_row5 = vabsq_s16(row5);
-  int16x8_t abs_row6 = vabsq_s16(row6);
-  int16x8_t abs_row7 = vabsq_s16(row7);
-
-  
-  uint16x8_t row0_diff =
-    vreinterpretq_u16_s16(veorq_s16(abs_row0, vshrq_n_s16(row0, 15)));
-  uint16x8_t row1_diff =
-    vreinterpretq_u16_s16(veorq_s16(abs_row1, vshrq_n_s16(row1, 15)));
-  uint16x8_t row2_diff =
-    vreinterpretq_u16_s16(veorq_s16(abs_row2, vshrq_n_s16(row2, 15)));
-  uint16x8_t row3_diff =
-    vreinterpretq_u16_s16(veorq_s16(abs_row3, vshrq_n_s16(row3, 15)));
-  uint16x8_t row4_diff =
-    vreinterpretq_u16_s16(veorq_s16(abs_row4, vshrq_n_s16(row4, 15)));
-  uint16x8_t row5_diff =
-    vreinterpretq_u16_s16(veorq_s16(abs_row5, vshrq_n_s16(row5, 15)));
-  uint16x8_t row6_diff =
-    vreinterpretq_u16_s16(veorq_s16(abs_row6, vshrq_n_s16(row6, 15)));
-  uint16x8_t row7_diff =
-    vreinterpretq_u16_s16(veorq_s16(abs_row7, vshrq_n_s16(row7, 15)));
 
   
 
 
-  uint8x8_t abs_row0_gt0 = vmovn_u16(vcgtq_u16(vreinterpretq_u16_s16(abs_row0),
-                                               vdupq_n_u16(0)));
-  uint8x8_t abs_row1_gt0 = vmovn_u16(vcgtq_u16(vreinterpretq_u16_s16(abs_row1),
-                                               vdupq_n_u16(0)));
-  uint8x8_t abs_row2_gt0 = vmovn_u16(vcgtq_u16(vreinterpretq_u16_s16(abs_row2),
-                                               vdupq_n_u16(0)));
-  uint8x8_t abs_row3_gt0 = vmovn_u16(vcgtq_u16(vreinterpretq_u16_s16(abs_row3),
-                                               vdupq_n_u16(0)));
-  uint8x8_t abs_row4_gt0 = vmovn_u16(vcgtq_u16(vreinterpretq_u16_s16(abs_row4),
-                                               vdupq_n_u16(0)));
-  uint8x8_t abs_row5_gt0 = vmovn_u16(vcgtq_u16(vreinterpretq_u16_s16(abs_row5),
-                                               vdupq_n_u16(0)));
-  uint8x8_t abs_row6_gt0 = vmovn_u16(vcgtq_u16(vreinterpretq_u16_s16(abs_row6),
-                                               vdupq_n_u16(0)));
-  uint8x8_t abs_row7_gt0 = vmovn_u16(vcgtq_u16(vreinterpretq_u16_s16(abs_row7),
-                                               vdupq_n_u16(0)));
+  uint16x8_t row0_ne_0 = vtstq_s16(row0, row0);
+  uint16x8_t row1_ne_0 = vtstq_s16(row1, row1);
+  uint16x8_t row2_ne_0 = vtstq_s16(row2, row2);
+  uint16x8_t row3_ne_0 = vtstq_s16(row3, row3);
+  uint16x8_t row4_ne_0 = vtstq_s16(row4, row4);
+  uint16x8_t row5_ne_0 = vtstq_s16(row5, row5);
+  uint16x8_t row6_ne_0 = vtstq_s16(row6, row6);
+  uint16x8_t row7_ne_0 = vtstq_s16(row7, row7);
+
+  uint8x16_t row10_ne_0 = vuzp1q_u8(vreinterpretq_u8_u16(row1_ne_0),
+                                    vreinterpretq_u8_u16(row0_ne_0));
+  uint8x16_t row32_ne_0 = vuzp1q_u8(vreinterpretq_u8_u16(row3_ne_0),
+                                    vreinterpretq_u8_u16(row2_ne_0));
+  uint8x16_t row54_ne_0 = vuzp1q_u8(vreinterpretq_u8_u16(row5_ne_0),
+                                    vreinterpretq_u8_u16(row4_ne_0));
+  uint8x16_t row76_ne_0 = vuzp1q_u8(vreinterpretq_u8_u16(row7_ne_0),
+                                    vreinterpretq_u8_u16(row6_ne_0));
 
   
-  const uint8x8_t bitmap_mask =
-    vreinterpret_u8_u64(vmov_n_u64(0x0102040810204080));
+  const uint8x16_t bitmap_mask =
+    vreinterpretq_u8_u64(vdupq_n_u64(0x0102040810204080));
 
-  abs_row0_gt0 = vand_u8(abs_row0_gt0, bitmap_mask);
-  abs_row1_gt0 = vand_u8(abs_row1_gt0, bitmap_mask);
-  abs_row2_gt0 = vand_u8(abs_row2_gt0, bitmap_mask);
-  abs_row3_gt0 = vand_u8(abs_row3_gt0, bitmap_mask);
-  abs_row4_gt0 = vand_u8(abs_row4_gt0, bitmap_mask);
-  abs_row5_gt0 = vand_u8(abs_row5_gt0, bitmap_mask);
-  abs_row6_gt0 = vand_u8(abs_row6_gt0, bitmap_mask);
-  abs_row7_gt0 = vand_u8(abs_row7_gt0, bitmap_mask);
+  uint8x16_t bitmap_rows_10 = vandq_u8(row10_ne_0, bitmap_mask);
+  uint8x16_t bitmap_rows_32 = vandq_u8(row32_ne_0, bitmap_mask);
+  uint8x16_t bitmap_rows_54 = vandq_u8(row54_ne_0, bitmap_mask);
+  uint8x16_t bitmap_rows_76 = vandq_u8(row76_ne_0, bitmap_mask);
 
-  uint8x8_t bitmap_rows_10 = vpadd_u8(abs_row1_gt0, abs_row0_gt0);
-  uint8x8_t bitmap_rows_32 = vpadd_u8(abs_row3_gt0, abs_row2_gt0);
-  uint8x8_t bitmap_rows_54 = vpadd_u8(abs_row5_gt0, abs_row4_gt0);
-  uint8x8_t bitmap_rows_76 = vpadd_u8(abs_row7_gt0, abs_row6_gt0);
-  uint8x8_t bitmap_rows_3210 = vpadd_u8(bitmap_rows_32, bitmap_rows_10);
-  uint8x8_t bitmap_rows_7654 = vpadd_u8(bitmap_rows_76, bitmap_rows_54);
-  uint8x8_t bitmap_all = vpadd_u8(bitmap_rows_7654, bitmap_rows_3210);
+  uint8x16_t bitmap_rows_3210 = vpaddq_u8(bitmap_rows_32, bitmap_rows_10);
+  uint8x16_t bitmap_rows_7654 = vpaddq_u8(bitmap_rows_76, bitmap_rows_54);
+  uint8x16_t bitmap_rows_76543210 = vpaddq_u8(bitmap_rows_7654,
+                                              bitmap_rows_3210);
+  uint8x8_t bitmap_all = vpadd_u8(vget_low_u8(bitmap_rows_76543210),
+                                  vget_high_u8(bitmap_rows_76543210));
 
   
   bitmap_all =
@@ -242,15 +223,15 @@ JOCTET *jsimd_huff_encode_one_block_neon(void *state, JOCTET *buffer,
   
 
   
-#if defined(_MSC_VER) && !defined(__clang__)
-  unsigned int lz = BUILTIN_CLZ(vgetq_lane_s16(abs_row0, 0));
-#else
-  unsigned int lz;
-  __asm__("clz %w0, %w1" : "=r"(lz) : "r"(vgetq_lane_s16(abs_row0, 0)));
-#endif
-  unsigned int nbits = 32 - lz;
+  int16x8_t abs_row0 = vabsq_s16(row0);
+  int16x8_t row0_lz = vclzq_s16(abs_row0);
+  uint16x8_t row0_mask = vshlq_u16(vcltzq_s16(row0), vnegq_s16(row0_lz));
+  uint16x8_t row0_diff = veorq_u16(vreinterpretq_u16_s16(abs_row0), row0_mask);
   
-  unsigned int diff = (unsigned int)(vgetq_lane_u16(row0_diff, 0) << lz) >> lz;
+  unsigned int lz = vgetq_lane_u16(vreinterpretq_u16_s16(row0_lz), 0);
+  unsigned int nbits = 16 - lz;
+  
+  unsigned int diff = vgetq_lane_u16(row0_diff, 0);
   PUT_CODE(dctbl->ehufco[nbits], dctbl->ehufsi[nbits], diff)
 
   
@@ -266,10 +247,17 @@ JOCTET *jsimd_huff_encode_one_block_neon(void *state, JOCTET *buffer,
 
 
 
+
   if (non_zero_coefficients > 8) {
     uint8_t block_nbits[DCTSIZE2];
 
-    int16x8_t row0_lz = vclzq_s16(abs_row0);
+    int16x8_t abs_row1 = vabsq_s16(row1);
+    int16x8_t abs_row2 = vabsq_s16(row2);
+    int16x8_t abs_row3 = vabsq_s16(row3);
+    int16x8_t abs_row4 = vabsq_s16(row4);
+    int16x8_t abs_row5 = vabsq_s16(row5);
+    int16x8_t abs_row6 = vabsq_s16(row6);
+    int16x8_t abs_row7 = vabsq_s16(row7);
     int16x8_t row1_lz = vclzq_s16(abs_row1);
     int16x8_t row2_lz = vclzq_s16(abs_row2);
     int16x8_t row3_lz = vclzq_s16(abs_row3);
@@ -278,48 +266,47 @@ JOCTET *jsimd_huff_encode_one_block_neon(void *state, JOCTET *buffer,
     int16x8_t row6_lz = vclzq_s16(abs_row6);
     int16x8_t row7_lz = vclzq_s16(abs_row7);
     
-    uint8x8_t row0_nbits = vsub_u8(vdup_n_u8(16),
-                                   vmovn_u16(vreinterpretq_u16_s16(row0_lz)));
-    uint8x8_t row1_nbits = vsub_u8(vdup_n_u8(16),
-                                   vmovn_u16(vreinterpretq_u16_s16(row1_lz)));
-    uint8x8_t row2_nbits = vsub_u8(vdup_n_u8(16),
-                                   vmovn_u16(vreinterpretq_u16_s16(row2_lz)));
-    uint8x8_t row3_nbits = vsub_u8(vdup_n_u8(16),
-                                   vmovn_u16(vreinterpretq_u16_s16(row3_lz)));
-    uint8x8_t row4_nbits = vsub_u8(vdup_n_u8(16),
-                                   vmovn_u16(vreinterpretq_u16_s16(row4_lz)));
-    uint8x8_t row5_nbits = vsub_u8(vdup_n_u8(16),
-                                   vmovn_u16(vreinterpretq_u16_s16(row5_lz)));
-    uint8x8_t row6_nbits = vsub_u8(vdup_n_u8(16),
-                                   vmovn_u16(vreinterpretq_u16_s16(row6_lz)));
-    uint8x8_t row7_nbits = vsub_u8(vdup_n_u8(16),
-                                   vmovn_u16(vreinterpretq_u16_s16(row7_lz)));
+    uint8x16_t row01_lz = vuzp1q_u8(vreinterpretq_u8_s16(row0_lz),
+                                    vreinterpretq_u8_s16(row1_lz));
+    uint8x16_t row23_lz = vuzp1q_u8(vreinterpretq_u8_s16(row2_lz),
+                                    vreinterpretq_u8_s16(row3_lz));
+    uint8x16_t row45_lz = vuzp1q_u8(vreinterpretq_u8_s16(row4_lz),
+                                    vreinterpretq_u8_s16(row5_lz));
+    uint8x16_t row67_lz = vuzp1q_u8(vreinterpretq_u8_s16(row6_lz),
+                                    vreinterpretq_u8_s16(row7_lz));
     
-    vst1_u8(block_nbits + 0 * DCTSIZE, row0_nbits);
-    vst1_u8(block_nbits + 1 * DCTSIZE, row1_nbits);
-    vst1_u8(block_nbits + 2 * DCTSIZE, row2_nbits);
-    vst1_u8(block_nbits + 3 * DCTSIZE, row3_nbits);
-    vst1_u8(block_nbits + 4 * DCTSIZE, row4_nbits);
-    vst1_u8(block_nbits + 5 * DCTSIZE, row5_nbits);
-    vst1_u8(block_nbits + 6 * DCTSIZE, row6_nbits);
-    vst1_u8(block_nbits + 7 * DCTSIZE, row7_nbits);
+    uint8x16_t row01_nbits = vsubq_u8(vdupq_n_u8(16), row01_lz);
+    uint8x16_t row23_nbits = vsubq_u8(vdupq_n_u8(16), row23_lz);
+    uint8x16_t row45_nbits = vsubq_u8(vdupq_n_u8(16), row45_lz);
+    uint8x16_t row67_nbits = vsubq_u8(vdupq_n_u8(16), row67_lz);
     
-    row0_diff = vshlq_u16(row0_diff, row0_lz);
-    row1_diff = vshlq_u16(row1_diff, row1_lz);
-    row2_diff = vshlq_u16(row2_diff, row2_lz);
-    row3_diff = vshlq_u16(row3_diff, row3_lz);
-    row4_diff = vshlq_u16(row4_diff, row4_lz);
-    row5_diff = vshlq_u16(row5_diff, row5_lz);
-    row6_diff = vshlq_u16(row6_diff, row6_lz);
-    row7_diff = vshlq_u16(row7_diff, row7_lz);
-    row0_diff = vshlq_u16(row0_diff, vnegq_s16(row0_lz));
-    row1_diff = vshlq_u16(row1_diff, vnegq_s16(row1_lz));
-    row2_diff = vshlq_u16(row2_diff, vnegq_s16(row2_lz));
-    row3_diff = vshlq_u16(row3_diff, vnegq_s16(row3_lz));
-    row4_diff = vshlq_u16(row4_diff, vnegq_s16(row4_lz));
-    row5_diff = vshlq_u16(row5_diff, vnegq_s16(row5_lz));
-    row6_diff = vshlq_u16(row6_diff, vnegq_s16(row6_lz));
-    row7_diff = vshlq_u16(row7_diff, vnegq_s16(row7_lz));
+    vst1q_u8(block_nbits + 0 * DCTSIZE, row01_nbits);
+    vst1q_u8(block_nbits + 2 * DCTSIZE, row23_nbits);
+    vst1q_u8(block_nbits + 4 * DCTSIZE, row45_nbits);
+    vst1q_u8(block_nbits + 6 * DCTSIZE, row67_nbits);
+    
+    uint16x8_t row1_mask = vshlq_u16(vcltzq_s16(row1), vnegq_s16(row1_lz));
+    uint16x8_t row2_mask = vshlq_u16(vcltzq_s16(row2), vnegq_s16(row2_lz));
+    uint16x8_t row3_mask = vshlq_u16(vcltzq_s16(row3), vnegq_s16(row3_lz));
+    uint16x8_t row4_mask = vshlq_u16(vcltzq_s16(row4), vnegq_s16(row4_lz));
+    uint16x8_t row5_mask = vshlq_u16(vcltzq_s16(row5), vnegq_s16(row5_lz));
+    uint16x8_t row6_mask = vshlq_u16(vcltzq_s16(row6), vnegq_s16(row6_lz));
+    uint16x8_t row7_mask = vshlq_u16(vcltzq_s16(row7), vnegq_s16(row7_lz));
+    
+    uint16x8_t row1_diff = veorq_u16(vreinterpretq_u16_s16(abs_row1),
+                                     row1_mask);
+    uint16x8_t row2_diff = veorq_u16(vreinterpretq_u16_s16(abs_row2),
+                                     row2_mask);
+    uint16x8_t row3_diff = veorq_u16(vreinterpretq_u16_s16(abs_row3),
+                                     row3_mask);
+    uint16x8_t row4_diff = veorq_u16(vreinterpretq_u16_s16(abs_row4),
+                                     row4_mask);
+    uint16x8_t row5_diff = veorq_u16(vreinterpretq_u16_s16(abs_row5),
+                                     row5_mask);
+    uint16x8_t row6_diff = veorq_u16(vreinterpretq_u16_s16(abs_row6),
+                                     row6_mask);
+    uint16x8_t row7_diff = veorq_u16(vreinterpretq_u16_s16(abs_row7),
+                                     row7_mask);
     
     vst1q_u16(block_diff + 0 * DCTSIZE, row0_diff);
     vst1q_u16(block_diff + 1 * DCTSIZE, row1_diff);
@@ -350,6 +337,13 @@ JOCTET *jsimd_huff_encode_one_block_neon(void *state, JOCTET *buffer,
   } else if (bitmap != 0) {
     uint16_t block_abs[DCTSIZE2];
     
+    int16x8_t abs_row1 = vabsq_s16(row1);
+    int16x8_t abs_row2 = vabsq_s16(row2);
+    int16x8_t abs_row3 = vabsq_s16(row3);
+    int16x8_t abs_row4 = vabsq_s16(row4);
+    int16x8_t abs_row5 = vabsq_s16(row5);
+    int16x8_t abs_row6 = vabsq_s16(row6);
+    int16x8_t abs_row7 = vabsq_s16(row7);
     vst1q_u16(block_abs + 0 * DCTSIZE, vreinterpretq_u16_s16(abs_row0));
     vst1q_u16(block_abs + 1 * DCTSIZE, vreinterpretq_u16_s16(abs_row1));
     vst1q_u16(block_abs + 2 * DCTSIZE, vreinterpretq_u16_s16(abs_row2));
@@ -359,6 +353,20 @@ JOCTET *jsimd_huff_encode_one_block_neon(void *state, JOCTET *buffer,
     vst1q_u16(block_abs + 6 * DCTSIZE, vreinterpretq_u16_s16(abs_row6));
     vst1q_u16(block_abs + 7 * DCTSIZE, vreinterpretq_u16_s16(abs_row7));
     
+    uint16x8_t row1_diff = veorq_u16(vreinterpretq_u16_s16(abs_row1),
+                                     vcltzq_s16(row1));
+    uint16x8_t row2_diff = veorq_u16(vreinterpretq_u16_s16(abs_row2),
+                                     vcltzq_s16(row2));
+    uint16x8_t row3_diff = veorq_u16(vreinterpretq_u16_s16(abs_row3),
+                                     vcltzq_s16(row3));
+    uint16x8_t row4_diff = veorq_u16(vreinterpretq_u16_s16(abs_row4),
+                                     vcltzq_s16(row4));
+    uint16x8_t row5_diff = veorq_u16(vreinterpretq_u16_s16(abs_row5),
+                                     vcltzq_s16(row5));
+    uint16x8_t row6_diff = veorq_u16(vreinterpretq_u16_s16(abs_row6),
+                                     vcltzq_s16(row6));
+    uint16x8_t row7_diff = veorq_u16(vreinterpretq_u16_s16(abs_row7),
+                                     vcltzq_s16(row7));
     vst1q_u16(block_diff + 0 * DCTSIZE, row0_diff);
     vst1q_u16(block_diff + 1 * DCTSIZE, row1_diff);
     vst1q_u16(block_diff + 2 * DCTSIZE, row2_diff);
@@ -375,7 +383,7 @@ JOCTET *jsimd_huff_encode_one_block_neon(void *state, JOCTET *buffer,
       bitmap <<= r;
       lz = BUILTIN_CLZ(block_abs[i]);
       nbits = 32 - lz;
-      diff = (unsigned int)(block_diff[i] << lz) >> lz;
+      diff = ((unsigned int)block_diff[i] << lz) >> lz;
       while (r > 15) {
         
         PUT_BITS(code_0xf0, size_0xf0)

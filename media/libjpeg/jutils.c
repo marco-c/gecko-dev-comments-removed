@@ -110,7 +110,7 @@ jcopy_sample_rows(JSAMPARRAY input_array, int source_row,
   for (row = num_rows; row > 0; row--) {
     inptr = *input_array++;
     outptr = *output_array++;
-    MEMCOPY(outptr, inptr, count);
+    memcpy(outptr, inptr, count);
   }
 }
 
@@ -120,7 +120,7 @@ jcopy_block_row(JBLOCKROW input_row, JBLOCKROW output_row,
                 JDIMENSION num_blocks)
 
 {
-  MEMCOPY(output_row, input_row, num_blocks * (DCTSIZE2 * sizeof(JCOEF)));
+  memcpy(output_row, input_row, num_blocks * (DCTSIZE2 * sizeof(JCOEF)));
 }
 
 
@@ -129,5 +129,5 @@ jzero_far(void *target, size_t bytestozero)
 
 
 {
-  MEMZERO(target, bytestozero);
+  memset(target, 0, bytestozero);
 }

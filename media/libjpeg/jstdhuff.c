@@ -29,7 +29,7 @@ add_huff_table(j_common_ptr cinfo, JHUFF_TBL **htblptr, const UINT8 *bits,
     return;
 
   
-  MEMCOPY((*htblptr)->bits, bits, sizeof((*htblptr)->bits));
+  memcpy((*htblptr)->bits, bits, sizeof((*htblptr)->bits));
 
   
 
@@ -41,8 +41,9 @@ add_huff_table(j_common_ptr cinfo, JHUFF_TBL **htblptr, const UINT8 *bits,
   if (nsymbols < 1 || nsymbols > 256)
     ERREXIT(cinfo, JERR_BAD_HUFF_TABLE);
 
-  MEMCOPY((*htblptr)->huffval, val, nsymbols * sizeof(UINT8));
-  MEMZERO(&((*htblptr)->huffval[nsymbols]), (256 - nsymbols) * sizeof(UINT8));
+  memcpy((*htblptr)->huffval, val, nsymbols * sizeof(UINT8));
+  memset(&((*htblptr)->huffval[nsymbols]), 0,
+         (256 - nsymbols) * sizeof(UINT8));
 
   
   (*htblptr)->sent_table = FALSE;

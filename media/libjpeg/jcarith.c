@@ -338,14 +338,14 @@ emit_restart(j_compress_ptr cinfo, int restart_num)
     compptr = cinfo->cur_comp_info[ci];
     
     if (cinfo->progressive_mode == 0 || (cinfo->Ss == 0 && cinfo->Ah == 0)) {
-      MEMZERO(entropy->dc_stats[compptr->dc_tbl_no], DC_STAT_BINS);
+      memset(entropy->dc_stats[compptr->dc_tbl_no], 0, DC_STAT_BINS);
       
       entropy->last_dc_val[ci] = 0;
       entropy->dc_context[ci] = 0;
     }
     
     if (cinfo->progressive_mode == 0 || cinfo->Se) {
-      MEMZERO(entropy->ac_stats[compptr->ac_tbl_no], AC_STAT_BINS);
+      memset(entropy->ac_stats[compptr->ac_tbl_no], 0, AC_STAT_BINS);
     }
   }
 
@@ -836,7 +836,7 @@ start_pass(j_compress_ptr cinfo, boolean gather_statistics)
 
 
 
-    ERREXIT(cinfo, JERR_NOT_COMPILED);
+    ERREXIT(cinfo, JERR_NOTIMPL);
 
   
 
@@ -867,7 +867,7 @@ start_pass(j_compress_ptr cinfo, boolean gather_statistics)
       if (entropy->dc_stats[tbl] == NULL)
         entropy->dc_stats[tbl] = (unsigned char *)(*cinfo->mem->alloc_small)
           ((j_common_ptr)cinfo, JPOOL_IMAGE, DC_STAT_BINS);
-      MEMZERO(entropy->dc_stats[tbl], DC_STAT_BINS);
+      memset(entropy->dc_stats[tbl], 0, DC_STAT_BINS);
       
       entropy->last_dc_val[ci] = 0;
       entropy->dc_context[ci] = 0;
@@ -880,7 +880,7 @@ start_pass(j_compress_ptr cinfo, boolean gather_statistics)
       if (entropy->ac_stats[tbl] == NULL)
         entropy->ac_stats[tbl] = (unsigned char *)(*cinfo->mem->alloc_small)
           ((j_common_ptr)cinfo, JPOOL_IMAGE, AC_STAT_BINS);
-      MEMZERO(entropy->ac_stats[tbl], AC_STAT_BINS);
+      memset(entropy->ac_stats[tbl], 0, AC_STAT_BINS);
 #ifdef CALCULATE_SPECTRAL_CONDITIONING
       if (cinfo->progressive_mode)
         

@@ -373,12 +373,3 @@ extern const int jpeg_natural_order[];
 
 
 extern const JLONG jpeg_aritab[];
-
-
-
-#ifdef INCOMPLETE_TYPES_BROKEN
-#ifndef AM_MEMORY_MANAGER       
-struct jvirt_sarray_control { long dummy; };
-struct jvirt_barray_control { long dummy; };
-#endif
-#endif 

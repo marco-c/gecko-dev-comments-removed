@@ -473,7 +473,7 @@ get_dht(j_decompress_ptr cinfo)
     for (i = 0; i < count; i++)
       INPUT_BYTE(cinfo, huffval[i], return FALSE);
 
-    MEMZERO(&huffval[count], (256 - count) * sizeof(UINT8));
+    memset(&huffval[count], 0, (256 - count) * sizeof(UINT8));
 
     length -= count;
 
@@ -491,8 +491,8 @@ get_dht(j_decompress_ptr cinfo)
     if (*htblptr == NULL)
       *htblptr = jpeg_alloc_huff_table((j_common_ptr)cinfo);
 
-    MEMCOPY((*htblptr)->bits, bits, sizeof((*htblptr)->bits));
-    MEMCOPY((*htblptr)->huffval, huffval, sizeof((*htblptr)->huffval));
+    memcpy((*htblptr)->bits, bits, sizeof((*htblptr)->bits));
+    memcpy((*htblptr)->huffval, huffval, sizeof((*htblptr)->huffval));
   }
 
   if (length != 0)

@@ -100,8 +100,8 @@ jpeg_copy_critical_parameters(j_decompress_ptr srcinfo, j_compress_ptr dstinfo)
       qtblptr = &dstinfo->quant_tbl_ptrs[tblno];
       if (*qtblptr == NULL)
         *qtblptr = jpeg_alloc_quant_table((j_common_ptr)dstinfo);
-      MEMCOPY((*qtblptr)->quantval, srcinfo->quant_tbl_ptrs[tblno]->quantval,
-              sizeof((*qtblptr)->quantval));
+      memcpy((*qtblptr)->quantval, srcinfo->quant_tbl_ptrs[tblno]->quantval,
+             sizeof((*qtblptr)->quantval));
       (*qtblptr)->sent_table = FALSE;
     }
   }

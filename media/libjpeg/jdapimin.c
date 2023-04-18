@@ -53,7 +53,7 @@ jpeg_CreateDecompress(j_decompress_ptr cinfo, int version, size_t structsize)
   {
     struct jpeg_error_mgr *err = cinfo->err;
     void *client_data = cinfo->client_data; 
-    MEMZERO(cinfo, sizeof(struct jpeg_decompress_struct));
+    memset(cinfo, 0, sizeof(struct jpeg_decompress_struct));
     cinfo->err = err;
     cinfo->client_data = client_data;
   }
@@ -92,7 +92,7 @@ jpeg_CreateDecompress(j_decompress_ptr cinfo, int version, size_t structsize)
   cinfo->master = (struct jpeg_decomp_master *)
     (*cinfo->mem->alloc_small) ((j_common_ptr)cinfo, JPOOL_PERMANENT,
                                 sizeof(my_decomp_master));
-  MEMZERO(cinfo->master, sizeof(my_decomp_master));
+  memset(cinfo->master, 0, sizeof(my_decomp_master));
 }
 
 
