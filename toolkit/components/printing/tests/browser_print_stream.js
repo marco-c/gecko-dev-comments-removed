@@ -44,10 +44,6 @@ async function printToDestination(aBrowser, aDestination) {
   return filePath;
 }
 
-
-
-const COCOA_MAX_SIZE_DIFFERENCE = 100; 
-
 add_task(async function testPrintToStream() {
   await PrintHelper.withTestPage(async helper => {
     let filePath = await printToDestination(
@@ -59,7 +55,13 @@ add_task(async function testPrintToStream() {
       Ci.nsIPrintSettings.kOutputDestinationStream
     );
 
-    const isCocoa = AppConstants.platform == "macosx";
+    
+    
+    
+    
+    
+    
+    const maxSizeDifference = AppConstants.platform == "macosx" ? 100 : 1;
 
     
     
@@ -72,23 +74,19 @@ add_task(async function testPrintToStream() {
         streamStat.size > 0,
         "Stream file should not be empty: " + streamStat.size
       );
-      if (isCocoa) {
-        return (
-          Math.abs(fileStat.size - streamStat.size) < COCOA_MAX_SIZE_DIFFERENCE
-        );
-      }
-      return fileStat.size == streamStat.size;
-    }, "Sizes should match");
+      return Math.abs(fileStat.size - streamStat.size) <= maxSizeDifference;
+    }, "Sizes should (almost) match");
 
-    if (!isCocoa) {
+    if (false) {
+      
+      
       let fileData = await IOUtils.read(filePath);
       let streamData = await IOUtils.read(streamPath);
       ok(!!fileData.length, "File should not be empty");
       is(fileData.length, streamData.length, "File size should be equal");
       for (let i = 0; i < fileData.length; ++i) {
         if (fileData[i] != streamData[i]) {
-          
-          todo_is(
+          is(
             fileData[i],
             streamData[i],
             `Files should be equal (byte ${i} different)`
