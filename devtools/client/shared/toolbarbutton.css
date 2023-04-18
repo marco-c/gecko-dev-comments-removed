@@ -1,12 +1,12 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
+/**
+ * Legacy `devtools-toolbarbutton` styles, extracted from common.css because
+ * we're only using them in Style Editor,
+ * and it makes maintaining the newer `devtools-button` styles easier.
+ */
 
 .devtools-toolbarbutton {
   appearance: none;
@@ -57,7 +57,7 @@
   background: var(--toolbarbutton-hover-background);
 }
 
-
+/* Selectable button which is unchecked. */
 
 .devtools-toolbarbutton[label]:not([checked=true],[disabled]):hover {
   background-color: var(--toolbarbutton-hover-background);
@@ -68,7 +68,7 @@
   color: var(--toolbarbutton-focus-color);
 }
 
-
+/* Selectable button which is checked. */
 
 .devtools-toolbarbutton:not([disabled])[label][checked=true],
 .devtools-toolbarbutton:not([disabled])[label][open] {
