@@ -1112,7 +1112,6 @@ pub struct PrimitiveInstance {
     
     
     pub vis: PrimitiveVisibility,
-    pub anti_aliased: bool,
 }
 
 impl PrimitiveInstance {
@@ -1132,7 +1131,6 @@ impl PrimitiveInstance {
                 local_clip_rect,
                 clip_chain_id,
             },
-            anti_aliased: false,
         }
     }
 

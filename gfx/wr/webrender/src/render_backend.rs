@@ -8,7 +8,7 @@
 
 
 
-use api::{DebugFlags, Parameter, BoolParameter};
+use api::{DebugFlags, Parameter, BoolParameter, PrimitiveFlags};
 use api::{DocumentId, ExternalScrollId, HitTestResult};
 use api::{IdNamespace, PipelineId, RenderNotifier, SampledScrollOffset};
 use api::{NotificationRequest, Checkpoint, QualitySettings};
@@ -204,6 +204,21 @@ impl DataStores {
             }
             _ => {
                 self.as_common_data(prim_instance).may_need_repetition
+            }
+        }
+    }
+
+    
+    pub fn prim_has_anti_aliasing(
+        &self,
+        prim_instance: &PrimitiveInstance,
+    ) -> bool {
+        match prim_instance.kind {
+            PrimitiveInstanceKind::Picture { .. } => {
+                false
+            }
+            _ => {
+                self.as_common_data(prim_instance).flags.contains(PrimitiveFlags::ANTIALISED)
             }
         }
     }
