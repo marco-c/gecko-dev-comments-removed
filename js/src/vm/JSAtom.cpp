@@ -403,7 +403,7 @@ bool AtomsTable::sweepIncrementally(SweepIterator& atomsToSweep,
   
   while (!atomsToSweep.empty()) {
     budget.step();
-    if (budget.isOverBudget()) {
+    if (budget.checkAndResetOverBudget()) {
       return false;
     }
 
