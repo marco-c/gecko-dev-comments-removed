@@ -404,15 +404,7 @@ impl ToAbsoluteLength for ComputedLength {
 impl ToAbsoluteLength for ComputedLengthPercentage {
     #[inline]
     fn to_pixel_length(&self, containing_len: Option<ComputedLength>) -> Result<CSSFloat, ()> {
-        match containing_len {
-            Some(relative_len) => Ok(self.resolve(relative_len).px()),
-            
-            
-            
-            
-            
-            None => Ok(self.resolve(Zero::zero()).px()),
-        }
+        Ok(self.maybe_percentage_relative_to(containing_len).ok_or(())?.px())
     }
 }
 
@@ -574,9 +566,18 @@ impl<T: ToMatrix> Transform<T> {
     
     
     
+    
     #[cfg_attr(rustfmt, rustfmt_skip)]
     pub fn to_transform_3d_matrix(
         &self,
+        reference_box: Option<&Rect<ComputedLength>>
+    ) -> Result<(Transform3D<CSSFloat>, bool), ()> {
+        Self::components_to_transform_3d_matrix(&self.0, reference_box)
+    }
+
+    
+    pub fn components_to_transform_3d_matrix(
+        ops: &[T],
         reference_box: Option<&Rect<ComputedLength>>
     ) -> Result<(Transform3D<CSSFloat>, bool), ()> {
         let cast_3d_transform = |m: Transform3D<f64>| -> Transform3D<CSSFloat> {
@@ -590,15 +591,16 @@ impl<T: ToMatrix> Transform<T> {
             )
         };
 
-        let (m, is_3d) = self.to_transform_3d_matrix_f64(reference_box)?;
+        let (m, is_3d) = Self::components_to_transform_3d_matrix_f64(ops, reference_box)?;
         Ok((cast_3d_transform(m), is_3d))
     }
 
     
-    pub fn to_transform_3d_matrix_f64(
-        &self,
+    fn components_to_transform_3d_matrix_f64(
+        ops: &[T],
         reference_box: Option<&Rect<ComputedLength>>,
     ) -> Result<(Transform3D<f64>, bool), ()> {
+        
         
         
         
@@ -607,9 +609,9 @@ impl<T: ToMatrix> Transform<T> {
         let mut transform = Transform3D::<f64>::identity();
         let mut contain_3d = false;
 
-        for operation in &*self.0 {
+        for operation in ops {
             let matrix = operation.to_3d_matrix(reference_box)?;
-            contain_3d |= operation.is_3d();
+            contain_3d = contain_3d || operation.is_3d();
             transform = matrix.then(&transform);
         }
 
