@@ -310,7 +310,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     this._currentWindowGlobalTargets.set(actor.innerWindowId, actor);
 
     
-    if (!this.browserId) {
+    if (this.context.type == "all") {
       this.emit("target-available-form", actor);
       return;
     }
