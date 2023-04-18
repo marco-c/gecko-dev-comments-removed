@@ -18,12 +18,15 @@ class Promise;
 struct GPUDeviceDescriptor;
 struct GPUExtensions;
 struct GPUFeatures;
+enum class GPUFeatureName : uint8_t;
+template <typename T>
+class Sequence;
 }  
 
 namespace webgpu {
-class AdapterFeatures;
 class Device;
 class Instance;
+class SupportedFeatures;
 class SupportedLimits;
 class WebGPUChild;
 namespace ffi {
@@ -37,6 +40,9 @@ class Adapter final : public ObjectBase, public ChildOf<Instance> {
 
   RefPtr<WebGPUChild> mBridge;
 
+  static Maybe<uint32_t> MakeFeatureBits(
+      const dom::Sequence<dom::GPUFeatureName>& aFeatures);
+
  private:
   ~Adapter();
   void Cleanup();
@@ -45,14 +51,14 @@ class Adapter final : public ObjectBase, public ChildOf<Instance> {
   const nsString mName;
   
   
-  RefPtr<AdapterFeatures> mFeatures;
+  RefPtr<SupportedFeatures> mFeatures;
   RefPtr<SupportedLimits> mLimits;
   const bool mIsFallbackAdapter = false;
 
  public:
   Adapter(Instance* const aParent, const ffi::WGPUAdapterInformation& aInfo);
   void GetName(nsString& out) const { out = mName; }
-  const RefPtr<AdapterFeatures>& Features() const;
+  const RefPtr<SupportedFeatures>& Features() const;
   const RefPtr<SupportedLimits>& Limits() const;
   bool IsFallbackAdapter() const { return mIsFallbackAdapter; }
 

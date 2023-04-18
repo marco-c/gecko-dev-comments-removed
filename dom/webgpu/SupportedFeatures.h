@@ -1,0 +1,31 @@
+
+
+
+
+
+#ifndef GPU_SupportedFeatures_H_
+#define GPU_SupportedFeatures_H_
+
+#include "nsWrapperCache.h"
+#include "ObjectModel.h"
+
+namespace mozilla {
+namespace webgpu {
+class Adapter;
+
+class SupportedFeatures final : public nsWrapperCache, public ChildOf<Adapter> {
+ public:
+  GPU_DECL_CYCLE_COLLECTION(SupportedFeatures)
+  GPU_DECL_JS_WRAP(SupportedFeatures)
+
+  explicit SupportedFeatures(Adapter* const aParent);
+
+ private:
+  ~SupportedFeatures() = default;
+  void Cleanup() {}
+};
+
+}  
+}  
+
+#endif  

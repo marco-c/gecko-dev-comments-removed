@@ -1,0 +1,20 @@
+
+
+
+
+
+#include "SupportedFeatures.h"
+#include "Adapter.h"
+#include "mozilla/dom/WebGPUBinding.h"
+
+namespace mozilla {
+namespace webgpu {
+
+GPU_IMPL_CYCLE_COLLECTION(SupportedFeatures, mParent)
+GPU_IMPL_JS_WRAP(SupportedFeatures)
+
+SupportedFeatures::SupportedFeatures(Adapter* const aParent)
+    : ChildOf(aParent) {}
+
+}  
+}  
