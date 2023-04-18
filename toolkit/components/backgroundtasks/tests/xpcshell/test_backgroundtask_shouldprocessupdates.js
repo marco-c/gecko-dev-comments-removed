@@ -31,7 +31,6 @@ add_task(async function test_backgroundtask_shouldprocessupdates() {
   
   
   
-  
   exitCode = await do_backgroundtask("shouldprocessupdates");
   Assert.equal(81, exitCode);
 });
