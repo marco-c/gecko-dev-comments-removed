@@ -885,9 +885,7 @@ bool LazyStubTier::createOneEntryStub(uint32_t funcExportIndex,
 
 
 
-
-
-auto IndirectStubComparator = [](uint32_t funcIndex,
+auto IndirectStubComparator = [](uint32_t funcIndex, void* tlsData,
                                  const IndirectStub& stub) -> int {
   if (funcIndex < stub.funcIndex) {
     return -1;
@@ -896,6 +894,12 @@ auto IndirectStubComparator = [](uint32_t funcIndex,
     return 1;
   }
   
+  if (uintptr_t(tlsData) < uintptr_t(stub.tls)) {
+    return -1;
+  }
+  if (uintptr_t(tlsData) > uintptr_t(stub.tls)) {
+    return 1;
+  }
   return 0;
 };
 
@@ -978,63 +982,24 @@ bool LazyStubTier::createManyIndirectStubs(
   }
 
   
-
-  
-  
-  
-  struct Counter {
-    explicit Counter(void* tls) : tls(tls), counter(0) {}
-    void* tls;
-    size_t counter;
-  };
-  Vector<Counter, 8, SystemAllocPolicy> counters{};
-  for (const auto& target : targets) {
-    size_t i = 0;
-    while (i < counters.length() && target.tls != counters[i].tls) {
-      i++;
-    }
-    if (i == counters.length() && !counters.emplaceBack(target.tls)) {
-      return false;
-    }
-    counters[i].counter++;
+  if (!indirectStubVector_.reserve(indirectStubVector_.length() +
+                                   targets.length())) {
+    return false;
   }
 
-  
-  
-  
-  for (const auto& counter : counters) {
-    auto probe = indirectStubTable_.lookupForAdd(counter.tls);
-    if (!probe) {
-      IndirectStubVector v{};
-      if (!indirectStubTable_.add(probe, counter.tls, std::move(v))) {
-        return false;
-      }
-    }
-    IndirectStubVector& indirectStubVector = probe->value();
-    if (!indirectStubVector.reserve(indirectStubVector.length() +
-                                    counter.counter)) {
-      return false;
-    }
-  }
-
-  
   for (const auto& target : targets) {
     auto stub = IndirectStub{target.functionIdx, lastStubSegmentIndex_,
-                             indirectStubRangeIndex};
-
-    auto probe = indirectStubTable_.lookup(target.tls);
-    MOZ_RELEASE_ASSERT(probe);
-    IndirectStubVector& indirectStubVector = probe->value();
+                             indirectStubRangeIndex, target.tls};
 
     size_t indirectStubIndex;
     MOZ_ALWAYS_FALSE(BinarySearchIf(
-        indirectStubVector, 0, indirectStubVector.length(),
+        indirectStubVector_, 0, indirectStubVector_.length(),
         [&stub](const IndirectStub& otherStub) {
-          return IndirectStubComparator(stub.funcIndex, otherStub);
+          return IndirectStubComparator(stub.funcIndex, stub.tls, otherStub);
         },
         &indirectStubIndex));
-    MOZ_ALWAYS_TRUE(indirectStubVector.insert(
-        indirectStubVector.begin() + indirectStubIndex, std::move(stub)));
+    MOZ_ALWAYS_TRUE(indirectStubVector_.insert(
+        indirectStubVector_.begin() + indirectStubIndex, std::move(stub)));
 
     ++indirectStubRangeIndex;
   }
@@ -1113,20 +1078,16 @@ void* LazyStubTier::lookupInterpEntry(uint32_t funcIndex) const {
 
 void* LazyStubTier::lookupIndirectStub(uint32_t funcIndex, void* tls) const {
   size_t match;
-  auto probe = indirectStubTable_.lookup(tls);
-  if (!probe) {
-    return nullptr;
-  }
-  const IndirectStubVector& indirectStubVector = probe->value();
   if (!BinarySearchIf(
-          indirectStubVector, 0, indirectStubVector.length(),
-          [funcIndex](const IndirectStub& stub) {
-            return IndirectStubComparator(funcIndex, stub);
+          indirectStubVector_, 0, indirectStubVector_.length(),
+          [funcIndex, tls](const IndirectStub& stub) {
+            return IndirectStubComparator(funcIndex, tls, stub);
           },
           &match)) {
     return nullptr;
   }
-  const IndirectStub& indirectStub = indirectStubVector[match];
+
+  const IndirectStub& indirectStub = indirectStubVector_[match];
 
   const LazyStubSegment& segment = *stubSegments_[indirectStub.segmentIndex];
   return segment.base() +
