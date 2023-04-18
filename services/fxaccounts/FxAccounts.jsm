@@ -1612,20 +1612,16 @@ FxAccountsInternal.prototype = {
   },
 };
 
-let fxAccountsSingleton = null;
-function getFxAccountsSingleton() {
-  if (fxAccountsSingleton) {
-    return fxAccountsSingleton;
-  }
 
-  fxAccountsSingleton = new FxAccounts();
+XPCOMUtils.defineLazyGetter(this, "fxAccounts", function() {
+  let a = new FxAccounts();
 
   
   
-  fxAccountsSingleton._internal.loadAndPoll();
+  a._internal.loadAndPoll();
 
-  return fxAccountsSingleton;
-}
+  return a;
+});
 
 
-var EXPORTED_SYMBOLS = ["getFxAccountsSingleton", "FxAccounts", "AccountState"];
+var EXPORTED_SYMBOLS = ["fxAccounts", "FxAccounts", "AccountState"];
