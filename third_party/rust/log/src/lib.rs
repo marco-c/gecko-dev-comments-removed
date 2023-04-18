@@ -263,61 +263,13 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
     html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-    html_root_url = "https://docs.rs/log/0.4.17"
+    html_root_url = "https://docs.rs/log/0.4.14"
 )]
 #![warn(missing_docs)]
-#![deny(missing_debug_implementations, unconditional_recursion)]
+#![deny(missing_debug_implementations)]
 #![cfg_attr(all(not(feature = "std"), not(test)), no_std)]
 
 
@@ -608,24 +560,6 @@ impl Level {
     pub fn as_str(&self) -> &'static str {
         LOG_LEVEL_NAMES[*self as usize]
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn iter() -> impl Iterator<Item = Self> {
-        (1..6).map(|i| Self::from_usize(i).unwrap())
-    }
 }
 
 
@@ -768,7 +702,6 @@ impl LevelFilter {
             _ => None,
         }
     }
-
     
     #[inline]
     pub fn max() -> LevelFilter {
@@ -788,24 +721,6 @@ impl LevelFilter {
     
     pub fn as_str(&self) -> &'static str {
         LOG_LEVEL_NAMES[*self as usize]
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn iter() -> impl Iterator<Item = Self> {
-        (0..6).map(|i| Self::from_usize(i).unwrap())
     }
 }
 
@@ -991,6 +906,7 @@ impl<'a> Record<'a> {
         }
     }
 }
+
 
 
 
@@ -1273,16 +1189,8 @@ pub trait Log: Sync + Send {
     
     
     
-    
-    
-    
-    
-    
-    
     fn enabled(&self, metadata: &Metadata) -> bool;
 
-    
-    
     
     
     
@@ -1306,22 +1214,6 @@ impl Log for NopLogger {
     fn flush(&self) {}
 }
 
-impl<T> Log for &'_ T
-where
-    T: ?Sized + Log,
-{
-    fn enabled(&self, metadata: &Metadata) -> bool {
-        (**self).enabled(metadata)
-    }
-
-    fn log(&self, record: &Record) {
-        (**self).log(record)
-    }
-    fn flush(&self) {
-        (**self).flush()
-    }
-}
-
 #[cfg(feature = "std")]
 impl<T> Log for std::boxed::Box<T>
 where
@@ -1339,31 +1231,12 @@ where
     }
 }
 
-#[cfg(feature = "std")]
-impl<T> Log for std::sync::Arc<T>
-where
-    T: ?Sized + Log,
-{
-    fn enabled(&self, metadata: &Metadata) -> bool {
-        self.as_ref().enabled(metadata)
-    }
-
-    fn log(&self, record: &Record) {
-        self.as_ref().log(record)
-    }
-    fn flush(&self) {
-        self.as_ref().flush()
-    }
-}
-
-
-
 
 
 
 #[inline]
 pub fn set_max_level(level: LevelFilter) {
-    MAX_LOG_LEVEL_FILTER.store(level as usize, Ordering::Relaxed)
+    MAX_LOG_LEVEL_FILTER.store(level as usize, Ordering::SeqCst)
 }
 
 
@@ -1489,8 +1362,6 @@ where
         }
         INITIALIZING => {
             while STATE.load(Ordering::SeqCst) == INITIALIZING {
-                
-                #[allow(deprecated)]
                 std::sync::atomic::spin_loop_hint();
             }
             Err(SetLoggerError(()))
@@ -1581,39 +1452,10 @@ pub fn logger() -> &'static dyn Log {
 
 
 #[doc(hidden)]
-#[cfg(not(feature = "kv_unstable"))]
 pub fn __private_api_log(
     args: fmt::Arguments,
     level: Level,
     &(target, module_path, file, line): &(&str, &'static str, &'static str, u32),
-    kvs: Option<&[(&str, &str)]>,
-) {
-    if kvs.is_some() {
-        panic!(
-            "key-value support is experimental and must be enabled using the `kv_unstable` feature"
-        )
-    }
-
-    logger().log(
-        &Record::builder()
-            .args(args)
-            .level(level)
-            .target(target)
-            .module_path_static(Some(module_path))
-            .file_static(Some(file))
-            .line(Some(line))
-            .build(),
-    );
-}
-
-
-#[doc(hidden)]
-#[cfg(feature = "kv_unstable")]
-pub fn __private_api_log(
-    args: fmt::Arguments,
-    level: Level,
-    &(target, module_path, file, line): &(&str, &'static str, &'static str, u32),
-    kvs: Option<&[(&str, &dyn kv::ToValue)]>,
 ) {
     logger().log(
         &Record::builder()
@@ -1623,7 +1465,6 @@ pub fn __private_api_log(
             .module_path_static(Some(module_path))
             .file_static(Some(file))
             .line(Some(line))
-            .key_values(&kvs)
             .build(),
     );
 }
@@ -1632,12 +1473,6 @@ pub fn __private_api_log(
 #[doc(hidden)]
 pub fn __private_api_enabled(level: Level, target: &str) -> bool {
     logger().enabled(&Metadata::builder().level(level).target(target).build())
-}
-
-
-#[doc(hidden)]
-pub mod __private_api {
-    pub use std::option::Option;
 }
 
 
@@ -1936,36 +1771,5 @@ mod tests {
                 .to_borrowed_str()
                 .expect("invalid value")
         );
-    }
-
-    
-    
-    #[test]
-    fn test_foreign_impl() {
-        use super::Log;
-        #[cfg(feature = "std")]
-        use std::sync::Arc;
-
-        fn assert_is_log<T: Log + ?Sized>() {}
-
-        assert_is_log::<&dyn Log>();
-
-        #[cfg(feature = "std")]
-        assert_is_log::<Box<dyn Log>>();
-
-        #[cfg(feature = "std")]
-        assert_is_log::<Arc<dyn Log>>();
-
-        
-        #[allow(unused)]
-        fn forall<T: Log + ?Sized>() {
-            #[cfg(feature = "std")]
-            assert_is_log::<Box<T>>();
-
-            assert_is_log::<&T>();
-
-            #[cfg(feature = "std")]
-            assert_is_log::<Arc<T>>();
-        }
     }
 }
