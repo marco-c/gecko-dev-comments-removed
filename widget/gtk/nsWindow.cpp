@@ -1490,7 +1490,7 @@ bool nsWindow::WaylandPopupIsAnchored() {
     
     return false;
   }
-  return popupFrame->GetAnchor() != nullptr;
+  return !!popupFrame->GetAnchor();
 }
 
 bool nsWindow::IsWidgetOverflowWindow() {
@@ -4286,6 +4286,12 @@ void nsWindow::DispatchContextMenuEventFromMouseEvent(uint16_t domButton,
   }
 }
 
+void nsWindow::TryToShowNativeWindowMenu(GdkEventButton* aEvent) {
+  if (!gdk_window_show_window_menu(GetToplevelGdkWindow(), (GdkEvent*)aEvent)) {
+    NS_WARNING("Native context menu wasn't shown");
+  }
+}
+
 void nsWindow::OnButtonPressEvent(GdkEventButton* aEvent) {
   LOG("Button %u press\n", aEvent->button);
 
@@ -4417,7 +4423,7 @@ void nsWindow::OnButtonReleaseEvent(GdkEventButton* aEvent) {
 
   
   
-  LayoutDeviceIntPoint pos = event.mRefPoint;
+  const LayoutDeviceIntPoint pos = event.mRefPoint;
 
   nsIWidget::ContentAndAPZEventStatus eventStatus = DispatchInputEvent(&event);
 
@@ -4445,10 +4451,7 @@ void nsWindow::OnButtonReleaseEvent(GdkEventButton* aEvent) {
   
   
   if (mIsPIPWindow && aEvent->button == 3) {
-    if (!gdk_window_show_window_menu(GetToplevelGdkWindow(),
-                                     (GdkEvent*)aEvent)) {
-      NS_WARNING("Native context menu wasn't shown");
-    }
+    TryToShowNativeWindowMenu(aEvent);
   }
 }
 
