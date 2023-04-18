@@ -72,7 +72,6 @@ interface nsIFile : nsISupports
 
 
 
-
     void append(in AString node);
     [noscript] void appendNative(in ACString node);
 
