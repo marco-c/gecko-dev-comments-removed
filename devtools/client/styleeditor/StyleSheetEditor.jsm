@@ -96,12 +96,6 @@ function StyleSheetEditor(resource, win, styleSheetFriendlyIndex) {
 
   
   
-  
-  
-  
-  this._isUpdating = false;
-  
-  
   this._justSetText = false;
 
   
@@ -403,13 +397,8 @@ StyleSheetEditor.prototype = {
     const updateIsFromSyleSheetEditor =
       update?.event?.cause === STYLE_SHEET_UPDATE_CAUSED_BY_STYLE_EDITOR;
 
-    
-    
-    if (this._isUpdating || updateIsFromSyleSheetEditor) {
+    if (updateIsFromSyleSheetEditor) {
       
-      
-      
-      this._isUpdating = false;
       this.emit("style-applied");
       return;
     }
@@ -618,9 +607,6 @@ StyleSheetEditor.prototype = {
     if (this.sourceEditor) {
       this._state.text = this.sourceEditor.getText();
     }
-
-    
-    this._isUpdating = true;
 
     try {
       const styleSheetsFront = await this._getStyleSheetsFront();
@@ -884,9 +870,6 @@ StyleSheetEditor.prototype = {
 
       
       
-      
-      this._isUpdating = true;
-
       const styleSheetsFront = await this._getStyleSheetsFront();
 
       await styleSheetsFront.update(
