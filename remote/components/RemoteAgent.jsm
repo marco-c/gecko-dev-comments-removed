@@ -44,11 +44,11 @@ const isRemote =
 class RemoteAgentParentProcess {
   #allowHosts;
   #allowOrigins;
+  #browserStartupFinished;
   #classID;
   #enabled;
   #port;
   #server;
-  #browserStartupFinished;
 
   #cdp;
   #webDriverBiDi;
@@ -56,11 +56,11 @@ class RemoteAgentParentProcess {
   constructor() {
     this.#allowHosts = null;
     this.#allowOrigins = null;
+    this.#browserStartupFinished = Deferred();
     this.#classID = Components.ID("{8f685a9d-8181-46d6-a71d-869289099c6d}");
     this.#enabled = false;
     this.#port = DEFAULT_PORT;
     this.#server = null;
-    this.#browserStartupFinished = Deferred();
 
     
     this.#cdp = null;
@@ -103,7 +103,6 @@ class RemoteAgentParentProcess {
   }
 
   
-
 
 
 
@@ -373,8 +372,7 @@ class RemoteAgentParentProcess {
       // Listen for application shutdown to also shutdown the Remote Agent
       // and a possible running instance of httpd.js.
       case "quit-application":
-        Services.obs.removeObserver(this, "quit-application");
-
+        Services.obs.removeObserver(this, topic);
         this.#stop();
         break;
     }

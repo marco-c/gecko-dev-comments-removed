@@ -37,6 +37,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   IdlePromise: "chrome://remote/content/marionette/sync.js",
   l10n: "chrome://remote/content/marionette/l10n.js",
   Log: "chrome://remote/content/shared/Log.jsm",
+  Marionette: "chrome://remote/content/components/Marionette.jsm",
   MarionettePrefs: "chrome://remote/content/marionette/prefs.js",
   modal: "chrome://remote/content/marionette/modal.js",
   navigate: "chrome://remote/content/marionette/navigate.js",
@@ -422,7 +423,15 @@ GeckoDriver.prototype.newSession = async function(cmd) {
       this._currentSession.capabilities.delete("webSocketUrl");
     }
 
-    const win = await windowManager.waitForInitialApplicationWindow();
+    
+    
+    
+    
+    
+    logger.debug(`Waiting for initial application window`);
+    await Marionette.browserStartupFinished;
+
+    const win = await windowManager.waitForInitialApplicationWindowLoaded();
 
     if (MarionettePrefs.clickToStart) {
       Services.prompt.alert(
