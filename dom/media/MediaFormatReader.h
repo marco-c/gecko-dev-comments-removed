@@ -133,6 +133,10 @@ class MediaFormatReader final
   
   void NotifyDataArrived();
 
+  
+  
+  void UpdateMediaEngineId(uint64_t aMediaEngineId);
+
  protected:
   
   void UpdateBuffered();
@@ -830,6 +834,9 @@ class MediaFormatReader final
   bool IsDecoderWaitingForCDM(TrackType aTrack);
 
   void GetDebugInfo(dom::MediaFormatReaderDebugInfo& aInfo);
+
+  
+  Maybe<uint64_t> mMediaEngineId;
 };
 
 }  
