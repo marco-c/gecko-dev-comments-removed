@@ -470,6 +470,10 @@ class MediaFormatReader final
         
         
         return false;
+      } else if (mError.ref() ==
+                 NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_ERR) {
+        
+        return false;
       } else {
         
         return true;
