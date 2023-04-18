@@ -1649,14 +1649,6 @@ nsExpatDriver::GetMode() const { return eDTDMode_full_standards; }
 
 
 
-NS_IMETHODIMP_(bool)
-nsExpatDriver::IsContainer(int32_t aTag) const { return true; }
-
-NS_IMETHODIMP_(bool)
-nsExpatDriver::CanContain(int32_t aParent, int32_t aChild) const {
-  return true;
-}
-
 void nsExpatDriver::MaybeStopParser(nsresult aState) {
   if (NS_FAILED(aState)) {
     
