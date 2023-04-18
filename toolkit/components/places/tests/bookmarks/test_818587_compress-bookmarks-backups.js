@@ -19,7 +19,7 @@ add_task(async function compress_bookmark_backups_test() {
   let mostRecentBackupFile = await PlacesBackups.getMostRecentBackup();
   Assert.notEqual(mostRecentBackupFile, null);
   Assert.ok(
-    PlacesBackups.filenamesRegex.test(OS.Path.basename(mostRecentBackupFile))
+    PlacesBackups.filenamesRegex.test(PathUtils.filename(mostRecentBackupFile))
   );
 
   
@@ -30,7 +30,7 @@ add_task(async function compress_bookmark_backups_test() {
 
   
   
-  let jsonFile = OS.Path.join(OS.Constants.Path.profileDir, "bookmarks.json");
+  let jsonFile = PathUtils.join(PathUtils.profileDir, "bookmarks.json");
   await PlacesBackups.saveBookmarksToJSONFile(jsonFile);
   Assert.equal((await PlacesBackups.getBackupFiles()).length, 1);
 

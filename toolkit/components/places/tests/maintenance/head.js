@@ -18,13 +18,14 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 async function createCorruptDb(filename) {
-  let path = OS.Path.join(OS.Constants.Path.profileDir, filename);
+  let path = PathUtils.join(PathUtils.profileDir, filename);
   await IOUtils.remove(path, { ignoreAbsent: true });
   
   let dir = do_get_cwd().path;
-  let src = OS.Path.join(dir, "corruptDB.sqlite");
+  let src = PathUtils.join(dir, "corruptDB.sqlite");
   await IOUtils.copy(src, path);
 }
+
 
 
 
@@ -50,22 +51,19 @@ async function test_database_replacement(src, filename, shouldClone, dbStatus) {
   let willClone = shouldClone && filename == DB_FILENAME;
 
   
-  let dest = OS.Path.join(OS.Constants.Path.profileDir, filename);
+  let dest = PathUtils.join(PathUtils.profileDir, filename);
   Assert.ok(
     !(await IOUtils.exists(dest)),
     `"${filename} should not exist initially`
   );
-  let corrupt = OS.Path.join(
-    OS.Constants.Path.profileDir,
-    `${filename}.corrupt`
-  );
+  let corrupt = PathUtils.join(PathUtils.profileDir, `${filename}.corrupt`);
   Assert.ok(
     !(await IOUtils.exists(corrupt)),
     `${filename}.corrupt should not exist initially`
   );
 
-  let dir = do_get_cwd().path;
-  src = OS.Path.join(dir, src);
+  let dir = PathUtils.parent(do_get_cwd().path);
+  src = PathUtils.join(dir, ...src);
   await IOUtils.copy(src, dest);
 
   

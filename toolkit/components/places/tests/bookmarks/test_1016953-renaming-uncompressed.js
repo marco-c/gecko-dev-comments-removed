@@ -10,8 +10,8 @@ add_task(async function test_same_date_same_hash() {
   
   let backupFolder = await PlacesBackups.getBackupFolder();
   
-  let tempPath = OS.Path.join(
-    OS.Constants.Path.profileDir,
+  let tempPath = PathUtils.join(
+    PathUtils.profileDir,
     "bug10169583_bookmarks.json"
   );
   let { count, hash } = await BookmarkJSONUtils.exportToFile(tempPath);
@@ -26,7 +26,7 @@ add_task(async function test_same_date_same_hash() {
     "_" +
     hash +
     ".json";
-  let backupFile = OS.Path.join(backupFolder, filename);
+  let backupFile = PathUtils.join(backupFolder, filename);
   await IOUtils.move(tempPath, backupFile);
 
   
@@ -50,8 +50,8 @@ add_task(async function test_same_date_diff_hash() {
   
   
   let backupFolder = await PlacesBackups.getBackupFolder();
-  let tempPath = OS.Path.join(
-    OS.Constants.Path.profileDir,
+  let tempPath = PathUtils.join(
+    PathUtils.profileDir,
     "bug10169583_bookmarks.json"
   );
   let { count } = await BookmarkJSONUtils.exportToFile(tempPath);
@@ -62,7 +62,7 @@ add_task(async function test_same_date_diff_hash() {
     "_" +
     count +
     "_differentHash==.json";
-  let backupFile = OS.Path.join(backupFolder, filename);
+  let backupFile = PathUtils.join(backupFolder, filename);
   await IOUtils.move(tempPath, backupFile);
   await PlacesBackups.create(); 
   let mostRecentBackupFile = await PlacesBackups.getMostRecentBackup();
@@ -81,8 +81,8 @@ add_task(async function test_diff_date_same_hash() {
   
   
   let backupFolder = await PlacesBackups.getBackupFolder();
-  let tempPath = OS.Path.join(
-    OS.Constants.Path.profileDir,
+  let tempPath = PathUtils.join(
+    PathUtils.profileDir,
     "bug10169583_bookmarks.json"
   );
   let { count, hash } = await BookmarkJSONUtils.exportToFile(tempPath);
@@ -104,8 +104,8 @@ add_task(async function test_diff_date_same_hash() {
     "_" +
     hash +
     ".json";
-  let backupFile = OS.Path.join(backupFolder, oldFilename);
-  let newBackupFile = OS.Path.join(backupFolder, newFilename);
+  let backupFile = PathUtils.join(backupFolder, oldFilename);
+  let newBackupFile = PathUtils.join(backupFolder, newFilename);
   await IOUtils.move(tempPath, backupFile);
 
   

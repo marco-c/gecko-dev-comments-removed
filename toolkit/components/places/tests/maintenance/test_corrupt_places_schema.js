@@ -4,9 +4,7 @@
 
 
 add_task(async function() {
-  let path = await setupPlacesDatabase(
-    OS.Path.join("..", "migration", "places_v43.sqlite")
-  );
+  let path = await setupPlacesDatabase(["migration", "places_v43.sqlite"]);
 
   
   

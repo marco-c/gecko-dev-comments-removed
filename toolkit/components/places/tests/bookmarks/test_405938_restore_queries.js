@@ -223,7 +223,7 @@ tests.push(test);
 
 add_task(async function() {
   
-  let jsonFile = OS.Path.join(OS.Constants.Path.profileDir, "bookmarks.json");
+  let jsonFile = PathUtils.join(PathUtils.profileDir, "bookmarks.json");
 
   
   for (let singleTest of tests) {

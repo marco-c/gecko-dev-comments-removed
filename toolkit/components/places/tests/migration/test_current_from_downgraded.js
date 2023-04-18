@@ -5,14 +5,14 @@
 
 
 add_task(async function setup() {
-  let dbFile = OS.Path.join(
+  let dbFile = PathUtils.join(
     do_get_cwd().path,
     `places_v${CURRENT_SCHEMA_VERSION}.sqlite`
   );
   Assert.ok(await IOUtils.exists(dbFile));
   await setupPlacesDatabase(`places_v${CURRENT_SCHEMA_VERSION}.sqlite`);
   
-  let path = OS.Path.join(OS.Constants.Path.profileDir, DB_FILENAME);
+  let path = PathUtils.join(PathUtils.profileDir, DB_FILENAME);
   let db = await Sqlite.openConnection({ path });
   await db.setSchemaVersion(FIRST_UPGRADABLE_SCHEMA_VERSION);
   await db.close();

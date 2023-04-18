@@ -42,7 +42,7 @@ function validateResults(expectedValidItemsCount) {
 
 add_task(async function() {
   
-  let jsonFile = OS.Path.join(OS.Constants.Path.profileDir, "bookmarks.json");
+  let jsonFile = PathUtils.join(PathUtils.profileDir, "bookmarks.json");
 
   
   

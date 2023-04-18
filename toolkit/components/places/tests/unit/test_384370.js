@@ -27,15 +27,15 @@ var bookmarkData = [
 
 add_task(async function() {
   
-  let jsonFile = OS.Path.join(
-    OS.Constants.Path.profileDir,
+  let jsonFile = PathUtils.join(
+    PathUtils.profileDir,
     "bookmarks.exported.json"
   );
   await IOUtils.remove(jsonFile, { ignoreAbsent: true });
 
   
   
-  let htmlFile = OS.Path.join(do_get_cwd().path, "bookmarks.preplaces.html");
+  let htmlFile = PathUtils.join(do_get_cwd().path, "bookmarks.preplaces.html");
   await BookmarkHTMLUtils.importFromFile(htmlFile, { replace: true });
 
   

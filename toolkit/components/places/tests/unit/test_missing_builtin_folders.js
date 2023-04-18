@@ -27,7 +27,7 @@ add_task(async function setup() {
   await setupPlacesDatabase("missingBuiltIn.sqlite");
 
   
-  let path = OS.Path.join(OS.Constants.Path.profileDir, DB_FILENAME);
+  let path = PathUtils.join(PathUtils.profileDir, DB_FILENAME);
   let db = await Sqlite.openConnection({ path });
 
   let rows = await db.execute(

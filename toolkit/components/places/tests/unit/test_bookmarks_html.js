@@ -85,14 +85,14 @@ var gBookmarksFileNew;
 
 add_task(async function setup() {
   
-  gBookmarksFileOld = OS.Path.join(
+  gBookmarksFileOld = PathUtils.join(
     do_get_cwd().path,
     "bookmarks.preplaces.html"
   );
 
   
-  gBookmarksFileNew = OS.Path.join(
-    OS.Constants.Path.profileDir,
+  gBookmarksFileNew = PathUtils.join(
+    PathUtils.profileDir,
     "bookmarks.exported.html"
   );
   await IOUtils.remove(gBookmarksFileNew, { ignoreAbsent: true });

@@ -36,7 +36,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PlacesBackups: "resource://gre/modules/PlacesBackups.jsm",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.jsm",
   PlacesTransactions: "resource://gre/modules/PlacesTransactions.jsm",
-  OS: "resource://gre/modules/osfile.jsm",
   Sqlite: "resource://gre/modules/Sqlite.jsm",
   TestUtils: "resource://testing-common/TestUtils.jsm",
   AppConstants: "resource://gre/modules/AppConstants.jsm",
@@ -928,14 +927,24 @@ const DB_FILENAME = "places.sqlite";
 
 
 
-async function setupPlacesDatabase(aFileName, aDestFileName = DB_FILENAME) {
+
+
+
+
+
+async function setupPlacesDatabase(path, destFileName = DB_FILENAME) {
   let currentDir = do_get_cwd().path;
 
-  let src = OS.Path.join(currentDir, aFileName);
+  if (typeof path == "string") {
+    path = [path];
+  } else {
+    currentDir = PathUtils.parent(currentDir);
+  }
+  let src = PathUtils.join(currentDir, ...path);
   Assert.ok(await IOUtils.exists(src), "Database file found");
 
   
-  let dest = OS.Path.join(OS.Constants.Path.profileDir, aDestFileName);
+  let dest = PathUtils.join(PathUtils.profileDir, destFileName);
   Assert.ok(
     !(await IOUtils.exists(dest)),
     "Database file should not exist yet"

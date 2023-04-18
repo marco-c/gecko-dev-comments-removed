@@ -33,7 +33,7 @@ function validateResults() {
 }
 
 add_task(async function() {
-  let jsonFile = OS.Path.join(OS.Constants.Path.profileDir, "bookmarks.json");
+  let jsonFile = PathUtils.join(PathUtils.profileDir, "bookmarks.json");
 
   
   let item = await PlacesUtils.bookmarks.insert({
