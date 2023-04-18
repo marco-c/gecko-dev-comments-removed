@@ -30,6 +30,8 @@ class SplitView {
     this._controller = root.querySelector(".splitview-controller");
     this._nav = root.querySelector(".splitview-nav");
     this._side = root.querySelector(".splitview-side-details");
+    this._tplSummary = root.querySelector("#splitview-tpl-summary-stylesheet");
+    this._tplDetails = root.querySelector("#splitview-tpl-details-stylesheet");
     this._activeSummary = null;
     this._filter = null;
 
@@ -162,59 +164,32 @@ class SplitView {
 
 
 
+  appendItem(options) {
+    
+    const details = this._tplDetails.cloneNode(true);
+    details.id = "";
+    const summary = this._tplSummary.cloneNode(true);
+    summary.id = "";
 
-
-
-
-
-  appendItem(summary, details, options) {
-    const binding = options || {};
-
-    binding._summary = summary;
-    binding._details = details;
-    bindings.set(summary, binding);
-
-    this._nav.appendChild(summary);
-
+    if (options?.ordinal !== undefined) {
+      
+      summary.style.MozBoxOrdinalGroup = options.ordinal;
+      summary.setAttribute("data-ordinal", options.ordinal);
+    }
     summary.addEventListener("click", event => {
       event.stopPropagation();
       this.activeSummary = summary;
     });
 
+    this._nav.appendChild(summary);
     this._side.appendChild(details);
-  }
 
-  
+    bindings.set(summary, {
+      _summary: summary,
+      _details: details,
+      onShow: options?.onShow,
+    });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-  appendTemplatedItem(name, options) {
-    options = options || {};
-    let summary = this._root.querySelector("#splitview-tpl-summary-" + name);
-    let details = this._root.querySelector("#splitview-tpl-details-" + name);
-
-    summary = summary.cloneNode(true);
-    summary.id = "";
-    if (options.ordinal !== undefined) {
-      
-      summary.style.MozBoxOrdinalGroup = options.ordinal;
-      summary.setAttribute("data-ordinal", options.ordinal);
-    }
-    details = details.cloneNode(true);
-    details.id = "";
-
-    this.appendItem(summary, details, options);
     return { summary, details };
   }
 
