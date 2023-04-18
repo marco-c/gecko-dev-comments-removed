@@ -7927,7 +7927,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectIs(
   HandleValue lhs = args_[0];
   HandleValue rhs = args_[1];
 
-  if (!isFirstStub_) {
+  if (!isFirstStub()) {
     writer.sameValueResult(lhsId, rhsId);
   } else if (lhs.isNumber() && rhs.isNumber() &&
              !(lhs.isInt32() && rhs.isInt32())) {
@@ -8177,7 +8177,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachSetHas(
   
   
   
-  if (isFirstStub_) {
+  if (isFirstStub()) {
     switch (args_[0].type()) {
       case ValueType::Double:
       case ValueType::Int32:
@@ -8265,7 +8265,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapHas(
   
   
   
-  if (isFirstStub_) {
+  if (isFirstStub()) {
     switch (args_[0].type()) {
       case ValueType::Double:
       case ValueType::Int32:
@@ -8353,7 +8353,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMapGet(
   
   
   
-  if (isFirstStub_) {
+  if (isFirstStub()) {
     switch (args_[0].type()) {
       case ValueType::Double:
       case ValueType::Int32:
@@ -8654,7 +8654,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachIsConstructing(
     HandleFunction callee) {
   
   MOZ_ASSERT(argc_ == 0);
-  MOZ_ASSERT(script_->isFunction());
+  MOZ_ASSERT(script()->isFunction());
 
   
   Int32OperandId argcId(writer.setInputOperandId(0));
@@ -8808,7 +8808,7 @@ InlinableNativeIRGenerator::tryAttachArrayIteratorPrototypeOptimizable(
   
   MOZ_ASSERT(argc_ == 0);
 
-  if (!isFirstStub_) {
+  if (!isFirstStub()) {
     
     return AttachDecision::NoAction;
   }
@@ -8847,7 +8847,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectCreate(
     return AttachDecision::NoAction;
   }
 
-  if (!isFirstStub_) {
+  if (!isFirstStub()) {
     
     return AttachDecision::NoAction;
   }
@@ -8941,7 +8941,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachTypedArrayConstructor(
     return AttachDecision::NoAction;
   }
 
-  if (!isFirstStub_) {
+  if (!isFirstStub()) {
     
     return AttachDecision::NoAction;
   }
