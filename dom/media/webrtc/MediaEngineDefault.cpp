@@ -50,20 +50,24 @@ using dom::MediaTrackSettings;
 using dom::VideoFacingModeEnum;
 
 static nsString DefaultVideoName() {
-  MOZ_ASSERT(!NS_IsMainThread());
   
   
   nsAutoString cameraNameFromPref;
   nsresult rv;
-  
-  
-  
-  
-  RefPtr<Runnable> runnable = NS_NewRunnableFunction(__func__, [&]() {
+  auto getPref = [&]() {
     rv = Preferences::GetString("media.getusermedia.fake-camera-name",
                                 cameraNameFromPref);
-  });
-  SyncRunnable::DispatchToThread(GetMainThreadSerialEventTarget(), runnable);
+  };
+  if (NS_IsMainThread()) {
+    getPref();
+  } else {
+    
+    
+    
+    
+    RefPtr runnable = NS_NewRunnableFunction(__func__, getPref);
+    SyncRunnable::DispatchToThread(GetMainThreadSerialEventTarget(), runnable);
+  }
 
   if (NS_SUCCEEDED(rv)) {
     return std::move(cameraNameFromPref);
