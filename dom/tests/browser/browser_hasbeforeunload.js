@@ -408,6 +408,12 @@ function assertHasBeforeUnload(browser, expected) {
 
 
 add_task(async function test_inner_window_scenarios() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["docshell.shistory.bfcache.ship_allow_beforeunload_listeners", false],
+    ],
+  });
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -592,6 +598,12 @@ add_task(async function test_inner_window_scenarios() {
 
 
 add_task(async function test_outer_window_scenarios() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["docshell.shistory.bfcache.ship_allow_beforeunload_listeners", false],
+    ],
+  });
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -787,6 +799,12 @@ add_task(async function test_outer_window_scenarios() {
 
 
 add_task(async function test_mixed_inner_and_outer_window_scenarios() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["docshell.shistory.bfcache.ship_allow_beforeunload_listeners", false],
+    ],
+  });
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
