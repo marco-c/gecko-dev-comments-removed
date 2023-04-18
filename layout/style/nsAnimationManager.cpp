@@ -205,8 +205,6 @@ static void UpdateOldAnimationPropertiesWithNew(
   }
 }
 
-
-
 static already_AddRefed<dom::AnimationTimeline> GetTimeline(
     const StyleAnimationTimeline& aStyleTimeline, nsPresContext* aPresContext,
     const NonOwningAnimationTarget& aTarget) {
@@ -229,11 +227,15 @@ static already_AddRefed<dom::AnimationTimeline> GetTimeline(
       }
       break;
     }
+    case StyleAnimationTimeline::Tag::Scroll: {
+      const auto& scroll = aStyleTimeline.AsScroll();
+      timeline = ScrollTimeline::FromAnonymousScroll(
+          aPresContext->Document(), aTarget, scroll._0, scroll._1);
+      break;
+    }
     case StyleAnimationTimeline::Tag::None:
       
       break;
-    case StyleAnimationTimeline::Tag::Scroll:
-      
     case StyleAnimationTimeline::Tag::Auto:
       timeline = aTarget.mElement->OwnerDoc()->Timeline();
       break;
