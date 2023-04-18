@@ -737,3 +737,16 @@ impl LayoutPrimitiveInfo {
         }
     }
 }
+
+
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Copy, Clone, PartialEq, Debug, Eq, Hash)]
+pub struct PipelineInstanceId(u32);
+
+impl PipelineInstanceId {
+    pub fn new(id: u32) -> Self {
+        PipelineInstanceId(id)
+    }
+}
