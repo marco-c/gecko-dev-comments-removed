@@ -323,11 +323,6 @@ let gSiteDataSettings = {
       (AppConstants.platform == "macosx" &&
         e.keyCode == KeyEvent.DOM_VK_BACK_SPACE)
     ) {
-      if (!e.target.closest("#sitesList")) {
-        
-        return;
-      }
-      
       this.removeSelected();
     }
   },
