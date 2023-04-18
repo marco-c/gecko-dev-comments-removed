@@ -3009,6 +3009,9 @@ void ContentChild::ForceKillTimerCallback(nsITimer* aTimer, void* aClosure) {
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvShutdown() {
+  CrashReporter::AnnotateCrashReport(
+      CrashReporter::Annotation::IPCShutdownState, "RecvShutdown entry"_ns);
+
   
   
   AppShutdown::AdvanceShutdownPhaseWithoutNotify(
@@ -3016,6 +3019,10 @@ mozilla::ipc::IPCResult ContentChild::RecvShutdown() {
 
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   if (os) {
+    CrashReporter::AnnotateCrashReport(
+        CrashReporter::Annotation::IPCShutdownState,
+        "content-child-will-shutdown started"_ns);
+
     os->NotifyObservers(ToSupports(this), "content-child-will-shutdown",
                         nullptr);
   }
@@ -3025,12 +3032,13 @@ mozilla::ipc::IPCResult ContentChild::RecvShutdown() {
 }
 
 void ContentChild::ShutdownInternal() {
-  
-  
-  
-  
   CrashReporter::AnnotateCrashReport(
-      CrashReporter::Annotation::IPCShutdownState, "RecvShutdown"_ns);
+      CrashReporter::Annotation::IPCShutdownState, "ShutdownInternal entry"_ns);
+
+  
+  
+  
+  
 
   MOZ_ASSERT(NS_IsMainThread());
   RefPtr<nsThread> mainThread = nsThreadManager::get().GetCurrentThread();
@@ -3063,6 +3071,9 @@ void ContentChild::ShutdownInternal() {
 
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   if (os) {
+    CrashReporter::AnnotateCrashReport(
+        CrashReporter::Annotation::IPCShutdownState,
+        "content-child-shutdown started"_ns);
     os->NotifyObservers(ToSupports(this), "content-child-shutdown", nullptr);
   }
 
@@ -3104,6 +3115,8 @@ void ContentChild::ShutdownInternal() {
   
   
   
+  CrashReporter::AnnotateCrashReport(
+      CrashReporter::Annotation::IPCShutdownState, "StartForceKillTimer"_ns);
   StartForceKillTimer();
 
   CrashReporter::AnnotateCrashReport(
