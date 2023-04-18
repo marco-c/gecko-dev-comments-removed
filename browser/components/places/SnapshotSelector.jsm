@@ -289,6 +289,7 @@ class SnapshotSelector extends EventEmitter {
 
 
   setUrl(url) {
+    url = Snapshots.stripFragments(url);
     if (this.#context.url == url) {
       return;
     }
@@ -305,6 +306,7 @@ class SnapshotSelector extends EventEmitter {
 
 
   setUrlAndRebuildNow(url) {
+    url = Snapshots.stripFragments(url);
     if (this.#context.url == url) {
       return;
     }

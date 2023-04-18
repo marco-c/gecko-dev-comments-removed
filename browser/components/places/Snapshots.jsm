@@ -294,6 +294,18 @@ const Snapshots = new (class Snapshots {
 
 
 
+  stripFragments(url) {
+    return url.split("#")[0];
+  }
+
+  
+
+
+
+
+
+
+
 
 
 
@@ -306,6 +318,9 @@ const Snapshots = new (class Snapshots {
     if (!url) {
       throw new Error("Missing url parameter to Snapshots.add()");
     }
+
+    url = this.stripFragments(url);
+
     if (!InteractionsBlocklist.canRecordUrl(url)) {
       throw new Error("This url cannot be added to snapshots");
     }
@@ -390,6 +405,7 @@ const Snapshots = new (class Snapshots {
 
 
   async delete(url) {
+    url = this.stripFragments(url);
     await PlacesUtils.withConnectionWrapper("Snapshots: delete", async db => {
       let placeId = (
         await db.executeCached(
@@ -421,6 +437,7 @@ const Snapshots = new (class Snapshots {
 
 
   async get(url, includeTombstones = false) {
+    url = this.stripFragments(url);
     let db = await PlacesUtils.promiseDBConnection();
     let extraWhereCondition = "";
 
