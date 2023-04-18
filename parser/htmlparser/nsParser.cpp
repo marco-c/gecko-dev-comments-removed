@@ -324,7 +324,11 @@ nsresult nsParser::WillBuildModel() {
   
   
   if (mParserContext->mDocType == eXML) {
-    mDTD = new nsExpatDriver();
+    RefPtr<nsExpatDriver> expat = new nsExpatDriver();
+    nsresult rv = expat->Initialize(mParserContext->mScanner.GetURI(), mSink);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    mDTD = expat.forget();
   } else {
     mDTD = new CNavDTD();
   }
@@ -333,16 +337,7 @@ nsresult nsParser::WillBuildModel() {
   nsresult rv = mParserContext->GetTokenizer(mDTD, mSink, tokenizer);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = mDTD->WillBuildModel(*mParserContext, mSink);
-  nsresult sinkResult = mSink->WillBuildModel(mParserContext->mDTDMode);
-  
-  
-  
-  
-  
-  
-  
-  return NS_FAILED(sinkResult) ? sinkResult : rv;
+  return mSink->WillBuildModel(mParserContext->mDTDMode);
 }
 
 

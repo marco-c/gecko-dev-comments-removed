@@ -17,12 +17,6 @@ CNavDTD::CNavDTD() {}
 CNavDTD::~CNavDTD() {}
 
 NS_IMETHODIMP
-CNavDTD::WillBuildModel(const CParserContext& aParserContext,
-                        nsIContentSink* aSink) {
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 CNavDTD::BuildModel(nsIContentSink* aSink) {
   
   
