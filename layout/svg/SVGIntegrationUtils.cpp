@@ -728,12 +728,11 @@ bool SVGIntegrationUtils::PaintMask(const PaintFramesParams& aParams,
     
     
     
-    if (!maskTarget->CanCreateSimilarDrawTarget(maskTarget->GetSize(),
-                                                SurfaceFormat::A8)) {
-      return false;
-    }
-    maskTarget = maskTarget->CreateSimilarDrawTarget(maskTarget->GetSize(),
-                                                     SurfaceFormat::A8);
+    maskTarget = maskTarget->CreateClippedDrawTarget(Rect(), SurfaceFormat::A8);
+    
+    
+    
+    maskTarget->SetTransform(Matrix());
   }
 
   nsIFrame* firstFrame =
