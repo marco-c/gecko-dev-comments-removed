@@ -586,7 +586,7 @@ void AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(nsIChannel* aChannel) {
     
     
     
-    if (NS_IsAboutBlank(uri)) {
+    if (NS_IsAboutBlank(uri) || NS_IsAboutSrcdoc(uri)) {
       nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
       if (NS_WARN_IF(!ssm)) {
         return;
@@ -627,7 +627,8 @@ bool AntiTrackingUtils::IsThirdPartyWindow(nsPIDOMWindowInner* aWindow,
   bool thirdParty = true;
 
   
-  if (aURI && !NS_IsAboutBlank(aURI)) {
+  
+  if (aURI && !NS_IsAboutBlank(aURI) && !NS_IsAboutSrcdoc(aURI)) {
     nsCOMPtr<nsIScriptObjectPrincipal> scriptObjPrin =
         do_QueryInterface(aWindow);
     if (!scriptObjPrin) {
