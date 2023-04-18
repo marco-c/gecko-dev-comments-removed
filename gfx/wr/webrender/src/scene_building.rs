@@ -1516,23 +1516,25 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::BackdropFilter(ref info) => {
                 profile_scope!("backdrop");
 
-                let (layout, _, spatial_node_index, clip_chain_id) = self.process_common_properties(
+                let (_layout, _, _spatial_node_index, _clip_chain_id) = self.process_common_properties(
                     &info.common,
                     None,
                 );
 
-                let filters = filter_ops_for_compositing(item.filters());
-                let filter_datas = filter_datas_for_compositing(item.filter_datas());
-                let filter_primitives = filter_primitives_for_compositing(item.filter_primitives());
+                let _filters = filter_ops_for_compositing(item.filters());
+                let _filter_datas = filter_datas_for_compositing(item.filter_datas());
+                let _filter_primitives = filter_primitives_for_compositing(item.filter_primitives());
 
-                self.add_backdrop_filter(
-                    spatial_node_index,
-                    clip_chain_id,
-                    &layout,
-                    filters,
-                    filter_datas,
-                    filter_primitives,
-                );
+                
+
+
+
+
+
+
+
+
+
             }
 
             
@@ -3364,6 +3366,7 @@ impl<'a> SceneBuilder<'a> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn add_backdrop_filter(
         &mut self,
         spatial_node_index: SpatialNodeIndex,
@@ -3495,6 +3498,7 @@ impl<'a> SceneBuilder<'a> {
     
     
     
+    #[allow(dead_code)]
     pub fn cut_backdrop_picture(&mut self) -> Option<PictureIndex> {
         let mut flattened_items = None;
         let mut backdrop_root =  None;
@@ -3714,6 +3718,7 @@ struct FlattenedStackingContext {
     context_3d: Picture3DContext<ExtendedPrimitiveInstance>,
 
     
+    #[allow(dead_code)]
     is_backdrop_root: bool,
 
     
