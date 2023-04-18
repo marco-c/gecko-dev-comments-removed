@@ -250,40 +250,6 @@ static bool AsyncFromSyncIteratorThrow(JSContext* cx, unsigned argc,
   return AsyncFromSyncIteratorMethod(cx, args, CompletionKind::Throw);
 }
 
-[[nodiscard]] static bool AsyncGeneratorMethodCommon(
-    JSContext* cx, HandleValue asyncGenVal, CompletionKind completionKind,
-    HandleValue completionValue, MutableHandleValue result);
-
-
-
-bool js::AsyncGeneratorNext(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  
-  return AsyncGeneratorMethodCommon(cx, args.thisv(), CompletionKind::Normal,
-                                    args.get(0), args.rval());
-}
-
-
-
-bool js::AsyncGeneratorReturn(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  
-  return AsyncGeneratorMethodCommon(cx, args.thisv(), CompletionKind::Return,
-                                    args.get(0), args.rval());
-}
-
-
-
-bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  
-  return AsyncGeneratorMethodCommon(cx, args.thisv(), CompletionKind::Throw,
-                                    args.get(0), args.rval());
-}
-
 const JSClass AsyncGeneratorObject::class_ = {
     "AsyncGenerator",
     JSCLASS_HAS_RESERVED_SLOTS(AsyncGeneratorObject::Slots),
@@ -780,6 +746,30 @@ class MOZ_STACK_CLASS MaybeEnterAsyncGeneratorRealm {
   result.setObject(*resultPromise);
 
   return maybeEnterRealm.maybeLeaveAndWrap(cx, result);
+}
+
+
+bool js::AsyncGeneratorNext(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  return AsyncGeneratorMethodCommon(cx, args.thisv(), CompletionKind::Normal,
+                                    args.get(0), args.rval());
+}
+
+
+bool js::AsyncGeneratorReturn(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  return AsyncGeneratorMethodCommon(cx, args.thisv(), CompletionKind::Return,
+                                    args.get(0), args.rval());
+}
+
+
+bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  return AsyncGeneratorMethodCommon(cx, args.thisv(), CompletionKind::Throw,
+                                    args.get(0), args.rval());
 }
 
 
