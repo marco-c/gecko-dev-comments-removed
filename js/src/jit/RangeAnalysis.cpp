@@ -310,22 +310,10 @@ bool RangeAnalysis::addBetaNodes() {
         }
         break;
       case JSOp::StrictEq:
-        
-        if (!compare->isNumericComparison()) {
-          continue;
-        }
-        
-        [[fallthrough]];
       case JSOp::Eq:
         comp.setDouble(bound, bound);
         break;
       case JSOp::StrictNe:
-        
-        if (!compare->isNumericComparison()) {
-          continue;
-        }
-        
-        [[fallthrough]];
       case JSOp::Ne:
         
         if (bound == 0) {
