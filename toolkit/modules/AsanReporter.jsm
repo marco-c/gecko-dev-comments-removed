@@ -24,6 +24,12 @@ const PREF_API_URL = "asanreporter.apiurl";
 const PREF_AUTH_TOKEN = "asanreporter.authtoken";
 const PREF_LOG_LEVEL = "asanreporter.loglevel";
 
+
+const REPORTER_PRODUCT = {
+  firefox: "mozilla-central-asan-nightly",
+  thunderbird: "comm-central-asan-daily",
+};
+
 const LOGGER_NAME = "asanreporter";
 
 let logger;
@@ -152,6 +158,7 @@ function submitToServer(data) {
     
     let product_version = versionArr.join("-");
     let os = AppConstants.platform;
+    let reporter_product = REPORTER_PRODUCT[AppConstants.MOZ_APP_NAME];
 
     let reportObj = {
       rawStdout: "",
@@ -159,7 +166,7 @@ function submitToServer(data) {
       rawCrashData: decoder.decode(data),
       
       platform: "x86-64",
-      product: "mozilla-central-asan-nightly",
+      product: reporter_product,
       product_version,
       os,
       client,
