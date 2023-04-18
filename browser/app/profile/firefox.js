@@ -511,9 +511,6 @@ pref("browser.urlbar.merino.clientVariants", "");
 
 pref("browser.urlbar.bestMatch.enabled", false);
 
-
-pref("browser.urlbar.bestMatch.blockingEnabled", false);
-
 pref("browser.altClickSave", false);
 
 
