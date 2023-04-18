@@ -40,6 +40,9 @@ function goUpdatePasteMenuItems() {
 window.addEventListener(
   "DOMContentLoaded",
   () => {
+    
+    
+    
     let container =
       document.querySelector("commandset") || document.documentElement;
     let fragment = MozXULElement.parseXULToFragment(`
@@ -47,14 +50,14 @@ window.addEventListener(
         <commandset id="editMenuCommandSetAll" commandupdater="true" events="focus,select" />
         <commandset id="editMenuCommandSetUndo" commandupdater="true" events="undo" />
         <commandset id="editMenuCommandSetPaste" commandupdater="true" events="clipboard" />
-        <command id="cmd_undo" internal="true"/>
-        <command id="cmd_redo" internal="true" />
-        <command id="cmd_cut" internal="true" />
-        <command id="cmd_copy" internal="true" />
-        <command id="cmd_paste" internal="true" />
-        <command id="cmd_delete" internal="true" />
-        <command id="cmd_selectAll" internal="true" />
-        <command id="cmd_switchTextDirection" />
+        <command id="cmd_undo" oncommand=";" />
+        <command id="cmd_redo" oncommand=";" />
+        <command id="cmd_cut" oncommand=";" />
+        <command id="cmd_copy" oncommand=";" />
+        <command id="cmd_paste" oncommand=";" />
+        <command id="cmd_delete" oncommand=";" />
+        <command id="cmd_selectAll" oncommand=";" />
+        <command id="cmd_switchTextDirection" oncommand=";" />
       </commandset>
     `);
 
