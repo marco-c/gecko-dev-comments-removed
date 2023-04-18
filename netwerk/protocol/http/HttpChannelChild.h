@@ -274,22 +274,22 @@ class HttpChannelChild final : public PHttpChannelChild,
   nsCOMPtr<nsIInputStream> mAltDataInputStream;
 
   
-  Mutex mBgChildMutex MOZ_UNANNOTATED{"HttpChannelChild::BgChildMutex"};
+  Mutex mBgChildMutex{"HttpChannelChild::BgChildMutex"};
 
   
-  RefPtr<HttpBackgroundChannelChild> mBgChild;
+  RefPtr<HttpBackgroundChannelChild> mBgChild GUARDED_BY(mBgChildMutex);
 
   
-  nsCOMPtr<nsIRunnable> mBgInitFailCallback;
+  nsCOMPtr<nsIRunnable> mBgInitFailCallback GUARDED_BY(mBgChildMutex);
 
   
   
   void CleanupBackgroundChannel();
 
   
-  nsCOMPtr<nsIEventTarget> mODATarget;
+  nsCOMPtr<nsIEventTarget> mODATarget GUARDED_BY(mEventTargetMutex);
   
-  Mutex mEventTargetMutex MOZ_UNANNOTATED{"HttpChannelChild::EventTargetMutex"};
+  Mutex mEventTargetMutex{"HttpChannelChild::EventTargetMutex"};
 
   TimeStamp mLastStatusReported;
 
