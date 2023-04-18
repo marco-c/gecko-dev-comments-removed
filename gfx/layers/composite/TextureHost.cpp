@@ -1,24 +1,24 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "TextureHost.h"
 
-#include "CompositableHost.h"  // for CompositableHost
-#include "mozilla/gfx/2D.h"    // for DataSourceSurface, Factory
+#include "CompositableHost.h"  
+#include "mozilla/gfx/2D.h"    
 #include "mozilla/gfx/gfxVars.h"
-#include "mozilla/ipc/Shmem.h"  // for Shmem
+#include "mozilla/ipc/Shmem.h"  
 #include "mozilla/layers/AsyncImagePipelineManager.h"
 #include "mozilla/layers/BufferTexture.h"
-#include "mozilla/layers/CompositableTransactionParent.h"  // for CompositableParentManager
+#include "mozilla/layers/CompositableTransactionParent.h"  
 #include "mozilla/layers/CompositorBridgeParent.h"
-#include "mozilla/layers/Compositor.h"         // for Compositor
-#include "mozilla/layers/ISurfaceAllocator.h"  // for ISurfaceAllocator
-#include "mozilla/layers/ImageBridgeParent.h"  // for ImageBridgeParent
-#include "mozilla/layers/LayersSurfaces.h"     // for SurfaceDescriptor, etc
-#include "mozilla/layers/TextureHostOGL.h"     // for TextureHostOGL
+#include "mozilla/layers/Compositor.h"         
+#include "mozilla/layers/ISurfaceAllocator.h"  
+#include "mozilla/layers/ImageBridgeParent.h"  
+#include "mozilla/layers/LayersSurfaces.h"     
+#include "mozilla/layers/TextureHostOGL.h"     
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/TextureClient.h"
 #include "mozilla/layers/GPUVideoTextureHost.h"
@@ -30,8 +30,8 @@
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "nsAString.h"
-#include "mozilla/RefPtr.h"   // for nsRefPtr
-#include "nsPrintfCString.h"  // for nsPrintfCString
+#include "mozilla/RefPtr.h"   
+#include "nsPrintfCString.h"  
 #include "mozilla/layers/PTextureParent.h"
 #include "mozilla/Unused.h"
 #include <limits>
@@ -63,11 +63,11 @@
 namespace mozilla {
 namespace layers {
 
-/**
- * TextureParent is the host-side IPDL glue between TextureClient and
- * TextureHost. It is an IPDL actor just like LayerParent, CompositableParent,
- * etc.
- */
+
+
+
+
+
 class TextureParent : public ParentActor<PTextureParent> {
  public:
   TextureParent(HostIPCAllocator* aAllocator, uint64_t aSerial,
@@ -92,7 +92,7 @@ class TextureParent : public ParentActor<PTextureParent> {
 
   HostIPCAllocator* mSurfaceAllocator;
   RefPtr<TextureHost> mTextureHost;
-  // mSerial is unique in TextureClient's process.
+  
   const uint64_t mSerial;
   wr::MaybeExternalImageId mExternalImageId;
 };
@@ -101,7 +101,6 @@ static bool WrapWithWebRenderTextureHost(ISurfaceAllocator* aDeallocator,
                                          LayersBackend aBackend,
                                          TextureFlags aFlags) {
   if ((aFlags & TextureFlags::SNAPSHOT) ||
-      (aBackend != LayersBackend::LAYERS_WR) ||
       (!aDeallocator->UsesImageBridge() &&
        !aDeallocator->AsCompositorBridgeParentBase())) {
     return false;
@@ -109,7 +108,7 @@ static bool WrapWithWebRenderTextureHost(ISurfaceAllocator* aDeallocator,
   return true;
 }
 
-////////////////////////////////////////////////////////////////////////////////
+
 PTextureParent* TextureHost::CreateIPDLActor(
     HostIPCAllocator* aAllocator, const SurfaceDescriptor& aSharedData,
     ReadLockDescriptor&& aReadLock, LayersBackend aLayersBackend,
@@ -125,18 +124,18 @@ PTextureParent* TextureHost::CreateIPDLActor(
   return actor;
 }
 
-// static
+
 bool TextureHost::DestroyIPDLActor(PTextureParent* actor) {
   delete actor;
   return true;
 }
 
-// static
+
 bool TextureHost::SendDeleteIPDLActor(PTextureParent* actor) {
   return PTextureParent::Send__delete__(actor);
 }
 
-// static
+
 TextureHost* TextureHost::AsTextureHost(PTextureParent* actor) {
   if (!actor) {
     return nullptr;
@@ -144,7 +143,7 @@ TextureHost* TextureHost::AsTextureHost(PTextureParent* actor) {
   return static_cast<TextureParent*>(actor)->mTextureHost;
 }
 
-// static
+
 uint64_t TextureHost::GetTextureSerial(PTextureParent* actor) {
   if (!actor) {
     return UINT64_MAX;
@@ -162,7 +161,7 @@ void TextureHost::SetLastFwdTransactionId(uint64_t aTransactionId) {
 already_AddRefed<TextureHost> CreateDummyBufferTextureHost(
     mozilla::layers::LayersBackend aBackend,
     mozilla::layers::TextureFlags aFlags) {
-  // Ensure that the host will delete the memory.
+  
   aFlags &= ~TextureFlags::DEALLOCATE_CLIENT;
   UniquePtr<TextureData> textureData(BufferTextureData::Create(
       gfx::IntSize(1, 1), gfx::SurfaceFormat::B8G8R8A8, gfx::BackendType::SKIA,
@@ -217,7 +216,7 @@ already_AddRefed<TextureHost> TextureHost::Create(
               ->LookupSurfaceDescriptorForClientTexture(desc.textureId());
       if (!realDesc) {
         gfxCriticalNote << "Failed to get descriptor for recorded texture.";
-        // Create a dummy to prevent any crashes due to missing IPDL actors.
+        
         result = CreateDummyBufferTextureHost(aBackend, aFlags);
         break;
       }
@@ -262,9 +261,9 @@ already_AddRefed<TextureHost> CreateBackendIndependentTextureHost(
           const ipc::Shmem& shmem = data.get_Shmem();
           const BufferDescriptor& desc = bufferDesc.desc();
           if (!shmem.IsReadable()) {
-            // We failed to map the shmem so we can't verify its size. This
-            // should not be a fatal error, so just create the texture with
-            // nothing backing it.
+            
+            
+            
             result = new ShmemTextureHost(shmem, desc, aDeallocator, aFlags);
             break;
           }
@@ -346,10 +345,10 @@ TextureHost::TextureHost(TextureFlags aFlags)
 
 TextureHost::~TextureHost() {
   if (mReadLocked) {
-    // If we still have a ReadLock, unlock it. At this point we don't care about
-    // the texture client being written into on the other side since it should
-    // be destroyed by now. But we will hit assertions if we don't ReadUnlock
-    // before destroying the lock itself.
+    
+    
+    
+    
     ReadUnlock();
   }
 }
@@ -380,8 +379,8 @@ void TextureHost::NotifyNotUsed() {
     return;
   }
 
-  // Do not need to call NotifyNotUsed() if TextureHost does not have
-  // TextureFlags::RECYCLE flag nor TextureFlags::WAIT_HOST_USAGE_END flag.
+  
+  
   if (!(GetFlags() & TextureFlags::RECYCLE) &&
       !(GetFlags() & TextureFlags::WAIT_HOST_USAGE_END)) {
     return;
@@ -399,10 +398,10 @@ void TextureHost::CallNotifyNotUsed() {
 
 void TextureHost::MaybeDestroyRenderTexture() {
   if (mExternalImageId.isNothing()) {
-    // RenderTextureHost was not created
+    
     return;
   }
-  // When TextureHost created RenderTextureHost, delete it here.
+  
   TextureHost::DestroyRenderTexture(mExternalImageId.ref());
 }
 
@@ -414,17 +413,17 @@ void TextureHost::DestroyRenderTexture(
 void TextureHost::EnsureRenderTexture(
     const wr::MaybeExternalImageId& aExternalImageId) {
   if (aExternalImageId.isNothing()) {
-    // TextureHost is wrapped by GPUVideoTextureHost.
+    
     if (mExternalImageId.isSome()) {
-      // RenderTextureHost was already created.
+      
       return;
     }
     mExternalImageId =
         Some(AsyncImagePipelineManager::GetNextExternalImageId());
   } else {
-    // TextureHost is wrapped by WebRenderTextureHost.
+    
     if (aExternalImageId == mExternalImageId) {
-      // The texture has already been created.
+      
       return;
     }
     MOZ_ASSERT(mExternalImageId.isNothing());
@@ -466,9 +465,9 @@ BufferTextureHost::BufferTextureHost(const BufferDescriptor& aDesc,
       MOZ_CRASH("GFX: Bad descriptor");
   }
   if (aFlags & TextureFlags::COMPONENT_ALPHA) {
-    // One texture of a component alpha texture pair will start out all white.
-    // This hack allows us to easily make sure that white will be uploaded.
-    // See bug 1138934
+    
+    
+    
     mNeedsFullUpdate = true;
   }
 
@@ -488,8 +487,8 @@ BufferTextureHost::~BufferTextureHost() = default;
 
 void BufferTextureHost::UpdatedInternal(const nsIntRegion* aRegion) {
   ++mUpdateSerial;
-  // If the last frame wasn't uploaded yet, and we -don't- have a partial
-  // update, we still need to update the full surface.
+  
+  
   if (aRegion && !mNeedsFullUpdate) {
     mMaybeUpdatedRegion.OrWith(*aRegion);
   } else {
@@ -535,8 +534,8 @@ void BufferTextureHost::PushResourceUpdates(
                     ? &wr::TransactionBuilder::AddExternalImage
                     : &wr::TransactionBuilder::UpdateExternalImage;
 
-  // Use native textures if our backend requires it, or if our backend doesn't
-  // forbid it and we want to use them.
+  
+  
   NativeTexturePolicy policy =
       BackendNativeTexturePolicy(aResources.GetBackendType(), GetSize());
   bool useNativeTexture =
@@ -575,7 +574,7 @@ void BufferTextureHost::PushDisplayItems(wr::DisplayListBuilder& aBuilder,
                                          wr::ImageRendering aFilter,
                                          const Range<wr::ImageKey>& aImageKeys,
                                          PushDisplayItemFlagSet aFlags) {
-  // SWGL should always try to bypass shaders and composite directly.
+  
   bool preferCompositorSurface =
       aFlags.contains(PushDisplayItemFlag::PREFER_COMPOSITOR_SURFACE);
   bool useExternalSurface =
@@ -611,9 +610,9 @@ void TextureHost::SetReadLocked() {
   if (!mReadLock) {
     return;
   }
-  // If mReadLocked is true it means we haven't read unlocked yet and the
-  // content side should not have been able to write into this texture and read
-  // lock again!
+  
+  
+  
   MOZ_ASSERT(!mReadLocked);
   mReadLocked = true;
 }
@@ -630,9 +629,9 @@ bool TextureHost::NeedsYFlip() const {
 }
 
 void BufferTextureHost::UnbindTextureSource() {
-  // This texture is not used by any layer anymore.
-  // If the texture has an intermediate buffer we don't care either because
-  // texture uploads are also performed synchronously for BufferTextureHost.
+  
+  
+  
   ReadUnlock();
 }
 
@@ -701,11 +700,11 @@ ShmemTextureHost::ShmemTextureHost(const ipc::Shmem& aShmem,
   if (aShmem.IsReadable()) {
     mShmem = MakeUnique<ipc::Shmem>(aShmem);
   } else {
-    // This can happen if we failed to map the shmem on this process, perhaps
-    // because it was big and we didn't have enough contiguous address space
-    // available, even though we did on the child process.
-    // As a result this texture will be in an invalid state and Lock will
-    // always fail.
+    
+    
+    
+    
+    
 
     gfxCriticalNote << "Failed to create a valid ShmemTextureHost";
   }
@@ -772,10 +771,10 @@ void MemoryTextureHost::ForgetSharedData() { mBuffer = nullptr; }
 uint8_t* MemoryTextureHost::GetBuffer() { return mBuffer; }
 
 size_t MemoryTextureHost::GetBufferSize() {
-  // MemoryTextureHost just trusts that the buffer size is large enough to read
-  // anything we need to. That's because MemoryTextureHost has to trust the
-  // buffer pointer anyway, so the security model here is just that
-  // MemoryTexture's are restricted to same-process clients.
+  
+  
+  
+  
   return std::numeric_limits<size_t>::max();
 }
 
@@ -817,8 +816,8 @@ void TextureParent::Destroy() {
   }
 
   if (mTextureHost->mReadLocked) {
-    // ReadUnlock here to make sure the ReadLock's shmem does not outlive the
-    // protocol that created it.
+    
+    
     mTextureHost->ReadUnlock();
   }
 
@@ -843,7 +842,7 @@ mozilla::ipc::IPCResult TextureParent::RecvRecycleTexture(
   return IPC_OK();
 }
 
-////////////////////////////////////////////////////////////////////////////////
 
-}  // namespace layers
-}  // namespace mozilla
+
+}  
+}  
