@@ -1469,6 +1469,12 @@ nsWindowsShellService::ClassifyShortcut(const nsAString& aPath,
     if (wcsnicmp(shortcutPath.get(), knownPath.get(), knownPath.Length()) ==
         0) {
       aResult.Assign(folders[i].classification);
+      
+      
+      
+      if (wcsstr(shortcutPath.get(), L"Private Browsing")) {
+        aResult.AppendLiteral("Private");
+      }
       return NS_OK;
     }
   }
