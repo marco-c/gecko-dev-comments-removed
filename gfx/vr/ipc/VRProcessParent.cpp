@@ -43,12 +43,6 @@ VRProcessParent::VRProcessParent(Listener* aListener)
 }
 
 VRProcessParent::~VRProcessParent() {
-  
-  
-  {
-    MonitorAutoLock lock(mMonitor);
-    mTaskFactory.RevokeAll();
-  }
   MOZ_COUNT_DTOR(VRProcessParent);
 }
 
@@ -133,6 +127,13 @@ void VRProcessParent::Shutdown() {
 
 void VRProcessParent::DestroyProcess() {
   if (mLaunchThread) {
+    
+    
+    {
+      MonitorAutoLock lock(mMonitor);
+      mTaskFactory.RevokeAll();
+    }
+
     mLaunchThread->Dispatch(NS_NewRunnableFunction("DestroyProcessRunnable",
                                                    [this] { Destroy(); }));
   }
