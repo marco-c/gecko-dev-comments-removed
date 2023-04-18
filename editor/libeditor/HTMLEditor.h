@@ -1505,9 +1505,12 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
-  CreateAndInsertElement(WithTransaction aWithTransaction, nsAtom& aTagName,
-                         const EditorDOMPoint& aPointToInsert,
-                         const std::function<nsresult(Element&)>& aInitializer);
+  CreateAndInsertElement(
+      WithTransaction aWithTransaction, nsAtom& aTagName,
+      const EditorDOMPoint& aPointToInsert,
+      const std::function<nsresult(Element&)>& aInitializer = [](Element&) {
+        return NS_OK;
+      });
 
   
 
@@ -1555,7 +1558,9 @@ class HTMLEditor final : public EditorBase,
   InsertElementWithSplittingAncestorsWithTransaction(
       nsAtom& aTagName, const EditorDOMPoint& aPointToInsert,
       BRElementNextToSplitPoint aBRElementNextToSplitPoint,
-      const std::function<nsresult(Element&)>& aInitializer);
+      const std::function<nsresult(Element&)>& aInitializer = [](Element&) {
+        return NS_OK;
+      });
 
   
 
@@ -3435,7 +3440,8 @@ class HTMLEditor final : public EditorBase,
 
   MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
   DeleteSelectionAndCreateElement(
-      nsAtom& aTag, const std::function<nsresult(Element&)>& aInitializer);
+      nsAtom& aTag, const std::function<nsresult(Element&)>& aInitializer =
+                        [](Element&) { return NS_OK; });
 
   
 
