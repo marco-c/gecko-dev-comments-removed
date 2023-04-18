@@ -164,7 +164,6 @@ class GeckoMediaPluginServiceParent final
 
   
   nsTArray<RefPtr<GMPParent>> mPlugins;
-  bool mShuttingDown;
 
   
   
@@ -183,6 +182,7 @@ class GeckoMediaPluginServiceParent final
     T mValue;
   };
 
+  MainThreadOnly<bool> mShuttingDown;
   MainThreadOnly<bool> mWaitingForPluginsSyncShutdown;
 
   nsTArray<nsString> mPluginsWaitingForDeletion;
