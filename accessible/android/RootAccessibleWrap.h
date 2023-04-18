@@ -21,6 +21,9 @@ class RootAccessibleWrap : public RootAccessible {
   RootAccessibleWrap(dom::Document* aDocument, PresShell* aPresShell);
   virtual ~RootAccessibleWrap();
 
+  
+  NS_DECL_NSIDOMEVENTLISTENER
+
   AccessibleWrap* GetContentAccessible();
 
   AccessibleWrap* FindAccessibleById(int32_t aID);
@@ -31,6 +34,10 @@ class RootAccessibleWrap : public RootAccessible {
   
   AccessibleWrap* FindAccessibleById(DocRemoteAccessibleWrap* aDocument,
                                      int32_t aID);
+
+ protected:
+  virtual nsresult AddEventListeners() override;
+  virtual nsresult RemoveEventListeners() override;
 };
 
 }  
