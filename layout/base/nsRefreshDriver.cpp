@@ -801,16 +801,20 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
 
   
   
-  
-  
   RefPtr<gfx::VsyncSource> mVsyncSource;
+
+  
   RefPtr<RefreshDriverVsyncObserver> mVsyncObserver;
+
+  
   
   RefPtr<RefreshTimerVsyncDispatcher> mVsyncDispatcher;
   
   
   
+  
   RefPtr<VsyncMainChild> mVsyncChild;
+
   TimeDuration mVsyncRate;
   bool mIsTicking = false;
 };  
