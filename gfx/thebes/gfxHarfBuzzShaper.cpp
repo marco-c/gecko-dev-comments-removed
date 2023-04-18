@@ -322,8 +322,8 @@ hb_position_t gfxHarfBuzzShaper::GetGlyphVAdvance(hb_codepoint_t glyph) {
   if (!mVmtxTable) {
     
     
-    return FloatToFixed(
-        mFont->GetMetrics(nsFontMetrics::eVertical).aveCharWidth);
+    const auto& m = mFont->GetHorizontalMetrics();
+    return FloatToFixed(std::max(m.maxAscent + m.maxDescent, m.emHeight));
   }
 
   NS_ASSERTION(mNumLongVMetrics > 0,
