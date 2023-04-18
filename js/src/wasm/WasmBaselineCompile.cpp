@@ -5611,7 +5611,7 @@ bool BaseCompiler::emitTableGet() {
   }
   pushI32(tableIndex);
   
-  return emitInstanceCall(lineOrBytecode, SASigTableGet);
+  return emitInstanceCall(lineOrBytecode, SASigTableGetFunc);
 }
 
 bool BaseCompiler::emitTableGrow() {
@@ -5638,7 +5638,7 @@ bool BaseCompiler::emitTableSet() {
   }
   pushI32(tableIndex);
   
-  return emitInstanceCall(lineOrBytecode, SASigTableSet);
+  return emitInstanceCall(lineOrBytecode, SASigTableSetFunc);
 }
 
 bool BaseCompiler::emitTableSize() {
