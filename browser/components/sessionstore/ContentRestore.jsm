@@ -122,7 +122,7 @@ ContentRestoreInternal.prototype = {
     let activePageData = tabData.entries[activeIndex] || {};
     let uri = activePageData.url || null;
     if (uri && !loadArguments) {
-      webNavigation.setCurrentURI(Services.io.newURI(uri));
+      webNavigation.setCurrentURIForSessionStore(Services.io.newURI(uri));
     }
 
     SessionHistory.restore(this.docShell, tabData);
@@ -178,7 +178,9 @@ ContentRestoreInternal.prototype = {
     
     
     if (!isRemotenessUpdate) {
-      webNavigation.setCurrentURI(Services.io.newURI("about:blank"));
+      webNavigation.setCurrentURIForSessionStore(
+        Services.io.newURI("about:blank")
+      );
     }
 
     try {
@@ -362,7 +364,9 @@ HistoryListener.prototype = {
 
     
     
-    this.webNavigation.setCurrentURI(Services.io.newURI("about:blank"));
+    this.webNavigation.setCurrentURIForSessionStore(
+      Services.io.newURI("about:blank")
+    );
 
     
     

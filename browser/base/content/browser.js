@@ -5363,11 +5363,15 @@ var XULBrowserWindow = {
       this.reloadCommand.removeAttribute("disabled");
     }
 
+    let isSessionRestore = !!(
+      aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SESSION_STORE
+    );
+
     
     
     
     
-    gURLBar.setURI(aLocationURI, aIsSimulated);
+    gURLBar.setURI(aLocationURI, aIsSimulated, isSessionRestore);
 
     BookmarkingUI.onLocationChange();
     

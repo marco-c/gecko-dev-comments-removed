@@ -115,7 +115,7 @@ add_task(async function test_remove_uninteresting_window() {
   
   await SpecialPowers.spawn(browser, [], async function() {
     
-    docShell.setCurrentURI(Services.io.newURI("about:blank"));
+    docShell.setCurrentURIForSessionStore(Services.io.newURI("about:blank"));
 
     if (!SpecialPowers.Services.appinfo.sessionHistoryInParent) {
       let { sessionHistory } = docShell.QueryInterface(Ci.nsIWebNavigation);

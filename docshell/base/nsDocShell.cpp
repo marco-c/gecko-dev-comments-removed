@@ -1572,12 +1572,16 @@ nsDocShell::GetChromeEventHandler(EventTarget** aChromeEventHandler) {
 }
 
 NS_IMETHODIMP
-nsDocShell::SetCurrentURI(nsIURI* aURI) {
+nsDocShell::SetCurrentURIForSessionStore(nsIURI* aURI) {
   
   
-  SetCurrentURI(aURI, nullptr,  true,
-                 false,
-                 0);
+  SetCurrentURI(aURI, nullptr,
+                
+                true,
+                
+                false,
+                
+                nsIWebProgressListener::LOCATION_CHANGE_SESSION_STORE);
   return NS_OK;
 }
 

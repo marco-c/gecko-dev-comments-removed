@@ -322,7 +322,10 @@ class UrlbarInput {
 
 
 
-  setURI(uri = null, dueToTabSwitch = false) {
+
+
+
+  setURI(uri = null, dueToTabSwitch = false, dueToSessionRestore = false) {
     let value = this.window.gBrowser.userTypedValue;
     let valid = false;
 
@@ -355,9 +358,13 @@ class UrlbarInput {
           value = "about:blank";
         }
       }
-
+      
+      
+      
       valid =
-        !this.window.isBlankPageURL(uri.spec) || uri.schemeIs("moz-extension");
+        !dueToSessionRestore &&
+        (!this.window.isBlankPageURL(uri.spec) ||
+          uri.schemeIs("moz-extension"));
     } else if (
       this.window.isInitialPage(value) &&
       BrowserUIUtils.checkEmptyPageOrigin(this.window.gBrowser.selectedBrowser)
