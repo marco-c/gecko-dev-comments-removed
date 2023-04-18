@@ -352,7 +352,12 @@ void ServiceWorkerRegistrar::RemoveAll() {
 
 void ServiceWorkerRegistrar::LoadData() {
   MOZ_ASSERT(!NS_IsMainThread());
-  MOZ_ASSERT(!mDataLoaded);
+#ifdef DEBUG
+  {
+    MonitorAutoLock lock(mMonitor);
+    MOZ_ASSERT(!mDataLoaded);
+  }
+#endif
 
   nsresult rv = ReadData();
 
@@ -373,10 +378,9 @@ bool ServiceWorkerRegistrar::ReloadDataForTest() {
   }
 
   MOZ_ASSERT(NS_IsMainThread());
+  MonitorAutoLock lock(mMonitor);
   mData.Clear();
   mDataLoaded = false;
-
-  MonitorAutoLock lock(mMonitor);
 
   nsCOMPtr<nsIEventTarget> target =
       do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
@@ -829,44 +833,45 @@ nsresult ServiceWorkerRegistrar::ReadData() {
   
   
   
-  
-  
 
-  
-  for (uint32_t i = 0; i < tmpData.Length(); ++i) {
+  {
+    MonitorAutoLock lock(mMonitor);
     
-    
-    if (!ServiceWorkerRegistrationDataIsValid(tmpData[i])) {
-      continue;
-    }
-
-    bool match = false;
-    if (dedupe) {
-      MOZ_ASSERT(overwrite);
+    for (uint32_t i = 0; i < tmpData.Length(); ++i) {
       
       
-      for (uint32_t j = 0; j < mData.Length(); ++j) {
+      if (!ServiceWorkerRegistrationDataIsValid(tmpData[i])) {
+        continue;
+      }
+
+      bool match = false;
+      if (dedupe) {
+        MOZ_ASSERT(overwrite);
         
         
-        if (Equivalent(tmpData[i], mData[j])) {
+        for (uint32_t j = 0; j < mData.Length(); ++j) {
           
           
-          mData[j] = tmpData[i];
-          
-          match = true;
-          break;
+          if (Equivalent(tmpData[i], mData[j])) {
+            
+            
+            mData[j] = tmpData[i];
+            
+            match = true;
+            break;
+          }
         }
-      }
-    } else {
+      } else {
 #ifdef DEBUG
-      
-      for (uint32_t j = 0; j < mData.Length(); ++j) {
-        MOZ_ASSERT(!Equivalent(tmpData[i], mData[j]));
-      }
+        
+        for (uint32_t j = 0; j < mData.Length(); ++j) {
+          MOZ_ASSERT(!Equivalent(tmpData[i], mData[j]));
+        }
 #endif
-    }
-    if (!match) {
-      mData.AppendElement(tmpData[i]);
+      }
+      if (!match) {
+        mData.AppendElement(tmpData[i]);
+      }
     }
   }
 
