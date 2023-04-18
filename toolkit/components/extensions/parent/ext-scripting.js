@@ -26,13 +26,17 @@ var { ExtensionError } = ExtensionUtils;
 
 
 
+const execute = (context, details, kind, method) => {
+  const { tabManager } = context.extension;
 
-
-const execute = (tab, context, details, kind, method) => {
   let options = {
     jsPaths: [],
+    cssPaths: [],
     extensionId: context.extension.id,
   };
+
+  const { tabId, frameIds, allFrames } = details.target;
+  const tab = tabManager.get(tabId);
 
   
   options.hasActiveTabPermission = tab.hasActiveTabPermission;
@@ -40,24 +44,28 @@ const execute = (tab, context, details, kind, method) => {
     host => host.pattern
   );
 
-  
-  if (details.codeToExecute) {
-    options[`${kind}Code`] = details.codeToExecute;
+  const codeKey = kind === "js" ? "func" : "css";
+  if ((details.files === null) == (details[codeKey] === null)) {
+    throw new ExtensionError(
+      `Exactly one of files and ${codeKey} must be specified.`
+    );
+  }
+
+  if (details[codeKey]) {
+    options[`${kind}Code`] = details[codeKey];
   }
 
   if (details.files) {
     for (const file of details.files) {
       let url = context.uri.resolve(file);
       if (!tab.extension.isExtensionURL(url)) {
-        return Promise.reject({
-          message: "Files to be injected must be within the extension",
-        });
+        throw new ExtensionError(
+          "Files to be injected must be within the extension"
+        );
       }
       options[`${kind}Paths`].push(url);
     }
   }
-
-  let { frameIds, allFrames } = details.target;
 
   if (allFrames && frameIds) {
     throw new ExtensionError("Cannot specify both 'allFrames' and 'frameIds'.");
@@ -76,8 +84,11 @@ const execute = (tab, context, details, kind, method) => {
   
   options.returnResultsWithFrameIds = kind === "js";
 
-  
-  
+  if (details.origin) {
+    options.cssOrigin = details.origin.toLowerCase();
+  } else {
+    options.cssOrigin = "author";
+  }
 
   
   
@@ -86,16 +97,14 @@ const execute = (tab, context, details, kind, method) => {
 
 this.scripting = class extends ExtensionAPI {
   getAPI(context) {
-    const { extension } = context;
-    const { tabManager } = extension;
-
     return {
       scripting: {
         executeScriptInternal: async details => {
-          let { tabId } = details.target;
-          let tab = tabManager.get(tabId);
+          return execute(context, details, "js", "executeScript");
+        },
 
-          return execute(tab, context, details, "js", "executeScript");
+        insertCSS: async details => {
+          return execute(context, details, "css", "insertCSS").then(() => {});
         },
       },
     };

@@ -13,15 +13,6 @@ this.scripting = class extends ExtensionAPI {
     return {
       scripting: {
         executeScript: async details => {
-          if (
-            (details.files !== null && details.func !== null) ||
-            (!details.files && !details.func)
-          ) {
-            throw new ExtensionError(
-              "Exactly one of files and func must be specified."
-            );
-          }
-
           let { func, args, ...parentDetails } = details;
 
           if (details.files) {
@@ -30,16 +21,21 @@ this.scripting = class extends ExtensionAPI {
                 "'args' may not be used with file injections."
               );
             }
-          } else {
+          }
+          
+          
+          if (func) {
             try {
               const serializedArgs = args
                 ? JSON.stringify(args).slice(1, -1)
                 : "";
               
-              parentDetails.codeToExecute = `(${func.toString()})(${serializedArgs});`;
+              parentDetails.func = `(${func.toString()})(${serializedArgs});`;
             } catch (e) {
               throw new ExtensionError("Unserializable arguments.");
             }
+          } else {
+            parentDetails.func = null;
           }
 
           return context.childManager.callParentAsyncFunction(
