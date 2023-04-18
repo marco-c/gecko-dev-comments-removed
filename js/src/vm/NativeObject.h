@@ -998,12 +998,13 @@ class NativeObject : public JSObject {
                                            HandleNativeObject obj,
                                            uint32_t nfixed);
 
-  [[nodiscard]] bool copyAndFreeSlotsBeforeSwap(
-      JSContext* cx, MutableHandleValueVector values);
-  [[nodiscard]] static bool fillInSlotsAfterSwap(JSContext* cx,
-                                                 HandleNativeObject obj,
-                                                 gc::AllocKind kind,
-                                                 HandleValueVector values);
+  
+  [[nodiscard]] bool prepareForSwap(JSContext* cx,
+                                    MutableHandleValueVector slotValuesOut);
+  [[nodiscard]] static bool fixupAfterSwap(JSContext* cx,
+                                           HandleNativeObject obj,
+                                           gc::AllocKind kind,
+                                           HandleValueVector slotValues);
 
  public:
   

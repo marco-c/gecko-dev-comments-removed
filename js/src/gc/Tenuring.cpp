@@ -534,9 +534,6 @@ JSObject* js::TenuringTracer::moveToTenuredSlow(JSObject* src) {
     NativeObject* nsrc = &src->as<NativeObject>();
     tenuredSize += moveSlotsToTenured(ndst, nsrc);
     tenuredSize += moveElementsToTenured(ndst, nsrc, dstKind);
-
-    
-    
   }
 
   JSObjectMovedOp op = dst->getClass()->extObjectMovedOp();
