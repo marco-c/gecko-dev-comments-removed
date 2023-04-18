@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "GMPChild.h"
 
@@ -25,8 +25,6 @@
 #include "GMPVideoEncoderChild.h"
 #include "GMPVideoHost.h"
 #include "mozilla/Algorithm.h"
-#include "mozilla/FOGIPC.h"
-#include "mozilla/glean/GleanMetrics.h"
 #include "mozilla/ipc/CrashReporterClient.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/ProcessChild.h"
@@ -37,13 +35,12 @@
 #include "nsReadableUtils.h"
 #include "nsThreadManager.h"
 #include "nsXULAppAPI.h"
-#include "nsIXULRuntime.h"
 #include "prio.h"
 #ifdef XP_WIN
-#  include <stdlib.h>  // for _exit()
+#  include <stdlib.h>  
 #  include "WinUtils.h"
 #else
-#  include <unistd.h>  // for _exit()
+#  include <unistd.h>  
 #endif
 
 using namespace mozilla::ipc;
@@ -146,8 +143,8 @@ static bool GetPluginPaths(const nsAString& aPluginPath,
     return false;
   }
 
-  // Mac sandbox rules expect paths to actual files and directories -- not
-  // soft links.
+  
+  
   libDirectory->Normalize();
   aPluginDirectoryPath = GetNativeTarget(libDirectory);
 
@@ -156,16 +153,16 @@ static bool GetPluginPaths(const nsAString& aPluginPath,
 
   return true;
 }
-#  endif  // MOZ_SANDBOX
-#endif    // XP_MACOSX
+#  endif  
+#endif    
 
 bool GMPChild::Init(const nsAString& aPluginPath, base::ProcessId aParentPid,
                     mozilla::ipc::ScopedPort aPort) {
   GMP_CHILD_LOG_DEBUG("%s pluginPath=%s", __FUNCTION__,
                       NS_ConvertUTF16toUTF8(aPluginPath).get());
 
-  // GMPChild needs nsThreadManager to create the ProfilerChild thread.
-  // It is also used on debug builds for the sandbox tests.
+  
+  
   if (NS_WARN_IF(NS_FAILED(nsThreadManager::get().Init()))) {
     return false;
   }
@@ -197,21 +194,21 @@ GMPErr GMPChild::GetAPI(const char* aAPIName, void* aHostAPI, void** aPluginAPI,
 }
 
 mozilla::ipc::IPCResult GMPChild::RecvPreloadLibs(const nsCString& aLibs) {
-  // Pre-load libraries that may need to be used by the EME plugin but that
-  // can't be loaded after the sandbox has started.
+  
+  
 #ifdef XP_WIN
-  // Items in this must be lowercase!
+  
   constexpr static const char16_t* whitelist[] = {
-      u"dxva2.dll",        // Get monitor information
-      u"evr.dll",          // MFGetStrideForBitmapInfoHeader
-      u"freebl3.dll",      // NSS for clearkey CDM
-      u"mfplat.dll",       // MFCreateSample, MFCreateAlignedMemoryBuffer,
-                           // MFCreateMediaType
-      u"msmpeg2vdec.dll",  // H.264 decoder
-      u"nss3.dll",         // NSS for clearkey CDM
-      u"ole32.dll",        // required for OPM
-      u"psapi.dll",        // For GetMappedFileNameW, see bug 1383611
-      u"softokn3.dll",     // NSS for clearkey CDM
+      u"dxva2.dll",        
+      u"evr.dll",          
+      u"freebl3.dll",      
+      u"mfplat.dll",       
+                           
+      u"msmpeg2vdec.dll",  
+      u"nss3.dll",         
+      u"ole32.dll",        
+      u"psapi.dll",        
+      u"softokn3.dll",     
   };
   constexpr static bool (*IsASCII)(const char16_t*) =
       IsAsciiNullTerminated<char16_t>;
@@ -233,11 +230,11 @@ mozilla::ipc::IPCResult GMPChild::RecvPreloadLibs(const nsCString& aLibs) {
   }
 #elif defined(XP_LINUX)
   constexpr static const char* whitelist[] = {
-      // NSS libraries used by clearkey.
+      
       "libfreeblpriv3.so",
       "libsoftokn3.so",
-      // glibc libraries merged into libc.so.6; see bug 1725828 and
-      // the corresponding code in GMPParent.cpp.
+      
+      
       "libdl.so.2",
       "libpthread.so.0",
       "librt.so.1",
@@ -252,16 +249,16 @@ mozilla::ipc::IPCResult GMPChild::RecvPreloadLibs(const nsCString& aLibs) {
         if (libHandle) {
           mLibHandles.AppendElement(libHandle);
         } else {
-          // TODO(bug 1698718): remove the logging once we've identified
-          // the cause of the load failure.
+          
+          
           const char* error = dlerror();
           if (error) {
-            // We should always have an error, but gracefully handle just in
-            // case.
+            
+            
             nsAutoCString nsError{error};
             CrashReporter::AppendAppNotesToCrashReport(nsError);
           }
-          // End bug 1698718 logging.
+          
 
           MOZ_CRASH("Couldn't load lib needed by media plugin");
         }
@@ -358,10 +355,10 @@ static nsCOMPtr<nsIFile> GetFirefoxAppPath(
     nsCOMPtr<nsIFile> aPluginContainerPath) {
   MOZ_ASSERT(aPluginContainerPath);
 #if defined(XP_MACOSX)
-  // On MacOS the firefox binary is a few parent directories up from
-  // plugin-container.
-  // aPluginContainerPath will end with something like:
-  // xxxx/NightlyDebug.app/Contents/MacOS/plugin-container.app/Contents/MacOS/plugin-container
+  
+  
+  
+  
   nsCOMPtr<nsIFile> path = aPluginContainerPath;
   for (int i = 0; i < 4; i++) {
     path = GetParentFile(path);
@@ -371,8 +368,8 @@ static nsCOMPtr<nsIFile> GetFirefoxAppPath(
   nsCOMPtr<nsIFile> parent = GetParentFile(aPluginContainerPath);
 #  if XP_WIN
   if (IsFileLeafEqualToASCII(parent, "i686")) {
-    // We must be on Windows on ARM64, where the plugin-container path will
-    // be in the 'i686' subdir. The firefox.exe is in the parent directory.
+    
+    
     parent = GetParentFile(parent);
   }
 #  endif
@@ -385,13 +382,13 @@ static bool GetSigPath(const int aRelativeLayers,
                        const nsString& aTargetSigFileName,
                        nsCOMPtr<nsIFile> aExecutablePath,
                        nsCOMPtr<nsIFile>& aOutSigPath) {
-  // The sig file will be located in
-  // xxxx/NightlyDebug.app/Contents/Resources/XUL.sig
-  // xxxx/NightlyDebug.app/Contents/Resources/firefox.sig
-  // xxxx/NightlyDebug.app/Contents/MacOS/plugin-container.app/Contents/Resources/plugin-container.sig
-  // On MacOS the sig file is a few parent directories up from
-  // its executable file.
-  // Start to search the path from the path of the executable file we provided.
+  
+  
+  
+  
+  
+  
+  
   MOZ_ASSERT(aExecutablePath);
   nsCOMPtr<nsIFile> path = aExecutablePath;
   for (int i = 0; i < aRelativeLayers; i++) {
@@ -429,9 +426,9 @@ static bool AppendHostPath(nsCOMPtr<nsIFile>& aFile,
       NS_SUCCEEDED(sigFile->GetPath(str))) {
     CopyUTF16toUTF8(str, sigFilePath);
   } else {
-    // Cannot successfully get the sig file path.
-    // Assume it is located at the same place as plugin-container
-    // alternatively.
+    
+    
+    
     sigFilePath = nsCString(NS_ConvertUTF16toUTF8(str) + ".sig"_ns);
   }
 #else
@@ -444,9 +441,9 @@ static bool AppendHostPath(nsCOMPtr<nsIFile>& aFile,
 
 nsTArray<std::pair<nsCString, nsCString>>
 GMPChild::MakeCDMHostVerificationPaths() {
-  // Record the file path and its sig file path.
+  
   nsTArray<std::pair<nsCString, nsCString>> paths;
-  // Plugin binary path.
+  
   nsCOMPtr<nsIFile> path;
   nsString str;
   if (GetPluginFile(mPluginPath, path) && FileExists(path) &&
@@ -456,24 +453,24 @@ GMPChild::MakeCDMHostVerificationPaths() {
                        nsCString(NS_ConvertUTF16toUTF8(str) + ".sig"_ns)));
   }
 
-  // Plugin-container binary path.
-  // Note: clang won't let us initialize an nsString from a wstring, so we
-  // need to go through UTF8 to get to an nsString.
+  
+  
+  
   const std::string pluginContainer =
       WideToUTF8(CommandLine::ForCurrentProcess()->program());
   path = nullptr;
   CopyUTF8toUTF16(nsDependentCString(pluginContainer.c_str()), str);
-  if (NS_FAILED(NS_NewLocalFile(str, true, /* aFollowLinks */
+  if (NS_FAILED(NS_NewLocalFile(str, true, 
                                 getter_AddRefs(path))) ||
       !AppendHostPath(path, paths)) {
-    // Without successfully determining plugin-container's path, we can't
-    // determine libxul's or Firefox's. So give up.
+    
+    
     return paths;
   }
 
 #if defined(XP_WIN)
-  // On Windows on ARM64, we should also append the x86 plugin-container's
-  // xul.dll.
+  
+  
   const bool isWindowsOnARM64 =
       IsFileLeafEqualToASCII(GetParentFile(path), "i686");
   if (isWindowsOnARM64) {
@@ -485,15 +482,15 @@ GMPChild::MakeCDMHostVerificationPaths() {
   }
 #endif
 
-  // Firefox application binary path.
+  
   nsCOMPtr<nsIFile> appDir = GetFirefoxAppPath(path);
   path = AppendFile(CloneFile(appDir), FIREFOX_FILE);
   if (!AppendHostPath(path, paths)) {
     return paths;
   }
 
-  // Libxul path. Note: re-using 'appDir' var here, as we assume libxul is in
-  // the same directory as Firefox executable.
+  
+  
   appDir->GetPath(str);
   path = AppendFile(CloneFile(appDir), XUL_LIB_FILE);
   if (!AppendHostPath(path, paths)) {
@@ -587,10 +584,6 @@ void GMPChild::ActorDestroy(ActorDestroyReason aWhy) {
     ProcessChild::QuickExit();
   }
 
-  // Send the last bits of Glean data over to the main process.
-  glean::FlushFOGData(
-      [](ByteBuf&& aBuf) { glean::SendFOGData(std::move(aBuf)); });
-
   if (mProfilerController) {
     mProfilerController->Shutdown();
     mProfilerController = nullptr;
@@ -604,7 +597,7 @@ void GMPChild::ActorDestroy(ActorDestroyReason aWhy) {
 void GMPChild::ProcessingError(Result aCode, const char* aReason) {
   switch (aCode) {
     case MsgDropped:
-      _exit(0);  // Don't trigger a crash report.
+      _exit(0);  
     case MsgNotKnown:
       MOZ_CRASH("aborting because of MsgNotKnown");
     case MsgNotAllowed:
@@ -683,22 +676,6 @@ mozilla::ipc::IPCResult GMPChild::RecvInitGMPContentChild(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult GMPChild::RecvFlushFOGData(
-    FlushFOGDataResolver&& aResolver) {
-  GMP_CHILD_LOG_DEBUG("GMPChild RecvFlushFOGData");
-  glean::FlushFOGData(std::move(aResolver));
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult GMPChild::RecvTestTriggerMetrics(
-    TestTriggerMetricsResolver&& aResolve) {
-  GMP_CHILD_LOG_DEBUG("GMPChild RecvTestTriggerMetrics");
-  mozilla::glean::test_only_ipc::a_counter.Add(
-      nsIXULRuntime::PROCESS_TYPE_GMPLUGIN);
-  aResolve(true);
-  return IPC_OK();
-}
-
 void GMPChild::GMPContentChildActorDestroy(GMPContentChild* aGMPContentChild) {
   for (uint32_t i = mGMPContentChildren.Length(); i > 0; i--) {
     RefPtr<GMPContentChild>& destroyedActor = mGMPContentChildren[i - 1];
@@ -717,8 +694,8 @@ mozilla::ipc::IPCResult GMPChild::RecvInitProfiler(
   return IPC_OK();
 }
 
-}  // namespace gmp
-}  // namespace mozilla
+}  
+}  
 
 #undef GMP_CHILD_LOG_DEBUG
 #undef __CLASS__
