@@ -2184,6 +2184,12 @@ static ResolvedPopupMargin ResolveMargin(nsMenuPopupFrame* aFrame,
 
   auto popupSides = SidesForPopupAlignment(aPopupAlign);
   auto anchorSides = SidesForPopupAlignment(aAnchorAlign);
+  
+  
+  
+  
+  
+  
   if (popupSides.mHorizontal == anchorSides.mHorizontal) {
     margin.left = -margin.left;
     margin.right = -margin.right;
@@ -2192,8 +2198,11 @@ static ResolvedPopupMargin ResolveMargin(nsMenuPopupFrame* aFrame,
     offset.x += popupSide == eSideRight ? -margin.Side(popupSide)
                                         : margin.Side(popupSide);
     margin.left = margin.right = 0;
+  } else {
+    std::swap(margin.left, margin.right);
   }
 
+  
   if (popupSides.mVertical == anchorSides.mVertical) {
     margin.top = -margin.top;
     margin.bottom = -margin.bottom;
@@ -2202,6 +2211,8 @@ static ResolvedPopupMargin ResolveMargin(nsMenuPopupFrame* aFrame,
     offset.y += popupSide == eSideBottom ? -margin.Side(popupSide)
                                          : margin.Side(popupSide);
     margin.top = margin.bottom = 0;
+  } else {
+    std::swap(margin.top, margin.bottom);
   }
 
   return {margin, offset};
