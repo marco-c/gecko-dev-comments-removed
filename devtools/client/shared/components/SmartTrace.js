@@ -33,6 +33,11 @@ class SmartTrace extends Component {
       onViewSourceInDebugger: PropTypes.func.isRequired,
       
       sourceMapURLService: PropTypes.object,
+      
+      
+      
+      
+      
       initialRenderDelay: PropTypes.number,
       onSourceMapResultDebounceDelay: PropTypes.number,
       
@@ -55,7 +60,7 @@ class SmartTrace extends Component {
       
       
       
-      ready: !props.sourceMapURLService,
+      ready: !props.sourceMapURLService || !this.hasInitialRenderDelay(),
       updateCount: 0,
       
       originalLocations: null,
@@ -92,6 +97,12 @@ class SmartTrace extends Component {
             })
         )
       );
+
+      
+      
+      if (!this.hasInitialRenderDelay()) {
+        return;
+      }
 
       const delay = new Promise(res => {
         this.initialRenderDelayTimeoutId = setTimeout(
@@ -199,10 +210,17 @@ class SmartTrace extends Component {
     }
   }
 
+  hasInitialRenderDelay() {
+    return (
+      Number.isFinite(this.props.initialRenderDelay) &&
+      this.props.initialRenderDelay > 0
+    );
+  }
+
   render() {
     if (
       this.state.hasError ||
-      (Number.isFinite(this.props.initialRenderDelay) && !this.state.ready)
+      (this.hasInitialRenderDelay() && !this.state.ready)
     ) {
       return null;
     }
