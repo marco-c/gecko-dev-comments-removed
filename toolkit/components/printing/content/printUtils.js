@@ -72,6 +72,19 @@ var PrintUtils = {
     ));
   },
 
+  async checkForSelection(browsingContext) {
+    try {
+      let sourceActor = browsingContext.currentWindowGlobal.getActor(
+        "PrintingSelection"
+      );
+      
+      return await sourceActor.sendQuery("PrintingSelection:HasSelection", {});
+    } catch (e) {
+      Cu.reportError(e);
+    }
+    return false;
+  },
+
   
 
 
@@ -314,6 +327,11 @@ var PrintUtils = {
       }
 
       if (useSystemDialog) {
+        const hasSelection = await PrintUtils.checkForSelection(
+          browsingContext
+        );
+        settings.isPrintSelectionRBEnabled = hasSelection;
+
         
         
         try {
