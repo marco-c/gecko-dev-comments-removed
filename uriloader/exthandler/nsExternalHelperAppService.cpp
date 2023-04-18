@@ -1970,6 +1970,39 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
     alwaysAsk = true;
   }
 
+  
+  
+#ifdef XP_WIN
+  
+
+
+
+
+  if (!alwaysAsk && action != nsIMIMEInfo::saveToDisk &&
+      !shouldAutomaticallyHandleInternally) {
+    nsCOMPtr<nsIHandlerApp> prefApp;
+    mMimeInfo->GetPreferredApplicationHandler(getter_AddRefs(prefApp));
+    if (action != nsIMIMEInfo::useHelperApp || !prefApp) {
+      nsCOMPtr<nsIFile> fileToTest;
+      GetTargetFile(getter_AddRefs(fileToTest));
+      if (fileToTest) {
+        bool isExecutable;
+        rv = fileToTest->IsExecutable(&isExecutable);
+        if (NS_FAILED(rv) || mTempFileIsExecutable ||
+            isExecutable) {  
+          alwaysAsk = true;
+        }
+      } else {  
+                
+        NS_WARNING(
+            "GetDownloadInfo returned a null file after the temp file has been "
+            "set up! ");
+        alwaysAsk = true;
+      }
+    }
+  }
+#endif
+
   nsAutoCString actionTelem;
   if (alwaysAsk) {
     actionTelem.AssignLiteral("ask");
@@ -1998,39 +2031,6 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
     
   } else {
     
-#ifdef XP_WIN
-    
-
-
-
-
-
-
-
-
-    nsCOMPtr<nsIHandlerApp> prefApp;
-    mMimeInfo->GetPreferredApplicationHandler(getter_AddRefs(prefApp));
-    if (action != nsIMIMEInfo::useHelperApp || !prefApp) {
-      nsCOMPtr<nsIFile> fileToTest;
-      GetTargetFile(getter_AddRefs(fileToTest));
-      if (fileToTest) {
-        bool isExecutable;
-        rv = fileToTest->IsExecutable(&isExecutable);
-        if (NS_FAILED(rv) ||
-            isExecutable) {  
-          action = nsIMIMEInfo::saveToDisk;
-        }
-      } else {  
-                
-        NS_WARNING(
-            "GetDownloadInfo returned a null file after the temp file has been "
-            "set up! ");
-        action = nsIMIMEInfo::saveToDisk;
-      }
-    }
-
-#endif
-
     if (action == nsIMIMEInfo::useHelperApp ||
         action == nsIMIMEInfo::useSystemDefault ||
         shouldAutomaticallyHandleInternally) {
