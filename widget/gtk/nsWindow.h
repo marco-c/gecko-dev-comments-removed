@@ -171,7 +171,17 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntRect GetScreenBounds() override;
   LayoutDeviceIntRect GetClientBounds() override;
   LayoutDeviceIntSize GetClientSize() override;
-  LayoutDeviceIntPoint GetClientOffset() override;
+  LayoutDeviceIntPoint GetClientOffset() override { return mClientOffset; }
+
+  
+  
+  
+  
+  
+  
+  
+  void RecomputeClientOffset(bool aNotify);
+
   void SetCursor(const Cursor&) override;
   void Invalidate(const LayoutDeviceIntRect& aRect) override;
   void* GetNativeData(uint32_t aDataType) override;
@@ -467,9 +477,6 @@ class nsWindow final : public nsBaseWidget {
   void GrabPointer(guint32 aTime);
   void ReleaseGrabs(void);
 
-  void UpdateClientOffsetFromFrameExtents();
-  void UpdateClientOffsetFromCSDWindow();
-
   void DispatchContextMenuEventFromMouseEvent(uint16_t domButton,
                                               GdkEventButton* aEvent);
 
@@ -532,13 +539,14 @@ class nsWindow final : public nsBaseWidget {
   nsSizeMode mSizeMode = nsSizeMode_Normal;
   float mAspectRatio = 0.0f;
   float mAspectRatioSaved = 0.0f;
+
   
   
   
   
   
   LayoutDeviceIntSize mLastSizeRequest;
-  nsIntPoint mClientOffset;
+  LayoutDeviceIntPoint mClientOffset;
 
   
   guint32 mLastScrollEventTime = GDK_CURRENT_TIME;
