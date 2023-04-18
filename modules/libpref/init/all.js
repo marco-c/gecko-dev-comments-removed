@@ -59,24 +59,6 @@ pref("security.content.signature.root_hash",
 
 pref("security.default_personal_cert",   "Ask Every Time");
 pref("security.remember_cert_checkbox_default_setting", true);
-pref("security.ask_for_password",        0);
-pref("security.password_lifetime",       30);
-
-
-
-
-
-
-
-pref("security.family_safety.mode", 2);
-
-pref("security.enterprise_roots.enabled", false);
-
-
-
-
-
-pref("security.osclientcerts.autoload", true);
 
 pref("security.pki.cert_short_lifetime_in_days", 10);
 
@@ -157,12 +139,6 @@ pref("security.pki.mitm_detected", false);
 #else
   pref("security.remote_settings.intermediates.enabled", false);
 #endif
-#if defined(EARLY_BETA_OR_EARLIER) && !defined(MOZ_WIDGET_ANDROID)
-  pref("security.intermediate_preloading_healer.enabled", true);
-#else
-  pref("security.intermediate_preloading_healer.enabled", false);
-#endif
-pref("security.intermediate_preloading_healer.timer_interval_ms", 300000);
 pref("security.remote_settings.intermediates.bucket", "security-state");
 pref("security.remote_settings.intermediates.collection", "intermediates");
 pref("security.remote_settings.intermediates.checked", 0);
@@ -2136,8 +2112,6 @@ pref("font.name-list.monospace.x-math", "monospace");
 
 
 pref("font.blacklist.underline_offset", "FangSong,Gulim,GulimChe,MingLiU,MingLiU-ExtB,MingLiU_HKSCS,MingLiU-HKSCS-ExtB,MS Gothic,MS Mincho,MS PGothic,MS PMincho,MS UI Gothic,PMingLiU,PMingLiU-ExtB,SimHei,SimSun,SimSun-ExtB,Hei,Kai,Apple LiGothic,Apple LiSung,Osaka");
-
-pref("security.directory",              "");
 
 
 pref("security.dialog_enable_delay", 1000);
