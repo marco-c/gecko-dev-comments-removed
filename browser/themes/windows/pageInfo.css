@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @import "chrome://global/skin/global.css";
 @namespace html url("http://www.w3.org/1999/xhtml");
@@ -13,7 +13,7 @@
   color: FieldText;
 }
 
-
+/* View buttons */
 #viewGroup {
   padding-inline-start: 10px;
 }
@@ -39,6 +39,10 @@
 #viewGroup > radio > .radio-label-box {
   margin: 0;
   padding: 0 6px;
+}
+
+#viewGroup:focus-visible > radio[focused="true"] > .radio-label-box {
+  outline: var(--default-focusring);
 }
 
 #generalTab {
@@ -81,7 +85,7 @@
   padding: 10px;
 }
 
-
+/* Misc */
 tree {
   margin: .5em;
 }
@@ -107,7 +111,7 @@ html|input:disabled {
   font-style: italic;
 }
 
-
+/* General Tab */
 
 #securityBox description {
   margin-inline-start: 10px;
@@ -118,7 +122,7 @@ html|input:disabled {
   line-height: 2em;
 }
 
-
+/* Media Tab */
 #imagetree {
   min-height: 10em;
   margin-bottom: 0;
@@ -147,7 +151,7 @@ treechildren::-moz-tree-cell-text(broken) {
   color: graytext;
 }
 
-
+/* Permissions Tab */
 #permList {
   margin: .5em;
   overflow: auto;
@@ -171,7 +175,7 @@ treechildren::-moz-tree-cell-text(broken) {
   color: -moz-dialogText;
 }
 
-
+/* Security Tab */
 
 #securityPanel table {
   margin-bottom: 1em;
