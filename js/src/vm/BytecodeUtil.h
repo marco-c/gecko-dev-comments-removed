@@ -302,7 +302,6 @@ static inline bool IsJumpOpcode(JSOp op) { return JOF_OPTYPE(op) == JOF_JUMP; }
 static inline bool BytecodeFallsThrough(JSOp op) {
   
   
-  
   switch (op) {
     case JSOp::Goto:
     case JSOp::Default:

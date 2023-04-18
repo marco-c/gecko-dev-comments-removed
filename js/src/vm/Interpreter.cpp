@@ -4104,11 +4104,6 @@ static MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER bool Interpret(JSContext* cx,
     END_CASE(FinishTuple)
 #endif
 
-    CASE(Gosub) {
-      int32_t len = GET_JUMP_OFFSET(REGS.pc);
-      ADVANCE_AND_DISPATCH(len);
-    }
-
     CASE(Retsub) {
       
       Value rval, lval;
