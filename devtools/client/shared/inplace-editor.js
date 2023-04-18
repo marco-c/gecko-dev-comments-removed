@@ -693,11 +693,16 @@ InplaceEditor.prototype = {
     
     
     const el = this.doc.createElement("div");
-    const units = ["px", "deg", "s"];
+
+    
+    const units = ["", "px", "deg", "s"];
     for (const unit of units) {
       const value = beforeValue + "1" + unit + afterValue;
       el.style.setProperty(this.property.name, "");
       el.style.setProperty(this.property.name, value);
+      
+      
+      
       if (el.style.getPropertyValue(this.property.name) !== "") {
         return unit;
       }
