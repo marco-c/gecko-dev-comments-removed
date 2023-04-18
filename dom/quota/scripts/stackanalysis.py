@@ -120,6 +120,7 @@ def checkAverageFrameTimeDeltas(rows, max_delta):
 def collectTopmostFrames(rows):
     prev_cid = "unset"
     prev_sid = "unset"
+    prev_tid = "unset"
     prev_ctx = "unset"
     prev_sev = "ERROR"
     session_complete = False
@@ -127,13 +128,14 @@ def collectTopmostFrames(rows):
     for row in rows:
         cid = row["client_id"]
         sid = row["session_id"]
+        tid = row["seq"] >> 32  
         ctx = row["context"]
-        seq = row["seq"]
+        seq = row["seq"] & 0x00000000FFFFFFFF  
         sev = row["severity"]
 
         
         
-        if cid != prev_cid or sid != prev_sid:
+        if cid != prev_cid or sid != prev_sid or tid != prev_tid:
             if seq == 1:
                 session_complete = True
             else:
@@ -142,7 +144,13 @@ def collectTopmostFrames(rows):
         if session_complete:
             
             
-            if seq == 1 or cid != prev_cid or sid != prev_sid or ctx != prev_ctx:
+            if (
+                seq == 1
+                or cid != prev_cid
+                or sid != prev_sid
+                or tid != prev_tid
+                or ctx != prev_ctx
+            ):
                 addTopmostFrame(row)
                 after_severity_downgrade = False
             
@@ -159,6 +167,7 @@ def collectTopmostFrames(rows):
 
         prev_cid = cid
         prev_sid = sid
+        prev_tid = tid
         prev_ctx = ctx
         prev_sev = sev
 
