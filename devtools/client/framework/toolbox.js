@@ -299,7 +299,6 @@ function Toolbox(
   this._saveSplitConsoleHeight = this._saveSplitConsoleHeight.bind(this);
   this._onFocus = this._onFocus.bind(this);
   this._onBrowserMessage = this._onBrowserMessage.bind(this);
-  this._onPerformanceFrontEvent = this._onPerformanceFrontEvent.bind(this);
   this._onTabsOrderUpdated = this._onTabsOrderUpdated.bind(this);
   this._onToolbarFocus = this._onToolbarFocus.bind(this);
   this._onToolbarArrowKeypress = this._onToolbarArrowKeypress.bind(this);
@@ -4156,30 +4155,6 @@ Toolbox.prototype = {
 
   getTextBoxContextMenu: function() {
     return this.topDoc.getElementById("toolbox-menu");
-  },
-
-  
-
-
-
-
-
-  async _onPerformanceFrontEvent(performanceFront) {
-    if (this.getPanel("performance")) {
-      
-      
-      performanceFront.flushQueuedRecordings();
-      return;
-    }
-
-    
-    
-    
-    
-    const panel = await this.loadTool("performance");
-    const recordings = performanceFront.flushQueuedRecordings();
-    panel.panelWin.PerformanceController.populateWithRecordings(recordings);
-    await panel.open();
   },
 
   
