@@ -182,7 +182,8 @@ impl Default for Source {
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, Eq, Parse, PartialEq, PartialOrd, ToCss, ToShmem)]
-pub enum Orientation {
+#[repr(u8)]
+pub enum ScrollDirection {
     
     Auto,
     
@@ -195,11 +196,14 @@ pub enum Orientation {
     Vertical,
 }
 
-impl Default for Orientation {
+impl Default for ScrollDirection {
     fn default() -> Self {
-        Orientation::Auto
+        ScrollDirection::Auto
     }
 }
+
+
+pub use self::ScrollDirection as Orientation;
 
 
 
