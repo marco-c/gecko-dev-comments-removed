@@ -11,15 +11,13 @@
 class nsIPrincipal;
 class nsIQuotaUsageRequest;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 using ServiceWorkerQuotaMitigationCallback = std::function<void(bool)>;
 
 void ClearQuotaUsageIfNeeded(nsIPrincipal* aPrincipal,
                              ServiceWorkerQuotaMitigationCallback&& aCallback);
 
-}  
 }  
 
 #endif

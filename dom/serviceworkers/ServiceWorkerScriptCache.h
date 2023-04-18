@@ -14,8 +14,7 @@
 class nsILoadGroup;
 class nsIPrincipal;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ServiceWorkerRegistrationInfo;
 
@@ -50,7 +49,6 @@ nsresult Compare(ServiceWorkerRegistrationInfo* aRegistration,
 
 }  
 
-}  
 }  
 
 #endif  

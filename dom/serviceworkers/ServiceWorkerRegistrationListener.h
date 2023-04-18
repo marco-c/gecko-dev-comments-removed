@@ -7,8 +7,7 @@
 #ifndef mozilla_dom_ServiceWorkerRegistrationListener_h
 #define mozilla_dom_ServiceWorkerRegistrationListener_h
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ServiceWorkerRegistrationDescriptor;
 
@@ -31,7 +30,6 @@ class ServiceWorkerRegistrationListener {
       const ServiceWorkerRegistrationDescriptor& aDescriptor) = 0;
 };
 
-}  
 }  
 
 #endif 

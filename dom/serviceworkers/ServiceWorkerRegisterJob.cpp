@@ -9,8 +9,7 @@
 #include "mozilla/dom/WorkerCommon.h"
 #include "ServiceWorkerManager.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 ServiceWorkerRegisterJob::ServiceWorkerRegisterJob(
     nsIPrincipal* aPrincipal, const nsACString& aScope,
@@ -53,7 +52,6 @@ void ServiceWorkerRegisterJob::AsyncExecute() {
   Update();
 }
 
-ServiceWorkerRegisterJob::~ServiceWorkerRegisterJob() {}
+ServiceWorkerRegisterJob::~ServiceWorkerRegisterJob() = default;
 
-}  
 }  

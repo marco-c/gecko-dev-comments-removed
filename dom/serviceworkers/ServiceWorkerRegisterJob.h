@@ -9,8 +9,7 @@
 
 #include "ServiceWorkerUpdateJob.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -29,7 +28,6 @@ class ServiceWorkerRegisterJob final : public ServiceWorkerUpdateJob {
   virtual ~ServiceWorkerRegisterJob();
 };
 
-}  
 }  
 
 #endif  

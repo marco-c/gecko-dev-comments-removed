@@ -9,8 +9,7 @@
 
 #include "mozilla/dom/PServiceWorkerRegistrationParent.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class IPCServiceWorkerRegistrationDescriptor;
 class ServiceWorkerRegistrationProxy;
@@ -54,7 +53,6 @@ class ServiceWorkerRegistrationParent final
   void MaybeSendDelete();
 };
 
-}  
 }  
 
 #endif  
