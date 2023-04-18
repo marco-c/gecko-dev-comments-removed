@@ -26,7 +26,9 @@ function test_getSharingProviders() {
     "http://example.org/#/",
     "http://example.org/#/#",
     "http://example.org/#/#/",
-    "http://example.org/foo/bar/x|page.html#this_is_a_fragment",
+    
+    
+    
     "http://example.org/page.html#this_is_a_fragment",
     "http://example.org/page.html#this_is_a_fragment#and_another",
     "http://example.org/foo/bar;#foo",

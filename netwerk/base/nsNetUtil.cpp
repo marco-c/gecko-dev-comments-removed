@@ -1753,32 +1753,14 @@ nsresult NS_NewURIWithNSURLEncoding(nsIURI** aResult, const nsACString& aSpec) {
   
   
   
+  
+  
   nsAutoCString ref, escapedRef;
   if (NS_SUCCEEDED(uri->GetRef(ref)) && !ref.IsEmpty()) {
-    if (!NS_Escape(ref, escapedRef, url_AppleExtra)) {
+    if (!NS_Escape(ref, escapedRef, url_NSURLRef)) {
       return NS_ERROR_INVALID_ARG;
     }
     rv = NS_MutateURI(uri).SetRef(escapedRef).Finalize(uri);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  
-  nsAutoCString filePath, escapedFilePath;
-  if (NS_SUCCEEDED(uri->GetFilePath(filePath)) && !filePath.IsEmpty()) {
-    if (!NS_Escape(filePath, escapedFilePath, url_AppleExtra)) {
-      return NS_ERROR_INVALID_ARG;
-    }
-    rv = NS_MutateURI(uri).SetFilePath(escapedFilePath).Finalize(uri);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
-  
-  nsAutoCString query, escapedQuery;
-  if (NS_SUCCEEDED(uri->GetQuery(query)) && !query.IsEmpty()) {
-    if (!NS_Escape(query, escapedQuery, url_AppleExtra)) {
-      return NS_ERROR_INVALID_ARG;
-    }
-    rv = NS_MutateURI(uri).SetQuery(escapedQuery).Finalize(uri);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

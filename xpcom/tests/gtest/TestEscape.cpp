@@ -148,7 +148,7 @@ TEST(Escape, AppleNSURLEscapeHash)
 {
   nsCString toEscape("#");
   nsCString escaped;
-  bool isEscapedOK = NS_Escape(toEscape, escaped, url_AppleExtra);
+  bool isEscapedOK = NS_Escape(toEscape, escaped, url_NSURLRef);
   EXPECT_EQ(isEscapedOK, true);
   EXPECT_STREQ(escaped.BeginReading(), "%23");
 }
@@ -158,31 +158,46 @@ TEST(Escape, AppleNSURLEscapeNoDouble)
   
   nsCString toEscape("%23");
   nsCString escaped;
-  bool isEscapedOK = NS_Escape(toEscape, escaped, url_AppleExtra);
+  bool isEscapedOK = NS_Escape(toEscape, escaped, url_NSURLRef);
   EXPECT_EQ(isEscapedOK, true);
   EXPECT_STREQ(escaped.BeginReading(), "%23");
 }
 
 
-
-
-TEST(Escape, AppleNSURLEscapeURL)
+TEST(Escape, AppleNSURLEscapeLists)
 {
-  nsCString toEscape("https://chat.mozilla.org/#/room/#macdev:mozilla.org");
-  nsCString escaped;
-  nsresult rv = NS_GetSpecWithNSURLEncoding(escaped, toEscape);
-  EXPECT_EQ(rv, NS_OK);
-  EXPECT_STREQ(escaped.BeginReading(),
-               "https://chat.mozilla.org/#/room/%23macdev%3Amozilla.org");
-}
+  
+  nsTArray<std::pair<nsCString, nsCString>> pairs{
+      {"https://chat.mozilla.org/#/room/#macdev:mozilla.org"_ns,
+       "https://chat.mozilla.org/#/room/%23macdev:mozilla.org"_ns},
+  };
 
+  for (std::pair<nsCString, nsCString>& pair : pairs) {
+    nsCString escaped;
+    nsresult rv = NS_GetSpecWithNSURLEncoding(escaped, pair.first);
+    EXPECT_EQ(rv, NS_OK);
+    EXPECT_STREQ(pair.second.BeginReading(), escaped.BeginReading());
+  }
 
-TEST(Escape, AppleNSURLEscapeURLDouble)
-{
-  const nsCString toEscape(
-      "https://chat.mozilla.org/#/room/%23macdev%3Amozilla.org");
-  nsCString escaped;
-  nsresult rv = NS_GetSpecWithNSURLEncoding(escaped, toEscape);
-  EXPECT_EQ(rv, NS_OK);
-  EXPECT_STREQ(toEscape.BeginReading(), escaped.BeginReading());
+  
+  nsTArray<nsCString> unchangedURLs{
+      
+      "https://bugzilla.mozilla.org/show_bug.cgi?id=1737854"_ns,
+      
+      "https://html.spec.whatwg.org/multipage/dom.html#the-document%27s-address"_ns,
+      
+      "https://www.google.com/search?q=firefox+web+browser&client=firefox-b-1-d&ei=abc&ved=abc&abc=5&oq=firefox+web+browser&gs_lcp=abc&sclient=gws-wiz"_ns,
+      
+      "https://chat.mozilla.org/#/room/%23macdev%3Amozilla.org"_ns,
+      "https://searchfox.org/mozilla-central/search?q=symbol%3AE_%3CT_mozilla%3A%3AWebGLExtensionID%3E_EXT_color_buffer_half_float&path="_ns,
+      
+      "https://site.com/script?foo=bar#this_ref"_ns,
+  };
+
+  for (nsCString& toEscape : unchangedURLs) {
+    nsCString escaped;
+    nsresult rv = NS_GetSpecWithNSURLEncoding(escaped, toEscape);
+    EXPECT_EQ(rv, NS_OK);
+    EXPECT_STREQ(toEscape.BeginReading(), escaped.BeginReading());
+  }
 }
