@@ -728,18 +728,6 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
         
         rv = NS_ERROR_NOT_IMPLEMENTED;
       }
-    } else if (printSilently && !printingViaParent) {
-      
-      
-      
-      
-      
-      
-      
-      
-
-      
-      rv = printData->mPrintSettings->SetupSilentPrinting();
     }
     
     if (rv == NS_ERROR_ABORT) return rv;

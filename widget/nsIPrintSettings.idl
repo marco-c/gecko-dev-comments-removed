@@ -342,16 +342,6 @@ interface nsIPrintSettings : nsISupports
 
 
 
-  [noscript] void SetupSilentPrinting();
-
-  
-
-
-
-
-
-
-
 
   [noscript] void SetUnwriteableMarginInTwips(in nsNativeIntMarginRef aEdge);
   [noscript, notxpcom, nostdcall] nsNativeIntMargin GetUnwriteableMarginInTwips();

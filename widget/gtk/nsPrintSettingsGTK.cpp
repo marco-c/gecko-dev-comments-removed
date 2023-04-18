@@ -17,17 +17,6 @@ static constexpr gchar kCupsDuplexNone[] = "None";
 static constexpr gchar kCupsDuplexNoTumble[] = "DuplexNoTumble";
 static constexpr gchar kCupsDuplexTumble[] = "DuplexTumble";
 
-static gboolean ref_printer(GtkPrinter* aPrinter, gpointer aData) {
-  ((nsPrintSettingsGTK*)aData)->SetGtkPrinter(aPrinter);
-  return TRUE;
-}
-
-static gboolean printer_enumerator(GtkPrinter* aPrinter, gpointer aData) {
-  if (gtk_printer_is_default(aPrinter)) return ref_printer(aPrinter, aData);
-
-  return FALSE;  
-}
-
 static GtkPaperSize* moz_gtk_paper_size_copy_to_new_custom(
     GtkPaperSize* oldPaperSize) {
   
@@ -595,21 +584,6 @@ nsPrintSettingsGTK::GetEffectivePageSize(double* aWidth, double* aHeight) {
     *aWidth = *aHeight;
     *aHeight = temp;
   }
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsPrintSettingsGTK::SetupSilentPrinting() {
-  
-  
-  
-  
-  gtk_enumerate_printers(printer_enumerator, this, nullptr, TRUE);
-
-  
-  if (!GTK_IS_PRINTER(mGTKPrinter))
-    gtk_enumerate_printers(ref_printer, this, nullptr, TRUE);
-
   return NS_OK;
 }
 
