@@ -187,7 +187,8 @@ class WindowGlobalChild final : public WindowGlobalActor,
       const dom::sessionstore::DocShellRestoreState& aState,
       RestoreDocShellStateResolver&& aResolve);
 
-  mozilla::ipc::IPCResult RecvRestoreTabContent(
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvRestoreTabContent(
       dom::SessionStoreRestoreData* aData,
       RestoreTabContentResolver&& aResolve);
 
