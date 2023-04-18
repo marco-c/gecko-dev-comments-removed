@@ -50,37 +50,84 @@ const SEARCH_DEFAULT_UPDATE_INTERVAL = 7;
 const RECONFIG_IDLE_TIME_SEC = 5 * 60;
 
 
-function ParseSubmissionResult(
-  engine,
-  terms,
-  termsParameterName,
-  termsOffset,
-  termsLength
-) {
-  this._engine = engine;
-  this._terms = terms;
-  this._termsParameterName = termsParameterName;
-  this._termsOffset = termsOffset;
-  this._termsLength = termsLength;
-}
-ParseSubmissionResult.prototype = {
+
+
+
+
+
+class ParseSubmissionResult {
+  constructor(engine, terms, termsParameterName, termsOffset, termsLength) {
+    this.#engine = engine;
+    this.#terms = terms;
+    this.#termsParameterName = termsParameterName;
+    this.#termsOffset = termsOffset;
+    this.#termsLength = termsLength;
+  }
+
   get engine() {
-    return this._engine;
-  },
+    return this.#engine;
+  }
+
   get terms() {
-    return this._terms;
-  },
+    return this.#terms;
+  }
+
   get termsParameterName() {
-    return this._termsParameterName;
-  },
+    return this.#termsParameterName;
+  }
+
   get termsOffset() {
-    return this._termsOffset;
-  },
+    return this.#termsOffset;
+  }
+
   get termsLength() {
-    return this._termsLength;
-  },
-  QueryInterface: ChromeUtils.generateQI(["nsISearchParseSubmissionResult"]),
-};
+    return this.#termsLength;
+  }
+
+  
+
+
+
+
+
+
+  #engine;
+
+  
+
+
+
+
+
+  #terms;
+
+  
+
+
+
+
+  #termsParameterName;
+
+  
+
+
+
+
+
+
+  #termsOffset;
+
+  
+
+
+
+
+
+
+  #termsLength;
+
+  QueryInterface = ChromeUtils.generateQI(["nsISearchParseSubmissionResult"]);
+}
 
 const gEmptyParseSubmissionResult = Object.freeze(
   new ParseSubmissionResult(null, "", "", -1, 0)
@@ -92,127 +139,107 @@ const gEmptyParseSubmissionResult = Object.freeze(
 
 
 
-function SearchService() {
-  this._initObservers = PromiseUtils.defer();
-  this._engines = new Map();
-  this._settings = new lazy.SearchSettings(this);
-}
+class SearchService {
+  constructor() {
+    this.#initObservers = PromiseUtils.defer();
+    
+    
+    this._engines = new Map();
+    this._settings = new lazy.SearchSettings(this);
+  }
 
-SearchService.prototype = {
-  classID: Components.ID("{7319788a-fe93-4db3-9f39-818cf08f4256}"),
+  classID = Components.ID("{7319788a-fe93-4db3-9f39-818cf08f4256}");
 
-  
-  
-  _initRV: Cr.NS_OK,
+  get defaultEngine() {
+    this.#ensureInitialized();
+    return this._getEngineDefault(false);
+  }
 
-  
-  _initStarted: false,
+  set defaultEngine(newEngine) {
+    this.#ensureInitialized();
+    this.#setEngineDefault(false, newEngine);
+  }
 
-  
-  
-  _initialized: false,
+  get defaultPrivateEngine() {
+    this.#ensureInitialized();
+    return this._getEngineDefault(this.#separatePrivateDefault);
+  }
 
-  
-  _maybeReloadDebounce: false,
+  set defaultPrivateEngine(newEngine) {
+    this.#ensureInitialized();
+    if (!this._separatePrivateDefaultPrefValue) {
+      Services.prefs.setBoolPref(
+        lazy.SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+        true
+      );
+    }
+    this.#setEngineDefault(this.#separatePrivateDefault, newEngine);
+  }
 
-  
-  _reloadingEngines: false,
+  async getDefault() {
+    await this.init();
+    return this.defaultEngine;
+  }
 
-  
-  _engineSelector: null,
+  async setDefault(engine) {
+    await this.init();
+    return (this.defaultEngine = engine);
+  }
 
-  
+  async getDefaultPrivate() {
+    await this.init();
+    return this.defaultPrivateEngine;
+  }
 
-
-
-  _submissionURLIgnoreList: [],
-
-  
-
-
-
-  _loadPathIgnoreList: [],
-
-  
-
-
-  _engines: null,
-
-  
-
-
-  __sortedEngines: null,
-
-  
-
-
-
-  _dontSetUseSavedOrder: false,
-
-  
-
-
-
-
-  _searchDefault: null,
+  async setDefaultPrivate(engine) {
+    await this.init();
+    return (this.defaultPrivateEngine = engine);
+  }
 
   
 
 
 
 
-  _searchPrivateDefault: null,
+  get originalDefaultEngine() {
+    return this.#originalDefaultEngine();
+  }
 
   
 
 
 
 
-  _startupExtensions: new Set(),
-
-  
 
 
+  get originalPrivateDefaultEngine() {
+    return this.#originalDefaultEngine(this.#separatePrivateDefault);
+  }
 
+  get isInitialized() {
+    return this._initialized;
+  }
 
-  _startupRemovedExtensions: new Set(),
-
-  
-  _defaultOverrideAllowlist: null,
-
-  
-  
-  
-  get _separatePrivateDefault() {
-    return (
-      this._separatePrivateDefaultPrefValue &&
-      this._separatePrivateDefaultEnabledPrefValue
+  getDefaultEngineInfo() {
+    let [telemetryId, defaultSearchEngineData] = this.#getEngineInfo(
+      this.defaultEngine
     );
-  },
+    const result = {
+      defaultSearchEngine: telemetryId,
+      defaultSearchEngineData,
+    };
 
-  
-  
-  
-  _ensureInitialized() {
-    if (this._initialized) {
-      if (!Components.isSuccessCode(this._initRV)) {
-        lazy.logConsole.debug("_ensureInitialized: failure");
-        throw Components.Exception(
-          "SearchService previously failed to initialize",
-          this._initRV
-        );
-      }
-      return;
+    if (this.#separatePrivateDefault) {
+      let [
+        privateTelemetryId,
+        defaultPrivateSearchEngineData,
+      ] = this.#getEngineInfo(this.defaultPrivateEngine);
+      result.defaultPrivateSearchEngine = privateTelemetryId;
+      result.defaultPrivateSearchEngineData = defaultPrivateSearchEngineData;
     }
 
-    let err = new Error(
-      "Something tried to use the search service before it's been " +
-        "properly intialized. Please examine the stack trace to figure out what and " +
-        "where to fix it:\n"
-    );
-    err.message += err.stack;
-    throw err;
-  },
+    return result;
+  }
 
   
 
@@ -220,181 +247,130 @@ SearchService.prototype = {
 
 
 
-  async _init() {
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_separatePrivateDefaultPrefValue",
-      lazy.SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
-      false,
-      this._onSeparateDefaultPrefChanged.bind(this)
+
+
+  getEngineByName(engineName) {
+    this.#ensureInitialized();
+    return this._engines.get(engineName) || null;
+  }
+
+  async getEngineByAlias(alias) {
+    await this.init();
+    for (var engine of this._engines.values()) {
+      if (engine && engine.aliases.includes(alias)) {
+        return engine;
+      }
+    }
+    return null;
+  }
+
+  async getEngines() {
+    await this.init();
+    lazy.logConsole.debug("getEngines: getting all engines");
+    return this.#sortedEngines;
+  }
+
+  async getVisibleEngines() {
+    await this.init(true);
+    lazy.logConsole.debug("getVisibleEngines: getting all visible engines");
+    return this.#sortedVisibleEngines;
+  }
+
+  async getAppProvidedEngines() {
+    await this.init();
+
+    return this._sortEnginesByDefaults(
+      this.#sortedEngines.filter(e => e.isAppProvided)
     );
+  }
 
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_separatePrivateDefaultEnabledPrefValue",
-      lazy.SearchUtils.BROWSER_SEARCH_PREF +
-        "separatePrivateDefault.ui.enabled",
-      false,
-      this._onSeparateDefaultPrefChanged.bind(this)
-    );
+  async getEnginesByExtensionID(extensionID) {
+    await this.init();
+    return this.#getEnginesByExtensionID(extensionID);
+  }
 
-    
-    
-    
-    Services.obs.addObserver(this, lazy.Region.REGION_TOPIC);
+  
+  async init() {
+    lazy.logConsole.debug("init");
+    if (this.#initStarted) {
+      return this.#initObservers.promise;
+    }
 
+    TelemetryStopwatch.start("SEARCH_SERVICE_INIT_MS");
+    this.#initStarted = true;
     try {
       
-      this._engineSelector = new lazy.SearchEngineSelector(
-        this._handleConfigurationUpdated.bind(this)
-      );
-
-      
-      let settings = await this._settings.get();
-
-      this._setupRemoteSettings().catch(Cu.reportError);
-
-      await this._loadEngines(settings);
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (Services.startup.shuttingDown) {
-        lazy.logConsole.warn("_init: abandoning init due to shutting down");
-        this._initRV = Cr.NS_ERROR_ABORT;
-        this._initObservers.reject(this._initRV);
-        return this._initRV;
-      }
-
-      
-      lazy.logConsole.debug("_init: engines loaded, writing settings");
-      this._addObservers();
+      await this.#init();
+      TelemetryStopwatch.finish("SEARCH_SERVICE_INIT_MS");
     } catch (ex) {
-      this._initRV = ex.result !== undefined ? ex.result : Cr.NS_ERROR_FAILURE;
-      lazy.logConsole.error("_init: failure initializing search:", ex);
+      TelemetryStopwatch.cancel("SEARCH_SERVICE_INIT_MS");
+      this.#initObservers.reject(ex.result);
+      throw ex;
     }
 
-    this._initialized = true;
-    if (Components.isSuccessCode(this._initRV)) {
-      this._initObservers.resolve(this._initRV);
-    } else {
-      this._initObservers.reject(this._initRV);
+    if (!Components.isSuccessCode(this.#initRV)) {
+      throw Components.Exception(
+        "SearchService initialization failed",
+        this.#initRV
+      );
+    } else if (this.#startupRemovedExtensions.size) {
+      Services.tm.dispatchToMainThread(async () => {
+        
+        
+        
+        
+        
+        
+        lazy.logConsole.debug("Removing delayed extension engines");
+        for (let id of this.#startupRemovedExtensions) {
+          for (let engine of this.#getEnginesByExtensionID(id)) {
+            
+            
+            if (!engine.isAppProvided) {
+              await this.removeEngine(engine);
+            }
+          }
+        }
+        this.#startupRemovedExtensions.clear();
+      });
     }
-
-    this._recordTelemetryData();
-
-    Services.obs.notifyObservers(
-      null,
-      lazy.SearchUtils.TOPIC_SEARCH_SERVICE,
-      "init-complete"
-    );
-
-    lazy.logConsole.debug("Completed _init");
-    return this._initRV;
-  },
+    return this.#initRV;
+  }
 
   
 
 
 
 
-
-
-
-
-
-
-  async _setupRemoteSettings() {
-    
-    let listener = this._handleIgnoreListUpdated.bind(this);
-
-    const current = await lazy.IgnoreLists.getAndSubscribe(listener);
-    
-    
-    this._ignoreListListener = listener;
-
-    await this._handleIgnoreListUpdated({ data: { current } });
-    Services.obs.notifyObservers(
-      null,
-      lazy.SearchUtils.TOPIC_SEARCH_SERVICE,
-      "settings-update-complete"
-    );
-  },
+  async runBackgroundChecks() {
+    await this.init();
+    await this.#migrateLegacyEngines();
+    await this.#checkWebExtensionEngines();
+  }
 
   
 
 
+  reset() {
+    this._initialized = false;
+    this.#initObservers = PromiseUtils.defer();
+    this.#initStarted = false;
+    this.#startupExtensions = new Set();
+    this._engines.clear();
+    this.__sortedEngines = null;
+    this.#currentEngine = null;
+    this.#currentPrivateEngine = null;
+    this._searchDefault = null;
+    this.#searchPrivateDefault = null;
+    this.#maybeReloadDebounce = false;
+    this._settings._batchTask?.disarm();
+  }
 
-
-
-
-  async _handleIgnoreListUpdated(eventData) {
-    lazy.logConsole.debug("_handleIgnoreListUpdated");
-    const {
-      data: { current },
-    } = eventData;
-
-    for (const entry of current) {
-      if (entry.id == "load-paths") {
-        this._loadPathIgnoreList = [...entry.matches];
-      } else if (entry.id == "submission-urls") {
-        this._submissionURLIgnoreList = [...entry.matches];
-      }
-    }
-
-    
-    
-    if (!this.isInitialized) {
-      await this._initObservers;
-    }
-    
-    
-    let engineRemoved = false;
-    for (let engine of this._engines.values()) {
-      if (this._engineMatchesIgnoreLists(engine)) {
-        await this.removeEngine(engine);
-        engineRemoved = true;
-      }
-    }
-    
-    
-    
-    if (engineRemoved && !this._engines.size) {
-      this._maybeReloadEngines().catch(Cu.reportError);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-  _engineMatchesIgnoreLists(engine) {
-    if (this._loadPathIgnoreList.includes(engine._loadPath)) {
-      return true;
-    }
-    let url = engine
-      ._getURLOfType("text/html")
-      .getSubmission("dummy", engine)
-      .uri.spec.toLowerCase();
-    if (
-      this._submissionURLIgnoreList.some(code =>
-        url.includes(code.toLowerCase())
-      )
-    ) {
-      return true;
-    }
-    return false;
-  },
+  resetToOriginalDefaultEngine() {
+    let originalDefaultEngine = this.originalDefaultEngine;
+    originalDefaultEngine.hidden = false;
+    this.defaultEngine = originalDefaultEngine;
+  }
 
   async maybeSetAndOverrideDefault(extension) {
     let searchProvider =
@@ -411,8 +387,8 @@ SearchService.prototype = {
       };
     }
 
-    if (!this._defaultOverrideAllowlist) {
-      this._defaultOverrideAllowlist = new SearchDefaultOverrideAllowlistHandler();
+    if (!this.#defaultOverrideAllowlist) {
+      this.#defaultOverrideAllowlist = new SearchDefaultOverrideAllowlistHandler();
     }
 
     if (
@@ -427,7 +403,7 @@ SearchService.prototype = {
         };
       }
       if (
-        !(await this._defaultOverrideAllowlist.canOverride(
+        !(await this.#defaultOverrideAllowlist.canOverride(
           extension,
           engine._extensionID
         ))
@@ -457,7 +433,7 @@ SearchService.prototype = {
 
     if (
       engine.getAttr("overriddenBy") == extension.id &&
-      (await this._defaultOverrideAllowlist.canOverride(
+      (await this.#defaultOverrideAllowlist.canOverride(
         extension,
         engine._extensionID
       ))
@@ -477,28 +453,564 @@ SearchService.prototype = {
       canChangeToAppProvided: false,
       canInstallEngine: false,
     };
-  },
+  }
 
   
 
 
 
-  _handleConfigurationUpdated() {
-    if (this._queuedIdle) {
+
+
+
+  async addPolicyEngine(details) {
+    await this._createAndAddEngine({
+      extensionID: "set-via-policy",
+      extensionBaseURI: "",
+      isAppProvided: false,
+      manifest: details,
+    });
+  }
+
+  
+
+
+
+
+
+
+  async updatePolicyEngine(details) {
+    let engine = this.getEngineByName(
+      details.chrome_settings_overrides.search_provider.name
+    );
+    if (engine && !engine.isAppProvided) {
+      engine._updateFromManifest(
+        "set-via-policy",
+        "",
+        details,
+        engine._locale || lazy.SearchUtils.DEFAULT_TAG
+      );
+    }
+  }
+
+  
+
+
+
+
+
+
+  async addUserEngine(name, url, alias) {
+    await this._createAndAddEngine({
+      extensionID: "set-via-user",
+      extensionBaseURI: "",
+      isAppProvided: false,
+      manifest: {
+        chrome_settings_overrides: {
+          search_provider: {
+            name,
+            search_url: encodeURI(url),
+            keyword: alias,
+          },
+        },
+      },
+    });
+  }
+
+  
+
+
+
+
+
+
+
+  async addEnginesFromExtension(extension) {
+    lazy.logConsole.debug("addEnginesFromExtension: " + extension.id);
+    
+    
+    
+    if (
+      extension.startupReason == "ADDON_UPGRADE" ||
+      extension.startupReason == "ADDON_DOWNGRADE"
+    ) {
+      
+      
+      
+      let existing = await this.#upgradeExtensionEngine(extension);
+      if (existing?.length) {
+        return existing;
+      }
+    }
+
+    if (extension.isAppProvided) {
+      
+      
+      
+      
+      if (this._initialized && !this._reloadingEngines) {
+        let { engines } = await this._fetchEngineSelectorEngines();
+        let inConfig = engines.filter(el => el.webExtension.id == extension.id);
+        if (inConfig.length) {
+          return this.#installExtensionEngine(
+            extension,
+            inConfig.map(el => el.webExtension.locale)
+          );
+        }
+      }
+      lazy.logConsole.debug(
+        "addEnginesFromExtension: Ignoring builtIn engine."
+      );
+      return [];
+    }
+
+    
+    
+    if (!this._initialized) {
+      this.#startupExtensions.add(extension);
+      return [];
+    }
+
+    return this.#installExtensionEngine(extension, [
+      lazy.SearchUtils.DEFAULT_TAG,
+    ]);
+  }
+
+  async addOpenSearchEngine(engineURL, iconURL) {
+    lazy.logConsole.debug("addEngine: Adding", engineURL);
+    await this.init();
+    let errCode;
+    try {
+      var engine = new lazy.OpenSearchEngine();
+      engine._setIcon(iconURL, false);
+      errCode = await new Promise(resolve => {
+        engine._install(engineURL, errorCode => {
+          resolve(errorCode);
+        });
+      });
+      if (errCode) {
+        throw errCode;
+      }
+    } catch (ex) {
+      throw Components.Exception(
+        "addEngine: Error adding engine:\n" + ex,
+        errCode || Cr.NS_ERROR_FAILURE
+      );
+    }
+    return engine;
+  }
+
+  async removeWebExtensionEngine(id) {
+    if (!this.isInitialized) {
+      lazy.logConsole.debug(
+        "Delaying removing extension engine on startup:",
+        id
+      );
+      this.#startupRemovedExtensions.add(id);
       return;
     }
 
-    this._queuedIdle = true;
-
-    this.idleService.addIdleObserver(this, RECONFIG_IDLE_TIME_SEC);
-  },
-
-  get _sortedEngines() {
-    if (!this.__sortedEngines) {
-      return this._buildSortedEngineList();
+    lazy.logConsole.debug("removeWebExtensionEngine:", id);
+    for (let engine of this.#getEnginesByExtensionID(id)) {
+      await this.removeEngine(engine);
     }
-    return this.__sortedEngines;
-  },
+  }
+
+  async removeEngine(engine) {
+    await this.init();
+    if (!engine) {
+      throw Components.Exception(
+        "no engine passed to removeEngine!",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
+
+    var engineToRemove = null;
+    for (var e of this._engines.values()) {
+      if (engine.wrappedJSObject == e) {
+        engineToRemove = e;
+      }
+    }
+
+    if (!engineToRemove) {
+      throw Components.Exception(
+        "removeEngine: Can't find engine to remove!",
+        Cr.NS_ERROR_FILE_NOT_FOUND
+      );
+    }
+
+    if (engineToRemove == this.defaultEngine) {
+      this.#findAndSetNewDefaultEngine({
+        privateMode: false,
+        excludeEngineName: engineToRemove.name,
+      });
+    }
+
+    
+    
+    
+    
+    
+    if (
+      this.#separatePrivateDefault &&
+      engineToRemove == this.defaultPrivateEngine
+    ) {
+      this.#findAndSetNewDefaultEngine({
+        privateMode: true,
+        excludeEngineName: engineToRemove.name,
+      });
+    }
+
+    if (engineToRemove._isAppProvided) {
+      
+      
+      engineToRemove.hidden = true;
+      engineToRemove.alias = null;
+    } else {
+      
+      if (engineToRemove._filePath) {
+        let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+        file.persistentDescriptor = engineToRemove._filePath;
+        if (file.exists()) {
+          file.remove(false);
+        }
+        engineToRemove._filePath = null;
+      }
+      this.#internalRemoveEngine(engineToRemove);
+
+      
+      if (!this.#dontSetUseSavedOrder) {
+        this.#saveSortedEngineList();
+      }
+    }
+    lazy.SearchUtils.notifyAction(
+      engineToRemove,
+      lazy.SearchUtils.MODIFIED_TYPE.REMOVED
+    );
+  }
+
+  async moveEngine(engine, newIndex) {
+    await this.init();
+    if (newIndex > this.#sortedEngines.length || newIndex < 0) {
+      throw Components.Exception("moveEngine: Index out of bounds!");
+    }
+    if (
+      !(engine instanceof Ci.nsISearchEngine) &&
+      !(engine instanceof lazy.SearchEngine)
+    ) {
+      throw Components.Exception(
+        "moveEngine: Invalid engine passed to moveEngine!",
+        Cr.NS_ERROR_INVALID_ARG
+      );
+    }
+    if (engine.hidden) {
+      throw Components.Exception(
+        "moveEngine: Can't move a hidden engine!",
+        Cr.NS_ERROR_FAILURE
+      );
+    }
+
+    engine = engine.wrappedJSObject;
+
+    var currentIndex = this.#sortedEngines.indexOf(engine);
+    if (currentIndex == -1) {
+      throw Components.Exception(
+        "moveEngine: Can't find engine to move!",
+        Cr.NS_ERROR_UNEXPECTED
+      );
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    var newIndexEngine = this.#sortedVisibleEngines[newIndex];
+    if (!newIndexEngine) {
+      throw Components.Exception(
+        "moveEngine: Can't find engine to replace!",
+        Cr.NS_ERROR_UNEXPECTED
+      );
+    }
+
+    for (var i = 0; i < this.#sortedEngines.length; ++i) {
+      if (newIndexEngine == this.#sortedEngines[i]) {
+        break;
+      }
+      if (this.#sortedEngines[i].hidden) {
+        newIndex++;
+      }
+    }
+
+    if (currentIndex == newIndex) {
+      return;
+    } 
+
+    
+    var movedEngine = this.__sortedEngines.splice(currentIndex, 1)[0];
+    this.__sortedEngines.splice(newIndex, 0, movedEngine);
+
+    lazy.SearchUtils.notifyAction(
+      engine,
+      lazy.SearchUtils.MODIFIED_TYPE.CHANGED
+    );
+
+    
+    this.#saveSortedEngineList();
+  }
+
+  restoreDefaultEngines() {
+    this.#ensureInitialized();
+    for (let e of this._engines.values()) {
+      
+      if (e.hidden && e.isAppProvided) {
+        e.hidden = false;
+      }
+    }
+  }
+
+  parseSubmissionURL(url) {
+    if (!this._initialized) {
+      
+      
+      
+      return gEmptyParseSubmissionResult;
+    }
+
+    if (!this.#parseSubmissionMap) {
+      this.#buildParseSubmissionMap();
+    }
+
+    
+    let soughtKey, soughtQuery;
+    try {
+      let soughtUrl = Services.io.newURI(url).QueryInterface(Ci.nsIURL);
+
+      
+      if (soughtUrl.scheme != "http" && soughtUrl.scheme != "https") {
+        return gEmptyParseSubmissionResult;
+      }
+
+      
+      soughtKey = soughtUrl.host + soughtUrl.filePath.toLowerCase();
+      soughtQuery = soughtUrl.query;
+    } catch (ex) {
+      
+      return gEmptyParseSubmissionResult;
+    }
+
+    
+    let mapEntry = this.#parseSubmissionMap.get(soughtKey);
+    if (!mapEntry) {
+      return gEmptyParseSubmissionResult;
+    }
+
+    
+    
+    let encodedTerms = null;
+    for (let param of soughtQuery.split("&")) {
+      let equalPos = param.indexOf("=");
+      if (
+        equalPos != -1 &&
+        param.substr(0, equalPos) == mapEntry.termsParameterName
+      ) {
+        
+        encodedTerms = param.substr(equalPos + 1);
+        break;
+      }
+    }
+    if (encodedTerms === null) {
+      return gEmptyParseSubmissionResult;
+    }
+
+    let length = 0;
+    let offset = url.indexOf("?") + 1;
+    let query = url.slice(offset);
+    
+    
+    for (let param of query.split("&")) {
+      let equalPos = param.indexOf("=");
+      if (
+        equalPos != -1 &&
+        param.substr(0, equalPos) == mapEntry.termsParameterName
+      ) {
+        
+        offset += equalPos + 1;
+        length = param.length - equalPos - 1;
+        break;
+      }
+      offset += param.length + 1;
+    }
+
+    
+    let terms;
+    try {
+      terms = Services.textToSubURI.UnEscapeAndConvert(
+        mapEntry.engine.queryCharset,
+        encodedTerms.replace(/\+/g, " ")
+      );
+    } catch (ex) {
+      
+      return gEmptyParseSubmissionResult;
+    }
+
+    let submission = new ParseSubmissionResult(
+      mapEntry.engine,
+      terms,
+      mapEntry.termsParameterName,
+      offset,
+      length
+    );
+    return submission;
+  }
+
+  
+  notify(timer) {
+    lazy.logConsole.debug("notify: checking for updates");
+
+    if (
+      !Services.prefs.getBoolPref(
+        lazy.SearchUtils.BROWSER_SEARCH_PREF + "update",
+        true
+      )
+    ) {
+      return;
+    }
+
+    
+    
+    var currentTime = Date.now();
+    lazy.logConsole.debug("currentTime:" + currentTime);
+    for (let e of this._engines.values()) {
+      let engine = e.wrappedJSObject;
+      if (!engine._hasUpdates) {
+        continue;
+      }
+
+      var expirTime = engine.getAttr("updateexpir");
+      lazy.logConsole.debug(
+        engine.name,
+        "expirTime:",
+        expirTime,
+        "updateURL:",
+        engine._updateURL,
+        "iconUpdateURL:",
+        engine._iconUpdateURL
+      );
+
+      var engineExpired = expirTime <= currentTime;
+
+      if (!expirTime || !engineExpired) {
+        lazy.logConsole.debug("skipping engine");
+        continue;
+      }
+
+      lazy.logConsole.debug(engine.name, "has expired");
+
+      engineUpdateService.update(engine);
+
+      
+      engineUpdateService.scheduleNextUpdate(engine);
+    } 
+  }
+
+  #initObservers;
+  #currentEngine;
+  #currentPrivateEngine;
+  #queuedIdle;
+
+  
+
+
+
+
+
+  #initRV = Cr.NS_OK;
+
+  
+
+
+
+
+  #initStarted = false;
+
+  
+
+
+
+
+
+
+
+  _initialized = false;
+
+  
+
+
+
+
+  #maybeReloadDebounce = false;
+
+  
+
+
+
+
+
+
+
+  _reloadingEngines = false;
+
+  
+
+
+
+
+  #engineSelector = null;
+
+  
+
+
+
+
+
+  #submissionURLIgnoreList = [];
+
+  
+
+
+
+
+
+  #loadPathIgnoreList = [];
+
+  
+
+
+
+
+  _engines = null;
+
+  
+
+
+
+
+
+  __sortedEngines = null;
+
+  
+
+
+
+
+
+  #dontSetUseSavedOrder = false;
 
   
 
@@ -510,10 +1022,411 @@ SearchService.prototype = {
 
 
 
-  _originalDefaultEngine(privateMode = false) {
-    let defaultEngine = this._getEngineByWebExtensionDetails(
-      privateMode && this._searchPrivateDefault
-        ? this._searchPrivateDefault
+  _searchDefault = null;
+
+  
+
+
+
+
+
+
+  #searchPrivateDefault = null;
+
+  
+
+
+
+
+
+
+  #startupExtensions = new Set();
+
+  
+
+
+
+
+
+
+  #startupRemovedExtensions = new Set();
+
+  
+
+
+
+
+  #defaultOverrideAllowlist = null;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  #parseSubmissionMap = null;
+
+  
+
+
+
+
+  #observersAdded = false;
+
+  get #sortedEngines() {
+    if (!this.__sortedEngines) {
+      return this.#buildSortedEngineList();
+    }
+    return this.__sortedEngines;
+  }
+  
+
+
+
+
+
+
+  get #separatePrivateDefault() {
+    return (
+      this._separatePrivateDefaultPrefValue &&
+      this._separatePrivateDefaultEnabledPrefValue
+    );
+  }
+
+  #getEnginesByExtensionID(extensionID) {
+    lazy.logConsole.debug("getEngines: getting all engines for", extensionID);
+    var engines = this.#sortedEngines.filter(function(engine) {
+      return engine._extensionID == extensionID;
+    });
+    return engines;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  #getEngineByWebExtensionDetails(details) {
+    for (const engine of this._engines.values()) {
+      if (
+        engine._extensionID == details.id &&
+        engine._locale == details.locale
+      ) {
+        return engine;
+      }
+    }
+    return null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  _getEngineDefault(privateMode) {
+    let currentEngine = privateMode
+      ? this.#currentPrivateEngine
+      : this.#currentEngine;
+
+    if (currentEngine && !currentEngine.hidden) {
+      return currentEngine;
+    }
+
+    
+    const attributeName = privateMode ? "private" : "current";
+    let name = this._settings.getAttribute(attributeName);
+    let engine = this._engines.get(name) || null;
+    if (
+      engine &&
+      (engine.isAppProvided ||
+        this._settings.getVerifiedAttribute(attributeName))
+    ) {
+      
+      
+      
+      if (privateMode) {
+        this.#currentPrivateEngine = engine;
+      } else {
+        this.#currentEngine = engine;
+      }
+    }
+    if (!name) {
+      if (privateMode) {
+        this.#currentPrivateEngine = this.originalPrivateDefaultEngine;
+      } else {
+        this.#currentEngine = this.originalDefaultEngine;
+      }
+    }
+
+    currentEngine = privateMode
+      ? this.#currentPrivateEngine
+      : this.#currentEngine;
+    if (currentEngine && !currentEngine.hidden) {
+      return currentEngine;
+    }
+    
+    return this.#findAndSetNewDefaultEngine({ privateMode });
+  }
+
+  
+
+
+
+
+  #ensureInitialized() {
+    if (this._initialized) {
+      if (!Components.isSuccessCode(this.#initRV)) {
+        lazy.logConsole.debug("#ensureInitialized: failure");
+        throw Components.Exception(
+          "SearchService previously failed to initialize",
+          this.#initRV
+        );
+      }
+      return;
+    }
+
+    let err = new Error(
+      "Something tried to use the search service before it's been " +
+        "properly intialized. Please examine the stack trace to figure out what and " +
+        "where to fix it:\n"
+    );
+    err.message += err.stack;
+    throw err;
+  }
+
+  
+
+
+
+
+
+  async #init() {
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "_separatePrivateDefaultPrefValue",
+      lazy.SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+      false,
+      this.#onSeparateDefaultPrefChanged.bind(this)
+    );
+
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "_separatePrivateDefaultEnabledPrefValue",
+      lazy.SearchUtils.BROWSER_SEARCH_PREF +
+        "separatePrivateDefault.ui.enabled",
+      false,
+      this.#onSeparateDefaultPrefChanged.bind(this)
+    );
+
+    
+    
+    
+    Services.obs.addObserver(this, lazy.Region.REGION_TOPIC);
+
+    try {
+      
+      this.#engineSelector = new lazy.SearchEngineSelector(
+        this.#handleConfigurationUpdated.bind(this)
+      );
+
+      
+      let settings = await this._settings.get();
+
+      this.#setupRemoteSettings().catch(Cu.reportError);
+
+      await this.#loadEngines(settings);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (Services.startup.shuttingDown) {
+        lazy.logConsole.warn("#init: abandoning init due to shutting down");
+        this.#initRV = Cr.NS_ERROR_ABORT;
+        this.#initObservers.reject(this.#initRV);
+        return this.#initRV;
+      }
+
+      
+      lazy.logConsole.debug("#init: engines loaded, writing settings");
+      this.#addObservers();
+    } catch (ex) {
+      this.#initRV = ex.result !== undefined ? ex.result : Cr.NS_ERROR_FAILURE;
+      lazy.logConsole.error("#init: failure initializing search:", ex);
+    }
+
+    this._initialized = true;
+    if (Components.isSuccessCode(this.#initRV)) {
+      this.#initObservers.resolve(this.#initRV);
+    } else {
+      this.#initObservers.reject(this.#initRV);
+    }
+
+    this.#recordTelemetryData();
+
+    Services.obs.notifyObservers(
+      null,
+      lazy.SearchUtils.TOPIC_SEARCH_SERVICE,
+      "init-complete"
+    );
+
+    lazy.logConsole.debug("Completed #init");
+    return this.#initRV;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  async #setupRemoteSettings() {
+    
+    let listener = this.#handleIgnoreListUpdated.bind(this);
+
+    const current = await lazy.IgnoreLists.getAndSubscribe(listener);
+    
+    
+    this.ignoreListListener = listener;
+
+    await this.#handleIgnoreListUpdated({ data: { current } });
+    Services.obs.notifyObservers(
+      null,
+      lazy.SearchUtils.TOPIC_SEARCH_SERVICE,
+      "settings-update-complete"
+    );
+  }
+
+  
+
+
+
+
+
+
+  async #handleIgnoreListUpdated(eventData) {
+    lazy.logConsole.debug("#handleIgnoreListUpdated");
+    const {
+      data: { current },
+    } = eventData;
+
+    for (const entry of current) {
+      if (entry.id == "load-paths") {
+        this.#loadPathIgnoreList = [...entry.matches];
+      } else if (entry.id == "submission-urls") {
+        this.#submissionURLIgnoreList = [...entry.matches];
+      }
+    }
+
+    
+    
+    if (!this.isInitialized) {
+      await this.#initObservers;
+    }
+    
+    
+    let engineRemoved = false;
+    for (let engine of this._engines.values()) {
+      if (this.#engineMatchesIgnoreLists(engine)) {
+        await this.removeEngine(engine);
+        engineRemoved = true;
+      }
+    }
+    
+    
+    
+    if (engineRemoved && !this._engines.size) {
+      this._maybeReloadEngines().catch(Cu.reportError);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+  #engineMatchesIgnoreLists(engine) {
+    if (this.#loadPathIgnoreList.includes(engine._loadPath)) {
+      return true;
+    }
+    let url = engine
+      ._getURLOfType("text/html")
+      .getSubmission("dummy", engine)
+      .uri.spec.toLowerCase();
+    if (
+      this.#submissionURLIgnoreList.some(code =>
+        url.includes(code.toLowerCase())
+      )
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  
+
+
+
+  #handleConfigurationUpdated() {
+    if (this.#queuedIdle) {
+      return;
+    }
+
+    this.#queuedIdle = true;
+
+    this.idleService.addIdleObserver(this, RECONFIG_IDLE_TIME_SEC);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  #originalDefaultEngine(privateMode = false) {
+    let defaultEngine = this.#getEngineByWebExtensionDetails(
+      privateMode && this.#searchPrivateDefault
+        ? this.#searchPrivateDefault
         : this._searchDefault
     );
 
@@ -524,22 +1437,13 @@ SearchService.prototype = {
     if (privateMode) {
       
       
-      return this._originalDefaultEngine(false);
+      return this.#originalDefaultEngine(false);
     }
 
     
     
-    return this._sortedVisibleEngines[0];
-  },
-
-  
-
-
-
-
-  get originalDefaultEngine() {
-    return this._originalDefaultEngine();
-  },
+    return this.#sortedVisibleEngines[0];
+  }
 
   
 
@@ -547,62 +1451,45 @@ SearchService.prototype = {
 
 
 
-
-  get originalPrivateDefaultEngine() {
-    return this._originalDefaultEngine(this._separatePrivateDefault);
-  },
-
-  resetToOriginalDefaultEngine() {
-    let originalDefaultEngine = this.originalDefaultEngine;
-    originalDefaultEngine.hidden = false;
-    this.defaultEngine = originalDefaultEngine;
-  },
-
-  
-
-
-
-
-
-  async _loadEngines(settings) {
+  async #loadEngines(settings) {
     
     
     let prevMetaData = { ...settings?.metaData };
     let prevCurrentEngine = prevMetaData.current;
     let prevAppDefaultEngine = prevMetaData?.appDefaultEngine;
 
-    lazy.logConsole.debug("_loadEngines: start");
+    lazy.logConsole.debug("#loadEngines: start");
     let { engines, privateDefault } = await this._fetchEngineSelectorEngines();
-    this._setDefaultAndOrdersFromSelector(engines, privateDefault);
+    this.#setDefaultAndOrdersFromSelector(engines, privateDefault);
 
     
     
     await lazy.AddonManager.readyPromise;
 
-    let newEngines = await this._loadEnginesFromConfig(engines);
+    let newEngines = await this.#loadEnginesFromConfig(engines);
     for (let engine of newEngines) {
-      this._addEngineToStore(engine);
+      this.#addEngineToStore(engine);
     }
 
     lazy.logConsole.debug(
-      "_loadEngines: loading",
-      this._startupExtensions.size,
+      "#loadEngines: loading",
+      this.#startupExtensions.size,
       "engines reported by AddonManager startup"
     );
-    for (let extension of this._startupExtensions) {
-      await this._installExtensionEngine(
+    for (let extension of this.#startupExtensions) {
+      await this.#installExtensionEngine(
         extension,
         [lazy.SearchUtils.DEFAULT_TAG],
         true
       );
     }
-    this._startupExtensions.clear();
+    this.#startupExtensions.clear();
 
-    this._loadEnginesFromSettings(settings.engines);
+    this.#loadEnginesFromSettings(settings.engines);
 
-    this._loadEnginesMetadataFromSettings(settings.engines);
+    this.#loadEnginesMetadataFromSettings(settings.engines);
 
-    lazy.logConsole.debug("_loadEngines: done");
+    lazy.logConsole.debug("#loadEngines: done");
 
     let newCurrentEngine = this._getEngineDefault(false)?.name;
     this._settings.setAttribute(
@@ -611,7 +1498,7 @@ SearchService.prototype = {
     );
 
     if (
-      this._shouldDisplayRemovalOfEngineNotificationBox(
+      this.#shouldDisplayRemovalOfEngineNotificationBox(
         settings,
         prevMetaData,
         newCurrentEngine,
@@ -624,7 +1511,8 @@ SearchService.prototype = {
         newCurrentEngine
       );
     }
-  },
+  }
+
   
 
 
@@ -643,7 +1531,7 @@ SearchService.prototype = {
 
 
 
-  _shouldDisplayRemovalOfEngineNotificationBox(
+  #shouldDisplayRemovalOfEngineNotificationBox(
     settings,
     prevMetaData,
     newCurrentEngine,
@@ -676,13 +1564,14 @@ SearchService.prototype = {
       
       
       
-      if (!this._didSettingsMetaDataUpdate(prevMetaData)) {
+      if (!this.#didSettingsMetaDataUpdate(prevMetaData)) {
         return true;
       }
     }
 
     return false;
-  },
+  }
+
   
 
 
@@ -693,12 +1582,12 @@ SearchService.prototype = {
 
 
 
-  async _loadEnginesFromConfig(engineConfigs) {
-    lazy.logConsole.debug("_loadEnginesFromConfig");
+  async #loadEnginesFromConfig(engineConfigs) {
+    lazy.logConsole.debug("#loadEnginesFromConfig");
     let engines = [];
     for (let config of engineConfigs) {
       try {
-        let engine = await this.makeEngineFromConfig(config);
+        let engine = await this._makeEngineFromConfig(config);
         engines.push(engine);
       } catch (ex) {
         console.error(
@@ -709,26 +1598,29 @@ SearchService.prototype = {
       }
     }
     return engines;
-  },
+  }
 
   
 
 
 
+
+
+
   async _maybeReloadEngines() {
-    if (this._maybeReloadDebounce) {
+    if (this.#maybeReloadDebounce) {
       lazy.logConsole.debug("We're already waiting to reload engines.");
       return;
     }
 
     if (!this._initialized || this._reloadingEngines) {
-      this._maybeReloadDebounce = true;
+      this.#maybeReloadDebounce = true;
       
       Services.tm.idleDispatchToMainThread(() => {
-        if (!this._maybeReloadDebounce) {
+        if (!this.#maybeReloadDebounce) {
           return;
         }
-        this._maybeReloadDebounce = false;
+        this.#maybeReloadDebounce = false;
         this._maybeReloadEngines().catch(Cu.reportError);
       }, 10000);
       lazy.logConsole.debug(
@@ -752,17 +1644,19 @@ SearchService.prototype = {
     }
     this._reloadingEngines = false;
     lazy.logConsole.debug("maybeReloadEngines complete");
-  },
+  }
 
+  
+  
   async _reloadEngines(settings) {
     
-    let prevCurrentEngine = this._currentEngine;
-    let prevPrivateEngine = this._currentPrivateEngine;
+    let prevCurrentEngine = this.#currentEngine;
+    let prevPrivateEngine = this.#currentPrivateEngine;
     let prevMetaData = { ...settings?.metaData };
 
     
     
-    this._dontSetUseSavedOrder = true;
+    this.#dontSetUseSavedOrder = true;
 
     
     
@@ -809,11 +1703,11 @@ SearchService.prototype = {
           continue;
         }
 
-        policy = await this._getExtensionPolicy(engine._extensionID);
+        policy = await this.#getExtensionPolicy(engine._extensionID);
         locale =
           replacementEngines[0].webExtension.locale ||
           lazy.SearchUtils.DEFAULT_TAG;
-        manifest = await this._getManifestForLocale(policy.extension, locale);
+        manifest = await this.#getManifestForLocale(policy.extension, locale);
 
         
         
@@ -836,9 +1730,9 @@ SearchService.prototype = {
       } else {
         
         
-        policy = await this._getExtensionPolicy(engine._extensionID);
+        policy = await this.#getExtensionPolicy(engine._extensionID);
         locale = engine._locale;
-        manifest = await this._getManifestForLocale(policy.extension, locale);
+        manifest = await this.#getManifestForLocale(policy.extension, locale);
       }
       engine._updateFromManifest(
         policy.extension.id,
@@ -854,8 +1748,8 @@ SearchService.prototype = {
     
     for (let engine of configEngines) {
       try {
-        let newEngine = await this.makeEngineFromConfig(engine);
-        this._addEngineToStore(newEngine, true);
+        let newEngine = await this._makeEngineFromConfig(engine);
+        this.#addEngineToStore(newEngine, true);
       } catch (ex) {
         lazy.logConsole.warn(
           `Could not load engine ${
@@ -864,11 +1758,11 @@ SearchService.prototype = {
         );
       }
     }
-    this._loadEnginesMetadataFromSettings(settings.engines);
+    this.#loadEnginesMetadataFromSettings(settings.engines);
 
     
-    this._currentEngine = null;
-    this._currentPrivateEngine = null;
+    this.#currentEngine = null;
+    this.#currentPrivateEngine = null;
     
     
     
@@ -885,7 +1779,7 @@ SearchService.prototype = {
       this._settings.setAttribute("private", "");
     }
 
-    this._setDefaultAndOrdersFromSelector(
+    this.#setDefaultAndOrdersFromSelector(
       originalConfigEngines,
       privateDefault
     );
@@ -894,14 +1788,14 @@ SearchService.prototype = {
     
     if (prevCurrentEngine && this.defaultEngine !== prevCurrentEngine) {
       lazy.SearchUtils.notifyAction(
-        this._currentEngine,
+        this.#currentEngine,
         lazy.SearchUtils.MODIFIED_TYPE.DEFAULT
       );
       
       
-      if (!this._separatePrivateDefault) {
+      if (!this.#separatePrivateDefault) {
         lazy.SearchUtils.notifyAction(
-          this._currentEngine,
+          this.#currentEngine,
           lazy.SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
         );
       }
@@ -909,7 +1803,7 @@ SearchService.prototype = {
       if (
         prevMetaData &&
         settings.metaData &&
-        !this._didSettingsMetaDataUpdate(prevMetaData) &&
+        !this.#didSettingsMetaDataUpdate(prevMetaData) &&
         Services.prefs.getBoolPref("browser.search.removeEngineInfobar.enabled")
       ) {
         this._showRemovalOfSearchEngineNotificationBox(
@@ -920,12 +1814,12 @@ SearchService.prototype = {
     }
 
     if (
-      this._separatePrivateDefault &&
+      this.#separatePrivateDefault &&
       prevPrivateEngine &&
       this.defaultPrivateEngine !== prevPrivateEngine
     ) {
       lazy.SearchUtils.notifyAction(
-        this._currentPrivateEngine,
+        this.#currentPrivateEngine,
         lazy.SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
       );
     }
@@ -945,7 +1839,7 @@ SearchService.prototype = {
 
           
           
-          this._internalRemoveEngine(engine);
+          this.#internalRemoveEngine(engine);
 
           let addon = await lazy.AddonManager.getAddonByID(engine._extensionID);
           if (addon) {
@@ -967,7 +1861,7 @@ SearchService.prototype = {
       } else {
         
         
-        this._internalRemoveEngine(engine);
+        this.#internalRemoveEngine(engine);
       }
       lazy.SearchUtils.notifyAction(
         engine,
@@ -982,7 +1876,7 @@ SearchService.prototype = {
       this.originalDefaultEngine?.name
     );
 
-    this._dontSetUseSavedOrder = false;
+    this.#dontSetUseSavedOrder = false;
     
     this.__sortedEngines = null;
     Services.obs.notifyObservers(
@@ -990,33 +1884,15 @@ SearchService.prototype = {
       lazy.SearchUtils.TOPIC_SEARCH_SERVICE,
       "engines-reloaded"
     );
-  },
+  }
 
-  
-
-
-  reset() {
-    this._initialized = false;
-    this._initObservers = PromiseUtils.defer();
-    this._initStarted = false;
-    this._startupExtensions = new Set();
-    this._engines.clear();
-    this.__sortedEngines = null;
-    this._currentEngine = null;
-    this._currentPrivateEngine = null;
-    this._searchDefault = null;
-    this._searchPrivateDefault = null;
-    this._maybeReloadDebounce = false;
-    this._settings._batchTask?.disarm();
-  },
-
-  _addEngineToStore(engine, skipDuplicateCheck = false) {
-    if (this._engineMatchesIgnoreLists(engine)) {
-      lazy.logConsole.debug("_addEngineToStore: Ignoring engine");
+  #addEngineToStore(engine, skipDuplicateCheck = false) {
+    if (this.#engineMatchesIgnoreLists(engine)) {
+      lazy.logConsole.debug("#addEngineToStore: Ignoring engine");
       return;
     }
 
-    lazy.logConsole.debug("_addEngineToStore: Adding engine:", engine.name);
+    lazy.logConsole.debug("#addEngineToStore: Adding engine:", engine.name);
 
     
     
@@ -1028,7 +1904,7 @@ SearchService.prototype = {
       !hasSameNameAsUpdate
     ) {
       lazy.logConsole.debug(
-        "_addEngineToStore: Duplicate engine found, aborting!"
+        "#addEngineToStore: Duplicate engine found, aborting!"
       );
       return;
     }
@@ -1066,9 +1942,9 @@ SearchService.prototype = {
       
       
       
-      if (this.__sortedEngines && !this._dontSetUseSavedOrder) {
+      if (this.__sortedEngines && !this.#dontSetUseSavedOrder) {
         this.__sortedEngines.push(engine);
-        this._saveSortedEngineList();
+        this.#saveSortedEngineList();
       }
       lazy.SearchUtils.notifyAction(
         engine,
@@ -1085,9 +1961,9 @@ SearchService.prototype = {
         engineUpdateService.scheduleNextUpdate(engine);
       }
     }
-  },
+  }
 
-  _loadEnginesMetadataFromSettings(engines) {
+  #loadEnginesMetadataFromSettings(engines) {
     if (!engines) {
       return;
     }
@@ -1096,7 +1972,7 @@ SearchService.prototype = {
       let name = engine._name;
       if (this._engines.has(name)) {
         lazy.logConsole.debug(
-          "_loadEnginesMetadataFromSettings, transfering metadata for",
+          "#loadEnginesMetadataFromSettings, transfering metadata for",
           name,
           engine._metaData
         );
@@ -1110,15 +1986,15 @@ SearchService.prototype = {
         eng._metaData = engine._metaData || {};
       }
     }
-  },
+  }
 
-  _loadEnginesFromSettings(enginesCache) {
+  #loadEnginesFromSettings(enginesCache) {
     if (!enginesCache) {
       return;
     }
 
     lazy.logConsole.debug(
-      "_loadEnginesFromSettings: Loading",
+      "#loadEnginesFromSettings: Loading",
       enginesCache.length,
       "engines from settings"
     );
@@ -1161,7 +2037,7 @@ SearchService.prototype = {
           loadPath: engineJSON._loadPath,
         });
         engine._initWithJSON(engineJSON);
-        this._addEngineToStore(engine);
+        this.#addEngineToStore(engine);
       } catch (ex) {
         lazy.logConsole.error(
           "Failed to load",
@@ -1175,13 +2051,15 @@ SearchService.prototype = {
 
     if (skippedEngines) {
       lazy.logConsole.debug(
-        "_loadEnginesFromSettings: skipped",
+        "#loadEnginesFromSettings: skipped",
         skippedEngines,
         "built-in engines."
       );
     }
-  },
+  }
 
+  
+  
   async _fetchEngineSelectorEngines() {
     let searchEngineSelectorProperties = {
       locale: Services.locale.appLocaleAsBCP47,
@@ -1200,7 +2078,7 @@ SearchService.prototype = {
     let {
       engines,
       privateDefault,
-    } = await this._engineSelector.fetchEngineConfiguration(
+    } = await this.#engineSelector.fetchEngineConfiguration(
       searchEngineSelectorProperties
     );
 
@@ -1213,37 +2091,37 @@ SearchService.prototype = {
     }
 
     return { engines, privateDefault };
-  },
+  }
 
-  _setDefaultAndOrdersFromSelector(engines, privateDefault) {
+  #setDefaultAndOrdersFromSelector(engines, privateDefault) {
     const defaultEngine = engines[0];
     this._searchDefault = {
       id: defaultEngine.webExtension.id,
       locale: defaultEngine.webExtension.locale,
     };
     if (privateDefault) {
-      this._searchPrivateDefault = {
+      this.#searchPrivateDefault = {
         id: privateDefault.webExtension.id,
         locale: privateDefault.webExtension.locale,
       };
     }
-  },
+  }
 
-  _saveSortedEngineList() {
-    lazy.logConsole.debug("_saveSortedEngineList");
+  #saveSortedEngineList() {
+    lazy.logConsole.debug("#saveSortedEngineList");
 
     
     
     this._settings.setAttribute("useSavedOrder", true);
 
-    var engines = this._sortedEngines;
+    var engines = this.#sortedEngines;
 
     for (var i = 0; i < engines.length; ++i) {
       engines[i].setAttr("order", i + 1);
     }
-  },
+  }
 
-  _buildSortedEngineList() {
+  #buildSortedEngineList() {
     
     
     
@@ -1253,7 +2131,7 @@ SearchService.prototype = {
     
     
     if (this._settings.getAttribute("useSavedOrder")) {
-      lazy.logConsole.debug("_buildSortedEngineList: using saved order");
+      lazy.logConsole.debug("#buildSortedEngineList: using saved order");
       let addedEngines = {};
 
       
@@ -1285,7 +2163,7 @@ SearchService.prototype = {
       this.__sortedEngines = filteredEngines;
 
       if (needToSaveEngineList) {
-        this._saveSortedEngineList();
+        this.#saveSortedEngineList();
       }
 
       
@@ -1303,14 +2181,17 @@ SearchService.prototype = {
       });
       return (this.__sortedEngines = this.__sortedEngines.concat(alphaEngines));
     }
-    lazy.logConsole.debug("_buildSortedEngineList: using default orders");
+    lazy.logConsole.debug("#buildSortedEngineList: using default orders");
 
     return (this.__sortedEngines = this._sortEnginesByDefaults(
       Array.from(this._engines.values())
     ));
-  },
+  }
 
   
+
+
+
 
 
 
@@ -1366,82 +2247,19 @@ SearchService.prototype = {
     });
 
     return [...sortedEngines, ...remainingEngines];
-  },
+  }
 
   
 
 
 
 
-  get _sortedVisibleEngines() {
-    this.__sortedVisibleEngines = this._sortedEngines.filter(
+  get #sortedVisibleEngines() {
+    this.__sortedVisibleEngines = this.#sortedEngines.filter(
       engine => !engine.hidden
     );
     return this.__sortedVisibleEngines;
-  },
-
-  
-  async init() {
-    lazy.logConsole.debug("init");
-    if (this._initStarted) {
-      return this._initObservers.promise;
-    }
-
-    TelemetryStopwatch.start("SEARCH_SERVICE_INIT_MS");
-    this._initStarted = true;
-    try {
-      
-      await this._init();
-      TelemetryStopwatch.finish("SEARCH_SERVICE_INIT_MS");
-    } catch (ex) {
-      TelemetryStopwatch.cancel("SEARCH_SERVICE_INIT_MS");
-      this._initObservers.reject(ex.result);
-      throw ex;
-    }
-
-    if (!Components.isSuccessCode(this._initRV)) {
-      throw Components.Exception(
-        "SearchService initialization failed",
-        this._initRV
-      );
-    } else if (this._startupRemovedExtensions.size) {
-      Services.tm.dispatchToMainThread(async () => {
-        
-        
-        
-        
-        
-        
-        lazy.logConsole.debug("Removing delayed extension engines");
-        for (let id of this._startupRemovedExtensions) {
-          for (let engine of this._getEnginesByExtensionID(id)) {
-            
-            
-            if (!engine.isAppProvided) {
-              await this.removeEngine(engine);
-            }
-          }
-        }
-        this._startupRemovedExtensions.clear();
-      });
-    }
-    return this._initRV;
-  },
-
-  get isInitialized() {
-    return this._initialized;
-  },
-
-  
-
-
-
-
-  async runBackgroundChecks() {
-    await this.init();
-    await this._migrateLegacyEngines();
-    await this._checkWebExtensionEngines();
-  },
+  }
 
   
 
@@ -1449,7 +2267,7 @@ SearchService.prototype = {
 
 
 
-  async _migrateLegacyEngines() {
+  async #migrateLegacyEngines() {
     lazy.logConsole.debug("Running migrate legacy engines");
 
     const matchRegExp = /extensions\/(.*?)\.xpi!/i;
@@ -1480,7 +2298,7 @@ SearchService.prototype = {
     }
 
     lazy.logConsole.debug("Migrate legacy engines complete");
-  },
+  }
 
   
 
@@ -1488,7 +2306,7 @@ SearchService.prototype = {
 
 
 
-  async _checkWebExtensionEngines() {
+  async #checkWebExtensionEngines() {
     lazy.logConsole.debug("Running check on WebExtension engines");
 
     for (let engine of this._engines.values()) {
@@ -1522,7 +2340,7 @@ SearchService.prototype = {
           2
         );
       } else {
-        let policy = await this._getExtensionPolicy(engine._extensionID);
+        let policy = await this.#getExtensionPolicy(engine._extensionID);
         let providerSettings =
           policy.extension.manifest?.chrome_settings_overrides?.search_provider;
 
@@ -1557,147 +2375,7 @@ SearchService.prototype = {
       }
     }
     lazy.logConsole.debug("WebExtension engine check complete");
-  },
-
-  async getEngines() {
-    await this.init();
-    lazy.logConsole.debug("getEngines: getting all engines");
-    return this._sortedEngines;
-  },
-
-  async getVisibleEngines() {
-    await this.init(true);
-    lazy.logConsole.debug("getVisibleEngines: getting all visible engines");
-    return this._sortedVisibleEngines;
-  },
-
-  async getAppProvidedEngines() {
-    await this.init();
-
-    return this._sortEnginesByDefaults(
-      this._sortedEngines.filter(e => e.isAppProvided)
-    );
-  },
-
-  async getEnginesByExtensionID(extensionID) {
-    await this.init();
-    return this._getEnginesByExtensionID(extensionID);
-  },
-
-  _getEnginesByExtensionID(extensionID) {
-    lazy.logConsole.debug("getEngines: getting all engines for", extensionID);
-    var engines = this._sortedEngines.filter(function(engine) {
-      return engine._extensionID == extensionID;
-    });
-    return engines;
-  },
-
-  
-
-
-
-
-
-
-
-  getEngineByName(engineName) {
-    this._ensureInitialized();
-    return this._engines.get(engineName) || null;
-  },
-
-  async getEngineByAlias(alias) {
-    await this.init();
-    for (var engine of this._engines.values()) {
-      if (engine && engine.aliases.includes(alias)) {
-        return engine;
-      }
-    }
-    return null;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-  _getEngineByWebExtensionDetails(details) {
-    for (const engine of this._engines.values()) {
-      if (
-        engine._extensionID == details.id &&
-        engine._locale == details.locale
-      ) {
-        return engine;
-      }
-    }
-    return null;
-  },
-
-  
-
-
-
-
-
-
-  async addPolicyEngine(details) {
-    await this._createAndAddEngine({
-      extensionID: "set-via-policy",
-      extensionBaseURI: "",
-      isAppProvided: false,
-      manifest: details,
-    });
-  },
-
-  
-
-
-
-
-
-
-  async updatePolicyEngine(details) {
-    let engine = this.getEngineByName(
-      details.chrome_settings_overrides.search_provider.name
-    );
-    if (engine && !engine.isAppProvided) {
-      engine._updateFromManifest(
-        "set-via-policy",
-        "",
-        details,
-        engine._locale || lazy.SearchUtils.DEFAULT_TAG
-      );
-    }
-  },
-
-  
-
-
-
-
-
-
-  async addUserEngine(name, url, alias) {
-    await this._createAndAddEngine({
-      extensionID: "set-via-user",
-      extensionBaseURI: "",
-      isAppProvided: false,
-      manifest: {
-        chrome_settings_overrides: {
-          search_provider: {
-            name,
-            search_url: encodeURI(url),
-            keyword: alias,
-          },
-        },
-      },
-    });
-  },
+  }
 
   
 
@@ -1779,12 +2457,12 @@ SearchService.prototype = {
       locale
     );
 
-    this._addEngineToStore(newEngine);
+    this.#addEngineToStore(newEngine);
     if (isCurrent) {
       this.defaultEngine = newEngine;
     }
     return newEngine;
-  },
+  }
 
   
 
@@ -1792,72 +2470,13 @@ SearchService.prototype = {
 
 
 
-
-
-  async addEnginesFromExtension(extension) {
-    lazy.logConsole.debug("addEnginesFromExtension: " + extension.id);
-    
-    
-    
-    if (
-      extension.startupReason == "ADDON_UPGRADE" ||
-      extension.startupReason == "ADDON_DOWNGRADE"
-    ) {
-      
-      
-      
-      let existing = await this._upgradeExtensionEngine(extension);
-      if (existing?.length) {
-        return existing;
-      }
-    }
-
-    if (extension.isAppProvided) {
-      
-      
-      
-      
-      if (this._initialized && !this._reloadingEngines) {
-        let { engines } = await this._fetchEngineSelectorEngines();
-        let inConfig = engines.filter(el => el.webExtension.id == extension.id);
-        if (inConfig.length) {
-          return this._installExtensionEngine(
-            extension,
-            inConfig.map(el => el.webExtension.locale)
-          );
-        }
-      }
-      lazy.logConsole.debug(
-        "addEnginesFromExtension: Ignoring builtIn engine."
-      );
-      return [];
-    }
-
-    
-    
-    if (!this._initialized) {
-      this._startupExtensions.add(extension);
-      return [];
-    }
-
-    return this._installExtensionEngine(extension, [
-      lazy.SearchUtils.DEFAULT_TAG,
-    ]);
-  },
-
-  
-
-
-
-
-
-  async _upgradeExtensionEngine(extension) {
+  async #upgradeExtensionEngine(extension) {
     let { engines } = await this._fetchEngineSelectorEngines();
     let extensionEngines = await this.getEnginesByExtensionID(extension.id);
 
     for (let engine of extensionEngines) {
       let locale = engine._locale || lazy.SearchUtils.DEFAULT_TAG;
-      let manifest = await this._getManifestForLocale(extension, locale);
+      let manifest = await this.#getManifestForLocale(extension, locale);
       let configuration =
         engines.find(
           e =>
@@ -1894,48 +2513,14 @@ SearchService.prototype = {
       }
     }
     return extensionEngines;
-  },
+  }
 
-  
-
-
-
-
-
-
-
-
-  async makeEngineFromConfig(config) {
-    lazy.logConsole.debug("makeEngineFromConfig:", config);
-    let policy = await this._getExtensionPolicy(config.webExtension.id);
-    let locale =
-      "locale" in config.webExtension
-        ? config.webExtension.locale
-        : lazy.SearchUtils.DEFAULT_TAG;
-
-    let manifest = await this._getManifestForLocale(policy.extension, locale);
-
-    let engine = new lazy.SearchEngine({
-      name: manifest.chrome_settings_overrides.search_provider.name.trim(),
-      isAppProvided: policy.extension.isAppProvided,
-      loadPath: `[other]addEngineWithDetails:${policy.extension.id}`,
-    });
-    engine._initFromManifest(
-      policy.extension.id,
-      policy.extension.baseURI,
-      manifest,
-      locale,
-      config
-    );
-    return engine;
-  },
-
-  async _installExtensionEngine(extension, locales, initEngine = false) {
+  async #installExtensionEngine(extension, locales, initEngine = false) {
     lazy.logConsole.debug("installExtensionEngine:", extension.id);
 
     let installLocale = async locale => {
-      let manifest = await this._getManifestForLocale(extension, locale);
-      return this._addEngineForManifest(
+      let manifest = await this.#getManifestForLocale(extension, locale);
+      return this.#addEngineForManifest(
         extension,
         manifest,
         locale,
@@ -1954,9 +2539,9 @@ SearchService.prototype = {
       engines.push(await installLocale(locale));
     }
     return engines;
-  },
+  }
 
-  async _addEngineForManifest(
+  async #addEngineForManifest(
     extension,
     manifest,
     locale = lazy.SearchUtils.DEFAULT_TAG,
@@ -1966,7 +2551,7 @@ SearchService.prototype = {
     
     
     if (extension.startupReason == "APP_STARTUP") {
-      let engine = this._getEngineByWebExtensionDetails({
+      let engine = this.#getEngineByWebExtensionDetails({
         id: extension.id,
         locale,
       });
@@ -1987,122 +2572,9 @@ SearchService.prototype = {
       locale,
       initEngine,
     });
-  },
+  }
 
-  async addOpenSearchEngine(engineURL, iconURL) {
-    lazy.logConsole.debug("addEngine: Adding", engineURL);
-    await this.init();
-    let errCode;
-    try {
-      var engine = new lazy.OpenSearchEngine();
-      engine._setIcon(iconURL, false);
-      errCode = await new Promise(resolve => {
-        engine._install(engineURL, errorCode => {
-          resolve(errorCode);
-        });
-      });
-      if (errCode) {
-        throw errCode;
-      }
-    } catch (ex) {
-      throw Components.Exception(
-        "addEngine: Error adding engine:\n" + ex,
-        errCode || Cr.NS_ERROR_FAILURE
-      );
-    }
-    return engine;
-  },
-
-  async removeWebExtensionEngine(id) {
-    if (!this.isInitialized) {
-      lazy.logConsole.debug(
-        "Delaying removing extension engine on startup:",
-        id
-      );
-      this._startupRemovedExtensions.add(id);
-      return;
-    }
-
-    lazy.logConsole.debug("removeWebExtensionEngine:", id);
-    for (let engine of this._getEnginesByExtensionID(id)) {
-      await this.removeEngine(engine);
-    }
-  },
-
-  async removeEngine(engine) {
-    await this.init();
-    if (!engine) {
-      throw Components.Exception(
-        "no engine passed to removeEngine!",
-        Cr.NS_ERROR_INVALID_ARG
-      );
-    }
-
-    var engineToRemove = null;
-    for (var e of this._engines.values()) {
-      if (engine.wrappedJSObject == e) {
-        engineToRemove = e;
-      }
-    }
-
-    if (!engineToRemove) {
-      throw Components.Exception(
-        "removeEngine: Can't find engine to remove!",
-        Cr.NS_ERROR_FILE_NOT_FOUND
-      );
-    }
-
-    if (engineToRemove == this.defaultEngine) {
-      this._findAndSetNewDefaultEngine({
-        privateMode: false,
-        excludeEngineName: engineToRemove.name,
-      });
-    }
-
-    
-    
-    
-    
-    
-    if (
-      this._separatePrivateDefault &&
-      engineToRemove == this.defaultPrivateEngine
-    ) {
-      this._findAndSetNewDefaultEngine({
-        privateMode: true,
-        excludeEngineName: engineToRemove.name,
-      });
-    }
-
-    if (engineToRemove._isAppProvided) {
-      
-      
-      engineToRemove.hidden = true;
-      engineToRemove.alias = null;
-    } else {
-      
-      if (engineToRemove._filePath) {
-        let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-        file.persistentDescriptor = engineToRemove._filePath;
-        if (file.exists()) {
-          file.remove(false);
-        }
-        engineToRemove._filePath = null;
-      }
-      this._internalRemoveEngine(engineToRemove);
-
-      
-      if (!this._dontSetUseSavedOrder) {
-        this._saveSortedEngineList();
-      }
-    }
-    lazy.SearchUtils.notifyAction(
-      engineToRemove,
-      lazy.SearchUtils.MODIFIED_TYPE.REMOVED
-    );
-  },
-
-  _internalRemoveEngine(engine) {
+  #internalRemoveEngine(engine) {
     
     if (this.__sortedEngines) {
       var index = this.__sortedEngines.indexOf(engine);
@@ -2117,93 +2589,7 @@ SearchService.prototype = {
 
     
     this._engines.delete(engine.name);
-  },
-
-  async moveEngine(engine, newIndex) {
-    await this.init();
-    if (newIndex > this._sortedEngines.length || newIndex < 0) {
-      throw Components.Exception("moveEngine: Index out of bounds!");
-    }
-    if (
-      !(engine instanceof Ci.nsISearchEngine) &&
-      !(engine instanceof lazy.SearchEngine)
-    ) {
-      throw Components.Exception(
-        "moveEngine: Invalid engine passed to moveEngine!",
-        Cr.NS_ERROR_INVALID_ARG
-      );
-    }
-    if (engine.hidden) {
-      throw Components.Exception(
-        "moveEngine: Can't move a hidden engine!",
-        Cr.NS_ERROR_FAILURE
-      );
-    }
-
-    engine = engine.wrappedJSObject;
-
-    var currentIndex = this._sortedEngines.indexOf(engine);
-    if (currentIndex == -1) {
-      throw Components.Exception(
-        "moveEngine: Can't find engine to move!",
-        Cr.NS_ERROR_UNEXPECTED
-      );
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    var newIndexEngine = this._sortedVisibleEngines[newIndex];
-    if (!newIndexEngine) {
-      throw Components.Exception(
-        "moveEngine: Can't find engine to replace!",
-        Cr.NS_ERROR_UNEXPECTED
-      );
-    }
-
-    for (var i = 0; i < this._sortedEngines.length; ++i) {
-      if (newIndexEngine == this._sortedEngines[i]) {
-        break;
-      }
-      if (this._sortedEngines[i].hidden) {
-        newIndex++;
-      }
-    }
-
-    if (currentIndex == newIndex) {
-      return;
-    } 
-
-    
-    var movedEngine = this.__sortedEngines.splice(currentIndex, 1)[0];
-    this.__sortedEngines.splice(newIndex, 0, movedEngine);
-
-    lazy.SearchUtils.notifyAction(
-      engine,
-      lazy.SearchUtils.MODIFIED_TYPE.CHANGED
-    );
-
-    
-    this._saveSortedEngineList();
-  },
-
-  restoreDefaultEngines() {
-    this._ensureInitialized();
-    for (let e of this._engines.values()) {
-      
-      if (e.hidden && e.isAppProvided) {
-        e.hidden = false;
-      }
-    }
-  },
+  }
 
   
 
@@ -2229,11 +2615,7 @@ SearchService.prototype = {
 
 
 
-  _findAndSetNewDefaultEngine({ privateMode, excludeEngineName = "" }) {
-    const currentEngineProp = privateMode
-      ? "_currentPrivateEngine"
-      : "_currentEngine";
-
+  #findAndSetNewDefaultEngine({ privateMode, excludeEngineName = "" }) {
     
     let newDefault = privateMode
       ? this.originalPrivateDefaultEngine
@@ -2244,7 +2626,7 @@ SearchService.prototype = {
       newDefault.hidden ||
       newDefault.name == excludeEngineName
     ) {
-      let sortedEngines = this._sortedVisibleEngines;
+      let sortedEngines = this.#sortedVisibleEngines;
       let generalSearchEngines = sortedEngines.filter(
         e => e.isGeneralPurposeEngine
       );
@@ -2268,7 +2650,7 @@ SearchService.prototype = {
       
       if (!newDefault) {
         if (!firstVisible) {
-          sortedEngines = this._sortedEngines;
+          sortedEngines = this.#sortedEngines;
           firstVisible = sortedEngines.find(e => e.isGeneralPurposeEngine);
           if (!firstVisible) {
             firstVisible = sortedEngines[0];
@@ -2290,56 +2672,10 @@ SearchService.prototype = {
     
     
     
-    this._setEngineDefault(privateMode, newDefault);
+    this.#setEngineDefault(privateMode, newDefault);
 
-    return this[currentEngineProp];
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  _getEngineDefault(privateMode) {
-    const currentEngineProp = privateMode
-      ? "_currentPrivateEngine"
-      : "_currentEngine";
-
-    if (this[currentEngineProp] && !this[currentEngineProp].hidden) {
-      return this[currentEngineProp];
-    }
-
-    
-    const attributeName = privateMode ? "private" : "current";
-    let name = this._settings.getAttribute(attributeName);
-    let engine = this._engines.get(name) || null;
-    if (
-      engine &&
-      (engine.isAppProvided ||
-        this._settings.getVerifiedAttribute(attributeName))
-    ) {
-      
-      
-      
-      this[currentEngineProp] = engine;
-    }
-    if (!name) {
-      this[currentEngineProp] = privateMode
-        ? this.originalPrivateDefaultEngine
-        : this.originalDefaultEngine;
-    }
-
-    if (this[currentEngineProp] && !this[currentEngineProp].hidden) {
-      return this[currentEngineProp];
-    }
-    
-    return this._findAndSetNewDefaultEngine({ privateMode });
-  },
+    return privateMode ? this.#currentPrivateEngine : this.#currentEngine;
+  }
 
   
 
@@ -2351,7 +2687,7 @@ SearchService.prototype = {
 
 
 
-  _setEngineDefault(privateMode, newEngine) {
+  #setEngineDefault(privateMode, newEngine) {
     
     
     
@@ -2392,27 +2728,33 @@ SearchService.prototype = {
       }
     }
 
-    const currentEngine = `_current${privateMode ? "Private" : ""}Engine`;
+    let currentEngine = privateMode
+      ? this.#currentPrivateEngine
+      : this.#currentEngine;
 
-    if (newCurrentEngine == this[currentEngine]) {
+    if (newCurrentEngine == currentEngine) {
       return;
     }
 
     
-    this[currentEngine]?.removeExtensionOverride();
+    currentEngine?.removeExtensionOverride();
 
-    this[currentEngine] = newCurrentEngine;
+    if (privateMode) {
+      this.#currentPrivateEngine = newCurrentEngine;
+    } else {
+      this.#currentEngine = newCurrentEngine;
+    }
 
     
     
     
     
     
-    let newName = this[currentEngine].name;
+    let newName = newCurrentEngine.name;
     const originalDefault = privateMode
       ? this.originalPrivateDefaultEngine
       : this.originalDefaultEngine;
-    if (this[currentEngine] == originalDefault) {
+    if (newCurrentEngine == originalDefault) {
       newName = "";
     }
 
@@ -2424,72 +2766,26 @@ SearchService.prototype = {
     
     
     if (this._initialized) {
-      this._recordTelemetryData();
+      this.#recordTelemetryData();
     }
 
     lazy.SearchUtils.notifyAction(
-      this[currentEngine],
+      newCurrentEngine,
       lazy.SearchUtils.MODIFIED_TYPE[
         privateMode ? "DEFAULT_PRIVATE" : "DEFAULT"
       ]
     );
     
     
-    if (!privateMode && !this._separatePrivateDefault) {
+    if (!privateMode && !this.#separatePrivateDefault) {
       lazy.SearchUtils.notifyAction(
-        this[currentEngine],
+        newCurrentEngine,
         lazy.SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
       );
     }
-  },
+  }
 
-  get defaultEngine() {
-    this._ensureInitialized();
-    return this._getEngineDefault(false);
-  },
-
-  set defaultEngine(newEngine) {
-    this._ensureInitialized();
-    this._setEngineDefault(false, newEngine);
-  },
-
-  get defaultPrivateEngine() {
-    this._ensureInitialized();
-    return this._getEngineDefault(this._separatePrivateDefault);
-  },
-
-  set defaultPrivateEngine(newEngine) {
-    this._ensureInitialized();
-    if (!this._separatePrivateDefaultPrefValue) {
-      Services.prefs.setBoolPref(
-        lazy.SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
-        true
-      );
-    }
-    this._setEngineDefault(this._separatePrivateDefault, newEngine);
-  },
-
-  async getDefault() {
-    await this.init();
-    return this.defaultEngine;
-  },
-
-  async setDefault(engine) {
-    await this.init();
-    return (this.defaultEngine = engine);
-  },
-
-  async getDefaultPrivate() {
-    await this.init();
-    return this.defaultPrivateEngine;
-  },
-
-  async setDefaultPrivate(engine) {
-    await this.init();
-    return (this.defaultPrivateEngine = engine);
-  },
-
-  _onSeparateDefaultPrefChanged() {
+  #onSeparateDefaultPrefChanged() {
     
     this.__sortedEngines = null;
     
@@ -2502,11 +2798,11 @@ SearchService.prototype = {
         lazy.SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
       );
       
-      this._recordTelemetryData();
+      this.#recordTelemetryData();
     }
-  },
+  }
 
-  _getEngineInfo(engine) {
+  #getEngineInfo(engine) {
     if (!engine) {
       
       
@@ -2579,34 +2875,13 @@ SearchService.prototype = {
     }
 
     return [engine.telemetryId, engineData];
-  },
-
-  getDefaultEngineInfo() {
-    let [telemetryId, defaultSearchEngineData] = this._getEngineInfo(
-      this.defaultEngine
-    );
-    const result = {
-      defaultSearchEngine: telemetryId,
-      defaultSearchEngineData,
-    };
-
-    if (this._separatePrivateDefault) {
-      let [
-        privateTelemetryId,
-        defaultPrivateSearchEngineData,
-      ] = this._getEngineInfo(this.defaultPrivateEngine);
-      result.defaultPrivateSearchEngine = privateTelemetryId;
-      result.defaultPrivateSearchEngineData = defaultPrivateSearchEngineData;
-    }
-
-    return result;
-  },
+  }
 
   
 
 
 
-  _recordTelemetryData() {
+  #recordTelemetryData() {
     let info = this.getDefaultEngineInfo();
 
     Glean.searchEngineDefault.engineId.set(info.defaultSearchEngine);
@@ -2644,34 +2919,17 @@ SearchService.prototype = {
       Glean.searchEnginePrivate.submissionUrl.set("");
       Glean.searchEnginePrivate.verified.set("");
     }
-  },
+  }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _parseSubmissionMap: null,
-
-  _buildParseSubmissionMap() {
-    this._parseSubmissionMap = new Map();
+  #buildParseSubmissionMap() {
+    this.#parseSubmissionMap = new Map();
 
     
     
     
     let keysOfAlternates = new Set();
 
-    for (let engine of this._sortedEngines) {
+    for (let engine of this.#sortedEngines) {
       if (engine.hidden) {
         continue;
       }
@@ -2692,7 +2950,7 @@ SearchService.prototype = {
 
         
         
-        let existingEntry = this._parseSubmissionMap.get(key);
+        let existingEntry = this.#parseSubmissionMap.get(key);
         if (!existingEntry) {
           if (isAlternate) {
             keysOfAlternates.add(key);
@@ -2703,7 +2961,7 @@ SearchService.prototype = {
           return;
         }
 
-        this._parseSubmissionMap.set(key, mapValueForEngine);
+        this.#parseSubmissionMap.set(key, mapValueForEngine);
       };
 
       processDomain(urlParsingInfo.mainDomain, false);
@@ -2711,102 +2969,7 @@ SearchService.prototype = {
         urlParsingInfo.mainDomain
       ).forEach(d => processDomain(d, true));
     }
-  },
-
-  parseSubmissionURL(url) {
-    if (!this._initialized) {
-      
-      
-      
-      return gEmptyParseSubmissionResult;
-    }
-
-    if (!this._parseSubmissionMap) {
-      this._buildParseSubmissionMap();
-    }
-
-    
-    let soughtKey, soughtQuery;
-    try {
-      let soughtUrl = Services.io.newURI(url).QueryInterface(Ci.nsIURL);
-
-      
-      if (soughtUrl.scheme != "http" && soughtUrl.scheme != "https") {
-        return gEmptyParseSubmissionResult;
-      }
-
-      
-      soughtKey = soughtUrl.host + soughtUrl.filePath.toLowerCase();
-      soughtQuery = soughtUrl.query;
-    } catch (ex) {
-      
-      return gEmptyParseSubmissionResult;
-    }
-
-    
-    let mapEntry = this._parseSubmissionMap.get(soughtKey);
-    if (!mapEntry) {
-      return gEmptyParseSubmissionResult;
-    }
-
-    
-    
-    let encodedTerms = null;
-    for (let param of soughtQuery.split("&")) {
-      let equalPos = param.indexOf("=");
-      if (
-        equalPos != -1 &&
-        param.substr(0, equalPos) == mapEntry.termsParameterName
-      ) {
-        
-        encodedTerms = param.substr(equalPos + 1);
-        break;
-      }
-    }
-    if (encodedTerms === null) {
-      return gEmptyParseSubmissionResult;
-    }
-
-    let length = 0;
-    let offset = url.indexOf("?") + 1;
-    let query = url.slice(offset);
-    
-    
-    for (let param of query.split("&")) {
-      let equalPos = param.indexOf("=");
-      if (
-        equalPos != -1 &&
-        param.substr(0, equalPos) == mapEntry.termsParameterName
-      ) {
-        
-        offset += equalPos + 1;
-        length = param.length - equalPos - 1;
-        break;
-      }
-      offset += param.length + 1;
-    }
-
-    
-    let terms;
-    try {
-      terms = Services.textToSubURI.UnEscapeAndConvert(
-        mapEntry.engine.queryCharset,
-        encodedTerms.replace(/\+/g, " ")
-      );
-    } catch (ex) {
-      
-      return gEmptyParseSubmissionResult;
-    }
-
-    let submission = new ParseSubmissionResult(
-      mapEntry.engine,
-      terms,
-      mapEntry.termsParameterName,
-      offset,
-      length
-    );
-    return submission;
-  },
+  }
 
   
 
@@ -2815,7 +2978,7 @@ SearchService.prototype = {
 
 
 
-  async _getExtensionPolicy(id) {
+  async #getExtensionPolicy(id) {
     let policy = WebExtensionPolicy.getByID(id);
     if (!policy) {
       let idPrefix = id.split("@")[0];
@@ -2827,127 +2990,15 @@ SearchService.prototype = {
     
     await policy.readyPromise;
     return policy;
-  },
+  }
 
-  
-  observe(engine, topic, verb) {
-    switch (topic) {
-      case lazy.SearchUtils.TOPIC_ENGINE_MODIFIED:
-        switch (verb) {
-          case lazy.SearchUtils.MODIFIED_TYPE.LOADED:
-            engine = engine.QueryInterface(Ci.nsISearchEngine);
-            lazy.logConsole.debug(
-              "observe: Done installation of ",
-              engine.name
-            );
-            this._addEngineToStore(engine.wrappedJSObject);
-            
-            
-            break;
-          case lazy.SearchUtils.MODIFIED_TYPE.ADDED:
-          case lazy.SearchUtils.MODIFIED_TYPE.CHANGED:
-          case lazy.SearchUtils.MODIFIED_TYPE.REMOVED:
-            
-            this._parseSubmissionMap = null;
-            break;
-        }
-        break;
-
-      case "idle": {
-        this.idleService.removeIdleObserver(this, RECONFIG_IDLE_TIME_SEC);
-        this._queuedIdle = false;
-        lazy.logConsole.debug(
-          "Reloading engines after idle due to configuration change"
-        );
-        this._maybeReloadEngines().catch(Cu.reportError);
-        break;
-      }
-
-      case QUIT_APPLICATION_TOPIC:
-        this._removeObservers();
-        break;
-
-      case TOPIC_LOCALES_CHANGE:
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        Services.tm.dispatchToMainThread(() => {
-          if (!Services.startup.shuttingDown) {
-            this._maybeReloadEngines().catch(Cu.reportError);
-          }
-        });
-        break;
-      case lazy.Region.REGION_TOPIC:
-        lazy.logConsole.debug("Region updated:", lazy.Region.home);
-        this._maybeReloadEngines().catch(Cu.reportError);
-        break;
-    }
-  },
-
-  
-  notify(timer) {
-    lazy.logConsole.debug("_notify: checking for updates");
-
-    if (
-      !Services.prefs.getBoolPref(
-        lazy.SearchUtils.BROWSER_SEARCH_PREF + "update",
-        true
-      )
-    ) {
-      return;
-    }
-
-    
-    
-    var currentTime = Date.now();
-    lazy.logConsole.debug("currentTime:" + currentTime);
-    for (let e of this._engines.values()) {
-      let engine = e.wrappedJSObject;
-      if (!engine._hasUpdates) {
-        continue;
-      }
-
-      var expirTime = engine.getAttr("updateexpir");
-      lazy.logConsole.debug(
-        engine.name,
-        "expirTime:",
-        expirTime,
-        "updateURL:",
-        engine._updateURL,
-        "iconUpdateURL:",
-        engine._iconUpdateURL
-      );
-
-      var engineExpired = expirTime <= currentTime;
-
-      if (!expirTime || !engineExpired) {
-        lazy.logConsole.debug("skipping engine");
-        continue;
-      }
-
-      lazy.logConsole.debug(engine.name, "has expired");
-
-      engineUpdateService.update(engine);
-
-      
-      engineUpdateService.scheduleNextUpdate(engine);
-    } 
-  },
-
-  _addObservers() {
-    if (this._observersAdded) {
+  #addObservers() {
+    if (this.#observersAdded) {
       
       
       return;
     }
-    this._observersAdded = true;
+    this.#observersAdded = true;
 
     lazy.NimbusFeatures.search.onUpdate(() =>
       Services.search.wrappedJSObject._maybeReloadEngines()
@@ -2998,17 +3049,18 @@ SearchService.prototype = {
 
       () => shutdownState
     );
-  },
-  _observersAdded: false,
+  }
 
+  
+  
   _removeObservers() {
-    if (this._ignoreListListener) {
-      lazy.IgnoreLists.unsubscribe(this._ignoreListListener);
-      delete this._ignoreListListener;
+    if (this.ignoreListListener) {
+      lazy.IgnoreLists.unsubscribe(this.ignoreListListener);
+      delete this.ignoreListListener;
     }
-    if (this._queuedIdle) {
+    if (this.#queuedIdle) {
       this.idleService.removeIdleObserver(this, RECONFIG_IDLE_TIME_SEC);
-      this._queuedIdle = false;
+      this.#queuedIdle = false;
     }
 
     this._settings.removeObservers();
@@ -3021,13 +3073,75 @@ SearchService.prototype = {
     Services.obs.removeObserver(this, QUIT_APPLICATION_TOPIC);
     Services.obs.removeObserver(this, TOPIC_LOCALES_CHANGE);
     Services.obs.removeObserver(this, lazy.Region.REGION_TOPIC);
-  },
+  }
 
-  QueryInterface: ChromeUtils.generateQI([
+  QueryInterface = ChromeUtils.generateQI([
     "nsISearchService",
     "nsIObserver",
     "nsITimerCallback",
-  ]),
+  ]);
+
+  
+  observe(engine, topic, verb) {
+    switch (topic) {
+      case lazy.SearchUtils.TOPIC_ENGINE_MODIFIED:
+        switch (verb) {
+          case lazy.SearchUtils.MODIFIED_TYPE.LOADED:
+            engine = engine.QueryInterface(Ci.nsISearchEngine);
+            lazy.logConsole.debug(
+              "observe: Done installation of ",
+              engine.name
+            );
+            this.#addEngineToStore(engine.wrappedJSObject);
+            
+            
+            break;
+          case lazy.SearchUtils.MODIFIED_TYPE.ADDED:
+          case lazy.SearchUtils.MODIFIED_TYPE.CHANGED:
+          case lazy.SearchUtils.MODIFIED_TYPE.REMOVED:
+            
+            this.#parseSubmissionMap = null;
+            break;
+        }
+        break;
+
+      case "idle": {
+        this.idleService.removeIdleObserver(this, RECONFIG_IDLE_TIME_SEC);
+        this.#queuedIdle = false;
+        lazy.logConsole.debug(
+          "Reloading engines after idle due to configuration change"
+        );
+        this._maybeReloadEngines().catch(Cu.reportError);
+        break;
+      }
+
+      case QUIT_APPLICATION_TOPIC:
+        this._removeObservers();
+        break;
+
+      case TOPIC_LOCALES_CHANGE:
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
+        Services.tm.dispatchToMainThread(() => {
+          if (!Services.startup.shuttingDown) {
+            this._maybeReloadEngines().catch(Cu.reportError);
+          }
+        });
+        break;
+      case lazy.Region.REGION_TOPIC:
+        lazy.logConsole.debug("Region updated:", lazy.Region.home);
+        this._maybeReloadEngines().catch(Cu.reportError);
+        break;
+    }
+  }
 
   
 
@@ -3035,7 +3149,44 @@ SearchService.prototype = {
 
 
 
-  _didSettingsMetaDataUpdate(metaData) {
+
+
+
+
+
+
+  async _makeEngineFromConfig(config) {
+    lazy.logConsole.debug("_makeEngineFromConfig:", config);
+    let policy = await this.#getExtensionPolicy(config.webExtension.id);
+    let locale =
+      "locale" in config.webExtension
+        ? config.webExtension.locale
+        : lazy.SearchUtils.DEFAULT_TAG;
+
+    let manifest = await this.#getManifestForLocale(policy.extension, locale);
+
+    let engine = new lazy.SearchEngine({
+      name: manifest.chrome_settings_overrides.search_provider.name.trim(),
+      isAppProvided: policy.extension.isAppProvided,
+      loadPath: `[other]addEngineWithDetails:${policy.extension.id}`,
+    });
+    engine._initFromManifest(
+      policy.extension.id,
+      policy.extension.baseURI,
+      manifest,
+      locale,
+      config
+    );
+    return engine;
+  }
+
+  
+
+
+
+
+
+  #didSettingsMetaDataUpdate(metaData) {
     let metaDataProperties = [
       "locale",
       "region",
@@ -3047,9 +3198,13 @@ SearchService.prototype = {
     return metaDataProperties.some(p => {
       return metaData?.[p] !== this._settings.getAttribute(p);
     });
-  },
+  }
 
   
+
+
+
+
 
 
 
@@ -3067,7 +3222,7 @@ SearchService.prototype = {
       prevCurrentEngine,
       newCurrentEngine
     );
-  },
+  }
 
   
 
@@ -3086,7 +3241,7 @@ SearchService.prototype = {
 
 
 
-  async _getManifestForLocale(extension, locale) {
+  async #getManifestForLocale(extension, locale) {
     let manifest = extension.manifest;
 
     
@@ -3101,8 +3256,8 @@ SearchService.prototype = {
       manifest = await extension.getLocalizedManifest(localeToLoad);
     }
     return manifest;
-  },
-};
+  }
+} 
 
 var engineUpdateService = {
   scheduleNextUpdate(engine) {
