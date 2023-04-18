@@ -3,8 +3,9 @@
 
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const lazy = {};
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "LayoutUtils",
   "resource://gre/modules/LayoutUtils.jsm"
 );
@@ -78,7 +79,7 @@ class DateTimePickerChild extends JSWindowActorChild {
 
 
   getBoundingContentRect(aElement) {
-    return LayoutUtils.getElementBoundingScreenRect(aElement);
+    return lazy.LayoutUtils.getElementBoundingScreenRect(aElement);
   }
 
   getTimePickerPref() {
