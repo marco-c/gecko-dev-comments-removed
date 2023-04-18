@@ -228,6 +228,21 @@ template <typename Unit>
       return false;
     }
     if (extensibleStencil) {
+      if (input.options.populateDelazificationCache() &&
+          !cx->isHelperThreadContext()) {
+        BorrowingCompilationStencil borrowingStencil(*extensibleStencil);
+        if (!StartOffThreadDelazification(cx, input.options, borrowingStencil)) {
+          return false;
+        }
+
+        
+        
+        
+        
+        if (input.options.waitForDelazificationCache()) {
+          WaitForAllDelazifyTasks(cx->runtime());
+        }
+      }
       if (output.is<UniquePtr<ExtensibleCompilationStencil>>()) {
         output.as<UniquePtr<ExtensibleCompilationStencil>>() =
             std::move(extensibleStencil);
@@ -278,6 +293,22 @@ template <typename Unit>
 
   if (!compiler.compile(cx, &globalsc)) {
     return false;
+  }
+
+  if (input.options.populateDelazificationCache() &&
+      !cx->isHelperThreadContext()) {
+    BorrowingCompilationStencil borrowingStencil(compiler.stencil());
+    if (!StartOffThreadDelazification(cx, input.options, borrowingStencil)) {
+      return false;
+    }
+
+    
+    
+    
+    
+    if (input.options.waitForDelazificationCache()) {
+      WaitForAllDelazifyTasks(cx->runtime());
+    }
   }
 
   if (output.is<UniquePtr<ExtensibleCompilationStencil>>()) {
@@ -1109,15 +1140,17 @@ static bool CompileLazyFunctionToStencilMaybeInstantiate(
   MOZ_ASSERT(input.source);
 
   AutoAssertReportedException assertException(cx);
-  auto res = GetCachedLazyFunctionStencilMaybeInstantiate(cx, input, output);
-  switch (res) {
-    case GetCachedResult::Error:
-      return false;
-    case GetCachedResult::Found:
-      assertException.reset();
-      return true;
-    case GetCachedResult::NotFound:
-      break;
+  if (input.options.consumeDelazificationCache()) {
+    auto res = GetCachedLazyFunctionStencilMaybeInstantiate(cx, input, output);
+    switch (res) {
+      case GetCachedResult::Error:
+        return false;
+      case GetCachedResult::Found:
+        assertException.reset();
+        return true;
+      case GetCachedResult::NotFound:
+        break;
+    }
   }
 
   InheritThis inheritThis =
@@ -1163,6 +1196,30 @@ static bool CompileLazyFunctionToStencilMaybeInstantiate(
   if (isRelazifiableAfterDelazify && !hadLazyScriptData) {
     compilationState.scriptData[CompilationStencil::TopLevelIndex]
         .setAllowRelazify();
+  }
+
+  if (input.options.checkDelazificationCache()) {
+    using OutputType = RefPtr<CompilationStencil>;
+    BytecodeCompilerOutput cached((OutputType()));
+    auto res = GetCachedLazyFunctionStencilMaybeInstantiate(cx, input, cached);
+    if (res == GetCachedResult::Error) {
+      return false;
+    }
+    
+    if (res == GetCachedResult::Found) {
+      auto& concurrentSharedData = cached.as<OutputType>().get()->sharedData;
+      auto concurrentData = concurrentSharedData.isSingle() ?
+        concurrentSharedData.asSingle()->get()->immutableData() :
+        concurrentSharedData.asBorrow()->asSingle()->get()->immutableData();
+      auto ondemandData =
+        compilationState.sharedData.asSingle()->get()->immutableData();
+      MOZ_RELEASE_ASSERT(concurrentData.Length() == ondemandData.Length(),
+                         "Non-deterministic stencils");
+      for (size_t i = 0; i < concurrentData.Length(); i++) {
+        MOZ_RELEASE_ASSERT(concurrentData[i] == ondemandData[i],
+                           "Non-deterministic stencils");
+      }
+    }
   }
 
   if (output.is<UniquePtr<ExtensibleCompilationStencil>>()) {

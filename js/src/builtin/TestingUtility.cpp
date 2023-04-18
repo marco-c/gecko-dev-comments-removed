@@ -19,6 +19,7 @@
 #include "js/Value.h"               
 #include "vm/JSContext.h"           
 #include "vm/JSObject.h"            
+#include "vm/Realm.h"               
 #include "vm/StringType.h"          
 
 bool js::ParseCompileOptions(JSContext* cx, JS::CompileOptions& options,

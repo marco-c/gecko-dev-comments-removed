@@ -673,6 +673,14 @@ struct DelazifyTask : public mozilla::LinkedListElement<DelazifyTask>,
   
   OffThreadFrontendErrors errors_;
 
+  
+  static UniquePtr<DelazifyTask> Create(
+      JSContext* cx,
+      JSRuntime* runtime,
+      const JS::ContextOptions& contextOptions,
+      const JS::ReadOnlyCompileOptions& options,
+      const frontend::CompilationStencil& stencil);
+
   DelazifyTask(JSRuntime* runtime, const JS::ContextOptions& options);
 
   [[nodiscard]] bool init(
