@@ -111,7 +111,7 @@ impl EventLoopHandle {
     }
 
     
-    pub fn shutdown(&self) -> Result<()> {
+    fn shutdown(&self) -> Result<()> {
         self.requests_tx
             .send(Request::Shutdown)
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
@@ -813,9 +813,8 @@ mod test {
     fn dead_server() {
         init();
         let (server, _client, client_proxy) = setup();
-        server.handle().shutdown().unwrap();
-        
         drop(server);
+
         let response = client_proxy.call(TestServerMessage::TestRequest);
         response.wait().expect_err("sending on closed channel");
     }
@@ -824,7 +823,7 @@ mod test {
     fn dead_client() {
         init();
         let (_server, client, client_proxy) = setup();
-        client.handle().shutdown().unwrap();
+        drop(client);
 
         let response = client_proxy.call(TestServerMessage::TestRequest);
         response.wait().expect_err("sending on a closed channel");
@@ -859,8 +858,7 @@ mod test {
 
         start_rx.recv().expect("after_start callback done");
 
-        
-        elt.handle().shutdown().expect("shutdown");
+        drop(elt);
 
         stop_rx.recv().expect("before_stop callback done");
     }
