@@ -157,15 +157,19 @@ impl<'a, 'b, 'i> DeclarationParser<'i> for ScrollTimelineDescriptorsParser<'a, '
 
 
 
+
+
 #[derive(Clone, Debug, Parse, PartialEq, ToCss, ToShmem)]
 pub enum Source {
     
+    #[css(skip)]
     Selector(ScrollTimelineSelector),
     
     
     Auto,
     
     
+    #[css(skip)]
     None,
 }
 
@@ -215,7 +219,7 @@ pub struct ScrollOffsets(#[css(if_empty = "none", iterable)] Box<[ScrollTimeline
 
 impl Parse for ScrollOffsets {
     fn parse<'i, 't>(
-        context: &ParserContext,
+        _context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
         if input.try_parse(|i| i.expect_ident_matching("none")).is_ok() {
@@ -224,11 +228,13 @@ impl Parse for ScrollOffsets {
 
         Ok(ScrollOffsets(
             input
-                .parse_comma_separated(|i| ScrollTimelineOffset::parse(context, i))?
+                .parse_comma_separated(|i| ScrollTimelineOffset::parse(i))?
                 .into_boxed_slice(),
         ))
     }
 }
+
+
 
 
 
@@ -240,8 +246,10 @@ pub enum ScrollTimelineOffset {
     Auto,
     
     
+    #[css(skip)]
     LengthPercentage(LengthPercentage),
     
+    #[css(skip)]
     ElementOffset(ElementOffset),
 }
 
