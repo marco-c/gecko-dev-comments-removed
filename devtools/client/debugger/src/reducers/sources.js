@@ -71,7 +71,14 @@ export function initialSourcesState(state) {
     projectDirectoryRootName: prefs.projectDirectoryRootName,
     chromeAndExtensionsEnabled: prefs.chromeAndExtensionsEnabled,
     focusedItem: null,
-    tabsBlackBoxed: state?.tabsBlackBoxed ?? [],
+    
+
+
+
+
+
+
+    blackboxedRanges: state?.blackboxedRanges ?? {},
   };
 }
 
@@ -133,22 +140,13 @@ function update(state = initialSourcesState(), action) {
     case "LOAD_SOURCE_TEXT":
       return updateLoadedState(state, action);
 
-    case "BLACKBOX_SOURCES":
-      if (action.status === "done") {
-        const { shouldBlackBox } = action;
-        const { sources } = action.value;
-
-        state = updateBlackBoxListSources(state, sources, shouldBlackBox);
-        return updateBlackboxFlagSources(state, sources, shouldBlackBox);
-      }
-      break;
-
     case "BLACKBOX":
       if (action.status === "done") {
-        const { id, url } = action.source;
-        const { isBlackBoxed } = action.value;
-        state = updateBlackBoxList(state, url, isBlackBoxed);
-        return updateBlackboxFlag(state, id, isBlackBoxed);
+        const { blackboxSources } = action.value;
+        state = updateBlackBoxState(state, blackboxSources);
+        
+        
+        return updateSourcesBlackboxState(state, blackboxSources);
       }
       break;
 
@@ -407,41 +405,22 @@ function updateLoadedState(state, action) {
 
 
 
-
-function updateBlackboxFlag(state, sourceId, isBlackBoxed) {
-  
-  
-  
-  if (!hasResource(state.sources, sourceId)) {
-    
-    
-    return state;
-  }
-
-  return {
-    ...state,
-    sources: updateResources(state.sources, [
-      {
-        id: sourceId,
-        isBlackBoxed,
-      },
-    ]),
-  };
-}
-
-function updateBlackboxFlagSources(state, sources, shouldBlackBox) {
+function updateSourcesBlackboxState(state, blackboxSources) {
   const sourcesToUpdate = [];
 
-  for (const source of sources) {
+  for (const { source } of blackboxSources) {
     if (!hasResource(state.sources, source.id)) {
       
       
       continue;
     }
 
+    
+    
+    const isBlackBoxed = !!state.blackboxedRanges[source.url];
     sourcesToUpdate.push({
       id: source.id,
-      isBlackBoxed: shouldBlackBox,
+      isBlackBoxed,
     });
   }
   state.sources = updateResources(state.sources, sourcesToUpdate);
@@ -449,30 +428,81 @@ function updateBlackboxFlagSources(state, sources, shouldBlackBox) {
   return state;
 }
 
-function updateBlackboxTabs(tabs, url, isBlackBoxed) {
-  const i = tabs.indexOf(url);
-  if (i >= 0) {
-    if (!isBlackBoxed) {
-      tabs.splice(i, 1);
+function updateBlackboxRangesForSourceUrl(
+  currentRanges,
+  url,
+  shouldBlackBox,
+  newRanges
+) {
+  if (shouldBlackBox) {
+    
+    
+    if (!newRanges.length) {
+      currentRanges[url] = [];
+    } else {
+      currentRanges[url] = currentRanges[url] || [];
+      newRanges.forEach(newRange => {
+        
+        
+        const duplicate = currentRanges[url].findIndex(
+          r =>
+            r.start.line == newRange.start.line &&
+            r.end.line == newRange.end.line
+        );
+        if (duplicate !== -1) {
+          return;
+        }
+        
+        const index = currentRanges[url].findIndex(
+          range =>
+            range.end.line <= newRange.start.line &&
+            range.end.column <= newRange.start.column
+        );
+        currentRanges[url].splice(index + 1, 0, newRange);
+      });
     }
-  } else if (isBlackBoxed) {
-    tabs.push(url);
+  } else {
+    
+    
+    if (!newRanges.length) {
+      delete currentRanges[url];
+      return;
+    }
+    
+    newRanges.forEach(newRange => {
+      const index = currentRanges[url].findIndex(
+        range =>
+          range.start.line === newRange.start.line &&
+          range.end.line === newRange.end.line
+      );
+
+      if (index !== -1) {
+        currentRanges[url].splice(index, 1);
+      }
+    });
+
+    
+    if (currentRanges[url].length == 0) {
+      delete currentRanges[url];
+    }
   }
 }
 
-function updateBlackBoxList(state, url, isBlackBoxed) {
-  const tabs = [...state.tabsBlackBoxed];
-  updateBlackboxTabs(tabs, url, isBlackBoxed);
-  return { ...state, tabsBlackBoxed: tabs };
-}
 
-function updateBlackBoxListSources(state, sources, shouldBlackBox) {
-  const tabs = [...state.tabsBlackBoxed];
 
-  sources.forEach(source => {
-    updateBlackboxTabs(tabs, source.url, shouldBlackBox);
-  });
-  return { ...state, tabsBlackBoxed: tabs };
+
+
+function updateBlackBoxState(state, blackboxSources) {
+  const currentRanges = { ...state.blackboxedRanges };
+  blackboxSources.map(({ source, shouldBlackBox, ranges }) =>
+    updateBlackboxRangesForSourceUrl(
+      currentRanges,
+      source.url,
+      shouldBlackBox,
+      ranges
+    )
+  );
+  return { ...state, blackboxedRanges: currentRanges };
 }
 
 
@@ -925,8 +955,8 @@ export function isSourceLoadingOrLoaded(state, sourceId) {
   return content !== null;
 }
 
-export function getBlackBoxList(state) {
-  return state.sources.tabsBlackBoxed;
+export function getBlackBoxRanges(state) {
+  return state.sources.blackboxedRanges;
 }
 
 export default update;

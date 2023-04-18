@@ -13,86 +13,104 @@ import { getSourceActorsForSource } from "../../selectors";
 
 import { PROMISE } from "../utils/middleware/promise";
 
-async function blackboxActors(state, client, sourceId, isBlackBoxed, range) {
-  for (const actor of getSourceActorsForSource(state, sourceId)) {
-    await client.blackBox(actor, isBlackBoxed, range);
+async function blackboxSourceActors(
+  thunkArgs,
+  sources,
+  shouldBlackBox,
+  ranges
+) {
+  const { getState, client, sourceMaps } = thunkArgs;
+  const blackboxSources = await Promise.all(
+    sources.map(async source => {
+      let sourceId = source.id;
+      
+      
+      
+      if (isOriginalId(source.id)) {
+        sourceId = originalToGeneratedId(source.id);
+        ranges = [await sourceMaps.getFileGeneratedRange(source.id)];
+        if (ranges.length) {
+          
+          
+          
+          console.warn(
+            "The might be unxpected issues when ignoring lines in an original file."
+          );
+        }
+      }
+
+      for (const actor of getSourceActorsForSource(getState(), sourceId)) {
+        await client.blackBox(actor, shouldBlackBox, ranges);
+      }
+
+      return { source, shouldBlackBox, ranges };
+    })
+  );
+
+  if (shouldBlackBox) {
+    recordEvent("blackbox");
   }
-  return { isBlackBoxed: !isBlackBoxed };
+
+  return { blackboxSources };
 }
 
-async function getBlackboxRangeForSource(source, sourceMaps) {
-  let sourceId = source.id,
-    range;
 
-  
-  
-  
-  
-  
-  if (isOriginalId(source.id)) {
-    range = await sourceMaps.getFileGeneratedRange(source.id);
-    sourceId = originalToGeneratedId(source.id);
-  }
-  return { sourceId, range };
-}
 
-export function toggleBlackBox(cx, source) {
-  return async ({ dispatch, getState, client, sourceMaps }) => {
-    const { isBlackBoxed } = source;
 
-    if (!isBlackBoxed) {
-      recordEvent("blackbox");
-    }
 
-    const { sourceId, range } = await getBlackboxRangeForSource(
-      source,
-      sourceMaps
-    );
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function toggleBlackBox(cx, source, shouldBlackBox, ranges) {
+  return async thunkArgs => {
+    const { dispatch } = thunkArgs;
+    shouldBlackBox =
+      typeof shouldBlackBox == "boolean"
+        ? shouldBlackBox
+        : !source.isBlackBoxed;
 
     return dispatch({
       type: "BLACKBOX",
       cx,
-      source,
-      [PROMISE]: blackboxActors(
-        getState(),
-        client,
-        sourceId,
-        isBlackBoxed,
-        range
+      [PROMISE]: blackboxSourceActors(
+        thunkArgs,
+        [source],
+        shouldBlackBox,
+        ranges ? ranges : []
       ),
     });
   };
 }
 
+
+
+
+
+
+
+
 export function blackBoxSources(cx, sourcesToBlackBox, shouldBlackBox) {
-  return async ({ dispatch, getState, client, sourceMaps }) => {
-    const state = getState();
+  return async thunkArgs => {
+    const { dispatch } = thunkArgs;
+
     const sources = sourcesToBlackBox.filter(
       source => source.isBlackBoxed !== shouldBlackBox
     );
 
-    if (shouldBlackBox) {
-      recordEvent("blackbox");
-    }
-
-    const promises = [
-      ...sources.map(async source => {
-        const { sourceId, range } = await getBlackboxRangeForSource(
-          source,
-          sourceMaps
-        );
-
-        return getSourceActorsForSource(state, sourceId).map(actor =>
-          client.blackBox(actor, source.isBlackBoxed, range)
-        );
-      }),
-    ];
-
     return dispatch({
-      type: "BLACKBOX_SOURCES",
+      type: "BLACKBOX",
       cx,
-      shouldBlackBox,
-      [PROMISE]: Promise.all(promises).then(() => ({ sources })),
+      [PROMISE]: blackboxSourceActors(thunkArgs, sources, shouldBlackBox, []),
     });
   };
 }

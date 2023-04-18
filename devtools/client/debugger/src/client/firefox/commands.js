@@ -318,12 +318,24 @@ async function pauseOnExceptions(
   });
 }
 
-async function blackBox(sourceActor, isBlackBoxed, range) {
+async function blackBox(sourceActor, shouldBlackBox, ranges) {
   const sourceFront = currentThreadFront().source({ actor: sourceActor.actor });
-  if (isBlackBoxed) {
-    await sourceFront.unblackBox(range);
-  } else {
+  
+  if (!ranges.length) {
+    await toggleBlackBoxSourceFront(sourceFront, shouldBlackBox);
+    return;
+  }
+  
+  for (const range of ranges) {
+    await toggleBlackBoxSourceFront(sourceFront, shouldBlackBox, range);
+  }
+}
+
+async function toggleBlackBoxSourceFront(sourceFront, shouldBlackBox, range) {
+  if (shouldBlackBox) {
     await sourceFront.blackBox(range);
+  } else {
+    await sourceFront.unblackBox(range);
   }
 }
 
