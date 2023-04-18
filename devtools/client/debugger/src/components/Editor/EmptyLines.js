@@ -42,7 +42,10 @@ class EmptyLines extends Component {
   shouldComponentUpdate(nextProps) {
     const { breakableLines, selectedSource } = this.props;
     return (
-      breakableLines != nextProps.breakableLines ||
+      
+      
+      
+      breakableLines.size != nextProps.breakableLines.size ||
       selectedSource.id != nextProps.selectedSource.id
     );
   }

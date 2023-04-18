@@ -377,7 +377,7 @@ export function getBreakableLines(state, sourceId) {
 
   
   
-  return getBreakableLinesForSourceActors(state, sourceActorIDs);
+  return getBreakableLinesForSourceActors(state, sourceActorIDs, source.isHTML);
 }
 
 export const getSelectedBreakableLines = createSelector(
