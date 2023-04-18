@@ -19,8 +19,7 @@
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/MediaQueryListBinding.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class MediaList;
 
@@ -97,7 +96,6 @@ class MediaQueryList final : public DOMEventTargetHelper,
   bool mMatchesValid;
 };
 
-}  
 }  
 
 #endif 

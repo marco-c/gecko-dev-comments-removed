@@ -13,8 +13,7 @@
 
 class nsIDivertableChannel;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class BrowserChild;
 
@@ -40,7 +39,6 @@ class ExternalHelperAppChild : public PExternalHelperAppChild,
   nsresult mStatus;
 };
 
-}  
 }  
 
 #endif  
