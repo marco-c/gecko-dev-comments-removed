@@ -152,39 +152,42 @@ async function pickNodeInContentPage(
   browserElementSelector,
   contentElementSelector
 ) {
-  await ToolboxTask.spawn(contentElementSelector, async _selector => {
-    const onPickerStarted = gToolbox.nodePicker.once("picker-started");
+  await ToolboxTask.spawn(
+    JSON.stringify(contentElementSelector),
+    async _selector => {
+      const onPickerStarted = gToolbox.nodePicker.once("picker-started");
 
-    
-    
-    
-    
-    const onPickerReady = new Promise(resolve => {
-      gToolbox.nodePicker.on(
-        "inspector-front-ready-for-picker",
-        async function onFrontReady(walker) {
-          if (await walker.querySelector(walker.rootNode, _selector)) {
-            gToolbox.nodePicker.off(
-              "inspector-front-ready-for-picker",
-              onFrontReady
-            );
-            resolve();
+      
+      
+      
+      
+      const onPickerReady = new Promise(resolve => {
+        gToolbox.nodePicker.on(
+          "inspector-front-ready-for-picker",
+          async function onFrontReady(walker) {
+            if (await walker.querySelector(walker.rootNode, _selector)) {
+              gToolbox.nodePicker.off(
+                "inspector-front-ready-for-picker",
+                onFrontReady
+              );
+              resolve();
+            }
           }
-        }
-      );
-    });
+        );
+      });
 
-    gToolbox.nodePicker.start();
-    await onPickerStarted;
-    await onPickerReady;
+      gToolbox.nodePicker.start();
+      await onPickerStarted;
+      await onPickerReady;
 
-    const inspector = gToolbox.getPanel("inspector");
+      const inspector = gToolbox.getPanel("inspector");
 
-    
-    
-    this.onPickerStopped = gToolbox.nodePicker.once("picker-stopped");
-    this.onInspectorUpdated = inspector.once("inspector-updated");
-  });
+      
+      
+      this.onPickerStopped = gToolbox.nodePicker.once("picker-stopped");
+      this.onInspectorUpdated = inspector.once("inspector-updated");
+    }
+  );
 
   
   const { x, y } = await SpecialPowers.spawn(

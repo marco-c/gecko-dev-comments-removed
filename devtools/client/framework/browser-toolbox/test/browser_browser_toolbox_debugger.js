@@ -68,7 +68,7 @@ add_task(async function runTest() {
   
   const interval = setInterval(s.plop, 1000);
 
-  await ToolboxTask.spawn(testUrl, async _testUrl => {
+  await ToolboxTask.spawn(`"${testUrl}"`, async _testUrl => {
     
 
 
@@ -171,7 +171,7 @@ add_task(async function runTest() {
     );
     content.interval = content.setInterval(s.foo, 1000);
   });
-  await ToolboxTask.spawn(testUrl2, async _testUrl => {
+  await ToolboxTask.spawn(`"${testUrl2}"`, async _testUrl => {
     const dbg = createDebuggerContext(gToolbox);
 
     const fileName = _testUrl.match(/content-process-test.*\.js/)[0];

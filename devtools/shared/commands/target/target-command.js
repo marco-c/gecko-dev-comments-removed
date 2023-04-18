@@ -8,10 +8,6 @@ const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
 
 const BROWSERTOOLBOX_FISSION_ENABLED = "devtools.browsertoolbox.fission";
-const BROWSERTOOLBOX_SCOPE_PREF = "devtools.browsertoolbox.scope";
-
-const BROWSERTOOLBOX_SCOPE_EVERYTHING = "everything";
-const BROWSERTOOLBOX_SCOPE_PARENTPROCESS = "parent-process";
 
 class TargetCommand extends EventEmitter {
   #selectedTargetFront;
@@ -42,14 +38,6 @@ class TargetCommand extends EventEmitter {
     this.descriptorFront = descriptorFront;
     this.rootFront = descriptorFront.client.mainRoot;
 
-    this._updateBrowserToolboxScope = this._updateBrowserToolboxScope.bind(
-      this
-    );
-
-    Services.prefs.addObserver(
-      BROWSERTOOLBOX_SCOPE_PREF,
-      this._updateBrowserToolboxScope
-    );
     
     
     this.onLocalTabRemotenessChange = this.onLocalTabRemotenessChange.bind(
@@ -111,40 +99,6 @@ class TargetCommand extends EventEmitter {
 
   get selectedTargetFront() {
     return this.#selectedTargetFront || this.targetFront;
-  }
-
-  
-
-
-
-
-
-  _updateBrowserToolboxScope() {
-    const fissionBrowserToolboxEnabled = Services.prefs.getBoolPref(
-      BROWSERTOOLBOX_FISSION_ENABLED
-    );
-    if (!fissionBrowserToolboxEnabled) {
-      return;
-    }
-    const browserToolboxScope = Services.prefs.getCharPref(
-      BROWSERTOOLBOX_SCOPE_PREF
-    );
-    if (browserToolboxScope == BROWSERTOOLBOX_SCOPE_EVERYTHING) {
-      
-      this.startListening();
-    } else if (browserToolboxScope == BROWSERTOOLBOX_SCOPE_PARENTPROCESS) {
-      const disabledTargetTypes = [
-        TargetCommand.TYPES.FRAME,
-        TargetCommand.TYPES.PROCESS,
-      ];
-      
-      
-      
-      
-      for (const type of disabledTargetTypes) {
-        this.stopListeningForType(type, { isTargetSwitching: false });
-      }
-    }
   }
 
   
@@ -542,13 +496,7 @@ class TargetCommand extends EventEmitter {
       const fissionBrowserToolboxEnabled = Services.prefs.getBoolPref(
         BROWSERTOOLBOX_FISSION_ENABLED
       );
-      const browserToolboxScope = Services.prefs.getCharPref(
-        BROWSERTOOLBOX_SCOPE_PREF
-      );
-      if (
-        fissionBrowserToolboxEnabled &&
-        browserToolboxScope == BROWSERTOOLBOX_SCOPE_EVERYTHING
-      ) {
+      if (fissionBrowserToolboxEnabled) {
         types = TargetCommand.ALL_TYPES;
       }
     }
@@ -594,31 +542,27 @@ class TargetCommand extends EventEmitter {
     }
 
     for (const type of TargetCommand.ALL_TYPES) {
-      this.stopListeningForType(type, { isTargetSwitching });
-    }
-  }
-
-  stopListeningForType(type, { isTargetSwitching }) {
-    if (!this._isListening(type)) {
-      return;
-    }
-    this._setListening(type, false);
-
-    
-    
-    if (this.hasTargetWatcherSupport(type)) {
-      
-      
-      
-      
-      
-      if (!isTargetSwitching && !this.watcherFront.isDestroyed()) {
-        this.watcherFront.unwatchTargets(type);
+      if (!this._isListening(type)) {
+        continue;
       }
-    } else if (this.legacyImplementation[type]) {
-      this.legacyImplementation[type].unlisten({ isTargetSwitching });
-    } else {
-      throw new Error(`Unsupported target type '${type}'`);
+      this._setListening(type, false);
+
+      
+      
+      if (this.hasTargetWatcherSupport(type)) {
+        
+        
+        
+        
+        
+        if (!isTargetSwitching && !this.watcherFront.isDestroyed()) {
+          this.watcherFront.unwatchTargets(type);
+        }
+      } else if (this.legacyImplementation[type]) {
+        this.legacyImplementation[type].unlisten({ isTargetSwitching });
+      } else {
+        throw new Error(`Unsupported target type '${type}'`);
+      }
     }
   }
 
@@ -1092,11 +1036,6 @@ class TargetCommand extends EventEmitter {
 
     this.#selectedTargetFront = null;
     this._isDestroyed = true;
-
-    Services.prefs.removeObserver(
-      BROWSERTOOLBOX_SCOPE_PREF,
-      this._updateBrowserToolboxScope
-    );
   }
 }
 

@@ -458,7 +458,9 @@ add_task(async function testSourceTreeNamesForWebExtensions() {
     assertSourceTreeNode,
   });
 
-  await ToolboxTask.spawn(selectors, async _selectors => {
+  
+  
+  await ToolboxTask.spawn(JSON.stringify(selectors), async _selectors => {
     this.selectors = _selectors;
   });
 
