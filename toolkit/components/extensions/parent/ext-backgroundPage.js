@@ -398,7 +398,7 @@ this.backgroundPage = class extends ExtensionAPI {
       ignoreDevToolsAttached = false,
     } = {}) => {
       await bgStartupPromise;
-      if (!this.extension) {
+      if (!this.extension || this.extension.hasShutdown) {
         
         return;
       }
