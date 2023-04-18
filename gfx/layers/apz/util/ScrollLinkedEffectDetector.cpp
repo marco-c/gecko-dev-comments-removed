@@ -25,8 +25,9 @@ void ScrollLinkedEffectDetector::PositioningPropertyMutated() {
   }
 }
 
-ScrollLinkedEffectDetector::ScrollLinkedEffectDetector(dom::Document* aDoc)
-    : mDocument(aDoc) {
+ScrollLinkedEffectDetector::ScrollLinkedEffectDetector(
+    dom::Document* aDoc, const TimeStamp& aTimeStamp)
+    : mDocument(aDoc), mTimeStamp(aTimeStamp) {
   MOZ_ASSERT(NS_IsMainThread());
   sDepth++;
 }
@@ -37,7 +38,7 @@ ScrollLinkedEffectDetector::~ScrollLinkedEffectDetector() {
     
     
     if (sFoundScrollLinkedEffect) {
-      mDocument->ReportHasScrollLinkedEffect();
+      mDocument->ReportHasScrollLinkedEffect(mTimeStamp);
       sFoundScrollLinkedEffect = false;
     }
   }
