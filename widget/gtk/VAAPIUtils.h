@@ -1,0 +1,11 @@
+
+
+
+
+
+
+namespace mozilla::widget {
+
+bool VAAPIIsSupported();
+
+}
