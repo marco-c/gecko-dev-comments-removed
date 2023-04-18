@@ -23,6 +23,20 @@ function moveFile(src, dest) {
   rimraf.sync(src);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 (async function bundle() {
   process.env.TARGET = "firefox-panel";
   process.env.OUTPUT_PATH = bundlePath;
