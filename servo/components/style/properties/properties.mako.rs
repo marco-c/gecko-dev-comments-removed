@@ -267,6 +267,9 @@ pub enum PropertyDeclaration {
     % endfor
 }
 
+
+size_of_test!(PropertyDeclaration, 32);
+
 #[repr(C)]
 struct PropertyDeclarationVariantRepr<T> {
     tag: u16,
@@ -2599,6 +2602,10 @@ pub struct SourcePropertyDeclaration {
     all_shorthand: AllShorthand,
 }
 
+
+
+size_of_test!(SourcePropertyDeclaration, 600);
+
 impl SourcePropertyDeclaration {
     
     #[inline]
@@ -4221,6 +4228,11 @@ macro_rules! longhand_properties_idents {
         }
     }
 }
+
+
+size_of_test!(ComputedValues, 232);
+
+size_of_test!(Option<Arc<ComputedValues>>, 8);
 
 
 

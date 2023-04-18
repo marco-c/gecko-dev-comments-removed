@@ -3131,6 +3131,12 @@ impl Rule {
 }
 
 
+
+
+
+size_of_test!(Rule, 40);
+
+
 pub fn needs_revalidation_for_testing(s: &Selector<SelectorImpl>) -> bool {
     let mut attribute_dependencies = Default::default();
     let mut mapped_ids = Default::default();

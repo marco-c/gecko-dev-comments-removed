@@ -204,9 +204,6 @@ impl RuleTree {
 const RULE_TREE_GC_INTERVAL: usize = 300;
 
 
-pub const RULE_NODE_SIZE: usize = std::mem::size_of::<RuleNode>();
-
-
 struct RuleNode {
     
     root: Option<WeakRuleNode>,
@@ -768,3 +765,8 @@ impl hash::Hash for StrongRuleNode {
         (&*self.p as *const RuleNode).hash(state)
     }
 }
+
+
+size_of_test!(RuleNode, 80);
+
+size_of_test!(Option<StrongRuleNode>, 8);

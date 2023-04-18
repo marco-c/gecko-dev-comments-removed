@@ -40,6 +40,9 @@ pub type Image =
     generic::Image<Gradient, MozImageRect, SpecifiedImageUrl, Color, Percentage, Resolution>;
 
 
+size_of_test!(Image, 16);
+
+
 
 pub type Gradient = generic::Gradient<
     LineDirection,

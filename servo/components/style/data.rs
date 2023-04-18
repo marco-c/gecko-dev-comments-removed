@@ -159,6 +159,9 @@ pub struct ElementStyles {
     pub pseudos: EagerPseudoStyles,
 }
 
+
+size_of_test!(ElementStyles, 16);
+
 impl ElementStyles {
     
     pub fn get_primary(&self) -> Option<&Arc<ComputedValues>> {
@@ -248,6 +251,9 @@ pub struct ElementData {
     
     pub flags: ElementDataFlags,
 }
+
+
+size_of_test!(ElementData, 24);
 
 
 #[derive(Debug)]
