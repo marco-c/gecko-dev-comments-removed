@@ -5,6 +5,11 @@
 
 
 
+let gLeftEdge = 0;
+let gTopEdge = 0;
+
+
+
 
 
 
@@ -59,7 +64,7 @@ async function testVideo(browser, videoID, pipWin, { pinX, pinY } = {}) {
     newWidth,
     newHeight
   ) {
-    if (pinX || previousScreenX == 0) {
+    if (pinX || previousScreenX == gLeftEdge) {
       Assert.equal(
         previousScreenX,
         newScreenX,
@@ -208,6 +213,31 @@ async function testVideo(browser, videoID, pipWin, { pinX, pinY } = {}) {
   );
 }
 
+add_setup(async () => {
+  await BrowserTestUtils.withNewTab(
+    {
+      url: TEST_PAGE,
+      gBrowser,
+    },
+    async browser => {
+      
+      
+      
+      let clearWin = await triggerPictureInPicture(browser, "with-controls");
+      let initialScreenX = clearWin.mozInnerScreenX;
+      let initialScreenY = clearWin.mozInnerScreenY;
+      let PiPScreen = PictureInPicture.getWorkingScreen(
+        initialScreenX,
+        initialScreenY
+      );
+      [gLeftEdge, gTopEdge] = PictureInPicture.getAvailScreenSize(PiPScreen);
+      clearWin.moveTo(gLeftEdge, gTopEdge);
+
+      await BrowserTestUtils.closeWindow(clearWin);
+    }
+  );
+});
+
 
 
 
@@ -226,7 +256,7 @@ add_task(async () => {
 
         await testVideo(browser, videoID, pipWin);
 
-        pipWin.moveTo(0, 0);
+        pipWin.moveTo(gLeftEdge, gTopEdge);
 
         await testVideo(browser, videoID, pipWin, { pinX: true, pinY: true });
 
