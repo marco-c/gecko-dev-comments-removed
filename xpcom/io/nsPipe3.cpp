@@ -159,18 +159,22 @@ struct nsPipeReadState {
         mActiveRead(false),
         mNeedDrain(false) {}
 
-  char* mReadCursor;
-  char* mReadLimit;
-  int32_t mSegment;
-  uint32_t mAvailable;
+  
+  
+  
+  
+  char* mReadCursor GUARDED_VAR;
+  char* mReadLimit GUARDED_VAR;
+  int32_t mSegment GUARDED_VAR;
+  uint32_t mAvailable GUARDED_VAR;
 
   
-  bool mActiveRead;
+  bool mActiveRead GUARDED_VAR;
 
   
   
   
-  bool mNeedDrain;
+  bool mNeedDrain GUARDED_VAR;
 };
 
 
@@ -211,10 +215,9 @@ class nsPipeInputStream final : public nsIAsyncInputStream,
         mReadState(aOther.mReadState),
         mPriority(nsIRunnablePriority::PRIORITY_NORMAL) {}
 
-  nsresult Fill();
   void SetNonBlocking(bool aNonBlocking) { mBlocking = !aNonBlocking; }
 
-  uint32_t Available();
+  uint32_t Available() REQUIRES(Monitor());
 
   
   nsresult Wait();
@@ -223,9 +226,11 @@ class nsPipeInputStream final : public nsIAsyncInputStream,
   
   
   MonitorAction OnInputReadable(uint32_t aBytesWritten, nsPipeEvents&,
-                                const ReentrantMonitorAutoEnter& ev);
+                                const ReentrantMonitorAutoEnter& ev)
+      REQUIRES(Monitor());
   MonitorAction OnInputException(nsresult, nsPipeEvents&,
-                                 const ReentrantMonitorAutoEnter& ev);
+                                 const ReentrantMonitorAutoEnter& ev)
+      REQUIRES(Monitor());
 
   nsPipeReadState& ReadState() { return mReadState; }
 
@@ -234,14 +239,18 @@ class nsPipeInputStream final : public nsIAsyncInputStream,
   nsresult Status() const;
 
   
-  nsresult Status(const ReentrantMonitorAutoEnter& ev) const;
+  nsresult Status(const ReentrantMonitorAutoEnter& ev) const
+      REQUIRES(Monitor());
 
   
   
   
-  nsresult InputStatus(const ReentrantMonitorAutoEnter&) const {
+  nsresult InputStatus(const ReentrantMonitorAutoEnter&) const
+      REQUIRES(Monitor()) {
     return mInputStatus;
   }
+
+  ReentrantMonitor& Monitor() const;
 
  private:
   virtual ~nsPipeInputStream();
@@ -252,13 +261,14 @@ class nsPipeInputStream final : public nsIAsyncInputStream,
   
   
   
-  nsresult mInputStatus;
+  nsresult mInputStatus GUARDED_BY(Monitor());
   bool mBlocking;
 
   
-  bool mBlocked;
-  CallbackHolder mCallback;
+  bool mBlocked GUARDED_BY(Monitor());
+  CallbackHolder mCallback GUARDED_BY(Monitor());
 
+  
   
   nsPipeReadState mReadState;
   Atomic<uint32_t, Relaxed> mPriority;
@@ -289,13 +299,17 @@ class nsPipeOutputStream : public nsIAsyncOutputStream, public nsIClassInfo {
         mWritable(true) {}
 
   void SetNonBlocking(bool aNonBlocking) { mBlocking = !aNonBlocking; }
-  void SetWritable(bool aWritable) { mWritable = aWritable; }
+  void SetWritable(bool aWritable) REQUIRES(Monitor()) {
+    mWritable = aWritable;
+  }
 
   
   nsresult Wait();
 
-  MonitorAction OnOutputWritable(nsPipeEvents&);
-  MonitorAction OnOutputException(nsresult, nsPipeEvents&);
+  MonitorAction OnOutputWritable(nsPipeEvents&) REQUIRES(Monitor());
+  MonitorAction OnOutputException(nsresult, nsPipeEvents&) REQUIRES(Monitor());
+
+  ReentrantMonitor& Monitor() const;
 
  private:
   nsPipe* mPipe;
@@ -306,9 +320,9 @@ class nsPipeOutputStream : public nsIAsyncOutputStream, public nsIClassInfo {
   bool mBlocking;
 
   
-  bool mBlocked;
-  bool mWritable;
-  CallbackHolder mCallback;
+  bool mBlocked GUARDED_BY(Monitor());
+  bool mWritable GUARDED_BY(Monitor());
+  CallbackHolder mCallback GUARDED_BY(Monitor());
 };
 
 
@@ -336,19 +350,23 @@ class nsPipe final {
   
 
   void PeekSegment(const nsPipeReadState& aReadState, uint32_t aIndex,
-                   char*& aCursor, char*& aLimit);
+                   char*& aCursor, char*& aLimit) REQUIRES(mReentrantMonitor);
   SegmentChangeResult AdvanceReadSegment(nsPipeReadState& aReadState,
-                                         const ReentrantMonitorAutoEnter& ev);
-  bool ReadSegmentBeingWritten(nsPipeReadState& aReadState);
-  uint32_t CountSegmentReferences(int32_t aSegment);
-  void SetAllNullReadCursors();
-  bool AllReadCursorsMatchWriteCursor();
-  void RollBackAllReadCursors(char* aWriteCursor);
-  void UpdateAllReadCursors(char* aWriteCursor);
-  void ValidateAllReadCursors();
+                                         const ReentrantMonitorAutoEnter& ev)
+      REQUIRES(mReentrantMonitor);
+  bool ReadSegmentBeingWritten(nsPipeReadState& aReadState)
+      REQUIRES(mReentrantMonitor);
+  uint32_t CountSegmentReferences(int32_t aSegment) REQUIRES(mReentrantMonitor);
+  void SetAllNullReadCursors() REQUIRES(mReentrantMonitor);
+  bool AllReadCursorsMatchWriteCursor() REQUIRES(mReentrantMonitor);
+  void RollBackAllReadCursors(char* aWriteCursor) REQUIRES(mReentrantMonitor);
+  void UpdateAllReadCursors(char* aWriteCursor) REQUIRES(mReentrantMonitor);
+  void ValidateAllReadCursors() REQUIRES(mReentrantMonitor);
   uint32_t GetBufferSegmentCount(const nsPipeReadState& aReadState,
-                                 const ReentrantMonitorAutoEnter& ev) const;
-  bool IsAdvanceBufferFull(const ReentrantMonitorAutoEnter& ev) const;
+                                 const ReentrantMonitorAutoEnter& ev) const
+      REQUIRES(mReentrantMonitor);
+  bool IsAdvanceBufferFull(const ReentrantMonitorAutoEnter& ev) const
+      REQUIRES(mReentrantMonitor);
 
   
   
@@ -379,23 +397,41 @@ class nsPipe final {
   
   
   
-  nsTArray<nsPipeInputStream*> mInputList;
+  nsTArray<nsPipeInputStream*> mInputList GUARDED_BY(mReentrantMonitor);
 
-  ReentrantMonitor mReentrantMonitor MOZ_UNANNOTATED;
-  nsSegmentedBuffer mBuffer;
-
-  
-  
-  
-  uint32_t mMaxAdvanceBufferSegmentCount;
-
-  int32_t mWriteSegment;
-  char* mWriteCursor;
-  char* mWriteLimit;
+  ReentrantMonitor mReentrantMonitor;
+  nsSegmentedBuffer mBuffer GUARDED_BY(mReentrantMonitor);
 
   
-  nsresult mStatus;
+  
+  
+  uint32_t mMaxAdvanceBufferSegmentCount GUARDED_BY(mReentrantMonitor);
+
+  int32_t mWriteSegment GUARDED_BY(mReentrantMonitor);
+  char* mWriteCursor GUARDED_BY(mReentrantMonitor);
+  char* mWriteLimit GUARDED_BY(mReentrantMonitor);
+
+  
+  nsresult mStatus GUARDED_BY(mReentrantMonitor);
 };
+
+
+
+
+
+
+
+
+
+ReentrantMonitor& nsPipeOutputStream::Monitor() const
+    RETURN_CAPABILITY(mPipe->mReentrantMonitor) {
+  return mPipe->mReentrantMonitor;
+}
+
+ReentrantMonitor& nsPipeInputStream::Monitor() const
+    RETURN_CAPABILITY(mPipe->mReentrantMonitor) {
+  return mPipe->mReentrantMonitor;
+}
 
 
 
@@ -626,6 +662,7 @@ void nsPipe::AdvanceReadCursor(nsPipeReadState& aReadState,
         !ReadSegmentBeingWritten(aReadState)) {
       
       
+      mOutput.Monitor().AssertCurrentThreadIn();
       if (AdvanceReadSegment(aReadState, mon) == SegmentAdvanceBufferRead &&
           mOutput.OnOutputWritable(events) == NotifyMonitor) {
         mon.NotifyAll();
@@ -752,6 +789,7 @@ void nsPipe::DrainInputStream(nsPipeReadState& aReadState,
 
   
   
+  mOutput.Monitor().AssertCurrentThreadIn();
   if (!IsAdvanceBufferFull(mon) &&
       mOutput.OnOutputWritable(aEvents) == NotifyMonitor) {
     mon.NotifyAll();
@@ -834,12 +872,14 @@ void nsPipe::AdvanceWriteCursor(uint32_t aBytesWritten) {
 
     
     if (mWriteCursor == mWriteLimit) {
+      mOutput.Monitor().AssertCurrentThreadIn();
       mOutput.SetWritable(!IsAdvanceBufferFull(mon));
     }
 
     
     bool needNotify = false;
     for (uint32_t i = 0; i < mInputList.Length(); ++i) {
+      mInputList[i]->Monitor().AssertCurrentThreadIn();
       if (mInputList[i]->OnInputReadable(aBytesWritten, events, mon) ==
           NotifyMonitor) {
         needNotify = true;
@@ -881,6 +921,7 @@ void nsPipe::OnInputStreamException(nsPipeInputStream* aStream,
         continue;
       }
 
+      mInputList[i]->Monitor().AssertCurrentThreadIn();
       MonitorAction action =
           mInputList[i]->OnInputException(aReason, events, mon);
 
@@ -917,6 +958,7 @@ void nsPipe::OnPipeException(nsresult aReason, bool aOutputOnly) {
     for (uint32_t i = 0; i < list.Length(); ++i) {
       
       
+      list[i]->Monitor().AssertCurrentThreadIn();
       if (aOutputOnly && list[i]->Available()) {
         continue;
       }
@@ -926,6 +968,7 @@ void nsPipe::OnPipeException(nsresult aReason, bool aOutputOnly) {
       }
     }
 
+    mOutput.Monitor().AssertCurrentThreadIn();
     if (mOutput.OnOutputException(aReason, events) == NotifyMonitor) {
       needNotify = true;
     }
@@ -942,6 +985,7 @@ nsresult nsPipe::CloneInputStream(nsPipeInputStream* aOriginal,
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
   RefPtr<nsPipeInputStream> ref = new nsPipeInputStream(*aOriginal);
   
+  ref->Monitor().AssertCurrentThreadIn();
   if (NS_SUCCEEDED(ref->InputStatus(mon))) {
     mInputList.AppendElement(ref);
   }
@@ -1074,6 +1118,7 @@ bool nsPipe::IsAdvanceBufferFull(const ReentrantMonitorAutoEnter& ev) const {
   uint32_t minBufferSegments = UINT32_MAX;
   for (uint32_t i = 0; i < mInputList.Length(); ++i) {
     
+    mInputList[i]->Monitor().AssertCurrentThreadIn();
     if (NS_FAILED(mInputList[i]->Status(ev))) {
       continue;
     }
@@ -1750,10 +1795,12 @@ nsresult NS_NewPipe(nsIInputStream** aPipeIn, nsIOutputStream** aPipeOut,
   return NS_OK;
 }
 
+
+
 nsresult NS_NewPipe2(nsIAsyncInputStream** aPipeIn,
                      nsIAsyncOutputStream** aPipeOut, bool aNonBlockingInput,
                      bool aNonBlockingOutput, uint32_t aSegmentSize,
-                     uint32_t aSegmentCount) {
+                     uint32_t aSegmentCount) NO_THREAD_SAFETY_ANALYSIS {
   RefPtr<nsPipe> pipe =
       new nsPipe(aSegmentSize ? aSegmentSize : DEFAULT_SEGMENT_SIZE,
                  aSegmentCount ? aSegmentCount : DEFAULT_SEGMENT_COUNT);
