@@ -22,9 +22,6 @@ using namespace mozilla;
 using namespace mozilla::widget;
 
 
-static NS_DEFINE_IID(kIDragServiceIID, NS_IDRAGSERVICE_IID);
-
-
 static POINTL gDragLastPoint;
 
 bool nsNativeDragTarget::gDragImageChanged = false;
@@ -39,19 +36,12 @@ nsNativeDragTarget::nsNativeDragTarget(nsIWidget* aWidget)
       mTookOwnRef(false),
       mWidget(aWidget),
       mDropTargetHelper(nullptr) {
-  static NS_DEFINE_IID(kCDragServiceCID, NS_DRAGSERVICE_CID);
-
   mHWnd = (HWND)mWidget->GetNativeData(NS_NATIVE_WINDOW);
 
-  
-
-
-  CallGetService(kCDragServiceCID, &mDragService);
+  mDragService = do_GetService("@mozilla.org/widget/dragservice;1");
 }
 
 nsNativeDragTarget::~nsNativeDragTarget() {
-  NS_RELEASE(mDragService);
-
   if (mDropTargetHelper) {
     mDropTargetHelper->Release();
     mDropTargetHelper = nullptr;
@@ -163,7 +153,7 @@ void nsNativeDragTarget::DispatchDragDropEvent(EventMessage aEventMessage,
   modifierKeyState.InitInputEvent(event);
 
   event.mInputSource =
-      static_cast<nsBaseDragService*>(mDragService)->GetInputSource();
+      static_cast<nsBaseDragService*>(mDragService.get())->GetInputSource();
 
   mWidget->DispatchInputEvent(&event);
 }
@@ -191,7 +181,7 @@ void nsNativeDragTarget::ProcessDrag(EventMessage aEventMessage,
   
   
   
-  nsDragService* dragService = static_cast<nsDragService*>(mDragService);
+  nsDragService* dragService = static_cast<nsDragService*>(mDragService.get());
   currSession->GetDragAction(&geckoAction);
 
   int32_t childDragAction = dragService->TakeChildProcessDragAction();
@@ -274,7 +264,8 @@ nsNativeDragTarget::DragEnter(LPDATAOBJECT pIDataSource, DWORD grfKeyState,
   
   
   
-  nsDragService* winDragService = static_cast<nsDragService*>(mDragService);
+  nsDragService* winDragService =
+      static_cast<nsDragService*>(mDragService.get());
   winDragService->SetIDataObject(pIDataSource);
 
   
@@ -324,7 +315,8 @@ nsNativeDragTarget::DragOver(DWORD grfKeyState, POINTL ptl, LPDWORD pdwEffect) {
       
       
       POINT pt = {ptl.x, ptl.y};
-      nsDragService* dragService = static_cast<nsDragService*>(mDragService);
+      nsDragService* dragService =
+          static_cast<nsDragService*>(mDragService.get());
       GetDropTargetHelper()->DragEnter(mHWnd, dragService->GetDataObject(), &pt,
                                        *pdwEffect);
     }
@@ -422,7 +414,8 @@ nsNativeDragTarget::Drop(LPDATAOBJECT pData, DWORD grfKeyState, POINTL aPT,
   
   
   
-  nsDragService* winDragService = static_cast<nsDragService*>(mDragService);
+  nsDragService* winDragService =
+      static_cast<nsDragService*>(mDragService.get());
   winDragService->SetIDataObject(pData);
 
   

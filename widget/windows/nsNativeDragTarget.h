@@ -89,7 +89,7 @@ class nsNativeDragTarget final : public IDropTarget {
 
   
   nsIWidget* mWidget;
-  nsIDragService* mDragService;
+  nsCOMPtr<nsIDragService> mDragService;
   
   IDropTargetHelper* GetDropTargetHelper();
 
