@@ -9,20 +9,22 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
+const lazy = {};
+
+XPCOMUtils.defineLazyGlobalGetters(lazy, ["fetch"]);
 
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "BackgroundPageThumbs",
   "resource://gre/modules/BackgroundPageThumbs.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "PageThumbs",
   "resource://gre/modules/PageThumbs.jsm"
 );
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
@@ -31,7 +33,7 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const GREY_10 = "#F9F9FA";
 
 XPCOMUtils.defineLazyPreferenceGetter(
-  this,
+  lazy,
   "gPrivilegedAboutProcessEnabled",
   "browser.tabs.remote.separatePrivilegedContentProcess",
   false
@@ -47,21 +49,21 @@ const Screenshots = {
 
   async getScreenshotForURL(url) {
     try {
-      await BackgroundPageThumbs.captureIfMissing(url, {
+      await lazy.BackgroundPageThumbs.captureIfMissing(url, {
         backgroundColor: GREY_10,
       });
 
       
       
-      if (gPrivilegedAboutProcessEnabled) {
-        return PageThumbs.getThumbnailURL(url);
+      if (lazy.gPrivilegedAboutProcessEnabled) {
+        return lazy.PageThumbs.getThumbnailURL(url);
       }
 
       
       
-      const imgPath = PageThumbs.getThumbnailPath(url);
+      const imgPath = lazy.PageThumbs.getThumbnailPath(url);
 
-      const filePathResponse = await fetch(`file://${imgPath}`);
+      const filePathResponse = await lazy.fetch(`file://${imgPath}`);
       const fileContents = await filePathResponse.blob();
 
       
@@ -81,7 +83,7 @@ const Screenshots = {
     
     
     try {
-      await PageThumbs._store(url, url, null, true);
+      await lazy.PageThumbs._store(url, url, null, true);
     } catch (err) {
       
     }
@@ -95,7 +97,7 @@ const Screenshots = {
 
   _shouldGetScreenshots() {
     for (let win of Services.wm.getEnumerator("navigator:browser")) {
-      if (!PrivateBrowsingUtils.isWindowPrivate(win)) {
+      if (!lazy.PrivateBrowsingUtils.isWindowPrivate(win)) {
         
         return true;
       }

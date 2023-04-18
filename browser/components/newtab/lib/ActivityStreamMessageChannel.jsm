@@ -4,16 +4,18 @@
 
 "use strict";
 
+const lazy = {};
+
 
 
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "AboutNewTab",
   "resource:///modules/AboutNewTab.jsm"
 );
 
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "AboutHomeStartupCache",
   "resource:///modules/BrowserGlue.jsm"
 );
@@ -116,7 +118,7 @@ class ActivityStreamMessageChannel {
   broadcast(action) {
     
     
-    AboutHomeStartupCache.onPreloadedNewTabMessage();
+    lazy.AboutHomeStartupCache.onPreloadedNewTabMessage();
 
     this.channel.sendAsyncMessage(this.outgoingMessageName, action);
   }
@@ -173,7 +175,7 @@ class ActivityStreamMessageChannel {
     
     
     
-    AboutHomeStartupCache.onPreloadedNewTabMessage();
+    lazy.AboutHomeStartupCache.onPreloadedNewTabMessage();
 
     const preloadedBrowsers = this.getPreloadedBrowser();
     if (preloadedBrowsers && action.data) {
@@ -223,7 +225,7 @@ class ActivityStreamMessageChannel {
     
     const channel =
       this.pageURL === ABOUT_NEW_TAB_URL &&
-      AboutNewTab.overridePageListener(true);
+      lazy.AboutNewTab.overridePageListener(true);
     this.channel =
       channel || new RemotePages([ABOUT_HOME_URL, ABOUT_NEW_TAB_URL]);
     this.channel.addMessageListener("RemotePage:Init", this.onNewTabInit);
@@ -260,7 +262,7 @@ class ActivityStreamMessageChannel {
       this.onMessage
     );
     if (this.pageURL === ABOUT_NEW_TAB_URL) {
-      AboutNewTab.reset(this.channel);
+      lazy.AboutNewTab.reset(this.channel);
     } else {
       this.channel.destroy();
     }

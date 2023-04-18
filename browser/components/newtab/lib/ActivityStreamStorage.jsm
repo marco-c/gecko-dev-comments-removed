@@ -1,9 +1,10 @@
+const lazy = {};
 
 
 
 
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "IndexedDB",
   "resource://gre/modules/IndexedDB.jsm"
 );
@@ -68,7 +69,7 @@ class ActivityStreamStorage {
   }
 
   _openDatabase() {
-    return IndexedDB.open(this.dbName, { version: this.dbVersion }, db => {
+    return lazy.IndexedDB.open(this.dbName, { version: this.dbVersion }, db => {
       
       
       this.storeNames.forEach(store => {
@@ -94,7 +95,7 @@ class ActivityStreamStorage {
       if (this.telemetry) {
         this.telemetry.handleUndesiredEvent({ event: "INDEXEDDB_OPEN_FAILED" });
       }
-      await IndexedDB.deleteDatabase(this.dbName);
+      await lazy.IndexedDB.deleteDatabase(this.dbName);
       return this._openDatabase();
     }
   }
