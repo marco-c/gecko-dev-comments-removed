@@ -14,7 +14,9 @@ var { XPCOMUtils } = ChromeUtils.import(
 );
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   ExtensionData: "resource://gre/modules/Extension.jsm",
   ExtensionTestCommon: "resource://testing-common/ExtensionTestCommon.jsm",
   PerTestCoverageUtils: "resource://testing-common/PerTestCoverageUtils.jsm",
@@ -672,7 +674,7 @@ class SpecialPowersParent extends JSWindowActorParent {
   }
 
   _spawnChrome(task, args, caller, imports) {
-    let sb = new SpecialPowersSandbox(
+    let sb = new lazy.SpecialPowersSandbox(
       null,
       data => {
         this.sendAsyncMessage("Assert", data);
@@ -981,7 +983,7 @@ class SpecialPowersParent extends JSWindowActorParent {
           
           
           
-          let sb = new SpecialPowersSandbox(
+          let sb = new lazy.SpecialPowersSandbox(
             scriptName,
             data => {
               this.sendAsyncMessage("Assert", data);
@@ -1067,11 +1069,11 @@ class SpecialPowersParent extends JSWindowActorParent {
         }
 
         case "SPRequestDumpCoverageCounters": {
-          return PerTestCoverageUtils.afterTest();
+          return lazy.PerTestCoverageUtils.afterTest();
         }
 
         case "SPRequestResetCoverageCounters": {
-          return PerTestCoverageUtils.beforeTest();
+          return lazy.PerTestCoverageUtils.beforeTest();
         }
 
         case "SPCheckServiceWorkers": {
@@ -1112,7 +1114,7 @@ class SpecialPowersParent extends JSWindowActorParent {
             );
           }
 
-          let extension = ExtensionTestCommon.generate(ext);
+          let extension = lazy.ExtensionTestCommon.generate(ext);
 
           let resultListener = (...args) => {
             this.sendAsyncMessage("SPExtensionMessage", {
@@ -1165,7 +1167,7 @@ class SpecialPowersParent extends JSWindowActorParent {
           
           
           
-          let extensionData = new ExtensionData(extension.rootURI);
+          let extensionData = new lazy.ExtensionData(extension.rootURI);
           return extensionData
             .loadManifest()
             .then(
@@ -1189,7 +1191,7 @@ class SpecialPowersParent extends JSWindowActorParent {
               
               
               if (extension.id) {
-                await ExtensionTestCommon.setIncognitoOverride(extension);
+                await lazy.ExtensionTestCommon.setIncognitoOverride(extension);
               }
               return extension.startup().then(
                 () => {},
@@ -1294,7 +1296,7 @@ class SpecialPowersParent extends JSWindowActorParent {
           return browsingContext.currentWindowGlobal
             .drawSnapshot(rect, 1.0, background, resetScrollPosition)
             .then(async image => {
-              let hiddenFrame = new HiddenFrame();
+              let hiddenFrame = new lazy.HiddenFrame();
               let win = await hiddenFrame.get();
 
               let canvas = win.document.createElement("canvas");
@@ -1325,11 +1327,11 @@ class SpecialPowersParent extends JSWindowActorParent {
         }
 
         case "SPRemoveAllServiceWorkers": {
-          return ServiceWorkerCleanUp.removeAll();
+          return lazy.ServiceWorkerCleanUp.removeAll();
         }
 
         case "SPRemoveServiceWorkerDataForExampleDomain": {
-          return ServiceWorkerCleanUp.removeFromHost("example.com");
+          return lazy.ServiceWorkerCleanUp.removeFromHost("example.com");
         }
 
         case "SPGenerateMediaControlKeyTestEvent": {
