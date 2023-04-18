@@ -22,7 +22,6 @@ const TEST_URL = testServer.urlFor("index.html");
 const INTEGRATION_TEST_PAGE_SOURCES = [
   "index.html",
   "script.js",
-  "onload.js",
   "test-functions.js",
   "query.js?x=1",
   "query.js?x=2",
@@ -31,14 +30,8 @@ const INTEGRATION_TEST_PAGE_SOURCES = [
   "replaced-bundle.js",
   "removed-original.js",
   "named-eval.js",
-  
   "bootstrap 3b1a221408fdde86aa49",
   "bootstrap 6fda1f7ea9ecbc1a2d5b",
-  
-  
-  "same-url.sjs",
-  "same-url.sjs",
-  "same-url.sjs",
 ];
 
 
