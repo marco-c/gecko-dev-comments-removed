@@ -4838,7 +4838,18 @@ class nsDisplayWrapList : public nsPaintedDisplayItem {
       wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
       const StackingContextHelper& aSc,
       layers::RenderRootStateManager* aManager,
-      nsDisplayListBuilder* aDisplayListBuilder) override;
+      nsDisplayListBuilder* aDisplayListBuilder) override {
+    return CreateWebRenderCommandsNewClipListOption(
+        aBuilder, aResources, aSc, aManager, aDisplayListBuilder, true);
+  }
+
+  
+  
+  bool CreateWebRenderCommandsNewClipListOption(
+      wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
+      const StackingContextHelper& aSc,
+      layers::RenderRootStateManager* aManager,
+      nsDisplayListBuilder* aDisplayListBuilder, bool aNewClipList);
 
   const ActiveScrolledRoot* GetFrameActiveScrolledRoot() {
     return mFrameActiveScrolledRoot;
