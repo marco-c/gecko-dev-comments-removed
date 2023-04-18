@@ -62,7 +62,7 @@ TEST(MediaDataDecoder, H264)
 }
 
 
-#if defined(MOZ_AV1) && defined(MOZ_WAYLAND)
+#if defined(MOZ_AV1) && defined(MOZ_WAYLAND) && defined(MOZ_FFVPX)
 TEST(MediaDataDecoder, AV1)
 {
   if (!DecoderTraits::IsMP4SupportedType(
