@@ -60,8 +60,6 @@
 
 
 
-
-
   function DevToolsWorker(url, opts) {
     opts = opts || {};
     this._worker = new ChromeWorker(url);
