@@ -757,6 +757,7 @@ function processBodies(functionName, wholeBodyAttrs)
     
     
     
+    
     const ignoreVars = new Set();
     if (functionName.match(/mozilla::dom::/)) {
         const vars = functionBodies[0].DefineVariable.filter(
@@ -765,7 +766,9 @@ function processBodies(functionName, wholeBodyAttrs)
             v => [ v.Variable.Name[0], v.Type.Name ]
         );
 
-        const holders = vars.filter(([n, t]) => n.match(/^arg\d+_holder$/) && t.match(/Argument\b/));
+        const holders = vars.filter(
+            ([n, t]) => n.match(/^arg\d+_holder$/) &&
+                        (t.includes("Argument") || t.includes("Rooter")));
         for (const [holder,] of holders) {
             ignoreVars.add(holder); 
             ignoreVars.add(holder.replace("_holder", "")); 
