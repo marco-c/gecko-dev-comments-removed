@@ -681,10 +681,10 @@ Result<RefPtr<Element>, nsresult> WhiteSpaceVisibilityKeeper::InsertBRElement(
   if (NS_WARN_IF(!textFragmentDataAtInsertionPoint.IsInitialized())) {
     return Err(NS_ERROR_FAILURE);
   }
-  const EditorDOMRange invisibleLeadingWhiteSpaceRangeOfNewLine =
+  EditorDOMRange invisibleLeadingWhiteSpaceRangeOfNewLine =
       textFragmentDataAtInsertionPoint
           .GetNewInvisibleLeadingWhiteSpaceRangeIfSplittingAt(aPointToInsert);
-  const EditorDOMRange invisibleTrailingWhiteSpaceRangeOfCurrentLine =
+  EditorDOMRange invisibleTrailingWhiteSpaceRangeOfCurrentLine =
       textFragmentDataAtInsertionPoint
           .GetNewInvisibleTrailingWhiteSpaceRangeIfSplittingAt(aPointToInsert);
   const Maybe<const VisibleWhiteSpacesData> visibleWhiteSpaces =
@@ -698,16 +698,29 @@ Result<RefPtr<Element>, nsresult> WhiteSpaceVisibilityKeeper::InsertBRElement(
           : PointPosition::NotInSameDOMTree;
 
   EditorDOMPoint pointToInsert(aPointToInsert);
-  {
-    
-    
-    AutoTrackDOMPoint tracker(aHTMLEditor.RangeUpdaterRef(), &pointToInsert);
+  EditorDOMPoint atNBSPReplacableWithSP;
+  if (!invisibleLeadingWhiteSpaceRangeOfNewLine.IsPositioned() &&
+      (pointPositionWithVisibleWhiteSpaces == PointPosition::MiddleOfFragment ||
+       pointPositionWithVisibleWhiteSpaces == PointPosition::EndOfFragment)) {
+    atNBSPReplacableWithSP =
+        textFragmentDataAtInsertionPoint
+            .GetPreviousNBSPPointIfNeedToReplaceWithASCIIWhiteSpace(
+                pointToInsert);
+  }
 
+  {
     if (invisibleTrailingWhiteSpaceRangeOfCurrentLine.IsPositioned()) {
       if (!invisibleTrailingWhiteSpaceRangeOfCurrentLine.Collapsed()) {
         
         MOZ_ASSERT(invisibleTrailingWhiteSpaceRangeOfCurrentLine.StartRef() ==
                    pointToInsert);
+        AutoTrackDOMPoint trackPointToInsert(aHTMLEditor.RangeUpdaterRef(),
+                                             &pointToInsert);
+        AutoTrackDOMPoint trackEndOfLineNBSP(aHTMLEditor.RangeUpdaterRef(),
+                                             &atNBSPReplacableWithSP);
+        AutoTrackDOMRange trackLeadingWhiteSpaceRange(
+            aHTMLEditor.RangeUpdaterRef(),
+            &invisibleLeadingWhiteSpaceRangeOfNewLine);
         nsresult rv = aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
             invisibleTrailingWhiteSpaceRangeOfCurrentLine.StartRef(),
             invisibleTrailingWhiteSpaceRangeOfCurrentLine.EndRef(),
@@ -717,6 +730,9 @@ Result<RefPtr<Element>, nsresult> WhiteSpaceVisibilityKeeper::InsertBRElement(
               "HTMLEditor::DeleteTextAndTextNodesWithTransaction() failed");
           return Err(rv);
         }
+        
+        
+        invisibleTrailingWhiteSpaceRangeOfCurrentLine.Clear();
       }
     }
     
@@ -737,6 +753,13 @@ Result<RefPtr<Element>, nsresult> WhiteSpaceVisibilityKeeper::InsertBRElement(
         if (!atPreviousCharOfNextCharOfInsertionPoint.IsSet() ||
             atPreviousCharOfNextCharOfInsertionPoint.IsEndOfContainer() ||
             !atPreviousCharOfNextCharOfInsertionPoint.IsCharASCIISpace()) {
+          AutoTrackDOMPoint trackPointToInsert(aHTMLEditor.RangeUpdaterRef(),
+                                               &pointToInsert);
+          AutoTrackDOMPoint trackEndOfLineNBSP(aHTMLEditor.RangeUpdaterRef(),
+                                               &atNBSPReplacableWithSP);
+          AutoTrackDOMRange trackLeadingWhiteSpaceRange(
+              aHTMLEditor.RangeUpdaterRef(),
+              &invisibleLeadingWhiteSpaceRangeOfNewLine);
           
           EditorRawDOMPointInText endOfCollapsibleASCIIWhiteSpaces =
               textFragmentDataAtInsertionPoint
@@ -754,18 +777,20 @@ Result<RefPtr<Element>, nsresult> WhiteSpaceVisibilityKeeper::InsertBRElement(
                 "ReplaceTextAndRemoveEmptyTextNodes() failed");
             return Err(rv);
           }
+          
+          
+          invisibleTrailingWhiteSpaceRangeOfCurrentLine.Clear();
         }
       }
     }
 
     if (invisibleLeadingWhiteSpaceRangeOfNewLine.IsPositioned()) {
       if (!invisibleLeadingWhiteSpaceRangeOfNewLine.Collapsed()) {
+        AutoTrackDOMPoint trackPointToInsert(aHTMLEditor.RangeUpdaterRef(),
+                                             &pointToInsert);
         
         MOZ_ASSERT(invisibleLeadingWhiteSpaceRangeOfNewLine.EndRef() ==
                    pointToInsert);
-        
-        
-        
         nsresult rv = aHTMLEditor.DeleteTextAndTextNodesWithTransaction(
             invisibleLeadingWhiteSpaceRangeOfNewLine.StartRef(),
             invisibleLeadingWhiteSpaceRangeOfNewLine.EndRef(),
@@ -776,22 +801,22 @@ Result<RefPtr<Element>, nsresult> WhiteSpaceVisibilityKeeper::InsertBRElement(
               "DeleteTextAndTextNodesWithTransaction() failed");
           return Err(rv);
         }
+        
+        
+        atNBSPReplacableWithSP.Clear();
+        invisibleLeadingWhiteSpaceRangeOfNewLine.Clear();
+        invisibleTrailingWhiteSpaceRangeOfCurrentLine.Clear();
       }
     }
     
     
-    else if (pointPositionWithVisibleWhiteSpaces ==
-                 PointPosition::MiddleOfFragment ||
-             pointPositionWithVisibleWhiteSpaces ==
-                 PointPosition::EndOfFragment) {
-      
-      
-      
-      EditorDOMPointInText atNBSPReplacedWithASCIIWhiteSpace =
-          textFragmentDataAtInsertionPoint
-              .GetPreviousNBSPPointIfNeedToReplaceWithASCIIWhiteSpace(
-                  pointToInsert);
-      if (atNBSPReplacedWithASCIIWhiteSpace.IsSet()) {
+    else if (atNBSPReplacableWithSP.IsInTextNode()) {
+      const EditorDOMPointInText atNBSPReplacedWithASCIIWhiteSpace =
+          atNBSPReplacableWithSP.AsInText();
+      if (!atNBSPReplacedWithASCIIWhiteSpace.IsEndOfContainer() &&
+          atNBSPReplacedWithASCIIWhiteSpace.IsCharNBSP()) {
+        AutoTrackDOMPoint trackPointToInsert(aHTMLEditor.RangeUpdaterRef(),
+                                             &pointToInsert);
         AutoTransactionsConserveSelection dontChangeMySelection(aHTMLEditor);
         nsresult rv = aHTMLEditor.ReplaceTextWithTransaction(
             MOZ_KnownLive(*atNBSPReplacedWithASCIIWhiteSpace.ContainerAsText()),
@@ -800,6 +825,11 @@ Result<RefPtr<Element>, nsresult> WhiteSpaceVisibilityKeeper::InsertBRElement(
           NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed failed");
           return Err(rv);
         }
+        
+        
+        atNBSPReplacableWithSP.Clear();
+        invisibleLeadingWhiteSpaceRangeOfNewLine.Clear();
+        invisibleTrailingWhiteSpaceRangeOfCurrentLine.Clear();
       }
     }
   }
