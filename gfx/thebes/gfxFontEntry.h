@@ -790,8 +790,10 @@ class gfxFontEntry {
   };
 
   using FontTableCache = nsTHashtable<FontTableHashEntry>;
-  mozilla::Atomic<FontTableCache*> mFontTableCache;
-  FontTableCache* GetFontTableCache() const { return mFontTableCache; }
+  mozilla::Atomic<FontTableCache*> mFontTableCache GUARDED_BY(mLock);
+  FontTableCache* GetFontTableCache() const NO_THREAD_SAFETY_ANALYSIS {
+    return mFontTableCache;
+  }
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxFontEntry::RangeFlags)
@@ -849,12 +851,17 @@ class gfxFontFamily {
 
   gfxFontFamily(const nsACString& aName, FontVisibility aVisibility)
       : mName(aName),
-        mLock("gfxFontFamily lock"),
         mVisibility(aVisibility),
+        mOtherFamilyNamesInitialized(false),
+        mHasOtherFamilyNames(false),
+        mFaceNamesInitialized(false),
+        mHasStyles(false),
         mIsSimpleFamily(false),
         mIsBadUnderlineFamily(false),
+        mFamilyCharacterMapInitialized(false),
         mSkipDefaultFeatureSpaceCheck(false),
-        mCheckForFallbackFaces(false) {}
+        mCheckForFallbackFaces(false),
+        mCheckedForLegacyFamilyNames(false) {}
 
   const nsCString& Name() const { return mName; }
 
@@ -867,20 +874,11 @@ class gfxFontFamily {
   
   
   
-  
   bool CheckForLegacyFamilyNames(gfxPlatformFontList* aFontList);
 
-  nsTArray<RefPtr<gfxFontEntry>>& GetFontList() {
-    mozilla::AutoReadLock lock(mLock);
-    return mAvailableFonts;
-  }
+  nsTArray<RefPtr<gfxFontEntry>>& GetFontList() { return mAvailableFonts; }
 
   void AddFontEntry(RefPtr<gfxFontEntry> aFontEntry) {
-    mozilla::AutoWriteLock lock(mLock);
-    AddFontEntryLocked(aFontEntry);
-  }
-
-  void AddFontEntryLocked(RefPtr<gfxFontEntry> aFontEntry) REQUIRES(mLock) {
     
     
     if (aFontEntry->IsItalic() && !aFontEntry->IsUserFont() &&
@@ -920,8 +918,6 @@ class gfxFontFamily {
 
   
   
-  
-  
   void FindFontForChar(GlobalFontMatch* aMatchData);
 
   
@@ -935,30 +931,17 @@ class gfxFontFamily {
 
   
   
-  
-  
   virtual void ReadFaceNames(gfxPlatformFontList* aPlatformFontList,
                              bool aNeedFullnamePostscriptNames,
                              FontInfoData* aFontInfoData = nullptr);
 
   
   
-  
-  virtual void FindStyleVariationsLocked(FontInfoData* aFontInfoData = nullptr)
-      REQUIRES(mLock){};
-  void FindStyleVariations(FontInfoData* aFontInfoData = nullptr) {
-    if (mHasStyles) {
-      return;
-    }
-    mozilla::AutoWriteLock lock(mLock);
-    FindStyleVariationsLocked(aFontInfoData);
-  }
+  virtual void FindStyleVariations(FontInfoData* aFontInfoData = nullptr) {}
 
   
   gfxFontEntry* FindFont(const nsACString& aPostscriptName);
 
-  
-  
   
   void ReadAllCMAPs(FontInfoData* aFontInfoData = nullptr);
 
@@ -966,18 +949,16 @@ class gfxFontFamily {
     if (!mFamilyCharacterMapInitialized) {
       ReadAllCMAPs();
     }
-    mozilla::AutoReadLock lock(mLock);
     return mFamilyCharacterMap.test(aCh);
   }
 
-  void ResetCharacterMap() REQUIRES(mLock) {
+  void ResetCharacterMap() {
     mFamilyCharacterMap.reset();
     mFamilyCharacterMapInitialized = false;
   }
 
   
   void SetBadUnderlineFamily() {
-    mozilla::AutoWriteLock lock(mLock);
     mIsBadUnderlineFamily = true;
     if (mHasStyles) {
       SetBadUnderlineFonts();
@@ -990,12 +971,12 @@ class gfxFontFamily {
   bool CheckForFallbackFaces() const { return mCheckForFallbackFaces; }
 
   
-  void SortAvailableFonts() REQUIRES(mLock);
+  void SortAvailableFonts();
 
   
   
   
-  void CheckForSimpleFamily() REQUIRES(mLock);
+  void CheckForSimpleFamily();
 
   
   virtual void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
@@ -1038,33 +1019,31 @@ class gfxFontFamily {
                                    bool useFullName = false);
 
   
-  void SetBadUnderlineFonts() REQUIRES(mLock) {
-    for (auto& f : mAvailableFonts) {
-      if (f) {
-        f->mIsBadUnderlineFont = true;
+  void SetBadUnderlineFonts() {
+    uint32_t i, numFonts = mAvailableFonts.Length();
+    for (i = 0; i < numFonts; i++) {
+      if (mAvailableFonts[i]) {
+        mAvailableFonts[i]->mIsBadUnderlineFont = true;
       }
     }
   }
 
   nsCString mName;
-  nsTArray<RefPtr<gfxFontEntry>> mAvailableFonts GUARDED_BY(mLock);
-  gfxSparseBitSet mFamilyCharacterMap GUARDED_BY(mLock);
-
-  mutable mozilla::RWLock mLock;
+  nsTArray<RefPtr<gfxFontEntry>> mAvailableFonts;
+  gfxSparseBitSet mFamilyCharacterMap;
 
   FontVisibility mVisibility;
 
-  mozilla::Atomic<bool> mOtherFamilyNamesInitialized;
-  mozilla::Atomic<bool> mFaceNamesInitialized;
-  mozilla::Atomic<bool> mHasStyles;
-  mozilla::Atomic<bool> mFamilyCharacterMapInitialized;
-  mozilla::Atomic<bool> mCheckedForLegacyFamilyNames;
-  mozilla::Atomic<bool> mHasOtherFamilyNames;
-
-  bool mIsSimpleFamily : 1 GUARDED_BY(mLock);
+  bool mOtherFamilyNamesInitialized : 1;
+  bool mHasOtherFamilyNames : 1;
+  bool mFaceNamesInitialized : 1;
+  bool mHasStyles : 1;
+  bool mIsSimpleFamily : 1;
   bool mIsBadUnderlineFamily : 1;
+  bool mFamilyCharacterMapInitialized : 1;
   bool mSkipDefaultFeatureSpaceCheck : 1;
   bool mCheckForFallbackFaces : 1;  
+  bool mCheckedForLegacyFamilyNames : 1;
 
   enum {
     

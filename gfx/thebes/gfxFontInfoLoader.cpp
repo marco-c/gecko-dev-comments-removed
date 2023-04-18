@@ -143,22 +143,12 @@ void gfxFontInfoLoader::StartLoader(uint32_t aDelay) {
     return;
   }
 
+  NS_ASSERTION(!mFontInfo, "fontinfo should be null when starting font loader");
+
   
   if (mState != stateInitial && mState != stateTimerOff &&
       mState != stateTimerOnDelay) {
     CancelLoader();
-  }
-
-  
-  
-  
-  if (!mFontInfo) {
-    mFontInfo = CreateFontInfoData();
-    if (!mFontInfo) {
-      
-      mState = stateTimerOff;
-      return;
-    }
   }
 
   AddShutdownObserver();
@@ -204,6 +194,13 @@ void gfxFontInfoLoader::StartLoader(uint32_t aDelay) {
   NS_ASSERTION(!gXPCOMThreadsShutDown,
                "Bug 1508626 - Initializing font loader after shutdown but "
                "before observer");
+
+  mFontInfo = CreateFontInfoData();
+  if (!mFontInfo) {
+    
+    mState = stateTimerOff;
+    return;
+  }
 
   
   InitLoader();
