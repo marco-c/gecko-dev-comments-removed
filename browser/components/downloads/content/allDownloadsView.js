@@ -583,6 +583,10 @@ DownloadsPlacesView.prototype = {
   isCommandEnabled(aCommand) {
     switch (aCommand) {
       case "cmd_copy":
+        return Array.prototype.some.call(
+          this._richlistbox.selectedItems,
+          element => !!element._shell.download.source?.url
+        );
       case "downloadsCmd_openReferrer":
       case "downloadShowMenuItem":
         return this._richlistbox.selectedItems.length == 1;
@@ -603,8 +607,8 @@ DownloadsPlacesView.prototype = {
   _copySelectedDownloadsToClipboard() {
     let urls = Array.from(
       this._richlistbox.selectedItems,
-      element => element._shell.download.source.url
-    );
+      element => element._shell.download.source?.url
+    ).filter(Boolean);
 
     Cc["@mozilla.org/widget/clipboardhelper;1"]
       .getService(Ci.nsIClipboardHelper)
@@ -723,10 +727,19 @@ DownloadsPlacesView.prototype = {
       return false;
     }
 
-    DownloadsViewUI.updateContextMenuForElement(
-      document.getElementById("downloadsContextMenu"),
-      element
+    let contextMenu = document.getElementById("downloadsContextMenu");
+    DownloadsViewUI.updateContextMenuForElement(contextMenu, element);
+    
+    
+    
+    
+    contextMenu.querySelector(
+      ".downloadCopyLocationMenuItem"
+    ).hidden = !Array.prototype.some.call(
+      this._richlistbox.selectedItems,
+      el => !!el._shell.download.source?.url
     );
+
     let download = element._shell.download;
     if (!download.stopped) {
       

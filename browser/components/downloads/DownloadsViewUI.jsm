@@ -232,6 +232,13 @@ var DownloadsViewUI = {
 
     
     
+    
+    contextMenu.querySelector(
+      ".downloadOpenReferrerMenuItem"
+    ).hidden = !download.source.referrerInfo?.originalReferrer;
+
+    
+    
     let useSystemViewerItem = contextMenu.querySelector(
       ".downloadUseSystemDefaultMenuItem"
     );
