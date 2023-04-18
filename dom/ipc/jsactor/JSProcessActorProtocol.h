@@ -22,6 +22,7 @@ namespace dom {
 struct ProcessActorOptions;
 class JSProcessActorInfo;
 class EventTarget;
+class JSActorProtocolUtils;
 
 
 
@@ -65,6 +66,8 @@ class JSProcessActorProtocol final : public JSActorProtocol,
   nsCString mName;
   nsTArray<nsCString> mRemoteTypes;
   bool mIncludeParent = false;
+
+  friend class JSActorProtocolUtils;
 
   ParentSide mParent;
   ChildSide mChild;
