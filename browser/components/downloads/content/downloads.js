@@ -278,7 +278,10 @@ var DownloadsPanel = {
   handleEvent(aEvent) {
     switch (aEvent.type) {
       case "mousemove":
-        if (this.panel.contains(document.activeElement)) {
+        if (
+          !DownloadsView.contextMenuOpen &&
+          this.panel.contains(document.activeElement)
+        ) {
           
           
           document.activeElement.blur();

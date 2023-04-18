@@ -308,6 +308,43 @@ const TestCasesDeletedFile = [
   },
 ];
 
+const TestCasesMultipleFiles = [
+  {
+    name: "Multiple files",
+    prefEnabled: true,
+    downloads: [
+      {
+        state: DownloadsCommon.DOWNLOAD_FINISHED,
+        contentType: "text/plain",
+        target: {},
+        source: {
+          referrerInfo: exampleRefInfo,
+        },
+      },
+      {
+        state: DownloadsCommon.DOWNLOAD_FINISHED,
+        contentType: "text/plain",
+        target: {},
+        source: {
+          referrerInfo: exampleRefInfo,
+        },
+        deleted: true,
+      },
+    ],
+    expected: {
+      menu: [
+        MENU_ITEMS.alwaysOpenSimilarFiles,
+        MENU_ITEMS.openReferrer,
+        MENU_ITEMS.copyLocation,
+        MENU_ITEMS.separator,
+        MENU_ITEMS.delete,
+        MENU_ITEMS.clearList,
+      ],
+    },
+    itemIndex: 1,
+  },
+];
+
 add_task(async function test_setUp() {
   
   let downloadList = await Downloads.getList(Downloads.ALL);
@@ -410,11 +447,27 @@ for (let testData of TestCasesDeletedFile) {
   add_task(tmp[testData.name]);
 }
 
+for (let testData of TestCasesMultipleFiles) {
+  if (testData.skip) {
+    info("Skipping test:" + testData.name);
+    continue;
+  }
+  
+  
+  let tmp = {
+    async [testData.name]() {
+      await testDownloadContextMenu(testData);
+    },
+  };
+  add_task(tmp[testData.name]);
+}
+
 async function testDownloadContextMenu({
   overrideExtension = null,
   downloads = [],
   expected,
   prefEnabled,
+  itemIndex = 0,
 }) {
   info(
     `Setting browser.download.improvements_to_download_panel to ${prefEnabled}`
@@ -426,9 +479,9 @@ async function testDownloadContextMenu({
   
   await prepareDownloads(downloads, overrideExtension);
   let downloadList = await Downloads.getList(Downloads.PUBLIC);
-  let [firstDownload] = await downloadList.getAll();
-  info("Download succeeded? " + firstDownload.succeeded);
-  info("Download target exists? " + firstDownload.target.exists);
+  let download = (await downloadList.getAll())[itemIndex];
+  info("Download succeeded? " + download.succeeded);
+  info("Download target exists? " + download.target.exists);
 
   
   await task_openPanel();
@@ -438,12 +491,28 @@ async function testDownloadContextMenu({
     return downloadsListBox.childElementCount == downloads.length;
   });
 
-  info("trigger the context menu");
-  let itemTarget = document.querySelector(
-    "#downloadsListBox richlistitem .downloadMainArea"
+  let itemTarget = document
+    .querySelectorAll("#downloadsListBox richlistitem")
+    [itemIndex].querySelector(".downloadMainArea");
+  EventUtils.synthesizeMouse(itemTarget, 1, 1, { type: "mousemove" });
+  is(
+    DownloadsView.richListBox.selectedIndex,
+    0,
+    "moving the mouse resets the richlistbox's selected index"
   );
 
+  info("trigger the context menu");
   let contextMenu = await openContextMenu(itemTarget);
+
+  
+  
+  DownloadsView.richListBox.selectedIndex = itemIndex;
+  EventUtils.synthesizeMouse(itemTarget, 1, 1, { type: "mousemove" });
+  is(
+    DownloadsView.richListBox.selectedIndex,
+    itemIndex,
+    "selected index after opening the context menu and moving the mouse"
+  );
 
   info("context menu should be open, verify its menu items");
   let result = verifyContextMenu(contextMenu, expected.menu);
