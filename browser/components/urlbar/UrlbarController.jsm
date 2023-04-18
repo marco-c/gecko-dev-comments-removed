@@ -325,9 +325,11 @@ class UrlbarController {
         
         
         
+        
         let allowTabbingThroughResults =
           this.input.focusedViaMousedown ||
           this.input.searchMode?.isPreview ||
+          this.view.selectedElement ||
           (this.input.value &&
             this.input.getAttribute("pageproxystate") != "valid");
         if (
