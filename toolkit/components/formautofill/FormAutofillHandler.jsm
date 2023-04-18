@@ -422,7 +422,10 @@ class FormAutofillSection {
 
     for (let fieldDetail of this.fieldDetails) {
       let element = fieldDetail.elementWeakRef.get();
-      let value = profile[fieldDetail.fieldName] || "";
+      let value =
+        profile[`${fieldDetail.fieldName}-formatted`] ||
+        profile[fieldDetail.fieldName] ||
+        "";
 
       
       if (!element) {
@@ -732,6 +735,12 @@ class FormAutofillSection {
       option.hasAttribute("selected")
     );
     element.value = selected ? selected.value : element.options[0].value;
+    element.dispatchEvent(
+      new element.ownerGlobal.Event("input", { bubbles: true })
+    );
+    element.dispatchEvent(
+      new element.ownerGlobal.Event("change", { bubbles: true })
+    );
   }
 }
 
@@ -1071,7 +1080,14 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
     );
   }
 
-  creditCardExpDateTransformer(profile) {
+  
+
+
+
+
+
+
+  creditCardExpiryDateTransformer(profile) {
     if (!profile["cc-exp"]) {
       return;
     }
@@ -1145,23 +1161,31 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
     }
   }
 
-  creditCardExpMonthTransformer(profile) {
-    if (!profile["cc-exp-month"]) {
-      return;
-    }
+  
 
-    let detail = this.getFieldDetailByName("cc-exp-month");
-    if (!detail) {
-      return;
-    }
 
-    let element = detail.elementWeakRef.get();
 
+
+
+
+  creditCardExpMonthAndYearTransformer(profile) {
+    const getInputElementByField = (field, self) => {
+      if (!field) {
+        return null;
+      }
+      let detail = self.getFieldDetailByName(field);
+      if (!detail) {
+        return null;
+      }
+      let element = detail.elementWeakRef.get();
+      return element.tagName === "INPUT" ? element : null;
+    };
+    let month = getInputElementByField("cc-exp-month", this);
     
     
     
-    if (element.tagName === "INPUT") {
-      let placeholder = element.placeholder;
+    if (month) {
+      let placeholder = month.placeholder;
 
       
       let result = /(?<!.)mm(?!.)/i.test(placeholder);
@@ -1169,6 +1193,22 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
         profile["cc-exp-month-formatted"] = profile["cc-exp-month"]
           .toString()
           .padStart(2, "0");
+      }
+    }
+
+    let year = getInputElementByField("cc-exp-year", this);
+    
+    
+    
+    if (year) {
+      let placeholder = year.placeholder;
+
+      
+      let result = /(?<!.)(yy|aa|jj)(?!.)/i.test(placeholder);
+      if (result) {
+        profile["cc-exp-year-formatted"] = profile["cc-exp-year"]
+          .toString()
+          .substring(2);
       }
     }
   }
@@ -1206,8 +1246,8 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
     
     
     
-    this.creditCardExpDateTransformer(profile);
-    this.creditCardExpMonthTransformer(profile);
+    this.creditCardExpiryDateTransformer(profile);
+    this.creditCardExpMonthAndYearTransformer(profile);
     this.matchSelectOptions(profile);
     this.adaptFieldMaxLength(profile);
   }

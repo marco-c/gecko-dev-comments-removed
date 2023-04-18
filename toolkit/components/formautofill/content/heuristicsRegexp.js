@@ -8,6 +8,8 @@
 
 
 
+
+
 "use strict";
 
 var HeuristicsRegExp = {
@@ -48,14 +50,17 @@ var HeuristicsRegExp = {
       "address-level1": "land", 
       "additional-name": "apellido.?materno|lastlastname",
       "cc-name":
-        
-        "accountholdername" +
+        "accountholdername" + 
         "|titulaire", 
       "cc-number": "(cc|kk)nr", 
-      "cc-exp-month": "(cc|kk)month", 
-      "cc-exp-year": "(cc|kk)year", 
-      
-      "cc-type": "type" + 
+      "cc-exp-month":
+        "month" + 
+        "|(cc|kk)month", 
+      "cc-exp-year":
+        "year" + 
+        "|(cc|kk)year", 
+      "cc-type":
+        "type" + 
         "|kartenmarke", 
     },
 
