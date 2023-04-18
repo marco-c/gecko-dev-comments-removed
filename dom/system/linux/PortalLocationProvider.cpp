@@ -5,16 +5,11 @@
 
 
 #include "PortalLocationProvider.h"
-#include <errno.h>
 #include "MLSFallback.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/FloatingPoint.h"
-#include "mozilla/LazyIdleThread.h"
 #include "mozilla/Logging.h"
 #include "mozilla/dom/GeolocationPositionErrorBinding.h"
 #include "GeolocationPosition.h"
-#include "nsProxyRelease.h"
-#include "nsThreadUtils.h"
 #include "prtime.h"
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
