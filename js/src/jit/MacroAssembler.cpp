@@ -4453,17 +4453,13 @@ void MacroAssembler::packedArrayShift(Register array, ValueOperand output,
   loadValue(elementAddr, output);
 
   
-  EmitPreBarrier(*this, elementAddr, MIRType::Value);
-
   
   {
     
     volatileRegs.takeUnchecked(temp1);
+    volatileRegs.takeUnchecked(temp2);
     if (output.hasVolatileReg()) {
       volatileRegs.addUnchecked(output);
-    }
-    if (temp2.volatile_()) {
-      volatileRegs.addUnchecked(temp2);
     }
 
     PushRegsInMask(volatileRegs);
@@ -4474,15 +4470,7 @@ void MacroAssembler::packedArrayShift(Register array, ValueOperand output,
     callWithABI<Fn, ArrayShiftMoveElements>();
 
     PopRegsInMask(volatileRegs);
-
-    
-    loadPtr(Address(array, NativeObject::offsetOfElements()), temp1);
   }
-
-  
-  sub32(Imm32(1), temp2);
-  store32(temp2, lengthAddr);
-  store32(temp2, initLengthAddr);
 
   bind(&done);
 }
