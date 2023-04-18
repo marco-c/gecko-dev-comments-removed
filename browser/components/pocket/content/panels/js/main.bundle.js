@@ -55,10 +55,82 @@ function Header(props) {
 
 
 
+function ArticleList(props) {
+  return react.createElement("ul", {
+    className: "stp_article_list"
+  }, props.articles?.map(article => react.createElement("li", {
+    className: "stp_article_list_item"
+  }, react.createElement("a", {
+    className: "stp_article_list_link",
+    href: article.url
+  }, react.createElement("img", {
+    className: "stp_article_list_thumb",
+    src: article.thumbnail,
+    alt: article.alt
+  }), react.createElement("div", {
+    className: "stp_article_list_meta"
+  }, react.createElement("header", {
+    className: "stp_article_list_header"
+  }, article.title), react.createElement("p", {
+    className: "stp_article_list_publisher"
+  }, article.publisher))))));
+}
+
+ const ArticleList_ArticleList = (ArticleList);
+;
+
+
+
+
+
+function PopularTopics(props) {
+  return react.createElement("ul", {
+    className: "stp_popular_topics"
+  }, props.topics?.map(topic => react.createElement("li", {
+    key: `item-${topic.topic}`,
+    className: "stp_popular_topic"
+  }, react.createElement("a", {
+    className: "stp_popular_topic_link",
+    href: `https://${props.pockethost}/explore/${topic.topic}?utm_source=${props.utmsource}`
+  }, topic.title))));
+}
+
+ const PopularTopics_PopularTopics = (PopularTopics);
+;
+
+
+
+
+
+
+
 
 function Home(props) {
-  return react.createElement(react.Fragment, null, react.createElement(Header_Header, null, react.createElement("a", null, react.createElement("span", {
+  const {
+    articles,
+    locale,
+    topics,
+    pockethost
+  } = props;
+  return react.createElement("div", {
+    className: "stp_panel_container"
+  }, react.createElement("div", {
+    className: "stp_panel stp_panel_home"
+  }, react.createElement(Header_Header, null, react.createElement("a", null, react.createElement("span", {
     "data-l10n-id": "pocket-panel-header-my-list"
+  }))), react.createElement("hr", null), articles?.length ? react.createElement(react.Fragment, null, react.createElement("p", {
+    "data-l10n-id": "pocket-panel-home-most-recent-saves"
+  }), react.createElement(ArticleList_ArticleList, {
+    articles: articles
+  }), react.createElement("span", {
+    "data-l10n-id": "pocket-panel-button-show-all"
+  })) : react.createElement(react.Fragment, null, react.createElement("p", {
+    "data-l10n-id": "pocket-panel-home-new-user-cta"
+  }), react.createElement("p", {
+    "data-l10n-id": "pocket-panel-home-new-user-message"
+  })), react.createElement("hr", null), pockethost && locale?.startsWith("en") && topics?.length && react.createElement(react.Fragment, null, react.createElement("div", null, "Explore popular topics:"), react.createElement(PopularTopics_PopularTopics, {
+    topics: topics,
+    pockethost: pockethost
   }))));
 }
 
@@ -173,7 +245,22 @@ HomeOverlay.prototype = {
     if (layoutRefresh) {
       
       react_dom.render( react.createElement(Home_Home, {
-        pockethost: pockethost
+        locale: locale,
+        articles: [],
+        pockethost: pockethost,
+        topics: [{
+          title: "Self Improvement",
+          topic: "self-improvement"
+        }, {
+          title: "Food",
+          topic: "food"
+        }, {
+          title: "Entertainment",
+          topic: "entertainment"
+        }, {
+          title: "Science",
+          topic: "science"
+        }]
       }), document.querySelector(`body`));
     } else {
       
@@ -229,9 +316,24 @@ HomeOverlay.prototype = {
 
 
 function Signup(props) {
-  return react.createElement(react.Fragment, null, react.createElement(Header_Header, null, react.createElement("a", null, react.createElement("span", {
+  const {
+    locale
+  } = props;
+  return react.createElement("div", {
+    className: "stp_panel_container"
+  }, react.createElement("div", {
+    className: "stp_panel stp_panel_home"
+  }, react.createElement(Header_Header, null, react.createElement("a", null, react.createElement("span", {
     "data-l10n-id": "pocket-panel-header-sign-in"
-  }))));
+  }))), react.createElement("hr", null), react.createElement("p", {
+    "data-l10n-id": "pocket-panel-signup-cta-a"
+  }), react.createElement("p", {
+    "data-l10n-id": "pocket-panel-signup-cta-b"
+  }), locale?.startsWith("en") ? react.createElement(react.Fragment, null, react.createElement("hr", null), react.createElement("p", null, "Get thought-provoking article recommendations"), react.createElement("p", null, "Find stories that go deep into a subject or offer a new perspective.")) : react.createElement("p", {
+    "data-l10n-id": "pocket-panel-signup-cta-c"
+  }), react.createElement("hr", null), react.createElement("p", {
+    "data-l10n-id": "pocket-panel-button-activate"
+  })));
 }
 
  const Signup_Signup = (Signup);
@@ -275,9 +377,10 @@ var SignupOverlay = function (options) {
     } = new URL(window.location.href);
     const isEmailSignupEnabled = searchParams.get(`emailButton`) === `true`;
     const pockethost = searchParams.get(`pockethost`) || `getpocket.com`;
+    const locale = searchParams.get(`locale`) || ``;
+    const language = locale.split(`-`)[0].toLowerCase();
     const utmCampaign = searchParams.get(`utmCampaign`) || `firefox_door_hanger_menu`;
     const utmSource = searchParams.get(`utmSource`) || `control`;
-    const language = searchParams.get(`locale`)?.split(`-`)[0].toLowerCase();
     const layoutRefresh = searchParams.get(`layoutRefresh`) === `true`;
 
     if (this.active) {
@@ -290,7 +393,8 @@ var SignupOverlay = function (options) {
       
       document.querySelector(`.pkt_ext_containersignup`)?.classList.remove(`pkt_ext_containersignup`);
       react_dom.render( react.createElement(Signup_Signup, {
-        pockethost: pockethost
+        pockethost: pockethost,
+        locale: locale
       }), document.querySelector(`body`));
     } else {
       const templateData = {
@@ -327,10 +431,29 @@ var SignupOverlay = function (options) {
 
 
 
+
 function Saved(props) {
-  return react.createElement(react.Fragment, null, react.createElement(Header_Header, null, react.createElement("a", null, react.createElement("span", {
+  const {
+    similarRecs,
+    savedStory
+  } = props;
+  return react.createElement("div", {
+    className: "stp_panel_container"
+  }, react.createElement("div", {
+    className: "stp_panel stp_panel_home"
+  }, react.createElement(Header_Header, null, react.createElement("a", null, react.createElement("span", {
     "data-l10n-id": "pocket-panel-header-my-list"
-  }))));
+  }))), react.createElement("hr", null), savedStory && react.createElement(react.Fragment, null, react.createElement("p", {
+    "data-l10n-id": "pocket-panel-saved-page-saved"
+  }), react.createElement(ArticleList_ArticleList, {
+    articles: [savedStory]
+  }), react.createElement("span", {
+    "data-l10n-id": "pocket-panel-button-add-tags"
+  }), react.createElement("span", {
+    "data-l10n-id": "pocket-panel-saved-remove-page"
+  })), react.createElement("hr", null), similarRecs?.length && react.createElement(ArticleList_ArticleList, {
+    articles: similarRecs
+  })));
 }
 
  const Saved_Saved = (Saved);
@@ -860,7 +983,8 @@ SavedOverlay.prototype = {
     if (layoutRefresh) {
       
       react_dom.render( react.createElement(Saved_Saved, {
-        pockethost: pockethost
+        pockethost: pockethost,
+        savedStory: {}
       }), document.querySelector(`body`));
     } else {
       
@@ -920,53 +1044,6 @@ SavedOverlay.prototype = {
 
 };
  const saved_overlay = (SavedOverlay);
-;
-
-
-
-
-
-function ArticleList(props) {
-  return react.createElement("ul", {
-    className: "stp_article_list"
-  }, props.articles.map(article => react.createElement("li", {
-    className: "stp_article_list_item"
-  }, react.createElement("a", {
-    className: "stp_article_list_link",
-    href: article.url
-  }, react.createElement("img", {
-    className: "stp_article_list_thumb",
-    src: article.thumbnail,
-    alt: article.alt
-  }), react.createElement("div", {
-    className: "stp_article_list_meta"
-  }, react.createElement("header", {
-    className: "stp_article_list_header"
-  }, article.title), react.createElement("p", {
-    className: "stp_article_list_publisher"
-  }, article.publisher))))));
-}
-
- const ArticleList_ArticleList = (ArticleList);
-;
-
-
-
-
-
-function PopularTopics(props) {
-  return react.createElement("ul", {
-    className: "stp_popular_topics"
-  }, props.topics.map(topic => react.createElement("li", {
-    key: `item-${topic.topic}`,
-    className: "stp_popular_topic"
-  }, react.createElement("a", {
-    className: "stp_popular_topic_link",
-    href: `https://${props.pockethost}/explore/${topic.topic}?utm_source=${props.utmsource}`
-  }, topic.title))));
-}
-
- const PopularTopics_PopularTopics = (PopularTopics);
 ;
 
 
