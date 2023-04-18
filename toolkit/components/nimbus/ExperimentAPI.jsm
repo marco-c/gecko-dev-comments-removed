@@ -76,8 +76,11 @@ const experimentBranchAccessor = {
     
     
     
-    if (!(prop in target)) {
+    if (!(prop in target) && target.features) {
       return target.features.find(f => f.featureId === prop);
+    } else if (target.feature?.featureId === prop) {
+      
+      return target.feature;
     }
 
     return target[prop];
