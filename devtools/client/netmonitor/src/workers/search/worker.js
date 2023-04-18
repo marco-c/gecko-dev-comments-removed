@@ -5,7 +5,10 @@
 "use strict";
 
 
-importScripts("./search.js", "../worker-utils.js");
+importScripts(
+  "resource://devtools/client/netmonitor/src/workers/search/search.js",
+  "resource://devtools/client/netmonitor/src/workers/worker-utils.js"
+);
 
 
 self.onmessage = workerHandler({ searchInResource });
