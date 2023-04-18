@@ -97,6 +97,13 @@ class ClientHandle final : public ClientThing<ClientHandleChild> {
   
   RefPtr<GenericPromise> OnDetach();
 
+  
+  
+  
+  
+  
+  void EvictFromBFCache();
+
   NS_INLINE_DECL_REFCOUNTING(ClientHandle);
 };
 

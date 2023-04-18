@@ -18,8 +18,8 @@ ClientSource* ClientSourceOpChild::GetSource() const {
   return actor->GetSource();
 }
 
-template <typename Method, typename Args>
-void ClientSourceOpChild::DoSourceOp(Method aMethod, const Args& aArgs) {
+template <typename Method, typename... Args>
+void ClientSourceOpChild::DoSourceOp(Method aMethod, Args&&... aArgs) {
   RefPtr<ClientOpPromise> promise;
   nsCOMPtr<nsISerialEventTarget> target;
 
@@ -40,7 +40,7 @@ void ClientSourceOpChild::DoSourceOp(Method aMethod, const Args& aArgs) {
 
     
     
-    promise = (source->*aMethod)(aArgs);
+    promise = (source->*aMethod)(std::forward<Args>(aArgs)...);
   }
 
   
@@ -95,6 +95,10 @@ void ClientSourceOpChild::Init(const ClientOpConstructorArgs& aArgs) {
     case ClientOpConstructorArgs::TClientGetInfoAndStateArgs: {
       DoSourceOp(&ClientSource::GetInfoAndState,
                  aArgs.get_ClientGetInfoAndStateArgs());
+      break;
+    }
+    case ClientOpConstructorArgs::TClientEvictBFCacheArgs: {
+      DoSourceOp(&ClientSource::EvictFromBFCacheOp);
       break;
     }
     default: {

@@ -277,6 +277,8 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
   
   void RecordTelemetry(uint32_t aNumber, uint32_t aFetch);
 
+  void EvictFromBFCache(ServiceWorkerRegistrationInfo* aRegistration);
+
  private:
   struct RegistrationDataPerPrincipal;
 

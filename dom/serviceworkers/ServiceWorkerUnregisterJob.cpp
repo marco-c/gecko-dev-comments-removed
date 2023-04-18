@@ -114,6 +114,8 @@ void ServiceWorkerUnregisterJob::Unregister() {
     swm->MaybeSendUnregister(mPrincipal, mScope);
   }
 
+  swm->EvictFromBFCache(registration);
+
   
   swm->RemoveRegistration(registration);
   MOZ_ASSERT(registration->IsUnregistered());
