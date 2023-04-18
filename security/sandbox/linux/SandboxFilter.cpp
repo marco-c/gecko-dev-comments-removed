@@ -166,6 +166,28 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
     return ConvertError(syscall(nr, args...));
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ResultExpr KcmpPolicyForMesa() const {
+    
+    
+    
+    
+    static const int kKcmpFile = 0;
+    const pid_t myPid = getpid();
+    Arg<pid_t> pid1(0), pid2(1);
+    Arg<int> type(2);
+    return If(AllOf(pid1 == myPid, pid2 == myPid, type == kKcmpFile), Allow())
+        .Else(InvalidSyscall());
+  }
+
  private:
   
   
@@ -768,6 +790,8 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
             .Case(F_GETFL, Allow())
             .Case(F_SETFL, If((flags & ~allowed_flags) == 0, Allow())
                                .Else(InvalidSyscall()))
+            
+            .Case(F_DUPFD_CLOEXEC, Allow())
             .Default(SandboxPolicyBase::EvaluateSyscall(sysno));
       }
 
@@ -932,6 +956,16 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
       case __NR_getrandom:
         return Allow();
 
+        
+        
+        
+        
+      CASES_FOR_getuid:
+      CASES_FOR_getgid:
+      CASES_FOR_geteuid:
+      CASES_FOR_getegid:
+        return Allow();
+
 #ifdef DESKTOP
         
         
@@ -945,6 +979,18 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         
       case __NR_rseq:
         return Allow();
+
+      case __NR_ioctl: {
+        Arg<unsigned long> request(1);
+        
+        
+        
+        
+        
+        return If(AnyOf(request == TCGETS, request == TIOCGWINSZ),
+                  Error(ENOTTY))
+            .Else(SandboxPolicyBase::EvaluateSyscall(sysno));
+      }
 
 #ifdef MOZ_ASAN
         
@@ -1347,9 +1393,6 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
             .ElseIf(request == FIONBIO, Allow())
             
             
-            .ElseIf(request == TCGETS, Error(ENOTTY))
-            
-            
             .ElseIf(shifted_type != kTtyIoctls, Allow())
             .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
       }
@@ -1357,7 +1400,6 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
       CASES_FOR_fcntl : {
         Arg<int> cmd(1);
         return Switch(cmd)
-            .Case(F_DUPFD_CLOEXEC, Allow())
             
             .Case(F_SETLK, Allow())
 #ifdef F_SETLK64
@@ -1404,12 +1446,6 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
         return Allow();
 
       CASES_FOR_dup2:  
-        return Allow();
-
-      CASES_FOR_getuid:
-      CASES_FOR_getgid:
-      CASES_FOR_geteuid:
-      CASES_FOR_getegid:
         return Allow();
 
       case __NR_fsync:
@@ -1526,22 +1562,8 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
       case __NR_get_mempolicy:
         return Allow();
 
-        
-        
-        
-      case __NR_kcmp: {
-        
-        
-        
-        
-        static const int kKcmpFile = 0;
-        const pid_t myPid = getpid();
-        Arg<pid_t> pid1(0), pid2(1);
-        Arg<int> type(2);
-        return If(AllOf(pid1 == myPid, pid2 == myPid, type == kKcmpFile),
-                  Allow())
-            .Else(InvalidSyscall());
-      }
+      case __NR_kcmp:
+        return KcmpPolicyForMesa();
 
 #endif  
 
@@ -1667,13 +1689,6 @@ class GMPSandboxPolicy : public SandboxPolicyCommon {
         return Trap(OpenTrap, mFiles);
 
       case __NR_brk:
-      
-      
-      
-      CASES_FOR_getuid:
-      CASES_FOR_getgid:
-      CASES_FOR_geteuid:
-      CASES_FOR_getegid:
         return Allow();
       case __NR_sched_get_priority_min:
       case __NR_sched_get_priority_max:
@@ -1739,12 +1754,7 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
     switch (sysno) {
       case __NR_getrusage:
         return Allow();
-      case __NR_ioctl: {
-        Arg<unsigned long> request(1);
-        
-        
-        return If(request == TCGETS, Error(ENOTTY)).Else(InvalidSyscall());
-      }
+
       
       default:
         return SandboxPolicyCommon::EvaluateSyscall(sysno);
@@ -1841,9 +1851,6 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
             .ElseIf(request == FIONREAD, Allow())
             
             
-            .ElseIf(request == TCGETS, Error(ENOTTY))
-            
-            
             .ElseIf(shifted_type != kTtyIoctls, Allow())
             .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
       }
@@ -1884,12 +1891,6 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
             .Else(InvalidSyscall());
       }
 #endif  
-
-      CASES_FOR_getuid:
-      CASES_FOR_getgid:
-      CASES_FOR_geteuid:
-      CASES_FOR_getegid:
-        return Allow();
 
       
       case __NR_uname:
