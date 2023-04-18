@@ -235,6 +235,7 @@ class FloatRegisters {
 
   
   union RegisterContent {
+    float s;
     double d;
   };
 

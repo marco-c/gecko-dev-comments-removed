@@ -98,7 +98,8 @@ class MOZ_STACK_CLASS MachineState {
   }
 
   uintptr_t read(Register reg) const;
-  double read(FloatRegister reg) const;
+  template <typename T>
+  T read(FloatRegister reg) const;
 
   
   void write(Register reg, uintptr_t value) const;
