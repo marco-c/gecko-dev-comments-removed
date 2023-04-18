@@ -98,7 +98,7 @@ NS_IMETHODIMP
 AsyncStatementJSHelper::Resolve(nsIXPConnectWrappedNative* aWrapper,
                                 JSContext* aCtx, JSObject* aScopeObj, jsid aId,
                                 bool* resolvedp, bool* _retval) {
-  if (!JSID_IS_STRING(aId)) return NS_OK;
+  if (!aId.isString()) return NS_OK;
 
   
   JS::RootedObject scope(aCtx, aScopeObj);

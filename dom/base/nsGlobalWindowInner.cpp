@@ -3079,7 +3079,7 @@ bool nsGlobalWindowInner::DoResolve(
   
 
   
-  if (!JSID_IS_STRING(aId)) {
+  if (!aId.isString()) {
     return true;
   }
 
@@ -3143,7 +3143,7 @@ bool nsGlobalWindowInner::DoResolve(
 bool nsGlobalWindowInner::MayResolve(jsid aId) {
   
   
-  if (!JSID_IS_STRING(aId)) {
+  if (!aId.isString()) {
     return false;
   }
 
