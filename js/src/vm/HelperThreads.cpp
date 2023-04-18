@@ -931,17 +931,6 @@ bool DelazifyTask::init(
       
       strategy = cx->make_unique<DepthFirstDelazification>();
       break;
-    case JS::DelazificationOption::ConcurrentBreathFirst:
-      
-      
-      MOZ_CRASH("Strategy is not yet implemented");
-      break;
-    case JS::DelazificationOption::ConcurrentMostFrequentNameFirst:
-      
-      
-      
-      MOZ_CRASH("Strategy is not yet implemented");
-      break;
     case JS::DelazificationOption::ParseEverythingEagerly:
       
       
