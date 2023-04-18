@@ -128,10 +128,7 @@ const SnapshotScorer = new (class SnapshotScorer {
         if (currentScore) {
           
           
-          currentScore.sourceScore = Math.max(
-            currentScore.sourceScore,
-            score * weight
-          );
+          currentScore.sourceScore += score * weight;
         } else {
           currentScore = {
             snapshot,
