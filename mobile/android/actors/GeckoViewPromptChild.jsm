@@ -20,10 +20,11 @@ class GeckoViewPromptChild extends GeckoViewActorChild {
     debug`handleEvent: ${type}`;
 
     switch (type) {
-      case "mozshowdropdown": 
-      case "mozshowdropdown-sourcetouch": 
-      case "click": 
-      case "contextmenu": 
+      case "MozOpenDateTimePicker":
+      case "mozshowdropdown":
+      case "mozshowdropdown-sourcetouch":
+      case "click":
+      case "contextmenu":
       case "DOMPopupBlocked":
         Services.prompt.wrappedJSObject.handleEvent(event);
     }
