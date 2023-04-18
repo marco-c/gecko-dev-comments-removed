@@ -146,7 +146,18 @@ if (window[window.GoogleAnalyticsObject || "ga"]?.loaded === undefined) {
     remove: t => ga("remove", t),
   });
 
+  
+  const q = window[window.GoogleAnalyticsObject || "ga"]?.q;
   window[window.GoogleAnalyticsObject || "ga"] = ga;
+
+  if (Array.isArray(q)) {
+    const push = o => {
+      ga(...o);
+      return true;
+    };
+    q.push = push;
+    q.forEach(o => push(o));
+  }
 
   
   const dl = window.dataLayer;
