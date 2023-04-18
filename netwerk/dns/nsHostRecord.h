@@ -176,7 +176,7 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
   
   mozilla::TimeStamp mGraceStart;
 
-  uint32_t mTtl = 0;
+  mozilla::Atomic<uint32_t, mozilla::Relaxed> mTtl{0};
 
   
   
