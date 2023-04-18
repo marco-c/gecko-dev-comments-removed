@@ -177,7 +177,9 @@ pub fn update_prim_visibility(
                 frame_context.spatial_tree,
             );
 
-            let surface_local_rect = surfaces[raster_config.surface_index.0].local_rect.cast_unit();
+            let surface_local_rect = surfaces[raster_config.surface_index.0]
+                .unclipped_local_rect
+                .cast_unit();
 
             
             
