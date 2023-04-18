@@ -60,6 +60,11 @@ const MessageState = overrides =>
         mutableMessagesById: new Map(),
         
         
+        
+        
+        mutableMessagesOrder: [],
+        
+        
         cssMessagesMatchingElements: new Map(),
         
         visibleMessages: [],
@@ -103,6 +108,7 @@ function cloneState(state) {
     warningGroupsById: new Map(state.warningGroupsById),
     
     mutableMessagesById: state.mutableMessagesById,
+    mutableMessagesOrder: state.mutableMessagesOrder,
     currentGroup: state.currentGroup,
     lastMessageId: state.lastMessageId,
   };
@@ -261,21 +267,25 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
   
   
   if (isUnsorted) {
-    const entries = Array.from(state.mutableMessagesById.entries());
-    const newMessageIndex = entries.findIndex(
-      entry => entry[1].timeStamp > addedMessage.timeStamp
-    );
+    let newMessageIndex = 0;
     
     
-    if (newMessageIndex === -1) {
-      state.mutableMessagesById.set(addedMessage.id, addedMessage);
-    } else {
-      entries.splice(newMessageIndex, 0, [addedMessage.id, addedMessage]);
-      state.mutableMessagesById = new Map(entries);
+    
+    for (let i = state.mutableMessagesOrder.length - 1; i >= 0; i--) {
+      const message = state.mutableMessagesById.get(
+        state.mutableMessagesOrder[i]
+      );
+      if (message.timeStamp <= addedMessage.timeStamp) {
+        newMessageIndex = i + 1;
+        break;
+      }
     }
+
+    state.mutableMessagesOrder.splice(newMessageIndex, 0, addedMessage.id);
   } else {
-    state.mutableMessagesById.set(addedMessage.id, addedMessage);
+    state.mutableMessagesOrder.push(addedMessage.id);
   }
+  state.mutableMessagesById.set(addedMessage.id, addedMessage);
 
   if (newMessage.type === "trace") {
     
@@ -322,16 +332,20 @@ function addMessage(newMessage, state, filtersState, prefsState, uiState) {
     } else if (isUnsorted) {
       
       
-      const index = state.visibleMessages.findIndex(
-        id => state.mutableMessagesById.get(id).timeStamp > newMessage.timeStamp
-      );
       
       
-      if (index == -1) {
-        state.visibleMessages.push(newMessage.id);
-      } else {
-        state.visibleMessages.splice(index, 0, newMessage.id);
+      
+      let index = 0;
+      for (let i = state.visibleMessages.length - 1; i >= 0; i--) {
+        const id = state.visibleMessages[i];
+        if (
+          state.mutableMessagesById.get(id).timeStamp <= newMessage.timeStamp
+        ) {
+          index = i + 1;
+          break;
+        }
       }
+      state.visibleMessages.splice(index, 0, newMessage.id);
     } else {
       state.visibleMessages.push(newMessage.id);
     }
@@ -465,7 +479,8 @@ function messages(
       if (isGroupType(currMessage.type) || isWarningGroup(currMessage)) {
         
         const messagesToShow = [];
-        for (const [id, message] of mutableMessagesById) {
+        for (const id of state.mutableMessagesOrder) {
+          const message = mutableMessagesById.get(id);
           if (
             !visibleMessages.includes(message.id) &&
             ((isWarningGroup(currMessage) && !!getWarningGroupType(message)) ||
@@ -631,7 +646,8 @@ function messages(
       }
 
       let needSort = false;
-      for (const [msgId, message] of state.mutableMessagesById) {
+      for (const msgId of state.mutableMessagesOrder) {
+        const message = state.mutableMessagesById.get(msgId);
         const warningGroupType = getWarningGroupType(message);
         if (warningGroupType) {
           const warningGroupMessageId = getParentWarningGroupMessageId(message);
@@ -714,6 +730,7 @@ function setVisibleMessages({
 }) {
   const {
     mutableMessagesById,
+    mutableMessagesOrder,
     visibleMessages,
     messagesUiById,
   } = messagesState;
@@ -722,7 +739,8 @@ function setVisibleMessages({
   const matchedGroups = new Set();
   const filtered = getDefaultFiltersCounter();
 
-  mutableMessagesById.forEach((message, msgId) => {
+  mutableMessagesOrder.forEach(msgId => {
+    const message = mutableMessagesById.get(msgId);
     const groupParentId = message.groupId;
     let hasMatchedAncestor = false;
     const ancestors = [];
@@ -877,7 +895,8 @@ function limitTopLevelMessageCount(newState, logLimit) {
   const removedMessagesId = [];
 
   let cleaningGroup = false;
-  for (const [id, message] of newState.mutableMessagesById) {
+  for (const id of newState.mutableMessagesOrder) {
+    const message = newState.mutableMessagesById.get(id);
     
     
     if (cleaningGroup === true && !message.groupId) {
@@ -962,7 +981,13 @@ function removeMessagesFromState(state, removedMessagesIds) {
       return res;
     }, {});
 
-  removedMessagesIds.forEach(id => state.mutableMessagesById.delete(id));
+  removedMessagesIds.forEach(id => {
+    state.mutableMessagesById.delete(id);
+    state.mutableMessagesOrder.splice(
+      state.mutableMessagesOrder.indexOf(id),
+      1
+    );
+  });
 
   if (state.messagesUiById.find(isInRemovedId)) {
     state.messagesUiById = state.messagesUiById.filter(

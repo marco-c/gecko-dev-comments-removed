@@ -81,8 +81,8 @@ function clonePacket(packet) {
 
 
 function getMessageAt(state, index) {
-  const messages = getMutableMessagesById(state);
-  return messages.get([...messages.keys()][index]);
+  const messageMap = getMutableMessagesById(state);
+  return messageMap.get(state.messages.mutableMessagesOrder[index]);
 }
 
 
@@ -102,7 +102,7 @@ function getFirstMessage(state) {
 
 
 function getLastMessage(state) {
-  const lastIndex = getMutableMessagesById(state).size - 1;
+  const lastIndex = state.messages.mutableMessagesOrder.length - 1;
   return getMessageAt(state, lastIndex);
 }
 
