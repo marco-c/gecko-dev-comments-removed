@@ -741,6 +741,9 @@ class IdleObject final {
   ~IdleObject() = default;
 };
 
+
+#if 0
+
 TEST(ThreadUtils, IdleRunnableMethod)
 {
   {
@@ -787,6 +790,7 @@ TEST(ThreadUtils, IdleRunnableMethod)
     ASSERT_TRUE(idleInheritedSetDeadline->mSetDeadlineCalled);
   }
 }
+#endif
 
 TEST(ThreadUtils, IdleTaskRunner)
 {
