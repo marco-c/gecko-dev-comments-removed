@@ -275,7 +275,9 @@ void RemotePrintJobParent::ActorDestroy(ActorDestroyReason aWhy) {
   
   for (auto listener : mPrintProgressListeners) {
     listener->OnStateChange(nullptr, nullptr,
-                            nsIWebProgressListener::STATE_STOP, NS_OK);
+                            nsIWebProgressListener::STATE_STOP |
+                                nsIWebProgressListener::STATE_IS_DOCUMENT,
+                            NS_OK);
   }
 }
 
