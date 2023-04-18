@@ -2,7 +2,7 @@
 
 
 "use strict";
-const { ManifestProcessor } = SpecialPowers.Cu.import(
+const { ManifestProcessor } = SpecialPowers.ChromeUtils.import(
   "resource://gre/modules/ManifestProcessor.jsm"
 );
 const processor = ManifestProcessor;

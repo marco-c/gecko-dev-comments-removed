@@ -1,6 +1,5 @@
-const { AppConstants } = SpecialPowers.Cu.import(
-  "resource://gre/modules/AppConstants.jsm",
-  {}
+const { AppConstants } = SpecialPowers.ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
 );
 
 
