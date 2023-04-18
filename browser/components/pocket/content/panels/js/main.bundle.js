@@ -1629,25 +1629,35 @@ StyleGuideOverlay.prototype = {
     
     react_dom.render( react.createElement("div", null, react.createElement("h3", null, "JSX Components:"), react.createElement("h4", {
       className: "stp_styleguide_h4"
-    }, "Button"), react.createElement(Button_Button, {
+    }, "Buttons"), react.createElement("h5", {
+      className: "stp_styleguide_h5"
+    }, "text"), react.createElement(Button_Button, {
       style: "text",
       url: "https://example.org",
       source: "styleguide"
-    }, "Text Button"), react.createElement("br", null), react.createElement(Button_Button, {
+    }, "Text Button"), react.createElement("h5", {
+      className: "stp_styleguide_h5"
+    }, "primary"), react.createElement(Button_Button, {
       style: "primary",
       url: "https://example.org",
       source: "styleguide"
-    }, "Primary Button"), react.createElement("br", null), react.createElement(Button_Button, {
+    }, "Primary Button"), react.createElement("h5", {
+      className: "stp_styleguide_h5"
+    }, "secondary"), react.createElement(Button_Button, {
       style: "secondary",
       url: "https://example.org",
       source: "styleguide"
-    }, "Secondary Button"), react.createElement("span", {
+    }, "Secondary Button"), react.createElement("h5", {
+      className: "stp_styleguide_h5"
+    }, "primary wide"), react.createElement("span", {
       className: "stp_button_wide"
     }, react.createElement(Button_Button, {
       style: "primary",
       url: "https://example.org",
       source: "styleguide"
-    }, "Primary Wide Button")), react.createElement("span", {
+    }, "Primary Wide Button")), react.createElement("h5", {
+      className: "stp_styleguide_h5"
+    }, "secondary wide"), react.createElement("span", {
       className: "stp_button_wide"
     }, react.createElement(Button_Button, {
       style: "secondary",
