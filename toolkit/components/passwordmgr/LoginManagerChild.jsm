@@ -974,6 +974,63 @@ class LoginFormState {
 
     return pwFields;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  compareAndUpdatePreviouslySentValues(
+    formLikeRoot,
+    usernameValue,
+    passwordValue,
+    dismissed = false,
+    triggeredByFillingGenerated = false
+  ) {
+    const lastSentValues = this.lastSubmittedValuesByRootElement.get(
+      formLikeRoot
+    );
+    if (lastSentValues) {
+      if (dismissed && !lastSentValues.dismissed) {
+        
+        dismissed = false;
+      }
+      if (
+        lastSentValues.username == usernameValue &&
+        lastSentValues.password == passwordValue &&
+        lastSentValues.dismissed == dismissed &&
+        lastSentValues.triggeredByFillingGenerated ==
+          triggeredByFillingGenerated
+      ) {
+        lazy.log(
+          "compareAndUpdatePreviouslySentValues: values are equivalent, returning true"
+        );
+        return true;
+      }
+    }
+
+    
+    
+    this.lastSubmittedValuesByRootElement.set(formLikeRoot, {
+      username: usernameValue,
+      password: passwordValue,
+      dismissed,
+      triggeredByFillingGenerated,
+    });
+    lazy.log(
+      "compareAndUpdatePreviouslySentValues: values not equivalent, returning false"
+    );
+    return false;
+  }
 }
 
 
@@ -1016,64 +1073,6 @@ class LoginManagerChild extends JSWindowActorChild {
 
   static forWindow(window) {
     return window.windowGlobalChild?.getActor("LoginManager");
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _compareAndUpdatePreviouslySentValues(
-    formLikeRoot,
-    usernameValue,
-    passwordValue,
-    dismissed = false,
-    triggeredByFillingGenerated = false
-  ) {
-    let state = this.stateForDocument(formLikeRoot.ownerDocument);
-    const lastSentValues = state.lastSubmittedValuesByRootElement.get(
-      formLikeRoot
-    );
-    if (lastSentValues) {
-      if (dismissed && !lastSentValues.dismissed) {
-        
-        dismissed = false;
-      }
-      if (
-        lastSentValues.username == usernameValue &&
-        lastSentValues.password == passwordValue &&
-        lastSentValues.dismissed == dismissed &&
-        lastSentValues.triggeredByFillingGenerated ==
-          triggeredByFillingGenerated
-      ) {
-        lazy.log(
-          "_compareAndUpdatePreviouslySentValues: values are equivalent, returning true"
-        );
-        return true;
-      }
-    }
-
-    
-    
-    state.lastSubmittedValuesByRootElement.set(formLikeRoot, {
-      username: usernameValue,
-      password: passwordValue,
-      dismissed,
-      triggeredByFillingGenerated,
-    });
-    lazy.log(
-      "_compareAndUpdatePreviouslySentValues: values not equivalent, returning false"
-    );
-    return false;
   }
 
   receiveMessage(msg) {
@@ -2435,7 +2434,7 @@ class LoginManagerChild extends JSWindowActorChild {
       }
 
       if (
-        this._compareAndUpdatePreviouslySentValues(
+        docState.compareAndUpdatePreviouslySentValues(
           form.rootElement,
           usernameValue,
           newPasswordField.value,
