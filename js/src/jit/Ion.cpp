@@ -1018,6 +1018,20 @@ bool OptimizeMIR(MIRGenerator* mir) {
     }
   }
 
+  
+  
+  if (!mir->compilingWasm()) {
+    if (!EliminateTriviallyDeadResumePointOperands(mir, graph)) {
+      return false;
+    }
+    gs.spewPass("Eliminate trivially dead resume point operands");
+    AssertBasicGraphCoherency(graph);
+
+    if (mir->shouldCancel("Eliminate trivially dead resume point operands")) {
+      return false;
+    }
+  }
+
   {
     AutoTraceLog log(logger, TraceLogger_FoldTests);
     if (!FoldTests(graph)) {

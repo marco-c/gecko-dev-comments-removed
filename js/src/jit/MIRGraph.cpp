@@ -190,6 +190,9 @@ MBasicBlock* MBasicBlock::NewSplitEdge(MIRGraph& graph, MBasicBlock* pred,
     if (!split) {
       return nullptr;
     }
+
+    
+    split->end(MGoto::New(graph.alloc(), succ));
   } else {
     
     MResumePoint* succEntry = succ->entryResumePoint();
@@ -226,6 +229,9 @@ MBasicBlock* MBasicBlock::NewSplitEdge(MIRGraph& graph, MBasicBlock* pred,
     split->entryResumePoint_ = splitEntry;
 
     
+    split->end(MGoto::New(graph.alloc(), succ));
+
+    
     
     size_t succEdgeIdx = succ->indexForPredecessor(pred);
 
@@ -233,9 +239,16 @@ MBasicBlock* MBasicBlock::NewSplitEdge(MIRGraph& graph, MBasicBlock* pred,
       MDefinition* def = succEntry->getOperand(i);
       
       
-      MOZ_ASSERT_IF(def->block() == succ, def->isPhi());
       if (def->block() == succ) {
-        def = def->toPhi()->getOperand(succEdgeIdx);
+        if (def->isPhi()) {
+          def = def->toPhi()->getOperand(succEdgeIdx);
+        } else {
+          
+          MOZ_ASSERT(def->isConstant());
+          MOZ_ASSERT(def->type() == MIRType::MagicOptimizedOut);
+
+          def = split->optimizedOutConstant(graph.alloc());
+        }
       }
 
       splitEntry->initOperand(i, def);
@@ -249,9 +262,6 @@ MBasicBlock* MBasicBlock::NewSplitEdge(MIRGraph& graph, MBasicBlock* pred,
   }
 
   split->setLoopDepth(succ->loopDepth());
-
-  
-  split->end(MGoto::New(graph.alloc(), succ));
 
   graph.insertBlockAfter(pred, split);
 

@@ -1266,6 +1266,27 @@ static void EliminateTriviallyDeadResumePointOperands(MIRGraph& graph,
 
 
 
+bool jit::EliminateTriviallyDeadResumePointOperands(MIRGenerator* mir,
+                                                    MIRGraph& graph) {
+  for (auto* block : graph) {
+    if (MResumePoint* rp = block->entryResumePoint()) {
+      if (!graph.alloc().ensureBallast()) {
+        return false;
+      }
+      ::EliminateTriviallyDeadResumePointOperands(graph, rp);
+    }
+  }
+  return true;
+}
+
+
+
+
+
+
+
+
+
 
 
 bool jit::EliminateDeadResumePointOperands(MIRGenerator* mir, MIRGraph& graph) {
@@ -1286,7 +1307,7 @@ bool jit::EliminateDeadResumePointOperands(MIRGenerator* mir, MIRGraph& graph) {
       if (!graph.alloc().ensureBallast()) {
         return false;
       }
-      EliminateTriviallyDeadResumePointOperands(graph, rp);
+      ::EliminateTriviallyDeadResumePointOperands(graph, rp);
     }
 
     
@@ -1300,7 +1321,7 @@ bool jit::EliminateDeadResumePointOperands(MIRGenerator* mir, MIRGraph& graph) {
         if (!graph.alloc().ensureBallast()) {
           return false;
         }
-        EliminateTriviallyDeadResumePointOperands(graph, rp);
+        ::EliminateTriviallyDeadResumePointOperands(graph, rp);
       }
 
       
