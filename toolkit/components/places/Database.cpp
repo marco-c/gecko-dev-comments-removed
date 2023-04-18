@@ -64,6 +64,9 @@
 
 
 #define PREF_DISABLE_DURABILITY "places.database.disableDurability"
+
+#define PREF_PREVIEWS_ENABLED "places.previews.enabled"
+
 #define ENV_ALLOW_CORRUPTION \
   "ALLOW_PLACES_DATABASE_TO_LOSE_DATA_AND_BECOME_CORRUPT"
 
@@ -1217,6 +1220,13 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
 
       
 
+      if (currentSchemaVersion < 61) {
+        rv = MigrateV61Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
       
       
       
@@ -1341,6 +1351,10 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
 
     
     rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_SESSION_TO_PLACES);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_PREVIEWS_TOMBSTONES);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -1585,6 +1599,8 @@ nsresult Database::InitFunctions() {
   NS_ENSURE_SUCCESS(rv, rv);
   rv = InvalidateDaysOfHistoryFunction::create(mMainConn);
   NS_ENSURE_SUCCESS(rv, rv);
+  rv = MD5HexFunction::create(mMainConn);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
 }
@@ -1611,8 +1627,16 @@ nsresult Database::InitTempEntities() {
   rv = mMainConn->ExecuteSimpleSQL(
       CREATE_UPDATEORIGINSDELETE_AFTERDELETE_TRIGGER);
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = mMainConn->ExecuteSimpleSQL(CREATE_PLACES_AFTERDELETE_TRIGGER);
-  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (Preferences::GetBool(PREF_PREVIEWS_ENABLED, false)) {
+    rv = mMainConn->ExecuteSimpleSQL(
+        CREATE_PLACES_AFTERDELETE_WPREVIEWS_TRIGGER);
+    NS_ENSURE_SUCCESS(rv, rv);
+  } else {
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_PLACES_AFTERDELETE_TRIGGER);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
   rv = mMainConn->ExecuteSimpleSQL(CREATE_UPDATEORIGINSUPDATE_TEMP);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = mMainConn->ExecuteSimpleSQL(
@@ -2325,6 +2349,18 @@ nsresult Database::MigrateV60Up() {
   if (NS_FAILED(rv)) {
     rv = mMainConn->ExecuteSimpleSQL(
         "ALTER TABLE moz_places ADD COLUMN site_name TEXT"_ns);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+  return NS_OK;
+}
+
+nsresult Database::MigrateV61Up() {
+  
+  nsCOMPtr<mozIStorageStatement> stmt;
+  nsresult rv = mMainConn->CreateStatement(
+      "SELECT hash FROM moz_previews_tombstones"_ns, getter_AddRefs(stmt));
+  if (NS_FAILED(rv)) {
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_PREVIEWS_TOMBSTONES);
     NS_ENSURE_SUCCESS(rv, rv);
   }
   return NS_OK;
