@@ -31,30 +31,32 @@ nsresult BodyCreateDir(nsIFile& aBaseDir);
 
 
 
-nsresult BodyDeleteDir(const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir);
+nsresult BodyDeleteDir(const ClientMetadata& aClientMetadata,
+                       nsIFile& aBaseDir);
 
 
 
 Result<std::pair<nsID, nsCOMPtr<nsISupports>>, nsresult> BodyStartWriteStream(
-    const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir, nsIInputStream& aSource,
-    void* aClosure, nsAsyncCopyCallbackFun aCallback);
+    const ClientMetadata& aClientMetadata, nsIFile& aBaseDir,
+    nsIInputStream& aSource, void* aClosure, nsAsyncCopyCallbackFun aCallback);
 
 void BodyCancelWrite(nsISupports& aCopyContext);
 
 nsresult BodyFinalizeWrite(nsIFile& aBaseDir, const nsID& aId);
 
 Result<NotNull<nsCOMPtr<nsIInputStream>>, nsresult> BodyOpen(
-    const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir, const nsID& aId);
+    const ClientMetadata& aClientMetadata, nsIFile& aBaseDir, const nsID& aId);
 
-nsresult BodyMaybeUpdatePaddingSize(const QuotaInfo& aQuotaInfo,
+nsresult BodyMaybeUpdatePaddingSize(const ClientMetadata& aClientMetadata,
                                     nsIFile& aBaseDir, const nsID& aId,
                                     uint32_t aPaddingInfo,
                                     int64_t* aPaddingSizeInOut);
 
-nsresult BodyDeleteFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir,
-                         const nsTArray<nsID>& aIdList);
+nsresult BodyDeleteFiles(const ClientMetadata& aClientMetadata,
+                         nsIFile& aBaseDir, const nsTArray<nsID>& aIdList);
 
-nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir,
+nsresult BodyDeleteOrphanedFiles(const ClientMetadata& aClientMetadata,
+                                 nsIFile& aBaseDir,
                                  const nsTArray<nsID>& aKnownBodyIdList);
 
 
@@ -63,28 +65,28 @@ nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir,
 
 
 template <typename Func>
-nsresult BodyTraverseFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBodyDir,
-                           const Func& aHandleFileFunc, bool aCanRemoveFiles,
-                           bool aTrackQuota = true);
+nsresult BodyTraverseFiles(const ClientMetadata& aClientMetadata,
+                           nsIFile& aBodyDir, const Func& aHandleFileFunc,
+                           bool aCanRemoveFiles, bool aTrackQuota = true);
 
-nsresult CreateMarkerFile(const QuotaInfo& aQuotaInfo);
+nsresult CreateMarkerFile(const ClientMetadata& aClientMetadata);
 
-nsresult DeleteMarkerFile(const QuotaInfo& aQuotaInfo);
+nsresult DeleteMarkerFile(const ClientMetadata& aClientMetadata);
 
-bool MarkerFileExists(const QuotaInfo& aQuotaInfo);
+bool MarkerFileExists(const ClientMetadata& aClientMetadata);
 
-nsresult RemoveNsIFileRecursively(const QuotaInfo& aQuotaInfo, nsIFile& aFile,
-                                  bool aTrackQuota = true);
-
-
+nsresult RemoveNsIFileRecursively(const ClientMetadata& aClientMetadata,
+                                  nsIFile& aFile, bool aTrackQuota = true);
 
 
 
-nsresult RemoveNsIFile(const QuotaInfo& aQuotaInfo, nsIFile& aFile,
+
+
+nsresult RemoveNsIFile(const ClientMetadata& aClientMetadata, nsIFile& aFile,
                        bool aTrackQuota = true);
 
-void DecreaseUsageForQuotaInfo(const QuotaInfo& aQuotaInfo,
-                               int64_t aUpdatingSize);
+void DecreaseUsageForClientMetadata(const ClientMetadata& aClientMetadata,
+                                    int64_t aUpdatingSize);
 
 
 

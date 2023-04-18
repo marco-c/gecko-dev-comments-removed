@@ -30,8 +30,7 @@ using CacheId = int64_t;
 static const CacheId INVALID_CACHE_ID = -1;
 
 
-
-struct QuotaInfo : quota::OriginMetadata {
+struct ClientMetadata : quota::OriginMetadata {
   nsCOMPtr<nsIFile> mDir;
   int64_t mDirectoryLockId = -1;
 };

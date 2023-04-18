@@ -56,7 +56,7 @@ class Action : public SafeRefCounted<Action> {
   
   
   virtual void RunOnTarget(SafeRefPtr<Resolver> aResolver,
-                           const QuotaInfo& aQuotaInfo,
+                           const ClientMetadata& aClientMetadata,
                            Data* aOptionalData) = 0;
 
   
@@ -102,4 +102,4 @@ class Action : public SafeRefCounted<Action> {
 }  
 }  
 
-#endif  
+#endif
