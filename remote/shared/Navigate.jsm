@@ -51,7 +51,9 @@ async function waitForInitialNavigationCompleted(webProgress, options = {}) {
   const browsingContext = webProgress.browsingContext;
 
   
-  const listener = new ProgressListener(webProgress, { resolveWhenStarted });
+  const listener = new ProgressListener(webProgress, {
+    resolveWhenStarted,
+  });
   const navigated = listener.start();
 
   
@@ -85,6 +87,7 @@ async function waitForInitialNavigationCompleted(webProgress, options = {}) {
 
 
 class ProgressListener {
+  #expectNavigation;
   #resolveWhenStarted;
   #unloadTimeout;
   #waitForExplicitStart;
@@ -113,13 +116,21 @@ class ProgressListener {
 
 
 
+
+
+
+
+
+
   constructor(webProgress, options = {}) {
     const {
+      expectNavigation = false,
       resolveWhenStarted = false,
       unloadTimeout = 200,
       waitForExplicitStart = false,
     } = options;
 
+    this.#expectNavigation = expectNavigation;
     this.#resolveWhenStarted = resolveWhenStarted;
     this.#unloadTimeout = unloadTimeout;
     this.#waitForExplicitStart = waitForExplicitStart;
@@ -205,14 +216,16 @@ class ProgressListener {
   }
 
   #setUnloadTimer() {
-    this.#unloadTimerId = setTimeout(() => {
-      logger.trace(
-        truncate`[${this.browsingContext.id}] No navigation detected: ${this.currentURI?.spec}`
-      );
-      
-      this.#targetURI = this.currentURI;
-      this.stop();
-    }, this.#unloadTimeout);
+    if (!this.#expectNavigation) {
+      this.#unloadTimerId = setTimeout(() => {
+        logger.trace(
+          truncate`[${this.browsingContext.id}] No navigation detected: ${this.currentURI?.spec}`
+        );
+        
+        this.#targetURI = this.currentURI;
+        this.stop();
+      }, this.#unloadTimeout);
+    }
   }
 
   onStateChange(progress, request, flag, status) {

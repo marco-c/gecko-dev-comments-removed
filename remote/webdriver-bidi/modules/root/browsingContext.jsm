@@ -347,6 +347,7 @@ class BrowsingContextModule extends Module {
 
     const resolveWhenStarted = wait === WaitCondition.None;
     const listener = new ProgressListener(webProgress, {
+      expectNavigation: true,
       resolveWhenStarted,
       
       
