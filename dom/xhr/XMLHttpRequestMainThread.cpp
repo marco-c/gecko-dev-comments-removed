@@ -2911,6 +2911,7 @@ void XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody,
   
   
   if (!mChannel) {
+    mErrorLoad = ErrorType::eChannelOpen;
     mFlagSend = true;  
     aRv = MaybeSilentSendFailure(NS_ERROR_DOM_NETWORK_ERR);
     return;
@@ -2918,6 +2919,7 @@ void XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody,
 
   
   if (IsBlobURI(mRequestURL) && !mRequestMethod.EqualsLiteral("GET")) {
+    mErrorLoad = ErrorType::eChannelOpen;
     mFlagSend = true;  
     aRv = MaybeSilentSendFailure(NS_ERROR_DOM_NETWORK_ERR);
     return;
