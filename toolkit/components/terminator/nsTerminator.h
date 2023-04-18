@@ -35,9 +35,6 @@ class nsTerminator final : public nsIObserver {
   int mCurrentStep;
 };
 
-
-void XPCOMShutdownNotified();
-
 }  
 
 #define NS_TOOLKIT_TERMINATOR_CID                    \

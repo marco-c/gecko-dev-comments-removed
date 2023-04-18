@@ -91,9 +91,10 @@ static ShutdownStep sShutdownSteps[] = {
     ShutdownStep(mozilla::ShutdownPhase::AppShutdownQM),
     ShutdownStep(mozilla::ShutdownPhase::XPCOMWillShutdown),
     ShutdownStep(mozilla::ShutdownPhase::XPCOMShutdown),
+    ShutdownStep(mozilla::ShutdownPhase::XPCOMShutdownThreads),
+    ShutdownStep(mozilla::ShutdownPhase::XPCOMShutdownFinal),
+    ShutdownStep(mozilla::ShutdownPhase::CCPostLastCycleCollection),
 };
-
-Atomic<bool> sShutdownNotified;
 
 int GetStepForPhase(mozilla::ShutdownPhase aPhase) {
   for (size_t i = 0; i < std::size(sShutdownSteps); i++) {
@@ -190,6 +191,7 @@ void RunWatchdog(void* arg) {
       continue;
     }
 
+    
     NoteIntentionalCrash(XRE_GetProcessTypeString());
 
     
@@ -202,53 +204,44 @@ void RunWatchdog(void* arg) {
         stack.get());
 
     
-    if (!sShutdownNotified) {
-      mozilla::ShutdownPhase lastStep = mozilla::ShutdownPhase::NotInShutdown;
-      
-      
-      
-      
-      for (int i = ArrayLength(sShutdownSteps) - 1; i >= 0; --i) {
-        if (sShutdownSteps[i].mTicks > -1) {
-          lastStep = sShutdownSteps[i].mPhase;
-          break;
-        }
+    mozilla::ShutdownPhase lastPhase = mozilla::ShutdownPhase::NotInShutdown;
+    
+    
+    
+    
+    for (int i = ArrayLength(sShutdownSteps) - 1; i >= 0; --i) {
+      if (sShutdownSteps[i].mTicks > -1) {
+        lastPhase = sShutdownSteps[i].mPhase;
+        break;
       }
+    }
 
-      if (lastStep != mozilla::ShutdownPhase::NotInShutdown) {
-        nsCString msg;
-        msg.AppendPrintf(
-            "Shutdown hanging at step %s. "
-            "Something is blocking the main-thread.",
-            mozilla::AppShutdown::GetObserverKey(lastStep));
-        
-        MOZ_CRASH_UNSAFE(strdup(msg.BeginReading()));
-      }
-
+    if (lastPhase == mozilla::ShutdownPhase::NotInShutdown) {
+      
+      CrashReporter::SetMinidumpAnalysisAllThreads();
       MOZ_CRASH("Shutdown hanging before starting any known phase.");
     }
 
     
+    
     mozilla::dom::workerinternals::RuntimeService* runtimeService =
         mozilla::dom::workerinternals::RuntimeService::GetService();
     if (runtimeService) {
+      
+      
       runtimeService->CrashIfHanging();
     }
 
     
     
-    
-    
-    
-#if defined(XP_WIN)
-    Sleep(1000 );
-#else
-    usleep(1000000 );
-#endif
+    nsCString msg;
+    msg.AppendPrintf(
+        "Shutdown hanging at step %s. "
+        "Something is blocking the main-thread.",
+        mozilla::AppShutdown::GetShutdownPhaseName(lastPhase));
 
-    
     CrashReporter::SetMinidumpAnalysisAllThreads();
-    MOZ_CRASH("Shutdown hanging after all known phases and workers finished.");
+    MOZ_CRASH_UNSAFE(strdup(msg.BeginReading()));
   }
 }
 
@@ -384,7 +377,7 @@ nsTerminator::nsTerminator() : mInitialized(false), mCurrentStep(-1) {}
 
 void nsTerminator::Start() {
   MOZ_ASSERT(!mInitialized);
-  sShutdownNotified = false;
+
   StartWatchdog();
 #if !defined(NS_FREE_PERMANENT_DATA)
   
@@ -417,6 +410,12 @@ nsTerminator::Observe(nsISupports*, const char* aTopic, const char16_t*) {
     AdvancePhase(mozilla::ShutdownPhase::XPCOMWillShutdown);
   } else if (strcmp(aTopic, "terminator-test-xpcom-shutdown") == 0) {
     AdvancePhase(mozilla::ShutdownPhase::XPCOMShutdown);
+  } else if (strcmp(aTopic, "terminator-test-xpcom-shutdown-threads") == 0) {
+    AdvancePhase(mozilla::ShutdownPhase::XPCOMShutdownThreads);
+  } else if (strcmp(aTopic, "terminator-test-XPCOMShutdownFinal") == 0) {
+    AdvancePhase(mozilla::ShutdownPhase::XPCOMShutdownFinal);
+  } else if (strcmp(aTopic, "terminator-test-CCPostLastCycleCollection") == 0) {
+    AdvancePhase(mozilla::ShutdownPhase::CCPostLastCycleCollection);
   }
 
   return NS_OK;
@@ -506,11 +505,24 @@ void nsTerminator::StartWriter() {
   }
 }
 
+
+
+
+const char* GetReadableNameForPhase(mozilla::ShutdownPhase aPhase) {
+  const char* readableName = mozilla::AppShutdown::GetObserverKey(aPhase);
+  if (!readableName) {
+    readableName = mozilla::AppShutdown::GetShutdownPhaseName(aPhase);
+  }
+  return readableName;
+}
+
 void nsTerminator::AdvancePhase(mozilla::ShutdownPhase aPhase) {
   
-  if (sShutdownNotified) {
+  auto step = GetStepForPhase(aPhase);
+  if (step < 0) {
     return;
   }
+
   
   
   
@@ -518,14 +530,14 @@ void nsTerminator::AdvancePhase(mozilla::ShutdownPhase aPhase) {
     Start();
   }
 
-  UpdateHeartbeat(GetStepForPhase(aPhase));
+  UpdateHeartbeat(step);
 #if !defined(NS_FREE_PERMANENT_DATA)
   
   
   
   UpdateTelemetry();
 #endif  
-  UpdateCrashReport(mozilla::AppShutdown::GetObserverKey(aPhase));
+  UpdateCrashReport(GetReadableNameForPhase(aPhase));
 }
 
 void nsTerminator::UpdateHeartbeat(int32_t aStep) {
@@ -569,8 +581,7 @@ void nsTerminator::UpdateTelemetry() {
       telemetryData->AppendLiteral(", ");
     }
     telemetryData->AppendLiteral(R"(")");
-    telemetryData->Append(
-        mozilla::AppShutdown::GetObserverKey(shutdownStep.mPhase));
+    telemetryData->Append(GetReadableNameForPhase(shutdownStep.mPhase));
     telemetryData->AppendLiteral(R"(": )");
     telemetryData->AppendInt(shutdownStep.mTicks);
   }
@@ -600,10 +611,4 @@ void nsTerminator::UpdateCrashReport(const char* aTopic) {
   Unused << CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::ShutdownProgress, report);
 }
-
-void XPCOMShutdownNotified() {
-  MOZ_DIAGNOSTIC_ASSERT(sShutdownNotified == false);
-  sShutdownNotified = true;
-}
-
 }  

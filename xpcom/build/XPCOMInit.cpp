@@ -625,10 +625,6 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
           do_QueryInterface(mgr));
     }
 
-#ifndef ANDROID
-    mozilla::XPCOMShutdownNotified();
-#endif
-
     
     
     NS_ProcessPendingEvents(thread);
