@@ -217,10 +217,7 @@ void DManipEventHandler::TransitionToState(State aNewState) {
   switch (prevState) {
     case State::ePanning: {
       
-      
-      if (aNewState != State::eInertia) {
-        SendPan(Phase::eEnd, 0.f, 0.f, false);
-      }
+      SendPan(Phase::eEnd, 0.f, 0.f, false);
       break;
     }
     case State::eInertia: {
@@ -304,7 +301,7 @@ DManipEventHandler::OnContentUpdated(IDirectManipulationViewport* viewport,
 
   
   if (FuzzyEqualsMultiplicative(scale, 1.f)) {
-    if (mState == State::eNone || mState == State::eInertia) {
+    if (mState == State::eNone) {
       TransitionToState(State::ePanning);
     }
   } else {
