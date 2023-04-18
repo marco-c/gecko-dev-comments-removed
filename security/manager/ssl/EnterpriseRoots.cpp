@@ -277,7 +277,6 @@ OSStatus GatherEnterpriseCertsMacOS(Vector<EnterpriseCert>& certs) {
     }
     bool isTrusted = false;
     bool fallBackToDeprecatedAPI = true;
-#  if defined MAC_OS_X_VERSION_10_14
     if (nsCocoaFeatures::OnMojaveOrLater()) {
       
       
@@ -287,7 +286,6 @@ OSStatus GatherEnterpriseCertsMacOS(Vector<EnterpriseCert>& certs) {
         fallBackToDeprecatedAPI = false;
       }
     }
-#  endif  
     if (fallBackToDeprecatedAPI) {
       SecTrustResultType result;
       rv = SecTrustEvaluate(trustHandle.get(), &result);
