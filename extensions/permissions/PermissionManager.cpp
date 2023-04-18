@@ -5,7 +5,6 @@
 
 
 #include "mozilla/AbstractThread.h"
-#include "mozilla/AppShutdown.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ContentPrincipal.h"
@@ -614,6 +613,12 @@ PermissionManager::PermissionKey::CreateFromURI(nsIURI* aURI,
 }
 
 
+void PermissionManager::Startup() {
+  nsCOMPtr<nsIPermissionManager> permManager =
+      do_GetService("@mozilla.org/permissionmanager;1");
+}
+
+
 
 
 NS_IMPL_ISUPPORTS(PermissionManager, nsIPermissionManager, nsIObserver,
@@ -623,6 +628,7 @@ PermissionManager::PermissionManager()
     : mMonitor("PermissionManager::mMonitor"),
       mState(eInitializing),
       mMemoryOnlyDB(false),
+      mBlockerAdded(false),
       mLargestID(0) {}
 
 PermissionManager::~PermissionManager() {
@@ -642,13 +648,7 @@ PermissionManager::~PermissionManager() {
 }
 
 
-StaticMutex PermissionManager::sCreationMutex;
-
-
 already_AddRefed<nsIPermissionManager> PermissionManager::GetXPCOMSingleton() {
-  
-  StaticMutexAutoLock lock(sCreationMutex);
-
   if (gPermissionManager) {
     return do_AddRef(gPermissionManager);
   }
@@ -670,9 +670,6 @@ already_AddRefed<nsIPermissionManager> PermissionManager::GetXPCOMSingleton() {
 
 
 PermissionManager* PermissionManager::GetInstance() {
-  
-  
-  
   if (!gPermissionManager) {
     
     nsCOMPtr<nsIPermissionManager> permManager = GetXPCOMSingleton();
@@ -682,12 +679,6 @@ PermissionManager* PermissionManager::GetInstance() {
 }
 
 nsresult PermissionManager::Init() {
-  
-  
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown)) {
-    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
-  }
-
   
   
   mMemoryOnlyDB = Preferences::GetBool("permissions.memory_only", false);
@@ -714,22 +705,31 @@ nsresult PermissionManager::Init() {
 
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   if (observerService) {
+    observerService->AddObserver(this, "profile-before-change", true);
     observerService->AddObserver(this, "profile-do-change", true);
     observerService->AddObserver(this, "testonly-reload-permissions-from-disk",
                                  true);
   }
 
   if (XRE_IsParentProcess()) {
-    nsCOMPtr<nsIAsyncShutdownClient> asc = GetAsyncShutdownClient();
-    if (!asc) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-    nsAutoString blockerName;
-    MOZ_ALWAYS_SUCCEEDS(GetName(blockerName));
+    nsCOMPtr<nsIAsyncShutdownClient> asc = GetShutdownPhase();
+    if (asc) {
+      nsAutoString blockerName;
+      MOZ_ALWAYS_SUCCEEDS(GetName(blockerName));
 
-    nsresult rv = asc->AddBlocker(
-        this, NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__, blockerName);
-    NS_ENSURE_SUCCESS(rv, rv);
+      
+      nsresult rv =
+          asc->AddBlocker(this, NS_LITERAL_STRING_FROM_CSTRING(__FILE__),
+                          __LINE__, blockerName);
+      Unused << NS_WARN_IF(NS_FAILED(rv));
+      if (NS_SUCCEEDED(rv)) {
+        mBlockerAdded = true;
+      }
+    }
+
+    if (!mBlockerAdded) {
+      ClearOnShutdown(&gPermissionManager);
+    }
   }
 
   AddIdleDailyMaintenanceJob();
@@ -2556,7 +2556,15 @@ NS_IMETHODIMP PermissionManager::Observe(nsISupports* aSubject,
                                          const char16_t* someData) {
   ENSURE_NOT_CHILD_PROCESS;
 
-  if (!nsCRT::strcmp(aTopic, "profile-do-change")) {
+  if (!nsCRT::strcmp(aTopic, "profile-before-change")) {
+    if (!mBlockerAdded) {
+      
+      
+      RemoveIdleDailyMaintenanceJob();
+      RemoveAllFromMemory();
+      CloseDB(eNone);
+    }
+  } else if (!nsCRT::strcmp(aTopic, "profile-do-change")) {
     
     InitDB(false);
   } else if (!nsCRT::strcmp(aTopic, "testonly-reload-permissions-from-disk")) {
@@ -3819,7 +3827,7 @@ nsresult PermissionManager::TestPermissionWithoutDefaultsFromPrincipal(
 void PermissionManager::MaybeCompleteShutdown() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsCOMPtr<nsIAsyncShutdownClient> asc = GetAsyncShutdownClient();
+  nsCOMPtr<nsIAsyncShutdownClient> asc = GetShutdownPhase();
   MOZ_ASSERT(asc);
 
   DebugOnly<nsresult> rv = asc->RemoveBlocker(this);
@@ -3858,8 +3866,7 @@ PermissionManager::GetState(nsIPropertyBag** aBagOut) {
   return NS_OK;
 }
 
-nsCOMPtr<nsIAsyncShutdownClient> PermissionManager::GetAsyncShutdownClient()
-    const {
+nsCOMPtr<nsIAsyncShutdownClient> PermissionManager::GetShutdownPhase() const {
   nsresult rv;
   nsCOMPtr<nsIAsyncShutdownService> svc =
       do_GetService("@mozilla.org/async-shutdown-service;1", &rv);
@@ -3868,9 +3875,7 @@ nsCOMPtr<nsIAsyncShutdownClient> PermissionManager::GetAsyncShutdownClient()
   }
 
   nsCOMPtr<nsIAsyncShutdownClient> client;
-  
-  
-  rv = svc->GetXpcomWillShutdown(getter_AddRefs(client));
+  rv = svc->GetProfileBeforeChange(getter_AddRefs(client));
   MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
 
   return client;

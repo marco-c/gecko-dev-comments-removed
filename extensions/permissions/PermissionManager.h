@@ -20,7 +20,6 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/StaticMutex.h"
 #include "mozilla/ThreadBound.h"
 #include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
@@ -195,6 +194,15 @@ class PermissionManager final : public nsIPermissionManager,
       nsIURI* aURI, const OriginAttributes* aOriginAttributes,
       const nsACString& aType, uint32_t* aPermission);
 
+  
+
+
+
+
+
+
+  static void Startup();
+
   nsresult RemovePermissionsWithAttributes(OriginAttributesPattern& aAttrs);
 
   
@@ -365,7 +373,6 @@ class PermissionManager final : public nsIPermissionManager,
 
  private:
   ~PermissionManager();
-  static StaticMutex sCreationMutex;
 
   
 
@@ -522,7 +529,7 @@ class PermissionManager final : public nsIPermissionManager,
                                       uint32_t aExpireType, int64_t aExpireTime,
                                       int64_t aModificationTime, int64_t aId);
 
-  nsCOMPtr<nsIAsyncShutdownClient> GetAsyncShutdownClient() const;
+  nsCOMPtr<nsIAsyncShutdownClient> GetShutdownPhase() const;
 
   void MaybeCompleteShutdown();
 
@@ -638,6 +645,8 @@ class PermissionManager final : public nsIPermissionManager,
   void CompleteMigrations();
 
   bool mMemoryOnlyDB;
+
+  bool mBlockerAdded;
 
   nsTHashtable<PermissionHashKey> mPermissionTable;
   

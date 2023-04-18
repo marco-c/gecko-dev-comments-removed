@@ -101,13 +101,6 @@ add_task(async function test_hawk_authenticated_request() {
   let localTime = then + clockSkew;
 
   
-  
-  
-  
-  
-  
-
-  
   let acceptLanguage = "zu-NP"; 
   Services.prefs.setStringPref("intl.accept_languages", acceptLanguage);
 
