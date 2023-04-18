@@ -49,6 +49,12 @@ Preferences.set("media.gmp-manager.checkContentSignature", false);
 
 do_get_profile();
 
+add_task(function test_setup() {
+  
+  
+  Services.fog.initializeFOG();
+});
+
 function run_test() {
   Preferences.set("media.gmp.log.dump", true);
   Preferences.set("media.gmp.log.level", 0);
@@ -520,60 +526,15 @@ add_task(async function test_checkForAddons_updatesWithAddons() {
 
 
 add_task(async function test_checkForAddons_contentSignatureSuccess() {
-  Preferences.set("media.gmp-manager.checkContentSignature", true);
+  const previousUrlOverride = setupContentSigTestPrefs();
 
-  
-  let PREF_KEY_URL_OVERRIDE_BACKUP = Preferences.get(
-    GMPPrefs.KEY_URL_OVERRIDE,
-    ""
-  );
-
-  const testServer = new HttpServer();
-  
-  
-  testServer.start();
-  const baseUri =
-    testServer.identity.primaryScheme +
-    "://" +
-    testServer.identity.primaryHost +
-    ":" +
-    testServer.identity.primaryPort;
-
-  let goodXml = readStringFromFile(do_get_file("good.xml"));
-  
-  
-  
-  const goodXmlContentSignature =
-    "7QYnPqFoOlS02BpDdIRIljzmPr6BFwPs1z1y8KJUBlnU7EVG6FbnXmVVt5Op9wDzgvhXX7th8qFJvpPOZs_B_tHRDNJ8SK0HN95BAN15z3ZW2r95SSHmU-fP2JgoNOR3";
-
-  
-  const validX5uPath = "/valid_x5u";
-  const validCertChain = [
-    readStringFromFile(do_get_file("content_signing_aus_ee.pem")),
-    readStringFromFile(do_get_file("content_signing_int.pem")),
-    readStringFromFile(do_get_file("content_signing_root.pem")),
-  ];
-  testServer.registerPathHandler(validX5uPath, (req, res) => {
-    res.write(validCertChain.join("\n"));
-  });
-  const validX5uUrl = baseUri + validX5uPath;
-
-  
-  const validContentSignatureHeader = `x5u=${validX5uUrl}; p384ecdsa=${goodXmlContentSignature}`;
-  const updatePath = "/valid_update.xml";
-  testServer.registerPathHandler(updatePath, (req, res) => {
-    res.setHeader("content-signature", validContentSignatureHeader);
-    res.write(goodXml);
-  });
+  const xmlFetchResultHistogram = resetGmpTelemetryAndGetHistogram();
 
   
   setCertRoot("content_signing_root.pem");
 
-  Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, baseUri + updatePath);
-
-  const xmlFetchResultHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "MEDIA_GMP_UPDATE_XML_FETCH_RESULT"
-  );
+  const testServerInfo = getTestServerForContentSignatureTests();
+  Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, testServerInfo.validUpdateUri);
 
   let installManager = new GMPInstallManager();
   try {
@@ -596,14 +557,13 @@ add_task(async function test_checkForAddons_contentSignatureSuccess() {
 
   
   TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 2, 1);
-
   
-  if (PREF_KEY_URL_OVERRIDE_BACKUP) {
-    Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, PREF_KEY_URL_OVERRIDE_BACKUP);
-  } else {
-    Preferences.reset(GMPPrefs.KEY_URL_OVERRIDE);
-  }
-  Preferences.set("media.gmp-manager.checkContentSignature", false);
+  Assert.equal(
+    Glean.gmp.updateXmlFetchResult.content_sig_success.testGetValue(),
+    1
+  );
+
+  revertContentSigTestPrefs(previousUrlOverride);
 });
 
 
@@ -611,37 +571,14 @@ add_task(async function test_checkForAddons_contentSignatureSuccess() {
 
 
 add_task(async function test_checkForAddons_contentSignatureFailure() {
-  Preferences.set("media.gmp-manager.checkContentSignature", true);
+  const previousUrlOverride = setupContentSigTestPrefs();
 
-  
-  let PREF_KEY_URL_OVERRIDE_BACKUP = Preferences.get(
+  const xmlFetchResultHistogram = resetGmpTelemetryAndGetHistogram();
+
+  const testServerInfo = getTestServerForContentSignatureTests();
+  Preferences.set(
     GMPPrefs.KEY_URL_OVERRIDE,
-    ""
-  );
-
-  const testServer = new HttpServer();
-  
-  
-  testServer.start();
-  const baseUri =
-    testServer.identity.primaryScheme +
-    "://" +
-    testServer.identity.primaryHost +
-    ":" +
-    testServer.identity.primaryPort;
-
-  let goodXml = readStringFromFile(do_get_file("good.xml"));
-
-  const updatePath = "/invalid_update.xml";
-  testServer.registerPathHandler(updatePath, (req, res) => {
-    
-    res.write(goodXml);
-  });
-
-  Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, baseUri + updatePath);
-
-  const xmlFetchResultHistogram = TelemetryTestUtils.getAndClearHistogram(
-    "MEDIA_GMP_UPDATE_XML_FETCH_RESULT"
+    testServerInfo.missingContentSigUri
   );
 
   let installManager = new GMPInstallManager();
@@ -668,14 +605,13 @@ add_task(async function test_checkForAddons_contentSignatureFailure() {
 
   
   TelemetryTestUtils.assertHistogram(xmlFetchResultHistogram, 3, 1);
-
   
-  if (PREF_KEY_URL_OVERRIDE_BACKUP) {
-    Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, PREF_KEY_URL_OVERRIDE_BACKUP);
-  } else {
-    Preferences.reset(GMPPrefs.KEY_URL_OVERRIDE);
-  }
-  Preferences.set("media.gmp-manager.checkContentSignature", false);
+  Assert.equal(
+    Glean.gmp.updateXmlFetchResult.content_sig_missing_data.testGetValue(),
+    1
+  );
+
+  revertContentSigTestPrefs(previousUrlOverride);
 });
 
 
@@ -1222,4 +1158,110 @@ function createNewZipFile(zipName, data) {
   stream.close();
   info("zip file created on disk at: " + zipFile.path);
   return zipFile;
+}
+
+
+
+
+
+
+function setupContentSigTestPrefs() {
+  Preferences.set("media.gmp-manager.checkContentSignature", true);
+
+  
+  
+  return Preferences.get(GMPPrefs.KEY_URL_OVERRIDE, "");
+}
+
+
+
+
+
+
+
+
+function revertContentSigTestPrefs(previousUrlOverride) {
+  if (previousUrlOverride) {
+    Preferences.set(GMPPrefs.KEY_URL_OVERRIDE, previousUrlOverride);
+  } else {
+    Preferences.reset(GMPPrefs.KEY_URL_OVERRIDE);
+  }
+  Preferences.set("media.gmp-manager.checkContentSignature", false);
+}
+
+
+
+
+
+
+
+function resetGmpTelemetryAndGetHistogram() {
+  Services.fog.testResetFOG();
+  return TelemetryTestUtils.getAndClearHistogram(
+    "MEDIA_GMP_UPDATE_XML_FETCH_RESULT"
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getTestServerForContentSignatureTests() {
+  const testServer = new HttpServer();
+  
+  
+  testServer.start();
+  const baseUri =
+    testServer.identity.primaryScheme +
+    "://" +
+    testServer.identity.primaryHost +
+    ":" +
+    testServer.identity.primaryPort;
+
+  let goodXml = readStringFromFile(do_get_file("good.xml"));
+  
+  
+  
+  const goodXmlContentSignature =
+    "7QYnPqFoOlS02BpDdIRIljzmPr6BFwPs1z1y8KJUBlnU7EVG6FbnXmVVt5Op9wDzgvhXX7th8qFJvpPOZs_B_tHRDNJ8SK0HN95BAN15z3ZW2r95SSHmU-fP2JgoNOR3";
+
+  
+  const validX5uPath = "/valid_x5u";
+  const validCertChain = [
+    readStringFromFile(do_get_file("content_signing_aus_ee.pem")),
+    readStringFromFile(do_get_file("content_signing_int.pem")),
+    readStringFromFile(do_get_file("content_signing_root.pem")),
+  ];
+  testServer.registerPathHandler(validX5uPath, (req, res) => {
+    res.write(validCertChain.join("\n"));
+  });
+  const validX5uUrl = baseUri + validX5uPath;
+
+  
+  const validContentSignatureHeader = `x5u=${validX5uUrl}; p384ecdsa=${goodXmlContentSignature}`;
+  const validUpdatePath = "/valid_update.xml";
+  testServer.registerPathHandler(validUpdatePath, (req, res) => {
+    res.setHeader("content-signature", validContentSignatureHeader);
+    res.write(goodXml);
+  });
+
+  const missingContentSigPath = "/update_missing_content_sig.xml";
+  testServer.registerPathHandler(missingContentSigPath, (req, res) => {
+    
+    res.write(goodXml);
+  });
+
+  return {
+    testServer,
+    validUpdateUri: baseUri + validUpdatePath,
+    missingContentSigUri: baseUri + missingContentSigPath,
+  };
 }
