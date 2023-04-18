@@ -4,12 +4,12 @@
 
 
 
+#include <d3d11.h>
 #include <memory>
 #include <mfobjects.h>
 
 #include "D3D11TextureIMFSampleImage.h"
 #include "WMF.h"
-#include "d3d11.h"
 #include "mozilla/layers/KnowsCompositor.h"
 #include "mozilla/layers/TextureForwarder.h"
 
