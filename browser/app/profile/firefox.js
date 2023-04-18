@@ -1856,7 +1856,10 @@ pref("browser.contentblocking.reject-and-isolate-cookies.preferences.ui.enabled"
 
 
 
-pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cm,fp,stp,lvl2,rp,ocsp");
+
+
+
+pref("browser.contentblocking.features.strict", "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cm,fp,stp,lvl2,rp,rpTop,ocsp");
 
 
 
