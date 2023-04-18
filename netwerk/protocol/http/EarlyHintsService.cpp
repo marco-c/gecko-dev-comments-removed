@@ -5,32 +5,32 @@
 
 
 
-#include "EarlyHintsPreloader.h"
+#include "EarlyHintsService.h"
 #include "mozilla/Telemetry.h"
 
 namespace mozilla::net {
 
-void EarlyHintsPreloader::EarlyHint(const nsACString& linkHeader) {
+void EarlyHintsService::EarlyHint(const nsACString& linkHeader) {
   mEarlyHintsCount++;
   if (!mFirstEarlyHint) {
     mFirstEarlyHint.emplace(TimeStamp::NowLoRes());
   }
 }
 
-void EarlyHintsPreloader::FinalResponse(uint32_t aResponseStatus) {
+void EarlyHintsService::FinalResponse(uint32_t aResponseStatus) {
   
   
   CollectTelemetry(Some(aResponseStatus));
 }
 
-void EarlyHintsPreloader::Cancel() {
+void EarlyHintsService::Cancel() {
   if (!mCanceled) {
     CollectTelemetry(Nothing());
     mCanceled = true;
   }
 }
 
-void EarlyHintsPreloader::CollectTelemetry(Maybe<uint32_t> aResponseStatus) {
+void EarlyHintsService::CollectTelemetry(Maybe<uint32_t> aResponseStatus) {
   
   
   

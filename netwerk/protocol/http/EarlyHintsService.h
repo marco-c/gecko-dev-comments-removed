@@ -5,8 +5,8 @@
 
 
 
-#ifndef mozilla_net_EarlyHintsPreload_h
-#define mozilla_net_EarlyHintsPreload_h
+#ifndef mozilla_net_EarlyHintsService_h
+#define mozilla_net_EarlyHintsService_h
 
 #include "nsStringFwd.h"
 #include "mozilla/Maybe.h"
@@ -14,10 +14,10 @@
 
 namespace mozilla::net {
 
-class EarlyHintsPreloader {
+class EarlyHintsService {
  public:
-  EarlyHintsPreloader() = default;
-  ~EarlyHintsPreloader() = default;
+  EarlyHintsService() = default;
+  ~EarlyHintsService() = default;
   void EarlyHint(const nsACString& linkHeader);
   void FinalResponse(uint32_t aResponseStatus);
   void Cancel();
