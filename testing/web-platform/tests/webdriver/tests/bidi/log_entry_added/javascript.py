@@ -34,3 +34,7 @@ async def test_types_and_values(bidi_session, current_session, inline, wait_for_
     )
 
     
+
+    
+    
+    current_session.url = inline("<p>foo")
