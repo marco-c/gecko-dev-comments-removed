@@ -791,11 +791,6 @@ nsresult nsDocShell::LoadURI(nsDocShellLoadState* aLoadState,
       ("nsDocShell[%p]: loading %s with flags 0x%08x", this,
        aLoadState->URI()->GetSpecOrDefault().get(), aLoadState->LoadFlags()));
 
-  
-  
-  
-  mCheckingSessionHistory = false;
-
   if ((!aLoadState->LoadIsFromSessionHistory() &&
        !LOAD_TYPE_HAS_FLAGS(aLoadState->LoadType(),
                             LOAD_FLAGS_REPLACE_HISTORY)) ||
