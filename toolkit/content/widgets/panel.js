@@ -21,8 +21,6 @@
     constructor() {
       super();
 
-      this.attachShadow({ mode: "open" });
-
       this._prevFocus = 0;
       this._fadeTimer = null;
 
@@ -62,9 +60,11 @@
       
       
       
-      if (this.shadowRoot.firstChild) {
+      if (this.shadowRoot) {
         return;
       }
+
+      this.attachShadow({ mode: "open" });
 
       if (!this.isArrowPanel) {
         let slot = document.createElement("slot");
@@ -77,7 +77,7 @@
     }
 
     get panelContent() {
-      return this.shadowRoot.querySelector("[part=content]");
+      return this.shadowRoot?.querySelector("[part=content]");
     }
 
     get hidden() {
