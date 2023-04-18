@@ -883,6 +883,13 @@ pref("devtools.performance.recording.child.timeout_s", 0);
 #endif
 
 
+#if defined(NIGHTLY_BUILD)
+  pref("devtools.performance.recording.active-tab-view.enabled", true);
+#else
+  pref("devtools.performance.recording.active-tab-view.enabled", false);
+#endif
+
+
 pref("devtools.performance.recording.entries", 10000000);
 pref("devtools.performance.recording.entries.remote", 10000000);
 

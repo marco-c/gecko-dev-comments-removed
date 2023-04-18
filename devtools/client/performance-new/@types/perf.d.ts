@@ -402,6 +402,13 @@ export interface PerformancePref {
 
 
 
+
+
+  UIEnableActiveTabView: "devtools.performance.recording.active-tab-view.enabled";
+  
+
+
+
   PopupIntroDisplayed: "devtools.performance.popup.intro-displayed";
   
 

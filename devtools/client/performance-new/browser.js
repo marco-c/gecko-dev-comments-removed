@@ -41,6 +41,10 @@ const UI_BASE_URL_PREF = "devtools.performance.recording.ui-base-url";
 
 const UI_BASE_URL_PATH_PREF = "devtools.performance.recording.ui-base-url-path";
 
+
+const UI_ENABLE_ACTIVE_TAB_PREF =
+  "devtools.performance.recording.active-tab-view.enabled";
+
 const UI_BASE_URL_DEFAULT = "https://profiler.firefox.com";
 const UI_BASE_URL_PATH_DEFAULT = "/from-browser";
 
@@ -73,13 +77,25 @@ async function openProfilerTab(profilerViewMode) {
     UI_BASE_URL_PATH_PREF,
     UI_BASE_URL_PATH_DEFAULT
   );
+  
+  
+  const enableActiveTab = Services.prefs.getBoolPref(
+    UI_ENABLE_ACTIVE_TAB_PREF,
+    false
+  );
 
   
   
   
   let viewModeQueryString = "";
   if (profilerViewMode === "active-tab") {
-    viewModeQueryString = "?view=active-tab&implementation=js";
+    
+    
+    if (enableActiveTab) {
+      viewModeQueryString = "?view=active-tab&implementation=js";
+    } else {
+      viewModeQueryString = "?implementation=js";
+    }
   } else if (profilerViewMode !== undefined && profilerViewMode !== "full") {
     viewModeQueryString = `?view=${profilerViewMode}`;
   }

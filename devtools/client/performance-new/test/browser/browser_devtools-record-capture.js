@@ -9,6 +9,14 @@ const FRONTEND_BASE_PATH =
   "/browser/devtools/client/performance-new/test/browser/fake-frontend.html";
 const FRONTEND_BASE_URL = FRONTEND_BASE_HOST + FRONTEND_BASE_PATH;
 
+add_setup(async function setup() {
+  
+  
+  SpecialPowers.pushPrefEnv({
+    set: [["devtools.performance.recording.active-tab-view.enabled", true]],
+  });
+});
+
 add_task(async function test() {
   info(
     "Test that DevTools can capture profiles. This function also unit tests the " +
