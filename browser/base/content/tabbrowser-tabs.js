@@ -752,26 +752,37 @@
       } else if (draggedTab) {
         
         
-        let dropIndex = this._getDropIndex(event, false);
+        const dropIndex = this._getDropIndex(event, false);
         let newIndex = dropIndex;
-        let selectedIndex = -1;
+        let selectedTab;
+        let indexForSelectedTab;
         for (let i = 0; i < movingTabs.length; ++i) {
-          let tab = movingTabs[i];
+          const tab = movingTabs[i];
           if (tab.selected) {
-            selectedIndex = i;
+            selectedTab = tab;
+            indexForSelectedTab = newIndex;
           } else {
-            gBrowser.adoptTab(tab, newIndex++, tab == draggedTab);
+            const newTab = gBrowser.adoptTab(tab, newIndex, tab == draggedTab);
+            if (newTab) {
+              ++newIndex;
+            }
           }
         }
-        if (selectedIndex >= 0) {
-          let tab = movingTabs[selectedIndex];
-          gBrowser.adoptTab(tab, dropIndex + selectedIndex, tab == draggedTab);
+        if (selectedTab) {
+          const newTab = gBrowser.adoptTab(
+            selectedTab,
+            indexForSelectedTab,
+            selectedTab == draggedTab
+          );
+          if (newTab) {
+            ++newIndex;
+          }
         }
 
         
         gBrowser.addRangeToMultiSelectedTabs(
           gBrowser.tabs[dropIndex],
-          gBrowser.tabs[dropIndex + movingTabs.length - 1]
+          gBrowser.tabs[newIndex - 1]
         );
       } else {
         
