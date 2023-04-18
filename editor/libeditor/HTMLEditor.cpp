@@ -4613,9 +4613,17 @@ nsresult HTMLEditor::JoinNodesWithTransaction(nsIContent& aLeftContent,
 
   
   
+  
+  if (MOZ_UNLIKELY(NS_WARN_IF(aRightContent.GetParentNode() !=
+                              atRightContent.GetContainer()))) {
+    return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+  }
+
+  
+  
   DebugOnly<nsresult> rvIgnored = RangeUpdaterRef().SelAdjJoinNodes(
-      aLeftContent, aRightContent, *atRightContent.GetContainer(),
-      atRightContent.Offset(), oldLeftNodeLen);
+      EditorRawDOMPoint(&aRightContent, oldLeftNodeLen), aLeftContent,
+      atRightContent.Offset(), JoinNodesDirection::LeftNodeIntoRightNode);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "RangeUpdater::SelAdjJoinNodes() failed, but ignored");
 

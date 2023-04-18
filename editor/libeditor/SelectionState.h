@@ -26,6 +26,8 @@ class Selection;
 class Text;
 }  
 
+enum class JoinNodesDirection;  
+
 
 
 
@@ -141,9 +143,22 @@ class MOZ_STACK_CLASS RangeUpdater final {
   nsresult SelAdjInsertNode(const EditorDOMPointBase<PT, CT>& aPoint);
   void SelAdjDeleteNode(nsINode& aNode);
   nsresult SelAdjSplitNode(nsIContent& aRightNode, nsIContent& aNewLeftNode);
-  nsresult SelAdjJoinNodes(nsINode& aLeftNode, nsINode& aRightNode,
-                           nsINode& aParent, uint32_t aOffset,
-                           uint32_t aOldLeftNodeLength);
+  
+
+
+
+
+
+
+
+
+
+
+
+  nsresult SelAdjJoinNodes(const EditorRawDOMPoint& aStartOfRightContent,
+                           const nsIContent& aRemovedContent,
+                           uint32_t aOffsetOfRemovedContent,
+                           JoinNodesDirection aJoinNodesDirection);
   void SelAdjInsertText(const dom::Text& aTextNode, uint32_t aOffset,
                         uint32_t aInsertedLength);
   void SelAdjDeleteText(const dom::Text& aTextNode, uint32_t aOffset,

@@ -33,6 +33,13 @@ class OwningNonNull;
 
 
 
+enum class JoinNodesDirection {
+  LeftNodeIntoRightNode,
+  RightNodeIntoLeftNode,
+};
+
+
+
 
 
 

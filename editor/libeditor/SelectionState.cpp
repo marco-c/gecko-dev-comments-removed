@@ -5,8 +5,10 @@
 
 #include "SelectionState.h"
 
-#include "mozilla/Assertions.h"   
-#include "mozilla/EditorUtils.h"  
+#include "EditorUtils.h"      
+#include "HTMLEditHelpers.h"  
+
+#include "mozilla/Assertions.h"  
 #include "mozilla/dom/RangeBinding.h"
 #include "mozilla/dom/Selection.h"  
 #include "nsAString.h"              
@@ -347,9 +349,12 @@ nsresult RangeUpdater::SelAdjSplitNode(nsIContent& aRightNode,
   return NS_OK;
 }
 
-nsresult RangeUpdater::SelAdjJoinNodes(nsINode& aLeftNode, nsINode& aRightNode,
-                                       nsINode& aParent, uint32_t aOffset,
-                                       uint32_t aOldLeftNodeLength) {
+nsresult RangeUpdater::SelAdjJoinNodes(
+    const EditorRawDOMPoint& aStartOfRightContent,
+    const nsIContent& aRemovedContent, uint32_t aOffsetOfRemovedContent,
+    JoinNodesDirection aJoinNodesDirection) {
+  MOZ_ASSERT(aStartOfRightContent.IsSetAndValid());
+
   if (mLocked) {
     
     return NS_OK;
@@ -359,44 +364,44 @@ nsresult RangeUpdater::SelAdjJoinNodes(nsINode& aLeftNode, nsINode& aRightNode,
     return NS_OK;
   }
 
+  auto AdjustDOMPoint = [&](nsCOMPtr<nsINode>& aContainer,
+                            uint32_t& aOffset) -> void {
+    if (aContainer == aStartOfRightContent.GetContainerParent()) {
+      
+      
+      if (aOffset > aOffsetOfRemovedContent) {
+        aOffset--;
+      }
+      
+      
+      else if (aOffset == aOffsetOfRemovedContent) {
+        aContainer = aStartOfRightContent.GetContainer();
+        aOffset = aStartOfRightContent.Offset();
+      }
+    } else if (aContainer == aStartOfRightContent.GetContainer()) {
+      
+      
+      if (aJoinNodesDirection == JoinNodesDirection::LeftNodeIntoRightNode) {
+        aOffset += aStartOfRightContent.Offset();
+      }
+    } else if (aContainer == &aRemovedContent) {
+      
+      
+      
+      
+      aContainer = aStartOfRightContent.GetContainer();
+      if (aJoinNodesDirection == JoinNodesDirection::RightNodeIntoLeftNode) {
+        aOffset += aStartOfRightContent.Offset();
+      }
+    }
+  };
+
   for (RefPtr<RangeItem>& rangeItem : mArray) {
     if (NS_WARN_IF(!rangeItem)) {
       return NS_ERROR_FAILURE;
     }
-
-    if (rangeItem->mStartContainer == &aParent) {
-      
-      if (rangeItem->mStartOffset > aOffset) {
-        rangeItem->mStartOffset--;
-      } else if (rangeItem->mStartOffset == aOffset) {
-        
-        rangeItem->mStartContainer = &aRightNode;
-        rangeItem->mStartOffset = aOldLeftNodeLength;
-      }
-    } else if (rangeItem->mStartContainer == &aRightNode) {
-      
-      rangeItem->mStartOffset += aOldLeftNodeLength;
-    } else if (rangeItem->mStartContainer == &aLeftNode) {
-      
-      rangeItem->mStartContainer = &aRightNode;
-    }
-
-    if (rangeItem->mEndContainer == &aParent) {
-      
-      if (rangeItem->mEndOffset > aOffset) {
-        rangeItem->mEndOffset--;
-      } else if (rangeItem->mEndOffset == aOffset) {
-        
-        rangeItem->mEndContainer = &aRightNode;
-        rangeItem->mEndOffset = aOldLeftNodeLength;
-      }
-    } else if (rangeItem->mEndContainer == &aRightNode) {
-      
-      rangeItem->mEndOffset += aOldLeftNodeLength;
-    } else if (rangeItem->mEndContainer == &aLeftNode) {
-      
-      rangeItem->mEndContainer = &aRightNode;
-    }
+    AdjustDOMPoint(rangeItem->mStartContainer, rangeItem->mStartOffset);
+    AdjustDOMPoint(rangeItem->mEndContainer, rangeItem->mEndOffset);
   }
 
   return NS_OK;
