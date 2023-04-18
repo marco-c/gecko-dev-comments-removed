@@ -11,20 +11,9 @@
 #include <stddef.h>
 
 namespace jxl {
-template <size_t V>
-struct square_root {
-  static constexpr float value = square_root<V / 4>::value * 2;
-};
 
-template <>
-struct square_root<1> {
-  static constexpr float value = 1.0f;
-};
-
-template <>
-struct square_root<2> {
-  static constexpr float value = 1.4142135623730951f;
-};
+static constexpr float kSqrt2 = 1.41421356237f;
+static constexpr float kSqrt0_5 = 0.70710678118f;
 
 
 

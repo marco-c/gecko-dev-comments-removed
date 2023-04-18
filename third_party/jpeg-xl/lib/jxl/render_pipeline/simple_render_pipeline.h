@@ -29,6 +29,10 @@ class SimpleRenderPipeline : public RenderPipeline {
   
   
   std::vector<ImageF> channel_data_;
+  size_t processed_passes_ = 0;
+
+ private:
+  Rect MakeChannelRect(size_t group_id, size_t channel, bool is_color);
 };
 
 }  

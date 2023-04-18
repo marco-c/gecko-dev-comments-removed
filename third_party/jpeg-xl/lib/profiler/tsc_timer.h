@@ -22,7 +22,6 @@
 #include <windows.h>
 
 #undef LoadFence
-#undef StoreFence
 #endif
 
 #if defined(__MACH__)

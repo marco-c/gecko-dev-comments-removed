@@ -9,6 +9,7 @@
 
 
 
+#include "jxl/types.h"
 #include "lib/extras/packed_image.h"
 #include "lib/jxl/base/status.h"
 #include "lib/jxl/codec_in_out.h"
@@ -21,6 +22,13 @@ namespace extras {
 Status ConvertPackedPixelFileToCodecInOut(const PackedPixelFile& ppf,
                                           ThreadPool* pool, CodecInOut* io);
 
+
+
+Status ConvertCodecInOutToPackedPixelFile(const CodecInOut& io,
+                                          const JxlPixelFormat& pixel_format,
+                                          const ColorEncoding& c_desired,
+                                          ThreadPool* pool,
+                                          PackedPixelFile* ppf);
 }  
 }  
 

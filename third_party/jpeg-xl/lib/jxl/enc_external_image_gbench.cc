@@ -32,7 +32,7 @@ void BM_EncExternalImage_ConvertImageRGBA(benchmark::State& state) {
           false,
           8, JXL_NATIVE_ENDIAN,
           false,
-          nullptr, &ib, false));
+          nullptr, &ib, false, 0));
     }
   }
 

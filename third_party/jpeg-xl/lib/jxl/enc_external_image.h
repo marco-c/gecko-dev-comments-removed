@@ -21,20 +21,10 @@
 #include "lib/jxl/image_bundle.h"
 
 namespace jxl {
-
-
-
-constexpr size_t RowSize(size_t xsize, size_t channels,
-                         size_t bits_per_sample) {
-  return bits_per_sample == 1
-             ? DivCeil(xsize, kBitsPerByte)
-             : xsize * channels * DivCeil(bits_per_sample, kBitsPerByte);
-}
-
 Status ConvertFromExternal(Span<const uint8_t> bytes, size_t xsize,
                            size_t ysize, size_t bits_per_sample,
                            JxlEndianness endianness, ThreadPool* pool,
-                           ImageF* channel, bool float_in);
+                           ImageF* channel, bool float_in, size_t align);
 
 
 
@@ -43,7 +33,7 @@ Status ConvertFromExternal(Span<const uint8_t> bytes, size_t xsize,
                            bool has_alpha, bool alpha_is_premultiplied,
                            size_t bits_per_sample, JxlEndianness endianness,
                            bool flipped_y, ThreadPool* pool, ImageBundle* ib,
-                           bool float_in);
+                           bool float_in, size_t align);
 Status BufferToImageF(const JxlPixelFormat& pixel_format, size_t xsize,
                       size_t ysize, const void* buffer, size_t size,
                       ThreadPool* pool, ImageF* channel);

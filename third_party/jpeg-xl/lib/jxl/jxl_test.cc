@@ -245,7 +245,7 @@ TEST(JxlTest, RoundtripResample2MT) {
   
   EXPECT_LE(Roundtrip(&io, cparams, dparams, &pool, &io2), 64500u);
   EXPECT_THAT(ComputeDistance2(io.Main(), io2.Main(), GetJxlCms()),
-              IsSlightlyBelow(300));
+              IsSlightlyBelow(320));
 }
 
 
@@ -270,6 +270,30 @@ TEST(JxlTest, RoundtripOutOfOrderProcessing) {
   Roundtrip(&io, cparams, dparams, &pool, &io2);
 
   EXPECT_GE(1.5, ButteraugliDistance(io, io2, cparams.ba_params, GetJxlCms(),
+                                     nullptr, &pool));
+}
+
+TEST(JxlTest, RoundtripOutOfOrderProcessingBorder) {
+  FakeParallelRunner fake_pool(47, 8);
+  ThreadPool pool(&JxlFakeParallelRunner, &fake_pool);
+  const PaddedBytes orig =
+      ReadTestData("imagecompression.info/flower_foveon.png");
+  CodecInOut io;
+  ASSERT_TRUE(SetFromBytes(Span<const uint8_t>(orig), &io, &pool));
+  
+  
+  io.ShrinkTo(513, 515);
+
+  CompressParams cparams;
+  
+  cparams.epf = 3;
+  cparams.resampling = 2;
+
+  DecompressParams dparams;
+  CodecInOut io2;
+  Roundtrip(&io, cparams, dparams, &pool, &io2);
+
+  EXPECT_GE(2.8, ButteraugliDistance(io, io2, cparams.ba_params, GetJxlCms(),
                                      nullptr, &pool));
 }
 
@@ -571,7 +595,7 @@ TEST(JxlTest, RoundtripSmallPatchesAlpha) {
   EXPECT_LE(Roundtrip(&io, cparams, dparams, pool, &io2), 2000u);
   EXPECT_THAT(ButteraugliDistance(io, io2, cparams.ba_params, GetJxlCms(),
                                   nullptr, pool),
-              IsSlightlyBelow(0.22f));
+              IsSlightlyBelow(0.24f));
 }
 
 TEST(JxlTest, RoundtripSmallPatches) {
@@ -599,7 +623,7 @@ TEST(JxlTest, RoundtripSmallPatches) {
   EXPECT_LE(Roundtrip(&io, cparams, dparams, pool, &io2), 2000u);
   EXPECT_THAT(ButteraugliDistance(io, io2, cparams.ba_params, GetJxlCms(),
                                   nullptr, pool),
-              IsSlightlyBelow(0.22f));
+              IsSlightlyBelow(0.24f));
 }
 
 
@@ -835,7 +859,7 @@ TEST(JxlTest, RoundtripAlphaResampling) {
 
   EXPECT_THAT(ButteraugliDistance(io, io2, cparams.ba_params, GetJxlCms(),
                                   nullptr, pool),
-              IsSlightlyBelow(4.6));
+              IsSlightlyBelow(4.7));
 }
 
 TEST(JxlTest, RoundtripAlphaResamplingOnlyAlpha) {
@@ -867,7 +891,7 @@ TEST(JxlTest, RoundtripAlphaResamplingOnlyAlpha) {
 
   EXPECT_THAT(ButteraugliDistance(io, io2, cparams.ba_params, GetJxlCms(),
                                   nullptr, pool),
-              IsSlightlyBelow(1.8));
+              IsSlightlyBelow(1.85));
 }
 
 TEST(JxlTest, RoundtripAlphaNonMultipleOf8) {

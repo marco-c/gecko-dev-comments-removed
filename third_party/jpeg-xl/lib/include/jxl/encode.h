@@ -275,6 +275,17 @@ typedef enum {
   
 
 
+
+
+
+
+
+
+  JXL_ENC_FRAME_INDEX_BOX = 31,
+
+  
+
+
   JXL_ENC_FRAME_SETTING_FILL_ENUM = 65535,
 
 } JxlEncoderFrameSettingId;
@@ -808,7 +819,6 @@ JXL_EXPORT void JxlEncoderInitBlendInfo(JxlBlendInfo* blend_info);
 
 JXL_EXPORT JxlEncoderStatus JxlEncoderSetBasicInfo(JxlEncoder* enc,
                                                    const JxlBasicInfo* info);
-
 
 
 

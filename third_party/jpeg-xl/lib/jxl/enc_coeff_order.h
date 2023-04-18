@@ -24,8 +24,9 @@
 namespace jxl {
 
 
-uint32_t ComputeUsedOrders(SpeedTier speed, const AcStrategyImage& ac_strategy,
-                           const Rect& rect);
+
+std::pair<uint32_t, uint32_t> ComputeUsedOrders(
+    SpeedTier speed, const AcStrategyImage& ac_strategy, const Rect& rect);
 
 
 
@@ -33,7 +34,7 @@ uint32_t ComputeUsedOrders(SpeedTier speed, const AcStrategyImage& ac_strategy,
 void ComputeCoeffOrder(SpeedTier speed, const ACImage& acs,
                        const AcStrategyImage& ac_strategy,
                        const FrameDimensions& frame_dim, uint32_t& used_orders,
-                       coeff_order_t* JXL_RESTRICT order);
+                       uint16_t used_acs, coeff_order_t* JXL_RESTRICT order);
 
 void EncodeCoeffOrders(uint16_t used_orders,
                        const coeff_order_t* JXL_RESTRICT order,

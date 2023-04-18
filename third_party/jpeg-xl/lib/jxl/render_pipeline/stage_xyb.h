@@ -21,6 +21,12 @@ namespace jxl {
 
 std::unique_ptr<RenderPipelineStage> GetXYBStage(
     const OutputEncodingInfo& output_encoding_info);
+
+
+
+std::unique_ptr<RenderPipelineStage> GetFastXYBTosRGB8Stage(
+    uint8_t* rgb, size_t stride, size_t width, size_t height, bool rgba,
+    bool has_alpha, size_t alpha_c);
 }  
 
 #endif  
