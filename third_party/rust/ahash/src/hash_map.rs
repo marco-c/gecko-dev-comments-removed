@@ -6,28 +6,43 @@ use std::iter::FromIterator;
 use std::ops::{Deref, DerefMut, Index};
 use std::panic::UnwindSafe;
 
+#[cfg(feature = "serde")]
+use serde::{
+    de::{Deserialize, Deserializer},
+    ser::{Serialize, Serializer},
+};
+
+use crate::RandomState;
+
 
 
 #[derive(Clone)]
 pub struct AHashMap<K, V, S = crate::RandomState>(HashMap<K, V, S>);
 
-impl<K, V, S> AHashMap<K, V, S>
-where
-    K: Hash + Eq,
-    S: BuildHasher + Default,
-{
+impl<K, V> From<HashMap<K, V, crate::RandomState>> for AHashMap<K, V> {
+    fn from(item: HashMap<K, V, crate::RandomState>) -> Self {
+        AHashMap(item)
+    }
+}
+
+impl<K, V> Into<HashMap<K, V, crate::RandomState>> for AHashMap<K, V> {
+    fn into(self) -> HashMap<K, V, crate::RandomState> {
+        self.0
+    }
+}
+
+impl<K, V> AHashMap<K, V, RandomState> {
     pub fn new() -> Self {
-        AHashMap(HashMap::with_hasher(S::default()))
+        AHashMap(HashMap::with_hasher(RandomState::default()))
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
-        AHashMap(HashMap::with_capacity_and_hasher(capacity, S::default()))
+        AHashMap(HashMap::with_capacity_and_hasher(capacity, RandomState::default()))
     }
 }
 
 impl<K, V, S> AHashMap<K, V, S>
 where
-    K: Hash + Eq,
     S: BuildHasher,
 {
     pub fn with_hasher(hash_builder: S) -> Self {
@@ -36,6 +51,144 @@ where
 
     pub fn with_capacity_and_hasher(capacity: usize, hash_builder: S) -> Self {
         AHashMap(HashMap::with_capacity_and_hasher(capacity, hash_builder))
+    }
+}
+
+impl<K, V, S> AHashMap<K, V, S>
+where
+    K: Hash + Eq,
+    S: BuildHasher,
+{
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn get<Q: ?Sized>(&self, k: &Q) -> Option<&V>
+    where
+        K: Borrow<Q>,
+        Q: Hash + Eq,
+    {
+        self.0.get(k)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn get_key_value<Q: ?Sized>(&self, k: &Q) -> Option<(&K, &V)>
+    where
+        K: Borrow<Q>,
+        Q: Hash + Eq,
+    {
+        self.0.get_key_value(k)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn get_mut<Q: ?Sized>(&mut self, k: &Q) -> Option<&mut V>
+    where
+        K: Borrow<Q>,
+        Q: Hash + Eq,
+    {
+        self.0.get_mut(k)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn insert(&mut self, k: K, v: V) -> Option<V> {
+        self.0.insert(k, v)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn remove<Q: ?Sized>(&mut self, k: &Q) -> Option<V>
+    where
+        K: Borrow<Q>,
+        Q: Hash + Eq,
+    {
+        self.0.remove(k)
     }
 }
 
@@ -99,7 +252,7 @@ where
 
 impl<K, V, S> Debug for AHashMap<K, V, S>
 where
-    K: Eq + Hash + Debug,
+    K: Debug,
     V: Debug,
     S: BuildHasher,
 {
@@ -165,13 +318,54 @@ where
     }
 }
 
-impl<K, V, S> Default for AHashMap<K, V, S>
-where
-    K: Eq + Hash,
-    S: BuildHasher + Default,
-{
+impl<K, V> Default for AHashMap<K, V, RandomState> {
     #[inline]
-    fn default() -> AHashMap<K, V, S> {
-        AHashMap::with_hasher(Default::default())
+    fn default() -> AHashMap<K, V, RandomState> {
+        AHashMap::new()
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<K, V> Serialize for AHashMap<K, V>
+where
+    K: Serialize + Eq + Hash,
+    V: Serialize,
+{
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.deref().serialize(serializer)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de, K, V> Deserialize<'de> for AHashMap<K, V>
+where
+    K: Deserialize<'de> + Eq + Hash,
+    V: Deserialize<'de>,
+{
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let hash_map = HashMap::deserialize(deserializer);
+        hash_map.map(|hash_map| Self(hash_map))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn test_borrow() {
+        let mut map: AHashMap<String, String> = AHashMap::new();
+        map.insert("foo".to_string(), "Bar".to_string());
+        map.insert("Bar".to_string(), map.get("foo").unwrap().to_owned());
+    }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_serde() {
+        let mut map = AHashMap::new();
+        map.insert("for".to_string(), 0);
+        map.insert("bar".to_string(), 1);
+        let serialization = serde_json::to_string(&map).unwrap();
+        let deserialization: AHashMap<String, u64> = serde_json::from_str(&serialization).unwrap();
+        assert_eq!(deserialization, map);
     }
 }

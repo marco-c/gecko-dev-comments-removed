@@ -28,12 +28,13 @@ impl Group {
     
     
     
+    #[allow(clippy::items_after_statements)]
     pub const fn static_empty() -> &'static [u8; Group::WIDTH] {
         #[repr(C)]
         struct AlignedBytes {
             _align: [Group; 0],
             bytes: [u8; Group::WIDTH],
-        };
+        }
         const ALIGNED_BYTES: AlignedBytes = AlignedBytes {
             _align: [],
             bytes: [EMPTY; Group::WIDTH],
@@ -45,7 +46,7 @@ impl Group {
     #[inline]
     #[allow(clippy::cast_ptr_alignment)] 
     pub unsafe fn load(ptr: *const u8) -> Self {
-        Group(x86::_mm_loadu_si128(ptr as *const _))
+        Group(x86::_mm_loadu_si128(ptr.cast()))
     }
 
     
@@ -55,7 +56,7 @@ impl Group {
     pub unsafe fn load_aligned(ptr: *const u8) -> Self {
         
         debug_assert_eq!(ptr as usize & (mem::align_of::<Self>() - 1), 0);
-        Group(x86::_mm_load_si128(ptr as *const _))
+        Group(x86::_mm_load_si128(ptr.cast()))
     }
 
     
@@ -65,7 +66,7 @@ impl Group {
     pub unsafe fn store_aligned(self, ptr: *mut u8) {
         
         debug_assert_eq!(ptr as usize & (mem::align_of::<Self>() - 1), 0);
-        x86::_mm_store_si128(ptr as *mut _, self.0);
+        x86::_mm_store_si128(ptr.cast(), self.0);
     }
 
     
