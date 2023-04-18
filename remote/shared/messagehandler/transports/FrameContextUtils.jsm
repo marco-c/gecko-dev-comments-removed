@@ -6,12 +6,14 @@
 
 const EXPORTED_SYMBOLS = ["isBrowsingContextCompatible"];
 
-function getOsPid(browsingContext) {
+function isParentProcess(browsingContext) {
   if (browsingContext instanceof CanonicalBrowsingContext) {
-    return browsingContext.currentWindowGlobal.osPid;
+    return browsingContext.currentWindowGlobal.osPid === -1;
   }
 
-  return browsingContext.window.osPid;
+  
+  
+  return false;
 }
 
 
@@ -36,10 +38,5 @@ function isBrowsingContextCompatible(browsingContext, options = {}) {
   }
 
   
-  
-  if (getOsPid(browsingContext) === -1) {
-    return false;
-  }
-
-  return true;
+  return !isParentProcess(browsingContext);
 }
