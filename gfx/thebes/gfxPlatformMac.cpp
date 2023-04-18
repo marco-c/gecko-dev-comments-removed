@@ -846,208 +846,197 @@ static CVReturn VsyncCallback(CVDisplayLinkRef aDisplayLink,
 
 class OSXVsyncSource final : public VsyncSource {
  public:
-  OSXVsyncSource() : mGlobalDisplay(new OSXDisplay()) {}
-
-  Display& GetGlobalDisplay() override { return *mGlobalDisplay; }
-
-  class OSXDisplay final : public VsyncSource::Display {
-   public:
-    OSXDisplay()
-        : mDisplayLink(nullptr, "OSXVsyncSource::OSXDisplay::mDisplayLink") {
-      MOZ_ASSERT(NS_IsMainThread());
-      mTimer = NS_NewTimer();
-      CGDisplayRegisterReconfigurationCallback(DisplayReconfigurationCallback,
-                                               this);
-    }
-
-    virtual ~OSXDisplay() {
-      MOZ_ASSERT(NS_IsMainThread());
-      CGDisplayRemoveReconfigurationCallback(DisplayReconfigurationCallback,
+  OSXVsyncSource()
+      : mDisplayLink(nullptr, "OSXVsyncSource::OSXDisplay::mDisplayLink") {
+    MOZ_ASSERT(NS_IsMainThread());
+    mTimer = NS_NewTimer();
+    CGDisplayRegisterReconfigurationCallback(DisplayReconfigurationCallback,
                                              this);
+  }
+
+  virtual ~OSXVsyncSource() {
+    MOZ_ASSERT(NS_IsMainThread());
+    CGDisplayRemoveReconfigurationCallback(DisplayReconfigurationCallback,
+                                           this);
+  }
+
+  static void RetryEnableVsync(nsITimer* aTimer, void* aOsxVsyncSource) {
+    MOZ_ASSERT(NS_IsMainThread());
+    OSXVsyncSource* osxVsyncSource =
+        static_cast<OSXVsyncSource*>(aOsxVsyncSource);
+    MOZ_ASSERT(osxVsyncSource);
+    osxVsyncSource->EnableVsync();
+  }
+
+  void EnableVsync() override {
+    MOZ_ASSERT(NS_IsMainThread());
+    if (IsVsyncEnabled()) {
+      return;
     }
 
-    static void RetryEnableVsync(nsITimer* aTimer, void* aOsxDisplay) {
-      MOZ_ASSERT(NS_IsMainThread());
-      OSXDisplay* osxDisplay = static_cast<OSXDisplay*>(aOsxDisplay);
-      MOZ_ASSERT(osxDisplay);
-      osxDisplay->EnableVsync();
-    }
-
-    void EnableVsync() override {
-      MOZ_ASSERT(NS_IsMainThread());
-      if (IsVsyncEnabled()) {
-        return;
-      }
-
-      auto displayLink = mDisplayLink.Lock();
-
-      
-      
-      
-      
-      
-      CVReturn retval = CVDisplayLinkCreateWithActiveCGDisplays(&*displayLink);
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if ((retval == kCVReturnSuccess) &&
-          (CVDisplayLinkGetCurrentCGDisplay(*displayLink) == 0)) {
-        retval = kCVReturnInvalidDisplay;
-      }
-
-      if (retval != kCVReturnSuccess) {
-        NS_WARNING(
-            "Could not create a display link with all active displays. "
-            "Retrying");
-        CVDisplayLinkRelease(*displayLink);
-        *displayLink = nullptr;
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        uint32_t delay = 100;
-        mTimer->InitWithNamedFuncCallback(RetryEnableVsync, this, delay,
-                                          nsITimer::TYPE_ONE_SHOT,
-                                          "RetryEnableVsync");
-        return;
-      }
-
-      if (CVDisplayLinkSetOutputCallback(*displayLink, &VsyncCallback, this) !=
-          kCVReturnSuccess) {
-        NS_WARNING("Could not set displaylink output callback");
-        CVDisplayLinkRelease(*displayLink);
-        *displayLink = nullptr;
-        return;
-      }
-
-      mPreviousTimestamp = TimeStamp::Now();
-      if (CVDisplayLinkStart(*displayLink) != kCVReturnSuccess) {
-        NS_WARNING("Could not activate the display link");
-        CVDisplayLinkRelease(*displayLink);
-        *displayLink = nullptr;
-      }
-
-      CVTime vsyncRate =
-          CVDisplayLinkGetNominalOutputVideoRefreshPeriod(*displayLink);
-      if (vsyncRate.flags & kCVTimeIsIndefinite) {
-        NS_WARNING("Could not get vsync rate, setting to 60.");
-        mVsyncRate = TimeDuration::FromMilliseconds(1000.0 / 60.0);
-      } else {
-        int64_t timeValue = vsyncRate.timeValue;
-        int64_t timeScale = vsyncRate.timeScale;
-        const int milliseconds = 1000;
-        float rateInMs = ((double)timeValue / (double)timeScale) * milliseconds;
-        mVsyncRate = TimeDuration::FromMilliseconds(rateInMs);
-      }
-    }
-
-    void DisableVsync() override {
-      MOZ_ASSERT(NS_IsMainThread());
-      if (!IsVsyncEnabled()) {
-        return;
-      }
-
-      
-      auto displayLink = mDisplayLink.Lock();
-      if (*displayLink) {
-        CVDisplayLinkRelease(*displayLink);
-        *displayLink = nullptr;
-      }
-    }
-
-    bool IsVsyncEnabled() override {
-      MOZ_ASSERT(NS_IsMainThread());
-      auto displayLink = mDisplayLink.Lock();
-      return *displayLink != nullptr;
-    }
-
-    TimeDuration GetVsyncRate() override { return mVsyncRate; }
-
-    void Shutdown() override {
-      MOZ_ASSERT(NS_IsMainThread());
-      mTimer->Cancel();
-      mTimer = nullptr;
-      DisableVsync();
-    }
+    auto displayLink = mDisplayLink.Lock();
 
     
     
     
     
     
-    TimeStamp mPreviousTimestamp;
+    CVReturn retval = CVDisplayLinkCreateWithActiveCGDisplays(&*displayLink);
 
-   private:
-    static void DisplayReconfigurationCallback(
-        CGDirectDisplayID aDisplay, CGDisplayChangeSummaryFlags aFlags,
-        void* aUserInfo) {
-      static_cast<OSXDisplay*>(aUserInfo)->OnDisplayReconfiguration(aDisplay,
-                                                                    aFlags);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if ((retval == kCVReturnSuccess) &&
+        (CVDisplayLinkGetCurrentCGDisplay(*displayLink) == 0)) {
+      retval = kCVReturnInvalidDisplay;
     }
 
-    void OnDisplayReconfiguration(CGDirectDisplayID aDisplay,
-                                  CGDisplayChangeSummaryFlags aFlags) {
-      
-      
-      
-      
-      
-      if (aFlags & kCGDisplayBeginConfigurationFlag) {
-        
-        
-        return;
-      }
+    if (retval != kCVReturnSuccess) {
+      NS_WARNING(
+          "Could not create a display link with all active displays. "
+          "Retrying");
+      CVDisplayLinkRelease(*displayLink);
+      *displayLink = nullptr;
 
-      if (!NS_IsMainThread()) {
-        return;
-      }
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      uint32_t delay = 100;
+      mTimer->InitWithNamedFuncCallback(RetryEnableVsync, this, delay,
+                                        nsITimer::TYPE_ONE_SHOT,
+                                        "RetryEnableVsync");
+      return;
+    }
 
-      bool didReconfigureCurrentDisplayLinkDisplay = false;
-      {  
-        auto displayLink = mDisplayLink.Lock();
-        didReconfigureCurrentDisplayLinkDisplay =
-            *displayLink &&
-            CVDisplayLinkGetCurrentCGDisplay(*displayLink) == aDisplay;
-      }
+    if (CVDisplayLinkSetOutputCallback(*displayLink, &VsyncCallback, this) !=
+        kCVReturnSuccess) {
+      NS_WARNING("Could not set displaylink output callback");
+      CVDisplayLinkRelease(*displayLink);
+      *displayLink = nullptr;
+      return;
+    }
 
-      if (didReconfigureCurrentDisplayLinkDisplay) {
-        
-        
-        
-        DisableVsync();
-        EnableVsync();
-      }
+    mPreviousTimestamp = TimeStamp::Now();
+    if (CVDisplayLinkStart(*displayLink) != kCVReturnSuccess) {
+      NS_WARNING("Could not activate the display link");
+      CVDisplayLinkRelease(*displayLink);
+      *displayLink = nullptr;
+    }
+
+    CVTime vsyncRate =
+        CVDisplayLinkGetNominalOutputVideoRefreshPeriod(*displayLink);
+    if (vsyncRate.flags & kCVTimeIsIndefinite) {
+      NS_WARNING("Could not get vsync rate, setting to 60.");
+      mVsyncRate = TimeDuration::FromMilliseconds(1000.0 / 60.0);
+    } else {
+      int64_t timeValue = vsyncRate.timeValue;
+      int64_t timeScale = vsyncRate.timeScale;
+      const int milliseconds = 1000;
+      float rateInMs = ((double)timeValue / (double)timeScale) * milliseconds;
+      mVsyncRate = TimeDuration::FromMilliseconds(rateInMs);
+    }
+  }
+
+  void DisableVsync() override {
+    MOZ_ASSERT(NS_IsMainThread());
+    if (!IsVsyncEnabled()) {
+      return;
     }
 
     
-    
-    DataMutex<CVDisplayLinkRef> mDisplayLink;
+    auto displayLink = mDisplayLink.Lock();
+    if (*displayLink) {
+      CVDisplayLinkRelease(*displayLink);
+      *displayLink = nullptr;
+    }
+  }
 
-    
-    RefPtr<nsITimer> mTimer;
-    TimeDuration mVsyncRate;
-  };  
+  bool IsVsyncEnabled() override {
+    MOZ_ASSERT(NS_IsMainThread());
+    auto displayLink = mDisplayLink.Lock();
+    return *displayLink != nullptr;
+  }
+
+  TimeDuration GetVsyncRate() override { return mVsyncRate; }
+
+  void Shutdown() override {
+    MOZ_ASSERT(NS_IsMainThread());
+    mTimer->Cancel();
+    mTimer = nullptr;
+    DisableVsync();
+  }
+
+  
+  
+  
+  
+  
+  TimeStamp mPreviousTimestamp;
 
  private:
-  virtual ~OSXVsyncSource() = default;
+  static void DisplayReconfigurationCallback(CGDirectDisplayID aDisplay,
+                                             CGDisplayChangeSummaryFlags aFlags,
+                                             void* aUserInfo) {
+    static_cast<OSXVsyncSource*>(aUserInfo)->OnDisplayReconfiguration(aDisplay,
+                                                                      aFlags);
+  }
 
-  RefPtr<OSXDisplay> mGlobalDisplay;
+  void OnDisplayReconfiguration(CGDirectDisplayID aDisplay,
+                                CGDisplayChangeSummaryFlags aFlags) {
+    
+    
+    
+    
+    
+    if (aFlags & kCGDisplayBeginConfigurationFlag) {
+      
+      
+      return;
+    }
+
+    if (!NS_IsMainThread()) {
+      return;
+    }
+
+    bool didReconfigureCurrentDisplayLinkDisplay = false;
+    {  
+      auto displayLink = mDisplayLink.Lock();
+      didReconfigureCurrentDisplayLinkDisplay =
+          *displayLink &&
+          CVDisplayLinkGetCurrentCGDisplay(*displayLink) == aDisplay;
+    }
+
+    if (didReconfigureCurrentDisplayLinkDisplay) {
+      
+      
+      
+      DisableVsync();
+      EnableVsync();
+    }
+  }
+
+  
+  
+  DataMutex<CVDisplayLinkRef> mDisplayLink;
+
+  
+  RefPtr<nsITimer> mTimer;
+  TimeDuration mVsyncRate;
 };  
 
 static CVReturn VsyncCallback(CVDisplayLinkRef aDisplayLink,
@@ -1056,13 +1045,12 @@ static CVReturn VsyncCallback(CVDisplayLinkRef aDisplayLink,
                               CVOptionFlags aFlagsIn, CVOptionFlags* aFlagsOut,
                               void* aDisplayLinkContext) {
   
-  OSXVsyncSource::OSXDisplay* display =
-      (OSXVsyncSource::OSXDisplay*)aDisplayLinkContext;
+  OSXVsyncSource* vsyncSource = (OSXVsyncSource*)aDisplayLinkContext;
 
   mozilla::TimeStamp outputTime =
       mozilla::TimeStamp::FromSystemTime(aOutputTime->hostTime);
   mozilla::TimeStamp nextVsync = outputTime;
-  mozilla::TimeStamp previousVsync = display->mPreviousTimestamp;
+  mozilla::TimeStamp previousVsync = vsyncSource->mPreviousTimestamp;
   mozilla::TimeStamp now = TimeStamp::Now();
 
   
@@ -1078,24 +1066,23 @@ static CVReturn VsyncCallback(CVDisplayLinkRef aDisplayLink,
     previousVsync = now;
   }
 
-  display->mPreviousTimestamp = nextVsync;
+  vsyncSource->mPreviousTimestamp = nextVsync;
 
-  display->NotifyVsync(previousVsync, outputTime);
+  vsyncSource->NotifyVsync(previousVsync, outputTime);
   return kCVReturnSuccess;
 }
 
 already_AddRefed<mozilla::gfx::VsyncSource>
 gfxPlatformMac::CreateHardwareVsyncSource() {
   RefPtr<VsyncSource> osxVsyncSource = new OSXVsyncSource();
-  VsyncSource::Display& primaryDisplay = osxVsyncSource->GetGlobalDisplay();
-  primaryDisplay.EnableVsync();
-  if (!primaryDisplay.IsVsyncEnabled()) {
+  osxVsyncSource->EnableVsync();
+  if (!osxVsyncSource->IsVsyncEnabled()) {
     NS_WARNING(
         "OS X Vsync source not enabled. Falling back to software vsync.");
     return gfxPlatform::CreateHardwareVsyncSource();
   }
 
-  primaryDisplay.DisableVsync();
+  osxVsyncSource->DisableVsync();
   return osxVsyncSource.forget();
 }
 

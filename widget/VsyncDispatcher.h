@@ -79,12 +79,12 @@ class RefreshTimerVsyncDispatcher final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RefreshTimerVsyncDispatcher)
 
  public:
-  explicit RefreshTimerVsyncDispatcher(gfx::VsyncSource::Display* aDisplay);
+  explicit RefreshTimerVsyncDispatcher(gfx::VsyncSource* aVsyncSource);
 
   
   void NotifyVsync(const VsyncEvent& aVsync);
 
-  void MoveToDisplay(gfx::VsyncSource::Display* aDisplay);
+  void MoveToSource(gfx::VsyncSource* aVsyncSource);
 
   
   
@@ -102,7 +102,7 @@ class RefreshTimerVsyncDispatcher final {
   
   
   
-  gfx::VsyncSource::Display* mDisplay;
+  gfx::VsyncSource* mVsyncSource;
   DataMutex<nsTArray<RefPtr<VsyncObserver>>> mVsyncObservers;
 };
 

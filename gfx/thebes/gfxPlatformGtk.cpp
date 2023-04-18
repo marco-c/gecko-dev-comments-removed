@@ -664,317 +664,292 @@ bool gfxPlatformGtk::CheckVariationFontSupport() {
 
 class GtkVsyncSource final : public VsyncSource {
  public:
-  GtkVsyncSource() {
+  GtkVsyncSource()
+      : mGLContext(nullptr),
+        mXDisplay(nullptr),
+        mSetupLock("GLXVsyncSetupLock"),
+        mVsyncThread("GLXVsyncThread"),
+        mVsyncTask(nullptr),
+        mVsyncEnabledLock("GLXVsyncEnabledLock"),
+        mVsyncEnabled(false) {
     MOZ_ASSERT(NS_IsMainThread());
-    mGlobalDisplay = new GLXDisplay();
   }
 
   virtual ~GtkVsyncSource() { MOZ_ASSERT(NS_IsMainThread()); }
 
-  virtual Display& GetGlobalDisplay() override { return *mGlobalDisplay; }
+  
+  
+  
+  bool Setup() {
+    MonitorAutoLock lock(mSetupLock);
+    MOZ_ASSERT(NS_IsMainThread());
+    if (!mVsyncThread.Start()) return false;
 
-  class GLXDisplay final : public VsyncSource::Display {
-   public:
-    GLXDisplay()
-        : mGLContext(nullptr),
-          mXDisplay(nullptr),
-          mSetupLock("GLXVsyncSetupLock"),
-          mVsyncThread("GLXVsyncThread"),
-          mVsyncTask(nullptr),
-          mVsyncEnabledLock("GLXVsyncEnabledLock"),
-          mVsyncEnabled(false) {}
+    RefPtr<Runnable> vsyncSetup =
+        NewRunnableMethod("GtkVsyncSource::SetupGLContext", this,
+                          &GtkVsyncSource::SetupGLContext);
+    mVsyncThread.message_loop()->PostTask(vsyncSetup.forget());
+    
+    lock.Wait();
+    return mGLContext != nullptr;
+  }
+
+  
+  void SetupGLContext() {
+    MonitorAutoLock lock(mSetupLock);
+    MOZ_ASSERT(!NS_IsMainThread());
+    MOZ_ASSERT(!mGLContext, "GLContext already setup!");
 
     
     
-    
-    bool Setup() {
-      MonitorAutoLock lock(mSetupLock);
-      MOZ_ASSERT(NS_IsMainThread());
-      if (!mVsyncThread.Start()) return false;
-
-      RefPtr<Runnable> vsyncSetup =
-          NewRunnableMethod("GtkVsyncSource::GLXDisplay::SetupGLContext", this,
-                            &GLXDisplay::SetupGLContext);
-      mVsyncThread.message_loop()->PostTask(vsyncSetup.forget());
-      
-      lock.Wait();
-      return mGLContext != nullptr;
-    }
-
-    
-    void SetupGLContext() {
-      MonitorAutoLock lock(mSetupLock);
-      MOZ_ASSERT(!NS_IsMainThread());
-      MOZ_ASSERT(!mGLContext, "GLContext already setup!");
-
-      
-      
-      mXDisplay = XOpenDisplay(nullptr);
-      if (!mXDisplay) {
-        lock.NotifyAll();
-        return;
-      }
-
-      
-      Window root = DefaultRootWindow(mXDisplay);
-      int screen = DefaultScreen(mXDisplay);
-
-      ScopedXFree<GLXFBConfig> cfgs;
-      GLXFBConfig config;
-      int visid;
-      bool forWebRender = false;
-      if (!gl::GLContextGLX::FindFBConfigForWindow(
-              mXDisplay, screen, root, &cfgs, &config, &visid, forWebRender)) {
-        lock.NotifyAll();
-        return;
-      }
-
-      mGLContext = gl::GLContextGLX::CreateGLContext(
-          {}, gfx::XlibDisplay::Borrow(mXDisplay), root, config, false,
-          nullptr);
-
-      if (!mGLContext) {
-        lock.NotifyAll();
-        return;
-      }
-
-      mGLContext->MakeCurrent();
-
-      
-      unsigned int syncCounter = 0;
-      if (gl::sGLXLibrary.fGetVideoSync(&syncCounter) != 0) {
-        mGLContext = nullptr;
-      }
-
+    mXDisplay = XOpenDisplay(nullptr);
+    if (!mXDisplay) {
       lock.NotifyAll();
-    }
-
-    virtual void EnableVsync() override {
-      MOZ_ASSERT(NS_IsMainThread());
-      MOZ_ASSERT(mGLContext, "GLContext not setup!");
-
-      MonitorAutoLock lock(mVsyncEnabledLock);
-      if (mVsyncEnabled) {
-        return;
-      }
-      mVsyncEnabled = true;
-
-      
-      
-      if (!mVsyncTask) {
-        mVsyncTask = NewRunnableMethod("GtkVsyncSource::GLXDisplay::RunVsync",
-                                       this, &GLXDisplay::RunVsync);
-        RefPtr<Runnable> addrefedTask = mVsyncTask;
-        mVsyncThread.message_loop()->PostTask(addrefedTask.forget());
-      }
-    }
-
-    virtual void DisableVsync() override {
-      MonitorAutoLock lock(mVsyncEnabledLock);
-      mVsyncEnabled = false;
-    }
-
-    virtual bool IsVsyncEnabled() override {
-      MonitorAutoLock lock(mVsyncEnabledLock);
-      return mVsyncEnabled;
-    }
-
-    virtual void Shutdown() override {
-      MOZ_ASSERT(NS_IsMainThread());
-      DisableVsync();
-
-      
-      RefPtr<Runnable> shutdownTask = NewRunnableMethod(
-          "GtkVsyncSource::GLXDisplay::Cleanup", this, &GLXDisplay::Cleanup);
-      mVsyncThread.message_loop()->PostTask(shutdownTask.forget());
-
-      
-      mVsyncThread.Stop();
-    }
-
-   private:
-    virtual ~GLXDisplay() = default;
-
-    void RunVsync() {
-      MOZ_ASSERT(!NS_IsMainThread());
-
-      mGLContext->MakeCurrent();
-
-      unsigned int syncCounter = 0;
-      gl::sGLXLibrary.fGetVideoSync(&syncCounter);
-      for (;;) {
-        {
-          MonitorAutoLock lock(mVsyncEnabledLock);
-          if (!mVsyncEnabled) {
-            mVsyncTask = nullptr;
-            return;
-          }
-        }
-
-        TimeStamp lastVsync = TimeStamp::Now();
-        bool useSoftware = false;
-
-        
-        
-        unsigned int nextSync = syncCounter + 1;
-        int status;
-        if ((status = gl::sGLXLibrary.fWaitVideoSync(2, (int)nextSync % 2,
-                                                     &syncCounter)) != 0) {
-          gfxWarningOnce() << "glXWaitVideoSync returned " << status;
-          useSoftware = true;
-        }
-
-        if (syncCounter == (nextSync - 1)) {
-          gfxWarningOnce()
-              << "glXWaitVideoSync failed to increment the sync counter.";
-          useSoftware = true;
-        }
-
-        if (useSoftware) {
-          double remaining =
-              (1000.f / 60.f) - (TimeStamp::Now() - lastVsync).ToMilliseconds();
-          if (remaining > 0) {
-            AUTO_PROFILER_THREAD_SLEEP;
-            PlatformThread::Sleep((int)remaining);
-          }
-        }
-
-        lastVsync = TimeStamp::Now();
-        TimeStamp outputTime = lastVsync + GetVsyncRate();
-        NotifyVsync(lastVsync, outputTime);
-      }
-    }
-
-    void Cleanup() {
-      MOZ_ASSERT(!NS_IsMainThread());
-
-      mGLContext = nullptr;
-      if (mXDisplay) XCloseDisplay(mXDisplay);
+      return;
     }
 
     
-    RefPtr<gl::GLContextGLX> mGLContext;
-    _XDisplay* mXDisplay;
-    Monitor mSetupLock;
-    base::Thread mVsyncThread;
-    RefPtr<Runnable> mVsyncTask;
-    Monitor mVsyncEnabledLock;
-    bool mVsyncEnabled;
-  };
+    Window root = DefaultRootWindow(mXDisplay);
+    int screen = DefaultScreen(mXDisplay);
+
+    ScopedXFree<GLXFBConfig> cfgs;
+    GLXFBConfig config;
+    int visid;
+    bool forWebRender = false;
+    if (!gl::GLContextGLX::FindFBConfigForWindow(
+            mXDisplay, screen, root, &cfgs, &config, &visid, forWebRender)) {
+      lock.NotifyAll();
+      return;
+    }
+
+    mGLContext = gl::GLContextGLX::CreateGLContext(
+        {}, gfx::XlibDisplay::Borrow(mXDisplay), root, config, false, nullptr);
+
+    if (!mGLContext) {
+      lock.NotifyAll();
+      return;
+    }
+
+    mGLContext->MakeCurrent();
+
+    
+    unsigned int syncCounter = 0;
+    if (gl::sGLXLibrary.fGetVideoSync(&syncCounter) != 0) {
+      mGLContext = nullptr;
+    }
+
+    lock.NotifyAll();
+  }
+
+  virtual void EnableVsync() override {
+    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(mGLContext, "GLContext not setup!");
+
+    MonitorAutoLock lock(mVsyncEnabledLock);
+    if (mVsyncEnabled) {
+      return;
+    }
+    mVsyncEnabled = true;
+
+    
+    
+    if (!mVsyncTask) {
+      mVsyncTask = NewRunnableMethod("GtkVsyncSource::RunVsync", this,
+                                     &GtkVsyncSource::RunVsync);
+      RefPtr<Runnable> addrefedTask = mVsyncTask;
+      mVsyncThread.message_loop()->PostTask(addrefedTask.forget());
+    }
+  }
+
+  virtual void DisableVsync() override {
+    MonitorAutoLock lock(mVsyncEnabledLock);
+    mVsyncEnabled = false;
+  }
+
+  virtual bool IsVsyncEnabled() override {
+    MonitorAutoLock lock(mVsyncEnabledLock);
+    return mVsyncEnabled;
+  }
+
+  virtual void Shutdown() override {
+    MOZ_ASSERT(NS_IsMainThread());
+    DisableVsync();
+
+    
+    RefPtr<Runnable> shutdownTask = NewRunnableMethod(
+        "GtkVsyncSource::Cleanup", this, &GtkVsyncSource::Cleanup);
+    mVsyncThread.message_loop()->PostTask(shutdownTask.forget());
+
+    
+    mVsyncThread.Stop();
+  }
 
  private:
+  void RunVsync() {
+    MOZ_ASSERT(!NS_IsMainThread());
+
+    mGLContext->MakeCurrent();
+
+    unsigned int syncCounter = 0;
+    gl::sGLXLibrary.fGetVideoSync(&syncCounter);
+    for (;;) {
+      {
+        MonitorAutoLock lock(mVsyncEnabledLock);
+        if (!mVsyncEnabled) {
+          mVsyncTask = nullptr;
+          return;
+        }
+      }
+
+      TimeStamp lastVsync = TimeStamp::Now();
+      bool useSoftware = false;
+
+      
+      
+      unsigned int nextSync = syncCounter + 1;
+      int status;
+      if ((status = gl::sGLXLibrary.fWaitVideoSync(2, (int)nextSync % 2,
+                                                   &syncCounter)) != 0) {
+        gfxWarningOnce() << "glXWaitVideoSync returned " << status;
+        useSoftware = true;
+      }
+
+      if (syncCounter == (nextSync - 1)) {
+        gfxWarningOnce()
+            << "glXWaitVideoSync failed to increment the sync counter.";
+        useSoftware = true;
+      }
+
+      if (useSoftware) {
+        double remaining =
+            (1000.f / 60.f) - (TimeStamp::Now() - lastVsync).ToMilliseconds();
+        if (remaining > 0) {
+          AUTO_PROFILER_THREAD_SLEEP;
+          PlatformThread::Sleep((int)remaining);
+        }
+      }
+
+      lastVsync = TimeStamp::Now();
+      TimeStamp outputTime = lastVsync + GetVsyncRate();
+      NotifyVsync(lastVsync, outputTime);
+    }
+  }
+
+  void Cleanup() {
+    MOZ_ASSERT(!NS_IsMainThread());
+
+    mGLContext = nullptr;
+    if (mXDisplay) XCloseDisplay(mXDisplay);
+  }
+
   
-  RefPtr<GLXDisplay> mGlobalDisplay;
+  RefPtr<gl::GLContextGLX> mGLContext;
+  _XDisplay* mXDisplay;
+  Monitor mSetupLock;
+  base::Thread mVsyncThread;
+  RefPtr<Runnable> mVsyncTask;
+  Monitor mVsyncEnabledLock;
+  bool mVsyncEnabled;
 };
 
 class XrandrSoftwareVsyncSource final : public SoftwareVsyncSource {
  public:
-  XrandrSoftwareVsyncSource() : SoftwareVsyncSource(false) {
+  XrandrSoftwareVsyncSource() {
     MOZ_ASSERT(NS_IsMainThread());
-    mGlobalDisplay = new XrandrSoftwareDisplay();
+
+    UpdateVsyncRate();
+
+    GdkScreen* defaultScreen = gdk_screen_get_default();
+    g_signal_connect(defaultScreen, "monitors-changed",
+                     G_CALLBACK(monitors_changed), this);
   }
 
  private:
-  class XrandrSoftwareDisplay final : public SoftwareDisplay {
-   public:
-    XrandrSoftwareDisplay() {
-      MOZ_ASSERT(NS_IsMainThread());
+  
+  
+  
+  void UpdateVsyncRate() {
+    struct _XDisplay* dpy = gdk_x11_get_default_xdisplay();
 
-      UpdateVsyncRate();
-
-      GdkScreen* defaultScreen = gdk_screen_get_default();
-      g_signal_connect(defaultScreen, "monitors-changed",
-                       G_CALLBACK(monitors_changed), this);
-    }
-
-   private:
     
     
     
-    void UpdateVsyncRate() {
-      struct _XDisplay* dpy = gdk_x11_get_default_xdisplay();
+    double highestRefreshRate = gfxPlatform::GetSoftwareVsyncRate();
+
+    
+    
+    
+    int eventBase, errorBase, major, minor;
+    if (XRRQueryExtension(dpy, &eventBase, &errorBase) &&
+        XRRQueryVersion(dpy, &major, &minor) &&
+        (major > 1 || (major == 1 && minor >= 3))) {
+      Window root = gdk_x11_get_default_root_xwindow();
+      XRRScreenResources* res = XRRGetScreenResourcesCurrent(dpy, root);
 
       
       
       
-      double highestRefreshRate = gfxPlatform::GetSoftwareVsyncRate();
-
       
-      
-      
-      int eventBase, errorBase, major, minor;
-      if (XRRQueryExtension(dpy, &eventBase, &errorBase) &&
-          XRRQueryVersion(dpy, &major, &minor) &&
-          (major > 1 || (major == 1 && minor >= 3))) {
-        Window root = gdk_x11_get_default_root_xwindow();
-        XRRScreenResources* res = XRRGetScreenResourcesCurrent(dpy, root);
+      highestRefreshRate -= 1.0;
 
-        
-        
-        
-        
-        highestRefreshRate -= 1.0;
-
-        for (int i = 0; i < res->noutput; i++) {
-          XRROutputInfo* outputInfo =
-              XRRGetOutputInfo(dpy, res, res->outputs[i]);
-          if (!outputInfo->crtc) {
-            XRRFreeOutputInfo(outputInfo);
-            continue;
-          }
-
-          XRRCrtcInfo* crtcInfo = XRRGetCrtcInfo(dpy, res, outputInfo->crtc);
-          for (int j = 0; j < res->nmode; j++) {
-            if (res->modes[j].id == crtcInfo->mode) {
-              double refreshRate = mode_refresh(&res->modes[j]);
-              if (refreshRate > highestRefreshRate) {
-                highestRefreshRate = refreshRate;
-              }
-              break;
-            }
-          }
-
-          XRRFreeCrtcInfo(crtcInfo);
+      for (int i = 0; i < res->noutput; i++) {
+        XRROutputInfo* outputInfo = XRRGetOutputInfo(dpy, res, res->outputs[i]);
+        if (!outputInfo->crtc) {
           XRRFreeOutputInfo(outputInfo);
+          continue;
         }
-        XRRFreeScreenResources(res);
-      }
 
-      const double rate = 1000.0 / highestRefreshRate;
-      mVsyncRate = mozilla::TimeDuration::FromMilliseconds(rate);
+        XRRCrtcInfo* crtcInfo = XRRGetCrtcInfo(dpy, res, outputInfo->crtc);
+        for (int j = 0; j < res->nmode; j++) {
+          if (res->modes[j].id == crtcInfo->mode) {
+            double refreshRate = mode_refresh(&res->modes[j]);
+            if (refreshRate > highestRefreshRate) {
+              highestRefreshRate = refreshRate;
+            }
+            break;
+          }
+        }
+
+        XRRFreeCrtcInfo(crtcInfo);
+        XRRFreeOutputInfo(outputInfo);
+      }
+      XRRFreeScreenResources(res);
     }
 
-    static void monitors_changed(GdkScreen* aScreen, gpointer aClosure) {
-      XrandrSoftwareDisplay* self =
-          static_cast<XrandrSoftwareDisplay*>(aClosure);
-      self->UpdateVsyncRate();
+    const double rate = 1000.0 / highestRefreshRate;
+    mVsyncRate = mozilla::TimeDuration::FromMilliseconds(rate);
+  }
+
+  static void monitors_changed(GdkScreen* aScreen, gpointer aClosure) {
+    XrandrSoftwareVsyncSource* self =
+        static_cast<XrandrSoftwareVsyncSource*>(aClosure);
+    self->UpdateVsyncRate();
+  }
+
+  
+  static double mode_refresh(const XRRModeInfo* mode_info) {
+    double rate;
+    double vTotal = mode_info->vTotal;
+
+    if (mode_info->modeFlags & RR_DoubleScan) {
+      
+      vTotal *= 2;
     }
 
-    
-    static double mode_refresh(const XRRModeInfo* mode_info) {
-      double rate;
-      double vTotal = mode_info->vTotal;
-
-      if (mode_info->modeFlags & RR_DoubleScan) {
-        
-        vTotal *= 2;
-      }
-
-      if (mode_info->modeFlags & RR_Interlace) {
-        
-        
-        vTotal /= 2;
-      }
-
-      if (mode_info->hTotal && vTotal) {
-        rate = ((double)mode_info->dotClock /
-                ((double)mode_info->hTotal * (double)vTotal));
-      } else {
-        rate = 0;
-      }
-      return rate;
+    if (mode_info->modeFlags & RR_Interlace) {
+      
+      
+      vTotal /= 2;
     }
-  };
+
+    if (mode_info->hTotal && vTotal) {
+      rate = ((double)mode_info->dotClock /
+              ((double)mode_info->hTotal * (double)vTotal));
+    } else {
+      rate = 0;
+    }
+    return rate;
+  }
 };
 
 already_AddRefed<gfx::VsyncSource> gfxPlatformGtk::CreateHardwareVsyncSource() {
@@ -1003,9 +978,8 @@ already_AddRefed<gfx::VsyncSource> gfxPlatformGtk::CreateHardwareVsyncSource() {
   if (gfxConfig::IsEnabled(Feature::HW_COMPOSITING) && !isXwayland &&
       (!gfxVars::UseEGL() || isMesa) &&
       gl::sGLXLibrary.SupportsVideoSync(DefaultXDisplay())) {
-    RefPtr<VsyncSource> vsyncSource = new GtkVsyncSource();
-    VsyncSource::Display& display = vsyncSource->GetGlobalDisplay();
-    if (!static_cast<GtkVsyncSource::GLXDisplay&>(display).Setup()) {
+    RefPtr<GtkVsyncSource> vsyncSource = new GtkVsyncSource();
+    if (!vsyncSource->Setup()) {
       NS_WARNING("Failed to setup GLContext, falling back to software vsync.");
       return gfxPlatform::CreateHardwareVsyncSource();
     }

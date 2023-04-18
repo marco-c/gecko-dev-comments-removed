@@ -60,7 +60,7 @@ void VsyncParent::DispatchVsyncEvent(const VsyncEvent& aVsync) {
   
   
   if (mObservingVsync && !mDestroyed) {
-    TimeDuration vsyncRate = mVsyncSource->GetGlobalDisplay().GetVsyncRate();
+    TimeDuration vsyncRate = mVsyncSource->GetVsyncRate();
     Unused << SendNotify(aVsync, vsyncRate.ToMilliseconds());
   }
 }
