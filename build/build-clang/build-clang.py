@@ -251,13 +251,23 @@ def build_one_stage(
             "-DCMAKE_INSTALL_PREFIX=%s" % inst_dir,
             "-DLLVM_TARGETS_TO_BUILD=%s" % machine_targets,
             "-DLLVM_ENABLE_ASSERTIONS=%s" % ("ON" if assertions else "OFF"),
-            "-DLLVM_TOOL_LIBCXX_BUILD=%s" % ("ON" if build_libcxx else "OFF"),
             "-DLLVM_ENABLE_BINDINGS=OFF",
             "-DLLVM_ENABLE_CURL=OFF",
         ]
         if "TASK_ID" in os.environ:
             cmake_args += [
                 "-DCLANG_REPOSITORY_STRING=taskcluster-%s" % os.environ["TASK_ID"],
+            ]
+        
+        if is_final_stage and os.path.basename(cc[0]).lower() != "cl.exe":
+            cmake_args += [
+                "-DLLVM_FORCE_BUILD_RUNTIME=ON",
+                "-DLLVM_TOOL_LIBCXX_BUILD=%s" % ("ON" if build_libcxx else "OFF"),
+                
+                
+                
+                
+                "-DLLVM_TOOL_LIBCXXABI_BUILD=%s" % ("OFF" if is_windows() else "ON"),
             ]
         if not is_final_stage:
             cmake_args += [
