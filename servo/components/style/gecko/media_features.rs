@@ -284,18 +284,6 @@ pub enum PrefersColorScheme {
 }
 
 
-
-
-
-#[derive(Clone, Copy, Debug, FromPrimitive, Parse, PartialEq, PartialOrd, ToCss)]
-#[repr(u8)]
-#[allow(missing_docs)]
-pub enum DynamicRange {
-    Standard,
-    High,
-}
-
-
 fn eval_prefers_reduced_motion(device: &Device, query_value: Option<PrefersReducedMotion>) -> bool {
     let prefers_reduced =
         unsafe { bindings::Gecko_MediaFeatures_PrefersReducedMotion(device.document()) };
@@ -430,25 +418,6 @@ fn eval_content_prefers_color_scheme(
     query_value: Option<PrefersColorScheme>,
 ) -> bool {
     do_eval_prefers_color_scheme(device,  true, query_value)
-}
-
-
-fn eval_dynamic_range(device: &Device, query_value: Option<DynamicRange>) -> bool {
-    let dynamic_range =
-        unsafe { bindings::Gecko_MediaFeatures_DynamicRange(device.document()) };
-    match query_value {
-        Some(v) => dynamic_range >= v,
-        None => true,
-    }
-}
-
-fn eval_video_dynamic_range(device: &Device, query_value: Option<DynamicRange>) -> bool {
-    let dynamic_range =
-        unsafe { bindings::Gecko_MediaFeatures_VideoDynamicRange(device.document()) };
-    match query_value {
-        Some(v) => dynamic_range >= v,
-        None => true,
-    }
 }
 
 bitflags! {
@@ -713,7 +682,7 @@ macro_rules! bool_pref_feature {
 
 
 
-pub static MEDIA_FEATURES: [MediaFeatureDescription; 60] = [
+pub static MEDIA_FEATURES: [MediaFeatureDescription; 58] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -864,18 +833,6 @@ pub static MEDIA_FEATURES: [MediaFeatureDescription; 60] = [
         atom!("prefers-color-scheme"),
         AllowsRanges::No,
         keyword_evaluator!(eval_prefers_color_scheme, PrefersColorScheme),
-        ParsingRequirements::empty(),
-    ),
-    feature!(
-        atom!("dynamic-range"),
-        AllowsRanges::No,
-        keyword_evaluator!(eval_dynamic_range, DynamicRange),
-        ParsingRequirements::empty(),
-    ),
-    feature!(
-        atom!("video-dynamic-range"),
-        AllowsRanges::No,
-        keyword_evaluator!(eval_video_dynamic_range, DynamicRange),
         ParsingRequirements::empty(),
     ),
     
