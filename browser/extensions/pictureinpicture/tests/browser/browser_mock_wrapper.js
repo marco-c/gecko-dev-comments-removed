@@ -3,11 +3,24 @@
 
 "use strict";
 
+
+
+ChromeUtils.defineModuleGetter(
+  this,
+  "TOGGLE_POLICIES",
+  "resource://gre/modules/PictureInPictureControls.jsm"
+);
+
 const TEST_URL =
   getRootDirectory(gTestPath).replace(
     "chrome://mochitests/content",
     "https://mochitest.youtube.com:443"
   ) + "test-mock-wrapper.html";
+const TEST_URL_TOGGLE_VISIBILITY =
+  getRootDirectory(gTestPath).replace(
+    "chrome://mochitests/content",
+    "https://mochitest.youtube.com:443"
+  ) + "test-toggle-visibility.html";
 
 
 
@@ -174,3 +187,23 @@ async function setupVideoListeners(browser) {
     });
   });
 }
+
+
+
+
+
+add_task(async function test_mock_should_hide_toggle() {
+  await testToggle(TEST_URL_TOGGLE_VISIBILITY, {
+    "mock-video-controls": { canToggle: false, policy: TOGGLE_POLICIES.HIDDEN },
+  });
+});
+
+
+
+
+
+add_task(async function test_mock_should_not_hide_toggle() {
+  await testToggle(TEST_URL, {
+    "mock-video-controls": { canToggle: true },
+  });
+});
