@@ -126,9 +126,10 @@ const EXPECTED_BEST_MATCH_POSITION_RESULT = {
 
 add_task(async function init() {
   UrlbarPrefs.set("quicksuggest.enabled", true);
+  UrlbarPrefs.set("bestMatch.enabled", true);
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
-  UrlbarPrefs.set("bestMatch.enabled", true);
+  UrlbarPrefs.set("suggest.bestmatch", true);
 
   
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
@@ -269,9 +270,23 @@ add_task(async function tabToSearch() {
 
 
 
-add_task(async function disabled() {
+add_task(async function disabled_featureGate() {
   UrlbarPrefs.set("bestMatch.enabled", false);
+  await doDisabledTest();
+  UrlbarPrefs.set("bestMatch.enabled", true);
+});
 
+
+
+add_task(async function disabled_suggestions() {
+  UrlbarPrefs.set("suggest.bestmatch", false);
+  await doDisabledTest();
+  UrlbarPrefs.set("suggest.bestmatch", true);
+});
+
+
+
+async function doDisabledTest() {
   
   
   let expectedResult = { ...EXPECTED_BEST_MATCH_RESULT };
@@ -312,9 +327,7 @@ add_task(async function disabled() {
     true,
     "result.isSuggestedIndexRelativeToGroup"
   );
-
-  UrlbarPrefs.set("bestMatch.enabled", true);
-});
+}
 
 
 add_task(async function position() {

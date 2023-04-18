@@ -186,7 +186,9 @@ class ProviderQuickSuggest extends UrlbarProvider {
     };
 
     let isBestMatch =
-      suggestion.is_best_match && UrlbarPrefs.get("bestMatchEnabled");
+      suggestion.is_best_match &&
+      UrlbarPrefs.get("bestMatchEnabled") &&
+      UrlbarPrefs.get("suggest.bestmatch");
     if (isBestMatch) {
       
       

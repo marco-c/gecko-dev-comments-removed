@@ -183,6 +183,10 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["speculativeConnect.enabled", true],
 
   
+  
+  ["suggest.bestmatch", true],
+
+  
   ["suggest.bookmark", true],
 
   

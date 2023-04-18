@@ -383,6 +383,13 @@ pref("browser.urlbar.suggest.calculator",           false);
 
 
 
+
+pref("browser.urlbar.suggest.bestmatch", true, sticky);
+
+
+
+
+
 pref("browser.urlbar.suggest.quicksuggest.nonsponsored", false, sticky);
 
 
@@ -503,7 +510,7 @@ pref("browser.urlbar.merino.providers", "");
 pref("browser.urlbar.merino.clientVariants", "");
 
 
-pref("browser.urlbar.bestMatch.enabled", true);
+pref("browser.urlbar.bestMatch.enabled", false);
 
 pref("browser.altClickSave", false);
 
