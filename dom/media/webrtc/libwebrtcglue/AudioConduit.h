@@ -153,6 +153,11 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   Ssrcs GetLocalSSRCs() const override;
   Maybe<Ssrc> GetRemoteSSRC() const override;
 
+  void DisableSsrcChanges() override {
+    MOZ_ASSERT(mCallThread->IsOnCurrentThread());
+    mAllowSsrcChange = false;
+  }
+
  private:
   
 
@@ -203,6 +208,10 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   void DeleteSendStream();
   void CreateRecvStream();
   void DeleteRecvStream();
+
+  
+  
+  bool mAllowSsrcChange = true;
 
   
   
