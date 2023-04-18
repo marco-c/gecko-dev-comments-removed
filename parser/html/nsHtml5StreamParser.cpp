@@ -1555,14 +1555,14 @@ nsresult nsHtml5StreamParser::OnDataAvailable(nsIRequest* aRequest,
                                               uint64_t aSourceOffset,
                                               uint32_t aLength) {
   nsresult rv;
-  if (NS_FAILED(rv = mExecutor->IsBroken())) {
-    return rv;
-  }
 
   MOZ_ASSERT(mRequest == aRequest, "Got data on wrong stream.");
   uint32_t totalRead;
   
   if (MOZ_UNLIKELY(NS_IsMainThread())) {
+    if (NS_FAILED(rv = mExecutor->IsBroken())) {
+      return rv;
+    }
     Maybe<Buffer<uint8_t>> maybe = Buffer<uint8_t>::Alloc(aLength);
     if (maybe.isNothing()) {
       return mExecutor->MarkAsBroken(NS_ERROR_OUT_OF_MEMORY);
@@ -1581,9 +1581,13 @@ nsresult nsHtml5StreamParser::OnDataAvailable(nsIRequest* aRequest,
     }
     return rv;
   }
+
   MOZ_ASSERT(IsParserThread(), "Wrong thread!");
   mozilla::MutexAutoLock autoLock(mTokenizerMutex);
 
+  if (NS_FAILED(rv = mTreeBuilder->IsBroken())) {
+    return rv;
+  }
   if (mBufferingBytes) {
     Maybe<Buffer<uint8_t>> maybe = Buffer<uint8_t>::Alloc(aLength);
     if (maybe.isNothing()) {
@@ -1604,6 +1608,7 @@ nsresult nsHtml5StreamParser::OnDataAvailable(nsIRequest* aRequest,
   MOZ_ASSERT(totalRead == aLength);
   return rv;
 }
+
 
 
 nsresult nsHtml5StreamParser::CopySegmentsToParser(
