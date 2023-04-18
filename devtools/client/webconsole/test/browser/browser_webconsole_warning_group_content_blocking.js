@@ -179,6 +179,11 @@ async function testStorageAccessBlockedGrouping(groupLabel) {
 
   await clearOutput(hud);
 
+  
+  
+  
+  await setFilterState(hud, { text: "-has been rejected" });
+
   const getWarningMessage = url => groupLabel.replace("<URL>", url);
 
   const onStorageAccessBlockedMessage = waitForMessage(
