@@ -8,7 +8,9 @@
 #include "ModuleLoader.h"
 
 #include "jsapi.h"
+#include "js/CompileOptions.h"  
 #include "js/ContextOptions.h"  
+#include "js/experimental/JSStencil.h"  
 #include "js/MemoryFunctions.h"
 #include "js/Modules.h"  
 #include "js/OffThreadScriptCompilation.h"
@@ -461,17 +463,31 @@ nsresult ModuleLoader::CompileOrFinishModuleScript(
     return NS_OK;
   }
 
+  if (!nsJSUtils::IsScriptable(aGlobal)) {
+    return NS_OK;
+  }
+
   MaybeSourceText maybeSource;
   nsresult rv = aRequest->GetScriptSource(aCx, &maybeSource);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  return maybeSource.constructed<SourceText<char16_t>>()
-             ? nsJSUtils::CompileModule(aCx,
-                                        maybeSource.ref<SourceText<char16_t>>(),
-                                        aGlobal, aOptions, aModule)
-             : nsJSUtils::CompileModule(aCx,
-                                        maybeSource.ref<SourceText<Utf8Unit>>(),
-                                        aGlobal, aOptions, aModule);
+  RefPtr<JS::Stencil> stencil =
+      maybeSource.constructed<SourceText<char16_t>>()
+          ? JS::CompileModuleScriptToStencil(
+                aCx, aOptions, maybeSource.ref<SourceText<char16_t>>())
+          : JS::CompileModuleScriptToStencil(
+                aCx, aOptions, maybeSource.ref<SourceText<Utf8Unit>>());
+  if (!stencil) {
+    return NS_ERROR_FAILURE;
+  }
+
+  JS::InstantiateOptions instantiateOptions(aOptions);
+  aModule.set(JS::InstantiateModuleStencil(aCx, instantiateOptions, stencil));
+  if (!aModule) {
+    return NS_ERROR_FAILURE;
+  }
+
+  return NS_OK;
 }
 
 
