@@ -2,8 +2,14 @@
 
 
 const messageSubject = {
-  ERROR: "error",
-  OBJECT_URL: "object url",
+  ERROR: "error",  
+  OBJECT_URL: "object url", 
   STARTED_BUFFERING: "started buffering",
   FINISHED_BUFFERING: "finished buffering",
-}
+  VERIFY_DURATION: "verify duration", 
+  AWAIT_DURATION: "await duration", 
+  VERIFY_HAVE_NOTHING: "verify have nothing readyState",
+  VERIFY_AT_LEAST_HAVE_METADATA: "verify readyState is at least HAVE_METADATA",
+  ACK_VERIFIED: "verified", 
+  WORKER_DONE: "worker done", 
+};
