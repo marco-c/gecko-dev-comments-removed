@@ -122,7 +122,7 @@ class CAPABILITY ReentrantMonitor : BlockingResourceBase {
 
 
 
-  void AssertCurrentThreadIn() ASSERT_CAPABILITY(mReentrantMonitor) {
+  void AssertCurrentThreadIn() ASSERT_CAPABILITY(this) {
     PR_ASSERT_CURRENT_THREAD_IN_MONITOR(mReentrantMonitor);
   }
 
@@ -130,13 +130,13 @@ class CAPABILITY ReentrantMonitor : BlockingResourceBase {
 
 
 
-  void AssertNotCurrentThreadIn() EXCLUDES(mReentrantMonitor) {
+  void AssertNotCurrentThreadIn() ASSERT_CAPABILITY(!this) {
     
   }
 
 #else
-  void AssertCurrentThreadIn() ASSERT_CAPABILITY(mReentrantMonitor) {}
-  void AssertNotCurrentThreadIn() EXCLUDES(mReentrantMonitor) {}
+  void AssertCurrentThreadIn() ASSERT_CAPABILITY(this) {}
+  void AssertNotCurrentThreadIn() ASSERT_CAPABILITY(!this) {}
 
 #endif  
 
