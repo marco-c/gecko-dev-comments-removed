@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html class="reftest-wait reftest-no-flush">
 <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
-
-
-
-
+<!--
+  A test for a partial pre-rendered transform animation moves to a place where
+  jank happens.
+  -->
 <style>
 html {
   overflow: hidden;
@@ -29,14 +29,14 @@ body {
 }
 </style>
 <div id="target">
-  
-
-
-
+  <!--
+    Put an SVG element so that the transform display item has a blob on
+    WebRender which means this test properly fails without the proper fix.
+    -->
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2000 2000">
-    
-    <rect fill="green" x="0" width="1125" height="2000"></rect>
-    <rect fill="red" x="1125" width="875" height="2000"></rect>
+    <!-- green on the pre-render area -->
+    <rect fill="green" x="0" width="1125" height="2000" rx="0.001"></rect>
+    <rect fill="red" x="1125" width="875" height="2000" rx="0.001"></rect>
   </svg>
 </div>
 <script>

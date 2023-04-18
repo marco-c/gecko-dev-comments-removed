@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html class="reftest-wait reftest-no-flush">
 <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
-
-
-
-
+<!--
+  Another variant of partial-prerender-translate-2.html, but the transform
+  animation is scaled by the parent element.
+  -->
 <style>
 html {
   overflow: hidden;
@@ -28,13 +28,13 @@ body {
 </style>
 <div style="transform: scale(0.5); transform-origin: 0 0">
   <div id="target">
-    
-
-
-
+    <!--
+      Put an SVG element so that the transform display item has a blob on
+      WebRender which means this test properly fails without the proper fix.
+      -->
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4000 2000">
-      <rect fill="green" x="0" width="2250" height="2000"></rect>
-      <rect fill="red" x="2250" width="1750" height="2000"></rect>
+      <rect fill="green" x="0" width="2250" height="2000" rx="0.001"></rect>
+      <rect fill="red" x="2250" width="1750" height="2000" rx="0.001"></rect>
     </svg>
   </div>
 </div>

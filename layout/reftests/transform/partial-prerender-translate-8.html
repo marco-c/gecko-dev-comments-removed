@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html class="reftest-wait reftest-no-flush">
 <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
-
-
-
-
-
+<!--
+  A test for a partial pre-rendered transform in an iframe, if the clip
+  rectangle of the transform animation were wrong, e.g. (800, 1000), the
+  transform animation janks at the initial position.
+  -->
 <style>
 html {
   overflow: hidden;
@@ -15,7 +15,7 @@ body {
   padding: 0px;
 }
 </style>
-              
+              <!-- a half width of the view port -->
 <iframe style="width:400px; height:1000px; border: 0"
         srcdoc="<!DOCTYPE HTML>
                 <html>
@@ -43,9 +43,9 @@ body {
                 </style>
                 <div id='target'>
                   <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 1000'>
-                    <rect fill='green' x='0'   width='800' height='1000'></rect>
-                    <rect fill='blue'  x='800' width='325' height='1000'></rect>
-                    <rect fill='red'   x='1125' width='675' height='1000'></rect>
+                    <rect fill='green' x='0'   width='800' height='1000' rx='0.001'></rect>
+                    <rect fill='blue'  x='800' width='325' height='1000' rx='0.001'></rect>
+                    <rect fill='red'   x='1125' width='675' height='1000' rx='0.001'></rect>
                   </svg>
                 </div>
                 <script>

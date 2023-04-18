@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html class="reftest-wait reftest-no-flush">
 <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
-
-
-
-
-
-
+<!--
+  A test case for a transform animation frame is positioned by specifying
+  left property (i.e. not transform property) so that if we didn't factor the
+  offset (from the reference frame) in the jank mechanism, the animation will
+  jank at wrong positions.
+  -->
 <style>
 html {
   overflow: hidden;
@@ -47,21 +47,21 @@ body {
 }
 </style>
 <div id="target">
-  
+  <!--
+    Put an SVG element so that the transform display item has a blob on
+    WebRender which means this test properly fails without the proper fix.
 
-
-
-
-
-
-
-
-
-
+    The pre-render area width is 1125px, thus the expanded area outside of the
+    visible area is 325px. The 325px width is expaned to both directions,
+    leftward and rightward. Meanwhile, the horizontal visible frame range is
+    [200px, 1000px] because of `left: -200px`, so the left edge of the
+    pre-render area is 37.5px (= 200 - 325/2), the right edge is 1162.5px
+    (= 1000 + 325/2).
+    -->
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000">
-    <rect fill="green" x="0"      width="800" height="1000"></rect>
-    <rect fill="blue"  x="800"    width="362.5" height="1000"></rect>
-    <rect fill="red"   x="1162.5" width="837.5" height="1000"></rect>
+    <rect fill="green" x="0"      width="800" height="1000" rx="0.001"></rect>
+    <rect fill="blue"  x="800"    width="362.5" height="1000" rx="0.001"></rect>
+    <rect fill="red"   x="1162.5" width="837.5" height="1000" rx="0.001"></rect>
   </svg>
 </div>
 <script>
