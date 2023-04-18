@@ -291,6 +291,11 @@ FetchStreamReader::OnOutputStreamReady(nsIAsyncOutputStream* aStream) {
 
   ReadableStreamDefaultReaderRead(aes.cx(), MOZ_KnownLive(mReader), readRequest,
                                   rv);
+
+  
+  
+  rv.WouldReportJSException();
+
   if (NS_WARN_IF(rv.Failed())) {
     
     CloseAndRelease(aes.cx(), NS_ERROR_DOM_INVALID_STATE_ERR);
