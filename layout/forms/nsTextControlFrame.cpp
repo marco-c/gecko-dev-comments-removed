@@ -783,14 +783,17 @@ void nsTextControlFrame::ReflowTextControlChild(
     auto size = desiredSize.Size(outerWM);
     
     
-    position = LogicalPoint(outerWM);
-    position.B(outerWM) =
+    LogicalRect buttonRect(outerWM);
+    buttonRect.BSize(outerWM) = size.BSize(outerWM);
+    buttonRect.ISize(outerWM) = size.ISize(outerWM);
+    buttonRect.BStart(outerWM) =
         bp.BStart(outerWM) +
         (aReflowInput.ComputedBSize() - size.BSize(outerWM)) / 2;
     
-    position.I(outerWM) =
+    buttonRect.IStart(outerWM) =
         bp.IStart(outerWM) + aReflowInput.ComputedISize() - size.ISize(outerWM);
-    position = position.ConvertTo(wm, outerWM, containerSize);
+    buttonRect = buttonRect.ConvertTo(wm, outerWM, containerSize);
+    position = buttonRect.Origin(wm);
     aButtonBoxISize = size.ISize(outerWM);
   }
 
