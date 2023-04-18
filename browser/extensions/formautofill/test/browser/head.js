@@ -676,6 +676,17 @@ function getDoorhangerButton(button) {
   return getNotification()[button];
 }
 
+
+
+
+
+
+
+
+
+
+
+
 async function removeAllRecords() {
   let addresses = await getAddresses();
   if (addresses.length) {
