@@ -388,6 +388,17 @@ class WebrtcVideoConduit
   unsigned short mLastHeight = 0;
 
   
+  
+  
+  
+  Maybe<uint64_t> mLastTimestampSendUs;
+
+  
+  
+  
+  Maybe<uint32_t> mLastRTPTimestampReceive;
+
+  
   unsigned int mSendingFramerate;
 
   
