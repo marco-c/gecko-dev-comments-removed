@@ -88,6 +88,7 @@ void APZUpdater::CompleteSceneSwap(const wr::WrWindowId& aWindowId,
     
     return;
   }
+  updater->mApz->mTreeLock.AssertCurrentThreadIn();
 
   for (const auto& removedPipeline : aInfo.removed_pipelines) {
     LayersId layersId = wr::AsLayersId(removedPipeline.pipeline_id);
