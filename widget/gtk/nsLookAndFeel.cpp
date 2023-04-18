@@ -1095,15 +1095,7 @@ bool nsLookAndFeel::PerThemeData::GetFont(FontID aID, nsString& aFontName,
   }
 
   
-  double scaleFactor = StaticPrefs::layout_css_devPixelsPerPx();
-  if (scaleFactor > 0) {
-    aFontStyle.size *=
-        widget::ScreenHelperGTK::GetGTKMonitorScaleFactor() / scaleFactor;
-  } else {
-    
-    aFontStyle.size /= gfxPlatformGtk::GetFontScaleFactor();
-  }
-
+  aFontStyle.size /= gfxPlatformGtk::GetFontScaleFactor();
   return true;
 }
 

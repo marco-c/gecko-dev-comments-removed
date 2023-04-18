@@ -61,22 +61,15 @@ static int gLastGdkError;
 
 
 static inline gint GetMonitorScaleFactor(nsPresContext* aPresContext) {
+  nsCOMPtr<nsIWidget> rootWidget = aPresContext->GetRootWidget();
+  auto scale = rootWidget ? rootWidget->GetDefaultScale()
+                          : aPresContext->CSSToDevPixelScale();
   
   
-  double scale = StaticPrefs::layout_css_devPixelsPerPx();
-  if (scale <= 0) {
-    if (nsCOMPtr<nsIWidget> rootWidget = aPresContext->GetRootWidget()) {
-      int monitorScale = int(round(rootWidget->GetDefaultScale().scale));
-      
-      
-      if (monitorScale < 1) {
-        return 1;
-      }
-      return monitorScale;
-    }
-  }
+  int monitorScale = int(round(scale.scale));
   
-  return ScreenHelperGTK::GetGTKMonitorScaleFactor();
+  
+  return std::max(1, monitorScale);
 }
 
 static inline gint GetMonitorScaleFactor(nsIFrame* aFrame) {
