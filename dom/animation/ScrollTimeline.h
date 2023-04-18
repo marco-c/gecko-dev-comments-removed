@@ -65,25 +65,18 @@ class Element;
 class ScrollTimeline final : public AnimationTimeline {
  public:
   struct Scroller {
-    
-    enum class Type : uint8_t {
-      
-      Auto,
-      
-      Other,
-    };
-    Type mType = Type::Auto;
+    StyleScroller mType = StyleScroller::Root;
     RefPtr<Element> mElement;
 
     
     
-    static Scroller Auto(const Document* aOwnerDoc) {
+    static Scroller Root(const Document* aOwnerDoc) {
       
       
       
       
       
-      return {Type::Auto, aOwnerDoc->GetDocumentElement()};
+      return {StyleScroller::Root, aOwnerDoc->GetDocumentElement()};
     }
 
     explicit operator bool() const { return mElement; }
