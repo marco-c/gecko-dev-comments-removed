@@ -15,7 +15,7 @@ template <typename F>
 void QuotaManager::MaybeRecordQuotaManagerShutdownStepWith(F&& aFunc) {
   
 
-  if (ShutdownStarted()) {
+  if (IsShuttingDown()) {
     RecordShutdownStep(Nothing{}, std::forward<F>(aFunc)());
   }
 }
