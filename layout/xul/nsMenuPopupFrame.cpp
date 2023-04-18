@@ -2376,29 +2376,37 @@ void nsMenuPopupFrame::DestroyFrom(nsIFrame* aDestructRoot,
 void nsMenuPopupFrame::MoveTo(const CSSPoint& aPos, bool aUpdateAttrs) {
   nsIWidget* widget = GetWidget();
   nsPoint appUnitsPos = CSSPixel::ToAppUnits(aPos);
+
+  
+  
+  
+  
+  
+  
+  {
+    nsMargin margin(0, 0, 0, 0);
+    StyleMargin()->GetMargin(margin);
+
+    
+    
+    if (mAdjustOffsetForContextMenu) {
+      margin.left += CSSPixel::ToAppUnits(
+          LookAndFeel::GetInt(LookAndFeel::IntID::ContextMenuOffsetHorizontal));
+      margin.top += CSSPixel::ToAppUnits(
+          LookAndFeel::GetInt(LookAndFeel::IntID::ContextMenuOffsetVertical));
+    }
+
+    appUnitsPos.x -= margin.left;
+    appUnitsPos.y -= margin.top;
+  }
+
   if ((mScreenRect.x == appUnitsPos.x && mScreenRect.y == appUnitsPos.y) &&
       (!widget || widget->GetClientOffset() == mLastClientOffset)) {
     return;
   }
 
-  
-  
-  
-  
-  nsMargin margin(0, 0, 0, 0);
-  StyleMargin()->GetMargin(margin);
-
-  
-  if (mAdjustOffsetForContextMenu) {
-    margin.left += CSSPixel::ToAppUnits(
-        LookAndFeel::GetInt(LookAndFeel::IntID::ContextMenuOffsetHorizontal));
-    margin.top += CSSPixel::ToAppUnits(
-        LookAndFeel::GetInt(LookAndFeel::IntID::ContextMenuOffsetVertical));
-  }
-
   mAnchorType = MenuPopupAnchorType_Point;
-  mScreenRect.x = appUnitsPos.x - margin.left;
-  mScreenRect.y = appUnitsPos.y - margin.top;
+  mScreenRect.MoveTo(appUnitsPos);
 
   SetPopupPosition(nullptr, true, false);
 
