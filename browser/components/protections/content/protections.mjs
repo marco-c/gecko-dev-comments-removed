@@ -1,17 +1,17 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* eslint-env mozilla/frame-script */
 
-
-
-
-
-import LockwiseCard from "./lockwise-card.js";
-import MonitorCard from "./monitor-card.js";
-import ProxyCard from "./proxy-card.js";
-import VPNCard from "./vpn-card.js";
+import LockwiseCard from "./lockwise-card.mjs";
+import MonitorCard from "./monitor-card.mjs";
+import ProxyCard from "./proxy-card.mjs";
+import VPNCard from "./vpn-card.mjs";
 
 let cbCategory = RPMGetStringPref("browser.contentblocking.category");
 document.sendTelemetryEvent = (action, object, value = "") => {
-  
+  // eslint-disable-next-line no-undef
   RPMRecordTelemetryEvent("security.ui.protections", action, object, value, {
     category: cbCategory,
   });
@@ -24,9 +24,9 @@ if (searchParams.has("entrypoint")) {
   RPMSendAsyncMessage("RecordEntryPoint", {
     entrypoint: searchParams.get("entrypoint"),
   });
-  
-  
-  
+  // Remove this parameter from the URL (after recording above) to make it
+  // cleaner for bookmarking and switch-to-tab and so that bookmarked values
+  // don't skew telemetry.
   searchParams.delete("entrypoint");
   searchParamsChanged = true;
 }
@@ -43,11 +43,11 @@ document.addEventListener("DOMContentLoaded", e => {
   }
 
   RPMSendQuery("FetchEntryPoint", {}).then(entrypoint => {
-    
+    // Send telemetry on arriving on this page
     document.sendTelemetryEvent("show", "protection_report", entrypoint);
   });
 
-  
+  // We need to send the close telemetry before unload while we still have a connection to RPM.
   window.addEventListener("beforeunload", () => {
     document.sendTelemetryEvent("close", "protection_report");
   });
@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", e => {
     let summary = document.getElementById("graph-total-summary");
     let weekSummary = document.getElementById("graph-week-summary");
 
-    
+    // User is in private mode, show no data on the graph
     if (data.isPrivate) {
       graph.classList.add("private-window");
     } else {
@@ -112,8 +112,8 @@ document.addEventListener("DOMContentLoaded", e => {
       summary.setAttribute("data-l10n-id", "graph-total-tracker-summary");
     }
 
-    
-    
+    // Set a default top size for the height of the graph bars so that small
+    // numbers don't fill the whole graph.
     let largest = 100;
     if (largest < data.largest) {
       largest = data.largest;
@@ -127,17 +127,17 @@ document.addEventListener("DOMContentLoaded", e => {
       cryptominer: 0,
     };
 
-    
-    
-    
-    
-    
-    
+    // For accessibility clients, we turn the graph into a fake table with annotated text.
+    // We use WAI-ARIA roles, properties, and states to mark up the table, rows and cells.
+    // Each day becomes one row in the table.
+    // Each row contains the day, total, and then one cell for each bar that we display.
+    // At most, a row can contain seven cells.
+    // But we need to caclulate the actual number of the most cells in a row to give accurate information.
     let maxColumnCount = 0;
     let date = new Date();
     for (let i = 0; i <= 6; i++) {
       let dateString = date.toISOString().split("T")[0];
-      let ariaOwnsString = ""; 
+      let ariaOwnsString = ""; // Get the row's colummns in order
       let currentColumnCount = 0;
       let bar = document.createElement("div");
       bar.className = "graph-bar";
@@ -159,14 +159,14 @@ document.addEventListener("DOMContentLoaded", e => {
         currentColumnCount += 1;
         let barHeight = (content.total / largest) * 100;
         weekCount += content.total;
-        
+        // Add a short timeout to allow the elements to be added to the dom before triggering an animation.
         setTimeout(() => {
           bar.style.height = `${barHeight}%`;
         }, 20);
         for (let type of dataTypes) {
           if (content[type]) {
             let dataHeight = (content[type] / content.total) * 100;
-            
+            // Since we are dealing with non-visual content, screen readers need a parent container to get the text
             let cellSpan = document.createElement("span");
             cellSpan.id = type + i;
             cellSpan.setAttribute("role", "cell");
@@ -188,11 +188,11 @@ document.addEventListener("DOMContentLoaded", e => {
           }
         }
         if (currentColumnCount > maxColumnCount) {
-          
+          // The current row has more than any previous rows
           maxColumnCount = currentColumnCount;
         }
       } else {
-        
+        // There were no content blocking events on this day.
         bar.classList.add("empty");
       }
       bar.appendChild(innerBar);
@@ -213,7 +213,7 @@ document.addEventListener("DOMContentLoaded", e => {
 
       let label = document.createElement("span");
       label.className = "column-label";
-      
+      // While the graphs fill up from the right, the days fill up from the left, so match the IDs
       label.id = "day" + (6 - i);
       label.setAttribute("role", "rowheader");
       if (i == 6) {
@@ -222,14 +222,14 @@ document.addEventListener("DOMContentLoaded", e => {
         label.textContent = data.weekdays[(i + 1 + new Date().getDay()) % 7];
       }
       graph.append(label);
-      
+      // Make the day the first column in a row, making it the row header.
       bar.setAttribute("aria-owns", "day" + i + " " + ariaOwnsString);
       date.setDate(date.getDate() - 1);
     }
-    maxColumnCount += 1; 
+    maxColumnCount += 1; // Add the day column in the fake table
     graph.setAttribute("aria-colCount", maxColumnCount);
-    
-    
+    // Set the total number of each type of tracker on the tabs as well as their
+    // "Learn More" links
     for (let type of dataTypes) {
       document.querySelector(`label[data-type=${type}] span`).textContent =
         weekTypeCounts[type];
@@ -270,7 +270,7 @@ document.addEventListener("DOMContentLoaded", e => {
       !tpEnabled &&
       !socialEnabled;
 
-    
+    // User has turned off all blocking, show a different card.
     if (notBlocking) {
       document
         .getElementById("etp-card-content")
@@ -286,10 +286,10 @@ document.addEventListener("DOMContentLoaded", e => {
         .setAttribute("data-l10n-id", "protection-report-page-summary");
       document.querySelector(".etp-card").classList.add("custom-not-blocking");
 
-      
+      // Hide the link to settings from the header, so we are not showing two links.
       manageProtectionsLink.style.display = "none";
     } else {
-      
+      // Hide each type of tab if blocking of that type is off.
       if (!tpEnabled) {
         legend.style.gridTemplateAreas = legend.style.gridTemplateAreas.replace(
           "tracker",
@@ -339,7 +339,7 @@ document.addEventListener("DOMContentLoaded", e => {
       }
 
       let firstRadio = document.querySelector("input:enabled");
-      
+      // There will be no radio options if we are showing the
       firstRadio.checked = true;
       document.body.setAttribute("focuseddatatype", firstRadio.dataset.type);
 
@@ -370,7 +370,7 @@ document.addEventListener("DOMContentLoaded", e => {
     wrapper.addEventListener("mouseover", triggerTabFocus);
     wrapper.addEventListener("click", triggerTabClick);
 
-    
+    // Change the class on the body to change the color variable.
     let radios = document.querySelectorAll("#legend input");
     for (let radio of radios) {
       radio.addEventListener("change", ev => {
@@ -392,7 +392,7 @@ document.addEventListener("DOMContentLoaded", e => {
   }).then(createGraph);
 
   let exitIcon = document.querySelector("#mobile-hanger .exit-icon");
-  
+  // hide the mobile promotion and keep hidden with a pref.
   exitIcon.addEventListener("click", () => {
     RPMSetBoolPref("browser.contentblocking.report.show_mobile_app", false);
     document.getElementById("mobile-hanger").classList.add("hidden");
@@ -432,7 +432,7 @@ document.addEventListener("DOMContentLoaded", e => {
 
   RPMSendQuery("FetchUserLoginsData", {}).then(data => {
     if (lockwiseCard) {
-      
+      // Once data for the user is retrieved, display the lockwise card.
       lockwiseCard.buildContent(data);
     }
 
@@ -446,7 +446,7 @@ document.addEventListener("DOMContentLoaded", e => {
     }
   });
 
-  
+  // For tests
   const lockwiseUI = document.querySelector(".lockwise-card");
   lockwiseUI.dataset.enabled = lockwiseEnabled;
 
@@ -455,7 +455,7 @@ document.addEventListener("DOMContentLoaded", e => {
     true
   );
   if (monitorEnabled) {
-    
+    // Show the Monitor card.
     const monitorUI = document.querySelector(".card.monitor-card.hidden");
     monitorUI.classList.remove("hidden");
     monitorUI.classList.add("loading");
@@ -464,7 +464,7 @@ document.addEventListener("DOMContentLoaded", e => {
     monitorCard.init();
   }
 
-  
+  // For tests
   const monitorUI = document.querySelector(".monitor-card");
   monitorUI.dataset.enabled = monitorEnabled;
 
@@ -478,7 +478,7 @@ document.addEventListener("DOMContentLoaded", e => {
     proxyCard.init();
   }
 
-  
+  // For tests
   const proxyUI = document.querySelector(".proxy-card");
   proxyUI.dataset.enabled = proxyEnabled;
 
@@ -487,7 +487,7 @@ document.addEventListener("DOMContentLoaded", e => {
     const vpnCard = new VPNCard(document);
     vpnCard.init();
   }
-  
+  // For tests
   const vpnUI = document.querySelector(".vpn-card");
   vpnUI.dataset.enabled = VPNEnabled;
 });
