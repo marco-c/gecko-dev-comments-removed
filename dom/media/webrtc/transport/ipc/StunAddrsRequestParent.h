@@ -9,8 +9,7 @@
 
 struct MDNSService;
 
-namespace mozilla {
-namespace net {
+namespace mozilla::net {
 
 class StunAddrsRequestParent : public PStunAddrsRequestParent {
   friend class PStunAddrsRequestParent;
@@ -78,7 +77,6 @@ class StunAddrsRequestParent : public PStunAddrsRequestParent {
   static StaticRefPtr<MDNSServiceWrapper> mSharedMDNSService;
 };
 
-}  
 }  
 
 #endif  

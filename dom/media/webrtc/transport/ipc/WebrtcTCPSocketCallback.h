@@ -9,8 +9,7 @@
 
 #include "nsTArray.h"
 
-namespace mozilla {
-namespace net {
+namespace mozilla::net {
 
 class WebrtcTCPSocketCallback {
  public:
@@ -24,7 +23,6 @@ class WebrtcTCPSocketCallback {
   virtual ~WebrtcTCPSocketCallback() = default;
 };
 
-}  
 }  
 
 #endif  

@@ -11,8 +11,7 @@
 
 #include "mozilla/Assertions.h"
 
-namespace mozilla {
-namespace sdp {
+namespace mozilla::sdp {
 
 enum NetType { kNetTypeNone, kInternet };
 
@@ -59,8 +58,6 @@ inline std::ostream& operator<<(std::ostream& os, sdp::Direction d) {
 }
 
 enum SdpType { kOffer, kAnswer };
-
-}  
 
 }  
 
