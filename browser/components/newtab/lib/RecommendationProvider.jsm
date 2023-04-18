@@ -2,11 +2,30 @@
 
 
 "use strict";
-ChromeUtils.defineModuleGetter(
-  this,
-  "PersonalityProvider",
-  "resource://activity-stream/lib/PersonalityProvider/PersonalityProvider.jsm"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
 );
+XPCOMUtils.defineLazyModuleGetters(this, {
+  PersonalityProvider:
+    "resource://activity-stream/lib/PersonalityProvider/PersonalityProvider.jsm",
+});
+
 const { actionTypes: at, actionCreators: ac } = ChromeUtils.import(
   "resource://activity-stream/common/Actions.jsm"
 );
