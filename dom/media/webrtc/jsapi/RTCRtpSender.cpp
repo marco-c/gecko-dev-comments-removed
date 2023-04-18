@@ -55,7 +55,8 @@ RTCRtpSender::RTCRtpSender(nsPIDOMWindowInner* aWindow, PeerConnectionImpl* aPc,
       INIT_CANONICAL(mVideoCodec, Nothing()),
       INIT_CANONICAL(mVideoRtpRtcpConfig, Nothing()),
       INIT_CANONICAL(mVideoCodecMode, webrtc::VideoCodecMode::kRealtimeVideo),
-      INIT_CANONICAL(mCname, std::string()) {
+      INIT_CANONICAL(mCname, std::string()),
+      INIT_CANONICAL(mTransmitting, false) {
   mPipeline = new MediaPipelineTransmit(
       mPc->GetHandle(), aTransportHandler, aCallThread, aStsThread,
       aConduit->type() == MediaSessionConduit::VIDEO, aConduit);
@@ -649,14 +650,11 @@ bool RTCRtpSender::SeamlessTrackSwitch(
     if (aWithTrack) {
       newType = Some(aWithTrack->GetSource().GetMediaSource());
     }
-    
-    
-    
     if (oldType != newType) {
-      mTransceiverImpl->UpdateConduit();
+      UpdateConduit();
     }
   } else if (!mSenderTrack != !aWithTrack) {
-    mTransceiverImpl->UpdateConduit();
+    UpdateConduit();
   }
 
   
@@ -708,6 +706,9 @@ void RTCRtpSender::UpdateConduit() {
     return;
   }
 
+  mTransmitting = false;
+  Stop();
+
   mSsrcs = mJsepTransceiver->mSendTrack.GetSsrcs();
   mVideoRtxSsrcs = mJsepTransceiver->mSendTrack.GetRtxSsrcs();
   mCname = mJsepTransceiver->mSendTrack.GetCNAME();
@@ -716,6 +717,9 @@ void RTCRtpSender::UpdateConduit() {
     UpdateVideoConduit();
   } else {
     UpdateAudioConduit();
+  }
+  if ((mTransmitting = mJsepTransceiver->mSendTrack.GetActive())) {
+    Start();
   }
 }
 
