@@ -149,7 +149,6 @@ class RequestHelper final : public Runnable, public LSRequestChildCallback {
   State mState;
   
   bool mWaiting;
-  bool mCancelled;
 
  public:
   RequestHelper(LSObject* aObject, const LSRequestParams& aParams)
@@ -160,8 +159,7 @@ class RequestHelper final : public Runnable, public LSRequestChildCallback {
         mParams(aParams),
         mResultCode(NS_OK),
         mState(State::Initial),
-        mWaiting(true),
-        mCancelled(false) {}
+        mWaiting(true) {}
 
   bool IsOnOwningThread() const {
     MOZ_ASSERT(mOwningEventTarget);
@@ -1113,50 +1111,25 @@ nsresult RequestHelper::StartAndReturnResponse(LSRequestResponse& aResponse) {
 
       nsCOMPtr<nsITimer> timer = NS_NewTimer();
 
-      MOZ_ALWAYS_SUCCEEDS(timer->SetTarget(mNestedEventTarget));
+      MOZ_ALWAYS_SUCCEEDS(timer->SetTarget(domFileThread));
+
       MOZ_ALWAYS_SUCCEEDS(timer->InitWithNamedFuncCallback(
           [](nsITimer* aTimer, void* aClosure) {
-            auto helper = static_cast<RequestHelper*>(aClosure);
-
-            helper->mCancelled = true;
-          },
-          this, FAILSAFE_CANCEL_SYNC_OP_MS, nsITimer::TYPE_ONE_SHOT,
-          "RequestHelper::StartAndReturnResponse::SpinEventLoopTimer"));
-
-      MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
-          "RequestHelper::StartAndReturnResponse"_ns,
-          [&]() {
-            if (mCancelled) {
-              return true;
-            }
-
-            if (!mWaiting) {
-              return true;
-            }
-
-            return false;
-          },
-          thread));
-
-      MOZ_ALWAYS_SUCCEEDS(timer->Cancel());
-    }
-
-    
-    
-    
-    
-    
-    if (NS_WARN_IF(mWaiting)) {
-      
-      
-
-      RefPtr<RequestHelper> self = this;
-
-      RefPtr<Runnable> runnable =
-          NS_NewRunnableFunction("RequestHelper::SendCancelRunnable", [self]() {
-            LSRequestChild* actor = self->mActor;
+            
+            
 
             
+            
+            
+            
+            
+            
+            
+
+            auto helper = static_cast<RequestHelper*>(aClosure);
+
+            LSRequestChild* actor = helper->mActor;
+
             
             
             
@@ -1165,20 +1138,28 @@ nsresult RequestHelper::StartAndReturnResponse(LSRequestResponse& aResponse) {
             if (actor && !actor->Finishing()) {
               actor->SendCancel();
             }
-          });
+          },
+          this, FAILSAFE_CANCEL_SYNC_OP_MS, nsITimer::TYPE_ONE_SHOT,
+          "RequestHelper::StartAndReturnResponse::SpinEventLoopTimer"));
 
-      rv = domFileThread->Dispatch(runnable, NS_DISPATCH_NORMAL);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
+      MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
+          "RequestHelper::StartAndReturnResponse"_ns,
+          [&]() { return !mWaiting; }, thread));
 
-      return NS_ERROR_FAILURE;
+      MOZ_ALWAYS_SUCCEEDS(timer->Cancel());
     }
 
     
     
+    MOZ_ASSERT(mState == State::Complete);
+
+    
+    MOZ_ASSERT(!mWaiting);
+
     
     
+    
+    mNestedEventTarget = nullptr;
   }
 
   if (NS_WARN_IF(NS_FAILED(mResultCode))) {
