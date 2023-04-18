@@ -565,11 +565,16 @@ var HeuristicsRegExp = {
     let rules = [];
     this.RULE_SETS.forEach(set => {
       if (set[name]) {
-        rules.push(`(${set[name]})`.normalize("NFKC"));
+        
+        
+        
+        
+        
+        rules.push(`(${set[name].toLowerCase()})`.normalize("NFKC"));
       }
     });
 
-    const value = new RegExp(rules.join("|"), "iu");
+    const value = new RegExp(rules.join("|"), "u");
     Object.defineProperty(this.RULES, name, { get: undefined });
     Object.defineProperty(this.RULES, name, { value });
     return value;

@@ -1182,11 +1182,12 @@ this.FormAutofillHeuristics = {
 
 
 
+
   _findMatchedFieldName(element, regexps) {
     const getElementStrings = this._getElementStrings(element);
     for (let regexp of regexps) {
       for (let string of getElementStrings) {
-        if (this.RULES[regexp].test(string)) {
+        if (this.RULES[regexp].test(string.toLowerCase())) {
           return regexp;
         }
       }
