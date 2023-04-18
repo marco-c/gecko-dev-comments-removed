@@ -256,6 +256,8 @@ static bool CheckIfAppRanRecently(bool* aResult) {
 
 
 
+
+
 int wmain(int argc, wchar_t** argv) {
   if (argc < 2 || !argv[1]) {
     return E_INVALIDARG;
