@@ -44,7 +44,9 @@ class HitTestInfoManager {
 
 
 
-  void ProcessItem(nsDisplayItem* aItem, wr::DisplayListBuilder& aBuilder,
+
+
+  bool ProcessItem(nsDisplayItem* aItem, wr::DisplayListBuilder& aBuilder,
                    nsDisplayListBuilder* aDisplayListBuilder);
 
  private:
