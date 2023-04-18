@@ -64,6 +64,11 @@ class OpenTypeCFF : public Table {
   
   std::vector<uint16_t> region_index_count;
 
+  
+  
+  
+  std::vector<int32_t> vsindex_per_font;
+
  protected:
   bool ValidateFDSelect(uint16_t num_glyphs);
 

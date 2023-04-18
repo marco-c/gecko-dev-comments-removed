@@ -34,9 +34,6 @@ const size_t kMaxCFF2ArgumentStack = 513;
 
 
 
-
-
-
 bool ValidateCFFCharStrings(
     OpenTypeCFF& cff,
     const CFFIndex &global_subrs_index,
@@ -96,6 +93,16 @@ enum CharStringOperator {
   kHFlex1 = (12 << 8) + 36,
   kFlex1 = (12 << 8) + 37,
   
+};
+
+struct CharStringContext {
+  bool endchar_seen = false;
+  bool width_seen = false;
+  size_t num_stems = 0;
+  bool cff2 = false;
+  bool blend_seen = false;
+  bool vsindex_seen = false;
+  int32_t vsindex = 0;
 };
 
 }  
