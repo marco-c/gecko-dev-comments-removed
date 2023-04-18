@@ -3,6 +3,12 @@
 
 "use strict";
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "WebNavigationFrames",
+  "resource://gre/modules/WebNavigationFrames.jsm"
+);
+
 
 
 
@@ -87,6 +93,37 @@ this.runtime = class extends ExtensionAPI {
 
         getURL(url) {
           return extension.baseURI.resolve(url);
+        },
+
+        getFrameId(target) {
+          let frameId = WebNavigationFrames.getFromWindow(target);
+          if (frameId >= 0) {
+            return frameId;
+          }
+          
+
+          let type;
+          try {
+            type = Cu.getClassName(target, true);
+          } catch (e) {
+            
+          }
+
+          const embedderTypes = [
+            "HTMLIFrameElement",
+            "HTMLFrameElement",
+            "HTMLEmbedElement",
+            "HTMLObjectElement",
+          ];
+
+          if (embedderTypes.includes(type)) {
+            if (!target.browsingContext) {
+              return -1;
+            }
+            return WebNavigationFrames.getFrameId(target.browsingContext);
+          }
+
+          throw new ExtensionUtils.ExtensionError("Invalid argument");
         },
       },
     };
