@@ -31,6 +31,7 @@ struct rlbox_shared_lock {
 
 
 
+
 #define RLBOX_SINGLE_THREADED_INVOCATIONS
 
 #define RLBOX_CUSTOM_ABORT(msg) MOZ_CRASH_UNSAFE_PRINTF("RLBox crash: %s", msg)
