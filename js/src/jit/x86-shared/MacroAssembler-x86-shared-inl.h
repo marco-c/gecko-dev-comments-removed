@@ -1243,10 +1243,6 @@ void MacroAssembler::moveSimd128(FloatRegister src, FloatRegister dest) {
 
 
 
-void MacroAssembler::zeroSimd128(FloatRegister dest) {
-  MacroAssemblerX86Shared::zeroSimd128Int(dest);
-}
-
 void MacroAssembler::loadConstantSimd128(const SimdConstant& v,
                                          FloatRegister dest) {
   if (v.isFloatingType()) {

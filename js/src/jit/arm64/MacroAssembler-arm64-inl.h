@@ -2209,12 +2209,6 @@ void MacroAssembler::moveSimd128(FloatRegister src, FloatRegister dest) {
   }
 }
 
-void MacroAssembler::zeroSimd128(FloatRegister dest) {
-  
-  
-  Eor(Simd16B(dest), Simd16B(dest), Simd16B(dest));
-}
-
 void MacroAssembler::loadConstantSimd128(const SimdConstant& v,
                                          FloatRegister dest) {
   
