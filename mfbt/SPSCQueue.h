@@ -232,11 +232,7 @@ class SPSCRingBufferBase {
 
 
 
-
   int AvailableRead() const {
-#ifdef DEBUG
-    AssertCorrectThread(mConsumerId);
-#endif
     return AvailableReadInternal(
         mReadIndex.load(std::memory_order::memory_order_relaxed),
         mWriteIndex.load(std::memory_order::memory_order_relaxed));
@@ -251,11 +247,7 @@ class SPSCRingBufferBase {
 
 
 
-
   int AvailableWrite() const {
-#ifdef DEBUG
-    AssertCorrectThread(mProducerId);
-#endif
     return AvailableWriteInternal(
         mReadIndex.load(std::memory_order::memory_order_relaxed),
         mWriteIndex.load(std::memory_order::memory_order_relaxed));
