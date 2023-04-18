@@ -3364,10 +3364,8 @@ void MediaManager::Shutdown() {
   
   class ShutdownTask : public Runnable {
    public:
-    ShutdownTask(RefPtr<MediaManager> aManager, RefPtr<Runnable> aReply)
-        : mozilla::Runnable("ShutdownTask"),
-          mManager(std::move(aManager)),
-          mReply(std::move(aReply)) {}
+    explicit ShutdownTask(RefPtr<MediaManager> aManager)
+        : mozilla::Runnable("ShutdownTask"), mManager(std::move(aManager)) {}
 
    private:
     NS_IMETHOD
@@ -3385,18 +3383,11 @@ void MediaManager::Shutdown() {
       mManager->mBackend =
           nullptr;  
 
-      if (NS_FAILED(NS_DispatchToMainThread(mReply.forget()))) {
-        LOG("Will leak thread: DispatchToMainthread of reply runnable failed "
-            "in MediaManager shutdown");
-      }
-
       return NS_OK;
     }
     RefPtr<MediaManager> mManager;
-    RefPtr<Runnable> mReply;
   };
 
-  
   
 
   
@@ -3410,8 +3401,17 @@ void MediaManager::Shutdown() {
   
   
   
-  auto shutdown = MakeRefPtr<ShutdownTask>(
-      this, media::NewRunnableFrom([]() {
+  auto shutdown = MakeRefPtr<ShutdownTask>(this);
+  MOZ_ALWAYS_SUCCEEDS(mMediaThread->Dispatch(shutdown.forget()));
+  
+  
+  
+  
+  
+  
+  
+  mMediaThread->BeginShutdown()->Then(
+      GetMainThreadSerialEventTarget(), __func__, [] {
         LOG("MediaManager shutdown lambda running, releasing MediaManager "
             "singleton");
         StaticMutexAutoLock lock(sSingletonMutex);
@@ -3420,11 +3420,7 @@ void MediaManager::Shutdown() {
             sSingleton->mShutdownBlocker);
 
         sSingleton = nullptr;
-        return NS_OK;
-      }));
-  MOZ_ALWAYS_SUCCEEDS(mMediaThread->Dispatch(shutdown.forget()));
-  mMediaThread->BeginShutdown();
-  mMediaThread->AwaitShutdownAndIdle();
+      });
 }
 
 void MediaManager::SendPendingGUMRequest() {
