@@ -1273,6 +1273,11 @@ def compiler(
         if info.flags:
             raise FatalCheckError("Unknown compiler or compiler not supported.")
 
+        
+        
+        if host_or_target.os == "Android":
+            flags.append("--rtlib=libgcc")
+
         return namespace(
             wrapper=wrapper,
             compiler=compiler,
