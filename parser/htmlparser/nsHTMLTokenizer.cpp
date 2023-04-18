@@ -32,7 +32,6 @@ nsHTMLTokenizer::nsHTMLTokenizer() {
   
 }
 
-nsresult nsHTMLTokenizer::WillTokenize(bool aIsFinalChunk) { return NS_OK; }
 
 
 
@@ -45,7 +44,7 @@ nsresult nsHTMLTokenizer::WillTokenize(bool aIsFinalChunk) { return NS_OK; }
 
 
 
-
-nsresult nsHTMLTokenizer::ConsumeToken(nsScanner& aScanner) {
+nsresult nsHTMLTokenizer::ConsumeToken(nsScanner& aScanner,
+                                       bool aIsFinalChunk) {
   return NS_ERROR_HTMLPARSER_EOF;
 }

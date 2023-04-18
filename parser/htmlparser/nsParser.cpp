@@ -1107,22 +1107,6 @@ nsresult nsParser::OnStopRequest(nsIRequest* request, nsresult status) {
 
 
 
-bool nsParser::WillTokenize(bool aIsFinalChunk) {
-  if (!mParserContext) {
-    return true;
-  }
-
-  nsITokenizer* theTokenizer;
-  nsresult result = mParserContext->GetTokenizer(mDTD, mSink, theTokenizer);
-  NS_ENSURE_SUCCESS(result, false);
-  return NS_SUCCEEDED(theTokenizer->WillTokenize(aIsFinalChunk));
-}
-
-
-
-
-
-
 nsresult nsParser::Tokenize(bool aIsFinalChunk) {
   if (mInternalState == NS_ERROR_OUT_OF_MEMORY) {
     
@@ -1140,10 +1124,10 @@ nsresult nsParser::Tokenize(bool aIsFinalChunk) {
   if (NS_SUCCEEDED(result)) {
     bool killSink = false;
 
-    WillTokenize(aIsFinalChunk);
     while (NS_SUCCEEDED(result)) {
       mParserContext->mScanner.Mark();
-      result = theTokenizer->ConsumeToken(mParserContext->mScanner);
+      result =
+          theTokenizer->ConsumeToken(mParserContext->mScanner, aIsFinalChunk);
       if (NS_FAILED(result)) {
         mParserContext->mScanner.RewindToMark();
         if (NS_ERROR_HTMLPARSER_EOF == result) {

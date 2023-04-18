@@ -368,7 +368,6 @@ nsExpatDriver::nsExpatDriver()
       mInExternalDTD(false),
       mMadeFinalCallToExpat(false),
       mInParser(false),
-      mIsFinalChunk(false),
       mInternalState(NS_OK),
       mExpatBuffered(0),
       mTagDepth(0),
@@ -1228,7 +1227,7 @@ void nsExpatDriver::ParseBuffer(const char16_t* aBuffer, uint32_t aLength,
 }
 
 NS_IMETHODIMP
-nsExpatDriver::ConsumeToken(nsScanner& aScanner) {
+nsExpatDriver::ConsumeToken(nsScanner& aScanner, bool aIsFinalChunk) {
   
   
   nsScannerIterator currentExpatPosition;
@@ -1250,9 +1249,9 @@ nsExpatDriver::ConsumeToken(nsScanner& aScanner) {
   
   
   
-  while (start != end || (mIsFinalChunk && !mMadeFinalCallToExpat) ||
+  while (start != end || (aIsFinalChunk && !mMadeFinalCallToExpat) ||
          (BlockedOrInterrupted() && mExpatBuffered > 0)) {
-    bool noMoreBuffers = start == end && mIsFinalChunk;
+    bool noMoreBuffers = start == end && aIsFinalChunk;
     bool blocked = BlockedOrInterrupted();
 
     const char16_t* buffer;
@@ -1620,12 +1619,6 @@ void nsExpatDriver::DidBuildModel() {
   }
   mOriginalSink = nullptr;
   mSink = nullptr;
-}
-
-NS_IMETHODIMP
-nsExpatDriver::WillTokenize(bool aIsFinalChunk) {
-  mIsFinalChunk = aIsFinalChunk;
-  return NS_OK;
 }
 
 NS_IMETHODIMP_(void)

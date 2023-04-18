@@ -298,17 +298,6 @@ class nsParser final : public nsIParser,
 
 
 
-
-  bool WillTokenize(bool aIsFinalChunk = false);
-
-  
-
-
-
-
-
-
-
   nsresult Tokenize(bool aIsFinalChunk = false);
 
   

@@ -169,9 +169,6 @@ class nsExpatDriver : public nsIDTD, public nsITokenizer {
 
   
   bool mInParser;
-  
-  
-  bool mIsFinalChunk;
 
   nsresult mInternalState;
 
