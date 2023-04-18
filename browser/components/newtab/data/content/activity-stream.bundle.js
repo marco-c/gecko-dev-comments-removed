@@ -777,24 +777,27 @@ const Base = Object(react_redux__WEBPACK_IMPORTED_MODULE_4__["connect"])(state =
 
  (function(module, exports) {
 
-var g; 
+var g;
 
-g = function () {
-  return this;
-}();
+
+g = (function() {
+	return this;
+})();
 
 try {
-  
-  g = g || new Function("return this")();
+	
+	g = g || new Function("return this")();
 } catch (e) {
-  
-  if (typeof window === "object") g = window;
-} 
+	
+	if (typeof window === "object") g = window;
+}
+
 
 
 
 
 module.exports = g;
+
 
  }),
 
@@ -9351,7 +9354,9 @@ function mapBundleSync(iterable, ids) {
     return getBundleForId(iterable, ids);
   }
 
-  return ids.map(id => getBundleForId(iterable, id));
+  return ids.map(
+    id => getBundleForId(iterable, id)
+  );
 }
 
 
@@ -9366,6 +9371,7 @@ function getBundleForId(iterable, id) {
 
   return null;
 }
+
 
 
 
@@ -9392,9 +9398,9 @@ async function mapBundleAsync(iterable, ids) {
       if (!foundBundles[index] && bundle.hasMessage(id)) {
         foundBundles[index] = bundle;
         remainingCount--;
-      } 
+      }
 
-
+      
       if (remainingCount === 0) {
         return foundBundles;
       }
@@ -9403,6 +9409,9 @@ async function mapBundleAsync(iterable, ids) {
 
   return foundBundles;
 }
+
+
+
 
 
 
