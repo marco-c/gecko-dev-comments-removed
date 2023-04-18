@@ -296,13 +296,8 @@ class nsDocShell final : public nsDocLoader,
 
 
 
-
-
-
-
-  nsresult SetupRefreshURIFromHeader(nsIURI* aBaseURI, nsIPrincipal* aPrincipal,
-                                     uint64_t aInnerWindowID,
-                                     const nsACString& aHeader);
+  void SetupRefreshURIFromHeader(mozilla::dom::Document* aDocument,
+                                 const nsAString& aHeader);
 
   
   

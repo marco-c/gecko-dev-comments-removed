@@ -5171,247 +5171,216 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
   return NS_OK;
 }
 
-nsresult nsDocShell::SetupRefreshURIFromHeader(nsIURI* aBaseURI,
-                                               nsIPrincipal* aPrincipal,
-                                               uint64_t aInnerWindowID,
-                                               const nsACString& aHeader) {
+static const char16_t* SkipASCIIWhitespace(const char16_t* aStart,
+                                           const char16_t* aEnd) {
+  const char16_t* iter = aStart;
+  while (iter != aEnd && mozilla::IsAsciiWhitespace(*iter)) {
+    ++iter;
+  }
+  return iter;
+}
+
+static Tuple<const char16_t*, const char16_t*> ExtractURLString(
+    const char16_t* aPosition, const char16_t* aEnd) {
+  MOZ_ASSERT(aPosition != aEnd);
+
+  
+  
+  const char16_t* urlStart = aPosition;
+  const char16_t* urlEnd = aEnd;
+
+  
+  
+  
+  if (*aPosition == 'U' || *aPosition == 'u') {
+    ++aPosition;
+
+    
+    
+    
+    if (aPosition == aEnd || (*aPosition != 'R' && *aPosition != 'r')) {
+      return MakeTuple(urlStart, urlEnd);
+    }
+
+    ++aPosition;
+
+    
+    
+    
+    if (aPosition == aEnd || (*aPosition != 'L' && *aPosition != 'l')) {
+      return MakeTuple(urlStart, urlEnd);
+    }
+
+    ++aPosition;
+
+    
+    aPosition = SkipASCIIWhitespace(aPosition, aEnd);
+
+    
+    
+    
+    if (aPosition == aEnd || *aPosition != '=') {
+      return MakeTuple(urlStart, urlEnd);
+    }
+
+    ++aPosition;
+
+    
+    aPosition = SkipASCIIWhitespace(aPosition, aEnd);
+  }
+
+  
+  
+  
+  
+  Maybe<char> quote;
+  if (aPosition != aEnd && (*aPosition == '\'' || *aPosition == '"')) {
+    quote.emplace(*aPosition);
+    ++aPosition;
+  }
+
+  
+  
+  urlStart = aPosition;
+  urlEnd = aEnd;
+
+  
+  
+  
+  const char16_t* quotePos;
+  if (quote.isSome() &&
+      (quotePos = nsCharTraits<char16_t>::find(
+           urlStart, std::distance(urlStart, aEnd), quote.value()))) {
+    urlEnd = quotePos;
+  }
+
+  return MakeTuple(urlStart, urlEnd);
+}
+
+void nsDocShell::SetupRefreshURIFromHeader(Document* aDocument,
+                                           const nsAString& aHeader) {
   if (mIsBeingDestroyed) {
-    return NS_ERROR_FAILURE;
+    return;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  const char16_t* position = aHeader.BeginReading();
+  const char16_t* end = aHeader.EndReading();
+
   
   
 
   
-  
-  MOZ_ASSERT(aPrincipal);
-
-  nsAutoCString uriAttrib;
-  CheckedInt<uint32_t> seconds(0);
-  bool specifiesSeconds = false;
-
-  nsACString::const_iterator iter, tokenStart, doneIterating;
-
-  aHeader.BeginReading(iter);
-  aHeader.EndReading(doneIterating);
+  position = SkipASCIIWhitespace(position, end);
 
   
-  while (iter != doneIterating && nsCRT::IsAsciiSpace(*iter)) {
-    ++iter;
+  CheckedInt<uint32_t> milliSeconds;
+
+  
+  const char16_t* digitsStart = position;
+  while (position != end && mozilla::IsAsciiDigit(*position)) {
+    ++position;
   }
 
-  tokenStart = iter;
-
-  if (iter != doneIterating) {
-    if (*iter == '-') {
-      return NS_ERROR_FAILURE;
-    }
-
+  if (position == digitsStart) {
     
-    if (*iter == '+') {
-      ++iter;
-    }
-  }
-
-  
-  while (iter != doneIterating && (*iter >= '0' && *iter <= '9')) {
-    seconds = seconds * 10 + (*iter - '0');
-    if (!seconds.isValid()) {
-      return NS_ERROR_FAILURE;
-    }
-    specifiesSeconds = true;
-    ++iter;
-  }
-
-  CheckedInt<uint32_t> milliSeconds(seconds * 1000);
-  if (!milliSeconds.isValid()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (iter != doneIterating) {
     
-    nsACString::const_iterator iterAfterDigit = iter;
-    while (iter != doneIterating && !(*iter == ';' || *iter == ',')) {
-      if (specifiesSeconds) {
-        
-        
-        
-        if (iter == iterAfterDigit && !nsCRT::IsAsciiSpace(*iter) &&
-            *iter != '.') {
-          
-          
-          
-          
-          return NS_ERROR_FAILURE;
-        } else if (nsCRT::IsAsciiSpace(*iter)) {
-          
-          
-          
-          ++iter;
-          break;
-        }
-      }
-      ++iter;
-    }
-
     
-    while (iter != doneIterating && nsCRT::IsAsciiSpace(*iter)) {
-      ++iter;
+    if (position == end || *position != '.') {
+      return;
     }
-
-    
-    if (iter != doneIterating && (*iter == ';' || *iter == ',')) {
-      ++iter;
-    }
-
-    
-    while (iter != doneIterating && nsCRT::IsAsciiSpace(*iter)) {
-      ++iter;
-    }
-  }
-
-  
-  tokenStart = iter;
-
-  
-  if (iter != doneIterating && (*iter == 'u' || *iter == 'U')) {
-    ++iter;
-    if (iter != doneIterating && (*iter == 'r' || *iter == 'R')) {
-      ++iter;
-      if (iter != doneIterating && (*iter == 'l' || *iter == 'L')) {
-        ++iter;
-
-        
-        while (iter != doneIterating && nsCRT::IsAsciiSpace(*iter)) {
-          ++iter;
-        }
-
-        if (iter != doneIterating && *iter == '=') {
-          ++iter;
-
-          
-          while (iter != doneIterating && nsCRT::IsAsciiSpace(*iter)) {
-            ++iter;
-          }
-
-          
-          tokenStart = iter;
-        }
-      }
-    }
-  }
-
-  
-
-  bool isQuotedURI = false;
-  if (tokenStart != doneIterating &&
-      (*tokenStart == '"' || *tokenStart == '\'')) {
-    isQuotedURI = true;
-    ++tokenStart;
-  }
-
-  
-  iter = tokenStart;
-
-  
-
-  
-  while (iter != doneIterating) {
-    if (isQuotedURI && (*iter == '"' || *iter == '\'')) {
-      break;
-    }
-    ++iter;
-  }
-
-  
-  if (iter != tokenStart && isQuotedURI) {
-    --iter;
-    if (!(*iter == '"' || *iter == '\'')) {
-      ++iter;
-    }
-  }
-
-  
-  
-
-  nsresult rv = NS_OK;
-
-  nsCOMPtr<nsIURI> uri;
-  bool specifiesURI = false;
-  if (tokenStart == iter) {
-    uri = aBaseURI;
   } else {
-    uriAttrib = Substring(tokenStart, iter);
     
-    rv = NS_NewURI(getter_AddRefs(uri), uriAttrib, nullptr, aBaseURI);
-    specifiesURI = true;
+    
+    nsContentUtils::ParseHTMLIntegerResultFlags result;
+    uint32_t seconds =
+        nsContentUtils::ParseHTMLInteger(digitsStart, position, &result);
+    MOZ_ASSERT(!(result & nsContentUtils::eParseHTMLInteger_Negative));
+    if (result & nsContentUtils::eParseHTMLInteger_Error) {
+      
+      
+      
+      MOZ_ASSERT(!(result & nsContentUtils::eParseHTMLInteger_ErrorOverflow));
+      return;
+    }
+    MOZ_ASSERT(
+        !(result & nsContentUtils::eParseHTMLInteger_DidNotConsumeAllInput));
+
+    milliSeconds = seconds;
+    milliSeconds *= 1000;
+    if (!milliSeconds.isValid()) {
+      return;
+    }
   }
 
   
-  if (!specifiesSeconds && !specifiesURI) {
-    
-    
-    return NS_ERROR_FAILURE;
+  
+  
+  while (position != end &&
+         (mozilla::IsAsciiDigit(*position) || *position == '.')) {
+    ++position;
   }
 
-  if (NS_SUCCEEDED(rv)) {
-    nsCOMPtr<nsIScriptSecurityManager> securityManager(
-        do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID, &rv));
-    if (NS_SUCCEEDED(rv)) {
-      rv = securityManager->CheckLoadURIWithPrincipal(
-          aPrincipal, uri,
-          nsIScriptSecurityManager::LOAD_IS_AUTOMATIC_DOCUMENT_REPLACEMENT,
-          aInnerWindowID);
+  
+  nsCOMPtr<nsIURI> urlRecord(aDocument->GetDocumentURI());
 
-      if (NS_SUCCEEDED(rv)) {
-        bool isjs = true;
-        rv = NS_URIChainHasFlags(
-            uri, nsIProtocolHandler::URI_OPENING_EXECUTES_SCRIPT, &isjs);
-        NS_ENSURE_SUCCESS(rv, rv);
+  
+  if (position != end) {
+    
+    
+    if (*position != ';' && *position != ',' &&
+        !mozilla::IsAsciiWhitespace(*position)) {
+      return;
+    }
 
-        if (isjs) {
-          return NS_ERROR_FAILURE;
-        }
-      }
+    
+    position = SkipASCIIWhitespace(position, end);
 
-      rv = RefreshURI(uri, aPrincipal, milliSeconds.value());
+    
+    
+    if (position != end && (*position == ';' || *position == ',')) {
+      ++position;
+
+      
+      position = SkipASCIIWhitespace(position, end);
+    }
+
+    
+    if (position != end) {
+      const char16_t* urlStart;
+      const char16_t* urlEnd;
+
+      
+      Tie(urlStart, urlEnd) = ExtractURLString(position, end);
+
+      
+      
+      nsresult rv =
+          NS_NewURI(getter_AddRefs(urlRecord),
+                    Substring(urlStart, std::distance(urlStart, urlEnd)),
+                     nullptr, aDocument->GetDocBaseURI());
+      NS_ENSURE_SUCCESS_VOID(rv);
     }
   }
-  return rv;
+
+  nsIPrincipal* principal = aDocument->NodePrincipal();
+  nsCOMPtr<nsIScriptSecurityManager> securityManager =
+      nsContentUtils::GetSecurityManager();
+  nsresult rv = securityManager->CheckLoadURIWithPrincipal(
+      principal, urlRecord,
+      nsIScriptSecurityManager::LOAD_IS_AUTOMATIC_DOCUMENT_REPLACEMENT,
+      aDocument->InnerWindowID());
+  NS_ENSURE_SUCCESS_VOID(rv);
+
+  bool isjs = true;
+  rv = NS_URIChainHasFlags(
+      urlRecord, nsIProtocolHandler::URI_OPENING_EXECUTES_SCRIPT, &isjs);
+  NS_ENSURE_SUCCESS_VOID(rv);
+
+  if (isjs) {
+    return;
+  }
+
+  RefreshURI(urlRecord, principal, milliSeconds.value());
 }
 
 static void DoCancelRefreshURITimers(nsIMutableArray* aTimerList) {
