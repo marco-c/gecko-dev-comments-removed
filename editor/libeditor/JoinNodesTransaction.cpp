@@ -75,7 +75,9 @@ NS_INTERFACE_MAP_END_INHERITING(EditTransactionBase)
 
 bool JoinNodesTransaction::CanDoIt() const {
   if (NS_WARN_IF(!mKeepingContent) || NS_WARN_IF(!mRemovedContent) ||
-      NS_WARN_IF(!mHTMLEditor) || !mKeepingContent->IsInComposedDoc()) {
+      NS_WARN_IF(!mHTMLEditor) ||
+      NS_WARN_IF(mRemovedContent->IsBeingRemoved()) ||
+      !mKeepingContent->IsInComposedDoc()) {
     return false;
   }
   return HTMLEditUtils::IsRemovableFromParentNode(*mRemovedContent);
@@ -88,18 +90,25 @@ NS_IMETHODIMP JoinNodesTransaction::DoTransaction() {
           ("%p JoinNodesTransaction::%s this=%s", this, __FUNCTION__,
            ToString(*this).c_str()));
 
-  if (NS_WARN_IF(!mHTMLEditor) || NS_WARN_IF(!mKeepingContent) ||
-      NS_WARN_IF(!mRemovedContent)) {
+  return DoTransactionInternal(RedoingTransaction::No);
+}
+
+nsresult JoinNodesTransaction::DoTransactionInternal(
+    RedoingTransaction aRedoingTransaction) {
+  if (MOZ_UNLIKELY(NS_WARN_IF(!mHTMLEditor) || NS_WARN_IF(!mKeepingContent) ||
+                   NS_WARN_IF(!mRemovedContent) ||
+                   NS_WARN_IF(mRemovedContent->IsBeingRemoved()))) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
   nsINode* removingContentParentNode = mRemovedContent->GetParentNode();
-  if (NS_WARN_IF(!removingContentParentNode)) {
+  if (MOZ_UNLIKELY(NS_WARN_IF(!removingContentParentNode))) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
   
-  if (removingContentParentNode != mKeepingContent->GetParentNode()) {
+  if (MOZ_UNLIKELY(removingContentParentNode !=
+                   mKeepingContent->GetParentNode())) {
     NS_ASSERTION(false, "Nodes do not have same parent");
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -107,13 +116,43 @@ NS_IMETHODIMP JoinNodesTransaction::DoTransaction() {
   
   
   mParentNode = removingContentParentNode;
+  
+  
+  
+  
   mJoinedOffset = mRemovedContent->Length();
 
   const OwningNonNull<HTMLEditor> htmlEditor = *mHTMLEditor;
   const OwningNonNull<nsIContent> removingContent = *mRemovedContent;
   const OwningNonNull<nsIContent> keepingContent = *mKeepingContent;
-  const nsresult rv = htmlEditor->DoJoinNodes(keepingContent, removingContent);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HTMLEditor::DoJoinNodes() failed");
+  
+  
+  const uint32_t removingContentOffset =
+      *removingContent->ComputeIndexInParentNode();
+  nsresult rv;
+  
+  EditorDOMPoint joinNodesPoint(mKeepingContent, 0u);
+  {
+    AutoTrackDOMPoint trackJoinNodePoint(htmlEditor->RangeUpdaterRef(),
+                                         &joinNodesPoint);
+    rv = htmlEditor->DoJoinNodes(keepingContent, removingContent);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HTMLEditor::DoJoinNodes() failed");
+
+    DebugOnly<nsresult> rvIgnored =
+        htmlEditor->RangeUpdaterRef().SelAdjJoinNodes(
+            CreateJoinedPoint<EditorRawDOMPoint>(), removingContent,
+            removingContentOffset, JoinNodesDirection::LeftNodeIntoRightNode);
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
+                         "RangeUpdater::SelAdjJoinNodes() failed, but ignored");
+  }
+  
+  
+  mJoinedOffset = joinNodesPoint.Offset();
+
+  if (aRedoingTransaction == RedoingTransaction::No) {
+    htmlEditor->DidJoinNodesTransaction(*this, rv);
+  }
+
   return rv;
 }
 
@@ -145,7 +184,7 @@ NS_IMETHODIMP JoinNodesTransaction::RedoTransaction() {
   MOZ_LOG(GetLogModule(), LogLevel::Info,
           ("%p JoinNodesTransaction::%s this=%s", this, __FUNCTION__,
            ToString(*this).c_str()));
-  return DoTransaction();
+  return DoTransactionInternal(RedoingTransaction::Yes);
 }
 
 }  

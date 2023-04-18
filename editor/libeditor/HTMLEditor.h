@@ -1000,6 +1000,16 @@ class HTMLEditor final : public EditorBase,
   MOZ_CAN_RUN_SCRIPT nsresult RestorePreservedSelection();
   void StopPreservingSelection();
 
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT void DidJoinNodesTransaction(
+      const JoinNodesTransaction& aTransaction, nsresult aDoJoinNodesResult);
+
  protected:  
   
 
