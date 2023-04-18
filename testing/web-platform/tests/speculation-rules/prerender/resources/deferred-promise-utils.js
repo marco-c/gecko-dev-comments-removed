@@ -55,7 +55,6 @@ class PrerenderEventCollector {
           const testChannel = new PrerenderChannel('test-channel');
           
           testChannel.postMessage(this.eventsSeen_);
-          testChannel.close();
         });
     document.addEventListener('prerenderingchange', () => {
       this.addEvent('prerendering change');
@@ -68,7 +67,6 @@ class PrerenderEventCollector {
       const prerenderChannel = new PrerenderChannel('prerender-channel');
       
       prerenderChannel.postMessage('readyToActivate');
-      prerenderChannel.close();
     }, 0);
   }
 }

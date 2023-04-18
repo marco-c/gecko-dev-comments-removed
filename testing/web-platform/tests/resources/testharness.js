@@ -126,7 +126,7 @@
                             } catch (e) {}
                         }
                     }
-                    if (w !== self) {
+                    if (supports_post_message(w) && w !== self) {
                         w.postMessage(message_arg, "*");
                     }
                 });
@@ -4416,6 +4416,14 @@
 
     const get_stack = function() {
         var stack = new Error().stack;
+        
+        if (!stack) {
+            try {
+                throw new Error();
+            } catch (e) {
+                stack = e.stack;
+            }
+        }
 
         
         if (!stack) {
@@ -4642,6 +4650,43 @@
             return location.pathname.substring(location.pathname.lastIndexOf('/') + 1, location.pathname.indexOf('.'));
         }
         return "Untitled";
+    }
+
+    function supports_post_message(w)
+    {
+        var supports;
+        var type;
+        
+        
+        
+        
+        
+        
+        
+        
+        try {
+            type = typeof w.postMessage;
+            if (type === "function") {
+                supports = true;
+            }
+
+            
+            
+            else if (type === "object") {
+                supports = true;
+            }
+
+            
+            
+            else {
+                supports = false;
+            }
+        } catch (e) {
+            
+            
+            supports = false;
+        }
+        return supports;
     }
 
     

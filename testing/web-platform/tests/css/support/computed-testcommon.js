@@ -36,7 +36,7 @@ function test_computed_value(property, specified, computed, titleExtra) {
   }, `Property ${property} value '${specified}'${titleExtra ? ' ' + titleExtra : ''}`);
 }
 
-function testComputedValueGreaterOrLowerThan(property, specified, expected, titleExtra) {
+function test_computed_value_greater_or_lower_than(property, specified, expected, titleExtra) {
     test(() => {
       const target = document.getElementById('target');
       assert_true(property in getComputedStyle(target), property + " doesn't seem to be supported in the computed style");
@@ -53,16 +53,16 @@ function testComputedValueGreaterOrLowerThan(property, specified, expected, titl
   }, `Property ${property} value '${specified}'${titleExtra ? ' ' + titleExtra : ''}`);
 }
 
-function testTransformValuesCloseTo(specified, epsilon, expectedValue, description)
+function compareValueCloseTo(property_name, calcValue, epsilon, expectedValue, description)
 {
     if(!description) {
-      description = `Property ${specified} value expected same with ${expectedValue} in +/-${epsilon}`
+        description = `Property ${calcValue} value expected same with ${expectedValue} in +/-${epsilon}`
     }
 
     test(function()
     {
         var targetElement = document.getElementById("target");
-        targetElement.style.setProperty('transform', "initial");
+        targetElement.style.setProperty(property_name, "initial");
 
         
 
@@ -70,9 +70,9 @@ function testTransformValuesCloseTo(specified, epsilon, expectedValue, descripti
 
 
 
-        targetElement.style.setProperty('transform', specified);
+        targetElement.style.setProperty(property_name, calcValue);
 
-        var computedCalcValue = getComputedStyle(targetElement)['transform'];
+        var computedCalcValue = getComputedStyle(targetElement)[property_name];
 
         
 
@@ -107,9 +107,9 @@ function testTransformValuesCloseTo(specified, epsilon, expectedValue, descripti
 
 
 
-        targetElement.style.setProperty('transform', expectedValue);
+        targetElement.style.setProperty(property_name, expectedValue);
 
-        var computedExpectedValue = getComputedStyle(targetElement)['transform'];
+        var computedExpectedValue = getComputedStyle(targetElement)[property_name];
 
         
 
@@ -141,9 +141,41 @@ function testTransformValuesCloseTo(specified, epsilon, expectedValue, descripti
         tableSplitExpectedValue[5] = parseFloat(tableSplitExpectedValue[5]);
 
         assert_array_approx_equals(tableSplitCalcValue, tableSplitExpectedValue, epsilon);
+
+        
+
+
+
+
+
+
+
+
+
+
     } , description);
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
 
 function test_pseudo_computed_value(pseudo, property, specified, computed, titleExtra) {
   if (!computed)

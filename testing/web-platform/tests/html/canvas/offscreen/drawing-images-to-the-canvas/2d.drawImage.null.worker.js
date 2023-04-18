@@ -3,6 +3,7 @@
 
 
 
+
 importScripts("/resources/testharness.js");
 importScripts("/html/canvas/resources/canvas-tests.js");
 
