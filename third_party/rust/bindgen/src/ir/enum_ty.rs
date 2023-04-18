@@ -86,7 +86,7 @@ impl Enum {
         } else {
             Some(type_name)
         };
-        let type_name = type_name.as_ref().map(String::as_str);
+        let type_name = type_name.as_deref();
 
         let definition = declaration.definition().unwrap_or(declaration);
         definition.visit(|cursor| {
@@ -118,7 +118,7 @@ impl Enum {
                             }
                         });
 
-                    let name = ctx
+                    let new_name = ctx
                         .parse_callbacks()
                         .and_then(|callbacks| {
                             callbacks.enum_variant_name(type_name, &name, val)
@@ -130,10 +130,11 @@ impl Enum {
                                 .last()
                                 .cloned()
                         })
-                        .unwrap_or(name);
+                        .unwrap_or_else(|| name.clone());
 
                     let comment = cursor.raw_comment();
                     variants.push(EnumVariant::new(
+                        new_name,
                         name,
                         comment,
                         val,
@@ -152,7 +153,7 @@ impl Enum {
         enums: &RegexSet,
         item: &Item,
     ) -> bool {
-        let path = item.path_for_whitelisting(ctx);
+        let path = item.path_for_allowlisting(ctx);
         let enum_ty = item.expect_type();
 
         if enums.matches(&path[1..].join("::")) {
@@ -225,6 +226,9 @@ pub struct EnumVariant {
     name: String,
 
     
+    name_for_allowlisting: String,
+
+    
     comment: Option<String>,
 
     
@@ -251,12 +255,14 @@ impl EnumVariant {
     
     pub fn new(
         name: String,
+        name_for_allowlisting: String,
         comment: Option<String>,
         val: EnumVariantValue,
         custom_behavior: Option<EnumVariantCustomBehavior>,
     ) -> Self {
         EnumVariant {
             name,
+            name_for_allowlisting,
             comment,
             val,
             custom_behavior,
@@ -269,13 +275,18 @@ impl EnumVariant {
     }
 
     
+    pub fn name_for_allowlisting(&self) -> &str {
+        &self.name_for_allowlisting
+    }
+
+    
     pub fn val(&self) -> EnumVariantValue {
         self.val
     }
 
     
     pub fn comment(&self) -> Option<&str> {
-        self.comment.as_ref().map(|s| &**s)
+        self.comment.as_deref()
     }
 
     

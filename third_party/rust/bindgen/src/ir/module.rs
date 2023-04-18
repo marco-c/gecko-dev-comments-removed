@@ -32,15 +32,15 @@ impl Module {
     
     pub fn new(name: Option<String>, kind: ModuleKind) -> Self {
         Module {
-            name: name,
-            kind: kind,
+            name,
+            kind,
             children: ItemSet::new(),
         }
     }
 
     
     pub fn name(&self) -> Option<&str> {
-        self.name.as_ref().map(|n| &**n)
+        self.name.as_deref()
     }
 
     

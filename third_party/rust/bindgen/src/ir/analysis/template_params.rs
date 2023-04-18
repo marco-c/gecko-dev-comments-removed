@@ -158,7 +158,7 @@ pub struct UsedTemplateParameters<'ctx> {
     
     
     
-    whitelisted_items: HashSet<ItemId>,
+    allowlisted_items: HashSet<ItemId>,
 }
 
 impl<'ctx> UsedTemplateParameters<'ctx> {
@@ -226,20 +226,20 @@ impl<'ctx> UsedTemplateParameters<'ctx> {
     
     
     
-    fn constrain_instantiation_of_blacklisted_template(
+    fn constrain_instantiation_of_blocklisted_template(
         &self,
         this_id: ItemId,
         used_by_this_id: &mut ItemSet,
         instantiation: &TemplateInstantiation,
     ) {
         trace!(
-            "    instantiation of blacklisted template, uses all template \
+            "    instantiation of blocklisted template, uses all template \
              arguments"
         );
 
         let args = instantiation
             .template_arguments()
-            .into_iter()
+            .iter()
             .map(|a| {
                 a.into_resolver()
                     .through_type_refs()
@@ -379,10 +379,10 @@ impl<'ctx> MonotoneFramework for UsedTemplateParameters<'ctx> {
     fn new(ctx: &'ctx BindgenContext) -> UsedTemplateParameters<'ctx> {
         let mut used = HashMap::default();
         let mut dependencies = HashMap::default();
-        let whitelisted_items: HashSet<_> =
-            ctx.whitelisted_items().iter().cloned().collect();
+        let allowlisted_items: HashSet<_> =
+            ctx.allowlisted_items().iter().cloned().collect();
 
-        let whitelisted_and_blacklisted_items: ItemSet = whitelisted_items
+        let allowlisted_and_blocklisted_items: ItemSet = allowlisted_items
             .iter()
             .cloned()
             .flat_map(|i| {
@@ -398,9 +398,9 @@ impl<'ctx> MonotoneFramework for UsedTemplateParameters<'ctx> {
             })
             .collect();
 
-        for item in whitelisted_and_blacklisted_items {
-            dependencies.entry(item).or_insert(vec![]);
-            used.entry(item).or_insert(Some(ItemSet::new()));
+        for item in allowlisted_and_blocklisted_items {
+            dependencies.entry(item).or_insert_with(Vec::new);
+            used.entry(item).or_insert_with(|| Some(ItemSet::new()));
 
             {
                 
@@ -408,10 +408,11 @@ impl<'ctx> MonotoneFramework for UsedTemplateParameters<'ctx> {
                 item.trace(
                     ctx,
                     &mut |sub_item: ItemId, _| {
-                        used.entry(sub_item).or_insert(Some(ItemSet::new()));
+                        used.entry(sub_item)
+                            .or_insert_with(|| Some(ItemSet::new()));
                         dependencies
                             .entry(sub_item)
-                            .or_insert(vec![])
+                            .or_insert_with(Vec::new)
                             .push(item);
                     },
                     &(),
@@ -421,39 +422,42 @@ impl<'ctx> MonotoneFramework for UsedTemplateParameters<'ctx> {
             
             
             
-            ctx.resolve_item(item).as_type().map(|ty| match ty.kind() {
-                &TypeKind::TemplateInstantiation(ref inst) => {
-                    let decl = ctx.resolve_type(inst.template_definition());
-                    let args = inst.template_arguments();
+            let item_kind =
+                ctx.resolve_item(item).as_type().map(|ty| ty.kind());
+            if let Some(&TypeKind::TemplateInstantiation(ref inst)) = item_kind
+            {
+                let decl = ctx.resolve_type(inst.template_definition());
+                let args = inst.template_arguments();
 
-                    
-                    
-                    
-                    let params = decl.self_template_params(ctx);
+                
+                
+                
+                let params = decl.self_template_params(ctx);
 
-                    for (arg, param) in args.iter().zip(params.iter()) {
-                        let arg = arg
-                            .into_resolver()
-                            .through_type_aliases()
-                            .through_type_refs()
-                            .resolve(ctx)
-                            .id();
+                for (arg, param) in args.iter().zip(params.iter()) {
+                    let arg = arg
+                        .into_resolver()
+                        .through_type_aliases()
+                        .through_type_refs()
+                        .resolve(ctx)
+                        .id();
 
-                        let param = param
-                            .into_resolver()
-                            .through_type_aliases()
-                            .through_type_refs()
-                            .resolve(ctx)
-                            .id();
+                    let param = param
+                        .into_resolver()
+                        .through_type_aliases()
+                        .through_type_refs()
+                        .resolve(ctx)
+                        .id();
 
-                        used.entry(arg).or_insert(Some(ItemSet::new()));
-                        used.entry(param).or_insert(Some(ItemSet::new()));
+                    used.entry(arg).or_insert_with(|| Some(ItemSet::new()));
+                    used.entry(param).or_insert_with(|| Some(ItemSet::new()));
 
-                        dependencies.entry(arg).or_insert(vec![]).push(param);
-                    }
+                    dependencies
+                        .entry(arg)
+                        .or_insert_with(Vec::new)
+                        .push(param);
                 }
-                _ => {}
-            });
+            }
         }
 
         if cfg!(feature = "testing_only_extra_assertions") {
@@ -467,7 +471,7 @@ impl<'ctx> MonotoneFramework for UsedTemplateParameters<'ctx> {
             
             
             
-            for item in whitelisted_items.iter() {
+            for item in allowlisted_items.iter() {
                 extra_assert!(used.contains_key(item));
                 extra_assert!(dependencies.contains_key(item));
                 item.trace(
@@ -482,10 +486,10 @@ impl<'ctx> MonotoneFramework for UsedTemplateParameters<'ctx> {
         }
 
         UsedTemplateParameters {
-            ctx: ctx,
-            used: used,
-            dependencies: dependencies,
-            whitelisted_items: whitelisted_items,
+            ctx,
+            used,
+            dependencies,
+            allowlisted_items,
         }
     }
 
@@ -493,7 +497,7 @@ impl<'ctx> MonotoneFramework for UsedTemplateParameters<'ctx> {
         
         
         self.ctx
-            .whitelisted_items()
+            .allowlisted_items()
             .iter()
             .cloned()
             .flat_map(|i| {
@@ -538,7 +542,7 @@ impl<'ctx> MonotoneFramework for UsedTemplateParameters<'ctx> {
             
             Some(&TypeKind::TemplateInstantiation(ref inst)) => {
                 if self
-                    .whitelisted_items
+                    .allowlisted_items
                     .contains(&inst.template_definition().into())
                 {
                     self.constrain_instantiation(
@@ -547,7 +551,7 @@ impl<'ctx> MonotoneFramework for UsedTemplateParameters<'ctx> {
                         inst,
                     );
                 } else {
-                    self.constrain_instantiation_of_blacklisted_template(
+                    self.constrain_instantiation_of_blocklisted_template(
                         id,
                         &mut used_by_this_id,
                         inst,

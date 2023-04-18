@@ -25,7 +25,7 @@ pub enum FieldAccessorKind {
 
 
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Default, Clone, PartialEq, Debug)]
 pub struct Annotations {
     
     opaque: bool,
@@ -42,6 +42,8 @@ pub struct Annotations {
     disallow_debug: bool,
     
     disallow_default: bool,
+    
+    must_use_type: bool,
     
     
     private_fields: Option<bool>,
@@ -72,23 +74,6 @@ fn parse_accessor(s: &str) -> FieldAccessorKind {
         "unsafe" => FieldAccessorKind::Unsafe,
         "immutable" => FieldAccessorKind::Immutable,
         _ => FieldAccessorKind::Regular,
-    }
-}
-
-impl Default for Annotations {
-    fn default() -> Self {
-        Annotations {
-            opaque: false,
-            hide: false,
-            use_instead_of: None,
-            disallow_copy: false,
-            disallow_debug: false,
-            disallow_default: false,
-            private_fields: None,
-            accessor_kind: None,
-            constify_enum_variant: false,
-            derives: vec![],
-        }
     }
 }
 
@@ -140,7 +125,7 @@ impl Annotations {
     
     
     pub fn use_instead_of(&self) -> Option<&[String]> {
-        self.use_instead_of.as_ref().map(|s| &**s)
+        self.use_instead_of.as_deref()
     }
 
     
@@ -161,6 +146,11 @@ impl Annotations {
     
     pub fn disallow_default(&self) -> bool {
         self.disallow_default
+    }
+
+    
+    pub fn must_use_type(&self) -> bool {
+        self.must_use_type
     }
 
     
@@ -190,6 +180,7 @@ impl Annotations {
                     "nocopy" => self.disallow_copy = true,
                     "nodebug" => self.disallow_debug = true,
                     "nodefault" => self.disallow_default = true,
+                    "mustusetype" => self.must_use_type = true,
                     "replaces" => {
                         self.use_instead_of = Some(
                             attr.value.split("::").map(Into::into).collect(),

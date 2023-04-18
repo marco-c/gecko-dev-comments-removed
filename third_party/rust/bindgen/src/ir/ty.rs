@@ -39,7 +39,6 @@ pub struct Type {
 
 
 
-
 pub const RUST_DERIVE_IN_ARRAY_LIMIT: usize = 32;
 
 impl Type {
@@ -88,23 +87,17 @@ impl Type {
 
     
     pub fn name(&self) -> Option<&str> {
-        self.name.as_ref().map(|name| &**name)
+        self.name.as_deref()
     }
 
     
     pub fn is_block_pointer(&self) -> bool {
-        match self.kind {
-            TypeKind::BlockPointer(..) => true,
-            _ => false,
-        }
+        matches!(self.kind, TypeKind::BlockPointer(..))
     }
 
     
     pub fn is_comp(&self) -> bool {
-        match self.kind {
-            TypeKind::Comp(..) => true,
-            _ => false,
-        }
+        matches!(self.kind, TypeKind::Comp(..))
     }
 
     
@@ -117,58 +110,43 @@ impl Type {
 
     
     pub fn is_type_param(&self) -> bool {
-        match self.kind {
-            TypeKind::TypeParam => true,
-            _ => false,
-        }
+        matches!(self.kind, TypeKind::TypeParam)
     }
 
     
     pub fn is_template_instantiation(&self) -> bool {
-        match self.kind {
-            TypeKind::TemplateInstantiation(..) => true,
-            _ => false,
-        }
+        matches!(self.kind, TypeKind::TemplateInstantiation(..))
     }
 
     
     pub fn is_template_alias(&self) -> bool {
-        match self.kind {
-            TypeKind::TemplateAlias(..) => true,
-            _ => false,
-        }
+        matches!(self.kind, TypeKind::TemplateAlias(..))
     }
 
     
     pub fn is_function(&self) -> bool {
-        match self.kind {
-            TypeKind::Function(..) => true,
-            _ => false,
-        }
+        matches!(self.kind, TypeKind::Function(..))
     }
 
     
     pub fn is_enum(&self) -> bool {
-        match self.kind {
-            TypeKind::Enum(..) => true,
-            _ => false,
-        }
+        matches!(self.kind, TypeKind::Enum(..))
     }
 
     
     pub fn is_builtin_or_type_param(&self) -> bool {
-        match self.kind {
+        matches!(
+            self.kind,
             TypeKind::Void |
-            TypeKind::NullPtr |
-            TypeKind::Function(..) |
-            TypeKind::Array(..) |
-            TypeKind::Reference(..) |
-            TypeKind::Pointer(..) |
-            TypeKind::Int(..) |
-            TypeKind::Float(..) |
-            TypeKind::TypeParam => true,
-            _ => false,
-        }
+                TypeKind::NullPtr |
+                TypeKind::Function(..) |
+                TypeKind::Array(..) |
+                TypeKind::Reference(..) |
+                TypeKind::Pointer(..) |
+                TypeKind::Int(..) |
+                TypeKind::Float(..) |
+                TypeKind::TypeParam
+        )
     }
 
     
@@ -179,26 +157,17 @@ impl Type {
 
     
     pub fn is_float(&self) -> bool {
-        match self.kind {
-            TypeKind::Float(..) => true,
-            _ => false,
-        }
+        matches!(self.kind, TypeKind::Float(..))
     }
 
     
     pub fn is_bool(&self) -> bool {
-        match self.kind {
-            TypeKind::Int(IntKind::Bool) => true,
-            _ => false,
-        }
+        matches!(self.kind, TypeKind::Int(IntKind::Bool))
     }
 
     
     pub fn is_integer(&self) -> bool {
-        match self.kind {
-            TypeKind::Int(..) => true,
-            _ => false,
-        }
+        matches!(self.kind, TypeKind::Int(..))
     }
 
     
@@ -217,19 +186,15 @@ impl Type {
 
     
     pub fn is_type_ref(&self) -> bool {
-        match self.kind {
-            TypeKind::ResolvedTypeRef(_) |
-            TypeKind::UnresolvedTypeRef(_, _, _) => true,
-            _ => false,
-        }
+        matches!(
+            self.kind,
+            TypeKind::ResolvedTypeRef(_) | TypeKind::UnresolvedTypeRef(_, _, _)
+        )
     }
 
     
     pub fn is_unresolved_ref(&self) -> bool {
-        match self.kind {
-            TypeKind::UnresolvedTypeRef(_, _, _) => true,
-            _ => false,
-        }
+        matches!(self.kind, TypeKind::UnresolvedTypeRef(_, _, _))
     }
 
     
@@ -279,14 +244,14 @@ impl Type {
         match self.kind {
             TypeKind::TypeParam => {
                 let name = self.name().expect("Unnamed named type?");
-                !clang::is_valid_identifier(&name)
+                !clang::is_valid_identifier(name)
             }
             _ => false,
         }
     }
 
     
-    fn sanitize_name<'a>(name: &'a str) -> Cow<'a, str> {
+    fn sanitize_name(name: &str) -> Cow<str> {
         if clang::is_valid_identifier(name) {
             return Cow::Borrowed(name);
         }
@@ -301,12 +266,8 @@ impl Type {
         ctx: &BindgenContext,
     ) -> Option<Cow<'a, str>> {
         let name_info = match *self.kind() {
-            TypeKind::Pointer(inner) => {
-                Some((inner.into(), Cow::Borrowed("ptr")))
-            }
-            TypeKind::Reference(inner) => {
-                Some((inner.into(), Cow::Borrowed("ref")))
-            }
+            TypeKind::Pointer(inner) => Some((inner, Cow::Borrowed("ptr"))),
+            TypeKind::Reference(inner) => Some((inner, Cow::Borrowed("ref"))),
             TypeKind::Array(inner, length) => {
                 Some((inner, format!("array{}", length).into()))
             }
@@ -376,16 +337,16 @@ impl Type {
     
     
     pub fn should_be_traced_unconditionally(&self) -> bool {
-        match self.kind {
+        matches!(
+            self.kind,
             TypeKind::Comp(..) |
-            TypeKind::Function(..) |
-            TypeKind::Pointer(..) |
-            TypeKind::Array(..) |
-            TypeKind::Reference(..) |
-            TypeKind::TemplateInstantiation(..) |
-            TypeKind::ResolvedTypeRef(..) => true,
-            _ => false,
-        }
+                TypeKind::Function(..) |
+                TypeKind::Pointer(..) |
+                TypeKind::Array(..) |
+                TypeKind::Reference(..) |
+                TypeKind::TemplateInstantiation(..) |
+                TypeKind::ResolvedTypeRef(..)
+        )
     }
 }
 
@@ -792,7 +753,7 @@ impl Type {
             (ty.template_args().is_some() && ty_kind != CXType_Typedef)
         {
             
-            match TemplateInstantiation::from_ty(&ty, ctx) {
+            match TemplateInstantiation::from_ty(ty, ctx) {
                 Some(inst) => TypeKind::TemplateInstantiation(inst),
                 None => TypeKind::Opaque,
             }
@@ -1121,7 +1082,16 @@ impl Type {
                     let inner = cursor.typedef_type().expect("Not valid Type?");
                     let inner =
                         Item::from_ty_or_ref(inner, location, None, ctx);
-                    TypeKind::Alias(inner)
+                    if inner == potential_id {
+                        warn!(
+                            "Generating oqaque type instead of self-referential \
+                            typedef");
+                        
+                        
+                        TypeKind::Opaque
+                    } else {
+                        TypeKind::Alias(inner)
+                    }
                 }
                 CXType_Enum => {
                     let enum_ = Enum::from_ty(ty, ctx).expect("Not an enum?");

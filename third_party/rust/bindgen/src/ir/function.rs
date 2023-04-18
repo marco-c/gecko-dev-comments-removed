@@ -28,7 +28,9 @@ pub enum FunctionKind {
 }
 
 impl FunctionKind {
-    fn from_cursor(cursor: &clang::Cursor) -> Option<FunctionKind> {
+    
+    
+    pub fn from_cursor(cursor: &clang::Cursor) -> Option<FunctionKind> {
         
         Some(match cursor.kind() {
             clang_sys::CXCursor_FunctionDecl => FunctionKind::Function,
@@ -121,7 +123,7 @@ impl Function {
 
     
     pub fn mangled_name(&self) -> Option<&str> {
-        self.mangled_name.as_ref().map(|n| &**n)
+        self.mangled_name.as_deref()
     }
 
     
@@ -185,10 +187,7 @@ pub enum Abi {
 impl Abi {
     
     fn is_unknown(&self) -> bool {
-        match *self {
-            Abi::Unknown(..) => true,
-            _ => false,
-        }
+        matches!(*self, Abi::Unknown(..))
     }
 }
 
@@ -338,7 +337,7 @@ fn args_from_ty_and_cursor(
             });
 
             let cursor = arg_cur.unwrap_or(*cursor);
-            let ty = arg_ty.unwrap_or(cursor.cur_type());
+            let ty = arg_ty.unwrap_or_else(|| cursor.cur_type());
             (name, Item::from_ty_or_ref(ty, cursor, None, ctx))
         })
         .collect()
@@ -358,7 +357,7 @@ impl FunctionSig {
             argument_types,
             is_variadic,
             must_use,
-            abi: abi,
+            abi,
         }
     }
 
@@ -409,7 +408,7 @@ impl FunctionSig {
             CXCursor_CXXMethod |
             CXCursor_ObjCInstanceMethodDecl |
             CXCursor_ObjCClassMethodDecl => {
-                args_from_ty_and_cursor(&ty, &cursor, ctx)
+                args_from_ty_and_cursor(ty, &cursor, ctx)
             }
             _ => {
                 
@@ -432,7 +431,7 @@ impl FunctionSig {
                     
                     
                     
-                    args_from_ty_and_cursor(&ty, &cursor, ctx)
+                    args_from_ty_and_cursor(ty, &cursor, ctx)
                 } else {
                     args
                 }
@@ -520,7 +519,7 @@ impl FunctionSig {
             warn!("Unknown calling convention: {:?}", call_conv);
         }
 
-        Ok(Self::new(ret.into(), args, ty.is_variadic(), must_use, abi))
+        Ok(Self::new(ret, args, ty.is_variadic(), must_use, abi))
     }
 
     
@@ -565,10 +564,7 @@ impl FunctionSig {
             return false;
         }
 
-        match self.abi {
-            Abi::C | Abi::Unknown(..) => true,
-            _ => false,
-        }
+        matches!(self.abi, Abi::C | Abi::Unknown(..))
     }
 }
 
@@ -595,10 +591,13 @@ impl ClangSubItemParser for Function {
             return Err(ParseError::Continue);
         }
 
-        if !context.options().generate_inline_functions &&
-            cursor.is_inlined_function()
-        {
-            return Err(ParseError::Continue);
+        if cursor.is_inlined_function() {
+            if !context.options().generate_inline_functions {
+                return Err(ParseError::Continue);
+            }
+            if cursor.is_deleted_function() {
+                return Err(ParseError::Continue);
+            }
         }
 
         let linkage = cursor.linkage();

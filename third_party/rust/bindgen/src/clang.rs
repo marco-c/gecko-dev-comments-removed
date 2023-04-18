@@ -4,9 +4,7 @@
 #![allow(non_upper_case_globals, dead_code)]
 
 use crate::ir::context::BindgenContext;
-use cexpr;
 use clang_sys::*;
-use regex;
 use std::ffi::{CStr, CString};
 use std::fmt;
 use std::hash::Hash;
@@ -85,7 +83,7 @@ impl Cursor {
 
             let mut result = Vec::with_capacity(count);
             for i in 0..count {
-                let string_ptr = (*manglings).Strings.offset(i as isize);
+                let string_ptr = (*manglings).Strings.add(i);
                 result.push(cxstring_to_string_leaky(*string_ptr));
             }
             clang_disposeStringSet(manglings);
@@ -223,12 +221,12 @@ impl Cursor {
     
     
     pub fn is_template_like(&self) -> bool {
-        match self.kind() {
+        matches!(
+            self.kind(),
             CXCursor_ClassTemplate |
-            CXCursor_ClassTemplatePartialSpecialization |
-            CXCursor_TypeAliasTemplateDecl => true,
-            _ => false,
-        }
+                CXCursor_ClassTemplatePartialSpecialization |
+                CXCursor_TypeAliasTemplateDecl
+        )
     }
 
     
@@ -275,7 +273,7 @@ impl Cursor {
             return parent.is_in_non_fully_specialized_template();
         }
 
-        return true;
+        true
     }
 
     
@@ -402,12 +400,9 @@ impl Cursor {
     where
         Visitor: FnMut(Cursor) -> CXChildVisitResult,
     {
+        let data = &mut visitor as *mut Visitor;
         unsafe {
-            clang_visitChildren(
-                self.x,
-                visit_children::<Visitor>,
-                mem::transmute(&mut visitor),
-            );
+            clang_visitChildren(self.x, visit_children::<Visitor>, data.cast());
         }
     }
 
@@ -467,6 +462,27 @@ impl Cursor {
     
     pub fn is_inlined_function(&self) -> bool {
         unsafe { clang_Cursor_isFunctionInlined(self.x) != 0 }
+    }
+
+    
+    pub fn is_defaulted_function(&self) -> bool {
+        unsafe { clang_CXXMethod_isDefaulted(self.x) != 0 }
+    }
+
+    
+    pub fn is_deleted_function(&self) -> bool {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        self.is_inlined_function() &&
+            self.definition().is_none() &&
+            !self.is_defaulted_function()
     }
 
     
@@ -630,6 +646,15 @@ impl Cursor {
     
     pub fn access_specifier(&self) -> CX_CXXAccessSpecifier {
         unsafe { clang_getCXXAccessSpecifier(self.x) }
+    }
+
+    
+    
+    
+    
+    pub fn public_accessible(&self) -> bool {
+        let access = self.access_specifier();
+        access == CX_CXXPublic || access == CX_CXXInvalidAccessSpecifier
     }
 
     
@@ -870,7 +895,7 @@ extern "C" fn visit_children<Visitor>(
 where
     Visitor: FnMut(Cursor) -> CXChildVisitResult,
 {
-    let func: &mut Visitor = unsafe { mem::transmute(data) };
+    let func: &mut Visitor = unsafe { &mut *(data as *mut Visitor) };
     let child = Cursor { x: cur };
 
     (*func)(child)
@@ -997,7 +1022,7 @@ impl Type {
         let s = unsafe { cxstring_into_string(clang_getTypeSpelling(self.x)) };
         
         
-        if s.split("::").all(|s| is_valid_identifier(s)) {
+        if s.split("::").all(is_valid_identifier) {
             if let Some(s) = s.split("::").last() {
                 return s.to_owned();
             }
@@ -1025,7 +1050,7 @@ impl Type {
                 ctx.target_pointer_size() as c_longlong
             }
             
-            CXType_Auto if self.is_non_deductible_auto_type() => return -6,
+            CXType_Auto if self.is_non_deductible_auto_type() => -6,
             _ => unsafe { clang_Type_getSizeOf(self.x) },
         }
     }
@@ -1038,7 +1063,7 @@ impl Type {
                 ctx.target_pointer_size() as c_longlong
             }
             
-            CXType_Auto if self.is_non_deductible_auto_type() => return -6,
+            CXType_Auto if self.is_non_deductible_auto_type() => -6,
             _ => unsafe { clang_Type_getAlignOf(self.x) },
         }
     }
@@ -1256,12 +1281,12 @@ impl Type {
         
         
         self.template_args().map_or(false, |args| args.len() > 0) &&
-            match self.declaration().kind() {
+            !matches!(
+                self.declaration().kind(),
                 CXCursor_ClassTemplatePartialSpecialization |
-                CXCursor_TypeAliasTemplateDecl |
-                CXCursor_TemplateTemplateParameter => false,
-                _ => true,
-            }
+                    CXCursor_TypeAliasTemplateDecl |
+                    CXCursor_TemplateTemplateParameter
+            )
     }
 
     
@@ -1373,6 +1398,12 @@ impl fmt::Display for SourceLocation {
         } else {
             "builtin definitions".fmt(f)
         }
+    }
+}
+
+impl fmt::Debug for SourceLocation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self)
     }
 }
 
@@ -1674,11 +1705,7 @@ impl UnsavedFile {
             Contents: contents.as_ptr(),
             Length: contents.as_bytes().len() as c_ulong,
         };
-        UnsavedFile {
-            x: x,
-            name: name,
-            contents: contents,
-        }
+        UnsavedFile { x, name, contents }
     }
 }
 
@@ -1789,7 +1816,7 @@ pub fn ast_dump(c: &Cursor, depth: isize) -> CXChildVisitResult {
 
         if let Some(refd) = c.referenced() {
             if refd != *c {
-                println!("");
+                println!();
                 print_cursor(
                     depth,
                     String::from(prefix) + "referenced.",
@@ -1800,7 +1827,7 @@ pub fn ast_dump(c: &Cursor, depth: isize) -> CXChildVisitResult {
 
         let canonical = c.canonical();
         if canonical != *c {
-            println!("");
+            println!();
             print_cursor(
                 depth,
                 String::from(prefix) + "canonical.",
@@ -1810,7 +1837,7 @@ pub fn ast_dump(c: &Cursor, depth: isize) -> CXChildVisitResult {
 
         if let Some(specialized) = c.specialized() {
             if specialized != *c {
-                println!("");
+                println!();
                 print_cursor(
                     depth,
                     String::from(prefix) + "specialized.",
@@ -1820,7 +1847,7 @@ pub fn ast_dump(c: &Cursor, depth: isize) -> CXChildVisitResult {
         }
 
         if let Some(parent) = c.fallible_semantic_parent() {
-            println!("");
+            println!();
             print_cursor(
                 depth,
                 String::from(prefix) + "semantic-parent.",
@@ -1868,34 +1895,34 @@ pub fn ast_dump(c: &Cursor, depth: isize) -> CXChildVisitResult {
 
         let canonical = ty.canonical_type();
         if canonical != *ty {
-            println!("");
+            println!();
             print_type(depth, String::from(prefix) + "canonical.", &canonical);
         }
 
         if let Some(pointee) = ty.pointee_type() {
             if pointee != *ty {
-                println!("");
+                println!();
                 print_type(depth, String::from(prefix) + "pointee.", &pointee);
             }
         }
 
         if let Some(elem) = ty.elem_type() {
             if elem != *ty {
-                println!("");
+                println!();
                 print_type(depth, String::from(prefix) + "elements.", &elem);
             }
         }
 
         if let Some(ret) = ty.ret_type() {
             if ret != *ty {
-                println!("");
+                println!();
                 print_type(depth, String::from(prefix) + "return.", &ret);
             }
         }
 
         let named = ty.named();
         if named != *ty && named.is_valid() {
-            println!("");
+            println!();
             print_type(depth, String::from(prefix) + "named.", &named);
         }
     }
@@ -1903,13 +1930,13 @@ pub fn ast_dump(c: &Cursor, depth: isize) -> CXChildVisitResult {
     print_indent(depth, "(");
     print_cursor(depth, "", c);
 
-    println!("");
+    println!();
     let ty = c.cur_type();
     print_type(depth, "type.", &ty);
 
     let declaration = ty.declaration();
     if declaration != *c && declaration.kind() != CXCursor_NoDeclFound {
-        println!("");
+        println!();
         print_cursor(depth, "type.declaration.", &declaration);
     }
 
@@ -1917,7 +1944,7 @@ pub fn ast_dump(c: &Cursor, depth: isize) -> CXChildVisitResult {
     let mut found_children = false;
     c.visit(|s| {
         if !found_children {
-            println!("");
+            println!();
             found_children = true;
         }
         ast_dump(&s, depth + 1)

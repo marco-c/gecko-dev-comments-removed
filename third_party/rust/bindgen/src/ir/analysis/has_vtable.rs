@@ -79,14 +79,14 @@ pub struct HasVtableAnalysis<'ctx> {
 
 impl<'ctx> HasVtableAnalysis<'ctx> {
     fn consider_edge(kind: EdgeKind) -> bool {
-        match kind {
-            
-            
+        
+        
+        matches!(
+            kind,
             EdgeKind::TypeReference |
-            EdgeKind::BaseMember |
-            EdgeKind::TemplateDeclaration => true,
-            _ => false,
-        }
+                EdgeKind::BaseMember |
+                EdgeKind::TemplateDeclaration
+        )
     }
 
     fn insert<Id: Into<ItemId>>(
@@ -147,7 +147,7 @@ impl<'ctx> MonotoneFramework for HasVtableAnalysis<'ctx> {
     }
 
     fn initial_worklist(&self) -> Vec<ItemId> {
-        self.ctx.whitelisted_items().iter().cloned().collect()
+        self.ctx.allowlisted_items().iter().cloned().collect()
     }
 
     fn constrain(&mut self, id: ItemId) -> ConstrainResult {

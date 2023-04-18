@@ -51,6 +51,7 @@ macro_rules! doc_mod {
 
 mod clang;
 mod codegen;
+mod deps;
 mod features;
 mod ir;
 mod parse;
@@ -88,12 +89,28 @@ type HashSet<K> = ::rustc_hash::FxHashSet<K>;
 pub(crate) use std::collections::hash_map::Entry;
 
 
-pub const DEFAULT_ANON_FIELDS_PREFIX: &'static str = "__bindgen_anon_";
+pub const DEFAULT_ANON_FIELDS_PREFIX: &str = "__bindgen_anon_";
+
+fn file_is_cpp(name_file: &str) -> bool {
+    name_file.ends_with(".hpp") ||
+        name_file.ends_with(".hxx") ||
+        name_file.ends_with(".hh") ||
+        name_file.ends_with(".h++")
+}
 
 fn args_are_cpp(clang_args: &[String]) -> bool {
-    return clang_args
-        .windows(2)
-        .any(|w| w[0] == "-xc++" || w[1] == "-xc++" || w == &["-x", "c++"]);
+    for w in clang_args.windows(2) {
+        if w[0] == "-xc++" || w[1] == "-xc++" {
+            return true;
+        }
+        if w[0] == "-x" && w[1] == "c++" {
+            return true;
+        }
+        if w[0] == "-include" && file_is_cpp(&w[1]) {
+            return true;
+        }
+    }
+    false
 }
 
 bitflags! {
@@ -288,18 +305,20 @@ impl Builder {
             (&self.options.type_alias, "--type-alias"),
             (&self.options.new_type_alias, "--new-type-alias"),
             (&self.options.new_type_alias_deref, "--new-type-alias-deref"),
-            (&self.options.blacklisted_types, "--blacklist-type"),
-            (&self.options.blacklisted_functions, "--blacklist-function"),
-            (&self.options.blacklisted_items, "--blacklist-item"),
+            (&self.options.blocklisted_types, "--blocklist-type"),
+            (&self.options.blocklisted_functions, "--blocklist-function"),
+            (&self.options.blocklisted_items, "--blocklist-item"),
+            (&self.options.blocklisted_files, "--blocklist-file"),
             (&self.options.opaque_types, "--opaque-type"),
-            (&self.options.whitelisted_functions, "--whitelist-function"),
-            (&self.options.whitelisted_types, "--whitelist-type"),
-            (&self.options.whitelisted_vars, "--whitelist-var"),
+            (&self.options.allowlisted_functions, "--allowlist-function"),
+            (&self.options.allowlisted_types, "--allowlist-type"),
+            (&self.options.allowlisted_vars, "--allowlist-var"),
             (&self.options.no_partialeq_types, "--no-partialeq"),
             (&self.options.no_copy_types, "--no-copy"),
             (&self.options.no_debug_types, "--no-debug"),
             (&self.options.no_default_types, "--no-default"),
             (&self.options.no_hash_types, "--no-hash"),
+            (&self.options.must_use_types, "--must-use-type"),
         ];
 
         for (set, flag) in regex_sets {
@@ -363,8 +382,8 @@ impl Builder {
             output_vector.push("--no-doc-comments".into());
         }
 
-        if !self.options.whitelist_recursively {
-            output_vector.push("--no-recursive-whitelist".into());
+        if !self.options.allowlist_recursively {
+            output_vector.push("--no-recursive-allowlist".into());
         }
 
         if self.options.objc_extern_crate {
@@ -462,6 +481,10 @@ impl Builder {
             output_vector.push("--no-prepend-enum-name".into());
         }
 
+        if self.options.fit_macro_constants {
+            output_vector.push("--fit-macro-constant-types".into());
+        }
+
         if self.options.array_pointers_in_arguments {
             output_vector.push("--use-array-pointers-in-arguments".into());
         }
@@ -476,6 +499,14 @@ impl Builder {
         for line in &self.options.raw_lines {
             output_vector.push("--raw-line".into());
             output_vector.push(line.clone());
+        }
+
+        for (module, lines) in &self.options.module_lines {
+            for line in lines.iter() {
+                output_vector.push("--module-raw-line".into());
+                output_vector.push(module.clone());
+                output_vector.push(line.clone());
+            }
         }
 
         if self.options.use_core {
@@ -512,10 +543,29 @@ impl Builder {
             output_vector.push(path.into());
         }
 
-        if self.options.dynamic_library_name.is_some() {
-            let libname = self.options.dynamic_library_name.as_ref().unwrap();
+        if let Some(ref name) = self.options.dynamic_library_name {
             output_vector.push("--dynamic-loading".into());
-            output_vector.push(libname.clone());
+            output_vector.push(name.clone());
+        }
+
+        if self.options.dynamic_link_require_all {
+            output_vector.push("--dynamic-link-require-all".into());
+        }
+
+        if self.options.respect_cxx_access_specs {
+            output_vector.push("--respect-cxx-access-specs".into());
+        }
+
+        if self.options.translate_enum_integer_types {
+            output_vector.push("--translate-enum-integer-types".into());
+        }
+
+        if self.options.c_naming {
+            output_vector.push("--c-naming".into());
+        }
+
+        if self.options.force_explicit_padding {
+            output_vector.push("--explicit-padding".into());
         }
 
         
@@ -566,11 +616,32 @@ impl Builder {
     }
 
     
+    pub fn depfile<H: Into<String>, D: Into<PathBuf>>(
+        mut self,
+        output_module: H,
+        depfile: D,
+    ) -> Builder {
+        self.options.depfile = Some(deps::DepfileSpec {
+            output_module: output_module.into(),
+            depfile_path: depfile.into(),
+        });
+        self
+    }
+
+    
     
     
     pub fn header_contents(mut self, name: &str, contents: &str) -> Builder {
+        
+        
+        let absolute_path = env::current_dir()
+            .expect("Cannot retrieve current directory")
+            .join(name)
+            .to_str()
+            .expect("Cannot convert current directory name to string")
+            .to_owned();
         self.input_header_contents
-            .push((name.into(), contents.into()));
+            .push((absolute_path, contents.into()));
         self
     }
 
@@ -602,11 +673,6 @@ impl Builder {
         self
     }
 
-    
-    
-    
-    
-    
     
     
     
@@ -649,9 +715,15 @@ impl Builder {
     
     
     
-    pub fn whitelist_recursively(mut self, doit: bool) -> Self {
-        self.options.whitelist_recursively = doit;
+    pub fn allowlist_recursively(mut self, doit: bool) -> Self {
+        self.options.allowlist_recursively = doit;
         self
+    }
+
+    
+    #[deprecated(note = "Use allowlist_recursively instead")]
+    pub fn whitelist_recursively(self, doit: bool) -> Self {
+        self.allowlist_recursively(doit)
     }
 
     
@@ -688,9 +760,16 @@ impl Builder {
 
     
     
-    #[deprecated(note = "Use blacklist_type instead")]
+    #[deprecated(note = "Use blocklist_type instead")]
     pub fn hide_type<T: AsRef<str>>(self, arg: T) -> Builder {
-        self.blacklist_type(arg)
+        self.blocklist_type(arg)
+    }
+
+    
+    
+    #[deprecated(note = "Use blocklist_type instead")]
+    pub fn blacklist_type<T: AsRef<str>>(self, arg: T) -> Builder {
+        self.blocklist_type(arg)
     }
 
     
@@ -699,31 +778,54 @@ impl Builder {
     
     
     
-    pub fn blacklist_type<T: AsRef<str>>(mut self, arg: T) -> Builder {
-        self.options.blacklisted_types.insert(arg);
+    pub fn blocklist_type<T: AsRef<str>>(mut self, arg: T) -> Builder {
+        self.options.blocklisted_types.insert(arg);
+        self
+    }
+
+    
+    
+    #[deprecated(note = "Use blocklist_function instead")]
+    pub fn blacklist_function<T: AsRef<str>>(self, arg: T) -> Builder {
+        self.blocklist_function(arg)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn blocklist_function<T: AsRef<str>>(mut self, arg: T) -> Builder {
+        self.options.blocklisted_functions.insert(arg);
         self
     }
 
     
     
     
-    
-    
-    
-    pub fn blacklist_function<T: AsRef<str>>(mut self, arg: T) -> Builder {
-        self.options.blacklisted_functions.insert(arg);
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(note = "Use blocklist_item instead")]
     pub fn blacklist_item<T: AsRef<str>>(mut self, arg: T) -> Builder {
-        self.options.blacklisted_items.insert(arg);
+        self.options.blocklisted_items.insert(arg);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn blocklist_item<T: AsRef<str>>(mut self, arg: T) -> Builder {
+        self.options.blocklisted_items.insert(arg);
+        self
+    }
+
+    
+    
+    pub fn blocklist_file<T: AsRef<str>>(mut self, arg: T) -> Builder {
+        self.options.blocklisted_files.insert(arg);
         self
     }
 
@@ -741,9 +843,17 @@ impl Builder {
     
     
     
-    #[deprecated(note = "use whitelist_type instead")]
+    #[deprecated(note = "use allowlist_type instead")]
     pub fn whitelisted_type<T: AsRef<str>>(self, arg: T) -> Builder {
-        self.whitelist_type(arg)
+        self.allowlist_type(arg)
+    }
+
+    
+    
+    
+    #[deprecated(note = "use allowlist_type instead")]
+    pub fn whitelist_type<T: AsRef<str>>(self, arg: T) -> Builder {
+        self.allowlist_type(arg)
     }
 
     
@@ -753,8 +863,8 @@ impl Builder {
     
     
     
-    pub fn whitelist_type<T: AsRef<str>>(mut self, arg: T) -> Builder {
-        self.options.whitelisted_types.insert(arg);
+    pub fn allowlist_type<T: AsRef<str>>(mut self, arg: T) -> Builder {
+        self.options.allowlisted_types.insert(arg);
         self
     }
 
@@ -765,17 +875,25 @@ impl Builder {
     
     
     
-    pub fn whitelist_function<T: AsRef<str>>(mut self, arg: T) -> Builder {
-        self.options.whitelisted_functions.insert(arg);
+    pub fn allowlist_function<T: AsRef<str>>(mut self, arg: T) -> Builder {
+        self.options.allowlisted_functions.insert(arg);
         self
     }
 
     
     
     
-    #[deprecated(note = "use whitelist_function instead")]
+    #[deprecated(note = "use allowlist_function instead")]
+    pub fn whitelist_function<T: AsRef<str>>(self, arg: T) -> Builder {
+        self.allowlist_function(arg)
+    }
+
+    
+    
+    
+    #[deprecated(note = "use allowlist_function instead")]
     pub fn whitelisted_function<T: AsRef<str>>(self, arg: T) -> Builder {
-        self.whitelist_function(arg)
+        self.allowlist_function(arg)
     }
 
     
@@ -785,17 +903,23 @@ impl Builder {
     
     
     
-    pub fn whitelist_var<T: AsRef<str>>(mut self, arg: T) -> Builder {
-        self.options.whitelisted_vars.insert(arg);
+    pub fn allowlist_var<T: AsRef<str>>(mut self, arg: T) -> Builder {
+        self.options.allowlisted_vars.insert(arg);
         self
     }
 
     
+    #[deprecated(note = "use allowlist_var instead")]
+    pub fn whitelist_var<T: AsRef<str>>(self, arg: T) -> Builder {
+        self.allowlist_var(arg)
+    }
+
     
     
-    #[deprecated(note = "use whitelist_var instead")]
+    
+    #[deprecated(note = "use allowlist_var instead")]
     pub fn whitelisted_var<T: AsRef<str>>(self, arg: T) -> Builder {
-        self.whitelist_var(arg)
+        self.allowlist_var(arg)
     }
 
     
@@ -1265,6 +1389,12 @@ impl Builder {
     }
 
     
+    pub fn fit_macro_constants(mut self, doit: bool) -> Self {
+        self.options.fit_macro_constants = doit;
+        self
+    }
+
+    
     pub fn prepend_enum_name(mut self, doit: bool) -> Self {
         self.options.prepend_enum_name = doit;
         self
@@ -1303,10 +1433,21 @@ impl Builder {
     }
 
     
+    
+    
+    
+    
+    
+    pub fn explicit_padding(mut self, doit: bool) -> Self {
+        self.options.force_explicit_padding = doit;
+        self
+    }
+
+    
     pub fn generate(mut self) -> Result<Bindings, ()> {
         
         if let Some(extra_clang_args) =
-            env::var("BINDGEN_EXTRA_CLANG_ARGS").ok()
+            get_target_dependent_env_var("BINDGEN_EXTRA_CLANG_ARGS")
         {
             
             if let Some(strings) = shlex::split(&extra_clang_args) {
@@ -1318,11 +1459,13 @@ impl Builder {
 
         
         self.options.input_header = self.input_headers.pop();
-        self.options
-            .clang_args
-            .extend(self.input_headers.drain(..).flat_map(|header| {
-                iter::once("-include".into()).chain(iter::once(header))
-            }));
+        self.options.extra_input_headers = self.input_headers;
+        self.options.clang_args.extend(
+            self.options.extra_input_headers.iter().flat_map(|header| {
+                iter::once("-include".into())
+                    .chain(iter::once(header.to_string()))
+            }),
+        );
 
         self.options.input_unsaved_files.extend(
             self.input_header_contents
@@ -1341,13 +1484,6 @@ impl Builder {
     
     
     pub fn dump_preprocessed_input(&self) -> io::Result<()> {
-        fn check_is_cpp(name_file: &str) -> bool {
-            name_file.ends_with(".hpp") ||
-                name_file.ends_with(".hxx") ||
-                name_file.ends_with(".hh") ||
-                name_file.ends_with(".h++")
-        }
-
         let clang =
             clang_sys::support::Clang::find(None, &[]).ok_or_else(|| {
                 io::Error::new(
@@ -1365,7 +1501,7 @@ impl Builder {
 
         
         for header in &self.input_headers {
-            is_cpp |= check_is_cpp(header);
+            is_cpp |= file_is_cpp(header);
 
             wrapper_contents.push_str("#include \"");
             wrapper_contents.push_str(header);
@@ -1375,7 +1511,7 @@ impl Builder {
         
         
         for &(ref name, ref contents) in &self.input_header_contents {
-            is_cpp |= check_is_cpp(name);
+            is_cpp |= file_is_cpp(name);
 
             wrapper_contents.push_str("#line 0 \"");
             wrapper_contents.push_str(name);
@@ -1462,6 +1598,13 @@ impl Builder {
     }
 
     
+    
+    pub fn must_use_type<T: Into<String>>(mut self, arg: T) -> Builder {
+        self.options.must_use_types.insert(arg.into());
+        self
+    }
+
+    
     pub fn array_pointers_in_arguments(mut self, doit: bool) -> Self {
         self.options.array_pointers_in_arguments = doit;
         self
@@ -1484,6 +1627,39 @@ impl Builder {
         self.options.dynamic_library_name = Some(dynamic_library_name.into());
         self
     }
+
+    
+    
+    
+    pub fn dynamic_link_require_all(mut self, req: bool) -> Self {
+        self.options.dynamic_link_require_all = req;
+        self
+    }
+
+    
+    pub fn respect_cxx_access_specs(mut self, doit: bool) -> Self {
+        self.options.respect_cxx_access_specs = doit;
+        self
+    }
+
+    
+    
+    
+    
+    
+    pub fn translate_enum_integer_types(mut self, doit: bool) -> Self {
+        self.options.translate_enum_integer_types = doit;
+        self
+    }
+
+    
+    
+    
+    
+    pub fn c_naming(mut self, doit: bool) -> Self {
+        self.options.c_naming = doit;
+        self
+    }
 }
 
 
@@ -1491,15 +1667,19 @@ impl Builder {
 struct BindgenOptions {
     
     
-    blacklisted_types: RegexSet,
+    blocklisted_types: RegexSet,
 
     
     
-    blacklisted_functions: RegexSet,
+    blocklisted_functions: RegexSet,
 
     
     
-    blacklisted_items: RegexSet,
+    blocklisted_items: RegexSet,
+
+    
+    
+    blocklisted_files: RegexSet,
 
     
     
@@ -1509,18 +1689,21 @@ struct BindgenOptions {
     rustfmt_path: Option<PathBuf>,
 
     
-    
-    
-    
-    
-    
-    whitelisted_types: RegexSet,
+    depfile: Option<deps::DepfileSpec>,
 
     
-    whitelisted_functions: RegexSet,
+    
+    
+    
+    
+    
+    allowlisted_types: RegexSet,
 
     
-    whitelisted_vars: RegexSet,
+    allowlisted_functions: RegexSet,
+
+    
+    allowlisted_vars: RegexSet,
 
     
     default_enum_style: codegen::EnumVariation,
@@ -1670,6 +1853,9 @@ struct BindgenOptions {
     input_header: Option<String>,
 
     
+    extra_input_headers: Vec<String>,
+
+    
     input_unsaved_files: Vec<clang::UnsavedFile>,
 
     
@@ -1693,7 +1879,7 @@ struct BindgenOptions {
     generate_inline_functions: bool,
 
     
-    whitelist_recursively: bool,
+    allowlist_recursively: bool,
 
     
     
@@ -1718,6 +1904,9 @@ struct BindgenOptions {
 
     
     detect_include_paths: bool,
+
+    
+    fit_macro_constants: bool,
 
     
     prepend_enum_name: bool,
@@ -1760,6 +1949,9 @@ struct BindgenOptions {
     no_hash_types: RegexSet,
 
     
+    must_use_types: RegexSet,
+
+    
     array_pointers_in_arguments: bool,
 
     
@@ -1768,6 +1960,24 @@ struct BindgenOptions {
     
     
     dynamic_library_name: Option<String>,
+
+    
+    
+    
+    dynamic_link_require_all: bool,
+
+    
+    
+    respect_cxx_access_specs: bool,
+
+    
+    translate_enum_integer_types: bool,
+
+    
+    c_naming: bool,
+
+    
+    force_explicit_padding: bool,
 }
 
 
@@ -1778,12 +1988,13 @@ impl ::std::panic::UnwindSafe for BindgenOptions {}
 impl BindgenOptions {
     fn build(&mut self) {
         let mut regex_sets = [
-            &mut self.whitelisted_vars,
-            &mut self.whitelisted_types,
-            &mut self.whitelisted_functions,
-            &mut self.blacklisted_types,
-            &mut self.blacklisted_functions,
-            &mut self.blacklisted_items,
+            &mut self.allowlisted_vars,
+            &mut self.allowlisted_types,
+            &mut self.allowlisted_functions,
+            &mut self.blocklisted_types,
+            &mut self.blocklisted_functions,
+            &mut self.blocklisted_items,
+            &mut self.blocklisted_files,
             &mut self.opaque_types,
             &mut self.bitfield_enums,
             &mut self.constified_enums,
@@ -1799,6 +2010,7 @@ impl BindgenOptions {
             &mut self.no_debug_types,
             &mut self.no_default_types,
             &mut self.no_hash_types,
+            &mut self.must_use_types,
         ];
         let record_matches = self.record_matches;
         for regex_set in &mut regex_sets {
@@ -1827,14 +2039,16 @@ impl Default for BindgenOptions {
         BindgenOptions {
             rust_target,
             rust_features: rust_target.into(),
-            blacklisted_types: Default::default(),
-            blacklisted_functions: Default::default(),
-            blacklisted_items: Default::default(),
+            blocklisted_types: Default::default(),
+            blocklisted_functions: Default::default(),
+            blocklisted_items: Default::default(),
+            blocklisted_files: Default::default(),
             opaque_types: Default::default(),
             rustfmt_path: Default::default(),
-            whitelisted_types: Default::default(),
-            whitelisted_functions: Default::default(),
-            whitelisted_vars: Default::default(),
+            depfile: Default::default(),
+            allowlisted_types: Default::default(),
+            allowlisted_functions: Default::default(),
+            allowlisted_vars: Default::default(),
             default_enum_style: Default::default(),
             bitfield_enums: Default::default(),
             newtype_enums: Default::default(),
@@ -1877,18 +2091,20 @@ impl Default for BindgenOptions {
             module_lines: HashMap::default(),
             clang_args: vec![],
             input_header: None,
+            extra_input_headers: vec![],
             input_unsaved_files: vec![],
             parse_callbacks: None,
             codegen_config: CodegenConfig::all(),
             conservative_inline_namespaces: false,
             generate_comments: true,
             generate_inline_functions: false,
-            whitelist_recursively: true,
+            allowlist_recursively: true,
             generate_block: false,
             objc_extern_crate: false,
             block_extern_crate: false,
             enable_mangling: true,
             detect_include_paths: true,
+            fit_macro_constants: false,
             prepend_enum_name: true,
             time_phases: false,
             record_matches: true,
@@ -1900,9 +2116,15 @@ impl Default for BindgenOptions {
             no_debug_types: Default::default(),
             no_default_types: Default::default(),
             no_hash_types: Default::default(),
+            must_use_types: Default::default(),
             array_pointers_in_arguments: false,
             wasm_import_module_name: None,
             dynamic_library_name: None,
+            dynamic_link_require_all: false,
+            respect_cxx_access_specs: false,
+            translate_enum_integer_types: false,
+            c_naming: false,
+            force_explicit_padding: false,
         }
     }
 }
@@ -1940,7 +2162,7 @@ pub struct Bindings {
     module: proc_macro2::TokenStream,
 }
 
-pub(crate) const HOST_TARGET: &'static str =
+pub(crate) const HOST_TARGET: &str =
     include_str!(concat!(env!("OUT_DIR"), "/host-target.txt"));
 
 
@@ -1948,7 +2170,8 @@ pub(crate) const HOST_TARGET: &'static str =
 fn rust_to_clang_target(rust_target: &str) -> String {
     if rust_target.starts_with("aarch64-apple-") {
         let mut clang_target = "arm64-apple-".to_owned();
-        clang_target.push_str(&rust_target["aarch64-apple-".len()..]);
+        clang_target
+            .push_str(rust_target.strip_prefix("aarch64-apple-").unwrap());
         return clang_target;
     }
     rust_target.to_owned()
@@ -2069,7 +2292,9 @@ impl Bindings {
             debug!("Found clang: {:?}", clang);
 
             
-            let is_cpp = args_are_cpp(&options.clang_args);
+            let is_cpp = args_are_cpp(&options.clang_args) ||
+                options.input_header.as_deref().map_or(false, file_is_cpp);
+
             let search_paths = if is_cpp {
                 clang.cpp_search_paths
             } else {
@@ -2119,7 +2344,10 @@ impl Bindings {
             }
         }
 
-        for f in options.input_unsaved_files.iter() {
+        for (idx, f) in options.input_unsaved_files.iter().enumerate() {
+            if idx != 0 || options.input_header.is_some() {
+                options.clang_args.push("-include".to_owned());
+            }
             options.clang_args.push(f.name.to_str().unwrap().to_owned())
         }
 
@@ -2151,15 +2379,6 @@ impl Bindings {
                 #( #items )*
             },
         })
-    }
-
-    
-    pub fn to_string(&self) -> String {
-        let mut bytes = vec![];
-        self.write(Box::new(&mut bytes) as Box<dyn Write>)
-            .expect("writing to a vec cannot fail");
-        String::from_utf8(bytes)
-            .expect("we should only write bindings that are valid utf-8")
     }
 
     
@@ -2211,7 +2430,7 @@ impl Bindings {
     }
 
     
-    fn rustfmt_path<'a>(&'a self) -> io::Result<Cow<'a, PathBuf>> {
+    fn rustfmt_path(&self) -> io::Result<Cow<PathBuf>> {
         debug_assert!(self.options.rustfmt_bindings);
         if let Some(ref p) = self.options.rustfmt_path {
             return Ok(Cow::Borrowed(p));
@@ -2302,6 +2521,18 @@ impl Bindings {
     }
 }
 
+impl std::fmt::Display for Bindings {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut bytes = vec![];
+        self.write(Box::new(&mut bytes) as Box<dyn Write>)
+            .expect("writing to a vec cannot fail");
+        f.write_str(
+            std::str::from_utf8(&bytes)
+                .expect("we should only write bindings that are valid utf-8"),
+        )
+    }
+}
+
 
 
 fn filter_builtins(ctx: &BindgenContext, cursor: &clang::Cursor) -> bool {
@@ -2350,7 +2581,7 @@ fn parse(context: &mut BindgenContext) -> Result<(), ()> {
     if context.options().emit_ast {
         fn dump_if_not_builtin(cur: &clang::Cursor) -> CXChildVisitResult {
             if !cur.is_builtin() {
-                clang::ast_dump(&cur, 0)
+                clang::ast_dump(cur, 0)
             } else {
                 CXChildVisit_Continue
             }
@@ -2383,33 +2614,43 @@ pub struct ClangVersion {
 pub fn clang_version() -> ClangVersion {
     ensure_libclang_is_loaded();
 
+    
     let raw_v: String = clang::extract_clang_version();
     let split_v: Option<Vec<&str>> = raw_v
         .split_whitespace()
-        .nth(2)
+        .find(|t| t.chars().next().map_or(false, |v| v.is_ascii_digit()))
         .map(|v| v.split('.').collect());
-    match split_v {
-        Some(v) => {
-            if v.len() >= 2 {
-                let maybe_major = v[0].parse::<u32>();
-                let maybe_minor = v[1].parse::<u32>();
-                match (maybe_major, maybe_minor) {
-                    (Ok(major), Ok(minor)) => {
-                        return ClangVersion {
-                            parsed: Some((major, minor)),
-                            full: raw_v.clone(),
-                        }
-                    }
-                    _ => {}
-                }
+    if let Some(v) = split_v {
+        if v.len() >= 2 {
+            let maybe_major = v[0].parse::<u32>();
+            let maybe_minor = v[1].parse::<u32>();
+            if let (Ok(major), Ok(minor)) = (maybe_major, maybe_minor) {
+                return ClangVersion {
+                    parsed: Some((major, minor)),
+                    full: raw_v.clone(),
+                };
             }
         }
-        None => {}
     };
     ClangVersion {
         parsed: None,
         full: raw_v.clone(),
     }
+}
+
+
+fn get_target_dependent_env_var(var: &str) -> Option<String> {
+    if let Ok(target) = env::var("TARGET") {
+        if let Ok(v) = env::var(&format!("{}_{}", var, target)) {
+            return Some(v);
+        }
+        if let Ok(v) =
+            env::var(&format!("{}_{}", var, target.replace("-", "_")))
+        {
+            return Some(v);
+        }
+    }
+    env::var(var).ok()
 }
 
 
@@ -2457,8 +2698,8 @@ fn commandline_flag_unit_test_function() {
     
     let bindings = crate::builder()
         .header("input_header")
-        .whitelist_type("Distinct_Type")
-        .whitelist_function("safe_function");
+        .allowlist_type("Distinct_Type")
+        .allowlist_function("safe_function");
 
     let command_line_flags = bindings.command_line_flags();
     let test_cases = vec![
@@ -2467,9 +2708,9 @@ fn commandline_flag_unit_test_function() {
         "--no-derive-default",
         "--generate",
         "functions,types,vars,methods,constructors,destructors",
-        "--whitelist-type",
+        "--allowlist-type",
         "Distinct_Type",
-        "--whitelist-function",
+        "--allowlist-function",
         "safe_function",
     ]
     .iter()

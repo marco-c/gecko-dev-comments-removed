@@ -1,5 +1,7 @@
 
 
+pub use crate::ir::analysis::DeriveTrait;
+pub use crate::ir::derive::CanDerive as ImplementsTrait;
 pub use crate::ir::enum_ty::{EnumVariantCustomBehavior, EnumVariantValue};
 pub use crate::ir::int::IntKind;
 use std::fmt;
@@ -76,4 +78,29 @@ pub trait ParseCallbacks: fmt::Debug + UnwindSafe {
 
     
     fn include_file(&self, _filename: &str) {}
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn blocklisted_type_implements_trait(
+        &self,
+        _name: &str,
+        _derive_trait: DeriveTrait,
+    ) -> Option<ImplementsTrait> {
+        None
+    }
+
+    
+    
+    
+    
+    fn add_derives(&self, _name: &str) -> Vec<String> {
+        vec![]
+    }
 }
