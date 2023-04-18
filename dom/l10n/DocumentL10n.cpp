@@ -11,6 +11,8 @@
 #include "mozilla/dom/DocumentL10nBinding.h"
 #include "mozilla/Telemetry.h"
 
+using namespace mozilla;
+using namespace mozilla::intl;
 using namespace mozilla::dom;
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(DocumentL10n)
@@ -74,7 +76,25 @@ class L10nReadyHandler final : public PromiseNativeHandler {
 
   void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override {
     mDocumentL10n->InitialTranslationCompleted(false);
-    mPromise->MaybeRejectWithUndefined();
+
+    nsTArray<nsCString> errors{
+        "[dom/l10n] Could not complete initial document translation."_ns,
+    };
+    IgnoredErrorResult rv;
+    MaybeReportErrorsToGecko(errors, rv, mDocumentL10n->GetParentObject());
+
+    
+
+
+
+
+
+
+
+
+
+
+    mPromise->MaybeResolveWithUndefined();
   }
 
  private:
