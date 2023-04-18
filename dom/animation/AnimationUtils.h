@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_AnimationUtils_h
 #define mozilla_dom_AnimationUtils_h
 
+#include "mozilla/PseudoStyleType.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/Nullable.h"
 #include "nsRFPService.h"
@@ -18,7 +19,6 @@ struct JSContext;
 
 namespace mozilla {
 
-enum class PseudoStyleType : uint8_t;
 class ComputedTimingFunction;
 class EffectSet;
 
@@ -84,6 +84,16 @@ class AnimationUtils {
 
   static bool HasCurrentTransitions(const dom::Element* aElement,
                                     PseudoStyleType aPseudoType);
+
+  
+
+
+
+  static bool IsSupportedPseudoForAnimations(PseudoStyleType aType) {
+    
+    return aType == PseudoStyleType::before ||
+           aType == PseudoStyleType::after || aType == PseudoStyleType::marker;
+  }
 };
 
 }  

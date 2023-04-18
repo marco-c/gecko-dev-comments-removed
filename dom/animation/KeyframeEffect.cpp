@@ -743,12 +743,6 @@ void KeyframeEffect::ResetPartialPrerendered() {
   }
 }
 
-static bool IsSupportedPseudoForWebAnimation(PseudoStyleType aType) {
-  
-  return aType == PseudoStyleType::before || aType == PseudoStyleType::after ||
-         aType == PseudoStyleType::marker;
-}
-
 static const KeyframeEffectOptions& KeyframeEffectOptionsFromUnion(
     const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions) {
   MOZ_ASSERT(aOptions.IsKeyframeEffectOptions());
@@ -794,7 +788,7 @@ static KeyframeEffectParams KeyframeEffectParamsFromUnion(
   }
 
   result.mPseudoType = *pseudoType;
-  if (!IsSupportedPseudoForWebAnimation(result.mPseudoType)) {
+  if (!AnimationUtils::IsSupportedPseudoForAnimations(result.mPseudoType)) {
     
     aRv.ThrowSyntaxError(
         nsPrintfCString("'%s' is an unsupported pseudo-element.",
@@ -1103,7 +1097,7 @@ void KeyframeEffect::SetPseudoElement(const nsAString& aPseudoElement,
     return;
   }
 
-  if (!IsSupportedPseudoForWebAnimation(*pseudoType)) {
+  if (!AnimationUtils::IsSupportedPseudoForAnimations(*pseudoType)) {
     
     aRv.ThrowSyntaxError(
         nsPrintfCString("'%s' is an unsupported pseudo-element.",
