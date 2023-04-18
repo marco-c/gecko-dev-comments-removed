@@ -42,10 +42,13 @@ class SandboxPolicyBase : public sandbox::bpf_dsl::Policy {
     return Nothing();
   }
 
+  
+  
 #ifndef ANDROID
   
   
-  virtual Maybe<ResultExpr> EvaluateIpcCall(int aCall) const {
+  
+  virtual Maybe<ResultExpr> EvaluateIpcCall(int aCall, int aArgShift) const {
     return Nothing();
   }
 #endif
