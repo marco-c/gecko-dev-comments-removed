@@ -2520,8 +2520,7 @@ AttachDecision GetPropIRGenerator::tryAttachSparseElement(
   
   
   
-  if ((nobj->staticPrototype() != nullptr) &&
-      ObjectMayHaveExtraIndexedProperties(nobj->staticPrototype())) {
+  if (PrototypeMayHaveIndexedProperties(nobj)) {
     return AttachDecision::NoAction;
   }
 
@@ -4179,8 +4178,7 @@ AttachDecision SetPropIRGenerator::tryAttachAddOrUpdateSparseElement(
   }
 
   
-  if ((aobj->staticPrototype() != nullptr) &&
-      ObjectMayHaveExtraIndexedProperties(aobj->staticPrototype())) {
+  if (PrototypeMayHaveIndexedProperties(aobj)) {
     return AttachDecision::NoAction;
   }
 
