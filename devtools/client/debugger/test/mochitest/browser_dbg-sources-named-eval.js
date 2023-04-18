@@ -4,6 +4,7 @@
 
 
 
+
 "use strict";
 
 add_task(async function() {
@@ -15,19 +16,37 @@ add_task(async function() {
     "long.js"
   );
 
-  info(`>>> contentTask: evaluate evaled.js\n`);
-  SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
-    content.eval("window.evaledFunc = function() {} //# sourceURL=evaled.js");
+  info("Assert that all page sources appear in the source tree");
+  await waitForSourcesInSourceTree(dbg, [
+    "doc-sources.html",
+    "simple1.js",
+    "simple2.js",
+    "nested-source.js",
+    "long.js",
+  ]);
+
+  info(`>>> contentTask: evaluate evaled.js`);
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function() {
+    content.eval(
+      `window.evaledFunc = function() {};
+//# sourceURL=evaled.js
+`
+    );
   });
 
-  await waitForSourceCount(dbg, 3);
-  ok(true);
-});
+  info("Assert that the evaled source appear in the source tree");
+  await waitForSourcesInSourceTree(dbg, [
+    "doc-sources.html",
+    "simple1.js",
+    "simple2.js",
+    "nested-source.js",
+    "long.js",
+    "evaled.js",
+  ]);
 
-async function waitForSourceCount(dbg, i) {
-  
-  
-  await waitUntil(() => {
-    return findAllElements(dbg, "sourceNodes").length === i;
-  }, `waiting for source count ${i}`);
-}
+  info("Wait for the evaled source");
+  await waitForSource(dbg, "evaled.js");
+  await selectSource(dbg, "evaled.js");
+
+  assertTextContentOnLine(dbg, 1, "window.evaledFunc = function() {};");
+});

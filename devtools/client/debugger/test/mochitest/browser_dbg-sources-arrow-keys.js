@@ -5,6 +5,9 @@
 "use strict";
 
 
+
+
+
 add_task(async function() {
   const dbg = await initDebugger(
     "doc-sources.html",
@@ -14,8 +17,15 @@ add_task(async function() {
     "long.js"
   );
 
+  
+  await waitForSourcesInSourceTree(dbg, [], { noExpand: true });
   await clickElement(dbg, "sourceDirectoryLabel", 3);
-  await assertSourceCount(dbg, 8);
+  
+  await waitForSourcesInSourceTree(
+    dbg,
+    ["doc-sources.html", "simple1.js", "simple2.js", "long.js"],
+    { noExpand: true }
+  );
 
   
   await pressKey(dbg, "Right");
@@ -23,12 +33,10 @@ add_task(async function() {
 
   
   await pressKey(dbg, "Right");
-  await assertSourceCount(dbg, 8);
   await assertNodeIsFocused(dbg, 4);
 
   
   await pressKey(dbg, "Left");
-  await assertSourceCount(dbg, 8);
   await assertNodeIsFocused(dbg, 4);
 
   
@@ -36,11 +44,28 @@ add_task(async function() {
   await assertNodeIsFocused(dbg, 4);
 
   
+  
+  await waitForSourcesInSourceTree(
+    dbg,
+    ["doc-sources.html", "simple1.js", "simple2.js", "long.js"],
+    { noExpand: true }
+  );
   await pressKey(dbg, "Right");
   await assertNodeIsFocused(dbg, 4);
+  
+  await waitForSourcesInSourceTree(
+    dbg,
+    [
+      "doc-sources.html",
+      "simple1.js",
+      "simple2.js",
+      "long.js",
+      "nested-source.js",
+    ],
+    { noExpand: true }
+  );
 
   
-  await waitForSourceCount(dbg, 9);
   await pressKey(dbg, "Down");
   await assertNodeIsFocused(dbg, 5);
 
@@ -58,8 +83,25 @@ add_task(async function() {
   await assertNodeIsFocused(dbg, 4);
 
   
+  
+  await waitForSourcesInSourceTree(
+    dbg,
+    [
+      "doc-sources.html",
+      "simple1.js",
+      "simple2.js",
+      "long.js",
+      "nested-source.js",
+    ],
+    { noExpand: true }
+  );
   await pressKey(dbg, "Left");
-  await assertSourceCount(dbg, 8);
+  
+  await waitForSourcesInSourceTree(
+    dbg,
+    ["doc-sources.html", "simple1.js", "simple2.js", "long.js"],
+    { noExpand: true }
+  );
   await pressKey(dbg, "Left");
   await assertNodeIsFocused(dbg, 3);
 

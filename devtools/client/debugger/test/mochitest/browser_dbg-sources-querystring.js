@@ -4,6 +4,8 @@
 
 
 
+
+
 "use strict";
 
 add_task(async function() {
@@ -14,18 +16,20 @@ add_task(async function() {
   );
 
   
-  await assertSourceCount(dbg, 2);
-  await clickElement(dbg, "sourceDirectoryLabel", 2);
+  await waitForSourcesInSourceTree(dbg, [], { noExpand: true });
+  await clickElement(dbg, "sourceDirectoryLabel", 3);
+  await waitForSourcesInSourceTree(dbg, ["simple1.js?x=1", "simple1.js?x=2"], {
+    noExpand: true,
+  });
 
-  is(getLabel(dbg, 3), "simple1.js?x=1", "simple1.js?x=1 exists");
-  is(getLabel(dbg, 4), "simple1.js?x=2", "simple1.js?x=2 exists");
+  is(getLabel(dbg, 4), "simple1.js?x=1", "simple1.js?x=1 exists");
+  is(getLabel(dbg, 5), "simple1.js?x=2", "simple1.js?x=2 exists");
 
-  const source = findSource(dbg, "simple1.js?x=1");
-  await selectSource(dbg, source);
+  await selectSource(dbg, "simple1.js?x=1");
   const tab = findElement(dbg, "activeTab");
   is(tab.innerText, "simple1.js?x=1", "Tab label is simple1.js?x=1");
   await addBreakpoint(dbg, "simple1.js?x=1", 6);
-  assertBreakpointHeading(dbg, "simple1.js?x=1", 2);
+  assertBreakpointHeading(dbg, "simple1.js?x=1", 0);
 
   
   clickElement(dbg, "prettyPrintButton");
@@ -33,12 +37,14 @@ add_task(async function() {
 
   const prettyTab = findElement(dbg, "activeTab");
   is(prettyTab.innerText, "simple1.js?x=1", "Tab label is simple1.js?x=1");
+  
   ok(prettyTab.querySelector("img.prettyPrint"));
-  assertBreakpointHeading(dbg, "simple1.js?x=1", 2);
+  assertBreakpointHeading(dbg, "simple1.js?x=1", 0);
 
   
   pressKey(dbg, "quickOpen");
   type(dbg, "simple1.js?x");
+  
   ok(findElement(dbg, "resultItems")[0].innerText.includes("simple.js?x=1"));
 });
 
@@ -49,6 +55,7 @@ function getLabel(dbg, index) {
 }
 
 function assertBreakpointHeading(dbg, label, index) {
-  const breakpointHeading = findElement(dbg, "breakpointItem", index).innerText;
+  const breakpointHeading = findAllElements(dbg, "breakpointHeadings")[index]
+    .innerText;
   is(breakpointHeading, label, `Breakpoint heading is ${label}`);
 }
