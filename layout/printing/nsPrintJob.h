@@ -260,6 +260,10 @@ class nsPrintJob final : public nsIWebProgressListener,
   
   PrintPreviewResolver mPrintPreviewCallback;
 
+  
+  
+  float mShrinkToFitFactor = 1.0f;
+
   float mScreenDPI = 115.0f;
 
   bool mCreatedForPrintPreview = false;

@@ -64,7 +64,6 @@ class nsPrintData {
   bool mIsAborted;          
   bool mPreparingForPrint;  
   int32_t mNumPrintablePages;
-  float mShrinkRatio;
 
  private:
   nsPrintData() = delete;
