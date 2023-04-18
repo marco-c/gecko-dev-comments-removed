@@ -1493,7 +1493,12 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
   if (prop.isNotFound()) {
     
     
-    if (!obj->isExtensible() && !id.isPrivateName()) {
+    if (!obj->isExtensible() && !id.isPrivateName() &&
+        
+        
+        
+        IF_RECORD_TUPLE(
+            !(IsExtendedPrimitiveWrapper(*obj) && desc_.resolving()), true)) {
       return result.fail(JSMSG_CANT_DEFINE_PROP_OBJECT_NOT_EXTENSIBLE);
     }
 

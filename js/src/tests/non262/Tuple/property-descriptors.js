@@ -19,28 +19,23 @@ assertThrowsInstanceOf(
   "#[1, 2, 3] is not a non-null object"
 );
 
+assertThrowsInstanceOf(
+  () => Object.defineProperty(tupO, "b", {}),
+  TypeError,
+  'can\'t define property "b": tuple is not extensible'
+);
 
+assertThrowsInstanceOf(
+  () => Object.defineProperty(tupO, "3", {}),
+  TypeError,
+  'can\'t define property "3": tuple is not extensible'
+);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+assertThrowsInstanceOf(
+  () => Object.defineProperty(tupO, Symbol(), {}),
+  TypeError,
+  'can\'t define property "Symbol()": tuple is not extensible'
+);
 
 assertThrowsInstanceOf(
   () => Object.defineProperty(tupO, "0", { value: 2 }),

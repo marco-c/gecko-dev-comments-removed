@@ -4,8 +4,8 @@
 
 
 
-#ifndef vm_RecordTupleBoxShared_h
-#define vm_RecordTupleBoxShared_h
+#ifndef vm_RecordTupleShared_h
+#define vm_RecordTupleShared_h
 
 #include "js/ErrorReport.h"
 #include "js/TypeDecls.h"
@@ -13,6 +13,7 @@
 namespace js {
 
 bool IsExtendedPrimitive(JSObject& obj);
+bool IsExtendedPrimitiveWrapper(const JSObject& obj);
 
 }  
 

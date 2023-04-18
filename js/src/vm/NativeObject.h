@@ -34,6 +34,12 @@ namespace js {
 class Shape;
 class TenuringTracer;
 
+#ifdef ENABLE_RECORD_TUPLE
+
+
+extern bool IsExtendedPrimitiveWrapper(const JSObject& obj);
+#endif
+
 
 
 
@@ -814,7 +820,14 @@ class NativeObject : public JSObject {
   
   bool nonProxyIsExtensible() const = delete;
 
-  bool isExtensible() const { return !hasFlag(ObjectFlag::NotExtensible); }
+  bool isExtensible() const {
+#ifdef ENABLE_RECORD_TUPLE
+    if (IsExtendedPrimitiveWrapper(*this)) {
+      return false;
+    }
+#endif
+    return !hasFlag(ObjectFlag::NotExtensible);
+  }
 
   
 

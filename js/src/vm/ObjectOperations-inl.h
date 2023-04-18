@@ -36,6 +36,12 @@
 
 namespace js {
 
+#ifdef ENABLE_RECORD_TUPLE
+
+
+extern bool IsExtendedPrimitiveWrapper(const JSObject& obj);
+#endif
+
 
 
 

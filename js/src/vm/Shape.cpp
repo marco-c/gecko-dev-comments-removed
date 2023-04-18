@@ -369,7 +369,11 @@ bool NativeObject::addProperty(JSContext* cx, HandleNativeObject obj,
   MOZ_ASSERT_IF(
       !id.isPrivateName(),
       obj->isExtensible() ||
-          (JSID_IS_INT(id) && obj->containsDenseElement(JSID_TO_INT(id))));
+          (JSID_IS_INT(id) && obj->containsDenseElement(JSID_TO_INT(id))) ||
+          
+          
+          
+          IF_RECORD_TUPLE(IsExtendedPrimitiveWrapper(*obj), false));
 
   if (!ReshapeForShadowedProp(cx, obj, id)) {
     return false;

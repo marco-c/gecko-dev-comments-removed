@@ -25,6 +25,12 @@
 
 namespace js {
 
+#ifdef ENABLE_RECORD_TUPLE
+
+
+extern bool IsExtendedPrimitiveWrapper(const JSObject& obj);
+#endif
+
 
 
 static inline gc::AllocKind NewObjectGCKind() { return gc::AllocKind::OBJECT4; }
@@ -206,6 +212,11 @@ inline js::GlobalObject& JSObject::nonCCWGlobal() const {
 inline bool JSObject::nonProxyIsExtensible() const {
   MOZ_ASSERT(!uninlinedIsProxyObject());
 
+#ifdef ENABLE_RECORD_TUPLE
+  if (js::IsExtendedPrimitiveWrapper(*this)) {
+    return false;
+  }
+#endif
   
   return !hasFlag(js::ObjectFlag::NotExtensible);
 }

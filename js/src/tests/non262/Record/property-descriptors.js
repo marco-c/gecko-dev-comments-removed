@@ -18,21 +18,17 @@ assertThrowsInstanceOf(
 	"#{ \"a\": 3, \"x\": 1, \"y\": 2 } is not a non-null object"
 );
 
+assertThrowsInstanceOf(
+	() => Object.defineProperty(recO, "b", {}),
+	TypeError,
+	"can't define property \"b\": Record is not extensible"
+);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+assertThrowsInstanceOf(
+	() => Object.defineProperty(recO, Symbol(), {}),
+	TypeError,
+	"can't define property \"b\": Record is not extensible"
+);
 
 assertThrowsInstanceOf(
 	() => Object.defineProperty(recO, "x", { value: 2 }),
