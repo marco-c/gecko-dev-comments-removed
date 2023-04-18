@@ -413,23 +413,15 @@ class StoreBuffer {
     } Hasher;
   };
 
-  
-  
-  
-  inline void CheckAccess() const {
 #ifdef DEBUG
-    if (JS::RuntimeHeapIsBusy()) {
-      MOZ_ASSERT(!CurrentThreadIsGCMarking());
-      lock_.assertOwnedByCurrentThread();
-    } else {
-      MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
-    }
+  void checkAccess() const;
+#else
+  void checkAccess() const {}
 #endif
-  }
 
   template <typename Buffer, typename Edge>
   void unput(Buffer& buffer, const Edge& edge) {
-    CheckAccess();
+    checkAccess();
     if (!isEnabled()) {
       return;
     }
@@ -439,7 +431,7 @@ class StoreBuffer {
 
   template <typename Buffer, typename Edge>
   void put(Buffer& buffer, const Edge& edge) {
-    CheckAccess();
+    checkAccess();
     if (!isEnabled()) {
       return;
     }
