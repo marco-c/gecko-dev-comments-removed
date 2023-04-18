@@ -183,9 +183,9 @@ var BrowserUtils = {
     function isHTMLLink(aNode) {
       
       return (
-        (aNode instanceof content.HTMLAnchorElement && aNode.href) ||
-        (aNode instanceof content.HTMLAreaElement && aNode.href) ||
-        aNode instanceof content.HTMLLinkElement
+        (content.HTMLAnchorElement.isInstance(aNode) && aNode.href) ||
+        (content.HTMLAreaElement.isInstance(aNode) && aNode.href) ||
+        content.HTMLLinkElement.isInstance(aNode)
       );
     }
 

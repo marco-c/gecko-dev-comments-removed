@@ -65,6 +65,8 @@ this.PersistentCache = class PersistentCache {
           data = await IOUtils.readJSON(filepath);
         } catch (error) {
           if (
+            
+            
             !(error instanceof DOMException) ||
             error.name !== "NotFoundError"
           ) {

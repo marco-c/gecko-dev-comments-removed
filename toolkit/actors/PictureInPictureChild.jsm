@@ -211,7 +211,7 @@ class PictureInPictureLauncherChild extends JSWindowActorChild {
     let doc = this.document;
     if (doc) {
       let video = doc.activeElement;
-      if (!(video instanceof HTMLVideoElement)) {
+      if (!HTMLVideoElement.isInstance(video)) {
         let listOfVideos = [...doc.querySelectorAll("video")].filter(
           video => !isNaN(video.duration)
         );
@@ -407,7 +407,7 @@ class PictureInPictureToggleChild extends JSWindowActorChild {
       case "UAWidgetSetupOrChange": {
         if (
           this.toggleEnabled &&
-          event.target instanceof this.contentWindow.HTMLVideoElement &&
+          this.contentWindow.HTMLVideoElement.isInstance(event.target) &&
           event.target.ownerDocument == this.document
         ) {
           this.registerVideo(event.target);
@@ -1694,7 +1694,7 @@ class PictureInPictureChild extends JSWindowActorChild {
           
           
           
-          if (video && video.srcObject instanceof MediaStream) {
+          if (video && MediaStream.isInstance(video.srcObject)) {
             break;
           }
         }
