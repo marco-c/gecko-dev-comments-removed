@@ -1,0 +1,11 @@
+
+
+
+
+export function getPreview(state) {
+  return state.preview.preview;
+}
+
+export function getPreviewCount(state) {
+  return state.preview.previewCount;
+}
