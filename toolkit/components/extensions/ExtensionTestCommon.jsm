@@ -242,6 +242,37 @@ ExtensionTestCommon = class ExtensionTestCommon {
 
 
 
+  static getBackgroundServiceWorkerEnabled() {
+    return WebExtensionPolicy.backgroundServiceWorkerEnabled;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static isInBackgroundServiceWorkerTests() {
+    return Services.prefs.getBoolPref(
+      "extensions.backgroundServiceWorker.forceInTestExtension",
+      false
+    );
+  }
+
+  
+
+
+
+
+
 
 
 
@@ -284,10 +315,22 @@ ExtensionTestCommon = class ExtensionTestCommon {
       delete manifest.host_permissions;
     }
 
+    if (data.useServiceWorker === undefined) {
+      
+      
+      
+      data.useServiceWorker = ExtensionTestCommon.isInBackgroundServiceWorkerTests();
+    }
+
     if (data.background) {
       let bgScript = Services.uuid.generateUUID().number + ".js";
 
-      provide(manifest, ["background", "scripts"], [bgScript], true);
+      let scriptKey = data.useServiceWorker
+        ? ["background", "service_worker"]
+        : ["background", "scripts"];
+      let scriptVal = data.useServiceWorker ? bgScript : [bgScript];
+      provide(manifest, scriptKey, scriptVal, true);
+
       files[bgScript] = data.background;
     }
 
