@@ -472,14 +472,8 @@ def check_output(out, err, rc, timed_out, test, options):
 
     if test.expect_error:
         
-        
-        
-        if sys.platform in ["win32", "cygwin"]:
-            if rc != 3 and rc != 0:
-                return False
-        else:
-            if rc != 3:
-                return False
+        if rc != 3:
+            return False
 
         return test.expect_error in err
 
@@ -519,12 +513,6 @@ def check_output(out, err, rc, timed_out, test, options):
         return False
 
     if rc != test.expect_status:
-        
-        
-        
-        if sys.platform in ["win32", "cygwin"] and rc == 0:
-            return True
-
         
         
         if (
