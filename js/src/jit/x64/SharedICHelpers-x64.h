@@ -37,10 +37,11 @@ inline void EmitCallIC(MacroAssembler& masm, CodeOffset* callOffset) {
 inline void EmitReturnFromIC(MacroAssembler& masm) { masm.ret(); }
 
 inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm) {
+  Address stubAddr(FramePointer, BaselineStubFrameLayout::ICStubOffsetFromFP);
+  masm.loadPtr(stubAddr, ICStubReg);
+
   masm.mov(FramePointer, StackPointer);
   masm.Pop(FramePointer);
-
-  masm.Pop(ICStubReg);
 
   
   

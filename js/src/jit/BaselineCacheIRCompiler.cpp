@@ -2368,7 +2368,7 @@ void BaselineCacheIRCompiler::pushStandardArguments(Register argcReg,
 
   
   Register argPtr = scratch2;
-  Address argAddress(masm.getStackPointer(), STUB_FRAME_SIZE);
+  Address argAddress(masm.getStackPointer(), StubFrameSize);
   masm.computeEffectiveAddress(argAddress, argPtr);
 
   
@@ -2398,7 +2398,7 @@ void BaselineCacheIRCompiler::pushArrayArguments(Register argcReg,
   
   Register startReg = scratch;
   masm.unboxObject(Address(masm.getStackPointer(),
-                           (isConstructing * sizeof(Value)) + STUB_FRAME_SIZE),
+                           (isConstructing * sizeof(Value)) + StubFrameSize),
                    startReg);
   masm.loadPtr(Address(startReg, NativeObject::offsetOfElements()), startReg);
 
@@ -2416,7 +2416,7 @@ void BaselineCacheIRCompiler::pushArrayArguments(Register argcReg,
 
   
   if (isConstructing) {
-    masm.pushValue(Address(FramePointer, STUB_FRAME_SIZE));
+    masm.pushValue(Address(FramePointer, StubFrameSizeFromFP));
   }
 
   
@@ -2435,13 +2435,15 @@ void BaselineCacheIRCompiler::pushArrayArguments(Register argcReg,
   masm.bind(&copyDone);
 
   
-  masm.pushValue(Address(
-      FramePointer, STUB_FRAME_SIZE + (1 + isConstructing) * sizeof(Value)));
+  masm.pushValue(
+      Address(FramePointer,
+              StubFrameSizeFromFP + (1 + isConstructing) * sizeof(Value)));
 
   
   if (!isJitCall) {
-    masm.pushValue(Address(
-        FramePointer, STUB_FRAME_SIZE + (2 + isConstructing) * sizeof(Value)));
+    masm.pushValue(
+        Address(FramePointer,
+                StubFrameSizeFromFP + (2 + isConstructing) * sizeof(Value)));
   }
 }
 
@@ -2508,7 +2510,7 @@ void BaselineCacheIRCompiler::pushFunApplyArgsObj(Register argcReg,
                                                   bool isJitCall) {
   
   Register argsReg = scratch;
-  masm.unboxObject(Address(masm.getStackPointer(), STUB_FRAME_SIZE), argsReg);
+  masm.unboxObject(Address(masm.getStackPointer(), StubFrameSize), argsReg);
 
   
   
@@ -2549,7 +2551,7 @@ void BaselineCacheIRCompiler::pushFunApplyArgsObj(Register argcReg,
   masm.bind(&done);
 
   
-  masm.pushValue(Address(FramePointer, STUB_FRAME_SIZE + sizeof(Value)));
+  masm.pushValue(Address(FramePointer, StubFrameSizeFromFP + sizeof(Value)));
 
   
   if (!isJitCall) {
@@ -2749,15 +2751,15 @@ void BaselineCacheIRCompiler::storeThis(const T& newThis, Register argcReg,
   switch (flags.getArgFormat()) {
     case CallFlags::Standard: {
       BaseValueIndex thisAddress(masm.getStackPointer(),
-                                 argcReg,               
-                                 1 * sizeof(Value) +    
-                                     STUB_FRAME_SIZE);  
+                                 argcReg,             
+                                 1 * sizeof(Value) +  
+                                     StubFrameSize);  
       masm.storeValue(newThis, thisAddress);
     } break;
     case CallFlags::Spread: {
       Address thisAddress(masm.getStackPointer(),
-                          2 * sizeof(Value) +    
-                              STUB_FRAME_SIZE);  
+                          2 * sizeof(Value) +  
+                              StubFrameSize);  
       masm.storeValue(newThis, thisAddress);
     } break;
     default:
@@ -2785,7 +2787,7 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
     return;
   }
 
-  size_t depth = STUB_FRAME_SIZE;
+  size_t depth = StubFrameSize;
 
   
   LiveGeneralRegisterSet liveNonGCRegs;
@@ -2829,7 +2831,7 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
   
   
   
-  depth = STUB_FRAME_SIZE;
+  depth = StubFrameSize;
   loadStackObject(ArgumentKind::Callee, flags, depth, argcReg, calleeReg);
 }
 

@@ -691,36 +691,39 @@ class ICStub;
 
 class BaselineStubFrameLayout : public CommonFrameLayout {
   
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
 
  public:
+  
+  
+  static constexpr size_t FramePointerOffset = sizeof(void*);
+  static constexpr size_t ICStubOffset = 2 * sizeof(void*);
+  static constexpr int ICStubOffsetFromFP = -int(sizeof(void*));
+
   static inline size_t Size() { return sizeof(BaselineStubFrameLayout); }
-
-  static inline int reverseOffsetOfSavedFramePtr() {
-    return -int(2 * sizeof(void*));
-  }
-
-  static inline int reverseOffsetOfStubPtr() { return -int(sizeof(void*)); }
 
   inline ICStub* maybeStubPtr() {
     uint8_t* fp = reinterpret_cast<uint8_t*>(this);
-    return *reinterpret_cast<ICStub**>(fp + reverseOffsetOfStubPtr());
+    return *reinterpret_cast<ICStub**>(fp - ICStubOffset);
   }
 };
+
+
+
+static constexpr size_t StubFrameSize = 4 * sizeof(uintptr_t);
+
+
+
+static constexpr size_t StubFrameSizeFromFP = 3 * sizeof(uintptr_t);
 
 
 class InvalidationBailoutStack {

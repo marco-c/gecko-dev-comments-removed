@@ -901,6 +901,12 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   size_t startOfBaselineStubFrame = framePushed();
 
   
+  if (!writePtr(prevFramePtr(), "PrevFramePtr")) {
+    return false;
+  }
+  prevFramePtr_ = virtualPointerAtStackOffset(0);
+
+  
   uint32_t pcOff = script_->pcToOffset(pc_);
   JitScript* jitScript = script_->jitScript();
   const ICEntry& icEntry = jitScript->icEntryFromPCOffset(pcOff);
@@ -908,12 +914,6 @@ bool BaselineStackBuilder::buildStubFrame(uint32_t frameSize,
   if (!writePtr(fallback, "StubPtr")) {
     return false;
   }
-
-  
-  if (!writePtr(prevFramePtr(), "PrevFramePtr")) {
-    return false;
-  }
-  prevFramePtr_ = virtualPointerAtStackOffset(0);
 
   
   

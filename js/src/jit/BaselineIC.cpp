@@ -561,7 +561,7 @@ void FallbackICCodeCompiler::assumeStubFrame() {
 
   
   
-  framePushedAtEnterStubFrame_ = STUB_FRAME_SIZE;
+  framePushedAtEnterStubFrame_ = StubFrameSize;
 #endif
 }
 
@@ -1665,7 +1665,7 @@ void FallbackICCodeCompiler::pushCallArguments(
 
   
   
-  size_t valueOffset = STUB_FRAME_SIZE;
+  size_t valueOffset = StubFrameSize;
 
   
   
@@ -1715,23 +1715,23 @@ bool FallbackICCodeCompiler::emitCall(bool isSpread, bool isConstructing) {
     
     uint32_t valueOffset = 0;
     if (isConstructing) {
-      masm.pushValue(Address(FramePointer, STUB_FRAME_SIZE));
+      masm.pushValue(Address(FramePointer, StubFrameSizeFromFP));
       valueOffset++;
     }
 
     
-    masm.pushValue(
-        Address(FramePointer, valueOffset * sizeof(Value) + STUB_FRAME_SIZE));
+    masm.pushValue(Address(FramePointer,
+                           valueOffset * sizeof(Value) + StubFrameSizeFromFP));
     valueOffset++;
 
     
-    masm.pushValue(
-        Address(FramePointer, valueOffset * sizeof(Value) + STUB_FRAME_SIZE));
+    masm.pushValue(Address(FramePointer,
+                           valueOffset * sizeof(Value) + StubFrameSizeFromFP));
     valueOffset++;
 
     
-    masm.pushValue(
-        Address(FramePointer, valueOffset * sizeof(Value) + STUB_FRAME_SIZE));
+    masm.pushValue(Address(FramePointer,
+                           valueOffset * sizeof(Value) + StubFrameSizeFromFP));
     valueOffset++;
 
     masm.push(masm.getStackPointer());

@@ -52,9 +52,8 @@ inline void EmitBaselineCreateStubFrameDescriptor(MacroAssembler& masm,
                                                   Register reg,
                                                   uint32_t headerSize) {
   
-  
   masm.mov(FramePointer, reg);
-  masm.as_add(reg, reg, Imm8(sizeof(void*) * 2));
+  masm.as_add(reg, reg, Imm8(BaselineStubFrameLayout::FramePointerOffset));
   masm.ma_sub(BaselineStackReg, reg);
 
   masm.makeFrameDescriptor(reg, FrameType::BaselineStub, headerSize);
@@ -65,10 +64,6 @@ inline void EmitBaselineCallVM(TrampolinePtr target, MacroAssembler& masm) {
   masm.push(r0);
   masm.call(target);
 }
-
-
-static const uint32_t STUB_FRAME_SIZE = 4 * sizeof(void*);
-static const uint32_t STUB_FRAME_SAVED_STUB_OFFSET = sizeof(void*);
 
 inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
   MOZ_ASSERT(scratch != ICTailCallReg);
@@ -94,9 +89,10 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
   masm.Push(ICTailCallReg);
 
   
-  masm.Push(ICStubReg);
   masm.Push(FramePointer);
   masm.mov(BaselineStackReg, FramePointer);
+
+  masm.Push(ICStubReg);
 
   
   masm.checkStackAlignment();

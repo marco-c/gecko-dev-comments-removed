@@ -1127,7 +1127,8 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
     masm.storePtr(scratch2, lastProfilingCallSite);
 
     Address stubFrameSavedFramePtr(
-        scratch3, JitFrameLayout::Size() - (2 * sizeof(void*)));
+        scratch3,
+        JitFrameLayout::Size() - BaselineStubFrameLayout::FramePointerOffset);
     masm.loadPtr(stubFrameSavedFramePtr, scratch2);
     masm.addPtr(Imm32(sizeof(void*)), scratch2);  
     masm.storePtr(scratch2, lastProfilingFrame);
@@ -1223,7 +1224,8 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
     masm.storePtr(scratch2, lastProfilingCallSite);
 
     Address stubFrameSavedFramePtr(
-        scratch3, RectifierFrameLayout::Size() - (2 * sizeof(void*)));
+        scratch3, RectifierFrameLayout::Size() -
+                      BaselineStubFrameLayout::FramePointerOffset);
     masm.loadPtr(stubFrameSavedFramePtr, scratch2);
     masm.addPtr(Imm32(sizeof(void*)), scratch2);
     masm.storePtr(scratch2, lastProfilingFrame);

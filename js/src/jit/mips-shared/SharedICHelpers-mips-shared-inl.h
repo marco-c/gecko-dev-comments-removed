@@ -55,7 +55,7 @@ inline void EmitBaselineCreateStubFrameDescriptor(MacroAssembler& masm,
   
   
   masm.movePtr(FramePointer, reg);
-  masm.addPtr(Imm32(sizeof(intptr_t) * 2), reg);
+  masm.addPtr(Imm32(BaselineStubFrameLayout::FramePointerOffset), reg);
   masm.subPtr(BaselineStackReg, reg);
 
   masm.makeFrameDescriptor(reg, FrameType::BaselineStub, headerSize);
