@@ -309,6 +309,9 @@ class SharedPrefMap {
     uint8_t mIsLocked : 1;
     
     
+    uint8_t mIsSanitized : 1;
+    
+    
     
     uint8_t mIsSkippedByIteration : 1;
   };
@@ -339,6 +342,7 @@ class SharedPrefMap {
     bool HasDefaultValue() const { return mEntry->mHasDefaultValue; }
     bool HasUserValue() const { return mEntry->mHasUserValue; }
     bool IsLocked() const { return mEntry->mIsLocked; }
+    bool IsSanitized() const { return mEntry->mIsSanitized; }
     bool IsSticky() const { return mEntry->mIsSticky; }
     bool IsSkippedByIteration() const { return mEntry->mIsSkippedByIteration; }
 
@@ -569,6 +573,7 @@ class MOZ_RAII SharedPrefMapBuilder {
     uint8_t mHasUserValue : 1;
     uint8_t mIsSticky : 1;
     uint8_t mIsLocked : 1;
+    uint8_t mIsSanitized : 1;
     uint8_t mIsSkippedByIteration : 1;
   };
 
@@ -807,6 +812,7 @@ class MOZ_RAII SharedPrefMapBuilder {
     uint8_t mHasUserValue : 1;
     uint8_t mIsSticky : 1;
     uint8_t mIsLocked : 1;
+    uint8_t mIsSanitized : 1;
     uint8_t mIsSkippedByIteration : 1;
   };
 
