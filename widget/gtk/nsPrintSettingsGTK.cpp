@@ -599,21 +599,6 @@ nsPrintSettingsGTK::GetEffectivePageSize(double* aWidth, double* aHeight) {
 }
 
 NS_IMETHODIMP
-nsPrintSettingsGTK::SetupSilentPrinting() {
-  
-  
-  
-  
-  gtk_enumerate_printers(printer_enumerator, this, nullptr, TRUE);
-
-  
-  if (!GTK_IS_PRINTER(mGTKPrinter))
-    gtk_enumerate_printers(ref_printer, this, nullptr, TRUE);
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsPrintSettingsGTK::GetPageRanges(nsTArray<int32_t>& aPages) {
   GtkPrintPages gtkRange = gtk_print_settings_get_print_pages(mPrintSettings);
   if (gtkRange != GTK_PRINT_PAGES_RANGES) {
