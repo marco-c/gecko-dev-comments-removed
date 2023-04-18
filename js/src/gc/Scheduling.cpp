@@ -453,6 +453,12 @@ void HeapThreshold::setIncrementalLimitFromStartBytes(
                uint64_t(startBytes_) + tunables.gcMaxNurseryBytes());
   incrementalLimitBytes_ = ToClampedSize(bytes);
   MOZ_ASSERT(incrementalLimitBytes_ >= startBytes_);
+
+  
+  
+  if (hasSliceThreshold() && sliceBytes() > incrementalLimitBytes()) {
+    sliceBytes_ = incrementalLimitBytes();
+  }
 }
 
 double HeapThreshold::eagerAllocTrigger(bool highFrequencyGC) const {
@@ -464,21 +470,31 @@ double HeapThreshold::eagerAllocTrigger(bool highFrequencyGC) const {
 
 void HeapThreshold::setSliceThreshold(ZoneAllocator* zone,
                                       const HeapSize& heapSize,
-                                      const GCSchedulingTunables& tunables) {
+                                      const GCSchedulingTunables& tunables,
+                                      bool waitingOnBGTask) {
+  
+  
+  
+  
+  
+  
+  
   
   
 
   size_t bytesRemaining = incrementalBytesRemaining(heapSize);
+  bool isUrgent = bytesRemaining < tunables.urgentThresholdBytes();
 
   size_t delayBeforeNextSlice = tunables.zoneAllocDelayBytes();
-  if (bytesRemaining < tunables.urgentThresholdBytes()) {
+  if (isUrgent) {
     double fractionRemaining =
         double(bytesRemaining) / double(tunables.urgentThresholdBytes());
     delayBeforeNextSlice =
         size_t(double(delayBeforeNextSlice) * fractionRemaining);
+    MOZ_ASSERT(delayBeforeNextSlice <= tunables.zoneAllocDelayBytes());
+  } else if (waitingOnBGTask) {
+    delayBeforeNextSlice = bytesRemaining - tunables.urgentThresholdBytes();
   }
-
-  MOZ_ASSERT(delayBeforeNextSlice <= tunables.zoneAllocDelayBytes());
 
   sliceBytes_ = ToClampedSize(
       std::min(uint64_t(heapSize.bytes()) + uint64_t(delayBeforeNextSlice),
