@@ -12,6 +12,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/net/CookieJarSettings.h"
+#include "mozilla/LoadInfo.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/WindowContext.h"
@@ -618,7 +619,19 @@ void AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(nsIChannel* aChannel) {
 
   
   
+  
   if (!bc) {
+    
+    
+    
+    
+    
+    
+    if (static_cast<net::LoadInfo*>(loadInfo.get())
+            ->HasIsThirdPartyContextToTopWindowSet()) {
+      return;
+    }
+
     
     auto* loadingPrincipal =
         BasePrincipal::Cast(loadInfo->GetLoadingPrincipal());
