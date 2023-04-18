@@ -420,10 +420,22 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   masm.push(lr);
 
   
-  masm.Ldr(w0, MemOperand(masm.GetStackPointer64(),
-                          RectifierFrameLayout::offsetOfNumActualArgs()));
-  masm.Ldr(x1, MemOperand(masm.GetStackPointer64(),
-                          RectifierFrameLayout::offsetOfCalleeToken()));
+  
+  
+  
+  
+  static_assert(sizeof(Value) == sizeof(void*));
+  masm.push(FramePointer);
+  masm.moveStackPtrTo(FramePointer);
+
+  
+  constexpr size_t FrameOffset = sizeof(void*);  
+  constexpr size_t NargsOffset =
+      FrameOffset + RectifierFrameLayout::offsetOfNumActualArgs();
+  constexpr size_t TokenOffset =
+      FrameOffset + RectifierFrameLayout::offsetOfCalleeToken();
+  masm.Ldr(w0, MemOperand(masm.GetStackPointer64(), NargsOffset));
+  masm.Ldr(x1, MemOperand(masm.GetStackPointer64(), TokenOffset));
 
   
   
@@ -436,24 +448,14 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
                 "Constructing must be low-order bit");
   masm.And(x4, x1, Operand(CalleeToken_FunctionConstructing));
   masm.Add(x7, x6, x4);
+  masm.Add(x7, x7, Operand(1));  
 
   
   masm.mov(r0, r8);
 
   
   masm.Add(x3, masm.GetStackPointer64(), Operand(x8, vixl::LSL, 3));
-  masm.Add(x3, x3, Operand(sizeof(RectifierFrameLayout)));
-
-  
-  
-  
-  
-  
-  
-  static_assert(sizeof(Value) == sizeof(void*));
-  masm.push(FramePointer);
-  masm.moveStackPtrTo(FramePointer);
-  masm.Add(x7, x7, Operand(1));
+  masm.Add(x3, x3, Operand(FrameOffset + sizeof(RectifierFrameLayout)));
 
   
   

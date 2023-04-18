@@ -469,14 +469,27 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   masm.pushReturnAddress();
 
   
-  masm.ma_ldr(
-      DTRAddr(sp, DtrOffImm(RectifierFrameLayout::offsetOfNumActualArgs())),
-      r0);
+  
+  
+  
+  
+  static_assert(sizeof(Value) == 2 * sizeof(void*));
+  static_assert(JitStackAlignment == sizeof(Value));
+  masm.push(FramePointer);
+  masm.mov(StackPointer, FramePointer);
+  masm.push(FramePointer);  
+
+  
+  constexpr size_t FrameOffset = 2 * sizeof(void*);  
+  constexpr size_t NargsOffset =
+      FrameOffset + RectifierFrameLayout::offsetOfNumActualArgs();
+  masm.ma_ldr(DTRAddr(sp, DtrOffImm(NargsOffset)), r0);
   masm.mov(r0, r8);
 
   
-  masm.ma_ldr(
-      DTRAddr(sp, DtrOffImm(RectifierFrameLayout::offsetOfCalleeToken())), r1);
+  constexpr size_t TokenOffset =
+      FrameOffset + RectifierFrameLayout::offsetOfCalleeToken();
+  masm.ma_ldr(DTRAddr(sp, DtrOffImm(TokenOffset)), r1);
   {
     ScratchRegisterScope scratch(masm);
     masm.ma_and(Imm32(CalleeTokenMask), r1, r6, scratch);
@@ -489,17 +502,9 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   {
     ScratchRegisterScope scratch(masm);
     masm.ma_alu(sp, lsl(r8, 3), r3, OpAdd);  
-    masm.ma_add(r3, Imm32(sizeof(RectifierFrameLayout)), r3, scratch);
+    masm.ma_add(r3, Imm32(FrameOffset + sizeof(RectifierFrameLayout)), r3,
+                scratch);
   }
-
-  
-  
-  
-  static_assert(sizeof(Value) == 2 * sizeof(void*));
-  static_assert(JitStackAlignment == sizeof(Value));
-  masm.push(FramePointer);
-  masm.mov(StackPointer, FramePointer);
-  masm.push(FramePointer);  
 
   {
     Label notConstructing;

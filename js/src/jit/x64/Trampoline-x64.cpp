@@ -481,10 +481,23 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   
 
   
-  masm.loadPtr(Address(rsp, RectifierFrameLayout::offsetOfNumActualArgs()), r8);
+  
+  
+  
+  
+  masm.push(FramePointer);
+  masm.movq(rsp, FramePointer);
 
   
-  masm.loadPtr(Address(rsp, RectifierFrameLayout::offsetOfCalleeToken()), rax);
+  constexpr size_t FrameOffset = sizeof(void*);  
+  constexpr size_t NargsOffset =
+      FrameOffset + RectifierFrameLayout::offsetOfNumActualArgs();
+  masm.loadPtr(Address(rsp, NargsOffset), r8);
+
+  
+  constexpr size_t TokenOffset =
+      FrameOffset + RectifierFrameLayout::offsetOfCalleeToken();
+  masm.loadPtr(Address(rsp, TokenOffset), rax);
   masm.mov(rax, rcx);
   masm.andq(Imm32(uint32_t(CalleeTokenMask)), rcx);
   masm.loadFunctionArgCount(rcx, rcx);
@@ -521,12 +534,6 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
 
   
   masm.subq(r8, rcx);
-
-  
-  
-  
-  masm.push(FramePointer);
-  masm.movq(rsp, FramePointer);
 
   
   
