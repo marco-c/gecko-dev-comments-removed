@@ -1161,6 +1161,16 @@ class UrlbarView {
       
       
       
+      const groupAriaLabel = this._createElement("span");
+      groupAriaLabel.className = "urlbarView-group-aria-label";
+      item._content.insertBefore(groupAriaLabel, item._content.firstChild);
+      item._elements.set("groupAriaLabel", groupAriaLabel);
+
+      
+      
+      
+      
+      
       
       item.setAttribute("role", "presentation");
       item._content.setAttribute("role", "option");
@@ -1687,14 +1697,19 @@ class UrlbarView {
           }
         }
       }
+
+      const groupAriaLabel = item._elements.get("groupAriaLabel");
+
       if (label) {
         this._setElementL10n(item, {
           attribute: "label",
           id: label.id,
           args: label.args,
         });
+        groupAriaLabel?.setAttribute("aria-label", item.getAttribute("label"));
       } else {
         this._removeElementL10n(item, { attribute: "label" });
+        groupAriaLabel?.removeAttribute("aria-label");
       }
     }
 
