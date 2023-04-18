@@ -215,7 +215,7 @@ nsresult nsChannelClassifier::StartInternal() {
   }
   
   
-  rv = uriClassifier->Classify(principal, nullptr, this, &expectCallback);
+  rv = uriClassifier->Classify(principal, this, &expectCallback);
   if (NS_FAILED(rv)) {
     return rv;
   }

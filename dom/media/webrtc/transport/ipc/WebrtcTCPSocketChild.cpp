@@ -82,12 +82,9 @@ void WebrtcTCPSocketChild::AsyncOpen(
 
   if (IsNeckoChild()) {
     
-    gNeckoChild->SetEventTargetForActor(this, GetMainThreadSerialEventTarget());
     gNeckoChild->SendPWebrtcTCPSocketConstructor(this, tabId);
   } else if (IsSocketProcessChild()) {
     
-    SocketProcessChild::GetSingleton()->SetEventTargetForActor(
-        this, GetMainThreadSerialEventTarget());
     SocketProcessChild::GetSingleton()->SendPWebrtcTCPSocketConstructor(this,
                                                                         tabId);
   }

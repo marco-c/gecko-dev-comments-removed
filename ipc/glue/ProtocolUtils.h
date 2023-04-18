@@ -211,20 +211,7 @@ class IProtocol : public HasResultCodes {
   
   
   
-  
-  
-  
-  void SetEventTargetForActor(IProtocol* aActor,
-                              nsISerialEventTarget* aEventTarget);
-
-  
-  
-  
-  void ReplaceEventTargetForActor(IProtocol* aActor,
-                                  nsISerialEventTarget* aEventTarget);
-
   nsISerialEventTarget* GetActorEventTarget();
-  already_AddRefed<nsISerialEventTarget> GetActorEventTarget(IProtocol* aActor);
 
   
   ProtocolId GetProtocolId() const { return mProtocolId; }
@@ -424,14 +411,6 @@ class IToplevelProtocol : public IProtocol {
   MessageChannel* GetIPCChannel() { return &mChannel; }
   const MessageChannel* GetIPCChannel() const { return &mChannel; }
 
-  
-  void SetEventTargetForActorInternal(IProtocol* aActor,
-                                      nsISerialEventTarget* aEventTarget);
-  void ReplaceEventTargetForActor(IProtocol* aActor,
-                                  nsISerialEventTarget* aEventTarget);
-  nsISerialEventTarget* GetActorEventTarget();
-  already_AddRefed<nsISerialEventTarget> GetActorEventTarget(IProtocol* aActor);
-
   void SetOtherProcessId(base::ProcessId aOtherPid);
 
   virtual void OnChannelClose() = 0;
@@ -521,9 +500,6 @@ class IToplevelProtocol : public IProtocol {
 
   void OnIPCChannelOpened() { ActorConnected(); }
 
-  already_AddRefed<nsISerialEventTarget> GetMessageEventTarget(
-      const Message& aMsg);
-
   base::ProcessId OtherPidMaybeInvalid() const { return mOtherPid; }
 
  private:
@@ -539,12 +515,6 @@ class IToplevelProtocol : public IProtocol {
   int32_t mLastLocalId;
   IDMap<IProtocol*> mActorMap;
   IDMap<Shmem::SharedMemory*> mShmemMap;
-
-  
-  
-  
-  Mutex mEventTargetMutex;
-  IDMap<nsCOMPtr<nsISerialEventTarget>> mEventTargetMap;
 
   MessageChannel mChannel;
 };

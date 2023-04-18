@@ -159,6 +159,11 @@ class MessageChannel : HasResultCodes {
   
   
   
+  nsISerialEventTarget* GetWorkerEventTarget() const { return mWorkerThread; }
+
+  
+  
+  
   
   bool Open(ScopedPort aPort, Side aSide,
             nsISerialEventTarget* aEventTarget = nullptr);

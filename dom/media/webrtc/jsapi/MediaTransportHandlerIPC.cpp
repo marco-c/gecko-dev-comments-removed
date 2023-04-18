@@ -40,7 +40,6 @@ MediaTransportHandlerIPC::MediaTransportHandlerIPC(
               __func__);
         }
         MediaTransportChild* child = new MediaTransportChild(this);
-        actor->SetEventTargetForActor(child, mCallbackThread);
         
         
         mChild = actor->SendPMediaTransportConstructor(child);
