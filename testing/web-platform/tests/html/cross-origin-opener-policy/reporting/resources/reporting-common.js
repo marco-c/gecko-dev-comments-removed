@@ -181,7 +181,6 @@ function replaceTokensInReceivedReport(str) {
 }
 
 
-
 async function reportingTest(testFunction, executorToken, expectedReports) {
   await new Promise(testFunction);
   expectedReports = Array.from(
