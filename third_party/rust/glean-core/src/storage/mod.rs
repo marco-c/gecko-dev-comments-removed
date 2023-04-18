@@ -203,7 +203,7 @@ impl StorageManager {
         let mut snapshotter = |metric_id: &[u8], metric: &Metric| {
             let metric_id = String::from_utf8_lossy(metric_id).into_owned();
             if metric_id.ends_with("#experiment") {
-                let name = metric_id.splitn(2, '#').next().unwrap(); 
+                let (name, _) = metric_id.split_once('#').unwrap(); 
                 snapshot.insert(name.to_string(), metric.as_json());
             }
         };

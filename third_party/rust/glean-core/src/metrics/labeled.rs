@@ -182,8 +182,7 @@ pub fn combine_base_identifier_and_label(base_identifer: &str, label: &str) -> S
 
 
 pub fn strip_label(identifier: &str) -> &str {
-    
-    identifier.splitn(2, '/').next().unwrap()
+    identifier.split_once('/').map_or(identifier, |s| s.0)
 }
 
 
