@@ -61,6 +61,16 @@ DomPanel.prototype = {
 
     this._toolbox.on("select", this.onPanelVisibilityChange);
 
+    
+    this._onTargetAvailable = () => {};
+    this._onTargetSelected = this._onTargetSelected.bind(this);
+    await this._commands.targetCommand.watchTargets(
+      [this._commands.targetCommand.TYPES.FRAME],
+      this._onTargetAvailable,
+      null,
+      this._onTargetSelected
+    );
+
     this.onResourceAvailable = this.onResourceAvailable.bind(this);
     await this._commands.resourceCommand.watchResources(
       [this._commands.resourceCommand.TYPES.DOCUMENT_EVENT],
@@ -92,6 +102,12 @@ DomPanel.prototype = {
     }
     this._destroyed = true;
 
+    this._commands.targetCommand.unwatchTargets(
+      [this._commands.targetCommand.TYPES.FRAME],
+      this._onTargetAvailable,
+      null,
+      this._onTargetSelected
+    );
     this._commands.resourceCommand.unwatchResources(
       [this._commands.resourceCommand.TYPES.DOCUMENT_EVENT],
       { onAvailable: this.onResourceAvailable }
@@ -127,9 +143,16 @@ DomPanel.prototype = {
 
 
 
-  onTabNavigated: function() {
+
+  forceRefresh: function() {
     this.shouldRefresh = true;
+    
+    
     this.refresh();
+  },
+
+  _onTargetSelected: function({ targetFront }) {
+    this.forceRefresh();
   },
 
   onResourceAvailable: function(resources) {
@@ -141,7 +164,7 @@ DomPanel.prototype = {
         resource.name === "dom-complete" &&
         resource.targetFront.isTopLevel
       ) {
-        this.onTabNavigated();
+        this.forceRefresh();
       }
     }
   },
