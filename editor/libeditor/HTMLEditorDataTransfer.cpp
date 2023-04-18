@@ -2896,8 +2896,8 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
   
   Result<RefPtr<Element>, nsresult> spanElementOrError =
       DeleteSelectionAndCreateElement(
-          *nsGkAtoms::span,
-          [](HTMLEditor&, Element& aSpanElement, const EditorDOMPoint&) {
+          *nsGkAtoms::span, [](HTMLEditor&, Element& aSpanElement,
+                               const EditorDOMPoint& aPointToInsert) {
             
             DebugOnly<nsresult> rvIgnored = aSpanElement.SetAttr(
                 kNameSpaceID_None, nsGkAtoms::mozquote, u"true"_ns,
@@ -2910,10 +2910,7 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
                     aSpanElement.IsInComposedDoc() ? "true" : "false")
                     .get());
             
-            
-            
-            if (aSpanElement.GetParent() &&
-                aSpanElement.GetParent()->IsHTMLElement(nsGkAtoms::body)) {
+            if (aPointToInsert.IsContainerHTMLElement(nsGkAtoms::body)) {
               DebugOnly<nsresult> rvIgnored = aSpanElement.SetAttr(
                   kNameSpaceID_None, nsGkAtoms::style,
                   nsLiteralString(u"white-space: pre-wrap; display: block; "
