@@ -223,7 +223,7 @@ class nsTextControlFrame : public nsContainerFrame,
 
   Element* GetPlaceholderNode() const { return mPlaceholderDiv; }
 
-  Element* GetShowPasswordButton() const { return mShowPasswordButton; }
+  Element* GetRevealButton() const { return mRevealButton; }
 
   
   nsresult MaybeBeginSecureKeyboardInput();
@@ -354,7 +354,8 @@ class nsTextControlFrame : public nsContainerFrame,
   RefPtr<Element> mPlaceholderDiv;
   RefPtr<Element> mPreviewDiv;
   
-  RefPtr<Element> mShowPasswordButton;
+  
+  RefPtr<Element> mRevealButton;
   RefPtr<nsAnonDivObserver> mMutationObserver;
   
   
