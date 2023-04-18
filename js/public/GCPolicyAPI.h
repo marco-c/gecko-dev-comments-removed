@@ -56,14 +56,14 @@ namespace JS {
 
 
 
+
+
 template <typename T>
 struct StructGCPolicy {
   static_assert(!std::is_pointer_v<T>,
                 "Pointer type not allowed for StructGCPolicy");
 
   static void trace(JSTracer* trc, T* tp, const char* name) { tp->trace(trc); }
-
-  static void sweep(T* tp) { return tp->sweep(); }
 
   static bool traceWeak(JSTracer* trc, T* tp) { return tp->traceWeak(trc); }
 
@@ -189,6 +189,29 @@ struct GCPolicy<mozilla::Maybe<T>> {
 
 template <>
 struct GCPolicy<JS::Realm*>;  
+
+template <>
+struct GCPolicy<mozilla::Ok> : public IgnoreGCPolicy<mozilla::Ok> {};
+
+template <typename V, typename E>
+struct GCPolicy<mozilla::Result<V, E>> {
+  static void trace(JSTracer* trc, mozilla::Result<V, E>* tp,
+                    const char* name) {
+    if (tp->isOk()) {
+      V tmp = tp->unwrap();
+      JS::GCPolicy<V>::trace(trc, &tmp, "Result value");
+      tp->updateAfterTracing(std::move(tmp));
+    }
+
+    if (tp->isErr()) {
+      E tmp = tp->unwrapErr();
+      JS::GCPolicy<E>::trace(trc, &tmp, "Result error");
+      tp->updateErrorAfterTracing(std::move(tmp));
+    }
+  }
+
+  static bool isValid(const mozilla::Result<V, E>& t) { return true; }
+};
 
 }  
 
