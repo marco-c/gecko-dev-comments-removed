@@ -557,24 +557,23 @@ class LazyStubTier {
   LazyFuncExportVector exports_;
   size_t lastStubSegmentIndex_;
 
-  bool createManyEntryStubs(const Uint32Vector& funcExportIndices,
-                            const CodeTier& codeTier,
-                            bool flushAllThreadsIcaches,
-                            size_t* stubSegmentIndex);
+  bool createMany(const Uint32Vector& funcExportIndices,
+                  const CodeTier& codeTier, bool flushAllThreadsIcaches,
+                  size_t* stubSegmentIndex);
 
  public:
   LazyStubTier() : lastStubSegmentIndex_(0) {}
 
-  
-  
-  bool createOneEntryStub(uint32_t funcExportIndex, const CodeTier& codeTier);
-
-  bool entryStubsEmpty() const { return stubSegments_.empty(); }
-  bool hasEntryStub(uint32_t funcIndex) const;
+  bool empty() const { return stubSegments_.empty(); }
+  bool hasStub(uint32_t funcIndex) const;
 
   
   
   void* lookupInterpEntry(uint32_t funcIndex) const;
+
+  
+  
+  bool createOne(uint32_t funcExportIndex, const CodeTier& codeTier);
 
   
   
