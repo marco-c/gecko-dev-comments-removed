@@ -268,6 +268,16 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
     html_favicon_url = "https://www.rust-lang.org/static/images/favicon.ico"
@@ -595,6 +605,12 @@ impl Builder {
     
     pub fn format_module_path(&mut self, write: bool) -> &mut Self {
         self.format.format_module_path = write;
+        self
+    }
+
+    
+    pub fn format_target(&mut self, write: bool) -> &mut Self {
+        self.format.format_target = write;
         self
     }
 
