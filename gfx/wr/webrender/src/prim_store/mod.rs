@@ -1111,8 +1111,8 @@ impl PrimitiveInstance {
 
         if self.is_chased() {
             #[cfg(debug_assertions)] 
-            println!("\tpreparing {:?}", self.id);
-            println!("\t{:?}", self.kind);
+            info!("\tpreparing {:?}", self.id);
+            info!("\t{:?}", self.kind);
         }
     }
 
