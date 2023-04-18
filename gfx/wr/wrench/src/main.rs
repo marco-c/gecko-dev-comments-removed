@@ -32,7 +32,6 @@ use gleam::gl::Gl;
 use crate::perf::PerfHarness;
 use crate::rawtest::RawtestHarness;
 use crate::reftest::{ReftestHarness, ReftestOptions};
-use std::fs;
 #[cfg(feature = "headless")]
 use std::ffi::CString;
 #[cfg(feature = "headless")]
@@ -328,7 +327,8 @@ fn make_window(
     let wrapper = if let Some(events_loop) = events_loop {
         let context_builder = glutin::ContextBuilder::new()
             .with_gl(gl_request)
-            .with_vsync(vsync);
+            
+            .with_vsync(vsync || cfg!(target_os = "android"));
 
         let window_builder = winit::window::WindowBuilder::new()
             .with_title("WRench")
@@ -489,11 +489,18 @@ fn reftest<'a>(
     rx: Receiver<NotifierEvent>
 ) -> usize {
     let dim = window.get_inner_size();
-    let base_manifest = if cfg!(target_os = "android") {
-        Path::new("/sdcard/wrench/reftests/reftest.list")
-    } else {
-        Path::new("reftests/reftest.list")
+    #[cfg(target_os = "android")]
+    let base_manifest = {
+        let mut list_path = PathBuf::new();
+        list_path.push(ndk_glue::native_activity().external_data_path().to_str().unwrap());
+        list_path.push("wrench");
+        list_path.push("reftests");
+        list_path.push("reftest.list");
+        list_path
     };
+    #[cfg(not(target_os = "android"))]
+    let base_manifest = Path::new("reftests/reftest.list").to_owned();
+
     let specific_reftest = subargs.value_of("REFTEST").map(Path::new);
     let mut reftest_options = ReftestOptions::default();
     if let Some(allow_max_diff) = subargs.value_of("fuzz_tolerance") {
@@ -501,12 +508,13 @@ fn reftest<'a>(
         reftest_options.allow_num_differences = dim.width as usize * dim.height as usize;
     }
     let num_failures = ReftestHarness::new(&mut wrench, window, &rx)
-        .run(base_manifest, specific_reftest, &reftest_options);
+        .run(&base_manifest, specific_reftest, &reftest_options);
     wrench.shut_down(rx);
     num_failures
 }
 
-fn main() {
+#[cfg_attr(target_os = "android", ndk_glue::main)]
+pub fn main() {
     #[cfg(feature = "env_logger")]
     env_logger::init();
 
@@ -527,14 +535,20 @@ fn main() {
 
     
     
-    let args = if cfg!(target_os = "android") {
+    #[cfg(target_os = "android")]
+    let args = {
         
         
         std::env::set_var("RUST_BACKTRACE", "full");
 
         let mut args = vec!["wrench".to_string()];
 
-        if let Ok(wrench_args) = fs::read_to_string("/sdcard/wrench/args") {
+        let mut args_path = PathBuf::new();
+        args_path.push(ndk_glue::native_activity().external_data_path().to_str().unwrap());
+        args_path.push("wrench");
+        args_path.push("args");
+
+        if let Ok(wrench_args) = std::fs::read_to_string(&args_path) {
             for line in wrench_args.lines() {
                 if let Some(envvar) = line.strip_prefix("env: ") {
                     if let Some((lhs, rhs)) = envvar.split_once('=') {
@@ -552,9 +566,10 @@ fn main() {
         }
 
         clap.get_matches_from(&args)
-    } else {
-        clap.get_matches()
     };
+
+    #[cfg(not(target_os = "android"))]
+    let args = clap.get_matches();
 
     
     let res_path = args.value_of("shaders").map(PathBuf::from);
@@ -621,6 +636,21 @@ fn main() {
     };
 
     let software = args.is_present("software");
+
+    
+    
+    
+    
+    #[cfg(target_os = "android")]
+    {
+        events_loop.as_mut().unwrap().run_return(|event, _elwt, control_flow| {
+            if let winit::event::Event::Resumed = event {
+                if ndk_glue::native_window().is_some() {
+                    *control_flow = winit::event_loop::ControlFlow::Exit;
+                }
+            }
+        });
+    }
 
     let mut window = make_window(
         size,
