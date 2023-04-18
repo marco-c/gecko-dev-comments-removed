@@ -560,6 +560,7 @@ HTMLTooltip.prototype = {
     
     
     let measuredHeight;
+    const currentScrollTop = this.panel.scrollTop;
     if (this.preferredWidth === "auto") {
       
       this.container.style.width = "auto";
@@ -663,6 +664,7 @@ HTMLTooltip.prototype = {
     );
 
     this.container.style.height = height + "px";
+    this.panel.scrollTop = currentScrollTop;
 
     return { left, top };
   },
