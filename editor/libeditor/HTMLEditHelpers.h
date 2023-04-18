@@ -360,63 +360,39 @@ class MOZ_STACK_CLASS SplitNodeResult final {
     return EditorDOMPointType::After(mPreviousNode);
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-  SplitNodeResult(nsIContent* aPreviousNodeOfSplitPoint,
-                  nsIContent* aNextNodeOfSplitPoint,
-                  SplitNodeDirection aDirection)
-      : mPreviousNode(aPreviousNodeOfSplitPoint),
-        mNextNode(aNextNodeOfSplitPoint),
-        mRv(NS_OK),
-        mDirection(aDirection) {
-    MOZ_DIAGNOSTIC_ASSERT(mPreviousNode || mNextNode);
-  }
-  SplitNodeResult(nsCOMPtr<nsIContent>&& aPreviousNodeOfSplitPoint,
-                  nsIContent* aNextNodeOfSplitPoint,
-                  SplitNodeDirection aDirection)
-      : mPreviousNode(std::move(aPreviousNodeOfSplitPoint)),
-        mNextNode(aNextNodeOfSplitPoint),
-        mRv(NS_OK),
-        mDirection(aDirection) {
-    MOZ_DIAGNOSTIC_ASSERT(mPreviousNode || mNextNode);
-  }
-  SplitNodeResult(nsIContent* aPreviousNodeOfSplitPoint,
-                  nsCOMPtr<nsIContent>&& aNextNodeOfSplitPoint,
-                  SplitNodeDirection aDirection)
-      : mPreviousNode(aPreviousNodeOfSplitPoint),
-        mNextNode(std::move(aNextNodeOfSplitPoint)),
-        mRv(NS_OK),
-        mDirection(aDirection) {
-    MOZ_DIAGNOSTIC_ASSERT(mPreviousNode || mNextNode);
-  }
-  SplitNodeResult(nsCOMPtr<nsIContent>&& aPreviousNodeOfSplitPoint,
-                  nsCOMPtr<nsIContent>&& aNextNodeOfSplitPoint,
-                  SplitNodeDirection aDirection)
-      : mPreviousNode(std::move(aPreviousNodeOfSplitPoint)),
-        mNextNode(std::move(aNextNodeOfSplitPoint)),
-        mRv(NS_OK),
-        mDirection(aDirection) {
-    MOZ_DIAGNOSTIC_ASSERT(mPreviousNode || mNextNode);
-  }
+  SplitNodeResult() = delete;
 
   
 
 
 
-  explicit SplitNodeResult(const EditorRawDOMPoint& aGivenSplitPoint)
-      : mGivenSplitPoint(aGivenSplitPoint),
+
+
+
+
+
+  SplitNodeResult(nsIContent& aNewNode, nsIContent& aSplitNode,
+                  SplitNodeDirection aDirection)
+      : mPreviousNode(aDirection == SplitNodeDirection::LeftNodeIsNewOne
+                          ? &aNewNode
+                          : &aSplitNode),
+        mNextNode(aDirection == SplitNodeDirection::LeftNodeIsNewOne
+                      ? &aSplitNode
+                      : &aNewNode),
         mRv(NS_OK),
-        mDirection(SplitNodeDirection::LeftNodeIsNewOne) {
-    MOZ_DIAGNOSTIC_ASSERT(mGivenSplitPoint.IsSet());
+        mDirection(aDirection) {}
+  SplitNodeResult(nsCOMPtr<nsIContent>&& aNewNode,
+                  nsCOMPtr<nsIContent>&& aSplitNode,
+                  SplitNodeDirection aDirection)
+      : mPreviousNode(aDirection == SplitNodeDirection::LeftNodeIsNewOne
+                          ? std::move(aNewNode)
+                          : std::move(aSplitNode)),
+        mNextNode(aDirection == SplitNodeDirection::LeftNodeIsNewOne
+                      ? std::move(aSplitNode)
+                      : std::move(aNewNode)),
+        mRv(NS_OK),
+        mDirection(aDirection) {
+    MOZ_DIAGNOSTIC_ASSERT(mPreviousNode || mNextNode);
   }
 
   
@@ -428,7 +404,41 @@ class MOZ_STACK_CLASS SplitNodeResult final {
     MOZ_DIAGNOSTIC_ASSERT(NS_FAILED(mRv));
   }
 
+  SplitNodeResult ToHandledResult() const {
+    SplitNodeResult result(NS_OK, mDirection);
+    result.mPreviousNode = GetPreviousContent();
+    result.mNextNode = GetNextContent();
+    MOZ_DIAGNOSTIC_ASSERT(result.Handled());
+    return result;
+  }
+
+  static inline SplitNodeResult HandledButDidNotSplitDueToEndOfContainer(
+      nsIContent& aNotSplitNode, SplitNodeDirection aDirection) {
+    SplitNodeResult result(NS_OK, aDirection);
+    result.mPreviousNode = &aNotSplitNode;
+    return result;
+  }
+
+  static inline SplitNodeResult HandledButDidNotSplitDueToStartOfContainer(
+      nsIContent& aNotSplitNode, SplitNodeDirection aDirection) {
+    SplitNodeResult result(NS_OK, aDirection);
+    result.mNextNode = &aNotSplitNode;
+    return result;
+  }
+
+  template <typename PT, typename CT>
+  static inline SplitNodeResult NotHandled(
+      const EditorDOMPointBase<PT, CT>& aGivenSplitPoint,
+      SplitNodeDirection aDirection) {
+    SplitNodeResult result(NS_OK, aDirection);
+    result.mGivenSplitPoint = aGivenSplitPoint;
+    return result;
+  }
+
  private:
+  SplitNodeResult(nsresult aRv, SplitNodeDirection aDirection)
+      : mRv(aRv), mDirection(aDirection) {}
+
   
   
   
@@ -447,8 +457,6 @@ class MOZ_STACK_CLASS SplitNodeResult final {
 
   nsresult mRv;
   SplitNodeDirection mDirection;
-
-  SplitNodeResult() = delete;
 };
 
 

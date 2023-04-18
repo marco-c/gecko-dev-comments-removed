@@ -8060,7 +8060,8 @@ SplitNodeResult HTMLEditor::MaybeSplitAncestorsForInsertWithTransaction(
   
   
   if (pointToInsert.GetContainer() == aStartOfDeepestRightNode.GetContainer()) {
-    return SplitNodeResult(aStartOfDeepestRightNode);
+    return SplitNodeResult::NotHandled(aStartOfDeepestRightNode,
+                                       SplitNodeDirection::LeftNodeIsNewOne);
   }
 
   SplitNodeResult splitNodeResult = SplitNodeDeepWithTransaction(

@@ -4415,30 +4415,31 @@ SplitNodeResult HTMLEditor::SplitNodeDeepWithTransaction(
 
   nsCOMPtr<nsIContent> newLeftNodeOfMostAncestor;
   EditorDOMPoint atStartOfRightNode(aStartOfDeepestRightNode);
-  SplitNodeResult lastSplitNodeResult(atStartOfRightNode);
+  SplitNodeResult lastSplitNodeResult = SplitNodeResult::NotHandled(
+      atStartOfRightNode, SplitNodeDirection::LeftNodeIsNewOne);
 
   while (true) {
     
     
     
     
-    nsIContent* currentRightNode = atStartOfRightNode.GetContainerAsContent();
-    if (NS_WARN_IF(!currentRightNode)) {
+    nsIContent* splittingContent = atStartOfRightNode.GetContainerAsContent();
+    if (NS_WARN_IF(!splittingContent)) {
       return SplitNodeResult(NS_ERROR_FAILURE);
     }
     
     
-    if (NS_WARN_IF(currentRightNode != &aMostAncestorToSplit &&
+    if (NS_WARN_IF(splittingContent != &aMostAncestorToSplit &&
                    !atStartOfRightNode.GetContainerParentAsContent())) {
       return SplitNodeResult(NS_ERROR_FAILURE);
     }
     
     
-    if (!HTMLEditUtils::IsSplittableNode(*currentRightNode)) {
-      if (currentRightNode == &aMostAncestorToSplit) {
+    if (!HTMLEditUtils::IsSplittableNode(*splittingContent)) {
+      if (splittingContent == &aMostAncestorToSplit) {
         return lastSplitNodeResult;
       }
-      atStartOfRightNode.Set(currentRightNode);
+      atStartOfRightNode.Set(splittingContent);
       continue;
     }
 
@@ -4454,42 +4455,43 @@ SplitNodeResult HTMLEditor::SplitNodeDeepWithTransaction(
         return lastSplitNodeResult;
       }
 
-      MOZ_ASSERT(lastSplitNodeResult.GetOriginalContent() == currentRightNode);
-      if (currentRightNode == &aMostAncestorToSplit) {
+      MOZ_ASSERT(lastSplitNodeResult.GetOriginalContent() == splittingContent);
+      if (splittingContent == &aMostAncestorToSplit) {
         
         return lastSplitNodeResult;
       }
 
       
-      atStartOfRightNode.Set(lastSplitNodeResult.GetNextContent());
+      atStartOfRightNode = lastSplitNodeResult.AtNextContent<EditorDOMPoint>();
     }
     
     
     else if (!atStartOfRightNode.IsStartOfContainer()) {
-      lastSplitNodeResult = SplitNodeResult(
-          currentRightNode, nullptr, SplitNodeDirection::LeftNodeIsNewOne);
-      if (currentRightNode == &aMostAncestorToSplit) {
+      lastSplitNodeResult =
+          SplitNodeResult::HandledButDidNotSplitDueToEndOfContainer(
+              *splittingContent, SplitNodeDirection::LeftNodeIsNewOne);
+      if (splittingContent == &aMostAncestorToSplit) {
         return lastSplitNodeResult;
       }
 
       
-      atStartOfRightNode.Set(currentRightNode);
-      DebugOnly<bool> advanced = atStartOfRightNode.AdvanceOffset();
-      NS_WARNING_ASSERTION(advanced,
-                           "Failed to advance offset after current node");
+      atStartOfRightNode.SetAfter(splittingContent);
     }
     
     
     else {
-      lastSplitNodeResult = SplitNodeResult(
-          nullptr, currentRightNode, SplitNodeDirection::LeftNodeIsNewOne);
-      if (currentRightNode == &aMostAncestorToSplit) {
-        return lastSplitNodeResult;
+      if (splittingContent == &aMostAncestorToSplit) {
+        return SplitNodeResult::HandledButDidNotSplitDueToStartOfContainer(
+            *splittingContent, SplitNodeDirection::LeftNodeIsNewOne);
       }
 
       
-      lastSplitNodeResult = SplitNodeResult(atStartOfRightNode);
-      atStartOfRightNode.Set(currentRightNode);
+      
+      
+      
+      lastSplitNodeResult = SplitNodeResult::NotHandled(
+          atStartOfRightNode, SplitNodeDirection::LeftNodeIsNewOne);
+      atStartOfRightNode.Set(splittingContent);
     }
   }
 
@@ -4714,7 +4716,7 @@ SplitNodeResult HTMLEditor::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "RangeUpdater::SelAdjSplitNode() failed, but ignored");
 
-  return SplitNodeResult(&aNewNode, aStartOfRightNode.ContainerAsContent(),
+  return SplitNodeResult(aNewNode, *aStartOfRightNode.ContainerAsContent(),
                          SplitNodeDirection::LeftNodeIsNewOne);
 }
 
