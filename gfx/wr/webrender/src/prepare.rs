@@ -902,54 +902,49 @@ fn decompose_repeated_gradient(
     spatial_tree: &SpatialTree,
     mut callback: Option<&mut dyn FnMut(&LayoutRect, GpuDataRequest)>,
 ) -> GradientTileRange {
-    let mut visible_tiles = Vec::new();
+    let tile_range = gradient_tiles.open_range();
 
     
     
     
-    let tight_clip_rect = prim_vis
+    if let Some(tight_clip_rect) = prim_vis
         .combined_local_clip_rect
-        .intersection(prim_local_rect).unwrap();
+        .intersection(prim_local_rect) {
 
-    let visible_rect = compute_conservative_visible_rect(
-        &prim_vis.clip_chain,
-        frame_state.current_dirty_region().combined,
-        prim_spatial_node_index,
-        spatial_tree,
-    );
-    let stride = *stretch_size + *tile_spacing;
-
-    let repetitions = image_tiling::repetitions(prim_local_rect, &visible_rect, stride);
-    for Repetition { origin, .. } in repetitions {
-        let mut handle = GpuCacheHandle::new();
-        let rect = LayoutRect::from_origin_and_size(
-            origin,
-            *stretch_size,
+        let visible_rect = compute_conservative_visible_rect(
+            &prim_vis.clip_chain,
+            frame_state.current_dirty_region().combined,
+            prim_spatial_node_index,
+            spatial_tree,
         );
+        let stride = *stretch_size + *tile_spacing;
 
-        if let Some(callback) = &mut callback {
-            if let Some(request) = frame_state.gpu_cache.request(&mut handle) {
-                callback(&rect, request);
+        let repetitions = image_tiling::repetitions(prim_local_rect, &visible_rect, stride);
+        gradient_tiles.reserve(repetitions.num_repetitions());
+        for Repetition { origin, .. } in repetitions {
+            let mut handle = GpuCacheHandle::new();
+            let rect = LayoutRect::from_origin_and_size(
+                origin,
+                *stretch_size,
+            );
+
+            if let Some(callback) = &mut callback {
+                if let Some(request) = frame_state.gpu_cache.request(&mut handle) {
+                    callback(&rect, request);
+                }
             }
+
+            gradient_tiles.push(VisibleGradientTile {
+                local_rect: rect,
+                local_clip_rect: tight_clip_rect,
+                handle
+            });
         }
-
-        visible_tiles.push(VisibleGradientTile {
-            local_rect: rect,
-            local_clip_rect: tight_clip_rect,
-            handle
-        });
     }
 
     
     
-    
-    
-    
-    if visible_tiles.is_empty() {
-        GradientTileRange::empty()
-    } else {
-        gradient_tiles.extend(visible_tiles)
-    }
+    gradient_tiles.close_range(tile_range)
 }
 
 
