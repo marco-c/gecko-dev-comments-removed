@@ -305,3 +305,46 @@ async function findMessagesVirtualized({
     gFindMessagesVirtualizedStack = null;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+function findMessageByType(hud, text, typeSelector) {
+  const elements = findMessagesByType(hud, text, typeSelector);
+  return elements.at(-1);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function findMessagesByType(hud, text, typeSelector) {
+  if (!typeSelector) {
+    throw new Error("typeSelector parameter is required");
+  }
+  if (!typeSelector.startsWith(".")) {
+    throw new Error("typeSelector should start with a dot e.g. `.result`");
+  }
+
+  const selector = ".message" + typeSelector;
+  const messages = hud.ui.outputNode.querySelectorAll(selector);
+  const elements = Array.from(messages).filter(el =>
+    el.textContent.includes(text)
+  );
+  return elements;
+}
