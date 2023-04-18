@@ -42,11 +42,6 @@ class nsPrintData {
 
   nsCOMArray<nsIWebProgressListener> mPrintProgressListeners;
 
-  
-  
-  
-  nsPrintObject* mSelectionRoot = nullptr;
-
   bool mOnStartSent;
   bool mIsAborted;  
 

@@ -258,6 +258,11 @@ class nsPrintJob final : public nsIWebProgressListener,
   
   
   
+  nsPrintObject* mSelectionRoot = nullptr;
+
+  
+  
+  
   nsTArray<nsPrintObject*> mPrintDocList;
 
   

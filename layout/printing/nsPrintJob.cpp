@@ -163,13 +163,13 @@ void nsPrintJob::BuildNestedPrintObjects(
   
   if (aParentPO->mFrameType == eIFrame &&
       aParentPO->mDocument->GetProperty(nsGkAtoms::printisfocuseddoc)) {
-    mPrt->mSelectionRoot = aParentPO.get();
-  } else if (!mPrt->mSelectionRoot && aParentPO->HasSelection()) {
+    mSelectionRoot = aParentPO.get();
+  } else if (!mSelectionRoot && aParentPO->HasSelection()) {
     
     
     
     
-    mPrt->mSelectionRoot = mPrt->mPrintObject.get();
+    mSelectionRoot = mPrt->mPrintObject.get();
   }
 
   for (auto& bc : aParentPO->mDocShell->GetBrowsingContext()->Children()) {
@@ -1940,16 +1940,16 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
 
   
   
-  NS_ENSURE_STATE(!mDisallowSelectionPrint && printData->mSelectionRoot);
+  NS_ENSURE_STATE(!mDisallowSelectionPrint && mSelectionRoot);
 
   
   
-  if (printData->mSelectionRoot->mFrameType == eIFrame &&
-      !printData->mSelectionRoot->HasSelection()) {
-    printData->mSelectionRoot->EnablePrinting(true);
+  if (mSelectionRoot->mFrameType == eIFrame &&
+      !mSelectionRoot->HasSelection()) {
+    mSelectionRoot->EnablePrinting(true);
   } else {
     
-    printData->mSelectionRoot->EnablePrintingSelectionOnly();
+    mSelectionRoot->EnablePrintingSelectionOnly();
   }
   return NS_OK;
 }
@@ -1999,8 +1999,7 @@ nsresult nsPrintJob::FinishPrintPreview() {
   }
 
   if (mPrintPreviewCallback) {
-    const bool hasSelection =
-        !mDisallowSelectionPrint && printData->mSelectionRoot;
+    const bool hasSelection = !mDisallowSelectionPrint && mSelectionRoot;
     
     
     const Maybe<bool> maybeLandscape =
