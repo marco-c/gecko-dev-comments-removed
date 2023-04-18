@@ -499,7 +499,14 @@ static Maybe<OopIframeMetrics> GetOopIframeMetrics(
   if (!browserChild) {
     return Some(OopIframeMetrics{});
   }
-  MOZ_DIAGNOSTIC_ASSERT(!browserChild->IsTopLevel());
+
+  if (MOZ_UNLIKELY(browserChild->IsTopLevel())) {
+    
+    
+    
+    MOZ_ASSERT_UNREACHABLE("Top level BrowserChild w/ non-top level Document?");
+    return Nothing();
+  }
 
   nsRect inProcessRootRect;
   if (nsIScrollableFrame* scrollFrame =
