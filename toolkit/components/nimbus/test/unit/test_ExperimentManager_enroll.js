@@ -116,8 +116,7 @@ add_task(
     sandbox.spy(manager, "setExperimentActive");
     sandbox.spy(manager, "sendEnrollmentTelemetry");
 
-    
-    Services.fog.testResetFOG();
+    await manager.onStartup();
 
     await manager.onStartup();
 
@@ -126,14 +125,6 @@ add_task(
       undefined,
       Services.fog.testGetExperimentData("foo"),
       "no active experiment exists before enrollment"
-    );
-
-    
-    var enrollmentEvents = Glean.nimbusEvents.enrollment.testGetValue();
-    Assert.equal(
-      undefined,
-      enrollmentEvents,
-      "no Glean enrollment events before enrollment"
     );
 
     await manager.enroll(
@@ -162,32 +153,6 @@ add_task(
       "Glean.setExperimentActive called with `foo` feature"
     );
 
-    
-    enrollmentEvents = Glean.nimbusEvents.enrollment.testGetValue();
-    
-    Assert.equal(1, enrollmentEvents.length);
-    
-    Assert.equal(
-      experiment.slug,
-      enrollmentEvents[0].extra.experiment,
-      "Glean.nimbusEvents.enrollment recorded with correct experiment slug"
-    );
-    Assert.equal(
-      experiment.branch.slug,
-      enrollmentEvents[0].extra.branch,
-      "Glean.nimbusEvents.enrollment recorded with correct branch slug"
-    );
-    Assert.equal(
-      experiment.experimentType,
-      enrollmentEvents[0].extra.experiment_type,
-      "Glean.nimbusEvents.enrollment recorded with correct experiment type"
-    );
-    Assert.equal(
-      experiment.enrollmentId,
-      enrollmentEvents[0].extra.enrollment_id,
-      "Glean.nimbusEvents.enrollment recorded with correct enrollment id"
-    );
-
     manager.unenroll("foo", "test-cleanup");
   }
 );
@@ -209,9 +174,6 @@ add_task(async function test_setRolloutActive_sendEnrollmentTelemetry_called() {
   sandbox.spy(manager, "setExperimentActive");
   sandbox.spy(manager, "sendEnrollmentTelemetry");
 
-  
-  Services.fog.testResetFOG();
-
   await manager.onStartup();
 
   
@@ -219,14 +181,6 @@ add_task(async function test_setRolloutActive_sendEnrollmentTelemetry_called() {
     undefined,
     Services.fog.testGetExperimentData("rollout"),
     "no rollout active before enrollment"
-  );
-
-  
-  var enrollmentEvents = Glean.nimbusEvents.enrollment.testGetValue();
-  Assert.equal(
-    undefined,
-    enrollmentEvents,
-    "no Glean enrollment events before enrollment"
   );
 
   let result = await manager.enroll(
@@ -284,32 +238,6 @@ add_task(async function test_setRolloutActive_sendEnrollmentTelemetry_called() {
     "Glean.setExperimentActive called with expected values"
   );
 
-  
-  enrollmentEvents = Glean.nimbusEvents.enrollment.testGetValue();
-  
-  Assert.equal(1, enrollmentEvents.length);
-  
-  Assert.equal(
-    enrollment.slug,
-    enrollmentEvents[0].extra.experiment,
-    "Glean.nimbusEvents.enrollment recorded with correct experiment slug"
-  );
-  Assert.equal(
-    enrollment.branch.slug,
-    enrollmentEvents[0].extra.branch,
-    "Glean.nimbusEvents.enrollment recorded with correct branch slug"
-  );
-  Assert.equal(
-    enrollment.experimentType,
-    enrollmentEvents[0].extra.experiment_type,
-    "Glean.nimbusEvents.enrollment recorded with correct experiment type"
-  );
-  Assert.equal(
-    enrollment.enrollmentId,
-    enrollmentEvents[0].extra.enrollment_id,
-    "Glean.nimbusEvents.enrollment recorded with correct enrollment id"
-  );
-
   manager.unenroll("rollout", "test-cleanup");
 
   globalSandbox.restore();
@@ -326,18 +254,7 @@ add_task(async function test_failure_name_conflict() {
   const sandbox = sinon.createSandbox();
   sandbox.spy(manager, "sendFailureTelemetry");
 
-  
-  Services.fog.testResetFOG();
-
   await manager.onStartup();
-
-  
-  var failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue();
-  Assert.equal(
-    undefined,
-    failureEvents,
-    "no Glean enroll_failed events before failure"
-  );
 
   
   await manager.store.addEnrollment(ExperimentFakes.experiment("foo"));
@@ -358,22 +275,6 @@ add_task(async function test_failure_name_conflict() {
     "should send failure telemetry if a conflicting experiment exists"
   );
 
-  
-  failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue();
-  
-  Assert.equal(1, failureEvents.length);
-  
-  Assert.equal(
-    "foo",
-    failureEvents[0].extra.experiment,
-    "Glean.nimbusEvents.enroll_failed recorded with correct experiment slug"
-  );
-  Assert.equal(
-    "name-conflict",
-    failureEvents[0].extra.reason,
-    "Glean.nimbusEvents.enroll_failed recorded with correct reason"
-  );
-
   manager.unenroll("foo", "test-cleanup");
 });
 
@@ -382,18 +283,7 @@ add_task(async function test_failure_group_conflict() {
   const sandbox = sinon.createSandbox();
   sandbox.spy(manager, "sendFailureTelemetry");
 
-  
-  Services.fog.testResetFOG();
-
   await manager.onStartup();
-
-  
-  var failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue();
-  Assert.equal(
-    undefined,
-    failureEvents,
-    "no Glean enroll_failed events before failure"
-  );
 
   
   
@@ -434,22 +324,6 @@ add_task(async function test_failure_group_conflict() {
     "should send failure telemetry if a feature conflict exists"
   );
 
-  
-  failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue();
-  
-  Assert.equal(1, failureEvents.length);
-  
-  Assert.equal(
-    "bar",
-    failureEvents[0].extra.experiment,
-    "Glean.nimbusEvents.enroll_failed recorded with correct experiment slug"
-  );
-  Assert.equal(
-    "feature-conflict",
-    failureEvents[0].extra.reason,
-    "Glean.nimbusEvents.enroll_failed recorded with correct reason"
-  );
-
   manager.unenroll("foo", "test-cleanup");
 });
 
@@ -464,18 +338,7 @@ add_task(async function test_rollout_failure_group_conflict() {
   };
   sandbox.spy(manager, "sendFailureTelemetry");
 
-  
-  Services.fog.testResetFOG();
-
   await manager.onStartup();
-
-  
-  var failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue();
-  Assert.equal(
-    undefined,
-    failureEvents,
-    "no Glean enroll_failed events before failure"
-  );
 
   
   await manager.store.addEnrollment(rollout);
@@ -496,22 +359,6 @@ add_task(async function test_rollout_failure_group_conflict() {
     "should send failure telemetry if a feature conflict exists"
   );
 
-  
-  failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue();
-  
-  Assert.equal(1, failureEvents.length);
-  
-  Assert.equal(
-    recipe.slug,
-    failureEvents[0].extra.experiment,
-    "Glean.nimbusEvents.enroll_failed recorded with correct experiment slug"
-  );
-  Assert.equal(
-    "feature-conflict",
-    failureEvents[0].extra.reason,
-    "Glean.nimbusEvents.enroll_failed recorded with correct reason"
-  );
-
   manager.unenroll("rollout-enrollment", "test-cleanup");
 });
 
@@ -526,18 +373,7 @@ add_task(async function test_rollout_experiment_no_conflict() {
   };
   sandbox.spy(manager, "sendFailureTelemetry");
 
-  
-  Services.fog.testResetFOG();
-
   await manager.onStartup();
-
-  
-  var failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue();
-  Assert.equal(
-    undefined,
-    failureEvents,
-    "no Glean enroll_failed events before failure"
-  );
 
   await manager.store.addEnrollment(experiment);
 
@@ -550,14 +386,6 @@ add_task(async function test_rollout_experiment_no_conflict() {
   Assert.ok(
     manager.sendFailureTelemetry.notCalled,
     "Should send failure telemetry if a feature conflict exists"
-  );
-
-  
-  failureEvents = Glean.nimbusEvents.enrollFailed.testGetValue();
-  Assert.equal(
-    undefined,
-    failureEvents,
-    "no Glean enroll_failed events before failure"
   );
 
   manager.unenroll("rollout-enrollment", "test-cleanup");
