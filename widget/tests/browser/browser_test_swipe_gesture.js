@@ -5,6 +5,11 @@
 "use strict";
 
 Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/gfx/layers/apz/test/mochitest/apz_test_utils.js",
+  this
+);
+
+Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js",
   this
 );
@@ -15,78 +20,105 @@ function waitForWhile() {
   });
 }
 
+const NativePanHandlerForWindows = {
+  beginPhase: SpecialPowers.DOMWindowUtils.PHASE_BEGIN,
+  updatePhase: SpecialPowers.DOMWindowUtils.PHASE_UPDATE,
+  endPhase: SpecialPowers.DOMWindowUtils.PHASE_END,
+  promiseNativePanEvent: promiseNativeTouchpadPan,
+  deltaOnRTL: 50,
+};
 
-const kCGScrollPhaseBegan = 1;
-const kCGScrollPhaseChanged = 2;
-const kCGScrollPhaseEnded = 4;
+const NativePanHandlerForMac = {
+  
+  beginPhase: 1, 
+  updatePhase: 2, 
+  endPhase: 4, 
+  promiseNativePanEvent: promiseNativePanGestureEventAndWaitForObserver,
+  deltaOnRTL: -50,
+};
+
+function getPanHandler() {
+  switch (getPlatform()) {
+    case "windows":
+      return NativePanHandlerForWindows;
+    case "mac":
+      return NativePanHandlerForMac;
+    default:
+      throw new Error(
+        "There's no native pan handler on platform " + getPlatform()
+      );
+  }
+}
+
+const NativePanHandler = getPanHandler();
 
 async function panRightToLeft(aElement, aX, aY) {
-  await promiseNativePanGestureEventAndWaitForObserver(
+  await NativePanHandler.promiseNativePanEvent(
     aElement,
     aX,
     aY,
-    -50,
+    NativePanHandler.deltaOnRTL,
     0,
-    kCGScrollPhaseBegan
+    NativePanHandler.beginPhase
   );
-  await promiseNativePanGestureEventAndWaitForObserver(
+  await NativePanHandler.promiseNativePanEvent(
     aElement,
     aX,
     aY,
-    -50,
+    NativePanHandler.deltaOnRTL,
     0,
-    kCGScrollPhaseChanged
+    NativePanHandler.updatePhase
   );
-  await promiseNativePanGestureEventAndWaitForObserver(
+  await NativePanHandler.promiseNativePanEvent(
     aElement,
     aX,
     aY,
-    -50,
+    NativePanHandler.deltaOnRTL,
     0,
-    kCGScrollPhaseChanged
+    NativePanHandler.updatePhase
   );
-  await promiseNativePanGestureEventAndWaitForObserver(
+  await NativePanHandler.promiseNativePanEvent(
     aElement,
     aX,
     aY,
     0,
     0,
-    kCGScrollPhaseEnded
+    NativePanHandler.endPhase
   );
 }
 
 async function panLeftToRight(aElement, aX, aY) {
-  await promiseNativePanGestureEventAndWaitForObserver(
+  await NativePanHandler.promiseNativePanEvent(
     aElement,
     aX,
     aY,
-    50,
+    -NativePanHandler.deltaOnRTL,
     0,
-    kCGScrollPhaseBegan
+    NativePanHandler.beginPhase
   );
-  await promiseNativePanGestureEventAndWaitForObserver(
+  await NativePanHandler.promiseNativePanEvent(
     aElement,
     aX,
     aY,
-    50,
+    -NativePanHandler.deltaOnRTL,
     0,
-    kCGScrollPhaseChanged
+    NativePanHandler.updatePhase
   );
-  await promiseNativePanGestureEventAndWaitForObserver(
+  await NativePanHandler.promiseNativePanEvent(
     aElement,
     aX,
     aY,
-    50,
+    -NativePanHandler.deltaOnRTL,
     0,
-    kCGScrollPhaseChanged
+    NativePanHandler.updatePhase
   );
-  await promiseNativePanGestureEventAndWaitForObserver(
+  await NativePanHandler.promiseNativePanEvent(
     aElement,
     aX,
     aY,
     0,
     0,
-    kCGScrollPhaseEnded
+    NativePanHandler.endPhase
   );
 }
 

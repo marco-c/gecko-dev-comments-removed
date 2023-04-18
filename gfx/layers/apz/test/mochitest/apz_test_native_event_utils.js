@@ -471,6 +471,36 @@ async function synthesizeNativePanGestureEvent(
 
 
 
+
+
+async function promiseNativeTouchpadPan(
+  aTarget,
+  aX,
+  aY,
+  aDeltaX,
+  aDeltaY,
+  aPhase
+) {
+  if (getPlatform() != "windows") {
+    throw new Error(
+      `promiseNativeTouchpadPan doesn't work on ${getPlatform()}`
+    );
+  }
+
+  let pt = await coordinatesRelativeToScreen({
+    offsetX: aX,
+    offsetY: aY,
+    target: aTarget,
+  });
+
+  const utils = utilsForTarget(aTarget);
+  utils.sendNativeTouchpadPan(aPhase, pt.x, pt.y, aDeltaX, aDeltaY, 0);
+
+  return promiseFrame();
+}
+
+
+
 function promiseNativePanGestureEventAndWaitForObserver(
   aElement,
   aX,
