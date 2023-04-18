@@ -4500,6 +4500,7 @@ void SamplerThread::SpyOnUnregisteredThreads() {
        ProcType::Unknown,
        ""_ns,
        nsTArray<WindowInfo>{},
+       nsTArray<UtilityInfo>{},
        0
 #ifdef XP_MACOSX
       ,

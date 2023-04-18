@@ -152,7 +152,7 @@ class GeckoChildProcessHost : public ChildProcessHost,
   
   void SetAlreadyDead();
 
-#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+#if defined(MOZ_SANDBOX) && defined(XP_MACOSX)
   
   static bool StartMacSandbox(int aArgc, char** aArgv,
                               std::string& aErrorMessage);
@@ -171,7 +171,7 @@ class GeckoChildProcessHost : public ChildProcessHost,
   
   
   void DisableOSActivityMode();
-#endif
+#endif  
   typedef std::function<void(GeckoChildProcessHost*)> GeckoProcessCallback;
 
   

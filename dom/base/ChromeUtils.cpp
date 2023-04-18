@@ -45,6 +45,9 @@
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/dom/WorkerScope.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
+#include "mozilla/ipc/UtilityProcessSandboxing.h"
+#include "mozilla/ipc/UtilityProcessManager.h"
+#include "mozilla/ipc/UtilityProcessHost.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "IOActivityMonitor.h"
 #include "nsThreadUtils.h"
@@ -897,6 +900,30 @@ static WebIDLProcType ProcTypeToWebIDL(mozilla::ProcType aType) {
 
 #undef PROCTYPE_TO_WEBIDL_CASE
 
+#define UTILITYACTORNAME_TO_WEBIDL_CASE(_utilityActorName, _webidl) \
+  case mozilla::UtilityActorName::_utilityActorName:                \
+    return WebIDLUtilityActorName::_webidl
+
+static WebIDLUtilityActorName UtilityActorNameToWebIDL(
+    mozilla::UtilityActorName aType) {
+  
+  static_assert(WebIDLUtilityActorNameValues::Count ==
+                    static_cast<size_t>(UtilityActorName::AudioDecoder) + 1,
+                "In order for this static cast to be okay, "
+                "UtilityActorName must match UtilityActorName exactly");
+
+  
+  switch (aType) {
+    UTILITYACTORNAME_TO_WEBIDL_CASE(Unknown, Unknown);
+    UTILITYACTORNAME_TO_WEBIDL_CASE(AudioDecoder, AudioDecoder);
+  }
+
+  MOZ_ASSERT(false, "Unhandled case in WebIDLUtilityActorName");
+  return WebIDLUtilityActorName::Unknown;
+}
+
+#undef UTILITYACTORNAME_TO_WEBIDL_CASE
+
 
 already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
                                                        ErrorResult& aRv) {
@@ -938,7 +965,8 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
        base::GetCurrentProcId(),
        ProcType::Browser,
        ""_ns,
-       nsTArray<WindowInfo>());
+       nsTArray<WindowInfo>(),
+       nsTArray<UtilityInfo>());
 
   
   mozilla::ipc::GeckoChildProcessHost::GetAll(
@@ -957,6 +985,7 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
             
             return;
           }
+
 #define GECKO_PROCESS_TYPE(enum_value, enum_name, string_name, proc_typename, \
                            process_bin_type, procinfo_typename,               \
                            webidl_typename, allcaps_name)                     \
@@ -979,6 +1008,19 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
             break;
         }
 
+        
+        nsTArray<UtilityInfo> utilityActors;
+        if (aGeckoProcess->GetProcessType() ==
+            GeckoProcessType::GeckoProcessType_Utility) {
+          RefPtr<mozilla::ipc::UtilityProcessManager> upm =
+              mozilla::ipc::UtilityProcessManager::GetSingleton();
+          if (!utilityActors.AppendElements(upm->GetActors(aGeckoProcess),
+                                            fallible)) {
+            NS_WARNING("Error adding actors");
+            return;
+          }
+        }
+
         requests.EmplaceBack(
              childPid,
              type,
@@ -986,6 +1028,7 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
              nsTArray<WindowInfo>(),  
                                                          
                                                          
+             std::move(utilityActors),
              0  
 #ifdef XP_MACOSX
             ,
@@ -1087,6 +1130,7 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
          type,
          origin,
          std::move(windows),
+         nsTArray<UtilityInfo>(),
          contentParent->ChildID()
 #ifdef XP_MACOSX
             ,
@@ -1153,6 +1197,20 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
                   dest->mDocumentTitle = source.documentTitle;
                   dest->mIsProcessRoot = source.isProcessRoot;
                   dest->mIsInProcess = source.isInProcess;
+                }
+
+                if (sysProcInfo.type == ProcType::Utility) {
+                  for (const auto& source : sysProcInfo.utilityActors) {
+                    auto* dest =
+                        childInfo->mUtilityActors.AppendElement(fallible);
+                    if (!dest) {
+                      domPromise->MaybeReject(NS_ERROR_OUT_OF_MEMORY);
+                      return;
+                    }
+
+                    dest->mActorName =
+                        UtilityActorNameToWebIDL(source.actorName);
+                  }
                 }
               }
             }
