@@ -170,6 +170,42 @@ add_task(async function reject() {
 });
 
 
+add_task(async function close() {
+  await doDialogTest({
+    callback: async () => {
+      info("Calling showOnboardingDialog");
+      const { win, maybeShowPromise } = await showOnboardingDialog();
+
+      info("Check the visibility of the close button");
+      const closeButton = win.document.getElementById("onboardingClose");
+      Assert.ok(BrowserTestUtils.is_visible(closeButton));
+
+      info("Click on the close button");
+      closeButton.click();
+
+      info("Waiting for maybeShowOnboardingDialog to finish");
+      await maybeShowPromise;
+    },
+    onboardingDialogChoice: "close_1",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": false,
+    },
+    telemetryEvents: [
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "data_collect_toggled",
+        object: "disabled",
+      },
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "opt_in_dialog",
+        object: "close_1",
+      },
+    ],
+  });
+});
+
+
 add_task(async function skip() {
   await doDialogTest({
     callback: async () => {
@@ -446,6 +482,33 @@ add_task(async function dismissed_other_on_introduction() {
 });
 
 
+add_task(async function focus_order_on_introduction() {
+  if (!gCanTabMoveFocus) {
+    Assert.ok(true, "Tab key can't move focus, skipping test");
+    return;
+  }
+
+  setDialogPrereqPrefs();
+
+  info("Calling showOnboardingDialog");
+  const { win, maybeShowPromise } = await showOnboardingDialog();
+
+  info("Check the first focus");
+  Assert.equal(win.document.activeElement.id, "onboardingNext");
+
+  const order = ["onboardingClose", "onboardingNext", "onboardingClose"];
+  for (const next of order) {
+    EventUtils.synthesizeKey("KEY_Tab");
+    Assert.equal(win.document.activeElement.id, next);
+  }
+
+  EventUtils.synthesizeKey("KEY_Escape");
+
+  info("Waiting for maybeShowOnboardingDialog to finish");
+  await maybeShowPromise;
+});
+
+
 add_task(async function focus_order_on_main() {
   if (!gCanTabMoveFocus) {
     Assert.ok(true, "Tab key can't move focus, skipping test");
@@ -550,6 +613,37 @@ add_task(async function focus_order_with_reject_option() {
 
   info("Waiting for maybeShowOnboardingDialog to finish");
   await maybeShowPromise;
+});
+
+
+
+
+add_task(async function focus_close() {
+  await doFocusTest({
+    introductionPane: true,
+    tabKeyRepeat: 1,
+    expectedFocusID: "onboardingClose",
+    callback: async () => {
+      info("Enter to submit");
+      EventUtils.synthesizeKey("KEY_Enter");
+    },
+    onboardingDialogChoice: "close_1",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": false,
+    },
+    telemetryEvents: [
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "data_collect_toggled",
+        object: "disabled",
+      },
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "opt_in_dialog",
+        object: "close_1",
+      },
+    ],
+  });
 });
 
 
@@ -806,50 +900,6 @@ add_task(async function nimbus_skip_onboarding_dialog() {
 });
 
 
-
-add_task(async function close_button_on_introduction_pane() {
-  await QuickSuggestTestUtils.withExperiment({
-    valueOverrides: {
-      quickSuggestOnboardingDialogVariation: "B",
-    },
-    callback: async () => {
-      await doDialogTest({
-        callback: async () => {
-          info("Calling showOnboardingDialog");
-          const { win, maybeShowPromise } = await showOnboardingDialog();
-
-          info("Check the visibility of the close button");
-          const closeButton = win.document.getElementById("onboardingClose");
-          Assert.ok(BrowserTestUtils.is_visible(closeButton));
-
-          info("Click on the close button");
-          closeButton.click();
-
-          info("Waiting for maybeShowOnboardingDialog to finish");
-          await maybeShowPromise;
-        },
-        onboardingDialogChoice: "close_1",
-        expectedUserBranchPrefs: {
-          "quicksuggest.dataCollection.enabled": false,
-        },
-        telemetryEvents: [
-          {
-            category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-            method: "data_collect_toggled",
-            object: "disabled",
-          },
-          {
-            category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-            method: "opt_in_dialog",
-            object: "close_1",
-          },
-        ],
-      });
-    },
-  });
-});
-
-
 add_task(async function variation_A() {
   await doVariationTest({
     variation: "A",
@@ -870,9 +920,6 @@ add_task(async function variation_A() {
 add_task(async function variation_B() {
   await doVariationTest({
     variation: "B",
-    expectedUI: {
-      introductionCloseButton: true,
-    },
     expectedL10N: {
       onboardingNext: "firefox-suggest-onboarding-introduction-next-button-1",
       "introduction-title": "firefox-suggest-onboarding-introduction-title-2",
@@ -910,9 +957,6 @@ add_task(async function variation_C() {
 add_task(async function variation_D() {
   await doVariationTest({
     variation: "D",
-    expectedUI: {
-      introductionCloseButton: true,
-    },
     expectedL10N: {
       onboardingNext: "firefox-suggest-onboarding-introduction-next-button-1",
       "introduction-title": "firefox-suggest-onboarding-introduction-title-4",
@@ -932,7 +976,6 @@ add_task(async function variation_E() {
     variation: "E",
     expectedUI: {
       firefoxLogo: true,
-      introductionCloseButton: true,
     },
     expectedL10N: {
       onboardingNext: "firefox-suggest-onboarding-introduction-next-button-1",
@@ -951,9 +994,6 @@ add_task(async function variation_E() {
 add_task(async function variation_F() {
   await doVariationTest({
     variation: "F",
-    expectedUI: {
-      introductionCloseButton: true,
-    },
     expectedL10N: {
       onboardingNext: "firefox-suggest-onboarding-introduction-next-button-2",
       "introduction-title": "firefox-suggest-onboarding-introduction-title-6",
@@ -1106,6 +1146,7 @@ async function doFocusTest({
   telemetryEvents,
   callback,
   expectedUserBranchPrefs,
+  introductionPane,
 }) {
   if (!gCanTabMoveFocus && tabKeyRepeat) {
     Assert.ok(true, "Tab key can't move focus, skipping test");
@@ -1118,7 +1159,7 @@ async function doFocusTest({
     telemetryEvents,
     callback: async () => {
       const { win, maybeShowPromise } = await showOnboardingDialog({
-        skipIntroduction: true,
+        skipIntroduction: !introductionPane,
       });
 
       let doc = win.document;
@@ -1223,14 +1264,6 @@ async function doVariationTest({
           : logoImage;
         Assert.equal(introductionLogoImage, expectedIntroductionLogoImage);
         Assert.equal(mainLogoImage, logoImage);
-      }
-
-      info("Check the close button on introduction pane");
-      const onboardingClose = win.document.getElementById("onboardingClose");
-      if (expectedUI.introductionCloseButton) {
-        Assert.ok(BrowserTestUtils.is_visible(onboardingClose));
-      } else {
-        Assert.ok(BrowserTestUtils.is_hidden(onboardingClose));
       }
 
       info("Check the l10n attribute");
