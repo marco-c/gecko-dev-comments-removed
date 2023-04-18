@@ -172,6 +172,21 @@ class ContentBlocking final {
   
   
   
+  
+  
+  
+  static Maybe<bool> CheckSameSiteCallingContextDecidesStorageAccessAPI(
+      dom::Document* aDocument, bool aRequireUserActivation);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
   static Maybe<bool> CheckExistingPermissionDecidesStorageAccessAPI(
       dom::Document* aDocument);
 
