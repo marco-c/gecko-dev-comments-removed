@@ -529,26 +529,34 @@ export function getRelativeUrl(source, root) {
 
 
 
-
-
-
-
-
-
-export function isDescendantOfRoot(source, rootUrl, threads) {
-  
+export function removeThreadActorId(root, threads) {
   threads.forEach(thread => {
-    if (rootUrl.includes(thread.actor)) {
-      rootUrl = rootUrl.slice(thread.actor.length + 1);
+    if (root.includes(thread.actor)) {
+      root = root.slice(thread.actor.length + 1);
     }
   });
+  return root;
+}
 
+
+
+
+
+
+
+
+
+
+
+
+
+export function isDescendantOfRoot(source, rootUrlWithoutThreadActor) {
   if (source.url && source.url.includes("chrome://")) {
     const { group, path } = getURL(source);
-    return (group + path).includes(rootUrl);
+    return (group + path).includes(rootUrlWithoutThreadActor);
   }
 
-  return !!source.url && source.url.includes(rootUrl);
+  return !!source.url && source.url.includes(rootUrlWithoutThreadActor);
 }
 
 export function isGenerated(source) {
