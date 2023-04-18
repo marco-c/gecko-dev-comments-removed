@@ -217,16 +217,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool allocateInstantiationStorage = false;
 
   
-  
-  
-  
-  
-  
-  
-  
-  bool deoptimizeModuleGlobalVars = false;
-
-  
 
 
 
@@ -320,7 +310,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
     PrintFields_(borrowBuffer);
     PrintFields_(usePinnedBytecode);
     PrintFields_(allocateInstantiationStorage);
-    PrintFields_(deoptimizeModuleGlobalVars);
     PrintFields_(introductionType);
     PrintFields_(introductionLineno);
     PrintFields_(introductionOffset);

@@ -16,8 +16,8 @@
 #include "nsRefPtrHashtable.h"
 #include "nsCOMArray.h"
 #include "nsCOMPtr.h"
-#include "nsILoadInfo.h"    
-#include "nsINode.h"        
+#include "nsILoadInfo.h"  
+#include "nsINode.h"      
 #include "nsThreadUtils.h"  
 #include "nsURIHashKey.h"
 #include "mozilla/CORSMode.h"
@@ -273,11 +273,6 @@ class ModuleLoaderBase : public nsISupports {
   void SetAcquiringImportMaps(bool acquiring) {
     mAcquiringImportMaps = acquiring;
   }
-
-  
-  bool IsModuleFetched(nsIURI* aURL) const;
-
-  nsresult GetFetchedModuleURLs(nsTArray<nsCString>& aURLs);
 
   
 

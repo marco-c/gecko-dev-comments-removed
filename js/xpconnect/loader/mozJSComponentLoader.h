@@ -41,15 +41,7 @@ class mozJSComponentLoader final : public nsIMemoryReporter {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
 
-  
   void GetLoadedModules(nsTArray<nsCString>& aLoadedModules);
-
-  
-  nsresult GetLoadedESModules(nsTArray<nsCString>& aLoadedModules);
-
-  
-  nsresult GetLoadedJSAndESModules(nsTArray<nsCString>& aLoadedModules);
-
   void GetLoadedComponents(nsTArray<nsCString>& aLoadedComponents);
   nsresult GetModuleImportStack(const nsACString& aLocation,
                                 nsACString& aRetval);
@@ -82,13 +74,6 @@ class mozJSComponentLoader final : public nsIMemoryReporter {
   
   nsresult ImportModule(JSContext* aCx, const nsACString& aResourceURI,
                         JS::MutableHandleObject aModuleNamespace);
-
-  
-  nsresult TryFallbackToImportModule(JSContext* aCx,
-                                     const nsACString& aResourceURI,
-                                     JS::MutableHandleObject aModuleGlobal,
-                                     JS::MutableHandleObject aModuleExports,
-                                     bool aIgnoreExports);
 
   nsresult Unload(const nsACString& aResourceURI);
   nsresult IsModuleLoaded(const nsACString& aResourceURI, bool* aRetval);
