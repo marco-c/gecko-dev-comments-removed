@@ -22,7 +22,7 @@ class gfxGDIFont : public gfxFont {
 
   virtual ~gfxGDIFont();
 
-  HFONT GetHFONT() { return mFont; }
+  HFONT GetHFONT() const { return mFont; }
 
   already_AddRefed<mozilla::gfx::ScaledFont> GetScaledFont(
       const TextRunDrawParams& aRunParams) override;
@@ -35,8 +35,7 @@ class gfxGDIFont : public gfxFont {
                      mozilla::gfx::ShapedTextFlags aOrientation) override;
 
   
-  mozilla::UniquePtr<gfxFont> CopyWithAntialiasOption(
-      AntialiasOption anAAOption) override;
+  gfxFont* CopyWithAntialiasOption(AntialiasOption anAAOption) const override;
 
   
   
@@ -49,7 +48,8 @@ class gfxGDIFont : public gfxFont {
   
   int32_t GetGlyphWidth(uint16_t aGID) override;
 
-  bool GetGlyphBounds(uint16_t aGID, gfxRect* aBounds, bool aTight) override;
+  bool GetGlyphBounds(uint16_t aGID, gfxRect* aBounds,
+                      bool aTight) const override;
 
   void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                               FontCacheSizes* aSizes) const;
@@ -59,7 +59,7 @@ class gfxGDIFont : public gfxFont {
   FontType GetType() const override { return FONT_TYPE_GDI; }
 
  protected:
-  const Metrics& GetHorizontalMetrics() override;
+  const Metrics& GetHorizontalMetrics() const override { return *mMetrics; }
 
   bool ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
                  uint32_t aOffset, uint32_t aLength, Script aScript,
