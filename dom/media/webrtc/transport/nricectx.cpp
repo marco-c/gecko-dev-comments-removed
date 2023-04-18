@@ -766,8 +766,6 @@ NrIceCtx::Controlling NrIceCtx::GetControlling() {
 
 nsresult NrIceCtx::SetStunServers(
     const std::vector<NrIceStunServer>& stun_servers) {
-  if (stun_servers.empty()) return NS_OK;
-
   
   std::vector<nr_ice_stun_server> servers;
 
@@ -795,8 +793,6 @@ nsresult NrIceCtx::SetStunServers(
 
 nsresult NrIceCtx::SetTurnServers(
     const std::vector<NrIceTurnServer>& turn_servers) {
-  if (turn_servers.empty()) return NS_OK;
-
   
   std::vector<nr_ice_turn_server> servers;
 
