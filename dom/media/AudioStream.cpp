@@ -242,8 +242,6 @@ nsresult AudioStream::Init(AudioDeviceInfo* aSinkInfo) {
   LOG("%s channels: %d, rate: %d", __FUNCTION__, mOutChannels,
       mAudioClock.GetInputRate());
   mSinkInfo = aSinkInfo;
-  
-  mPlaybackComplete = false;
 
   cubeb_stream_params params;
   params.rate = mAudioClock.GetInputRate();
@@ -506,21 +504,11 @@ void AudioStream::GetUnprocessed(AudioBufferWriter& aWriter) {
   }
 
   while (aWriter.Available() > 0) {
-    UniquePtr<Chunk> c;
-    {
-      MonitorAutoLock lock(mMonitor);
-      c = mDataSource.PopFrames(aWriter.Available());
-    }
-    if (c->Frames() == 0) {
+    uint32_t count = mDataSource.PopFrames(aWriter.Ptr(), aWriter.Available());
+    if (count == 0) {
       break;
     }
-    MOZ_ASSERT(c->Frames() <= aWriter.Available());
-    if (IsValidAudioFormat(c.get())) {
-      aWriter.Write(c->Data(), c->Frames());
-    } else {
-      
-      aWriter.WriteZeros(c->Frames());
-    }
+    aWriter.Advance(count);
   }
 }
 
@@ -535,36 +523,22 @@ void AudioStream::GetTimeStretched(AudioBufferWriter& aWriter) {
       ceil(aWriter.Available() * mAudioClock.GetPlaybackRate());
 
   while (mTimeStretcher->numSamples() < aWriter.Available()) {
-    UniquePtr<Chunk> c;
-    {
-      MonitorAutoLock mon(mMonitor);
-      c = mDataSource.PopFrames(toPopFrames);
+    
+    AutoTArray<AudioDataValue, 1000> buf;
+    auto size = CheckedUint32(mOutChannels) * toPopFrames;
+    if (!size.isValid()) {
+      
+      LOGW("Invalid member data: %d channels, %d frames", mOutChannels,
+           toPopFrames);
+      return;
     }
-    if (c->Frames() == 0) {
+    buf.SetLength(size.value());
+    
+    uint32_t count = mDataSource.PopFrames(buf.Elements(), toPopFrames);
+    if (count == 0) {
       break;
     }
-    MOZ_ASSERT(c->Frames() <= toPopFrames);
-    if (IsValidAudioFormat(c.get())) {
-      mTimeStretcher->putSamples(c->Data(), c->Frames());
-    } else {
-      
-      AutoTArray<AudioDataValue, 1000> buf;
-      auto size = CheckedUint32(mOutChannels) * c->Frames();
-      if (!size.isValid()) {
-        
-        LOGW("Invalid member data: %d channels, %d frames", mOutChannels,
-             c->Frames());
-        return;
-      }
-      buf.SetLength(size.value());
-      size = size * sizeof(AudioDataValue);
-      if (!size.isValid()) {
-        LOGW("The required memory size is too large.");
-        return;
-      }
-      memset(buf.Elements(), 0, size.value());
-      mTimeStretcher->putSamples(buf.Elements(), c->Frames());
-    }
+    mTimeStretcher->putSamples(buf.Elements(), count);
   }
 
   auto* timeStretcher = mTimeStretcher;
@@ -596,6 +570,7 @@ void AudioStream::UpdatePlaybackRateIfNeeded() {
       mAudioClock.GetPlaybackRate() == mPlaybackRate) {
     return;
   }
+
   EnsureTimeStretcherInitialized();
 
   mAudioClock.SetPlaybackRate(mPlaybackRate);
@@ -637,16 +612,9 @@ long AudioStream::DataCallback(void* aBuffer, long aFrames) {
     GetTimeStretched(writer);
   }
 
-  bool ended;
-
-  {
-    MonitorAutoLock lock(mMonitor);
-    ended = mDataSource.Ended();
-  }
-
   
   
-  if (ended) {
+  if (!mDataSource.Ended()) {
 #ifndef XP_MACOSX
     MonitorAutoLock mon(mMonitor);
 #endif

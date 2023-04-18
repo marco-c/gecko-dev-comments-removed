@@ -79,10 +79,12 @@ class AudioSink : private AudioStream::DataSource {
 
   
   
-  UniquePtr<AudioStream::Chunk> PopFrames(uint32_t aFrames) override;
+  
+  uint32_t PopFrames(AudioDataValue* aBuffer, uint32_t aFrames) override;
   bool Ended() const override;
 
-  void CheckIsAudible(const AudioData* aData);
+  void CheckIsAudible(const Span<AudioDataValue>& aInterleaved,
+                      size_t aChannel);
 
   
   RefPtr<AudioStream> mAudioStream;
@@ -107,22 +109,8 @@ class AudioSink : private AudioStream::DataSource {
   bool mPlaying;
 
   
-
-
-
   
-  RefPtr<AudioData> mCurrentData;
-
-  
-  
-  
-  
-  mutable Monitor mMonitor;
-  
-  UniquePtr<AudioBufferCursor> mCursor;
-
-  
-  int64_t mWritten;
+  Atomic<int64_t> mWritten;
 
   
   Atomic<bool> mErrored;
@@ -130,7 +118,7 @@ class AudioSink : private AudioStream::DataSource {
   const RefPtr<AbstractThread> mOwnerThread;
 
   
-  void OnAudioPopped(const RefPtr<AudioData>& aSample);
+  void OnAudioPopped();
   void OnAudioPushed(const RefPtr<AudioData>& aSample);
   void NotifyAudioNeeded();
   
@@ -139,12 +127,11 @@ class AudioSink : private AudioStream::DataSource {
   already_AddRefed<AudioData> CreateAudioFromBuffer(
       AlignedAudioBuffer&& aBuffer, AudioData* aReference);
   
-  
   uint32_t PushProcessedAudio(AudioData* aData);
+  uint32_t AudioQueuedInRingBufferUs() const;
+  uint32_t SampleToFrame(uint32_t aSamples) const;
   UniquePtr<AudioConverter> mConverter;
-  MediaQueue<AudioData> mProcessedQueue;
-  
-  Atomic<uint64_t> mProcessedQueueLength;
+  UniquePtr<SPSCQueue<AudioDataValue>> mProcessedSPSCQueue;
   MediaEventListener mAudioQueueListener;
   MediaEventListener mAudioQueueFinishListener;
   MediaEventListener mProcessedQueueListener;
@@ -160,7 +147,10 @@ class AudioSink : private AudioStream::DataSource {
   AudibilityMonitor mAudibilityMonitor;
   bool mIsAudioDataAudible;
   MediaEventProducer<bool> mAudibleEvent;
+  
+  MediaEventProducer<void> mAudioPopped;
 
+  Atomic<bool> mProcessedQueueFinished;
   MediaQueue<AudioData>& mAudioQueue;
 };
 

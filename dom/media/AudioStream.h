@@ -158,7 +158,7 @@ class AudioBufferCursor {
 
 
 
-class AudioBufferWriter : private AudioBufferCursor {
+class AudioBufferWriter : public AudioBufferCursor {
  public:
   AudioBufferWriter(Span<AudioDataValue> aSpan, uint32_t aChannels,
                     uint32_t aFrames)
@@ -219,7 +219,7 @@ class AudioStream final {
    public:
     
     
-    virtual UniquePtr<Chunk> PopFrames(uint32_t aFrames) = 0;
+    virtual uint32_t PopFrames(AudioDataValue* aAudio, uint32_t aFrames) = 0;
     
     virtual bool Ended() const = 0;
 
