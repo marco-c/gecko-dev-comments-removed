@@ -189,9 +189,6 @@ class TelemetryTests(TestingMixin, VCSToolsScript, CodeCoverageMixin):
             "--log-xunit",
             os.path.join(dirs["abs_blob_upload_dir"], "report.xml"),
             
-            "--symbols-path",
-            self.symbols_path,
-            
             "-vv",
         ]
 
