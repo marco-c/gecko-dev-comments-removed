@@ -165,6 +165,16 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
     return type == nsIDNSService::RESOLVE_TYPE_DEFAULT;
   }
 
+  virtual void Reset() {
+    mTRRSkippedReason = TRRSkippedReason::TRR_UNSET;
+    mFirstTRRSkippedReason = TRRSkippedReason::TRR_UNSET;
+    mTrrAttempts = 0;
+    mTRRSuccess = false;
+    mNativeSuccess = false;
+  }
+
+  virtual void OnCompleteLookup() {}
+
   
   mozilla::TimeStamp mValidStart;
 
@@ -187,8 +197,6 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
 
   TRRSkippedReason mTRRSkippedReason = TRRSkippedReason::TRR_UNSET;
   TRRSkippedReason mFirstTRRSkippedReason = TRRSkippedReason::TRR_UNSET;
-  TRRSkippedReason mTRRAFailReason = TRRSkippedReason::TRR_UNSET;
-  TRRSkippedReason mTRRAAAAFailReason = TRRSkippedReason::TRR_UNSET;
 
   mozilla::DataMutex<RefPtr<mozilla::net::TRRQuery>> mTRRQuery;
 
@@ -206,6 +214,12 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
 
   
   bool mDoomed = false;
+
+  
+  bool mTRRSuccess = false;
+
+  
+  bool mNativeSuccess = false;
 };
 
 
@@ -284,16 +298,25 @@ class AddrHostRecord final : public nsHostRecord {
   
   bool onQueue() { return LoadNative() && isInList(); }
 
+  virtual void Reset() override {
+    nsHostRecord::Reset();
+    StoreNativeUsed(false);
+    mResolverType = DNSResolverType::Native;
+  }
+
+  virtual void OnCompleteLookup() override {
+    nsHostRecord::OnCompleteLookup();
+    
+    StoreNative(false);
+  }
+
   
-  mozilla::TimeStamp mTrrStart;
   mozilla::TimeStamp mNativeStart;
   mozilla::TimeDuration mTrrDuration;
   mozilla::TimeDuration mNativeDuration;
 
   
   mozilla::Atomic<DNSResolverType> mResolverType{DNSResolverType::Native};
-  uint8_t mTRRSuccess = 0;     
-  uint8_t mNativeSuccess = 0;  
 
   
   MOZ_ATOMIC_BITFIELDS(mAtomicBitfields, 8, (
