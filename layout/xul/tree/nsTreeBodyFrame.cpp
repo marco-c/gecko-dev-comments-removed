@@ -4178,8 +4178,8 @@ void nsTreeBodyFrame::ScrollCallback(nsITimer* aTimer, void* aClosure) {
   }
 }
 
-NS_IMETHODIMP
-nsTreeBodyFrame::ScrollEvent::Run() {
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP nsTreeBodyFrame::ScrollEvent::Run() {
   if (mInner) {
     mInner->FireScrollEvent();
   }
@@ -4191,7 +4191,9 @@ void nsTreeBodyFrame::FireScrollEvent() {
   WidgetGUIEvent event(true, eScroll, nullptr);
   
   event.mFlags.mBubbles = false;
-  EventDispatcher::Dispatch(GetContent(), PresContext(), &event);
+  RefPtr<nsIContent> content = GetContent();
+  RefPtr<nsPresContext> presContext = PresContext();
+  EventDispatcher::Dispatch(content, presContext, &event);
 }
 
 void nsTreeBodyFrame::PostScrollEvent() {

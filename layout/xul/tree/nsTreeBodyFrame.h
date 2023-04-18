@@ -443,7 +443,7 @@ class nsTreeBodyFrame final : public nsLeafBoxFrame,
   };
 
   void PostScrollEvent();
-  void FireScrollEvent();
+  MOZ_CAN_RUN_SCRIPT void FireScrollEvent();
 
   
 
