@@ -603,6 +603,15 @@ void DOMIntersectionObserver::Update(Document* aDocument,
       
       
       
+      if (targetFrame->AncestorHidesContent()) {
+        return false;
+      }
+
+      
+      
+      
+      
+      
       
       
       
