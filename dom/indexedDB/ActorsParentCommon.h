@@ -31,9 +31,7 @@ class mozIStorageConnection;
 class mozIStorageStatement;
 class mozIStorageValueArray;
 
-namespace mozilla {
-namespace dom {
-namespace indexedDB {
+namespace mozilla::dom::indexedDB {
 
 class DatabaseFileManager;
 struct StructuredCloneFileParent;
@@ -122,8 +120,6 @@ DeserializeStructuredCloneFiles(const DatabaseFileManager& aFileManager,
 nsresult ExecuteSimpleSQLSequence(mozIStorageConnection& aConnection,
                                   Span<const nsLiteralCString> aSQLCommands);
 
-}  
-}  
 }  
 
 #endif  

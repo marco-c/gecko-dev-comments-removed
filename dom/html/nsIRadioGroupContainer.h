@@ -11,10 +11,8 @@
 class nsIRadioVisitor;
 class nsIFormControl;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class HTMLInputElement;
-}  
 }  
 
 #define NS_IRADIOGROUPCONTAINER_IID                  \

@@ -10,9 +10,7 @@
 #include "mozilla/dom/RemoteBrowser.h"
 #include "mozilla/dom/BrowserBridgeChild.h"
 
-namespace mozilla {
-
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -65,7 +63,6 @@ class BrowserBridgeHost : public RemoteBrowser {
   EffectsInfo mEffectsInfo;
 };
 
-}  
 }  
 
 #endif  

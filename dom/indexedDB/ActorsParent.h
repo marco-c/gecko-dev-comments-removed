@@ -14,8 +14,7 @@
 
 class nsIPrincipal;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Element;
 class FileHandleThreadPool;
@@ -68,7 +67,6 @@ class PermissionRequestHelper final : public PermissionRequestBase {
   void OnPromptComplete(PermissionValue aPermissionValue) override;
 };
 
-}  
 }  
 }  
 

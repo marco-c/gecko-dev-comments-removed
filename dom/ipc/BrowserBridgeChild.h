@@ -11,9 +11,7 @@
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/ipc/IdType.h"
 
-namespace mozilla {
-
-namespace dom {
+namespace mozilla::dom {
 class BrowsingContext;
 class ContentChild;
 class BrowserBridgeHost;
@@ -128,7 +126,6 @@ class BrowserBridgeChild : public PBrowserBridgeChild {
 #endif    
 };
 
-}  
 }  
 
 #endif  

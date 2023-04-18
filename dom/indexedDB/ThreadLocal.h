@@ -11,8 +11,7 @@
 #include "mozilla/dom/indexedDB/PBackgroundIDBSharedTypes.h"
 #include "ProfilerHelpers.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class IDBFactory;
 
@@ -89,7 +88,6 @@ class ThreadLocal {
   ~ThreadLocal();
 };
 
-}  
 }  
 }  
 

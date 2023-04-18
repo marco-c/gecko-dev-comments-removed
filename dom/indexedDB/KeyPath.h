@@ -21,8 +21,7 @@ template <class T>
 class Heap;
 }
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class OwningStringOrStringSequence;
 template <typename T>
@@ -113,7 +112,6 @@ class KeyPath {
   CopyableTArray<nsString> mStrings;
 };
 
-}  
 }  
 }  
 

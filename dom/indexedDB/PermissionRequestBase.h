@@ -17,8 +17,7 @@
 
 class nsIPrincipal;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Element;
 
@@ -65,7 +64,6 @@ class PermissionRequestBase : public nsIObserver,
   NS_DECL_NSIIDBPERMISSIONSREQUEST
 };
 
-}  
 }  
 }  
 

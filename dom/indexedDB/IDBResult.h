@@ -12,9 +12,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace mozilla {
-namespace dom {
-namespace indexedDB {
+namespace mozilla::dom::indexedDB {
 
 
 
@@ -155,8 +153,6 @@ detail::IDBError<Special> IDBError(detail::SpecialConstant<Special> aResult) {
   return {aResult};
 }
 
-}  
-}  
 }  
 
 #endif  

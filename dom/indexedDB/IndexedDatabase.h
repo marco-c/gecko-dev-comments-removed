@@ -15,8 +15,7 @@
 #include "nsTArray.h"
 #include "SafeRefPtr.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Blob;
 class IDBDatabase;
@@ -234,7 +233,6 @@ JSObject* StructuredCloneReadCallback(
     const JS::CloneDataPolicy& aCloneDataPolicy, uint32_t aTag, uint32_t aData,
     void* aClosure);
 
-}  
 }  
 }  
 

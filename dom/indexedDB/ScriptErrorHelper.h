@@ -10,9 +10,7 @@
 #include <inttypes.h>
 #include "nsStringFwd.h"
 
-namespace mozilla {
-namespace dom {
-namespace indexedDB {
+namespace mozilla::dom::indexedDB {
 
 
 class ScriptErrorHelper {
@@ -29,8 +27,6 @@ class ScriptErrorHelper {
       bool aIsChrome, uint64_t aInnerWindowID);
 };
 
-}  
-}  
 }  
 
 #endif  

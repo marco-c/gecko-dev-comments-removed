@@ -23,9 +23,7 @@ struct ParamTraits;
 
 }  
 
-namespace mozilla {
-namespace dom {
-namespace indexedDB {
+namespace mozilla::dom::indexedDB {
 
 class Key {
   friend struct IPC::ParamTraits<Key>;
@@ -285,8 +283,6 @@ class Key {
   nsresult SetFromSource(T* aSource, uint32_t aIndex);
 };
 
-}  
-}  
 }  
 
 #endif  

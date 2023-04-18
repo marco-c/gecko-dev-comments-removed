@@ -25,15 +25,11 @@
 #define IDB_REPORT_INTERNAL_ERR_LAMBDA \
   [](const auto&) { IDB_REPORT_INTERNAL_ERR(); }
 
-namespace mozilla {
-namespace dom {
-namespace indexedDB {
+namespace mozilla::dom::indexedDB {
 
 MOZ_COLD void ReportInternalError(const char* aFile, uint32_t aLine,
                                   const char* aStr);
 
-}  
-}  
 }  
 
 #endif  

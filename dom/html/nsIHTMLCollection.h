@@ -15,10 +15,8 @@
 
 class nsINode;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class Element;
-}  
 }  
 
 
