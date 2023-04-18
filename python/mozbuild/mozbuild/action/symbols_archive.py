@@ -43,14 +43,41 @@ def make_archive(archive_name, base, exclude, include):
 
                 fill_archive(add_file)
         elif archive_basename.endswith(".tar.zst"):
+            import mozfile
+            import subprocess
             import tarfile
-            import zstandard
+            from buildconfig import topsrcdir
 
-            ctx = zstandard.ZstdCompressor(threads=-1)
-            zstdwriter = ctx.stream_writer(fh)
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            python_path = mozpath.normpath(os.path.dirname(sys.executable))
+            path = [
+                p
+                for p in os.environ["PATH"].split(os.pathsep)
+                if mozpath.normpath(p) != python_path
+            ]
+            python3 = mozfile.which("python3", path=path)
+            proc = subprocess.Popen(
+                [
+                    python3,
+                    os.path.join(topsrcdir, "taskcluster", "scripts", "misc", "zstdpy"),
+                    "-T0",
+                ],
+                stdin=subprocess.PIPE,
+                stdout=fh,
+            )
 
             with tarfile.open(
-                mode="w|", fileobj=zstdwriter, bufsize=1024 * 1024
+                mode="w|", fileobj=proc.stdin, bufsize=1024 * 1024
             ) as tar:
 
                 def add_file(p, f):
@@ -58,6 +85,8 @@ def make_archive(archive_name, base, exclude, include):
                     tar.addfile(info, f.open())
 
                 fill_archive(add_file)
+            proc.stdin.close()
+            proc.wait()
         else:
             raise Exception(
                 "Unsupported archive format for {}".format(archive_basename)
