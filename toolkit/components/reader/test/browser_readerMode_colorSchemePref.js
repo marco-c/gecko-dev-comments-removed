@@ -11,11 +11,6 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
 
 async function testColorScheme(aPref, aExpectation) {
   
-  await SpecialPowers.pushPrefEnv({
-    set: [["reader.improvements_H12022.enabled", true]],
-  });
-
-  
   Services.prefs.setIntPref("browser.theme.content-theme", aPref);
 
   

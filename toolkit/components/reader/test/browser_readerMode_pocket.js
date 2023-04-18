@@ -93,9 +93,6 @@ add_task(async function() {
 
 
 add_task(async function() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["reader.improvements_H12022.enabled", true]],
-  });
   await BrowserTestUtils.withNewTab(
     TEST_PATH + "readerModeArticleShort.html",
     async function(browser) {
