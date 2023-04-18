@@ -3689,8 +3689,6 @@ impl PictureScratchBuffer {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub struct SurfaceIndex(pub usize);
 
-pub const ROOT_SURFACE_INDEX: SurfaceIndex = SurfaceIndex(0);
-
 
 #[derive(Debug)]
 pub enum SurfaceRenderTasks {
@@ -4326,7 +4324,7 @@ impl PicturePrimitive {
         pic_index: PictureIndex,
         surface_spatial_node_index: SpatialNodeIndex,
         raster_spatial_node_index: SpatialNodeIndex,
-        parent_surface_index: SurfaceIndex,
+        parent_surface_index: Option<SurfaceIndex>,
         parent_subpixel_mode: SubpixelMode,
         frame_state: &mut FrameBuildingState,
         frame_context: &FrameBuildingContext,
@@ -4360,7 +4358,7 @@ impl PicturePrimitive {
                 (
                     raster_spatial_node_index,
                     surface_spatial_node_index,
-                    parent_surface_index,
+                    parent_surface_index.expect("bug: no parent"),
                     0.0,
                 )
             }
@@ -4796,6 +4794,7 @@ impl PicturePrimitive {
             }
             Some(ref mut raster_config) => {
                 let pic_rect = self.precise_local_rect.cast_unit();
+                let parent_surface_index = parent_surface_index.expect("bug: no parent for child surface");
 
                 let mut device_pixel_scale = frame_state
                     .surfaces[raster_config.surface_index.0]
@@ -5691,163 +5690,173 @@ impl PicturePrimitive {
         &mut self,
         frame_context: &FrameBuildingContext,
         tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
-        current_surface_index: SurfaceIndex,
+        current_surface_index: Option<SurfaceIndex>,
         surfaces: &mut Vec<SurfaceInfo>,
     ) -> SurfaceIndex {
         
         self.raster_config = None;
 
-        
-        
-        let mut surface_index = current_surface_index;
-
-        if let Some(ref composite_mode) = self.composite_mode {
-            
-            let current_surface = &surfaces[current_surface_index.0];
-            let parent_raster_node_index = current_surface.raster_spatial_node_index;
-            let parent_device_pixel_scale = current_surface.device_pixel_scale;
-            let surface_spatial_node_index = self.spatial_node_index;
-
-            let surface_to_parent_transform = frame_context.spatial_tree
-                .get_relative_transform(surface_spatial_node_index, parent_raster_node_index);
-
-            
-            let mut min_scale = 1.0;
-            let mut max_scale = 1.0e32;
-
-            
-            
-            let establishes_raster_root = match composite_mode {
-                PictureCompositeMode::TileCache { slice_id } => {
-                    let tile_cache = tile_caches.get_mut(&slice_id).unwrap();
-
-                    
-                    
-                    
-                    
-                    let update_raster_scale =
-                        !frame_context.fb_config.low_quality_pinch_zoom ||
-                        !frame_context.spatial_tree.get_spatial_node(tile_cache.spatial_node_index).is_ancestor_or_self_zooming;
-
-                    if update_raster_scale {
-                        
-                        let local_to_device = get_relative_scale_offset(
-                            tile_cache.spatial_node_index,
-                            frame_context.root_spatial_node_index,
-                            frame_context.spatial_tree,
-                        );
-
-                        tile_cache.current_raster_scale = local_to_device.scale.x;
-                    }
-
-                    
-                    min_scale = 0.0;
-
-                    if frame_context.fb_config.low_quality_pinch_zoom {
-                        
-                        
-                        
-                        min_scale = tile_cache.current_raster_scale;
-                        max_scale = tile_cache.current_raster_scale;
-                    }
-
-                    
-                    
-                    
-                    true
-                }
-                PictureCompositeMode::SvgFilter(..) => {
-                    
-                    true
-                }
-                PictureCompositeMode::MixBlend(..) |
-                PictureCompositeMode::Filter(..) |
-                PictureCompositeMode::ComponentTransferFilter(..) |
-                PictureCompositeMode::Blit(..) => {
-                    
-                    surface_to_parent_transform.is_perspective()
-                }
-            };
-
-            let (raster_spatial_node_index, device_pixel_scale) = if establishes_raster_root {
+        let surface_index = match self.composite_mode {
+            Some(ref composite_mode) => {
                 
-                
-                let scale_factors = surface_to_parent_transform.scale_factors();
+                let (parent_raster_node_index, parent_device_pixel_scale) = match current_surface_index {
+                    Some(index) => {
+                        let current_surface = &surfaces[index.0];
+                        (current_surface.raster_spatial_node_index, current_surface.device_pixel_scale)
+                    }
+                    None => {
+                        let root_spatial_node_index = frame_context.spatial_tree.root_reference_frame_index();
+                        (root_spatial_node_index, Scale::new(1.0))
+                    }
+                };
+                let surface_spatial_node_index = self.spatial_node_index;
+
+                let surface_to_parent_transform = frame_context.spatial_tree
+                    .get_relative_transform(surface_spatial_node_index, parent_raster_node_index);
 
                 
-                let scaling_factor = scale_factors.0.max(scale_factors.1).max(min_scale).min(max_scale);
+                let mut min_scale = 1.0;
+                let mut max_scale = 1.0e32;
 
-                let device_pixel_scale = parent_device_pixel_scale * Scale::new(scaling_factor);
-                (surface_spatial_node_index, device_pixel_scale)
-            } else {
-                (parent_raster_node_index, parent_device_pixel_scale)
-            };
+                
+                
+                let establishes_raster_root = match composite_mode {
+                    PictureCompositeMode::TileCache { slice_id } => {
+                        let tile_cache = tile_caches.get_mut(&slice_id).unwrap();
 
-            let scale_factors = frame_context
-                    .spatial_tree
-                    .get_relative_transform(surface_spatial_node_index, raster_spatial_node_index)
-                    .scale_factors();
-
-            
-            
-            let mut inflation_factor = 0.0;
-            if self.options.inflate_if_required {
-                match composite_mode {
-                    PictureCompositeMode::Filter(Filter::Blur(width, height)) => {
-                        let blur_radius = f32::max(clamp_blur_radius(*width, scale_factors), clamp_blur_radius(*height, scale_factors));
                         
                         
-                        inflation_factor = blur_radius * BLUR_SAMPLE_SCALE;
+                        
+                        
+                        let update_raster_scale =
+                            !frame_context.fb_config.low_quality_pinch_zoom ||
+                            !frame_context.spatial_tree.get_spatial_node(tile_cache.spatial_node_index).is_ancestor_or_self_zooming;
+
+                        if update_raster_scale {
+                            
+                            let local_to_device = get_relative_scale_offset(
+                                tile_cache.spatial_node_index,
+                                frame_context.root_spatial_node_index,
+                                frame_context.spatial_tree,
+                            );
+
+                            tile_cache.current_raster_scale = local_to_device.scale.x;
+                        }
+
+                        
+                        min_scale = 0.0;
+
+                        if frame_context.fb_config.low_quality_pinch_zoom {
+                            
+                            
+                            
+                            min_scale = tile_cache.current_raster_scale;
+                            max_scale = tile_cache.current_raster_scale;
+                        }
+
+                        
+                        
+                        
+                        true
                     }
-                    PictureCompositeMode::SvgFilter(ref primitives, _) => {
-                        let mut max = 0.0;
-                        for primitive in primitives {
-                            if let FilterPrimitiveKind::Blur(ref blur) = primitive.kind {
-                                max = f32::max(max, blur.width);
-                                max = f32::max(max, blur.height);
+                    PictureCompositeMode::SvgFilter(..) => {
+                        
+                        true
+                    }
+                    PictureCompositeMode::MixBlend(..) |
+                    PictureCompositeMode::Filter(..) |
+                    PictureCompositeMode::ComponentTransferFilter(..) |
+                    PictureCompositeMode::Blit(..) => {
+                        
+                        surface_to_parent_transform.is_perspective()
+                    }
+                };
+
+                let (raster_spatial_node_index, device_pixel_scale) = if establishes_raster_root {
+                    
+                    
+                    let scale_factors = surface_to_parent_transform.scale_factors();
+
+                    
+                    let scaling_factor = scale_factors.0.max(scale_factors.1).max(min_scale).min(max_scale);
+
+                    let device_pixel_scale = parent_device_pixel_scale * Scale::new(scaling_factor);
+                    (surface_spatial_node_index, device_pixel_scale)
+                } else {
+                    (parent_raster_node_index, parent_device_pixel_scale)
+                };
+
+                let scale_factors = frame_context
+                        .spatial_tree
+                        .get_relative_transform(surface_spatial_node_index, raster_spatial_node_index)
+                        .scale_factors();
+
+                
+                
+                let mut inflation_factor = 0.0;
+                if self.options.inflate_if_required {
+                    match composite_mode {
+                        PictureCompositeMode::Filter(Filter::Blur(width, height)) => {
+                            let blur_radius = f32::max(clamp_blur_radius(*width, scale_factors), clamp_blur_radius(*height, scale_factors));
+                            
+                            
+                            inflation_factor = blur_radius * BLUR_SAMPLE_SCALE;
+                        }
+                        PictureCompositeMode::SvgFilter(ref primitives, _) => {
+                            let mut max = 0.0;
+                            for primitive in primitives {
+                                if let FilterPrimitiveKind::Blur(ref blur) = primitive.kind {
+                                    max = f32::max(max, blur.width);
+                                    max = f32::max(max, blur.height);
+                                }
                             }
+                            inflation_factor = clamp_blur_radius(max, scale_factors) * BLUR_SAMPLE_SCALE;
                         }
-                        inflation_factor = clamp_blur_radius(max, scale_factors) * BLUR_SAMPLE_SCALE;
-                    }
-                    PictureCompositeMode::Filter(Filter::DropShadows(ref shadows)) => {
-                        
-                        
-                        
-                        
+                        PictureCompositeMode::Filter(Filter::DropShadows(ref shadows)) => {
+                            
+                            
+                            
+                            
 
-                        
-                        let mut max_blur_radius: f32 = 0.0;
-                        for shadow in shadows {
-                            max_blur_radius = max_blur_radius.max(shadow.blur_radius);
+                            
+                            let mut max_blur_radius: f32 = 0.0;
+                            for shadow in shadows {
+                                max_blur_radius = max_blur_radius.max(shadow.blur_radius);
+                            }
+
+                            inflation_factor = clamp_blur_radius(max_blur_radius, scale_factors) * BLUR_SAMPLE_SCALE;
                         }
-
-                        inflation_factor = clamp_blur_radius(max_blur_radius, scale_factors) * BLUR_SAMPLE_SCALE;
+                        _ => {}
                     }
-                    _ => {}
                 }
+
+                let surface = SurfaceInfo::new(
+                    surface_spatial_node_index,
+                    raster_spatial_node_index,
+                    inflation_factor,
+                    frame_context.global_screen_world_rect,
+                    &frame_context.spatial_tree,
+                    device_pixel_scale,
+                    scale_factors,
+                );
+
+                let surface_index = SurfaceIndex(surfaces.len());
+                surfaces.push(surface);
+
+                self.raster_config = Some(RasterConfig {
+                    composite_mode: composite_mode.clone(),
+                    establishes_raster_root,
+                    surface_index,
+                    root_scaling_factor: 1.0,
+                    clipped_bounding_rect: WorldRect::zero(),
+                });
+
+                surface_index
             }
-
-            let surface = SurfaceInfo::new(
-                surface_spatial_node_index,
-                raster_spatial_node_index,
-                inflation_factor,
-                frame_context.global_screen_world_rect,
-                &frame_context.spatial_tree,
-                device_pixel_scale,
-                scale_factors,
-            );
-
-            surface_index = SurfaceIndex(surfaces.len());
-            surfaces.push(surface);
-
-            self.raster_config = Some(RasterConfig {
-                composite_mode: composite_mode.clone(),
-                establishes_raster_root,
-                surface_index,
-                root_scaling_factor: 1.0,
-                clipped_bounding_rect: WorldRect::zero(),
-            });
-        }
+            None => {
+                current_surface_index.expect("bug: pass-through picture without parent surface")
+            }
+        };
 
         surface_index
     }
@@ -5859,7 +5868,7 @@ impl PicturePrimitive {
     pub fn propagate_bounding_rect(
         &mut self,
         surface_index: SurfaceIndex,
-        parent_surface_index: SurfaceIndex,
+        parent_surface_index: Option<SurfaceIndex>,
         surfaces: &mut [SurfaceInfo],
         frame_context: &FrameBuildingContext,
         data_stores: &mut DataStores,
@@ -5995,16 +6004,18 @@ impl PicturePrimitive {
             }
 
             
-            let parent_surface = &mut surfaces[parent_surface_index.0];
-            parent_surface.map_local_to_surface.set_target_spatial_node(
-                self.spatial_node_index,
-                frame_context.spatial_tree,
-            );
-            if let Some(parent_surface_rect) = parent_surface
-                .map_local_to_surface
-                .map(&surface_rect)
-            {
-                parent_surface.rect = parent_surface.rect.union(&parent_surface_rect);
+            if let Some(parent_surface_index) = parent_surface_index {
+                let parent_surface = &mut surfaces[parent_surface_index.0];
+                parent_surface.map_local_to_surface.set_target_spatial_node(
+                    self.spatial_node_index,
+                    frame_context.spatial_tree,
+                );
+                if let Some(parent_surface_rect) = parent_surface
+                    .map_local_to_surface
+                    .map(&surface_rect)
+                {
+                    parent_surface.rect = parent_surface.rect.union(&parent_surface_rect);
+                }
             }
         }
     }
