@@ -172,6 +172,7 @@ class gfxUserFontFamily : public gfxFontFamily {
 
   
   void AddFontEntry(gfxFontEntry* aFontEntry) {
+    mozilla::AutoWriteLock lock(mLock);
     MOZ_ASSERT(!mIsSimpleFamily, "not valid for user-font families");
     
     RefPtr<gfxFontEntry> fe = aFontEntry;
@@ -196,12 +197,16 @@ class gfxUserFontFamily : public gfxFontFamily {
   }
 
   void RemoveFontEntry(gfxFontEntry* aFontEntry) {
+    mozilla::AutoWriteLock lock(mLock);
     MOZ_ASSERT(!mIsSimpleFamily, "not valid for user-font families");
     mAvailableFonts.RemoveElement(aFontEntry);
   }
 
   
-  void DetachFontEntries() { mAvailableFonts.Clear(); }
+  void DetachFontEntries() {
+    mozilla::AutoWriteLock lock(mLock);
+    mAvailableFonts.Clear();
+  }
 };
 
 class gfxUserFontEntry;
