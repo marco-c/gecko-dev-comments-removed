@@ -90,9 +90,9 @@ class TransformStream final : public nsISupports, public nsWrapperCache {
   
   bool mBackpressure = false;
   RefPtr<Promise> mBackpressureChangePromise;
-  MOZ_KNOWN_LIVE RefPtr<TransformStreamDefaultController> mController;
-  MOZ_KNOWN_LIVE RefPtr<ReadableStream> mReadable;
-  MOZ_KNOWN_LIVE RefPtr<WritableStream> mWritable;
+  RefPtr<TransformStreamDefaultController> mController;
+  RefPtr<ReadableStream> mReadable;
+  RefPtr<WritableStream> mWritable;
 };
 
 MOZ_CAN_RUN_SCRIPT void TransformStreamErrorWritableAndUnblockWrite(
