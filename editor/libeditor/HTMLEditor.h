@@ -781,7 +781,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
   RemoveBlockContainerWithTransaction(Element& aElement);
 
   Element* GetEditorRoot() const final;
