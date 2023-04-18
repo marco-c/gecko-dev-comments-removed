@@ -196,7 +196,9 @@ class CompositorWidget {
 
 
 
-  virtual void OnResumeComposition() {}
+
+
+  virtual bool OnResumeComposition() { return true; }
 
   
 
