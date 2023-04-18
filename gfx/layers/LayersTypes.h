@@ -213,62 +213,6 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE(
 ));
 
 
-struct EventRegions {
-  
-  
-  
-  
-  nsIntRegion mHitRegion;
-  
-  
-  
-  nsIntRegion mDispatchToContentHitRegion;
-
-  
-  
-  
-  
-  nsIntRegion mNoActionRegion;
-  nsIntRegion mHorizontalPanRegion;
-  nsIntRegion mVerticalPanRegion;
-
-  
-  
-  
-  
-  
-  
-  
-  bool mDTCRequiresTargetConfirmation;
-
-  EventRegions();
-
-  explicit EventRegions(nsIntRegion aHitRegion);
-
-  
-  
-  
-  EventRegions(const nsIntRegion& aHitRegion,
-               const nsIntRegion& aMaybeHitRegion,
-               const nsIntRegion& aDispatchToContentRegion,
-               const nsIntRegion& aNoActionRegion,
-               const nsIntRegion& aHorizontalPanRegion,
-               const nsIntRegion& aVerticalPanRegion,
-               bool aDTCRequiresTargetConfirmation);
-
-  bool operator==(const EventRegions& aRegions) const;
-  bool operator!=(const EventRegions& aRegions) const;
-  friend std::ostream& operator<<(std::ostream& aStream, const EventRegions& e);
-
-  void ApplyTranslationAndScale(float aXTrans, float aYTrans, float aXScale,
-                                float aYScale);
-  void Transform(const gfx::Matrix4x4& aTransform);
-  void OrWith(const EventRegions& aOther);
-
-  bool IsEmpty() const;
-  void SetEmpty();
-};
-
 
 
 
