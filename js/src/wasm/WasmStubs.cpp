@@ -1983,7 +1983,7 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
   }
 
   
-  CallSiteDesc desc(CallSiteDesc::Dynamic);
+  CallSiteDesc desc(CallSiteDesc::Import);
   MoveSPForJitABI(masm);
   masm.wasmCallImport(desc, CalleeDesc::import(fi.tlsDataOffset()));
 
