@@ -303,6 +303,8 @@ static ShowScrollbar ShouldShowScrollbar(StyleOverflow aOverflow) {
 }
 
 struct MOZ_STACK_CLASS ScrollReflowInput {
+  
+  
   const ReflowInput& mReflowInput;
   nsBoxLayoutState mBoxState;
   ShowScrollbar mHScrollbar;
@@ -321,24 +323,20 @@ struct MOZ_STACK_CLASS ScrollReflowInput {
   OverflowAreas mContentsOverflowAreas;
   
   
-  MOZ_INIT_OUTSIDE_CTOR
-  bool mReflowedContentsWithHScrollbar;
+  bool mReflowedContentsWithHScrollbar = false;
   
   
-  MOZ_INIT_OUTSIDE_CTOR
-  bool mReflowedContentsWithVScrollbar;
+  bool mReflowedContentsWithVScrollbar = false;
 
   
   
   nsSize mInsideBorderSize;
   
   
-  MOZ_INIT_OUTSIDE_CTOR
-  bool mShowHScrollbar;
+  bool mShowHScrollbar = false;
   
   
-  MOZ_INIT_OUTSIDE_CTOR
-  bool mShowVScrollbar;
+  bool mShowVScrollbar = false;
   
   
   
@@ -347,17 +345,47 @@ struct MOZ_STACK_CLASS ScrollReflowInput {
   bool mOnlyNeedHScrollbarToScrollVVInsideLV = false;
   bool mOnlyNeedVScrollbarToScrollVVInsideLV = false;
 
-  ScrollReflowInput(nsIScrollableFrame* aFrame, const ReflowInput& aReflowInput)
-      : mReflowInput(aReflowInput),
-        
-        
-        mBoxState(aReflowInput.mFrame->PresContext(),
-                  aReflowInput.mRenderingContext) {
-    ScrollStyles styles = aFrame->GetScrollStyles();
-    mHScrollbar = ShouldShowScrollbar(styles.mHorizontal);
-    mVScrollbar = ShouldShowScrollbar(styles.mVertical);
-  }
+  ScrollReflowInput(nsHTMLScrollFrame* aFrame, const ReflowInput& aReflowInput);
 };
+
+ScrollReflowInput::ScrollReflowInput(nsHTMLScrollFrame* aFrame,
+                                     const ReflowInput& aReflowInput)
+    : mReflowInput(aReflowInput),
+      
+      
+      mBoxState(aReflowInput.mFrame->PresContext(),
+                aReflowInput.mRenderingContext),
+      mComputedBorder(aReflowInput.ComputedPhysicalBorderPadding() -
+                      aReflowInput.ComputedPhysicalPadding()) {
+  ScrollStyles styles = aFrame->GetScrollStyles();
+  mHScrollbar = ShouldShowScrollbar(styles.mHorizontal);
+  mVScrollbar = ShouldShowScrollbar(styles.mVertical);
+
+  if (!aFrame->GetScrollbarBox(false)) {
+    mHScrollbar = ShowScrollbar::Never;
+    mHScrollbarAllowedForScrollingVVInsideLV = false;
+  }
+  if (!aFrame->GetScrollbarBox(true)) {
+    mVScrollbar = ShowScrollbar::Never;
+    mVScrollbarAllowedForScrollingVVInsideLV = false;
+  }
+
+  const auto* scrollbarStyle =
+      nsLayoutUtils::StyleForScrollbar(mReflowInput.mFrame);
+  
+  
+  
+  
+  
+  
+  if (scrollbarStyle->StyleUIReset()->mScrollbarWidth ==
+      StyleScrollbarWidth::None) {
+    mHScrollbar = ShowScrollbar::Never;
+    mHScrollbarAllowedForScrollingVVInsideLV = false;
+    mVScrollbar = ShowScrollbar::Never;
+    mVScrollbarAllowedForScrollingVVInsideLV = false;
+  }
+}
 
 }  
 
@@ -1278,16 +1306,6 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
   mHelper.HandleScrollbarStyleSwitching();
 
   ScrollReflowInput state(this, aReflowInput);
-  
-  
-  if (!mHelper.mVScrollbarBox) {
-    state.mVScrollbarAllowedForScrollingVVInsideLV = false;
-    state.mVScrollbar = ShowScrollbar::Never;
-  }
-  if (!mHelper.mHScrollbarBox) {
-    state.mHScrollbarAllowedForScrollingVVInsideLV = false;
-    state.mHScrollbar = ShowScrollbar::Never;
-  }
 
   
   bool reflowHScrollbar = true;
@@ -1308,28 +1326,10 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
     reflowScrollCorner = false;
   }
 
-  const auto* scrollbarStyle = nsLayoutUtils::StyleForScrollbar(this);
-  
-  
-  
-  
-  
-  
-  if (scrollbarStyle->StyleUIReset()->mScrollbarWidth ==
-      StyleScrollbarWidth::None) {
-    state.mVScrollbarAllowedForScrollingVVInsideLV = false;
-    state.mHScrollbarAllowedForScrollingVVInsideLV = false;
-    state.mVScrollbar = ShowScrollbar::Never;
-    state.mHScrollbar = ShowScrollbar::Never;
-  }
-
   nsRect oldScrollAreaBounds = mHelper.mScrollPort;
   nsRect oldScrolledAreaBounds =
       mHelper.mScrolledFrame->ScrollableOverflowRectRelativeToParent();
   nsPoint oldScrollPosition = mHelper.GetScrollPosition();
-
-  state.mComputedBorder = aReflowInput.ComputedPhysicalBorderPadding() -
-                          aReflowInput.ComputedPhysicalPadding();
 
   ReflowContents(&state, aDesiredSize);
 
