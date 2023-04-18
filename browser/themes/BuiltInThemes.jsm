@@ -115,6 +115,32 @@ class _BuiltInThemes {
 
 
 
+
+
+
+
+
+  themeIsExpired(id) {
+    let themeInfo = this.builtInThemeMap.get(id);
+    return themeInfo?.expiry && new Date(themeInfo.expiry) < new Date();
+  }
+
+  
+
+
+
+
+
+
+  isRetainedExpiredTheme(id) {
+    return retainedThemes.includes(id) && this.themeIsExpired(id);
+  }
+
+  
+
+
+
+
   async _uninstallExpiredThemes() {
     const activeThemeID = Services.prefs.getStringPref(
       kActiveThemePref,
