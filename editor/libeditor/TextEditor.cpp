@@ -517,7 +517,7 @@ nsresult TextEditor::PasteAsQuotationAsAction(int32_t aClipboardType,
   }
 
   
-  clipboard->GetSomeData(trans, aClipboardType);
+  clipboard->GetData(trans, aClipboardType);
 
   
   

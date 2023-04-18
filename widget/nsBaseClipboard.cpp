@@ -77,8 +77,8 @@ NS_IMETHODIMP nsBaseClipboard::SetData(nsITransferable* aTransferable,
 
 
 
-NS_IMETHODIMP nsBaseClipboard::GetSomeData(nsITransferable* aTransferable,
-                                           int32_t aWhichClipboard) {
+NS_IMETHODIMP nsBaseClipboard::GetData(nsITransferable* aTransferable,
+                                       int32_t aWhichClipboard) {
   NS_ASSERTION(aTransferable, "clipboard given a null transferable");
 
   MOZ_LOG(sBaseClipboardLog, LogLevel::Debug, ("%s", __FUNCTION__));
