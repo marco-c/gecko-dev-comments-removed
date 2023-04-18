@@ -7,59 +7,78 @@
 #ifndef __FFmpegVideoFramePool_h__
 #define __FFmpegVideoFramePool_h__
 
+#include "FFmpegVideoDecoder.h"
+#include "FFmpegLibWrapper.h"
+
 #include "mozilla/layers/DMABUFSurfaceImage.h"
 #include "mozilla/widget/DMABufLibWrapper.h"
 #include "mozilla/widget/DMABufSurface.h"
 
 namespace mozilla {
 
+class VideoFramePool;
+class VideoFrameSurfaceVAAPI;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <int V>
-class VideoFrameSurface {};
-template <>
-class VideoFrameSurface<LIBAV_VER>;
-
-template <int V>
-class VideoFramePool {};
-template <>
-class VideoFramePool<LIBAV_VER>;
-
-template <>
-class VideoFrameSurface<LIBAV_VER> {
-  friend class VideoFramePool<LIBAV_VER>;
-
+class VideoFrameSurface {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VideoFrameSurface)
 
-  explicit VideoFrameSurface(DMABufSurface* aSurface);
+  VideoFrameSurface() = default;
+
+  virtual VideoFrameSurfaceVAAPI* AsVideoFrameSurfaceVAAPI() { return nullptr; }
+
+  virtual void SetYUVColorSpace(gfx::YUVColorSpace aColorSpace) = 0;
+  virtual void SetColorRange(gfx::ColorRange aColorRange) = 0;
+
+  virtual RefPtr<DMABufSurfaceYUV> GetDMABufSurface() { return nullptr; };
+  virtual RefPtr<layers::Image> GetAsImage() = 0;
+
+  
+  
+  
+  VideoFrameSurface(const VideoFrameSurface&) = delete;
+  const VideoFrameSurface& operator=(VideoFrameSurface const&) = delete;
+
+ protected:
+  virtual ~VideoFrameSurface(){};
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class VideoFrameSurfaceVAAPI final : public VideoFrameSurface {
+  friend class VideoFramePool;
+
+ public:
+  explicit VideoFrameSurfaceVAAPI(DMABufSurface* aSurface);
+
+  VideoFrameSurfaceVAAPI* AsVideoFrameSurfaceVAAPI() final { return this; }
 
   void SetYUVColorSpace(mozilla::gfx::YUVColorSpace aColorSpace) {
     mSurface->GetAsDMABufSurfaceYUV()->SetYUVColorSpace(aColorSpace);
@@ -73,12 +92,6 @@ class VideoFrameSurface<LIBAV_VER> {
   };
 
   RefPtr<layers::Image> GetAsImage();
-
-  
-  
-  
-  VideoFrameSurface(const VideoFrameSurface&) = delete;
-  const VideoFrameSurface& operator=(VideoFrameSurface const&) = delete;
 
  protected:
   
@@ -94,7 +107,7 @@ class VideoFrameSurface<LIBAV_VER> {
   void MarkAsUsed() { mSurface->GlobalRefAdd(); }
 
  private:
-  virtual ~VideoFrameSurface();
+  virtual ~VideoFrameSurfaceVAAPI();
 
   const RefPtr<DMABufSurface> mSurface;
   const FFmpegLibWrapper* mLib;
@@ -103,24 +116,23 @@ class VideoFrameSurface<LIBAV_VER> {
 };
 
 
-template <>
-class VideoFramePool<LIBAV_VER> {
+class VideoFramePool final {
  public:
   VideoFramePool();
   ~VideoFramePool();
 
-  RefPtr<VideoFrameSurface<LIBAV_VER>> GetVideoFrameSurface(
+  RefPtr<VideoFrameSurface> GetVideoFrameSurface(
       VADRMPRIMESurfaceDescriptor& aVaDesc, AVCodecContext* aAVCodecContext,
       AVFrame* aAVFrame, FFmpegLibWrapper* aLib);
   void ReleaseUnusedVAAPIFrames();
 
  private:
-  RefPtr<VideoFrameSurface<LIBAV_VER>> GetFreeVideoFrameSurface();
+  RefPtr<VideoFrameSurface> GetFreeVideoFrameSurface();
 
  private:
   
   Mutex mSurfaceLock MOZ_UNANNOTATED;
-  nsTArray<RefPtr<VideoFrameSurface<LIBAV_VER>>> mDMABufSurfaces;
+  nsTArray<RefPtr<VideoFrameSurfaceVAAPI>> mDMABufSurfaces;
   
   
   Maybe<bool> mTextureCreationWorks;
