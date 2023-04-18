@@ -1987,20 +1987,20 @@ PeerConnectionImpl::Close() {
           })
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
-          [transportHandler = std::move(mTransportHandler),
-           privateWindow = mPrivateWindow]() mutable {
+          [this, self = RefPtr<PeerConnectionImpl>(this)]() mutable {
             CSFLogDebug(LOGTAG, "PCImpl->mTransportHandler::RemoveTransports");
-            transportHandler->RemoveTransportsExcept(std::set<std::string>());
-            if (privateWindow) {
-              transportHandler->ExitPrivateMode();
+            mTransportHandler->RemoveTransportsExcept(std::set<std::string>());
+            if (mPrivateWindow) {
+              mTransportHandler->ExitPrivateMode();
+            }
+            mTransportHandler = nullptr;
+            if (PeerConnectionCtx::isActive()) {
+              
+              
+              
+              PeerConnectionCtx::GetInstance()->RemovePeerConnection(mHandle);
             }
           });
-
-  if (PeerConnectionCtx::isActive()) {
-    
-    
-    PeerConnectionCtx::GetInstance()->RemovePeerConnection(mHandle);
-  }
 
   return NS_OK;
 }
