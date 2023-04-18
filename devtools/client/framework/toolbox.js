@@ -15,6 +15,7 @@ const SPLITCONSOLE_HEIGHT_PREF = "devtools.toolbox.splitconsoleHeight";
 const DISABLE_AUTOHIDE_PREF = "ui.popup.disable_autohide";
 const FORCE_THEME_NOTIFICATION_PREF = "devtools.theme.force-auto-theme-info";
 const SHOW_THEME_NOTIFICATION_PREF = "devtools.theme.show-auto-theme-info";
+const PSEUDO_LOCALE_PREF = "intl.l10n.pseudo";
 const HOST_HISTOGRAM = "DEVTOOLS_TOOLBOX_HOST";
 const CURRENT_THEME_SCALAR = "devtools.current_theme";
 const HTML_NS = "http://www.w3.org/1999/xhtml";
@@ -286,6 +287,9 @@ function Toolbox(
   this._toolUnregistered = this._toolUnregistered.bind(this);
   this._refreshHostTitle = this._refreshHostTitle.bind(this);
   this.toggleNoAutohide = this.toggleNoAutohide.bind(this);
+  this.disablePseudoLocale = () => this.changePseudoLocale("none");
+  this.enableAccentedPseudoLocale = () => this.changePseudoLocale("accented");
+  this.enableBidiPseudoLocale = () => this.changePseudoLocale("bidi");
   this._updateFrames = this._updateFrames.bind(this);
   this._splitConsoleOnKeypress = this._splitConsoleOnKeypress.bind(this);
   this.closeToolbox = this.closeToolbox.bind(this);
@@ -1895,9 +1899,15 @@ Toolbox.prototype = {
     );
 
     
-    if (this.disableAutohideAvailable) {
-      const disable = await this._isDisableAutohideEnabled();
-      this.component.setDisableAutohide(disable);
+    if (this.isBrowserChromeTarget) {
+      
+      
+      const [disableAutohide, pseudoLocale] = await Promise.all([
+        this._isDisableAutohideEnabled(),
+        this.getPseudoLocale(),
+      ]);
+      this.component.setDisableAutohide(disableAutohide);
+      this.component.setPseudoLocale(pseudoLocale);
     }
   },
 
@@ -1911,6 +1921,9 @@ Toolbox.prototype = {
       toggleOptions: this.toggleOptions,
       toggleSplitConsole: this.toggleSplitConsole,
       toggleNoAutohide: this.toggleNoAutohide,
+      disablePseudoLocale: this.disablePseudoLocale,
+      enableAccentedPseudoLocale: this.enableAccentedPseudoLocale,
+      enableBidiPseudoLocale: this.enableBidiPseudoLocale,
       closeToolbox: this.closeToolbox,
       focusButton: this._onToolbarFocus,
       toolbox: this,
@@ -3232,19 +3245,62 @@ Toolbox.prototype = {
 
 
   get preferenceFront() {
-    const frontPromise = this.commands.client.mainRoot.getFront("preference");
-    frontPromise.then(front => {
+    if (!this._preferenceFrontRequest) {
       
       
-      this._preferenceFront = front;
-    });
-
-    return frontPromise;
+      this._preferenceFrontRequest = this.commands.client.mainRoot.getFront(
+        "preference"
+      );
+    }
+    return this._preferenceFrontRequest;
   },
 
   
-  get disableAutohideAvailable() {
+  
+  get isBrowserChromeTarget() {
     return this.target.chrome;
+  },
+
+  
+
+
+
+
+  async changePseudoLocale(pseudoLocale) {
+    await this.isOpen;
+    const prefFront = await this.preferenceFront;
+    if (pseudoLocale === "none") {
+      await prefFront.clearUserPref(PSEUDO_LOCALE_PREF);
+    } else {
+      await prefFront.setCharPref(PSEUDO_LOCALE_PREF, pseudoLocale);
+    }
+    this.component.setPseudoLocale(pseudoLocale);
+    this._pseudoLocaleChanged = true;
+  },
+
+  
+
+
+
+
+  async getPseudoLocale() {
+    
+    
+    await this.isOpen;
+    if (!this.isBrowserChromeTarget) {
+      return undefined;
+    }
+
+    const prefFront = await this.preferenceFront;
+    const locale = await prefFront.getCharPref(PSEUDO_LOCALE_PREF);
+
+    switch (locale) {
+      case "bidi":
+      case "accented":
+        return locale;
+      default:
+        return "none";
+    }
   },
 
   async toggleNoAutohide() {
@@ -3254,7 +3310,7 @@ Toolbox.prototype = {
 
     front.setBoolPref(DISABLE_AUTOHIDE_PREF, toggledValue);
 
-    if (this.disableAutohideAvailable) {
+    if (this.isBrowserChromeTarget) {
       this.component.setDisableAutohide(toggledValue);
     }
     this._autohideHasBeenToggled = true;
@@ -3264,7 +3320,7 @@ Toolbox.prototype = {
     
     
     await this.isOpen;
-    if (!this.disableAutohideAvailable) {
+    if (!this.isBrowserChromeTarget) {
       return false;
     }
 
@@ -3968,7 +4024,11 @@ Toolbox.prototype = {
     this._toolNames = null;
 
     
-    outstanding.push(this.resetPreference());
+    outstanding.push(
+      this.resetPreference().then(() => {
+        this._preferenceFrontRequest = null;
+      })
+    );
 
     this.commands.targetCommand.unwatchTargets({
       types: this.commands.targetCommand.ALL_TYPES,
@@ -4181,17 +4241,25 @@ Toolbox.prototype = {
 
 
   async resetPreference() {
-    if (!this._preferenceFront) {
+    if (
+      
+      !this._preferenceFrontRequest ||
+      
+      
+      
+      (!this._autohideHasBeenToggled && !this._pseudoLocaleChanged)
+    ) {
       return;
     }
 
-    
-    
-    if (this._autohideHasBeenToggled) {
-      await this._preferenceFront.clearUserPref(DISABLE_AUTOHIDE_PREF);
-    }
+    const preferenceFront = await this.preferenceFront;
 
-    this._preferenceFront = null;
+    if (this._autohideHasBeenToggled) {
+      await preferenceFront.clearUserPref(DISABLE_AUTOHIDE_PREF);
+    }
+    if (this._pseudoLocaleChanged) {
+      await preferenceFront.clearUserPref(PSEUDO_LOCALE_PREF);
+    }
   },
 
   

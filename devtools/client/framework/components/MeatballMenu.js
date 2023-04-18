@@ -72,6 +72,10 @@ class MeatballMenu extends PureComponent {
       disableAutohide: PropTypes.bool,
 
       
+      
+      pseudoLocale: PropTypes.string,
+
+      
       toggleOptions: PropTypes.func.isRequired,
 
       
@@ -79,6 +83,12 @@ class MeatballMenu extends PureComponent {
 
       
       toggleNoAutohide: PropTypes.func,
+
+      
+      
+      disablePseudoLocale: PropTypes.func,
+      enableAccentedPseudoLocale: PropTypes.func,
+      enableBidiPseudoLocale: PropTypes.func,
 
       
       
@@ -107,8 +117,10 @@ class MeatballMenu extends PureComponent {
     
     
     
+    
     const didChange =
       typeof this.props.disableAutohide !== typeof prevProps.disableAutohide ||
+      this.props.pseudoLocale !== prevProps.pseudoLocale ||
       this.props.currentToolId !== prevProps.currentToolId ||
       this.props.isSplitConsoleActive !== prevProps.isSplitConsoleActive;
 
@@ -181,6 +193,27 @@ class MeatballMenu extends PureComponent {
     }
 
     
+    items.push(
+      MenuItem({
+        id: "toolbox-meatball-menu-settings",
+        key: "settings",
+        l10nID: "toolbox-meatball-menu-settings-label",
+        
+        
+        accelerator: this.props.L10N.getStr("toolbox.help.key"),
+        onClick: this.props.toggleOptions,
+        className: "iconic",
+      })
+    );
+
+    if (
+      typeof this.props.disableAutohide !== "undefined" ||
+      typeof this.props.pseudoLocale !== "undefined"
+    ) {
+      items.push(hr({ key: "docs-separator-1" }));
+    }
+
+    
     
     
     
@@ -199,20 +232,42 @@ class MeatballMenu extends PureComponent {
     }
 
     
-    items.push(
-      MenuItem({
-        id: "toolbox-meatball-menu-settings",
-        key: "settings",
-        l10nID: "toolbox-meatball-menu-settings-label",
-        
-        
-        accelerator: this.props.L10N.getStr("toolbox.help.key"),
-        onClick: this.props.toggleOptions,
-        className: "iconic",
-      })
-    );
+    if (typeof this.props.pseudoLocale !== "undefined") {
+      const {
+        pseudoLocale,
+        enableAccentedPseudoLocale,
+        enableBidiPseudoLocale,
+        disablePseudoLocale,
+      } = this.props;
+      items.push(
+        MenuItem({
+          id: "toolbox-meatball-menu-pseudo-locale-accented",
+          key: "pseudo-locale-accented",
+          l10nID: "toolbox-meatball-menu-pseudo-locale-accented",
+          type: "checkbox",
+          checked: pseudoLocale === "accented",
+          onClick:
+            pseudoLocale === "accented"
+              ? disablePseudoLocale
+              : enableAccentedPseudoLocale,
+          className: "iconic",
+        }),
+        MenuItem({
+          id: "toolbox-meatball-menu-pseudo-locale-bidi",
+          key: "pseudo-locale-bidi",
+          l10nID: "toolbox-meatball-menu-pseudo-locale-bidi",
+          type: "checkbox",
+          checked: pseudoLocale === "bidi",
+          onClick:
+            pseudoLocale === "bidi"
+              ? disablePseudoLocale
+              : enableBidiPseudoLocale,
+          className: "iconic",
+        })
+      );
+    }
 
-    items.push(hr({ key: "docs-separator" }));
+    items.push(hr({ key: "docs-separator-2" }));
 
     
     items.push(

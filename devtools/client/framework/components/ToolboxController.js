@@ -37,6 +37,7 @@ class ToolboxController extends Component {
       canCloseToolbox: true,
       isSplitConsoleActive: false,
       disableAutohide: undefined,
+      pseudoLocale: undefined,
       canRender: false,
       buttonIds: [],
       checkedButtonsUpdated: () => {
@@ -159,8 +160,18 @@ class ToolboxController extends Component {
     this.setState({ isSplitConsoleActive });
   }
 
+  
+
+
   setDisableAutohide(disableAutohide) {
     this.setState({ disableAutohide });
+  }
+
+  
+
+
+  setPseudoLocale(pseudoLocale) {
+    this.setState({ pseudoLocale });
   }
 
   setPanelDefinitions(panelDefinitions) {
