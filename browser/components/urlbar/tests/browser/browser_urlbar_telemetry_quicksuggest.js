@@ -37,6 +37,11 @@ const SUGGEST_PREF = "suggest.quicksuggest";
 
 let spy;
 
+
+if (AppConstants.platform == "macosx") {
+  requestLongerTimeout(3);
+}
+
 add_task(async function init() {
   ({ sandbox, spy } = QuickSuggestTestUtils.createTelemetryPingSpy());
 
@@ -65,8 +70,64 @@ add_task(async function init() {
 });
 
 
-add_task(async function impression() {
+
+
+
+add_task(async function impression_offline_dataCollectionDisabled() {
+  await QuickSuggestTestUtils.setScenario("offline");
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  await doImpressionTest({
+    scenario: "offline",
+    search_query: undefined,
+  });
+});
+
+
+
+
+
+add_task(async function impression_offline_dataCollectionEnabled() {
+  await QuickSuggestTestUtils.setScenario("offline");
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
+  await doImpressionTest({
+    scenario: "offline",
+    search_query: TEST_SEARCH_STRING,
+  });
+});
+
+
+
+
+
+add_task(async function impression_online_dataCollectionDisabled() {
+  await QuickSuggestTestUtils.setScenario("online");
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+  await doImpressionTest({
+    scenario: "online",
+    search_query: undefined,
+  });
+});
+
+
+
+
+
+add_task(async function impression_online_dataCollectionEnabled() {
+  await QuickSuggestTestUtils.setScenario("online");
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
+  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+  await doImpressionTest({
+    scenario: "online",
+    search_query: TEST_SEARCH_STRING,
+  });
+});
+
+async function doImpressionTest({ scenario, search_query }) {
   await BrowserTestUtils.withNewTab("about:blank", async () => {
+    spy.resetHistory();
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
       value: TEST_SEARCH_STRING,
@@ -78,59 +139,30 @@ add_task(async function impression() {
       index,
       url: TEST_URL,
     });
+    
+    
     await UrlbarTestUtils.promisePopupClose(window, () => {
       EventUtils.synthesizeKey("KEY_Enter");
     });
     QuickSuggestTestUtils.assertScalars({
       [QuickSuggestTestUtils.SCALARS.IMPRESSION]: index + 1,
     });
-    QuickSuggestTestUtils.assertImpressionPing({ index, spy });
+    QuickSuggestTestUtils.assertImpressionPing({
+      index,
+      spy,
+      scenario,
+      search_query,
+    });
+    QuickSuggestTestUtils.assertNoClickPing(spy);
   });
+
   await PlacesUtils.history.clear();
-});
 
-
-add_task(async function impression_online() {
-  await UrlbarTestUtils.withExperiment({
-    valueOverrides: {
-      
-      merinoEnabled: false,
-      quickSuggestScenario: "online",
-      quickSuggestShouldShowOnboardingDialog: false,
-    },
-    callback: async () => {
-      spy.resetHistory();
-      UrlbarPrefs.set("suggest.quicksuggest", true);
-      UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
-      await BrowserTestUtils.withNewTab("about:blank", async () => {
-        await UrlbarTestUtils.promiseAutocompleteResultPopup({
-          window,
-          value: TEST_SEARCH_STRING,
-          fireInputEvent: true,
-        });
-        let index = 1;
-        await QuickSuggestTestUtils.assertIsQuickSuggest({
-          window,
-          index,
-          url: TEST_URL,
-        });
-        await UrlbarTestUtils.promisePopupClose(window, () => {
-          EventUtils.synthesizeKey("KEY_Enter");
-        });
-        QuickSuggestTestUtils.assertScalars({
-          [QuickSuggestTestUtils.SCALARS.IMPRESSION]: index + 1,
-        });
-        QuickSuggestTestUtils.assertImpressionPing({
-          index,
-          spy,
-          scenario: "online",
-          search_query: TEST_SEARCH_STRING,
-        });
-      });
-      await PlacesUtils.history.clear();
-    },
-  });
-});
+  await QuickSuggestTestUtils.setScenario(null);
+  UrlbarPrefs.clear("quicksuggest.dataCollection.enabled");
+  UrlbarPrefs.clear("suggest.quicksuggest");
+  UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
+}
 
 
 
@@ -151,6 +183,7 @@ add_task(async function noImpression_abandonment() {
     });
     QuickSuggestTestUtils.assertScalars({});
     QuickSuggestTestUtils.assertNoImpressionPing(spy);
+    QuickSuggestTestUtils.assertNoClickPing(spy);
   });
 });
 
@@ -170,42 +203,132 @@ add_task(async function noImpression_noQuickSuggestResult() {
     });
     QuickSuggestTestUtils.assertScalars({});
     QuickSuggestTestUtils.assertNoImpressionPing(spy);
+    QuickSuggestTestUtils.assertNoClickPing(spy);
   });
   await PlacesUtils.history.clear();
 });
 
 
 
-add_task(async function click_keyboard() {
-  await BrowserTestUtils.withNewTab("about:blank", async () => {
-    spy.resetHistory();
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      window,
-      value: TEST_SEARCH_STRING,
-      fireInputEvent: true,
-    });
-    let index = 1;
-    await QuickSuggestTestUtils.assertIsQuickSuggest({
-      window,
-      index,
-      url: TEST_URL,
-    });
-    await UrlbarTestUtils.promisePopupClose(window, () => {
-      EventUtils.synthesizeKey("KEY_ArrowDown");
-      EventUtils.synthesizeKey("KEY_Enter");
-    });
-    QuickSuggestTestUtils.assertScalars({
-      [QuickSuggestTestUtils.SCALARS.IMPRESSION]: index + 1,
-      [QuickSuggestTestUtils.SCALARS.CLICK]: index + 1,
-    });
-    QuickSuggestTestUtils.assertClickPing({ index, spy });
+
+
+add_task(async function click_keyboard_offline_dataCollectionDisabled() {
+  await QuickSuggestTestUtils.setScenario("offline");
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  await doClickTest({
+    useKeyboard: true,
+    scenario: "offline",
+    search_query: undefined,
   });
-  await PlacesUtils.history.clear();
 });
 
 
 
-add_task(async function click_mouse() {
+
+
+add_task(async function click_keyboard_offline_dataCollectionEnabled() {
+  await QuickSuggestTestUtils.setScenario("offline");
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
+  await doClickTest({
+    useKeyboard: true,
+    scenario: "offline",
+    search_query: TEST_SEARCH_STRING,
+  });
+});
+
+
+
+
+
+add_task(async function click_keyboard_online_dataCollectionDisabled() {
+  await QuickSuggestTestUtils.setScenario("online");
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+  await doClickTest({
+    useKeyboard: true,
+    scenario: "online",
+    search_query: undefined,
+  });
+});
+
+
+
+
+
+add_task(async function click_keyboard_online_dataCollectionEnabled() {
+  await QuickSuggestTestUtils.setScenario("online");
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
+  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+  await doClickTest({
+    useKeyboard: true,
+    scenario: "online",
+    search_query: TEST_SEARCH_STRING,
+  });
+});
+
+
+
+
+
+add_task(async function click_mouse_offline_dataCollectionDisabled() {
+  await QuickSuggestTestUtils.setScenario("offline");
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  await doClickTest({
+    useKeyboard: false,
+    scenario: "offline",
+    search_query: undefined,
+  });
+});
+
+
+
+
+
+add_task(async function click_mouse_offline_dataCollectionEnabled() {
+  await QuickSuggestTestUtils.setScenario("offline");
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
+  await doClickTest({
+    useKeyboard: false,
+    scenario: "offline",
+    search_query: TEST_SEARCH_STRING,
+  });
+});
+
+
+
+
+
+add_task(async function click_mouse_online_dataCollectionDisabled() {
+  await QuickSuggestTestUtils.setScenario("online");
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+  await doClickTest({
+    useKeyboard: false,
+    scenario: "online",
+    search_query: undefined,
+  });
+});
+
+
+
+
+
+add_task(async function click_mouse_online_dataCollectionEnabled() {
+  await QuickSuggestTestUtils.setScenario("online");
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
+  UrlbarPrefs.set("suggest.quicksuggest", true);
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+  await doClickTest({
+    useKeyboard: false,
+    scenario: "online",
+    search_query: TEST_SEARCH_STRING,
+  });
+});
+
+async function doClickTest({ useKeyboard, scenario, search_query }) {
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     spy.resetHistory();
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -220,16 +343,33 @@ add_task(async function click_mouse() {
       url: TEST_URL,
     });
     await UrlbarTestUtils.promisePopupClose(window, () => {
-      EventUtils.synthesizeMouseAtCenter(result.element.row, {});
+      if (useKeyboard) {
+        EventUtils.synthesizeKey("KEY_ArrowDown");
+        EventUtils.synthesizeKey("KEY_Enter");
+      } else {
+        EventUtils.synthesizeMouseAtCenter(result.element.row, {});
+      }
     });
     QuickSuggestTestUtils.assertScalars({
       [QuickSuggestTestUtils.SCALARS.IMPRESSION]: index + 1,
       [QuickSuggestTestUtils.SCALARS.CLICK]: index + 1,
     });
-    QuickSuggestTestUtils.assertClickPing({ index, spy });
+    QuickSuggestTestUtils.assertImpressionPing({
+      index,
+      spy,
+      scenario,
+      search_query,
+    });
+    QuickSuggestTestUtils.assertClickPing({ index, spy, scenario });
   });
+
   await PlacesUtils.history.clear();
-});
+
+  await QuickSuggestTestUtils.setScenario(null);
+  UrlbarPrefs.clear("quicksuggest.dataCollection.enabled");
+  UrlbarPrefs.clear("suggest.quicksuggest");
+  UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
+}
 
 
 
@@ -261,10 +401,12 @@ add_task(async function click_beforeSearchSuggestions() {
         EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: index });
         EventUtils.synthesizeKey("KEY_Enter");
       });
+      
       QuickSuggestTestUtils.assertScalars({
         [QuickSuggestTestUtils.SCALARS.IMPRESSION]: index + 1,
         [QuickSuggestTestUtils.SCALARS.CLICK]: index + 1,
       });
+      QuickSuggestTestUtils.assertImpressionPing({ index, spy });
       QuickSuggestTestUtils.assertClickPing({ index, spy });
     });
   });
@@ -304,6 +446,7 @@ add_task(async function help_keyboard() {
     [QuickSuggestTestUtils.SCALARS.IMPRESSION]: index + 1,
     [QuickSuggestTestUtils.SCALARS.HELP]: index + 1,
   });
+  QuickSuggestTestUtils.assertImpressionPing({ index, spy });
   QuickSuggestTestUtils.assertNoClickPing(spy);
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
   await PlacesUtils.history.clear();
@@ -340,6 +483,7 @@ add_task(async function help_mouse() {
     [QuickSuggestTestUtils.SCALARS.IMPRESSION]: index + 1,
     [QuickSuggestTestUtils.SCALARS.HELP]: index + 1,
   });
+  QuickSuggestTestUtils.assertImpressionPing({ index, spy });
   QuickSuggestTestUtils.assertNoClickPing(spy);
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
   await PlacesUtils.history.clear();
@@ -444,10 +588,8 @@ add_task(async function nimbusExposure() {
   Services.telemetry.clearEvents();
   NimbusFeatures.urlbar._didSendExposureEvent = false;
   UrlbarProviderQuickSuggest._recordedExposureEvent = false;
-  let doExperimentCleanup = await UrlbarTestUtils.enrollExperiment({
+  let doExperimentCleanup = await QuickSuggestTestUtils.enrollExperiment({
     valueOverrides: {
-      
-      merinoEnabled: false,
       quickSuggestEnabled: true,
       quickSuggestShouldShowOnboardingDialog: false,
     },
@@ -532,7 +674,7 @@ add_task(async function nimbusExposure() {
 add_task(async function updateScenario() {
   
   
-  UrlbarPrefs.clear("quicksuggest.scenario");
+  await QuickSuggestTestUtils.setScenario(null);
   UrlbarPrefs.clear("suggest.quicksuggest");
   UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
   Services.telemetry.clearEvents();
@@ -540,7 +682,7 @@ add_task(async function updateScenario() {
   
   let defaults = Services.prefs.getDefaultBranch("browser.urlbar.");
   Assert.equal(
-    defaults.getCharPref("quicksuggest.scenario"),
+    UrlbarPrefs.get("quicksuggest.scenario"),
     "offline",
     "Default scenario is offline initially"
   );
@@ -566,7 +708,7 @@ add_task(async function updateScenario() {
   );
 
   
-  defaults.setCharPref("quicksuggest.scenario", "online");
+  await QuickSuggestTestUtils.setScenario("online");
   Assert.ok(
     !defaults.getBoolPref("suggest.quicksuggest"),
     "suggest.quicksuggest is false after setting online scenario"
@@ -590,7 +732,7 @@ add_task(async function updateScenario() {
   );
 
   
-  defaults.setCharPref("quicksuggest.scenario", "offline");
+  await QuickSuggestTestUtils.setScenario("offline");
   Assert.ok(
     defaults.getBoolPref("suggest.quicksuggest"),
     "suggest.quicksuggest is true after setting offline again"
@@ -619,7 +761,7 @@ add_task(async function updateScenario() {
 add_task(async function telemetryEnvironmentUpdateNotification() {
   
   
-  UrlbarPrefs.clear("quicksuggest.scenario");
+  await QuickSuggestTestUtils.setScenario(null);
   UrlbarPrefs.clear("suggest.quicksuggest");
   UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
 

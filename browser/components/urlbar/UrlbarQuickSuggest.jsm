@@ -263,21 +263,29 @@ class Suggestions {
 
     UrlbarPrefs.set(SEEN_DIALOG_PREF, true);
 
+    
+    
+    
+    
+    
+    
+    let optedIn = params.choice == ONBOARDING_CHOICE.ACCEPT;
+    UrlbarPrefs.set("suggest.quicksuggest", optedIn);
+    UrlbarPrefs.set("suggest.quicksuggest.sponsored", optedIn);
+    UrlbarPrefs.set("quicksuggest.dataCollection.enabled", optedIn);
+
     switch (params.choice) {
-      case ONBOARDING_CHOICE.ACCEPT:
-        
-        UrlbarPrefs.set("suggest.quicksuggest", true);
-        UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
-        break;
       case ONBOARDING_CHOICE.LEARN_MORE:
         win.openTrustedLinkIn(UrlbarProviderQuickSuggest.helpUrl, "tab", {
           fromChrome: true,
         });
         break;
-      case ONBOARDING_CHOICE.NOT_NOW:
-        break;
       case ONBOARDING_CHOICE.SETTINGS:
         win.openPreferences("privacy-locationBar");
+        break;
+      case ONBOARDING_CHOICE.ACCEPT:
+      case ONBOARDING_CHOICE.NOT_NOW:
+        
         break;
       default:
         if (escapeKeyPressed) {
@@ -310,10 +318,8 @@ class Suggestions {
 
   onPrefChanged(pref) {
     switch (pref) {
-      
-      
-      
       case "suggest.quicksuggest":
+      case "suggest.quicksuggest.sponsored":
         this._queueSettingsSetup();
         break;
     }
@@ -343,7 +349,8 @@ class Suggestions {
     this._queueSettingsTask(() => {
       let enabled =
         UrlbarPrefs.get(FEATURE_AVAILABLE) &&
-        UrlbarPrefs.get("suggest.quicksuggest");
+        (UrlbarPrefs.get("suggest.quicksuggest") ||
+          UrlbarPrefs.get("suggest.quicksuggest.sponsored"));
       if (enabled && !this._rs) {
         this._onSettingsSync = (...args) => this._queueSettingsSync(...args);
         this._rs = RemoteSettings(RS_COLLECTION);

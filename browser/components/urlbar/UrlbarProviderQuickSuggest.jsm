@@ -108,7 +108,8 @@ class ProviderQuickSuggest extends UrlbarProvider {
       !queryContext.searchMode &&
       !queryContext.isPrivate &&
       UrlbarPrefs.get("quickSuggestEnabled") &&
-      UrlbarPrefs.get("suggest.quicksuggest")
+      (UrlbarPrefs.get("suggest.quicksuggest") ||
+        UrlbarPrefs.get("suggest.quicksuggest.sponsored"))
     );
   }
 
@@ -135,7 +136,11 @@ class ProviderQuickSuggest extends UrlbarProvider {
         this._fetchRemoteSettingsSuggestion(queryContext, searchString)
       );
     }
-    if (UrlbarPrefs.get("merinoEnabled") && queryContext.allowRemoteResults()) {
+    if (
+      UrlbarPrefs.get("merinoEnabled") &&
+      UrlbarPrefs.get("quicksuggest.dataCollection.enabled") &&
+      queryContext.allowRemoteResults()
+    ) {
       promises.push(this._fetchMerinoSuggestions(queryContext, searchString));
     }
 
@@ -148,14 +153,9 @@ class ProviderQuickSuggest extends UrlbarProvider {
     
     
     
-    
     let suggestion = allSuggestions
       .flat()
-      .filter(
-        s =>
-          s &&
-          (!s.is_sponsored || UrlbarPrefs.get("suggest.quicksuggest.sponsored"))
-      )
+      .filter(s => s && this._canAddSuggestion(s))
       .sort((a, b) => b.score - a.score)[0];
     if (!suggestion) {
       return;
@@ -286,15 +286,15 @@ class ProviderQuickSuggest extends UrlbarProvider {
         requestId,
       } = result.payload;
 
-      let searchQuery;
-      let matchedKeywords;
       let scenario = UrlbarPrefs.get("quicksuggest.scenario");
+
       
       
       
-      
+      let matchedKeywords;
+      let searchQuery;
       if (
-        scenario === "online" &&
+        UrlbarPrefs.get("quicksuggest.dataCollection.enabled") &&
         source === QUICK_SUGGEST_SOURCE.REMOTE_SETTINGS
       ) {
         matchedKeywords = qsSuggestion || details.searchString;
@@ -531,6 +531,23 @@ class ProviderQuickSuggest extends UrlbarProvider {
       request_id,
       source: QUICK_SUGGEST_SOURCE.MERINO,
     }));
+  }
+
+  
+
+
+
+
+
+
+
+
+  _canAddSuggestion(suggestion) {
+    return (
+      (suggestion.is_sponsored &&
+        UrlbarPrefs.get("suggest.quicksuggest.sponsored")) ||
+      (!suggestion.is_sponsored && UrlbarPrefs.get("suggest.quicksuggest"))
+    );
   }
 
   

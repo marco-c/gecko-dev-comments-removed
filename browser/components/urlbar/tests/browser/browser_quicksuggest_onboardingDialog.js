@@ -18,6 +18,11 @@ const ONBOARDING_URI =
 const OTHER_DIALOG_URI = getRootDirectory(gTestPath) + "subdialog.xhtml";
 
 
+if (AppConstants.platform == "macosx") {
+  requestLongerTimeout(3);
+}
+
+
 add_task(async function accept() {
   await doDialogTest({
     expectOptIn: true,
@@ -506,6 +511,7 @@ async function doDialogTest({
       set: [
         ["browser.urlbar.suggest.quicksuggest", false],
         ["browser.urlbar.suggest.quicksuggest.sponsored", false],
+        ["browser.urlbar.quicksuggest.dataCollection.enabled", false],
         ["browser.urlbar.quicksuggest.enabled", true],
         ["browser.urlbar.quicksuggest.shouldShowOnboardingDialog", true],
         ["browser.urlbar.quicksuggest.showedOnboardingDialog", false],
@@ -528,6 +534,11 @@ async function doDialogTest({
       UrlbarPrefs.get("suggest.quicksuggest.sponsored"),
       expectOptIn,
       "Sponsored pref enabled status"
+    );
+    Assert.equal(
+      UrlbarPrefs.get("quicksuggest.dataCollection.enabled"),
+      expectOptIn,
+      "Data collection pref enabled status"
     );
 
     if (onboardingDialogChoice) {

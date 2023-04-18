@@ -190,7 +190,6 @@ add_task(async function nonsponsoredOnly_noMatch() {
 });
 
 
-
 add_task(async function sponsoredOnly_sponsored() {
   UrlbarPrefs.set("suggest.quicksuggest", false);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
@@ -199,7 +198,10 @@ add_task(async function sponsoredOnly_sponsored() {
     providers: [UrlbarProviderQuickSuggest.name],
     isPrivate: false,
   });
-  await check_results({ context, matches: [] });
+  await check_results({
+    context,
+    matches: [EXPECTED_SPONSORED_RESULT],
+  });
 });
 
 
@@ -615,6 +617,7 @@ async function doDedupeAgainstURLTest({
   
   info("Doing first query");
   UrlbarPrefs.set("suggest.quicksuggest", false);
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
   let context = createContext(searchString, { isPrivate: false });
   await check_results({
     context,
@@ -701,6 +704,7 @@ add_task(async function setupAndTeardown() {
   
   UrlbarPrefs.set("suggest.quicksuggest", false);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
+  await UrlbarQuickSuggest.readyPromise;
   Assert.ok(
     !UrlbarQuickSuggest._rs,
     "Settings client is null after disabling suggest prefs"
@@ -726,8 +730,29 @@ add_task(async function setupAndTeardown() {
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   await UrlbarQuickSuggest.readyPromise;
   Assert.ok(
+    UrlbarQuickSuggest._rs,
+    "Settings client is non-null after enabling suggest.quicksuggest.sponsored"
+  );
+
+  UrlbarPrefs.set("suggest.quicksuggest", true);
+  await UrlbarQuickSuggest.readyPromise;
+  Assert.ok(
+    UrlbarQuickSuggest._rs,
+    "Settings client remains non-null after enabling suggest.quicksuggest"
+  );
+
+  UrlbarPrefs.set("suggest.quicksuggest", false);
+  await UrlbarQuickSuggest.readyPromise;
+  Assert.ok(
+    UrlbarQuickSuggest._rs,
+    "Settings client remains non-null after disabling suggest.quicksuggest"
+  );
+
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
+  await UrlbarQuickSuggest.readyPromise;
+  Assert.ok(
     !UrlbarQuickSuggest._rs,
-    "Settings client remains null after enabling suggest.quicksuggest.sponsored"
+    "Settings client is null after disabling suggest.quicksuggest.sponsored"
   );
 
   UrlbarPrefs.set("suggest.quicksuggest", true);

@@ -211,11 +211,32 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["quicksuggest.onboardingDialogChoice", ""],
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ["quicksuggest.migrationVersion", 0],
+
+  
   ["quicksuggest.remoteSettings.enabled", true],
 
   
   
-  ["quicksuggest.scenario", "history"],
+  
+  
+  ["quicksuggest.scenario", ""],
+
+  
+  ["quicksuggest.dataCollection.enabled", false],
 
   
   ["quicksuggest.shouldShowOnboardingDialog", true],
@@ -442,12 +463,14 @@ class Preferences {
       "nsIObserver",
       "nsISupportsWeakReference",
     ]);
+
     Services.prefs.addObserver(PREF_URLBAR_BRANCH, this, true);
     for (let pref of PREF_OTHER_DEFAULTS.keys()) {
       Services.prefs.addObserver(pref, this, true);
     }
     this._observerWeakRefs = [];
     this.addObserver(this);
+
     
     
     
@@ -455,7 +478,11 @@ class Preferences {
       "keyword.enabled",
       "suggest.searches",
     ];
+
+    
+    
     this._updatingFirefoxSuggestScenario = false;
+
     NimbusFeatures.urlbar.onUpdate(() => this._onNimbusUpdate());
   }
 
@@ -554,9 +581,13 @@ class Preferences {
 
 
 
-  async updateFirefoxSuggestScenario() {
-    
-    
+
+
+
+
+
+
+  async updateFirefoxSuggestScenario(isStartup, scenarioOverride = undefined) {
     
     
     
@@ -564,15 +595,17 @@ class Preferences {
     if (this._updatingFirefoxSuggestScenario) {
       return;
     }
+
     try {
       this._updatingFirefoxSuggestScenario = true;
-      await this._updateFirefoxSuggestScenarioHelper();
+      await Region.init();
+      this._updateFirefoxSuggestScenarioHelper(isStartup, scenarioOverride);
     } finally {
       this._updatingFirefoxSuggestScenario = false;
     }
   }
 
-  async _updateFirefoxSuggestScenarioHelper() {
+  _updateFirefoxSuggestScenarioHelper(isStartup, scenarioOverride) {
     
     
     
@@ -589,9 +622,71 @@ class Preferences {
     
     
     
-    let scenario = this._nimbus.quickSuggestScenario;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    let nonSponsoredInitiallyEnabled = this.get("suggest.quicksuggest");
+    let sponsoredInitiallyEnabled = this.get("suggest.quicksuggest.sponsored");
+
+    
+    let scenario = scenarioOverride || this._nimbus.quickSuggestScenario;
     if (!scenario) {
-      await Region.init();
       if (
         Region.home == "US" &&
         Services.locale.appLocaleAsBCP47.substring(0, 2) == "en"
@@ -603,50 +698,70 @@ class Preferences {
         scenario = "history";
       }
     }
+    if (!this.FIREFOX_SUGGEST_DEFAULT_PREFS.hasOwnProperty(scenario)) {
+      scenario = "history";
+      Cu.reportError(`Unrecognized Firefox Suggest scenario "${scenario}"`);
+    }
+
+    
+    let prefs = this.FIREFOX_SUGGEST_DEFAULT_PREFS[scenario];
+
+    
+    
+    let uiPrefNamesByVariable = {
+      quickSuggestNonSponsoredEnabled: "suggest.quicksuggest",
+      quickSuggestSponsoredEnabled: "suggest.quicksuggest.sponsored",
+      quickSuggestDataCollectionEnabled: "quicksuggest.dataCollection.enabled",
+    };
+    for (let [variable, prefName] of Object.entries(uiPrefNamesByVariable)) {
+      if (this._nimbus.hasOwnProperty(variable)) {
+        prefs[prefName] = this._nimbus[variable];
+      }
+    }
 
     let defaults = Services.prefs.getDefaultBranch("browser.urlbar.");
-    defaults.setCharPref("quicksuggest.scenario", scenario);
-    
-    
-  }
-
-  _syncFirefoxSuggestPrefsFromScenario() {
-    
-    
-    
-    
-    
-
-    let scenario = this.get("quicksuggest.scenario");
-    let defaults = Services.prefs.getDefaultBranch("browser.urlbar.");
-
-    let enabled = false;
-    switch (scenario) {
-      case "history":
-        defaults.setBoolPref("quicksuggest.shouldShowOnboardingDialog", true);
-        defaults.setBoolPref("suggest.quicksuggest", false);
-        defaults.setBoolPref("suggest.quicksuggest.sponsored", false);
-        break;
-      case "offline":
-        enabled = true;
-        defaults.setBoolPref("quicksuggest.shouldShowOnboardingDialog", false);
-        defaults.setBoolPref("suggest.quicksuggest", true);
-        defaults.setBoolPref("suggest.quicksuggest.sponsored", true);
-        break;
-      case "online":
-        enabled = true;
-        defaults.setBoolPref("quicksuggest.shouldShowOnboardingDialog", true);
-        defaults.setBoolPref("suggest.quicksuggest", false);
-        defaults.setBoolPref("suggest.quicksuggest.sponsored", false);
-        break;
-      default:
-        Cu.reportError(`Unrecognized Firefox Suggest scenario "${scenario}"`);
-        break;
+    for (let [name, value] of Object.entries(prefs)) {
+      
+      defaults.setBoolPref(name, value);
     }
 
     
     
-    defaults.setBoolPref("quicksuggest.enabled", enabled);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (
+      scenario == "online" &&
+      this.get("quicksuggest.dataCollection.enabled") &&
+      Services.prefs.prefHasUserValue(
+        "browser.urlbar.quicksuggest.dataCollection.enabled"
+      )
+    ) {
+      if (nonSponsoredInitiallyEnabled) {
+        this.set("suggest.quicksuggest", true);
+      }
+      if (sponsoredInitiallyEnabled) {
+        this.set("suggest.quicksuggest.sponsored", true);
+      }
+    }
+
+    
+    if (isStartup) {
+      this._ensureFirefoxSuggestPrefsMigrated(scenario);
+    }
+
+    
+    
+    
+    this.set("quicksuggest.scenario", scenario);
 
     
     
@@ -658,6 +773,91 @@ class Preferences {
     
     
     Services.obs.notifyObservers(null, FIREFOX_SUGGEST_UPDATE_TOPIC);
+  }
+
+  
+
+
+
+
+  get FIREFOX_SUGGEST_DEFAULT_PREFS() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return {
+      history: {
+        "quicksuggest.enabled": false,
+      },
+      offline: {
+        "quicksuggest.enabled": true,
+        "quicksuggest.dataCollection.enabled": false,
+        "quicksuggest.shouldShowOnboardingDialog": false,
+        "suggest.quicksuggest": true,
+        "suggest.quicksuggest.sponsored": true,
+      },
+      online: {
+        "quicksuggest.enabled": true,
+        "quicksuggest.dataCollection.enabled": false,
+        "quicksuggest.shouldShowOnboardingDialog": true,
+        "suggest.quicksuggest": false,
+        "suggest.quicksuggest.sponsored": false,
+      },
+    };
+  }
+
+  
+
+
+
+
+
+  _ensureFirefoxSuggestPrefsMigrated(scenario) {
+    if (this.get("quicksuggest.migrationVersion")) {
+      
+      return;
+    }
+
+    
+    
+    
+    if (!this.get("suggest.quicksuggest")) {
+      switch (scenario) {
+        case "offline":
+          
+          
+          
+          this.set("suggest.quicksuggest.sponsored", false);
+          break;
+        case "online":
+          
+          
+          if (this.get("suggest.quicksuggest.sponsored")) {
+            this.clear("suggest.quicksuggest.sponsored");
+          }
+          break;
+      }
+    }
+
+    
+    
+    
+    if (scenario == "online" && this.get("suggest.quicksuggest")) {
+      this.set("quicksuggest.dataCollection.enabled", true);
+    }
+
+    this.set("quicksuggest.migrationVersion", 1);
   }
 
   
@@ -721,9 +921,6 @@ class Preferences {
 
     
     switch (pref) {
-      case "quicksuggest.scenario":
-        this._syncFirefoxSuggestPrefsFromScenario();
-        return;
       case "showSearchSuggestionsFirst":
         this.set(
           "resultGroups",
@@ -752,7 +949,7 @@ class Preferences {
     }
     this.__nimbus = null;
 
-    this.updateFirefoxSuggestScenario();
+    this.updateFirefoxSuggestScenario(false);
   }
 
   get _nimbus() {

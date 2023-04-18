@@ -382,9 +382,25 @@ pref("browser.urlbar.suggest.openpage",             true);
 pref("browser.urlbar.suggest.searches",             true);
 pref("browser.urlbar.suggest.topsites",             true);
 pref("browser.urlbar.suggest.engines",              true);
-pref("browser.urlbar.suggest.quicksuggest",         false);
-pref("browser.urlbar.suggest.quicksuggest.sponsored", false);
 pref("browser.urlbar.suggest.calculator",           false);
+
+
+
+
+
+pref("browser.urlbar.suggest.quicksuggest", false, sticky);
+
+
+
+
+
+pref("browser.urlbar.suggest.quicksuggest.sponsored", false, sticky);
+
+
+
+
+
+pref("browser.urlbar.quicksuggest.dataCollection.enabled", false, sticky);
 
 
 pref("browser.urlbar.quicksuggest.enabled", false);
@@ -402,10 +418,6 @@ pref("browser.urlbar.quicksuggest.nonSponsoredIndex", -1);
 
 
 pref("browser.urlbar.quicksuggest.remoteSettings.enabled", true);
-
-
-
-pref("browser.urlbar.quicksuggest.scenario", "history");
 
 
 #ifdef NIGHTLY_BUILD

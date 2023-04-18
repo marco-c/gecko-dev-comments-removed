@@ -8,8 +8,17 @@
 
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  EnterprisePolicyTesting:
+    "resource://testing-common/EnterprisePolicyTesting.jsm",
   UrlbarQuickSuggest: "resource:///modules/UrlbarQuickSuggest.jsm",
 });
+
+
+
+const POLICY_PREF = "suggest.quicksuggest";
+
+let gDefaultBranch = Services.prefs.getDefaultBranch("browser.urlbar.");
+let gUserBranch = Services.prefs.getBranch("browser.urlbar.");
 
 add_task(async function init() {
   await QuickSuggestTestUtils.ensureQuickSuggestInit();
@@ -27,7 +36,7 @@ add_task(async function test_override_wait_after_n_restarts() {
     ],
   });
 
-  await UrlbarTestUtils.withExperiment({
+  await QuickSuggestTestUtils.withExperiment({
     valueOverrides: {
       quickSuggestScenario: "online",
       
@@ -69,7 +78,7 @@ add_task(async function test_skip_onboarding_dialog() {
       ["browser.urlbar.quicksuggest.seenRestarts", 0],
     ],
   });
-  await UrlbarTestUtils.withExperiment({
+  await QuickSuggestTestUtils.withExperiment({
     valueOverrides: {
       quickSuggestScenario: "online",
       quickSuggestShouldShowOnboardingDialog: false,
@@ -93,7 +102,7 @@ add_task(async function test_skip_onboarding_dialog() {
 });
 
 add_task(async function test_indexes() {
-  await UrlbarTestUtils.withExperiment({
+  await QuickSuggestTestUtils.withExperiment({
     valueOverrides: {
       quickSuggestNonSponsoredIndex: 99,
       quickSuggestSponsoredIndex: -1337,
@@ -114,7 +123,7 @@ add_task(async function test_indexes() {
 });
 
 add_task(async function test_merino() {
-  await UrlbarTestUtils.withExperiment({
+  await QuickSuggestTestUtils.withExperiment({
     valueOverrides: {
       merinoEnabled: true,
       merinoEndpointURL: "http://example.com/test_merino_config",
@@ -137,148 +146,132 @@ add_task(async function test_merino() {
 });
 
 add_task(async function test_scenario_online() {
-  await UrlbarTestUtils.withExperiment({
-    valueOverrides: {
-      quickSuggestScenario: "online",
-    },
-    callback: () => {
-      assertScenarioPrefs({
-        urlbarPrefs: {
-          
-          "quicksuggest.scenario": "online",
-          "quicksuggest.enabled": true,
-          "quicksuggest.shouldShowOnboardingDialog": true,
-          "suggest.quicksuggest": false,
-          "suggest.quicksuggest.sponsored": false,
+  await doBasicScenarioTest("online", {
+    urlbarPrefs: {
+      
+      "quicksuggest.scenario": "online",
+      "quicksuggest.enabled": true,
+      "quicksuggest.dataCollection.enabled": false,
+      "quicksuggest.shouldShowOnboardingDialog": true,
+      "suggest.quicksuggest": false,
+      "suggest.quicksuggest.sponsored": false,
 
-          
-          quickSuggestScenario: "online",
-          quickSuggestEnabled: true,
-          quickSuggestShouldShowOnboardingDialog: true,
-        },
-        defaults: [
-          {
-            name: "browser.urlbar.quicksuggest.scenario",
-            value: "online",
-            getter: "getCharPref",
-          },
-          {
-            name: "browser.urlbar.quicksuggest.enabled",
-            value: true,
-          },
-          {
-            name: "browser.urlbar.quicksuggest.shouldShowOnboardingDialog",
-            value: true,
-          },
-          {
-            name: "browser.urlbar.suggest.quicksuggest",
-            value: false,
-          },
-          {
-            name: "browser.urlbar.suggest.quicksuggest.sponsored",
-            value: false,
-          },
-        ],
-      });
+      
+      quickSuggestScenario: "online",
+      quickSuggestEnabled: true,
+      quickSuggestShouldShowOnboardingDialog: true,
     },
+    defaults: [
+      {
+        name: "browser.urlbar.quicksuggest.enabled",
+        value: true,
+      },
+      {
+        name: "browser.urlbar.quicksuggest.dataCollection.enabled",
+        value: false,
+      },
+      {
+        name: "browser.urlbar.quicksuggest.shouldShowOnboardingDialog",
+        value: true,
+      },
+      {
+        name: "browser.urlbar.suggest.quicksuggest",
+        value: false,
+      },
+      {
+        name: "browser.urlbar.suggest.quicksuggest.sponsored",
+        value: false,
+      },
+    ],
   });
 });
 
 add_task(async function test_scenario_offline() {
-  await UrlbarTestUtils.withExperiment({
-    valueOverrides: {
-      quickSuggestScenario: "offline",
-    },
-    callback: () => {
-      assertScenarioPrefs({
-        urlbarPrefs: {
-          
-          "quicksuggest.scenario": "offline",
-          "quicksuggest.enabled": true,
-          "quicksuggest.shouldShowOnboardingDialog": false,
-          "suggest.quicksuggest": true,
-          "suggest.quicksuggest.sponsored": true,
+  await doBasicScenarioTest("offline", {
+    urlbarPrefs: {
+      
+      "quicksuggest.scenario": "offline",
+      "quicksuggest.enabled": true,
+      "quicksuggest.dataCollection.enabled": false,
+      "quicksuggest.shouldShowOnboardingDialog": false,
+      "suggest.quicksuggest": true,
+      "suggest.quicksuggest.sponsored": true,
 
-          
-          quickSuggestScenario: "offline",
-          quickSuggestEnabled: true,
-          quickSuggestShouldShowOnboardingDialog: false,
-        },
-        defaults: [
-          {
-            name: "browser.urlbar.quicksuggest.scenario",
-            value: "offline",
-            getter: "getCharPref",
-          },
-          {
-            name: "browser.urlbar.quicksuggest.enabled",
-            value: true,
-          },
-          {
-            name: "browser.urlbar.quicksuggest.shouldShowOnboardingDialog",
-            value: false,
-          },
-          {
-            name: "browser.urlbar.suggest.quicksuggest",
-            value: true,
-          },
-          {
-            name: "browser.urlbar.suggest.quicksuggest.sponsored",
-            value: true,
-          },
-        ],
-      });
+      
+      quickSuggestScenario: "offline",
+      quickSuggestEnabled: true,
+      quickSuggestShouldShowOnboardingDialog: false,
     },
+    defaults: [
+      {
+        name: "browser.urlbar.quicksuggest.enabled",
+        value: true,
+      },
+      {
+        name: "browser.urlbar.quicksuggest.dataCollection.enabled",
+        value: false,
+      },
+      {
+        name: "browser.urlbar.quicksuggest.shouldShowOnboardingDialog",
+        value: false,
+      },
+      {
+        name: "browser.urlbar.suggest.quicksuggest",
+        value: true,
+      },
+      {
+        name: "browser.urlbar.suggest.quicksuggest.sponsored",
+        value: true,
+      },
+    ],
   });
 });
 
 add_task(async function test_scenario_history() {
-  await UrlbarTestUtils.withExperiment({
-    valueOverrides: {
-      quickSuggestScenario: "history",
-    },
-    callback: () => {
-      assertScenarioPrefs({
-        urlbarPrefs: {
-          
-          "quicksuggest.scenario": "history",
-          "quicksuggest.enabled": false,
-          "quicksuggest.shouldShowOnboardingDialog": true,
-          "suggest.quicksuggest": false,
-          "suggest.quicksuggest.sponsored": false,
+  await doBasicScenarioTest("history", {
+    urlbarPrefs: {
+      
+      "quicksuggest.scenario": "history",
+      "quicksuggest.enabled": false,
 
-          
-          quickSuggestScenario: "history",
-          quickSuggestEnabled: false,
-          quickSuggestShouldShowOnboardingDialog: true,
-        },
-        defaults: [
-          {
-            name: "browser.urlbar.quicksuggest.scenario",
-            value: "history",
-            getter: "getCharPref",
-          },
-          {
-            name: "browser.urlbar.quicksuggest.enabled",
-            value: false,
-          },
-          {
-            name: "browser.urlbar.quicksuggest.shouldShowOnboardingDialog",
-            value: true,
-          },
-          {
-            name: "browser.urlbar.suggest.quicksuggest",
-            value: false,
-          },
-          {
-            name: "browser.urlbar.suggest.quicksuggest.sponsored",
-            value: false,
-          },
-        ],
-      });
+      
+      quickSuggestScenario: "history",
+      quickSuggestEnabled: false,
     },
+    defaults: [
+      {
+        name: "browser.urlbar.quicksuggest.enabled",
+        value: false,
+      },
+    ],
   });
 });
+
+async function doBasicScenarioTest(scenario, expectedPrefs) {
+  await QuickSuggestTestUtils.withExperiment({
+    valueOverrides: {
+      quickSuggestScenario: scenario,
+    },
+    callback: () => {
+      
+      Assert.ok(
+        !UrlbarPrefs.updatingFirefoxSuggestPrefs,
+        "updatingFirefoxSuggestPrefs is false"
+      );
+
+      assertScenarioPrefs(expectedPrefs);
+    },
+  });
+
+  
+  
+  Assert.ok(
+    !UrlbarPrefs.updatingFirefoxSuggestPrefs,
+    "updatingFirefoxSuggestPrefs is false"
+  );
+
+  assertDefaultScenarioPrefs();
+}
 
 function assertScenarioPrefs({ urlbarPrefs, defaults }) {
   for (let [name, value] of Object.entries(urlbarPrefs)) {
@@ -295,10 +288,1835 @@ function assertScenarioPrefs({ urlbarPrefs, defaults }) {
   }
 }
 
+function assertDefaultScenarioPrefs() {
+  assertScenarioPrefs({
+    urlbarPrefs: {
+      "quicksuggest.scenario": "offline",
+      "quicksuggest.enabled": true,
+      "quicksuggest.dataCollection.enabled": false,
+      "quicksuggest.shouldShowOnboardingDialog": false,
+      "suggest.quicksuggest": true,
+      "suggest.quicksuggest.sponsored": true,
+
+      
+      
+    },
+    defaults: [
+      {
+        name: "browser.urlbar.quicksuggest.enabled",
+        value: true,
+      },
+      {
+        name: "browser.urlbar.quicksuggest.dataCollection.enabled",
+        value: false,
+      },
+      {
+        name: "browser.urlbar.quicksuggest.shouldShowOnboardingDialog",
+        value: false,
+      },
+      {
+        name: "browser.urlbar.suggest.quicksuggest",
+        value: true,
+      },
+      {
+        name: "browser.urlbar.suggest.quicksuggest.sponsored",
+        value: true,
+      },
+    ],
+  });
+}
+
 function clearOnboardingPrefs() {
   UrlbarPrefs.clear("suggest.quicksuggest");
   UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
+  UrlbarPrefs.clear("quicksuggest.dataCollection.enabled");
   UrlbarPrefs.clear("quicksuggest.shouldShowOnboardingDialog");
   UrlbarPrefs.clear("quicksuggest.showedOnboardingDialog");
   UrlbarPrefs.clear("quicksuggest.seenRestarts");
+}
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.history,
+    },
+    valueOverrides: {
+      quickSuggestScenario: "history",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.history,
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.history,
+    },
+    valueOverrides: {
+      quickSuggestScenario: "offline",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.history,
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+    },
+    valueOverrides: {
+      quickSuggestScenario: "offline",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "suggest.quicksuggest.sponsored": false,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "offline",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "suggest.quicksuggest.sponsored": false,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "suggest.quicksuggest": false,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "offline",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "suggest.quicksuggest": false,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "suggest.quicksuggest": false,
+        "suggest.quicksuggest.sponsored": false,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "offline",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "suggest.quicksuggest": false,
+        "suggest.quicksuggest.sponsored": false,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "offline",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "suggest.quicksuggest": false,
+        "suggest.quicksuggest.sponsored": false,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "offline",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "suggest.quicksuggest": false,
+        "suggest.quicksuggest.sponsored": false,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "suggest.quicksuggest.sponsored": false,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest.sponsored": false,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "suggest.quicksuggest": false,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest": false,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "suggest.quicksuggest": false,
+        "suggest.quicksuggest.sponsored": false,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest": false,
+        "suggest.quicksuggest.sponsored": false,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest": true,
+        "suggest.quicksuggest.sponsored": true,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "suggest.quicksuggest.sponsored": false,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest": true,
+        "suggest.quicksuggest.sponsored": false,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "suggest.quicksuggest": false,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest": false,
+        "suggest.quicksuggest.sponsored": true,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "suggest.quicksuggest": false,
+        "suggest.quicksuggest.sponsored": false,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest": false,
+        "suggest.quicksuggest.sponsored": false,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest.sponsored": true,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest.sponsored": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest": true,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest": true,
+        "suggest.quicksuggest.sponsored": true,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest": true,
+        "suggest.quicksuggest.sponsored": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest.sponsored": true,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest.sponsored": true,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest": true,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest": true,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest": true,
+        "suggest.quicksuggest.sponsored": true,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+    },
+    expectedPrefs: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest": true,
+        "suggest.quicksuggest.sponsored": true,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+    },
+    valueOverrides: {
+      quickSuggestScenario: "offline",
+      quickSuggestSponsoredEnabled: true,
+    },
+    expectedPrefs: {
+      defaultBranch: {
+        ...UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+        "suggest.quicksuggest.sponsored": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "suggest.quicksuggest.sponsored": false,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "offline",
+      quickSuggestSponsoredEnabled: true,
+    },
+    expectedPrefs: {
+      defaultBranch: {
+        ...UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+        "suggest.quicksuggest.sponsored": true,
+      },
+      userBranch: {
+        "suggest.quicksuggest.sponsored": false,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+    },
+    valueOverrides: {
+      quickSuggestScenario: "offline",
+      quickSuggestDataCollectionEnabled: true,
+    },
+    expectedPrefs: {
+      defaultBranch: {
+        ...UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+      userBranch: {
+        "quicksuggest.dataCollection.enabled": false,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "offline",
+      quickSuggestDataCollectionEnabled: true,
+    },
+    expectedPrefs: {
+      defaultBranch: {
+        ...UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+      userBranch: {
+        "quicksuggest.dataCollection.enabled": false,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+      quickSuggestSponsoredEnabled: true,
+    },
+    expectedPrefs: {
+      defaultBranch: {
+        ...UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+        "suggest.quicksuggest.sponsored": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "suggest.quicksuggest.sponsored": false,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+      quickSuggestSponsoredEnabled: true,
+    },
+    expectedPrefs: {
+      defaultBranch: {
+        ...UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+        "suggest.quicksuggest.sponsored": true,
+      },
+      userBranch: {
+        "suggest.quicksuggest.sponsored": false,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+      quickSuggestDataCollectionEnabled: true,
+    },
+    expectedPrefs: {
+      defaultBranch: {
+        ...UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+      userBranch: {
+        "quicksuggest.dataCollection.enabled": false,
+      },
+    },
+    valueOverrides: {
+      quickSuggestScenario: "online",
+      quickSuggestDataCollectionEnabled: true,
+    },
+    expectedPrefs: {
+      defaultBranch: {
+        ...UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.online,
+        "quicksuggest.dataCollection.enabled": true,
+      },
+      userBranch: {
+        "quicksuggest.dataCollection.enabled": false,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments([
+    {
+      initialPrefsToSet: {
+        defaultBranch: {
+          "suggest.quicksuggest": true,
+          "suggest.quicksuggest.sponsored": true,
+        },
+      },
+      valueOverrides: {
+        quickSuggestNonSponsoredEnabled: false,
+        quickSuggestSponsoredEnabled: false,
+      },
+      expectedPrefs: {
+        defaultBranch: {
+          "suggest.quicksuggest": false,
+          "suggest.quicksuggest.sponsored": false,
+        },
+      },
+    },
+    {
+      initialPrefsToSet: {
+        userBranch: {
+          "suggest.quicksuggest": true,
+          "suggest.quicksuggest.sponsored": true,
+        },
+      },
+      valueOverrides: {
+        quickSuggestNonSponsoredEnabled: false,
+        quickSuggestSponsoredEnabled: false,
+      },
+      expectedPrefs: {
+        defaultBranch: {
+          "suggest.quicksuggest": false,
+          "suggest.quicksuggest.sponsored": false,
+        },
+        userBranch: {
+          "suggest.quicksuggest": true,
+          "suggest.quicksuggest.sponsored": true,
+        },
+      },
+    },
+  ]);
+});
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: {
+        "suggest.quicksuggest": true,
+        "suggest.quicksuggest.sponsored": true,
+      },
+      userBranch: {
+        "suggest.quicksuggest": false,
+        "suggest.quicksuggest.sponsored": false,
+      },
+    },
+    valueOverrides: {
+      quickSuggestNonSponsoredEnabled: true,
+      quickSuggestSponsoredEnabled: true,
+    },
+    expectedPrefs: {
+      defaultBranch: {
+        "suggest.quicksuggest": true,
+        "suggest.quicksuggest.sponsored": true,
+      },
+      userBranch: {
+        "suggest.quicksuggest": false,
+        "suggest.quicksuggest.sponsored": false,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments([
+    {
+      initialPrefsToSet: {
+        defaultBranch: {
+          "suggest.quicksuggest": false,
+          "suggest.quicksuggest.sponsored": false,
+        },
+      },
+      valueOverrides: {
+        quickSuggestNonSponsoredEnabled: true,
+        quickSuggestSponsoredEnabled: true,
+      },
+      expectedPrefs: {
+        defaultBranch: {
+          "suggest.quicksuggest": true,
+          "suggest.quicksuggest.sponsored": true,
+        },
+      },
+    },
+    {
+      initialPrefsToSet: {
+        userBranch: {
+          "suggest.quicksuggest": false,
+          "suggest.quicksuggest.sponsored": false,
+        },
+      },
+      valueOverrides: {
+        quickSuggestNonSponsoredEnabled: true,
+        quickSuggestSponsoredEnabled: true,
+      },
+      expectedPrefs: {
+        defaultBranch: {
+          "suggest.quicksuggest": true,
+          "suggest.quicksuggest.sponsored": true,
+        },
+        userBranch: {
+          "suggest.quicksuggest": false,
+          "suggest.quicksuggest.sponsored": false,
+        },
+      },
+    },
+  ]);
+});
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: {
+        "suggest.quicksuggest": false,
+        "suggest.quicksuggest.sponsored": false,
+      },
+      userBranch: {
+        "suggest.quicksuggest": true,
+        "suggest.quicksuggest.sponsored": true,
+      },
+    },
+    valueOverrides: {
+      quickSuggestNonSponsoredEnabled: false,
+      quickSuggestSponsoredEnabled: false,
+    },
+    expectedPrefs: {
+      defaultBranch: {
+        "suggest.quicksuggest": false,
+        "suggest.quicksuggest.sponsored": false,
+      },
+      userBranch: {
+        "suggest.quicksuggest": true,
+        "suggest.quicksuggest.sponsored": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments(
+    [
+      {
+        initialPrefsToSet: {
+          defaultBranch: {
+            "quicksuggest.dataCollection.enabled": true,
+          },
+        },
+        valueOverrides: {
+          quickSuggestDataCollectionEnabled: false,
+        },
+        expectedPrefs: {
+          defaultBranch: {
+            "quicksuggest.dataCollection.enabled": false,
+          },
+        },
+      },
+    ],
+    [
+      {
+        initialPrefsToSet: {
+          userBranch: {
+            "quicksuggest.dataCollection.enabled": true,
+          },
+        },
+        valueOverrides: {
+          quickSuggestDataCollectionEnabled: false,
+        },
+        expectedPrefs: {
+          defaultBranch: {
+            "quicksuggest.dataCollection.enabled": false,
+          },
+          userBranch: {
+            "quicksuggest.dataCollection.enabled": true,
+          },
+        },
+      },
+    ]
+  );
+});
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: {
+        "quicksuggest.dataCollection.enabled": true,
+      },
+      userBranch: {
+        "quicksuggest.dataCollection.enabled": false,
+      },
+    },
+    valueOverrides: {
+      quickSuggestDataCollectionEnabled: true,
+    },
+    expectedPrefs: {
+      defaultBranch: {
+        "quicksuggest.dataCollection.enabled": true,
+      },
+      userBranch: {
+        "quicksuggest.dataCollection.enabled": false,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments(
+    [
+      {
+        initialPrefsToSet: {
+          defaultBranch: {
+            "quicksuggest.dataCollection.enabled": false,
+          },
+        },
+        valueOverrides: {
+          quickSuggestDataCollectionEnabled: true,
+        },
+        expectedPrefs: {
+          defaultBranch: {
+            "quicksuggest.dataCollection.enabled": true,
+          },
+        },
+      },
+    ],
+    [
+      {
+        initialPrefsToSet: {
+          userBranch: {
+            "quicksuggest.dataCollection.enabled": false,
+          },
+        },
+        valueOverrides: {
+          quickSuggestDataCollectionEnabled: true,
+        },
+        expectedPrefs: {
+          defaultBranch: {
+            "quicksuggest.dataCollection.enabled": false,
+          },
+          userBranch: {
+            "quicksuggest.dataCollection.enabled": false,
+          },
+        },
+      },
+    ]
+  );
+});
+
+
+
+
+
+
+
+
+
+add_task(async function() {
+  await checkEnrollments({
+    initialPrefsToSet: {
+      defaultBranch: {
+        "quicksuggest.dataCollection.enabled": false,
+      },
+      userBranch: {
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+    valueOverrides: {
+      quickSuggestDataCollectionEnabled: false,
+    },
+    expectedPrefs: {
+      defaultBranch: {
+        "quicksuggest.dataCollection.enabled": false,
+      },
+      userBranch: {
+        "quicksuggest.dataCollection.enabled": true,
+      },
+    },
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function checkEnrollments(options) {
+  info("Testing: " + JSON.stringify(options));
+
+  let enrollments;
+  if (Array.isArray(options)) {
+    enrollments = options;
+  } else {
+    enrollments = [options];
+  }
+
+  
+  for (let i = 0; i < enrollments.length; i++) {
+    info(
+      `Starting setup for enrollment ${i}: ` + JSON.stringify(enrollments[i])
+    );
+
+    let { initialPrefsToSet, valueOverrides, expectedPrefs } = enrollments[i];
+
+    
+    UrlbarPrefs._updatingFirefoxSuggestScenario = true;
+    let {
+      defaultBranch: initialDefaultBranch,
+      userBranch: initialUserBranch,
+    } = initialPrefsToSet;
+    initialDefaultBranch = initialDefaultBranch || {};
+    initialUserBranch = initialUserBranch || {};
+    for (let name of Object.keys(initialDefaultBranch)) {
+      
+      
+      gUserBranch.clearUserPref(name);
+    }
+    for (let [branch, prefs] of [
+      [gDefaultBranch, initialDefaultBranch],
+      [gUserBranch, initialUserBranch],
+    ]) {
+      for (let [name, value] of Object.entries(prefs)) {
+        branch.setBoolPref(name, value);
+      }
+    }
+    UrlbarPrefs._updatingFirefoxSuggestScenario = false;
+
+    let {
+      defaultBranch: expectedDefaultBranch,
+      userBranch: expectedUserBranch,
+    } = expectedPrefs;
+    expectedDefaultBranch = expectedDefaultBranch || {};
+    expectedUserBranch = expectedUserBranch || {};
+
+    
+    info(`Installing experiment for enrollment ${i}`);
+    await QuickSuggestTestUtils.withExperiment({
+      valueOverrides,
+      callback: () => {
+        info(`Installed experiment for enrollment ${i}, now checking prefs`);
+
+        
+        
+        
+        
+        let expectedEffectivePrefs = {};
+        for (let [branch, prefs, branchType] of [
+          [gDefaultBranch, expectedDefaultBranch, "default"],
+          [gUserBranch, expectedUserBranch, "user"],
+        ]) {
+          for (let [name, value] of Object.entries(prefs)) {
+            expectedEffectivePrefs[name] = value;
+            Assert.equal(
+              branch.getBoolPref(name),
+              value,
+              `Pref ${name} on ${branchType} branch`
+            );
+            if (branch == gUserBranch) {
+              Assert.ok(
+                gUserBranch.prefHasUserValue(name),
+                `Pref ${name} is on user branch`
+              );
+            }
+          }
+        }
+        for (let name of Object.keys(initialDefaultBranch)) {
+          if (!expectedUserBranch.hasOwnProperty(name)) {
+            Assert.ok(
+              !gUserBranch.prefHasUserValue(name),
+              `Pref ${name} is not on user branch`
+            );
+          }
+        }
+        for (let [name, value] of Object.entries(expectedEffectivePrefs)) {
+          Assert.equal(
+            UrlbarPrefs.get(name),
+            value,
+            `Pref ${name} effective value`
+          );
+        }
+
+        info(`Uninstalling experiment for enrollment ${i}`);
+      },
+    });
+
+    info(`Uninstalled experiment for enrollment ${i}, now checking prefs`);
+
+    
+    
+    
+    
+    
+    let effectivePrefs = Object.assign(
+      {},
+      UrlbarPrefs.FIREFOX_SUGGEST_DEFAULT_PREFS.offline
+    );
+    for (let [name, value] of Object.entries(expectedUserBranch)) {
+      effectivePrefs[name] = value;
+    }
+    for (let [name, value] of Object.entries(effectivePrefs)) {
+      Assert.equal(
+        UrlbarPrefs.get(name),
+        value,
+        `Pref ${name} effective value after unenrolling`
+      );
+    }
+
+    
+    UrlbarPrefs._updatingFirefoxSuggestScenario = true;
+    for (let name of Object.keys(expectedUserBranch)) {
+      UrlbarPrefs.clear(name);
+    }
+    UrlbarPrefs._updatingFirefoxSuggestScenario = false;
+  }
+}
+
+
+
+
+
+
+add_task(async function() {
+  await doPolicyTest({
+    prefPolicy: {
+      Status: "locked",
+      Value: false,
+    },
+    expectedDefault: false,
+    expectedUser: undefined,
+    expectedLocked: true,
+  });
+});
+
+
+
+
+add_task(async function() {
+  await doPolicyTest({
+    prefPolicy: {
+      Status: "locked",
+      Value: true,
+    },
+    expectedDefault: true,
+    expectedUser: undefined,
+    expectedLocked: true,
+  });
+});
+
+
+
+
+add_task(async function() {
+  await doPolicyTest({
+    prefPolicy: {
+      Status: "default",
+      Value: false,
+    },
+    expectedDefault: false,
+    expectedUser: undefined,
+    expectedLocked: false,
+  });
+});
+
+
+
+
+add_task(async function() {
+  await doPolicyTest({
+    prefPolicy: {
+      Status: "default",
+      Value: true,
+    },
+    expectedDefault: true,
+    expectedUser: undefined,
+    expectedLocked: false,
+  });
+});
+
+
+
+
+add_task(async function() {
+  await doPolicyTest({
+    prefPolicy: {
+      Status: "user",
+      Value: false,
+    },
+    expectedDefault: true,
+    expectedUser: false,
+    expectedLocked: false,
+  });
+});
+
+
+
+
+add_task(async function() {
+  await doPolicyTest({
+    prefPolicy: {
+      Status: "user",
+      Value: true,
+    },
+    expectedDefault: true,
+    
+    
+    
+    expectedUser: true,
+    expectedLocked: false,
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function doPolicyTest({
+  prefPolicy,
+  expectedDefault,
+  expectedUser,
+  expectedLocked,
+}) {
+  info(
+    "Starting pref policy test: " +
+      JSON.stringify({
+        prefPolicy,
+        expectedDefault,
+        expectedUser,
+        expectedLocked,
+      })
+  );
+
+  let pref = POLICY_PREF;
+
+  
+  Assert.ok(
+    gDefaultBranch.getBoolPref(pref),
+    `${pref} is initially true on default branch (assuming en-US)`
+  );
+  Assert.ok(
+    !gUserBranch.prefHasUserValue(pref),
+    `${pref} does not have initial user value`
+  );
+
+  
+  await EnterprisePolicyTesting.setupPolicyEngineWithJson({
+    policies: {
+      Preferences: {
+        [`browser.urlbar.${pref}`]: prefPolicy,
+      },
+    },
+  });
+  Assert.equal(
+    Services.policies.status,
+    Ci.nsIEnterprisePolicies.ACTIVE,
+    "Policy engine is active"
+  );
+
+  
+  Assert.equal(
+    gDefaultBranch.getBoolPref(pref),
+    expectedDefault,
+    `${pref} has expected default-branch value after setting policy`
+  );
+
+  
+  Assert.equal(
+    gUserBranch.prefHasUserValue(pref),
+    expectedUser !== undefined,
+    `${pref} is on user branch as expected after setting policy`
+  );
+  if (expectedUser !== undefined) {
+    Assert.equal(
+      gUserBranch.getBoolPref(pref),
+      expectedUser,
+      `${pref} has expected user-branch value after setting policy`
+    );
+  }
+
+  
+  Assert.equal(
+    gDefaultBranch.prefIsLocked(pref),
+    expectedLocked,
+    `${pref} is locked as expected after setting policy`
+  );
+
+  
+  await EnterprisePolicyTesting.setupPolicyEngineWithJson("");
+  Assert.equal(
+    Services.policies.status,
+    Ci.nsIEnterprisePolicies.INACTIVE,
+    "Policy engine is inactive"
+  );
+
+  gDefaultBranch.unlockPref(pref);
+  gUserBranch.clearUserPref(pref);
+  await QuickSuggestTestUtils.setScenario(null);
+
+  Assert.ok(
+    !gDefaultBranch.prefIsLocked(pref),
+    `${pref} is not locked after cleanup`
+  );
+  Assert.ok(
+    gDefaultBranch.getBoolPref(pref),
+    `${pref} is true on default branch after cleanup (assuming en-US)`
+  );
+  Assert.ok(
+    !gUserBranch.prefHasUserValue(pref),
+    `${pref} does not have user value after cleanup`
+  );
 }

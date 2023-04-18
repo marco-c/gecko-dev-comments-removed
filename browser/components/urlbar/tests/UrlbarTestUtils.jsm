@@ -15,8 +15,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserTestUtils: "resource://testing-common/BrowserTestUtils.jsm",
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.jsm",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
-  ExperimentAPI: "resource://nimbus/ExperimentAPI.jsm",
-  ExperimentFakes: "resource://testing-common/NimbusTestUtils.jsm",
   FormHistoryTestUtils: "resource://testing-common/FormHistoryTestUtils.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
@@ -789,38 +787,6 @@ var UrlbarTestUtils = {
         throw error;
       }
     }
-  },
-
-  
-
-
-
-
-
-
-
-  async withExperiment({ callback, ...options }) {
-    let doExperimentCleanup = await this.enrollExperiment(options);
-    await callback();
-    await doExperimentCleanup();
-  },
-
-  
-
-
-
-
-
-
-
-  async enrollExperiment({ valueOverrides = {} }) {
-    await ExperimentAPI.ready();
-    let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
-      enabled: true,
-      featureId: "urlbar",
-      value: valueOverrides,
-    });
-    return doExperimentCleanup;
   },
 };
 

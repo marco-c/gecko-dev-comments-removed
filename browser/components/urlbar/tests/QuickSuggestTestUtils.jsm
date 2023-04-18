@@ -12,10 +12,14 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   CONTEXTUAL_SERVICES_PING_TYPES:
     "resource:///modules/PartnerLinkAttribution.jsm",
+  ExperimentAPI: "resource://nimbus/ExperimentAPI.jsm",
+  ExperimentFakes: "resource://testing-common/NimbusTestUtils.jsm",
   PartnerLinkAttribution: "resource:///modules/PartnerLinkAttribution.jsm",
   Services: "resource://gre/modules/Services.jsm",
   sinon: "resource://testing-common/Sinon.jsm",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.jsm",
+  TestUtils: "resource://testing-common/TestUtils.jsm",
+  UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarQuickSuggest: "resource:///modules/UrlbarQuickSuggest.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
@@ -40,6 +44,8 @@ const SCALARS = {
 
 const TELEMETRY_EVENT_CATEGORY = "contextservices.quicksuggest";
 
+const UPDATE_TOPIC = "firefox-suggest-update";
+
 
 
 
@@ -54,7 +60,7 @@ const TEST_SCOPE_PROPERTIES = [
 
 
 
-class TestUtils {
+class QSTestUtils {
   get LEARN_MORE_URL() {
     return LEARN_MORE_URL;
   }
@@ -65,6 +71,10 @@ class TestUtils {
 
   get TELEMETRY_EVENT_CATEGORY() {
     return TELEMETRY_EVENT_CATEGORY;
+  }
+
+  get UPDATE_TOPIC() {
+    return UPDATE_TOPIC;
   }
 
   
@@ -136,6 +146,29 @@ class TestUtils {
     }
 
     return cleanup;
+  }
+
+  
+
+
+
+
+
+  async setScenario(scenario) {
+    
+    
+    await this.waitForScenarioUpdated();
+    await UrlbarPrefs.updateFirefoxSuggestScenario(false, scenario);
+  }
+
+  
+
+
+  async waitForScenarioUpdated() {
+    await TestUtils.waitForCondition(
+      () => !UrlbarPrefs.updatingFirefoxSuggestScenario,
+      "Waiting for updatingFirefoxSuggestScenario to be false"
+    );
   }
 
   
@@ -289,32 +322,32 @@ class TestUtils {
 
   assertImpressionPing({
     index,
-    search_query,
     spy,
     advertiser = "test-advertiser",
     block_id = 1,
+    search_query = undefined,
     matched_keywords = search_query,
     reporting_url = "http://impression.reporting.test.com/",
     scenario = "offline",
   }) {
-    this.Assert.ok(spy.calledOnce, "Should send a custom impression ping");
+    
+    let calls = spy.getCalls().filter(call => {
+      let endpoint = call.args[1];
+      return endpoint.includes(CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION);
+    });
+    this.Assert.equal(calls.length, 1, "Sent one impression ping");
 
-    let [payload, endpoint] = spy.firstCall.args;
-
-    this.Assert.ok(
-      endpoint.includes(CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION),
-      "Should set the endpoint for QuickSuggest impression"
-    );
+    let payload = calls[0].args[0];
 
     
     let expectedPayload = {
       advertiser,
       block_id,
-      matched_keywords: scenario == "online" ? matched_keywords : undefined,
+      matched_keywords,
       position: index + 1,
       reporting_url,
       scenario,
-      search_query: scenario == "online" ? search_query : undefined,
+      search_query,
     };
     let actualPayload = {};
     for (let key of Object.keys(expectedPayload)) {
@@ -333,7 +366,12 @@ class TestUtils {
 
 
   assertNoImpressionPing(spy) {
-    this.Assert.ok(spy.notCalled, "Should not send a custom impression");
+    
+    let calls = spy.getCalls().filter(call => {
+      let endpoint = call.args[1];
+      return endpoint.includes(CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION);
+    });
+    this.Assert.equal(calls.length, 0, "Did not send an impression ping");
   }
 
   
@@ -362,14 +400,13 @@ class TestUtils {
     scenario = "offline",
   }) {
     
-    this.Assert.ok(spy.calledTwice, "Should send a custom impression ping");
+    let calls = spy.getCalls().filter(call => {
+      let endpoint = call.args[1];
+      return endpoint.includes(CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION);
+    });
+    this.Assert.equal(calls.length, 1, "Sent one click ping");
 
-    let [payload, endpoint] = spy.secondCall.args;
-
-    this.Assert.ok(
-      endpoint.includes(CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION),
-      "Should set the endpoint for QuickSuggest click"
-    );
+    let payload = calls[0].args[0];
 
     
     let expectedPayload = {
@@ -397,8 +434,73 @@ class TestUtils {
 
   assertNoClickPing(spy) {
     
-    this.Assert.ok(spy.calledOnce, "Should not send a custom impression");
+    let calls = spy.getCalls().filter(call => {
+      let endpoint = call.args[1];
+      return endpoint.includes(CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION);
+    });
+    this.Assert.equal(calls.length, 0, "Did not send a click ping");
+  }
+
+  
+
+
+
+
+
+
+
+  async withExperiment({ callback, ...options }) {
+    let doExperimentCleanup = await this.enrollExperiment(options);
+    await callback();
+    await doExperimentCleanup();
+  }
+
+  
+
+
+
+
+
+
+
+  async enrollExperiment({ valueOverrides = {} }) {
+    this.info?.("Awaiting ExperimentAPI.ready");
+    await ExperimentAPI.ready();
+
+    
+    
+    
+    
+    
+    await this.waitForScenarioUpdated();
+
+    
+    let updatePromise = TestUtils.topicObserved(
+      QuickSuggestTestUtils.UPDATE_TOPIC
+    );
+
+    let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
+      enabled: true,
+      featureId: "urlbar",
+      value: valueOverrides,
+    });
+
+    
+    this.info?.("Awaiting update after enrolling in experiment");
+    await updatePromise;
+
+    return async () => {
+      
+      
+      let unenrollUpdatePromise = TestUtils.topicObserved(
+        QuickSuggestTestUtils.UPDATE_TOPIC
+      );
+      this.info?.("Awaiting experiment cleanup");
+      await doExperimentCleanup();
+      this.info?.("Awaiting update after unenrolling in experiment");
+      await unenrollUpdatePromise;
+    };
   }
 }
 
-var QuickSuggestTestUtils = new TestUtils();
+var QuickSuggestTestUtils = new QSTestUtils();
