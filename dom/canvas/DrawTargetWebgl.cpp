@@ -354,7 +354,7 @@ bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format) {
   if (!mSkia->Init(size, SurfaceFormat::B8G8R8A8)) {
     return false;
   }
-  mSkia->SetPermitSubpixelAA(IsOpaque(format));
+  SetPermitSubpixelAA(IsOpaque(format));
   return true;
 }
 
@@ -384,11 +384,13 @@ bool DrawTargetWebgl::SharedContext::Initialize() {
   return true;
 }
 
-void DrawTargetWebgl::SharedContext::SetBlendState(CompositionOp aOp) {
-  if (aOp == mLastCompositionOp) {
+void DrawTargetWebgl::SharedContext::SetBlendState(
+    CompositionOp aOp, const Maybe<DeviceColor>& aColor) {
+  if (aOp == mLastCompositionOp && mLastBlendColor == aColor) {
     return;
   }
   mLastCompositionOp = aOp;
+  mLastBlendColor = aColor;
   
   
   
@@ -400,17 +402,20 @@ void DrawTargetWebgl::SharedContext::SetBlendState(CompositionOp aOp) {
   mWebgl->Enable(LOCAL_GL_BLEND);
   switch (aOp) {
     case CompositionOp::OP_OVER:
-      mWebgl->BlendFuncSeparate(LOCAL_GL_ONE, LOCAL_GL_ONE_MINUS_SRC_ALPHA,
-                                LOCAL_GL_ONE, LOCAL_GL_ONE_MINUS_SRC_ALPHA);
+      if (aColor) {
+        
+        mWebgl->BlendColor(aColor->b, aColor->g, aColor->r, 1.0f);
+        mWebgl->BlendFunc(LOCAL_GL_CONSTANT_COLOR,
+                          LOCAL_GL_ONE_MINUS_SRC_COLOR);
+      } else {
+        mWebgl->BlendFunc(LOCAL_GL_ONE, LOCAL_GL_ONE_MINUS_SRC_ALPHA);
+      }
       break;
     case CompositionOp::OP_ADD:
-      mWebgl->BlendFuncSeparate(LOCAL_GL_ONE, LOCAL_GL_ONE, LOCAL_GL_ONE,
-                                LOCAL_GL_ONE);
+      mWebgl->BlendFunc(LOCAL_GL_ONE, LOCAL_GL_ONE);
       break;
     case CompositionOp::OP_ATOP:
-      mWebgl->BlendFuncSeparate(
-          LOCAL_GL_DST_ALPHA, LOCAL_GL_ONE_MINUS_SRC_ALPHA, LOCAL_GL_DST_ALPHA,
-          LOCAL_GL_ONE_MINUS_SRC_ALPHA);
+      mWebgl->BlendFunc(LOCAL_GL_DST_ALPHA, LOCAL_GL_ONE_MINUS_SRC_ALPHA);
       break;
     case CompositionOp::OP_SOURCE:
     default:
@@ -1330,9 +1335,6 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
   }
 
   
-  SetBlendState(aOptions.mCompositionOp);
-
-  
   bool scissor = false;
   if (!mClipRect.Contains(IntRect(IntPoint(), mViewportSize))) {
     scissor = true;
@@ -1376,6 +1378,8 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
           break;
         }
       }
+      
+      SetBlendState(aOptions.mCompositionOp);
       
       
       if (mLastProgram != mSolidProgram) {
@@ -1574,6 +1578,11 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
       }
 
       
+      
+      
+      SetBlendState(aOptions.mCompositionOp,
+                    format != SurfaceFormat::A8 ? aMaskColor : Nothing());
+      
       if (mLastProgram != mImageProgram) {
         mWebgl->UseProgram(mImageProgram);
         mLastProgram = mImageProgram;
@@ -1599,10 +1608,13 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
                             {(const uint8_t*)&aaData, sizeof(aaData)});
         mDirtyAA = !!aStrokeOptions;
       }
-      DeviceColor color = aMaskColor.valueOr(DeviceColor(1, 1, 1, 1));
+      DeviceColor color = aMaskColor && format != SurfaceFormat::A8
+                              ? DeviceColor::Mask(1.0f, aMaskColor->a)
+                              : aMaskColor.valueOr(DeviceColor(1, 1, 1, 1));
       float a = color.a * aOptions.mAlpha;
       float colorData[4] = {color.b * a, color.g * a, color.r * a, a};
-      float swizzleData = aMaskColor ? 1.0f : 0.0f;
+      float swizzleData =
+          aMaskColor && format == SurfaceFormat::A8 ? 1.0f : 0.0f;
       Matrix xform(aRect.width, 0.0f, 0.0f, aRect.height, aRect.x, aRect.y);
       if (aTransformed) {
         xform *= currentTransform;
@@ -2140,8 +2152,8 @@ void DrawTargetWebgl::MaskSurface(const Pattern& aSource, SourceSurface* aMask,
 }
 
 
-static already_AddRefed<DataSourceSurface> ExtractAlpha(
-    SourceSurface* aSurface) {
+static already_AddRefed<DataSourceSurface> ExtractAlpha(SourceSurface* aSurface,
+                                                        bool aAllowSubpixelAA) {
   RefPtr<DataSourceSurface> surfaceData = aSurface->GetDataSurface();
   if (!surfaceData) {
     return nullptr;
@@ -2160,8 +2172,12 @@ static already_AddRefed<DataSourceSurface> ExtractAlpha(
   if (!dstMap.IsMapped()) {
     return nullptr;
   }
-  SwizzleData(srcMap.GetData(), srcMap.GetStride(), surfaceData->GetFormat(),
-              dstMap.GetData(), dstMap.GetStride(), SurfaceFormat::A8, size);
+  
+  
+  SwizzleData(
+      srcMap.GetData(), srcMap.GetStride(),
+      aAllowSubpixelAA ? SurfaceFormat::A8R8G8B8 : surfaceData->GetFormat(),
+      dstMap.GetData(), dstMap.GetStride(), SurfaceFormat::A8, size);
   return alpha.forget();
 }
 
@@ -2496,7 +2512,9 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
   
   
   
-  bool useColor = aUseSubpixelAA;
+  
+  
+  bool useBitmaps = aFont->MayUseBitmaps();
 
   
   GlyphCache* cache =
@@ -2508,9 +2526,13 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
   }
   
   DeviceColor color = static_cast<const ColorPattern&>(aPattern).mColor;
-  DeviceColor aaColor = useColor ? color : DeviceColor(1.0f, 1.0f, 1.0f, 1.0f);
-  RefPtr<GlyphCacheEntry> entry =
-      cache->FindOrInsertEntry(aBuffer, aaColor, currentTransform, intBounds);
+  
+  
+  
+  RefPtr<GlyphCacheEntry> entry = cache->FindOrInsertEntry(
+      aBuffer,
+      useBitmaps ? color : DeviceColor::Mask(aUseSubpixelAA ? 1 : 0, 1),
+      currentTransform, intBounds);
   if (!entry) {
     return false;
   }
@@ -2524,10 +2546,9 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
     
     SurfacePattern pattern(nullptr, ExtendMode::CLAMP,
                            Matrix::Translation(intBounds.TopLeft()));
-    if (DrawRectAccel(
-            Rect(intBounds), pattern, aOptions,
-            handle->GetFormat() == SurfaceFormat::A8 ? Some(color) : Nothing(),
-            &handle, false, true, true)) {
+    if (DrawRectAccel(Rect(intBounds), pattern, aOptions,
+                      useBitmaps ? Nothing() : Some(color), &handle, false,
+                      true, true)) {
       return true;
     }
   } else {
@@ -2536,28 +2557,34 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
     
     
     RefPtr<DrawTargetSkia> textDT = new DrawTargetSkia;
-    if (textDT->Init(intBounds.Size(), SurfaceFormat::B8G8R8A8)) {
+    if (textDT->Init(intBounds.Size(), !useBitmaps && !aUseSubpixelAA
+                                           ? SurfaceFormat::A8
+                                           : SurfaceFormat::B8G8R8A8)) {
       textDT->SetTransform(currentTransform *
                            Matrix::Translation(-intBounds.TopLeft()));
       textDT->SetPermitSubpixelAA(aUseSubpixelAA);
       DrawOptions drawOptions(1.0f, CompositionOp::OP_OVER,
                               aOptions.mAntialiasMode);
-      textDT->FillGlyphs(aFont, aBuffer, ColorPattern(aaColor), drawOptions);
+      
+      
+      
+      
+      textDT->FillGlyphs(
+          aFont, aBuffer,
+          ColorPattern(useBitmaps ? color : DeviceColor(1, 1, 1, 1)),
+          drawOptions);
       RefPtr<SourceSurface> textSurface = textDT->Snapshot();
       if (textSurface) {
-        if (!useColor) {
-          
-          
-          
-          
-          if (CheckForColorGlyphs(textSurface)) {
-            useColor = true;
-          } else {
-            textSurface = ExtractAlpha(textSurface);
-            if (!textSurface) {
-              
-              return false;
-            }
+        
+        
+        
+        
+        if (textSurface->GetFormat() != SurfaceFormat::A8 &&
+            !CheckForColorGlyphs(textSurface)) {
+          textSurface = ExtractAlpha(textSurface, !useBitmaps);
+          if (!textSurface) {
+            
+            return false;
           }
         }
         
@@ -2565,7 +2592,7 @@ bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
         SurfacePattern pattern(textSurface, ExtendMode::CLAMP,
                                Matrix::Translation(intBounds.TopLeft()));
         if (DrawRectAccel(Rect(intBounds), pattern, aOptions,
-                          useColor ? Nothing() : Some(color), &handle, false,
+                          useBitmaps ? Nothing() : Some(color), &handle, false,
                           true) &&
             handle) {
           
@@ -2595,7 +2622,8 @@ void DrawTargetWebgl::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
   }
   bool useSubpixelAA =
       GetPermitSubpixelAA() &&
-      (aaMode == AntialiasMode::DEFAULT || aaMode == AntialiasMode::SUBPIXEL);
+      (aaMode == AntialiasMode::DEFAULT || aaMode == AntialiasMode::SUBPIXEL) &&
+      aOptions.mCompositionOp == CompositionOp::OP_OVER;
 
   if (mWebglValid && SupportsDrawOptions(aOptions) &&
       aPattern.GetType() == PatternType::COLOR && PrepareContext() &&

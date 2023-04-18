@@ -164,7 +164,10 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
 
     uint32_t mMaxTextureSize = 0;
 
+    
     CompositionOp mLastCompositionOp = CompositionOp::OP_SOURCE;
+    
+    Maybe<DeviceColor> mLastBlendColor;
 
     
     LinkedList<RefPtr<TextureHandle>> mTextureHandles;
@@ -201,7 +204,8 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     bool Initialize();
     bool CreateShaders();
 
-    void SetBlendState(CompositionOp aOp);
+    void SetBlendState(CompositionOp aOp,
+                       const Maybe<DeviceColor>& aBlendColor = Nothing());
 
     void SetClipRect(const IntRect& aClipRect) { mClipRect = aClipRect; }
 
