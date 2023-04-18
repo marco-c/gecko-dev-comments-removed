@@ -135,9 +135,9 @@ static void DumpPrintObjectsTreeLayout(const UniquePtr<nsPrintObject>& aPO,
 
 #  define DUMP_DOC_LIST(_title) \
     DumpPrintObjectsListStart((_title), mPrintDocList);
-#  define DUMP_DOC_TREE DumpPrintObjectsTree(mPrt->mPrintObject.get());
+#  define DUMP_DOC_TREE DumpPrintObjectsTree(mPrintObject.get());
 #  define DUMP_DOC_TREELAYOUT \
-    DumpPrintObjectsTreeLayout(mPrt->mPrintObject, mPrt->mPrintDC);
+    DumpPrintObjectsTreeLayout(mPrintObject, mPrt->mPrintDC);
 #else
 #  define DUMP_DOC_LIST(_title)
 #  define DUMP_DOC_TREE
@@ -169,7 +169,7 @@ void nsPrintJob::BuildNestedPrintObjects(
     
     
     
-    mSelectionRoot = mPrt->mPrintObject.get();
+    mSelectionRoot = mPrintObject.get();
   }
 
   for (auto& bc : aParentPO->mDocShell->GetBrowsingContext()->Children()) {
@@ -245,7 +245,10 @@ void nsPrintJob::Destroy() {
 }
 
 
-void nsPrintJob::DestroyPrintingData() { mPrt = nullptr; }
+void nsPrintJob::DestroyPrintingData() {
+  mPrintObject = nullptr;
+  mPrt = nullptr;
+}
 
 
 
@@ -291,7 +294,7 @@ nsPrintJob::GetSeqFrameAndCountSheets() const {
     return {nullptr, 0};
   }
 
-  const nsPrintObject* po = mPrt->mPrintObject.get();
+  const nsPrintObject* po = mPrintObject.get();
   if (NS_WARN_IF(!po)) {
     return {nullptr, 0};
   }
@@ -407,16 +410,16 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
 
   {
     nsAutoScriptBlocker scriptBlocker;
-    printData->mPrintObject = MakeUnique<nsPrintObject>();
-    rv = printData->mPrintObject->InitAsRootObject(docShell, aDoc,
-                                                   mIsCreatingPrintPreview);
+    mPrintObject = MakeUnique<nsPrintObject>();
+    rv =
+        mPrintObject->InitAsRootObject(docShell, aDoc, mIsCreatingPrintPreview);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    mPrintDocList.AppendElement(printData->mPrintObject.get());
+    mPrintDocList.AppendElement(mPrintObject.get());
 
-    printData->mPrintObject->mFrameType = eDoc;
+    mPrintObject->mFrameType = eDoc;
 
-    BuildNestedPrintObjects(printData->mPrintObject);
+    BuildNestedPrintObjects(mPrintObject);
   }
 
   
@@ -428,8 +431,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
   }
 
   
-  if (!printData->mPrintObject->mDocument ||
-      !printData->mPrintObject->mDocument->GetRootElement())
+  if (!mPrintObject->mDocument || !mPrintObject->mDocument->GetRootElement())
     return NS_ERROR_GFX_PRINTER_STARTDOC;
 
   mPrintSettings->GetShrinkToFit(&mShrinkToFit);
@@ -777,7 +779,7 @@ nsresult nsPrintJob::SetupToPrintContent() {
   
   
   
-  if (NS_WARN_IF(!mPrt) || NS_WARN_IF(!mPrt->mPrintObject)) {
+  if (NS_WARN_IF(!mPrt) || NS_WARN_IF(!mPrintObject)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -785,9 +787,8 @@ nsresult nsPrintJob::SetupToPrintContent() {
   
   
   
-  if (mIsCreatingPrintPreview &&
-      (NS_WARN_IF(!mPrt->mPrintObject->mPresContext) ||
-       NS_WARN_IF(!mPrt->mPrintObject->mPresShell))) {
+  if (mIsCreatingPrintPreview && (NS_WARN_IF(!mPrintObject->mPresContext) ||
+                                  NS_WARN_IF(!mPrintObject->mPresShell))) {
     return NS_ERROR_FAILURE;
   }
 
@@ -797,8 +798,8 @@ nsresult nsPrintJob::SetupToPrintContent() {
   
   
   MOZ_ASSERT(
-      (!mIsCreatingPrintPreview && !mPrt->mPrintObject->PrintingIsEnabled()) ||
-          (mPrt->mPrintObject->mPresContext && mPrt->mPrintObject->mPresShell),
+      (!mIsCreatingPrintPreview && !mPrintObject->PrintingIsEnabled()) ||
+          (mPrintObject->mPresContext && mPrintObject->mPresShell),
       "mPresContext and mPresShell shouldn't be nullptr when printing the "
       "document or creating print-preview");
 
@@ -827,7 +828,7 @@ nsresult nsPrintJob::SetupToPrintContent() {
   
   
   if (mShrinkToFit) {
-    mShrinkToFitFactor = printData->mPrintObject->mShrinkRatio;
+    mShrinkToFitFactor = mPrintObject->mShrinkRatio;
 
     if (mShrinkToFitFactor < 0.998f) {
       nsresult rv = ReconstructAndReflow();
@@ -843,7 +844,7 @@ nsresult nsPrintJob::SetupToPrintContent() {
     }
 
     if (MOZ_LOG_TEST(gPrintingLog, LogLevel::Debug)) {
-      float calcRatio = printData->mPrintObject->mShrinkRatio;
+      float calcRatio = mPrintObject->mShrinkRatio;
       PR_PL(
           ("*******************************************************************"
            "*******\n"));
@@ -895,7 +896,7 @@ nsresult nsPrintJob::SetupToPrintContent() {
 
   nsAutoString docTitleStr;
   nsAutoString docURLStr;
-  GetDisplayTitleAndURL(*printData->mPrintObject->mDocument, mPrintSettings,
+  GetDisplayTitleAndURL(*mPrintObject->mDocument, mPrintSettings,
                         DocTitleDefault::eDocURLElseFallback, docTitleStr,
                         docURLStr);
 
@@ -923,10 +924,10 @@ nsresult nsPrintJob::SetupToPrintContent() {
     
     
     nsPageSequenceFrame* seqFrame =
-        printData->mPrintObject->mPresShell->GetPageSequenceFrame();
+        mPrintObject->mPresShell->GetPageSequenceFrame();
     if (seqFrame) {
-      seqFrame->StartPrint(printData->mPrintObject->mPresContext,
-                           mPrintSettings, docTitleStr, docURLStr);
+      seqFrame->StartPrint(mPrintObject->mPresContext, mPrintSettings,
+                           docTitleStr, docURLStr);
     }
   }
 
@@ -944,7 +945,7 @@ nsresult nsPrintJob::SetupToPrintContent() {
   
 
   if (mIsDoingPrinting) {
-    PrintDocContent(printData->mPrintObject, rv);  
+    PrintDocContent(mPrintObject, rv);  
   }
 
   return rv;
@@ -992,7 +993,6 @@ void nsPrintJob::FirePrintPreviewUpdateEvent() {
 
 nsresult nsPrintJob::InitPrintDocConstruction(bool aHandleError) {
   
-  
   RefPtr<nsPrintData> printData = mPrt;
 
   if (NS_WARN_IF(!printData)) {
@@ -1007,11 +1007,11 @@ nsresult nsPrintJob::InitPrintDocConstruction(bool aHandleError) {
     mDoingInitialReflow = true;
 
     nsCOMPtr<nsIWebProgress> webProgress =
-        do_QueryInterface(printData->mPrintObject->mDocShell);
+        do_QueryInterface(mPrintObject->mDocShell);
     webProgress->AddProgressListener(static_cast<nsIWebProgressListener*>(this),
                                      nsIWebProgress::NOTIFY_STATE_REQUEST);
 
-    MOZ_TRY(ReflowDocList(printData->mPrintObject));
+    MOZ_TRY(ReflowDocList(mPrintObject));
 
     FirePrintPreviewUpdateEvent();
   }
@@ -1024,7 +1024,7 @@ bool nsPrintJob::ShouldResumePrint() const {
   if (mDoingInitialReflow) {
     return false;
   }
-  Document* doc = mPrt->mPrintObject->mDocument;
+  Document* doc = mPrintObject->mDocument;
   MOZ_ASSERT(doc);
   NS_ENSURE_TRUE(doc, true);
   nsCOMPtr<nsILoadGroup> lg = doc->GetDocumentLoadGroup();
@@ -1047,13 +1047,13 @@ nsresult nsPrintJob::MaybeResumePrintAfterResourcesLoaded(
   
   
   
-  if (!mPrt || NS_WARN_IF(!mPrt->mPrintObject) ||
-      NS_WARN_IF(!mPrt->mPrintObject->mDocShell)) {
+  if (!mPrt || NS_WARN_IF(!mPrintObject) ||
+      NS_WARN_IF(!mPrintObject->mDocShell)) {
     return NS_ERROR_FAILURE;
   }
 
   nsCOMPtr<nsIWebProgress> webProgress =
-      do_QueryInterface(mPrt->mPrintObject->mDocShell);
+      do_QueryInterface(mPrintObject->mDocShell);
 
   webProgress->RemoveProgressListener(
       static_cast<nsIWebProgressListener*>(this));
@@ -1892,7 +1892,7 @@ bool nsPrintJob::DonePrintingSheets(nsPrintObject* aPO, nsresult aResult) {
   if (aPO && !printData->mIsAborted) {
     aPO->mHasBeenPrinted = true;
     nsresult rv;
-    bool didPrint = PrintDocContent(printData->mPrintObject, rv);
+    bool didPrint = PrintDocContent(mPrintObject, rv);
     if (NS_SUCCEEDED(rv) && didPrint) {
       PR_PL(
           ("****** In DV::DonePrintingSheets PO: %p (%s) didPrint:%s (Not Done "
@@ -1934,7 +1934,7 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
   PR_PL(("********* nsPrintJob::EnablePOsForPrinting *********\n"));
 
   if (!mPrintSettings->GetPrintSelectionOnly()) {
-    printData->mPrintObject->EnablePrinting(true);
+    mPrintObject->EnablePrinting(true);
     return NS_OK;
   }
 
@@ -2003,14 +2003,13 @@ nsresult nsPrintJob::FinishPrintPreview() {
     
     
     const Maybe<bool> maybeLandscape =
-        printData->mPrintObject->mPresShell->StyleSet()
-            ->GetDefaultPageOrientation()
-            .map([](StylePageOrientation o) -> bool {
+        mPrintObject->mPresShell->StyleSet()->GetDefaultPageOrientation().map(
+            [](StylePageOrientation o) -> bool {
               return o == StylePageOrientation::Landscape;
             });
     mPrintPreviewCallback(PrintPreviewResultInfo(
         GetPrintPreviewNumSheets(), GetRawNumPages(), GetIsEmpty(),
-        hasSelection, hasSelection && printData->mPrintObject->HasSelection(),
+        hasSelection, hasSelection && mPrintObject->HasSelection(),
         maybeLandscape));
     mPrintPreviewCallback = nullptr;
   }

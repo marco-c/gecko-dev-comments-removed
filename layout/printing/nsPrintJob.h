@@ -256,6 +256,9 @@ class nsPrintJob final : public nsIWebProgressListener,
   RefPtr<RemotePrintJobChild> mRemotePrintJob;
 
   
+  mozilla::UniquePtr<nsPrintObject> mPrintObject;
+
+  
   
   
   nsPrintObject* mSelectionRoot = nullptr;
