@@ -219,7 +219,7 @@ pub trait RenderNotifier: Send {
         composite_needed: bool,
     );
     
-    fn new_frame_ready(&self, _: DocumentId, scrolled: bool, composite_needed: bool, render_time_ns: Option<u64>);
+    fn new_frame_ready(&self, _: DocumentId, scrolled: bool, composite_needed: bool);
     
     
     
