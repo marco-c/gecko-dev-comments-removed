@@ -62,6 +62,11 @@ function trr_test_setup() {
 
   
   
+  
+  Services.prefs.setBoolPref("network.trr.temp_blocklist", false);
+
+  
+  
 
   return h2Port;
 }
@@ -95,6 +100,7 @@ function trr_clear_prefs() {
     "network.trr.send_empty_accept-encoding_headers"
   );
   Services.prefs.clearUserPref("network.trr.strict_native_fallback");
+  Services.prefs.clearUserPref("network.trr.temp_blocklist");
 }
 
 
