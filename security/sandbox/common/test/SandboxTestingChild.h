@@ -45,7 +45,6 @@ class SandboxTestingChild : public PSandboxTestingChild {
   
   inline void ReportNoTests();
 
-#ifdef XP_UNIX
   
   void PosixTest(const nsCString& aName, bool aExpectSuccess, int aStatus);
 
@@ -60,7 +59,6 @@ class SandboxTestingChild : public PSandboxTestingChild {
   template <typename F>
   void ErrnoValueTest(const nsCString& aName, bool aExpectEquals,
                       int aExpectedErrno, F&& aFunction);
-#endif
 
  private:
   explicit SandboxTestingChild(SandboxTestingThread* aThread,

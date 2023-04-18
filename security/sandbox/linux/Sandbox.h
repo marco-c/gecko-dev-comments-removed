@@ -12,6 +12,8 @@
 #include "nsXULAppAPI.h"
 #include <vector>
 
+#include "mozilla/ipc/UtilityProcessSandboxing.h"
+
 
 
 
@@ -62,6 +64,8 @@ MOZ_EXPORT void SetMediaPluginSandbox(const char* aFilePath);
 MOZ_EXPORT void SetRemoteDataDecoderSandbox(int aBroker);
 
 MOZ_EXPORT void SetSocketProcessSandbox(int aBroker);
+
+MOZ_EXPORT void SetUtilitySandbox(int aBroker, ipc::SandboxingKind aKind);
 
 
 

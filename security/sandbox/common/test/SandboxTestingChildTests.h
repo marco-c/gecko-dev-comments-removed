@@ -33,6 +33,10 @@
 #  include <CoreGraphics/CoreGraphics.h>
 #endif
 
+#ifdef XP_WIN
+#  include <stdio.h>
+#endif
+
 namespace mozilla {
 
 #ifdef XP_LINUX
@@ -314,6 +318,39 @@ void RunTestsGMPlugin(SandboxTestingChild* child) {
 #  endif  
 #else     
   child->ReportNoTests();
+#endif
+}
+
+void RunTestsUtility(SandboxTestingChild* child) {
+  MOZ_ASSERT(child, "No SandboxTestingChild*?");
+
+#ifdef XP_UNIX
+#  ifdef XP_LINUX
+  child->ErrnoValueTest("ioctl_tiocsti"_ns, false, ENOSYS, [&] {
+    int rv = ioctl(1, TIOCSTI, "x");
+    return rv;
+  });
+
+  struct rusage res;
+  child->ErrnoTest("getrusage"_ns, true, [&] {
+    int rv = getrusage(RUSAGE_SELF, &res);
+    return rv;
+  });
+#  endif  
+#else     
+#  ifdef XP_WIN
+  child->ErrnoValueTest("write_only"_ns, true, EPERM, [&] {
+    FILE* rv = fopen("test_sandbox.txt", "w");
+    int errno_copy = errno;
+    if (rv != nullptr) {
+      fclose(rv);
+      MOZ_ASSERT(!rv, "SHould have had a nullptr");
+    }
+    return errno_copy;
+  });
+#  else   
+  child->ReportNoTests();
+#  endif  
 #endif
 }
 

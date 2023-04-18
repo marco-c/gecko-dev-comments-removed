@@ -197,6 +197,9 @@ from collections import namedtuple
 
 
 
+
+
+
 GeckoProcessType = namedtuple(
     "GeckoProcessType",
     [
@@ -322,5 +325,16 @@ process_types = [
         "ForkServer",
         "FORKSERVER",
         False,
+    ),
+    GeckoProcessType(
+        11,
+        "Utility",
+        "utility",
+        "Utility",
+        "Self",
+        "Utility",
+        "Utility",
+        "UTILITY",
+        True,
     ),
 ]

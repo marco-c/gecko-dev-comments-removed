@@ -1,0 +1,27 @@
+
+
+
+
+
+#ifndef _include_ipc_glue_UtilityProcessSandboxing_h_
+#define _include_ipc_glue_UtilityProcessSandboxing_h_
+
+#include <stdint.h>
+
+namespace mozilla {
+
+namespace ipc {
+
+
+
+enum SandboxingKind : uint64_t {
+
+  GENERIC_UTILITY = 0x01,
+
+};
+
+}  
+
+}  
+
+#endif  
