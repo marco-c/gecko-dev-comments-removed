@@ -312,12 +312,6 @@ class gfxTextRun : public gfxShapedText {
                        aDrawTargetForTightBoundingBox, aProvider);
   }
 
-  void GetLineHeightMetrics(Range aRange, gfxFloat& aAscent,
-                            gfxFloat& aDescent) const;
-  void GetLineHeightMetrics(gfxFloat& aAscent, gfxFloat& aDescent) const {
-    GetLineHeightMetrics(Range(this), aAscent, aDescent);
-  }
-
   
 
 
@@ -834,8 +828,7 @@ class gfxTextRun : public gfxShapedText {
   
   
   
-  
-  bool ShrinkToLigatureBoundaries(Range* aRange) const;
+  void ShrinkToLigatureBoundaries(Range* aRange) const;
   
   gfxFloat GetPartialLigatureWidth(Range aRange,
                                    PropertyProvider* aProvider) const;
