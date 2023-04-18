@@ -32,10 +32,8 @@ using JS::ReadOnlyCompileOptions;
 enum class OffThread { Compile, Decode };
 
 static bool CanDoOffThread(JSContext* cx, const ReadOnlyCompileOptions& options,
-                           size_t length, OffThread what) {
+                           size_t length) {
   static const size_t TINY_LENGTH = 5 * 1000;
-  static const size_t HUGE_SRC_LENGTH = 100 * 1000;
-  static const size_t HUGE_BC_LENGTH = 367 * 1000;
 
   
   
@@ -45,23 +43,6 @@ static bool CanDoOffThread(JSContext* cx, const ReadOnlyCompileOptions& options,
     if (length < TINY_LENGTH) {
       return false;
     }
-
-    
-    
-    
-    
-    
-    
-    bool mustWait = options.useOffThreadParseGlobal &&
-                    OffThreadParsingMustWaitForGC(cx->runtime());
-    if (mustWait) {
-      if (what == OffThread::Compile && length < HUGE_SRC_LENGTH) {
-        return false;
-      }
-      if (what == OffThread::Decode && length < HUGE_BC_LENGTH) {
-        return false;
-      }
-    }
   }
 
   return cx->runtime()->canUseParallelParsing() && CanUseExtraThreads();
@@ -69,7 +50,7 @@ static bool CanDoOffThread(JSContext* cx, const ReadOnlyCompileOptions& options,
 
 JS_PUBLIC_API bool JS::CanCompileOffThread(
     JSContext* cx, const ReadOnlyCompileOptions& options, size_t length) {
-  return CanDoOffThread(cx, options, length, OffThread::Compile);
+  return CanDoOffThread(cx, options, length);
 }
 
 JS_PUBLIC_API JS::OffThreadToken* JS::CompileOffThread(
@@ -179,7 +160,7 @@ JS_PUBLIC_API void JS::CancelOffThreadModule(JSContext* cx,
 JS_PUBLIC_API bool JS::CanDecodeOffThread(JSContext* cx,
                                           const ReadOnlyCompileOptions& options,
                                           size_t length) {
-  return CanDoOffThread(cx, options, length, OffThread::Decode);
+  return CanDoOffThread(cx, options, length);
 }
 
 
@@ -247,13 +228,3 @@ JS_PUBLIC_API void JS::CancelMultiOffThreadScriptsDecoder(
   HelperThreadState().cancelParseTask(
       cx->runtime(), ParseTaskKind::MultiStencilsDecode, token);
 }
-
-namespace js {
-bool gUseOffThreadParseGlobal = false;
-}  
-
-JS_PUBLIC_API void JS::SetUseOffThreadParseGlobal(bool value) {
-  gUseOffThreadParseGlobal = value;
-}
-
-bool js::UseOffThreadParseGlobal() { return gUseOffThreadParseGlobal; }

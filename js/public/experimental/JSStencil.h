@@ -74,8 +74,6 @@ extern JS_PUBLIC_API already_AddRefed<Stencil> CompileModuleScriptToStencil(
 
 
 
-
-
 extern JS_PUBLIC_API already_AddRefed<Stencil> FinishOffThreadStencil(
     JSContext* cx, JS::OffThreadToken* token);
 

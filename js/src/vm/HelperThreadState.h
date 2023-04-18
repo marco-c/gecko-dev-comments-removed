@@ -398,9 +398,6 @@ class GlobalHelperThreadState {
                             JS::OffThreadToken* token,
                             mozilla::Vector<RefPtr<JS::Stencil>>* stencils);
 
-  void mergeParseTaskRealm(JSContext* cx, ParseTask* parseTask,
-                           JS::Realm* dest);
-
  public:
   void cancelParseTask(JSRuntime* rt, ParseTaskKind kind,
                        JS::OffThreadToken* token);
@@ -515,12 +512,15 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
   JSRuntime* runtime = nullptr;
 
   
+  
   JSObject* parseGlobal;
 
   
   JS::OffThreadCompileCallback callback;
   void* callbackData;
 
+  
+  
   
   
   
@@ -551,8 +551,7 @@ struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
             JS::OffThreadCompileCallback callback, void* callbackData);
   virtual ~ParseTask();
 
-  bool init(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
-            JSObject* global);
+  bool init(JSContext* cx, const JS::ReadOnlyCompileOptions& options);
 
   void activate(JSRuntime* rt);
   virtual void parse(JSContext* cx) = 0;

@@ -151,11 +151,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   
   
   
-  bool useOffThreadParseGlobal = true;
-
-  
-  
-  
   
   
   

@@ -89,7 +89,6 @@
 #include "js/HashTable.h"
 #include "js/Interrupt.h"
 #include "js/LocaleSensitive.h"
-#include "js/OffThreadScriptCompilation.h"  
 #include "js/Printf.h"
 #include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
@@ -204,13 +203,6 @@ static bool GetRealmConfiguration(JSContext* cx, unsigned argc, Value* vp) {
   if (!JS_SetProperty(cx, info, "privateMethods",
                       privateFields && privateMethods ? TrueHandleValue
                                                       : FalseHandleValue)) {
-    return false;
-  }
-
-  bool offThreadParseGlobal = js::UseOffThreadParseGlobal();
-  if (!JS_SetProperty(
-          cx, info, "offThreadParseGlobal",
-          offThreadParseGlobal ? TrueHandleValue : FalseHandleValue)) {
     return false;
   }
 
