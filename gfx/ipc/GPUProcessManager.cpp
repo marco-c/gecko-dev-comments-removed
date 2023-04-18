@@ -57,6 +57,10 @@
 #  include "mozilla/layers/UiCompositorControllerChild.h"
 #endif  
 
+#if defined(XP_WIN)
+#  include "gfxWindowsPlatform.h"
+#endif
+
 namespace mozilla {
 namespace gfx {
 
@@ -606,7 +610,11 @@ void GPUProcessManager::OnInProcessDeviceReset(bool aTrackThreshold) {
     DisableWebRenderConfig(wr::WebRenderError::EXCESSIVE_RESETS, nsCString());
 #endif
   }
-
+#ifdef XP_WIN
+  
+  
+  gfxWindowsPlatform::GetPlatform()->HandleDeviceReset();
+#endif
   RebuildInProcessSessions();
   NotifyListenersOnCompositeDeviceReset();
 }
