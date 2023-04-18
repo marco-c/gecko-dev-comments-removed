@@ -35,7 +35,7 @@ function keyedScalarValue(aScalarName, aProcessName) {
     : undefined;
 }
 
-add_task({ skip_if: () => !runningInParent }, function test_setup() {
+add_setup({ skip_if: () => !runningInParent }, function test_setup() {
   
   do_get_profile();
 
