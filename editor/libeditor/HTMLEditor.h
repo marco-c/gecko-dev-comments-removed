@@ -1567,11 +1567,15 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+
   enum class BRElementNextToSplitPoint { Keep, Delete };
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult
   InsertElementWithSplittingAncestorsWithTransaction(
       nsAtom& aTagName, const EditorDOMPoint& aPointToInsert,
       BRElementNextToSplitPoint aBRElementNextToSplitPoint,
+      const Element& aEditingHost,
       const InitializeInsertingElement& aInitializer = DoNothingForNewElement);
 
   
@@ -4483,6 +4487,8 @@ class HTMLEditor final : public EditorBase,
 
 
     void Abort();
+
+    bool MaybeRestoreSelectionLater() const { return !!mHTMLEditor; }
 
    protected:
     
