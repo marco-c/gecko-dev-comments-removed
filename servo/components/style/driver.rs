@@ -133,28 +133,26 @@ where
                 let tls = ScopedTLS::<ThreadLocalStyleContext<E>>::new(pool);
                 let root_opaque = root.as_node().opaque();
                 let drain = discovered.drain(..);
-                pool.install(|| {
+                pool.scope_fifo(|scope| {
                     
                     
                     
                     
                     
-                    rayon::scope_fifo(|scope| {
-                        gecko_profiler_label!(Layout, StyleComputation);
-                        parallel::traverse_nodes(
-                            drain,
-                            DispatchMode::TailCall,
-                             true,
-                            root_opaque,
-                            PerLevelTraversalData {
-                                current_dom_depth: depth,
-                            },
-                            scope,
-                            pool,
-                            traversal,
-                            &tls,
-                        );
-                    });
+                    gecko_profiler_label!(Layout, StyleComputation);
+                    parallel::traverse_nodes(
+                        drain,
+                        DispatchMode::TailCall,
+                         true,
+                        root_opaque,
+                        PerLevelTraversalData {
+                            current_dom_depth: depth,
+                        },
+                        scope,
+                        pool,
+                        traversal,
+                        &tls,
+                    );
                 });
 
                 tls_slots = Some(tls.into_slots());
