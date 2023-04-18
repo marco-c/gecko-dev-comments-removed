@@ -457,8 +457,8 @@ class SnapshotIterator {
 
   bool resumeAfter() const {
     
-    MOZ_ASSERT_IF(moreFrames(), resumeMode() != ResumeMode::ResumeAfter);
-    return resumeMode() == ResumeMode::ResumeAfter;
+    MOZ_ASSERT_IF(moreFrames(), !IsResumeAfter(resumeMode()));
+    return IsResumeAfter(resumeMode());
   }
   inline BailoutKind bailoutKind() const { return snapshot_.bailoutKind(); }
 

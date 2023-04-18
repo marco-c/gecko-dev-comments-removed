@@ -69,8 +69,10 @@ bool MResumePoint::writeRecoverData(CompactBufferWriter& writer) const {
 #ifdef DEBUG
   
   
+  uint32_t numIntermediate = NumIntermediateValues(mode());
   if (JSContext* cx = GetJitContext()->cx) {
-    if (!AssertBailoutStackDepth(cx, script, pc(), mode(), exprStack)) {
+    if (!AssertBailoutStackDepth(cx, script, pc(), mode(),
+                                 exprStack - numIntermediate)) {
       return false;
     }
   }

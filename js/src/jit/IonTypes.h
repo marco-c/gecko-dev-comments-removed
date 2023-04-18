@@ -174,6 +174,11 @@ enum class BailoutKind : uint8_t {
   OnStackInvalidation,
 
   
+  
+  
+  ThrowCheckIsObject,
+
+  
   Unreachable,
 
   Limit
@@ -217,6 +222,8 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "Finally";
     case BailoutKind::OnStackInvalidation:
       return "OnStackInvalidation";
+    case BailoutKind::ThrowCheckIsObject:
+      return "ThrowCheckIsObject";
     case BailoutKind::Unreachable:
       return "Unreachable";
 
@@ -1001,6 +1008,13 @@ enum class ResumeMode : uint8_t {
   ResumeAfter,
 
   
+  
+  
+  
+  
+  ResumeAfterCheckIsObject,
+
+  
   ResumeAt,
 
   
@@ -1027,8 +1041,31 @@ inline const char* ResumeModeToString(ResumeMode mode) {
       return "InlinedFunCall";
     case ResumeMode::InlinedAccessor:
       return "InlinedAccessor";
+    case ResumeMode::ResumeAfterCheckIsObject:
+      return "ResumeAfterCheckIsObject";
   }
   MOZ_CRASH("Invalid mode");
+}
+
+inline bool IsResumeAfter(ResumeMode mode) {
+  switch (mode) {
+    case ResumeMode::ResumeAfter:
+    case ResumeMode::ResumeAfterCheckIsObject:
+      return true;
+    default:
+      return false;
+  }
+}
+
+
+
+inline uint32_t NumIntermediateValues(ResumeMode mode) {
+  switch (mode) {
+    case ResumeMode::ResumeAfterCheckIsObject:
+      return 1;
+    default:
+      return 0;
+  }
 }
 
 }  

@@ -492,6 +492,17 @@ BaselineStackBuilder::BaselineStackBuilder(JSContext* cx,
 bool BaselineStackBuilder::initFrame() {
   
   
+  if (catchingException()) {
+    pc_ = excInfo_->resumePC();
+    resumeMode_ = mozilla::Some(ResumeMode::ResumeAt);
+  } else {
+    pc_ = script_->offsetToPC(iter_.pcOffset());
+    resumeMode_ = mozilla::Some(iter_.resumeMode());
+  }
+  op_ = JSOp(*pc_);
+
+  
+  
   
   
   if (catchingException()) {
@@ -500,7 +511,11 @@ bool BaselineStackBuilder::initFrame() {
     uint32_t totalFrameSlots = iter_.numAllocations();
     uint32_t fixedSlots = script_->nfixed();
     uint32_t argSlots = CountArgSlots(script_, fun_);
-    exprStackSlots_ = totalFrameSlots - fixedSlots - argSlots;
+    uint32_t intermediates = NumIntermediateValues(resumeMode());
+    exprStackSlots_ = totalFrameSlots - fixedSlots - argSlots - intermediates;
+
+    
+    MOZ_ASSERT(exprStackSlots_ <= totalFrameSlots);
   }
 
   resetFramePushed();
@@ -518,17 +533,6 @@ bool BaselineStackBuilder::initFrame() {
     return false;
   }
   prevFramePtr_ = virtualPointerAtStackOffset(0);
-
-  
-  
-  if (catchingException()) {
-    pc_ = excInfo_->resumePC();
-    resumeMode_ = mozilla::Some(ResumeMode::ResumeAt);
-  } else {
-    pc_ = script_->offsetToPC(iter_.pcOffset());
-    resumeMode_ = mozilla::Some(iter_.resumeMode());
-  }
-  op_ = JSOp(*pc_);
 
   return true;
 }
@@ -854,6 +858,18 @@ bool BaselineStackBuilder::buildExpressionStack() {
     }
     if (!writeValue(v, "StackValue")) {
       return false;
+    }
+  }
+
+  if (resumeMode() == ResumeMode::ResumeAfterCheckIsObject) {
+    JitSpew(JitSpew_BaselineBailouts,
+            "      Checking that intermediate value is an object");
+    Value returnVal;
+    if (iter_.tryRead(&returnVal) && !returnVal.isObject()) {
+      MOZ_ASSERT(!returnVal.isMagic());
+      JitSpew(JitSpew_BaselineBailouts,
+              "      Not an object! Overwriting bailout kind");
+      bailoutKind_ = BailoutKind::ThrowCheckIsObject;
     }
   }
 
@@ -1274,7 +1290,7 @@ bool BaselineStackBuilder::envChainSlotCanBeOptimized() {
 bool jit::AssertBailoutStackDepth(JSContext* cx, JSScript* script,
                                   jsbytecode* pc, ResumeMode mode,
                                   uint32_t exprStackSlots) {
-  if (mode == ResumeMode::ResumeAfter) {
+  if (IsResumeAfter(mode)) {
     pc = GetNextPc(pc);
   }
 
@@ -2080,6 +2096,10 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
     case BailoutKind::UninitializedLexical:
       HandleLexicalCheckFailure(cx, outerScript, innerScript);
       break;
+
+    case BailoutKind::ThrowCheckIsObject:
+      MOZ_ASSERT(!cx->isExceptionPending());
+      return ThrowCheckIsObject(cx, CheckIsObjectKind::IteratorReturn);
 
     case BailoutKind::IonExceptionDebugMode:
       
