@@ -2698,7 +2698,7 @@ impl Connection {
     
     
     
-    pub fn stream_create(&mut self, st: StreamType) -> Res<u64> {
+    pub fn stream_create(&mut self, st: StreamType) -> Res<StreamId> {
         
         match self.state {
             State::Closing { .. } | State::Draining { .. } | State::Closed { .. } => {
@@ -2721,12 +2721,12 @@ impl Connection {
     
     pub fn stream_priority(
         &mut self,
-        stream_id: u64,
+        stream_id: StreamId,
         transmission: TransmissionPriority,
         retransmission: RetransmissionPriority,
     ) -> Res<()> {
         self.streams
-            .get_send_stream_mut(stream_id.into())?
+            .get_send_stream_mut(stream_id)?
             .set_priority(transmission, retransmission);
         Ok(())
     }
@@ -2738,10 +2738,8 @@ impl Connection {
     
     
     
-    pub fn stream_send(&mut self, stream_id: u64, data: &[u8]) -> Res<usize> {
-        self.streams
-            .get_send_stream_mut(stream_id.into())?
-            .send(data)
+    pub fn stream_send(&mut self, stream_id: StreamId, data: &[u8]) -> Res<usize> {
+        self.streams.get_send_stream_mut(stream_id)?.send(data)
     }
 
     
@@ -2751,10 +2749,10 @@ impl Connection {
     
     
     
-    pub fn stream_send_atomic(&mut self, stream_id: u64, data: &[u8]) -> Res<bool> {
+    pub fn stream_send_atomic(&mut self, stream_id: StreamId, data: &[u8]) -> Res<bool> {
         let val = self
             .streams
-            .get_send_stream_mut(stream_id.into())?
+            .get_send_stream_mut(stream_id)?
             .send_atomic(data);
         if let Ok(val) = val {
             debug_assert!(
@@ -2770,21 +2768,19 @@ impl Connection {
     
     
     
-    pub fn stream_avail_send_space(&self, stream_id: u64) -> Res<usize> {
-        Ok(self.streams.get_send_stream(stream_id.into())?.avail())
+    pub fn stream_avail_send_space(&self, stream_id: StreamId) -> Res<usize> {
+        Ok(self.streams.get_send_stream(stream_id)?.avail())
     }
 
     
-    pub fn stream_close_send(&mut self, stream_id: u64) -> Res<()> {
-        self.streams.get_send_stream_mut(stream_id.into())?.close();
+    pub fn stream_close_send(&mut self, stream_id: StreamId) -> Res<()> {
+        self.streams.get_send_stream_mut(stream_id)?.close();
         Ok(())
     }
 
     
-    pub fn stream_reset_send(&mut self, stream_id: u64, err: AppError) -> Res<()> {
-        self.streams
-            .get_send_stream_mut(stream_id.into())?
-            .reset(err);
+    pub fn stream_reset_send(&mut self, stream_id: StreamId, err: AppError) -> Res<()> {
+        self.streams.get_send_stream_mut(stream_id)?.reset(err);
         Ok(())
     }
 
@@ -2793,16 +2789,16 @@ impl Connection {
     
     
     
-    pub fn stream_recv(&mut self, stream_id: u64, data: &mut [u8]) -> Res<(usize, bool)> {
-        let stream = self.streams.get_recv_stream_mut(stream_id.into())?;
+    pub fn stream_recv(&mut self, stream_id: StreamId, data: &mut [u8]) -> Res<(usize, bool)> {
+        let stream = self.streams.get_recv_stream_mut(stream_id)?;
 
         let rb = stream.read(data)?;
         Ok((rb.0 as usize, rb.1))
     }
 
     
-    pub fn stream_stop_sending(&mut self, stream_id: u64, err: AppError) -> Res<()> {
-        let stream = self.streams.get_recv_stream_mut(stream_id.into())?;
+    pub fn stream_stop_sending(&mut self, stream_id: StreamId, err: AppError) -> Res<()> {
+        let stream = self.streams.get_recv_stream_mut(stream_id)?;
 
         stream.stop_sending(err);
         Ok(())
@@ -2812,8 +2808,8 @@ impl Connection {
     
     
     
-    pub fn set_stream_max_data(&mut self, stream_id: u64, max_data: u64) -> Res<()> {
-        let stream = self.streams.get_recv_stream_mut(stream_id.into())?;
+    pub fn set_stream_max_data(&mut self, stream_id: StreamId, max_data: u64) -> Res<()> {
+        let stream = self.streams.get_recv_stream_mut(stream_id)?;
 
         stream.set_stream_max_data(max_data);
         Ok(())
@@ -2826,8 +2822,8 @@ impl Connection {
     
     
     
-    pub fn stream_keep_alive(&mut self, stream_id: u64, keep: bool) -> Res<()> {
-        self.streams.keep_alive(stream_id.into(), keep)
+    pub fn stream_keep_alive(&mut self, stream_id: StreamId, keep: bool) -> Res<()> {
+        self.streams.keep_alive(stream_id, keep)
     }
 
     pub fn remote_datagram_size(&self) -> u64 {
