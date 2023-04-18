@@ -22,6 +22,5 @@ module.exports = {
     
     "mozilla/reject-importGlobalProperties": ["error", "everything"],
     "mozilla/var-only-at-top-level": "error",
-    "mozilla/use-chromeutils-import": ["error", { allowCu: true }],
   },
 };

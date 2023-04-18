@@ -3,8 +3,7 @@
 
 "use strict";
 
-const { utils: Cu } = Components;
-const { BrowserLoader } = Cu.import(
+const { BrowserLoader } = ChromeUtils.import(
   "resource://devtools/shared/loader/browser-loader.js"
 );
 
