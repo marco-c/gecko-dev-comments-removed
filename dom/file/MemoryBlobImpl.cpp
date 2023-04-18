@@ -5,6 +5,7 @@
 
 
 #include "MemoryBlobImpl.h"
+#include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/SHA1.h"
 #include "nsIMemoryReporter.h"
@@ -64,10 +65,56 @@ nsresult MemoryBlobImpl::DataOwnerAdapter::Create(DataOwner* aDataOwner,
       NS_ASSIGNMENT_DEPEND);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  NS_ADDREF(*_retval =
-                new MemoryBlobImpl::DataOwnerAdapter(aDataOwner, stream));
+  NS_ADDREF(*_retval = new MemoryBlobImpl::DataOwnerAdapter(aDataOwner, stream,
+                                                            aLength));
 
   return NS_OK;
+}
+
+void MemoryBlobImpl::DataOwnerAdapter::Serialize(
+    mozilla::ipc::InputStreamParams& aParams,
+    FileDescriptorArray& aFileDescriptors, bool aDelayedStart,
+    uint32_t aMaxSize, uint32_t* aSizeUsed,
+    mozilla::ipc::ChildToParentStreamActorManager* aManager) {
+  SerializeInternal(aParams, aFileDescriptors, aDelayedStart, aMaxSize,
+                    aSizeUsed, aManager);
+}
+
+void MemoryBlobImpl::DataOwnerAdapter::Serialize(
+    mozilla::ipc::InputStreamParams& aParams,
+    FileDescriptorArray& aFileDescriptors, bool aDelayedStart,
+    uint32_t aMaxSize, uint32_t* aSizeUsed,
+    mozilla::ipc::ParentToChildStreamActorManager* aManager) {
+  SerializeInternal(aParams, aFileDescriptors, aDelayedStart, aMaxSize,
+                    aSizeUsed, aManager);
+}
+
+template <typename M>
+void MemoryBlobImpl::DataOwnerAdapter::SerializeInternal(
+    mozilla::ipc::InputStreamParams& aParams,
+    FileDescriptorArray& aFileDescriptors, bool aDelayedStart,
+    uint32_t aMaxSize, uint32_t* aSizeUsed, M* aManager) {
+  MOZ_ASSERT(aSizeUsed);
+
+  
+  
+  
+  
+  if (mLength >= aMaxSize) {
+    *aSizeUsed = 0;
+    mozilla::ipc::InputStreamHelper::SerializeInputStreamAsPipe(
+        this, aParams, aDelayedStart, aManager);
+    return;
+  }
+
+  mSerializableInputStream->Serialize(aParams, aFileDescriptors, aDelayedStart,
+                                      aMaxSize, aSizeUsed, aManager);
+}
+
+bool MemoryBlobImpl::DataOwnerAdapter::Deserialize(
+    const mozilla::ipc::InputStreamParams&, const FileDescriptorArray&) {
+  MOZ_CRASH("This method should never be called");
+  return false;
 }
 
 already_AddRefed<BlobImpl> MemoryBlobImpl::CreateSlice(
