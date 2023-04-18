@@ -312,8 +312,6 @@ void silk_VAD_GetNoiseLevels(
     
     if( psSilk_VAD->counter < 1000 ) { 
         min_coef = silk_DIV32_16( silk_int16_MAX, silk_RSHIFT( psSilk_VAD->counter, 4 ) + 1 );
-        
-        psSilk_VAD->counter++;
     } else {
         min_coef = 0;
     }
@@ -357,4 +355,7 @@ void silk_VAD_GetNoiseLevels(
         
         psSilk_VAD->NL[ k ] = nl;
     }
+
+    
+    psSilk_VAD->counter++;
 }

@@ -28,28 +28,27 @@
 #ifndef SILK_DEBUG_H
 #define SILK_DEBUG_H
 
-
-
-
-#define SILK_DEBUG 0
-
-
-#define SILK_TIC_TOC 0
-
-#if SILK_DEBUG || SILK_TIC_TOC
 #include "typedef.h"
-#include <string.h>     
 #include <stdio.h>      
-#endif
+#include <string.h>     
 
 #ifdef  __cplusplus
 extern "C"
 {
 #endif
 
-#if SILK_TIC_TOC
-
 unsigned long GetHighResolutionTime(void); 
+
+
+
+
+#define SILK_DEBUG 0
+
+
+#define SILK_TIC_TOC    0
+
+
+#if SILK_TIC_TOC
 
 #if (defined(_WIN32) || defined(_WINCE))
 #include <windows.h>    

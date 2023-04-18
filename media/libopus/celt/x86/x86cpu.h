@@ -56,10 +56,40 @@
 int opus_select_arch(void);
 # endif
 
-#define OP_CVTEPI8_EPI32_M32(x) \
- (_mm_cvtepi8_epi32(_mm_cvtsi32_si128(*(int *)(x))))
 
-#define OP_CVTEPI16_EPI32_M64(x) \
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# if defined(__clang__) || !defined(__OPTIMIZE__)
+#  define OP_CVTEPI8_EPI32_M32(x) \
+ (_mm_cvtepi8_epi32(_mm_cvtsi32_si128(*(int *)(x))))
+# else
+#  define OP_CVTEPI8_EPI32_M32(x) \
+ (_mm_cvtepi8_epi32(*(__m128i *)(x)))
+#endif
+
+
+
+# if defined(__clang__) || !defined(__OPTIMIZE__)
+#  define OP_CVTEPI16_EPI32_M64(x) \
  (_mm_cvtepi16_epi32(_mm_loadl_epi64((__m128i *)(x))))
+# else
+#  define OP_CVTEPI16_EPI32_M64(x) \
+ (_mm_cvtepi16_epi32(*(__m128i *)(x)))
+# endif
 
 #endif

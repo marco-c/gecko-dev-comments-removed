@@ -41,14 +41,15 @@
 #define QS  14
 
 
-#define OVERRIDE_silk_warped_autocorrelation_FIX_c
-void silk_warped_autocorrelation_FIX_c(
+#define OVERRIDE_silk_warped_autocorrelation_FIX
+void silk_warped_autocorrelation_FIX(
           opus_int32                *corr,                                  
           opus_int                  *scale,                                 
     const opus_int16                *input,                                 
     const opus_int                  warping_Q16,                            
     const opus_int                  length,                                 
-    const opus_int                  order                                   
+    const opus_int                  order,                                  
+    int                             arch                                    
 )
 {
     opus_int   n, i, lsh;

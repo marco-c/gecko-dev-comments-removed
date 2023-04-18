@@ -32,7 +32,6 @@
 #include "SigProc_FIX.h"
 
 
-
 void silk_LPC_fit(
     opus_int16                  *a_QOUT,            
     opus_int32                    *a_QIN,             
