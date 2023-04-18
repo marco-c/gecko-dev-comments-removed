@@ -101,8 +101,6 @@ class ServiceWorkerUpdateFinishCallback {
 
 
 class ServiceWorkerManager final : public nsIServiceWorkerManager,
-                                   public nsITimerCallback,
-                                   public nsINamed,
                                    public nsIObserver {
   friend class GetRegistrationsRunnable;
   friend class GetRegistrationRunnable;
@@ -117,8 +115,6 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
   NS_DECL_ISUPPORTS
   NS_DECL_NSISERVICEWORKERMANAGER
   NS_DECL_NSIOBSERVER
-  NS_DECL_NSITIMERCALLBACK
-  NS_DECL_NSINAMED
 
   
   
@@ -272,6 +268,16 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
       uint32_t aShutdownStateId,
       ServiceWorkerShutdownState::Progress aProgress) const;
 
+  
+  
+  
+  
+  
+  
+  
+  void RecordTelemetry(uint32_t aNumber, uint32_t aFetch);
+  void RecordTelemetryGap(uint32_t aNumber, uint32_t aFetch, uint32_t aRepeats);
+
  private:
   struct RegistrationDataPerPrincipal;
 
@@ -422,7 +428,8 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
 
   nsTArray<UniquePtr<PendingReadyData>> mPendingReadyList;
 
-  nsCOMPtr<nsITimer> mTelemetryTimer;
+  const uint32_t mTelemetryPeriodMs = 5 * 1000;
+  TimeStamp mTelemetryLastChange;
 };
 
 }  
