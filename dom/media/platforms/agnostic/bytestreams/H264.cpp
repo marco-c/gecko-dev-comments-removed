@@ -1277,6 +1277,8 @@ bool H264::DecodeRecoverySEI(const mozilla::MediaByteBuffer* aSEI,
     bw.WriteUE(1);  
     bw.WriteUE(0);  
     bw.WriteUE(0);  
+    bw.WriteBit(false);  
+    bw.WriteBit(false);  
   }
 
   bw.WriteBits(br.ReadBits(11),
