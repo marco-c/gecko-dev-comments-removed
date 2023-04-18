@@ -5585,7 +5585,6 @@ void CodeGenerator::emitCallInvokeFunction(T* apply, Register extraStackSize) {
 
   
   masm.moveStackPtrTo(objreg);
-  masm.Push(extraStackSize);
 
   pushArg(objreg);                                     
   pushArg(ToRegister(apply->getArgc()));               
@@ -5594,11 +5593,10 @@ void CodeGenerator::emitCallInvokeFunction(T* apply, Register extraStackSize) {
   pushArg(ToRegister(apply->getFunction()));           
 
   
+  
   using Fn = bool (*)(JSContext*, HandleObject, bool, bool, uint32_t, Value*,
                       MutableHandleValue);
   callVM<Fn, jit::InvokeFunction>(apply, &extraStackSize);
-
-  masm.Pop(extraStackSize);
 }
 
 
@@ -5719,9 +5717,15 @@ void CodeGenerator::emitCopyValuesForApply(Register argvSrcBase,
   masm.decBranchPtr(Assembler::NonZero, argvIndex, Imm32(1), &loop);
 }
 
-void CodeGenerator::emitPopArguments(Register extraStackSpace) {
+void CodeGenerator::emitRestoreStackPointerFromFP() {
   
-  masm.freeStack(extraStackSpace);
+  
+
+  MOZ_ASSERT(masm.framePushed() == frameSize());
+
+  int32_t offset = -int32_t(frameSize() - JitFrameLayout::FramePointerOffset);
+  masm.computeEffectiveAddress(Address(FramePointer, offset),
+                               masm.getStackPointer());
 }
 
 void CodeGenerator::emitPushArguments(Register argcreg,
@@ -6003,7 +6007,7 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
     }
 #endif
 
-    emitPopArguments(extraStackSpace);
+    emitRestoreStackPointerFromFP();
     return;
   }
 
@@ -6093,14 +6097,8 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
     }
 
     
-    masm.loadPtr(Address(masm.getStackPointer(), 0), stackSpace);
-    masm.rshiftPtr(Imm32(FRAMESIZE_SHIFT), stackSpace);
-    masm.subPtr(Imm32(pushed), stackSpace);
-
     
-    
-    int prefixGarbage = sizeof(JitFrameLayout) - sizeof(void*);
-    masm.adjustStack(prefixGarbage);
+    masm.freeStack(sizeof(JitFrameLayout) - sizeof(void*));
     masm.jump(&end);
   }
 
@@ -6130,7 +6128,7 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
   }
 
   
-  emitPopArguments(extraStackSpace);
+  emitRestoreStackPointerFromFP();
 }
 
 void CodeGenerator::visitApplyArgsGeneric(LApplyArgsGeneric* apply) {
