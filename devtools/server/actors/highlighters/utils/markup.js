@@ -62,6 +62,7 @@ const XUL_HIGHLIGHTER_STYLES_SHEET = `data:text/css;charset=utf-8,
   width: 100%;
   height: 100%;
   z-index: 2;
+  color-scheme: light;
 }`;
 
 const STYLESHEET_URI =
@@ -295,6 +296,11 @@ CanvasFrameAnonymousContentHelper.prototype = {
 
       if (!this._iframe) {
         this._iframe = window.document.createElement("iframe");
+        
+        
+        
+        this._iframe.srcdoc =
+          "<!doctype html><meta name=color-scheme content=light>";
         this._iframe.classList.add("devtools-highlighter-renderer");
         
         
