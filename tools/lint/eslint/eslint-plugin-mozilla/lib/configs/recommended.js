@@ -63,6 +63,10 @@ module.exports = {
         "mozilla/mark-exported-symbols-as-used": "error",
         
         
+        
+        "mozilla/use-isInstance": "error",
+        
+        
         "no-redeclare": ["error", { builtinGlobals: false }],
         
         
