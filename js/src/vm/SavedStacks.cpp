@@ -1428,12 +1428,22 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
   
   DebugOnly<bool> seenCached = false;
 
-  bool seenDebuggerEvalFrame = false;
+  
+  
+  
+  
+  
+  
+  Vector<AbstractFramePtr, 4, TempAllocPolicy> unreachedEvalTargets(cx);
 
   while (!iter.done()) {
     Activation& activation = *iter.activation();
     Maybe<LiveSavedFrameCache::FramePtr> framePtr =
         LiveSavedFrameCache::FramePtr::create(iter);
+
+    if (capture.is<JS::AllFrames>() && iter.hasUsableAbstractFramePtr()) {
+      unreachedEvalTargets.eraseIfEqual(iter.abstractFramePtr());
+    }
 
     if (framePtr) {
       
@@ -1442,9 +1452,14 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
                                     framePtr->isRematerializedFrame());
       seenCached |= framePtr->hasCachedSavedFrame();
 
-      seenDebuggerEvalFrame |=
-          (framePtr->isInterpreterFrame() &&
-           framePtr->asInterpreterFrame().isDebuggerEvalFrame());
+      if (capture.is<JS::AllFrames>() && framePtr->isInterpreterFrame() &&
+          framePtr->asInterpreterFrame().isDebuggerEvalFrame()) {
+        AbstractFramePtr target =
+            framePtr->asInterpreterFrame().evalInFramePrev();
+        if (!unreachedEvalTargets.append(target)) {
+          return false;
+        }
+      }
     }
 
     if (capture.is<JS::AllFrames>() && framePtr &&
@@ -1458,7 +1473,9 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
       
       
       
-      if (cachedParentFrame) {
+      
+      
+      if (cachedParentFrame && unreachedEvalTargets.empty()) {
         break;
       }
 
@@ -1546,7 +1563,7 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
         return false;
       }
       stackChain[stackChain.length() - 1].setParent(asyncParent);
-      if (!(capture.is<JS::AllFrames>() && seenDebuggerEvalFrame)) {
+      if (!capture.is<JS::AllFrames>() || unreachedEvalTargets.empty()) {
         
         
         
