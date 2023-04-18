@@ -24,7 +24,7 @@ registerCleanupFunction(function() {
 
 
 
-add_setup(async function() {
+add_task(async function setup() {
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
   registerCleanupFunction(async function() {
     BrowserTestUtils.removeTab(gBrowser.selectedTab);

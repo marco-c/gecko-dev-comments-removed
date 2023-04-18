@@ -20,7 +20,7 @@ let gMainSubButton;
 let gSubView;
 let gSubButton;
 
-add_setup(async function() {
+add_task(async function setup() {
   let navBar = document.getElementById("nav-bar");
   gAnchor = document.createXULElement("toolbarbutton");
   

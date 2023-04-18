@@ -197,7 +197,7 @@ function waitForIgnoredReports(reportIDs) {
   return Promise.all(promises);
 }
 
-add_setup(async function() {
+add_task(async function setup() {
   
   
   

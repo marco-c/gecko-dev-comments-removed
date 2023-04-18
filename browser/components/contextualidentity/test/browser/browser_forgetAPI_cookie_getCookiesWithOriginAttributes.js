@@ -37,7 +37,7 @@ function getCookiesForOA(host, userContextId) {
 
 
 
-add_setup(async function() {
+add_task(async function setup() {
   
   await SpecialPowers.pushPrefEnv({
     set: [["privacy.userContext.enabled", true]],

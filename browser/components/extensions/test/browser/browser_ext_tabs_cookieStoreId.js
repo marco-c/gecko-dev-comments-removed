@@ -2,7 +2,7 @@
 
 "use strict";
 
-add_setup(async function() {
+add_task(async function setup() {
   
   return SpecialPowers.pushPrefEnv({
     set: [["privacy.userContext.enabled", true]],

@@ -17,7 +17,7 @@ const serverInfo = {
   port: 20709, 
 };
 
-add_setup(async function() {
+add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.urlbar.autoFill", true],

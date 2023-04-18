@@ -59,7 +59,7 @@ function initProxy() {
   });
 }
 
-add_setup(async function() {
+add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     
     set: [["prompts.modalType.httpAuth", Services.prompt.MODAL_TYPE_TAB]],

@@ -70,7 +70,7 @@ async function expectFocusAfterKey(aKey, aFocus) {
   ok(true, aFocus.id + " focused after " + aKey + " pressed");
 }
 
-add_setup(async function() {
+add_task(async function setup() {
   
   
   await SpecialPowers.pushPrefEnv({

@@ -19,7 +19,7 @@ const SNIPPETS_PREF = "browser.newtabpage.activity-stream.feeds.snippets";
 const TOPSTORIES_PREF =
   "browser.newtabpage.activity-stream.feeds.system.topstories";
 
-add_setup(async function() {
+add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     
     set: [[HIGHLIGHTS_PREF, true]],

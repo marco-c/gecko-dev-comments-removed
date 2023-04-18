@@ -11,7 +11,7 @@
 
 
 
-add_setup(async function() {
+add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [["dom.ipc.processCount", 1]],
   });

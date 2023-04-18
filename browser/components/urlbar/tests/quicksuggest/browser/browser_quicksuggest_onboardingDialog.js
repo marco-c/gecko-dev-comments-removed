@@ -32,7 +32,7 @@ if (AppConstants.platform == "macosx") {
 
 
 let gCanTabMoveFocus;
-add_setup(async function() {
+add_task(async function setup() {
   gCanTabMoveFocus = await canTabMoveFocus();
 });
 

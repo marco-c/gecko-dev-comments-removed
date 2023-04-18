@@ -1,7 +1,7 @@
 
 
 
-add_setup(async function() {
+add_task(async function setup() {
   let storageChangedPromised = TestUtils.topicObserved(
     "passwordmgr-storage-changed",
     (_, data) => data == "addLogin"

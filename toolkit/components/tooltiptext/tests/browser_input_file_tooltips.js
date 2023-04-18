@@ -1,7 +1,7 @@
 
 
 let tempFile;
-add_setup(async function() {
+add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({ set: [["ui.tooltipDelay", 0]] });
   tempFile = createTempFile();
   registerCleanupFunction(function() {

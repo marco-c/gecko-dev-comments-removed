@@ -111,7 +111,7 @@ async function crashBackgroundTabs(tabs) {
   }
 }
 
-add_setup(async function() {
+add_task(async function setup() {
   
   
   await SpecialPowers.pushPrefEnv({

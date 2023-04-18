@@ -76,7 +76,7 @@ async function mock_dropbox() {
   });
 }
 
-add_setup(async function() {
+add_task(async function setup() {
   
   
   

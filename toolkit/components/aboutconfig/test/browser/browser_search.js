@@ -1,7 +1,7 @@
 
 
 
-add_setup(async function() {
+add_task(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["test.aboutconfig.a", "test value 1"],

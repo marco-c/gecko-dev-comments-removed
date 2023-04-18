@@ -53,7 +53,7 @@ async function decayInputHistory() {
   await PlacesTestUtils.promiseAsyncUpdates();
 }
 
-add_setup(async function() {
+add_task(async function setup() {
   
   win = await BrowserTestUtils.openNewBrowserWindow();
 

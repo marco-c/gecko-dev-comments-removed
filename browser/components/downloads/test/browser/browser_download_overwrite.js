@@ -17,7 +17,7 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-add_setup(async function() {
+add_task(async function setup() {
   
   await createDownloadedFile(gTestTargetFile.path, "Hello.\n");
   ok(gTestTargetFile.exists(), "We created a test file.");
