@@ -99,8 +99,7 @@ LONGHANDS_NOT_SERIALIZED_WITH_SERVO = [
 
 def serialized_by_servo(prop):
     if prop.type() == "shorthand":
-        
-        return prop.name != "mask"
+        return True
     
     
     if prop.keyword and prop.name != "-moz-osx-font-smoothing":
