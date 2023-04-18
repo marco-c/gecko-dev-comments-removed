@@ -812,11 +812,6 @@ this.FormAutofillUtils = {
 
 
   findAddressSelectOption(selectEl, address, fieldName) {
-    if (selectEl.options.length > 512) {
-      
-      
-      return null;
-    }
     let value = address[fieldName];
     if (!value) {
       return null;
