@@ -4,6 +4,9 @@
 
 
 
+
+
 DIRS += ["ipdl"]
 
-TEST_DIRS += ["gtest"]
+if CONFIG["MOZ_IPDL_TESTS"]:
+    DIRS += ["cxx"]

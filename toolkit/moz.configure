@@ -932,6 +932,12 @@ set_define("MOZ_WEBSPEECH_TEST_BACKEND", webspeech_test_backend)
 
 
 
+option("--enable-ipdl-tests", help="Enable expensive IPDL tests")
+
+set_config("MOZ_IPDL_TESTS", depends_if("--enable-ipdl-tests")(lambda _: True))
+
+
+
 @depends(target, milestone)
 def skia_pdf_default(target, milestone):
     return milestone.is_nightly and target.os != "WINNT"

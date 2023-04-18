@@ -418,7 +418,7 @@ class IToplevelProtocol : public IProtocol {
 
   bool Open(ScopedPort aPort, base::ProcessId aOtherPid);
 
-  bool Open(IToplevelProtocol* aTarget, nsISerialEventTarget* aEventTarget,
+  bool Open(MessageChannel* aChannel, nsISerialEventTarget* aEventTarget,
             mozilla::ipc::Side aSide = mozilla::ipc::UnknownSide);
 
   
@@ -427,7 +427,7 @@ class IToplevelProtocol : public IProtocol {
   
   
   
-  bool OpenOnSameThread(IToplevelProtocol* aTarget,
+  bool OpenOnSameThread(MessageChannel* aChannel,
                         mozilla::ipc::Side aSide = mozilla::ipc::UnknownSide);
 
   

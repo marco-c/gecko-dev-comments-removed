@@ -457,7 +457,8 @@ void ImageBridgeChild::Bind(Endpoint<PImageBridgeChild>&& aEndpoint) {
 }
 
 void ImageBridgeChild::BindSameProcess(RefPtr<ImageBridgeParent> aParent) {
-  Open(aParent, aParent->GetThread(), mozilla::ipc::ChildSide);
+  ipc::MessageChannel* parentChannel = aParent->GetIPCChannel();
+  Open(parentChannel, aParent->GetThread(), mozilla::ipc::ChildSide);
 
   
   this->AddRef();

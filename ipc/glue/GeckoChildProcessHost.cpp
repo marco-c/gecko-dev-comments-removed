@@ -1111,13 +1111,7 @@ bool PosixProcessLauncher::DoSetup() {
     mLaunchOptions->env_map["LD_LIBRARY_PATH"] = new_ld_lib_path.get();
 
 #  elif OS_MACOSX  
-    
-    
-    nsCString new_dyld_lib_path(path.get());
-    if (PR_GetEnv("MOZ_RUN_GTEST")) {
-      new_dyld_lib_path = path + "/gtest:"_ns + new_dyld_lib_path;
-    }
-    mLaunchOptions->env_map["DYLD_LIBRARY_PATH"] = new_dyld_lib_path.get();
+    mLaunchOptions->env_map["DYLD_LIBRARY_PATH"] = path.get();
 
     
     

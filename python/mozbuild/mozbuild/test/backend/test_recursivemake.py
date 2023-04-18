@@ -794,79 +794,31 @@ class TestRecursiveMakeBackend(BackendTester):
         env = self._get_environment("ipdl_sources")
 
         
-        ipdl_root = mozpath.join(env.topobjdir, "ipdl")
-
-        
         
         env.substs = dict(env.substs)
-        env.substs["IPDL_ROOT"] = ipdl_root
+        env.substs["IPDL_ROOT"] = env.topobjdir
 
         self._consume("ipdl_sources", RecursiveMakeBackend, env)
 
-        manifest_path = mozpath.join(ipdl_root, "ipdlsrcs.mk")
+        manifest_path = mozpath.join(env.topobjdir, "ipdlsrcs.mk")
         lines = [l.strip() for l in open(manifest_path, "rt").readlines()]
 
         
-        topsrcdir = mozpath.normsep(env.topsrcdir)
+        topsrcdir = env.topsrcdir.replace(os.sep, "/")
 
         expected = [
             "ALL_IPDLSRCS := bar1.ipdl foo1.ipdl %s/bar/bar.ipdl %s/bar/bar2.ipdlh %s/foo/foo.ipdl %s/foo/foo2.ipdlh"  
             % tuple([topsrcdir] * 4),
-            "IPDLDIRS := %s %s/bar %s/foo" % (ipdl_root, topsrcdir, topsrcdir),
+            "CPPSRCS := UnifiedProtocols0.cpp",
+            "IPDLDIRS := %s %s/bar %s/foo" % (env.topobjdir, topsrcdir, topsrcdir),
         ]
 
-        found = [str for str in lines if str.startswith(("ALL_IPDLSRCS", "IPDLDIRS"))]
+        found = [
+            str
+            for str in lines
+            if str.startswith(("ALL_IPDLSRCS", "CPPSRCS", "IPDLDIRS"))
+        ]
         self.assertEqual(found, expected)
-
-        
-        
-        
-        
-        for dir, expected in (
-            (".", []),
-            ("ipdl", []),
-            (
-                "bar",
-                [
-                    "CPPSRCS += "
-                    + " ".join(
-                        f"{ipdl_root}/{f}"
-                        for f in [
-                            "bar.cpp",
-                            "bar1.cpp",
-                            "bar1Child.cpp",
-                            "bar1Parent.cpp",
-                            "bar2.cpp",
-                            "barChild.cpp",
-                            "barParent.cpp",
-                        ]
-                    )
-                ],
-            ),
-            (
-                "foo",
-                [
-                    "CPPSRCS += "
-                    + " ".join(
-                        f"{ipdl_root}/{f}"
-                        for f in [
-                            "foo.cpp",
-                            "foo1.cpp",
-                            "foo1Child.cpp",
-                            "foo1Parent.cpp",
-                            "foo2.cpp",
-                            "fooChild.cpp",
-                            "fooParent.cpp",
-                        ]
-                    )
-                ],
-            ),
-        ):
-            backend_path = mozpath.join(env.topobjdir, dir, "backend.mk")
-            lines = [l.strip() for l in open(backend_path, "rt").readlines()]
-
-            found = [str for str in lines if str.startswith("CPPSRCS")]
-            self.assertEqual(found, expected)
 
     def test_defines(self):
         """Test that DEFINES are written to backend.mk correctly."""

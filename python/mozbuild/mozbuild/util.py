@@ -1206,6 +1206,9 @@ def group_unified_files(files, unified_prefix, unified_suffix, files_per_unified
     file."""
 
     
+    files = sorted(files)
+
+    
     
     
     dummy_fill_value = ("dummy",)

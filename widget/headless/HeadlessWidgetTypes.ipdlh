@@ -4,8 +4,6 @@
 
 
 
-include "mozilla/GfxMessageUtils.h";
-
 using mozilla::LayoutDeviceIntSize from "Units.h";
 
 namespace mozilla {
