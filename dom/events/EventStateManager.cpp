@@ -3969,7 +3969,10 @@ bool EventStateManager::IsTargetCrossProcess(WidgetGUIEvent* aEvent) {
 }
 
 void EventStateManager::NotifyDestroyPresContext(nsPresContext* aPresContext) {
-  IMEStateManager::OnDestroyPresContext(aPresContext);
+  RefPtr<nsPresContext> presContext = aPresContext;
+  if (presContext) {
+    IMEStateManager::OnDestroyPresContext(*presContext);
+  }
   if (mHoverContent) {
     
     
@@ -3978,7 +3981,7 @@ void EventStateManager::NotifyDestroyPresContext(nsPresContext* aPresContext) {
     SetContentState(nullptr, NS_EVENT_STATE_HOVER);
   }
   mPointersEnterLeaveHelper.Clear();
-  PointerEventHandler::NotifyDestroyPresContext(aPresContext);
+  PointerEventHandler::NotifyDestroyPresContext(presContext);
 }
 
 void EventStateManager::SetPresContext(nsPresContext* aPresContext) {
@@ -5818,7 +5821,9 @@ void EventStateManager::ContentRemoved(Document* aDocument,
     element->LeaveLink(element->GetPresContext(Element::eForComposedDoc));
   }
 
-  IMEStateManager::OnRemoveContent(mPresContext, aContent);
+  if (RefPtr<nsPresContext> presContext = mPresContext) {
+    IMEStateManager::OnRemoveContent(*presContext, *aContent);
+  }
 
   
   

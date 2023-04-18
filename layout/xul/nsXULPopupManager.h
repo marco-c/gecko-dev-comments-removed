@@ -878,7 +878,9 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  void UpdateKeyboardListeners();
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void UpdateKeyboardListeners();
 
   
 
