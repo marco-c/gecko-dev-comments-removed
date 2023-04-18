@@ -153,8 +153,26 @@ var CaptivePortalWatcher = {
       return;
     }
 
+    
+    
+    
+    
+    let canonicalURI = Services.io.newURI(this.canonicalURL);
+    let isPrivate = PrivateBrowsingUtils.isWindowPrivate(window);
+    let principal = Services.scriptSecurityManager.createContentPrincipal(
+      canonicalURI,
+      {
+        userContextId: gBrowser.contentPrincipal.userContextId,
+        privateBrowsingId: isPrivate ? 1 : 0,
+      }
+    );
+    Services.perms.addFromPrincipal(
+      principal,
+      "https-only-load-insecure",
+      Ci.nsIPermissionManager.ALLOW_ACTION,
+      Ci.nsIPermissionManager.EXPIRE_SESSION
+    );
     let win = BrowserWindowTracker.getTopWindow();
-
     
     
     if (win.document.documentElement.getAttribute("ignorecaptiveportal")) {
