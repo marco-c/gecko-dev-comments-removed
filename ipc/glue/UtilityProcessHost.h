@@ -72,9 +72,9 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   
   
-  RefPtr<UtilityProcessParent> GetActor() const {
+  UtilityProcessParent* GetActor() const {
     MOZ_ASSERT(NS_IsMainThread());
-    return mUtilityProcessParent;
+    return mUtilityProcessParent.get();
   }
 
   bool IsConnected() const {

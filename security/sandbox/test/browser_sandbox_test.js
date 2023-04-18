@@ -14,11 +14,7 @@ function test() {
   
   
   
-  
-  
-  
-  
-  var processTypes = ["tab", "socket", "rdd", "gmplugin", "utility:0", "gpu"];
+  var processTypes = ["tab", "socket", "rdd", "gmplugin", "utility", "gpu"];
 
   
   let sandboxTestResult = (subject, topic, data) => {
