@@ -198,7 +198,6 @@ class MOZ_STACK_CLASS BaselineStackBuilder {
   bool envChainSlotCanBeOptimized();
 #endif
 
-  bool hasLiveStackValueAtDepth(uint32_t stackSlotIndex);
   bool isPrologueBailout();
   jsbytecode* getResumePC();
   void* getStubReturnAddress();
@@ -873,25 +872,18 @@ bool BaselineStackBuilder::buildExpressionStack() {
           exprStackSlots());
   for (uint32_t i = 0; i < exprStackSlots(); i++) {
     Value v;
-    if (propagatingIonExceptionForDebugMode()) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      MOZ_ASSERT(cx_->realm()->isDebuggee() || forcedReturn());
-      if (iter_.moreFrames() || hasLiveStackValueAtDepth(i)) {
-        v = iter_.read();
-      } else {
-        iter_.skip();
-        v = MagicValue(JS_OPTIMIZED_OUT);
-      }
-    } else {
-      v = iter_.read();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!iter_.tryRead(&v)) {
+      MOZ_ASSERT(propagatingIonExceptionForDebugMode() && !iter_.moreFrames());
+      v = MagicValue(JS_OPTIMIZED_OUT);
     }
     if (!writeValue(v, "StackValue")) {
       return false;
@@ -1455,33 +1447,6 @@ jsbytecode* BaselineStackBuilder::getResumePC() {
   }
 
   return slowerPc;
-}
-
-bool BaselineStackBuilder::hasLiveStackValueAtDepth(uint32_t stackSlotIndex) {
-  
-  
-
-  MOZ_ASSERT(stackSlotIndex < exprStackSlots());
-
-  for (TryNoteIterAllNoGC tni(script_, pc_); !tni.done(); ++tni) {
-    const TryNote& tn = **tni;
-
-    switch (tn.kind()) {
-      case TryNoteKind::ForIn:
-      case TryNoteKind::ForOf:
-      case TryNoteKind::Destructuring:
-        MOZ_ASSERT(tn.stackDepth <= exprStackSlots());
-        if (stackSlotIndex < tn.stackDepth) {
-          return true;
-        }
-        break;
-
-      default:
-        break;
-    }
-  }
-
-  return false;
 }
 
 bool BaselineStackBuilder::isPrologueBailout() {
