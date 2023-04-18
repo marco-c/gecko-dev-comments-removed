@@ -1730,7 +1730,7 @@ var PlacesUtils = {
       let type = aRow.getResultByName("type");
       item.typeCode = type;
       if (type == Ci.nsINavBookmarksService.TYPE_BOOKMARK) {
-        copyProps("charset", "tags", "iconuri");
+        copyProps("charset", "tags", "iconUri");
       }
 
       switch (type) {
@@ -1796,7 +1796,7 @@ var PlacesUtils = {
                       JOIN moz_icons_to_pages ON icon_id = i.id
                       JOIN moz_pages_w_icons pi ON page_id = pi.id
                       WHERE pi.page_url_hash = hash(h.url) AND pi.page_url = h.url
-                      ORDER BY width DESC LIMIT 1) AS iconuri,
+                      ORDER BY width DESC LIMIT 1) AS iconUri,
               (SELECT GROUP_CONCAT(t.title, ',')
                FROM moz_bookmarks b2
                JOIN moz_bookmarks t ON t.id = +b2.parent AND t.parent = :tags_folder
