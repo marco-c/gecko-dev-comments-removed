@@ -57,13 +57,16 @@ function createAnimationTarget() {
 
 const epsilon = 50;
 
-function test_render_blocking(finalTest, finalTestTitle) {
+function test_render_blocking(optional_element, finalTest, finalTestTitle) {
   
   
   
-  
-  
-  const loadObserver = new LoadObserver(window);
+  if (!(optional_element instanceof HTMLElement)) {
+    finalTestTitle = finalTest;
+    finalTest = optional_element;
+    optional_element = undefined;
+  }
+  const loadObserver = new LoadObserver(optional_element || window);
 
   promise_test(async test => {
     assert_implements(window.PerformancePaintTiming);
