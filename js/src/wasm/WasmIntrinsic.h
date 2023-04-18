@@ -52,7 +52,7 @@ struct Intrinsic {
 
 bool CompileIntrinsicModule(JSContext* cx, const mozilla::Span<IntrinsicId> ids,
                             Shareable sharedMemory,
-                            MutableHandleWasmModuleObject result);
+                            MutableHandle<WasmModuleObject*> result);
 
 }  
 }  

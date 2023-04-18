@@ -42,7 +42,7 @@ class Realm {
   
   
 
-  bool registerInstance(JSContext* cx, HandleWasmInstanceObject instanceObj);
+  bool registerInstance(JSContext* cx, Handle<WasmInstanceObject*> instanceObj);
   void unregisterInstance(Instance& instance);
 
   

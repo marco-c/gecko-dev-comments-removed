@@ -67,7 +67,7 @@ class InitExpr {
   
   
   bool evaluate(JSContext* cx, const ValVector& globalImportValues,
-                HandleWasmInstanceObject instanceObj,
+                Handle<WasmInstanceObject*> instanceObj,
                 MutableHandleVal result) const;
 
   bool isLiteral() const { return kind_ == InitExprKind::Literal; }

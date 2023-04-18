@@ -521,7 +521,7 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
   
   
   
-  RootedWasmInstanceObject keepAlive(cx, iter.instance()->object());
+  Rooted<WasmInstanceObject*> keepAlive(cx, iter.instance()->object());
 
   JitActivation* activation = CallingActivation(cx);
   RootedValue exn(cx);

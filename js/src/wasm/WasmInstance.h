@@ -143,13 +143,13 @@ class alignas(16) Instance {
   void* preBarrierCode_;
 
   
-  WeakHeapPtrWasmInstanceObject object_;
+  WeakHeapPtr<WasmInstanceObject*> object_;
 
   
   const SharedCode code_;
 
   
-  const GCPtrWasmMemoryObject memory_;
+  const GCPtr<WasmMemoryObject*> memory_;
 
   
   const SharedTableVector tables_;
@@ -189,7 +189,7 @@ class alignas(16) Instance {
   const void** addressOfTypeId(const TypeIdDesc& typeId) const;
   FuncImportInstanceData& funcImportInstanceData(const FuncImport& fi);
   TableInstanceData& tableInstanceData(const TableDesc& td) const;
-  GCPtrWasmTagObject& tagInstanceData(const TagDesc& td) const;
+  GCPtr<WasmTagObject*>& tagInstanceData(const TagDesc& td) const;
 
   
   friend class js::WasmInstanceObject;
@@ -198,15 +198,15 @@ class alignas(16) Instance {
   bool callImport(JSContext* cx, uint32_t funcImportIndex, unsigned argc,
                   uint64_t* argv);
 
-  Instance(JSContext* cx, HandleWasmInstanceObject object, SharedCode code,
-           HandleWasmMemoryObject memory, SharedTableVector&& tables,
+  Instance(JSContext* cx, Handle<WasmInstanceObject*> object, SharedCode code,
+           Handle<WasmMemoryObject*> memory, SharedTableVector&& tables,
            UniqueDebugState maybeDebug);
   ~Instance();
 
  public:
-  static Instance* create(JSContext* cx, HandleWasmInstanceObject object,
+  static Instance* create(JSContext* cx, Handle<WasmInstanceObject*> object,
                           SharedCode code, uint32_t globalDataLength,
-                          HandleWasmMemoryObject memory,
+                          Handle<WasmMemoryObject*> memory,
                           SharedTableVector&& tables,
                           UniqueDebugState maybeDebug);
   static void destroy(Instance* instance);
@@ -340,10 +340,10 @@ class alignas(16) Instance {
   [[nodiscard]] bool constantRefFunc(uint32_t funcIndex,
                                      MutableHandleFuncRef result);
   [[nodiscard]] bool constantRttCanon(JSContext* cx, uint32_t sourceTypeIndex,
-                                      MutableHandleRttValue result);
-  [[nodiscard]] bool constantRttSub(JSContext* cx, HandleRttValue parentRtt,
+                                      MutableHandle<RttValue*> result);
+  [[nodiscard]] bool constantRttSub(JSContext* cx, Handle<RttValue*> parentRtt,
                                     uint32_t sourceChildTypeIndex,
-                                    MutableHandleRttValue result);
+                                    MutableHandle<RttValue*> result);
 
   
   

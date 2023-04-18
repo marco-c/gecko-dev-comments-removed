@@ -263,7 +263,8 @@ bool DebuggerSource::CallData::getBinary() {
     return false;
   }
 
-  RootedWasmInstanceObject instanceObj(cx, referent.as<WasmInstanceObject*>());
+  Rooted<WasmInstanceObject*> instanceObj(cx,
+                                          referent.as<WasmInstanceObject*>());
   wasm::Instance& instance = instanceObj->instance();
 
   if (!instance.debugEnabled()) {
