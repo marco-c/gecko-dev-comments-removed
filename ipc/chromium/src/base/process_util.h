@@ -248,8 +248,7 @@ bool LaunchApp(const CommandLine& cl, const LaunchOptions&,
 
 
 
-
-bool KillProcess(ProcessHandle process, int exit_code, bool wait);
+bool KillProcess(ProcessHandle process, int exit_code);
 
 
 

@@ -69,7 +69,7 @@ ProcessId GetProcId(ProcessHandle process) { return process; }
 
 
 
-bool KillProcess(ProcessHandle process_id, int exit_code, bool wait) {
+bool KillProcess(ProcessHandle process_id, int exit_code) {
   
   
   
@@ -85,29 +85,6 @@ bool KillProcess(ProcessHandle process_id, int exit_code, bool wait) {
 
   if (!result && (errno == ESRCH)) {
     result = true;
-    wait = false;
-  }
-
-  if (result && wait) {
-    int tries = 60;
-    bool exited = false;
-    
-    while (tries-- > 0) {
-      int pid = HANDLE_EINTR(waitpid(process_id, NULL, WNOHANG));
-      if (pid == process_id) {
-        exited = true;
-        break;
-      } else if (errno == ECHILD) {
-        exited = true;
-        break;
-      }
-
-      sleep(1);
-    }
-
-    if (!exited) {
-      result = kill(process_id, SIGKILL) == 0;
-    }
   }
 
   if (!result) DLOG(ERROR) << "Unable to terminate process.";

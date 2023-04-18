@@ -846,18 +846,6 @@ void GeckoChildProcessHost::InitializeChannel(
   lock.Notify();
 }
 
-void GeckoChildProcessHost::Join() {
-  AssertIOThread();
-
-  if (!mChildProcessHandle) {
-    return;
-  }
-
-  
-  base::KillProcess(mChildProcessHandle, 0,  true);
-  SetAlreadyDead();
-}
-
 void GeckoChildProcessHost::SetAlreadyDead() {
   if (mChildProcessHandle &&
       mChildProcessHandle != base::kInvalidProcessHandle) {

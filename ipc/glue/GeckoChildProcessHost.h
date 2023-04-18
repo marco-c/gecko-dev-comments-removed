@@ -150,12 +150,6 @@ class GeckoChildProcessHost : public ChildProcessHost,
 #endif
 
   
-
-
-
-  void Join();
-
-  
   void SetAlreadyDead();
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
