@@ -103,12 +103,15 @@ add_task(async function setup() {
       ["privacy.trackingprotection.enabled", false],
       ["privacy.trackingprotection.pbmode.enabled", false],
       ["privacy.trackingprotection.annotate_channels", true],
+      
+      ["network.cookie.sameSite.laxByDefault", false],
     ],
   });
 
   await UrlClassifierTestUtils.addTestTrackers();
 
   registerCleanupFunction(() => {
+    SpecialPowers.clearUserPref("network.cookie.sameSite.laxByDefault");
     UrlClassifierTestUtils.cleanupTestTrackers();
   });
 });

@@ -12,9 +12,13 @@ const re = new RegExp(key + "=([0-9.]+)");
 
 
 
-async function prefOffHttpsFirstMode() {
+
+async function setupPrefs() {
   await SpecialPowers.pushPrefEnv({
-    set: [["dom.security.https_first", false]],
+    set: [
+      ["dom.security.https_first", false],
+      ["network.cookie.sameSite.laxByDefault", false],
+    ],
   });
 }
 
@@ -39,4 +43,4 @@ registerCleanupFunction(() => {
   Services.cookies.removeAll();
 });
 
-IsolationTestTools.runTests(TEST_PAGE, doTest, null, prefOffHttpsFirstMode);
+IsolationTestTools.runTests(TEST_PAGE, doTest, null, setupPrefs);

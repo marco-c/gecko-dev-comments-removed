@@ -80,6 +80,11 @@ async function testPref(aIsPrefEnabled) {
 }
 
 add_task(async function runTests() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["network.cookie.sameSite.laxByDefault", false]],
+  });
+
   let tests = [true, false];
 
   
@@ -113,4 +118,6 @@ add_task(async function runTests() {
     
     await testPref(false);
   }
+
+  SpecialPowers.clearUserPref("network.cookie.sameSite.laxByDefault");
 });

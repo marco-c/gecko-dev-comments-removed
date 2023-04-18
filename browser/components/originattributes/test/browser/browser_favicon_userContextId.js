@@ -334,6 +334,8 @@ add_task(async function setup() {
     set: [
       ["privacy.userContext.enabled", true],
       ["dom.security.https_first", false],
+      
+      ["network.cookie.sameSite.laxByDefault", false],
     ],
   });
 });

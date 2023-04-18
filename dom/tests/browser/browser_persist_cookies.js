@@ -19,6 +19,7 @@ registerCleanupFunction(async function() {
   info("Running the cleanup code");
   MockFilePicker.cleanup();
   Services.obs.removeObserver(checkRequest, "http-on-modify-request");
+  SpecialPowers.clearUserPref("network.cookie.sameSite.laxByDefault");
   if (gTestDir && gTestDir.exists()) {
     
     
@@ -72,7 +73,11 @@ add_task(async function() {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [["network.cookie.cookieBehavior", 4]],
+    set: [
+      ["network.cookie.cookieBehavior", 4],
+      
+      ["network.cookie.sameSite.laxByDefault", false],
+    ],
   });
 
   await BrowserTestUtils.withNewTab("about:blank", async function(browser) {
