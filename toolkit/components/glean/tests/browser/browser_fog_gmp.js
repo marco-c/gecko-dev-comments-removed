@@ -8,9 +8,6 @@
 
 
 
-
-
-
 function GetTestWebBasedURL(fileName) {
   return (
     getRootDirectory(gTestPath).replace(

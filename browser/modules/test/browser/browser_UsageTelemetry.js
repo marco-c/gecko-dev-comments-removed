@@ -27,9 +27,6 @@ const { SessionStore } = ChromeUtils.import(
 );
 
 
-
-
-
 Services.obs.notifyObservers(null, TELEMETRY_SUBSESSION_TOPIC);
 
 

@@ -4,9 +4,6 @@ const { E10SUtils } = ChromeUtils.import(
 );
 const triggeringPrincipal_base64 = E10SUtils.SERIALIZED_SYSTEMPRINCIPAL;
 
-
-
-
 const MAX_CONCURRENT_TABS = "browser.engagement.max_concurrent_tab_count";
 const TAB_EVENT_COUNT = "browser.engagement.tab_open_event_count";
 const MAX_CONCURRENT_WINDOWS = "browser.engagement.max_concurrent_window_count";

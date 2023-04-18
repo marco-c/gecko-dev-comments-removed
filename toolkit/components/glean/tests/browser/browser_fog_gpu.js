@@ -3,9 +3,6 @@
 
 "use strict";
 
-
-
-
 add_task(async () => {
   if (
     !(await ChromeUtils.requestProcInfo()).children.some(p => p.type == "gpu")
