@@ -230,6 +230,25 @@ class RequestHelper final : public Runnable, public LSRequestChildCallback {
   void OnResponse(const LSRequestResponse& aResponse) override;
 };
 
+void AssertExplicitSnapshotInvariants(const LSObject& aObject) {
+  
+  
+  MOZ_ASSERT(aObject.InExplicitSnapshot());
+
+  
+  
+  
+  
+  
+  MOZ_ASSERT(aObject.DatabaseStrongRef());
+
+  
+  
+  
+  
+  MOZ_ASSERT(!aObject.DatabaseStrongRef()->IsAllowedToClose());
+}
+
 }  
 
 LSObject::LSObject(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal,
@@ -573,8 +592,12 @@ void LSObject::Disconnect() {
   
   
   if (mInExplicitSnapshot) {
-    nsresult rv = EndExplicitSnapshotInternal();
+    AssertExplicitSnapshotInvariants(*this);
+
+    nsresult rv = mDatabase->EndExplicitSnapshot();
     Unused << NS_WARN_IF(NS_FAILED(rv));
+
+    mInExplicitSnapshot = false;
   }
 }
 
@@ -826,11 +849,15 @@ void LSObject::EndExplicitSnapshot(nsIPrincipal& aSubjectPrincipal,
     return;
   }
 
-  nsresult rv = EndExplicitSnapshotInternal();
+  AssertExplicitSnapshotInvariants(*this);
+
+  nsresult rv = mDatabase->EndExplicitSnapshot();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aError.Throw(rv);
     return;
   }
+
+  mInExplicitSnapshot = false;
 }
 
 bool LSObject::GetHasActiveSnapshot(nsIPrincipal& aSubjectPrincipal,
@@ -1053,36 +1080,6 @@ void LSObject::OnChange(const nsAString& aKey, const nsAString& aOldValue,
                aNewValue,  kLocalStorageType, mDocumentURI,
                 !!mPrivateBrowsingId,
                 false);
-}
-
-nsresult LSObject::EndExplicitSnapshotInternal() {
-  AssertIsOnOwningThread();
-
-  
-  
-  MOZ_ASSERT(mInExplicitSnapshot);
-
-  
-  
-  
-  
-  
-  MOZ_ASSERT(mDatabase);
-
-  
-  
-  
-  
-  MOZ_ASSERT(!mDatabase->IsAllowedToClose());
-
-  nsresult rv = mDatabase->EndExplicitSnapshot(this);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  mInExplicitSnapshot = false;
-
-  return NS_OK;
 }
 
 void LSObject::LastRelease() {
