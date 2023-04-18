@@ -12,6 +12,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 var { ExtensionError } = ExtensionUtils;
+var { ignoreEvent } = ExtensionCommon;
 
 XPCOMUtils.defineLazyGetter(this, "extensionStorageSync", () => {
   
@@ -80,6 +81,30 @@ this.storage = class extends ExtensionAPIPersistent {
           unregisterLocal();
           unregisterSync();
         },
+        convert(_fire) {
+          fire = _fire;
+        },
+      };
+    },
+    "local.onChanged"({ fire }) {
+      let unregister = this.registerLocalChangedListener(changes => {
+        
+        
+        fire.raw(changes);
+      });
+      return {
+        unregister,
+        convert(_fire) {
+          fire = _fire;
+        },
+      };
+    },
+    "sync.onChanged"({ fire }) {
+      let unregister = this.registerSyncChangedListener(changes => {
+        fire.async(changes);
+      });
+      return {
+        unregister,
         convert(_fire) {
           fire = _fire;
         },
@@ -213,6 +238,12 @@ this.storage = class extends ExtensionAPIPersistent {
               return ExtensionStorageIDB.selectBackend(context);
             },
           },
+          onChanged: new EventManager({
+            context,
+            module: "storage",
+            event: "local.onChanged",
+            extensionApi: this,
+          }).api(),
         },
 
         sync: {
@@ -236,6 +267,12 @@ this.storage = class extends ExtensionAPIPersistent {
             enforceNoTemporaryAddon(extension.id);
             return extensionStorageSync.getBytesInUse(extension, keys, context);
           },
+          onChanged: new EventManager({
+            context,
+            module: "storage",
+            event: "sync.onChanged",
+            extensionApi: this,
+          }).api(),
         },
 
         managed: {
@@ -256,6 +293,8 @@ this.storage = class extends ExtensionAPIPersistent {
             }
             return ExtensionStorage._filterProperties(data, keys);
           },
+          
+          onChanged: ignoreEvent(context, "storage.managed.onChanged"),
         },
 
         onChanged: new EventManager({

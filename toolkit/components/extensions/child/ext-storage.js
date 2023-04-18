@@ -151,6 +151,35 @@ this.storage = class extends ExtensionAPI {
       context
     );
 
+    
+    function makeOnChangedEventTarget(onChangedName) {
+      return new EventManager({
+        context,
+        name: onChangedName,
+        register: fire => {
+          let onChanged = (data, area) => {
+            let changes = new context.cloneScope.Object();
+            for (let [key, value] of Object.entries(data)) {
+              changes[key] = deserialize(value);
+            }
+            if (area) {
+              
+              fire.raw(changes, area);
+            } else {
+              
+              fire.raw(changes);
+            }
+          };
+
+          let parent = context.childManager.getParentEvent(onChangedName);
+          parent.addListener(onChanged);
+          return () => {
+            parent.removeListener(onChanged);
+          };
+        },
+      }).api();
+    }
+
     function sanitize(items) {
       
       
@@ -222,7 +251,9 @@ this.storage = class extends ExtensionAPI {
     let promiseStorageLocalBackend;
 
     
-    const local = {};
+    const local = {
+      onChanged: makeOnChangedEventTarget("storage.local.onChanged"),
+    };
     for (let method of ["get", "set", "remove", "clear"]) {
       local[method] = async function(...args) {
         try {
@@ -293,6 +324,7 @@ this.storage = class extends ExtensionAPI {
               [items]
             );
           },
+          onChanged: makeOnChangedEventTarget("storage.sync.onChanged"),
         },
 
         managed: {
@@ -310,29 +342,11 @@ this.storage = class extends ExtensionAPI {
           clear() {
             return Promise.reject({ message: "storage.managed is read-only" });
           },
+
+          onChanged: makeOnChangedEventTarget("storage.managed.onChanged"),
         },
 
-        onChanged: new EventManager({
-          context,
-          name: "storage.onChanged",
-          register: fire => {
-            let onChanged = (data, area) => {
-              let changes = new context.cloneScope.Object();
-              for (let [key, value] of Object.entries(data)) {
-                changes[key] = deserialize(value);
-              }
-              fire.raw(changes, area);
-            };
-
-            let parent = context.childManager.getParentEvent(
-              "storage.onChanged"
-            );
-            parent.addListener(onChanged);
-            return () => {
-              parent.removeListener(onChanged);
-            };
-          },
-        }).api(),
+        onChanged: makeOnChangedEventTarget("storage.onChanged"),
       },
     };
   }
