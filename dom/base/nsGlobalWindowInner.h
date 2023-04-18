@@ -130,6 +130,8 @@ struct RequestInit;
 class RequestOrUSVString;
 class SharedWorker;
 class Selection;
+class WebTaskScheduler;
+class WebTaskSchedulerMainThread;
 class SpeechSynthesis;
 class Timeout;
 class U2F;
@@ -988,6 +990,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   bool CrossOriginIsolated() const override;
 
+  mozilla::dom::WebTaskScheduler* Scheduler();
+
  protected:
   
 
@@ -1345,6 +1349,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
  private:
   RefPtr<mozilla::dom::ContentMediaController> mContentMediaController;
+
+  RefPtr<mozilla::dom::WebTaskSchedulerMainThread> mWebTaskScheduler;
 
  protected:
   
