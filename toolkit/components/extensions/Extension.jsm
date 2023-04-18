@@ -1037,7 +1037,7 @@ class ExtensionData {
     this.manifest = manifest;
     this.rawManifest = manifest;
 
-    if (manifest && manifest.default_locale) {
+    if (manifest.default_locale) {
       await this.initLocale();
     }
 
@@ -1045,7 +1045,7 @@ class ExtensionData {
     
     
     
-    if (manifest && manifest.l10n_resources && "isPrivileged" in this) {
+    if (manifest.l10n_resources && this.constructor != ExtensionData) {
       if (this.isPrivileged) {
         this.fluentL10n = new Localization(manifest.l10n_resources, true);
       } else {
