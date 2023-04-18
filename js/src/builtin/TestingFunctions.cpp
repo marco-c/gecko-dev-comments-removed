@@ -53,8 +53,6 @@
 #include "builtin/SelfHostingDefines.h"
 #include "builtin/TestingUtility.h"  
 #include "frontend/BytecodeCompilation.h"  
-
-
 #include "frontend/BytecodeCompiler.h"  
 #include "frontend/CompilationStencil.h"  
 #include "gc/Allocator.h"
@@ -6277,13 +6275,6 @@ static bool EvalStencil(JSContext* cx, uint32_t argc, Value* vp) {
                                 &elementAttributeName)) {
       return false;
     }
-  }
-
-  if (stencilObj->stencil()->canLazilyParse !=
-      frontend::CanLazilyParse(options)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_STENCIL_OPTIONS_MISMATCH);
-    return false;
   }
 
   bool useDebugMetadata = !privateValue.isUndefined() || elementAttributeName;
