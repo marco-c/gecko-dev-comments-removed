@@ -550,12 +550,23 @@ ssl3_HandleParsedExtensions(sslSocket *ss, SSLHandshakeType message)
                     if (allowNotOffered) {
                         continue; 
                     }
-                
+                    
+
+
+
+                    SSL_TRC(3, ("%d: TLS13: unknown extension %d in message %d",
+                                SSL_GETPID(), extension, message));
+                    tls13_FatalError(ss, SSL_ERROR_RX_UNEXPECTED_EXTENSION,
+                                     unsupported_extension);
+                    return SECFailure;
                 case tls13_extension_disallowed:
-                    SSL_TRC(3, ("%d: TLS13: unexpected extension %d in message %d",
+                    
+
+
+                    SSL_TRC(3, ("%d: TLS13: disallowed extension %d in message %d",
                                 SSL_GETPID(), extension, message));
                     tls13_FatalError(ss, SSL_ERROR_EXTENSION_DISALLOWED_FOR_VERSION,
-                                     unsupported_extension);
+                                     illegal_parameter);
                     return SECFailure;
             }
         }
