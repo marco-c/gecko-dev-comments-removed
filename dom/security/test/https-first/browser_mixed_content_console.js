@@ -34,7 +34,7 @@ function on_console_message(msgObj) {
   
   
   
-  if (message.includes("HTTPS-First Mode:")) {
+  if (message.includes("HTTPS-First Mode: Upgrading insecure request")) {
     ok(message.includes("Upgrading insecure request"), "request got upgraded");
     ok(
       message.includes(
