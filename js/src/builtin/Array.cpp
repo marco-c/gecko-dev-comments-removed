@@ -3283,34 +3283,23 @@ static bool array_with_at(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  int64_t index;
-  bool result;
-  if (!IsIntegralNumber(cx, args.get(0), &result)) {
-    return false;
-  }
-
-  if (!result) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
-    return false;
-  }
-  if (!ToInt64(cx, args.get(0), &index)) {
-    return false;
-  }
-  
-  if (index >= int64_t(len)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
+  double relativeIndex;
+  if (!ToInteger(cx, args.get(0), &relativeIndex)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX,
+                              "Array.withAt");
     return false;
   }
 
   
-  int64_t actualIndex = index;
-  if (index < 0) {
-    actualIndex = int64_t(len + index);
-  }
-
-  
+  double actualIndex = relativeIndex;
   if (actualIndex < 0) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
+    actualIndex = int64_t(len + actualIndex);
+  }
+
+  
+  if (actualIndex < 0 || actualIndex >= double(len)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX,
+                              "Array.withAt: index out of bounds");
     return false;
   }
   
