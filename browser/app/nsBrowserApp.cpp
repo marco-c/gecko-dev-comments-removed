@@ -27,8 +27,10 @@
 #  include "mozilla/PreXULSkeletonUI.h"
 #  include "freestanding/SharedSection.h"
 #  include "LauncherProcessWin.h"
+#  include "mozilla/GeckoArgs.h"
 #  include "mozilla/WindowsDllBlocklist.h"
 #  include "mozilla/WindowsDpiInitialization.h"
+#  include "mozilla/WindowsProcessMitigations.h"
 
 #  define XRE_WANT_ENVIRON
 #  define strcasecmp _stricmp
@@ -300,14 +302,21 @@ int main(int argc, char* argv[], char* envp[]) {
 #  if defined(XP_WIN) && defined(MOZ_SANDBOX)
     
     
+    
+    Maybe<bool> win32kLockedDown =
+        mozilla::geckoargs::sWin32kLockedDown.Get(argc, argv);
+    if (win32kLockedDown.isSome() && *win32kLockedDown) {
+      mozilla::SetWin32kLockedDownInPolicy();
+    }
+
+    
+    
     if (IsSandboxedProcess() && !sandboxing::GetInitializedTargetServices()) {
       Output("Failed to initialize the sandbox target services.");
       return 255;
     }
 #  endif
 #  if defined(XP_WIN)
-    
-    
     
     
     

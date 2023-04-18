@@ -13,10 +13,6 @@
 #include "mozilla/sandboxing/permissionsService.h"
 #include "mozilla/WindowsProcessMitigations.h"
 
-namespace sandbox {
-extern "C" MitigationFlags g_shared_mitigations;
-}
-
 namespace mozilla {
 namespace sandboxing {
 
@@ -133,12 +129,6 @@ static void InitializeHandleVerifier() {
 static sandbox::TargetServices* InitializeTargetServices() {
   
   InitializeHandleVerifier();
-
-  
-  
-  if (sandbox::g_shared_mitigations & sandbox::MITIGATION_WIN32K_DISABLE) {
-    SetWin32kLockedDownInPolicy();
-  }
 
   EnableApiQueryInterception();
 

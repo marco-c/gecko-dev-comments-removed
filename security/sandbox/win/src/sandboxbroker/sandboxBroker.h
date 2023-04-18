@@ -65,6 +65,11 @@ class AbstractSandboxBroker {
 
   virtual void AddHandleToShare(HANDLE aHandle) = 0;
 
+  
+
+
+  virtual bool IsWin32kLockedDown() = 0;
+
  protected:
   virtual ~AbstractSandboxBroker() {}
 };
@@ -119,6 +124,8 @@ class SandboxBroker : public AbstractSandboxBroker {
 
 
   void AddHandleToShare(HANDLE aHandle) override;
+
+  bool IsWin32kLockedDown() final;
 
   
   void ApplyLoggingPolicy();
