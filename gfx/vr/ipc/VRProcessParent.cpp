@@ -16,7 +16,6 @@
 #include "mozilla/ipc/ProcessUtils.h"
 #include "mozilla/ipc/ProtocolTypes.h"
 #include "mozilla/ipc/ProtocolUtils.h"  
-#include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TimeStamp.h"  
 #include "mozilla/Unused.h"
@@ -55,9 +54,9 @@ bool VRProcessParent::Launch() {
   std::vector<std::string> extraArgs;
   ProcessChild::AddPlatformBuildID(extraArgs);
 
-  mPrefSerializer = MakeUnique<ipc::SharedPreferenceSerializer>();
-  if (!mPrefSerializer->SerializeToSharedMemory(GeckoProcessType_VR,
-                                                 ""_ns)) {
+  mPrefSerializer = MakeUnique<ipc::SharedPreferenceSerializer>(
+      dom::ContentParent::ShouldSyncPreference);
+  if (!mPrefSerializer->SerializeToSharedMemory()) {
     return false;
   }
   mPrefSerializer->AddSharedPrefCmdLineArgs(*this, extraArgs);
