@@ -7477,32 +7477,40 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
-  nsCOMPtr<nsIContent> prevItem = HTMLEditUtils::GetPreviousSibling(
-      aListItemElement, {WalkTreeOption::IgnoreNonEditableNode});
+  
+  if (MOZ_UNLIKELY(!splitListItemResult.DidSplit()) ||
+      NS_WARN_IF(!splitListItemResult.GetNewContent()->IsElement()) ||
+      NS_WARN_IF(!splitListItemResult.GetOriginalContent()->IsElement())) {
+    NS_WARNING("HTMLEditor::SplitNodeDeepWithTransaction() didn't split");
+    return Err(NS_ERROR_FAILURE);
+  }
 
   
-  if (!prevItem || !HTMLEditUtils::IsListItem(prevItem)) {
-    return EditorDOMPoint(&aListItemElement);
-  }
+  
+  Element& leftListItemElement =
+      *splitListItemResult.GetPreviousContent()->AsElement();
+  Element& rightListItemElement =
+      *splitListItemResult.GetNextContent()->AsElement();
 
   
   
   
   if (HTMLEditUtils::IsEmptyNode(
-          *prevItem, {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
+          leftListItemElement,
+          {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
     CreateElementResult createPaddingBRResult =
         InsertPaddingBRElementForEmptyLastLineWithTransaction(
-            EditorDOMPoint(prevItem, 0));
+            EditorDOMPoint(&leftListItemElement, 0u));
     if (MOZ_UNLIKELY(createPaddingBRResult.Failed())) {
       NS_WARNING(
           "HTMLEditor::InsertPaddingBRElementForEmptyLastLineWithTransaction("
           ") failed");
       return Err(createPaddingBRResult.Rv());
     }
-    return EditorDOMPoint(&aListItemElement, 0u);
+    return EditorDOMPoint(&rightListItemElement, 0u);
   }
 
-  if (HTMLEditUtils::IsEmptyNode(aListItemElement)) {
+  if (HTMLEditUtils::IsEmptyNode(rightListItemElement)) {
     
     
     
@@ -7515,7 +7523,7 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
       Result<RefPtr<Element>, nsresult> maybeNewListItemElement =
           CreateAndInsertElement(WithTransaction::Yes,
                                  MOZ_KnownLive(nextDefinitionListItemTagName),
-                                 EditorDOMPoint::After(aListItemElement));
+                                 EditorDOMPoint::After(rightListItemElement));
       if (MOZ_UNLIKELY(maybeNewListItemElement.isErr())) {
         NS_WARNING(
             "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) "
@@ -7523,7 +7531,10 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
         return Err(maybeNewListItemElement.unwrapErr());
       }
       MOZ_ASSERT(maybeNewListItemElement.inspect());
-      nsresult rv = DeleteNodeWithTransaction(aListItemElement);
+      
+      
+      nsresult rv =
+          DeleteNodeWithTransaction(MOZ_KnownLive(rightListItemElement));
       if (MOZ_UNLIKELY(NS_WARN_IF(Destroyed()))) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
@@ -7537,9 +7548,12 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
     
     
     
+    
     RefPtr<Element> brElement;
+    
+    
     nsresult rv = CopyLastEditableChildStylesWithTransaction(
-        MOZ_KnownLive(*prevItem->AsElement()), aListItemElement,
+        MOZ_KnownLive(leftListItemElement), MOZ_KnownLive(rightListItemElement),
         address_of(brElement));
     if (MOZ_UNLIKELY(NS_WARN_IF(Destroyed()))) {
       return Err(NS_ERROR_EDITOR_DESTROYED);
@@ -7551,7 +7565,7 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
       return Err(NS_ERROR_FAILURE);
     }
     return brElement ? EditorDOMPoint(brElement)
-                     : EditorDOMPoint(&aListItemElement, 0u);
+                     : EditorDOMPoint(&rightListItemElement, 0u);
   }
 
   
@@ -7559,7 +7573,7 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
   
   WSScanResult forwardScanFromStartOfListItemResult =
       WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
-          &aEditingHost, EditorRawDOMPoint(&aListItemElement, 0u));
+          &aEditingHost, EditorRawDOMPoint(&rightListItemElement, 0u));
   if (MOZ_UNLIKELY(forwardScanFromStartOfListItemResult.Failed())) {
     NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
     return Err(NS_ERROR_FAILURE);
