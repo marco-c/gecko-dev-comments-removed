@@ -3671,6 +3671,10 @@ class Document : public nsINode,
 
   
   
+  DOMHighResTimeStamp LastUserGestureTimeStamp();
+
+  
+  
   bool HasValidTransientUserGestureActivation() const;
 
   

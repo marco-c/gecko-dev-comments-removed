@@ -13,6 +13,7 @@
 #include "mozilla/dom/MaybeDiscarded.h"
 #include "mozilla/dom/SyncedContext.h"
 #include "mozilla/dom/UserActivation.h"
+#include "nsDOMNavigationTiming.h"
 #include "nsILoadInfo.h"
 #include "nsWrapperCache.h"
 
@@ -187,6 +188,10 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   
   
   bool HasValidTransientUserGestureActivation();
+
+  
+  
+  DOMHighResTimeStamp LastUserGestureTimeStamp();
 
   
   
