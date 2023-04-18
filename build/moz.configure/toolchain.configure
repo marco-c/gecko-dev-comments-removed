@@ -2138,6 +2138,7 @@ set_config("COVERAGE_CFLAGS", coverage_cflags)
 
 
 
+
 @depends(target)
 def is_linker_option_enabled(target):
     if target.kernel not in ("WINNT", "SunOS"):
@@ -2268,6 +2269,14 @@ def select_linker(linker, c_compiler, developer_options, toolchain_flags, target
         die("Could not use {} as linker".format(linker))
 
     if (
+        linker is None
+        and developer_options
+        and target.kernel == "Darwin"
+        and c_compiler.type == "clang"
+        and c_compiler.version >= "13.0"
+    ):
+        result = try_linker("lld")
+    elif (
         linker is None
         and developer_options
         and (result is None or result.KIND in ("bfd", "gold"))
