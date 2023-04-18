@@ -12,6 +12,7 @@
 #include "mozilla/intl/Bidi.h"
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/RefPtr.h"
@@ -70,9 +71,10 @@ struct DOMMatrix2DInit;
 
 
 
-class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
-                                       public nsWrapperCache,
-                                       public BasicRenderingContext2D {
+class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
+                                 public nsWrapperCache,
+                                 public BasicRenderingContext2D {
+ protected:
   virtual ~CanvasRenderingContext2D();
 
  public:
@@ -409,6 +411,7 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
 
 
   PresShell* GetPresShell() final;
+  void Initialize() override;
   NS_IMETHOD SetDimensions(int32_t aWidth, int32_t aHeight) override;
   NS_IMETHOD InitializeWithDrawTarget(
       nsIDocShell* aShell, NotNull<gfx::DrawTarget*> aTarget) override;
@@ -470,8 +473,6 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
 
   enum class Style : uint8_t { STROKE = 0, FILL, MAX };
 
-  nsINode* GetParentObject() { return mCanvasElement; }
-
   void LineTo(const mozilla::gfx::Point& aPoint) {
     if (mPathBuilder) {
       mPathBuilder->LineTo(aPoint);
@@ -501,7 +502,7 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
   
   bool GetHitRegionRect(Element* aElement, nsRect& aRect) override;
 
-  void OnShutdown();
+  virtual void OnShutdown();
 
   
 
@@ -537,7 +538,7 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
 
 
 
-  static uintptr_t sNumLivingContexts;
+  static mozilla::Atomic<uintptr_t> sNumLivingContexts;
 
   static mozilla::gfx::DrawTarget* sErrorTarget;
 
@@ -734,8 +735,9 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
   RefPtr<mozilla::layers::PersistentBufferProvider> mBufferProvider;
 
   RefPtr<CanvasShutdownObserver> mShutdownObserver;
-  void RemoveShutdownObserver();
-  bool AlreadyShutDown() const { return !mShutdownObserver; }
+  virtual void AddShutdownObserver();
+  virtual void RemoveShutdownObserver();
+  virtual bool AlreadyShutDown() const { return !mShutdownObserver; }
 
   
 
@@ -1011,6 +1013,10 @@ class CanvasRenderingContext2D final : public nsICanvasRenderingContextInternal,
 
   bool mWriteOnly;
   bool mClipsNeedConverting = false;
+
+  virtual void AddZoneWaitingForGC();
+  virtual void AddAssociatedMemory();
+  virtual void RemoveAssociatedMemory();
 };
 
 size_t BindingJSObjectMallocBytes(CanvasRenderingContext2D* aContext);
