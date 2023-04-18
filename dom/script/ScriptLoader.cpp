@@ -2181,6 +2181,12 @@ nsresult ScriptLoader::EvaluateScriptElement(ScriptLoadRequest* aRequest) {
     setProcessingScriptTag.emplace(context);
   }
 
+  
+  
+  
+  
+  MOZ_ASSERT(!aRequest->IsImportMapRequest());
+
   if (aRequest->IsModuleRequest()) {
     return aRequest->AsModuleRequest()->EvaluateModule();
   }
