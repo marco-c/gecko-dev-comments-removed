@@ -49,6 +49,9 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 
 
 
+
+
+
 XPCOMUtils.defineLazyGetter(lazy, "logConsole", function() {
   return console.createInstance({
     prefix: "SnapshotsManager",
@@ -885,7 +888,7 @@ const Snapshots = new (class Snapshots {
       interactionCounts.min = Math.min(interactionCounts.min, interactions);
       return {
         snapshot: this.#translateRow(row),
-        interactions,
+        data: { interactions },
       };
     });
 
@@ -896,7 +899,7 @@ const Snapshots = new (class Snapshots {
     
     
     entries.forEach(e => {
-      e.score = this.timeOfDayScore(e.interactions, interactionCounts);
+      e.score = this.timeOfDayScore(e.data.interactions, interactionCounts);
     });
     return entries;
   }
