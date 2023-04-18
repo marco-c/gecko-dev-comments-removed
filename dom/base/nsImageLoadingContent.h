@@ -428,16 +428,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
 
-
-
-
-  bool* GetRegisteredFlagForRequest(imgIRequest* aRequest);
-
-  
-
-
-
-
   void ResetAnimationIfNeeded();
 
   
@@ -472,17 +462,19 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   
   RefPtr<imgRequestProxy> mCurrentRequest;
   RefPtr<imgRequestProxy> mPendingRequest;
-  uint32_t mCurrentRequestFlags;
-  uint32_t mPendingRequestFlags;
+  uint8_t mCurrentRequestFlags = 0;
+  uint8_t mPendingRequestFlags = 0;
 
   enum {
     
-    REQUEST_NEEDS_ANIMATION_RESET = 0x00000001U,
+    REQUEST_NEEDS_ANIMATION_RESET = 1 << 0,
     
-    REQUEST_IS_TRACKED = 0x00000004U,
+    REQUEST_IS_TRACKED = 1 << 1,
+    
+    REQUEST_IS_ANIMATED = 1 << 2,
     
     
-    REQUEST_IS_IMAGESET = 0x00000008U
+    REQUEST_IS_IMAGESET = 1 << 3,
   };
 
   
