@@ -21,7 +21,6 @@ import * as reactAriaComponentsTabs from "react-aria-components/src/tabs";
 
 
 import classnames from "classnames";
-import move from "lodash-move";
 
 
 
@@ -31,7 +30,6 @@ export const vendored = {
   classnames,
   "devtools-utils": devtoolsUtils,
   "fuzzaldrin-plus": fuzzaldrinPlus,
-  "lodash-move": move,
   "react-aria-components/src/tabs": reactAriaComponentsTabs,
   "react-transition-group/Transition": transition,
 };
