@@ -169,8 +169,6 @@ class SplitView {
 
 
 
-
-
   appendItem(summary, details, options) {
     const binding = options || {};
 
@@ -186,10 +184,6 @@ class SplitView {
     });
 
     this._side.appendChild(details);
-
-    if (binding.onCreate) {
-      binding.onCreate(summary, details, binding.data);
-    }
   }
 
   
@@ -223,7 +217,7 @@ class SplitView {
     details.id = "";
 
     this.appendItem(summary, details, options);
-    return { summary: summary, details: details };
+    return { summary, details };
   }
 
   
