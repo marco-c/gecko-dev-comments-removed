@@ -189,6 +189,12 @@ bool TestFindRegion() {
 }
 
 extern "C" int wmain(int argc, wchar_t* argv[]) {
+  
+  
+  
+  unsigned int rnd = 0;
+  rand_s(&rnd);
+
   if (!TestFindRegion()) {
     return 1;
   }
