@@ -613,24 +613,6 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void quick_test(TestTransactionFactory* factory) {
 
 
 
-  rv = mgr->AddListener(nullptr);
-  EXPECT_EQ(rv, NS_ERROR_NULL_POINTER);
-
-  
-
-
-
-
-
-  rv = mgr->RemoveListener(nullptr);
-  EXPECT_EQ(rv, NS_ERROR_NULL_POINTER);
-
-  
-
-
-
-
-
 
 
 

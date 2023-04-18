@@ -143,14 +143,10 @@ nsresult TransactionItem::UndoChildren(
       mRedoStack->Push(transactionItem.forget());
     }
 
-    nsresult rv2 = aTransactionManager->DidUndoNotify(transaction, rv);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv2),
-                         "TransactionManager::DidUndoNotify() failed");
-    if (NS_SUCCEEDED(rv)) {
-      rv = rv2;
+    if (transaction) {
+      aTransactionManager->DidUndoNotify(*transaction, rv);
     }
   }
-  
   
   
   return rv;
@@ -206,14 +202,10 @@ nsresult TransactionItem::RedoChildren(
     }
 
     
-    nsresult rv2 = aTransactionManager->DidUndoNotify(transaction, rv);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv2),
-                         "TransactionManager::DidUndoNotify() failed");
-    if (NS_SUCCEEDED(rv)) {
-      rv = rv2;
+    if (transaction) {
+      aTransactionManager->DidUndoNotify(*transaction, rv);
     }
   }
-  
   
   
   return rv;

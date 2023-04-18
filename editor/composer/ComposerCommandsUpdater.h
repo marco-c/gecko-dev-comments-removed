@@ -87,15 +87,13 @@ class ComposerCommandsUpdater final : public nsITimerCallback, public nsINamed {
 
 
 
+
   MOZ_CAN_RUN_SCRIPT void DidDoTransaction(
-      TransactionManager& aTransactionManager, nsITransaction* aTransaction,
-      nsresult aDoTransactionResult);
+      TransactionManager& aTransactionManager);
   MOZ_CAN_RUN_SCRIPT void DidUndoTransaction(
-      TransactionManager& aTransactionManager, nsITransaction* aTransaction,
-      nsresult aUndoTransactionResult);
+      TransactionManager& aTransactionManager);
   MOZ_CAN_RUN_SCRIPT void DidRedoTransaction(
-      TransactionManager& aTransactionManager, nsITransaction* aTransaction,
-      nsresult aRedoTransactionResult);
+      TransactionManager& aTransactionManager);
 
  protected:
   virtual ~ComposerCommandsUpdater();

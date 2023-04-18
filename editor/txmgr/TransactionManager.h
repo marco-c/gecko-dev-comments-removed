@@ -18,7 +18,6 @@
 #include "nscore.h"
 
 class nsITransaction;
-class nsITransactionListener;
 
 namespace mozilla {
 
@@ -55,25 +54,15 @@ class TransactionManager final : public nsITransactionManager,
     return true;
   }
 
-  bool AddTransactionListener(nsITransactionListener& aListener) {
-    
-    return mListeners.AppendObject(&aListener);
-  }
-  bool RemoveTransactionListener(nsITransactionListener& aListener) {
-    return mListeners.RemoveObject(&aListener);
-  }
   void Attach(HTMLEditor& aHTMLEditor);
   void Detach(const HTMLEditor& aHTMLEditor);
 
-  
-  
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult DidDoNotify(nsITransaction* aTransaction,
-                                                   nsresult aDoResult);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-  DidUndoNotify(nsITransaction* aTransaction, nsresult aUndoResult);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-  DidRedoNotify(nsITransaction* aTransaction, nsresult aRedoResult);
+  MOZ_CAN_RUN_SCRIPT void DidDoNotify(nsITransaction& aTransaction,
+                                      nsresult aDoResult);
+  MOZ_CAN_RUN_SCRIPT void DidUndoNotify(nsITransaction& aTransaction,
+                                        nsresult aUndoResult);
+  MOZ_CAN_RUN_SCRIPT void DidRedoNotify(nsITransaction& aTransaction,
+                                        nsresult aRedoResult);
 
   
 
@@ -92,7 +81,6 @@ class TransactionManager final : public nsITransactionManager,
   TransactionStack mDoStack;
   TransactionStack mUndoStack;
   TransactionStack mRedoStack;
-  nsCOMArray<nsITransactionListener> mListeners;
   RefPtr<HTMLEditor> mHTMLEditor;
 };
 

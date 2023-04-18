@@ -5,7 +5,6 @@
 
 #include "nsISupports.idl"
 #include "nsITransaction.idl"
-#include "nsITransactionListener.idl"
 
 %{C++
 namespace mozilla {
@@ -136,23 +135,6 @@ interface nsITransactionManager : nsISupports
 
 
   nsITransaction peekRedoStack();
-
-  
-
-
-
-
-
-
-  void AddListener(in nsITransactionListener aListener);
-
-  
-
-
-
-
-
-  void RemoveListener(in nsITransactionListener aListener);
 
 %{C++
   
