@@ -326,7 +326,8 @@ void SandboxLaunchPrepare(GeckoProcessType aType,
     case GeckoProcessType_RDD:
       if (level >= 1) {
         canChroot = true;
-        flags |= CLONE_NEWNET | CLONE_NEWIPC;
+        
+        flags |= CLONE_NEWNET;
       }
       break;
     case GeckoProcessType_Content:

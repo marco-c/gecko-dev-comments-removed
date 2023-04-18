@@ -809,6 +809,14 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
     }
   }
 
+  
+  policy->AddDir(rdwr, "/dev/dri");
+  AddMesaSysfsPaths(policy.get());
+
+  
+  AddLdconfigPaths(policy.get());
+  AddLdLibraryEnvPaths(policy.get());
+
   if (policy->IsEmpty()) {
     policy = nullptr;
   }
