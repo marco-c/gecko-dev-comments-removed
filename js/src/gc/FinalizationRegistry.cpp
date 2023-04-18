@@ -314,6 +314,11 @@ void FinalizationRegistryGlobalData::removeRecord(JSObject* record) {
 
 void FinalizationRegistryGlobalData::trace(JSTracer* trc,
                                            GlobalObject* global) {
+  
+  
+  
+  AutoDisableCompartmentCheckTracer adcct;
+
   for (RecordSet::Enum e(recordSet); !e.empty(); e.popFront()) {
     HeapPtrObject& obj = e.mutableFront();
     TraceCrossCompartmentEdge(trc, global, &obj,
