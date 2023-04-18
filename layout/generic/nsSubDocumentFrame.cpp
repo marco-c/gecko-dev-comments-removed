@@ -351,6 +351,10 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     return;
   }
 
+  if (IsContentHidden()) {
+    return;
+  }
+
   
   
   

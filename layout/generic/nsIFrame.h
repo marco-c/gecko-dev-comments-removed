@@ -3158,6 +3158,11 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+  bool IsContentHidden() const;
+
+  
+
+
 
 
   mozilla::LayoutFrameType Type() const {

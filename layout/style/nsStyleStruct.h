@@ -1563,6 +1563,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
            !IsInnerTableStyle();
   }
 
+  bool IsContentVisibilityHidden() const {
+    return mContentVisibility == mozilla::StyleContentVisibility::Hidden;
+  }
+
   
 
   bool HasTransformStyle() const {

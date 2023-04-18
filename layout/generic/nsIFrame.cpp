@@ -4130,6 +4130,10 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
     return;
   }
 
+  if (IsContentHidden()) {
+    return;
+  }
+
   
   
   
@@ -6950,6 +6954,14 @@ bool nsIFrame::IsContentDisabled() const {
 
   auto* element = nsGenericHTMLElement::FromNodeOrNull(GetContent());
   return element && element->IsDisabled();
+}
+
+bool nsIFrame::IsContentHidden() const {
+  if (!StyleDisplay()->IsContentVisibilityHidden()) {
+    return false;
+  }
+
+  return IsFrameOfType(nsIFrame::eReplaced) || !StyleDisplay()->IsInlineFlow();
 }
 
 nsresult nsIFrame::CharacterDataChanged(const CharacterDataChangeInfo&) {

@@ -2478,7 +2478,7 @@ nsChangeHint nsStyleDisplay::CalcDifference(
   
   
   if (mContentVisibility != aNewData.mContentVisibility) {
-    hint |= nsChangeHint_NeedReflow;
+    hint |= nsChangeHint_RepaintFrame;
   }
 
   if (mScrollbarGutter != aNewData.mScrollbarGutter) {
