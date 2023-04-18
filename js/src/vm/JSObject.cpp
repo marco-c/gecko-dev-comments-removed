@@ -1174,6 +1174,7 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
 
   
   
+  
   MOZ_RELEASE_ASSERT(js::ObjectMayBeSwapped(a));
   MOZ_RELEASE_ASSERT(js::ObjectMayBeSwapped(b));
 
@@ -1194,22 +1195,6 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
   }
 
   unsigned r = NotifyGCPreSwap(a, b);
-
-  
-  MOZ_ASSERT(a->compartment() == b->compartment());
-  MOZ_ASSERT(a->is<JSFunction>() == b->is<JSFunction>());
-
-  
-  MOZ_ASSERT_IF(a->is<JSFunction>(),
-                a->tenuredSizeOfThis() == b->tenuredSizeOfThis());
-
-  
-  
-  MOZ_ASSERT(!a->is<RegExpObject>() && !b->is<RegExpObject>());
-  MOZ_ASSERT(!a->is<ArrayObject>() && !b->is<ArrayObject>());
-  MOZ_ASSERT(!a->is<ArrayBufferObject>() && !b->is<ArrayBufferObject>());
-  MOZ_ASSERT(!a->is<TypedArrayObject>() && !b->is<TypedArrayObject>());
-  MOZ_ASSERT(!a->is<TypedObject>() && !b->is<TypedObject>());
 
   
   
@@ -1241,8 +1226,7 @@ void JSObject::swap(JSContext* cx, HandleObject a, HandleObject b,
 
     size_t size = a->tenuredSizeOfThis();
 
-    char tmp[mozilla::tl::Max<sizeof(JSFunction),
-                              sizeof(JSObject_Slots16)>::value];
+    char tmp[sizeof(JSObject_Slots16)];
     MOZ_ASSERT(size <= sizeof(tmp));
 
     js_memcpy(tmp, a, size);
