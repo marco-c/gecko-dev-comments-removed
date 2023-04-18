@@ -378,10 +378,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   static bool IsWaveEnabled();
   static bool IsWebMEnabled();
 
-#  ifdef MOZ_WMF
-  static bool IsWMFEnabled();
-#  endif
-
   
   FrameStatistics& GetFrameStatistics() { return *mFrameStats; }
 
