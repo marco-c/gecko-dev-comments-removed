@@ -60,19 +60,11 @@ bool Link::ElementHasHref() const {
 
 void Link::VisitedQueryFinished(bool aVisited) {
   MOZ_ASSERT(mRegistered, "Setting the link state of an unregistered Link!");
-  MOZ_ASSERT(mState == State::Unvisited,
-             "Why would we want to know our visited state otherwise?");
 
   auto newState = aVisited ? State::Visited : State::Unvisited;
 
   
   mState = newState;
-
-  
-  
-  if (aVisited) {
-    mRegistered = false;
-  }
 
   MOZ_ASSERT(LinkState() == NS_EVENT_STATE_VISITED ||
                  LinkState() == NS_EVENT_STATE_UNVISITED,
