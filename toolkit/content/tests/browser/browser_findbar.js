@@ -308,9 +308,16 @@ add_task(async function test_open_and_close_keys() {
 
 
 add_task(async function test_input_keypress() {
+  await SpecialPowers.pushPrefEnv({ set: [["general.smoothScroll", false]] });
+
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    "data:text/html,<body style='height: 5000px;'>Hello There</body>"
+    
+    `data:text/html,
+    <!DOCTYPE html>
+    <body style='height: 5000px;'>
+    Hello There
+    </body>`
   );
 
   await gFindBarPromise;
