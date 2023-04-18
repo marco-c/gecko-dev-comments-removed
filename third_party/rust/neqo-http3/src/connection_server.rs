@@ -5,7 +5,7 @@
 
 
 use crate::connection::{Http3Connection, Http3State};
-use crate::hframe::HFrame;
+use crate::frames::HFrame;
 use crate::recv_message::{RecvMessage, RecvMessageInfo};
 use crate::send_message::SendMessage;
 use crate::server_connection_events::{Http3ServerConnEvent, Http3ServerConnEvents};
@@ -38,6 +38,11 @@ impl Http3ServerHandler {
             events: Http3ServerConnEvents::default(),
             needs_processing: false,
         }
+    }
+
+    #[must_use]
+    pub fn state(&self) -> Http3State {
+        self.base_handler.state()
     }
 
     
@@ -146,6 +151,24 @@ impl Http3ServerHandler {
         )
     }
 
+    
+    
+    
+    
+    
+    
+    pub fn webtransport_close_session(
+        &mut self,
+        conn: &mut Connection,
+        session_id: StreamId,
+        error: u32,
+        message: &str,
+    ) -> Res<()> {
+        self.needs_processing = true;
+        self.base_handler
+            .webtransport_close_session(conn, session_id, error, message)
+    }
+
     pub fn webtransport_create_stream(
         &mut self,
         conn: &mut Connection,
@@ -187,7 +210,7 @@ impl Http3ServerHandler {
             self.needs_processing = false;
             return true;
         }
-        self.base_handler.has_data_to_send() | self.events.has_events()
+        self.base_handler.has_data_to_send() || self.events.has_events()
     }
 
     

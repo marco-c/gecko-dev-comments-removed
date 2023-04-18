@@ -108,8 +108,12 @@ pub struct IncrementalDecoderIgnore {
 }
 
 impl IncrementalDecoderIgnore {
+    
+    
+    
     #[must_use]
     pub fn new(n: usize) -> Self {
+        assert_ne!(n, 0);
         Self { remaining: n }
     }
 

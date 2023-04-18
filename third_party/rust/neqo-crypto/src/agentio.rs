@@ -32,14 +32,6 @@ pub fn as_c_void<T: Unpin>(pin: &mut Pin<Box<T>>) -> *mut c_void {
 }
 
 
-#[derive(Default, Debug)]
-struct RecordLength {
-    epoch: Epoch,
-    ct: ContentType,
-    len: usize,
-}
-
-
 #[derive(Default)]
 pub struct Record {
     pub epoch: Epoch,

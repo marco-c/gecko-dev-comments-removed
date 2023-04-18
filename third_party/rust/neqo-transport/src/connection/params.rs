@@ -5,6 +5,7 @@
 
 
 use crate::connection::{ConnectionIdManager, Role, LOCAL_ACTIVE_CID_LIMIT};
+pub use crate::recovery::FAST_PTO_SCALE;
 use crate::recv_stream::RECV_BUFFER_SIZE;
 use crate::rtt::GRANULARITY;
 use crate::stream_id::StreamType;
@@ -70,6 +71,7 @@ pub struct ConnectionParameters {
     datagram_size: u64,
     outgoing_datagram_queue: usize,
     incoming_datagram_queue: usize,
+    fast_pto: u8,
 }
 
 impl Default for ConnectionParameters {
@@ -89,6 +91,7 @@ impl Default for ConnectionParameters {
             datagram_size: 0,
             outgoing_datagram_queue: MAX_QUEUED_DATAGRAMS_DEFAULT,
             incoming_datagram_queue: MAX_QUEUED_DATAGRAMS_DEFAULT,
+            fast_pto: FAST_PTO_SCALE,
         }
     }
 }
@@ -243,6 +246,30 @@ impl ConnectionParameters {
     pub fn incoming_datagram_queue(mut self, v: usize) -> Self {
         
         self.incoming_datagram_queue = max(v, 1);
+        self
+    }
+
+    pub fn get_fast_pto(&self) -> u8 {
+        self.fast_pto
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn fast_pto(mut self, scale: u8) -> Self {
+        assert_ne!(scale, 0);
+        self.fast_pto = scale;
         self
     }
 
