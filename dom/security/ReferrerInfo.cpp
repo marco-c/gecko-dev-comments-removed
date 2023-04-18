@@ -699,8 +699,25 @@ bool ReferrerInfo::ShouldIgnoreLessRestrictedPolicies(
     return false;
   }
 
-  bool isCrossSite = IsCrossSiteRequest(aChannel);
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
   bool isPrivate = NS_UsePrivateBrowsing(aChannel);
+
+  
+  
+  if (loadInfo->GetExternalContentPolicyType() ==
+      ExtContentPolicy::TYPE_DOCUMENT) {
+    bool isEnabledForTopNavigation =
+        isPrivate
+            ? StaticPrefs::
+                  network_http_referer_disallowCrossSiteRelaxingDefault_pbmode_top_navigation()
+            : StaticPrefs::
+                  network_http_referer_disallowCrossSiteRelaxingDefault_top_navigation();
+    if (!isEnabledForTopNavigation) {
+      return false;
+    }
+  }
+
+  bool isCrossSite = IsCrossSiteRequest(aChannel);
   bool isEnabled =
       isPrivate
           ? StaticPrefs::
@@ -723,8 +740,6 @@ bool ReferrerInfo::ShouldIgnoreLessRestrictedPolicies(
     }
     return false;
   }
-
-  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
 
   
   auto* triggerBasePrincipal =
