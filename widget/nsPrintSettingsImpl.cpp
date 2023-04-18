@@ -685,6 +685,12 @@ nsIntMargin nsPrintSettings::GetUnwriteableMarginInTwips() {
 
 
 NS_IMETHODIMP
+nsPrintSettings::SetupSilentPrinting() { return NS_OK; }
+
+
+
+
+NS_IMETHODIMP
 nsPrintSettings::GetEffectivePageSize(double* aWidth, double* aHeight) {
   if (mPaperSizeUnit == kPaperSizeInches) {
     *aWidth = NS_INCHES_TO_TWIPS(float(mPaperWidth));
