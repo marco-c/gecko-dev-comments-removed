@@ -1757,12 +1757,8 @@ pref("media.gmp-gmpopenh264.enabled", true);
 
 pref("media.autoplay.default", 1); 
 
-#ifdef NIGHTLY_BUILD
-  
-  pref("media.autoplay.block-webaudio", true);
-#else
-  pref("media.autoplay.block-webaudio", false);
-#endif
+
+pref("media.autoplay.block-webaudio", true);
 
 pref("media.videocontrols.picture-in-picture.enabled", true);
 pref("media.videocontrols.picture-in-picture.audio-toggle.enabled", true);
