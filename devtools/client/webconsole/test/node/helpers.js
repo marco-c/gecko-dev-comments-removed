@@ -12,7 +12,7 @@ const {
   stubPackets,
 } = require("devtools/client/webconsole/test/node/fixtures/stubs/index");
 const {
-  getAllMessagesById,
+  getMutableMessagesById,
 } = require("devtools/client/webconsole/selectors/messages");
 const { getPrefsService } = require("devtools/client/webconsole/utils/prefs");
 const prefsService = getPrefsService({});
@@ -81,7 +81,7 @@ function clonePacket(packet) {
 
 
 function getMessageAt(state, index) {
-  const messages = getAllMessagesById(state);
+  const messages = getMutableMessagesById(state);
   return messages.get([...messages.keys()][index]);
 }
 
@@ -102,7 +102,7 @@ function getFirstMessage(state) {
 
 
 function getLastMessage(state) {
-  const lastIndex = getAllMessagesById(state).size - 1;
+  const lastIndex = getMutableMessagesById(state).size - 1;
   return getMessageAt(state, lastIndex);
 }
 

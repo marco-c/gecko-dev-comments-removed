@@ -19,7 +19,7 @@ const {
   isPacketPrivate,
 } = require("devtools/client/webconsole/utils/messages");
 const {
-  getAllMessagesById,
+  getMutableMessagesById,
   getMessage,
 } = require("devtools/client/webconsole/selectors/messages");
 const Telemetry = require("devtools/client/shared/telemetry");
@@ -181,7 +181,7 @@ class WebConsoleWrapper {
 
     
     
-    const messages = [...getAllMessagesById(store.getState()).values()];
+    const messages = [...getMutableMessagesById(store.getState()).values()];
     this.queuedMessageUpdates = this.queuedMessageUpdates.filter(
       ({ actor }) => {
         const queuedNetworkMessage = this.queuedMessageAdds.find(
