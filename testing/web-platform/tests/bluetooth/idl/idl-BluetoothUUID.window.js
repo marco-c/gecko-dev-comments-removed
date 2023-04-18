@@ -1,7 +1,5 @@
-<!DOCTYPE html>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script>
+
+
 'use strict'
 
 var base_uuid = '00000000-0000-1000-8000-00805f9b34fb'
@@ -141,9 +139,9 @@ test(() => {
   let array = [];
   let func = () => {};
 
-  // cannonicalUUID
+  
   assert_throws_js(TypeError, () => BluetoothUUID.canonicalUUID(object));
-  // [] converts to '', which converts to 0 before the range check.
+  
   assert_equals(BluetoothUUID.canonicalUUID(array), base_uuid);
   assert_throws_js(TypeError, () => BluetoothUUID.canonicalUUID(func));
   assert_throws_js(TypeError, () => BluetoothUUID.canonicalUUID(undefined));
@@ -153,7 +151,7 @@ test(() => {
       BluetoothUUID.canonicalUUID(true), BluetoothUUID.canonicalUUID(1));
   assert_throws_js(TypeError, () => BluetoothUUID.canonicalUUID(NaN));
 
-  // getService
+  
   assert_throws_js(TypeError, () => BluetoothUUID.getService(object));
   assert_throws_js(TypeError, () => BluetoothUUID.getService(array));
   assert_throws_js(TypeError, () => BluetoothUUID.getService(func));
@@ -161,7 +159,7 @@ test(() => {
   assert_throws_js(TypeError, () => BluetoothUUID.getService(null));
   assert_throws_js(TypeError, () => BluetoothUUID.getService(false));
 
-  // getCharacteristic
+  
   assert_throws_js(TypeError, () => BluetoothUUID.getCharacteristic(object));
   assert_throws_js(TypeError, () => BluetoothUUID.getCharacteristic(array));
   assert_throws_js(TypeError, () => BluetoothUUID.getCharacteristic(func));
@@ -169,7 +167,7 @@ test(() => {
   assert_throws_js(TypeError, () => BluetoothUUID.getCharacteristic(null));
   assert_throws_js(TypeError, () => BluetoothUUID.getCharacteristic(false));
 
-  // getDescriptor
+  
   assert_throws_js(TypeError, () => BluetoothUUID.getDescriptor(object));
   assert_throws_js(TypeError, () => BluetoothUUID.getDescriptor(array));
   assert_throws_js(TypeError, () => BluetoothUUID.getDescriptor(func));
@@ -177,4 +175,3 @@ test(() => {
   assert_throws_js(TypeError, () => BluetoothUUID.getDescriptor(null));
   assert_throws_js(TypeError, () => BluetoothUUID.getDescriptor(false));
 }, 'Non-number and non-strings');
-</script>

@@ -1,8 +1,5 @@
-<!DOCTYPE html>
-<title>Bluetooth interface</title>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script>
+
+
 'use strict';
 const test_desc = 'Bluetooth IDL test';
 
@@ -14,9 +11,8 @@ test(() => {
       TypeError, () => Bluetooth(),
       'the constructor should not be callable');
 
-  // Bluetooth implements BluetoothDiscovery;
+  
   assert_true('requestDevice' in navigator.bluetooth);
   assert_true('getDevices' in navigator.bluetooth);
   assert_equals(navigator.bluetooth.requestDevice.length, 0);
 }, test_desc);
-</script>
