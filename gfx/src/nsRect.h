@@ -54,6 +54,9 @@ struct nsRect : public mozilla::gfx::BaseRect<nscoord, nsRect, nsPoint, nsSize,
   
   
 
+  
+  
+  
   [[nodiscard]] nsRect SaturatingUnion(const nsRect& aRect) const {
     if (IsEmpty()) {
       return aRect;

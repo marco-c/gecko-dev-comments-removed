@@ -178,7 +178,6 @@ struct BaseRect {
   
   
   
-  
   [[nodiscard]] Sub Union(const Sub& aRect) const {
     if (IsEmpty()) {
       return aRect;
