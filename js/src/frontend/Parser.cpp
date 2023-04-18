@@ -9576,7 +9576,7 @@ GeneralParser<ParseHandler, Unit>::orExpr(InHandling inHandling,
           if (handler_.isPrivateName(pn)) {
             if (depth > 0 && Precedence(kindStack[depth - 1]) >=
                                  Precedence(ParseNodeKind::InExpr)) {
-              error(JSMSG_ILLEGAL_PRIVATE_NAME);
+              error(JSMSG_INVALID_PRIVATE_NAME_PRECEDENCE);
               return null();
             }
 
