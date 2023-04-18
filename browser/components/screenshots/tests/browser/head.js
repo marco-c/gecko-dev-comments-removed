@@ -17,6 +17,28 @@ const gScreenshotUISelectors = {
   copyButton: "button.highlight-button-copy",
 };
 
+
+const MouseEvents = {
+  mouse: new Proxy(
+    {},
+    {
+      get: (target, name) =>
+        async function(x, y, selector = ":root") {
+          if (name === "click") {
+            this.down(x, y);
+            this.up(x, y);
+          } else {
+            await safeSynthesizeMouseEventInContentPage(selector, x, y, {
+              type: "mouse" + name,
+            });
+          }
+        },
+    }
+  ),
+};
+
+const { mouse } = MouseEvents;
+
 class ScreenshotsHelper {
   constructor(browser) {
     this.browser = browser;
@@ -39,6 +61,114 @@ class ScreenshotsHelper {
     button.click();
   }
 
+  async waitForOverlay() {
+    let panel = gBrowser.selectedBrowser.ownerDocument.querySelector(
+      "#screenshotsPagePanel"
+    );
+    await BrowserTestUtils.waitForMutationCondition(
+      panel,
+      { attributes: true },
+      () => {
+        return BrowserTestUtils.is_visible(panel);
+      }
+    );
+    ok(BrowserTestUtils.is_visible(panel), "Panel buttons are visible");
+
+    await BrowserTestUtils.waitForCondition(async () => {
+      let init = await this.isOverlayInitialized();
+      return init;
+    });
+    info("Overlay is visible");
+  }
+
+  async waitForOverlayClosed() {
+    await BrowserTestUtils.waitForCondition(async () => {
+      let init = !(await this.isOverlayInitialized());
+      info("Is overlay initialized: " + !init);
+      return init;
+    });
+    info("Overlay is not visible");
+  }
+
+  async isOverlayInitialized() {
+    return SpecialPowers.spawn(this.browser, [], () => {
+      let screenshotsChild = content.windowGlobalChild.getActor(
+        "ScreenshotsComponent"
+      );
+      return screenshotsChild?._overlay?._initialized;
+    });
+  }
+
+  async getOverlayState() {
+    return ContentTask.spawn(this.browser, null, async () => {
+      let screenshotsChild = content.windowGlobalChild.getActor(
+        "ScreenshotsComponent"
+      );
+      return screenshotsChild._overlay.stateHandler.getState();
+    });
+  }
+
+  async waitForStateChange(newState) {
+    await BrowserTestUtils.waitForCondition(async () => {
+      let state = await this.getOverlayState();
+      return state === newState;
+    });
+  }
+
+  async dragOverlay(startX, startY, endX, endY) {
+    await this.waitForStateChange("crosshairs");
+    let state = await this.getOverlayState();
+    Assert.equal(state, "crosshairs", "The overlay is in the crosshairs state");
+
+    mouse.down(startX, startY);
+
+    await this.waitForStateChange("draggingReady");
+    state = await this.getOverlayState();
+    Assert.equal(
+      state,
+      "draggingReady",
+      "The overlay is in the draggingReady state"
+    );
+
+    mouse.move(endX, endY);
+
+    await this.waitForStateChange("dragging");
+    state = await this.getOverlayState();
+    Assert.equal(state, "dragging", "The overlay is in the dragging state");
+
+    mouse.up(endX, endY);
+
+    await this.waitForStateChange("selected");
+    state = await this.getOverlayState();
+    Assert.equal(state, "selected", "The overlay is in the selected state");
+
+    this.endX = endX;
+    this.endY = endY;
+  }
+
+  clickCopyButton() {
+    
+    
+    
+    mouse.click(this.endX - 166, this.endY + 30);
+  }
+
+  clickCancelButton() {
+    
+    
+    
+    mouse.click(this.endX - 230, this.endY + 30);
+  }
+
+  async zoomBrowser(zoom) {
+    await SpecialPowers.spawn(this.browser, [zoom], zoomLevel => {
+      const { Layout } = ChromeUtils.import(
+        "chrome://mochitests/content/browser/accessible/tests/browser/Layout.jsm"
+      );
+      Layout.zoomDocument(content.document, zoomLevel);
+    });
+  }
+
   
 
 
@@ -59,7 +189,7 @@ class ScreenshotsHelper {
     const initialClipboardData = Date.now().toString();
     SpecialPowers.clipboardCopyString(initialClipboardData);
 
-    let promiseChanged = BrowserTestUtils.waitForCondition(() => {
+    let promiseChanged = TestUtils.waitForCondition(() => {
       let data;
       try {
         data = getRawClipboardData("image/png");
@@ -83,7 +213,6 @@ class ScreenshotsHelper {
   getContentDimensions() {
     return SpecialPowers.spawn(this.browser, [], async function() {
       let doc = content.document.documentElement;
-      
       return {
         clientHeight: doc.clientHeight,
         clientWidth: doc.clientWidth,
@@ -228,4 +357,41 @@ function getRawClipboardData(flavor) {
   }
   data = data.value || null;
   return data;
+}
+
+
+
+
+
+
+
+
+
+
+async function safeSynthesizeMouseEventInContentPage(
+  selector,
+  x,
+  y,
+  options = {}
+) {
+  let context = gBrowser.selectedBrowser.browsingContext;
+
+  await scrollContentPageNodeIntoView(context, selector);
+  BrowserTestUtils.synthesizeMouse(selector, x, y, options, context);
+}
+
+
+
+
+
+
+
+
+function scrollContentPageNodeIntoView(browsingContext, selector) {
+  return SpecialPowers.spawn(browsingContext, [selector], function(
+    innerSelector
+  ) {
+    const node = content.wrappedJSObject.document.querySelector(innerSelector);
+    node.scrollIntoView();
+  });
 }

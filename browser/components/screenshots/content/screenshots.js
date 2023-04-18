@@ -170,7 +170,7 @@ class ScreenshotsUI extends HTMLElement {
 
   getFilename() {
     let filenameTitle = "Dummy Page"; 
-    const date = new Date(Date.now());
+    const date = new Date();
     
     filenameTitle = filenameTitle.replace(/[:\\<>/!@&?"*.|\x00-\x1F]/g, " ");
     filenameTitle = filenameTitle.replace(/\s{1,4000}/g, " ");
