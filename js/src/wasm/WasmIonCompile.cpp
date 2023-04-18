@@ -161,6 +161,11 @@ struct Control {
 
 
 
+
+
+
+
+
 struct IonCompilePolicy {
   
   using Value = MDefinition*;
@@ -1963,7 +1968,10 @@ class FunctionCompiler {
     return true;
   }
 
-  bool catchableCall(const CallSiteDesc& desc, const CalleeDesc& callee, const MWasmCallBase::Args& args, const ArgTypeVector& argTypes, MDefinition* index = nullptr) {
+  bool catchableCall(const CallSiteDesc& desc, const CalleeDesc& callee,
+                     const MWasmCallBase::Args& args,
+                     const ArgTypeVector& argTypes,
+                     MDefinition* index = nullptr) {
     MWasmCallTryDesc tryDesc;
 #ifdef ENABLE_WASM_EXCEPTIONS
     if (!beginTryCall(&tryDesc)) {
@@ -1974,10 +1982,12 @@ class FunctionCompiler {
     MInstruction* ins;
     if (tryDesc.inTry) {
       ins = MWasmCallCatchable::New(alloc(), desc, callee, args,
-                                    StackArgAreaSizeUnaligned(argTypes), tryDesc, index);
+                                    StackArgAreaSizeUnaligned(argTypes),
+                                    tryDesc, index);
     } else {
-      ins = MWasmCallUncatchable::New(alloc(), desc, callee, args,
-                                      StackArgAreaSizeUnaligned(argTypes), index);
+      ins =
+          MWasmCallUncatchable::New(alloc(), desc, callee, args,
+                                    StackArgAreaSizeUnaligned(argTypes), index);
     }
     if (!ins) {
       return false;
@@ -2651,43 +2661,40 @@ class FunctionCompiler {
     return tag;
   }
 
-  MDefinition* loadPendingException() {
-    MWasmLoadTls* exn = MWasmLoadTls::New(
+  void loadPendingExceptionState(MInstruction** exception, MInstruction** tag) {
+    *exception = MWasmLoadTls::New(
         alloc(), tlsPointer_, wasm::Instance::offsetOfPendingException(),
         MIRType::RefOrNull, AliasSet::Load(AliasSet::WasmPendingException));
-    curBlock_->add(exn);
-    return exn;
-  }
+    curBlock_->add(*exception);
 
-  MDefinition* loadPendingExceptionTag() {
-    MWasmLoadTls* tag = MWasmLoadTls::New(
+    *tag = MWasmLoadTls::New(
         alloc(), tlsPointer_, wasm::Instance::offsetOfPendingExceptionTag(),
         MIRType::RefOrNull, AliasSet::Load(AliasSet::WasmPendingException));
-    curBlock_->add(tag);
-    return tag;
+    curBlock_->add(*tag);
   }
 
-  void clearPendingExceptionState() {
+  bool setPendingExceptionState(MDefinition* exception, MDefinition* tag) {
     
-    auto* exceptionLoc = MWasmDerivedPointer::New(
+    auto* exceptionAddr = MWasmDerivedPointer::New(
         alloc(), tlsPointer_, Instance::offsetOfPendingException());
-    curBlock_->add(exceptionLoc);
-    auto* null = nullRefConstant();
-    auto* clearException =
-        MWasmStoreRef::New(alloc(), tlsPointer_, exceptionLoc, null,
+    curBlock_->add(exceptionAddr);
+    auto* setException =
+        MWasmStoreRef::New(alloc(), tlsPointer_, exceptionAddr, exception,
                            AliasSet::WasmPendingException);
-    curBlock_->add(clearException);
-    
+    curBlock_->add(setException);
+    if (!postBarrierPrecise(0, exceptionAddr, exception)) {
+      return false;
+    }
 
     
-    auto* exceptionTagLoc = MWasmDerivedPointer::New(
+    auto* exceptionTagAddr = MWasmDerivedPointer::New(
         alloc(), tlsPointer_, Instance::offsetOfPendingExceptionTag());
-    curBlock_->add(exceptionTagLoc);
-    auto* clearExceptionTag =
-        MWasmStoreRef::New(alloc(), tlsPointer_, exceptionTagLoc, null,
+    curBlock_->add(exceptionTagAddr);
+    auto* setExceptionTag =
+        MWasmStoreRef::New(alloc(), tlsPointer_, exceptionTagAddr, tag,
                            AliasSet::WasmPendingException);
-    curBlock_->add(clearExceptionTag);
-    
+    curBlock_->add(setExceptionTag);
+    return postBarrierPrecise(0, exceptionTagAddr, tag);
   }
 
   bool addPadPatch(MControlInstruction* ins, size_t relativeTryDepth) {
@@ -2696,26 +2703,10 @@ class FunctionCompiler {
     return padPatches.emplaceBack(ins);
   }
 
-  bool endWithPadPatch(MBasicBlock* block, MDefinition* exn, MDefinition* tag,
-                       uint32_t relativeTryDepth) {
-    MOZ_ASSERT(iter().controlKind(relativeTryDepth) == LabelKind::Try);
-    MOZ_ASSERT(exn);
-    MOZ_ASSERT(exn->type() == MIRType::RefOrNull);
-    MOZ_ASSERT(tag && tag->type() == MIRType::RefOrNull);
-    MOZ_ASSERT(numPushed(block) == 0);
-
-    
-    
-    if (!block->ensureHasSlots(2)) {
-      return false;
-    }
-    block->push(exn);
-    block->push(tag);
-
-    MGoto* insToPatch = MGoto::New(alloc());
-    block->end(insToPatch);
-
-    return addPadPatch(insToPatch, relativeTryDepth);
+  bool endWithPadPatch(uint32_t relativeTryDepth) {
+    MGoto* jumpToLandingPad = MGoto::New(alloc());
+    curBlock_->end(jumpToLandingPad);
+    return addPadPatch(jumpToLandingPad, relativeTryDepth);
   }
 
   bool delegatePadPatches(const ControlInstructionVector& patches,
@@ -2767,15 +2758,9 @@ class FunctionCompiler {
     
     curBlock_->add(
         MWasmCallLandingPrePad::New(alloc(), callBlock, call->tryNoteIndex));
+
     
-    MDefinition* pendingException = loadPendingException();
-    
-    MDefinition* pendingTag = loadPendingExceptionTag();
-    
-    clearPendingExceptionState();
-    
-    if (!endWithPadPatch(call->prePadBlock, pendingException, pendingTag,
-                         call->relativeTryDepth)) {
+    if (!endWithPadPatch(call->relativeTryDepth)) {
       return false;
     }
 
@@ -2784,12 +2769,6 @@ class FunctionCompiler {
     return true;
   }
 
-  
-  
-  
-  
-  
-  
   
   
   bool createTryLandingPadIfNeeded(Control& control, MBasicBlock** landingPad) {
@@ -2808,29 +2787,55 @@ class FunctionCompiler {
     
     MControlInstruction* ins = patches[0];
     MBasicBlock* pred = ins->block();
-    MBasicBlock* pad = nullptr;
-    if (!newBlock(pred, &pad)) {
+    if (!newBlock(pred, landingPad)) {
       return false;
     }
-    ins->replaceSuccessor(0, pad);
+    ins->replaceSuccessor(0, *landingPad);
     for (size_t i = 1; i < patches.length(); i++) {
       ins = patches[i];
       pred = ins->block();
-      if (!pad->addPredecessor(alloc(), pred)) {
+      if (!(*landingPad)->addPredecessor(alloc(), pred)) {
         return false;
       }
-      ins->replaceSuccessor(0, pad);
+      ins->replaceSuccessor(0, *landingPad);
+    }
+
+    
+    if (!setupLandingPadSlots(*landingPad)) {
+      return false;
+    }
+
+    
+    patches.clear();
+    return true;
+  }
+
+  
+  
+  bool setupLandingPadSlots(MBasicBlock* landingPad) {
+    MBasicBlock* prevBlock = curBlock_;
+    curBlock_ = landingPad;
+
+    
+    MInstruction* exception;
+    MInstruction* tag;
+    loadPendingExceptionState(&exception, &tag);
+
+    
+    auto* null = nullRefConstant();
+    if (!setPendingExceptionState(null, null)) {
+      return false;
     }
 
     
     
-    
-    
-    *landingPad = pad;
-    mirGraph().moveBlockToEnd(pad);
+    if (!landingPad->ensureHasSlots(2)) {
+      return false;
+    }
+    landingPad->push(exception);
+    landingPad->push(tag);
 
-    
-    patches.clear();
+    curBlock_ = prevBlock;
     return true;
   }
 
@@ -3157,17 +3162,15 @@ class FunctionCompiler {
     
     uint32_t relativeTryDepth;
     if (inTryBlock(&relativeTryDepth)) {
-      MBasicBlock* prePadBlock = nullptr;
-      if (!newBlock(curBlock_, &prePadBlock)) {
+      
+      if (!setPendingExceptionState(exn, tag)) {
         return false;
       }
-      MGoto* ins = MGoto::New(alloc(), prePadBlock);
 
       
-      if (!endWithPadPatch(prePadBlock, exn, tag, relativeTryDepth)) {
+      if (!endWithPadPatch(relativeTryDepth)) {
         return false;
       }
-      curBlock_->end(ins);
       curBlock_ = nullptr;
       return true;
     }
