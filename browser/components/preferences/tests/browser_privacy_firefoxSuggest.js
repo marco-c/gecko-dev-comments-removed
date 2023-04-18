@@ -10,9 +10,22 @@ XPCOMUtils.defineLazyModuleGetters(this, {
     "resource:///modules/UrlbarProviderQuickSuggest.jsm",
 });
 
+XPCOMUtils.defineLazyGetter(this, "QuickSuggestTestUtils", () => {
+  const { QuickSuggestTestUtils: module } = ChromeUtils.import(
+    "resource://testing-common/QuickSuggestTestUtils.jsm"
+  );
+  module.init(this);
+  registerCleanupFunction(() => module.uninit());
+  return module;
+});
+
 const CONTAINER_ID = "firefoxSuggestContainer";
-const MAIN_CHECKBOX_ID = "firefoxSuggestSuggestion";
-const SPONSORED_CHECKBOX_ID = "firefoxSuggestSponsoredSuggestion";
+const NONSPONSORED_CHECKBOX_ID = "firefoxSuggestNonsponsoredToggle";
+const SPONSORED_CHECKBOX_ID = "firefoxSuggestSponsoredToggle";
+const DATA_COLLECTION_CHECKBOX_ID = "firefoxSuggestDataCollectionToggle";
+const INFO_BOX_ID = "firefoxSuggestInfoBox";
+const INFO_TEXT_ID = "firefoxSuggestInfoText";
+const LEARN_MORE_CLASS = "firefoxSuggestLearnMore";
 
 
 
@@ -28,137 +41,67 @@ const EXPECTED_L10N_IDS = {
   },
 };
 
-let originalExperimentPrefDefaultBranchValue;
-
 
 if (AppConstants.platform == "macosx") {
   requestLongerTimeout(3);
 }
 
-add_task(async function init() {
-  
-  
-  
-  try {
-    originalExperimentPrefDefaultBranchValue = Services.prefs
-      .getDefaultBranch("browser.urlbar.quicksuggest.enabled")
-      .getBoolPref("");
-  } catch (ex) {}
+
+
+
+add_task(async function historyToOffline() {
+  await doVisibilityTest({
+    initialScenario: "history",
+    initialExpectedVisibility: false,
+    newScenario: "offline",
+    newExpectedVisibility: true,
+  });
 });
 
-
-
-
-add_task(async function() {
+add_task(async function historyToOnline() {
   await doVisibilityTest({
-    initialDefaultBranchValue: undefined,
-    initialUserBranchValue: undefined,
+    initialScenario: "history",
+    initialExpectedVisibility: false,
+    newScenario: "online",
+    newExpectedVisibility: true,
+  });
+});
+
+add_task(async function offlineToHistory() {
+  await doVisibilityTest({
+    initialScenario: "offline",
     initialExpectedVisibility: true,
-    newDefaultBranchValue: false,
-    newUserBranchValue: false,
+    newScenario: "history",
     newExpectedVisibility: false,
   });
 });
 
-add_task(async function() {
+add_task(async function offlineToOnline() {
   await doVisibilityTest({
-    initialDefaultBranchValue: false,
-    initialUserBranchValue: undefined,
-    initialExpectedVisibility: false,
-    newDefaultBranchValue: false,
-    newUserBranchValue: false,
-    newExpectedVisibility: false,
-  });
-});
-
-add_task(async function() {
-  await doVisibilityTest({
-    initialDefaultBranchValue: undefined,
-    initialUserBranchValue: false,
-    initialExpectedVisibility: false,
-    newDefaultBranchValue: false,
-    newUserBranchValue: false,
-    newExpectedVisibility: false,
-  });
-});
-
-add_task(async function() {
-  await doVisibilityTest({
-    initialDefaultBranchValue: undefined,
-    initialUserBranchValue: undefined,
+    initialScenario: "offline",
     initialExpectedVisibility: true,
-    newDefaultBranchValue: true,
-    newUserBranchValue: undefined,
+    newScenario: "online",
     newExpectedVisibility: true,
   });
 });
 
-add_task(async function() {
+add_task(async function onlineToHistory() {
   await doVisibilityTest({
-    initialDefaultBranchValue: undefined,
-    initialUserBranchValue: undefined,
+    initialScenario: "online",
     initialExpectedVisibility: true,
-    newDefaultBranchValue: undefined,
-    newUserBranchValue: true,
-    newExpectedVisibility: true,
-  });
-});
-
-add_task(async function() {
-  await doVisibilityTest({
-    initialDefaultBranchValue: false,
-    initialUserBranchValue: undefined,
-    initialExpectedVisibility: false,
-    newDefaultBranchValue: true,
-    newUserBranchValue: undefined,
-    newExpectedVisibility: true,
-  });
-});
-
-add_task(async function() {
-  await doVisibilityTest({
-    initialDefaultBranchValue: false,
-    initialUserBranchValue: undefined,
-    initialExpectedVisibility: false,
-    newDefaultBranchValue: undefined,
-    newUserBranchValue: true,
-    newExpectedVisibility: true,
-  });
-});
-
-add_task(async function() {
-  await doVisibilityTest({
-    initialDefaultBranchValue: undefined,
-    initialUserBranchValue: false,
-    initialExpectedVisibility: false,
-    newDefaultBranchValue: true,
-    newUserBranchValue: undefined,
+    newScenario: "history",
     newExpectedVisibility: false,
   });
 });
 
-add_task(async function() {
+add_task(async function onlineToOffline() {
   await doVisibilityTest({
-    initialDefaultBranchValue: undefined,
-    initialUserBranchValue: false,
-    initialExpectedVisibility: false,
-    newDefaultBranchValue: undefined,
-    newUserBranchValue: true,
+    initialScenario: "online",
+    initialExpectedVisibility: true,
+    newScenario: "offline",
     newExpectedVisibility: true,
   });
 });
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -174,42 +117,28 @@ add_task(async function() {
 
 
 async function doVisibilityTest({
-  initialDefaultBranchValue,
-  initialUserBranchValue,
+  initialScenario,
   initialExpectedVisibility,
-  newDefaultBranchValue,
-  newUserBranchValue,
+  newScenario,
   newExpectedVisibility,
 }) {
   info(
     "Running visibility test: " +
       JSON.stringify({
-        initialDefaultBranchValue,
-        initialUserBranchValue,
+        initialScenario,
         initialExpectedVisibility,
-        newDefaultBranchValue,
-        newUserBranchValue,
+        newScenario,
         newExpectedVisibility,
       })
   );
 
   
-  if (initialDefaultBranchValue !== undefined) {
-    Services.prefs
-      .getDefaultBranch("browser.urlbar.quicksuggest.enabled")
-      .setBoolPref("", initialDefaultBranchValue);
-  }
-  if (initialUserBranchValue !== undefined) {
-    Services.prefs.setBoolPref(
-      "browser.urlbar.quicksuggest.enabled",
-      initialUserBranchValue
-    );
-  }
+  await QuickSuggestTestUtils.setScenario(initialScenario);
 
   Assert.equal(
-    Services.prefs.getBoolPref("browser.urlbar.quicksuggest.enabled", false),
+    Services.prefs.getBoolPref("browser.urlbar.quicksuggest.enabled"),
     initialExpectedVisibility,
-    "Pref getter returns expected initial value"
+    `quicksuggest.enabled is correct after setting initial scenario, initialExpectedVisibility=${initialExpectedVisibility}`
   );
 
   
@@ -220,7 +149,7 @@ async function doVisibilityTest({
   Assert.equal(
     BrowserTestUtils.is_visible(container),
     initialExpectedVisibility,
-    "The container has the expected initial visibility"
+    `The container has the expected initial visibility, initialExpectedVisibility=${initialExpectedVisibility}`
   );
 
   
@@ -228,34 +157,24 @@ async function doVisibilityTest({
     Assert.equal(
       doc.getElementById(id).dataset.l10nId,
       initialExpectedVisibility ? enabled : disabled,
-      "Initial l10n ID for element with ID: " + id
+      `Initial l10n ID for element with ID ${id}, initialExpectedVisibility=${initialExpectedVisibility}`
     );
   }
 
   
-  if (newDefaultBranchValue !== undefined) {
-    Services.prefs
-      .getDefaultBranch("browser.urlbar.quicksuggest.enabled")
-      .setBoolPref("", newDefaultBranchValue);
-  }
-  if (newUserBranchValue !== undefined) {
-    Services.prefs.setBoolPref(
-      "browser.urlbar.quicksuggest.enabled",
-      newUserBranchValue
-    );
-  }
+  await QuickSuggestTestUtils.setScenario(newScenario);
 
   Assert.equal(
-    Services.prefs.getBoolPref("browser.urlbar.quicksuggest.enabled", false),
+    Services.prefs.getBoolPref("browser.urlbar.quicksuggest.enabled"),
     newExpectedVisibility,
-    "Pref getter returns expected value after setting prefs"
+    `quicksuggest.enabled is correct after setting new scenario, newExpectedVisibility=${newExpectedVisibility}`
   );
 
   
   Assert.equal(
     BrowserTestUtils.is_visible(container),
     newExpectedVisibility,
-    "The container has the expected visibility after setting prefs"
+    `The container has the expected visibility after setting new scenario, newExpectedVisibility=${newExpectedVisibility}`
   );
 
   
@@ -263,259 +182,205 @@ async function doVisibilityTest({
     Assert.equal(
       doc.getElementById(id).dataset.l10nId,
       newExpectedVisibility ? enabled : disabled,
-      "New l10n ID for element with ID: " + id
+      `New l10n ID for element with ID ${id}, newExpectedVisibility=${newExpectedVisibility}`
     );
   }
 
   
   gBrowser.removeCurrentTab();
-
-  Services.prefs.clearUserPref("browser.urlbar.quicksuggest.enabled");
-  if (originalExperimentPrefDefaultBranchValue === undefined) {
-    Services.prefs.deleteBranch("browser.urlbar.quicksuggest.enabled");
-  } else {
-    Services.prefs
-      .getDefaultBranch("browser.urlbar.quicksuggest.enabled")
-      .setBoolPref("", originalExperimentPrefDefaultBranchValue);
-  }
+  await QuickSuggestTestUtils.setScenario(null);
 }
 
 
-
-
-add_task(async function checkboxes_initial_mainTrue_sponsoredTrue() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.quicksuggest.enabled", true],
-      ["browser.urlbar.suggest.quicksuggest", true],
-      ["browser.urlbar.suggest.quicksuggest.sponsored", true],
-    ],
-  });
+add_task(async function togglesAndInfoBox() {
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: true },
-    [SPONSORED_CHECKBOX_ID]: { enabled: true, checked: true },
-  });
 
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.suggest.quicksuggest", false]],
-  });
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: false },
-    [SPONSORED_CHECKBOX_ID]: { enabled: false, checked: false },
-  });
-
-  await SpecialPowers.popPrefEnv();
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: true },
-    [SPONSORED_CHECKBOX_ID]: { enabled: true, checked: true },
-  });
-
-  gBrowser.removeCurrentTab();
-  await SpecialPowers.popPrefEnv();
-});
-
-
-
-
-add_task(async function checkboxes_initial_mainTrue_sponsoredFalse() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.quicksuggest.enabled", true],
-      ["browser.urlbar.suggest.quicksuggest", true],
-      ["browser.urlbar.suggest.quicksuggest.sponsored", false],
-    ],
-  });
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: true },
-    [SPONSORED_CHECKBOX_ID]: { enabled: true, checked: false },
-  });
-
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.suggest.quicksuggest", false]],
-  });
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: false },
-    [SPONSORED_CHECKBOX_ID]: { enabled: false, checked: false },
-  });
-
-  await SpecialPowers.popPrefEnv();
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: true },
-    [SPONSORED_CHECKBOX_ID]: { enabled: true, checked: false },
-  });
-
-  gBrowser.removeCurrentTab();
-  await SpecialPowers.popPrefEnv();
-});
-
-
-
-
-add_task(async function checkboxes_initial_mainFalse_sponsoredTrue() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.quicksuggest.enabled", true],
-      ["browser.urlbar.suggest.quicksuggest", false],
-      ["browser.urlbar.suggest.quicksuggest.sponsored", true],
-    ],
-  });
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: false },
-    [SPONSORED_CHECKBOX_ID]: { enabled: false, checked: false },
-  });
-
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.suggest.quicksuggest", true]],
-  });
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: true },
-    [SPONSORED_CHECKBOX_ID]: { enabled: true, checked: true },
-  });
-
-  await SpecialPowers.popPrefEnv();
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: false },
-    [SPONSORED_CHECKBOX_ID]: { enabled: false, checked: false },
-  });
-
-  gBrowser.removeCurrentTab();
-  await SpecialPowers.popPrefEnv();
-});
-
-
-
-
-add_task(async function checkboxes_initial_mainFalse_sponsoredFalse() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.quicksuggest.enabled", true],
-      ["browser.urlbar.suggest.quicksuggest", false],
-      ["browser.urlbar.suggest.quicksuggest.sponsored", false],
-    ],
-  });
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: false },
-    [SPONSORED_CHECKBOX_ID]: { enabled: false, checked: false },
-  });
-
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.suggest.quicksuggest", true]],
-  });
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: true },
-    [SPONSORED_CHECKBOX_ID]: { enabled: true, checked: false },
-  });
-
-  await SpecialPowers.popPrefEnv();
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: false },
-    [SPONSORED_CHECKBOX_ID]: { enabled: false, checked: false },
-  });
-
-  gBrowser.removeCurrentTab();
-  await SpecialPowers.popPrefEnv();
-});
-
-
-add_task(async function clickCheckboxes() {
+  
   
   
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.quicksuggest.enabled", true],
       ["browser.urlbar.suggest.quicksuggest", true],
       ["browser.urlbar.suggest.quicksuggest.sponsored", true],
+      ["browser.urlbar.quicksuggest.dataCollection.enabled", true],
     ],
   });
+  assertCheckboxes({
+    [NONSPONSORED_CHECKBOX_ID]: true,
+    [SPONSORED_CHECKBOX_ID]: true,
+    [DATA_COLLECTION_CHECKBOX_ID]: true,
+  });
+  await assertInfoBox("addressbar-firefox-suggest-info-all");
+  await SpecialPowers.popPrefEnv();
+
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.suggest.quicksuggest", true],
+      ["browser.urlbar.suggest.quicksuggest.sponsored", true],
+      ["browser.urlbar.quicksuggest.dataCollection.enabled", false],
+    ],
+  });
+  assertCheckboxes({
+    [NONSPONSORED_CHECKBOX_ID]: true,
+    [SPONSORED_CHECKBOX_ID]: true,
+    [DATA_COLLECTION_CHECKBOX_ID]: false,
+  });
+  await assertInfoBox("addressbar-firefox-suggest-info-nonsponsored-sponsored");
+  await SpecialPowers.popPrefEnv();
+
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.suggest.quicksuggest", true],
+      ["browser.urlbar.suggest.quicksuggest.sponsored", false],
+      ["browser.urlbar.quicksuggest.dataCollection.enabled", true],
+    ],
+  });
+  assertCheckboxes({
+    [NONSPONSORED_CHECKBOX_ID]: true,
+    [SPONSORED_CHECKBOX_ID]: false,
+    [DATA_COLLECTION_CHECKBOX_ID]: true,
+  });
+  await assertInfoBox("addressbar-firefox-suggest-info-nonsponsored-data");
+  await SpecialPowers.popPrefEnv();
+
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.suggest.quicksuggest", true],
+      ["browser.urlbar.suggest.quicksuggest.sponsored", false],
+      ["browser.urlbar.quicksuggest.dataCollection.enabled", false],
+    ],
+  });
+  assertCheckboxes({
+    [NONSPONSORED_CHECKBOX_ID]: true,
+    [SPONSORED_CHECKBOX_ID]: false,
+    [DATA_COLLECTION_CHECKBOX_ID]: false,
+  });
+  await assertInfoBox("addressbar-firefox-suggest-info-nonsponsored");
+  await SpecialPowers.popPrefEnv();
+
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.suggest.quicksuggest", false],
+      ["browser.urlbar.suggest.quicksuggest.sponsored", true],
+      ["browser.urlbar.quicksuggest.dataCollection.enabled", true],
+    ],
+  });
+  assertCheckboxes({
+    [NONSPONSORED_CHECKBOX_ID]: false,
+    [SPONSORED_CHECKBOX_ID]: true,
+    [DATA_COLLECTION_CHECKBOX_ID]: true,
+  });
+  await assertInfoBox("addressbar-firefox-suggest-info-sponsored-data");
+  await SpecialPowers.popPrefEnv();
+
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.suggest.quicksuggest", false],
+      ["browser.urlbar.suggest.quicksuggest.sponsored", true],
+      ["browser.urlbar.quicksuggest.dataCollection.enabled", false],
+    ],
+  });
+  assertCheckboxes({
+    [NONSPONSORED_CHECKBOX_ID]: false,
+    [SPONSORED_CHECKBOX_ID]: true,
+    [DATA_COLLECTION_CHECKBOX_ID]: false,
+  });
+  await assertInfoBox("addressbar-firefox-suggest-info-sponsored");
+  await SpecialPowers.popPrefEnv();
+
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.suggest.quicksuggest", false],
+      ["browser.urlbar.suggest.quicksuggest.sponsored", false],
+      ["browser.urlbar.quicksuggest.dataCollection.enabled", true],
+    ],
+  });
+  assertCheckboxes({
+    [NONSPONSORED_CHECKBOX_ID]: false,
+    [SPONSORED_CHECKBOX_ID]: false,
+    [DATA_COLLECTION_CHECKBOX_ID]: true,
+  });
+  await assertInfoBox("addressbar-firefox-suggest-info-data");
+  await SpecialPowers.popPrefEnv();
+
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.suggest.quicksuggest", false],
+      ["browser.urlbar.suggest.quicksuggest.sponsored", false],
+      ["browser.urlbar.quicksuggest.dataCollection.enabled", false],
+    ],
+  });
+  assertCheckboxes({
+    [NONSPONSORED_CHECKBOX_ID]: false,
+    [SPONSORED_CHECKBOX_ID]: false,
+    [DATA_COLLECTION_CHECKBOX_ID]: false,
+  });
+  await assertInfoBox(null);
+  await SpecialPowers.popPrefEnv();
+
+  gBrowser.removeCurrentTab();
+});
+
+
+add_task(async function clickToggles() {
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
 
   let doc = gBrowser.selectedBrowser.contentDocument;
   let addressBarSection = doc.getElementById("locationBarGroup");
   addressBarSection.scrollIntoView();
 
-  let sponsoredCheckbox = doc.getElementById(SPONSORED_CHECKBOX_ID);
-  Assert.ok(
-    BrowserTestUtils.is_visible(sponsoredCheckbox),
-    "The sponsored checkbox is visible"
-  );
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: true },
-    [SPONSORED_CHECKBOX_ID]: { enabled: true, checked: true },
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.suggest.quicksuggest", true],
+      ["browser.urlbar.suggest.quicksuggest.sponsored", true],
+      ["browser.urlbar.quicksuggest.dataCollection.enabled", true],
+    ],
   });
+  assertCheckboxes({
+    [NONSPONSORED_CHECKBOX_ID]: true,
+    [SPONSORED_CHECKBOX_ID]: true,
+    [DATA_COLLECTION_CHECKBOX_ID]: true,
+  });
+  await assertInfoBox("addressbar-firefox-suggest-info-all");
 
   
   await BrowserTestUtils.synthesizeMouseAtCenter(
-    "#" + SPONSORED_CHECKBOX_ID,
+    "#" + NONSPONSORED_CHECKBOX_ID,
     {},
     gBrowser.selectedBrowser
   );
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: true },
-    [SPONSORED_CHECKBOX_ID]: { enabled: true, checked: false },
-  });
-  Assert.ok(
-    !Services.prefs.getBoolPref(
-      "browser.urlbar.suggest.quicksuggest.sponsored"
-    ),
-    "The sponsored pref is false after checkbox click 1"
-  );
-
-  
-  await BrowserTestUtils.synthesizeMouseAtCenter(
-    "#" + SPONSORED_CHECKBOX_ID,
-    {},
-    gBrowser.selectedBrowser
-  );
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: true },
-    [SPONSORED_CHECKBOX_ID]: { enabled: true, checked: true },
-  });
-  Assert.ok(
-    Services.prefs.getBoolPref("browser.urlbar.suggest.quicksuggest.sponsored"),
-    "The sponsored pref is true after checkbox click 2"
-  );
-
-  
-  await BrowserTestUtils.synthesizeMouseAtCenter(
-    "#" + MAIN_CHECKBOX_ID,
-    {},
-    gBrowser.selectedBrowser
-  );
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: false },
-    [SPONSORED_CHECKBOX_ID]: { enabled: false, checked: false },
-  });
   Assert.ok(
     !Services.prefs.getBoolPref("browser.urlbar.suggest.quicksuggest"),
-    "The main pref is false after checkbox click 1"
-  );
-  Assert.ok(
-    Services.prefs.getBoolPref("browser.urlbar.suggest.quicksuggest.sponsored"),
-    "The sponsored pref remains true after main checkbox click 1"
-  );
-
-  
-  await BrowserTestUtils.synthesizeMouseAtCenter(
-    "#" + MAIN_CHECKBOX_ID,
-    {},
-    gBrowser.selectedBrowser
+    "suggest.quicksuggest is false after clicking non-sponsored toggle"
   );
   assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: true },
-    [SPONSORED_CHECKBOX_ID]: { enabled: true, checked: true },
+    [NONSPONSORED_CHECKBOX_ID]: false,
+    [SPONSORED_CHECKBOX_ID]: true,
+    [DATA_COLLECTION_CHECKBOX_ID]: true,
   });
-  Assert.ok(
-    Services.prefs.getBoolPref("browser.urlbar.suggest.quicksuggest"),
-    "The main pref is true after checkbox click 2"
-  );
-  Assert.ok(
-    Services.prefs.getBoolPref("browser.urlbar.suggest.quicksuggest.sponsored"),
-    "The sponsored pref remains true after main checkbox click 2"
-  );
+  await assertInfoBox("addressbar-firefox-suggest-info-sponsored-data");
 
   
   await BrowserTestUtils.synthesizeMouseAtCenter(
@@ -523,58 +388,51 @@ add_task(async function clickCheckboxes() {
     {},
     gBrowser.selectedBrowser
   );
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: true },
-    [SPONSORED_CHECKBOX_ID]: { enabled: true, checked: false },
-  });
-  Assert.ok(
-    !Services.prefs.getBoolPref(
-      "browser.urlbar.suggest.quicksuggest.sponsored"
-    ),
-    "The sponsored pref is false after checkbox click 3"
-  );
-
-  
-  await BrowserTestUtils.synthesizeMouseAtCenter(
-    "#" + MAIN_CHECKBOX_ID,
-    {},
-    gBrowser.selectedBrowser
-  );
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: false },
-    [SPONSORED_CHECKBOX_ID]: { enabled: false, checked: false },
-  });
   Assert.ok(
     !Services.prefs.getBoolPref("browser.urlbar.suggest.quicksuggest"),
-    "The main pref is false after checkbox click 3"
+    "suggest.quicksuggest remains false after clicking sponsored toggle"
   );
   Assert.ok(
     !Services.prefs.getBoolPref(
       "browser.urlbar.suggest.quicksuggest.sponsored"
     ),
-    "The sponsored pref remains false after main checkbox click 3"
+    "suggest.quicksuggest.sponsored is false after clicking sponsored toggle"
   );
+  assertCheckboxes({
+    [NONSPONSORED_CHECKBOX_ID]: false,
+    [SPONSORED_CHECKBOX_ID]: false,
+    [DATA_COLLECTION_CHECKBOX_ID]: true,
+  });
+  await assertInfoBox("addressbar-firefox-suggest-info-data");
 
   
   await BrowserTestUtils.synthesizeMouseAtCenter(
-    "#" + MAIN_CHECKBOX_ID,
+    "#" + DATA_COLLECTION_CHECKBOX_ID,
     {},
     gBrowser.selectedBrowser
   );
-  assertCheckboxes({
-    [MAIN_CHECKBOX_ID]: { enabled: true, checked: true },
-    [SPONSORED_CHECKBOX_ID]: { enabled: true, checked: false },
-  });
   Assert.ok(
-    Services.prefs.getBoolPref("browser.urlbar.suggest.quicksuggest"),
-    "The main pref is true after checkbox click 4"
+    !Services.prefs.getBoolPref("browser.urlbar.suggest.quicksuggest"),
+    "suggest.quicksuggest remains false after clicking sponsored toggle"
   );
   Assert.ok(
     !Services.prefs.getBoolPref(
       "browser.urlbar.suggest.quicksuggest.sponsored"
     ),
-    "The sponsored pref remains false after main checkbox click 4"
+    "suggest.quicksuggest.sponsored remains false after clicking data collection toggle"
   );
+  Assert.ok(
+    !Services.prefs.getBoolPref(
+      "browser.urlbar.quicksuggest.dataCollection.enabled"
+    ),
+    "quicksuggest.dataCollection.enabled is false after clicking data collection toggle"
+  );
+  assertCheckboxes({
+    [NONSPONSORED_CHECKBOX_ID]: false,
+    [SPONSORED_CHECKBOX_ID]: false,
+    [DATA_COLLECTION_CHECKBOX_ID]: false,
+  });
+  await assertInfoBox(null);
 
   gBrowser.removeCurrentTab();
   await SpecialPowers.popPrefEnv();
@@ -582,98 +440,116 @@ add_task(async function clickCheckboxes() {
 
 
 add_task(async function clickLearnMore() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.quicksuggest.enabled", true]],
-  });
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
 
   let doc = gBrowser.selectedBrowser.contentDocument;
   let addressBarSection = doc.getElementById("locationBarGroup");
   addressBarSection.scrollIntoView();
 
-  let learnMore = doc.getElementById("firefoxSuggestSuggestionLearnMore");
-  Assert.ok(
-    BrowserTestUtils.is_visible(learnMore),
-    "The sponsored checkbox is visible"
-  );
-
-  let tabPromise = BrowserTestUtils.waitForNewTab(
-    gBrowser,
-    UrlbarProviderQuickSuggest.helpUrl
-  );
-  await BrowserTestUtils.synthesizeMouseAtCenter(
-    "#" + learnMore.id,
-    {},
-    gBrowser.selectedBrowser
-  );
-  info("Waiting for help page to load in a new tab");
-  await tabPromise;
-  gBrowser.removeCurrentTab();
-
-  gBrowser.removeCurrentTab();
-  await SpecialPowers.popPrefEnv();
-});
-
-
-add_task(async function mainCheckboxDescription_online() {
+  
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.quicksuggest.scenario", "online"]],
+    set: [
+      ["browser.urlbar.suggest.quicksuggest", true],
+      ["browser.urlbar.suggest.quicksuggest.sponsored", true],
+      ["browser.urlbar.quicksuggest.dataCollection.enabled", true],
+    ],
   });
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+  await assertInfoBox("addressbar-firefox-suggest-info-all");
 
-  let doc = gBrowser.selectedBrowser.contentDocument;
-  Assert.ok(
-    BrowserTestUtils.is_visible(
-      doc.getElementById("firefoxSuggestSuggestionDescription")
-    ),
-    "The main checkbox description is visible"
+  let learnMoreLinks = doc.querySelectorAll("." + LEARN_MORE_CLASS);
+  Assert.equal(
+    learnMoreLinks.length,
+    2,
+    "Expected number of learn-more links are present"
   );
+  for (let link of learnMoreLinks) {
+    Assert.ok(
+      BrowserTestUtils.is_visible(link),
+      "Learn-more link is visible: " + link.id
+    );
+  }
+
+  let prefsTab = gBrowser.selectedTab;
+  for (let link of learnMoreLinks) {
+    let tabPromise = BrowserTestUtils.waitForNewTab(
+      gBrowser,
+      UrlbarProviderQuickSuggest.helpUrl
+    );
+    info("Clicking learn-more link: " + link.id);
+    Assert.ok(link.id, "Sanity check: Learn-more link has an ID");
+    await BrowserTestUtils.synthesizeMouseAtCenter(
+      "#" + link.id,
+      {},
+      gBrowser.selectedBrowser
+    );
+    info("Waiting for help page to load in a new tab");
+    await tabPromise;
+    gBrowser.removeCurrentTab();
+    gBrowser.selectedTab = prefsTab;
+  }
 
   gBrowser.removeCurrentTab();
   await SpecialPowers.popPrefEnv();
 });
 
 
-add_task(async function mainCheckboxDescription_offline() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.quicksuggest.scenario", "offline"]],
-  });
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
-
-  let doc = gBrowser.selectedBrowser.contentDocument;
-  Assert.ok(
-    BrowserTestUtils.is_hidden(
-      doc.getElementById("firefoxSuggestSuggestionDescription")
-    ),
-    "The main checkbox description is hidden"
-  );
-
-  gBrowser.removeCurrentTab();
-  await SpecialPowers.popPrefEnv();
-});
 
 
 
 
 
 
-
-
-function assertCheckboxes(statesByElementID) {
+function assertCheckboxes(checkedByElementID) {
   let doc = gBrowser.selectedBrowser.contentDocument;
   let container = doc.getElementById(CONTAINER_ID);
   Assert.ok(BrowserTestUtils.is_visible(container), "The container is visible");
-  for (let [id, { enabled, checked }] of Object.entries(statesByElementID)) {
+  for (let [id, checked] of Object.entries(checkedByElementID)) {
     let checkbox = doc.getElementById(id);
-    Assert.equal(
-      checkbox.disabled,
-      !enabled,
-      "Checkbox enabled status for ID: " + id
-    );
     Assert.equal(
       checkbox.checked,
       checked,
-      "Checkbox checked status for ID: " + id
+      "Checkbox checked state for ID: " + id
+    );
+  }
+}
+
+
+
+
+
+
+
+
+async function assertInfoBox(expectedL10nID) {
+  info("Checking info box with expected l10n ID: " + expectedL10nID);
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  let infoBox = doc.getElementById(INFO_BOX_ID);
+  await TestUtils.waitForCondition(
+    () => BrowserTestUtils.is_visible(infoBox) == !!expectedL10nID,
+    "Waiting for expected info box visibility: " + !!expectedL10nID
+  );
+
+  let infoIcon = infoBox.querySelector(".info-icon");
+  Assert.equal(
+    BrowserTestUtils.is_visible(infoIcon),
+    !!expectedL10nID,
+    "The info icon is visible iff a description should be shown"
+  );
+
+  let learnMore = infoBox.querySelector("." + LEARN_MORE_CLASS);
+  Assert.ok(learnMore, "Found the info box learn more link");
+  Assert.equal(
+    BrowserTestUtils.is_visible(learnMore),
+    !!expectedL10nID,
+    "The info box learn more link is visible iff a description should be shown"
+  );
+
+  if (expectedL10nID) {
+    let infoText = doc.getElementById(INFO_TEXT_ID);
+    Assert.equal(
+      infoText.dataset.l10nId,
+      expectedL10nID,
+      "Info text has expected l10n ID"
     );
   }
 }

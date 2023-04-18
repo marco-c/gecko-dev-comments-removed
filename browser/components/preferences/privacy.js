@@ -158,6 +158,7 @@ Preferences.addAll([
   { id: "browser.urlbar.suggest.engines", type: "bool" },
   { id: "browser.urlbar.suggest.quicksuggest", type: "bool" },
   { id: "browser.urlbar.suggest.quicksuggest.sponsored", type: "bool" },
+  { id: "browser.urlbar.quicksuggest.dataCollection.enabled", type: "bool" },
 
   
   { id: "places.history.enabled", type: "bool" },
@@ -1992,7 +1993,7 @@ var gPrivacyPane = {
     
     this._urlbarPrefObserver = {
       onPrefChanged: pref => {
-        if (["quicksuggest.enabled", "quicksuggest.scenario"].includes(pref)) {
+        if (pref == "quicksuggest.enabled") {
           this._updateFirefoxSuggestSection();
         }
       },
@@ -2006,29 +2007,22 @@ var gPrivacyPane = {
 
     
     
-    
-    
-    
-    
-    Preferences.get("browser.urlbar.suggest.quicksuggest").on("change", () =>
-      
-      
-      this._updateFirefoxSuggestSponsoredCheckbox()
-    );
-    setEventListener("firefoxSuggestSponsoredSuggestion", "command", () => {
-      
-      
-      Preferences.get(
-        "browser.urlbar.suggest.quicksuggest.sponsored"
-      ).value = document.getElementById(
-        "firefoxSuggestSponsoredSuggestion"
-      ).checked;
-    });
+    let infoBoxPrefs = [
+      "browser.urlbar.suggest.quicksuggest",
+      "browser.urlbar.suggest.quicksuggest.sponsored",
+      "browser.urlbar.quicksuggest.dataCollection.enabled",
+    ];
+    for (let pref of infoBoxPrefs) {
+      Preferences.get(pref).on("change", () =>
+        this._updateFirefoxSuggestInfoBox()
+      );
+    }
 
     
-    document
-      .getElementById("firefoxSuggestSuggestionLearnMore")
-      .setAttribute("href", UrlbarProviderQuickSuggest.helpUrl);
+    let links = document.querySelectorAll(".firefoxSuggestLearnMore");
+    for (let link of links) {
+      link.setAttribute("href", UrlbarProviderQuickSuggest.helpUrl);
+    }
 
     this._updateFirefoxSuggestSection(true);
   },
@@ -2051,15 +2045,15 @@ var gPrivacyPane = {
       };
       for (let [elementId, l10nId] of Object.entries(l10nIdByElementId)) {
         let element = document.getElementById(elementId);
-        element.dataset.l10nIdOriginal = element.dataset.l10nId;
+        element.dataset.l10nIdOriginal ??= element.dataset.l10nId;
         element.dataset.l10nId = l10nId;
       }
       
+      document
+        .getElementById("openSearchEnginePreferences")
+        .classList.add("extraMargin");
       
-      document.getElementById("firefoxSuggestSuggestionDescription").hidden =
-        UrlbarPrefs.get("quicksuggest.scenario") != "online";
-      
-      this._updateFirefoxSuggestSponsoredCheckbox();
+      this._updateFirefoxSuggestInfoBox();
       container.removeAttribute("hidden");
     } else if (!onInit) {
       
@@ -2073,6 +2067,9 @@ var gPrivacyPane = {
         delete element.dataset.l10nIdOriginal;
         document.l10n.translateElements([element]);
       }
+      document
+        .getElementById("openSearchEnginePreferences")
+        .classList.remove("extraMargin");
     }
   },
 
@@ -2080,16 +2077,52 @@ var gPrivacyPane = {
 
 
 
-  _updateFirefoxSuggestSponsoredCheckbox() {
-    let sponsoredCheckbox = document.getElementById(
-      "firefoxSuggestSponsoredSuggestion"
-    );
-    sponsoredCheckbox.disabled = !Preferences.get(
-      "browser.urlbar.suggest.quicksuggest"
+  _updateFirefoxSuggestInfoBox() {
+    let nonsponsored = Preferences.get("browser.urlbar.suggest.quicksuggest")
+      .value;
+    let sponsored = Preferences.get(
+      "browser.urlbar.suggest.quicksuggest.sponsored"
     ).value;
-    sponsoredCheckbox.checked =
-      !sponsoredCheckbox.disabled &&
-      Preferences.get("browser.urlbar.suggest.quicksuggest.sponsored").value;
+    let dataCollection = Preferences.get(
+      "browser.urlbar.quicksuggest.dataCollection.enabled"
+    ).value;
+
+    
+    
+    let l10nId;
+    if (nonsponsored && sponsored && dataCollection) {
+      l10nId = "addressbar-firefox-suggest-info-all";
+    } else if (nonsponsored && sponsored && !dataCollection) {
+      l10nId = "addressbar-firefox-suggest-info-nonsponsored-sponsored";
+    } else if (nonsponsored && !sponsored && dataCollection) {
+      l10nId = "addressbar-firefox-suggest-info-nonsponsored-data";
+    } else if (nonsponsored && !sponsored && !dataCollection) {
+      l10nId = "addressbar-firefox-suggest-info-nonsponsored";
+    } else if (!nonsponsored && sponsored && dataCollection) {
+      l10nId = "addressbar-firefox-suggest-info-sponsored-data";
+    } else if (!nonsponsored && sponsored && !dataCollection) {
+      l10nId = "addressbar-firefox-suggest-info-sponsored";
+    } else if (!nonsponsored && !sponsored && dataCollection) {
+      l10nId = "addressbar-firefox-suggest-info-data";
+    }
+
+    let instance = (this._firefoxSuggestInfoBoxInstance = {});
+    let infoBox = document.getElementById("firefoxSuggestInfoBox");
+    if (!l10nId) {
+      infoBox.hidden = true;
+    } else {
+      let infoText = document.getElementById("firefoxSuggestInfoText");
+      infoText.dataset.l10nId = l10nId;
+
+      
+      
+      
+      document.l10n.translateElements([infoText]).then(() => {
+        if (instance == this._firefoxSuggestInfoBoxInstance) {
+          infoBox.hidden = false;
+        }
+      });
+    }
   },
 
   
