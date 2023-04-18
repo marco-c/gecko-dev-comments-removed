@@ -4,7 +4,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["WebSocketHandshake"];
+var EXPORTED_SYMBOLS = ["allowNullOrigin", "WebSocketHandshake"];
 
 
 
@@ -15,7 +15,10 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  Services: "resource://gre/modules/Services.jsm",
+
   executeSoon: "chrome://remote/content/shared/Sync.jsm",
+  RemoteAgent: "chrome://remote/content/components/RemoteAgent.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(this, "CryptoHash", () => {
@@ -28,6 +31,16 @@ XPCOMUtils.defineLazyGetter(this, "threadManager", () => {
 
 
 
+
+
+const LOOPBACKS = ["localhost", "127.0.0.1", "[::1]"];
+
+
+
+let nullOriginAllowed = false;
+function allowNullOrigin(allowed) {
+  nullOriginAllowed = allowed;
+}
 
 
 
@@ -78,7 +91,56 @@ function writeHttpResponse(output, headers, body = "") {
 
 
 
+
+
+
+function isIPAddress(uri) {
+  try {
+    
+    Services.eTLD.getBaseDomain(uri);
+  } catch (e) {
+    return e.result == Cr.NS_ERROR_HOST_IS_IP_ADDRESS;
+  }
+  return false;
+}
+
+
+
+
+
 function processRequest({ requestLine, headers }) {
+  const origin = headers.get("origin");
+
+  
+  const isTestOrigin = origin === "null" && nullOriginAllowed;
+  if (headers.has("origin") && !isTestOrigin) {
+    throw new Error(
+      `The handshake request has incorrect Host header ${origin}`
+    );
+  }
+
+  const hostHeader = headers.get("host");
+
+  let hostUri, host, port;
+  try {
+    
+    hostUri = Services.io.newURI(`https://${hostHeader}`);
+    ({ host, port } = hostUri);
+  } catch (e) {
+    throw new Error(
+      `The handshake request Host header must be a well-formed host: ${hostHeader}`
+    );
+  }
+
+  const isHostnameValid = LOOPBACKS.includes(host) || isIPAddress(hostUri);
+  
+  const isPortValid = port === -1 || port == RemoteAgent.port;
+  if (!isHostnameValid || !isPortValid) {
+    throw new Error(
+      `The handshake request has incorrect Host header ${hostHeader}`
+    );
+  }
+
   const method = requestLine.split(" ")[0];
   if (method !== "GET") {
     throw new Error("The handshake request must use GET method");

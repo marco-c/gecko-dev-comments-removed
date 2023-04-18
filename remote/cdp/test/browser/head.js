@@ -12,6 +12,15 @@ const { RemoteAgentError } = ChromeUtils.import(
   "chrome://remote/content/cdp/Error.jsm"
 );
 
+const { allowNullOrigin } = ChromeUtils.import(
+  "chrome://remote/content/server/WebSocketHandshake.jsm"
+);
+
+
+
+allowNullOrigin(true);
+registerCleanupFunction(() => allowNullOrigin(false));
+
 const TIMEOUT_MULTIPLIER = SpecialPowers.isDebugBuild ? 4 : 1;
 const TIMEOUT_EVENTS = 1000 * TIMEOUT_MULTIPLIER;
 
