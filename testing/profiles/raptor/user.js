@@ -45,6 +45,11 @@ user_pref('datareporting.healthreport.uploadEnabled', false);
 user_pref('toolkit.telemetry.initDelay', 99999999);
 
 
+
+
+user_pref("fission.autostart", false);
+
+
 user_pref('media.autoplay.default', 5);
 user_pref('media.autoplay.ask-permission', true);
 user_pref('media.autoplay.blocking_policy', 1);

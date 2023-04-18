@@ -8,3 +8,8 @@
 
 
 user_pref("browser.tabs.remote.autostart", true);
+
+
+
+
+user_pref("fission.autostart", false);
