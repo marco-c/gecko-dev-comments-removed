@@ -853,6 +853,45 @@ void MacroAssemblerX86Shared::minMaxFloat32x4(bool isMin, FloatRegister lhs,
   
 }
 
+void MacroAssemblerX86Shared::minMaxFloat32x4AVX(bool isMin, FloatRegister lhs,
+                                                 FloatRegister rhs,
+                                                 FloatRegister temp1,
+                                                 FloatRegister temp2,
+                                                 FloatRegister output) {
+  ScratchSimd128Scope scratch(asMasm());
+  Label l;
+  SimdConstant quietBits(SimdConstant::SplatX4(int32_t(0x00400000)));
+
+   
+  FloatRegister lhsCopy = moveSimd128FloatIfEqual(lhs, scratch, output);
+  
+  
+  FloatRegister rhsCopy = moveSimd128FloatIfEqual(rhs, scratch, output);
+  if (isMin) {
+    vminps(Operand(rhs), lhs, temp2);             
+    vminps(Operand(lhs), rhs, temp1);             
+  } else {
+    vmaxps(Operand(rhs), lhs, temp2);             
+    vmaxps(Operand(lhs), rhs, temp1);             
+  }
+  vorps(temp1, temp2, output);                    
+  vcmpunordps(Operand(rhsCopy), lhsCopy, temp1);  
+  vptest(temp1, temp1);                           
+  j(Assembler::Equal, &l);                        
+
+  
+  
+  
+  
+  vcmpunordps(Operand(lhsCopy), lhsCopy, temp2);  
+  vblendvps(temp2, lhsCopy, rhsCopy, temp2);      
+  asMasm().vporSimd128(quietBits, temp2, temp2);  
+  vblendvps(temp1, temp2, output, output);        
+
+  bind(&l);
+  
+}
+
 
 void MacroAssemblerX86Shared::minMaxFloat64x2(bool isMin, FloatRegister lhs,
                                               Operand rhs, FloatRegister temp1,
@@ -906,32 +945,87 @@ void MacroAssemblerX86Shared::minMaxFloat64x2(bool isMin, FloatRegister lhs,
   
 }
 
-void MacroAssemblerX86Shared::minFloat32x4(FloatRegister lhs, Operand rhs,
-                                           FloatRegister temp1,
-                                           FloatRegister temp2,
-                                           FloatRegister output) {
-  minMaxFloat32x4(true, lhs, rhs, temp1, temp2, output);
+void MacroAssemblerX86Shared::minMaxFloat64x2AVX(bool isMin, FloatRegister lhs,
+                                                 FloatRegister rhs,
+                                                 FloatRegister temp1,
+                                                 FloatRegister temp2,
+                                                 FloatRegister output) {
+  ScratchSimd128Scope scratch(asMasm());
+  Label l;
+  SimdConstant quietBits(SimdConstant::SplatX2(int64_t(0x0008000000000000ull)));
+
+   
+  FloatRegister lhsCopy = moveSimd128FloatIfEqual(lhs, scratch, output);
+  
+  
+  FloatRegister rhsCopy = moveSimd128FloatIfEqual(rhs, scratch, output);
+  if (isMin) {
+    vminpd(Operand(rhs), lhs, temp2);             
+    vminpd(Operand(lhs), rhs, temp1);             
+  } else {
+    vmaxpd(Operand(rhs), lhs, temp2);             
+    vmaxpd(Operand(lhs), rhs, temp1);             
+  }
+  vorpd(temp1, temp2, output);                    
+  vcmpunordpd(Operand(rhsCopy), lhsCopy, temp1);  
+  vptest(temp1, temp1);                           
+  j(Assembler::Equal, &l);                        
+
+  
+  
+  
+  
+  vcmpunordpd(Operand(lhsCopy), lhsCopy, temp2);  
+  vblendvpd(temp2, lhsCopy, rhsCopy, temp2);      
+  asMasm().vporSimd128(quietBits, temp2, temp2);  
+  vblendvpd(temp1, temp2, output, output);        
+
+  bind(&l);
+  
 }
 
-void MacroAssemblerX86Shared::maxFloat32x4(FloatRegister lhs, Operand rhs,
+void MacroAssemblerX86Shared::minFloat32x4(FloatRegister lhs, FloatRegister rhs,
                                            FloatRegister temp1,
                                            FloatRegister temp2,
                                            FloatRegister output) {
-  minMaxFloat32x4(false, lhs, rhs, temp1, temp2, output);
+  if (HasAVX()) {
+    minMaxFloat32x4AVX(true, lhs, rhs, temp1, temp2, output);
+    return;
+  }
+  minMaxFloat32x4(true, lhs, Operand(rhs), temp1, temp2, output);
 }
 
-void MacroAssemblerX86Shared::minFloat64x2(FloatRegister lhs, Operand rhs,
+void MacroAssemblerX86Shared::maxFloat32x4(FloatRegister lhs, FloatRegister rhs,
                                            FloatRegister temp1,
                                            FloatRegister temp2,
                                            FloatRegister output) {
-  minMaxFloat64x2(true, lhs, rhs, temp1, temp2, output);
+  if (HasAVX()) {
+    minMaxFloat32x4AVX(false, lhs, rhs, temp1, temp2, output);
+    return;
+  }
+  minMaxFloat32x4(false, lhs, Operand(rhs), temp1, temp2, output);
 }
 
-void MacroAssemblerX86Shared::maxFloat64x2(FloatRegister lhs, Operand rhs,
+void MacroAssemblerX86Shared::minFloat64x2(FloatRegister lhs, FloatRegister rhs,
                                            FloatRegister temp1,
                                            FloatRegister temp2,
                                            FloatRegister output) {
-  minMaxFloat64x2(false, lhs, rhs, temp1, temp2, output);
+  if (HasAVX()) {
+    minMaxFloat64x2AVX(true, lhs, rhs, temp1, temp2, output);
+    return;
+  }
+  minMaxFloat64x2(true, lhs, Operand(rhs), temp1, temp2, output);
+}
+
+void MacroAssemblerX86Shared::maxFloat64x2(FloatRegister lhs, FloatRegister rhs,
+                                           FloatRegister temp1,
+                                           FloatRegister temp2,
+                                           FloatRegister output) {
+  if (HasAVX()) {
+    minMaxFloat64x2AVX(false, lhs, rhs, temp1, temp2, output);
+    return;
+  }
+  minMaxFloat64x2(false, lhs, Operand(rhs), temp1, temp2, output);
 }
 
 void MacroAssemblerX86Shared::packedShiftByScalarInt8x16(
