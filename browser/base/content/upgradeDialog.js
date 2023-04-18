@@ -298,7 +298,10 @@ function onLoad(ready) {
     logo.classList.remove("hidden");
     colorways.remove();
     checkbox.remove();
+  }
 
+  
+  function handleCheckbox() {
     
     
     if (checkbox.firstElementChild.checked) {
@@ -346,6 +349,7 @@ function onLoad(ready) {
         
         case "upgrade-dialog-colorway-primary-button":
           gPrevTheme = null;
+          handleCheckbox();
           removeColorways();
           break;
 
