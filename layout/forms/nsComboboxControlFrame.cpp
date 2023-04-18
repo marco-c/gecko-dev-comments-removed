@@ -358,13 +358,7 @@ nscoord nsComboboxControlFrame::GetIntrinsicISize(gfxContext* aRenderingContext,
   }
 
   
-  
   displayISize += DropDownButtonISize();
-  nsPresContext* pc = PresContext();
-  if (!pc->UseOverlayScrollbars()) {
-    displayISize += nsIScrollableFrame::GetNondisappearingScrollbarWidth(
-        pc, GetWritingMode());
-  }
 
   return displayISize;
 }
