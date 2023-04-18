@@ -202,6 +202,28 @@ class Accessible {
   virtual nsAtom* TagName() const = 0;
 
   
+  
+
+  
+
+
+  virtual uint8_t ActionCount() const = 0;
+
+  
+
+
+  virtual void ActionNameAt(uint8_t aIndex, nsAString& aName) = 0;
+
+  
+
+
+  void ActionDescriptionAt(uint8_t aIndex, nsAString& aDescription) {
+    nsAutoString name;
+    ActionNameAt(aIndex, name);
+    TranslateString(name, aDescription);
+  }
+
+  
 
   bool IsDoc() const { return HasGenericType(eDocument); }
 
