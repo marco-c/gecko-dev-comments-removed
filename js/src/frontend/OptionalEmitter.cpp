@@ -23,6 +23,7 @@ bool OptionalEmitter::emitJumpShortCircuit() {
 
   if (!bce_->emit1(JSOp::IsNullOrUndefined)) {
     
+    return false;
   }
   if (!bce_->emitJump(JSOp::JumpIfTrue, &jumpShortCircuit_)) {
     
