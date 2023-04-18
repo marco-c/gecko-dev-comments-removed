@@ -328,7 +328,7 @@ FlattenedConstraints::FlattenedConstraints(const NormalizedConstraints& aOther)
 
 bool MediaConstraintsHelper::SomeSettingsFit(
     const NormalizedConstraints& aConstraints,
-    const nsTArray<RefPtr<MediaDevice>>& aDevices) {
+    const nsTArray<RefPtr<LocalMediaDevice>>& aDevices) {
   nsTArray<const NormalizedConstraintSet*> sets;
   sets.AppendElement(&aConstraints);
 
@@ -361,7 +361,7 @@ uint32_t MediaConstraintsHelper::FitnessDistance(
 
  const char* MediaConstraintsHelper::SelectSettings(
     const NormalizedConstraints& aConstraints,
-    nsTArray<RefPtr<MediaDevice>>& aDevices, CallerType aCallerType) {
+    nsTArray<RefPtr<LocalMediaDevice>>& aDevices, CallerType aCallerType) {
   auto& c = aConstraints;
   LogConstraints(c);
 
@@ -370,11 +370,11 @@ uint32_t MediaConstraintsHelper::FitnessDistance(
   
   
   
-  nsTArray<RefPtr<MediaDevice>> unsatisfactory;
+  nsTArray<RefPtr<LocalMediaDevice>> unsatisfactory;
   nsTArray<const NormalizedConstraintSet*> aggregateConstraints;
   aggregateConstraints.AppendElement(&c);
 
-  std::multimap<uint32_t, RefPtr<MediaDevice>> ordered;
+  std::multimap<uint32_t, RefPtr<LocalMediaDevice>> ordered;
 
   for (uint32_t i = 0; i < aDevices.Length();) {
     uint32_t distance =
@@ -401,7 +401,7 @@ uint32_t MediaConstraintsHelper::FitnessDistance(
 
   for (const auto& advanced : c.mAdvanced) {
     aggregateConstraints.AppendElement(&advanced);
-    nsTArray<RefPtr<MediaDevice>> rejects;
+    nsTArray<RefPtr<LocalMediaDevice>> rejects;
     for (uint32_t j = 0; j < aDevices.Length();) {
       uint32_t distance = aDevices[j]->GetBestFitnessDistance(
           aggregateConstraints, aCallerType);
@@ -422,7 +422,7 @@ uint32_t MediaConstraintsHelper::FitnessDistance(
 
  const char* MediaConstraintsHelper::FindBadConstraint(
     const NormalizedConstraints& aConstraints,
-    const nsTArray<RefPtr<MediaDevice>>& aDevices) {
+    const nsTArray<RefPtr<LocalMediaDevice>>& aDevices) {
   
   
   
@@ -485,9 +485,10 @@ uint32_t MediaConstraintsHelper::FitnessDistance(
   NormalizedConstraints empty((dom::MediaTrackConstraints()));
   c.mDeviceId = empty.mDeviceId;
   c.mGroupId = empty.mGroupId;
-  AutoTArray<RefPtr<MediaDevice>, 1> devices;
-  devices.AppendElement(MakeRefPtr<MediaDevice>(
-      aMediaEngineSource, aMediaEngineSource->GetName(), u""_ns, u""_ns));
+  RefPtr device = new MediaDevice(
+      aMediaEngineSource, aMediaEngineSource->GetName(), u""_ns, u""_ns);
+  AutoTArray<RefPtr<LocalMediaDevice>, 1> devices;
+  devices.EmplaceBack(new LocalMediaDevice(device, u""_ns, u""_ns, u""_ns));
   return FindBadConstraint(c, devices);
 }
 
