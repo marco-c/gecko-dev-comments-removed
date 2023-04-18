@@ -12,12 +12,8 @@ pub use dispatcher::{dispatch_background_task, dispatch_local, dispatch_onto, Ru
 mod event_loop;
 mod executor;
 pub use executor::{
-    spawn, spawn_blocking, spawn_local, spawn_onto, spawn_onto_blocking, TaskBuilder,
+    spawn, spawn_blocking, spawn_local, spawn_onto, spawn_onto_blocking, AsyncTask, TaskBuilder,
 };
-
-
-
-pub use async_task::Task as AsyncTask;
 
 
 
