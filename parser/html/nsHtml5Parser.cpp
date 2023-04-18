@@ -658,7 +658,7 @@ nsresult nsHtml5Parser::StartExecutor() {
 
 
 
-  return executor->WillBuildModel(eDTDMode_unknown);
+  return executor->WillBuildModel();
 }
 
 nsresult nsHtml5Parser::Initialize(mozilla::dom::Document* aDoc, nsIURI* aURI,
