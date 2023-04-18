@@ -18,6 +18,8 @@ var { requireRawId } = ChromeUtils.import(
 
 const EXPORTED_SYMBOLS = [
   "DevToolsLoader",
+  "useDistinctSystemPrincipalLoader",
+  "releaseDistinctSystemPrincipalLoader",
   "require",
   "loader",
   
@@ -25,6 +27,37 @@ const EXPORTED_SYMBOLS = [
 ];
 
 var gNextLoaderID = 0;
+
+
+
+
+
+
+
+
+
+
+
+var systemLoader = null;
+var systemLoaderRequesters = new Set();
+function useDistinctSystemPrincipalLoader(requester) {
+  if (!systemLoader) {
+    systemLoader = new DevToolsLoader({
+      invisibleToDebugger: true,
+    });
+    systemLoaderRequesters.clear();
+  }
+  systemLoaderRequesters.add(requester);
+  return systemLoader;
+}
+
+function releaseDistinctSystemPrincipalLoader(requester) {
+  systemLoaderRequesters.delete(requester);
+  if (systemLoaderRequesters.size == 0) {
+    systemLoader.destroy();
+    systemLoader = null;
+  }
+}
 
 
 
