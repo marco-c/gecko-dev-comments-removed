@@ -26,6 +26,9 @@ class WindowsUIUtils final : public nsIWindowsUIUtils {
   static void UpdateInTabletMode();
   static bool GetInTabletMode();
 
+  
+  static bool ComputeOverlayScrollbars();
+
  protected:
   ~WindowsUIUtils();
 };
