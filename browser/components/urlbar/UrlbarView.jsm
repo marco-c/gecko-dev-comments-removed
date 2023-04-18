@@ -1153,6 +1153,12 @@ class UrlbarView {
     
     
     
+    if (
+      result.providerName == "UrlbarProviderQuickSuggest" &&
+      UrlbarPrefs.get("quickSuggestBlockingEnabled")
+    ) {
+      this._addRowButton(item, "block", "firefox-suggest-urlbar-block");
+    }
     if (result.payload.helpUrl) {
       this._addRowButton(item, "help", result.payload.helpL10nId);
     }
@@ -1285,7 +1291,7 @@ class UrlbarView {
     body.appendChild(bottom);
     item._elements.set("bottom", bottom);
 
-    if (UrlbarPrefs.get("bestMatch.blockingEnabled")) {
+    if (UrlbarPrefs.get("bestMatchBlockingEnabled")) {
       this._addRowButton(item, "block", "firefox-suggest-urlbar-block");
     }
     if (result.payload.helpUrl) {
@@ -1336,7 +1342,14 @@ class UrlbarView {
         result.type == UrlbarUtils.RESULT_TYPE.DYNAMIC &&
         oldResult.dynamicType != result.dynamicType) ||
       oldResult.isBestMatch != result.isBestMatch ||
-      !!result.payload.helpUrl != item._buttons.has("help");
+      !!result.payload.helpUrl != item._buttons.has("help") ||
+      (result.isBestMatch &&
+        UrlbarPrefs.get("bestMatchBlockingEnabled") !=
+          item._buttons.has("block")) ||
+      (!result.isBestMatch &&
+        result.providerName == "UrlbarProviderQuickSuggest" &&
+        UrlbarPrefs.get("quickSuggestBlockingEnabled") !=
+          item._buttons.has("block"));
 
     if (needsNewContent) {
       while (item.lastChild) {

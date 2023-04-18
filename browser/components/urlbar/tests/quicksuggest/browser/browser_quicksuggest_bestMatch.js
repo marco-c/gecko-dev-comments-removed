@@ -9,17 +9,13 @@
 
 
 
-"use strict";
 
-const { timestampTemplate } = UrlbarProviderQuickSuggest;
+"use strict";
 
 const SUGGESTIONS = [1, 2, 3].map(i => ({
   id: i,
   title: `Best match ${i}`,
-  
-  
-  
-  url: `http://example.com/bestmatch${i}?t=${timestampTemplate}`,
+  url: `http://example.com/bestmatch${i}`,
   keywords: [`bestmatch${i}`],
   click_url: "http://example.com/click",
   impression_url: "http://example.com/impression",
@@ -39,10 +35,7 @@ const NON_BEST_MATCH_SUGGESTION = {
 
 add_task(async function init() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.bestMatch.enabled", true],
-      ["browser.urlbar.bestMatch.blockingEnabled", true],
-    ],
+    set: [["browser.urlbar.bestMatch.enabled", true]],
   });
 
   await PlacesUtils.history.clear();
@@ -55,176 +48,6 @@ add_task(async function init() {
   await QuickSuggestTestUtils.ensureQuickSuggestInit(
     SUGGESTIONS.concat(NON_BEST_MATCH_SUGGESTION)
   );
-});
-
-
-add_task(async function basicBlock_keyboard() {
-  await doBasicBlockTest(() => {
-    
-    
-    EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: 2 });
-    EventUtils.synthesizeKey("KEY_Enter");
-  });
-});
-
-
-add_task(async function basicBlock_mouse() {
-  await doBasicBlockTest(blockButton => {
-    EventUtils.synthesizeMouseAtCenter(blockButton, {});
-  });
-});
-
-
-add_task(async function basicBlock_keyShortcut() {
-  await doBasicBlockTest(() => {
-    
-    EventUtils.synthesizeKey("KEY_ArrowDown");
-    EventUtils.synthesizeKey("KEY_Delete", { shiftKey: true });
-  });
-});
-
-async function doBasicBlockTest(doBlock) {
-  
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: SUGGESTIONS[0].keywords[0],
-  });
-  Assert.equal(
-    UrlbarTestUtils.getResultCount(window),
-    2,
-    "Two rows are present after searching (heuristic + best match)"
-  );
-
-  let details = await QuickSuggestTestUtils.assertIsQuickSuggest({
-    window,
-    originalUrl: SUGGESTIONS[0].url,
-    isBestMatch: true,
-  });
-
-  
-  let blockButton = details.element.row._buttons.get("block");
-  doBlock(blockButton);
-
-  
-  Assert.ok(
-    UrlbarTestUtils.isPopupOpen(window),
-    "View remains open after blocking result"
-  );
-  Assert.equal(
-    UrlbarTestUtils.getResultCount(window),
-    1,
-    "Only one row after blocking best match"
-  );
-  await QuickSuggestTestUtils.assertNoQuickSuggestResults(window);
-
-  
-  Assert.ok(
-    await UrlbarProviderQuickSuggest.isSuggestionBlocked(SUGGESTIONS[0].url),
-    "Suggestion is blocked"
-  );
-
-  await UrlbarTestUtils.promisePopupClose(window);
-  await UrlbarProviderQuickSuggest.clearBlockedSuggestions();
-}
-
-
-add_task(async function blockMultiple() {
-  for (let i = 0; i < SUGGESTIONS.length; i++) {
-    
-    let { keywords, url } = SUGGESTIONS[i];
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      window,
-      value: keywords[0],
-    });
-    await QuickSuggestTestUtils.assertIsQuickSuggest({
-      window,
-      originalUrl: url,
-      isBestMatch: true,
-    });
-
-    
-    EventUtils.synthesizeKey("KEY_ArrowDown", { repeat: 2 });
-    EventUtils.synthesizeKey("KEY_Enter");
-    Assert.ok(
-      await UrlbarProviderQuickSuggest.isSuggestionBlocked(url),
-      "Suggestion is blocked after picking block button"
-    );
-
-    
-    
-    for (let j = 0; j < SUGGESTIONS.length; j++) {
-      Assert.equal(
-        await UrlbarProviderQuickSuggest.isSuggestionBlocked(
-          SUGGESTIONS[j].url
-        ),
-        j <= i,
-        `Suggestion at index ${j} is blocked or not as expected`
-      );
-    }
-  }
-
-  await UrlbarTestUtils.promisePopupClose(window);
-  await UrlbarProviderQuickSuggest.clearBlockedSuggestions();
-});
-
-
-add_task(async function blockingDisabled() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.bestMatch.blockingEnabled", false]],
-  });
-
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: SUGGESTIONS[0].keywords[0],
-  });
-
-  let expectedResultCount = 2;
-  Assert.equal(
-    UrlbarTestUtils.getResultCount(window),
-    expectedResultCount,
-    "Two rows are present after searching (heuristic + best match)"
-  );
-
-  
-  
-  
-  let details = await QuickSuggestTestUtils.assertIsQuickSuggest({
-    window,
-    originalUrl: SUGGESTIONS[0].url,
-    isBestMatch: true,
-  });
-  Assert.ok(
-    !details.element.row._buttons.get("block"),
-    "Block button is not present"
-  );
-
-  
-  
-  EventUtils.synthesizeKey("KEY_ArrowDown");
-  EventUtils.synthesizeKey("KEY_Delete", { shiftKey: true });
-
-  
-  Assert.ok(
-    UrlbarTestUtils.isPopupOpen(window),
-    "View remains open after key shortcut"
-  );
-  Assert.equal(
-    UrlbarTestUtils.getResultCount(window),
-    expectedResultCount,
-    "Same number of results after key shortcut"
-  );
-  await QuickSuggestTestUtils.assertIsQuickSuggest({
-    window,
-    originalUrl: SUGGESTIONS[0].url,
-    isBestMatch: true,
-  });
-  Assert.ok(
-    !(await UrlbarProviderQuickSuggest.isSuggestionBlocked(SUGGESTIONS[0].url)),
-    "Suggestion is not blocked"
-  );
-
-  await UrlbarTestUtils.promisePopupClose(window);
-  await SpecialPowers.popPrefEnv();
 });
 
 

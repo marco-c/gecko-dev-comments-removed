@@ -438,6 +438,10 @@ pref("browser.urlbar.quicksuggest.impressionCaps.nonSponsoredEnabled", false);
 pref("browser.urlbar.quicksuggest.impressionCaps.sponsoredEnabled", false);
 
 
+
+pref("browser.urlbar.quicksuggest.blockingEnabled", false);
+
+
 #ifdef NIGHTLY_BUILD
 pref("browser.urlbar.unitConversion.enabled", true);
 #else
@@ -523,6 +527,7 @@ pref("browser.urlbar.merino.clientVariants", "");
 
 
 pref("browser.urlbar.bestMatch.enabled", false);
+
 
 
 pref("browser.urlbar.bestMatch.blockingEnabled", false);

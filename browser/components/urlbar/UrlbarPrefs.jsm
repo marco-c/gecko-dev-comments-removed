@@ -56,6 +56,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["autoFill.stddevMultiplier", [0.0, "float"]],
 
   
+  
   ["bestMatch.blockingEnabled", false],
 
   
@@ -222,7 +223,11 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["suggest.topsites", true],
 
   
-  ["quickSuggest.blockedDigests", ""],
+  ["quicksuggest.blockedDigests", ""],
+
+  
+  
+  ["quicksuggest.blockingEnabled", false],
 
   
   
