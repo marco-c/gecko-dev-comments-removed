@@ -426,17 +426,8 @@ const observer = {
       }
 
       case "focus": {
-        if (
-          field.hasBeenTypePassword &&
-          docState.generatedPasswordFields.has(field)
-        ) {
-          
-          docState._togglePasswordFieldMasking(field, true);
-          break;
-        }
-
         
-        loginManagerChild._onUsernameFocus(aEvent);
+        docState.onFocus(field, aEvent.target);
         break;
       }
 
@@ -621,7 +612,7 @@ class LoginFormState {
 
 
 
-  _isLoginAlreadyFilled(aUsernameField) {
+  #isLoginAlreadyFilled(aUsernameField) {
     let formLikeRoot = lazy.FormLikeFactory.findRootForField(aUsernameField);
     
     let existingLoginForm = lazy.LoginFormFactory.getForRootElement(
@@ -629,12 +620,12 @@ class LoginFormState {
     );
     if (!existingLoginForm) {
       throw new Error(
-        "_isLoginAlreadyFilled called with a username field with " +
+        "#isLoginAlreadyFilled called with a username field with " +
           "no rootElement LoginForm"
       );
     }
 
-    lazy.log("_isLoginAlreadyFilled: existingLoginForm", existingLoginForm);
+    lazy.log("#isLoginAlreadyFilled: existingLoginForm", existingLoginForm);
     let { login: filledLogin } =
       this.fillsByRootElement.get(formLikeRoot) || {};
     if (!filledLogin) {
@@ -756,6 +747,59 @@ class LoginFormState {
 
     
     this._togglePasswordFieldMasking(passwordField, false);
+  }
+
+  onFocus(field, focusedField) {
+    if (field.hasBeenTypePassword && this.generatedPasswordFields.has(field)) {
+      
+      this._togglePasswordFieldMasking(field, true);
+      return;
+    }
+
+    
+    this.#onUsernameFocus(focusedField);
+  }
+
+  
+
+
+
+  #onUsernameFocus(focusedField) {
+    if (
+      !focusedField.mozIsTextField(true) ||
+      focusedField.hasBeenTypePassword ||
+      focusedField.readOnly
+    ) {
+      return;
+    }
+
+    if (this.#isLoginAlreadyFilled(focusedField)) {
+      lazy.log("#onUsernameFocus: Already filled");
+      return;
+    }
+
+    
+
+
+
+
+
+
+
+
+
+    let timeDiff = Date.now() - gLastRightClickTimeStamp;
+    if (timeDiff < AUTOCOMPLETE_AFTER_RIGHT_CLICK_THRESHOLD_MS) {
+      lazy.log(
+        "Not opening autocomplete after focus since a context menu was opened within",
+        timeDiff,
+        "ms"
+      );
+      return;
+    }
+
+    lazy.log("maybeOpenAutocompleteAfterFocus: Opening the autocomplete popup");
+    lazy.gFormFillService.showPopup();
   }
 }
 
@@ -1529,50 +1573,6 @@ class LoginManagerChild extends JSWindowActorChild {
     lazy.LoginRecipesContent.cacheRecipes(formOrigin, doc.defaultView, recipes);
 
     this._fillForm(form, loginsFound, recipes, { autofillForm, importable });
-  }
-
-  
-
-
-
-  _onUsernameFocus(event) {
-    let focusedField = event.target;
-    if (
-      !focusedField.mozIsTextField(true) ||
-      focusedField.hasBeenTypePassword ||
-      focusedField.readOnly
-    ) {
-      return;
-    }
-
-    const docState = this.stateForDocument(focusedField.ownerDocument);
-    if (docState._isLoginAlreadyFilled(focusedField)) {
-      lazy.log("_onUsernameFocus: Already filled");
-      return;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-    let timeDiff = Date.now() - gLastRightClickTimeStamp;
-    if (timeDiff < AUTOCOMPLETE_AFTER_RIGHT_CLICK_THRESHOLD_MS) {
-      lazy.log(
-        "Not opening autocomplete after focus since a context menu was opened within",
-        timeDiff,
-        "ms"
-      );
-      return;
-    }
-
-    lazy.log("maybeOpenAutocompleteAfterFocus: Opening the autocomplete popup");
-    lazy.gFormFillService.showPopup();
   }
 
   
