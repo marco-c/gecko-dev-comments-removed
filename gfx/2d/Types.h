@@ -41,6 +41,7 @@ enum class SurfaceType : int8_t {
   DATA_SHARED_WRAPPER,    
   BLOB_IMAGE,             
   DATA_MAPPED,            
+  WEBGL,                  
 };
 
 enum class SurfaceFormat : int8_t {
