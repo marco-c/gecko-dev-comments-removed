@@ -582,7 +582,6 @@ class nsTableFrame : public nsContainerFrame {
   explicit nsTableFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                         ClassID aID = kClassID);
 
-  
   virtual ~nsTableFrame();
 
   void InitChildReflowInput(ReflowInput& aReflowInput);
@@ -641,7 +640,8 @@ class nsTableFrame : public nsContainerFrame {
   void ClearAllPositionedTableParts();
 
   nsITableLayoutStrategy* LayoutStrategy() const {
-    return static_cast<nsTableFrame*>(FirstInFlow())->mTableLayoutStrategy;
+    return static_cast<nsTableFrame*>(FirstInFlow())
+        ->mTableLayoutStrategy.get();
   }
 
   
@@ -872,11 +872,11 @@ class nsTableFrame : public nsContainerFrame {
 
   std::map<int32_t, int32_t> mDeletedRowIndexRanges;  
                                                       
-  nsTableCellMap* mCellMap;  
-                             
-  nsITableLayoutStrategy* mTableLayoutStrategy;  
-                                                 
-  nsFrameList mColGroups;                        
+  mozilla::UniquePtr<nsTableCellMap> mCellMap;  
+                                                
+  
+  mozilla::UniquePtr<nsITableLayoutStrategy> mTableLayoutStrategy;
+  nsFrameList mColGroups;  
 };
 
 inline bool nsTableFrame::IsRowGroup(mozilla::StyleDisplay aDisplayType) const {

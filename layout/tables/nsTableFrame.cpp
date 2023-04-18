@@ -161,9 +161,7 @@ ComputedStyle* nsTableFrame::GetParentComputedStyle(
 
 nsTableFrame::nsTableFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                            ClassID aID)
-    : nsContainerFrame(aStyle, aPresContext, aID),
-      mCellMap(nullptr),
-      mTableLayoutStrategy(nullptr) {
+    : nsContainerFrame(aStyle, aPresContext, aID) {
   memset(&mBits, 0, sizeof(mBits));
 }
 
@@ -189,11 +187,11 @@ void nsTableFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   if (!aPrevInFlow) {
     
     
-    mCellMap = new nsTableCellMap(*this, borderCollapse);
+    mCellMap = MakeUnique<nsTableCellMap>(*this, borderCollapse);
     if (IsAutoLayout()) {
-      mTableLayoutStrategy = new BasicTableLayoutStrategy(this);
+      mTableLayoutStrategy = MakeUnique<BasicTableLayoutStrategy>(this);
     } else {
-      mTableLayoutStrategy = new FixedTableLayoutStrategy(this);
+      mTableLayoutStrategy = MakeUnique<FixedTableLayoutStrategy>(this);
     }
   } else {
     
@@ -203,10 +201,12 @@ void nsTableFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   }
 }
 
-nsTableFrame::~nsTableFrame() {
-  delete mCellMap;
-  delete mTableLayoutStrategy;
-}
+
+
+
+
+
+nsTableFrame::~nsTableFrame() = default;
 
 void nsTableFrame::DestroyFrom(nsIFrame* aDestructRoot,
                                PostDestroyData& aPostDestroyData) {
@@ -648,7 +648,7 @@ void nsTableFrame::RemoveCol(nsTableColGroupFrame* aColGroupFrame,
 
 
 nsTableCellMap* nsTableFrame::GetCellMap() const {
-  return static_cast<nsTableFrame*>(FirstInFlow())->mCellMap;
+  return static_cast<nsTableFrame*>(FirstInFlow())->mCellMap.get();
 }
 
 nsTableColGroupFrame* nsTableFrame::CreateSyntheticColGroupFrame() {
@@ -2122,16 +2122,10 @@ void nsTableFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
 
   bool isAuto = IsAutoLayout();
   if (isAuto != (LayoutStrategy()->GetType() == nsITableLayoutStrategy::Auto)) {
-    nsITableLayoutStrategy* temp;
     if (isAuto)
-      temp = new BasicTableLayoutStrategy(this);
+      mTableLayoutStrategy = MakeUnique<BasicTableLayoutStrategy>(this);
     else
-      temp = new FixedTableLayoutStrategy(this);
-
-    if (temp) {
-      delete mTableLayoutStrategy;
-      mTableLayoutStrategy = temp;
-    }
+      mTableLayoutStrategy = MakeUnique<FixedTableLayoutStrategy>(this);
   }
 }
 
