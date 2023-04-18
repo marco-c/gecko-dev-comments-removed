@@ -995,7 +995,10 @@ class LocalAccessible : public nsISupports, public Accessible {
   LocalAccessible* mParent;
   nsTArray<LocalAccessible*> mChildren;
   int32_t mIndexInParent;
+
+  
   Maybe<nsRect> mBounds;
+  int32_t mFirstLineStart;
 
   
 

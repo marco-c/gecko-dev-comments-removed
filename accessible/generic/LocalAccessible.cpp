@@ -121,6 +121,7 @@ LocalAccessible::LocalAccessible(nsIContent* aContent, DocAccessible* aDoc)
       mParent(nullptr),
       mIndexInParent(-1),
       mBounds(),
+      mFirstLineStart(-1),
       mStateFlags(0),
       mContextFlags(0),
       mReorderEventTarget(false),
@@ -3205,6 +3206,7 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     }
   }
 
+  bool boundsChanged = false;
   if (aCacheDomain & CacheDomain::Bounds) {
     nsRect newBoundsRect = ParentRelativeBounds();
 
@@ -3217,8 +3219,9 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     
     MOZ_ASSERT(aUpdateType == CacheUpdateType::Initial || mBounds.isSome(),
                "Incremental cache push but mBounds is not set!");
-    if (aUpdateType == CacheUpdateType::Initial ||
-        !newBoundsRect.IsEqualEdges(mBounds.value())) {
+    boundsChanged = aUpdateType == CacheUpdateType::Initial ||
+                    !newBoundsRect.IsEqualEdges(mBounds.value());
+    if (boundsChanged) {
       mBounds = Some(newBoundsRect);
 
       nsTArray<int32_t> boundsArray(4);
@@ -3245,25 +3248,51 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
              false);
         fields->SetAttribute(nsGkAtoms::style, std::move(attrs));
       }
-      
-      
-      nsTArray<int32_t> lineStarts;
-      for (TextLeafPoint lineStart =
-               TextLeafPoint(this, 0).FindNextLineStartSameLocalAcc(
-                    true);
-           lineStart;
-           lineStart = lineStart.FindNextLineStartSameLocalAcc(false)) {
-        lineStarts.AppendElement(lineStart.mOffset);
-      }
-      if (!lineStarts.IsEmpty()) {
-        fields->SetAttribute(nsGkAtoms::line, std::move(lineStarts));
-      }
     }
     if (HyperTextAccessible* ht = AsHyperText()) {
       RefPtr<AccAttributes> attrs = ht->DefaultTextAttributes();
       fields->SetAttribute(nsGkAtoms::style, std::move(attrs));
     }
   }
+
+  if (aCacheDomain & (CacheDomain::Text | CacheDomain::Bounds) &&
+      !HasChildren()) {
+    
+    
+    TextLeafPoint lineStart =
+        TextLeafPoint(this, 0).FindNextLineStartSameLocalAcc(
+             true);
+    int32_t lineStartOffset = lineStart ? lineStart.mOffset : -1;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aCacheDomain & CacheDomain::Text || boundsChanged ||
+        mFirstLineStart != lineStartOffset) {
+      mFirstLineStart = lineStartOffset;
+      nsTArray<int32_t> lineStarts;
+      for (; lineStart;
+           lineStart = lineStart.FindNextLineStartSameLocalAcc(false)) {
+        lineStarts.AppendElement(lineStart.mOffset);
+      }
+      if (!lineStarts.IsEmpty()) {
+        fields->SetAttribute(nsGkAtoms::line, std::move(lineStarts));
+      } else if (aUpdateType == CacheUpdateType::Update) {
+        fields->SetAttribute(nsGkAtoms::line, DeleteEntry());
+      }
+    }
+  }
+
   nsIFrame* frame = GetFrame();
   if (aCacheDomain & CacheDomain::TransformMatrix) {
     if (frame && frame->IsTransformed()) {
