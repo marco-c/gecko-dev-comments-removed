@@ -124,7 +124,7 @@ HDC gfxWindowsNativeDrawing::BeginNativeDrawing() {
       
       if (mTransformType == TRANSLATION_ONLY ||
           !(mNativeDrawFlags & CAN_AXIS_ALIGNED_SCALE)) {
-        mScale = gfxSize(1.0, 1.0);
+        mScale = MatrixScalesDouble();
 
         
         
@@ -134,19 +134,19 @@ HDC gfxWindowsNativeDrawing::BeginNativeDrawing() {
                                    (int32_t)ceil(mNativeRect.Height() + 1));
       } else {
         
-        mScale = m.ScaleFactors().ToSize();
+        mScale = m.ScaleFactors();
 
-        mWorldTransform.eM11 = (FLOAT)mScale.width;
+        mWorldTransform.eM11 = (FLOAT)mScale.xScale;
         mWorldTransform.eM12 = 0.0f;
         mWorldTransform.eM21 = 0.0f;
-        mWorldTransform.eM22 = (FLOAT)mScale.height;
+        mWorldTransform.eM22 = (FLOAT)mScale.yScale;
         mWorldTransform.eDx = 0.0f;
         mWorldTransform.eDy = 0.0f;
 
         
         mTempSurfaceSize =
-            IntSize((int32_t)ceil(mNativeRect.Width() * mScale.width + 1),
-                    (int32_t)ceil(mNativeRect.Height() * mScale.height + 1));
+            IntSize((int32_t)ceil(mNativeRect.Width() * mScale.xScale + 1),
+                    (int32_t)ceil(mNativeRect.Height() * mScale.yScale + 1));
       }
     }
   }
@@ -265,7 +265,7 @@ void gfxWindowsNativeDrawing::PaintToContext() {
       dt->SetTransform(newTransform);
 
       Rect rect(Point(0.0, 0.0), ToSize(mNativeRect.Size()));
-      Matrix m = Matrix::Scaling(1.0 / mScale.width, 1.0 / mScale.height);
+      Matrix m = Matrix::Scaling(1.0 / mScale.xScale, 1.0 / mScale.yScale);
       SurfacePattern pat(source, ExtendMode::CLAMP, m);
       dt->FillRect(rect, pat);
     }
