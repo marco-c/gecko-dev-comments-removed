@@ -12,6 +12,9 @@
 #include "mozilla/layers/APZInputBridgeChild.h"     
 #include "mozilla/layers/GeckoContentController.h"  
 #include "mozilla/layers/RemoteCompositorSession.h"  
+#ifdef MOZ_WIDGET_ANDROID
+#  include "mozilla/jni/Utils.h"  
+#endif
 
 namespace mozilla {
 namespace layers {
@@ -149,7 +152,21 @@ mozilla::ipc::IPCResult APZCTreeManagerChild::RecvHandleTap(
   dom::BrowserParent* tab =
       dom::BrowserParent::GetBrowserParentFromLayersId(aGuid.mLayersId);
   if (tab) {
+#ifdef MOZ_WIDGET_ANDROID
+    
+    
+    
+    
+    
+    mozilla::jni::DispatchToGeckoPriorityQueue(
+        NewRunnableMethod<TapType, LayoutDevicePoint, Modifiers,
+                          ScrollableLayerGuid, uint64_t>(
+            "dom::BrowserParent::SendHandleTap", tab,
+            &dom::BrowserParent::SendHandleTap, aType, aPoint, aModifiers,
+            aGuid, aInputBlockId));
+#else
     tab->SendHandleTap(aType, aPoint, aModifiers, aGuid, aInputBlockId);
+#endif
   }
   return IPC_OK();
 }
