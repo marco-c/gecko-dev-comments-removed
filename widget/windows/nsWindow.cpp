@@ -1830,30 +1830,6 @@ void nsWindow::SetThemeRegion() {
       }
     }
   }
-
-  
-  
-  
-  
-  
-  
-  else if (!HasGlass() &&
-           (mWindowType == eWindowType_popup && !IsPopupWithTitleBar() &&
-            (mPopupType == ePopupTypeTooltip ||
-             mPopupType == ePopupTypePanel))) {
-    HRGN hRgn = nullptr;
-    RECT rect = {0, 0, mBounds.Width(), mBounds.Height()};
-
-    HDC dc = ::GetDC(mWnd);
-    GetThemeBackgroundRegion(nsUXThemeData::GetTheme(eUXTooltip), dc,
-                             TTP_STANDARD, TS_NORMAL, &rect, &hRgn);
-    if (hRgn) {
-      if (!SetWindowRgn(mWnd, hRgn,
-                        false))  
-        DeleteObject(hRgn);
-    }
-    ::ReleaseDC(mWnd, dc);
-  }
 }
 
 
