@@ -52,14 +52,6 @@ enum class NamedCurve {
   secp256r1 = 3,
 };
 
-struct SignedDigest final {
-  Input digest;
-  DigestAlgorithm digestAlgorithm;
-  Input signature;
-
-  void operator=(const SignedDigest&) = delete;
-};
-
 enum class EndEntityOrCA { MustBeEndEntity = 0, MustBeCA = 1 };
 
 enum class KeyUsage : uint8_t {
@@ -307,8 +299,10 @@ class TrustDomain {
   
   
   
-  virtual Result VerifyRSAPKCS1SignedDigest(const SignedDigest& signedDigest,
-                                            Input subjectPublicKeyInfo) = 0;
+  virtual Result VerifyRSAPKCS1SignedData(Input data,
+                                          DigestAlgorithm digestAlgorithm,
+                                          Input signature,
+                                          Input subjectPublicKeyInfo) = 0;
 
   
   
@@ -325,8 +319,10 @@ class TrustDomain {
   
   
   
-  virtual Result VerifyECDSASignedDigest(const SignedDigest& signedDigest,
-                                         Input subjectPublicKeyInfo) = 0;
+  virtual Result VerifyECDSASignedData(Input data,
+                                       DigestAlgorithm digestAlgorithm,
+                                       Input signature,
+                                       Input subjectPublicKeyInfo) = 0;
 
   
   

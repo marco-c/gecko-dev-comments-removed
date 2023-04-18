@@ -192,18 +192,6 @@ inline unsigned int DaysBeforeYear(unsigned int year) {
 
 static const size_t MAX_DIGEST_SIZE_IN_BYTES = 512 / 8;  
 
-Result DigestSignedData(TrustDomain& trustDomain,
-                        const der::SignedDataWithSignature& signedData,
-                         uint8_t (&digestBuf)[MAX_DIGEST_SIZE_IN_BYTES],
-                         der::PublicKeyAlgorithm& publicKeyAlg,
-                         SignedDigest& signedDigest);
-
-Result VerifySignedDigest(TrustDomain& trustDomain,
-                          der::PublicKeyAlgorithm publicKeyAlg,
-                          const SignedDigest& signedDigest,
-                          Input signerSubjectPublicKeyInfo);
-
-
 Result VerifySignedData(TrustDomain& trustDomain,
                         const der::SignedDataWithSignature& signedData,
                         Input signerSubjectPublicKeyInfo);

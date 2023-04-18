@@ -61,7 +61,6 @@ public:
     , stapledOCSPResponse(aStapledOCSPResponse)
     , subCACount(aSubCACount)
     , deferredSubjectError(aDeferredSubjectError)
-    , subjectSignaturePublicKeyAlg(der::PublicKeyAlgorithm::Uninitialized)
     , result(Result::FATAL_ERROR_LIBRARY_FAILURE)
     , resultWasSet(false)
     , buildForwardCallBudget(aBuildForwardCallBudget)
@@ -83,11 +82,6 @@ private:
    Input const* const stapledOCSPResponse;
   const unsigned int subCACount;
   const Result deferredSubjectError;
-
-  
-  uint8_t subjectSignatureDigestBuf[MAX_DIGEST_SIZE_IN_BYTES];
-  der::PublicKeyAlgorithm subjectSignaturePublicKeyAlg;
-  SignedDigest subjectSignature;
 
   Result RecordResult(Result currentResult,  bool& keepGoing);
   Result result;
@@ -215,22 +209,8 @@ PathBuildingStep::Check(Input potentialIssuerDER,
     return RecordResult(rv, keepGoing);
   }
 
-  
-  
-  
-  
-  if (subjectSignature.digest.GetLength() == 0) {
-    rv = DigestSignedData(trustDomain, subject.GetSignedData(),
-                          subjectSignatureDigestBuf,
-                          subjectSignaturePublicKeyAlg, subjectSignature);
-    if (rv != Success) {
-      return rv;
-    }
-  }
-
-  rv = VerifySignedDigest(trustDomain, subjectSignaturePublicKeyAlg,
-                          subjectSignature,
-                          potentialIssuer.GetSubjectPublicKeyInfo());
+  rv = VerifySignedData(trustDomain, subject.GetSignedData(),
+                        potentialIssuer.GetSubjectPublicKeyInfo());
   if (rv != Success) {
     return RecordResult(rv, keepGoing);
   }

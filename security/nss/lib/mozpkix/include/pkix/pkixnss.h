@@ -34,15 +34,15 @@ namespace pkix {
 
 
 
-Result VerifyRSAPKCS1SignedDigestNSS(const SignedDigest& sd,
-                                     Input subjectPublicKeyInfo,
-                                     void* pkcs11PinArg);
+Result VerifyRSAPKCS1SignedDataNSS(Input data, DigestAlgorithm digestAlgorithm,
+                                   Input signature, Input subjectPublicKeyInfo,
+                                   void* pkcs11PinArg);
 
 
 
-Result VerifyECDSASignedDigestNSS(const SignedDigest& sd,
-                                  Input subjectPublicKeyInfo,
-                                  void* pkcs11PinArg);
+Result VerifyECDSASignedDataNSS(Input data, DigestAlgorithm digestAlgorithm,
+                                Input signature, Input subjectPublicKeyInfo,
+                                void* pkcs11PinArg);
 
 
 

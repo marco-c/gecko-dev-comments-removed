@@ -488,7 +488,7 @@ inline Result OptionalExtensions(Reader& input, uint8_t tag,
 Result DigestAlgorithmIdentifier(Reader& input,
                                   DigestAlgorithm& algorithm);
 
-enum class PublicKeyAlgorithm { RSA_PKCS1, ECDSA, Uninitialized };
+enum class PublicKeyAlgorithm { RSA_PKCS1, ECDSA };
 
 Result SignatureAlgorithmIdentifierValue(
     Reader& input,
@@ -524,6 +524,9 @@ struct SignedDataWithSignature final {
 
 Result SignedData(Reader& input,  Reader& tbs,
                    SignedDataWithSignature& signedDataWithSignature);
+
+
+Result ECDSASigValue(Input ecdsaSignature,  Input& r,  Input& s);
 }
 }
 }  
