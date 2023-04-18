@@ -9,10 +9,12 @@ describe("scrollList", () => {
     jest.useFakeTimers();
   });
 
+  
   it("just returns if element not found", () => {
     const li = document.createElement("li");
     scrollList([li], 1);
   });
+  
 
   it("calls scrollIntoView ", () => {
     const ul = document.createElement("ul");
