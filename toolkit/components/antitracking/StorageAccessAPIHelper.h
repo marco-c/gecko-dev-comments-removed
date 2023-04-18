@@ -33,7 +33,7 @@ class ContentParent;
 class Document;
 }  
 
-class ContentBlocking final {
+class StorageAccessAPIHelper final {
  public:
   enum StorageAccessPromptChoices { eAllow, eAllowAutoGrant };
 
