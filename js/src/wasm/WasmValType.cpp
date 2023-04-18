@@ -56,6 +56,7 @@ bool wasm::ToValType(JSContext* cx, HandleValue v, ValType* out) {
     if (ToRefType(cx, typeLinearStr, &rt)) {
       *out = ValType(rt);
     } else {
+      
       return false;
     }
   }

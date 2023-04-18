@@ -94,8 +94,6 @@ assertErrorMessage(() => ins.exports.newfn(3),
 
 
 
-var gi = new WebAssembly.Global({value: "v128"});
-var gm = new WebAssembly.Global({value: "v128", mutable:true});
 
 
 
@@ -103,9 +101,21 @@ var gm = new WebAssembly.Global({value: "v128", mutable:true});
 assertErrorMessage(() => new WebAssembly.Global({value: "v128"}, 37),
                    TypeError,
                    /cannot pass.*v128.*to or from JS/);
+assertErrorMessage(() => new WebAssembly.Global({value: "v128"}),
+                   TypeError,
+                   /cannot pass.*v128.*to or from JS/);
+assertErrorMessage(() => new WebAssembly.Global({value: "v128", mutable: true}),
+                   TypeError,
+                   /cannot pass.*v128.*to or from JS/);
 
 
 
+
+let {gi, gm} = wasmEvalText(`
+  (module
+    (global (export "gi") v128 v128.const i64x2 0 0)
+    (global (export "gm") (mut v128) v128.const i64x2 0 0)
+  )`).exports;
 
 assertErrorMessage(() => gi.value,
                    TypeError,
