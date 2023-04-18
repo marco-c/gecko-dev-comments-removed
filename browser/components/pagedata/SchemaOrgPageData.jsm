@@ -199,9 +199,12 @@ function parseMicrodataProp(propElement) {
 
 
 
-function collectProduct(pageData, item) {
+
+
+function collectProduct(document, pageData, item) {
   if (item.has("image")) {
-    pageData.image = item.get("image");
+    let url = new URL(item.get("image"), document.documentURI);
+    pageData.image = url.toString();
   }
 
   if (item.has("description")) {
@@ -314,6 +317,82 @@ function collectMicrodataItems(document) {
 
 
 
+
+
+function collectJsonLDItems(document) {
+  
+
+
+
+  let items = [];
+
+  
+
+
+
+
+
+
+  function fromLD(val) {
+    if (typeof val == "object" && "@type" in val) {
+      let item = new Item(val["@type"]);
+
+      for (let [prop, value] of Object.entries(val)) {
+        
+        if (prop.startsWith("@")) {
+          continue;
+        }
+
+        if (!Array.isArray(value)) {
+          value = [value];
+        }
+
+        item.properties.set(prop, value.map(fromLD));
+      }
+
+      return item;
+    }
+
+    return val;
+  }
+
+  let scripts = document.querySelectorAll("script[type='application/ld+json'");
+  for (let script of scripts) {
+    try {
+      let content = JSON.parse(script.textContent);
+
+      if (typeof content != "object") {
+        continue;
+      }
+
+      if (!("@context" in content)) {
+        continue;
+      }
+
+      if (
+        content["@context"] != "http://schema.org" &&
+        content["@context"] != "https://schema.org"
+      ) {
+        continue;
+      }
+
+      let item = fromLD(content);
+      if (item instanceof Item) {
+        items.push(item);
+      }
+    } catch (e) {
+      
+    }
+  }
+
+  return items;
+}
+
+
+
+
+
+
 const SchemaOrgPageData = {
   
 
@@ -325,7 +404,7 @@ const SchemaOrgPageData = {
 
 
   collectItems(document) {
-    return collectMicrodataItems(document);
+    return collectMicrodataItems(document).concat(collectJsonLDItems(document));
   },
 
   
@@ -344,7 +423,7 @@ const SchemaOrgPageData = {
       switch (item.type) {
         case "Product":
           if (!(PageDataSchema.DATA_TYPE.PRODUCT in pageData.data)) {
-            collectProduct(pageData, item);
+            collectProduct(document, pageData, item);
           }
           break;
         case "Organization":
