@@ -16,21 +16,23 @@ const { setTimeout, clearTimeout } = ChromeUtils.import(
 
 var EXPORTED_SYMBOLS = ["RemoteSettingsWorker"];
 
+const lazy = {};
+
 XPCOMUtils.defineLazyPreferenceGetter(
-  this,
+  lazy,
   "gMaxIdleMilliseconds",
   "services.settings.worker_idle_max_milliseconds",
   30 * 1000 
 );
 
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "AsyncShutdown",
   "resource://gre/modules/AsyncShutdown.jsm"
 );
 
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "SharedUtils",
   "resource://services-settings/SharedUtils.jsm"
 );
@@ -128,7 +130,7 @@ class Worker {
       } else {
         this.idleTimeoutId = setTimeout(() => {
           this.stop();
-        }, gMaxIdleMilliseconds);
+        }, lazy.gMaxIdleMilliseconds);
       }
     }
   }
@@ -187,7 +189,7 @@ class Worker {
   async checkContentHash(buffer, size, hash) {
     
     
-    return SharedUtils.checkContentHash(buffer, size, hash);
+    return lazy.SharedUtils.checkContentHash(buffer, size, hash);
   }
 }
 
@@ -198,7 +200,7 @@ class Worker {
 
 
 try {
-  AsyncShutdown.profileBeforeChange.addBlocker(
+  lazy.AsyncShutdown.profileBeforeChange.addBlocker(
     "Remote Settings profile-before-change",
     async () => {
       

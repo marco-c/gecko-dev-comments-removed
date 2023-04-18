@@ -6,7 +6,9 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   KeyValueService: "resource://gre/modules/kvstore.jsm",
 });
 
@@ -109,7 +111,7 @@ class SyncHistory {
       
       const dir = PathUtils.join(PathUtils.profileDir, "settings");
       await IOUtils.makeDirectory(dir);
-      this.#store = await KeyValueService.getOrCreate(dir, "synchistory");
+      this.#store = await lazy.KeyValueService.getOrCreate(dir, "synchistory");
     }
     return this.#store;
   }

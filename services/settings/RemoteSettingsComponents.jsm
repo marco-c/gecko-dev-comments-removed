@@ -5,8 +5,10 @@
 
 var EXPORTED_SYMBOLS = ["RemoteSettingsTimer"];
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "RemoteSettings",
   "resource://services-settings/remote-settings.js"
 );
@@ -19,7 +21,7 @@ RemoteSettingsTimer.prototype = {
 
   
   notify(timer) {
-    RemoteSettings.pollChanges({ trigger: "timer" }).catch(e =>
+    lazy.RemoteSettings.pollChanges({ trigger: "timer" }).catch(e =>
       Cu.reportError(e)
     );
   },
