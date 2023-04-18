@@ -601,10 +601,7 @@ class ContentHandler {
   init(providerInfo) {
     Services.ppmm.sharedData.set("SearchTelemetry:ProviderInfo", providerInfo);
 
-    Cc["@mozilla.org/network/http-activity-distributor;1"]
-      .getService(Ci.nsIHttpActivityDistributor)
-      .addObserver(this);
-
+    Services.obs.addObserver(this, "http-on-examine-response");
     Services.obs.addObserver(this, "http-on-stop-request");
   }
 
@@ -612,10 +609,7 @@ class ContentHandler {
 
 
   uninit() {
-    Cc["@mozilla.org/network/http-activity-distributor;1"]
-      .getService(Ci.nsIHttpActivityDistributor)
-      .removeObserver(this);
-
+    Services.obs.removeObserver(this, "http-on-examine-response");
     Services.obs.removeObserver(this, "http-on-stop-request");
   }
 
@@ -705,6 +699,9 @@ class ContentHandler {
       case "http-on-stop-request":
         this._reportChannelBandwidth(aSubject);
         break;
+      case "http-on-examine-response":
+        this.observeActivity(aSubject);
+        break;
     }
   }
 
@@ -715,57 +712,35 @@ class ContentHandler {
 
 
 
-
-
-  observeActivity(
-    nativeChannel,
-    activityType,
-    activitySubtype 
-
-
-
-  ) {
-    
-    if (
-      !this._browserInfoByURL.size ||
-      activityType !=
-        Ci.nsIHttpActivityObserver.ACTIVITY_TYPE_HTTP_TRANSACTION ||
-      activitySubtype !=
-        Ci.nsIHttpActivityObserver.ACTIVITY_SUBTYPE_TRANSACTION_CLOSE
-    ) {
+  observeActivity(channel) {
+    if (!(channel instanceof Ci.nsIChannel)) {
       return;
     }
 
-    
-    
-    if (!(nativeChannel instanceof Ci.nsIChannel)) {
-      return;
-    }
-    let channel = ChannelWrapper.get(nativeChannel);
-    
-    if (channel._adClickRecorded) {
+    let wrappedChannel = ChannelWrapper.get(channel);
+    if (wrappedChannel._adClickRecorded) {
       logConsole.debug("Ad click already recorded");
       return;
     }
 
-    
-    
     Services.tm.dispatchToMainThread(() => {
       
       
       
-      if (channel.statusCode == 204) {
+      if (wrappedChannel.statusCode == 204) {
         logConsole.debug("Ignoring activity from ambiguous responses");
         return;
       }
 
-      let originURL = channel.originURI && channel.originURI.spec;
+      
+      let originURL = wrappedChannel.originURI && wrappedChannel.originURI.spec;
       let item = this._findBrowserItemForURL(originURL);
       if (!originURL || !item) {
         return;
       }
 
-      let URL = channel.finalURL;
+      let URL = wrappedChannel.finalURL;
+
       let info = this._getProviderInfoForURL(URL, true);
       if (!info) {
         return;
@@ -789,7 +764,7 @@ class ContentHandler {
           `${info.telemetryId}:${item.info.type}`,
           1
         );
-        channel._adClickRecorded = true;
+        wrappedChannel._adClickRecorded = true;
       } catch (e) {
         Cu.reportError(e);
       }
