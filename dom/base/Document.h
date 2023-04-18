@@ -338,6 +338,12 @@ class DOMStyleSheetSetList;
 class ResizeObserver;
 class ResizeObserverController;
 class PostMessageEvent;
+struct PageLoadEventTelemetryData {
+  TimeDuration mPageLoadTime;
+  TimeDuration mTotalJSExecutionTime;
+  TimeDuration mResponseStartTime;
+  TimeDuration mFirstContentfulPaintTime;
+};
 
 #define DEPRECATED_OPERATION(_op) e##_op,
 enum class DeprecatedOperations : uint16_t {
@@ -5281,10 +5287,16 @@ class Document : public nsINode,
   bool mShouldNotifyFormOrPasswordRemoved;
 
   
-  void AccumulateJSTelemetry();
+  void RecordPageLoadEventTelemetry(
+      PageLoadEventTelemetryData aEventTelemetryData);
 
   
-  void AccumulatePageLoadTelemetry();
+  void AccumulateJSTelemetry(
+      PageLoadEventTelemetryData& aEventTelemetryDataOut);
+
+  
+  void AccumulatePageLoadTelemetry(
+      PageLoadEventTelemetryData& aEventTelemetryDataOut);
 
   
   
