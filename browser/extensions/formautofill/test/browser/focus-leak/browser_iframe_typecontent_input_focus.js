@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const URL_ROOT =
@@ -40,6 +41,7 @@ add_task(async function() {
   const focusMeInput = panelFrame.contentDocument.querySelector(".focusme");
   const onFocus = BrowserTestUtils.waitForEvent(focusMeInput, "focus");
   focusMeInput.focus();
+  await new Promise(resolve => setTimeout(resolve, 1000));
   await onFocus;
 
   
