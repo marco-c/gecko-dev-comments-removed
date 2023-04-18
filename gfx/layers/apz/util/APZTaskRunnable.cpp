@@ -26,13 +26,11 @@ APZTaskRunnable::Run() {
   mPendingRepaintRequestMap.clear();
   mNeedsFlushCompleteNotification = false;
   mRegisteredPresShellId = 0;
+  RefPtr<GeckoContentController> controller = mController;
 
   
   while (!requests.empty()) {
-    mController->RequestContentRepaint(requests.front());
-    if (!mController) {
-      return NS_OK;
-    }
+    controller->RequestContentRepaint(requests.front());
     requests.pop_front();
   }
 
@@ -40,7 +38,6 @@ APZTaskRunnable::Run() {
     
     
     
-    RefPtr<GeckoContentController> controller = mController;
     controller->NotifyFlushComplete();
   }
 
@@ -53,10 +50,9 @@ void APZTaskRunnable::QueueRequest(const RepaintRequest& aRequest) {
   if (IsTestControllingRefreshesEnabled()) {
     
     
+    RefPtr<GeckoContentController> controller = mController;
     Run();
-    if (mController) {
-      mController->RequestContentRepaint(aRequest);
-    }
+    controller->RequestContentRepaint(aRequest);
     return;
   }
   EnsureRegisterAsEarlyRunner();
@@ -87,11 +83,9 @@ void APZTaskRunnable::QueueFlushCompleteNotification() {
   if (IsTestControllingRefreshesEnabled()) {
     
     
+    RefPtr<GeckoContentController> controller = mController;
     Run();
-    if (mController) {
-      RefPtr<GeckoContentController> controller = mController;
-      controller->NotifyFlushComplete();
-    }
+    controller->NotifyFlushComplete();
     return;
   }
 
