@@ -1087,15 +1087,7 @@ var gMainPane = {
       let description = document.createXULElement("description");
       description.classList.add("message-bar-description");
 
-      
-      if (
-        i == 0 &&
-        (locales[0] == "ar" ||
-          locales[0] == "ckb" ||
-          locales[0] == "fa" ||
-          locales[0] == "he" ||
-          locales[0] == "ur")
-      ) {
+      if (i == 0 && gMainPane.getLocaleDirection(locales[0]) === "rtl") {
         description.classList.add("rtl-locale");
       }
       description.setAttribute("flex", "1");
@@ -1169,13 +1161,35 @@ var gMainPane = {
       return;
     }
 
-    
-    gMainPane.recordBrowserLanguagesTelemetry("reorder");
-
-    let locales = Array.from(
+    let newLocales = Array.from(
       new Set([locale, ...Services.locale.requestedLocales]).values()
     );
-    this.showConfirmLanguageChangeMessageBar(locales);
+
+    gMainPane.recordBrowserLanguagesTelemetry("reorder");
+
+    switch (gMainPane.getLanguageSwitchTransitionType(newLocales)) {
+      case "requires-restart":
+        
+        gMainPane.showConfirmLanguageChangeMessageBar(newLocales);
+        gMainPane.updatePrimaryBrowserLanguageUI(newLocales[0]);
+        break;
+      case "live-reload":
+        Services.locale.requestedLocales = newLocales;
+        gMainPane.updatePrimaryBrowserLanguageUI(
+          Services.locale.appLocaleAsBCP47
+        );
+        gMainPane.hideConfirmLanguageChangeMessageBar();
+        break;
+      case "locales-match":
+        
+        gMainPane.updatePrimaryBrowserLanguageUI(
+          Services.locale.appLocaleAsBCP47
+        );
+        gMainPane.hideConfirmLanguageChangeMessageBar();
+        break;
+      default:
+        throw new Error("Unhandled transition type.");
+    }
   },
 
   
@@ -1372,24 +1386,97 @@ var gMainPane = {
   },
 
   
+
+
+
+
+
+
+
+
+
+  getLocaleDirection(locale) {
+    if (
+      locale == "ar" ||
+      locale == "ckb" ||
+      locale == "fa" ||
+      locale == "he" ||
+      locale == "ur"
+    ) {
+      return "rtl";
+    }
+    return "ltr";
+  },
+
+  
+
+
+
+
+
+
+  getLanguageSwitchTransitionType(newLocales) {
+    const { appLocalesAsBCP47 } = Services.locale;
+    if (appLocalesAsBCP47.join(",") === newLocales.join(",")) {
+      
+      return "locales-match";
+    }
+
+    if (Services.prefs.getBoolPref("intl.multilingual.liveReload")) {
+      if (
+        gMainPane.getLocaleDirection(newLocales[0]) !==
+          gMainPane.getLocaleDirection(appLocalesAsBCP47[0]) &&
+        !Services.prefs.getBoolPref("intl.multilingual.liveReloadBidirectional")
+      ) {
+        
+        
+        return "requires-restart";
+      }
+
+      return "live-reload";
+    }
+
+    return "requires-restart";
+  },
+
+  
   browserLanguagesClosed() {
-    let { accepted, selected } = this.gBrowserLanguagesDialog;
-    let active = Services.locale.appLocalesAsBCP47;
+    
+    
+    let { selected } = this.gBrowserLanguagesDialog;
 
     this.gBrowserLanguagesDialog.recordTelemetry(
-      accepted ? "accept" : "cancel"
+      selected ? "accept" : "cancel"
     );
 
-    
-    if (selected && selected.join(",") != active.join(",")) {
-      gMainPane.showConfirmLanguageChangeMessageBar(selected);
-      gMainPane.updatePrimaryBrowserLanguageUI(selected[0]);
+    if (!selected) {
+      
       return;
     }
 
-    
-    gMainPane.updatePrimaryBrowserLanguageUI(Services.locale.appLocaleAsBCP47);
-    gMainPane.hideConfirmLanguageChangeMessageBar();
+    switch (gMainPane.getLanguageSwitchTransitionType(selected)) {
+      case "requires-restart":
+        gMainPane.showConfirmLanguageChangeMessageBar(selected);
+        gMainPane.updatePrimaryBrowserLanguageUI(selected[0]);
+        break;
+      case "live-reload":
+        Services.locale.requestedLocales = selected;
+
+        gMainPane.updatePrimaryBrowserLanguageUI(
+          Services.locale.appLocaleAsBCP47
+        );
+        gMainPane.hideConfirmLanguageChangeMessageBar();
+        break;
+      case "locales-match":
+        
+        gMainPane.updatePrimaryBrowserLanguageUI(
+          Services.locale.appLocaleAsBCP47
+        );
+        gMainPane.hideConfirmLanguageChangeMessageBar();
+        break;
+      default:
+        throw new Error("Unhandled transition type.");
+    }
   },
 
   displayUseSystemLocale() {

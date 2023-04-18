@@ -399,8 +399,18 @@ var gBrowserLanguagesDialog = {
 
 
 
+
+
+
+
+
+  selected: null,
+
+  
+
+
+
   _telemetryId: null,
-  accepted: false,
 
   
 
@@ -411,7 +421,6 @@ var gBrowserLanguagesDialog = {
 
 
   _selectedLocalesUI: null,
-  selectedLocales: null,
 
   get downloadEnabled() {
     
@@ -428,26 +437,32 @@ var gBrowserLanguagesDialog = {
     );
   },
 
-  beforeAccept() {
-    this.selected = this.getSelectedLocales();
-    this.accepted = true;
-  },
-
   async onLoad() {
-    document
-      .getElementById("BrowserLanguagesDialog")
-      .addEventListener("beforeaccept", () => this.beforeAccept());
     
-    let { telemetryId, selected, search } = window.arguments[0];
+
+
+
+
+
+
+
+
+
+    
+    let {
+      telemetryId,
+      selectedLocalesForRestart,
+      search,
+    } = window.arguments[0];
+
     this._telemetryId = telemetryId;
-    this.selectedLocales = selected;
 
     
     
     
     
     let selectedLocales =
-      this.selectedLocales || Services.locale.appLocalesAsBCP47;
+      selectedLocalesForRestart || Services.locale.appLocalesAsBCP47;
     let selectedLocaleSet = new Set(selectedLocales);
     let available = await getAvailableLocales();
     let availableSet = new Set(available);
@@ -464,6 +479,13 @@ var gBrowserLanguagesDialog = {
     await this.initAvailableLocales(available, search);
 
     this.initialized = true;
+
+    
+    document
+      .getElementById("BrowserLanguagesDialog")
+      .addEventListener("beforeaccept", () => {
+        this.selected = this._selectedLocalesUI.items.map(item => item.value);
+      });
   },
 
   
