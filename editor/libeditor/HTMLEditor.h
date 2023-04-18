@@ -2891,8 +2891,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  Element* GetInclusiveAncestorByTagNameInternal(const nsStaticAtom& aTagName,
-                                                 nsIContent& aContent) const;
+  Element* GetInclusiveAncestorByTagNameInternal(
+      const nsStaticAtom& aTagName, const nsIContent& aContent) const;
 
   
 
@@ -2938,11 +2938,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-
-  Element* GetFirstTableRowElement(Element& aTableOrElementInTable,
-                                   ErrorResult& aRv) const;
+  Result<RefPtr<Element>, nsresult> GetFirstTableRowElement(
+      const Element& aTableOrElementInTable) const;
 
   
 
