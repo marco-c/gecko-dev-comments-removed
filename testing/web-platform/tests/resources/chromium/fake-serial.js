@@ -307,10 +307,14 @@ class FakeSerialPort {
     }
     this.writable_ = undefined;
 
-    if (this.receiver_) {
-      this.receiver_.$.close();
-      this.receiver_ = undefined;
-    }
+    
+    
+    const receiver = this.receiver_;
+    this.receiver_ = undefined;
+    setTimeout(() => {
+      receiver.$.close();
+    }, 0);
+
     return {};
   }
 }
