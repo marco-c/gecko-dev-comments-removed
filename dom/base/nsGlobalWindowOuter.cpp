@@ -6567,9 +6567,12 @@ class CommandDispatcher : public Runnable {
         mDispatcher(aDispatcher),
         mAction(aAction) {}
 
-  NS_IMETHOD Run() override { return mDispatcher->UpdateCommands(mAction); }
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override {
+    return mDispatcher->UpdateCommands(mAction);
+  }
 
-  nsCOMPtr<nsIDOMXULCommandDispatcher> mDispatcher;
+  const nsCOMPtr<nsIDOMXULCommandDispatcher> mDispatcher;
   nsString mAction;
 };
 }  
