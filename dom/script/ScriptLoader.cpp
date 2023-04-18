@@ -3177,9 +3177,6 @@ nsresult ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest) {
                                 MarkerInnerWindowIdFromJSContext(cx),
                                 profilerLabelString);
 
-      
-      AutoCurrentScriptUpdater scriptUpdater(this, nullptr);
-
       ModuleLoadRequest* request = aRequest->AsModuleRequest();
       MOZ_ASSERT(request->mModuleScript);
       MOZ_ASSERT(!request->mOffThreadToken);
