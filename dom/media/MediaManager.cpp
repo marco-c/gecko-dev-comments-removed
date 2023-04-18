@@ -1778,6 +1778,13 @@ RefPtr<MediaManager::DeviceSetPromise> MediaManager::EnumerateRawDevices(
 
   MozPromiseHolder<DeviceSetPromise> holder;
   RefPtr<DeviceSetPromise> promise = holder.Ensure(__func__);
+  if (sHasShutdown) {
+    
+    
+    
+    holder.Resolve(new MediaDeviceSetRefCnt(), __func__);
+    return promise;
+  }
 
   const bool hasVideo = aVideoInputType != MediaSourceEnum::Other;
   const bool hasAudio = aAudioInputType != MediaSourceEnum::Other;
@@ -2213,8 +2220,6 @@ void MediaManager::DeviceListChanged() {
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self, this] {
-            MOZ_ASSERT(MediaManager::GetIfExists(),
-                       "Timer is cancelled on Shutdown()");
             mUnhandledDeviceChangeTime = TimeStamp();
             HandleDeviceListChanged();
           },
