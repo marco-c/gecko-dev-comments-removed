@@ -12,14 +12,14 @@ if (typeof detachArrayBuffer === "function") {
 if (typeof detachArrayBuffer === "function") {
     let detached = false;
     let ta = new Int32Array(3);
-    assertThrowsInstanceOf(() => {
-        ta.sort(function(a, b) {
-            assertEq(detached, false);
+    ta.sort(function(a, b) {
+        if (!detached) {
             detached = true;
             detachArrayBuffer(ta.buffer);
-            return a - b;
-        });
-    }, TypeError);
+        }
+        return a - b;
+    });
+    assertEq(detached, true);
 }
 
 
@@ -36,14 +36,14 @@ if (typeof newGlobal === "function" && typeof detachArrayBuffer === "function") 
     let detached = false;
     let ta = new Int32Array(3);
     let otherGlobal = newGlobal();
-    assertThrowsInstanceOf(() => {
-        otherGlobal.Int32Array.prototype.sort.call(ta, function(a,b) {
-            assertEq(detached, false);
+    otherGlobal.Int32Array.prototype.sort.call(ta, function(a,b) {
+        if (!detached) {
             detached = true;
             detachArrayBuffer(ta.buffer);
-            return a - b;
-        });
-    }, otherGlobal.TypeError);
+        }
+        return a - b;
+    });
+    assertEq(detached, true);
 }
 
 
