@@ -37,6 +37,9 @@
 #ifndef DOUBLE_CONVERSION_UTILS_H_
 #define DOUBLE_CONVERSION_UTILS_H_
 
+
+
+
 #include <cstdlib>
 #include <cstring>
 
@@ -46,9 +49,17 @@
 #define DOUBLE_CONVERSION_ASSERT(condition)         \
     U_ASSERT(condition)
 #endif
+#if defined(DOUBLE_CONVERSION_NON_PREFIXED_MACROS) && !defined(ASSERT)
+#define ASSERT DOUBLE_CONVERSION_ASSERT
+#endif
+
 #ifndef DOUBLE_CONVERSION_UNIMPLEMENTED
 #define DOUBLE_CONVERSION_UNIMPLEMENTED() (abort())
 #endif
+#if defined(DOUBLE_CONVERSION_NON_PREFIXED_MACROS) && !defined(UNIMPLEMENTED)
+#define UNIMPLEMENTED DOUBLE_CONVERSION_UNIMPLEMENTED
+#endif
+
 #ifndef DOUBLE_CONVERSION_NO_RETURN
 #ifdef _MSC_VER
 #define DOUBLE_CONVERSION_NO_RETURN __declspec(noreturn)
@@ -56,6 +67,10 @@
 #define DOUBLE_CONVERSION_NO_RETURN __attribute__((noreturn))
 #endif
 #endif
+#if defined(DOUBLE_CONVERSION_NON_PREFIXED_MACROS) && !defined(NO_RETURN)
+#define NO_RETURN DOUBLE_CONVERSION_NO_RETURN
+#endif
+
 #ifndef DOUBLE_CONVERSION_UNREACHABLE
 #ifdef _MSC_VER
 void DOUBLE_CONVERSION_NO_RETURN abort_noreturn();
@@ -64,6 +79,9 @@ inline void abort_noreturn() { abort(); }
 #else
 #define DOUBLE_CONVERSION_UNREACHABLE()   (abort())
 #endif
+#endif
+#if defined(DOUBLE_CONVERSION_NON_PREFIXED_MACROS) && !defined(UNREACHABLE)
+#define UNREACHABLE DOUBLE_CONVERSION_UNREACHABLE
 #endif
 
 
@@ -81,11 +99,17 @@ inline void abort_noreturn() { abort(); }
 #define DOUBLE_CONVERSION_UNUSED
 #endif
 #endif
+#if defined(DOUBLE_CONVERSION_NON_PREFIXED_MACROS) && !defined(UNUSED)
+#define UNUSED DOUBLE_CONVERSION_UNUSED
+#endif
 
 #if DOUBLE_CONVERSION_HAS_ATTRIBUTE(uninitialized)
 #define DOUBLE_CONVERSION_STACK_UNINITIALIZED __attribute__((uninitialized))
 #else
 #define DOUBLE_CONVERSION_STACK_UNINITIALIZED
+#endif
+#if defined(DOUBLE_CONVERSION_NON_PREFIXED_MACROS) && !defined(STACK_UNINITIALIZED)
+#define STACK_UNINITIALIZED DOUBLE_CONVERSION_STACK_UNINITIALIZED
 #endif
 
 
@@ -127,7 +151,7 @@ inline void abort_noreturn() { abort(); }
     defined(_MIPS_ARCH_MIPS32R2) || defined(__ARMEB__) ||\
     defined(__AARCH64EL__) || defined(__aarch64__) || defined(__AARCH64EB__) || \
     defined(__riscv) || defined(__e2k__) || \
-    defined(__or1k__) || defined(__arc__) || \
+    defined(__or1k__) || defined(__arc__) || defined(__ARC64__) || \
     defined(__microblaze__) || defined(__XTENSA__) || \
     defined(__EMSCRIPTEN__) || defined(__wasm32__)
 #define DOUBLE_CONVERSION_CORRECT_DOUBLE_OPERATIONS 1
@@ -143,6 +167,9 @@ inline void abort_noreturn() { abort(); }
 #endif  
 #else
 #error Target architecture was not detected as supported by Double-Conversion.
+#endif
+#if defined(DOUBLE_CONVERSION_NON_PREFIXED_MACROS) && !defined(CORRECT_DOUBLE_OPERATIONS)
+#define CORRECT_DOUBLE_OPERATIONS DOUBLE_CONVERSION_CORRECT_DOUBLE_OPERATIONS
 #endif
 
 #if defined(_WIN32) && !defined(__MINGW32__)
@@ -169,7 +196,9 @@ typedef uint16_t uc16;
 
 
 #define DOUBLE_CONVERSION_UINT64_2PART_C(a, b) (((static_cast<uint64_t>(a) << 32) + 0x##b##u))
-
+#if defined(DOUBLE_CONVERSION_NON_PREFIXED_MACROS) && !defined(UINT64_2PART_C)
+#define UINT64_2PART_C DOUBLE_CONVERSION_UINT64_2PART_C
+#endif
 
 
 
@@ -180,6 +209,9 @@ typedef uint16_t uc16;
   ((sizeof(a) / sizeof(*(a))) /                         \
   static_cast<size_t>(!(sizeof(a) % sizeof(*(a)))))
 #endif
+#if defined(DOUBLE_CONVERSION_NON_PREFIXED_MACROS) && !defined(ARRAY_SIZE)
+#define ARRAY_SIZE DOUBLE_CONVERSION_ARRAY_SIZE
+#endif
 
 
 
@@ -187,6 +219,9 @@ typedef uint16_t uc16;
 #define DOUBLE_CONVERSION_DISALLOW_COPY_AND_ASSIGN(TypeName)      \
   TypeName(const TypeName&);                    \
   void operator=(const TypeName&)
+#endif
+#if defined(DOUBLE_CONVERSION_NON_PREFIXED_MACROS) && !defined(DC_DISALLOW_COPY_AND_ASSIGN)
+#define DC_DISALLOW_COPY_AND_ASSIGN DOUBLE_CONVERSION_DISALLOW_COPY_AND_ASSIGN
 #endif
 
 
@@ -199,6 +234,9 @@ typedef uint16_t uc16;
 #define DOUBLE_CONVERSION_DISALLOW_IMPLICIT_CONSTRUCTORS(TypeName) \
   TypeName();                                    \
   DOUBLE_CONVERSION_DISALLOW_COPY_AND_ASSIGN(TypeName)
+#endif
+#if defined(DOUBLE_CONVERSION_NON_PREFIXED_MACROS) && !defined(DC_DISALLOW_IMPLICIT_CONSTRUCTORS)
+#define DC_DISALLOW_IMPLICIT_CONSTRUCTORS DOUBLE_CONVERSION_DISALLOW_IMPLICIT_CONSTRUCTORS
 #endif
 
 

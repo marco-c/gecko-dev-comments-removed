@@ -86,12 +86,12 @@ public:
 
 
 
-    bool operator==(const UVector32& other);
+    bool operator==(const UVector32& other) const;
 
     
 
 
-    inline bool operator!=(const UVector32& other);
+    inline bool operator!=(const UVector32& other) const;
 
     
     
@@ -268,7 +268,7 @@ inline int32_t UVector32::lastElementi(void) const {
     return elementAti(count-1);
 }
 
-inline bool UVector32::operator!=(const UVector32& other) {
+inline bool UVector32::operator!=(const UVector32& other) const {
     return !operator==(other);
 }
 

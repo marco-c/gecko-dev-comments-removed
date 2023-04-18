@@ -163,7 +163,7 @@ void RuleBasedBreakIterator::DictionaryCache::populateDictionary(int32_t startPo
         
         
         if (lbe != NULL) {
-            foundBreakCount += lbe->findBreaks(text, rangeStart, rangeEnd, fBreaks, status);
+            foundBreakCount += lbe->findBreaks(text, rangeStart, rangeEnd, fBreaks, fBI->fIsPhraseBreaking, status);
         }
 
         

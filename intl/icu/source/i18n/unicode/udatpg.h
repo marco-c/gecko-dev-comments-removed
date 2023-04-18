@@ -499,6 +499,11 @@ udatpg_getFieldDisplayName(const UDateTimePatternGenerator *dtpg,
 
 
 
+
+
+
+
+
 U_CAPI void U_EXPORT2
 udatpg_setDateTimeFormat(const UDateTimePatternGenerator *dtpg,
                          const UChar *dtFormat, int32_t length);
@@ -510,9 +515,79 @@ udatpg_setDateTimeFormat(const UDateTimePatternGenerator *dtpg,
 
 
 
+
+
+
+
+
+
 U_CAPI const UChar * U_EXPORT2
 udatpg_getDateTimeFormat(const UDateTimePatternGenerator *dtpg,
                          int32_t *pLength);
+
+#if !UCONFIG_NO_FORMATTING
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI void U_EXPORT2
+udatpg_setDateTimeFormatForStyle(UDateTimePatternGenerator *udtpg,
+                        UDateFormatStyle style,
+                        const UChar *dateTimeFormat, int32_t length,
+                        UErrorCode *pErrorCode);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI const UChar* U_EXPORT2
+udatpg_getDateTimeFormatForStyle(const UDateTimePatternGenerator *udtpg,
+                        UDateFormatStyle style, int32_t *pLength,
+                        UErrorCode *pErrorCode);
+#endif 
+#endif 
 
 
 

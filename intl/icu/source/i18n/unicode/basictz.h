@@ -152,7 +152,6 @@ public:
     virtual void getSimpleRulesNear(UDate date, InitialTimeZoneRule*& initial,
         AnnualTimeZoneRule*& std, AnnualTimeZoneRule*& dst, UErrorCode& status) const;
 
-#ifndef U_FORCE_HIDE_DRAFT_API
     
 
 
@@ -162,7 +161,6 @@ public:
         UTimeZoneLocalOption duplicatedTimeOpt, int32_t& rawOffset,
         int32_t& dstOffset, UErrorCode& status) const;
 
-#endif 
 
 #ifndef U_HIDE_INTERNAL_API
     
