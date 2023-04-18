@@ -945,6 +945,12 @@ nsresult nsPrintJob::SetupToPrintContent() {
   
 
   if (mIsDoingPrinting) {
+    
+    
+    if (NS_WARN_IF(!mPrintObject)) {
+      return NS_ERROR_FAILURE;
+    }
+
     PrintDocContent(mPrintObject, rv);  
   }
 
