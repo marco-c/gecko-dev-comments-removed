@@ -117,6 +117,16 @@ function timeDeltaFrom(monotonicStartTime) {
   return -1;
 }
 
+const NS_ERROR_MODULE_BASE_OFFSET = 0x45;
+const NS_ERROR_MODULE_NETWORK = 6;
+
+
+
+
+function NS_ERROR_GET_MODULE(code) {
+  return ((code & 0x7fff0000) >> 16) - NS_ERROR_MODULE_BASE_OFFSET;
+}
+
 
 
 
@@ -1144,6 +1154,19 @@ class SyncTelemetryImpl {
     }
 
     if (error.result) {
+      
+      
+      
+      
+      
+      
+      
+      if (
+        error.result == Cr.NS_ERROR_ABORT ||
+        NS_ERROR_GET_MODULE(error.result) == NS_ERROR_MODULE_NETWORK
+      ) {
+        return { name: "httperror", code: error.result };
+      }
       return { name: "nserror", code: error.result };
     }
     
