@@ -584,7 +584,7 @@ bool GMPCapability::Supports(const nsTArray<GMPCapability>& aCapabilities,
         
         if (tag.EqualsLiteral(kClearKeyKeySystemName)) {
           if (capabilities.mAPIName.EqualsLiteral(GMP_API_VIDEO_DECODER)) {
-            if (!WMFDecoderModule::HasH264()) {
+            if (!WMFDecoderModule::CanCreateMFTDecoder(WMFStreamType::H264)) {
               continue;
             }
           }

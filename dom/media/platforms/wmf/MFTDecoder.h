@@ -26,6 +26,12 @@ class MFTDecoder final {
   
   
   
+  HRESULT Create(const GUID& aCLSID);
+
+  
+  
+  
+  
   
   
   
@@ -108,6 +114,7 @@ class MFTDecoder final {
   MFT_INPUT_STREAM_INFO mInputStreamInfo;
   MFT_OUTPUT_STREAM_INFO mOutputStreamInfo;
 
+  RefPtr<IMFActivate> mActivate;
   RefPtr<IMFTransform> mDecoder;
 
   RefPtr<IMFMediaType> mOutputType;
