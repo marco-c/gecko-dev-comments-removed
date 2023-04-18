@@ -11,40 +11,123 @@
 
 #include "jsapi.h"
 
+#include "builtin/TupleObject.h"
 #include "gc/Allocator.h"
+#include "gc/AllocKind.h"
+#include "gc/Nursery.h"
 #include "gc/Tracer.h"
+#include "js/TypeDecls.h"
+#include "util/StringBuffer.h"
+#include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
+#include "vm/RecordType.h"
 #include "vm/SelfHosting.h"
+#include "vm/ToSource.h"
 
 #include "vm/JSObject-inl.h"
+#include "vm/NativeObject-inl.h"
 
 using namespace js;
 
-static bool TupleConstructor(JSContext* cx, unsigned argc, Value* vp);
+TupleType* AllocateTuple(JSContext* cx, uint32_t length) {
+  RootedShape shape(
+      cx, SharedShape::getInitialShape(
+              cx, &TupleType::class_, cx->realm(), TaggedProto(nullptr),
+              
+               0));
+  if (!shape) {
+    return nullptr;
+  }
 
-const JSClass TupleType::class_ = {"tuple", 0, JS_NULL_CLASS_OPS,
-                                   &TupleType::classSpec_};
+  gc::AllocKind allocKind = GuessArrayGCKind(length);
 
-const JSClass TupleType::protoClass_ = {
-    "Tuple.prototype", JSCLASS_HAS_CACHED_PROTO(JSProto_Tuple),
-    JS_NULL_CLASS_OPS, &TupleType::classSpec_};
+  JSObject* obj =
+      js::AllocateObject(cx, allocKind, 0, gc::DefaultHeap, &TupleType::class_);
+  if (!obj) {
+    return nullptr;
+  }
 
-const ClassSpec TupleType::classSpec_ = {
-    GenericCreateConstructor<TupleConstructor, 1, gc::AllocKind::FUNCTION>,
-    GenericCreatePrototype<TupleType>,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr,
-    nullptr};
+  TupleType* tup = static_cast<TupleType*>(obj);
 
-TupleType* TupleType::create(JSContext* cx) {
-  Rooted<TaggedProto> proto(cx, TaggedProto(nullptr));
-  return NewObjectWithGivenTaggedProto<TupleType>(cx, proto);
+  tup->initShape(shape);
+  tup->initEmptyDynamicSlots();
+
+  uint32_t capacity =
+      gc::GetGCKindSlots(allocKind) - ObjectElements::VALUES_PER_HEADER;
+
+  tup->setFixedElements(0);
+  new (tup->getElementsHeader()) ObjectElements(capacity, length);
+
+  if (!tup->ensureElements(cx, length)) {
+    return nullptr;
+  }
+
+  return tup;
+}
+
+TupleType* TupleType::create(JSContext* cx, uint32_t length,
+                             const Value* elements) {
+  for (uint32_t index = 0; index < length; index++) {
+    if (!elements[index].isPrimitive()) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_RECORD_TUPLE_NO_OBJECT);
+      return nullptr;
+    }
+  }
+
+  TupleType* tup = AllocateTuple(cx, length);
+  ObjectElements* header = tup->getElementsHeader();
+
+  tup->initDenseElements(elements, length);
+  tup->shrinkCapacityToInitializedLength(cx);
+
+  header->setNotExtensible();
+  header->seal();
+  header->freeze();
+
+  return tup;
+}
+
+JSString* js::TupleToSource(JSContext* cx, TupleType* tup) {
+  JSStringBuilder sb(cx);
+
+  if (!sb.append("#[")) {
+    return nullptr;
+  }
+
+  uint32_t length = tup->length();
+
+  RootedValue elt(cx);
+  for (uint32_t index = 0; index < length; index++) {
+    elt.set(tup->getDenseElement(index));
+
+    
+    JSString* str = ValueToSource(cx, elt);
+    if (!str) {
+      return nullptr;
+    }
+
+    
+    if (!sb.append(str)) {
+      return nullptr;
+    }
+    if (index + 1 != length) {
+      if (!sb.append(", ")) {
+        return nullptr;
+      }
+    }
+  }
+
+  
+  if (!sb.append(']')) {
+    return nullptr;
+  }
+
+  return sb.finishString();
 }
 
 
-static bool TupleConstructor(JSContext* cx, unsigned argc, Value* vp) {
+bool TupleConstructor(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -54,12 +137,7 @@ static bool TupleConstructor(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  if (args.length() > 0) {
-    MOZ_CRASH("Only empty tuples are supported");
-    return false;
-  }
-
-  TupleType* tup = TupleType::create(cx);
+  TupleType* tup = TupleType::create(cx, args.length(), args.array());
   if (!tup) {
     return false;
   }
@@ -67,3 +145,107 @@ static bool TupleConstructor(JSContext* cx, unsigned argc, Value* vp) {
   args.rval().setExtendedPrimitive(*tup);
   return true;
 }
+
+NativeObject* tuplePrototype(JSContext* cx) {
+  JSObject* proto = GlobalObject::getOrCreateTuplePrototype(cx, cx->global());
+  if (!proto) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(proto->is<NativeObject>());
+  return &proto->as<NativeObject>();
+}
+
+bool Tuple_getProperty(JSContext* cx, HandleObject obj, HandleValue receiver,
+                       HandleId id, MutableHandleValue vp) {
+  MOZ_ASSERT(obj->is<TupleType>());
+
+  if (id.isInt()) {
+    int32_t index = id.toInt();
+    TupleType& tup = obj->as<TupleType>();
+    if (index >= 0 && uint32_t(index) < tup.length()) {
+      vp.set(tup.getDenseElement(index));
+      return true;
+    }
+    return false;
+  }
+
+  
+  
+  RootedNativeObject proto(cx, tuplePrototype(cx));
+  if (!proto) return false;
+
+  return NativeGetProperty(cx, proto, receiver, id, vp);
+}
+
+bool Tuple_setProperty(JSContext* cx, HandleObject obj, HandleId id,
+                       HandleValue v, HandleValue receiver,
+                       ObjectOpResult& result) {
+  return result.failReadOnly();
+}
+
+
+
+
+
+bool IsTuple(HandleValue v) {
+  if (v.isExtendedPrimitive()) return v.toExtendedPrimitive().is<TupleType>();
+  if (v.isObject()) return v.toObject().is<TupleObject>();
+  return false;
+};
+
+static MOZ_ALWAYS_INLINE TupleType* ThisTupleValue(HandleValue val) {
+  MOZ_ASSERT(IsTuple(val));
+  return val.isExtendedPrimitive() ? &val.toExtendedPrimitive().as<TupleType>()
+                                   : val.toObject().as<TupleObject>().unbox();
+}
+
+
+bool lengthAccessor_impl(JSContext* cx, const CallArgs& args) {
+  
+  TupleType* tuple = ThisTupleValue(args.thisv());
+  
+  args.rval().setInt32(tuple->length());
+  return true;
+}
+
+bool TupleType::lengthAccessor(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsTuple, lengthAccessor_impl>(cx, args);
+}
+
+
+
+
+
+const ObjectOps TupleTypeObjectOps = {
+     nullptr,
+     nullptr,
+     nullptr,
+    Tuple_getProperty,
+    Tuple_setProperty,
+     nullptr,
+     nullptr,
+     nullptr,
+     nullptr,
+};
+
+const JSClass TupleType::class_ = {"tuple",           0,
+                                   JS_NULL_CLASS_OPS, &TupleType::classSpec_,
+                                   JS_NULL_CLASS_EXT, &TupleTypeObjectOps};
+
+const JSClass TupleType::protoClass_ = {
+    "Tuple.prototype", JSCLASS_HAS_CACHED_PROTO(JSProto_Tuple),
+    JS_NULL_CLASS_OPS, &TupleType::classSpec_};
+
+const JSPropertySpec properties_[] = {
+    JS_PSG("length", TupleType::lengthAccessor, 0), JS_PS_END};
+
+const ClassSpec TupleType::classSpec_ = {
+    GenericCreateConstructor<TupleConstructor, 1, gc::AllocKind::FUNCTION>,
+    GenericCreatePrototype<TupleType>,
+    nullptr,
+    nullptr,
+    nullptr,
+    properties_,
+    nullptr};
