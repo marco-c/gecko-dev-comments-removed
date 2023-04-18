@@ -2,8 +2,6 @@
 
 
 
-import { URL as URLParser } from "whatwg-url";
-
 const defaultUrl = {
   hash: "",
   host: "",
@@ -57,7 +55,7 @@ export function parse(url) {
 
   let urlObj;
   try {
-    urlObj = new URLParser(url);
+    urlObj = new URL(url);
   } catch (err) {
     urlObj = { ...defaultUrl };
     
@@ -89,6 +87,10 @@ export function parse(url) {
       urlObj.pathname = url;
     }
   }
+  
+  
+  
+  urlObj.pathname = urlObj.pathname.replace(/\/+/, "/");
   urlObj.path = urlObj.pathname + urlObj.search;
 
   

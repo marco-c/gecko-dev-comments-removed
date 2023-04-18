@@ -23,7 +23,6 @@ DevToolsModules(
     'seamless-immutable.js',
     'WasmDis.js',
     'WasmParser.js',
-    'whatwg-url.js',
 )
 
 
