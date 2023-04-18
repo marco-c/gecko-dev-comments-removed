@@ -122,7 +122,7 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
 
 Result<int64_t, nsresult> GetPaddingSizeFromDB(
     nsIFile& aDir, nsIFile& aDBFile, const OriginMetadata& aOriginMetadata) {
-  ClientMetadata clientMetadata(aOriginMetadata);
+  CacheDirectoryMetadata directoryMetadata(aOriginMetadata);
   
   
   
@@ -130,7 +130,7 @@ Result<int64_t, nsresult> GetPaddingSizeFromDB(
   
   
   
-  MOZ_DIAGNOSTIC_ASSERT(clientMetadata.mDirectoryLockId == -1);
+  MOZ_DIAGNOSTIC_ASSERT(directoryMetadata.mDirectoryLockId == -1);
 
 #ifdef DEBUG
   {
@@ -139,7 +139,8 @@ Result<int64_t, nsresult> GetPaddingSizeFromDB(
   }
 #endif
 
-  QM_TRY_INSPECT(const auto& conn, OpenDBConnection(clientMetadata, aDBFile));
+  QM_TRY_INSPECT(const auto& conn,
+                 OpenDBConnection(directoryMetadata, aDBFile));
 
   
   
@@ -434,7 +435,7 @@ nsresult CacheQuotaClient::RestorePaddingFileInternal(
 }
 
 nsresult CacheQuotaClient::WipePaddingFileInternal(
-    const ClientMetadata& aClientMetadata, nsIFile* aBaseDir) {
+    const CacheDirectoryMetadata& aDirectoryMetadata, nsIFile* aBaseDir) {
   MOZ_ASSERT(!NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(aBaseDir);
 
@@ -467,7 +468,7 @@ nsresult CacheQuotaClient::WipePaddingFileInternal(
       }()));
 
   if (paddingSize > 0) {
-    DecreaseUsageForClientMetadata(aClientMetadata, paddingSize);
+    DecreaseUsageForDirectoryMetadata(aDirectoryMetadata, paddingSize);
   }
 
   QM_TRY(MOZ_TO_RESULT(
@@ -516,7 +517,7 @@ nsresult RestorePaddingFile(nsIFile* aBaseDir, mozIStorageConnection* aConn) {
 }
 
 
-nsresult WipePaddingFile(const ClientMetadata& aClientMetadata,
+nsresult WipePaddingFile(const CacheDirectoryMetadata& aDirectoryMetadata,
                          nsIFile* aBaseDir) {
   MOZ_ASSERT(!NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(aBaseDir);
@@ -525,7 +526,7 @@ nsresult WipePaddingFile(const ClientMetadata& aClientMetadata,
   MOZ_DIAGNOSTIC_ASSERT(cacheQuotaClient);
 
   QM_TRY(MOZ_TO_RESULT(
-      cacheQuotaClient->WipePaddingFileInternal(aClientMetadata, aBaseDir)));
+      cacheQuotaClient->WipePaddingFileInternal(aDirectoryMetadata, aBaseDir)));
 
   return NS_OK;
 }

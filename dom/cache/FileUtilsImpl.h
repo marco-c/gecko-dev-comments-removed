@@ -15,12 +15,13 @@ namespace dom {
 namespace cache {
 
 template <typename Func>
-nsresult BodyTraverseFiles(const Maybe<ClientMetadata>& aClientMetadata,
-                           nsIFile& aBodyDir, const Func& aHandleFileFunc,
-                           const bool aCanRemoveFiles, const bool aTrackQuota) {
+nsresult BodyTraverseFiles(
+    const Maybe<CacheDirectoryMetadata>& aDirectoryMetadata, nsIFile& aBodyDir,
+    const Func& aHandleFileFunc, const bool aCanRemoveFiles,
+    const bool aTrackQuota) {
   
   
-  MOZ_DIAGNOSTIC_ASSERT_IF(aTrackQuota, aClientMetadata);
+  MOZ_DIAGNOSTIC_ASSERT_IF(aTrackQuota, aDirectoryMetadata);
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   {
@@ -40,7 +41,7 @@ nsresult BodyTraverseFiles(const Maybe<ClientMetadata>& aClientMetadata,
   FlippedOnce<true> isEmpty;
   QM_TRY(quota::CollectEachFile(
       aBodyDir,
-      [&isEmpty, &aClientMetadata, aTrackQuota, &aHandleFileFunc,
+      [&isEmpty, &aDirectoryMetadata, aTrackQuota, &aHandleFileFunc,
        aCanRemoveFiles](const nsCOMPtr<nsIFile>& file) -> Result<Ok, nsresult> {
         QM_TRY_INSPECT(const auto& dirEntryKind, quota::GetDirEntryKind(*file));
 
@@ -48,7 +49,7 @@ nsresult BodyTraverseFiles(const Maybe<ClientMetadata>& aClientMetadata,
           case quota::nsIFileKind::ExistsAsDirectory: {
             
             DebugOnly<nsresult> result = RemoveNsIFileRecursively(
-                aClientMetadata, *file,  false);
+                aDirectoryMetadata, *file,  false);
             MOZ_ASSERT(NS_SUCCEEDED(result));
             break;
           }
@@ -62,7 +63,7 @@ nsresult BodyTraverseFiles(const Maybe<ClientMetadata>& aClientMetadata,
             if (StringEndsWith(leafName, ".tmp"_ns)) {
               if (aCanRemoveFiles) {
                 DebugOnly<nsresult> result =
-                    RemoveNsIFile(aClientMetadata, *file, aTrackQuota);
+                    RemoveNsIFile(aDirectoryMetadata, *file, aTrackQuota);
                 MOZ_ASSERT(NS_SUCCEEDED(result));
                 return Ok{};
               }
@@ -75,7 +76,7 @@ nsresult BodyTraverseFiles(const Maybe<ClientMetadata>& aClientMetadata,
               
               if (!maybeEndingOk) {
                 DebugOnly<nsresult> result = RemoveNsIFile(
-                    aClientMetadata, *file,  false);
+                    aDirectoryMetadata, *file,  false);
                 MOZ_ASSERT(NS_SUCCEEDED(result));
                 return Ok{};
               }
@@ -101,7 +102,7 @@ nsresult BodyTraverseFiles(const Maybe<ClientMetadata>& aClientMetadata,
 
   if (isEmpty && aCanRemoveFiles) {
     DebugOnly<nsresult> result = RemoveNsIFileRecursively(
-        aClientMetadata, aBodyDir,  false);
+        aDirectoryMetadata, aBodyDir,  false);
     MOZ_ASSERT(NS_SUCCEEDED(result));
   }
 
