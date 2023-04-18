@@ -6,9 +6,18 @@
 
 "use strict";
 
+
+
+
+
 add_task(async function() {
   
   const URL = URL_ROOT_COM_SSL + "storage-cache-basic.html";
+  await SpecialPowers.addPermission(
+    "3rdPartyStorage^https://example.net",
+    true,
+    URL
+  );
   await openTabAndSetupStorage(URL);
   const doc = gPanelWindow.document;
 
@@ -21,6 +30,11 @@ add_task(async function() {
   
   await selectTreeItem(["Cache", "https://example.net", "foo"]);
   checkCacheData(URL_ROOT_NET_SSL + "storage-blank.html", "OK");
+
+  await SpecialPowers.removePermission(
+    "3rdPartyStorage^http://example.net",
+    URL
+  );
 });
 
 function checkCacheData(url, status) {
