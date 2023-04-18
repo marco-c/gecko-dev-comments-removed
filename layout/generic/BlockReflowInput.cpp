@@ -32,7 +32,8 @@ BlockReflowInput::BlockReflowInput(const ReflowInput& aReflowInput,
                                    nsBlockFrame* aFrame, bool aBStartMarginRoot,
                                    bool aBEndMarginRoot,
                                    bool aBlockNeedsFloatManager,
-                                   nscoord aConsumedBSize)
+                                   const nscoord aConsumedBSize,
+                                   const nscoord aEffectiveContentBoxBSize)
     : mBlock(aFrame),
       mPresContext(aPresContext),
       mReflowInput(aReflowInput),
@@ -115,15 +116,23 @@ BlockReflowInput::BlockReflowInput(const ReflowInput& aReflowInput,
   
   
   
-  if (NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableBSize()) {
+  if (const nscoord availableBSize = aReflowInput.AvailableBSize();
+      availableBSize != NS_UNCONSTRAINEDSIZE) {
     
     
     
-    auto bp = aFrame->StyleBorder()->mBoxDecorationBreak ==
-                      StyleBoxDecorationBreak::Clone
-                  ? mBorderPadding.BStartEnd(wm)
-                  : mBorderPadding.BStart(wm);
-    mContentArea.BSize(wm) = std::max(0, aReflowInput.AvailableBSize() - bp);
+    
+    
+    
+    const bool reserveSpaceForBlockEndBP =
+        mReflowInput.mStyleBorder->mBoxDecorationBreak ==
+            StyleBoxDecorationBreak::Clone &&
+        (aEffectiveContentBoxBSize == NS_UNCONSTRAINEDSIZE ||
+         aEffectiveContentBoxBSize + mBorderPadding.BStartEnd(wm) >
+             availableBSize);
+    const nscoord bp = reserveSpaceForBlockEndBP ? mBorderPadding.BStartEnd(wm)
+                                                 : mBorderPadding.BStart(wm);
+    mContentArea.BSize(wm) = std::max(0, availableBSize - bp);
   } else {
     
     
@@ -185,10 +194,13 @@ LogicalRect BlockReflowInput::ComputeBlockAvailSpace(
 #endif
   WritingMode wm = mReflowInput.GetWritingMode();
   LogicalRect result(wm);
-  const nscoord availBSize = mReflowInput.AvailableBSize();
   result.BStart(wm) = mBCoord;
-  result.BSize(wm) = availBSize == NS_UNCONSTRAINEDSIZE ? NS_UNCONSTRAINEDSIZE
-                                                        : availBSize - mBCoord;
+  
+  
+  
+  result.BSize(wm) = ContentBSize() == NS_UNCONSTRAINEDSIZE
+                         ? NS_UNCONSTRAINEDSIZE
+                         : ContentBEnd() - mBCoord;
   
   
   

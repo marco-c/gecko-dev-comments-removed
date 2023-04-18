@@ -1272,8 +1272,8 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
   const ReflowInput* reflowInput = &aReflowInput;
   WritingMode wm = aReflowInput.GetWritingMode();
-  nscoord consumedBSize = CalcAndCacheConsumedBSize();
-  nscoord effectiveComputedBSize =
+  const nscoord consumedBSize = CalcAndCacheConsumedBSize();
+  const nscoord effectiveContentBoxBSize =
       GetEffectiveComputedBSize(aReflowInput, consumedBSize);
   Maybe<ReflowInput> mutableReflowInput;
   
@@ -1295,7 +1295,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
           aReflowInput.ComputedLogicalMargin(wm).BStart(wm);
     }
 
-    if (effectiveComputedBSize + blockDirExtras.BStartEnd(wm) <=
+    if (effectiveContentBoxBSize + blockDirExtras.BStartEnd(wm) <=
         aReflowInput.AvailableBSize()) {
       mutableReflowInput.emplace(aReflowInput);
       mutableReflowInput->AvailableBSize() = NS_UNCONSTRAINEDSIZE;
@@ -1344,10 +1344,9 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   bool blockStartMarginRoot, blockEndMarginRoot;
   IsMarginRoot(&blockStartMarginRoot, &blockEndMarginRoot);
 
-  
-  
   BlockReflowInput state(*reflowInput, aPresContext, this, blockStartMarginRoot,
-                         blockEndMarginRoot, needFloatManager, consumedBSize);
+                         blockEndMarginRoot, needFloatManager, consumedBSize,
+                         effectiveContentBoxBSize);
 
   if (HasAnyStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION) &&
       PresContext()->BidiEnabled()) {
@@ -3805,15 +3804,6 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
       
       
       if (frame->IsColumnSetFrame()) {
-        if (availSize.BSize(wm) != NS_UNCONSTRAINEDSIZE &&
-            StyleBorder()->mBoxDecorationBreak ==
-                StyleBoxDecorationBreak::Clone) {
-          
-          
-          
-          availSize.BSize(wm) -= aState.BorderPadding().BEnd(wm);
-        }
-
         nscoord contentBSize = aState.mReflowInput.ComputedBSize();
         if (aState.mReflowInput.ComputedMaxBSize() != NS_UNCONSTRAINEDSIZE) {
           contentBSize =

@@ -97,7 +97,8 @@ class BlockReflowInput {
   BlockReflowInput(const ReflowInput& aReflowInput, nsPresContext* aPresContext,
                    nsBlockFrame* aFrame, bool aBStartMarginRoot,
                    bool aBEndMarginRoot, bool aBlockNeedsFloatManager,
-                   nscoord aConsumedBSize = NS_UNCONSTRAINEDSIZE);
+                   const nscoord aConsumedBSize,
+                   const nscoord aEffectiveContentBoxBSize);
 
   
 
