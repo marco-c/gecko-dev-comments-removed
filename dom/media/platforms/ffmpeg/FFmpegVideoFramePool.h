@@ -160,6 +160,9 @@ class VideoFramePool final {
   
   mozilla::Mutex mSurfaceLock;
   nsTArray<RefPtr<VideoFrameSurface>> mDMABufSurfaces;
+  
+  
+  Maybe<bool> mTextureCreationWorks;
 };
 
 }  
