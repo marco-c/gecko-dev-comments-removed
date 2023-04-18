@@ -41,6 +41,13 @@ extern bool LooselyEqual(JSContext* cx, JS::Handle<JS::Value> lval,
 extern bool SameValue(JSContext* cx, JS::Handle<JS::Value> v1,
                       JS::Handle<JS::Value> v2, bool* same);
 
+
+
+
+
+extern bool SameValueZero(JSContext* cx, JS::Handle<JS::Value> v1,
+                          JS::Handle<JS::Value> v2, bool* same);
+
 }  
 
 #endif  

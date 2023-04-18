@@ -29,6 +29,18 @@ RecordType* RecordType::create(JSContext* cx) {
   return NewObjectWithGivenTaggedProto<RecordType>(cx, proto);
 }
 
+bool RecordType::sameValueZero(JSContext* cx, RecordType* lhs, RecordType* rhs,
+                               bool* equal) {
+  MOZ_CRASH("Unsupported");
+  return false;
+}
+
+bool RecordType::sameValue(JSContext* cx, RecordType* lhs, RecordType* rhs,
+                           bool* equal) {
+  MOZ_CRASH("Unsupported");
+  return false;
+}
+
 
 static bool RecordConstructor(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
