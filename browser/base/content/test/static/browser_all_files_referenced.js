@@ -68,6 +68,9 @@ var gExceptionPaths = [
 
   
   "resource://nimbus/schemas/",
+
+  
+  "resource://activity-stream/schemas",
 ];
 
 
