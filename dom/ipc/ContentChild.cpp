@@ -2991,6 +2991,18 @@ void ContentChild::ForceKillTimerCallback(nsITimer* aTimer, void* aClosure) {
   ProcessChild::QuickExit();
 }
 
+mozilla::ipc::IPCResult ContentChild::RecvShutdownConfirmedHP() {
+  CrashReporter::AnnotateCrashReport(
+      CrashReporter::Annotation::IPCShutdownState,
+      "RecvShutdownConfirmedHP entry"_ns);
+
+  
+  
+  
+
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult ContentChild::RecvShutdown() {
   CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::IPCShutdownState, "RecvShutdown entry"_ns);

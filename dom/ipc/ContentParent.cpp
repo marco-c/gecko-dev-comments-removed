@@ -1769,6 +1769,10 @@ void ContentParent::ShutDownProcess(ShutDownMethod aMethod) {
     if (CanSend() && !mShutdownPending) {
       
       SetInputPriorityEventEnabled(false);
+      
+      
+      Unused << SendShutdownConfirmedHP();
+      
       if (SendShutdown()) {
         mShutdownPending = true;
         

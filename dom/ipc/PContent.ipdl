@@ -781,6 +781,12 @@ child:
 
 
 
+    [Priority=control] async ShutdownConfirmedHP();
+
+    
+
+
+
     async Shutdown();
 
     async LoadProcessScript(nsString url);
