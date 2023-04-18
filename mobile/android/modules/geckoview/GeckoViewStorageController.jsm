@@ -68,12 +68,15 @@ const ClearFlags = [
     1 << 7,
     Ci.nsIClearDataService.CLEAR_CONTENT_PREFERENCES |
       Ci.nsIClearDataService.CLEAR_DOM_PUSH_NOTIFICATIONS |
-      Ci.nsIClearDataService.CLEAR_SECURITY_SETTINGS,
+      
+      Ci.nsIClearDataService.CLEAR_CLIENT_AUTH_REMEMBER_SERVICE,
   ],
   [
     
     1 << 8,
     Ci.nsIClearDataService.CLEAR_EME,
+    
+    Ci.nsIClearDataService.CLEAR_HSTS,
   ],
   [
     

@@ -109,6 +109,8 @@ function testSecurityInfo({
 
 add_task(async function test_baseDomain() {
   gSSService.clearAll();
+
+  
   addTestSecurityInfo();
 
   
@@ -116,7 +118,7 @@ add_task(async function test_baseDomain() {
     Services.clearData.deleteDataFromBaseDomain(
       "example.net",
       false,
-      Ci.nsIClearDataService.CLEAR_SECURITY_SETTINGS,
+      Ci.nsIClearDataService.CLEAR_HSTS,
       aResolve
     );
   });
@@ -124,13 +126,13 @@ add_task(async function test_baseDomain() {
   testSecurityInfo({
     host: "example.net",
     expectedHSTS: false,
-    expectedCARS: false,
+    expectedCARS: true,
   });
   
   testSecurityInfo({
     host: "test.example.net",
     expectedHSTS: false,
-    expectedCARS: false,
+    expectedCARS: true,
   });
   testSecurityInfo({ host: "example.org" });
 
@@ -138,18 +140,63 @@ add_task(async function test_baseDomain() {
     host: "example.com",
     topLevelBaseDomain: "example.net",
     expectedHSTS: false,
-    expectedCARS: false,
+    expectedCARS: true,
   });
   testSecurityInfo({
     host: "example.net",
     topLevelBaseDomain: "example.org",
     expectedHSTS: false,
-    expectedCARS: false,
+    expectedCARS: true,
   });
   testSecurityInfo({
     host: "test.example.net",
     topLevelBaseDomain: "example.org",
     expectedHSTS: false,
+    expectedCARS: true,
+  });
+
+  
+  addTestSecurityInfo();
+
+  
+  await new Promise(aResolve => {
+    Services.clearData.deleteDataFromBaseDomain(
+      "example.net",
+      false,
+      Ci.nsIClearDataService.CLEAR_CLIENT_AUTH_REMEMBER_SERVICE,
+      aResolve
+    );
+  });
+
+  testSecurityInfo({
+    host: "example.net",
+    expectedHSTS: true,
+    expectedCARS: false,
+  });
+  
+  testSecurityInfo({
+    host: "test.example.net",
+    expectedHSTS: true,
+    expectedCARS: false,
+  });
+  testSecurityInfo({ host: "example.org" });
+
+  testSecurityInfo({
+    host: "example.com",
+    topLevelBaseDomain: "example.net",
+    expectedHSTS: true,
+    expectedCARS: false,
+  });
+  testSecurityInfo({
+    host: "example.net",
+    topLevelBaseDomain: "example.org",
+    expectedHSTS: true,
+    expectedCARS: false,
+  });
+  testSecurityInfo({
+    host: "test.example.net",
+    topLevelBaseDomain: "example.org",
+    expectedHSTS: true,
     expectedCARS: false,
   });
 
@@ -159,6 +206,8 @@ add_task(async function test_baseDomain() {
 
 add_task(async function test_host() {
   gSSService.clearAll();
+
+  
   addTestSecurityInfo();
 
   
@@ -166,7 +215,7 @@ add_task(async function test_host() {
     Services.clearData.deleteDataFromHost(
       "example.net",
       false,
-      Ci.nsIClearDataService.CLEAR_SECURITY_SETTINGS,
+      Ci.nsIClearDataService.CLEAR_HSTS,
       aResolve
     );
   });
@@ -174,7 +223,7 @@ add_task(async function test_host() {
   testSecurityInfo({
     host: "example.net",
     expectedHSTS: false,
-    expectedCARS: false,
+    expectedCARS: true,
   });
   testSecurityInfo({
     host: "test.example.net",
@@ -188,12 +237,55 @@ add_task(async function test_host() {
     host: "example.net",
     topLevelBaseDomain: "example.org",
     expectedHSTS: false,
-    expectedCARS: false,
+    expectedCARS: true,
   });
   testSecurityInfo({
     host: "test.example.net",
     topLevelBaseDomain: "example.org",
     expectedHSTS: false,
+    expectedCARS: true,
+  });
+
+  
+  gSSService.clearAll();
+
+  
+
+  addTestSecurityInfo();
+
+  
+  await new Promise(aResolve => {
+    Services.clearData.deleteDataFromHost(
+      "example.net",
+      false,
+      Ci.nsIClearDataService.CLEAR_CLIENT_AUTH_REMEMBER_SERVICE,
+      aResolve
+    );
+  });
+
+  testSecurityInfo({
+    host: "example.net",
+    expectedHSTS: true,
+    expectedCARS: false,
+  });
+  testSecurityInfo({
+    host: "test.example.net",
+    expectedHSTS: true,
+    expectedCARS: true,
+  });
+  testSecurityInfo({ host: "example.org" });
+
+  testSecurityInfo({ host: "example.com", topLevelBaseDomain: "example.net" });
+  testSecurityInfo({
+    host: "example.net",
+    topLevelBaseDomain: "example.org",
+    expectedHSTS: true,
+    expectedCARS: false,
+  });
+  testSecurityInfo({
+    host: "test.example.net",
+    topLevelBaseDomain: "example.org",
+    expectedHSTS: true,
     expectedCARS: true,
   });
 
