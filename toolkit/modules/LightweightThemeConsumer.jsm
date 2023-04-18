@@ -239,9 +239,10 @@ LightweightThemeConsumer.prototype = {
   _update(themeData) {
     this._lastData = themeData;
 
+    const hasDarkTheme = !!themeData.darkTheme;
     let updateGlobalThemeData = true;
     let useDarkTheme = (() => {
-      if (!themeData.darkTheme) {
+      if (!hasDarkTheme) {
         return false;
       }
       if (this.darkThemeMediaQuery?.matches) {
@@ -311,7 +312,12 @@ LightweightThemeConsumer.prototype = {
 
     if (theme.id != DEFAULT_THEME_ID || useDarkTheme) {
       if (updateGlobalThemeData) {
-        _determineToolbarAndContentTheme(this._doc, theme._processedColors);
+        _determineToolbarAndContentTheme(
+          this._doc,
+          theme,
+          hasDarkTheme,
+          useDarkTheme
+        );
       }
       root.setAttribute("lwtheme", "true");
     } else {
@@ -435,54 +441,101 @@ function _setProperty(elem, active, variableName, value) {
   }
 }
 
-function _determineToolbarAndContentTheme(aDoc, aColors) {
+function _determineToolbarAndContentTheme(
+  aDoc,
+  aTheme,
+  aHasDarkTheme = false,
+  aIsDarkTheme = false
+) {
+  const kDark = 0;
+  const kLight = 1;
+  const kSystem = 2;
+  const kToolbar = 3; 
+
+  const colors = aTheme?._processedColors;
   function prefValue(aColor, aIsForeground = false) {
     if (typeof aColor != "object") {
       aColor = _cssColorToRGBA(aDoc, aColor);
     }
-    return _isColorDark(aColor.r, aColor.g, aColor.b) == aIsForeground ? 1 : 0;
+    return _isColorDark(aColor.r, aColor.g, aColor.b) == aIsForeground
+      ? kLight
+      : kDark;
+  }
+
+  function colorSchemeValue(aColorScheme) {
+    if (!aColorScheme) {
+      return null;
+    }
+    switch (aColorScheme) {
+      case "light":
+        return kLight;
+      case "dark":
+        return kDark;
+      case "system":
+        return kSystem;
+      case "auto":
+      default:
+        break;
+    }
+    return null;
   }
 
   let toolbarTheme = (function() {
-    if (!aColors) {
+    if (!aTheme) {
       if (!DEFAULT_THEME_RESPECTS_SYSTEM_COLOR_SCHEME) {
-        return 1;
+        return kLight;
       }
-      return 2;
+      return kSystem;
+    }
+    let themeValue = colorSchemeValue(aTheme.color_scheme);
+    if (themeValue !== null) {
+      return themeValue;
+    }
+    if (aHasDarkTheme) {
+      return aIsDarkTheme ? kDark : kLight;
     }
     
     
     
-    if (aColors.toolbarColor) {
-      let color = _cssColorToRGBA(aDoc, aColors.toolbarColor);
+    if (colors.toolbarColor) {
+      let color = _cssColorToRGBA(aDoc, colors.toolbarColor);
       if (color.a == 1) {
         return prefValue(color);
       }
     }
-    if (aColors.toolbar_text) {
-      return prefValue(aColors.toolbar_text,  true);
+    if (colors.toolbar_text) {
+      return prefValue(colors.toolbar_text,  true);
     }
     
     
     
     
     
-    return prefValue(aColors.textcolor || "black",  true);
+    return prefValue(colors.textcolor || "black",  true);
   })();
 
   let contentTheme = (function() {
-    if (!aColors) {
-      return 2;
+    if (!aTheme) {
+      return kToolbar;
     }
-    if (aColors.ntp_background) {
+    let themeValue = colorSchemeValue(
+      aTheme.content_color_scheme || aTheme.color_scheme
+    );
+    if (themeValue !== null) {
+      return themeValue;
+    }
+    if (aHasDarkTheme) {
+      return aIsDarkTheme ? kDark : kLight;
+    }
+    if (colors.ntp_background) {
       
       
-      return prefValue(aColors.ntp_background);
+      return prefValue(colors.ntp_background);
     }
-    if (aColors.ntp_text) {
-      return prefValue(aColors.ntp_text,  true);
+    if (colors.ntp_text) {
+      return prefValue(colors.ntp_text,  true);
     }
-    return 2;
+    return kToolbar;
   })();
 
   Services.prefs.setIntPref("browser.theme.toolbar-theme", toolbarTheme);
