@@ -1498,7 +1498,7 @@ public class Tokenizer implements Locator, Locator2 {
             
             
             
-            char[] newBuf = new char[worstCase];
+            char[] newBuf = new char[Math.max(worstCase, (strBuf.length*5)/4)];
             System.arraycopy(strBuf, 0, newBuf, 0, strBufLen);
             strBuf = newBuf;
         }
