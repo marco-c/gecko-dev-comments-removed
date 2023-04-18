@@ -321,7 +321,7 @@ void U2FTokenManager::Register(
   mLastTransactionId = aTransactionId;
 
   
-  bool directAttestationRequested = false;
+  bool noneAttestationRequested = true;
 
 
 
@@ -332,17 +332,16 @@ void U2FTokenManager::Register(
     AttestationConveyancePreference attestation =
         extra.attestationConveyancePreference();
 
-    directAttestationRequested =
-        attestation == AttestationConveyancePreference::Direct;
+    noneAttestationRequested =
+        attestation == AttestationConveyancePreference::None;
   }
 #endif  
 
   
   
-  if (!directAttestationRequested ||
+  if (noneAttestationRequested ||
       U2FPrefManager::Get()->GetAllowDirectAttestationForTesting()) {
-    
-    DoRegister(aTransactionInfo, !directAttestationRequested);
+    DoRegister(aTransactionInfo, noneAttestationRequested);
     return;
   }
 
