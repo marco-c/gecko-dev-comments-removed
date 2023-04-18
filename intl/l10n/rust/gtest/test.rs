@@ -4,16 +4,33 @@
 
 use l10nregistry_ffi::load::{load_async, load_sync};
 use moz_task;
+use std::borrow::Borrow;
+
+
+
+
+
+
+
+
+
+fn assert_about_about_correct<T: Borrow<[u8]>> (res: T) {
+    assert!(res.borrow().len() > 0);
+
+    
+    let needle = b"about-about-title";
+    assert!(res.borrow().windows(needle.len()).position(|window| window == needle).is_some());
+
+    let needle = b"about-about-note";
+    assert!(res.borrow().windows(needle.len()).position(|window| window == needle).is_some());
+}
 
 #[no_mangle]
 pub extern "C" fn Rust_L10NLoadAsync(it_worked: *mut bool) {
     let future = async move {
         match load_async("resource://gre/localization/en-US/toolkit/about/aboutAbout.ftl").await {
             Ok(res) => {
-                assert_eq!(res.len(), 460);
-                assert!(res.starts_with(
-                    b"# This Source Code Form is subject to the terms of the Mozilla Public"
-                ));
+                assert_about_about_correct(res);
                 unsafe {
                     *it_worked = true;
                 }
@@ -31,10 +48,7 @@ pub extern "C" fn Rust_L10NLoadAsync(it_worked: *mut bool) {
 pub extern "C" fn Rust_L10NLoadSync(it_worked: *mut bool) {
     match load_sync("resource://gre/localization/en-US/toolkit/about/aboutAbout.ftl") {
         Ok(res) => {
-            assert_eq!(res.len(), 460);
-            assert!(res.starts_with(
-                b"# This Source Code Form is subject to the terms of the Mozilla Public"
-            ));
+            assert_about_about_correct(res);
             unsafe {
                 *it_worked = true;
             }
