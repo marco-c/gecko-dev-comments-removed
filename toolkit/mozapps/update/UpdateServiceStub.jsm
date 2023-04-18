@@ -16,10 +16,6 @@ const { AppConstants } = ChromeUtils.import(
 
 const DIR_UPDATES = "updates";
 const FILE_UPDATE_STATUS = "update.status";
-const FILE_ACTIVE_UPDATE_XML = "active-update.xml";
-const FILE_LAST_UPDATE_LOG = "last-update.log";
-const FILE_UPDATES_XML = "updates.xml";
-const FILE_UPDATE_LOG = "update.log";
 const FILE_UPDATE_MESSAGES = "update_messages.log";
 const FILE_BACKUP_MESSAGES = "update_messages_old.log";
 
@@ -30,7 +26,7 @@ const KEY_PROFILE_DIR = "ProfD";
 
 
 
-const PREF_PREFIX_UPDATE_DIR_MIGRATED = "app.update.migrated.updateDir2.";
+const PREF_PREFIX_UPDATE_DIR_MIGRATED = "app.update.migrated.updateDir3.";
 const PREF_APP_UPDATE_ALTUPDATEDIRPATH = "app.update.altUpdateDirPath";
 const PREF_APP_UPDATE_LOG = "app.update.log";
 const PREF_APP_UPDATE_FILE_LOGGING = "app.update.log.file";
@@ -88,8 +84,19 @@ function UpdateServiceStub() {
     AppConstants.platform == "win" &&
     !Services.prefs.getBoolPref(prefUpdateDirMigrated, false)
   ) {
-    migrateUpdateDirectory();
     Services.prefs.setBoolPref(prefUpdateDirMigrated, true);
+    try {
+      migrateUpdateDirectory();
+    } catch (ex) {
+      
+      
+      
+      
+      LOG(
+        `UpdateServiceStub:UpdateServiceStub Failed to migrate update ` +
+          `directory. Exception: ${ex}`
+      );
+    }
   }
 
   
@@ -142,120 +149,271 @@ function deactivateUpdateLogFile() {
 
 
 function migrateUpdateDirectory() {
+  LOG("UpdateServiceStub:migrateUpdateDirectory Performing migration");
+
   let sourceRootDir = FileUtils.getDir(KEY_OLD_UPDROOT, [], false);
   let destRootDir = FileUtils.getDir(KEY_UPDROOT, [], false);
+  let hash = destRootDir.leafName;
 
   if (!sourceRootDir.exists()) {
-    LOG(
-      "UpdateServiceStub:_migrateUpdateDirectory - Abort: No migration " +
-        "necessary. Nothing to migrate."
-    );
+    
     return;
   }
 
-  if (destRootDir.exists()) {
+  
+  const toMigrate = [
+    ["updates.xml"],
+    ["active-update.xml"],
+    ["update-config.json"],
+    ["updates", "last-update.log"],
+    ["updates", "backup-update.log"],
+    ["updates", "downloading", FILE_UPDATE_STATUS],
+    ["updates", "downloading", "update.mar"],
+    ["updates", "0", FILE_UPDATE_STATUS],
+    ["updates", "0", "update.mar"],
+    ["updates", "0", "update.version"],
+    ["updates", "0", "update.log"],
+    ["backgroundupdate", "datareporting", "glean", "db", "data.safe.bin"],
+  ];
+
+  
+  
+  
+  
+  for (let pathComponents of toMigrate) {
+    
+    let destFile = destRootDir.clone();
+    for (let pathComponent of pathComponents) {
+      destFile.append(pathComponent);
+    }
+
+    if (destFile.exists()) {
+      LOG(
+        `UpdateServiceStub:migrateUpdateDirectory Aborting migration because ` +
+          `"${destFile.path}" already exists.`
+      );
+      return;
+    }
+  }
+
+  
+  
+  let sourceRootParent = sourceRootDir.parent.parent;
+  let destRootParent = destRootDir.parent.parent;
+
+  let profileCountFile = sourceRootParent.clone();
+  profileCountFile.append(`profile_count_${hash}.json`);
+  migrateFile(profileCountFile, destRootParent);
+
+  const updatePingPrefix = `uninstall_ping_${hash}_`;
+  const updatePingSuffix = ".json";
+  try {
+    for (let file of sourceRootParent.directoryEntries) {
+      if (
+        file.leafName.startsWith(updatePingPrefix) &&
+        file.leafName.endsWith(updatePingSuffix)
+      ) {
+        migrateFile(file, destRootParent);
+      }
+    }
+  } catch (ex) {
+    
     
     LOG(
-      "UpdateServiceStub:_migrateUpdateDirectory - migrated and unmigrated " +
-        "update directories found. Deleting the unmigrated directory: " +
-        sourceRootDir.path
+      `UpdateServiceStub:migrateUpdateDirectory Failed to migrate uninstall ` +
+        `ping. Exception: ${ex}`
     );
+  }
+
+  
+  
+  const backgroundLogPrefix = `backgroundupdate`;
+  const backgroundLogSuffix = ".moz_log";
+  try {
+    for (let file of sourceRootDir.directoryEntries) {
+      if (
+        file.leafName.startsWith(backgroundLogPrefix) &&
+        file.leafName.endsWith(backgroundLogSuffix)
+      ) {
+        migrateFile(file, destRootDir);
+      }
+    }
+  } catch (ex) {
+    LOG(
+      `UpdateServiceStub:migrateUpdateDirectory Failed to migrate background ` +
+        `log file. Exception: ${ex}`
+    );
+  }
+
+  const pendingPingRelDir =
+    "backgroundupdate\\datareporting\\glean\\pending_pings";
+  let pendingPingSourceDir = sourceRootDir.clone();
+  pendingPingSourceDir.appendRelativePath(pendingPingRelDir);
+  let pendingPingDestDir = destRootDir.clone();
+  pendingPingDestDir.appendRelativePath(pendingPingRelDir);
+  
+  const pendingPingFilenameRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+  if (pendingPingSourceDir.exists()) {
     try {
-      sourceRootDir.remove(true);
-    } catch (e) {
+      for (let file of pendingPingSourceDir.directoryEntries) {
+        if (pendingPingFilenameRegex.test(file.leafName)) {
+          migrateFile(file, pendingPingDestDir);
+        }
+      }
+    } catch (ex) {
+      
+      
       LOG(
-        "UpdateServiceStub:_migrateUpdateDirectory - Deletion of " +
-          "unmigrated directory failed. Exception: " +
-          e
+        `UpdateServiceStub:migrateUpdateDirectory Failed to migrate ` +
+          `pending pings. Exception: ${ex}`
       );
     }
+  }
+
+  
+  for (let pathComponents of toMigrate) {
+    let filename = pathComponents.pop();
+
+    
+    let sourceFile = sourceRootDir.clone();
+    let destDir = destRootDir.clone();
+    for (let pathComponent of pathComponents) {
+      sourceFile.append(pathComponent);
+      destDir.append(pathComponent);
+    }
+    sourceFile.append(filename);
+
+    migrateFile(sourceFile, destDir);
+  }
+
+  
+  
+  let updateLockFile = sourceRootParent.clone();
+  updateLockFile.append(`UpdateLock-${hash}`);
+  try {
+    updateLockFile.remove(false);
+  } catch (ex) {}
+
+  
+  
+  
+  
+  
+  
+  
+  cleanupDir(sourceRootDir, true);
+  
+  cleanupDir(sourceRootDir.parent, false);
+  
+  cleanupDir(sourceRootParent, false);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function migrateFile(sourceFile, destDir) {
+  if (!sourceFile.exists()) {
     return;
   }
 
-  let sourceUpdateDir = sourceRootDir.clone();
-  sourceUpdateDir.append(DIR_UPDATES);
-  let destUpdateDir = destRootDir.clone();
-  destUpdateDir.append(DIR_UPDATES);
-
-  let sourcePatchDir = sourceUpdateDir.clone();
-  sourcePatchDir.append("0");
-  let destPatchDir = destUpdateDir.clone();
-  destPatchDir.append("0");
-
-  let sourceStatusFile = sourcePatchDir.clone();
-  sourceStatusFile.append(FILE_UPDATE_STATUS);
-  let destStatusFile = destPatchDir.clone();
-  destStatusFile.append(FILE_UPDATE_STATUS);
-
-  let sourceActiveXML = sourceRootDir.clone();
-  sourceActiveXML.append(FILE_ACTIVE_UPDATE_XML);
-  try {
-    sourceActiveXML.moveTo(destRootDir, sourceActiveXML.leafName);
-  } catch (e) {
+  if (sourceFile.isDirectory()) {
     LOG(
-      "UpdateServiceStub:_migrateUpdateDirectory - Unable to move active " +
-        "update XML file. Exception: " +
-        e
+      `UpdateServiceStub:migrateFile Aborting attempt to migrate ` +
+        `"${sourceFile.path}" because it is a directory.`
     );
-  }
-
-  let sourceUpdateXML = sourceRootDir.clone();
-  sourceUpdateXML.append(FILE_UPDATES_XML);
-  try {
-    sourceUpdateXML.moveTo(destRootDir, sourceUpdateXML.leafName);
-  } catch (e) {
-    LOG(
-      "UpdateServiceStub:_migrateUpdateDirectory - Unable to move " +
-        "update XML file. Exception: " +
-        e
-    );
-  }
-
-  let sourceUpdateLog = sourcePatchDir.clone();
-  sourceUpdateLog.append(FILE_UPDATE_LOG);
-  try {
-    sourceUpdateLog.moveTo(destPatchDir, sourceUpdateLog.leafName);
-  } catch (e) {
-    LOG(
-      "UpdateServiceStub:_migrateUpdateDirectory - Unable to move " +
-        "update log file. Exception: " +
-        e
-    );
-  }
-
-  let sourceLastUpdateLog = sourceUpdateDir.clone();
-  sourceLastUpdateLog.append(FILE_LAST_UPDATE_LOG);
-  try {
-    sourceLastUpdateLog.moveTo(destUpdateDir, sourceLastUpdateLog.leafName);
-  } catch (e) {
-    LOG(
-      "UpdateServiceStub:_migrateUpdateDirectory - Unable to move " +
-        "last-update log file. Exception: " +
-        e
-    );
-  }
-
-  try {
-    sourceStatusFile.moveTo(destStatusFile.parent, destStatusFile.leafName);
-  } catch (e) {
-    LOG(
-      "UpdateServiceStub:_migrateUpdateDirectory - Unable to move update " +
-        "status file. Exception: " +
-        e
-    );
+    return;
   }
 
   
-  
   try {
-    sourceRootDir.remove(true);
-  } catch (e) {
+    
+    
+    destDir.create(Ci.nsIFile.DIRECTORY_TYPE, 0);
+  } catch (ex) {
+    if (ex.result != Cr.NS_ERROR_FILE_ALREADY_EXISTS) {
+      LOG(
+        `UpdateServiceStub:migrateFile Unable to create destination ` +
+          `directory "${destDir.path}": ${ex}`
+      );
+    }
+  }
+
+  try {
+    sourceFile.moveTo(destDir, null);
+    return;
+  } catch (ex) {}
+
+  try {
+    sourceFile.copyTo(destDir, null);
+  } catch (ex) {
     LOG(
-      "UpdateServiceStub:_migrateUpdateDirectory - Deletion of old update " +
-        "directory failed. Exception: " +
-        e
+      `UpdateServiceStub:migrateFile Failed to migrate file from ` +
+        `"${sourceFile.path}" to "${destDir.path}". Exception: ${ex}`
+    );
+    return;
+  }
+
+  try {
+    sourceFile.remove(false);
+  } catch (ex) {
+    LOG(
+      `UpdateServiceStub:migrateFile Successfully migrated file from ` +
+        `"${sourceFile.path}" to "${destDir.path}", but was unable to remove ` +
+        `the original. Exception: ${ex}`
     );
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+function cleanupDir(dir, recurse) {
+  let directoryEmpty = true;
+  try {
+    for (let file of dir.directoryEntries) {
+      if (!recurse) {
+        
+        
+        
+        return false;
+      }
+      if (file.isDirectory()) {
+        if (!cleanupDir(file, recurse)) {
+          directoryEmpty = false;
+        }
+      } else {
+        directoryEmpty = false;
+      }
+    }
+  } catch (ex) {
+    
+    
+    return false;
+  }
+
+  if (directoryEmpty) {
+    try {
+      dir.remove(false);
+      return true;
+    } catch (ex) {}
+  }
+  return false;
 }
 
 
