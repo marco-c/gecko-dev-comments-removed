@@ -15,6 +15,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
   CONTEXT_DESCRIPTOR_TYPES:
     "chrome://remote/content/shared/messagehandler/MessageHandler.jsm",
+  isBrowsingContextCompatible:
+    "chrome://remote/content/shared/messagehandler/transports/FrameContextUtils.jsm",
   MessageHandlerFrameActor:
     "chrome://remote/content/shared/messagehandler/transports/js-window-actors/MessageHandlerFrameActor.jsm",
 });
@@ -148,36 +150,11 @@ class FrameTransport {
       }
 
       for (const { browsingContext } of win.gBrowser.browsers) {
-        
-        
-        const isChrome = browsingContext.currentWindowGlobal.osPid === -1;
-
-        
-        
-        
-        
-        
-        
-        
-        
-        const isInitialDocument =
-          browsingContext.currentWindowGlobal.isInitialDocument;
-        if (isChrome || isInitialDocument) {
-          continue;
+        if (isBrowsingContextCompatible(browsingContext, { browserId })) {
+          browsingContexts = browsingContexts.concat(
+            browsingContext.getAllBrowsingContextsInSubtree()
+          );
         }
-
-        
-        
-        if (
-          typeof browserId !== "undefined" &&
-          browsingContext.browserId !== browserId
-        ) {
-          continue;
-        }
-
-        browsingContexts = browsingContexts.concat(
-          browsingContext.getAllBrowsingContextsInSubtree()
-        );
       }
     }
 
