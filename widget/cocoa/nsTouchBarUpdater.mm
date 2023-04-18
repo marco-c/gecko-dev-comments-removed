@@ -1,25 +1,18 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #import <Cocoa/Cocoa.h>
 
 #include "nsTouchBar.h"
 #include "nsTouchBarInput.h"
 #include "nsTouchBarUpdater.h"
-#include "nsTouchBarNativeAPIDefines.h"
 
 #include "nsIBaseWindow.h"
 #include "nsIWidget.h"
 
-// defined in nsCocoaWindow.mm.
-extern BOOL sTouchBarIsInitialized;
 
-#if !defined(MAC_OS_X_VERSION_10_12_2) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12_2
-@interface BaseWindow (NSTouchBarProvider)
-@property(strong) NSTouchBar* touchBar;
-@end
-#endif
+extern BOOL sTouchBarIsInitialized;
 
 NS_IMPL_ISUPPORTS(nsTouchBarUpdater, nsITouchBarUpdater);
 
@@ -44,8 +37,8 @@ nsTouchBarUpdater::UpdateTouchBarInputs(nsIBaseWindow* aWindow,
       }
 
       NSTouchBarItemIdentifier newIdentifier = [TouchBarInput nativeIdentifierWithXPCOM:input];
-      // We don't support updating the Share scrubber since it's a special
-      // Apple-made component that behaves differently from the other inputs.
+      
+      
       if ([newIdentifier isEqualToString:[TouchBarInput nativeIdentifierWithType:@"scrubber"
                                                                          withKey:@"share"]]) {
         continue;
@@ -71,8 +64,8 @@ nsTouchBarUpdater::ShowPopover(nsIBaseWindow* aWindow, nsITouchBarInput* aPopove
   }
 
   if ([cocoaWin respondsToSelector:@selector(touchBar)]) {
-    // We don't need to completely reinitialize the popover. We only need its
-    // identifier to look it up in [nsTouchBar mappedLayoutItems].
+    
+    
     NSTouchBarItemIdentifier popoverIdentifier = [TouchBarInput nativeIdentifierWithXPCOM:aPopover];
 
     TouchBarInput* popoverItem =
@@ -108,7 +101,7 @@ BaseWindow* nsTouchBarUpdater::GetCocoaWindow(nsIBaseWindow* aWindow) {
   return cocoaWin;
 }
 
-// NOTE: This method is for internal unit tests only.
+
 NS_IMETHODIMP
 nsTouchBarUpdater::SetTouchBarInitialized(bool aIsInitialized) {
   sTouchBarIsInitialized = aIsInitialized;

@@ -137,19 +137,9 @@ static void ActivateBundledFonts() {
 
 
 
-
-
-
-
-
-#if __MAC_OS_X_VERSION_MAX_ALLOWED < 101500
-static const nsLiteralCString kLangFontsDirs[] = {
-    "/Library/Application Support/Apple/Fonts/Language Support"_ns};
-#else
 static const nsLiteralCString kLangFontsDirs[] = {
     "/Library/Application Support/Apple/Fonts/Language Support"_ns,
     "/System/Library/Fonts/Supplemental"_ns};
-#endif
 
 static void FontRegistrationCallback(void* aUnused) {
   AUTO_PROFILER_REGISTER_THREAD("RegisterFonts");
