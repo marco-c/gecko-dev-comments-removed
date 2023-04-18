@@ -73,7 +73,7 @@ def make_task_description(config, jobs):
         
         
         if job["worker"]["publish-mode"] == "Manual":
-            job["shipping-phase"] = "build"
+            job["shipping-phase"] = "promote"
 
         yield job
 
