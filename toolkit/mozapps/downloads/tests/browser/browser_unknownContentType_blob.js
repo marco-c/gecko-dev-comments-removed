@@ -97,7 +97,7 @@ async function check_blob_origin(pageURL, expectedSource, expectedListOrigin) {
     
     await BrowserTestUtils.withNewTab("about:downloads", async dlBrowser => {
       let doc = dlBrowser.contentDocument;
-      let listNode = doc.getElementById("downloadsRichListBox");
+      let listNode = doc.getElementById("downloadsListBox");
       await BrowserTestUtils.waitForMutationCondition(
         listNode,
         { childList: true, subtree: true, attributeFilter: ["value"] },

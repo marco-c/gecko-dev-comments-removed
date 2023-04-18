@@ -10,14 +10,14 @@ const { PrivateBrowsingUtils } = ChromeUtils.import(
 
 var ContentAreaDownloadsView = {
   init() {
-    let box = document.getElementById("downloadsRichListBox");
+    let box = document.getElementById("downloadsListBox");
     box.addEventListener(
       "InitialDownloadsLoaded",
       () => {
         
         
         document
-          .getElementById("downloadsRichListBox")
+          .getElementById("downloadsListBox")
           .focus({ preventFocusRing: true });
       },
       { once: true }
