@@ -16,10 +16,8 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/IntegerPrintfMacros.h"
 
-namespace mozilla {
-namespace media {
+namespace mozilla::media {
 class TimeIntervals;
-}  
 }  
 
 template <>

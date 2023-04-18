@@ -12,8 +12,7 @@
 #include "nsISupportsImpl.h"
 #include "nsITimer.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class DetailedPromise;
 class TestGMPVideoDecoder;
@@ -225,7 +224,6 @@ class MediaKeySystemAccessManager final : public nsIObserver, public nsINamed {
       mAppAllowsProtectedMediaPromiseRequest;
 };
 
-}  
 }  
 
 #endif  

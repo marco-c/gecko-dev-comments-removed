@@ -14,8 +14,7 @@
 
 #include <queue>
 
-namespace mozilla {
-namespace gmp {
+namespace mozilla::gmp {
 
 class GMPChild;
 class GMPStorageChild;
@@ -90,7 +89,6 @@ class GMPStorageChild : public PGMPStorageChild {
   bool mShutdown;
 };
 
-}  
 }  
 
 #endif  

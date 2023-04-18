@@ -7,8 +7,7 @@
 #ifndef MOZILLA_PRINCIPALCHANGEOBSERVER_H_
 #define MOZILLA_PRINCIPALCHANGEOBSERVER_H_
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -23,7 +22,6 @@ class PrincipalChangeObserver {
   virtual void PrincipalChanged(T* aArg) = 0;
 };
 
-}  
 }  
 
 #endif 

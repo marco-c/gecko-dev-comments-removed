@@ -10,8 +10,7 @@
 #include "GMPSharedMemManager.h"
 #include "nsISupportsImpl.h"
 
-namespace mozilla {
-namespace gmp {
+namespace mozilla::gmp {
 
 class GMPParent;
 class GMPVideoDecoderParent;
@@ -86,7 +85,6 @@ class GMPContentParent final : public PGMPContentParent, public GMPSharedMem {
   uint32_t mCloseBlockerCount = 0;
 };
 
-}  
 }  
 
 #endif  

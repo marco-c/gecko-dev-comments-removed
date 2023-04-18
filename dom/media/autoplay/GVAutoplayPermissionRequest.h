@@ -10,8 +10,7 @@
 
 class nsGlobalWindowInner;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -82,7 +81,6 @@ class GVAutoplayPermissionRequestor final {
                                  GVAutoplayRequestType aType);
 };
 
-}  
 }  
 
 #endif

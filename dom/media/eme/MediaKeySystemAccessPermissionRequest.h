@@ -12,8 +12,7 @@
 
 class nsGlobalWindowInner;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -70,7 +69,6 @@ class MediaKeySystemAccessPermissionRequest
   MozPromiseHolder<RequestPromise> mPromiseHolder;
 };
 
-}  
 }  
 
 #endif  

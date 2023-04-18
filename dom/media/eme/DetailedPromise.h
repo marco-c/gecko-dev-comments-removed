@@ -11,8 +11,7 @@
 #include "mozilla/Telemetry.h"
 #include "EMEUtils.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -100,7 +99,6 @@ class DetailedPromise : public Promise {
   Optional<Telemetry::HistogramID> mFailureLatencyProbe;
 };
 
-}  
 }  
 
 #endif  

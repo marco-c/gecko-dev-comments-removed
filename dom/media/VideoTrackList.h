@@ -10,8 +10,7 @@
 #include "MediaTrack.h"
 #include "MediaTrackList.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class VideoTrack;
 
@@ -47,7 +46,6 @@ class VideoTrackList : public MediaTrackList {
   int32_t mSelectedIndex;
 };
 
-}  
 }  
 
 #endif  
