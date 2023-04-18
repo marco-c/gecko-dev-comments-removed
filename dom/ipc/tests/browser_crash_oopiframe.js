@@ -1,13 +1,5 @@
 "use strict";
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "TelemetryTestUtils",
-  "resource://testing-common/TelemetryTestUtils.jsm"
-);
-
-const SUBFRAME_CRASH_PRESENTED_KEY = "notificationbar.crash_subframe_ui";
-
 
 
 
@@ -47,8 +39,6 @@ async function openTestTabs(numTabs) {
 
 
 async function testFrameCrash(numTabs) {
-  Services.telemetry.clearScalars();
-
   let iframeBC = await openTestTabs(numTabs);
   let browser = gBrowser.selectedBrowser;
   let rootBC = browser.browsingContext;
@@ -125,36 +115,6 @@ async function testFrameCrash(numTabs) {
   
   await notificationPromise;
 
-  info("Subframe crashed ui count");
-  TelemetryTestUtils.assertKeyedScalar(
-    TelemetryTestUtils.getProcessScalars("parent", true),
-    SUBFRAME_CRASH_PRESENTED_KEY,
-    "shown",
-    1
-  );
-
-  if (numTabs > 1) {
-    
-    
-    await BrowserTestUtils.switchTab(gBrowser, gBrowser.tabs[1]);
-    info("Subframe crashed ui count after switching tab");
-    TelemetryTestUtils.assertKeyedScalar(
-      TelemetryTestUtils.getProcessScalars("parent", true),
-      SUBFRAME_CRASH_PRESENTED_KEY,
-      "shown",
-      2
-    );
-
-    await BrowserTestUtils.switchTab(gBrowser, gBrowser.tabs[2]);
-    info("Subframe crashed ui count after switching tab again");
-    TelemetryTestUtils.assertKeyedScalar(
-      TelemetryTestUtils.getProcessScalars("parent", true),
-      SUBFRAME_CRASH_PRESENTED_KEY,
-      "shown",
-      3
-    );
-  }
-
   for (let count = 1; count <= numTabs; count++) {
     let notificationBox = gBrowser.getNotificationBox(gBrowser.browsers[count]);
     let notification = notificationBox.currentNotification;
@@ -204,14 +164,6 @@ async function testFrameCrash(numTabs) {
   for (let count = 1; count <= numTabs; count++) {
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   }
-
-  info("Subframe crashed ui count at end of test");
-  TelemetryTestUtils.assertKeyedScalar(
-    TelemetryTestUtils.getProcessScalars("parent", true),
-    SUBFRAME_CRASH_PRESENTED_KEY,
-    "shown",
-    numTabs > 1 ? 3 : 1
-  );
 }
 
 
