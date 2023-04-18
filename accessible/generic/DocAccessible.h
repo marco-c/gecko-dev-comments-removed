@@ -572,7 +572,7 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
 
-  void ARIAActiveDescendantIDMaybeMoved(dom::Element* aElm);
+  void ARIAActiveDescendantIDMaybeMoved(LocalAccessible* aAccessible);
 
   
 
