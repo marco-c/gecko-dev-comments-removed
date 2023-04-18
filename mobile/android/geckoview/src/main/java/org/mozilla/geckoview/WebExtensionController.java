@@ -1093,7 +1093,7 @@ public class WebExtensionController {
 
     final String url = sender.getString("url");
     final boolean isTopLevel;
-    if (session == null) {
+    if (session == null || environmentType == WebExtension.MessageSender.ENV_TYPE_EXTENSION) {
       
       isTopLevel = true;
     } else {
