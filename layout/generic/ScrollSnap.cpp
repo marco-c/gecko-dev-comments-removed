@@ -111,27 +111,17 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
                              nscoord aStartPos, nscoord aScrollingDirection,
                              nscoord* aBestEdge, nscoord* aSecondBestEdge,
                              bool* aEdgeFound) {
-  
-  
-  
-  
-  
-  if (mUnit != ScrollUnit::DEVICE_PIXELS) {
+  if (mSnapFlags & ScrollSnapFlags::IntendedDirection) {
     
     
-    if (aScrollingDirection == 0) {
+    if (aScrollingDirection == 0 ||
+        (aEdge - aStartPos) * aScrollingDirection <= 0) {
       
-      return;
-    }
-
-    
-    
-    nscoord direction = (aEdge - aStartPos) * aScrollingDirection;
-    if (direction <= 0) {
       
       return;
     }
   }
+
   if (!*aEdgeFound) {
     *aBestEdge = aEdge;
     *aEdgeFound = true;
