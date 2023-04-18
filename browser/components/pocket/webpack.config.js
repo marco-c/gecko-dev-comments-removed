@@ -4,6 +4,7 @@
 
 
 module.exports = {
+  mode: "production",
   entry: {
     main: "./content/panels/js/main.js",
   },
