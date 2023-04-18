@@ -37,7 +37,38 @@ nsresult NewBufferFromStorageStream(nsIStorageStream* storageStream,
 
 nsresult ResolveURI(nsIURI* in, nsIURI** out);
 
-nsresult PathifyURI(nsIURI* in, nsACString& out);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nsresult PathifyURI(const char* loaderType, size_t loaderTypeLength, nsIURI* in,
+                    nsACString& out);
+
+template <int N>
+nsresult PathifyURI(const char (&loaderType)[N], nsIURI* in, nsACString& out) {
+  return PathifyURI(loaderType, N - 1, in, out);
+}
+
 }  
 }  
 
