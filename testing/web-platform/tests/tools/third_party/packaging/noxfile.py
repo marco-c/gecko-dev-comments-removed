@@ -1,17 +1,18 @@
 
 
-import time
-import re
-import os
-import sys
-import glob
-import shutil
+import contextlib
+import datetime
 import difflib
+import glob
+import os
+import re
+import shutil
+import subprocess
+import sys
 import tempfile
 import textwrap
-import datetime
-import contextlib
-import subprocess
+import time
+import webbrowser
 from pathlib import Path
 
 import nox
@@ -20,13 +21,14 @@ nox.options.sessions = ["lint"]
 nox.options.reuse_existing_virtualenvs = True
 
 
-@nox.session(python=["2.7", "3.4", "3.5", "3.6", "3.7", "3.8", "3.9", "pypy", "pypy3"])
+@nox.session(python=["3.6", "3.7", "3.8", "3.9", "3.10", "pypy3"])
 def tests(session):
     def coverage(*args):
         session.run("python", "-m", "coverage", *args)
 
     
-    session.install("coverage<5.0.0", "pretend", "pytest", "pip>=9.0.2")
+    session.install("coverage<5.0.0", "pretend", "pytest>=6.2.0", "pip>=9.0.2")
+    session.install(".")
 
     if "pypy" not in session.python:
         coverage(
@@ -35,14 +37,19 @@ def tests(session):
             "packaging/",
             "-m",
             "pytest",
-            "--strict",
+            "--strict-markers",
             *session.posargs,
         )
         coverage("report", "-m", "--fail-under", "100")
     else:
         
         session.run(
-            "python", "-m", "pytest", "--capture=no", "--strict", *session.posargs
+            "python",
+            "-m",
+            "pytest",
+            "--capture=no",
+            "--strict-markers",
+            *session.posargs,
         )
 
 
@@ -54,7 +61,7 @@ def lint(session):
 
     
     session.install("build", "twine")
-    session.run("python", "-m", "build")
+    session.run("pyproject-build")
     session.run("twine", "check", *glob.glob("dist/*"))
 
 
@@ -62,6 +69,7 @@ def lint(session):
 def docs(session):
     shutil.rmtree("docs/_build", ignore_errors=True)
     session.install("furo")
+    session.install("-e", ".")
 
     variants = [
         
@@ -86,13 +94,14 @@ def docs(session):
 @nox.session
 def release(session):
     package_name = "packaging"
-    version_file = Path(f"{package_name}/__init__.py")
+    version_file = Path(f"{package_name}/__about__.py")
     changelog_file = Path("CHANGELOG.rst")
 
     try:
         release_version = _get_version_from_arguments(session.posargs)
     except ValueError as e:
         session.error(f"Invalid arguments: {e}")
+        return
 
     
     _check_working_directory_state(session)
@@ -132,7 +141,7 @@ def release(session):
     
     files = sorted(glob.glob("dist/*"))
     expected = [
-        f"dist/{package_name}-{release_version}-py2.py3-none-any.whl",
+        f"dist/{package_name}-{release_version}-py3-none-any.whl",
         f"dist/{package_name}-{release_version}.tar.gz",
     ]
     if files != expected:
@@ -143,19 +152,22 @@ def release(session):
         session.error(f"Got the wrong files:\n{diff}")
 
     
-    session.run("git", "checkout", "-q", "master", external=True)
+    session.run("git", "checkout", "-q", "main", external=True)
 
     
     session.run("twine", "check", *files)
 
     
+    
+    
+    
+    session.run("git", "push", "upstream", "main", release_version, external=True)
+
+    
     session.run("twine", "upload", *files)
 
     
-    
-    
-    
-    session.run("git", "push", "upstream", "master", release_version, external=True)
+    webbrowser.open("https://github.com/pypa/packaging/releases")
 
 
 
@@ -214,8 +226,8 @@ def _check_git_state(session, version_tag):
         capture_output=True,
         encoding="utf-8",
     )
-    if result.stdout != "master\n":
-        session.error(f"Not on master branch: {result.stdout!r}")
+    if result.stdout != "main\n":
+        session.error(f"Not on main branch: {result.stdout!r}")
 
     
     result = subprocess.run(

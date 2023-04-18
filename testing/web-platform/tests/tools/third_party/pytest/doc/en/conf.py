@@ -15,11 +15,15 @@
 
 
 
+import ast
 import os
+import shutil
 import sys
+from textwrap import dedent
+from typing import List
+from typing import TYPE_CHECKING
 
 from _pytest import __version__ as version
-from _pytest.compat import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import sphinx.application
@@ -33,7 +37,25 @@ release = ".".join(version.split(".")[:2])
 
 
 autodoc_member_order = "bysource"
+autodoc_typehints = "description"
 todo_include_todos = 1
+
+latex_engine = "lualatex"
+
+latex_elements = {
+    "preamble": dedent(
+        r"""
+        \directlua{
+            luaotfload.add_fallback("fallbacks", {
+                "Noto Serif CJK SC:style=Regular;",
+                "Symbola:Style=Regular;"
+            })
+        }
+
+        \setmainfont{FreeSerif}[RawFeature={fallback=fallbacks}]
+        """
+    )
+}
 
 
 
@@ -47,12 +69,20 @@ extensions = [
     "pygments_pytest",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
+    "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     "sphinx_removed_in",
     "sphinxcontrib_trio",
 ]
+
+
+
+
+
+if shutil.which("inkscape"):
+    extensions.append("sphinxcontrib.inkscapeconverter")
 
 
 templates_path = ["_templates"]
@@ -68,7 +98,7 @@ master_doc = "contents"
 
 
 project = "pytest"
-copyright = "2015–2020, holger krekel and pytest-dev team"
+copyright = "2015, holger krekel and pytest-dev team"
 
 
 
@@ -120,7 +150,6 @@ pygments_style = "sphinx"
 
 
 linkcheck_ignore = [
-    "https://github.com/numpy/numpy/blob/master/doc/release/1.16.0-notes.rst#new-deprecations",
     "https://blogs.msdn.microsoft.com/bharry/2017/06/28/testing-in-a-cloud-delivery-cadence/",
     "http://pythontesting.net/framework/pytest-introduction/",
     r"https://github.com/pytest-dev/pytest/issues/\d+",
@@ -129,6 +158,16 @@ linkcheck_ignore = [
 
 
 linkcheck_workers = 5
+
+
+_repo = "https://github.com/pytest-dev/pytest"
+extlinks = {
+    "bpo": ("https://bugs.python.org/issue%s", "bpo-"),
+    "pypi": ("https://pypi.org/project/%s/", ""),
+    "issue": (f"{_repo}/issues/%s", "issue #"),
+    "pull": (f"{_repo}/pull/%s", "pull request #"),
+    "user": ("https://github.com/%s", "@"),
+}
 
 
 
@@ -157,7 +196,7 @@ html_short_title = "pytest-%s" % release
 
 
 
-html_logo = "img/pytest1.png"
+html_logo = "img/pytest_logo_curves.svg"
 
 
 
@@ -249,7 +288,7 @@ latex_documents = [
         "contents",
         "pytest.tex",
         "pytest Documentation",
-        "holger krekel, trainer and consultant, http://merlinux.eu",
+        "holger krekel, trainer and consultant, https://merlinux.eu/",
         "manual",
     )
 ]
@@ -290,7 +329,7 @@ man_pages = [("usage", "pytest", "pytest usage", ["holger krekel at merlinux eu"
 epub_title = "pytest"
 epub_author = "holger krekel at merlinux eu"
 epub_publisher = "holger krekel at merlinux eu"
-epub_copyright = "2013-2020, holger krekel et alii"
+epub_copyright = "2013, holger krekel et alii"
 
 
 
@@ -345,8 +384,17 @@ texinfo_documents = [
 
 
 intersphinx_mapping = {
-    "pluggy": ("https://pluggy.readthedocs.io/en/latest", None),
+    "pluggy": ("https://pluggy.readthedocs.io/en/stable", None),
     "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable", None),
+    "pip": ("https://pip.pypa.io/en/stable", None),
+    "tox": ("https://tox.wiki/en/stable", None),
+    "virtualenv": ("https://virtualenv.pypa.io/en/stable", None),
+    "django": (
+        "http://docs.djangoproject.com/en/stable",
+        "http://docs.djangoproject.com/en/stable/_objects",
+    ),
+    "setuptools": ("https://setuptools.pypa.io/en/stable", None),
 }
 
 
@@ -397,4 +445,34 @@ def setup(app: "sphinx.application.Sphinx") -> None:
         indextemplate="pair: %s; global variable interpreted by pytest",
     )
 
+    app.add_crossref_type(
+        directivename="hook",
+        rolename="hook",
+        objname="pytest hook",
+        indextemplate="pair: %s; hook",
+    )
+
     configure_logging(app)
+
+    
+    
+    
+    
+    
+    import sphinx.pycode.ast
+    import sphinx.pycode.parser
+
+    original_is_final = sphinx.pycode.parser.VariableCommentPicker.is_final
+
+    def patched_is_final(self, decorators: List[ast.expr]) -> bool:
+        if original_is_final(self, decorators):
+            return True
+        return any(
+            sphinx.pycode.ast.unparse(decorator) == "final" for decorator in decorators
+        )
+
+    sphinx.pycode.parser.VariableCommentPicker.is_final = patched_is_final
+
+    
+    
+    import _pytest.legacypath  

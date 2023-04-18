@@ -49,7 +49,7 @@ hr {
 
 ul { 
     line-height: 1.5em;
-    
+    /*list-style-image: url("bullet.gif"); */
     margin-left: 1.5em;
     padding:0;
 }
@@ -80,19 +80,19 @@ blockquote {
 
 code {
     color: Black;
-    
-    
+    /*background-color: #dee7ec;*/
+    /*background-color: #cccccc;*/
 }
 
 pre {
     padding: 1em;
     border: 1px dotted #8cacbb;
     color: Black;
-    
-
-
-
-
+    /*
+    background-color: #dee7ec;
+    background-color: #cccccc;
+    background-color: #dee7ec;
+    */
     overflow: auto;
 }
 
@@ -101,12 +101,12 @@ pre {
     display: none;
 }
 
+/* main page styles */
 
-
-
-
-
-
+/*a[href]:hover { color: black; text-decoration: underline; }
+a[href]:link { color: black; text-decoration: underline; }
+a[href] { color: black; text-decoration: underline; }
+*/
 
 span.menu_selected {
 	color: black;
@@ -117,23 +117,23 @@ span.menu_selected {
 
 
 a.menu {
-  	
+  	/*color: #3ba6ec; */
   	font: 120% Verdana, Helvetica, Arial, sans-serif;
 	text-decoration: none;
     padding-right: 0.3em;
 }
 
 a.menu[href]:visited, a.menu[href]:link{
-  	
+  	/*color: #3ba6ec; */
 	text-decoration: none;
 }
 
 a.menu[href]:hover {
-  	
+  	/*color: black;*/
 }
 
 div#pagetitle{
-  
+  /*border-spacing: 20px;*/
   font: 160% Verdana, Helvetica, Arial, sans-serif;
   color: #3ba6ec; 
   vertical-align: middle;
@@ -150,21 +150,21 @@ a.wikicurrent {
 
 table.body {
   border: 0;
-  
-
-
-
+  /*padding: 0;
+  border-spacing: 0px;
+  border-collapse: separate;
+  */
 }
 
 td.page-header-left {
   padding: 5px;
-  
+  /*border-bottom: 1px solid #444444;*/
 }
 
 td.page-header-top {
   padding: 0;
     
-  
+  /*border-bottom: 1px solid #444444;*/
 }
 
 td.sidebar {
@@ -209,7 +209,7 @@ p:first-child {
   padding: 0;
 }
 
-
+/* style for forms */
 table.form {
   padding: 2;
   border-spacing: 0px;
@@ -247,7 +247,7 @@ table.form td.html {
   color: #777777;
 }
 
-
+/* style for lists */
 table.list {
   border-spacing: 0px;
   border-collapse: separate;
@@ -314,7 +314,7 @@ table.list tr.navigation th:first-child {
 }
 
 
-
+/* style for message displays */
 table.messages {
   border-spacing: 0px;
   border-collapse: separate;
@@ -352,7 +352,7 @@ table.messages td:first-child {
   border-right: 1px solid #afafaf;
 }
 
-
+/* style for file displays */
 table.files {
   border-spacing: 0px;
   border-collapse: separate;
@@ -378,7 +378,7 @@ table.files td {
   empty-cells: show;
 }
 
-
+/* style for history displays */
 table.history {
   border-spacing: 0px;
   border-collapse: separate;
@@ -408,7 +408,7 @@ table.history td {
 }
 
 
-
+/* style for class list */
 table.classlist {
   border-spacing: 0px;
   border-collapse: separate;
@@ -429,7 +429,7 @@ table.classlist th {
 }
 
 
-
+/* style for class help display */
 table.classhelp {
   border-spacing: 0px;
   border-collapse: separate;
@@ -451,7 +451,7 @@ table.classhelp td {
 }
 
 
-
+/* style for "other" displays */
 table.otherinfo {
   border-spacing: 0px;
   border-collapse: separate;
@@ -477,7 +477,7 @@ input {
     color: Black;
     background-color: white;
     vertical-align: middle;
-    margin-bottom: 1px; 
+    margin-bottom: 1px; /* IE bug fix */
     padding: 0.1em;
 }
 
@@ -486,7 +486,7 @@ select {
     color: Black;
     background-color: white;
     vertical-align: middle;
-    margin-bottom: 1px; 
+    margin-bottom: 1px; /* IE bug fix */
     padding: 0.1em;
 }
 
@@ -501,27 +501,27 @@ a.external {
     color: #AA6600;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+dl,ul,ol {
+    margin-top: 1pt;
+}
+tt,pre {
+    font-family: Lucida Console,Courier New,Courier,monotype;
+    font-size: 12pt;
+}
+pre.code {
+    margin-top: 8pt;
+    margin-bottom: 8pt;
+    background-color: #FFFFEE;
+    white-space:pre;
+    border-style:solid;
+    border-width:1pt;
+    border-color:#999999;
+    color:#111111;
+    padding:5px;
+    width:100%;
+}
+*/
 div.diffold {
     background-color: #FFFF80;
     border-style:none;
@@ -546,11 +546,11 @@ div.message {
 }
 strong.highlight {
     background-color: #FFBBBB;
-
-
-
-
-
+/* as usual, NetScape breaks with innocent CSS
+    border-color: #FFAAAA;
+    border-style: solid;
+    border-width: 1pt;
+*/
 }
 
 table.navibar {
@@ -582,7 +582,7 @@ a.wikiaction, input.wikiaction {
     text-decoration: None;
     text-align: center;
     color: black;
-    
+    /*border: 1px solid #3ba6ec; */
     margin: 4px;
     padding: 5;
     padding-bottom: 0;
@@ -592,7 +592,7 @@ a.wikiaction, input.wikiaction {
 a.wikiaction[href]:hover { 
 	color: black; 
 	text-decoration: none; 
-	
+	/*background-color: #dddddd; */
 }
 
 
@@ -615,19 +615,19 @@ div#contentspace h2:first-child {
   margin-top: 0;
 }
 
-
+/* heading and paragraph text */
 
 div.heading, h1 {
     font-family: Verdana, Helvetica, Arial, sans-serif;
     background-color: #58b3ef;
     background-color: #FFFFFF; 
-    
+    /*color: #4893cf;*/
     color: black;
     padding-top: 1.0em;
     padding-bottom:0.2em;
     text-align: left;
     margin-top: 0em; 
-    
+    /*margin-bottom:8pt;*/
     font-weight: bold;
     font-size: 115%;
     border-bottom: 1px solid #8CACBB;
@@ -646,9 +646,9 @@ h1, h2, h3, h4, h5, h6 {
     padding-left: 0em;
     padding-top: 1em;
     padding-bottom: 0.2em;
-    
+    /*border-bottom: 1px solid #8CACBB;*/
 }
-
+/* h1,h2 { padding-top: 0; }*/
 
 
 h1 { font-size: 145%; }
@@ -674,7 +674,7 @@ pre.exception {
     background-color: #cccccc;
 }
 
-
+/* defines for navgiation bar (documentation) */
 
 
 div.direntry {
@@ -706,28 +706,28 @@ span.right {
 }
 
 div.navbar {
-  
-  font-size: 80% ;
+  /*margin: 0;*/
+  font-size: 80% /*smaller*/;
   font-weight: bold;
   text-align: left;
-  
+  /* position: fixed; */
   top: 100pt;
-  left: 0pt; 
+  left: 0pt; /*  auto; */
   width: 120pt;
-  
-
+  /* right: auto;
+  right: 0pt;  2em; */
 }
 
 
 div.history a {
-    
+    /* font-size: 70%; */
 }
 
 div.wikiactiontitle { 
   font-weight: bold;
 }
 
-
+/*  REST  defines */
 
 div.document {
     margin: 0;
@@ -751,7 +751,7 @@ div#navspace {
     position: absolute;
     font-size: 100%;
     width: 150px;
-    overflow: hidden; 
+    overflow: hidden; /* scroll;  */
 }
 
 
@@ -763,44 +763,44 @@ div#errorline {
 
 div#contentspace {
     position: absolute;
-  	
+  	/* font: 120% "Times New Roman", serif;*/
     font: 110% Verdana, Helvetica, Arial, sans-serif;
     left: 170px;
     margin-right: 5px;
 }
 
 div#menubar {
-
+/*    width: 400px; */
     float: left;
 }
 
-
+/* for the documentation page */
 div#title{
     
   font-size: 110%;
   color: black;
     
     
-  
-
-
-
-
-
+  /*background-color: #dee7ec; 
+  #padding: 5pt; 
+  #padding-bottom: 1em; 
+  #color: black;
+  border-width: 1pt;
+  border-style: solid;*/
 
 }
 
 div#docnavlist {
-  
+  /*background-color: #dee7ec; */
   padding: 5pt; 
   padding-bottom: 2em; 
   color: black;
   border-width: 1pt;
-  
+  /*border-style: solid;*/
 }
 
 
-
+/* text markup */
 
 div.listtitle {
     color: Black;
@@ -820,7 +820,7 @@ div.actionbox h3 {
   padding-left: 0.5em;
   background-color: #fabf00;
   text-align: center;
-  border: 1px solid black; 
+  border: 1px solid black; /* 8cacbb; */
 }
 
 div.actionbox a { 
@@ -841,10 +841,10 @@ div.actionbox a.history {
 div.actionbox { 
   margin-bottom: 2em;
   padding-bottom: 1em;
-  overflow: hidden; 
+  overflow: hidden; /* scroll;  */
 }
 
-
+/* taken from docutils (oh dear, a bit senseless) */
 ol.simple, ul.simple {
   margin-bottom: 1em }
 
@@ -864,180 +864,180 @@ ol.upperroman {
   list-style: upper-roman }
 
 
+/*
+:Author: David Goodger
+:Contact: goodger@users.sourceforge.net
+:date: $Date: 2003/01/22 22:26:48 $
+:version: $Revision: 1.29 $
+:copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+*/
+/*
+.first {
+  margin-top: 0 }
 
+.last {
+  margin-bottom: 0 }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+dd {
+  margin-bottom: 0.5em }
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.attention, div.caution, div.danger, div.error, div.hint,
+div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
 
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
 
+div.hint p.admonition-title, div.important p.admonition-title,
+div.note p.admonition-title, div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
 
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
 
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
 
+div.figure {
+  margin-left: 2em }
 
+div.footer, div.header {
+  font-size: smaller }
 
+div.system-messages {
+  margin: 5em }
 
+div.system-messages h1 {
+  color: red }
 
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
 
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
 
+div.topic {
+  margin: 2em }
 
+h1.title {
+  text-align: center }
 
+h2.subtitle {
+  text-align: center }
 
+hr {
+  width: 75% }
 
+p.caption {
+  font-style: italic }
 
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
 
+p.label {
+  white-space: nowrap }
 
+p.topic-title {
+  font-weight: bold }
 
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font-family: serif ;
+  font-size: 100% }
 
+pre.line-block {
+  font-family: serif ;
+  font-size: 100% }
 
+pre.literal-block, pre.doctest-block {
+  margin-left: 2em ;
+  margin-right: 2em ;
+  background-color: #eeeeee }
 
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
 
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
 
+span.interpreted {
+  font-family: sans-serif }
 
+span.option {
+  white-space: nowrap }
 
+span.option-argument {
+  font-style: italic }
 
+span.pre {
+  white-space: pre }
 
+span.problematic {
+  color: red }
 
+table {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
 
+table.citation {
+  border-left: solid thin gray ;
+  padding-left: 0.5ex }
 
+table.docinfo {
+  margin: 2em 4em }
 
+table.footnote {
+  border-left: solid thin black ;
+  padding-left: 0.5ex }
 
+td, th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
 
+th.docinfo-name, th.field-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap }
 
+h1 tt, h2 tt, h3 tt, h4 tt, h5 tt, h6 tt {
+  font-size: 100% }
 
+tt {
+  background-color: #eeeeee }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ul.auto-toc {
+  list-style-type: none }
+*/
 
 div.section {
   margin-top: 1.0em ;

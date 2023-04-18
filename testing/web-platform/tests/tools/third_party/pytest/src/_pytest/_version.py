@@ -1,4 +1,5 @@
 # coding: utf-8
 
 
-version = '6.1.1'
+version = '7.0.1'
+version_tuple = (7, 0, 1)

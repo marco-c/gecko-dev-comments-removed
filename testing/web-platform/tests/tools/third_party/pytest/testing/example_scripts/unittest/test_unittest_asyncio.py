@@ -1,8 +1,8 @@
 from typing import List
-from unittest import IsolatedAsyncioTestCase  
+from unittest import IsolatedAsyncioTestCase
 
 
-teardowns = []  
+teardowns: List[None] = []
 
 
 class AsyncArguments(IsolatedAsyncioTestCase):

@@ -1,16 +1,15 @@
 
 .. _`skipping plugin`: plugin/skipping.html
 .. _`funcargs mechanism`: funcargs.html
-.. _`doctest.py`: http:
+.. _`doctest.py`: https:
 .. _`xUnit style setup`: xunit_setup.html
 .. _`pytest_nose`: plugin/nose.html
 .. _`reStructured Text`: http:
 .. _`Python debugger`: http:
-.. _nose: http:
-.. _pytest: http:
-.. _mercurial: http:
-.. _`setuptools`: http:
-.. _`distribute`: http:
-.. _`pip`: http:
-.. _`virtualenv`: http:
+.. _nose: https:
+.. _pytest: https:
+.. _`setuptools`: https:
+.. _`distribute`: https:
+.. _`pip`: https:
+.. _`virtualenv`: https:
 .. _hudson: http:

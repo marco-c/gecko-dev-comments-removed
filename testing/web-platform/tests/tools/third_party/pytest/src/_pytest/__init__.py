@@ -1,8 +1,9 @@
-__all__ = ["__version__"]
+__all__ = ["__version__", "version_tuple"]
 
 try:
-    from ._version import version as __version__
-except ImportError:
+    from ._version import version as __version__, version_tuple
+except ImportError:  
     
     
     __version__ = "unknown"
+    version_tuple = (0, 0, "unknown")  

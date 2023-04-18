@@ -13,7 +13,7 @@ import pytest
 
 
 def _modules() -> List[str]:
-    pytest_pkg = _pytest.__path__  
+    pytest_pkg: str = _pytest.__path__  
     return sorted(
         n
         for _, n, _ in pkgutil.walk_packages(pytest_pkg, prefix=_pytest.__name__ + ".")
@@ -27,8 +27,6 @@ def test_no_warnings(module: str) -> None:
     subprocess.check_call((
         sys.executable,
         "-W", "error",
-        
-        "-W", "ignore:The usage of `cmp` is deprecated and will be removed on or after 2021-06-01.  Please use `eq` and `order` instead.:DeprecationWarning",  
-        "-c", "__import__({!r})".format(module),
+        "-c", f"__import__({module!r})",
     ))
     

@@ -8,7 +8,7 @@ dictionary or an import path.
 
 (c) Holger Krekel and others, 2004-2014
 """
-__version__ = '1.5.2'
+from py._error import error
 
 try:
     from py._vendored_packages import apipkg
@@ -19,14 +19,16 @@ except ImportError:
     lib_not_mangled_by_packagers = False
     vendor_prefix = ''
 
+try:
+    from ._version import version as __version__
+except ImportError:
+    
+    __version__ = "unknown"
 
-import sys
 
-apipkg.initpkg(__name__, attr={'_apipkg': apipkg}, exportdefs={
+apipkg.initpkg(__name__, attr={'_apipkg': apipkg, 'error': error}, exportdefs={
     
     'std': '._std:std',
-    
-    'error': '._error:error',
 
     '_pydir' : '.__metainfo:pydir',
     'version': 'py:__version__', 
