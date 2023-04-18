@@ -8,10 +8,16 @@
 #ifndef _nsTextEquivUtils_H_
 #define _nsTextEquivUtils_H_
 
-#include "LocalAccessible.h"
+#include "mozilla/a11y/Accessible.h"
 #include "Role.h"
 
 class nsIContent;
+
+namespace mozilla {
+namespace a11y {
+class LocalAccessible;
+}
+}  
 
 
 
@@ -40,6 +46,7 @@ enum ETextEquivRule {
 class nsTextEquivUtils {
  public:
   typedef mozilla::a11y::LocalAccessible LocalAccessible;
+  typedef mozilla::a11y::Accessible Accessible;
 
   
 
@@ -48,7 +55,7 @@ class nsTextEquivUtils {
 
 
 
-  static inline bool HasNameRule(LocalAccessible* aAccessible,
+  static inline bool HasNameRule(Accessible* aAccessible,
                                  ETextEquivRule aRule) {
     return (GetRoleRule(aAccessible->Role()) & aRule) == aRule;
   }
@@ -66,7 +73,7 @@ class nsTextEquivUtils {
 
 
 
-  static void GetTextEquivFromSubtree(const LocalAccessible* aAccessible,
+  static void GetTextEquivFromSubtree(const Accessible* aAccessible,
                                       nsString& aTextEquiv) {
     aTextEquiv.Truncate();
 
@@ -126,21 +133,20 @@ class nsTextEquivUtils {
 
 
 
-  static nsresult AppendFromAccessibleChildren(
-      const LocalAccessible* aAccessible, nsAString* aString);
+  static nsresult AppendFromAccessibleChildren(const Accessible* aAccessible,
+                                               nsAString* aString);
 
   
 
 
 
-  static nsresult AppendFromAccessible(LocalAccessible* aAccessible,
+  static nsresult AppendFromAccessible(Accessible* aAccessible,
                                        nsAString* aString);
 
   
 
 
-  static nsresult AppendFromValue(LocalAccessible* aAccessible,
-                                  nsAString* aString);
+  static nsresult AppendFromValue(Accessible* aAccessible, nsAString* aString);
 
   
 
@@ -164,7 +170,13 @@ class nsTextEquivUtils {
 
 
 
-  static bool ShouldIncludeInSubtreeCalculation(LocalAccessible* aAccessible);
+  static bool ShouldIncludeInSubtreeCalculation(Accessible* aAccessible);
+
+  
+
+
+
+  static bool IsWhitespaceLeaf(Accessible* aAccessible);
 };
 
 #endif
