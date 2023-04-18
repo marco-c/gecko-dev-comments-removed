@@ -16,7 +16,6 @@
 
 #include "js/GCAnnotations.h"
 #include "js/shadow/Zone.h"
-#include "js/SliceBudget.h"
 #include "js/TypeDecls.h"
 #include "js/UniquePtr.h"
 #include "js/Utility.h"
@@ -888,20 +887,6 @@ typedef void (*DoCycleCollectionCallback)(JSContext* cx);
 
 extern JS_PUBLIC_API DoCycleCollectionCallback
 SetDoCycleCollectionCallback(JSContext* cx, DoCycleCollectionCallback callback);
-
-using CreateSliceBudgetCallback = js::SliceBudget (*)(JS::GCReason reason,
-                                                      int64_t millis);
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API void SetCreateGCSliceBudgetCallback(
-    JSContext* cx, CreateSliceBudgetCallback cb);
 
 
 

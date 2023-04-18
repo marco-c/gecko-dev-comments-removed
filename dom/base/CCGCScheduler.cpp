@@ -486,8 +486,7 @@ void CCGCScheduler::EnsureGCRunner(TimeDuration aDelay) {
       "CCGCScheduler::EnsureGCRunner", aDelay,
       TimeDuration::FromMilliseconds(
           StaticPrefs::javascript_options_gc_delay_interslice()),
-      mActiveIntersliceGCBudget, true, [this] { return mDidShutdown; },
-      [this](uint32_t) { mInterruptRequested = true; });
+      mActiveIntersliceGCBudget, true, [this] { return mDidShutdown; });
 }
 
 
@@ -595,7 +594,8 @@ js::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
 
   if (aCCBeginTime.IsNull()) {
     
-    return js::SliceBudget(js::TimeBudget(baseBudget));
+    return js::SliceBudget(js::TimeBudget(baseBudget),
+                           kNumCCNodesBetweenTimeChecks);
   }
 
   
@@ -624,8 +624,9 @@ js::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
   
   
   
-  return js::SliceBudget(js::TimeBudget(
-      std::max({delaySliceBudget, laterSliceBudget, baseBudget})));
+  return js::SliceBudget(js::TimeBudget(std::max(
+                             {delaySliceBudget, laterSliceBudget, baseBudget})),
+                         kNumCCNodesBetweenTimeChecks);
 }
 
 TimeDuration CCGCScheduler::ComputeInterSliceGCBudget(TimeStamp aDeadline,

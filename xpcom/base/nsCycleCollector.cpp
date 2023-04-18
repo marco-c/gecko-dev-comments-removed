@@ -3451,7 +3451,6 @@ bool nsCycleCollector::Collect(CCReason aReason, ccIsManual aIsManual,
     
     
     MOZ_ASSERT(IsIdle());
-    aBudget.resetOverBudget();
     if (Collect(aReason, ccIsManual::CCIsManual, aBudget, aManualListener)) {
       collectedAny = true;
     }

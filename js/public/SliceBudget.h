@@ -8,7 +8,6 @@
 #define js_SliceBudget_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Variant.h"
 
@@ -45,55 +44,31 @@ struct UnlimitedBudget {};
 
 
 class JS_PUBLIC_API SliceBudget {
- public:
-  using InterruptRequestFlag = mozilla::Atomic<bool>;
-
- private:
   static const intptr_t UnlimitedCounter = INTPTR_MAX;
-
-  
-  
-  
-  static constexpr intptr_t StepsPerExpensiveCheck = 1000;
-
-  
+  static const intptr_t DefaultStepsPerTimeCheck = 1000;
 
   mozilla::Variant<TimeBudget, WorkBudget, UnlimitedBudget> budget;
+  int64_t stepsPerTimeCheck = DefaultStepsPerTimeCheck;
 
-  
-  
-  InterruptRequestFlag* interruptRequested = nullptr;
+  int64_t counter;
 
-  
-  
-  int64_t counter = StepsPerExpensiveCheck;
+  SliceBudget() : budget(UnlimitedBudget()), counter(UnlimitedCounter) {}
 
-  
-  
-  
-  bool interrupted = false;
-
-  explicit SliceBudget(InterruptRequestFlag* irqPtr)
-      : budget(UnlimitedBudget()),
-        interruptRequested(irqPtr),
-        counter(irqPtr ? StepsPerExpensiveCheck : UnlimitedCounter) {}
-
-  [[nodiscard]] bool isOverBudgetSlow();
+  bool checkOverBudget();
 
  public:
   
-  static SliceBudget unlimited() { return SliceBudget(nullptr); }
+  static SliceBudget unlimited() { return SliceBudget(); }
 
   
   explicit SliceBudget(TimeBudget time,
-                       InterruptRequestFlag* interrupt = nullptr);
-
-  explicit SliceBudget(mozilla::TimeDuration duration,
-                       InterruptRequestFlag* interrupt = nullptr)
-      : SliceBudget(TimeBudget(duration.ToMilliseconds()), interrupt) {}
+                       int64_t stepsPerTimeCheck = DefaultStepsPerTimeCheck);
 
   
   explicit SliceBudget(WorkBudget work);
+
+  explicit SliceBudget(mozilla::TimeDuration time)
+      : SliceBudget(TimeBudget(time.ToMilliseconds())) {}
 
   
   
@@ -111,18 +86,7 @@ class JS_PUBLIC_API SliceBudget {
     }
   }
 
-  [[nodiscard]] bool isOverBudget() {
-    return counter <= 0 && isOverBudgetSlow();
-  }
-
-  void resetOverBudget() {
-    interrupted = false;
-    if (isTimeBudget()) {
-      counter = StepsPerExpensiveCheck;
-    } else if (isWorkBudget()) {
-      counter = workBudget();
-    }
-  }
+  bool isOverBudget() { return counter <= 0 && checkOverBudget(); }
 
   bool isWorkBudget() const { return budget.is<WorkBudget>(); }
   bool isTimeBudget() const { return budget.is<TimeBudget>(); }
@@ -135,8 +99,6 @@ class JS_PUBLIC_API SliceBudget {
     return budget.as<TimeBudget>().deadline;
   }
 
-  
-  
   int describe(char* buffer, size_t maxlen) const;
 };
 

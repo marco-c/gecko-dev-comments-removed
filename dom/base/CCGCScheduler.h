@@ -62,6 +62,9 @@ static const TimeDuration kMaxCCLockedoutTime = TimeDuration::FromSeconds(30);
 static const uint32_t kCCPurpleLimit = 200;
 
 
+static const int64_t kNumCCNodesBetweenTimeChecks = 1000;
+
+
 enum class GCRunnerAction {
   WaitToMajorGC,  
   StartMajorGC,   
@@ -109,8 +112,6 @@ struct CCRunnerStep {
 
 class CCGCScheduler {
  public:
-  CCGCScheduler() : mInterruptRequested(false) {}
-
   static bool CCRunnerFired(TimeStamp aDeadline);
 
   
@@ -152,11 +153,6 @@ class CCGCScheduler {
   void KillGCRunner();
   void KillCCRunner();
   void KillAllTimersAndRunners();
-
-  js::SliceBudget CreateGCSliceBudget(JS::GCReason aReason, int64_t aMillis) {
-    return js::SliceBudget(mozilla::TimeDuration::FromMilliseconds(aMillis),
-                           &mInterruptRequested);
-  }
 
   
 
@@ -441,10 +437,6 @@ class CCGCScheduler {
 
   
   bool mReadyForMajorGC = false;
-
-  
-  
-  mozilla::Atomic<bool> mInterruptRequested;
 
   
   

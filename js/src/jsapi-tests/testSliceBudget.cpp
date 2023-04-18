@@ -40,10 +40,6 @@ BEGIN_TEST(testSliceBudgetWork) {
 
   budget.step(5000);
   CHECK(budget.isOverBudget());
-  CHECK(budget.isOverBudget());
-
-  budget.resetOverBudget();
-  CHECK(!budget.isOverBudget());
 
   return true;
 }
@@ -71,69 +67,9 @@ END_TEST(testSliceBudgetTime)
 
 BEGIN_TEST(testSliceBudgetTimeZero) {
   SliceBudget budget = SliceBudget(TimeBudget(0));
-  CHECK(!budget.isOverBudget());
   budget.step(1000);
   CHECK(budget.isOverBudget());
-  CHECK(budget.isOverBudget());
-
-  budget.resetOverBudget();
-  CHECK(!budget.isOverBudget());
 
   return true;
 }
 END_TEST(testSliceBudgetTimeZero)
-
-BEGIN_TEST(testSliceBudgetInterruptibleTime) {
-  mozilla::Atomic<bool> wantInterrupt(false);
-
-  
-  
-  static constexpr int64_t LONG_TIME = 100000;
-  SliceBudget budget = SliceBudget(TimeBudget(LONG_TIME), &wantInterrupt);
-  CHECK(!budget.isUnlimited());
-  CHECK(!budget.isWorkBudget());
-  CHECK(budget.isTimeBudget());
-
-  CHECK(budget.timeBudget() == LONG_TIME);
-
-  CHECK(!budget.isOverBudget());
-
-  
-  budget.step(500);
-
-  
-  CHECK(!budget.isOverBudget());
-
-  
-  wantInterrupt = true;
-
-  
-  CHECK(!budget.isOverBudget());
-
-  
-  budget.step(1000);
-
-  
-  
-  CHECK(budget.isOverBudget());
-  CHECK(!wantInterrupt);
-  CHECK(budget.isOverBudget());
-
-  
-
-  budget.resetOverBudget();
-  CHECK(!budget.isOverBudget());
-  budget.step(5);
-  CHECK(!budget.isOverBudget());
-
-  
-  wantInterrupt = true;
-  budget.step(2000);
-  wantInterrupt = false;
-  CHECK(!budget.isOverBudget());
-
-  
-
-  return true;
-}
-END_TEST(testSliceBudgetInterruptibleTime)
