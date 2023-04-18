@@ -12,17 +12,18 @@
 extern "C" {
 
 
-size_t RLBoxComputeWOFF2FinalSize(const uint8_t* aData, size_t aLength);
-bool RLBoxConvertWOFF2ToTTF(const uint8_t* aData, size_t aLength,
-                            size_t aDecompressedSize, size_t* aResultSize,
-                            void** aResultOwningStr, uint8_t** aResultData);
+
+
+
+unsigned long RLBoxComputeWOFF2FinalSize(const char* aData,
+                                         unsigned long aLength);
+bool RLBoxConvertWOFF2ToTTF(const char* aData, unsigned long aLength,
+                            unsigned long aDecompressedSize,
+                            unsigned long* aResultSize, void** aResultOwningStr,
+                            char** aResultData);
 
 
 void RLBoxDeleteWOFF2String(void** aStr);
-
-
-
-
 
 typedef BrotliDecoderResult(BrotliDecompressCallback)(
     unsigned long aEncodedSize, const char* aEncodedBuffer,

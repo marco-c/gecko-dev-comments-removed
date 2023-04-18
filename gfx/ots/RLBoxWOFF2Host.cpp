@@ -122,7 +122,8 @@ bool RLBoxProcessWOFF2(ots::FontFile* aHeader, ots::OTSStream* aOutput,
 
   
 
-  auto data = TransferBufferToWOFF2<uint8_t>(sandbox, aData, aLength);
+  auto data = TransferBufferToWOFF2<char>(
+      sandbox, reinterpret_cast<const char*>(aData), aLength);
   NS_ENSURE_TRUE(*data, false);
 
   
@@ -148,7 +149,7 @@ bool RLBoxProcessWOFF2(ots::FontFile* aHeader, ots::OTSStream* aOutput,
 
   
 
-  size_t decompressedSize =
+  unsigned long decompressedSize =
       sandbox
           ->invoke_sandbox_function(RLBoxComputeWOFF2FinalSize, *data, aLength)
           .copy_and_verify(sizeValidator);
@@ -159,8 +160,8 @@ bool RLBoxProcessWOFF2(ots::FontFile* aHeader, ots::OTSStream* aOutput,
 
   
 
-  auto sizep = WOFF2Alloc<size_t>(sandbox);
-  auto bufp = WOFF2Alloc<uint8_t*>(sandbox);
+  auto sizep = WOFF2Alloc<unsigned long>(sandbox);
+  auto bufp = WOFF2Alloc<char*>(sandbox);
   auto bufOwnerString =
       WOFF2Alloc<void*>(sandbox);  
 
@@ -183,16 +184,16 @@ bool RLBoxProcessWOFF2(ots::FontFile* aHeader, ots::OTSStream* aOutput,
   
   
   
-  size_t size = (*sizep.get()).copy_and_verify(sizeValidator);
+  unsigned long size = (*sizep.get()).copy_and_verify(sizeValidator);
 
   if (NS_WARN_IF(!validateOK)) {
     return false;
   }
 
-  const uint8_t* decompressed =
+  const uint8_t* decompressed = reinterpret_cast<const uint8_t*>(
       (*bufp.get())
           .unverified_safe_pointer_because(
-              size, "Only care that the buffer is within sandbox boundary.");
+              size, "Only care that the buffer is within sandbox boundary."));
 
   
   NS_ENSURE_TRUE(decompressed, false);
