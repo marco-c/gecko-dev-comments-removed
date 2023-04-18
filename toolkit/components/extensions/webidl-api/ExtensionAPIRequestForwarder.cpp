@@ -629,6 +629,38 @@ void RequestWorkerRunnable::ReadResult(JSContext* aCx,
 
 
 
+RequestInitWorkerRunnable::RequestInitWorkerRunnable(
+    dom::WorkerPrivate* aWorkerPrivate, Maybe<dom::ClientInfo>& aSWClientInfo)
+    : WorkerMainThreadRunnable(aWorkerPrivate,
+                               "extensions::RequestInitWorkerRunnable"_ns) {
+  MOZ_ASSERT(dom::IsCurrentThreadRunningWorker());
+  MOZ_ASSERT(aSWClientInfo.isSome());
+  mClientInfo = aSWClientInfo;
+}
+
+bool RequestInitWorkerRunnable::MainThreadRun() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  auto* baseURI = mWorkerPrivate->GetBaseURI();
+  RefPtr<WebExtensionPolicy> policy =
+      ExtensionPolicyService::GetSingleton().GetByURL(baseURI);
+
+  RefPtr<ExtensionServiceWorkerInfo> swInfo = new ExtensionServiceWorkerInfo(
+      *mClientInfo, mWorkerPrivate->ServiceWorkerID());
+
+  nsCOMPtr<mozIExtensionAPIRequestHandler> handler =
+      &ExtensionAPIRequestForwarder::APIRequestHandler();
+  MOZ_ASSERT(handler);
+
+  if (NS_FAILED(handler->InitExtensionWorker(policy, swInfo))) {
+    NS_WARNING("nsIExtensionAPIRequestHandler.initExtensionWorker call failed");
+  }
+
+  return true;
+}
+
+
+
 nsresult NotifyWorkerDestroyedRunnable::Run() {
   MOZ_ASSERT(NS_IsMainThread());
 
