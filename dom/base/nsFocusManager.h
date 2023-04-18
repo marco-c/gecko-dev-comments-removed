@@ -263,14 +263,6 @@ class nsFocusManager final : public nsIFocusManager,
 
   void WasNuked(nsPIDOMWindowOuter* aWindow);
 
-  
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-  FocusPlugin(mozilla::dom::Element* aPlugin);
-
   static uint32_t ProgrammaticFocusFlags(
       const mozilla::dom::FocusOptions& aOptions);
 
