@@ -179,25 +179,107 @@ GMPInstallManager.prototype = {
 
 
 
-  recordUpdateXmlTelemetry(didGetAddonList, checkContentSignature) {
-    let log = getScopedLogger("GMPInstallManager.recordUpdateXmlTelemetry");
-
+  recordUpdateXmlTelemetryForContentSignature(didGetAddonList, err = null) {
+    let log = getScopedLogger(
+      "GMPInstallManager.recordUpdateXmlTelemetryForContentSignature"
+    );
     try {
       let updateResultHistogram = Services.telemetry.getHistogramById(
         "MEDIA_GMP_UPDATE_XML_FETCH_RESULT"
       );
 
+      
+      
       if (didGetAddonList) {
-        if (checkContentSignature) {
-          updateResultHistogram.add("content_sig_ok");
-        } else {
-          updateResultHistogram.add("cert_pinning_ok");
-        }
-      } else if (checkContentSignature) {
-        updateResultHistogram.add("content_sig_fail");
-      } else {
-        updateResultHistogram.add("cert_pinning_fail");
+        updateResultHistogram.add("content_sig_ok");
+        Glean.gmp.updateXmlFetchResult.content_sig_success.add(1);
+        return;
       }
+      
+      updateResultHistogram.add("content_sig_fail");
+      if (!err?.addonCheckerErr) {
+        
+        
+        
+        Glean.gmp.updateXmlFetchResult.content_sig_unknown_error.add(1);
+        return;
+      }
+      const errorToHistogramMap = {
+        [ProductAddonChecker.NETWORK_REQUEST_ERR]:
+          "content_sig_net_request_error",
+        [ProductAddonChecker.NETWORK_TIMEOUT_ERR]: "content_sig_net_timeout",
+        [ProductAddonChecker.ABORT_ERR]: "content_sig_abort",
+        [ProductAddonChecker.VERIFICATION_MISSING_DATA_ERR]:
+          "content_sig_missing_data",
+        [ProductAddonChecker.VERIFICATION_FAILED_ERR]: "content_sig_failed",
+        [ProductAddonChecker.VERIFICATION_INVALID_ERR]: "content_sig_invalid",
+        [ProductAddonChecker.XML_PARSE_ERR]: "content_sig_xml_parse_error",
+      };
+      let metricID =
+        errorToHistogramMap[err.addonCheckerErr] ?? "content_sig_unknown_error";
+      let metric = Glean.gmp.updateXmlFetchResult[metricID];
+      metric.add(1);
+    } catch (e) {
+      
+      
+      
+      log.error(
+        `Failed to record telemetry result of getProductAddonList, got error: ${e}`
+      );
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  recordUpdateXmlTelemetryForCertPinning(didGetAddonList, err = null) {
+    let log = getScopedLogger(
+      "GMPInstallManager.recordUpdateXmlTelemetryForCertPinning"
+    );
+    try {
+      let updateResultHistogram = Services.telemetry.getHistogramById(
+        "MEDIA_GMP_UPDATE_XML_FETCH_RESULT"
+      );
+
+      
+      
+      if (didGetAddonList) {
+        updateResultHistogram.add("cert_pinning_ok");
+        Glean.gmp.updateXmlFetchResult.cert_pin_success.add(1);
+        return;
+      }
+      
+      updateResultHistogram.add("cert_pinning_fail");
+      if (!err?.addonCheckerErr) {
+        
+        
+        
+        Glean.gmp.updateXmlFetchResult.cert_pin_unknown_error.add(1);
+        return;
+      }
+      const errorToHistogramMap = {
+        [ProductAddonChecker.NETWORK_REQUEST_ERR]: "cert_pin_net_request_error",
+        [ProductAddonChecker.NETWORK_TIMEOUT_ERR]: "cert_pin_net_timeout",
+        [ProductAddonChecker.ABORT_ERR]: "cert_pin_abort",
+        [ProductAddonChecker.VERIFICATION_MISSING_DATA_ERR]:
+          "cert_pin_missing_data",
+        [ProductAddonChecker.VERIFICATION_FAILED_ERR]: "cert_pin_failed",
+        [ProductAddonChecker.VERIFICATION_INVALID_ERR]: "cert_pin_invalid",
+        [ProductAddonChecker.XML_PARSE_ERR]: "cert_pin_xml_parse_error",
+      };
+      let metricID =
+        errorToHistogramMap[err.addonCheckerErr] ?? "cert_pin_unknown_error";
+      let metric = Glean.gmp.updateXmlFetchResult[metricID];
+      metric.add(1);
     } catch (e) {
       
       
@@ -270,11 +352,19 @@ GMPInstallManager.prototype = {
       checkContentSignature
     )
       .then(res => {
-        this.recordUpdateXmlTelemetry(true, checkContentSignature);
+        if (checkContentSignature) {
+          this.recordUpdateXmlTelemetryForContentSignature(true);
+        } else {
+          this.recordUpdateXmlTelemetryForCertPinning(true);
+        }
         return res;
       })
-      .catch(() => {
-        this.recordUpdateXmlTelemetry(false, checkContentSignature);
+      .catch(err => {
+        if (checkContentSignature) {
+          this.recordUpdateXmlTelemetryForContentSignature(false, err);
+        } else {
+          this.recordUpdateXmlTelemetryForCertPinning(false, err);
+        }
         return downloadLocalConfig();
       });
 
