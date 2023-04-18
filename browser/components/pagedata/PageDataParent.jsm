@@ -27,6 +27,7 @@ class PageDataParent extends JSWindowActorParent {
 
 
 
+
   collectPageData() {
     if (!this.#deferredCollection) {
       this.#deferredCollection = PromiseUtils.defer();
@@ -43,9 +44,7 @@ class PageDataParent extends JSWindowActorParent {
 
 
   didDestroy() {
-    this.#deferredCollection?.reject(
-      new Error("Page destroyed before collection completed.")
-    );
+    this.#deferredCollection?.resolve(null);
   }
 
   
@@ -59,11 +58,6 @@ class PageDataParent extends JSWindowActorParent {
       case "PageData:DocumentReady":
         PageDataService.pageLoaded(this, msg.data.url);
         break;
-      
-      
-      
-      
-      
     }
   }
 }
