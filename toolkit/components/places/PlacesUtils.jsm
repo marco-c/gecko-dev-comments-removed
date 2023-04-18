@@ -1967,6 +1967,64 @@ var PlacesUtils = {
         return lazy.gCryptoHash.finish(true);
     }
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  async maybeInsertPlace(db, url) {
+    
+    await db.executeCached(
+      `INSERT OR IGNORE INTO moz_places (url, url_hash, rev_host, hidden, frecency, guid)
+      VALUES (:url, hash(:url), :rev_host, 0, :frecency,
+              IFNULL((SELECT guid FROM moz_places WHERE url_hash = hash(:url) AND url = :url),
+                      GENERATE_GUID()))
+      `,
+      {
+        url: url.href,
+        rev_host: this.getReversedHost(url),
+        frecency: url.protocol == "place:" ? 0 : -1,
+      }
+    );
+    await db.executeCached("DELETE FROM moz_updateoriginsinsert_temp");
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  async maybeInsertManyPlaces(db, urls) {
+    await db.executeCached(
+      `INSERT OR IGNORE INTO moz_places (url, url_hash, rev_host, hidden, frecency, guid) VALUES
+     (:url, hash(:url), :rev_host, 0, :frecency,
+     IFNULL((SELECT guid FROM moz_places WHERE url_hash = hash(:url) AND url = :url), :maybeguid))`,
+      urls.map(url => ({
+        url: url.href,
+        rev_host: this.getReversedHost(url),
+        frecency: url.protocol == "place:" ? 0 : -1,
+        maybeguid: this.history.makeGuid(),
+      }))
+    );
+    await db.executeCached("DELETE FROM moz_updateoriginsinsert_temp");
+  },
 };
 
 XPCOMUtils.defineLazyGetter(PlacesUtils, "history", function() {
@@ -2501,19 +2559,7 @@ PlacesUtils.keywords = {
           
           
           await db.executeTransaction(async () => {
-            await db.executeCached(
-              `INSERT OR IGNORE INTO moz_places (url, url_hash, rev_host, hidden, frecency, guid)
-               VALUES (:url, hash(:url), :rev_host, 0, :frecency,
-                       IFNULL((SELECT guid FROM moz_places WHERE url_hash = hash(:url) AND url = :url),
-                              GENERATE_GUID()))
-              `,
-              {
-                url: url.href,
-                rev_host: PlacesUtils.getReversedHost(url),
-                frecency: url.protocol == "place:" ? 0 : -1,
-              }
-            );
-            await db.executeCached("DELETE FROM moz_updateoriginsinsert_temp");
+            await PlacesUtils.maybeInsertPlace(db, url);
 
             
             
