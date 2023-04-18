@@ -200,6 +200,16 @@ class Accessible {
   
 
 
+  virtual nsRect BoundsInAppUnits() const = 0;
+
+  
+
+
+  virtual nsIntRect BoundsInCSSPixels() const;
+
+  
+
+
 
 
 

@@ -405,17 +405,9 @@ class LocalAccessible : public nsISupports, public Accessible {
   virtual void AppendTextTo(nsAString& aText, uint32_t aStartOffset = 0,
                             uint32_t aLength = UINT32_MAX) override;
 
-  
-
-
-  virtual nsRect BoundsInAppUnits() const;
+  virtual nsRect BoundsInAppUnits() const override;
 
   virtual LayoutDeviceIntRect Bounds() const override;
-
-  
-
-
-  virtual nsIntRect BoundsInCSSPixels() const;
 
   
 
