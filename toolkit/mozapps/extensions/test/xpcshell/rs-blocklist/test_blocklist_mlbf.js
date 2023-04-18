@@ -17,6 +17,13 @@ const SIGNED_ADDON_VERSION = "1.0";
 const SIGNED_ADDON_KEY = `${SIGNED_ADDON_ID}:${SIGNED_ADDON_VERSION}`;
 const SIGNED_ADDON_SIGN_TIME = 1459980789000; 
 
+
+const SIGNED_SITEPERM_XPI_FILE = do_get_file("webmidi_permission.xpi");
+const SIGNED_SITEPERM_ADDON_ID = "webmidi@test.mozilla.org";
+const SIGNED_SITEPERM_ADDON_VERSION = "1.0.2";
+const SIGNED_SITEPERM_KEY = `${SIGNED_SITEPERM_ADDON_ID}:${SIGNED_SITEPERM_ADDON_VERSION}`;
+const SIGNED_SITEPERM_SIGN_TIME = 1637606460000; 
+
 function mockMLBF({ blocked = [], notblocked = [], generationTime }) {
   
   ExtensionBlocklistMLBF._fetchMLBF = async () => {
@@ -215,5 +222,47 @@ add_task(async function langpack_not_blocked_on_Nightly() {
     
     Assert.equal(addon.blocklistState, Ci.nsIBlocklistService.STATE_BLOCKED);
   }
+  await addon.uninstall();
+});
+
+
+add_task(async function signed_sitepermission_xpi_blocked_on_install() {
+  mockMLBF({
+    blocked: [SIGNED_SITEPERM_KEY],
+    notblocked: [],
+    generationTime: SIGNED_SITEPERM_SIGN_TIME + 1,
+  });
+  await ExtensionBlocklistMLBF._onUpdate();
+
+  await promiseInstallFile(SIGNED_SITEPERM_XPI_FILE);
+  let addon = await promiseAddonByID(SIGNED_SITEPERM_ADDON_ID);
+  
+  
+  
+  equal(
+    addon.signedDate?.getTime(),
+    SIGNED_SITEPERM_SIGN_TIME,
+    "The addon xpi has the expected signedDate timestamp"
+  );
+  Assert.equal(
+    addon.blocklistState,
+    Ci.nsIBlocklistService.STATE_BLOCKED,
+    "Got the expected STATE_BLOCKED blocklistState"
+  );
+  Assert.ok(addon.appDisabled, "Blocked add-on is disabled on install");
+
+  mockMLBF({
+    blocked: [],
+    notblocked: [SIGNED_SITEPERM_KEY],
+    generationTime: SIGNED_SITEPERM_SIGN_TIME - 1,
+  });
+  await ExtensionBlocklistMLBF._onUpdate();
+  Assert.equal(
+    addon.blocklistState,
+    Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
+    "Got the expected STATE_NOT_BLOCKED blocklistState"
+  );
+  Assert.ok(!addon.appDisabled, "Re-enabled after unblock");
+
   await addon.uninstall();
 });

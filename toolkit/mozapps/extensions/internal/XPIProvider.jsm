@@ -168,6 +168,8 @@ const BOOTSTRAP_REASONS = {
   ADDON_DOWNGRADE: 8,
 };
 
+
+
 const ALL_EXTERNAL_TYPES = new Set([
   "dictionary",
   "extension",

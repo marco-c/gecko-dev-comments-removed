@@ -85,6 +85,18 @@ const kRegExpRemovalRegExp = /^\/\^\(\(?|\\|\)\)?\$\/$/g;
 
 
 
+
+
+const kXPIAddonTypes = [
+  "extension",
+  "theme",
+  "locale",
+  "dictionary",
+  "sitepermission",
+];
+
+
+
 function processMatcher(str) {
   if (!str.startsWith("/")) {
     return str;
@@ -773,8 +785,7 @@ this.ExtensionBlocklistRS = {
     await this.ensureInitialized();
     await this._updateEntries();
 
-    const types = ["extension", "theme", "locale", "dictionary", "service"];
-    let addons = await AddonManager.getAddonsByTypes(types);
+    let addons = await AddonManager.getAddonsByTypes(kXPIAddonTypes);
     for (let addon of addons) {
       let oldState = addon.blocklistState;
       if (addon.updateBlocklistState) {
@@ -1136,9 +1147,7 @@ this.ExtensionBlocklistMLBF = {
     this.ensureInitialized();
     await this._updateMLBF(true);
 
-    
-    const types = ["extension", "theme", "locale", "dictionary"];
-    let addons = await AddonManager.getAddonsByTypes(types);
+    let addons = await AddonManager.getAddonsByTypes(kXPIAddonTypes);
     for (let addon of addons) {
       let oldState = addon.blocklistState;
       await addon.updateBlocklistState(false);
