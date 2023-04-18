@@ -52,37 +52,37 @@ class nsAvailableMemoryWatcher final : public nsITimerCallback,
   ~nsAvailableMemoryWatcher();
   bool RegisterMemoryResourceHandler();
   void UnregisterMemoryResourceHandler();
-  void MaybeSaveMemoryReport(const MutexAutoLock&);
-  void Shutdown(const MutexAutoLock&);
-  bool ListenForLowMemory(const MutexAutoLock&);
-  void OnLowMemory(const MutexAutoLock&);
-  void OnHighMemory(const MutexAutoLock&);
-  void StartPollingIfUserInteracting(const MutexAutoLock&);
+  void MaybeSaveMemoryReport(const MutexAutoLock&) REQUIRES(mMutex);
+  void Shutdown(const MutexAutoLock&) REQUIRES(mMutex);
+  bool ListenForLowMemory(const MutexAutoLock&) REQUIRES(mMutex);
+  void OnLowMemory(const MutexAutoLock&) REQUIRES(mMutex);
+  void OnHighMemory(const MutexAutoLock&) REQUIRES(mMutex);
+  void StartPollingIfUserInteracting(const MutexAutoLock&) REQUIRES(mMutex);
   void StopPolling();
-  void StopPollingIfUserIdle(const MutexAutoLock&);
-  void OnUserInteracting(const MutexAutoLock&);
+  void StopPollingIfUserIdle(const MutexAutoLock&) REQUIRES(mMutex);
+  void OnUserInteracting(const MutexAutoLock&) REQUIRES(mMutex);
 
   
   
   
   
-  Mutex mMutex MOZ_UNANNOTATED;
-  nsCOMPtr<nsITimer> mTimer;
-  nsAutoHandle mLowMemoryHandle;
-  HANDLE mWaitHandle;
-  bool mPolling;
+  Mutex mMutex;
+  nsCOMPtr<nsITimer> mTimer GUARDED_BY(mMutex);
+  nsAutoHandle mLowMemoryHandle GUARDED_BY(mMutex);
+  HANDLE mWaitHandle GUARDED_BY(mMutex);
+  bool mPolling GUARDED_BY(mMutex);
 
   
   
   
-  bool mNeedToRestartTimerOnUserInteracting;
+  bool mNeedToRestartTimerOnUserInteracting GUARDED_BY(mMutex);
   
   
   
-  bool mUnderMemoryPressure;
+  bool mUnderMemoryPressure GUARDED_BY(mMutex);
 
-  bool mSavedReport;
-  bool mIsShutdown;
+  bool mSavedReport GUARDED_BY(mMutex);
+  bool mIsShutdown GUARDED_BY(mMutex);
 
   
   

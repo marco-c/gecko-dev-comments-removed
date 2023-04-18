@@ -1681,8 +1681,11 @@ NS_IMETHODIMP
 nsMemoryReporterManager::CollectReports(nsIHandleReportCallback* aHandleReport,
                                         nsISupports* aData, bool aAnonymize) {
   size_t n = MallocSizeOf(this);
-  n += mStrongReporters->ShallowSizeOfIncludingThis(MallocSizeOf);
-  n += mWeakReporters->ShallowSizeOfIncludingThis(MallocSizeOf);
+  {
+    mozilla::MutexAutoLock autoLock(mMutex);
+    n += mStrongReporters->ShallowSizeOfIncludingThis(MallocSizeOf);
+    n += mWeakReporters->ShallowSizeOfIncludingThis(MallocSizeOf);
+  }
 
   MOZ_COLLECT_REPORT("explicit/memory-reporter-manager", KIND_HEAP, UNITS_BYTES,
                      n, "Memory used by the memory reporter infrastructure.");
@@ -1754,6 +1757,7 @@ nsMemoryReporterManager::GetReportsExtended(
   return rv;
 }
 
+
 nsresult nsMemoryReporterManager::StartGettingReports() {
   PendingProcessesState* s = mPendingProcessesState;
   nsresult rv;
@@ -1807,7 +1811,7 @@ nsresult nsMemoryReporterManager::StartGettingReports() {
     }
   }
 
-  if (!mIsRegistrationBlocked && net::gIOService) {
+  if (!IsRegistrationBlocked() && net::gIOService) {
     if (RefPtr<MemoryReportingProcess> proc =
             net::gIOService->GetSocketProcessMemoryReporter()) {
       s->mChildrenPending.AppendElement(proc.forget());
@@ -1915,6 +1919,7 @@ nsMemoryReporterManager::GetReportsForThisProcessExtended(
 
   return NS_OK;
 }
+
 
 NS_IMETHODIMP
 nsMemoryReporterManager::EndReport() {

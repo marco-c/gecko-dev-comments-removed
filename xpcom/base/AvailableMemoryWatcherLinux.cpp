@@ -43,15 +43,15 @@ class nsAvailableMemoryWatcher final : public nsITimerCallback,
   void UpdateCrashAnnotation(const MutexAutoLock&);
   static bool IsMemoryLow();
 
-  nsCOMPtr<nsITimer> mTimer;
-  nsCOMPtr<nsIThread> mThread;
+  nsCOMPtr<nsITimer> mTimer GUARDED_BY(mMutex);
+  nsCOMPtr<nsIThread> mThread GUARDED_BY(mMutex);
 
-  bool mPolling;
-  bool mUnderMemoryPressure;
+  bool mPolling GUARDED_BY(mMutex);
+  bool mUnderMemoryPressure GUARDED_BY(mMutex);
 
   
   
-  Mutex mMutex MOZ_UNANNOTATED;
+  Mutex mMutex;
 
   
   
@@ -76,6 +76,7 @@ nsresult nsAvailableMemoryWatcher::Init() {
   if (NS_FAILED(rv)) {
     return rv;
   }
+  MutexAutoLock lock(mMutex);
   mTimer = NS_NewTimer();
   nsCOMPtr<nsIThread> thread;
   
@@ -89,7 +90,6 @@ nsresult nsAvailableMemoryWatcher::Init() {
   }
   mThread = thread;
 
-  MutexAutoLock lock(mMutex);
   
   UpdateCrashAnnotation(lock);
 
@@ -112,7 +112,8 @@ NS_IMPL_ISUPPORTS_INHERITED(nsAvailableMemoryWatcher,
                             nsAvailableMemoryWatcherBase, nsITimerCallback,
                             nsIObserver);
 
-void nsAvailableMemoryWatcher::StopPolling(const MutexAutoLock&) {
+void nsAvailableMemoryWatcher::StopPolling(const MutexAutoLock&)
+    REQUIRES(mMutex) {
   if (mPolling && mTimer) {
     
     mTimer->Cancel();
@@ -147,7 +148,7 @@ bool nsAvailableMemoryWatcher::IsMemoryLow() {
   return aResult;
 }
 
-void nsAvailableMemoryWatcher::ShutDown(const MutexAutoLock&) {
+void nsAvailableMemoryWatcher::ShutDown(const MutexAutoLock&) REQUIRES(mMutex) {
   if (mTimer) {
     mTimer->Cancel();
   }
@@ -199,7 +200,8 @@ void nsAvailableMemoryWatcher::HandleLowMemory() {
       [self = RefPtr{this}]() { self->mTabUnloader->UnloadTabAsync(); }));
 }
 
-void nsAvailableMemoryWatcher::UpdateCrashAnnotation(const MutexAutoLock&) {
+void nsAvailableMemoryWatcher::UpdateCrashAnnotation(const MutexAutoLock&)
+    REQUIRES(mMutex) {
   CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::LinuxUnderMemoryPressure,
       mUnderMemoryPressure);
@@ -221,7 +223,8 @@ void nsAvailableMemoryWatcher::MaybeHandleHighMemory() {
 
 
 
-void nsAvailableMemoryWatcher::StartPolling(const MutexAutoLock& aLock) {
+void nsAvailableMemoryWatcher::StartPolling(const MutexAutoLock& aLock)
+    REQUIRES(mMutex) {
   uint32_t pollingInterval = mUnderMemoryPressure
                                  ? kLowMemoryPollingIntervalMS
                                  : kHighMemoryPollingIntervalMS;
