@@ -90,7 +90,7 @@ class InitExpr {
   
   [[nodiscard]] bool clone(const InitExpr& src);
 
-  WASM_DECLARE_SERIALIZABLE(InitExpr)
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
 
 }  
