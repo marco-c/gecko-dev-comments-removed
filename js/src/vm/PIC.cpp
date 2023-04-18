@@ -266,7 +266,7 @@ void js::ForOfPIC::Chain::reset(JSContext* cx) {
 void js::ForOfPIC::Chain::eraseChain(JSContext* cx) {
   
   MOZ_ASSERT(!disabled_);
-  freeAllStubs(cx->defaultFreeOp());
+  freeAllStubs(cx->gcContext());
 }
 
 

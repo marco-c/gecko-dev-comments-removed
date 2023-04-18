@@ -84,8 +84,7 @@ bool jit::Bailout(BailoutStack* sp, BaselineBailoutInfo** bailoutInfo) {
   
   
   if (frame.ionScript()->invalidated()) {
-    frame.ionScript()->decrementInvalidationCount(
-        cx->runtime()->defaultFreeOp());
+    frame.ionScript()->decrementInvalidationCount(cx->runtime()->gcContext());
   }
 
   
@@ -177,7 +176,7 @@ bool jit::InvalidationBailout(InvalidationBailoutStack* sp,
 #endif
   }
 
-  frame.ionScript()->decrementInvalidationCount(cx->runtime()->defaultFreeOp());
+  frame.ionScript()->decrementInvalidationCount(cx->runtime()->gcContext());
 
   
   if (cx->runtime()->jitRuntime()->isProfilerInstrumentationEnabled(

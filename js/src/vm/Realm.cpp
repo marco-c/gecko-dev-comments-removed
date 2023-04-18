@@ -342,7 +342,7 @@ void Realm::traceWeakGlobalEdge(JSTracer* trc) {
   
   auto result = TraceWeakEdge(trc, &global_, "Realm::global_");
   if (result.isDead()) {
-    result.initialTarget()->releaseData(runtime_->defaultFreeOp());
+    result.initialTarget()->releaseData(runtime_->gcContext());
   }
 }
 
@@ -408,7 +408,7 @@ void Realm::setAllocationMetadataBuilder(
     const js::AllocationMetadataBuilder* builder) {
   
   
-  ReleaseAllJITCode(runtime_->defaultFreeOp());
+  ReleaseAllJITCode(runtime_->gcContext());
 
   allocationMetadataBuilder_ = builder;
 }

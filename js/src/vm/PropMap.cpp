@@ -159,7 +159,7 @@ static MOZ_ALWAYS_INLINE SharedPropMap* PropMapChildReadBarrier(
     
     
     MOZ_ASSERT(parent->isMarkedAny());
-    parent->removeChild(zone->runtimeFromMainThread()->defaultFreeOp(), child);
+    parent->removeChild(zone->runtimeFromMainThread()->gcContext(), child);
     return nullptr;
   }
 

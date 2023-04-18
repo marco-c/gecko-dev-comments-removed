@@ -924,7 +924,7 @@ class GCRuntime {
   
   MainThreadData<JS::Zone*> systemZone;
 
-  MainThreadData<JS::GCContext> mainThreadFreeOp;
+  MainThreadData<JS::GCContext> mainThreadContext;
 
  private:
   

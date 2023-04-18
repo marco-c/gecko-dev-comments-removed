@@ -87,7 +87,7 @@ void GeckoProfilerRuntime::enable(bool enabled) {
 
 
 
-  ReleaseAllJITCode(rt->defaultFreeOp());
+  ReleaseAllJITCode(rt->gcContext());
 
   
   
