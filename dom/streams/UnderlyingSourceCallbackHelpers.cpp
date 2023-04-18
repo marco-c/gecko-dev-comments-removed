@@ -45,7 +45,7 @@ void UnderlyingSourceAlgorithms::StartCallback(
   
   
   
-  JS::RootedObject thisObj(aCx, mUnderlyingSource);
+  JS::Rooted<JSObject*> thisObj(aCx, mUnderlyingSource);
   ReadableStreamDefaultControllerOrReadableByteStreamController controller;
   if (aController.IsDefault()) {
     controller.SetAsReadableStreamDefaultController() = aController.AsDefault();
@@ -61,7 +61,7 @@ void UnderlyingSourceAlgorithms::StartCallback(
 
 already_AddRefed<Promise> UnderlyingSourceAlgorithms::PullCallback(
     JSContext* aCx, ReadableStreamController& aController, ErrorResult& aRv) {
-  JS::RootedObject thisObj(aCx, mUnderlyingSource);
+  JS::Rooted<JSObject*> thisObj(aCx, mUnderlyingSource);
   if (!mPullCallback) {
     
     
@@ -100,7 +100,7 @@ already_AddRefed<Promise> UnderlyingSourceAlgorithms::CancelCallback(
   
   
   
-  JS::RootedObject thisObj(aCx, mUnderlyingSource);
+  JS::Rooted<JSObject*> thisObj(aCx, mUnderlyingSource);
   RefPtr<Promise> promise =
       mCancelCallback->Call(thisObj, aReason, aRv, "UnderlyingSource.cancel",
                             CallbackFunction::eRethrowExceptions);

@@ -21,7 +21,8 @@ class TransformerAlgorithms final {
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(TransformerAlgorithms)
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(TransformerAlgorithms)
 
-  TransformerAlgorithms(nsIGlobalObject* aGlobal, JS::HandleObject aTransformer,
+  TransformerAlgorithms(nsIGlobalObject* aGlobal,
+                        JS::Handle<JSObject*> aTransformer,
                         Transformer& aTransformerDict)
       : mGlobal(aGlobal), mTransformer(aTransformer) {
     

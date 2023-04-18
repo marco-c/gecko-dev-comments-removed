@@ -55,7 +55,7 @@ already_AddRefed<Promise> TransformerAlgorithms::TransformCallback(
   
   
   
-  JS::RootedObject thisObj(aCx, mTransformer);
+  JS::Rooted<JSObject*> thisObj(aCx, mTransformer);
   return MOZ_KnownLive(mTransformCallback)
       ->Call(thisObj, aChunk, aController, aRv,
              "TransformStreamDefaultController.[[transformAlgorithm]]",
@@ -75,7 +75,7 @@ already_AddRefed<Promise> TransformerAlgorithms::FlushCallback(
   
   
   
-  JS::RootedObject thisObj(aCx, mTransformer);
+  JS::Rooted<JSObject*> thisObj(aCx, mTransformer);
   return MOZ_KnownLive(mFlushCallback)
       ->Call(thisObj, aController, aRv,
              "TransformStreamDefaultController.[[flushAlgorithm]]",

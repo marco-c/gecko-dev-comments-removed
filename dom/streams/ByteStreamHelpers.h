@@ -28,7 +28,7 @@ bool CanTransferArrayBuffer(JSContext* aCx, JS::Handle<JSObject*> aObject,
 
 
 
-JSObject* CloneAsUint8Array(JSContext* aCx, JS::HandleObject aObject);
+JSObject* CloneAsUint8Array(JSContext* aCx, JS::Handle<JSObject*> aObject);
 
 MOZ_CAN_RUN_SCRIPT void
 SetUpReadableByteStreamControllerFromBodyStreamUnderlyingSource(

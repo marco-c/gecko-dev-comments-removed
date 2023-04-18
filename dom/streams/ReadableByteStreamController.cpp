@@ -294,7 +294,7 @@ void ReadableByteStreamControllerClose(
       ErrorResult rv;
       rv.ThrowTypeError("Leftover Bytes");
 
-      JS::RootedValue exception(aCx);
+      JS::Rooted<JS::Value> exception(aCx);
       MOZ_ALWAYS_TRUE(ToJSValue(aCx, std::move(rv), &exception));
 
       
@@ -547,8 +547,8 @@ JSObject* ReadableByteStreamControllerConvertPullIntoDescriptor(
 MOZ_CAN_RUN_SCRIPT
 void ReadableStreamFulfillReadIntoRequest(JSContext* aCx,
                                           ReadableStream* aStream,
-                                          JS::HandleValue aChunk, bool done,
-                                          ErrorResult& aRv) {
+                                          JS::Handle<JS::Value> aChunk,
+                                          bool done, ErrorResult& aRv) {
   
   MOZ_ASSERT(ReadableStreamHasBYOBReader(aStream));
 
@@ -599,13 +599,13 @@ void ReadableByteStreamControllerCommitPullIntoDescriptor(
 
   
   
-  JS::RootedObject filledView(
+  JS::Rooted<JSObject*> filledView(
       aCx, ReadableByteStreamControllerConvertPullIntoDescriptor(
                aCx, pullIntoDescriptor, aRv));
   if (aRv.Failed()) {
     return;
   }
-  JS::RootedValue filledViewValue(aCx, JS::ObjectValue(*filledView));
+  JS::Rooted<JS::Value> filledViewValue(aCx, JS::ObjectValue(*filledView));
 
   
   if (pullIntoDescriptor->GetReaderType() == ReaderType::Default) {
@@ -1059,7 +1059,7 @@ void ReadableByteStreamController::PullSteps(JSContext* aCx,
     
     if (!buffer) {
       
-      JS::RootedValue bufferError(aCx);
+      JS::Rooted<JS::Value> bufferError(aCx);
       if (!JS_GetPendingException(aCx, &bufferError)) {
         
         aRv.StealExceptionFromJSContext(aCx);
@@ -1127,7 +1127,7 @@ ReadableByteStreamControllerShiftPendingPullInto(
 
 JSObject* ConstructFromPullIntoConstructor(
     JSContext* aCx, PullIntoDescriptor::Constructor constructor,
-    JS::HandleObject buffer, size_t byteOffset, size_t length) {
+    JS::Handle<JSObject*> buffer, size_t byteOffset, size_t length) {
   switch (constructor) {
     case PullIntoDescriptor::Constructor::DataView:
       return JS_NewDataView(aCx, buffer, byteOffset, length);
@@ -1591,8 +1591,8 @@ bool ReadableByteStreamControllerFillPullIntoDescriptorFromQueue(
     
     
     
-    JS::RootedObject descriptorBuffer(aCx, aPullIntoDescriptor->Buffer());
-    JS::RootedObject queueBuffer(aCx, headOfQueue->Buffer());
+    JS::Rooted<JSObject*> descriptorBuffer(aCx, aPullIntoDescriptor->Buffer());
+    JS::Rooted<JSObject*> queueBuffer(aCx, headOfQueue->Buffer());
     if (!JS::ArrayBufferCopyData(aCx, descriptorBuffer, destStart, queueBuffer,
                                  headOfQueue->ByteOffset(), bytesToCopy)) {
       aRv.StealExceptionFromJSContext(aCx);
@@ -1652,7 +1652,7 @@ bool ReadableByteStreamControllerFillPullIntoDescriptorFromQueue(
 
 void ReadableByteStreamControllerPullInto(
     JSContext* aCx, ReadableByteStreamController* aController,
-    JS::HandleObject aView, ReadIntoRequest* aReadIntoRequest,
+    JS::Handle<JSObject*> aView, ReadIntoRequest* aReadIntoRequest,
     ErrorResult& aRv) {
   aRv.MightThrowJSException();
 
@@ -1688,18 +1688,18 @@ void ReadableByteStreamControllerPullInto(
   
   
   bool isShared;
-  JS::RootedObject viewedArrayBuffer(
+  JS::Rooted<JSObject*> viewedArrayBuffer(
       aCx, JS_GetArrayBufferViewBuffer(aCx, aView, &isShared));
   if (!viewedArrayBuffer) {
     aRv.StealExceptionFromJSContext(aCx);
     return;
   }
-  JS::RootedObject bufferResult(aCx,
-                                TransferArrayBuffer(aCx, viewedArrayBuffer));
+  JS::Rooted<JSObject*> bufferResult(
+      aCx, TransferArrayBuffer(aCx, viewedArrayBuffer));
 
   
   if (!bufferResult) {
-    JS::RootedValue pendingException(aCx);
+    JS::Rooted<JS::Value> pendingException(aCx);
     if (!JS_GetPendingException(aCx, &pendingException)) {
       
       
@@ -1721,7 +1721,7 @@ void ReadableByteStreamControllerPullInto(
   }
 
   
-  JS::RootedObject buffer(aCx, bufferResult);
+  JS::Rooted<JSObject*> buffer(aCx, bufferResult);
 
   
   
@@ -1753,17 +1753,18 @@ void ReadableByteStreamControllerPullInto(
   if (stream->State() == ReadableStream::ReaderState::Closed) {
     
     
-    JS::RootedObject pullIntoBuffer(aCx, pullIntoDescriptor->Buffer());
-    JS::RootedObject emptyView(aCx, ConstructFromPullIntoConstructor(
-                                        aCx, ctor, pullIntoBuffer,
-                                        pullIntoDescriptor->ByteOffset(), 0));
+    JS::Rooted<JSObject*> pullIntoBuffer(aCx, pullIntoDescriptor->Buffer());
+    JS::Rooted<JSObject*> emptyView(
+        aCx,
+        ConstructFromPullIntoConstructor(aCx, ctor, pullIntoBuffer,
+                                         pullIntoDescriptor->ByteOffset(), 0));
     if (!emptyView) {
       aRv.StealExceptionFromJSContext(aCx);
       return;
     }
 
     
-    JS::RootedValue emptyViewValue(aCx, JS::ObjectValue(*emptyView));
+    JS::Rooted<JS::Value> emptyViewValue(aCx, JS::ObjectValue(*emptyView));
     aReadIntoRequest->CloseSteps(aCx, emptyViewValue, aRv);
 
     
@@ -1796,7 +1797,7 @@ void ReadableByteStreamControllerPullInto(
         return;
       }
       
-      JS::RootedValue filledViewValue(aCx, JS::ObjectValue(*filledView));
+      JS::Rooted<JS::Value> filledViewValue(aCx, JS::ObjectValue(*filledView));
       aReadIntoRequest->ChunkSteps(aCx, filledViewValue, aRv);
       
       return;
@@ -1808,7 +1809,7 @@ void ReadableByteStreamControllerPullInto(
       ErrorResult typeError;
       typeError.ThrowTypeError("Close Requested True during Pull Into");
 
-      JS::RootedValue e(aCx);
+      JS::Rooted<JS::Value> e(aCx);
       MOZ_RELEASE_ASSERT(ToJSValue(aCx, std::move(typeError), &e));
 
       
@@ -1886,7 +1887,7 @@ void SetUpReadableByteStreamController(
   aStream->SetController(*aController);
 
   
-  JS::RootedValue startResult(aCx, JS::UndefinedValue());
+  JS::Rooted<JS::Value> startResult(aCx, JS::UndefinedValue());
   RefPtr<ReadableStreamController> controller = aController;
   aAlgorithms->StartCallback(aCx, *controller, &startResult, aRv);
   if (aRv.Failed()) {
@@ -1930,7 +1931,8 @@ void SetUpReadableByteStreamController(
 
 
 void SetUpReadableByteStreamControllerFromUnderlyingSource(
-    JSContext* aCx, ReadableStream* aStream, JS::HandleObject aUnderlyingSource,
+    JSContext* aCx, ReadableStream* aStream,
+    JS::Handle<JSObject*> aUnderlyingSource,
     UnderlyingSource& aUnderlyingSourceDict, double aHighWaterMark,
     ErrorResult& aRv) {
   

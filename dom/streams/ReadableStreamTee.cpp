@@ -93,8 +93,8 @@ void ReadableStreamDefaultTeeReadRequest::ChunkSteps(
       mTeeState->SetReadAgain(false);
 
       
-      JS::RootedValue chunk1(cx, mChunk);
-      JS::RootedValue chunk2(cx, mChunk);
+      JS::Rooted<JS::Value> chunk1(cx, mChunk);
+      JS::Rooted<JS::Value> chunk2(cx, mChunk);
 
       
       MOZ_RELEASE_ASSERT(!mTeeState->CloneForBranch2());
@@ -187,7 +187,7 @@ MOZ_CAN_RUN_SCRIPT void PullWithDefaultReader(JSContext* aCx,
                                               TeeState* aTeeState,
                                               ErrorResult& aRv);
 MOZ_CAN_RUN_SCRIPT void PullWithBYOBReader(JSContext* aCx, TeeState* aTeeState,
-                                           JS::HandleObject aView,
+                                           JS::Handle<JSObject*> aView,
                                            TeeBranch aForBranch,
                                            ErrorResult& aRv);
 
@@ -233,7 +233,7 @@ MOZ_CAN_RUN_SCRIPT void ByteStreamTeePullAlgorithm(JSContext* aCx,
   } else {
     
     
-    JS::RootedObject view(aCx, byobRequest->View());
+    JS::Rooted<JSObject*> view(aCx, byobRequest->View());
     PullWithBYOBReader(aCx, aTeeState, view, aForBranch, aRv);
   }
 
@@ -284,27 +284,27 @@ class ByteStreamTeeSourceAlgorithms final
     
     if (mTeeState->Canceled(otherStream())) {
       
-      JS::RootedObject compositeReason(aCx, JS::NewArrayObject(aCx, 2));
+      JS::Rooted<JSObject*> compositeReason(aCx, JS::NewArrayObject(aCx, 2));
       if (!compositeReason) {
         aRv.StealExceptionFromJSContext(aCx);
         return nullptr;
       }
 
-      JS::RootedValue reason1(aCx, mTeeState->Reason1());
+      JS::Rooted<JS::Value> reason1(aCx, mTeeState->Reason1());
       if (!JS_SetElement(aCx, compositeReason, 0, reason1)) {
         aRv.StealExceptionFromJSContext(aCx);
         return nullptr;
       }
 
-      JS::RootedValue reason2(aCx, mTeeState->Reason2());
+      JS::Rooted<JS::Value> reason2(aCx, mTeeState->Reason2());
       if (!JS_SetElement(aCx, compositeReason, 1, reason2)) {
         aRv.StealExceptionFromJSContext(aCx);
         return nullptr;
       }
 
       
-      JS::RootedValue compositeReasonValue(aCx,
-                                           JS::ObjectValue(*compositeReason));
+      JS::Rooted<JS::Value> compositeReasonValue(
+          aCx, JS::ObjectValue(*compositeReason));
       RefPtr<ReadableStream> stream(mTeeState->GetStream());
       RefPtr<Promise> cancelResult =
           ReadableStreamCancel(aCx, stream, compositeReasonValue, aRv);
@@ -496,7 +496,7 @@ struct PullWithDefaultReaderReadRequest final : public ReadRequest {
 
     MOZ_ASSERT(aChunk.isObjectOrNull());
     MOZ_ASSERT(aChunk.toObjectOrNull() != nullptr);
-    JS::RootedObject chunk(aCx, &aChunk.toObject());
+    JS::Rooted<JSObject*> chunk(aCx, &aChunk.toObject());
     RefPtr<PullWithDefaultReaderChunkStepMicrotask> task =
         MakeRefPtr<PullWithDefaultReaderChunkStepMicrotask>(aCx, mTeeState,
                                                             chunk);
@@ -677,11 +677,11 @@ class PullWithBYOBReader_ReadIntoRequest final : public ReadIntoRequest {
         if (!otherCanceled) {
           
           
-          JS::RootedObject clonedChunk(cx, CloneAsUint8Array(cx, mChunk));
+          JS::Rooted<JSObject*> clonedChunk(cx, CloneAsUint8Array(cx, mChunk));
 
           
           if (!clonedChunk) {
-            JS::RootedValue exception(cx);
+            JS::Rooted<JS::Value> exception(cx);
             if (!JS_GetPendingException(cx, &exception)) {
               
               
@@ -779,7 +779,7 @@ class PullWithBYOBReader_ReadIntoRequest final : public ReadIntoRequest {
 
     MOZ_ASSERT(aChunk.isObjectOrNull());
     MOZ_ASSERT(aChunk.toObjectOrNull());
-    JS::RootedObject chunk(aCx, aChunk.toObjectOrNull());
+    JS::Rooted<JSObject*> chunk(aCx, aChunk.toObjectOrNull());
     RefPtr<PullWithBYOBReaderChunkMicrotask> task =
         MakeRefPtr<PullWithBYOBReaderChunkMicrotask>(aCx, mTeeState, chunk,
                                                      mForBranch);
@@ -827,7 +827,7 @@ class PullWithBYOBReader_ReadIntoRequest final : public ReadIntoRequest {
       MOZ_ASSERT(aChunk.isObject());
       MOZ_ASSERT(aChunk.toObjectOrNull());
 
-      JS::RootedObject chunkObject(aCx, &aChunk.toObject());
+      JS::Rooted<JSObject*> chunkObject(aCx, &aChunk.toObject());
       MOZ_ASSERT(JS_IsArrayBufferViewObject(chunkObject));
       
       MOZ_ASSERT(JS_GetArrayBufferViewByteLength(chunkObject) == 0);
@@ -879,7 +879,7 @@ NS_INTERFACE_MAP_END_INHERITING(ReadIntoRequest)
 
 
 void PullWithBYOBReader(JSContext* aCx, TeeState* aTeeState,
-                        JS::HandleObject aView, TeeBranch aForBranch,
+                        JS::Handle<JSObject*> aView, TeeBranch aForBranch,
                         ErrorResult& aRv) {
   
   if (aTeeState->GetReader()->IsDefault()) {

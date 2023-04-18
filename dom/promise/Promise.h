@@ -69,7 +69,8 @@ class Promise : public SupportsWeakPtr {
           eDontPropagateUserInteraction);
 
   
-  static void ReportRejectedPromise(JSContext* aCx, JS::HandleObject aPromise);
+  static void ReportRejectedPromise(JSContext* aCx,
+                                    JS::Handle<JSObject*> aPromise);
 
   typedef void (Promise::*MaybeFunc)(JSContext* aCx,
                                      JS::Handle<JS::Value> aValue);
@@ -283,7 +284,7 @@ class Promise : public SupportsWeakPtr {
 
   Result<RefPtr<Promise>, nsresult> ThenWithoutCycleCollection(
       const std::function<already_AddRefed<Promise>(
-          JSContext*, JS::HandleValue, ErrorResult& aRv)>& aCallback);
+          JSContext*, JS::Handle<JS::Value>, ErrorResult& aRv)>& aCallback);
 
   
   

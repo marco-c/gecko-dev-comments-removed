@@ -276,7 +276,7 @@ void ReadableStreamDefaultControllerEnqueue(
     
     if (aRv.MaybeSetPendingException(
             aCx, "ReadableStreamDefaultController.enqueue")) {
-      JS::RootedValue errorValue(aCx);
+      JS::Rooted<JS::Value> errorValue(aCx);
 
       JS_GetPendingException(aCx, &errorValue);
 
@@ -303,7 +303,7 @@ void ReadableStreamDefaultControllerEnqueue(
     
     if (aRv.MaybeSetPendingException(
             aCx, "ReadableStreamDefaultController.enqueue")) {
-      JS::RootedValue errorValue(aCx);
+      JS::Rooted<JS::Value> errorValue(aCx);
 
       JS_GetPendingException(aCx, &errorValue);
 
@@ -495,7 +495,7 @@ void SetUpReadableStreamDefaultController(
 
   
   
-  JS::RootedValue startResult(aCx, JS::UndefinedValue());
+  JS::Rooted<JS::Value> startResult(aCx, JS::UndefinedValue());
   RefPtr<ReadableStreamDefaultController> controller = aController;
   aAlgorithms->StartCallback(aCx, *controller, &startResult, aRv);
   if (aRv.Failed()) {
@@ -540,7 +540,8 @@ void SetUpReadableStreamDefaultController(
 
 
 void SetupReadableStreamDefaultControllerFromUnderlyingSource(
-    JSContext* aCx, ReadableStream* aStream, JS::HandleObject aUnderlyingSource,
+    JSContext* aCx, ReadableStream* aStream,
+    JS::Handle<JSObject*> aUnderlyingSource,
     UnderlyingSource& aUnderlyingSourceDict, double aHighWaterMark,
     QueuingStrategySize* aSizeAlgorithm, ErrorResult& aRv) {
   
@@ -588,7 +589,7 @@ void ReadableStreamDefaultController::PullSteps(JSContext* aCx,
   
   if (!mQueue.isEmpty()) {
     
-    JS::RootedValue chunk(aCx);
+    JS::Rooted<JS::Value> chunk(aCx);
     DequeueValue(this, &chunk);
 
     

@@ -101,7 +101,7 @@ struct Read_ReadIntoRequest final : public ReadIntoRequest {
 
     
     
-    JS::RootedObject chunk(aCx, &aChunk.toObject());
+    JS::Rooted<JSObject*> chunk(aCx, &aChunk.toObject());
     if (!JS_WrapObject(aCx, &chunk)) {
       aRv.StealExceptionFromJSContext(aCx);
       return;
@@ -169,7 +169,7 @@ NS_INTERFACE_MAP_END_INHERITING(ReadIntoRequest)
 
 void ReadableStreamBYOBReaderRead(JSContext* aCx,
                                   ReadableStreamBYOBReader* aReader,
-                                  JS::HandleObject aView,
+                                  JS::Handle<JSObject*> aView,
                                   ReadIntoRequest* aReadIntoRequest,
                                   ErrorResult& aRv) {
   
@@ -184,7 +184,7 @@ void ReadableStreamBYOBReaderRead(JSContext* aCx,
   
   
   if (stream->State() == ReadableStream::ReaderState::Errored) {
-    JS::RootedValue error(aCx, stream->StoredError());
+    JS::Rooted<JS::Value> error(aCx, stream->StoredError());
 
     aReadIntoRequest->ErrorSteps(aCx, error, aRv);
     return;
@@ -210,7 +210,7 @@ already_AddRefed<Promise> ReadableStreamBYOBReader::Read(
   }
   JSContext* cx = jsapi.cx();
 
-  JS::RootedObject view(cx, aArray.Obj());
+  JS::Rooted<JSObject*> view(cx, aArray.Obj());
 
   
   
@@ -223,7 +223,7 @@ already_AddRefed<Promise> ReadableStreamBYOBReader::Read(
   
   
   bool isSharedMemory;
-  JS::RootedObject viewedArrayBuffer(
+  JS::Rooted<JSObject*> viewedArrayBuffer(
       cx, JS_GetArrayBufferViewBuffer(cx, view, &isSharedMemory));
   if (!viewedArrayBuffer) {
     aRv.StealExceptionFromJSContext(cx);

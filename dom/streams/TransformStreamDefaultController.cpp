@@ -123,7 +123,7 @@ void TransformStreamDefaultController::Enqueue(JSContext* aCx,
     TransformStreamErrorWritableAndUnblockWrite(aCx, stream, error, aRv);
 
     
-    JS::RootedValue storedError(aCx, stream->Readable()->StoredError());
+    JS::Rooted<JS::Value> storedError(aCx, stream->Readable()->StoredError());
     aRv.MightThrowJSException();
     aRv.ThrowJSException(aCx, storedError);
     return;
@@ -210,8 +210,8 @@ void SetUpTransformStreamDefaultController(
 
 
 void SetUpTransformStreamDefaultControllerFromTransformer(
-    JSContext* aCx, TransformStream& aStream, JS::HandleObject aTransformer,
-    Transformer& aTransformerDict) {
+    JSContext* aCx, TransformStream& aStream,
+    JS::Handle<JSObject*> aTransformer, Transformer& aTransformerDict) {
   
   auto controller =
       MakeRefPtr<TransformStreamDefaultController>(aStream.GetParentObject());
