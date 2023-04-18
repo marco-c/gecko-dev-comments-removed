@@ -175,6 +175,11 @@ class Accessible {
 
   
 
+
+  virtual nsAtom* TagName() const = 0;
+
+  
+
   bool IsDoc() const { return HasGenericType(eDocument); }
 
   bool IsTableRow() const { return HasGenericType(eTableRow); }
