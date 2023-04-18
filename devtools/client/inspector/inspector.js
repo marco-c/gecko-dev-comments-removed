@@ -929,14 +929,7 @@ Inspector.prototype = {
 
 
   getSelectedSidebar: function() {
-    const pref = "devtools.inspector.selectedSidebar";
-    
-    
-    if (!Services.prefs.prefHasUserValue(pref)) {
-      return this.getActiveSidebar();
-    }
-
-    return Services.prefs.getCharPref(pref);
+    return Services.prefs.getCharPref("devtools.inspector.selectedSidebar");
   },
 
   setSelectedSidebar: function(toolId) {
