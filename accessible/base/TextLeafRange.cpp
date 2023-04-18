@@ -752,6 +752,9 @@ TextLeafPoint TextLeafPoint::FindBoundary(AccessibleTextBoundary aBoundaryType,
   if (aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_END) {
     return FindLineEnd(aDirection, aIncludeOrigin);
   }
+  if (aBoundaryType == nsIAccessibleText::BOUNDARY_WORD_END) {
+    return FindWordEnd(aDirection, aIncludeOrigin);
+  }
   if (aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_START &&
       aIncludeOrigin && aDirection == eDirPrevious && IsEmptyLastLine()) {
     
@@ -865,6 +868,68 @@ TextLeafPoint TextLeafPoint::FindLineEnd(nsDirection aDirection,
     return prevChar;
   }
   return lineStart;
+}
+
+bool TextLeafPoint::IsSpace() const {
+  return GetWordBreakClass(GetChar()) == eWbcSpace;
+}
+
+TextLeafPoint TextLeafPoint::FindWordEnd(nsDirection aDirection,
+                                         bool aIncludeOrigin) const {
+  char16_t origChar = GetChar();
+  const bool origIsSpace = GetWordBreakClass(origChar) == eWbcSpace;
+  bool prevIsSpace = false;
+  if (aDirection == eDirPrevious || (aIncludeOrigin && origIsSpace) ||
+      !origChar) {
+    TextLeafPoint prev =
+        FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious, false);
+    if (aDirection == eDirPrevious && prev == *this) {
+      return *this;  
+    }
+    prevIsSpace = prev.IsSpace();
+    if (aIncludeOrigin && origIsSpace && !prevIsSpace) {
+      
+      
+      return *this;
+    }
+  }
+  TextLeafPoint boundary = *this;
+  if (aDirection == eDirPrevious && !prevIsSpace) {
+    
+    
+    boundary = FindBoundary(nsIAccessibleText::BOUNDARY_WORD_START,
+                            eDirPrevious, aIncludeOrigin);
+  } else if (aDirection == eDirNext &&
+             (origIsSpace || (!origChar && prevIsSpace))) {
+    
+    
+    boundary =
+        FindBoundary(nsIAccessibleText::BOUNDARY_WORD_START, eDirNext, false);
+    if (boundary.IsSpace()) {
+      
+      
+      return boundary;
+    }
+  }
+  if (aDirection == eDirNext) {
+    boundary = boundary.FindBoundary(nsIAccessibleText::BOUNDARY_WORD_START,
+                                     eDirNext, aIncludeOrigin);
+  }
+  
+  
+  
+  TextLeafPoint prev = boundary;
+  for (;;) {
+    prev = prev.FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious);
+    if (prev == boundary) {
+      break;  
+    }
+    if (!prev.IsSpace()) {
+      break;
+    }
+    boundary = prev;
+  }
+  return boundary;
 }
 
 already_AddRefed<AccAttributes> TextLeafPoint::GetTextAttributesLocalAcc(

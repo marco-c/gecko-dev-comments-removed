@@ -922,6 +922,7 @@ void HyperTextAccessible::TextBeforeOffset(int32_t aOffset,
                                            nsAString& aText) {
   if (StaticPrefs::accessibility_cache_enabled_AtStartup() &&
       (aBoundaryType == nsIAccessibleText::BOUNDARY_WORD_START ||
+       aBoundaryType == nsIAccessibleText::BOUNDARY_WORD_END ||
        aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_START ||
        aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_END)) {
     
@@ -1012,6 +1013,7 @@ void HyperTextAccessible::TextAtOffset(int32_t aOffset,
                                        int32_t* aEndOffset, nsAString& aText) {
   if (StaticPrefs::accessibility_cache_enabled_AtStartup() &&
       (aBoundaryType == nsIAccessibleText::BOUNDARY_WORD_START ||
+       aBoundaryType == nsIAccessibleText::BOUNDARY_WORD_END ||
        aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_START ||
        aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_END)) {
     
@@ -1110,6 +1112,7 @@ void HyperTextAccessible::TextAfterOffset(int32_t aOffset,
                                           nsAString& aText) {
   if (StaticPrefs::accessibility_cache_enabled_AtStartup() &&
       (aBoundaryType == nsIAccessibleText::BOUNDARY_WORD_START ||
+       aBoundaryType == nsIAccessibleText::BOUNDARY_WORD_END ||
        aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_START ||
        aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_END)) {
     

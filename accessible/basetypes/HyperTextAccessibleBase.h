@@ -187,7 +187,8 @@ class HyperTextAccessibleBase {
 
 
   void AdjustOriginIfEndBoundary(TextLeafPoint& aOrigin,
-                                 AccessibleTextBoundary aBoundaryType) const;
+                                 AccessibleTextBoundary aBoundaryType,
+                                 bool aAtOffset = false) const;
 };
 
 }  
