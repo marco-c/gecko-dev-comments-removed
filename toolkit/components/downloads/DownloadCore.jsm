@@ -2343,7 +2343,15 @@ DownloadCopySaver.prototype = {
           }
         },
 
-        onDataAvailable(aRequest, aInputStream, aOffset, aCount) {
+        onDataAvailable: (aRequest, aInputStream, aOffset, aCount) => {
+          
+          
+          
+          
+          if (this._canceled) {
+            aRequest.cancel(Cr.NS_BINDING_ABORTED);
+            return;
+          }
           backgroundFileSaver.onDataAvailable(
             aRequest,
             aInputStream,
