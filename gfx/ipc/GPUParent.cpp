@@ -651,9 +651,6 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
       [](ByteBuf&& aBuf) { glean::SendFOGData(std::move(aBuf)); });
 
 #ifndef NS_FREE_PERMANENT_DATA
-#  ifdef XP_WIN
-  wmf::MFShutdown();
-#  endif
   
   
   ProcessChild::QuickExit();
@@ -662,10 +659,6 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
   
   mShutdownBlockers.WaitUntilClear(10 * 1000 )
       ->Then(GetCurrentSerialEventTarget(), __func__, [this]() {
-#ifdef XP_WIN
-        wmf::MFShutdown();
-#endif
-
         if (mProfilerController) {
           mProfilerController->Shutdown();
           mProfilerController = nullptr;

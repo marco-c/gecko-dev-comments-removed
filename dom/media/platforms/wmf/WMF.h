@@ -22,6 +22,11 @@
 #include <wmcodecdsp.h>
 #include <codecapi.h>
 
+#include "mozilla/Atomics.h"
+#include "mozilla/ClearOnShutdown.h"
+#include "mozilla/StaticMutex.h"
+#include "nsThreadUtils.h"
+
 
 
 
@@ -39,15 +44,72 @@ namespace wmf {
 
 
 
-HRESULT MFStartup();
 
 
 
 
 
 
+class MediaFoundationInitializer final {
+ public:
+  ~MediaFoundationInitializer() {
+    if (mHasInitialized) {
+      if (FAILED(MFShutdown())) {
+        NS_WARNING("MFShutdown failed");
+      }
+    }
+  }
+  static bool HasInitialized() {
+    if (sIsShutdown) {
+      return false;
+    }
+    return Get()->mHasInitialized;
+  }
+ private:
+  static MediaFoundationInitializer* Get() {
+    {
+      StaticMutexAutoLock lock(sCreateMutex);
+      if (!sInitializer) {
+        sInitializer.reset(new MediaFoundationInitializer());
+        GetMainThreadSerialEventTarget()->Dispatch(
+            NS_NewRunnableFunction("MediaFoundationInitializer::Get", [&] {
+              
+              RunOnShutdown([&] {
+                sInitializer.reset();
+                sIsShutdown = true;
+              }, ShutdownPhase::XPCOMShutdown);
+            }));
+      }
+    }
+    return sInitializer.get();
+  }
 
-HRESULT MFShutdown();
+  MediaFoundationInitializer()
+    : mHasInitialized(SUCCEEDED(MFStartup())) {
+    if (!mHasInitialized) {
+      NS_WARNING("MFStartup failed");
+    }
+  }
+
+  
+  
+  
+  
+  HRESULT MFStartup();
+
+  
+  
+  
+  
+  
+  
+  HRESULT MFShutdown();
+
+  static inline UniquePtr<MediaFoundationInitializer> sInitializer;
+  static inline StaticMutex sCreateMutex;
+  static inline Atomic<bool> sIsShutdown{false};
+  const bool mHasInitialized;
+};
 
 
 
