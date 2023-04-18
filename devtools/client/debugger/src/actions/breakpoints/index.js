@@ -23,8 +23,8 @@ import {
   enableBreakpoint,
   disableBreakpoint,
 } from "./modify";
-import remapLocations from "./remapLocations";
 
+import { isOriginalId } from "devtools-source-map";
 
 
 export * from "./breakpointPositions";
@@ -163,13 +163,34 @@ export function removeBreakpointsInSource(cx, source) {
   };
 }
 
-export function remapBreakpoints(cx, sourceId) {
+
+
+
+
+
+
+
+
+
+
+
+
+export function updateBreakpointsForNewPrettyPrintedSource(cx, sourceId) {
   return async ({ dispatch, getState, sourceMaps }) => {
+    if (isOriginalId(sourceId)) {
+      console.error("Can't update breakpoints on original sources");
+      return;
+    }
     const breakpoints = getBreakpointsForSource(getState(), sourceId);
-    const newBreakpoints = await remapLocations(
-      breakpoints,
-      sourceId,
-      sourceMaps
+    
+    
+    const newBreakpoints = await Promise.all(
+      breakpoints.map(async breakpoint => {
+        const location = await sourceMaps.getOriginalLocation(
+          breakpoint.generatedLocation
+        );
+        return { ...breakpoint, location };
+      })
     );
 
     
