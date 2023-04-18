@@ -46,6 +46,7 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/ContentDOMReference.jsm"
 );
 
+const { WebVTT } = ChromeUtils.import("resource://gre/modules/vtt.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -53,6 +54,12 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AppConstants: "resource://gre/modules/AppConstants.jsm",
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "DISPLAY_TEXT_TRACKS_PREF",
+  "media.videocontrols.picture-in-picture.display-text-tracks.enabled",
+  false
+);
 const TOGGLE_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.enabled";
 const TOGGLE_TESTING_PREF =
@@ -1132,6 +1139,132 @@ class PictureInPictureChild extends JSWindowActorChild {
   weakPlayerContent = null;
 
   
+  _currentWebVTTTrack = null;
+
+  observerFunction = null;
+
+  observe(subject, topic, data) {
+    if (
+      topic != "nsPref:changed" ||
+      data !==
+        "media.videocontrols.picture-in-picture.display-text-tracks.enabled"
+    ) {
+      return;
+    }
+
+    const originatingVideo = this.getWeakVideo();
+    let isTextTrackPrefEnabled = Services.prefs.getBoolPref(
+      "media.videocontrols.picture-in-picture.display-text-tracks.enabled"
+    );
+
+    
+    if (isTextTrackPrefEnabled) {
+      this.setupTextTracks(originatingVideo);
+    } else {
+      this.removeTextTracks(originatingVideo);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  setupTextTracks(originatingVideo) {
+    const isWebVTTSupported = !!originatingVideo.textTracks?.length;
+
+    if (!isWebVTTSupported) {
+      return;
+    }
+
+    
+    this.setActiveTextTrack(originatingVideo.textTracks);
+
+    if (!this._currentWebVTTTrack) {
+      return;
+    }
+
+    
+    originatingVideo.textTracks.addEventListener("change", this);
+    this._currentWebVTTTrack.addEventListener("cuechange", this.onCueChange);
+
+    const cues = this._currentWebVTTTrack.activeCues;
+    this.updateWebVTTTextTracksDisplay(cues);
+  }
+
+  
+
+
+
+
+
+
+
+
+  removeTextTracks(originatingVideo) {
+    const isWebVTTSupported = !!originatingVideo.textTracks;
+
+    if (!isWebVTTSupported) {
+      return;
+    }
+
+    
+    originatingVideo.textTracks.removeEventListener("change", this);
+    this._currentWebVTTTrack?.removeEventListener(
+      "cuechange",
+      this.onCueChange
+    );
+    this._currentWebVTTTrack = null;
+    this.updateWebVTTTextTracksDisplay(null);
+  }
+
+  
+
+
+
+
+
+  updateWebVTTTextTracksDisplay(textTrackCues) {
+    let pipWindowTracksContainer = this.document.getElementById("texttracks");
+    let playerVideo = this.document.getElementById("playervideo");
+    let playerVideoWindow = playerVideo.ownerGlobal;
+
+    
+    pipWindowTracksContainer.replaceChildren();
+
+    if (!textTrackCues) {
+      return;
+    }
+
+    const allCuesArray = [...textTrackCues];
+    let lineNumberUsed = allCuesArray.find(cue => cue.line !== "auto");
+
+    
+    
+    
+    if (lineNumberUsed) {
+      allCuesArray.sort((cue1, cue2) => cue1.line - cue2.line);
+    }
+    
+    
+    allCuesArray.forEach(cue => {
+      let text = cue.text;
+      let cueTextNode = WebVTT.convertCueToDOMTree(playerVideoWindow, text);
+      let cueDiv = this.document.createElement("div");
+      cueDiv.appendChild(cueTextNode);
+      
+      
+      cueDiv.style = "white-space: pre;";
+      pipWindowTracksContainer.appendChild(cueDiv);
+    });
+  }
+
+  
 
 
 
@@ -1248,6 +1381,36 @@ class PictureInPictureChild extends JSWindowActorChild {
         }
         break;
       }
+      case "change": {
+        
+        
+        if (this._currentWebVTTTrack) {
+          this._currentWebVTTTrack.removeEventListener(
+            "cuechange",
+            this.onCueChange
+          );
+          this._currentWebVTTTrack = null;
+        }
+
+        const tracks = event.target;
+        this.setActiveTextTrack(tracks);
+        const isCurrentTrackAvailable = this._currentWebVTTTrack;
+
+        
+        
+        if (!isCurrentTrackAvailable || !tracks.length) {
+          this.updateWebVTTTextTracksDisplay(null);
+          return;
+        }
+
+        this._currentWebVTTTrack.addEventListener(
+          "cuechange",
+          this.onCueChange
+        );
+        const cues = this._currentWebVTTTrack.activeCues;
+        this.updateWebVTTTextTracksDisplay(cues);
+        break;
+      }
     }
   }
 
@@ -1332,7 +1495,33 @@ class PictureInPictureChild extends JSWindowActorChild {
 
 
 
+  setActiveTextTrack(textTrackList) {
+    this._currentWebVTTTrack = null;
+
+    for (let i = 0; i < textTrackList.length; i++) {
+      let track = textTrackList[i];
+      let isCCText = track.kind === "subtitles" || track.kind === "captions";
+      if (isCCText && track.mode === "showing") {
+        this._currentWebVTTTrack = track;
+        break;
+      }
+    }
+  }
+
+  
+
+
+
+
   trackOriginatingVideo(originatingVideo) {
+    this.observerFunction = (subject, topic, data) => {
+      this.observe(subject, topic, data);
+    };
+    Services.prefs.addObserver(
+      "media.videocontrols.picture-in-picture.display-text-tracks.enabled",
+      this.observerFunction
+    );
+
     let originatingWindow = originatingVideo.ownerGlobal;
     if (originatingWindow) {
       originatingWindow.addEventListener("pagehide", this);
@@ -1340,6 +1529,10 @@ class PictureInPictureChild extends JSWindowActorChild {
       originatingVideo.addEventListener("pause", this);
       originatingVideo.addEventListener("volumechange", this);
       originatingVideo.addEventListener("resize", this);
+
+      if (DISPLAY_TEXT_TRACKS_PREF) {
+        this.setupTextTracks(originatingVideo);
+      }
 
       let chromeEventHandler = originatingWindow.docShell.chromeEventHandler;
       chromeEventHandler.addEventListener(
@@ -1362,6 +1555,11 @@ class PictureInPictureChild extends JSWindowActorChild {
 
 
   untrackOriginatingVideo(originatingVideo) {
+    Services.prefs.removeObserver(
+      "media.videocontrols.picture-in-picture.display-text-tracks.enabled",
+      this.observerFunction
+    );
+
     let originatingWindow = originatingVideo.ownerGlobal;
     if (originatingWindow) {
       originatingWindow.removeEventListener("pagehide", this);
@@ -1369,6 +1567,10 @@ class PictureInPictureChild extends JSWindowActorChild {
       originatingVideo.removeEventListener("pause", this);
       originatingVideo.removeEventListener("volumechange", this);
       originatingVideo.removeEventListener("resize", this);
+
+      if (DISPLAY_TEXT_TRACKS_PREF) {
+        this.removeTextTracks(originatingVideo);
+      }
 
       let chromeEventHandler = originatingWindow.docShell.chromeEventHandler;
       chromeEventHandler.removeEventListener(
@@ -1463,6 +1665,8 @@ class PictureInPictureChild extends JSWindowActorChild {
 
     let doc = this.document;
     let playerVideo = doc.createElement("video");
+    playerVideo.id = "playervideo";
+    let textTracks = doc.createElement("div");
 
     doc.body.style.overflow = "hidden";
     doc.body.style.margin = "0";
@@ -1473,7 +1677,20 @@ class PictureInPictureChild extends JSWindowActorChild {
     playerVideo.style.width = "100vw";
     playerVideo.style.backgroundColor = "#000";
 
+    
+    
+    
+    textTracks.id = "texttracks";
+    
+    textTracks.style.position = "absolute";
+    textTracks.style.textAlign = "center";
+    textTracks.style.width = "100vw";
+    textTracks.style.bottom = "30px";
+    textTracks.style.backgroundColor = "black";
+    textTracks.style.color = "white";
+
     doc.body.appendChild(playerVideo);
+    doc.body.appendChild(textTracks);
 
     originatingVideo.cloneElementVisually(playerVideo);
 
@@ -1483,6 +1700,7 @@ class PictureInPictureChild extends JSWindowActorChild {
       playerVideo.style.transform = "scaleX(-1)";
     }
 
+    this.onCueChange = this.onCueChange.bind(this);
     this.trackOriginatingVideo(originatingVideo);
 
     this.contentWindow.addEventListener(
@@ -1524,6 +1742,15 @@ class PictureInPictureChild extends JSWindowActorChild {
     let video = this.getWeakVideo();
     if (video && this.videoWrapper) {
       this.videoWrapper.setMuted(video, false);
+    }
+  }
+
+  onCueChange(e) {
+    if (!DISPLAY_TEXT_TRACKS_PREF) {
+      this.updateWebVTTTextTracksDisplay(null);
+    } else {
+      const cues = this._currentWebVTTTrack.activeCues;
+      this.updateWebVTTTextTracksDisplay(cues);
     }
   }
 
