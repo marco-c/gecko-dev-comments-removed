@@ -261,21 +261,11 @@ wasm::Pages wasm::MaxMemoryPages(IndexType) {
 }
 #  else
 wasm::Pages wasm::MaxMemoryPages(IndexType t) {
-  size_t offsetGuardAllowance = 0;
-  if (t == IndexType::I64) {
-    
-    
-    
-    
-    MOZ_ASSERT(!IsHugeMemoryEnabled(t));
-    offsetGuardAllowance = OffsetGuardLimit;
-  }
-
-  size_t desired =
-      t == IndexType::I64 ? MaxMemory64LimitField : MaxMemory32LimitField;
-  size_t actual =
-      (ArrayBufferObject::maxBufferByteLength() - offsetGuardAllowance) /
-      PageSize;
+  MOZ_ASSERT_IF(t == IndexType::I64, !IsHugeMemoryEnabled(t));
+  MOZ_ASSERT_IF(t == IndexType::I64,
+                ArrayBufferObject::maxBufferByteLength() % PageSize == 0);
+  size_t desired = MaxMemoryLimitField(t);
+  size_t actual = ArrayBufferObject::maxBufferByteLength() / PageSize;
   return wasm::Pages(std::min(desired, actual));
 }
 #  endif

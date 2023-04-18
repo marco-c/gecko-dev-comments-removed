@@ -1103,7 +1103,7 @@ bool ArrayBufferObject::wasmGrowToPagesInPlace(
     return false;
   }
   MOZ_ASSERT(newPages <= wasm::MaxMemoryPages(t) &&
-             newPages.byteLength() < ArrayBufferObject::maxBufferByteLength());
+             newPages.byteLength() <= ArrayBufferObject::maxBufferByteLength());
 
   
   
