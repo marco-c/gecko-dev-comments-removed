@@ -21,6 +21,7 @@
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
 #include "vm/ShapeZone.h"
+#include "vm/Watchtower.h"
 
 #include "vm/JSContext-inl.h"
 #include "vm/JSObject-inl.h"
@@ -124,96 +125,6 @@ class MOZ_RAII AutoCheckShapeConsistency {
 
 }  
 
-static bool ReshapeForShadowedPropSlow(JSContext* cx, HandleNativeObject obj,
-                                       HandleId id) {
-  MOZ_ASSERT(obj->isUsedAsPrototype());
-
-  
-  if (JSID_IS_INT(id)) {
-    return true;
-  }
-
-  RootedObject proto(cx, obj->staticPrototype());
-  while (proto) {
-    
-    if (!proto->is<NativeObject>()) {
-      break;
-    }
-
-    if (proto->as<NativeObject>().contains(cx, id)) {
-      return JSObject::setInvalidatedTeleporting(cx, proto);
-    }
-
-    proto = proto->staticPrototype();
-  }
-
-  return true;
-}
-
-static MOZ_ALWAYS_INLINE bool ReshapeForShadowedProp(JSContext* cx,
-                                                     HandleNativeObject obj,
-                                                     HandleId id) {
-  
-  
-  
-  
-  
-
-  
-  if (!obj->isUsedAsPrototype()) {
-    return true;
-  }
-
-  return ReshapeForShadowedPropSlow(cx, obj, id);
-}
-
-static bool ReshapeForProtoMutation(JSContext* cx, HandleObject obj) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  if (!obj->isUsedAsPrototype()) {
-    return true;
-  }
-
-  RootedObject pobj(cx, obj);
-
-  while (pobj && pobj->is<NativeObject>()) {
-    if (!pobj->hasInvalidatedTeleporting()) {
-      if (!JSObject::setInvalidatedTeleporting(cx, pobj)) {
-        return false;
-      }
-    }
-    pobj = pobj->staticPrototype();
-  }
-
-  return true;
-}
-
  MOZ_ALWAYS_INLINE bool
 NativeObject::maybeConvertToDictionaryForAdd(JSContext* cx,
                                              HandleNativeObject obj) {
@@ -248,7 +159,7 @@ bool NativeObject::addCustomDataProperty(JSContext* cx, HandleNativeObject obj,
   AutoCheckShapeConsistency check(obj);
   AssertValidCustomDataProp(obj, flags);
 
-  if (!ReshapeForShadowedProp(cx, obj, id)) {
+  if (!Watchtower::watchPropertyAdd(cx, obj, id)) {
     return false;
   }
 
@@ -375,7 +286,7 @@ bool NativeObject::addProperty(JSContext* cx, HandleNativeObject obj,
           
           IF_RECORD_TUPLE(IsExtendedPrimitiveWrapper(*obj), false));
 
-  if (!ReshapeForShadowedProp(cx, obj, id)) {
+  if (!Watchtower::watchPropertyAdd(cx, obj, id)) {
     return false;
   }
 
@@ -490,7 +401,7 @@ bool NativeObject::addPropertyInReservedSlot(JSContext* cx,
 
   
   
-  MOZ_ASSERT(!obj->isUsedAsPrototype());
+  MOZ_ASSERT(!Watchtower::watchesPropertyAdd(obj));
 
   ObjectFlags objectFlags = obj->shape()->objectFlags();
   const JSClass* clasp = obj->shape()->getObjectClass();
@@ -974,7 +885,7 @@ bool JSObject::setProtoUnchecked(JSContext* cx, HandleObject obj,
 
   
   
-  if (!ReshapeForProtoMutation(cx, obj)) {
+  if (!Watchtower::watchProtoChange(cx, obj)) {
     return false;
   }
 
