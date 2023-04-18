@@ -194,6 +194,14 @@ bool ArgumentsGetterImpl(JSContext* cx, const CallArgs& args) {
   }
 
   
+  
+  
+  if (js::SupportDifferentialTesting()) {
+    args.rval().setNull();
+    return true;
+  }
+
+  
   NonBuiltinScriptFrameIter iter(cx);
   if (!AdvanceToActiveCallLinear(cx, iter, fun)) {
     args.rval().setNull();
