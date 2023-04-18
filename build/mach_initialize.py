@@ -8,8 +8,6 @@ import math
 import os
 import platform
 import shutil
-import site
-import subprocess
 import sys
 
 if sys.version_info[0] < 3:
@@ -168,11 +166,6 @@ install a recent enough Python 3.
 """.strip()
 
 
-def _scrub_system_site_packages():
-    site_paths = set(site.getsitepackages() + [site.getusersitepackages()])
-    sys.path = [path for path in sys.path if path not in site_paths]
-
-
 def _activate_python_environment(topsrcdir, state_dir):
     
     
@@ -187,98 +180,24 @@ def _activate_python_environment(topsrcdir, state_dir):
     ]
 
     from mach.site import (
-        MozSiteMetadata,
+        MachSiteManager,
+        VirtualenvOutOfDateException,
         MozSiteMetadataOutOfDateError,
-        MozSiteManager,
     )
 
     try:
-        mach_site = MozSiteManager(
+        mach_environment = MachSiteManager.from_environment(
             topsrcdir,
-            os.path.join(state_dir, "_virtualenvs"),
-            "mach",
+            
+            os.path.normpath(state_dir),
         )
-        active_site_metadata = MozSiteMetadata.from_runtime()
-        is_mach_site = active_site_metadata and active_site_metadata.site_name == "mach"
-    except MozSiteMetadataOutOfDateError as e:
-        print(e)
-        print('This should be resolved by running "./mach create-mach-environment".')
+        mach_environment.activate()
+    except (VirtualenvOutOfDateException, MozSiteMetadataOutOfDateError):
+        print(
+            'The "mach" virtualenv is not up-to-date, please run '
+            '"./mach create-mach-environment"'
+        )
         sys.exit(1)
-
-    requirements = mach_site.requirements()
-    if os.environ.get("MACH_USE_SYSTEM_PYTHON") or os.environ.get("MOZ_AUTOMATION"):
-        env_var = (
-            "MOZ_AUTOMATION"
-            if os.environ.get("MOZ_AUTOMATION")
-            else "MACH_USE_SYSTEM_PYTHON"
-        )
-
-        has_pip = (
-            subprocess.run(
-                [sys.executable, "-c", "import pip"], stderr=subprocess.DEVNULL
-            ).returncode
-            == 0
-        )
-        
-        
-        
-        assert (
-            not requirements.pypi_requirements
-        ), "Mach pip package requirements must be optional."
-        if has_pip:
-            pip = [sys.executable, "-m", "pip"]
-            check_result = subprocess.run(
-                pip + ["check"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                universal_newlines=True,
-            )
-            if check_result.returncode:
-                print(check_result.stdout, file=sys.stderr)
-                subprocess.check_call(pip + ["list", "-v"], stdout=sys.stderr)
-                raise Exception(
-                    'According to "pip check", the current Python '
-                    "environment has package-compatibility issues."
-                )
-
-            package_result = requirements.validate_environment_packages(pip)
-            if not package_result.has_all_packages:
-                print(
-                    "Skipping automatic management of Python dependencies since "
-                    f"the '{env_var}' environment variable is set.\n"
-                    "The following issues were found while validating your Python "
-                    "environment:"
-                )
-                print(package_result.report())
-                sys.exit(1)
-        else:
-            
-            
-            
-            
-            _scrub_system_site_packages()
-
-        sys.path[0:0] = requirements.pths_as_absolute(topsrcdir)
-    elif is_mach_site:
-        
-        
-        
-        
-        
-        
-        if not mach_site.up_to_date():
-            print(
-                'The "mach" virtualenv is not up-to-date, please run '
-                '"./mach create-mach-environment"'
-            )
-            sys.exit(1)
-    else:
-        
-        
-        
-        _scrub_system_site_packages()
-
-        sys.path[0:0] = requirements.pths_as_absolute(topsrcdir)
 
 
 def initialize(topsrcdir):
