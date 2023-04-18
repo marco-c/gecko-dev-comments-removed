@@ -1318,6 +1318,7 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
     if (StringBeginsWith(nsDependentAtomString(aAttribute), u"aria-"_ns)) {
       uint8_t attrFlags = aria::AttrCharacteristicsFor(aAttribute);
       if (!(attrFlags & ATTR_BYPASSOBJ)) {
+        mDoc->QueueCacheUpdate(this, CacheDomain::ARIA);
         
         
         
@@ -3535,6 +3536,25 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       } else {
         fields->SetAttribute(nsGkAtoms::headers, DeleteEntry());
       }
+    }
+  }
+
+  if (aCacheDomain & CacheDomain::ARIA && mContent) {
+    
+    
+    
+    RefPtr<AccAttributes> ariaAttrs;
+    aria::AttrIterator attrIt(mContent);
+    while (attrIt.Next()) {
+      if (!ariaAttrs) {
+        ariaAttrs = new AccAttributes();
+      }
+      attrIt.ExposeAttr(ariaAttrs);
+    }
+    if (ariaAttrs) {
+      fields->SetAttribute(nsGkAtoms::aria, std::move(ariaAttrs));
+    } else if (aUpdateType == CacheUpdateType::Update) {
+      fields->SetAttribute(nsGkAtoms::aria, DeleteEntry());
     }
   }
 
