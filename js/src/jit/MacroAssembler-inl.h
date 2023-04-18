@@ -427,11 +427,11 @@ void MacroAssembler::branchIfNotFunctionIsNonBuiltinCtor(Register fun,
   
   
   
-  constexpr int32_t mask =
-      Imm32_16Adj(FunctionFlags::BASESCRIPT | FunctionFlags::SELF_HOSTED |
-                  FunctionFlags::CONSTRUCTOR);
+  constexpr int32_t mask = FunctionFlags::BASESCRIPT |
+                           FunctionFlags::SELF_HOSTED |
+                           FunctionFlags::CONSTRUCTOR;
   constexpr int32_t expected =
-      Imm32_16Adj(FunctionFlags::BASESCRIPT | FunctionFlags::CONSTRUCTOR);
+      FunctionFlags::BASESCRIPT | FunctionFlags::CONSTRUCTOR;
 
   load32(Address(fun, JSFunction::offsetOfFlagsAndArgCount()), scratch);
   and32(Imm32(mask), scratch);
