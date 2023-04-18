@@ -3020,57 +3020,121 @@ var gMainPane = {
     let token = {};
     this._downloadDisplayToken = token;
 
-    var folderListPref = Preferences.get("browser.download.folderList");
     var downloadFolder = document.getElementById("downloadFolder");
-    var currentDirPref = Preferences.get("browser.download.dir");
 
-    
-    var fph = Services.io
-      .getProtocolHandler("file")
-      .QueryInterface(Ci.nsIFileProtocolHandler);
-    var iconUrlSpec;
-
-    let folderIndex = folderListPref.value;
+    let folderIndex = Preferences.get("browser.download.folderList").value;
     
     
     if (folderIndex == 3) {
+      let currentDirPref = Preferences.get("browser.download.dir");
       folderIndex = currentDirPref.value
         ? await this._folderToIndex(currentDirPref.value)
         : 1;
     }
 
     
-    let folderValue;
-    if (folderIndex == 2) {
-      
-      folderValue = currentDirPref.value
-        ? `\u2066${currentDirPref.value.path}\u2069`
-        : "";
-      iconUrlSpec = fph.getURLSpecFromDir(currentDirPref.value);
-    } else if (folderIndex == 1) {
-      
-      [folderValue] = await document.l10n.formatValues([
-        { id: "downloads-folder-name" },
-      ]);
-      iconUrlSpec = fph.getURLSpecFromDir(await this._indexToFolder(1));
-    } else {
-      
-      [folderValue] = await document.l10n.formatValues([
-        { id: "desktop-folder-name" },
-      ]);
-      iconUrlSpec = fph.getURLSpecFromDir(
-        await this._getDownloadsFolder("Desktop")
-      );
-    }
+    let {
+      folderDisplayName,
+      file,
+    } = await this._getSystemDownloadFolderDetails(folderIndex);
+    
+    let fph = Services.io
+      .getProtocolHandler("file")
+      .QueryInterface(Ci.nsIFileProtocolHandler);
+    let iconUrlSpec = fph.getURLSpecFromDir(file);
+
     
     
     if (this._downloadDisplayToken != token) {
       return;
     }
     
-    downloadFolder.value = folderValue;
+    downloadFolder.value = folderDisplayName;
     downloadFolder.style.backgroundImage =
       "url(moz-icon://" + iconUrlSpec + "?size=16)";
+  },
+
+  async _getSystemDownloadFolderDetails(folderIndex) {
+    let downloadsDir = await this._getDownloadsFolder("Downloads");
+    let desktopDir = await this._getDownloadsFolder("Desktop");
+    let currentDirPref = Preferences.get("browser.download.dir");
+
+    let file;
+    let firefoxLocalizedName;
+    if (folderIndex == 2 && currentDirPref.value) {
+      file = currentDirPref.value;
+      if (file.equals(downloadsDir)) {
+        folderIndex = 1;
+      } else if (file.equals(desktopDir)) {
+        folderIndex = 0;
+      }
+    }
+    switch (folderIndex) {
+      case 2: 
+        break;
+
+      case 1: {
+        
+        file = downloadsDir;
+        firefoxLocalizedName = await document.l10n.formatValues([
+          { id: "downloads-folder-name" },
+        ]);
+        break;
+      }
+
+      case 0:
+      
+      default: {
+        file = desktopDir;
+        firefoxLocalizedName = await document.l10n.formatValues([
+          { id: "desktop-folder-name" },
+        ]);
+      }
+    }
+    if (firefoxLocalizedName) {
+      let folderDisplayName, leafName;
+      
+      
+      try {
+        folderDisplayName = file.displayName;
+      } catch (ex) {
+        
+      }
+      try {
+        leafName = file.leafName;
+      } catch (ex) {
+        
+      }
+
+      
+      
+      if (folderDisplayName && folderDisplayName != leafName) {
+        return { file, folderDisplayName };
+      }
+
+      
+      if (firefoxLocalizedName) {
+        
+        
+        
+        if (
+          AppConstants.platform == "mac" ||
+          leafName == firefoxLocalizedName
+        ) {
+          return { file, folderDisplayName: firefoxLocalizedName };
+        }
+      }
+    }
+    
+    
+    if (file) {
+      
+      return { file, folderDisplayName: `\u2066${file.path}\u2069` };
+    }
+    
+    
+    file = desktopDir;
+    return { file, folderDisplayName: "" };
   },
 
   
