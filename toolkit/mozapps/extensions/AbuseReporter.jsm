@@ -116,6 +116,10 @@ const AbuseReporter = {
     return currentTimestamp - this._lastReportTimestamp;
   },
 
+  isSupportedAddonType(addonType) {
+    return SUPPORTED_ADDON_TYPES.includes(addonType);
+  },
+
   
 
 
