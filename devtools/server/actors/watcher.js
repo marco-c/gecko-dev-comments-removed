@@ -238,9 +238,6 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
           [Resources.TYPES.SERVER_SENT_EVENT]: shouldEnableAllWatchers,
           [Resources.TYPES.WEBSOCKET]: shouldEnableAllWatchers,
         },
-
-        
-        "event-breakpoints": true,
       },
     };
   },
