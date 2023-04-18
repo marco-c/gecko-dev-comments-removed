@@ -99,7 +99,7 @@ bool wasm::CompileIntrinsicModule(JSContext* cx,
 
   
   SharedCompileArgs compileArgs =
-      CompileArgs::buildAndReport(cx, ScriptedCaller(), featureOptions);
+      CompileArgs::build(cx, ScriptedCaller(), featureOptions);
   if (!compileArgs) {
     return false;
   }
