@@ -8,6 +8,9 @@
 
 
 add_task(async function() {
+  
+  await pushPref("devtools.netmonitor.features.newEditAndResend", true);
+
   const { monitor } = await initNetMonitor(HTTPS_CUSTOM_GET_URL, {
     requestCount: 1,
   });
@@ -20,21 +23,28 @@ add_task(async function() {
   store.dispatch(Actions.batchEnable(false));
 
   info("open the left panel");
-  let waitForPanels = waitForDOM(
+  const waitForPanels = waitForDOM(
     document,
     ".monitor-panel .network-action-bar"
   );
 
-  const respSearchButton = document.querySelector(
-    "#netmonitor-toolbar-container .devtools-search-icon"
+  info("switching to new HTTP Custom Request panel");
+  let HTTPCustomRequestButton = document.querySelector(
+    "#netmonitor-toolbar-container .devtools-http-custom-request-icon"
   );
-  respSearchButton.click();
+  ok(HTTPCustomRequestButton, "The Toolbar button should be visible.");
+
+  HTTPCustomRequestButton.click();
   await waitForPanels;
+
   is(
     !!document.querySelector("#network-action-bar-HTTP-custom-request-panel"),
-    false,
-    "The 'New Request' header should be hidden when the pref is false."
+    true,
+    "The 'New Request' header should be visible when the pref is true."
   );
+
+  
+  await pushPref("devtools.netmonitor.features.newEditAndResend", false);
 
   
   const closePanel = document.querySelector(
@@ -42,18 +52,15 @@ add_task(async function() {
   );
   closePanel.click();
 
-  await pushPref("devtools.netmonitor.features.newEditAndResend", true);
+  
+  HTTPCustomRequestButton = document.querySelector(
+    "#netmonitor-toolbar-container .devtools-http-custom-request-icon"
+  );
 
-  info("open the left panel");
-  waitForPanels = waitForDOM(document, ".monitor-panel .network-action-bar");
-  respSearchButton.click();
-  await waitForPanels;
-
-  info("switching to new request panel");
   is(
-    !!document.querySelector("#network-action-bar-HTTP-custom-request-panel"),
-    true,
-    "The 'New Request' header should be visible when the pref is true."
+    !!HTTPCustomRequestButton,
+    false,
+    "The toolbar button should be hidden when the pref is false."
   );
 
   await teardown(monitor);
