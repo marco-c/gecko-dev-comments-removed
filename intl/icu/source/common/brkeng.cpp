@@ -79,6 +79,7 @@ UnhandledEngine::findBreaks( UText *text,
                              int32_t ,
                              int32_t endPos,
                              UVector32 &,
+                             UBool ,
                              UErrorCode &status) const {
     if (U_FAILURE(status)) return 0;
     UChar32 c = utext_current32(text); 

@@ -316,6 +316,11 @@ public:
 
 
 
+
+
+
+
+
     void setDateTimeFormat(const UnicodeString& dateTimeFormat);
 
     
@@ -323,7 +328,62 @@ public:
 
 
 
+
+
+
+
+
+
     const UnicodeString& getDateTimeFormat() const;
+
+#if !UCONFIG_NO_FORMATTING
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void setDateTimeFormat(UDateFormatStyle style, const UnicodeString& dateTimeFormat,
+                            UErrorCode& status);
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    const UnicodeString& getDateTimeFormat(UDateFormatStyle style,
+                            UErrorCode& status) const;
+#endif 
+#endif 
 
     
 
@@ -545,8 +605,7 @@ private:
 
     DateTimePatternGenerator& operator=(const DateTimePatternGenerator& other);
 
-    
-    
+    static const int32_t UDATPG_WIDTH_COUNT = UDATPG_NARROW + 1;
 
     Locale pLocale;  
     FormatParser *fp;
@@ -554,9 +613,8 @@ private:
     DistanceInfo *distanceInfo;
     PatternMap *patternMap;
     UnicodeString appendItemFormats[UDATPG_FIELD_COUNT];
-    
-    UnicodeString fieldDisplayNames[UDATPG_FIELD_COUNT][3];
-    UnicodeString dateTimeFormat;
+    UnicodeString fieldDisplayNames[UDATPG_FIELD_COUNT][UDATPG_WIDTH_COUNT];
+    UnicodeString dateTimeFormat[4];
     UnicodeString decimal;
     DateTimeMatcher *skipMatcher;
     Hashtable *fAvailableFormatKeyHash;

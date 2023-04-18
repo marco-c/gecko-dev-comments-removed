@@ -127,12 +127,6 @@ public:
 
 
 
-    void addElementX(void* obj, UErrorCode &status);
-
-    
-
-
-
 
     void addElement(void *obj, UErrorCode &status);
 
@@ -196,12 +190,6 @@ public:
     inline int32_t size(void) const {return count;}
 
     inline UBool isEmpty(void) const {return count == 0;}
-
-    
-
-
-
-    UBool ensureCapacityX(int32_t minimumCapacity, UErrorCode &status);
 
     UBool ensureCapacity(int32_t minimumCapacity, UErrorCode &status);
 

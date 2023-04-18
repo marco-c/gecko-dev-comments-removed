@@ -750,7 +750,7 @@ UnicodeString PatternStringUtils::propertiesToPatternString(const DecimalFormatP
     int32_t groupingLength = grouping1 + grouping2 + 1;
 
     
-    double roundingInterval = properties.roundingIncrement;
+    double increment = properties.roundingIncrement;
     UnicodeString digitsString;
     int32_t digitsStringScale = 0;
     if (maxSig != uprv_min(dosMax, -1)) {
@@ -761,14 +761,14 @@ UnicodeString PatternStringUtils::propertiesToPatternString(const DecimalFormatP
         while (digitsString.length() < maxSig) {
             digitsString.append(u'#');
         }
-    } else if (roundingInterval != 0.0 && !ignoreRoundingIncrement(roundingInterval,maxFrac)) {
-        
-        digitsStringScale = -roundingutils::doubleFractionLength(roundingInterval, nullptr);
+    } else if (increment != 0.0 && !ignoreRoundingIncrement(increment,maxFrac)) {
         
         DecimalQuantity incrementQuantity;
-        incrementQuantity.setToDouble(roundingInterval);
+        incrementQuantity.setToDouble(increment);
+        incrementQuantity.roundToInfinity();
+        digitsStringScale = incrementQuantity.getLowerDisplayMagnitude();
         incrementQuantity.adjustMagnitude(-digitsStringScale);
-        incrementQuantity.roundToMagnitude(0, kDefaultMode, status);
+        incrementQuantity.setMinInteger(minInt - digitsStringScale);
         UnicodeString str = incrementQuantity.toPlainString();
         if (str.charAt(0) == u'-') {
             

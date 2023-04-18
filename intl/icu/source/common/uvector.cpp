@@ -99,14 +99,6 @@ bool UVector::operator==(const UVector& other) const {
     return true;
 }
 
-
-
-void UVector::addElementX(void* obj, UErrorCode &status) {
-    if (ensureCapacityX(count + 1, status)) {
-        elements[count++].pointer = obj;
-    }
-}
-
 void UVector::addElement(void* obj, UErrorCode &status) {
     U_ASSERT(deleter == nullptr);
     if (ensureCapacity(count + 1, status)) {
@@ -331,38 +323,6 @@ int32_t UVector::indexOf(UElement key, int32_t startIndex, int8_t hint) const {
     return -1;
 }
 
-UBool UVector::ensureCapacityX(int32_t minimumCapacity, UErrorCode &status) {
-    if (minimumCapacity < 0) {
-        status = U_ILLEGAL_ARGUMENT_ERROR;
-        return FALSE;
-	}
-    if (capacity < minimumCapacity) {
-        if (capacity > (INT32_MAX - 1) / 2) {        	
-        	status = U_ILLEGAL_ARGUMENT_ERROR;
-        	return FALSE;
-        }
-        int32_t newCap = capacity * 2;
-        if (newCap < minimumCapacity) {
-            newCap = minimumCapacity;
-        }
-        if (newCap > (int32_t)(INT32_MAX / sizeof(UElement))) {	
-        	
-        	status = U_ILLEGAL_ARGUMENT_ERROR;
-        	return FALSE;
-        }
-        UElement* newElems = (UElement *)uprv_realloc(elements, sizeof(UElement)*newCap);
-        if (newElems == nullptr) {
-            
-            status = U_MEMORY_ALLOCATION_ERROR;
-            return FALSE;
-        }
-        elements = newElems;
-        capacity = newCap;
-    }
-    return TRUE;
-}
-
-
 UBool UVector::ensureCapacity(int32_t minimumCapacity, UErrorCode &status) {
     if (U_FAILURE(status)) {
         return false;
@@ -370,7 +330,7 @@ UBool UVector::ensureCapacity(int32_t minimumCapacity, UErrorCode &status) {
     if (minimumCapacity < 0) {
         status = U_ILLEGAL_ARGUMENT_ERROR;
         return false;
-	}
+    }
     if (capacity < minimumCapacity) {
         if (capacity > (INT32_MAX - 1) / 2) {        	
             status = U_ILLEGAL_ARGUMENT_ERROR;
@@ -396,6 +356,7 @@ UBool UVector::ensureCapacity(int32_t minimumCapacity, UErrorCode &status) {
     }
     return true;
 }
+
 
 
 

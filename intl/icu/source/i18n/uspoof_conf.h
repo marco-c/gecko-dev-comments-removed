@@ -39,11 +39,12 @@ U_NAMESPACE_BEGIN
 
 
 struct SPUString : public UMemory {
-    UnicodeString  *fStr;             
-    int32_t         fCharOrStrTableIndex;   
-                                      
-                                      
-    SPUString(UnicodeString *s);
+    LocalPointer<UnicodeString> fStr;     
+    int32_t      fCharOrStrTableIndex;    
+                                          
+                                          
+
+    SPUString(LocalPointer<UnicodeString> s);
     ~SPUString();
 };
 
