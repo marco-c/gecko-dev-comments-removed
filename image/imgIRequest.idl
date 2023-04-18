@@ -38,6 +38,11 @@ interface imgIRequest : nsIRequest
   
 
 
+  [infallible] readonly attribute unsigned long providerId;
+
+  
+
+
 
 
 
