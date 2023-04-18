@@ -6,6 +6,7 @@
     <link rel="help" href="http://www.w3.org/TR/css3-background/#the-box-shadow">
     <link rel="help" href="http://www.w3.org/TR/css3-background/#the-border-radius">
     <link rel="match" href="reference/css-box-shadow-ref-001.html">
+    <meta name="fuzzy" content="maxDifference=0-52; totalPixels=0-138">
     <style type="text/css">
 		.greenSquare-shadow{
             position: absolute;
@@ -47,9 +48,9 @@
 <body>
     <p>The test passes if you the green square's black shadow and it completely covers the red square.</p>
     <div class="container">
-        
+        <!-- This is the square that should not be visible if the test passes -->
 		<div id="red" class="redSquare"></div>
-        
+        <!-- This is the square being tested with the shadow -->
 		<div id="green" class="greenSquare-shadow"></div>
     </div>
 	<input type="button" value="Border radius?" onclick="fun_radius()">
