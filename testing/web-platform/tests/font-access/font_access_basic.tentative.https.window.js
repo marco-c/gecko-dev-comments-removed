@@ -17,8 +17,7 @@ font_access_test(async t => {
 
   fonts.forEach(font => {
     assert_true(
-        font instanceof FontMetadata,
-        'Results should be FontMetadata instances');
+        font instanceof FontData, 'Results should be FontData instances');
 
     
     assert_equals(typeof font.postscriptName, 'string');
@@ -37,4 +36,4 @@ font_access_test(async t => {
       assert_font_equals(font, expectedFont);
     }
   });
-}, 'query(): FontMetadata property types and values');
+}, 'query(): FontData property types and values');
