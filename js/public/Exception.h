@@ -8,6 +8,7 @@
 #define js_Exception_h
 
 #include "mozilla/Attributes.h"
+#include "mozilla/Maybe.h"
 
 #include "jstypes.h"
 
@@ -183,6 +184,12 @@ extern JS_PUBLIC_API void SetPendingExceptionStack(
 
 
 extern JS_PUBLIC_API JSObject* ExceptionStackOrNull(JS::HandleObject obj);
+
+
+
+
+
+extern JS_PUBLIC_API mozilla::Maybe<JS::Value> GetExceptionCause(JSObject* exc);
 
 }  
 

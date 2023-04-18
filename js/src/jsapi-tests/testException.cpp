@@ -1,12 +1,12 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "js/CallAndConstruct.h"    // JS_CallFunctionValue
-#include "js/PropertyAndElement.h"  // JS_GetProperty
+
+
+
+
+
+
+#include "js/CallAndConstruct.h"    
+#include "js/PropertyAndElement.h"  
 #include "jsapi-tests/tests.h"
 
 BEGIN_TEST(testException_bug860435) {
@@ -26,3 +26,44 @@ BEGIN_TEST(testException_bug860435) {
   return true;
 }
 END_TEST(testException_bug860435)
+
+BEGIN_TEST(testException_getCause) {
+  JS::RootedValue err(cx);
+  EVAL("new Error('message', { cause: new Error('message 2') })", &err);
+  CHECK(err.isObject());
+
+  JS::RootedString msg(cx, JS::ToString(cx, err));
+  CHECK(msg);
+  
+  bool match;
+  CHECK(JS_StringEqualsLiteral(cx, msg, "Error: message", &match));
+  CHECK(match);
+
+  JS::Rooted<mozilla::Maybe<JS::Value>> maybeCause(
+      cx, JS::GetExceptionCause(&err.toObject()));
+  CHECK(maybeCause.isSome());
+  JS::RootedValue cause(cx, *maybeCause);
+  CHECK(cause.isObject());
+
+  msg = JS::ToString(cx, cause);
+  CHECK(msg);
+  
+  CHECK(JS_StringEqualsLiteral(cx, msg, "Error: message 2", &match));
+  CHECK(match);
+
+  maybeCause = JS::GetExceptionCause(&cause.toObject());
+  CHECK(maybeCause.isNothing());
+
+  return true;
+}
+END_TEST(testException_getCause)
+
+BEGIN_TEST(testException_getCausePlainObject) {
+  JS::RootedObject plain(cx, JS_NewPlainObject(cx));
+  CHECK(plain);
+  JS::Rooted<mozilla::Maybe<JS::Value>> maybeCause(
+      cx, JS::GetExceptionCause(plain));
+  CHECK(maybeCause.isNothing());
+  return true;
+}
+END_TEST(testException_getCausePlainObject)
