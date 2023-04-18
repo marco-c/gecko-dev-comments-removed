@@ -299,6 +299,9 @@ class DebugAPI {
   static bool debuggerObservesAsmJS(GlobalObject* global);
 
   
+  static bool debuggerObservesWasm(GlobalObject* global);
+
+  
 
 
 

@@ -34,6 +34,7 @@ const SUPPORTED_OPTIONS = {
   
   
   observeAsmJS: true,
+  observeWasm: true,
   
   pauseWorkersUntilAttach: true,
 };

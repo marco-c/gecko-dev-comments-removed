@@ -387,6 +387,7 @@ class JS::Realm : public JS::shadow::Realm {
     DebuggerObservesAllExecution = 1 << 1,
     DebuggerObservesAsmJS = 1 << 2,
     DebuggerObservesCoverage = 1 << 3,
+    DebuggerObservesWasm = 1 << 4,
   };
   unsigned debugModeBits_ = 0;
   friend class js::AutoRestoreRealmDebugMode;
@@ -657,16 +658,26 @@ class JS::Realm : public JS::shadow::Realm {
 
   
   
-  
-  
-  
-  
   bool debuggerObservesAsmJS() const {
     static const unsigned Mask = IsDebuggee | DebuggerObservesAsmJS;
     return (debugModeBits_ & Mask) == Mask;
   }
   void updateDebuggerObservesAsmJS() {
     updateDebuggerObservesFlag(DebuggerObservesAsmJS);
+  }
+
+  
+  
+  
+  
+  
+  
+  bool debuggerObservesWasm() const {
+    static const unsigned Mask = IsDebuggee | DebuggerObservesWasm;
+    return (debugModeBits_ & Mask) == Mask;
+  }
+  void updateDebuggerObservesWasm() {
+    updateDebuggerObservesFlag(DebuggerObservesWasm);
   }
 
   
