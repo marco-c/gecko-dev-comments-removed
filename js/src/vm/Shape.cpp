@@ -152,7 +152,7 @@ static void AssertValidCustomDataProp(NativeObject* obj, PropertyFlags flags) {
 
 bool NativeObject::addCustomDataProperty(JSContext* cx, HandleNativeObject obj,
                                          HandleId id, PropertyFlags flags) {
-  MOZ_ASSERT(!JSID_IS_VOID(id));
+  MOZ_ASSERT(!id.isVoid());
   MOZ_ASSERT(!id.isPrivateName());
   MOZ_ASSERT(!obj->containsPure(id));
 
@@ -275,7 +275,7 @@ bool NativeObject::addProperty(JSContext* cx, HandleNativeObject obj,
 
   
   
-  MOZ_ASSERT(!JSID_IS_VOID(id));
+  MOZ_ASSERT(!id.isVoid());
   MOZ_ASSERT(!obj->containsPure(id));
   MOZ_ASSERT_IF(!id.isPrivateName(),
                 obj->isExtensible() ||
@@ -390,7 +390,7 @@ bool NativeObject::addPropertyInReservedSlot(JSContext* cx,
   MOZ_ASSERT(slot < JSCLASS_RESERVED_SLOTS(obj->getClass()));
 
   
-  MOZ_ASSERT(!JSID_IS_VOID(id));
+  MOZ_ASSERT(!id.isVoid());
   MOZ_ASSERT(!obj->containsPure(id));
   MOZ_ASSERT(!id.isPrivateName());
   MOZ_ASSERT(obj->isExtensible());
@@ -463,7 +463,7 @@ static void AssertValidArrayIndex(NativeObject* obj, jsid id) {
 bool NativeObject::changeProperty(JSContext* cx, HandleNativeObject obj,
                                   HandleId id, PropertyFlags flags,
                                   uint32_t* slotOut) {
-  MOZ_ASSERT(!JSID_IS_VOID(id));
+  MOZ_ASSERT(!id.isVoid());
 
   AutoCheckShapeConsistency check(obj);
   AssertValidArrayIndex(obj, id);
@@ -583,7 +583,7 @@ bool NativeObject::changeCustomDataPropAttributes(JSContext* cx,
                                                   HandleNativeObject obj,
                                                   HandleId id,
                                                   PropertyFlags flags) {
-  MOZ_ASSERT(!JSID_IS_VOID(id));
+  MOZ_ASSERT(!id.isVoid());
 
   AutoCheckShapeConsistency check(obj);
   AssertValidArrayIndex(obj, id);

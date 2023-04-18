@@ -485,7 +485,7 @@ bool ExportFunction(JSContext* cx, HandleValue vfunction, HandleValue vscope,
     }
 
     RootedId id(cx, options.defineAs);
-    if (JSID_IS_VOID(id)) {
+    if (id.isVoid()) {
       
       
       
@@ -527,7 +527,7 @@ bool ExportFunction(JSContext* cx, HandleValue vfunction, HandleValue vscope,
     
     
     
-    if (!JSID_IS_VOID(options.defineAs)) {
+    if (!options.defineAs.isVoid()) {
       if (!JS_DefinePropertyById(cx, targetScope, id, rval, JSPROP_ENUMERATE)) {
         return false;
       }
@@ -558,7 +558,7 @@ bool CreateObjectIn(JSContext* cx, HandleValue vobj,
     return false;
   }
 
-  bool define = !JSID_IS_VOID(options.defineAs);
+  bool define = !options.defineAs.isVoid();
 
   if (define && js::IsScriptedProxy(scope)) {
     JS_ReportErrorASCII(cx, "Defining property on proxy object is not allowed");
