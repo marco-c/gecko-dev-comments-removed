@@ -9,8 +9,13 @@
 #ifndef js_Zone_h
 #define js_Zone_h
 
-#include "jspubtd.h"
-#include "js/Context.h"
+#include "mozilla/MemoryReporting.h"  
+
+#include <stddef.h>  
+
+#include "jstypes.h"        
+#include "js/RootingAPI.h"  
+#include "js/TypeDecls.h"  
 
 
 

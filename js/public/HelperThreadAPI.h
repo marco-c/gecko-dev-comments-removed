@@ -12,6 +12,10 @@
 #ifndef js_HelperThreadAPI_h
 #define js_HelperThreadAPI_h
 
+#include <stddef.h>  
+
+#include "jstypes.h"  
+
 namespace JS {
 
 

@@ -7,6 +7,9 @@
 #ifndef js_friend_PerformanceHint_h
 #define js_friend_PerformanceHint_h
 
+#include "jstypes.h"       
+#include "js/TypeDecls.h"  
+
 namespace js {
 namespace gc {
 
