@@ -283,10 +283,8 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
 
 
 
-  virtual void ScrollToCSSPixels(
-      const CSSIntPoint& aScrollPosition,
-      ScrollMode aMode = ScrollMode::Instant,
-      ScrollOrigin aOrigin = ScrollOrigin::NotSpecified) = 0;
+  virtual void ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
+                                 ScrollMode aMode = ScrollMode::Instant) = 0;
   
 
 
