@@ -862,7 +862,7 @@ void nsINode::Normalize() {
   }
 
   
-  RefPtr<Document> doc = OwnerDoc();
+  Document* doc = OwnerDoc();
 
   
   mozAutoSubtreeModified subtree(doc, nullptr);
@@ -872,11 +872,10 @@ void nsINode::Normalize() {
   bool hasRemoveListeners = nsContentUtils::HasMutationListeners(
       doc, NS_EVENT_BITS_MUTATION_NODEREMOVED);
   if (hasRemoveListeners) {
-    for (nsCOMPtr<nsIContent>& node : nodes) {
-      
-      if (nsCOMPtr<nsINode> parentNode = node->GetParentNode()) {
-        
-        nsContentUtils::MaybeFireNodeRemoved(MOZ_KnownLive(node), parentNode);
+    for (uint32_t i = 0; i < nodes.Length(); ++i) {
+      nsINode* parentNode = nodes[i]->GetParentNode();
+      if (parentNode) {  
+        nsContentUtils::MaybeFireNodeRemoved(nodes[i], parentNode);
       }
     }
   }
@@ -2469,7 +2468,8 @@ nsINode* nsINode::ReplaceOrInsertBefore(bool aReplace, nsINode* aNewChild,
 
     
     
-    if (nsCOMPtr<nsINode> oldParent = aNewChild->GetParentNode()) {
+    nsINode* oldParent = aNewChild->GetParentNode();
+    if (oldParent) {
       nsContentUtils::MaybeFireNodeRemoved(aNewChild, oldParent);
     }
 

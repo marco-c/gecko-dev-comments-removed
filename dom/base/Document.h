@@ -2349,8 +2349,7 @@ class Document : public nsINode,
 
 
 
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Sanitize();
+  void Sanitize();
 
   
 
@@ -3316,9 +3315,7 @@ class Document : public nsINode,
       const nsAString& target, const nsAString& data, ErrorResult& rv) const;
   already_AddRefed<nsINode> ImportNode(nsINode& aNode, bool aDeep,
                                        ErrorResult& rv) const;
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsINode* AdoptNode(nsINode& aNode,
-                                                 ErrorResult& rv);
+  nsINode* AdoptNode(nsINode& aNode, ErrorResult& rv);
   already_AddRefed<Event> CreateEvent(const nsAString& aEventType,
                                       CallerType aCallerType,
                                       ErrorResult& rv) const;

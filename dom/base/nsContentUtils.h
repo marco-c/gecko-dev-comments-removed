@@ -1443,8 +1443,7 @@ class nsContentUtils {
 
 
 
-  MOZ_CAN_RUN_SCRIPT static void MaybeFireNodeRemoved(nsINode* aChild,
-                                                      nsINode* aParent);
+  static void MaybeFireNodeRemoved(nsINode* aChild, nsINode* aParent);
 
   
 
@@ -1904,10 +1903,8 @@ class nsContentUtils {
 
 
 
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult SetNodeTextContent(
-      nsIContent* aContent, const nsAString& aValue, bool aTryReuse);
+  static nsresult SetNodeTextContent(nsIContent* aContent,
+                                     const nsAString& aValue, bool aTryReuse);
 
   
 

@@ -313,9 +313,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
 
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-  PostHandleEvent(mozilla::EventChainPostVisitor& aVisitor) override;
+  nsresult PostHandleEvent(mozilla::EventChainPostVisitor& aVisitor) override;
 
   void Suspend(bool aIncludeSubWindows = true);
   void Resume(bool aIncludeSubWindows = true);
@@ -1260,7 +1258,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   bool MaybeCallDocumentFlushedResolvers(bool aUntilExhaustion);
 
   
-  MOZ_CAN_RUN_SCRIPT void FireFrameLoadEvent();
+  void FireFrameLoadEvent();
 
   void UpdateAutoplayPermission();
   void UpdateShortcutsPermission();

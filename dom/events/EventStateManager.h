@@ -119,16 +119,16 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
                            nsIFrame* aTargetFrame, nsEventStatus* aStatus,
                            nsIContent* aOverrideClickTarget);
 
-  MOZ_CAN_RUN_SCRIPT void PostHandleKeyboardEvent(
-      WidgetKeyboardEvent* aKeyboardEvent, nsIFrame* aTargetFrame,
-      nsEventStatus& aStatus);
+  void PostHandleKeyboardEvent(WidgetKeyboardEvent* aKeyboardEvent,
+                               nsIFrame* aTargetFrame, nsEventStatus& aStatus);
 
   
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void DispatchLegacyMouseScrollEvents(
-      nsIFrame* aTargetFrame, WidgetWheelEvent* aEvent, nsEventStatus* aStatus);
+  void DispatchLegacyMouseScrollEvents(nsIFrame* aTargetFrame,
+                                       WidgetWheelEvent* aEvent,
+                                       nsEventStatus* aStatus);
 
   void NotifyDestroyPresContext(nsPresContext* aPresContext);
   void SetPresContext(nsPresContext* aPresContext);
@@ -386,9 +386,10 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsIFrame* DispatchMouseOrPointerEvent(
-      WidgetMouseEvent* aMouseEvent, EventMessage aMessage,
-      nsIContent* aTargetContent, nsIContent* aRelatedContent);
+  nsIFrame* DispatchMouseOrPointerEvent(WidgetMouseEvent* aMouseEvent,
+                                        EventMessage aMessage,
+                                        nsIContent* aTargetContent,
+                                        nsIContent* aRelatedContent);
   
 
 
@@ -403,8 +404,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void NotifyMouseOver(
-      WidgetMouseEvent* aMouseEvent, nsIContent* aContent);
+  void NotifyMouseOver(WidgetMouseEvent* aMouseEvent, nsIContent* aContent);
   
 
 
@@ -414,10 +414,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-
-
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
-                                                  nsIContent* aMovingInto);
+  void NotifyMouseOut(WidgetMouseEvent* aMouseEvent, nsIContent* aMovingInto);
   MOZ_CAN_RUN_SCRIPT void GenerateDragDropEnterExit(
       nsPresContext* aPresContext, WidgetDragEvent* aDragEvent);
 
@@ -770,11 +767,9 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-  MOZ_CAN_RUN_SCRIPT void SendLineScrollEvent(nsIFrame* aTargetFrame,
-                                              WidgetWheelEvent* aEvent,
-                                              EventState& aState,
-                                              int32_t aDelta,
-                                              DeltaDirection aDeltaDirection);
+  void SendLineScrollEvent(nsIFrame* aTargetFrame, WidgetWheelEvent* aEvent,
+                           EventState& aState, int32_t aDelta,
+                           DeltaDirection aDeltaDirection);
 
   
 
@@ -789,11 +784,9 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-  MOZ_CAN_RUN_SCRIPT void SendPixelScrollEvent(nsIFrame* aTargetFrame,
-                                               WidgetWheelEvent* aEvent,
-                                               EventState& aState,
-                                               int32_t aPixelDelta,
-                                               DeltaDirection aDeltaDirection);
+  void SendPixelScrollEvent(nsIFrame* aTargetFrame, WidgetWheelEvent* aEvent,
+                            EventState& aState, int32_t aPixelDelta,
+                            DeltaDirection aDeltaDirection);
 
   
 
