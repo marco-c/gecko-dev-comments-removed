@@ -114,11 +114,7 @@ class UntrustedModulesProcessor final : public nsIObserver {
   RefPtr<ModulesTrustPromise> GetModulesTrustInternal(ModulePaths&& aModPaths);
 
   
-  RefPtr<ModuleRecord> GetOrAddModuleRecord(
-      ModulesMap& aModules, const ModuleEvaluator& aModEval,
-      const glue::EnhancedModuleLoadInfo& aModLoadInfo);
-  RefPtr<ModuleRecord> GetOrAddModuleRecord(ModulesMap& aModules,
-                                            const ModuleEvaluator& aModEval,
+  RefPtr<ModuleRecord> GetOrAddModuleRecord(const ModuleEvaluator& aModEval,
                                             const nsAString& aResolvedNtPath);
 
   
@@ -136,6 +132,7 @@ class UntrustedModulesProcessor final : public nsIObserver {
   RefPtr<LazyIdleThread> mThread;
 
   Mutex mUnprocessedMutex;
+  Mutex mModuleCacheMutex;
 
   
   Vector<glue::EnhancedModuleLoadInfo> mUnprocessedModuleLoads;
@@ -146,6 +143,11 @@ class UntrustedModulesProcessor final : public nsIObserver {
 
   
   Atomic<bool> mAllowProcessing;
+
+  
+  
+  
+  ModulesMap mGlobalModuleCache;
 };
 
 }  
