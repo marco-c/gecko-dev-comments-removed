@@ -401,7 +401,7 @@ pub fn get_mime_extensions_str(mut mime_str: &str) -> Option<&'static [&'static 
     }
 
     let (top, sub) = {
-        let split_idx = mime_str.find('/')?;
+        let split_idx = mime_str.find('/').unwrap();
         (&mime_str[..split_idx], &mime_str[split_idx + 1..])
     };
 
@@ -432,12 +432,13 @@ pub fn octet_stream() -> Mime {
 mod tests {
     include!("mime_types.rs");
 
-    use super::{expect_mime, from_ext, from_path, get_mime_extensions_str};
+    use super::{from_ext, from_path, expect_mime};
     #[allow(deprecated, unused_imports)]
     use std::ascii::AsciiExt;
 
     use std::fmt::Debug;
     use std::path::Path;
+
 
     #[test]
     fn check_type_bounds() {
@@ -470,9 +471,7 @@ mod tests {
             "image/gif".to_string()
         );
         assert_eq!(
-            from_path("/path/to/file.gif")
-                .first_or_octet_stream()
-                .to_string(),
+            from_path("/path/to/file.gif").first_or_octet_stream().to_string(),
             "image/gif".to_string()
         );
     }
@@ -499,9 +498,7 @@ mod tests {
     #[test]
     fn test_are_mime_types_parseable() {
         for (_, mimes) in MIME_TYPES {
-            mimes.iter().for_each(|s| {
-                expect_mime(s);
-            });
+            mimes.iter().for_each(|s| { expect_mime(s); });
         }
     }
 
@@ -525,10 +522,5 @@ mod tests {
                 n_ext
             );
         }
-    }
-
-    #[test]
-    fn test_get_mime_extensions_str_no_panic_if_bad_mime() {
-        assert_eq!(get_mime_extensions_str(""), None);
     }
 }

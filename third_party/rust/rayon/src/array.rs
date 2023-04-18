@@ -1,4 +1,4 @@
-#![cfg(has_min_const_generics)]
+#![cfg(min_const_generics)]
 
 
 

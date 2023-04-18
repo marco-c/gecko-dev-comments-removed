@@ -62,7 +62,7 @@ use std::ffi::{OsStr, OsString};
 use std::fmt::{self, Display};
 use std::fs;
 use std::io::{self, BufRead, BufReader, Read, Write};
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
@@ -139,8 +139,6 @@ enum ErrorKind {
     ToolExecError,
     
     ToolNotFound,
-    
-    InvalidArgument,
 }
 
 
@@ -421,6 +419,7 @@ impl Build {
     
     
     
+
     pub fn ar_flag(&mut self, flag: &str) -> &mut Build {
         self.ar_flags.push(flag.to_string());
         self
@@ -945,17 +944,6 @@ impl Build {
     
     
     pub fn try_compile(&self, output: &str) -> Result<(), Error> {
-        let mut output_components = Path::new(output).components();
-        match (output_components.next(), output_components.next()) {
-            (Some(Component::Normal(_)), None) => {}
-            _ => {
-                return Err(Error::new(
-                    ErrorKind::InvalidArgument,
-                    "argument of `compile` must be a single normal path component",
-                ));
-            }
-        }
-
         let (lib_name, gnu_lib_name) = if output.starts_with("lib") && output.ends_with(".a") {
             (&output[3..output.len() - 2], output.to_owned())
         } else {
@@ -1077,31 +1065,6 @@ impl Build {
         Ok(())
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -1603,8 +1566,6 @@ impl Build {
                             cmd.args.push("--target=x86_64-unknown-windows-gnu".into());
                         } else if target.contains("i686") {
                             cmd.args.push("--target=i686-unknown-windows-gnu".into())
-                        } else if target.contains("aarch64") {
-                            cmd.args.push("--target=aarch64-unknown-windows-gnu".into())
                         }
                     } else {
                         cmd.args.push(format!("--target={}", target).into());
@@ -1825,12 +1786,6 @@ impl Build {
                     if let Some(arch) = parts.next() {
                         let arch = &arch[5..];
                         if target.contains("linux") && arch.starts_with("64") {
-                            cmd.args.push(("-march=rv64gc").into());
-                            cmd.args.push("-mabi=lp64d".into());
-                        } else if target.contains("freebsd") && arch.starts_with("64") {
-                            cmd.args.push(("-march=rv64gc").into());
-                            cmd.args.push("-mabi=lp64d".into());
-                        } else if target.contains("openbsd") && arch.starts_with("64") {
                             cmd.args.push(("-march=rv64gc").into());
                             cmd.args.push("-mabi=lp64d".into());
                         } else if target.contains("linux") && arch.starts_with("32") {
@@ -2546,8 +2501,6 @@ impl Build {
             .as_ref()
             .map(|s| s.trim_right_matches('-').to_owned());
         cross_compile.or(match &target[..] {
-            "aarch64-pc-windows-gnu" => Some("aarch64-w64-mingw32"),
-            "aarch64-uwp-windows-gnu" => Some("aarch64-w64-mingw32"),
             "aarch64-unknown-linux-gnu" => Some("aarch64-linux-gnu"),
             "aarch64-unknown-linux-musl" => Some("aarch64-linux-musl"),
             "aarch64-unknown-netbsd" => Some("aarch64--netbsd"),

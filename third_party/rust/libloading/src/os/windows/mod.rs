@@ -1,6 +1,6 @@
 
 
-#[cfg(all(libloading_docs, not(windows)))]
+#[cfg(all(docsrs, not(windows)))]
 mod windows_imports {
     pub(super) enum WORD {}
     pub(super) struct DWORD;
@@ -23,7 +23,7 @@ mod windows_imports {
         pub(crate) const LOAD_LIBRARY_SAFE_CURRENT_DIRS: DWORD = DWORD;
     }
 }
-#[cfg(any(not(libloading_docs), windows))]
+#[cfg(any(not(docsrs), windows))]
 mod windows_imports {
     extern crate winapi;
     pub(super) use self::winapi::shared::minwindef::{WORD, DWORD, HMODULE, FARPROC};

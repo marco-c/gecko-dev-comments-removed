@@ -1,6 +1,5 @@
 
 
-use crate::Separator;
 use serde::{
     de::{Deserialize, DeserializeOwned, Deserializer, Error, MapAccess, SeqAccess, Visitor},
     ser::{Serialize, SerializeMap, SerializeSeq, Serializer},
@@ -14,26 +13,7 @@ use std::{
     marker::PhantomData,
     str::FromStr,
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+use Separator;
 
 
 
@@ -93,8 +73,8 @@ pub mod display_fromstr {
         {
             type Value = S;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-                write!(formatter, "a string")
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(formatter, "valid json object")
             }
 
             fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
@@ -117,25 +97,6 @@ pub mod display_fromstr {
         serializer.serialize_str(&*value.to_string())
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -213,7 +174,7 @@ pub mod seq_display_fromstr {
         {
             type Value = Vec<S>;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 write!(formatter, "a sequence")
             }
 
@@ -297,25 +258,8 @@ pub mod seq_display_fromstr {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
-pub struct StringWithSeparator<Sep, T = ()>(PhantomData<(Sep, T)>);
+pub struct StringWithSeparator<Sep>(PhantomData<Sep>);
 
 impl<Sep> StringWithSeparator<Sep>
 where
@@ -402,7 +346,12 @@ where
 
 
 
-#[allow(clippy::option_option)]
+
+
+
+
+
+#[cfg_attr(feature = "cargo-clippy", allow(option_option))]
 pub mod double_option {
     use super::*;
 
@@ -428,6 +377,16 @@ pub mod double_option {
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -552,9 +511,14 @@ pub mod unwrap_or_skip {
 
 
 
+
+
+
+
+
 pub mod sets_duplicate_value_is_error {
     use super::*;
-    use crate::duplicate_key_impls::PreventDuplicateInsertsSet;
+    use duplicate_key_impls::PreventDuplicateInsertsSet;
 
     
     pub fn deserialize<'de, D, T, V>(deserializer: D) -> Result<T, D::Error>
@@ -566,7 +530,7 @@ pub mod sets_duplicate_value_is_error {
         struct SeqVisitor<T, V> {
             marker: PhantomData<T>,
             set_item_type: PhantomData<V>,
-        }
+        };
 
         impl<'de, T, V> Visitor<'de> for SeqVisitor<T, V>
         where
@@ -575,7 +539,7 @@ pub mod sets_duplicate_value_is_error {
         {
             type Value = T;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("a sequence")
             }
 
@@ -602,16 +566,12 @@ pub mod sets_duplicate_value_is_error {
         };
         deserializer.deserialize_seq(visitor)
     }
-
-    
-    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        T: Serialize,
-        S: Serializer,
-    {
-        value.serialize(serializer)
-    }
 }
+
+
+
+
+
 
 
 
@@ -656,7 +616,7 @@ pub mod sets_duplicate_value_is_error {
 
 pub mod maps_duplicate_key_is_error {
     use super::*;
-    use crate::duplicate_key_impls::PreventDuplicateInsertsMap;
+    use duplicate_key_impls::PreventDuplicateInsertsMap;
 
     
     pub fn deserialize<'de, D, T, K, V>(deserializer: D) -> Result<T, D::Error>
@@ -670,7 +630,7 @@ pub mod maps_duplicate_key_is_error {
             marker: PhantomData<T>,
             map_key_type: PhantomData<K>,
             map_value_type: PhantomData<V>,
-        }
+        };
 
         impl<'de, T, K, V> Visitor<'de> for MapVisitor<T, K, V>
         where
@@ -680,7 +640,7 @@ pub mod maps_duplicate_key_is_error {
         {
             type Value = T;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("a map")
             }
 
@@ -708,28 +668,22 @@ pub mod maps_duplicate_key_is_error {
         };
         deserializer.deserialize_map(visitor)
     }
-
-    
-    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        T: Serialize,
-        S: Serializer,
-    {
-        value.serialize(serializer)
-    }
 }
 
 
 
 
-#[deprecated = "This module does nothing. Remove the attribute. Serde's default behavior is to use the first value when deserializing a set."]
-#[allow(deprecated)]
+
+
+
+
+
+
 pub mod sets_first_value_wins {
     use super::*;
-    use crate::duplicate_key_impls::DuplicateInsertsFirstWinsSet;
+    use duplicate_key_impls::DuplicateInsertsFirstWinsSet;
 
     
-    #[deprecated = "This function does nothing. Remove the attribute. Serde's default behavior is to use the first value when deserializing a set."]
     pub fn deserialize<'de, D, T, V>(deserializer: D) -> Result<T, D::Error>
     where
         T: DuplicateInsertsFirstWinsSet<V>,
@@ -739,7 +693,7 @@ pub mod sets_first_value_wins {
         struct SeqVisitor<T, V> {
             marker: PhantomData<T>,
             set_item_type: PhantomData<V>,
-        }
+        };
 
         impl<'de, T, V> Visitor<'de> for SeqVisitor<T, V>
         where
@@ -748,7 +702,7 @@ pub mod sets_first_value_wins {
         {
             type Value = T;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("a sequence")
             }
 
@@ -773,85 +727,12 @@ pub mod sets_first_value_wins {
         };
         deserializer.deserialize_seq(visitor)
     }
-
-    
-    #[deprecated = "This function does nothing. Remove the attribute. Serde's default behavior is to use the first value when deserializing a set."]
-    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        T: Serialize,
-        S: Serializer,
-    {
-        value.serialize(serializer)
-    }
 }
 
 
 
 
 
-
-
-
-
-
-pub mod sets_last_value_wins {
-    use super::*;
-    use crate::duplicate_key_impls::DuplicateInsertsLastWinsSet;
-
-    
-    pub fn deserialize<'de, D, T, V>(deserializer: D) -> Result<T, D::Error>
-    where
-        T: DuplicateInsertsLastWinsSet<V>,
-        V: Deserialize<'de>,
-        D: Deserializer<'de>,
-    {
-        struct SeqVisitor<T, V> {
-            marker: PhantomData<T>,
-            set_item_type: PhantomData<V>,
-        }
-
-        impl<'de, T, V> Visitor<'de> for SeqVisitor<T, V>
-        where
-            T: DuplicateInsertsLastWinsSet<V>,
-            V: Deserialize<'de>,
-        {
-            type Value = T;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-                formatter.write_str("a sequence")
-            }
-
-            #[inline]
-            fn visit_seq<A>(self, mut access: A) -> Result<Self::Value, A::Error>
-            where
-                A: SeqAccess<'de>,
-            {
-                let mut values = Self::Value::new(access.size_hint());
-
-                while let Some(value) = access.next_element()? {
-                    values.replace(value);
-                }
-
-                Ok(values)
-            }
-        }
-
-        let visitor = SeqVisitor {
-            marker: PhantomData,
-            set_item_type: PhantomData,
-        };
-        deserializer.deserialize_seq(visitor)
-    }
-
-    
-    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        T: Serialize,
-        S: Serializer,
-    {
-        value.serialize(serializer)
-    }
-}
 
 
 
@@ -897,7 +778,7 @@ pub mod sets_last_value_wins {
 
 pub mod maps_first_key_wins {
     use super::*;
-    use crate::duplicate_key_impls::DuplicateInsertsFirstWinsMap;
+    use duplicate_key_impls::DuplicateInsertsFirstWinsMap;
 
     
     pub fn deserialize<'de, D, T, K, V>(deserializer: D) -> Result<T, D::Error>
@@ -911,7 +792,7 @@ pub mod maps_first_key_wins {
             marker: PhantomData<T>,
             map_key_type: PhantomData<K>,
             map_value_type: PhantomData<V>,
-        }
+        };
 
         impl<'de, T, K, V> Visitor<'de> for MapVisitor<T, K, V>
         where
@@ -921,7 +802,7 @@ pub mod maps_first_key_wins {
         {
             type Value = T;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("a map")
             }
 
@@ -947,30 +828,7 @@ pub mod maps_first_key_wins {
         };
         deserializer.deserialize_map(visitor)
     }
-
-    
-    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        T: Serialize,
-        S: Serializer,
-    {
-        value.serialize(serializer)
-    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1031,7 +889,7 @@ pub mod string_empty_as_none {
         {
             type Value = Option<S>;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("any string")
             }
 
@@ -1150,17 +1008,6 @@ pub mod string_empty_as_none {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 pub mod hashmap_as_tuple_list {
     use super::{SerializeSeq, *}; 
 
@@ -1190,7 +1037,7 @@ pub mod hashmap_as_tuple_list {
         deserializer.deserialize_seq(HashMapVisitor(PhantomData))
     }
 
-    #[allow(clippy::type_complexity)]
+    #[cfg_attr(feature = "cargo-clippy", allow(type_complexity))]
     struct HashMapVisitor<K, V, BH>(PhantomData<fn() -> HashMap<K, V, BH>>);
 
     impl<'de, K, V, BH> Visitor<'de> for HashMapVisitor<K, V, BH>
@@ -1201,7 +1048,7 @@ pub mod hashmap_as_tuple_list {
     {
         type Value = HashMap<K, V, BH>;
 
-        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
             formatter.write_str("a list of key-value pairs")
         }
 
@@ -1218,23 +1065,6 @@ pub mod hashmap_as_tuple_list {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1301,7 +1131,7 @@ pub mod btreemap_as_tuple_list {
         deserializer.deserialize_seq(BTreeMapVisitor(PhantomData))
     }
 
-    #[allow(clippy::type_complexity)]
+    #[cfg_attr(feature = "cargo-clippy", allow(type_complexity))]
     struct BTreeMapVisitor<K, V>(PhantomData<fn() -> BTreeMap<K, V>>);
 
     impl<'de, K, V> Visitor<'de> for BTreeMapVisitor<K, V>
@@ -1311,7 +1141,7 @@ pub mod btreemap_as_tuple_list {
     {
         type Value = BTreeMap<K, V>;
 
-        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
             formatter.write_str("a list of key-value pairs")
         }
 
@@ -1327,16 +1157,6 @@ pub mod btreemap_as_tuple_list {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1455,7 +1275,7 @@ pub mod tuple_list_as_map {
         deserializer.deserialize_map(MapVisitor(PhantomData))
     }
 
-    #[allow(clippy::type_complexity)]
+    #[cfg_attr(feature = "cargo-clippy", allow(type_complexity))]
     struct MapVisitor<I, K, V>(PhantomData<fn() -> (I, K, V)>);
 
     impl<'de, I, K, V> Visitor<'de> for MapVisitor<I, K, V>
@@ -1466,7 +1286,7 @@ pub mod tuple_list_as_map {
     {
         type Value = I;
 
-        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
             formatter.write_str("a map")
         }
 
@@ -1496,30 +1316,8 @@ pub mod tuple_list_as_map {
                 Err(err) => Some(Err(err)),
             }
         }
-
-        fn size_hint(&self) -> (usize, Option<usize>) {
-            match self.0.size_hint() {
-                Some(size) => (size, Some(size)),
-                None => (0, None),
-            }
-        }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1589,7 +1387,7 @@ pub mod bytes_or_string {
     impl<'de> Visitor<'de> for BytesOrStringVisitor {
         type Value = Vec<u8>;
 
-        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
             formatter.write_str("a list of bytes or a string")
         }
 
@@ -1679,24 +1477,6 @@ pub mod bytes_or_string {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 pub mod default_on_error {
     use super::*;
 
@@ -1706,50 +1486,9 @@ pub mod default_on_error {
         D: Deserializer<'de>,
         T: Deserialize<'de> + Default,
     {
-        #[derive(Debug, serde::Deserialize)]
-        #[serde(untagged)]
-        enum GoodOrError<T> {
-            Good(T),
-            
-            
-            
-            Error(serde::de::IgnoredAny),
-        }
-
-        Ok(match Deserialize::deserialize(deserializer) {
-            Ok(GoodOrError::Good(res)) => res,
-            _ => Default::default(),
-        })
-    }
-
-    
-    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        T: Serialize,
-        S: Serializer,
-    {
-        value.serialize(serializer)
+        T::deserialize(deserializer).or_else(|_| Ok(Default::default()))
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1792,110 +1531,4 @@ pub mod default_on_null {
     {
         Ok(Option::deserialize(deserializer)?.unwrap_or_default())
     }
-
-    
-    pub fn serialize<T, S>(value: &T, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        T: Serialize,
-        S: Serializer,
-    {
-        value.serialize(serializer)
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn deserialize_ignore_any<'de, D: Deserializer<'de>, T: Default>(
-    deserializer: D,
-) -> Result<T, D::Error> {
-    serde::de::IgnoredAny::deserialize(deserializer).map(|_| T::default())
 }

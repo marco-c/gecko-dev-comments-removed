@@ -10,7 +10,6 @@
 
 use crate::{Arbitrary, Error, Result};
 use std::marker::PhantomData;
-use std::ops::ControlFlow;
 use std::{mem, ops};
 
 
@@ -408,41 +407,6 @@ impl<'a> Unstructured<'a> {
     
     
     
-    pub fn ratio<T>(&mut self, numerator: T, denominator: T) -> Result<bool>
-    where
-        T: Int,
-    {
-        assert!(T::ZERO < numerator);
-        assert!(numerator <= denominator);
-        let x = self.int_in_range(T::ONE..=denominator)?;
-        Ok(x <= numerator)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -558,100 +522,6 @@ impl<'a> Unstructured<'a> {
             u: Some(self),
             _marker: PhantomData,
         })
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn arbitrary_loop(
-        &mut self,
-        min: Option<u32>,
-        max: Option<u32>,
-        mut f: impl FnMut(&mut Self) -> Result<ControlFlow<(), ()>>,
-    ) -> Result<()> {
-        let min = min.unwrap_or(0);
-        let max = max.unwrap_or(u32::MAX);
-        assert!(min <= max);
-
-        for _ in 0..min {
-            match f(self)? {
-                ControlFlow::Continue(_) => continue,
-                ControlFlow::Break(_) => return Ok(()),
-            }
-        }
-
-        for _ in 0..(max - min) {
-            let keep_going = self.arbitrary().unwrap_or(false);
-            if !keep_going {
-                break;
-            }
-            match f(self)? {
-                ControlFlow::Continue(_) => continue,
-                ControlFlow::Break(_) => break,
-            }
-        }
-
-        Ok(())
     }
 }
 

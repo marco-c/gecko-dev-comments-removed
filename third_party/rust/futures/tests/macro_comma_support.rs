@@ -14,7 +14,6 @@ fn ready() {
     }))
 }
 
-#[cfg_attr(miri, ignore)] 
 #[test]
 fn poll() {
     use futures::poll;

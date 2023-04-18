@@ -18,7 +18,7 @@
 #[cfg(feature = "smawk")]
 mod optimal_fit;
 #[cfg(feature = "smawk")]
-pub use optimal_fit::{wrap_optimal_fit, OverflowError, Penalties};
+pub use optimal_fit::{wrap_optimal_fit, OptimalFit};
 
 use crate::core::{Fragment, Word};
 
@@ -29,16 +29,7 @@ use crate::core::{Fragment, Word};
 
 
 
-
-#[derive(Clone, Copy)]
-pub enum WrapAlgorithm {
-    
-    
-    
-    
-    
-    FirstFit,
-
+pub trait WrapAlgorithm: WrapAlgorithmClone + std::fmt::Debug {
     
     
     
@@ -46,125 +37,52 @@ pub enum WrapAlgorithm {
     
     
     
-    
-    
-    
-    
-    
-    #[cfg(feature = "smawk")]
-    OptimalFit(Penalties),
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Custom(for<'a, 'b> fn(words: &'b [Word<'a>], line_widths: &'b [usize]) -> Vec<&'b [Word<'a>]>),
+    fn wrap<'a, 'b>(&self, words: &'b [Word<'a>], line_widths: &'b [usize]) -> Vec<&'b [Word<'a>]>;
 }
 
-impl std::fmt::Debug for WrapAlgorithm {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            WrapAlgorithm::FirstFit => f.write_str("FirstFit"),
-            #[cfg(feature = "smawk")]
-            WrapAlgorithm::OptimalFit(penalties) => write!(f, "OptimalFit({:?})", penalties),
-            WrapAlgorithm::Custom(_) => f.write_str("Custom(...)"),
-        }
+
+
+
+
+#[doc(hidden)]
+pub trait WrapAlgorithmClone {
+    fn clone_box(&self) -> Box<dyn WrapAlgorithm>;
+}
+
+impl<T: WrapAlgorithm + Clone + 'static> WrapAlgorithmClone for T {
+    fn clone_box(&self) -> Box<dyn WrapAlgorithm> {
+        Box::new(self.clone())
     }
 }
 
-impl WrapAlgorithm {
-    
-    
-    
-    
-    
-    pub const fn new() -> Self {
-        #[cfg(not(feature = "smawk"))]
-        {
-            WrapAlgorithm::FirstFit
-        }
-
-        #[cfg(feature = "smawk")]
-        {
-            WrapAlgorithm::new_optimal_fit()
-        }
+impl Clone for Box<dyn WrapAlgorithm> {
+    fn clone(&self) -> Box<dyn WrapAlgorithm> {
+        use std::ops::Deref;
+        self.deref().clone_box()
     }
+}
 
-    
-    
-    
-    
-    
-    #[cfg(feature = "smawk")]
-    pub const fn new_optimal_fit() -> Self {
-        WrapAlgorithm::OptimalFit(Penalties::new())
+impl WrapAlgorithm for Box<dyn WrapAlgorithm> {
+    fn wrap<'a, 'b>(&self, words: &'b [Word<'a>], line_widths: &'b [usize]) -> Vec<&'b [Word<'a>]> {
+        use std::ops::Deref;
+        self.deref().wrap(words, line_widths)
     }
+}
 
-    
-    
-    
-    
-    
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct FirstFit;
+
+impl WrapAlgorithm for FirstFit {
     #[inline]
-    pub fn wrap<'a, 'b>(
-        &self,
-        words: &'b [Word<'a>],
-        line_widths: &'b [usize],
-    ) -> Vec<&'b [Word<'a>]> {
-        
-        
-        
-        
-        let f64_line_widths = line_widths.iter().map(|w| *w as f64).collect::<Vec<_>>();
-
-        match self {
-            WrapAlgorithm::FirstFit => wrap_first_fit(words, &f64_line_widths),
-
-            #[cfg(feature = "smawk")]
-            WrapAlgorithm::OptimalFit(penalties) => {
-                
-                
-                wrap_optimal_fit(words, &f64_line_widths, penalties).unwrap()
-            }
-
-            WrapAlgorithm::Custom(func) => func(words, line_widths),
-        }
+    fn wrap<'a, 'b>(&self, words: &'b [Word<'a>], line_widths: &'b [usize]) -> Vec<&'b [Word<'a>]> {
+        wrap_first_fit(words, line_widths)
     }
 }
-
-impl Default for WrapAlgorithm {
-    fn default() -> Self {
-        WrapAlgorithm::new()
-    }
-}
-
-
 
 
 
@@ -314,13 +232,13 @@ impl Default for WrapAlgorithm {
 
 pub fn wrap_first_fit<'a, 'b, T: Fragment>(
     fragments: &'a [T],
-    line_widths: &'b [f64],
+    line_widths: &'b [usize],
 ) -> Vec<&'a [T]> {
     
-    let default_line_width = line_widths.last().copied().unwrap_or(0.0);
+    let default_line_width = line_widths.last().copied().unwrap_or(0);
     let mut lines = Vec::new();
     let mut start = 0;
-    let mut width = 0.0;
+    let mut width = 0;
 
     for (idx, fragment) in fragments.iter().enumerate() {
         let line_width = line_widths
@@ -330,52 +248,10 @@ pub fn wrap_first_fit<'a, 'b, T: Fragment>(
         if width + fragment.width() + fragment.penalty_width() > line_width && idx > start {
             lines.push(&fragments[start..idx]);
             start = idx;
-            width = 0.0;
+            width = 0;
         }
         width += fragment.width() + fragment.whitespace_width();
     }
     lines.push(&fragments[start..]);
     lines
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[derive(Debug, PartialEq)]
-    struct Word(f64);
-
-    #[rustfmt::skip]
-    impl Fragment for Word {
-        fn width(&self) -> f64 { self.0 }
-        fn whitespace_width(&self) -> f64 { 1.0 }
-        fn penalty_width(&self) -> f64 { 0.0 }
-    }
-
-    #[test]
-    fn wrap_string_longer_than_f64() {
-        let words = vec![
-            Word(1e307),
-            Word(2e307),
-            Word(3e307),
-            Word(4e307),
-            Word(5e307),
-            Word(6e307),
-        ];
-        
-        
-        assert_eq!(
-            wrap_first_fit(&words, &[15e307]),
-            &[
-                vec![
-                    Word(1e307),
-                    Word(2e307),
-                    Word(3e307),
-                    Word(4e307),
-                    Word(5e307)
-                ],
-                vec![Word(6e307)]
-            ]
-        );
-    }
 }

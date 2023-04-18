@@ -96,7 +96,6 @@ fn drop_in_poll() {
     assert_eq!(block_on(future1), 1);
 }
 
-#[cfg_attr(miri, ignore)] 
 #[test]
 fn peek() {
     let mut local_pool = LocalPool::new();

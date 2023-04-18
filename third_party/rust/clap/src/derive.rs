@@ -1,7 +1,7 @@
 
 
 
-use crate::{ArgMatches, Command, Error, PossibleValue};
+use crate::{App, ArgMatches, Error, PossibleValue};
 
 use std::ffi::OsString;
 
@@ -76,10 +76,10 @@ use std::ffi::OsString;
 
 
 
-pub trait Parser: FromArgMatches + CommandFactory + Sized {
+pub trait Parser: FromArgMatches + IntoApp + Sized {
     
     fn parse() -> Self {
-        let matches = <Self as CommandFactory>::command().get_matches();
+        let matches = <Self as IntoApp>::into_app().get_matches();
         let res =
             <Self as FromArgMatches>::from_arg_matches(&matches).map_err(format_error::<Self>);
         match res {
@@ -94,7 +94,7 @@ pub trait Parser: FromArgMatches + CommandFactory + Sized {
 
     
     fn try_parse() -> Result<Self, Error> {
-        let matches = <Self as CommandFactory>::command().try_get_matches()?;
+        let matches = <Self as IntoApp>::into_app().try_get_matches()?;
         <Self as FromArgMatches>::from_arg_matches(&matches).map_err(format_error::<Self>)
     }
 
@@ -104,7 +104,7 @@ pub trait Parser: FromArgMatches + CommandFactory + Sized {
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
     {
-        let matches = <Self as CommandFactory>::command().get_matches_from(itr);
+        let matches = <Self as IntoApp>::into_app().get_matches_from(itr);
         let res =
             <Self as FromArgMatches>::from_arg_matches(&matches).map_err(format_error::<Self>);
         match res {
@@ -123,7 +123,7 @@ pub trait Parser: FromArgMatches + CommandFactory + Sized {
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
     {
-        let matches = <Self as CommandFactory>::command().try_get_matches_from(itr)?;
+        let matches = <Self as IntoApp>::into_app().try_get_matches_from(itr)?;
         <Self as FromArgMatches>::from_arg_matches(&matches).map_err(format_error::<Self>)
     }
 
@@ -133,7 +133,7 @@ pub trait Parser: FromArgMatches + CommandFactory + Sized {
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
     {
-        let matches = <Self as CommandFactory>::command_for_update().get_matches_from(itr);
+        let matches = <Self as IntoApp>::into_app_for_update().get_matches_from(itr);
         let res = <Self as FromArgMatches>::update_from_arg_matches(self, &matches)
             .map_err(format_error::<Self>);
         if let Err(e) = res {
@@ -149,7 +149,7 @@ pub trait Parser: FromArgMatches + CommandFactory + Sized {
         I: IntoIterator<Item = T>,
         T: Into<OsString> + Clone,
     {
-        let matches = <Self as CommandFactory>::command_for_update().try_get_matches_from(itr)?;
+        let matches = <Self as IntoApp>::into_app_for_update().try_get_matches_from(itr)?;
         <Self as FromArgMatches>::update_from_arg_matches(self, &matches)
             .map_err(format_error::<Self>)
     }
@@ -158,11 +158,10 @@ pub trait Parser: FromArgMatches + CommandFactory + Sized {
     
     #[deprecated(
         since = "3.0.0",
-        note = "`StructOpt::clap` is replaced with `IntoCommand::command` (derived as part of `Parser`)"
+        note = "`StructOpt::clap` is replaced with `IntoApp::into_app` (derived as part of `Parser`)"
     )]
-    #[doc(hidden)]
-    fn clap<'help>() -> Command<'help> {
-        <Self as CommandFactory>::command()
+    fn clap<'help>() -> App<'help> {
+        <Self as IntoApp>::into_app()
     }
 
     
@@ -171,7 +170,6 @@ pub trait Parser: FromArgMatches + CommandFactory + Sized {
         since = "3.0.0",
         note = "`StructOpt::from_clap` is replaced with `FromArgMatches::from_arg_matches` (derived as part of `Parser`)"
     )]
-    #[doc(hidden)]
     fn from_clap(matches: &ArgMatches) -> Self {
         <Self as FromArgMatches>::from_arg_matches(matches).unwrap()
     }
@@ -181,7 +179,6 @@ pub trait Parser: FromArgMatches + CommandFactory + Sized {
         since = "3.0.0",
         note = "`StructOpt::from_args` is replaced with `Parser::parse` (note the change in derives)"
     )]
-    #[doc(hidden)]
     fn from_args() -> Self {
         Self::parse()
     }
@@ -191,7 +188,6 @@ pub trait Parser: FromArgMatches + CommandFactory + Sized {
         since = "3.0.0",
         note = "`StructOpt::from_args_safe` is replaced with `Parser::try_parse` (note the change in derives)"
     )]
-    #[doc(hidden)]
     fn from_args_safe() -> Result<Self, Error> {
         Self::try_parse()
     }
@@ -201,7 +197,6 @@ pub trait Parser: FromArgMatches + CommandFactory + Sized {
         since = "3.0.0",
         note = "`StructOpt::from_iter` is replaced with `Parser::parse_from` (note the change in derives)"
     )]
-    #[doc(hidden)]
     fn from_iter<I, T>(itr: I) -> Self
     where
         I: IntoIterator<Item = T>,
@@ -216,7 +211,6 @@ pub trait Parser: FromArgMatches + CommandFactory + Sized {
         since = "3.0.0",
         note = "`StructOpt::from_iter_safe` is replaced with `Parser::try_parse_from` (note the change in derives)"
     )]
-    #[doc(hidden)]
     fn from_iter_safe<I, T>(itr: I) -> Result<Self, Error>
     where
         I: IntoIterator<Item = T>,
@@ -229,30 +223,15 @@ pub trait Parser: FromArgMatches + CommandFactory + Sized {
 
 
 
-pub trait CommandFactory: Sized {
+pub trait IntoApp: Sized {
     
     
     
-    fn command<'help>() -> Command<'help> {
-        #[allow(deprecated)]
-        Self::into_app()
-    }
-    
-    #[deprecated(since = "3.1.0", note = "Replaced with `CommandFactory::command")]
-    fn into_app<'help>() -> Command<'help>;
+    fn into_app<'help>() -> App<'help>;
     
     
     
-    fn command_for_update<'help>() -> Command<'help> {
-        #[allow(deprecated)]
-        Self::into_app_for_update()
-    }
-    
-    #[deprecated(
-        since = "3.1.0",
-        note = "Replaced with `CommandFactory::command_for_update"
-    )]
-    fn into_app_for_update<'help>() -> Command<'help>;
+    fn into_app_for_update<'help>() -> App<'help>;
 }
 
 
@@ -331,13 +310,13 @@ pub trait Args: FromArgMatches + Sized {
     
     
     
-    fn augment_args(cmd: Command<'_>) -> Command<'_>;
+    fn augment_args(app: App<'_>) -> App<'_>;
     
     
     
     
     
-    fn augment_args_for_update(cmd: Command<'_>) -> Command<'_>;
+    fn augment_args_for_update(app: App<'_>) -> App<'_>;
 }
 
 
@@ -375,13 +354,13 @@ pub trait Subcommand: FromArgMatches + Sized {
     
     
     
-    fn augment_subcommands(cmd: Command<'_>) -> Command<'_>;
+    fn augment_subcommands(app: App<'_>) -> App<'_>;
     
     
     
     
     
-    fn augment_subcommands_for_update(cmd: Command<'_>) -> Command<'_>;
+    fn augment_subcommands_for_update(app: App<'_>) -> App<'_>;
     
     fn has_subcommand(name: &str) -> bool;
 }
@@ -466,13 +445,12 @@ impl<T: Parser> Parser for Box<T> {
     }
 }
 
-#[allow(deprecated)]
-impl<T: CommandFactory> CommandFactory for Box<T> {
-    fn into_app<'help>() -> Command<'help> {
-        <T as CommandFactory>::into_app()
+impl<T: IntoApp> IntoApp for Box<T> {
+    fn into_app<'help>() -> App<'help> {
+        <T as IntoApp>::into_app()
     }
-    fn into_app_for_update<'help>() -> Command<'help> {
-        <T as CommandFactory>::into_app_for_update()
+    fn into_app_for_update<'help>() -> App<'help> {
+        <T as IntoApp>::into_app_for_update()
     }
 }
 
@@ -486,27 +464,27 @@ impl<T: FromArgMatches> FromArgMatches for Box<T> {
 }
 
 impl<T: Args> Args for Box<T> {
-    fn augment_args(cmd: Command<'_>) -> Command<'_> {
-        <T as Args>::augment_args(cmd)
+    fn augment_args(app: App<'_>) -> App<'_> {
+        <T as Args>::augment_args(app)
     }
-    fn augment_args_for_update(cmd: Command<'_>) -> Command<'_> {
-        <T as Args>::augment_args_for_update(cmd)
+    fn augment_args_for_update(app: App<'_>) -> App<'_> {
+        <T as Args>::augment_args_for_update(app)
     }
 }
 
 impl<T: Subcommand> Subcommand for Box<T> {
-    fn augment_subcommands(cmd: Command<'_>) -> Command<'_> {
-        <T as Subcommand>::augment_subcommands(cmd)
+    fn augment_subcommands(app: App<'_>) -> App<'_> {
+        <T as Subcommand>::augment_subcommands(app)
     }
-    fn augment_subcommands_for_update(cmd: Command<'_>) -> Command<'_> {
-        <T as Subcommand>::augment_subcommands_for_update(cmd)
+    fn augment_subcommands_for_update(app: App<'_>) -> App<'_> {
+        <T as Subcommand>::augment_subcommands_for_update(app)
     }
     fn has_subcommand(name: &str) -> bool {
         <T as Subcommand>::has_subcommand(name)
     }
 }
 
-fn format_error<I: CommandFactory>(err: crate::Error) -> crate::Error {
-    let mut cmd = I::command();
-    err.format(&mut cmd)
+fn format_error<I: IntoApp>(err: crate::Error) -> crate::Error {
+    let mut app = I::into_app();
+    err.format(&mut app)
 }

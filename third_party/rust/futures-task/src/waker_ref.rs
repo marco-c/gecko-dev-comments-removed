@@ -55,7 +55,7 @@ where
 {
     
     
-    let ptr = Arc::as_ptr(wake).cast::<()>();
+    let ptr = (&**wake as *const W) as *const ();
 
     let waker =
         ManuallyDrop::new(unsafe { Waker::from_raw(RawWaker::new(ptr, waker_vtable::<W>())) });

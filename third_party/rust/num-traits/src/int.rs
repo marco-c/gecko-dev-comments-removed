@@ -90,39 +90,7 @@ pub trait PrimInt:
     
     
     
-    fn leading_ones(self) -> u32 {
-        (!self).leading_zeros()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn leading_zeros(self) -> u32;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn trailing_ones(self) -> u32 {
-        (!self).trailing_zeros()
-    }
 
     
     
@@ -266,26 +234,6 @@ pub trait PrimInt:
     
     
     
-    fn reverse_bits(self) -> Self {
-        reverse_bits_fallback(self)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     fn from_be(x: Self) -> Self;
 
@@ -358,39 +306,6 @@ pub trait PrimInt:
     fn pow(self, exp: u32) -> Self;
 }
 
-fn one_per_byte<P: PrimInt>() -> P {
-    
-    
-    
-    
-    let mut ret = P::one();
-    let mut shift = 8;
-    let mut b = ret.count_zeros() >> 3;
-    while b != 0 {
-        ret = (ret << shift) | ret;
-        shift <<= 1;
-        b >>= 1;
-    }
-    ret
-}
-
-fn reverse_bits_fallback<P: PrimInt>(i: P) -> P {
-    let rep_01: P = one_per_byte();
-    let rep_03 = (rep_01 << 1) | rep_01;
-    let rep_05 = (rep_01 << 2) | rep_01;
-    let rep_0f = (rep_03 << 2) | rep_03;
-    let rep_33 = (rep_03 << 4) | rep_03;
-    let rep_55 = (rep_05 << 4) | rep_05;
-
-    
-    
-    let mut ret = i.swap_bytes();
-    ret = ((ret & rep_0f) << 4) | ((ret >> 4) & rep_0f);
-    ret = ((ret & rep_33) << 2) | ((ret >> 2) & rep_33);
-    ret = ((ret & rep_55) << 1) | ((ret >> 1) & rep_55);
-    ret
-}
-
 macro_rules! prim_int_impl {
     ($T:ty, $S:ty, $U:ty) => {
         impl PrimInt for $T {
@@ -404,21 +319,9 @@ macro_rules! prim_int_impl {
                 <$T>::count_zeros(self)
             }
 
-            #[cfg(has_leading_trailing_ones)]
-            #[inline]
-            fn leading_ones(self) -> u32 {
-                <$T>::leading_ones(self)
-            }
-
             #[inline]
             fn leading_zeros(self) -> u32 {
                 <$T>::leading_zeros(self)
-            }
-
-            #[cfg(has_leading_trailing_ones)]
-            #[inline]
-            fn trailing_ones(self) -> u32 {
-                <$T>::trailing_ones(self)
             }
 
             #[inline]
@@ -459,12 +362,6 @@ macro_rules! prim_int_impl {
             #[inline]
             fn swap_bytes(self) -> Self {
                 <$T>::swap_bytes(self)
-            }
-
-            #[cfg(has_reverse_bits)]
-            #[inline]
-            fn reverse_bits(self) -> Self {
-                <$T>::reverse_bits(self)
             }
 
             #[inline]
@@ -510,59 +407,3 @@ prim_int_impl!(i64, i64, u64);
 #[cfg(has_i128)]
 prim_int_impl!(i128, i128, u128);
 prim_int_impl!(isize, isize, usize);
-
-#[cfg(test)]
-mod tests {
-    use int::PrimInt;
-
-    #[test]
-    pub fn reverse_bits() {
-        use core::{i16, i32, i64, i8};
-
-        assert_eq!(
-            PrimInt::reverse_bits(0x0123_4567_89ab_cdefu64),
-            0xf7b3_d591_e6a2_c480
-        );
-
-        assert_eq!(PrimInt::reverse_bits(0i8), 0);
-        assert_eq!(PrimInt::reverse_bits(-1i8), -1);
-        assert_eq!(PrimInt::reverse_bits(1i8), i8::MIN);
-        assert_eq!(PrimInt::reverse_bits(i8::MIN), 1);
-        assert_eq!(PrimInt::reverse_bits(-2i8), i8::MAX);
-        assert_eq!(PrimInt::reverse_bits(i8::MAX), -2);
-
-        assert_eq!(PrimInt::reverse_bits(0i16), 0);
-        assert_eq!(PrimInt::reverse_bits(-1i16), -1);
-        assert_eq!(PrimInt::reverse_bits(1i16), i16::MIN);
-        assert_eq!(PrimInt::reverse_bits(i16::MIN), 1);
-        assert_eq!(PrimInt::reverse_bits(-2i16), i16::MAX);
-        assert_eq!(PrimInt::reverse_bits(i16::MAX), -2);
-
-        assert_eq!(PrimInt::reverse_bits(0i32), 0);
-        assert_eq!(PrimInt::reverse_bits(-1i32), -1);
-        assert_eq!(PrimInt::reverse_bits(1i32), i32::MIN);
-        assert_eq!(PrimInt::reverse_bits(i32::MIN), 1);
-        assert_eq!(PrimInt::reverse_bits(-2i32), i32::MAX);
-        assert_eq!(PrimInt::reverse_bits(i32::MAX), -2);
-
-        assert_eq!(PrimInt::reverse_bits(0i64), 0);
-        assert_eq!(PrimInt::reverse_bits(-1i64), -1);
-        assert_eq!(PrimInt::reverse_bits(1i64), i64::MIN);
-        assert_eq!(PrimInt::reverse_bits(i64::MIN), 1);
-        assert_eq!(PrimInt::reverse_bits(-2i64), i64::MAX);
-        assert_eq!(PrimInt::reverse_bits(i64::MAX), -2);
-    }
-
-    #[test]
-    #[cfg(has_i128)]
-    pub fn reverse_bits_i128() {
-        use core::i128;
-
-        assert_eq!(PrimInt::reverse_bits(0i128), 0);
-        assert_eq!(PrimInt::reverse_bits(-1i128), -1);
-        assert_eq!(PrimInt::reverse_bits(1i128), i128::MIN);
-        assert_eq!(PrimInt::reverse_bits(i128::MIN), 1);
-        assert_eq!(PrimInt::reverse_bits(-2i128), i128::MAX);
-        assert_eq!(PrimInt::reverse_bits(i128::MAX), -2);
-    }
-}

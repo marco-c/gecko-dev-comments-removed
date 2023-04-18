@@ -37,6 +37,7 @@
 
 
 
+
 const CSI: (char, char) = ('\x1b', '[');
 
 const ANSI_FINAL_BYTE: std::ops::RangeInclusive<char> = '\x40'..='\x7e';
@@ -196,15 +197,15 @@ pub fn display_width(text: &str) -> usize {
 
 pub trait Fragment: std::fmt::Debug {
     
-    fn width(&self) -> f64;
+    fn width(&self) -> usize;
 
     
     
-    fn whitespace_width(&self) -> f64;
+    fn whitespace_width(&self) -> usize;
 
     
     
-    fn penalty_width(&self) -> f64;
+    fn penalty_width(&self) -> usize;
 }
 
 
@@ -240,7 +241,7 @@ impl<'a> Word<'a> {
         let trimmed = word.trim_end_matches(' ');
         Word {
             word: trimmed,
-            width: display_width(trimmed),
+            width: display_width(&trimmed),
             whitespace: &word[trimmed.len()..],
             penalty: "",
         }
@@ -303,22 +304,22 @@ impl<'a> Word<'a> {
 
 impl Fragment for Word<'_> {
     #[inline]
-    fn width(&self) -> f64 {
-        self.width as f64
+    fn width(&self) -> usize {
+        self.width
     }
 
     
     
     #[inline]
-    fn whitespace_width(&self) -> f64 {
-        self.whitespace.len() as f64
+    fn whitespace_width(&self) -> usize {
+        self.whitespace.len()
     }
 
     
     
     #[inline]
-    fn penalty_width(&self) -> f64 {
-        self.penalty.len() as f64
+    fn penalty_width(&self) -> usize {
+        self.penalty.len()
     }
 }
 
@@ -333,7 +334,7 @@ where
 {
     let mut shortened_words = Vec::new();
     for word in words {
-        if word.width() > line_width as f64 {
+        if word.width() > line_width {
             shortened_words.extend(word.break_apart(line_width));
         } else {
             shortened_words.push(word);

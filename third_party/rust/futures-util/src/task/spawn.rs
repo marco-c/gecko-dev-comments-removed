@@ -42,7 +42,6 @@ pub trait SpawnExt: Spawn {
     
     
     
-    
     #[cfg(feature = "alloc")]
     fn spawn<Fut>(&self, future: Fut) -> Result<(), SpawnError>
     where
@@ -51,7 +50,6 @@ pub trait SpawnExt: Spawn {
         self.spawn_obj(FutureObj::new(Box::new(future)))
     }
 
-    
     
     
     
@@ -130,7 +128,6 @@ pub trait LocalSpawnExt: LocalSpawn {
         self.spawn_local_obj(LocalFutureObj::new(Box::new(future)))
     }
 
-    
     
     
     

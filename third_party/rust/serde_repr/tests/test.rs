@@ -1,8 +1,4 @@
-#![allow(
-    
-    clippy::nonstandard_macro_braces,
-    clippy::wildcard_imports,
-)]
+#![allow(clippy::wildcard_imports)]
 
 use serde_repr::{Deserialize_repr, Serialize_repr};
 

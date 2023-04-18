@@ -6,7 +6,6 @@
 
 use crate::iter::*;
 use crate::slice::ParallelSliceMut;
-use crate::SendPtr;
 use std::mem;
 use std::mem::size_of;
 use std::ptr;
@@ -25,7 +24,7 @@ unsafe fn decrement_and_get<T>(ptr: &mut *mut T) -> *mut T {
 
 
 struct CopyOnDrop<T> {
-    src: *const T,
+    src: *mut T,
     dest: *mut T,
     len: usize,
 }
@@ -64,7 +63,9 @@ where
             
             
             
-            let tmp = mem::ManuallyDrop::new(ptr::read(&v[0]));
+            let mut tmp = NoDrop {
+                value: Some(ptr::read(&v[0])),
+            };
 
             
             
@@ -77,13 +78,13 @@ where
             
             
             let mut hole = InsertionHole {
-                src: &*tmp,
+                src: tmp.value.as_mut().unwrap(),
                 dest: &mut v[1],
             };
             ptr::copy_nonoverlapping(&v[1], &mut v[0], 1);
 
             for i in 2..v.len() {
-                if !is_less(&v[i], &*tmp) {
+                if !is_less(&v[i], tmp.value.as_ref().unwrap()) {
                     break;
                 }
                 ptr::copy_nonoverlapping(&v[i], &mut v[i - 1], 1);
@@ -94,8 +95,19 @@ where
     }
 
     
+    struct NoDrop<T> {
+        value: Option<T>,
+    }
+
+    impl<T> Drop for NoDrop<T> {
+        fn drop(&mut self) {
+            mem::forget(self.value.take());
+        }
+    }
+
+    
     struct InsertionHole<T> {
-        src: *const T,
+        src: *mut T,
         dest: *mut T,
     }
 
@@ -207,7 +219,6 @@ where
             
             let len = (self.end as usize - self.start as usize) / size_of::<T>();
             unsafe {
-                
                 ptr::copy_nonoverlapping(self.start, self.dest, len);
             }
         }
@@ -487,12 +498,11 @@ where
         mem::forget(s);
 
         
-        
-        let dest_l = SendPtr(dest);
-        let dest_r = SendPtr(dest.add(left_l.len() + right_l.len()));
+        let dest_l = dest as usize;
+        let dest_r = dest.add(left_l.len() + right_l.len()) as usize;
         rayon_core::join(
-            || par_merge(left_l, right_l, dest_l.0, is_less),
-            || par_merge(left_r, right_r, dest_r.0, is_less),
+            || par_merge(left_l, right_l, dest_l as *mut T, is_less),
+            || par_merge(left_r, right_r, dest_r as *mut T, is_less),
         );
     }
     
@@ -589,12 +599,11 @@ unsafe fn recurse<T, F>(
     };
 
     
-    
-    let v = SendPtr(v);
-    let buf = SendPtr(buf);
+    let v = v as usize;
+    let buf = buf as usize;
     rayon_core::join(
-        || recurse(v.0, buf.0, left, !into_buf, is_less),
-        || recurse(v.0, buf.0, right, !into_buf, is_less),
+        || recurse(v as *mut T, buf as *mut T, left, !into_buf, is_less),
+        || recurse(v as *mut T, buf as *mut T, right, !into_buf, is_less),
     );
 
     
@@ -659,8 +668,7 @@ where
     
     let mut iter = {
         
-        
-        let buf = SendPtr(buf);
+        let buf = buf as usize;
 
         v.par_chunks_mut(CHUNK_LENGTH)
             .with_max_len(1)
@@ -669,7 +677,7 @@ where
                 let l = CHUNK_LENGTH * i;
                 let r = l + chunk.len();
                 unsafe {
-                    let buf = buf.0.add(l);
+                    let buf = (buf as *mut T).add(l);
                     (l, r, mergesort(chunk, buf, &is_less))
                 }
             })

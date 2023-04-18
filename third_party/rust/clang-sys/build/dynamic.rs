@@ -1,15 +1,23 @@
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 use std::env;
 use std::fs::File;
 use std::io::{self, Error, ErrorKind, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 
 use super::common;
-
-
-
-
 
 
 fn parse_elf_header(path: &Path) -> io::Result<u8> {
@@ -49,8 +57,8 @@ fn parse_pe_header(path: &Path) -> io::Result<u16> {
 }
 
 
-fn validate_library(path: &Path) -> Result<(), String> {
-    if cfg!(any(target_os = "linux", target_os = "freebsd")) {
+fn validate_header(path: &Path) -> Result<(), String> {
+    if cfg!(any(target_os = "freebsd", target_os = "linux")) {
         let class = parse_elf_header(path).map_err(|e| e.to_string())?;
 
         if cfg!(target_pointer_width = "32") && class != 1 {
@@ -78,9 +86,6 @@ fn validate_library(path: &Path) -> Result<(), String> {
         Ok(())
     }
 }
-
-
-
 
 
 
@@ -122,10 +127,10 @@ fn search_libclang_directories(runtime: bool) -> Result<Vec<(PathBuf, String, Ve
     }
 
     if cfg!(any(
-        target_os = "freebsd",
-        target_os = "haiku",
-        target_os = "netbsd",
         target_os = "openbsd",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "haiku"
     )) {
         
         
@@ -144,7 +149,7 @@ fn search_libclang_directories(runtime: bool) -> Result<Vec<(PathBuf, String, Ve
     let mut invalid = vec![];
     for (directory, filename) in common::search_libclang_directories(&files, "LIBCLANG_PATH") {
         let path = directory.join(&filename);
-        match validate_library(&path) {
+        match validate_header(&path) {
             Ok(()) => {
                 let version = parse_version(&filename);
                 valid.push((directory, filename, version))
@@ -196,10 +201,6 @@ pub fn find(runtime: bool) -> Result<(PathBuf, String), String> {
         .map(|(path, filename, _)| (path, filename))
         .ok_or_else(|| "unreachable".into())
 }
-
-
-
-
 
 
 #[cfg(not(feature = "runtime"))]

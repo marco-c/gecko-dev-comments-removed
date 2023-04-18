@@ -1,24 +1,15 @@
 
 
-#![forbid(unsafe_code)]
-
-#![allow(unknown_lints)]
 #![warn(nonstandard_style, rust_2018_idioms, unused)]
 
 
-#![forbid(future_incompatible, rust_2018_compatibility, rust_2021_compatibility)]
-
-
-
-
-
-
-
+#![forbid(future_incompatible)]
+#![allow(unknown_lints)] 
+#![forbid(unsafe_code)]
 #![warn(
     box_pointers,
     deprecated_in_future,
-    fuzzy_provenance_casts,
-    lossy_provenance_casts,
+    disjoint_capture_migration,
     macro_use_extern_crate,
     meta_variable_misuse,
     missing_abi,
@@ -37,9 +28,16 @@
     unused_results,
     variant_size_differences
 )]
-#![warn(clippy::all, clippy::pedantic, clippy::nursery, clippy::restriction)]
+
+
+
+
+
+
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+#![warn(clippy::restriction)]
 #![allow(clippy::blanket_clippy_restriction_lints)] 
-#![allow(clippy::exhaustive_structs, clippy::exhaustive_enums, clippy::single_char_lifetime_names)] 
+#![allow(clippy::exhaustive_structs, clippy::exhaustive_enums)] 
 
 pub mod basic {
     include!("include/basic.rs");
@@ -163,6 +161,7 @@ mod clippy_redundant_pub_crate {
         }
     }
 
+    #[allow(dead_code)]
     pin_project! {
         #[project = EnumProj]
         #[project_ref = EnumProjRef]
@@ -178,7 +177,6 @@ mod clippy_redundant_pub_crate {
     }
 }
 
-#[allow(clippy::use_self)]
 pub mod clippy_type_repetition_in_bounds {
     use pin_project_lite::pin_project;
 

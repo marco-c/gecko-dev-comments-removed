@@ -1,10 +1,8 @@
 use crate::memmem::{rarebytes::RareNeedleBytes, NeedleInfo};
 
 mod fallback;
-#[cfg(memchr_runtime_simd)]
+#[cfg(all(target_arch = "x86_64", memchr_runtime_simd))]
 mod genericsimd;
-#[cfg(all(not(miri), target_arch = "wasm32", memchr_runtime_simd))]
-mod wasm;
 #[cfg(all(not(miri), target_arch = "x86_64", memchr_runtime_simd))]
 mod x86;
 
@@ -91,21 +89,6 @@ pub(crate) type PrefilterFnTy = unsafe fn(
     haystack: &[u8],
     needle: &[u8],
 ) -> Option<usize>;
-
-
-
-
-
-#[cfg(memchr_runtime_simd)]
-fn simple_memchr_fallback(
-    _prestate: &mut PrefilterState,
-    ninfo: &NeedleInfo,
-    haystack: &[u8],
-    needle: &[u8],
-) -> Option<usize> {
-    let (rare, _) = ninfo.rarebytes.as_rare_ordered_usize();
-    crate::memchr(needle[rare], haystack).map(|i| i.saturating_sub(rare))
-}
 
 impl PrefilterFn {
     
@@ -286,6 +269,7 @@ impl PrefilterState {
 
 
 
+#[cfg(all(not(miri), target_arch = "x86_64", memchr_runtime_simd))]
 #[inline(always)]
 pub(crate) fn forward(
     config: &Prefilter,
@@ -296,37 +280,46 @@ pub(crate) fn forward(
         return None;
     }
 
-    #[cfg(all(not(miri), target_arch = "x86_64", memchr_runtime_simd))]
+    #[cfg(feature = "std")]
     {
-        #[cfg(feature = "std")]
-        {
-            if cfg!(memchr_runtime_avx) {
-                if is_x86_feature_detected!("avx2") {
-                    
-                    
-                    return unsafe { Some(PrefilterFn::new(x86::avx::find)) };
-                }
+        if cfg!(memchr_runtime_avx) {
+            if is_x86_feature_detected!("avx2") {
+                
+                
+                return unsafe { Some(PrefilterFn::new(x86::avx::find)) };
             }
         }
-        if cfg!(memchr_runtime_sse2) {
-            
-            
-            return unsafe { Some(PrefilterFn::new(x86::sse::find)) };
-        }
     }
-    #[cfg(all(not(miri), target_arch = "wasm32", memchr_runtime_simd))]
-    {
+    if cfg!(memchr_runtime_sse2) {
         
         
-        
-        
-        if true {
-            return unsafe { Some(PrefilterFn::new(wasm::find)) };
-        }
+        return unsafe { Some(PrefilterFn::new(x86::sse::find)) };
     }
     
     
     
+    let (rare1_rank, _) = rare.as_ranks(needle);
+    if rare1_rank <= MAX_FALLBACK_RANK {
+        
+        return unsafe { Some(PrefilterFn::new(fallback::find)) };
+    }
+    None
+}
+
+
+
+
+
+#[cfg(not(all(not(miri), target_arch = "x86_64", memchr_runtime_simd)))]
+#[inline(always)]
+pub(crate) fn forward(
+    config: &Prefilter,
+    rare: &RareNeedleBytes,
+    needle: &[u8],
+) -> Option<PrefilterFn> {
+    if config.is_none() || needle.len() <= 1 {
+        return None;
+    }
     let (rare1_rank, _) = rare.as_ranks(needle);
     if rare1_rank <= MAX_FALLBACK_RANK {
         
@@ -431,7 +424,7 @@ pub(crate) mod tests {
         
         
         fn new(
-            seed: PrefilterTestSeed,
+            seed: &PrefilterTestSeed,
             rare1i: usize,
             rare2i: usize,
             haystack_len: usize,
@@ -515,7 +508,6 @@ pub(crate) mod tests {
     ];
 
     
-    #[derive(Clone, Copy)]
     struct PrefilterTestSeed {
         first: u8,
         rare1: u8,
@@ -524,47 +516,47 @@ pub(crate) mod tests {
 
     impl PrefilterTestSeed {
         
-        fn generate(self) -> impl Iterator<Item = PrefilterTest> {
+        fn generate(&self) -> Vec<PrefilterTest> {
+            let mut tests = vec![];
+            let mut push = |test: Option<PrefilterTest>| {
+                if let Some(test) = test {
+                    tests.push(test);
+                }
+            };
             let len_start = 2;
             
             
             
-            
-            
-            
-            
-            (len_start..=40).flat_map(move |needle_len| {
+            for needle_len in len_start..=40 {
                 let rare_start = len_start - 1;
-                (rare_start..needle_len).flat_map(move |rare1i| {
-                    (rare1i..needle_len).flat_map(move |rare2i| {
-                        (needle_len..=66).flat_map(move |haystack_len| {
-                            PrefilterTest::new(
+                for rare1i in rare_start..needle_len {
+                    for rare2i in rare1i..needle_len {
+                        for haystack_len in needle_len..=66 {
+                            push(PrefilterTest::new(
                                 self,
                                 rare1i,
                                 rare2i,
                                 haystack_len,
                                 needle_len,
                                 None,
-                            )
-                            .into_iter()
-                            .chain(
-                                (0..=(haystack_len - needle_len)).flat_map(
-                                    move |output| {
-                                        PrefilterTest::new(
-                                            self,
-                                            rare1i,
-                                            rare2i,
-                                            haystack_len,
-                                            needle_len,
-                                            Some(output),
-                                        )
-                                    },
-                                ),
-                            )
-                        })
-                    })
-                })
-            })
+                            ));
+                            
+                            
+                            for output in 0..=(haystack_len - needle_len) {
+                                push(PrefilterTest::new(
+                                    self,
+                                    rare1i,
+                                    rare2i,
+                                    haystack_len,
+                                    needle_len,
+                                    Some(output),
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
+            tests
         }
     }
 }

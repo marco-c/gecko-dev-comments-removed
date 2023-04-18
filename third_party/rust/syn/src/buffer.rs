@@ -88,25 +88,25 @@ impl TokenBuffer {
         
         
         
-        let entries = entries.into_boxed_slice();
-        let len = entries.len();
-        
-        
-        
-        let entries = Box::into_raw(entries) as *mut Entry;
+        let mut entries = entries.into_boxed_slice();
         for (idx, group) in groups {
             
             
             
-            let group_up = unsafe { entries.add(idx + 1) };
+            let group_up = unsafe { entries.as_ptr().add(idx + 1) };
 
             
             
             let inner = Self::inner_new(group.stream(), group_up);
-            unsafe { *entries.add(idx) = Entry::Group(group, inner) };
+            entries[idx] = Entry::Group(group, inner);
         }
 
-        TokenBuffer { ptr: entries, len }
+        let len = entries.len();
+        let ptr = Box::into_raw(entries);
+        TokenBuffer {
+            ptr: ptr as *const Entry,
+            len,
+        }
     }
 
     

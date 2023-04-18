@@ -5,20 +5,46 @@
 
 
 use std::cmp;
-use std::mem::{self, MaybeUninit};
+use std::mem;
 use std::ptr;
 
 
+
+
+
+
+struct WriteOnDrop<T> {
+    value: Option<T>,
+    dest: *mut T,
+}
+
+impl<T> Drop for WriteOnDrop<T> {
+    fn drop(&mut self) {
+        unsafe {
+            ptr::write(self.dest, self.value.take().unwrap());
+        }
+    }
+}
+
+
+struct NoDrop<T> {
+    value: Option<T>,
+}
+
+impl<T> Drop for NoDrop<T> {
+    fn drop(&mut self) {
+        mem::forget(self.value.take());
+    }
+}
+
+
 struct CopyOnDrop<T> {
-    src: *const T,
+    src: *mut T,
     dest: *mut T,
 }
 
 impl<T> Drop for CopyOnDrop<T> {
     fn drop(&mut self) {
-        
-        
-        
         unsafe {
             ptr::copy_nonoverlapping(self.src, self.dest, 1);
         }
@@ -31,43 +57,29 @@ where
     F: Fn(&T, &T) -> bool,
 {
     let len = v.len();
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     unsafe {
         
         if len >= 2 && is_less(v.get_unchecked(1), v.get_unchecked(0)) {
             
             
             
-            let tmp = mem::ManuallyDrop::new(ptr::read(v.get_unchecked(0)));
-            let v = v.as_mut_ptr();
-            let mut hole = CopyOnDrop {
-                src: &*tmp,
-                dest: v.add(1),
+            let mut tmp = NoDrop {
+                value: Some(ptr::read(v.get_unchecked(0))),
             };
-            ptr::copy_nonoverlapping(v.add(1), v.add(0), 1);
+            let mut hole = CopyOnDrop {
+                src: tmp.value.as_mut().unwrap(),
+                dest: v.get_unchecked_mut(1),
+            };
+            ptr::copy_nonoverlapping(v.get_unchecked(1), v.get_unchecked_mut(0), 1);
 
             for i in 2..len {
-                if !is_less(&*v.add(i), &*tmp) {
+                if !is_less(v.get_unchecked(i), tmp.value.as_ref().unwrap()) {
                     break;
                 }
 
                 
-                ptr::copy_nonoverlapping(v.add(i), v.add(i - 1), 1);
-                hole.dest = v.add(i);
+                ptr::copy_nonoverlapping(v.get_unchecked(i), v.get_unchecked_mut(i - 1), 1);
+                hole.dest = v.get_unchecked_mut(i);
             }
             
         }
@@ -80,43 +92,29 @@ where
     F: Fn(&T, &T) -> bool,
 {
     let len = v.len();
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     unsafe {
         
         if len >= 2 && is_less(v.get_unchecked(len - 1), v.get_unchecked(len - 2)) {
             
             
             
-            let tmp = mem::ManuallyDrop::new(ptr::read(v.get_unchecked(len - 1)));
-            let v = v.as_mut_ptr();
-            let mut hole = CopyOnDrop {
-                src: &*tmp,
-                dest: v.add(len - 2),
+            let mut tmp = NoDrop {
+                value: Some(ptr::read(v.get_unchecked(len - 1))),
             };
-            ptr::copy_nonoverlapping(v.add(len - 2), v.add(len - 1), 1);
+            let mut hole = CopyOnDrop {
+                src: tmp.value.as_mut().unwrap(),
+                dest: v.get_unchecked_mut(len - 2),
+            };
+            ptr::copy_nonoverlapping(v.get_unchecked(len - 2), v.get_unchecked_mut(len - 1), 1);
 
             for i in (0..len - 2).rev() {
-                if !is_less(&*tmp, &*v.add(i)) {
+                if !is_less(&tmp.value.as_ref().unwrap(), v.get_unchecked(i)) {
                     break;
                 }
 
                 
-                ptr::copy_nonoverlapping(v.add(i), v.add(i + 1), 1);
-                hole.dest = v.add(i);
+                ptr::copy_nonoverlapping(v.get_unchecked(i), v.get_unchecked_mut(i + 1), 1);
+                hole.dest = v.get_unchecked_mut(i);
             }
             
         }
@@ -140,8 +138,6 @@ where
     let mut i = 1;
 
     for _ in 0..MAX_STEPS {
-        
-        
         unsafe {
             
             while i < len && !is_less(v.get_unchecked(i), v.get_unchecked(i - 1)) {
@@ -178,7 +174,7 @@ where
     F: Fn(&T, &T) -> bool,
 {
     for i in 1..v.len() {
-        shift_tail(&mut v[..i + 1], is_less);
+        shift_tail(&mut v[..=i], is_less);
     }
 }
 
@@ -259,25 +255,18 @@ where
     let mut block_l = BLOCK;
     let mut start_l = ptr::null_mut();
     let mut end_l = ptr::null_mut();
-    let mut offsets_l = [MaybeUninit::<u8>::uninit(); BLOCK];
+    let mut offsets_l = [0u8; BLOCK];
 
-    
     
     let mut r = unsafe { l.add(v.len()) };
     let mut block_r = BLOCK;
     let mut start_r = ptr::null_mut();
     let mut end_r = ptr::null_mut();
-    let mut offsets_r = [MaybeUninit::<u8>::uninit(); BLOCK];
-
-    
-    
+    let mut offsets_r = [0u8; BLOCK];
 
     
     fn width<T>(l: *mut T, r: *mut T) -> usize {
         assert!(mem::size_of::<T>() > 0);
-        
-        
-        
         (r as usize - l as usize) / mem::size_of::<T>()
     }
 
@@ -300,9 +289,6 @@ where
             } else if start_r < end_r {
                 block_l = rem;
             } else {
-                
-                
-                
                 block_l = rem / 2;
                 block_r = rem - block_l;
             }
@@ -312,22 +298,11 @@ where
 
         if start_l == end_l {
             
-            
-            start_l = offsets_l.as_mut_ptr() as *mut u8;
-            end_l = start_l;
+            start_l = offsets_l.as_mut_ptr();
+            end_l = offsets_l.as_mut_ptr();
             let mut elem = l;
 
             for i in 0..block_l {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
                 unsafe {
                     
                     *end_l = i as u8;
@@ -339,23 +314,11 @@ where
 
         if start_r == end_r {
             
-            
-            start_r = offsets_r.as_mut_ptr() as *mut u8;
-            end_r = start_r;
+            start_r = offsets_r.as_mut_ptr();
+            end_r = offsets_r.as_mut_ptr();
             let mut elem = r;
 
             for i in 0..block_r {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
                 unsafe {
                     
                     elem = elem.offset(-1);
@@ -383,22 +346,6 @@ where
             
             
             
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
             unsafe {
                 let tmp = ptr::read(left!());
                 ptr::copy_nonoverlapping(right!(), left!(), 1);
@@ -419,22 +366,12 @@ where
 
         if start_l == end_l {
             
-
-            
-            
-            
-            
-            
-            
-            l = unsafe { l.offset(block_l as isize) };
+            l = unsafe { l.add(block_l) };
         }
 
         if start_r == end_r {
             
-
-            
-            
-            r = unsafe { r.offset(-(block_r as isize)) };
+            r = unsafe { r.sub(block_r) };
         }
 
         if is_done {
@@ -451,17 +388,6 @@ where
         
         debug_assert_eq!(width(l, r), block_l);
         while start_l < end_l {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
             unsafe {
                 end_l = end_l.offset(-1);
                 ptr::swap(l.offset(*end_l as isize), r.offset(-1));
@@ -474,7 +400,6 @@ where
         
         debug_assert_eq!(width(l, r), block_r);
         while start_r < end_r {
-            
             unsafe {
                 end_r = end_r.offset(-1);
                 ptr::swap(l, r.offset(-(*end_r as isize) - 1));
@@ -507,23 +432,15 @@ where
 
         
         
-
-        
-        let tmp = mem::ManuallyDrop::new(unsafe { ptr::read(pivot) });
-        let _pivot_guard = CopyOnDrop {
-            src: &*tmp,
+        let write_on_drop = WriteOnDrop {
+            value: unsafe { Some(ptr::read(pivot)) },
             dest: pivot,
         };
-        let pivot = &*tmp;
+        let pivot = write_on_drop.value.as_ref().unwrap();
 
         
         let mut l = 0;
         let mut r = v.len();
-
-        
-        
-        
-        
         unsafe {
             
             while l < r && is_less(v.get_unchecked(l), pivot) {
@@ -567,22 +484,16 @@ where
 
     
     
-    
-    let tmp = mem::ManuallyDrop::new(unsafe { ptr::read(pivot) });
-    let _pivot_guard = CopyOnDrop {
-        src: &*tmp,
+    let write_on_drop = WriteOnDrop {
+        value: unsafe { Some(ptr::read(pivot)) },
         dest: pivot,
     };
-    let pivot = &*tmp;
+    let pivot = write_on_drop.value.as_ref().unwrap();
 
     
     let mut l = 0;
     let mut r = v.len();
     loop {
-        
-        
-        
-        
         unsafe {
             
             while l < r && !is_less(pivot, v.get_unchecked(l)) {
@@ -601,8 +512,7 @@ where
 
             
             r -= 1;
-            let ptr = v.as_mut_ptr();
-            ptr::swap(ptr.add(l), ptr.add(r));
+            ptr::swap(v.get_unchecked_mut(l), v.get_unchecked_mut(r));
             l += 1;
         }
     }
@@ -629,11 +539,10 @@ fn break_patterns<T>(v: &mut [T]) {
             random
         };
         let mut gen_usize = || {
-            
             if mem::size_of::<usize>() <= 4 {
                 gen_u32() as usize
             } else {
-                (((gen_u32() as u64) << 32) | (gen_u32() as u64)) as usize
+                ((u64::from(gen_u32()) << 32) | u64::from(gen_u32())) as usize
             }
         };
 
@@ -685,12 +594,6 @@ where
 
     if len >= 8 {
         
-        
-        
-        
-        
-        
-        
         let mut sort2 = |a: &mut usize, b: &mut usize| unsafe {
             if is_less(v.get_unchecked(*b), v.get_unchecked(*a)) {
                 ptr::swap(a, b);
@@ -738,7 +641,7 @@ where
 
 
 
-fn recurse<'a, T, F>(mut v: &'a mut [T], is_less: &F, mut pred: Option<&'a mut T>, mut limit: u32)
+fn recurse<'a, T, F>(mut v: &'a mut [T], is_less: &F, mut pred: Option<&'a mut T>, mut limit: usize)
 where
     T: Send,
     F: Fn(&T, &T) -> bool + Sync,
@@ -798,7 +701,7 @@ where
                 let mid = partition_equal(v, pivot, is_less);
 
                 
-                v = &mut v[mid..];
+                v = &mut { v }[mid..];
                 continue;
             }
         }
@@ -809,7 +712,7 @@ where
         was_partitioned = was_p;
 
         
-        let (left, right) = v.split_at_mut(mid);
+        let (left, right) = { v }.split_at_mut(mid);
         let (pivot, right) = right.split_at_mut(1);
         let pivot = &mut pivot[0];
 
@@ -850,8 +753,7 @@ where
     }
 
     
-    
-    let limit = mem::size_of::<usize>() as u32 * 8 - v.len().leading_zeros();
+    let limit = mem::size_of::<usize>() * 8 - v.len().leading_zeros() as usize;
 
     recurse(v, &is_less, None, limit);
 }

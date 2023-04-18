@@ -93,17 +93,6 @@ use self::registry::{CustomSpawn, DefaultSpawn, ThreadSpawn};
 
 
 
-pub fn max_num_threads() -> usize {
-    
-    crate::sleep::THREADS_MAX
-}
-
-
-
-
-
-
-
 
 
 

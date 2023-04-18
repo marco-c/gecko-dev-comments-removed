@@ -1,6 +1,6 @@
 use alloc::sync::{Arc, Weak};
 use core::cell::UnsafeCell;
-use core::sync::atomic::Ordering::{self, Relaxed, SeqCst};
+use core::sync::atomic::Ordering::{self, SeqCst};
 use core::sync::atomic::{AtomicBool, AtomicPtr};
 
 use super::abort::abort;
@@ -31,11 +31,6 @@ pub(super) struct Task<Fut> {
 
     
     pub(super) queued: AtomicBool,
-
-    
-    
-    
-    pub(super) woken: AtomicBool,
 }
 
 
@@ -53,8 +48,6 @@ impl<Fut> ArcWake for Task<Fut> {
             None => return,
         };
 
-        arc_self.woken.store(true, Relaxed);
-
         
         
         
@@ -69,7 +62,7 @@ impl<Fut> ArcWake for Task<Fut> {
         
         let prev = arc_self.queued.swap(true, SeqCst);
         if !prev {
-            inner.enqueue(Arc::as_ptr(arc_self));
+            inner.enqueue(&**arc_self);
             inner.waker.wake();
         }
     }

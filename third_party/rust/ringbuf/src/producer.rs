@@ -2,7 +2,6 @@ use alloc::sync::Arc;
 use core::{
     mem::{self, MaybeUninit},
     ptr::copy_nonoverlapping,
-    slice,
     sync::atomic::Ordering,
 };
 #[cfg(feature = "std")]
@@ -76,7 +75,7 @@ impl<T: Sized> Producer<T> {
     {
         let head = self.rb.head.load(Ordering::Acquire);
         let tail = self.rb.tail.load(Ordering::Acquire);
-        let len = self.rb.data.len();
+        let len = self.rb.data.get_ref().len();
 
         let ranges = if tail >= head {
             if head > 0 {
@@ -92,11 +91,9 @@ impl<T: Sized> Producer<T> {
             (0..0, 0..0)
         };
 
-        let ptr = self.rb.data.get_mut().as_mut_ptr();
-
         let slices = (
-            slice::from_raw_parts_mut(ptr.add(ranges.0.start), ranges.0.len()),
-            slice::from_raw_parts_mut(ptr.add(ranges.1.start), ranges.1.len()),
+            &mut self.rb.data.get_mut()[ranges.0],
+            &mut self.rb.data.get_mut()[ranges.1],
         );
 
         let n = f(slices.0, slices.1);

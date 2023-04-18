@@ -11,10 +11,7 @@ fn sdk_path(target: &str) -> Result<String, std::io::Error> {
 
     let sdk = if target.contains("apple-darwin") {
         "macosx"
-    } else if target == "x86_64-apple-ios"
-        || target == "i386-apple-ios"
-        || target == "aarch64-apple-ios-sim"
-    {
+    } else if target == "x86_64-apple-ios" || target == "i386-apple-ios" {
         "iphonesimulator"
     } else if target == "aarch64-apple-ios"
         || target == "armv7-apple-ios"
@@ -47,32 +44,16 @@ fn build(sdk_path: Option<&str>, target: &str) {
 
     let mut headers: Vec<&'static str> = vec![];
 
-    #[cfg(feature = "audio_unit")]
-    {
-        
-        
-        
-        if target.contains("apple-ios") {
-            
-            
-            
-            println!("cargo:rustc-link-lib=framework=AudioToolbox");
-        } else {
-            
-            
-            
-            
-            
-            
-            println!("cargo:rustc-link-lib=framework=AudioUnit");
-        }
-        headers.push("AudioUnit/AudioUnit.h");
-    }
-
     #[cfg(feature = "audio_toolbox")]
     {
         println!("cargo:rustc-link-lib=framework=AudioToolbox");
         headers.push("AudioToolbox/AudioToolbox.h");
+    }
+
+    #[cfg(feature = "audio_unit")]
+    {
+        println!("cargo:rustc-link-lib=framework=AudioToolbox");
+        headers.push("AudioUnit/AudioUnit.h");
     }
 
     #[cfg(feature = "core_audio")]

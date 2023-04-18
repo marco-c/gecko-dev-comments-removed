@@ -73,7 +73,6 @@ pub trait Future01CompatExt: Future01 {
     
     
     
-    
     fn compat(self) -> Compat01As03<Self>
     where
         Self: Sized,
@@ -85,7 +84,6 @@ impl<Fut: Future01> Future01CompatExt for Fut {}
 
 
 pub trait Stream01CompatExt: Stream01 {
-    
     
     
     
@@ -115,7 +113,6 @@ impl<St: Stream01> Stream01CompatExt for St {}
 #[cfg(feature = "sink")]
 #[cfg_attr(docsrs, doc(cfg(feature = "sink")))]
 pub trait Sink01CompatExt: Sink01 {
-    
     
     
     
@@ -378,7 +375,6 @@ mod io {
         
         
         
-        
         fn compat(self) -> Compat01As03<Self>
         where
             Self: Sized,
@@ -391,7 +387,6 @@ mod io {
     
     #[cfg_attr(docsrs, doc(cfg(feature = "io-compat")))]
     pub trait AsyncWrite01CompatExt: AsyncWrite01 {
-        
         
         
         

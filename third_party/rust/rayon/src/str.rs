@@ -13,7 +13,6 @@
 
 
 
-
 use crate::iter::plumbing::*;
 use crate::iter::*;
 use crate::split_producer::*;
@@ -35,11 +34,11 @@ fn find_char_midpoint(chars: &str) -> usize {
     
     
     let (left, right) = chars.as_bytes().split_at(mid);
-    match right.iter().copied().position(is_char_boundary) {
+    match right.iter().cloned().position(is_char_boundary) {
         Some(i) => mid + i,
         None => left
             .iter()
-            .copied()
+            .cloned()
             .rposition(is_char_boundary)
             .unwrap_or(0),
     }
@@ -152,12 +151,10 @@ pub trait ParallelString {
     
     
     
-    
     fn par_split<P: Pattern>(&self, separator: P) -> Split<'_, P> {
         Split::new(self.as_parallel_string(), separator)
     }
 
-    
     
     
     
@@ -233,7 +230,6 @@ pub trait ParallelString {
     
     
     
-    
     fn par_matches<P: Pattern>(&self, pattern: P) -> Matches<'_, P> {
         Matches {
             chars: self.as_parallel_string(),
@@ -241,7 +237,6 @@ pub trait ParallelString {
         }
     }
 
-    
     
     
     
@@ -308,62 +303,89 @@ fn offset<T>(base: usize) -> impl Fn((usize, T)) -> (usize, T) {
     move |(i, x)| (base + i, x)
 }
 
-macro_rules! impl_pattern {
-    (&$self:ident => $pattern:expr) => {
-        private_impl! {}
+impl Pattern for char {
+    private_impl! {}
 
-        #[inline]
-        fn find_in(&$self, chars: &str) -> Option<usize> {
-            chars.find($pattern)
-        }
+    #[inline]
+    fn find_in(&self, chars: &str) -> Option<usize> {
+        chars.find(*self)
+    }
 
-        #[inline]
-        fn rfind_in(&$self, chars: &str) -> Option<usize> {
-            chars.rfind($pattern)
-        }
+    #[inline]
+    fn rfind_in(&self, chars: &str) -> Option<usize> {
+        chars.rfind(*self)
+    }
 
-        #[inline]
-        fn is_suffix_of(&$self, chars: &str) -> bool {
-            chars.ends_with($pattern)
-        }
+    #[inline]
+    fn is_suffix_of(&self, chars: &str) -> bool {
+        chars.ends_with(*self)
+    }
 
-        fn fold_splits<'ch, F>(&$self, chars: &'ch str, folder: F, skip_last: bool) -> F
-        where
-            F: Folder<&'ch str>,
-        {
-            let mut split = chars.split($pattern);
-            if skip_last {
-                split.next_back();
-            }
-            folder.consume_iter(split)
+    fn fold_splits<'ch, F>(&self, chars: &'ch str, folder: F, skip_last: bool) -> F
+    where
+        F: Folder<&'ch str>,
+    {
+        let mut split = chars.split(*self);
+        if skip_last {
+            split.next_back();
         }
+        folder.consume_iter(split)
+    }
 
-        fn fold_matches<'ch, F>(&$self, chars: &'ch str, folder: F) -> F
-        where
-            F: Folder<&'ch str>,
-        {
-            folder.consume_iter(chars.matches($pattern))
-        }
+    fn fold_matches<'ch, F>(&self, chars: &'ch str, folder: F) -> F
+    where
+        F: Folder<&'ch str>,
+    {
+        folder.consume_iter(chars.matches(*self))
+    }
 
-        fn fold_match_indices<'ch, F>(&$self, chars: &'ch str, folder: F, base: usize) -> F
-        where
-            F: Folder<(usize, &'ch str)>,
-        {
-            folder.consume_iter(chars.match_indices($pattern).map(offset(base)))
-        }
+    fn fold_match_indices<'ch, F>(&self, chars: &'ch str, folder: F, base: usize) -> F
+    where
+        F: Folder<(usize, &'ch str)>,
+    {
+        folder.consume_iter(chars.match_indices(*self).map(offset(base)))
     }
 }
 
-impl Pattern for char {
-    impl_pattern!(&self => *self);
-}
-
-impl Pattern for &[char] {
-    impl_pattern!(&self => *self);
-}
-
 impl<FN: Sync + Send + Fn(char) -> bool> Pattern for FN {
-    impl_pattern!(&self => self);
+    private_impl! {}
+
+    fn find_in(&self, chars: &str) -> Option<usize> {
+        chars.find(self)
+    }
+
+    fn rfind_in(&self, chars: &str) -> Option<usize> {
+        chars.rfind(self)
+    }
+
+    fn is_suffix_of(&self, chars: &str) -> bool {
+        chars.ends_with(self)
+    }
+
+    fn fold_splits<'ch, F>(&self, chars: &'ch str, folder: F, skip_last: bool) -> F
+    where
+        F: Folder<&'ch str>,
+    {
+        let mut split = chars.split(self);
+        if skip_last {
+            split.next_back();
+        }
+        folder.consume_iter(split)
+    }
+
+    fn fold_matches<'ch, F>(&self, chars: &'ch str, folder: F) -> F
+    where
+        F: Folder<&'ch str>,
+    {
+        folder.consume_iter(chars.matches(self))
+    }
+
+    fn fold_match_indices<'ch, F>(&self, chars: &'ch str, folder: F, base: usize) -> F
+    where
+        F: Folder<(usize, &'ch str)>,
+    {
+        folder.consume_iter(chars.match_indices(self).map(offset(base)))
+    }
 }
 
 

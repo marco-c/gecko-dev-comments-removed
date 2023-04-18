@@ -1,5 +1,3 @@
-#![cfg(not(miri))] 
-
 use futures::channel::oneshot;
 use futures::executor::ThreadPool;
 use futures::future::{self, ok, Future, FutureExt, TryFutureExt};

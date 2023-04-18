@@ -27,13 +27,9 @@ use core::marker::PhantomData;
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 #[cfg(feature = "mint")]
 use mint;
-use num_traits::real::Real;
 use num_traits::{Float, NumCast, Signed};
 #[cfg(feature = "serde")]
 use serde;
-
-#[cfg(feature = "bytemuck")]
-use bytemuck::{Zeroable, Pod};
 
 
 #[repr(C)]
@@ -106,12 +102,6 @@ where
         })
     }
 }
-
-#[cfg(feature = "bytemuck")]
-unsafe impl<T: Zeroable, U> Zeroable for Vector2D<T, U> {}
-
-#[cfg(feature = "bytemuck")]
-unsafe impl<T: Pod, U: 'static> Pod for Vector2D<T, U> {}
 
 impl<T: Eq, U> Eq for Vector2D<T, U> {}
 
@@ -452,27 +442,6 @@ where
 impl<T: Float, U> Vector2D<T, U> {
     
     #[inline]
-    #[must_use]
-    pub fn robust_normalize(self) -> Self {
-        let length = self.length();
-        if length.is_infinite() {
-            let scaled = self / T::max_value();
-            scaled / scaled.length()
-        } else {
-            self / length
-        }
-    }
-
-    
-    #[inline]
-    pub fn is_finite(self) -> bool {
-        self.x.is_finite() && self.y.is_finite()
-    }
-}
-
-impl<T: Real, U> Vector2D<T, U> {
-    
-    #[inline]
     pub fn length(self) -> T {
         self.square_length().sqrt()
     }
@@ -501,8 +470,15 @@ impl<T: Real, U> Vector2D<T, U> {
 
     
     #[inline]
-    pub fn with_length(self, length: T) -> Self {
-        self.normalize() * length
+    #[must_use]
+    pub fn robust_normalize(self) -> Self {
+        let length = self.length();
+        if length.is_infinite() {
+            let scaled = self / T::max_value();
+            scaled / scaled.length()
+        } else {
+            self / length
+        }
     }
 
     
@@ -532,6 +508,12 @@ impl<T: Real, U> Vector2D<T, U> {
     pub fn clamp_length(self, min: T, max: T) -> Self {
         debug_assert!(min <= max);
         self.with_min_length(min).with_max_length(max)
+    }
+
+    
+    #[inline]
+    pub fn is_finite(self) -> bool {
+        self.x.is_finite() && self.y.is_finite()
     }
 }
 
@@ -966,12 +948,6 @@ where
     }
 }
 
-#[cfg(feature = "bytemuck")]
-unsafe impl<T: Zeroable, U> Zeroable for Vector3D<T, U> {}
-
-#[cfg(feature = "bytemuck")]
-unsafe impl<T: Pod, U: 'static> Pod for Vector3D<T, U> {}
-
 impl<T: Eq, U> Eq for Vector3D<T, U> {}
 
 impl<T: PartialEq, U> PartialEq for Vector3D<T, U> {
@@ -1302,27 +1278,6 @@ where
 
 impl<T: Float, U> Vector3D<T, U> {
     
-    #[inline]
-    #[must_use]
-    pub fn robust_normalize(self) -> Self {
-        let length = self.length();
-        if length.is_infinite() {
-            let scaled = self / T::max_value();
-            scaled / scaled.length()
-        } else {
-            self / length
-        }
-    }
-
-    
-    #[inline]
-    pub fn is_finite(self) -> bool {
-        self.x.is_finite() && self.y.is_finite() && self.z.is_finite()
-    }
-}
-
-impl<T: Real, U> Vector3D<T, U> {
-    
     
     
     pub fn angle_to(self, other: Self) -> Angle<T>
@@ -1365,6 +1320,19 @@ impl<T: Real, U> Vector3D<T, U> {
 
     
     #[inline]
+    #[must_use]
+    pub fn robust_normalize(self) -> Self {
+        let length = self.length();
+        if length.is_infinite() {
+            let scaled = self / T::max_value();
+            scaled / scaled.length()
+        } else {
+            self / length
+        }
+    }
+
+    
+    #[inline]
     pub fn with_max_length(self, max_length: T) -> Self {
         let square_length = self.square_length();
         if square_length > max_length * max_length {
@@ -1390,6 +1358,12 @@ impl<T: Real, U> Vector3D<T, U> {
     pub fn clamp_length(self, min: T, max: T) -> Self {
         debug_assert!(min <= max);
         self.with_min_length(min).with_max_length(max)
+    }
+
+    
+    #[inline]
+    pub fn is_finite(self) -> bool {
+        self.x.is_finite() && self.y.is_finite() && self.z.is_finite()
     }
 }
 

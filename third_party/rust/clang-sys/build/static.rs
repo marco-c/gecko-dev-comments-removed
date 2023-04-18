@@ -1,5 +1,17 @@
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 extern crate glob;
 
 use std::path::{Path, PathBuf};
@@ -7,27 +19,6 @@ use std::path::{Path, PathBuf};
 use glob::Pattern;
 
 use common;
-
-
-
-
-
-
-const CLANG_LIBRARIES: &[&str] = &[
-    "clang",
-    "clangAST",
-    "clangAnalysis",
-    "clangBasic",
-    "clangDriver",
-    "clangEdit",
-    "clangFrontend",
-    "clangIndex",
-    "clangLex",
-    "clangParse",
-    "clangRewrite",
-    "clangSema",
-    "clangSerialization",
-];
 
 
 fn get_library_name(path: &Path) -> Option<String> {
@@ -60,6 +51,23 @@ fn get_llvm_libraries() -> Vec<String> {
 }
 
 
+const CLANG_LIBRARIES: &[&str] = &[
+    "clang",
+    "clangAST",
+    "clangAnalysis",
+    "clangBasic",
+    "clangDriver",
+    "clangEdit",
+    "clangFrontend",
+    "clangIndex",
+    "clangLex",
+    "clangParse",
+    "clangRewrite",
+    "clangSema",
+    "clangSerialization",
+];
+
+
 fn get_clang_libraries<P: AsRef<Path>>(directory: P) -> Vec<String> {
     
     
@@ -77,7 +85,6 @@ fn get_clang_libraries<P: AsRef<Path>>(directory: P) -> Vec<String> {
 }
 
 
-
 fn find() -> PathBuf {
     let name = if cfg!(target_os = "windows") {
         "libclang.lib"
@@ -92,10 +99,6 @@ fn find() -> PathBuf {
         panic!("could not find any static libraries");
     }
 }
-
-
-
-
 
 
 pub fn link() {
@@ -130,10 +133,12 @@ pub fn link() {
     
     if cfg!(target_os = "freebsd") {
         println!("cargo:rustc-flags=-l ffi -l ncursesw -l c++ -l z");
-    } else if cfg!(any(target_os = "haiku", target_os = "linux")) {
+    } else if cfg!(target_os = "linux") {
         println!("cargo:rustc-flags=-l ffi -l ncursesw -l stdc++ -l z");
     } else if cfg!(target_os = "macos") {
         println!("cargo:rustc-flags=-l ffi -l ncurses -l c++ -l z");
+    } else if cfg!(target_os = "haiku") {
+        println!("cargo:rustc-flags=-l ffi -l ncursesw -l stdc++ -l z");
     }
 
     cep.discard();

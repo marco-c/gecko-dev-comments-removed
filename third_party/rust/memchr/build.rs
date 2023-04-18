@@ -15,29 +15,15 @@ fn main() {
 
 
 fn enable_simd_optimizations() {
-    if is_env_set("CARGO_CFG_MEMCHR_DISABLE_AUTO_SIMD") {
+    if is_env_set("CARGO_CFG_MEMCHR_DISABLE_AUTO_SIMD")
+        || !target_has_feature("sse2")
+    {
         return;
     }
-    let arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
-    match &arch[..] {
-        "x86_64" => {
-            if !target_has_feature("sse2") {
-                return;
-            }
-            println!("cargo:rustc-cfg=memchr_runtime_simd");
-            println!("cargo:rustc-cfg=memchr_runtime_sse2");
-            println!("cargo:rustc-cfg=memchr_runtime_sse42");
-            println!("cargo:rustc-cfg=memchr_runtime_avx");
-        }
-        "wasm32" | "wasm64" => {
-            if !target_has_feature("simd128") {
-                return;
-            }
-            println!("cargo:rustc-cfg=memchr_runtime_simd");
-            println!("cargo:rustc-cfg=memchr_runtime_wasm128");
-        }
-        _ => {}
-    }
+    println!("cargo:rustc-cfg=memchr_runtime_simd");
+    println!("cargo:rustc-cfg=memchr_runtime_sse2");
+    println!("cargo:rustc-cfg=memchr_runtime_sse42");
+    println!("cargo:rustc-cfg=memchr_runtime_avx");
 }
 
 

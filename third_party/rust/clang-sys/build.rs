@@ -13,6 +13,18 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 #![allow(unused_attributes)]
 
 extern crate glob;
@@ -24,7 +36,7 @@ pub mod common;
 #[path = "build/dynamic.rs"]
 pub mod dynamic;
 #[path = "build/static.rs"]
-pub mod r#static;
+pub mod static_;
 
 
 #[cfg(feature = "runtime")]
@@ -44,7 +56,6 @@ fn copy(source: &str, destination: &Path) {
 }
 
 
-
 #[cfg(feature = "runtime")]
 fn main() {
     use std::env;
@@ -62,7 +73,7 @@ fn main() {
 #[cfg(not(feature = "runtime"))]
 fn main() {
     if cfg!(feature = "static") {
-        r#static::link();
+        static_::link();
     } else {
         dynamic::link();
     }

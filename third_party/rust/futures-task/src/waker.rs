@@ -20,7 +20,7 @@ pub fn waker<W>(wake: Arc<W>) -> Waker
 where
     W: ArcWake + 'static,
 {
-    let ptr = Arc::into_raw(wake).cast::<()>();
+    let ptr = Arc::into_raw(wake) as *const ();
 
     unsafe { Waker::from_raw(RawWaker::new(ptr, waker_vtable::<W>())) }
 }
@@ -31,7 +31,7 @@ where
 #[allow(clippy::redundant_clone)] 
 unsafe fn increase_refcount<T: ArcWake>(data: *const ()) {
     
-    let arc = mem::ManuallyDrop::new(Arc::<T>::from_raw(data.cast::<T>()));
+    let arc = mem::ManuallyDrop::new(Arc::<T>::from_raw(data as *const T));
     
     let _arc_clone: mem::ManuallyDrop<_> = arc.clone();
 }
@@ -43,17 +43,17 @@ unsafe fn clone_arc_raw<T: ArcWake>(data: *const ()) -> RawWaker {
 }
 
 unsafe fn wake_arc_raw<T: ArcWake>(data: *const ()) {
-    let arc: Arc<T> = Arc::from_raw(data.cast::<T>());
+    let arc: Arc<T> = Arc::from_raw(data as *const T);
     ArcWake::wake(arc);
 }
 
 
 unsafe fn wake_by_ref_arc_raw<T: ArcWake>(data: *const ()) {
     
-    let arc = mem::ManuallyDrop::new(Arc::<T>::from_raw(data.cast::<T>()));
+    let arc = mem::ManuallyDrop::new(Arc::<T>::from_raw(data as *const T));
     ArcWake::wake_by_ref(&arc);
 }
 
 unsafe fn drop_arc_raw<T: ArcWake>(data: *const ()) {
-    drop(Arc::<T>::from_raw(data.cast::<T>()))
+    drop(Arc::<T>::from_raw(data as *const T))
 }

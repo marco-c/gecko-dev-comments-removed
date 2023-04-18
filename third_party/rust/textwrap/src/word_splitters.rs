@@ -4,6 +4,9 @@
 
 
 
+
+use std::ops::Deref;
+
 use crate::core::{display_width, Word};
 
 
@@ -33,22 +36,8 @@ use crate::core::{display_width, Word};
 
 
 
-#[derive(Clone)]
-pub enum WordSplitter {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    NoHyphenation,
 
+pub trait WordSplitter: WordSplitterClone + std::fmt::Debug {
     
     
     
@@ -63,112 +52,33 @@ pub enum WordSplitter {
     
     
     
-    
-    
-    HyphenSplitter,
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Custom(fn(word: &str) -> Vec<usize>),
-
-    
-    
-    
-    
-    
-    
-    
-    #[cfg(feature = "hyphenation")]
-    Hyphenation(hyphenation::Standard),
+    fn split_points(&self, word: &str) -> Vec<usize>;
 }
 
-impl std::fmt::Debug for WordSplitter {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            WordSplitter::NoHyphenation => f.write_str("NoHyphenation"),
-            WordSplitter::HyphenSplitter => f.write_str("HyphenSplitter"),
-            WordSplitter::Custom(_) => f.write_str("Custom(...)"),
-            #[cfg(feature = "hyphenation")]
-            WordSplitter::Hyphenation(dict) => write!(f, "Hyphenation({})", dict.language()),
-        }
+
+
+
+
+#[doc(hidden)]
+pub trait WordSplitterClone {
+    fn clone_box(&self) -> Box<dyn WordSplitter>;
+}
+
+impl<T: WordSplitter + Clone + 'static> WordSplitterClone for T {
+    fn clone_box(&self) -> Box<dyn WordSplitter> {
+        Box::new(self.clone())
     }
 }
 
-impl PartialEq<WordSplitter> for WordSplitter {
-    fn eq(&self, other: &WordSplitter) -> bool {
-        match (self, other) {
-            (WordSplitter::NoHyphenation, WordSplitter::NoHyphenation) => true,
-            (WordSplitter::HyphenSplitter, WordSplitter::HyphenSplitter) => true,
-            #[cfg(feature = "hyphenation")]
-            (WordSplitter::Hyphenation(this_dict), WordSplitter::Hyphenation(other_dict)) => {
-                this_dict.language() == other_dict.language()
-            }
-            (_, _) => false,
-        }
+impl Clone for Box<dyn WordSplitter> {
+    fn clone(&self) -> Box<dyn WordSplitter> {
+        self.deref().clone_box()
     }
 }
 
-impl WordSplitter {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn split_points(&self, word: &str) -> Vec<usize> {
-        match self {
-            WordSplitter::NoHyphenation => Vec::new(),
-            WordSplitter::HyphenSplitter => {
-                let mut splits = Vec::new();
-
-                for (idx, _) in word.match_indices('-') {
-                    
-                    
-                    
-                    let prev = word[..idx].chars().next_back();
-                    let next = word[idx + 1..].chars().next();
-
-                    if prev.filter(|ch| ch.is_alphanumeric()).is_some()
-                        && next.filter(|ch| ch.is_alphanumeric()).is_some()
-                    {
-                        splits.push(idx + 1); 
-                    }
-                }
-
-                splits
-            }
-            WordSplitter::Custom(splitter_func) => splitter_func(word),
-            #[cfg(feature = "hyphenation")]
-            WordSplitter::Hyphenation(dictionary) => {
-                use hyphenation::Hyphenator;
-                dictionary.hyphenate(word).breaks
-            }
-        }
+impl WordSplitter for Box<dyn WordSplitter> {
+    fn split_points(&self, word: &str) -> Vec<usize> {
+        self.deref().split_points(word)
     }
 }
 
@@ -178,12 +88,107 @@ impl WordSplitter {
 
 
 
-pub fn split_words<'a, I>(
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug)]
+pub struct NoHyphenation;
+
+
+
+impl WordSplitter for NoHyphenation {
+    fn split_points(&self, _: &str) -> Vec<usize> {
+        Vec::new()
+    }
+}
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug)]
+pub struct HyphenSplitter;
+
+
+
+
+
+
+
+
+impl WordSplitter for HyphenSplitter {
+    fn split_points(&self, word: &str) -> Vec<usize> {
+        let mut splits = Vec::new();
+
+        for (idx, _) in word.match_indices('-') {
+            
+            
+            
+            let prev = word[..idx].chars().next_back();
+            let next = word[idx + 1..].chars().next();
+
+            if prev.filter(|ch| ch.is_alphanumeric()).is_some()
+                && next.filter(|ch| ch.is_alphanumeric()).is_some()
+            {
+                splits.push(idx + 1); 
+            }
+        }
+
+        splits
+    }
+}
+
+
+
+
+
+
+
+
+#[cfg(feature = "hyphenation")]
+impl WordSplitter for hyphenation::Standard {
+    fn split_points(&self, word: &str) -> Vec<usize> {
+        use hyphenation::Hyphenator;
+        self.hyphenate(word).breaks
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn split_words<'a, I, WordSplit>(
     words: I,
-    word_splitter: &'a WordSplitter,
+    word_splitter: &'a WordSplit,
 ) -> impl Iterator<Item = Word<'a>>
 where
     I: IntoIterator<Item = Word<'a>>,
+    WordSplit: WordSplitter,
 {
     words.into_iter().flat_map(move |word| {
         let mut prev = 0;
@@ -230,13 +235,13 @@ mod tests {
 
     #[test]
     fn split_words_no_words() {
-        assert_iter_eq!(split_words(vec![], &WordSplitter::HyphenSplitter), vec![]);
+        assert_iter_eq!(split_words(vec![], &HyphenSplitter), vec![]);
     }
 
     #[test]
     fn split_words_empty_word() {
         assert_iter_eq!(
-            split_words(vec![Word::from("   ")], &WordSplitter::HyphenSplitter),
+            split_words(vec![Word::from("   ")], &HyphenSplitter),
             vec![Word::from("   ")]
         );
     }
@@ -244,7 +249,7 @@ mod tests {
     #[test]
     fn split_words_single_word() {
         assert_iter_eq!(
-            split_words(vec![Word::from("foobar")], &WordSplitter::HyphenSplitter),
+            split_words(vec![Word::from("foobar")], &HyphenSplitter),
             vec![Word::from("foobar")]
         );
     }
@@ -252,28 +257,23 @@ mod tests {
     #[test]
     fn split_words_hyphen_splitter() {
         assert_iter_eq!(
-            split_words(vec![Word::from("foo-bar")], &WordSplitter::HyphenSplitter),
+            split_words(vec![Word::from("foo-bar")], &HyphenSplitter),
             vec![Word::from("foo-"), Word::from("bar")]
         );
     }
 
     #[test]
-    fn split_words_no_hyphenation() {
-        assert_iter_eq!(
-            split_words(vec![Word::from("foo-bar")], &WordSplitter::NoHyphenation),
-            vec![Word::from("foo-bar")]
-        );
-    }
-
-    #[test]
     fn split_words_adds_penalty() {
-        let fixed_split_point = |_: &str| vec![3];
+        #[derive(Clone, Debug)]
+        struct FixedSplitPoint;
+        impl WordSplitter for FixedSplitPoint {
+            fn split_points(&self, _: &str) -> Vec<usize> {
+                vec![3]
+            }
+        }
 
         assert_iter_eq!(
-            split_words(
-                vec![Word::from("foobar")].into_iter(),
-                &WordSplitter::Custom(fixed_split_point)
-            ),
+            split_words(vec![Word::from("foobar")].into_iter(), &FixedSplitPoint),
             vec![
                 Word {
                     word: "foo",
@@ -291,10 +291,7 @@ mod tests {
         );
 
         assert_iter_eq!(
-            split_words(
-                vec![Word::from("fo-bar")].into_iter(),
-                &WordSplitter::Custom(fixed_split_point)
-            ),
+            split_words(vec![Word::from("fo-bar")].into_iter(), &FixedSplitPoint),
             vec![
                 Word {
                     word: "fo-",

@@ -23,9 +23,16 @@
 
 #![allow(warnings)]
 #![forbid(unsafe_code)]
-#![no_std]
+#![cfg_attr(any(has_alloc, feature = "rustc-dep-of-std"), no_std)]
 
+
+#[cfg(any(has_alloc, feature = "rustc-dep-of-std"))]
 extern crate alloc;
+#[cfg(all(not(has_alloc), not(feature = "rustc-dep-of-std")))]
+use std as alloc;
+
+#[cfg(test)]
+extern crate std;
 
 pub mod deflate;
 pub mod inflate;
@@ -52,7 +59,6 @@ pub enum MZFlush {
     
     
     
-    
     Full = 3,
     
     Finish = 4,
@@ -76,80 +82,32 @@ impl MZFlush {
 }
 
 
-
-
-
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum MZStatus {
-    
-    
-    
-    
     Ok = 0,
-
-    
-    
-    
-    
-    
     StreamEnd = 1,
-
-    
     NeedDict = 2,
 }
-
-
-
 
 
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum MZError {
-    
     ErrNo = -1,
-
-    
-    
-    
-    
-    
-    
     Stream = -2,
-
-    
-    
-    
     Data = -3,
-
-    
     Mem = -4,
-
-    
-    
-    
-    
     Buf = -5,
-
-    
     Version = -6,
-
-    
-    
-    
-    
     Param = -10_000,
 }
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-#[non_exhaustive]
 pub enum DataFormat {
     
     Zlib,
-    
-    
-    ZLibIgnoreChecksum,
     
     Raw,
 }
@@ -165,7 +123,7 @@ impl DataFormat {
 
     pub(crate) fn to_window_bits(self) -> i32 {
         match self {
-            DataFormat::Zlib | DataFormat::ZLibIgnoreChecksum => shared::MZ_DEFAULT_WINDOW_BITS,
+            DataFormat::Zlib => shared::MZ_DEFAULT_WINDOW_BITS,
             DataFormat::Raw => -shared::MZ_DEFAULT_WINDOW_BITS,
         }
     }
@@ -187,7 +145,7 @@ pub struct StreamResult {
 
 impl StreamResult {
     #[inline]
-    pub(crate) const fn error(error: MZError) -> StreamResult {
+    pub(crate) fn error(error: MZError) -> StreamResult {
         StreamResult {
             bytes_consumed: 0,
             bytes_written: 0,

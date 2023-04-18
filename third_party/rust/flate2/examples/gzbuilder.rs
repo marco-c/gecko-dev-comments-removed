@@ -13,7 +13,7 @@ fn main() {
 
 
 fn sample_builder() -> Result<(), io::Error> {
-    let f = File::create("examples/hello_world.txt.gz")?;
+    let f = File::create("examples/hello_world.gz")?;
     let mut gz = GzBuilder::new()
         .filename("hello_world.txt")
         .comment("test file, please delete")

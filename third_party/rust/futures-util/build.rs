@@ -1,20 +1,21 @@
-
-
-
-
-
-
-
-
-
-
-
-
 #![warn(rust_2018_idioms, single_use_lifetimes)]
 
 use std::env;
 
 include!("no_atomic_cas.rs");
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 fn main() {
     let target = match env::var("TARGET") {
@@ -33,7 +34,7 @@ fn main() {
     
     
     
-    if NO_ATOMIC_CAS.contains(&&*target) {
+    if NO_ATOMIC_CAS_TARGETS.contains(&&*target) {
         println!("cargo:rustc-cfg=futures_no_atomic_cas");
     }
 

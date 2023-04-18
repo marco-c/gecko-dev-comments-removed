@@ -3,10 +3,10 @@
 use std::ffi::OsString;
 use std::path::PathBuf;
 
-use clap::{Args, Parser, Subcommand};
+use clap::{AppSettings, Parser, Subcommand};
 
 
-#[derive(Debug, Parser)]
+#[derive(Parser)]
 #[clap(name = "git")]
 #[clap(about = "A fictional versioning CLI", long_about = None)]
 struct Cli {
@@ -14,59 +14,35 @@ struct Cli {
     command: Commands,
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Subcommand)]
 enum Commands {
     
-    #[clap(arg_required_else_help = true)]
+    #[clap(setting(AppSettings::ArgRequiredElseHelp))]
     Clone {
         
         remote: String,
     },
     
-    #[clap(arg_required_else_help = true)]
+    #[clap(setting(AppSettings::ArgRequiredElseHelp))]
     Push {
         
         remote: String,
     },
     
-    #[clap(arg_required_else_help = true)]
+    #[clap(setting(AppSettings::ArgRequiredElseHelp))]
     Add {
         
         #[clap(required = true, parse(from_os_str))]
         path: Vec<PathBuf>,
     },
-    Stash(Stash),
     #[clap(external_subcommand)]
     External(Vec<OsString>),
-}
-
-#[derive(Debug, Args)]
-#[clap(args_conflicts_with_subcommands = true)]
-struct Stash {
-    #[clap(subcommand)]
-    command: Option<StashCommands>,
-
-    #[clap(flatten)]
-    push: StashPush,
-}
-
-#[derive(Debug, Subcommand)]
-enum StashCommands {
-    Push(StashPush),
-    Pop { stash: Option<String> },
-    Apply { stash: Option<String> },
-}
-
-#[derive(Debug, Args)]
-struct StashPush {
-    #[clap(short, long)]
-    message: Option<String>,
 }
 
 fn main() {
     let args = Cli::parse();
 
-    match args.command {
+    match &args.command {
         Commands::Clone { remote } => {
             println!("Cloning {}", remote);
         }
@@ -75,20 +51,6 @@ fn main() {
         }
         Commands::Add { path } => {
             println!("Adding {:?}", path);
-        }
-        Commands::Stash(stash) => {
-            let stash_cmd = stash.command.unwrap_or(StashCommands::Push(stash.push));
-            match stash_cmd {
-                StashCommands::Push(push) => {
-                    println!("Pushing {:?}", push);
-                }
-                StashCommands::Pop { stash } => {
-                    println!("Popping {:?}", stash);
-                }
-                StashCommands::Apply { stash } => {
-                    println!("Applying {:?}", stash);
-                }
-            }
         }
         Commands::External(args) => {
             println!("Calling out to {:?} with {:?}", &args[0], &args[1..]);

@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 
-use crate::core::Fragment;
+use crate::core::{Fragment, Word};
+use crate::wrap_algorithms::WrapAlgorithm;
 
 
 
@@ -10,148 +11,13 @@ use crate::core::Fragment;
 
 
 
+#[derive(Clone, Copy, Debug, Default)]
+pub struct OptimalFit;
 
-
-
-
-
-
-
-
-
-#[derive(Clone, Copy, Debug)]
-pub struct Penalties {
-    
-    
-    pub nline_penalty: usize,
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub overflow_penalty: usize,
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub short_last_line_fraction: usize,
-
-    
-    
-    
-    pub short_last_line_penalty: usize,
-
-    
-    pub hyphen_penalty: usize,
-}
-
-impl Penalties {
-    
-    
-    
-    
-    
-    
-    pub const fn new() -> Self {
-        Penalties {
-            nline_penalty: 1000,
-            overflow_penalty: 50 * 50,
-            short_last_line_fraction: 4,
-            short_last_line_penalty: 25,
-            hyphen_penalty: 25,
-        }
-    }
-}
-
-impl Default for Penalties {
-    fn default() -> Self {
-        Self::new()
+impl WrapAlgorithm for OptimalFit {
+    #[inline]
+    fn wrap<'a, 'b>(&self, words: &'b [Word<'a>], line_widths: &'b [usize]) -> Vec<&'b [Word<'a>]> {
+        wrap_optimal_fit(words, line_widths)
     }
 }
 
@@ -173,7 +39,7 @@ impl LineNumbers {
     fn get<T>(&self, i: usize, minima: &[(usize, T)]) -> usize {
         while self.line_numbers.borrow_mut().len() < i + 1 {
             let pos = self.line_numbers.borrow().len();
-            let line_number = 1 + self.get(minima[pos].0, minima);
+            let line_number = 1 + self.get(minima[pos].0, &minima);
             self.line_numbers.borrow_mut().push(line_number);
         }
 
@@ -182,16 +48,8 @@ impl LineNumbers {
 }
 
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct OverflowError;
 
-impl std::fmt::Display for OverflowError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "wrap_optimal_fit cost computation overflowed")
-    }
-}
-
-impl std::error::Error for OverflowError {}
+const NLINE_PENALTY: i32 = 1000;
 
 
 
@@ -223,6 +81,24 @@ impl std::error::Error for OverflowError {}
 
 
 
+
+
+
+
+
+
+
+
+const OVERFLOW_PENALTY: i32 = 50 * 50;
+
+
+const SHORT_LINE_FRACTION: usize = 4;
+
+
+const SHORT_LAST_LINE_PENALTY: i32 = 25;
+
+
+const HYPHEN_PENALTY: i32 = 25;
 
 
 
@@ -301,13 +177,12 @@ impl std::error::Error for OverflowError {}
 
 pub fn wrap_optimal_fit<'a, 'b, T: Fragment>(
     fragments: &'a [T],
-    line_widths: &'b [f64],
-    penalties: &'b Penalties,
-) -> Result<Vec<&'a [T]>, OverflowError> {
+    line_widths: &'b [usize],
+) -> Vec<&'a [T]> {
     
-    let default_line_width = line_widths.last().copied().unwrap_or(0.0);
+    let default_line_width = line_widths.last().copied().unwrap_or(0);
     let mut widths = Vec::with_capacity(fragments.len() + 1);
-    let mut width = 0.0;
+    let mut width = 0;
     widths.push(width);
     for fragment in fragments {
         width += fragment.width() + fragment.whitespace_width();
@@ -316,14 +191,14 @@ pub fn wrap_optimal_fit<'a, 'b, T: Fragment>(
 
     let line_numbers = LineNumbers::new(fragments.len());
 
-    let minima = smawk::online_column_minima(0.0, widths.len(), |minima, i, j| {
+    let minima = smawk::online_column_minima(0, widths.len(), |minima, i, j| {
         
-        let line_number = line_numbers.get(i, minima);
+        let line_number = line_numbers.get(i, &minima);
         let line_width = line_widths
             .get(line_number)
             .copied()
             .unwrap_or(default_line_width);
-        let target_width = line_width.max(1.0);
+        let target_width = std::cmp::max(1, line_width);
 
         
         
@@ -336,42 +211,34 @@ pub fn wrap_optimal_fit<'a, 'b, T: Fragment>(
         
         
         
-        let mut cost = minima[i].1 + penalties.nline_penalty as f64;
+        let mut cost = minima[i].1 + NLINE_PENALTY;
 
         
         if line_width > target_width {
             
-            let overflow = line_width - target_width;
-            cost += overflow * penalties.overflow_penalty as f64;
+            let overflow = (line_width - target_width) as i32;
+            cost += overflow * OVERFLOW_PENALTY;
         } else if j < fragments.len() {
             
             
-            let gap = target_width - line_width;
+            let gap = (target_width - line_width) as i32;
             cost += gap * gap;
-        } else if i + 1 == j
-            && line_width < target_width / penalties.short_last_line_fraction as f64
-        {
+        } else if i + 1 == j && line_width < target_width / SHORT_LINE_FRACTION {
             
             
             
-            cost += penalties.short_last_line_penalty as f64;
+            cost += SHORT_LAST_LINE_PENALTY;
         }
 
         
-        if fragments[j - 1].penalty_width() > 0.0 {
+        if fragments[j - 1].penalty_width() > 0 {
             
             
-            cost += penalties.hyphen_penalty as f64;
+            cost += HYPHEN_PENALTY;
         }
 
         cost
     });
-
-    for (_, cost) in &minima {
-        if cost.is_infinite() {
-            return Err(OverflowError);
-        }
-    }
 
     let mut lines = Vec::with_capacity(line_numbers.get(fragments.len(), &minima));
     let mut pos = fragments.len();
@@ -385,49 +252,5 @@ pub fn wrap_optimal_fit<'a, 'b, T: Fragment>(
     }
 
     lines.reverse();
-    Ok(lines)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[derive(Debug, PartialEq)]
-    struct Word(f64);
-
-    #[rustfmt::skip]
-    impl Fragment for Word {
-        fn width(&self) -> f64 { self.0 }
-        fn whitespace_width(&self) -> f64 { 1.0 }
-        fn penalty_width(&self) -> f64 { 0.0 }
-    }
-
-    #[test]
-    fn wrap_fragments_with_infinite_widths() {
-        let words = vec![Word(f64::INFINITY)];
-        assert_eq!(
-            wrap_optimal_fit(&words, &[0.0], &Penalties::default()),
-            Err(OverflowError)
-        );
-    }
-
-    #[test]
-    fn wrap_fragments_with_huge_widths() {
-        let words = vec![Word(1e200), Word(1e250), Word(1e300)];
-        assert_eq!(
-            wrap_optimal_fit(&words, &[1e300], &Penalties::default()),
-            Err(OverflowError)
-        );
-    }
-
-    #[test]
-    fn wrap_fragments_with_large_widths() {
-        
-        
-        let words = vec![Word(1e25), Word(1e50), Word(1e75)];
-        assert_eq!(
-            wrap_optimal_fit(&words, &[1e100], &Penalties::default()),
-            Ok(vec![&vec![Word(1e25), Word(1e50), Word(1e75)][..]])
-        );
-    }
+    lines
 }

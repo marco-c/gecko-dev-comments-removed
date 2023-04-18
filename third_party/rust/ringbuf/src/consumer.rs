@@ -4,7 +4,6 @@ use core::{
     mem::{self, MaybeUninit},
     ops::Range,
     ptr::copy_nonoverlapping,
-    slice,
     sync::atomic,
 };
 #[cfg(feature = "std")]
@@ -56,7 +55,7 @@ impl<T: Sized> Consumer<T> {
     fn get_ranges(&self) -> (Range<usize>, Range<usize>) {
         let head = self.rb.head.load(atomic::Ordering::Acquire);
         let tail = self.rb.tail.load(atomic::Ordering::Acquire);
-        let len = self.rb.data.len();
+        let len = unsafe { self.rb.data.get_ref().len() };
 
         match head.cmp(&tail) {
             cmp::Ordering::Less => (head..tail, 0..0),
@@ -68,69 +67,43 @@ impl<T: Sized> Consumer<T> {
     
     
     
-    pub fn as_slices(&self) -> (&[T], &[T]) {
+    
+    
+    
+    
+    pub fn access<F: FnOnce(&[T], &[T])>(&self, f: F) {
         let ranges = self.get_ranges();
 
         unsafe {
-            let ptr = self.rb.data.get_ref().as_ptr();
+            let left = &self.rb.data.get_ref()[ranges.0];
+            let right = &self.rb.data.get_ref()[ranges.1];
 
-            let left = slice::from_raw_parts(ptr.add(ranges.0.start), ranges.0.len());
-            let right = slice::from_raw_parts(ptr.add(ranges.1.start), ranges.1.len());
-
-            (
+            f(
                 &*(left as *const [MaybeUninit<T>] as *const [T]),
                 &*(right as *const [MaybeUninit<T>] as *const [T]),
-            )
+            );
         }
     }
 
     
     
     
-    pub fn as_mut_slices(&mut self) -> (&mut [T], &mut [T]) {
+    
+    
+    
+    
+    pub fn access_mut<F: FnOnce(&mut [T], &mut [T])>(&mut self, f: F) {
         let ranges = self.get_ranges();
 
         unsafe {
-            let ptr = self.rb.data.get_mut().as_mut_ptr();
+            let left = &mut self.rb.data.get_mut()[ranges.0];
+            let right = &mut self.rb.data.get_mut()[ranges.1];
 
-            let left = slice::from_raw_parts_mut(ptr.add(ranges.0.start), ranges.0.len());
-            let right = slice::from_raw_parts_mut(ptr.add(ranges.1.start), ranges.1.len());
-
-            (
+            f(
                 &mut *(left as *mut [MaybeUninit<T>] as *mut [T]),
                 &mut *(right as *mut [MaybeUninit<T>] as *mut [T]),
-            )
+            );
         }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[deprecated(since = "0.2.7", note = "please use `as_slices` instead")]
-    pub fn access<F: FnOnce(&[T], &[T])>(&self, f: F) {
-        let (left, right) = self.as_slices();
-        f(left, right);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[deprecated(since = "0.2.7", note = "please use `as_mut_slices` instead")]
-    pub fn access_mut<F: FnOnce(&mut [T], &mut [T])>(&mut self, f: F) {
-        let (left, right) = self.as_mut_slices();
-        f(left, right);
     }
 
     
@@ -160,7 +133,7 @@ impl<T: Sized> Consumer<T> {
     {
         let head = self.rb.head.load(atomic::Ordering::Acquire);
         let tail = self.rb.tail.load(atomic::Ordering::Acquire);
-        let len = self.rb.data.len();
+        let len = self.rb.data.get_ref().len();
 
         let ranges = match head.cmp(&tail) {
             cmp::Ordering::Less => (head..tail, 0..0),
@@ -168,11 +141,9 @@ impl<T: Sized> Consumer<T> {
             cmp::Ordering::Equal => (0..0, 0..0),
         };
 
-        let ptr = self.rb.data.get_mut().as_mut_ptr();
-
         let slices = (
-            slice::from_raw_parts_mut(ptr.wrapping_add(ranges.0.start), ranges.0.len()),
-            slice::from_raw_parts_mut(ptr.wrapping_add(ranges.1.start), ranges.1.len()),
+            &mut self.rb.data.get_mut()[ranges.0],
+            &mut self.rb.data.get_mut()[ranges.1],
         );
 
         let n = f(slices.0, slices.1);
@@ -283,69 +254,31 @@ impl<T: Sized> Consumer<T> {
     
     
     
-    
-    
-    #[deprecated(since = "0.2.7", note = "please use `iter` instead")]
     pub fn for_each<F: FnMut(&T)>(&self, mut f: F) {
-        let (left, right) = self.as_slices();
-
-        for c in left.iter() {
-            f(c);
-        }
-        for c in right.iter() {
-            f(c);
-        }
-    }
-
-    
-    pub fn iter(&self) -> impl Iterator<Item = &T> + '_ {
-        let (left, right) = self.as_slices();
-
-        left.iter().chain(right.iter())
+        self.access(|left, right| {
+            for c in left.iter() {
+                f(c);
+            }
+            for c in right.iter() {
+                f(c);
+            }
+        });
     }
 
     
     
     
-    
-    
-    #[deprecated(since = "0.2.7", note = "please use `iter_mut` instead")]
     pub fn for_each_mut<F: FnMut(&mut T)>(&mut self, mut f: F) {
-        let (left, right) = self.as_mut_slices();
-
-        for c in left.iter_mut() {
-            f(c);
-        }
-        for c in right.iter_mut() {
-            f(c);
-        }
+        self.access_mut(|left, right| {
+            for c in left.iter_mut() {
+                f(c);
+            }
+            for c in right.iter_mut() {
+                f(c);
+            }
+        });
     }
 
-    
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> + '_ {
-        let (left, right) = self.as_mut_slices();
-
-        left.iter_mut().chain(right.iter_mut())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -386,14 +319,6 @@ impl<T: Sized> Consumer<T> {
     
     pub fn move_to(&mut self, other: &mut Producer<T>, count: Option<usize>) -> usize {
         move_items(self, other, count)
-    }
-}
-
-impl<T: Sized> Iterator for Consumer<T> {
-    type Item = T;
-
-    fn next(&mut self) -> Option<T> {
-        self.pop()
     }
 }
 

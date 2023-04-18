@@ -78,7 +78,6 @@
 
 
 
-
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(
     missing_debug_implementations,
@@ -151,73 +150,13 @@ pub use futures_util::io;
 
 #[cfg(feature = "executor")]
 #[cfg_attr(docsrs, doc(cfg(feature = "executor")))]
-pub mod executor {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    pub use futures_executor::{
-        block_on, block_on_stream, enter, BlockingStream, Enter, EnterError, LocalPool,
-        LocalSpawner,
-    };
-
-    #[cfg(feature = "thread-pool")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "thread-pool")))]
-    pub use futures_executor::{ThreadPool, ThreadPoolBuilder};
-}
+#[doc(inline)]
+pub use futures_executor as executor;
 
 #[cfg(feature = "compat")]
 #[cfg_attr(docsrs, doc(cfg(feature = "compat")))]
-pub mod compat {
-    
-    
-    
-    
-
-    pub use futures_util::compat::{
-        Compat, Compat01As03, Compat01As03Sink, CompatSink, Executor01As03, Executor01CompatExt,
-        Executor01Future, Future01CompatExt, Sink01CompatExt, Stream01CompatExt,
-    };
-
-    #[cfg(feature = "io-compat")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "io-compat")))]
-    pub use futures_util::compat::{AsyncRead01CompatExt, AsyncWrite01CompatExt};
-}
+#[doc(inline)]
+pub use futures_util::compat;
 
 pub mod prelude {
     
@@ -238,12 +177,10 @@ pub mod prelude {
     pub use crate::stream::{self, Stream, TryStream};
 
     #[doc(no_inline)]
-    #[allow(unreachable_pub)]
     pub use crate::future::{FutureExt as _, TryFutureExt as _};
     #[doc(no_inline)]
     pub use crate::sink::SinkExt as _;
     #[doc(no_inline)]
-    #[allow(unreachable_pub)]
     pub use crate::stream::{StreamExt as _, TryStreamExt as _};
 
     #[cfg(feature = "std")]
@@ -251,7 +188,6 @@ pub mod prelude {
 
     #[cfg(feature = "std")]
     #[doc(no_inline)]
-    #[allow(unreachable_pub)]
     pub use crate::io::{
         AsyncBufReadExt as _, AsyncReadExt as _, AsyncSeekExt as _, AsyncWriteExt as _,
     };

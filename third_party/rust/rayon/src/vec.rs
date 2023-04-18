@@ -132,16 +132,22 @@ impl<'data, T: Send> IndexedParallelIterator for Drain<'data, T> {
         self.range.len()
     }
 
-    fn with_producer<CB>(mut self, callback: CB) -> CB::Output
+    fn with_producer<CB>(self, callback: CB) -> CB::Output
     where
         CB: ProducerCallback<Self::Item>,
     {
         unsafe {
             
-            self.vec.set_len(self.range.start);
+            let start = self.range.start;
+            self.vec.set_len(start);
 
             
-            let producer = DrainProducer::from_vec(&mut self.vec, self.range.len());
+            let producer = {
+                
+                let mut slice = &mut self.vec[start..];
+                slice = slice::from_raw_parts_mut(slice.as_mut_ptr(), self.range.len());
+                DrainProducer::new(slice)
+            };
 
             
             callback.callback(producer)
@@ -178,26 +184,12 @@ pub(crate) struct DrainProducer<'data, T: Send> {
     slice: &'data mut [T],
 }
 
-impl<T: Send> DrainProducer<'_, T> {
+impl<'data, T: 'data + Send> DrainProducer<'data, T> {
     
     
     
-    pub(crate) unsafe fn new(slice: &mut [T]) -> DrainProducer<'_, T> {
+    pub(crate) unsafe fn new(slice: &'data mut [T]) -> Self {
         DrainProducer { slice }
-    }
-
-    
-    
-    
-    
-    unsafe fn from_vec(vec: &mut Vec<T>, len: usize) -> DrainProducer<'_, T> {
-        let start = vec.len();
-        assert!(vec.capacity() - start >= len);
-
-        
-        
-        let ptr = vec.as_mut_ptr().add(start);
-        DrainProducer::new(slice::from_raw_parts_mut(ptr, len))
     }
 }
 

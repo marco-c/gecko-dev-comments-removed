@@ -1,10 +1,8 @@
-
-
-use clap::{arg, command, Command};
+use clap::{app_from_crate, arg, App};
 use std::path::Path;
 
 fn main() {
-    let matches = command!()
+    let matches = app_from_crate!()
         .arg(arg!([name] "Optional name to operate on"))
         .arg(
             arg!(
@@ -19,7 +17,7 @@ fn main() {
             -d --debug ... "Turn debugging information on"
         ))
         .subcommand(
-            Command::new("test")
+            App::new("test")
                 .about("does testing things")
                 .arg(arg!(-l --list "lists test values")),
         )

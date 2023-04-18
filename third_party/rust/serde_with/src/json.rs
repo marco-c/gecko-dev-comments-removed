@@ -2,8 +2,9 @@
 
 
 
-use crate::{de::DeserializeAs, ser::SerializeAs};
-use serde::{de::DeserializeOwned, Deserializer, Serialize, Serializer};
+
+
+
 
 
 
@@ -37,6 +38,7 @@ pub mod nested {
         de::{DeserializeOwned, Deserializer, Error, Visitor},
         ser::{self, Serialize, Serializer},
     };
+    use serde_json;
     use std::{fmt, marker::PhantomData};
 
     
@@ -54,7 +56,7 @@ pub mod nested {
         {
             type Value = S;
 
-            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 write!(formatter, "valid json object")
             }
 
@@ -82,63 +84,5 @@ pub mod nested {
     {
         let s = serde_json::to_string(value).map_err(ser::Error::custom)?;
         serializer.serialize_str(&*s)
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[derive(Copy, Clone, Debug, Default)]
-pub struct JsonString;
-
-impl<T> SerializeAs<T> for JsonString
-where
-    T: Serialize,
-{
-    fn serialize_as<S>(source: &T, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        crate::json::nested::serialize(source, serializer)
-    }
-}
-
-impl<'de, T> DeserializeAs<'de, T> for JsonString
-where
-    T: DeserializeOwned,
-{
-    fn deserialize_as<D>(deserializer: D) -> Result<T, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        crate::json::nested::deserialize(deserializer)
     }
 }

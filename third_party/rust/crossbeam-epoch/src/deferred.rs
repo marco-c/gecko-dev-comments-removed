@@ -18,7 +18,7 @@ type Data = [usize; DATA_WORDS];
 
 pub(crate) struct Deferred {
     call: unsafe fn(*mut u8),
-    data: MaybeUninit<Data>,
+    data: Data,
     _marker: PhantomData<*mut ()>, 
 }
 
@@ -46,7 +46,7 @@ impl Deferred {
 
                 Deferred {
                     call: call::<F>,
-                    data,
+                    data: data.assume_init(),
                     _marker: PhantomData,
                 }
             } else {
@@ -57,13 +57,14 @@ impl Deferred {
                 unsafe fn call<F: FnOnce()>(raw: *mut u8) {
                     
                     
+                    #[allow(clippy::cast_ptr_alignment)]
                     let b: Box<F> = ptr::read(raw as *mut Box<F>);
                     (*b)();
                 }
 
                 Deferred {
                     call: call::<F>,
-                    data,
+                    data: data.assume_init(),
                     _marker: PhantomData,
                 }
             }
@@ -74,7 +75,7 @@ impl Deferred {
     #[inline]
     pub(crate) fn call(mut self) {
         let call = self.call;
-        unsafe { call(self.data.as_mut_ptr() as *mut u8) };
+        unsafe { call(&mut self.data as *mut Data as *mut u8) };
     }
 }
 

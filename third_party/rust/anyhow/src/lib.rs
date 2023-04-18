@@ -210,7 +210,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/anyhow/1.0.57")]
+#![doc(html_root_url = "https://docs.rs/anyhow/1.0.52")]
 #![cfg_attr(backtrace, feature(backtrace))]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -589,11 +589,6 @@ pub type Result<T, E = Error> = core::result::Result<T, E>;
 
 
 
-
-
-
-
-
 pub trait Context<T, E>: context::private::Sealed {
     
     fn context<C>(self, context: C) -> Result<T, Error>
@@ -667,13 +662,5 @@ pub mod private {
             
             Error::msg(fmt::format(args))
         }
-    }
-
-    #[doc(hidden)]
-    #[inline]
-    #[cold]
-    #[must_use]
-    pub fn must_use(error: Error) -> Error {
-        error
     }
 }

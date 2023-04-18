@@ -11,17 +11,18 @@
 
 
 
-use alloc::vec::Vec;
 use core::cmp::max;
 use core::ops::Range;
+use alloc::vec::Vec;
 
-use super::level::Level;
 use super::BidiClass::{self, *};
+use super::level::Level;
 
 
 
 
 pub type LevelRun = Range<usize>;
+
 
 
 #[derive(Debug, PartialEq)]
@@ -30,6 +31,7 @@ pub struct IsolatingRunSequence {
     pub sos: BidiClass, 
     pub eos: BidiClass, 
 }
+
 
 
 
@@ -103,10 +105,9 @@ pub fn isolating_run_sequences(
             }
 
             
-            let pred_level = match original_classes[..start_of_seq]
-                .iter()
-                .rposition(not_removed_by_x9)
-            {
+            let pred_level = match original_classes[..start_of_seq].iter().rposition(
+                not_removed_by_x9,
+            ) {
                 Some(idx) => levels[idx],
                 None => para_level,
             };
@@ -115,10 +116,9 @@ pub fn isolating_run_sequences(
             let succ_level = if let RLI | LRI | FSI = original_classes[end_of_seq - 1] {
                 para_level
             } else {
-                match original_classes[end_of_seq..]
-                    .iter()
-                    .position(not_removed_by_x9)
-                {
+                match original_classes[end_of_seq..].iter().position(
+                    not_removed_by_x9,
+                ) {
                     Some(idx) => levels[end_of_seq + idx],
                     None => para_level,
                 }

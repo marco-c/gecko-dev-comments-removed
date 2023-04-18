@@ -31,8 +31,6 @@ use core::hash::{Hash};
 use num_traits::NumCast;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-#[cfg(feature = "bytemuck")]
-use bytemuck::{Zeroable, Pod};
 
 
 
@@ -106,12 +104,6 @@ where
         })
     }
 }
-
-#[cfg(feature = "bytemuck")]
-unsafe impl<T: Zeroable, Src, Dst> Zeroable for Transform3D<T, Src, Dst> {}
-
-#[cfg(feature = "bytemuck")]
-unsafe impl<T: Pod, Src: 'static, Dst: 'static> Pod for Transform3D<T, Src, Dst> {}
 
 impl<T: Copy, Src, Dst> Copy for Transform3D<T, Src, Dst> {}
 

@@ -17,96 +17,95 @@ fn main() {
     
     
     
-    if minor < 26 {
-        println!("cargo:rustc-cfg=no_ops_bound");
-        if minor < 17 {
-            println!("cargo:rustc-cfg=no_collections_bound");
+    if minor >= 26 {
+        println!("cargo:rustc-cfg=ops_bound");
+    } else if minor >= 17 && cfg!(feature = "std") {
+        println!("cargo:rustc-cfg=collections_bound");
+    }
+
+    
+    
+    if minor >= 19 {
+        println!("cargo:rustc-cfg=core_reverse");
+    }
+
+    
+    
+    
+    if minor >= 20 {
+        println!("cargo:rustc-cfg=de_boxed_c_str");
+        println!("cargo:rustc-cfg=de_boxed_path");
+    }
+
+    
+    
+    
+    if minor >= 21 {
+        println!("cargo:rustc-cfg=de_rc_dst");
+    }
+
+    
+    
+    if minor >= 25 {
+        println!("cargo:rustc-cfg=core_duration");
+    }
+
+    
+    
+    
+    
+    
+    
+    if minor >= 26 && (!emscripten || minor >= 40) {
+        println!("cargo:rustc-cfg=integer128");
+    }
+
+    
+    
+    
+    
+    if minor >= 27 {
+        println!("cargo:rustc-cfg=range_inclusive");
+        println!("cargo:rustc-cfg=iterator_try_fold");
+    }
+
+    
+    
+    if minor >= 28 {
+        println!("cargo:rustc-cfg=num_nonzero");
+    }
+
+    
+    if minor >= 31 {
+        println!("cargo:rustc-cfg=serde_derive");
+    }
+
+    
+    
+    
+    
+    if minor >= 34 {
+        println!("cargo:rustc-cfg=core_try_from");
+        println!("cargo:rustc-cfg=num_nonzero_signed");
+        println!("cargo:rustc-cfg=systemtime_checked_add");
+
+        
+        
+        
+        let has_atomic64 = target.starts_with("x86_64")
+            || target.starts_with("i686")
+            || target.starts_with("aarch64")
+            || target.starts_with("powerpc64")
+            || target.starts_with("sparc64")
+            || target.starts_with("mips64el")
+            || target.starts_with("riscv64");
+        let has_atomic32 = has_atomic64 || emscripten;
+        if has_atomic64 {
+            println!("cargo:rustc-cfg=std_atomic64");
         }
-    }
-
-    
-    
-    if minor < 19 {
-        println!("cargo:rustc-cfg=no_core_reverse");
-    }
-
-    
-    
-    
-    if minor < 20 {
-        println!("cargo:rustc-cfg=no_de_boxed_c_str");
-        println!("cargo:rustc-cfg=no_de_boxed_path");
-    }
-
-    
-    
-    
-    if minor < 21 {
-        println!("cargo:rustc-cfg=no_de_rc_dst");
-    }
-
-    
-    
-    if minor < 25 {
-        println!("cargo:rustc-cfg=no_core_duration");
-    }
-
-    
-    
-    
-    
-    
-    
-    if minor < 26 || emscripten && minor < 40 {
-        println!("cargo:rustc-cfg=no_integer128");
-    }
-
-    
-    
-    
-    
-    if minor < 27 {
-        println!("cargo:rustc-cfg=no_range_inclusive");
-        println!("cargo:rustc-cfg=no_iterator_try_fold");
-    }
-
-    
-    
-    if minor < 28 {
-        println!("cargo:rustc-cfg=no_num_nonzero");
-    }
-
-    
-    if minor < 31 {
-        println!("cargo:rustc-cfg=no_serde_derive");
-    }
-
-    
-    
-    
-    
-    if minor < 34 {
-        println!("cargo:rustc-cfg=no_core_try_from");
-        println!("cargo:rustc-cfg=no_num_nonzero_signed");
-        println!("cargo:rustc-cfg=no_systemtime_checked_add");
-    }
-
-    
-    
-    
-    let has_atomic64 = target.starts_with("x86_64")
-        || target.starts_with("i686")
-        || target.starts_with("aarch64")
-        || target.starts_with("powerpc64")
-        || target.starts_with("sparc64")
-        || target.starts_with("mips64el")
-        || target.starts_with("riscv64");
-    let has_atomic32 = has_atomic64 || emscripten;
-    if minor < 34 || !has_atomic64 {
-        println!("cargo:rustc-cfg=no_std_atomic64");
-    }
-    if minor < 34 || !has_atomic32 {
-        println!("cargo:rustc-cfg=no_std_atomic");
+        if has_atomic32 {
+            println!("cargo:rustc-cfg=std_atomic");
+        }
     }
 }
 

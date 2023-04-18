@@ -56,9 +56,6 @@ use std::cell::RefCell;
 
 
 
-
-
-
 pub struct Lookahead1<'a> {
     scope: Span,
     cursor: Cursor<'a>,
