@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 
+#include <algorithm>
 #include <string>
 
 #include "base/logging.h"
@@ -408,10 +409,7 @@ bool PreProcessName(std::wstring* path) {
   
   
   
-  if (path->find(L'/') != std::wstring::npos) {
-    return false;
-  }
-
+  std::replace(path->begin(), path->end(), L'/', L'\\');
   if (path->find(L"\\..\\") != std::wstring::npos) {
     return false;
   }
