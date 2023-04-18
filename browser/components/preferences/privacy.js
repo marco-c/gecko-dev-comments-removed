@@ -21,6 +21,18 @@ const CONTENT_BLOCKING_PREFS = [
   "privacy.firstparty.isolate",
 ];
 
+
+
+
+
+const SANITIZE_ON_SHUTDOWN_PREFS_ONLY = [
+  "privacy.clearOnShutdown.history",
+  "privacy.clearOnShutdown.downloads",
+  "privacy.clearOnShutdown.sessions",
+  "privacy.clearOnShutdown.formdata",
+  "privacy.clearOnShutdown.siteSettings",
+];
+
 const PREF_OPT_OUT_STUDIES_ENABLED = "app.shield.optoutstudies.enabled";
 const PREF_NORMANDY_ENABLED = "app.normandy.enabled";
 
@@ -111,9 +123,9 @@ Preferences.addAll([
   { id: "places.history.enabled", type: "bool" },
   { id: "browser.formfill.enable", type: "bool" },
   { id: "privacy.history.custom", type: "bool" },
+
   
   { id: "network.cookie.cookieBehavior", type: "int" },
-  { id: "network.cookie.lifetimePolicy", type: "int" },
   { id: "network.cookie.blockFutureCookies", type: "bool" },
   
   { id: "browser.contentblocking.category", type: "string" },
@@ -122,6 +134,15 @@ Preferences.addAll([
   
   { id: "privacy.sanitize.sanitizeOnShutdown", type: "bool" },
   { id: "privacy.sanitize.timeSpan", type: "int" },
+  { id: "privacy.clearOnShutdown.cookies", type: "bool" },
+  { id: "privacy.clearOnShutdown.cache", type: "bool" },
+  { id: "privacy.clearOnShutdown.offlineApps", type: "bool" },
+  { id: "privacy.clearOnShutdown.history", type: "bool" },
+  { id: "privacy.clearOnShutdown.downloads", type: "bool" },
+  { id: "privacy.clearOnShutdown.sessions", type: "bool" },
+  { id: "privacy.clearOnShutdown.formdata", type: "bool" },
+  { id: "privacy.clearOnShutdown.siteSettings", type: "bool" },
+
   
   { id: "privacy.donottrackheader.enabled", type: "bool" },
 
@@ -497,6 +518,8 @@ var gPrivacyPane = {
 
   init() {
     this._updateSanitizeSettingsButton();
+    this.initDeleteOnCloseBox();
+    this.syncSanitizationPrefsWithDeleteOnClose();
     this.initializeHistoryMode();
     this.updateHistoryModePane();
     this.updatePrivacyMicroControls();
@@ -523,10 +546,6 @@ var gPrivacyPane = {
 
     
     Preferences.get("network.cookie.cookieBehavior").on(
-      "change",
-      gPrivacyPane.networkCookieBehaviorReadPrefs.bind(gPrivacyPane)
-    );
-    Preferences.get("network.cookie.lifetimePolicy").on(
       "change",
       gPrivacyPane.networkCookieBehaviorReadPrefs.bind(gPrivacyPane)
     );
@@ -693,8 +712,7 @@ var gPrivacyPane = {
     setSyncToPrefListener("blockCookiesMenu", () =>
       this.writeBlockCookiesFrom()
     );
-    setSyncFromPrefListener("deleteOnClose", () => this.readDeleteOnClose());
-    setSyncToPrefListener("deleteOnClose", () => this.writeDeleteOnClose());
+
     setSyncFromPrefListener("savePasswords", () => this.readSavePasswords());
 
     let microControlHandler = el =>
@@ -1278,11 +1296,7 @@ var gPrivacyPane = {
       behavior == Ci.nsICookieService.BEHAVIOR_REJECT;
     let privateBrowsing = Preferences.get("browser.privatebrowsing.autostart")
       .value;
-    let cookieExpirationLocked = Services.prefs.prefIsLocked(
-      "network.cookie.lifetimePolicy"
-    );
-    deleteOnCloseCheckbox.disabled =
-      privateBrowsing || completelyBlockCookies || cookieExpirationLocked;
+    deleteOnCloseCheckbox.disabled = privateBrowsing || completelyBlockCookies;
     deleteOnCloseNote.hidden = !privateBrowsing;
 
     switch (behavior) {
@@ -1495,10 +1509,6 @@ var gPrivacyPane = {
 
 
   updatePrivacyMicroControls() {
-    
-    
-    document.getElementById("deleteOnClose").checked = this.readDeleteOnClose();
-
     let clearDataSettings = document.getElementById("clearDataSettings");
 
     if (document.getElementById("historyMode").value == "custom") {
@@ -1585,6 +1595,97 @@ var gPrivacyPane = {
         Services.obs.notifyObservers(null, "clear-private-data");
       },
     });
+  },
+
+  
+
+
+  initDeleteOnCloseBox() {
+    let deleteOnCloseBox = document.getElementById("deleteOnClose");
+    deleteOnCloseBox.checked =
+      Preferences.get("privacy.sanitize.sanitizeOnShutdown").value &&
+      Preferences.get("privacy.clearOnShutdown.cookies").value &&
+      Preferences.get("privacy.clearOnShutdown.cache").value &&
+      Preferences.get("privacy.clearOnShutdown.offlineApps").value;
+  },
+
+  
+
+
+  syncSanitizationPrefsWithDeleteOnClose() {
+    let deleteOnCloseBox = document.getElementById("deleteOnClose");
+    let historyMode = Preferences.get("privacy.history.custom");
+    let sanitizeOnShutdownPref = Preferences.get(
+      "privacy.sanitize.sanitizeOnShutdown"
+    );
+    
+    let cookiePref = Preferences.get("privacy.clearOnShutdown.cookies");
+    let cachePref = Preferences.get("privacy.clearOnShutdown.cache");
+    let offlineAppsPref = Preferences.get(
+      "privacy.clearOnShutdown.offlineApps"
+    );
+
+    
+    deleteOnCloseBox.addEventListener("command", () => {
+      let { checked } = deleteOnCloseBox;
+      cookiePref.value = checked;
+      cachePref.value = checked;
+      offlineAppsPref.value = checked;
+      
+      
+      if (!sanitizeOnShutdownPref.value) {
+        this._resetCleaningPrefs();
+      }
+      
+      sanitizeOnShutdownPref.value =
+        this._isCustomCleaningPrefPresent() || checked;
+
+      
+      if (checked && !historyMode.value) {
+        historyMode.value = "custom";
+        this.initializeHistoryMode();
+        this.updateHistoryModePane();
+        this.updatePrivacyMicroControls();
+      }
+    });
+
+    cookiePref.on("change", this._onSanitizePrefChangeSyncClearOnClose);
+    cachePref.on("change", this._onSanitizePrefChangeSyncClearOnClose);
+    offlineAppsPref.on("change", this._onSanitizePrefChangeSyncClearOnClose);
+    sanitizeOnShutdownPref.on(
+      "change",
+      this._onSanitizePrefChangeSyncClearOnClose
+    );
+  },
+
+  
+
+
+  _onSanitizePrefChangeSyncClearOnClose() {
+    let deleteOnCloseBox = document.getElementById("deleteOnClose");
+    deleteOnCloseBox.checked =
+      Preferences.get("privacy.clearOnShutdown.cookies").value &&
+      Preferences.get("privacy.clearOnShutdown.cache").value &&
+      Preferences.get("privacy.clearOnShutdown.offlineApps").value &&
+      Preferences.get("privacy.sanitize.sanitizeOnShutdown").value;
+  },
+
+  
+
+
+  _resetCleaningPrefs() {
+    SANITIZE_ON_SHUTDOWN_PREFS_ONLY.forEach(
+      pref => (Preferences.get(pref).value = false)
+    );
+  },
+
+  
+
+
+  _isCustomCleaningPrefPresent() {
+    return SANITIZE_ON_SHUTDOWN_PREFS_ONLY.some(
+      pref => Preferences.get(pref).value
+    );
   },
 
   
@@ -1711,28 +1812,6 @@ var gPrivacyPane = {
 
 
 
-
-
-
-
-
-  readDeleteOnClose() {
-    let privateBrowsing = Preferences.get("browser.privatebrowsing.autostart")
-      .value;
-    if (privateBrowsing) {
-      return true;
-    }
-
-    let lifetimePolicy = Preferences.get("network.cookie.lifetimePolicy").value;
-    return lifetimePolicy == Ci.nsICookieService.ACCEPT_SESSION;
-  },
-
-  writeDeleteOnClose() {
-    let checkbox = document.getElementById("deleteOnClose");
-    return checkbox.checked
-      ? Ci.nsICookieService.ACCEPT_SESSION
-      : Ci.nsICookieService.ACCEPT_NORMALLY;
-  },
 
   
 
