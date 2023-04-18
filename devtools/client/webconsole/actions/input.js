@@ -178,11 +178,13 @@ function handleHelperResult(response) {
   return async ({ dispatch, hud, toolbox, webConsoleUI, getState }) => {
     const { result, helperResult } = response;
     const helperHasRawOutput = !!helperResult?.rawOutput;
+    let networkFront = null;
+
+    
+    
     const hasNetworkResourceCommandSupport = hud.resourceCommand.hasResourceCommandSupport(
       hud.resourceCommand.TYPES.NETWORK_EVENT
     );
-    let networkFront = null;
-    
     if (hasNetworkResourceCommandSupport) {
       networkFront = await hud.resourceCommand.watcherFront.getNetworkParentActor();
     }
@@ -286,8 +288,7 @@ function handleHelperResult(response) {
           
           
           
-          
-          if (hasNetworkResourceCommandSupport && networkFront) {
+          if (networkFront) {
             await networkFront.blockRequest({ url: blockURL });
           }
           toolbox
@@ -310,8 +311,7 @@ function handleHelperResult(response) {
           break;
         case "unblockURL":
           const unblockURL = helperResult.args.url;
-          
-          if (hasNetworkResourceCommandSupport && networkFront) {
+          if (networkFront) {
             await networkFront.unblockRequest({ url: unblockURL });
           }
           toolbox
