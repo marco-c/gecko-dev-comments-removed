@@ -870,24 +870,11 @@ var FullScreen = {
     for (let el of document.querySelectorAll(
       "toolbar[fullscreentoolbar=true]"
     )) {
+      
+      
       if (aEnterFS) {
-        
-        
-        el.setAttribute("saved-context", el.getAttribute("context"));
-        if (el.id == "nav-bar" || el.id == "TabsToolbar") {
-          el.setAttribute("context", "autohide-context");
-        } else {
-          el.removeAttribute("context");
-        }
-
-        
-        
         el.setAttribute("inFullscreen", true);
       } else {
-        if (el.hasAttribute("saved-context")) {
-          el.setAttribute("context", el.getAttribute("saved-context"));
-          el.removeAttribute("saved-context");
-        }
         el.removeAttribute("inFullscreen");
       }
     }
