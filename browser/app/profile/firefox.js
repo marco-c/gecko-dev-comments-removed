@@ -2446,6 +2446,9 @@ pref("devtools.netmonitor.audits.slow", 500);
 pref("devtools.netmonitor.features.serverSentEvents", true);
 
 
+pref("devtools.netmonitor.features.newEditAndResend", false);
+
+
 pref("devtools.storage.enabled", true);
 
 
