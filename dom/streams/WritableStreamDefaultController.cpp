@@ -380,6 +380,10 @@ MOZ_CAN_RUN_SCRIPT static void WritableStreamDefaultControllerProcessClose(
                      : Promise::CreateResolvedWithUndefined(
                            aController->GetParentObject(), aRv);
 
+  if (aRv.Failed()) {
+    return;
+  }
+
   
   
   aController->ClearAlgorithms();
