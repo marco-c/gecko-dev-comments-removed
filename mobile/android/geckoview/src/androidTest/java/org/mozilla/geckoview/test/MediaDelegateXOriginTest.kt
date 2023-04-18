@@ -149,9 +149,6 @@ class MediaDelegateXOriginTest : BaseSessionTest() {
 
     @Test fun testDeviceRecordingEventAudioAndVideoInXOriginIframe() {
         
-        assumeThat(sessionRule.env.isFission, Matchers.equalTo(false))
-
-        
         assumeThat(sessionRule.env.isIsolatedProcess, Matchers.equalTo(false))
 
         mainSession.loadTestPath(GETUSERMEDIA_XORIGIN_CONTAINER_HTML_PATH)
@@ -166,9 +163,6 @@ class MediaDelegateXOriginTest : BaseSessionTest() {
     }
 
     @Test fun testDeviceRecordingEventAudioAndVideoInXOriginIframeNoAllow() {
-        
-        assumeThat(sessionRule.env.isFission, Matchers.equalTo(false))
-
         mainSession.loadTestPath(GETUSERMEDIA_XORIGIN_CONTAINER_HTML_PATH)
         mainSession.waitForPageStop()
 

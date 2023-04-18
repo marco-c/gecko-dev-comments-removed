@@ -35,6 +35,13 @@ class GeckoViewPermissionChild extends GeckoViewActorChild {
     return this.sendQuery("GetAppPermissions", aPermissions);
   }
 
+  mediaRecordingStatusChanged(aDevices) {
+    return this.eventDispatcher.sendRequest({
+      type: "GeckoView:MediaRecordingStatusChanged",
+      devices: aDevices,
+    });
+  }
+
   async promptPermission(aRequest) {
     
     const types = aRequest.types.QueryInterface(Ci.nsIArray);
