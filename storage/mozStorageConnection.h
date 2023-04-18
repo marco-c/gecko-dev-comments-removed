@@ -78,9 +78,13 @@ class Connection final : public mozIStorageConnection,
 
 
 
+
+
+
+
   Connection(Service* aService, int aFlags,
              ConnectionOperation aSupportedOperations,
-             bool aIgnoreLockingMode = false);
+             bool aInterruptible = false, bool aIgnoreLockingMode = false);
 
   
 
@@ -389,12 +393,6 @@ class Connection final : public mozIStorageConnection,
 
 
 
-  nsCString mTelemetryFilename;
-
-  
-
-
-
 
 
 
@@ -404,25 +402,7 @@ class Connection final : public mozIStorageConnection,
 
 
 
-
-
-
-
-
-
-
-
-
-  bool mAsyncExecutionThreadShuttingDown;
-
-  
-
-
-
-
-
-
-  bool mConnectionClosed;
+  nsCString mTelemetryFilename;
 
   
 
@@ -452,9 +432,28 @@ class Connection final : public mozIStorageConnection,
   nsCOMPtr<mozIStorageProgressHandler> mProgressHandler;
 
   
+  
+  
+  RefPtr<Service> mStorageService;
+
+  nsresult synchronousClose();
+
+  
 
 
   const int mFlags;
+
+  uint32_t mTransactionNestingLevel;
+
+  
+
+
+  const ConnectionOperation mSupportedOperations;
+
+  
+
+
+  const bool mInterruptible;
 
   
 
@@ -462,18 +461,28 @@ class Connection final : public mozIStorageConnection,
   const bool mIgnoreLockingMode;
 
   
-  
-  
-  RefPtr<Service> mStorageService;
+
+
+
+
+
+
+
+
+
+
+
+
+  bool mAsyncExecutionThreadShuttingDown;
 
   
 
 
-  const ConnectionOperation mSupportedOperations;
 
-  nsresult synchronousClose();
 
-  uint32_t mTransactionNestingLevel;
+
+
+  bool mConnectionClosed;
 };
 
 

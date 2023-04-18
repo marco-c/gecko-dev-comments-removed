@@ -3,25 +3,11 @@
 
 
 
-add_task(async function test_sync_conn() {
-  
-  let db = getOpenedDatabase();
-  Assert.throws(
-    () => db.interrupt(),
-    /NS_ERROR_ILLEGAL_VALUE/,
-    "interrupt() should throw if invoked on a synchronous connection"
-  );
-  db.close();
-});
-
 add_task(async function test_wr_async_conn() {
   
   let db = await openAsyncDatabase(getTestDB());
-  Assert.throws(
-    () => db.interrupt(),
-    /NS_ERROR_ILLEGAL_VALUE/,
-    "interrupt() should throw if invoked on a R/W connection"
-  );
+  await db.interrupt();
+  info("should be able to interrupt a R/W async connection");
   await asyncClose(db);
 });
 
@@ -80,6 +66,58 @@ add_task(
       await completePromise,
       Ci.mozIStorageStatementCallback.REASON_CANCELED,
       "Should have been canceled"
+    );
+
+    await asyncClose(db);
+  }
+);
+
+add_task(
+  {
+    
+    
+    skip_if: () => AppConstants.platform == "android",
+  },
+  async function test_async_conn() {
+    let db = await openAsyncDatabase(getTestDB());
+    
+    let stmt = db.createAsyncStatement(`
+    WITH RECURSIVE test(n) AS (
+      VALUES(1)
+      UNION ALL
+      SELECT n + 1 FROM test
+    )
+    SELECT t.n
+    FROM test,test AS t`);
+
+    let completePromise = new Promise((resolve, reject) => {
+      let listener = {
+        handleResult(aResultSet) {
+          reject();
+        },
+        handleError(aError) {
+          reject();
+        },
+        handleCompletion(aReason) {
+          resolve(aReason);
+        },
+      };
+      stmt.executeAsync(listener);
+      stmt.finalize();
+    });
+
+    
+    
+    
+    await new Promise(resolve => do_timeout(500, resolve));
+
+    
+    db.interrupt();
+
+    Assert.equal(
+      await completePromise,
+      Ci.mozIStorageStatementCallback.REASON_CANCELED,
+      "Should have been able to cancel even for R/W database"
     );
 
     await asyncClose(db);
