@@ -381,6 +381,15 @@ static void AddGLDependencies(SandboxBroker::Policy* policy) {
   
   
   
+  if (const char* snapDesktopDir = PR_GetEnv("SNAP_DESKTOP_RUNTIME")) {
+    nsAutoCString snapDesktopShare(snapDesktopDir);
+    snapDesktopShare.AppendLiteral("/usr/share");
+    policy->AddDir(rdonly, snapDesktopShare.get());
+  }
+
+  
+  
+  
 
   
   
