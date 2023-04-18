@@ -118,19 +118,13 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
       
       return;
     }
+
     
     
-    
-    
-    
-    if (mUnit != ScrollUnit::WHOLE) {
+    nscoord direction = (aEdge - aStartPos) * aScrollingDirection;
+    if (direction <= 0) {
       
-      
-      nscoord direction = (aEdge - aStartPos) * aScrollingDirection;
-      if (direction <= 0) {
-        
-        return;
-      }
+      return;
     }
   }
   if (!*aEdgeFound) {
@@ -162,7 +156,8 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
     }
   };
 
-  if (mUnit == ScrollUnit::DEVICE_PIXELS || mUnit == ScrollUnit::LINES) {
+  if (mUnit == ScrollUnit::DEVICE_PIXELS || mUnit == ScrollUnit::LINES ||
+      mUnit == ScrollUnit::WHOLE) {
     nscoord distance = std::abs(aEdge - aDestination);
     updateBestEdges(
         distance < std::abs(*aBestEdge - aDestination),
@@ -190,14 +185,6 @@ void CalcSnapPoints::AddEdge(nscoord aEdge, nscoord aDestination,
     
     if (overshoot > 0) {
       updateBestEdges(overshoot < curOvershoot, overshoot < secondOvershoot);
-    }
-  } else if (mUnit == ScrollUnit::WHOLE) {
-    
-    
-    if (aScrollingDirection > 0) {
-      updateBestEdges(aEdge > *aBestEdge, aEdge > *aSecondBestEdge);
-    } else if (aScrollingDirection < 0) {
-      updateBestEdges(aEdge < *aBestEdge, aEdge < *aSecondBestEdge);
     }
   } else {
     NS_ERROR("Invalid scroll mode");
