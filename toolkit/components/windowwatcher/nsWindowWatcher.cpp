@@ -2192,12 +2192,16 @@ static void SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
   
   
   
-  DesktopIntCoord left = 0, top = 0;
-  CSSIntCoord width = 0, height = 0;
+  DesktopIntCoord left = 0;
+  DesktopIntCoord top = 0;
+  CSSIntCoord width = 0;
+  CSSIntCoord height = 0;
   
-  CSSIntCoord chromeWidth = 0, chromeHeight = 0;
+  CSSIntCoord chromeWidth = 0;
+  CSSIntCoord chromeHeight = 0;
   
-  bool sizeChromeWidth = true, sizeChromeHeight = true;
+  bool sizeChromeWidth = true;
+  bool sizeChromeHeight = true;
 
   {
     CSSToLayoutDeviceScale cssToDevScale =
