@@ -288,9 +288,23 @@ async function focusAndWaitForFieldsIdentified(browserOrContext, selector) {
   });
 }
 
-async function expectPopupOpen(browser) {
-  info("expectPopupOpen");
-  await BrowserTestUtils.waitForPopupEvent(browser.autoCompletePopup, "shown");
+
+
+
+
+
+
+async function runAndWaitForAutocompletePopupOpen(browser, taskFn) {
+  info("runAndWaitForAutocompletePopupOpen");
+  let popupShown = BrowserTestUtils.waitForPopupEvent(
+    browser.autoCompletePopup,
+    "shown"
+  );
+
+  
+  await taskFn();
+
+  await popupShown;
   await BrowserTestUtils.waitForMutationCondition(
     browser.autoCompletePopup.richlistbox,
     { childList: true, subtree: true, attributes: true },
@@ -353,12 +367,15 @@ async function openPopupOn(browser, selector) {
     "FormAutoComplete:PopupOpened"
   );
   await SimpleTest.promiseFocus(browser);
-  await focusAndWaitForFieldsIdentified(browser, selector);
-  if (!selector.includes("cc-")) {
-    info(`openPopupOn: before VK_DOWN on ${selector}`);
-    await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
-  }
-  await expectPopupOpen(browser);
+
+  await runAndWaitForAutocompletePopupOpen(browser, async () => {
+    await focusAndWaitForFieldsIdentified(browser, selector);
+    if (!selector.includes("cc-")) {
+      info(`openPopupOn: before VK_DOWN on ${selector}`);
+      await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
+    }
+  });
+
   await childNotifiedPromise;
 }
 
@@ -369,12 +386,15 @@ async function openPopupForSubframe(browser, frameBrowsingContext, selector) {
   );
 
   await SimpleTest.promiseFocus(browser);
-  await focusAndWaitForFieldsIdentified(frameBrowsingContext, selector);
-  if (!selector.includes("cc-")) {
-    info(`openPopupForSubframe: before VK_DOWN on ${selector}`);
-    await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, frameBrowsingContext);
-  }
-  await expectPopupOpen(browser);
+
+  await runAndWaitForAutocompletePopupOpen(browser, async () => {
+    await focusAndWaitForFieldsIdentified(frameBrowsingContext, selector);
+    if (!selector.includes("cc-")) {
+      info(`openPopupForSubframe: before VK_DOWN on ${selector}`);
+      await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, frameBrowsingContext);
+    }
+  });
+
   await childNotifiedPromise;
 }
 
