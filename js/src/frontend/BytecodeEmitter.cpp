@@ -9813,19 +9813,22 @@ bool BytecodeEmitter::emitCreateMemberInitializers(ClassEmitter& ce,
   return true;
 }
 
+static bool IsPrivateInstanceAccessor(const ClassMethod* classMethod) {
+  return !classMethod->isStatic() &&
+         classMethod->name().isKind(ParseNodeKind::PrivateName) &&
+         classMethod->accessorType() != AccessorType::None;
+}
+
 bool BytecodeEmitter::emitPrivateMethodInitializers(ClassEmitter& ce,
                                                     ListNode* obj) {
   for (ParseNode* propdef : obj->contents()) {
-    if (!propdef->is<ClassMethod>() || propdef->as<ClassMethod>().isStatic()) {
+    if (!propdef->is<ClassMethod>()) {
       continue;
     }
-    ParseNode* propName = &propdef->as<ClassMethod>().name();
-    if (!propName->isKind(ParseNodeKind::PrivateName)) {
-      continue;
-    }
-    AccessorType accessorType = propdef->as<ClassMethod>().accessorType();
-    if (accessorType == AccessorType::None) {
-      
+    auto* classMethod = &propdef->as<ClassMethod>();
+
+    
+    if (!IsPrivateInstanceAccessor(classMethod)) {
       continue;
     }
 
@@ -9838,9 +9841,10 @@ bool BytecodeEmitter::emitPrivateMethodInitializers(ClassEmitter& ce,
 
     
     
+    TaggedParserAtomIndex name = classMethod->name().as<NameNode>().atom();
+    AccessorType accessorType = classMethod->accessorType();
     StringBuffer storedMethodName(cx);
-    if (!storedMethodName.append(parserAtoms(),
-                                 propName->as<NameNode>().atom())) {
+    if (!storedMethodName.append(parserAtoms(), name)) {
       return false;
     }
     if (!storedMethodName.append(
@@ -9850,7 +9854,7 @@ bool BytecodeEmitter::emitPrivateMethodInitializers(ClassEmitter& ce,
     auto storedMethodAtom = storedMethodName.finishParserAtom(parserAtoms());
 
     
-    if (!emitFunction(&propdef->as<ClassMethod>().method())) {
+    if (!emitFunction(&classMethod->method())) {
       
       
       
@@ -9877,8 +9881,7 @@ bool BytecodeEmitter::emitPrivateMethodInitializers(ClassEmitter& ce,
       return false;
     }
 
-    if (!emitPrivateMethodInitializer(ce, propdef, propName, storedMethodAtom,
-                                      accessorType)) {
+    if (!emitPrivateMethodInitializer(classMethod, storedMethodAtom)) {
       
       
       
@@ -9898,10 +9901,13 @@ bool BytecodeEmitter::emitPrivateMethodInitializers(ClassEmitter& ce,
 }
 
 bool BytecodeEmitter::emitPrivateMethodInitializer(
-    ClassEmitter& ce, ParseNode* prop, ParseNode* propName,
-    TaggedParserAtomIndex storedMethodAtom, AccessorType accessorType) {
+    ClassMethod* classMethod, TaggedParserAtomIndex storedMethodAtom) {
+  MOZ_ASSERT(IsPrivateInstanceAccessor(classMethod));
+
+  auto* name = &classMethod->name().as<NameNode>();
+
   
-  FunctionNode* funNode = prop->as<ClassMethod>().initializerIfPrivate();
+  FunctionNode* funNode = classMethod->initializerIfPrivate();
   MOZ_ASSERT(funNode);
   FunctionBox* funbox = funNode->funbox();
   FunctionEmitter fe(this, funbox, funNode->syntaxKind(),
@@ -9934,7 +9940,7 @@ bool BytecodeEmitter::emitPrivateMethodInitializer(
     
     return false;
   }
-  if (!bce2.emitGetPrivateName(&propName->as<NameNode>())) {
+  if (!bce2.emitGetPrivateName(name)) {
     
     return false;
   }
@@ -9943,20 +9949,13 @@ bool BytecodeEmitter::emitPrivateMethodInitializer(
     return false;
   }
 
-  PrivateNameKind kind = propName->as<NameNode>().privateNameKind();
-  switch (kind) {
-    case PrivateNameKind::Method:
-      if (!bce2.emit1(JSOp::InitLockedElem)) {
-        
-        return false;
-      }
-      break;
+  switch (name->privateNameKind()) {
     case PrivateNameKind::Setter:
       if (!bce2.emit1(JSOp::InitHiddenElemSetter)) {
         
         return false;
       }
-      if (!bce2.emitGetPrivateName(&propName->as<NameNode>())) {
+      if (!bce2.emitGetPrivateName(name)) {
         
         return false;
       }
@@ -9973,7 +9972,7 @@ bool BytecodeEmitter::emitPrivateMethodInitializer(
       break;
     case PrivateNameKind::Getter:
     case PrivateNameKind::GetterSetter:
-      if (accessorType == AccessorType::Getter) {
+      if (classMethod->accessorType() == AccessorType::Getter) {
         if (!bce2.emit1(JSOp::InitHiddenElemGetter)) {
           
           return false;

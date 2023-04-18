@@ -663,8 +663,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   [[nodiscard]] bool emitPrivateMethodInitializers(ClassEmitter& ce,
                                                    ListNode* obj);
   [[nodiscard]] bool emitPrivateMethodInitializer(
-      ClassEmitter& ce, ParseNode* prop, ParseNode* propName,
-      TaggedParserAtomIndex storedMethodAtom, AccessorType accessorType);
+      ClassMethod* classMethod, TaggedParserAtomIndex storedMethodAtom);
 
   
   
