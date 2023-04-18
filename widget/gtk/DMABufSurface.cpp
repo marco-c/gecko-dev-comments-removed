@@ -249,39 +249,31 @@ void DMABufSurface::FenceWait() {
   if (!mGL) {
     return;
   }
-  const auto& gle = gl::GLContextEGL::Cast(mGL);
-  const auto& egl = gle->mEgl;
-
-  if (!mSync && mSyncFd > 0) {
-    FenceImportFromFd();
-  }
-
-  
-  
-  if (mSync) {
-    egl->fClientWaitSync(mSync, 0, LOCAL_EGL_FOREVER);
-  }
-}
-
-bool DMABufSurface::FenceImportFromFd() {
-  if (!mGL) {
-    return false;
+  if (mSyncFd < 0) {
+    NS_WARNING(
+        "DMABufSurface::FenceWait(): We're missing fence file descriptor!");
+    return;
   }
   const auto& gle = gl::GLContextEGL::Cast(mGL);
   const auto& egl = gle->mEgl;
 
   const EGLint attribs[] = {LOCAL_EGL_SYNC_NATIVE_FENCE_FD_ANDROID, mSyncFd,
                             LOCAL_EGL_NONE};
-  mSync = egl->fCreateSync(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
-  close(mSyncFd);
-  mSyncFd = -1;
-
-  if (!mSync) {
+  EGLSync sync = egl->fCreateSync(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
+  if (!sync) {
     MOZ_ASSERT(false, "Failed to create GLFence!");
-    return false;
+    
+    close(mSyncFd);
+    mSyncFd = -1;
+    return;
   }
 
-  return true;
+  
+  
+  mSyncFd = -1;
+
+  egl->fClientWaitSync(sync, 0, LOCAL_EGL_FOREVER);
+  egl->fDestroySync(sync);
 }
 
 bool DMABufSurface::OpenFileDescriptors(const MutexAutoLock& aProofOfLock) {
