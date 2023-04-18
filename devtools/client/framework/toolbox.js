@@ -2339,6 +2339,10 @@ Toolbox.prototype = {
 
 
   updateFrameButton() {
+    if (this.isDestroying()) {
+      return;
+    }
+
     if (this.currentToolId === "options" && this.frameMap.size <= 1) {
       
       
