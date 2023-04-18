@@ -396,28 +396,11 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
     Maybe<nsRect> maybeBounds = RetrieveCachedBounds();
     if (maybeBounds) {
       nsRect bounds = *maybeBounds;
-#if !defined(ANDROID)
-      dom::CanonicalBrowsingContext* cbc =
-          static_cast<dom::BrowserParent*>(mDoc->Manager())
-              ->GetBrowsingContext()
-              ->Top();
-      dom::BrowserParent* bp = cbc->GetBrowserParent();
-      nsPresContext* presContext =
-          bp->GetOwnerElement()->OwnerDoc()->GetPresContext();
-      float fullZoom = cbc->GetFullZoom();
-#else
-      
-      float fullZoom = 1.0;
-#endif
+      const DocAccessibleParent* topDoc = IsDoc() ? AsDoc() : nullptr;
 
       if (aOffset.isSome()) {
         
         nsRect internalRect = *aOffset;
-        
-        
-        
-        
-        internalRect.ScaleRoundOut(1 / fullZoom);
         bounds.SetRectX(bounds.x + internalRect.x, internalRect.width);
         bounds.SetRectY(bounds.y + internalRect.y, internalRect.height);
       }
@@ -450,6 +433,8 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
                 nsGkAtoms::resolution);
             MOZ_ASSERT(res, "No cached document resolution found.");
             bounds.ScaleRoundOut(res.valueOr(1.0f));
+
+            topDoc = remoteAcc->AsDoc();
           }
 
           
@@ -468,8 +453,23 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
         acc = acc->Parent();
       }
 
+      MOZ_ASSERT(topDoc);
+      if (topDoc) {
+        
+        
+        
+        
+        auto appUnitsPerDevPixel = topDoc->mCachedFields->GetAttribute<int32_t>(
+            nsGkAtoms::_moz_device_pixel_ratio);
+        MOZ_ASSERT(appUnitsPerDevPixel);
+        if (appUnitsPerDevPixel) {
+          
+          devPxBounds = LayoutDeviceIntRect::FromAppUnitsToNearest(
+              bounds, *appUnitsPerDevPixel);
+        }
+      }
+
 #if !defined(ANDROID)
-      
       
       
       
@@ -477,14 +477,6 @@ LayoutDeviceIntRect RemoteAccessibleBase<Derived>::BoundsWithOffset(
         
         
         LayoutDeviceIntRect localBounds = localAcc->Bounds();
-
-        
-        devPxBounds = LayoutDeviceIntRect::FromAppUnitsToNearest(
-            bounds, presContext->AppUnitsPerDevPixel());
-
-        
-        
-        devPxBounds.ScaleRoundOut(fullZoom);
 
         
         

@@ -3500,6 +3500,10 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
         
         float resolution = presShell->GetResolution();
         fields->SetAttribute(nsGkAtoms::resolution, resolution);
+        int32_t appUnitsPerDevPixel =
+            presShell->GetPresContext()->AppUnitsPerDevPixel();
+        fields->SetAttribute(nsGkAtoms::_moz_device_pixel_ratio,
+                             appUnitsPerDevPixel);
       }
     }
   }

@@ -91,6 +91,9 @@
 #include "mozilla/layers/APZThreadUtils.h"
 #include "MobileViewportManager.h"
 #include "mozilla/dom/ImageTracker.h"
+#ifdef ACCESSIBILITY
+#  include "mozilla/a11y/DocAccessible.h"
+#endif
 
 
 #include "imgIContainer.h"
@@ -491,6 +494,15 @@ void nsPresContext::AppUnitsPerDevPixelChanged() {
       MediaFeatureChangePropagation::JustThisDocument);
 
   mCurAppUnitsPerDevPixel = mDeviceContext->AppUnitsPerDevPixel();
+
+#ifdef ACCESSIBILITY
+  if (mCurAppUnitsPerDevPixel != oldAppUnitsPerDevPixel) {
+    if (nsAccessibilityService* accService = GetAccService()) {
+      accService->NotifyOfDevPixelRatioChange(mPresShell,
+                                              mCurAppUnitsPerDevPixel);
+    }
+  }
+#endif
 
   
   
