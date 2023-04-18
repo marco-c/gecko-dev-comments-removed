@@ -119,7 +119,6 @@ class Calendar;
 
 
 
-
 class DateTimeFormat final {
  public:
   
@@ -252,6 +251,7 @@ class DateTimeFormat final {
       DateTimePatternGenerator* aDateTimePatternGenerator,
       Maybe<Span<const char16_t>> aTimeZoneOverride = Nothing{});
 
+ private:
   
 
 
@@ -264,15 +264,6 @@ class DateTimeFormat final {
 
 
 
-  static Result<UniquePtr<DateTimeFormat>, ICUError> TryCreateFromSkeleton(
-      Span<const char> aLocale, Span<const char16_t> aSkeleton,
-      DateTimePatternGenerator* aDateTimePatternGenerator,
-      Maybe<Span<const char16_t>> aTimeZoneOverride = Nothing{}) {
-    return TryCreateFromSkeleton(aLocale, aSkeleton, aDateTimePatternGenerator,
-                                 Nothing{}, aTimeZoneOverride);
-  }
-
- private:
   static Result<UniquePtr<DateTimeFormat>, ICUError> TryCreateFromSkeleton(
       Span<const char> aLocale, Span<const char16_t> aSkeleton,
       DateTimePatternGenerator* aDateTimePatternGenerator,
