@@ -3244,6 +3244,25 @@ class nsDisplayList {
     return list;
   }
 
+  nsDisplayItem* RemoveBottom() {
+    if (!mBottom) {
+      return nullptr;
+    }
+
+    nsDisplayItem* bottom = mBottom->mValue;
+    mBottom = mBottom->mNext;
+
+    if (!mBottom) {
+      
+      mTop = nullptr;
+    }
+
+    MOZ_ASSERT(mLength > 0);
+    mLength--;
+
+    return bottom;
+  }
+
   
 
 
