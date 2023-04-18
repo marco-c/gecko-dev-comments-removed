@@ -57,6 +57,7 @@ def process_single_leak_file(
     leakedObjectAnalysis = []
     leakedObjectNames = []
     recordLeakedObjects = False
+    header = []
     log.info("leakcheck | Processing leak log file %s" % leakLogFileName)
 
     with open(leakLogFileName, "r") as leaks:
@@ -67,7 +68,11 @@ def process_single_leak_file(
             if not matches:
                 
                 strippedLine = line.rstrip()
-                log.info(stackFixer(strippedLine) if stackFixer else strippedLine)
+                logLine = stackFixer(strippedLine) if stackFixer else strippedLine
+                if recordLeakedObjects:
+                    log.info(logLine)
+                else:
+                    header.append(logLine)
                 continue
             name = matches.group("name").rstrip()
             size = int(matches.group("size"))
@@ -75,8 +80,16 @@ def process_single_leak_file(
             numLeaked = int(matches.group("numLeaked"))
             
             
-            if numLeaked != 0 or name == "TOTAL":
+            if numLeaked != 0:
+                
+                if name == "TOTAL":
+                    for logLine in header:
+                        log.info(logLine)
                 log.info(line.rstrip())
+            
+            
+            if name == "TOTAL":
+                header = []
             
             
             if name == "TOTAL":
