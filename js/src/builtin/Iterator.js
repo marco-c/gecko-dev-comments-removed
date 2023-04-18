@@ -2,7 +2,7 @@
 
 
 
-function IteratorIdentity() {
+ function IteratorIdentity() {
   return this;
 }
 
@@ -36,6 +36,40 @@ function IteratorClose(iteratorRecord, value) {
   }
   
   return value;
+}
+
+
+
+
+
+
+
+
+
+function GetIteratorSync(obj) {
+  
+  var method = GetMethod(obj, GetBuiltinSymbol("iterator"))
+
+  
+  var iterator = callContentFunction(method, obj);
+
+  
+  if (!IsObject(iterator)) {
+    ThrowTypeError(JSMSG_NOT_ITERABLE, obj === null ? "null" : typeof obj);
+  }
+
+  
+  var nextMethod = iterator.next;
+
+  
+  var iteratorRecord = {
+    iterator,
+    nextMethod,
+    done: false
+  };
+
+  
+  return iteratorRecord;
 }
 
 
