@@ -33,7 +33,7 @@ class nsHttpTransaction;
 class nsHttpRequestHead;
 class nsHttpConnectionInfo;
 class NullHttpTransaction;
-class SpdyConnectTransaction;
+class Http2ConnectTransaction;
 
 
 
@@ -153,7 +153,7 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   
   
   
-  virtual SpdyConnectTransaction* QuerySpdyConnectTransaction() {
+  virtual Http2ConnectTransaction* QueryHttp2ConnectTransaction() {
     return nullptr;
   }
 

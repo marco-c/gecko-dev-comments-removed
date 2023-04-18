@@ -133,7 +133,7 @@ class TLSFilterTransaction final : public nsAHttpTransaction,
   [[nodiscard]] nsresult NudgeTunnel(NudgeTunnelCallback* callback);
   [[nodiscard]] nsresult SetProxiedTransaction(
       nsAHttpTransaction* aTrans,
-      nsAHttpTransaction* aSpdyConnectTransaction = nullptr);
+      nsAHttpTransaction* aHttp2ConnectTransaction = nullptr);
   void newIODriver(nsIAsyncInputStream* aSocketIn,
                    nsIAsyncOutputStream* aSocketOut,
                    nsIAsyncInputStream** outSocketIn,
@@ -143,7 +143,7 @@ class TLSFilterTransaction final : public nsAHttpTransaction,
   bool IsNullTransaction() override;
   NullHttpTransaction* QueryNullTransaction() override;
   nsHttpTransaction* QueryHttpTransaction() override;
-  SpdyConnectTransaction* QuerySpdyConnectTransaction() override;
+  Http2ConnectTransaction* QueryHttp2ConnectTransaction() override;
   [[nodiscard]] nsresult WriteSegmentsAgain(nsAHttpSegmentWriter* writer,
                                             uint32_t count,
                                             uint32_t* countWritten,
@@ -198,102 +198,6 @@ class TLSFilterTransaction final : public nsAHttpTransaction,
   
   nsresult mCloseReason;
   uint32_t mNudgeCounter;
-};
-
-class SocketTransportShim;
-class InputStreamShim;
-class OutputStreamShim;
-class nsHttpConnection;
-
-class SpdyConnectTransaction final : public NullHttpTransaction {
- public:
-  SpdyConnectTransaction(nsHttpConnectionInfo* ci,
-                         nsIInterfaceRequestor* callbacks, uint32_t caps,
-                         nsHttpTransaction* trans, nsAHttpConnection* session,
-                         bool isWebsocket);
-  ~SpdyConnectTransaction();
-
-  SpdyConnectTransaction* QuerySpdyConnectTransaction() override {
-    return this;
-  }
-
-  
-  
-  
-  void ForcePlainText();
-  
-  
-  bool MapStreamToHttpConnection(nsISocketTransport* aTransport,
-                                 nsHttpConnectionInfo* aConnInfo,
-                                 const nsACString& aFlat407Headers,
-                                 int32_t aHttpResponseCode);
-
-  [[nodiscard]] nsresult ReadSegments(nsAHttpSegmentReader* reader,
-                                      uint32_t count,
-                                      uint32_t* countRead) final;
-  [[nodiscard]] nsresult WriteSegments(nsAHttpSegmentWriter* writer,
-                                       uint32_t count,
-                                       uint32_t* countWritten) final;
-  nsHttpRequestHead* RequestHead() final;
-  void Close(nsresult code) final;
-
-  
-  
-  
-  bool ConnectedReadyForInput();
-
-  bool IsWebsocket() { return mIsWebsocket; }
-  void SetConnRefTaken();
-
- private:
-  friend class SocketTransportShim;
-  friend class InputStreamShim;
-  friend class OutputStreamShim;
-
-  [[nodiscard]] nsresult Flush(uint32_t count, uint32_t* countRead);
-  void CreateShimError(nsresult code);
-
-  nsCString mConnectString;
-  uint32_t mConnectStringOffset;
-
-  nsAHttpConnection* mSession;
-  nsAHttpSegmentReader* mSegmentReader;
-
-  UniquePtr<char[]> mInputData;
-  uint32_t mInputDataSize;
-  uint32_t mInputDataUsed;
-  uint32_t mInputDataOffset;
-
-  UniquePtr<char[]> mOutputData;
-  uint32_t mOutputDataSize;
-  uint32_t mOutputDataUsed;
-  uint32_t mOutputDataOffset;
-
-  bool mForcePlainText;
-  TimeStamp mTimestampSyn;
-
-  
-  
-  
-  
-  RefPtr<nsHttpConnection> mTunneledConn;
-  RefPtr<SocketTransportShim> mTunnelTransport;
-  RefPtr<InputStreamShim> mTunnelStreamIn;
-  RefPtr<OutputStreamShim> mTunnelStreamOut;
-  RefPtr<nsHttpTransaction> mDrivingTransaction;
-
-  
-  bool mIsWebsocket;
-  bool mConnRefTaken;
-  nsCOMPtr<nsIAsyncOutputStream> mInputShimPipe;
-  nsCOMPtr<nsIAsyncInputStream> mOutputShimPipe;
-  nsresult WriteDataToBuffer(nsAHttpSegmentWriter* writer, uint32_t count,
-                             uint32_t* countWritten);
-  [[nodiscard]] nsresult WebsocketWriteSegments(nsAHttpSegmentWriter* writer,
-                                                uint32_t count,
-                                                uint32_t* countWritten);
-
-  bool mCreateShimErrorCalled;
 };
 
 }  
