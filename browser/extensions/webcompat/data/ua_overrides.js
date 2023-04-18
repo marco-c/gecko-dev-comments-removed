@@ -639,25 +639,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1727100",
-    platform: "desktop",
-    domain: "slack.com",
-    bug: "1727100",
-    config: {
-      matches: ["*://app.slack.com/*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA("95.0.4638.54");
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1738317",
     platform: "android",
     domain: "vmos.cn",
