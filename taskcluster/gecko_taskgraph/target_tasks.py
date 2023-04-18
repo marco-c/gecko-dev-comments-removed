@@ -1172,7 +1172,7 @@ def target_tasks_condprof(full_task_graph, parameters, graph_config):
     """
     for name, task in full_task_graph.tasks.items():
         if task.kind == "condprof":
-            if "a51" not in task.name:  
+            if "a51" not in name:  
                 yield name
 
 
