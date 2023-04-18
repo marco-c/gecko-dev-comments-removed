@@ -797,9 +797,11 @@ var interfaceNamesInGlobalScope = [
   
   { name: "NamedNodeMap", insecureContext: true },
   
+  "NavigationPreloadManager",
+  
   { name: "Navigator", insecureContext: true },
   
-  { name: "NetworkInformation", insecureContext: true, desktop: false },
+  { name: "NetworkInformation", insecureContext: true, disabled: true },
   
   { name: "Node", insecureContext: true },
   
