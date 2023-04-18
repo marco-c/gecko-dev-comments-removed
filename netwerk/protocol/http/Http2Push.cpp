@@ -220,13 +220,14 @@ nsresult Http2PushedStream::ReadSegments(nsAHttpSegmentReader* reader, uint32_t,
 
   mozilla::OriginAttributes originAttributes;
   switch (mUpstreamState) {
-    case GENERATING_HEADERS:
+    case GENERATING_HEADERS: {
       
       
       
       mSocketTransport->GetOriginAttributes(&originAttributes);
+      RefPtr<Http2Session> session = Session();
       CreatePushHashKey(mHeaderScheme, mHeaderHost, originAttributes,
-                        Session()->Serial(), mHeaderPath, mOrigin, mHashKey);
+                        session->Serial(), mHeaderPath, mOrigin, mHashKey);
 
       LOG3(("Http2PushStream 0x%X hash key %s\n", mStreamID, mHashKey.get()));
 
@@ -236,7 +237,7 @@ nsresult Http2PushedStream::ReadSegments(nsAHttpSegmentReader* reader, uint32_t,
       Http2Stream::mRequestHeadersDone = 1;
       Http2Stream::mOpenGenerated = 1;
       Http2Stream::ChangeState(UPSTREAM_COMPLETE);
-      break;
+    } break;
 
     case UPSTREAM_COMPLETE:
       
@@ -267,7 +268,8 @@ void Http2PushedStream::AdjustInitialWindow() {
     Http2Stream::AdjustInitialWindow();
     
     
-    Session()->TransactionHasDataToWrite(this);
+    RefPtr<Http2Session> session = Session();
+    session->TransactionHasDataToWrite(this);
   }
   
   
@@ -289,7 +291,8 @@ bool Http2PushedStream::GetHashKey(nsCString& key) {
 }
 
 void Http2PushedStream::ConnectPushedStream(Http2Stream* stream) {
-  Session()->ConnectPushedStream(stream);
+  RefPtr<Http2Session> session = Session();
+  session->ConnectPushedStream(stream);
 }
 
 bool Http2PushedStream::IsOrphaned(TimeStamp now) {
@@ -338,8 +341,8 @@ void Http2PushedStream::TopBrowsingContextIdChanged(uint64_t id) {
   MOZ_ASSERT(gHttpHandler->ActiveTabPriority());
 
   mCurrentTopBrowsingContextId = id;
-
-  if (!Session()->UseH2Deps()) {
+  RefPtr<Http2Session> session = Session();
+  if (!session->UseH2Deps()) {
     return;
   }
 
@@ -352,8 +355,7 @@ void Http2PushedStream::TopBrowsingContextIdChanged(uint64_t id) {
   }
 
   if (mPriorityDependency != oldDependency) {
-    Session()->SendPriorityFrame(mStreamID, mPriorityDependency,
-                                 mPriorityWeight);
+    session->SendPriorityFrame(mStreamID, mPriorityDependency, mPriorityWeight);
   }
 }
 

@@ -162,7 +162,7 @@ class Http2Stream : public nsAHttpSegmentReader,
   
   virtual void SetPushComplete(){};
 
-  Http2Session* Session();
+  already_AddRefed<Http2Session> Session();
 
   [[nodiscard]] static nsresult MakeOriginURL(const nsACString& origin,
                                               nsCOMPtr<nsIURI>& url);
