@@ -611,8 +611,9 @@ class JarWriter(object):
         respectively, to JAR_DEFLATE and JAR_STORED.
         When the data should be compressed, it is only really compressed if
         the compressed size is smaller than the uncompressed size.
-        The mode option gives the unix permissions that should be stored
-        for the jar entry.
+        The mode option gives the unix permissions that should be stored for the
+        jar entry, which defaults to 0o100644 (regular file, u+rw, g+r, o+r) if
+        not specified.
         If a duplicated member is found skip_duplicates will prevent raising
         an exception if set to True.
         The given data may be a buffer, a file-like instance, a Deflater or a
@@ -646,11 +647,16 @@ class JarWriter(object):
         
         entry = JarCdirEntry()
         entry["creator_version"] = 20
-        if mode is not None:
+        if mode is None:
             
+            mode = 0o000644
+        if not mode & 0o777000:
             
-            entry["creator_version"] |= 3 << 8
-            entry["external_attr"] = (mode & 0xFFFF) << 16
+            mode |= 0o100000
+        
+        
+        entry["creator_version"] |= 3 << 8
+        entry["external_attr"] = (mode & 0xFFFF) << 16
         if deflater.compressed:
             entry["min_version"] = 20  
             entry["general_flag"] = 2  
