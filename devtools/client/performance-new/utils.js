@@ -77,17 +77,46 @@ function formatFileSize(num) {
 
 
 
-function makeExponentialScale(rangeStart, rangeEnd) {
-  const startExp = Math.log(rangeStart);
-  const endExp = Math.log(rangeEnd);
+
+function makeLinear10Scale(rangeStart, rangeEnd) {
+  const start10 = Math.log10(rangeStart);
+  const end10 = Math.log10(rangeEnd);
+
+  if (!Number.isInteger(start10)) {
+    throw new Error(`rangeStart is not a power of 10: ${rangeStart}`);
+  }
+
+  if (!Number.isInteger(end10)) {
+    throw new Error(`rangeEnd is not a power of 10: ${rangeEnd}`);
+  }
 
   
-  const fromFractionToValue = frac =>
-    Math.exp((1 - frac) * startExp + frac * endExp);
+  
+  
+  
+  
+  const intervals = end10 - start10;
 
   
-  const fromValueToFraction = value =>
-    (Math.log(value) - startExp) / (endExp - startExp);
+  
+  const STEP_PER_INTERVAL = 9;
+
+  const steps = intervals * STEP_PER_INTERVAL;
+
+  
+  const fromFractionToValue = frac => {
+    const step = Math.round(frac * steps);
+    const base = Math.floor(step / STEP_PER_INTERVAL);
+    const factor = (step % STEP_PER_INTERVAL) + 1;
+    return Math.pow(10, base) * factor * rangeStart;
+  };
+
+  
+  const fromValueToFraction = value => {
+    const interval = Math.floor(Math.log10(value / rangeStart));
+    const base = rangeStart * Math.pow(10, interval);
+    return (interval * STEP_PER_INTERVAL + value / base - 1) / steps;
+  };
 
   
   const fromFractionToSingleDigitValue = frac => {
@@ -102,6 +131,8 @@ function makeExponentialScale(rangeStart, rangeEnd) {
     
     
     fromFractionToSingleDigitValue,
+    
+    steps,
   };
 }
 
@@ -116,6 +147,16 @@ function makeExponentialScale(rangeStart, rangeEnd) {
 function makePowerOf2Scale(rangeStart, rangeEnd) {
   const startExp = Math.log2(rangeStart);
   const endExp = Math.log2(rangeEnd);
+
+  if (!Number.isInteger(startExp)) {
+    throw new Error(`rangeStart is not a power of 2: ${rangeStart}`);
+  }
+
+  if (!Number.isInteger(endExp)) {
+    throw new Error(`rangeEnd is not a power of 2: ${rangeEnd}`);
+  }
+
+  const steps = endExp - startExp;
 
   
   const fromFractionToValue = frac =>
@@ -141,6 +182,8 @@ function makePowerOf2Scale(rangeStart, rangeEnd) {
     
     
     fromFractionToSingleDigitValue,
+    
+    steps,
   };
 }
 
@@ -440,7 +483,7 @@ const featureDescriptions = [
 
 module.exports = {
   formatFileSize,
-  makeExponentialScale,
+  makeLinear10Scale,
   makePowerOf2Scale,
   scaleRangeWithClamping,
   calculateOverhead,
