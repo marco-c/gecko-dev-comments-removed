@@ -123,19 +123,31 @@ add_task(async function test_preexisting_crlite_data() {
   Services.prefs.clearUserPref("security.OCSP.require");
   Services.prefs.clearUserPref("security.OCSP.enabled");
 
-  let notCoveredCert = constructCertFromFile(
-    "test_crlite_filters/notcovered.pem"
+  
+  
+  
+  
+  
+  
+  Services.prefs.setIntPref(
+    "security.pki.crlite_ct_merge_delay_seconds",
+    60 * 60 * 24 * 60
   );
+  
+  
+  
+  
   await checkCertErrorGenericAtTime(
     certdb,
-    notCoveredCert,
+    revokedCert,
     PRErrorCodeSuccess,
     certificateUsageSSLServer,
-    new Date("2022-01-07T00:00:00Z").getTime() / 1000,
+    new Date("2020-10-20T00:00:00Z").getTime() / 1000,
     false,
-    "peekaboophonics.com",
+    "us-datarecovery.com",
     Ci.nsIX509CertDB.FLAG_LOCAL_ONLY
   );
+  Services.prefs.clearUserPref("security.pki.crlite_ct_merge_delay_seconds");
 });
 
 function run_test() {
@@ -151,8 +163,6 @@ function run_test() {
   
   let stashFile = do_get_file("test_crlite_preexisting/crlite.stash");
   stashFile.copyTo(securityStateDirectory, "crlite.stash");
-  let coverageFile = do_get_file("test_crlite_preexisting/crlite.coverage");
-  coverageFile.copyTo(securityStateDirectory, "crlite.coverage");
   let certStorageFile = do_get_file("test_crlite_preexisting/data.safe.bin");
   certStorageFile.copyTo(securityStateDirectory, "data.safe.bin");
 
