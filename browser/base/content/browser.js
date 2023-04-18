@@ -1906,10 +1906,11 @@ var gBrowserInit = {
     
     
     FullZoom.init();
-    PanelUI.init(shouldSuppressPopupNotifications);
 
     UpdateUrlbarSearchSplitterState();
 
+    PanelUI.init(shouldSuppressPopupNotifications);
+    gTabsPanel.init();
     BookmarkingUI.init();
     BrowserSearch.delayedStartupInit();
     gProtectionsHandler.init();
