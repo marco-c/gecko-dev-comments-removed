@@ -771,6 +771,11 @@ void BrowsingContext::Attach(bool aFromIPC, ContentParent* aOriginProcess) {
     CreateChildSHistory();
   }
 
+  
+  
+  
+  const char16_t* why = u"attach";
+
   if (XRE_IsContentProcess() && !aFromIPC) {
     
     ContentChild::GetSingleton()->SendCreateBrowsingContext(
@@ -797,6 +802,10 @@ void BrowsingContext::Attach(bool aFromIPC, ContentParent* aOriginProcess) {
       }
     });
 
+    if (IsTop() && IsContent() && Canonical()->GetWebProgress()) {
+      why = u"replace";
+    }
+
     
     
     if (IsContent() && !Canonical()->mWebProgress) {
@@ -806,7 +815,7 @@ void BrowsingContext::Attach(bool aFromIPC, ContentParent* aOriginProcess) {
 
   if (nsCOMPtr<nsIObserverService> obs = services::GetObserverService()) {
     obs->NotifyWhenScriptSafe(ToSupports(this), "browsing-context-attached",
-                              nullptr);
+                              why);
   }
 
   if (XRE_IsParentProcess()) {
