@@ -4,13 +4,15 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["serialize"];
+var EXPORTED_SYMBOLS = ["deserialize", "serialize"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  assert: "chrome://remote/content/shared/webdriver/Assert.jsm",
+  InvalidArgumentError: "chrome://remote/content/shared/webdriver/Errors.jsm",
   Log: "chrome://remote/content/shared/Log.jsm",
 });
 
@@ -28,34 +30,93 @@ XPCOMUtils.defineLazyGetter(this, "logger", () =>
 
 
 
+function deserialize(serializedValue) {
+  const { objectId, type, value } = serializedValue;
+
+  if (type !== undefined) {
+    assert.string(type, `Expected "type" to be a string, got ${type}`);
+  }
+
+  
+  if (objectId !== undefined) {
+    assert.string(
+      objectId,
+      `Expected "objectId" to be a string, got ${objectId}`
+    );
+
+    
+    logger.warn(`Unsupported type remote reference with objectId ${objectId}`);
+    return undefined;
+  }
+
+  
+  switch (type) {
+    case "undefined":
+      return undefined;
+    case "null":
+      return null;
+    case "string":
+      assert.string(value, `Expected "value" to be a string, got ${value}`);
+      return value;
+    case "number":
+      
+      if (typeof value === "number") {
+        return value;
+      }
+
+      
+      assert.in(value, ["NaN", "-0", "+Infinity", "-Infinity"]);
+      return Number(value);
+    case "boolean":
+      assert.boolean(value, `Expected "value" to be a boolean, got ${value}`);
+      return value;
+    case "bigint":
+      assert.string(value, `Expected "value" to be a string, got ${value}`);
+      try {
+        return BigInt(value);
+      } catch (e) {
+        throw new InvalidArgumentError(
+          `Failed to deserialize value as BigInt: ${value}`
+        );
+      }
+  }
+
+  logger.warn(`Unsupported type for local value ${type}`);
+  return undefined;
+}
+
+
+
+
+
+
+
+
+
+
+
 function serialize(value ) {
   const type = typeof value;
 
-  let remoteValue;
-
+  
   if (type == "undefined") {
-    remoteValue = { type };
+    return { type };
   } else if (Object.is(value, null)) {
-    remoteValue = { type: "null" };
-
-    
+    return { type: "null" };
   } else if (Object.is(value, NaN)) {
-    remoteValue = { type: "number", value: "NaN" };
+    return { type: "number", value: "NaN" };
   } else if (Object.is(value, -0)) {
-    remoteValue = { type: "number", value: "-0" };
+    return { type: "number", value: "-0" };
   } else if (Object.is(value, Infinity)) {
-    remoteValue = { type: "number", value: "+Infinity" };
+    return { type: "number", value: "+Infinity" };
   } else if (Object.is(value, -Infinity)) {
-    remoteValue = { type: "number", value: "-Infinity" };
+    return { type: "number", value: "-Infinity" };
   } else if (type == "bigint") {
-    remoteValue = { type, value: value.toString() };
-
-    
+    return { type, value: value.toString() };
   } else if (["boolean", "number", "string"].includes(type)) {
-    remoteValue = { type, value };
-  } else {
-    logger.warn(`Unsupported type for remote value: ${value.toString()}`);
+    return { type, value };
   }
 
-  return remoteValue;
+  logger.warn(`Unsupported type for remote value: ${value.toString()}`);
+  return undefined;
 }
