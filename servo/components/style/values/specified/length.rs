@@ -22,7 +22,6 @@ use crate::values::CSSFloat;
 use crate::Zero;
 use app_units::Au;
 use cssparser::{Parser, Token};
-use euclid::default::Size2D;
 use std::cmp;
 use std::ops::{Add, Mul};
 use style_traits::values::specified::AllowedNumericType;
@@ -303,6 +302,30 @@ impl FontRelativeLength {
 }
 
 
+pub enum ViewportVariant {
+    
+    UADefault,
+    
+    Small,
+    
+    Large,
+    
+    Dynamic,
+}
+
+
+enum ViewportUnit {
+    
+    Vw,
+    
+    Vh,
+    
+    Vmin,
+    
+    Vmax,
+}
+
+
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToCss, ToShmem)]
@@ -312,35 +335,146 @@ pub enum ViewportPercentageLength {
     Vw(CSSFloat),
     
     #[css(dimension)]
+    Svw(CSSFloat),
+    
+    #[css(dimension)]
+    Lvw(CSSFloat),
+    
+    #[css(dimension)]
+    Dvw(CSSFloat),
+    
+    #[css(dimension)]
     Vh(CSSFloat),
+    
+    #[css(dimension)]
+    Svh(CSSFloat),
+    
+    #[css(dimension)]
+    Lvh(CSSFloat),
+    
+    #[css(dimension)]
+    Dvh(CSSFloat),
     
     #[css(dimension)]
     Vmin(CSSFloat),
     
     #[css(dimension)]
+    Svmin(CSSFloat),
+    
+    #[css(dimension)]
+    Lvmin(CSSFloat),
+    
+    #[css(dimension)]
+    Dvmin(CSSFloat),
+    
+    #[css(dimension)]
     Vmax(CSSFloat),
+    
+    #[css(dimension)]
+    Svmax(CSSFloat),
+    
+    #[css(dimension)]
+    Lvmax(CSSFloat),
+    
+    #[css(dimension)]
+    Dvmax(CSSFloat),
 }
 
 impl ViewportPercentageLength {
     
     fn is_zero(&self) -> bool {
-        match *self {
-            ViewportPercentageLength::Vw(v) |
-            ViewportPercentageLength::Vh(v) |
-            ViewportPercentageLength::Vmin(v) |
-            ViewportPercentageLength::Vmax(v) => v == 0.,
-        }
+        let (_, _, v) = self.unpack();
+        v == 0.
     }
 
     fn is_negative(&self) -> bool {
-        match *self {
-            ViewportPercentageLength::Vw(v) |
-            ViewportPercentageLength::Vh(v) |
-            ViewportPercentageLength::Vmin(v) |
-            ViewportPercentageLength::Vmax(v) => v < 0.,
-        }
+        let (_, _, v) = self.unpack();
+        v < 0.
     }
 
+    fn unpack(&self) -> (ViewportVariant, ViewportUnit, CSSFloat) {
+        match *self {
+            ViewportPercentageLength::Vw(v) => (
+                ViewportVariant::UADefault,
+                ViewportUnit::Vw,
+                v,
+            ),
+            ViewportPercentageLength::Svw(v) => (
+                ViewportVariant::Small,
+                ViewportUnit::Vw,
+                v,
+            ),
+            ViewportPercentageLength::Lvw(v) => (
+                ViewportVariant::Large,
+                ViewportUnit::Vw,
+                v,
+            ),
+            ViewportPercentageLength::Dvw(v) => (
+                ViewportVariant::Dynamic,
+                ViewportUnit::Vw,
+                v,
+            ),
+            ViewportPercentageLength::Vh(v) => (
+                ViewportVariant::UADefault,
+                ViewportUnit::Vh,
+                v,
+            ),
+            ViewportPercentageLength::Svh(v) => (
+                ViewportVariant::Small,
+                ViewportUnit::Vh,
+                v,
+            ),
+            ViewportPercentageLength::Lvh(v) => (
+                ViewportVariant::Large,
+                ViewportUnit::Vh,
+                v),
+            ViewportPercentageLength::Dvh(v) => (
+                ViewportVariant::Dynamic,
+                ViewportUnit::Vh,
+                v,
+            ),
+            ViewportPercentageLength::Vmin(v) => (
+                ViewportVariant::UADefault,
+                ViewportUnit::Vmin,
+                v,
+            ),
+            ViewportPercentageLength::Svmin(v) => (
+                ViewportVariant::Small,
+                ViewportUnit::Vmin,
+                v,
+            ),
+            ViewportPercentageLength::Lvmin(v) => (
+                ViewportVariant::Large,
+                ViewportUnit::Vmin,
+                v,
+            ),
+            ViewportPercentageLength::Dvmin(v) => (
+                ViewportVariant::Dynamic,
+                ViewportUnit::Vmin,
+                v,
+            ),
+            ViewportPercentageLength::Vmax(v) => (
+                ViewportVariant::UADefault,
+                ViewportUnit::Vmax,
+                v,
+            ),
+            ViewportPercentageLength::Svmax(v) => (
+                ViewportVariant::Small,
+                ViewportUnit::Vmax,
+                v,
+            ),
+            ViewportPercentageLength::Lvmax(v) => (
+                ViewportVariant::Large,
+                ViewportUnit::Vmax,
+                v,
+            ),
+            ViewportPercentageLength::Dvmax(v) => (
+                ViewportVariant::Dynamic,
+                ViewportUnit::Vmax,
+                v,
+            ),
+        }
+    }
     fn try_sum(&self, other: &Self) -> Result<Self, ()> {
         use self::ViewportPercentageLength::*;
 
@@ -350,14 +484,29 @@ impl ViewportPercentageLength {
 
         Ok(match (self, other) {
             (&Vw(one), &Vw(other)) => Vw(one + other),
+            (&Svw(one), &Svw(other)) => Svw(one + other),
+            (&Lvw(one), &Lvw(other)) => Lvw(one + other),
+            (&Dvw(one), &Dvw(other)) => Dvw(one + other),
             (&Vh(one), &Vh(other)) => Vh(one + other),
+            (&Svh(one), &Svh(other)) => Svh(one + other),
+            (&Lvh(one), &Lvh(other)) => Lvh(one + other),
+            (&Dvh(one), &Dvh(other)) => Dvh(one + other),
             (&Vmin(one), &Vmin(other)) => Vmin(one + other),
+            (&Svmin(one), &Svmin(other)) => Svmin(one + other),
+            (&Lvmin(one), &Lvmin(other)) => Lvmin(one + other),
+            (&Dvmin(one), &Dvmin(other)) => Dvmin(one + other),
             (&Vmax(one), &Vmax(other)) => Vmax(one + other),
+            (&Svmax(one), &Svmax(other)) => Svmax(one + other),
+            (&Lvmax(one), &Lvmax(other)) => Lvmax(one + other),
+            (&Dvmax(one), &Dvmax(other)) => Dvmax(one + other),
             
             
             _ => unsafe {
                 match *self {
-                    Vw(..) | Vh(..) | Vmin(..) | Vmax(..) => {},
+                    Vw(..) | Svw(..) | Lvw(..) | Dvw(..) |
+                    Vh(..) | Svh(..) | Lvh(..) | Dvh(..) |
+                    Vmin(..) | Svmin(..) | Lvmin(..) | Dvmin(..) |
+                    Vmax(..) | Svmax(..) | Lvmax(..) | Dvmax(..) => {},
                 }
                 debug_unreachable!("Forgot to handle unit in try_sum()")
             },
@@ -365,15 +514,20 @@ impl ViewportPercentageLength {
     }
 
     
-    pub fn to_computed_value(&self, viewport_size: Size2D<Au>) -> CSSPixelLength {
-        let (factor, length) = match *self {
-            ViewportPercentageLength::Vw(length) => (length, viewport_size.width),
-            ViewportPercentageLength::Vh(length) => (length, viewport_size.height),
-            ViewportPercentageLength::Vmin(length) => {
-                (length, cmp::min(viewport_size.width, viewport_size.height))
+    pub fn to_computed_value(&self, context: &Context) -> CSSPixelLength {
+        let (variant, unit, factor) = self.unpack();
+        let length = match unit {
+            ViewportUnit::Vw => context.viewport_size_for_viewport_unit_resolution(variant).width,
+            ViewportUnit::Vh => context.viewport_size_for_viewport_unit_resolution(variant).height,
+            ViewportUnit::Vmin => {
+                let base_size =
+                    context.viewport_size_for_viewport_unit_resolution(variant);
+                cmp::min(base_size.width, base_size.height)
             },
-            ViewportPercentageLength::Vmax(length) => {
-                (length, cmp::max(viewport_size.width, viewport_size.height))
+            ViewportUnit::Vmax => {
+                let base_size =
+                    context.viewport_size_for_viewport_unit_resolution(variant);
+                cmp::max(base_size.width, base_size.height)
             },
         };
 
@@ -602,14 +756,50 @@ impl NoCalcLength {
             "vw" if !context.in_page_rule() => {
                 NoCalcLength::ViewportPercentage(ViewportPercentageLength::Vw(value))
             },
+            "svw" if !context.in_page_rule() => {
+                NoCalcLength::ViewportPercentage(ViewportPercentageLength::Svw(value))
+            },
+            "lvw" if !context.in_page_rule() => {
+                NoCalcLength::ViewportPercentage(ViewportPercentageLength::Lvw(value))
+            },
+            "dvw" if !context.in_page_rule() => {
+                NoCalcLength::ViewportPercentage(ViewportPercentageLength::Dvw(value))
+            },
             "vh" if !context.in_page_rule() => {
                 NoCalcLength::ViewportPercentage(ViewportPercentageLength::Vh(value))
+            },
+            "svh" if !context.in_page_rule() => {
+                NoCalcLength::ViewportPercentage(ViewportPercentageLength::Svh(value))
+            },
+            "lvh" if !context.in_page_rule() => {
+                NoCalcLength::ViewportPercentage(ViewportPercentageLength::Lvh(value))
+            },
+            "dvh" if !context.in_page_rule() => {
+                NoCalcLength::ViewportPercentage(ViewportPercentageLength::Dvh(value))
             },
             "vmin" if !context.in_page_rule() => {
                 NoCalcLength::ViewportPercentage(ViewportPercentageLength::Vmin(value))
             },
+            "svmin" if !context.in_page_rule() => {
+                NoCalcLength::ViewportPercentage(ViewportPercentageLength::Svmin(value))
+            },
+            "lvmin" if !context.in_page_rule() => {
+                NoCalcLength::ViewportPercentage(ViewportPercentageLength::Lvmin(value))
+            },
+            "dvmin" if !context.in_page_rule() => {
+                NoCalcLength::ViewportPercentage(ViewportPercentageLength::Dvmin(value))
+            },
             "vmax" if !context.in_page_rule() => {
                 NoCalcLength::ViewportPercentage(ViewportPercentageLength::Vmax(value))
+            },
+            "svmax" if !context.in_page_rule() => {
+                NoCalcLength::ViewportPercentage(ViewportPercentageLength::Svmax(value))
+            },
+            "lvmax" if !context.in_page_rule() => {
+                NoCalcLength::ViewportPercentage(ViewportPercentageLength::Lvmax(value))
+            },
+            "dvmax" if !context.in_page_rule() => {
+                NoCalcLength::ViewportPercentage(ViewportPercentageLength::Dvmax(value))
             },
             _ => return Err(()),
         })
@@ -794,9 +984,21 @@ impl Mul<CSSFloat> for ViewportPercentageLength {
     fn mul(self, scalar: CSSFloat) -> ViewportPercentageLength {
         match self {
             ViewportPercentageLength::Vw(v) => ViewportPercentageLength::Vw(v * scalar),
+            ViewportPercentageLength::Svw(v) => ViewportPercentageLength::Svw(v * scalar),
+            ViewportPercentageLength::Lvw(v) => ViewportPercentageLength::Lvw(v * scalar),
+            ViewportPercentageLength::Dvw(v) => ViewportPercentageLength::Dvw(v * scalar),
             ViewportPercentageLength::Vh(v) => ViewportPercentageLength::Vh(v * scalar),
+            ViewportPercentageLength::Svh(v) => ViewportPercentageLength::Svh(v * scalar),
+            ViewportPercentageLength::Lvh(v) => ViewportPercentageLength::Lvh(v * scalar),
+            ViewportPercentageLength::Dvh(v) => ViewportPercentageLength::Dvh(v * scalar),
             ViewportPercentageLength::Vmin(v) => ViewportPercentageLength::Vmin(v * scalar),
+            ViewportPercentageLength::Svmin(v) => ViewportPercentageLength::Svmin(v * scalar),
+            ViewportPercentageLength::Lvmin(v) => ViewportPercentageLength::Lvmin(v * scalar),
+            ViewportPercentageLength::Dvmin(v) => ViewportPercentageLength::Dvmin(v * scalar),
             ViewportPercentageLength::Vmax(v) => ViewportPercentageLength::Vmax(v * scalar),
+            ViewportPercentageLength::Svmax(v) => ViewportPercentageLength::Svmax(v * scalar),
+            ViewportPercentageLength::Lvmax(v) => ViewportPercentageLength::Lvmax(v * scalar),
+            ViewportPercentageLength::Dvmax(v) => ViewportPercentageLength::Dvmax(v * scalar),
         }
     }
 }
@@ -811,14 +1013,29 @@ impl PartialOrd for ViewportPercentageLength {
 
         match (self, other) {
             (&Vw(ref one), &Vw(ref other)) => one.partial_cmp(other),
+            (&Svw(ref one), &Svw(ref other)) => one.partial_cmp(other),
+            (&Lvw(ref one), &Lvw(ref other)) => one.partial_cmp(other),
+            (&Dvw(ref one), &Dvw(ref other)) => one.partial_cmp(other),
             (&Vh(ref one), &Vh(ref other)) => one.partial_cmp(other),
+            (&Svh(ref one), &Svh(ref other)) => one.partial_cmp(other),
+            (&Lvh(ref one), &Lvh(ref other)) => one.partial_cmp(other),
+            (&Dvh(ref one), &Dvh(ref other)) => one.partial_cmp(other),
             (&Vmin(ref one), &Vmin(ref other)) => one.partial_cmp(other),
+            (&Svmin(ref one), &Svmin(ref other)) => one.partial_cmp(other),
+            (&Lvmin(ref one), &Lvmin(ref other)) => one.partial_cmp(other),
+            (&Dvmin(ref one), &Dvmin(ref other)) => one.partial_cmp(other),
             (&Vmax(ref one), &Vmax(ref other)) => one.partial_cmp(other),
+            (&Svmax(ref one), &Svmax(ref other)) => one.partial_cmp(other),
+            (&Lvmax(ref one), &Lvmax(ref other)) => one.partial_cmp(other),
+            (&Dvmax(ref one), &Dvmax(ref other)) => one.partial_cmp(other),
             
             
             _ => unsafe {
                 match *self {
-                    Vw(..) | Vh(..) | Vmin(..) | Vmax(..) => {},
+                    Vw(..) | Svw(..) | Lvw(..) | Dvw(..) |
+                    Vh(..) | Svh(..) | Lvh(..) | Dvh(..) |
+                    Vmin(..) | Svmin(..) | Lvmin(..) | Dvmin(..) |
+                    Vmax(..) | Svmax(..) | Lvmax(..) | Dvmax(..) => {},
                 }
                 debug_unreachable!("Forgot an arm in partial_cmp?")
             },

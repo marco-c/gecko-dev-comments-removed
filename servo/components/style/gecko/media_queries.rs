@@ -15,6 +15,7 @@ use crate::string_cache::Atom;
 use crate::values::computed::{ColorScheme, Length};
 use crate::values::specified::color::SystemColor;
 use crate::values::specified::font::FONT_MEDIUM_PX;
+use crate::values::specified::ViewportVariant;
 use crate::values::{CustomIdent, KeyframesName};
 use app_units::{Au, AU_PER_PX};
 use cssparser::RGBA;
@@ -56,6 +57,9 @@ pub struct Device {
     used_viewport_size: AtomicBool,
     
     
+    used_dynamic_viewport_size: AtomicBool,
+    
+    
     environment: CssEnvironment,
 }
 
@@ -95,6 +99,7 @@ impl Device {
             body_text_color: AtomicUsize::new(prefs.mLightColors.mDefault as usize),
             used_root_font_size: AtomicBool::new(false),
             used_viewport_size: AtomicBool::new(false),
+            used_dynamic_viewport_size: AtomicBool::new(false),
             environment: CssEnvironment,
         }
     }
@@ -200,6 +205,8 @@ impl Device {
         self.reset_computed_values();
         self.used_root_font_size.store(false, Ordering::Relaxed);
         self.used_viewport_size.store(false, Ordering::Relaxed);
+        self.used_dynamic_viewport_size
+            .store(false, Ordering::Relaxed);
     }
 
     
@@ -270,7 +277,10 @@ impl Device {
 
     
     
-    pub fn au_viewport_size_for_viewport_unit_resolution(&self) -> Size2D<Au> {
+    pub fn au_viewport_size_for_viewport_unit_resolution(
+        &self,
+        variant: ViewportVariant,
+    ) -> Size2D<Au> {
         self.used_viewport_size.store(true, Ordering::Relaxed);
         let pc = match self.pres_context() {
             Some(pc) => pc,
@@ -281,13 +291,52 @@ impl Device {
             return self.page_size_minus_default_margin(pc);
         }
 
-        let size = &pc.mSizeForViewportUnits;
-        Size2D::new(Au(size.width), Au(size.height))
+        match variant {
+            ViewportVariant::UADefault => {
+                let size = &pc.mSizeForViewportUnits;
+                Size2D::new(Au(size.width), Au(size.height))
+            },
+            ViewportVariant::Small => {
+                let size = &pc.mVisibleArea;
+                Size2D::new(Au(size.width), Au(size.height))
+            },
+            ViewportVariant::Large => {
+                let size = &pc.mVisibleArea;
+                
+                debug_assert!(
+                    /* pc.mDynamicToolbarMaxHeight >=0 && */
+                    pc.mDynamicToolbarMaxHeight < i32::MAX as u32
+                );
+                Size2D::new(
+                    Au(size.width),
+                    Au(size.height
+                        + pc.mDynamicToolbarMaxHeight as i32 * pc.mCurAppUnitsPerDevPixel),
+                )
+            },
+            ViewportVariant::Dynamic => {
+                self.used_dynamic_viewport_size.store(true, Ordering::Relaxed);
+                let size = &pc.mVisibleArea;
+                
+                debug_assert!(
+                    /* pc.mDynamicToolbarHeight >=0 && */
+                    pc.mDynamicToolbarHeight < i32::MAX as u32
+                );
+                Size2D::new(
+                    Au(size.width),
+                    Au(size.height + pc.mDynamicToolbarHeight as i32 * pc.mCurAppUnitsPerDevPixel),
+                )
+            },
+        }
     }
 
     
     pub fn used_viewport_size(&self) -> bool {
         self.used_viewport_size.load(Ordering::Relaxed)
+    }
+
+    
+    pub fn used_dynamic_viewport_size(&self) -> bool {
+        self.used_dynamic_viewport_size.load(Ordering::Relaxed)
     }
 
     
