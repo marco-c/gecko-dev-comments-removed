@@ -818,14 +818,23 @@ void nsContentSecurityUtils::DetectJsHacks() {
   if (MOZ_LIKELY(sJSHacksChecked || sJSHacksPresent)) {
     return;
   }
+  nsresult rv;
+  sJSHacksChecked = true;
+
   
   
   
-  bool xpinstallSignatures =
-      Preferences::GetBool("xpinstall.signatures.required", false);
-  if (!xpinstallSignatures) {
+  bool xpinstallSignatures;
+  rv = Preferences::GetBool("xpinstall.signatures.required",
+                            &xpinstallSignatures, PrefValueKind::Default);
+  if (!NS_FAILED(rv) && !xpinstallSignatures) {
     sJSHacksPresent = true;
-    sJSHacksChecked = true;
+    return;
+  }
+  rv = Preferences::GetBool("xpinstall.signatures.required",
+                            &xpinstallSignatures, PrefValueKind::User);
+  if (!NS_FAILED(rv) && !xpinstallSignatures) {
+    sJSHacksPresent = true;
     return;
   }
 
@@ -834,27 +843,48 @@ void nsContentSecurityUtils::DetectJsHacks() {
   
   
   nsAutoString jsConfigPref;
-  nsresult rv = Preferences::GetString("general.config.filename", jsConfigPref);
+  rv = Preferences::GetString("general.config.filename", jsConfigPref,
+                              PrefValueKind::Default);
   if (!NS_FAILED(rv) && !jsConfigPref.IsEmpty()) {
     sJSHacksPresent = true;
+    return;
+  }
+  rv = Preferences::GetString("general.config.filename", jsConfigPref,
+                              PrefValueKind::User);
+  if (!NS_FAILED(rv) && !jsConfigPref.IsEmpty()) {
+    sJSHacksPresent = true;
+    return;
   }
 
   
   
   
   nsAutoString configUrlPref;
-  rv = Preferences::GetString("autoadmin.global_config_url", configUrlPref);
+  rv = Preferences::GetString("autoadmin.global_config_url", configUrlPref,
+                              PrefValueKind::Default);
   if (!NS_FAILED(rv) && !configUrlPref.IsEmpty()) {
     sJSHacksPresent = true;
+    return;
+  }
+  rv = Preferences::GetString("autoadmin.global_config_url", configUrlPref,
+                              PrefValueKind::User);
+  if (!NS_FAILED(rv) && !configUrlPref.IsEmpty()) {
+    sJSHacksPresent = true;
+    return;
   }
 
   bool failOverToCache;
-  rv = Preferences::GetBool("autoadmin.failover_to_cached", &failOverToCache);
+  rv = Preferences::GetBool("autoadmin.failover_to_cached", &failOverToCache,
+                            PrefValueKind::Default);
+  if (!NS_FAILED(rv) && failOverToCache) {
+    sJSHacksPresent = true;
+    return;
+  }
+  rv = Preferences::GetBool("autoadmin.failover_to_cached", &failOverToCache,
+                            PrefValueKind::User);
   if (!NS_FAILED(rv) && failOverToCache) {
     sJSHacksPresent = true;
   }
-
-  sJSHacksChecked = true;
 }
 
 
