@@ -30,6 +30,7 @@ class ContentBlockingAllowList final {
                         bool aIsPrivateBrowsing, bool& aIsAllowListed);
 
   static bool Check(nsIHttpChannel* aChannel);
+  static bool Check(nsPIDOMWindowInner* aWindow);
 
   
   
@@ -44,7 +45,6 @@ class ContentBlockingAllowList final {
  private:
   
   static bool Check(nsIPrincipal* aTopWinPrincipal, bool aIsPrivateBrowsing);
-  static bool Check(nsPIDOMWindowInner* aWindow);
   static bool Check(nsICookieJarSettings* aCookieJarSettings);
 
   friend class ContentBlocking;

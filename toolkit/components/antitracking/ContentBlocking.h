@@ -35,42 +35,6 @@ class Document;
 
 class ContentBlocking final {
  public:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static bool ShouldAllowAccessFor(nsPIDOMWindowInner* a3rdPartyTrackingWindow,
-                                   nsIURI* aURI, uint32_t* aRejectedReason);
-
-  
-  
-  
-  
-  
-  
-  static bool ApproximateAllowAccessForWithoutChannel(
-      nsPIDOMWindowInner* aFirstPartyWindow, nsIURI* aURI);
-
-  
-  
-  
-  
-  static bool ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
-                                   uint32_t* aRejectedReason);
-
-  
-  
-  static bool ShouldAllowAccessFor(nsIPrincipal* aPrincipal,
-                                   nsICookieJarSettings* aCookieJarSettings);
-
   enum StorageAccessPromptChoices { eAllow, eAllowAutoGrant };
 
   
