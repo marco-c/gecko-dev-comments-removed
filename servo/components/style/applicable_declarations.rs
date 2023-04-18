@@ -45,7 +45,9 @@ pub struct CascadePriority {
 #[allow(dead_code)]
 fn size_assert() {
     #[allow(unsafe_code)]
-    unsafe { std::mem::transmute::<u32, CascadePriority>(0u32) };
+    unsafe {
+        std::mem::transmute::<u32, CascadePriority>(0u32)
+    };
 }
 
 impl PartialOrd for CascadePriority {
@@ -57,34 +59,39 @@ impl PartialOrd for CascadePriority {
 
 impl Ord for CascadePriority {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.cascade_level
-            .cmp(&other.cascade_level)
-            .then_with(|| {
-                let ordering = self.layer_order.cmp(&other.layer_order);
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                if self.cascade_level.is_important() {
-                    ordering.reverse()
-                } else {
-                    ordering
-                }
-            })
+        self.cascade_level.cmp(&other.cascade_level).then_with(|| {
+            let ordering = self.layer_order.cmp(&other.layer_order);
+            if ordering == std::cmp::Ordering::Equal {
+                return ordering;
+            }
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if self.cascade_level.is_important() &&
+                !self.layer_order.is_style_attribute_layer() &&
+                !other.layer_order.is_style_attribute_layer()
+            {
+                ordering.reverse()
+            } else {
+                ordering
+            }
+        })
     }
 }
 
 impl CascadePriority {
     
     pub fn new(cascade_level: CascadeLevel, layer_order: LayerOrder) -> Self {
-        Self { cascade_level, layer_order }
+        Self {
+            cascade_level,
+            layer_order,
+        }
     }
 
     
@@ -149,12 +156,13 @@ impl ApplicableDeclarationBlock {
     pub fn from_declarations(
         declarations: Arc<Locked<PropertyDeclarationBlock>>,
         level: CascadeLevel,
+        layer_order: LayerOrder,
     ) -> Self {
         ApplicableDeclarationBlock {
             source: StyleSource::from_declarations(declarations),
             source_order: 0,
             specificity: 0,
-            cascade_priority: CascadePriority::new(level, LayerOrder::root()),
+            cascade_priority: CascadePriority::new(level, layer_order),
         }
     }
 
