@@ -68,8 +68,6 @@ class nsIConstraintValidation : public nsISupports {
   
   nsIConstraintValidation();
 
-  nsresult CheckValidity(bool* aValidity);
-
   bool GetValidityState(ValidityStateType aState) const {
     return mValidityBitField & aState;
   }
