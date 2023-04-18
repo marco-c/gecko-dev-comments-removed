@@ -101,27 +101,6 @@ add_task(async function testEnableNetworkMonitoringInBrowserConsole() {
 
 
 
-async function toggleNetworkMonitoringConsoleSetting(hud, on) {
-  const selector =
-    ".webconsole-console-settings-menu-item-enableNetworkMonitoring";
-  const settingChanged = waitFor(() => {
-    const el = getConsoleSettingElement(hud, selector);
-    return on
-      ? el.getAttribute("aria-checked") === "true"
-      : el.getAttribute("aria-checked") !== "true";
-  });
-  await toggleConsoleSetting(hud, selector);
-  await settingChanged;
-}
-
-
-
-
-
-
-
-
-
 
 
 async function checkNoMessageExists(hud, msg, selector) {

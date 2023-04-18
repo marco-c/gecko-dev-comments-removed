@@ -452,6 +452,27 @@ function _getContextMenu(hud) {
   return doc.getElementById("webconsole-menu");
 }
 
+
+
+
+
+
+
+
+
+async function toggleNetworkMonitoringConsoleSetting(hud, shouldBeSwitchedOn) {
+  const selector =
+    ".webconsole-console-settings-menu-item-enableNetworkMonitoring";
+  const settingChanged = waitFor(() => {
+    const el = getConsoleSettingElement(hud, selector);
+    return shouldBeSwitchedOn
+      ? el.getAttribute("aria-checked") === "true"
+      : el.getAttribute("aria-checked") !== "true";
+  });
+  await toggleConsoleSetting(hud, selector);
+  await settingChanged;
+}
+
 async function toggleConsoleSetting(hud, selector) {
   const toolbox = hud.toolbox;
   const doc = toolbox ? toolbox.doc : hud.chromeWindow.document;
