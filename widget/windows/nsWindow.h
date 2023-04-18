@@ -573,42 +573,42 @@ class nsWindow final : public nsWindowBase {
 
  protected:
   nsCOMPtr<nsIWidget> mParent;
-  nsIntSize mLastSize;
+  nsIntSize mLastSize = nsIntSize(0, 0);
   nsIntPoint mLastPoint;
-  HWND mWnd;
-  HWND mTransitionWnd;
-  WNDPROC mPrevWndProc;
+  HWND mWnd = nullptr;
+  HWND mTransitionWnd = nullptr;
+  WNDPROC mPrevWndProc = nullptr;
   HBRUSH mBrush;
   IMEContext mDefaultIMC;
-  HDEVNOTIFY mDeviceNotifyHandle;
-  bool mIsTopWidgetWindow;
-  bool mInDtor;
-  bool mIsVisible;
-  bool mPainting;
-  bool mTouchWindow;
-  bool mDisplayPanFeedback;
-  bool mHideChrome;
+  HDEVNOTIFY mDeviceNotifyHandle = nullptr;
+  bool mIsTopWidgetWindow = false;
+  bool mInDtor = false;
+  bool mIsVisible = false;
+  bool mPainting = false;
+  bool mTouchWindow = false;
+  bool mDisplayPanFeedback = false;
+  bool mHideChrome = false;
   bool mIsRTL;
-  bool mFullscreenMode;
-  bool mMousePresent;
-  bool mSimulatedClientArea;
-  bool mDestroyCalled;
+  bool mFullscreenMode = false;
+  bool mMousePresent = false;
+  bool mSimulatedClientArea = false;
+  bool mDestroyCalled = false;
   bool mOpeningAnimationSuppressed;
   bool mAlwaysOnTop;
-  bool mIsEarlyBlankWindow;
-  bool mIsShowingPreXULSkeletonUI;
-  bool mResizable;
-  DWORD_PTR mOldStyle;
-  DWORD_PTR mOldExStyle;
-  nsNativeDragTarget* mNativeDragTarget;
-  HKL mLastKeyboardLayout;
-  nsSizeMode mOldSizeMode;
-  nsSizeMode mLastSizeMode;
+  bool mIsEarlyBlankWindow = false;
+  bool mIsShowingPreXULSkeletonUI = false;
+  bool mResizable = false;
+  DWORD_PTR mOldStyle = 0;
+  DWORD_PTR mOldExStyle = 0;
+  nsNativeDragTarget* mNativeDragTarget = nullptr;
+  HKL mLastKeyboardLayout = 0;
+  nsSizeMode mOldSizeMode = nsSizeMode_Normal;
+  nsSizeMode mLastSizeMode = nsSizeMode_Normal;
   WindowHook mWindowHook;
-  uint32_t mPickerDisplayCount;
-  HICON mIconSmall;
-  HICON mIconBig;
-  HWND mLastKillFocusWindow;
+  uint32_t mPickerDisplayCount = 0;
+  HICON mIconSmall = nullptr;
+  HICON mIconBig = nullptr;
+  HWND mLastKillFocusWindow = nullptr;
   static bool sDropShadowEnabled;
   static uint32_t sInstanceCount;
   static TriStateBool sCanQuit;
@@ -624,7 +624,7 @@ class nsWindow final : public nsWindowBase {
   static bool sIsRestoringSession;
   static bool sFirstTopLevelWindowCreated;
 
-  PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate;
+  PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate = nullptr;
 
   
   static TriStateBool sHasBogusPopupsDropShadowOnMultiMonitor;
@@ -638,12 +638,12 @@ class nsWindow final : public nsWindowBase {
   
   LayoutDeviceIntMargin mFutureMarginsOnceChromeShows;
   
-  bool mFutureMarginsToUse;
+  bool mFutureMarginsToUse = false;
 
   
-  bool mCustomNonClient;
+  bool mCustomNonClient = false;
   
-  bool mUseResizeMarginOverrides;
+  bool mUseResizeMarginOverrides = false;
   
   int32_t mHorResizeMargin;
   
@@ -651,9 +651,11 @@ class nsWindow final : public nsWindowBase {
   
   int32_t mCaptionHeight;
 
-  double mDefaultScale;
+  
+  double mDefaultScale = -1.0;
 
-  float mAspectRatio;
+  
+  float mAspectRatio = 0.0;
 
   nsCOMPtr<nsIUserIdleServiceInternal> mIdleService;
 
@@ -680,37 +682,37 @@ class nsWindow final : public nsWindowBase {
   static BYTE sLastMouseButton;
 
   
-  HDC mPaintDC;  
+  HDC mPaintDC = nullptr;  
 
   LayoutDeviceIntRect mLastPaintBounds;
 
-  ResizeState mResizeState;
+  ResizeState mResizeState = NOT_RESIZING;
 
   
-  nsTransparencyMode mTransparencyMode;
+  nsTransparencyMode mTransparencyMode = eTransparencyOpaque;
   nsIntRegion mPossiblyTransparentRegion;
-  MARGINS mGlassMargins;
+  MARGINS mGlassMargins = {0, 0, 0, 0};
 
   
   nsWinGesture mGesture;
 
   
-  nsWeakPtr mTaskbarPreview;
+  nsWeakPtr mTaskbarPreview = nullptr;
   
   
-  bool mHasTaskbarIconBeenCreated;
+  bool mHasTaskbarIconBeenCreated = false;
 
   
   
-  bool mMouseTransparent;
+  bool mMouseTransparent = false;
 
   
-  bool mSendingSetText;
+  bool mSendingSetText = false;
 
   
   bool mIsChildWindow : 1;
 
-  int32_t mCachedHitTestResult;
+  int32_t mCachedHitTestResult = 0;
 
   
   
@@ -720,7 +722,7 @@ class nsWindow final : public nsWindowBase {
   mozilla::Maybe<LayoutDeviceIntRect> mWindowButtonsRect;
 
   
-  POINT mCachedHitTestPoint;
+  POINT mCachedHitTestPoint = {0, 0};
   TimeStamp mCachedHitTestTime;
 
   RefPtr<mozilla::widget::InProcessWinCompositorWidget> mBasicLayersSurface;
@@ -729,7 +731,9 @@ class nsWindow final : public nsWindowBase {
   static void InitMouseWheelScrollData();
 
   double mSizeConstraintsScale;  
-  int32_t mMaxTextureSize;
+
+  
+  int32_t mMaxTextureSize = -1;
 
   
   WinPointerEvents mPointerEvents;
@@ -738,7 +742,7 @@ class nsWindow final : public nsWindowBase {
 
   
   
-  bool mRequestFxrOutputPending;
+  bool mRequestFxrOutputPending = false;
 
   mozilla::UniquePtr<mozilla::widget::DirectManipulationOwner> mDmOwner;
 
