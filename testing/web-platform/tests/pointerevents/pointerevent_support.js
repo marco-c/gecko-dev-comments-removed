@@ -453,3 +453,26 @@ function arePointerEventsBeforeCompatMouseEvents(events){
 
   return true;
 }
+
+
+
+function getEvent(event_type, target) {
+  return new Promise(resolve => {
+    target.addEventListener(event_type, e => resolve(e), {once: true});
+  });
+}
+
+
+
+
+function getMessageData(message_data_type, source) {
+  return new Promise(resolve => {
+    function waitAndRemove(e) {
+      if (e.source != source || !e.data || e.data.type != message_data_type)
+        return;
+      window.removeEventListener("message", waitAndRemove);
+      resolve(e.data);
+    }
+    window.addEventListener("message", waitAndRemove);
+  });
+}
