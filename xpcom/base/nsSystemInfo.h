@@ -15,6 +15,18 @@
 #  include "mozilla/dom/PContent.h"
 #endif  
 
+#if defined(XP_WIN)
+#  include <inspectable.h>
+
+
+
+MIDL_INTERFACE("7D1D81DB-8D63-4789-9EA5-DDCF65A94F3C")
+IWindowsIntegrityPolicyStatics : public IInspectable {
+ public:
+  virtual HRESULT STDMETHODCALLTYPE get_IsEnabled(bool* value) = 0;
+};
+#endif
+
 class nsISerialEventTarget;
 
 struct FolderDiskInfo {
@@ -38,6 +50,10 @@ struct OSInfo {
 struct ProcessInfo {
   bool isWow64 = false;
   bool isWowARM64 = false;
+  
+  
+  
+  bool isWindowsSMode = false;
   int32_t cpuCount = 0;
   int32_t cpuCores = 0;
   nsCString cpuVendor;

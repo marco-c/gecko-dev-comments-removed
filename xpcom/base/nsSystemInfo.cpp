@@ -28,10 +28,12 @@
 #  include <windows.h>
 #  include <winioctl.h>
 #  ifndef __MINGW32__
+#    include <wrl.h>
 #    include <wscapi.h>
 #  endif  
 #  include "base/scoped_handle_win.h"
 #  include "mozilla/DynamicallyLinkedFunctionPtr.h"
+#  include "mozilla/WindowsVersion.h"
 #  include "nsAppDirectoryServiceDefs.h"
 #  include "nsDirectoryServiceDefs.h"
 #  include "nsDirectoryServiceUtils.h"
@@ -82,6 +84,16 @@
 uint32_t nsSystemInfo::gUserUmask = 0;
 
 using namespace mozilla::dom;
+
+#if defined(XP_WIN)
+#  define RuntimeClass_Windows_System_Profile_WindowsIntegrityPolicy \
+    L"Windows.System.Profile.WindowsIntegrityPolicy"
+#  ifndef __MINGW32__
+using namespace Microsoft::WRL;
+using namespace Microsoft::WRL::Wrappers;
+using namespace ABI::Windows::Foundation;
+#  endif  
+#endif
 
 #if defined(XP_LINUX) && !defined(ANDROID)
 static void SimpleParseKeyValuePairs(
@@ -624,6 +636,32 @@ nsresult CollectProcessInfo(ProcessInfo& info) {
     info.isWowARM64 = (processMachine == IMAGE_FILE_MACHINE_I386 &&
                        nativeMachine == IMAGE_FILE_MACHINE_ARM64);
   }
+
+  
+
+#  ifndef __MINGW32__
+  
+  
+  
+  
+  
+  if (IsWin10Sep2018UpdateOrLater()) {
+    ComPtr<IWindowsIntegrityPolicyStatics> wip;
+    HRESULT hr = GetActivationFactory(
+        HStringReference(
+            RuntimeClass_Windows_System_Profile_WindowsIntegrityPolicy)
+            .Get(),
+        &wip);
+    if (SUCCEEDED(hr)) {
+      
+      
+      
+      hr = wip->get_IsEnabled(&info.isWindowsSMode);
+      NS_WARNING_ASSERTION(SUCCEEDED(hr),
+                           "WindowsIntegrityPolicy.IsEnabled failed");
+    }
+  }
+#  endif  
 
   
   HKEY key;
@@ -1258,6 +1296,10 @@ JSObject* GetJSObjForProcessInfo(JSContext* aCx, const ProcessInfo& info) {
 
   JS::Rooted<JS::Value> valisWowARM64(aCx, JS::BooleanValue(info.isWowARM64));
   JS_SetProperty(aCx, jsInfo, "isWowARM64", valisWowARM64);
+
+  JS::Rooted<JS::Value> valisWindowsSMode(
+      aCx, JS::BooleanValue(info.isWindowsSMode));
+  JS_SetProperty(aCx, jsInfo, "isWindowsSMode", valisWindowsSMode);
 #endif
 
   JS::Rooted<JS::Value> valCountInfo(aCx, JS::Int32Value(info.cpuCount));
