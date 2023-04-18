@@ -718,8 +718,14 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvResume() {
 }
 
 mozilla::ipc::IPCResult HttpChannelParent::RecvCancel(
-    const nsresult& status, const uint32_t& requestBlockingReason) {
+    const nsresult& status, const uint32_t& requestBlockingReason,
+    const mozilla::Maybe<nsCString>& logString) {
   LOG(("HttpChannelParent::RecvCancel [this=%p]\n", this));
+
+  
+  if (logString.isSome()) {
+    LOG(("HttpChannelParent::RecvCancel: %s", logString->get()));
+  }
 
   
   if (mChannel) {
