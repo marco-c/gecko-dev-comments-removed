@@ -469,7 +469,7 @@ def artifact_toolchain(
             records[record.filename] = record
 
     
-    for f in from_task:
+    for f in from_task or ():
         task_id, colon, name = f.partition(":")
         if not colon:
             self.log(
