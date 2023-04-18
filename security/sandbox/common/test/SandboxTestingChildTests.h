@@ -111,6 +111,26 @@ void RunTestsContent(SandboxTestingChild* child) {
                          sizeof(sa_family_t) + str_size);
     return con_st;
   });
+
+  
+  std::vector<std::pair<const char*, bool>> open_tests = {
+      {"/dev/random", true}};
+  
+  
+  if (stat("/proc/sys/crypto/fips_enabled", &st) == 0) {
+    open_tests.push_back({"/proc/sys/crypto/fips_enabled", true});
+  }
+
+  for (const std::pair<const char*, bool>& to_open : open_tests) {
+    child->ErrnoTest("open("_ns + nsCString(to_open.first) + ")"_ns,
+                     to_open.second, [&] {
+                       int fd = open(to_open.first, O_RDONLY);
+                       if (to_open.second && fd > 0) {
+                         close(fd);
+                       }
+                       return fd;
+                     });
+  }
 #  endif  
 
 #  ifdef XP_MACOSX
@@ -156,6 +176,27 @@ void RunTestsSocket(SandboxTestingChild* child) {
     int rv = prctl(PR_GET_SECCOMP, 0, 0, 0, 0);
     return rv;
   });
+
+  
+  std::vector<std::pair<const char*, bool>> open_tests = {
+      {"/dev/random", true}};
+  
+  
+  struct stat st;
+  if (stat("/proc/sys/crypto/fips_enabled", &st) == 0) {
+    open_tests.push_back({"/proc/sys/crypto/fips_enabled", true});
+  }
+
+  for (const std::pair<const char*, bool>& to_open : open_tests) {
+    child->ErrnoTest("open("_ns + nsCString(to_open.first) + ")"_ns,
+                     to_open.second, [&] {
+                       int fd = open(to_open.first, O_RDONLY);
+                       if (to_open.second && fd > 0) {
+                         close(fd);
+                       }
+                       return fd;
+                     });
+  }
 #  endif  
 
 #else   
