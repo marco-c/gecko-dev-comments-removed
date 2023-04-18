@@ -3926,8 +3926,6 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor
   
   RefPtr<gfxTextRun> mTextRun;
 
-  RefPtr<nsPresContext> mPresContext;
-
   
   RefPtr<DrawTarget> mDrawTarget;
 
@@ -4071,8 +4069,6 @@ TextMetrics* CanvasRenderingContext2D::DrawOrMeasureText(
   }
 
   CanvasBidiProcessor processor;
-
-  processor.mPresContext = presContext;
 
   
   
