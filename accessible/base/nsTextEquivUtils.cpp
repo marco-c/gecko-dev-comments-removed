@@ -105,6 +105,26 @@ nsresult nsTextEquivUtils::AppendTextEquivFromContent(
 nsresult nsTextEquivUtils::AppendTextEquivFromTextContent(nsIContent* aContent,
                                                           nsAString* aString) {
   if (aContent->IsText()) {
+    bool isHTMLBlock = false;
+
+    nsIContent* parentContent = aContent->GetFlattenedTreeParent();
+    if (parentContent) {
+      nsIFrame* frame = parentContent->GetPrimaryFrame();
+      if (frame) {
+        
+        
+        
+        const nsStyleDisplay* display = frame->StyleDisplay();
+        if (display->IsBlockOutsideStyle() ||
+            display->mDisplay == StyleDisplay::TableCell) {
+          isHTMLBlock = true;
+          if (!aString->IsEmpty()) {
+            aString->Append(char16_t(' '));
+          }
+        }
+      }
+    }
+
     if (aContent->TextLength() > 0) {
       nsIFrame* frame = aContent->GetPrimaryFrame();
       if (frame) {
@@ -115,6 +135,9 @@ nsresult nsTextEquivUtils::AppendTextEquivFromTextContent(nsIContent* aContent,
       } else {
         
         aContent->GetAsText()->AppendTextTo(*aString);
+      }
+      if (isHTMLBlock && !aString->IsEmpty()) {
+        aString->Append(char16_t(' '));
       }
     }
 
@@ -161,27 +184,10 @@ nsresult nsTextEquivUtils::AppendFromAccessibleChildren(
 nsresult nsTextEquivUtils::AppendFromAccessible(Accessible* aAccessible,
                                                 nsAString* aString) {
   
-  bool isHTMLBlock = false;
   if (aAccessible->IsLocal() && aAccessible->AsLocal()->IsContent()) {
-    nsIContent* content = aAccessible->AsLocal()->GetContent();
-    nsresult rv = AppendTextEquivFromTextContent(content, aString);
+    nsresult rv = AppendTextEquivFromTextContent(
+        aAccessible->AsLocal()->GetContent(), aString);
     if (rv != NS_OK_NO_NAME_CLAUSE_HANDLED) return rv;
-    if (!content->IsText()) {
-      nsIFrame* frame = content->GetPrimaryFrame();
-      if (frame) {
-        
-        
-        
-        const nsStyleDisplay* display = frame->StyleDisplay();
-        if (display->IsBlockOutsideStyle() ||
-            display->mDisplay == StyleDisplay::TableCell) {
-          isHTMLBlock = true;
-          if (!aString->IsEmpty()) {
-            aString->Append(char16_t(' '));
-          }
-        }
-      }
-    }
   }
 
   bool isEmptyTextEquiv = true;
@@ -214,15 +220,9 @@ nsresult nsTextEquivUtils::AppendFromAccessible(Accessible* aAccessible,
   
   if (isEmptyTextEquiv && !text.IsEmpty()) {
     AppendString(aString, text);
-    if (isHTMLBlock) {
-      aString->Append(char16_t(' '));
-    }
     return NS_OK;
   }
 
-  if (!isEmptyTextEquiv && isHTMLBlock) {
-    aString->Append(char16_t(' '));
-  }
   return rv;
 }
 
