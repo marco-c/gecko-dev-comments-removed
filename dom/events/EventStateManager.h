@@ -191,6 +191,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
   void TryToFlushPendingNotificationsToIME();
 
+  static bool IsKeyboardEventUserActivity(WidgetEvent* aEvent);
+
   
 
 

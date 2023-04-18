@@ -431,11 +431,13 @@ static bool IsMessageGamepadUserActivity(EventMessage aMessage) {
 }
 
 
+bool EventStateManager::IsKeyboardEventUserActivity(WidgetEvent* aEvent) {
+  
+  
+  
+  
+  
 
-
-
-
-static bool IsKeyboardEventUserActivity(WidgetEvent* aEvent) {
   WidgetKeyboardEvent* keyEvent = aEvent->AsKeyboardEvent();
   
   if (keyEvent->ModifiersMatchWithAccessKey(AccessKeyType::eContent)) {
@@ -491,7 +493,7 @@ static void OnTypingInteractionEnded() {
 }
 
 static void HandleKeyUpInteraction(WidgetKeyboardEvent* aKeyEvent) {
-  if (IsKeyboardEventUserActivity(aKeyEvent)) {
+  if (EventStateManager::IsKeyboardEventUserActivity(aKeyEvent)) {
     TimeStamp now = TimeStamp::Now();
     if (gTypingEndTime.IsNull()) {
       gTypingEndTime = now;
