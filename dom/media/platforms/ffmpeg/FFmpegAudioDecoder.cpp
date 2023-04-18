@@ -18,21 +18,15 @@ FFmpegAudioDecoder<LIBAV_VER>::FFmpegAudioDecoder(FFmpegLibWrapper* aLib,
     : FFmpegDataDecoder(aLib, GetCodecId(aConfig.mMimeType)) {
   MOZ_COUNT_CTOR(FFmpegAudioDecoder);
 
-  if (mCodecID == AV_CODEC_ID_AAC) {
-    MOZ_DIAGNOSTIC_ASSERT(
-        aConfig.mCodecSpecificConfig.is<AacCodecSpecificData>());
+  if (mCodecID == AV_CODEC_ID_AAC &&
+      aConfig.mCodecSpecificConfig.is<AacCodecSpecificData>()) {
+    const AacCodecSpecificData& aacCodecSpecificData =
+      aConfig.mCodecSpecificConfig.as<AacCodecSpecificData>();
+    mExtraData = new MediaByteBuffer;
     
-    
-    
-    if (aConfig.mCodecSpecificConfig.is<AacCodecSpecificData>()) {
-      const AacCodecSpecificData& aacCodecSpecificData =
-          aConfig.mCodecSpecificConfig.as<AacCodecSpecificData>();
-      mExtraData = new MediaByteBuffer;
-      
-      mExtraData->AppendElements(
-          *aacCodecSpecificData.mDecoderConfigDescriptorBinaryBlob);
-      return;
-    }
+    mExtraData->AppendElements(
+        *aacCodecSpecificData.mDecoderConfigDescriptorBinaryBlob);
+    return;
   }
 
   if (mCodecID == AV_CODEC_ID_MP3) {
