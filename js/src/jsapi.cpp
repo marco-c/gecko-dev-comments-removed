@@ -1,12 +1,12 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * JavaScript API.
- */
+
+
+
+
+
+
+
+
 
 #include "jsapi.h"
 
@@ -38,14 +38,14 @@
 #include "gc/Marking.h"
 #include "gc/PublicIterators.h"
 #include "jit/JitSpewer.h"
-#include "js/CallAndConstruct.h"  // JS::IsCallable
+#include "js/CallAndConstruct.h"  
 #include "js/CharacterEncoding.h"
 #include "js/CompileOptions.h"
-#include "js/ContextOptions.h"  // JS::ContextOptions{,Ref}
+#include "js/ContextOptions.h"  
 #include "js/Conversions.h"
 #include "js/ErrorInterceptor.h"
-#include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
-#include "js/friend/StackLimits.h"    // js::AutoCheckRecursionLimit
+#include "js/friend/ErrorMessages.h"  
+#include "js/friend/StackLimits.h"    
 #include "js/GlobalObject.h"
 #include "js/Initialization.h"
 #include "js/Interrupt.h"
@@ -59,7 +59,7 @@
 #include "js/StableStringChars.h"
 #include "js/Stack.h"
 #include "js/StreamConsumer.h"
-#include "js/String.h"  // JS::MaxStringLength
+#include "js/String.h"  
 #include "js/Symbol.h"
 #include "js/TelemetryTimers.h"
 #include "js/Utility.h"
@@ -80,8 +80,8 @@
 #include "vm/JSFunction.h"
 #include "vm/JSObject.h"
 #include "vm/JSScript.h"
-#include "vm/PlainObject.h"    // js::PlainObject
-#include "vm/PromiseObject.h"  // js::PromiseObject
+#include "vm/PlainObject.h"    
+#include "vm/PromiseObject.h"  
 #include "vm/Runtime.h"
 #include "vm/SavedStacks.h"
 #include "vm/StringType.h"
@@ -94,7 +94,7 @@
 #include "debugger/DebugAPI-inl.h"
 #include "vm/Compartment-inl.h"
 #include "vm/Interpreter-inl.h"
-#include "vm/IsGivenTypeObject-inl.h"  // js::IsGivenTypeObject
+#include "vm/IsGivenTypeObject-inl.h"  
 #include "vm/JSAtom-inl.h"
 #include "vm/JSScript-inl.h"
 #include "vm/NativeObject-inl.h"
@@ -112,8 +112,8 @@ using JS::CompileOptions;
 using JS::ReadOnlyCompileOptions;
 using JS::SourceText;
 
-// See preprocessor definition of JS_BITS_PER_WORD in jstypes.h; make sure
-// JS_64BIT (used internally) agrees with it
+
+
 #ifdef JS_64BIT
 static_assert(JS_BITS_PER_WORD == 64, "values must be in sync");
 #else
@@ -168,7 +168,7 @@ bool JS::ObjectOpResult::reportError(JSContext* cx, HandleObject obj,
     }
 
     if (code_ == JSMSG_SET_NON_OBJECT_RECEIVER) {
-      // We know that the original receiver was a primitive, so unbox it.
+      
       RootedValue val(cx, ObjectValue(*obj));
       if (!obj->is<ProxyObject>()) {
         if (!Unbox(cx, obj, &val)) {
@@ -292,7 +292,7 @@ namespace js {
 
 void AssertHeapIsIdle() { MOZ_ASSERT(!JS::RuntimeHeapIsBusy()); }
 
-}  // namespace js
+}  
 
 static void AssertHeapIsIdleOrIterating() {
   MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
@@ -364,13 +364,13 @@ JS_PUBLIC_API JSObject* JS_GetBoundFunctionTarget(JSFunction* fun) {
   return fun->isBoundFunction() ? fun->getBoundFunctionTarget() : nullptr;
 }
 
-/************************************************************************/
 
-// Prevent functions from being discarded by linker, so that they are callable
-// when debugging.
+
+
+
 static void PreventDiscardingFunctions() {
   if (reinterpret_cast<uintptr_t>(&PreventDiscardingFunctions) == 1) {
-    // Never executed.
+    
     memset((void*)&js::debug::GetMarkInfo, 0, 1);
     memset((void*)&js::debug::GetMarkWordAddress, 0, 1);
     memset((void*)&js::debug::GetMarkMask, 0, 1);
@@ -382,10 +382,10 @@ JS_PUBLIC_API JSContext* JS_NewContext(uint32_t maxbytes,
   MOZ_ASSERT(JS::detail::libraryInitState == JS::detail::InitState::Running,
              "must call JS_Init prior to creating any JSContexts");
 
-  // Prevent linker from discarding unused debug functions.
+  
   PreventDiscardingFunctions();
 
-  // Make sure that all parent runtimes are the topmost parent.
+  
   while (parentRuntime && parentRuntime->parentRuntime) {
     parentRuntime = parentRuntime->parentRuntime;
   }
@@ -460,29 +460,29 @@ JS_PUBLIC_API void JS_SetErrorInterceptorCallback(
     JSRuntime* rt, JSErrorInterceptor* callback) {
 #if defined(NIGHTLY_BUILD)
   rt->errorInterception.interceptor = callback;
-#endif  // defined(NIGHTLY_BUILD)
+#endif  
 }
 
 JS_PUBLIC_API JSErrorInterceptor* JS_GetErrorInterceptorCallback(
     JSRuntime* rt) {
 #if defined(NIGHTLY_BUILD)
   return rt->errorInterception.interceptor;
-#else   // !NIGHTLY_BUILD
+#else   
   return nullptr;
-#endif  // defined(NIGHTLY_BUILD)
+#endif  
 }
 
 JS_PUBLIC_API Maybe<JSExnType> JS_GetErrorType(const JS::Value& val) {
-  // All errors are objects.
+  
   if (!val.isObject()) {
     return mozilla::Nothing();
   }
 
   const JSObject& obj = val.toObject();
 
-  // All errors are `ErrorObject`.
+  
   if (!obj.is<js::ErrorObject>()) {
-    // Not one of the primitive errors.
+    
     return mozilla::Nothing();
   }
 
@@ -588,68 +588,68 @@ static void ReleaseAssertObjectHasNoWrappers(JSContext* cx,
   }
 }
 
-/*
- * [SMDOC] Brain transplants.
- *
- * Not for beginners or the squeamish.
- *
- * Sometimes a web spec requires us to transplant an object from one
- * compartment to another, like when a DOM node is inserted into a document in
- * another window and thus gets "adopted". We cannot literally change the
- * `.compartment()` of a `JSObject`; that would break the compartment
- * invariants. However, as usual, we have a workaround using wrappers.
- *
- * Of all the wrapper-based workarounds we do, it's safe to say this is the
- * most spectacular and questionable.
- *
- * `JS_TransplantObject(cx, origobj, target)` changes `origobj` into a
- * simulacrum of `target`, using highly esoteric means. To JS code, the effect
- * is as if `origobj` magically "became" `target`, but most often what actually
- * happens is that `origobj` gets turned into a cross-compartment wrapper for
- * `target`. The old behavior and contents of `origobj` are overwritten or
- * discarded.
- *
- * Thus, to "transplant" an object from one compartment to another:
- *
- * 1.  Let `origobj` be the object that you want to move. First, create a
- *     clone of it, `target`, in the destination compartment.
- *
- *     In our DOM adoption example, `target` will be a Node of the same type as
- *     `origobj`, same content, but in the adopting document.  We're not done
- *     yet: the spec for DOM adoption requires that `origobj.ownerDocument`
- *     actually change. All we've done so far is make a copy.
- *
- * 2.  Call `JS_TransplantObject(cx, origobj, target)`. This typically turns
- *     `origobj` into a wrapper for `target`, so that any JS code that has a
- *     reference to `origobj` will observe it to have the behavior of `target`
- *     going forward. In addition, all existing wrappers for `origobj` are
- *     changed into wrappers for `target`, extending the illusion to those
- *     compartments as well.
- *
- * During navigation, we use the above technique to transplant the WindowProxy
- * into the new Window's compartment.
- *
- * A few rules:
- *
- * -   `origobj` and `target` must be two distinct objects of the same
- *     `JSClass`.  Some classes may not support transplantation; WindowProxy
- *     objects and DOM nodes are OK.
- *
- * -   `target` should be created specifically to be passed to this function.
- *     There must be no existing cross-compartment wrappers for it; ideally
- *     there shouldn't be any pointers to it at all, except the one passed in.
- *
- * -   `target` shouldn't be used afterwards. Instead, `JS_TransplantObject`
- *     returns a pointer to the transplanted object, which might be `target`
- *     but might be some other object in the same compartment. Use that.
- *
- * The reason for this last rule is that JS_TransplantObject does very strange
- * things in some cases, like swapping `target`'s brain with that of another
- * object. Leaving `target` behaving like its former self is not a goal.
- *
- * We don't have a good way to recover from failure in this function, so
- * we intentionally crash instead.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static void CheckTransplantObject(JSObject* obj) {
 #ifdef DEBUG
@@ -668,7 +668,7 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
 
   RootedObject newIdentity(cx);
 
-  // Don't allow a compacting GC to observe any intermediate state.
+  
   AutoDisableCompactingGC nocgc(cx);
 
   AutoDisableProxyCheck adpc;
@@ -678,41 +678,41 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
   JS::Compartment* destination = target->compartment();
 
   if (origobj->compartment() == destination) {
-    // If the original object is in the same compartment as the
-    // destination, then we know that we won't find a wrapper in the
-    // destination's cross compartment map and that the same
-    // object will continue to work.
+    
+    
+    
+    
     AutoRealm ar(cx, origobj);
     JSObject::swap(cx, origobj, target, oomUnsafe);
     newIdentity = origobj;
   } else if (ObjectWrapperMap::Ptr p = destination->lookupWrapper(origobj)) {
-    // There might already be a wrapper for the original object in
-    // the new compartment. If there is, we use its identity and swap
-    // in the contents of |target|.
+    
+    
+    
     newIdentity = p->value().get();
 
-    // When we remove origv from the wrapper map, its wrapper, newIdentity,
-    // must immediately cease to be a cross-compartment wrapper. Nuke it.
+    
+    
     destination->removeWrapper(p);
     NukeCrossCompartmentWrapper(cx, newIdentity);
 
     AutoRealm ar(cx, newIdentity);
     JSObject::swap(cx, newIdentity, target, oomUnsafe);
   } else {
-    // Otherwise, we use |target| for the new identity object.
+    
     newIdentity = target;
   }
 
-  // Now, iterate through other scopes looking for references to the old
-  // object, and update the relevant cross-compartment wrappers. We do this
-  // even if origobj is in the same compartment as target and thus
-  // `newIdentity == origobj`, because this process also clears out any
-  // cached wrapper state.
+  
+  
+  
+  
+  
   if (!RemapAllWrappersForObject(cx, origobj, newIdentity)) {
     oomUnsafe.crash("JS_TransplantObject");
   }
 
-  // Lastly, update the original object to point to the new one.
+  
   if (origobj->compartment() != destination) {
     RootedObject newIdentityWrapper(cx, newIdentity);
     AutoRealm ar(cx, origobj);
@@ -731,8 +731,8 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
     }
   }
 
-  // The new identity object might be one of several things. Return it to avoid
-  // ambiguity.
+  
+  
   JS::AssertCellIsNotGray(newIdentity);
   return newIdentity;
 }
@@ -744,11 +744,11 @@ JS_PUBLIC_API void js::RemapRemoteWindowProxies(
   CheckTransplantObject(target);
   ReleaseAssertObjectHasNoWrappers(cx, target);
 
-  // |target| can't be a remote proxy, because we expect it to get a CCW when
-  // wrapped across compartments.
+  
+  
   MOZ_ASSERT(!js::IsDOMRemoteProxyObject(target));
 
-  // Don't allow a compacting GC to observe any intermediate state.
+  
   AutoDisableCompactingGC nocgc(cx);
 
   AutoDisableProxyCheck adpc;
@@ -763,22 +763,22 @@ JS_PUBLIC_API void js::RemapRemoteWindowProxies(
   RootedObject targetCompartmentProxy(cx);
   JS::RootedVector<JSObject*> otherProxies(cx);
 
-  // Use the callback to find remote proxies in all compartments that match
-  // whatever criteria callback uses.
+  
+  
   for (CompartmentsIter c(cx->runtime()); !c.done(); c.next()) {
     RootedObject remoteProxy(cx, callback->getObjectToTransplant(c));
     if (!remoteProxy) {
       continue;
     }
-    // The object the callback returns should be a DOM remote proxy object in
-    // the compartment c. We rely on it being a DOM remote proxy because that
-    // means that it won't have any cross-compartment wrappers.
+    
+    
+    
     MOZ_ASSERT(js::IsDOMRemoteProxyObject(remoteProxy));
     MOZ_ASSERT(remoteProxy->compartment() == c);
     CheckTransplantObject(remoteProxy);
 
-    // Immediately turn the DOM remote proxy object into a dead proxy object
-    // so we don't have to worry about anything weird going on with it.
+    
+    
     js::NukeNonCCWProxy(cx, remoteProxy);
 
     if (remoteProxy->compartment() == target->compartment()) {
@@ -788,10 +788,10 @@ JS_PUBLIC_API void js::RemapRemoteWindowProxies(
     }
   }
 
-  // If there was a remote proxy in |target|'s compartment, we need to use it
-  // instead of |target|, in case it had any references, so swap it. Do this
-  // before any other compartment so that the target object will be set up
-  // correctly before we start wrapping it into other compartments.
+  
+  
+  
+  
   if (targetCompartmentProxy) {
     AutoRealm ar(cx, targetCompartmentProxy);
     JSObject::swap(cx, targetCompartmentProxy, target, oomUnsafe);
@@ -804,18 +804,18 @@ JS_PUBLIC_API void js::RemapRemoteWindowProxies(
   }
 }
 
-/*
- * Recompute all cross-compartment wrappers for an object, resetting state.
- * Gecko uses this to clear Xray wrappers when doing a navigation that reuses
- * the inner window and global object.
- */
+
+
+
+
+
 JS_PUBLIC_API bool JS_RefreshCrossCompartmentWrappers(JSContext* cx,
                                                       HandleObject obj) {
   return RemapAllWrappersForObject(cx, obj, obj);
 }
 
 typedef struct JSStdName {
-  size_t atomOffset; /* offset of atom pointer in JSAtomState */
+  size_t atomOffset; 
   JSProtoKey key;
   bool isDummy() const { return key == JSProto_Null; }
   bool isSentinel() const { return key == JSProto_LIMIT; }
@@ -837,24 +837,24 @@ static const JSStdName* LookupStdName(const JSAtomState& names, JSAtom* name,
   return nullptr;
 }
 
-/*
- * Table of standard classes, indexed by JSProtoKey. For entries where the
- * JSProtoKey does not correspond to a class with a meaningful constructor, we
- * insert a null entry into the table.
- */
+
+
+
+
+
 #define STD_NAME_ENTRY(name, clasp) {NAME_OFFSET(name), JSProto_##name},
 #define STD_DUMMY_ENTRY(name, dummy) {0, JSProto_Null},
 static const JSStdName standard_class_names[] = {
     JS_FOR_PROTOTYPES(STD_NAME_ENTRY, STD_DUMMY_ENTRY){0, JSProto_LIMIT}};
 
-/*
- * Table of top-level function and constant names and the JSProtoKey of the
- * standard class that initializes them.
- */
+
+
+
+
 static const JSStdName builtin_property_names[] = {
     {NAME_OFFSET(eval), JSProto_Object},
 
-    /* Global properties and functions defined by the Number class. */
+    
     {NAME_OFFSET(NaN), JSProto_Number},
     {NAME_OFFSET(Infinity), JSProto_Number},
     {NAME_OFFSET(isNaN), JSProto_Number},
@@ -862,7 +862,7 @@ static const JSStdName builtin_property_names[] = {
     {NAME_OFFSET(parseFloat), JSProto_Number},
     {NAME_OFFSET(parseInt), JSProto_Number},
 
-    /* String global functions. */
+    
     {NAME_OFFSET(escape), JSProto_String},
     {NAME_OFFSET(unescape), JSProto_String},
     {NAME_OFFSET(decodeURI), JSProto_String},
@@ -889,10 +889,10 @@ static bool SkipSharedArrayBufferConstructor(JSProtoKey key,
              "shouldn't contemplate defining SharedArrayBuffer if shared "
              "memory is disabled");
 
-  // On the web, it isn't presently possible to expose the global
-  // "SharedArrayBuffer" property unless the page is cross-site-isolated.  Only
-  // define this constructor if an option on the realm indicates that it should
-  // be defined.
+  
+  
+  
+  
   return !options.defineSharedArrayBufferConstructor();
 }
 
@@ -909,7 +909,7 @@ JS_PUBLIC_API bool JS_ResolveStandardClass(JSContext* cx, HandleObject obj,
     return true;
   }
 
-  /* Check whether we're resolving 'undefined', and define it if so. */
+  
   JSAtom* idAtom = id.toAtom();
   if (idAtom == cx->names().undefined) {
     *resolved = true;
@@ -918,17 +918,17 @@ JS_PUBLIC_API bool JS_ResolveStandardClass(JSContext* cx, HandleObject obj,
         JSPROP_PERMANENT | JSPROP_READONLY | JSPROP_RESOLVING);
   }
 
-  // Resolve a "globalThis" self-referential property if necessary.
+  
   if (idAtom == cx->names().globalThis) {
     return GlobalObject::maybeResolveGlobalThis(cx, global, resolved);
   }
 
   do {
-    // Try for class constructors/prototypes named by well-known atoms.
+    
     const JSStdName* stdnm =
         LookupStdName(cx->names(), idAtom, standard_class_names);
     if (!stdnm) {
-      // Try less frequently used top-level functions and constants.
+      
       stdnm = LookupStdName(cx->names(), idAtom, builtin_property_names);
       if (!stdnm) {
         break;
@@ -941,9 +941,9 @@ JS_PUBLIC_API bool JS_ResolveStandardClass(JSContext* cx, HandleObject obj,
     }
 
     if (JSProtoKey key = stdnm->key; key != JSProto_Null) {
-      // If this class is anonymous (or it's "SharedArrayBuffer" but that global
-      // constructor isn't supposed to be defined), then it doesn't exist as a
-      // global property, so we won't resolve anything.
+      
+      
+      
       const JSClass* clasp = ProtoKeyToClass(key);
       if ((!clasp || clasp->specShouldDefineConstructor()) &&
           !SkipSharedArrayBufferConstructor(key, global)) {
@@ -957,11 +957,11 @@ JS_PUBLIC_API bool JS_ResolveStandardClass(JSContext* cx, HandleObject obj,
     }
   } while (false);
 
-  // There is no such property to resolve. An ordinary resolve hook would
-  // just return true at this point. But the global object is special in one
-  // more way: its prototype chain is lazily initialized. That is,
-  // global->getProto() might be null right now because we haven't created
-  // Object.prototype yet. Force it now.
+  
+  
+  
+  
+  
   return GlobalObject::getOrCreateObjectPrototype(cx, global);
 }
 
@@ -969,9 +969,9 @@ JS_PUBLIC_API bool JS_MayResolveStandardClass(const JSAtomState& names, jsid id,
                                               JSObject* maybeObj) {
   MOZ_ASSERT_IF(maybeObj, maybeObj->is<GlobalObject>());
 
-  // The global object's resolve hook is special: JS_ResolveStandardClass
-  // initializes the prototype chain lazily. Only attempt to optimize here
-  // if we know the prototype chain has been initialized.
+  
+  
+  
   if (!maybeObj || !maybeObj->staticPrototype()) {
     return true;
   }
@@ -982,8 +982,8 @@ JS_PUBLIC_API bool JS_MayResolveStandardClass(const JSAtomState& names, jsid id,
 
   JSAtom* atom = id.toAtom();
 
-  // This will return true even for deselected constructors.  (To do
-  // better, we need a JSContext here; it's fine as it is.)
+  
+  
 
   return atom == names.undefined || atom == names.globalThis ||
          LookupStdName(names, atom, standard_class_names) ||
@@ -1011,8 +1011,8 @@ static bool EnumerateStandardClassesInTable(JSContext* cx,
 
     JSProtoKey key = table[i].key;
 
-    // If the standard class has been resolved, the properties have been
-    // defined on the global so we don't need to add them here.
+    
+    
     if (!includeResolved && global->isStandardClassResolved(key)) {
       continue;
     }
@@ -1047,15 +1047,15 @@ static bool EnumerateStandardClasses(JSContext* cx, JS::HandleObject obj,
                                      bool enumerableOnly,
                                      bool includeResolved) {
   if (enumerableOnly) {
-    // There are no enumerable standard classes and "undefined" is
-    // not enumerable.
+    
+    
     return true;
   }
 
   Handle<GlobalObject*> global = obj.as<GlobalObject>();
 
-  // It's fine to always append |undefined| here, it's non-configurable and
-  // the enumeration code filters duplicates.
+  
+  
   if (!properties.append(NameToId(cx->names().undefined))) {
     return false;
   }
@@ -1125,7 +1125,7 @@ JS_PUBLIC_API void ProtoKeyToId(JSContext* cx, JSProtoKey key,
   idp.set(NameToId(ClassName(key, cx)));
 }
 
-} /* namespace JS */
+} 
 
 JS_PUBLIC_API JSProtoKey JS_IdToProtoKey(JSContext* cx, HandleId id) {
   AssertHeapIsIdle();
@@ -1288,7 +1288,7 @@ JS_PUBLIC_API void JS_RemoveExtraGCRootsTracer(JSContext* cx,
 }
 
 JS_PUBLIC_API bool JS::IsIdleGCTaskNeeded(JSRuntime* rt) {
-  // Currently, we only collect nursery during idle time.
+  
   return rt->gc.nursery().shouldCollect();
 }
 
@@ -1468,11 +1468,11 @@ JS_GetExternalStringCallbacks(JSString* str) {
 static void SetNativeStackLimit(JSContext* cx, JS::StackKind kind,
                                 size_t stackSize) {
 #ifdef __wasi__
-  // WASI makes this easy: we build with the "stack-first" wasm-ld option, so
-  // the stack grows downward toward zero. Let's set a limit just a bit above
-  // this so that we catch an overflow before a Wasm trap occurs.
+  
+  
+  
   cx->nativeStackLimit[kind] = 1024;
-#else  // __wasi__
+#else  
 #  if JS_STACK_GROWTH_DIRECTION > 0
   if (stackSize == 0) {
     cx->nativeStackLimit[kind] = UINTPTR_MAX;
@@ -1480,15 +1480,15 @@ static void SetNativeStackLimit(JSContext* cx, JS::StackKind kind,
     MOZ_ASSERT(cx->nativeStackBase() <= size_t(-1) - stackSize);
     cx->nativeStackLimit[kind] = cx->nativeStackBase() + stackSize - 1;
   }
-#  else   // stack grows up
+#  else   
   if (stackSize == 0) {
     cx->nativeStackLimit[kind] = 0;
   } else {
     MOZ_ASSERT(cx->nativeStackBase() >= stackSize);
     cx->nativeStackLimit[kind] = cx->nativeStackBase() - (stackSize - 1);
   }
-#  endif  // stack grows down
-#endif    // !__wasi__
+#  endif  
+#endif    
 }
 
 JS_PUBLIC_API void JS_SetNativeStackQuota(JSContext* cx,
@@ -1519,7 +1519,7 @@ JS_PUBLIC_API void JS_SetNativeStackQuota(JSContext* cx,
   }
 }
 
-/************************************************************************/
+
 
 JS_PUBLIC_API bool JS_ValueToId(JSContext* cx, HandleValue value,
                                 MutableHandleId idp) {
@@ -1762,15 +1762,15 @@ JS_PUBLIC_API void JS_GlobalObjectTraceHook(JSTracer* trc, JSObject* global) {
   GlobalObject* globalObj = &global->as<GlobalObject>();
   Realm* globalRealm = globalObj->realm();
 
-  // If we GC when creating the global, we may not have set that global's
-  // realm's global pointer yet. In this case, the realm will not yet contain
-  // anything that needs to be traced.
+  
+  
+  
   if (globalRealm->unsafeUnbarrieredMaybeGlobal() != globalObj) {
     return;
   }
 
-  // Trace the realm for any GC things that should only stick around if we
-  // know the global is live.
+  
+  
   globalRealm->traceGlobalData(trc);
 
   globalObj->traceData(trc, globalObj);
@@ -1781,24 +1781,24 @@ JS_PUBLIC_API void JS_GlobalObjectTraceHook(JSTracer* trc, JSObject* global) {
 }
 
 const JSClassOps JS::DefaultGlobalClassOps = {
-    nullptr,                         // addProperty
-    nullptr,                         // delProperty
-    nullptr,                         // enumerate
-    JS_NewEnumerateStandardClasses,  // newEnumerate
-    JS_ResolveStandardClass,         // resolve
-    JS_MayResolveStandardClass,      // mayResolve
-    nullptr,                         // finalize
-    nullptr,                         // call
-    nullptr,                         // construct
-    JS_GlobalObjectTraceHook,        // trace
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    JS_NewEnumerateStandardClasses,  
+    JS_ResolveStandardClass,         
+    JS_MayResolveStandardClass,      
+    nullptr,                         
+    nullptr,                         
+    nullptr,                         
+    JS_GlobalObjectTraceHook,        
 };
 
 JS_PUBLIC_API void JS_FireOnNewGlobalObject(JSContext* cx,
                                             JS::HandleObject global) {
-  // This hook is infallible, because we don't really want arbitrary script
-  // to be able to throw errors during delicate global creation routines.
-  // This infallibility will eat OOM and slow script, but if that happens
-  // we'll likely run up into them again soon in a fallible context.
+  
+  
+  
+  
   cx->check(global);
   Rooted<js::GlobalObject*> globalObject(cx, &global->as<GlobalObject>());
   DebugAPI::onNewGlobalObject(cx, globalObject);
@@ -1811,7 +1811,7 @@ JS_PUBLIC_API JSObject* JS_NewObject(JSContext* cx, const JSClass* clasp) {
   CHECK_THREAD(cx);
 
   if (!clasp) {
-    // Default class is Object.
+    
     return NewPlainObject(cx);
   }
 
@@ -1831,7 +1831,7 @@ JS_PUBLIC_API JSObject* JS_NewObjectWithGivenProto(JSContext* cx,
   cx->check(proto);
 
   if (!clasp) {
-    // Default class is Object.
+    
     return NewPlainObjectWithProto(cx, proto);
   }
 
@@ -1879,7 +1879,7 @@ JS_PUBLIC_API void JS::SetFilenameValidationCallback(
   js::gFilenameValidationCallback = cb;
 }
 
-/*** Standard internal methods **********************************************/
+
 
 JS_PUBLIC_API bool JS_GetPrototype(JSContext* cx, HandleObject obj,
                                    MutableHandleObject result) {
@@ -1921,7 +1921,7 @@ JS_PUBLIC_API bool JS_SetImmutablePrototype(JSContext* cx, JS::HandleObject obj,
   return SetImmutablePrototype(cx, obj, succeeded);
 }
 
-/* * */
+
 
 JS_PUBLIC_API bool JS_FreezeObject(JSContext* cx, HandleObject obj) {
   AssertHeapIsIdle();
@@ -1943,8 +1943,8 @@ JS_PUBLIC_API bool JS_DeepFreezeObject(JSContext* cx, HandleObject obj) {
   CHECK_THREAD(cx);
   cx->check(obj);
 
-  // Assume that non-extensible objects are already deep-frozen, to avoid
-  // divergence.
+  
+  
   bool extensible;
   if (!IsExtensible(cx, obj, &extensible)) {
     return false;
@@ -1957,7 +1957,7 @@ JS_PUBLIC_API bool JS_DeepFreezeObject(JSContext* cx, HandleObject obj) {
     return false;
   }
 
-  // Walk slots in obj and if any value is a non-null object, seal it.
+  
   if (obj->is<NativeObject>()) {
     RootedNativeObject nobj(cx, &obj->as<NativeObject>());
     for (uint32_t i = 0, n = nobj->slotSpan(); i < n; ++i) {
@@ -2018,10 +2018,10 @@ bool PropertySpecNameToId(JSContext* cx, JSPropertySpec::Name name,
 JS_PUBLIC_API bool JS::PropertySpecNameToPermanentId(JSContext* cx,
                                                      JSPropertySpec::Name name,
                                                      jsid* idp) {
-  // We are calling fromMarkedLocation(idp) even though idp points to a
-  // location that will never be marked. This is OK because the whole point
-  // of this API is to populate *idp with a jsid that does not need to be
-  // marked.
+  
+  
+  
+  
   MutableHandleId id = MutableHandleId::fromMarkedLocation(idp);
   if (!PropertySpecNameToId(cx, name, id)) {
     return false;
@@ -2037,8 +2037,8 @@ JS_PUBLIC_API bool JS::PropertySpecNameToPermanentId(JSContext* cx,
 JS_PUBLIC_API bool JS::ObjectToCompletePropertyDescriptor(
     JSContext* cx, HandleObject obj, HandleValue descObj,
     MutableHandle<PropertyDescriptor> desc) {
-  // |obj| can be in a different compartment here. The caller is responsible
-  // for wrapping it (see JS_WrapPropertyDescriptor).
+  
+  
   cx->check(descObj);
   if (!ToPropertyDescriptor(cx, descObj, true, desc)) {
     return false;
@@ -2062,16 +2062,16 @@ JS_PUBLIC_API void JS_SetAllNonReservedSlotsToUndefined(JS::HandleObject obj) {
 
 JS_PUBLIC_API void JS_SetReservedSlot(JSObject* obj, uint32_t index,
                                       const Value& value) {
-  // Note: we don't use setReservedSlot so that this also works on swappable DOM
-  // objects. See NativeObject::getReservedSlotRef comment.
+  
+  
   MOZ_ASSERT(index < JSCLASS_RESERVED_SLOTS(obj->getClass()));
   obj->as<NativeObject>().setSlot(index, value);
 }
 
 JS_PUBLIC_API void JS_InitReservedSlot(JSObject* obj, uint32_t index, void* ptr,
                                        size_t nbytes, JS::MemoryUse use) {
-  // Note: we don't use InitReservedSlot so that this also works on swappable
-  // DOM objects. See NativeObject::getReservedSlotRef comment.
+  
+  
   MOZ_ASSERT(index < JSCLASS_RESERVED_SLOTS(obj->getClass()));
   AddCellMemory(obj, nbytes, js::MemoryUse(use));
   obj->as<NativeObject>().initSlot(index, PrivateValue(ptr));
@@ -2193,10 +2193,10 @@ JS_PUBLIC_API JSFunction* JS::NewFunctionFromSpec(JSContext* cx,
   }
 #endif
 
-  // Delay cloning self-hosted functions until they are called. This is
-  // achieved by passing DefineFunction a nullptr JSNative which produces an
-  // interpreted JSFunction where !hasScript. Interpreted call paths then
-  // call InitializeLazyFunctionScript if !hasScript.
+  
+  
+  
+  
   if (fs->selfHostedName) {
     MOZ_ASSERT(!fs->call.op);
     MOZ_ASSERT(!fs->call.info);
@@ -2290,7 +2290,7 @@ extern JS_PUBLIC_API bool JS_IsConstructor(JSFunction* fun) {
 
 void JS::TransitiveCompileOptions::copyPODTransitiveOptions(
     const TransitiveCompileOptions& rhs) {
-  // filename_, introducerFilename_, sourceMapURL_ should be handled in caller.
+  
 
   mutedErrors_ = rhs.mutedErrors_;
   forceStrictMode_ = rhs.forceStrictMode_;
@@ -2316,6 +2316,7 @@ void JS::TransitiveCompileOptions::copyPODTransitiveOptions(
   borrowBuffer = rhs.borrowBuffer;
   usePinnedBytecode = rhs.usePinnedBytecode;
   allocateInstantiationStorage = rhs.allocateInstantiationStorage;
+  deoptimizeModuleGlobalVars = rhs.deoptimizeModuleGlobalVars;
 
   introductionType = rhs.introductionType;
   introductionLineno = rhs.introductionLineno;
@@ -2336,7 +2337,7 @@ JS::OwningCompileOptions::OwningCompileOptions(JSContext* cx)
     : ReadOnlyCompileOptions() {}
 
 void JS::OwningCompileOptions::release() {
-  // OwningCompileOptions always owns these, so these casts are okay.
+  
   js_free(const_cast<char*>(filename_));
   js_free(const_cast<char16_t*>(sourceMapURL_));
   js_free(const_cast<char*>(introducerFilename_));
@@ -2356,7 +2357,7 @@ size_t JS::OwningCompileOptions::sizeOfExcludingThis(
 
 bool JS::OwningCompileOptions::copy(JSContext* cx,
                                     const ReadOnlyCompileOptions& rhs) {
-  // Release existing string allocations.
+  
   release();
 
   copyPODNonTransitiveOptions(rhs);
@@ -2389,7 +2390,7 @@ bool JS::OwningCompileOptions::copy(JSContext* cx,
 
 JS::CompileOptions::CompileOptions(JSContext* cx) : ReadOnlyCompileOptions() {
   if (!js::IsAsmJSCompilationAvailable(cx)) {
-    // Distinguishing the cases is just for error reporting.
+    
     asmJSOption = !cx->options().asmJS()
                       ? AsmJSOption::DisabledByAsmJSPref
                       : AsmJSOption::DisabledByNoWasmCompiler;
@@ -2408,16 +2409,16 @@ JS::CompileOptions::CompileOptions(JSContext* cx) : ReadOnlyCompileOptions() {
 
   sourcePragmas_ = cx->options().sourcePragmas();
 
-  // Certain modes of operation force strict-mode in general.
+  
   forceStrictMode_ = cx->options().strictMode();
 
-  // Certain modes of operation disallow syntax parsing in general.
+  
   if (coverage::IsLCovEnabled()) {
     eagerDelazificationStrategy_ = DelazificationOption::ParseEverythingEagerly;
   }
 
-  // Note: If we parse outside of a specific realm, we do not inherit any realm
-  // behaviours. These can still be set manually on the options though.
+  
+  
   if (cx->realm()) {
     discardSource = cx->realm()->behaviors().discardSource();
   }
@@ -2445,9 +2446,9 @@ JS_PUBLIC_API JSObject* JS_GetGlobalFromScript(JSScript* script) {
 }
 
 JS_PUBLIC_API const char* JS_GetScriptFilename(JSScript* script) {
-  // This is called from ThreadStackHelper which can be called from another
-  // thread or inside a signal hander, so we need to be careful in case a
-  // copmacting GC is currently moving things around.
+  
+  
+  
   return script->maybeForwardedFilename();
 }
 
@@ -2497,7 +2498,7 @@ JS_PUBLIC_API JSString* JS_DecompileFunction(JSContext* cx,
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
   cx->check(fun);
-  return FunctionToString(cx, fun, /* isToSource = */ false);
+  return FunctionToString(cx, fun,  false);
 }
 
 JS_PUBLIC_API void JS::SetScriptPrivate(JSScript* script,
@@ -2559,18 +2560,18 @@ JS_PUBLIC_API void JS_ResetInterruptCallback(JSContext* cx, bool enable) {
   cx->interruptCallbackDisabled = enable;
 }
 
-/************************************************************************/
 
-/*
- * Promises.
- */
+
+
+
+
 JS_PUBLIC_API void JS::SetJobQueue(JSContext* cx, JobQueue* queue) {
   cx->jobQueue = queue;
 }
 
 extern JS_PUBLIC_API void JS::SetPromiseRejectionTrackerCallback(
     JSContext* cx, PromiseRejectionTrackerCallback callback,
-    void* data /* = nullptr */) {
+    void* data ) {
   cx->promiseRejectionTrackerCallback = callback;
   cx->promiseRejectionTrackerCallbackData = data;
 }
@@ -2878,16 +2879,16 @@ JS_PUBLIC_API bool JS::SetPromiseUserInputEventHandlingState(
   return true;
 }
 
-/**
- * Unforgeable version of Promise.all for internal use.
- *
- * Takes a dense array of Promise objects and returns a promise that's
- * resolved with an array of resolution values when all those promises ahve
- * been resolved, or rejected with the rejection value of the first rejected
- * promise.
- *
- * Asserts that the array is dense and all entries are Promise objects.
- */
+
+
+
+
+
+
+
+
+
+
 JS_PUBLIC_API JSObject* JS::GetWaitForAllPromise(
     JSContext* cx, JS::HandleObjectVector promises) {
   AssertHeapIsIdle();
@@ -2929,9 +2930,9 @@ JS::AutoSetAsyncStackForNewCalls::AutoSetAsyncStackForNewCalls(
       oldAsyncCallIsExplicit(cx->asyncCallIsExplicit) {
   CHECK_THREAD(cx);
 
-  // The option determines whether we actually use the new values at this
-  // point. It will not affect restoring the previous values when the object
-  // is destroyed, so if the option changes it won't cause consistency issues.
+  
+  
+  
   if (!cx->options().asyncStack()) {
     return;
   }
@@ -2950,7 +2951,7 @@ JS::AutoSetAsyncStackForNewCalls::~AutoSetAsyncStackForNewCalls() {
   cx->asyncCallIsExplicit = oldAsyncCallIsExplicit;
 }
 
-/************************************************************************/
+
 JS_PUBLIC_API JSString* JS_NewStringCopyN(JSContext* cx, const char* s,
                                           size_t n) {
   AssertHeapIsIdle();
@@ -3407,7 +3408,7 @@ static bool PropertySpecNameIsDigits(JSPropertySpec::Name name) {
   }
   return true;
 }
-#endif  // DEBUG
+#endif  
 
 JS_PUBLIC_API bool JS::PropertySpecNameEqualsId(JSPropertySpec::Name name,
                                                 HandleId id) {
@@ -3502,7 +3503,7 @@ JS_PUBLIC_API bool JS_ParseJSONWithReviver(JSContext* cx, HandleString str,
                                     vp);
 }
 
-/************************************************************************/
+
 
 JS_PUBLIC_API void JS_ReportErrorASCII(JSContext* cx, const char* format, ...) {
   va_list ap;
@@ -3647,7 +3648,7 @@ JS_PUBLIC_API bool JS_ExpandErrorArgumentsASCII(JSContext* cx,
   va_end(ap);
   return ok;
 }
-/************************************************************************/
+
 
 JS_PUBLIC_API bool JS_SetDefaultLocale(JSRuntime* rt, const char* locale) {
   AssertHeapIsIdle();
@@ -3675,14 +3676,14 @@ JS_PUBLIC_API void JS_SetLocaleCallbacks(JSRuntime* rt,
 }
 
 JS_PUBLIC_API const JSLocaleCallbacks* JS_GetLocaleCallbacks(JSRuntime* rt) {
-  /* This function can be called by a finalizer. */
+  
   return rt->localeCallbacks;
 }
 
-/************************************************************************/
+
 
 JS_PUBLIC_API bool JS_IsExceptionPending(JSContext* cx) {
-  /* This function can be called by a finalizer. */
+  
   return (bool)cx->isExceptionPending();
 }
 
@@ -3704,9 +3705,9 @@ JS_PUBLIC_API void JS_SetPendingException(JSContext* cx, HandleValue value,
                                           JS::ExceptionStackBehavior behavior) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
-  // We don't check the compartment of `value` here, because we're not
-  // doing anything with it other than storing it, and stored
-  // exception values can be in an abitrary compartment.
+  
+  
+  
 
   if (behavior == JS::ExceptionStackBehavior::Capture) {
     cx->setPendingException(value, ShouldCaptureStack::Always);
@@ -3747,9 +3748,9 @@ void JS::AutoSaveExceptionState::restore() {
 }
 
 JS::AutoSaveExceptionState::~AutoSaveExceptionState() {
-  // NOTE: An interrupt/uncatchable exception or a debugger-forced-return may be
-  //       clobbered here by the saved exception. If that is not desired, this
-  //       state should be dropped before the destructor fires.
+  
+  
+  
   if (!context->isExceptionPending()) {
     if (status != JS::ExceptionStatus::None) {
       context->status = status;
@@ -4225,16 +4226,16 @@ JS_PUBLIC_API bool JS_GetGlobalJitCompilerOption(JSContext* cx,
   return true;
 }
 
-/************************************************************************/
+
 
 #if !defined(STATIC_EXPORTABLE_JS_API) && !defined(STATIC_JS_API) && \
     defined(XP_WIN)
 
 #  include "util/WindowsWrapper.h"
 
-/*
- * Initialization routine for the JS DLL.
- */
+
+
+
 BOOL WINAPI DllMain(HINSTANCE hDLL, DWORD dwReason, LPVOID lpReserved) {
   return TRUE;
 }
@@ -4338,15 +4339,15 @@ JS_PUBLIC_API bool DescribeScriptedCaller(JSContext* cx, AutoFilename* filename,
     return false;
   }
 
-  // If the caller is hidden, the embedding wants us to return false here so
-  // that it can check its own stack (see HideScriptedCaller).
+  
+  
   if (i.activation()->scriptedCallerIsHidden()) {
     return false;
   }
 
   if (filename) {
     if (i.isWasm()) {
-      // For Wasm, copy out the filename, there is no script source.
+      
       UniqueChars copy = DuplicateString(i.filename() ? i.filename() : "");
       if (!copy) {
         filename->setUnowned("out of memory");
@@ -4354,7 +4355,7 @@ JS_PUBLIC_API bool DescribeScriptedCaller(JSContext* cx, AutoFilename* filename,
         filename->setOwned(std::move(copy));
       }
     } else {
-      // All other frames have a script source to read the filename from.
+      
       filename->setScriptSource(i.scriptSource());
     }
   }
@@ -4368,24 +4369,24 @@ JS_PUBLIC_API bool DescribeScriptedCaller(JSContext* cx, AutoFilename* filename,
   return true;
 }
 
-// Fast path to get the activation and realm to use for GetScriptedCallerGlobal.
-// If this returns false, the fast path didn't work out and the caller has to
-// use the (much slower) NonBuiltinFrameIter path.
-//
-// The optimization here is that we skip Ion-inlined frames and only look at
-// 'outer' frames. That's fine because Ion doesn't inline cross-realm calls.
-// However, GetScriptedCallerGlobal has to skip self-hosted frames and Ion
-// can inline self-hosted scripts, so we have to be careful:
-//
-// * When we see a non-self-hosted outer script, it's possible we inlined
-//   self-hosted scripts into it but that doesn't matter because these scripts
-//   all have the same realm/global anyway.
-//
-// * When we see a self-hosted outer script, it's possible we inlined
-//   non-self-hosted scripts into it, so we have to give up because in this
-//   case, whether or not to skip the self-hosted frame (to the possibly
-//   different-realm caller) requires the slow path to handle inlining. Baseline
-//   and the interpreter don't inline so this only affects Ion.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static bool GetScriptedCallerActivationRealmFast(JSContext* cx,
                                                  Activation** activation,
                                                  Realm** realm) {
@@ -4413,8 +4414,8 @@ static bool GetScriptedCallerActivationRealmFast(JSContext* cx,
       }
 
       if (iter.isJSJit() && iter.asJSJit().isIonScripted()) {
-        // Ion might have inlined non-self-hosted scripts in this
-        // self-hosted script.
+        
+        
         return false;
       }
 
@@ -4452,16 +4453,16 @@ JS_PUBLIC_API JSObject* GetScriptedCallerGlobal(JSContext* cx) {
 
   MOZ_ASSERT(realm->compartment() == activation->compartment());
 
-  // If the caller is hidden, the embedding wants us to return null here so
-  // that it can check its own stack (see HideScriptedCaller).
+  
+  
   if (activation->scriptedCallerIsHidden()) {
     return nullptr;
   }
 
   GlobalObject* global = realm->maybeGlobal();
 
-  // No one should be running code in a realm without any live objects, so
-  // there should definitely be a live global.
+  
+  
   MOZ_ASSERT(global);
 
   return global;
@@ -4470,8 +4471,8 @@ JS_PUBLIC_API JSObject* GetScriptedCallerGlobal(JSContext* cx) {
 JS_PUBLIC_API void HideScriptedCaller(JSContext* cx) {
   MOZ_ASSERT(cx);
 
-  // If there's no accessible activation on the stack, we'll return null from
-  // DescribeScriptedCaller anyway, so there's no need to annotate anything.
+  
+  
   Activation* act = cx->activation();
   if (!act) {
     return;
@@ -4487,7 +4488,7 @@ JS_PUBLIC_API void UnhideScriptedCaller(JSContext* cx) {
   act->unhideScriptedCaller();
 }
 
-} /* namespace JS */
+} 
 
 #ifdef JS_DEBUG
 JS_PUBLIC_API void JS::detail::AssertArgumentsAreSane(JSContext* cx,
@@ -4496,7 +4497,7 @@ JS_PUBLIC_API void JS::detail::AssertArgumentsAreSane(JSContext* cx,
   CHECK_THREAD(cx);
   cx->check(value);
 }
-#endif /* JS_DEBUG */
+#endif 
 
 JS_PUBLIC_API bool JS::FinishIncrementalEncoding(JSContext* cx,
                                                  JS::HandleScript script,
@@ -4548,13 +4549,13 @@ JS_PUBLIC_API void JS::SetOutOfMemoryCallback(JSContext* cx,
 }
 
 JS::FirstSubsumedFrame::FirstSubsumedFrame(
-    JSContext* cx, bool ignoreSelfHostedFrames /* = true */)
+    JSContext* cx, bool ignoreSelfHostedFrames )
     : JS::FirstSubsumedFrame(cx, cx->realm()->principals(),
                              ignoreSelfHostedFrames) {}
 
 JS_PUBLIC_API bool JS::CaptureCurrentStack(
     JSContext* cx, JS::MutableHandleObject stackp,
-    JS::StackCapture&& capture /* = JS::StackCapture(JS::AllFrames()) */) {
+    JS::StackCapture&& capture ) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
   MOZ_RELEASE_ASSERT(cx->realm());
@@ -4634,9 +4635,9 @@ JS_PUBLIC_API void NoteIntentionalCrash() {
 
 #ifdef DEBUG
 bool gSupportDifferentialTesting = false;
-#endif  // DEBUG
+#endif  
 
-}  // namespace js
+}  
 
 #ifdef DEBUG
 
@@ -4644,4 +4645,4 @@ JS_PUBLIC_API void JS::SetSupportDifferentialTesting(bool value) {
   js::gSupportDifferentialTesting = value;
 }
 
-#endif  // DEBUG
+#endif  
