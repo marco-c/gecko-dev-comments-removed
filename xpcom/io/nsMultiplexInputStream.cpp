@@ -905,9 +905,15 @@ nsMultiplexInputStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
     if (NS_SUCCEEDED(mStatus)) {
       uint64_t avail = 0;
       nsresult rv = aStream->Available(&avail);
-      if (rv == NS_BASE_STREAM_CLOSED || avail == 0) {
+      if (rv == NS_BASE_STREAM_CLOSED || (NS_SUCCEEDED(rv) && avail == 0)) {
         
-        ++mCurrentStream;
+        
+        
+        
+        
+        if (NS_FAILED(rv)) {
+          ++mCurrentStream;
+        }
         MutexAutoUnlock unlock(mLock);
         return AsyncWaitInternal();
       }
