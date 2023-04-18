@@ -78,7 +78,17 @@ AudioSink::AudioSink(AbstractThread* aThread,
   }
 }
 
-AudioSink::~AudioSink() = default;
+AudioSink::~AudioSink() {
+  
+  
+  
+  
+  
+  if (mAudioStream) {
+    mAudioStream->Shutdown();
+  }
+}
+
 
 nsresult AudioSink::InitializeAudioStream(
     const PlaybackParams& aParams,
