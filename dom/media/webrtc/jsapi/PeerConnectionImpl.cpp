@@ -351,6 +351,12 @@ PeerConnectionImpl::PeerConnectionImpl(const GlobalObject* aGlobal)
 }
 
 PeerConnectionImpl::~PeerConnectionImpl() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  MOZ_ASSERT(!mTransportHandler,
+             "PeerConnection should either be closed, or not initted in the "
+             "first place.");
+
   if (mTimeCard) {
     STAMP_TIMECARD(mTimeCard, "Destructor Invoked");
     STAMP_TIMECARD(mTimeCard, mHandle.c_str());
@@ -359,19 +365,6 @@ PeerConnectionImpl::~PeerConnectionImpl() {
     mTimeCard = nullptr;
   }
 
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (mWindow && mActiveOnWindow) {
-    mWindow->RemovePeerConnection();
-    
-    
-    
-    mActiveOnWindow = false;
-  }
-
-  if (mPrivateWindow && mTransportHandler) {
-    mTransportHandler->ExitPrivateMode();
-  }
   if (PeerConnectionCtx::isActive()) {
     PeerConnectionCtx::GetInstance()->RemovePeerConnection(mHandle);
   } else {
@@ -380,15 +373,6 @@ PeerConnectionImpl::~PeerConnectionImpl() {
 
   CSFLogInfo(LOGTAG, "%s: PeerConnectionImpl destructor invoked for %s",
              __FUNCTION__, mHandle.c_str());
-
-  
-  
-
-  
-  
-  
-  
-  ShutdownMedia();
 }
 
 nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
@@ -1940,10 +1924,6 @@ nsresult PeerConnectionImpl::CheckApiState(bool assert_ice_ready) const {
     CSFLogError(LOGTAG, "%s: called API while closed", __FUNCTION__);
     return NS_ERROR_FAILURE;
   }
-  if (mDestroyed) {
-    CSFLogError(LOGTAG, "%s: called API after shutdown", __FUNCTION__);
-    return NS_ERROR_FAILURE;
-  }
   return NS_OK;
 }
 
@@ -1956,12 +1936,110 @@ PeerConnectionImpl::Close() {
     return NS_OK;
   }
 
-  CloseInt();
+  mSignalingState = RTCSignalingState::Closed;
+
+  
+  
+  
+  
+  if (!mPrivateWindow) {
+    RecordLongtermICEStatistics();
+  }
+  RecordEndOfCallTelemetry();
+
+  CSFLogInfo(LOGTAG,
+             "%s: Closing PeerConnectionImpl %s; "
+             "ending call",
+             __FUNCTION__, mHandle.c_str());
+  if (mJsepSession) {
+    mJsepSession->Close();
+  }
+  if (mDataConnection) {
+    CSFLogInfo(LOGTAG, "%s: Destroying DataChannelConnection %p for %s",
+               __FUNCTION__, (void*)mDataConnection.get(), mHandle.c_str());
+    mDataConnection->Destroy();
+    mDataConnection =
+        nullptr;  
+  }
+  
+  for (RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
+    RefPtr<dom::MediaStreamTrack> track = transceiver->GetSendTrack();
+    if (track) {
+      track->RemovePrincipalChangeObserver(this);
+    }
+  }
+
+  if (mStunAddrsRequest) {
+    for (const auto& hostname : mRegisteredMDNSHostnames) {
+      mStunAddrsRequest->SendUnregisterMDNSHostname(
+          nsCString(hostname.c_str()));
+    }
+    mRegisteredMDNSHostnames.clear();
+    mStunAddrsRequest->Cancel();
+    mStunAddrsRequest = nullptr;
+  }
+
+  for (auto& transceiver : mTransceivers) {
+    
+    
+    transceiver->Shutdown_m();
+  }
+
+  mTransceivers.clear();
+
+  mQueuedIceCtxOperations.clear();
+
   
   if (mWindow && mActiveOnWindow) {
     mWindow->RemovePeerConnection();
     mActiveOnWindow = false;
   }
+
+  if (!mTransportHandler) {
+    
+    return NS_OK;
+  }
+
+  
+  RefPtr<GenericPromise> promise;
+  if (mCall) {
+    
+    
+    auto callThread = mCall->mCallThread;
+    promise = InvokeAsync(callThread, __func__, [call = std::move(mCall)]() {
+      call->Destroy();
+      return GenericPromise::CreateAndResolve(
+          true, "PCImpl->WebRtcCallWrapper::Destroy");
+    });
+  } else {
+    promise = GenericPromise::CreateAndResolve(true, __func__);
+  }
+
+  
+  
+  
+  
+  MOZ_RELEASE_ASSERT(mSTSThread);
+  promise
+      ->Then(
+          mSTSThread, __func__,
+          [signalHandler = std::move(mSignalHandler)]() mutable {
+            CSFLogDebug(
+                LOGTAG,
+                "Destroying PeerConnectionImpl::SignalHandler on STS thread");
+            return GenericPromise::CreateAndResolve(
+                true, "PeerConnectionImpl::~SignalHandler");
+          })
+      ->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [transportHandler = std::move(mTransportHandler),
+           privateWindow = mPrivateWindow]() mutable {
+            CSFLogDebug(LOGTAG, "PCImpl->mTransportHandler::RemoveTransports");
+            transportHandler->RemoveTransportsExcept(std::set<std::string>());
+            if (privateWindow) {
+              transportHandler->ExitPrivateMode();
+            }
+          });
 
   return NS_OK;
 }
@@ -2010,8 +2088,7 @@ nsresult PeerConnectionImpl::SetConfiguration(
 bool PeerConnectionImpl::PluginCrash(uint32_t aPluginID,
                                      const nsAString& aPluginName) {
   
-  bool result = !mDestroyed ? AnyCodecHasPluginID(aPluginID) : false;
-  if (!result) {
+  if (!AnyCodecHasPluginID(aPluginID)) {
     return false;
   }
 
@@ -2101,117 +2178,6 @@ void PeerConnectionImpl::RecordEndOfCallTelemetry() {
   mCallTelemEnded = true;
 }
 
-nsresult PeerConnectionImpl::CloseInt() {
-  PC_AUTO_ENTER_API_CALL_NO_CHECK();
-
-  mSignalingState = RTCSignalingState::Closed;
-
-  
-  
-  
-  
-  if (!mPrivateWindow) {
-    RecordLongtermICEStatistics();
-  }
-  RecordEndOfCallTelemetry();
-  CSFLogInfo(LOGTAG,
-             "%s: Closing PeerConnectionImpl %s; "
-             "ending call",
-             __FUNCTION__, mHandle.c_str());
-  if (mJsepSession) {
-    mJsepSession->Close();
-  }
-  if (mDataConnection) {
-    CSFLogInfo(LOGTAG, "%s: Destroying DataChannelConnection %p for %s",
-               __FUNCTION__, (void*)mDataConnection.get(), mHandle.c_str());
-    mDataConnection->Destroy();
-    mDataConnection =
-        nullptr;  
-  }
-  ShutdownMedia();
-
-  
-
-  return NS_OK;
-}
-
-void PeerConnectionImpl::ShutdownMedia() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (mDestroyed) return;
-  mDestroyed = true;
-
-  
-  for (RefPtr<TransceiverImpl>& transceiver : mTransceivers) {
-    RefPtr<dom::MediaStreamTrack> track = transceiver->GetSendTrack();
-    if (track) {
-      track->RemovePrincipalChangeObserver(this);
-    }
-  }
-
-  if (mStunAddrsRequest) {
-    for (const auto& hostname : mRegisteredMDNSHostnames) {
-      mStunAddrsRequest->SendUnregisterMDNSHostname(
-          nsCString(hostname.c_str()));
-    }
-    mRegisteredMDNSHostnames.clear();
-    mStunAddrsRequest->Cancel();
-    mStunAddrsRequest = nullptr;
-  }
-
-  for (auto& transceiver : mTransceivers) {
-    
-    
-    transceiver->Shutdown_m();
-  }
-
-  mTransceivers.clear();
-
-  mQueuedIceCtxOperations.clear();
-
-  if (!mTransportHandler) {
-    
-    return;
-  }
-
-  
-  RefPtr<GenericPromise> promise;
-  if (mCall) {
-    
-    
-    auto callThread = mCall->mCallThread;
-    promise = InvokeAsync(callThread, __func__, [call = std::move(mCall)]() {
-      call->Destroy();
-      return GenericPromise::CreateAndResolve(
-          true, "PCImpl->WebRtcCallWrapper::Destroy");
-    });
-  } else {
-    promise = GenericPromise::CreateAndResolve(true, __func__);
-  }
-
-  
-  
-  
-  
-  MOZ_RELEASE_ASSERT(mSTSThread);
-  promise
-      ->Then(
-          mSTSThread, __func__,
-          [signalHandler = std::move(mSignalHandler)]() mutable {
-            CSFLogDebug(
-                LOGTAG,
-                "Destroying PeerConnectionImpl::SignalHandler on STS thread");
-            return GenericPromise::CreateAndResolve(
-                true, "PeerConnectionImpl::~SignalHandler");
-          })
-      ->Then(
-          GetMainThreadSerialEventTarget(), __func__,
-          [transportHandler = std::move(mTransportHandler)]() mutable {
-            CSFLogDebug(LOGTAG, "PCImpl->mTransportHandler::RemoveTransports");
-            transportHandler->RemoveTransportsExcept(std::set<std::string>());
-          });
-}
-
 DOMMediaStream* PeerConnectionImpl::GetReceiveStream(
     const std::string& aId) const {
   nsString wanted = NS_ConvertASCIItoUTF16(aId.c_str());
@@ -2278,9 +2244,6 @@ void PeerConnectionImpl::OnSetDescriptionSuccess(JsepSdpType sdpType,
           mPCObserver->OnStateChange(PCObserverStateType::SignalingState, jrv);
         }
 
-        
-        
-        
         if (remote) {
           dom::RTCRtpReceiver::StreamAssociationChanges changes;
           for (const auto& transceiver : mTransceivers) {
@@ -2426,8 +2389,6 @@ bool PeerConnectionImpl::IsClosed() const {
   return mSignalingState == RTCSignalingState::Closed;
 }
 
-bool PeerConnectionImpl::IsActive() const { return !mDestroyed; }
-
 PeerConnectionWrapper::PeerConnectionWrapper(const std::string& handle)
     : impl_(nullptr) {
   PeerConnectionImpl* impl =
@@ -2436,8 +2397,6 @@ PeerConnectionWrapper::PeerConnectionWrapper(const std::string& handle)
   if (!PeerConnectionCtx::isActive() || !impl) {
     return;
   }
-
-  if (!impl->IsActive()) return;
 
   impl_ = impl;
 }

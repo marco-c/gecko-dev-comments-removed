@@ -408,8 +408,6 @@ class PeerConnectionImpl final
   
   nsresult OnAlpnNegotiated(bool aPrivacyRequested);
 
-  bool IsActive() const;
-
   
   void StartCallTelem();
 
@@ -466,7 +464,6 @@ class PeerConnectionImpl final
   NS_IMETHODIMP EnsureDataConnection(uint16_t aLocalPort, uint16_t aNumstreams,
                                      uint32_t aMaxMessageSize, bool aMMSSet);
 
-  nsresult CloseInt();
   nsresult CheckApiState(bool assert_ice_ready) const;
   void CheckThread() const { MOZ_ASSERT(CheckThreadInt(), "Wrong thread"); }
   bool CheckThreadInt() const {
@@ -480,9 +477,6 @@ class PeerConnectionImpl final
   
   RefPtr<MediaPipeline> GetMediaPipelineForTrack(
       dom::MediaStreamTrack& aRecvTrack);
-
-  
-  void ShutdownMedia();
 
   void CandidateReady(const std::string& candidate,
                       const std::string& transportId, const std::string& ufrag);
@@ -747,10 +741,6 @@ class PeerConnectionImpl final
   
   
   bool mTargetForDefaultLocalAddressLookupIsSet = false;
-
-  
-  
-  bool mDestroyed = false;
 
   
   
