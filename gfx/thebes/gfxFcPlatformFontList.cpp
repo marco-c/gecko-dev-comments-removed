@@ -1519,16 +1519,20 @@ nsresult gfxFcPlatformFontList::InitFontListForPlatform() {
   }
 #endif
 
-  
-  FcFontSet* systemFonts = FcConfigGetFonts(nullptr, FcSetSystem);
-  AddFontSetFamilies(systemFonts, policy.get(),  false);
-
 #ifdef MOZ_BUNDLED_FONTS
+  
+  
+  
+  
   if (StaticPrefs::gfx_bundled_fonts_activate_AtStartup() != 0) {
     FcFontSet* appFonts = FcConfigGetFonts(nullptr, FcSetApplication);
     AddFontSetFamilies(appFonts, policy.get(),  true);
   }
 #endif
+
+  
+  FcFontSet* systemFonts = FcConfigGetFonts(nullptr, FcSetSystem);
+  AddFontSetFamilies(systemFonts, policy.get(),  false);
 
   return NS_OK;
 }
