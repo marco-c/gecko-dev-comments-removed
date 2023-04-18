@@ -43,7 +43,8 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   ModuleLoadRequest(nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
                     const SRIMetadata& aIntegrity, nsIURI* aReferrer,
                     bool aIsTopLevel, bool aIsDynamicImport,
-                    ModuleLoader* aLoader, VisitedURLSet* aVisitedSet);
+                    ModuleLoader* aLoader, VisitedURLSet* aVisitedSet,
+                    ModuleLoadRequest* aRootModule);
 
  public:
   NS_DECL_ISUPPORTS_INHERITED
@@ -51,16 +52,16 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
                                                          ScriptLoadRequest)
 
   
-  static ModuleLoadRequest* CreateTopLevel(
+  static already_AddRefed<ModuleLoadRequest> CreateTopLevel(
       nsIURI* aURI, ScriptFetchOptions* aFetchOptions, Element* aElement,
       const SRIMetadata& aIntegrity, nsIURI* aReferrer, ScriptLoader* aLoader);
 
   
-  static ModuleLoadRequest* CreateStaticImport(nsIURI* aURI,
-                                               ModuleLoadRequest* aParent);
+  static already_AddRefed<ModuleLoadRequest> CreateStaticImport(
+      nsIURI* aURI, ModuleLoadRequest* aParent);
 
   
-  static ModuleLoadRequest* CreateDynamicImport(
+  static already_AddRefed<ModuleLoadRequest> CreateDynamicImport(
       nsIURI* aURI, ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL,
       Element* aElement, ScriptLoader* aLoader,
       JS::Handle<JS::Value> aReferencingPrivate,
@@ -79,6 +80,13 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   void DependenciesLoaded();
   void LoadFailed();
 
+  ModuleLoadRequest* GetRootModule() {
+    if (!mRootModule) {
+      return this;
+    }
+    return mRootModule;
+  }
+
  private:
   void LoadFinished();
   void CancelImports();
@@ -94,6 +102,10 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   
   
   RefPtr<ModuleLoader> mLoader;
+
+  
+  
+  RefPtr<ModuleLoadRequest> mRootModule;
 
   
   
