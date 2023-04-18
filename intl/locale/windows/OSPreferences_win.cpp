@@ -67,11 +67,11 @@ bool OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList) {
                 
                 
                 Locale locale;
-                auto result = LocaleParser::tryParse(loc, locale);
-                if (result.isOk() && locale.addLikelySubtags().isOk() &&
-                    locale.region().present()) {
+                auto result = LocaleParser::TryParse(loc, locale);
+                if (result.isOk() && locale.AddLikelySubtags().isOk() &&
+                    locale.Region().Present()) {
                   loc.Append('-');
-                  loc.Append(locale.region().span());
+                  loc.Append(locale.Region().Span());
                 }
               }
               aLocaleList.AppendElement(loc);
