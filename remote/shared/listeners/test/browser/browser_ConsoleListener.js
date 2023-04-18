@@ -10,11 +10,19 @@ add_task(async function test_level() {
     is(message.level, level, "Received expected log level");
     is(message.message, "foo", "Received expected log message");
   }
+
+  
+  
+  await clearConsole();
 });
 
 add_task(async function test_message() {
   const message = await logMessage({ message: "bar" });
   is(message.message, "bar", "Received expected log message");
+
+  
+  
+  await clearConsole();
 });
 
 async function logMessage(options = {}) {

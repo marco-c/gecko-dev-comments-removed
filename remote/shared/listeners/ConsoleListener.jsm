@@ -40,6 +40,7 @@ XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
 
 
 class ConsoleListener {
+  #emittedMessages;
   #innerWindowId;
   #listening;
 
@@ -52,8 +53,9 @@ class ConsoleListener {
   constructor(innerWindowId) {
     EventEmitter.decorate(this);
 
-    this.#listening = false;
+    this.#emittedMessages = new WeakSet();
     this.#innerWindowId = innerWindowId;
+    this.#listening = false;
   }
 
   get listening() {
@@ -69,9 +71,12 @@ class ConsoleListener {
       return;
     }
 
-    
-    
     Services.console.registerListener(this.#onConsoleMessage);
+
+    
+    
+    this.#emitCachedMessages();
+
     this.#listening = true;
   }
 
@@ -84,12 +89,28 @@ class ConsoleListener {
     this.#listening = false;
   }
 
+  #emitCachedMessages() {
+    const cachedMessages = Services.console.getMessageArray() || [];
+
+    for (const message of cachedMessages) {
+      this.#onConsoleMessage(message);
+    }
+  }
+
   #onConsoleMessage = message => {
     if (!(message instanceof Ci.nsIScriptError)) {
       
       
       return;
     }
+
+    
+    
+    if (this.#emittedMessages.has(message)) {
+      return;
+    }
+
+    this.#emittedMessages.add(message);
 
     if (message.innerWindowID !== this.#innerWindowId) {
       
