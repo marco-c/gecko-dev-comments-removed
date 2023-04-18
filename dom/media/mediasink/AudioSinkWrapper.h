@@ -87,6 +87,16 @@ class AudioSinkWrapper : public MediaSink {
   void GetDebugInfo(dom::MediaSinkDebugInfo& aInfo) override;
 
  private:
+  
+  
+  enum class ClockSource {
+    
+    AudioStream,
+    
+    SystemClock,
+    
+    Paused
+  } mLastClockSource = ClockSource::Paused;
   bool IsMuted() const;
   void OnMuted(bool aMuted);
   virtual ~AudioSinkWrapper();
