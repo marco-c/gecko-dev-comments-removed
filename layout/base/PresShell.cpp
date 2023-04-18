@@ -3672,14 +3672,19 @@ void PresShell::DoScrollContentIntoView() {
 
   
   
+  
+  
   nsIFrame* container = nsLayoutUtils::GetClosestFrameOfType(
       frame->GetParent(), LayoutFrameType::Scroll);
   if (!container) {
-    
-    return;
+    container = frame->PresShell()->GetRootFrame();
+    MOZ_DIAGNOSTIC_ASSERT(container);
+    if (!container) {
+      return;
+    }
   }
 
-  ScrollIntoViewData* data = static_cast<ScrollIntoViewData*>(
+  auto* data = static_cast<ScrollIntoViewData*>(
       mContentToScrollTo->GetProperty(nsGkAtoms::scrolling));
   if (MOZ_UNLIKELY(!data)) {
     mContentToScrollTo = nullptr;
