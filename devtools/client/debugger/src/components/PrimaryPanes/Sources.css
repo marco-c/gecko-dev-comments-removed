@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 .sources-panel {
   background-color: var(--theme-sidebar-background);
@@ -80,7 +80,7 @@
   background-color: #ffffff;
 }
 
-
+/* Use the same width as .img.arrow */
 .sources-list .tree .img.no-arrow {
   width: 10px;
   visibility: hidden;
@@ -193,12 +193,12 @@
 
 .sources-list .img.blackBox {
   mask-size: 13px;
-  background-color: var(--theme-icon-checked-color);
+  background-color: var(--red-40);
 }
 
-
-
-
+/*
+  Custom root styles
+*/
 .sources-pane.sources-list-custom-root {
   display: block;
   position: relative;
@@ -216,7 +216,7 @@
   left: 0;
 }
 
-
+/* Removes start margin when a custom root is used */
 .sources-list-custom-root
   .tree
   > .tree-node[data-expandable="false"][aria-level="0"] {
