@@ -12,7 +12,7 @@ const { extend } = require("devtools/shared/extend");
 
 loader.lazyRequireGetter(
   this,
-  "setEventTooltip",
+  "EventTooltip",
   "devtools/client/shared/widgets/tooltip/EventTooltipHelper",
   true
 );
@@ -74,10 +74,14 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
 
     const toolbox = this.markup.toolbox;
 
-    setEventTooltip(tooltip, listenerInfo, toolbox);
+    
+    const eventTooltip = new EventTooltip(tooltip, listenerInfo, toolbox);
+
     
     this.markup._disableImagePreviewTooltip();
     tooltip.once("hidden", () => {
+      eventTooltip.destroy();
+
       
       this.markup._enableImagePreviewTooltip();
 
