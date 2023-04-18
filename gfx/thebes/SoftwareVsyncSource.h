@@ -7,6 +7,7 @@
 #ifndef GFX_SOFTWARE_VSYNC_SOURCE_H
 #define GFX_SOFTWARE_VSYNC_SOURCE_H
 
+#include "mozilla/DataMutex.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
@@ -21,7 +22,7 @@ namespace mozilla::gfx {
 
 class SoftwareVsyncSource : public VsyncSource {
  public:
-  explicit SoftwareVsyncSource();
+  explicit SoftwareVsyncSource(const TimeDuration& aInitialVsyncRate);
   virtual ~SoftwareVsyncSource();
 
   void EnableVsync() override;
@@ -34,12 +35,17 @@ class SoftwareVsyncSource : public VsyncSource {
   void ScheduleNextVsync(TimeStamp aVsyncTimestamp);
   void Shutdown() override;
 
+  
+  void SetVsyncRate(const TimeDuration& aNewRate);
+
  protected:
-  TimeDuration mVsyncRate;
   
   base::Thread* mVsyncThread;
   RefPtr<CancelableRunnable> mCurrentVsyncTask;  
   bool mVsyncEnabled;                            
+
+ private:
+  DataMutex<TimeDuration> mVsyncRate;  
 };
 
 }  
