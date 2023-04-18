@@ -1,0 +1,14 @@
+
+
+
+
+
+#include "nsIBaseWindow.h"
+#include "mozilla/LookAndFeel.h"
+
+using namespace mozilla;
+
+CSSToLayoutDeviceScale nsIBaseWindow::UnscaledDevicePixelsPerCSSPixel() {
+  return CSSToLayoutDeviceScale(GetWidgetCSSToDeviceScale() *
+                                LookAndFeel::SystemZoomSettings().mFullZoom);
+}

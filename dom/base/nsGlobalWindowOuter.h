@@ -826,7 +826,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   void SetCSSViewportWidthAndHeight(nscoord width, nscoord height);
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  nsresult SetDocShellWidthAndHeight(int32_t width, int32_t height);
+  nsresult SetDocShellSize(const mozilla::LayoutDeviceIntSize& aInnerSize);
 
   static bool CanSetProperty(const char* aPrefName);
 
@@ -850,8 +850,8 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
   
   nsresult GetInnerSize(mozilla::CSSSize& aSize);
-  nsIntSize GetOuterSize(mozilla::dom::CallerType aCallerType,
-                         mozilla::ErrorResult& aError);
+  mozilla::CSSIntSize GetOuterSize(mozilla::dom::CallerType aCallerType,
+                                   mozilla::ErrorResult& aError);
   void SetOuterSize(int32_t aLengthCSSPixels, bool aIsWidth,
                     mozilla::dom::CallerType aCallerType,
                     mozilla::ErrorResult& aError);
@@ -875,21 +875,10 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   
   
   
-  int32_t DevToCSSIntPixels(int32_t px);
-  nsIntSize DevToCSSIntPixels(nsIntSize px);
-
   
   
   
-  
-  int32_t DevToCSSIntPixelsForBaseWindow(int32_t aDevicePixels,
-                                         nsIBaseWindow* aWindow);
-  nsIntSize DevToCSSIntPixelsForBaseWindow(nsIntSize aDeviceSize,
-                                           nsIBaseWindow* aWindow);
-  int32_t CSSToDevIntPixelsForBaseWindow(int32_t aCSSPixels,
-                                         nsIBaseWindow* aWindow);
-  nsIntSize CSSToDevIntPixelsForBaseWindow(nsIntSize aCSSSize,
-                                           nsIBaseWindow* aWindow);
+  mozilla::CSSToLayoutDeviceScale CSSToDevScaleForBaseWindow(nsIBaseWindow*);
 
   void SetFocusedElement(mozilla::dom::Element* aElement,
                          uint32_t aFocusMethod = 0,
