@@ -106,6 +106,15 @@ uint32_t URLQueryStringStripper::StripQueryString(nsIURI* aURI,
 
     if (mList.Contains(lowerCaseName)) {
       numStripped += 1;
+
+      
+      
+      
+      nsAutoCString telemetryLabel("param_");
+      AppendUTF16toUTF8(lowerCaseName, telemetryLabel);
+      Telemetry::AccumulateCategorical(
+          Telemetry::QUERY_STRIPPING_COUNT_BY_PARAM, telemetryLabel);
+
       return true;
     }
 
