@@ -10,6 +10,7 @@
 
 #include "Units.h"
 #include "mozilla/dom/FontFaceSet.h"
+#include "mozilla/dom/ElementBinding.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/AutoRestore.h"
@@ -3130,6 +3131,7 @@ already_AddRefed<gfxContext> PresShell::CreateReferenceRenderingContext() {
   return rc ? rc.forget() : nullptr;
 }
 
+
 nsresult PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
                                ScrollFlags aAdditionalScrollFlags) {
   if (!mDocument) {
@@ -3149,157 +3151,193 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName, bool aScroll,
   
   RefPtr<EventStateManager> esm = mPresContext->EventStateManager();
 
+  
+  
+  
+  
+  
   if (aAnchorName.IsEmpty()) {
     NS_ASSERTION(!aScroll, "can't scroll to empty anchor name");
     esm->SetContentState(nullptr, NS_EVENT_STATE_URLTARGET);
     return NS_OK;
   }
 
-  nsresult rv = NS_OK;
-  nsCOMPtr<nsIContent> content;
+  
+  
+  
 
   
-  if (mDocument) {
-    content = mDocument->GetElementById(aAnchorName);
-  }
-
   
-  if (!content && mDocument->IsHTMLDocument()) {
+  
+  
+  RefPtr<Element> target = [&]() -> Element* {
     
-    nsCOMPtr<nsINodeList> list = mDocument->GetElementsByName(aAnchorName);
-    if (list) {
+    
+    if (Element* el = mDocument->GetElementById(aAnchorName)) {
+      return el;
+    }
+
+    
+    
+    
+    
+    
+    if (mDocument->IsHTMLDocument()) {
+      nsCOMPtr<nsINodeList> list = mDocument->GetElementsByName(aAnchorName);
       
       uint32_t length = list->Length();
       for (uint32_t i = 0; i < length; i++) {
         nsIContent* node = list->Item(i);
         if (node->IsHTMLElement(nsGkAtoms::a)) {
-          content = node;
+          return node->AsElement();
+        }
+      }
+    } else {
+      constexpr auto nameSpace = u"http://www.w3.org/1999/xhtml"_ns;
+      
+      nsCOMPtr<nsINodeList> list =
+          mDocument->GetElementsByTagNameNS(nameSpace, u"a"_ns);
+      
+      for (uint32_t i = 0; true; i++) {
+        nsIContent* node = list->Item(i);
+        if (!node) {  
           break;
+        }
+
+        
+        if (node->IsElement() &&
+            node->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::name,
+                                           aAnchorName, eCaseMatters)) {
+          return node->AsElement();
         }
       }
     }
-  }
+
+    
+    return nullptr;
+  }();
 
   
-  if (!content && !mDocument->IsHTMLDocument()) {
-    constexpr auto nameSpace = u"http://www.w3.org/1999/xhtml"_ns;
-    
-    nsCOMPtr<nsINodeList> list =
-        mDocument->GetElementsByTagNameNS(nameSpace, u"a"_ns);
-    
-    for (uint32_t i = 0; true; i++) {
-      nsIContent* node = list->Item(i);
-      if (!node) {  
-        break;
-      }
+  
+  
+  
+  esm->SetContentState(target, NS_EVENT_STATE_URLTARGET);
 
+  
+  if (nsIScrollableFrame* rootScroll = GetRootScrollFrameAsScrollable()) {
+    if (rootScroll->DidHistoryRestore()) {
       
-      if (node->IsElement() &&
-          node->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::name,
-                                         aAnchorName, eCaseMatters)) {
-        content = node;
-        break;
-      }
+      aScroll = false;
+      rootScroll->ClearDidHistoryRestore();
     }
   }
 
-  esm->SetContentState(content, NS_EVENT_STATE_URLTARGET);
-
-#ifdef ACCESSIBILITY
-  nsIContent* anchorTarget = content;
-#endif
-
-  nsIScrollableFrame* rootScroll = GetRootScrollFrameAsScrollable();
-  if (rootScroll && rootScroll->DidHistoryRestore()) {
-    
-    aScroll = false;
-    rootScroll->ClearDidHistoryRestore();
-  }
-
-  if (content) {
+  if (target) {
     if (aScroll) {
+      
+      
+      
+      
+      
       ScrollingInteractionContext scrollToAnchorContext(true);
+      MOZ_TRY(ScrollContentIntoView(
+          target, ScrollAxis(kScrollToTop, WhenToScroll::Always), ScrollAxis(),
+          ScrollFlags::AnchorScrollFlags | aAdditionalScrollFlags));
 
-      rv = ScrollContentIntoView(
-          content, ScrollAxis(kScrollToTop, WhenToScroll::Always), ScrollAxis(),
-          ScrollFlags::AnchorScrollFlags | aAdditionalScrollFlags);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      nsIScrollableFrame* rootScroll = GetRootScrollFrameAsScrollable();
-      if (rootScroll) {
-        mLastAnchorScrolledTo = content;
+      if (nsIScrollableFrame* rootScroll = GetRootScrollFrameAsScrollable()) {
+        mLastAnchorScrolledTo = target;
         mLastAnchorScrollPositionY = rootScroll->GetScrollPosition().y;
       }
     }
 
-    
-    
-    bool selectAnchor = Preferences::GetBool("layout.selectanchor");
+    {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      RefPtr<nsRange> jumpToRange = nsRange::Create(mDocument);
+      nsCOMPtr<nsIContent> nodeToSelect = target.get();
+      while (nodeToSelect->GetFirstChild()) {
+        nodeToSelect = nodeToSelect->GetFirstChild();
+      }
+      jumpToRange->SelectNodeContents(*nodeToSelect, IgnoreErrors());
+      if (RefPtr sel = mSelection->GetSelection(SelectionType::eNormal)) {
+        sel->RemoveAllRanges(IgnoreErrors());
+        sel->AddRangeAndSelectFramesAndNotifyListeners(*jumpToRange,
+                                                       IgnoreErrors());
+        if (!StaticPrefs::layout_selectanchor()) {
+          
+          sel->CollapseToStart(IgnoreErrors());
+        }
+      }
+    }
 
     
     
     
-    RefPtr<nsRange> jumpToRange = nsRange::Create(mDocument);
-    while (content && content->GetFirstChild()) {
-      content = content->GetFirstChild();
-    }
-    jumpToRange->SelectNodeContents(*content, IgnoreErrors());
     
-    RefPtr<Selection> sel = mSelection->GetSelection(SelectionType::eNormal);
-    if (sel) {
-      sel->RemoveAllRanges(IgnoreErrors());
-      sel->AddRangeAndSelectFramesAndNotifyListeners(*jumpToRange,
-                                                     IgnoreErrors());
-      if (!selectAnchor) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const bool shouldFocusTarget = [&] {
+      if (!aScroll) {
+        return false;
+      }
+      nsIFrame* targetFrame = target->GetPrimaryFrame();
+      return targetFrame && targetFrame->IsFocusable();
+    }();
+
+    if (shouldFocusTarget) {
+      FocusOptions options;
+      options.mPreventScroll = true;
+      target->Focus(options, CallerType::NonSystem, IgnoreErrors());
+    } else if (RefPtr<nsIFocusManager> fm = nsFocusManager::GetFocusManager()) {
+      if (nsPIDOMWindowOuter* win = mDocument->GetWindow()) {
         
-        sel->CollapseToStart(IgnoreErrors());
-      }
-    }
-    
-    
-    nsPIDOMWindowOuter* win = mDocument->GetWindow();
-
-    nsFocusManager* fm = nsFocusManager::GetFocusManager();
-    if (fm && win) {
-      nsCOMPtr<mozIDOMWindowProxy> focusedWindow;
-      fm->GetFocusedWindow(getter_AddRefs(focusedWindow));
-      if (SameCOMIdentity(win, focusedWindow)) {
-        fm->ClearFocus(focusedWindow);
+        nsCOMPtr<mozIDOMWindowProxy> focusedWindow;
+        fm->GetFocusedWindow(getter_AddRefs(focusedWindow));
+        if (SameCOMIdentity(win, focusedWindow)) {
+          fm->ClearFocus(focusedWindow);
+        }
       }
     }
 
     
-    nsCOMPtr<SVGAnimationElement> animationElement = do_QueryInterface(content);
-    if (animationElement) {
+    if (nsCOMPtr<SVGAnimationElement> animationElement =
+            do_QueryInterface(target)) {
       animationElement->ActivateByHyperlink();
     }
-  } else {
-    rv = NS_ERROR_FAILURE;
-    if (nsContentUtils::EqualsIgnoreASCIICase(aAnchorName, u"top"_ns)) {
-      
-      
-      rv = NS_OK;
-      nsIScrollableFrame* sf = GetRootScrollFrameAsScrollable();
-      
-      
-      if (aScroll && sf) {
-        ScrollMode scrollMode =
-            sf->IsSmoothScroll() ? ScrollMode::SmoothMsd : ScrollMode::Instant;
-        
-        sf->ScrollTo(nsPoint(0, 0), scrollMode);
-      }
-    }
-  }
 
-#ifdef ACCESSIBILITY
-  if (anchorTarget) {
     if (nsAccessibilityService* accService = GetAccessibilityService()) {
-      accService->NotifyOfAnchorJumpTo(anchorTarget);
+      accService->NotifyOfAnchorJumpTo(target);
     }
+  } else if (nsContentUtils::EqualsIgnoreASCIICase(aAnchorName, u"top"_ns)) {
+    
+    nsIScrollableFrame* sf = GetRootScrollFrameAsScrollable();
+    
+    
+    if (aScroll && sf) {
+      ScrollMode scrollMode =
+          sf->IsSmoothScroll() ? ScrollMode::SmoothMsd : ScrollMode::Instant;
+      
+      sf->ScrollTo(nsPoint(0, 0), scrollMode);
+    }
+  } else {
+    return NS_ERROR_FAILURE;
   }
-#endif  
 
-  return rv;
+  return NS_OK;
 }
 
 nsresult PresShell::ScrollToAnchor() {
