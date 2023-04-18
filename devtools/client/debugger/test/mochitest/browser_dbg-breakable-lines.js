@@ -7,13 +7,12 @@ const TEST_URL = testServer.urlFor("index.html");
 
 
 add_task(async function testBreakableLinesOverReloads() {
-  const dbg = await initDebuggerWithAbsoluteURL(TEST_URL, "script.js");
+  const dbg = await initDebuggerWithAbsoluteURL(TEST_URL, "index.html", "script.js", "original.js");
 
   info("Assert breakable lines of the first html page load");
   await assertBreakableLines(dbg, "index.html", 20, [[16], [17]]);
 
   info("Assert breakable lines of the first original source file, original.js");
-  await waitForSource(dbg, "original.js");
   
   
   
@@ -23,12 +22,9 @@ add_task(async function testBreakableLinesOverReloads() {
   info("Assert breakable lines of the simple first load of script.js");
   await assertBreakableLines(dbg, "script.js", 3, [[1], [3]]);
 
-  info("Reload the page and assert that breakable lines get updated");
+  info("Reload the page, wait for sources and assert that breakable lines get updated");
   testServer.switchToNextVersion();
-  await reload(dbg);
-
-  info("Wait for script.js to be ready");
-  await waitForSelectedSource(dbg, "script.js");
+  await reload(dbg, "index.html", "script.js", "original.js");
 
   info("Assert breakable lines of the more complex second load of script.js");
   await assertBreakableLines(dbg, "script.js", 23, [[2], [13,23]]);
@@ -37,7 +33,6 @@ add_task(async function testBreakableLinesOverReloads() {
   await assertBreakableLines(dbg, "index.html", 21, [[15], [17]]);
 
   info("Assert breakable lines of the second orignal file");
-  await waitForSource(dbg, "original.js");
   
   
   await assertBreakableLines(dbg, "original.js", 18, [[1,3], [8,11], [13]]);
