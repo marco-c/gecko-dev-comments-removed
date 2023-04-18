@@ -45,7 +45,6 @@ class StreamRegistry {
   }
 
   async _discard(stream) {
-    
     if (stream instanceof lazy.OS.File) {
       let fileInfo;
 
@@ -73,7 +72,6 @@ class StreamRegistry {
   add(stream) {
     let handle;
 
-    
     if (stream instanceof lazy.OS.File) {
       handle = Services.uuid
         .generateUUID()
