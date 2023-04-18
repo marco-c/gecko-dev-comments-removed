@@ -1084,7 +1084,11 @@ pub extern "C" fn wr_thread_pool_new(low_priority: bool) -> *mut WrThreadPool {
     
     
     
-    let num_threads = num_cpus::get().max(2).min(8);
+
+    
+    
+    let max = if low_priority { 8 } else { 4 };
+    let num_threads = num_cpus::get().min(max);
 
     let priority_tag = if low_priority { "LP" } else { "" };
 
