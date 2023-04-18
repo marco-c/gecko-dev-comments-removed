@@ -22,7 +22,7 @@
 #define mozilla_ThreadSafety_h
 #include "mozilla/Attributes.h"
 
-#if defined(__clang__) && (!defined(SWIG))
+#if defined(__clang__) && (__clang_major__ >= 8) && !defined(SWIG)
 #  define THREAD_ANNOTATION_ATTRIBUTE__(x) __attribute__((x))
 
 
@@ -61,8 +61,10 @@
 
 
 
-#define ACQUIRED_AFTER(...) THREAD_ANNOTATION_ATTRIBUTE__(acquired_after(__VA_ARGS__))
-#define ACQUIRED_BEFORE(...) THREAD_ANNOTATION_ATTRIBUTE__(acquired_before(__VA_ARGS__))
+#define ACQUIRED_AFTER(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(acquired_after(__VA_ARGS__))
+#define ACQUIRED_BEFORE(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(acquired_before(__VA_ARGS__))
 
 
 
@@ -104,7 +106,8 @@
 #define SHARED_TRYLOCK_FUNCTION(...) \
   THREAD_ANNOTATION_ATTRIBUTE__(shared_trylock_function(__VA_ARGS__))
 
-#define CAPABILITY_RELEASE(...) THREAD_ANNOTATION_ATTRIBUTE__(unlock_function(__VA_ARGS__))
+#define CAPABILITY_RELEASE(...) \
+  THREAD_ANNOTATION_ATTRIBUTE__(unlock_function(__VA_ARGS__))
 
 
 #define NO_THREAD_SAFETY_ANALYSIS \
