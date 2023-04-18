@@ -4,19 +4,12 @@
 
 
 
-XPIDL_SOURCES += [
-    "nsIPrintProgress.idl",
-    "nsIPrintProgressParams.idl",
-]
-
 EXPORTS.mozilla.layout += [
     "ipc/RemotePrintJobChild.h",
     "ipc/RemotePrintJobParent.h",
 ]
 
 EXPORTS.mozilla.layout.printing += ["DrawEventRecorder.h"]
-
-XPIDL_MODULE = "layout_printing"
 
 UNIFIED_SOURCES += [
     "DrawEventRecorder.cpp",

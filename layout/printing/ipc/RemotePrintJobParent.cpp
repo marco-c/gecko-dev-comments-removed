@@ -267,6 +267,7 @@ mozilla::ipc::IPCResult RemotePrintJobParent::RecvStatusChange(
 void RemotePrintJobParent::RegisterListener(nsIWebProgressListener* aListener) {
   MOZ_ASSERT(aListener);
 
+  
   mPrintProgressListeners.AppendElement(aListener);
 }
 
