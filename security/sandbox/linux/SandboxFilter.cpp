@@ -1837,6 +1837,10 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
       }
 
         
+      case __NR_uname:
+        return Allow();
+
+        
       default:
         return SandboxPolicyCommon::EvaluateSyscall(sysno);
     }
