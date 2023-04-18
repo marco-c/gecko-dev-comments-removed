@@ -7,7 +7,10 @@ function test_runner(test) {
     
     const sandbox = sinon.createSandbox();
     try {
-      await test({ sandbox, main: testGlobal.window.thePKT_PANEL });
+      await test({
+        sandbox,
+        pktPanelMessaging: testGlobal.window.pktPanelMessaging,
+      });
     } finally {
       
       sandbox.restore();
@@ -19,24 +22,24 @@ function test_runner(test) {
   add_task(testTask);
 }
 
-test_runner(async function test_clickHelper({ sandbox, main }) {
+test_runner(async function test_clickHelper({ sandbox, pktPanelMessaging }) {
   
   const button = document.createElement("button");
   button.setAttribute("href", "http://example.com");
 
   
-  sandbox.stub(testGlobal.pktPanelMessaging, "sendMessage");
+  sandbox.stub(pktPanelMessaging, "sendMessage");
 
   
-  main.clickHelper(button, { source: "test-click", position: 2 });
+  pktPanelMessaging.clickHelper(button, { source: "test-click", position: 2 });
   button.click();
 
   Assert.ok(
-    testGlobal.pktPanelMessaging.sendMessage.calledOnce,
+    pktPanelMessaging.sendMessage.calledOnce,
     "Should fire sendMessage once with clickHelper click"
   );
   Assert.ok(
-    testGlobal.pktPanelMessaging.sendMessage.calledWith("PKT_openTabWithUrl", {
+    pktPanelMessaging.sendMessage.calledWith("PKT_openTabWithUrl", {
       url: "http://example.com",
       activate: true,
       source: "test-click",

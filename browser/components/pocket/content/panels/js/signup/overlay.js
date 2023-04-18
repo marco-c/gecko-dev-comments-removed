@@ -5,23 +5,29 @@
 
 
 
+import pktPanelMessaging from "../messages.js";
 
-
-var PKT_PANEL_OVERLAY = function(options) {
+var SignupOverlay = function(options) {
   this.inited = false;
   this.active = false;
 
   this.setupClickEvents = function() {
-    thePKT_PANEL.clickHelper(document.querySelector(`.pkt_ext_learnmore`), {
-      source: `learn_more`,
-    });
-    thePKT_PANEL.clickHelper(document.querySelector(`.signup-btn-firefox`), {
-      source: `sign_up_1`,
-    });
-    thePKT_PANEL.clickHelper(document.querySelector(`.signup-btn-email`), {
+    pktPanelMessaging.clickHelper(
+      document.querySelector(`.pkt_ext_learnmore`),
+      {
+        source: `learn_more`,
+      }
+    );
+    pktPanelMessaging.clickHelper(
+      document.querySelector(`.signup-btn-firefox`),
+      {
+        source: `sign_up_1`,
+      }
+    );
+    pktPanelMessaging.clickHelper(document.querySelector(`.signup-btn-email`), {
       source: `sign_up_2`,
     });
-    thePKT_PANEL.clickHelper(document.querySelector(`.pkt_ext_login`), {
+    pktPanelMessaging.clickHelper(document.querySelector(`.pkt_ext_login`), {
       source: `log_in`,
     });
   };
@@ -71,3 +77,5 @@ var PKT_PANEL_OVERLAY = function(options) {
     pktPanelMessaging.sendMessage("PKT_show_signup");
   };
 };
+
+export default SignupOverlay;

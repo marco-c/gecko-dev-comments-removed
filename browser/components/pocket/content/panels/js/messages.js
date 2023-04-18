@@ -1,43 +1,51 @@
 
 
-var pktPanelMessaging = (function() {
-  function removeMessageListener(messageId, callback) {
+var pktPanelMessaging = {
+  removeMessageListener(messageId, callback) {
     RPMRemoveMessageListener(messageId, callback);
-  }
+  },
 
-  function addMessageListener(messageId, callback = () => {}) {
+  addMessageListener(messageId, callback = () => {}) {
     RPMAddMessageListener(messageId, callback);
-  }
+  },
 
-  function sendMessage(messageId, payload = {}, callback) {
+  sendMessage(messageId, payload = {}, callback) {
     if (callback) {
       
       
       
       
       const responseMessageId = `${messageId}_response`;
-      var responseListener = function(responsePayload) {
+      var responseListener = responsePayload => {
         callback(responsePayload);
-        removeMessageListener(responseMessageId, responseListener);
+        this.removeMessageListener(responseMessageId, responseListener);
       };
 
-      addMessageListener(responseMessageId, responseListener);
+      this.addMessageListener(responseMessageId, responseListener);
     }
 
     
     RPMSendAsyncMessage(messageId, payload);
-  }
-
-  function log() {
-    RPMSendAsyncMessage("PKT_log", arguments);
-  }
+  },
 
   
+  
+  clickHelper(element, { source = "", position }) {
+    element?.addEventListener(`click`, event => {
+      event.preventDefault();
 
+      this.sendMessage("PKT_openTabWithUrl", {
+        url: event.currentTarget.getAttribute(`href`),
+        activate: true,
+        source,
+        position,
+      });
+    });
+  },
 
-  return {
-    log,
-    addMessageListener,
-    sendMessage,
-  };
-})();
+  log() {
+    RPMSendAsyncMessage("PKT_log", arguments);
+  },
+};
+
+export default pktPanelMessaging;
