@@ -2284,7 +2284,6 @@ class EventManager {
       for (let [event, eventEntry] of moduleEntry) {
         for (let listener of eventEntry.values()) {
           let primed = { pendingEvents: [] };
-          listener.primed = primed;
 
           let fireEvent = (...args) =>
             new Promise((resolve, reject) => {
@@ -2302,13 +2301,16 @@ class EventManager {
             async: fireEvent,
           };
 
-          let { unregister, convert } = api.primeListener(
+          let handler = api.primeListener(
             extension,
             event,
             fire,
             listener.params
           );
-          Object.assign(primed, { unregister, convert });
+          if (handler) {
+            listener.primed = primed;
+            Object.assign(primed, handler);
+          }
         }
       }
     }
