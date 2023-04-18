@@ -11,47 +11,21 @@
 #ifndef RTC_BASE_PLATFORM_UITHREAD_H_
 #define RTC_BASE_PLATFORM_UITHREAD_H_
 
-#if defined(WEBRTC_WIN)
-
-#  include "Assertions.h"
-#  include "rtc_base/platform_thread.h"
-#  include "rtc_base/deprecated/recursive_critical_section.h"
-#  include "ThreadSafety.h"
+#include "rtc_base/platform_thread.h"
+#include "rtc_base/deprecated/recursive_critical_section.h"
 
 namespace rtc {
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#if defined(WEBRTC_WIN)
 class PlatformUIThread : public PlatformThread {
  public:
   PlatformUIThread(ThreadRunFunction func, void* obj, const char* thread_name)
-      : PlatformThread(func, obj, thread_name) {
-    MOZ_ASSERT(func);
-  }
-  virtual ~PlatformUIThread();
+      : PlatformThread(func, obj, thread_name),
+        hwnd_(nullptr),
+        timerid_(0),
+        timeout_(0),
+        stop_(false) {}
+  virtual ~PlatformUIThread() {}
 
   void Stop() override;
 
@@ -66,21 +40,15 @@ class PlatformUIThread : public PlatformThread {
  private:
   static LRESULT CALLBACK EventWindowProc(HWND, UINT, WPARAM, LPARAM);
   void NativeEventCallback();
-  
   bool InternalInit();
 
-  HWND hwnd_ GUARDED_BY(cs_) = nullptr;
-  UINT_PTR timerid_ GUARDED_BY(cs_) = 0;
-  unsigned int timeout_ GUARDED_BY(cs_) = 0;
-  enum class State {
-    UNSTARTED,
-    STARTED,
-    STOPPED,
-  };
-  State state_ GUARDED_BY(cs_) = State::UNSTARTED;
+  HWND hwnd_;
+  UINT_PTR timerid_;
+  unsigned int timeout_;
+  bool stop_;
 };
+#endif
 
 }  
 
-#endif
 #endif  
