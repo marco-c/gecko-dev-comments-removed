@@ -1227,10 +1227,13 @@ class PictureInPictureChild extends JSWindowActorChild {
 
 
 
+
+
   setupTextTracks(originatingVideo) {
     const isWebVTTSupported = !!originatingVideo.textTracks?.length;
 
     if (!isWebVTTSupported) {
+      this.setUpCaptionChangeListener(originatingVideo);
       return;
     }
 
@@ -1431,6 +1434,7 @@ class PictureInPictureChild extends JSWindowActorChild {
             videoWidth: video.videoWidth,
           });
         }
+        this.setupTextTracks(video);
         break;
       }
       case "change": {
@@ -1600,6 +1604,12 @@ class PictureInPictureChild extends JSWindowActorChild {
     }
   }
 
+  setUpCaptionChangeListener(originatingVideo) {
+    if (this.videoWrapper) {
+      this.videoWrapper.setCaptionContainerObserver(originatingVideo, this);
+    }
+  }
+
   
 
 
@@ -1665,7 +1675,8 @@ class PictureInPictureChild extends JSWindowActorChild {
         : null;
     this.videoWrapper = new PictureInPictureChildVideoWrapper(
       wrapperPath,
-      originatingVideo
+      originatingVideo,
+      this
     );
   }
 
@@ -1740,6 +1751,7 @@ class PictureInPictureChild extends JSWindowActorChild {
     textTracks.style.bottom = "30px";
     textTracks.style.backgroundColor = "black";
     textTracks.style.color = "white";
+    textTracks.style.whiteSpace = "pre-wrap";
 
     doc.body.appendChild(playerVideo);
     doc.body.appendChild(textTracks);
@@ -2027,6 +2039,7 @@ class PictureInPictureChild extends JSWindowActorChild {
 class PictureInPictureChildVideoWrapper {
   #sandbox;
   #siteWrapper;
+  #PictureInPictureChild;
 
   
 
@@ -2038,10 +2051,11 @@ class PictureInPictureChildVideoWrapper {
 
 
 
-  constructor(videoWrapperScriptPath, video) {
+  constructor(videoWrapperScriptPath, video, piPChild) {
     this.#sandbox = videoWrapperScriptPath
       ? this.#createSandbox(videoWrapperScriptPath, video)
       : null;
+    this.#PictureInPictureChild = piPChild;
   }
 
   
@@ -2154,6 +2168,17 @@ class PictureInPictureChildVideoWrapper {
 
   
 
+
+
+  updatePiPTextTracks(text) {
+    let pipWindowTracksContainer = this.#PictureInPictureChild.document.getElementById(
+      "texttracks"
+    );
+    pipWindowTracksContainer.textContent = text;
+  }
+
+  /* Video methods to be used for video controls from the PiP window. */
+
   play(video) {
     return this.#callWrapperMethod({
       name: "play",
@@ -2246,6 +2271,20 @@ class PictureInPictureChildVideoWrapper {
       fallback: () => {
         video.muted = shouldMute;
       },
+      validateRetVal: retVal => retVal == null,
+    });
+  }
+
+  setCaptionContainerObserver(video) {
+    return this.#callWrapperMethod({
+      name: "setCaptionContainerObserver",
+      args: [
+        video,
+        text => {
+          this.updatePiPTextTracks(text);
+        },
+      ],
+      fallback: () => {},
       validateRetVal: retVal => retVal == null,
     });
   }
