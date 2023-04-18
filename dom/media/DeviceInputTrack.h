@@ -29,8 +29,6 @@ class NativeInputTrack : public ProcessedMediaTrack {
   uint32_t NumberOfChannels() const override;
 
   
-  void NotifyOutputData(MediaTrackGraphImpl* aGraph, AudioDataValue* aBuffer,
-                        size_t aFrames, TrackRate aRate, uint32_t aChannels);
   void DeviceChanged(MediaTrackGraphImpl* aGraph);
 
   

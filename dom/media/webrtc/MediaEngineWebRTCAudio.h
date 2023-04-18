@@ -113,9 +113,8 @@ class AudioInputProcessing : public AudioDataListener {
   void Process(MediaTrackGraphImpl* aGraph, GraphTime aFrom, GraphTime aTo,
                AudioSegment* aInput, AudioSegment* aOutput);
 
-  void NotifyOutputData(MediaTrackGraphImpl* aGraph, AudioDataValue* aBuffer,
-                        size_t aFrames, TrackRate aRate,
-                        uint32_t aChannels) override;
+  void ProcessOutputData(MediaTrackGraphImpl* aGraph, AudioDataValue* aBuffer,
+                         size_t aFrames, TrackRate aRate, uint32_t aChannels);
   bool IsVoiceInput(MediaTrackGraphImpl* aGraph) const override {
     
     
@@ -268,6 +267,10 @@ class AudioInputTrack : public ProcessedMediaTrack {
   
   void GetInputSourceData(AudioSegment& aOutput, const MediaInputPort* aPort,
                           GraphTime aFrom, GraphTime aTo) const;
+  
+  
+  void NotifyOutputData(MediaTrackGraphImpl* aGraph, AudioDataValue* aBuffer,
+                        size_t aFrames, TrackRate aRate, uint32_t aChannels);
 
   
   AudioInputTrack* AsAudioInputTrack() override { return this; }

@@ -108,16 +108,6 @@ class AudioDataListenerInterface {
 
  public:
   
-  
-
-
-
-
-  virtual void NotifyOutputData(MediaTrackGraphImpl* aGraph,
-                                AudioDataValue* aBuffer, size_t aFrames,
-                                TrackRate aRate, uint32_t aChannels) = 0;
-
-  
 
 
   virtual uint32_t RequestedInputChannelCount(MediaTrackGraphImpl* aGraph) = 0;
