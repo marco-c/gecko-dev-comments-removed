@@ -4612,7 +4612,7 @@ void nsWindow::OnScrollEvent(GdkEventScroll* aEvent) {
         }
 
         
-        wheelEvent.mScrollType = WidgetWheelEvent::SCROLL_ASYNCHRONOUSELY;
+        wheelEvent.mScrollType = WidgetWheelEvent::SCROLL_ASYNCHRONOUSLY;
       }
 
       
