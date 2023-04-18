@@ -246,7 +246,7 @@ tainted<T*, T_Sbx> copy_memory_or_grant_access(rlbox_sandbox<T_Sbx>& sandbox,
   using T_nocv = std::remove_cv_t<T>;
   tainted<T_nocv*, T_Sbx> copy =
     sandbox.template malloc_in_sandbox<T_nocv>(num_trunc);
-  rlbox::memcpy(sandbox, copy, src, num_trunc);
+  rlbox::memcpy(sandbox, copy, src, num * sizeof(T));
   if (free_source_on_copy) {
     free(const_cast<void*>(reinterpret_cast<const void*>(src)));
   }
