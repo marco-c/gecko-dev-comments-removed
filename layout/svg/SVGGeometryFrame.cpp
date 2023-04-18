@@ -819,6 +819,13 @@ bool SVGGeometryFrame::CreateWebRenderCommands(
     return false;
   }
 
+  SVGMarkerFrame* markerFrames[SVGMark::eTypeCount];
+  if (element->IsMarkable() &&
+      SVGObserverUtils::GetAndObserveMarkers(this, &markerFrames)) {
+    
+    return false;
+  }
+
   if (!aDryRun) {
     auto rect = simplePath.AsRect();
 
