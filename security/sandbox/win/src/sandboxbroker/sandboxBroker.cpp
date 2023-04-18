@@ -690,13 +690,7 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
   LOG_W("Win32k Lockdown State: '%s'",
         ContentWin32kLockdownStateToString(win32kLockdownState));
 
-  
-  
-  
-  
-  
-  if (!aIsFileProcess &&
-      (win32kLockdownState == ContentWin32kLockdownState::LockdownEnabled)) {
+  if (win32kLockdownState == ContentWin32kLockdownState::LockdownEnabled) {
     result = AddWin32kLockdownPolicy(mPolicy, false);
     MOZ_RELEASE_ASSERT(result == sandbox::SBOX_ALL_OK,
                        "Failed to add the win32k lockdown policy");
