@@ -2,7 +2,7 @@
 
 
 PartitionedStorageHelper.runTest(
-  "ServiceWorkers",
+  "ServiceWorkers - disable partitioning",
   async (win3rdParty, win1stParty, allowed) => {
     
     await win3rdParty.navigator.serviceWorker.register("empty.js").then(
@@ -37,6 +37,53 @@ PartitionedStorageHelper.runTest(
     ["dom.ipc.processCount", 1],
     ["dom.serviceWorkers.enabled", true],
     ["dom.serviceWorkers.testing.enabled", true],
+    ["privacy.partition.serviceWorkers", false],
+  ]
+);
+
+PartitionedStorageHelper.runTest(
+  "ServiceWorkers - enable partitioning",
+  async (win3rdParty, win1stParty, allowed) => {
+    
+    await win3rdParty.navigator.serviceWorker.register("empty.js").then(
+      _ => {
+        ok(
+          true,
+          "Success: ServiceWorker should be available in third parties."
+        );
+      },
+      _ => {
+        ok(
+          false,
+          "Failed: ServiceWorker should be available in third parties."
+        );
+      }
+    );
+
+    await win1stParty.navigator.serviceWorker.register("empty.js").then(
+      _ => {
+        ok(true, "Success: ServiceWorker should be available!");
+      },
+      _ => {
+        ok(false, "Failed: ServiceWorker should be available!");
+      }
+    );
+  },
+
+  async _ => {
+    await new Promise(resolve => {
+      Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
+        resolve()
+      );
+    });
+  },
+
+  [
+    ["dom.serviceWorkers.exemptFromPerDomainMax", true],
+    ["dom.ipc.processCount", 1],
+    ["dom.serviceWorkers.enabled", true],
+    ["dom.serviceWorkers.testing.enabled", true],
+    ["privacy.partition.serviceWorkers", true],
   ]
 );
 
@@ -78,11 +125,12 @@ PartitionedStorageHelper.runTest(
     ["dom.ipc.processCount", 1],
     ["dom.serviceWorkers.enabled", true],
     ["dom.serviceWorkers.testing.enabled", true],
+    ["privacy.partition.serviceWorkers", true],
   ]
 );
 
 PartitionedStorageHelper.runTest(
-  "ServiceWorkers - ScriptContext",
+  "ServiceWorkers - Partition ScriptContext",
   async (win3rdParty, win1stParty, allowed) => {
     
     if (!win1stParty.sw) {
@@ -90,41 +138,40 @@ PartitionedStorageHelper.runTest(
         win1stParty,
         "serviceWorker.js"
       );
-
-      
-      let res = await sendAndWaitWorkerMessage(
-        win1stParty.sw,
-        win1stParty.navigator.serviceWorker,
-        {
-          type: "SetScriptValue",
-          value: "1stParty",
-        }
-      );
-      ok(res.result, "OK", "Set script value to first-party service worker.");
     }
 
     
-    
-    if (allowed && !win3rdParty.sw) {
+    if (!win3rdParty.sw) {
       win3rdParty.sw = await registerServiceWorker(
         win3rdParty,
         "serviceWorker.js"
       );
-
-      
-      let res = await sendAndWaitWorkerMessage(
-        win3rdParty.sw,
-        win3rdParty.navigator.serviceWorker,
-        {
-          type: "SetScriptValue",
-          value: "3rdParty",
-        }
-      );
-      ok(res.result, "OK", "Set script value to third-party service worker.");
     }
 
     
     let res = await sendAndWaitWorkerMessage(
+      win1stParty.sw,
+      win1stParty.navigator.serviceWorker,
+      {
+        type: "SetScriptValue",
+        value: "1stParty",
+      }
+    );
+    ok(res.result, "OK", "Set script value to first-party service worker.");
+
+    
+    res = await sendAndWaitWorkerMessage(
+      win3rdParty.sw,
+      win3rdParty.navigator.serviceWorker,
+      {
+        type: "SetScriptValue",
+        value: "3rdParty",
+      }
+    );
+    ok(res.result, "OK", "Set script value to third-party service worker.");
+
+    
+    res = await sendAndWaitWorkerMessage(
       win1stParty.sw,
       win1stParty.navigator.serviceWorker,
       { type: "GetScriptValue" }
@@ -136,20 +183,17 @@ PartitionedStorageHelper.runTest(
     );
 
     
-    
-    if (allowed) {
-      res = await sendAndWaitWorkerMessage(
-        win3rdParty.sw,
-        win3rdParty.navigator.serviceWorker,
-        { type: "GetScriptValue" }
-      );
+    res = await sendAndWaitWorkerMessage(
+      win3rdParty.sw,
+      win3rdParty.navigator.serviceWorker,
+      { type: "GetScriptValue" }
+    );
 
-      is(
-        res.value,
-        "3rdParty",
-        "The script value in third party window is correct"
-      );
-    }
+    is(
+      res.value,
+      "3rdParty",
+      "The script value in third party window is correct"
+    );
   },
 
   async _ => {
@@ -165,11 +209,12 @@ PartitionedStorageHelper.runTest(
     ["dom.ipc.processCount", 1],
     ["dom.serviceWorkers.enabled", true],
     ["dom.serviceWorkers.testing.enabled", true],
+    ["privacy.partition.serviceWorkers", true],
   ]
 );
 
 PartitionedStorageHelper.runTest(
-  "ServiceWorkers - DOM Cache",
+  "ServiceWorkers - Partition DOM Cache",
   async (win3rdParty, win1stParty, allowed) => {
     
     if (!win1stParty.sw) {
@@ -177,41 +222,40 @@ PartitionedStorageHelper.runTest(
         win1stParty,
         "serviceWorker.js"
       );
-
-      
-      let res = await sendAndWaitWorkerMessage(
-        win1stParty.sw,
-        win1stParty.navigator.serviceWorker,
-        {
-          type: "SetCache",
-          value: "1stParty",
-        }
-      );
-      ok(res.result, "OK", "Set cache to first-party service worker.");
     }
 
     
-    
-    if (allowed && !win3rdParty.sw) {
+    if (!win3rdParty.sw) {
       win3rdParty.sw = await registerServiceWorker(
         win3rdParty,
         "serviceWorker.js"
       );
-
-      
-      let res = await sendAndWaitWorkerMessage(
-        win3rdParty.sw,
-        win3rdParty.navigator.serviceWorker,
-        {
-          type: "SetCache",
-          value: "3rdParty",
-        }
-      );
-      ok(res.result, "OK", "Set cache to third-party service worker.");
     }
 
     
     let res = await sendAndWaitWorkerMessage(
+      win1stParty.sw,
+      win1stParty.navigator.serviceWorker,
+      {
+        type: "SetCache",
+        value: "1stParty",
+      }
+    );
+    ok(res.result, "OK", "Set cache to first-party service worker.");
+
+    
+    res = await sendAndWaitWorkerMessage(
+      win3rdParty.sw,
+      win3rdParty.navigator.serviceWorker,
+      {
+        type: "SetCache",
+        value: "3rdParty",
+      }
+    );
+    ok(res.result, "OK", "Set cache to third-party service worker.");
+
+    
+    res = await sendAndWaitWorkerMessage(
       win1stParty.sw,
       win1stParty.navigator.serviceWorker,
       { type: "HasCache", value: "1stParty" }
@@ -231,30 +275,27 @@ PartitionedStorageHelper.runTest(
     );
 
     
-    
-    if (allowed) {
-      res = await sendAndWaitWorkerMessage(
-        win3rdParty.sw,
-        win3rdParty.navigator.serviceWorker,
-        { type: "HasCache", value: "1stParty" }
-      );
+    res = await sendAndWaitWorkerMessage(
+      win3rdParty.sw,
+      win3rdParty.navigator.serviceWorker,
+      { type: "HasCache", value: "1stParty" }
+    );
 
-      ok(
-        !res.value,
-        "The '1stParty' cache storage should not exist for the third-party window."
-      );
+    ok(
+      !res.value,
+      "The '1stParty' cache storage should not exist for the third-party window."
+    );
 
-      res = await sendAndWaitWorkerMessage(
-        win3rdParty.sw,
-        win3rdParty.navigator.serviceWorker,
-        { type: "HasCache", value: "3rdParty" }
-      );
+    res = await sendAndWaitWorkerMessage(
+      win3rdParty.sw,
+      win3rdParty.navigator.serviceWorker,
+      { type: "HasCache", value: "3rdParty" }
+    );
 
-      ok(
-        res.value,
-        "The '3rdParty' cache storage should exist for the third-party window."
-      );
-    }
+    ok(
+      res.value,
+      "The '3rdParty' cache storage should exist for the third-party window."
+    );
   },
 
   async _ => {
@@ -270,11 +311,12 @@ PartitionedStorageHelper.runTest(
     ["dom.ipc.processCount", 1],
     ["dom.serviceWorkers.enabled", true],
     ["dom.serviceWorkers.testing.enabled", true],
+    ["privacy.partition.serviceWorkers", true],
   ]
 );
 
 PartitionedStorageHelper.runTest(
-  "ServiceWorkers - IndexedDB",
+  "ServiceWorkers - Partition IndexedDB",
   async (win3rdParty, win1stParty, allowed) => {
     
     if (!win1stParty.sw) {
@@ -282,41 +324,40 @@ PartitionedStorageHelper.runTest(
         win1stParty,
         "serviceWorker.js"
       );
-
-      
-      let res = await sendAndWaitWorkerMessage(
-        win1stParty.sw,
-        win1stParty.navigator.serviceWorker,
-        {
-          type: "SetIndexedDB",
-          value: "1stParty",
-        }
-      );
-      ok(res.result, "OK", "Set cache to first-party service worker.");
     }
 
     
-    
-    if (allowed && !win3rdParty.sw) {
+    if (!win3rdParty.sw) {
       win3rdParty.sw = await registerServiceWorker(
         win3rdParty,
         "serviceWorker.js"
       );
-
-      
-      let res = await sendAndWaitWorkerMessage(
-        win3rdParty.sw,
-        win3rdParty.navigator.serviceWorker,
-        {
-          type: "SetIndexedDB",
-          value: "3rdParty",
-        }
-      );
-      ok(res.result, "OK", "Set cache to third-party service worker.");
     }
 
     
     let res = await sendAndWaitWorkerMessage(
+      win1stParty.sw,
+      win1stParty.navigator.serviceWorker,
+      {
+        type: "SetIndexedDB",
+        value: "1stParty",
+      }
+    );
+    ok(res.result, "OK", "Set cache to first-party service worker.");
+
+    
+    res = await sendAndWaitWorkerMessage(
+      win3rdParty.sw,
+      win3rdParty.navigator.serviceWorker,
+      {
+        type: "SetIndexedDB",
+        value: "3rdParty",
+      }
+    );
+    ok(res.result, "OK", "Set cache to third-party service worker.");
+
+    
+    res = await sendAndWaitWorkerMessage(
       win1stParty.sw,
       win1stParty.navigator.serviceWorker,
       { type: "GetIndexedDB" }
@@ -328,20 +369,17 @@ PartitionedStorageHelper.runTest(
     );
 
     
-    
-    if (allowed) {
-      res = await sendAndWaitWorkerMessage(
-        win3rdParty.sw,
-        win3rdParty.navigator.serviceWorker,
-        { type: "GetIndexedDB" }
-      );
+    res = await sendAndWaitWorkerMessage(
+      win3rdParty.sw,
+      win3rdParty.navigator.serviceWorker,
+      { type: "GetIndexedDB" }
+    );
 
-      is(
-        res.value,
-        "3rdParty",
-        "The indexedDB value in third party window is correct"
-      );
-    }
+    is(
+      res.value,
+      "3rdParty",
+      "The indexedDB value in third party window is correct"
+    );
   },
 
   async _ => {
@@ -357,17 +395,13 @@ PartitionedStorageHelper.runTest(
     ["dom.ipc.processCount", 1],
     ["dom.serviceWorkers.enabled", true],
     ["dom.serviceWorkers.testing.enabled", true],
+    ["privacy.partition.serviceWorkers", true],
   ]
 );
 
 PartitionedStorageHelper.runTest(
-  "ServiceWorkers - Intercept",
+  "ServiceWorkers - Partition Intercept",
   async (win3rdParty, win1stParty, allowed) => {
-    
-    if (!allowed) {
-      return;
-    }
-
     
     if (!win1stParty.sw) {
       win1stParty.sw = await registerServiceWorker(
@@ -376,7 +410,6 @@ PartitionedStorageHelper.runTest(
       );
     }
 
-    
     
     if (!win3rdParty.sw) {
       win3rdParty.sw = await registerServiceWorker(
@@ -449,5 +482,6 @@ PartitionedStorageHelper.runTest(
     ["dom.ipc.processCount", 1],
     ["dom.serviceWorkers.enabled", true],
     ["dom.serviceWorkers.testing.enabled", true],
+    ["privacy.partition.serviceWorkers", true],
   ]
 );
