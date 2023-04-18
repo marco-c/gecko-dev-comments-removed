@@ -1,9 +1,12 @@
 
 
 use bytes::Bytes;
+use http::header::HeaderName;
 #[cfg(feature = "http1")]
-use http::header::{HeaderName, IntoHeaderName, ValueIter};
+use http::header::{IntoHeaderName, ValueIter};
 use http::HeaderMap;
+#[cfg(feature = "ffi")]
+use std::collections::HashMap;
 #[cfg(feature = "http2")]
 use std::fmt;
 
@@ -118,5 +121,101 @@ impl HeaderCaseMap {
         N: IntoHeaderName,
     {
         self.0.append(name, orig);
+    }
+}
+
+#[cfg(feature = "ffi")]
+#[derive(Clone, Debug)]
+
+pub(crate) struct OriginalHeaderOrder {
+    
+    
+    num_entries: HashMap<HeaderName, usize>,
+    
+    
+    
+    
+    
+    entry_order: Vec<(HeaderName, usize)>,
+}
+
+#[cfg(all(feature = "http1", feature = "ffi"))]
+impl OriginalHeaderOrder {
+    pub(crate) fn default() -> Self {
+        OriginalHeaderOrder {
+            num_entries: HashMap::new(),
+            entry_order: Vec::new(),
+        }
+    }
+
+    pub(crate) fn insert(&mut self, name: HeaderName) {
+        if !self.num_entries.contains_key(&name) {
+            let idx = 0;
+            self.num_entries.insert(name.clone(), 1);
+            self.entry_order.push((name, idx));
+        }
+        
+        
+        
+    }
+
+    pub(crate) fn append<N>(&mut self, name: N)
+    where
+        N: IntoHeaderName + Into<HeaderName> + Clone,
+    {
+        let name: HeaderName = name.into();
+        let idx;
+        if self.num_entries.contains_key(&name) {
+            idx = self.num_entries[&name];
+            *self.num_entries.get_mut(&name).unwrap() += 1;
+        } else {
+            idx = 0;
+            self.num_entries.insert(name.clone(), 1);
+        }
+        self.entry_order.push((name, idx));
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) fn get_in_order(&self) -> impl Iterator<Item = &(HeaderName, usize)> {
+        self.entry_order.iter()
     }
 }

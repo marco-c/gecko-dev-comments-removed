@@ -156,6 +156,8 @@ pub struct Builder {
     h1_writev: Option<bool>,
     h1_title_case_headers: bool,
     h1_preserve_header_case: bool,
+    #[cfg(feature = "ffi")]
+    h1_preserve_header_order: bool,
     h1_read_buf_exact_size: Option<usize>,
     h1_max_buf_size: Option<usize>,
     #[cfg(feature = "ffi")]
@@ -558,6 +560,8 @@ impl Builder {
             h1_parser_config: Default::default(),
             h1_title_case_headers: false,
             h1_preserve_header_case: false,
+            #[cfg(feature = "ffi")]
+            h1_preserve_header_order: false,
             h1_max_buf_size: None,
             #[cfg(feature = "ffi")]
             h1_headers_raw: false,
@@ -701,6 +705,21 @@ impl Builder {
     
     pub fn http1_preserve_header_case(&mut self, enabled: bool) -> &mut Builder {
         self.h1_preserve_header_case = enabled;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "ffi")]
+    pub fn http1_preserve_header_order(&mut self, enabled: bool) -> &mut Builder {
+        self.h1_preserve_header_order = enabled;
         self
     }
 
@@ -950,6 +969,10 @@ impl Builder {
                     }
                     if opts.h1_preserve_header_case {
                         conn.set_preserve_header_case();
+                    }
+                    #[cfg(feature = "ffi")]
+                    if opts.h1_preserve_header_order {
+                        conn.set_preserve_header_order();
                     }
                     if opts.h09_responses {
                         conn.set_h09_responses();
