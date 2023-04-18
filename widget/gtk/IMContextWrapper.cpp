@@ -5,6 +5,7 @@
 
 
 #include "mozilla/Logging.h"
+#include "nsString.h"
 #include "prtime.h"
 
 #include "IMContextWrapper.h"
@@ -1455,8 +1456,12 @@ void IMContextWrapper::Blur() {
 
 void IMContextWrapper::OnSelectionChange(
     nsWindow* aCaller, const IMENotification& aIMENotification) {
+  const bool isSelectionRangeChanged =
+      mSelection.mOffset != aIMENotification.mSelectionChangeData.mOffset ||
+      mSelection.mString != *aIMENotification.mSelectionChangeData.mString;
   mSelection.Assign(aIMENotification);
-  bool retrievedSurroundingSignalReceived = mRetrieveSurroundingSignalReceived;
+  const bool retrievedSurroundingSignalReceived =
+      mRetrieveSurroundingSignalReceived;
   mRetrieveSurroundingSignalReceived = false;
 
   if (MOZ_UNLIKELY(IsDestroyed())) {
@@ -1470,10 +1475,11 @@ void IMContextWrapper::OnSelectionChange(
           ("0x%p OnSelectionChange(aCaller=0x%p, aIMENotification={ "
            "mSelectionChangeData=%s }), "
            "mCompositionState=%s, mIsDeletingSurrounding=%s, "
-           "mRetrieveSurroundingSignalReceived=%s",
+           "mRetrieveSurroundingSignalReceived=%s, isSelectionRangeChanged=%s",
            this, aCaller, ToString(selectionChangeData).c_str(),
            GetCompositionStateName(), ToChar(mIsDeletingSurrounding),
-           ToChar(retrievedSurroundingSignalReceived)));
+           ToChar(retrievedSurroundingSignalReceived),
+           ToChar(isSelectionRangeChanged)));
 
   if (aCaller != mLastFocusedWindow) {
     MOZ_LOG(gGtkIMLog, LogLevel::Error,
@@ -1532,8 +1538,18 @@ void IMContextWrapper::OnSelectionChange(
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (!selectionChangeData.mCausedByComposition &&
-      !selectionChangeData.mCausedBySelectionEvent &&
+      !selectionChangeData.mCausedBySelectionEvent && isSelectionRangeChanged &&
       !occurredBeforeComposition) {
     
     
@@ -2332,12 +2348,34 @@ bool IMContextWrapper::DispatchCompositionCommitEvent(
                this));
       return true;
     }
+    if (MOZ_UNLIKELY(!EnsureToCacheSelection())) {
+      MOZ_LOG(gGtkIMLog, LogLevel::Warning,
+              ("0x%p   DispatchCompositionCommitEvent(), Warning, "
+               "Failed to cache selection before dispatching "
+               "eContentCommandInsertText event",
+               this));
+    }
     if (!MaybeDispatchKeyEventAsProcessedByIME(eContentCommandInsertText)) {
       MOZ_LOG(gGtkIMLog, LogLevel::Warning,
               ("0x%p   DispatchCompositionCommitEvent(), Warning, "
                "MaybeDispatchKeyEventAsProcessedByIME() returned false",
                this));
       return false;
+    }
+    
+    
+    
+    
+    
+    if (mSelection.IsValid()) {
+      mSelection.CollapseTo(mSelection.mOffset + aCommitString->Length(),
+                            mSelection.mWritingMode);
+      MOZ_LOG(gGtkIMLog, LogLevel::Info,
+              ("0x%p   DispatchCompositionCommitEvent(), "
+               "mSelection={ mOffset=%u, mString=\"%s\", mWritingMode=%s }",
+               this, mSelection.mOffset,
+               NS_ConvertUTF16toUTF8(mSelection.mString).get(),
+               ToString(mSelection.mWritingMode).c_str()));
     }
     MOZ_ASSERT(!dispatcher);
   } else {
@@ -2379,14 +2417,14 @@ bool IMContextWrapper::DispatchCompositionCommitEvent(
                this));
       return false;
     }
-  }
 
-  
-  mSelection.CollapseTo(
-      mCompositionStart + (aCommitString
-                               ? aCommitString->Length()
-                               : mDispatchedCompositionString.Length()),
-      mSelection.mWritingMode);
+    
+    mSelection.CollapseTo(
+        mCompositionStart + (aCommitString
+                                 ? aCommitString->Length()
+                                 : mDispatchedCompositionString.Length()),
+        mSelection.mWritingMode);
+  }
 
   mCompositionState = eCompositionState_NotComposing;
   
