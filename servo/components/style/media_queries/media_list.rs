@@ -10,6 +10,7 @@ use super::{Device, MediaQuery, Qualifier};
 use crate::context::QuirksMode;
 use crate::error_reporting::ContextualParseError;
 use crate::parser::ParserContext;
+use crate::values::computed;
 use cssparser::{Delimiter, Parser};
 use cssparser::{ParserInput, Token};
 
@@ -74,15 +75,17 @@ impl MediaList {
     pub fn evaluate(&self, device: &Device, quirks_mode: QuirksMode) -> bool {
         
         
-        self.media_queries.is_empty() ||
+        if self.media_queries.is_empty() {
+            return true;
+        }
+
+        computed::Context::for_media_query_evaluation(device, quirks_mode, |context| {
             self.media_queries.iter().any(|mq| {
                 let media_match = mq.media_type.matches(device.media_type());
 
                 
                 let query_match = media_match &&
-                    mq.condition
-                        .as_ref()
-                        .map_or(true, |c| c.matches(device, quirks_mode));
+                    mq.condition.as_ref().map_or(true, |c| c.matches(context));
 
                 
                 match mq.qualifier {
@@ -90,6 +93,7 @@ impl MediaList {
                     _ => query_match,
                 }
             })
+        })
     }
 
     
