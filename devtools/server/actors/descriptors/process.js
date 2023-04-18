@@ -92,6 +92,7 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
         
         
         isTopLevelTarget: true,
+        sessionContext: createBrowserSessionContext(),
       });
       
       

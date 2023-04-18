@@ -56,9 +56,12 @@ const parentProcessTargetPrototype = extend({}, windowGlobalTargetPrototype);
 
 
 
+
+
+
 parentProcessTargetPrototype.initialize = function(
   connection,
-  { isTopLevelTarget, window }
+  { isTopLevelTarget, window, sessionContext }
 ) {
   
   if (!window) {
@@ -80,6 +83,7 @@ parentProcessTargetPrototype.initialize = function(
   WindowGlobalTargetActor.prototype.initialize.call(this, connection, {
     docShell: window.docShell,
     isTopLevelTarget,
+    sessionContext,
   });
 
   
