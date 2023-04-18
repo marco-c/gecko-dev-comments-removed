@@ -164,6 +164,9 @@ class nsFocusManager final : public nsIFocusManager,
   void UpdateCaretForCaretBrowsingMode();
 
   
+  uint32_t GetLastFocusMethod(nsPIDOMWindowOuter*) const;
+
+  
 
 
 
