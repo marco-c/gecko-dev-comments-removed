@@ -121,6 +121,9 @@
 
 
 
+
+
+
 #include "mozmemory_wrap.h"
 #include "mozjemalloc.h"
 #include "mozjemalloc_types.h"
@@ -416,7 +419,11 @@ static const size_t kMaxTinyClass = 8;
 
 static const size_t kMinQuantumClass = kMaxTinyClass * 2;
 static const size_t kMinQuantumWideClass = 512;
+#ifdef XP_MACOSX
+static const size_t kMinSubPageClass = 512;
+#else
 static const size_t kMinSubPageClass = 4_KiB;
+#endif
 
 
 static const size_t kQuantum = 16;
@@ -447,10 +454,11 @@ static const size_t kNumTinyClasses =
     LOG2(kMaxTinyClass) - LOG2(kMinTinyClass) + 1;
 
 
+
 static const size_t kNumQuantumClasses =
-    (kMaxQuantumClass - kMinQuantumClass) / kQuantum + 1;
+    (kMaxQuantumClass + kQuantum - kMinQuantumClass) / kQuantum;
 static const size_t kNumQuantumWideClasses =
-    (kMaxQuantumWideClass - kMinQuantumWideClass) / kQuantumWide + 1;
+    (kMaxQuantumWideClass + kQuantumWide - kMinQuantumWideClass) / kQuantumWide;
 
 
 
@@ -551,7 +559,8 @@ GLOBAL_ASSERT(1ULL << gPageSize2Pow == gPageSize,
               "Page size is not a power of two");
 GLOBAL_ASSERT(kQuantum >= sizeof(void*));
 GLOBAL_ASSERT(kQuantum <= kQuantumWide);
-GLOBAL_ASSERT(kQuantumWide <= (kMinSubPageClass - kMaxQuantumClass));
+GLOBAL_ASSERT(!kNumQuantumWideClasses ||
+              kQuantumWide <= (kMinSubPageClass - kMaxQuantumClass));
 
 GLOBAL_ASSERT(kQuantumWide <= kMaxQuantumClass);
 
@@ -2253,7 +2262,6 @@ struct FastDivide {
       mozilla::IsPowerOfTwo(Max) ? Max - Q : Max;
   
   static const unsigned num_divisors = (max_divisor - min_divisor) / Q + 1;
-  static_assert(max_divisor > min_divisor);
 
   static const unsigned inv_shift = 21;
 
@@ -2274,7 +2282,11 @@ struct FastDivide {
       inv(28), inv(29), inv(30), inv(31)
     };
     
-    static_assert(num_divisors <= sizeof(size_invs) / sizeof(unsigned),
+
+    
+    
+    static_assert(!(min_divisor < max_divisor) ||
+                      num_divisors <= sizeof(size_invs) / sizeof(unsigned),
                   "num_divisors does not match array size");
 
     MOZ_ASSERT(div >= min_divisor);
