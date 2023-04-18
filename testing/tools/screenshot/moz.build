@@ -4,7 +4,7 @@
 
 
 
-if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk" and CONFIG["MOZ_X11"]:
+if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     Program("screentopng")
     SOURCES += [
         "gdk-screenshot.cpp",
