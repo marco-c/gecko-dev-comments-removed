@@ -139,7 +139,7 @@ function Submitter(id, recordSubmission, noThrottle, extraExtraKeyVals) {
   this.recordSubmission = recordSubmission;
   this.noThrottle = noThrottle;
   this.additionalDumps = [];
-  this.extraKeyVals = extraExtraKeyVals || {};
+  this.extraKeyVals = extraExtraKeyVals;
   
   this.submitStatusPromise = new Promise((resolve, reject) => {
     this.resolveSubmitStatusPromise = resolve;
@@ -435,6 +435,12 @@ Submitter.prototype = {
 
 var CrashSubmit = {
   
+  SUBMITTED_FROM_AUTO: "Auto",
+  SUBMITTED_FROM_INFOBAR: "Infobar",
+  SUBMITTED_FROM_ABOUT_CRASHES: "AboutCrashes",
+  SUBMITTED_FROM_CRASH_TAB: "CrashedTab",
+
+  
 
 
 
@@ -458,11 +464,14 @@ var CrashSubmit = {
 
 
 
-  submit: function CrashSubmit_submit(id, params) {
+
+
+
+  submit: function CrashSubmit_submit(id, submittedFrom, params) {
     params = params || {};
     let recordSubmission = false;
     let noThrottle = false;
-    let extraExtraKeyVals = null;
+    let extraExtraKeyVals = {};
 
     if ("recordSubmission" in params) {
       recordSubmission = params.recordSubmission;
@@ -475,6 +484,8 @@ var CrashSubmit = {
     if ("extraExtraKeyVals" in params) {
       extraExtraKeyVals = params.extraExtraKeyVals;
     }
+
+    extraExtraKeyVals.SubmittedFrom = submittedFrom;
 
     let submitter = new Submitter(
       id,
