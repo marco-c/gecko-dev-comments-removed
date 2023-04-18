@@ -270,14 +270,6 @@ Shape* InterpretObjLiteralShape(JSContext* cx,
     return nullptr;
   }
 
-  
-  
-  if (MOZ_UNLIKELY(!proto->isUsedAsPrototype())) {
-    if (!JSObject::setIsUsedAsPrototype(cx, proto)) {
-      return nullptr;
-    }
-  }
-
   return SharedShape::getInitialOrPropMapShape(
       cx, &PlainObject::class_, cx->realm(), AsTaggedProto(proto),
       numFixedSlots, map, mapLength, objectFlags);
