@@ -226,6 +226,9 @@ class gfxTextRun : public gfxShapedText {
     
     virtual gfxFloat GetHyphenWidth() const = 0;
 
+    
+    virtual mozilla::gfx::ShapedTextFlags GetShapedTextFlags() const = 0;
+
     typedef gfxFont::Spacing Spacing;
 
     
@@ -989,8 +992,9 @@ class gfxFontGroup final : public gfxTextRunFactory {
 
 
 
-  already_AddRefed<gfxTextRun> MakeHyphenTextRun(DrawTarget* aDrawTarget,
-                                                 uint32_t aAppUnitsPerDevUnit);
+  already_AddRefed<gfxTextRun> MakeHyphenTextRun(
+      DrawTarget* aDrawTarget, mozilla::gfx::ShapedTextFlags aFlags,
+      uint32_t aAppUnitsPerDevUnit);
 
   
 
