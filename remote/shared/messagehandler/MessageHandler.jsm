@@ -141,6 +141,12 @@ class MessageHandler extends EventEmitter {
       isProtocolEvent,
       sessionId: this.sessionId,
     });
+
+    
+    
+    if (!isProtocolEvent) {
+      this.emit(name, data);
+    }
   }
 
   
