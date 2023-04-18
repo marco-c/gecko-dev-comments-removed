@@ -642,7 +642,6 @@ class GCRuntime {
 
   
   bool registerWeakRef(HandleObject target, HandleObject weakRef);
-  bool unregisterWeakRefWrapper(JSObject* wrapper);
   void traceKeptObjects(JSTracer* trc);
 
   JS::GCReason lastStartReason() const { return initialReason; }
