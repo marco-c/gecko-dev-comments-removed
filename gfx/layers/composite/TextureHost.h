@@ -556,16 +556,7 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
 
 
 
-
-  virtual bool HasIntermediateBuffer() const { return false; }
-
-  
-
-
-
-  virtual bool NeedsDeferredDeletion() const {
-    return !HasIntermediateBuffer();
-  }
+  virtual bool NeedsDeferredDeletion() const { return true; }
 
   void AddCompositableRef() {
     ++mCompositableCount;
@@ -789,8 +780,6 @@ class BufferTextureHost : public TextureHost {
 
   already_AddRefed<gfx::DataSourceSurface> GetAsSurface() override;
 
-  bool HasIntermediateBuffer() const override { return mHasIntermediateBuffer; }
-
   bool NeedsDeferredDeletion() const override {
     return TextureHost::NeedsDeferredDeletion() || UseExternalTextures();
   }
@@ -834,7 +823,6 @@ class BufferTextureHost : public TextureHost {
   uint32_t mUpdateSerial;
   bool mLocked;
   bool mNeedsFullUpdate;
-  bool mHasIntermediateBuffer;
   bool mUseExternalTextures;
 
   class DataTextureSourceYCbCrBasic;

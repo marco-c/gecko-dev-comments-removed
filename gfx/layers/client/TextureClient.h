@@ -228,7 +228,6 @@ class TextureData {
   struct Info {
     gfx::IntSize size;
     gfx::SurfaceFormat format;
-    bool hasIntermediateBuffer;
     bool hasSynchronization;
     bool supportsMoz2D;
     bool canExposeMappedData;
@@ -236,7 +235,6 @@ class TextureData {
 
     Info()
         : format(gfx::SurfaceFormat::UNKNOWN),
-          hasIntermediateBuffer(false),
           hasSynchronization(false),
           supportsMoz2D(false),
           canExposeMappedData(false),
@@ -428,13 +426,6 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
 
 
   bool HasSynchronization() const { return mInfo.hasSynchronization; }
-
-  
-
-
-
-
-  bool HasIntermediateBuffer() const { return mInfo.hasIntermediateBuffer; }
 
   bool CanExposeDrawTarget() const { return mInfo.supportsMoz2D; }
 

@@ -173,14 +173,8 @@ PersistentBufferProviderShared::PersistentBufferProviderShared(
   }
 
   
-  
-  
-  
-  if (!aTexture->HasIntermediateBuffer() && gfxVars::UseWebRender()) {
+  if (gfxVars::UseWebRenderTripleBufferingWin()) {
     ++mMaxAllowedTextures;
-    if (gfxVars::UseWebRenderTripleBufferingWin()) {
-      ++mMaxAllowedTextures;
-    }
   }
 
   MOZ_COUNT_CTOR(PersistentBufferProviderShared);

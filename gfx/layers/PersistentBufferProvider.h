@@ -196,8 +196,7 @@ class PersistentBufferProviderShared : public PersistentBufferProvider,
   
   
   RefPtr<TextureClient> mPermanentBackBuffer;
-  
-  static const size_t kMaxTexturesAllowed = 4;
+  static const size_t kMaxTexturesAllowed = 5;
   Vector<RefPtr<TextureClient>, kMaxTexturesAllowed + 2> mTextures;
   
   Maybe<uint32_t> mBack;
