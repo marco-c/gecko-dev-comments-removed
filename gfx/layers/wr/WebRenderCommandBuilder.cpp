@@ -1667,6 +1667,58 @@ void WebRenderCommandBuilder::CreateWebRenderCommands(
 struct NewLayerData {
   size_t mLayerCountBeforeRecursing = 0;
   const ActiveScrolledRoot* mStopAtAsr = nullptr;
+
+  
+  nsDisplayTransform* mDeferredItem = nullptr;
+  ScrollableLayerGuid::ViewID mDeferredId = ScrollableLayerGuid::NULL_SCROLL_ID;
+  bool mTransformShouldGetOwnLayer = false;
+
+  void ComputeDeferredTransformInfo(const StackingContextHelper& aSc,
+                                    nsDisplayItem* aItem) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mDeferredItem = aSc.GetDeferredTransformItem();
+    if (mDeferredItem) {
+      
+      
+      
+      
+      
+      
+      
+      if (ActiveScrolledRoot::IsProperAncestor(
+              mDeferredItem->GetActiveScrolledRoot(), mStopAtAsr)) {
+        mDeferredItem = nullptr;
+      }
+    }
+    if (mDeferredItem) {
+      if (const auto* asr = mDeferredItem->GetActiveScrolledRoot()) {
+        mDeferredId = asr->GetViewId();
+      }
+      if (mDeferredItem->GetActiveScrolledRoot() !=
+          aItem->GetActiveScrolledRoot()) {
+        mTransformShouldGetOwnLayer = true;
+      } else if (aItem->GetType() == DisplayItemType::TYPE_SCROLL_INFO_LAYER) {
+        
+        
+        
+        
+        mTransformShouldGetOwnLayer = true;
+      }
+    }
+  }
 };
 
 void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
@@ -1798,6 +1850,7 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
         newLayerData->mLayerCountBeforeRecursing = mLayerScrollData.size();
         newLayerData->mStopAtAsr =
             mAsrStack.empty() ? nullptr : mAsrStack.back();
+        newLayerData->ComputeDeferredTransformInfo(aSc, item);
 
         mAsrStack.push_back(asr);
       }
@@ -1846,54 +1899,10 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
         int32_t descendants =
             mLayerScrollData.size() - newLayerData->mLayerCountBeforeRecursing;
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        nsDisplayTransform* deferred = aSc.GetDeferredTransformItem();
-        ScrollableLayerGuid::ViewID deferredId =
-            ScrollableLayerGuid::NULL_SCROLL_ID;
-        bool transformShouldGetOwnLayer = false;
-        if (deferred) {
-          
-          
-          
-          
-          
-          
-          
-          if (ActiveScrolledRoot::IsProperAncestor(
-                  deferred->GetActiveScrolledRoot(), stopAtAsr)) {
-            deferred = nullptr;
-          }
-        }
-        if (deferred) {
-          if (const auto* asr = deferred->GetActiveScrolledRoot()) {
-            deferredId = asr->GetViewId();
-          }
-          if (deferred->GetActiveScrolledRoot() !=
-              item->GetActiveScrolledRoot()) {
-            transformShouldGetOwnLayer = true;
-          } else if (item->GetType() ==
-                     DisplayItemType::TYPE_SCROLL_INFO_LAYER) {
-            
-            
-            
-            
-            transformShouldGetOwnLayer = true;
-          }
-        }
-        if (transformShouldGetOwnLayer) {
+        nsDisplayTransform* deferred = newLayerData->mDeferredItem;
+        ScrollableLayerGuid::ViewID deferredId = newLayerData->mDeferredId;
+
+        if (newLayerData->mTransformShouldGetOwnLayer) {
           
           
           
