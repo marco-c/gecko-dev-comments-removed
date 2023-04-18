@@ -851,7 +851,8 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
   
   
   
-  nscoord baseline = metrics.mBoundingBox.y + metrics.mAscent;
+  nscoord baseline =
+      NSToCoordRoundWithClamp(metrics.mBoundingBox.y + metrics.mAscent);
   gfxFloat x, width;
   if (aFlags & eNoHorizontalOverflow) {
     x = 0.0;
@@ -864,8 +865,10 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
     x = metrics.mBoundingBox.x;
     width = metrics.mBoundingBox.width;
   }
-  nsRect fillInAppUnits(x, baseline - above, width,
-                        metrics.mBoundingBox.height + above + below);
+  nsRect fillInAppUnits(
+      NSToCoordRoundWithClamp(x), baseline - above,
+      NSToCoordRoundWithClamp(width),
+      NSToCoordRoundWithClamp(metrics.mBoundingBox.height) + above + below);
   if (textRun->IsVertical()) {
     
     std::swap(fillInAppUnits.x, fillInAppUnits.y);

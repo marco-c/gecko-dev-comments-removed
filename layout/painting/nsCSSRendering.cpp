@@ -1099,9 +1099,11 @@ static void ComputeObjectAnchorCoord(const LengthPercentage& aCoord,
 
   
   
-  *aAnchorPointCoord = aCoord.Resolve(aOriginBounds, NSToCoordRoundWithClamp);
+  *aAnchorPointCoord = aCoord.Resolve(
+      aOriginBounds, static_cast<nscoord (*)(float)>(NSToCoordRoundWithClamp));
   
-  *aTopLeftCoord = aCoord.Resolve(extraSpace, NSToCoordRoundWithClamp);
+  *aTopLeftCoord = aCoord.Resolve(
+      extraSpace, static_cast<nscoord (*)(float)>(NSToCoordRoundWithClamp));
 }
 
 void nsImageRenderer::ComputeObjectAnchorPoint(const Position& aPos,

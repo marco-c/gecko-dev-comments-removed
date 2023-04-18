@@ -153,6 +153,19 @@ inline nscoord NSToCoordRoundWithClamp(float aValue) {
   return NSToCoordRound(aValue);
 }
 
+inline nscoord NSToCoordRoundWithClamp(double aValue) {
+#ifndef NS_COORD_IS_FLOAT
+  
+  if (aValue >= double(nscoord_MAX)) {
+    return nscoord_MAX;
+  }
+  if (aValue <= double(nscoord_MIN)) {
+    return nscoord_MIN;
+  }
+#endif
+  return NSToCoordRound(aValue);
+}
+
 
 
 
