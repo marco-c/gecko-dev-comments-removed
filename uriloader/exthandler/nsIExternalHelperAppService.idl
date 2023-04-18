@@ -139,6 +139,13 @@ interface nsIHelperAppLauncher : nsICancelable
 
   void setDownloadToLaunch(in boolean aHandleInternally, in nsIFile aFile);
 
+
+  
+
+
+
+  void launchLocalFile();
+
   
 
 
