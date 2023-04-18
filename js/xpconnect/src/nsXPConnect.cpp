@@ -484,8 +484,6 @@ void InitGlobalObjectOptions(JS::RealmOptions& aOptions,
     aOptions.creationOptions().setToSourceEnabled(true);
     
     aOptions.creationOptions().setSecureContext(true);
-    
-    aOptions.creationOptions().setFreezeBuiltins(true);
     aOptions.behaviors().setClampAndJitterTime(false);
   }
 
