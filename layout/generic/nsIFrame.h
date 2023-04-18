@@ -3164,6 +3164,12 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+  bool AncestorHidesContent() const;
+
+  
+
+
+
 
   mozilla::LayoutFrameType Type() const {
     MOZ_ASSERT(uint8_t(mClass) < mozilla::ArrayLength(sLayoutFrameTypes));
