@@ -693,6 +693,10 @@ class nsWindow final : public nsBaseWidget {
   static void OnCloakEvent(HWND aWnd, bool aCloaked);
   void OnCloakChanged(bool aCloaked);
 
+  
+  
+  mozilla::Maybe<UINT> GetHiddenTaskbarEdge();
+
   static bool sTouchInjectInitialized;
   static InjectTouchInputPtr sInjectTouchFuncPtr;
   static bool sDropShadowEnabled;
