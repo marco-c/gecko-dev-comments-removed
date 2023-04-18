@@ -18,6 +18,7 @@
 
 
 
+
 #if defined(_M_X64) || defined(__x86_64__)
 #define WEBRTC_ARCH_X86_FAMILY
 #define WEBRTC_ARCH_X86_64
@@ -32,17 +33,45 @@
 #define WEBRTC_ARCH_X86
 #define WEBRTC_ARCH_32_BITS
 #define WEBRTC_ARCH_LITTLE_ENDIAN
-#elif defined(__ARMEL__)
+#elif defined(_M_ARM) || defined(__ARMEL__)
 #define WEBRTC_ARCH_ARM_FAMILY
 #define WEBRTC_ARCH_32_BITS
 #define WEBRTC_ARCH_LITTLE_ENDIAN
-#elif defined(__MIPSEL__)
+#elif defined(__MIPSEL__) || defined(__MIPSEB__)
 #define WEBRTC_ARCH_MIPS_FAMILY
 #if defined(__LP64__)
 #define WEBRTC_ARCH_64_BITS
 #else
 #define WEBRTC_ARCH_32_BITS
 #endif
+#if defined(__MIPSEL__)
+#define WEBRTC_ARCH_LITTLE_ENDIAN
+#else
+#define WEBRTC_ARCH_BIG_ENDIAN
+#endif
+#elif defined(__PPC__)
+#if defined(__PPC64__)
+#define WEBRTC_ARCH_64_BITS
+#else
+#define WEBRTC_ARCH_32_BITS
+#endif
+#if defined(__LITTLE_ENDIAN__)
+#define WEBRTC_ARCH_LITTLE_ENDIAN
+#else
+#define WEBRTC_ARCH_BIG_ENDIAN
+#endif
+#elif defined(__sparc) || defined(__sparc__)
+#if __SIZEOF_LONG__ == 8
+#define WEBRTC_ARCH_64_BITS
+#else
+#define WEBRTC_ARCH_32_BITS
+#endif
+#define WEBRTC_ARCH_BIG_ENDIAN
+#elif defined(__riscv) && __riscv_xlen == 64
+#define WEBRTC_ARCH_64_BITS
+#define WEBRTC_ARCH_LITTLE_ENDIAN
+#elif defined(__riscv) && __riscv_xlen == 32
+#define WEBRTC_ARCH_32_BITS
 #define WEBRTC_ARCH_LITTLE_ENDIAN
 #elif defined(__pnacl__)
 #define WEBRTC_ARCH_32_BITS
