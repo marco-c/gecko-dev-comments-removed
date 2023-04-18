@@ -113,16 +113,6 @@ class JS_PUBLIC_API RealmCreationOptions {
 
   
   
-  
-  
-  bool mergeable() const { return mergeable_; }
-  RealmCreationOptions& setMergeable(bool flag) {
-    mergeable_ = flag;
-    return *this;
-  }
-
-  
-  
   bool preserveJitCode() const { return preserveJitCode_; }
   RealmCreationOptions& setPreserveJitCode(bool flag) {
     preserveJitCode_ = flag;
@@ -268,7 +258,6 @@ class JS_PUBLIC_API RealmCreationOptions {
   uint64_t profilerRealmID_ = 0;
   WeakRefSpecifier weakRefs_ = WeakRefSpecifier::Disabled;
   bool invisibleToDebugger_ = false;
-  bool mergeable_ = false;
   bool preserveJitCode_ = false;
   bool sharedMemoryAndAtomics_ = false;
   bool defineSharedArrayBufferConstructor_ = true;

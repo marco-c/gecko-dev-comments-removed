@@ -4214,7 +4214,9 @@ void gc::MergeRealms(Realm* source, Realm* target) {
 void GCRuntime::mergeRealms(Realm* source, Realm* target) {
   
   
-  MOZ_ASSERT(source->creationOptions().mergeable());
+  
+  
+  MOZ_ASSERT(false);
   MOZ_ASSERT(source->creationOptions().invisibleToDebugger());
 
   MOZ_ASSERT(!source->hasBeenEnteredIgnoringJit());
