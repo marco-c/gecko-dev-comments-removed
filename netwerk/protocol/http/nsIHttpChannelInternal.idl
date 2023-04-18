@@ -25,6 +25,7 @@ native TimeStamp(mozilla::TimeStamp);
 
 interface nsIAsyncInputStream;
 interface nsIAsyncOutputStream;
+interface nsIEarlyHintObserver;
 interface nsIPrincipal;
 interface nsIProxyInfo;
 interface nsISecurityConsoleMessage;
@@ -455,4 +456,9 @@ interface nsIHttpChannelInternal : nsISupports
 
 
     [must_use] readonly attribute boolean hasHTTPSRR;
+
+    
+
+
+    [must_use] void setEarlyHintObserver(in nsIEarlyHintObserver aObserver);
 };
