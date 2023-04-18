@@ -35,23 +35,23 @@ class APZHitTestingTester : public APZCTreeManagerTester {
   void CreateComplexMultiLayerTree() {
     const char* treeShape = "x(xx(x)xx(x(x)xx))";
     
-    nsIntRegion layerVisibleRegion[] = {
-        nsIntRegion(IntRect(0, 0, 300, 400)),    
-        nsIntRegion(IntRect(0, 0, 100, 100)),    
-        nsIntRegion(IntRect(50, 50, 200, 300)),  
-        nsIntRegion(IntRect(50, 50, 200,
-                            300)),  
-        nsIntRegion(IntRect(0, 200, 100, 100)),  
-        nsIntRegion(IntRect(200, 0, 100,
-                            400)),  
-        nsIntRegion(IntRect(200, 0, 100, 200)),  
-                                                 
-        nsIntRegion(IntRect(200, 0, 100,
-                            200)),  
-        nsIntRegion(IntRect(200, 200, 100,
-                            100)),  
-        nsIntRegion(IntRect(200, 300, 100,
-                            100)),  
+    LayerIntRegion layerVisibleRegion[] = {
+        LayerIntRect(0, 0, 300, 400),    
+        LayerIntRect(0, 0, 100, 100),    
+        LayerIntRect(50, 50, 200, 300),  
+        LayerIntRect(50, 50, 200,
+                     300),  
+        LayerIntRect(0, 200, 100, 100),  
+        LayerIntRect(200, 0, 100,
+                     400),  
+        LayerIntRect(200, 0, 100, 200),  
+                                         
+        LayerIntRect(200, 0, 100,
+                     200),  
+        LayerIntRect(200, 200, 100,
+                     100),  
+        LayerIntRect(200, 300, 100,
+                     100),  
     };
     CreateScrollData(treeShape, layerVisibleRegion);
     SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID);
@@ -71,9 +71,9 @@ class APZHitTestingTester : public APZCTreeManagerTester {
   void CreateBug1148350LayerTree() {
     const char* treeShape = "x(x)";
     
-    nsIntRegion layerVisibleRegion[] = {
-        nsIntRegion(IntRect(0, 0, 200, 200)),
-        nsIntRegion(IntRect(0, 0, 200, 200)),
+    LayerIntRegion layerVisibleRegion[] = {
+        LayerIntRect(0, 0, 200, 200),
+        LayerIntRect(0, 0, 200, 200),
     };
     CreateScrollData(treeShape, layerVisibleRegion);
     SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID);

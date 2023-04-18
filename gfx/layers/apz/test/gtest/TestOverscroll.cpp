@@ -1574,8 +1574,8 @@ TEST_F(APZCOverscrollTesterMock, OverscrollHandoff) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
 
   const char* treeShape = "x(x)";
-  nsIntRegion layerVisibleRegion[] = {nsIntRegion(IntRect(0, 0, 100, 100)),
-                                      nsIntRegion(IntRect(0, 0, 100, 50))};
+  LayerIntRegion layerVisibleRegion[] = {LayerIntRect(0, 0, 100, 100),
+                                         LayerIntRect(0, 0, 100, 50)};
   CreateScrollData(treeShape, layerVisibleRegion);
   SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
                             CSSRect(0, 0, 200, 200));
@@ -1608,8 +1608,8 @@ TEST_F(APZCOverscrollTesterMock, VerticalOverscrollHandoffToScrollableRoot) {
 
   
   const char* treeShape = "x(x)";
-  nsIntRegion layerVisibleRegion[] = {nsIntRegion(IntRect(0, 0, 100, 100)),
-                                      nsIntRegion(IntRect(0, 0, 100, 50))};
+  LayerIntRegion layerVisibleRegion[] = {LayerIntRect(0, 0, 100, 100),
+                                         LayerIntRect(0, 0, 100, 50)};
   CreateScrollData(treeShape, layerVisibleRegion);
   SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
                             CSSRect(0, 0, 100, 200));
@@ -1640,8 +1640,8 @@ TEST_F(APZCOverscrollTesterMock, NoOverscrollHandoffToNonScrollableRoot) {
   
   
   const char* treeShape = "x(x)";
-  nsIntRegion layerVisibleRegion[] = {nsIntRegion(IntRect(0, 0, 100, 100)),
-                                      nsIntRegion(IntRect(0, 0, 100, 50))};
+  LayerIntRegion layerVisibleRegion[] = {LayerIntRect(0, 0, 100, 100),
+                                         LayerIntRect(0, 0, 100, 50)};
   CreateScrollData(treeShape, layerVisibleRegion);
   SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
                             CSSRect(0, 0, 100, 100));
@@ -1672,8 +1672,8 @@ TEST_F(APZCOverscrollTesterMock, NoOverscrollHandoffOrthogonalPanGesture) {
   
   
   const char* treeShape = "x(x)";
-  nsIntRegion layerVisibleRegion[] = {nsIntRegion(IntRect(0, 0, 100, 100)),
-                                      nsIntRegion(IntRect(0, 0, 100, 50))};
+  LayerIntRegion layerVisibleRegion[] = {LayerIntRect(0, 0, 100, 100),
+                                         LayerIntRect(0, 0, 100, 50)};
   CreateScrollData(treeShape, layerVisibleRegion);
   SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
                             CSSRect(0, 0, 200, 100));
@@ -1705,8 +1705,8 @@ TEST_F(APZCOverscrollTesterMock,
   
   
   const char* treeShape = "x(x)";
-  nsIntRegion layerVisibleRegion[] = {nsIntRegion(IntRect(0, 0, 100, 100)),
-                                      nsIntRegion(IntRect(0, 0, 100, 50))};
+  LayerIntRegion layerVisibleRegion[] = {LayerIntRect(0, 0, 100, 100),
+                                         LayerIntRect(0, 0, 100, 50)};
   CreateScrollData(treeShape, layerVisibleRegion);
   SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
                             CSSRect(0, 0, 100, 200));
@@ -1779,8 +1779,8 @@ TEST_F(APZCOverscrollTesterMock, RetriggeredOverscrollAnimationVelocity) {
 
   
   const char* treeShape = "x(x)";
-  nsIntRegion layerVisibleRegion[] = {nsIntRegion(IntRect(0, 0, 100, 100)),
-                                      nsIntRegion(IntRect(0, 0, 100, 50))};
+  LayerIntRegion layerVisibleRegion[] = {LayerIntRect(0, 0, 100, 100),
+                                         LayerIntRect(0, 0, 100, 50)};
   CreateScrollData(treeShape, layerVisibleRegion);
   SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
                             CSSRect(0, 0, 100, 200));
@@ -1863,7 +1863,7 @@ TEST_F(APZCOverscrollTesterMock, OverscrollIntoPreventDefault) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
 
   const char* treeShape = "x";
-  nsIntRegion layerVisibleRegions[] = {nsIntRegion(IntRect(0, 0, 100, 100))};
+  LayerIntRegion layerVisibleRegions[] = {LayerIntRect(0, 0, 100, 100)};
   CreateScrollData(treeShape, layerVisibleRegions);
   SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
                             CSSRect(0, 0, 100, 200));
