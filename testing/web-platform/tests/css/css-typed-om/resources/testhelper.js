@@ -146,6 +146,17 @@ function createDivWithStyle(test, cssText) {
 
 
 
+function createDivWithoutStyle(test) {
+  let element = document.createElement('div');
+  document.body.appendChild(element);
+  test.add_cleanup(() => {
+    element.remove();
+  });
+  return element;
+}
+
+
+
 function createInlineStyleMap(test, cssText) {
   return createElementWithInlineStyleMap(test, cssText)[1]
 }
