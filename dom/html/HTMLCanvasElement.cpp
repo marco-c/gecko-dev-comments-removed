@@ -218,6 +218,12 @@ class RequestedFrameRefreshObserver : public nsARefreshObserver {
       return;
     }
 
+    
+    
+    
+    
+    mOwningElement->MarkContextCleanForFrameCapture();
+
     mOwningElement->ProcessDestroyedFrameListeners();
 
     if (!mOwningElement->IsFrameCaptureRequested(aTime)) {
@@ -265,7 +271,6 @@ class RequestedFrameRefreshObserver : public nsARefreshObserver {
     mLastCaptureTime = aTime;
 
     mOwningElement->SetFrameCapture(copy.forget(), aTime);
-    mOwningElement->MarkContextCleanForFrameCapture();
   }
 
   void DetachFromRefreshDriver() {
