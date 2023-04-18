@@ -48,33 +48,6 @@ function notifyBackgroundScriptStatus(addonId, isRunning) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const BACKGROUND_STATE = {
-  STARTING: "starting",
-  RUNNING: "running",
-  SUSPENDING: "suspending",
-  STOPPED: "stopped",
-};
-
-
 class BackgroundPage extends HiddenExtensionPage {
   constructor(extension, options) {
     super(extension, "background");
@@ -318,7 +291,6 @@ this.backgroundPage = class extends ExtensionAPI {
 
     let { extension } = this;
     let { manifest } = extension;
-    extension.backgroundState = BACKGROUND_STATE.STARTING;
 
     let BackgroundClass = manifest.background.service_worker
       ? BackgroundWorker
@@ -368,15 +340,10 @@ this.backgroundPage = class extends ExtensionAPI {
 
     
     let bgStartupPromise = new Promise(resolve => {
-      let done = event => {
+      let done = () => {
         extension.off("background-script-started", done);
         extension.off("background-script-aborted", done);
         extension.off("shutdown", done);
-        if (event == "background-script-started" && this.bgInstance) {
-          extension.backgroundState = BACKGROUND_STATE.RUNNING;
-        } else {
-          extension.backgroundState = BACKGROUND_STATE.STOPPED;
-        }
         resolve();
       };
       extension.on("background-script-started", done);
@@ -411,11 +378,6 @@ this.backgroundPage = class extends ExtensionAPI {
         return;
       }
 
-      if (extension.backgroundState == BACKGROUND_STATE.SUSPENDING) {
-        extension.backgroundState = BACKGROUND_STATE.RUNNING;
-        
-        extension.emit("background-script-suspend-canceled");
-      }
       this.resetIdleTimer();
     };
 
@@ -425,29 +387,22 @@ this.backgroundPage = class extends ExtensionAPI {
     extension.once("background-script-started", resetBackgroundIdle);
 
     extension.terminateBackground = async () => {
-      await bgStartupPromise;
-      if (!this.extension) {
-        
-        return;
-      }
-      if (extension.backgroundState != BACKGROUND_STATE.RUNNING) {
-        return;
-      }
-      extension.backgroundState = BACKGROUND_STATE.SUSPENDING;
       this.clearIdleTimer();
-      
-      await extension.emit("background-script-suspend");
-      
-      
-      if (extension.backgroundState != BACKGROUND_STATE.SUSPENDING) {
-        return;
-      }
       extension.off("background-script-reset-idle", resetBackgroundIdle);
+      await bgStartupPromise;
       this.onShutdown(false);
       EventManager.clearPrimedListeners(this.extension, false);
       
       return this.primeBackground(false);
     };
+
+    extension.once("terminate-background-script", async () => {
+      if (!this.extension) {
+        
+        return;
+      }
+      this.extension.terminateBackground();
+    });
 
     
     
@@ -487,14 +442,12 @@ this.backgroundPage = class extends ExtensionAPI {
   }
 
   onShutdown(isAppShutdown) {
-    this.extension.backgroundState = BACKGROUND_STATE.STOPPED;
     
     this.clearIdleTimer();
 
     if (this.bgInstance) {
       this.bgInstance.shutdown(isAppShutdown);
       this.bgInstance = null;
-      
       this.extension.emit("shutdown-background-script");
     } else {
       EventManager.clearPrimedListeners(this.extension, false);
@@ -503,7 +456,6 @@ this.backgroundPage = class extends ExtensionAPI {
 
   async onManifestEntry(entryName) {
     let { extension } = this;
-    extension.backgroundState = BACKGROUND_STATE.STOPPED;
 
     await this.primeBackground();
 
