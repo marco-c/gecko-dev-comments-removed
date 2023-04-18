@@ -277,18 +277,21 @@ ProfileBufferBlockIndex AddMarkerToBuffer(
     
     
     
+    auto CaptureStackAndAddMarker = [&](ProfileChunkedBuffer& aChunkedBuffer) {
+      aOptions.StackRef().UseRequestedBacktrace(
+          aBacktraceCaptureFunction(aChunkedBuffer, captureOptions)
+              ? &aChunkedBuffer
+              : nullptr);
+      
+      return AddMarkerWithOptionalStackToBuffer<MarkerType>(
+          aBuffer, aName, aCategory, std::move(aOptions), aTs...);
+    };
     
     ProfileBufferChunkManagerSingle chunkManager(
         ProfileBufferChunkManager::scExpectedMaximumStackSize);
     ProfileChunkedBuffer chunkedBuffer(
         ProfileChunkedBuffer::ThreadSafety::WithoutMutex, chunkManager);
-    aOptions.StackRef().UseRequestedBacktrace(
-        aBacktraceCaptureFunction(chunkedBuffer, captureOptions)
-            ? &chunkedBuffer
-            : nullptr);
-    
-    return AddMarkerWithOptionalStackToBuffer<MarkerType>(
-        aBuffer, aName, aCategory, std::move(aOptions), aTs...);
+    return CaptureStackAndAddMarker(chunkedBuffer);
   }
 
   return AddMarkerWithOptionalStackToBuffer<MarkerType>(
