@@ -62,6 +62,16 @@ nsWebHandlerApp.prototype = {
     
     
 
+    let { scheme } = aURI;
+    if (scheme == "ftp" || scheme == "ftps" || scheme == "sftp") {
+      
+      
+      aURI = aURI
+        .mutate()
+        .setUserPass("")
+        .finalize();
+    }
+
     
     var escapedUriSpecToHandle = encodeURIComponent(aURI.spec);
 
@@ -78,7 +88,6 @@ nsWebHandlerApp.prototype = {
     
     
     if (aBrowsingContext && aBrowsingContext != aBrowsingContext.top) {
-      let { scheme } = aURI;
       if (!scheme.startsWith("web+") && !scheme.startsWith("ext+")) {
         aBrowsingContext = null;
       }
