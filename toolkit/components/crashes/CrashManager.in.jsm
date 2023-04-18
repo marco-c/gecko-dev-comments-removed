@@ -4,8 +4,6 @@
 
 "use strict";
 
-const myScope = this;
-
 const { PromiseUtils } = ChromeUtils.import(
   "resource://gre/modules/PromiseUtils.jsm"
 );
@@ -712,7 +710,7 @@ CrashManager.prototype = Object.freeze({
   _sendCrashPing(crashId, type, date, metadata = {}) {
     
     
-    let reportMeta = Cu.cloneInto(metadata, myScope);
+    let reportMeta = Cu.cloneInto(metadata, {});
     let crashEnvironment = parseAndRemoveField(
       reportMeta,
       "TelemetryEnvironment"
