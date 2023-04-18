@@ -350,11 +350,17 @@ class SendTab {
   }
 
   async _decrypt(ciphertext) {
-    let {
-      privateKey,
-      publicKey,
-      authSecret,
-    } = await this._getPersistedSendTabKeys();
+    let sendTabKeys = await this._getPersistedSendTabKeys();
+    if (!sendTabKeys) {
+      
+      
+      
+      
+      
+      await this._generateAndPersistEncryptedSendTabKey();
+      sendTabKeys = await this._getPersistedSendTabKeys();
+    }
+    let { privateKey, publicKey, authSecret } = sendTabKeys;
     publicKey = urlsafeBase64Decode(publicKey);
     authSecret = urlsafeBase64Decode(authSecret);
     ciphertext = new Uint8Array(urlsafeBase64Decode(ciphertext));
