@@ -7,6 +7,8 @@ async function installTrigger(filename) {
     set: [
       ["extensions.InstallTrigger.enabled", true],
       ["extensions.InstallTriggerImpl.enabled", true],
+      
+      ["xpinstall.userActivation.required", false],
     ],
   });
   BrowserTestUtils.loadURI(gBrowser.selectedBrowser, INSTALL_PAGE);

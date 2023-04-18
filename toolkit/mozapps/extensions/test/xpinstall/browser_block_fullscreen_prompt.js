@@ -31,6 +31,13 @@ function triggerInstall(browser, xpi_url) {
   });
 }
 
+add_setup(async () => {
+  await SpecialPowers.pushPrefEnv({
+    
+    set: [["xpinstall.userActivation.required", false]],
+  });
+});
+
 
 add_task(async function testFullscreenBlockAddonInstallPrompt() {
   
