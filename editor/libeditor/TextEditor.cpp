@@ -643,7 +643,10 @@ void TextEditor::ReinitializeSelection(Element& aElement) {
     return;
   }
 
-  OnFocus(aElement);
+  
+  
+  
+  EditorBase::OnFocus(aElement);
 
   
   
