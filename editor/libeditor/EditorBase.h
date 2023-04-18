@@ -867,6 +867,11 @@ class EditorBase : public nsIEditor,
     bool mDidNormalizeWhitespaces;
 
     
+    
+    
+    bool mNeedsToCleanUpEmptyInlineElements;
+
+    
 
 
 
@@ -913,6 +918,7 @@ class EditorBase : public nsIEditor,
       mDidDeleteEmptyParentBlocks = false;
       mRestoreContentEditableCount = false;
       mDidNormalizeWhitespaces = false;
+      mNeedsToCleanUpEmptyInlineElements = true;
     }
 
     

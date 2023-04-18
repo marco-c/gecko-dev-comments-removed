@@ -633,8 +633,9 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
 
     
     
-    if (mPlaceholderBatch && SelectionRef().IsCollapsed() &&
-        SelectionRef().GetFocusNode()) {
+    if (mPlaceholderBatch &&
+        TopLevelEditSubActionDataRef().mNeedsToCleanUpEmptyInlineElements &&
+        SelectionRef().IsCollapsed() && SelectionRef().GetFocusNode()) {
       RefPtr<Element> mostDistantEmptyInlineAncestor = nullptr;
       for (Element* ancestor :
            SelectionRef().GetFocusNode()->InclusiveAncestorsOfType<Element>()) {
