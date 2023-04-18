@@ -682,13 +682,7 @@ add_task(async function test_telemetryCleanFHRDatabase() {
 });
 
 add_task(async function test_sendNewProfile() {
-  if (
-    gIsAndroid ||
-    (AppConstants.platform == "linux" && OS.Constants.Sys.bits == 32)
-  ) {
-    
-    
-    
+  if (gIsAndroid) {
     
     return;
   }
@@ -762,12 +756,12 @@ add_task(async function test_sendNewProfile() {
   
   Assert.equal(
     req.getHeader("User-Agent"),
-    "pingsender/1.0",
+    "pingsender/2.0",
     "Should have received the correct user agent string."
   );
   Assert.equal(
     req.getHeader("X-PingSender-Version"),
-    "1.0",
+    "2.0",
     "Should have received the correct PingSender version string."
   );
 
