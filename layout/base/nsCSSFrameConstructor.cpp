@@ -5355,13 +5355,13 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
   
   
   
-  auto* details = HTMLDetailsElement::FromNodeOrNull(parent);
+  auto* const details = HTMLDetailsElement::FromNodeOrNull(parent);
   if (ShouldSuppressFrameInNonOpenDetails(details, aComputedStyle, *aContent)) {
     return;
   }
 
   if (aContent->IsHTMLElement(nsGkAtoms::legend) && aParentFrame) {
-    const nsFieldSetFrame* fs = GetFieldSetFrameFor(aParentFrame);
+    const nsFieldSetFrame* const fs = GetFieldSetFrameFor(aParentFrame);
     if (fs && !fs->GetLegend() && !aState.mHasRenderedLegend &&
         !aComputedStyle->StyleDisplay()->IsFloatingStyle() &&
         !aComputedStyle->StyleDisplay()->IsAbsolutelyPositionedStyle()) {
@@ -5370,24 +5370,22 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
     }
   }
 
-  const FrameConstructionData* data =
+  const FrameConstructionData* const data =
       FindDataForContent(*aContent, *aComputedStyle, aParentFrame, aFlags);
   if (!data || data->mBits & FCDATA_SUPPRESS_FRAME) {
     return;
   }
 
-  bool isPopup = false;
+  const bool isPopup =
+      (data->mBits & FCDATA_IS_POPUP) && (!aParentFrame ||  
+                                          !aParentFrame->IsMenuFrame());
 
-  if ((data->mBits & FCDATA_IS_POPUP) && (!aParentFrame ||  
-                                          !aParentFrame->IsMenuFrame())) {
-    if (!aState.mPopupList.containingBlock && !aState.mHavePendingPopupgroup) {
-      return;
-    }
-
-    isPopup = true;
+  if (isPopup && !aState.mPopupList.containingBlock &&
+      !aState.mHavePendingPopupgroup) {
+    return;
   }
 
-  uint32_t bits = data->mBits;
+  const uint32_t bits = data->mBits;
 
   
   if (aParentFrame && aParentFrame->IsTableColGroupFrame() &&
@@ -5396,7 +5394,7 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
     return;
   }
 
-  bool canHavePageBreak =
+  const bool canHavePageBreak =
       aFlags.contains(ItemFlag::AllowPageBreak) &&
       aState.mPresContext->IsPaginated() &&
       !display.IsAbsolutelyPositionedStyle() &&
@@ -5408,7 +5406,7 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
   }
 
   if (details && details->Open()) {
-    auto* summary = HTMLSummaryElement::FromNode(aContent);
+    const auto* const summary = HTMLSummaryElement::FromNode(aContent);
     if (summary && summary->IsMainSummary()) {
       
       
@@ -5452,7 +5450,7 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
   } else {
     
     
-    bool isInline =
+    const bool isInline =
         
         
         
