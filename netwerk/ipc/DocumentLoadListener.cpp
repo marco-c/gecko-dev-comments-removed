@@ -532,9 +532,6 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   loadingContext->GetOriginAttributes(attrs);
 
   mLoadIdentifier = aLoadState->GetLoadIdentifier();
-  
-  mIsDownload = !aLoadState->FileName().IsVoid();
-  mIsLoadingJSURI = net::SchemeIsJavascript(aLoadState->URI());
 
   
   if (aLoadState->OriginalFrameSrc() || !mIsDocumentLoad) {
@@ -760,22 +757,6 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
     MOZ_RELEASE_ASSERT(mParentWindowContext->GetBrowsingContext() ==
                            GetLoadingBrowsingContext(),
                        "mismatched parent window context?");
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!mSupportsRedirectToRealChannel && aLoadState->TriggeringPrincipal() &&
-      aLoadState->TriggeringPrincipal()->IsSystemPrincipal()) {
-    WindowContext* topWc = loadingContext->GetTopWindowContext();
-    if (topWc && !topWc->IsDiscarded()) {
-      MOZ_ALWAYS_SUCCEEDS(topWc->SetSHEntryHasUserInteraction(true));
-    }
   }
 
   *aRv = NS_OK;
@@ -2252,6 +2233,10 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
       mDoingProcessSwitch = true;
 
       DisconnectListeners(NS_BINDING_ABORTED, NS_BINDING_ABORTED, true);
+
+      
+      
+      
 
       
       

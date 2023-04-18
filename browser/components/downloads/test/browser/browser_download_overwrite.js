@@ -63,43 +63,35 @@ add_task(async function test_overwrite_does_not_delete_first() {
   let dialogPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
 
   
-  await BrowserTestUtils.withNewTab(
-    {
-      gBrowser,
-      opening: TEST_ROOT + "foo.txt",
-      waitForLoad: false,
-      waitForStateStop: true,
-    },
-    async function() {
-      if (
-        !Services.prefs.getBoolPref(
-          "browser.download.improvements_to_download_panel"
-        )
-      ) {
-        let dialog = await dialogPromise;
-        info("Got dialog.");
-        let saveEl = dialog.document.getElementById("save");
-        dialog.document.getElementById("mode").selectedItem = saveEl;
-        
-        dialog.document
-          .getElementById("unknownContentType")
-          .getButton("accept").disabled = false;
-        
-        dialog.document.querySelector("dialog").acceptDialog();
-      }
-
-      ok(await transferCompletePromise, "download should succeed");
-      ok(
-        gTestTargetFile.exists(),
-        "File should still exist and not have been deleted."
-      );
+  await BrowserTestUtils.withNewTab(TEST_ROOT + "foo.txt", async function() {
+    if (
+      !Services.prefs.getBoolPref(
+        "browser.download.improvements_to_download_panel"
+      )
+    ) {
+      let dialog = await dialogPromise;
+      info("Got dialog.");
+      let saveEl = dialog.document.getElementById("save");
+      dialog.document.getElementById("mode").selectedItem = saveEl;
       
+      dialog.document
+        .getElementById("unknownContentType")
+        .getButton("accept").disabled = false;
       
-      
-      mockTransferRegisterer.unregister();
-      unregisteredTransfer = true;
+      dialog.document.querySelector("dialog").acceptDialog();
     }
-  );
+
+    ok(await transferCompletePromise, "download should succeed");
+    ok(
+      gTestTargetFile.exists(),
+      "File should still exist and not have been deleted."
+    );
+    
+    
+    
+    mockTransferRegisterer.unregister();
+    unregisteredTransfer = true;
+  });
 });
 
 
@@ -122,43 +114,35 @@ add_task(async function test_overwrite_works() {
     });
   });
   
-  await BrowserTestUtils.withNewTab(
-    {
-      gBrowser,
-      opening: TEST_ROOT + "foo.txt",
-      waitForLoad: false,
-      waitForStateStop: true,
-    },
-    async function() {
-      if (
-        !Services.prefs.getBoolPref(
-          "browser.download.improvements_to_download_panel"
-        )
-      ) {
-        let dialog = await dialogPromise;
-        info("Got dialog.");
-        let saveEl = dialog.document.getElementById("save");
-        dialog.document.getElementById("mode").selectedItem = saveEl;
-        
-        dialog.document
-          .getElementById("unknownContentType")
-          .getButton("accept").disabled = false;
-        
-        dialog.document.querySelector("dialog").acceptDialog();
-      }
-
-      info("wait for download to finish");
-      let download = await downloadFinishedPromise;
-      ok(download.succeeded, "Download should succeed");
-      ok(
-        gTestTargetFile.exists(),
-        "File should still exist and not have been deleted."
-      );
-      let contents = new TextDecoder().decode(
-        await IOUtils.read(gTestTargetFile.path)
-      );
-      info("Got: " + contents);
-      ok(contents.startsWith("Dummy"), "The file was overwritten.");
+  await BrowserTestUtils.withNewTab(TEST_ROOT + "foo.txt", async function() {
+    if (
+      !Services.prefs.getBoolPref(
+        "browser.download.improvements_to_download_panel"
+      )
+    ) {
+      let dialog = await dialogPromise;
+      info("Got dialog.");
+      let saveEl = dialog.document.getElementById("save");
+      dialog.document.getElementById("mode").selectedItem = saveEl;
+      
+      dialog.document
+        .getElementById("unknownContentType")
+        .getButton("accept").disabled = false;
+      
+      dialog.document.querySelector("dialog").acceptDialog();
     }
-  );
+
+    info("wait for download to finish");
+    let download = await downloadFinishedPromise;
+    ok(download.succeeded, "Download should succeed");
+    ok(
+      gTestTargetFile.exists(),
+      "File should still exist and not have been deleted."
+    );
+    let contents = new TextDecoder().decode(
+      await IOUtils.read(gTestTargetFile.path)
+    );
+    info("Got: " + contents);
+    ok(contents.startsWith("Dummy"), "The file was overwritten.");
+  });
 });

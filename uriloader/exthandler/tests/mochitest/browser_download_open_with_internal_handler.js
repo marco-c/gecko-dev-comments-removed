@@ -147,12 +147,10 @@ add_task(async function test_check_open_with_internal_handler() {
       await publicList.removeFinished();
     });
     let dialogWindowPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
-    let loadingTab = await BrowserTestUtils.openNewForegroundTab({
+    let loadingTab = await BrowserTestUtils.openNewForegroundTab(
       gBrowser,
-      opening: TEST_PATH + file,
-      waitForLoad: false,
-      waitForStateStop: true,
-    });
+      TEST_PATH + file
+    );
     
     
     
@@ -344,12 +342,10 @@ add_task(async function test_check_open_with_external_application() {
       await publicList.removeFinished();
     });
     let dialogWindowPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
-    let loadingTab = await BrowserTestUtils.openNewForegroundTab({
+    let loadingTab = await BrowserTestUtils.openNewForegroundTab(
       gBrowser,
-      opening: TEST_PATH + file,
-      waitForLoad: false,
-      waitForStateStop: true,
-    });
+      TEST_PATH + file
+    );
     let dialogWindow = await dialogWindowPromise;
     is(
       dialogWindow.location.href,
@@ -448,12 +444,10 @@ add_task(async function test_check_open_with_external_then_internal() {
     let dialogWindowPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
     
     
-    let loadingTab = await BrowserTestUtils.openNewForegroundTab({
+    let loadingTab = await BrowserTestUtils.openNewForegroundTab(
       gBrowser,
-      opening: TEST_PATH + file,
-      waitForLoad: false,
-      waitForStateStop: true,
-    });
+      TEST_PATH + file
+    );
     let dialogWindow = await dialogWindowPromise;
     is(
       dialogWindow.location.href,
@@ -507,12 +501,10 @@ add_task(async function test_check_open_with_external_then_internal() {
     
     
     dialogWindowPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
-    loadingTab = await BrowserTestUtils.openNewForegroundTab({
+    loadingTab = await BrowserTestUtils.openNewForegroundTab(
       gBrowser,
-      opening: TEST_PATH + file,
-      waitForLoad: false,
-      waitForStateStop: true,
-    });
+      TEST_PATH + file
+    );
     dialogWindow = await dialogWindowPromise;
     is(
       dialogWindow.location.href,
@@ -592,12 +584,10 @@ add_task(
       ["file_xml_attachment_test.xml", true],
     ]) {
       let dialogWindowPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
-      let loadingTab = await BrowserTestUtils.openNewForegroundTab({
+      let loadingTab = await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
-        opening: TEST_PATH + file,
-        waitForLoad: false,
-        waitForStateStop: true,
-      });
+        TEST_PATH + file
+      );
       let dialogWindow = await dialogWindowPromise;
       is(
         dialogWindow.location.href,
@@ -645,12 +635,10 @@ add_task(async function test_internal_handler_hidden_with_other_type() {
   });
 
   let dialogWindowPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
-  let loadingTab = await BrowserTestUtils.openNewForegroundTab({
+  let loadingTab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    opening: TEST_PATH + "file_txt_attachment_test.txt",
-    waitForLoad: false,
-    waitForStateStop: true,
-  });
+    TEST_PATH + "file_txt_attachment_test.txt"
+  );
   let dialogWindow = await dialogWindowPromise;
   is(
     dialogWindow.location.href,
@@ -701,12 +689,10 @@ add_task(async function test_internal_handler_hidden_with_pdf_pref_disabled() {
     "file_pdf_binary_octet_stream.pdf",
   ]) {
     let dialogWindowPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
-    let loadingTab = await BrowserTestUtils.openNewForegroundTab({
+    let loadingTab = await BrowserTestUtils.openNewForegroundTab(
       gBrowser,
-      opening: TEST_PATH + file,
-      waitForLoad: false,
-      waitForStateStop: true,
-    });
+      TEST_PATH + file
+    );
     let dialogWindow = await dialogWindowPromise;
     is(
       dialogWindow.location.href,
@@ -745,12 +731,10 @@ add_task(
       set: [["browser.helperApps.showOpenOptionForViewableInternally", false]],
     });
     let dialogWindowPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
-    let loadingTab = await BrowserTestUtils.openNewForegroundTab({
+    let loadingTab = await BrowserTestUtils.openNewForegroundTab(
       gBrowser,
-      opening: TEST_PATH + "file_xml_attachment_test.xml",
-      waitForLoad: false,
-      waitForStateStop: true,
-    });
+      TEST_PATH + "file_xml_attachment_test.xml"
+    );
     let dialogWindow = await dialogWindowPromise;
     is(
       dialogWindow.location.href,

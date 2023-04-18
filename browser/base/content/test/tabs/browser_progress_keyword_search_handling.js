@@ -50,10 +50,6 @@ add_task(async function test_unknown_host() {
     EventUtils.synthesizeKey("KEY_Enter");
 
     await searchPromise;
-    
-    
-    await new Promise(resolve => executeSoon(resolve));
-
     ok(kButton.hasAttribute("displaystop"), "Should be showing stop");
 
     await TestUtils.waitForCondition(
