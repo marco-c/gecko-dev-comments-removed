@@ -275,7 +275,11 @@ class ScriptLoadRequest
 
   void ClearScriptSource();
 
-  void SetScript(JSScript* aScript);
+  void MarkForBytecodeEncoding(JSScript* aScript);
+
+  bool IsMarkedForBytecodeEncoding() const {
+    return !!mScriptForBytecodeEncoding;
+  }
 
   bool IsBytecode() const { return mDataType == DataType::eBytecode; }
 
@@ -328,7 +332,7 @@ class ScriptLoadRequest
 
   
   
-  JS::Heap<JSScript*> mScript;
+  JS::Heap<JSScript*> mScriptForBytecodeEncoding;
 
   
   
