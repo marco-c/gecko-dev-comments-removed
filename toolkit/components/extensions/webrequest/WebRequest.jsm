@@ -748,17 +748,19 @@ HttpObserverManager = {
       
       
       
-      let onStart = function() {
-        channel.removeEventListener("start", onStart);
-        if (!channel.errorString) {
-          this.runChannelListener(channel, "onErrorOccurred", {
-            error:
-              this.activityErrorsMap.get(lastActivity) ||
-              `NS_ERROR_NET_UNKNOWN_${lastActivity}`,
-          });
-        }
-      };
-      channel.addEventListener("start", onStart);
+      channel.addEventListener(
+        "start",
+        () => {
+          if (!channel.errorString) {
+            this.runChannelListener(channel, "onErrorOccurred", {
+              error:
+                this.activityErrorsMap.get(lastActivity) ||
+                `NS_ERROR_NET_UNKNOWN_${lastActivity}`,
+            });
+          }
+        },
+        { once: true }
+      );
     } else if (
       lastActivity !== this.GOOD_LAST_ACTIVITY &&
       lastActivity !==
