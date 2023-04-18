@@ -21,10 +21,8 @@ class nsIPrincipal;
 class nsIURI;
 class nsPIDOMWindowOuter;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class WindowGlobalParent;
-}
 }  
 
 class ThirdPartyUtil final : public mozIThirdPartyUtil {

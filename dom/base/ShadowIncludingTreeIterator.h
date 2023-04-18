@@ -19,8 +19,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ShadowRoot.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ShadowIncludingTreeIterator {
  public:
@@ -114,7 +113,6 @@ class ShadowIncludingTreeIterator {
 #endif  
 };
 
-}  
 }  
 
 #endif  

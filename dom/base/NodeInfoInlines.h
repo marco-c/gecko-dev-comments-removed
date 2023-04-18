@@ -12,8 +12,7 @@
 #include "nsDOMString.h"
 #include "nsGkAtoms.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 inline bool NodeInfo::Equals(NodeInfo* aNodeInfo) const {
   return aNodeInfo == this ||
@@ -55,7 +54,6 @@ inline bool NodeInfo::QualifiedNameEquals(const nsAtom* aNameAtom) const {
   return aNameAtom->Equals(mQualifiedName);
 }
 
-}  
 }  
 
 inline void CheckValidNodeInfo(uint16_t aNodeType, const nsAtom* aName,

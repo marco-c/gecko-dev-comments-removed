@@ -9,8 +9,7 @@
 
 #include "mozilla/dom/MessageBroadcaster.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -45,7 +44,6 @@ class ParentProcessMessageManager final : public MessageBroadcaster {
   virtual ~ParentProcessMessageManager();
 };
 
-}  
 }  
 
 #endif  

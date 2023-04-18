@@ -9,8 +9,7 @@
 
 #include "mozilla/dom/MessageSender.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class SyncMessageSender : public MessageSender {
  protected:
@@ -19,7 +18,6 @@ class SyncMessageSender : public MessageSender {
       : MessageSender(aCallback, nullptr, aFlags) {}
 };
 
-}  
 }  
 
 #endif  

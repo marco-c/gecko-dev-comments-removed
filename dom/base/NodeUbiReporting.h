@@ -21,8 +21,7 @@
 
 
 
-namespace JS {
-namespace ubi {
+namespace JS::ubi {
 
 
 
@@ -85,7 +84,6 @@ class Concrete<mozilla::dom::Attr> : public Concrete<nsINode> {
   static const char16_t concreteTypeName[];
 };
 
-}  
 }  
 
 #endif

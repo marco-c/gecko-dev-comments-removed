@@ -9,8 +9,7 @@
 
 #include "js/StructuredClone.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -145,7 +144,6 @@ enum StructuredCloneTags : uint32_t {
   
 };
 
-}  
 }  
 
 #endif  

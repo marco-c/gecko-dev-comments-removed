@@ -10,8 +10,7 @@
 #include "nsFrameMessageManager.h"
 #include "mozilla/ErrorResult.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -114,7 +113,6 @@ class MessageManagerGlobal {
   RefPtr<nsFrameMessageManager> mMessageManager;
 };
 
-}  
 }  
 
 #endif  

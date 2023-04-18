@@ -13,8 +13,7 @@
 #include "nsITimer.h"
 #include "nsINamed.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class TimeoutManager;
 
@@ -85,7 +84,6 @@ class TimeoutExecutor final : public nsIRunnable,
   NS_DECL_NSINAMED
 };
 
-}  
 }  
 
 #endif  

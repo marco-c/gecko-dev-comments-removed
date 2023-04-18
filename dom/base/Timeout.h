@@ -16,8 +16,7 @@
 #include "nsTHashMap.h"
 #include "GeckoProfiler.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -194,7 +193,6 @@ class Timeout final : protected LinkedListElement<RefPtr<Timeout>> {
   friend class LinkedListElement<RefPtr<Timeout>>;
 };
 
-}  
 }  
 
 #endif  

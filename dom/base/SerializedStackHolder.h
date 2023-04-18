@@ -10,8 +10,7 @@
 #include "mozilla/dom/StructuredCloneHolder.h"
 #include "mozilla/dom/WorkerRef.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -77,7 +76,6 @@ void ConvertSerializedStackToJSON(UniquePtr<SerializedStackHolder> aStackHolder,
 void NotifyNetworkMonitorAlternateStack(nsISupports* aChannel,
                                         const nsAString& aStackJSON);
 
-}  
 }  
 
 #endif  
