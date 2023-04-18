@@ -252,6 +252,12 @@ extern JS_PUBLIC_API bool DetachArrayBuffer(JSContext* cx,
 
 
 
+extern JS_PUBLIC_API bool HasDefinedArrayBufferDetachKey(JSContext* cx,
+                                                         Handle<JSObject*> obj,
+                                                         bool* isDefined);
+
+
+
 
 
 
