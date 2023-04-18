@@ -1,0 +1,18 @@
+
+
+
+
+"use strict";
+
+async function clearConsole() {
+  for (const tab of gBrowser.tabs) {
+    await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
+      Services.console.reset();
+    });
+  }
+  Services.console.reset();
+}
+
+registerCleanupFunction(async () => {
+  await clearConsole();
+});
