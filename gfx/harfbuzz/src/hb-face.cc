@@ -143,7 +143,7 @@ hb_face_create_for_tables (hb_reference_table_func_t  reference_table_func,
 
 typedef struct hb_face_for_data_closure_t {
   hb_blob_t *blob;
-  unsigned int  index;
+  uint16_t  index;
 } hb_face_for_data_closure_t;
 
 static hb_face_for_data_closure_t *
@@ -156,7 +156,7 @@ _hb_face_for_data_closure_create (hb_blob_t *blob, unsigned int index)
     return nullptr;
 
   closure->blob = blob;
-  closure->index = index;
+  closure->index = (uint16_t) (index & 0xFFFFu);
 
   return closure;
 }
@@ -188,6 +188,16 @@ _hb_face_for_data_reference_table (hb_face_t *face HB_UNUSED, hb_tag_t tag, void
 
   return blob;
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -411,6 +421,7 @@ hb_face_reference_blob (hb_face_t *face)
 {
   return face->reference_table (HB_TAG_NONE);
 }
+
 
 
 

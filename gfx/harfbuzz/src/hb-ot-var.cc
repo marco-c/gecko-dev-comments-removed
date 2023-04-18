@@ -308,6 +308,9 @@ hb_ot_var_normalize_variations (hb_face_t            *face,
 
 
 
+
+
+
 void
 hb_ot_var_normalize_coords (hb_face_t    *face,
 			    unsigned int coords_length,

@@ -1477,6 +1477,8 @@ DEFINE_NULL_INSTANCE (hb_font_t) =
 
   1000, 
   1000, 
+  0., 
+  0., 
   1<<16, 
   1<<16, 
 
@@ -1525,6 +1527,13 @@ _hb_font_create (hb_face_t *face)
 
 
 
+
+
+
+
+
+
+
 hb_font_t *
 hb_font_create (hb_face_t *face)
 {
@@ -1533,6 +1542,11 @@ hb_font_create (hb_face_t *face)
 #ifndef HB_NO_OT_FONT
   
   hb_ot_font_set_funcs (font);
+#endif
+
+#ifndef HB_NO_VAR
+  if (face && face->index >> 16)
+    hb_font_set_var_named_instance (font, (face->index >> 16) - 1);
 #endif
 
   return font;
@@ -1578,6 +1592,7 @@ hb_font_create_sub_font (hb_font_t *parent)
 
   font->x_scale = parent->x_scale;
   font->y_scale = parent->y_scale;
+  font->slant = parent->slant;
   font->mults_changed ();
   font->x_ppem = parent->x_ppem;
   font->y_ppem = parent->y_ppem;
@@ -2023,7 +2038,54 @@ hb_font_get_ptem (hb_font_t *font)
   return font->ptem;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN void
+hb_font_set_synthetic_slant (hb_font_t *font, float slant)
+{
+  if (hb_object_is_immutable (font))
+    return;
+
+  font->slant = slant;
+  font->mults_changed ();
+}
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN float
+hb_font_get_synthetic_slant (hb_font_t *font)
+{
+  return font->slant;
+}
+
 #ifndef HB_NO_VAR
+
+
+
+
 
 
 
@@ -2081,6 +2143,10 @@ hb_font_set_variations (hb_font_t            *font,
 
   _hb_font_adopt_var_coords (font, normalized, design_coords, coords_length);
 }
+
+
+
+
 
 
 
@@ -2158,6 +2224,10 @@ hb_font_set_var_named_instance (hb_font_t *font,
 
 
 
+
+
+
+
 void
 hb_font_set_var_coords_normalized (hb_font_t    *font,
 				   const int    *coords, 
@@ -2206,6 +2276,11 @@ hb_font_set_var_coords_normalized (hb_font_t    *font,
 
 
 
+
+
+
+
+
 const int *
 hb_font_get_var_coords_normalized (hb_font_t    *font,
 				   unsigned int *length)
@@ -2216,7 +2291,13 @@ hb_font_get_var_coords_normalized (hb_font_t    *font,
   return font->coords;
 }
 
-#ifdef HB_EXPERIMENTAL_API
+
+
+
+
+
+
+
 
 
 
@@ -2238,7 +2319,6 @@ hb_font_get_var_coords_design (hb_font_t *font,
 
   return font->design_coords;
 }
-#endif
 #endif
 
 #ifndef HB_DISABLE_DEPRECATED

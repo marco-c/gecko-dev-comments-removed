@@ -260,6 +260,8 @@ hb_ot_color_has_svg (hb_face_t *face)
 
 
 
+
+
 hb_blob_t *
 hb_ot_color_glyph_reference_svg (hb_face_t *face, hb_codepoint_t glyph)
 {
@@ -286,6 +288,8 @@ hb_ot_color_has_png (hb_face_t *face)
 {
   return face->table.CBDT->has_data () || face->table.sbix->has_data ();
 }
+
+
 
 
 

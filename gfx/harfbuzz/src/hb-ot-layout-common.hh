@@ -68,8 +68,8 @@
 #define HB_MAX_FEATURE_INDICES	1500
 #endif
 
-#ifndef HB_MAX_LOOKUP_INDICES
-#define HB_MAX_LOOKUP_INDICES	20000
+#ifndef HB_MAX_LOOKUP_VISIT_COUNT
+#define HB_MAX_LOOKUP_VISIT_COUNT	35000
 #endif
 
 
@@ -128,7 +128,7 @@ struct hb_prune_langsys_context_t
   bool visited (const T *p, hb_set_t &visited_set)
   {
     hb_codepoint_t delta = (hb_codepoint_t) ((uintptr_t) p - (uintptr_t) table);
-     if (visited_set.has (delta))
+    if (visited_set.in_error () || visited_set.has (delta))
       return true;
 
     visited_set.add (delta);
@@ -173,7 +173,7 @@ struct hb_subset_layout_context_t :
   bool visitLookupIndex()
   {
     lookup_index_count++;
-    return lookup_index_count < HB_MAX_LOOKUP_INDICES;
+    return lookup_index_count < HB_MAX_LOOKUP_VISIT_COUNT;
   }
 
   hb_subset_context_t *subset_context;
@@ -655,7 +655,6 @@ struct LangSys
   void collect_features (hb_prune_langsys_context_t *c) const
   {
     if (!has_required_feature () && !get_feature_count ()) return;
-    if (c->visitedLangsys (this)) return;
     if (has_required_feature () &&
         c->duplicate_feature_map->has (reqFeatureIndex))
       c->new_feature_indexes->add (get_required_feature_index ());
@@ -750,11 +749,15 @@ struct Script
     {
       
       const LangSys& d = get_default_lang_sys ();
-      d.collect_features (c);
+      if (!c->visitedLangsys (&d)) {
+        d.collect_features (c);
+      }
 
       for (auto _ : + hb_zip (langSys, hb_range (langsys_count)))
       {
+
         const LangSys& l = this+_.first.offset;
+        if (c->visitedLangsys (&l)) continue;
         if (l.compare (d, c->duplicate_feature_map)) continue;
 
         l.collect_features (c);
@@ -766,6 +769,7 @@ struct Script
       for (auto _ : + hb_zip (langSys, hb_range (langsys_count)))
       {
         const LangSys& l = this+_.first.offset;
+        if (c->visitedLangsys (&l)) continue;
         l.collect_features (c);
         c->script_langsys_map->get (script_index)->add (_.second);
       }
@@ -2926,8 +2930,6 @@ struct VariationStore
 
     hb_vector_t<hb_inc_bimap_t> inner_maps;
     inner_maps.resize ((unsigned) dataSets.len);
-    for (unsigned i = 0; i < inner_maps.length; i++)
-      inner_maps[i].init ();
 
     for (unsigned idx : c->plan->layout_variation_indices->iter ())
     {
@@ -2935,17 +2937,10 @@ struct VariationStore
       uint16_t minor = idx & 0xFFFF;
 
       if (major >= inner_maps.length)
-      {
-	for (unsigned i = 0; i < inner_maps.length; i++)
-	  inner_maps[i].fini ();
 	return_trace (false);
-      }
       inner_maps[major].add (minor);
     }
     varstore_prime->serialize (c->serializer, this, inner_maps.as_array ());
-
-    for (unsigned i = 0; i < inner_maps.length; i++)
-      inner_maps[i].fini ();
 
     return_trace (
         !c->serializer->in_error()
