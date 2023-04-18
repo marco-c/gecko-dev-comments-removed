@@ -14,7 +14,7 @@ protected:
   
   
   
-  unsigned checkExplicitAlignment(const Decl *D) const {
+  static unsigned checkExplicitAlignment(const Decl *D) {
     ASTContext &Context = D->getASTContext();
     unsigned PointerAlign = Context.getTargetInfo().getPointerAlign(0);
 
@@ -26,6 +26,65 @@ protected:
       return Context.toCharUnitsFromBits(MaxAlign).getQuantity();
     }
     return 0;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  static bool canPassAsTemporary(const CXXRecordDecl *D) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool HasNonDeletedCopyOrMove = false;
+
+    if (D->needsImplicitCopyConstructor() &&
+        !D->defaultedCopyConstructorIsDeleted()) {
+      if (!D->hasTrivialCopyConstructorForCall())
+        return false;
+      HasNonDeletedCopyOrMove = true;
+    }
+
+    if (D->needsImplicitMoveConstructor() &&
+        !D->defaultedMoveConstructorIsDeleted()) {
+      if (!D->hasTrivialMoveConstructorForCall())
+        return false;
+      HasNonDeletedCopyOrMove = true;
+    }
+
+    if (D->needsImplicitDestructor() && !D->defaultedDestructorIsDeleted() &&
+        !D->hasTrivialDestructorForCall())
+      return false;
+
+    for (const CXXMethodDecl *MD : D->methods()) {
+      if (MD->isDeleted())
+        continue;
+
+      auto *CD = dyn_cast<CXXConstructorDecl>(MD);
+      if (CD && CD->isCopyOrMoveConstructor())
+        HasNonDeletedCopyOrMove = true;
+      else if (!isa<CXXDestructorDecl>(MD))
+        continue;
+
+      if (!MD->isTrivialForCall())
+        return false;
+    }
+
+    return HasNonDeletedCopyOrMove;
   }
 
   
@@ -50,7 +109,7 @@ protected:
     
     
     auto RD = dyn_cast<CXXRecordDecl>(D);
-    if (RD && RD->canPassInRegisters()) {
+    if (RD && RD->isCompleteDefinition() && canPassAsTemporary(RD)) {
       return "";
     }
 
