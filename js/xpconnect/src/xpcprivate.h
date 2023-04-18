@@ -404,6 +404,9 @@ class XPCJSContext final : public mozilla::CycleCollectedJSContext,
     IDX_INTERFACE_ID,
     IDX_INITIALIZER,
     IDX_PRINT,
+    IDX_FETCH,
+    IDX_CRYPTO,
+    IDX_INDEXEDDB,
     IDX_TOTAL_COUNT  
   };
 
@@ -2849,6 +2852,9 @@ void InitializeValue(const nsXPTType& aType, void* aValue);
 
 void DestructValue(const nsXPTType& aType, void* aValue,
                    uint32_t aArrayLen = 0);
+
+bool SandboxCreateCrypto(JSContext* cx, JS::Handle<JSObject*> obj);
+bool SandboxCreateFetch(JSContext* cx, JS::Handle<JSObject*> obj);
 
 }  
 
