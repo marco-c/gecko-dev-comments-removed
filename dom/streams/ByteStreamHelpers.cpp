@@ -10,8 +10,7 @@
 #include "js/experimental/TypedData.h"
 #include "mozilla/ErrorResult.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -104,5 +103,4 @@ JSObject* CloneAsUint8Array(JSContext* aCx, JS::HandleObject aObject) {
   return array;
 }
 
-}  
 }  

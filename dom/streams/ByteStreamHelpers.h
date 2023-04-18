@@ -10,8 +10,7 @@
 #include "js/TypeDecls.h"
 #include "mozilla/ErrorResult.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -25,9 +24,8 @@ bool CanTransferArrayBuffer(JSContext* aCx, JS::Handle<JSObject*> aObject,
 
 
 
-JSObject* CloneAsUint8Array(JSContext* aCx, JS::HandleObject O);
+JSObject* CloneAsUint8Array(JSContext* aCx, JS::HandleObject aObject);
 
-}  
 }  
 
 #endif

@@ -18,17 +18,14 @@
 #include "nsWrapperCache.h"
 #include "mozilla/LinkedList.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Promise;
 class ReadableStream;
 
 }  
-}  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ReadableStreamBYOBReader final : public ReadableStreamGenericReader,
                                        public nsWrapperCache {
@@ -85,7 +82,6 @@ void ReadableStreamBYOBReaderRelease(JSContext* aCx,
                                      ReadableStreamBYOBReader* aReader,
                                      ErrorResult& aRv);
 
-}  
 }  
 
 #endif  
