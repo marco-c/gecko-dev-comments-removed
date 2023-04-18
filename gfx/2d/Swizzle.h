@@ -50,6 +50,27 @@ GFX2D_API bool SwizzleData(const uint8_t* aSrc, int32_t aSrcStride,
 
 
 
+
+GFX2D_API bool SwizzleYFlipData(const uint8_t* aSrc, int32_t aSrcStride,
+                                SurfaceFormat aSrcFormat, uint8_t* aDst,
+                                int32_t aDstStride, SurfaceFormat aDstFormat,
+                                const IntSize& aSize);
+
+
+
+
+
+
+GFX2D_API bool PremultiplyYFlipData(const uint8_t* aSrc, int32_t aSrcStride,
+                                    SurfaceFormat aSrcFormat, uint8_t* aDst,
+                                    int32_t aDstStride,
+                                    SurfaceFormat aDstFormat,
+                                    const IntSize& aSize);
+
+
+
+
+
 typedef void (*SwizzleRowFn)(const uint8_t* aSrc, uint8_t* aDst,
                              int32_t aLength);
 
