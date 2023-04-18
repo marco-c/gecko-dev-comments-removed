@@ -952,6 +952,7 @@ class ChromeAndroidBase(Browser):
     def __init__(self, logger):
         super().__init__(logger)
         self.device_serial = None
+        self.adb_binary = "adb"
 
     def download(self, dest=None, channel=None, rename=None):
         raise NotImplementedError
@@ -977,7 +978,7 @@ class ChromeAndroidBase(Browser):
             self.logger.warning("No package name provided.")
             return None
 
-        command = ['adb']
+        command = [self.adb_binary]
         if self.device_serial:
             
             command.extend(['-s', self.device_serial[0]])
@@ -1036,7 +1037,7 @@ class AndroidWebview(ChromeAndroidBase):
         
         
         
-        command = ['adb']
+        command = [self.adb_binary]
         if self.device_serial:
             command.extend(['-s', self.device_serial[0]])
         command.extend(['shell', 'dumpsys', 'webviewupdate'])
