@@ -383,7 +383,9 @@ class SizeClassesBetween {
 };
 
 #define ALIGNMENT_CEILING(s, alignment) \
-  (((s) + (alignment - 1)) & (~(alignment - 1)))
+  (((s) + ((alignment)-1)) & (~((alignment)-1)))
+
+#define ALIGNMENT_FLOOR(s, alignment) ((s) & (~((alignment)-1)))
 
 static bool IsSameRoundedHugeClass(size_t aSize1, size_t aSize2,
                                    jemalloc_stats_t& aStats) {
@@ -658,7 +660,7 @@ TEST(Jemalloc, JunkPoison)
 }
 #endif  
 
-TEST(Jemalloc, GuardRegion)
+TEST(Jemalloc, TrailingGuard)
 {
   
   
@@ -693,7 +695,6 @@ TEST(Jemalloc, GuardRegion)
   jemalloc_ptr_info_t info;
   jemalloc_ptr_info(guard_page, &info);
   ASSERT_TRUE(jemalloc_ptr_is_freed_page(&info));
-  ASSERT_TRUE(info.tag == TagFreedPage);
 
   ASSERT_DEATH_WRAP(*(char*)guard_page = 0, "");
 
@@ -702,6 +703,56 @@ TEST(Jemalloc, GuardRegion)
   }
   moz_arena_free(arena, extra_ptr);
 
+  moz_dispose_arena(arena);
+
+#ifdef HAS_GDB_SLEEP_DURATION
+  _gdb_sleep_duration = old_gdb_sleep_duration;
+#endif
+}
+
+TEST(Jemalloc, LeadingGuard)
+{
+  
+  
+  AutoDisablePHCOnCurrentThread disable;
+
+  jemalloc_stats_t stats;
+  jemalloc_stats(&stats);
+
+#ifdef HAS_GDB_SLEEP_DURATION
+  
+  unsigned int old_gdb_sleep_duration = _gdb_sleep_duration;
+  _gdb_sleep_duration = 0;
+#endif
+
+  arena_id_t arena = moz_create_arena();
+  ASSERT_TRUE(arena != 0);
+
+  
+  
+  
+  
+  
+  void* ptr = moz_arena_malloc(arena, stats.large_max);
+  ASSERT_TRUE(ptr != nullptr);
+  
+  void* chunk_start = (void*)ALIGNMENT_FLOOR((uintptr_t)ptr, stats.chunksize);
+  ASSERT_NE((uintptr_t)ptr, (uintptr_t)chunk_start);
+  
+  
+  ASSERT_NE((uintptr_t)ptr, (uintptr_t)chunk_start + stats.page_size);
+  
+  
+  
+
+  
+  void* guard_page = (void*)(((uintptr_t)ptr) - sizeof(void*));
+  jemalloc_ptr_info_t info;
+  jemalloc_ptr_info(guard_page, &info);
+  ASSERT_TRUE(info.tag == TagUnknown);
+  ASSERT_DEATH_WRAP(*(char*)guard_page = 0, "");
+
+  moz_arena_free(arena, ptr);
   moz_dispose_arena(arena);
 
 #ifdef HAS_GDB_SLEEP_DURATION
