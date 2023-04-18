@@ -82,7 +82,11 @@ function shouldConsoleTryUpgradeAndError() {
 
 add_task(async function test_with_downloads_pref_enabled() {
   await SpecialPowers.pushPrefEnv({
-    set: [["dom.security.https_first", true]],
+    set: [
+      ["dom.security.https_first", true],
+      
+      ["browser.download.improvements_to_download_panel", true],
+    ],
   });
   let checkPromise = shouldConsoleTryUpgradeAndError();
   let downloadsPanelPromise = promisePanelOpened();
