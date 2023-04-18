@@ -12,6 +12,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/ProfileJSONWriter.h"
+#include "mozilla/ProportionValue.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Vector.h"
 #include "nsIProfiler.h"
@@ -60,10 +61,19 @@ class nsProfiler final : public nsIProfiler {
   struct PendingProfile {
     base::ProcessId childPid;
 
+    mozilla::ProportionValue progressProportion;
+    nsCString progressLocation;
+
+    mozilla::TimeStamp lastProgressRequest;
+    mozilla::TimeStamp lastProgressResponse;
+    mozilla::TimeStamp lastProgressChange;
+
     explicit PendingProfile(base::ProcessId aChildPid) : childPid(aChildPid) {}
   };
 
   PendingProfile* GetPendingProfile(base::ProcessId aChildPid);
+  
+  bool SendProgressRequest(PendingProfile& aPendingProfile);
 
   
   mozilla::Vector<ExitProfile> mExitProfiles;

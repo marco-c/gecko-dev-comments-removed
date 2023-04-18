@@ -710,6 +710,80 @@ nsProfiler::GetBufferInfo(uint32_t* aCurrentPosition, uint32_t* aTotalSize,
   return NS_OK;
 }
 
+bool nsProfiler::SendProgressRequest(PendingProfile& aPendingProfile) {
+  RefPtr<ProfilerParent::SingleProcessProgressPromise> progressPromise =
+      ProfilerParent::RequestGatherProfileProgress(aPendingProfile.childPid);
+  if (!progressPromise) {
+    LOG("RequestGatherProfileProgress(%u) -> null!",
+        unsigned(aPendingProfile.childPid));
+    
+    return false;
+  }
+
+  DEBUG_LOG("RequestGatherProfileProgress(%u) sent...",
+            unsigned(aPendingProfile.childPid));
+  aPendingProfile.lastProgressRequest = TimeStamp::Now();
+  progressPromise->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [self = RefPtr<nsProfiler>(this),
+       childPid = aPendingProfile.childPid](GatherProfileProgress&& aResult) {
+        if (!self->mGathering) {
+          return;
+        }
+        PendingProfile* pendingProfile = self->GetPendingProfile(childPid);
+        DEBUG_LOG(
+            "RequestGatherProfileProgress(%u) response: %.2f '%s' "
+            "(%u were pending, %s %u)",
+            unsigned(childPid),
+            ProportionValue::FromUnderlyingType(
+                aResult.progressProportionValueUnderlyingType())
+                    .ToDouble() *
+                100.0,
+            aResult.progressLocation().Data(),
+            unsigned(self->mPendingProfiles.length()),
+            pendingProfile ? "including" : "excluding", unsigned(childPid));
+        if (pendingProfile) {
+          
+          pendingProfile->lastProgressResponse = TimeStamp::Now();
+          
+          if (aResult.progressProportionValueUnderlyingType() !=
+              pendingProfile->progressProportion.ToUnderlyingType()) {
+            pendingProfile->lastProgressChange =
+                pendingProfile->lastProgressResponse;
+            pendingProfile->progressProportion =
+                ProportionValue::FromUnderlyingType(
+                    aResult.progressProportionValueUnderlyingType());
+            pendingProfile->progressLocation = aResult.progressLocation();
+            self->RestartGatheringTimer();
+          }
+        }
+      },
+      [self = RefPtr<nsProfiler>(this), childPid = aPendingProfile.childPid](
+          ipc::ResponseRejectReason&& aReason) {
+        if (!self->mGathering) {
+          return;
+        }
+        PendingProfile* pendingProfile = self->GetPendingProfile(childPid);
+        LOG("RequestGatherProfileProgress(%u) rejection: %d "
+            "(%u were pending, %s %u)",
+            unsigned(childPid), (int)aReason,
+            unsigned(self->mPendingProfiles.length()),
+            pendingProfile ? "including" : "excluding", unsigned(childPid));
+        if (pendingProfile) {
+          
+          MOZ_ASSERT(self->mPendingProfiles.begin() <= pendingProfile &&
+                     pendingProfile < self->mPendingProfiles.end());
+          self->mPendingProfiles.erase(pendingProfile);
+          if (self->mPendingProfiles.empty()) {
+            
+            
+            self->FinishGathering();
+          }
+        }
+      });
+  return true;
+}
+
  void nsProfiler::GatheringTimerCallback(nsITimer* aTimer,
                                                      void* aClosure) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
@@ -728,6 +802,82 @@ nsProfiler::GetBufferInfo(uint32_t* aCurrentPosition, uint32_t* aTotalSize,
     
     return;
   }
+
+  bool progressWasMade = false;
+
+  
+  for (auto iPlus1 = self->mPendingProfiles.length(); iPlus1 != 0; --iPlus1) {
+    PendingProfile& pendingProfile = self->mPendingProfiles[iPlus1 - 1];
+
+    bool needToSendProgressRequest = false;
+    if (pendingProfile.lastProgressRequest.IsNull()) {
+      DEBUG_LOG("GatheringTimerCallback() - child %u: No data yet",
+                unsigned(pendingProfile.childPid));
+      
+      needToSendProgressRequest = true;
+      
+      progressWasMade = true;
+    } else if (pendingProfile.lastProgressResponse.IsNull()) {
+      LOG("GatheringTimerCallback() - child %u: Waiting for first response",
+          unsigned(pendingProfile.childPid));
+      
+      
+    } else if (pendingProfile.lastProgressResponse <=
+               pendingProfile.lastProgressRequest) {
+      LOG("GatheringTimerCallback() - child %u: Waiting for response",
+          unsigned(pendingProfile.childPid));
+      
+      
+    } else if (pendingProfile.lastProgressChange.IsNull()) {
+      LOG("GatheringTimerCallback() - child %u: Still waiting for first change",
+          unsigned(pendingProfile.childPid));
+      
+      
+      needToSendProgressRequest = true;
+    } else if (pendingProfile.lastProgressRequest <
+               pendingProfile.lastProgressChange) {
+      DEBUG_LOG("GatheringTimerCallback() - child %u: Recent change",
+                unsigned(pendingProfile.childPid));
+      
+      needToSendProgressRequest = true;
+      progressWasMade = true;
+    } else {
+      LOG("GatheringTimerCallback() - child %u: No recent change",
+          unsigned(pendingProfile.childPid));
+      needToSendProgressRequest = true;
+    }
+
+    
+    if (needToSendProgressRequest) {
+      if (!self->SendProgressRequest(pendingProfile)) {
+        
+        self->mPendingProfiles.erase(&pendingProfile);
+        LOG("... Failed to send progress request");
+      } else {
+        DEBUG_LOG("... Sent progress request");
+      }
+    } else {
+      DEBUG_LOG("... No progress request");
+    }
+  }
+
+  if (self->mPendingProfiles.empty()) {
+    
+    
+    self->FinishGathering();
+    return;
+  }
+
+  
+
+  if (progressWasMade) {
+    
+    DEBUG_LOG("GatheringTimerCallback() - Progress made, restart timer");
+    self->RestartGatheringTimer();
+    return;
+  }
+
+  DEBUG_LOG("GatheringTimerCallback() - Timeout!");
   self->mGatheringTimer = nullptr;
   if (!profiler_is_active() || !self->mGathering) {
     
@@ -837,8 +987,6 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
 
   mWriter.emplace();
 
-  TimeStamp streamingStart = TimeStamp::Now();
-
   UniquePtr<ProfilerCodeAddressService> service =
       profiler_code_address_service_for_presymbolication();
 
@@ -877,34 +1025,20 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
 
     
     
-    const uint32_t parentTimeMs = static_cast<uint32_t>(
-        (TimeStamp::Now() - streamingStart).ToMilliseconds());
     
-    
-    
-    
-    
-    
-    const uint32_t parentToChildrenFactor = profiles.Length() * 2;
-    
-    
-    
+    constexpr uint32_t cMinChildTimeoutS = 1u;  
+    constexpr uint32_t cMaxChildTimeoutS = 60u;  
     uint32_t childTimeoutS = Preferences::GetUint(
-        "devtools.performance.recording.child.timeout_s", 0u);
-    if (childTimeoutS == 0) {
-      
-      childTimeoutS = 1;
+        "devtools.performance.recording.child.timeout_s", cMinChildTimeoutS);
+    if (childTimeoutS < cMinChildTimeoutS) {
+      childTimeoutS = cMinChildTimeoutS;
+    } else if (childTimeoutS > cMaxChildTimeoutS) {
+      childTimeoutS = cMaxChildTimeoutS;
     }
-    
-    
-    
-    
-    
-    const uint32_t streamingTimeoutMs =
-        parentTimeMs * parentToChildrenFactor + childTimeoutS * 1000;
+    const uint32_t childTimeoutMs = childTimeoutS * PR_MSEC_PER_SEC;
     Unused << NS_NewTimerWithFuncCallback(
         getter_AddRefs(mGatheringTimer), GatheringTimerCallback, this,
-        streamingTimeoutMs, nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
+        childTimeoutMs, nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
         "nsProfilerGatheringTimer", GetMainThreadSerialEventTarget());
 
     MOZ_ASSERT(mPendingProfiles.capacity() >= profiles.Length());
@@ -914,12 +1048,22 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
           GetMainThreadSerialEventTarget(), __func__,
           [self = RefPtr<nsProfiler>(this),
            childPid = profile.childPid](mozilla::ipc::Shmem&& aResult) {
+            PendingProfile* pendingProfile = self->GetPendingProfile(childPid);
+            LOG("GatherProfile(%u) response: %u bytes (%u were pending, %s %u)",
+                unsigned(childPid), unsigned(aResult.Size<char>()),
+                unsigned(self->mPendingProfiles.length()),
+                pendingProfile ? "including" : "excluding", unsigned(childPid));
             const nsDependentCSubstring profileString(aResult.get<char>(),
                                                       aResult.Size<char>() - 1);
             self->GatheredOOPProfile(childPid, profileString);
           },
           [self = RefPtr<nsProfiler>(this),
            childPid = profile.childPid](ipc::ResponseRejectReason&& aReason) {
+            PendingProfile* pendingProfile = self->GetPendingProfile(childPid);
+            LOG("GatherProfile(%u) rejection: %d (%u were pending, %s %u)",
+                unsigned(childPid), (int)aReason,
+                unsigned(self->mPendingProfiles.length()),
+                pendingProfile ? "including" : "excluding", unsigned(childPid));
             self->GatheredOOPProfile(childPid, ""_ns);
           });
     }
