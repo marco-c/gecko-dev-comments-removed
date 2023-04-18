@@ -3910,6 +3910,12 @@ void nsWindow::OnSizeAllocate(GtkAllocation* aAllocation) {
   mHasReceivedSizeAllocate = true;
 
   LayoutDeviceIntSize size = GdkRectToDevicePixels(*aAllocation).Size();
+
+  
+  
+  
+  ConstrainSize(&size.width, &size.height);
+
   if (mBounds.Size() == size) {
     LOG("  Already the same size");
     
