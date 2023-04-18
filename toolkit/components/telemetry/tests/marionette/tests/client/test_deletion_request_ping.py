@@ -45,6 +45,23 @@ class TestDeletionRequestPing(TelemetryTestCase):
         self.enable_telemetry()
 
         
+        
+        
+        
+        
+        
+        
+        with self.marionette.using_context(self.marionette.CONTEXT_CHROME):
+            return self.marionette.execute_async_script(
+                """
+                let [resolve] = arguments;
+                Cu.import("resource://gre/modules/ClientID.jsm");
+                ClientID.getClientID().then(resolve);
+                """,
+                script_timeout=1000,
+            )
+
+        
         main_ping = self.wait_for_ping(self.restart_browser, MAIN_SHUTDOWN_PING)
 
         
