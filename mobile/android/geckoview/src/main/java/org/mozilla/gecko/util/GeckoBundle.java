@@ -5,6 +5,7 @@
 
 package org.mozilla.gecko.util;
 
+import android.graphics.RectF;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcel;
@@ -376,6 +377,25 @@ public final class GeckoBundle implements Parcelable {
             : !(value instanceof String[])
                 ? new String[getNullArrayLength(value)]
                 : (String[]) value;
+  }
+
+  
+
+
+
+
+
+  public RectF getRectF(final String key) {
+    final GeckoBundle rectBundle = getBundle(key);
+    if (rectBundle == null) {
+      return null;
+    }
+
+    return new RectF(
+        (float) rectBundle.getDouble("left"),
+        (float) rectBundle.getDouble("top"),
+        (float) rectBundle.getDouble("right"),
+        (float) rectBundle.getDouble("bottom"));
   }
 
   
