@@ -660,9 +660,13 @@ class AssemblerShared {
   
   
 #ifdef ENABLE_WASM_EXCEPTIONS
-  size_t append(wasm::WasmTryNote tryNote) {
-    enoughMemory_ &= tryNotes_.append(tryNote);
-    return tryNotes_.length() - 1;
+  [[nodiscard]] bool append(wasm::WasmTryNote tryNote, size_t* tryNoteIndex) {
+    if (!tryNotes_.append(tryNote)) {
+      enoughMemory_ = false;
+      return false;
+    }
+    *tryNoteIndex = tryNotes_.length() - 1;
+    return true;
   }
 #endif
 
