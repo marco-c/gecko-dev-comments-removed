@@ -3113,8 +3113,7 @@ void MacroAssembler::copySignDouble(FloatRegister lhs, FloatRegister rhs,
   ScratchDoubleScope scratch(*this);
 
   
-  loadConstantDouble(0, scratch);
-  negateDouble(scratch);
+  loadConstantDouble(-0.0, scratch);
 
   if (lhs != output) {
     moveDouble(lhs, output);
@@ -3130,8 +3129,7 @@ void MacroAssembler::copySignFloat32(FloatRegister lhs, FloatRegister rhs,
   ScratchFloat32Scope scratch(*this);
 
   
-  loadConstantFloat32(0, scratch);
-  negateFloat(scratch);
+  loadConstantFloat32(-0.0f, scratch);
 
   if (lhs != output) {
     moveFloat32(lhs, output);

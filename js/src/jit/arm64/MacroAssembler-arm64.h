@@ -1585,9 +1585,13 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   }
 
   void loadConstantDouble(double d, FloatRegister dest) {
+    
+    
+    
     Fmov(ARMFPRegister(dest, 64), d);
   }
   void loadConstantFloat32(float f, FloatRegister dest) {
+    
     Fmov(ARMFPRegister(dest, 32), f);
   }
 
