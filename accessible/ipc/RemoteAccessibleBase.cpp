@@ -470,6 +470,14 @@ uint64_t RemoteAccessibleBase<Derived>::State() {
 template <class Derived>
 already_AddRefed<AccAttributes> RemoteAccessibleBase<Derived>::Attributes() {
   RefPtr<AccAttributes> attributes = new AccAttributes();
+  if (mCachedFields) {
+    
+    
+    if (auto tag =
+            mCachedFields->GetAttribute<RefPtr<nsAtom>>(nsGkAtoms::tag)) {
+      attributes->SetAttribute(nsGkAtoms::tag, *tag);
+    }
+  }
   return attributes.forget();
 }
 

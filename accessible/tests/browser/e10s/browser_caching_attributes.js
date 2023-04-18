@@ -7,6 +7,11 @@
 
 loadScripts({ name: "attributes.js", dir: MOCHITESTS_DIR });
 
+const isCacheEnabled = Services.prefs.getBoolPref(
+  "accessibility.cache.enabled",
+  false
+);
+
 
 
 
@@ -130,5 +135,30 @@ addAccessibleTask(
       testAbsentAttrs(textbox, unexpected);
     }
   },
-  { iframe: true, remoteIframe: true }
+  {
+    
+    topLevel: !isCacheEnabled,
+    iframe: !isCacheEnabled,
+    remoteIframe: !isCacheEnabled,
+  }
+);
+
+
+
+
+addAccessibleTask(
+  `
+<p id="p">text</p>
+<textarea id="textarea"></textarea>
+  `,
+  async function(browser, docAcc) {
+    testAttrs(docAcc, { tag: "body" }, true);
+    const p = findAccessibleChildByID(docAcc, "p");
+    testAttrs(p, { tag: "p" }, true);
+    const textLeaf = p.firstChild;
+    testAbsentAttrs(textLeaf, { tag: "" });
+    const textarea = findAccessibleChildByID(docAcc, "textarea");
+    testAttrs(textarea, { tag: "textarea" }, true);
+  },
+  { chrome: true, topLevel: true, iframe: true, remoteIframe: true }
 );
