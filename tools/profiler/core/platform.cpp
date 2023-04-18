@@ -250,7 +250,7 @@ class GeckoJavaSampler
           (jstring)(aJni->GetObjectArrayElement(aJavaArray.Get(), i));
       const char* filterString = aJni->GetStringUTFChars(javaString, 0);
       
-      MOZ_RELEASE_ASSERT(aCharArray.append(&filterString, 0));
+      MOZ_RELEASE_ASSERT(aCharArray.append(filterString));
     }
   }
 
