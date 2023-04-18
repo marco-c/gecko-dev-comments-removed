@@ -336,7 +336,11 @@ impl Hir {
         info.set_alternation_literal(false);
         
         
-        info.set_match_empty(word_boundary.is_negated());
+        
+        
+        
+        
+        info.set_match_empty(true);
         
         if let WordBoundary::AsciiNegate = word_boundary {
             info.set_always_utf8(false);

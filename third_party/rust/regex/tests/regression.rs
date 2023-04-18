@@ -217,3 +217,6 @@ matiter!(
 
 ismatch!(empty_group_match, r"()Ј01", "zЈ01", true);
 matiter!(empty_group_find, r"()Ј01", "zЈ01", (1, 5));
+
+
+mat!(non_greedy_question_literal, r"ab??", "ab", Some((0, 1)));
