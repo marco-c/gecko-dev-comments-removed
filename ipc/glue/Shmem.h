@@ -19,6 +19,12 @@
 #include "mozilla/Range.h"
 #include "mozilla/UniquePtr.h"
 
+namespace IPC {
+template <typename T>
+struct ParamTraits;
+}
+
+namespace mozilla::ipc {
 
 
 
@@ -34,76 +40,41 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-namespace mozilla {
-namespace layers {
-class ShadowLayerForwarder;
-}  
-
-namespace ipc {
-
-template <typename P>
-struct IPDLParamTraits;
 
 class Shmem final {
-  friend struct IPDLParamTraits<mozilla::ipc::Shmem>;
-#ifdef DEBUG
-  
-  friend class mozilla::layers::ShadowLayerForwarder;
-#endif
+  friend struct IPC::ParamTraits<mozilla::ipc::Shmem>;
 
  public:
-  typedef int32_t id_t;
   
   typedef mozilla::ipc::SharedMemory SharedMemory;
   typedef SharedMemory::SharedMemoryType SharedMemoryType;
-  
-  
-  
-  
-  struct PrivateIPDLCaller {};
 
-  Shmem() : mSegment(nullptr), mData(nullptr), mSize(0), mId(0) {}
+  Shmem() = default;
 
+  
+  
+  
+  Shmem(size_t aNBytes, SharedMemoryType aType, bool aUnsafe);
+
+  
+  
+  Shmem(RefPtr<SharedMemory> aSegment, size_t aNBytes, bool aUnsafe);
+
+  
   Shmem(const Shmem& aOther) = default;
-
-  Shmem(PrivateIPDLCaller, SharedMemory* aSegment, id_t aId);
-
-  ~Shmem() {
-    
-    
-    forget(PrivateIPDLCaller());
-  }
-
   Shmem& operator=(const Shmem& aRhs) = default;
 
   bool operator==(const Shmem& aRhs) const { return mSegment == aRhs.mSegment; }
+  bool operator!=(const Shmem& aRhs) const { return mSegment != aRhs.mSegment; }
 
   
   
-  bool IsWritable() const { return mSegment != nullptr; }
+  bool IsValid() const { return mSegment != nullptr; }
 
   
   
-  bool IsReadable() const { return mSegment != nullptr; }
+  bool IsWritable() const { return IsValid(); }
+  bool IsReadable() const { return IsValid(); }
 
   
   template <typename T>
@@ -132,79 +103,35 @@ class Shmem final {
   }
 
   
-  id_t Id(PrivateIPDLCaller) const { return mId; }
-
-  SharedMemory* Segment(PrivateIPDLCaller) const { return mSegment; }
-
+  
+  
 #ifndef DEBUG
-  void RevokeRights(PrivateIPDLCaller) {}
+  void RevokeRights() { *this = Shmem(); }
 #else
-  void RevokeRights(PrivateIPDLCaller);
+  void RevokeRights();
 #endif
-
-  void forget(PrivateIPDLCaller) {
-    mSegment = nullptr;
-    mData = nullptr;
-    mSize = 0;
-    mId = 0;
-  }
-
-  static already_AddRefed<Shmem::SharedMemory> Alloc(PrivateIPDLCaller,
-                                                     size_t aNBytes,
-                                                     SharedMemoryType aType,
-                                                     bool aUnsafe,
-                                                     bool aProtect = false);
-
-  
-  
-  
-  
-  UniquePtr<IPC::Message> MkCreatedMessage(PrivateIPDLCaller,
-                                           int32_t routingId);
-
-  
-  
-  
-  
-  UniquePtr<IPC::Message> MkDestroyedMessage(PrivateIPDLCaller,
-                                             int32_t routingId);
-
-  
-  
-  
-  
-  static already_AddRefed<SharedMemory> OpenExisting(
-      PrivateIPDLCaller, const IPC::Message& aDescriptor, id_t* aId,
-      bool aProtect = false);
-
-  static void Dealloc(PrivateIPDLCaller, SharedMemory* aSegment);
 
  private:
   template <typename T>
   void AssertAligned() const {
-    if (0 != (mSize % sizeof(T))) MOZ_CRASH("shmem is not T-aligned");
+    MOZ_RELEASE_ASSERT(0 == (mSize % sizeof(T)),
+                       "shmem size is not a multiple of sizeof(T)");
   }
 
-#if !defined(DEBUG)
+#ifndef DEBUG
   void AssertInvariants() const {}
-
-  static uint32_t* PtrToSize(SharedMemory* aSegment) {
-    char* endOfSegment =
-        reinterpret_cast<char*>(aSegment->memory()) + aSegment->Size();
-    return reinterpret_cast<uint32_t*>(endOfSegment - sizeof(uint32_t));
-  }
-
 #else
   void AssertInvariants() const;
 #endif
 
   RefPtr<SharedMemory> mSegment;
-  void* mData;
-  size_t mSize;
-  id_t mId;
+  void* mData = nullptr;
+  size_t mSize = 0;
+#ifdef DEBUG
+  bool mUnsafe = false;
+#endif
 };
 
-}  
 }  
 
 #endif  
