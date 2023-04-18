@@ -318,7 +318,7 @@ pref("browser.startup.preXulSkeletonUI", true);
 #endif
 
 
-pref("browser.startup.upgradeDialog.enabled", true);
+pref("browser.startup.upgradeDialog.enabled", false);
 
 
 
