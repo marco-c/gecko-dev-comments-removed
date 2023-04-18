@@ -487,7 +487,12 @@ nsresult ScriptLoader::RestartLoad(ScriptLoadRequest* aRequest) {
   
   
   aRequest->mProgress = ScriptLoadRequest::Progress::eLoading_Source;
-  nsresult rv = StartLoad(aRequest);
+  nsresult rv;
+  if (aRequest->IsModuleRequest()) {
+    rv = mModuleLoader->RestartModuleLoad(aRequest);
+  } else {
+    rv = StartLoad(aRequest);
+  }
   if (NS_FAILED(rv)) {
     return rv;
   }
