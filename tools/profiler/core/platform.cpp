@@ -199,10 +199,8 @@ LazyLogModule gProfilerLog("prof");
 ProfileChunkedBuffer& profiler_get_core_buffer() {
   
   
-  
-  
-  static ProfileChunkedBuffer sProfileChunkedBuffer{
-      ProfileChunkedBuffer::ThreadSafety::WithMutex};
+  static ProfileChunkedBuffer& sProfileChunkedBuffer =
+      baseprofiler::profiler_get_core_buffer();
   return sProfileChunkedBuffer;
 }
 
@@ -664,9 +662,11 @@ class ActivePS {
     return aFeatures;
   }
 
-  ActivePS(PSLockRef aLock, PowerOfTwo32 aCapacity, double aInterval,
-           uint32_t aFeatures, const char** aFilters, uint32_t aFilterCount,
-           uint64_t aActiveTabID, const Maybe<double>& aDuration)
+  ActivePS(
+      PSLockRef aLock, PowerOfTwo32 aCapacity, double aInterval,
+      uint32_t aFeatures, const char** aFilters, uint32_t aFilterCount,
+      uint64_t aActiveTabID, const Maybe<double>& aDuration,
+      UniquePtr<ProfileBufferChunkManagerWithLocalLimit> aChunkManagerOrNull)
       : mGeneration(sNextGeneration++),
         mCapacity(aCapacity),
         mDuration(aDuration),
@@ -674,13 +674,15 @@ class ActivePS {
         mFeatures(AdjustFeatures(aFeatures, aFilterCount)),
         mActiveTabID(aActiveTabID),
         mProfileBufferChunkManager(
-            MakeUnique<ProfileBufferChunkManagerWithLocalLimit>(
-                size_t(ClampToAllowedEntries(aCapacity.Value())) *
-                    scBytesPerEntry,
-                ChunkSizeForEntries(aCapacity.Value()))),
+            aChunkManagerOrNull
+                ? std::move(aChunkManagerOrNull)
+                : MakeUnique<ProfileBufferChunkManagerWithLocalLimit>(
+                      size_t(ClampToAllowedEntries(aCapacity.Value())) *
+                          scBytesPerEntry,
+                      ChunkSizeForEntries(aCapacity.Value()))),
         mProfileBuffer([this]() -> ProfileChunkedBuffer& {
           ProfileChunkedBuffer& coreBuffer = profiler_get_core_buffer();
-          coreBuffer.SetChunkManager(*mProfileBufferChunkManager);
+          coreBuffer.SetChunkManagerIfDifferent(*mProfileBufferChunkManager);
           return coreBuffer;
         }()),
         mMaybeProcessCPUCounter(ProfilerFeature::HasProcessCPU(aFeatures)
@@ -783,13 +785,15 @@ class ActivePS {
   }
 
  public:
-  static void Create(PSLockRef aLock, PowerOfTwo32 aCapacity, double aInterval,
-                     uint32_t aFeatures, const char** aFilters,
-                     uint32_t aFilterCount, uint64_t aActiveTabID,
-                     const Maybe<double>& aDuration) {
+  static void Create(
+      PSLockRef aLock, PowerOfTwo32 aCapacity, double aInterval,
+      uint32_t aFeatures, const char** aFilters, uint32_t aFilterCount,
+      uint64_t aActiveTabID, const Maybe<double>& aDuration,
+      UniquePtr<ProfileBufferChunkManagerWithLocalLimit> aChunkManagerOrNull) {
     MOZ_ASSERT(!sInstance);
     sInstance = new ActivePS(aLock, aCapacity, aInterval, aFeatures, aFilters,
-                             aFilterCount, aActiveTabID, aDuration);
+                             aFilterCount, aActiveTabID, aDuration,
+                             std::move(aChunkManagerOrNull));
   }
 
   [[nodiscard]] static SamplerThread* Destroy(PSLockRef aLock) {
@@ -5420,18 +5424,6 @@ static void TriggerPollJSSamplingOnMainThread() {
   }
 }
 
-static bool HasMinimumLength(const char* aString, size_t aMinimumLength) {
-  if (!aString) {
-    return false;
-  }
-  for (size_t i = 0; i < aMinimumLength; ++i) {
-    if (aString[i] == '\0') {
-      return false;
-    }
-  }
-  return true;
-}
-
 static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
                                   double aInterval, uint32_t aFeatures,
                                   const char** aFilters, uint32_t aFilterCount,
@@ -5464,15 +5456,16 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
   
   mozilla::base_profiler_markers_detail::EnsureBufferForMainThreadAddMarker();
 
-  UniquePtr<char[]> baseprofile;
+  UniquePtr<ProfileBufferChunkManagerWithLocalLimit> baseChunkManager;
   if (baseprofiler::profiler_is_active()) {
     
     
     
+
     
-    baseprofile = baseprofiler::profiler_get_profile(
-         0,  false,
-         true);
+    
+    
+    baseChunkManager = baseprofiler::detail::ExtractBaseProfilerChunkManager();
 
     
     
@@ -5509,19 +5502,10 @@ static void locked_profiler_start(PSLockRef aLock, PowerOfTwo32 aCapacity,
   double interval = aInterval > 0 ? aInterval : PROFILER_DEFAULT_INTERVAL;
 
   ActivePS::Create(aLock, capacity, interval, aFeatures, aFilters, aFilterCount,
-                   aActiveTabID, duration);
+                   aActiveTabID, duration, std::move(baseChunkManager));
 
   
   MOZ_ASSERT(ActivePS::Exists(aLock));
-
-  
-  
-  if (HasMinimumLength(baseprofile.get(), 2)) {
-    
-    
-    
-    ActivePS::AddBaseProfileThreads(aLock, std::move(baseprofile));
-  }
 
   
 #if defined(MOZ_REPLACE_MALLOC) && defined(MOZ_PROFILER_MEMORY)

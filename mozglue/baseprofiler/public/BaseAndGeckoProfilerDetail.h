@@ -17,10 +17,16 @@
 #include "mozilla/Span.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Types.h"
+#include "mozilla/UniquePtr.h"
 
 namespace mozilla {
 
+class ProfileBufferChunkManagerWithLocalLimit;
+
 namespace baseprofiler::detail {
+
+[[nodiscard]] MFBT_API UniquePtr<ProfileBufferChunkManagerWithLocalLimit>
+ExtractBaseProfilerChunkManager();
 
 
 
