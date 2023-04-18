@@ -12,6 +12,7 @@
 
 #  include "nsString.h"
 #  include "unicode/unum.h"  
+#  include "mozilla/intl/ICUError.h"
 
 class nsIContent;
 
@@ -71,7 +72,7 @@ class ICUUtils {
   
 
 
-  static nsresult UErrorToNsResult(const UErrorCode aErrorCode);
+  static nsresult ICUErrorToNsResult(const mozilla::intl::ICUError aError);
 
 #  if 0
   
