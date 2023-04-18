@@ -3,6 +3,8 @@
 
 
 
+include "ipc/nsGUIEventIPC.h";
+
 using LayoutDeviceIntPoint from "Units.h";
 using struct mozilla::layers::ScrollableLayerGuid from "mozilla/layers/ScrollableLayerGuid.h";
 using struct mozilla::layers::APZEventResult from "mozilla/layers/APZInputBridge.h";
