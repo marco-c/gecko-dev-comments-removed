@@ -120,12 +120,7 @@ void CheckArenaListAccess<Helper>::check() const {
     return;
   }
 
-  JSRuntime* rt = TlsContext.get()->runtime();
   if (zone->isAtomsZone()) {
-    
-    if (rt->isOffThreadParseRunning()) {
-      rt->gc.assertCurrentThreadHasLockedGC();
-    }
     return;
   }
 
