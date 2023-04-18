@@ -108,8 +108,7 @@ CompositorD3D11::CompositorD3D11(widget::CompositorWidget* aWidget)
       mAllowPartialPresents(false),
       mIsDoubleBuffered(false),
       mVerifyBuffersFailed(false),
-      mUseMutexOnPresent(false),
-      mUseForSoftwareWebRender(false) {
+      mUseMutexOnPresent(false) {
   mUseMutexOnPresent = StaticPrefs::gfx_use_mutex_on_present_AtStartup();
 }
 
@@ -822,15 +821,6 @@ Maybe<IntRect> CompositorD3D11::BeginFrame(const nsIntRegion& aInvalidRegion,
   if (mDevice->GetDeviceRemovedReason() != S_OK) {
     if (!mAttachments->IsDeviceReset()) {
       gfxCriticalNote << "GFX: D3D11 skip BeginFrame with device-removed.";
-
-      
-      
-      
-      
-      
-      if (XRE_IsGPUProcess() && !mUseForSoftwareWebRender) {
-        GPUParent::GetSingleton()->NotifyDeviceReset();
-      }
       mAttachments->SetDeviceReset();
     }
     return Nothing();
