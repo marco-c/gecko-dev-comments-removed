@@ -1511,6 +1511,22 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
+  InsertElementWithSplittingAncestorsWithTransaction(
+      nsAtom& aTagName, const EditorDOMPoint& aPointToInsert);
+
+  
+
+
+
+
+
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT SplitRangeOffFromNodeResult
   SplitRangeOffFromBlock(Element& aBlockElement,
                          nsIContent& aStartOfMiddleElement,
