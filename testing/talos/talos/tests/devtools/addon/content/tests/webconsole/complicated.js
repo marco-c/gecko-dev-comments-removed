@@ -8,7 +8,6 @@ const Services = require("Services");
 const {
   openToolboxAndLog,
   closeToolboxAndLog,
-  isFissionEnabled,
   testSetup,
   testTeardown,
   COMPLICATED_URL,
@@ -16,56 +15,46 @@ const {
 const {
   reloadConsoleAndLog,
 } = require("damp-test/tests/webconsole/webconsole-helpers");
-const { AppConstants } = require("resource://gre/modules/AppConstants.jsm");
+
+
 
 const EXPECTED_MESSAGES = [
   {
-    text: `This page uses the non standard property “zoom”`,
-    count: isFissionEnabled() ? 1 : 2,
-    visibleWhenFissionEnabled: true,
-  },
-  {
-    text: `Layout was forced before the page was fully loaded.`,
-    visibleWhenFissionEnabled: true,
-  },
-  {
-    text: `Some cookies are misusing the “SameSite“ attribute, so it won’t work as expected`,
-    visibleWhenFissionEnabled: true,
-    nightlyOnly: true,
-  },
-  {
-    text: `Uncaught DOMException: XMLHttpRequest.send: XMLHttpRequest state must be OPENED.`,
-    visibleWhenFissionEnabled: true,
-  },
-  {
     text: `Uncaught SyntaxError: missing ) after argument list`,
     count: 2,
-    visibleWhenFissionEnabled: false,
   },
   {
     text: `Uncaught ReferenceError: Bootloaddisableder is not defined`,
     count: 4,
-    visibleWhenFissionEnabled: false,
+    stacktrace: true,
   },
-].filter(
-  ({ visibleWhenFissionEnabled, nightlyOnly }) =>
-    (!isFissionEnabled() || visibleWhenFissionEnabled) &&
-    (!nightlyOnly || AppConstants.NIGHTLY_BUILD)
-);
+  {
+    text: `Uncaught DOMException: XMLHttpRequest.send: XMLHttpRequest state must be OPENED`,
+  },
+];
 
 module.exports = async function() {
-  
-  
-  Services.prefs.setIntPref("ui.useOverlayScrollbars", 0);
-
   await testSetup(COMPLICATED_URL);
+
+  
+  
+  const filtersToDisable = [
+    "devtools.webconsole.filter.warn",
+    "devtools.webconsole.filter.info",
+    "devtools.webconsole.filter.log",
+    "devtools.webconsole.filter.debug",
+  ];
+  for (const filter of filtersToDisable) {
+    Services.prefs.setBoolPref(filter, false);
+  }
 
   let toolbox = await openToolboxAndLog("complicated.webconsole", "webconsole");
   await reloadConsoleAndLog("complicated", toolbox, EXPECTED_MESSAGES);
   await closeToolboxAndLog("complicated.webconsole", toolbox);
 
-  
-  Services.prefs.clearUserPref("ui.useOverlayScrollbars");
+  for (const filter of filtersToDisable) {
+    Services.prefs.clearUserPref(filter);
+  }
 
   await testTeardown();
 };

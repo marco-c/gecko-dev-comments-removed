@@ -19,23 +19,23 @@ const TEST_URL = PAGES_BASE_URL + "custom/console/index.html";
 
 module.exports = async function() {
   
-  
-  
-  
-  const domains = 2;
-
-  
-  const sync = 250,
+  const sync = 500,
     stream = 250,
-    batch = 250,
+    batch = 500,
     simple = 5000;
 
-  const params = `?domains=${domains}&sync=${sync}&stream=${stream}&batch=${batch}&simple=${simple}`;
+  const params = `?sync=${sync}&stream=${stream}&batch=${batch}&simple=${simple}`;
   const url = TEST_URL + params;
   await testSetup(url, { disableCache: true });
 
   const toolbox = await openToolboxAndLog("custom.webconsole", "webconsole");
-  await reloadConsoleAndLog("custom", toolbox, sync + stream + batch + simple);
+  
+  
+  await reloadConsoleAndLog("custom", toolbox, [
+    {
+      text: "simple log " + (simple - 1),
+    },
+  ]);
   await closeToolboxAndLog("custom.webconsole", toolbox);
 
   await testTeardown();
