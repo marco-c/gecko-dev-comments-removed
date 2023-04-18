@@ -12,6 +12,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "nsIWeakReferenceUtils.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/widget/WindowOcclusionState.h"
 #include "mozilla/widget/WinEventObserver.h"
@@ -284,7 +285,7 @@ class WinWindowOcclusionTracker final : public DisplayStatusListener,
   
   
   
-  std::unordered_map<HWND, nsBaseWidget*> mHwndRootWindowMap;
+  std::unordered_map<HWND, nsWeakPtr> mHwndRootWindowMap;
 
   
   int mNumVisibleRootWindows = 0;
