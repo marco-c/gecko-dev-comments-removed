@@ -6,6 +6,8 @@
 
 
 
+
+
 const worker = new Worker("same-url.sjs");
 worker.postMessage("foo");
 
@@ -17,10 +19,3 @@ this.evaled = eval("function sameUrlEval() {}; console.log('eval script'); //# s
 const script = document.createElement("script");
 script.src = "same-url.sjs";
 document.body.appendChild(script);
-
-
-const iframe = document.createElement("iframe");
-const sameUrl = new URL("same-url.sjs", location);
-const iframeContent = `<!DOCTYPE html><script src="${sameUrl}"></script>`;
-iframe.src = `https://example.org/document-builder.sjs?html=` + encodeURI(iframeContent);
-document.body.appendChild(iframe);
