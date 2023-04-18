@@ -167,18 +167,6 @@ class GeckoViewStartup {
       }
 
       case "profile-after-change": {
-        
-        
-        GeckoViewUtils.addLazyGetter(this, "ContentPrefServiceParent", {
-          module: "resource://gre/modules/ContentPrefServiceParent.jsm",
-          init: cpsp => cpsp.alwaysInit(),
-          ppmm: [
-            "ContentPrefs:FunctionCall",
-            "ContentPrefs:AddObserverForName",
-            "ContentPrefs:RemoveObserverForName",
-          ],
-        });
-
         GeckoViewUtils.addLazyGetter(this, "GeckoViewRemoteDebugger", {
           module: "resource://gre/modules/GeckoViewRemoteDebugger.jsm",
           init: gvrd => gvrd.onInit(),
