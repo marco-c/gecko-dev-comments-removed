@@ -4935,8 +4935,6 @@ static void CompareExchange(MacroAssembler& masm,
 
   ScratchRegisterScope scratch(masm);
 
-  
-  
   masm.memoryBarrierBefore(sync);
 
   masm.bind(&again);
@@ -5040,8 +5038,6 @@ static void AtomicExchange(MacroAssembler& masm,
 
   ScratchRegisterScope scratch(masm);
 
-  
-  
   masm.memoryBarrierBefore(sync);
 
   masm.bind(&again);
@@ -5143,8 +5139,6 @@ static void AtomicFetchOp(MacroAssembler& masm,
   SecondScratchRegisterScope scratch2(masm);
   Register ptr = ComputePointerForAtomic(masm, mem, scratch2);
 
-  
-  
   masm.memoryBarrierBefore(sync);
 
   ScratchRegisterScope scratch(masm);
@@ -5400,8 +5394,6 @@ static void CompareExchange64(MacroAssembler& masm,
   SecondScratchRegisterScope scratch2(masm);
   Register ptr = ComputePointerForAtomic(masm, mem, scratch2);
 
-  
-  
   masm.memoryBarrierBefore(sync);
 
   masm.bind(&again);
@@ -6160,8 +6152,6 @@ void MacroAssemblerARM::wasmLoadImpl(const wasm::MemoryAccessDesc& access,
                   type == Scalar::Int32 || type == Scalar::Int64;
   unsigned byteSize = access.byteSize();
 
-  
-  
   asMasm().memoryBarrierBefore(access.sync());
 
   BufferOffset load;
@@ -6277,8 +6267,6 @@ void MacroAssemblerARM::wasmStoreImpl(const wasm::MemoryAccessDesc& access,
     }
   }
 
-  
-  
   asMasm().memoryBarrierAfter(access.sync());
 
   BufferOffset store;

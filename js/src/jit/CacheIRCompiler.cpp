@@ -8118,8 +8118,6 @@ bool CacheIRCompiler::emitAtomicsLoadResult(ObjOperandId objId,
   
   BaseIndex source(scratch, index, ScaleFromScalarType(elementType));
 
-  
-  
   auto sync = Synchronization::Load();
 
   masm.memoryBarrierBefore(sync);
@@ -8170,8 +8168,6 @@ bool CacheIRCompiler::emitAtomicsStoreResult(ObjOperandId objId,
     
     BaseIndex dest(scratch, index, ScaleFromScalarType(elementType));
 
-    
-    
     auto sync = Synchronization::Store();
 
     masm.memoryBarrierBefore(sync);

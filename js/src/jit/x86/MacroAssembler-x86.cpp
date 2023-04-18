@@ -958,8 +958,6 @@ void MacroAssembler::wasmLoad(const wasm::MemoryAccessDesc& access,
           access.type() == Scalar::Float32 || access.type() == Scalar::Float64);
   MOZ_ASSERT_IF(access.isWidenSimd128Load(), access.type() == Scalar::Float64);
 
-  
-  
   memoryBarrierBefore(access.sync());
 
   append(access, size());
@@ -1123,8 +1121,6 @@ void MacroAssembler::wasmStore(const wasm::MemoryAccessDesc& access,
   MOZ_ASSERT(dstAddr.kind() == Operand::MEM_REG_DISP ||
              dstAddr.kind() == Operand::MEM_SCALE);
 
-  
-  
   memoryBarrierBefore(access.sync());
 
   append(access, size());
@@ -1221,8 +1217,6 @@ static void CompareExchange64(MacroAssembler& masm,
   MOZ_ASSERT(replacement.high == ecx);
   MOZ_ASSERT(replacement.low == ebx);
 
-  
-  
   if (access) {
     masm.append(*access, masm.size());
   }

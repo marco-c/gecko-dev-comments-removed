@@ -30,9 +30,11 @@
 
 
 
-#if (defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || \
-     defined(_M_IX86) || defined(__arm__) || defined(__aarch64__))
-#  error "Do not use on a tier-1 platform where inline assembly is available"
+#if ((defined(__x86_64__) || defined(_M_X64)) && defined(JS_CODEGEN_X64)) || \
+    ((defined(__i386__) || defined(_M_IX86)) && defined(JS_CODEGEN_X86)) ||  \
+    (defined(__arm__) && defined(JS_CODEGEN_ARM)) ||                         \
+    ((defined(__aarch64__) || defined(_M_ARM64)) && defined(JS_CODEGEN_ARM64))
+#  error "Do not use this code on a tier-1 platform when a JIT is available"
 #endif
 
 #if !(defined(__clang__) || defined(__GNUC__))
@@ -100,6 +102,15 @@
 #endif
 
 
+
+inline bool js::jit::AtomicOperations::Initialize() {
+  
+  return true;
+}
+
+inline void js::jit::AtomicOperations::ShutDown() {
+  
+}
 
 
 
