@@ -25,7 +25,9 @@ pub struct RemoteClient {
 
 
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, serde::Deserialize, serde::Serialize)]
+
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum DeviceType {
     Desktop,
     Mobile,
