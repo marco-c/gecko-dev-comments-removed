@@ -14,6 +14,7 @@
 #include "mozilla/EventForwards.h"  
 #include "mozilla/FontRange.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/NativeKeyBindingsType.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/TextRange.h"
 #include "mozilla/WritingModes.h"
@@ -499,8 +500,7 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
 
 
   MOZ_CAN_RUN_SCRIPT bool InitEditCommandsFor(
-      nsIWidget::NativeKeyBindingsType aType,
-      const Maybe<WritingMode>& aWritingMode);
+      NativeKeyBindingsType aType, const Maybe<WritingMode>& aWritingMode);
 
   
 
@@ -519,7 +519,7 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
 
 
   const nsTArray<CommandInt>& EditCommandsConstRef(
-      nsIWidget::NativeKeyBindingsType aType) const {
+      NativeKeyBindingsType aType) const {
     return const_cast<WidgetKeyboardEvent*>(this)->EditCommandsRef(aType);
   }
 
@@ -527,7 +527,7 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
 
 
 
-  bool IsEditCommandsInitialized(nsIWidget::NativeKeyBindingsType aType) const {
+  bool IsEditCommandsInitialized(NativeKeyBindingsType aType) const {
     return const_cast<WidgetKeyboardEvent*>(this)->IsEditCommandsInitializedRef(
         aType);
   }
@@ -549,9 +549,9 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
 
 
   typedef void (*DoCommandCallback)(Command, void*);
-  MOZ_CAN_RUN_SCRIPT bool ExecuteEditCommands(
-      nsIWidget::NativeKeyBindingsType aType, DoCommandCallback aCallback,
-      void* aCallbackData);
+  MOZ_CAN_RUN_SCRIPT bool ExecuteEditCommands(NativeKeyBindingsType aType,
+                                              DoCommandCallback aCallback,
+                                              void* aCallbackData);
 
   
   
@@ -789,14 +789,13 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
   CopyableTArray<CommandInt> mEditCommandsForMultiLineEditor;
   CopyableTArray<CommandInt> mEditCommandsForRichTextEditor;
 
-  nsTArray<CommandInt>& EditCommandsRef(
-      nsIWidget::NativeKeyBindingsType aType) {
+  nsTArray<CommandInt>& EditCommandsRef(NativeKeyBindingsType aType) {
     switch (aType) {
-      case nsIWidget::NativeKeyBindingsForSingleLineEditor:
+      case NativeKeyBindingsType::SingleLineEditor:
         return mEditCommandsForSingleLineEditor;
-      case nsIWidget::NativeKeyBindingsForMultiLineEditor:
+      case NativeKeyBindingsType::MultiLineEditor:
         return mEditCommandsForMultiLineEditor;
-      case nsIWidget::NativeKeyBindingsForRichTextEditor:
+      case NativeKeyBindingsType::RichTextEditor:
         return mEditCommandsForRichTextEditor;
       default:
         MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE(
@@ -810,13 +809,13 @@ class WidgetKeyboardEvent : public WidgetInputEvent {
   bool mEditCommandsForMultiLineEditorInitialized;
   bool mEditCommandsForRichTextEditorInitialized;
 
-  bool& IsEditCommandsInitializedRef(nsIWidget::NativeKeyBindingsType aType) {
+  bool& IsEditCommandsInitializedRef(NativeKeyBindingsType aType) {
     switch (aType) {
-      case nsIWidget::NativeKeyBindingsForSingleLineEditor:
+      case NativeKeyBindingsType::SingleLineEditor:
         return mEditCommandsForSingleLineEditorInitialized;
-      case nsIWidget::NativeKeyBindingsForMultiLineEditor:
+      case NativeKeyBindingsType::MultiLineEditor:
         return mEditCommandsForMultiLineEditorInitialized;
-      case nsIWidget::NativeKeyBindingsForRichTextEditor:
+      case NativeKeyBindingsType::RichTextEditor:
         return mEditCommandsForRichTextEditorInitialized;
       default:
         MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE(

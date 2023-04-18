@@ -56,6 +56,7 @@ class nsIScreen;
 class nsIRunnable;
 
 namespace mozilla {
+enum class NativeKeyBindingsType : uint8_t;
 class WidgetGUIEvent;
 class WidgetInputEvent;
 class WidgetKeyboardEvent;
@@ -1856,13 +1857,9 @@ class nsIWidget : public nsISupports {
 
 
 
-  enum NativeKeyBindingsType : uint8_t {
-    NativeKeyBindingsForSingleLineEditor,
-    NativeKeyBindingsForMultiLineEditor,
-    NativeKeyBindingsForRichTextEditor
-  };
   MOZ_CAN_RUN_SCRIPT virtual bool GetEditCommands(
-      NativeKeyBindingsType aType, const mozilla::WidgetKeyboardEvent& aEvent,
+      mozilla::NativeKeyBindingsType aType,
+      const mozilla::WidgetKeyboardEvent& aEvent,
       nsTArray<mozilla::CommandInt>& aCommands);
 
   

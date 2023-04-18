@@ -8,20 +8,21 @@
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/AutoRestore.h"
-#include "mozilla/ContentEvents.h"         
-#include "mozilla/EditorBase.h"            
-#include "mozilla/EventListenerManager.h"  
-#include "mozilla/EventStateManager.h"     
-#include "mozilla/HTMLEditor.h"            
-#include "mozilla/IMEStateManager.h"       
-#include "mozilla/Preferences.h"           
-#include "mozilla/PresShell.h"             
-#include "mozilla/TextEditor.h"            
-#include "mozilla/TextEvents.h"            
-#include "mozilla/dom/Element.h"           
-#include "mozilla/dom/Event.h"             
-#include "mozilla/dom/EventTarget.h"       
-#include "mozilla/dom/MouseEvent.h"        
+#include "mozilla/ContentEvents.h"          
+#include "mozilla/EditorBase.h"             
+#include "mozilla/EventListenerManager.h"   
+#include "mozilla/EventStateManager.h"      
+#include "mozilla/HTMLEditor.h"             
+#include "mozilla/IMEStateManager.h"        
+#include "mozilla/NativeKeyBindingsType.h"  
+#include "mozilla/Preferences.h"            
+#include "mozilla/PresShell.h"              
+#include "mozilla/TextEditor.h"             
+#include "mozilla/TextEvents.h"             
+#include "mozilla/dom/Element.h"            
+#include "mozilla/dom/Event.h"              
+#include "mozilla/dom/EventTarget.h"        
+#include "mozilla/dom/MouseEvent.h"         
 #include "mozilla/dom/Selection.h"
 #include "nsAString.h"
 #include "nsCaret.h"            
@@ -638,9 +639,8 @@ nsresult EditorEventListener::KeyPress(WidgetKeyboardEvent* aKeyboardEvent) {
   
   AutoRestore<nsCOMPtr<nsIWidget>> saveWidget(aKeyboardEvent->mWidget);
   aKeyboardEvent->mWidget = widget;
-  if (aKeyboardEvent->ExecuteEditCommands(
-          nsIWidget::NativeKeyBindingsForRichTextEditor, DoCommandCallback,
-          doc)) {
+  if (aKeyboardEvent->ExecuteEditCommands(NativeKeyBindingsType::RichTextEditor,
+                                          DoCommandCallback, doc)) {
     aKeyboardEvent->PreventDefault();
   }
   return NS_OK;
