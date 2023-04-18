@@ -669,9 +669,9 @@ var interfaceNamesInGlobalScope = [
   
   { name: "Location", insecureContext: true },
   
-  { name: "Lock", insecureContext: false, disabled: true },
+  { name: "Lock", nightly: true },
   
-  { name: "LockManager", insecureContext: false, disabled: true },
+  { name: "LockManager", nightly: true },
   
   { name: "MathMLElement", insecureContext: true },
   

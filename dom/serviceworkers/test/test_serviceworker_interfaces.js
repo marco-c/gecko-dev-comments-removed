@@ -200,6 +200,10 @@ var interfaceNamesInGlobalScope = [
   
   "ImageData",
   
+  { name: "Lock", nightly: true },
+  
+  { name: "LockManager", nightly: true },
+  
   "MediaCapabilities",
   
   "MediaCapabilitiesInfo",

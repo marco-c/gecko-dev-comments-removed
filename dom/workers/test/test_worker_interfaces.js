@@ -205,6 +205,10 @@ var interfaceNamesInGlobalScope = [
   
   { name: "ImageData", insecureContext: true },
   
+  { name: "Lock", nightly: true },
+  
+  { name: "LockManager", nightly: true },
+  
   { name: "MessageChannel", insecureContext: true },
   
   { name: "MessageEvent", insecureContext: true },
