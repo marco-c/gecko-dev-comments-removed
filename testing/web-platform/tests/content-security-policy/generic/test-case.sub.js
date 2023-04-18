@@ -54,9 +54,6 @@ function TestCase(scenarios, sanityChecker) {
         await new Promise(resolve => setTimeout(resolve, 0));
 
         
-        await new Promise(resolve => setTimeout(resolve, 0));
-
-        
         
         violationEventResolve(violationEvents);
         document.removeEventListener('securitypolicyviolation', listener);
