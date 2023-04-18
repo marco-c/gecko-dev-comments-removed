@@ -7,7 +7,6 @@
 #include "DefaultBrowser.h"
 
 #include <string>
-#include <unordered_map>
 
 #include <shlobj.h>
 #include <shlwapi.h>
@@ -16,55 +15,43 @@
 #include "EventLog.h"
 #include "Registry.h"
 
+#include "mozilla/ArrayUtils.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 
 using BrowserResult = mozilla::WindowsErrorResult<Browser>;
 
+constexpr std::pair<std::string_view, Browser> kStringBrowserMap[]{
+    {"", Browser::Unknown},
+    {"firefox", Browser::Firefox},
+    {"chrome", Browser::Chrome},
+    {"edge", Browser::EdgeWithEdgeHTML},
+    {"edge-chrome", Browser::EdgeWithBlink},
+    {"ie", Browser::InternetExplorer},
+    {"opera", Browser::Opera},
+    {"brave", Browser::Brave},
+};
+
+static_assert(mozilla::ArrayLength(kStringBrowserMap) == kBrowserCount);
+
 std::string GetStringForBrowser(Browser browser) {
-  switch (browser) {
-    case Browser::Firefox:
-      return std::string("firefox");
-    case Browser::Chrome:
-      return std::string("chrome");
-    case Browser::EdgeWithEdgeHTML:
-      return std::string("edge");
-    case Browser::EdgeWithBlink:
-      return std::string("edge-chrome");
-    case Browser::InternetExplorer:
-      return std::string("ie");
-    case Browser::Opera:
-      return std::string("opera");
-    case Browser::Brave:
-      return std::string("brave");
-    case Browser::Unknown:
-      return std::string("");
+  for (const auto& [mapString, mapBrowser] : kStringBrowserMap) {
+    if (browser == mapBrowser) {
+      return std::string{mapString};
+    }
   }
+
+  return std::string("");
 }
 
 Browser GetBrowserFromString(const std::string& browserString) {
-  if (browserString.compare("firefox") == 0) {
-    return Browser::Firefox;
+  for (const auto& [mapString, mapBrowser] : kStringBrowserMap) {
+    if (browserString == mapString) {
+      return mapBrowser;
+    }
   }
-  if (browserString.compare("chrome") == 0) {
-    return Browser::Chrome;
-  }
-  if (browserString.compare("edge") == 0) {
-    return Browser::EdgeWithEdgeHTML;
-  }
-  if (browserString.compare("edge-chrome") == 0) {
-    return Browser::EdgeWithBlink;
-  }
-  if (browserString.compare("ie") == 0) {
-    return Browser::InternetExplorer;
-  }
-  if (browserString.compare("opera") == 0) {
-    return Browser::Opera;
-  }
-  if (browserString.compare("brave") == 0) {
-    return Browser::Brave;
-  }
+
   return Browser::Unknown;
 }
 
@@ -92,21 +79,53 @@ static BrowserResult GetDefaultBrowser() {
   
   
   
+  std::array<wchar_t, 256> friendlyName{};
+  DWORD friendlyNameLen = friendlyName.size();
+  hr = AssocQueryStringW(ASSOCF_NONE, ASSOCSTR_FRIENDLYAPPNAME,
+                         registeredApp.get(), NULL, friendlyName.data(),
+                         &friendlyNameLen);
+  if (FAILED(hr)) {
+    LOG_ERROR(hr);
+    return BrowserResult(mozilla::WindowsError::FromHResult(hr));
+  }
+
   
-  const std::unordered_map<std::wstring, Browser> AppIDPrefixes = {
+  
+  
+  constexpr std::pair<std::wstring_view, Browser> kFriendlyNamePrefixes[] = {
       {L"Firefox", Browser::Firefox},
-      {L"Chrome", Browser::Chrome},
-      {L"AppX", Browser::EdgeWithEdgeHTML},
-      {L"MSEdgeHTM", Browser::EdgeWithBlink},
-      {L"IE.", Browser::InternetExplorer},
+      {L"Google Chrome", Browser::Chrome},
+      {L"Microsoft Edge", Browser::EdgeWithBlink},
+      {L"Internet Explorer", Browser::InternetExplorer},
       {L"Opera", Browser::Opera},
       {L"Brave", Browser::Brave},
   };
 
-  for (const auto& prefix : AppIDPrefixes) {
-    if (!wcsnicmp(registeredApp.get(), prefix.first.c_str(),
-                  prefix.first.length())) {
-      return prefix.second;
+  for (const auto& [prefix, browser] : kFriendlyNamePrefixes) {
+    
+    if (!wcsnicmp(friendlyName.data(), prefix.data(), prefix.length())) {
+      if (browser == Browser::EdgeWithBlink) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        constexpr std::wstring_view progIdEdgeHtml{
+            L"AppXq0fevzme2pys62n3e0fbqa7peapykr8v"};
+
+        if (!wcsnicmp(registeredApp.get(), progIdEdgeHtml.data(),
+                      progIdEdgeHtml.length())) {
+          return Browser::EdgeWithEdgeHTML;
+        }
+      }
+
+      return browser;
     }
   }
 
