@@ -54,13 +54,313 @@ namespace {
 using BlockVector = Vector<MBasicBlock*, 8, SystemAllocPolicy>;
 using DefVector = Vector<MDefinition*, 8, SystemAllocPolicy>;
 
+
+
+
+using ControlInstructionVector =
+    Vector<MControlInstruction*, 8, SystemAllocPolicy>;
+
+struct CatchInfo {
+  uint32_t tagIndex;
+  MBasicBlock* block;
+
+  CatchInfo(uint32_t tagIndex, MBasicBlock* block)
+      : tagIndex(tagIndex), block(block) {}
+};
+
+using CatchInfoVector = Vector<CatchInfo, 8, SystemAllocPolicy>;
+
+struct Control {
+  MBasicBlock* block;
+  MBasicBlock* catchAllBlock;
+  
+  
+  ControlInstructionVector tryPadPatches;
+
+  
+  
+  
+  CatchInfoVector tryCatches;
+
+  Control() : block(nullptr), catchAllBlock(nullptr) {}
+
+  explicit Control(MBasicBlock* block) : block(block), catchAllBlock(nullptr) {}
+
+ public:
+  void setBlock(MBasicBlock* newBlock) { block = newBlock; }
+
+  
+  bool tagAlreadyHandled(uint32_t tagIndex) {
+    for (CatchInfo& info : tryCatches) {
+      if (tagIndex == info.tagIndex) {
+        return true;
+      }
+    }
+    return false;
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct IonCompilePolicy {
   
   using Value = MDefinition*;
   using ValueVector = DefVector;
 
   
-  using ControlItem = MBasicBlock*;
+  
+  
+  
+  using ControlItem = Control;
 };
 
 using IonOpIter = OpIter<IonCompilePolicy>;
@@ -1737,8 +2037,14 @@ class FunctionCompiler {
     ResultType resultType = ResultType::Vector(funcType.results());
     auto callee = CalleeDesc::function(funcIndex);
     ArgTypeVector args(funcType);
+    bool inTry = false;
+#ifdef ENABLE_WASM_EXCEPTIONS
+    
+    
+    inTry = inTryCode();
+#endif
     auto* ins = MWasmCall::New(alloc(), desc, callee, call.regArgs_,
-                               StackArgAreaSizeUnaligned(args));
+                               StackArgAreaSizeUnaligned(args), inTry);
     if (!ins) {
       return false;
     }
@@ -1783,8 +2089,14 @@ class FunctionCompiler {
     CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Indirect);
     ArgTypeVector args(funcType);
     ResultType resultType = ResultType::Vector(funcType.results());
+    bool inTry = false;
+#ifdef ENABLE_WASM_EXCEPTIONS
+    
+    
+    inTry = inTryCode();
+#endif
     auto* ins = MWasmCall::New(alloc(), desc, callee, call.regArgs_,
-                               StackArgAreaSizeUnaligned(args), index);
+                               StackArgAreaSizeUnaligned(args), inTry, index);
     if (!ins) {
       return false;
     }
@@ -1805,8 +2117,14 @@ class FunctionCompiler {
     auto callee = CalleeDesc::import(globalDataOffset);
     ArgTypeVector args(funcType);
     ResultType resultType = ResultType::Vector(funcType.results());
+    bool inTry = false;
+#ifdef ENABLE_WASM_EXCEPTIONS
+    
+    
+    inTry = inTryCode();
+#endif
     auto* ins = MWasmCall::New(alloc(), desc, callee, call.regArgs_,
-                               StackArgAreaSizeUnaligned(args));
+                               StackArgAreaSizeUnaligned(args), inTry);
     if (!ins) {
       return false;
     }
@@ -1829,7 +2147,7 @@ class FunctionCompiler {
     CallSiteDesc desc(lineOrBytecode, CallSiteDesc::Symbolic);
     auto callee = CalleeDesc::builtin(builtin.identity);
     auto* ins = MWasmCall::New(alloc(), desc, callee, call.regArgs_,
-                               StackArgAreaSizeUnaligned(builtin));
+                               StackArgAreaSizeUnaligned(builtin), false);
     if (!ins) {
       return false;
     }
@@ -2360,6 +2678,585 @@ class FunctionCompiler {
 
   
 
+#ifdef ENABLE_WASM_EXCEPTIONS
+  bool inTryBlock(uint32_t* relativeDepth) {
+    return iter().controlFindInnermost(LabelKind::Try, relativeDepth);
+  }
+
+  bool inTryCode() {
+    uint32_t relativeDepth;
+    return inTryBlock(&relativeDepth);
+  }
+
+  bool clearExceptionGetTag(MDefinition** tagIndex) {
+    
+    
+    uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
+    const SymbolicAddressSignature& callee = SASigConsumePendingException;
+    CallCompileState args;
+    if (!passInstance(callee.argTypes[0], &args)) {
+      return false;
+    }
+    if (!finishCall(&args)) {
+      return false;
+    }
+    return builtinInstanceMethodCall(callee, lineOrBytecode, args, tagIndex);
+  }
+
+  bool endWithPadPatch(MBasicBlock* block, MDefinition* exn,
+                       MDefinition* tagIndex, uint32_t relativeTryDepth) {
+    MOZ_ASSERT(iter().controlKind(relativeTryDepth) == LabelKind::Try);
+    MOZ_ASSERT(exn);
+    MOZ_ASSERT(exn->type() == MIRType::RefOrNull);
+    MOZ_ASSERT(tagIndex && tagIndex->type() == MIRType::Int32);
+    MOZ_ASSERT(numPushed(block) == 0);
+
+    
+    
+    if (!block->ensureHasSlots(2)) {
+      return false;
+    }
+    block->push(exn);
+    block->push(tagIndex);
+
+    MGoto* insToPatch = MGoto::New(alloc());
+    block->end(insToPatch);
+
+    
+    Control& tryControl = iter().controlItem(relativeTryDepth);
+    ControlInstructionVector& padPatches = tryControl.tryPadPatches;
+    return padPatches.emplaceBack(insToPatch);
+  }
+
+  bool checkPendingExceptionAndBranch(uint32_t relativeTryDepth) {
+    
+    
+
+    MOZ_ASSERT(inTryCode());
+
+    
+    MWasmLoadTls* pendingException = MWasmLoadTls::New(
+        alloc(), tlsPointer_, offsetof(wasm::TlsData, pendingException),
+        MIRType::RefOrNull, AliasSet::Load(AliasSet::WasmPendingException));
+    curBlock_->add(pendingException);
+
+    
+    MBasicBlock* fallthroughBlock = nullptr;
+    if (!newBlock(curBlock_, &fallthroughBlock)) {
+      return false;
+    }
+    MBasicBlock* prePadBlock = nullptr;
+    if (!newBlock(curBlock_, &prePadBlock)) {
+      return false;
+    }
+    MDefinition* nullVal = nullRefConstant();
+    
+    MDefinition* pendingExceptionIsNotNull = compare(
+        pendingException, nullVal, JSOp::Ne, MCompare::Compare_RefOrNull);
+
+    
+    
+
+    MTest* branchIfNull = MTest::New(alloc(), pendingExceptionIsNotNull,
+                                     prePadBlock, fallthroughBlock);
+    curBlock_->end(branchIfNull);
+    curBlock_ = prePadBlock;
+
+    
+    MDefinition* tagIndex = nullptr;
+    if (!clearExceptionGetTag(&tagIndex)) {
+      return false;
+    }
+
+    
+    if (!endWithPadPatch(prePadBlock, pendingException, tagIndex,
+                         relativeTryDepth)) {
+      return false;
+    }
+
+    
+    curBlock_ = fallthroughBlock;
+    return true;
+  }
+
+  bool maybeCheckPendingExceptionAfterCall() {
+    uint32_t relativeTryDepth;
+    return !inTryBlock(&relativeTryDepth) ||
+           checkPendingExceptionAndBranch(relativeTryDepth);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool maybeCreateTryPadBlock(Control& catching) {
+    
+    MOZ_ASSERT(inDeadCode() || curBlock_->hasLastIns());
+
+    
+    
+    
+    
+    ControlInstructionVector& patches = catching.tryPadPatches;
+    if (patches.empty()) {
+      curBlock_ = nullptr;
+      return true;
+    }
+
+    
+    
+    
+    MControlInstruction* ins = patches[0];
+    MBasicBlock* pred = ins->block();
+    MBasicBlock* pad = nullptr;
+    if (!newBlock(pred, &pad)) {
+      return false;
+    }
+    ins->replaceSuccessor(0, pad);
+    for (size_t i = 1; i < patches.length(); i++) {
+      ins = patches[i];
+      pred = ins->block();
+      if (!pad->addPredecessor(alloc(), pred)) {
+        return false;
+      }
+      ins->replaceSuccessor(0, pad);
+    }
+
+    
+    
+    
+    
+    curBlock_ = pad;
+    mirGraph().moveBlockToEnd(curBlock_);
+    mirGraph().setHasTryBlock();
+
+    
+    patches.clear();
+    return true;
+  }
+
+  bool emitTry(MBasicBlock** curBlock) {
+    *curBlock = curBlock_;
+    return startBlock();
+  }
+
+  bool finishTryOrCatchBlock(Control& control) {
+    if (inDeadCode()) {
+      return true;
+    }
+
+    
+    
+    MOZ_ASSERT(!curBlock_->hasLastIns());
+    MGoto* jump = MGoto::New(alloc());
+    if (!addControlFlowPatch(jump, 0, MGoto::TargetIndex)) {
+      return false;
+    }
+
+    
+    curBlock_->end(jump);
+    return true;
+  }
+
+  bool switchToCatch(const LabelKind& kind, uint32_t tagIndex,
+                     Control& control) {
+    
+    
+
+    
+    
+    if (!control.block) {
+      MOZ_ASSERT(inDeadCode());
+      return true;
+    }
+
+    if (!finishTryOrCatchBlock(control)) {
+      return false;
+    }
+
+    
+    
+    if (kind == LabelKind::Try) {
+      if (!maybeCreateTryPadBlock(control)) {
+        return false;
+      }
+
+      
+      control.block = curBlock_;
+
+      
+      if (curBlock_ == nullptr) {
+        return true;
+      }
+
+      
+      
+      MOZ_ASSERT(numPushed(curBlock_) == 2);
+
+      
+      
+      
+      if (tagIndex == CatchAllIndex) {
+        curBlock_->pop();
+        curBlock_->pop();
+        control.catchAllBlock = curBlock_;
+        return true;
+      }
+
+      MOZ_ASSERT(control.tryCatches.empty());
+    }
+
+    
+    MBasicBlock* padBlock = control.block;
+
+    
+    
+    if (tagIndex != CatchAllIndex && control.tagAlreadyHandled(tagIndex)) {
+      curBlock_ = nullptr;
+      return true;
+    }
+
+    
+    MBasicBlock* nextCatch = nullptr;
+    if (!newBlock(padBlock, &nextCatch)) {
+      return false;
+    }
+
+    
+    
+    if (tagIndex == CatchAllIndex) {
+      control.catchAllBlock = nextCatch;
+    } else {
+      CatchInfo catchInfo(tagIndex, nextCatch);
+      if (!control.tryCatches.emplaceBack(catchInfo)) {
+        return false;
+      }
+    }
+
+    
+    
+    curBlock_ = nextCatch;
+    mirGraph().moveBlockToEnd(curBlock_);
+    
+    curBlock_->pop();
+    MDefinition* exn = curBlock_->pop();
+    MOZ_ASSERT(exn->type() == MIRType::RefOrNull);
+
+    
+    if (tagIndex == CatchAllIndex) {
+      return true;
+    }
+
+    
+    const TagType& tagType = moduleEnv().tags[tagIndex].type;
+    const ValTypeVector& tagParams = tagType.argTypes;
+    const TagOffsetVector& offsets = tagType.argOffsets;
+
+    MWasmExceptionDataPointer* exnDataPtr =
+        MWasmExceptionDataPointer::New(alloc(), exn);
+    curBlock_->add(exnDataPtr);
+
+    MIRType type;
+    size_t count = tagParams.length();
+    DefVector loadedValues;
+    
+    if (!loadedValues.reserve(count)) {
+      return false;
+    }
+
+    for (size_t i = 0; i < count; i++) {
+      int32_t offset = offsets[i];
+      type = ToMIRType(tagParams[i]);
+      if (IsNumberType(type) || tagParams[i].kind() == ValType::V128) {
+        auto* load =
+            MWasmLoadExceptionDataValue::New(alloc(), exnDataPtr, offset, type);
+        if (!load || !loadedValues.append(load)) {
+          return false;
+        }
+        MOZ_ASSERT(load->type() != MIRType::None);
+        curBlock_->add(load);
+      } else {
+        MOZ_ASSERT(tagParams[i].kind() == ValType::Rtt ||
+                   tagParams[i].kind() == ValType::Ref);
+        MOZ_CRASH("Reftype values in exceptions NYI in Ion");
+      }
+    }
+    iter().setResults(count, loadedValues);
+    return true;
+  }
+
+  bool finishCatchlessTry(Control& control) {
+    
+    
+    if (control.tryPadPatches.empty()) {
+      return true;
+    }
+
+    
+    MBasicBlock* prevBlock = curBlock_;
+    curBlock_ = nullptr;
+
+    
+    if (!maybeCreateTryPadBlock(control)) {
+      return false;
+    }
+
+    
+    
+    
+    
+    MOZ_ASSERT(!inDeadCode());
+    MOZ_ASSERT(numPushed(curBlock_) == 2);
+
+    
+    
+    MDefinition* tagIndex = curBlock_->pop();
+    MDefinition* exn = curBlock_->pop();
+    if (!throwFrom(exn, tagIndex)) {
+      return false;
+    }
+
+    
+    curBlock_ = prevBlock;
+    return true;
+  }
+
+  bool finishCatches(LabelKind kind, Control& control) {
+    MBasicBlock* padBlock = control.block;
+    
+    if (!padBlock) {
+      return true;
+    }
+
+    
+    
+    if (control.tryCatches.empty()) {
+      MOZ_ASSERT(kind == LabelKind::CatchAll);
+      MOZ_ASSERT(control.catchAllBlock == padBlock);
+      return true;
+    }
+
+    
+
+    
+    MBasicBlock* prevBlock = curBlock_;
+
+    
+    curBlock_ = padBlock;
+
+    
+    MOZ_ASSERT(numPushed(curBlock_) == 2);
+    MDefinition* tagIndex = curBlock_->pop();
+    MDefinition* exn = curBlock_->pop();
+    MOZ_ASSERT(exn && tagIndex);
+    MOZ_ASSERT(tagIndex->type() == MIRType::Int32);
+    MOZ_ASSERT(exn->type() == MIRType::RefOrNull);
+
+    
+    
+    curBlock_->push(exn);
+    curBlock_->push(tagIndex);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MDefinition* one = constant(Int32Value(1), MIRType::Int32);
+    MDefinition* adjustedTagIndex = add(tagIndex, one, MIRType::Int32);
+    uint32_t numTags = moduleEnv_.tags.length();
+
+    
+    MTableSwitch* table =
+        MTableSwitch::New(alloc(), adjustedTagIndex, 0, (int32_t)numTags);
+
+    
+    MBasicBlock* defaultCatch = nullptr;
+    if (kind == LabelKind::CatchAll) {
+      MOZ_ASSERT(control.catchAllBlock);
+      defaultCatch = control.catchAllBlock;
+    } else {
+      if (!newBlock(curBlock_, &defaultCatch)) {
+        return false;
+      }
+      
+      curBlock_ = defaultCatch;
+      MDefinition* rethrowTagIndex = curBlock_->pop();
+      MDefinition* rethrowExn = curBlock_->pop();
+      if (!throwFrom(rethrowExn, rethrowTagIndex)) {
+        return false;
+      }
+      curBlock_ = padBlock;
+    }
+
+    
+    size_t defaultIndex;
+    if (!table->addDefault(defaultCatch, &defaultIndex)) {
+      return false;
+    }
+    MOZ_ASSERT(defaultIndex == 0);
+    using TagMap =
+        HashMap<uint32_t, uint32_t, DefaultHasher<uint32_t>, SystemAllocPolicy>;
+
+    TagMap tagMap;
+
+    
+    for (CatchInfo& info : control.tryCatches) {
+      uint32_t catchTagIndex = info.tagIndex;
+      MBasicBlock* catchBlock = info.block;
+      MOZ_ASSERT(catchTagIndex < numTags);
+      MOZ_ASSERT(catchBlock);
+      size_t switchIndex;
+      if (!table->addSuccessor(catchBlock, &switchIndex)) {
+        return false;
+      }
+      if (!tagMap.put(catchTagIndex, switchIndex)) {
+        return false;
+      }
+    }
+
+    
+    
+
+    
+    if (!table->addCase(0)) {
+      return false;
+    }
+
+    
+    for (size_t catchTagIndex = 0; catchTagIndex < numTags; catchTagIndex++) {
+      size_t switchIndex;
+      TagMap::Ptr p = tagMap.lookup(catchTagIndex);
+      switchIndex = p ? p->value() : 0;
+      if (!table->addCase(switchIndex)) {
+        return false;
+      }
+    }
+
+    
+    curBlock_->end(table);
+
+    
+    curBlock_ = prevBlock;
+    if (prevBlock) {
+      mirGraph().moveBlockToEnd(curBlock_);
+    }
+
+    return true;
+  }
+
+  bool emitThrow(uint32_t tagIndex, const DefVector& argValues) {
+    if (inDeadCode()) {
+      return true;
+    }
+
+    uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
+    const TagType& tagType = moduleEnv_.tags[tagIndex].type;
+    const ResultType& tagParams = tagType.resultType();
+
+    
+    MDefinition* tagIndexDef =
+        constant(Int32Value(int32_t(tagIndex)), MIRType::Int32);
+    MDefinition* exnSize =
+        constant(Int32Value(tagType.bufferSize), MIRType::Int32);
+    MDefinition* exn = nullptr;
+    const SymbolicAddressSignature& callee = SASigExceptionNew;
+    CallCompileState args;
+    if (!passInstance(callee.argTypes[0], &args)) {
+      return false;
+    }
+    if (!passArg(tagIndexDef, callee.argTypes[1], &args)) {
+      return false;
+    }
+    if (!passArg(exnSize, callee.argTypes[2], &args)) {
+      return false;
+    }
+    if (!finishCall(&args)) {
+      return false;
+    }
+    if (!builtinInstanceMethodCall(callee, lineOrBytecode, args, &exn)) {
+      return false;
+    }
+    MOZ_ASSERT(exn);
+
+    
+    MWasmExceptionDataPointer* exnDataPtr =
+        MWasmExceptionDataPointer::New(alloc(), exn);
+    curBlock_->add(exnDataPtr);
+
+    for (int32_t i = (int32_t)tagParams.length() - 1; i >= 0; i--) {
+      int32_t offset = tagType.argOffsets[i];
+      MOZ_RELEASE_ASSERT(IsNumberType(tagParams[i]) ||
+                         tagParams[i].kind() == ValType::V128);
+      MWasmStoreExceptionDataValue* store = MWasmStoreExceptionDataValue::New(
+          alloc(), exnDataPtr, offset, argValues[i]);
+      curBlock_->add(store);
+    }
+
+    
+    return throwFrom(exn, tagIndexDef);
+  }
+
+  bool throwFrom(MDefinition* exn, MDefinition* tagIndex) {
+    if (inDeadCode()) {
+      return true;
+    }
+
+    
+    
+    uint32_t relativeTryDepth;
+    if (inTryBlock(&relativeTryDepth)) {
+      MBasicBlock* prePadBlock = nullptr;
+      if (!newBlock(curBlock_, &prePadBlock)) {
+        return false;
+      }
+      MGoto* ins = MGoto::New(alloc(), prePadBlock);
+
+      
+      if (!endWithPadPatch(prePadBlock, exn, tagIndex, relativeTryDepth)) {
+        return false;
+      }
+      curBlock_->end(ins);
+      curBlock_ = nullptr;
+      return true;
+    }
+
+    
+    
+    uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
+    const SymbolicAddressSignature& callee = SASigThrowException;
+    CallCompileState args;
+    if (!passInstance(callee.argTypes[0], &args)) {
+      return false;
+    }
+    if (!passArg(exn, callee.argTypes[1], &args)) {
+      return false;
+    }
+    if (!finishCall(&args)) {
+      return false;
+    }
+    if (!builtinInstanceMethodCall(callee, lineOrBytecode, args)) {
+      return false;
+    }
+    unreachableTrap();
+
+    curBlock_ = nullptr;
+    return true;
+  }
+#endif
+
+  
+
   uint32_t readCallSiteLineOrBytecode() {
     if (!func_.callSiteLineNums.empty()) {
       return func_.callSiteLineNums[lastReadCallSite_++];
@@ -2551,7 +3448,7 @@ static bool EmitLoop(FunctionCompiler& f) {
 
   f.addInterruptCheck();
 
-  f.iter().controlItem() = loopHeader;
+  f.iter().controlItem().setBlock(loopHeader);
   return true;
 }
 
@@ -2567,7 +3464,7 @@ static bool EmitIf(FunctionCompiler& f) {
     return false;
   }
 
-  f.iter().controlItem() = elseBlock;
+  f.iter().controlItem().setBlock(elseBlock);
   return true;
 }
 
@@ -2583,7 +3480,8 @@ static bool EmitElse(FunctionCompiler& f) {
     return false;
   }
 
-  if (!f.switchToElse(f.iter().controlItem(), &f.iter().controlItem())) {
+  Control& control = f.iter().controlItem();
+  if (!f.switchToElse(control.block, &control.block)) {
     return false;
   }
 
@@ -2599,7 +3497,8 @@ static bool EmitEnd(FunctionCompiler& f) {
     return false;
   }
 
-  MBasicBlock* block = f.iter().controlItem();
+  Control& control = f.iter().controlItem();
+  MBasicBlock* block = control.block;
   f.iter().popEnd();
 
   if (!f.pushDefs(preJoinDefs)) {
@@ -2649,14 +3548,27 @@ static bool EmitEnd(FunctionCompiler& f) {
       }
       break;
 #ifdef ENABLE_WASM_EXCEPTIONS
-    case LabelKind::Try:
-      MOZ_CRASH("NYI");
+    case LabelKind::Try: {
+      if (block) {
+        if (!f.finishCatchlessTry(control)) {
+          return false;
+        }
+      }
+      if (!f.finishBlock(&postJoinDefs)) {
+        return false;
+      }
       break;
+    }
     case LabelKind::Catch:
-      MOZ_CRASH("NYI");
-      break;
     case LabelKind::CatchAll:
-      MOZ_CRASH("NYI");
+      if (block) {
+        if (!f.finishCatches(kind, control)) {
+          return false;
+        }
+      }
+      if (!f.finishBlock(&postJoinDefs)) {
+        return false;
+      }
       break;
 #endif
   }
@@ -2744,7 +3656,13 @@ static bool EmitTry(FunctionCompiler& f) {
     return false;
   }
 
-  MOZ_CRASH("NYI");
+  MBasicBlock* curBlock = nullptr;
+  if (!f.emitTry(&curBlock)) {
+    return false;
+  }
+
+  f.iter().controlItem().setBlock(curBlock);
+  return true;
 }
 
 static bool EmitCatch(FunctionCompiler& f) {
@@ -2757,7 +3675,14 @@ static bool EmitCatch(FunctionCompiler& f) {
     return false;
   }
 
-  MOZ_CRASH("NYI");
+  
+  
+  
+  if (!f.pushDefs(tryValues)) {
+    return false;
+  }
+
+  return f.switchToCatch(kind, tagIndex, f.iter().controlItem());
 }
 
 static bool EmitCatchAll(FunctionCompiler& f) {
@@ -2768,7 +3693,15 @@ static bool EmitCatchAll(FunctionCompiler& f) {
     return false;
   }
 
-  MOZ_CRASH("NYI");
+  
+  
+  
+  
+  if (!f.pushDefs(tryValues)) {
+    return false;
+  }
+
+  return f.switchToCatch(kind, CatchAllIndex, f.iter().controlItem());
 }
 
 static bool EmitDelegate(FunctionCompiler& f) {
@@ -2784,13 +3717,13 @@ static bool EmitDelegate(FunctionCompiler& f) {
 }
 
 static bool EmitThrow(FunctionCompiler& f) {
-  uint32_t exnIndex;
+  uint32_t tagIndex;
   DefVector argValues;
-  if (!f.iter().readThrow(&exnIndex, &argValues)) {
+  if (!f.iter().readThrow(&tagIndex, &argValues)) {
     return false;
   }
 
-  MOZ_CRASH("NYI");
+  return f.emitThrow(tagIndex, argValues);
 }
 
 static bool EmitRethrow(FunctionCompiler& f) {
@@ -2863,6 +3796,12 @@ static bool EmitCall(FunctionCompiler& f, bool asmJSFuncDef) {
     }
   }
 
+#ifdef ENABLE_WASM_EXCEPTIONS
+  if (!f.maybeCheckPendingExceptionAfterCall()) {
+    return false;
+  }
+#endif
+
   f.iter().setResults(results.length(), results);
   return true;
 }
@@ -2902,6 +3841,12 @@ static bool EmitCallIndirect(FunctionCompiler& f, bool oldStyle) {
                       &results)) {
     return false;
   }
+
+#ifdef ENABLE_WASM_EXCEPTIONS
+  if (!f.maybeCheckPendingExceptionAfterCall()) {
+    return false;
+  }
+#endif
 
   f.iter().setResults(results.length(), results);
   return true;

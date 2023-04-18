@@ -1443,8 +1443,9 @@ bool Instance::initElems(JSContext* cx, uint32_t tableIndex,
       .forCompiledCode();
 }
 
- void* Instance::throwException(Instance* instance, JSObject* exn) {
-  MOZ_ASSERT(SASigThrowException.failureMode == FailureMode::FailOnNullPtr);
+ int32_t Instance::throwException(Instance* instance,
+                                              JSObject* exn) {
+  MOZ_ASSERT(SASigThrowException.failureMode == FailureMode::FailOnNegI32);
 
   JSContext* cx = instance->tlsData()->cx;
   RootedValue exnVal(cx, UnboxAnyRef(AnyRef::fromJSObject(exn)));
@@ -1452,7 +1453,7 @@ bool Instance::initElems(JSContext* cx, uint32_t tableIndex,
 
   
   
-  return nullptr;
+  return -1;
 }
 
  uint32_t Instance::consumePendingException(Instance* instance) {

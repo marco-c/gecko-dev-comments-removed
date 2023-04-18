@@ -352,10 +352,13 @@ class AliasSet {
     
     RNG = 1 << 16,
 
-    Last = RNG,
-    Any = Last | (Last - 1),
+    
+    WasmPendingException = 1 << 17,
 
-    NumCategories = 17,
+    Last = WasmPendingException,
+
+    Any = Last | (Last - 1),
+    NumCategories = 18,
 
     
     Store_ = 1 << 31
@@ -9019,11 +9022,13 @@ class MWasmLoadTls : public MUnaryInstruction, public NoTypePolicy::Data {
     
     MOZ_ASSERT(aliases_.flags() ==
                    AliasSet::Load(AliasSet::WasmHeapMeta).flags() ||
+               aliases_.flags() ==
+                   AliasSet::Load(AliasSet::WasmPendingException).flags() ||
                aliases_.flags() == AliasSet::None().flags());
 
     
     MOZ_ASSERT(type == MIRType::Pointer || type == MIRType::Int32 ||
-               type == MIRType::Int64);
+               type == MIRType::Int64 || type == MIRType::RefOrNull);
 
     setMovable();
     setResultType(type);
@@ -9900,14 +9905,16 @@ class MWasmCall final : public MVariadicInstruction, public NoTypePolicy::Data {
   FixedList<AnyRegister> argRegs_;
   uint32_t stackArgAreaSizeUnaligned_;
   ABIArg instanceArg_;
+  bool inTry_;
 
   MWasmCall(const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee,
-            uint32_t stackArgAreaSizeUnaligned)
+            uint32_t stackArgAreaSizeUnaligned, bool inTry)
       : MVariadicInstruction(classOpcode),
         desc_(desc),
         callee_(callee),
         builtinMethodFailureMode_(wasm::FailureMode::Infallible),
-        stackArgAreaSizeUnaligned_(stackArgAreaSizeUnaligned) {}
+        stackArgAreaSizeUnaligned_(stackArgAreaSizeUnaligned),
+        inTry_(inTry) {}
 
  public:
   INSTRUCTION_HEADER(WasmCall)
@@ -9921,7 +9928,7 @@ class MWasmCall final : public MVariadicInstruction, public NoTypePolicy::Data {
 
   static MWasmCall* New(TempAllocator& alloc, const wasm::CallSiteDesc& desc,
                         const wasm::CalleeDesc& callee, const Args& args,
-                        uint32_t stackArgAreaSizeUnaligned,
+                        uint32_t stackArgAreaSizeUnaligned, bool inTry,
                         MDefinition* tableIndex = nullptr);
 
   static MWasmCall* NewBuiltinInstanceMethodCall(
@@ -9948,6 +9955,10 @@ class MWasmCall final : public MVariadicInstruction, public NoTypePolicy::Data {
   bool possiblyCalls() const override { return true; }
 
   const ABIArg& instanceArg() const { return instanceArg_; }
+
+#ifdef ENABLE_WASM_EXCEPTIONS
+  bool inTry() { return inTry_; }
+#endif
 };
 
 class MWasmSelect : public MTernaryInstruction, public NoTypePolicy::Data {
@@ -10409,6 +10420,90 @@ class MIonToWasmCall final : public MVariadicInstruction,
   bool isConsistentFloat32Use(MUse* use) const override;
 #endif
 };
+
+
+
+
+class MWasmExceptionDataPointer : public MUnaryInstruction,
+                                  public NoTypePolicy::Data {
+  explicit MWasmExceptionDataPointer(MDefinition* exn)
+      : MUnaryInstruction(classOpcode, exn) {
+    MOZ_ASSERT(exn != nullptr);
+    MOZ_ASSERT(exn->type() == MIRType::RefOrNull);
+    setResultType(MIRType::Pointer);
+    
+    
+    
+    setGuard();  
+  }
+
+ public:
+  INSTRUCTION_HEADER(WasmExceptionDataPointer)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, exn))
+
+  AliasSet getAliasSet() const override {
+    return AliasSet::Load(AliasSet::Any);
+  }
+};
+
+
+class MWasmLoadExceptionDataValue : public MUnaryInstruction,
+                                    public NoTypePolicy::Data {
+  uint32_t offset_;
+
+  MWasmLoadExceptionDataValue(MDefinition* exnDataPtr, uint32_t offset,
+                              MIRType type)
+      : MUnaryInstruction(classOpcode, exnDataPtr), offset_(offset) {
+    MOZ_ASSERT(IsNumberType(type) || type == MIRType::Simd128);
+    setResultType(type);
+    
+    
+    
+    setGuard();  
+  }
+
+ public:
+  INSTRUCTION_HEADER(WasmLoadExceptionDataValue)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, exnDataPtr))
+
+  uint32_t offset() const { return offset_; }
+
+  AliasSet getAliasSet() const override {
+    return AliasSet::Load(AliasSet::Any);
+  }
+};
+
+
+class MWasmStoreExceptionDataValue : public MBinaryInstruction,
+                                     public NoTypePolicy::Data {
+  uint32_t offset_;
+
+  MWasmStoreExceptionDataValue(MDefinition* exnDataPtr, uint32_t offset,
+                               MDefinition* value)
+      : MBinaryInstruction(classOpcode, exnDataPtr, value), offset_(offset) {
+    
+    
+    
+    setGuard();  
+  }
+
+ public:
+  INSTRUCTION_HEADER(WasmStoreExceptionDataValue)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, exnDataPtr), (1, value))
+
+  uint32_t offset() const { return offset_; }
+
+  
+  
+  AliasSet getAliasSet() const override {
+    return AliasSet::Store(AliasSet::Any);
+  }
+};
+
+
 
 #undef INSTRUCTION_HEADER
 

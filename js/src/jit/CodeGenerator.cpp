@@ -8015,6 +8015,17 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
   MWasmCall* mir = lir->mir();
   bool needsBoundsCheck = lir->needsBoundsCheck();
 
+#ifdef ENABLE_WASM_EXCEPTIONS
+  
+  
+  bool inTry_ = mir->inTry();
+  size_t tryNoteIndex = 0;
+
+  if (inTry_) {
+    tryNoteIndex = masm.wasmStartTry();
+  }
+#endif
+
   MOZ_ASSERT((sizeof(wasm::Frame) + masm.framePushed()) % WasmStackAlignment ==
              0);
   static_assert(
@@ -8081,6 +8092,27 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
   } else {
     MOZ_ASSERT(!switchRealm);
   }
+
+#ifdef ENABLE_WASM_EXCEPTIONS
+  if (inTry_) {
+    
+    
+    
+    
+    
+    
+    
+
+    wasm::WasmTryNoteVector& tryNotes = masm.tryNotes();
+    wasm::WasmTryNote& tryNote = tryNotes[tryNoteIndex];
+    tryNote.end = masm.currentOffset();
+    tryNote.entryPoint = tryNote.end;
+    tryNote.framePushed = masm.framePushed();
+
+    
+    MOZ_ASSERT(tryNote.end > tryNote.begin);
+  }
+#endif
 }
 
 void CodeGenerator::visitWasmLoadSlot(LWasmLoadSlot* ins) {
@@ -15032,6 +15064,7 @@ void CodeGenerator::visitWasmAlignmentCheck64(LWasmAlignmentCheck64* ins) {
 
 void CodeGenerator::visitWasmLoadTls(LWasmLoadTls* ins) {
   switch (ins->mir()->type()) {
+    case MIRType::RefOrNull:
     case MIRType::Pointer:
       masm.loadPtr(Address(ToRegister(ins->tlsPtr()), ins->mir()->offset()),
                    ToRegister(ins->output()));
@@ -16467,6 +16500,24 @@ void CodeGenerator::visitWasmAnyRefFromJSObject(LWasmAnyRefFromJSObject* lir) {
     masm.movePtr(input, output);
   }
 }
+
+
+
+
+
+void CodeGenerator::visitWasmExceptionDataPointer(
+    LWasmExceptionDataPointer* lir) {
+  Register exn = ToRegister(lir->exn());
+  Register dataPtr = ToRegister(lir->output());
+  const uint32_t dataOffset =
+      NativeObject::getFixedSlotOffset(ArrayBufferObject::DATA_SLOT);
+  const int32_t valuesOffset = (int32_t)WasmExceptionObject::offsetOfValues();
+
+  masm.unboxObject(Address(exn, valuesOffset), dataPtr);
+  masm.loadPtr(Address(dataPtr, dataOffset), dataPtr);
+}
+
+
 
 static_assert(!std::is_polymorphic_v<CodeGenerator>,
               "CodeGenerator should not have any virtual methods");

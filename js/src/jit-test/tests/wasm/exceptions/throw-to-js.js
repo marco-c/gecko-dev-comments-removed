@@ -46,6 +46,9 @@ assertWasmThrowsExn(() =>
   ).exports.f()
 );
 
+if (wasmCompileMode() === "baseline") {
+  
+
 assertWasmThrowsExn(() =>
   wasmEvalText(
     `(module
@@ -111,6 +114,7 @@ assertWasmThrowsExn(() =>
          end))`
   ).exports.f()
 );
+}
 
 
 assertWasmThrowsExn(() =>
@@ -148,6 +152,9 @@ assertThrowsValue(
   42
 );
 
+if (wasmCompileMode() === "baseline") {
+  
+
 
 assertThrowsValue(
   () =>
@@ -170,6 +177,7 @@ assertThrowsValue(
     ).exports.f(),
   42
 );
+}
 
 
 {
@@ -312,6 +320,9 @@ assertEq(
   );
 }
 
+if (wasmCompileMode() === "baseline") {
+  
+
 
 assertWasmThrowsExn(() =>
   wasmEvalText(
@@ -341,3 +352,4 @@ assertWasmThrowsExn(() =>
          delegate 0))`
   ).exports.f()
 );
+}
