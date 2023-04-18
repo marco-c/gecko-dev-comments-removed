@@ -32,7 +32,7 @@ using mozilla::dom::Selection;
 
 nsPrintObject::nsPrintObject()
     : mContent(nullptr),
-      mFrameType(eFrame),
+      mFrameType(eDoc),
       mParent(nullptr),
       mHasBeenPrinted(false),
       mInvisible(false),
@@ -80,15 +80,8 @@ nsresult nsPrintObject::InitAsNestedObject(nsIDocShell* aDocShell,
   nsCOMPtr<nsPIDOMWindowOuter> window = aDoc->GetWindow();
   mContent = window->GetFrameElementInternal();
 
-  
-  
-  if (mContent->IsHTMLElement(nsGkAtoms::frame) &&
-      mParent->mFrameType == eFrameSet) {
-    mFrameType = eFrame;
-  } else {
-    
-    mFrameType = eIFrame;
-  }
+  mFrameType = eIFrame;
+
   return NS_OK;
 }
 

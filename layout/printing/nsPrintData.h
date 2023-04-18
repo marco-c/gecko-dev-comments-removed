@@ -60,7 +60,6 @@ class nsPrintData {
   
   nsTArray<nsPrintObject*> mPrintDocList;
 
-  bool mIsParentAFrameSet;
   bool mOnStartSent;
   bool mIsAborted;          
   bool mPreparingForPrint;  

@@ -116,8 +116,7 @@ static uint32_t gDumpLOFileNameCnt = 0;
 #endif
 
 #define PRT_YESNO(_p) ((_p) ? "YES" : "NO")
-static const char* gFrameTypesStr[] = {"eDoc", "eFrame", "eIFrame",
-                                       "eFrameSet"};
+static const char* gFrameTypesStr[] = {"eDoc", "eIFrame"};
 
 
 
@@ -148,51 +147,6 @@ static void DumpPrintObjectsTreeLayout(const UniquePtr<nsPrintObject>& aPO,
 
 
 
-
-static bool HasFramesetChild(nsIContent* aContent) {
-  if (!aContent) {
-    return false;
-  }
-
-  
-  for (nsIContent* child = aContent->GetFirstChild(); child;
-       child = child->GetNextSibling()) {
-    if (child->IsHTMLElement(nsGkAtoms::frameset)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-static bool IsParentAFrameSet(nsIDocShell* aParent) {
-  
-  if (!aParent) return false;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool isFrameSet = false;
-  
-  
-  nsCOMPtr<Document> doc = aParent->GetDocument();
-  if (doc) {
-    nsIContent* rootElement = doc->GetRootElement();
-    if (rootElement) {
-      isFrameSet = HasFramesetChild(rootElement);
-    }
-  }
-  return isFrameSet;
-}
 
 
 
@@ -518,9 +472,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
 
     printData->mPrintDocList.AppendElement(printData->mPrintObject.get());
 
-    printData->mIsParentAFrameSet = IsParentAFrameSet(docShell);
-    printData->mPrintObject->mFrameType =
-        printData->mIsParentAFrameSet ? eFrameSet : eDoc;
+    printData->mPrintObject->mFrameType = eDoc;
 
     BuildNestedPrintObjects(printData->mPrintObject, printData);
   }
@@ -961,19 +913,7 @@ nsresult nsPrintJob::SetupToPrintContent() {
   
   bool ppIsShrinkToFit = mPrtPreview && mPrtPreview->mShrinkToFit;
   if (printData->mShrinkToFit && !ppIsShrinkToFit) {
-    
-    if (printData->mPrintDocList.Length() > 1 &&
-        printData->mPrintObject->mFrameType == eFrameSet) {
-      nsPrintObject* smallestPO = FindSmallestSTF();
-      NS_ASSERTION(smallestPO, "There must always be an XMost PO!");
-      if (smallestPO) {
-        
-        printData->mShrinkRatio = smallestPO->mShrinkRatio;
-      }
-    } else {
-      
-      printData->mShrinkRatio = printData->mPrintObject->mShrinkRatio;
-    }
+    printData->mShrinkRatio = printData->mPrintObject->mShrinkRatio;
 
     if (printData->mShrinkRatio < 0.998f) {
       nsresult rv = ReconstructAndReflow(true);
@@ -989,19 +929,7 @@ nsresult nsPrintJob::SetupToPrintContent() {
     }
 
     if (MOZ_LOG_TEST(gPrintingLog, LogLevel::Debug)) {
-      float calcRatio = 0.0f;
-      if (printData->mPrintDocList.Length() > 1 &&
-          printData->mPrintObject->mFrameType == eFrameSet) {
-        nsPrintObject* smallestPO = FindSmallestSTF();
-        NS_ASSERTION(smallestPO, "There must always be an XMost PO!");
-        if (smallestPO) {
-          
-          calcRatio = smallestPO->mShrinkRatio;
-        }
-      } else {
-        
-        calcRatio = printData->mPrintObject->mShrinkRatio;
-      }
+      float calcRatio = printData->mPrintObject->mShrinkRatio;
       PR_PL(
           ("*******************************************************************"
            "*******\n"));
@@ -2130,32 +2058,6 @@ nsresult nsPrintJob::EnablePOsForPrinting() {
     printData->mSelectionRoot->EnablePrintingSelectionOnly();
   }
   return NS_OK;
-}
-
-
-
-
-nsPrintObject* nsPrintJob::FindSmallestSTF() {
-  float smallestRatio = 1.0f;
-  nsPrintObject* smallestPO = nullptr;
-
-  for (uint32_t i = 0; i < mPrt->mPrintDocList.Length(); i++) {
-    nsPrintObject* po = mPrt->mPrintDocList.ElementAt(i);
-    NS_ASSERTION(po, "nsPrintObject can't be null!");
-    if (po->mFrameType != eFrameSet && po->mFrameType != eIFrame) {
-      if (po->mShrinkRatio < smallestRatio) {
-        smallestRatio = po->mShrinkRatio;
-        smallestPO = po;
-      }
-    }
-  }
-
-#ifdef EXTENDED_DEBUG_PRINTING
-  if (smallestPO)
-    printf("*PO: %p  Type: %d  %10.3f\n", smallestPO, smallestPO->mFrameType,
-           smallestPO->mShrinkRatio);
-#endif
-  return smallestPO;
 }
 
 
