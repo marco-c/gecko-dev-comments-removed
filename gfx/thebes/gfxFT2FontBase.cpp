@@ -10,6 +10,7 @@
 #include "mozilla/StaticPrefs_gfx.h"
 #include "gfxFontConstants.h"
 #include "gfxFontUtils.h"
+#include "gfxHarfBuzzShaper.h"
 #include <algorithm>
 #include <dlfcn.h>
 
@@ -261,7 +262,7 @@ void gfxFT2FontBase::InitMetrics() {
     if (aspect > 0.0) {
       
       
-      mHarfBuzzShaper = nullptr;
+      delete mHarfBuzzShaper.exchange(nullptr);
       mAdjustedSize = mStyle.GetAdjustedSize(aspect);
       
       

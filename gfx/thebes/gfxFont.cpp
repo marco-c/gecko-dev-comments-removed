@@ -877,16 +877,11 @@ gfxFont::~gfxFont() {
 
   
   
-  auto* verticalMetrics = mVerticalMetrics.exchange(nullptr);
-  delete verticalMetrics;
-  auto* hbShaper = mHarfBuzzShaper.exchange(nullptr);
-  delete hbShaper;
-  auto* grShaper = mGraphiteShaper.exchange(nullptr);
-  delete grShaper;
-  auto* mathTable = mMathTable.exchange(nullptr);
-  delete mathTable;
-  auto* nonAAfont = mNonAAFont.exchange(nullptr);
-  delete nonAAfont;
+  delete mVerticalMetrics.exchange(nullptr);
+  delete mHarfBuzzShaper.exchange(nullptr);
+  delete mGraphiteShaper.exchange(nullptr);
+  delete mMathTable.exchange(nullptr);
+  delete mNonAAFont.exchange(nullptr);
 
   if (auto* scaledFont = mAzureScaledFont.exchange(nullptr)) {
     scaledFont->Release();
@@ -1494,10 +1489,8 @@ bool gfxFont::SupportsSubSuperscript(uint32_t aSubSuperscript,
   }
 
   
-  {
-    if (mGraphiteShaper && gfxPlatform::GetPlatform()->UseGraphiteShaping()) {
-      return true;
-    }
+  if (mGraphiteShaper && gfxPlatform::GetPlatform()->UseGraphiteShaping()) {
+    return true;
   }
 
   gfxHarfBuzzShaper* shaper = GetHarfBuzzShaper();

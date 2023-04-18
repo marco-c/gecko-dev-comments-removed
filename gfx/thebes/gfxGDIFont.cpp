@@ -15,6 +15,7 @@
 #include "mozilla/Preferences.h"
 #include "nsUnicodeProperties.h"
 #include "gfxFontConstants.h"
+#include "gfxHarfBuzzShaper.h"
 #include "gfxTextRun.h"
 
 #include "cairo-win32.h"
@@ -169,7 +170,7 @@ void gfxGDIFont::Initialize() {
           if (aspect > 0.0) {
             
             
-            mHarfBuzzShaper = nullptr;
+            delete mHarfBuzzShaper.exchange(nullptr);
             mAdjustedSize = mStyle.GetAdjustedSize(aspect);
           }
         }

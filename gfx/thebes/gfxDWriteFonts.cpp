@@ -8,6 +8,7 @@
 #include <algorithm>
 #include "gfxDWriteFontList.h"
 #include "gfxContext.h"
+#include "gfxHarfBuzzShaper.h"
 #include "gfxTextRun.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DWriteSettings.h"
@@ -349,7 +350,7 @@ void gfxDWriteFont::ComputeMetrics(AntialiasOption anAAOption) {
     if (aspect > 0.0) {
       
       
-      mHarfBuzzShaper = nullptr;
+      delete mHarfBuzzShaper.exchange(nullptr);
       mAdjustedSize = mStyle.GetAdjustedSize(aspect);
     }
   }
