@@ -1,6 +1,10 @@
 
 
 
+const { TelemetryTestUtils } = ChromeUtils.import(
+  "resource://testing-common/TelemetryTestUtils.jsm"
+);
+
 const PREF_DFPI_ENABLED_BY_DEFAULT =
   "privacy.restrict3rdpartystorage.rollout.enabledByDefault";
 const COOKIE_BEHAVIOR_PREF = "network.cookie.cookieBehavior";
@@ -33,13 +37,32 @@ function testSearchPrefState(optIn) {
   let expectedPrefs = optIn ? SEARCH_PREFS_OPT_IN : SEARCH_PREFS_OPT_OUT;
 
   expectedPrefs.forEach(([key, value]) => {
-    ok(Services.prefs.prefHasUserValue(key));
+    ok(
+      Services.prefs.prefHasUserValue(key),
+      `Pref '${key}' should have user value.'`
+    );
     is(
       Services.prefs.getStringPref(key),
       value,
-      `Pref '${key}' is set by the action`
+      `Pref '${key}' should have correct value.`
     );
   });
+}
+
+function testTelemetryState(optIn) {
+  let expectedValue;
+  if (optIn == null) {
+    expectedValue = 2;
+  } else {
+    expectedValue = optIn ? 1 : 0;
+  }
+
+  TelemetryTestUtils.assertScalar(
+    TelemetryTestUtils.getProcessScalars("parent"),
+    "privacy.dfpi_rollout_enabledByDefault",
+    expectedValue,
+    "Scalar should have correct value"
+  );
 }
 
 
@@ -50,19 +73,8 @@ add_task(async function testdFPIRolloutPref() {
     Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER
   );
 
-  Services.prefs.setBoolPref(PREF_DFPI_ENABLED_BY_DEFAULT, false);
-  is(
-    defaultPrefs.getIntPref(COOKIE_BEHAVIOR_PREF),
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER
-  );
-  testSearchPrefState(false);
-
-  Services.prefs.setBoolPref(PREF_DFPI_ENABLED_BY_DEFAULT, true);
-  is(
-    defaultPrefs.getIntPref(COOKIE_BEHAVIOR_PREF),
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
-  );
-  testSearchPrefState(true);
+  
+  testTelemetryState(null);
 
   Services.prefs.setBoolPref(PREF_DFPI_ENABLED_BY_DEFAULT, false);
   is(
@@ -70,6 +82,7 @@ add_task(async function testdFPIRolloutPref() {
     Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER
   );
   testSearchPrefState(false);
+  testTelemetryState(false);
 
   Services.prefs.setBoolPref(PREF_DFPI_ENABLED_BY_DEFAULT, true);
   is(
@@ -77,4 +90,21 @@ add_task(async function testdFPIRolloutPref() {
     Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
   );
   testSearchPrefState(true);
+  testTelemetryState(true);
+
+  Services.prefs.setBoolPref(PREF_DFPI_ENABLED_BY_DEFAULT, false);
+  is(
+    defaultPrefs.getIntPref(COOKIE_BEHAVIOR_PREF),
+    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER
+  );
+  testSearchPrefState(false);
+  testTelemetryState(false);
+
+  Services.prefs.setBoolPref(PREF_DFPI_ENABLED_BY_DEFAULT, true);
+  is(
+    defaultPrefs.getIntPref(COOKIE_BEHAVIOR_PREF),
+    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
+  );
+  testSearchPrefState(true);
+  testTelemetryState(true);
 });
