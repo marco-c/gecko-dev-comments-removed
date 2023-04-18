@@ -153,6 +153,33 @@ add_task(async function() {
         browser,
         [testcase.url, testcase.loadType, testcase.iframe],
         async (url, loadType, iframe) => {
+          async function ensureDecodeFinished() {
+            
+            
+            
+            
+            SpecialPowers.snapshotWindowWithOptions(
+              content.window,
+              undefined ,
+              undefined ,
+              
+              
+              {
+                DRAWWINDOW_DRAW_VIEW: true,
+                DRAWWINDOW_USE_WIDGET_LAYERS: true,
+                DRAWWINDOW_DRAW_CARET: true,
+              }
+            );
+
+            
+            
+            await new Promise(r =>
+              content.requestAnimationFrame(() =>
+                content.requestAnimationFrame(r)
+              )
+            );
+          }
+
           try {
             if (loadType == "media") {
               const audio = content.document.createElement("audio");
@@ -188,6 +215,7 @@ add_task(async function() {
               });
               content.document.body.appendChild(object);
               await onloadPromise;
+              await ensureDecodeFinished();
               content.document.body.removeChild(object);
               return;
             }
@@ -199,6 +227,7 @@ add_task(async function() {
               });
               content.document.body.appendChild(embed);
               await onloadPromise;
+              await ensureDecodeFinished();
               content.document.body.removeChild(embed);
               return;
             }
