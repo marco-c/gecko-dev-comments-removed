@@ -743,7 +743,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  void CollectWireframe();
+  bool CollectWireframe();
 
   
   
