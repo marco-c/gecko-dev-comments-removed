@@ -636,7 +636,7 @@ bool BaselineStackBuilder::buildBaselineFrame() {
     
     if (fun_) {
       envChain = fun_->environment();
-    } else if (script_->module()) {
+    } else if (script_->isModule()) {
       envChain = script_->module()->environment();
     } else {
       
