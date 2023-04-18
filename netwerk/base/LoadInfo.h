@@ -350,6 +350,10 @@ class LoadInfo final : public nsILoadInfo {
   nsCOMPtr<nsIURI> mUnstrippedURI;
 };
 
+
+
+already_AddRefed<nsIPrincipal> CreateTruncatedPrincipal(nsIPrincipal*);
+
 }  
 }  
 
