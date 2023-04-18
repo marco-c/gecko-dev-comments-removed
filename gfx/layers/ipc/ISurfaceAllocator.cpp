@@ -20,8 +20,13 @@ mozilla::Atomic<ptrdiff_t> GfxMemoryImageReporter::sAmount(0);
 
 
 uint32_t CompositableForwarder::GetMaxFileDescriptorsPerMessage() {
+#if defined(OS_POSIX)
   static const uint32_t kMaxFileDescriptors =
-      IPC::Message::MAX_DESCRIPTORS_PER_MESSAGE;
+      FileDescriptorSet::MAX_DESCRIPTORS_PER_MESSAGE;
+#else
+  
+  static const uint32_t kMaxFileDescriptors = 250;
+#endif
   return kMaxFileDescriptors;
 }
 
@@ -38,8 +43,13 @@ void HostIPCAllocator::SendPendingAsyncMessages() {
   
   
   
+#if defined(OS_POSIX)
   static const uint32_t kMaxMessageNumber =
-      IPC::Message::MAX_DESCRIPTORS_PER_MESSAGE;
+      FileDescriptorSet::MAX_DESCRIPTORS_PER_MESSAGE;
+#else
+  
+  static const uint32_t kMaxMessageNumber = 250;
+#endif
 
   nsTArray<AsyncParentMessageData> messages;
   messages.SetCapacity(mPendingAsyncMessage.size());

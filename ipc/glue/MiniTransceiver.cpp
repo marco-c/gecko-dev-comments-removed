@@ -38,18 +38,18 @@ namespace {
 
 
 
-static void InitMsgHdr(msghdr* aHdr, int aIOVSize, size_t aMaxNumFds) {
+static void InitMsgHdr(msghdr* aHdr, int aIOVSize, int aMaxNumFds) {
   aHdr->msg_name = nullptr;
   aHdr->msg_namelen = 0;
   aHdr->msg_flags = 0;
 
   
-  auto* iov = new iovec[aIOVSize];
+  auto iov = new iovec[aIOVSize];
   aHdr->msg_iov = iov;
   aHdr->msg_iovlen = aIOVSize;
 
   
-  auto* cbuf = new char[CMSG_SPACE(sizeof(int) * aMaxNumFds)];
+  auto cbuf = new char[CMSG_SPACE(sizeof(int) * aMaxNumFds)];
   aHdr->msg_control = cbuf;
   aHdr->msg_controllen = CMSG_SPACE(sizeof(int) * aMaxNumFds);
 }
@@ -66,20 +66,18 @@ static void DeinitMsgHdr(msghdr* aHdr) {
 
 void MiniTransceiver::PrepareFDs(msghdr* aHdr, IPC::Message& aMsg) {
   
-  size_t num_fds = aMsg.attached_handles_.Length();
+  int num_fds = aMsg.file_descriptor_set()->size();
 
   cmsghdr* cmsg = CMSG_FIRSTHDR(aHdr);
   cmsg->cmsg_level = SOL_SOCKET;
   cmsg->cmsg_type = SCM_RIGHTS;
   cmsg->cmsg_len = CMSG_LEN(sizeof(int) * num_fds);
-  for (size_t i = 0; i < num_fds; ++i) {
-    reinterpret_cast<int*>(CMSG_DATA(cmsg))[i] =
-        aMsg.attached_handles_[i].get();
-  }
+  aMsg.file_descriptor_set()->GetDescriptors(
+      reinterpret_cast<int*>(CMSG_DATA(cmsg)));
 
   
   
-  aMsg.header()->num_handles = num_fds;
+  aMsg.header()->num_fds = num_fds;
 }
 
 size_t MiniTransceiver::PrepareBuffers(msghdr* aHdr, IPC::Message& aMsg) {
@@ -113,10 +111,11 @@ bool MiniTransceiver::Send(IPC::Message& aMsg) {
   mState = STATE_SENDING;
 #endif
 
-  auto clean_fdset = MakeScopeExit([&] { aMsg.attached_handles_.Clear(); });
+  auto clean_fdset =
+      MakeScopeExit([&] { aMsg.file_descriptor_set()->CommitAll(); });
 
-  size_t num_fds = aMsg.attached_handles_.Length();
-  msghdr hdr{};
+  int num_fds = aMsg.file_descriptor_set()->size();
+  msghdr hdr;
   InitMsgHdr(&hdr, kMaxIOVecSize, num_fds);
 
   UniquePtr<msghdr, decltype(&DeinitMsgHdr)> uniq(&hdr, &DeinitMsgHdr);
@@ -228,11 +227,7 @@ bool MiniTransceiver::Recv(IPC::Message& aMsg) {
 
   
   UniquePtr<IPC::Message> msg = MakeUnique<IPC::Message>(databuf.get(), msgsz);
-  nsTArray<UniqueFileHandle> handles(num_all_fds);
-  for (unsigned i = 0; i < num_all_fds; ++i) {
-    handles.AppendElement(UniqueFileHandle(all_fds[i]));
-  }
-  msg->SetAttachedFileHandles(std::move(handles));
+  msg->file_descriptor_set()->SetDescriptors(all_fds, num_all_fds);
 
   if (mDataBufClear == DataBufferClear::AfterReceiving) {
     
@@ -240,7 +235,7 @@ bool MiniTransceiver::Recv(IPC::Message& aMsg) {
     memset(databuf.get(), 0, msgsz);
   }
 
-  MOZ_ASSERT(msg->header()->num_handles == msg->attached_handles_.Length(),
+  MOZ_ASSERT(msg->header()->num_fds == msg->file_descriptor_set()->size(),
              "The number of file descriptors in the header is different from"
              " the number actually received");
 

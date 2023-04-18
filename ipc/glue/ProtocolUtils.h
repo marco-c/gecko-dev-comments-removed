@@ -639,6 +639,16 @@ MOZ_NEVER_INLINE void ArrayLengthReadError(const char* aElementName);
 
 MOZ_NEVER_INLINE void SentinelReadError(const char* aElementName);
 
+#if defined(XP_WIN)
+
+
+
+
+bool DuplicateHandle(HANDLE aSourceHandle, DWORD aTargetProcessId,
+                     HANDLE* aTargetHandle, DWORD aDesiredAccess,
+                     DWORD aOptions);
+#endif
+
 
 
 

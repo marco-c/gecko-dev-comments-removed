@@ -12,6 +12,7 @@
 #if defined(OS_POSIX)
 #  include <sys/types.h>
 #  include <semaphore.h>
+#  include "base/file_descriptor_posix.h"
 #endif
 #include <string>
 
@@ -24,7 +25,11 @@ namespace base {
 
 
 
-typedef mozilla::UniqueFileHandle SharedMemoryHandle;
+#if defined(OS_WIN)
+typedef HANDLE SharedMemoryHandle;
+#elif defined(OS_POSIX)
+typedef FileDescriptor SharedMemoryHandle;
+#endif
 
 
 
@@ -37,7 +42,7 @@ class SharedMemory {
   
   SharedMemory(SharedMemoryHandle init_handle, bool read_only)
       : SharedMemory() {
-    SetHandle(std::move(init_handle), read_only);
+    SetHandle(init_handle, read_only);
   }
 
   
@@ -96,16 +101,12 @@ class SharedMemory {
   
   
   
+  
   mozilla::UniqueFileHandle TakeHandle() {
     mozilla::UniqueFileHandle handle = std::move(mapped_file_);
     Close();
     return handle;
   }
-
-  
-  
-  
-  mozilla::UniqueFileHandle CloneHandle();
 
   
   
@@ -149,6 +150,27 @@ class SharedMemory {
   
   static void* FindFreeAddressSpace(size_t size);
 
+  
+  
+  
+  
+  
+  
+  bool ShareToProcess(base::ProcessId target_pid,
+                      SharedMemoryHandle* new_handle) {
+    return ShareToProcessCommon(target_pid, new_handle, false);
+  }
+
+  
+  
+  
+  
+  
+  
+  bool GiveToProcess(ProcessId target_pid, SharedMemoryHandle* new_handle) {
+    return ShareToProcessCommon(target_pid, new_handle, true);
+  }
+
 #ifdef OS_POSIX
   
   
@@ -158,6 +180,9 @@ class SharedMemory {
 #endif
 
  private:
+  bool ShareToProcessCommon(ProcessId target_pid,
+                            SharedMemoryHandle* new_handle, bool close_self);
+
   bool CreateInternal(size_t size, bool freezeable);
 
   

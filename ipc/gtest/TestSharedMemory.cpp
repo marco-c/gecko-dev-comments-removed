@@ -46,10 +46,11 @@ TEST(IPCSharedMemory, FreezeAndMapRW)
   ASSERT_FALSE(shm.memory());
 
   
-  auto handle = shm.TakeHandle();
+  auto handle = base::SharedMemory::NULLHandle();
+  ASSERT_TRUE(shm.GiveToProcess(base::GetCurrentProcId(), &handle));
   ASSERT_TRUE(shm.IsHandleValid(handle));
   ASSERT_FALSE(shm.IsValid());
-  ASSERT_TRUE(shm.SetHandle(std::move(handle),  false));
+  ASSERT_TRUE(shm.SetHandle(handle,  false));
   ASSERT_TRUE(shm.IsValid());
 
   
@@ -102,10 +103,11 @@ TEST(IPCSharedMemory, Reprotect)
   *mem = 'A';
 
   
-  auto handle = shm.TakeHandle();
+  auto handle = base::SharedMemory::NULLHandle();
+  ASSERT_TRUE(shm.GiveToProcess(base::GetCurrentProcId(), &handle));
   ASSERT_TRUE(shm.IsHandleValid(handle));
   ASSERT_FALSE(shm.IsValid());
-  ASSERT_TRUE(shm.SetHandle(std::move(handle),  true));
+  ASSERT_TRUE(shm.SetHandle(handle,  true));
   ASSERT_TRUE(shm.IsValid());
 
   
@@ -139,14 +141,14 @@ TEST(IPCSharedMemory, WinUnfreeze)
   ASSERT_FALSE(shm.memory());
 
   
-  auto handle = shm.TakeHandle();
+  auto handle = base::SharedMemory::NULLHandle();
+  ASSERT_TRUE(shm.GiveToProcess(base::GetCurrentProcId(), &handle));
   ASSERT_TRUE(shm.IsHandleValid(handle));
   ASSERT_FALSE(shm.IsValid());
 
   
-  HANDLE newHandle = INVALID_HANDLE_VALUE;
   bool unfroze = ::DuplicateHandle(
-      GetCurrentProcess(), handle.release(), GetCurrentProcess(), &newHandle,
+      GetCurrentProcess(), handle, GetCurrentProcess(), &handle,
       FILE_MAP_ALL_ACCESS, false, DUPLICATE_CLOSE_SOURCE);
   ASSERT_FALSE(unfroze);
 }
@@ -233,10 +235,11 @@ TEST(IPCSharedMemory, ROCopyAndMapRW)
   ASSERT_TRUE(shmRO.IsValid());
 
   
-  auto handle = shmRO.TakeHandle();
+  auto handle = base::SharedMemory::NULLHandle();
+  ASSERT_TRUE(shmRO.GiveToProcess(base::GetCurrentProcId(), &handle));
   ASSERT_TRUE(shmRO.IsHandleValid(handle));
   ASSERT_FALSE(shmRO.IsValid());
-  ASSERT_TRUE(shmRO.SetHandle(std::move(handle),  false));
+  ASSERT_TRUE(shmRO.SetHandle(handle,  false));
   ASSERT_TRUE(shmRO.IsValid());
 
   

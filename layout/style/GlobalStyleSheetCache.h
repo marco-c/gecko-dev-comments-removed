@@ -15,7 +15,6 @@
 #include "mozilla/PreferenceSheet.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/UserAgentStyleSheetID.h"
 #include "mozilla/css/Loader.h"
 
 class nsIFile;
@@ -65,7 +64,7 @@ class GlobalStyleSheetCache final : public nsIObserver,
   
   
   
-  static void SetSharedMemory(base::SharedMemoryHandle aHandle,
+  static void SetSharedMemory(const base::SharedMemoryHandle& aHandle,
                               uintptr_t aAddress);
 
   

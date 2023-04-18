@@ -15,7 +15,6 @@
 #include "mojo/core/ports/port_ref.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/ipc/ScopedPort.h"
 #include "nsTArray.h"
 
@@ -23,11 +22,17 @@
 #  include "mozilla/ipc/Faulty.h"
 #endif
 
+namespace base {
+struct FileDescriptor;
+}
+
 namespace mozilla {
 namespace ipc {
 class MiniTransceiver;
 }
 }  
+
+class FileDescriptorSet;
 
 namespace IPC {
 
@@ -89,10 +94,6 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
     REPLY = 1,
   };
 
-  
-  
-  enum { MAX_DESCRIPTORS_PER_MESSAGE = 200 };
-
   class HeaderFlags {
     friend class Message;
 
@@ -106,7 +107,6 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
       COMPRESS_BIT = 0x0200,
       COMPRESSALL_BIT = 0x0400,
       CONSTRUCTOR_BIT = 0x0800,
-      RELAY_BIT = 0x1000,
     };
 
    public:
@@ -147,20 +147,12 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
     bool IsReply() const { return (mFlags & REPLY_BIT) != 0; }
 
     bool IsReplyError() const { return (mFlags & REPLY_ERROR_BIT) != 0; }
-    bool IsRelay() const { return (mFlags & RELAY_BIT) != 0; }
 
    private:
     void SetSync() { mFlags |= SYNC_BIT; }
     void SetInterrupt() { mFlags |= INTERRUPT_BIT; }
     void SetReply() { mFlags |= REPLY_BIT; }
     void SetReplyError() { mFlags |= REPLY_ERROR_BIT; }
-    void SetRelay(bool relay) {
-      if (relay) {
-        mFlags |= RELAY_BIT;
-      } else {
-        mFlags &= ~RELAY_BIT;
-      }
-    }
 
     uint32_t mFlags;
   };
@@ -254,10 +246,9 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
 
   const mozilla::TimeStamp& create_time() const { return create_time_; }
 
-  uint32_t num_handles() const;
-
-  bool is_relay() const { return header()->flags.IsRelay(); }
-  void set_relay(bool new_relay) { header()->flags.SetRelay(new_relay); }
+#if defined(OS_POSIX)
+  uint32_t num_fds() const;
+#endif
 
   template <class T>
   static bool Dispatch(const Message* msg, T* obj, void (T::*func)()) {
@@ -309,21 +300,21 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
     return Pickle::MessageSize(HeaderSize(), range_start, range_end);
   }
 
-  bool WriteFileHandle(mozilla::UniqueFileHandle handle);
+#if defined(OS_POSIX)
+  
+  
 
   
+  bool WriteFileDescriptor(const base::FileDescriptor& descriptor);
   
-  bool ConsumeFileHandle(PickleIterator* iter,
-                         mozilla::UniqueFileHandle* handle) const;
+  
+  bool ReadFileDescriptor(PickleIterator* iter,
+                          base::FileDescriptor* descriptor) const;
 
-  
-  
-  
-  void SetAttachedFileHandles(nsTArray<mozilla::UniqueFileHandle> handles);
-
-#if defined(OS_MACOSX)
+#  if defined(OS_MACOSX)
   void set_fd_cookie(uint32_t cookie) { header()->cookie = cookie; }
   uint32_t fd_cookie() const { return header()->cookie; }
+#  endif
 #endif
 
   void WritePort(mozilla::ipc::ScopedPort port);
@@ -353,12 +344,14 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
 #endif
 
   struct Header : Pickle::Header {
-    int32_t routing;       
-    msgid_t type;          
-    HeaderFlags flags;     
-    uint32_t num_handles;  
-#if defined(OS_MACOSX)
+    int32_t routing;    
+    msgid_t type;       
+    HeaderFlags flags;  
+#if defined(OS_POSIX)
+    uint32_t num_fds;  
+#  if defined(OS_MACOSX)
     uint32_t cookie;  
+#  endif
 #endif
     union {
       
@@ -379,11 +372,21 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   Header* header() { return headerT<Header>(); }
   const Header* header() const { return headerT<Header>(); }
 
+#if defined(OS_POSIX)
   
+  RefPtr<FileDescriptorSet> file_descriptor_set_;
+
   
-  
-  
-  mutable nsTArray<mozilla::UniqueFileHandle> attached_handles_;
+  void EnsureFileDescriptorSet();
+
+  FileDescriptorSet* file_descriptor_set() {
+    EnsureFileDescriptorSet();
+    return file_descriptor_set_.get();
+  }
+  const FileDescriptorSet* file_descriptor_set() const {
+    return file_descriptor_set_.get();
+  }
+#endif
 
   
   

@@ -21,6 +21,9 @@
 #include "build/build_config.h"
 #include "chrome/common/ipc_message.h"
 
+#if defined(OS_POSIX)
+#  include "chrome/common/file_descriptor_set_posix.h"
+#endif
 #if defined(OS_WIN)
 #  include <windows.h>
 #endif
@@ -383,6 +386,12 @@ struct ParamTraitsWindows<HWND> {
 template <class P>
 struct ParamTraitsIPC : ParamTraitsWindows<P> {};
 
+#if defined(OS_POSIX)
+
+
+
+
+
 
 
 
@@ -394,31 +403,39 @@ struct ParamTraitsIPC : ParamTraitsWindows<P> {};
 
 
 template <>
-struct ParamTraitsIPC<mozilla::UniqueFileHandle> {
-  typedef mozilla::UniqueFileHandle param_type;
-  static void Write(Message* m, param_type&& p) {
-    const bool valid = p != nullptr;
+struct ParamTraitsIPC<base::FileDescriptor> {
+  typedef base::FileDescriptor param_type;
+  static void Write(Message* m, const param_type& p) {
+    const bool valid = p.fd >= 0;
     WriteParam(m, valid);
+
     if (valid) {
-      if (!m->WriteFileHandle(std::move(p))) {
-        NOTREACHED() << "Too many file handles for one message!";
+      if (!m->WriteFileDescriptor(p)) {
+        NOTREACHED() << "Too many file descriptors for one message!";
       }
     }
   }
   static bool Read(const Message* m, PickleIterator* iter, param_type* r) {
     bool valid;
-    if (!ReadParam(m, iter, &valid)) {
-      return false;
-    }
+    if (!ReadParam(m, iter, &valid)) return false;
 
     if (!valid) {
-      *r = nullptr;
+      r->fd = -1;
+      r->auto_close = false;
       return true;
     }
 
-    return m->ConsumeFileHandle(iter, r);
+    return m->ReadFileDescriptor(iter, r);
+  }
+  static void Log(const param_type& p, std::wstring* l) {
+    if (p.auto_close) {
+      l->append(StringPrintf(L"FD(%d auto-close)", p.fd));
+    } else {
+      l->append(StringPrintf(L"FD(%d)", p.fd));
+    }
   }
 };
+#endif  
 
 
 

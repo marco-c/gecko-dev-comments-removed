@@ -32,15 +32,13 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   ChannelImpl(const ChannelId& channel_id, HANDLE server_pipe, Mode mode,
               Listener* listener);
   ~ChannelImpl() {
-    if (pipe_ != INVALID_HANDLE_VALUE ||
-        other_process_ != INVALID_HANDLE_VALUE) {
+    if (pipe_ != INVALID_HANDLE_VALUE) {
       Close();
     }
   }
   bool Connect();
   void Close();
   HANDLE GetServerPipeHandle() const;
-  void StartAcceptingHandles(Mode mode);
   Listener* set_listener(Listener* listener) {
     Listener* old = listener_;
     listener_ = listener;
@@ -72,11 +70,6 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
                                DWORD bytes_written);
 
   
-  
-  bool AcceptHandles(Message& msg);
-  bool TransferHandles(Message& msg);
-
-  
   virtual void OnIOCompleted(MessageLoopForIO::IOContext* context,
                              DWORD bytes_transfered, DWORD error);
 
@@ -85,15 +78,15 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
     explicit State(ChannelImpl* channel);
     ~State();
     MessageLoopForIO::IOContext context;
-    bool is_pending = false;
+    bool is_pending;
   };
 
   State input_state_;
   State output_state_;
 
-  HANDLE pipe_ = INVALID_HANDLE_VALUE;
+  HANDLE pipe_;
 
-  Listener* listener_ = nullptr;
+  Listener* listener_;
 
   
   mozilla::Queue<mozilla::UniquePtr<Message>, 64> output_queue_;
@@ -105,7 +98,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
 
   
   mozilla::UniquePtr<char[]> input_buf_;
-  size_t input_buf_offset_ = 0;
+  size_t input_buf_offset_;
 
   
   
@@ -114,15 +107,15 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   
   
   
-  bool waiting_connect_ = false;
+  bool waiting_connect_;
 
   
   
   
-  bool processing_incoming_ = false;
+  bool processing_incoming_;
 
   
-  std::atomic<bool> closed_ = false;
+  std::atomic<bool> closed_;
 
   
   
@@ -132,7 +125,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   
   
   
-  std::atomic<size_t> output_queue_length_ = 0;
+  std::atomic<size_t> output_queue_length_;
 
   ScopedRunnableMethodFactory<ChannelImpl> factory_;
 
@@ -140,21 +133,11 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   
   
   
-  int32_t shared_secret_ = 0;
+  int32_t shared_secret_;
 
   
   
-  bool waiting_for_shared_secret_ = false;
-
-  
-  
-  
-  bool accept_handles_ = false;
-  bool privileged_ = false;
-
-  
-  
-  HANDLE other_process_ = INVALID_HANDLE_VALUE;
+  bool waiting_for_shared_secret_;
 
 #ifdef DEBUG
   mozilla::UniquePtr<nsAutoOwningThread> _mOwningThread;

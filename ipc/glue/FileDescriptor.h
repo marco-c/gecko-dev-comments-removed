@@ -11,8 +11,16 @@
 #include "base/process.h"
 #include "mozilla/UniquePtrExtensions.h"
 
+#ifdef XP_UNIX
+#  include "base/file_descriptor_posix.h"
+#endif
+
 namespace mozilla {
 namespace ipc {
+
+
+
+
 
 
 
@@ -28,6 +36,12 @@ class FileDescriptor {
 
   using UniquePlatformHandle = mozilla::UniqueFileHandle;
   using PlatformHandleType = UniquePlatformHandle::ElementType;
+
+#ifdef XP_WIN
+  typedef PlatformHandleType PickleType;
+#else
+  typedef base::FileDescriptor PickleType;
+#endif
 
   
   struct IPDLPrivate {};
@@ -46,11 +60,20 @@ class FileDescriptor {
 
   explicit FileDescriptor(UniquePlatformHandle&& aHandle);
 
+  
+  
+  FileDescriptor(const IPDLPrivate&, const PickleType& aPickle);
+
   ~FileDescriptor();
 
   FileDescriptor& operator=(const FileDescriptor& aOther);
 
   FileDescriptor& operator=(FileDescriptor&& aOther);
+
+  
+  
+  
+  PickleType ShareTo(const IPDLPrivate&, ProcessId aTargetPid) const;
 
   
   

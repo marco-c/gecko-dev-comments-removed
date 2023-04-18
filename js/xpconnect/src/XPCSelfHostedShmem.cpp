@@ -71,7 +71,7 @@ bool xpc::SelfHostedShmem::InitFromChild(::base::SharedMemoryHandle aHandle,
   MOZ_ASSERT(!mLen, "Shouldn't call this more than once");
 
   auto shm = mozilla::MakeUnique<base::SharedMemory>();
-  if (NS_WARN_IF(!shm->SetHandle(std::move(aHandle),  true))) {
+  if (NS_WARN_IF(!shm->SetHandle(aHandle,  true))) {
     return false;
   }
 
