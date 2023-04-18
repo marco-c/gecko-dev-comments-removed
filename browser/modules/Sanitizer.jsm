@@ -364,21 +364,41 @@ var Sanitizer = {
     },
 
     cookies: {
-      async clear(range) {
+      async clear(range, { progress, principalsForShutdownClearing }) {
         let refObj = {};
         TelemetryStopwatch.start("FX_SANITIZE_COOKIES_2", refObj);
-        await clearData(
-          range,
-          Ci.nsIClearDataService.CLEAR_COOKIES |
-            Ci.nsIClearDataService.CLEAR_MEDIA_DEVICES
-        );
+        
+        
+        if (progress && principalsForShutdownClearing) {
+          await maybeSanitizeSessionPrincipals(
+            progress,
+            principalsForShutdownClearing,
+            Ci.nsIClearDataService.CLEAR_COOKIES
+          );
+        } else {
+          
+          await clearData(range, Ci.nsIClearDataService.CLEAR_COOKIES);
+        }
+        await clearData(range, Ci.nsIClearDataService.CLEAR_MEDIA_DEVICES);
         TelemetryStopwatch.finish("FX_SANITIZE_COOKIES_2", refObj);
       },
     },
 
     offlineApps: {
-      async clear(range) {
-        await clearData(range, Ci.nsIClearDataService.CLEAR_DOM_STORAGES);
+      async clear(range, { progress, principalsForShutdownClearing }) {
+        
+        
+        if (progress && principalsForShutdownClearing) {
+          
+          await maybeSanitizeSessionPrincipals(
+            progress,
+            principalsForShutdownClearing,
+            Ci.nsIClearDataService.CLEAR_DOM_STORAGES
+          );
+        } else {
+          
+          await clearData(range, Ci.nsIClearDataService.CLEAR_DOM_STORAGES);
+        }
       },
     },
 
@@ -726,6 +746,13 @@ async function sanitizeInternal(items, aItemsToClear, progress, options = {}) {
   };
 
   
+  if (progress.isShutdown) {
+    let principalsCollector = new PrincipalsCollector();
+    let principals = await principalsCollector.getAllPrincipals(progress);
+    options.principalsForShutdownClearing = principals;
+    options.progress = progress;
+  }
+  
   
   
   let handles = [];
@@ -858,7 +885,14 @@ async function sanitizeOnShutdown(progress) {
     progress.advancement = "session-only";
 
     let principals = await principalsCollector.getAllPrincipals(progress);
-    await maybeSanitizeSessionPrincipals(progress, principals);
+    await maybeSanitizeSessionPrincipals(
+      progress,
+      principals,
+      Ci.nsIClearDataService.CLEAR_ALL_CACHES |
+        Ci.nsIClearDataService.CLEAR_COOKIES |
+        Ci.nsIClearDataService.CLEAR_DOM_STORAGES |
+        Ci.nsIClearDataService.CLEAR_EME
+    );
 
     progress.advancement = "done";
     return;
@@ -893,7 +927,14 @@ async function sanitizeOnShutdown(progress) {
       principals,
       permission.principal.host
     );
-    await maybeSanitizeSessionPrincipals(progress, selectedPrincipals);
+    await maybeSanitizeSessionPrincipals(
+      progress,
+      selectedPrincipals,
+      Ci.nsIClearDataService.CLEAR_ALL_CACHES |
+        Ci.nsIClearDataService.CLEAR_COOKIES |
+        Ci.nsIClearDataService.CLEAR_DOM_STORAGES |
+        Ci.nsIClearDataService.CLEAR_EME
+    );
   }
   progress.sanitizationPrefs.session_permission_exceptions = exceptions;
   progress.advancement = "done";
@@ -908,7 +949,12 @@ function extractMatchingPrincipals(principals, matchHost) {
 
 
 
-async function maybeSanitizeSessionPrincipals(progress, principals) {
+
+
+
+
+
+async function maybeSanitizeSessionPrincipals(progress, principals, flags) {
   log("Sanitizing " + principals.length + " principals");
 
   let promises = [];
@@ -919,7 +965,7 @@ async function maybeSanitizeSessionPrincipals(progress, principals) {
     progress.step = "principal-checked:" + cookieAllowed;
 
     if (!cookieAllowed) {
-      promises.push(sanitizeSessionPrincipal(progress, principal));
+      promises.push(sanitizeSessionPrincipal(progress, principal, flags));
     }
   });
 
@@ -974,7 +1020,7 @@ function cookiesAllowedForDomainOrSubDomain(principal) {
   return false;
 }
 
-async function sanitizeSessionPrincipal(progress, principal) {
+async function sanitizeSessionPrincipal(progress, principal, flags) {
   log("Sanitizing principal: " + principal.asciispec);
 
   await new Promise(resolve => {
@@ -982,10 +1028,7 @@ async function sanitizeSessionPrincipal(progress, principal) {
     Services.clearData.deleteDataFromPrincipal(
       principal,
       true ,
-      Ci.nsIClearDataService.CLEAR_ALL_CACHES |
-        Ci.nsIClearDataService.CLEAR_COOKIES |
-        Ci.nsIClearDataService.CLEAR_DOM_STORAGES |
-        Ci.nsIClearDataService.CLEAR_EME,
+      flags,
       resolve
     );
   });
