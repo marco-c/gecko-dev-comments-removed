@@ -15,6 +15,7 @@ use euclid::default::{Transform3D, Vector3D};
 
 
 #[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToAnimatedZero)]
+#[repr(C)]
 pub struct RGBA {
     
     pub red: f32,
@@ -179,7 +180,7 @@ impl Color {
         let left_bg = S::from(left_color.scaled_rgba());
         let right_bg = S::from(right_color.scaled_rgba());
 
-        let color = S::lerp(left_bg, left_weight, right_bg, right_weight, hue_interpolation);
+        let color = S::lerp(&left_bg, left_weight, &right_bg, right_weight, hue_interpolation);
         let rgba: RGBA = color.into();
         let rgba = if !rgba.in_gamut() {
             
@@ -367,48 +368,175 @@ trait ModelledColor: Clone + Copy + From<RGBA> + Into<RGBA> {
     
     
     fn lerp(
-        left_bg: Self,
+        left_bg: &Self,
         left_weight: f32,
-        right_bg: Self,
+        right_bg: &Self,
         right_weight: f32,
         hue_interpolation: HueInterpolationMethod,
     ) -> Self;
 }
 
-impl ModelledColor for RGBA {
-    fn lerp(
-        left_bg: Self,
-        left_weight: f32,
-        right_bg: Self,
-        right_weight: f32,
-        _: HueInterpolationMethod,
-    ) -> Self {
-        
-        
-        let mut red = 0.;
-        let mut green = 0.;
-        let mut blue = 0.;
+fn interpolate_premultiplied_component(
+    left: f32,
+    left_weight: f32,
+    left_alpha: f32,
+    right: f32,
+    right_weight: f32,
+    right_alpha: f32,
+    inverse_of_result_alpha: f32,
+) -> f32 {
+    (left * left_weight * left_alpha + right * right_weight * right_alpha) * inverse_of_result_alpha
+}
 
-        
-        
-        for &(bg, weight) in &[(left_bg, left_weight), (right_bg, right_weight)] {
-            red += bg.red * bg.alpha * weight;
-            green += bg.green * bg.alpha * weight;
-            blue += bg.blue * bg.alpha * weight;
-        }
+fn adjust_hue(left: &mut f32, right: &mut f32, hue_interpolation: HueInterpolationMethod) {
+    use std::f32::consts::{PI, TAU};
 
-        let alpha = (left_bg.alpha * left_weight + right_bg.alpha * right_weight).min(1.);
-        if alpha <= 0. {
-            RGBA::transparent()
+    
+    
+    
+    
+    
+    if left.is_nan() {
+        if right.is_nan() {
+            *left = 0.;
+            *right = 0.;
         } else {
-            let inv = 1. / alpha;
-            RGBA::new(red * inv, green * inv, blue * inv, alpha)
+            *left = *right;
+        }
+    } else if right.is_nan() {
+        *right = *left;
+    }
+
+    if hue_interpolation == HueInterpolationMethod::Specified {
+        
+        
+        return;
+    }
+
+    
+    fn normalize(v: &mut f32) {
+        while *v < 0. {
+            *v += TAU;
+        }
+        while *v > TAU {
+            *v  -= TAU;
+        }
+    }
+
+    normalize(left);
+    normalize(right);
+
+    match hue_interpolation {
+        
+        HueInterpolationMethod::Shorter => {
+            let delta = *right - *left;
+
+            if delta > PI {
+                *left += PI;
+            } else if delta < -1. * PI {
+                *right += PI;
+            }
+        },
+        
+        HueInterpolationMethod::Longer => {
+            let delta = *right - *left;
+            if 0. < delta && delta < PI {
+                *left += TAU;
+            } else if -1. * PI < delta && delta < 0. {
+                *right += TAU;
+            }
+        },
+        
+        HueInterpolationMethod::Increasing => {
+            if *right < *left {
+                *right += TAU;
+            }
+        },
+        
+        HueInterpolationMethod::Decreasing => {
+            if *left < *right {
+                *left += TAU;
+            }
+        },
+        HueInterpolationMethod::Specified => unreachable!("Handled above"),
+    }
+}
+
+fn interpolate_hue(
+    mut left: f32,
+    left_weight: f32,
+    mut right: f32,
+    right_weight: f32,
+    hue_interpolation: HueInterpolationMethod,
+) -> f32 {
+    adjust_hue(&mut left, &mut right, hue_interpolation);
+    left * left_weight + right * right_weight
+}
+
+fn interpolate_premultiplied(
+    left: &[f32; 4],
+    left_weight: f32,
+    right: &[f32; 4],
+    right_weight: f32,
+    hue_index: Option<usize>,
+    hue_interpolation: HueInterpolationMethod,
+) -> [f32; 4] {
+    let left_alpha = left[3];
+    let right_alpha = right[3];
+    let result_alpha = (left_alpha * left_weight + right_alpha * right_weight).min(1.);
+    let mut result = [0.; 4];
+    if result_alpha <= 0. {
+        return result;
+    }
+
+    let inverse_of_result_alpha = 1. / result_alpha;
+    for i in 0..3 {
+        let is_hue = hue_index == Some(i);
+        result[i] = if is_hue {
+            interpolate_hue(left[i], left_weight, right[i], right_weight, hue_interpolation)
+        } else {
+            interpolate_premultiplied_component(left[i], left_weight, left_alpha, right[i], right_weight, right_alpha, inverse_of_result_alpha)
+        };
+    }
+    result[3] = result_alpha;
+
+    result
+}
+
+macro_rules! impl_lerp {
+    ($ty:ident, $hue_index:expr) => {
+        // These ensure the transmutes below are sound.
+        const_assert_eq!(std::mem::size_of::<$ty>(), std::mem::size_of::<f32>() * 4);
+        const_assert_eq!(std::mem::align_of::<$ty>(), std::mem::align_of::<f32>());
+        impl ModelledColor for $ty {
+            fn lerp(
+                left: &Self,
+                left_weight: f32,
+                right: &Self,
+                right_weight: f32,
+                hue_interpolation: HueInterpolationMethod,
+            ) -> Self {
+                use std::mem::transmute;
+                unsafe {
+                    transmute::<[f32; 4], Self>(interpolate_premultiplied(
+                        transmute::<&Self, &[f32; 4]>(left),
+                        left_weight,
+                        transmute::<&Self, &[f32; 4]>(right),
+                        right_weight,
+                        $hue_index,
+                        hue_interpolation,
+                    ))
+                }
+            }
         }
     }
 }
 
+impl_lerp!(RGBA, None);
+
 
 #[derive(Clone, Copy, Debug)]
+#[repr(C)]
 pub struct XYZA {
     
     pub x: f32,
@@ -420,58 +548,11 @@ pub struct XYZA {
     pub alpha: f32,
 }
 
-impl XYZA {
-    
-    #[inline]
-    pub fn transparent() -> Self {
-        Self {
-            x: 0.,
-            y: 0.,
-            z: 0.,
-            alpha: 0.,
-        }
-    }
-}
-
-impl ModelledColor for XYZA {
-    fn lerp(
-        left_bg: Self,
-        left_weight: f32,
-        right_bg: Self,
-        right_weight: f32,
-        _: HueInterpolationMethod,
-    ) -> Self {
-        
-        
-        let mut x = 0.;
-        let mut y = 0.;
-        let mut z = 0.;
-
-        
-        
-        for &(bg, weight) in &[(left_bg, left_weight), (right_bg, right_weight)] {
-            x += bg.x * bg.alpha * weight;
-            y += bg.y * bg.alpha * weight;
-            z += bg.z * bg.alpha * weight;
-        }
-
-        let alpha = (left_bg.alpha * left_weight + right_bg.alpha * right_weight).min(1.);
-        if alpha <= 0. {
-            Self::transparent()
-        } else {
-            let inv = 1. / alpha;
-            Self {
-                x: x * inv,
-                y: y * inv,
-                z: z * inv,
-                alpha,
-            }
-        }
-    }
-}
+impl_lerp!(XYZA, None);
 
 
 #[derive(Clone, Copy, Debug)]
+#[repr(C)]
 pub struct LABA {
     
     pub lightness: f32,
@@ -483,55 +564,7 @@ pub struct LABA {
     pub alpha: f32,
 }
 
-impl LABA {
-    
-    #[inline]
-    pub fn transparent() -> Self {
-        Self {
-            lightness: 0.,
-            a: 0.,
-            b: 0.,
-            alpha: 0.,
-        }
-    }
-}
-
-impl ModelledColor for LABA {
-    fn lerp(
-        left_bg: Self,
-        left_weight: f32,
-        right_bg: Self,
-        right_weight: f32,
-        _: HueInterpolationMethod,
-    ) -> Self {
-        
-        
-        let mut lightness = 0.;
-        let mut a = 0.;
-        let mut b = 0.;
-
-        
-        
-        for &(bg, weight) in &[(left_bg, left_weight), (right_bg, right_weight)] {
-            lightness += bg.lightness * bg.alpha * weight;
-            a += bg.a * bg.alpha * weight;
-            b += bg.b * bg.alpha * weight;
-        }
-
-        let alpha = (left_bg.alpha * left_weight + right_bg.alpha * right_weight).min(1.);
-        if alpha <= 0. {
-            Self::transparent()
-        } else {
-            let inv = 1. / alpha;
-            Self {
-                lightness: lightness * inv,
-                a: a * inv,
-                b: b * inv,
-                alpha,
-            }
-        }
-    }
-}
+impl_lerp!(LABA, None);
 
 
 #[derive(Clone, Copy, Debug)]
@@ -546,140 +579,7 @@ pub struct LCHA {
     pub alpha: f32,
 }
 
-impl LCHA {
-    
-    #[inline]
-    pub fn transparent() -> Self {
-        Self {
-            lightness: 0.,
-            chroma: 0.,
-            hue: 0.,
-            alpha: 0.,
-        }
-    }
-}
-
-impl LCHA {
-    fn adjust(left_bg: Self, right_bg: Self, hue_interpolation: HueInterpolationMethod) -> (Self, Self) {
-        use std::f32::consts::{PI, TAU};
-
-        let mut left_bg = left_bg;
-        let mut right_bg = right_bg;
-
-        
-        
-        
-        
-        
-        if left_bg.hue.is_nan() || right_bg.hue.is_nan() {
-            if left_bg.hue.is_nan() && right_bg.hue.is_nan() {
-                left_bg.hue = 0.;
-                right_bg.hue = 0.;
-            } else if left_bg.hue.is_nan() {
-                left_bg.hue = right_bg.hue;
-            } else if right_bg.hue.is_nan() {
-                right_bg.hue = left_bg.hue;
-            }
-        }
-
-        if hue_interpolation != HueInterpolationMethod::Specified {
-            
-            while left_bg.hue < 0. {
-                left_bg.hue += TAU;
-            }
-            while left_bg.hue > TAU {
-                left_bg.hue -= TAU;
-            }
-
-            while right_bg.hue < 0. {
-                right_bg.hue += TAU;
-            }
-            while right_bg.hue >= TAU {
-                right_bg.hue -= TAU;
-            }
-        }
-
-        match hue_interpolation {
-            HueInterpolationMethod::Shorter => {
-                let delta = right_bg.hue - left_bg.hue;
-
-                if delta > PI {
-                    left_bg.hue += PI;
-                } else if delta < -1. * PI {
-                    right_bg.hue += PI;
-                }
-            },
-
-            HueInterpolationMethod::Longer => {
-                let delta = right_bg.hue - left_bg.hue;
-                if 0. < delta && delta < PI {
-                    left_bg.hue += TAU;
-                } else if -1. * PI < delta && delta < 0. {
-                    right_bg.hue += TAU;
-                }
-            },
-
-            HueInterpolationMethod::Increasing => {
-                if right_bg.hue < left_bg.hue {
-                    right_bg.hue += TAU;
-                }
-            },
-
-            HueInterpolationMethod::Decreasing => {
-                if left_bg.hue < right_bg.hue {
-                    left_bg.hue += TAU;
-                }
-            },
-
-            
-            
-            HueInterpolationMethod::Specified => {},
-        }
-
-        (left_bg, right_bg)
-    }
-}
-
-impl ModelledColor for LCHA {
-    fn lerp(
-        left_bg: Self,
-        left_weight: f32,
-        right_bg: Self,
-        right_weight: f32,
-        hue_interpolation: HueInterpolationMethod,
-    ) -> Self {
-        
-        
-        let (left_bg, right_bg) = Self::adjust(left_bg, right_bg, hue_interpolation);
-
-        let mut lightness = 0.;
-        let mut chroma = 0.;
-        let mut hue = 0.;
-
-        
-        
-        for &(bg, weight) in &[(left_bg, left_weight), (right_bg, right_weight)] {
-            lightness += bg.lightness * bg.alpha * weight;
-            chroma += bg.chroma * bg.alpha * weight;
-            
-            
-            hue += bg.hue * weight;
-        }
-
-        let alpha = (left_bg.alpha * left_weight + right_bg.alpha * right_weight).min(1.);
-        if alpha <= 0. {
-            Self::transparent()
-        } else {
-            let inv = 1. / alpha;
-            Self {
-                lightness: lightness * inv,
-                chroma: chroma * inv,
-                hue,
-                alpha,
-            }
-        }
-    }
-}
+impl_lerp!(LCHA, Some(2));
 
 impl From<RGBA> for XYZA {
     
