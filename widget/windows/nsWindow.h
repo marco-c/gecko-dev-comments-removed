@@ -250,6 +250,8 @@ class nsWindow final : public nsWindowBase {
       const LayoutDeviceIntRegion& aOpaqueRegion) override;
   virtual nsresult SetNonClientMargins(
       LayoutDeviceIntMargin& aMargins) override;
+  virtual void SetResizeMargin(
+      mozilla::LayoutDeviceIntCoord aResizeMargin) override;
   void SetDrawsInTitlebar(bool aState) override;
   virtual void UpdateWindowDraggingRegion(
       const LayoutDeviceIntRegion& aRegion) override;
@@ -641,7 +643,10 @@ class nsWindow final : public nsWindowBase {
   
   bool mCustomNonClient;
   
+  bool mUseResizeMarginOverrides;
+  
   int32_t mHorResizeMargin;
+  
   int32_t mVertResizeMargin;
   
   int32_t mCaptionHeight;

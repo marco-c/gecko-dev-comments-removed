@@ -958,6 +958,11 @@ class nsIWidget : public nsISupports {
 
 
 
+  virtual void SetResizeMargin(mozilla::LayoutDeviceIntCoord aResizeMargin) = 0;
+  
+
+
+
 
   virtual LayoutDeviceIntPoint GetClientOffset() = 0;
 

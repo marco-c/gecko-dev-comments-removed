@@ -684,6 +684,7 @@ nsWindow::nsWindow(bool aIsChildWindow)
   mCachedHitTestPoint.y = 0;
   mCachedHitTestTime = TimeStamp::Now();
   mCachedHitTestResult = 0;
+  mUseResizeMarginOverrides = false;
   mTransparencyMode = eTransparencyOpaque;
   memset(&mGlassMargins, 0, sizeof mGlassMargins);
   DWORD background = ::GetSysColor(COLOR_BTNFACE);
@@ -2864,33 +2865,34 @@ bool nsWindow::UpdateNonClientMargins(int32_t aSizeMode, bool aReflowWindow) {
       (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CYCAPTION, dpi) +
                         WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
                   : 0);
+  if (!mUseResizeMarginOverrides) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    mHorResizeMargin =
+        WinUtils::GetSystemMetricsForDpi(SM_CXFRAME, dpi) +
+        (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
+                    : 0);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  mHorResizeMargin =
-      WinUtils::GetSystemMetricsForDpi(SM_CXFRAME, dpi) +
-      (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
-                  : 0);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  mVertResizeMargin =
-      WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
-      (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
-                  : 0);
+    
+    
+    
+    
+    
+    
+    
+    
+    mVertResizeMargin =
+        WinUtils::GetSystemMetricsForDpi(SM_CYFRAME, dpi) +
+        (hasCaption ? WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi)
+                    : 0);
+  }
 
   if (aSizeMode == nsSizeMode_Minimized) {
     
@@ -3043,6 +3045,13 @@ nsresult nsWindow::SetNonClientMargins(LayoutDeviceIntMargin& margins) {
   }
 
   return NS_OK;
+}
+
+void nsWindow::SetResizeMargin(mozilla::LayoutDeviceIntCoord aResizeMargin) {
+  mUseResizeMarginOverrides = true;
+  mHorResizeMargin = aResizeMargin;
+  mVertResizeMargin = aResizeMargin;
+  UpdateNonClientMargins();
 }
 
 void nsWindow::InvalidateNonClientRegion() {
@@ -6406,6 +6415,7 @@ int32_t nsWindow::ClientMarginHitTestPoint(int32_t mx, int32_t my) {
     right = true;
   }
 
+  bool inResizeRegion = false;
   if (isResizable) {
     if (top) {
       testResult = HTTOP;
@@ -6423,6 +6433,7 @@ int32_t nsWindow::ClientMarginHitTestPoint(int32_t mx, int32_t my) {
       if (left) testResult = HTLEFT;
       if (right) testResult = HTRIGHT;
     }
+    inResizeRegion = (testResult != HTCLIENT);
   } else {
     if (top)
       testResult = HTCAPTION;
@@ -6443,19 +6454,24 @@ int32_t nsWindow::ClientMarginHitTestPoint(int32_t mx, int32_t my) {
     mCachedHitTestPoint = {pt.x, pt.y};
     mCachedHitTestTime = TimeStamp::Now();
 
-    if (mDraggableRegion.Contains(pt.x, pt.y)) {
-      testResult = HTCAPTION;
-    } else if (mWindowBtnRect[WindowButtonType::Minimize].Contains(pt.x,
-                                                                   pt.y)) {
+    if (mWindowBtnRect[WindowButtonType::Minimize].Contains(pt.x, pt.y)) {
       testResult = HTMINBUTTON;
     } else if (mWindowBtnRect[WindowButtonType::Maximize].Contains(pt.x,
                                                                    pt.y)) {
       testResult = HTMAXBUTTON;
     } else if (mWindowBtnRect[WindowButtonType::Close].Contains(pt.x, pt.y)) {
       testResult = HTCLOSE;
-    } else {
-      testResult = HTCLIENT;
+    } else if (!inResizeRegion) {
+      
+      
+      
+      if (mDraggableRegion.Contains(pt.x, pt.y)) {
+        testResult = HTCAPTION;
+      } else {
+        testResult = HTCLIENT;
+      }
     }
+
     mCachedHitTestResult = testResult;
   }
 

@@ -38,6 +38,7 @@ const TOGGLE_POSITION_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.position";
 const TOGGLE_POSITION_RIGHT = "right";
 const TOGGLE_POSITION_LEFT = "left";
+const RESIZE_MARGIN_PX = 16;
 
 
 
@@ -416,6 +417,8 @@ var PictureInPicture = {
       features,
       null
     );
+
+    pipWindow.windowUtils.setResizeMargin(RESIZE_MARGIN_PX);
 
     if (Services.appinfo.OS == "WINNT") {
       WindowsUIUtils.setWindowIconNoData(pipWindow);
