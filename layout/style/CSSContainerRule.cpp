@@ -50,12 +50,6 @@ void CSSContainerRule::GetConditionText(nsACString& aConditionText) {
   Servo_ContainerRule_GetConditionText(mRawRule, &aConditionText);
 }
 
-void CSSContainerRule::SetConditionText(const nsACString& aConditionText, ErrorResult&) {
-  
-  
-  
-}
-
 
 void CSSContainerRule::GetCssText(nsACString& aCssText) const {
   Servo_ContainerRule_GetCssText(mRawRule, &aCssText);
