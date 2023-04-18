@@ -110,6 +110,20 @@ class Suggestions {
 
 
 
+
+
+  get config() {
+    return this._config;
+  }
+
+  
+
+
+
+
+
+
+
   async query(phrase) {
     log.info("Handling query for", phrase);
     phrase = phrase.toLowerCase();
@@ -121,9 +135,7 @@ class Suggestions {
     if (!result) {
       return null;
     }
-
-    let suggestion = {
-      is_best_match: false,
+    return {
       full_keyword: this.getFullKeyword(phrase, result.keywords),
       title: result.title,
       url: result.url,
@@ -136,19 +148,8 @@ class Suggestions {
       source: QUICK_SUGGEST_SOURCE.REMOTE_SETTINGS,
       icon: await this._fetchIcon(result.icon),
       position: result.position,
+      _test_is_best_match: result._test_is_best_match,
     };
-
-    
-    if (typeof result._test_is_best_match == "boolean") {
-      suggestion.is_best_match = result._test_is_best_match;
-    } else if (this._config.best_match) {
-      let { best_match } = this._config;
-      suggestion.is_best_match =
-        best_match.min_search_string_length <= phrase.length &&
-        !best_match.blocked_suggestion_ids.includes(resultID);
-    }
-
-    return suggestion;
   }
 
   
