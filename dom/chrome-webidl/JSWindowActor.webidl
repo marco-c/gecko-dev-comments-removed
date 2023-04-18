@@ -130,21 +130,7 @@ dictionary WindowActorSidedOptions {
 
 
 
-
-
-
-  ByteString moduleURI;
-
-  
-
-
-
-
-
-
-
-
-  ByteString esModuleURI;
+  required ByteString moduleURI;
 };
 
 dictionary WindowActorEventListenerOptions : AddEventListenerOptions {

@@ -1,20 +1,19 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/*
- * Dumping ground for simple services for which the isolation of a full global
- * is overkill. Be careful about namespace pollution, and be mindful about
- * importing lots of JSMs in global scope, since this file will almost certainly
- * be loaded from enough callsites that any such imports will always end up getting
- * eagerly loaded at startup.
- */
+
+
+
+
+
+
+
+
+
+
 
 "use strict";
 
-/* globals WebExtensionPolicy */
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -26,6 +25,7 @@ ChromeUtils.defineModuleGetter(
   "NetUtil",
   "resource://gre/modules/NetUtil.jsm"
 );
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(
   lazy,
@@ -39,14 +39,14 @@ const ArrayBufferInputStream = Components.Constructor(
   "setData"
 );
 
-/*
- * This class provides a stream filter for locale messages in CSS files served
- * by the moz-extension: protocol handler.
- *
- * See SubstituteChannel in netwerk/protocol/res/ExtensionProtocolHandler.cpp
- * for usage.
- */
-export function AddonLocalizationConverter() {}
+
+
+
+
+
+
+
+function AddonLocalizationConverter() {}
 
 AddonLocalizationConverter.prototype = {
   QueryInterface: ChromeUtils.generateQI(["nsIStreamConverter"]),
@@ -71,10 +71,10 @@ AddonLocalizationConverter.prototype = {
     }
   },
 
-  // aContext must be a nsIURI object for a valid moz-extension: URL.
+  
   getAddon(aContext) {
-    // In this case, we want the add-on ID even if the URL is web accessible,
-    // so check the root rather than the exact path.
+    
+    
     let uri = Services.io.newURI("/", null, aContext);
 
     let addon = WebExtensionPolicy.getByURI(uri);
@@ -137,7 +137,7 @@ AddonLocalizationConverter.prototype = {
   },
 };
 
-export function HttpIndexViewer() {}
+function HttpIndexViewer() {}
 
 HttpIndexViewer.prototype = {
   QueryInterface: ChromeUtils.generateQI(["nsIDocumentLoaderFactory"]),
@@ -180,3 +180,5 @@ HttpIndexViewer.prototype = {
     return res;
   },
 };
+
+var EXPORTED_SYMBOLS = ["AddonLocalizationConverter", "HttpIndexViewer"];
