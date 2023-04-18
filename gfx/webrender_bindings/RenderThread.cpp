@@ -17,7 +17,6 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUParent.h"
 #include "mozilla/gfx/GPUProcessManager.h"
-#include "mozilla/glean/GleanMetrics.h"
 #include "mozilla/layers/CompositableInProcessManager.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
@@ -565,9 +564,7 @@ void RenderThread::UpdateAndRender(
     
     
     
-    auto timerId = glean::wr::gpu_wait_time.Start();
     renderer->WaitForGPU();
-    glean::wr::gpu_wait_time.StopAndAccumulate(std::move(timerId));
   } else {
     
     
