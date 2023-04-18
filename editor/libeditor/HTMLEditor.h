@@ -1139,7 +1139,7 @@ class HTMLEditor final : public EditorBase,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   SplitParentInlineElementsAtRangeEdges(
-      nsTArray<RefPtr<nsRange>>& aArrayOfRanges);
+      nsTArray<OwningNonNull<nsRange>>& aArrayOfRanges);
 
   
 
@@ -1207,7 +1207,7 @@ class HTMLEditor final : public EditorBase,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   SplitInlinesAndCollectEditTargetNodes(
-      nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
+      nsTArray<OwningNonNull<nsRange>>& aArrayOfRanges,
       nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
       EditSubAction aEditSubAction,
       CollectNonEditableNodes aCollectNonEditableNodes);
@@ -1217,7 +1217,7 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  SplitTextNodesAtRangeEnd(nsTArray<RefPtr<nsRange>>& aArrayOfRanges);
+  SplitTextNodesAtRangeEnd(nsTArray<OwningNonNull<nsRange>>& aArrayOfRanges);
 
   
 
@@ -1225,7 +1225,7 @@ class HTMLEditor final : public EditorBase,
 
 
   nsresult CollectEditTargetNodes(
-      nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
+      nsTArray<OwningNonNull<nsRange>>& aArrayOfRanges,
       nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
       EditSubAction aEditSubAction,
       CollectNonEditableNodes aCollectNonEditableNodes);
@@ -1266,7 +1266,7 @@ class HTMLEditor final : public EditorBase,
 
 
   void GetSelectionRangesExtendedToHardLineStartAndEnd(
-      nsTArray<RefPtr<nsRange>>& aOutArrayOfRanges,
+      nsTArray<OwningNonNull<nsRange>>& aOutArrayOfRanges,
       EditSubAction aEditSubAction);
 
   
