@@ -552,9 +552,41 @@ using LazyFuncExportVector = Vector<LazyFuncExport, 0, SystemAllocPolicy>;
 
 
 
+struct IndirectStub {
+  size_t funcIndex;
+  size_t segmentIndex;
+  size_t codeRangeIndex;
+  void* tls;
+  IndirectStub(size_t funcIndex, size_t segmentIndex, size_t codeRangeIndex,
+               TlsData* tls)
+      : funcIndex(funcIndex),
+        segmentIndex(segmentIndex),
+        codeRangeIndex(codeRangeIndex),
+        tls(tls) {}
+};
+
+using IndirectStubVector = Vector<IndirectStub, 0, SystemAllocPolicy>;
+
+
+
+
+
+
+
+
+
 class LazyStubTier {
   LazyStubSegmentVector stubSegments_;
   LazyFuncExportVector exports_;
+  
+  
+  
+  
+  
+  
+  
+  
+  IndirectStubVector indirectStubVector_;
   size_t lastStubSegmentIndex_;
 
   bool createManyEntryStubs(const Uint32Vector& funcExportIndices,
@@ -575,6 +607,9 @@ class LazyStubTier {
   
   
   void* lookupInterpEntry(uint32_t funcIndex) const;
+
+  
+  void* lookupIndirectStub(uint32_t funcIndex, void* tls) const;
 
   const CodeRange* lookupRange(const void* pc) const;
 
