@@ -51,3 +51,18 @@ async function doGC() {
   ].getService(Ci.nsIMemoryReporterManager);
   await new Promise(resolve => MemoryReporter.minimizeMemoryUsage(resolve));
 }
+
+
+
+
+
+
+
+
+
+
+async function loadURL(browser, url) {
+  const loaded = BrowserTestUtils.browserLoaded(browser);
+  BrowserTestUtils.loadURI(browser, url);
+  return loaded;
+}
