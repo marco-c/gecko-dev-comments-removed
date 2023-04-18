@@ -77,6 +77,11 @@ def _activate_mach_virtualenv():
     )
     mach_site.activate()
 
+    if TASKCLUSTER:
+        
+        
+        sys.path.append("xpcshell")
+
 
 def run_tests(mach_cmd, kwargs, client_args):
     """This tests runner can be used directly via main or via Mach.
