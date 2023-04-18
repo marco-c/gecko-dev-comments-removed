@@ -348,18 +348,6 @@ enum AVPixelFormat {
     AV_PIX_FMT_NV24,      
     AV_PIX_FMT_NV42,      
 
-    
-
-
-
-
-    AV_PIX_FMT_VULKAN,
-
-    AV_PIX_FMT_Y210BE,    
-    AV_PIX_FMT_Y210LE,    
-
-    AV_PIX_FMT_X2RGB10LE, 
-    AV_PIX_FMT_X2RGB10BE, 
     AV_PIX_FMT_NB         
 };
 
@@ -448,9 +436,6 @@ enum AVPixelFormat {
 #define AV_PIX_FMT_P010       AV_PIX_FMT_NE(P010BE,  P010LE)
 #define AV_PIX_FMT_P016       AV_PIX_FMT_NE(P016BE,  P016LE)
 
-#define AV_PIX_FMT_Y210       AV_PIX_FMT_NE(Y210BE,  Y210LE)
-#define AV_PIX_FMT_X2RGB10    AV_PIX_FMT_NE(X2RGB10BE, X2RGB10LE)
-
 
 
 
@@ -471,8 +456,7 @@ enum AVColorPrimaries {
     AVCOL_PRI_SMPTEST428_1 = AVCOL_PRI_SMPTE428,
     AVCOL_PRI_SMPTE431    = 11, 
     AVCOL_PRI_SMPTE432    = 12, 
-    AVCOL_PRI_EBU3213     = 22, 
-    AVCOL_PRI_JEDEC_P22   = AVCOL_PRI_EBU3213,
+    AVCOL_PRI_JEDEC_P22   = 22, 
     AVCOL_PRI_NB                
 };
 
@@ -532,58 +516,10 @@ enum AVColorSpace {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 enum AVColorRange {
     AVCOL_RANGE_UNSPECIFIED = 0,
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    AVCOL_RANGE_MPEG        = 1,
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    AVCOL_RANGE_JPEG        = 2,
+    AVCOL_RANGE_MPEG        = 1, 
+    AVCOL_RANGE_JPEG        = 2, 
     AVCOL_RANGE_NB               
 };
 

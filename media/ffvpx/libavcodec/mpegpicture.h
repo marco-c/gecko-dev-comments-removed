@@ -69,7 +69,6 @@ typedef struct Picture {
 
     int alloc_mb_width;         
     int alloc_mb_height;        
-    int alloc_mb_stride;        
 
     AVBufferRef *mb_mean_buf;
     uint8_t *mb_mean;           

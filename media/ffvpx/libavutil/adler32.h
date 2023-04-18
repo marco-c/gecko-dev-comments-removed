@@ -27,24 +27,8 @@
 #ifndef AVUTIL_ADLER32_H
 #define AVUTIL_ADLER32_H
 
-#include <stddef.h>
 #include <stdint.h>
 #include "attributes.h"
-#include "version.h"
-
-
-
-
-
-
-
-
-
-#if FF_API_CRYPTO_SIZE_T
-typedef unsigned long AVAdler;
-#else
-typedef uint32_t AVAdler;
-#endif
 
 
 
@@ -58,15 +42,19 @@ typedef uint32_t AVAdler;
 
 
 
-AVAdler av_adler32_update(AVAdler adler, const uint8_t *buf,
-#if FF_API_CRYPTO_SIZE_T
-                          unsigned int len) av_pure;
-#else
-                          size_t len) av_pure;
-#endif
 
 
 
 
 
-#endif
+
+
+
+unsigned long av_adler32_update(unsigned long adler, const uint8_t *buf,
+                                unsigned int len) av_pure;
+
+
+
+
+
+#endif 

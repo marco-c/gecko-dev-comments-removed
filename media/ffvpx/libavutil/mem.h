@@ -33,7 +33,6 @@
 #include "attributes.h"
 #include "error.h"
 #include "avutil.h"
-#include "version.h"
 
 
 
@@ -49,10 +48,6 @@
 
 
 
-
-
-
-#if FF_API_DECLARE_ALIGNED
 
 
 
@@ -130,7 +125,6 @@
 
 
 
-#endif
 
 
 
