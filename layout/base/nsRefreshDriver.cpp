@@ -1529,12 +1529,19 @@ void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {
     mRefreshTimerStartedCause = profiler_capture_backtrace();
   }
 
+  if (IsFrozen() || !mPresContext) {
+    
+    StopTimer();
+    return;
+  }
+
   
   if (mActiveTimer && !(aFlags & eForceAdjustTimer)) {
     
     
     
-    if (mUserInputProcessingCount && CanDoExtraTick()) {
+    if ((mPresContext->TakeWantsExtraTick() || mUserInputProcessingCount) &&
+        CanDoExtraTick()) {
       RefPtr<nsRefreshDriver> self = this;
       NS_DispatchToCurrentThreadQueue(
           NS_NewRunnableFunction(
@@ -1553,12 +1560,6 @@ void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {
               }),
           EventQueuePriority::Vsync);
     }
-    return;
-  }
-
-  if (IsFrozen() || !mPresContext) {
-    
-    StopTimer();
     return;
   }
 

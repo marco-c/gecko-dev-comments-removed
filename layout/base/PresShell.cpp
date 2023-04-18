@@ -3924,19 +3924,44 @@ void PresShell::UnsuppressAndInvalidate() {
   PROFILER_MARKER_UNTYPED("UnsuppressAndInvalidate", GRAPHICS);
 
   mPaintingSuppressed = false;
+
+  if (mPresContext->IsRootContentDocumentCrossProcess()) {
+    nsWeakPtr weakDoc = do_GetWeakReference(mDocument);
+    
+    
+    
+    mPresContext->RegisterManagedPostRefreshObserver(
+        new ManagedPostRefreshObserver(
+            mPresContext, [weakDoc](bool aWasCanceled) {
+              if (aWasCanceled) {
+                return ManagedPostRefreshObserver::Unregister::Yes;
+              }
+
+              nsCOMPtr<Document> doc = do_QueryReferent(weakDoc);
+              if (!doc) {
+                return ManagedPostRefreshObserver::Unregister::Yes;
+              }
+              nsPresContext* pctx = doc->GetPresContext();
+              if (!pctx) {
+                return ManagedPostRefreshObserver::Unregister::Yes;
+              }
+
+              if (auto* bc = BrowserChild::GetFrom(doc->GetDocShell())) {
+                if (doc->IsInitialDocument()) {
+                  bc->SendDidUnsuppressPaintingNormalPriority();
+                } else {
+                  bc->SendDidUnsuppressPainting();
+                }
+              }
+
+              return ManagedPostRefreshObserver::Unregister::Yes;
+            }));
+    mPresContext->SetWantsExtraTick();
+  }
+
   if (nsIFrame* rootFrame = mFrameConstructor->GetRootFrame()) {
     
     rootFrame->InvalidateFrame();
-  }
-
-  if (mPresContext->IsRootContentDocumentCrossProcess()) {
-    if (auto* bc = BrowserChild::GetFrom(mDocument->GetDocShell())) {
-      if (mDocument->IsInitialDocument()) {
-        bc->SendDidUnsuppressPaintingNormalPriority();
-      } else {
-        bc->SendDidUnsuppressPainting();
-      }
-    }
   }
 
   
