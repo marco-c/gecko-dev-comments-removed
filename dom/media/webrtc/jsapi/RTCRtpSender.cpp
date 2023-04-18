@@ -472,8 +472,7 @@ void RTCRtpSender::ApplyParameters(const RTCRtpParameters& aParameters) {
 
   if (mJsepTransceiver->mSendTrack.SetJsConstraints(constraints)) {
     if (mPipeline->Transmitting()) {
-      DebugOnly<nsresult> rv = UpdateConduit();
-      MOZ_ASSERT(NS_SUCCEEDED(rv));
+      UpdateConduit();
     }
   }
 }
@@ -637,8 +636,6 @@ bool RTCRtpSender::SeamlessTrackSwitch(
   
   
 
-  
-  
   mPipeline->SetTrack(aWithTrack);
 
   if (mTransceiverImpl->IsVideo()) {
@@ -656,22 +653,13 @@ bool RTCRtpSender::SeamlessTrackSwitch(
     
     
     if (oldType != newType) {
-      if (NS_WARN_IF(NS_FAILED(mTransceiverImpl->UpdateConduit()))) {
-        MOZ_LOG(gSenderLog, LogLevel::Error,
-                ("%s[%s]: %s Error Updating VideoConduit",
-                 mPc->GetHandle().c_str(), GetMid().c_str(), __FUNCTION__));
-        return false;
-      }
+      mTransceiverImpl->UpdateConduit();
     }
   } else if (!mSenderTrack != !aWithTrack) {
-    if (NS_WARN_IF(NS_FAILED(mTransceiverImpl->UpdateConduit()))) {
-      MOZ_LOG(gSenderLog, LogLevel::Error,
-              ("%s[%s]: %s Error Updating AudioConduit",
-               mPc->GetHandle().c_str(), GetMid().c_str(), __FUNCTION__));
-      return false;
-    }
+    mTransceiverImpl->UpdateConduit();
   }
 
+  
   return true;
 }
 
@@ -709,15 +697,15 @@ void RTCRtpSender::UpdateTransport() {
                                nullptr);
 }
 
-nsresult RTCRtpSender::UpdateConduit() {
+void RTCRtpSender::UpdateConduit() {
   
   
-  if (mJsepTransceiver->mSendTrack.GetSsrcs().empty()) {
-    MOZ_LOG(gSenderLog, LogLevel::Error,
-            ("%s[%s]: %s No local SSRC set! (Should be set regardless of "
-             "whether we're sending RTP; we need a local SSRC in all cases)",
-             mPc->GetHandle().c_str(), GetMid().c_str(), __FUNCTION__));
-    return NS_ERROR_FAILURE;
+  if (NS_WARN_IF(mJsepTransceiver->mSendTrack.GetSsrcs().empty())) {
+    MOZ_ASSERT(
+        false,
+        "No local ssrcs! This is a bug in the jsep engine, and should never "
+        "happen!");
+    return;
   }
 
   mSsrcs = mJsepTransceiver->mSendTrack.GetSsrcs();
@@ -725,26 +713,25 @@ nsresult RTCRtpSender::UpdateConduit() {
   mCname = mJsepTransceiver->mSendTrack.GetCNAME();
 
   if (mPipeline->mConduit->type() == MediaSessionConduit::VIDEO) {
-    return UpdateVideoConduit();
+    UpdateVideoConduit();
+  } else {
+    UpdateAudioConduit();
   }
-  return UpdateAudioConduit();
 }
 
-nsresult RTCRtpSender::ConfigureVideoCodecMode() {
+void RTCRtpSender::ConfigureVideoCodecMode() {
   if (!mSenderTrack) {
     
-    return NS_OK;
+    return;
   }
 
   RefPtr<mozilla::dom::VideoStreamTrack> videotrack =
       mSenderTrack->AsVideoStreamTrack();
 
   if (!videotrack) {
-    MOZ_LOG(gSenderLog, LogLevel::Error,
-            ("%s[%s]: %s mSenderTrack is not video! This should never happen!",
-             mPc->GetHandle().c_str(), GetMid().c_str(), __FUNCTION__));
-    MOZ_CRASH();
-    return NS_ERROR_FAILURE;
+    MOZ_CRASH(
+        "In ConfigureVideoCodecMode, mSenderTrack is not video! This should "
+        "never happen!");
   }
 
   dom::MediaSourceEnum source = videotrack->GetSource().GetMediaSource();
@@ -763,11 +750,9 @@ nsresult RTCRtpSender::ConfigureVideoCodecMode() {
   }
 
   mVideoCodecMode = mode;
-
-  return NS_OK;
 }
 
-nsresult RTCRtpSender::UpdateVideoConduit() {
+void RTCRtpSender::UpdateVideoConduit() {
   
   
   
@@ -785,50 +770,42 @@ nsresult RTCRtpSender::UpdateVideoConduit() {
       mLocalRtpExtensions = extmaps;
     }
 
-    nsresult rv = ConfigureVideoCodecMode();
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
+    ConfigureVideoCodecMode();
 
     std::vector<VideoCodecConfig> configs;
-    rv = TransceiverImpl::NegotiatedDetailsToVideoCodecConfigs(details,
-                                                               &configs);
-    if (NS_FAILED(rv)) {
-      MOZ_LOG(gSenderLog, LogLevel::Error,
-              ("%s[%s]: %s Failed to convert JsepCodecDescriptions to "
-               "VideoCodecConfigs (send).",
-               mPc->GetHandle().c_str(), GetMid().c_str(), __FUNCTION__));
-      return rv;
-    }
+    TransceiverImpl::NegotiatedDetailsToVideoCodecConfigs(details, &configs);
 
     if (configs.empty()) {
-      MOZ_LOG(gSenderLog, LogLevel::Info,
-              ("%s[%s]: %s  No codecs were negotiated (send).",
+      
+      
+      
+      
+      MOZ_LOG(gSenderLog, LogLevel::Error,
+              ("%s[%s]: %s  No video codecs were negotiated (send).",
                mPc->GetHandle().c_str(), GetMid().c_str(), __FUNCTION__));
-      return NS_OK;
+      return;
     }
 
     mVideoCodec = Some(configs[0]);
     mVideoRtpRtcpConfig = Some(details.GetRtpRtcpConfig());
   }
-
-  return NS_OK;
 }
 
-nsresult RTCRtpSender::UpdateAudioConduit() {
+void RTCRtpSender::UpdateAudioConduit() {
   if (mJsepTransceiver->mSendTrack.GetNegotiatedDetails() &&
       mJsepTransceiver->mSendTrack.GetActive()) {
     const auto& details(*mJsepTransceiver->mSendTrack.GetNegotiatedDetails());
     std::vector<AudioCodecConfig> configs;
-    nsresult rv = TransceiverImpl::NegotiatedDetailsToAudioCodecConfigs(
-        details, &configs);
-
-    if (NS_FAILED(rv)) {
+    TransceiverImpl::NegotiatedDetailsToAudioCodecConfigs(details, &configs);
+    if (configs.empty()) {
+      
+      
+      
+      
       MOZ_LOG(gSenderLog, LogLevel::Error,
-              ("%s[%s]: %s   Failed to convert JsepCodecDescriptions to "
-               "AudioCodecConfigs (send).",
+              ("%s[%s]: %s No audio codecs were negotiated (send)",
                mPc->GetHandle().c_str(), GetMid().c_str(), __FUNCTION__));
-      return rv;
+      return;
     }
 
     std::vector<AudioCodecConfig> dtmfConfigs;
@@ -867,8 +844,6 @@ nsresult RTCRtpSender::UpdateAudioConduit() {
       mLocalRtpExtensions = extmaps;
     }
   }
-
-  return NS_OK;
 }
 
 void RTCRtpSender::Stop() {
