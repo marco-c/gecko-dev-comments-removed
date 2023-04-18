@@ -274,6 +274,16 @@ AutofillProfileAutoCompleteSearch.prototype = {
     }
 
     Promise.resolve(pendingSearchResult).then(result => {
+      if (this.forceStop) {
+        
+        
+        
+        if (isFormAutofillSearch) {
+          autocompleteController.resetInternalState();
+        }
+        return;
+      }
+
       listener.onSearchResult(this, result);
       
       
