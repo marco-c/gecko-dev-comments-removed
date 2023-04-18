@@ -340,20 +340,6 @@ static nsresult ConvertWinError(DWORD aWinErr) {
 }
 
 
-static __int64 MyFileSeek64(HANDLE aHandle, __int64 aDistance,
-                            DWORD aMoveMethod) {
-  LARGE_INTEGER li;
-
-  li.QuadPart = aDistance;
-  li.LowPart = SetFilePointer(aHandle, li.LowPart, &li.HighPart, aMoveMethod);
-  if (li.LowPart == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR) {
-    li.QuadPart = -1;
-  }
-
-  return li.QuadPart;
-}
-
-
 static bool IsRootPath(const nsAString& aPath) {
   
   if (aPath.Last() != L'\\') {
@@ -2646,8 +2632,10 @@ nsLocalFile::SetFileSize(int64_t aFileSize) {
   
   
   nsresult rv = NS_ERROR_FAILURE;
-  aFileSize = MyFileSeek64(hFile, aFileSize, FILE_BEGIN);
-  if (aFileSize != -1 && SetEndOfFile(hFile)) {
+  LARGE_INTEGER distance;
+  distance.QuadPart = aFileSize;
+  if (SetFilePointerEx(hFile, distance, nullptr, FILE_BEGIN) &&
+      SetEndOfFile(hFile)) {
     MakeDirty();
     rv = NS_OK;
   }
