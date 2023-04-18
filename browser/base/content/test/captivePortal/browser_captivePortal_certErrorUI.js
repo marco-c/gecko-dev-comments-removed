@@ -18,7 +18,17 @@ add_task(async function checkCaptivePortalCertErrorUI() {
     "Checking that the alternate cert error UI is shown when we are behind a captive portal"
   );
 
+  
+  
+  
+  let secondWindow = await openWindowAndWaitForFocus();
+  await SimpleTest.promiseFocus(window);
+
   await portalDetected();
+
+  
+  ensureNoPortalTab(secondWindow);
+
   let tab = await openCaptivePortalErrorTab();
   let browser = tab.linkedBrowser;
   let portalTabPromise = BrowserTestUtils.waitForNewTab(
@@ -51,6 +61,9 @@ add_task(async function checkCaptivePortalCertErrorUI() {
   );
 
   
+  ensureNoPortalTab(secondWindow);
+
+  
   await BrowserTestUtils.switchTab(gBrowser, tab);
   
   
@@ -66,6 +79,9 @@ add_task(async function checkCaptivePortalCertErrorUI() {
   info("Opening captive portal login page");
   let portalTab2 = await portalTabPromise;
   is(portalTab2, portalTab, "The existing portal tab should be focused.");
+
+  
+  ensureNoPortalTab(secondWindow);
 
   let portalTabClosing = BrowserTestUtils.waitForTabClosing(portalTab);
   let errorTabReloaded = BrowserTestUtils.waitForErrorPage(browser);
@@ -86,6 +102,7 @@ add_task(async function checkCaptivePortalCertErrorUI() {
   });
 
   await BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.closeWindow(secondWindow);
 });
 
 add_task(async function testCaptivePortalAdvancedPanel() {
@@ -142,5 +159,10 @@ add_task(async function testCaptivePortalAdvancedPanel() {
     "@mozilla.org/security/certoverride;1"
   ].getService(Ci.nsICertOverrideService);
   certOverrideService.clearValidityOverride("expired.example.com", -1, {});
+
+  let errorTabReloaded = BrowserTestUtils.waitForErrorPage(browser);
+  Services.obs.notifyObservers(null, "captive-portal-login-success");
+  await errorTabReloaded;
+
   await BrowserTestUtils.removeTab(tab);
 });
