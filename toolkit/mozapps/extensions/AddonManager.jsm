@@ -39,6 +39,7 @@ const PREF_EM_AUTOUPDATE_DEFAULT = "extensions.update.autoUpdateDefault";
 const PREF_EM_STRICT_COMPATIBILITY = "extensions.strictCompatibility";
 const PREF_EM_CHECK_UPDATE_SECURITY = "extensions.checkUpdateSecurity";
 const PREF_SYS_ADDON_UPDATE_ENABLED = "extensions.systemAddon.update.enabled";
+const PREF_REMOTESETTINGS_DISABLED = "extensions.remoteSettings.disabled";
 
 const PREF_MIN_WEBEXT_PLATFORM_VERSION =
   "extensions.webExtensionsMinPlatformVersion";
@@ -89,6 +90,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AddonRepository: "resource://gre/modules/addons/AddonRepository.jsm",
   AbuseReporter: "resource://gre/modules/AbuseReporter.jsm",
   Extension: "resource://gre/modules/Extension.jsm",
+  RemoteSettings: "resource://services-settings/remote-settings.js",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -108,7 +110,12 @@ Services.ppmm.loadProcessScript(
 
 const INTEGER = /^[1-9]\d*$/;
 
-var EXPORTED_SYMBOLS = ["AddonManager", "AddonManagerPrivate", "AMTelemetry"];
+var EXPORTED_SYMBOLS = [
+  "AddonManager",
+  "AddonManagerPrivate",
+  "AMTelemetry",
+  "AMRemoteSettings",
+];
 
 const CATEGORY_PROVIDER_MODULE = "addon-provider-module";
 
@@ -485,6 +492,7 @@ var gShutdownInProgress = false;
 var gBrowserUpdated = null;
 
 var AMTelemetry;
+var AMRemoteSettings;
 
 
 
@@ -596,6 +604,9 @@ var AddonManagerInternal = {
       AMTelemetry.init();
 
       
+      AMRemoteSettings.init();
+
+      
       for (let provider in this.telemetryDetails) {
         delete this.telemetryDetails[provider];
       }
@@ -679,6 +690,9 @@ var AddonManagerInternal = {
         gWebExtensionsMinPlatformVersion
       );
       Services.prefs.addObserver(PREF_MIN_WEBEXT_PLATFORM_VERSION, this);
+
+      
+      Services.prefs.addObserver(PREF_REMOTESETTINGS_DISABLED, this);
 
       
       Services.obs.addObserver(this, INTL_LOCALES_CHANGED);
@@ -967,14 +981,18 @@ var AddonManagerInternal = {
 
     gRepoShutdownState = "pending";
     gShutdownInProgress = true;
+
     
     Services.prefs.removeObserver(PREF_EM_CHECK_COMPATIBILITY, this);
     Services.prefs.removeObserver(PREF_EM_STRICT_COMPATIBILITY, this);
     Services.prefs.removeObserver(PREF_EM_CHECK_UPDATE_SECURITY, this);
     Services.prefs.removeObserver(PREF_EM_UPDATE_ENABLED, this);
     Services.prefs.removeObserver(PREF_EM_AUTOUPDATE_DEFAULT, this);
+    Services.prefs.removeObserver(PREF_REMOTESETTINGS_DISABLED, this);
 
     Services.obs.removeObserver(this, INTL_LOCALES_CHANGED);
+
+    AMRemoteSettings.shutdown();
 
     let savedError = null;
     
@@ -1106,6 +1124,14 @@ var AddonManagerInternal = {
         gWebExtensionsMinPlatformVersion = Services.prefs.getCharPref(
           PREF_MIN_WEBEXT_PLATFORM_VERSION
         );
+        break;
+      }
+      case PREF_REMOTESETTINGS_DISABLED: {
+        if (Services.prefs.getBoolPref(PREF_REMOTESETTINGS_DISABLED, false)) {
+          AMRemoteSettings.shutdown();
+        } else {
+          AMRemoteSettings.init();
+        }
         break;
       }
     }
@@ -4209,6 +4235,145 @@ var AddonManager = {
 
   get beforeShutdown() {
     return gBeforeShutdownBarrier.client;
+  },
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+AMRemoteSettings = {
+  
+  RS_COLLECTION: "addons-manager-settings",
+  
+  RS_ENTRIES_MAP: {
+    installTriggerDeprecation: [
+      "extensions.InstallTriggerImpl.enabled",
+      "extensions.InstallTrigger.enabled",
+    ],
+  },
+
+  client: null,
+  onSync: null,
+  promiseStartup: null,
+
+  init() {
+    try {
+      if (!this.promiseStartup) {
+        
+        
+        
+        this.promiseStartup = new Promise(resolve => {
+          function observer() {
+            resolve();
+            Services.obs.removeObserver(
+              observer,
+              "browser-delayed-startup-finished"
+            );
+          }
+          Services.obs.addObserver(
+            observer,
+            "browser-delayed-startup-finished"
+          );
+        });
+      }
+
+      if (Services.prefs.getBoolPref(PREF_REMOTESETTINGS_DISABLED, false)) {
+        return;
+      }
+
+      if (!this.client) {
+        this.client = RemoteSettings(this.RS_COLLECTION);
+        this.onSync = this.processEntries.bind(this);
+        this.client.on("sync", this.onSync);
+        
+        this.promiseStartup.then(() => this.processEntries());
+      }
+    } catch (err) {
+      logger.error("Failure to initialize AddonManager RemoteSettings", err);
+    }
+  },
+
+  shutdown() {
+    try {
+      if (this.client) {
+        this.client.off("sync", this.onSync);
+        this.client = null;
+        this.onSync = null;
+      }
+      this.promiseStartup = null;
+    } catch (err) {
+      logger.error("Failure on shutdown AddonManager RemoteSettings", err);
+    }
+  },
+
+  async processEntries() {
+    const entries = await this.client.get({ syncIfEmpty: false }).catch(err => {
+      logger.error("Failure to process AddonManager RemoteSettings", err);
+      return [];
+    });
+
+    for (const entry of entries) {
+      logger.debug(`Processing AddonManager RemoteSettings "${entry.id}"`);
+
+      for (const [groupName, prefs] of Object.entries(this.RS_ENTRIES_MAP)) {
+        const data = entry[groupName];
+        if (!data) {
+          continue;
+        }
+
+        for (const pref of prefs) {
+          
+          if (!(pref in data)) {
+            continue;
+          }
+
+          try {
+            
+            if (typeof data[pref] == "boolean") {
+              logger.debug(
+                `Process AddonManager RemoteSettings "${entry.id}" - "${groupName}": ${pref}=${data[pref]}`
+              );
+              Services.prefs.setBoolPref(pref, data[pref]);
+            }
+          } catch (e) {
+            logger.error(
+              `Failed to process AddonManager RemoteSettings "${entry.id}" - "${groupName}": ${pref}`,
+              e
+            );
+          }
+        }
+      }
+    }
   },
 };
 
