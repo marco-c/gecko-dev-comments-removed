@@ -12,11 +12,7 @@
 #include "mozilla/dom/cache/StreamControl.h"
 #include "nsTObserverArray.h"
 
-namespace mozilla {
-namespace ipc {
-class AutoIPCStream;
-}  
-namespace dom::cache {
+namespace mozilla::dom::cache {
 
 class ReadStream;
 class StreamList;
@@ -37,9 +33,7 @@ class CacheStreamControlParent final : public PCacheStreamControlParent,
   virtual void SerializeControl(CacheReadStream* aReadStreamOut) override;
 
   virtual void SerializeStream(CacheReadStream* aReadStreamOut,
-                               nsIInputStream* aStream,
-                               nsTArray<UniquePtr<mozilla::ipc::AutoIPCStream>>&
-                                   aStreamCleanupList) override;
+                               nsIInputStream* aStream) override;
 
   virtual void OpenStream(const nsID& aId,
                           InputStreamResolver&& aResolver) override;
@@ -73,7 +67,6 @@ class CacheStreamControlParent final : public PCacheStreamControlParent,
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CacheStreamControlParent, override)
 };
 
-}  
 }  
 
 #endif  

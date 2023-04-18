@@ -25,9 +25,7 @@ class BackgroundDataBridgeParent;
 
 
 
-class SocketProcessChild final
-    : public PSocketProcessChild,
-      public mozilla::ipc::ChildToParentStreamActorManager {
+class SocketProcessChild final : public PSocketProcessChild {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SocketProcessChild)
 

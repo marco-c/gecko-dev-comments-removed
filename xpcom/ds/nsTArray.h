@@ -95,7 +95,6 @@ class IndexCursorResponse;
 }  
 
 namespace mozilla::ipc {
-class AutoIPCStream;
 class ContentSecurityPolicy;
 template <class T>
 class Endpoint;
@@ -826,9 +825,6 @@ struct MOZ_NEEDS_MEMMOVABLE_TYPE nsTArray_RelocationStrategy {
   struct nsTArray_RelocationStrategy<T<S>> {                        \
     using Type = nsTArray_RelocateUsingMoveConstructor<T<S>>;       \
   };
-
-
-
 
 MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR_FOR_TEMPLATE(JS::Heap)
 MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR_FOR_TEMPLATE(std::function)

@@ -18,10 +18,6 @@ namespace ipc {
 class FileDescriptor;
 
 
-class ParentToChildStreamActorManager {};
-
-class ChildToParentStreamActorManager {};
-
 
 class InputStreamHelper {
  public:
@@ -36,37 +32,16 @@ class InputStreamHelper {
   
   
   
-  
-  
-  
-  
   static void SerializeInputStream(nsIInputStream* aInputStream,
                                    InputStreamParams& aParams,
-                                   nsTArray<FileDescriptor>& aFileDescriptors,
-                                   bool aDelayedStart, uint32_t aMaxSize,
-                                   uint32_t* aSizeUsed,
-                                   ParentToChildStreamActorManager* aManager);
-
-  static void SerializeInputStream(nsIInputStream* aInputStream,
-                                   InputStreamParams& aParams,
-                                   nsTArray<FileDescriptor>& aFileDescriptors,
-                                   bool aDelayedStart, uint32_t aMaxSize,
-                                   uint32_t* aSizeUsed,
-                                   ChildToParentStreamActorManager* aManager);
+                                   uint32_t aMaxSize, uint32_t* aSizeUsed);
 
   
-  
-  static void SerializeInputStreamAsPipe(
-      nsIInputStream* aInputStream, InputStreamParams& aParams,
-      bool aDelayedStart, ParentToChildStreamActorManager* aManager);
-
-  static void SerializeInputStreamAsPipe(
-      nsIInputStream* aInputStream, InputStreamParams& aParams,
-      bool aDelayedStart, ChildToParentStreamActorManager* aManager);
+  static void SerializeInputStreamAsPipe(nsIInputStream* aInputStream,
+                                         InputStreamParams& aParams);
 
   static already_AddRefed<nsIInputStream> DeserializeInputStream(
-      const InputStreamParams& aParams,
-      const nsTArray<FileDescriptor>& aFileDescriptors);
+      const InputStreamParams& aParams);
 };
 
 }  
