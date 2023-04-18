@@ -195,6 +195,14 @@ class JSObject
     return setFlag(cx, obj, js::ObjectFlag::IsUsedAsPrototype);
   }
 
+  bool useWatchtowerTestingCallback() const {
+    return hasFlag(js::ObjectFlag::UseWatchtowerTestingCallback);
+  }
+  static bool setUseWatchtowerTestingCallback(JSContext* cx,
+                                              JS::HandleObject obj) {
+    return setFlag(cx, obj, js::ObjectFlag::UseWatchtowerTestingCallback);
+  }
+
   inline bool isBoundFunction() const;
 
   
