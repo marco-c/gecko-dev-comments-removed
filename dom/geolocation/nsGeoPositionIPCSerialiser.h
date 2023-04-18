@@ -97,7 +97,7 @@ struct ParamTraits<nsIDOMGeoPosition*> {
     
     if (isNull) return;
 
-    DOMTimeStamp timeStamp;
+    EpochTimeStamp timeStamp;
     aParam->GetTimestamp(&timeStamp);
     WriteParam(aMsg, timeStamp);
 
@@ -118,7 +118,7 @@ struct ParamTraits<nsIDOMGeoPosition*> {
       return true;
     }
 
-    DOMTimeStamp timeStamp;
+    EpochTimeStamp timeStamp;
     RefPtr<nsIDOMGeoPositionCoords> coords;
 
     
