@@ -243,6 +243,9 @@ ALL_PROCESSES += [
     DllBlocklistEntry("WRDll.x86.dll", (1, 1, 0, 227)),
 
     
+    DllBlocklistEntry("WRusr.dll", (9, 0, 32, 49)),
+
+    
     DllBlocklistEntry("iwprn.dll", (6, 9, 11, 360)),
     DllBlocklistEntry("iwprn_x86.dll", (6, 9, 11, 360)),
 ]
