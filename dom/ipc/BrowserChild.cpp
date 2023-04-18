@@ -2312,16 +2312,29 @@ bool BrowserChild::DeallocPFilePickerChild(PFilePickerChild* actor) {
   return true;
 }
 
-RefPtr<VsyncMainChild> BrowserChild::GetVsyncChild() {
+PVsyncChild* BrowserChild::AllocPVsyncChild() {
+  RefPtr<dom::VsyncChild> actor = new VsyncChild();
+  
+  
+  return actor.forget().take();
+}
+
+bool BrowserChild::DeallocPVsyncChild(PVsyncChild* aActor) {
+  MOZ_ASSERT(aActor);
+
+  
+  RefPtr<VsyncChild> actor = dont_AddRef(static_cast<VsyncChild*>(aActor));
+  return true;
+}
+
+RefPtr<VsyncChild> BrowserChild::GetVsyncChild() {
   
   
   
 #if defined(MOZ_WAYLAND)
   if (IsWaylandEnabled() && !mVsyncChild) {
-    mVsyncChild = MakeRefPtr<VsyncMainChild>();
-    if (!SendPVsyncConstructor(mVsyncChild)) {
-      mVsyncChild = nullptr;
-    }
+    PVsyncChild* actor = SendPVsyncConstructor();
+    mVsyncChild = static_cast<VsyncChild*>(actor);
   }
 #endif
   return mVsyncChild;

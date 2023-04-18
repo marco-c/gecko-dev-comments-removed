@@ -45,7 +45,6 @@
 #include "mozilla/UseCounter.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/css/StylePreloadKind.h"
-#include "mozilla/dom/AnimationFrameProvider.h"
 #include "mozilla/dom/DispatcherTrait.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
 #include "mozilla/dom/Element.h"
@@ -276,7 +275,6 @@ enum class ViewportFitType : uint8_t;
 class WindowContext;
 class WindowGlobalChild;
 class WindowProxyHolder;
-class WorkerDocumentListener;
 class XPathEvaluator;
 class XPathExpression;
 class XPathNSResolver;
@@ -2128,9 +2126,6 @@ class Document : public nsINode,
 
   void FlushExternalResources(FlushType aType);
 
-  void AddWorkerDocumentListener(WorkerDocumentListener* aListener);
-  void RemoveWorkerDocumentListener(WorkerDocumentListener* aListener);
-
   
   void UpdateSVGUseElementShadowTrees() {
     if (mSVGUseElementsNeedingShadowTreeUpdate.IsEmpty()) {
@@ -3106,6 +3101,19 @@ class Document : public nsINode,
   LinkedList<DocumentTimeline>& Timelines() { return mTimelines; }
 
   SVGSVGElement* GetSVGRootElement() const;
+
+  struct FrameRequest {
+    FrameRequest(FrameRequestCallback& aCallback, int32_t aHandle);
+    ~FrameRequest();
+
+    
+    
+    bool operator==(int32_t aHandle) const { return mHandle == aHandle; }
+    bool operator<(int32_t aHandle) const { return mHandle < aHandle; }
+
+    RefPtr<FrameRequestCallback> mCallback;
+    int32_t mHandle;
+  };
 
   nsresult ScheduleFrameRequestCallback(FrameRequestCallback& aCallback,
                                         int32_t* aHandle);
@@ -4977,6 +4985,11 @@ class Document : public nsINode,
   uint32_t mIgnoreDestructiveWritesCounter;
 
   
+
+
+  int32_t mFrameRequestCallbackCounter;
+
+  
   uint32_t mStaticCloneCount;
 
   
@@ -4997,7 +5010,11 @@ class Document : public nsINode,
 
   nsCOMPtr<nsIDocumentEncoder> mCachedEncoder;
 
-  FrameRequestManager mFrameRequestManager;
+  nsTArray<FrameRequest> mFrameRequestCallbacks;
+
+  
+  
+  HashSet<int32_t> mCanceledFrameRequestCallbacks;
 
   
   
@@ -5254,8 +5271,6 @@ class Document : public nsINode,
   RefPtr<ChromeObserver> mChromeObserver;
 
   RefPtr<HTMLAllCollection> mAll;
-
-  nsTHashSet<RefPtr<WorkerDocumentListener>> mWorkerListeners;
 
   
   float mSavedResolution;

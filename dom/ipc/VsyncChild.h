@@ -8,17 +8,46 @@
 #define mozilla_dom_ipc_VsyncChild_h
 
 #include "mozilla/dom/PVsyncChild.h"
+#include "mozilla/RefPtr.h"
+#include "nsISupportsImpl.h"
+#include "nsTObserverArray.h"
 
-namespace mozilla::dom {
+namespace mozilla {
 
-class VsyncChild : public PVsyncChild {
+class VsyncObserver;
+
+namespace dom {
+
+
+
+
+
+class VsyncChild final : public PVsyncChild {
+  NS_INLINE_DECL_REFCOUNTING(VsyncChild)
+
   friend class PVsyncChild;
 
- protected:
-  virtual mozilla::ipc::IPCResult RecvNotify(const VsyncEvent& aVsync,
-                                             const float& aVsyncRate) = 0;
+ public:
+  VsyncChild();
+
+  void AddChildRefreshTimer(VsyncObserver* aVsyncObserver);
+  void RemoveChildRefreshTimer(VsyncObserver* aVsyncObserver);
+
+  TimeDuration GetVsyncRate();
+
+ private:
+  virtual ~VsyncChild();
+
+  mozilla::ipc::IPCResult RecvNotify(const VsyncEvent& aVsync,
+                                     const float& aVsyncRate);
+  virtual void ActorDestroy(ActorDestroyReason aActorDestroyReason) override;
+
+  bool mIsShutdown;
+  TimeDuration mVsyncRate;
+  nsTObserverArray<VsyncObserver*> mObservers;
 };
 
+}  
 }  
 
 #endif  

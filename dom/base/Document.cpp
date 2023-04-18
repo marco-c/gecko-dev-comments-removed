@@ -229,7 +229,6 @@
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/dom/WindowProxyHolder.h"
-#include "mozilla/dom/WorkerDocumentListener.h"
 #include "mozilla/dom/XPathEvaluator.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/nsCSPUtils.h"
@@ -1253,6 +1252,14 @@ void Document::SelectorCache::NotifyExpired(SelectorCacheKey* aSelector) {
   delete aSelector;
 }
 
+Document::FrameRequest::FrameRequest(FrameRequestCallback& aCallback,
+                                     int32_t aHandle)
+    : mCallback(&aCallback), mHandle(aHandle) {
+  LogFrameRequestCallback::LogDispatch(mCallback);
+}
+
+Document::FrameRequest::~FrameRequest() = default;
+
 Document::PendingFrameStaticClone::~PendingFrameStaticClone() = default;
 
 
@@ -1405,6 +1412,7 @@ Document::Document(const char* aContentType)
       mPreloadPictureDepth(0),
       mEventsSuppressed(0),
       mIgnoreDestructiveWritesCounter(0),
+      mFrameRequestCallbackCounter(0),
       mStaticCloneCount(0),
       mWindow(nullptr),
       mBFCacheEntry(nullptr),
@@ -2438,10 +2446,14 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMidasCommandManager)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAll)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocGroup)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFrameRequestManager)
 
   
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPreloadingImages)
+
+  for (uint32_t i = 0; i < tmp->mFrameRequestCallbacks.Length(); ++i) {
+    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mFrameRequestCallbacks[i]");
+    cb.NoteXPCOMChild(tmp->mFrameRequestCallbacks[i].mCallback);
+  }
 
   
   if (tmp->mAnimationController) {
@@ -2588,7 +2600,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   delete tmp->mSubDocuments;
   tmp->mSubDocuments = nullptr;
 
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mFrameRequestManager)
+  tmp->mFrameRequestCallbacks.Clear();
   MOZ_RELEASE_ASSERT(!tmp->mFrameRequestCallbacksScheduled,
                      "How did we get here without our presshell going away "
                      "first?");
@@ -6877,7 +6889,7 @@ void Document::UpdateFrameRequestCallbackSchedulingState(
   
   
   bool shouldBeScheduled =
-      WouldScheduleFrameRequestCallbacks() && !mFrameRequestManager.IsEmpty();
+      WouldScheduleFrameRequestCallbacks() && !mFrameRequestCallbacks.IsEmpty();
   if (shouldBeScheduled == mFrameRequestCallbacksScheduled) {
     
     return;
@@ -6898,7 +6910,8 @@ void Document::UpdateFrameRequestCallbackSchedulingState(
 
 void Document::TakeFrameRequestCallbacks(nsTArray<FrameRequest>& aCallbacks) {
   MOZ_ASSERT(aCallbacks.IsEmpty());
-  mFrameRequestManager.Take(aCallbacks);
+  aCallbacks = std::move(mFrameRequestCallbacks);
+  mCanceledFrameRequestCallbacks.clear();
   
   
   mFrameRequestCallbacksScheduled = false;
@@ -13197,23 +13210,31 @@ void Document::UnlinkOriginalDocumentIfStatic() {
 
 nsresult Document::ScheduleFrameRequestCallback(FrameRequestCallback& aCallback,
                                                 int32_t* aHandle) {
-  nsresult rv = mFrameRequestManager.Schedule(aCallback, aHandle);
-  if (NS_FAILED(rv)) {
-    return rv;
+  if (mFrameRequestCallbackCounter == INT32_MAX) {
+    
+    return NS_ERROR_NOT_AVAILABLE;
   }
+  int32_t newHandle = ++mFrameRequestCallbackCounter;
 
+  mFrameRequestCallbacks.AppendElement(FrameRequest(aCallback, newHandle));
   UpdateFrameRequestCallbackSchedulingState();
+
+  *aHandle = newHandle;
   return NS_OK;
 }
 
 void Document::CancelFrameRequestCallback(int32_t aHandle) {
-  if (mFrameRequestManager.Cancel(aHandle)) {
+  
+  if (mFrameRequestCallbacks.RemoveElementSorted(aHandle)) {
     UpdateFrameRequestCallbackSchedulingState();
+  } else {
+    Unused << mCanceledFrameRequestCallbacks.put(aHandle);
   }
 }
 
 bool Document::IsCanceledFrameRequestCallback(int32_t aHandle) const {
-  return mFrameRequestManager.IsCanceled(aHandle);
+  return !mCanceledFrameRequestCallbacks.empty() &&
+         mCanceledFrameRequestCallbacks.has(aHandle);
 }
 
 nsresult Document::GetStateObject(nsIVariant** aState) {
@@ -15128,21 +15149,7 @@ void Document::UpdateVisibilityState(DispatchVisibilityChange aDispatchEvent) {
     if (mVisibilityState == dom::VisibilityState::Visible) {
       MaybeActiveMediaComponents();
     }
-
-    bool visible = !Hidden();
-    for (auto* listener : mWorkerListeners) {
-      listener->OnVisible(visible);
-    }
   }
-}
-
-void Document::AddWorkerDocumentListener(WorkerDocumentListener* aListener) {
-  mWorkerListeners.Insert(aListener);
-  aListener->OnVisible(!Hidden());
-}
-
-void Document::RemoveWorkerDocumentListener(WorkerDocumentListener* aListener) {
-  mWorkerListeners.Remove(aListener);
 }
 
 VisibilityState Document::ComputeVisibilityState() const {
