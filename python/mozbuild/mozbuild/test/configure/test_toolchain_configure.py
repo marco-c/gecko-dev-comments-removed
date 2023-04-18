@@ -370,9 +370,9 @@ class BaseToolchainTest(BaseConfigureTest):
                 compiler = sandbox._value_for(sandbox[var])
                 
                 
-                self.assertEquals((var, compiler), (var, result))
+                self.assertEqual((var, compiler), (var, result))
             except SystemExit:
-                self.assertEquals((var, result), (var, self.out.getvalue().strip()))
+                self.assertEqual((var, result), (var, self.out.getvalue().strip()))
                 return
 
         
@@ -408,7 +408,7 @@ class BaseToolchainTest(BaseConfigureTest):
             "IMPORT_LIB_SUFFIX",
             "OBJ_SUFFIX",
         ):
-            self.assertEquals(
+            self.assertEqual(
                 "%s=%s" % (k, sandbox.get_config(k)),
                 "%s=%s" % (k, library_name_info[k]),
             )

@@ -25,7 +25,7 @@ class TestMSIX(unittest.TestCase):
             ("X.Y.Z", "X.Y.Z.0"),
         ]:
             version = get_embedded_version(input, buildid)
-            self.assertEquals(version, output)
+            self.assertEqual(version, output)
             
             
             self.assertTrue(version.endswith(".0"))
@@ -35,7 +35,7 @@ class TestMSIX(unittest.TestCase):
             ("X.0a1", "X.YYMm.DdHh.0"),
         ]:
             version = get_embedded_version(input, buildid)
-            self.assertEquals(version, output)
+            self.assertEqual(version, output)
             
             
             self.assertTrue(version.endswith(".0"))
