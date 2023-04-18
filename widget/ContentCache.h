@@ -60,6 +60,8 @@ class ContentCache {
 
     WritingMode mWritingMode;
 
+    bool mHasRange;
+
     
     
     
@@ -71,11 +73,19 @@ class ContentCache {
     
     LayoutDeviceIntRect mRect;
 
-    explicit Selection(uint32_t aAnchorOffset, uint32_t aFocusOffset,
-                       const WritingMode& aWritingMode)
-        : mAnchor(aAnchorOffset),
-          mFocus(aFocusOffset),
-          mWritingMode(aWritingMode) {}
+    explicit Selection(
+        const IMENotification::SelectionChangeDataBase& aSelectionChangeData)
+        : mAnchor(UINT32_MAX),
+          mFocus(UINT32_MAX),
+          mWritingMode(aSelectionChangeData.GetWritingMode()),
+          mHasRange(aSelectionChangeData.HasRange()) {
+      if (mHasRange) {
+        mAnchor = aSelectionChangeData.AnchorOffset();
+        mFocus = aSelectionChangeData.FocusOffset();
+      }
+    }
+
+    explicit Selection(const WidgetQueryContentEvent& aQuerySelectedTextEvent);
 
     void ClearRects() {
       for (auto& rect : mAnchorCharRects) {
@@ -118,7 +128,12 @@ class ContentCache {
 
     friend std::ostream& operator<<(std::ostream& aStream,
                                     const Selection& aSelection) {
-      aStream << "{ mAnchor=" << aSelection.mAnchor
+      aStream << "{ ";
+      if (!aSelection.mHasRange) {
+        aStream << "HasRange()=false }";
+        return aStream;
+      }
+      aStream << "mAnchor=" << aSelection.mAnchor
               << ", mFocus=" << aSelection.mFocus
               << ", mWritingMode=" << ToString(aSelection.mWritingMode).c_str();
       if (aSelection.HasRects()) {
@@ -153,7 +168,8 @@ class ContentCache {
   Maybe<Selection> mSelection;
 
   bool IsSelectionValid() const {
-    return mSelection.isSome() && mSelection->EndOffset() <= mText.Length();
+    return mSelection.isSome() && mSelection->mHasRange &&
+           mSelection->EndOffset() <= mText.Length();
   }
 
   
@@ -308,8 +324,9 @@ class ContentCacheInChild final : public ContentCache {
 
 
 
-  void SetSelection(nsIWidget* aWidget, uint32_t aStartOffset, uint32_t aLength,
-                    bool aReversed, const WritingMode& aWritingMode);
+  void SetSelection(
+      nsIWidget* aWidget,
+      const IMENotification::SelectionChangeDataBase& aSelectionChangeData);
 
  private:
   bool QueryCharRect(nsIWidget* aWidget, uint32_t aOffset,

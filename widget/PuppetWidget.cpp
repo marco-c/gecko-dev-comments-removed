@@ -835,11 +835,7 @@ nsresult PuppetWidget::NotifyIMEOfSelectionChange(
 
   
   
-  mContentCache.SetSelection(
-      this, aIMENotification.mSelectionChangeData.mOffset,
-      aIMENotification.mSelectionChangeData.Length(),
-      aIMENotification.mSelectionChangeData.mReversed,
-      aIMENotification.mSelectionChangeData.GetWritingMode());
+  mContentCache.SetSelection(this, aIMENotification.mSelectionChangeData);
 
   mBrowserChild->SendNotifyIMESelection(mContentCache, aIMENotification);
 
