@@ -12,7 +12,11 @@
 #include "nsWindowsHelpers.h"
 #include <windows.h>
 #include <psapi.h>
-#include <tlhelp32.h>
+#include <winternl.h>
+
+#ifndef STATUS_INFO_LENGTH_MISMATCH
+#  define STATUS_INFO_LENGTH_MISMATCH ((NTSTATUS)0xC0000004L)
+#endif
 
 #define PR_USEC_PER_NSEC 1000L
 
@@ -157,11 +161,36 @@ ProcInfoPromise::ResolveOrRejectValue GetProcInfoSync(
 
   
 
+  NTSTATUS ntStatus;
+
+  UniquePtr<char[]> buf;
+  ULONG bufLen = 512u * 1024u;
+
   
   
-  nsAutoHandle hThreadSnap(CreateToolhelp32Snapshot(
-       TH32CS_SNAPTHREAD,  0));
-  if (!hThreadSnap) {
+  
+  do {
+    
+    
+    buf = MakeUniqueFallible<char[]>(bufLen);
+    if (!buf) {
+      result.SetReject(NS_ERROR_OUT_OF_MEMORY);
+      return result;
+    }
+
+    ntStatus = ::NtQuerySystemInformation(SystemProcessInformation, buf.get(),
+                                          bufLen, &bufLen);
+    if (ntStatus != STATUS_INFO_LENGTH_MISMATCH) {
+      break;
+    }
+
+    
+    
+    
+    
+    bufLen += 8u * 1024u;
+  } while (true);
+  if (!NT_SUCCESS(ntStatus)) {
     result.SetReject(NS_ERROR_UNEXPECTED);
     return result;
   }
@@ -173,62 +202,75 @@ ProcInfoPromise::ResolveOrRejectValue GetProcInfoSync(
       reinterpret_cast<GETTHREADDESCRIPTION>(::GetProcAddress(
           ::GetModuleHandleW(L"Kernel32.dll"), "GetThreadDescription"));
 
-  THREADENTRY32 te32;
-  te32.dwSize = sizeof(THREADENTRY32);
-
-  
-  for (auto success = Thread32First(hThreadSnap.get(), &te32); success;
-       success = Thread32Next(hThreadSnap.get(), &te32)) {
-    auto processLookup = gathered.lookup(te32.th32OwnerProcessID);
-    if (!processLookup) {
-      
-      continue;
-    }
-    ThreadInfo* threadInfo =
-        processLookup->value().threads.AppendElement(fallible);
-    if (!threadInfo) {
-      result.SetReject(NS_ERROR_OUT_OF_MEMORY);
-      return result;
-    }
-
-    nsAutoHandle hThread(
-        OpenThread( THREAD_QUERY_INFORMATION,
-                    FALSE,
-                    te32.th32ThreadID));
-    if (!hThread) {
-      
-      
-      processLookup->value().threads.RemoveLastElement();
-      continue;
-    }
-
-    threadInfo->tid = te32.th32ThreadID;
-
+  PSYSTEM_PROCESS_INFORMATION processInfo;
+  for (ULONG offset = 0;; offset += processInfo->NextEntryOffset) {
+    MOZ_RELEASE_ASSERT(offset < bufLen);
+    processInfo =
+        reinterpret_cast<PSYSTEM_PROCESS_INFORMATION>(buf.get() + offset);
+    ULONG pid = HandleToUlong(processInfo->UniqueProcessId);
     
-    
-    if (QueryThreadCycleTime(hThread.get(), &threadInfo->cpuCycleCount) &&
-        frequencyInMHz) {
-      threadInfo->cpuTime =
-          threadInfo->cpuCycleCount * PR_USEC_PER_NSEC / frequencyInMHz;
-    } else {
-      FILETIME createTime, exitTime, kernelTime, userTime;
-      if (GetThreadTimes(hThread.get(), &createTime, &exitTime, &kernelTime,
-                         &userTime)) {
-        threadInfo->cpuTime =
-            ToNanoSeconds(kernelTime) + ToNanoSeconds(userTime);
+    auto processLookup = gathered.lookup(pid);
+    if (processLookup) {
+      for (ULONG i = 0; i < processInfo->NumberOfThreads; ++i) {
+        
+        
+        PSYSTEM_THREAD_INFORMATION thread =
+            reinterpret_cast<PSYSTEM_THREAD_INFORMATION>(
+                buf.get() + offset + sizeof(SYSTEM_PROCESS_INFORMATION) +
+                sizeof(SYSTEM_THREAD_INFORMATION) * i);
+        ULONG tid = HandleToUlong(thread->ClientId.UniqueThread);
+
+        ThreadInfo* threadInfo =
+            processLookup->value().threads.AppendElement(fallible);
+        if (!threadInfo) {
+          result.SetReject(NS_ERROR_OUT_OF_MEMORY);
+          return result;
+        }
+
+        nsAutoHandle hThread(
+            OpenThread( THREAD_QUERY_INFORMATION,
+                        FALSE,
+                        tid));
+        if (!hThread) {
+          
+          
+          processLookup->value().threads.RemoveLastElement();
+          continue;
+        }
+
+        threadInfo->tid = tid;
+
+        
+        
+        if (QueryThreadCycleTime(hThread.get(), &threadInfo->cpuCycleCount) &&
+            frequencyInMHz) {
+          threadInfo->cpuTime =
+              threadInfo->cpuCycleCount * PR_USEC_PER_NSEC / frequencyInMHz;
+        } else {
+          FILETIME createTime, exitTime, kernelTime, userTime;
+          if (GetThreadTimes(hThread.get(), &createTime, &exitTime, &kernelTime,
+                             &userTime)) {
+            threadInfo->cpuTime =
+                ToNanoSeconds(kernelTime) + ToNanoSeconds(userTime);
+          }
+        }
+
+        
+        
+        if (getThreadDescription) {
+          PWSTR threadName = nullptr;
+          if (getThreadDescription(hThread.get(), &threadName) && threadName) {
+            threadInfo->name = threadName;
+          }
+          if (threadName) {
+            LocalFree(threadName);
+          }
+        }
       }
     }
 
-    
-    
-    if (getThreadDescription) {
-      PWSTR threadName = nullptr;
-      if (getThreadDescription(hThread.get(), &threadName) && threadName) {
-        threadInfo->name = threadName;
-      }
-      if (threadName) {
-        LocalFree(threadName);
-      }
+    if (processInfo->NextEntryOffset == 0) {
+      break;
     }
   }
 
