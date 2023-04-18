@@ -115,6 +115,7 @@ let DownloadsViewableInternally = {
       extension: "xml",
       mimeTypes: ["text/xml", "application/xml"],
       available: true,
+      managedElsewhere: true,
     },
     {
       extension: "svg",
@@ -132,6 +133,7 @@ let DownloadsViewableInternally = {
         );
       },
       
+      managedElsewhere: true,
     },
     {
       extension: "webp",
