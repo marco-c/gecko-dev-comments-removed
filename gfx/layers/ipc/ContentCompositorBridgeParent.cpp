@@ -14,7 +14,6 @@
 #  include "mozilla/gfx/DeviceManagerDx.h"  
 #  include "mozilla/layers/ImageDataSerializer.h"
 #endif
-#include "mozilla/ipc/Transport.h"           
 #include "mozilla/layers/AnimationHelper.h"  
 #include "mozilla/layers/APZCTreeManagerParent.h"  
 #include "mozilla/layers/APZUpdater.h"             

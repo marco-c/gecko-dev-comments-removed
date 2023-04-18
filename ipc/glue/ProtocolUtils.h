@@ -35,9 +35,6 @@
 #include "nsTHashSet.h"
 
 
-#include "mozilla/ipc/Transport.h"  
-
-
 #include "base/process_util.h"  
 #include "prenv.h"              
 
