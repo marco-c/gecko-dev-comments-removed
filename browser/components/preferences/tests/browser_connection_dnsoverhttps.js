@@ -46,6 +46,15 @@ const defaultPrefValues = Object.freeze({
   [TRR_CUSTOM_URI_PREF]: "",
 });
 
+
+
+
+
+
+Cc["@mozilla.org/network/native-dns-override;1"]
+  .getService(Ci.nsINativeDNSResolverOverride)
+  .addIPOverride("mozilla.cloudflare-dns.com", "127.0.0.1");
+
 async function resetPrefs() {
   await DoHTestUtils.resetRemoteSettingsConfig();
   await DoHController._uninit();
