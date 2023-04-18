@@ -39,6 +39,7 @@
 #  include "mozilla/WidgetUtilsGtk.h"
 #  ifdef MOZ_WAYLAND
 #    include "mozilla/widget/nsWaylandDisplay.h"
+#    include "mozilla/widget/DMABufLibWrapper.h"
 #  endif  
 #  include <gdk/gdk.h>
 #endif  
@@ -812,6 +813,11 @@ std::shared_ptr<EglDisplay> GLLibraryEGL::CreateDisplayLocked(
         NS_WARNING("Failed to get wl_display.");
         return nullptr;
       }
+    } else if (!gdkDisplay) {
+      
+      
+      
+      nativeDisplay = widget::GetDMABufDevice()->GetGbmDevice();
     }
 #endif
     ret = GetAndInitDisplay(*this, nativeDisplay, aProofOfLock);
