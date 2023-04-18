@@ -38,15 +38,13 @@ const MIN_FAVICON_SIZE = 96;
 
 
 function getFaviconInfo(uri) {
-  
-  const preferredWidth = 0;
   return new Promise(resolve =>
     PlacesUtils.favicons.getFaviconDataForPage(
       uri,
       
       (iconUri, faviconLength, favicon, mimeType, faviconSize) =>
         resolve(iconUri ? { iconUri, faviconSize } : null),
-      preferredWidth
+      NewTabUtils.activityStreamProvider.THUMB_FAVICON_SIZE
     )
   );
 }
