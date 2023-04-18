@@ -1631,7 +1631,7 @@ class gfxFont {
 
     gfxFloat aveCharWidth;
     gfxFloat spaceWidth;
-    gfxFloat zeroWidth;         
+    gfxFloat zeroWidth;  
     gfxFloat ideographicWidth;  
 
     gfxFloat ZeroOrAveCharWidth() const {

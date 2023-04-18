@@ -416,9 +416,11 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::EndDocument() {
     if (widget::ShouldUsePortal(widget::PortalKind::Print)) {
       
       
-      nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+      nsCOMPtr<nsIObserverService> os =
+          mozilla::services::GetObserverService();
       
-      os->NotifyObservers(nullptr, "print-to-file-finished", targetPath.get());
+      os->NotifyObservers(nullptr, "print-to-file-finished",
+                          targetPath.get());
     }
   }
   return NS_OK;

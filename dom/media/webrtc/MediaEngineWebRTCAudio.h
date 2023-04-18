@@ -266,8 +266,9 @@ class AudioInputTrack : public ProcessedMediaTrack {
   }
   
   
-  void GetInputSourceData(AudioSegment& aOutput, const MediaInputPort* aPort,
-                          GraphTime aFrom, GraphTime aTo) const;
+  void GetInputSourceData(AudioSegment& aOutput,
+                          const MediaInputPort* aPort, GraphTime aFrom,
+                          GraphTime aTo) const;
 
   
   AudioInputTrack* AsAudioInputTrack() override { return this; }
