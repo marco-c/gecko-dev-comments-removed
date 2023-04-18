@@ -458,7 +458,7 @@ class Suggestions {
 
 
   async _fetchIcon(path) {
-    if (!path) {
+    if (!path || !this._rs) {
       return null;
     }
     let record = (
