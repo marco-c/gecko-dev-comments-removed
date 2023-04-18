@@ -2920,6 +2920,8 @@ impl<'a> SceneBuilder<'a> {
         
         
         
+        let mut info = info.clone();
+
         let size = get_line_decoration_size(
             &info.rect.size(),
             orientation,
@@ -2928,6 +2930,32 @@ impl<'a> SceneBuilder<'a> {
         );
 
         let cache_key = size.map(|size| {
+            
+            
+            if style == LineStyle::Dotted {
+                let clip_size = match orientation {
+                    LineOrientation::Horizontal => {
+                        LayoutSize::new(
+                            size.width * (info.rect.width() / size.width).floor(),
+                            info.rect.height(),
+                        )
+                    }
+                    LineOrientation::Vertical => {
+                        LayoutSize::new(
+                            info.rect.width(),
+                            size.height * (info.rect.height() / size.height).floor(),
+                        )
+                    }
+                };
+                let clip_rect = LayoutRect::from_origin_and_size(
+                    info.rect.min,
+                    clip_size,
+                );
+                info.clip_rect = clip_rect
+                    .intersection(&info.clip_rect)
+                    .unwrap_or_else(LayoutRect::zero);
+            }
+
             LineDecorationCacheKey {
                 style,
                 orientation,
