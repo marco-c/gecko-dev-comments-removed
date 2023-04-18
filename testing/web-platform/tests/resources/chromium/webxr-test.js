@@ -64,12 +64,13 @@ class ChromeXRTest {
     this.mockVRService_ = new MockVRService();
   }
 
+  
   simulateDeviceConnection(init_params) {
-    return Promise.resolve(this.mockVRService_.addRuntime(init_params));
+    return Promise.resolve(this.mockVRService_._addRuntime(init_params));
   }
 
   disconnectAllDevices() {
-    this.mockVRService_.removeAllRuntimes();
+    this.mockVRService_._removeAllRuntimes();
     return Promise.resolve();
   }
 
@@ -102,6 +103,7 @@ class ChromeXRTest {
     test_driver.click(button);
   }
 
+  
   Debug(name, msg) {
     console.log(new Date().toISOString() + ' DEBUG[' + name + '] ' + msg);
   }
@@ -123,7 +125,7 @@ class MockVRService {
   }
 
   
-  addRuntime(fakeDeviceInit) {
+  _addRuntime(fakeDeviceInit) {
     const runtime = new MockRuntime(fakeDeviceInit, this);
     this.runtimes_.push(runtime);
 
@@ -134,7 +136,7 @@ class MockVRService {
     return runtime;
   }
 
-  removeAllRuntimes() {
+  _removeAllRuntimes() {
     if (this.client_) {
       this.client_.onDeviceChanged();
     }
@@ -142,7 +144,7 @@ class MockVRService {
     this.runtimes_ = [];
   }
 
-  removeRuntime(device) {
+  _removeRuntime(device) {
     const index = this.runtimes_.indexOf(device);
     if (index >= 0) {
       this.runtimes_.splice(index, 1);
@@ -152,6 +154,7 @@ class MockVRService {
     }
   }
 
+  
   setClient(client) {
     if (this.client_) {
       throw new Error("setClient should only be called once");
@@ -164,7 +167,7 @@ class MockVRService {
     const requests = [];
     
     for (let i = 0; i < this.runtimes_.length; i++) {
-      requests[i] = this.runtimes_[i].requestRuntimeSession(sessionOptions);
+      requests[i] = this.runtimes_[i]._requestRuntimeSession(sessionOptions);
     }
 
     return Promise.all(requests).then((results) => {
@@ -191,15 +194,11 @@ class MockVRService {
     });
   }
 
-  exitPresent() {
-    return Promise.resolve();
-  }
-
   supportsSession(sessionOptions) {
     const requests = [];
     
     for (let i = 0; i < this.runtimes_.length; i++) {
-      requests[i] = this.runtimes_[i].runtimeSupportsSession(sessionOptions);
+      requests[i] = this.runtimes_[i]._runtimeSupportsSession(sessionOptions);
     }
 
     return Promise.all(requests).then((results) => {
@@ -215,10 +214,15 @@ class MockVRService {
     });
   }
 
+  exitPresent() {
+    return Promise.resolve();
+  }
+
   setFramesThrottled(throttled) {
     this.setFramesThrottledImpl(throttled);
   }
 
+  
   
   setFramesThrottledImpl(throttled) {}
 
@@ -247,6 +251,7 @@ class FakeXRAnchorController {
     this.anchorOrigin_ = XRMathHelper.identity();
   }
 
+  
   get deleted() {
     return this.deleted_;
   }
@@ -267,7 +272,7 @@ class FakeXRAnchorController {
 
   stopTracking() {
     if(!this.deleted_) {
-      this.device_.deleteAnchorController(this.id_);
+      this.device_._deleteAnchorController(this.id_);
 
       this.deleted_ = true;
       this.dirty_ = true;
@@ -296,29 +301,12 @@ class FakeXRAnchorController {
     return this.paused_;
   }
 
-  markProcessed() {
+  _markProcessed() {
     this.dirty_ = false;
   }
 
-  getAnchorOrigin() {
+  _getAnchorOrigin() {
     return this.anchorOrigin_;
-  }
-}
-
-
-class FakeXRHitTestSourceController {
-  constructor(id) {
-    this.id_ = id;
-    this.deleted_ = false;
-  }
-
-  get deleted() {
-    return this.deleted_;
-  }
-
-  
-  set deleted(value) {
-    this.deleted_ = value;
   }
 }
 
@@ -327,7 +315,7 @@ class FakeXRHitTestSourceController {
 class MockRuntime {
   
   
-  static featureToMojoMap = {
+  static _featureToMojoMap = {
     'viewer': vrMojom.XRSessionFeature.REF_SPACE_VIEWER,
     'local': vrMojom.XRSessionFeature.REF_SPACE_LOCAL,
     'local-floor': vrMojom.XRSessionFeature.REF_SPACE_LOCAL_FLOOR,
@@ -340,19 +328,19 @@ class MockRuntime {
     'depth-sensing': vrMojom.XRSessionFeature.DEPTH,
   };
 
-  static sessionModeToMojoMap = {
+  static _sessionModeToMojoMap = {
     "inline": vrMojom.XRSessionMode.kInline,
     "immersive-vr": vrMojom.XRSessionMode.kImmersiveVr,
     "immersive-ar": vrMojom.XRSessionMode.kImmersiveAr,
   };
 
-  static environmentBlendModeToMojoMap = {
+  static _environmentBlendModeToMojoMap = {
     "opaque": vrMojom.XREnvironmentBlendMode.kOpaque,
     "alpha-blend": vrMojom.XREnvironmentBlendMode.kAlphaBlend,
     "additive": vrMojom.XREnvironmentBlendMode.kAdditive,
   };
 
-  static interactionModeToMojoMap = {
+  static _interactionModeToMojoMap = {
     "screen-space": vrMojom.XRInteractionMode.kScreenSpace,
     "world-space": vrMojom.XRInteractionMode.kWorldSpace,
   };
@@ -416,9 +404,9 @@ class MockRuntime {
     
     if (this.supportedModes_.includes(vrMojom.XRSessionMode.kImmersiveVr) ||
         this.supportedModes_.includes(vrMojom.XRSessionMode.kImmersiveAr)) {
-      this.displayInfo_ = this.getImmersiveDisplayInfo();
+      this.displayInfo_ = this._getImmersiveDisplayInfo();
     } else if (this.supportedModes_.includes(vrMojom.XRSessionMode.kInline)) {
-      this.displayInfo_ = this.getNonImmersiveDisplayInfo();
+      this.displayInfo_ = this._getNonImmersiveDisplayInfo();
     } else {
       
       console.error("Device has empty supported modes array!");
@@ -434,7 +422,7 @@ class MockRuntime {
     }
 
     if (fakeDeviceInit.world) {
-      this.world_ = fakeDeviceInit.world;
+      this.setWorld(fakeDeviceInit.world);
     }
 
     if (fakeDeviceInit.depthSensingData) {
@@ -451,60 +439,16 @@ class MockRuntime {
     this.setViews(fakeDeviceInit.views);
 
     
-    this.setFeatures(fakeDeviceInit.supportedFeatures || []);
-  }
-
-  _convertModeToEnum(sessionMode) {
-    if (sessionMode in MockRuntime.sessionModeToMojoMap) {
-      return MockRuntime.sessionModeToMojoMap[sessionMode];
-    }
-
-    throw new TypeError("Unrecognized value for XRSessionMode enum: " + sessionMode);
-  }
-
-  _convertModesToEnum(sessionModes) {
-    return sessionModes.map(mode => this._convertModeToEnum(mode));
-  }
-
-  _convertBlendModeToEnum(blendMode) {
-    if (blendMode in MockRuntime.environmentBlendModeToMojoMap) {
-      return MockRuntime.environmentBlendModeToMojoMap[blendMode];
-    } else {
-      if (this.supportedModes_.includes(vrMojom.XRSessionMode.kImmersiveAr)) {
-        return vrMojom.XREnvironmentBlendMode.kAdditive;
-      } else if (this.supportedModes_.includes(
-            vrMojom.XRSessionMode.kImmersiveVr)) {
-        return vrMojom.XREnvironmentBlendMode.kOpaque;
-      }
-    }
-  }
-
-  _convertInteractionModeToEnum(interactionMode) {
-    if (interactionMode in MockRuntime.interactionModeToMojoMap) {
-      return MockRuntime.interactionModeToMojoMap[interactionMode];
-    } else {
-      return vrMojom.XRInteractionMode.kWorldSpace;
-    }
+    this._setFeatures(fakeDeviceInit.supportedFeatures || []);
   }
 
   
-  disconnect() {
-    this.service_.removeRuntime(this);
-    this.presentation_provider_.Close();
-    if (this.sessionClient_) {
-      this.sessionClient_.$.close();
-      this.sessionClient_ = null;
-    }
-
-    return Promise.resolve();
-  }
-
   setViews(views) {
     if (views) {
       this.displayInfo_.views = [];
       this.viewOffsets_ = [];
       for (let i = 0; i < views.length; i++) {
-        this.displayInfo_.views[i] = this.getView(views[i]);
+        this.displayInfo_.views[i] = this._getView(views[i]);
         this.viewOffsets_[i] = composeGFXTransform(views[i].viewOffset);
       }
 
@@ -512,6 +456,17 @@ class MockRuntime {
         this.sessionClient_.onChanged(this.displayInfo_);
       }
     }
+  }
+
+  disconnect() {
+    this.service_._removeRuntime(this);
+    this.presentation_provider_._close();
+    if (this.sessionClient_) {
+      this.sessionClient_.$.close();
+      this.sessionClient_ = null;
+    }
+
+    return Promise.resolve();
   }
 
   setViewerOrigin(origin, emulatedPosition = false) {
@@ -534,21 +489,23 @@ class MockRuntime {
     this.pose_ = null;
   }
 
-  simulateVisibilityChange(visibilityState) {
-    let mojoState = null;
-    switch (visibilityState) {
-      case "visible":
-        mojoState = vrMojom.XRVisibilityState.VISIBLE;
-        break;
-      case "visible-blurred":
-        mojoState = vrMojom.XRVisibilityState.VISIBLE_BLURRED;
-        break;
-      case "hidden":
-        mojoState = vrMojom.XRVisibilityState.HIDDEN;
-        break;
+  setFloorOrigin(floorOrigin) {
+    if (!this.stageParameters_) {
+      this.stageParameters_ = default_stage_parameters;
+      this.stageParameters_.bounds = this.bounds_;
     }
-    if (mojoState && this.sessionClient_) {
-      this.sessionClient_.onVisibilityStateChanged(mojoState);
+
+    
+    this.stageParameters_.mojoFromFloor =
+        {matrix: getMatrixFromTransform(floorOrigin)};
+
+    this._onStageParametersUpdated();
+  }
+
+  clearFloorOrigin() {
+    if (this.stageParameters_) {
+      this.stageParameters_ = null;
+      this._onStageParametersUpdated();
     }
   }
 
@@ -567,37 +524,30 @@ class MockRuntime {
     
     if (this.stageParameters_) {
       this.stageParameters_.bounds = this.bounds_;
-      this.onStageParametersUpdated();
+      this._onStageParametersUpdated();
     }
-  }
-
-  setFloorOrigin(floorOrigin) {
-    if (!this.stageParameters_) {
-      this.stageParameters_ = default_stage_parameters;
-      this.stageParameters_.bounds = this.bounds_;
-    }
-
-    
-    this.stageParameters_.mojoFromFloor =
-        {matrix: getMatrixFromTransform(floorOrigin)};
-
-    this.onStageParametersUpdated();
-  }
-
-  clearFloorOrigin() {
-    if (this.stageParameters_) {
-      this.stageParameters_ = null;
-      this.onStageParametersUpdated();
-    }
-  }
-
-  onStageParametersUpdated() {
-    
-    this.stageParametersId_++;
   }
 
   simulateResetPose() {
     this.send_mojo_space_reset_ = true;
+  }
+
+  simulateVisibilityChange(visibilityState) {
+    let mojoState = null;
+    switch (visibilityState) {
+      case "visible":
+        mojoState = vrMojom.XRVisibilityState.VISIBLE;
+        break;
+      case "visible-blurred":
+        mojoState = vrMojom.XRVisibilityState.VISIBLE_BLURRED;
+        break;
+      case "hidden":
+        mojoState = vrMojom.XRVisibilityState.HIDDEN;
+        break;
+    }
+    if (mojoState && this.sessionClient_) {
+      this.sessionClient_.onVisibilityStateChanged(mojoState);
+    }
   }
 
   simulateInputSourceConnection(fakeInputSourceInit) {
@@ -609,6 +559,16 @@ class MockRuntime {
     return source;
   }
 
+  
+  setWorld(world) {
+    this.world_ = world;
+  }
+
+  clearWorld() {
+    this.world_ = null;
+  }
+
+  
   setAnchorCreationCallback(callback) {
     this.anchor_creation_callback_ = callback;
   }
@@ -617,6 +577,7 @@ class MockRuntime {
     this.hit_test_source_creation_callback_ = callback;
   }
 
+  
   setLightEstimate(fakeXrLightEstimateInit) {
     if (!fakeXrLightEstimateInit.sphericalHarmonicsCoefficients) {
       throw new TypeError("sphericalHarmonicsCoefficients must be set");
@@ -679,6 +640,7 @@ class MockRuntime {
     }
   }
 
+  
   setDepthSensingData(depthSensingData) {
     for(const key of ["depthData", "normDepthBufferFromNormView", "rawValueToMeters", "width", "height"]) {
       if(!(key in depthSensingData)) {
@@ -706,8 +668,46 @@ class MockRuntime {
   }
 
   
-  getNonImmersiveDisplayInfo() {
-    const displayInfo = this.getImmersiveDisplayInfo();
+  _convertModeToEnum(sessionMode) {
+    if (sessionMode in MockRuntime._sessionModeToMojoMap) {
+      return MockRuntime._sessionModeToMojoMap[sessionMode];
+    }
+
+    throw new TypeError("Unrecognized value for XRSessionMode enum: " + sessionMode);
+  }
+
+  _convertModesToEnum(sessionModes) {
+    return sessionModes.map(mode => this._convertModeToEnum(mode));
+  }
+
+  _convertBlendModeToEnum(blendMode) {
+    if (blendMode in MockRuntime._environmentBlendModeToMojoMap) {
+      return MockRuntime._environmentBlendModeToMojoMap[blendMode];
+    } else {
+      if (this.supportedModes_.includes(vrMojom.XRSessionMode.kImmersiveAr)) {
+        return vrMojom.XREnvironmentBlendMode.kAdditive;
+      } else if (this.supportedModes_.includes(
+            vrMojom.XRSessionMode.kImmersiveVr)) {
+        return vrMojom.XREnvironmentBlendMode.kOpaque;
+      }
+    }
+  }
+
+  _convertInteractionModeToEnum(interactionMode) {
+    if (interactionMode in MockRuntime._interactionModeToMojoMap) {
+      return MockRuntime._interactionModeToMojoMap[interactionMode];
+    } else {
+      return vrMojom.XRInteractionMode.kWorldSpace;
+    }
+  }
+
+  _onStageParametersUpdated() {
+    
+    this.stageParametersId_++;
+  }
+
+  _getNonImmersiveDisplayInfo() {
+    const displayInfo = this._getImmersiveDisplayInfo();
 
     displayInfo.capabilities.canPresent = false;
     displayInfo.views = [];
@@ -716,7 +716,7 @@ class MockRuntime {
   }
 
   
-  getImmersiveDisplayInfo() {
+  _getImmersiveDisplayInfo() {
     const viewport_size = 20;
     return {
       displayName: 'FakeDevice',
@@ -760,7 +760,7 @@ class MockRuntime {
 
   
   
-  getView(fakeXRViewInit) {
+  _getView(fakeXRViewInit) {
     let fov = null;
 
     if (fakeXRViewInit.fieldOfView) {
@@ -817,10 +817,10 @@ class MockRuntime {
     };
   }
 
-  setFeatures(supportedFeatures) {
+  _setFeatures(supportedFeatures) {
     function convertFeatureToMojom(feature) {
-      if (feature in MockRuntime.featureToMojoMap) {
-        return MockRuntime.featureToMojoMap[feature];
+      if (feature in MockRuntime._featureToMojoMap) {
+        return MockRuntime._featureToMojoMap[feature];
       } else {
         return vrMojom.XRSessionFeature.INVALID;
       }
@@ -837,23 +837,22 @@ class MockRuntime {
   }
 
   
-  addInputSource(source) {
+  _addInputSource(source) {
     if (!this.input_sources_.has(source.source_id_)) {
       this.input_sources_.set(source.source_id_, source);
     }
   }
 
-  removeInputSource(source) {
+  _removeInputSource(source) {
     this.input_sources_.delete(source.source_id_);
   }
 
   
-  deleteAnchorController(controllerId) {
+  _deleteAnchorController(controllerId) {
     this.anchor_controllers_.delete(controllerId);
   }
 
   
-
   _injectAdditionalFrameData(options, frameData) {
   }
 
@@ -879,7 +878,7 @@ class MockRuntime {
         if (this.input_sources_.size > 0) {
           input_state = [];
           for (const input_source of this.input_sources_.values()) {
-            input_state.push(input_source.getInputSourceState());
+            input_state.push(input_source._getInputSourceState());
           }
         }
 
@@ -944,21 +943,6 @@ class MockRuntime {
   }
 
   setInputSourceButtonListener(listener) { listener.$.close(); }
-
-  
-  
-  
-  closeEnvironmentIntegrationProvider() {
-    if (this.environmentProviderReceiver_) {
-      this.environmentProviderReceiver_.$.close();
-    }
-  }
-
-  closeDataProvider() {
-    this.closeEnvironmentIntegrationProvider();
-    this.dataProviderReceiver_.$.close();
-    this.sessionOptions_ = null;
-  }
 
   
   subscribeToHitTest(nativeOriginInformation, entityTypes, ray) {
@@ -1132,8 +1116,8 @@ class MockRuntime {
   detachAnchor(anchorId) {}
 
   
-  requestRuntimeSession(sessionOptions) {
-    return this.runtimeSupportsSession(sessionOptions).then((result) => {
+  _requestRuntimeSession(sessionOptions) {
+    return this._runtimeSupportsSession(sessionOptions).then((result) => {
       
       const options = {
         transportMethod:
@@ -1146,8 +1130,8 @@ class MockRuntime {
       let submit_frame_sink;
       if (result.supportsSession) {
         submit_frame_sink = {
-          clientReceiver: this.presentation_provider_.getClientReceiver(),
-          provider: this.presentation_provider_.bindProvider(sessionOptions),
+          clientReceiver: this.presentation_provider_._getClientReceiver(),
+          provider: this.presentation_provider_._bindProvider(sessionOptions),
           transportOptions: options
         };
 
@@ -1205,7 +1189,7 @@ class MockRuntime {
     });
   }
 
-  runtimeSupportsSession(options) {
+  _runtimeSupportsSession(options) {
     let result = this.supportedModes_.includes(options.mode);
 
     if (options.requiredFeatures.includes(vrMojom.XRSessionFeature.DEPTH)
@@ -1261,10 +1245,10 @@ class MockRuntime {
         if(!controller.paused) {
           anchorData.mojoFromAnchor = getPoseFromTransform(
               XRMathHelper.decomposeRigidTransform(
-                  controller.getAnchorOrigin()));
+                  controller._getAnchorOrigin()));
         }
 
-        controller.markProcessed();
+        controller._markProcessed();
 
         frameData.anchorsData.updatedAnchorsData.push(anchorData);
       }
@@ -1700,11 +1684,11 @@ class MockXRInputSource {
   }
 
   disconnect() {
-    this.pairedDevice_.removeInputSource(this);
+    this.pairedDevice_._removeInputSource(this);
   }
 
   reconnect() {
-    this.pairedDevice_.addInputSource(this);
+    this.pairedDevice_._addInputSource(this);
   }
 
   startSelection() {
@@ -1743,7 +1727,7 @@ class MockXRInputSource {
     }
 
     const supported_button_map = {};
-    this.gamepad_ = this.getEmptyGamepad();
+    this.gamepad_ = this._getEmptyGamepad();
     for (let i = 0; i < supportedButtons.length; i++) {
       const buttonType = supportedButtons[i].buttonType;
       this.supported_buttons_.push(buttonType);
@@ -1759,11 +1743,11 @@ class MockXRInputSource {
     });
 
     
-    this.addGamepadButton(supported_button_map['grip']);
-    this.addGamepadButton(supported_button_map['touchpad']);
-    this.addGamepadButton(supported_button_map['thumbstick']);
-    this.addGamepadButton(supported_button_map['optional-button']);
-    this.addGamepadButton(supported_button_map['optional-thumbstick']);
+    this._addGamepadButton(supported_button_map['grip']);
+    this._addGamepadButton(supported_button_map['touchpad']);
+    this._addGamepadButton(supported_button_map['thumbstick']);
+    this._addGamepadButton(supported_button_map['optional-button']);
+    this._addGamepadButton(supported_button_map['optional-thumbstick']);
 
     
     for (let i = 0; i < this.gamepad_.buttons.length; i++) {
@@ -1788,15 +1772,15 @@ class MockXRInputSource {
       throw new Error("Tried to update state on an unsupported button");
     }
 
-    const buttonIndex = this.getButtonIndex(buttonState.buttonType);
-    const axesStartIndex = this.getAxesStartIndex(buttonState.buttonType);
+    const buttonIndex = this._getButtonIndex(buttonState.buttonType);
+    const axesStartIndex = this._getAxesStartIndex(buttonState.buttonType);
 
     if (buttonIndex == -1) {
       throw new Error("Unknown Button Type!");
     }
 
     
-    if (buttonIndex === this.getButtonIndex('grip')) {
+    if (buttonIndex === this._getButtonIndex('grip')) {
       
       if (buttonState.pressed) {
         this.primary_squeeze_pressed_ = true;
@@ -1820,7 +1804,12 @@ class MockXRInputSource {
   }
 
   
-  getInputSourceState() {
+  setOverlayPointerPosition(x, y) {
+    this.overlay_pointer_position_ = {x: x, y: y};
+  }
+
+  
+  _getInputSourceState() {
     const input_state = {};
 
     input_state.sourceId = this.source_id_;
@@ -1925,11 +1914,7 @@ class MockXRInputSource {
     return input_state;
   }
 
-  setOverlayPointerPosition(x, y) {
-    this.overlay_pointer_position_ = {x: x, y: y};
-  }
-
-  getEmptyGamepad() {
+  _getEmptyGamepad() {
     
     
     const gamepad = {
@@ -1957,13 +1942,13 @@ class MockXRInputSource {
     return gamepad;
   }
 
-  addGamepadButton(buttonState) {
+  _addGamepadButton(buttonState) {
     if (buttonState == null) {
       return;
     }
 
-    const buttonIndex = this.getButtonIndex(buttonState.buttonType);
-    const axesStartIndex = this.getAxesStartIndex(buttonState.buttonType);
+    const buttonIndex = this._getButtonIndex(buttonState.buttonType);
+    const axesStartIndex = this._getAxesStartIndex(buttonState.buttonType);
 
     if (buttonIndex == -1) {
       throw new Error("Unknown Button Type!");
@@ -1983,7 +1968,7 @@ class MockXRInputSource {
   }
 
   
-  getButtonIndex(buttonType) {
+  _getButtonIndex(buttonType) {
     switch (buttonType) {
       case 'grip':
         return 1;
@@ -2000,7 +1985,7 @@ class MockXRInputSource {
     }
   }
 
-  getAxesStartIndex(buttonType) {
+  _getAxesStartIndex(buttonType) {
     switch (buttonType) {
       case 'touchpad':
         return 0;
@@ -2019,6 +2004,22 @@ class MockXRInputSource {
 }
 
 
+class FakeXRHitTestSourceController {
+  constructor(id) {
+    this.id_ = id;
+    this.deleted_ = false;
+  }
+
+  get deleted() {
+    return this.deleted_;
+  }
+
+  
+  set deleted(value) {
+    this.deleted_ = value;
+  }
+}
+
 class MockXRPresentationProvider {
   constructor() {
     this.receiver_ = null;
@@ -2026,7 +2027,7 @@ class MockXRPresentationProvider {
     this.missing_frame_count_ = 0;
   }
 
-  bindProvider() {
+  _bindProvider() {
     const provider = new vrMojom.XRPresentationProviderRemote();
 
     if (this.receiver_) {
@@ -2037,14 +2038,14 @@ class MockXRPresentationProvider {
     return provider;
   }
 
-  getClientReceiver() {
+  _getClientReceiver() {
     this.submitFrameClient_ = new vrMojom.XRPresentationClientRemote();
     return this.submitFrameClient_.$.bindNewPipeAndPassReceiver();
   }
 
+  
   updateLayerBounds(frameId, leftBounds, rightBounds, sourceSize) {}
 
-  
   submitFrameMissing(frameId, mailboxHolder, timeWaited) {
     this.missing_frame_count_++;
   }
@@ -2066,7 +2067,7 @@ class MockXRPresentationProvider {
   submitFrameDrawnIntoTexture(frameId, syncToken, timeWaited) {}
 
   
-  Close() {
+  _close() {
     if (this.receiver_) {
       this.receiver_.$.close();
     }
