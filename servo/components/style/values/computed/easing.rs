@@ -4,11 +4,14 @@
 
 
 
-use crate::values::computed::{Integer, Number};
+use crate::values::computed::{Integer, Number, Percentage};
 use crate::values::generics::easing;
 
 
-pub type ComputedTimingFunction = easing::TimingFunction<Integer, Number>;
+pub type ComputedTimingFunction = easing::TimingFunction<Integer, Number, Percentage>;
 
 
 pub type TimingFunction = ComputedTimingFunction;
+
+
+pub type ComputedLinearStop = easing::LinearStop<Number, Percentage>;

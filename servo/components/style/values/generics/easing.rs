@@ -6,6 +6,7 @@
 
 
 use crate::parser::ParserContext;
+use crate::values::generics::Optional;
 
 
 #[derive(
@@ -20,9 +21,33 @@ use crate::parser::ParserContext;
     ToResolvedValue,
     ToShmem,
 )]
+#[repr(C)]
+pub struct LinearStop<Number, Percentage> {
+    
+    pub output: Number,
+    
+    #[css(skip_if = "Optional::is_none")]
+    pub input_start: Optional<Percentage>,
+    
+    #[css(skip_if = "Optional::is_none")]
+    pub input_end: Optional<Percentage>,
+}
+
+
+#[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[value_info(ty = "TIMING_FUNCTION")]
 #[repr(u8, C)]
-pub enum TimingFunction<Integer, Number> {
+pub enum TimingFunction<Integer, Number, Percentage> {
     
     Keyword(TimingKeyword),
     
@@ -39,6 +64,11 @@ pub enum TimingFunction<Integer, Number> {
     #[css(comma, function)]
     #[value_info(other_values = "step-start,step-end")]
     Steps(Integer, #[css(skip_if = "is_end")] StepPosition),
+    
+    
+    
+    #[css(comma, function = "linear")]
+    LinearFunction(#[css(iterable)] crate::OwnedSlice<LinearStop<Number, Percentage>>),
 }
 
 #[allow(missing_docs)]
@@ -110,7 +140,7 @@ fn is_end(position: &StepPosition) -> bool {
     *position == StepPosition::JumpEnd || *position == StepPosition::End
 }
 
-impl<Integer, Number> TimingFunction<Integer, Number> {
+impl<Integer, Number, Percentage> TimingFunction<Integer, Number, Percentage> {
     
     #[inline]
     pub fn ease() -> Self {
