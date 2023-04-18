@@ -17,6 +17,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PartnerLinkAttribution: "resource:///modules/PartnerLinkAttribution.jsm",
   Services: "resource://gre/modules/Services.jsm",
   SkippableTimer: "resource:///modules/UrlbarUtils.jsm",
+  TaskQueue: "resource:///modules/UrlbarUtils.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarQuickSuggest: "resource:///modules/UrlbarQuickSuggest.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
@@ -24,7 +25,11 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["AbortController", "fetch"]);
+XPCOMUtils.defineLazyGlobalGetters(this, [
+  "AbortController",
+  "crypto",
+  "fetch",
+]);
 
 const TIMESTAMP_TEMPLATE = "%YYYYMMDDHH%";
 const TIMESTAMP_LENGTH = 10;
@@ -97,6 +102,20 @@ class ProviderQuickSuggest extends UrlbarProvider {
     return (
       Services.urlFormatter.formatURLPref("app.support.baseURL") + "top-pick"
     );
+  }
+
+  
+
+
+  get timestampTemplate() {
+    return TIMESTAMP_TEMPLATE;
+  }
+
+  
+
+
+  get timestampLength() {
+    return TIMESTAMP_LENGTH;
   }
 
   
@@ -177,9 +196,13 @@ class ProviderQuickSuggest extends UrlbarProvider {
       return;
     }
 
+    
+    
+    let originalUrl = suggestion.url;
     this._replaceSuggestionTemplates(suggestion);
 
     let payload = {
+      originalUrl,
       url: suggestion.url,
       urlTimestampIndex: suggestion.urlTimestampIndex,
       icon: suggestion.icon,
@@ -249,6 +272,74 @@ class ProviderQuickSuggest extends UrlbarProvider {
         NimbusFeatures.urlbar.recordExposureEvent({ once: true })
       );
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  blockResult(result) {
+    this.logger.info("Blocking result: " + JSON.stringify(result));
+    this.blockSuggestion(result.payload.originalUrl);
+    return true;
+  }
+
+  
+
+
+
+
+
+  async blockSuggestion(originalUrl) {
+    this.logger.debug(`Queueing blockSuggestion: ${originalUrl}`);
+    await this._blockTaskQueue.queue(async () => {
+      this.logger.info(`Blocking suggestion: ${originalUrl}`);
+      let digest = await this._getDigest(originalUrl);
+      this.logger.debug(`Got digest for '${originalUrl}': ${digest}`);
+      this._blockedDigests.add(digest);
+      let json = JSON.stringify([...this._blockedDigests]);
+      UrlbarPrefs.set("quickSuggest.blockedDigests", json);
+      this.logger.debug(`All blocked suggestions: ${json}`);
+    });
+  }
+
+  
+
+
+
+
+
+
+
+  async isSuggestionBlocked(originalUrl) {
+    this.logger.debug(`Queueing isSuggestionBlocked: ${originalUrl}`);
+    return this._blockTaskQueue.queue(async () => {
+      this.logger.info(`Getting blocked status: ${originalUrl}`);
+      let digest = await this._getDigest(originalUrl);
+      this.logger.debug(`Got digest for '${originalUrl}': ${digest}`);
+      let isBlocked = this._blockedDigests.has(digest);
+      this.logger.info(`Blocked status for '${originalUrl}': ${isBlocked}`);
+      return isBlocked;
+    });
+  }
+
+  
+
+
+  async clearBlockedSuggestions() {
+    this.logger.debug(`Queueing clearBlockedSuggestions`);
+    await this._blockTaskQueue.queue(() => {
+      this.logger.info(`Clearing all blocked suggestions`);
+      this._blockedDigests.clear();
+      UrlbarPrefs.clear("quickSuggest.blockedDigests");
+    });
   }
 
   
@@ -372,6 +463,12 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
   onPrefChanged(pref) {
     switch (pref) {
+      case "quickSuggest.blockedDigests":
+        this.logger.debug(
+          "browser.urlbar.quickSuggest.blockedDigests changed, loading digests"
+        );
+        this._loadBlockedDigests();
+        break;
       case "quicksuggest.dataCollection.enabled":
         if (!UrlbarPrefs.updatingFirefoxSuggestScenario) {
           Services.telemetry.recordEvent(
@@ -720,6 +817,47 @@ class ProviderQuickSuggest extends UrlbarProvider {
   
 
 
+  async _loadBlockedDigests() {
+    this.logger.debug(`Queueing _loadBlockedDigests`);
+    await this._blockTaskQueue.queue(() => {
+      this.logger.info(`Loading blocked suggestion digests`);
+      let json = UrlbarPrefs.get("quickSuggest.blockedDigests");
+      this.logger.debug(
+        `browser.urlbar.quickSuggest.blockedDigests value: ${json}`
+      );
+      if (!json) {
+        this.logger.info(`There are no blocked suggestion digests`);
+        this._blockedDigests.clear();
+      } else {
+        try {
+          this._blockedDigests = new Set(JSON.parse(json));
+          this.logger.info(`Successfully loaded blocked suggestion digests`);
+        } catch (error) {
+          this.logger.error(
+            `Error loading blocked suggestion digests: ${error}`
+          );
+        }
+      }
+    });
+  }
+
+  
+
+
+
+
+
+
+  async _getDigest(string) {
+    let stringArray = new TextEncoder().encode(string);
+    let hashBuffer = await crypto.subtle.digest("SHA-1", stringArray);
+    let hashArray = new Uint8Array(hashBuffer);
+    return Array.from(hashArray, b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  
+
+
 
 
   _updateExperimentState() {
@@ -733,11 +871,30 @@ class ProviderQuickSuggest extends UrlbarProvider {
     
     if (UrlbarPrefs.get("quickSuggestEnabled")) {
       UrlbarQuickSuggest; 
+      this._loadBlockedDigests();
     }
   }
 
   
   _addedResultInLastQuery = false;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  _blockedDigests = new Set();
+
+  
+  
+  _blockTaskQueue = new TaskQueue();
 }
 
 var UrlbarProviderQuickSuggest = new ProviderQuickSuggest();

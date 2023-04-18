@@ -218,6 +218,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["suggest.topsites", true],
 
   
+  ["quickSuggest.blockedDigests", ""],
+
+  
   
   ["quicksuggest.enabled", false],
 

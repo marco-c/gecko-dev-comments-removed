@@ -416,7 +416,7 @@ class UrlbarController {
           break;
         }
         if (event.shiftKey) {
-          if (!executeAction || this._handleDeleteEntry()) {
+          if (!executeAction || this.handleDeleteEntry()) {
             event.preventDefault();
           }
         } else if (executeAction) {
@@ -584,23 +584,56 @@ class UrlbarController {
 
 
 
-  _handleDeleteEntry() {
+
+
+
+
+
+
+
+
+
+
+
+  handleDeleteEntry(result = undefined) {
     if (!this._lastQueryContextWrapper) {
       Cu.reportError("Cannot delete - the latest query is not present");
       return false;
     }
 
-    const selectedResult = this.input.view.selectedResult;
+    if (!result) {
+      
+      let { selectedElement } = this.input.view;
+      if (selectedElement?.classList.contains("urlbarView-button")) {
+        
+        
+        return false;
+      }
+      result = this.input.view.selectedResult;
+    }
+
+    if (!result || result.heuristic) {
+      return false;
+    }
+
+    
+    let provider = UrlbarProvidersManager.getProvider(result.providerName);
+    if (!provider) {
+      Cu.reportError(`Provider not found: ${result.providerName}`);
+    }
+    let blockedByProvider = provider?.tryMethod("blockResult", result);
+
+    
+    
     if (
-      !selectedResult ||
-      selectedResult.source != UrlbarUtils.RESULT_SOURCE.HISTORY ||
-      selectedResult.heuristic
+      !blockedByProvider &&
+      result.source != UrlbarUtils.RESULT_SOURCE.HISTORY
     ) {
       return false;
     }
 
     let { queryContext } = this._lastQueryContextWrapper;
-    let index = queryContext.results.indexOf(selectedResult);
+    let index = queryContext.results.indexOf(result);
     if (index < 0) {
       Cu.reportError("Failed to find the selected result in the results");
       return false;
@@ -609,20 +642,24 @@ class UrlbarController {
     queryContext.results.splice(index, 1);
     this.notify(NOTIFICATIONS.QUERY_RESULT_REMOVED, index);
 
+    if (blockedByProvider) {
+      return true;
+    }
+
     
-    if (selectedResult.type == UrlbarUtils.RESULT_TYPE.SEARCH) {
+    if (result.type == UrlbarUtils.RESULT_TYPE.SEARCH) {
       if (!queryContext.formHistoryName) {
         return false;
       }
       
-      let { url } = UrlbarUtils.getUrlFromResult(selectedResult);
+      let { url } = UrlbarUtils.getUrlFromResult(result);
       PlacesUtils.history.remove(url).catch(Cu.reportError);
       
       FormHistory.update(
         {
           op: "remove",
           fieldname: queryContext.formHistoryName,
-          value: selectedResult.payload.suggestion,
+          value: result.payload.suggestion,
         },
         {
           handleError(error) {
@@ -634,9 +671,7 @@ class UrlbarController {
     }
 
     
-    PlacesUtils.history
-      .remove(selectedResult.payload.url)
-      .catch(Cu.reportError);
+    PlacesUtils.history.remove(result.payload.url).catch(Cu.reportError);
     return true;
   }
 

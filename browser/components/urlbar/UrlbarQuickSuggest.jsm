@@ -20,6 +20,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   QUICK_SUGGEST_SOURCE: "resource:///modules/UrlbarProviderQuickSuggest.jsm",
   RemoteSettings: "resource://services-settings/remote-settings.js",
   Services: "resource://gre/modules/Services.jsm",
+  TaskQueue: "resource:///modules/UrlbarUtils.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProviderQuickSuggest:
     "resource:///modules/UrlbarProviderQuickSuggest.jsm",
@@ -73,7 +74,7 @@ class Suggestions {
     UrlbarPrefs.addObserver(this);
     NimbusFeatures.urlbar.onUpdate(() => this._queueSettingsSetup());
 
-    this._queueSettingsTask(() => {
+    this._settingsTaskQueue.queue(() => {
       return new Promise(resolve => {
         Services.tm.idleDispatchToMainThread(() => {
           this._queueSettingsSetup();
@@ -98,12 +99,7 @@ class Suggestions {
 
 
   get readyPromise() {
-    if (!this._settingsTaskQueue.length) {
-      return Promise.resolve();
-    }
-    return new Promise(resolve => {
-      this._emptySettingsTaskQueueCallbacks.push(resolve);
-    });
+    return this._settingsTaskQueue.emptyPromise;
   }
 
   
@@ -319,10 +315,11 @@ class Suggestions {
 
   
   
-  _settingsTaskQueue = [];
-
   
-  _emptySettingsTaskQueueCallbacks = [];
+  
+  
+  
+  _settingsTaskQueue = new TaskQueue();
 
   
   _results = new Map();
@@ -335,7 +332,7 @@ class Suggestions {
 
 
   _queueSettingsSetup() {
-    this._queueSettingsTask(() => {
+    this._settingsTaskQueue.queue(() => {
       let enabled =
         UrlbarPrefs.get(FEATURE_AVAILABLE) &&
         (UrlbarPrefs.get("suggest.quicksuggest.nonsponsored") ||
@@ -362,7 +359,7 @@ class Suggestions {
 
 
   _queueSettingsSync(event = null) {
-    this._queueSettingsTask(async () => {
+    this._settingsTaskQueue.queue(async () => {
       
       if (event?.data?.deleted) {
         await Promise.all(
@@ -403,47 +400,6 @@ class Suggestions {
         this._tree.set(keyword, result.id);
       }
     }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  _queueSettingsTask(callback) {
-    this._settingsTaskQueue.push(callback);
-    if (this._settingsTaskQueue.length == 1) {
-      this._doNextSettingsTask();
-    }
-  }
-
-  
-
-
-
-  async _doNextSettingsTask() {
-    if (!this._settingsTaskQueue.length) {
-      while (this._emptySettingsTaskQueueCallbacks.length) {
-        let callback = this._emptySettingsTaskQueueCallbacks.shift();
-        callback();
-      }
-      return;
-    }
-
-    let task = this._settingsTaskQueue[0];
-    try {
-      await task();
-    } catch (error) {
-      log.error(error);
-    }
-    this._settingsTaskQueue.shift();
-    this._doNextSettingsTask();
   }
 
   

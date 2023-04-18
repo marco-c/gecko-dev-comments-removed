@@ -23,11 +23,10 @@ const HTTP_SEARCH_STRING = "http prefix";
 const HTTPS_SEARCH_STRING = "https prefix";
 const PREFIX_SUGGESTIONS_STRIPPED_URL = "example.com/prefix-test";
 
-const TIMESTAMP_TEMPLATE = "%YYYYMMDDHH%";
-const TIMESTAMP_LENGTH = 10;
+const { timestampTemplate, timestampLength } = UrlbarProviderQuickSuggest;
 const TIMESTAMP_SEARCH_STRING = "timestamp";
-const TIMESTAMP_SUGGESTION_URL = `http://example.com/timestamp-${TIMESTAMP_TEMPLATE}`;
-const TIMESTAMP_SUGGESTION_CLICK_URL = `http://click.reporting.test.com/timestamp-${TIMESTAMP_TEMPLATE}-foo`;
+const TIMESTAMP_SUGGESTION_URL = `http://example.com/timestamp-${timestampTemplate}`;
+const TIMESTAMP_SUGGESTION_CLICK_URL = `http://click.reporting.test.com/timestamp-${timestampTemplate}-foo`;
 
 const REMOTE_SETTINGS_DATA = [
   {
@@ -86,6 +85,7 @@ const EXPECTED_SPONSORED_RESULT = {
     qsSuggestion: "frab",
     title: "frabbits",
     url: "http://test.com/q=frabbits",
+    originalUrl: "http://test.com/q=frabbits",
     icon: null,
     sponsoredImpressionUrl: "http://impression.reporting.test.com/",
     sponsoredClickUrl: "http://click.reporting.test.com/",
@@ -107,6 +107,7 @@ const EXPECTED_NONSPONSORED_RESULT = {
     qsSuggestion: "nonspon",
     title: "Non-Sponsored",
     url: "http://test.com/?q=nonsponsored",
+    originalUrl: "http://test.com/?q=nonsponsored",
     icon: null,
     sponsoredImpressionUrl: "http://impression.reporting.test.com/nonsponsored",
     sponsoredClickUrl: "http://click.reporting.test.com/nonsponsored",
@@ -128,6 +129,7 @@ const EXPECTED_HTTP_RESULT = {
     qsSuggestion: HTTP_SEARCH_STRING,
     title: "http suggestion",
     url: "http://" + PREFIX_SUGGESTIONS_STRIPPED_URL,
+    originalUrl: "http://" + PREFIX_SUGGESTIONS_STRIPPED_URL,
     icon: null,
     sponsoredImpressionUrl: "http://impression.reporting.test.com/prefix",
     sponsoredClickUrl: "http://click.reporting.test.com/prefix",
@@ -149,6 +151,7 @@ const EXPECTED_HTTPS_RESULT = {
     qsSuggestion: HTTPS_SEARCH_STRING,
     title: "https suggestion",
     url: "https://" + PREFIX_SUGGESTIONS_STRIPPED_URL,
+    originalUrl: "https://" + PREFIX_SUGGESTIONS_STRIPPED_URL,
     icon: null,
     sponsoredImpressionUrl: "http://impression.reporting.test.com/prefix",
     sponsoredClickUrl: "http://click.reporting.test.com/prefix",
@@ -843,7 +846,7 @@ add_task(async function dedupeAgainstURL_timestamps() {
 
   
   let dupeURL = TIMESTAMP_SUGGESTION_URL.replace(
-    TIMESTAMP_TEMPLATE,
+    timestampTemplate,
     "2013051113"
   );
 
@@ -851,14 +854,14 @@ add_task(async function dedupeAgainstURL_timestamps() {
   
   let badTimestamps = [
     
-    "x".repeat(TIMESTAMP_LENGTH),
+    "x".repeat(timestampLength),
     
-    "5".repeat(TIMESTAMP_LENGTH - 1),
+    "5".repeat(timestampLength - 1),
     
     "",
   ];
   let badTimestampURLs = badTimestamps.map(str =>
-    TIMESTAMP_SUGGESTION_URL.replace(TIMESTAMP_TEMPLATE, str)
+    TIMESTAMP_SUGGESTION_URL.replace(timestampTemplate, str)
   );
 
   await PlacesTestUtils.addVisits(
@@ -913,6 +916,7 @@ add_task(async function dedupeAgainstURL_timestamps() {
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     heuristic: false,
     payload: {
+      originalUrl: TIMESTAMP_SUGGESTION_URL,
       qsSuggestion: TIMESTAMP_SEARCH_STRING,
       title: "Timestamp suggestion",
       icon: null,
@@ -1028,4 +1032,152 @@ add_task(async function dedupeAgainstURL_timestamps() {
   UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
   UrlbarPrefs.clear("suggest.searches");
   await PlacesUtils.history.clear();
+});
+
+
+add_task(async function blockedSuggestionsAPI() {
+  
+  await UrlbarProviderQuickSuggest.clearBlockedSuggestions();
+  Assert.equal(
+    UrlbarProviderQuickSuggest._blockedDigests.size,
+    0,
+    "_blockedDigests is empty"
+  );
+  Assert.equal(
+    UrlbarPrefs.get("quickSuggest.blockedDigests"),
+    "",
+    "quickSuggest.blockedDigests is an empty string"
+  );
+
+  
+  let urls = [];
+  for (let i = 0; i < 3; i++) {
+    urls.push("http://example.com/" + i);
+  }
+
+  
+  
+  for (let i = 0; i < urls.length; i++) {
+    await UrlbarProviderQuickSuggest.blockSuggestion(urls[i]);
+    for (let j = 0; j < urls.length; j++) {
+      Assert.equal(
+        await UrlbarProviderQuickSuggest.isSuggestionBlocked(urls[j]),
+        j <= i,
+        `Suggestion at index ${j} is blocked or not as expected`
+      );
+    }
+  }
+
+  
+  for (let url of urls) {
+    Assert.ok(
+      await UrlbarProviderQuickSuggest.isSuggestionBlocked(url),
+      `Suggestion is blocked: ${url}`
+    );
+  }
+
+  
+  Assert.equal(
+    UrlbarProviderQuickSuggest._blockedDigests.size,
+    urls.length,
+    "_blockedDigests has correct size"
+  );
+  let array = JSON.parse(UrlbarPrefs.get("quickSuggest.blockedDigests"));
+  Assert.ok(Array.isArray(array), "Parsed value of pref is an array");
+  Assert.equal(array.length, urls.length, "Array has correct length");
+
+  
+  
+  UrlbarPrefs.set("quickSuggest.blockedDigests", "not a json array");
+  await UrlbarProviderQuickSuggest._blockTaskQueue.emptyPromise;
+  for (let url of urls) {
+    Assert.ok(
+      await UrlbarProviderQuickSuggest.isSuggestionBlocked(url),
+      `Suggestion remains blocked: ${url}`
+    );
+  }
+  Assert.equal(
+    UrlbarProviderQuickSuggest._blockedDigests.size,
+    urls.length,
+    "_blockedDigests still has correct size"
+  );
+
+  
+  
+  let newURL = "http://example.com/new-block";
+  await UrlbarProviderQuickSuggest.blockSuggestion(newURL);
+  urls.push(newURL);
+  for (let url of urls) {
+    Assert.ok(
+      await UrlbarProviderQuickSuggest.isSuggestionBlocked(url),
+      `Suggestion is blocked: ${url}`
+    );
+  }
+  Assert.equal(
+    UrlbarProviderQuickSuggest._blockedDigests.size,
+    urls.length,
+    "_blockedDigests has correct size"
+  );
+  array = JSON.parse(UrlbarPrefs.get("quickSuggest.blockedDigests"));
+  Assert.ok(Array.isArray(array), "Parsed value of pref is an array");
+  Assert.equal(array.length, urls.length, "Array has correct length");
+
+  
+  newURL = "http://example.com/direct-to-pref";
+  urls.push(newURL);
+  array = JSON.parse(UrlbarPrefs.get("quickSuggest.blockedDigests"));
+  array.push(await UrlbarProviderQuickSuggest._getDigest(newURL));
+  UrlbarPrefs.set("quickSuggest.blockedDigests", JSON.stringify(array));
+  await UrlbarProviderQuickSuggest._blockTaskQueue.emptyPromise;
+
+  
+  for (let url of urls) {
+    Assert.ok(
+      await UrlbarProviderQuickSuggest.isSuggestionBlocked(url),
+      `Suggestion is blocked: ${url}`
+    );
+  }
+  Assert.equal(
+    UrlbarProviderQuickSuggest._blockedDigests.size,
+    urls.length,
+    "_blockedDigests has correct size"
+  );
+
+  
+  UrlbarPrefs.clear("quickSuggest.blockedDigests");
+  await UrlbarProviderQuickSuggest._blockTaskQueue.emptyPromise;
+  for (let url of urls) {
+    Assert.ok(
+      !(await UrlbarProviderQuickSuggest.isSuggestionBlocked(url)),
+      `Suggestion is no longer blocked: ${url}`
+    );
+  }
+  Assert.equal(
+    UrlbarProviderQuickSuggest._blockedDigests.size,
+    0,
+    "_blockedDigests is now empty"
+  );
+
+  
+  for (let url of urls) {
+    await UrlbarProviderQuickSuggest.blockSuggestion(url);
+  }
+  for (let url of urls) {
+    Assert.ok(
+      await UrlbarProviderQuickSuggest.isSuggestionBlocked(url),
+      `Suggestion is blocked: ${url}`
+    );
+  }
+  await UrlbarProviderQuickSuggest.clearBlockedSuggestions();
+  for (let url of urls) {
+    Assert.ok(
+      !(await UrlbarProviderQuickSuggest.isSuggestionBlocked(url)),
+      `Suggestion is no longer blocked: ${url}`
+    );
+  }
+  Assert.equal(
+    UrlbarProviderQuickSuggest._blockedDigests.size,
+    0,
+    "_blockedDigests is now empty"
+  );
 });

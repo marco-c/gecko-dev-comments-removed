@@ -12,6 +12,7 @@
 var EXPORTED_SYMBOLS = [
   "L10nCache",
   "SkippableTimer",
+  "TaskQueue",
   "UrlbarMuxer",
   "UrlbarProvider",
   "UrlbarQueryContext",
@@ -1017,7 +1018,10 @@ var UrlbarUtils = {
       
       
       
-      return Log.repository.getLoggerWithMessagePrefix("urlbar", prefix + "::");
+      return Log.repository.getLoggerWithMessagePrefix(
+        "urlbar",
+        prefix + " :: "
+      );
     }
     return this._logger;
   },
@@ -1310,6 +1314,9 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       },
       isSponsored: {
         type: "boolean",
+      },
+      originalUrl: {
+        type: "string",
       },
       qsSuggestion: {
         type: "string",
@@ -1843,6 +1850,22 @@ class UrlbarProvider {
 
 
 
+  blockResult(result) {
+    return false;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2240,4 +2263,73 @@ class L10nCache {
     let parts = [id].concat(argValues);
     return JSON.stringify(parts);
   }
+}
+
+
+
+
+
+
+class TaskQueue {
+  
+
+
+
+
+  get emptyPromise() {
+    if (!this._queue.length) {
+      return Promise.resolve();
+    }
+    return new Promise(resolve => this._emptyCallbacks.push(resolve));
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  queue(callback) {
+    return new Promise((resolve, reject) => {
+      this._queue.push({ callback, resolve, reject });
+      if (this._queue.length == 1) {
+        this._doNextTask();
+      }
+    });
+  }
+
+  
+
+
+
+  async _doNextTask() {
+    if (!this._queue.length) {
+      while (this._emptyCallbacks.length) {
+        let callback = this._emptyCallbacks.shift();
+        callback();
+      }
+      return;
+    }
+
+    let { callback, resolve, reject } = this._queue[0];
+    try {
+      let value = await callback();
+      resolve(value);
+    } catch (error) {
+      Cu.reportError(error);
+      reject(error);
+    }
+    this._queue.shift();
+    this._doNextTask();
+  }
+
+  _queue = [];
+  _emptyCallbacks = [];
 }
