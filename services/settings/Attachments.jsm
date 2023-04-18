@@ -29,6 +29,14 @@ class BadContentError extends Error {
   }
 }
 
+class ServerInfoError extends Error {
+  constructor(error) {
+    super(`Server response is invalid ${error}`);
+    this.name = "ServerInfoError";
+    this.original = error;
+  }
+}
+
 
 
 class LazyRecordAndBuffer {
@@ -92,6 +100,9 @@ class Downloader {
   static get BadContentError() {
     return BadContentError;
   }
+  static get ServerInfoError() {
+    return ServerInfoError;
+  }
 
   constructor(...folders) {
     this.folders = ["settings", ...folders];
@@ -108,6 +119,8 @@ class Downloader {
   }
 
   
+
+
 
 
 
@@ -284,6 +297,8 @@ class Downloader {
 
 
 
+
+
   async downloadToDisk(record, options = {}) {
     const { retries = 3 } = options;
     const {
@@ -396,8 +411,13 @@ class Downloader {
 
   async _baseAttachmentsURL() {
     if (!this._cdnURL) {
-      const server = Utils.SERVER_URL;
-      const serverInfo = await (await Utils.fetch(`${server}/`)).json();
+      const resp = await Utils.fetch(`${Utils.SERVER_URL}/`);
+      let serverInfo;
+      try {
+        serverInfo = await resp.json();
+      } catch (error) {
+        throw new Downloader.ServerInfoError(error);
+      }
       
       const {
         capabilities: {
