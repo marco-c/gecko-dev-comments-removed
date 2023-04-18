@@ -980,8 +980,7 @@ class gfxFontUtils {
                                             gfxSparseBitSet& aCharacterMap);
 
   static nsresult ReadCMAPTableFormat4(const uint8_t* aBuf, uint32_t aLength,
-                                       gfxSparseBitSet& aCharacterMap,
-                                       bool aIsSymbolFont);
+                                       gfxSparseBitSet& aCharacterMap);
 
   static nsresult ReadCMAPTableFormat14(const uint8_t* aBuf, uint32_t aLength,
                                         mozilla::UniquePtr<uint8_t[]>& aTable);
@@ -989,8 +988,7 @@ class gfxFontUtils {
   static uint32_t FindPreferredSubtable(const uint8_t* aBuf,
                                         uint32_t aBufLength,
                                         uint32_t* aTableOffset,
-                                        uint32_t* aUVSTableOffset,
-                                        bool* aIsSymbolFont);
+                                        uint32_t* aUVSTableOffset);
 
   static nsresult ReadCMAP(const uint8_t* aBuf, uint32_t aBufLength,
                            gfxSparseBitSet& aCharacterMap,
@@ -1016,12 +1014,6 @@ class gfxFontUtils {
 
   static uint32_t MapCharToGlyph(const uint8_t* aCmapBuf, uint32_t aBufLength,
                                  uint32_t aUnicode, uint32_t aVarSelector = 0);
-
-  
-  
-  static MOZ_ALWAYS_INLINE uint32_t MapLegacySymbolFontCharToPUA(uint32_t aCh) {
-    return aCh >= 0x20 && aCh <= 0xff ? 0xf000 + aCh : 0;
-  }
 
 #ifdef XP_WIN
   

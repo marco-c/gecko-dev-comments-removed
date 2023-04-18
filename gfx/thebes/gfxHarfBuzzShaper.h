@@ -169,12 +169,6 @@ class gfxHarfBuzzShaper : public gfxFontShaper {
   
   
   bool mUseFontGetGlyph;
-
-  
-  
-  
-  bool mIsSymbolFont;
-
   
   
   bool mUseFontGlyphWidths;
