@@ -18,6 +18,7 @@
 #  include "mozilla/Result.h"
 #  include "mozilla/TimeStamp.h"
 #  include "mozilla/UniquePtr.h"
+#  include "mozilla/SPSCQueue.h"
 #  include "nsCOMPtr.h"
 #  include "nsThreadUtils.h"
 #  include "WavDumper.h"
@@ -38,6 +39,18 @@ class AudioStream;
 class FrameHistory;
 class AudioConfig;
 
+
+
+
+struct CallbackInfo {
+  CallbackInfo() = default;
+  CallbackInfo(uint32_t aServiced, uint32_t aUnderrun, uint32_t aOutputRate)
+      : mServiced(aServiced), mUnderrun(aUnderrun), mOutputRate(aOutputRate) {}
+  uint32_t mServiced = 0;
+  uint32_t mUnderrun = 0;
+  uint32_t mOutputRate = 0;
+};
+
 class AudioClock {
  public:
   AudioClock();
@@ -55,14 +68,14 @@ class AudioClock {
 
 
 
-  int64_t GetPositionInFrames(int64_t aFrames) const;
+  int64_t GetPositionInFrames(int64_t aFrames);
 
   
 
 
 
 
-  int64_t GetPosition(int64_t frames) const;
+  int64_t GetPosition(int64_t frames);
 
   
   
@@ -82,13 +95,21 @@ class AudioClock {
 
  private:
   
-  uint32_t mOutRate;
-  
-  uint32_t mInRate;
+  Atomic<uint32_t> mOutRate;
   
   bool mPreservesPitch;
   
   const UniquePtr<FrameHistory> mFrameHistory;
+#  ifdef XP_MACOSX
+  
+  
+  SPSCQueue<CallbackInfo> mCallbackInfoQueue{100};
+  
+  
+  
+  
+  AutoTArray<CallbackInfo, 5> mAudioThreadCallbackInfo;
+#  endif
 };
 
 
