@@ -31,6 +31,7 @@
 
 #include "PlatformMacros.h"
 
+#include "mozilla/Atomics.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/ProfileBufferEntrySerialization.h"
@@ -72,6 +73,15 @@ typedef uint8_t* Address;
 
 
 
+
+
+
+
+
+
+
+
+extern mozilla::Atomic<int, mozilla::MemoryOrdering::Relaxed> gSkipSampling;
 
 namespace mozilla {
 class JSONWriter;

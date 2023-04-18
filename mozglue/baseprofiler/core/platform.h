@@ -33,6 +33,7 @@
 
 #include "BaseProfiler.h"
 
+#include "mozilla/Atomics.h"
 #include "mozilla/Logging.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
@@ -101,6 +102,15 @@ namespace mozilla {
 class JSONWriter;
 
 namespace baseprofiler {
+
+
+
+
+
+
+
+
+extern mozilla::Atomic<int, mozilla::MemoryOrdering::Relaxed> gSkipSampling;
 
 typedef uint8_t* Address;
 

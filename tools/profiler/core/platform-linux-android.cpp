@@ -591,28 +591,13 @@ void SamplerThread::Stop(PSLockRef aLock) {
 
 
 
-static void paf_prepare() {
-  MOZ_RELEASE_ASSERT(CorePS::Exists());
-
-  PSAutoLock lock;
-
-  if (ActivePS::Exists(lock)) {
-    ActivePS::SetWasSamplingPaused(lock, ActivePS::IsSamplingPaused(lock));
-    ActivePS::SetIsSamplingPaused(lock, true);
-  }
-}
 
 
-static void paf_parent() {
-  MOZ_RELEASE_ASSERT(CorePS::Exists());
+static void paf_prepare() { ++gSkipSampling; }
 
-  PSAutoLock lock;
 
-  if (ActivePS::Exists(lock)) {
-    ActivePS::SetIsSamplingPaused(lock, ActivePS::WasSamplingPaused(lock));
-    ActivePS::SetWasSamplingPaused(lock, false);
-  }
-}
+
+static void paf_parent() { --gSkipSampling; }
 
 static void PlatformInit(PSLockRef aLock) {
   
