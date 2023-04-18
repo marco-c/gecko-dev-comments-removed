@@ -12,7 +12,7 @@ describe("PanelTestProvider", () => {
   it("should have correct number of messages", () => {
     
     
-    assert.lengthOf(messages, 15);
+    assert.lengthOf(messages, 16);
   });
   it("should be a valid message", () => {
     const updateMessages = messages.filter(
