@@ -60,7 +60,8 @@ RLBoxHunspell::RLBoxHunspell(const nsAutoCString& affpath,
 
   
   
-  const uint64_t expectedMaxMemory = 7 * dictSize;
+  
+  const uint64_t expectedMaxMemory = static_cast<uint64_t>(6.4 * dictSize);
 
   
   
