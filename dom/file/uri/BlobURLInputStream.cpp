@@ -140,7 +140,8 @@ NS_IMETHODIMP BlobURLInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
   }
 
   
-  if (NS_WARN_IF(mAsyncWaitCallback && aCallback)) {
+  if (NS_WARN_IF(mAsyncWaitCallback && aCallback &&
+                 mAsyncWaitCallback != aCallback)) {
     return NS_ERROR_FAILURE;
   }
 
