@@ -5,16 +5,17 @@
 
 #include "HTMLEditUtils.h"
 
-#include "CSSEditUtils.h"  
-#include "WSRunObject.h"   
+#include "CSSEditUtils.h"    
+#include "EditAction.h"      
+#include "EditorBase.h"      
+#include "EditorDOMPoint.h"  
+#include "EditorForwards.h"  
+#include "EditorUtils.h"     
+#include "WSRunObject.h"     
 
-#include "mozilla/ArrayUtils.h"      
-#include "mozilla/Assertions.h"      
-#include "mozilla/EditAction.h"      
-#include "mozilla/EditorBase.h"      
-#include "mozilla/EditorDOMPoint.h"  
-#include "mozilla/EditorUtils.h"     
-#include "mozilla/dom/Element.h"     
+#include "mozilla/ArrayUtils.h"   
+#include "mozilla/Assertions.h"   
+#include "mozilla/dom/Element.h"  
 #include "mozilla/dom/HTMLAnchorElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/Text.h"  
@@ -1792,6 +1793,35 @@ EditorDOMPointType HTMLEditUtils::GetBetterInsertionPointFor(
 
   return forwardScanFromPointToInsertResult
       .template PointAfterContent<EditorDOMPointType>();
+}
+
+
+size_t HTMLEditUtils::CollectChildren(
+    nsINode& aNode, nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
+    size_t aIndexToInsertChildren, const CollectChildrenOptions& aOptions) {
+  
+  
+
+  size_t numberOfFoundChildren = 0;
+  for (nsIContent* content =
+           GetFirstChild(aNode, {WalkTreeOption::IgnoreNonEditableNode});
+       content; content = content->GetNextSibling()) {
+    if ((aOptions.contains(CollectChildrenOption::CollectListChildren) &&
+         (HTMLEditUtils::IsAnyListElement(content) ||
+          HTMLEditUtils::IsListItem(content))) ||
+        (aOptions.contains(CollectChildrenOption::CollectTableChildren) &&
+         HTMLEditUtils::IsAnyTableElement(content))) {
+      numberOfFoundChildren += HTMLEditUtils::CollectChildren(
+          *content, aOutArrayOfContents,
+          aIndexToInsertChildren + numberOfFoundChildren, aOptions);
+    } else if (!aOptions.contains(
+                   CollectChildrenOption::IgnoreNonEditableChildren) ||
+               EditorUtils::IsEditableContent(*content, EditorType::HTML)) {
+      aOutArrayOfContents.InsertElementAt(
+          aIndexToInsertChildren + numberOfFoundChildren++, *content);
+    }
+  }
+  return numberOfFoundChildren;
 }
 
 }  

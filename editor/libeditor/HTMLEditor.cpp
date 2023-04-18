@@ -3924,12 +3924,11 @@ CreateElementResult HTMLEditor::ReplaceContainerWithTransactionInternal(
                                                *newContainer);
   {
     AutoTArray<OwningNonNull<nsIContent>, 32> arrayOfChildren;
-    HTMLEditor::CollectChildren(
-        aOldContainer, arrayOfChildren, 0u, CollectListChildren::No,
-        CollectTableChildren::No,
+    HTMLEditUtils::CollectChildren(
+        aOldContainer, arrayOfChildren, 0u,
         
         
-        CollectNonEditableNodes::Yes);
+        {});
     
     
     
@@ -3992,12 +3991,11 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::RemoveContainerWithTransaction(
                                          EditorRawDOMPoint(&aElement));
 
   AutoTArray<OwningNonNull<nsIContent>, 32> arrayOfChildren;
-  HTMLEditor::CollectChildren(
-      aElement, arrayOfChildren, 0u, CollectListChildren::No,
-      CollectTableChildren::No,
+  HTMLEditUtils::CollectChildren(
+      aElement, arrayOfChildren, 0u,
       
       
-      CollectNonEditableNodes::Yes);
+      {});
   const OwningNonNull<nsINode> parentNode = *aElement.GetParentNode();
   nsCOMPtr<nsIContent> previousChild = aElement.GetPreviousSibling();
   

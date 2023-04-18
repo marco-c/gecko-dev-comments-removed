@@ -1190,43 +1190,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-  enum class CollectListChildren { No, Yes };
-  enum class CollectTableChildren { No, Yes };
-  enum class CollectNonEditableNodes { No, Yes };
-  size_t CollectChildren(
-      nsINode& aNode, nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
-      size_t aIndexToInsertChildren, CollectListChildren aCollectListChildren,
-      CollectTableChildren aCollectTableChildren,
-      CollectNonEditableNodes aCollectNonEditableNodes) const;
-
-  
-
-
-
-
-  nsresult CollectEditTargetNodes(
-      nsTArray<OwningNonNull<nsRange>>& aArrayOfRanges,
-      nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
-      EditSubAction aEditSubAction,
-      CollectNonEditableNodes aCollectNonEditableNodes);
-
-  
-
-
-
-
   template <typename EditorDOMRangeType>
   already_AddRefed<nsRange> CreateRangeIncludingAdjuscentWhiteSpaces(
       const EditorDOMRangeType& aRange);

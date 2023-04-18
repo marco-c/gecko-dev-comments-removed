@@ -36,6 +36,7 @@ class Text;
 
 
 
+enum class CollectChildrenOption;              
 enum class EditAction;                         
 enum class EditorCommandParamType : uint16_t;  
 enum class EditSubAction : int32_t;            
@@ -50,6 +51,7 @@ enum class SplitNodeDirection;
 
 
 
+using CollectChildrenOptions = EnumSet<CollectChildrenOption>;
 using SuggestCaretOptions = EnumSet<SuggestCaret>;
 
 

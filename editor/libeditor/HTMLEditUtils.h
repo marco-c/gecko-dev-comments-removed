@@ -36,6 +36,15 @@ class nsPresContext;
 
 namespace mozilla {
 
+enum class CollectChildrenOption {
+  
+  IgnoreNonEditableChildren,
+  
+  CollectListChildren,
+  
+  CollectTableChildren,
+};
+
 class HTMLEditUtils final {
   using AbstractRange = dom::AbstractRange;
   using Element = dom::Element;
@@ -1955,6 +1964,22 @@ class HTMLEditUtils final {
     }
     return false;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static size_t CollectChildren(
+      nsINode& aNode, nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
+      size_t aIndexToInsertChildren, const CollectChildrenOptions& aOptions);
 
  private:
   static bool CanNodeContain(nsHTMLTag aParentTagId, nsHTMLTag aChildTagId);
