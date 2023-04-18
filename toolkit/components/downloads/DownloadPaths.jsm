@@ -10,36 +10,6 @@
 
 var EXPORTED_SYMBOLS = ["DownloadPaths"];
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
-
-ChromeUtils.defineModuleGetter(
-  this,
-  "AppConstants",
-  "resource://gre/modules/AppConstants.jsm"
-);
-
-
-
-
-XPCOMUtils.defineLazyGetter(this, "gConvertToSpaceRegExp", () => {
-  
-  
-  
-  switch (AppConstants.platform) {
-    
-    
-    case "android":
-      return /[\x00-\x1f\x7f-\x9f:*?|"<>;,+=\[\]]+/g;
-    case "win":
-      return /[\x00-\x1f\x7f-\x9f:*?|]+/g;
-    default:
-      return /[\x00-\x1f\x7f-\x9f:]+/g;
-  }
-  
-});
-
 var DownloadPaths = {
   
 
@@ -48,45 +18,14 @@ var DownloadPaths = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   sanitize(leafName, { compressWhitespaces = true } = {}) {
-    if (AppConstants.platform == "win") {
-      leafName = leafName
-        .replace(/</g, "(")
-        .replace(/>/g, ")")
-        .replace(/"/g, "'");
+    const mimeSvc = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
+
+    let flags = mimeSvc.VALIDATE_SANITIZE_ONLY | mimeSvc.VALIDATE_DONT_TRUNCATE;
+    if (!compressWhitespaces) {
+      flags |= mimeSvc.VALIDATE_DONT_COLLAPSE_WHITESPACE;
     }
-    leafName = leafName
-      .replace(/[\\/]+/g, "_")
-      .replace(/[\u200e\u200f\u202a-\u202e]/g, "")
-      .replace(gConvertToSpaceRegExp, " ");
-    if (compressWhitespaces) {
-      leafName = leafName.replace(/\s{2,}/g, " ");
-    }
-    return leafName.replace(/^[\s\u180e.]+|[\s\u180e.]+$/g, "");
+    return mimeSvc.validateFileNameForSaving(leafName, "", flags);
   },
 
   
