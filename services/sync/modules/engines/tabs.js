@@ -22,9 +22,22 @@ const { CryptoWrapper } = ChromeUtils.import(
   "resource://services-sync/record.js"
 );
 const { Svc, Utils } = ChromeUtils.import("resource://services-sync/util.js");
-const { SCORE_INCREMENT_SMALL, URI_LENGTH_MAX } = ChromeUtils.import(
-  "resource://services-sync/constants.js"
+const {
+  LOGIN_SUCCEEDED,
+  SCORE_INCREMENT_SMALL,
+  STATUS_OK,
+  URI_LENGTH_MAX,
+} = ChromeUtils.import("resource://services-sync/constants.js");
+const { CommonUtils } = ChromeUtils.import(
+  "resource://services-common/utils.js"
 );
+const { Async } = ChromeUtils.import("resource://services-common/async.js");
+
+const { SyncRecord, SyncTelemetry } = ChromeUtils.import(
+  "resource://services-sync/telemetry.js"
+);
+
+const FAR_FUTURE = 4102405200000; 
 
 const lazy = {};
 
@@ -138,6 +151,132 @@ TabEngine.prototype = {
   async trackRemainingChanges() {
     if (this._modified.count() > 0) {
       this._tracker.modified = true;
+    }
+  },
+
+  async _onRecordsWritten(succeeded, failed, serverModifiedTime) {
+    await super._onRecordsWritten(succeeded, failed, serverModifiedTime);
+    if (failed.length) {
+      
+      this._log.warn("the server rejected our tabs record");
+    }
+  },
+
+  
+  _engineLock: Utils.lock,
+  _engineLocked: false,
+
+  
+  get locked() {
+    return this._engineLocked;
+  },
+  lock() {
+    if (this._engineLocked) {
+      return false;
+    }
+    this._engineLocked = true;
+    return true;
+  },
+  unlock() {
+    this._engineLocked = false;
+  },
+
+  
+  
+  
+  
+  
+  async quickWrite() {
+    if (!this.enabled) {
+      
+      
+      this._log.info("Can't do a quick-sync as tabs is disabled");
+      return;
+    }
+    
+    
+    if (this.service.status.checkSetup() != STATUS_OK) {
+      this._log.info(
+        "Can't do a quick-sync due to the service status",
+        this.service.status.toString()
+      );
+      return;
+    }
+    if (!this.service.serverConfiguration) {
+      this._log.info("Can't do a quick sync before the first full sync");
+      return;
+    }
+    try {
+      await this._engineLock("tabs.js: quickWrite", async () => {
+        
+        
+        
+        
+        
+        const origLastSync = await this.getLastSync();
+        await this.setLastSync(FAR_FUTURE);
+        try {
+          await this._doQuickWrite();
+        } finally {
+          await this.setLastSync(origLastSync);
+        }
+      })();
+    } catch (ex) {
+      if (!Utils.isLockException(ex)) {
+        throw ex;
+      }
+      this._log.info(
+        "Can't do a quick-write as another tab sync is in progress"
+      );
+    }
+  },
+
+  
+  
+  async _doQuickWrite() {
+    
+    const name = "tabs";
+    let telemetryRecord = new SyncRecord(
+      SyncTelemetry.allowedEngines,
+      "quick-write"
+    );
+    telemetryRecord.onEngineStart(name);
+    try {
+      Async.checkAppReady();
+      
+      
+      
+      
+      this._modified.replace(await this.pullChanges());
+      this._tracker.clearChangedIDs();
+      this._tracker.resetScore();
+
+      
+      Async.checkAppReady();
+      await this._uploadOutgoing();
+      telemetryRecord.onEngineApplied(name, 1);
+      telemetryRecord.onEngineStop(name, null);
+    } catch (ex) {
+      telemetryRecord.onEngineStop(name, ex);
+    } finally {
+      
+      telemetryRecord.finished(null);
+      SyncTelemetry.takeTelemetryRecord(telemetryRecord);
+    }
+  },
+
+  async _sync() {
+    try {
+      await this._engineLock("tabs.js: fullSync", async () => {
+        await super._sync();
+      })();
+    } catch (ex) {
+      if (!Utils.isLockException(ex)) {
+        throw ex;
+      }
+      this._log.info(
+        "Can't do full tabs sync as a quick-write is currently running"
+      );
     }
   },
 };
@@ -441,12 +580,31 @@ TabTracker.prototype = {
       delayInMs > 0 &&
       scheduler.numClients > 1 
     ) {
+      if (this.tabsQuickWriteTimer) {
+        this._log.debug(
+          "Detected a tab change, but a quick-write is already scheduled"
+        );
+        return;
+      }
       this._log.debug(
-        "Detected a tab change: scheduling a sync in " + delayInMs + "ms"
+        "Detected a tab change: scheduling a quick-write in " + delayInMs + "ms"
       );
-      scheduler.scheduleNextSync(delayInMs, {
-        why: "tabschanged",
-      });
+      CommonUtils.namedTimer(
+        () => {
+          this._log.trace("tab quick-sync timer fired.");
+          this.engine
+            .quickWrite()
+            .then(() => {
+              this._log.trace("tab quick-sync done.");
+            })
+            .catch(ex => {
+              this._log.error("tab quick-sync failed.", ex);
+            });
+        },
+        delayInMs,
+        this,
+        "tabsQuickWriteTimer"
+      );
     } else if (scoreIncrement) {
       this.score += scoreIncrement;
     }

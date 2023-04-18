@@ -6,6 +6,7 @@
 
 var EXPORTED_SYMBOLS = [
   "ErrorSanitizer", 
+  "SyncRecord",
   "SyncTelemetry",
 ];
 
@@ -882,7 +883,8 @@ class SyncTelemetryImpl {
 
   _checkCurrent(topic) {
     if (!this.current) {
-      log.warn(
+      
+      log.info(
         `Observed notification ${topic} but no current sync is being recorded.`
       );
       return false;
@@ -961,16 +963,21 @@ class SyncTelemetryImpl {
     }
     this.current.finished(error);
     this.currentSyncNodeType = this.current.syncNodeType;
+    let current = this.current;
+    this.current = null;
+    this.takeTelemetryRecord(current);
+  }
+
+  takeTelemetryRecord(record) {
     
     
     
     this.maybeSubmitForDataChange();
     if (this.payloads.length < this.maxPayloadCount) {
-      this.payloads.push(this.current.toJSON());
+      this.payloads.push(record.toJSON());
     } else {
       ++this.discarded;
     }
-    this.current = null;
     
     
     this.maybeSubmitForInterval();
