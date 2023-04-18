@@ -803,13 +803,13 @@ impl Default for Scroller {
 #[repr(u8)]
 pub enum ScrollAxis {
     
-    Block,
+    Block = 0,
     
-    Inline,
+    Inline = 1,
     
-    Vertical,
+    Vertical = 2,
     
-    Horizontal,
+    Horizontal = 3,
 }
 
 impl Default for ScrollAxis {
