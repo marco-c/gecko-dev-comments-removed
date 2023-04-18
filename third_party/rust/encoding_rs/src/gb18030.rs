@@ -8,9 +8,9 @@
 
 
 use super::*;
-use data::*;
-use handles::*;
-use variant::*;
+use crate::data::*;
+use crate::handles::*;
+use crate::variant::*;
 
 use super::in_inclusive_range16;
 use super::in_range16;
@@ -571,7 +571,7 @@ impl Gb18030Encoder {
 
 
 
-#[cfg(test)]
+#[cfg(all(test, feature = "alloc"))]
 mod tests {
     use super::super::testing::*;
     use super::super::*;
@@ -653,12 +653,15 @@ mod tests {
         
         encode_gb18030("\u{4E02}", b"\x81\x40");
         encode_gb18030("\u{4E8A}", b"\x81\x7E");
-        encode_gb18030("\u{4E90}", b"\x81\x80");
-        encode_gb18030("\u{4FA2}", b"\x81\xFE");
-        encode_gb18030("\u{FA0C}", b"\xFE\x40");
-        encode_gb18030("\u{E843}", b"\xFE\x7E");
-        encode_gb18030("\u{4723}", b"\xFE\x80");
-        encode_gb18030("\u{E4C5}", b"\xFE\xFE");
+        if !cfg!(miri) {
+            
+            encode_gb18030("\u{4E90}", b"\x81\x80");
+            encode_gb18030("\u{4FA2}", b"\x81\xFE");
+            encode_gb18030("\u{FA0C}", b"\xFE\x40");
+            encode_gb18030("\u{E843}", b"\xFE\x7E");
+            encode_gb18030("\u{4723}", b"\xFE\x80");
+            encode_gb18030("\u{E4C5}", b"\xFE\xFE");
+        }
 
         
         encode_gb18030("\u{E5E5}", b"&#58853;");
@@ -667,9 +670,12 @@ mod tests {
         
         encode_gb18030("\u{0080}", b"\x81\x30\x81\x30");
         encode_gb18030("\u{E7C7}", b"\x81\x35\xF4\x37");
-        encode_gb18030("\u{2603}", b"\x81\x37\xA3\x30");
-        encode_gb18030("\u{1F4A9}", b"\x94\x39\xDA\x33");
-        encode_gb18030("\u{10FFFF}", b"\xE3\x32\x9A\x35");
+        if !cfg!(miri) {
+            
+            encode_gb18030("\u{2603}", b"\x81\x37\xA3\x30");
+            encode_gb18030("\u{1F4A9}", b"\x94\x39\xDA\x33");
+            encode_gb18030("\u{10FFFF}", b"\xE3\x32\x9A\x35");
+        }
 
         
         encode_gb18030("\u{00F7}", b"\xA1\xC2");
@@ -689,12 +695,15 @@ mod tests {
         
         encode_gbk("\u{4E02}", b"\x81\x40");
         encode_gbk("\u{4E8A}", b"\x81\x7E");
-        encode_gbk("\u{4E90}", b"\x81\x80");
-        encode_gbk("\u{4FA2}", b"\x81\xFE");
-        encode_gbk("\u{FA0C}", b"\xFE\x40");
-        encode_gbk("\u{E843}", b"\xFE\x7E");
-        encode_gbk("\u{4723}", b"\xFE\x80");
-        encode_gbk("\u{E4C5}", b"\xFE\xFE");
+        if !cfg!(miri) {
+            
+            encode_gbk("\u{4E90}", b"\x81\x80");
+            encode_gbk("\u{4FA2}", b"\x81\xFE");
+            encode_gbk("\u{FA0C}", b"\xFE\x40");
+            encode_gbk("\u{E843}", b"\xFE\x7E");
+            encode_gbk("\u{4723}", b"\xFE\x80");
+            encode_gbk("\u{E4C5}", b"\xFE\xFE");
+        }
 
         
         encode_gbk("\u{E5E5}", b"&#58853;");
@@ -703,15 +712,19 @@ mod tests {
         
         encode_gbk("\u{0080}", b"&#128;");
         encode_gbk("\u{E7C7}", b"&#59335;");
-        encode_gbk("\u{2603}", b"&#9731;");
-        encode_gbk("\u{1F4A9}", b"&#128169;");
-        encode_gbk("\u{10FFFF}", b"&#1114111;");
+        if !cfg!(miri) {
+            
+            encode_gbk("\u{2603}", b"&#9731;");
+            encode_gbk("\u{1F4A9}", b"&#128169;");
+            encode_gbk("\u{10FFFF}", b"&#1114111;");
+        }
 
         
         encode_gbk("\u{00F7}", b"\xA1\xC2");
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)] 
     fn test_gb18030_decode_all() {
         let input = include_bytes!("test_data/gb18030_in.txt");
         let expectation = include_str!("test_data/gb18030_in_ref.txt");
@@ -721,6 +734,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)] 
     fn test_gb18030_encode_all() {
         let input = include_str!("test_data/gb18030_out.txt");
         let expectation = include_bytes!("test_data/gb18030_out_ref.txt");

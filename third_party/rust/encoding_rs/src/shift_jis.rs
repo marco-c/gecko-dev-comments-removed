@@ -8,9 +8,9 @@
 
 
 use super::*;
-use data::*;
-use handles::*;
-use variant::*;
+use crate::data::*;
+use crate::handles::*;
+use crate::variant::*;
 
 use super::in_inclusive_range;
 use super::in_inclusive_range16;
@@ -305,7 +305,7 @@ impl ShiftJisEncoder {
 
 
 
-#[cfg(test)]
+#[cfg(all(test, feature = "alloc"))]
 mod tests {
     use super::super::testing::*;
     use super::super::*;
@@ -385,6 +385,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)] 
     fn test_shift_jis_decode_all() {
         let input = include_bytes!("test_data/shift_jis_in.txt");
         let expectation = include_str!("test_data/shift_jis_in_ref.txt");
@@ -394,6 +395,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)] 
     fn test_shift_jis_encode_all() {
         let input = include_str!("test_data/shift_jis_out.txt");
         let expectation = include_bytes!("test_data/shift_jis_out_ref.txt");

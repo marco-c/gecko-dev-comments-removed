@@ -8,7 +8,7 @@
 
 
 use super::*;
-use variant::*;
+use crate::variant::*;
 
 pub struct ReplacementDecoder {
     emitted: bool,
@@ -73,7 +73,7 @@ impl ReplacementDecoder {
 
 
 
-#[cfg(test)]
+#[cfg(all(test, feature = "alloc"))]
 mod tests {
     use super::super::testing::*;
     use super::super::*;

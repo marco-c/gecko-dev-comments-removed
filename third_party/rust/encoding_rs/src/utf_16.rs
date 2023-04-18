@@ -8,8 +8,8 @@
 
 
 use super::*;
-use handles::*;
-use variant::*;
+use crate::handles::*;
+use crate::variant::*;
 
 pub struct Utf16Decoder {
     lead_surrogate: u16, 
@@ -200,7 +200,7 @@ impl Utf16Decoder {
 
 
 
-#[cfg(test)]
+#[cfg(all(test, feature = "alloc"))]
 mod tests {
     use super::super::testing::*;
     use super::super::*;

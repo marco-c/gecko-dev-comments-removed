@@ -8,8 +8,8 @@
 
 
 use super::*;
-use handles::*;
-use variant::*;
+use crate::handles::*;
+use crate::variant::*;
 
 cfg_if! {
     if #[cfg(feature = "simd-accel")] {
@@ -196,7 +196,7 @@ impl UserDefinedEncoder {
 
 
 
-#[cfg(test)]
+#[cfg(all(test, feature = "alloc"))]
 mod tests {
     use super::super::testing::*;
     use super::super::*;
