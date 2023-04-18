@@ -63,7 +63,6 @@ class nsPrintData {
   bool mOnStartSent;
   bool mIsAborted;          
   bool mPreparingForPrint;  
-  int32_t mNumPrintablePages;
 
  private:
   nsPrintData() = delete;
