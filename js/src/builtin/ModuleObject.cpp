@@ -1163,10 +1163,6 @@ void ModuleObject::setMetaObject(JSObject* obj) {
   setReservedSlot(MetaObjectSlot, ObjectValue(*obj));
 }
 
-Scope* ModuleObject::enclosingScope() const {
-  return script()->enclosingScope();
-}
-
 
 void ModuleObject::trace(JSTracer* trc, JSObject* obj) {
   ModuleObject& module = obj->as<ModuleObject>();
