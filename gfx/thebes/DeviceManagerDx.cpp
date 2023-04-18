@@ -862,7 +862,8 @@ FeatureStatus DeviceManagerDx::CreateContentDevice() {
   return FeatureStatus::Available;
 }
 
-RefPtr<ID3D11Device> DeviceManagerDx::CreateDecoderDevice() {
+RefPtr<ID3D11Device> DeviceManagerDx::CreateDecoderDevice(
+    bool aHardwareWebRender) {
   bool isAMD = false;
   {
     MutexAutoLock lock(mDeviceLock);
@@ -884,8 +885,9 @@ RefPtr<ID3D11Device> DeviceManagerDx::CreateDecoderDevice() {
   }
 
   if (reuseDevice) {
-    if (mCompositorDevice && mCompositorDeviceSupportsVideo &&
-        !mDecoderDevice) {
+    
+    if (aHardwareWebRender && mCompositorDevice &&
+        mCompositorDeviceSupportsVideo && !mDecoderDevice) {
       mDecoderDevice = mCompositorDevice;
 
       RefPtr<ID3D10Multithread> multi;
