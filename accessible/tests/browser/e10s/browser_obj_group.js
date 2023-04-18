@@ -7,11 +7,6 @@
 
 loadScripts({ name: "attributes.js", dir: MOCHITESTS_DIR });
 
-const isCacheEnabled = Services.prefs.getBoolPref(
-  "accessibility.cache.enabled",
-  false
-);
-
 
 
 
