@@ -25,6 +25,16 @@ ChromeUtils.defineModuleGetter(
   "JSONFile",
   "resource://gre/modules/JSONFile.jsm"
 );
+const { Integration } = ChromeUtils.import(
+  "resource://gre/modules/Integration.jsm"
+);
+
+
+Integration.downloads.defineModuleGetter(
+  this,
+  "DownloadIntegration",
+  "resource://gre/modules/DownloadIntegration.jsm"
+);
 
 XPCOMUtils.defineLazyServiceGetter(
   this,
@@ -80,6 +90,11 @@ HandlerService.prototype = {
       this._migrateProtocolHandlersIfNeeded();
 
       Services.obs.notifyObservers(null, "handlersvc-store-initialized");
+
+      
+      
+      
+      this._migrateDownloadsImprovementsIfNeeded();
     }
   },
 
@@ -90,6 +105,7 @@ HandlerService.prototype = {
           defaultHandlersVersion: {},
           mimeTypes: {},
           schemes: {},
+          isDownloadsImprovementsAlreadyMigrated: false,
         };
   },
 
@@ -390,6 +406,50 @@ HandlerService.prototype = {
           }
         })
         .catch(Cu.reportError);
+    }
+  },
+
+  
+
+
+
+
+
+
+
+
+  _migrateDownloadsImprovementsIfNeeded() {
+    
+    
+    if (
+      Services.prefs.getBoolPref(
+        "browser.download.improvements_to_download_panel"
+      ) &&
+      !Services.policies.getActivePolicies()?.Handlers &&
+      !this._store.data.isDownloadsImprovementsAlreadyMigrated
+    ) {
+      for (let [type, mimeInfo] of Object.entries(this._store.data.mimeTypes)) {
+        let isViewableInternally = DownloadIntegration.shouldViewDownloadInternally(
+          type
+        );
+        let isAskOnly = mimeInfo && mimeInfo.ask;
+
+        if (isAskOnly) {
+          if (isViewableInternally) {
+            mimeInfo.action = Ci.nsIHandlerInfo.handleInternally;
+          } else {
+            mimeInfo.action = Ci.nsIHandlerInfo.saveToDisk;
+          }
+
+          
+          
+          
+          mimeInfo.ask = false;
+        }
+      }
+
+      this._store.data.isDownloadsImprovementsAlreadyMigrated = true;
+      this._store.saveSoon();
     }
   },
 
