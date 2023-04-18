@@ -2260,23 +2260,28 @@ var gBrowserInit = {
           window.arguments[5] != undefined
             ? window.arguments[5]
             : Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID;
-        loadURI(
-          uriToLoad,
-          window.arguments[2] || null,
-          window.arguments[3] || null,
-          window.arguments[4] || false,
-          userContextId,
-          
-          
-          window.arguments[6],
-          window.arguments[7],
-          !!window.arguments[6],
-          window.arguments[8],
-          
-          
-          window.arguments[9] !== false,
-          window.arguments[10]
-        );
+
+        try {
+          openLinkIn(uriToLoad, "current", {
+            referrerInfo: window.arguments[2] || null,
+            postData: window.arguments[3] || null,
+            allowThirdPartyFixup: window.arguments[4] || false,
+            userContextId,
+            
+            
+            originPrincipal: window.arguments[6],
+            originStoragePrincipal: window.arguments[7],
+            triggeringPrincipal: window.arguments[8],
+            
+            
+            allowInheritPrincipal: window.arguments[9] !== false,
+            csp: window.arguments[10],
+            forceAboutBlankViewerInCurrent: !!window.arguments[6],
+          });
+        } catch (e) {
+          Cu.reportError(e);
+        }
+
         window.focus();
       } else {
         
