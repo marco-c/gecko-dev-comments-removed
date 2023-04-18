@@ -12,19 +12,111 @@
 
 
 
-
 "use strict";
 
-var re = /(^([+\-]?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?(?=\D|\s|$))|^0x[\da-fA-F]+$|\d+)/g;
-var sre = /^\s+|\s+$/g; 
-var snre = /\s+/g; 
+const tokenizeNumbersRx = /(^([+\-]?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?(?=\D|\s|$))|^0x[\da-fA-F]+$|\d+)/g;
+const dateRx = /(^([\w ]+,?[\w ]+)?[\w ]+,?[\w ]+\d+:\d+(:\d+)?[\w ]?|^\d{1,4}[\/\-]\d{1,4}[\/\-]\d{1,4}|^\w+, \w+ \d+, \d{4})/;
+const hexRx = /^0x[0-9a-f]+$/i;
+const startsWithNullRx = /^\0/;
+const endsWithNullRx = /\0$/;
+const whitespaceRx = /\s+/g;
+const startsWithZeroRx = /^0/;
 
 
-var dre = /(^([\w ]+,?[\w ]+)?[\w ]+,?[\w ]+\d+:\d+(:\d+)?[\w ]?|^\d{1,4}[\/\-]\d{1,4}[\/\-]\d{1,4}|^\w+, \w+ \d+, \d{4})/;
-var hre = /^0x[0-9a-f]+$/i;
-var ore = /^0/;
-var b0re = /^\0/;
-var e0re = /\0$/;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function naturalSort(a = "", b = "", insensitive = false) {
+  
+  a = (a + "").trim();
+  b = (b + "").trim();
+
+  if (insensitive) {
+    a = a.toLowerCase();
+    b = b.toLowerCase();
+  }
+
+  
+  
+  const aChunks = a
+    .replace(tokenizeNumbersRx, "\0$1\0")
+    .replace(startsWithNullRx, "")
+    .replace(endsWithNullRx, "")
+    .split("\0");
+  const bChunks = b
+    .replace(tokenizeNumbersRx, "\0$1\0")
+    .replace(startsWithNullRx, "")
+    .replace(endsWithNullRx, "")
+    .split("\0");
+
+  
+  const aHexOrDate =
+    parseInt(a.match(hexRx), 16) || (aChunks.length !== 1 && Date.parse(a));
+  const bHexOrDate =
+    parseInt(b.match(hexRx), 16) ||
+    (aHexOrDate && b.match(dateRx) && Date.parse(b)) ||
+    null;
+
+  
+  if (bHexOrDate) {
+    if (aHexOrDate < bHexOrDate) {
+      return -1;
+    } else if (aHexOrDate > bHexOrDate) {
+      return 1;
+    }
+  }
+
+  
+  const aChunksLength = aChunks.length;
+  const bChunksLength = bChunks.length;
+  const maxLen = Math.max(aChunksLength, bChunksLength);
+
+  for (let i = 0; i < maxLen; i++) {
+    const aChunk = normalizeChunk(aChunks[i] || "", aChunksLength);
+    const bChunk = normalizeChunk(bChunks[i] || "", bChunksLength);
+
+    
+    if (isNaN(aChunk) !== isNaN(bChunk)) {
+      return isNaN(aChunk) ? 1 : -1;
+    }
+
+    
+    
+    if (/[^\x00-\x80]/.test(aChunk + bChunk) && aChunk.localeCompare) {
+      const comp = aChunk.localeCompare(bChunk);
+      return comp / Math.abs(comp);
+    }
+    if (aChunk < bChunk) {
+      return -1;
+    } else if (aChunk > bChunk) {
+      return 1;
+    }
+  }
+  return null;
+}
+
+
+
+const normalizeChunk = function(str, length) {
+  return (
+    ((!str.match(startsWithZeroRx) || length == 1) && parseFloat(str)) ||
+    str.replace(whitespaceRx, " ").trim() ||
+    0
+  );
+};
 
 exports.naturalSortCaseSensitive = function naturalSortCaseSensitive(a, b) {
   return naturalSort(a, b, false);
@@ -33,88 +125,3 @@ exports.naturalSortCaseSensitive = function naturalSortCaseSensitive(a, b) {
 exports.naturalSortCaseInsensitive = function naturalSortCaseInsensitive(a, b) {
   return naturalSort(a, b, true);
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function naturalSort(a, b, insensitive) {
-  
-  const i = function(s) {
-    return ((insensitive && ("" + s).toLowerCase()) || "" + s).replace(sre, "");
-  };
-  const x = i(a) || "";
-  const y = i(b) || "";
-  
-  const xN = x
-    .replace(re, "\0$1\0")
-    .replace(e0re, "")
-    .replace(b0re, "")
-    .split("\0");
-  const yN = y
-    .replace(re, "\0$1\0")
-    .replace(e0re, "")
-    .replace(b0re, "")
-    .split("\0");
-  
-  const xD = parseInt(x.match(hre), 16) || (xN.length !== 1 && Date.parse(x));
-  const yD =
-    parseInt(y.match(hre), 16) || (xD && y.match(dre) && Date.parse(y)) || null;
-  const normChunk = function(s, l) {
-    
-    
-    return (
-      ((!s.match(ore) || l == 1) && parseFloat(s)) ||
-      s.replace(snre, " ").replace(sre, "") ||
-      0
-    );
-  };
-  let oFxNcL;
-  let oFyNcL;
-
-  
-  if (yD) {
-    if (xD < yD) {
-      return -1;
-    } else if (xD > yD) {
-      return 1;
-    }
-  }
-
-  
-  
-  for (let cLoc = 0, xNl = xN.length, yNl = yN.length, numS = Math.max(xNl, yNl); cLoc < numS; cLoc++) {
-    oFxNcL = normChunk(xN[cLoc] || "", xNl);
-    oFyNcL = normChunk(yN[cLoc] || "", yNl);
-
-    
-    if (isNaN(oFxNcL) !== isNaN(oFyNcL)) {
-      return isNaN(oFxNcL) ? 1 : -1;
-    }
-    
-    
-    if (/[^\x00-\x80]/.test(oFxNcL + oFyNcL) && oFxNcL.localeCompare) {
-      const comp = oFxNcL.localeCompare(oFyNcL);
-      return comp / Math.abs(comp);
-    }
-    if (oFxNcL < oFyNcL) {
-      return -1;
-    } else if (oFxNcL > oFyNcL) {
-      return 1;
-    }
-  }
-  return null;
-}
