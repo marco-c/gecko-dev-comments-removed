@@ -189,6 +189,9 @@ pref("dom.keyboardevent.keypress.hack.use_legacy_keycode_and_charcode.addl", "")
 pref("dom.mouseevent.click.hack.use_legacy_non-primary_dispatch", "");
 
 
+pref("dom.text-recognition.enabled", false);
+
+
 
 pref("browser.sessionhistory.max_total_viewers", -1);
 
