@@ -67,6 +67,11 @@ class LinuxPtraceDumper : public LinuxDumper {
   
   
   
+  virtual bool GetThreadNameByIndex(size_t index, char* name, size_t size);
+
+  
+  
+  
   virtual bool IsPostMortem() const;
 
   

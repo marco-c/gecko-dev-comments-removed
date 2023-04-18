@@ -16,8 +16,14 @@ UNIFIED_SOURCES += [
     'microdump_writer/microdump_writer.cc',
     'minidump_writer/linux_dumper.cc',
     'minidump_writer/linux_ptrace_dumper.cc',
-    'minidump_writer/minidump_writer.cc',
 ]
+
+if CONFIG["CC_TYPE"] == "gcc":
+    
+    
+    SOURCES += ['minidump_writer/minidump_writer.cc']
+else:
+    UNIFIED_SOURCES += ['minidump_writer/minidump_writer.cc']
 
 
 if CONFIG['OS_TARGET'] == 'Linux' or CONFIG['OS_TARGET'] == 'Android':
