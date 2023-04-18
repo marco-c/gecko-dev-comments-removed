@@ -69,9 +69,7 @@ class gfxDWriteFont final : public gfxFont {
   FontType GetType() const override { return FONT_TYPE_DWRITE; }
 
   already_AddRefed<mozilla::gfx::ScaledFont> GetScaledFont(
-      mozilla::gfx::DrawTarget* aTarget) override;
-  already_AddRefed<mozilla::gfx::ScaledFont> GetScaledFontNoGDI(
-      mozilla::gfx::DrawTarget* aTarget) override;
+      const TextRunDrawParams& aRunParams) override;
 
   bool ShouldRoundXOffset(cairo_t* aCairo) const override;
 
@@ -105,9 +103,7 @@ class gfxDWriteFont final : public gfxFont {
   
   
   bool mAzureScaledFontUsedClearType;
-  bool mAzureScaledFontNoGDIUsedClearType = false;
-
-  RefPtr<mozilla::gfx::ScaledFont> mAzureScaledFontNoGDI;
+  bool mAzureScaledFontForcedGDI;
 
   bool UsingClearType() {
     return mozilla::gfx::gfxVars::SystemTextQuality() == CLEARTYPE_QUALITY;
