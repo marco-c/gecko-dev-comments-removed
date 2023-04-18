@@ -53,42 +53,18 @@ add_task(async function test_main() {
     });
 
     
-    let expectPass = true;
-    if (iter == 0 && num == 2) {
-      expectPass = false;
-    }
-    if (navigator.platform.includes("Mac")) {
-      if (iter == 0 && num == 1) {
-        expectPass = false;
-      }
-    }
-    if (navigator.platform.includes("Win")) {
-      if (iter == 1 && num == 2) {
-        expectPass = false;
-      }
-      if (iter == 2 && num == 1) {
-        expectPass = false;
-      }
-      if (iter == 2 && num == 2) {
-        expectPass = false;
-      }
-    }
-
-    if (expectPass) {
-      
-      ok(
-        Math.abs(scrollPos - visualScrollPos) < 2,
-        "expect scroll position and visual scroll position to be the same: visual " +
-          visualScrollPos +
-          " scroll " +
-          scrollPos +
-          " (" +
-          iter +
-          "," +
-          num +
-          ")"
-      );
-    }
+    ok(
+      Math.abs(scrollPos - visualScrollPos) < 2,
+      "expect scroll position and visual scroll position to be the same: visual " +
+        visualScrollPos +
+        " scroll " +
+        scrollPos +
+        " (" +
+        iter +
+        "," +
+        num +
+        ")"
+    );
   }
 
   for (let i = 0; i < 5; i++) {
