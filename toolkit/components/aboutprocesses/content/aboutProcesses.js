@@ -393,11 +393,7 @@ var View = {
       });
     } else {
       let { duration, unit } = this._getDuration(data.totalCpu);
-      if (data.totalCpu == 0) {
-        
-        
-        
-        
+      if (data.totalCpu == 0 && AppConstants.platform == "win") {
         
         
         unit = "ms";
