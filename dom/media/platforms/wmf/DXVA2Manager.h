@@ -74,6 +74,8 @@ class DXVA2Manager {
   
   virtual void BeforeShutdownVideoMFTDecoder() {}
 
+  virtual bool SupportsZeroCopyNV12Texture() { return false; }
+
   static bool IsNV12Supported(uint32_t aVendorID, uint32_t aDeviceID,
                               const nsAString& aDriverVersionString);
 
