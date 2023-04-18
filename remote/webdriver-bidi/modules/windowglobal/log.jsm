@@ -53,9 +53,13 @@ class Log extends Module {
   _applySessionData(params) {
     
     
-    if (params.category === "event") {
-      for (const event of params.values) {
+    const { category, added = [], removed = [] } = params;
+    if (category === "event") {
+      for (const event of added) {
         this._subscribeEvent(event);
+      }
+      for (const event of removed) {
+        this._unsubscribeEvent(event);
       }
     }
   }
@@ -67,19 +71,26 @@ class Log extends Module {
     }
   }
 
+  _unsubscribeEvent(event) {
+    if (event === "log.entryAdded") {
+      this.#consoleAPIListener.stopListening();
+      this.#consoleMessageListener.stopListening();
+    }
+  }
+
   #onConsoleAPIMessage = (eventName, data = {}) => {
-    const { message } = data;
+    
+    
+    const { arguments: messageArguments, level: method, timeStamp } = data;
 
     
     
 
     
-    
-    const method = message.level;
-    const level = this._getLogEntryLevelFromConsoleMethod(method);
+    const logEntrylevel = this._getLogEntryLevelFromConsoleMethod(method);
 
     
-    const timestamp = message.timeStamp || Date.now();
+    const timestamp = timeStamp || Date.now();
 
     
     let text = "";
@@ -91,7 +102,7 @@ class Log extends Module {
     
     
     
-    const args = message.arguments || [];
+    const args = messageArguments || [];
     text += args.map(String).join(" ");
 
     
@@ -107,7 +118,7 @@ class Log extends Module {
     
     const entry = {
       type: "console",
-      level,
+      level: logEntrylevel,
       text,
       timestamp,
       method,
