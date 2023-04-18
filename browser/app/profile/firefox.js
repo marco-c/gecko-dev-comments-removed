@@ -745,6 +745,8 @@ pref("browser.tabs.tooltipsShowPidAndActiveness", true);
 pref("browser.tabs.tooltipsShowPidAndActiveness", false);
 #endif
 
+pref("browser.tabs.firefox-view", false);
+
 
 
 pref("security.allow_eval_with_system_principal", false);
