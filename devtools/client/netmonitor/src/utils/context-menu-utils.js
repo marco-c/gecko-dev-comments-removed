@@ -12,7 +12,7 @@ function baseCopyFormatter({ name, value, object, hasChildren }) {
   if (hasChildren) {
     return baseCopyAllFormatter({ [name]: value });
   }
-  return `${name}: ${value}`;
+  return `${value}`;
 }
 
 

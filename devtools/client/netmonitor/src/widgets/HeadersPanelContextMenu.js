@@ -26,7 +26,7 @@ class HeadersPanelContextMenu {
   constructor(props = {}) {
     this.props = props;
     this.copyAll = this.copyAll.bind(this);
-    this.copy = this.copy.bind(this);
+    this.copyValue = this.copyValue.bind(this);
   }
 
   
@@ -38,14 +38,14 @@ class HeadersPanelContextMenu {
     const { target } = event;
     const menuItems = [
       {
-        id: "headers-panel-context-menu-copy",
-        label: L10N.getStr("netmonitor.context.copy"),
-        accesskey: L10N.getStr("netmonitor.context.copy.accesskey"),
+        id: "headers-panel-context-menu-copyvalue",
+        label: L10N.getStr("netmonitor.context.copyValue"),
+        accesskey: L10N.getStr("netmonitor.context.copyValue.accesskey"),
         click: () => {
           const { name, value } = getSummaryContent(
             target.closest(".tabpanel-summary-container")
           );
-          this.copy(
+          this.copyValue(
             { name, value, object: null, hasChildren: false },
             selection
           );
@@ -105,7 +105,7 @@ class HeadersPanelContextMenu {
 
 
 
-  copy(object, selection) {
+  copyValue(object, selection) {
     let buffer = "";
     if (selection.toString() !== "") {
       buffer = selection.toString();

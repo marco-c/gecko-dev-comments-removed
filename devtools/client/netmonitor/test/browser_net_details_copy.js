@@ -31,10 +31,13 @@ add_task(async function() {
   
   EventUtils.sendMouseEvent({ type: "contextmenu" }, urlRow);
   await waitForClipboardPromise(function setup() {
-    getContextMenuItem(monitor, "properties-view-context-menu-copy").click();
+    getContextMenuItem(
+      monitor,
+      "properties-view-context-menu-copyvalue"
+    ).click();
   }, "http://example.com/browser/devtools/client/netmonitor/test/html_simple-test-page.html");
 
-  ok(true, "The copy action put expected url string into clipboard");
+  ok(true, "The copy value action put expected url string into clipboard");
 
   
   EventUtils.sendMouseEvent({ type: "contextmenu" }, urlRow);
@@ -94,10 +97,10 @@ add_task(async function() {
   
   EventUtils.sendMouseEvent({ type: "contextmenu" }, httpSummaryValue);
   await waitForClipboardPromise(function setup() {
-    getContextMenuItem(monitor, "headers-panel-context-menu-copy").click();
-  }, "Version: HTTP/1.1");
+    getContextMenuItem(monitor, "headers-panel-context-menu-copyvalue").click();
+  }, "HTTP/1.1");
 
-  ok(true, "The copy action put expected text into clipboard");
+  ok(true, "The copy value action put expected text into clipboard");
 
   
   EventUtils.sendMouseEvent({ type: "contextmenu" }, httpSummaryValue);
@@ -161,10 +164,13 @@ add_task(async function() {
   EventUtils.sendMouseEvent({ type: "contextmenu" }, objectRow);
   const expected = JSON.stringify({ obj: { type: "string" } }, null, "\t");
   await waitForClipboardPromise(function setup() {
-    getContextMenuItem(monitor, "properties-view-context-menu-copy").click();
+    getContextMenuItem(
+      monitor,
+      "properties-view-context-menu-copyvalue"
+    ).click();
   }, expected);
 
-  ok(true, "The copy action put expected json into clipboard");
+  ok(true, "The copy value action put expected json into clipboard");
 
   
   EventUtils.sendMouseEvent({ type: "contextmenu" }, objectRow);
@@ -177,10 +183,13 @@ add_task(async function() {
   
   EventUtils.sendMouseEvent({ type: "contextmenu" }, stringRow);
   await waitForClipboardPromise(function setup() {
-    getContextMenuItem(monitor, "properties-view-context-menu-copy").click();
-  }, "type: string");
+    getContextMenuItem(
+      monitor,
+      "properties-view-context-menu-copyvalue"
+    ).click();
+  }, "string");
 
-  ok(true, "The copy action put expected text into clipboard");
+  ok(true, "The copy value action put expected text into clipboard");
 
   await teardown(monitor);
 });
@@ -233,16 +242,22 @@ add_task(async function() {
     const cur = objectRows[i];
     EventUtils.sendMouseEvent({ type: "contextmenu" }, cur);
     await waitForClipboardPromise(function setup() {
-      getContextMenuItem(monitor, "properties-view-context-menu-copy").click();
+      getContextMenuItem(
+        monitor,
+        "properties-view-context-menu-copyvalue"
+      ).click();
     }, JSON.stringify(expectedResponseCookies[i], null, "\t"));
   }
 
-  const expectedRequestCookies = ["bob: true", "foo: bar", "tom: cool"];
+  const expectedRequestCookies = ["true", "bar", "cool"];
   for (let i = 0; i < expectedRequestCookies.length; i++) {
     const cur = stringRows[objectRows.length + i];
     EventUtils.sendMouseEvent({ type: "contextmenu" }, cur);
     await waitForClipboardPromise(function setup() {
-      getContextMenuItem(monitor, "properties-view-context-menu-copy").click();
+      getContextMenuItem(
+        monitor,
+        "properties-view-context-menu-copyvalue"
+      ).click();
     }, expectedRequestCookies[i]);
   }
 
