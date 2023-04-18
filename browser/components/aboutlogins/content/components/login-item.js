@@ -4,7 +4,7 @@
 
 import {
   recordTelemetryEvent,
-  promptForMasterPassword,
+  promptForPrimaryPassword,
 } from "../aboutLoginsUtils.js";
 
 export default class LoginItem extends HTMLElement {
@@ -353,10 +353,10 @@ export default class LoginItem extends HTMLElement {
         if (classList.contains("reveal-password-checkbox")) {
           
           if (this._revealCheckbox.checked && !this.dataset.editing) {
-            let masterPasswordAuth = await promptForMasterPassword(
+            let primaryPasswordAuth = await promptForPrimaryPassword(
               "about-logins-reveal-password-os-auth-dialog-message"
             );
-            if (!masterPasswordAuth) {
+            if (!primaryPasswordAuth) {
               this._revealCheckbox.checked = false;
               return;
             }
@@ -403,10 +403,10 @@ export default class LoginItem extends HTMLElement {
               ? this._copyUsernameButton
               : this._copyPasswordButton;
           if (copyButton.dataset.copyLoginProperty == "password") {
-            let masterPasswordAuth = await promptForMasterPassword(
+            let primaryPasswordAuth = await promptForPrimaryPassword(
               "about-logins-copy-password-os-auth-dialog-message"
             );
-            if (!masterPasswordAuth) {
+            if (!primaryPasswordAuth) {
               return;
             }
           }
@@ -458,10 +458,10 @@ export default class LoginItem extends HTMLElement {
           return;
         }
         if (classList.contains("edit-button")) {
-          let masterPasswordAuth = await promptForMasterPassword(
+          let primaryPasswordAuth = await promptForPrimaryPassword(
             "about-logins-edit-login-os-auth-dialog-message"
           );
-          if (!masterPasswordAuth) {
+          if (!primaryPasswordAuth) {
             return;
           }
 

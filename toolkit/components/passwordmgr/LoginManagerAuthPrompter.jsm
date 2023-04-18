@@ -210,7 +210,7 @@ LoginManagerAuthPromptFactory.prototype = {
       return;
     }
 
-    this.log("Waiting for master password UI");
+    this.log("Waiting for primary password UI");
 
     this._uiBusyPromise = new Promise();
     await this._uiBusyPromise;

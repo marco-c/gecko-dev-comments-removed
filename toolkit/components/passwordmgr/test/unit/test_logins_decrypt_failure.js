@@ -13,7 +13,7 @@
 
 
 
-function resetMasterPassword() {
+function resetPrimaryPassword() {
   let token = Cc["@mozilla.org/security/pk11tokendb;1"]
     .getService(Ci.nsIPK11TokenDB)
     .getInternalKeyToken();
@@ -33,7 +33,7 @@ add_task(async function test_logins_decrypt_failure() {
   }
 
   
-  resetMasterPassword();
+  resetPrimaryPassword();
 
   
   Assert.equal(Services.logins.getAllLogins().length, 0);
@@ -142,7 +142,7 @@ add_task(function test_add_logins_with_decrypt_failure() {
   );
 
   
-  resetMasterPassword();
+  resetPrimaryPassword();
 
   
   equal(Services.logins.searchLogins(searchProp).length, 0);
@@ -163,7 +163,7 @@ add_task(async function test_sync_metadata_with_decrypt_failure() {
   equal(await Services.logins.getLastSync(), 123);
 
   
-  resetMasterPassword();
+  resetPrimaryPassword();
 
   
   equal(await Services.logins.getSyncID(), null);

@@ -964,8 +964,8 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     if (!event.isTrusted) {
       return;
     }
-    let isMasterPasswordSet = Services.cpmm.sharedData.get(
-      "isMasterPasswordSet"
+    let isPrimaryPasswordSet = Services.cpmm.sharedData.get(
+      "isPrimaryPasswordSet"
     );
     let document = event.target.ownerDocument;
 
@@ -975,11 +975,11 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     log(
       "onDOMFormHasPassword, visibilityState:",
       document.visibilityState,
-      "isMasterPasswordSet:",
-      isMasterPasswordSet
+      "isPrimaryPasswordSet:",
+      isPrimaryPasswordSet
     );
 
-    if (document.visibilityState == "visible" || isMasterPasswordSet) {
+    if (document.visibilityState == "visible" || isPrimaryPasswordSet) {
       this._processDOMFormHasPasswordEvent(event);
     } else {
       
@@ -1000,16 +1000,16 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     if (!event.isTrusted) {
       return;
     }
-    let isMasterPasswordSet = Services.cpmm.sharedData.get(
-      "isMasterPasswordSet"
+    let isPrimaryPasswordSet = Services.cpmm.sharedData.get(
+      "isPrimaryPasswordSet"
     );
     let document = event.target.ownerDocument;
 
     log(
       "onDOMFormHasPossibleUsername, visibilityState:",
       document.visibilityState,
-      "isMasterPasswordSet:",
-      isMasterPasswordSet
+      "isPrimaryPasswordSet:",
+      isPrimaryPasswordSet
     );
 
     
@@ -1029,7 +1029,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       return;
     }
 
-    if (document.visibilityState == "visible" || isMasterPasswordSet) {
+    if (document.visibilityState == "visible" || isPrimaryPasswordSet) {
       this._processDOMFormHasPossibleUsernameEvent(event);
     } else {
       
@@ -1080,20 +1080,20 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     }
 
     let document = pwField.ownerDocument;
-    let isMasterPasswordSet = Services.cpmm.sharedData.get(
-      "isMasterPasswordSet"
+    let isPrimaryPasswordSet = Services.cpmm.sharedData.get(
+      "isPrimaryPasswordSet"
     );
     log(
       "onDOMInputPasswordAdded, visibilityState:",
       document.visibilityState,
-      "isMasterPasswordSet:",
-      isMasterPasswordSet
+      "isPrimaryPasswordSet:",
+      isPrimaryPasswordSet
     );
 
     
     
     
-    if (document.visibilityState == "visible" || isMasterPasswordSet) {
+    if (document.visibilityState == "visible" || isPrimaryPasswordSet) {
       this._processDOMInputPasswordAddedEvent(event);
     } else {
       
@@ -1193,7 +1193,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       mozSystemGroup: true,
     });
 
-    this._getLoginDataFromParent(form, { showMasterPassword: true })
+    this._getLoginDataFromParent(form, { showPrimaryPassword: true })
       .then(this.loginsFound.bind(this))
       .catch(Cu.reportError);
   }
@@ -1453,7 +1453,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       if (passwordField) {
         this._getLoginDataFromParent(acForm, {
           guid: loginGUID,
-          showMasterPassword: false,
+          showPrimaryPassword: false,
         })
           .then(({ form, loginsFound, recipes }) => {
             if (!loginGUID) {

@@ -183,10 +183,10 @@ function waitForMPDialog(action) {
   return dialogShown.then(function([subject]) {
     let dialog = subject.Dialog;
     let expected = "Password Required - " + BRAND_FULL_NAME;
-    is(dialog.args.title, expected, "Dialog is the Master Password dialog");
+    is(dialog.args.title, expected, "Dialog is the Primary Password dialog");
     if (action == "authenticate") {
       SpecialPowers.wrap(dialog.ui.password1Textbox).setUserInput(
-        LoginTestUtils.masterPassword.masterPassword
+        LoginTestUtils.primaryPassword.primaryPassword
       );
       dialog.ui.button0.click();
     } else if (action == "cancel") {

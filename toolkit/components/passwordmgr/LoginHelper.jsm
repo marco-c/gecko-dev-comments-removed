@@ -1578,7 +1578,7 @@ this.LoginHelper = {
   
 
 
-  isMasterPasswordSet() {
+  isPrimaryPasswordSet() {
     let tokenDB = Cc["@mozilla.org/security/pk11tokendb;1"].getService(
       Ci.nsIPK11TokenDB
     );

@@ -232,7 +232,7 @@ class LoginManagerParent extends JSWindowActorParent {
       
       
       if (e.result == Cr.NS_ERROR_ABORT) {
-        log("User cancelled master password prompt.");
+        log("User cancelled primary password prompt.");
         gLastMPLoginCancelled = Date.now();
         return [];
       }
@@ -506,7 +506,7 @@ class LoginManagerParent extends JSWindowActorParent {
   async sendLoginDataToChild(
     formOrigin,
     actionOrigin,
-    { guid, showMasterPassword }
+    { guid, showPrimaryPassword }
   ) {
     let recipes = [];
     let formHost;
@@ -518,7 +518,7 @@ class LoginManagerParent extends JSWindowActorParent {
       
     }
 
-    if (!showMasterPassword && !Services.logins.isLoggedIn) {
+    if (!showPrimaryPassword && !Services.logins.isLoggedIn) {
       return { logins: [], recipes };
     }
 
@@ -550,7 +550,7 @@ class LoginManagerParent extends JSWindowActorParent {
           }
 
           let result = self.sendLoginDataToChild(formOrigin, actionOrigin, {
-            showMasterPassword,
+            showPrimaryPassword,
           });
           uiBusyPromiseResolve(result);
         },
@@ -625,7 +625,7 @@ class LoginManagerParent extends JSWindowActorParent {
     if (!Services.logins.isLoggedIn) {
       if (Services.logins.uiBusy) {
         log(
-          "Not searching logins for autocomplete since the master password prompt is already showing"
+          "Not searching logins for autocomplete since the primary password prompt is already showing"
         );
         
         
@@ -635,7 +635,7 @@ class LoginManagerParent extends JSWindowActorParent {
       let timeDiff = Date.now() - gLastMPLoginCancelled;
       if (timeDiff < LoginManagerParent._repromptTimeout) {
         log(
-          "Not searching logins for autocomplete since the master password " +
+          "Not searching logins for autocomplete since the primary password " +
             `prompt was last cancelled ${Math.round(
               timeDiff / 1000
             )} seconds ago.`

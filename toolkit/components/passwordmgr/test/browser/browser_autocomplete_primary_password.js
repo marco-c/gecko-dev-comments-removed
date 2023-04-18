@@ -31,10 +31,10 @@ add_task(async function setup() {
     password: "password",
   });
   Services.logins.addLogin(login);
-  LoginTestUtils.masterPassword.enable();
+  LoginTestUtils.primaryPassword.enable();
 
   registerCleanupFunction(function() {
-    LoginTestUtils.masterPassword.disable();
+    LoginTestUtils.primaryPassword.disable();
   });
 
   
