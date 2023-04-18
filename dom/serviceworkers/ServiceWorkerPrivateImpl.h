@@ -141,6 +141,12 @@ class ServiceWorkerPrivateImpl final : public ServiceWorkerPrivate::Inner,
       RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
       ServiceWorkerPushEventOpArgs&& aArgs);
 
+  
+  
+  RefPtr<FetchServiceResponsePromise> SetupNavigationPreload(
+      nsCOMPtr<nsIInterceptedChannel>& aChannel,
+      const RefPtr<ServiceWorkerRegistrationInfo>& aRegistration);
+
   nsresult SendFetchEventInternal(
       RefPtr<ServiceWorkerRegistrationInfo>&& aRegistration,
       ParentToParentServiceWorkerFetchEventOpArgs&& aArgs,

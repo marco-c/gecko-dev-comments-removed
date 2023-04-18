@@ -898,6 +898,59 @@ nsresult MaybeStoreStreamForBackgroundThread(nsIInterceptedChannel* aChannel,
 
 }  
 
+RefPtr<FetchServiceResponsePromise>
+ServiceWorkerPrivateImpl::SetupNavigationPreload(
+    nsCOMPtr<nsIInterceptedChannel>& aChannel,
+    const RefPtr<ServiceWorkerRegistrationInfo>& aRegistration) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  AssertIsOnMainThread();
+
+  
+  auto result = GetIPCInternalRequest(aChannel);
+  if (result.isErr()) {
+    return nullptr;
+  }
+  IPCInternalRequest ipcRequest = result.unwrap();
+
+  
+  
+  SafeRefPtr<InternalRequest> preloadRequest =
+      MakeSafeRefPtr<InternalRequest>(ipcRequest);
+  
+  nsCOMPtr<nsIUploadChannel2> uploadChannel = do_QueryInterface(aChannel);
+  if (uploadChannel) {
+    nsCOMPtr<nsIInputStream> uploadStream;
+    nsresult rv = uploadChannel->CloneUploadStream(
+        &ipcRequest.bodySize(), getter_AddRefs(uploadStream));
+    
+    
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return nullptr;
+    }
+    preloadRequest->SetBody(uploadStream, ipcRequest.bodySize());
+  }
+
+  
+  preloadRequest->SetSkipServiceWorker();
+
+  
+  
+  
+  IgnoredErrorResult err;
+  auto headersGuard = preloadRequest->Headers()->Guard();
+  preloadRequest->Headers()->SetGuard(HeadersGuardEnum::None, err);
+  preloadRequest->Headers()->Append(
+      "Service-Worker-Navigation-Preload"_ns,
+      aRegistration->GetNavigationPreloadState().headerValue(), err);
+  preloadRequest->Headers()->SetGuard(headersGuard, err);
+
+  
+  
+  if (!err.Failed()) {
+  }
+  return nullptr;
+}
+
 nsresult ServiceWorkerPrivateImpl::SendFetchEvent(
     RefPtr<ServiceWorkerRegistrationInfo> aRegistration,
     nsCOMPtr<nsIInterceptedChannel> aChannel, const nsAString& aClientId,
@@ -927,19 +980,7 @@ nsresult ServiceWorkerPrivateImpl::SendFetchEvent(
                            request.method().LowerCaseEqualsASCII("get") &&
                            aRegistration->GetNavigationPreloadState().enabled();
   if (preloadNavigation) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    SetupNavigationPreload(aChannel, aRegistration);
   }
 
   ParentToParentServiceWorkerFetchEventOpArgs args(
