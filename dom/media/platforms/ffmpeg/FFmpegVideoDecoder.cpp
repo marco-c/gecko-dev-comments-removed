@@ -1038,7 +1038,16 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
 
   RefPtr<VideoData> v;
 #ifdef CUSTOMIZED_BUFFER_ALLOCATION
-  if (mIsUsingShmemBufferForDecode && *mIsUsingShmemBufferForDecode) {
+  bool requiresCopy = false;
+#  ifdef XP_MACOSX
+  
+  
+  
+  
+  requiresCopy = (b.mColorDepth != gfx::ColorDepth::COLOR_8);
+#  endif
+  if (mIsUsingShmemBufferForDecode && *mIsUsingShmemBufferForDecode &&
+      !requiresCopy) {
     RefPtr<ImageBufferWrapper> wrapper = static_cast<ImageBufferWrapper*>(
         mLib->av_buffer_get_opaque(mFrame->buf[0]));
     MOZ_ASSERT(wrapper);
