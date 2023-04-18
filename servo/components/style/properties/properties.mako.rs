@@ -4211,19 +4211,38 @@ macro_rules! css_properties_accessors {
 
 
 
-
-
-
 #[macro_export]
 macro_rules! longhand_properties_idents {
     ($macro_name: ident) => {
         $macro_name! {
             % for property in data.longhands:
-                { ${property.ident}, ${"true" if property.boxed else "false"} }
+                { ${property.ident} }
             % endfor
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(target_pointer_width = "64")]
+#[allow(dead_code)] 
+const BOX_THRESHOLD: usize = 24;
+% for longhand in data.longhands:
+#[cfg(target_pointer_width = "64")]
+% if longhand.boxed:
+const_assert!(std::mem::size_of::<longhands::${longhand.ident}::SpecifiedValue>() > BOX_THRESHOLD);
+% else:
+const_assert!(std::mem::size_of::<longhands::${longhand.ident}::SpecifiedValue>() <= BOX_THRESHOLD);
+% endif
+% endfor
 
 % if engine in ["servo-2013", "servo-2020"]:
 % for effect_name in ["repaint", "reflow_out_of_flow", "reflow", "rebuild_and_reflow_inline", "rebuild_and_reflow"]:
