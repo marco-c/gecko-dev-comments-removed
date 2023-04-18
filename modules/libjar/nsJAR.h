@@ -13,7 +13,7 @@
 #include "prinrval.h"
 
 #include "mozilla/Atomics.h"
-#include "mozilla/Mutex.h"
+#include "mozilla/RecursiveMutex.h"
 #include "nsCOMPtr.h"
 #include "nsClassHashtable.h"
 #include "nsString.h"
@@ -53,8 +53,10 @@ class nsJAR final : public nsIZipReader {
 
   NS_DECL_NSIZIPREADER
 
-  nsresult GetJarPath(nsACString& aResult);
+  nsresult GetFullJarPath(nsACString& aResult);
 
+  
+  
   PRIntervalTime GetReleaseTime() { return mReleaseTime; }
 
   bool IsReleased() { return mReleaseTime != PR_INTERVAL_NO_TIMEOUT; }
@@ -64,29 +66,27 @@ class nsJAR final : public nsIZipReader {
   void ClearReleaseTime() { mReleaseTime = PR_INTERVAL_NO_TIMEOUT; }
 
   void SetZipReaderCache(nsZipReaderCache* aCache) {
-    mozilla::MutexAutoLock lock(mLock);
+    mozilla::RecursiveMutexAutoLock lock(mLock);
     mCache = aCache;
   }
 
   nsresult GetNSPRFileDesc(PRFileDesc** aNSPRFileDesc);
 
  protected:
-  
-  nsCOMPtr<nsIFile> mZipFile;   
-  nsCString mOuterZipEntry;     
-  RefPtr<nsZipArchive> mZip;    
-  PRIntervalTime mReleaseTime;  
-  nsZipReaderCache*
-      mCache;  
-  mozilla::Mutex mLock;  
-  int64_t mMtime;
-  bool mOpened;
-
-  
-  bool mSkipArchiveClosing;
-
   nsresult LoadEntry(const nsACString& aFilename, nsCString& aBuf);
   int32_t ReadLine(const char** src);
+
+  
+  
+  PRIntervalTime mReleaseTime;
+
+  
+  mozilla::RecursiveMutex mLock;
+  nsCString mOuterZipEntry;    
+  nsCOMPtr<nsIFile> mZipFile;  
+  RefPtr<nsZipArchive> mZip;   
+  nsZipReaderCache*
+      mCache;  
 };
 
 
@@ -105,14 +105,14 @@ class nsJARItem : public nsIZipEntry {
  private:
   virtual ~nsJARItem() {}
 
-  uint32_t mSize;     
-  uint32_t mRealsize; 
-  uint32_t mCrc32;
-  PRTime mLastModTime;
-  uint16_t mCompression;
-  uint32_t mPermissions;
-  bool mIsDirectory;
-  bool mIsSynthetic;
+  const uint32_t mSize;     
+  const uint32_t mRealsize; 
+  const uint32_t mCrc32;
+  const PRTime mLastModTime;
+  const uint16_t mCompression;
+  const uint32_t mPermissions;
+  const bool mIsDirectory;
+  const bool mIsSynthetic;
 };
 
 
@@ -150,6 +150,8 @@ class nsJAREnumerator final : public nsStringEnumeratorBase {
 class nsZipReaderCache : public nsIZipReaderCache,
                          public nsIObserver,
                          public nsSupportsWeakReference {
+  friend class nsJAR;
+
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIZIPREADERCACHE
@@ -162,6 +164,8 @@ class nsZipReaderCache : public nsIZipReaderCache,
   typedef nsRefPtrHashtable<nsCStringHashKey, nsJAR> ZipsHashtable;
 
  protected:
+  void AssertLockOwned() { mLock.AssertCurrentThreadOwns(); }
+
   virtual ~nsZipReaderCache();
 
   mozilla::Mutex mLock MOZ_UNANNOTATED;
