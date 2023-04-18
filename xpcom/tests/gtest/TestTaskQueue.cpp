@@ -29,7 +29,7 @@ TEST(TaskQueue, EventOrder)
   bool errored = false;
   int counter = 0;
   int sync = 0;
-  Monitor monitor("TaskQueue::EventOrder::monitor");
+  Monitor monitor MOZ_UNANNOTATED("TaskQueue::EventOrder::monitor");
 
   
   for (int i = 0; i < 10000; ++i) {

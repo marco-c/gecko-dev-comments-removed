@@ -1546,7 +1546,7 @@ class MediaPipelineReceiveVideo::PipelineListener
 
  private:
   RefPtr<layers::ImageContainer> mImageContainer;
-  Mutex mMutex;  
+  Mutex mMutex MOZ_UNANNOTATED;  
   PrincipalHandle mPrincipalHandle;
   
   

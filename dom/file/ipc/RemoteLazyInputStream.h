@@ -115,7 +115,7 @@ class RemoteLazyInputStream final : public nsIAsyncInputStream,
 
   
   
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
 };
 
 }  

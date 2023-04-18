@@ -47,7 +47,7 @@ class nsPrinterWin final : public nsPrinterBase {
   
   
   
-  mutable mozilla::Mutex mDriverMutex{"nsPrinterWin::Driver"};
+  mutable mozilla::Mutex mDriverMutex MOZ_UNANNOTATED{"nsPrinterWin::Driver"};
 };
 
 #endif  

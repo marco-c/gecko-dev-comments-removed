@@ -198,7 +198,7 @@ class CheckerboardEvent final {
 
 
 
-  mutable Monitor mRendertraceLock;
+  mutable Monitor mRendertraceLock MOZ_UNANNOTATED;
   
 
 

@@ -106,7 +106,7 @@ class nsDNSService final : public mozilla::net::DNSServiceBase,
 
   
   
-  mozilla::Mutex mLock{"nsDNSServer.mLock"};
+  mozilla::Mutex mLock MOZ_UNANNOTATED{"nsDNSServer.mLock"};
 
   
   

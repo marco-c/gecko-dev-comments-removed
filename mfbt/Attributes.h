@@ -699,6 +699,13 @@
 
 
 
+
+
+
+
+
+
+
 #  ifdef XGILL_PLUGIN
 #    pragma GCC diagnostic ignored "-Wignored-attributes"
 #    pragma GCC diagnostic ignored "-Wattributes"
@@ -768,6 +775,13 @@
       __attribute__((annotate("moz_may_call_after_must_return")))
 #    define MOZ_LIFETIME_BOUND __attribute__((annotate("moz_lifetime_bound")))
 #    define MOZ_KNOWN_LIVE __attribute__((annotate("moz_known_live")))
+#    ifndef XGILL_PLUGIN
+#      define MOZ_UNANNOTATED __attribute__((annotate("moz_unannotated")))
+#      define MOZ_ANNOTATED __attribute__((annotate("moz_annotated")))
+#    else
+#      define MOZ_UNANNOTATED
+#      define MOZ_ANNOTATED
+#    endif
 
 
 
@@ -821,6 +835,8 @@
 #    define MOZ_MAY_CALL_AFTER_MUST_RETURN
 #    define MOZ_LIFETIME_BOUND
 #    define MOZ_KNOWN_LIVE
+#    define MOZ_UNANNOTATED
+#    define MOZ_ANNOTATED
 #  endif 
 
 #  define MOZ_RAII MOZ_NON_TEMPORARY_CLASS MOZ_STACK_CLASS

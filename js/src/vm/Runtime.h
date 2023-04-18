@@ -564,7 +564,7 @@ struct JSRuntime {
 
 
 
-  js::Mutex scriptDataLock;
+  js::Mutex scriptDataLock MOZ_UNANNOTATED;
 #ifdef DEBUG
   bool activeThreadHasScriptDataAccess;
 #endif

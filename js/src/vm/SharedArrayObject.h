@@ -50,7 +50,7 @@ class SharedArrayRawBuffer {
  private:
   mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> refcount_;
   mozilla::Atomic<size_t, mozilla::SequentiallyConsistent> length_;
-  Mutex growLock_;
+  Mutex growLock_ MOZ_UNANNOTATED;
   
   wasm::IndexType wasmIndexType_;
   

@@ -130,7 +130,7 @@ class TextureClientRecycleAllocator : public ITextureClientRecycleAllocator {
 
   
   std::stack<RefPtr<TextureClientHolder> > mPooledClients;
-  Mutex mLock;
+  Mutex mLock MOZ_UNANNOTATED;
   bool mIsDestroyed;
 };
 

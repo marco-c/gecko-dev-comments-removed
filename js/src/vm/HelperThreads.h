@@ -60,7 +60,7 @@ using UniqueTier2GeneratorTask = UniquePtr<Tier2GeneratorTask>;
 
 
 
-extern Mutex gHelperThreadLock;
+extern Mutex gHelperThreadLock MOZ_UNANNOTATED;
 
 class MOZ_RAII AutoLockHelperThreadState : public LockGuard<Mutex> {
   using Base = LockGuard<Mutex>;

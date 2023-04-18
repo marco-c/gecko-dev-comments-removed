@@ -187,7 +187,7 @@ class CompositorAnimationStorage final {
   AnimatedValueTable mAnimatedValues;
   AnimationsTable mAnimations;
   std::unordered_set<uint64_t> mNewAnimations;
-  mutable Mutex mLock;
+  mutable Mutex mLock MOZ_UNANNOTATED;
   
   CompositorBridgeParent* MOZ_NON_OWNING_REF mCompositorBridge;
 };

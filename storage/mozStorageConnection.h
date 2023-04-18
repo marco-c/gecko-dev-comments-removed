@@ -167,7 +167,7 @@ class Connection final : public mozIStorageConnection,
 
 
 
-  Mutex sharedAsyncExecutionMutex;
+  Mutex sharedAsyncExecutionMutex MOZ_UNANNOTATED;
 
   
 

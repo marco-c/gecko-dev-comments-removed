@@ -774,7 +774,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  mutable mozilla::RecursiveMutex mTreeLock;
+  mutable mozilla::RecursiveMutex mTreeLock MOZ_UNANNOTATED;
   RefPtr<HitTestingTreeNode> mRootNode;
 
   
@@ -796,7 +796,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
 
 
-  mutable mozilla::Mutex mMapLock;
+  mutable mozilla::Mutex mMapLock MOZ_UNANNOTATED;
 
   
 
@@ -1003,7 +1003,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   std::unordered_map<LayersId, UniquePtr<APZTestData>, LayersId::HashFn>
       mTestData;
-  mutable mozilla::Mutex mTestDataLock;
+  mutable mozilla::Mutex mTestDataLock MOZ_UNANNOTATED;
 
   
   float mDPI;
@@ -1015,7 +1015,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   
   ScrollGenerationCounter mScrollGenerationCounter;
-  mozilla::Mutex mScrollGenerationLock;
+  mozilla::Mutex mScrollGenerationLock MOZ_UNANNOTATED;
 
 #if defined(MOZ_WIDGET_ANDROID)
  private:

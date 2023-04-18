@@ -197,7 +197,7 @@ class BufferRecycleBin final {
 
   
   
-  Mutex mLock;
+  Mutex mLock MOZ_UNANNOTATED;
 
   
   
@@ -251,7 +251,7 @@ class ImageContainerListener final {
 
   ~ImageContainerListener();
 
-  Mutex mLock;
+  Mutex mLock MOZ_UNANNOTATED;
   ImageContainer* mImageContainer;
 };
 
@@ -543,7 +543,7 @@ class ImageContainer final : public SupportsThreadSafeWeakPtr<ImageContainer> {
 
   
   
-  RecursiveMutex mRecursiveMutex;
+  RecursiveMutex mRecursiveMutex MOZ_UNANNOTATED;
 
   RefPtr<TextureClientRecycleAllocator> mRecycleAllocator;
 

@@ -92,7 +92,7 @@ class Logger final {
 
   nsCOMPtr<nsIFile> mLogFileName;
   nsCOMPtr<nsIOutputStream> mLogFile;  
-  Mutex mMutex;                        
+  Mutex mMutex MOZ_UNANNOTATED;        
   nsCOMPtr<nsIThread> mThread;
   nsTArray<nsCString> mEntries;
 };

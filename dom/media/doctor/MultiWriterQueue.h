@@ -28,7 +28,7 @@ class MultiWriterQueueReaderLocking_Mutex {
   void Unlock() { mMutex.Unlock(); };
 
  private:
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
 };
 
 

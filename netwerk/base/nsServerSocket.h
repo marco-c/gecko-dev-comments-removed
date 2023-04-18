@@ -51,7 +51,7 @@ class nsServerSocket : public nsASocketHandler, public nsIServerSocket {
   nsresult TryAttach();
 
   
-  mozilla::Mutex mLock{"nsServerSocket.mLock"};
+  mozilla::Mutex mLock MOZ_UNANNOTATED{"nsServerSocket.mLock"};
   PRNetAddr mAddr = {.raw = {0, {0}}};
   nsCOMPtr<nsIEventTarget> mListenerTarget;
   bool mAttached{false};

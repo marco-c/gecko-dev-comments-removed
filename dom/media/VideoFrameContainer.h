@@ -117,7 +117,7 @@ class VideoFrameContainer {
   } mMainThreadState;
 
   
-  Mutex mMutex;
+  Mutex mMutex MOZ_UNANNOTATED;
   
   
   

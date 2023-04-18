@@ -186,7 +186,7 @@ static AtomCache sRecentlyUsedMainThreadAtoms;
 
 class nsAtomSubTable {
   friend class nsAtomTable;
-  Mutex mLock;
+  Mutex mLock MOZ_UNANNOTATED;
   PLDHashTable mTable;
   nsAtomSubTable();
   void GCLocked(GCKind aKind);

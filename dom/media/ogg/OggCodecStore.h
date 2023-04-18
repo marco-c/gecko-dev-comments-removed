@@ -29,7 +29,7 @@ class OggCodecStore {
   nsClassHashtable<nsUint32HashKey, OggCodecState> mCodecStates;
 
   
-  Monitor mMonitor;
+  Monitor mMonitor MOZ_UNANNOTATED;
 };
 
 }  

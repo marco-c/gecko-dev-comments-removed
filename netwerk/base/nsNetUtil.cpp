@@ -1596,7 +1596,7 @@ class BufferWriter final : public nsIInputStreamCallback {
 
   
   
-  Monitor mMonitor;
+  Monitor mMonitor MOZ_UNANNOTATED;
 
   nsCOMPtr<nsIInputStream> mInputStream;
   nsCOMPtr<nsIAsyncInputStream> mAsyncInputStream;

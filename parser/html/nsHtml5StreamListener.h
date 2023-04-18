@@ -51,7 +51,7 @@ class nsHtml5StreamListener : public nsIStreamListener,
   
   
   
-  mozilla::ReentrantMonitor mDelegateMonitor;
+  mozilla::ReentrantMonitor mDelegateMonitor MOZ_UNANNOTATED;
   
   
   

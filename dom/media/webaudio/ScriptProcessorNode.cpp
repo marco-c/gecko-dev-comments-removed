@@ -80,7 +80,7 @@ class SharedBuffers final {
     
     
     
-    Mutex mMutex;
+    Mutex mMutex MOZ_UNANNOTATED;
     
     BufferList mBufferList;
   };

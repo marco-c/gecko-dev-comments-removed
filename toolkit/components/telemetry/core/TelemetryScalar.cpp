@@ -2429,7 +2429,7 @@ void internal_ApplyPendingOperations(const StaticMutexAutoLock& lock) {
 
 
 
-static StaticMutex gTelemetryScalarsMutex;
+static StaticMutex gTelemetryScalarsMutex MOZ_UNANNOTATED;
 
 void TelemetryScalar::InitializeGlobalState(bool aCanRecordBase,
                                             bool aCanRecordExtended) {

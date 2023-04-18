@@ -117,7 +117,7 @@ class BackgroundFileSaver : public nsIBackgroundFileSaver {
 
 
 
-  mozilla::Mutex mLock{"BackgroundFileSaver.mLock"};
+  mozilla::Mutex mLock MOZ_UNANNOTATED{"BackgroundFileSaver.mLock"};
 
   
 

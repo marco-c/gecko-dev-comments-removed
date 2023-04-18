@@ -278,7 +278,7 @@ class imgRequest final : public nsIStreamListener,
   bool mIsDeniedCrossSiteCORSRequest;
   bool mIsCrossSiteNoCORSRequest;
 
-  mutable mozilla::Mutex mMutex;
+  mutable mozilla::Mutex mMutex MOZ_UNANNOTATED;
 
   
   

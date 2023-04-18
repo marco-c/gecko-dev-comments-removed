@@ -112,19 +112,19 @@ class APZSampler {
   
   
   
-  static StaticMutex sWindowIdLock;
+  static StaticMutex sWindowIdLock MOZ_UNANNOTATED;
   static StaticAutoPtr<std::unordered_map<uint64_t, RefPtr<APZSampler>>>
       sWindowIdMap;
   Maybe<wr::WrWindowId> mWindowId;
 
   
-  mutable Mutex mThreadIdLock;
+  mutable Mutex mThreadIdLock MOZ_UNANNOTATED;
   
   
   
   Maybe<PlatformThreadId> mSamplerThreadId;
 
-  Mutex mSampleTimeLock;
+  Mutex mSampleTimeLock MOZ_UNANNOTATED;
   
   SampleTime mSampleTime;
 };

@@ -77,7 +77,7 @@ static void UpdateDriverSetupMacCommandLine(int& argc, char**& argv,
   
   
   
-  Monitor monitor("nsUpdateDriver SetupMacCommandLine");
+  Monitor monitor MOZ_UNANNOTATED("nsUpdateDriver SetupMacCommandLine");
 
   nsresult rv = NS_DispatchToMainThread(NS_NewRunnableFunction(
       "UpdateDriverSetupMacCommandLine",

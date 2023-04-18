@@ -367,7 +367,7 @@ class nsSocketTransport final : public nsASocketHandler,
   
 
   
-  Mutex mLock{"nsSocketTransport.mLock"};
+  Mutex mLock MOZ_UNANNOTATED{"nsSocketTransport.mLock"};
   LockedPRFileDesc mFD;
   nsrefcnt mFDref{0};        
   bool mFDconnected{false};  

@@ -58,7 +58,7 @@ class ChildDNSService final : public DNSServiceBase, public nsPIDNSService {
   
   nsClassHashtable<nsCStringHashKey, nsTArray<RefPtr<DNSRequestSender>>>
       mPendingRequests;
-  Mutex mPendingRequestsLock{"DNSPendingRequestsLock"};
+  Mutex mPendingRequestsLock MOZ_UNANNOTATED{"DNSPendingRequestsLock"};
   RefPtr<TRRServiceParent> mTRRServiceParent;
 };
 

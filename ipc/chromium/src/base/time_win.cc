@@ -236,7 +236,7 @@ class NowSingleton {
     
     
     
-    static mozilla::StaticMutex mutex;
+    static mozilla::StaticMutex mutex MOZ_UNANNOTATED;
     static NowSingleton now(mutex);
     return now;
   }

@@ -797,7 +797,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   bool mIgnoreCacheEntry{false};
   
   
-  mozilla::Mutex mRCWNLock{"nsHttpChannel.mRCWNLock"};
+  mozilla::Mutex mRCWNLock MOZ_UNANNOTATED{"nsHttpChannel.mRCWNLock"};
 
   TimeStamp mNavigationStartTimeStamp;
 

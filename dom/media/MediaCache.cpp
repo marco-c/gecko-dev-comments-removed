@@ -443,7 +443,7 @@ class MediaCache {
   
   
   
-  mozilla::Monitor mMonitor;
+  mozilla::Monitor mMonitor MOZ_UNANNOTATED;
   
   nsTArray<MediaCacheStream*> mStreams;
   

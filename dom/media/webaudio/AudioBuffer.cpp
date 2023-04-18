@@ -72,7 +72,7 @@ class AudioBufferMemoryTracker : public nsIMemoryReporter {
   void Init();
 
   
-  static StaticMutex sMutex;
+  static StaticMutex sMutex MOZ_UNANNOTATED;
   static StaticRefPtr<AudioBufferMemoryTracker> sSingleton;
   nsTHashSet<const AudioBuffer*> mBuffers;
 };
