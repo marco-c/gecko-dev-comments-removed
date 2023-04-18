@@ -3758,10 +3758,6 @@ class Document : public nsINode,
   bool IsScriptTracking(JSContext* aCx) const;
 
   
-  
-  FlashClassification DocumentFlashClassification();
-
-  
   void AddResizeObserver(ResizeObserver&);
   void RemoveResizeObserver(ResizeObserver&);
   void ScheduleResizeObserversNotification() const;
@@ -3886,11 +3882,7 @@ class Document : public nsINode,
   
   already_AddRefed<mozilla::dom::FeaturePolicy> GetParentFeaturePolicy();
 
-  FlashClassification DocumentFlashClassificationInternal();
-
  public:
-  bool IsThirdPartyForFlashClassifier();
-
   const OriginTrials& Trials() const { return mTrials; }
 
  private:
@@ -5088,14 +5080,6 @@ class Document : public nsINode,
 
   class HeaderData;
   UniquePtr<HeaderData> mHeaderData;
-
-  
-  
-  FlashClassification mFlashClassification;
-
-  
-  
-  Maybe<bool> mIsThirdPartyForFlashClassifier;
 
   nsRevocableEventPtr<nsRunnableMethod<Document, void, false>>
       mPendingTitleChangeEvent;

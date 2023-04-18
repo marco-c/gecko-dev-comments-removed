@@ -1442,7 +1442,6 @@ Document::Document(const char* aContentType)
       mViewportFit(ViewportFitType::Auto),
       mSubDocuments(nullptr),
       mHeaderData(nullptr),
-      mFlashClassification(FlashClassification::Unknown),
       mServoRestyleRootDirtyBits(0),
       mThrowOnDynamicMarkupInsertionCounter(0),
       mIgnoreOpensDuringUnloadCounter(0),
@@ -4300,11 +4299,6 @@ bool Document::GetAllowPlugins() {
     if (mSandboxFlags & SANDBOXED_PLUGINS) {
       return false;
     }
-  }
-
-  FlashClassification classification = DocumentFlashClassification();
-  if (classification == FlashClassification::Denied) {
-    return false;
   }
 
   return true;
@@ -16610,52 +16604,6 @@ bool Document::IsExtensionPage() const {
          BasePrincipal::Cast(NodePrincipal())->AddonPolicy();
 }
 
-
-
-
-
-
-FlashClassification Document::DocumentFlashClassification() {
-  
-  const auto fnIsFlashBlockingEnabled = [] {
-    return StaticPrefs::plugins_flashBlock_enabled() && !FissionAutostart();
-  };
-
-  
-  if (!StaticPrefs::plugins_http_https_only() && !fnIsFlashBlockingEnabled()) {
-    return FlashClassification::Unknown;
-  }
-
-  if (!NodePrincipal()->GetIsContentPrincipal()) {
-    return FlashClassification::Denied;
-  }
-
-  if (StaticPrefs::plugins_http_https_only()) {
-    
-    
-    
-    
-    
-
-    if (!(NodePrincipal()->SchemeIs("http") ||
-          NodePrincipal()->SchemeIs("https"))) {
-      return FlashClassification::Denied;
-    }
-  }
-
-  
-  
-  if (!fnIsFlashBlockingEnabled()) {
-    return FlashClassification::Unknown;
-  }
-
-  if (mFlashClassification == FlashClassification::Unknown) {
-    mFlashClassification = DocumentFlashClassificationInternal();
-  }
-
-  return mFlashClassification;
-}
-
 void Document::AddResizeObserver(ResizeObserver& aObserver) {
   if (!mResizeObserverController) {
     mResizeObserverController = MakeUnique<ResizeObserverController>(this);
@@ -16690,123 +16638,6 @@ void Document::ScheduleResizeObserversNotification() const {
   }
 
   mResizeObserverController->ScheduleNotification();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool Document::IsThirdPartyForFlashClassifier() {
-  if (mIsThirdPartyForFlashClassifier.isSome()) {
-    return mIsThirdPartyForFlashClassifier.value();
-  }
-
-  BrowsingContext* browsingContext = this->GetBrowsingContext();
-  if (!browsingContext) {
-    mIsThirdPartyForFlashClassifier.emplace(true);
-    return mIsThirdPartyForFlashClassifier.value();
-  }
-
-  if (browsingContext->IsTop()) {
-    mIsThirdPartyForFlashClassifier.emplace(false);
-    return mIsThirdPartyForFlashClassifier.value();
-  }
-
-  nsCOMPtr<Document> parentDocument = GetInProcessParentDocument();
-  if (!parentDocument) {
-    
-    mIsThirdPartyForFlashClassifier.emplace(true);
-    return mIsThirdPartyForFlashClassifier.value();
-  }
-
-  if (parentDocument->IsThirdPartyForFlashClassifier()) {
-    mIsThirdPartyForFlashClassifier.emplace(true);
-    return mIsThirdPartyForFlashClassifier.value();
-  }
-
-  nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
-  nsCOMPtr<nsIPrincipal> parentPrincipal = parentDocument->GetPrincipal();
-
-  bool principalsMatch = false;
-  nsresult rv = principal->Equals(parentPrincipal, &principalsMatch);
-
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    
-    mIsThirdPartyForFlashClassifier.emplace(true);
-    return mIsThirdPartyForFlashClassifier.value();
-  }
-
-  if (!principalsMatch) {
-    mIsThirdPartyForFlashClassifier.emplace(true);
-    return mIsThirdPartyForFlashClassifier.value();
-  }
-
-  
-  mIsThirdPartyForFlashClassifier.emplace(false);
-  return mIsThirdPartyForFlashClassifier.value();
-}
-
-FlashClassification Document::DocumentFlashClassificationInternal() {
-  FlashClassification classification = FlashClassification::Unknown;
-
-  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(GetChannel());
-  if (httpChannel) {
-    nsIHttpChannel::FlashPluginState state = nsIHttpChannel::FlashPluginUnknown;
-    httpChannel->GetFlashPluginState(&state);
-
-    
-    
-
-    if (state == nsIHttpChannel::FlashPluginDeniedInSubdocuments &&
-        IsThirdPartyForFlashClassifier()) {
-      return FlashClassification::Denied;
-    }
-
-    if (state == nsIHttpChannel::FlashPluginDenied) {
-      return FlashClassification::Denied;
-    }
-
-    if (state == nsIHttpChannel::FlashPluginAllowed) {
-      classification = FlashClassification::Allowed;
-    }
-  }
-
-  if (IsTopLevelContentDocument()) {
-    return classification;
-  }
-
-  Document* parentDocument = GetInProcessParentDocument();
-  if (!parentDocument) {
-    return FlashClassification::Denied;
-  }
-
-  FlashClassification parentClassification =
-      parentDocument->DocumentFlashClassification();
-
-  if (parentClassification == FlashClassification::Denied) {
-    return FlashClassification::Denied;
-  }
-
-  
-  
-  if (classification == FlashClassification::Unknown &&
-      parentClassification == FlashClassification::Allowed) {
-    return FlashClassification::Allowed;
-  }
-
-  return classification;
 }
 
 void Document::ClearStaleServoData() {
