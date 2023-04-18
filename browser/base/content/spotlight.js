@@ -37,7 +37,11 @@ async function renderSpotlight(ready) {
 
   
   let imageEl = clone.querySelector(".logo");
-  imageEl.src = logo.imageURL;
+  if (logo.imageURL) {
+    imageEl.src = logo.imageURL;
+  } else {
+    imageEl.style.visibility = "hidden";
+  }
   imageEl.style.height = imageEl.style.width = logo.size;
 
   
