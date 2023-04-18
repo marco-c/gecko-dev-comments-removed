@@ -834,6 +834,11 @@ class WorkerPrivate final : public RelativeTimeline {
     return mLoadInfo.mServiceWorkersTestingInWindow;
   }
 
+  
+  bool IsThirdPartyContextToTopWindow() const {
+    return mLoadInfo.mIsThirdPartyContextToTopWindow;
+  }
+
   bool IsWatchedByDevTools() const { return mLoadInfo.mWatchedByDevTools; }
 
   
