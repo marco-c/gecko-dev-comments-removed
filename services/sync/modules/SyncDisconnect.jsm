@@ -23,9 +23,9 @@ XPCOMUtils.defineLazyGetter(this, "FxAccountsCommon", function() {
   return ChromeUtils.import("resource://gre/modules/FxAccountsCommon.js");
 });
 
-this.EXPORTED_SYMBOLS = ["SyncDisconnectInternal", "SyncDisconnect"];
+const EXPORTED_SYMBOLS = ["SyncDisconnectInternal", "SyncDisconnect"];
 
-this.SyncDisconnectInternal = {
+const SyncDisconnectInternal = {
   lockRetryInterval: 1000, 
   lockRetryCount: 120, 
   promiseDisconnectFinished: null, 
@@ -226,7 +226,7 @@ this.SyncDisconnectInternal = {
   },
 };
 
-this.SyncDisconnect = {
+const SyncDisconnect = {
   get promiseDisconnectFinished() {
     return SyncDisconnectInternal.promiseDisconnectFinished;
   },
