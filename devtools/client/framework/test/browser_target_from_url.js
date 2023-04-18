@@ -7,7 +7,6 @@ const TEST_URI =
 const { DevToolsLoader } = ChromeUtils.import(
   "resource://devtools/shared/loader/Loader.jsm"
 );
-const { createCommandsDictionary } = require("devtools/shared/commands/index");
 const {
   descriptorFromURL,
 } = require("devtools/client/framework/descriptor-from-url");
@@ -46,9 +45,6 @@ add_task(async function() {
   descriptor = await descriptorFromURL(
     new URL("http://foo?type=tab&id=" + windowId)
   );
-  const commands = await createCommandsDictionary(descriptor);
-  
-  await commands.targetCommand.startListening();
   target = await descriptor.getTarget();
   assertTarget(target, TEST_URI);
   await descriptor.client.close();

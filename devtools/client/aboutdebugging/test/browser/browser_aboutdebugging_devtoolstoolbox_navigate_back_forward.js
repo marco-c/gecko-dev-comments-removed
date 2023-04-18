@@ -3,8 +3,13 @@
 
 "use strict";
 
+
+
+
+
+
 const ORIGINAL_URL = "https://example.com/document-builder.sjs?html=page1";
-const OTHER_URL = "https://example.org/document-builder.sjs?html=page2";
+const OTHER_URL = "https://example.com/document-builder.sjs?html=page2";
 
 async function waitForUrl(url, toolbox, browserTab, win) {
   const {

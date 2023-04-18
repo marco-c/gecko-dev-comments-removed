@@ -25,16 +25,15 @@ add_task(async function test() {
   const client = new DevToolsClient(transport);
   const [type] = await client.connect();
   is(type, "browser", "Root actor should identify itself as a browser.");
-  const tab1 = await addTab(TAB1_URL);
+  const tab = await addTab(TAB1_URL);
 
-  await assertListTabs(tab1, client.mainRoot);
+  await assertListTabs(client.mainRoot);
 
-  const tab2 = await addTab(TAB1_URL);
   
-  await assertGetTab(client, client.mainRoot, tab2);
+  await assertGetTab(client, client.mainRoot, tab);
 });
 
-async function assertListTabs(tab, rootFront) {
+async function assertListTabs(rootFront) {
   const tabDescriptors = await rootFront.listTabs();
   is(tabDescriptors.length, 2, "Should be two tabs");
 
@@ -54,6 +53,7 @@ async function assertListTabs(tab, rootFront) {
 
   info("Detach the tab target");
   const onTargetDestroyed = tabTarget.once("target-destroyed");
+  const onDescriptorDestroyed = tabDescriptor.once("descriptor-destroyed");
   await tabTarget.detach();
 
   info("Wait for target destruction");
@@ -63,25 +63,19 @@ async function assertListTabs(tab, rootFront) {
   
   
   
-  ok(
-    !tabDescriptor.isDestroyed(),
-    "The tab descriptor isn't destroyed on target detach"
-  );
-
-  info("Close the descriptor's tab");
-  const onDescriptorDestroyed = tabDescriptor.once("descriptor-destroyed");
-  await removeTab(tab);
-
+  
   info("Wait for descriptor destruction");
   await onDescriptorDestroyed;
 
+  
+  
   ok(
     tabTarget.isDestroyed(),
-    "The tab target should be destroyed after closing the tab"
+    "The tab target should be destroyed after detach"
   );
   ok(
     tabDescriptor.isDestroyed(),
-    "The tab descriptor is also always destroyed after tab closing"
+    "The tab descriptor should be destroyed after detach"
   );
 
   
