@@ -1230,11 +1230,14 @@ bool ModuleObject::execute(JSContext* cx, HandleModuleObject self,
 
   RootedScript script(cx, self->script());
 
-  
-  
-  
-  auto guardA = mozilla::MakeScopeExit(
-      [&] { self->setReservedSlot(ScriptSlot, UndefinedValue()); });
+  auto guardA = mozilla::MakeScopeExit([&] {
+    if (self->isAsync()) {
+      
+      
+      return;
+    }
+    ModuleObject::onTopLevelEvaluationFinished(self);
+  });
 
   RootedModuleEnvironmentObject env(cx, self->environment());
   if (!env) {
@@ -1244,6 +1247,14 @@ bool ModuleObject::execute(JSContext* cx, HandleModuleObject self,
   }
 
   return Execute(cx, script, env, rval);
+}
+
+
+void ModuleObject::onTopLevelEvaluationFinished(ModuleObject* module) {
+  
+  
+  
+  module->setReservedSlot(ScriptSlot, UndefinedValue());
 }
 
 
@@ -2246,6 +2257,8 @@ void js::AsyncModuleExecutionFulfilled(JSContext* cx,
   
   MOZ_ASSERT(module->isAsyncEvaluating());
 
+  ModuleObject::onTopLevelEvaluationFinished(module);
+
   if (module->hasTopLevelCapability()) {
     MOZ_ASSERT(module->getCycleRoot() == module);
     ModuleObject::topLevelCapabilityResolve(cx, module);
@@ -2321,6 +2334,8 @@ void js::AsyncModuleExecutionRejected(JSContext* cx, HandleModuleObject module,
     MOZ_ASSERT(module->hadEvaluationError());
     return;
   }
+
+  ModuleObject::onTopLevelEvaluationFinished(module);
 
   
   MOZ_ASSERT(!module->hadEvaluationError());
