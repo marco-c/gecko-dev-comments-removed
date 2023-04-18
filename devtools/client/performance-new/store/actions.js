@@ -33,11 +33,9 @@ const {
 
 
 
-
-exports.reportProfilerReady = (isActive, isLockedForPrivateBrowsing) => ({
+exports.reportProfilerReady = isActive => ({
   type: "REPORT_PROFILER_READY",
   isActive,
-  isLockedForPrivateBrowsing,
 });
 
 
@@ -54,22 +52,6 @@ exports.reportProfilerStarted = () => ({
 
 exports.reportProfilerStopped = () => ({
   type: "REPORT_PROFILER_STOPPED",
-});
-
-
-
-
-
-exports.reportPrivateBrowsingStarted = () => ({
-  type: "REPORT_PRIVATE_BROWSING_STARTED",
-});
-
-
-
-
-
-exports.reportPrivateBrowsingStopped = () => ({
-  type: "REPORT_PRIVATE_BROWSING_STOPPED",
 });
 
 

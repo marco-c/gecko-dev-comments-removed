@@ -31,10 +31,7 @@ function recordingState(state = "not-yet-known", action) {
         return state;
       }
 
-      const { isActive, isLockedForPrivateBrowsing } = action;
-      if (isLockedForPrivateBrowsing) {
-        return "locked-by-private-browsing";
-      }
+      const { isActive } = action;
       if (isActive) {
         return "recording";
       }
@@ -58,7 +55,6 @@ function recordingState(state = "not-yet-known", action) {
           
           return "recording";
 
-        case "locked-by-private-browsing":
         case "recording":
           
           
@@ -78,9 +74,7 @@ function recordingState(state = "not-yet-known", action) {
           return "available-to-record";
 
         case "request-to-start-recording":
-        
-        
-        case "locked-by-private-browsing":
+          
           
           return state;
 
@@ -94,33 +88,6 @@ function recordingState(state = "not-yet-known", action) {
         default:
           throw new Error("Unhandled recording state");
       }
-
-    case "REPORT_PRIVATE_BROWSING_STARTED":
-      switch (state) {
-        case "request-to-get-profile-and-stop-profiler":
-        
-        
-        case "request-to-stop-profiler":
-        case "available-to-record":
-        case "not-yet-known":
-          return "locked-by-private-browsing";
-
-        case "request-to-start-recording":
-        case "recording":
-          return "locked-by-private-browsing";
-
-        case "locked-by-private-browsing":
-          
-          return state;
-
-        default:
-          throw new Error("Unhandled recording state");
-      }
-
-    case "REPORT_PRIVATE_BROWSING_STOPPED":
-      
-      
-      return "available-to-record";
 
     case "REQUESTING_TO_START_RECORDING":
       return "request-to-start-recording";
@@ -150,7 +117,6 @@ function recordingState(state = "not-yet-known", action) {
 function recordingUnexpectedlyStopped(recState, state = false, action) {
   switch (action.type) {
     case "REPORT_PROFILER_STOPPED":
-    case "REPORT_PRIVATE_BROWSING_STARTED":
       if (
         recState === "recording" ||
         recState == "request-to-start-recording"

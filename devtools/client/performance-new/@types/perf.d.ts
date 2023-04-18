@@ -47,8 +47,8 @@ export interface Commands {
   targetCommand: {
     targetFront: {
       getTrait: (
-        traitName: "noDisablingOnPrivateBrowsing"
-      ) => boolean | undefined;
+        traitName: string
+      ) => unknown;
     };
   };
 }
@@ -66,7 +66,6 @@ export interface PerfFront {
   ) => Promise<[number[], number[], number[]]>;
   isActive: () => Promise<boolean>;
   isSupportedPlatform: () => Promise<boolean>;
-  isLockedForPrivateBrowsing: () => Promise<boolean>;
   on: (type: string, listener: () => void) => void;
   off: (type: string, listener: () => void) => void;
   destroy: () => void;
@@ -88,12 +87,6 @@ export interface PreferenceFront {
 
 export interface RootTraits {
   
-  
-  
-  noDisablingOnPrivateBrowsing?: boolean;
-
-  
-  
 }
 
 export type RecordingState =
@@ -109,9 +102,7 @@ export type RecordingState =
   | "request-to-stop-profiler"
   
   
-  | "recording"
-  
-  | "locked-by-private-browsing";
+  | "recording";
 
 
 
@@ -264,19 +255,12 @@ export type Action =
   | {
       type: "REPORT_PROFILER_READY";
       isActive: boolean;
-      isLockedForPrivateBrowsing: boolean;
     }
   | {
       type: "REPORT_PROFILER_STARTED";
     }
   | {
       type: "REPORT_PROFILER_STOPPED";
-    }
-  | {
-      type: "REPORT_PRIVATE_BROWSING_STARTED";
-    }
-  | {
-      type: "REPORT_PRIVATE_BROWSING_STOPPED";
     }
   | {
       type: "REQUESTING_TO_START_RECORDING";

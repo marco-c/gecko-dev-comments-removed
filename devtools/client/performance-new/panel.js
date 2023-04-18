@@ -62,11 +62,10 @@ class PerformancePanel {
     this.panelWin.gIsPanelDestroyed = false;
 
     const perfFront = await this.commands.client.mainRoot.getFront("perf");
-    const traits = {
-      noDisablingOnPrivateBrowsing: this.commands.targetCommand.targetFront.getTrait(
-        "noDisablingOnPrivateBrowsing"
-      ),
-    };
+
+    
+    
+    const traits = {};
 
     await this.panelWin.gInit(
       perfFront,

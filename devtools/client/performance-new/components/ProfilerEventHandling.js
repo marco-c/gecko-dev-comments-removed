@@ -40,8 +40,6 @@
 
 
 
-
-
 "use strict";
 
 const { PureComponent } = require("devtools/client/shared/vendor/react");
@@ -64,9 +62,6 @@ class ProfilerEventHandling extends PureComponent {
       reportProfilerReady,
       reportProfilerStarted,
       reportProfilerStopped,
-      reportPrivateBrowsingStarted,
-      reportPrivateBrowsingStopped,
-      traits: { noDisablingOnPrivateBrowsing },
     } = this.props;
 
     if (!isSupportedPlatform) {
@@ -74,32 +69,11 @@ class ProfilerEventHandling extends PureComponent {
     }
 
     
-    Promise.all([
-      perfFront.isActive(),
-      noDisablingOnPrivateBrowsing
-        ? false
-        : perfFront.isLockedForPrivateBrowsing(),
-    ]).then(([isActive, isLockedForPrivateBrowsing]) => {
-      reportProfilerReady(isActive, isLockedForPrivateBrowsing);
-    });
+    perfFront.isActive().then(isActive => reportProfilerReady(isActive));
 
     
     this.props.perfFront.on("profiler-started", reportProfilerStarted);
     this.props.perfFront.on("profiler-stopped", reportProfilerStopped);
-
-    if (!noDisablingOnPrivateBrowsing) {
-      
-      
-      
-      this.props.perfFront.on(
-        "profile-locked-by-private-browsing",
-        reportPrivateBrowsingStarted
-      );
-      this.props.perfFront.on(
-        "profile-unlocked-from-private-browsing",
-        reportPrivateBrowsingStopped
-      );
-    }
   }
 
   componentWillUnmount() {
@@ -108,7 +82,6 @@ class ProfilerEventHandling extends PureComponent {
       case "available-to-record":
       case "request-to-stop-profiler":
       case "request-to-get-profile-and-stop-profiler":
-      case "locked-by-private-browsing":
         
         break;
 
@@ -143,8 +116,6 @@ const mapDispatchToProps = {
   reportProfilerReady: actions.reportProfilerReady,
   reportProfilerStarted: actions.reportProfilerStarted,
   reportProfilerStopped: actions.reportProfilerStopped,
-  reportPrivateBrowsingStarted: actions.reportPrivateBrowsingStarted,
-  reportPrivateBrowsingStopped: actions.reportPrivateBrowsingStopped,
 };
 
 module.exports = connect(

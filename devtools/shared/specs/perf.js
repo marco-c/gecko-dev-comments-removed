@@ -31,16 +31,6 @@ const perfDescription = {
     "profiler-stopped": {
       type: "profiler-stopped",
     },
-    
-    
-    
-    
-    "profile-locked-by-private-browsing": {
-      type: "profile-locked-by-private-browsing",
-    },
-    "profile-unlocked-from-private-browsing": {
-      type: "profile-unlocked-from-private-browsing",
-    },
   },
 
   methods: {
@@ -82,13 +72,6 @@ const perfDescription = {
     },
 
     isSupportedPlatform: {
-      request: {},
-      response: { value: RetVal("boolean") },
-    },
-
-    
-    
-    isLockedForPrivateBrowsing: {
       request: {},
       response: { value: RetVal("boolean") },
     },
