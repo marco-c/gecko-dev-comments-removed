@@ -179,6 +179,7 @@ void CreateElementTransaction::InsertNewNode(ErrorResult& aError) {
   
   
   if (NS_WARN_IF(mPointToInsert.GetChild() &&
+                 mPointToInsert.GetChild()->IsInComposedDoc() &&
                  mPointToInsert.GetContainer() !=
                      mPointToInsert.GetChild()->GetParentNode())) {
     
