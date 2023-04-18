@@ -118,11 +118,4 @@ interface nsISocketProvider : nsISupports
 
 
     const long ANONYMOUS_CONNECT_ALLOW_CLIENT_CERT = 1 << 4;
-
-    
-
-
-
-    const unsigned long DONT_TRY_ECH = (1 << 10);
-
 };
