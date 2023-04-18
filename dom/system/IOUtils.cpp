@@ -240,8 +240,8 @@ static void RejectJSPromise(Promise* aPromise, const IOUtils::IOError& aError) {
       aPromise->MaybeRejectWithAbortError(errMsg.refOr("Operation aborted"_ns));
       break;
     default:
-      aPromise->MaybeRejectWithUnknownError(FormatErrorMessage(
-          aError.Code(), errMsg.refOr("Unexpected error"_ns).get()));
+      aPromise->MaybeRejectWithUnknownError(
+          errMsg.refOr(FormatErrorMessage(aError.Code(), "Unexpected error")));
   }
 }
 
@@ -896,13 +896,9 @@ Result<IOUtils::JsBuffer, IOUtils::IOError> IOUtils::ReadSync(
     
     uint32_t totalRead = 0;
     while (totalRead != bufSize) {
-      
-      
-      uint32_t bytesToReadThisChunk =
-          std::min<uint32_t>(bufSize - totalRead, INT32_MAX);
       uint32_t bytesRead = 0;
       if (nsresult rv =
-              stream->Read(toRead.Elements(), bytesToReadThisChunk, &bytesRead);
+              stream->Read(toRead.Elements(), bufSize - totalRead, &bytesRead);
           NS_FAILED(rv)) {
         return Err(IOError(rv).WithMessage(
             "Encountered an unexpected error while reading file(%s)",
