@@ -4783,13 +4783,10 @@ void HTMLEditor::DidJoinNodesTransaction(
 }
 
 nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
-                                 nsIContent& aContentToJoin) {
+                                 nsIContent& aContentToRemove) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  uint32_t firstNodeLength = aContentToJoin.Length();
-
-  EditorRawDOMPoint atNodeToJoin(&aContentToJoin);
-  EditorRawDOMPoint atNodeToKeep(&aContentToKeep);
+  const uint32_t removingNodeLength = aContentToRemove.Length();
 
   
   
@@ -4798,58 +4795,62 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
   
   
   AutoTArray<SavedRange, 10> savedRanges;
-  for (SelectionType selectionType : kPresentSelectionTypes) {
-    SavedRange range;
-    range.mSelection = GetSelection(selectionType);
-    if (selectionType == SelectionType::eNormal) {
-      if (NS_WARN_IF(!range.mSelection)) {
-        return NS_ERROR_FAILURE;
-      }
-    } else if (!range.mSelection) {
-      
-      continue;
-    }
-
-    const uint32_t rangeCount = range.mSelection->RangeCount();
-    for (const uint32_t j : IntegerRange(rangeCount)) {
-      MOZ_ASSERT(range.mSelection->RangeCount() == rangeCount);
-      const RefPtr<nsRange> r = range.mSelection->GetRangeAt(j);
-      MOZ_ASSERT(r);
-      MOZ_ASSERT(r->IsPositioned());
-      range.mStartContainer = r->GetStartContainer();
-      range.mStartOffset = r->StartOffset();
-      range.mEndContainer = r->GetEndContainer();
-      range.mEndOffset = r->EndOffset();
-
-      
-      
-      
-      if (range.mStartContainer) {
-        if (range.mStartContainer == atNodeToKeep.GetContainer() &&
-            atNodeToJoin.Offset() < range.mStartOffset &&
-            range.mStartOffset <= atNodeToKeep.Offset()) {
-          range.mStartContainer = &aContentToJoin;
-          range.mStartOffset = firstNodeLength;
+  {
+    EditorRawDOMPoint atRemovingNode(&aContentToRemove);
+    EditorRawDOMPoint atNodeToKeep(&aContentToKeep);
+    for (SelectionType selectionType : kPresentSelectionTypes) {
+      SavedRange savingRange;
+      savingRange.mSelection = GetSelection(selectionType);
+      if (selectionType == SelectionType::eNormal) {
+        if (NS_WARN_IF(!savingRange.mSelection)) {
+          return NS_ERROR_FAILURE;
         }
-        if (range.mEndContainer == atNodeToKeep.GetContainer() &&
-            atNodeToJoin.Offset() < range.mEndOffset &&
-            range.mEndOffset <= atNodeToKeep.Offset()) {
-          range.mEndContainer = &aContentToJoin;
-          range.mEndOffset = firstNodeLength;
-        }
+      } else if (!savingRange.mSelection) {
+        
+        continue;
       }
 
-      savedRanges.AppendElement(range);
+      const uint32_t rangeCount = savingRange.mSelection->RangeCount();
+      for (const uint32_t j : IntegerRange(rangeCount)) {
+        MOZ_ASSERT(savingRange.mSelection->RangeCount() == rangeCount);
+        const RefPtr<nsRange> r = savingRange.mSelection->GetRangeAt(j);
+        MOZ_ASSERT(r);
+        MOZ_ASSERT(r->IsPositioned());
+        savingRange.mStartContainer = r->GetStartContainer();
+        savingRange.mStartOffset = r->StartOffset();
+        savingRange.mEndContainer = r->GetEndContainer();
+        savingRange.mEndOffset = r->EndOffset();
+
+        
+        
+        
+        if (savingRange.mStartContainer) {
+          if (savingRange.mStartContainer == atNodeToKeep.GetContainer() &&
+              atRemovingNode.Offset() < savingRange.mStartOffset &&
+              savingRange.mStartOffset <= atNodeToKeep.Offset()) {
+            savingRange.mStartContainer = &aContentToRemove;
+            savingRange.mStartOffset = removingNodeLength;
+          }
+          if (savingRange.mEndContainer == atNodeToKeep.GetContainer() &&
+              atRemovingNode.Offset() < savingRange.mEndOffset &&
+              savingRange.mEndOffset <= atNodeToKeep.Offset()) {
+            savingRange.mEndContainer = &aContentToRemove;
+            savingRange.mEndOffset = removingNodeLength;
+          }
+        }
+
+        savedRanges.AppendElement(savingRange);
+      }
     }
   }
 
   
   
-  if (aContentToKeep.IsText() && aContentToJoin.IsText()) {
+  if (aContentToKeep.IsText() && aContentToRemove.IsText()) {
     nsAutoString rightText;
     nsAutoString leftText;
     aContentToKeep.AsText()->GetData(rightText);
-    aContentToJoin.AsText()->GetData(leftText);
+    aContentToRemove.AsText()->GetData(leftText);
     leftText += rightText;
     IgnoredErrorResult ignoredError;
     DoSetText(MOZ_KnownLive(*aContentToKeep.AsText()), leftText, ignoredError);
@@ -4860,13 +4861,13 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
                          "EditorBase::DoSetText() failed, but ignored");
   } else {
     
-    nsCOMPtr<nsINodeList> childNodes = aContentToJoin.ChildNodes();
+    nsCOMPtr<nsINodeList> childNodes = aContentToRemove.ChildNodes();
     MOZ_ASSERT(childNodes);
 
     
     
     
-    nsCOMPtr<nsIContent> firstNode = aContentToKeep.GetFirstChild();
+    nsCOMPtr<nsIContent> firstChild = aContentToKeep.GetFirstChild();
 
     
     
@@ -4874,87 +4875,82 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
       nsCOMPtr<nsIContent> childNode = childNodes->Item(i - 1);
       if (childNode) {
         
-        ErrorResult error;
-        aContentToKeep.InsertBefore(*childNode, firstNode, error);
+        IgnoredErrorResult error;
+        aContentToKeep.InsertBefore(*childNode, firstChild, error);
         if (NS_WARN_IF(Destroyed())) {
-          error.SuppressException();
           return NS_ERROR_EDITOR_DESTROYED;
         }
         if (error.Failed()) {
           NS_WARNING("nsINode::InsertBefore() failed");
           return error.StealNSResult();
         }
-        firstNode = std::move(childNode);
+        firstChild = std::move(childNode);
       }
     }
   }
 
   
-  aContentToJoin.Remove();
+  aContentToRemove.Remove();
   if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
 
-  bool allowedTransactionsToChangeSelection =
+  const bool allowedTransactionsToChangeSelection =
       AllowsTransactionsToChangeSelection();
 
+  
   RefPtr<Selection> previousSelection;
-  for (size_t i = 0; i < savedRanges.Length(); ++i) {
+  for (SavedRange& savedRange : savedRanges) {
     
-    SavedRange& range = savedRanges[i];
-
-    
-    if (range.mSelection != previousSelection) {
-      ErrorResult error;
-      MOZ_KnownLive(range.mSelection)->RemoveAllRanges(error);
+    if (savedRange.mSelection != previousSelection) {
+      IgnoredErrorResult error;
+      MOZ_KnownLive(savedRange.mSelection)->RemoveAllRanges(error);
       if (NS_WARN_IF(Destroyed())) {
-        error.SuppressException();
         return NS_ERROR_EDITOR_DESTROYED;
       }
       if (error.Failed()) {
         NS_WARNING("Selection::RemoveAllRanges() failed");
         return error.StealNSResult();
       }
-      previousSelection = range.mSelection;
+      previousSelection = savedRange.mSelection;
     }
 
     if (allowedTransactionsToChangeSelection &&
-        range.mSelection->Type() == SelectionType::eNormal) {
+        savedRange.mSelection->Type() == SelectionType::eNormal) {
       
       
       continue;
     }
 
     
-    if (range.mStartContainer == &aContentToJoin) {
-      range.mStartContainer = &aContentToKeep;
-    } else if (range.mStartContainer == &aContentToKeep) {
-      range.mStartOffset += firstNodeLength;
+    if (savedRange.mStartContainer == &aContentToRemove) {
+      savedRange.mStartContainer = &aContentToKeep;
+    } else if (savedRange.mStartContainer == &aContentToKeep) {
+      savedRange.mStartOffset += removingNodeLength;
     }
 
     
-    if (range.mEndContainer == &aContentToJoin) {
-      range.mEndContainer = &aContentToKeep;
-    } else if (range.mEndContainer == &aContentToKeep) {
-      range.mEndOffset += firstNodeLength;
+    if (savedRange.mEndContainer == &aContentToRemove) {
+      savedRange.mEndContainer = &aContentToKeep;
+    } else if (savedRange.mEndContainer == &aContentToKeep) {
+      savedRange.mEndOffset += removingNodeLength;
     }
 
-    RefPtr<nsRange> newRange =
-        nsRange::Create(range.mStartContainer, range.mStartOffset,
-                        range.mEndContainer, range.mEndOffset, IgnoreErrors());
+    const RefPtr<nsRange> newRange = nsRange::Create(
+        savedRange.mStartContainer, savedRange.mStartOffset,
+        savedRange.mEndContainer, savedRange.mEndOffset, IgnoreErrors());
     if (!newRange) {
       NS_WARNING("nsRange::Create() failed");
       return NS_ERROR_FAILURE;
     }
 
-    ErrorResult error;
+    IgnoredErrorResult error;
     
     
     
-    MOZ_KnownLive(range.mSelection)
+    MOZ_KnownLive(savedRange.mSelection)
         ->AddRangeAndSelectFramesAndNotifyListeners(*newRange, error);
     if (NS_WARN_IF(Destroyed())) {
-      error.SuppressException();
       return NS_ERROR_EDITOR_DESTROYED;
     }
     if (NS_WARN_IF(error.Failed())) {
@@ -4965,7 +4961,7 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
   if (allowedTransactionsToChangeSelection) {
     
     DebugOnly<nsresult> rvIgnored =
-        SelectionRef().CollapseInLimiter(&aContentToKeep, firstNodeLength);
+        SelectionRef().CollapseInLimiter(&aContentToKeep, removingNodeLength);
     if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
