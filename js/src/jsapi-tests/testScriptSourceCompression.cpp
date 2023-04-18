@@ -6,6 +6,7 @@
 
 
 #include "mozilla/Assertions.h"  
+#include "mozilla/RefPtr.h"      
 #include "mozilla/Utf8.h"        
 
 #include <algorithm>  
@@ -19,11 +20,12 @@
 
 #include "gc/GC.h"                        
 #include "js/CompilationAndEvaluation.h"  
-#include "js/CompileOptions.h"            
-#include "js/Conversions.h"               
-#include "js/MemoryFunctions.h"           
+#include "js/CompileOptions.h"  
+#include "js/Conversions.h"     
+#include "js/experimental/JSStencil.h"  
+#include "js/MemoryFunctions.h"         
 #include "js/OffThreadScriptCompilation.h"  
-#include "js/RootingAPI.h"  
+#include "js/RootingAPI.h"                  
 #include "js/SourceText.h"  
 #include "js/String.h"  
 #include "js/UniquePtr.h"  
@@ -511,7 +513,8 @@ BEGIN_TEST(testScriptSourceCompression_offThread) {
   
   options.forceAsync = true;
 
-  CHECK(token = JS::CompileOffThread(cx, options, source, callback, &monitor));
+  CHECK(token = JS::CompileToStencilOffThread(cx, options, source, callback,
+                                              &monitor));
 
   {
     
@@ -521,7 +524,11 @@ BEGIN_TEST(testScriptSourceCompression_offThread) {
     lock.wait();
   }
 
-  JS::Rooted<JSScript*> script(cx, JS::FinishOffThreadScript(cx, token));
+  RefPtr<JS::Stencil> stencil = JS::FinishCompileToStencilOffThread(cx, token);
+  CHECK(stencil);
+  JS::InstantiateOptions instantiateOptions(options);
+  JS::Rooted<JSScript*> script(
+      cx, JS::InstantiateGlobalStencil(cx, instantiateOptions, stencil));
   CHECK(script);
 
   

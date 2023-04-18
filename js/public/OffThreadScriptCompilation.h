@@ -19,8 +19,6 @@
 #include "jstypes.h"  
 
 #include "js/CompileOptions.h"  
-#include "js/GCVector.h"        
-#include "js/Transcoding.h"     
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSScript;
@@ -60,45 +58,11 @@ using OffThreadCompileCallback = void (*)(OffThreadToken* token,
 
 
 
+
+
+
 extern JS_PUBLIC_API bool CanCompileOffThread(
     JSContext* cx, const ReadOnlyCompileOptions& options, size_t length);
-
-extern JS_PUBLIC_API OffThreadToken* CompileOffThread(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    SourceText<char16_t>& srcBuf, OffThreadCompileCallback callback,
-    void* callbackData);
-
-
-
-
-
-extern JS_PUBLIC_API OffThreadToken* CompileOffThread(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    SourceText<mozilla::Utf8Unit>& srcBuf, OffThreadCompileCallback callback,
-    void* callbackData);
-
-
-
-extern JS_PUBLIC_API JSScript* FinishOffThreadScript(JSContext* cx,
-                                                     OffThreadToken* token);
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API JSScript* FinishOffThreadScriptAndStartIncrementalEncoding(
-    JSContext* cx, OffThreadToken* token);
-
-extern JS_PUBLIC_API void CancelOffThreadScript(JSContext* cx,
-                                                OffThreadToken* token);
-
-extern JS_PUBLIC_API void CancelCompileToStencilOffThread(
-    JSContext* cx, OffThreadToken* token);
 
 extern JS_PUBLIC_API OffThreadToken* CompileOffThreadModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,

@@ -2,10 +2,14 @@
 
 
 
-#include "mozilla/Utf8.h"  
+#include "mozilla/RefPtr.h"  
+#include "mozilla/Utf8.h"    
 
 #include "js/CompilationAndEvaluation.h"  
-#include "js/SourceText.h"                
+#include "js/CompileOptions.h"  
+#include "js/experimental/JSStencil.h"  
+
+#include "js/SourceText.h"  
 #include "jsapi-tests/tests.h"
 #include "vm/HelperThreads.h"
 #include "vm/Monitor.h"
@@ -90,11 +94,15 @@ bool testCompile(bool nonSyntactic) {
   OffThreadToken* token;
 
   JS::SourceText<char16_t> srcBuf;
+  RefPtr<JS::Stencil> stencil;
   CHECK(srcBuf.init(cx, src_16, length, JS::SourceOwnership::Borrowed));
 
-  CHECK(CompileOffThread(cx, options, srcBuf, task.OffThreadCallback, &task));
+  CHECK(CompileToStencilOffThread(cx, options, srcBuf, task.OffThreadCallback,
+                                  &task));
   CHECK(token = task.waitUntilDone(cx));
-  CHECK(script = FinishOffThreadScript(cx, token));
+  CHECK(stencil = FinishCompileToStencilOffThread(cx, token));
+  InstantiateOptions instantiateOptions(options);
+  CHECK(script = InstantiateGlobalStencil(cx, instantiateOptions, stencil));
   CHECK_EQUAL(script->hasNonSyntacticScope(), nonSyntactic);
 
   return true;

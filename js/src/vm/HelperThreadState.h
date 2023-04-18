@@ -52,9 +52,6 @@ struct Tier2GeneratorTask;
 
 enum class ParseTaskKind {
   
-  Script,
-
-  
   ScriptStencil,
 
   
@@ -66,7 +63,6 @@ enum class ParseTaskKind {
   
   MultiStencilsDecode,
 };
-enum class StartEncoding { No, Yes };
 
 namespace wasm {
 
@@ -382,9 +378,8 @@ class GlobalHelperThreadState {
   UniquePtr<ParseTask> finishParseTaskCommon(JSContext* cx, ParseTaskKind kind,
                                              JS::OffThreadToken* token);
 
-  JSScript* finishSingleParseTask(
-      JSContext* cx, ParseTaskKind kind, JS::OffThreadToken* token,
-      StartEncoding startEncoding = StartEncoding::No);
+  JSScript* finishSingleParseTask(JSContext* cx, ParseTaskKind kind,
+                                  JS::OffThreadToken* token);
   already_AddRefed<frontend::CompilationStencil> finishCompileToStencilTask(
       JSContext* cx, ParseTaskKind kind, JS::OffThreadToken* token,
       JS::InstantiationStorage* storage);
@@ -399,9 +394,6 @@ class GlobalHelperThreadState {
 
   void trace(JSTracer* trc);
 
-  JSScript* finishScriptParseTask(
-      JSContext* cx, JS::OffThreadToken* token,
-      StartEncoding startEncoding = StartEncoding::No);
   already_AddRefed<frontend::CompilationStencil> finishCompileToStencilTask(
       JSContext* cx, JS::OffThreadToken* token,
       JS::InstantiationStorage* storage);
