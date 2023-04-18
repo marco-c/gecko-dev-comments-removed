@@ -505,7 +505,7 @@ nsresult nsHTMLDocument::StartDocumentLoad(
   }
 
   
-  mParser->Parse(uri, this);
+  mParser->Parse(uri);
 
   return rv;
 }

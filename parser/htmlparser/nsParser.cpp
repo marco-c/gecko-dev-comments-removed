@@ -113,18 +113,12 @@ class nsParserContinueEvent : public Runnable {
 
 
 
-nsParser::nsParser()
-    : mParserContext(nullptr), mCharset(WINDOWS_1252_ENCODING) {
-  Initialize(true);
-}
+nsParser::nsParser() : mCharset(WINDOWS_1252_ENCODING) { Initialize(true); }
 
 nsParser::~nsParser() { Cleanup(); }
 
 void nsParser::Initialize(bool aConstructor) {
-  if (aConstructor) {
-    
-    mParserContext = 0;
-  } else {
+  if (!aConstructor) {
     mUnusedInput.Truncate();
   }
 
@@ -142,18 +136,6 @@ void nsParser::Initialize(bool aConstructor) {
 }
 
 void nsParser::Cleanup() {
-#ifdef DEBUG
-  if (mParserContext && mParserContext->mPrevContext) {
-    NS_WARNING("Extra parser contexts still on the parser stack");
-  }
-#endif
-
-  while (mParserContext) {
-    CParserContext* pc = mParserContext->mPrevContext;
-    delete mParserContext;
-    mParserContext = pc;
-  }
-
   
   
   
@@ -171,11 +153,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsParser)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDTD)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSink)
-  CParserContext* pc = tmp->mParserContext;
-  while (pc) {
-    cb.NoteXPCOMChild(pc->mTokenizer);
-    pc = pc->mPrevContext;
-  }
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsParser)
@@ -357,8 +334,6 @@ nsresult nsParser::WillBuildModel() {
     }
   }  
 
-  NS_ASSERTION(!mDTD || !mParserContext->mPrevContext,
-               "Clobbering DTD for non-root parser context!");
   mDTD = FindSuitableDTD(*mParserContext);
   NS_ENSURE_TRUE(mDTD, NS_ERROR_OUT_OF_MEMORY);
 
@@ -381,60 +356,19 @@ nsresult nsParser::WillBuildModel() {
 
 
 
-
-
 void nsParser::DidBuildModel() {
-  if (IsComplete()) {
-    if (mParserContext && !mParserContext->mPrevContext) {
-      
-      
-      bool terminated = mInternalState == NS_ERROR_HTMLPARSER_STOPPARSING;
-      if (mDTD && mSink) {
-        mDTD->DidBuildModel();
-        mSink->DidBuildModel(terminated);
-      }
-
-      
-      mParserContext->mRequest = nullptr;
+  if (IsComplete() && mParserContext) {
+    
+    
+    bool terminated = mInternalState == NS_ERROR_HTMLPARSER_STOPPARSING;
+    if (mDTD && mSink) {
+      mDTD->DidBuildModel();
+      mSink->DidBuildModel(terminated);
     }
+
+    
+    mParserContext->mRequest = nullptr;
   }
-}
-
-
-
-
-
-
-
-void nsParser::PushContext(CParserContext& aContext) {
-  NS_ASSERTION(aContext.mPrevContext == mParserContext,
-               "Trying to push a context whose previous context differs from "
-               "the current parser context.");
-  mParserContext = &aContext;
-}
-
-
-
-
-
-
-
-
-CParserContext* nsParser::PopContext() {
-  CParserContext* oldContext = mParserContext;
-  if (oldContext) {
-    mParserContext = oldContext->mPrevContext;
-    if (mParserContext) {
-      
-      
-      
-      
-      if (mParserContext->mStreamListenerState != eOnStop) {
-        mParserContext->mStreamListenerState = oldContext->mStreamListenerState;
-      }
-    }
-  }
-  return oldContext;
 }
 
 
@@ -463,17 +397,6 @@ nsParser::Terminate(void) {
   
   
   CancelParsingEvents();
-
-  
-  
-  
-  
-  
-  while (mParserContext && mParserContext->mPrevContext) {
-    CParserContext* prev = mParserContext->mPrevContext;
-    delete mParserContext;
-    mParserContext = prev;
-  }
 
   if (mDTD) {
     mDTD->Terminate();
@@ -609,7 +532,7 @@ bool nsParser::IsScriptCreated() { return false; }
 
 
 NS_IMETHODIMP
-nsParser::Parse(nsIURI* aURL, void* aKey) {
+nsParser::Parse(nsIURI* aURL) {
   MOZ_ASSERT(aURL, "Error: Null URL given");
 
   if (mInternalState == NS_ERROR_OUT_OF_MEMORY) {
@@ -618,23 +541,18 @@ nsParser::Parse(nsIURI* aURL, void* aKey) {
     return mInternalState;
   }
 
-  nsresult result = NS_ERROR_HTMLPARSER_BADURL;
-
-  if (aURL) {
-    nsScanner* theScanner = new nsScanner(aURL, false);
-    CParserContext* pc =
-        new CParserContext(mParserContext, theScanner, aKey, mCommand);
-    if (pc && theScanner) {
-      pc->mMultipart = true;
-      pc->mContextType = CParserContext::eCTURL;
-      PushContext(*pc);
-
-      result = NS_OK;
-    } else {
-      result = mInternalState = NS_ERROR_HTMLPARSER_BADCONTEXT;
-    }
+  if (!aURL) {
+    return NS_ERROR_HTMLPARSER_BADURL;
   }
-  return result;
+
+  MOZ_ASSERT(!mParserContext, "We expect mParserContext to be null.");
+
+  nsScanner* theScanner = new nsScanner(aURL, false);
+  mParserContext = MakeUnique<CParserContext>(theScanner, mCommand);
+  mParserContext->mMultipart = true;
+  mParserContext->mContextType = CParserContext::eCTURL;
+
+  return NS_OK;
 }
 
 
@@ -642,8 +560,7 @@ nsParser::Parse(nsIURI* aURL, void* aKey) {
 
 
 
-nsresult nsParser::Parse(const nsAString& aSourceBuffer, void* aKey,
-                         bool aLastCall) {
+nsresult nsParser::Parse(const nsAString& aSourceBuffer, bool aLastCall) {
   nsresult result = NS_OK;
 
   if (mInternalState == NS_ERROR_OUT_OF_MEMORY) {
@@ -671,85 +588,49 @@ nsresult nsParser::Parse(const nsAString& aSourceBuffer, void* aKey,
   nsCOMPtr<nsIParser> kungFuDeathGrip(this);
 
   if (aLastCall || !aSourceBuffer.IsEmpty() || !mUnusedInput.IsEmpty()) {
-    
-    
-    
-    
-    CParserContext* pc = mParserContext;
-    while (pc && pc->mKey != aKey) {
-      pc = pc->mPrevContext;
-    }
-
-    if (!pc) {
-      
+    if (!mParserContext) {
       
       nsScanner* theScanner = new nsScanner(mUnusedInput);
       NS_ENSURE_TRUE(theScanner, NS_ERROR_OUT_OF_MEMORY);
 
-      eAutoDetectResult theStatus = eUnknownDetect;
+      mParserContext = MakeUnique<CParserContext>(theScanner, mCommand,
+                                                  eUnknownDetect, aLastCall);
 
-      if (mParserContext &&
-          mParserContext->mMimeType.EqualsLiteral("application/xml")) {
-        
-        NS_ASSERTION(mDTD, "How come the DTD is null?");
-
-        if (mParserContext) {
-          theStatus = mParserContext->mAutoDetectStatus;
-          
-        }
-      }
-
-      pc = new CParserContext(mParserContext, theScanner, aKey, mCommand,
-                              theStatus, aLastCall);
-      NS_ENSURE_TRUE(pc, NS_ERROR_OUT_OF_MEMORY);
-
-      PushContext(*pc);
-
-      pc->mMultipart = !aLastCall;  
-      if (pc->mPrevContext) {
-        pc->mMultipart |= pc->mPrevContext->mMultipart;
-      }
+      mParserContext->mMultipart = !aLastCall;  
 
       
-      if (pc->mMultipart) {
-        pc->mStreamListenerState = eOnDataAvail;
-        if (pc->mScanner) {
-          pc->mScanner->SetIncremental(true);
+      if (mParserContext->mMultipart) {
+        mParserContext->mStreamListenerState = eOnDataAvail;
+        if (mParserContext->mScanner) {
+          mParserContext->mScanner->SetIncremental(true);
         }
       } else {
-        pc->mStreamListenerState = eOnStop;
-        if (pc->mScanner) {
-          pc->mScanner->SetIncremental(false);
+        mParserContext->mStreamListenerState = eOnStop;
+        if (mParserContext->mScanner) {
+          mParserContext->mScanner->SetIncremental(false);
         }
       }
       
 
-      pc->mContextType = CParserContext::eCTString;
-      pc->SetMimeType("application/xml"_ns);
-      pc->mDTDMode = eDTDMode_full_standards;
+      mParserContext->mContextType = CParserContext::eCTString;
+      mParserContext->SetMimeType("application/xml"_ns);
+      mParserContext->mDTDMode = eDTDMode_full_standards;
 
       mUnusedInput.Truncate();
 
-      pc->mScanner->Append(aSourceBuffer);
+      mParserContext->mScanner->Append(aSourceBuffer);
       
       result = ResumeParse(false, false, false);
     } else {
-      pc->mScanner->Append(aSourceBuffer);
-      if (!pc->mPrevContext) {
-        
-        
-        if (aLastCall) {
-          pc->mStreamListenerState = eOnStop;
-          pc->mScanner->SetIncremental(false);
-        }
-
-        if (pc == mParserContext) {
-          
-          
-          
-          ResumeParse(false, false, false);
-        }
+      mParserContext->mScanner->Append(aSourceBuffer);
+      
+      
+      if (aLastCall) {
+        mParserContext->mStreamListenerState = eOnStop;
+        mParserContext->mScanner->SetIncremental(false);
       }
+
+      ResumeParse(false, false, false);
     }
   }
 
@@ -784,7 +665,7 @@ nsParser::ParseFragment(const nsAString& aSourceBuffer,
 
   
   
-  result = Parse(theContext, (void*)&theContext, false);
+  result = Parse(theContext, false);
   if (NS_FAILED(result)) {
     return result;
   }
@@ -803,12 +684,12 @@ nsParser::ParseFragment(const nsAString& aSourceBuffer,
   
   
   if (theCount == 0) {
-    result = Parse(aSourceBuffer, &theContext, true);
+    result = Parse(aSourceBuffer, true);
     fragSink->DidBuildContent();
   } else {
     
     
-    result = Parse(aSourceBuffer + u"</"_ns, &theContext, false);
+    result = Parse(aSourceBuffer + u"</"_ns, false);
     fragSink->DidBuildContent();
 
     if (NS_SUCCEEDED(result)) {
@@ -831,9 +712,11 @@ nsParser::ParseFragment(const nsAString& aSourceBuffer,
         endContext.Append('>');
       }
 
-      result = Parse(endContext, &theContext, true);
+      result = Parse(endContext, true);
     }
   }
+
+  mParserContext.reset();
 
   return result;
 }
@@ -929,38 +812,12 @@ nsresult nsParser::ResumeParse(bool allowIteration, bool aIsFinalChunk,
 
           return NS_OK;
         }
-        if ((NS_OK == result &&
-             theTokenizerResult == NS_ERROR_HTMLPARSER_EOF) ||
-            result == NS_ERROR_HTMLPARSER_INTERRUPTED) {
-          bool theContextIsStringBased =
-              CParserContext::eCTString == mParserContext->mContextType;
-
-          if (mParserContext->mStreamListenerState == eOnStop ||
-              !mParserContext->mMultipart || theContextIsStringBased) {
-            if (!mParserContext->mPrevContext) {
-              if (mParserContext->mStreamListenerState == eOnStop) {
-                DidBuildModel();
-                return NS_OK;
-              }
-            } else {
-              CParserContext* theContext = PopContext();
-              if (theContext) {
-                theIterationIsOk = allowIteration && theContextIsStringBased;
-                if (theContext->mCopyUnused) {
-                  if (!theContext->mScanner->CopyUnusedData(mUnusedInput)) {
-                    mInternalState = NS_ERROR_OUT_OF_MEMORY;
-                  }
-                }
-
-                delete theContext;
-              }
-
-              result = mInternalState;
-              aIsFinalChunk = mParserContext &&
-                              mParserContext->mStreamListenerState == eOnStop;
-              
-            }
-          }
+        if (((NS_OK == result &&
+              theTokenizerResult == NS_ERROR_HTMLPARSER_EOF) ||
+             result == NS_ERROR_HTMLPARSER_INTERRUPTED) &&
+            mParserContext->mStreamListenerState == eOnStop) {
+          DidBuildModel();
+          return NS_OK;
         }
 
         if (theTokenizerResult == NS_ERROR_HTMLPARSER_EOF ||
@@ -1024,8 +881,6 @@ nsresult nsParser::OnStartRequest(nsIRequest* request) {
   mParserContext->mAutoDetectStatus = eUnknownDetect;
   mParserContext->mRequest = request;
 
-  NS_ASSERTION(!mParserContext->mPrevContext,
-               "Clobbering DTD for non-root parser context!");
   mDTD = nullptr;
 
   nsresult rv;
@@ -1227,20 +1082,14 @@ nsresult nsParser::OnDataAvailable(nsIRequest* request,
     return rv;
   }
 
-  CParserContext* theContext = mParserContext;
-
-  while (theContext && theContext->mRequest != request) {
-    theContext = theContext->mPrevContext;
-  }
-
-  if (theContext) {
-    theContext->mStreamListenerState = eOnDataAvail;
+  if (mParserContext->mRequest == request) {
+    mParserContext->mStreamListenerState = eOnDataAvail;
 
     uint32_t totalRead;
     ParserWriteStruct pws;
     pws.mNeedCharsetCheck = true;
     pws.mParser = this;
-    pws.mScanner = theContext->mScanner.get();
+    pws.mScanner = mParserContext->mScanner.get();
     pws.mRequest = request;
 
     rv = pIStream->ReadSegments(ParserWriteFunc, &pws, aLength, &totalRead);
@@ -1278,15 +1127,9 @@ nsresult nsParser::OnStopRequest(nsIRequest* request, nsresult status) {
 
   nsresult rv = NS_OK;
 
-  CParserContext* pc = mParserContext;
-  while (pc) {
-    if (pc->mRequest == request) {
-      pc->mStreamListenerState = eOnStop;
-      pc->mScanner->SetIncremental(false);
-      break;
-    }
-
-    pc = pc->mPrevContext;
+  if (mParserContext->mRequest == request) {
+    mParserContext->mStreamListenerState = eOnStop;
+    mParserContext->mScanner->SetIncremental(false);
   }
 
   mStreamStatus = status;

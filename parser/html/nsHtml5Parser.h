@@ -122,8 +122,7 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
 
 
 
-
-  NS_IMETHOD Parse(nsIURI* aURL, void* aKey = nullptr) override;
+  NS_IMETHOD Parse(nsIURI* aURL) override;
 
   
 

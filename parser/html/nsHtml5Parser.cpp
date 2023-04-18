@@ -156,7 +156,7 @@ NS_IMETHODIMP_(bool)
 nsHtml5Parser::IsComplete() { return mExecutor->IsComplete(); }
 
 NS_IMETHODIMP
-nsHtml5Parser::Parse(nsIURI* aURL, void* ) {
+nsHtml5Parser::Parse(nsIURI* aURL) {
   
 
 

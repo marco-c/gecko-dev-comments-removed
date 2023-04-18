@@ -61,7 +61,7 @@ NS_IMETHODIMP_(bool)
 PrototypeDocumentParser::IsComplete() { return mIsComplete; }
 
 NS_IMETHODIMP
-PrototypeDocumentParser::Parse(nsIURI* aURL, void* aKey) {
+PrototypeDocumentParser::Parse(nsIURI* aURL) {
   
   
   nsXULPrototypeDocument* proto =
