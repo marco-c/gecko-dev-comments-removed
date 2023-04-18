@@ -47,6 +47,7 @@ class SessionAccessibility final
   
   using Base::AttachNative;
   using Base::DisposeNative;
+  bool IsCacheEnabled();
   jni::Object::LocalRef GetNodeInfo(int32_t aID);
   void SetText(int32_t aID, jni::String::Param aText);
   void Click(int32_t aID);
