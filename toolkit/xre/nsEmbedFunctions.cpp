@@ -536,6 +536,13 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
   }
 #endif
 
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  
+  mozilla::startup::IncreaseDescriptorLimits();
+#endif
+
   
   
   const char* const parentPIDString = aArgv[aArgc - 1];
