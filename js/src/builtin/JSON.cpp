@@ -32,11 +32,13 @@
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
 #include "vm/JSONParser.h"
+#include "vm/NativeObject.h"
 #include "vm/PlainObject.h"    
 #include "vm/WellKnownAtom.h"  
 
 #ifdef ENABLE_RECORD_TUPLE
 #  include "builtin/TupleObject.h"
+#  include "vm/RecordType.h"
 #endif
 
 #include "builtin/Array-inl.h"
@@ -1085,13 +1087,19 @@ static bool Revive(JSContext* cx, HandleValue reviver, MutableHandleValue vp) {
 }
 
 template <typename CharT>
+bool ParseJSON(JSContext* cx, const mozilla::Range<const CharT> chars,
+               MutableHandleValue vp) {
+  Rooted<JSONParser<CharT>> parser(
+      cx, JSONParser<CharT>(cx, chars, JSONParserBase::ParseType::JSONParse));
+  return parser.parse(vp);
+}
+
+template <typename CharT>
 bool js::ParseJSONWithReviver(JSContext* cx,
                               const mozilla::Range<const CharT> chars,
                               HandleValue reviver, MutableHandleValue vp) {
   
-  Rooted<JSONParser<CharT>> parser(
-      cx, JSONParser<CharT>(cx, chars, JSONParserBase::ParseType::JSONParse));
-  if (!parser.parse(vp)) {
+  if (!ParseJSON(cx, chars, vp)) {
     return false;
   }
 
@@ -1147,6 +1155,162 @@ static bool json_parse(JSContext* cx, unsigned argc, Value* vp) {
                                     args.rval());
 }
 
+#ifdef ENABLE_RECORD_TUPLE
+bool BuildImmutableProperty(JSContext* cx, HandleValue value, HandleId name,
+                            HandleValue reviver,
+                            MutableHandleValue immutableRes) {
+  MOZ_ASSERT(!name.isSymbol());
+
+  
+  if (value.isObject()) {
+    RootedValue childValue(cx), newElement(cx);
+    RootedId childName(cx);
+
+    
+    if (value.toObject().is<ArrayObject>()) {
+      RootedArrayObject arr(cx, &value.toObject().as<ArrayObject>());
+
+      
+      uint32_t len = arr->length();
+
+      TupleType* tup = TupleType::createUninitialized(cx, len);
+      if (!tup) {
+        return false;
+      }
+      immutableRes.setExtendedPrimitive(*tup);
+
+      
+      for (uint32_t i = 0; i < len; i++) {
+        
+        childName.set(INT_TO_JSID(i));
+
+        
+        if (!GetProperty(cx, arr, value, childName, &childValue)) {
+          return false;
+        }
+
+        
+        if (!BuildImmutableProperty(cx, childValue, childName, reviver,
+                                    &newElement)) {
+          return false;
+        }
+        MOZ_ASSERT(newElement.isPrimitive());
+
+        
+        if (!tup->initializeNextElement(cx, newElement)) {
+          return false;
+        }
+      }
+
+      
+      tup->finishInitialization(cx);
+    } else {
+      RootedObject obj(cx, &value.toObject());
+
+      
+      
+      
+      RootedIdVector props(cx);
+      if (!GetPropertyKeys(cx, obj, JSITER_OWNONLY, &props)) {
+        return false;
+      }
+
+      RecordType* rec = RecordType::createUninitialized(cx, props.length());
+      if (!rec) {
+        return false;
+      }
+      immutableRes.setExtendedPrimitive(*rec);
+
+      for (uint32_t i = 0; i < props.length(); i++) {
+        
+        childName.set(props[i]);
+
+        
+        if (!GetProperty(cx, obj, value, childName, &childValue)) {
+          return false;
+        }
+
+        
+        if (!BuildImmutableProperty(cx, childValue, childName, reviver,
+                                    &newElement)) {
+          return false;
+        }
+        MOZ_ASSERT(newElement.isPrimitive());
+
+        
+        if (!newElement.isUndefined()) {
+          
+          rec->initializeNextProperty(cx, childName, newElement);
+        }
+      }
+
+      
+      rec->finishInitialization(cx);
+    }
+  } else {
+    
+    immutableRes.set(value);
+  }
+
+  
+  if (IsCallable(reviver)) {
+    RootedValue keyVal(cx, StringValue(IdToString(cx, name)));
+
+    
+    if (!Call(cx, reviver, UndefinedHandleValue, keyVal, immutableRes,
+              immutableRes)) {
+      return false;
+    }
+
+    
+    if (!immutableRes.isPrimitive()) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_RECORD_TUPLE_NO_OBJECT);
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static bool json_parseImmutable(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  JSString* str = (args.length() >= 1) ? ToString<CanGC>(cx, args[0])
+                                       : cx->names().undefined;
+  if (!str) {
+    return false;
+  }
+
+  JSLinearString* linear = str->ensureLinear(cx);
+  if (!linear) {
+    return false;
+  }
+
+  AutoStableStringChars linearChars(cx);
+  if (!linearChars.init(cx, linear)) {
+    return false;
+  }
+
+  HandleValue reviver = args.get(1);
+  RootedValue unfiltered(cx);
+
+  if (linearChars.isLatin1()) {
+    if (!ParseJSON(cx, linearChars.latin1Range(), &unfiltered)) {
+      return false;
+    }
+  } else {
+    if (!ParseJSON(cx, linearChars.twoByteRange(), &unfiltered)) {
+      return false;
+    }
+  }
+
+  RootedId id(cx, NameToId(cx->names().empty));
+  return BuildImmutableProperty(cx, unfiltered, id, reviver, args.rval());
+}
+#endif
+
 
 bool json_stringify(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -1180,6 +1344,9 @@ bool json_stringify(JSContext* cx, unsigned argc, Value* vp) {
 static const JSFunctionSpec json_static_methods[] = {
     JS_FN(js_toSource_str, json_toSource, 0, 0),
     JS_FN("parse", json_parse, 2, 0), JS_FN("stringify", json_stringify, 3, 0),
+#ifdef ENABLE_RECORD_TUPLE
+    JS_FN("parseImmutable", json_parseImmutable, 2, 0),
+#endif
     JS_FS_END};
 
 static const JSPropertySpec json_static_properties[] = {
