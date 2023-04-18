@@ -26,6 +26,7 @@
 #include "js/Vector.h"
 #include "util/Memory.h"
 #include "wasm/WasmBuiltins.h"
+#include "wasm/WasmFrame.h"
 
 namespace js {
 
@@ -70,7 +71,6 @@ struct StackMap final {
   
   
   
-  
 
   
   
@@ -88,13 +88,19 @@ struct StackMap final {
   
 
   
-  uint32_t numMappedWords : 30;
+  static constexpr size_t MappedWordsBits = 30;
+  uint32_t numMappedWords : MappedWordsBits;
 
   
-  uint32_t numExitStubWords : 6;
+  static constexpr size_t ExitStubWordsBits = 6;
+  uint32_t numExitStubWords : ExitStubWordsBits;
 
   
-  uint32_t frameOffsetFromTop : 11;
+  
+  
+  
+  static constexpr size_t FrameOffsetBits = 12;
+  uint32_t frameOffsetFromTop : FrameOffsetBits;
 
   
   
@@ -103,9 +109,21 @@ struct StackMap final {
   uint32_t hasDebugFrameWithLiveRefs : 1;
 
  private:
-  static constexpr uint32_t maxMappedWords = (1 << 30) - 1;
-  static constexpr uint32_t maxExitStubWords = (1 << 6) - 1;
-  static constexpr uint32_t maxFrameOffsetFromTop = (1 << 11) - 1;
+  static constexpr uint32_t maxMappedWords = (1 << MappedWordsBits) - 1;
+  static constexpr uint32_t maxExitStubWords = (1 << ExitStubWordsBits) - 1;
+  static constexpr uint32_t maxFrameOffsetFromTop = (1 << FrameOffsetBits) - 1;
+
+  static constexpr size_t MaxParamSize =
+      std::max(sizeof(jit::FloatRegisters::RegisterContent),
+               sizeof(jit::Registers::RegisterContent));
+
+  
+  
+  
+  static_assert(FrameWithTls::sizeOf() / sizeof(void*) <= 8);
+  static_assert(maxFrameOffsetFromTop >=
+                    (MaxParams * MaxParamSize / sizeof(void*)) + 16,
+                "limited size of the offset field");
 
   uint32_t bitmap[1];
 
