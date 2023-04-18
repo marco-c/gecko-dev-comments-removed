@@ -14,7 +14,7 @@
 namespace js {
 namespace jit {
 
-static constexpr Register BaselineFrameReg = ebp;
+static constexpr Register BaselineFrameReg = FramePointer;
 static constexpr Register BaselineStackReg = esp;
 
 
