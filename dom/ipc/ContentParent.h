@@ -722,11 +722,6 @@ class ContentParent final
   void OnVarChanged(const GfxVarUpdate& aVar) override;
   void OnCompositorUnexpectedShutdown() override;
 
-  
-  
-  
-  void InitSurfaceAllocator();
-
  private:
   
 
