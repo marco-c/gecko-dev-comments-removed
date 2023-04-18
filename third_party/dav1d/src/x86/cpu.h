@@ -29,11 +29,13 @@
 #define DAV1D_SRC_X86_CPU_H
 
 enum CpuFlags {
-    DAV1D_X86_CPU_FLAG_SSE2      = 1 << 0,
-    DAV1D_X86_CPU_FLAG_SSSE3     = 1 << 1,
-    DAV1D_X86_CPU_FLAG_SSE41     = 1 << 2,
-    DAV1D_X86_CPU_FLAG_AVX2      = 1 << 3,
-    DAV1D_X86_CPU_FLAG_AVX512ICL = 1 << 4, 
+    DAV1D_X86_CPU_FLAG_SSE2        = 1 << 0,
+    DAV1D_X86_CPU_FLAG_SSSE3       = 1 << 1,
+    DAV1D_X86_CPU_FLAG_SSE41       = 1 << 2,
+    DAV1D_X86_CPU_FLAG_AVX2        = 1 << 3,
+    DAV1D_X86_CPU_FLAG_AVX512ICL   = 1 << 4, 
+
+    DAV1D_X86_CPU_FLAG_SLOW_GATHER = 1 << 5, 
 
 };
 

@@ -58,10 +58,20 @@ typedef struct Dav1dLogger {
     void (*callback)(void *cookie, const char *format, va_list ap);
 } Dav1dLogger;
 
+enum Dav1dInloopFilterType {
+    DAV1D_INLOOPFILTER_NONE        = 0,
+    DAV1D_INLOOPFILTER_DEBLOCK     = 1 << 0,
+    DAV1D_INLOOPFILTER_CDEF        = 1 << 1,
+    DAV1D_INLOOPFILTER_RESTORATION = 1 << 2,
+    DAV1D_INLOOPFILTER_ALL = DAV1D_INLOOPFILTER_DEBLOCK |
+                             DAV1D_INLOOPFILTER_CDEF |
+                             DAV1D_INLOOPFILTER_RESTORATION,
+};
+
 typedef struct Dav1dSettings {
     int n_threads; 
     int max_frame_delay; 
-    int apply_grain;
+    int apply_grain; 
     int operating_point; 
     int all_layers; 
     unsigned frame_size_limit; 
@@ -74,7 +84,9 @@ typedef struct Dav1dSettings {
                                  
                                  
                                  
-    uint8_t reserved[24]; 
+    enum Dav1dInloopFilterType inloop_filters; 
+                                               
+    uint8_t reserved[20]; 
 } Dav1dSettings;
 
 
