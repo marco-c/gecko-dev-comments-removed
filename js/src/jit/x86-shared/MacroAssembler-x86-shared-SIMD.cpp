@@ -1349,7 +1349,7 @@ void MacroAssemblerX86Shared::unsignedTruncSatFloat32x4ToInt32x4(
   
 
   
-  vpxor(Operand(scratch), scratch, scratch);
+  vxorps(Operand(scratch), scratch, scratch);
   vmaxps(Operand(scratch), src, dest);
 
   
