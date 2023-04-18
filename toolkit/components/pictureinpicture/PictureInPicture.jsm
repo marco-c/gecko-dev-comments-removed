@@ -209,7 +209,14 @@ var PictureInPicture = {
 
   _focusPipBrowserWindow(win) {
     let browser = this.weakWinToBrowser.get(win);
-    let gBrowser = browser.ownerGlobal.gBrowser;
+    let gBrowser = browser?.ownerGlobal?.gBrowser;
+
+    
+    
+    if (!gBrowser) {
+      return;
+    }
+
     let tab = gBrowser.getTabForBrowser(browser);
 
     
