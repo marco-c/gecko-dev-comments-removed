@@ -723,7 +723,7 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
     
     this._updateGuide("top", Math.round(toShowY[0]));
     this._updateGuide("right", Math.round(toShowX[1]) - 1);
-    this._updateGuide("bottom", Math.round(toShowY[1] - 1));
+    this._updateGuide("bottom", Math.round(toShowY[1]) - 1);
     this._updateGuide("left", Math.round(toShowX[0]));
   }
 
@@ -742,10 +742,10 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
 
 
 
-  _updateGuide(side, point = -1) {
+  _updateGuide(side, point) {
     const guide = this.getElement("guide-" + side);
 
-    if (point <= 0) {
+    if (!point || point <= 0) {
       guide.setAttribute("hidden", "true");
       return false;
     }
