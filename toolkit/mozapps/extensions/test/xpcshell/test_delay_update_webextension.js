@@ -7,6 +7,12 @@
 
 Services.prefs.setBoolPref(PREF_EM_CHECK_UPDATE_SECURITY, false);
 
+
+Services.prefs.setBoolPref(
+  "extensions.webextensions.background-delayed-startup",
+  true
+);
+
 if (AppConstants.platform == "win" && AppConstants.DEBUG) {
   
   
