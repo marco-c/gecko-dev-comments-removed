@@ -23,6 +23,7 @@ using OriginTrial = origin_trials_ffi::OriginTrial;
 
 
 class OriginTrials final {
+ public:
   
   
   
