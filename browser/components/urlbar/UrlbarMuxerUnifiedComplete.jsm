@@ -74,6 +74,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       strippedUrlToTopPrefixAndTitle: new Map(),
       urlToTabResultType: new Map(),
       addedRemoteTabUrls: new Set(),
+      addedSwitchTabUrls: new Set(),
       canShowPrivateSearch: context.results.length > 1,
       canShowTailSuggestions: true,
       
@@ -186,6 +187,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       ),
       urlToTabResultType: new Map(state.urlToTabResultType),
       addedRemoteTabUrls: new Set(state.addedRemoteTabUrls),
+      addedSwitchTabUrls: new Set(state.addedSwitchTabUrls),
       suggestions: new Set(state.suggestions),
     });
 
@@ -807,6 +809,14 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     
     if (
+      result.type == UrlbarUtils.RESULT_TYPE.TAB_SWITCH &&
+      state.addedSwitchTabUrls.has(result.payload.url)
+    ) {
+      return false;
+    }
+
+    
+    if (
       !result.heuristic &&
       result.type == UrlbarUtils.RESULT_TYPE.URL &&
       result.payload.url &&
@@ -1086,6 +1096,11 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     
     if (result.type == UrlbarUtils.RESULT_TYPE.REMOTE_TAB) {
       state.addedRemoteTabUrls.add(result.payload.url);
+    }
+
+    
+    if (result.type == UrlbarUtils.RESULT_TYPE.TAB_SWITCH) {
+      state.addedSwitchTabUrls.add(result.payload.url);
     }
   }
 
