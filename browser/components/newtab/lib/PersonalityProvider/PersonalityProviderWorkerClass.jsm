@@ -7,6 +7,12 @@
 
 
 
+
+
+
+
+
+
 var EXPORTED_SYMBOLS = ["PersonalityProviderWorker"];
 
 
@@ -194,13 +200,10 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
           continue;
         }
         if (model.model_type === "nb") {
-          
           nbTaggers.push(new NaiveBayesTextTagger(model, toksToTfIdfVector));
         } else if (model.model_type === "nmf") {
-          
           nmfTaggers[model.parent_tag] = new NmfTextTagger(
             model,
-            
             toksToTfIdfVector
           );
         }
@@ -215,11 +218,9 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
 
 
   generateRecipeExecutor() {
-    
     const recipeExecutor = new RecipeExecutor(
       this.taggers.nbTaggers,
       this.taggers.nmfTaggers,
-      
       tokenize
     );
     this.recipeExecutor = recipeExecutor;

@@ -22,6 +22,7 @@ window.ASRouterMessage = () => {
 window.ASRouterAddParentListener = () => {};
 window.ASRouterRemoveParentListener = () => {};
 
+
 importScripts("resource://gre/modules/workers/require.js");
 
 {
@@ -36,6 +37,14 @@ importScripts("resource://gre/modules/workers/require.js");
   
   ChromeUtils = undefined;
 
+  
+  
+  
+  
+  
+  
+  
+  
   importScripts(
     "resource://activity-stream/vendor/react.js",
     "resource://activity-stream/vendor/react-dom.js",

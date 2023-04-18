@@ -7,6 +7,12 @@
 "use strict";
 
 
+
+
+
+
+
+
 importScripts(
   "resource://gre/modules/workers/require.js",
   "resource://activity-stream/lib/PersonalityProvider/Tokenize.jsm",
@@ -17,7 +23,6 @@ importScripts(
 );
 
 const PromiseWorker = require("resource://gre/modules/workers/PromiseWorker.js");
-
 
 const personalityProviderWorker = new PersonalityProviderWorker();
 
