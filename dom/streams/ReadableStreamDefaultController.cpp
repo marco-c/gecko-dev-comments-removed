@@ -273,6 +273,11 @@ void ReadableStreamDefaultControllerEnqueue(
             : 1.0;
 
     
+    if (aRv.IsUncatchableException()) {
+      return;
+    }
+
+    
     if (aRv.MaybeSetPendingException(
             aCx, "ReadableStreamDefaultController.enqueue")) {
       JS::RootedValue errorValue(aCx);
