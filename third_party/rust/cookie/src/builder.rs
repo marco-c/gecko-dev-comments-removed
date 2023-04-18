@@ -1,10 +1,6 @@
 use std::borrow::Cow;
 
-use time::{Tm, Duration};
-
-use ::{Cookie, SameSite};
-
-
+use crate::{Cookie, SameSite, Expiration};
 
 
 
@@ -32,12 +28,12 @@ use ::{Cookie, SameSite};
 
 
 #[derive(Debug, Clone)]
-pub struct CookieBuilder {
+pub struct CookieBuilder<'c> {
     
-    cookie: Cookie<'static>,
+    cookie: Cookie<'c>,
 }
 
-impl CookieBuilder {
+impl<'c> CookieBuilder<'c> {
     
     
     
@@ -50,10 +46,9 @@ impl CookieBuilder {
     
     
     
-    
-    pub fn new<N, V>(name: N, value: V) -> CookieBuilder
-        where N: Into<Cow<'static, str>>,
-              V: Into<Cow<'static, str>>
+    pub fn new<N, V>(name: N, value: V) -> Self
+        where N: Into<Cow<'c, str>>,
+              V: Into<Cow<'c, str>>
     {
         CookieBuilder { cookie: Cookie::new(name, value) }
     }
@@ -76,8 +71,13 @@ impl CookieBuilder {
     
     
     
+    
+    
+    
+    
+    
     #[inline]
-    pub fn expires(mut self, when: Tm) -> CookieBuilder {
+    pub fn expires<E: Into<Expiration>>(mut self, when: E) -> Self {
         self.cookie.set_expires(when);
         self
     }
@@ -99,10 +99,8 @@ impl CookieBuilder {
     
     
     
-    
-    
     #[inline]
-    pub fn max_age(mut self, value: Duration) -> CookieBuilder {
+    pub fn max_age(mut self, value: time::Duration) -> Self {
         self.cookie.set_max_age(value);
         self
     }
@@ -120,7 +118,7 @@ impl CookieBuilder {
     
     
     
-    pub fn domain<D: Into<Cow<'static, str>>>(mut self, value: D) -> CookieBuilder {
+    pub fn domain<D: Into<Cow<'c, str>>>(mut self, value: D) -> Self {
         self.cookie.set_domain(value);
         self
     }
@@ -138,7 +136,7 @@ impl CookieBuilder {
     
     
     
-    pub fn path<P: Into<Cow<'static, str>>>(mut self, path: P) -> CookieBuilder {
+    pub fn path<P: Into<Cow<'c, str>>>(mut self, path: P) -> Self {
         self.cookie.set_path(path);
         self
     }
@@ -157,7 +155,7 @@ impl CookieBuilder {
     
     
     #[inline]
-    pub fn secure(mut self, value: bool) -> CookieBuilder {
+    pub fn secure(mut self, value: bool) -> Self {
         self.cookie.set_secure(value);
         self
     }
@@ -176,7 +174,7 @@ impl CookieBuilder {
     
     
     #[inline]
-    pub fn http_only(mut self, value: bool) -> CookieBuilder {
+    pub fn http_only(mut self, value: bool) -> Self {
         self.cookie.set_http_only(value);
         self
     }
@@ -195,7 +193,7 @@ impl CookieBuilder {
     
     
     #[inline]
-    pub fn same_site(mut self, value: SameSite) -> CookieBuilder {
+    pub fn same_site(mut self, value: SameSite) -> Self {
         self.cookie.set_same_site(value);
         self
     }
@@ -219,10 +217,8 @@ impl CookieBuilder {
     
     
     
-    
-    
     #[inline]
-    pub fn permanent(mut self) -> CookieBuilder {
+    pub fn permanent(mut self) -> Self {
         self.cookie.make_permanent();
         self
     }
@@ -244,7 +240,7 @@ impl CookieBuilder {
     
     
     #[inline]
-    pub fn finish(self) -> Cookie<'static> {
+    pub fn finish(self) -> Cookie<'c> {
         self.cookie
     }
 }
