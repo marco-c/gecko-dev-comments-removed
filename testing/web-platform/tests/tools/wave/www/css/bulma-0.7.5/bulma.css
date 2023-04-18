@@ -1,4 +1,4 @@
-
+/*! bulma.io v0.7.5 | MIT License | github.com/jgthms/bulma */
 @-webkit-keyframes spinAround {
   from {
     -webkit-transform: rotate(0deg);
@@ -26,7 +26,7 @@
 .pagination-ellipsis, .tabs {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
-  user-select: none;
+  -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
 }
@@ -237,7 +237,7 @@ fieldset[disabled] .pagination-ellipsis {
   cursor: not-allowed;
 }
 
-
+/*! minireset.css v0.0.4 | MIT License | github.com/jgthms/minireset.css */
 html,
 body,
 p,
@@ -10596,3 +10596,4 @@ label.panel-block:hover {
   background-color: #fafafa;
   padding: 3rem 1.5rem 6rem;
 }
+/*# sourceMappingURL=bulma.css.map */
