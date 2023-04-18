@@ -158,7 +158,12 @@ const PROP_JSON_FIELDS = [
   "rootURI",
 ];
 
-const SIGNED_TYPES = new Set(["extension", "locale", "theme"]);
+const SIGNED_TYPES = new Set([
+  "extension",
+  "locale",
+  "theme",
+  "sitepermission",
+]);
 
 
 const ASYNC_SAVE_DELAY_MS = 20;
