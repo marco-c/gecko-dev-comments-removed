@@ -18,7 +18,7 @@ registerCleanupFunction(() => {
 
 
 
-add_task(function test_setup() {
+add_setup(function test_setup() {
   
   do_get_profile();
 
