@@ -82,7 +82,7 @@ exports.allocationTracker = function({
     acceptGlobal = () => true;
   } else if (watchDevToolsGlobals) {
     
-    const builtinGlobal = require("devtools/shared/builtin-modules");
+    const builtinGlobal = require("devtools/shared/loader/builtin-modules");
     acceptGlobal = g => {
       
       if (g.class == "self-hosting-global") {

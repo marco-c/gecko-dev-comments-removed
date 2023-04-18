@@ -10,10 +10,10 @@
 
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 var { Loader, Require, resolveURI, unload } = ChromeUtils.import(
-  "resource://devtools/shared/base-loader.js"
+  "resource://devtools/shared/loader/base-loader.js"
 );
 var { requireRawId } = ChromeUtils.import(
-  "resource://devtools/shared/loader-plugin-raw.jsm"
+  "resource://devtools/shared/loader/loader-plugin-raw.jsm"
 );
 
 const EXPORTED_SYMBOLS = [
@@ -107,7 +107,9 @@ function DevToolsLoader({
   this.require = Require(this.loader, { id: "devtools" });
 
   
-  const { modules, globals } = this.require("devtools/shared/builtin-modules");
+  const { modules, globals } = this.require(
+    "devtools/shared/loader/builtin-modules"
+  );
 
   
   for (const id in modules) {

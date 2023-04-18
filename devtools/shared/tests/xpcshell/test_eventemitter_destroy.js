@@ -6,7 +6,7 @@
 
 add_task(function() {
   const { DevToolsLoader, require } = ChromeUtils.import(
-    "resource://devtools/shared/Loader.jsm"
+    "resource://devtools/shared/loader/Loader.jsm"
   );
 
   

@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=987877
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 987877</title>
@@ -12,7 +12,7 @@
   <script type="application/javascript">
 "use strict";
 
-const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+const { require } = ChromeUtils.import("resource://devtools/shared/loader/Loader.jsm");
 const CssLogic = require("devtools/shared/inspector/css-logic");
 
 const _tests = [];

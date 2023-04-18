@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+Bug 895360 - [app manager] Device meta data actor
+-->
 <head>
   <meta charset="utf-8">
   <title>Mozilla Bug</title>
@@ -15,7 +15,7 @@
 "use strict";
 
 window.onload = function() {
-  const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+  const {require} = ChromeUtils.import("resource://devtools/shared/loader/Loader.jsm");
   const {DevToolsClient} = require("devtools/client/devtools-client");
   const {DevToolsServer} = require("devtools/server/devtools-server");
   const Services = require("Services");

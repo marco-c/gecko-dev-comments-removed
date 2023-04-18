@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+Test that css-logic handles media-queries correctly
+-->
 <head>
   <meta charset="utf-8">
   <title>Test css-logic media-queries</title>
@@ -28,7 +28,7 @@
   "use strict";
 
   window.onload = function() {
-    const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+    const {require} = ChromeUtils.import("resource://devtools/shared/loader/Loader.jsm");
     const Services = require("Services");
     const {CssLogic} = require("devtools/server/actors/inspector/css-logic");
 

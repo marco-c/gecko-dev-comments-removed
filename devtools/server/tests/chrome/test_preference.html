@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+Bug 943251 - Test preferences actor
+-->
 <head>
   <meta charset="utf-8">
   <title>Test Preference Actor</title>
@@ -15,7 +15,7 @@
 "use strict";
 
 function runTests() {
-  const {require} = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+  const {require} = ChromeUtils.import("resource://devtools/shared/loader/Loader.jsm");
   const {DevToolsClient} = require("devtools/client/devtools-client");
   const {DevToolsServer} = require("devtools/server/devtools-server");
   const Services = require("Services");

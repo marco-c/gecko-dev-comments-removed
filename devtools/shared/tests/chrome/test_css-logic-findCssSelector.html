@@ -9,7 +9,7 @@
   <script type="application/javascript">
 "use strict";
 
-const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+const { require } = ChromeUtils.import("resource://devtools/shared/loader/Loader.jsm");
 const { findCssSelector } = require("devtools/shared/inspector/css-logic");
 
 var _tests = [];
@@ -90,25 +90,25 @@ addTest(function findCssSelectorBasic() {
 </head>
 <body>
   <div id="find-css-selector">
-    <div id="one"></div> 
-    <div id="2"></div> 
-    <div class="three"></div> 
-    <div class="4"></div> 
-    <div attr="5"></div>  
-    <p></p> 
-    <div class="seven seven"></div> 
-    <div class="eight eight2"></div> 
+    <div id="one"></div> <!-- Basic ID -->
+    <div id="2"></div> <!-- Escaped ID -->
+    <div class="three"></div> <!-- Basic Class -->
+    <div class="4"></div> <!-- Escaped Class -->
+    <div attr="5"></div>  <!-- Only an attribute -->
+    <p></p> <!-- Nothing unique -->
+    <div class="seven seven"></div> <!-- Two classes with same name -->
+    <div class="eight eight2"></div> <!-- Two classes with different names -->
 
-    
+    <!-- Two elements with the same id - should not use ID -->
     <div class="nine" id="nine-and-ten"></div>
     <div class="ten" id="nine-and-ten"></div>
 
-    
+    <!-- Three elements with the same id - should use class and nth-child instead -->
     <div class="sameclass" id="11-12-13"></div>
     <div class="sameclass" id="11-12-13"></div>
     <div class="sameclass" id="11-12-13"></div>
 
-    
+    <!-- Special characters -->
     <div id="!, &quot;, #, $, %, &amp;, ', (, ), *, +, ,, -, ., /, :, ;, <, =, >, ?, @, [, \, ], ^, `, {, |, }, ~"></div>
   </div>
 </body>

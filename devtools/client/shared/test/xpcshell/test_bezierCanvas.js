@@ -5,7 +5,9 @@
 
 
 
-var { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
+var { require } = ChromeUtils.import(
+  "resource://devtools/shared/loader/Loader.jsm"
+);
 var {
   CubicBezier,
   BezierCanvas,

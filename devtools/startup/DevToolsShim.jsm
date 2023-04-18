@@ -19,7 +19,7 @@ XPCOMUtils.defineLazyGetter(this, "DevToolsStartup", () => {
 
 XPCOMUtils.defineLazyGetter(this, "Telemetry", function() {
   const { require } = ChromeUtils.import(
-    "resource://devtools/shared/Loader.jsm"
+    "resource://devtools/shared/loader/Loader.jsm"
   );
   
   const Telemetry = require("devtools/client/shared/telemetry");
