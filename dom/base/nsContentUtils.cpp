@@ -3707,33 +3707,17 @@ already_AddRefed<imgIContainer> nsContentUtils::GetImageFromContent(
   return imgContainer.forget();
 }
 
-
-bool nsContentUtils::ContentIsDraggable(nsIContent* aContent) {
-  MOZ_ASSERT(aContent);
-
-  if (auto htmlElement = nsGenericHTMLElement::FromNode(aContent)) {
-    if (htmlElement->Draggable()) {
-      return true;
-    }
-
-    if (htmlElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::draggable,
-                                 nsGkAtoms::_false, eIgnoreCase)) {
-      return false;
-    }
-  }
-  if (aContent->IsSVGElement()) {
+static bool IsLinkWithURI(const nsIContent& aContent) {
+  const auto* element = Element::FromNode(aContent);
+  if (!element || !element->IsLink()) {
     return false;
   }
-
-  
-  return IsDraggableImage(aContent) || IsDraggableLink(aContent);
+  nsCOMPtr<nsIURI> absURI = element->GetHrefURI();
+  return !!absURI;
 }
 
-
-bool nsContentUtils::IsDraggableImage(nsIContent* aContent) {
-  MOZ_ASSERT(aContent, "Must have content node to test");
-
-  nsCOMPtr<nsIImageLoadingContent> imageContent(do_QueryInterface(aContent));
+static bool HasImageRequest(nsIContent& aContent) {
+  nsCOMPtr<nsIImageLoadingContent> imageContent(do_QueryInterface(&aContent));
   if (!imageContent) {
     return false;
   }
@@ -3744,17 +3728,49 @@ bool nsContentUtils::IsDraggableImage(nsIContent* aContent) {
 
   
   
-  return imgRequest != nullptr;
+  return !!imgRequest;
+}
+
+static Maybe<bool> DraggableOverride(const nsIContent& aContent) {
+  if (auto* el = nsGenericHTMLElement::FromNode(aContent)) {
+    if (el->Draggable()) {
+      return Some(true);
+    }
+
+    if (el->AttrValueIs(kNameSpaceID_None, nsGkAtoms::draggable,
+                        nsGkAtoms::_false, eIgnoreCase)) {
+      return Some(false);
+    }
+  }
+  if (aContent.IsSVGElement()) {
+    return Some(false);
+  }
+  return Nothing();
+}
+
+
+bool nsContentUtils::ContentIsDraggable(nsIContent* aContent) {
+  MOZ_ASSERT(aContent);
+
+  if (auto draggable = DraggableOverride(*aContent)) {
+    return *draggable;
+  }
+
+  
+  return HasImageRequest(*aContent) || IsLinkWithURI(*aContent);
+}
+
+
+bool nsContentUtils::IsDraggableImage(nsIContent* aContent) {
+  MOZ_ASSERT(aContent);
+  return HasImageRequest(*aContent) &&
+         DraggableOverride(*aContent).valueOr(true);
 }
 
 
 bool nsContentUtils::IsDraggableLink(const nsIContent* aContent) {
-  const auto* element = Element::FromNode(*aContent);
-  if (!element || !element->IsLink()) {
-    return false;
-  }
-  nsCOMPtr<nsIURI> absURI = element->GetHrefURI();
-  return !!absURI;
+  MOZ_ASSERT(aContent);
+  return IsLinkWithURI(*aContent) && DraggableOverride(*aContent).valueOr(true);
 }
 
 
