@@ -712,6 +712,13 @@ void nsPACMan::ContinueLoadingAfterPACUriKnown() {
 }
 
 void nsPACMan::OnLoadFailure() {
+  
+  
+  {
+    auto loader = mLoader.Lock();
+    loader.ref() = nullptr;
+  }
+
   int32_t minInterval = 5;    
   int32_t maxInterval = 300;  
 
