@@ -50,6 +50,7 @@ module.exports = {
       },
       files: ["**/*.sys.mjs", "**/*.jsm", "**/*.jsm.js"],
       rules: {
+        "mozilla/reject-global-this": "error",
         "mozilla/reject-top-level-await": "error",
         
         
@@ -58,6 +59,13 @@ module.exports = {
         
         
         "no-redeclare": ["error", { builtinGlobals: false }],
+      },
+    },
+    {
+      
+      files: ["browser/components/urlbar/**"],
+      rules: {
+        "mozilla/reject-global-this": "off",
       },
     },
     {

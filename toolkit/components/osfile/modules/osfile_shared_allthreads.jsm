@@ -35,8 +35,10 @@ if (typeof Components != "undefined") {
   
   
   
+  
   this.exports = {};
   ({ Services } = ChromeUtils.import("resource://gre/modules/Services.jsm"));
+  
   this.Services = Services;
   Meta = ChromeUtils.import("resource://gre/modules/PromiseWorker.jsm")
     .BasePromiseWorker.Meta;
@@ -1362,8 +1364,10 @@ Object.defineProperty(exports.OS.Shared, "TEST", {
 
 
 if (typeof Components != "undefined") {
+  
   this.EXPORTED_SYMBOLS = EXPORTED_SYMBOLS;
   for (let symbol of EXPORTED_SYMBOLS) {
+    
     this[symbol] = exports[symbol];
   }
 }

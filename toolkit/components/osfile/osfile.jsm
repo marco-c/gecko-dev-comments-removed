@@ -7,10 +7,12 @@
 
 
 if (typeof Components != "undefined") {
+  
   this.EXPORTED_SYMBOLS = ["OS"];
   const { OS } = ChromeUtils.import(
     "resource://gre/modules/osfile/osfile_async_front.jsm"
   );
+  
   this.OS = OS;
 } else {
   

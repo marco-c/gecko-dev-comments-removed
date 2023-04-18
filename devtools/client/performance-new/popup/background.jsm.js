@@ -70,6 +70,7 @@ const CURRENT_WEBCHANNEL_VERSION = 1;
 
 
 ChromeUtils.defineModuleGetter(
+  
   this,
   "require",
   "resource://devtools/shared/loader/Loader.jsm"

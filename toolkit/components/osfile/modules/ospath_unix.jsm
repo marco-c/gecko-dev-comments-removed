@@ -23,6 +23,7 @@ if (typeof Components != "undefined") {
   
   
   
+  
   this.exports = {};
 } else if (typeof module == "undefined" || typeof exports == "undefined") {
   throw new Error("Please load this module using require()");
@@ -194,8 +195,10 @@ exports.fromFileURI = fromFileURI;
 
 
 if (typeof Components != "undefined") {
+  
   this.EXPORTED_SYMBOLS = EXPORTED_SYMBOLS;
   for (let symbol of EXPORTED_SYMBOLS) {
+    
     this[symbol] = exports[symbol];
   }
 }

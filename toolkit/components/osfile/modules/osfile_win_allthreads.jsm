@@ -25,11 +25,13 @@ var SharedAll;
 if (typeof Components != "undefined") {
   
   const { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
+  
   this.ctypes = ctypes;
 
   SharedAll = ChromeUtils.import(
     "resource://gre/modules/osfile/osfile_shared_allthreads.jsm"
   );
+  
   this.exports = {};
 } else if (typeof module != "undefined" && typeof require != "undefined") {
   
@@ -431,8 +433,10 @@ var EXPORTED_SYMBOLS = [
 
 
 if (typeof Components != "undefined") {
+  
   this.EXPORTED_SYMBOLS = EXPORTED_SYMBOLS;
   for (let symbol of EXPORTED_SYMBOLS) {
+    
     this[symbol] = exports[symbol];
   }
 }

@@ -42,6 +42,9 @@
 
 if (typeof Components != "undefined") {
   
+  
+  
+  
   this.EXPORTED_SYMBOLS = ["AndroidLog"];
   var { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
 }

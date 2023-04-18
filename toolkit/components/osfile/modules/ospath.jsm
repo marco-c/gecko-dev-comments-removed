@@ -40,9 +40,11 @@ if (typeof Components == "undefined") {
     Path = ChromeUtils.import("resource://gre/modules/osfile/ospath_unix.jsm");
   }
 
+  
   this.EXPORTED_SYMBOLS = [];
   for (let k in Path) {
     EXPORTED_SYMBOLS.push(k);
+    
     this[k] = Path[k];
   }
 }
