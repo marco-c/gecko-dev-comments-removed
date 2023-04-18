@@ -31,7 +31,7 @@ ENameValueFlag Name(nsString& aName) const override;
 
 
 
-void Value(nsString& aValue) const;
+void Value(nsString& aValue) const override;
 
 
 

@@ -1005,12 +1005,9 @@ MsaaAccessible::get_accValue(
   if (accessible) {
     return accessible->get_accValue(kVarChildIdSelf, pszValue);
   }
-  if (mAcc->IsRemote()) {
-    return E_NOTIMPL;  
-  }
 
   nsAutoString value;
-  LocalAcc()->Value(value);
+  Acc()->Value(value);
 
   
   
