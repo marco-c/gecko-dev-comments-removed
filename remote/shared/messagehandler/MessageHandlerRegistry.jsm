@@ -122,6 +122,17 @@ class MessageHandlerRegistry extends EventEmitter {
 
 
 
+  getAllMessageHandlers() {
+    return this._messageHandlersMap.values();
+  }
+
+  
+
+
+
+
+
+
 
 
   getExistingMessageHandler(sessionId) {
