@@ -16,8 +16,6 @@ class JSLinearString;
 namespace mozilla {
 namespace dom {
 
-enum class BindingNamesOffset : uint16_t;
-
 namespace constructors {
 namespace id {
 enum ID : uint16_t;
@@ -30,7 +28,7 @@ struct WebIDLNameTableEntry {
   
   using ConstructorEnabled = bool (*)(JSContext* cx, JS::Handle<JSObject*> obj);
 
-  BindingNamesOffset mNameOffset;
+  uint16_t mNameOffset;
   uint16_t mNameLength;
   constructors::id::ID mConstructorId;
   CreateInterfaceObjectsMethod mCreate;
@@ -88,6 +86,11 @@ class WebIDLGlobalNameHash {
   
   
   static const WebIDLNameTableEntry sEntries[];
+
+  
+  
+  
+  static const char sNames[];
 };
 
 }  
