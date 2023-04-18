@@ -124,11 +124,9 @@ class InspectedWindowCommand {
     try {
       
       
-      if (typeof options.userAgent !== undefined) {
-        await this.commands.targetConfigurationCommand.updateConfiguration({
-          customUserAgent: options.userAgent,
-        });
-      }
+      await this.commands.targetConfigurationCommand.updateConfiguration({
+        customUserAgent: options.userAgent,
+      });
 
       const front = await this.getFront();
       const result = await front.reload(callerInfo, options);
