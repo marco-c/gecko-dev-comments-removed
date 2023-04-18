@@ -504,11 +504,29 @@ class LocalAccessible : public nsISupports, public Accessible {
   
   
 
-  virtual uint8_t ActionCount() const override;
+  
 
-  virtual void ActionNameAt(uint8_t aIndex, nsAString& aName) override;
 
-  virtual bool DoAction(uint8_t aIndex) const override;
+  virtual uint8_t ActionCount() const;
+
+  
+
+
+  virtual void ActionNameAt(uint8_t aIndex, nsAString& aName);
+
+  
+
+
+  void ActionDescriptionAt(uint8_t aIndex, nsAString& aDescription) {
+    nsAutoString name;
+    ActionNameAt(aIndex, name);
+    TranslateString(name, aDescription);
+  }
+
+  
+
+
+  virtual bool DoAction(uint8_t aIndex) const;
 
   
 
@@ -663,6 +681,11 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
+  static void TranslateString(const nsString& aKey, nsAString& aStringOut);
+
+  
+
+
   bool IsDefunct() const;
 
   
@@ -782,13 +805,6 @@ class LocalAccessible : public nsISupports, public Accessible {
 
   already_AddRefed<AccAttributes> BundleFieldsForCache(
       uint64_t aCacheDomain, CacheUpdateType aUpdateType);
-
-  
-
-
-
-
-  void SendCache(uint64_t aCacheDomain, CacheUpdateType aUpdate);
 
   virtual nsAtom* TagName() const override;
 
@@ -976,6 +992,13 @@ class LocalAccessible : public nsISupports, public Accessible {
 
   virtual void ARIAGroupPosition(int32_t* aLevel, int32_t* aSetSize,
                                  int32_t* aPosInSet) const override;
+
+  
+
+
+
+
+  void SendCache(uint64_t aCacheDomain, CacheUpdateType aUpdate);
 
   
   
