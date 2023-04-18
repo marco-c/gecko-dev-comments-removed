@@ -80,6 +80,32 @@ class DOMIntersectionObserverEntry final : public nsISupports,
     }                                                \
   }
 
+
+struct IntersectionInput {
+  
+  const bool mIsImplicitRoot = false;
+  
+  
+  
+  const nsINode* mRootNode = nullptr;
+  nsIFrame* mRootFrame = nullptr;
+  
+  nsRect mRootRect;
+  
+  nsMargin mRootMargin;
+  
+  Maybe<nsRect> mRemoteDocumentVisibleRect;
+};
+
+struct IntersectionOutput {
+  const bool mIsSimilarOrigin;
+  const nsRect mRootBounds;
+  const nsRect mTargetRect;
+  const Maybe<nsRect> mIntersectionRect;
+
+  bool Intersects() const { return mIntersectionRect.isSome(); }
+};
+
 class DOMIntersectionObserver final : public nsISupports,
                                       public nsWrapperCache {
   virtual ~DOMIntersectionObserver() { Disconnect(); }
@@ -121,6 +147,11 @@ class DOMIntersectionObserver final : public nsISupports,
   void Disconnect();
 
   void TakeRecords(nsTArray<RefPtr<DOMIntersectionObserverEntry>>& aRetVal);
+
+  static IntersectionInput ComputeInput(
+      const Document& aDocument, const nsINode* aRoot,
+      const StyleRect<LengthPercentage>* aRootMargin);
+  static IntersectionOutput Intersect(const IntersectionInput&, Element&);
 
   void Update(Document* aDocument, DOMHighResTimeStamp time);
   MOZ_CAN_RUN_SCRIPT void Notify();
