@@ -33,6 +33,7 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
+#include "mozilla/StorageAccess.h"
 #include "mozilla/Telemetry.h"
 #include "BatteryManager.h"
 #include "mozilla/dom/CredentialsContainer.h"
@@ -550,6 +551,13 @@ bool Navigator::CookieEnabled() {
     
     
     return cookieEnabled;
+  }
+
+  
+  
+  if (!granted &&
+      StoragePartitioningEnabled(rejectedReason, doc->CookieJarSettings())) {
+    granted = true;
   }
 
   ContentBlockingNotifier::OnDecision(
