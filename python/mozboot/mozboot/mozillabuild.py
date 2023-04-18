@@ -143,7 +143,27 @@ class MozillaBuildBootstrapper(BaseBootstrapper):
         
         
         
-        self.pip_install("mercurial", "--only-binary", "mercurial")
+        with open(Path(os.environ["MOZILLABUILD"]) / "VERSION") as f:
+            major, minor = (int(v) for v in f.read().split("."))
+
+        if major >= 4:
+            pip_dir = (
+                Path(os.environ["MOZILLABUILD"]) / "python3" / "Scripts" / "pip.exe"
+            )
+        else:
+            pip_dir = (
+                Path(os.environ["MOZILLABUILD"]) / "python" / "Scripts" / "pip.exe"
+            )
+
+        command = [
+            str(pip_dir),
+            "install",
+            "--upgrade",
+            "mercurial",
+            "--only-binary",
+            "mercurial",
+        ]
+        self.run(command)
 
     def install_browser_packages(self, mozconfig_builder):
         pass
@@ -246,10 +266,3 @@ class MozillaBuildBootstrapper(BaseBootstrapper):
 
     def run(self, command):
         subprocess.check_call(command, stdin=sys.stdin)
-
-    def pip_install(self, *packages):
-        pip_dir = Path(os.environ["MOZILLABUILD"]) / "python" / "Scripts" / "pip.exe"
-
-        command = [str(pip_dir), "install", "--upgrade"]
-        command.extend(packages)
-        self.run(command)
