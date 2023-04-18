@@ -158,6 +158,16 @@ FormAutoCompleteResult.prototype = {
 
 
 
+
+  isRemovableAt(index) {
+    this._checkIndexBounds(index);
+    return this._items[index].removable;
+  },
+
+  
+
+
+
   removeValueAt(index) {
     this._checkIndexBounds(index);
     

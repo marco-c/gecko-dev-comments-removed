@@ -197,6 +197,15 @@ class ProfileAutoCompleteResult {
 
 
 
+
+  isRemovableAt(index) {
+    return true;
+  }
+
+  
+
+
+
   removeValueAt(index) {
     
   }

@@ -100,6 +100,7 @@ SuggestAutoComplete.prototype = {
           
           
           comment: result,
+          removable: true,
         })),
         formHistoryResult
       );
