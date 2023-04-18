@@ -18,12 +18,14 @@ const { PrivateBrowsingUtils } = ChromeUtils.import(
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
-  this,
+  lazy,
   "ACTIVITY_STREAM_DEBUG",
   "browser.newtabpage.activity-stream.debug",
   false
@@ -35,13 +37,13 @@ class AboutNewTabChild extends JSWindowActorChild {
       
       
       if (
-        NimbusFeatures.aboutwelcome.isEnabled({ defaultValue: true }) &&
+        lazy.NimbusFeatures.aboutwelcome.isEnabled({ defaultValue: true }) &&
         this.contentWindow.location.pathname.includes("welcome")
       ) {
         return;
       }
 
-      const debug = !AppConstants.RELEASE_OR_BETA && ACTIVITY_STREAM_DEBUG;
+      const debug = !AppConstants.RELEASE_OR_BETA && lazy.ACTIVITY_STREAM_DEBUG;
       const debugString = debug ? "-dev" : "";
 
       
@@ -83,7 +85,7 @@ class AboutNewTabChild extends JSWindowActorChild {
 
         
         
-        NimbusFeatures.newtab.recordExposureEvent({ once: true });
+        lazy.NimbusFeatures.newtab.recordExposureEvent({ once: true });
       }
     }
   }
