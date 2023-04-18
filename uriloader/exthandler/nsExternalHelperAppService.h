@@ -199,6 +199,32 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
 
   void ExpungeTemporaryPrivateFiles();
 
+  bool GetFileNameFromChannel(nsIChannel* aChannel, nsAString& aFileName,
+                              nsIURI** aURI);
+
+  
+  already_AddRefed<nsIMIMEInfo> ValidateFileNameForSaving(
+      nsAString& aFileName, const nsACString& aMimeType, nsIURI* aURI,
+      nsIURI* aOriginalURI, uint32_t aFlags, bool aAllowURLExtension);
+
+  void SanitizeFileName(nsAString& aFileName, const nsACString& aExtension,
+                        uint32_t aFlags);
+
+  
+
+
+
+  enum ModifyExtensionType {
+    
+    ModifyExtension_Replace = 0,
+    
+    ModifyExtension_Append = 1,
+    
+    ModifyExtension_Ignore = 2
+  };
+  ModifyExtensionType ShouldModifyExtension(nsIMIMEInfo* aMimeInfo,
+                                            const nsCString& aFileExt);
+
   
 
 
@@ -255,11 +281,11 @@ class nsExternalAppHandler final : public nsIStreamListener,
 
 
 
-  nsExternalAppHandler(nsIMIMEInfo* aMIMEInfo, const nsACString& aFileExtension,
+  nsExternalAppHandler(nsIMIMEInfo* aMIMEInfo, const nsAString& aFileExtension,
                        mozilla::dom::BrowsingContext* aBrowsingContext,
                        nsIInterfaceRequestor* aWindowContext,
                        nsExternalHelperAppService* aExtProtSvc,
-                       const nsAString& aFilename, uint32_t aReason,
+                       const nsAString& aSuggestedFileName, uint32_t aReason,
                        bool aForceSave);
 
   
@@ -284,7 +310,7 @@ class nsExternalAppHandler final : public nsIStreamListener,
 
   nsCOMPtr<nsIFile> mTempFile;
   nsCOMPtr<nsIURI> mSourceUrl;
-  nsString mTempFileExtension;
+  nsString mFileExtension;
   nsString mTempLeafName;
 
   
@@ -472,12 +498,6 @@ class nsExternalAppHandler final : public nsIStreamListener,
 
 
   bool GetNeverAskFlagFromPref(const char* prefName, const char* aContentType);
-
-  
-
-
-
-  bool ShouldForceExtension(const nsString& aFileExt);
 
   
 
