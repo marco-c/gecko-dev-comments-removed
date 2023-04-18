@@ -2,7 +2,16 @@
 
 
 
+"use strict";
+
 var EXPORTED_SYMBOLS = ["BuiltInThemeConfig"];
+
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+XPCOMUtils.defineLazyModuleGetters(this, {
+  AppConstants: "resource://gre/modules/AppConstants.jsm",
+});
 
 
 
@@ -239,13 +248,13 @@ const ColorwayCollections = new Map([
   [
     "life-in-color",
     {
-      expiry: "2022-02-08",
+      expiry: AppConstants.NIGHTLY_BUILD ? "2022-08-03" : "2022-02-08",
     },
   ],
   [
     "true-colors",
     {
-      expiry: "2022-05-03",
+      expiry: AppConstants.NIGHTLY_BUILD ? "2022-4-20" : "2022-05-03",
     },
   ],
 ]);
