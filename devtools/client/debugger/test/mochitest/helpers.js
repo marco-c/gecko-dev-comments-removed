@@ -2193,6 +2193,54 @@ async function setLogPoint(dbg, index, value) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+function createVersionizedHttpTestServer(testFolderName) {
+  const httpServer = createTestHTTPServer();
+
+  let currentVersion = 1;
+
+  httpServer.registerPrefixHandler("/", async (request, response) => {
+    response.processAsync();
+    response.setStatusLine(request.httpVersion, 200, "OK");
+    if (request.path.endsWith(".js")) {
+      response.setHeader("Content-Type", "application/javascript");
+    } else if (request.path.endsWith(".js.map")) {
+      response.setHeader("Content-Type", "application/json");
+    }
+    if (request.path == "/" || request.path == "/index.html") {
+      response.setHeader("Content-Type", "text/html");
+    }
+    const url = URL_ROOT + `examples/${testFolderName}/v${currentVersion}${request.path}`;
+    info("[test-http-server] serving: " + url);
+    const content = await fetch(url);
+    const text = await content.text();
+    response.write(text);
+    response.finish();
+  });
+
+  return {
+    switchToNextVersion() {
+      currentVersion++;
+    },
+    urlFor(path) {
+      const port = httpServer.identity.primaryPort;
+      return `http://localhost:${port}/${path}`;
+    },
+  };
+}
+
+
+
+
 const protocolHandler = Services.io
   .getProtocolHandler("resource")
   .QueryInterface(Ci.nsIResProtocolHandler);
