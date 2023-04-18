@@ -580,26 +580,8 @@ void nsCoreUtils::DispatchAccEvent(RefPtr<nsIAccessibleEvent> event) {
 }
 
 bool nsCoreUtils::IsDisplayContents(nsIContent* aContent) {
-  auto* element = Element::FromNodeOrNull(aContent);
-  return element && element->IsDisplayContents();
-}
-
-bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
-  auto* element = Element::FromNodeOrNull(aContent);
-  if (!element) {
-    return false;
-  }
-  if (!element->HasServoData() || Servo_Element_IsDisplayNone(element)) {
-    
-    return false;
-  }
-  if (element->IsDisplayContents()) {
-    return true;
-  }
-  
-  
-  
-  return element->IsAnyOfHTMLElements(nsGkAtoms::option, nsGkAtoms::optgroup);
+  return aContent && aContent->IsElement() &&
+         aContent->AsElement()->IsDisplayContents();
 }
 
 bool nsCoreUtils::IsDocumentVisibleConsideringInProcessAncestors(

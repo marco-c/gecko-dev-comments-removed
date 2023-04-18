@@ -2815,6 +2815,17 @@ nsIFrame* EventStateManager::ComputeScrollTargetAndMayAdjustWheelEvent(
       canScroll = true;
     }
 
+    
+    nsComboboxControlFrame* comboBox = do_QueryFrame(scrollFrame);
+    if (comboBox) {
+      if (comboBox->IsDroppedDown()) {
+        
+        return canScroll ? frameToScroll : nullptr;
+      }
+      
+      continue;
+    }
+
     if (canScroll) {
       return frameToScroll;
     }

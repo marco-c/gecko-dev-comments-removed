@@ -352,8 +352,8 @@ void nsFontInflationData::ScanTextIn(nsIFrame* aFrame) {
         
         
         nscoord fontSize = kid->StyleFont()->mFont.size.ToAppUnits();
-        int32_t charCount = static_cast<nsComboboxControlFrame*>(kid)
-                                ->CharCountOfLargestOptionForInflation();
+        int32_t charCount = CharCountOfLargestOption(
+            static_cast<nsComboboxControlFrame*>(kid)->GetDropDown());
         mTextAmount += charCount * fontSize;
       } else if (fType == LayoutFrameType::ListControl) {
         
