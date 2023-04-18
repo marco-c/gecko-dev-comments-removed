@@ -2665,12 +2665,21 @@ GeckoDriver.prototype.acceptConnections = function(cmd) {
 
 
 
+
+
+
+
 GeckoDriver.prototype.quit = async function(cmd) {
+  const { flags = [], safeMode = false } = cmd.parameters;
   const quits = ["eConsiderQuit", "eAttemptQuit", "eForceQuit"];
 
-  let flags = [];
-  if (typeof cmd.parameters.flags != "undefined") {
-    flags = assert.array(cmd.parameters.flags);
+  assert.array(flags, `Expected "flags" to be an array`);
+  assert.boolean(safeMode, `Expected "safeMode" to be a boolean`);
+
+  if (safeMode && !flags.includes("eRestart")) {
+    throw new error.InvalidArgumentError(
+      `"safeMode" only works with restart flag`
+    );
   }
 
   let quitSeen;
@@ -2712,7 +2721,12 @@ GeckoDriver.prototype.quit = async function(cmd) {
 
   
   let quitApplication = waitForObserverTopic("quit-application");
-  Services.startup.quit(mode);
+
+  if (safeMode) {
+    Services.startup.restartInSafeMode(mode);
+  } else {
+    Services.startup.quit(mode);
+  }
 
   return {
     cause: (await quitApplication).data,
