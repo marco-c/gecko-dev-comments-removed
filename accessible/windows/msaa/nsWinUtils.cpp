@@ -14,6 +14,7 @@
 
 #include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_accessibility.h"
 #include "nsArrayUtils.h"
 #include "nsICSSDeclaration.h"
 #include "mozilla/dom/Document.h"
@@ -135,25 +136,26 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
       
       int32_t objId = static_cast<DWORD>(lParam);
       if (objId == OBJID_CLIENT) {
-        IAccessible* msaaAccessible = nullptr;
+        RefPtr<IAccessible> msaaAccessible;
         DocAccessible* document =
             reinterpret_cast<DocAccessible*>(::GetPropW(hWnd, kPropNameDocAcc));
         if (document) {
-          document->GetNativeInterface(
-              (void**)&msaaAccessible);  
+          document->GetNativeInterface(getter_AddRefs(msaaAccessible));
         } else {
           DocAccessibleParent* docParent = static_cast<DocAccessibleParent*>(
               ::GetPropW(hWnd, kPropNameDocAccParent));
           if (docParent) {
-            docParent->GetCOMInterface(
-                (void**)&msaaAccessible);  
+            if (StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+              msaaAccessible = MsaaAccessible::GetFrom(docParent);
+            } else {
+              docParent->GetCOMInterface(getter_AddRefs(msaaAccessible));
+            }
           }
         }
         if (msaaAccessible) {
           LRESULT result =
               ::LresultFromObject(IID_IAccessible, wParam,
                                   msaaAccessible);  
-          msaaAccessible->Release();                
           return result;
         }
       }
