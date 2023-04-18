@@ -238,7 +238,7 @@ class TRRService : public TRRServiceBase,
    public:
     
     
-    void RecordEvent(const char* aReason);
+    void RecordEvent(const char* aReason, const MutexAutoLock&);
 
     
     
@@ -289,8 +289,8 @@ class TRRService : public TRRServiceBase,
    public:
     
     
-    void RecordEvent(const char* aReason) {
-      mConfirmation.RecordEvent(aReason);
+    void RecordEvent(const char* aReason, const MutexAutoLock& aLock) {
+      mConfirmation.RecordEvent(aReason, aLock);
     }
 
     

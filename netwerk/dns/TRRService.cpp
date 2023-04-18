@@ -529,7 +529,10 @@ TRRService::Observe(nsISupports* aSubject, const char* aTopic,
     
     mConfirmationTriggered = false;
     ReadPrefs(NS_ConvertUTF16toUTF8(aData).get());
-    mConfirmation.RecordEvent("pref-change");
+    {
+      MutexAutoLock lock(mLock);
+      mConfirmation.RecordEvent("pref-change", lock);
+    }
 
     
     
@@ -579,7 +582,8 @@ TRRService::Observe(nsISupports* aSubject, const char* aTopic,
     if (!strcmp(aTopic, NS_NETWORK_LINK_TOPIC)) {
       if (NS_ConvertUTF16toUTF8(aData).EqualsLiteral(
               NS_NETWORK_LINK_DATA_DOWN)) {
-        mConfirmation.RecordEvent("network-change");
+        MutexAutoLock lock(mLock);
+        mConfirmation.RecordEvent("network-change", lock);
       }
 
       if (mURISetByDetection) {
@@ -596,15 +600,13 @@ TRRService::Observe(nsISupports* aSubject, const char* aTopic,
     
     
     
-    mConfirmation.RecordEvent("shutdown");
+    MutexAutoLock lock(mLock);
+    mConfirmation.RecordEvent("shutdown", lock);
 
     if (sTRRBackgroundThread) {
       nsCOMPtr<nsIThread> thread;
-      {
-        MutexAutoLock lock(mLock);
-        thread = sTRRBackgroundThread.get();
-        sTRRBackgroundThread = nullptr;
-      }
+      thread = sTRRBackgroundThread.get();
+      sTRRBackgroundThread = nullptr;
       MOZ_ALWAYS_SUCCEEDS(thread->Shutdown());
       sTRRServicePtr = nullptr;
     }
@@ -761,6 +763,9 @@ bool TRRService::ConfirmationContext::HandleEvent(ConfirmationEvent aEvent,
       break;
     case ConfirmationEvent::FailedLookups:
       MOZ_ASSERT(mState == CONFIRM_OK);
+      mTrigger.Assign("failed-lookups");
+      mFailedLookups = nsDependentCSubstring(
+          mFailureReasons, mTRRFailures % ConfirmationContext::RESULTS_SIZE);
       maybeConfirm("failed-lookups");
       break;
     case ConfirmationEvent::StrictMode:
@@ -1116,17 +1121,14 @@ void TRRService::ConfirmationContext::RecordTRRStatus(nsresult aChannelStatus) {
     
     
 
-    mTrigger.Assign("failed-lookups");
-    mFailedLookups = nsDependentCSubstring(
-        mFailureReasons, fails % ConfirmationContext::RESULTS_SIZE);
-
     
     
     HandleEvent(ConfirmationEvent::FailedLookups);
   }
 }
 
-void TRRService::ConfirmationContext::RecordEvent(const char* aReason) {
+void TRRService::ConfirmationContext::RecordEvent(const char* aReason,
+                                                  const MutexAutoLock&) {
   
   
   auto reset = [&]() {
@@ -1231,14 +1233,15 @@ void TRRService::ConfirmationContext::CompleteConfirmation(nsresult aStatus,
       HandleEvent(ConfirmationEvent::ConfirmFail, lock);
     }
 
+    if (State() == CONFIRM_OK) {
+      
+      RecordEvent("success", lock);
+    }
     LOG(("TRRService finishing confirmation test %s %d %X\n",
          OwningObject()->mPrivateURI.get(), State(), (unsigned int)aStatus));
   }
 
   if (State() == CONFIRM_OK) {
-    
-    RecordEvent("success");
-
     
     
     auto bl = OwningObject()->mTRRBLStorage.Lock();
