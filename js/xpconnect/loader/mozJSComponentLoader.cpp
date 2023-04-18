@@ -1254,12 +1254,6 @@ nsresult mozJSComponentLoader::Import(JSContext* aCx,
     MOZ_TRY(info.EnsureResolvedURI());
 
     
-    if ((!info.URI()->SchemeIs("resource")) &&
-        (!info.URI()->SchemeIs("chrome"))) {
-      return NS_ERROR_DOM_SECURITY_ERR;
-    }
-
-    
     nsCOMPtr<nsIJARURI> jarURI;
     jarURI = do_QueryInterface(info.ResolvedURI(), &rv);
     nsCOMPtr<nsIFileURL> baseFileURL;

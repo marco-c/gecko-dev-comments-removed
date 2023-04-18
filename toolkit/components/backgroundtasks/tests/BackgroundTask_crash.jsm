@@ -12,15 +12,9 @@ async function runBackgroundTask(commandLine) {
   
   
   
-  let cwd = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
-  let protocolHandler = Services.io
-    .getProtocolHandler("resource")
-    .QueryInterface(Ci.nsIResProtocolHandler);
-  var curDirURI = Services.io.newFileURI(cwd);
-  protocolHandler.setSubstitution("test", curDirURI);
-
+  let testPath = Services.dirsvc.get("CurWorkD", Ci.nsIFile).path;
   const { CrashTestUtils } = ChromeUtils.import(
-    "resource://test/CrashTestUtils.jsm"
+    `file://${testPath}/CrashTestUtils.jsm`
   );
 
   
