@@ -2588,6 +2588,7 @@ var SessionStoreInternal = {
     gBrowser.tabContainer.updateTabIndicatorAttr(aTab);
 
     let { userTypedValue = null, userTypedClear = 0 } = browser;
+    let hasStartedLoad = browser.didStartLoadSinceLastUserTyping();
 
     let cacheState = TabStateCache.get(browser.permanentKey);
 
@@ -2600,7 +2601,17 @@ var SessionStoreInternal = {
     
     
     
-    if (userTypedValue && !cacheState?.userTypedValue) {
+    
+    
+    
+    
+    
+    
+    let shouldUpdateCacheState =
+      userTypedValue &&
+      (!cacheState || (hasStartedLoad && !cacheState.userTypedValue));
+
+    if (shouldUpdateCacheState) {
       
       
       
