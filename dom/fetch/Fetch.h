@@ -19,6 +19,7 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/FetchStreamReader.h"
 #include "mozilla/dom/RequestBinding.h"
+#include "mozilla/dom/workerinternals/RuntimeService.h"
 
 class nsIGlobalObject;
 class nsIEventTarget;
@@ -231,9 +232,6 @@ class FetchBody : public BodyStreamHolder, public AbortFollower {
   nsCOMPtr<nsIGlobalObject> mOwner;
 
   
-  WorkerPrivate* mWorkerPrivate;
-
-  
   
   JS::Heap<JSObject*> mReadableStreamBody;
 
@@ -254,9 +252,9 @@ class FetchBody : public BodyStreamHolder, public AbortFollower {
 
   void LockStream(JSContext* aCx, JS::HandleObject aStream, ErrorResult& aRv);
 
-  bool IsOnTargetThread() { return NS_IsMainThread() == !mWorkerPrivate; }
-
-  void AssertIsOnTargetThread() { MOZ_ASSERT(IsOnTargetThread()); }
+  void AssertIsOnTargetThread() {
+    MOZ_ASSERT(NS_IsMainThread() == !GetCurrentThreadWorkerPrivate());
+  }
 
   
   bool mBodyUsed;
