@@ -32,15 +32,6 @@
 struct UFormattedValue;
 namespace mozilla::intl {
 
-static inline const char* IcuLocale(const char* aLocale) {
-  
-  const char* locale = aLocale;
-  if (!std::strcmp(locale, "und")) {
-    locale = "";  
-  }
-  return locale;
-}
-
 static inline const char* AssertNullTerminatedString(Span<const char> aSpan) {
   
   
@@ -61,6 +52,26 @@ static inline const char* AssertNullTerminatedString(std::string_view aView) {
   MOZ_ASSERT(std::strlen(aView.data()) == aView.size());
 
   return aView.data();
+}
+
+
+
+
+static inline const char* IcuLocale(const char* aLocale) {
+  
+  const char* locale = aLocale;
+  if (!std::strcmp(locale, "und")) {
+    locale = "";  
+  }
+  return locale;
+}
+
+
+
+
+
+static inline const char* IcuLocale(Span<const char> aLocale) {
+  return IcuLocale(AssertNullTerminatedString(aLocale));
 }
 
 using ICUResult = Result<Ok, ICUError>;
