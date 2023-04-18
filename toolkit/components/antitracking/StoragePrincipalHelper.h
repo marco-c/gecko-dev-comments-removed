@@ -243,8 +243,17 @@ class StoragePrincipalHelper final {
   static nsresult PrepareEffectiveStoragePrincipalOriginAttributes(
       nsIChannel* aChannel, OriginAttributes& aOriginAttributes);
 
+  
   static bool VerifyValidStoragePrincipalInfoForPrincipalInfo(
       const mozilla::ipc::PrincipalInfo& aStoragePrincipalInfo,
+      const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
+
+  
+  
+  
+  
+  static bool VerifyValidClientPrincipalInfoForPrincipalInfo(
+      const mozilla::ipc::PrincipalInfo& aClientPrincipalInfo,
       const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
   enum PrincipalType {
@@ -308,7 +317,7 @@ class StoragePrincipalHelper final {
 
   
   
-  static bool GetOriginAttributesForNetworkState(nsIChannel* aChanel,
+  static bool GetOriginAttributesForNetworkState(nsIChannel* aChannel,
                                                  OriginAttributes& aAttributes);
   static void GetOriginAttributesForNetworkState(dom::Document* aDocument,
                                                  OriginAttributes& aAttributes);
