@@ -121,12 +121,13 @@ interface nsIEditorSpellCheck : nsISupports
   
 
 
-  ACString      GetCurrentDictionary();
+  Array<ACString> getCurrentDictionaries();
 
   
 
 
-  void          SetCurrentDictionary(in ACString dictionary);
+  [implicit_jscontext]
+  Promise       setCurrentDictionaries(in Array<ACString> dictionaries);
 
   
 
