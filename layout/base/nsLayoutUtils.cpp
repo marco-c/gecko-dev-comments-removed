@@ -6242,7 +6242,7 @@ static SnappedImageDrawingParameters ComputeSnappedImageDrawingParameters(
     
     
     gfxSize unsnappedDestSize =
-        didSnap ? devPixelDest.Size() * currentMatrix.ScaleFactors().ToSize()
+        didSnap ? devPixelDest.Size() * currentMatrix.ScaleFactors()
                 : devPixelDest.Size();
 
     gfxRect anchoredDestRect(anchorPoint, unsnappedDestSize);
