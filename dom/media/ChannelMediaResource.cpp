@@ -339,7 +339,8 @@ nsresult ChannelMediaResource::OnStopRequest(nsIRequest* aRequest,
   NS_ASSERTION(NS_SUCCEEDED(rv), "GetLoadFlags() failed!");
 
   if (loadFlags & nsIRequest::LOAD_BACKGROUND) {
-    ModifyLoadFlags(loadFlags & ~nsIRequest::LOAD_BACKGROUND);
+    rv = ModifyLoadFlags(loadFlags & ~nsIRequest::LOAD_BACKGROUND);
+    NS_ASSERTION(NS_SUCCEEDED(rv), "ModifyLoadFlags() failed!");
   }
 
   
