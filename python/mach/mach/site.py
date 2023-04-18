@@ -34,7 +34,7 @@ METADATA_FILENAME = "moz_virtualenv_metadata.json"
 
 
 
-PIP_NETWORK_INSTALL_RESTRICTED_VIRTUALENVS = ("mach", "build")
+PIP_NETWORK_INSTALL_RESTRICTED_VIRTUALENVS = ("mach", "build", "common")
 
 
 class VirtualenvOutOfDateException(Exception):
