@@ -117,36 +117,22 @@ class BackgroundFileSaver : public nsIBackgroundFileSaver {
 
 
 
-  mozilla::Mutex mLock MOZ_UNANNOTATED{"BackgroundFileSaver.mLock"};
+  mozilla::Mutex mLock{"BackgroundFileSaver.mLock"};
 
   
 
 
-  bool mWorkerThreadAttentionRequested{false};
+  bool mWorkerThreadAttentionRequested GUARDED_BY(mLock){false};
 
   
 
 
-  bool mFinishRequested{false};
+  bool mFinishRequested GUARDED_BY(mLock){false};
 
   
 
 
-  bool mComplete{false};
-
-  
-
-
-
-
-
-  nsresult mStatus{NS_OK};
-
-  
-
-
-
-  bool mAppend{false};
+  bool mComplete GUARDED_BY(mLock){false};
 
   
 
@@ -154,14 +140,28 @@ class BackgroundFileSaver : public nsIBackgroundFileSaver {
 
 
 
-  nsCOMPtr<nsIFile> mInitialTarget;
+  nsresult mStatus GUARDED_BY(mLock){NS_OK};
+
+  
+
+
+
+  bool mAppend GUARDED_BY(mLock){false};
 
   
 
 
 
 
-  bool mInitialTargetKeepPartial{false};
+
+  nsCOMPtr<nsIFile> mInitialTarget GUARDED_BY(mLock);
+
+  
+
+
+
+
+  bool mInitialTargetKeepPartial GUARDED_BY(mLock){false};
 
   
 
@@ -172,43 +172,43 @@ class BackgroundFileSaver : public nsIBackgroundFileSaver {
 
 
 
-  nsCOMPtr<nsIFile> mRenamedTarget;
+  nsCOMPtr<nsIFile> mRenamedTarget GUARDED_BY(mLock);
 
   
 
 
 
 
-  bool mRenamedTargetKeepPartial{false};
+  bool mRenamedTargetKeepPartial GUARDED_BY(mLock){false};
 
   
 
 
 
-  nsCOMPtr<nsISupports> mAsyncCopyContext;
+  nsCOMPtr<nsISupports> mAsyncCopyContext GUARDED_BY(mLock);
 
   
 
 
 
-  nsCString mSha256;
+  nsCString mSha256 GUARDED_BY(mLock);
 
   
 
 
 
-  bool mSha256Enabled{false};
+  bool mSha256Enabled GUARDED_BY(mLock){false};
 
   
 
 
-  nsTArray<nsTArray<nsTArray<uint8_t>>> mSignatureInfo;
+  nsTArray<nsTArray<nsTArray<uint8_t>>> mSignatureInfo GUARDED_BY(mLock);
 
   
 
 
 
-  bool mSignatureInfoEnabled{false};
+  bool mSignatureInfoEnabled GUARDED_BY(mLock){false};
 
   
   
@@ -345,18 +345,18 @@ class BackgroundFileSaverStreamListener final : public BackgroundFileSaver,
   
 
 
-  bool mReceivedTooMuchData{false};
+  bool mReceivedTooMuchData GUARDED_BY(mSuspensionLock){false};
 
   
 
 
 
-  nsCOMPtr<nsIRequest> mRequest;
+  nsCOMPtr<nsIRequest> mRequest GUARDED_BY(mSuspensionLock);
 
   
 
 
-  bool mRequestSuspended{false};
+  bool mRequestSuspended GUARDED_BY(mSuspensionLock){false};
 
   
 
