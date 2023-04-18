@@ -186,10 +186,18 @@ ScreenOrientation::LockOrientationTask::Run() {
     return NS_OK;
   }
 
+  BrowsingContext* bc = mDocument->GetBrowsingContext();
+  if (!bc) {
+    mPromise->MaybeResolveWithUndefined();
+    mDocument->ClearOrientationPendingPromise();
+    return NS_OK;
+  }
+
+  OrientationType previousOrientationType = bc->GetCurrentOrientationType();
   mScreenOrientation->LockDeviceOrientation(mOrientationLock, mIsFullscreen)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [self = RefPtr{this}](
+          [self = RefPtr{this}, previousOrientationType](
               const GenericNonExclusivePromise::ResolveOrRejectValue& aValue) {
             if (self->mPromise->State() != Promise::PromiseState::Pending) {
               
@@ -206,9 +214,13 @@ ScreenOrientation::LockOrientationTask::Run() {
               return;
             }
             if (aValue.IsResolve()) {
+              
+              
               if (BrowsingContext* bc = self->mDocument->GetBrowsingContext()) {
-                if (self->OrientationLockContains(
-                        bc->GetCurrentOrientationType()) ||
+                OrientationType currentOrientationType =
+                    bc->GetCurrentOrientationType();
+                if ((previousOrientationType == currentOrientationType &&
+                     self->OrientationLockContains(currentOrientationType)) ||
                     (self->mOrientationLock ==
                          hal::ScreenOrientation::Default &&
                      bc->GetCurrentOrientationAngle() == 0)) {
