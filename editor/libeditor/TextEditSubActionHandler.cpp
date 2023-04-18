@@ -249,7 +249,7 @@ EditActionResult TextEditor::InsertLineFeedCharacterAtSelection() {
   
   
   
-  EditorRawDOMPoint endPoint(EditorBase::GetEndPoint(SelectionRef()));
+  const auto endPoint = GetFirstSelectionEndPoint<EditorRawDOMPoint>();
   if (endPoint == pointAfterInsertedLineFeed) {
     
     
@@ -638,8 +638,8 @@ EditActionResult TextEditor::HandleDeleteSelectionInternal(
   if (IsPasswordEditor() && IsMaskingPassword()) {
     MaskAllCharacters();
   } else {
-    EditorRawDOMPoint selectionStartPoint(
-        EditorBase::GetStartPoint(SelectionRef()));
+    const auto selectionStartPoint =
+        GetFirstSelectionStartPoint<EditorRawDOMPoint>();
     if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
       return EditActionResult(NS_ERROR_FAILURE);
     }
