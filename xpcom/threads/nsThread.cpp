@@ -319,13 +319,6 @@ struct ThreadInitData {
 }
 
 
-void nsThread::ClearThreadList() {
-  OffTheBooksMutexAutoLock mal(ThreadListMutex());
-  while (ThreadList().popFirst()) {
-  }
-}
-
-
 nsThreadEnumerator nsThread::Enumerate() { return {}; }
 
 void nsThread::AddToThreadList() {
