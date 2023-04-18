@@ -133,6 +133,20 @@ bool ContentCacheInChild::CacheSelection(nsIWidget* aWidget,
         sContentCacheLog, LogLevel::Error,
         ("0x%p CacheSelection(), FAILED, couldn't retrieve the selected text",
          this));
+  }
+  
+  
+  
+  
+  
+  
+  else if (NS_WARN_IF(mText.isNothing() &&
+                      !querySelectedTextEvent.mReply->mIsEditableContent)) {
+    MOZ_LOG(sContentCacheLog, LogLevel::Error,
+            ("0x%p CacheSelection(), FAILED, editable content had already been "
+             "blurred",
+             this));
+    return false;
   } else {
     mSelection.emplace(querySelectedTextEvent);
   }
@@ -193,6 +207,16 @@ bool ContentCacheInChild::CacheEditorRect(
          this));
     return false;
   }
+  
+  
+  
+  if (NS_WARN_IF(!queryEditorRectEvent.mReply->mIsEditableContent)) {
+    MOZ_LOG(sContentCacheLog, LogLevel::Error,
+            ("0x%p   CacheText(), FAILED, editable content had already been "
+             "blurred",
+             this));
+    return false;
+  }
   mEditorRect = queryEditorRectEvent.mReply->mRect;
   MOZ_LOG(sContentCacheLog, LogLevel::Info,
           ("0x%p   CacheEditorRect(), Succeeded, mEditorRect=%s", this,
@@ -214,6 +238,16 @@ bool ContentCacheInChild::CacheText(nsIWidget* aWidget,
   if (NS_WARN_IF(queryTextContentEvent.Failed())) {
     MOZ_LOG(sContentCacheLog, LogLevel::Error,
             ("0x%p   CacheText(), FAILED, couldn't retrieve whole text", this));
+    mText.reset();
+  }
+  
+  
+  
+  else if (NS_WARN_IF(!queryTextContentEvent.mReply->mIsEditableContent)) {
+    MOZ_LOG(sContentCacheLog, LogLevel::Error,
+            ("0x%p   CacheText(), FAILED, editable content had already been "
+             "blurred",
+             this));
     mText.reset();
   } else {
     mText = Some(nsString(queryTextContentEvent.mReply->DataRef()));
@@ -241,8 +275,18 @@ bool ContentCacheInChild::CacheText(nsIWidget* aWidget,
     mLastCommit.reset();
   }
 
-  const bool selectionCached = CacheSelection(aWidget, aNotification);
-  return selectionCached || queryTextContentEvent.Succeeded();
+  
+  
+  
+  if (MOZ_UNLIKELY(queryTextContentEvent.Failed() ||
+                   !queryTextContentEvent.mReply->mIsEditableContent)) {
+    mSelection.reset();
+    mCaret.reset();
+    mTextRectArray.reset();
+    return false;
+  }
+
+  return CacheSelection(aWidget, aNotification);
 }
 
 bool ContentCacheInChild::QueryCharRect(nsIWidget* aWidget, uint32_t aOffset,

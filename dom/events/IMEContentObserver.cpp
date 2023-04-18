@@ -607,6 +607,12 @@ nsresult IMEContentObserver::HandleQueryContentEvent(
     }
     aEvent->mReply->mContentsRoot = mRootContent;
     aEvent->mReply->mWritingMode = mSelectionData.GetWritingMode();
+    
+    
+    
+    
+    
+    aEvent->mReply->mIsEditableContent = true;
     MOZ_LOG(sIMECOLog, LogLevel::Debug,
             ("0x%p HandleQueryContentEvent(aEvent={ "
              "mMessage=%s, mReply=%s })",

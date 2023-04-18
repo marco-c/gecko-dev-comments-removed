@@ -1146,7 +1146,7 @@ class WidgetQueryContentEvent : public WidgetGUIEvent {
 
   struct Reply final {
     EventMessage const mEventMessage;
-    void* mContentsRoot;
+    void* mContentsRoot = nullptr;
     Maybe<OffsetAndData<uint32_t>> mOffsetAndData;
     
     
@@ -1158,7 +1158,7 @@ class WidgetQueryContentEvent : public WidgetGUIEvent {
     
     mozilla::LayoutDeviceIntRect mRect;
     
-    nsIWidget* mFocusedWidget;
+    nsIWidget* mFocusedWidget = nullptr;
     
     mozilla::WritingMode mWritingMode;
     
@@ -1168,17 +1168,14 @@ class WidgetQueryContentEvent : public WidgetGUIEvent {
     
     CopyableTArray<mozilla::LayoutDeviceIntRect> mRectArray;
     
-    bool mReversed;
+    bool mReversed = false;
     
-    bool mWidgetIsHit;
+    bool mWidgetIsHit = false;
+    
+    bool mIsEditableContent = false;
 
     Reply() = delete;
-    explicit Reply(EventMessage aEventMessage)
-        : mEventMessage(aEventMessage),
-          mContentsRoot(nullptr),
-          mFocusedWidget(nullptr),
-          mReversed(false),
-          mWidgetIsHit(false) {}
+    explicit Reply(EventMessage aEventMessage) : mEventMessage(aEventMessage) {}
 
     
     Reply(const Reply& aOther) = delete;
@@ -1279,6 +1276,8 @@ class WidgetQueryContentEvent : public WidgetGUIEvent {
         aStream << ", mWritingMode=" << ToString(aReply.mWritingMode).c_str();
       }
       aStream << ", mContentsRoot=0x" << aReply.mContentsRoot
+              << ", mIsEditableContent="
+              << (aReply.mIsEditableContent ? "true" : "false")
               << ", mFocusedWidget=0x" << aReply.mFocusedWidget;
       if (aReply.mEventMessage == eQueryTextContent) {
         aStream << ", mFontRanges={ Length()=" << aReply.mFontRanges.Length()

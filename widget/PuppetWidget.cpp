@@ -756,6 +756,7 @@ nsresult PuppetWidget::NotifyIMEOfFocusChange(
   if (gotFocus) {
     
     
+    
     if (NS_WARN_IF(!mContentCache.CacheAll(this, &aIMENotification))) {
       return NS_ERROR_FAILURE;
     }
