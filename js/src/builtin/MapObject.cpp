@@ -41,7 +41,7 @@ using mozilla::NumberEqualsInt32;
 
 
 
-static PreBarrieredValue NormalizeDoubleValue(double d) {
+static PreBarriered<Value> NormalizeDoubleValue(double d) {
   int32_t i;
   if (NumberEqualsInt32(d, &i)) {
     
@@ -138,8 +138,8 @@ HashNumber HashableValue::hash(const mozilla::HashCodeScrambler& hcs) const {
 }
 
 #ifdef ENABLE_RECORD_TUPLE
-inline bool SameExtendedPrimitiveType(const PreBarrieredValue& a,
-                                      const PreBarrieredValue& b) {
+inline bool SameExtendedPrimitiveType(const PreBarriered<Value>& a,
+                                      const PreBarriered<Value>& b) {
   return a.toExtendedPrimitive().getClass() ==
          b.toExtendedPrimitive().getClass();
 }

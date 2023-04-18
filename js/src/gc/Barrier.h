@@ -1241,8 +1241,6 @@ namespace jit {
 class JitCode;
 }  
 
-using PreBarrieredValue = PreBarriered<Value>;
-
 using GCPtrAtom = GCPtr<JSAtom*>;
 using GCPtrFunction = GCPtr<JSFunction*>;
 using GCPtrLinearString = GCPtr<JSLinearString*>;

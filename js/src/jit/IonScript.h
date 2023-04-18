@@ -162,14 +162,14 @@ class alignas(8) IonScript final : public TrailingArray {
   
   
   
-  PreBarrieredValue* constants() {
+  PreBarriered<Value>* constants() {
     
     
-    return offsetToPointer<PreBarrieredValue>(constantTableOffset());
+    return offsetToPointer<PreBarriered<Value>>(constantTableOffset());
   }
   size_t numConstants() const {
-    return numElements<PreBarrieredValue>(constantTableOffset(),
-                                          runtimeDataOffset());
+    return numElements<PreBarriered<Value>>(constantTableOffset(),
+                                            runtimeDataOffset());
   }
 
   
@@ -362,7 +362,7 @@ class alignas(8) IonScript final : public TrailingArray {
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     return mallocSizeOf(this);
   }
-  PreBarrieredValue& getConstant(size_t index) {
+  PreBarriered<Value>& getConstant(size_t index) {
     MOZ_ASSERT(index < numConstants());
     return constants()[index];
   }
