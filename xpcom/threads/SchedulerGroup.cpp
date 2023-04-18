@@ -41,7 +41,11 @@ void SchedulerGroup::MarkVsyncReceived() {
   
   
   
-  TimeStamp creation = TimeStamp::ProcessCreation();
+  bool inconsistent = false;
+  TimeStamp creation = TimeStamp::ProcessCreation(&inconsistent);
+  if (inconsistent) {
+    return;
+  }
 
   
   

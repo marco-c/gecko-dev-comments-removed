@@ -7,14 +7,14 @@
 #ifndef mozilla_TimeStamp_h
 #define mozilla_TimeStamp_h
 
+#include <stdint.h>
+#include <algorithm>  
+#include <ostream>
+#include <type_traits>
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Types.h"
-#include <algorithm>  
-#include <ostream>
-#include <stdint.h>
-#include <type_traits>
 
 namespace IPC {
 template <typename T>
@@ -426,7 +426,12 @@ class TimeStamp {
 
 
 
-  static MFBT_API TimeStamp ProcessCreation();
+
+
+
+
+
+  static MFBT_API TimeStamp ProcessCreation(bool* aIsInconsistent = nullptr);
 
   
 
@@ -526,10 +531,8 @@ class TimeStamp {
 
  private:
   friend struct IPC::ParamTraits<mozilla::TimeStamp>;
-  friend struct TimeStampInitialization;
 
-  MOZ_IMPLICIT
-  TimeStamp(TimeStampValue aValue) : mValue(aValue) {}
+  MOZ_IMPLICIT TimeStamp(TimeStampValue aValue) : mValue(aValue) {}
 
   static MFBT_API TimeStamp Now(bool aHighResolution);
 

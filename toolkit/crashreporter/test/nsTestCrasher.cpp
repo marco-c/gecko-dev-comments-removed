@@ -97,7 +97,6 @@ const int16_t CRASH_PHC_DOUBLE_FREE = 22;
 const int16_t CRASH_PHC_BOUNDS_VIOLATION = 23;
 const int16_t CRASH_HEAP_CORRUPTION = 24;
 const int16_t CRASH_EXC_GUARD = 25;
-const int16_t CRASH_STACK_OVERFLOW = 26;
 
 #if XP_WIN && HAVE_64BIT_BUILD && defined(_M_X64) && !defined(__MINGW32__)
 
@@ -153,23 +152,6 @@ uint8_t* GetPHCAllocation(size_t aSize) {
   MOZ_CRASH("failed to get a PHC allocation");
 }
 #endif
-
-#ifndef XP_WIN
-static void* overflow_stack(void* aUnused) {
-  
-  
-  void* rv = nullptr;
-
-  for (size_t i = 0; i < 1024 * 1024 * 1024; i++) {
-    void* ptr = alloca(sizeof(void*));
-    if (ptr != nullptr) {
-      rv = ptr;
-    }
-  }
-
-  return rv;
-}
-#endif  
 
 extern "C" NS_EXPORT void Crash(int16_t how) {
   switch (how) {
@@ -281,17 +263,6 @@ extern "C" NS_EXPORT void Crash(int16_t how) {
         close(fd);
         
       }
-    }
-#endif  
-#ifndef XP_WIN
-    case CRASH_STACK_OVERFLOW: {
-      pthread_t thread_id;
-      int rv = pthread_create(&thread_id, nullptr, overflow_stack, nullptr);
-      if (!rv) {
-        pthread_join(thread_id, nullptr);
-      }
-
-      break;  
     }
 #endif  
     default:
