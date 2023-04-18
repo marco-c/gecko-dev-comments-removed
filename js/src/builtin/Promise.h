@@ -27,6 +27,54 @@ class PromiseObject;
 
 enum class CompletionKind;
 
+enum class PromiseHandler : uint32_t {
+  Identity = 0,
+  Thrower,
+
+  
+  
+  
+  
+  
+  
+  
+  AsyncFunctionAwaitedFulfilled,
+  AsyncFunctionAwaitedRejected,
+
+  
+  
+  
+  
+  
+  AsyncGeneratorAwaitedFulfilled,
+  AsyncGeneratorAwaitedRejected,
+
+  
+  
+  
+  
+  
+  AsyncGeneratorResumeNextReturnFulfilled,
+  AsyncGeneratorResumeNextReturnRejected,
+
+  
+  
+  
+  
+  AsyncGeneratorYieldReturnAwaitedFulfilled,
+  AsyncGeneratorYieldReturnAwaitedRejected,
+
+  
+  
+  
+  
+  AsyncFromSyncIteratorValueUnwrapDone,
+  AsyncFromSyncIteratorValueUnwrapNotDone,
+
+  
+  Limit
+};
+
 
 extern bool Promise_then(JSContext* cx, unsigned argc, JS::Value* vp);
 
