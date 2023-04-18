@@ -157,7 +157,7 @@ const UNITS_GROUPS = [
 
 const CASE_SENSITIVE_UNITS = ["PN", "Pn", "MN", "Mn"];
 
-const NUMBER_REGEX = "\\d+(?:\\.\\d+)?\\s*";
+const NUMBER_REGEX = "-?\\d+(?:\\.\\d+)?\\s*";
 const UNIT_REGEX = "[A-Za-zµ0-9_./-]+";
 
 
