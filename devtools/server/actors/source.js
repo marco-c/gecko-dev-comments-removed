@@ -109,9 +109,12 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
     if (this.__isInlineSource === undefined) {
       
       
+      
+      
       this.__isInlineSource =
         source.introductionType === "inlineScript" &&
-        !resolveSourceURL(source.displayURL, this.threadActor._parent.window);
+        !resolveSourceURL(source.displayURL, this.threadActor._parent.window) &&
+        !this.url.startsWith("about:srcdoc");
     }
     return this.__isInlineSource;
   },
@@ -218,6 +221,16 @@ const SourceActor = ActorClassWithSpec(sourceSpec, {
       };
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     

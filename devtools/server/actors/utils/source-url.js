@@ -31,6 +31,12 @@ function getDebuggerSourceURL(source) {
   ) {
     return null;
   }
+  
+  
+  
+  if (source.url == "about:srcdoc") {
+    return source.url + "#" + source.id;
+  }
 
   return source.url;
 }
