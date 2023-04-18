@@ -20,8 +20,7 @@
 #include "builtin/streams/ReadableStreamInternals.h"  
 #include "builtin/streams/ReadableStreamOperations.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
-#include "builtin/streams/WritableStream.h"  
-#include "js/CallArgs.h"                     
+#include "js/CallArgs.h"     
 #include "js/Class.h"        
 #include "js/Conversions.h"  
 #include "js/ErrorReport.h"  
@@ -55,14 +54,12 @@ using js::NewBuiltinClassInstance;
 using js::NewDenseFullyAllocatedArray;
 using js::PlainObject;
 using js::ReadableStream;
-using js::ReadableStreamPipeTo;
 using js::ReadableStreamTee;
 using js::ReturnPromiseRejectedWithPendingError;
 using js::ToString;
 using js::UnwrapAndTypeCheckArgument;
 using js::UnwrapAndTypeCheckThis;
 using js::UnwrapAndTypeCheckValue;
-using js::WritableStream;
 
 using JS::CallArgs;
 using JS::CallArgsFromVp;
@@ -372,125 +369,6 @@ enum class ReadableStreamReaderMode { Byob };
 
 
 
-
-
-
-
-
-
-
-static bool ReadableStream_pipeTo(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  
-  Rooted<Value> options(cx, args.get(1));
-  if (options.isUndefined()) {
-    JSObject* emptyObj = NewPlainObject(cx);
-    if (!emptyObj) {
-      return false;
-    }
-    options.setObject(*emptyObj);
-  }
-  
-  
-  
-  
-  bool preventClose, preventAbort, preventCancel;
-  Rooted<Value> signalVal(cx);
-  {
-    
-    auto& v = signalVal;
-
-    if (!GetProperty(cx, options, cx->names().preventClose, &v)) {
-      return false;
-    }
-    preventClose = JS::ToBoolean(v);
-
-    if (!GetProperty(cx, options, cx->names().preventAbort, &v)) {
-      return false;
-    }
-    preventAbort = JS::ToBoolean(v);
-
-    if (!GetProperty(cx, options, cx->names().preventCancel, &v)) {
-      return false;
-    }
-    preventCancel = JS::ToBoolean(v);
-  }
-  if (!GetProperty(cx, options, cx->names().signal, &signalVal)) {
-    return false;
-  }
-
-  
-  
-  Rooted<ReadableStream*> unwrappedThis(
-      cx, UnwrapAndTypeCheckThis<ReadableStream>(cx, args, "pipeTo"));
-  if (!unwrappedThis) {
-    return ReturnPromiseRejectedWithPendingError(cx, args);
-  }
-
-  
-  
-  Rooted<WritableStream*> unwrappedDest(
-      cx, UnwrapAndTypeCheckArgument<WritableStream>(cx, args, "pipeTo", 0));
-  if (!unwrappedDest) {
-    return ReturnPromiseRejectedWithPendingError(cx, args);
-  }
-
-  
-  
-  
-  
-
-  
-  
-  
-  Rooted<JSObject*> signal(cx, nullptr);
-  if (!signalVal.isUndefined()) {
-    if (!UnwrapAndTypeCheckValue(
-            cx, signalVal, cx->runtime()->maybeAbortSignalClass(), [cx] {
-              JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                        JSMSG_READABLESTREAM_PIPETO_BAD_SIGNAL);
-            })) {
-      return ReturnPromiseRejectedWithPendingError(cx, args);
-    }
-
-    
-    signal = &signalVal.toObject();
-  }
-
-  
-  
-  if (unwrappedThis->locked()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_READABLESTREAM_LOCKED_METHOD, "pipeTo");
-    return ReturnPromiseRejectedWithPendingError(cx, args);
-  }
-
-  
-  
-  if (unwrappedDest->isLocked()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_WRITABLESTREAM_ALREADY_LOCKED);
-    return ReturnPromiseRejectedWithPendingError(cx, args);
-  }
-
-  
-  
-  
-  JSObject* promise =
-      ReadableStreamPipeTo(cx, unwrappedThis, unwrappedDest, preventClose,
-                           preventAbort, preventCancel, signal);
-  if (!promise) {
-    return false;
-  }
-
-  args.rval().setObject(*promise);
-  return true;
-}
-
-
-
-
 static bool ReadableStream_tee(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -538,28 +416,6 @@ static const JSPropertySpec ReadableStream_properties[] = {
     JS_STRING_SYM_PS(toStringTag, "ReadableStream", JSPROP_READONLY),
     JS_PS_END};
 
-static bool FinishReadableStreamClassInit(JSContext* cx, Handle<JSObject*> ctor,
-                                          Handle<JSObject*> proto) {
-  
-  
-  
-  
-  
-  
-  
-  const auto& rco = cx->realm()->creationOptions();
-  if (rco.getStreamsEnabled() && rco.getWritableStreamsEnabled() &&
-      rco.getReadableStreamPipeToEnabled()) {
-    Rooted<jsid> pipeTo(cx, NameToId(cx->names().pipeTo));
-    if (!DefineFunction(cx, proto, pipeTo, ReadableStream_pipeTo, 2,
-                        JSPROP_RESOLVING | JSPROP_ENUMERATE)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 const ClassSpec ReadableStream::classSpec_ = {
     js::GenericCreateConstructor<ReadableStream::constructor, 0,
                                  js::gc::AllocKind::FUNCTION>,
@@ -568,7 +424,7 @@ const ClassSpec ReadableStream::classSpec_ = {
     nullptr,
     ReadableStream_methods,
     ReadableStream_properties,
-    FinishReadableStreamClassInit,
+    nullptr,
     0};
 
 const JSClass ReadableStream::class_ = {

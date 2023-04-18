@@ -10,9 +10,8 @@
 
 #include "mozilla/Assertions.h"  
 
-#include "builtin/Array.h"                
-#include "builtin/Promise.h"              
-#include "builtin/streams/PipeToState.h"  
+#include "builtin/Array.h"    
+#include "builtin/Promise.h"  
 #include "builtin/streams/ReadableStream.h"  
 #include "builtin/streams/ReadableStreamController.h"  
 #include "builtin/streams/ReadableStreamDefaultControllerOperations.h"  
@@ -631,49 +630,4 @@ static bool TeeReaderErroredHandler(JSContext* cx, unsigned argc,
 
   
   return true;
-}
-
-
-
-
-
-
-PromiseObject* js::ReadableStreamPipeTo(JSContext* cx,
-                                        Handle<ReadableStream*> unwrappedSource,
-                                        Handle<WritableStream*> unwrappedDest,
-                                        bool preventClose, bool preventAbort,
-                                        bool preventCancel,
-                                        Handle<JSObject*> signal) {
-  cx->check(signal);
-
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  Rooted<PromiseObject*> promise(cx, PromiseObject::createSkippingExecutor(cx));
-  if (!promise) {
-    return nullptr;
-  }
-
-  
-  Rooted<PipeToState*> pipeToState(
-      cx,
-      PipeToState::create(cx, promise, unwrappedSource, unwrappedDest,
-                          preventClose, preventAbort, preventCancel, signal));
-  if (!pipeToState) {
-    if (!RejectPromiseWithPendingError(cx, promise)) {
-      return nullptr;
-    }
-
-    return promise;
-  }
-
-  
-  return promise;
 }
