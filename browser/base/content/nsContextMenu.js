@@ -591,12 +591,6 @@ class nsContextMenu {
     this.showItem("context-copyimage", this.onImage || showBGImage);
 
     
-    this.showItem(
-      "context-imagetext",
-      this.onImage && TEXT_RECOGNITION_ENABLED
-    );
-
-    
     this.showItem("context-sendimage", this.onImage || showBGImage);
 
     
@@ -2235,10 +2229,6 @@ class nsContextMenu {
     clipboard.copyString(this.originalMediaURL);
   }
 
-  getImageText() {
-    this.actor.getImageText(this.targetIdentifier);
-  }
-
   drmLearnMore(aEvent) {
     let drmInfoURL =
       Services.urlFormatter.formatURLPref("app.support.baseURL") +
@@ -2379,12 +2369,5 @@ XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "REVEAL_PASSWORD_ENABLED",
   "layout.forms.reveal-password-context-menu.enabled",
-  false
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "TEXT_RECOGNITION_ENABLED",
-  "dom.text-recognition.enabled",
   false
 );
