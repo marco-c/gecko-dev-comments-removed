@@ -39,5 +39,6 @@ def _bootstrap_sandbox():
 def bootstrap_toolchain(toolchain_job):
     
     
+    
     sandbox = _bootstrap_sandbox()
-    sandbox._value_for(sandbox["bootstrap_path"](toolchain_job))
+    return sandbox._value_for(sandbox["bootstrap_path"](toolchain_job))
