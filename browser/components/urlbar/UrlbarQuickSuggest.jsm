@@ -199,6 +199,9 @@ class Suggestions {
 
 
 
+
+
+
   async maybeShowOnboardingDialog() {
     
     
@@ -207,13 +210,11 @@ class Suggestions {
       !UrlbarPrefs.get(FEATURE_AVAILABLE) ||
       !UrlbarPrefs.get("quickSuggestShouldShowOnboardingDialog") ||
       UrlbarPrefs.get(SEEN_DIALOG_PREF) ||
-      UrlbarPrefs.get("suggest.quicksuggest.nonsponsored") ||
-      UrlbarPrefs.get("suggest.quicksuggest.sponsored")
+      UrlbarPrefs.get("quicksuggest.dataCollection.enabled")
     ) {
-      return;
+      return false;
     }
 
-    
     
     let restartsSeen = UrlbarPrefs.get(RESTARTS_PREF);
     if (
@@ -221,7 +222,7 @@ class Suggestions {
       UrlbarPrefs.get("quickSuggestShowOnboardingDialogAfterNRestarts")
     ) {
       UrlbarPrefs.set(RESTARTS_PREF, restartsSeen + 1);
-      return;
+      return false;
     }
 
     let win = BrowserWindowTracker.getTopWindow();
@@ -260,12 +261,7 @@ class Suggestions {
     
     
     
-    
-    
-    
     let optedIn = params.choice == ONBOARDING_CHOICE.ACCEPT;
-    UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", optedIn);
-    UrlbarPrefs.set("suggest.quicksuggest.sponsored", optedIn);
     UrlbarPrefs.set("quicksuggest.dataCollection.enabled", optedIn);
 
     switch (params.choice) {
@@ -300,6 +296,8 @@ class Suggestions {
       "opt_in_dialog",
       params.choice
     );
+
+    return true;
   }
 
   

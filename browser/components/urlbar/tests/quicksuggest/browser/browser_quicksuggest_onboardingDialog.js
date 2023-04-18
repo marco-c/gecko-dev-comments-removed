@@ -18,14 +18,41 @@ const ONBOARDING_URI =
 const OTHER_DIALOG_URI = getRootDirectory(gTestPath) + "subdialog.xhtml";
 
 
+const OFFLINE_DEFAULT_PREFS = {
+  "suggest.quicksuggest.nonsponsored": true,
+  "suggest.quicksuggest.sponsored": true,
+  "quicksuggest.dataCollection.enabled": false,
+};
+
+let gDefaultBranch = Services.prefs.getDefaultBranch("browser.urlbar.");
+let gUserBranch = Services.prefs.getBranch("browser.urlbar.");
+
+
 if (AppConstants.platform == "macosx") {
   requestLongerTimeout(3);
 }
 
 
+
+add_task(async function onboardingShouldNotAppear() {
+  setDialogPrereqPrefs();
+
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", true);
+
+  info("Calling maybeShowOnboardingDialog");
+  let showed = await UrlbarQuickSuggest.maybeShowOnboardingDialog();
+  Assert.ok(!showed, "The dialog was not shown");
+
+  UrlbarPrefs.clear("suggest.quicksuggest.nonsponsored");
+  UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
+  UrlbarPrefs.clear("quicksuggest.dataCollection.enabled");
+});
+
+
 add_task(async function accept() {
   await doDialogTest({
-    expectOptIn: true,
     callback: async () => {
       let tabCount = gBrowser.tabs.length;
       let dialogPromise = openDialog("accept");
@@ -44,17 +71,10 @@ add_task(async function accept() {
       Assert.equal(gBrowser.tabs.length, tabCount, "No news tabs were opened");
     },
     onboardingDialogChoice: "accept",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": true,
+    },
     telemetryEvents: [
-      {
-        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-        method: "enable_toggled",
-        object: "enabled",
-      },
-      {
-        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-        method: "sponsored_toggled",
-        object: "enabled",
-      },
       {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "data_collect_toggled",
@@ -72,7 +92,6 @@ add_task(async function accept() {
 
 add_task(async function notNow() {
   await doDialogTest({
-    expectOptIn: false,
     callback: async () => {
       let tabCount = gBrowser.tabs.length;
       let dialogPromise = openDialog("onboardingNotNow");
@@ -91,7 +110,15 @@ add_task(async function notNow() {
       Assert.equal(gBrowser.tabs.length, tabCount, "No news tabs were opened");
     },
     onboardingDialogChoice: "not_now_link",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": false,
+    },
     telemetryEvents: [
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "data_collect_toggled",
+        object: "disabled",
+      },
       {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "opt_in_dialog",
@@ -105,11 +132,9 @@ add_task(async function notNow() {
 
 add_task(async function settings() {
   await doDialogTest({
-    expectOptIn: false,
     callback: async () => {
       let dialogPromise = openDialog("extra1");
 
-      
       
       let loadPromise = BrowserTestUtils.browserLoaded(
         gBrowser.selectedBrowser
@@ -131,7 +156,15 @@ add_task(async function settings() {
       );
     },
     onboardingDialogChoice: "settings",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": false,
+    },
     telemetryEvents: [
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "data_collect_toggled",
+        object: "disabled",
+      },
       {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "opt_in_dialog",
@@ -145,7 +178,6 @@ add_task(async function settings() {
 
 add_task(async function learnMore() {
   await doDialogTest({
-    expectOptIn: false,
     callback: async () => {
       let dialogPromise = openDialog("onboardingLearnMore");
       let loadPromise = BrowserTestUtils.waitForNewTab(
@@ -174,7 +206,15 @@ add_task(async function learnMore() {
       BrowserTestUtils.removeTab(tab);
     },
     onboardingDialogChoice: "learn_more",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": false,
+    },
     telemetryEvents: [
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "data_collect_toggled",
+        object: "disabled",
+      },
       {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "opt_in_dialog",
@@ -190,7 +230,6 @@ add_task(async function escKey_focusInsideDialog() {
   await doFocusTest({
     tabKeyRepeat: 0,
     expectedFocusID: "onboardingAcceptButton",
-    expectOptIn: false,
     callback: async () => {
       let tabCount = gBrowser.tabs.length;
       Assert.ok(
@@ -206,7 +245,15 @@ add_task(async function escKey_focusInsideDialog() {
       Assert.equal(gBrowser.tabs.length, tabCount, "No news tabs were opened");
     },
     onboardingDialogChoice: "dismissed_escape_key",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": false,
+    },
     telemetryEvents: [
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "data_collect_toggled",
+        object: "disabled",
+      },
       {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "opt_in_dialog",
@@ -222,7 +269,6 @@ add_task(async function escKey_focusOutsideDialog() {
   await doFocusTest({
     tabKeyRepeat: 0,
     expectedFocusID: "onboardingAcceptButton",
-    expectOptIn: false,
     callback: async () => {
       document.documentElement.focus();
       Assert.ok(
@@ -232,7 +278,15 @@ add_task(async function escKey_focusOutsideDialog() {
       EventUtils.synthesizeKey("KEY_Escape");
     },
     onboardingDialogChoice: "dismissed_escape_key",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": false,
+    },
     telemetryEvents: [
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "data_collect_toggled",
+        object: "disabled",
+      },
       {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "opt_in_dialog",
@@ -258,7 +312,6 @@ add_task(async function escKey_queued_enter() {
 
 async function doQueuedEscKeyTest(otherDialogKey) {
   await doDialogTest({
-    expectOptIn: false,
     callback: async () => {
       
       let uris = [OTHER_DIALOG_URI, ONBOARDING_URI];
@@ -292,7 +345,15 @@ async function doQueuedEscKeyTest(otherDialogKey) {
       await onboardingClosedPromise;
     },
     onboardingDialogChoice: "dismissed_escape_key",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": false,
+    },
     telemetryEvents: [
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "data_collect_toggled",
+        object: "disabled",
+      },
       {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "opt_in_dialog",
@@ -305,7 +366,6 @@ async function doQueuedEscKeyTest(otherDialogKey) {
 
 add_task(async function dismissed_other() {
   await doDialogTest({
-    expectOptIn: false,
     callback: async () => {
       let dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(
         null,
@@ -324,7 +384,15 @@ add_task(async function dismissed_other() {
       await maybeShowPromise;
     },
     onboardingDialogChoice: "dismissed_other",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": false,
+    },
     telemetryEvents: [
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "data_collect_toggled",
+        object: "disabled",
+      },
       {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "opt_in_dialog",
@@ -341,22 +409,14 @@ add_task(async function focus_accept() {
   await doFocusTest({
     tabKeyRepeat: 0,
     expectedFocusID: "onboardingAcceptButton",
-    expectOptIn: true,
     callback: async () => {
       EventUtils.synthesizeKey("KEY_Enter");
     },
     onboardingDialogChoice: "accept",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": true,
+    },
     telemetryEvents: [
-      {
-        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-        method: "enable_toggled",
-        object: "enabled",
-      },
-      {
-        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-        method: "sponsored_toggled",
-        object: "enabled",
-      },
       {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "data_collect_toggled",
@@ -378,7 +438,6 @@ add_task(async function focus_settings() {
   await doFocusTest({
     tabKeyRepeat: 1,
     expectedFocusID: "onboardingSettingsButton",
-    expectOptIn: false,
     callback: async () => {
       
       let loadPromise = BrowserTestUtils.browserLoaded(
@@ -397,7 +456,15 @@ add_task(async function focus_settings() {
       );
     },
     onboardingDialogChoice: "settings",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": false,
+    },
     telemetryEvents: [
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "data_collect_toggled",
+        object: "disabled",
+      },
       {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "opt_in_dialog",
@@ -414,7 +481,6 @@ add_task(async function focus_learnMore() {
   await doFocusTest({
     tabKeyRepeat: 2,
     expectedFocusID: "onboardingLearnMore",
-    expectOptIn: false,
     callback: async () => {
       let loadPromise = BrowserTestUtils.waitForNewTab(
         gBrowser,
@@ -438,7 +504,15 @@ add_task(async function focus_learnMore() {
       BrowserTestUtils.removeTab(tab);
     },
     onboardingDialogChoice: "learn_more",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": false,
+    },
     telemetryEvents: [
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "data_collect_toggled",
+        object: "disabled",
+      },
       {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "opt_in_dialog",
@@ -455,7 +529,6 @@ add_task(async function focus_notNow() {
   await doFocusTest({
     tabKeyRepeat: 3,
     expectedFocusID: "onboardingNotNow",
-    expectOptIn: false,
     callback: async () => {
       let tabCount = gBrowser.tabs.length;
       EventUtils.synthesizeKey("KEY_Enter");
@@ -467,7 +540,15 @@ add_task(async function focus_notNow() {
       Assert.equal(gBrowser.tabs.length, tabCount, "No news tabs were opened");
     },
     onboardingDialogChoice: "not_now_link",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": false,
+    },
     telemetryEvents: [
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "data_collect_toggled",
+        object: "disabled",
+      },
       {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "opt_in_dialog",
@@ -484,22 +565,14 @@ add_task(async function focus_accept_wraparound() {
   await doFocusTest({
     tabKeyRepeat: 4,
     expectedFocusID: "onboardingAcceptButton",
-    expectOptIn: true,
     callback: async () => {
       EventUtils.synthesizeKey("KEY_Enter");
     },
     onboardingDialogChoice: "accept",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": true,
+    },
     telemetryEvents: [
-      {
-        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-        method: "enable_toggled",
-        object: "enabled",
-      },
-      {
-        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-        method: "sponsored_toggled",
-        object: "enabled",
-      },
       {
         category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
         method: "data_collect_toggled",
@@ -515,73 +588,95 @@ add_task(async function focus_accept_wraparound() {
 });
 
 async function doDialogTest({
-  expectOptIn,
   onboardingDialogChoice,
   telemetryEvents,
   callback,
+  expectedUserBranchPrefs,
 }) {
+  setDialogPrereqPrefs();
+
+  
+  let initialDefaultBranch = OFFLINE_DEFAULT_PREFS;
+  let originalDefaultBranch = {};
+  for (let [name, value] of Object.entries(initialDefaultBranch)) {
+    originalDefaultBranch = gDefaultBranch.getBoolPref(name);
+    gDefaultBranch.setBoolPref(name, value);
+    gUserBranch.clearUserPref(name);
+  }
+
+  
+  
+  Services.telemetry.clearEvents();
+
+  
   await BrowserTestUtils.withNewTab("about:blank", async () => {
-    
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        ["browser.urlbar.suggest.quicksuggest.nonsponsored", false],
-        ["browser.urlbar.suggest.quicksuggest.sponsored", false],
-        ["browser.urlbar.quicksuggest.dataCollection.enabled", false],
-        ["browser.urlbar.quicksuggest.enabled", true],
-        ["browser.urlbar.quicksuggest.shouldShowOnboardingDialog", true],
-        ["browser.urlbar.quicksuggest.showedOnboardingDialog", false],
-        ["browser.urlbar.quicksuggest.showOnboardingDialogAfterNRestarts", 0],
-      ],
-    });
-
-    
-    
-    Services.telemetry.clearEvents();
-
     await callback();
-
-    Assert.equal(
-      UrlbarPrefs.get("suggest.quicksuggest.nonsponsored"),
-      expectOptIn,
-      "Main pref enabled status"
-    );
-    Assert.equal(
-      UrlbarPrefs.get("suggest.quicksuggest.sponsored"),
-      expectOptIn,
-      "Sponsored pref enabled status"
-    );
-    Assert.equal(
-      UrlbarPrefs.get("quicksuggest.dataCollection.enabled"),
-      expectOptIn,
-      "Data collection pref enabled status"
-    );
-
-    if (onboardingDialogChoice) {
-      Assert.equal(
-        UrlbarPrefs.get("quicksuggest.onboardingDialogChoice"),
-        onboardingDialogChoice,
-        "onboardingDialogChoice"
-      );
-      Assert.equal(
-        TelemetryEnvironment.currentEnvironment.settings.userPrefs[
-          "browser.urlbar.quicksuggest.onboardingDialogChoice"
-        ],
-        onboardingDialogChoice,
-        "onboardingDialogChoice is correct in TelemetryEnvironment"
-      );
-    }
-
-    if (telemetryEvents) {
-      
-      
-      
-      TelemetryTestUtils.assertEvents(telemetryEvents, {
-        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
-      });
-    }
-
-    await SpecialPowers.popPrefEnv();
   });
+
+  
+  for (let [name, value] of Object.entries(initialDefaultBranch)) {
+    Assert.equal(
+      gDefaultBranch.getBoolPref(name),
+      value,
+      "Default-branch value for pref did not change after modal: " + name
+    );
+
+    let effectiveValue;
+    if (name in expectedUserBranchPrefs) {
+      effectiveValue = expectedUserBranchPrefs[name];
+      Assert.equal(
+        gUserBranch.getBoolPref(name),
+        effectiveValue,
+        "User-branch value for pref has expected value: " + name
+      );
+    } else {
+      effectiveValue = value;
+      Assert.ok(
+        !gUserBranch.prefHasUserValue(name),
+        "User-branch value for pref does not exist: " + name
+      );
+    }
+
+    
+    Assert.equal(
+      UrlbarPrefs.get(name),
+      effectiveValue,
+      "Effective value for pref is correct: " + name
+    );
+  }
+
+  Assert.equal(
+    UrlbarPrefs.get("quicksuggest.onboardingDialogChoice"),
+    onboardingDialogChoice,
+    "onboardingDialogChoice"
+  );
+  Assert.equal(
+    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+      "browser.urlbar.quicksuggest.onboardingDialogChoice"
+    ],
+    onboardingDialogChoice,
+    "onboardingDialogChoice is correct in TelemetryEnvironment"
+  );
+
+  
+  
+  
+  TelemetryTestUtils.assertEvents(telemetryEvents, {
+    category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+  });
+
+  Assert.ok(
+    UrlbarPrefs.get("quicksuggest.showedOnboardingDialog"),
+    "quicksuggest.showedOnboardingDialog is true after showing dialog"
+  );
+
+  
+  for (let [name, value] of Object.entries(originalDefaultBranch)) {
+    gDefaultBranch.setBoolPref(name, value);
+  }
+  for (let name of Object.keys(expectedUserBranchPrefs)) {
+    gUserBranch.clearUserPref(name);
+  }
 }
 
 
@@ -591,10 +686,10 @@ let gCanTabMoveFocus;
 async function doFocusTest({
   tabKeyRepeat,
   expectedFocusID,
-  expectOptIn,
   onboardingDialogChoice,
   telemetryEvents,
   callback,
+  expectedUserBranchPrefs,
 }) {
   if (gCanTabMoveFocus === undefined) {
     gCanTabMoveFocus = await canTabMoveFocus();
@@ -605,8 +700,8 @@ async function doFocusTest({
   }
 
   await doDialogTest({
-    expectOptIn,
     onboardingDialogChoice,
+    expectedUserBranchPrefs,
     telemetryEvents,
     callback: async () => {
       let dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(
@@ -651,6 +746,15 @@ async function doFocusTest({
   });
 }
 
+
+
+
+
+function setDialogPrereqPrefs() {
+  UrlbarPrefs.set("quicksuggest.shouldShowOnboardingDialog", true);
+  UrlbarPrefs.set("quicksuggest.showedOnboardingDialog", false);
+}
+
 async function openDialog(button = undefined) {
   await BrowserTestUtils.promiseAlertDialog(button, ONBOARDING_URI, {
     isSubDialog: true,
@@ -685,7 +789,6 @@ async function canTabMoveFocus() {
 
   let canMove = false;
   await doDialogTest({
-    expectOptIn: false,
     callback: async () => {
       let dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(
         null,
@@ -709,6 +812,22 @@ async function canTabMoveFocus() {
       EventUtils.synthesizeKey("KEY_Escape");
       await maybeShowPromise;
     },
+    onboardingDialogChoice: "dismissed_escape_key",
+    expectedUserBranchPrefs: {
+      "quicksuggest.dataCollection.enabled": false,
+    },
+    telemetryEvents: [
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "data_collect_toggled",
+        object: "disabled",
+      },
+      {
+        category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
+        method: "opt_in_dialog",
+        object: "dismissed_escape_key",
+      },
+    ],
   });
   return canMove;
 }
