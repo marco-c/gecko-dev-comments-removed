@@ -113,10 +113,6 @@ union PackedTypeCode {
 
   bool isValid() const { return typeCode_ != NoTypeCode; }
 
-  bool isReference() const {
-    return typeCodeAbstracted() == AbstractReferenceTypeCode;
-  }
-
   PackedRepr bits() const { return bits_; }
 
   TypeCode typeCode() const {
@@ -141,12 +137,20 @@ union PackedTypeCode {
   
   
   TypeCode typeCodeAbstracted() const {
-    MOZ_ASSERT(isValid());
-    TypeCode tc = TypeCode(typeCode_);
+    TypeCode tc = typeCode();
     return (tc < LowestPrimitiveTypeCode && tc != AbstractRttCode)
                ? AbstractReferenceTypeCode
                : tc;
   }
+
+  
+  bool isRefType() const {
+    return typeCodeAbstracted() == AbstractReferenceTypeCode;
+  }
+
+  
+  
+  bool isRefRepr() const { return typeCode() < LowestPrimitiveTypeCode; }
 
   uint32_t typeIndex() const {
     MOZ_ASSERT(isValid());
@@ -174,7 +178,7 @@ union PackedTypeCode {
   }
 
   PackedTypeCode asNonNullable() const {
-    MOZ_ASSERT(isReference());
+    MOZ_ASSERT(isRefType());
     PackedTypeCode mutated = *this;
     mutated.nullable_ = 0;
     return mutated;
@@ -477,6 +481,13 @@ class PackedType : public T {
     return tc_.bits();
   }
 
+  bool isRtt() const { return tc_.typeCode() == AbstractRttCode; }
+
+  bool isRefType() const {
+    MOZ_ASSERT(isValid());
+    return tc_.isRefType();
+  }
+
   bool isFuncRef() const { return tc_.typeCode() == TypeCode::FuncRef; }
 
   bool isExternRef() const { return tc_.typeCode() == TypeCode::ExternRef; }
@@ -488,17 +499,15 @@ class PackedType : public T {
     return tc_.typeCode() == AbstractReferenceTypeIndexCode;
   }
 
-  bool isReference() const {
+  bool isRefRepr() const {
     MOZ_ASSERT(isValid());
-    return tc_.isReference();
+    return tc_.isRefRepr();
   }
-
-  bool isRtt() const { return tc_.typeCode() == AbstractRttCode; }
 
   
   bool isDefaultable() const {
     MOZ_ASSERT(isValid());
-    return !(isRtt() || (isReference() && !isNullable()));
+    return !(isRtt() || (isRefType() && !isNullable()));
   }
 
   
@@ -537,12 +546,12 @@ class PackedType : public T {
   }
 
   RefType refType() const {
-    MOZ_ASSERT(isReference());
+    MOZ_ASSERT(isRefType());
     return RefType(tc_);
   }
 
   RefType::Kind refTypeKind() const {
-    MOZ_ASSERT(isReference());
+    MOZ_ASSERT(isRefType());
     return RefType(tc_).kind();
   }
 
@@ -709,7 +718,7 @@ static inline jit::MIRType ToMIRType(ValType vt) {
   MOZ_CRASH("bad type");
 }
 
-static inline bool IsNumberType(ValType vt) { return !vt.isReference(); }
+static inline bool IsNumberType(ValType vt) { return !vt.isRefType(); }
 
 static inline jit::MIRType ToMIRType(const Maybe<ValType>& t) {
   return t ? ToMIRType(ValType(t.ref())) : jit::MIRType::None;

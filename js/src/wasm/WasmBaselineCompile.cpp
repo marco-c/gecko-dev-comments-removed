@@ -2799,7 +2799,7 @@ bool BaseCompiler::sniffConditionalControlCmp(Cond compareOp,
 #endif
 
   
-  if (operandType.isReference()) {
+  if (operandType.isRefRepr()) {
     return false;
   }
 
@@ -5880,7 +5880,7 @@ void BaseCompiler::emitGcSetScalar(const T& dst, FieldType type, AnyReg value) {
 bool BaseCompiler::emitGcStructSet(RegRef object, RegPtr data,
                                    const StructField& field, AnyReg value) {
   
-  if (!field.type.isReference()) {
+  if (!field.type.isRefRepr()) {
     emitGcSetScalar(Address(data, field.offset), field.type, value);
     freeAny(value);
     return true;
@@ -5930,7 +5930,7 @@ bool BaseCompiler::emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
   });
 
   
-  if (!arrayType.elementType_.isReference()) {
+  if (!arrayType.elementType_.isRefRepr()) {
     emitGcSetScalar(BaseIndex(data, index, scale, 0), arrayType.elementType_,
                     value);
     return true;
@@ -6015,14 +6015,14 @@ bool BaseCompiler::emitStructNewWithRtt() {
   while (fieldIndex-- > 0) {
     const StructField& structField = structType.fields_[fieldIndex];
     
-    if (structField.type.isReference()) {
+    if (structField.type.isRefRepr()) {
       needPtr(RegPtr(PreBarrierReg));
     }
 
     AnyReg value = popAny();
 
     
-    if (structField.type.isReference()) {
+    if (structField.type.isRefRepr()) {
       freePtr(RegPtr(PreBarrierReg));
     }
 
@@ -6121,7 +6121,7 @@ bool BaseCompiler::emitStructSet() {
 
   
   
-  if (structField.type.isReference()) {
+  if (structField.type.isRefRepr()) {
     needPtr(RegPtr(PreBarrierReg));
   }
 
@@ -6130,7 +6130,7 @@ bool BaseCompiler::emitStructSet() {
   RegPtr rdata = needPtr();
 
   
-  if (structField.type.isReference()) {
+  if (structField.type.isRefRepr()) {
     freePtr(RegPtr(PreBarrierReg));
   }
 
@@ -6195,7 +6195,7 @@ bool BaseCompiler::emitArrayNewWithRtt() {
 
   
   
-  if (arrayType.elementType_.isReference()) {
+  if (arrayType.elementType_.isRefRepr()) {
     needPtr(RegPtr(PreBarrierReg));
   }
 
@@ -6210,7 +6210,7 @@ bool BaseCompiler::emitArrayNewWithRtt() {
   RegI32 length = emitGcArrayGetLength(rdata, true);
 
   
-  if (arrayType.elementType_.isReference()) {
+  if (arrayType.elementType_.isRefRepr()) {
     freePtr(RegPtr(PreBarrierReg));
   }
 
@@ -6320,7 +6320,7 @@ bool BaseCompiler::emitArraySet() {
 
   
   
-  if (arrayType.elementType_.isReference()) {
+  if (arrayType.elementType_.isRefRepr()) {
     needPtr(RegPtr(PreBarrierReg));
   }
 
@@ -6343,7 +6343,7 @@ bool BaseCompiler::emitArraySet() {
   RegI32 length = emitGcArrayGetLength(rdata, true);
 
   
-  if (arrayType.elementType_.isReference()) {
+  if (arrayType.elementType_.isRefRepr()) {
     freePtr(RegPtr(PreBarrierReg));
   }
 
