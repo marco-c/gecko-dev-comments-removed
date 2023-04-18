@@ -200,13 +200,6 @@ void CanvasChild::OnTextureForwarded() {
 
     mHasOutstandingWriteLock = false;
   }
-
-  
-  
-  
-  
-  
-  mRecorder->TakeExternalSurfaces(mLastTransactionExternalSurfaces);
 }
 
 void CanvasChild::EnsureBeginTransaction() {
