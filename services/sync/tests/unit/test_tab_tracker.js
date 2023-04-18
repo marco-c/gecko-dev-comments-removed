@@ -185,6 +185,12 @@ add_task(async function run_sync_on_tab_change_test() {
 
   
   Svc.Prefs.set("syncedTabs.syncDelayAfterTabChange", testExperimentDelay);
+  
+  
+  Svc.Prefs.set("clients.devices.desktop", 1);
+  Svc.Prefs.set("clients.devices.mobile", 1);
+  scheduler.updateClientMode();
+  Assert.equal(scheduler.numClients, 2);
 
   let doEnrollmentCleanup = await ExperimentFakes.enrollWithFeatureConfig(
     {
@@ -281,12 +287,43 @@ add_task(async function run_sync_on_tab_change_test() {
     scheduler.nextSync - Date.now() <= testExperimentDelay,
     "about page should trigger a sync soon after we changed the pref"
   );
+
+  _("Test no sync after tab change for accounts with <= 1 clients");
+  
+  await tracker.clearChangedIDs();
+  scheduler.nextSync = Date.now() + scheduler.idleInterval;
+  
+  Svc.Prefs.set("clients.devices.desktop", 1);
+  Svc.Prefs.set("clients.devices.mobile", 0);
+  scheduler.updateClientMode();
+  Assert.equal(scheduler.numClients, 1);
+
+  tracker.onLocationChange(
+    { isTopLevel: true },
+    undefined,
+    Services.io.newURI("https://www.mozilla.org"),
+    Ci.nsIWebProgressListener.LOCATION_CHANGE_RELOAD
+  );
+  Assert.ok(
+    tracker.modified,
+    "location change for a new top-level document flagged as modified"
+  );
+  Assert.ok(
+    scheduler.nextSync - Date.now() > testExperimentDelay,
+    "We should NOT be syncing shortly because there is only one client"
+  );
+
   await doEnrollmentCleanup();
 
   _("If there is no experiment, fallback to the pref");
   let delayPref = Svc.Prefs.get("syncedTabs.syncDelayAfterTabChange");
   let evttype = "TabOpen";
   Assert.equal(delayPref, testExperimentDelay);
+  
+  Svc.Prefs.set("clients.devices.desktop", 1);
+  Svc.Prefs.set("clients.devices.mobile", 1);
+  scheduler.updateClientMode();
+  Assert.equal(scheduler.numClients, 2);
   
   tracker.onTab({ type: evttype, originalTarget: evttype });
 

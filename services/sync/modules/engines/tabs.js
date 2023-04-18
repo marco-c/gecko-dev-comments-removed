@@ -429,7 +429,7 @@ TabTracker.prototype = {
 
   callScheduleSync(scoreIncrement) {
     this.modified = true;
-
+    let { scheduler } = this.engine.service;
     const delayInMs = lazy.NimbusFeatures.syncAfterTabChange.getVariable(
       "syncDelayAfterTabChange"
     );
@@ -437,11 +437,14 @@ TabTracker.prototype = {
     
     
     
-    if (delayInMs > 0) {
+    if (
+      delayInMs > 0 &&
+      scheduler.numClients > 1 
+    ) {
       this._log.debug(
         "Detected a tab change: scheduling a sync in " + delayInMs + "ms"
       );
-      this.engine.service.scheduler.scheduleNextSync(delayInMs, {
+      scheduler.scheduleNextSync(delayInMs, {
         why: "tabschanged",
       });
     } else if (scoreIncrement) {
