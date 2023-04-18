@@ -14,8 +14,6 @@ class PresShell;
 
 namespace a11y {
 
-class DocRemoteAccessibleWrap;
-
 class RootAccessibleWrap : public RootAccessible {
  public:
   RootAccessibleWrap(dom::Document* aDocument, PresShell* aPresShell);
@@ -23,17 +21,6 @@ class RootAccessibleWrap : public RootAccessible {
 
   
   NS_DECL_NSIDOMEVENTLISTENER
-
-  AccessibleWrap* GetContentAccessible();
-
-  AccessibleWrap* FindAccessibleById(int32_t aID);
-
-  
-  AccessibleWrap* FindAccessibleById(DocAccessibleWrap* aDocument, int32_t aID);
-
-  
-  AccessibleWrap* FindAccessibleById(DocRemoteAccessibleWrap* aDocument,
-                                     int32_t aID);
 
  protected:
   virtual nsresult AddEventListeners() override;
