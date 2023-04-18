@@ -483,7 +483,10 @@ mozilla::StyleDefaultFontSizes Gecko_GetBaseSize(nsAtom* lang);
 
 struct GeckoFontMetrics {
   mozilla::Length mXSize;
-  mozilla::Length mChSize;  
+  mozilla::Length mChSize;     
+  mozilla::Length mCapHeight;  
+  mozilla::Length mIcWidth;    
+  mozilla::Length mAscent;
 };
 
 GeckoFontMetrics Gecko_GetFontMetrics(const nsPresContext*, bool is_vertical,

@@ -181,6 +181,11 @@ class nsFontMetrics final {
   
 
 
+  nscoord IcWidth();
+
+  
+
+
 
   const nsFont& Font() const { return mFont; }
 
@@ -252,6 +257,10 @@ class nsFontMetrics final {
   
   nsPresContext* MOZ_NON_OWNING_REF mPresContext;
   int32_t mP2A;
+
+  
+  
+  nscoord mIcWidth = -1;
 
   
   
