@@ -229,6 +229,12 @@ class nsThreadShutdownEvent : public Runnable {
     
     mThread->mShutdownContext = mShutdownContext;
     MessageLoop::current()->Quit();
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    
+    nsAutoCString threadName(PR_GetThreadName(PR_GetCurrentThread()));
+    threadName.Append(",SHDRCV"_ns);
+    NS_SetCurrentThreadName(threadName.get());
+#endif
     return NS_OK;
   }
 
@@ -436,6 +442,13 @@ void nsThread::ThreadFunc(void* aArg) {
     
     
     MOZ_RELEASE_ASSERT(NS_SUCCEEDED(dispatch_ack_rv));
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    
+    nsAutoCString threadName(PR_GetThreadName(PR_GetCurrentThread()));
+    threadName.Append(",SHDACK"_ns);
+    NS_SetCurrentThreadName(threadName.get());
+#endif
   } else {
     NS_WARNING(
         "nsThread exiting after StopWaitingAndLeakThread was called, thread "
