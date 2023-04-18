@@ -714,6 +714,7 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1743429",
     config: {
       matches: [
+        "*://*.commerzbank.de/*", 
         "*://*.edf.com/*", 
         "*://*.wordpress.org/*", 
         "*://bethesda.net/*", 
@@ -814,7 +815,6 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://survey.sogosurvey.com/*", 
         "*://www.sussexlive.co.uk/*", 
         "*://www.tm-awx.com/*", 
-        "*://www.twitch.tv/*", 
         "*://www.walesonline.co.uk/*", 
         "*://www.wharf.co.uk/*", 
       ],
