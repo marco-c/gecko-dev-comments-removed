@@ -145,7 +145,9 @@ class MediaSourceTrackDemuxer
   
   RefPtr<TrackBuffersManager> mManager;
 
+  
   Maybe<RefPtr<MediaRawData>> mNextSample;
+  
   
   
   bool mReset;
