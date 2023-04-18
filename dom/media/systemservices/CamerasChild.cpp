@@ -199,20 +199,16 @@ bool CamerasChild::DispatchToParent(nsIRunnable* aRunnable,
   mReplyMonitor.AssertCurrentThreadOwns();
   CamerasSingleton::Thread()->Dispatch(aRunnable, NS_DISPATCH_NORMAL);
   
-  
-  if (!mIPCIsAlive) {
-    return false;
-  }
-  
   mReceivedReply = false;
   
   do {
+    
+    if (!mIPCIsAlive) {
+      return false;
+    }
     aMonitor.Wait();
-  } while (!mReceivedReply && mIPCIsAlive);
-  if (!mReplySuccess) {
-    return false;
-  }
-  return true;
+  } while (!mReceivedReply);
+  return mReplySuccess;
 }
 
 int CamerasChild::NumberOfCapabilities(CaptureEngine aCapEngine,
