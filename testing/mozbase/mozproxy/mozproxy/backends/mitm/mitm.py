@@ -420,9 +420,12 @@ class Mitmproxy(Playback):
                 return
 
             if mozinfo.os == "win":
-                from mozprocess.winprocess import ERROR_CONTROL_C_EXIT  
+                from mozprocess.winprocess import (
+                    ERROR_CONTROL_C_EXIT,
+                    ERROR_CONTROL_C_EXIT_DECIMAL,
+                )  
 
-                if exit_code == ERROR_CONTROL_C_EXIT:
+                if exit_code in [ERROR_CONTROL_C_EXIT, ERROR_CONTROL_C_EXIT_DECIMAL]:
                     LOG.info(
                         "Successfully killed the mitmproxy playback process"
                         " with exit code %d" % exit_code
