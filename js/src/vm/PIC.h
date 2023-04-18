@@ -154,13 +154,13 @@ struct ForOfPIC {
     
     GCPtr<Shape*> arrayProtoShape_;
     uint32_t arrayProtoIteratorSlot_;
-    GCPtrValue canonicalIteratorFunc_;
+    GCPtr<Value> canonicalIteratorFunc_;
 
     
     
     GCPtr<Shape*> arrayIteratorProtoShape_;
     uint32_t arrayIteratorProtoNextSlot_;
-    GCPtrValue canonicalNextFunc_;
+    GCPtr<Value> canonicalNextFunc_;
 
     
     bool initialized_;

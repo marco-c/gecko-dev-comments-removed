@@ -202,5 +202,5 @@ JS_PUBLIC_API void js::detail::SetValueInProxy(Value* slot,
                                                const Value& value) {
   
   
-  *reinterpret_cast<GCPtrValue*>(slot) = value;
+  *reinterpret_cast<GCPtr<Value>*>(slot) = value;
 }
