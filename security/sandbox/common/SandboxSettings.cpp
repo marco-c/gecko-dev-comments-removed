@@ -11,6 +11,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/StaticPrefs_security.h"
+#include "mozilla/StaticPrefs_webgl.h"
 
 #include "prenv.h"
 
@@ -32,6 +33,9 @@ const char* ContentWin32kLockdownStateToString(
 
     case ContentWin32kLockdownState::MissingWebRender:
       return "Win32k Lockdown disabled -- Missing WebRender";
+
+    case ContentWin32kLockdownState::MissingRemoteWebGL:
+      return "Win32k Lockdown disabled -- Missing Remote WebGL";
 
     case ContentWin32kLockdownState::OperatingSystemNotSupported:
       return "Win32k Lockdown disabled -- Operating system not supported";
@@ -59,6 +63,13 @@ ContentWin32kLockdownState GetContentWin32kLockdownState() {
       
       if (!gfx::gfxVars::UseWebRender()) {
         return ContentWin32kLockdownState::MissingWebRender;
+      }
+
+      
+      
+      if (!gfx::gfxVars::AllowWebglOop() ||
+          !StaticPrefs::webgl_out_of_process()) {
+        return ContentWin32kLockdownState::MissingRemoteWebGL;
       }
 
       
