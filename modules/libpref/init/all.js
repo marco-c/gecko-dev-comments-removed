@@ -4375,8 +4375,6 @@ pref("devtools.discovery.log", false);
 
 pref("devtools.remote.wifi.scan", true);
 
-pref("devtools.remote.tls-handshake-timeout", 10000);
-
 
 pref("devtools.remote.adb.extensionID", "adb@mozilla.org");
 

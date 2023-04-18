@@ -43,8 +43,6 @@ var Server = (exports.Server = {});
 
 
 
-
-
 Client.defaultSendOOB = ({ authResult, oob }) => {
   
   if (authResult != AuthenticationResult.PENDING) {
