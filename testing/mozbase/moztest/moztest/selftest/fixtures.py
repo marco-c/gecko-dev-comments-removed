@@ -53,6 +53,7 @@ def setup_test_harness(request, flavor="plain"):
 
     def inner(files_dir, *args, **kwargs):
         harness_root = _get_test_harness(*args, **kwargs)
+        test_root = None
         if harness_root:
             sys.path.insert(0, harness_root)
 
@@ -74,7 +75,6 @@ def setup_test_harness(request, flavor="plain"):
                         os.symlink(files_dir, test_root)
                     else:
                         shutil.copytree(files_dir, test_root)
-
         elif "TEST_HARNESS_ROOT" in os.environ:
             
             
@@ -85,6 +85,7 @@ def setup_test_harness(request, flavor="plain"):
             
             
             pass
+        return test_root
 
     return inner
 
