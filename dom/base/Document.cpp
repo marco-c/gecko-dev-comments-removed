@@ -6753,15 +6753,15 @@ void Document::SetHeaderData(nsAtom* aHeaderField, const nsAString& aData) {
   if (aHeaderField == nsGkAtoms::refresh && !IsStaticDocument()) {
     
     
-    if (mDocumentContainer) {
+    if (nsCOMPtr<nsIRefreshURI> refresher = mDocumentContainer.get()) {
       
       
       
       
       
-      mDocumentContainer->SetupRefreshURIFromHeader(
-          mDocumentURI, NodePrincipal(), InnerWindowID(),
-          NS_ConvertUTF16toUTF8(aData));
+      refresher->SetupRefreshURIFromHeader(mDocumentURI, NodePrincipal(),
+                                           InnerWindowID(),
+                                           NS_ConvertUTF16toUTF8(aData));
     }
   }
 

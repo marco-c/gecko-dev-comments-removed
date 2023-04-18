@@ -20,7 +20,6 @@
 #include "mozilla/AutoRestore.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Casting.h"
-#include "mozilla/CheckedInt.h"
 #include "mozilla/Components.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Encoding.h"
@@ -5011,8 +5010,8 @@ void nsDocShell::SetScrollbarPreference(mozilla::ScrollbarPreference aPref) {
 
 
 NS_IMETHODIMP
-nsDocShell::RefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
-                       uint32_t aDelay) {
+nsDocShell::RefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal, int32_t aDelay,
+                       bool aRepeat, bool aMetaRefresh) {
   MOZ_ASSERT(!mIsBeingDestroyed);
 
   NS_ENSURE_ARG(aURI);
@@ -5041,7 +5040,7 @@ nsDocShell::RefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
   }
 
   nsCOMPtr<nsITimerCallback> refreshTimer =
-      new nsRefreshTimer(this, aURI, aPrincipal, aDelay);
+      new nsRefreshTimer(this, aURI, aPrincipal, aDelay, aRepeat, aMetaRefresh);
 
   BusyFlags busyFlags = GetBusyFlags();
 
@@ -5072,7 +5071,7 @@ nsDocShell::RefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
 
 nsresult nsDocShell::ForceRefreshURIFromTimer(nsIURI* aURI,
                                               nsIPrincipal* aPrincipal,
-                                              uint32_t aDelay,
+                                              int32_t aDelay, bool aMetaRefresh,
                                               nsITimer* aTimer) {
   MOZ_ASSERT(aTimer, "Must have a timer here");
 
@@ -5090,12 +5089,12 @@ nsresult nsDocShell::ForceRefreshURIFromTimer(nsIURI* aURI,
     }
   }
 
-  return ForceRefreshURI(aURI, aPrincipal, aDelay);
+  return ForceRefreshURI(aURI, aPrincipal, aDelay, aMetaRefresh);
 }
 
 NS_IMETHODIMP
 nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
-                            uint32_t aDelay) {
+                            int32_t aDelay, bool aMetaRefresh) {
   NS_ENSURE_ARG(aURI);
 
   RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(aURI);
@@ -5103,7 +5102,7 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
   loadState->SetResultPrincipalURI(aURI);
   loadState->SetResultPrincipalURIIsSome(true);
   loadState->SetKeepResultPrincipalURIIfSet(true);
-  loadState->SetIsMetaRefresh(true);
+  loadState->SetIsMetaRefresh(aMetaRefresh);
 
   
   
@@ -5132,7 +5131,8 @@ nsDocShell::ForceRefreshURI(nsIURI* aURI, nsIPrincipal* aPrincipal,
   nsresult rv = aURI->Equals(mCurrentURI, &equalUri);
 
   nsCOMPtr<nsIReferrerInfo> referrerInfo;
-  if (NS_SUCCEEDED(rv) && !equalUri && aDelay <= REFRESH_REDIRECT_TIMER) {
+  if (NS_SUCCEEDED(rv) && (!equalUri) && aMetaRefresh &&
+      aDelay <= REFRESH_REDIRECT_TIMER) {
     
 
 
@@ -5221,7 +5221,7 @@ nsresult nsDocShell::SetupRefreshURIFromHeader(nsIURI* aBaseURI,
   MOZ_ASSERT(aPrincipal);
 
   nsAutoCString uriAttrib;
-  CheckedInt<uint32_t> seconds(0);
+  int32_t seconds = 0;
   bool specifiesSeconds = false;
 
   nsACString::const_iterator iter, tokenStart, doneIterating;
@@ -5236,33 +5236,24 @@ nsresult nsDocShell::SetupRefreshURIFromHeader(nsIURI* aBaseURI,
 
   tokenStart = iter;
 
-  if (iter != doneIterating) {
-    if (*iter == '-') {
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    if (*iter == '+') {
-      ++iter;
-    }
+  
+  if (iter != doneIterating && (*iter == '-' || *iter == '+')) {
+    ++iter;
   }
 
   
   while (iter != doneIterating && (*iter >= '0' && *iter <= '9')) {
     seconds = seconds * 10 + (*iter - '0');
-    if (!seconds.isValid()) {
-      return NS_ERROR_FAILURE;
-    }
     specifiesSeconds = true;
     ++iter;
   }
 
-  CheckedInt<uint32_t> milliSeconds(seconds * 1000);
-  if (!milliSeconds.isValid()) {
-    return NS_ERROR_FAILURE;
-  }
-
   if (iter != doneIterating) {
+    
+    if (*tokenStart == '-') {
+      seconds = -seconds;
+    }
+
     
     nsACString::const_iterator iterAfterDigit = iter;
     while (iter != doneIterating && !(*iter == ';' || *iter == ',')) {
@@ -5408,7 +5399,45 @@ nsresult nsDocShell::SetupRefreshURIFromHeader(nsIURI* aBaseURI,
         }
       }
 
-      rv = RefreshURI(uri, aPrincipal, milliSeconds.value());
+      if (NS_SUCCEEDED(rv)) {
+        
+        
+        if (seconds < 0) {
+          return NS_ERROR_FAILURE;
+        }
+
+        rv = RefreshURI(uri, aPrincipal, seconds * 1000, false, true);
+      }
+    }
+  }
+  return rv;
+}
+
+NS_IMETHODIMP
+nsDocShell::SetupRefreshURI(nsIChannel* aChannel) {
+  nsresult rv;
+  nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(aChannel, &rv));
+  if (NS_SUCCEEDED(rv)) {
+    nsAutoCString refreshHeader;
+    rv = httpChannel->GetResponseHeader("refresh"_ns, refreshHeader);
+
+    if (!refreshHeader.IsEmpty()) {
+      nsCOMPtr<nsIScriptSecurityManager> secMan =
+          do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID, &rv);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      nsCOMPtr<nsIPrincipal> principal;
+      rv = secMan->GetChannelResultPrincipal(aChannel,
+                                             getter_AddRefs(principal));
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      SetupReferrerInfoFromChannel(aChannel);
+      
+      
+      rv = SetupRefreshURIFromHeader(mCurrentURI, principal, 0, refreshHeader);
+      if (NS_SUCCEEDED(rv)) {
+        return NS_REFRESHURI_HEADER_FOUND;
+      }
     }
   }
   return rv;
@@ -8911,11 +8940,8 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
            this, mLoadingEntry->mInfo.GetURI()->GetSpecOrDefault().get()));
       bool hadActiveEntry = !!mActiveEntry;
       mActiveEntry = MakeUnique<SessionHistoryInfo>(mLoadingEntry->mInfo);
-      
-      
-      
       mBrowsingContext->SessionHistoryCommit(
-          *mLoadingEntry, mLoadType, mCurrentURI, hadActiveEntry, true, true,
+          *mLoadingEntry, mLoadType, hadActiveEntry, true, true,
           
           false);
       
@@ -10740,6 +10766,14 @@ nsresult nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
   return NS_OK;
 }
 
+void nsDocShell::SetupReferrerInfoFromChannel(nsIChannel* aChannel) {
+  nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(aChannel));
+  if (httpChannel) {
+    nsCOMPtr<nsIReferrerInfo> referrerInfo = httpChannel->GetReferrerInfo();
+    SetReferrerInfo(referrerInfo);
+  }
+}
+
 bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
                           nsIPrincipal* aTriggeringPrincipal,
                           nsIPrincipal* aPrincipalToInherit,
@@ -10964,11 +10998,12 @@ bool nsDocShell::OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
       SetCurrentURI(aURI, aChannel, aFireOnLocationChange,
                      false, locationFlags);
   
-  nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(aChannel));
-  if (httpChannel) {
-    mReferrerInfo = httpChannel->GetReferrerInfo();
-  }
+  SetupReferrerInfoFromChannel(aChannel);
   return onLocationChangeNeeded;
+}
+
+void nsDocShell::SetReferrerInfo(nsIReferrerInfo* aReferrerInfo) {
+  mReferrerInfo = aReferrerInfo;  
 }
 
 
@@ -13437,13 +13472,8 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aPersist, bool aExpired) {
     MOZ_ASSERT(loadingEntry);
     uint32_t loadType =
         mLoadType == LOAD_ERROR_PAGE ? mFailedLoadType : mLoadType;
-
-    
-    
-    
-    mBrowsingContext->SessionHistoryCommit(*loadingEntry, loadType, mCurrentURI,
-                                           hadActiveEntry, aPersist, false,
-                                           aExpired);
+    mBrowsingContext->SessionHistoryCommit(
+        *loadingEntry, loadType, hadActiveEntry, aPersist, false, aExpired);
   }
 }
 

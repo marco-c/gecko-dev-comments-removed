@@ -791,13 +791,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   bool IsPopupAllowed();
 
-  
-  
-  
   void SessionHistoryCommit(const LoadingSessionHistoryInfo& aInfo,
-                            uint32_t aLoadType, nsIURI* aCurrentURI,
-                            bool aHadActiveEntry, bool aPersist,
-                            bool aCloneEntryChildren, bool aChannelExpired);
+                            uint32_t aLoadType, bool aHadActiveEntry,
+                            bool aPersist, bool aCloneEntryChildren,
+                            bool aChannelExpired);
 
   
   
@@ -900,9 +897,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     
     return mChildSessionHistory.forget();
   }
-
-  static bool ShouldAddEntryForRefresh(nsIURI* aCurrentURI,
-                                       const SessionHistoryInfo& aInfo);
 
  private:
   void Attach(bool aFromIPC, ContentParent* aOriginProcess);

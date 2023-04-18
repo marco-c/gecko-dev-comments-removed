@@ -1408,7 +1408,7 @@ void nsDocLoader::FireOnStatusChange(nsIWebProgress* aWebProgress,
 }
 
 bool nsDocLoader::RefreshAttempted(nsIWebProgress* aWebProgress, nsIURI* aURI,
-                                   uint32_t aDelay, bool aSameURI) {
+                                   int32_t aDelay, bool aSameURI) {
   
 
 
