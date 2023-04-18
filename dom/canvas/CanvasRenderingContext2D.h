@@ -751,6 +751,9 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
   RefPtr<mozilla::layers::PersistentBufferProvider> mBufferProvider;
 
+  
+  bool mAllowAcceleration = true;
+
   RefPtr<CanvasShutdownObserver> mShutdownObserver;
   virtual void AddShutdownObserver();
   virtual void RemoveShutdownObserver();

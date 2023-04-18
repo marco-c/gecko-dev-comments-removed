@@ -98,6 +98,13 @@ class PersistentBufferProvider : public RefCounted<PersistentBufferProvider>,
   
 
 
+
+
+  virtual bool RequiresRefresh() const { return false; }
+
+  
+
+
   virtual Maybe<layers::SurfaceDescriptor> GetFrontBuffer() {
     return Nothing();
   }
@@ -154,6 +161,8 @@ class PersistentBufferProviderAccelerated
       const gfx::IntRect& aPersistedRect) override;
 
   bool ReturnDrawTarget(already_AddRefed<gfx::DrawTarget> aDT) override;
+
+  bool RequiresRefresh() const override;
 
  protected:
   ~PersistentBufferProviderAccelerated() override;

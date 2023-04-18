@@ -658,6 +658,7 @@ already_AddRefed<DataSourceSurface> DrawTargetWebgl::ReadSnapshot() {
   if (!PrepareContext(false)) {
     return nullptr;
   }
+  mProfile.OnReadback();
   return mSharedContext->ReadSnapshot();
 }
 
@@ -1228,6 +1229,7 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
   
   switch (aPattern.GetType()) {
     case PatternType::COLOR: {
+      mCurrentTarget->mProfile.OnUncachedDraw();
       auto color = static_cast<const ColorPattern&>(aPattern).mColor;
       if (((color.a * aOptions.mAlpha == 1.0f &&
             aOptions.mCompositionOp == CompositionOp::OP_OVER) ||
@@ -1345,6 +1347,8 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
       } else if ((tex = GetCompatibleSnapshot(surfacePattern.mSurface))) {
         backingSize = surfacePattern.mSurface->GetSize();
         bounds = IntRect(offset, texSize);
+        
+        mCurrentTarget->mProfile.OnCacheHit();
       } else {
         
         data = surfacePattern.mSurface->GetDataSurface();
@@ -1479,6 +1483,11 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
       if (data) {
         UploadSurface(data, format, IntRect(offset, texSize), bounds.TopLeft(),
                       texSize == backingSize);
+        
+        mCurrentTarget->mProfile.OnCacheMiss();
+      } else {
+        
+        mCurrentTarget->mProfile.OnCacheHit();
       }
 
       
@@ -2427,6 +2436,8 @@ void DrawTargetWebgl::ReadIntoSkia() {
       
       mSkia->CopySurface(snapshot, GetRect(), IntPoint(0, 0));
     }
+    
+    mProfile.OnFallback();
   }
   mSkiaValid = true;
   
@@ -2486,6 +2497,47 @@ bool DrawTargetWebgl::FlushFromSkia() {
   return true;
 }
 
+void DrawTargetWebgl::UsageProfile::BeginFrame() {
+  
+  mFallbacks = 0;
+  mLayers = 0;
+  mCacheMisses = 0;
+  mCacheHits = 0;
+  mUncachedDraws = 0;
+  mReadbacks = 0;
+}
+
+void DrawTargetWebgl::UsageProfile::EndFrame() {
+  bool failed = false;
+  
+  
+  
+  float cacheRatio =
+      StaticPrefs::gfx_canvas_accelerated_profile_cache_miss_ratio();
+  if (mFallbacks > 0 ||
+      mCacheMisses + mReadbacks > cacheRatio * (mCacheMisses + mCacheHits +
+                                                mUncachedDraws + mReadbacks)) {
+    failed = true;
+  }
+  if (failed) {
+    ++mFailedFrames;
+  }
+  ++mFrameCount;
+}
+
+bool DrawTargetWebgl::UsageProfile::RequiresRefresh() const {
+  
+  
+  
+  uint32_t profileFrames = StaticPrefs::gfx_canvas_accelerated_profile_frames();
+  if (!profileFrames || mFrameCount < profileFrames) {
+    return false;
+  }
+  float failRatio =
+      StaticPrefs::gfx_canvas_accelerated_profile_fallback_ratio();
+  return mFailedFrames > failRatio * mFrameCount;
+}
+
 
 void DrawTargetWebgl::BeginFrame(const IntRect& aPersistedRect) {
   if (mNeedsPresent) {
@@ -2501,10 +2553,12 @@ void DrawTargetWebgl::BeginFrame(const IntRect& aPersistedRect) {
       }
     }
   }
+  mProfile.BeginFrame();
 }
 
 
 void DrawTargetWebgl::EndFrame() {
+  mProfile.EndFrame();
   
   mSharedContext->PruneTextureMemory();
   
