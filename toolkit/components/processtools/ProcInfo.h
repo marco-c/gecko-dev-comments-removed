@@ -218,6 +218,12 @@ RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests);
 
 
 
+ProcInfoPromise::ResolveOrRejectValue GetProcInfoSync(
+    nsTArray<ProcInfoRequest>&& aRequests);
+
+
+
+
 
 template <typename T>
 nsresult CopySysProcInfoToDOM(const ProcInfo& source, T* dest) {

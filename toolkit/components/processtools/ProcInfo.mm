@@ -44,6 +44,119 @@ nsresult GetGpuTimeSinceProcessStartInMs(uint64_t* aResult) {
   return NS_OK;
 }
 
+ProcInfoPromise::ResolveOrRejectValue GetProcInfoSync(nsTArray<ProcInfoRequest>&& aRequests) {
+  ProcInfoPromise::ResolveOrRejectValue result;
+
+  HashMap<base::ProcessId, ProcInfo> gathered;
+  if (!gathered.reserve(aRequests.Length())) {
+    result.SetReject(NS_ERROR_OUT_OF_MEMORY);
+    return result;
+  }
+  for (const auto& request : aRequests) {
+    ProcInfo info;
+    info.pid = request.pid;
+    info.childId = request.childId;
+    info.type = request.processType;
+    info.origin = std::move(request.origin);
+    info.windows = std::move(request.windowInfo);
+
+    struct proc_taskinfo pti;
+    if ((unsigned long)proc_pidinfo(request.pid, PROC_PIDTASKINFO, 0, &pti, PROC_PIDTASKINFO_SIZE) <
+        PROC_PIDTASKINFO_SIZE) {
+      
+      
+      
+      continue;
+    }
+    info.cpuTime = pti.pti_total_user + pti.pti_total_system;
+
+    mach_port_t selectedTask;
+    
+    if (request.childTask == MACH_PORT_NULL) {
+      selectedTask = mach_task_self();
+    } else {
+      selectedTask = request.childTask;
+    }
+
+    
+    
+    task_vm_info_data_t task_vm_info;
+    mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
+    kern_return_t kr = task_info(selectedTask, TASK_VM_INFO, (task_info_t)&task_vm_info, &count);
+    info.memory = kr == KERN_SUCCESS ? task_vm_info.phys_footprint : 0;
+
+    
+
+    
+    
+    
+    
+    thread_act_port_array_t threadList;
+    mach_msg_type_number_t threadCount;
+    kern_return_t kret = task_threads(selectedTask, &threadList, &threadCount);
+    if (kret != KERN_SUCCESS) {
+      
+      
+      
+      
+      continue;
+    }
+
+    
+    
+    
+    auto guardThreadCount = MakeScopeExit([&] {
+      if (threadList == nullptr) {
+        return;
+      }
+      
+      for (mach_msg_type_number_t i = 0; i < threadCount; i++) {
+        mach_port_deallocate(mach_task_self(), threadList[i]);
+      }
+      vm_deallocate(mach_task_self(),  (vm_address_t)threadList,
+                     sizeof(thread_t) * threadCount);
+    });
+
+    for (mach_msg_type_number_t i = 0; i < threadCount; i++) {
+      
+      thread_extended_info_data_t threadInfoData;
+      count = THREAD_EXTENDED_INFO_COUNT;
+      kret =
+          thread_info(threadList[i], THREAD_EXTENDED_INFO, (thread_info_t)&threadInfoData, &count);
+      if (kret != KERN_SUCCESS) {
+        continue;
+      }
+
+      
+      thread_identifier_info identifierInfo;
+      count = THREAD_IDENTIFIER_INFO_COUNT;
+      kret = thread_info(threadList[i], THREAD_IDENTIFIER_INFO, (thread_info_t)&identifierInfo,
+                         &count);
+      if (kret != KERN_SUCCESS) {
+        continue;
+      }
+
+      
+      ThreadInfo* thread = info.threads.AppendElement(fallible);
+      if (!thread) {
+        result.SetReject(NS_ERROR_OUT_OF_MEMORY);
+        return result;
+      }
+      thread->cpuTime = threadInfoData.pth_user_time + threadInfoData.pth_system_time;
+      thread->name.AssignASCII(threadInfoData.pth_name);
+      thread->tid = identifierInfo.thread_id;
+    }
+
+    if (!gathered.put(request.pid, std::move(info))) {
+      result.SetReject(NS_ERROR_OUT_OF_MEMORY);
+      return result;
+    }
+  }
+
+  result.SetResolve(std::move(gathered));
+  return result;
+}
+
 RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
   auto holder = MakeUnique<MozPromiseHolder<ProcInfoPromise>>();
   RefPtr<ProcInfoPromise> promise = holder->Ensure(__func__);
@@ -55,116 +168,10 @@ RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
     return promise;
   }
 
-  RefPtr<nsIRunnable> r = NS_NewRunnableFunction(__func__, [holder = std::move(holder),
-                                                            requests = std::move(aRequests)]() {
-    HashMap<base::ProcessId, ProcInfo> gathered;
-    if (!gathered.reserve(requests.Length())) {
-      holder->Reject(NS_ERROR_OUT_OF_MEMORY, __func__);
-      return;
-    }
-    for (const auto& request : requests) {
-      ProcInfo info;
-      info.pid = request.pid;
-      info.childId = request.childId;
-      info.type = request.processType;
-      info.origin = std::move(request.origin);
-      info.windows = std::move(request.windowInfo);
-
-      struct proc_taskinfo pti;
-      if ((unsigned long)proc_pidinfo(request.pid, PROC_PIDTASKINFO, 0, &pti,
-                                      PROC_PIDTASKINFO_SIZE) < PROC_PIDTASKINFO_SIZE) {
-        
-        
-        
-        continue;
-      }
-      info.cpuTime = pti.pti_total_user + pti.pti_total_system;
-
-      mach_port_t selectedTask;
-      
-      if (request.childTask == MACH_PORT_NULL) {
-        selectedTask = mach_task_self();
-      } else {
-        selectedTask = request.childTask;
-      }
-
-      
-      
-      task_vm_info_data_t task_vm_info;
-      mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
-      kern_return_t kr = task_info(selectedTask, TASK_VM_INFO, (task_info_t)&task_vm_info, &count);
-      info.memory = kr == KERN_SUCCESS ? task_vm_info.phys_footprint : 0;
-
-      
-
-      
-      
-      
-      
-      thread_act_port_array_t threadList;
-      mach_msg_type_number_t threadCount;
-      kern_return_t kret = task_threads(selectedTask, &threadList, &threadCount);
-      if (kret != KERN_SUCCESS) {
-        
-        
-        
-        
-        continue;
-      }
-
-      
-      
-      
-      auto guardThreadCount = MakeScopeExit([&] {
-        if (threadList == nullptr) {
-          return;
-        }
-        
-        for (mach_msg_type_number_t i = 0; i < threadCount; i++) {
-          mach_port_deallocate(mach_task_self(), threadList[i]);
-        }
-        vm_deallocate(mach_task_self(),  (vm_address_t)threadList,
-                       sizeof(thread_t) * threadCount);
+  RefPtr<nsIRunnable> r = NS_NewRunnableFunction(
+      __func__, [holder = std::move(holder), requests = std::move(aRequests)]() mutable {
+        holder->ResolveOrReject(GetProcInfoSync(std::move(requests)), __func__);
       });
-
-      for (mach_msg_type_number_t i = 0; i < threadCount; i++) {
-        
-        thread_extended_info_data_t threadInfoData;
-        count = THREAD_EXTENDED_INFO_COUNT;
-        kret = thread_info(threadList[i], THREAD_EXTENDED_INFO, (thread_info_t)&threadInfoData,
-                           &count);
-        if (kret != KERN_SUCCESS) {
-          continue;
-        }
-
-        
-        thread_identifier_info identifierInfo;
-        count = THREAD_IDENTIFIER_INFO_COUNT;
-        kret = thread_info(threadList[i], THREAD_IDENTIFIER_INFO, (thread_info_t)&identifierInfo,
-                           &count);
-        if (kret != KERN_SUCCESS) {
-          continue;
-        }
-
-        
-        ThreadInfo* thread = info.threads.AppendElement(fallible);
-        if (!thread) {
-          holder->Reject(NS_ERROR_OUT_OF_MEMORY, __func__);
-          return;
-        }
-        thread->cpuTime = threadInfoData.pth_user_time + threadInfoData.pth_system_time;
-        thread->name.AssignASCII(threadInfoData.pth_name);
-        thread->tid = identifierInfo.thread_id;
-      }
-
-      if (!gathered.put(request.pid, std::move(info))) {
-        holder->Reject(NS_ERROR_OUT_OF_MEMORY, __func__);
-        return;
-      }
-    }
-    
-    holder->Resolve(std::move(gathered), __func__);
-  });
 
   rv = target->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
   if (NS_FAILED(rv)) {

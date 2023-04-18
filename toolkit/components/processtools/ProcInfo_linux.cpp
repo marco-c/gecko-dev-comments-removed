@@ -200,6 +200,94 @@ nsresult GetGpuTimeSinceProcessStartInMs(uint64_t* aResult) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+ProcInfoPromise::ResolveOrRejectValue GetProcInfoSync(
+    nsTArray<ProcInfoRequest>&& aRequests) {
+  ProcInfoPromise::ResolveOrRejectValue result;
+
+  HashMap<base::ProcessId, ProcInfo> gathered;
+  if (!gathered.reserve(aRequests.Length())) {
+    result.SetReject(NS_ERROR_OUT_OF_MEMORY);
+    return result;
+  }
+  for (const auto& request : aRequests) {
+    
+    StatReader reader(request.pid);
+    ProcInfo info;
+    nsresult rv = reader.ParseProc(info);
+    if (NS_FAILED(rv)) {
+      
+      
+      
+      continue;
+    }
+
+    
+    
+    
+    static const int MAX_FIELD = 3;
+    size_t VmSize, resident, shared;
+    info.memory = 0;
+    FILE* f = fopen(nsPrintfCString("/proc/%u/statm", request.pid).get(), "r");
+    if (f) {
+      int nread = fscanf(f, "%zu %zu %zu", &VmSize, &resident, &shared);
+      fclose(f);
+      if (nread == MAX_FIELD) {
+        info.memory = (resident - shared) * getpagesize();
+      }
+    }
+
+    
+    info.pid = request.pid;
+    info.childId = request.childId;
+    info.type = request.processType;
+    info.origin = request.origin;
+    info.windows = std::move(request.windowInfo);
+
+    
+    nsCString taskPath;
+    taskPath.AppendPrintf("/proc/%u/task", request.pid);
+    DIR* dirHandle = opendir(taskPath.get());
+    if (!dirHandle) {
+      
+      
+      
+      
+      continue;
+    }
+    auto cleanup = mozilla::MakeScopeExit([&] { closedir(dirHandle); });
+
+    
+    dirent* entry;
+    while ((entry = readdir(dirHandle)) != nullptr) {
+      if (entry->d_name[0] == '.') {
+        continue;
+      }
+      
+      nsAutoCString entryName(entry->d_name);
+      int32_t tid = entryName.ToInteger(&rv);
+      if (NS_FAILED(rv)) {
+        continue;
+      }
+      ThreadInfoReader reader(request.pid, tid);
+      ThreadInfo threadInfo;
+      rv = reader.ParseThread(threadInfo);
+      if (NS_FAILED(rv)) {
+        continue;
+      }
+      info.threads.AppendElement(threadInfo);
+    }
+
+    if (!gathered.put(request.pid, std::move(info))) {
+      result.SetReject(NS_ERROR_OUT_OF_MEMORY);
+      return result;
+    }
+  }
+
+  
+  result.SetResolve(std::move(gathered));
+  return result;
+}
+
 RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
   auto holder = MakeUnique<MozPromiseHolder<ProcInfoPromise>>();
   RefPtr<ProcInfoPromise> promise = holder->Ensure(__func__);
@@ -214,89 +302,8 @@ RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests) {
 
   RefPtr<nsIRunnable> r = NS_NewRunnableFunction(
       __func__,
-      [holder = std::move(holder), requests = std::move(aRequests)]() {
-        HashMap<base::ProcessId, ProcInfo> gathered;
-        if (!gathered.reserve(requests.Length())) {
-          holder->Reject(NS_ERROR_OUT_OF_MEMORY, __func__);
-          return;
-        }
-        for (const auto& request : requests) {
-          
-          StatReader reader(request.pid);
-          ProcInfo info;
-          nsresult rv = reader.ParseProc(info);
-          if (NS_FAILED(rv)) {
-            
-            
-            
-            continue;
-          }
-
-          
-          
-          
-          static const int MAX_FIELD = 3;
-          size_t VmSize, resident, shared;
-          info.memory = 0;
-          FILE* f =
-              fopen(nsPrintfCString("/proc/%u/statm", request.pid).get(), "r");
-          if (f) {
-            int nread = fscanf(f, "%zu %zu %zu", &VmSize, &resident, &shared);
-            fclose(f);
-            if (nread == MAX_FIELD) {
-              info.memory = (resident - shared) * getpagesize();
-            }
-          }
-
-          
-          info.pid = request.pid;
-          info.childId = request.childId;
-          info.type = request.processType;
-          info.origin = request.origin;
-          info.windows = std::move(request.windowInfo);
-
-          
-          nsCString taskPath;
-          taskPath.AppendPrintf("/proc/%u/task", request.pid);
-          DIR* dirHandle = opendir(taskPath.get());
-          if (!dirHandle) {
-            
-            
-            
-            
-            continue;
-          }
-          auto cleanup = mozilla::MakeScopeExit([&] { closedir(dirHandle); });
-
-          
-          dirent* entry;
-          while ((entry = readdir(dirHandle)) != nullptr) {
-            if (entry->d_name[0] == '.') {
-              continue;
-            }
-            
-            nsAutoCString entryName(entry->d_name);
-            int32_t tid = entryName.ToInteger(&rv);
-            if (NS_FAILED(rv)) {
-              continue;
-            }
-            ThreadInfoReader reader(request.pid, tid);
-            ThreadInfo threadInfo;
-            rv = reader.ParseThread(threadInfo);
-            if (NS_FAILED(rv)) {
-              continue;
-            }
-            info.threads.AppendElement(threadInfo);
-          }
-
-          if (!gathered.put(request.pid, std::move(info))) {
-            holder->Reject(NS_ERROR_OUT_OF_MEMORY, __func__);
-            return;
-          }
-        }
-
-        
-        holder->Resolve(std::move(gathered), __func__);
+      [holder = std::move(holder), requests = std::move(aRequests)]() mutable {
+        holder->ResolveOrReject(GetProcInfoSync(std::move(requests)), __func__);
       });
 
   rv = target->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
