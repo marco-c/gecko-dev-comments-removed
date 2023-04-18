@@ -5347,6 +5347,11 @@
       }
 
       
+      if (aEvent.defaultPreventedByChrome) {
+        return;
+      }
+
+      
       
 
       switch (ShortcutUtils.getSystemActionForEvent(aEvent)) {
@@ -5435,6 +5440,11 @@
 
       
       if (aEvent.defaultCancelled) {
+        return;
+      }
+
+      
+      if (aEvent.defaultPreventedByChrome) {
         return;
       }
 

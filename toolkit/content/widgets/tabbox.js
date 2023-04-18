@@ -118,6 +118,11 @@
       }
 
       
+      if (event.defaultPreventedByChrome) {
+        return;
+      }
+
+      
       
 
       const { ShortcutUtils } = imports;
