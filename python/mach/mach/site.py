@@ -221,15 +221,23 @@ class MachSiteManager:
             ]
             sys.path[0:0] = self._requirements.pths_as_absolute(self._topsrcdir)
         elif self._site_packages_source == SitePackagesSource.VENV:
+            
+            
             if Path(sys.prefix) != Path(self._metadata.prefix):
-                raise Exception(
-                    "In-process activation of the Mach virtualenv is "
-                    "not currently supported. Please invoke `./mach` using "
-                    "the Mach virtualenv python binary directly."
-                )
+                
+                sys.path = [
+                    path
+                    for path in sys.path
+                    if path
+                    not in ExternalPythonSite(sys.executable).all_site_packages_dirs()
+                ]
 
-            
-            
+                
+                
+                
+                
+                activate_path = self._virtualenv().activate_path
+                exec(open(activate_path).read(), dict(__file__=activate_path))
 
     def _build(self):
         if self._site_packages_source != SitePackagesSource.VENV:
