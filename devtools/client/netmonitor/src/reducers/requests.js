@@ -34,6 +34,8 @@ function Requests() {
     
     selectedId: null,
     
+    clickedRequestId: null,
+    
     
     preselectedId: null,
     
@@ -76,14 +78,9 @@ function requestsReducer(state = Requests(), action) {
 
     
     case SELECT_REQUEST: {
-      
-      
-      const clickedRequest = state.requests.find(
-        needle => needle.id === action.id
-      );
       return {
         ...state,
-        clickedRequest,
+        clickedRequestId: action.id,
         selectedId: action.id,
       };
     }
@@ -98,12 +95,9 @@ function requestsReducer(state = Requests(), action) {
     }
 
     case RIGHT_CLICK_REQUEST: {
-      const clickedRequest = state.requests.find(
-        needle => needle.id === action.id
-      );
       return {
         ...state,
-        clickedRequest,
+        clickedRequestId: action.id,
       };
     }
 
