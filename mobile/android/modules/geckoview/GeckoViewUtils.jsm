@@ -225,47 +225,6 @@ var GeckoViewUtils = {
 
 
 
-  registerLazyWindowEventListener(
-    window,
-    events,
-    { handler, scope, name, once }
-  ) {
-    const dispatcher = this.getDispatcherForWindow(window);
-
-    this._addLazyListeners(
-      events,
-      handler,
-      scope,
-      name,
-      (events, listener) => {
-        dispatcher.registerListener(listener, events);
-      },
-      (handlers, listener, args) => {
-        if (!once) {
-          dispatcher.unregisterListener(listener, args[0]);
-          handlers.forEach(handler =>
-            dispatcher.registerListener(handler, args[0])
-          );
-        }
-        handlers.forEach(handler => handler.onEvent(...args));
-      }
-    );
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
   addLazyPrefObserver(aPrefs, { handler, scope, name, once }) {
