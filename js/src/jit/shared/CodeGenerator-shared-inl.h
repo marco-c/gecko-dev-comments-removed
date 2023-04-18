@@ -223,16 +223,6 @@ int32_t CodeGeneratorShared::SlotToStackOffset(int32_t slot) const {
   return offset;
 }
 
-int32_t CodeGeneratorShared::StackOffsetToSlot(int32_t offset) const {
-  
-  
-  
-  
-  
-  
-  return masm.framePushed() - offset;
-}
-
 
 int32_t CodeGeneratorShared::StackOffsetOfPassedArg(int32_t slot) const {
   
