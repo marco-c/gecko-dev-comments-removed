@@ -1582,6 +1582,22 @@ class GeckoSessionTestRuleTest : BaseSessionTest(noErrorCollector = true) {
         assertThat("Delegate should only run once", count, equalTo(1))
     }
 
+    @Test(expected = RejectedPromiseException::class)
+    fun waitForJS_whileNavigating() {
+        mainSession.loadTestPath(HELLO_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        
+        mainSession.loadTestPath(HELLO2_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        
+        
+        
+        mainSession.goBack()
+        mainSession.waitForJS("new Promise(resolve => {})")
+    }
+
     private interface TestDelegate {
         fun onDelegate(foo: String, bar: String): Int
     }
