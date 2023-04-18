@@ -69,8 +69,16 @@ async function testWebExtensionMessages(
     !createWebExtensionBeforeOpeningBrowserConsole ||
     Services.prefs.getBoolPref("devtools.browsertoolbox.fission", false)
   ) {
-    await checkUniqueMessageExists(hud, "content console API message");
-    await checkUniqueMessageExists(hud, "background console API message");
+    await checkUniqueMessageExists(
+      hud,
+      "content console API message",
+      ".console-api"
+    );
+    await checkUniqueMessageExists(
+      hud,
+      "background console API message",
+      ".console-api"
+    );
   }
 
   await checkUniqueMessageExists(hud, "content error", ".error");
@@ -151,7 +159,7 @@ async function checkUniqueMessageExists(hud, msg, selector) {
   let messages;
   try {
     messages = await waitFor(() => {
-      const msgs = findMessages(hud, msg, selector);
+      const msgs = findMessagesByType(hud, msg, selector);
       return msgs.length > 0 ? msgs : null;
     });
   } catch (e) {
