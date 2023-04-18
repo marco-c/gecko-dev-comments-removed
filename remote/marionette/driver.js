@@ -2068,7 +2068,10 @@ GeckoDriver.prototype.close = async function() {
   
   
   
-  if (TabManager.getTabCount() === 1) {
+  if (
+    TabManager.getTabCount() === 1 &&
+    !this.currentSession.capabilities.get("moz:windowless")
+  ) {
     return [];
   }
 
@@ -2105,7 +2108,7 @@ GeckoDriver.prototype.closeChromeWindow = async function() {
   
   
   
-  if (nwins == 1) {
+  if (nwins == 1 && !this.currentSession.capabilities.get("moz:windowless")) {
     return [];
   }
 
@@ -2625,6 +2628,19 @@ GeckoDriver.prototype.quit = async function(cmd) {
     throw new error.InvalidArgumentError(
       `"safeMode" only works with restart flag`
     );
+  }
+
+  if (flags.includes("eSilently")) {
+    if (!this.currentSession.capabilities.get("moz:windowless")) {
+      throw new error.UnsupportedOperationError(
+        `Silent restarts only allowed with "moz:windowless" capability set`
+      );
+    }
+    if (!flags.includes("eRestart")) {
+      throw new error.InvalidArgumentError(
+        `"silently" only works with restart flag`
+      );
+    }
   }
 
   let quitSeen;
