@@ -55,29 +55,31 @@ class nsUrlClassifierPrefixSet final : public nsIUrlClassifierPrefixSet {
   static const uint32_t MAX_INDEX_DIFF = (1 << 16);
   static const uint32_t PREFIXSET_VERSION_MAGIC = 1;
 
-  void Clear();
-  nsresult MakePrefixSet(const uint32_t* aArray, uint32_t aLength);
-  uint32_t BinSearch(uint32_t start, uint32_t end, uint32_t target) const;
-  bool IsEmptyInternal() const;
+  void Clear() REQUIRES(mLock);
+  nsresult MakePrefixSet(const uint32_t* aArray, uint32_t aLength)
+      REQUIRES(mLock);
+  uint32_t BinSearch(uint32_t start, uint32_t end, uint32_t target) const
+      REQUIRES(mLock);
+  bool IsEmptyInternal() const REQUIRES(mLock);
 
   
   
   
   
-  mutable mozilla::Mutex mLock MOZ_UNANNOTATED;
+  mutable mozilla::Mutex mLock;
   
   
-  nsTArray<uint32_t> mIndexPrefixes;
-  
-  
-  
+  nsTArray<uint32_t> mIndexPrefixes GUARDED_BY(mLock);
   
   
   
-  nsTArray<nsTArray<uint16_t> > mIndexDeltas;
+  
+  
+  
+  nsTArray<nsTArray<uint16_t> > mIndexDeltas GUARDED_BY(mLock);
 
   
-  uint32_t mTotalPrefixes;
+  uint32_t mTotalPrefixes GUARDED_BY(mLock);
 
   nsCString mName;  
   mozilla::CorruptionCanary mCanary;
