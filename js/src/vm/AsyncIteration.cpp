@@ -63,12 +63,6 @@ using namespace js;
              "YieldReturn-Await fulfilled when not in "
              "'AwaitingYieldReturn' state");
 
-  
-  
-  
-  
-  asyncGenObj->setExecuting();
-
   return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Return, value);
 }
 
@@ -78,12 +72,6 @@ using namespace js;
   MOZ_ASSERT(
       asyncGenObj->isAwaitingYieldReturn(),
       "YieldReturn-Await rejected when not in 'AwaitingYieldReturn' state");
-
-  
-  
-  
-  
-  asyncGenObj->setExecuting();
 
   return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Throw, reason);
 }
@@ -542,8 +530,6 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
                                        onFulfilled, onRejected);
   }
 
-  generator->setExecuting();
-
   return AsyncGeneratorResume(cx, generator, completionKind, resumptionValue);
 }
 
@@ -851,8 +837,8 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
              "closed generator when resuming async generator");
   MOZ_ASSERT(asyncGenObj->isSuspended(),
              "non-suspended generator when resuming async generator");
-  MOZ_ASSERT(asyncGenObj->isExecuting(),
-             "async generator not set into 'executing' state");
+
+  asyncGenObj->setExecuting();
 
   
   HandlePropertyName funName = completionKind == CompletionKind::Normal
