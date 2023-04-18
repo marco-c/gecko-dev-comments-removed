@@ -12,10 +12,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/BlockingResourceBase.h"
-
-#ifndef XP_WIN
-#  include <pthread.h>
-#endif
+#include "mozilla/PlatformRWLock.h"
 
 namespace mozilla {
 
@@ -41,17 +38,9 @@ namespace mozilla {
 
 
 
-class RWLock : public BlockingResourceBase {
+class RWLock : public detail::RWLockImpl, public BlockingResourceBase {
  public:
   explicit RWLock(const char* aName);
-
-  
-  
-#ifdef XP_WIN
-  ~RWLock() = default;
-#else
-  ~RWLock();
-#endif
 
 #ifdef DEBUG
   bool LockedForWritingByCurrentThread();
@@ -62,33 +51,18 @@ class RWLock : public BlockingResourceBase {
   void WriteLock();
   void WriteUnlock();
 #else
-  bool TryReadLock() { return TryReadLockInternal(); }
-  void ReadLock() { ReadLockInternal(); }
-  void ReadUnlock() { ReadUnlockInternal(); }
-  bool TryWriteLock() { return TryWriteLockInternal(); }
-  void WriteLock() { WriteLockInternal(); }
-  void WriteUnlock() { WriteUnlockInternal(); }
+  bool TryReadLock() { return detail::RWLockImpl::tryReadLock(); }
+  void ReadLock() { detail::RWLockImpl::readLock(); }
+  void ReadUnlock() { detail::RWLockImpl::readUnlock(); }
+  bool TryWriteLock() { return detail::RWLockImpl::tryWriteLock(); }
+  void WriteLock() { detail::RWLockImpl::writeLock(); }
+  void WriteUnlock() { detail::RWLockImpl::writeUnlock(); }
 #endif
 
  private:
-  bool TryReadLockInternal();
-  void ReadLockInternal();
-  void ReadUnlockInternal();
-  bool TryWriteLockInternal();
-  void WriteLockInternal();
-  void WriteUnlockInternal();
-
   RWLock() = delete;
   RWLock(const RWLock&) = delete;
   RWLock& operator=(const RWLock&) = delete;
-
-#ifndef XP_WIN
-  pthread_rwlock_t mRWLock;
-#else
-  
-  
-  void* mRWLock;
-#endif
 
 #ifdef DEBUG
   
