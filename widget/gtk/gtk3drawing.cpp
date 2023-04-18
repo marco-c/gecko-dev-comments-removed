@@ -18,6 +18,7 @@
 #include "WidgetStyleCache.h"
 #include "nsString.h"
 #include "nsDebug.h"
+#include "WidgetUtilsGtk.h"
 
 #include <math.h>
 #include <dlfcn.h>
@@ -2192,7 +2193,11 @@ static gint moz_gtk_header_bar_paint(WidgetNodeType widgetType, cairo_t* cr,
 
   
   
-  if (widgetType == MOZ_GTK_HEADER_BAR) {
+  
+  
+  
+  if (widgetType == MOZ_GTK_HEADER_BAR &&
+      !mozilla::widget::GdkIsWaylandDisplay()) {
     GtkStyleContext* windowStyle =
         GetStyleContext(MOZ_GTK_HEADERBAR_WINDOW, state->scale);
     const bool solidDecorations =

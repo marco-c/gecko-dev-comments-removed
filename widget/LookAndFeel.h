@@ -239,9 +239,6 @@ class LookAndFeel {
     ContextMenuOffsetHorizontal,
 
     
-    GTKWayland,
-
-    
 
 
 
