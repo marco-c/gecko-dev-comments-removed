@@ -198,6 +198,10 @@ extern JS_PUBLIC_API OffThreadToken* DecodeStencilOffThread(
     JSContext* cx, const DecodeOptions& options, const TranscodeRange& range,
     OffThreadCompileCallback callback, void* callbackData);
 
+extern JS_PUBLIC_API OffThreadToken* DecodeMultiStencilsOffThread(
+    JSContext* cx, const DecodeOptions& options, TranscodeSources& sources,
+    OffThreadCompileCallback callback, void* callbackData);
+
 
 
 
@@ -216,6 +220,10 @@ extern JS_PUBLIC_API already_AddRefed<Stencil> FinishDecodeStencilOffThread(
     JSContext* cx, OffThreadToken* token,
     InstantiationStorage* storage = nullptr);
 
+extern JS_PUBLIC_API bool FinishDecodeMultiStencilsOffThread(
+    JSContext* cx, OffThreadToken* token,
+    mozilla::Vector<RefPtr<Stencil>>* stencils);
+
 extern JS_PUBLIC_API void CancelCompileToStencilOffThread(
     JSContext* cx, OffThreadToken* token);
 
@@ -225,20 +233,14 @@ extern JS_PUBLIC_API void CancelCompileModuleToStencilOffThread(
 extern JS_PUBLIC_API void CancelDecodeStencilOffThread(JSContext* cx,
                                                        OffThreadToken* token);
 
+extern JS_PUBLIC_API void CancelDecodeMultiStencilsOffThread(
+    JSContext* cx, OffThreadToken* token);
+
 
 
 
 extern JS_PUBLIC_API bool StartIncrementalEncoding(JSContext* cx,
                                                    RefPtr<Stencil>&& stencil);
-
-extern JS_PUBLIC_API OffThreadToken* DecodeMultiOffThreadStencils(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    mozilla::Vector<TranscodeSource>& sources,
-    OffThreadCompileCallback callback, void* callbackData);
-
-extern JS_PUBLIC_API bool FinishMultiOffThreadStencilDecoder(
-    JSContext* cx, OffThreadToken* token,
-    mozilla::Vector<RefPtr<Stencil>>* stencils);
 
 }  
 
