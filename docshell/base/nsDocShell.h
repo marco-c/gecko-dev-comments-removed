@@ -322,7 +322,8 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  void TriggerParentCheckDocShellIsEmpty();
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void TriggerParentCheckDocShellIsEmpty();
 
   nsresult HistoryEntryRemoved(int32_t aIndex);
 

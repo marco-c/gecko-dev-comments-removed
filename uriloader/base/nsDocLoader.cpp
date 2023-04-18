@@ -246,8 +246,8 @@ nsresult nsDocLoader::AddDocLoaderAsChildOfRoot(nsDocLoader* aDocLoader) {
   return rootDocLoader->AddChildLoader(aDocLoader);
 }
 
-NS_IMETHODIMP
-nsDocLoader::Stop(void) {
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP nsDocLoader::Stop(void) {
   nsresult rv = NS_OK;
 
   MOZ_LOG(gDocLoaderLog, LogLevel::Debug,
@@ -510,7 +510,8 @@ nsDocLoader::OnStartRequest(nsIRequest* request) {
   return NS_OK;
 }
 
-NS_IMETHODIMP
+
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
 nsDocLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   
   

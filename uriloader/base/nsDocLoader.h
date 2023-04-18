@@ -135,7 +135,10 @@ class nsDocLoader : public nsIDocumentLoader,
 
   uint32_t ChildCount() const { return mChildList.Length(); }
 
-  void OOPChildrenLoadingIsEmpty() { DocLoaderIsEmpty(true); }
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void OOPChildrenLoadingIsEmpty() {
+    DocLoaderIsEmpty(true);
+  }
 
  protected:
   explicit nsDocLoader(bool aNotifyAboutBackgroundRequests);
@@ -218,7 +221,9 @@ class nsDocLoader : public nsIDocumentLoader,
 
   
   
-  void ChildDoneWithOnload(nsIDocumentLoader* aChild) {
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void ChildDoneWithOnload(
+      nsIDocumentLoader* aChild) {
     mChildrenInOnload.RemoveObject(aChild);
     DocLoaderIsEmpty(true);
   }
@@ -230,7 +235,7 @@ class nsDocLoader : public nsIDocumentLoader,
   
   
   
-  void DocLoaderIsEmpty(
+  MOZ_CAN_RUN_SCRIPT void DocLoaderIsEmpty(
       bool aFlushLayout,
       const mozilla::Maybe<nsresult>& aOverrideStatus = mozilla::Nothing());
 
