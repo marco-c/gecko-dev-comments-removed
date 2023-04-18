@@ -3596,25 +3596,29 @@ nsresult EditorBase::OnCompositionChange(
   MOZ_ASSERT(
       !mPlaceholderBatch,
       "UpdateIMEComposition() must be called without place holder batch");
-  bool wasComposing = mComposition->IsComposing();
-  TextComposition::CompositionChangeEventHandlingMarker
-      compositionChangeEventHandlingMarker(mComposition,
-                                           &aCompositionChangeEvent);
-
-  RefPtr<nsCaret> caret = GetCaret();
+  nsString data(aCompositionChangeEvent.mData);
+  if (IsHTMLEditor()) {
+    nsContentUtils::PlatformToDOMLineBreaks(data);
+  }
 
   {
+    
+    
+    
+    const bool wasComposing = mComposition->IsComposing();
+    TextComposition::CompositionChangeEventHandlingMarker
+        compositionChangeEventHandlingMarker(mComposition,
+                                             &aCompositionChangeEvent);
     AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::IMETxnName,
                                                ScrollSelectionIntoView::Yes,
                                                __FUNCTION__);
 
+    
+    RefPtr<nsCaret> caret = GetCaret();
+
     MOZ_ASSERT(
         mIsInEditSubAction,
         "AutoPlaceholderBatch should've notified the observes of before-edit");
-    nsString data(aCompositionChangeEvent.mData);
-    if (IsHTMLEditor()) {
-      nsContentUtils::PlatformToDOMLineBreaks(data);
-    }
     
     
     rv = InsertTextAsSubAction(data, wasComposing ? SelectionHandling::Ignore
@@ -3633,6 +3637,12 @@ nsresult EditorBase::OnCompositionChange(
   
   
   if (!aCompositionChangeEvent.IsFollowedByCompositionEnd()) {
+    
+    
+    
+    
+    
+    MOZ_ASSERT_IF(mComposition, mComposition->String() == data);
     NotifyEditorObservers(eNotifyEditorObserversOfEnd);
   }
 
@@ -5235,6 +5245,9 @@ nsresult EditorBase::InitializeSelection(nsINode& aFocusEventTargetNode) {
       NS_WARNING_ASSERTION(
           NS_SUCCEEDED(rvIgnored),
           "CompositionTransaction::SetIMESelection() failed, but ignored");
+      mComposition->OnUpdateCompositionInEditor(
+          mComposition->String(), *textNode,
+          mComposition->XPOffsetInTextNode());
     }
   }
 
