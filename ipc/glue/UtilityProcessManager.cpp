@@ -201,22 +201,6 @@ void UtilityProcessManager::OnProcessUnexpectedShutdown(
   DestroyProcess();
 }
 
-void UtilityProcessManager::NotifyRemoteActorDestroyed() {
-  if (!NS_IsMainThread()) {
-    RefPtr<UtilityProcessManager> self = this;
-    NS_DispatchToMainThread(NS_NewRunnableFunction(
-        "UtilityProcessManager::NotifyRemoteActorDestroyed()",
-        [self]() { self->NotifyRemoteActorDestroyed(); }));
-    return;
-  }
-
-  
-  
-  
-  
-  OnProcessUnexpectedShutdown(mProcess);
-}
-
 void UtilityProcessManager::CleanShutdown() { DestroyProcess(); }
 
 void UtilityProcessManager::DestroyProcess() {
