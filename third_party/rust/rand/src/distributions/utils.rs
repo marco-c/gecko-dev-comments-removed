@@ -8,12 +8,10 @@
 
 
 
-#[cfg(feature = "std")] use crate::distributions::ziggurat_tables;
-#[cfg(feature = "std")] use crate::Rng;
 #[cfg(feature = "simd_support")] use packed_simd::*;
 
 
-pub trait WideningMultiply<RHS = Self> {
+pub(crate) trait WideningMultiply<RHS = Self> {
     type Output;
 
     fn wmul(self, x: RHS) -> Self::Output;
@@ -58,7 +56,6 @@ macro_rules! wmul_impl {
 wmul_impl! { u8, u16, 8 }
 wmul_impl! { u16, u32, 16 }
 wmul_impl! { u32, u64, 32 }
-#[cfg(not(target_os = "emscripten"))]
 wmul_impl! { u64, u128, 64 }
 
 
@@ -122,9 +119,6 @@ macro_rules! wmul_impl_large {
         )+
     };
 }
-#[cfg(target_os = "emscripten")]
-wmul_impl_large! { u64, 32 }
-#[cfg(not(target_os = "emscripten"))]
 wmul_impl_large! { u128, 64 }
 
 macro_rules! wmul_impl_usize {
@@ -140,12 +134,14 @@ macro_rules! wmul_impl_usize {
         }
     };
 }
+#[cfg(target_pointer_width = "16")]
+wmul_impl_usize! { u16 }
 #[cfg(target_pointer_width = "32")]
 wmul_impl_usize! { u32 }
 #[cfg(target_pointer_width = "64")]
 wmul_impl_usize! { u64 }
 
-#[cfg(all(feature = "simd_support", feature = "nightly"))]
+#[cfg(feature = "simd_support")]
 mod simd_wmul {
     use super::*;
     #[cfg(target_arch = "x86")] use core::arch::x86::*;
@@ -161,9 +157,8 @@ mod simd_wmul {
     }
 
     wmul_impl! { (u16x2, u32x2),, 16 }
-    #[cfg(not(target_feature = "sse2"))]
     wmul_impl! { (u16x4, u32x4),, 16 }
-    #[cfg(not(target_feature = "sse4.2"))]
+    #[cfg(not(target_feature = "sse2"))]
     wmul_impl! { (u16x8, u32x8),, 16 }
     #[cfg(not(target_feature = "avx2"))]
     wmul_impl! { (u16x16, u32x16),, 16 }
@@ -189,8 +184,6 @@ mod simd_wmul {
     }
 
     #[cfg(target_feature = "sse2")]
-    wmul_impl_16! { u16x4, __m64, _mm_mulhi_pu16, _mm_mullo_pi16 }
-    #[cfg(target_feature = "sse4.2")]
     wmul_impl_16! { u16x8, __m128i, _mm_mulhi_epu16, _mm_mullo_epi16 }
     #[cfg(target_feature = "avx2")]
     wmul_impl_16! { u16x16, __m256i, _mm256_mulhi_epu16, _mm256_mullo_epi16 }
@@ -210,9 +203,6 @@ mod simd_wmul {
     wmul_impl_large! { (u32x16,) u32, 16 }
     wmul_impl_large! { (u64x2, u64x4, u64x8,) u64, 32 }
 }
-#[cfg(all(feature = "simd_support", feature = "nightly"))]
-pub use self::simd_wmul::*;
-
 
 
 pub(crate) trait FloatSIMDUtils {
@@ -243,6 +233,8 @@ pub(crate) trait FloatSIMDUtils {
 
 
 #[cfg(not(std))]
+
+#[allow(clippy::wrong_self_convention)]
 pub(crate) trait Float: Sized {
     fn is_nan(self) -> bool;
     fn is_infinite(self) -> bool;
@@ -435,113 +427,3 @@ macro_rules! simd_impl {
 #[cfg(feature="simd_support")] simd_impl! { f64x2, f64, m64x2, u64x2 }
 #[cfg(feature="simd_support")] simd_impl! { f64x4, f64, m64x4, u64x4 }
 #[cfg(feature="simd_support")] simd_impl! { f64x8, f64, m64x8, u64x8 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(feature = "std")]
-pub fn log_gamma(x: f64) -> f64 {
-    
-    let coefficients: [f64; 6] = [
-        76.18009172947146,
-        -86.50532032941677,
-        24.01409824083091,
-        -1.231739572450155,
-        0.1208650973866179e-2,
-        -0.5395239384953e-5,
-    ];
-
-    
-    let tmp = x + 5.5;
-    let log = (x + 0.5) * tmp.ln() - tmp;
-
-    
-    let mut a = 1.000000000190015;
-    let mut denom = x;
-    for coeff in &coefficients {
-        denom += 1.0;
-        a += coeff / denom;
-    }
-
-    
-    
-    
-    log + (2.5066282746310005 * a / x).ln()
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(feature = "std")]
-#[inline(always)]
-pub fn ziggurat<R: Rng + ?Sized, P, Z>(
-    rng: &mut R,
-    symmetric: bool,
-    x_tab: ziggurat_tables::ZigTable,
-    f_tab: ziggurat_tables::ZigTable,
-    mut pdf: P,
-    mut zero_case: Z
-) -> f64
-where
-    P: FnMut(f64) -> f64,
-    Z: FnMut(&mut R, f64) -> f64,
-{
-    use crate::distributions::float::IntoFloat;
-    loop {
-        
-        
-        
-        
-        let bits = rng.next_u64();
-        let i = bits as usize & 0xff;
-
-        let u = if symmetric {
-            
-            
-            
-            
-            
-            (bits >> 12).into_float_with_exponent(1) - 3.0
-        } else {
-            
-            (bits >> 12).into_float_with_exponent(0) - (1.0 - ::core::f64::EPSILON / 2.0)
-        };
-        let x = u * x_tab[i];
-
-        let test_x = if symmetric { x.abs() } else { x };
-
-        
-        if test_x < x_tab[i + 1] {
-            return x;
-        }
-        if i == 0 {
-            return zero_case(rng, u);
-        }
-        
-        if f_tab[i + 1] + (f_tab[i] - f_tab[i + 1]) * rng.gen::<f64>() < pdf(x) {
-            return x;
-        }
-    }
-}

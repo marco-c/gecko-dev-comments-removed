@@ -10,10 +10,18 @@
 
 use core::char;
 use core::num::Wrapping;
+#[cfg(feature = "alloc")]
+use alloc::string::String;
 
 use crate::distributions::{Distribution, Standard, Uniform};
+#[cfg(feature = "alloc")]
+use crate::distributions::DistString;
 use crate::Rng;
 
+#[cfg(feature = "serde1")]
+use serde::{Serialize, Deserialize};
+#[cfg(feature = "min_const_gen")]
+use core::mem::{self, MaybeUninit};
 
 
 
@@ -33,7 +41,31 @@ use crate::Rng;
 
 
 
-#[derive(Debug)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Alphanumeric;
 
 
@@ -60,8 +92,21 @@ impl Distribution<char> for Standard {
     }
 }
 
-impl Distribution<char> for Alphanumeric {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> char {
+
+
+#[cfg(feature = "alloc")]
+impl DistString for Standard {
+    fn append_string<R: Rng + ?Sized>(&self, rng: &mut R, s: &mut String, len: usize) {
+        
+        
+        
+        s.reserve(4 * len);
+        s.extend(Distribution::<char>::sample_iter(self, rng).take(len));
+    }
+}
+
+impl Distribution<u8> for Alphanumeric {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> u8 {
         const RANGE: u32 = 26 + 26 + 10;
         const GEN_ASCII_STR_CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
                 abcdefghijklmnopqrstuvwxyz\
@@ -73,8 +118,18 @@ impl Distribution<char> for Alphanumeric {
         loop {
             let var = rng.next_u32() >> (32 - 6);
             if var < RANGE {
-                return GEN_ASCII_STR_CHARSET[var as usize] as char;
+                return GEN_ASCII_STR_CHARSET[var as usize];
             }
+        }
+    }
+}
+
+#[cfg(feature = "alloc")]
+impl DistString for Alphanumeric {
+    fn append_string<R: Rng + ?Sized>(&self, rng: &mut R, string: &mut String, len: usize) {
+        unsafe {
+            let v = string.as_mut_vec();
+            v.extend(self.sample_iter(rng).take(len));
         }
     }
 }
@@ -134,6 +189,24 @@ tuple_impl! {A, B, C, D, E, F, G, H, I, J}
 tuple_impl! {A, B, C, D, E, F, G, H, I, J, K}
 tuple_impl! {A, B, C, D, E, F, G, H, I, J, K, L}
 
+#[cfg(feature = "min_const_gen")]
+#[cfg_attr(doc_cfg, doc(cfg(feature = "min_const_gen")))]
+impl<T, const N: usize> Distribution<[T; N]> for Standard
+where Standard: Distribution<T>
+{
+    #[inline]
+    fn sample<R: Rng + ?Sized>(&self, _rng: &mut R) -> [T; N] {
+        let mut buff: [MaybeUninit<T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
+
+        for elem in &mut buff {
+            *elem = MaybeUninit::new(_rng.gen());
+        }
+
+        unsafe { mem::transmute_copy::<_, _>(&buff) }
+    }
+}
+
+#[cfg(not(feature = "min_const_gen"))]
 macro_rules! array_impl {
     
     {$n:expr, $t:ident, $($ts:ident,)*} => {
@@ -154,6 +227,7 @@ macro_rules! array_impl {
     };
 }
 
+#[cfg(not(feature = "min_const_gen"))]
 array_impl! {32, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T,}
 
 impl<T> Distribution<Option<T>> for Standard
@@ -184,7 +258,7 @@ where Standard: Distribution<T>
 mod tests {
     use super::*;
     use crate::RngCore;
-    #[cfg(all(not(feature = "std"), feature = "alloc"))] use alloc::string::String;
+    #[cfg(feature = "alloc")] use alloc::string::String;
 
     #[test]
     fn test_misc() {
@@ -206,7 +280,7 @@ mod tests {
             .map(|()| rng.gen::<char>())
             .take(1000)
             .collect();
-        assert!(word.len() != 0);
+        assert!(!word.is_empty());
     }
 
     #[test]
@@ -217,12 +291,12 @@ mod tests {
         
         let mut incorrect = false;
         for _ in 0..100 {
-            let c = rng.sample(Alphanumeric);
-            incorrect |= !((c >= '0' && c <= '9') ||
-                           (c >= 'A' && c <= 'Z') ||
-                           (c >= 'a' && c <= 'z') );
+            let c: char = rng.sample(Alphanumeric).into();
+            incorrect |= !(('0'..='9').contains(&c) ||
+                           ('A'..='Z').contains(&c) ||
+                           ('a'..='z').contains(&c) );
         }
-        assert!(incorrect == false);
+        assert!(!incorrect);
     }
 
     #[test]
@@ -245,7 +319,7 @@ mod tests {
             '\u{ed692}',
             '\u{35888}',
         ]);
-        test_samples(&Alphanumeric, 'a', &['h', 'm', 'e', '3', 'M']);
+        test_samples(&Alphanumeric, 0, &[104, 109, 101, 51, 77]);
         test_samples(&Standard, false, &[true, true, false, true, false]);
         test_samples(&Standard, None as Option<bool>, &[
             Some(true),

@@ -12,6 +12,8 @@ use crate::distributions::Distribution;
 use crate::Rng;
 use core::{fmt, u64};
 
+#[cfg(feature = "serde1")]
+use serde::{Serialize, Deserialize};
 
 
 
@@ -31,7 +33,8 @@ use core::{fmt, u64};
 
 
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 pub struct Bernoulli {
     
     p_int: u64,
@@ -93,7 +96,7 @@ impl Bernoulli {
     
     #[inline]
     pub fn new(p: f64) -> Result<Bernoulli, BernoulliError> {
-        if !(p >= 0.0 && p < 1.0) {
+        if !(0.0..1.0).contains(&p) {
             if p == 1.0 {
                 return Ok(Bernoulli { p_int: ALWAYS_TRUE });
             }
@@ -144,7 +147,19 @@ mod test {
     use crate::Rng;
 
     #[test]
+    #[cfg(feature="serde1")]
+    fn test_serializing_deserializing_bernoulli() {
+        let coin_flip = Bernoulli::new(0.5).unwrap();
+        let de_coin_flip : Bernoulli = bincode::deserialize(&bincode::serialize(&coin_flip).unwrap()).unwrap();
+
+        assert_eq!(coin_flip.p_int, de_coin_flip.p_int);
+    }
+
+    #[test]
     fn test_trivial() {
+        
+        #![allow(clippy::bool_assert_comparison)]
+
         let mut r = crate::test::rng(1);
         let always_false = Bernoulli::new(0.0).unwrap();
         let always_true = Bernoulli::new(1.0).unwrap();
@@ -195,5 +210,10 @@ mod test {
         assert_eq!(buf, [
             true, false, false, true, false, false, true, true, true, true
         ]);
+    }
+
+    #[test]
+    fn bernoulli_distributions_can_be_compared() {
+        assert_eq!(Bernoulli::new(1.0), Bernoulli::new(1.0));
     }
 }
