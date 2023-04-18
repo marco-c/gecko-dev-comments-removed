@@ -92,16 +92,7 @@ class Module : public JS::WasmModule {
   const CustomSectionVector customSections_;
 
   
-  
-  
-  
-  
-  
-  
 
-  mutable Atomic<bool> debugCodeClaimed_;
-  const UniqueConstBytes debugUnlinkedCode_;
-  const UniqueLinkData debugLinkData_;
   const SharedBytes debugBytecode_;
 
   
@@ -147,7 +138,6 @@ class Module : public JS::WasmModule {
   bool initSegments(JSContext* cx, HandleWasmInstanceObject instance,
                     HandleWasmMemoryObject memory,
                     const ValVector& globalImportValues) const;
-  SharedCode getDebugEnabledCode() const;
 
   class Tier2GeneratorTaskImpl;
 
@@ -155,8 +145,6 @@ class Module : public JS::WasmModule {
   Module(const Code& code, ImportVector&& imports, ExportVector&& exports,
          DataSegmentVector&& dataSegments, ElemSegmentVector&& elemSegments,
          CustomSectionVector&& customSections,
-         UniqueConstBytes debugUnlinkedCode = nullptr,
-         UniqueLinkData debugLinkData = nullptr,
          const ShareableBytes* debugBytecode = nullptr,
          bool loggingDeserialized = false)
       : code_(&code),
@@ -165,14 +153,9 @@ class Module : public JS::WasmModule {
         dataSegments_(std::move(dataSegments)),
         elemSegments_(std::move(elemSegments)),
         customSections_(std::move(customSections)),
-        debugCodeClaimed_(false),
-        debugUnlinkedCode_(std::move(debugUnlinkedCode)),
-        debugLinkData_(std::move(debugLinkData)),
         debugBytecode_(debugBytecode),
         loggingDeserialized_(loggingDeserialized),
         testingTier2Active_(false) {
-    MOZ_ASSERT_IF(metadata().debugEnabled,
-                  debugUnlinkedCode_ && debugLinkData_);
     initGCMallocBytesExcludingCode();
   }
   ~Module() override;
