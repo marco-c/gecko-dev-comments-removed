@@ -33,6 +33,9 @@
 #include "vm/JSContext-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/PlainObject-inl.h"
+#ifdef ENABLE_RECORD_TUPLE
+#  include "vm/TupleType.h"
+#endif
 
 using namespace js;
 using namespace js::gc;
@@ -652,8 +655,8 @@ size_t js::TenuringTracer::moveElementsToTenured(NativeObject* dst,
   uint32_t numShifted = srcHeader->numShiftedElements();
 
   
-  if (src->is<ArrayObject>() && nslots <= GetGCKindSlots(dstKind)) {
-    dst->as<ArrayObject>().setFixedElements();
+  if (src->canHaveFixedElements() && nslots <= GetGCKindSlots(dstKind)) {
+    dst->as<NativeObject>().setFixedElements();
     js_memcpy(dst->getElementsHeader(), srcAllocatedHeader, allocSize);
     dst->elements_ += numShifted;
     nursery().setElementsForwardingPointer(srcHeader, dst->getElementsHeader(),
