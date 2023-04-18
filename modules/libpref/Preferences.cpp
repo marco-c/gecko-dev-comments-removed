@@ -4069,11 +4069,6 @@ void Preferences::ReadUserOverridePrefs() {
 
   aFile->AppendNative("user.js"_ns);
   rv = openPrefFile(aFile, PrefValueKind::User);
-  if (rv != NS_ERROR_FILE_NOT_FOUND) {
-    
-    
-    Telemetry::ScalarSet(Telemetry::ScalarID::PREFERENCES_READ_USER_JS, true);
-  }
 }
 
 nsresult Preferences::MakeBackupPrefFile(nsIFile* aFile) {
