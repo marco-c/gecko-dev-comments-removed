@@ -3029,10 +3029,9 @@ static void locked_profiler_stream_json_for_this_process(
       
       
       
-      const ThreadRegistrationInfo threadInfo{"AndroidUI (JVM)",
-                                              ProfilerThreadId{}, false,
-                                              CorePS::ProcessStartTime()};
-      ProfiledThreadData profiledThreadData(threadInfo);
+      ProfiledThreadData profiledThreadData(
+          ThreadRegistrationInfo{"AndroidUI (JVM)", ProfilerThreadId{}, false,
+                                 CorePS::ProcessStartTime()});
       profiledThreadData.StreamJSON(
           javaBuffer, nullptr, aWriter, CorePS::ProcessName(aLock),
           CorePS::ETLDplus1(aLock), CorePS::ProcessStartTime(), aSinceTime,
