@@ -4388,11 +4388,13 @@ bool AsyncPanZoomController::UpdateAnimation(
   TimeDuration sampleTimeDelta = aSampleTime - mLastSampleTime;
   mLastSampleTime = aSampleTime;
 
-  
-  
-  
-  if (APZCTreeManager* treeManagerLocal = GetApzcTreeManager()) {
-    mScrollGeneration = treeManagerLocal->NewAPZScrollGeneration();
+  if (needComposite || mAnimation) {
+    
+    
+    
+    if (APZCTreeManager* treeManagerLocal = GetApzcTreeManager()) {
+      mScrollGeneration = treeManagerLocal->NewAPZScrollGeneration();
+    }
   }
 
   if (mAnimation) {
