@@ -66,25 +66,6 @@ static RefPtr<EncodedFrame> CreateFrame(EncodedFrame::FrameType aType,
       aType, std::move(data));
 }
 
-namespace testing::internal {
-
-
-template <typename Element>
-class StlContainerView<nsTArray<Element>> {
- public:
-  typedef GTEST_REMOVE_CONST_(Element) RawElement;
-  typedef std::vector<RawElement> type;
-  typedef const type const_reference;
-  static const_reference ConstReference(const nsTArray<Element>& aContainer) {
-    StaticAssertTypeEq<Element, RawElement>();
-    return type(aContainer.begin(), aContainer.end());
-  }
-  static type Copy(const nsTArray<Element>& aContainer) {
-    return type(aContainer.begin(), aContainer.end());
-  }
-};
-}  
-
 class MockContainerWriter : public ContainerWriter {
  public:
   MOCK_METHOD2(WriteEncodedTrack,
