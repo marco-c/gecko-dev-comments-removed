@@ -260,14 +260,27 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
       EncodedResponseSource responseSource,  bool& expired);
   TimeDuration GetOCSPTimeout() const;
 
+  Result CheckRevocationByCRLite(const mozilla::pkix::CertID& certID,
+                                 const mozilla::pkix::Input& sctExtension,
+                                  bool& crliteCoversCertificate);
+
+  Result CheckRevocationByOCSP(
+      const mozilla::pkix::CertID& certID, mozilla::pkix::Time time,
+      mozilla::pkix::Duration validityDuration, const nsCString& aiaLocation,
+      const bool crliteCoversCertificate, const Result crliteResult,
+       const mozilla::pkix::Input* stapledOCSPResponse,
+       bool& softFailure);
+
   Result SynchronousCheckRevocationWithServer(
       const mozilla::pkix::CertID& certID, const nsCString& aiaLocation,
       mozilla::pkix::Time time, uint16_t maxOCSPLifetimeInDays,
       const Result cachedResponseResult, const Result stapledOCSPResponseResult,
-      const bool crliteFilterCoversCertificate, const Result crliteResult);
+      const bool crliteFilterCoversCertificate, const Result crliteResult,
+       bool& softFailure);
   Result HandleOCSPFailure(const Result cachedResponseResult,
                            const Result stapledOCSPResponseResult,
-                           const Result error);
+                           const Result error,
+                            bool& softFailure);
 
   const SECTrustType mCertDBTrustType;
   const OCSPFetching mOCSPFetching;

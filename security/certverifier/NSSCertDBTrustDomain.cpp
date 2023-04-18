@@ -713,62 +713,124 @@ Result NSSCertDBTrustDomain::CheckRevocation(
     return Success;
   }
 
-  bool crliteFilterCoversCertificate = false;
-  Result crliteResult = Success;
-  if (mCRLiteMode != CRLiteMode::Disabled && sctExtension) {
-    MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-            ("NSSCertDBTrustDomain::CheckRevocation: checking CRLite"));
-    nsTArray<uint8_t> issuerSubjectPublicKeyInfoBytes;
-    issuerSubjectPublicKeyInfoBytes.AppendElements(
-        certID.issuerSubjectPublicKeyInfo.UnsafeGetData(),
-        certID.issuerSubjectPublicKeyInfo.GetLength());
-    nsTArray<uint8_t> serialNumberBytes;
-    serialNumberBytes.AppendElements(certID.serialNumber.UnsafeGetData(),
-                                     certID.serialNumber.GetLength());
-    
-    
+  
+  
+  
+  nsCString aiaLocation(VoidCString());
+  if (aiaExtension) {
+    UniquePLArenaPool arena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
+    if (!arena) {
+      return Result::FATAL_ERROR_NO_MEMORY;
+    }
     Result rv =
-        CheckCRLiteStash(issuerSubjectPublicKeyInfoBytes, serialNumberBytes);
+        GetOCSPAuthorityInfoAccessLocation(arena, *aiaExtension, aiaLocation);
     if (rv != Success) {
       return rv;
     }
+  }
 
-    nsTArray<uint8_t> issuerBytes;
-    issuerBytes.AppendElements(certID.issuer.UnsafeGetData(),
-                               certID.issuer.GetLength());
+  bool crliteCoversCertificate = false;
+  Result crliteResult = Success;
+  if (mCRLiteMode != CRLiteMode::Disabled && sctExtension) {
+    crliteResult =
+        CheckRevocationByCRLite(certID, *sctExtension, crliteCoversCertificate);
 
-    nsTArray<RefPtr<nsICRLiteTimestamp>> timestamps;
-    rv = BuildCRLiteTimestampArray(*sctExtension, timestamps);
-    if (rv != Success) {
-      MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-              ("decoding SCT extension failed - CRLite will be not be "
-               "consulted"));
-    } else {
-      crliteResult = CheckCRLite(issuerBytes, issuerSubjectPublicKeyInfoBytes,
-                                 serialNumberBytes, timestamps,
-                                 crliteFilterCoversCertificate);
+    
+    
+    if (crliteResult != Success &&
+        crliteResult != Result::ERROR_REVOKED_CERTIFICATE) {
+      return crliteResult;
+    }
+
+    if (crliteCoversCertificate) {
       
       
-      if (crliteResult != Success &&
-          crliteResult != Result::ERROR_REVOKED_CERTIFICATE) {
+      
+      if (mCRLiteMode == CRLiteMode::Enforce) {
         return crliteResult;
       }
-      if (crliteFilterCoversCertificate) {
-        
-        
-        
-        
-        if (mCRLiteMode == CRLiteMode::Enforce ||
-            (mCRLiteMode == CRLiteMode::ConfirmRevocations &&
-             crliteResult == Success)) {
-          return crliteResult;
-        }
+      
+      
+      
+      if (mCRLiteMode == CRLiteMode::ConfirmRevocations &&
+          aiaLocation.IsVoid()) {
+        return crliteResult;
+      }
+      
+      
+      if (mCRLiteMode == CRLiteMode::ConfirmRevocations &&
+          crliteResult == Success) {
+        return Success;
       }
     }
   }
 
-  const uint16_t maxOCSPLifetimeInDays = 10;
+  bool ocspSoftFailure = false;
+  Result ocspResult = CheckRevocationByOCSP(
+      certID, time, validityDuration, aiaLocation, crliteCoversCertificate,
+      crliteResult, stapledOCSPResponse, ocspSoftFailure);
 
+  
+  
+  if (crliteCoversCertificate &&
+      crliteResult == Result::ERROR_REVOKED_CERTIFICATE &&
+      mCRLiteMode == CRLiteMode::ConfirmRevocations &&
+      (ocspResult != Success || ocspSoftFailure)) {
+    return Result::ERROR_REVOKED_CERTIFICATE;
+  }
+
+  MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
+          ("NSSCertDBTrustDomain: end of CheckRevocation"));
+
+  return ocspResult;
+}
+
+Result NSSCertDBTrustDomain::CheckRevocationByCRLite(
+    const CertID& certID, const Input& sctExtension,
+     bool& crliteCoversCertificate) {
+  crliteCoversCertificate = false;
+  MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
+          ("NSSCertDBTrustDomain::CheckRevocation: checking CRLite"));
+  nsTArray<uint8_t> issuerSubjectPublicKeyInfoBytes;
+  issuerSubjectPublicKeyInfoBytes.AppendElements(
+      certID.issuerSubjectPublicKeyInfo.UnsafeGetData(),
+      certID.issuerSubjectPublicKeyInfo.GetLength());
+  nsTArray<uint8_t> serialNumberBytes;
+  serialNumberBytes.AppendElements(certID.serialNumber.UnsafeGetData(),
+                                   certID.serialNumber.GetLength());
+  
+  
+  Result rv =
+      CheckCRLiteStash(issuerSubjectPublicKeyInfoBytes, serialNumberBytes);
+  if (rv != Success) {
+    crliteCoversCertificate = (rv == Result::ERROR_REVOKED_CERTIFICATE);
+    return rv;
+  }
+
+  nsTArray<uint8_t> issuerBytes;
+  issuerBytes.AppendElements(certID.issuer.UnsafeGetData(),
+                             certID.issuer.GetLength());
+
+  nsTArray<RefPtr<nsICRLiteTimestamp>> timestamps;
+  rv = BuildCRLiteTimestampArray(sctExtension, timestamps);
+  if (rv != Success) {
+    MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
+            ("decoding SCT extension failed - CRLite will be not be "
+             "consulted"));
+    return Success;
+  }
+  return CheckCRLite(issuerBytes, issuerSubjectPublicKeyInfoBytes,
+                     serialNumberBytes, timestamps, crliteCoversCertificate);
+}
+
+Result NSSCertDBTrustDomain::CheckRevocationByOCSP(
+    const CertID& certID, Time time, Duration validityDuration,
+    const nsCString& aiaLocation, const bool crliteCoversCertificate,
+    const Result crliteResult,
+     const Input* stapledOCSPResponse,
+     bool& softFailure) {
+  softFailure = false;
+  const uint16_t maxOCSPLifetimeInDays = 10;
   
   
   
@@ -886,6 +948,7 @@ Result NSSCertDBTrustDomain::CheckRevocation(
       return Result::ERROR_OCSP_OLD_RESPONSE;
     }
 
+    softFailure = true;
     return Success;
   }
 
@@ -894,21 +957,6 @@ Result NSSCertDBTrustDomain::CheckRevocation(
       return cachedResponseResult;
     }
     return Result::ERROR_OCSP_UNKNOWN_CERT;
-  }
-
-  UniquePLArenaPool arena(PORT_NewArena(DER_DEFAULT_CHUNKSIZE));
-  if (!arena) {
-    return Result::FATAL_ERROR_NO_MEMORY;
-  }
-
-  Result rv;
-  nsCString aiaLocation(VoidCString());
-
-  if (aiaExtension) {
-    rv = GetOCSPAuthorityInfoAccessLocation(arena, *aiaExtension, aiaLocation);
-    if (rv != Success) {
-      return rv;
-    }
   }
 
   if (aiaLocation.IsVoid()) {
@@ -927,6 +975,8 @@ Result NSSCertDBTrustDomain::CheckRevocation(
     
     
     
+    
+    
     return Success;
   }
 
@@ -938,18 +988,19 @@ Result NSSCertDBTrustDomain::CheckRevocation(
     
     return SynchronousCheckRevocationWithServer(
         certID, aiaLocation, time, maxOCSPLifetimeInDays, cachedResponseResult,
-        stapledOCSPResponseResult, crliteFilterCoversCertificate, crliteResult);
+        stapledOCSPResponseResult, crliteCoversCertificate, crliteResult,
+        softFailure);
   }
 
   return HandleOCSPFailure(cachedResponseResult, stapledOCSPResponseResult,
-                           cachedResponseResult);
+                           cachedResponseResult, softFailure);
 }
 
 Result NSSCertDBTrustDomain::SynchronousCheckRevocationWithServer(
     const CertID& certID, const nsCString& aiaLocation, Time time,
     uint16_t maxOCSPLifetimeInDays, const Result cachedResponseResult,
-    const Result stapledOCSPResponseResult,
-    const bool crliteFilterCoversCertificate, const Result crliteResult) {
+    const Result stapledOCSPResponseResult, const bool crliteCoversCertificate,
+    const Result crliteResult,  bool& softFailure) {
   uint8_t ocspRequestBytes[OCSP_REQUEST_MAX_LENGTH];
   size_t ocspRequestLength;
 
@@ -980,7 +1031,7 @@ Result NSSCertDBTrustDomain::SynchronousCheckRevocationWithServer(
       return cacheRV;
     }
 
-    if (crliteFilterCoversCertificate) {
+    if (crliteCoversCertificate) {
       if (crliteResult == Success) {
         
         Telemetry::AccumulateCategorical(
@@ -993,7 +1044,7 @@ Result NSSCertDBTrustDomain::SynchronousCheckRevocationWithServer(
     }
 
     return HandleOCSPFailure(cachedResponseResult, stapledOCSPResponseResult,
-                             rv);
+                             rv, softFailure);
   }
 
   
@@ -1011,7 +1062,7 @@ Result NSSCertDBTrustDomain::SynchronousCheckRevocationWithServer(
   
   
   
-  if (crliteFilterCoversCertificate) {
+  if (crliteCoversCertificate) {
     if (rv == Success) {
       if (crliteResult == Success) {
         
@@ -1077,15 +1128,13 @@ Result NSSCertDBTrustDomain::SynchronousCheckRevocationWithServer(
     return stapledOCSPResponseResult;
   }
 
-  MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-          ("NSSCertDBTrustDomain: end of CheckRevocation"));
-
+  softFailure = true;
   return Success;  
 }
 
 Result NSSCertDBTrustDomain::HandleOCSPFailure(
     const Result cachedResponseResult, const Result stapledOCSPResponseResult,
-    const Result error) {
+    const Result error,  bool& softFailure) {
   if (mOCSPFetching != FetchOCSPForDVSoftFail) {
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
             ("NSSCertDBTrustDomain: returning SECFailure after OCSP request "
@@ -1110,6 +1159,8 @@ Result NSSCertDBTrustDomain::HandleOCSPFailure(
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
           ("NSSCertDBTrustDomain: returning SECSuccess after OCSP request "
            "failure"));
+
+  softFailure = true;
   return Success;  
 }
 
