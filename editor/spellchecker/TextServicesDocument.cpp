@@ -9,6 +9,7 @@
 #include "mozilla/Assertions.h"       
 #include "mozilla/EditorBase.h"       
 #include "mozilla/EditorUtils.h"      
+#include "mozilla/HTMLEditHelpers.h"  
 #include "mozilla/HTMLEditUtils.h"    
 #include "mozilla/mozalloc.h"         
 #include "mozilla/OwningNonNull.h"
@@ -1332,75 +1333,95 @@ void TextServicesDocument::DidDeleteContent(const nsIContent& aChildContent) {
   }
 }
 
-void TextServicesDocument::DidJoinNodes(const nsIContent& aLeftContent,
-                                        const nsIContent& aRightContent) {
+void TextServicesDocument::DidJoinContents(
+    const EditorRawDOMPoint& aJoinedPoint, const nsIContent& aRemovedContent,
+    JoinNodesDirection aJoinNodesDirection) {
   
-  if (!aLeftContent.IsText() || !aRightContent.IsText()) {
+  if (!aJoinedPoint.IsInTextNode() || !aRemovedContent.IsText()) {
     return;
   }
 
   
   
 
-  Maybe<size_t> maybeLeftIndex =
-      mOffsetTable.FirstIndexOf(*aLeftContent.AsText());
-  if (maybeLeftIndex.isNothing()) {
+  Maybe<size_t> maybeRemovedIndex =
+      mOffsetTable.FirstIndexOf(*aRemovedContent.AsText());
+  if (maybeRemovedIndex.isNothing()) {
     
     
     return;
   }
 
-  Maybe<size_t> maybeRightIndex =
-      mOffsetTable.FirstIndexOf(*aRightContent.AsText());
-  if (maybeRightIndex.isNothing()) {
+  Maybe<size_t> maybeJoinedIndex =
+      mOffsetTable.FirstIndexOf(*aJoinedPoint.ContainerAsText());
+  if (maybeJoinedIndex.isNothing()) {
     
     
     return;
   }
 
-  const size_t leftIndex = *maybeLeftIndex;
-  const size_t rightIndex = *maybeRightIndex;
-  NS_ASSERTION(leftIndex < rightIndex, "Indexes out of order.");
+  const size_t removedIndex = *maybeRemovedIndex;
+  const size_t joinedIndex = *maybeJoinedIndex;
 
-  if (leftIndex > rightIndex) {
-    
-    return;
+  if (aJoinNodesDirection == JoinNodesDirection::LeftNodeIntoRightNode) {
+    if (MOZ_UNLIKELY(removedIndex > joinedIndex)) {
+      NS_ASSERTION(removedIndex < joinedIndex, "Indexes out of order.");
+      return;
+    }
+    NS_ASSERTION(mOffsetTable[joinedIndex]->mOffsetInTextNode == 0,
+                 "Unexpected offset value for joinedIndex.");
+  } else {
+    if (MOZ_UNLIKELY(joinedIndex > removedIndex)) {
+      NS_ASSERTION(joinedIndex < removedIndex, "Indexes out of order.");
+      return;
+    }
+    NS_ASSERTION(mOffsetTable[removedIndex]->mOffsetInTextNode == 0,
+                 "Unexpected offset value for rightIndex.");
   }
-
-  NS_ASSERTION(mOffsetTable[rightIndex]->mOffsetInTextNode == 0,
-               "Unexpected offset value for rightIndex.");
 
   
   
-  uint32_t nodeLength = aLeftContent.AsText()->Length();
-  for (uint32_t i = leftIndex; i < rightIndex; i++) {
+  
+  const uint32_t movedTextDataLength =
+      aJoinNodesDirection == JoinNodesDirection::LeftNodeIntoRightNode
+          ? aJoinedPoint.Offset()
+          : aJoinedPoint.ContainerAsText()->TextDataLength() -
+                aJoinedPoint.Offset();
+  for (uint32_t i = removedIndex; i < mOffsetTable.Length(); i++) {
     const UniquePtr<OffsetEntry>& entry = mOffsetTable[i];
     LockOffsetEntryArrayLengthInDebugBuild(observer, mOffsetTable);
-    if (entry->mTextNode != aLeftContent.AsText()) {
+    if (entry->mTextNode != aRemovedContent.AsText()) {
       break;
     }
     if (entry->mIsValid) {
-      entry->mTextNode = const_cast<Text*>(aRightContent.AsText());
+      entry->mTextNode = aJoinedPoint.ContainerAsText();
+      if (aJoinNodesDirection == JoinNodesDirection::RightNodeIntoLeftNode) {
+        
+        
+        entry->mOffsetInTextNode += movedTextDataLength;
+      }
+    }
+  }
+
+  if (aJoinNodesDirection == JoinNodesDirection::LeftNodeIntoRightNode) {
+    
+    
+    for (uint32_t i = joinedIndex; i < mOffsetTable.Length(); i++) {
+      const UniquePtr<OffsetEntry>& entry = mOffsetTable[i];
+      LockOffsetEntryArrayLengthInDebugBuild(observer, mOffsetTable);
+      if (entry->mTextNode != aJoinedPoint.ContainerAsText()) {
+        break;
+      }
+      if (entry->mIsValid) {
+        entry->mOffsetInTextNode += movedTextDataLength;
+      }
     }
   }
 
   
   
-  for (uint32_t i = rightIndex; i < mOffsetTable.Length(); i++) {
-    const UniquePtr<OffsetEntry>& entry = mOffsetTable[i];
-    LockOffsetEntryArrayLengthInDebugBuild(observer, mOffsetTable);
-    if (entry->mTextNode != aRightContent.AsText()) {
-      break;
-    }
-    if (entry->mIsValid) {
-      entry->mOffsetInTextNode += nodeLength;
-    }
-  }
-
-  
-  
-  if (mFilteredIter->GetCurrentNode() == aLeftContent.AsText()) {
-    mFilteredIter->PositionAt(const_cast<Text*>(aRightContent.AsText()));
+  if (mFilteredIter->GetCurrentNode() == aRemovedContent.AsText()) {
+    mFilteredIter->PositionAt(aJoinedPoint.ContainerAsText());
   }
 }
 
@@ -2751,17 +2772,17 @@ TextServicesDocument::DidDeleteNode(nsINode* aChild, nsresult aResult) {
   return NS_OK;
 }
 
-NS_IMETHODIMP
-TextServicesDocument::DidJoinNodes(nsINode* aLeftNode, nsINode* aRightNode,
-                                   nsINode* aParent, nsresult aResult) {
-  if (NS_WARN_IF(NS_FAILED(aResult))) {
+NS_IMETHODIMP TextServicesDocument::DidJoinContents(
+    const EditorRawDOMPoint& aJoinedPoint, const nsINode* aRemovedNode,
+    bool aLeftNodeWasRemoved) {
+  if (MOZ_UNLIKELY(NS_WARN_IF(!aJoinedPoint.IsSetAndValid()) ||
+                   NS_WARN_IF(!aRemovedNode->IsContent()))) {
     return NS_OK;
   }
-  if (NS_WARN_IF(!aLeftNode) || !aLeftNode->IsContent() ||
-      NS_WARN_IF(!aRightNode) || !aRightNode->IsContent()) {
-    return NS_OK;
-  }
-  DidJoinNodes(*aLeftNode->AsContent(), *aRightNode->AsContent());
+  DidJoinContents(aJoinedPoint, *aRemovedNode->AsContent(),
+                  aLeftNodeWasRemoved
+                      ? JoinNodesDirection::LeftNodeIntoRightNode
+                      : JoinNodesDirection::RightNodeIntoLeftNode);
   return NS_OK;
 }
 

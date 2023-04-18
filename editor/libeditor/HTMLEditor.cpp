@@ -4616,6 +4616,10 @@ nsresult HTMLEditor::JoinNodesWithTransaction(nsIContent& aLeftContent,
 
   
   
+  
+  
+  
+  
   DebugOnly<nsresult> rvIgnored = RangeUpdaterRef().SelAdjJoinNodes(
       EditorRawDOMPoint(&aRightContent, oldLeftNodeLen), aLeftContent,
       atRightContent.Offset(), JoinNodesDirection::LeftNodeIntoRightNode);
@@ -4625,18 +4629,23 @@ nsresult HTMLEditor::JoinNodesWithTransaction(nsIContent& aLeftContent,
   TopLevelEditSubActionDataRef().DidJoinContents(
       *this, EditorRawDOMPoint(&aRightContent, oldLeftNodeLen));
 
-  if (mTextServicesDocument && NS_SUCCEEDED(rv)) {
-    RefPtr<TextServicesDocument> textServicesDocument = mTextServicesDocument;
-    textServicesDocument->DidJoinNodes(aLeftContent, aRightContent);
+  if (NS_SUCCEEDED(rv)) {
+    if (RefPtr<TextServicesDocument> textServicesDocument =
+            mTextServicesDocument) {
+      textServicesDocument->DidJoinContents(
+          EditorRawDOMPoint(&aRightContent, oldLeftNodeLen), aLeftContent,
+          JoinNodesDirection::LeftNodeIntoRightNode);
+    }
   }
 
   if (!mActionListeners.IsEmpty()) {
     for (auto& listener : mActionListeners.Clone()) {
-      DebugOnly<nsresult> rvIgnored = listener->DidJoinNodes(
-          &aLeftContent, &aRightContent, atRightContent.GetContainer(), rv);
+      DebugOnly<nsresult> rvIgnored = listener->DidJoinContents(
+          EditorRawDOMPoint(&aRightContent, oldLeftNodeLen), &aLeftContent,
+          true);
       NS_WARNING_ASSERTION(
           NS_SUCCEEDED(rvIgnored),
-          "nsIEditActionListener::DidJoinNodes() failed, but ignored");
+          "nsIEditActionListener::DidJoinContents() failed, but ignored");
     }
   }
 

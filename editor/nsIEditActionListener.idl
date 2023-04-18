@@ -10,6 +10,17 @@ webidl CharacterData;
 webidl Node;
 webidl Range;
 
+%{C++
+#include "mozilla/EditorDOMPoint.h"
+class nsINode;
+class nsIContent;
+namespace mozilla {
+template class EditorDOMPointBase<nsINode*, nsIContent*>;
+} 
+%}
+
+[ref] native EditorRawDOMPointRef(mozilla::EditorDOMPointBase<nsINode*, nsIContent*>);
+
 
 
 
@@ -44,10 +55,14 @@ interface nsIEditActionListener : nsISupports
 
 
 
-  void DidJoinNodes(in Node aLeftNode,
-                    in Node aRightNode,
-                    in Node aParent,
-                    in nsresult aResult);
+
+
+
+
+  [noscript]
+  void DidJoinContents([const] in EditorRawDOMPointRef aJoinedPoint,
+                       [const] in Node aRemovedNode,
+                       in bool aLeftNodeWasRemoved);
 
   
 
