@@ -1422,21 +1422,6 @@ nsresult nsParser::Tokenize(bool aIsFinalChunk) {
 
 
 
-
-
-
-NS_IMETHODIMP
-nsParser::GetChannel(nsIChannel** aChannel) {
-  nsresult result = NS_ERROR_NOT_AVAILABLE;
-  if (mParserContext && mParserContext->mRequest) {
-    result = CallQueryInterface(mParserContext->mRequest, aChannel);
-  }
-  return result;
-}
-
-
-
-
 NS_IMETHODIMP
 nsParser::GetDTD(nsIDTD** aDTD) {
   if (mParserContext) {

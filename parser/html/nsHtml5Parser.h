@@ -75,7 +75,7 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
 
 
 
-  NS_IMETHOD GetChannel(nsIChannel** aChannel) override;
+  nsresult GetChannel(nsIChannel** aChannel);
 
   
 

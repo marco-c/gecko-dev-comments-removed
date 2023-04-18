@@ -115,14 +115,6 @@ class nsIParser : public nsParserBase {
 
 
 
-  NS_IMETHOD GetChannel(nsIChannel** aChannel) override = 0;
-
-  
-
-
-
-
-
   NS_IMETHOD GetDTD(nsIDTD** aDTD) = 0;
 
   

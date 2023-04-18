@@ -218,14 +218,6 @@ class nsParser final : public nsIParser,
 
 
 
-  NS_IMETHOD GetChannel(nsIChannel** aChannel) override;
-
-  
-
-
-
-
-
   NS_IMETHOD GetDTD(nsIDTD** aDTD) override;
 
   
