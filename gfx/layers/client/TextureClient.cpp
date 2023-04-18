@@ -1137,11 +1137,6 @@ already_AddRefed<TextureClient> TextureClient::CreateForDrawing(
     KnowsCompositor* aAllocator, gfx::SurfaceFormat aFormat, gfx::IntSize aSize,
     BackendSelector aSelector, TextureFlags aTextureFlags,
     TextureAllocationFlags aAllocFlags) {
-  if (aAllocator->SupportsTextureDirectMapping() &&
-      std::max(aSize.width, aSize.height) <= aAllocator->GetMaxTextureSize()) {
-    aAllocFlags =
-        TextureAllocationFlags(aAllocFlags | ALLOC_ALLOW_DIRECT_MAPPING);
-  }
   return TextureClient::CreateForDrawing(aAllocator->GetTextureForwarder(),
                                          aFormat, aSize, aAllocator, aSelector,
                                          aTextureFlags, aAllocFlags);
@@ -1244,19 +1239,6 @@ already_AddRefed<TextureClient> TextureClient::CreateForRawBufferAccess(
     KnowsCompositor* aAllocator, gfx::SurfaceFormat aFormat, gfx::IntSize aSize,
     gfx::BackendType aMoz2DBackend, TextureFlags aTextureFlags,
     TextureAllocationFlags aAllocFlags) {
-  
-  
-  
-  bool supportsTextureDirectMapping =
-      aAllocator->SupportsTextureDirectMapping() &&
-      std::max(aSize.width, aSize.height) <= aAllocator->GetMaxTextureSize();
-  if (supportsTextureDirectMapping) {
-    aAllocFlags =
-        TextureAllocationFlags(aAllocFlags | ALLOC_ALLOW_DIRECT_MAPPING);
-  } else {
-    aAllocFlags =
-        TextureAllocationFlags(aAllocFlags & ~ALLOC_ALLOW_DIRECT_MAPPING);
-  }
   return CreateForRawBufferAccess(
       aAllocator->GetTextureForwarder(), aFormat, aSize, aMoz2DBackend,
       aAllocator->GetCompositorBackendType(), aTextureFlags, aAllocFlags);
