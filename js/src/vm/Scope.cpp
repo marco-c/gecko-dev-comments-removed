@@ -14,10 +14,8 @@
 
 #include "builtin/ModuleObject.h"
 #include "frontend/CompilationStencil.h"  
-#include "frontend/Parser.h"  
 #include "frontend/ParserAtom.h"  
 #include "frontend/ScriptIndex.h"  
-#include "frontend/SharedContext.h"
 #include "frontend/Stencil.h"
 #include "gc/Allocator.h"
 #include "gc/MaybeRooted.h"

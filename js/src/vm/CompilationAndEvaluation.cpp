@@ -19,8 +19,6 @@
 
 #include "frontend/BytecodeCompilation.h"  
 #include "frontend/CompilationStencil.h"  
-#include "frontend/FullParseHandler.h"    
-#include "frontend/ParseContext.h"        
 #include "frontend/Parser.h"       
 #include "js/CharacterEncoding.h"  
 #include "js/friend/ErrorMessages.h"  

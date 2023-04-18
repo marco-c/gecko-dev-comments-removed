@@ -13,13 +13,17 @@
 
 #include "NamespaceImports.h"
 
-#include "frontend/ParserAtom.h"  
 #include "js/Conversions.h"
 #include "js/friend/ErrorMessages.h"  
 
 #include "vm/StringType.h"
 
 namespace js {
+
+namespace frontend {
+class ParserAtomsTable;
+class TaggedParserAtomIndex;
+}  
 
 class GlobalObject;
 class StringBuffer;

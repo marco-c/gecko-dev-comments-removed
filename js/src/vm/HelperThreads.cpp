@@ -16,7 +16,6 @@
 #include "frontend/BytecodeCompilation.h"  
 #include "frontend/BytecodeCompiler.h"  
 #include "frontend/CompilationStencil.h"  
-#include "frontend/ParserAtom.h"          
 #include "jit/IonCompileTask.h"
 #include "jit/JitRuntime.h"
 #include "js/CompileOptions.h"  

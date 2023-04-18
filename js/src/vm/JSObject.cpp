@@ -32,7 +32,6 @@
 #include "builtin/Symbol.h"
 #include "builtin/WeakSetObject.h"
 #include "ds/IdValuePair.h"  
-#include "frontend/BytecodeCompiler.h"
 #include "gc/Policy.h"
 #include "js/CallAndConstruct.h"  
 #include "js/CharacterEncoding.h"

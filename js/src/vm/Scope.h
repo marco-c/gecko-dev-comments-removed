@@ -34,11 +34,11 @@
 #include "js/UbiNode.h"      
 #include "js/UniquePtr.h"    
 #include "util/Poison.h"  
-#include "vm/JSFunction.h"    
-#include "vm/ScopeKind.h"     
-#include "vm/Shape.h"         
-#include "vm/Xdr.h"           
-#include "wasm/WasmJS.h"      
+#include "vm/JSFunction.h"  
+#include "vm/ScopeKind.h"   
+#include "vm/Shape.h"       
+#include "vm/Xdr.h"         
+#include "wasm/WasmJS.h"    
 
 class JSAtom;
 class JSFreeOp;
@@ -57,10 +57,8 @@ class GenericPrinter;
 
 namespace frontend {
 struct CompilationAtomCache;
-struct CompilationStencilMerger;
 class ScopeStencil;
 struct ScopeStencilRef;
-class ParserAtom;
 }  
 
 template <typename NameT>

@@ -39,8 +39,6 @@
 #include "debugger/Script.h"              
 #include "debugger/Source.h"              
 #include "frontend/CompilationStencil.h"  
-#include "frontend/NameAnalysisTypes.h"   
-#include "frontend/ParseContext.h"        
 #include "frontend/Parser.h"              
 #include "gc/FreeOp.h"                    
 #include "gc/GC.h"                        
