@@ -829,7 +829,7 @@ void ContentBlocking::UpdateAllowAccessOnParentProcess(
   nsAutoCString topKey;
   nsCOMPtr<nsIPrincipal> topPrincipal =
       AntiTrackingUtils::GetPrincipal(aParentContext->Top());
-  PermissionManager::GetKeyForPrincipal(topPrincipal, false, true, topKey);
+  PermissionManager::GetKeyForPrincipal(topPrincipal, false, topKey);
 
   
   
@@ -857,7 +857,7 @@ void ContentBlocking::UpdateAllowAccessOnParentProcess(
       }
 
       nsAutoCString key;
-      PermissionManager::GetKeyForPrincipal(principal, false, true, key);
+      PermissionManager::GetKeyForPrincipal(principal, false, key);
       
       if (topKey != key) {
         continue;

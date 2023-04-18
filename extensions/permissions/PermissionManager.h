@@ -85,7 +85,6 @@ class PermissionManager final : public nsIPermissionManager,
    public:
     static PermissionKey* CreateFromPrincipal(nsIPrincipal* aPrincipal,
                                               bool aForceStripOA,
-                                              bool aScopeToSite,
                                               nsresult& aResult);
     static PermissionKey* CreateFromURI(nsIURI* aURI, nsresult& aResult);
     static PermissionKey* CreateFromURIAndOriginAttributes(
@@ -220,12 +219,8 @@ class PermissionManager final : public nsIPermissionManager,
 
 
 
-
-
-
-
   static void GetKeyForPrincipal(nsIPrincipal* aPrincipal, bool aForceStripOA,
-                                 bool aSiteScopePermissions, nsACString& aKey);
+                                 nsACString& aKey);
 
   
 
@@ -244,12 +239,8 @@ class PermissionManager final : public nsIPermissionManager,
 
 
 
-
-
-
-
   static void GetKeyForOrigin(const nsACString& aOrigin, bool aForceStripOA,
-                              bool aSiteScopePermissions, nsACString& aKey);
+                              nsACString& aKey);
 
   
 
@@ -381,11 +372,7 @@ class PermissionManager final : public nsIPermissionManager,
 
 
 
-
-
-
   nsresult GetStripPermsForPrincipal(nsIPrincipal* aPrincipal,
-                                     bool aSiteScopePermissions,
                                      nsTArray<PermissionEntry>& aResult);
 
   
@@ -394,14 +381,6 @@ class PermissionManager final : public nsIPermissionManager,
   
   
   bool HasExpired(uint32_t aExpireType, int64_t aExpireTime);
-
-  
-  
-  
-  
-  nsresult GetAllForPrincipalHelper(nsIPrincipal* aPrincipal,
-                                    bool aSiteScopePermissions,
-                                    nsTArray<RefPtr<nsIPermission>>& aResult);
 
   
   
