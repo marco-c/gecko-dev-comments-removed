@@ -648,7 +648,7 @@ void HandleException(ResumeFromException* rfe) {
 
         if (rfe->kind == ResumeFromException::RESUME_BAILOUT) {
           if (invalidated) {
-            ionScript->decrementInvalidationCount(cx->runtime()->gcContext());
+            ionScript->decrementInvalidationCount(cx->gcContext());
           }
           return;
         }
@@ -677,7 +677,7 @@ void HandleException(ResumeFromException* rfe) {
       
       
       if (invalidated) {
-        ionScript->decrementInvalidationCount(cx->runtime()->gcContext());
+        ionScript->decrementInvalidationCount(cx->gcContext());
       }
 
     } else if (frame.isBaselineJS()) {
