@@ -1340,48 +1340,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  SplitInlinesAndCollectEditTargetNodesInOneHardLine(
-      const EditorDOMPoint& aPointInOneHardLine,
-      nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
-      EditSubAction aEditSubAction,
-      CollectNonEditableNodes aCollectNonEditableNodes) {
-    if (MOZ_UNLIKELY(
-            NS_WARN_IF(!aPointInOneHardLine.IsSet()) ||
-            NS_WARN_IF(aPointInOneHardLine.IsInNativeAnonymousSubtree()))) {
-      return NS_ERROR_INVALID_ARG;
-    }
-
-    RefPtr<nsRange> oneLineRange = CreateRangeExtendedToHardLineStartAndEnd(
-        aPointInOneHardLine, aPointInOneHardLine, aEditSubAction);
-    if (!oneLineRange) {
-      
-      ErrorResult error;
-      oneLineRange =
-          nsRange::Create(aPointInOneHardLine.ToRawRangeBoundary(),
-                          aPointInOneHardLine.ToRawRangeBoundary(), error);
-      if (NS_WARN_IF(error.Failed())) {
-        return error.StealNSResult();
-      }
-    }
-    AutoTArray<RefPtr<nsRange>, 1> arrayOfLineRanges;
-    arrayOfLineRanges.AppendElement(oneLineRange);
-    nsresult rv = SplitInlinesAndCollectEditTargetNodes(
-        arrayOfLineRanges, aOutArrayOfContents, aEditSubAction,
-        aCollectNonEditableNodes);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "SplitInlinesAndCollectEditTargetNodes() failed");
-    return rv;
-  }
-
-  
-
-
-
-
-
   nsresult CollectEditTargetNodesInExtendedSelectionRanges(
       nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
       EditSubAction aEditSubAction,
