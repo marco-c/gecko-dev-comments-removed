@@ -54,7 +54,8 @@ enum class AllocKind : uint8_t;
 class StoreBuffer;
 class TenuredCell;
 
-extern void PerformIncrementalBarrier(TenuredCell* cell);
+extern void PerformIncrementalReadBarrier(TenuredCell* cell);
+extern void PerformIncrementalPreWriteBarrier(TenuredCell* cell);
 extern void PerformIncrementalBarrierDuringFlattening(JSString* str);
 extern void UnmarkGrayGCThingRecursively(TenuredCell* cell);
 
@@ -465,7 +466,7 @@ MOZ_ALWAYS_INLINE void ReadBarrier(T* thing) {
   static_assert(std::is_base_of_v<Cell, T>);
   static_assert(!std::is_same_v<Cell, T> && !std::is_same_v<TenuredCell, T>);
 
-  if (thing && !thing->isPermanentAndMayBeShared()) {
+  if (thing) {
     ReadBarrierImpl(thing);
   }
 }
@@ -474,7 +475,6 @@ MOZ_ALWAYS_INLINE void ReadBarrierImpl(TenuredCell* thing) {
   MOZ_ASSERT(!CurrentThreadIsIonCompiling());
   MOZ_ASSERT(!CurrentThreadIsGCMarking());
   MOZ_ASSERT(thing);
-  MOZ_ASSERT(CurrentThreadCanAccessZone(thing->zoneFromAnyThread()));
 
   
   mozilla::DebugOnly<JSRuntime*> runtime = thing->runtimeFromAnyThread();
@@ -483,9 +483,7 @@ MOZ_ALWAYS_INLINE void ReadBarrierImpl(TenuredCell* thing) {
 
   JS::shadow::Zone* shadowZone = thing->shadowZoneFromAnyThread();
   if (shadowZone->needsIncrementalBarrier()) {
-    
-    MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime));
-    PerformIncrementalBarrier(thing);
+    PerformIncrementalReadBarrier(thing);
     return;
   }
 
@@ -498,6 +496,8 @@ MOZ_ALWAYS_INLINE void ReadBarrierImpl(TenuredCell* thing) {
 
 MOZ_ALWAYS_INLINE void ReadBarrierImpl(Cell* thing) {
   MOZ_ASSERT(!CurrentThreadIsGCMarking());
+  MOZ_ASSERT(thing);
+
   if (thing->isTenured()) {
     ReadBarrierImpl(&thing->asTenured());
   }
@@ -506,10 +506,7 @@ MOZ_ALWAYS_INLINE void ReadBarrierImpl(Cell* thing) {
 MOZ_ALWAYS_INLINE void PreWriteBarrierImpl(TenuredCell* thing) {
   MOZ_ASSERT(!CurrentThreadIsIonCompiling());
   MOZ_ASSERT(!CurrentThreadIsGCMarking());
-
-  if (!thing) {
-    return;
-  }
+  MOZ_ASSERT(thing);
 
   
   
@@ -519,26 +516,14 @@ MOZ_ALWAYS_INLINE void PreWriteBarrierImpl(TenuredCell* thing) {
     return;
   }
 
-  
-  
-  
-  
-  bool checkThread = zone->isAtomsZone();
-  JSRuntime* runtime = thing->runtimeFromAnyThread();
-  if (checkThread && !CurrentThreadCanAccessRuntime(runtime)) {
-    MOZ_ASSERT(CurrentThreadIsGCFinalizing() ||
-               RuntimeIsVerifyingPreBarriers(runtime));
-    return;
-  }
-
-  MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime));
-  MOZ_ASSERT(!RuntimeFromMainThreadIsHeapMajorCollecting(zone));
-  PerformIncrementalBarrier(thing);
+  PerformIncrementalPreWriteBarrier(thing);
 }
 
 MOZ_ALWAYS_INLINE void PreWriteBarrierImpl(Cell* thing) {
   MOZ_ASSERT(!CurrentThreadIsGCMarking());
-  if (thing && thing->isTenured()) {
+  MOZ_ASSERT(thing);
+
+  if (thing->isTenured()) {
     PreWriteBarrierImpl(&thing->asTenured());
   }
 }
@@ -548,7 +533,7 @@ MOZ_ALWAYS_INLINE void PreWriteBarrier(T* thing) {
   static_assert(std::is_base_of_v<Cell, T>);
   static_assert(!std::is_same_v<Cell, T> && !std::is_same_v<TenuredCell, T>);
 
-  if (thing && !thing->isPermanentAndMayBeShared()) {
+  if (thing) {
     PreWriteBarrierImpl(thing);
   }
 }

@@ -1018,19 +1018,50 @@ JS_PUBLIC_API void js::gc::PerformIncrementalReadBarrier(JS::GCCellPtr thing) {
   trc->performBarrier(thing);
 }
 
-void js::gc::PerformIncrementalBarrier(TenuredCell* cell) {
-  
+void js::gc::PerformIncrementalReadBarrier(TenuredCell* cell) {
   
 
   MOZ_ASSERT(cell);
-  MOZ_ASSERT(!JS::RuntimeHeapIsMajorCollecting());
-
   if (cell->isMarkedBlack()) {
     return;
   }
 
+  MOZ_ASSERT(!JS::RuntimeHeapIsMajorCollecting());
+
   Zone* zone = cell->zone();
   MOZ_ASSERT(zone->needsIncrementalBarrier());
+
+  
+  BarrierTracer* trc = BarrierTracer::fromTracer(zone->barrierTracer());
+
+  trc->performBarrier(JS::GCCellPtr(cell, cell->getTraceKind()));
+}
+
+void js::gc::PerformIncrementalPreWriteBarrier(TenuredCell* cell) {
+  
+  
+
+  MOZ_ASSERT(cell);
+  if (cell->isMarkedBlack()) {
+    return;
+  }
+
+  Zone* zone = cell->zoneFromAnyThread();
+  MOZ_ASSERT(zone->needsIncrementalBarrier());
+
+  
+  
+  
+  
+  bool checkThread = zone->isAtomsZone();
+  JSRuntime* runtime = cell->runtimeFromAnyThread();
+  if (checkThread && !CurrentThreadCanAccessRuntime(runtime)) {
+    MOZ_ASSERT(CurrentThreadIsGCFinalizing() ||
+               RuntimeIsVerifyingPreBarriers(runtime));
+    return;
+  }
+
+  MOZ_ASSERT(!JS::RuntimeHeapIsMajorCollecting());
 
   
   BarrierTracer* trc = BarrierTracer::fromTracer(zone->barrierTracer());
@@ -1050,7 +1081,7 @@ void js::gc::PerformIncrementalBarrierDuringFlattening(JSString* str) {
     return;
   }
 
-  PerformIncrementalBarrier(cell);
+  PerformIncrementalPreWriteBarrier(cell);
 }
 
 template <typename T>
