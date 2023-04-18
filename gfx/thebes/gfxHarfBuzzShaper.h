@@ -47,6 +47,8 @@ class gfxHarfBuzzShaper : public gfxFontShaper {
   
   hb_position_t GetGlyphHAdvance(hb_codepoint_t glyph) const;
 
+  
+  
   hb_position_t GetGlyphVAdvance(hb_codepoint_t glyph);
 
   void GetGlyphVOrigin(hb_codepoint_t aGlyph, hb_position_t* aX,

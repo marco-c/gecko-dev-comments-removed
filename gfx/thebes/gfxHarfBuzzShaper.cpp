@@ -322,8 +322,8 @@ hb_position_t gfxHarfBuzzShaper::GetGlyphVAdvance(hb_codepoint_t glyph) {
   if (!mVmtxTable) {
     
     
-    return FloatToFixed(
-        mFont->GetMetrics(nsFontMetrics::eVertical).aveCharWidth);
+    
+    return -1;
   }
 
   NS_ASSERTION(mNumLongVMetrics > 0,
@@ -367,11 +367,17 @@ hb_position_t gfxHarfBuzzShaper::HBGetGlyphVAdvance(hb_font_t* font,
   
   
   
+  hb_position_t advance = fcd->mShaper->GetGlyphVAdvance(glyph);
+  if (advance < 0) {
+    
+    advance = FloatToFixed(fcd->mShaper->GetFont()
+                               ->GetMetrics(nsFontMetrics::eVertical)
+                               .aveCharWidth);
+  }
   
   
   
-  
-  return -fcd->mShaper->GetGlyphVAdvance(glyph);
+  return -advance;
 }
 
 struct VORG {
