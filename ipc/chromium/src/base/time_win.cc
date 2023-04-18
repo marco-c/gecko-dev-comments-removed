@@ -214,10 +214,18 @@ DWORD (*tick_function)(void) = &timeGetTimeWrapper;
 
 
 
+
+static mozilla::StaticMutex sNowSingletonLock;
+
+
+
+
+
+
 class NowSingleton {
  public:
   TimeDelta Now() {
-    mozilla::StaticMutexAutoLock locked(lock_);
+    mozilla::StaticMutexAutoLock locked(sNowSingletonLock);
     
     
     DWORD now = tick_function();
@@ -229,28 +237,20 @@ class NowSingleton {
   }
 
   static NowSingleton& instance() {
-    
-    
-    
-    
-    
-    
-    
-    static mozilla::StaticMutex mutex MOZ_UNANNOTATED;
-    static NowSingleton now(mutex);
+    static NowSingleton now;
     return now;
   }
 
  private:
-  explicit NowSingleton(mozilla::StaticMutex& aMutex)
-      : lock_(aMutex),
-        rollover_(TimeDelta::FromMilliseconds(0)),
-        last_seen_(0) {}
+  explicit NowSingleton()
+      : rollover_(TimeDelta::FromMilliseconds(0)), last_seen_(0) {}
   ~NowSingleton() = default;
 
-  mozilla::StaticMutex& lock_;  
-  TimeDelta rollover_;          
-  DWORD last_seen_;  
+  TimeDelta rollover_ GUARDED_BY(
+      sNowSingletonLock);  
+  DWORD last_seen_
+      GUARDED_BY(sNowSingletonLock);  
+                                      
 
   DISALLOW_COPY_AND_ASSIGN(NowSingleton);
 };
