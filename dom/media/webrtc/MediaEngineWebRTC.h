@@ -41,8 +41,6 @@
 namespace mozilla {
 
 class MediaEngineWebRTC : public MediaEngine {
-  typedef MediaEngine Super;
-
  public:
   MediaEngineWebRTC();
 
@@ -53,9 +51,6 @@ class MediaEngineWebRTC : public MediaEngine {
   
   
   void Shutdown() override;
-
-  
-  bool SupportsDuplex();
 
   void EnumerateDevices(dom::MediaSourceEnum, MediaSinkEnum,
                         nsTArray<RefPtr<MediaDevice>>*) override;
@@ -75,9 +70,6 @@ class MediaEngineWebRTC : public MediaEngine {
 
   static void FakeDeviceChangeEventTimerTick(nsITimer* aTimer, void* aClosure);
 
-  
-  
-  bool mHasTabVideoSource;
   MediaEventListener mCameraListChangeListener;
   MediaEventListener mMicrophoneListChangeListener;
   MediaEventListener mSpeakerListChangeListener;
