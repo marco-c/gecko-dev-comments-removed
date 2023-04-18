@@ -10,6 +10,7 @@
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/layers/APZThreadUtils.h"
+#include "mozilla/layers/SynchronousTask.h"
 
 namespace mozilla {
 namespace layers {
@@ -54,27 +55,27 @@ void APZInputBridgeChild::Open(Endpoint<PAPZInputBridgeChild>&& aEndpoint) {
 
 void APZInputBridgeChild::Destroy() {
   MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(NS_IsMainThread());
 
   
   
-  if (!APZThreadUtils::IsControllerThread()) {
-    APZThreadUtils::RunOnControllerThread(
-        NewRunnableMethod("layers::APZInputBridgeChild::Destroy", this,
-                          &APZInputBridgeChild::Destroy),
-        nsIThread::DISPATCH_SYNC);
-    return;
-  }
+  layers::SynchronousTask task("layers::APZInputBridgeChild::Destroy");
+  APZThreadUtils::RunOnControllerThread(
+      NS_NewRunnableFunction("layers::APZInputBridgeChild::Destroy", [&]() {
+        APZThreadUtils::AssertOnControllerThread();
+        AutoCompleteTask complete(&task);
 
-  APZThreadUtils::AssertOnControllerThread();
+        
+        
+        mProcessToken = 0;
 
-  
-  
-  mProcessToken = 0;
+        if (mIsOpen) {
+          PAPZInputBridgeChild::Close();
+          mIsOpen = false;
+        }
+      }));
 
-  if (mIsOpen) {
-    PAPZInputBridgeChild::Close();
-    mIsOpen = false;
-  }
+  task.Wait();
 }
 
 void APZInputBridgeChild::ActorDestroy(ActorDestroyReason aWhy) {
