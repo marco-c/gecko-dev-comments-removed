@@ -171,9 +171,7 @@ class WebDriverBiDi {
     
     
     
-    logger.debug(
-      `Awaiting all initial windows to be restored before enabling the protocol`
-    );
+    logger.debug(`Waiting for initial application window to be loaded`);
     await this.agent.browserStartupFinished;
 
     this._running = true;

@@ -98,10 +98,7 @@ class CDP {
     
     
     
-    
-    logger.debug(
-      `Awaiting all initial windows to be restored before enabling the protocol`
-    );
+    logger.debug(`Waiting for initial application window to be loaded`);
     await this.agent.browserStartupFinished;
 
     Cu.printStderr(`DevTools listening on ${this.address}\n`);
