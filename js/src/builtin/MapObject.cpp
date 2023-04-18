@@ -497,8 +497,7 @@ const JSPropertySpec MapObject::staticProperties[] = {
   
   
   
-  RootedId iteratorId(
-      cx, SYMBOL_TO_JSID(JS::GetWellKnownSymbol(cx, JS::SymbolCode::iterator)));
+  RootedId iteratorId(cx, PropertyKey::Symbol(cx->wellKnownSymbols().iterator));
   return NativeDefineDataProperty(cx, nativeProto, iteratorId, entriesFn, 0);
 }
 
@@ -1297,8 +1296,7 @@ const JSPropertySpec SetObject::staticProperties[] = {
 
   
   
-  RootedId iteratorId(
-      cx, SYMBOL_TO_JSID(JS::GetWellKnownSymbol(cx, JS::SymbolCode::iterator)));
+  RootedId iteratorId(cx, PropertyKey::Symbol(cx->wellKnownSymbols().iterator));
   return NativeDefineDataProperty(cx, nativeProto, iteratorId, valuesFn, 0);
 }
 
