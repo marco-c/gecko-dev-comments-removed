@@ -71,6 +71,19 @@ var PrintUtils = {
 
 
 
+  updatePrintSetupMenuHiddenState() {
+    let pageSetupMenuItem = document.getElementById("menu_printSetup");
+    if (pageSetupMenuItem) {
+      pageSetupMenuItem.hidden = !SHOW_PAGE_SETUP_MENU;
+    }
+  },
+
+  
+
+
+
+
+
   showPageSetup() {
     let printSettings = this.getPrintSettings();
     
@@ -125,18 +138,6 @@ var PrintUtils = {
       }
     }
     return null;
-  },
-
-  
-
-
-
-
-  updatePrintPreviewMenuHiddenState() {
-    let pageSetupMenuItem = document.getElementById("menu_printSetup");
-    if (pageSetupMenuItem) {
-      pageSetupMenuItem.hidden = !SHOW_PAGE_SETUP_MENU;
-    }
   },
 
   
