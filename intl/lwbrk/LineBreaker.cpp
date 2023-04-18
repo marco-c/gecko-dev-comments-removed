@@ -400,10 +400,10 @@ static int8_t GetClass(uint32_t u, LineBreakRule aLevel,
        CLASS_OPEN_LIKE_CHARACTER,
        CLASS_CHARACTER,
        CLASS_CHARACTER,
-       CLASS_CHARACTER,
+       CLASS_CLOSE_LIKE_CHARACTER,
        CLASS_CHARACTER,
        CLASS_BREAKABLE,
-       CLASS_CHARACTER,
+       CLASS_CLOSE_LIKE_CHARACTER,
        CLASS_NON_BREAKABLE,
        CLASS_CHARACTER,
        CLASS_BREAKABLE,
@@ -412,8 +412,8 @@ static int8_t GetClass(uint32_t u, LineBreakRule aLevel,
        CLASS_BREAKABLE,
        CLASS_CLOSE_LIKE_CHARACTER,
        CLASS_NUMERIC,
-       CLASS_CHARACTER,
-       CLASS_CHARACTER,
+       CLASS_OPEN_LIKE_CHARACTER,
+       CLASS_CLOSE_LIKE_CHARACTER,
        CLASS_CHARACTER,
        CLASS_CHARACTER,
        CLASS_CHARACTER,
@@ -566,18 +566,8 @@ static int8_t GetClass(uint32_t u, LineBreakRule aLevel,
       if (l <= 0x0060) {  
         
         
-        if (l + 0x20 == ',' || l + 0x20 == '.') {
-          return CLASS_CLOSE;
-        }
         
-        
-        if (l == 0x005f) {
-          return CLASS_OPEN;
-        }
-        if (l == 0x0060) {
-          return CLASS_CLOSE;
-        }
-        return GETCLASSFROMTABLE(gLBClass00, (l + 0x20));
+        return sUnicodeLineBreakToClass[cls];
       }
       if (l < 0x00a0) {  
         switch (l) {
