@@ -974,11 +974,8 @@ void nsRetrievalContextWayland::TransferFastTrackClipboard(
   }
 }
 
-GdkAtom* nsRetrievalContextWayland::GetTargetsImpl(int32_t aWhichClipboard,
-                                                   int* aTargetNum) {
-  LOGCLIP("nsRetrievalContextWayland::GetTargetsImpl(%s)\n",
-          aWhichClipboard == nsClipboard::kSelectionClipboard ? "primary"
-                                                              : "clipboard");
+GdkAtom* nsRetrievalContextWayland::GetTargets(int32_t aWhichClipboard,
+                                               int* aTargetNum) {
   
 
 
