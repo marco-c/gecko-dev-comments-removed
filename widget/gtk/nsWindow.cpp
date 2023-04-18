@@ -268,6 +268,9 @@ static SystemTimeConverter<guint32>& TimeConverter() {
 
 bool nsWindow::sTransparentMainWindow = false;
 
+
+MOZ_EXPORT extern "C" void mozgtk_linker_holder();
+
 namespace mozilla {
 
 #ifdef MOZ_X11
@@ -428,6 +431,10 @@ nsWindow::nsWindow()
     }
 #endif
   }
+  
+  
+  
+  mozgtk_linker_holder();
 }
 
 nsWindow::~nsWindow() {
@@ -5334,10 +5341,6 @@ void nsWindow::ConfigureGdkWindow() {
     
     
     SetCompositorHint(GTK_WIDGET_COMPOSIDED_ENABLED);
-
-    
-    
-    XShmQueryExtension(DefaultXDisplay());
   }
 #endif
 #ifdef MOZ_WAYLAND
