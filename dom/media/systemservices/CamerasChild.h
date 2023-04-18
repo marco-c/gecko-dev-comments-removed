@@ -79,10 +79,9 @@ class CamerasSingleton {
     Mutex().AssertCurrentThreadOwns();
     return singleton().mCamerasChildThread;
   }
-
-  static bool InShutdown() { return singleton().mInShutdown; }
-
-  static void StartShutdown() { singleton().mInShutdown = true; }
+  
+  
+  static void AssertNoChild() { MOZ_ASSERT(!singleton().mCameras); }
 
  private:
   CamerasSingleton();
@@ -106,7 +105,6 @@ class CamerasSingleton {
   
   CamerasChild* mCameras;
   nsCOMPtr<nsIThread> mCamerasChildThread;
-  Atomic<bool> mInShutdown;
 };
 
 
