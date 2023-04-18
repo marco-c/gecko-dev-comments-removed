@@ -9862,11 +9862,13 @@ bool BytecodeEmitter::emitPrivateMethodInitializers(ClassEmitter& ce,
     }
     
     
-    if (!ce.emitMemberInitializerHomeObject(false)) {
-      
-      
-      
-      return false;
+    if (classMethod->method().funbox()->needsHomeObject()) {
+      if (!ce.emitMemberInitializerHomeObject(false)) {
+        
+        
+        
+        return false;
+      }
     }
     if (!emitLexicalInitialization(storedMethodAtom)) {
       
