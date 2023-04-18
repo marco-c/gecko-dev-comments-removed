@@ -5513,7 +5513,17 @@ bool BytecodeEmitter::emitAsyncIterator() {
 }
 
 bool BytecodeEmitter::emitSpread(bool allowSelfHosted) {
+  
+  return emitSpread(allowSelfHosted, 2, JSOp::InitElemInc);
+  
+}
+
+bool BytecodeEmitter::emitSpread(bool allowSelfHosted, int spreadeeStackItems,
+                                 JSOp storeElementOp) {
   LoopControl loopInfo(this, StatementKind::Spread);
+  
+  
+  
 
   if (!loopInfo.emitLoopHead(this, Nothing())) {
     
@@ -5528,7 +5538,7 @@ bool BytecodeEmitter::emitSpread(bool allowSelfHosted) {
     
     
 
-    if (!emitDupAt(3, 2)) {
+    if (!emitDupAt(spreadeeStackItems + 1, 2)) {
       
       return false;
     }
@@ -5554,7 +5564,7 @@ bool BytecodeEmitter::emitSpread(bool allowSelfHosted) {
       
       return false;
     }
-    if (!emit1(JSOp::InitElemInc)) {
+    if (!emit1(storeElementOp)) {
       
       return false;
     }
@@ -5575,11 +5585,11 @@ bool BytecodeEmitter::emitSpread(bool allowSelfHosted) {
   
   MOZ_ASSERT(!loopInfo.continues.offset.valid());
 
-  if (!emit2(JSOp::Pick, 4)) {
+  if (!emit2(JSOp::Pick, spreadeeStackItems + 2)) {
     
     return false;
   }
-  if (!emit2(JSOp::Pick, 4)) {
+  if (!emit2(JSOp::Pick, spreadeeStackItems + 2)) {
     
     return false;
   }
@@ -10474,6 +10484,62 @@ bool BytecodeEmitter::emitSpreadIntoArray(UnaryNode* elem) {
   return true;
 }
 
+#ifdef ENABLE_RECORD_TUPLE
+bool BytecodeEmitter::emitTupleLiteral(ListNode* tuple) {
+  if (!emitUint32Operand(JSOp::InitTuple, tuple->count())) {
+    
+    return false;
+  }
+
+  for (ParseNode* elt = tuple->head(); elt; elt = elt->pn_next) {
+    if (elt->isKind(ParseNodeKind::Spread)) {
+      ParseNode* expr = elt->as<UnaryNode>().kid();
+
+      if (!emitTree(expr)) {
+        
+        return false;
+      }
+      if (!emitIterator()) {
+        
+        return false;
+      }
+      if (!emit2(JSOp::Pick, 2)) {
+        
+        return false;
+      }
+      if (!emitSpread(allowSelfHostedIter(expr),  1,
+                      JSOp::AddTupleElement)) {
+        
+        return false;
+      }
+    } else {
+      if (!emitTree(elt)) {
+        
+        return false;
+      }
+
+      
+      
+      if (!updateSourceCoordNotes(elt->pn_pos.begin)) {
+        return false;
+      }
+
+      if (!emit1(JSOp::AddTupleElement)) {
+        
+        return false;
+      }
+    }
+  }
+
+  if (!emit1(JSOp::FinishTuple)) {
+    
+    return false;
+  }
+
+  return true;
+}
+#endif
+
 static inline JSOp UnaryOpParseNodeKindToJSOp(ParseNodeKind pnk) {
   switch (pnk) {
     case ParseNodeKind::ThrowStmt:
@@ -11680,8 +11746,13 @@ bool BytecodeEmitter::emitTree(
 
 #ifdef ENABLE_RECORD_TUPLE
     case ParseNodeKind::RecordExpr:
+      MOZ_CRASH("records are not supported yet by BytecodeEmitter::emitTree");
+
     case ParseNodeKind::TupleExpr:
-      MOZ_CRASH("Record and Tuple are not supported yet");
+      if (!emitTupleLiteral(&pn->as<ListNode>())) {
+        return false;
+      }
+      break;
 #endif
 
     case ParseNodeKind::PropertyNameExpr:

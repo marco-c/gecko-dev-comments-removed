@@ -251,6 +251,8 @@
 
 
 
+
+
 #define FOR_EACH_OPCODE(MACRO)
 
 
@@ -1528,6 +1530,43 @@
 
  \
     MACRO(RegExp, reg_exp, NULL, 5, 0, 1, JOF_REGEXP) \
+    
+
+
+
+
+
+
+
+
+
+
+
+ \
+    IF_RECORD_TUPLE(MACRO(InitTuple, init_tuple, NULL, 5, 0, 1, JOF_UINT32)) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    IF_RECORD_TUPLE(MACRO(AddTupleElement, add_tuple_element, NULL, 1, 2, 1, JOF_BYTE)) \
+    
+
+
+
+
+
+
+
+ \
+    IF_RECORD_TUPLE(MACRO(FinishTuple, finish_tuple, NULL, 1, 1, 1, JOF_BYTE)) \
     
 
 
@@ -3511,9 +3550,9 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  MACRO(228)                                   \
-  MACRO(229)                                   \
-  MACRO(230)                                   \
+  IF_RECORD_TUPLE(, MACRO(228))     \
+  IF_RECORD_TUPLE(, MACRO(229))     \
+  IF_RECORD_TUPLE(, MACRO(230))     \
   MACRO(231)                                   \
   MACRO(232)                                   \
   MACRO(233)                                   \

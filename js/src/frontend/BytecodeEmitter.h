@@ -966,6 +966,15 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   
   
   
+  
+  
+  
+  
+  [[nodiscard]] bool emitSpread(bool allowSelfHosted, int spreadeeStackItems,
+                                JSOp storeElementOp);
+  
+  
+  
   [[nodiscard]] bool emitSpread(bool allowSelfHosted = false);
 
   enum class ClassNameKind {
@@ -996,6 +1005,10 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
                                                CallNode* call,
                                                CallOrNewEmitter& cone,
                                                OptionalEmitter& oe);
+
+#ifdef ENABLE_RECORD_TUPLE
+  [[nodiscard]] bool emitTupleLiteral(ListNode* tuple);
+#endif
 
   [[nodiscard]] bool emitExportDefault(BinaryNode* exportNode);
 
