@@ -15,6 +15,7 @@
 #include "nsTArray.h"
 #include "nsStubMutationObserver.h"
 #include "nsIDOMEventListener.h"
+#include "Units.h"
 
 class Area;
 class nsImageFrame;
@@ -43,7 +44,7 @@ class nsImageMap final : public nsStubMutationObserver,
 
 
 
-  mozilla::dom::HTMLAreaElement* GetArea(nscoord aX, nscoord aY) const;
+  mozilla::dom::HTMLAreaElement* GetArea(const mozilla::CSSIntPoint& aPt) const;
 
   
 

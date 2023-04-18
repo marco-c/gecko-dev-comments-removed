@@ -1374,8 +1374,8 @@ void HTMLInputElement::AfterClearForm(bool aUnbindOrDelete) {
 void HTMLInputElement::ResultForDialogSubmit(nsAString& aResult) {
   if (mType == FormControlType::InputImage) {
     
-    nsIntPoint* lastClickedPoint =
-        static_cast<nsIntPoint*>(GetProperty(nsGkAtoms::imageClickedPoint));
+    const auto* lastClickedPoint =
+        static_cast<CSSIntPoint*>(GetProperty(nsGkAtoms::imageClickedPoint));
     int32_t x, y;
     if (lastClickedPoint) {
       x = lastClickedPoint->x;
@@ -5669,8 +5669,8 @@ HTMLInputElement::SubmitNamesValues(FormData* aFormData) {
   
   if (mType == FormControlType::InputImage) {
     
-    nsIntPoint* lastClickedPoint =
-        static_cast<nsIntPoint*>(GetProperty(nsGkAtoms::imageClickedPoint));
+    const auto* lastClickedPoint =
+        static_cast<CSSIntPoint*>(GetProperty(nsGkAtoms::imageClickedPoint));
     int32_t x, y;
     if (lastClickedPoint) {
       

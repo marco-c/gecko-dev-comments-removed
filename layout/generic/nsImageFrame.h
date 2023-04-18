@@ -234,7 +234,10 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
   bool IsServerImageMap();
 
-  void TranslateEventCoords(const nsPoint& aPoint, nsIntPoint& aResult);
+  
+  
+  
+  mozilla::CSSIntPoint TranslateEventCoords(const nsPoint& aPoint);
 
   bool GetAnchorHREFTargetAndNode(nsIURI** aHref, nsString& aTarget,
                                   nsIContent** aNode);
