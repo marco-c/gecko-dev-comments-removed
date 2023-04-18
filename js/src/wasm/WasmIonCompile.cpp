@@ -980,9 +980,11 @@ class FunctionCompiler {
     
     
     
-    bool mem32LimitIs64Bits =
-        isMem32() && !moduleEnv_.memory->boundsCheckLimitIs32Bits() &&
-        ArrayBufferObject::maxBufferByteLength() >= 0x100000000;
+    static_assert(0x100000000 % PageSize == 0);
+    bool mem32LimitIs64Bits = isMem32() &&
+                              !moduleEnv_.memory->boundsCheckLimitIs32Bits() &&
+                              MaxMemoryPages(moduleEnv_.memory->indexType()) >=
+                                  Pages(0x100000000 / PageSize);
 #else
     
     
