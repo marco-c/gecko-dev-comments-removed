@@ -604,6 +604,11 @@ const windowGlobalTargetPrototype = {
         watchpoints: true,
         
         navigation: true,
+        
+        
+        
+        
+        isAutoAttached: true,
       },
     };
 

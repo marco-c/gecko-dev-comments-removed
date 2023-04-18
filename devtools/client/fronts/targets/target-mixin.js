@@ -493,7 +493,18 @@ function TargetMixin(parentClass) {
 
       
       
-      if (this.attach) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (this.attach && !this.getTrait("isAutoAttached")) {
         await this.attach();
       }
 
@@ -683,10 +694,6 @@ function TargetMixin(parentClass) {
     _cleanup() {
       this.threadFront = null;
       this._client = null;
-
-      
-      
-      this._attach = null;
 
       this._title = null;
       this._url = null;

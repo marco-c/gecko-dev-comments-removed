@@ -11,6 +11,8 @@ const {
   Arg,
 } = require("devtools/shared/protocol");
 
+
+
 types.addDictType("windowGlobalTarget.attach", {
   threadActor: "number",
   javascriptEnabled: "nullable:boolean",
@@ -58,6 +60,8 @@ const windowGlobalTargetSpecPrototype = {
   typeName: "windowGlobalTarget",
 
   methods: {
+    
+    
     attach: {
       request: {},
       response: RetVal("windowGlobalTarget.attach"),

@@ -29,6 +29,9 @@ class WindowGlobalTargetFront extends TargetMixin(
 
     this._onTabNavigated = this._onTabNavigated.bind(this);
     this._onFrameUpdate = this._onFrameUpdate.bind(this);
+
+    this.on("tabNavigated", this._onTabNavigated);
+    this.on("frameUpdate", this._onFrameUpdate);
   }
 
   form(json) {
@@ -109,17 +112,13 @@ class WindowGlobalTargetFront extends TargetMixin(
     this._title = title;
   }
 
+  
+  
   async attach() {
     if (this._attach) {
       return this._attach;
     }
     this._attach = (async () => {
-      
-      
-      
-      this.on("tabNavigated", this._onTabNavigated);
-      this.on("frameUpdate", this._onFrameUpdate);
-
       const response = await super.attach();
 
       this.targetForm.threadActor = response.threadActor;

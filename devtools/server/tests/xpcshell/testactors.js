@@ -189,7 +189,11 @@ const TestTargetActor = protocol.ActorClassWithSpec(windowGlobalTargetSpec, {
   },
 
   form: function() {
-    const response = { actor: this.actorID, title: this.title };
+    const response = {
+      actor: this.actorID,
+      title: this.title,
+      threadActor: this.threadActor.actorID,
+    };
 
     
     const actorPool = new LazyPool(this.conn);

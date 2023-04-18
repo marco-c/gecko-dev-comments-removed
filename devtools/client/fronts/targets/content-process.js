@@ -43,10 +43,6 @@ class ContentProcessTargetFront extends TargetMixin(
     return `(pid ${this.processID}) Content Process`;
   }
 
-  attach() {
-    return Promise.resolve();
-  }
-
   reconfigure() {
     
     
