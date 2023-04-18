@@ -63,10 +63,6 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed {
                       mozilla::StyleAppearance aAppearance);
 
   
-
-  bool IsDisabled(nsIFrame* aFrame, mozilla::EventStates aEventStates);
-
-  
   static bool IsFrameRTL(nsIFrame* aFrame);
 
   static bool IsHTMLContent(nsIFrame* aFrame);
@@ -77,20 +73,6 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed {
   }
 
   bool IsButtonTypeMenu(nsIFrame* aFrame);
-
-  
-  bool IsChecked(nsIFrame* aFrame) {
-    return GetCheckedOrSelected(aFrame, false);
-  }
-
-  
-  bool IsSelected(nsIFrame* aFrame) {
-    return GetCheckedOrSelected(aFrame, true);
-  }
-
-  static bool IsFocused(nsIFrame* aFrame) {
-    return CheckBooleanAttr(aFrame, nsGkAtoms::focused);
-  }
 
   
   int32_t GetScrollbarButtonType(nsIFrame* aFrame);
@@ -147,8 +129,6 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed {
   bool IsHorizontal(nsIFrame* aFrame);
 
   
-  bool IsIndeterminateProgress(nsIFrame* aFrame,
-                               mozilla::EventStates aEventStates);
   bool IsVerticalProgress(nsIFrame* aFrame);
 
   
@@ -172,9 +152,6 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed {
   
   static double GetProgressValue(nsIFrame* aFrame);
   static double GetProgressMaxValue(nsIFrame* aFrame);
-
-  bool GetCheckedOrSelected(nsIFrame* aFrame, bool aCheckSelected);
-  bool GetIndeterminate(nsIFrame* aFrame);
 
   bool QueueAnimatedContentForRefresh(nsIContent* aContent,
                                       uint32_t aMinimumFrameRate);
