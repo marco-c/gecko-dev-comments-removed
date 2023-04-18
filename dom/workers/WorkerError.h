@@ -53,7 +53,8 @@ class WorkerErrorReport : public WorkerErrorBase, public SerializedStackHolder {
   
   
   
-  static void ReportError(
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void ReportError(
       JSContext* aCx, WorkerPrivate* aWorkerPrivate, bool aFireAtScope,
       DOMEventTargetHelper* aTarget, UniquePtr<WorkerErrorReport> aReport,
       uint64_t aInnerWindowId,
