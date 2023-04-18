@@ -50,6 +50,14 @@ class JS_PUBLIC_API SliceBudget {
  public:
   using InterruptRequestFlag = mozilla::Atomic<bool>;
 
+  
+  
+  bool idle = false;
+
+  
+  
+  bool extended = false;
+
  private:
   static const intptr_t UnlimitedCounter = INTPTR_MAX;
 
