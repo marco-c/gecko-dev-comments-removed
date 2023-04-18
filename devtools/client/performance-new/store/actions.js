@@ -33,7 +33,6 @@ const {
 
 
 
-
 exports.reportProfilerReady = (isActive, isLockedForPrivateBrowsing) => ({
   type: "REPORT_PROFILER_READY",
   isActive,

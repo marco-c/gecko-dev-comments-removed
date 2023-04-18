@@ -36,13 +36,17 @@ const lazy = createLazyLoaders({
     ),
 });
 
+const TRANSFER_EVENT = "devtools:perf-html-transfer-profile";
+const SYMBOL_TABLE_REQUEST_EVENT = "devtools:perf-html-request-symbol-table";
+const SYMBOL_TABLE_RESPONSE_EVENT = "devtools:perf-html-reply-symbol-table";
+
 
 const UI_BASE_URL_PREF = "devtools.performance.recording.ui-base-url";
 
 const UI_BASE_URL_PATH_PREF = "devtools.performance.recording.ui-base-url-path";
 
 const UI_BASE_URL_DEFAULT = "https://profiler.firefox.com";
-const UI_BASE_URL_PATH_DEFAULT = "/from-browser";
+const UI_BASE_URL_PATH_DEFAULT = "/from-addon";
 
 
 
@@ -60,7 +64,17 @@ const UI_BASE_URL_PATH_DEFAULT = "/from-browser";
 
 
 
-function openProfilerTab(profilerViewMode) {
+
+
+
+
+
+
+function openProfilerAndDisplayProfile(
+  profile,
+  profilerViewMode,
+  symbolicationService
+) {
   const Services = lazy.Services();
   
   
@@ -101,7 +115,36 @@ function openProfilerTab(profilerViewMode) {
     }
   );
   browser.selectedTab = tab;
-  return tab.linkedBrowser;
+  const mm = tab.linkedBrowser.messageManager;
+  mm.loadFrameScript(
+    "chrome://devtools/content/performance-new/frame-script.js",
+    false
+  );
+  mm.sendAsyncMessage(TRANSFER_EVENT, profile);
+  mm.addMessageListener(SYMBOL_TABLE_REQUEST_EVENT, e => {
+    const { debugName, breakpadId } = e.data;
+    symbolicationService.getSymbolTable(debugName, breakpadId).then(
+      result => {
+        const [addr, index, buffer] = result;
+        mm.sendAsyncMessage(SYMBOL_TABLE_RESPONSE_EVENT, {
+          status: "success",
+          debugName,
+          breakpadId,
+          result: [addr, index, buffer],
+        });
+      },
+      error => {
+        
+        const { name, message, lineNumber, fileName } = error;
+        mm.sendAsyncMessage(SYMBOL_TABLE_RESPONSE_EVENT, {
+          status: "error",
+          debugName,
+          breakpadId,
+          error: { name, message, lineNumber, fileName },
+        });
+      }
+    );
+  });
 }
 
 
@@ -178,7 +221,7 @@ function openFilePickerForObjdir(window, objdirs, changeObjdirs) {
 }
 
 module.exports = {
-  openProfilerTab,
+  openProfilerAndDisplayProfile,
   sharedLibrariesFromProfile,
   restartBrowserWithEnvironmentVariable,
   getEnvironmentVariable,
