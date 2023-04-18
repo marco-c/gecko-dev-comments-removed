@@ -334,7 +334,7 @@ nsresult PrototypeDocumentContentSink::PrepareToWalk() {
 
   
   
-  mDocument->UpdateDocumentStates(NS_DOCUMENT_STATE_RTL_LOCALE, true);
+  mDocument->UpdateDocumentStates(DocumentState::RTL_LOCALE, true);
 
   nsContentUtils::AddScriptRunner(
       new nsDocElementCreatedNotificationRunner(mDocument));

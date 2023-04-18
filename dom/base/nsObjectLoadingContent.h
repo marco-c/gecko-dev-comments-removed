@@ -88,7 +88,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
 
 
-  mozilla::EventStates ObjectState() const;
+  mozilla::dom::ElementState ObjectState() const;
 
   ObjectType Type() const { return mType; }
 
@@ -447,8 +447,8 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
 
 
-  void NotifyStateChanged(ObjectType aOldType, mozilla::EventStates aOldState,
-                          bool aNotify);
+  void NotifyStateChanged(ObjectType aOldType,
+                          mozilla::dom::ElementState aOldState, bool aNotify);
 
   
 

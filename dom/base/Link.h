@@ -13,12 +13,12 @@
 
 #include "nsWrapperCache.h"  
 #include "nsCOMPtr.h"
+#include "mozilla/dom/RustTypes.h"
 
 class nsIURI;
 
 namespace mozilla {
 
-class EventStates;
 class SizeOfState;
 
 namespace dom {
@@ -60,7 +60,7 @@ class Link : public nsISupports {
 
 
 
-  EventStates LinkState() const;
+  ElementState LinkState() const;
 
   
 

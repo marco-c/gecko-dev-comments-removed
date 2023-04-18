@@ -238,7 +238,7 @@ nscolor ThemeColors::ComputeCustomAccentForeground(nscolor aColor) {
 }
 
 nscolor ThemeColors::AdjustUnthemedScrollbarThumbColor(nscolor aFaceColor,
-                                                       EventStates aStates) {
+                                                       ElementState aStates) {
   
   
   
@@ -248,8 +248,8 @@ nscolor ThemeColors::AdjustUnthemedScrollbarThumbColor(nscolor aFaceColor,
   
   
   
-  bool isActive = aStates.HasState(NS_EVENT_STATE_ACTIVE);
-  bool isHover = aStates.HasState(NS_EVENT_STATE_HOVER);
+  bool isActive = aStates.HasState(ElementState::ACTIVE);
+  bool isHover = aStates.HasState(ElementState::HOVER);
   if (!isActive && !isHover) {
     return aFaceColor;
   }

@@ -10,7 +10,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/EventDispatcher.h"
-#include "mozilla/EventStates.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/HTMLOptGroupElement.h"
@@ -132,8 +131,8 @@ HTMLSelectElement::HTMLSelectElement(
   
 
   
-  AddStatesSilently(NS_EVENT_STATE_ENABLED | NS_EVENT_STATE_OPTIONAL |
-                    NS_EVENT_STATE_VALID);
+  AddStatesSilently(ElementState::ENABLED | ElementState::OPTIONAL_ |
+                    ElementState::VALID);
 }
 
 
@@ -1220,19 +1219,19 @@ nsresult HTMLSelectElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
   return nsGenericHTMLFormControlElementWithState::PostHandleEvent(aVisitor);
 }
 
-EventStates HTMLSelectElement::IntrinsicState() const {
-  EventStates state =
+ElementState HTMLSelectElement::IntrinsicState() const {
+  ElementState state =
       nsGenericHTMLFormControlElementWithState::IntrinsicState();
 
   if (IsCandidateForConstraintValidation()) {
     if (IsValid()) {
-      state |= NS_EVENT_STATE_VALID;
+      state |= ElementState::VALID;
     } else {
-      state |= NS_EVENT_STATE_INVALID;
+      state |= ElementState::INVALID;
 
       if (GetValidityState(VALIDITY_STATE_CUSTOM_ERROR) ||
           (mCanShowInvalidUI && ShouldShowValidityUI())) {
-        state |= NS_EVENT_STATE_MOZ_UI_INVALID;
+        state |= ElementState::MOZ_UI_INVALID;
       }
     }
 
@@ -1244,9 +1243,9 @@ EventStates HTMLSelectElement::IntrinsicState() const {
     
     
     if (mCanShowValidUI && ShouldShowValidityUI() &&
-        (IsValid() || (state.HasState(NS_EVENT_STATE_MOZ_UI_INVALID) &&
+        (IsValid() || (state.HasState(ElementState::MOZ_UI_INVALID) &&
                        !mCanShowInvalidUI))) {
-      state |= NS_EVENT_STATE_MOZ_UI_VALID;
+      state |= ElementState::MOZ_UI_VALID;
     }
   }
 

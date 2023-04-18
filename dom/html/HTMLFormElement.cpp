@@ -15,7 +15,6 @@
 #include "mozilla/Components.h"
 #include "mozilla/ContentEvents.h"
 #include "mozilla/EventDispatcher.h"
-#include "mozilla/EventStates.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindContext.h"
@@ -120,7 +119,7 @@ HTMLFormElement::HTMLFormElement(
       mIsConstructingEntryList(false),
       mIsFiringSubmissionEvents(false) {
   
-  AddStatesSilently(NS_EVENT_STATE_VALID);
+  AddStatesSilently(ElementState::VALID);
 }
 
 HTMLFormElement::~HTMLFormElement() {
@@ -1916,7 +1915,7 @@ bool HTMLFormElement::CheckValidFormSubmission() {
           
           
           
-          mControls->mElements[i]->State().HasState(NS_EVENT_STATE_FOCUS)) {
+          mControls->mElements[i]->State().HasState(ElementState::FOCUS)) {
         static_cast<HTMLInputElement*>(mControls->mElements[i])
             ->UpdateValidityUIBits(true);
       }
@@ -2034,13 +2033,13 @@ void HTMLFormElement::SetValueMissingState(const nsAString& aName,
   RadioGroupManager::SetValueMissingState(aName, aValue);
 }
 
-EventStates HTMLFormElement::IntrinsicState() const {
-  EventStates state = nsGenericHTMLElement::IntrinsicState();
+ElementState HTMLFormElement::IntrinsicState() const {
+  ElementState state = nsGenericHTMLElement::IntrinsicState();
 
   if (mInvalidElementsCount) {
-    state |= NS_EVENT_STATE_INVALID;
+    state |= ElementState::INVALID;
   } else {
-    state |= NS_EVENT_STATE_VALID;
+    state |= ElementState::VALID;
   }
 
   return state;

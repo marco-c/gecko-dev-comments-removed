@@ -8,9 +8,9 @@
 #define mozilla_ServoElementSnapshot_h
 
 #include "AttrArray.h"
-#include "mozilla/EventStates.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/dom/BorrowedAttrInfo.h"
+#include "mozilla/dom/RustTypes.h"
 #include "nsAttrName.h"
 #include "nsAttrValue.h"
 #include "nsChangeHint.h"
@@ -47,7 +47,10 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ServoElementSnapshotFlags)
 class ServoElementSnapshot {
   typedef dom::BorrowedAttrInfo BorrowedAttrInfo;
   typedef dom::Element Element;
-  typedef EventStates::ServoType ServoStateType;
+
+  
+  
+  typedef dom::ElementState::InternalType ServoStateType;
 
  public:
   typedef ServoElementSnapshotFlags Flags;
@@ -70,9 +73,9 @@ class ServoElementSnapshot {
   
 
 
-  void AddState(EventStates aState) {
+  void AddState(dom::ElementState aState) {
     if (!HasAny(Flags::State)) {
-      mState = aState.ServoValue();
+      mState = aState.GetInternalValue();
       mContains |= Flags::State;
     }
   }

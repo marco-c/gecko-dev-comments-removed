@@ -79,7 +79,6 @@
 #include "mozilla/dom/PluginCrashedEvent.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/EventDispatcher.h"
-#include "mozilla/EventStates.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/widget/IMEData.h"
 #include "mozilla/IntegerPrintfMacros.h"
@@ -814,10 +813,10 @@ nsObjectLoadingContent::AsyncOnChannelRedirect(
 }
 
 
-EventStates nsObjectLoadingContent::ObjectState() const {
+ElementState nsObjectLoadingContent::ObjectState() const {
   switch (mType) {
     case eType_Loading:
-      return NS_EVENT_STATE_LOADING;
+      return ElementState::LOADING;
     case eType_Image:
       return ImageState();
     case eType_FakePlugin:
@@ -825,16 +824,16 @@ EventStates nsObjectLoadingContent::ObjectState() const {
       
       
       
-      return EventStates();
+      return ElementState();
     case eType_Fallback:
       
       
-      return EventStates();
+      return ElementState();
     case eType_Null:
-      return NS_EVENT_STATE_BROKEN;
+      return ElementState::BROKEN;
   }
   MOZ_ASSERT_UNREACHABLE("unknown type?");
-  return NS_EVENT_STATE_LOADING;
+  return ElementState::LOADING;
 }
 
 void nsObjectLoadingContent::MaybeRewriteYoutubeEmbed(nsIURI* aURI,
@@ -1442,7 +1441,7 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
   }
 
   
-  EventStates oldState = ObjectState();
+  ElementState oldState = ObjectState();
   ObjectType oldType = mType;
 
   ParameterUpdateFlags stateChange = UpdateObjectParameters();
@@ -1997,7 +1996,7 @@ void nsObjectLoadingContent::UnloadObject(bool aResetState) {
 }
 
 void nsObjectLoadingContent::NotifyStateChanged(ObjectType aOldType,
-                                                EventStates aOldState,
+                                                ElementState aOldState,
                                                 bool aNotify) {
   LOG(("OBJLC [%p]: NotifyStateChanged: (%u, %" PRIx64 ") -> (%u, %" PRIx64 ")"
        " (notify %i)",
@@ -2025,7 +2024,7 @@ void nsObjectLoadingContent::NotifyStateChanged(ObjectType aOldType,
     return;  
   }
 
-  const EventStates newState = ObjectState();
+  const ElementState newState = ObjectState();
   if (newState == aOldState && mType == aOldType) {
     return;  
   }

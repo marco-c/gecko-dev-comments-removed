@@ -38,7 +38,6 @@ namespace mozilla {
 
 class EditorBase;
 class EnterLeaveDispatcher;
-class EventStates;
 class IMEContentObserver;
 class ScrollbarsForWheel;
 class TextControlElement;
@@ -80,6 +79,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   friend class mozilla::EnterLeaveDispatcher;
   friend class mozilla::ScrollbarsForWheel;
   friend class mozilla::WheelTransaction;
+
+  using ElementState = dom::ElementState;
 
   virtual ~EventStateManager();
 
@@ -139,10 +140,10 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   already_AddRefed<nsIContent> GetEventTargetContent(WidgetEvent* aEvent);
 
   
-  static bool ManagesState(EventStates aState) {
-    return aState == NS_EVENT_STATE_ACTIVE || aState == NS_EVENT_STATE_HOVER ||
-           aState == NS_EVENT_STATE_DRAGOVER ||
-           aState == NS_EVENT_STATE_URLTARGET;
+  static bool ManagesState(ElementState aState) {
+    return aState == ElementState::ACTIVE || aState == ElementState::HOVER ||
+           aState == ElementState::DRAGOVER ||
+           aState == ElementState::URLTARGET;
   }
 
   
@@ -156,7 +157,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
 
 
-  bool SetContentState(nsIContent* aContent, EventStates aState);
+  bool SetContentState(nsIContent* aContent, ElementState aState);
 
   void NativeAnonymousContentRemoved(nsIContent* aAnonContent);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void ContentRemoved(dom::Document* aDocument,
@@ -1102,17 +1103,17 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   
   
   
-  void RemoveNodeFromChainIfNeeded(EventStates aState,
+  void RemoveNodeFromChainIfNeeded(ElementState aState,
                                    nsIContent* aContentRemoved, bool aNotify);
 
   bool IsEventOutsideDragThreshold(WidgetInputEvent* aEvent) const;
 
-  static inline void DoStateChange(dom::Element* aElement, EventStates aState,
+  static inline void DoStateChange(dom::Element* aElement, ElementState aState,
                                    bool aAddState);
-  static inline void DoStateChange(nsIContent* aContent, EventStates aState,
+  static inline void DoStateChange(nsIContent* aContent, ElementState aState,
                                    bool aAddState);
   static void UpdateAncestorState(nsIContent* aStartNode,
-                                  nsIContent* aStopBefore, EventStates aState,
+                                  nsIContent* aStopBefore, ElementState aState,
                                   bool aAddState);
   static void ResetLastOverForContent(
       const uint32_t& aIdx, const RefPtr<OverOutElementsWrapper>& aChunk,

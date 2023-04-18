@@ -15,7 +15,6 @@
 
 #include "imgINotificationObserver.h"
 #include "mozilla/CORSMode.h"
-#include "mozilla/EventStates.h"
 #include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
 #include "nsIContentPolicy.h"
@@ -23,6 +22,7 @@
 #include "nsIRequest.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/RustTypes.h"
 #include "nsAttrValue.h"
 #include "Units.h"
 
@@ -97,7 +97,8 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
 
-  void ForceImageState(bool aForce, mozilla::EventStates::InternalType aState);
+  void ForceImageState(bool aForce,
+                       mozilla::dom::ElementState::InternalType aState);
 
   
   already_AddRefed<mozilla::dom::Promise> RecognizeCurrentImageText(
@@ -142,7 +143,7 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
 
-  mozilla::EventStates ImageState() const;
+  mozilla::dom::ElementState ImageState() const;
 
   
 
@@ -544,7 +545,7 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
 
-  mozilla::EventStates mForcedImageState;
+  mozilla::dom::ElementState mForcedImageState;
 
   mozilla::TimeStamp mMostRecentRequestChange;
 

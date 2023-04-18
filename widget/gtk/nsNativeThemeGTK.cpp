@@ -25,7 +25,6 @@
 
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/EventStates.h"
 #include "mozilla/Services.h"
 
 #include <gdk/gdkprivate.h>
@@ -191,26 +190,26 @@ bool nsNativeThemeGTK::GetGtkWidgetAndState(StyleAppearance aAppearance,
     *aWidgetFlags = 0;
   }
 
-  EventStates eventState = GetContentState(aFrame, aAppearance);
+  ElementState eventState = GetContentState(aFrame, aAppearance);
   if (aState) {
     memset(aState, 0, sizeof(GtkWidgetState));
 
     
     
     if (aWidgetFlags) {
-      if (eventState.HasState(NS_EVENT_STATE_CHECKED)) {
+      if (eventState.HasState(ElementState::CHECKED)) {
         *aWidgetFlags |= MOZ_GTK_WIDGET_CHECKED;
       }
-      if (eventState.HasState(NS_EVENT_STATE_INDETERMINATE)) {
+      if (eventState.HasState(ElementState::INDETERMINATE)) {
         *aWidgetFlags |= MOZ_GTK_WIDGET_INCONSISTENT;
       }
     }
 
     aState->disabled =
-        eventState.HasState(NS_EVENT_STATE_DISABLED) || IsReadOnly(aFrame);
-    aState->active = eventState.HasState(NS_EVENT_STATE_ACTIVE);
-    aState->focused = eventState.HasState(NS_EVENT_STATE_FOCUS);
-    aState->inHover = eventState.HasState(NS_EVENT_STATE_HOVER);
+        eventState.HasState(ElementState::DISABLED) || IsReadOnly(aFrame);
+    aState->active = eventState.HasState(ElementState::ACTIVE);
+    aState->focused = eventState.HasState(ElementState::FOCUS);
+    aState->inHover = eventState.HasState(ElementState::HOVER);
     aState->isDefault = IsDefaultButton(aFrame);
     aState->canDefault = FALSE;  
 
@@ -246,7 +245,7 @@ bool nsNativeThemeGTK::GetGtkWidgetAndState(StyleAppearance aAppearance,
       
       
       
-      aState->focused = eventState.HasState(NS_EVENT_STATE_FOCUSRING);
+      aState->focused = eventState.HasState(ElementState::FOCUSRING);
       if (aAppearance == StyleAppearance::Radio ||
           aAppearance == StyleAppearance::Checkbox) {
         
@@ -490,9 +489,9 @@ bool nsNativeThemeGTK::GetGtkWidgetAndState(StyleAppearance aAppearance,
       break;
     case StyleAppearance::Progresschunk: {
       nsIFrame* stateFrame = aFrame->GetParent();
-      EventStates eventStates = GetContentState(stateFrame, aAppearance);
+      ElementState eventStates = GetContentState(stateFrame, aAppearance);
 
-      aGtkWidgetType = eventStates.HasState(NS_EVENT_STATE_INDETERMINATE)
+      aGtkWidgetType = eventStates.HasState(ElementState::INDETERMINATE)
                            ? IsVerticalProgress(stateFrame)
                                  ? MOZ_GTK_PROGRESS_CHUNK_VERTICAL_INDETERMINATE
                                  : MOZ_GTK_PROGRESS_CHUNK_INDETERMINATE

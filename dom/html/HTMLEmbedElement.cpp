@@ -4,7 +4,6 @@
 
 
 
-#include "mozilla/EventStates.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/HTMLEmbedElement.h"
 #include "mozilla/dom/HTMLEmbedElementBinding.h"
@@ -33,7 +32,7 @@ HTMLEmbedElement::HTMLEmbedElement(
   SetIsNetworkCreated(aFromParser == FROM_PARSER_NETWORK);
 
   
-  AddStatesSilently(NS_EVENT_STATE_LOADING);
+  AddStatesSilently(ElementState::LOADING);
 }
 
 HTMLEmbedElement::~HTMLEmbedElement() {
@@ -234,7 +233,7 @@ void HTMLEmbedElement::StartObjectLoad(bool aNotify, bool aForceLoad) {
   SetIsNetworkCreated(false);
 }
 
-EventStates HTMLEmbedElement::IntrinsicState() const {
+ElementState HTMLEmbedElement::IntrinsicState() const {
   return nsGenericHTMLElement::IntrinsicState() | ObjectState();
 }
 

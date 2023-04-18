@@ -4,7 +4,6 @@
 
 
 
-#include "mozilla/EventStates.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLObjectElement.h"
@@ -38,7 +37,7 @@ HTMLObjectElement::HTMLObjectElement(
   SetBarredFromConstraintValidation(true);
 
   
-  AddStatesSilently(NS_EVENT_STATE_LOADING);
+  AddStatesSilently(ElementState::LOADING);
 }
 
 HTMLObjectElement::~HTMLObjectElement() {
@@ -284,7 +283,7 @@ void HTMLObjectElement::StartObjectLoad(bool aNotify, bool aForce) {
   SetIsNetworkCreated(false);
 }
 
-EventStates HTMLObjectElement::IntrinsicState() const {
+ElementState HTMLObjectElement::IntrinsicState() const {
   return nsGenericHTMLFormControlElement::IntrinsicState() | ObjectState();
 }
 

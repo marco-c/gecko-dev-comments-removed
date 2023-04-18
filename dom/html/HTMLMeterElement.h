@@ -21,7 +21,7 @@ class HTMLMeterElement final : public nsGenericHTMLElement {
   explicit HTMLMeterElement(
       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
-  virtual EventStates IntrinsicState() const override;
+  virtual ElementState IntrinsicState() const override;
 
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
@@ -94,7 +94,7 @@ class HTMLMeterElement final : public nsGenericHTMLElement {
 
 
 
-  EventStates GetOptimumState() const;
+  ElementState GetOptimumState() const;
 };
 
 }  

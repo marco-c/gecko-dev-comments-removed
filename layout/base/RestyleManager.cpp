@@ -463,8 +463,8 @@ void RestyleManager::ContentRemoved(nsIContent* aOldChild,
 
 static bool StateChangeMayAffectFrame(const Element& aElement,
                                       const nsIFrame& aFrame,
-                                      EventStates aStates) {
-  const bool brokenChanged = aStates.HasState(NS_EVENT_STATE_BROKEN);
+                                      ElementState aStates) {
+  const bool brokenChanged = aStates.HasState(ElementState::BROKEN);
   if (aFrame.IsGeneratedContentFrame()) {
     if (aElement.IsHTMLElement(nsGkAtoms::mozgeneratedcontentimage)) {
       return brokenChanged;
@@ -473,7 +473,7 @@ static bool StateChangeMayAffectFrame(const Element& aElement,
     return false;
   }
 
-  const bool loadingChanged = aStates.HasState(NS_EVENT_STATE_LOADING);
+  const bool loadingChanged = aStates.HasState(ElementState::LOADING);
   if (!brokenChanged && !loadingChanged) {
     return false;
   }
@@ -497,7 +497,7 @@ static bool StateChangeMayAffectFrame(const Element& aElement,
 
 
 static nsChangeHint ChangeForContentStateChange(const Element& aElement,
-                                                EventStates aStateMask) {
+                                                ElementState aStateMask) {
   auto changeHint = nsChangeHint(0);
 
   
@@ -528,7 +528,7 @@ static nsChangeHint ChangeForContentStateChange(const Element& aElement,
     primaryFrame->ContentStatesChanged(aStateMask);
   }
 
-  if (aStateMask.HasState(NS_EVENT_STATE_VISITED)) {
+  if (aStateMask.HasState(ElementState::VISITED)) {
     
     
     
@@ -536,7 +536,7 @@ static nsChangeHint ChangeForContentStateChange(const Element& aElement,
   }
 
   
-  if (aStateMask.HasState(NS_EVENT_STATE_REVEALED)) {
+  if (aStateMask.HasState(ElementState::REVEALED)) {
     
     changeHint |= NS_STYLE_HINT_REFLOW;
   }
@@ -3221,7 +3221,7 @@ void RestyleManager::UpdateOnlyAnimationStyles() {
 }
 
 void RestyleManager::ContentStateChanged(nsIContent* aContent,
-                                         EventStates aChangedBits) {
+                                         ElementState aChangedBits) {
   MOZ_DIAGNOSTIC_ASSERT(!mInStyleRefresh);
 
   if (!aContent->IsElement()) {
@@ -3230,8 +3230,8 @@ void RestyleManager::ContentStateChanged(nsIContent* aContent,
 
   Element& element = *aContent->AsElement();
 
-  const EventStates kVisitedAndUnvisited =
-      NS_EVENT_STATE_VISITED | NS_EVENT_STATE_UNVISITED;
+  const ElementState kVisitedAndUnvisited =
+      ElementState::VISITED | ElementState::UNVISITED;
 
   
   
@@ -3263,7 +3263,7 @@ void RestyleManager::ContentStateChanged(nsIContent* aContent,
   
   
   
-  if (!aChangedBits.HasAtLeastOneOfStates(DIRECTION_STATES) &&
+  if (!aChangedBits.HasAtLeastOneOfStates(ElementState::DIR_STATES) &&
       !StyleSet()->HasStateDependency(element, aChangedBits)) {
     return;
   }
@@ -3277,7 +3277,7 @@ void RestyleManager::ContentStateChanged(nsIContent* aContent,
   }
 
   ServoElementSnapshot& snapshot = SnapshotFor(element);
-  EventStates previousState = element.StyleState() ^ aChangedBits;
+  ElementState previousState = element.StyleState() ^ aChangedBits;
   snapshot.AddState(previousState);
 }
 

@@ -10,11 +10,11 @@
 #include "mozilla/AnonymousContentKey.h"
 #include "mozilla/AtomArray.h"
 #include "mozilla/EnumeratedArray.h"
-#include "mozilla/EventStates.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PostTraversalTask.h"
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoUtils.h"
+#include "mozilla/dom/RustTypes.h"
 #include "mozilla/UniquePtr.h"
 #include "MainThreadUtils.h"
 #include "nsCSSPseudoElements.h"
@@ -125,7 +125,8 @@ class ServoStyleSet {
   void ImportRuleLoaded(dom::CSSImportRule&, StyleSheet&);
 
   
-  void InvalidateStyleForDocumentStateChanges(EventStates aStatesChanged);
+  void InvalidateStyleForDocumentStateChanges(
+      dom::DocumentState aStatesChanged);
 
   void RecordShadowStyleChange(dom::ShadowRoot&);
 
@@ -428,13 +429,13 @@ class ServoStyleSet {
 
 
 
-  bool HasStateDependency(const dom::Element&, EventStates) const;
+  bool HasStateDependency(const dom::Element&, dom::ElementState) const;
 
   
 
 
 
-  bool HasDocumentStateDependency(EventStates aState) const;
+  bool HasDocumentStateDependency(dom::DocumentState) const;
 
   
 

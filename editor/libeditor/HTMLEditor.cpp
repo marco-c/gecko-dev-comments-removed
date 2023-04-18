@@ -22,8 +22,7 @@
 #include "mozilla/ComposerCommandsUpdater.h"
 #include "mozilla/ContentIterator.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/Encoding.h"  
-#include "mozilla/EventStates.h"
+#include "mozilla/Encoding.h"      
 #include "mozilla/IntegerRange.h"  
 #include "mozilla/InternalMutationEvent.h"
 #include "mozilla/mozInlineSpellChecker.h"
@@ -712,7 +711,7 @@ Element* HTMLEditor::FindSelectionRoot(const nsINode& aNode) const {
     
     
     if (content->IsElement() &&
-        content->AsElement()->State().HasState(NS_EVENT_STATE_READWRITE)) {
+        content->AsElement()->State().HasState(ElementState::READWRITE)) {
       return content->AsElement();
     }
     return nullptr;
