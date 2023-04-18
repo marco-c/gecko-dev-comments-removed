@@ -6,6 +6,7 @@
 
 
 
+
 async function cleanupSandboxedFileSystem() {
   const dir = await navigator.storage.getDirectory();
   for await (let entry of dir.values())
