@@ -2,8 +2,6 @@
 
 
 
-import { flatMap, zip, range } from "lodash";
-
 import { getFrameUrl } from "./getFrameUrl";
 import { getLibraryFromUrl } from "./getLibraryFromUrl";
 
@@ -32,38 +30,44 @@ function annotateBabelAsyncFrames(frames) {
 
 
 
+
+
+
+
 function getBabelFrameIndexes(frames) {
-  const startIndexes = frames.reduce((accumulator, frame, index) => {
+  const startIndexes = [];
+  const endIndexes = [];
+
+  frames.forEach((frame, index) => {
+    const frameUrl = getFrameUrl(frame);
+
     if (
-      getFrameUrl(frame).match(/regenerator-runtime/i) &&
+      frameUrl.match(/regenerator-runtime/i) &&
       frame.displayName === "tryCatch"
     ) {
-      return [...accumulator, index];
+      startIndexes.push(index);
     }
-    return accumulator;
-  }, []);
-
-  const endIndexes = frames.reduce((accumulator, frame, index) => {
-    if (
-      getFrameUrl(frame).match(/_microtask/i) &&
-      frame.displayName === "flush"
-    ) {
-      return [...accumulator, index];
+    if (frame.displayName === "flush" && frameUrl.match(/_microtask/i)) {
+      endIndexes.push(index);
     }
     if (frame.displayName === "_asyncToGenerator/<") {
-      return [...accumulator, index + 1];
+      endIndexes.push(index + 1);
     }
-    return accumulator;
-  }, []);
+  });
 
   if (startIndexes.length != endIndexes.length || startIndexes.length === 0) {
-    return frames;
+    return [];
   }
 
+  const babelFrameIndexes = [];
   
   
   
-  return flatMap(zip(startIndexes, endIndexes), ([startIndex, endIndex]) =>
-    range(startIndex, endIndex + 1)
-  );
+  startIndexes.forEach((startIndex, index) => {
+    const matchingEndIndex = endIndexes[index];
+    for (let i = startIndex; i <= matchingEndIndex; i++) {
+      babelFrameIndexes.push(i);
+    }
+  });
+  return babelFrameIndexes;
 }
