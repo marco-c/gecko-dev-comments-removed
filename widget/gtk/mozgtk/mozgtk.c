@@ -6,13 +6,6 @@
 
 #include "mozilla/Types.h"
 
-#include <gdk/gdk.h>
-
-
-
-
-MOZ_EXPORT void mozgtk_linker_holder() { gdk_display_get_default(); }
-
 #ifdef MOZ_X11
 #  include <X11/Xlib.h>
 
