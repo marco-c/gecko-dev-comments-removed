@@ -71,13 +71,17 @@ class ProfilerParent final : public PProfilerParent {
   static RefPtr<SingleProcessProgressPromise> RequestGatherProfileProgress(
       base::ProcessId aChildPid);
 
-  static void ProfilerStarted(nsIProfilerStartParams* aParams);
+  
+  
+  
+  static RefPtr<GenericPromise> ProfilerStarted(
+      nsIProfilerStartParams* aParams);
   static void ProfilerWillStopIfStarted();
-  static void ProfilerStopped();
-  static void ProfilerPaused();
-  static void ProfilerResumed();
-  static void ProfilerPausedSampling();
-  static void ProfilerResumedSampling();
+  static RefPtr<GenericPromise> ProfilerStopped();
+  static RefPtr<GenericPromise> ProfilerPaused();
+  static RefPtr<GenericPromise> ProfilerResumed();
+  static RefPtr<GenericPromise> ProfilerPausedSampling();
+  static RefPtr<GenericPromise> ProfilerResumedSampling();
   static void ClearAllPages();
 
   

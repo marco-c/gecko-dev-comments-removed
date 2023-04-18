@@ -743,9 +743,71 @@ void ProfilerParent::RequestChunkManagerUpdate() {
 }
 
 
-void ProfilerParent::ProfilerStarted(nsIProfilerStartParams* aParams) {
+
+
+
+
+
+
+
+
+class PromiseResolverOnDestruction {
+ public:
+  NS_INLINE_DECL_REFCOUNTING(PromiseResolverOnDestruction)
+
+  template <typename TaskFunction>
+  static RefPtr<GenericPromise> RunTask(TaskFunction&& aTaskFunction) {
+    RefPtr<PromiseResolverOnDestruction> promiseResolver =
+        new PromiseResolverOnDestruction();
+    RefPtr<GenericPromise> promise =
+        promiseResolver->mPromiseHolder.Ensure(__func__);
+    std::forward<TaskFunction>(aTaskFunction)(std::move(promiseResolver));
+    return promise;
+  }
+
+ private:
+  PromiseResolverOnDestruction() = default;
+
+  ~PromiseResolverOnDestruction() {
+    mPromiseHolder.ResolveIfExists( true, __func__);
+  }
+
+  MozPromiseHolder<GenericPromise> mPromiseHolder;
+};
+
+
+
+
+template <typename ProfilerParentSendFunction>
+static RefPtr<GenericPromise> SendAndConvertPromise(
+    ProfilerParentSendFunction&& aProfilerParentSendFunction) {
   if (!NS_IsMainThread()) {
-    return;
+    return GenericPromise::CreateAndResolve( true, __func__);
+  }
+
+  return PromiseResolverOnDestruction::RunTask(
+      [&](RefPtr<PromiseResolverOnDestruction> aPromiseResolver) {
+        ProfilerParentTracker::Enumerate([&](ProfilerParent* profilerParent) {
+          std::forward<ProfilerParentSendFunction>(aProfilerParentSendFunction)(
+              profilerParent)
+              ->Then(GetMainThreadSerialEventTarget(), __func__,
+                     [aPromiseResolver](
+                         typename std::remove_reference_t<
+                             decltype(*std::forward<ProfilerParentSendFunction>(
+                                 aProfilerParentSendFunction)(
+                                 profilerParent))>::ResolveOrRejectValue&&) {
+                       
+                       
+                     });
+        });
+      });
+}
+
+
+RefPtr<GenericPromise> ProfilerParent::ProfilerStarted(
+    nsIProfilerStartParams* aParams) {
+  if (!NS_IsMainThread()) {
+    return GenericPromise::CreateAndResolve( true, __func__);
   }
 
   ProfilerInitParams ipcParams;
@@ -768,16 +830,17 @@ void ProfilerParent::ProfilerStarted(nsIProfilerStartParams* aParams) {
   }
   aParams->GetActiveTabID(&ipcParams.activeTabID());
 
-  ProfilerParentTracker::ProfilerStarted(ipcParams.entries());
-  ProfilerParentTracker::Enumerate([&](ProfilerParent* profilerParent) {
+  return SendAndConvertPromise([&](ProfilerParent* profilerParent) {
     if (profiler::detail::FiltersExcludePid(
             filtersCStrings,
             ProfilerProcessId::FromNumber(profilerParent->mChildPid))) {
       
-      return;
+      return PProfilerParent::StartPromise::CreateAndResolve( true,
+                                                             __func__);
     }
-    Unused << profilerParent->SendStart(ipcParams);
+    auto promise = profilerParent->SendStart(ipcParams);
     profilerParent->RequestChunkManagerUpdate();
+    return promise;
   });
 }
 
@@ -791,57 +854,37 @@ void ProfilerParent::ProfilerWillStopIfStarted() {
 }
 
 
-void ProfilerParent::ProfilerStopped() {
-  if (!NS_IsMainThread()) {
-    return;
-  }
-
-  ProfilerParentTracker::Enumerate([](ProfilerParent* profilerParent) {
-    Unused << profilerParent->SendStop();
+RefPtr<GenericPromise> ProfilerParent::ProfilerStopped() {
+  return SendAndConvertPromise([](ProfilerParent* profilerParent) {
+    return profilerParent->SendStop();
   });
 }
 
 
-void ProfilerParent::ProfilerPaused() {
-  if (!NS_IsMainThread()) {
-    return;
-  }
-
-  ProfilerParentTracker::Enumerate([](ProfilerParent* profilerParent) {
-    Unused << profilerParent->SendPause();
+RefPtr<GenericPromise> ProfilerParent::ProfilerPaused() {
+  return SendAndConvertPromise([](ProfilerParent* profilerParent) {
+    return profilerParent->SendPause();
   });
 }
 
 
-void ProfilerParent::ProfilerResumed() {
-  if (!NS_IsMainThread()) {
-    return;
-  }
-
-  ProfilerParentTracker::Enumerate([](ProfilerParent* profilerParent) {
-    Unused << profilerParent->SendResume();
+RefPtr<GenericPromise> ProfilerParent::ProfilerResumed() {
+  return SendAndConvertPromise([](ProfilerParent* profilerParent) {
+    return profilerParent->SendResume();
   });
 }
 
 
-void ProfilerParent::ProfilerPausedSampling() {
-  if (!NS_IsMainThread()) {
-    return;
-  }
-
-  ProfilerParentTracker::Enumerate([](ProfilerParent* profilerParent) {
-    Unused << profilerParent->SendPauseSampling();
+RefPtr<GenericPromise> ProfilerParent::ProfilerPausedSampling() {
+  return SendAndConvertPromise([](ProfilerParent* profilerParent) {
+    return profilerParent->SendPauseSampling();
   });
 }
 
 
-void ProfilerParent::ProfilerResumedSampling() {
-  if (!NS_IsMainThread()) {
-    return;
-  }
-
-  ProfilerParentTracker::Enumerate([](ProfilerParent* profilerParent) {
-    Unused << profilerParent->SendResumeSampling();
+RefPtr<GenericPromise> ProfilerParent::ProfilerResumedSampling() {
+  return SendAndConvertPromise([](ProfilerParent* profilerParent) {
+    return profilerParent->SendResumeSampling();
   });
 }
 
