@@ -30,19 +30,6 @@ class ScreenshotsComponentChild extends JSWindowActorChild {
     return null;
   }
 
-  handleEvent(event) {
-    switch (event.type) {
-      case "keydown":
-        if (event.key === "Escape") {
-          this.requestCancelScreenshot();
-        }
-        break;
-      case "beforeunload":
-        this.requestCancelScreenshot();
-        break;
-    }
-  }
-
   
 
 
@@ -106,8 +93,7 @@ class ScreenshotsComponentChild extends JSWindowActorChild {
         this.document,
         this
       ));
-    this.document.addEventListener("keydown", this);
-    this.document.ownerGlobal.addEventListener("beforeunload", this);
+    this.document.addEventListener("keydown", this.handler);
     overlay.initialize();
     return true;
   }
@@ -116,11 +102,20 @@ class ScreenshotsComponentChild extends JSWindowActorChild {
 
 
 
+  handler = event => {
+    if (event.key === "Escape") {
+      this.requestCancelScreenshot();
+    }
+  };
+
+  
+
+
+
 
 
   endScreenshotsOverlay() {
-    this.document.removeEventListener("keydown", this);
-    this.document.ownerGlobal.removeEventListener("beforeunload", this);
+    this.document.removeEventListener("keydown", this.handler);
     this._overlay?.tearDown();
     return true;
   }
