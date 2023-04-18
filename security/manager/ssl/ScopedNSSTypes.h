@@ -36,6 +36,10 @@
 #  include "mozilla/mozalloc_oom.h"
 #endif
 
+
+
+bool EnsureNSSInitializedChromeOrContent();
+
 namespace mozilla {
 
 
@@ -66,6 +70,18 @@ inline void SECKEYEncryptedPrivateKeyInfo_true(
   SECKEY_DestroyEncryptedPrivateKeyInfo(epki, true);
 }
 
+
+
+
+inline void FreeOneOrMoreSymKeys(PK11SymKey* keys) {
+  PK11SymKey* next;
+  while (keys) {
+    next = PK11_GetNextSymKey(keys);
+    PK11_FreeSymKey(keys);
+    keys = next;
+  }
+}
+
 }  
 
 
@@ -77,36 +93,99 @@ inline void SECKEYEncryptedPrivateKeyInfo_true(
 
 MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniquePK11Context, PK11Context,
                                       internal::PK11_DestroyContext_true)
+MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniquePK11SlotInfo, PK11SlotInfo,
+                                      PK11_FreeSlot)
+MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniquePK11SymKey, PK11SymKey,
+                                      internal::FreeOneOrMoreSymKeys)
 
 
 
 
+class DigestBase {
+ protected:
+  explicit DigestBase() : mLen(0), mDigestContext(nullptr) {}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Digest {
  public:
-  explicit Digest() : mLen(0), mDigestContext(nullptr) {}
+  nsresult Update(Span<const uint8_t> in) {
+    return Update(in.Elements(), in.Length());
+  }
+
+  nsresult Update(const unsigned char* buf, const uint32_t len) {
+    if (!mDigestContext) {
+      return NS_ERROR_NOT_INITIALIZED;
+    }
+    return MapSECStatus(PK11_DigestOp(mDigestContext.get(), buf, len));
+  }
+
+  nsresult End( nsTArray<uint8_t>& out) {
+    if (!mDigestContext) {
+      return NS_ERROR_NOT_INITIALIZED;
+    }
+    out.SetLength(mLen);
+    uint32_t len;
+    nsresult rv = MapSECStatus(
+        PK11_DigestFinal(mDigestContext.get(), out.Elements(), &len, mLen));
+    NS_ENSURE_SUCCESS(rv, rv);
+    mDigestContext = nullptr;
+    NS_ENSURE_TRUE(len == mLen, NS_ERROR_UNEXPECTED);
+
+    return NS_OK;
+  }
+
+ protected:
+  nsresult SetLength(SECOidTag hashType) {
+    switch (hashType) {
+      case SEC_OID_MD5:
+        mLen = MD5_LENGTH;
+        break;
+      case SEC_OID_SHA1:
+        mLen = SHA1_LENGTH;
+        break;
+      case SEC_OID_SHA256:
+        mLen = SHA256_LENGTH;
+        break;
+      default:
+        return NS_ERROR_INVALID_ARG;
+    }
+    return NS_OK;
+  }
+
+ private:
+  uint8_t mLen;
+
+ protected:
+  UniquePK11Context mDigestContext;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Digest : public DigestBase {
+ public:
+  explicit Digest() : DigestBase() {}
 
   static nsresult DigestBuf(SECOidTag hashAlg, Span<const uint8_t> buf,
                              nsTArray<uint8_t>& out) {
@@ -136,6 +215,9 @@ class Digest {
   }
 
   nsresult Begin(SECOidTag hashAlg) {
+    if (!EnsureNSSInitializedChromeOrContent()) {
+      return NS_ERROR_FAILURE;
+    }
     if (hashAlg != SEC_OID_SHA1 && hashAlg != SEC_OID_SHA256) {
       return NS_ERROR_INVALID_ARG;
     }
@@ -149,60 +231,69 @@ class Digest {
     NS_ENSURE_SUCCESS(rv, rv);
     return MapSECStatus(PK11_DigestBegin(mDigestContext.get()));
   }
+};
 
-  nsresult Update(Span<const uint8_t> in) {
-    return Update(in.Elements(), in.Length());
-  }
 
-  nsresult Update(const unsigned char* buf, const uint32_t len) {
-    if (!mDigestContext) {
-      return NS_ERROR_NOT_INITIALIZED;
+
+
+
+
+
+
+
+
+
+
+
+
+class HMAC : public DigestBase {
+ public:
+  explicit HMAC() : DigestBase() {}
+
+  nsresult Begin(SECOidTag hashAlg, Span<const uint8_t> key) {
+    if (!EnsureNSSInitializedChromeOrContent()) {
+      return NS_ERROR_FAILURE;
     }
-    return MapSECStatus(PK11_DigestOp(mDigestContext.get(), buf, len));
-  }
-
-  nsresult End( nsTArray<uint8_t>& out) {
-    if (!mDigestContext) {
-      return NS_ERROR_NOT_INITIALIZED;
-    }
-    out.SetLength(mLen);
-    uint32_t len;
-    nsresult rv = MapSECStatus(
-        PK11_DigestFinal(mDigestContext.get(), out.Elements(), &len, mLen));
-    NS_ENSURE_SUCCESS(rv, rv);
-    mDigestContext = nullptr;
-    NS_ENSURE_TRUE(len == mLen, NS_ERROR_UNEXPECTED);
-
-    return NS_OK;
-  }
-
- private:
-  nsresult SetLength(SECOidTag hashType) {
-#ifdef _MSC_VER
-#  pragma warning(push)
-    
-    
-#  pragma warning(disable : 4061)
-#endif
-    switch (hashType) {
-      case SEC_OID_SHA1:
-        mLen = SHA1_LENGTH;
-        break;
+    CK_MECHANISM_TYPE mechType;
+    switch (hashAlg) {
       case SEC_OID_SHA256:
-        mLen = SHA256_LENGTH;
+        mechType = CKM_SHA256_HMAC;
+        break;
+      case SEC_OID_MD5:
+        mechType = CKM_MD5_HMAC;
         break;
       default:
         return NS_ERROR_INVALID_ARG;
     }
-#ifdef _MSC_VER
-#  pragma warning(pop)
-#endif
+    if (key.Length() > std::numeric_limits<unsigned int>::max()) {
+      return NS_ERROR_INVALID_ARG;
+    }
+    
+    
+    
+    SECItem keyItem = {siBuffer, const_cast<unsigned char*>(key.Elements()),
+                       static_cast<unsigned int>(key.Length())};
+    UniquePK11SlotInfo slot(PK11_GetInternalSlot());
+    if (!slot) {
+      return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
+    }
+    UniquePK11SymKey symKey(
+        PK11_ImportSymKey(slot.get(), CKM_GENERIC_SECRET_KEY_GEN,
+                          PK11_OriginUnwrap, CKA_SIGN, &keyItem, nullptr));
+    if (!symKey) {
+      return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
+    }
+    SECItem emptyData = {siBuffer, nullptr, 0};
+    mDigestContext = UniquePK11Context(PK11_CreateContextBySymKey(
+        mechType, CKA_SIGN, symKey.get(), &emptyData));
+    if (!mDigestContext) {
+      return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
+    }
 
-    return NS_OK;
+    nsresult rv = SetLength(hashAlg);
+    NS_ENSURE_SUCCESS(rv, rv);
+    return MapSECStatus(PK11_DigestBegin(mDigestContext.get()));
   }
-
-  uint8_t mLen;
-  UniquePK11Context mDigestContext;
 };
 
 namespace internal {
@@ -271,18 +362,6 @@ inline void VFY_DestroyContext_true(VFYContext* ctx) {
   VFY_DestroyContext(ctx, true);
 }
 
-
-
-
-inline void FreeOneOrMoreSymKeys(PK11SymKey* keys) {
-  PK11SymKey* next;
-  while (keys) {
-    next = PK11_GetNextSymKey(keys);
-    PK11_FreeSymKey(keys);
-    keys = next;
-  }
-}
-
 }  
 
 MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniqueCERTCertificate, CERTCertificate,
@@ -321,12 +400,8 @@ MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniqueNSSCMSSignedData, NSSCMSSignedData,
 MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniquePK11GenericObject,
                                       PK11GenericObject,
                                       PK11_DestroyGenericObject)
-MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniquePK11SlotInfo, PK11SlotInfo,
-                                      PK11_FreeSlot)
 MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniquePK11SlotList, PK11SlotList,
                                       PK11_FreeSlotList)
-MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniquePK11SymKey, PK11SymKey,
-                                      internal::FreeOneOrMoreSymKeys)
 
 MOZ_TYPE_SPECIFIC_UNIQUE_PTR_TEMPLATE(UniquePLArenaPool, PLArenaPool,
                                       internal::PORT_FreeArena_false)
