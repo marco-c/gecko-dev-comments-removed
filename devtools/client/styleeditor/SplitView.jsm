@@ -135,7 +135,7 @@ class SplitView {
     this._activeSummary = summary;
 
     if (binding.onShow) {
-      binding.onShow(summary, binding._details, binding.data);
+      binding.onShow(binding._details);
     }
   }
 
@@ -152,8 +152,6 @@ class SplitView {
   }
 
   
-
-
 
 
 
