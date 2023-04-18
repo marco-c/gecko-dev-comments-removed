@@ -20,6 +20,15 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/Region.jsm"
 );
 
+function stringPrefToSet(prefVal) {
+  return new Set(
+    prefVal
+      .toLowerCase()
+      .split(/\s*,\s*/g) 
+      .filter(v => !!v) 
+  );
+}
+
 var BrowserUtils = {
   
 
@@ -305,20 +314,30 @@ var BrowserUtils = {
 
   
   shouldShowVPNPromo() {
-    const enablePromoPref = Services.prefs.getBoolPref(
-      "browser.vpn_promo.enabled"
+    const vpnPromoEnabled = Services.prefs.getBoolPref(
+      "browser.vpn_promo.enabled",
+      true
     );
     const homeRegion = Region.home || "";
     const currentRegion = Region.current || "";
-    let avoidAdsCountries = BrowserUtils.vpnDisallowedRegions;
+    const supportedRegions = BrowserUtils.vpnSupportedRegions;
+    const inSupportedRegion =
+      supportedRegions.has(currentRegion.toLowerCase()) ||
+      supportedRegions.has(homeRegion.toLowerCase());
+    const avoidAdsCountries = BrowserUtils.vpnDisallowedRegions;
     
-    let vpnIllegalCountries = ["cn", "kp", "tm"];
+    const vpnIllegalCountries = ["cn", "kp", "tm"];
     vpnIllegalCountries.forEach(country => avoidAdsCountries.add(country));
+    
+    const noActivePolicy =
+      Services.policies.status !== Services.policies.ACTIVE;
 
     return (
-      enablePromoPref &&
+      vpnPromoEnabled &&
       !avoidAdsCountries.has(homeRegion.toLowerCase()) &&
-      !avoidAdsCountries.has(currentRegion.toLowerCase())
+      !avoidAdsCountries.has(currentRegion.toLowerCase()) &&
+      inSupportedRegion &&
+      noActivePolicy
     );
   },
 
@@ -342,15 +361,18 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   BrowserUtils,
+  "vpnSupportedRegions",
+  "browser.contentblocking.report.vpn_regions",
+  "",
+  null,
+  stringPrefToSet
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  BrowserUtils,
   "vpnDisallowedRegions",
   "browser.vpn_promo.disallowed_regions",
   "ae,by,cn,cu,iq,ir,kp,om,ru,sd,sy,tm,tr,ua",
   null,
-  prefVal =>
-    new Set(
-      prefVal
-        .toLowerCase()
-        .split(/\s*,\s*/g) 
-        .filter(v => !!v) 
-    )
+  stringPrefToSet
 );

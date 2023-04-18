@@ -87,13 +87,10 @@ registerCleanupFunction(function head_cleanup() {
 });
 
 
-const getVPNOverrides = (hasSubscription = false, location = "us") => {
+const getVPNOverrides = (hasSubscription = false) => {
   return {
     vpnOverrides: () => {
-      return {
-        hasSubscription,
-        location,
-      };
+      return hasSubscription;
     },
   };
 };
