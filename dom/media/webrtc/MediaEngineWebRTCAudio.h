@@ -232,6 +232,9 @@ class AudioInputProcessing : public AudioDataListener {
   bool mEnded;
   
   AudioInputSamples mPendingData;
+  
+  
+  uint64_t mPacketCount;
 };
 
 
