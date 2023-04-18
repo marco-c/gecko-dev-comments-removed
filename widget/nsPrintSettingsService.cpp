@@ -988,8 +988,7 @@ nsresult nsPrintSettingsService::WritePrefDouble(const char* aPrefId,
   NS_ENSURE_ARG_POINTER(aPrefId);
 
   nsAutoCString str;
-  
-  str.AppendFloat((float)aVal);
+  str.AppendFloat(aVal);
   return Preferences::SetCString(aPrefId, str);
 }
 
