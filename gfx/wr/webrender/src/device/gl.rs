@@ -1652,7 +1652,8 @@ impl Device {
              
              
 
-        let is_angle = renderer_name.starts_with("ANGLE");
+        let is_windows_angle = cfg!(target_os = "windows")
+            && renderer_name.starts_with("ANGLE");
         let is_adreno_3xx = renderer_name.starts_with("Adreno (TM) 3");
 
         
@@ -1671,7 +1672,7 @@ impl Device {
             
             
             StrideAlignment::Bytes(NonZeroUsize::new(256).unwrap())
-        } else if is_angle {
+        } else if is_windows_angle {
             
             
             StrideAlignment::Bytes(NonZeroUsize::new(1).unwrap())
