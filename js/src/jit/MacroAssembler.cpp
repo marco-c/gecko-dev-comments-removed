@@ -3796,7 +3796,7 @@ std::pair<CodeOffset, uint32_t> MacroAssembler::wasmReserveStackChecked(
 CodeOffset MacroAssembler::wasmCallImport(const wasm::CallSiteDesc& desc,
                                           const wasm::CalleeDesc& callee) {
   storePtr(WasmTlsReg,
-           Address(getStackPointer(), WasmCallerTLSOffsetBeforeCall));
+           Address(getStackPointer(), WasmCallerTlsOffsetBeforeCall));
 
   
   uint32_t globalDataOffset = callee.importGlobalDataOffset();
@@ -3818,7 +3818,7 @@ CodeOffset MacroAssembler::wasmCallImport(const wasm::CallSiteDesc& desc,
                     WasmTlsReg);
 
   storePtr(WasmTlsReg,
-           Address(getStackPointer(), WasmCalleeTLSOffsetBeforeCall));
+           Address(getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
   loadWasmPinnedRegsFromTls();
 
   return call(desc, ABINonArgReg0);
@@ -3830,9 +3830,9 @@ CodeOffset MacroAssembler::wasmCallBuiltinInstanceMethod(
   MOZ_ASSERT(instanceArg != ABIArg());
 
   storePtr(WasmTlsReg,
-           Address(getStackPointer(), WasmCallerTLSOffsetBeforeCall));
+           Address(getStackPointer(), WasmCallerTlsOffsetBeforeCall));
   storePtr(WasmTlsReg,
-           Address(getStackPointer(), WasmCalleeTLSOffsetBeforeCall));
+           Address(getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
 
   if (instanceArg.kind() == ABIArg::GPR) {
     loadPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, instance)),
@@ -3900,9 +3900,9 @@ CodeOffset MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
     }
     loadPtr(Address(scratch, offsetof(wasm::FunctionTableElem, code)), scratch);
     storePtr(WasmTlsReg,
-             Address(getStackPointer(), WasmCallerTLSOffsetBeforeCall));
+             Address(getStackPointer(), WasmCallerTlsOffsetBeforeCall));
     storePtr(WasmTlsReg,
-             Address(getStackPointer(), WasmCalleeTLSOffsetBeforeCall));
+             Address(getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
     return call(desc, scratch);
   }
 
@@ -3945,10 +3945,10 @@ CodeOffset MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
   }
 
   storePtr(WasmTlsReg,
-           Address(getStackPointer(), WasmCallerTLSOffsetBeforeCall));
+           Address(getStackPointer(), WasmCallerTlsOffsetBeforeCall));
   loadPtr(Address(scratch, offsetof(wasm::FunctionTableElem, tls)), WasmTlsReg);
   storePtr(WasmTlsReg,
-           Address(getStackPointer(), WasmCalleeTLSOffsetBeforeCall));
+           Address(getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
 
   Label nonNull;
   branchTestPtr(Assembler::NonZero, WasmTlsReg, WasmTlsReg, &nonNull);
@@ -5381,20 +5381,6 @@ template void AutoGenericRegisterScope<FloatRegister>::reacquire();
 
 #endif  
 
-}  
-
-namespace wasm {
-TlsData* ExtractCallerTlsFromFrameWithTls(Frame* fp) {
-  return *reinterpret_cast<TlsData**>(reinterpret_cast<uint8_t*>(fp) +
-                                      sizeof(Frame) + ShadowStackSpace +
-                                      FrameWithTls::callerTLSOffset());
-}
-
-const TlsData* ExtractCalleeTlsFromFrameWithTls(const Frame* fp) {
-  return *reinterpret_cast<TlsData* const*>(
-      reinterpret_cast<const uint8_t*>(fp) + sizeof(Frame) + ShadowStackSpace +
-      FrameWithTls::calleeTLSOffset());
-}
 }  
 
 }  
