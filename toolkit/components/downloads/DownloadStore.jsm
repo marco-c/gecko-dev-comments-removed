@@ -38,17 +38,19 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+const lazy = {};
+
 ChromeUtils.defineModuleGetter(
-  this,
+  lazy,
   "Downloads",
   "resource://gre/modules/Downloads.jsm"
 );
 
-XPCOMUtils.defineLazyGetter(this, "gTextDecoder", function() {
+XPCOMUtils.defineLazyGetter(lazy, "gTextDecoder", function() {
   return new TextDecoder();
 });
 
-XPCOMUtils.defineLazyGetter(this, "gTextEncoder", function() {
+XPCOMUtils.defineLazyGetter(lazy, "gTextEncoder", function() {
   return new TextEncoder();
 });
 
@@ -107,12 +109,12 @@ DownloadStore.prototype = {
       
       let storeChanges = false;
       let removePromises = [];
-      let storeData = JSON.parse(gTextDecoder.decode(bytes));
+      let storeData = JSON.parse(lazy.gTextDecoder.decode(bytes));
 
       
       for (let downloadData of storeData.list) {
         try {
-          let download = await Downloads.createDownload(downloadData);
+          let download = await lazy.Downloads.createDownload(downloadData);
 
           
           
@@ -198,7 +200,7 @@ DownloadStore.prototype = {
 
       if (atLeastOneDownload) {
         
-        let bytes = gTextEncoder.encode(JSON.stringify(storeData));
+        let bytes = lazy.gTextEncoder.encode(JSON.stringify(storeData));
         await IOUtils.write(this.path, bytes, {
           tmpPath: this.path + ".tmp",
         });

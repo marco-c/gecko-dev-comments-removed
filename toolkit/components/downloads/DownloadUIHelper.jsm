@@ -17,11 +17,13 @@ const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 
-ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
+const lazy = {};
+
+ChromeUtils.defineModuleGetter(lazy, "OS", "resource://gre/modules/osfile.jsm");
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
 });
@@ -83,7 +85,7 @@ var DownloadUIHelper = {
   ) {
     let fileURI = Services.io.newFileURI(file);
     let allowPrivate =
-      isPrivate || PrivateBrowsingUtils.permanentPrivateBrowsing;
+      isPrivate || lazy.PrivateBrowsingUtils.permanentPrivateBrowsing;
 
     if (
       !browserWin ||
@@ -92,7 +94,7 @@ var DownloadUIHelper = {
     ) {
       
       
-      browserWin = BrowserWindowTracker.getTopWindow({
+      browserWin = lazy.BrowserWindowTracker.getTopWindow({
         private: allowPrivate,
       });
     }
@@ -202,7 +204,7 @@ DownloadPrompter.prototype = {
       
     }
 
-    let leafName = OS.Path.basename(path);
+    let leafName = lazy.OS.Path.basename(path);
 
     let s = DownloadUIHelper.strings;
     return this._prompter.confirm(

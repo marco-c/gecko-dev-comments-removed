@@ -23,7 +23,9 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   Downloads: "resource://gre/modules/Downloads.jsm",
   FileUtils: "resource://gre/modules/FileUtils.jsm",
   OS: "resource://gre/modules/osfile.jsm",
@@ -68,12 +70,12 @@ var DownloadHistory = {
 
 
 
-  async getList({ type = Downloads.PUBLIC, maxHistoryResults } = {}) {
+  async getList({ type = lazy.Downloads.PUBLIC, maxHistoryResults } = {}) {
     await DownloadCache.ensureInitialized();
 
     let key = `${type}|${maxHistoryResults ? maxHistoryResults : -1}`;
     if (!this._listPromises[key]) {
-      this._listPromises[key] = Downloads.getList(type).then(list => {
+      this._listPromises[key] = lazy.Downloads.getList(type).then(list => {
         
         
         let query =
@@ -96,7 +98,9 @@ var DownloadHistory = {
   async addDownloadToHistory(download) {
     if (
       download.source.isPrivate ||
-      !PlacesUtils.history.canAddURI(PlacesUtils.toURI(download.source.url))
+      !lazy.PlacesUtils.history.canAddURI(
+        lazy.PlacesUtils.toURI(download.source.url)
+      )
     ) {
       return;
     }
@@ -203,7 +207,7 @@ var DownloadCache = {
         placesObserver
       );
 
-      let pageAnnos = await PlacesUtils.history.fetchAnnotatedPages([
+      let pageAnnos = await lazy.PlacesUtils.history.fetchAnnotatedPages([
         METADATA_ANNO,
         DESTINATIONFILEURI_ANNO,
       ]);
@@ -258,7 +262,7 @@ var DownloadCache = {
   async addDownload(download) {
     await this.ensureInitialized();
 
-    let targetFile = new FileUtils.File(download.target.path);
+    let targetFile = new lazy.FileUtils.File(download.target.path);
     let targetUri = Services.io.newFileURI(targetFile);
 
     
@@ -267,9 +271,11 @@ var DownloadCache = {
     
     this._data.set(download.source.url, { targetFileSpec: targetUri.spec });
 
-    let originalPageInfo = await PlacesUtils.history.fetch(download.source.url);
+    let originalPageInfo = await lazy.PlacesUtils.history.fetch(
+      download.source.url
+    );
 
-    let pageInfo = await PlacesUtils.history.insert({
+    let pageInfo = await lazy.PlacesUtils.history.insert({
       url: download.source.url,
       
       
@@ -281,7 +287,7 @@ var DownloadCache = {
         {
           
           date: download.startTime,
-          transition: PlacesUtils.history.TRANSITIONS.DOWNLOAD,
+          transition: lazy.PlacesUtils.history.TRANSITIONS.DOWNLOAD,
           referrer: download.source.referrerInfo
             ? download.source.referrerInfo.originalReferrer
             : null,
@@ -289,7 +295,7 @@ var DownloadCache = {
       ],
     });
 
-    await PlacesUtils.history.update({
+    await lazy.PlacesUtils.history.update({
       annotations: new Map([["downloads/destinationFileURI", targetUri.spec]]),
       
       
@@ -319,7 +325,7 @@ var DownloadCache = {
     this._data.set(url, newData);
 
     try {
-      await PlacesUtils.history.update({
+      await lazy.PlacesUtils.history.update({
         annotations: new Map([[METADATA_ANNO, JSON.stringify(metadata)]]),
         url,
       });
@@ -473,7 +479,7 @@ HistoryDownload.prototype = {
 
   async refresh() {
     try {
-      this.target.size = (await OS.File.stat(this.target.path)).size;
+      this.target.size = (await lazy.OS.File.stat(this.target.path)).size;
       this.target.exists = true;
     } catch (ex) {
       
@@ -575,10 +581,13 @@ var DownloadHistoryList = function(publicList, place) {
   publicList.addView(this).catch(Cu.reportError);
   let query = {},
     options = {};
-  PlacesUtils.history.queryStringToQuery(place, query, options);
+  lazy.PlacesUtils.history.queryStringToQuery(place, query, options);
 
   
-  let result = PlacesUtils.history.executeQuery(query.value, options.value);
+  let result = lazy.PlacesUtils.history.executeQuery(
+    query.value,
+    options.value
+  );
   result.addObserver(this);
 
   
