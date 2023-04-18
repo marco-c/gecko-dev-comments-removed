@@ -820,7 +820,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   masm.loadWasmPinnedRegsFromTls();
 
   masm.storePtr(WasmTlsReg,
-                Address(masm.getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
+                Address(masm.getStackPointer(), WasmCalleeTLSOffsetBeforeCall));
 
   
   
@@ -1279,7 +1279,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   masm.loadWasmPinnedRegsFromTls();
 
   masm.storePtr(WasmTlsReg,
-                Address(masm.getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
+                Address(masm.getStackPointer(), WasmCalleeTLSOffsetBeforeCall));
 
   
   
@@ -1601,7 +1601,7 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
   
   masm.movePtr(ImmPtr(inst.tlsData()), WasmTlsReg);
   masm.storePtr(WasmTlsReg,
-                Address(masm.getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
+                Address(masm.getStackPointer(), WasmCalleeTLSOffsetBeforeCall));
   masm.loadWasmPinnedRegsFromTls();
 
   
@@ -2677,10 +2677,10 @@ bool wasm::GenerateIndirectStub(MacroAssembler& masm,
 
   
   masm.storePtr(WasmTlsReg,
-                Address(masm.getStackPointer(), WasmCallerTlsOffsetAfterCall));
+                Address(masm.getStackPointer(), WasmCallerTLSOffsetAfterCall));
   masm.movePtr(WasmTableCallScratchReg0, WasmTlsReg);
   masm.storePtr(WasmTableCallScratchReg0,
-                Address(masm.getStackPointer(), WasmCalleeTlsOffsetAfterCall));
+                Address(masm.getStackPointer(), WasmCalleeTLSOffsetAfterCall));
   masm.loadWasmPinnedRegsFromTls();
   masm.switchToWasmTlsRealm(WasmTableCallIndexReg, WasmTableCallScratchReg1);
 
@@ -2699,7 +2699,7 @@ bool wasm::GenerateIndirectStub(MacroAssembler& masm,
   
   PopFrame(masm);
   masm.subPtr(Imm32(wasm::TrampolineFpTag), FramePointer);
-  masm.loadPtr(Address(masm.getStackPointer(), WasmCallerTlsOffsetAfterCall),
+  masm.loadPtr(Address(masm.getStackPointer(), WasmCallerTLSOffsetAfterCall),
                WasmTlsReg);
   masm.loadWasmPinnedRegsFromTls();
   masm.switchToWasmTlsRealm(WasmTableCallIndexReg, WasmTableCallScratchReg1);

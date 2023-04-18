@@ -3803,7 +3803,7 @@ void MacroAssembler::loadWasmGlobalPtr(uint32_t globalDataOffset,
 CodeOffset MacroAssembler::wasmCallImport(const wasm::CallSiteDesc& desc,
                                           const wasm::CalleeDesc& callee) {
   storePtr(WasmTlsReg,
-           Address(getStackPointer(), WasmCallerTlsOffsetBeforeCall));
+           Address(getStackPointer(), WasmCallerTLSOffsetBeforeCall));
 
   
   uint32_t globalDataOffset = callee.importGlobalDataOffset();
@@ -3825,7 +3825,7 @@ CodeOffset MacroAssembler::wasmCallImport(const wasm::CallSiteDesc& desc,
                     WasmTlsReg);
 
   storePtr(WasmTlsReg,
-           Address(getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
+           Address(getStackPointer(), WasmCalleeTLSOffsetBeforeCall));
   loadWasmPinnedRegsFromTls();
 
   return call(desc, ABINonArgReg0);
@@ -3837,9 +3837,9 @@ CodeOffset MacroAssembler::wasmCallBuiltinInstanceMethod(
   MOZ_ASSERT(instanceArg != ABIArg());
 
   storePtr(WasmTlsReg,
-           Address(getStackPointer(), WasmCallerTlsOffsetBeforeCall));
+           Address(getStackPointer(), WasmCallerTLSOffsetBeforeCall));
   storePtr(WasmTlsReg,
-           Address(getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
+           Address(getStackPointer(), WasmCalleeTLSOffsetBeforeCall));
 
   if (instanceArg.kind() == ABIArg::GPR) {
     loadPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, instance)),
@@ -3893,9 +3893,9 @@ CodeOffset MacroAssembler::asmCallIndirect(const wasm::CallSiteDesc& desc,
   loadWasmGlobalPtr(callee.tableFunctionBaseGlobalDataOffset(), scratch);
   loadPtr(BaseIndex(scratch, index, ScalePointer), scratch);
   storePtr(WasmTlsReg,
-           Address(getStackPointer(), WasmCallerTlsOffsetBeforeCall));
+           Address(getStackPointer(), WasmCallerTLSOffsetBeforeCall));
   storePtr(WasmTlsReg,
-           Address(getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
+           Address(getStackPointer(), WasmCalleeTLSOffsetBeforeCall));
   return call(desc, scratch);
 }
 
@@ -5377,6 +5377,20 @@ template void AutoGenericRegisterScope<FloatRegister>::reacquire();
 
 #endif  
 
+}  
+
+namespace wasm {
+TlsData* ExtractCallerTlsFromFrameWithTls(Frame* fp) {
+  return *reinterpret_cast<TlsData**>(reinterpret_cast<uint8_t*>(fp) +
+                                      sizeof(Frame) + ShadowStackSpace +
+                                      FrameWithTls::callerTLSOffset());
+}
+
+const TlsData* ExtractCalleeTlsFromFrameWithTls(const Frame* fp) {
+  return *reinterpret_cast<TlsData* const*>(
+      reinterpret_cast<const uint8_t*>(fp) + sizeof(Frame) + ShadowStackSpace +
+      FrameWithTls::calleeTLSOffset());
+}
 }  
 
 }  
