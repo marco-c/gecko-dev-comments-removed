@@ -98,6 +98,12 @@ add_task(function test_privileged_theme() {
   return test_experiment_static_theme({ privileged: true });
 });
 
-add_task(function test_unprivileged_theme() {
-  return test_experiment_static_theme({ privileged: false });
-});
+add_task(
+  {
+    
+    pref_set: [["extensions.experiments.enabled", false]],
+  },
+  function test_unprivileged_theme() {
+    return test_experiment_static_theme({ privileged: false });
+  }
+);
