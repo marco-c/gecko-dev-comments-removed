@@ -248,6 +248,12 @@ ALL_PROCESSES += [
     
     DllBlocklistEntry("iwprn.dll", (6, 9, 11, 360)),
     DllBlocklistEntry("iwprn_x86.dll", (6, 9, 11, 360)),
+
+
+    
+    DllBlocklistEntry("qipcap.dll", (7, 7, 819, 1)),
+    DllBlocklistEntry("qipcap64.dll", (7, 7, 819, 1)),
+
 ]
 
 ALL_PROCESSES_TESTS += [
