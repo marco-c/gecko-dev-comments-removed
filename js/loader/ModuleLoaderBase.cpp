@@ -748,10 +748,6 @@ nsresult ModuleLoaderBase::EvaluateModule(nsIGlobalObject* aGlobalObject,
                             MarkerInnerWindowIdFromJSContext(cx),
                             profilerLabelString);
 
-  
-  
-  MOZ_ASSERT(aRequest->IsTextSource() || aRequest->IsUnknownDataType());
-
   ModuleLoadRequest* request = aRequest->AsModuleRequest();
   MOZ_ASSERT(request->mModuleScript);
   MOZ_ASSERT_IF(request->HasLoadContext(),
