@@ -525,7 +525,7 @@ async function openPopupOn(browser, selector) {
   await childNotifiedPromise;
 }
 
-async function openPopupForSubframe(browser, frameBrowsingContext, selector) {
+async function openPopupOnSubframe(browser, frameBrowsingContext, selector) {
   let childNotifiedPromise = waitPopupStateInChild(
     frameBrowsingContext,
     "FormAutoComplete:PopupOpened"
@@ -536,7 +536,7 @@ async function openPopupForSubframe(browser, frameBrowsingContext, selector) {
   await runAndWaitForAutocompletePopupOpen(browser, async () => {
     await focusAndWaitForFieldsIdentified(frameBrowsingContext, selector);
     if (!selector.includes("cc-")) {
-      info(`openPopupForSubframe: before VK_DOWN on ${selector}`);
+      info(`openPopupOnSubframe: before VK_DOWN on ${selector}`);
       await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, frameBrowsingContext);
     }
   });

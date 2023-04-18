@@ -29,7 +29,7 @@ add_task(async function test_iframe_autocomplete() {
   );
   let browser = tab.linkedBrowser;
   let iframeBC = browser.browsingContext.children[1];
-  await openPopupForSubframe(browser, iframeBC, "#street-address");
+  await openPopupOnSubframe(browser, iframeBC, "#street-address");
 
   
   
@@ -80,14 +80,14 @@ add_task(async function test_iframe_autocomplete() {
   );
 
   
-  await openPopupForSubframe(browser, iframeBC, "#street-address");
+  await openPopupOnSubframe(browser, iframeBC, "#street-address");
   await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, iframeBC);
   EventUtils.synthesizeKey("VK_RETURN", {});
 
   await waitForAutofill(iframeBC, "#organization", "Example Inc.");
 
   
-  await openPopupForSubframe(browser, iframeBC, "#street-address");
+  await openPopupOnSubframe(browser, iframeBC, "#street-address");
   await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, iframeBC);
   EventUtils.synthesizeKey("VK_RETURN", {});
 
@@ -117,7 +117,7 @@ add_task(async function test_iframe_autocomplete_preferences() {
   );
   let browser = tab.linkedBrowser;
   let iframeBC = browser.browsingContext.children[1];
-  await openPopupForSubframe(browser, iframeBC, "#organization");
+  await openPopupOnSubframe(browser, iframeBC, "#organization");
 
   await expectWarningText(browser, "Also autofills address, email");
 
