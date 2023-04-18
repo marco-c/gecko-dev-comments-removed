@@ -4,6 +4,7 @@
 
 
 #include "nsDNSServiceDiscovery.h"
+#include "MainThreadUtils.h"
 #include "MDNSResponderOperator.h"
 #include "nsICancelable.h"
 #include "nsXULAppAPI.h"

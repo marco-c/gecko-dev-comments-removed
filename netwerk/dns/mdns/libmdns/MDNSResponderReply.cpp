@@ -5,6 +5,7 @@
 
 #include "MDNSResponderReply.h"
 #include "mozilla/EndianUtils.h"
+#include "nsHttpHandler.h"  
 #include "private/pprio.h"
 
 namespace mozilla {
