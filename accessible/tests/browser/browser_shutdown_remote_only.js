@@ -22,7 +22,10 @@ add_task(async function() {
     },
     async function(browser) {
       info("Creating a service in content");
-      await loadContentScripts(browser, "Common.jsm");
+      await loadContentScripts(browser, {
+        script: "Common.jsm",
+        symbol: "CommonUtils",
+      });
       
       const [a11yInitObserver, a11yInit] = initAccService(browser);
       await a11yInitObserver;

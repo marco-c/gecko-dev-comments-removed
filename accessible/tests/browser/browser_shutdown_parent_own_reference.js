@@ -25,7 +25,10 @@ add_task(async function() {
         "Creating a service in parent and waiting for service to be created " +
           "in content"
       );
-      await loadContentScripts(browser, "Common.jsm");
+      await loadContentScripts(browser, {
+        script: "Common.jsm",
+        symbol: "CommonUtils",
+      });
       
       
       const [parentA11yInitObserver, parentA11yInit] = initAccService();

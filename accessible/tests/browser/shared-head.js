@@ -323,16 +323,8 @@ function loadScripts(...scripts) {
 
 
 async function loadContentScripts(target, ...scripts) {
-  for (let script of scripts) {
-    let contentScript;
-    if (typeof script === "string") {
-      
-      contentScript = `${CURRENT_DIR}${script}`;
-    } else {
-      
-      contentScript = `${script.dir}${script.name}`;
-    }
-
+  for (let { script, symbol } of scripts) {
+    let contentScript = `${CURRENT_DIR}${script}`;
     let loadedScriptSet = LOADED_CONTENT_SCRIPTS.get(contentScript);
     if (!loadedScriptSet) {
       loadedScriptSet = new WeakSet();
@@ -341,9 +333,14 @@ async function loadContentScripts(target, ...scripts) {
       continue;
     }
 
-    await SpecialPowers.spawn(target, [contentScript], async _contentScript => {
-      ChromeUtils.import(_contentScript, content.window);
-    });
+    await SpecialPowers.spawn(
+      target,
+      [contentScript, symbol],
+      async (_contentScript, importSymbol) => {
+        let module = ChromeUtils.import(_contentScript);
+        content.window[importSymbol] = module[importSymbol];
+      }
+    );
     loadedScriptSet.add(target);
   }
 }
@@ -519,7 +516,10 @@ function accessibleTask(doc, task, options = {}) {
         }
 
         await SimpleTest.promiseFocus(browser);
-        await loadContentScripts(browser, "Common.jsm");
+        await loadContentScripts(browser, {
+          script: "Common.jsm",
+          symbol: "CommonUtils",
+        });
 
         if (options.chrome) {
           ok(!browser.isRemoteBrowser, "Not remote browser");
