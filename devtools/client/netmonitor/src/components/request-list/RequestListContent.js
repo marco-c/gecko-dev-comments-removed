@@ -121,7 +121,8 @@ class RequestListContent extends Component {
     };
   }
 
-  componentWillMount() {
+  
+  UNSAFE_componentWillMount() {
     this.tooltip = new HTMLTooltip(window.parent.document, { type: "arrow" });
     window.addEventListener("resize", this.onResize);
   }

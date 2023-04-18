@@ -77,7 +77,8 @@ class RequestListHeader extends Component {
     this.resizeColumnToFitContent = this.resizeColumnToFitContent.bind(this);
   }
 
-  componentWillMount() {
+  
+  UNSAFE_componentWillMount() {
     const { resetColumns, resetSorting, toggleColumn } = this.props;
     this.contextMenu = new RequestListHeaderContextMenu({
       resetColumns,

@@ -50,7 +50,8 @@ class StackTracePanel extends Component {
 
 
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     const { request, connector } = nextProps;
     
     if (!request.stacktrace) {

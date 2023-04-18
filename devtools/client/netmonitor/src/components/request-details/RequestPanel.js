@@ -91,7 +91,8 @@ class RequestPanel extends Component {
     updateFormDataSections(this.props);
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     const { request, connector } = nextProps;
     fetchNetworkUpdatePacket(connector.requestData, request, [
       "requestPostData",

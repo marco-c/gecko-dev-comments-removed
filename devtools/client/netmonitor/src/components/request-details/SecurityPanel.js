@@ -214,7 +214,8 @@ class SecurityPanel extends Component {
     fetchNetworkUpdatePacket(connector.requestData, request, ["securityInfo"]);
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     const { request, connector } = nextProps;
     fetchNetworkUpdatePacket(connector.requestData, request, ["securityInfo"]);
   }

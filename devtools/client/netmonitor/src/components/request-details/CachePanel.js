@@ -51,7 +51,8 @@ class CachePanel extends Component {
     fetchNetworkUpdatePacket(connector.requestData, request, ["responseCache"]);
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     const { connector, request } = nextProps;
     fetchNetworkUpdatePacket(connector.requestData, request, ["responseCache"]);
   }

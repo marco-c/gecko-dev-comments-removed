@@ -30,7 +30,8 @@ class RequestListColumnResponseHeader extends Component {
     fetchNetworkUpdatePacket(connector.requestData, item, ["responseHeaders"]);
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     const { item, connector } = nextProps;
     fetchNetworkUpdatePacket(connector.requestData, item, ["responseHeaders"]);
   }

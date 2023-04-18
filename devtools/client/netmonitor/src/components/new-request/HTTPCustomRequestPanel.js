@@ -160,7 +160,8 @@ class HTTPCustomRequestPanel extends Component {
     this.getStateFromPref = this.getStateFromPref.bind(this);
   }
 
-  async componentWillMount() {
+  
+  async UNSAFE_componentWillMount() {
     const { connector, request } = this.props;
     if (request?.requestPostDataAvailable && !this.state.postBody) {
       const requestData = await connector.requestData(

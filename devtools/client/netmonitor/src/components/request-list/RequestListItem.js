@@ -294,7 +294,8 @@ class RequestListItem extends Component {
     }
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     const { connector, item, requestFilterTypes } = nextProps;
     
     if (requestFilterTypes.xhr || requestFilterTypes.ws) {

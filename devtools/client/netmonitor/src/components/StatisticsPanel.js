@@ -77,7 +77,8 @@ class StatisticsPanel extends Component {
     this.onLayoutChange = this.onLayoutChange.bind(this);
   }
 
-  componentWillMount() {
+  
+  UNSAFE_componentWillMount() {
     this.mdnLinkContainerNodes = new Map();
   }
 
@@ -91,7 +92,8 @@ class StatisticsPanel extends Component {
     });
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     const { requests, connector } = nextProps;
     requests.forEach(request => {
       fetchNetworkUpdatePacket(connector.requestData, request, [

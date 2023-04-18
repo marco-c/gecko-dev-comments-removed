@@ -100,7 +100,8 @@ class MonitorPanel extends Component {
     this.persistActionBarSize();
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     updateFormDataSections(nextProps);
   }
 

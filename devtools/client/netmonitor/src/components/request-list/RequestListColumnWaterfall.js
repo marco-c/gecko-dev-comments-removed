@@ -55,7 +55,8 @@ class RequestListColumnWaterfall extends Component {
     fetchNetworkUpdatePacket(connector.requestData, item, ["eventTimings"]);
   }
 
-  componentWillReceiveProps(nextProps) {
+  
+  UNSAFE_componentWillReceiveProps(nextProps) {
     if (nextProps.isVisible && nextProps.item.totalTime) {
       const { connector, item } = nextProps;
       fetchNetworkUpdatePacket(connector.requestData, item, ["eventTimings"]);
