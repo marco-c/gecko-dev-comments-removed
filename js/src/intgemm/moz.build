@@ -4,17 +4,23 @@
 
 
 
+include("../js-config.mozbuild")
+include("../js-cxxflags.mozbuild")
+
 FINAL_LIBRARY = "js"
 
 with Files("*"):
     BUG_COMPONENT = ("Core", "JavaScript: WebAssembly")
 
 LOCAL_INCLUDES += [
+    "!..",
+    "..",
     "/third_party/intgemm/intgemm",
 ]
 
 SOURCES += [
     "/third_party/intgemm/intgemm/intgemm.cc",
+    "IntegerGemmIntrinsic.cpp",
 ]
 
 GeneratedFile(
