@@ -20,6 +20,17 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/Region.jsm"
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "INVALID_SHAREABLE_SCHEMES",
+  "services.sync.engine.tabs.filteredSchemes",
+  "",
+  null,
+  val => {
+    return new Set(val.split("|"));
+  }
+);
+
 function stringPrefToSet(prefVal) {
   return new Set(
     prefVal
@@ -147,16 +158,9 @@ var BrowserUtils = {
     if (url.spec.length > 65535) {
       return false;
     }
-
-    let scheme = url.scheme;
-
-    return !(
-      "about" == scheme ||
-      "resource" == scheme ||
-      "chrome" == scheme ||
-      "blob" == scheme ||
-      "moz-extension" == scheme
-    );
+    
+    
+    return !INVALID_SHAREABLE_SCHEMES.has(url.scheme);
   },
 
   
