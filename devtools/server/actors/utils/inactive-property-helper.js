@@ -47,6 +47,32 @@ const VISITED_INVALID_PROPERTIES = allCssPropertiesExcept([
   "text-emphasis-color",
 ]);
 
+
+const REPLACED_ELEMENTS_NAMES = new Set([
+  "audio",
+  "br",
+  "button",
+  "canvas",
+  "embed",
+  "hr",
+  "iframe",
+  
+  
+  
+  
+  "input",
+  "math",
+  "object",
+  "picture",
+  
+  
+  
+  "select",
+  "svg",
+  "textarea",
+  "video",
+]);
+
 class InactivePropertyHelper {
   
 
@@ -837,39 +863,12 @@ class InactivePropertyHelper {
 
 
   get replaced() {
-    
-    
-    if (
-      this.nodeNameOneOf([
-        "audio",
-        "br",
-        "button",
-        "canvas",
-        "embed",
-        "hr",
-        "iframe",
-        
-        
-        
-        
-        "input",
-        "math",
-        "object",
-        "picture",
-        
-        
-        
-        "select",
-        "svg",
-        "textarea",
-        "video",
-      ])
-    ) {
+    if (REPLACED_ELEMENTS_NAMES.has(this.localName)) {
       return true;
     }
 
     
-    if (this.nodeName === "img" && this.node.complete) {
+    if (this.localName === "img" && this.node.complete) {
       return true;
     }
 
@@ -881,8 +880,8 @@ class InactivePropertyHelper {
 
 
 
-  get nodeName() {
-    return this.node.nodeName ? this.node.nodeName.toLowerCase() : null;
+  get localName() {
+    return this.node.localName;
   }
 
   
@@ -897,17 +896,6 @@ class InactivePropertyHelper {
 
   get isSvg() {
     return this.node.namespaceURI === "http://www.w3.org/2000/svg";
-  }
-
-  
-
-
-
-
-
-
-  nodeNameOneOf(values) {
-    return values.includes(this.nodeName);
   }
 
   
