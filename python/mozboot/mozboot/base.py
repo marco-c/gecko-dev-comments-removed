@@ -1,6 +1,6 @@
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -18,13 +18,13 @@ from mozboot.util import (
 )
 from mozfile import which
 
-
-
-
+# NOTE: This script is intended to be run with a vanilla Python install.  We
+# have to rely on the standard library instead of Python 2+3 helpers like
+# the six module.
 if sys.version_info < (3,):
     from urllib2 import urlopen
 
-    input = raw_input  
+    input = raw_input  # noqa
 else:
     from urllib.request import urlopen
 
@@ -137,15 +137,15 @@ JS_MOZCONFIG_TEMPLATE = """\
 ac_add_options --enable-application=js
 """
 
-
-
-
+# Upgrade Mercurial older than this.
+# This should match the OLDEST_NON_LEGACY_VERSION in
+# version-control-tools/hgext/configwizard/__init__.py.
 MODERN_MERCURIAL_VERSION = LooseVersion("4.9")
 
-
+# Upgrade rust older than this.
 MODERN_RUST_VERSION = LooseVersion(MINIMUM_RUST_VERSION)
 
-
+# Upgrade nasm older than this.
 MODERN_NASM_VERSION = LooseVersion("2.14")
 
 
@@ -394,8 +394,8 @@ class BaseBootstrapper(object):
         if not os.path.exists(mach_binary):
             raise ValueError("mach not found at %s" % mach_binary)
 
-        
-        
+        # NOTE: Use self.state_dir over the passed-in state_dir, which might be
+        # a subdirectory of the actual state directory.
         if not self.state_dir:
             raise ValueError(
                 "Need a state directory (e.g. ~/.mozbuild) to download " "artifacts"
@@ -432,6 +432,27 @@ class BaseBootstrapper(object):
 
     def dnf_install(self, *packages):
         if which("dnf"):
+
+            def not_installed(package):
+                # We could check for "Error: No matching Packages to list", but
+                # checking `dnf`s exit code is sufficent.
+                is_installed = subprocess.run(
+                    ["dnf", "--cacheonly", "list", "--installed", package],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                )
+                if is_installed.returncode not in [0, 1]:
+                    stdout = is_installed.stdout
+                    raise Exception(
+                        f'Failed to determine whether package "{package}" is installed: "{stdout}"'
+                    )
+                return is_installed.returncode != 0
+
+            packages = list(filter(not_installed, packages))
+            if len(packages) == 0:
+                # avoid sudo prompt (support unattended re-bootstrapping)
+                return
+
             command = ["dnf", "install"]
         else:
             command = ["yum", "install"]
@@ -444,6 +465,26 @@ class BaseBootstrapper(object):
 
     def dnf_groupinstall(self, *packages):
         if which("dnf"):
+            installed = subprocess.run(
+                # This should actually be:
+                #   ["dnf", "--cacheonly", "group", "list", "--installed", "--hidden"],
+                # However, that's currently not working:
+                #   https://bugzilla.redhat.com/show_bug.cgi?id=1884616#c0
+                ["dnf", "--cacheonly", "group", "list", "installed", "--hidden"],
+                universal_newlines=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            if installed.returncode != 0:
+                raise Exception(
+                    f'Failed to determine currently-installed package groups: "{installed.stdout}"'
+                )
+            installed_packages = (pkg.strip() for pkg in installed.stdout.split("\n"))
+            packages = list(filter(lambda p: p not in installed_packages, packages))
+            if len(packages) == 0:
+                # avoid sudo prompt (support unattended re-bootstrapping)
+                return
+
             command = ["dnf", "groupinstall"]
         else:
             command = ["yum", "groupinstall"]
@@ -574,9 +615,9 @@ class BaseBootstrapper(object):
             stderr=subprocess.STDOUT,
         )
         if process.returncode != 0:
-            
-            
-            
+            # This can happen e.g. if the user has an inactive pyenv shim in
+            # their path. Just silently treat this as a failure to parse the
+            # path and move on.
             return None
 
         match = re.search(name + " ([a-z0-9\.]+)", process.stdout)
@@ -709,14 +750,14 @@ class BaseBootstrapper(object):
         return path
 
     def print_rust_path_advice(self, template, cargo_home, cargo_bin):
-        
+        # Suggest ~/.cargo/env if it exists.
         if os.path.exists(os.path.join(cargo_home, "env")):
             cmd = "source %s/env" % cargo_home
         else:
-            
-            
-            
-            
+            # On Windows rustup doesn't write out ~/.cargo/env
+            # so fall back to a manual PATH update. Bootstrap
+            # only runs under msys, so a unix-style shell command
+            # is appropriate there.
             cargo_bin = self.win_to_msys_path(cargo_bin)
             cmd = "export PATH=%s:$PATH" % cargo_bin
         print(template % {"cargo_bin": cargo_bin, "cmd": cmd})
@@ -749,7 +790,7 @@ class BaseBootstrapper(object):
                 print(RUST_UPGRADE_FAILED % (MODERN_RUST_VERSION, after))
                 sys.exit(1)
         else:
-            
+            # No rustup. Download and run the installer.
             print("Will try to install Rust.")
             self.install_rust()
 
@@ -765,14 +806,14 @@ class BaseBootstrapper(object):
         ]
         print("Rust supports %s targets." % ", ".join(targets))
 
-        
+        # Support 32-bit Windows on 64-bit Windows.
         win32 = "i686-pc-windows-msvc"
         win64 = "x86_64-pc-windows-msvc"
         if rust.platform() == win64 and win32 not in targets:
             subprocess.check_call([rustup, "target", "add", win32])
 
         if "mobile_android" in self.application:
-            
+            # Let's add the most common targets.
             if rust_version < LooseVersion("1.33"):
                 arm_target = "armv7-linux-androideabi"
             else:
@@ -792,9 +833,9 @@ class BaseBootstrapper(object):
 
         Invoke rustup from the given path to update the rust install."""
         subprocess.check_call([rustup, "update"])
-        
-        
-        
+        # This installs rustfmt when not already installed, or nothing
+        # otherwise, while the update above would have taken care of upgrading
+        # it.
         subprocess.check_call([rustup, "component", "add", "rustfmt"])
 
     def install_rust(self):
