@@ -571,7 +571,8 @@ static ALWAYS_INLINE IntRange clip_distance_range(const E& left,
   
   Float clipStep = (rightClip - leftClip) / (right.cur_x() - left.cur_x());
   
-  Float clipDist = left.cur_x() - leftClip * recip(clipStep);
+  Float clipDist =
+      clamp(left.cur_x() - leftClip * recip(clipStep), 0.0f, 1.0e6f);
   
   
   
