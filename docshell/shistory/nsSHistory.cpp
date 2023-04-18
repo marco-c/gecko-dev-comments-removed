@@ -2048,6 +2048,10 @@ nsresult nsSHistory::LoadEntry(int32_t aIndex, long aLoadType,
   if (aIndex < 0 || aIndex >= Length()) {
     MOZ_LOG(gSHistoryLog, LogLevel::Debug, ("Index out of range"));
     
+    
+    
+    mRequestedIndex = -1;
+
     return NS_ERROR_FAILURE;
   }
 
