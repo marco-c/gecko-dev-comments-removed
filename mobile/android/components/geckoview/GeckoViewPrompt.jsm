@@ -46,8 +46,6 @@ class PromptFactory {
     }
   }
 
-  
-  
   _handleClick(aEvent) {
     const target = aEvent.composedTarget;
     const className = ChromeUtils.getClassName(target);
@@ -76,15 +74,15 @@ class PromptFactory {
     }
 
     const type = target.type;
-    if (
-      type === "date" ||
-      type === "month" ||
-      type === "week" ||
-      type === "time" ||
-      type === "datetime-local"
-    ) {
-      this._handleDateTime(target);
-      aEvent.preventDefault();
+    if (type === "month" || type === "week") {
+      
+      
+      
+      
+      if (!target.openOrClosedShadowRoot) {
+        this._handleDateTime(target);
+        aEvent.preventDefault();
+      }
     }
   }
 
