@@ -3224,7 +3224,8 @@ BrowserGlue.prototype = {
         let bookmarksUrl = null;
         if (restoreDefaultBookmarks) {
           
-          bookmarksUrl = "chrome://browser/locale/bookmarks.html";
+          
+          bookmarksUrl = "chrome://browser/content/default-bookmarks.html";
         } else if (await IOUtils.exists(BookmarkHTMLUtils.defaultPath)) {
           bookmarksUrl = PathUtils.toFileURI(BookmarkHTMLUtils.defaultPath);
         }
