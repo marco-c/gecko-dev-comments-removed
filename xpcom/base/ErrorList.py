@@ -340,6 +340,8 @@ with modules["NETWORK"]:
     errors["NS_ERROR_NET_TIMEOUT_EXTERNAL"] = FAILURE(85)
     
     errors["NS_ERROR_HTTPS_ONLY"] = FAILURE(86)
+    
+    errors["NS_ERROR_WEBSOCKET_CONNECTION_REFUSED"] = FAILURE(87)
 
     
     
