@@ -360,8 +360,6 @@ var DownloadsCommon = {
 
 
   async deleteDownloadFiles(download, clearHistory = 0) {
-    let { succeeded } = download;
-    let { path } = download.target;
     if (clearHistory > 1) {
       try {
         await PlacesUtils.history.remove(download.source.url);
@@ -373,18 +371,10 @@ var DownloadsCommon = {
       let list = await Downloads.getList(Downloads.ALL);
       await list.remove(download);
     }
-    if (succeeded) {
-      
-      
-      
-      await IOUtils.setPermissions(path, 0o660);
-      await IOUtils.remove(path, { ignoreAbsent: true });
+    await download.manuallyRemoveData();
+    if (clearHistory < 2) {
+      DownloadHistory.updateMetaData(download).catch(Cu.reportError);
     }
-    
-    
-    await download.removePartialData();
-    await download.refresh();
-    await download.finalize();
   },
 
   

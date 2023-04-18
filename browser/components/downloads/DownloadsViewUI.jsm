@@ -230,9 +230,9 @@ var DownloadsViewUI = {
       : {};
 
     
-    contextMenu.querySelector(".downloadDeleteFileMenuItem").hidden = !(
-      download.target?.exists || download.target?.partFileExists
-    );
+    contextMenu.querySelector(".downloadDeleteFileMenuItem").hidden =
+      download.deleted ||
+      !(download.target?.exists || download.target?.partFileExists);
 
     
     
@@ -739,7 +739,9 @@ DownloadsViewUI.DownloadElementShell.prototype = {
       
       
       
-      if (this.download.succeeded) {
+      if (this.download.deleted) {
+        this.showDeletedOrMissing();
+      } else if (this.download.succeeded) {
         DownloadsCommon.log(
           "_updateStateInner, target exists? ",
           this.download.target.path,
@@ -781,10 +783,7 @@ DownloadsViewUI.DownloadElementShell.prototype = {
         } else {
           
           
-          this.element.removeAttribute("exists");
-          let label = DownloadsCommon.strings.fileMovedOrMissing;
-          this.showStatusWithDetails(label, label);
-          this.hideButton();
+          this.showDeletedOrMissing();
         }
       } else if (this.download.error) {
         if (this.download.error.becauseBlockedByParentalControls) {
@@ -939,6 +938,16 @@ DownloadsViewUI.DownloadElementShell.prototype = {
     );
   },
 
+  showDeletedOrMissing() {
+    this.element.removeAttribute("exists");
+    let label =
+      DownloadsCommon.strings[
+        this.download.deleted ? "fileDeleted" : "fileMovedOrMissing"
+      ];
+    this.showStatusWithDetails(label, label);
+    this.hideButton();
+  },
+
   
 
 
@@ -1044,7 +1053,9 @@ DownloadsViewUI.DownloadElementShell.prototype = {
       case "downloadsCmd_show":
       case "downloadsCmd_deleteFile":
         let { target } = this.download;
-        return target.exists || target.partFileExists;
+        return (
+          !this.download.deleted && (target.exists || target.partFileExists)
+        );
 
       case "downloadsCmd_delete":
       case "cmd_delete":
@@ -1075,7 +1086,10 @@ DownloadsViewUI.DownloadElementShell.prototype = {
   downloadsCmd_cancel() {
     
     this.download.cancel().catch(() => {});
-    this.download.removePartialData().catch(Cu.reportError);
+    this.download
+      .removePartialData()
+      .catch(Cu.reportError)
+      .finally(() => this.download.target.refresh());
   },
 
   downloadsCmd_confirmBlock() {

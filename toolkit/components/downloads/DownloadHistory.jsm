@@ -135,7 +135,11 @@ var DownloadHistory = {
       }
     }
 
-    let metaData = { state, endTime: download.endTime };
+    let metaData = {
+      state,
+      deleted: download.deleted,
+      endTime: download.endTime,
+    };
     if (download.succeeded) {
       metaData.fileSize = download.target.size;
     }
@@ -398,6 +402,7 @@ HistoryDownload.prototype = {
         metaData.state == METADATA_STATE_CANCELED ||
         metaData.state == METADATA_STATE_PAUSED;
       this.endTime = metaData.endTime;
+      this.deleted = metaData.deleted;
 
       
       if (metaData.state == METADATA_STATE_FAILED) {
@@ -431,6 +436,7 @@ HistoryDownload.prototype = {
       this.succeeded = !this.target.path;
       this.error = this.target.path ? { message: "Unstarted download." } : null;
       this.canceled = false;
+      this.deleted = false;
 
       
       this.target.exists = false;

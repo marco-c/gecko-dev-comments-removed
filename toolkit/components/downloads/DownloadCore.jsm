@@ -182,6 +182,15 @@ Download.prototype = {
 
 
 
+
+  deleted: false,
+
+  
+
+
+
+
+
   error: null,
 
   
@@ -941,6 +950,7 @@ Download.prototype = {
           if (this.currentBytes != 0 || this.hasPartialData) {
             this.currentBytes = 0;
             this.hasPartialData = false;
+            this.target.refreshPartFileState();
             this._notifyChange();
           }
         } finally {
@@ -1121,6 +1131,36 @@ Download.prototype = {
     });
 
     return promise;
+  },
+
+  
+
+
+
+  async manuallyRemoveData() {
+    let { path } = this.target;
+    if (this.succeeded) {
+      
+      
+      
+      await IOUtils.setPermissions(path, 0o660);
+      await IOUtils.remove(path, { ignoreAbsent: true });
+    }
+    this.deleted = true;
+    await this.cancel();
+    await this.removePartialData();
+    
+    
+    
+    
+    await this.target.refreshPartFileState();
+    await this.refresh();
+    
+    
+    
+    
+    
+    this._notifyChange();
   },
 
   
