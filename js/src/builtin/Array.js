@@ -1238,10 +1238,12 @@ function ArrayToReversed() {
     var A = std_Array(len);
 
     
+    
     for (var k = 0; k < len; k++) {
         
         var from = len - k - 1;
         
+
         
         var fromValue = O[from];
         
@@ -1258,6 +1260,7 @@ function ArrayToSorted(comparefn) {
 
     
 
+
     if (comparefn !== undefined && !IsCallable(comparefn)) {
         ThrowTypeError(JSMSG_BAD_TOSORTED_ARG);
     }
@@ -1272,14 +1275,16 @@ function ArrayToSorted(comparefn) {
     var items = std_Array(len);
 
     
+
+
+
+
     for (var k = 0; k < len; k++) {
         DefineDataProperty(items, k, O[k]);
     }
 
-    
     SortArray(items, comparefn);
 
-    
     
     return items;
 }

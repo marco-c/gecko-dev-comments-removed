@@ -1792,6 +1792,11 @@ function TypedArrayCreateSameType(exemplar, length) {
     
     let constructor = GetTypedArrayConstructorFromKind(contentType);
 
+
+    
+    
+
+    
     
     return TypedArrayCreateWithLength(constructor, length);
 }
@@ -1812,10 +1817,17 @@ function TypedArrayToReversed() {
 
     
     var A = TypedArrayCreateSameType(O, len);
+
+    
     
     for (var k = 0; k < len; k++) {
+        
         var from = len - k - 1;
+        
+        
+        
         var fromValue = O[from];
+        
         DefineDataProperty(A, k, fromValue);
     }
 
@@ -1870,7 +1882,14 @@ function TypedArrayWith(index, value) {
     var A = TypedArrayCreateSameType(O, len);
 
     
+    
     for (var k = 0; k < len; k++) {
+        
+        
+        
+        
+
+
         var fromValue = k == actualIndex ? value : O[k];
         DefineDataProperty(A, k, fromValue);
     }
@@ -1898,12 +1917,22 @@ function TypedArrayToSorted(comparefn) {
     var O = this;
 
     
+
+    
     var len = TypedArrayLength(O);
 
+    
     var A = TypedArrayCreateSameType(O, len);
+
+    
+
+
+    
     for(var k = 0; k < len; k++) {
         A[k] = O[k];
     }
+
+    
     return callFunction(CallTypedArrayMethodIfWrapped, A, comparefn, "TypedArraySort");
 }
 
@@ -1939,8 +1968,8 @@ function TypedArrayToSpliced(start, deleteCount, ...items) {
     
     let insertCount = items.length;
 
-    
     var actualDeleteCount;
+    
     if (arguments.length < 1) {
         actualDeleteCount = 0;
     } else if (arguments.length < 2) {
@@ -1949,6 +1978,7 @@ function TypedArrayToSpliced(start, deleteCount, ...items) {
     } else {
         
         var dc = ToInteger(deleteCount);
+        
         actualDeleteCount = std_Math_min(len - actualStart, std_Math_max(0, dc));
     }
 
@@ -1967,20 +1997,37 @@ function TypedArrayToSpliced(start, deleteCount, ...items) {
     
     
     while (i < actualStart) {
+        
+        
+        
         var iValue = O[i];
+        
+        
         DefineDataProperty(A, i++, iValue);
     }
 
     
     
     for(var j = 0; j < insertCount; j++) {
+        
+        
+        
+        
         DefineDataProperty(A, i++, items[j]);
     }
 
     
     
     while(i < newLen) {
+        
+        
+        
+        
+        
+        
         let fromValue = O[r++];
+        
+        
         DefineDataProperty(A, i++, fromValue);
     }
 

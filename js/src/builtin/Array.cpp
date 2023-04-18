@@ -2777,12 +2777,21 @@ static bool CopyArrayElements(JSContext* cx, HandleObject obj, uint64_t begin,
 static bool GetActualStart(JSContext* cx, const CallArgs& args, uint64_t len,
                            uint64_t* result) {
   double relativeStart;
+  
+
+
+
+  
   if (!ToInteger(cx, args.get(0), &relativeStart)) {
     return false;
   }
+  
+
+
   if (relativeStart < 0) {
     *result = uint64_t(std::max(double(len) + relativeStart, 0.0));
   } else {
+    
     *result = uint64_t(std::min(relativeStart, double(len)));
   }
   return true;
@@ -2797,27 +2806,40 @@ static uint32_t GetItemCount(const CallArgs& args) {
 
 static bool GetActualDeleteCount(JSContext* cx, const CallArgs& args,
                                  HandleObject obj, uint64_t len,
-                                 uint64_t actualStart, uint64_t itemCount,
-                                 uint64_t* result) {
+                                 uint64_t actualStart, uint64_t insertCount,
+                                 uint64_t* actualDeleteCount) {
+  
+
+
+
+  
   if (args.length() < 1) {
-    *result = 0;
+    *actualDeleteCount = 0;
+    
+
   } else if (args.length() < 2) {
-    *result = len - actualStart;
+    *actualDeleteCount = len - actualStart;
   } else {
     double deleteCount;
+    
     if (!ToInteger(cx, args.get(1), &deleteCount)) {
       return false;
     }
-    *result = uint64_t(std::min(std::max(0.0, deleteCount),
-                                double(len) - double(actualStart)));
+    
 
-    if (double(len + itemCount - *result) >= DOUBLE_INTEGRAL_PRECISION_LIMIT) {
+    *actualDeleteCount = uint64_t(std::min(std::max(0.0, deleteCount),
+                                           double(len) - double(actualStart)));
+
+    
+    
+    if (double(len + insertCount - *actualDeleteCount) >=
+        DOUBLE_INTEGRAL_PRECISION_LIMIT) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_TOO_LONG_ARRAY);
       return false;
     }
   }
-  MOZ_ASSERT(actualStart + *result <= len);
+  MOZ_ASSERT(actualStart + *actualDeleteCount <= len);
 
   return true;
 }
@@ -3181,7 +3203,6 @@ static bool array_to_spliced(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  
   uint32_t insertCount = GetItemCount(args);
 
   
@@ -3203,42 +3224,65 @@ static bool array_to_spliced(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
+
   
-  uint64_t k = 0;
-  while (k < actualStart) {
-    RootedValue kValue(cx);
-    if (!GetArrayElement(cx, obj, k, &kValue)) {
+  uint64_t i = 0;
+
+  
+  uint64_t r = actualStart + actualDeleteCount;
+
+  
+  while (i < actualStart) {
+    
+    RootedValue iValue(cx);
+
+    
+    if (!GetArrayElement(cx, obj, i, &iValue)) {
       return false;
     }
-    if (!SetArrayElement(cx, A, k, kValue)) {
+
+    
+    if (!SetArrayElement(cx, A, i, iValue)) {
       return false;
     }
-    k++;
+
+    
+    i++;
   }
 
   
 
   
-  
   Value* items = args.array() + 2;
+
+  
+
 
   if (!SetArrayElements(cx, A, actualStart, insertCount, items)) {
     return false;
   }
-  k += insertCount;
+  
+  
+  i += insertCount;
 
   
   
-  while (k < newLen) {
-    uint64_t from = k + actualDeleteCount - insertCount;
+  while (i < newLen) {
+    
+    
     RootedValue fromValue(cx);
-    if (!GetArrayElement(cx, obj, from, &fromValue)) {
+    
+    if (!GetArrayElement(cx, obj, r, &fromValue)) {
       return false;
     }
-    if (!SetArrayElement(cx, A, k, fromValue)) {
+    
+    if (!SetArrayElement(cx, A, i, fromValue)) {
       return false;
     }
-    k++;
+    
+    i++;
+    
+    r++;
   }
 
   
@@ -3293,10 +3337,12 @@ static bool array_with(JSContext* cx, unsigned argc, Value* vp) {
   
   double actualIndex = relativeIndex;
   if (actualIndex < 0) {
+    
     actualIndex = int64_t(len + actualIndex);
   }
 
   
+
   if (actualIndex < 0 || actualIndex >= double(len)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX,
                               "Array.with: index out of bounds");
@@ -3312,14 +3358,19 @@ static bool array_with(JSContext* cx, unsigned argc, Value* vp) {
 
   
   for (uint64_t k = 0; k < len; k++) {
+    
     RootedValue fromValue(cx);
+
+    
     if (k == uint64_t(actualIndex)) {
       fromValue = args.get(1);
     } else {
+      
       if (!GetArrayElement(cx, obj, k, &fromValue)) {
         return false;
       }
     }
+    
     if (!SetArrayElement(cx, A, k, fromValue)) {
       return false;
     }
