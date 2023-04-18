@@ -19,9 +19,10 @@ function checkSubviewButtonClass(menuId, buttonId, subviewId) {
   return async function() {
     
     
-    ChromeUtils.import("resource://devtools/shared/loader/Loader.jsm").require(
-      "devtools/client/framework/devtools-browser"
-    );
+    ChromeUtils.import(
+      "resource://devtools/shared/loader/Loader.jsm",
+      {}
+    ).require("devtools/client/framework/devtools-browser");
 
     info(
       "Checking for items without the subviewbutton class in " +

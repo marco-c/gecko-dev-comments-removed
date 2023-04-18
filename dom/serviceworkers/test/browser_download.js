@@ -1,7 +1,8 @@
 
 
 
-var { Downloads } = ChromeUtils.import("resource://gre/modules/Downloads.jsm");
+var Downloads = ChromeUtils.import("resource://gre/modules/Downloads.jsm", {})
+  .Downloads;
 
 var gTestRoot = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content/",

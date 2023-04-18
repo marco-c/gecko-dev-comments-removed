@@ -36,7 +36,8 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 XPCOMUtils.defineLazyGetter(this, "log", () => {
   const { ConsoleAPI } = ChromeUtils.import(
-    "resource://gre/modules/Console.jsm"
+    "resource://gre/modules/Console.jsm",
+    {}
   );
   return new ConsoleAPI({
     maxLogLevel: "warn",

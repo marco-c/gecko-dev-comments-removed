@@ -12,6 +12,10 @@
 
 
 
+const { setTimeout } = ChromeUtils.import(
+  "resource://gre/modules/Timer.jsm",
+  {}
+);
 const { RemoteSecuritySettings } = ChromeUtils.import(
   "resource://gre/modules/psm/RemoteSecuritySettings.jsm"
 );

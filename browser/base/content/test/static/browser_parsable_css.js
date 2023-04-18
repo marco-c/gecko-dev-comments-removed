@@ -407,9 +407,10 @@ add_task(async function checkAllTheCSS() {
   
   
   let testFile = getRootDirectory(gTestPath) + "dummy_page.html";
-  let { HiddenFrame } = ChromeUtils.import(
-    "resource://gre/modules/HiddenFrame.jsm"
-  );
+  let HiddenFrame = ChromeUtils.import(
+    "resource://gre/modules/HiddenFrame.jsm",
+    {}
+  ).HiddenFrame;
   let hiddenFrame = new HiddenFrame();
   let win = await hiddenFrame.get();
   let iframe = win.document.createElementNS(

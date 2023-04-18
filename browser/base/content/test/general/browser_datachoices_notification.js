@@ -6,12 +6,14 @@
 
 
 
-var { Preferences } = ChromeUtils.import(
-  "resource://gre/modules/Preferences.jsm"
-);
-var { TelemetryReportingPolicy } = ChromeUtils.import(
-  "resource://gre/modules/TelemetryReportingPolicy.jsm"
-);
+var Preferences = ChromeUtils.import(
+  "resource://gre/modules/Preferences.jsm",
+  {}
+).Preferences;
+var TelemetryReportingPolicy = ChromeUtils.import(
+  "resource://gre/modules/TelemetryReportingPolicy.jsm",
+  {}
+).TelemetryReportingPolicy;
 
 const PREF_BRANCH = "datareporting.policy.";
 const PREF_FIRST_RUN = "toolkit.telemetry.reportingpolicy.firstRun";

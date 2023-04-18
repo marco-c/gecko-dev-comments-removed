@@ -28,7 +28,8 @@ add_task(async function init() {
   
   let profd = do_get_profile();
   SessionFile = ChromeUtils.import(
-    "resource:///modules/sessionstore/SessionFile.jsm"
+    "resource:///modules/sessionstore/SessionFile.jsm",
+    {}
   ).SessionFile;
   Paths = SessionFile.Paths;
 

@@ -9,7 +9,7 @@ function test() {
 
   
   
-  ChromeUtils.import("resource://testing-common/httpd.js");
+  ChromeUtils.import("resource://testing-common/httpd.js", {});
 
   nextTest();
 }
