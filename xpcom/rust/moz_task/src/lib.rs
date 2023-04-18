@@ -7,49 +7,44 @@
 
 
 
-extern crate cstr;
-extern crate futures_task;
-extern crate libc;
-extern crate nserror;
-extern crate nsstring;
-extern crate thiserror;
-extern crate xpcom;
-
+mod dispatcher;
+pub use dispatcher::{dispatch_background_task, dispatch_local, dispatch_onto, RunnableBuilder};
 mod event_loop;
 mod executor;
-pub use executor::spawn_current_thread;
+pub use executor::{
+    spawn, spawn_blocking, spawn_local, spawn_onto, spawn_onto_blocking, TaskBuilder,
+};
+
+
+
+pub use async_task::Task as AsyncTask;
 
 
 
 
 pub mod gtest_only {
-    pub use event_loop::spin_event_loop_until;
+    pub use crate::event_loop::spin_event_loop_until;
 }
 
-use nserror::{nsresult, NS_OK};
+use nserror::nsresult;
 use nsstring::{nsACString, nsCString};
-use std::{
-    ffi::CStr,
-    marker::PhantomData,
-    mem, ptr,
-    sync::atomic::{AtomicBool, Ordering},
-};
+use std::{ffi::CStr, marker::PhantomData, mem, ptr};
 use xpcom::{
     getter_addrefs,
     interfaces::{nsIEventTarget, nsIRunnable, nsISerialEventTarget, nsISupports, nsIThread},
-    xpcom, xpcom_method, AtomicRefcnt, RefCounted, RefPtr, XpCom,
+    AtomicRefcnt, RefCounted, RefPtr, XpCom,
 };
 
 extern "C" {
-    fn NS_GetCurrentThreadEventTarget(result: *mut *const nsIThread) -> nsresult;
-    fn NS_GetMainThreadEventTarget(result: *mut *const nsIThread) -> nsresult;
+    fn NS_GetCurrentThreadRust(result: *mut *const nsIThread) -> nsresult;
+    fn NS_GetMainThreadRust(result: *mut *const nsIThread) -> nsresult;
     fn NS_IsMainThread() -> bool;
     fn NS_NewNamedThreadWithDefaultStackSize(
         name: *const nsACString,
         result: *mut *const nsIThread,
         event: *const nsIRunnable,
     ) -> nsresult;
-    fn NS_IsCurrentThread(thread: *const nsIEventTarget) -> bool;
+    fn NS_IsOnCurrentThread(target: *const nsIEventTarget) -> bool;
     fn NS_ProxyReleaseISupports(
         name: *const libc::c_char,
         target: *const nsIEventTarget,
@@ -64,11 +59,11 @@ extern "C" {
 }
 
 pub fn get_current_thread() -> Result<RefPtr<nsIThread>, nsresult> {
-    getter_addrefs(|p| unsafe { NS_GetCurrentThreadEventTarget(p) })
+    getter_addrefs(|p| unsafe { NS_GetCurrentThreadRust(p) })
 }
 
 pub fn get_main_thread() -> Result<RefPtr<nsIThread>, nsresult> {
-    getter_addrefs(|p| unsafe { NS_GetMainThreadEventTarget(p) })
+    getter_addrefs(|p| unsafe { NS_GetMainThreadRust(p) })
 }
 
 pub fn is_main_thread() -> bool {
@@ -81,8 +76,8 @@ pub fn create_thread(name: &str) -> Result<RefPtr<nsIThread>, nsresult> {
     })
 }
 
-pub fn is_current_thread(thread: &nsIThread) -> bool {
-    unsafe { NS_IsCurrentThread(thread.coerce()) }
+pub fn is_on_current_thread(target: &nsIEventTarget) -> bool {
+    unsafe { NS_IsOnCurrentThread(target) }
 }
 
 
@@ -100,22 +95,10 @@ pub fn create_background_task_queue(
 
 
 
-#[inline]
-pub unsafe fn dispatch(runnable: &nsIRunnable, target: &nsIEventTarget) -> Result<(), nsresult> {
-    dispatch_with_options(runnable, target, DispatchOptions::default())
-}
 
 
 
-
-
-
-
-
-
-
-
-pub unsafe fn dispatch_with_options(
+pub unsafe fn dispatch_runnable(
     runnable: &nsIRunnable,
     target: &nsIEventTarget,
     options: DispatchOptions,
@@ -129,10 +112,6 @@ pub unsafe fn dispatch_with_options(
 
 
 
-#[inline]
-pub fn dispatch_background_task(runnable: RefPtr<nsIRunnable>) -> Result<(), nsresult> {
-    dispatch_background_task_with_options(runnable, DispatchOptions::default())
-}
 
 
 
@@ -145,15 +124,18 @@ pub fn dispatch_background_task(runnable: RefPtr<nsIRunnable>) -> Result<(), nsr
 
 
 
-pub fn dispatch_background_task_with_options(
-    runnable: RefPtr<nsIRunnable>,
+
+pub unsafe fn dispatch_background_task_runnable(
+    runnable: &nsIRunnable,
     options: DispatchOptions,
 ) -> Result<(), nsresult> {
     
     
     
-    unsafe { NS_DispatchBackgroundTask(runnable.coerce(), options.flags()) }.to_result()
+    NS_DispatchBackgroundTask(runnable, options.flags()).to_result()
 }
+
+
 
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
@@ -188,6 +170,24 @@ impl DispatchOptions {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub unsafe fn at_end(self, may_block: bool) -> DispatchOptions {
+        const FLAG: u32 = nsIEventTarget::DISPATCH_AT_END as u32;
+        if may_block {
+            DispatchOptions(self.flags() | FLAG)
+        } else {
+            DispatchOptions(self.flags() & !FLAG)
+        }
+    }
+
+    
     #[inline]
     fn flags(self) -> u32 {
         self.0
@@ -196,85 +196,101 @@ impl DispatchOptions {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub trait Task {
+    
     fn run(&self);
     fn done(&self) -> Result<(), nsresult>;
 }
 
-
-
-
-
-
-
-
-#[derive(xpcom)]
-#[xpimplements(nsIRunnable, nsINamed)]
-#[refcnt = "atomic"]
-pub struct InitTaskRunnable {
+pub struct TaskRunnable {
     name: &'static str,
-    original_thread: RefPtr<nsIThread>,
     task: Box<dyn Task + Send + Sync>,
-    has_run: AtomicBool,
 }
 
 impl TaskRunnable {
+    
     pub fn new(
         name: &'static str,
         task: Box<dyn Task + Send + Sync>,
-    ) -> Result<RefPtr<TaskRunnable>, nsresult> {
-        Ok(TaskRunnable::allocate(InitTaskRunnable {
-            name,
-            original_thread: get_current_thread()?,
-            task,
-            has_run: AtomicBool::new(false),
-        }))
+    ) -> Result<TaskRunnable, nsresult> {
+        Ok(TaskRunnable { name, task })
     }
 
-    
-    
-    #[inline]
-    pub fn dispatch(this: RefPtr<Self>, target: &nsIEventTarget) -> Result<(), nsresult> {
-        Self::dispatch_with_options(this, target, DispatchOptions::default())
+    pub fn dispatch(self, target: &nsIEventTarget) -> Result<(), nsresult> {
+        self.dispatch_with_options(target, DispatchOptions::default())
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
     pub fn dispatch_with_options(
-        this: RefPtr<Self>,
+        self,
         target: &nsIEventTarget,
         options: DispatchOptions,
     ) -> Result<(), nsresult> {
-        unsafe { target.DispatchFromScript(this.coerce(), options.flags()) }.to_result()
+        
+        let task = self.task;
+        let handle = TaskBuilder::new(self.name, async move {
+            task.run();
+            task
+        })
+        .options(options)
+        .spawn_onto(target);
+
+        
+        
+        spawn_local(self.name, async move {
+            let task = handle.await;
+            let _ = task.done();
+        })
+        .detach();
+        Ok(())
     }
 
-    xpcom_method!(run => Run());
-    fn run(&self) -> Result<(), nsresult> {
-        match self
-            .has_run
-            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
-        {
-            Ok(_) => {
-                self.task.run();
-                Self::dispatch(RefPtr::new(self), &self.original_thread)
-            }
-            Err(_) => {
-                assert!(is_current_thread(&self.original_thread));
-                self.task.done()
-            }
-        }
-    }
+    pub fn dispatch_background_task_with_options(
+        self,
+        options: DispatchOptions,
+    ) -> Result<(), nsresult> {
+        
+        let task = self.task;
+        let handle = TaskBuilder::new(self.name, async move {
+            task.run();
+            task
+        })
+        .options(options)
+        .spawn();
 
-    xpcom_method!(get_name => GetName() -> nsACString);
-    fn get_name(&self) -> Result<nsCString, nsresult> {
-        Ok(nsCString::from(self.name))
+        
+        
+        spawn_local(self.name, async move {
+            let task = handle.await;
+            let _ = task.done();
+        })
+        .detach();
+        Ok(())
     }
 }
 
@@ -309,7 +325,7 @@ unsafe impl<T: XpCom + 'static> RefCounted for ThreadPtrHolder<T> {
                 
                 
                 
-                if is_current_thread(&self.owning_thread) {
+                if is_on_current_thread(&self.owning_thread) {
                     (*self.ptr).release()
                 } else {
                     NS_ProxyReleaseISupports(
@@ -356,7 +372,7 @@ impl<T: XpCom + 'static> ThreadPtrHolder<T> {
     
     
     pub fn get(&self) -> Option<&T> {
-        if is_current_thread(&self.owning_thread) && !self.ptr.is_null() {
+        if is_on_current_thread(&self.owning_thread) && !self.ptr.is_null() {
             unsafe { Some(&*self.ptr) }
         } else {
             None

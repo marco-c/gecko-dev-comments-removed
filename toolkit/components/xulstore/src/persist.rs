@@ -19,12 +19,11 @@ use crate::{
     statics::get_database,
 };
 use crossbeam_utils::atomic::AtomicCell;
-use moz_task::{dispatch_background_task_with_options, DispatchOptions, Task, TaskRunnable};
+use moz_task::{DispatchOptions, Task, TaskRunnable};
 use nserror::nsresult;
 use once_cell::sync::Lazy;
 use rkv::{StoreError as RkvStoreError, Value};
 use std::{collections::HashMap, sync::Mutex, thread::sleep, time::Duration};
-use xpcom::RefPtr;
 
 
 
@@ -129,10 +128,8 @@ pub(crate) fn persist(key: String, value: Option<String>) -> XULStoreResult<()> 
         
         
         let task = Box::new(PersistTask::new());
-        dispatch_background_task_with_options(
-            RefPtr::new(TaskRunnable::new("XULStore::Persist", task)?.coerce()),
-            DispatchOptions::default().may_block(true),
-        )?;
+        TaskRunnable::new("XULStore::Persist", task)?
+            .dispatch_background_task_with_options(DispatchOptions::default().may_block(true))?;
     }
 
     

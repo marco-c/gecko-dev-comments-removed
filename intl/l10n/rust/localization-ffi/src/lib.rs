@@ -290,7 +290,7 @@ impl LocalizationRc {
         let id = nsCString::from(id);
         let strong_promise = RefPtr::new(promise);
 
-        moz_task::spawn_current_thread(async move {
+        moz_task::spawn_local("LocalizationRc::format_value", async move {
             let mut errors = vec![];
             let value = if let Some(value) = bundles
                 .format_value(&id.to_utf8(), args.as_ref(), &mut errors)
@@ -309,7 +309,7 @@ impl LocalizationRc {
                 .collect();
             callback(&strong_promise, &value, &errors);
         })
-        .expect("Failed to spawn future");
+        .detach();
     }
 
     pub fn format_values(
@@ -324,7 +324,7 @@ impl LocalizationRc {
 
         let strong_promise = RefPtr::new(promise);
 
-        moz_task::spawn_current_thread(async move {
+        moz_task::spawn_local("LocalizationRc::format_values", async move {
             let mut errors = vec![];
             let ret_val = bundles
                 .format_values(&keys, &mut errors)
@@ -350,7 +350,7 @@ impl LocalizationRc {
 
             callback(&strong_promise, &ret_val, &errors);
         })
-        .expect("Failed to spawn future");
+        .detach();
     }
 
     pub fn format_messages(
@@ -369,7 +369,7 @@ impl LocalizationRc {
 
         let strong_promise = RefPtr::new(promise);
 
-        moz_task::spawn_current_thread(async move {
+        moz_task::spawn_local("LocalizationRc::format_messages", async move {
             let mut errors = vec![];
             let ret_val = bundles
                 .format_messages(&keys, &mut errors)
@@ -399,7 +399,7 @@ impl LocalizationRc {
 
             callback(&strong_promise, &ret_val, &errors);
         })
-        .expect("Failed to spawn future");
+        .detach();
     }
 }
 
