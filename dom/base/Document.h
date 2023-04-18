@@ -2349,7 +2349,8 @@ class Document : public nsINode,
 
 
 
-  void Sanitize();
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Sanitize();
 
   
 
