@@ -28,12 +28,17 @@ macro_rules! expect {
 }
 
 #[no_mangle]
-pub extern "C" fn Rust_TestRustInGTest() {
+pub extern "C" fn Rust_MeasureInitializeTime() {
     
     
-    
-    
-    
-    fog::metrics::test_only::bad_code.add(12);
-    expect!(fog::metrics::test_only::bad_code.test_get_value(None) == Some(12));
+
+    let metric = &*fog::metrics::fog::initialization;
+    while metric.test_get_value("metrics").is_none() {
+        
+        
+        std::thread::yield_now();
+    }
+
+    let value = metric.test_get_value("metrics").unwrap();
+    expect!(value > 0);
 }
