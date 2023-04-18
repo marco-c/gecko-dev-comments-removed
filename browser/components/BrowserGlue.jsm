@@ -3376,7 +3376,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 125;
+    const UI_VERSION = 126;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     const PROFILE_DIR = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
@@ -4149,6 +4149,25 @@ BrowserGlue.prototype = {
         }
       } catch (ex) {
         Cu.reportError("Failed to clear XULStore PiP values: " + ex);
+      }
+    }
+
+    if (currentUIVersion < 126) {
+      
+      
+      
+      
+      
+      if (
+        !Services.prefs.getBoolPref(
+          "browser.download.improvements_to_download_panel",
+          true
+        )
+      ) {
+        Services.prefs.setBoolPref(
+          "browser.download.always_ask_before_handling_new_types",
+          true
+        );
       }
     }
 
