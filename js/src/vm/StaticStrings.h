@@ -33,7 +33,7 @@ class ParserAtomsTable;
 class TaggedParserAtomIndex;
 class WellKnownParserAtoms;
 struct CompilationAtomCache;
-}
+}  
 
 class StaticStrings {
   

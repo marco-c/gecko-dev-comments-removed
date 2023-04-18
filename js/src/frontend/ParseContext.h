@@ -17,7 +17,7 @@
 #include "frontend/SharedContext.h"
 #include "js/friend/ErrorMessages.h"  
 #include "vm/GeneratorAndAsyncKind.h"  
-#include "vm/WellKnownAtom.h"    
+#include "vm/WellKnownAtom.h"          
 
 namespace js {
 
