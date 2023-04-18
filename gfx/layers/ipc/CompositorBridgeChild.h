@@ -261,20 +261,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   
   Monitor mPaintLock;
 
-  
-  
-  
-  size_t mTotalAsyncPaints;
-  TimeStamp mAsyncTransactionBegin;
-
-  
-  
-  
-  bool mIsDelayingForAsyncPaints;
-
-  uintptr_t mSlowFlushCount;
-  uintptr_t mTotalFlushCount;
-
   RefPtr<CanvasChild> mCanvasChild;
 
   RefPtr<webgpu::WebGPUChild> mWebGPUChild;
