@@ -95,8 +95,9 @@ class DownscalingFilter final : public SurfaceFilter {
 
     mInputSize = aConfig.mInputSize;
     gfx::IntSize outputSize = mNext.InputSize();
-    mScale = gfxSize(double(mInputSize.width) / outputSize.width,
-                     double(mInputSize.height) / outputSize.height);
+    mScale =
+        gfx::MatrixScalesDouble(double(mInputSize.width) / outputSize.width,
+                                double(mInputSize.height) / outputSize.height);
     mHasAlpha = aConfig.mFormat == gfx::SurfaceFormat::OS_RGBA;
 
     ReleaseWindow();
@@ -154,7 +155,7 @@ class DownscalingFilter final : public SurfaceFilter {
 
     if (invalidRect) {
       
-      invalidRect->mInputSpaceRect.ScaleRoundOut(mScale.width, mScale.height);
+      invalidRect->mInputSpaceRect.ScaleRoundOut(mScale.xScale, mScale.yScale);
     }
 
     return invalidRect;
@@ -285,10 +286,10 @@ class DownscalingFilter final : public SurfaceFilter {
 
   Next mNext;  
 
-  gfx::IntSize mInputSize;  
-  gfxSize mScale;           
-                            
-                            
+  gfx::IntSize mInputSize;         
+  gfx::MatrixScalesDouble mScale;  
+                                   
+                                   
 
   UniquePtr<uint8_t[]> mRowBuffer;  
   UniquePtr<uint8_t*[]> mWindow;    
