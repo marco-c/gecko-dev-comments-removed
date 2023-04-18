@@ -86,7 +86,7 @@ def unwrap_rustup(prog, name):
                 
                 prog = from_rustup_which()
 
-        return prog
+        return normalize_path(prog)
 
     return unwrap
 
