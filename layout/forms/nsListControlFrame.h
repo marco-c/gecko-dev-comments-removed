@@ -249,7 +249,8 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
 
 
 
-  void FireMenuItemActiveEvent();  
+  void FireMenuItemActiveEvent(
+      nsIContent* aPreviousOption);  
 #endif
 
  protected:
