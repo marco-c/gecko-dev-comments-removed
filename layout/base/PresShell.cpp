@@ -11100,10 +11100,13 @@ bool PresShell::UsesMobileViewportSizing() const {
 
 void PresShell::UpdateImageLockingState() {
   
-  bool locked = !mFrozen && mIsActive;
+  const bool locked = !mFrozen && mIsActive;
+  auto* tracker = mDocument->ImageTracker();
+  if (locked == tracker->GetLockingState()) {
+    return;
+  }
 
-  mDocument->ImageTracker()->SetLockingState(locked);
-
+  tracker->SetLockingState(locked);
   if (locked) {
     
     

@@ -16,7 +16,7 @@
 
 namespace mozilla::dom {
 
-ImageTracker::ImageTracker() : mLocking(false), mAnimating(true) {}
+ImageTracker::ImageTracker() = default;
 
 ImageTracker::~ImageTracker() { SetLockingState(false); }
 
@@ -93,10 +93,10 @@ nsresult ImageTracker::Remove(imgIRequest* aImage, uint32_t aFlags) {
   return rv;
 }
 
-nsresult ImageTracker::SetLockingState(bool aLocked) {
+void ImageTracker::SetLockingState(bool aLocked) {
   
   if (mLocking == aLocked) {
-    return NS_OK;
+    return;
   }
 
   
@@ -110,8 +110,6 @@ nsresult ImageTracker::SetLockingState(bool aLocked) {
 
   
   mLocking = aLocked;
-
-  return NS_OK;
 }
 
 void ImageTracker::SetAnimatingState(bool aAnimating) {

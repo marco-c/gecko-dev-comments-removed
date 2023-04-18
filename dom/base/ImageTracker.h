@@ -48,7 +48,8 @@ class ImageTracker {
 
   
   
-  nsresult SetLockingState(bool aLocked);
+  void SetLockingState(bool aLocked);
+  bool GetLockingState() const { return mLocking; }
 
   
   
@@ -62,8 +63,8 @@ class ImageTracker {
   ~ImageTracker();
 
   nsTHashMap<nsPtrHashKey<imgIRequest>, uint32_t> mImages;
-  bool mLocking;
-  bool mAnimating;
+  bool mLocking = false;
+  bool mAnimating = true;
 };
 
 }  
