@@ -166,7 +166,14 @@ class _MockBaseOpen(object):
         self.files = files
 
     def __call__(
-        self, name, mode="r", buffering=None, encoding=None, newline=None, errors=None
+        self,
+        name,
+        mode="r",
+        buffering=None,
+        encoding=None,
+        newline=None,
+        errors=None,
+        opener=None,
     ):
         
         
@@ -179,6 +186,7 @@ class _MockBaseOpen(object):
                 encoding=encoding,
                 newline=newline,
                 errors=errors,
+                opener=opener,
             )
         
         absname = normcase(os.path.abspath(name))
