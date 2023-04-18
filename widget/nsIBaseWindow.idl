@@ -93,6 +93,14 @@ interface nsIBaseWindow : nsISupports
 
   void getPosition(out long x, out long y);
 
+%{C++
+  mozilla::LayoutDeviceIntPoint GetPosition() {
+    int32_t x = 0, y = 0;
+    GetPosition(&x, &y);
+    return mozilla::LayoutDeviceIntPoint(x, y);
+  }
+%}
+
   
 
 
@@ -102,6 +110,14 @@ interface nsIBaseWindow : nsISupports
 
 
   void getSize(out long cx, out long cy);
+
+%{C++
+  mozilla::LayoutDeviceIntSize GetSize() {
+    int32_t w = 0, h = 0;
+    GetSize(&w, &h);
+    return mozilla::LayoutDeviceIntSize(w, h);
+  }
+%}
 
   
 
@@ -121,6 +137,14 @@ interface nsIBaseWindow : nsISupports
 
 
   void getPositionAndSize(out long x, out long y, out long cx, out long cy);
+
+%{C++
+  mozilla::LayoutDeviceIntRect GetPositionAndSize() {
+    int32_t x = 0, y = 0, w = 0, h = 0;
+    GetPositionAndSize(&x, &y, &w, &h);
+    return mozilla::LayoutDeviceIntRect(x, y, w, h);
+  }
+%}
 
   
 
@@ -172,11 +196,11 @@ interface nsIBaseWindow : nsISupports
 
   attribute boolean visibility;
 
-    
+  
 
 
 
-    attribute boolean enabled;
+  attribute boolean enabled;
 
   
 
@@ -192,14 +216,17 @@ interface nsIBaseWindow : nsISupports
 
 
 
-  readonly attribute double unscaledDevicePixelsPerCSSPixel;
+
+
+  [noscript, notxpcom, nostdcall] readonly attribute double widgetCSSToDeviceScale;
 
 %{C++
-  mozilla::CSSToLayoutDeviceScale UnscaledDevicePixelsPerCSSPixel() {
-    double s = 1.0;
-    GetUnscaledDevicePixelsPerCSSPixel(&s);
-    return mozilla::CSSToLayoutDeviceScale(s);
-  }
+  
+  
+  
+  
+  
+  mozilla::CSSToLayoutDeviceScale UnscaledDevicePixelsPerCSSPixel();
 %}
 
   
@@ -223,7 +250,7 @@ interface nsIBaseWindow : nsISupports
     return mozilla::DesktopToLayoutDeviceScale(s);
   }
 
-  mozilla::CSSToDesktopScale GetCSSToDesktopScale() {
+  mozilla::CSSToDesktopScale GetUnscaledCSSToDesktopScale() {
     return UnscaledDevicePixelsPerCSSPixel() / DevicePixelsPerDesktopPixel();
   }
 %}

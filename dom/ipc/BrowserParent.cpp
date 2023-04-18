@@ -1008,8 +1008,10 @@ mozilla::ipc::IPCResult BrowserParent::RecvSetDimensions(
   
   
   
-  double currentScale;
-  treeOwnerAsWin->GetUnscaledDevicePixelsPerCSSPixel(&currentScale);
+  
+  
+  
+  double currentScale = treeOwnerAsWin->GetWidgetCSSToDeviceScale();
 
   int32_t x = aX;
   int32_t y = aY;

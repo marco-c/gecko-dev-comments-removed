@@ -138,7 +138,7 @@ class PuppetWidget : public nsBaseWidget,
     return GetWindowPosition();
   }
 
-  int32_t RoundsWidgetCoordinatesTo() override;
+  int32_t RoundsWidgetCoordinatesTo() override { return mRounding; }
 
   void InitEvent(WidgetGUIEvent& aEvent,
                  LayoutDeviceIntPoint* aPoint = nullptr);
@@ -201,12 +201,8 @@ class PuppetWidget : public nsBaseWidget,
 
   virtual void SetCursor(const Cursor&) override;
 
-  
-  
-  
-  
-  virtual float GetDPI() override;
-  virtual double GetDefaultScaleInternal() override;
+  float GetDPI() override { return mDPI; }
+  double GetDefaultScaleInternal() override { return mDefaultScale; }
 
   virtual bool NeedsPaint() override;
 
@@ -386,9 +382,9 @@ class PuppetWidget : public nsBaseWidget,
   ContentCacheInChild mContentCache;
 
   
-  float mDPI;
-  int32_t mRounding;
-  double mDefaultScale;
+  float mDPI = 96;
+  int32_t mRounding = 1;
+  double mDefaultScale = 1.0f;
 
   ScreenIntMargin mSafeAreaInsets;
 
