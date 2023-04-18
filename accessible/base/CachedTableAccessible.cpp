@@ -253,6 +253,38 @@ Accessible* CachedTableAccessible::CellAt(uint32_t aRowIdx, uint32_t aColIdx) {
   return mCells[cellIdx].Acc(mAcc);
 }
 
+void CachedTableAccessible::SelectCol(uint32_t aColIdx) {
+  if (LocalAccessible* localAcc = mAcc->AsLocal()) {
+    TableAccessible* table = localAcc->AsTable();
+    table->SelectCol(aColIdx);
+  }
+  
+}
+
+void CachedTableAccessible::UnselectCol(uint32_t aColIdx) {
+  if (LocalAccessible* localAcc = mAcc->AsLocal()) {
+    TableAccessible* table = localAcc->AsTable();
+    table->UnselectCol(aColIdx);
+  }
+  
+}
+
+void CachedTableAccessible::SelectRow(uint32_t aRowIdx) {
+  if (LocalAccessible* localAcc = mAcc->AsLocal()) {
+    TableAccessible* table = localAcc->AsTable();
+    table->SelectRow(aRowIdx);
+  }
+  
+}
+
+void CachedTableAccessible::UnselectRow(uint32_t aRowIdx) {
+  if (LocalAccessible* localAcc = mAcc->AsLocal()) {
+    TableAccessible* table = localAcc->AsTable();
+    table->UnselectRow(aRowIdx);
+  }
+  
+}
+
 bool CachedTableAccessible::IsProbablyLayoutTable() {
   if (RemoteAccessible* remoteAcc = mAcc->AsRemote()) {
     return remoteAcc->TableIsProbablyForLayout();
