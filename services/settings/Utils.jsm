@@ -48,12 +48,32 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
 
 
 
+XPCOMUtils.defineLazyGetter(this, "allowServerURLOverride", () => {
+  if (!AppConstants.RELEASE_OR_BETA) {
+    
+    return true;
+  }
 
-XPCOMUtils.defineLazyGetter(this, "localConnectionsOnly", () => {
+  if (AppConstants.MOZ_APP_NAME === "thunderbird") {
+    
+    return true;
+  }
+
   const env = Cc["@mozilla.org/process/environment;1"].getService(
     Ci.nsIEnvironment
   );
-  return env.get("MOZ_DISABLE_NONLOCAL_CONNECTIONS") === "1";
+  if (env.get("MOZ_DISABLE_NONLOCAL_CONNECTIONS") === "1") {
+    
+    
+    return true;
+  }
+
+  if (env.get("MOZ_REMOTE_SETTINGS_DEVTOOLS") === "1") {
+    
+    return true;
+  }
+
+  return false;
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -68,12 +88,9 @@ function _isUndefined(value) {
 
 var Utils = {
   get SERVER_URL() {
-    const isNotThunderbird = AppConstants.MOZ_APP_NAME != "thunderbird";
-    return AppConstants.RELEASE_OR_BETA &&
-      !localConnectionsOnly &&
-      isNotThunderbird
-      ? "https://firefox.settings.services.mozilla.com/v1"
-      : gServerURL;
+    return allowServerURLOverride
+      ? gServerURL
+      : "https://firefox.settings.services.mozilla.com/v1";
   },
 
   CHANGES_PATH: "/buckets/monitor/collections/changes/changeset",
