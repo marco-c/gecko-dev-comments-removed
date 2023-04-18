@@ -48,9 +48,9 @@ self.constructorThrowsForAll = (constructor, firstArgs) => {
 };
 
 self.garbageCollect = async () => {
-  if (self.testUtils?.gc) {
+  if (self.TestUtils?.gc) {
     
-    await testUtils.gc();
+    await TestUtils.gc();
   } else if (self.gc) {
     
     
