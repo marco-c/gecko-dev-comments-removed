@@ -1015,6 +1015,8 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         
         
         
+        
+        
         return If(AnyOf(request == TCGETS, request == TIOCGWINSZ),
                   Error(ENOTTY))
             .Else(SandboxPolicyBase::EvaluateSyscall(sysno));
@@ -2007,7 +2009,7 @@ UniquePtr<sandbox::bpf_dsl::Policy> GetSocketProcessSandboxPolicy(
       new SocketProcessSandboxPolicy(aMaybeBroker));
 }
 
-class UtilitySandboxPolicy final : public SandboxPolicyCommon {
+class UtilitySandboxPolicy : public SandboxPolicyCommon {
  public:
   explicit UtilitySandboxPolicy(SandboxBrokerClient* aBroker)
       : SandboxPolicyCommon(aBroker, ShmemUsage::MAY_CREATE,
@@ -2027,15 +2029,7 @@ class UtilitySandboxPolicy final : public SandboxPolicyCommon {
     switch (sysno) {
       case __NR_getrusage:
         return Allow();
-      case __NR_ioctl: {
-        Arg<unsigned long> request(1);
-        
-        
-        return If(request == TCGETS, Error(ENOTTY)).Else(InvalidSyscall());
-      }
-      case __NR_prctl: {
-        return Allow();
-      }
+
       
       default:
         return SandboxPolicyCommon::EvaluateSyscall(sysno);
@@ -2047,6 +2041,37 @@ UniquePtr<sandbox::bpf_dsl::Policy> GetUtilitySandboxPolicy(
     SandboxBrokerClient* aMaybeBroker) {
   return UniquePtr<sandbox::bpf_dsl::Policy>(
       new UtilitySandboxPolicy(aMaybeBroker));
+}
+
+class UtilityAudioDecoderSandboxPolicy final : public UtilitySandboxPolicy {
+ public:
+  explicit UtilityAudioDecoderSandboxPolicy(SandboxBrokerClient* aBroker)
+      : UtilitySandboxPolicy(aBroker) {}
+
+  ResultExpr EvaluateSyscall(int sysno) const override {
+    switch (sysno) {
+      
+      case __NR_get_mempolicy: {
+        return Allow();
+      }
+
+      
+      case __NR_sched_getaffinity: {
+        Arg<pid_t> pid(0);
+        return If(pid == 0, Allow()).Else(Trap(SchedTrap, nullptr));
+      }
+
+      
+      default:
+        return UtilitySandboxPolicy::EvaluateSyscall(sysno);
+    }
+  }
+};
+
+UniquePtr<sandbox::bpf_dsl::Policy> GetUtilityAudioDecoderSandboxPolicy(
+    SandboxBrokerClient* aMaybeBroker) {
+  return UniquePtr<sandbox::bpf_dsl::Policy>(
+      new UtilityAudioDecoderSandboxPolicy(aMaybeBroker));
 }
 
 }  

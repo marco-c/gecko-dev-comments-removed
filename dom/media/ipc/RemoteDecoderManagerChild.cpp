@@ -21,6 +21,7 @@
 #include "mozilla/layers/ISurfaceAllocator.h"
 #include "nsContentUtils.h"
 #include "nsIObserver.h"
+#include "mozilla/StaticPrefs_media.h"
 
 namespace mozilla {
 
@@ -29,8 +30,13 @@ using namespace gfx;
 
 
 
-StaticMutex sLaunchMutex;
-static StaticRefPtr<GenericNonExclusivePromise> sLaunchRDDPromise;
+StaticMutex sLaunchRDDMutex;
+static StaticRefPtr<GenericNonExclusivePromise> sLaunchRDDPromise
+    GUARDED_BY(sLaunchRDDMutex);
+
+StaticMutex sLaunchUtilityMutex;
+static StaticRefPtr<GenericNonExclusivePromise> sLaunchUtilityPromise
+    GUARDED_BY(sLaunchUtilityMutex);
 
 
 
@@ -41,6 +47,8 @@ static StaticDataMutex<StaticRefPtr<nsIThread>>
 
 static StaticRefPtr<RemoteDecoderManagerChild>
     sRemoteDecoderManagerChildForRDDProcess;
+static StaticRefPtr<RemoteDecoderManagerChild>
+    sRemoteDecoderManagerChildForUtilityProcess;
 
 static StaticRefPtr<RemoteDecoderManagerChild>
     sRemoteDecoderManagerChildForGPUProcess;
@@ -50,6 +58,8 @@ static StaticDataMutex<Maybe<PDMFactory::MediaCodecsSupported>> sGPUSupported(
     "RDMC::sGPUSupported");
 static StaticDataMutex<Maybe<PDMFactory::MediaCodecsSupported>> sRDDSupported(
     "RDMC::sRDDSupported");
+static StaticDataMutex<Maybe<PDMFactory::MediaCodecsSupported>>
+    sUtilitySupported("RDMC::sUtilitySupported");
 
 class ShutdownObserver final : public nsIObserver {
  public:
@@ -137,6 +147,11 @@ void RemoteDecoderManagerChild::Shutdown() {
             sRemoteDecoderManagerChildForRDDProcess->Close();
           }
           sRemoteDecoderManagerChildForRDDProcess = nullptr;
+          if (sRemoteDecoderManagerChildForUtilityProcess &&
+              sRemoteDecoderManagerChildForUtilityProcess->CanSend()) {
+            sRemoteDecoderManagerChildForUtilityProcess->Close();
+          }
+          sRemoteDecoderManagerChildForUtilityProcess = nullptr;
           if (sRemoteDecoderManagerChildForGPUProcess &&
               sRemoteDecoderManagerChildForGPUProcess->CanSend()) {
             sRemoteDecoderManagerChildForGPUProcess->Close();
@@ -182,6 +197,8 @@ RemoteDecoderManagerChild* RemoteDecoderManagerChild::GetSingleton(
       return sRemoteDecoderManagerChildForGPUProcess;
     case RemoteDecodeIn::RddProcess:
       return sRemoteDecoderManagerChildForRDDProcess;
+    case RemoteDecodeIn::UtilityProcess:
+      return sRemoteDecoderManagerChildForUtilityProcess;
     default:
       MOZ_CRASH("Unexpected RemoteDecode variant");
   }
@@ -204,6 +221,11 @@ bool RemoteDecoderManagerChild::Supports(
       supported = *supportedRDD;
       break;
     }
+    case RemoteDecodeIn::UtilityProcess: {
+      auto supportedUtility = sUtilitySupported.Lock();
+      supported = *supportedUtility;
+      break;
+    }
     case RemoteDecodeIn::GpuProcess: {
       auto supportedGPU = sGPUSupported.Lock();
       supported = *supportedGPU;
@@ -215,6 +237,10 @@ bool RemoteDecoderManagerChild::Supports(
   if (!supported) {
     
     
+    
+    if (aLocation == RemoteDecodeIn::UtilityProcess) {
+      LaunchUtilityProcessIfNeeded();
+    }
     if (aLocation == RemoteDecodeIn::RddProcess) {
       
       
@@ -225,7 +251,8 @@ bool RemoteDecoderManagerChild::Supports(
 
   
   
-  return PDMFactory::SupportsMimeType(aParams.MimeType(), *supported);
+  return PDMFactory::SupportsMimeType(aParams.MimeType(), *supported,
+                                      aLocation);
 }
 
 
@@ -238,7 +265,11 @@ RemoteDecoderManagerChild::CreateAudioDecoder(
     return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
         NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   }
-  return LaunchRDDProcessIfNeeded()->Then(
+  RefPtr<GenericNonExclusivePromise> launchPromise =
+      StaticPrefs::media_utility_process_enabled()
+          ? LaunchUtilityProcessIfNeeded()
+          : LaunchRDDProcessIfNeeded();
+  return launchPromise->Then(
       managerThread, __func__,
       [params = CreateDecoderParamsForAsync(aParams)](bool) {
         auto child = MakeRefPtr<RemoteAudioDecoderChild>();
@@ -348,7 +379,7 @@ RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded() {
                                                        __func__);
   }
 
-  StaticMutexAutoLock lock(sLaunchMutex);
+  StaticMutexAutoLock lock(sLaunchRDDMutex);
 
   if (sLaunchRDDPromise) {
     return sLaunchRDDPromise;
@@ -406,13 +437,94 @@ RemoteDecoderManagerChild::LaunchRDDProcessIfNeeded() {
   p = p->Then(
       GetCurrentSerialEventTarget(), __func__,
       [](const GenericNonExclusivePromise::ResolveOrRejectValue& aResult) {
-        StaticMutexAutoLock lock(sLaunchMutex);
+        StaticMutexAutoLock lock(sLaunchRDDMutex);
         sLaunchRDDPromise = nullptr;
         return GenericNonExclusivePromise::CreateAndResolveOrReject(aResult,
                                                                     __func__);
       });
   sLaunchRDDPromise = p;
   return sLaunchRDDPromise;
+}
+
+
+RefPtr<GenericNonExclusivePromise>
+RemoteDecoderManagerChild::LaunchUtilityProcessIfNeeded() {
+  MOZ_DIAGNOSTIC_ASSERT(XRE_IsContentProcess(),
+                        "Only supported from a content process.");
+
+  nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
+  if (!managerThread) {
+    
+    return GenericNonExclusivePromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                       __func__);
+  }
+
+  StaticMutexAutoLock lock(sLaunchUtilityMutex);
+
+  if (sLaunchUtilityPromise) {
+    return sLaunchUtilityPromise;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  RefPtr<GenericNonExclusivePromise> p = InvokeAsync(
+      managerThread, __func__, []() -> RefPtr<GenericNonExclusivePromise> {
+        auto* rps = GetSingleton(RemoteDecodeIn::UtilityProcess);
+        if (rps && rps->CanSend()) {
+          return GenericNonExclusivePromise::CreateAndResolve(true, __func__);
+        }
+        nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
+        ipc::PBackgroundChild* bgActor =
+            ipc::BackgroundChild::GetForCurrentThread();
+        if (!managerThread || NS_WARN_IF(!bgActor)) {
+          return GenericNonExclusivePromise::CreateAndReject(NS_ERROR_FAILURE,
+                                                             __func__);
+        }
+
+        return bgActor->SendEnsureUtilityProcessAndCreateBridge()->Then(
+            managerThread, __func__,
+            [](ipc::PBackgroundChild::
+                   EnsureUtilityProcessAndCreateBridgePromise::
+                       ResolveOrRejectValue&& aResult) {
+              nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
+              if (!managerThread || aResult.IsReject()) {
+                
+                return GenericNonExclusivePromise::CreateAndReject(
+                    NS_ERROR_FAILURE, __func__);
+              }
+              nsresult rv = Get<0>(aResult.ResolveValue());
+              if (NS_FAILED(rv)) {
+                return GenericNonExclusivePromise::CreateAndReject(rv,
+                                                                   __func__);
+              }
+              OpenForUtilityProcess(Get<1>(std::move(aResult.ResolveValue())));
+              return GenericNonExclusivePromise::CreateAndResolve(true,
+                                                                  __func__);
+            });
+      });
+
+  p = p->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [](const GenericNonExclusivePromise::ResolveOrRejectValue& aResult) {
+        StaticMutexAutoLock lock(sLaunchUtilityMutex);
+        sLaunchUtilityPromise = nullptr;
+        return GenericNonExclusivePromise::CreateAndResolveOrReject(aResult,
+                                                                    __func__);
+      });
+  sLaunchUtilityPromise = p;
+  return sLaunchUtilityPromise;
 }
 
 PRemoteDecoderChild* RemoteDecoderManagerChild::AllocPRemoteDecoderChild(
@@ -462,6 +574,36 @@ void RemoteDecoderManagerChild::OpenForRDDProcess(
         new RemoteDecoderManagerChild(RemoteDecodeIn::RddProcess);
     if (aEndpoint.Bind(manager)) {
       sRemoteDecoderManagerChildForRDDProcess = manager;
+      manager->InitIPDL();
+    }
+  }
+}
+
+void RemoteDecoderManagerChild::OpenForUtilityProcess(
+    Endpoint<PRemoteDecoderManagerChild>&& aEndpoint) {
+  nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
+  if (!managerThread) {
+    
+    return;
+  }
+  MOZ_ASSERT(managerThread->IsOnCurrentThread());
+
+  
+  
+  
+  
+  
+  
+  if (sRemoteDecoderManagerChildForUtilityProcess &&
+      sRemoteDecoderManagerChildForUtilityProcess->CanSend()) {
+    return;
+  }
+  sRemoteDecoderManagerChildForUtilityProcess = nullptr;
+  if (aEndpoint.IsValid()) {
+    RefPtr<RemoteDecoderManagerChild> manager =
+        new RemoteDecoderManagerChild(RemoteDecodeIn::UtilityProcess);
+    if (aEndpoint.Bind(manager)) {
+      sRemoteDecoderManagerChildForUtilityProcess = manager;
       manager->InitIPDL();
     }
   }
@@ -609,6 +751,11 @@ void RemoteDecoderManagerChild::SetSupported(
     }
     case RemoteDecodeIn::RddProcess: {
       auto supported = sRDDSupported.Lock();
+      *supported = Some(aSupported);
+      break;
+    }
+    case RemoteDecodeIn::UtilityProcess: {
+      auto supported = sUtilitySupported.Lock();
       *supported = Some(aSupported);
       break;
     }

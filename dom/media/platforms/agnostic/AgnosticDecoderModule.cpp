@@ -82,10 +82,37 @@ static bool IsAvailableInRdd(DecoderType type) {
   }
 }
 
+static bool IsAvailableInUtility(DecoderType type) {
+  switch (type) {
+    case DecoderType::Opus:
+      return StaticPrefs::media_utility_opus_enabled();
+    case DecoderType::Vorbis:
+#if defined(__MINGW32__)
+      
+      
+      
+      
+      
+      
+      
+      return false;
+#else
+      return StaticPrefs::media_utility_vorbis_enabled();
+#endif
+    case DecoderType::Wave:
+      return StaticPrefs::media_utility_wav_enabled();
+    case DecoderType::Theora:  
+    case DecoderType::VPX:
+    default:
+      return false;
+  }
+}
+
 
 static bool IsAvailable(DecoderType type) {
-  return XRE_IsRDDProcess() ? IsAvailableInRdd(type)
-                            : IsAvailableInDefault(type);
+  return XRE_IsRDDProcess()       ? IsAvailableInRdd(type)
+         : XRE_IsUtilityProcess() ? IsAvailableInUtility(type)
+                                  : IsAvailableInDefault(type);
 }
 
 bool AgnosticDecoderModule::SupportsMimeType(

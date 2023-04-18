@@ -232,22 +232,29 @@ void UtilityProcessChild::ActorDestroy(ActorDestroyReason aWhy) {
     mProfilerController = nullptr;
   }
 
-#  if defined(XP_WIN)
-  {
-    RefPtr<DllServices> dllSvc(DllServices::Get());
-    dllSvc->DisableFull();
-  }
+  
+  
+  
+  
+  mShutdownBlockers.WaitUntilClear(10 * 1000 )
+      ->Then(GetCurrentSerialEventTarget(), __func__, [&]() {
+#  ifdef XP_WIN
+        {
+          RefPtr<DllServices> dllSvc(DllServices::Get());
+          dllSvc->DisableFull();
+        }
 #  endif  
 
-  {
-    StaticMutexAutoLock lock(sUtilityProcessChildMutex);
-    if (sUtilityProcessChild) {
-      sUtilityProcessChild = nullptr;
-    }
-  }
+        {
+          StaticMutexAutoLock lock(sUtilityProcessChildMutex);
+          if (sUtilityProcessChild) {
+            sUtilityProcessChild = nullptr;
+          }
+        }
 
-  ipc::CrashReporterClient::DestroySingleton();
-  XRE_ShutdownChildProcess();
+        ipc::CrashReporterClient::DestroySingleton();
+        XRE_ShutdownChildProcess();
+      });
 #endif    
 }
 
