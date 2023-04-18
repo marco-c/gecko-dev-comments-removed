@@ -499,14 +499,41 @@ nsHTTPSOnlyUtils::PotentiallyDowngradeHttpsFirstRequest(nsIChannel* aChannel,
   NS_ENSURE_SUCCESS(rv, nullptr);
 
   
-  if (!uri->SchemeIs("https")) {
+  nsAutoCString spec;
+  if (uri->SchemeIs("https")) {
+    rv = uri->GetSpec(spec);
+    NS_ENSURE_SUCCESS(rv, nullptr);
+  } else if (uri->SchemeIs("view-source")) {
+    nsCOMPtr<nsINestedURI> nestedURI = do_QueryInterface(uri);
+    if (!nestedURI) {
+      return nullptr;
+    }
+    nsCOMPtr<nsIURI> innerURI;
+    rv = nestedURI->GetInnerURI(getter_AddRefs(innerURI));
+    NS_ENSURE_SUCCESS(rv, nullptr);
+    if (!innerURI || !innerURI->SchemeIs("https")) {
+      return nullptr;
+    }
+    nsAutoCString innerSpec;
+    rv = innerURI->GetSpec(innerSpec);
+    NS_ENSURE_SUCCESS(rv, nullptr);
+
+    spec.Append("view-source:");
+    spec.Append(innerSpec);
+  } else {
     return nullptr;
   }
 
   
+  if (spec.Find("https://") < 0) {
+    MOZ_ASSERT(false, "how can we end up here not dealing with an https: URI?");
+    return nullptr;
+  }
+  spec.ReplaceSubstring("https://", "http://");
+
   nsCOMPtr<nsIURI> newURI;
-  mozilla::Unused << NS_MutateURI(uri).SetScheme("http"_ns).Finalize(
-      getter_AddRefs(newURI));
+  rv = NS_NewURI(getter_AddRefs(newURI), spec);
+  NS_ENSURE_SUCCESS(rv, nullptr);
 
   
   NS_ConvertUTF8toUTF16 reportSpec(uri->GetSpecOrDefault());
