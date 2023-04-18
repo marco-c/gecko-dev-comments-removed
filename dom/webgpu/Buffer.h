@@ -53,6 +53,7 @@ class Buffer final : public ObjectBase, public ChildOf<Device> {
  private:
   virtual ~Buffer();
   void Cleanup();
+  void UnmapArrayBuffers(JSContext* aCx, ErrorResult& aRv);
 
   
   
