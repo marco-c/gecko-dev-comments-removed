@@ -17,11 +17,16 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ContextDescriptorType:
     "chrome://remote/content/shared/messagehandler/MessageHandler.jsm",
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
+  Log: "chrome://remote/content/shared/Log.jsm",
   Module: "chrome://remote/content/shared/messagehandler/Module.jsm",
   TabManager: "chrome://remote/content/shared/TabManager.jsm",
   waitForInitialNavigationCompleted:
     "chrome://remote/content/shared/Navigate.jsm",
 });
+
+XPCOMUtils.defineLazyGetter(this, "logger", () =>
+  Log.get(Log.TYPES.WEBDRIVER_BIDI)
+);
 
 class BrowsingContextModule extends Module {
   #contextListener;
@@ -43,6 +48,53 @@ class BrowsingContextModule extends Module {
   destroy() {
     this.#contextListener.off("attached", this.#onContextAttached);
     this.#contextListener.destroy();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  close(options = {}) {
+    const { context: contextId } = options;
+
+    assert.string(
+      contextId,
+      `Expected "context" to be a string, got ${contextId}`
+    );
+
+    const context = TabManager.getBrowsingContextById(contextId);
+    if (!context) {
+      throw new error.NoSuchFrameError(
+        `Browsing Context with id ${contextId} not found`
+      );
+    }
+
+    if (context.parent) {
+      throw new error.InvalidArgumentError(
+        `Browsing Context with id ${contextId} is not top-level`
+      );
+    }
+
+    if (TabManager.getTabCount() === 1) {
+      
+      
+      logger.warn(
+        `Closing the last open tab (Browsing Context id ${contextId}), expect inconsistent behavior across platforms`
+      );
+    }
+
+    const browser = context.embedderElement;
+    const tabBrowser = TabManager.getTabBrowser(browser.ownerGlobal);
+    const tab = tabBrowser.getTabForBrowser(browser);
+    TabManager.removeTab(tab);
   }
 
   
