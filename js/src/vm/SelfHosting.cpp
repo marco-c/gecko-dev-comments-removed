@@ -192,11 +192,18 @@ static bool intrinsic_IsArray(JSContext* cx, unsigned argc, Value* vp) {
 
 #ifdef ENABLE_RECORD_TUPLE
 
-static bool intrinsic_IsTuple(JSContext* cx, unsigned argc, Value* vp) {
+bool js::IsTupleUnchecked(JSContext* cx, const CallArgs& args) {
+  args.rval().setBoolean(IsTuple(args.get(0)));
+  return true;
+}
+
+
+
+
+bool js::intrinsic_IsTuple(JSContext* cx, unsigned argc, JS::Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   MOZ_ASSERT(args.length() == 1);
-  args.rval().setBoolean(IsTuple(args[0]));
-  return true;
+  return js::IsTupleUnchecked(cx, args);
 }
 #endif
 
