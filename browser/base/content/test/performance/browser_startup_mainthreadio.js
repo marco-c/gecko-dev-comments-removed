@@ -76,9 +76,6 @@ const kSharedFontList = SpecialPowers.getBoolPref("gfx.e10s.font-list.shared");
 
 
 
-
-
-
 const startupPhases = {
   
   
@@ -364,24 +361,14 @@ const startupPhases = {
     },
     {
       
-      path: `ProfD:cert9.db`,
-      condition: WIN,
-      ignoreIfUnused: true, 
-      canonicalize: true,
-      stat: 4,
-    },
-    {
-      
       path: `ProfD:cert9.db-journal`,
       condition: WIN,
-      canonicalize: true,
       stat: 3,
     },
     {
       
       path: `ProfD:cert9.db-wal`,
       condition: WIN,
-      canonicalize: true,
       stat: 3,
     },
     {
@@ -399,24 +386,14 @@ const startupPhases = {
     },
     {
       
-      path: `ProfD:key4.db`,
-      condition: WIN,
-      ignoreIfUnused: true, 
-      canonicalize: true,
-      stat: 4,
-    },
-    {
-      
       path: `ProfD:key4.db-journal`,
       condition: WIN,
-      canonicalize: true,
       stat: 5,
     },
     {
       
       path: `ProfD:key4.db-wal`,
       condition: WIN,
-      canonicalize: true,
       stat: 5,
     },
     {
@@ -529,13 +506,11 @@ const startupPhases = {
     {
       path: `ProfD:key4.db-journal`,
       condition: WIN,
-      canonicalize: true,
       stat: 2,
     },
     {
       path: `ProfD:key4.db-wal`,
       condition: WIN,
-      canonicalize: true,
       stat: 2,
     },
     {
@@ -555,7 +530,7 @@ for (let name of ["d3d11layers", "glcontext", "wmfvpxvideo"]) {
   });
 }
 
-function expandPathWithDirServiceKey(path, canonicalize = false) {
+function expandPathWithDirServiceKey(path) {
   if (path.includes(":")) {
     let [prefix, suffix] = path.split(":");
     let [key, property] = prefix.split(".");
@@ -564,20 +539,16 @@ function expandPathWithDirServiceKey(path, canonicalize = false) {
       dir = dir[property];
     }
 
-    if (canonicalize) {
-      path = dir.QueryInterface(Ci.nsILocalFileWin).canonicalPath;
-    } else {
-      
-      let dirPath = dir.path;
-      while (dir && !dir.isSymlink()) {
-        dir = dir.parent;
-      }
-      if (dir) {
-        dirPath = dirPath.replace(dir.path, dir.target);
-      }
-
-      path = dirPath;
+    
+    let dirPath = dir.path;
+    while (dir && !dir.isSymlink()) {
+      dir = dir.parent;
     }
+    if (dir) {
+      dirPath = dirPath.replace(dir.path, dir.target);
+    }
+
+    path = dirPath;
 
     if (suffix) {
       path += "/" + suffix;
@@ -736,7 +707,7 @@ add_task(async function() {
     );
     startupPhases[phase].forEach(entry => {
       entry.listedPath = entry.path;
-      entry.path = expandPathWithDirServiceKey(entry.path, entry.canonicalize);
+      entry.path = expandPathWithDirServiceKey(entry.path);
     });
   }
 
@@ -836,7 +807,6 @@ add_task(async function() {
             "listedPath",
             "path",
             "condition",
-            "canonicalize",
             "ignoreIfUnused",
             "_used",
           ].includes(op)
