@@ -1014,8 +1014,18 @@ RefPtr<gfx::DataSourceSurface> ClientWebGLContext::BackBufferSnapshot() {
   RefPtr<gfx::DataSourceSurface> surf =
       gfx::Factory::CreateDataSourceSurfaceWithStride(
           {size.x, size.y}, surfFormat, stride, true);
-  MOZ_ASSERT(surf);
-  if (NS_WARN_IF(!surf)) return nullptr;
+  if (NS_WARN_IF(!surf)) {
+    
+    
+    surf = gfx::Factory::CreateDataSourceSurfaceWithStride({1, 1}, surfFormat,
+                                                           4, true);
+    if (!surf) {
+      
+      gfxCriticalError() << "CreateDataSourceSurfaceWithStride(surfFormat="
+                         << surfFormat << ") failed.";
+    }
+    return nullptr;
+  }
 
   {
     const gfx::DataSourceSurface::ScopedMap map(
