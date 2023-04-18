@@ -4768,8 +4768,6 @@ MDefinition* MWasmBinaryBitwise::foldsTo(TempAllocator& alloc) {
   }
 
   
-  
-  
   if (IsIntegralConstantOnes(argL)) {
     switch (subOpcode()) {
       case SubOpcode::And:
@@ -4777,9 +4775,7 @@ MDefinition* MWasmBinaryBitwise::foldsTo(TempAllocator& alloc) {
       case SubOpcode::Or:
         return OnesOfType(alloc, type());
       case SubOpcode::Xor:
-        return type() == MIRType::Int32
-                   ? static_cast<MDefinition*>(MBitNot::New(alloc, argR))
-                   : this;
+        return MBitNot::New(alloc, argR);
       default:
         MOZ_CRASH();
     }
@@ -4793,9 +4789,7 @@ MDefinition* MWasmBinaryBitwise::foldsTo(TempAllocator& alloc) {
       case SubOpcode::Or:
         return OnesOfType(alloc, type());
       case SubOpcode::Xor:
-        return type() == MIRType::Int32
-                   ? static_cast<MDefinition*>(MBitNot::New(alloc, argL))
-                   : this;
+        return MBitNot::New(alloc, argL);
       default:
         MOZ_CRASH();
     }

@@ -42,6 +42,8 @@ class LIRGeneratorX86 : public LIRGeneratorX86Shared {
                           size_t lirIndex);
   void defineInt64Phi(MPhi* phi, size_t lirIndex);
 
+  void lowerForALUInt64(LInstructionHelper<INT64_PIECES, INT64_PIECES, 0>* ins,
+                        MDefinition* mir, MDefinition* input);
   void lowerForALUInt64(
       LInstructionHelper<INT64_PIECES, 2 * INT64_PIECES, 0>* ins,
       MDefinition* mir, MDefinition* lhs, MDefinition* rhs);
@@ -59,6 +61,9 @@ class LIRGeneratorX86 : public LIRGeneratorX86Shared {
 
   void lowerBigIntDiv(MBigIntDiv* ins);
   void lowerBigIntMod(MBigIntMod* ins);
+
+  void lowerAtomicLoad64(MLoadUnboxedScalar* ins);
+  void lowerAtomicStore64(MStoreUnboxedScalar* ins);
 
   void lowerPhi(MPhi* phi);
 
