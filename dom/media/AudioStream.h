@@ -105,9 +105,9 @@ class AudioClock {
   
   const UniquePtr<FrameHistory> mFrameHistory
 #  ifndef XP_MACOSX
-  GUARDED_BY(mMutex)
+      GUARDED_BY(mMutex)
 #  endif
-    ;
+          ;
 #  ifdef XP_MACOSX
   
   
