@@ -78,6 +78,8 @@ add_task(async function() {
     );
   };
 
+  const kTabCloseIconWidth = 13;
+
   let isExpectedChange = function(r) {
     
     if (!inTabStrip(r)) {
@@ -98,7 +100,9 @@ add_task(async function() {
     let isSecondTabRect =
       inRange(
         r.x1,
-        firstTabRect.right - 1, 
+        
+        
+        firstTabRect.right - kTabCloseIconWidth - 1,
         firstTabRect.right + firstTabRect.width
       ) &&
       r.x2 <
@@ -113,7 +117,10 @@ add_task(async function() {
     
     
     
-    if (r.h == 13 && r.w <= 2 * 13 + kMaxEmptyPixels) {
+    if (
+      r.h == kTabCloseIconWidth &&
+      r.w <= 2 * kTabCloseIconWidth + kMaxEmptyPixels
+    ) {
       return true;
     }
 
