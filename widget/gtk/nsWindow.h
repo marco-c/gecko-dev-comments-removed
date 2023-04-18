@@ -533,6 +533,12 @@ class nsWindow final : public nsBaseWidget {
   nsSizeMode mSizeState = nsSizeMode_Normal;
   float mAspectRatio = 0.0f;
   float mAspectRatioSaved = 0.0f;
+  
+  
+  
+  
+  
+  LayoutDeviceIntSize mLastSizeRequest;
   nsIntPoint mClientOffset;
 
   
@@ -616,9 +622,7 @@ class nsWindow final : public nsBaseWidget {
   bool mNoAutoHide : 1;
   bool mIsTransparent : 1;
   
-  
-  
-  bool mBoundsAreValid : 1;
+  bool mHasReceivedSizeAllocate : 1;
 
   
 
@@ -699,6 +703,8 @@ class nsWindow final : public nsBaseWidget {
 
 
   bool mWaitingForMoveToRectCallback : 1;
+  bool mMovedAfterMoveToRect : 1;
+  bool mResizedAfterMoveToRect : 1;
 
   
   
@@ -838,8 +844,6 @@ class nsWindow final : public nsBaseWidget {
   
   
   LayoutDeviceIntSize mMoveToRectPopupSize;
-
-  LayoutDeviceIntRect mNewBoundsAfterMoveToRect;
 
   
 
