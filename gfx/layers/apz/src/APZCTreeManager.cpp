@@ -2429,9 +2429,6 @@ void APZCTreeManager::UpdateZoomConstraints(
         return matches;
       });
 
-  MOZ_ASSERT(!node ||
-             !node->GetApzc());  
-
   
   
   
