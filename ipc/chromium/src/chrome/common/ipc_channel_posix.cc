@@ -579,9 +579,28 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
         return false;
       }
 #endif
+
+      if (msg->attached_handles_.Length() >
+          IPC::Message::MAX_DESCRIPTORS_PER_MESSAGE) {
+        MOZ_DIAGNOSTIC_ASSERT(false, "Too many file descriptors!");
+        CHROMIUM_LOG(FATAL) << "Too many file descriptors!";
+        
+        return false;
+      }
+
+      msg->header()->num_handles = msg->attached_handles_.Length();
+#if defined(OS_MACOSX)
+      if (!msg->attached_handles_.IsEmpty()) {
+        msg->set_fd_cookie(++last_pending_fd_id_);
+      }
+#endif
+
       Pickle::BufferList::IterImpl iter(msg->Buffers());
       MOZ_DIAGNOSTIC_ASSERT(!iter.Done(), "empty message");
       partial_write_.emplace(PartialWrite{iter, msg->attached_handles_});
+
+      AddIPCProfilerMarker(*msg, other_pid_, MessageDirection::eSending,
+                           MessagePhase::TransferStart);
     }
 
     if (partial_write_->iter_.Done()) {
@@ -590,41 +609,16 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
       return false;
     }
 
-    if (partial_write_->iter_.Data() == msg->Buffers().Start()) {
-      AddIPCProfilerMarker(*msg, other_pid_, MessageDirection::eSending,
-                           MessagePhase::TransferStart);
-
-      if (!msg->attached_handles_.IsEmpty()) {
-        
-        if (msg->attached_handles_.Length() >
-            IPC::Message::MAX_DESCRIPTORS_PER_MESSAGE) {
-          MOZ_DIAGNOSTIC_ASSERT(false, "Too many file descriptors!");
-          CHROMIUM_LOG(FATAL) << "Too many file descriptors!";
-          
-          return false;
-        }
-
-        msg->header()->num_handles = msg->attached_handles_.Length();
-#if defined(OS_MACOSX)
-        msg->set_fd_cookie(++last_pending_fd_id_);
-#endif
-      }
-    }
-
-    struct iovec iov[kMaxIOVecSize];
-    size_t iov_count = 0;
-    size_t amt_to_write = 0;
-
     
     Pickle::BufferList::IterImpl iter = partial_write_->iter_;
     auto handles = partial_write_->handles_;
 
+    
+    
+    
+    const size_t num_fds = std::min(handles.Length(), kControlBufferMaxFds);
     size_t max_amt_to_write = iter.TotalBytesAvailable(msg->Buffers());
-    if (!handles.IsEmpty()) {
-      
-      const size_t num_fds = std::min(handles.Length(), kControlBufferMaxFds);
-
-      
+    if (num_fds > 0) {
       msgh.msg_control = cmsgBuf;
       msgh.msg_controllen = CMSG_LEN(sizeof(int) * num_fds);
       struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msgh);
@@ -636,16 +630,13 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
       }
 
       
-      auto remaining = handles.From(num_fds);
-      partial_write_->handles_ = remaining;
-
       
       
       
-      
-      MOZ_ASSERT(max_amt_to_write > remaining.Length(),
+      size_t remaining = handles.Length() - num_fds;
+      MOZ_ASSERT(max_amt_to_write > remaining,
                  "must be at least one byte in the message for each handle");
-      max_amt_to_write -= remaining.Length();
+      max_amt_to_write -= remaining;
     }
 
     
@@ -653,6 +644,9 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
     
     
     
+    struct iovec iov[kMaxIOVecSize];
+    size_t iov_count = 0;
+    size_t amt_to_write = 0;
     while (!iter.Done() && iov_count < kMaxIOVecSize &&
            PipeBufHasSpaceAfter(amt_to_write) &&
            amt_to_write < max_amt_to_write) {
@@ -667,6 +661,7 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
       iter.Advance(msg->Buffers(), size);
     }
     MOZ_ASSERT(amt_to_write <= max_amt_to_write);
+    MOZ_ASSERT(amt_to_write > 0);
 
     const bool intentional_short_write = !iter.Done();
     msgh.msg_iov = iov;
@@ -722,6 +717,7 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
                                   amt_to_write);
         partial_write_->iter_.AdvanceAcrossSegments(msg->Buffers(),
                                                     bytes_written);
+        partial_write_->handles_ = handles.From(num_fds);
         
         MOZ_DIAGNOSTIC_ASSERT(!partial_write_->iter_.Done());
       }
@@ -734,6 +730,8 @@ bool Channel::ChannelImpl::ProcessOutgoingMessages() {
           MessageLoopForIO::WATCH_WRITE, &write_watcher_, this);
       return true;
     } else {
+      MOZ_ASSERT(partial_write_->handles_.Length() == num_fds,
+                 "not all handles were sent");
       partial_write_.reset();
 
 #if defined(OS_MACOSX)
