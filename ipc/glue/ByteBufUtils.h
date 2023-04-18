@@ -12,6 +12,7 @@
 #define mozilla_ipc_ByteBufUtils_h
 
 #include "mozilla/ipc/ByteBuf.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/mozalloc_oom.h"
 #include "ipc/IPCMessageUtils.h"
 
@@ -24,9 +25,15 @@ struct ParamTraits<mozilla::ipc::ByteBuf> {
   
   
   static void Write(Message* aMsg, paramType&& aParam) {
-    WriteParam(aMsg, aParam.mLen);
     
-    aMsg->WriteBytesZeroCopy(aParam.mData, aParam.mLen, aParam.mCapacity);
+    
+    
+    
+    mozilla::CheckedInt<uint32_t> length = aParam.mLen;
+    MOZ_RELEASE_ASSERT(length.isValid());
+    WriteParam(aMsg, length.value());
+    
+    aMsg->WriteBytesZeroCopy(aParam.mData, length.value(), aParam.mCapacity);
     aParam.mData = nullptr;
     aParam.mCapacity = 0;
     aParam.mLen = 0;
@@ -38,7 +45,7 @@ struct ParamTraits<mozilla::ipc::ByteBuf> {
     
     
     
-    size_t length;
+    uint32_t length;
     if (!ReadParam(aMsg, aIter, &length)) return false;
     if (!aResult->Allocate(length)) {
       mozalloc_handle_oom(length);
