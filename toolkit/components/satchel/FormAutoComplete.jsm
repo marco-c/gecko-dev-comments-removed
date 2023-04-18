@@ -401,24 +401,23 @@ FormAutoComplete.prototype = {
       
       
       
-      let allResults = wrappedResult._labels;
-      let datalistResults, datalistLabels;
+      let allResults = wrappedResult._items;
+      let datalistItems;
       if (allResults) {
         
         
         
         
-        let oldLabels = allResults.slice(wrappedResult.entries.length);
-        let oldValues = wrappedResult._values.slice(
-          wrappedResult.entries.length
-        );
+        let oldItems = allResults.slice(wrappedResult.entries.length);
 
-        datalistLabels = [];
-        datalistResults = [];
-        for (let i = 0; i < oldLabels.length; ++i) {
-          if (oldLabels[i].toLowerCase().includes(searchString)) {
-            datalistLabels.push(oldLabels[i]);
-            datalistResults.push(oldValues[i]);
+        datalistItems = [];
+        for (let i = 0; i < oldItems.length; ++i) {
+          if (oldItems[i].label.toLowerCase().includes(searchString)) {
+            datalistItems.push({
+              value: oldItems[i].value,
+              label: oldItems[i].label,
+              comment: "",
+            });
           }
         }
       }
@@ -452,23 +451,18 @@ FormAutoComplete.prototype = {
 
       
       
-      if (datalistResults) {
-        filteredEntries = filteredEntries.map(elt => elt.text);
+      if (datalistItems) {
+        filteredEntries = filteredEntries.map(elt => ({
+          value: elt.text,
+          
+          
+          label: "",
+          comment: "",
+        }));
 
-        let comments = new Array(
-          filteredEntries.length + datalistResults.length
-        ).fill("");
-        comments[filteredEntries.length] = "separator";
+        datalistItems[0].comment = "separator";
 
-        
-        
-        
-        datalistLabels = new Array(filteredEntries.length)
-          .fill("")
-          .concat(datalistLabels);
-        wrappedResult._values = filteredEntries.concat(datalistResults);
-        wrappedResult._labels = datalistLabels;
-        wrappedResult._comments = comments;
+        wrappedResult._items = filteredEntries.concat(datalistItems);
       }
 
       maybeNotifyListener(result);
@@ -512,20 +506,19 @@ FormAutoComplete.prototype = {
   },
 
   mergeResults(historyResult, datalistResult) {
-    let values = datalistResult.wrappedJSObject._values;
-    let labels = datalistResult.wrappedJSObject._labels;
-    let comments = new Array(values.length).fill("");
+    let items = datalistResult.wrappedJSObject._items;
 
     
     
     let entries = historyResult.wrappedJSObject.entries;
-    let historyResults = entries.map(entry => entry.text);
-    let historyComments = new Array(entries.length).fill("");
+    let historyResults = entries.map(entry => ({
+      value: entry.text,
+      label: entry.text,
+      comment: "",
+    }));
 
     
-    let finalValues = historyResults.concat(values);
-    let finalLabels = historyResults.concat(labels);
-    let finalComments = historyComments.concat(comments);
+    let finalItems = historyResults.concat(items);
 
     
     
@@ -541,9 +534,7 @@ FormAutoComplete.prototype = {
       Ci.nsIAutoCompleteResult.RESULT_SUCCESS,
       0,
       "",
-      finalValues,
-      finalLabels,
-      finalComments,
+      finalItems,
       historyResult
     );
   },

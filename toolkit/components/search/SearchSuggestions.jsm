@@ -72,14 +72,7 @@ SuggestAutoComplete.prototype = {
     }
 
     
-    this.onResultsReady(
-      results.term,
-      finalResults,
-      
-      
-      [...finalResults],
-      results.formHistoryResult
-    );
+    this.onResultsReady(results.term, finalResults, results.formHistoryResult);
   },
 
   
@@ -93,22 +86,21 @@ SuggestAutoComplete.prototype = {
 
 
 
-
-
-  onResultsReady(searchString, results, comments, formHistoryResult) {
+  onResultsReady(searchString, results, formHistoryResult) {
     if (this._listener) {
-      
-      
-      
-      let labels = results.slice();
       let result = new FormAutoCompleteResult(
         searchString,
         Ci.nsIAutoCompleteResult.RESULT_SUCCESS,
         0,
         "",
-        results,
-        labels,
-        comments,
+        results.map(result => ({
+          value: result,
+          label: result,
+          
+          
+          
+          comment: result,
+        })),
         formHistoryResult
       );
 
