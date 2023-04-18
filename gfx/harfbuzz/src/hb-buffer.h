@@ -362,13 +362,22 @@ hb_buffer_guess_segment_properties (hb_buffer_t *buffer);
 
 
 
+
+
+
+
+
+
+
+
 typedef enum { 
   HB_BUFFER_FLAG_DEFAULT			= 0x00000000u,
   HB_BUFFER_FLAG_BOT				= 0x00000001u, 
   HB_BUFFER_FLAG_EOT				= 0x00000002u, 
   HB_BUFFER_FLAG_PRESERVE_DEFAULT_IGNORABLES	= 0x00000004u,
   HB_BUFFER_FLAG_REMOVE_DEFAULT_IGNORABLES	= 0x00000008u,
-  HB_BUFFER_FLAG_DO_NOT_INSERT_DOTTED_CIRCLE	= 0x00000010u
+  HB_BUFFER_FLAG_DO_NOT_INSERT_DOTTED_CIRCLE	= 0x00000010u,
+  HB_BUFFER_FLAG_VERIFY				= 0x00000020u
 } hb_buffer_flags_t;
 
 HB_EXTERN void
@@ -522,7 +531,7 @@ hb_buffer_add_codepoints (hb_buffer_t          *buffer,
 
 HB_EXTERN void
 hb_buffer_append (hb_buffer_t *buffer,
-		  hb_buffer_t *source,
+		  const hb_buffer_t *source,
 		  unsigned int start,
 		  unsigned int end);
 
@@ -619,24 +628,24 @@ hb_buffer_serialize_glyphs (hb_buffer_t *buffer,
 
 HB_EXTERN unsigned int
 hb_buffer_serialize_unicode (hb_buffer_t *buffer,
-					unsigned int start,
-					unsigned int end,
-					char *buf,
-					unsigned int buf_size,
-					unsigned int *buf_consumed,
-					hb_buffer_serialize_format_t format,
-					hb_buffer_serialize_flags_t flags);
+			     unsigned int start,
+			     unsigned int end,
+			     char *buf,
+			     unsigned int buf_size,
+			     unsigned int *buf_consumed,
+			     hb_buffer_serialize_format_t format,
+			     hb_buffer_serialize_flags_t flags);
 
 HB_EXTERN unsigned int
 hb_buffer_serialize (hb_buffer_t *buffer,
-					unsigned int start,
-					unsigned int end,
-					char *buf,
-					unsigned int buf_size,
-					unsigned int *buf_consumed,
-					hb_font_t *font,
-					hb_buffer_serialize_format_t format,
-					hb_buffer_serialize_flags_t flags);
+		     unsigned int start,
+		     unsigned int end,
+		     char *buf,
+		     unsigned int buf_size,
+		     unsigned int *buf_consumed,
+		     hb_font_t *font,
+		     hb_buffer_serialize_format_t format,
+		     hb_buffer_serialize_flags_t flags);
 
 HB_EXTERN hb_bool_t
 hb_buffer_deserialize_glyphs (hb_buffer_t *buffer,
@@ -648,10 +657,10 @@ hb_buffer_deserialize_glyphs (hb_buffer_t *buffer,
 
 HB_EXTERN hb_bool_t
 hb_buffer_deserialize_unicode (hb_buffer_t *buffer,
-            const char *buf,
-            int buf_len,
-            const char **end_ptr,
-            hb_buffer_serialize_format_t format);
+			       const char *buf,
+			       int buf_len,
+			       const char **end_ptr,
+			       hb_buffer_serialize_format_t format);
 
 
 

@@ -52,6 +52,21 @@ HB_BEGIN_DECLS
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+#define HB_OT_MATH_SCRIPT HB_OT_TAG_MATH_SCRIPT
+
+
+
 HB_EXTERN HB_DEPRECATED_FOR (hb_ot_layout_table_select_script) hb_bool_t
 hb_ot_layout_table_choose_script (hb_face_t      *face,
 				  hb_tag_t        table_tag,

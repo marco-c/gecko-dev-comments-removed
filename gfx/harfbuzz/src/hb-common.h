@@ -491,6 +491,7 @@ hb_language_get_default (void);
 
 
 
+
 typedef enum
 {
   HB_SCRIPT_COMMON			= HB_TAG ('Z','y','y','y'), 
@@ -696,6 +697,11 @@ typedef enum
   HB_SCRIPT_TANGSA			= HB_TAG ('T','n','s','a'), 
   HB_SCRIPT_TOTO			= HB_TAG ('T','o','t','o'), 
   HB_SCRIPT_VITHKUQI			= HB_TAG ('V','i','t','h'), 
+
+  
+
+
+  HB_SCRIPT_MATH			= HB_TAG ('Z','m','t','h'),
 
   
   HB_SCRIPT_INVALID			= HB_TAG_NONE,

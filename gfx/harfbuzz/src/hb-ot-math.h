@@ -57,7 +57,11 @@ HB_BEGIN_DECLS
 
 
 
-#define HB_OT_MATH_SCRIPT HB_TAG('m','a','t','h')
+
+
+
+
+#define HB_OT_TAG_MATH_SCRIPT HB_TAG('m','a','t','h')
 
 
 
@@ -213,6 +217,20 @@ typedef enum {
 
 
 
+typedef struct {
+  hb_position_t max_correction_height;
+  hb_position_t kern_value;
+} hb_ot_math_kern_entry_t;
+
+
+
+
+
+
+
+
+
+
 typedef struct hb_ot_math_glyph_variant_t {
   hb_codepoint_t glyph;
   hb_position_t advance;
@@ -279,6 +297,14 @@ hb_ot_math_get_glyph_kerning (hb_font_t *font,
 			      hb_codepoint_t glyph,
 			      hb_ot_math_kern_t kern,
 			      hb_position_t correction_height);
+
+HB_EXTERN unsigned int
+hb_ot_math_get_glyph_kernings (hb_font_t *font,
+			       hb_codepoint_t glyph,
+			       hb_ot_math_kern_t kern,
+			       unsigned int start_offset,
+			       unsigned int *entries_count, 
+			       hb_ot_math_kern_entry_t *kern_entries );
 
 HB_EXTERN unsigned int
 hb_ot_math_get_glyph_variants (hb_font_t *font,
