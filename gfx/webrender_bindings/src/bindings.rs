@@ -46,11 +46,6 @@ use webrender::{
 };
 use wr_malloc_size_of::MallocSizeOfOps;
 
-#[cfg(target_os = "macos")]
-use core_foundation::string::CFString;
-#[cfg(target_os = "macos")]
-use core_graphics::font::CGFont;
-
 extern "C" {
     #[cfg(target_os = "android")]
     fn __android_log_write(prio: c_int, tag: *const c_char, text: *const c_char) -> c_int;
@@ -2298,20 +2293,9 @@ fn read_font_descriptor(bytes: &mut WrVecU8, index: u32) -> NativeFontHandle {
 #[cfg(target_os = "macos")]
 fn read_font_descriptor(bytes: &mut WrVecU8, _index: u32) -> NativeFontHandle {
     let chars = bytes.flush_into_vec();
-    let name = String::from_utf8(chars).unwrap();
-    let font = match CGFont::from_name(&CFString::new(&*name)) {
-        Ok(font) => font,
-        Err(_) => {
-            
-            
-            
-            
-            
-            CGFont::from_name(&CFString::from_static_string("Lucida Grande"))
-                .expect("Failed reading font descriptor and could not load fallback font")
-        },
-    };
-    NativeFontHandle(font)
+    NativeFontHandle {
+        name: String::from_utf8(chars).unwrap()
+    }
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
