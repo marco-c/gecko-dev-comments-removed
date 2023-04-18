@@ -1,31 +1,34 @@
+var xhr;
+var myself;
+
+async function handleLoadstart() {
+  try {
+    xhr.open("POST", "FOOBAR", false);
+    
+    
+    
+    
+    xhr.send();
+    myself.postMessage("MissingError");
+  } catch (err) {
+    if (err instanceof DOMException) {
+      
+      
+      myself.postMessage("DOMException");
+    } else {
+      myself.postMessage("OtherError");
+    }
+    
+    xhr.removeEventListener("loadstart", handleLoadstart, true);
+    throw err;
+  }
+}
+
 self.onmessage = async function(ev) {
-  var xhr = new XMLHttpRequest({ mozAnon: false });
-  var myself = self;
-  xhr.addEventListener(
-    "loadstart",
-    async () => {
-      try {
-        xhr.open("POST", "FOOBAR", false);
-        xhr.send();
-      } catch (err) {
-        if (err instanceof DOMException) {
-          
-          myself.postMessage("DOMException");
-        } else {
-          myself.postMessage("OtherError");
-        }
-        
-        throw err;
-      }
-      
-      
-      
-      myself.postMessage("MissingError");
-    },
-    true
-  );
+  xhr = new XMLHttpRequest({ mozAnon: false });
+  myself = self;
+  xhr.addEventListener("loadstart", handleLoadstart, true);
   xhr.open("POST", "FOOBAR", false);
   xhr.send();
-  
   postMessage("TERMINATE");
 };
