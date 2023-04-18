@@ -15,6 +15,7 @@
 
 namespace mozilla::a11y {
 class Accessible;
+class LocalAccessible;
 
 
 
@@ -127,6 +128,13 @@ class TextLeafPoint final {
 
   already_AddRefed<AccAttributes> GetTextAttributesLocalAcc(
       bool aIncludeDefaults = true) const;
+
+  
+
+
+
+
+  static nsTArray<int32_t> GetSpellingErrorOffsets(LocalAccessible* aAcc);
 
   
 
