@@ -549,7 +549,6 @@ struct MappedFontKey {
 }
 
 struct FontKeyMapLocked {
-    namespace: IdNamespace,
     next_id: u32,
     template_map: FastHashMap<FontTemplate, Arc<MappedFontKey>>,
     key_map: FastHashMap<FontKey, Arc<MappedFontKey>>,
@@ -563,14 +562,14 @@ struct FontKeyMapLocked {
 
 
 
-
 #[derive(Clone)]
 pub struct FontKeyMap(Arc<RwLock<FontKeyMapLocked>>);
 
 impl FontKeyMap {
-    pub fn new(namespace: IdNamespace) -> Self {
+    const SHARED_NAMESPACE: IdNamespace = IdNamespace(0);
+
+    pub fn new() -> Self {
         FontKeyMap(Arc::new(RwLock::new(FontKeyMapLocked {
-            namespace,
             next_id: 1,
             template_map: FastHashMap::default(),
             key_map: FastHashMap::default(),
@@ -601,7 +600,7 @@ impl FontKeyMap {
             locked.key_map.insert(*font_key, mapped);
             return None;
         }
-        let shared_key = FontKey::new(locked.namespace, locked.next_id);
+        let shared_key = FontKey::new(Self::SHARED_NAMESPACE, locked.next_id);
         locked.next_id += 1;
         let mapped = Arc::new(MappedFontKey {
             font_key: shared_key,
@@ -718,7 +717,6 @@ impl FontTemplateMap {
 }
 
 struct FontInstanceKeyMapLocked {
-    namespace: IdNamespace,
     next_id: u32,
     instances: FastHashSet<Arc<BaseFontInstance>>,
     key_map: FastHashMap<FontInstanceKey, Weak<BaseFontInstance>>,
@@ -732,14 +730,14 @@ struct FontInstanceKeyMapLocked {
 
 
 
-
 #[derive(Clone)]
 pub struct FontInstanceKeyMap(Arc<RwLock<FontInstanceKeyMapLocked>>);
 
 impl FontInstanceKeyMap {
-    pub fn new(namespace: IdNamespace) -> Self {
+    const SHARED_NAMESPACE: IdNamespace = IdNamespace(0);
+
+    pub fn new() -> Self {
         FontInstanceKeyMap(Arc::new(RwLock::new(FontInstanceKeyMapLocked {
-            namespace,
             next_id: 1,
             instances: FastHashSet::default(),
             key_map: FastHashMap::default(),
@@ -771,7 +769,7 @@ impl FontInstanceKeyMap {
             return None;
         }
         let unmapped_key = instance.instance_key;
-        instance.instance_key = FontInstanceKey::new(locked.namespace, locked.next_id);
+        instance.instance_key = FontInstanceKey::new(Self::SHARED_NAMESPACE, locked.next_id);
         locked.next_id += 1;
         let shared_instance = Arc::new(instance);
         locked.instances.insert(shared_instance.clone());
@@ -913,12 +911,12 @@ pub struct SharedFontResources {
 }
 
 impl SharedFontResources {
-    pub fn new(namespace: IdNamespace) -> Self {
+    pub fn new() -> Self {
         SharedFontResources {
             templates: FontTemplateMap::new(),
             instances: FontInstanceMap::new(),
-            font_keys: FontKeyMap::new(namespace),
-            instance_keys: FontInstanceKeyMap::new(namespace),
+            font_keys: FontKeyMap::new(),
+            instance_keys: FontInstanceKeyMap::new(),
         }
     }
 }
