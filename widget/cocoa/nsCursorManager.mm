@@ -240,6 +240,10 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
 
   
   if (sCurrentCursor == aCursor && sCurrentCursorScaleFactor == scaleFactor && mCurrentMacCursor) {
+    
+    if (MOZ_UNLIKELY(![mCurrentMacCursor isSet])) {
+      [mCurrentMacCursor set];
+    }
     return NS_OK;
   }
 
