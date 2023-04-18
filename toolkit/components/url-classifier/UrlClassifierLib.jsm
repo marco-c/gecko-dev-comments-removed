@@ -217,11 +217,12 @@ function RequestBackoffV4(maxRequests, requestPeriod, provider = null) {
   );
 }
 
-
-var lib = this;
-
 function UrlClassifierLib() {
-  this.wrappedJSObject = lib;
+  this.wrappedJSObject = {
+    RequestBackoff,
+    RequestBackoffV4,
+    BindToObject,
+  };
 }
 UrlClassifierLib.prototype.QueryInterface = ChromeUtils.generateQI([]);
 
