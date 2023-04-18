@@ -312,10 +312,7 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
       return false;
     }
 
-    
-    
-    
-    return this._form.useChildTargetToFetchChildren || this._form.remoteFrame;
+    return this._form.useChildTargetToFetchChildren;
   }
   get hasEventListeners() {
     return this._form.hasEventListeners;
