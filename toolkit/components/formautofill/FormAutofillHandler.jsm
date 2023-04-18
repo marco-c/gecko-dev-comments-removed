@@ -1089,8 +1089,9 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
     
     
     
+    
     let monthChars = "m";
-    let yearChars = "ya";
+    let yearChars = "yaj";
 
     let monthFirstCheck = new RegExp(
       "(?:\\b|^)((?:[" +
