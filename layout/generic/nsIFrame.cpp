@@ -5642,20 +5642,45 @@ static FrameTarget GetSelectionClosestFrameForBlock(nsIFrame* aFrame,
 
 
 
+
+
+
+
+
+
+
 static bool UseFrameEdge(nsIFrame* aFrame) {
   if (aFrame->IsFlexOrGridContainer() || aFrame->IsTableFrame()) {
     return true;
   }
-  if (static_cast<nsImageFrame*>(do_QueryFrame(aFrame))) {
-    return !nsContentUtils::ContentIsDraggable(aFrame->GetContent()) &&
-           !aFrame->GetContent()->IsEditable();
+  const nsImageFrame* image = do_QueryFrame(aFrame);
+  if (image && !aFrame->GetContent()->IsEditable()) {
+    
+    
+    return true;
   }
   return false;
 }
 
-static FrameTarget LastResortFrameTargetForFrame(nsIFrame* aFrame) {
-  return {aFrame, UseFrameEdge(aFrame), false};
+static FrameTarget LastResortFrameTargetForFrame(nsIFrame* aFrame,
+                                                 const nsPoint& aPoint) {
+  if (!UseFrameEdge(aFrame)) {
+    return {aFrame, false, false};
+  }
+  const auto& rect = aFrame->GetRectRelativeToSelf();
+  nscoord reference;
+  nscoord middle;
+  if (aFrame->GetWritingMode().IsVertical()) {
+    reference = aPoint.y;
+    middle = rect.Height() / 2;
+  } else {
+    reference = aPoint.x;
+    middle = rect.Width() / 2;
+  }
+  const bool afterFrame = reference > middle;
+  return {aFrame, true, afterFrame};
 }
+
 
 
 
@@ -5687,7 +5712,7 @@ static FrameTarget GetSelectionClosestFrame(nsIFrame* aFrame,
     }
   }
 
-  return LastResortFrameTargetForFrame(aFrame);
+  return LastResortFrameTargetForFrame(aFrame, aPoint);
 }
 
 static nsIFrame::ContentOffsets OffsetsForSingleFrame(nsIFrame* aFrame,
