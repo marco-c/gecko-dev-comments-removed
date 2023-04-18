@@ -7526,8 +7526,7 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
                                  EditorDOMPoint::After(rightListItemElement));
       if (MOZ_UNLIKELY(maybeNewListItemElement.isErr())) {
         NS_WARNING(
-            "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) "
-            "failed");
+            "HTMLEditor::CreateAndInsertElement(WithTransaction::Yes) failed");
         return Err(maybeNewListItemElement.unwrapErr());
       }
       MOZ_ASSERT(maybeNewListItemElement.inspect());
@@ -7549,23 +7548,20 @@ HTMLEditor::HandleInsertParagraphInListItemElement(
     
     
     
-    RefPtr<Element> brElement;
     
     
-    nsresult rv = CopyLastEditableChildStylesWithTransaction(
-        MOZ_KnownLive(leftListItemElement), MOZ_KnownLive(rightListItemElement),
-        address_of(brElement));
-    if (MOZ_UNLIKELY(NS_WARN_IF(Destroyed()))) {
-      return Err(NS_ERROR_EDITOR_DESTROYED);
-    }
-    if (MOZ_UNLIKELY(NS_FAILED(rv))) {
+    Result<RefPtr<HTMLBRElement>, nsresult> newBRElementOrError =
+        CopyLastEditableChildStylesWithTransaction(
+            MOZ_KnownLive(leftListItemElement),
+            MOZ_KnownLive(rightListItemElement), aEditingHost);
+    if (MOZ_UNLIKELY(newBRElementOrError.isErr())) {
       NS_WARNING(
-          "HTMLEditor::CopyLastEditableChildStylesWithTransaction() "
-          "failed");
-      return Err(NS_ERROR_FAILURE);
+          "HTMLEditor::CopyLastEditableChildStylesWithTransaction() failed");
+      return Err(newBRElementOrError.unwrapErr());
     }
-    return brElement ? EditorDOMPoint(brElement)
-                     : EditorDOMPoint(&rightListItemElement, 0u);
+    return newBRElementOrError.inspect()
+               ? EditorDOMPoint(newBRElementOrError.unwrap().get())
+               : EditorDOMPoint(&rightListItemElement, 0u);
   }
 
   
