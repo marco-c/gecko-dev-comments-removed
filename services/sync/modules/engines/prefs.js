@@ -2,7 +2,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["PrefsEngine", "PrefRec", "PREFS_GUID"];
+var EXPORTED_SYMBOLS = ["PrefsEngine", "PrefRec", "getPrefsGUIDForTest"];
 
 const PREF_SYNC_PREFS_PREFIX = "services.sync.prefs.sync.";
 
@@ -434,3 +434,7 @@ PrefTracker.prototype = {
     }
   },
 };
+
+function getPrefsGUIDForTest() {
+  return PREFS_GUID;
+}
