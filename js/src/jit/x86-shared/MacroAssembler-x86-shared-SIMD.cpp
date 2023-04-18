@@ -133,40 +133,44 @@ void MacroAssemblerX86Shared::extractLaneInt8x16(FloatRegister input,
   }
 }
 
-void MacroAssemblerX86Shared::replaceLaneFloat32x4(FloatRegister rhs,
-                                                   FloatRegister lhsDest,
-                                                   unsigned lane) {
-  MOZ_ASSERT(lhsDest.isSimd128() && rhs.isSingle());
+void MacroAssemblerX86Shared::replaceLaneFloat32x4(unsigned lane,
+                                                   FloatRegister lhs,
+                                                   FloatRegister rhs,
+                                                   FloatRegister dest) {
+  MOZ_ASSERT(lhs.isSimd128() && rhs.isSingle());
 
   if (lane == 0) {
-    if (rhs.asSimd128() == lhsDest) {
+    if (rhs.asSimd128() == lhs) {
       
       
+      moveSimd128Float(lhs, dest);
     } else {
       
-      vmovss(rhs, lhsDest, lhsDest);
+      vmovss(rhs, lhs, dest);
     }
   } else {
-    vinsertps(vinsertpsMask(0, lane), rhs, lhsDest, lhsDest);
+    vinsertps(vinsertpsMask(0, lane), rhs, lhs, dest);
   }
 }
 
-void MacroAssemblerX86Shared::replaceLaneFloat64x2(FloatRegister rhs,
-                                                   FloatRegister lhsDest,
-                                                   unsigned lane) {
-  MOZ_ASSERT(lhsDest.isSimd128() && rhs.isDouble());
+void MacroAssemblerX86Shared::replaceLaneFloat64x2(unsigned lane,
+                                                   FloatRegister lhs,
+                                                   FloatRegister rhs,
+                                                   FloatRegister dest) {
+  MOZ_ASSERT(lhs.isSimd128() && rhs.isDouble());
 
   if (lane == 0) {
-    if (rhs.asSimd128() == lhsDest) {
+    if (rhs.asSimd128() == lhs) {
       
       
+      moveSimd128Float(lhs, dest);
     } else {
       
-      vmovsd(rhs, lhsDest, lhsDest);
+      vmovsd(rhs, lhs, dest);
     }
   } else {
     
-    vshufpd(0, rhs, lhsDest, lhsDest);
+    vshufpd(0, rhs, lhs, dest);
   }
 }
 
