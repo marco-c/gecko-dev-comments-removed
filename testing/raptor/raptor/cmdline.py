@@ -464,6 +464,10 @@ def verify_options(parser, args):
         parser.error("--binary is required!")
 
     
+    if hasattr(args, "run_local") and (not args.run_local and args.debug_mode):
+        parser.error("Cannot run debug mode in CI")
+
+    
     if args.browsertime_visualmetrics and not args.browsertime_video:
         args.browsertime_video = True
 

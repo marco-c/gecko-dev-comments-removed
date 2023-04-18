@@ -315,6 +315,9 @@ class Browsertime(Perftest):
         if self.config["app"] in ("chrome", "chromium", "chrome-m"):
             priority1_options.extend(self.setup_chrome_args(test))
 
+        if self.debug_mode:
+            browsertime_options.extend(["-vv", "--debug", "true"])
+
         
         self.results_handler.remove_result_dir_for_test(test)
         priority1_options.extend(
@@ -334,7 +337,7 @@ class Browsertime(Perftest):
         parsed_cmds = [":::".join([str(i) for i in item]) for item in cmds if item]
         browsertime_options.extend(["--browsertime.commands", ";;;".join(parsed_cmds)])
 
-        if self.verbose and "-vvv" not in browsertime_options:
+        if self.verbose:
             browsertime_options.append("-vvv")
 
         if self.browsertime_video:
@@ -436,6 +439,8 @@ class Browsertime(Perftest):
         
         MULTI_OPTS = [
             "--firefox.android.intentArgument",
+            "--firefox.args",
+            "--firefox.preference",
         ]
         for index, argument in list(enumerate(priority1_options)):
             if argument in MULTI_OPTS:
@@ -466,6 +471,9 @@ class Browsertime(Perftest):
         )
 
     def _compute_process_timeout(self, test, timeout):
+        if self.debug_mode:
+            return sys.maxsize
+
         
         
         
@@ -508,10 +516,16 @@ class Browsertime(Perftest):
         
         cmd = self._compose_cmd(test, timeout)
 
+        output_timeout = BROWSERTIME_PAGELOAD_OUTPUT_TIMEOUT
         if test.get("type", "") == "scenario":
             
             
-            BROWSERTIME_PAGELOAD_OUTPUT_TIMEOUT = timeout
+            output_timeout = timeout
+        elif self.benchmark:
+            output_timeout = BROWSERTIME_BENCHMARK_OUTPUT_TIMEOUT
+
+        if self.debug_mode:
+            output_timeout = 2147483647
 
         LOG.info("timeout (s): {}".format(timeout))
         LOG.info("browsertime cwd: {}".format(os.getcwd()))
@@ -561,7 +575,7 @@ class Browsertime(Perftest):
 
                 date, level, msg = match.groups()
                 level = level.lower()
-                if "error" in level:
+                if "error" in level and not self.debug_mode:
                     self.browsertime_failure = msg
                     LOG.error("Browsertime failed to run")
                     proc.kill()
