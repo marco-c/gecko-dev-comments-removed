@@ -322,6 +322,22 @@ bool nsXPLookAndFeel::sInitialized = false;
 nsXPLookAndFeel* nsXPLookAndFeel::sInstance = nullptr;
 bool nsXPLookAndFeel::sShutdown = false;
 
+auto LookAndFeel::SystemZoomSettings() -> ZoomSettings {
+  ZoomSettings settings;
+  switch (StaticPrefs::browser_display_os_zoom_behavior()) {
+    case 0:
+    default:
+      break;
+    case 1:
+      settings.mFullZoom = GetTextScaleFactor();
+      break;
+    case 2:
+      settings.mTextZoom = GetTextScaleFactor();
+      break;
+  }
+  return settings;
+}
+
 
 nsXPLookAndFeel* nsXPLookAndFeel::GetInstance() {
   if (sInstance) {
@@ -385,10 +401,13 @@ static void IntPrefChanged(const nsACString& aPref) {
   LookAndFeel::NotifyChangedAllWindows(changeKind);
 }
 
-static void FloatPrefChanged() {
+static void FloatPrefChanged(const nsACString& aPref) {
   
-  LookAndFeel::NotifyChangedAllWindows(
-      widget::ThemeChangeKind::MediaQueriesOnly);
+  
+  auto changeKind = aPref.EqualsLiteral("ui.textScaleFactor")
+                        ? widget::ThemeChangeKind::StyleAndLayout
+                        : widget::ThemeChangeKind::MediaQueriesOnly;
+  LookAndFeel::NotifyChangedAllWindows(changeKind);
 }
 
 static void ColorPrefChanged() {
@@ -408,7 +427,7 @@ void nsXPLookAndFeel::OnPrefChanged(const char* aPref, void* aClosure) {
 
   for (const char* pref : sFloatPrefs) {
     if (prefName.Equals(pref)) {
-      FloatPrefChanged();
+      FloatPrefChanged(prefName);
       return;
     }
   }
@@ -433,6 +452,9 @@ static constexpr struct {
      widget::ThemeChangeKind::Style},
     
     {"widget.gtk.overlay-scrollbars.enabled"_ns,
+     widget::ThemeChangeKind::StyleAndLayout},
+    
+    {"browser.display.os-zoom-behavior"_ns,
      widget::ThemeChangeKind::StyleAndLayout},
     
     
