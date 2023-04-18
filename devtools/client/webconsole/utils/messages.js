@@ -728,6 +728,14 @@ function replaceURL(text, replacementText = "") {
 
 
 function getWarningGroupType(message) {
+  if (
+    message.level !== MESSAGE_LEVEL.WARN &&
+    
+    message.level !== MESSAGE_LEVEL.INFO
+  ) {
+    return null;
+  }
+
   if (isContentBlockingMessage(message)) {
     return MESSAGE_TYPE.CONTENT_BLOCKING_GROUP;
   }
