@@ -95,8 +95,7 @@ PKCS11ModuleDB::AddModule(const nsAString& aModuleName,
     return rv;
   }
   nsCString fullPath;
-  
-  NS_CopyUnicodeToNative(aLibraryFullPath, fullPath);
+  CopyUTF16toUTF8(aLibraryFullPath, fullPath);
   uint32_t mechFlags = SECMOD_PubMechFlagstoInternal(aCryptoMechanismFlags);
   uint32_t cipherFlags = SECMOD_PubCipherFlagstoInternal(aCipherFlags);
   SECStatus srv = SECMOD_AddNewModule(moduleNameNormalized.get(),

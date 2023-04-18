@@ -107,18 +107,14 @@ nsresult CommonInit();
 
 
 
-
-
 nsresult FileToCString(const nsCOMPtr<nsIFile>& file, nsACString& result) {
 #ifdef XP_WIN
-  
-  
-  nsCOMPtr<nsILocalFileWin> fileWin = do_QueryInterface(file);
-  if (!fileWin) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("couldn't get nsILocalFileWin"));
-    return NS_ERROR_FAILURE;
+  nsAutoString path;
+  nsresult rv = file->GetPath(path);
+  if (NS_SUCCEEDED(rv)) {
+    CopyUTF16toUTF8(path, result);
   }
-  return fileWin->GetNativeCanonicalPath(result);
+  return rv;
 #else
   return file->GetNativePath(result);
 #endif
@@ -733,8 +729,8 @@ class LoadLoadableCertsTask final : public Runnable {
   RefPtr<nsNSSComponent> mNSSComponent;
   bool mImportEnterpriseRoots;
   uint32_t mFamilySafetyMode;
-  Vector<nsCString> mPossibleLoadableRootsLocations;
-  Maybe<nsCString> mOSClientCertsModuleLocation;
+  Vector<nsCString> mPossibleLoadableRootsLocations;  
+  Maybe<nsCString> mOSClientCertsModuleLocation;      
 };
 
 nsresult LoadLoadableCertsTask::Dispatch() {
@@ -802,6 +798,7 @@ LoadLoadableCertsTask::Run() {
   }
   return NS_OK;
 }
+
 
 
 
@@ -973,6 +970,7 @@ nsresult nsNSSComponent::CheckForSmartCardChanges() {
 
 
 
+
 static nsresult GetNSS3Directory(nsCString& result) {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -1003,6 +1001,7 @@ static nsresult GetNSS3Directory(nsCString& result) {
   }
   return FileToCString(nss3Directory, result);
 }
+
 
 
 
