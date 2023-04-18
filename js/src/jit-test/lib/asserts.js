@@ -55,6 +55,10 @@ if (typeof assertErrorMessage === 'undefined') {
         try {
             f();
         } catch (e) {
+            
+            
+            if (e === "out of memory")
+                throw e;
             if (!(e instanceof ctor))
                 throw new Error("Assertion failed: expected exception " + ctor.name + ", got " + e);
             if (typeof test == "string") {
