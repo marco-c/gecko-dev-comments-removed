@@ -199,15 +199,6 @@ static mozilla::Maybe<bool> RunAsLauncherProcess(
 #else
 static mozilla::Maybe<bool> RunAsLauncherProcess(int& argc, wchar_t** argv) {
 #endif
-
-
-
-  if (mozilla::CheckArg(argc, argv, L"contentproc",
-                        static_cast<const wchar_t**>(nullptr),
-                        mozilla::CheckArgFlag::None) == mozilla::ARG_FOUND) {
-    return mozilla::Some(false);
-  }
-
   bool runAsLauncher = DoLauncherProcessChecks(argc, argv);
 
 #if defined(MOZ_LAUNCHER_PROCESS)
@@ -260,6 +251,16 @@ Maybe<int> LauncherMain(int& argc, wchar_t* argv[],
                static_cast<const wchar_t**>(nullptr),
                mozilla::CheckArgFlag::RemoveArg) == ARG_FOUND) {
     SetLauncherErrorForceEventLog();
+  }
+
+  
+  
+  
+  if (mozilla::CheckArg(argc, argv, L"contentproc",
+                        static_cast<const wchar_t**>(nullptr),
+                        mozilla::CheckArgFlag::None) == mozilla::ARG_FOUND) {
+    
+    return Nothing();
   }
 
 #if defined(MOZ_LAUNCHER_PROCESS)
