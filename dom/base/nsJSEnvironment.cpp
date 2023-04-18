@@ -1081,6 +1081,7 @@ void nsJSContext::GarbageCollectNow(JS::GCReason aReason,
 void nsJSContext::RunIncrementalGCSlice(JS::GCReason aReason,
                                         IsShrinking aShrinking,
                                         js::SliceBudget& aBudget) {
+  AUTO_PROFILER_LABEL_RELEVANT_FOR_JS("Incremental GC", GCCC);
   GarbageCollectImpl(aReason, aShrinking, aBudget);
 }
 
@@ -1415,8 +1416,6 @@ void nsJSContext::RunCycleCollectorSlice(CCReason aReason,
   AUTO_PROFILER_MARKER_TEXT("CCSlice", GCCC, {},
                             aDeadline.IsNull() ? ""_ns : "(idle)"_ns);
 
-  AUTO_PROFILER_LABEL("nsJSContext::RunCycleCollectorSlice", GCCC);
-
   PrepareForCycleCollectionSlice(aReason, aDeadline);
 
   
@@ -1529,6 +1528,8 @@ void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
 
 
 bool CCGCScheduler::CCRunnerFired(TimeStamp aDeadline) {
+  AUTO_PROFILER_LABEL_RELEVANT_FOR_JS("Incremental CC", GCCC);
+
   bool didDoWork = false;
 
   
