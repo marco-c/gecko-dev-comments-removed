@@ -747,6 +747,23 @@ function startup() {
         },
       },
     },
+    {
+      name: "GeckoViewPrompter",
+      onInit: {
+        actors: {
+          GeckoViewPrompter: {
+            parent: {
+              moduleURI: "resource:///actors/GeckoViewPrompterParent.jsm",
+            },
+            child: {
+              moduleURI: "resource:///actors/GeckoViewPrompterChild.jsm",
+            },
+            allFrames: true,
+            includeChrome: true,
+          },
+        },
+      },
+    },
   ]);
 
   if (!Services.appinfo.sessionHistoryInParent) {
@@ -766,6 +783,10 @@ function startup() {
 
   
   window.moduleManager = ModuleManager;
+
+  window.prompts = () => {
+    return window.ModuleManager.getActor("GeckoViewPrompter").getPrompts();
+  };
 
   Services.tm.dispatchToMainThread(() => {
     
