@@ -406,60 +406,43 @@ var PrintUtils = {
     );
   },
 
-  _setPrinterDefaultsForSelectedPrinter(
-    aPSSVC,
-    aPrintSettings,
-    defaultsOnly = false
-  ) {
-    if (!aPrintSettings.printerName) {
-      aPrintSettings.printerName = aPSSVC.lastUsedPrinterName;
-      if (!aPrintSettings.printerName) {
-        
-        
-        
-        let printerList = Cc["@mozilla.org/gfx/printerlist;1"].getService(
-          Ci.nsIPrinterList
-        );
-        aPrintSettings.printerName = printerList.systemDefaultPrinterName;
-      }
-    }
-
-    
-    
-    if (aPrintSettings.printerName != this.SAVE_TO_PDF_PRINTER) {
-      aPSSVC.initPrintSettingsFromPrinter(
-        aPrintSettings.printerName,
-        aPrintSettings
-      );
-    }
-
-    if (!defaultsOnly) {
-      
-      aPSSVC.initPrintSettingsFromPrefs(
-        aPrintSettings,
-        true,
-        aPrintSettings.kInitSaveAll
-      );
-    }
-  },
-
   getPrintSettings(aPrinterName, defaultsOnly) {
     var printSettings;
     try {
       var PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
         Ci.nsIPrintSettingsService
       );
+
+      
+      
+      let printerName =
+        aPrinterName ||
+        PSSVC.lastUsedPrinterName ||
+        Cc["@mozilla.org/gfx/printerlist;1"].getService(Ci.nsIPrinterList)
+          .systemDefaultPrinterName;
+
       printSettings = PSSVC.newPrintSettings;
-      if (aPrinterName) {
-        printSettings.printerName = aPrinterName;
+      printSettings.printerName = printerName;
+
+      
+      
+      if (printSettings.printerName != this.SAVE_TO_PDF_PRINTER) {
+        PSSVC.initPrintSettingsFromPrinter(
+          printSettings.printerName,
+          printSettings
+        );
       }
-      this._setPrinterDefaultsForSelectedPrinter(
-        PSSVC,
-        printSettings,
-        defaultsOnly
-      );
+
+      if (!defaultsOnly) {
+        
+        PSSVC.initPrintSettingsFromPrefs(
+          printSettings,
+          true,
+          printSettings.kInitSaveAll
+        );
+      }
     } catch (e) {
-      dump("getPrintSettings: " + e + "\n");
+      Cu.reportError("PrintUtils.getPrintSettings failed: " + e + "\n");
     }
     return printSettings;
   },
