@@ -3482,10 +3482,24 @@ bool BrowsingContext::IsPopupAllowed() {
   return false;
 }
 
+
+bool BrowsingContext::ShouldAddEntryForRefresh(
+    nsIURI* aCurrentURI, const SessionHistoryInfo& aInfo) {
+  if (aInfo.GetPostData()) {
+    return true;
+  }
+
+  bool equalsURI = false;
+  if (aCurrentURI) {
+    aCurrentURI->Equals(aInfo.GetURI(), &equalsURI);
+  }
+  return !equalsURI;
+}
+
 void BrowsingContext::SessionHistoryCommit(
     const LoadingSessionHistoryInfo& aInfo, uint32_t aLoadType,
-    bool aHadActiveEntry, bool aPersist, bool aCloneEntryChildren,
-    bool aChannelExpired) {
+    nsIURI* aCurrentURI, bool aHadActiveEntry, bool aPersist,
+    bool aCloneEntryChildren, bool aChannelExpired) {
   nsID changeID = {};
   if (XRE_IsContentProcess()) {
     RefPtr<ChildSHistory> rootSH = Top()->GetChildSessionHistory();
@@ -3498,10 +3512,14 @@ void BrowsingContext::SessionHistoryCommit(
         
         
         
+        
         if (!LOAD_TYPE_HAS_FLAGS(
                 aLoadType, nsIWebNavigation::LOAD_FLAGS_REPLACE_HISTORY) &&
             (IsTop() || aHadActiveEntry) &&
-            ShouldUpdateSessionHistory(aLoadType)) {
+            ShouldUpdateSessionHistory(aLoadType) &&
+            (!LOAD_TYPE_HAS_FLAGS(aLoadType,
+                                  nsIWebNavigation::LOAD_FLAGS_IS_REFRESH) ||
+             ShouldAddEntryForRefresh(aCurrentURI, aInfo.mInfo))) {
           changeID = rootSH->AddPendingHistoryChange();
         }
       } else {
