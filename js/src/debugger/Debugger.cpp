@@ -5206,7 +5206,7 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
       
       
       
-      for (const JS::GCCellPtr& thing : script->gcthings()) {
+      for (JS::GCCellPtr thing : script->gcthings()) {
         if (!thing.is<JSObject>() || !thing.as<JSObject>().is<JSFunction>()) {
           continue;
         }

@@ -477,11 +477,11 @@ void ApplyGCThingTyped(GCCellPtr thing, F&& f) {
 
 
 
-inline bool operator==(const JS::GCCellPtr& ptr1, const JS::GCCellPtr& ptr2) {
+inline bool operator==(JS::GCCellPtr ptr1, JS::GCCellPtr ptr2) {
   return ptr1.asCell() == ptr2.asCell();
 }
 
-inline bool operator!=(const JS::GCCellPtr& ptr1, const JS::GCCellPtr& ptr2) {
+inline bool operator!=(JS::GCCellPtr ptr1, JS::GCCellPtr ptr2) {
   return !(ptr1 == ptr2);
 }
 

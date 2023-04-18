@@ -3626,7 +3626,7 @@ static bool InitHoistedFunctionDeclarations(JSContext* cx, HandleScript script,
   
   
   for (size_t i = 0; i <= lastFun; ++i) {
-    const JS::GCCellPtr& thing = script->gcthings()[i];
+    JS::GCCellPtr thing = script->gcthings()[i];
 
     
     
