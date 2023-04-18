@@ -400,9 +400,29 @@ class IMContextWrapper final : public TextEventDispatcherListener {
 
   bool EnsureToCacheContentSelection(nsAString* aSelectedString = nullptr);
 
-  
-  
-  bool mIsIMFocused;
+  enum class IMEFocusState : uint8_t {
+    
+    Focused,
+    
+    Blurred,
+    
+    BlurredWithoutFocusChange,
+  };
+  friend std::ostream& operator<<(std::ostream& aStream, IMEFocusState aState) {
+    switch (aState) {
+      case IMEFocusState::Focused:
+        return aStream << "IMEFocusState::Focused";
+      case IMEFocusState::Blurred:
+        return aStream << "IMEFocusState::Blurred";
+      case IMEFocusState::BlurredWithoutFocusChange:
+        return aStream << "IMEFocusState::BlurredWithoutFocusChange";
+      default:
+        MOZ_ASSERT_UNREACHABLE("Invalid value");
+        return aStream << "<illegal value>";
+    }
+  }
+  IMEFocusState mIMEFocusState = IMEFocusState::Blurred;
+
   
   
   
@@ -518,11 +538,7 @@ class IMContextWrapper final : public TextEventDispatcherListener {
   
   bool IsDestroyed() { return !mOwnerWindow; }
 
-  
-  void Focus();
-
-  
-  void Blur();
+  void NotifyIMEOfFocusChange(IMEFocusState aIMEFocusState);
 
   
   void Init();
