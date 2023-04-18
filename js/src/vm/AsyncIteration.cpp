@@ -32,50 +32,6 @@ using namespace js;
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
     CompletionKind completionKind, HandleValue argument);
 
-
-[[nodiscard]] static bool AsyncGeneratorAwaitedFulfilled(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
-    HandleValue value) {
-  MOZ_ASSERT(asyncGenObj->isExecuting(),
-             "Await fulfilled when not in 'Executing' state");
-
-  return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Normal, value);
-}
-
-
-[[nodiscard]] static bool AsyncGeneratorAwaitedRejected(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
-    HandleValue reason) {
-  MOZ_ASSERT(asyncGenObj->isExecuting(),
-             "Await rejected when not in 'Executing' state");
-
-  return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Throw, reason);
-}
-
-
-
-
-
-[[nodiscard]] static bool AsyncGeneratorYieldReturnAwaitedFulfilled(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
-    HandleValue value) {
-  MOZ_ASSERT(asyncGenObj->isAwaitingYieldReturn(),
-             "YieldReturn-Await fulfilled when not in "
-             "'AwaitingYieldReturn' state");
-
-  return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Return, value);
-}
-
-[[nodiscard]] static bool AsyncGeneratorYieldReturnAwaitedRejected(
-    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
-    HandleValue reason) {
-  MOZ_ASSERT(
-      asyncGenObj->isAwaitingYieldReturn(),
-      "YieldReturn-Await rejected when not in 'AwaitingYieldReturn' state");
-
-  return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Throw, reason);
-}
-
 enum class ResumeNextKind { Enqueue, Reject, Resolve };
 
 [[nodiscard]] static bool AsyncGeneratorDrainQueue(
@@ -394,6 +350,26 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 }
 
 
+[[nodiscard]] static bool AsyncGeneratorAwaitedFulfilled(
+    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
+    HandleValue value) {
+  MOZ_ASSERT(asyncGenObj->isExecuting(),
+             "Await fulfilled when not in 'Executing' state");
+
+  return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Normal, value);
+}
+
+
+[[nodiscard]] static bool AsyncGeneratorAwaitedRejected(
+    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
+    HandleValue reason) {
+  MOZ_ASSERT(asyncGenObj->isExecuting(),
+             "Await rejected when not in 'Executing' state");
+
+  return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Throw, reason);
+}
+
+
 
 [[nodiscard]] static bool AsyncGeneratorAwait(
     JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
@@ -452,6 +428,26 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
   }
 
   return true;
+}
+
+[[nodiscard]] static bool AsyncGeneratorYieldReturnAwaitedFulfilled(
+    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
+    HandleValue value) {
+  MOZ_ASSERT(asyncGenObj->isAwaitingYieldReturn(),
+             "YieldReturn-Await fulfilled when not in "
+             "'AwaitingYieldReturn' state");
+
+  return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Return, value);
+}
+
+[[nodiscard]] static bool AsyncGeneratorYieldReturnAwaitedRejected(
+    JSContext* cx, Handle<AsyncGeneratorObject*> asyncGenObj,
+    HandleValue reason) {
+  MOZ_ASSERT(
+      asyncGenObj->isAwaitingYieldReturn(),
+      "YieldReturn-Await rejected when not in 'AwaitingYieldReturn' state");
+
+  return AsyncGeneratorResume(cx, asyncGenObj, CompletionKind::Throw, reason);
 }
 
 [[nodiscard]] static bool AsyncGeneratorUnwrapYieldResumptionAndResume(
