@@ -701,12 +701,6 @@ enum class StyleTextRendering : uint8_t {
 };
 
 
-enum class StyleColorAdjust : uint8_t {
-  Economy = 0,
-  Exact = 1,
-};
-
-
 enum class StyleColorInterpolation : uint8_t {
   Auto = 0,
   Srgb = 1,

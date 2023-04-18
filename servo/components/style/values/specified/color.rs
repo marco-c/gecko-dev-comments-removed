@@ -983,3 +983,13 @@ impl ToCss for ColorScheme {
         Ok(())
     }
 }
+
+
+#[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToComputedValue, ToResolvedValue, ToShmem)]
+#[repr(u8)]
+pub enum PrintColorAdjust {
+    
+    Economy,
+    
+    Exact,
+}
