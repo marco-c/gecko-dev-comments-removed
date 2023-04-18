@@ -4,8 +4,8 @@
 
 
 
-#ifndef gc_FinalizationRegistry_h
-#define gc_FinalizationRegistry_h
+#ifndef gc_FinalizationObservers_h
+#define gc_FinalizationObservers_h
 
 #include "gc/Barrier.h"
 #include "gc/WeakMap.h"

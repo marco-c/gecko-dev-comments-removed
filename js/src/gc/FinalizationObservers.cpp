@@ -8,7 +8,7 @@
 
 
 
-#include "gc/FinalizationRegistry.h"
+#include "gc/FinalizationObservers.h"
 
 #include "mozilla/ScopeExit.h"
 
