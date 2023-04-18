@@ -596,6 +596,10 @@ void mozJSComponentLoader::CreateLoaderGlobal(JSContext* aCx,
   
   xpc::SetLocationForGlobal(global, aLocation);
 
+  MOZ_ASSERT(!mModuleLoader);
+  RefPtr<ComponentScriptLoader> scriptLoader = new ComponentScriptLoader;
+  mModuleLoader = new ComponentModuleLoader(scriptLoader, backstagePass);
+
   aGlobal.set(global);
 }
 
