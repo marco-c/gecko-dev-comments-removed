@@ -760,9 +760,8 @@ class HeapSize {
   }
   void removeBytes(size_t nbytes, bool updateRetainedSize) {
     if (updateRetainedSize) {
-      
-      
-      retainedBytes_ = nbytes <= retainedBytes_ ? retainedBytes_ - nbytes : 0;
+      MOZ_ASSERT(retainedBytes_ >= nbytes);
+      retainedBytes_ -= nbytes;
     }
     MOZ_ASSERT(bytes_ >= nbytes);
     bytes_ -= nbytes;
