@@ -281,8 +281,9 @@ bool TestJSWeakMapWithGrayUnmarking(MarkKeyOrDelegate markKey,
     
     
     JS::PrepareForFullGC(cx);
+    js::SliceBudget budget(TimeBudget(1000000));
     JS::StartIncrementalGC(cx, JS::GCOptions::Normal, JS::GCReason::DEBUG_GC,
-                           1000000);
+                           budget);
     MOZ_ASSERT(cx->runtime()->gc.state() == gc::State::Sweep);
     MOZ_ASSERT(cx->zone()->gcState() == Zone::MarkBlackAndGray);
 
@@ -409,8 +410,9 @@ bool TestInternalWeakMapWithGrayUnmarking(CellColor keyMarkColor,
     
     
     JS::PrepareForFullGC(cx);
+    js::SliceBudget budget(TimeBudget(1000000));
     JS::StartIncrementalGC(cx, JS::GCOptions::Normal, JS::GCReason::DEBUG_GC,
-                           1000000);
+                           budget);
     MOZ_ASSERT(cx->runtime()->gc.state() == gc::State::Sweep);
     MOZ_ASSERT(cx->zone()->gcState() == Zone::MarkBlackAndGray);
 
