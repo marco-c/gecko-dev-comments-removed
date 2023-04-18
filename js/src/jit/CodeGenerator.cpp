@@ -2530,7 +2530,11 @@ JitCode* JitRealm::generateRegExpMatcherStub(JSContext* cx) {
   Register temp1 = regs.takeAny();
   Register temp2 = regs.takeAny();
   Register temp3 = regs.takeAny();
-  Register temp4 = regs.takeAny();
+  Register maybeTemp4 = InvalidReg;
+  if (!regs.empty()) {
+    
+    maybeTemp4 = regs.takeAny();
+  }
   Register maybeTemp5 = InvalidReg;
   if (!regs.empty()) {
     
@@ -2654,9 +2658,6 @@ JitCode* JitRealm::generateRegExpMatcherStub(JSContext* cx) {
 
   size_t pairsVectorStartOffset =
       RegExpPairsVectorStartOffset(inputOutputDataStartOffset);
-  Address firstMatchPairStartAddress(
-      masm.getStackPointer(),
-      pairsVectorStartOffset + offsetof(MatchPair, start));
 
   
   Register matchIndex = temp2;
@@ -2672,22 +2673,66 @@ JitCode* JitRealm::generateRegExpMatcherStub(JSContext* cx) {
   BaseIndex matchPairLimit(masm.getStackPointer(), matchIndex, TimesEight,
                            pairsVectorStartOffset + offsetof(MatchPair, limit));
 
+  Label* depStrFailure = &oolEntry;
+  Label restoreRegExpAndLastIndex;
+
+  Register temp4;
+  if (maybeTemp4 == InvalidReg) {
+    depStrFailure = &restoreRegExpAndLastIndex;
+
+    
+    
+    masm.push(regexp);
+    temp4 = regexp;
+
+    
+    MOZ_ASSERT(pairCountAddress.base == masm.getStackPointer());
+    MOZ_ASSERT(matchPairStart.base == masm.getStackPointer());
+    MOZ_ASSERT(matchPairLimit.base == masm.getStackPointer());
+    pairCountAddress.offset += sizeof(void*);
+    matchPairStart.offset += sizeof(void*);
+    matchPairLimit.offset += sizeof(void*);
+  } else {
+    temp4 = maybeTemp4;
+  }
+
   Register temp5;
   if (maybeTemp5 == InvalidReg) {
+    depStrFailure = &restoreRegExpAndLastIndex;
+
     
     
-    
-    
+    masm.push(lastIndex);
     temp5 = lastIndex;
+
+    
+    MOZ_ASSERT(pairCountAddress.base == masm.getStackPointer());
+    MOZ_ASSERT(matchPairStart.base == masm.getStackPointer());
+    MOZ_ASSERT(matchPairLimit.base == masm.getStackPointer());
+    pairCountAddress.offset += sizeof(void*);
+    matchPairStart.offset += sizeof(void*);
+    matchPairLimit.offset += sizeof(void*);
   } else {
     temp5 = maybeTemp5;
   }
 
+  auto maybeRestoreRegExpAndLastIndex = [&]() {
+    
+    
+
+    if (maybeTemp5 == InvalidReg) {
+      masm.pop(lastIndex);
+    }
+    if (maybeTemp4 == InvalidReg) {
+      masm.pop(regexp);
+    }
+  };
+
   
   
   CreateDependentString depStrs[]{
-      {CharEncoding::TwoByte, temp3, temp4, temp5, &oolEntry},
-      {CharEncoding::Latin1, temp3, temp4, temp5, &oolEntry},
+      {CharEncoding::TwoByte, temp3, temp4, temp5, depStrFailure},
+      {CharEncoding::Latin1, temp3, temp4, temp5, depStrFailure},
   };
 
   {
@@ -2735,6 +2780,8 @@ JitCode* JitRealm::generateRegExpMatcherStub(JSContext* cx) {
     masm.bind(&done);
   }
 
+  maybeRestoreRegExpAndLastIndex();
+
   
   masm.store32(
       matchIndex,
@@ -2743,6 +2790,10 @@ JitCode* JitRealm::generateRegExpMatcherStub(JSContext* cx) {
   masm.store32(
       matchIndex,
       Address(object, elementsOffset + ObjectElements::offsetOfLength()));
+
+  Address firstMatchPairStartAddress(
+      masm.getStackPointer(),
+      pairsVectorStartOffset + offsetof(MatchPair, start));
 
   masm.loadPtr(Address(object, NativeObject::offsetOfSlots()), temp2);
 
@@ -2769,6 +2820,10 @@ JitCode* JitRealm::generateRegExpMatcherStub(JSContext* cx) {
   masm.bind(&matchResultFallback);
   CreateMatchResultFallback(masm, object, temp2, temp3, templateObj, &oolEntry);
   masm.jump(&matchResultJoin);
+
+  
+  masm.bind(&restoreRegExpAndLastIndex);
+  maybeRestoreRegExpAndLastIndex();
 
   
   
