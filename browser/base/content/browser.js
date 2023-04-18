@@ -536,6 +536,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 
 
+
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "gProtonPlacesTooltip",
