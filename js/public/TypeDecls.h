@@ -142,4 +142,11 @@ using jsid = JS::PropertyKey;
 #  define IF_RECORD_TUPLE(x, ...) __VA_ARGS__
 #endif
 
+
+#ifndef MOZ_DOM_STREAMS
+#  define IF_JS_STREAMS(x, ...) x
+#else
+#  define IF_JS_STREAMS(x, ...) __VA_ARGS__
+#endif
+
 #endif 
