@@ -810,8 +810,7 @@ static bool DefineConstructor(JSContext* cx, JS::Handle<JSObject*> global,
   if (!nameStr) {
     return false;
   }
-  JS::Rooted<JS::PropertyKey> nameKey(cx,
-                                      JS::PropertyKey::fromNonIntAtom(nameStr));
+  JS::Rooted<JS::PropertyKey> nameKey(cx, JS::PropertyKey::NonIntAtom(nameStr));
   return DefineConstructor(cx, global, nameKey, constructor);
 }
 
@@ -906,7 +905,7 @@ static JSObject* CreateInterfaceObject(
     return nullptr;
   }
 
-  JS::Rooted<jsid> nameStr(cx, JS::PropertyKey::fromNonIntAtom(name));
+  JS::Rooted<jsid> nameStr(cx, JS::PropertyKey::NonIntAtom(name));
   if (defineOnGlobal && !DefineConstructor(cx, global, nameStr, constructor)) {
     return nullptr;
   }

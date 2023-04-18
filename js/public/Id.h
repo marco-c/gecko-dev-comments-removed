@@ -152,8 +152,6 @@ class PropertyKey {
   
   
   
-  static PropertyKey fromPinnedString(JSString* str);
-
   
   
   
@@ -170,23 +168,25 @@ class PropertyKey {
   
   
   
-  
-  
-  
-  
-  
-  static PropertyKey fromNonIntAtom(JSAtom* atom) {
+  static PropertyKey NonIntAtom(JSAtom* atom) {
     MOZ_ASSERT((uintptr_t(atom) & TypeMask) == 0);
     MOZ_ASSERT(PropertyKey::isNonIntAtom(atom));
     return PropertyKey::fromRawBits(uintptr_t(atom) | StringTypeTag);
   }
 
   
-  static PropertyKey fromNonIntAtom(JSString* str) {
+  static PropertyKey NonIntAtom(JSString* str) {
     MOZ_ASSERT((uintptr_t(str) & TypeMask) == 0);
     MOZ_ASSERT(PropertyKey::isNonIntAtom(str));
     return PropertyKey::fromRawBits(uintptr_t(str) | StringTypeTag);
   }
+
+  
+  
+  
+  
+  
+  static PropertyKey fromPinnedString(JSString* str);
 
   
   

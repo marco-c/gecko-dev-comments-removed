@@ -286,7 +286,7 @@ already_AddRefed<XPCNativeInterface> XPCNativeInterface::NewInstance(
       NS_ERROR("bad constant name");
       return nullptr;
     }
-    jsid name = PropertyKey::fromNonIntAtom(str);
+    jsid name = PropertyKey::NonIntAtom(str);
 
     
     
@@ -311,7 +311,7 @@ already_AddRefed<XPCNativeInterface> XPCNativeInterface::NewInstance(
     return nullptr;
   }
 
-  RootedId interfaceName(cx, PropertyKey::fromNonIntAtom(str));
+  RootedId interfaceName(cx, PropertyKey::NonIntAtom(str));
 
   
   
