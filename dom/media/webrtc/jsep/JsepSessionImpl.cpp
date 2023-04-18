@@ -2054,91 +2054,33 @@ nsresult JsepSessionImpl::SetupIds() {
 
 void JsepSessionImpl::SetupDefaultCodecs() {
   
-  
-  
-  
-  
-  
-  
-  
-  
+  mSupportedCodecs.emplace_back(JsepAudioCodecDescription::CreateDefaultOpus());
+  mSupportedCodecs.emplace_back(JsepAudioCodecDescription::CreateDefaultG722());
+  mSupportedCodecs.emplace_back(JsepAudioCodecDescription::CreateDefaultPCMU());
+  mSupportedCodecs.emplace_back(JsepAudioCodecDescription::CreateDefaultPCMA());
   mSupportedCodecs.emplace_back(
-      new JsepAudioCodecDescription("109", "opus", 48000, 2));
-
-  mSupportedCodecs.emplace_back(
-      new JsepAudioCodecDescription("9", "G722", 8000, 1));
-
-  mSupportedCodecs.emplace_back(
-      new JsepAudioCodecDescription("0", "PCMU", 8000, 1));
-
-  mSupportedCodecs.emplace_back(
-      new JsepAudioCodecDescription("8", "PCMA", 8000, 1));
-
-  mSupportedCodecs.emplace_back(
-      new JsepAudioCodecDescription("101", "telephone-event", 8000, 1));
+      JsepAudioCodecDescription::CreateDefaultTelephoneEvent());
 
   bool useRtx =
       mRtxIsAllowed &&
       Preferences::GetBool("media.peerconnection.video.use_rtx", false);
   
   
-  UniquePtr<JsepVideoCodecDescription> vp8(
-      new JsepVideoCodecDescription("120", "VP8", 90000));
-  
-  vp8->mConstraints.maxFs = 12288;  
-  vp8->mConstraints.maxFps = 60;
-  if (useRtx) {
-    vp8->EnableRtx("124");
-  }
-  mSupportedCodecs.push_back(std::move(vp8));
+  mSupportedCodecs.emplace_back(
+      JsepVideoCodecDescription::CreateDefaultVP8(useRtx));
+  mSupportedCodecs.emplace_back(
+      JsepVideoCodecDescription::CreateDefaultVP9(useRtx));
+  mSupportedCodecs.emplace_back(
+      JsepVideoCodecDescription::CreateDefaultH264_1(useRtx));
+  mSupportedCodecs.emplace_back(
+      JsepVideoCodecDescription::CreateDefaultH264_0(useRtx));
+  mSupportedCodecs.emplace_back(
+      JsepVideoCodecDescription::CreateDefaultUlpFec());
 
-  UniquePtr<JsepVideoCodecDescription> vp9(
-      new JsepVideoCodecDescription("121", "VP9", 90000));
-  
-  vp9->mConstraints.maxFs = 12288;  
-  vp9->mConstraints.maxFps = 60;
-  if (useRtx) {
-    vp9->EnableRtx("125");
-  }
-  mSupportedCodecs.push_back(std::move(vp9));
+  mSupportedCodecs.emplace_back(
+      JsepApplicationCodecDescription::CreateDefault());
 
-  UniquePtr<JsepVideoCodecDescription> h264_1(
-      new JsepVideoCodecDescription("126", "H264", 90000));
-  h264_1->mPacketizationMode = 1;
-  
-  h264_1->mProfileLevelId = 0x42E00D;
-  if (useRtx) {
-    h264_1->EnableRtx("127");
-  }
-  mSupportedCodecs.push_back(std::move(h264_1));
-
-  UniquePtr<JsepVideoCodecDescription> h264_0(
-      new JsepVideoCodecDescription("97", "H264", 90000));
-  h264_0->mPacketizationMode = 0;
-  
-  h264_0->mProfileLevelId = 0x42E00D;
-  if (useRtx) {
-    h264_0->EnableRtx("98");
-  }
-  mSupportedCodecs.push_back(std::move(h264_0));
-
-  UniquePtr<JsepVideoCodecDescription> ulpfec(new JsepVideoCodecDescription(
-      "123",     
-      "ulpfec",  
-      90000      
-      ));
-  mSupportedCodecs.push_back(std::move(ulpfec));
-
-  mSupportedCodecs.emplace_back(new JsepApplicationCodecDescription(
-      "webrtc-datachannel", WEBRTC_DATACHANNEL_STREAMS_DEFAULT,
-      WEBRTC_DATACHANNEL_PORT_DEFAULT,
-      WEBRTC_DATACHANNEL_MAX_MESSAGE_SIZE_LOCAL));
-
-  UniquePtr<JsepVideoCodecDescription> red(new JsepVideoCodecDescription(
-      "122",  
-      "red",  
-      90000   
-      ));
+  auto red = JsepVideoCodecDescription::CreateDefaultRed();
   
   
   red->UpdateRedundantEncodings(mSupportedCodecs);

@@ -163,6 +163,35 @@ class JsepAudioCodecDescription : public JsepCodecDescription {
 
   JSEP_CODEC_CLONE(JsepAudioCodecDescription)
 
+  static UniquePtr<JsepAudioCodecDescription> CreateDefaultOpus() {
+    
+    
+    
+    
+    
+    
+    
+    
+    return MakeUnique<JsepAudioCodecDescription>("109", "opus", 48000, 2);
+  }
+
+  static UniquePtr<JsepAudioCodecDescription> CreateDefaultG722() {
+    return MakeUnique<JsepAudioCodecDescription>("9", "G722", 8000, 1);
+  }
+
+  static UniquePtr<JsepAudioCodecDescription> CreateDefaultPCMU() {
+    return MakeUnique<JsepAudioCodecDescription>("0", "PCMU", 8000, 1);
+  }
+
+  static UniquePtr<JsepAudioCodecDescription> CreateDefaultPCMA() {
+    return MakeUnique<JsepAudioCodecDescription>("8", "PCMA", 8000, 1);
+  }
+
+  static UniquePtr<JsepAudioCodecDescription> CreateDefaultTelephoneEvent() {
+    return MakeUnique<JsepAudioCodecDescription>("101", "telephone-event", 8000,
+                                                 1);
+  }
+
   SdpFmtpAttributeList::OpusParameters GetOpusParameters(
       const std::string& pt, const SdpMediaSection& msection) const {
     
@@ -295,6 +324,68 @@ class JsepVideoCodecDescription : public JsepCodecDescription {
   static constexpr SdpMediaSection::MediaType type = SdpMediaSection::kVideo;
 
   SdpMediaSection::MediaType Type() const override { return type; }
+
+  static UniquePtr<JsepVideoCodecDescription> CreateDefaultVP8(bool aUseRtx) {
+    auto codec = MakeUnique<JsepVideoCodecDescription>("120", "VP8", 90000);
+    
+    codec->mConstraints.maxFs = 12288;  
+    codec->mConstraints.maxFps = 60;
+    if (aUseRtx) {
+      codec->EnableRtx("124");
+    }
+    return codec;
+  }
+
+  static UniquePtr<JsepVideoCodecDescription> CreateDefaultVP9(bool aUseRtx) {
+    auto codec = MakeUnique<JsepVideoCodecDescription>("121", "VP9", 90000);
+    
+    codec->mConstraints.maxFs = 12288;  
+    codec->mConstraints.maxFps = 60;
+    if (aUseRtx) {
+      codec->EnableRtx("125");
+    }
+    return codec;
+  }
+
+  static UniquePtr<JsepVideoCodecDescription> CreateDefaultH264_0(
+      bool aUseRtx) {
+    auto codec = MakeUnique<JsepVideoCodecDescription>("97", "H264", 90000);
+    codec->mPacketizationMode = 0;
+    
+    codec->mProfileLevelId = 0x42E00D;
+    if (aUseRtx) {
+      codec->EnableRtx("98");
+    }
+    return codec;
+  }
+
+  static UniquePtr<JsepVideoCodecDescription> CreateDefaultH264_1(
+      bool aUseRtx) {
+    auto codec = MakeUnique<JsepVideoCodecDescription>("126", "H264", 90000);
+    codec->mPacketizationMode = 1;
+    
+    codec->mProfileLevelId = 0x42E00D;
+    if (aUseRtx) {
+      codec->EnableRtx("127");
+    }
+    return codec;
+  }
+
+  static UniquePtr<JsepVideoCodecDescription> CreateDefaultUlpFec() {
+    return MakeUnique<JsepVideoCodecDescription>(
+        "123",     
+        "ulpfec",  
+        90000      
+    );
+  }
+
+  static UniquePtr<JsepVideoCodecDescription> CreateDefaultRed() {
+    return MakeUnique<JsepVideoCodecDescription>(
+        "122",  
+        "red",  
+        90000   
+    );
+  }
 
   virtual void EnableTmmbr() {
     
@@ -894,6 +985,13 @@ class JsepApplicationCodecDescription : public JsepCodecDescription {
   SdpMediaSection::MediaType Type() const override { return type; }
 
   JSEP_CODEC_CLONE(JsepApplicationCodecDescription)
+
+  static UniquePtr<JsepApplicationCodecDescription> CreateDefault() {
+    return MakeUnique<JsepApplicationCodecDescription>(
+        "webrtc-datachannel", WEBRTC_DATACHANNEL_STREAMS_DEFAULT,
+        WEBRTC_DATACHANNEL_PORT_DEFAULT,
+        WEBRTC_DATACHANNEL_MAX_MESSAGE_SIZE_LOCAL);
+  }
 
   
   virtual bool Matches(const std::string& fmt,
