@@ -44,7 +44,7 @@ bool UtilityProcessImpl::Init(int aArgc, char* aArgv[]) {
   
   
   if (*sandboxingKind < SandboxingKind::GENERIC_UTILITY ||
-      *sandboxingKind >= SandboxingKind::COUNT) {
+      *sandboxingKind > SandboxingKind::GENERIC_UTILITY) {
     return false;
   }
 

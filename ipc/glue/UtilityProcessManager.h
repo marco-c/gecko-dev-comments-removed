@@ -7,9 +7,7 @@
 #define _include_ipc_glue_UtilityProcessManager_h_
 #include "mozilla/MozPromise.h"
 #include "mozilla/ipc/UtilityProcessHost.h"
-#include "mozilla/EnumeratedArray.h"
 #include "nsIObserver.h"
-#include "nsTArray.h"
 
 namespace mozilla {
 
@@ -39,53 +37,33 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   void OnProcessUnexpectedShutdown(UtilityProcessHost* aHost);
 
   
-  Maybe<base::ProcessId> ProcessPid(SandboxingKind aSandbox);
+  
+  void NotifyRemoteActorDestroyed();
 
   
-  RefPtr<MemoryReportingProcess> GetProcessMemoryReporter(
-      UtilityProcessParent* parent);
+  Maybe<base::ProcessId> ProcessPid();
 
   
   
-  RefPtr<UtilityProcessParent> GetProcessParent(SandboxingKind aSandbox) {
-    RefPtr<ProcessFields> p = GetProcess(aSandbox);
-    if (!p) {
-      return nullptr;
-    }
-    return p->mProcessParent;
-  }
+  RefPtr<MemoryReportingProcess> GetProcessMemoryReporter();
 
   
-  nsTArray<RefPtr<UtilityProcessParent>> GetAllProcessesProcessParent() {
-    nsTArray<RefPtr<UtilityProcessParent>> rv;
-    for (auto& p : mProcesses) {
-      if (p && p->mProcessParent) {
-        rv.AppendElement(p->mProcessParent);
-      }
-    }
-    return rv;
-  }
+  UtilityProcessParent* GetProcessParent() { return mProcessParent; }
 
   
-  UtilityProcessHost* Process(SandboxingKind aSandbox) {
-    RefPtr<ProcessFields> p = GetProcess(aSandbox);
-    if (!p) {
-      return nullptr;
-    }
-    return p->mProcess;
-  }
+  bool AttemptedProcess() const { return mNumProcessAttempts > 0; }
 
   
-  void CleanShutdown(SandboxingKind aSandbox);
+  UtilityProcessHost* Process() { return mProcess; }
 
   
-  void CleanShutdownAllProcesses();
+  void CleanShutdown();
 
  private:
   ~UtilityProcessManager();
 
-  bool IsProcessLaunching(SandboxingKind aSandbox);
-  bool IsProcessDestroyed(SandboxingKind aSandbox);
+  bool IsProcessLaunching();
+  bool IsProcessDestroyed() const;
 
   
   void OnXPCOMShutdown();
@@ -93,7 +71,7 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
 
   UtilityProcessManager();
 
-  void DestroyProcess(SandboxingKind aSandbox);
+  void DestroyProcess();
 
   bool IsShutdown() const;
 
@@ -111,41 +89,19 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   friend class Observer;
 
   RefPtr<Observer> mObserver;
+  uint32_t mNumProcessAttempts = 0;
+  uint32_t mNumUnexpectedCrashes = 0;
 
-  class ProcessFields final {
-   public:
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ProcessFields);
-
-    explicit ProcessFields(SandboxingKind aSandbox) : mSandbox(aSandbox){};
-
-    
-    
-    RefPtr<GenericNonExclusivePromise> mLaunchPromise;
-
-    uint32_t mNumProcessAttempts = 0;
-    uint32_t mNumUnexpectedCrashes = 0;
-
-    
-    UtilityProcessHost* mProcess = nullptr;
-    RefPtr<UtilityProcessParent> mProcessParent = nullptr;
-
-    
-    
-    
-    nsTArray<dom::Pref> mQueuedPrefs;
-
-    SandboxingKind mSandbox = SandboxingKind::COUNT;
-
-   protected:
-    ~ProcessFields() = default;
-  };
-
-  EnumeratedArray<SandboxingKind, SandboxingKind::COUNT, RefPtr<ProcessFields>>
-      mProcesses;
-
-  RefPtr<ProcessFields> GetProcess(SandboxingKind);
-  bool NoMoreProcesses();
-  uint16_t AliveProcesses();
+  
+  UtilityProcessHost* mProcess = nullptr;
+  UtilityProcessParent* mProcessParent = nullptr;
+  
+  
+  
+  nsTArray<dom::Pref> mQueuedPrefs;
+  
+  
+  RefPtr<GenericNonExclusivePromise> mLaunchPromise;
 };
 
 }  
