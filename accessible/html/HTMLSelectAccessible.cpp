@@ -194,8 +194,8 @@ uint64_t HTMLSelectOptionAccessible::NativeState() const {
     
     LocalAccessible* listAcc = LocalParent();
     if (listAcc) {
-      nsIntRect optionRect = Bounds();
-      nsIntRect listRect = listAcc->Bounds();
+      LayoutDeviceIntRect optionRect = Bounds();
+      LayoutDeviceIntRect listRect = listAcc->Bounds();
       if (optionRect.Y() < listRect.Y() ||
           optionRect.YMost() > listRect.YMost()) {
         state |= states::OFFSCREEN;

@@ -270,12 +270,12 @@ Maybe<nsRect> RemoteAccessibleBase<Derived>::RetrieveCachedBounds() const {
 }
 
 template <class Derived>
-nsIntRect RemoteAccessibleBase<Derived>::Bounds() const {
+LayoutDeviceIntRect RemoteAccessibleBase<Derived>::Bounds() const {
   if (mCachedFields) {
     Maybe<nsRect> maybeBounds = RetrieveCachedBounds();
     if (maybeBounds) {
       nsRect bounds = *maybeBounds;
-      nsIntRect devPxBounds;
+      LayoutDeviceIntRect devPxBounds;
       dom::CanonicalBrowsingContext* cbc =
           static_cast<dom::BrowserParent*>(mDoc->Manager())
               ->GetBrowsingContext()
@@ -290,11 +290,11 @@ nsIntRect RemoteAccessibleBase<Derived>::Bounds() const {
                 const_cast<Accessible*>(acc)->AsLocal()) {
           
           
-          nsIntRect localBounds = localAcc->Bounds();
+          LayoutDeviceIntRect localBounds = localAcc->Bounds();
 
           
-          devPxBounds =
-              bounds.ToNearestPixels(presContext->AppUnitsPerDevPixel());
+          devPxBounds = LayoutDeviceIntRect::FromAppUnitsToNearest(
+              bounds, presContext->AppUnitsPerDevPixel());
 
           
           
@@ -351,14 +351,14 @@ nsIntRect RemoteAccessibleBase<Derived>::Bounds() const {
       
       nsPoint viewportOffset = presShell->GetVisualViewportOffset() -
                                presShell->GetLayoutViewportOffset();
-      devPxBounds.MoveBy(-(
-          viewportOffset.ToNearestPixels(presContext->AppUnitsPerDevPixel())));
+      devPxBounds.MoveBy(-(LayoutDeviceIntPoint::FromAppUnitsToNearest(
+          viewportOffset, presContext->AppUnitsPerDevPixel())));
 
       return devPxBounds;
     }
   }
 
-  return nsIntRect();
+  return LayoutDeviceIntRect();
 }
 
 template <class Derived>

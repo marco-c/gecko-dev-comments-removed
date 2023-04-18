@@ -186,7 +186,8 @@ class HyperTextAccessible : public AccessibleWrap,
   
 
 
-  nsIntRect TextBounds(
+
+  LayoutDeviceIntRect TextBounds(
       int32_t aStartOffset, int32_t aEndOffset,
       uint32_t aCoordType =
           nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE);
@@ -195,7 +196,7 @@ class HyperTextAccessible : public AccessibleWrap,
 
 
 
-  nsIntRect CharBounds(int32_t aOffset, uint32_t aCoordType) {
+  LayoutDeviceIntRect CharBounds(int32_t aOffset, uint32_t aCoordType) {
     int32_t endOffset = aOffset == static_cast<int32_t>(CharacterCount())
                             ? aOffset
                             : aOffset + 1;
@@ -397,8 +398,10 @@ class HyperTextAccessible : public AccessibleWrap,
 
 
 
-  nsIntRect GetBoundsInFrame(nsIFrame* aFrame, uint32_t aStartRenderedOffset,
-                             uint32_t aEndRenderedOffset);
+
+  LayoutDeviceIntRect GetBoundsInFrame(nsIFrame* aFrame,
+                                       uint32_t aStartRenderedOffset,
+                                       uint32_t aEndRenderedOffset);
 
   
 
