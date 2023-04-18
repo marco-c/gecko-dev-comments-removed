@@ -45,7 +45,7 @@ class BrowserProcessSubThread : public base::Thread {
   
   
 
-  static StaticMutex sLock MOZ_UNANNOTATED;
+  static StaticMutex sLock;
 
   
   

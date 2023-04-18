@@ -3011,7 +3011,7 @@ class PreferencesWriter final {
   static Atomic<int> sPendingWriteCount;
 
   
-  static StaticMutex sWritingToFile MOZ_UNANNOTATED;
+  static StaticMutex sWritingToFile;
 };
 
 Atomic<PrefSaveData*> PreferencesWriter::sPendingWriteData(nullptr);
@@ -5360,7 +5360,7 @@ static void InitAlwaysPref(const nsCString& aName, T* aCache,
 }
 
 static Atomic<bool> sOncePrefRead(false);
-static StaticMutex sOncePrefMutex MOZ_UNANNOTATED;
+static StaticMutex sOncePrefMutex;
 
 namespace StaticPrefs {
 

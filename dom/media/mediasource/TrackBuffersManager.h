@@ -514,7 +514,7 @@ class TrackBuffersManager final
   Atomic<EvictionState> mEvictionState;
 
   
-  mutable Mutex mMutex MOZ_UNANNOTATED;
+  mutable Mutex mMutex;
   
   
   

@@ -530,8 +530,8 @@ class ScriptPreloader : public nsIObserver,
   
   AutoMemMap* mCacheData;
 
-  Monitor mMonitor MOZ_UNANNOTATED;
-  Monitor mSaveMonitor MOZ_UNANNOTATED;
+  Monitor mMonitor;
+  Monitor mSaveMonitor;
 };
 
 }  

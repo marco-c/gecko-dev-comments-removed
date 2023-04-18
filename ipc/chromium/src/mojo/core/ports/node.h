@@ -287,7 +287,7 @@ class Node {
   
   
   
-  mozilla::Mutex ports_lock_ MOZ_UNANNOTATED{"Ports Lock"};
+  mozilla::Mutex ports_lock_{"Ports Lock"};
   std::unordered_map<LocalPortName, RefPtr<Port>> ports_;
 
   

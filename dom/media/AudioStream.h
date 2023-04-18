@@ -329,7 +329,7 @@ class AudioStream final {
   soundtouch::SoundTouch* mTimeStretcher;
 
   
-  Monitor mMonitor MOZ_UNANNOTATED;
+  Monitor mMonitor;
 
   const uint32_t mOutChannels;
   const AudioConfig::ChannelLayout::ChannelMap mChannelMap;

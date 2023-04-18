@@ -115,7 +115,7 @@ class HandlerProvider final : public IGeckoBackChannel,
                                 HRESULT* result);
 
   Atomic<uint32_t> mRefCnt;
-  Mutex mMutex MOZ_UNANNOTATED;  
+  Mutex mMutex;  
   const IID mTargetUnkIid;
   mscom::InterceptorTargetPtr<IUnknown>
       mTargetUnk;  
@@ -136,7 +136,7 @@ class HandlerProvider final : public IGeckoBackChannel,
   
   
   IA2PayloadPtr mPayload;
-  Mutex mPayloadMutex MOZ_UNANNOTATED;  
+  Mutex mPayloadMutex;  
 };
 
 }  

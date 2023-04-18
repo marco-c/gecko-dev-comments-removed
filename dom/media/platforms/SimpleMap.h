@@ -46,7 +46,7 @@ class SimpleMap {
   }
 
  private:
-  Mutex mMutex MOZ_UNANNOTATED;  
+  Mutex mMutex;  
   AutoTArray<Element, 16> mMap;
 };
 

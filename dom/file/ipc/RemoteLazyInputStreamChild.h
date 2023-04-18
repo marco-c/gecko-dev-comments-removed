@@ -78,7 +78,7 @@ class RemoteLazyInputStreamChild final : public PRemoteLazyInputStreamChild {
   nsTArray<RemoteLazyInputStream*> mStreams;
 
   
-  Mutex mMutex MOZ_UNANNOTATED;
+  Mutex mMutex;
 
   const nsID mID;
   const uint64_t mSize;

@@ -521,7 +521,7 @@ class ProcessExecutableMemory {
   uint8_t* base_;
 
   
-  Mutex lock_ MOZ_UNANNOTATED;
+  Mutex lock_;
 
   
   

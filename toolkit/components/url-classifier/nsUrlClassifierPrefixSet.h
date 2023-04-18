@@ -64,7 +64,7 @@ class nsUrlClassifierPrefixSet final : public nsIUrlClassifierPrefixSet {
   
   
   
-  mutable mozilla::Mutex mLock MOZ_UNANNOTATED;
+  mutable mozilla::Mutex mLock;
   
   
   nsTArray<uint32_t> mIndexPrefixes;

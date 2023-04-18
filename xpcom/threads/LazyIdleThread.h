@@ -131,7 +131,7 @@ class LazyIdleThread final : public nsIThread,
   
 
 
-  mozilla::Mutex mMutex MOZ_UNANNOTATED;
+  mozilla::Mutex mMutex;
 
   
 

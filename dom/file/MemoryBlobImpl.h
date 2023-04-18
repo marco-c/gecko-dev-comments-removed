@@ -97,7 +97,7 @@ class MemoryBlobImpl final : public BaseBlobImpl {
     
     
     
-    static mozilla::StaticMutex sDataOwnerMutex MOZ_UNANNOTATED;
+    static mozilla::StaticMutex sDataOwnerMutex;
     static mozilla::StaticAutoPtr<mozilla::LinkedList<DataOwner> > sDataOwners;
     static bool sMemoryReporterRegistered;
 

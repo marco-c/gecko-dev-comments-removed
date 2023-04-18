@@ -116,7 +116,7 @@ class Service : public mozIStorageService,
 
 
 
-  Mutex mMutex MOZ_UNANNOTATED;
+  Mutex mMutex;
 
   struct AutoVFSRegistration {
     int Init(UniquePtr<sqlite3_vfs> aVFS);
@@ -136,7 +136,7 @@ class Service : public mozIStorageService,
   
 
 
-  Mutex mRegistrationMutex MOZ_UNANNOTATED;
+  Mutex mRegistrationMutex;
 
   
 

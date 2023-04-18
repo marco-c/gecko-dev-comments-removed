@@ -113,13 +113,13 @@ class AnimationSurfaceProvider final : public ISurfaceProvider,
   RefPtr<RasterImage> mImage;
 
   
-  mutable Mutex mDecodingMutex MOZ_UNANNOTATED;
+  mutable Mutex mDecodingMutex;
 
   
   RefPtr<Decoder> mDecoder;
 
   
-  mutable Mutex mFramesMutex MOZ_UNANNOTATED;
+  mutable Mutex mFramesMutex;
 
   
   UniquePtr<AnimationFrameBuffer> mFrames;

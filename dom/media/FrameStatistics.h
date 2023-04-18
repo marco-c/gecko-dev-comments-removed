@@ -171,7 +171,7 @@ class FrameStatistics {
   ~FrameStatistics() = default;
 
   
-  mutable ReentrantMonitor mReentrantMonitor MOZ_UNANNOTATED;
+  mutable ReentrantMonitor mReentrantMonitor;
 
   FrameStatisticsData mFrameStatisticsData;
 };

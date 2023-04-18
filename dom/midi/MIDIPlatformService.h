@@ -149,7 +149,7 @@ class MIDIPlatformService {
   nsClassHashtable<nsStringHashKey, MIDIMessageQueue> mMessageQueues;
 
   
-  Mutex mMessageQueueMutex MOZ_UNANNOTATED;
+  Mutex mMessageQueueMutex;
 };
 
 }  

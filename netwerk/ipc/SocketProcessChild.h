@@ -177,7 +177,7 @@ class SocketProcessChild final
 
   bool mShuttingDown{false};
   
-  Mutex mMutex MOZ_UNANNOTATED{"SocketProcessChild::mMutex"};
+  Mutex mMutex{"SocketProcessChild::mMutex"};
   nsTHashMap<uint64_t, RefPtr<BackgroundDataBridgeParent>>
       mBackgroundDataBridgeMap;
 };

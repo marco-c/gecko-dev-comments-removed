@@ -167,12 +167,10 @@ class Interceptor final : public WeakReferenceSupport,
  private:
   InterceptorTargetPtr<IUnknown> mTarget;
   RefPtr<IInterceptorSink> mEventSink;
-  mozilla::Mutex mInterceptorMapMutex
-      MOZ_UNANNOTATED;  
+  mozilla::Mutex mInterceptorMapMutex;  
   
   nsTArray<MapEntry> mInterceptorMap;
-  mozilla::Mutex mStdMarshalMutex
-      MOZ_UNANNOTATED;  
+  mozilla::Mutex mStdMarshalMutex;  
   RefPtr<IUnknown> mStdMarshalUnk;
   IMarshal* mStdMarshal;  
   static MOZ_THREAD_LOCAL(bool) tlsCreatingStdMarshal;

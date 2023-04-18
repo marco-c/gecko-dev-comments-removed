@@ -543,7 +543,7 @@ class nsChildView final : public nsBaseWidget {
   
   
   
-  mozilla::Mutex mCompositingLock MOZ_UNANNOTATED;
+  mozilla::Mutex mCompositingLock;
 
   mozilla::ViewRegion mNonDraggableRegion;
 

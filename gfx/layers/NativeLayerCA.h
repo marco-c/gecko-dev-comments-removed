@@ -146,7 +146,7 @@ class NativeLayerRootCA : public NativeLayerRoot {
 
   void UpdateMouseMovedRecently(const MutexAutoLock& aProofOfLock);
 
-  Mutex mMutex MOZ_UNANNOTATED;  
+  Mutex mMutex;  
   Representation mOnscreenRepresentation;
   Representation mOffscreenRepresentation;
   NativeLayerRootSnapshotterCA* mWeakSnapshotter = nullptr;
@@ -381,7 +381,7 @@ class NativeLayerCA : public NativeLayer {
   void ForAllRepresentations(F aFn);
 
   
-  Mutex mMutex MOZ_UNANNOTATED;
+  Mutex mMutex;
 
   
   

@@ -306,7 +306,7 @@ class TestNode : public NodeDelegate {
   base::WaitableEvent idle_event_;
 
   
-  mozilla::Mutex lock_ MOZ_UNANNOTATED{"TestNode"};
+  mozilla::Mutex lock_{"TestNode"};
   bool started_ = false;
   bool dispatching_ = false;
   bool should_quit_ = false;
@@ -445,9 +445,9 @@ class PortsTest : public testing::Test, public MessageRouter {
 
   
   
-  mozilla::Mutex global_lock_ MOZ_UNANNOTATED{"PortsTest Global Lock"};
+  mozilla::Mutex global_lock_{"PortsTest Global Lock"};
 
-  mozilla::Mutex lock_ MOZ_UNANNOTATED{"PortsTest Lock"};
+  mozilla::Mutex lock_{"PortsTest Lock"};
   std::map<NodeName, TestNode*> nodes_;
 };
 

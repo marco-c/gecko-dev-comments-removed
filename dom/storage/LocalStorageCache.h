@@ -244,7 +244,7 @@ class LocalStorageCache : public LocalStorageCacheBridge {
   Data mData[kDataSetCount];
 
   
-  mozilla::Monitor mMonitor MOZ_UNANNOTATED;
+  mozilla::Monitor mMonitor;
 
   
   

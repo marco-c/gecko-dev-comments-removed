@@ -122,12 +122,4 @@ struct MOZ_RAII AutoLock {
 
 using MutexAutoLock = AutoLock<Mutex>;
 
-
-
-
-
-
-#define MOZ_UNANNOTATED
-#define MOZ_ANNOTATED
-
 #endif

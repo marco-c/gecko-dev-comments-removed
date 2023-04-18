@@ -1246,7 +1246,7 @@ class GCRuntime {
   
   friend class js::AutoLockGC;
   friend class js::AutoLockGCBgAlloc;
-  js::Mutex lock MOZ_UNANNOTATED;
+  js::Mutex lock;
 
   friend class BackgroundSweepTask;
   friend class BackgroundFreeTask;

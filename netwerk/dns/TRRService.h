@@ -119,7 +119,7 @@ class TRRService : public TRRServiceBase,
   void AddEtcHosts(const nsTArray<nsCString>&);
 
   bool mInitialized{false};
-  Mutex mLock MOZ_UNANNOTATED{"TRRService"};
+  Mutex mLock{"TRRService"};
 
   nsCString mPrivateCred;  
   nsCString mConfirmationNS{"example.com"_ns};

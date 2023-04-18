@@ -23,7 +23,7 @@ using AudioDeviceSet = CubebDeviceEnumerator::AudioDeviceSet;
 
 
 static StaticRefPtr<CubebDeviceEnumerator> sInstance;
-static StaticMutex sInstanceMutex MOZ_UNANNOTATED;
+static StaticMutex sInstanceMutex;
 
 
 CubebDeviceEnumerator* CubebDeviceEnumerator::GetInstance() {

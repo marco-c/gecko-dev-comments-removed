@@ -74,6 +74,6 @@ class nsPNGEncoder final : public imgIEncoder {
   
   
   
-  ReentrantMonitor mReentrantMonitor MOZ_UNANNOTATED;
+  ReentrantMonitor mReentrantMonitor;
 };
 #endif  

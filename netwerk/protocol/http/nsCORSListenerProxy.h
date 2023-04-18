@@ -123,7 +123,7 @@ class nsCORSListenerProxy final : public nsIStreamListener,
   
   
   
-  mutable mozilla::Mutex mMutex MOZ_UNANNOTATED;
+  mutable mozilla::Mutex mMutex;
 };
 
 #endif

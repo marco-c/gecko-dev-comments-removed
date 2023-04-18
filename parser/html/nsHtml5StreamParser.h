@@ -606,7 +606,7 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
 
-  mozilla::Mutex mTokenizerMutex MOZ_UNANNOTATED;
+  mozilla::Mutex mTokenizerMutex;
 
   
 
@@ -645,7 +645,7 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
   nsTArray<mozilla::UniquePtr<nsHtml5Speculation>> mSpeculations;
-  mozilla::Mutex mSpeculationMutex MOZ_UNANNOTATED;
+  mozilla::Mutex mSpeculationMutex;
 
   
 
@@ -727,7 +727,7 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
 
-  mozilla::Mutex mFlushTimerMutex MOZ_UNANNOTATED;
+  mozilla::Mutex mFlushTimerMutex;
 
   
 

@@ -111,7 +111,7 @@ class CacheIOThread final : public nsIThreadObserver {
 
   static CacheIOThread* sSelf;
 
-  mozilla::Monitor mMonitor MOZ_UNANNOTATED{"CacheIOThread"};
+  mozilla::Monitor mMonitor{"CacheIOThread"};
   PRThread* mThread{nullptr};
   
   

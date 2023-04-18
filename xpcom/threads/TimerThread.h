@@ -78,7 +78,7 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   
   
   
-  Monitor mMonitor MOZ_UNANNOTATED;
+  Monitor mMonitor;
 
   bool mShutdown;
   bool mWaiting;

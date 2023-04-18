@@ -108,7 +108,7 @@ namespace {
 
 
 
-static StaticMutex gTelemetryOriginMutex MOZ_UNANNOTATED;
+static StaticMutex gTelemetryOriginMutex;
 
 typedef nsTArray<Tuple<const char*, const char*>> OriginHashesList;
 UniquePtr<OriginHashesList> gOriginHashesList;

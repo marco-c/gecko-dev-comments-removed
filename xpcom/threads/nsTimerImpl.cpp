@@ -56,7 +56,7 @@ class TimerThreadWrapper {
   uint32_t AllowedEarlyFiringMicroseconds();
 
  private:
-  static mozilla::StaticMutex sMutex MOZ_UNANNOTATED;
+  static mozilla::StaticMutex sMutex;
   TimerThread* mThread;
 };
 
@@ -310,7 +310,7 @@ static mozilla::LogModule* GetTimerFiringsLog() { return sTimerFiringsLog; }
 #include <math.h>
 
 
-mozilla::StaticMutex nsTimerImpl::sDeltaMutex MOZ_UNANNOTATED;
+mozilla::StaticMutex nsTimerImpl::sDeltaMutex;
 
 double nsTimerImpl::sDeltaSumSquared = 0;
 

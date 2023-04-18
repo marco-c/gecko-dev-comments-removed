@@ -392,7 +392,7 @@ class MediaFormatReader final
     
     
     
-    Mutex mMutex MOZ_UNANNOTATED;
+    Mutex mMutex;
     
     RefPtr<MediaDataDecoder> mDecoder;
     nsCString mDescription;

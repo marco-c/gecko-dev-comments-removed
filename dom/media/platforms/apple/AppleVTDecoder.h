@@ -112,7 +112,7 @@ class AppleVTDecoder : public MediaDataDecoder,
   
   Atomic<bool> mIsFlushing;
   
-  Monitor mMonitor MOZ_UNANNOTATED;
+  Monitor mMonitor;
   ReorderQueue mReorderQueue;
   MozMonitoredPromiseHolder<DecodePromise> mPromise;
 

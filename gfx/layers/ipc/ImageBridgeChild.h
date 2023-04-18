@@ -354,7 +354,7 @@ class ImageBridgeChild final : public PImageBridgeChild,
   
 
 
-  Mutex mContainerMapLock MOZ_UNANNOTATED;
+  Mutex mContainerMapLock;
   std::unordered_map<uint64_t, RefPtr<ImageContainerListener>>
       mImageContainerListeners;
   RefPtr<ImageContainerListener> FindListener(

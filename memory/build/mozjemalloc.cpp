@@ -631,7 +631,7 @@ static bool malloc_initialized;
 static Atomic<bool, SequentiallyConsistent> malloc_initialized;
 #endif
 
-static StaticMutex gInitLock MOZ_UNANNOTATED = {STATIC_MUTEX_INIT};
+static StaticMutex gInitLock = {STATIC_MUTEX_INIT};
 
 
 
@@ -803,7 +803,7 @@ class AddressRadixTree {
   static_assert(kBitsAtLevel1 + (kHeight - 1) * kBitsPerLevel == Bits,
                 "AddressRadixTree parameters don't work out");
 
-  Mutex mLock MOZ_UNANNOTATED;
+  Mutex mLock;
   void** mRoot;
 
  public:
@@ -979,7 +979,7 @@ struct arena_t {
   arena_id_t mId;
 
   
-  Mutex mLock MOZ_UNANNOTATED;
+  Mutex mLock;
 
   arena_stats_t mStats;
 
@@ -1204,7 +1204,7 @@ class ArenaCollection {
 
   inline arena_t* GetDefault() { return mDefaultArena; }
 
-  Mutex mLock MOZ_UNANNOTATED;
+  Mutex mLock;
 
  private:
   inline arena_t* GetByIdInternal(arena_id_t aArenaId, bool aIsPrivate);
@@ -1222,7 +1222,7 @@ static ArenaCollection gArenas;
 static AddressRadixTree<(sizeof(void*) << 3) - LOG2(kChunkSize)> gChunkRTree;
 
 
-static Mutex chunks_mtx MOZ_UNANNOTATED;
+static Mutex chunks_mtx;
 
 
 
@@ -1232,7 +1232,7 @@ static RedBlackTree<extent_node_t, ExtentTreeSzTrait> gChunksBySize;
 static RedBlackTree<extent_node_t, ExtentTreeTrait> gChunksByAddress;
 
 
-static Mutex huge_mtx MOZ_UNANNOTATED;
+static Mutex huge_mtx;
 
 
 static RedBlackTree<extent_node_t, ExtentTreeTrait> huge;
@@ -1252,7 +1252,7 @@ static void* base_pages;
 static void* base_next_addr;
 static void* base_next_decommitted;
 static void* base_past_addr;  
-static Mutex base_mtx MOZ_UNANNOTATED;
+static Mutex base_mtx;
 static size_t base_mapped;
 static size_t base_committed;
 

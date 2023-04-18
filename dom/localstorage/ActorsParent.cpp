@@ -1368,7 +1368,7 @@ class Connection final : public CachingDatabaseConnection {
 
 
 class Connection::InitTemporaryOriginHelper final : public Runnable {
-  mozilla::Monitor mMonitor MOZ_UNANNOTATED;
+  mozilla::Monitor mMonitor;
   const OriginMetadata mOriginMetadata;
   nsString mOriginDirectoryPath;
   nsresult mIOThreadResultCode;
@@ -2614,7 +2614,7 @@ class QuotaClient final : public mozilla::dom::quota::Client {
 
   static QuotaClient* sInstance;
 
-  Mutex mShadowDatabaseMutex MOZ_UNANNOTATED;
+  Mutex mShadowDatabaseMutex;
   bool mShutdownRequested;
 
  public:

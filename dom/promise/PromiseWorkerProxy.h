@@ -207,7 +207,7 @@ class PromiseWorkerProxy : public PromiseNativeHandler,
   const PromiseWorkerProxyStructuredCloneCallbacks* mCallbacks;
 
   
-  Mutex mCleanUpLock MOZ_UNANNOTATED;
+  Mutex mCleanUpLock;
 };
 }  
 }  

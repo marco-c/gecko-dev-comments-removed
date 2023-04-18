@@ -503,7 +503,7 @@ class SimulatorProcess {
   
   
   
-  Mutex cacheLock_ MOZ_UNANNOTATED;
+  Mutex cacheLock_;
 
   Redirection* redirection_;
   ICacheMap icache_;

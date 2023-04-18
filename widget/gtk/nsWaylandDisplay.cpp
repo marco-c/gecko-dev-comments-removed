@@ -29,7 +29,7 @@ namespace widget {
 
 
 static RefPtr<nsWaylandDisplay> gWaylandDisplays[MAX_DISPLAY_CONNECTIONS];
-static StaticMutex gWaylandDisplayArrayWriteMutex MOZ_UNANNOTATED;
+static StaticMutex gWaylandDisplayArrayWriteMutex;
 
 
 void WaylandDispatchDisplays() {

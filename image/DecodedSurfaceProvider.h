@@ -75,7 +75,7 @@ class DecodedSurfaceProvider final : public ISurfaceProvider,
   RefPtr<RasterImage> mImage;
 
   
-  Mutex mMutex MOZ_UNANNOTATED;
+  Mutex mMutex;
 
   
   RefPtr<Decoder> mDecoder;

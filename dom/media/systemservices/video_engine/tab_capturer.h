@@ -61,7 +61,7 @@ class TabCapturer {
   
   
   
-  Monitor mMonitor MOZ_UNANNOTATED;
+  Monitor mMonitor;
   webrtc::DesktopCapturer::Callback* mCallback = nullptr;
 
   uint64_t mBrowserId = 0;
