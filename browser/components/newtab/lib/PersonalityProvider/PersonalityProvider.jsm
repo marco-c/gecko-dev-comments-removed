@@ -20,7 +20,6 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 const { BasePromiseWorker } = ChromeUtils.import(
@@ -52,10 +51,6 @@ this.PersonalityProvider = class PersonalityProvider {
       "resource://activity-stream/lib/PersonalityProvider/PersonalityProviderWorker.js"
     );
 
-    
-    
-    this._personalityProviderWorker.ExceptionHandlers["OS.File.Error"] =
-      OS.File.Error.fromMsg;
     return this._personalityProviderWorker;
   }
 
