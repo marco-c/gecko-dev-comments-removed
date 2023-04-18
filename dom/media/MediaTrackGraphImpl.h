@@ -394,7 +394,8 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   
 
-  ProcessedMediaTrack* GetDeviceTrack(CubebUtils::AudioDeviceID aID);
+  NativeInputTrack* GetOrCreateDeviceTrack(
+      CubebUtils::AudioDeviceID aID, const PrincipalHandle& aPrincipalHandle);
 
   
 

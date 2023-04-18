@@ -15,14 +15,17 @@ namespace mozilla {
 
 class NativeInputTrack : public ProcessedMediaTrack {
   ~NativeInputTrack() = default;
-  explicit NativeInputTrack(TrackRate aSampleRate)
+  NativeInputTrack(TrackRate aSampleRate,
+                   const PrincipalHandle& aPrincipalHandle)
       : ProcessedMediaTrack(aSampleRate, MediaSegment::AUDIO,
                             new AudioSegment()),
+        mPrincipalHandle(aPrincipalHandle),
         mIsBufferingAppended(false) {}
 
  public:
   
-  static NativeInputTrack* Create(MediaTrackGraphImpl* aGraph);
+  static NativeInputTrack* Create(MediaTrackGraphImpl* aGraph,
+                                  const PrincipalHandle& aPrincipalHandle);
 
   size_t AddUser();
   size_t RemoveUser();
@@ -45,7 +48,9 @@ class NativeInputTrack : public ProcessedMediaTrack {
   
   NativeInputTrack* AsNativeInputTrack() override { return this; }
 
- public:
+  
+  const PrincipalHandle mPrincipalHandle;
+
   
   nsTArray<RefPtr<AudioDataListener>> mDataUsers;
 

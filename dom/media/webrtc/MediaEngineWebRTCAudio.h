@@ -163,12 +163,11 @@ class AudioInputProcessing : public AudioDataListener {
 
   bool IsEnded() const { return mEnded; }
 
-  const PrincipalHandle& GetPrincipalHandle() const { return mPrincipal; }
-
  private:
   ~AudioInputProcessing() = default;
   void EnsureAudioProcessing(MediaTrackGraphImpl* aGraph, uint32_t aChannels);
   void ResetAudioProcessing(MediaTrackGraphImpl* aGraph);
+  PrincipalHandle GetCheckedPrincipal(const AudioSegment& aSegment);
   
   
   
@@ -200,6 +199,7 @@ class AudioInputProcessing : public AudioDataListener {
   AlignedFloatBuffer mInputDownmixBuffer;
   
   AudioSegment mSegment;
+  
   
   const PrincipalHandle mPrincipal;
   
@@ -249,7 +249,8 @@ class AudioInputTrack : public ProcessedMediaTrack {
   
   
   nsresult OpenAudioInput(CubebUtils::AudioDeviceID aId,
-                          AudioDataListener* aListener);
+                          AudioDataListener* aListener,
+                          const PrincipalHandle& aPrincipal);
   void CloseAudioInput();
   Maybe<CubebUtils::AudioDeviceID> DeviceId() const;
   void Destroy() override;
@@ -268,7 +269,6 @@ class AudioInputTrack : public ProcessedMediaTrack {
   
   
   void GetInputSourceData(AudioSegment& aOutput,
-                          const PrincipalHandle& aPrincipal,
                           const MediaInputPort* aPort, GraphTime aFrom,
                           GraphTime aTo) const;
 
