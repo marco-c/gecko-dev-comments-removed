@@ -837,9 +837,6 @@ class WorkerJSContext final : public mozilla::CycleCollectedJSContext {
     
     
     
-    nsCycleCollector_shutdown();
-
-    
     
     mWorkerPrivate = nullptr;
   }
@@ -2137,10 +2134,6 @@ WorkerThreadPrimaryRunnable::Run() {
       return NS_ERROR_FAILURE;
     }
 
-    
-    nsWeakPtr globalScopeSentinel;
-    nsWeakPtr debuggerScopeSentinel;
-
     {
       nsCycleCollector_startup();
 
@@ -2192,8 +2185,9 @@ WorkerThreadPrimaryRunnable::Run() {
 
       
       
-      globalScopeSentinel = do_GetWeakReference(mWorkerPrivate->GlobalScope());
-      debuggerScopeSentinel =
+      nsWeakPtr globalScopeSentinel =
+          do_GetWeakReference(mWorkerPrivate->GlobalScope());
+      nsWeakPtr debuggerScopeSentinel =
           do_GetWeakReference(mWorkerPrivate->DebuggerGlobalScope());
       MOZ_ASSERT(!mWorkerPrivate->GlobalScope() || globalScopeSentinel);
       MOZ_ASSERT(!mWorkerPrivate->DebuggerGlobalScope() ||
@@ -2212,25 +2206,30 @@ WorkerThreadPrimaryRunnable::Run() {
 
       
       
+      nsCycleCollector_shutdown();
+
       
-    }
+      nsCOMPtr<DOMEventTargetHelper> globalScopeAlive =
+          do_QueryReferent(globalScopeSentinel);
+      MOZ_ASSERT(!globalScopeAlive);
+      nsCOMPtr<DOMEventTargetHelper> debuggerScopeAlive =
+          do_QueryReferent(debuggerScopeSentinel);
+      MOZ_ASSERT(!debuggerScopeAlive);
 
-    
-    nsCOMPtr<DOMEventTargetHelper> globalScopeAlive =
-        do_QueryReferent(globalScopeSentinel);
-    MOZ_ASSERT(!globalScopeAlive);
-    nsCOMPtr<DOMEventTargetHelper> debuggerScopeAlive =
-        do_QueryReferent(debuggerScopeSentinel);
-    MOZ_ASSERT(!debuggerScopeAlive);
+      
+      if (globalScopeAlive) {
+        static_cast<WorkerGlobalScopeBase*>(globalScopeAlive.get())
+            ->NoteWorkerTerminated();
+        globalScopeAlive = nullptr;
+      }
+      if (debuggerScopeAlive) {
+        static_cast<WorkerGlobalScopeBase*>(debuggerScopeAlive.get())
+            ->NoteWorkerTerminated();
+        debuggerScopeAlive = nullptr;
+      }
 
-    
-    if (globalScopeAlive) {
-      static_cast<WorkerGlobalScopeBase*>(globalScopeAlive.get())
-          ->NoteWorkerTerminated();
-    }
-    if (debuggerScopeAlive) {
-      static_cast<WorkerGlobalScopeBase*>(debuggerScopeAlive.get())
-          ->NoteWorkerTerminated();
+      
+      
     }
   }
 
