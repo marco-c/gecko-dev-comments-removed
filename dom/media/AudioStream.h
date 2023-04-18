@@ -90,14 +90,17 @@ class AudioClock {
   
   bool GetPreservesPitch() const;
 
+  
   uint32_t GetInputRate() const { return mInRate; }
   uint32_t GetOutputRate() const { return mOutRate; }
 
  private:
   
-  Atomic<uint32_t> mOutRate;
   
+  Atomic<uint32_t> mOutRate;
   bool mPreservesPitch;
+  
+  
   
   const UniquePtr<FrameHistory> mFrameHistory;
 #  ifdef XP_MACOSX
@@ -307,18 +310,22 @@ class AudioStream final {
   long DataCallback(void* aBuffer, long aFrames);
   void StateCallback(cubeb_state aState);
 
-  nsresult EnsureTimeStretcherInitializedUnlocked();
+  
+  nsresult EnsureTimeStretcherInitialized();
+  void GetUnprocessed(AudioBufferWriter& aWriter);
+  void GetTimeStretched(AudioBufferWriter& aWriter);
+  void UpdatePlaybackRateIfNeeded();
 
   
   
   bool IsValidAudioFormat(Chunk* aChunk);
 
-  void GetUnprocessed(AudioBufferWriter& aWriter);
-  void GetTimeStretched(AudioBufferWriter& aWriter);
-
   template <typename Function, typename... Args>
   int InvokeCubeb(Function aFunction, Args&&... aArgs);
   bool CheckThreadIdChanged();
+  void AssertIsOnAudioThread() const;
+
+  soundtouch::SoundTouch* mTimeStretcher;
 
   
   Monitor mMonitor;
@@ -326,7 +333,6 @@ class AudioStream final {
   uint32_t mChannels;
   uint32_t mOutChannels;
   AudioClock mAudioClock;
-  soundtouch::SoundTouch* mTimeStretcher;
 
   WavDumper mDumpFile;
 
@@ -355,7 +361,10 @@ class AudioStream final {
   const bool mSandboxed = false;
 
   MozPromiseHolder<MediaSink::EndedPromise> mEndedPromise;
-  Atomic<bool> mPlaybackComplete;
+  std::atomic<bool> mPlaybackComplete;
+  
+  std::atomic<float> mPlaybackRate;
+  std::atomic<bool> mPreservesPitch;
 };
 
 }  

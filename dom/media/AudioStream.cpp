@@ -134,23 +134,26 @@ class FrameHistory {
   double mBasePosition;
 };
 
-AudioStream::AudioStream(DataSource& aSource)
-    : mMonitor("AudioStream"),
-      mChannels(0),
-      mOutChannels(0),
-      mTimeStretcher(nullptr),
+AudioStream::AudioStream(DataSource& aSource, uint32_t aInRate,
+                         uint32_t aOutputChannels,
+                         AudioConfig::ChannelLayout::ChannelMap aChannelMap)
+    : mTimeStretcher(nullptr),
+      mMonitor("AudioStream"),
+      mOutChannels(aOutputChannels),
+      mChannelMap(aChannelMap),
+      mAudioClock(aInRate),
       mState(INITIALIZED),
       mDataSource(aSource),
       mAudioThreadId(ProfilerThreadId{}),
-      mSandboxed(CubebUtils::SandboxEnabled()) {}
+      mSandboxed(CubebUtils::SandboxEnabled()),
+      mPlaybackComplete(false),
+      mPlaybackRate(1.0f),
+      mPreservesPitch(true) {}
 
 AudioStream::~AudioStream() {
   LOG("deleted, state %d", mState);
   MOZ_ASSERT(mState == SHUTDOWN && !mCubebStream,
              "Should've called Shutdown() before deleting an AudioStream");
-  if (mTimeStretcher) {
-    soundtouch::destroySoundTouchObj(mTimeStretcher);
-  }
 }
 
 size_t AudioStream::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
@@ -163,8 +166,8 @@ size_t AudioStream::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
   return amount;
 }
 
-nsresult AudioStream::EnsureTimeStretcherInitializedUnlocked() {
-  mMonitor.AssertCurrentThreadOwns();
+nsresult AudioStream::EnsureTimeStretcherInitialized() {
+  AssertIsOnAudioThread();
   if (!mTimeStretcher) {
     mTimeStretcher = soundtouch::createSoundTouchObj();
     mTimeStretcher->setSampleRate(mAudioClock.GetInputRate());
@@ -193,59 +196,25 @@ nsresult AudioStream::EnsureTimeStretcherInitializedUnlocked() {
 
 nsresult AudioStream::SetPlaybackRate(double aPlaybackRate) {
   TRACE("AudioStream::SetPlaybackRate");
-  
-  
-  MonitorAutoLock mon(mMonitor);
-
   NS_ASSERTION(
       aPlaybackRate > 0.0,
       "Can't handle negative or null playbackrate in the AudioStream.");
-  
-  
-  if (aPlaybackRate == mAudioClock.GetPlaybackRate()) {
+  if (aPlaybackRate == mPlaybackRate) {
     return NS_OK;
   }
 
-  if (EnsureTimeStretcherInitializedUnlocked() != NS_OK) {
-    return NS_ERROR_FAILURE;
-  }
+  mPlaybackRate = static_cast<float>(aPlaybackRate);
 
-  mAudioClock.SetPlaybackRate(aPlaybackRate);
-
-  if (mAudioClock.GetPreservesPitch()) {
-    mTimeStretcher->setTempo(aPlaybackRate);
-    mTimeStretcher->setRate(1.0f);
-  } else {
-    mTimeStretcher->setTempo(1.0f);
-    mTimeStretcher->setRate(aPlaybackRate);
-  }
   return NS_OK;
 }
 
 nsresult AudioStream::SetPreservesPitch(bool aPreservesPitch) {
-  TRACE("AudiOStream::SetPreservesPitch");
-  
-  
-  MonitorAutoLock mon(mMonitor);
-
-  
-  if (aPreservesPitch == mAudioClock.GetPreservesPitch()) {
+  TRACE("AudioStream::SetPreservesPitch");
+  if (aPreservesPitch == mPreservesPitch) {
     return NS_OK;
   }
 
-  if (EnsureTimeStretcherInitializedUnlocked() != NS_OK) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if (aPreservesPitch) {
-    mTimeStretcher->setTempo(mAudioClock.GetPlaybackRate());
-    mTimeStretcher->setRate(1.0f);
-  } else {
-    mTimeStretcher->setTempo(1.0f);
-    mTimeStretcher->setRate(mAudioClock.GetPlaybackRate());
-  }
-
-  mAudioClock.SetPreservesPitch(aPreservesPitch);
+  mPreservesPitch = aPreservesPitch;
 
   return NS_OK;
 }
@@ -453,6 +422,13 @@ void AudioStream::Shutdown() {
     mCubebStream.reset();
   }
 
+  
+  
+  if (mTimeStretcher) {
+    soundtouch::destroySoundTouchObj(mTimeStretcher);
+    mTimeStretcher = nullptr;
+  }
+
   mState = SHUTDOWN;
   mEndedPromise.ResolveIfExists(true, __func__);
 }
@@ -513,8 +489,7 @@ bool AudioStream::IsValidAudioFormat(Chunk* aChunk) {
 
 void AudioStream::GetUnprocessed(AudioBufferWriter& aWriter) {
   TRACE("AudioStream::GetUnprocessed");
-  mMonitor.AssertCurrentThreadOwns();
-
+  AssertIsOnAudioThread();
   
   
   if (mTimeStretcher && mTimeStretcher->numSamples()) {
@@ -530,10 +505,19 @@ void AudioStream::GetUnprocessed(AudioBufferWriter& aWriter) {
     
     NS_WARNING_ASSERTION(mTimeStretcher->numUnprocessedSamples() == 0,
                          "no samples");
+  } else if (mTimeStretcher) {
+    
+    
+    soundtouch::destroySoundTouchObj(mTimeStretcher);
+    mTimeStretcher = nullptr;
   }
 
   while (aWriter.Available() > 0) {
-    UniquePtr<Chunk> c = mDataSource.PopFrames(aWriter.Available());
+    UniquePtr<Chunk> c;
+    {
+      MonitorAutoLock lock(mMonitor);
+      c = mDataSource.PopFrames(aWriter.Available());
+    }
     if (c->Frames() == 0) {
       break;
     }
@@ -549,10 +533,8 @@ void AudioStream::GetUnprocessed(AudioBufferWriter& aWriter) {
 
 void AudioStream::GetTimeStretched(AudioBufferWriter& aWriter) {
   TRACE("AudioStream::GetTimeStretched");
-  mMonitor.AssertCurrentThreadOwns();
-
-  
-  if (EnsureTimeStretcherInitializedUnlocked() != NS_OK) {
+  AssertIsOnAudioThread();
+  if (EnsureTimeStretcherInitialized() != NS_OK) {
     return;
   }
 
@@ -560,7 +542,11 @@ void AudioStream::GetTimeStretched(AudioBufferWriter& aWriter) {
       ceil(aWriter.Available() * mAudioClock.GetPlaybackRate());
 
   while (mTimeStretcher->numSamples() < aWriter.Available()) {
-    UniquePtr<Chunk> c = mDataSource.PopFrames(toPopFrames);
+    UniquePtr<Chunk> c;
+    {
+      MonitorAutoLock mon(mMonitor);
+      c = mDataSource.PopFrames(toPopFrames);
+    }
     if (c->Frames() == 0) {
       break;
     }
@@ -605,12 +591,37 @@ bool AudioStream::CheckThreadIdChanged() {
   return false;
 }
 
+void AudioStream::AssertIsOnAudioThread() const {
+  
+  
+  MOZ_ASSERT(mAudioThreadId.load() == profiler_current_thread_id());
+}
+
+void AudioStream::UpdatePlaybackRateIfNeeded() {
+  AssertIsOnAudioThread();
+  if (mAudioClock.GetPreservesPitch() == mPreservesPitch &&
+      mAudioClock.GetPlaybackRate() == mPlaybackRate) {
+    return;
+  }
+  EnsureTimeStretcherInitialized();
+
+  mAudioClock.SetPlaybackRate(mPlaybackRate);
+  mAudioClock.SetPreservesPitch(mPreservesPitch);
+
+  if (mPreservesPitch) {
+    mTimeStretcher->setTempo(mPlaybackRate);
+    mTimeStretcher->setRate(1.0f);
+  } else {
+    mTimeStretcher->setTempo(1.0f);
+    mTimeStretcher->setRate(mPlaybackRate);
+  }
+}
+
 long AudioStream::DataCallback(void* aBuffer, long aFrames) {
-  if (!mSandboxed && CheckThreadIdChanged()) {
+  if (CheckThreadIdChanged() && !mSandboxed) {
     CubebUtils::GetAudioThreadRegistry()->Register(mAudioThreadId);
   }
   WebCore::DenormalDisabler disabler;
-  MonitorAutoLock lock(mMonitor);
 
   TRACE_AUDIO_CALLBACK_BUDGET(aFrames, mAudioClock.GetInputRate());
   TRACE("AudioStream::DataCallback");
@@ -619,6 +630,8 @@ long AudioStream::DataCallback(void* aBuffer, long aFrames) {
   if (SoftRealTimeLimitReached()) {
     DemoteThreadFromRealTime();
   }
+
+  UpdatePlaybackRateIfNeeded();
 
   auto writer = AudioBufferWriter(
       Span<AudioDataValue>(reinterpret_cast<AudioDataValue*>(aBuffer),
@@ -631,13 +644,19 @@ long AudioStream::DataCallback(void* aBuffer, long aFrames) {
     GetTimeStretched(writer);
   }
 
+  bool ended;
+
+  {
+    MonitorAutoLock lock(mMonitor);
+    ended = mDataSource.Ended();
+  }
+
   
   
-  if (!mDataSource.Ended()) {
+  if (ended) {
 #ifndef XP_MACOSX
     MonitorAutoLock mon(mMonitor);
 #endif
-    printf("Update frame history: +%ld\n", aFrames - writer.Available());
     mAudioClock.UpdateFrameHistory(aFrames - writer.Available(),
                                    writer.Available());
     if (writer.Available() > 0) {
@@ -649,6 +668,13 @@ long AudioStream::DataCallback(void* aBuffer, long aFrames) {
   } else {
     
     
+    if (mTimeStretcher && writer.Available()) {
+      soundtouch::destroySoundTouchObj(mTimeStretcher);
+      mTimeStretcher = nullptr;
+    }
+#ifndef XP_MACOSX
+    MonitorAutoLock mon(mMonitor);
+#endif
     mAudioClock.UpdateFrameHistory(aFrames - writer.Available(), 0);
   }
 
