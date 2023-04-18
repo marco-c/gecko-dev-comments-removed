@@ -39,8 +39,7 @@ class XMLDocument : public Document {
                                      nsILoadGroup* aLoadGroup,
                                      nsISupports* aContainer,
                                      nsIStreamListener** aDocListener,
-                                     bool aReset = true,
-                                     nsIContentSink* aSink = nullptr) override;
+                                     bool aReset = true) override;
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void EndLoad() override;
