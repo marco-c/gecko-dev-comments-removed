@@ -52,7 +52,6 @@ async function testDoorHanger(
         "privacy.restrict3rdpartystorage.userInteractionRequiredForHosts",
         "tracking.example.com,tracking.example.org",
       ],
-      ["browser.contentblocking.state-partitioning.mvp.ui.enabled", true],
       
       ["network.cookie.sameSite.laxByDefault", false],
     ],

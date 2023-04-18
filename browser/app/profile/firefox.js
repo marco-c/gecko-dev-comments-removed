@@ -1818,8 +1818,6 @@ pref("browser.contentblocking.fingerprinting.preferences.ui.enabled", true);
 
 pref("browser.contentblocking.reject-and-isolate-cookies.preferences.ui.enabled", true);
 
-pref("browser.contentblocking.state-partitioning.mvp.ui.enabled", true);
-
 
 
 

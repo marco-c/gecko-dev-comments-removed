@@ -447,9 +447,6 @@ add_task(async function test3rdPartyStoragePermission() {
   
   
   
-  SpecialPowers.pushPrefEnv({
-    set: [["browser.contentblocking.state-partitioning.mvp.ui.enabled", true]],
-  });
 
   await BrowserTestUtils.withNewTab(PERMISSIONS_PAGE, async function(browser) {
     await openPermissionPopup();
