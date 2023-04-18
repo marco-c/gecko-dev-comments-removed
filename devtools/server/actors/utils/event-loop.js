@@ -165,6 +165,12 @@ class EventLoop {
         if (Cu.isRemoteProxy(window.parent) && !Cu.isRemoteProxy(window)) {
           return true;
         }
+
+        
+        if (this.thread.getParent().ignoreSubFrames) {
+          return true;
+        }
+
         try {
           
           
