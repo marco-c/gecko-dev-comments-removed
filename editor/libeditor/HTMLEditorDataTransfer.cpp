@@ -11,6 +11,7 @@
 #include "EditAction.h"
 #include "EditorDOMPoint.h"
 #include "EditorUtils.h"
+#include "HTMLEditHelpers.h"
 #include "HTMLEditUtils.h"
 #include "InternetCiter.h"
 #include "SelectionState.h"
@@ -316,7 +317,9 @@ class MOZ_STACK_CLASS HTMLEditor::HTMLWithContextInserter final {
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MoveCaretOutsideOfLink(
       Element& aLinkElement, const EditorDOMPoint& aPointToPutCaret);
 
-  HTMLEditor& mHTMLEditor;
+  
+  
+  MOZ_KNOWN_LIVE HTMLEditor& mHTMLEditor;
 };
 
 class MOZ_STACK_CLASS
@@ -510,8 +513,8 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
       mHTMLEditor, ScrollSelectionIntoView::Yes, __FUNCTION__);
   IgnoredErrorResult ignoredError;
   AutoEditSubActionNotifier startToHandleEditSubAction(
-      MOZ_KnownLive(mHTMLEditor), EditSubAction::ePasteHTMLContent,
-      nsIEditor::eNext, ignoredError);
+      mHTMLEditor, EditSubAction::ePasteHTMLContent, nsIEditor::eNext,
+      ignoredError);
   if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
     return ignoredError.StealNSResult();
   }
@@ -542,8 +545,7 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
   
   
   if (aPointToInsert.IsSet()) {
-    rv = MOZ_KnownLive(mHTMLEditor)
-             .PrepareToInsertContent(aPointToInsert, aDoDeleteSelection);
+    rv = mHTMLEditor.PrepareToInsertContent(aPointToInsert, aDoDeleteSelection);
     if (NS_FAILED(rv)) {
       NS_WARNING("EditorBase::PrepareToInsertContent() failed");
       return rv;
@@ -581,8 +583,7 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
     
     
     if (aDoDeleteSelection) {
-      nsresult rv =
-          MOZ_KnownLive(mHTMLEditor).DeleteSelectionAsSubAction(eNone, eStrip);
+      nsresult rv = mHTMLEditor.DeleteSelectionAsSubAction(eNone, eStrip);
       if (NS_FAILED(rv)) {
         NS_WARNING(
             "EditorBase::DeleteSelectionAsSubAction(eNone, eStrip) failed");
@@ -609,7 +610,7 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
   }
 
   if (!cellSelectionMode) {
-    rv = MOZ_KnownLive(mHTMLEditor).DeleteSelectionAndPrepareToCreateNode();
+    rv = mHTMLEditor.DeleteSelectionAndPrepareToCreateNode();
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::DeleteSelectionAndPrepareToCreateNode() failed");
       return rv;
@@ -617,11 +618,9 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
 
     if (aClearStyle) {
       
-      EditResult result =
-          MOZ_KnownLive(mHTMLEditor)
-              .ClearStyleAt(
-                  EditorDOMPoint(mHTMLEditor.SelectionRef().AnchorRef()),
-                  nullptr, nullptr, SpecifiedStyle::Preserve);
+      EditResult result = mHTMLEditor.ClearStyleAt(
+          EditorDOMPoint(mHTMLEditor.SelectionRef().AnchorRef()), nullptr,
+          nullptr, SpecifiedStyle::Preserve);
       if (result.Failed()) {
         NS_WARNING("HTMLEditor::ClearStyleAt() failed");
         return result.Rv();
@@ -634,8 +633,8 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
     
     
     {
-      AutoSelectionRestorer restoreSelectionLater(MOZ_KnownLive(mHTMLEditor));
-      rv = MOZ_KnownLive(mHTMLEditor).DeleteTableCellWithTransaction(1);
+      AutoSelectionRestorer restoreSelectionLater(mHTMLEditor);
+      rv = mHTMLEditor.DeleteTableCellWithTransaction(1);
       if (NS_FAILED(rv)) {
         NS_WARNING("HTMLEditor::DeleteTableCellWithTransaction(1) failed");
         return rv;
@@ -662,7 +661,7 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
 
   mHTMLEditor.UndefineCaretBidiLevel();
 
-  rv = MOZ_KnownLive(mHTMLEditor).EnsureNoPaddingBRElementForEmptyEditor();
+  rv = mHTMLEditor.EnsureNoPaddingBRElementForEmptyEditor();
   if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
@@ -671,8 +670,7 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
                        "failed, but ignored");
 
   if (NS_SUCCEEDED(rv) && mHTMLEditor.SelectionRef().IsCollapsed()) {
-    nsresult rv =
-        MOZ_KnownLive(mHTMLEditor).EnsureCaretNotAfterInvisibleBRElement();
+    nsresult rv = mHTMLEditor.EnsureCaretNotAfterInvisibleBRElement();
     if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
@@ -680,7 +678,7 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
                          "HTMLEditor::EnsureCaretNotAfterInvisibleBRElement() "
                          "failed, but ignored");
     if (NS_SUCCEEDED(rv)) {
-      nsresult rv = MOZ_KnownLive(mHTMLEditor).PrepareInlineStylesForCaret();
+      nsresult rv = mHTMLEditor.PrepareInlineStylesForCaret();
       if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
@@ -713,9 +711,8 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
   if (HTMLBRElement* invisibleBRElement =
           GetInvisibleBRElementAtPoint(pointToInsert)) {
     AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
-    nsresult rv =
-        MOZ_KnownLive(mHTMLEditor)
-            .DeleteNodeWithTransaction(MOZ_KnownLive(*invisibleBRElement));
+    nsresult rv = mHTMLEditor.DeleteNodeWithTransaction(
+        MOZ_KnownLive(*invisibleBRElement));
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed.");
       return rv;
@@ -727,13 +724,19 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
 
   if (pointToInsert.IsInTextNode()) {
     const SplitNodeResult splitNodeResult =
-        MOZ_KnownLive(mHTMLEditor)
-            .SplitNodeDeepWithTransaction(
-                MOZ_KnownLive(*pointToInsert.GetContainerAsContent()),
-                pointToInsert, SplitAtEdges::eAllowToCreateEmptyContainer);
+        mHTMLEditor.SplitNodeDeepWithTransaction(
+            MOZ_KnownLive(*pointToInsert.GetContainerAsContent()),
+            pointToInsert, SplitAtEdges::eAllowToCreateEmptyContainer);
     if (splitNodeResult.isErr()) {
       NS_WARNING("HTMLEditor::SplitNodeDeepWithTransaction() failed");
       return splitNodeResult.unwrapErr();
+    }
+    nsresult rv = splitNodeResult.SuggestCaretPointTo(
+        mHTMLEditor, {SuggestCaret::OnlyIfHasSuggestion,
+                      SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
+    if (NS_FAILED(rv)) {
+      NS_WARNING("SplitNodeResult::SuggestCaretPointTo() failed");
+      return rv;
     }
     pointToInsert = splitNodeResult.AtSplitPoint<EditorDOMPoint>();
     if (MOZ_UNLIKELY(!pointToInsert.IsSet())) {
@@ -773,7 +776,7 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
   const EditorDOMPoint pointToPutCaret =
       GetNewCaretPointAfterInsertingHTML(lastInsertedPoint.inspect());
   
-  rv = MOZ_KnownLive(mHTMLEditor).CollapseSelectionTo(pointToPutCaret);
+  rv = mHTMLEditor.CollapseSelectionTo(pointToPutCaret);
   if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
     NS_WARNING(
         "EditorBase::CollapseSelectionTo() caused destroying the editor");
@@ -853,10 +856,9 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
       for (nsCOMPtr<nsIContent> firstChild = content->GetFirstChild();
            firstChild; firstChild = content->GetFirstChild()) {
         EditorDOMPoint insertedPoint =
-            MOZ_KnownLive(mHTMLEditor)
-                .InsertNodeIntoProperAncestorWithTransaction(
-                    *firstChild, pointToInsert,
-                    SplitAtEdges::eDoNotCreateEmptyContainer);
+            mHTMLEditor.InsertNodeIntoProperAncestorWithTransaction(
+                *firstChild, pointToInsert,
+                SplitAtEdges::eDoNotCreateEmptyContainer);
         if (!insertedPoint.IsSet()) {
           NS_WARNING(
               "HTMLEditor::InsertNodeIntoProperAncestorWithTransaction("
@@ -899,19 +901,17 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
               MOZ_ASSERT(pointToInsert.IsSet());
               AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
               DebugOnly<nsresult> rvIgnored =
-                  MOZ_KnownLive(mHTMLEditor)
-                      .DeleteNodeWithTransaction(
-                          MOZ_KnownLive(*pointToInsert.GetChild()));
+                  mHTMLEditor.DeleteNodeWithTransaction(
+                      MOZ_KnownLive(*pointToInsert.GetChild()));
               NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                                    "HTMLEditor::DeleteNodeWithTransaction() "
                                    "failed, but ignored");
             }
           }
           EditorDOMPoint insertedPoint =
-              MOZ_KnownLive(mHTMLEditor)
-                  .InsertNodeIntoProperAncestorWithTransaction(
-                      *firstChild, pointToInsert,
-                      SplitAtEdges::eDoNotCreateEmptyContainer);
+              mHTMLEditor.InsertNodeIntoProperAncestorWithTransaction(
+                  *firstChild, pointToInsert,
+                  SplitAtEdges::eDoNotCreateEmptyContainer);
           if (!insertedPoint.IsSet()) {
             NS_WARNING(
                 "HTMLEditor::InsertNodeIntoProperAncestorWithTransaction("
@@ -952,10 +952,9 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
       for (nsCOMPtr<nsIContent> firstChild = content->GetFirstChild();
            firstChild; firstChild = content->GetFirstChild()) {
         EditorDOMPoint insertedPoint =
-            MOZ_KnownLive(mHTMLEditor)
-                .InsertNodeIntoProperAncestorWithTransaction(
-                    *firstChild, pointToInsert,
-                    SplitAtEdges::eDoNotCreateEmptyContainer);
+            mHTMLEditor.InsertNodeIntoProperAncestorWithTransaction(
+                *firstChild, pointToInsert,
+                SplitAtEdges::eDoNotCreateEmptyContainer);
         if (!insertedPoint.IsSet()) {
           NS_WARNING(
               "HTMLEditor::InsertNodeIntoProperAncestorWithTransaction("
@@ -979,10 +978,9 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
       
       
       EditorDOMPoint insertedPoint =
-          MOZ_KnownLive(mHTMLEditor)
-              .InsertNodeIntoProperAncestorWithTransaction(
-                  MOZ_KnownLive(content), pointToInsert,
-                  SplitAtEdges::eDoNotCreateEmptyContainer);
+          mHTMLEditor.InsertNodeIntoProperAncestorWithTransaction(
+              MOZ_KnownLive(content), pointToInsert,
+              SplitAtEdges::eDoNotCreateEmptyContainer);
       NS_WARNING_ASSERTION(
           insertedPoint.IsSet(),
           "HTMLEditor::InsertNodeIntoProperAncestorWithTransaction("
@@ -1008,10 +1006,10 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
           }
           OwningNonNull<nsIContent> oldParentContent(
               *childContent->GetParent());
-          insertedPoint = MOZ_KnownLive(mHTMLEditor)
-                              .InsertNodeIntoProperAncestorWithTransaction(
-                                  oldParentContent, pointToInsert,
-                                  SplitAtEdges::eDoNotCreateEmptyContainer);
+          insertedPoint =
+              mHTMLEditor.InsertNodeIntoProperAncestorWithTransaction(
+                  oldParentContent, pointToInsert,
+                  SplitAtEdges::eDoNotCreateEmptyContainer);
           NS_WARNING_ASSERTION(
               insertedPoint.IsSet(),
               "HTMLEditor::InsertNodeIntoProperAncestorWithTransaction("
@@ -1054,26 +1052,21 @@ nsresult HTMLEditor::HTMLWithContextInserter::MoveCaretOutsideOfLink(
   
   
   const SplitNodeResult splitLinkResult =
-      MOZ_KnownLive(mHTMLEditor)
-          .SplitNodeDeepWithTransaction(
-              aLinkElement, aPointToPutCaret,
-              SplitAtEdges::eDoNotCreateEmptyContainer);
+      mHTMLEditor.SplitNodeDeepWithTransaction(
+          aLinkElement, aPointToPutCaret,
+          SplitAtEdges::eDoNotCreateEmptyContainer);
   if (splitLinkResult.EditorDestroyed()) {
     NS_WARNING(
         "HTMLEditor::SplitNodeDeepWithTransaction() caused destroying the "
         "editor");
     return NS_ERROR_EDITOR_DESTROYED;
   }
-  
-  splitLinkResult.IgnoreCaretPointSuggestion();
-  NS_WARNING_ASSERTION(
-      splitLinkResult.isOk(),
-      "HTMLEditor::SplitNodeDeepWithTransaction() failed, but ignored");
+
   if (nsIContent* previousContentOfSplitPoint =
           splitLinkResult.GetPreviousContent()) {
-    nsresult rv = MOZ_KnownLive(mHTMLEditor)
-                      .CollapseSelectionTo(EditorRawDOMPoint::After(
-                          *previousContentOfSplitPoint));
+    splitLinkResult.IgnoreCaretPointSuggestion();
+    nsresult rv = mHTMLEditor.CollapseSelectionTo(
+        EditorRawDOMPoint::After(*previousContentOfSplitPoint));
     if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
       NS_WARNING(
           "EditorBase::CollapseSelectionTo() caused destroying the editor");
@@ -1082,8 +1075,15 @@ nsresult HTMLEditor::HTMLWithContextInserter::MoveCaretOutsideOfLink(
     NS_WARNING_ASSERTION(
         NS_SUCCEEDED(rv),
         "EditorBase::CollapseSelectionTo() failed, but ignored");
+    return NS_OK;
   }
-  return NS_OK;
+
+  nsresult rv = splitLinkResult.SuggestCaretPointTo(
+      mHTMLEditor, {SuggestCaret::OnlyIfHasSuggestion,
+                    SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "SplitNodeResult::SuggestCaretPointTo() failed");
+  return rv;
 }
 
 
