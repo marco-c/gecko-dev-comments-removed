@@ -431,16 +431,6 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
 
-
-
-  getEventListeners: function(node) {
-    return this._eventCollector.getEventListeners(node);
-  },
-
-  
-
-
-
   getCustomElementLocation: function() {
     
     const name = this.rawNode.localName;
@@ -570,7 +560,7 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
   getEventListenerInfo: function() {
-    return this.getEventListeners(this.rawNode);
+    return this._eventCollector.getEventListeners(this.rawNode);
   },
 
   

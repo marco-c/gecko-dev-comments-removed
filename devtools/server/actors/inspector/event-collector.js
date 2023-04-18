@@ -861,10 +861,14 @@ class EventCollector {
       }
 
       for (const listener of listeners) {
-        if (collector.normalizeListener) {
-          listener.normalizeListener = collector.normalizeListener;
+        const eventObj = this.processHandlerForEvent(
+          listener,
+          dbg,
+          collector.normalizeListener
+        );
+        if (eventObj) {
+          listenerArray.push(eventObj);
         }
-        this.processHandlerForEvent(listenerArray, listener, dbg);
       }
     }
 
@@ -902,8 +906,9 @@ class EventCollector {
 
 
   
-  processHandlerForEvent(listenerArray, listener, dbg) {
+  processHandlerForEvent(listener, dbg, normalizeListener) {
     let globalDO;
+    let eventObj;
 
     try {
       const { capturing, handler } = listener;
@@ -915,8 +920,6 @@ class EventCollector {
       
       globalDO = dbg.addDebuggee(global);
       let listenerDO = globalDO.makeDebuggeeValue(handler);
-
-      const { normalizeListener } = listener;
 
       if (normalizeListener) {
         listenerDO = normalizeListener(listenerDO, listener);
@@ -1031,7 +1034,7 @@ class EventCollector {
             : ":" + line + (column === null ? "" : ":" + column));
       }
 
-      const eventObj = {
+      eventObj = {
         type: override.type || type,
         handler: override.handler || functionSource.trim(),
         origin: override.origin || origin,
@@ -1052,13 +1055,14 @@ class EventCollector {
       if (native || dom0) {
         eventObj.hide.debugger = true;
       }
-      listenerArray.push(eventObj);
     } finally {
       
       if (globalDO) {
         dbg.removeDebuggee(globalDO);
       }
     }
+
+    return eventObj;
   }
 }
 
