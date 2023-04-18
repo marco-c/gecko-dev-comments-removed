@@ -59,7 +59,7 @@ add_task(async function() {
   
   for (const { name, command, expected } of TEST_ITEMS) {
     await clearOutput(hud);
-    await executeAndWaitForMessage(hud, command, "", ".result");
+    await executeAndWaitForResultMessage(hud, command, "");
 
     const result = await getActualDisplayedInput(hud);
 

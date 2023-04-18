@@ -29,7 +29,7 @@ add_task(async function() {
 
   
   info("Waiting for optimized out message");
-  await executeAndWaitForMessage(hud, "upvar", "optimized out", ".result");
+  await executeAndWaitForResultMessage(hud, "upvar", "optimized out");
   ok(true, "Optimized out message logged");
 
   info("Open the debugger");

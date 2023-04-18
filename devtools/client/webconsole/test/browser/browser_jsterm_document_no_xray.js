@@ -9,11 +9,10 @@ add_task(async function() {
   const hud = await openNewTabAndConsole(TEST_URI);
 
   
-  const { node } = await executeAndWaitForMessage(
+  const { node } = await executeAndWaitForResultMessage(
     hud,
     "document",
-    "HTMLDocument",
-    ".result"
+    "HTMLDocument"
   );
   is(node.textContent.includes("xray"), false, "document - no XrayWrapper");
 });

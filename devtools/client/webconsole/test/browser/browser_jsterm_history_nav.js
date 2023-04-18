@@ -21,24 +21,22 @@ add_task(async function() {
   };
   popup.on("popup-opened", onShown);
 
-  await executeAndWaitForMessage(
+  await executeAndWaitForResultMessage(
     hud,
     `window.foobarBug660806 = {
     'location': 'value0',
     'locationbar': 'value1'
   }`,
-    "",
-    ".result"
+    ""
   );
   ok(!popup.isOpen, "popup is not open");
 
   
   
-  await executeAndWaitForMessage(
+  await executeAndWaitForResultMessage(
     hud,
     "window.foobarBug660806.location",
-    "",
-    ".result"
+    ""
   );
 
   const onSetInputValue = jsterm.once("set-input-value");

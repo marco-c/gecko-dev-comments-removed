@@ -13,17 +13,15 @@ add_task(async function() {
 
   info("Test `inspect(window)`");
   
-  await executeAndWaitForMessage(
+  await executeAndWaitForResultMessage(
     hud,
     "testProp = 'testValue'",
-    "testValue",
-    ".result"
+    "testValue"
   );
-  const { node: inspectWindowNode } = await executeAndWaitForMessage(
+  const { node: inspectWindowNode } = await executeAndWaitForResultMessage(
     hud,
     "inspect(window)",
-    "Window",
-    ".result"
+    "Window"
   );
 
   const objectInspectors = [...inspectWindowNode.querySelectorAll(".tree")];

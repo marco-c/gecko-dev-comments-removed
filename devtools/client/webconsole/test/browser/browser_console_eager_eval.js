@@ -21,7 +21,7 @@ add_task(async function() {
 
 
 async function executeNonDebuggeeSideeffect(hud) {
-  await executeAndWaitForMessage(
+  await executeAndWaitForResultMessage(
     hud,
     `globalThis.eagerLoader = ChromeUtils.import("resource://devtools/shared/loader/Loader.jsm");`,
     `DevToolsLoader`
@@ -41,5 +41,9 @@ async function executeNonDebuggeeSideeffect(hud) {
 
   setInputValue(hud, "");
 
-  await executeAndWaitForMessage(hud, `delete globalThis.eagerLoader;`, `true`);
+  await executeAndWaitForResultMessage(
+    hud,
+    `delete globalThis.eagerLoader;`,
+    `true`
+  );
 }

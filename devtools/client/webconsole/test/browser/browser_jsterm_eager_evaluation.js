@@ -27,11 +27,10 @@ add_task(async function() {
   const hud = await openNewTabAndConsole(TEST_URI);
 
   
-  await executeAndWaitForMessage(
+  await executeAndWaitForResultMessage(
     hud,
     "'result: ' + (x + y)",
-    "result: 7",
-    ".result"
+    "result: 7"
   );
 
   setInputValue(hud, "x + y");

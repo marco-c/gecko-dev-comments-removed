@@ -47,7 +47,7 @@ add_task(async function() {
   
   
   
-  await executeAndWaitForMessage(hud, `"smoke"`, `"smoke"`, ".result");
+  await executeAndWaitForResultMessage(hud, `"smoke"`, `"smoke"`);
 
   
   await waitForTick();
