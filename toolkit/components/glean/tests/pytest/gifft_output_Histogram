@@ -4,7 +4,6 @@
 
 
 
-#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/DataMutex.h"
@@ -23,10 +22,6 @@ static inline TimerToStampMutex::AutoLock GetTimerIdToStartsLock() {
   auto lock = sTimerIdToStarts.Lock();
   if (!*lock) {
     *lock = MakeUnique<nsTHashMap<TimerId, TimeStamp>>();
-    RunOnShutdown([&] {
-      auto lock = sTimerIdToStarts.Lock();
-      *lock = nullptr;  
-    });
   }
   return lock;
 }
