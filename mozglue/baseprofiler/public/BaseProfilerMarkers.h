@@ -240,7 +240,7 @@ extern template MFBT_API ProfileBufferBlockIndex AddMarkerToBuffer(
 
 #define AUTO_BASE_PROFILER_MARKER_TEXT(markerName, categoryName, options,   \
                                        text)                                \
-  ::mozilla::baseprofiler::AutoProfilerTextMarker BASE_PROFILER_RAII(       \
+  ::mozilla::baseprofiler::AutoProfilerTextMarker PROFILER_RAII(            \
       markerName, ::mozilla::baseprofiler::category::categoryName, options, \
       text)
 

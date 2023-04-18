@@ -10,6 +10,8 @@
 #ifndef ProfilerControl_h
 #define ProfilerControl_h
 
+#include "mozilla/BaseProfilerRAIIMacro.h"
+
 
 
 
@@ -45,11 +47,6 @@ static inline void profiler_shutdown(
 #  include "mozilla/MozPromise.h"
 #  include "mozilla/PowerOfTwo.h"
 #  include "mozilla/Vector.h"
-
-
-#  define PROFILERCTRL_RAII_PASTE(id, line) id##line
-#  define PROFILERCTRL_RAII_EXPAND(id, line) PROFILERCTRL_RAII_PASTE(id, line)
-#  define PROFILERCTRL_RAII PROFILERCTRL_RAII_EXPAND(raiiObject, __LINE__)
 
 
 
@@ -88,9 +85,9 @@ void profiler_init(void* stackTop);
 void profiler_init_threadmanager();
 
 
-#  define AUTO_PROFILER_INIT mozilla::AutoProfilerInit PROFILERCTRL_RAII
+#  define AUTO_PROFILER_INIT mozilla::AutoProfilerInit PROFILER_RAII
 
-#  define AUTO_PROFILER_INIT2 mozilla::AutoProfilerInit2 PROFILERCTRL_RAII
+#  define AUTO_PROFILER_INIT2 mozilla::AutoProfilerInit2 PROFILER_RAII
 
 
 

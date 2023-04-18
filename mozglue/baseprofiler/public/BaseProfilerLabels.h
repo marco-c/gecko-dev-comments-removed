@@ -28,16 +28,12 @@
 
 #  include "mozilla/Attributes.h"
 #  include "mozilla/Maybe.h"
+#  include "mozilla/BaseProfilerRAIIMacro.h"
 #  include "mozilla/BaseProfilerState.h"
 #  include "mozilla/ThreadLocal.h"
 
 #  include <stdint.h>
 #  include <string>
-
-
-#  define BASE_PROFILER_RAII_PASTE(id, line) id##line
-#  define BASE_PROFILER_RAII_EXPAND(id, line) BASE_PROFILER_RAII_PASTE(id, line)
-#  define BASE_PROFILER_RAII BASE_PROFILER_RAII_EXPAND(raiiObject, __LINE__)
 
 namespace mozilla::baseprofiler {
 
@@ -51,9 +47,9 @@ namespace mozilla::baseprofiler {
 
 
 
-#  define AUTO_BASE_PROFILER_LABEL(label, categoryPair)            \
-    ::mozilla::baseprofiler::AutoProfilerLabel BASE_PROFILER_RAII( \
-        label, nullptr,                                            \
+#  define AUTO_BASE_PROFILER_LABEL(label, categoryPair)       \
+    ::mozilla::baseprofiler::AutoProfilerLabel PROFILER_RAII( \
+        label, nullptr,                                       \
         ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair)
 
 
@@ -62,7 +58,7 @@ namespace mozilla::baseprofiler {
 
 
 #  define AUTO_BASE_PROFILER_LABEL_CATEGORY_PAIR(categoryPair)         \
-    ::mozilla::baseprofiler::AutoProfilerLabel BASE_PROFILER_RAII(     \
+    ::mozilla::baseprofiler::AutoProfilerLabel PROFILER_RAII(          \
         "", nullptr,                                                   \
         ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair,  \
         uint32_t(::mozilla::baseprofiler::ProfilingStackFrame::Flags:: \
@@ -89,7 +85,7 @@ namespace mozilla::baseprofiler {
 
 
 #  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_CSTR(label, categoryPair, cStr) \
-    ::mozilla::baseprofiler::AutoProfilerLabel BASE_PROFILER_RAII(         \
+    ::mozilla::baseprofiler::AutoProfilerLabel PROFILER_RAII(              \
         label, cStr,                                                       \
         ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair)
 
@@ -115,9 +111,9 @@ namespace mozilla::baseprofiler {
 
 
 
-#  define AUTO_BASE_PROFILER_LABEL_FAST(label, categoryPair, ctx)  \
-    ::mozilla::baseprofiler::AutoProfilerLabel BASE_PROFILER_RAII( \
-        ctx, label, nullptr,                                       \
+#  define AUTO_BASE_PROFILER_LABEL_FAST(label, categoryPair, ctx) \
+    ::mozilla::baseprofiler::AutoProfilerLabel PROFILER_RAII(     \
+        ctx, label, nullptr,                                      \
         ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair)
 
 
@@ -125,7 +121,7 @@ namespace mozilla::baseprofiler {
 
 #  define AUTO_BASE_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString,     \
                                                 categoryPair, ctx, flags) \
-    ::mozilla::baseprofiler::AutoProfilerLabel BASE_PROFILER_RAII(        \
+    ::mozilla::baseprofiler::AutoProfilerLabel PROFILER_RAII(             \
         ctx, label, dynamicString,                                        \
         ::mozilla::baseprofiler::ProfilingCategoryPair::categoryPair, flags)
 

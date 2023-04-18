@@ -88,6 +88,7 @@ static inline void profiler_shutdown() {}
 #  include "mozilla/Assertions.h"
 #  include "mozilla/Atomics.h"
 #  include "mozilla/Attributes.h"
+#  include "mozilla/BaseProfilerRAIIMacro.h"
 #  include "mozilla/Maybe.h"
 #  include "mozilla/PowerOfTwo.h"
 #  include "mozilla/TimeStamp.h"
@@ -140,7 +141,7 @@ static constexpr PowerOfTwo32 BASE_PROFILER_DEFAULT_STARTUP_ENTRIES =
 MFBT_API void profiler_init(void* stackTop);
 
 #  define AUTO_BASE_PROFILER_INIT \
-    ::mozilla::baseprofiler::AutoProfilerInit BASE_PROFILER_RAII
+    ::mozilla::baseprofiler::AutoProfilerInit PROFILER_RAII
 
 
 
@@ -235,7 +236,7 @@ MFBT_API void profiler_remove_sampled_counter(BaseProfilerCount* aCounter);
 
 
 #  define AUTO_BASE_PROFILER_REGISTER_THREAD(name) \
-    ::mozilla::baseprofiler::AutoProfilerRegisterThread BASE_PROFILER_RAII(name)
+    ::mozilla::baseprofiler::AutoProfilerRegisterThread PROFILER_RAII(name)
 
 
 
@@ -259,9 +260,9 @@ MFBT_API void profiler_thread_wake();
 
 
 #  define AUTO_BASE_PROFILER_THREAD_SLEEP \
-    ::mozilla::baseprofiler::AutoProfilerThreadSleep BASE_PROFILER_RAII
+    ::mozilla::baseprofiler::AutoProfilerThreadSleep PROFILER_RAII
 #  define AUTO_BASE_PROFILER_THREAD_WAKE \
-    ::mozilla::baseprofiler::AutoProfilerThreadWake BASE_PROFILER_RAII
+    ::mozilla::baseprofiler::AutoProfilerThreadWake PROFILER_RAII
 
 
 
