@@ -4829,7 +4829,8 @@ void AsyncPanZoomController::ReportCheckerboard(
   if (!mCheckerboardEvent && (recordTrace || forTelemetry)) {
     mCheckerboardEvent = MakeUnique<CheckerboardEvent>(recordTrace);
   }
-  mPotentialCheckerboardTracker.InTransform(inTransformingState);
+  mPotentialCheckerboardTracker.InTransform(inTransformingState,
+                                            recordTrace || forTelemetry);
   if (magnitude) {
     mPotentialCheckerboardTracker.CheckerboardSeen();
   }
@@ -4848,7 +4849,10 @@ void AsyncPanZoomController::UpdateCheckerboardEvent(
         mozilla::Telemetry::CHECKERBOARD_DURATION,
         (uint32_t)mCheckerboardEvent->GetDuration().ToMilliseconds());
 
-    mPotentialCheckerboardTracker.CheckerboardDone();
+    
+    
+    mPotentialCheckerboardTracker.CheckerboardDone(
+         true);
 
     if (StaticPrefs::apz_record_checkerboarding()) {
       

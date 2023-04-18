@@ -37,13 +37,13 @@ class PotentialCheckerboardDurationTracker {
 
 
 
-  void CheckerboardDone();
+  void CheckerboardDone(bool aRecordTelemetry);
 
   
 
 
 
-  void InTransform(bool aInTransform);
+  void InTransform(bool aInTransform, bool aRecordTelemetry);
 
  private:
   bool Tracking() const;
