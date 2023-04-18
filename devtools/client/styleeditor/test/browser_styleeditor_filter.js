@@ -50,8 +50,9 @@ add_task(async function() {
   );
 
   const setFilterInputValue = value => {
-    filterInput.focus();
-    filterInput.value = "";
+    
+    
+    synthesizeKeyShortcut("CmdOrCtrl+P");
     EventUtils.sendString(value);
   };
 
