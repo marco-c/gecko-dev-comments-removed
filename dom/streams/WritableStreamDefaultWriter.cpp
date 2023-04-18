@@ -98,8 +98,8 @@ already_AddRefed<Promise> WritableStreamDefaultWriter::Ready() {
 }
 
 
-static Nullable<double> WritableStreamDefaultWriterGetDesiredSize(
-    WritableStreamDefaultWriter* aWriter, ErrorResult& aRv) {
+Nullable<double> WritableStreamDefaultWriterGetDesiredSize(
+    WritableStreamDefaultWriter* aWriter) {
   
   RefPtr<WritableStream> stream = aWriter->GetStream();
 
@@ -132,7 +132,7 @@ Nullable<double> WritableStreamDefaultWriter::GetDesiredSize(ErrorResult& aRv) {
 
   
   RefPtr<WritableStreamDefaultWriter> thisRefPtr = this;
-  return WritableStreamDefaultWriterGetDesiredSize(thisRefPtr, aRv);
+  return WritableStreamDefaultWriterGetDesiredSize(thisRefPtr);
 }
 
 
@@ -271,11 +271,9 @@ void WritableStreamDefaultWriter::ReleaseLock(JSContext* aCx,
 }
 
 
-MOZ_CAN_RUN_SCRIPT static already_AddRefed<Promise>
-WritableStreamDefaultWriterWrite(JSContext* aCx,
-                                 WritableStreamDefaultWriter* aWriter,
-                                 JS::Handle<JS::Value> aChunk,
-                                 ErrorResult& aRv) {
+already_AddRefed<Promise> WritableStreamDefaultWriterWrite(
+    JSContext* aCx, WritableStreamDefaultWriter* aWriter,
+    JS::Handle<JS::Value> aChunk, ErrorResult& aRv) {
   
   RefPtr<WritableStream> stream = aWriter->GetStream();
 
@@ -547,6 +545,46 @@ void WritableStreamDefaultWriterEnsureReadyPromiseRejected(
 
   
   readyPromise->SetSettledPromiseIsHandled();
+}
+
+
+already_AddRefed<Promise> WritableStreamDefaultWriterCloseWithErrorPropagation(
+    JSContext* aCx, WritableStreamDefaultWriter* aWriter, ErrorResult& aRv) {
+  
+  RefPtr<WritableStream> stream = aWriter->GetStream();
+
+  
+  MOZ_ASSERT(stream);
+
+  
+  WritableStream::WriterState state = stream->State();
+
+  
+  
+  if (stream->CloseQueuedOrInFlight() ||
+      state == WritableStream::WriterState::Closed) {
+    return Promise::CreateResolvedWithUndefined(aWriter->GetParentObject(),
+                                                aRv);
+  }
+
+  
+  
+  if (state == WritableStream::WriterState::Errored) {
+    RefPtr<Promise> promise = Promise::Create(aWriter->GetParentObject(), aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+    JS::Rooted<JS::Value> error(aCx, stream->StoredError());
+    promise->MaybeReject(error);
+    return promise.forget();
+  }
+
+  
+  MOZ_ASSERT(state == WritableStream::WriterState::Writable ||
+             state == WritableStream::WriterState::Erroring);
+
+  
+  return WritableStreamDefaultWriterClose(aCx, aWriter, aRv);
 }
 
 }  
