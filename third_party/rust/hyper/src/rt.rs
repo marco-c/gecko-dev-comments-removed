@@ -5,4 +5,8 @@
 
 
 
-pub use crate::common::Executor;
+
+pub trait Executor<Fut> {
+    
+    fn execute(&self, fut: Fut);
+}

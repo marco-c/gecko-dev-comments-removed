@@ -1,19 +1,20 @@
+use std::pin::Pin;
+
 use auxiliary_macro::hidden_repr;
 use pin_project::{pin_project, pinned_drop, UnsafeUnpin};
-use std::pin::Pin;
 
 #[pin_project] 
 #[hidden_repr(packed)]
 struct A {
     #[pin]
-    field: u32,
+    f: u32,
 }
 
 #[pin_project(UnsafeUnpin)] 
 #[hidden_repr(packed)]
 struct C {
     #[pin]
-    field: u32,
+    f: u32,
 }
 
 unsafe impl UnsafeUnpin for C {}
@@ -22,7 +23,7 @@ unsafe impl UnsafeUnpin for C {}
 #[hidden_repr(packed)]
 struct D {
     #[pin]
-    field: u32,
+    f: u32,
 }
 
 #[pinned_drop]

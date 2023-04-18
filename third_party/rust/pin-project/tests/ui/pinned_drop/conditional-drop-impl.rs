@@ -1,10 +1,11 @@
-use pin_project::{pin_project, pinned_drop};
 use std::pin::Pin;
+
+use pin_project::{pin_project, pinned_drop};
 
 
 
 struct DropImpl<T> {
-    field: T,
+    f: T,
 }
 
 impl<T: Unpin> Drop for DropImpl<T> {
@@ -15,7 +16,7 @@ impl<T: Unpin> Drop for DropImpl<T> {
 #[pin_project(PinnedDrop)] 
 struct PinnedDropImpl<T> {
     #[pin]
-    field: T,
+    f: T,
 }
 
 #[pinned_drop]

@@ -78,16 +78,16 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/h2/0.2.5")]
+#![doc(html_root_url = "https://docs.rs/h2/0.3.13")]
 #![deny(missing_debug_implementations, missing_docs)]
 #![cfg_attr(test, deny(warnings))]
 
 macro_rules! proto_err {
     (conn: $($msg:tt)+) => {
-        log::debug!("connection error PROTOCOL_ERROR -- {};", format_args!($($msg)+))
+        tracing::debug!("connection error PROTOCOL_ERROR -- {};", format_args!($($msg)+))
     };
     (stream: $($msg:tt)+) => {
-        log::debug!("stream error PROTOCOL_ERROR -- {};", format_args!($($msg)+))
+        tracing::debug!("stream error PROTOCOL_ERROR -- {};", format_args!($($msg)+))
     };
 }
 
@@ -104,7 +104,13 @@ macro_rules! ready {
 mod codec;
 mod error;
 mod hpack;
+
+#[cfg(not(feature = "unstable"))]
 mod proto;
+
+#[cfg(feature = "unstable")]
+#[allow(missing_docs)]
+pub mod proto;
 
 #[cfg(not(feature = "unstable"))]
 mod frame;
@@ -114,14 +120,19 @@ mod frame;
 pub mod frame;
 
 pub mod client;
+pub mod ext;
 pub mod server;
 mod share;
+
+#[cfg(fuzzing)]
+#[cfg_attr(feature = "unstable", allow(missing_docs))]
+pub mod fuzz_bridge;
 
 pub use crate::error::{Error, Reason};
 pub use crate::share::{FlowControl, Ping, PingPong, Pong, RecvStream, SendStream, StreamId};
 
 #[cfg(feature = "unstable")]
-pub use codec::{Codec, RecvError, SendError, UserError};
+pub use codec::{Codec, SendError, UserError};
 
 use std::task::Poll;
 

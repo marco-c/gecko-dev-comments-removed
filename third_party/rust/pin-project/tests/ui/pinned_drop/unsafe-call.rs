@@ -1,16 +1,17 @@
-use pin_project::{pin_project, pinned_drop};
 use std::pin::Pin;
 
+use pin_project::{pin_project, pinned_drop};
+
 #[pin_project(PinnedDrop)]
-struct Struct {
+struct S {
     #[pin]
-    field: u8,
+    f: u8,
 }
 
 #[pinned_drop]
-impl PinnedDrop for Struct {
+impl PinnedDrop for S {
     fn drop(self: Pin<&mut Self>) {
-        self.project().field.get_unchecked_mut(); 
+        self.project().f.get_unchecked_mut(); 
     }
 }
 

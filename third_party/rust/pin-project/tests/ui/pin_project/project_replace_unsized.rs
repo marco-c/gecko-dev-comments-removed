@@ -2,7 +2,7 @@ use pin_project::pin_project;
 
 #[pin_project(project_replace)] 
 struct Struct<T: ?Sized> {
-    x: T,
+    f: T,
 }
 
 #[pin_project(project_replace)] 

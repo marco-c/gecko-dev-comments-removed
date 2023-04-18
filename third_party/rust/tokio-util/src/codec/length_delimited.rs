@@ -341,6 +341,37 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use crate::codec::{Decoder, Encoder, Framed, FramedRead, FramedWrite};
 
 use tokio::io::{AsyncRead, AsyncWrite};
@@ -348,7 +379,7 @@ use tokio::io::{AsyncRead, AsyncWrite};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::error::Error as StdError;
 use std::io::{self, Cursor};
-use std::{cmp, fmt};
+use std::{cmp, fmt, mem};
 
 
 
@@ -390,7 +421,7 @@ pub struct LengthDelimitedCodecError {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LengthDelimitedCodec {
     
     builder: Builder,
@@ -504,14 +535,14 @@ impl LengthDelimitedCodec {
         Ok(Some(n))
     }
 
-    fn decode_data(&self, n: usize, src: &mut BytesMut) -> io::Result<Option<BytesMut>> {
+    fn decode_data(&self, n: usize, src: &mut BytesMut) -> Option<BytesMut> {
         
         
         if src.len() < n {
-            return Ok(None);
+            return None;
         }
 
-        Ok(Some(src.split_to(n)))
+        Some(src.split_to(n))
     }
 }
 
@@ -531,7 +562,7 @@ impl Decoder for LengthDelimitedCodec {
             DecodeState::Data(n) => n,
         };
 
-        match self.decode_data(n, src)? {
+        match self.decode_data(n, src) {
             Some(data) => {
                 
                 self.state = DecodeState::Head;
@@ -597,6 +628,24 @@ impl Default for LengthDelimitedCodec {
 }
 
 
+
+mod builder {
+    
+    pub trait LengthFieldType {}
+
+    impl LengthFieldType for u8 {}
+    impl LengthFieldType for u16 {}
+    impl LengthFieldType for u32 {}
+    impl LengthFieldType for u64 {}
+
+    #[cfg(any(
+        target_pointer_width = "8",
+        target_pointer_width = "16",
+        target_pointer_width = "32",
+        target_pointer_width = "64",
+    ))]
+    impl LengthFieldType for usize {}
+}
 
 impl Builder {
     
@@ -744,6 +793,42 @@ impl Builder {
     pub fn max_frame_length(&mut self, val: usize) -> &mut Self {
         self.max_frame_len = val;
         self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn length_field_type<T: builder::LengthFieldType>(&mut self) -> &mut Self {
+        self.length_field_length(mem::size_of::<T>())
     }
 
     
