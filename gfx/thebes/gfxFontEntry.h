@@ -861,9 +861,16 @@ class gfxFontFamily {
   
   bool CheckForLegacyFamilyNames(gfxPlatformFontList* aFontList);
 
-  nsTArray<RefPtr<gfxFontEntry>>& GetFontList() {
-    mozilla::AutoReadLock lock(mLock);
+  
+  const nsTArray<RefPtr<gfxFontEntry>>& GetFontList() REQUIRES_SHARED(mLock) {
     return mAvailableFonts;
+  }
+  void ReadLock() ACQUIRE_SHARED(mLock) { mLock.ReadLock(); }
+  void ReadUnlock() RELEASE_SHARED(mLock) { mLock.ReadUnlock(); }
+
+  uint32_t FontListLength() const {
+    mozilla::AutoReadLock lock(mLock);
+    return mAvailableFonts.Length();
   }
 
   void AddFontEntry(RefPtr<gfxFontEntry> aFontEntry) {
@@ -946,7 +953,8 @@ class gfxFontFamily {
   }
 
   
-  gfxFontEntry* FindFont(const nsACString& aPostscriptName);
+  gfxFontEntry* FindFont(const nsACString& aFontName,
+                         const nsCStringComparator& aCmp) const;
 
   
   

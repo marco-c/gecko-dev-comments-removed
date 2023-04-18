@@ -1687,13 +1687,14 @@ nsresult gfxDWriteFontList::InitFontListForPlatform() {
 
   if (gillSansFamily && gillSansMTFamily) {
     gillSansFamily->FindStyleVariations();
-    nsTArray<RefPtr<gfxFontEntry> >& faces = gillSansFamily->GetFontList();
-    uint32_t i;
+
+    gillSansFamily->ReadLock();
+    const auto& faces = gillSansFamily->GetFontList();
 
     bool allUltraBold = true;
-    for (i = 0; i < faces.Length(); i++) {
+    for (const auto& face : faces) {
       
-      if (faces[i]->Name().Find("Ultra Bold"_ns) == -1) {
+      if (face->Name().Find("Ultra Bold"_ns) == -1) {
         allUltraBold = false;
         break;
       }
@@ -1703,27 +1704,29 @@ nsresult gfxDWriteFontList::InitFontListForPlatform() {
     
     if (allUltraBold) {
       
-      for (i = 0; i < faces.Length(); i++) {
+      for (const auto& face : faces) {
         
-        faces[i]->mFamilyName = gillSansMTFamily->Name();
-        gillSansMTFamily->AddFontEntry(faces[i]);
+        face->mFamilyName = gillSansMTFamily->Name();
+        gillSansMTFamily->AddFontEntry(face);
 
         if (LOG_FONTLIST_ENABLED()) {
-          gfxFontEntry* fe = faces[i];
           nsAutoCString weightString;
-          fe->Weight().ToString(weightString);
+          face->Weight().ToString(weightString);
           LOG_FONTLIST(
               ("(fontlist) moved (%s) to family (%s)"
                " with style: %s weight: %s stretch: %d",
-               fe->Name().get(), gillSansMTFamily->Name().get(),
-               (fe->IsItalic()) ? "italic"
-                                : (fe->IsOblique() ? "oblique" : "normal"),
-               weightString.get(), fe->Stretch().AsScalar()));
+               face->Name().get(), gillSansMTFamily->Name().get(),
+               (face->IsItalic()) ? "italic"
+                                  : (face->IsOblique() ? "oblique" : "normal"),
+               weightString.get(), face->Stretch().AsScalar()));
         }
       }
+      gillSansFamily->ReadUnlock();
 
       
       mFontFamilies.Remove(nameGillSans);
+    } else {
+      gillSansFamily->ReadUnlock();
     }
   }
 
