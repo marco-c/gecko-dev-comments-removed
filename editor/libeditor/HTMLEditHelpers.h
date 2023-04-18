@@ -39,6 +39,12 @@ enum class JoinNodesDirection {
 };
 
 
+enum class SplitNodeDirection {
+  LeftNodeIsNewOne,
+  RightNodeIsNewOne,
+};
+
+
 
 
 

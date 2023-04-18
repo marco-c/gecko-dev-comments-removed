@@ -304,8 +304,10 @@ void RangeUpdater::SelAdjDeleteNode(nsINode& aNodeToDelete) {
   }
 }
 
-nsresult RangeUpdater::SelAdjSplitNode(nsIContent& aRightNode,
-                                       nsIContent& aNewLeftNode) {
+nsresult RangeUpdater::SelAdjSplitNode(nsIContent& aOriginalContent,
+                                       uint32_t aSplitOffset,
+                                       nsIContent& aNewContent,
+                                       SplitNodeDirection aSplitNodeDirection) {
   if (mLocked) {
     
     return NS_OK;
@@ -315,8 +317,8 @@ nsresult RangeUpdater::SelAdjSplitNode(nsIContent& aRightNode,
     return NS_OK;
   }
 
-  EditorRawDOMPoint atLeftNode(&aNewLeftNode);
-  nsresult rv = SelAdjInsertNode(atLeftNode);
+  EditorRawDOMPoint atNewNode(&aNewContent);
+  nsresult rv = SelAdjInsertNode(atNewNode);
   if (NS_FAILED(rv)) {
     NS_WARNING("RangeUpdater::SelAdjInsertNode() failed");
     return rv;
@@ -325,26 +327,30 @@ nsresult RangeUpdater::SelAdjSplitNode(nsIContent& aRightNode,
   
   
   
-  uint32_t lengthOfLeftNode = aNewLeftNode.Length();
+  
+  auto AdjustDOMPoint = [&](nsCOMPtr<nsINode>& aContainer,
+                            uint32_t& aOffset) -> void {
+    if (aContainer != &aOriginalContent) {
+      return;
+    }
+    if (aSplitNodeDirection == SplitNodeDirection::LeftNodeIsNewOne) {
+      if (aOffset > aSplitOffset) {
+        aOffset -= aSplitOffset;
+      } else {
+        aContainer = &aNewContent;
+      }
+    } else if (aOffset >= aSplitOffset) {
+      aContainer = &aNewContent;
+      aOffset = aSplitOffset - aOffset;
+    }
+  };
+
   for (RefPtr<RangeItem>& rangeItem : mArray) {
     if (NS_WARN_IF(!rangeItem)) {
       return NS_ERROR_FAILURE;
     }
-
-    if (rangeItem->mStartContainer == &aRightNode) {
-      if (rangeItem->mStartOffset > lengthOfLeftNode) {
-        rangeItem->mStartOffset -= lengthOfLeftNode;
-      } else {
-        rangeItem->mStartContainer = &aNewLeftNode;
-      }
-    }
-    if (rangeItem->mEndContainer == &aRightNode) {
-      if (rangeItem->mEndOffset > lengthOfLeftNode) {
-        rangeItem->mEndOffset -= lengthOfLeftNode;
-      } else {
-        rangeItem->mEndContainer = &aNewLeftNode;
-      }
-    }
+    AdjustDOMPoint(rangeItem->mStartContainer, rangeItem->mStartOffset);
+    AdjustDOMPoint(rangeItem->mEndContainer, rangeItem->mEndOffset);
   }
   return NS_OK;
 }

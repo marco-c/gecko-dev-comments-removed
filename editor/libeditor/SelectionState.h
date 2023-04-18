@@ -27,6 +27,7 @@ class Text;
 }  
 
 enum class JoinNodesDirection;  
+enum class SplitNodeDirection;  
 
 
 
@@ -142,7 +143,23 @@ class MOZ_STACK_CLASS RangeUpdater final {
   template <typename PT, typename CT>
   nsresult SelAdjInsertNode(const EditorDOMPointBase<PT, CT>& aPoint);
   void SelAdjDeleteNode(nsINode& aNode);
-  nsresult SelAdjSplitNode(nsIContent& aRightNode, nsIContent& aNewLeftNode);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  nsresult SelAdjSplitNode(nsIContent& aOriginalContent, uint32_t aSplitOffset,
+                           nsIContent& aNewContent,
+                           SplitNodeDirection aSplitNodeDirection);
+
   
 
 
