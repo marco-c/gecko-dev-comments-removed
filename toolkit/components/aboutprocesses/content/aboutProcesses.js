@@ -385,7 +385,11 @@ var View = {
     return row;
   },
 
-  displayCpu(data, cpuCell) {
+  displayCpu(data, cpuCell, maxSlopeCpu) {
+    
+    
+    
+    let barWidth = -0.5;
     if (data.slopeCpu == null) {
       this._fillCell(cpuCell, {
         fluentName: "about-processes-cpu-user-and-kernel-not-ready",
@@ -425,8 +429,16 @@ var View = {
           },
           classes: ["cpu"],
         });
+
+        let cpuPercent = data.slopeCpu * 100;
+        if (maxSlopeCpu > 1) {
+          cpuPercent /= maxSlopeCpu;
+        }
+        
+        barWidth = Math.max(0.5, cpuPercent);
       }
     }
+    cpuCell.style.setProperty("--bar-width", barWidth);
   },
 
   
@@ -435,7 +447,8 @@ var View = {
 
 
 
-  displayProcessRow(data) {
+
+  displayProcessRow(data, maxSlopeCpu) {
     const cellCount = 4;
     let rowId = "p:" + data.pid;
     let row = this._getOrCreateRow(rowId, cellCount);
@@ -642,7 +655,7 @@ var View = {
 
     
     let cpuCell = memoryCell.nextSibling;
-    this.displayCpu(data, cpuCell);
+    this.displayCpu(data, cpuCell, maxSlopeCpu);
 
     
     let killButton = cpuCell.nextSibling;
@@ -840,7 +853,8 @@ var View = {
 
 
 
-  displayThreadRow(data) {
+
+  displayThreadRow(data, maxSlopeCpu) {
     const cellCount = 3;
     let rowId = "t:" + data.tid;
     let row = this._getOrCreateRow(rowId, cellCount);
@@ -859,7 +873,7 @@ var View = {
     });
 
     
-    this.displayCpu(data, nameCell.nextSibling);
+    this.displayCpu(data, nameCell.nextSibling, maxSlopeCpu);
 
     
   },
@@ -1178,13 +1192,17 @@ var Control = {
     this._hungItems = new Set();
 
     counters = this._sortProcesses(counters);
+
+    
+    this._maxSlopeCpu = Math.max(...counters.map(process => process.slopeCpu));
+
     let previousProcess = null;
     for (let process of counters) {
       this._sortDOMWindows(process.windows);
 
       process.isHung = process.childID && hungItems.has(process.childID);
 
-      let processRow = View.displayProcessRow(process);
+      let processRow = View.displayProcessRow(process, this._maxSlopeCpu);
 
       if (process.type != "extension") {
         
@@ -1197,7 +1215,7 @@ var Control = {
 
       if (SHOW_THREADS) {
         if (View.displayThreadSummaryRow(process)) {
-          this._showThreads(processRow);
+          this._showThreads(processRow, this._maxSlopeCpu);
         }
       }
       if (
@@ -1241,11 +1259,11 @@ var Control = {
       b.slopeCpu - a.slopeCpu || b.active - a.active || b.totalCpu - a.totalCpu
     );
   },
-  _showThreads(row) {
+  _showThreads(row, maxSlopeCpu) {
     let process = row.process;
     this._sortThreads(process.threads);
     for (let thread of process.threads) {
-      View.displayThreadRow(thread);
+      View.displayThreadRow(thread, maxSlopeCpu);
     }
   },
   _sortThreads(threads) {
@@ -1372,7 +1390,7 @@ var Control = {
   _handleTwisty(target) {
     let row = target.parentNode.parentNode;
     if (target.classList.toggle("open")) {
-      this._showThreads(row);
+      this._showThreads(row, this._maxSlopeCpu);
       View.insertAfterRow(row);
     } else {
       this._removeSubtree(row);
