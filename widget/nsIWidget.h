@@ -536,6 +536,11 @@ class nsIWidget : public nsISupports {
   
 
 
+  virtual void DidGetContentfulPaint() {}
+
+  
+
+
 
   
   virtual nsIWidgetListener* GetWidgetListener() const = 0;

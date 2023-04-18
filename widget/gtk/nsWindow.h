@@ -691,6 +691,12 @@ class nsWindow final : public nsBaseWidget {
   bool mWaitingForMoveToRectCallback : 1;
 
   
+  bool mConfiguredClearColor : 1;
+  
+  
+  bool mGotContentfulPaint : 1;
+
+  
   
   
   gchar* mTransparencyBitmap = nullptr;
@@ -718,6 +724,7 @@ class nsWindow final : public nsBaseWidget {
 
   
   WindowRenderer* GetWindowRenderer() override;
+  void DidGetContentfulPaint() override;
 
   void SetCompositorWidgetDelegate(CompositorWidgetDelegate* delegate) override;
 
