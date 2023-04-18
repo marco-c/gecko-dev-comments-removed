@@ -2064,7 +2064,6 @@ void ServiceWorkerManager::DispatchFetchEvent(nsIInterceptedChannel* aChannel,
                                               ErrorResult& aRv) {
   MOZ_ASSERT(aChannel);
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(XRE_IsParentProcess());
 
   nsCOMPtr<nsIChannel> internalChannel;
   aRv = aChannel->GetChannel(getter_AddRefs(internalChannel));
@@ -2233,13 +2232,28 @@ void ServiceWorkerManager::DispatchFetchEvent(nsIInterceptedChannel* aChannel,
   
   
   
-  RefPtr<PermissionManager> permMgr = PermissionManager::GetInstance();
-  if (permMgr) {
-    permMgr->WhenPermissionsAvailable(serviceWorker->Principal(),
-                                      continueRunnable);
-  } else {
-    continueRunnable->HandleError();
+  nsCOMPtr<nsIRunnable> permissionsRunnable = NS_NewRunnableFunction(
+      "dom::ServiceWorkerManager::DispatchFetchEvent", [=]() {
+        RefPtr<PermissionManager> permMgr = PermissionManager::GetInstance();
+        if (permMgr) {
+          permMgr->WhenPermissionsAvailable(serviceWorker->Principal(),
+                                            continueRunnable);
+        } else {
+          continueRunnable->HandleError();
+        }
+      });
+
+  nsCOMPtr<nsIUploadChannel2> uploadChannel =
+      do_QueryInterface(internalChannel);
+
+  
+  if (!uploadChannel) {
+    MOZ_ALWAYS_SUCCEEDS(permissionsRunnable->Run());
+    return;
   }
+  
+  
+  aRv = uploadChannel->EnsureUploadStreamIsCloneable(permissionsRunnable);
 }
 
 bool ServiceWorkerManager::IsAvailable(nsIPrincipal* aPrincipal, nsIURI* aURI,

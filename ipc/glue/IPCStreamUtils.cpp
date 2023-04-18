@@ -6,155 +6,356 @@
 
 #include "IPCStreamUtils.h"
 
-#include "ipc/IPCMessageUtilsSpecializations.h"
-
-#include "nsIHttpHeaderVisitor.h"
 #include "nsIIPCSerializableInputStream.h"
 #include "mozIRemoteLazyInputStream.h"
 
 #include "mozilla/Assertions.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/File.h"
-#include "mozilla/ipc/IPCStream.h"
+#include "mozilla/ipc/FileDescriptorSetChild.h"
+#include "mozilla/ipc/FileDescriptorSetParent.h"
 #include "mozilla/ipc/InputStreamUtils.h"
+#include "mozilla/net/SocketProcessChild.h"
+#include "mozilla/net/SocketProcessParent.h"
 #include "mozilla/InputStreamLengthHelper.h"
 #include "mozilla/RemoteLazyInputStreamParent.h"
 #include "mozilla/Unused.h"
-#include "nsIMIMEInputStream.h"
 #include "nsNetCID.h"
+#include "BackgroundParentImpl.h"
+#include "BackgroundChildImpl.h"
 
 using namespace mozilla::dom;
 
-namespace mozilla::ipc {
+namespace mozilla {
+namespace ipc {
 
 namespace {
 
-class MIMEStreamHeaderVisitor final : public nsIHttpHeaderVisitor {
- public:
-  explicit MIMEStreamHeaderVisitor(
-      nsTArray<mozilla::ipc::HeaderEntry>& aHeaders)
-      : mHeaders(aHeaders) {}
 
-  NS_DECL_ISUPPORTS
-  NS_IMETHOD VisitHeader(const nsACString& aName,
-                         const nsACString& aValue) override {
-    auto el = mHeaders.AppendElement();
-    el->name() = aName;
-    el->value() = aValue;
-    return NS_OK;
+
+
+
+template <typename M>
+bool SerializeInputStreamWithFdsChild(nsIIPCSerializableInputStream* aStream,
+                                      IPCStream& aValue, bool aDelayedStart,
+                                      M* aManager) {
+  MOZ_RELEASE_ASSERT(aStream);
+  MOZ_ASSERT(aManager);
+
+  
+  
+  const uint64_t kTooLargeStream = 1024 * 1024;
+
+  uint32_t sizeUsed = 0;
+  AutoTArray<FileDescriptor, 4> fds;
+  aStream->Serialize(aValue.stream(), fds, aDelayedStart, kTooLargeStream,
+                     &sizeUsed, aManager);
+
+  MOZ_ASSERT(sizeUsed <= kTooLargeStream);
+
+  if (aValue.stream().type() == InputStreamParams::T__None) {
+    MOZ_CRASH("Serialize failed!");
   }
 
- private:
-  ~MIMEStreamHeaderVisitor() = default;
+  if (fds.IsEmpty()) {
+    aValue.optionalFds() = void_t();
+  } else {
+    PFileDescriptorSetChild* fdSet =
+        aManager->SendPFileDescriptorSetConstructor(fds[0]);
+    for (uint32_t i = 1; i < fds.Length(); ++i) {
+      Unused << fdSet->SendAddFileDescriptor(fds[i]);
+    }
 
-  nsTArray<mozilla::ipc::HeaderEntry>& mHeaders;
-};
+    aValue.optionalFds() = fdSet;
+  }
 
-NS_IMPL_ISUPPORTS(MIMEStreamHeaderVisitor, nsIHttpHeaderVisitor)
+  return true;
+}
 
-static bool SerializeLazyInputStream(nsIInputStream* aStream,
-                                     IPCStream& aValue) {
+template <typename M>
+bool SerializeInputStreamWithFdsParent(nsIIPCSerializableInputStream* aStream,
+                                       IPCStream& aValue, bool aDelayedStart,
+                                       M* aManager) {
+  MOZ_RELEASE_ASSERT(aStream);
+  MOZ_ASSERT(aManager);
+
+  const uint64_t kTooLargeStream = 1024 * 1024;
+
+  uint32_t sizeUsed = 0;
+  AutoTArray<FileDescriptor, 4> fds;
+  aStream->Serialize(aValue.stream(), fds, aDelayedStart, kTooLargeStream,
+                     &sizeUsed, aManager);
+
+  MOZ_ASSERT(sizeUsed <= kTooLargeStream);
+
+  if (aValue.stream().type() == InputStreamParams::T__None) {
+    MOZ_CRASH("Serialize failed!");
+  }
+
+  aValue.optionalFds() = void_t();
+  if (!fds.IsEmpty()) {
+    PFileDescriptorSetParent* fdSet =
+        aManager->SendPFileDescriptorSetConstructor(fds[0]);
+    for (uint32_t i = 1; i < fds.Length(); ++i) {
+      if (NS_WARN_IF(!fdSet->SendAddFileDescriptor(fds[i]))) {
+        Unused << PFileDescriptorSetParent::Send__delete__(fdSet);
+        fdSet = nullptr;
+        break;
+      }
+    }
+
+    if (fdSet) {
+      aValue.optionalFds() = fdSet;
+    }
+  }
+
+  return true;
+}
+
+template <typename M>
+bool SerializeInputStream(nsIInputStream* aStream, IPCStream& aValue,
+                          M* aManager, bool aDelayedStart) {
   MOZ_ASSERT(aStream);
+  MOZ_ASSERT(aManager);
+
+  InputStreamParams params;
+  InputStreamHelper::SerializeInputStreamAsPipe(aStream, params, aDelayedStart,
+                                                aManager);
+
+  if (params.type() == InputStreamParams::T__None) {
+    return false;
+  }
+
+  aValue.stream() = params;
+  aValue.optionalFds() = void_t();
+
+  return true;
+}
+
+template <typename M>
+bool SerializeLazyInputStream(nsIInputStream* aStream, IPCStream& aValue,
+                              M* aManager) {
+  MOZ_ASSERT(aStream);
+  MOZ_ASSERT(aManager);
   MOZ_ASSERT(XRE_IsParentProcess());
 
   
   
-  if (nsCOMPtr<nsIMIMEInputStream> mimeStream = do_QueryInterface(aStream)) {
-    MIMEInputStreamParams params;
-    params.startedReading() = false;
-
-    nsCOMPtr<nsIHttpHeaderVisitor> visitor =
-        new MIMEStreamHeaderVisitor(params.headers());
-    if (NS_WARN_IF(NS_FAILED(mimeStream->VisitHeaders(visitor)))) {
+  nsCOMPtr<nsIInputStream> stream = aStream;
+  if (nsCOMPtr<mozIRemoteLazyInputStream> remoteLazyInputStream =
+          do_QueryInterface(stream)) {
+    stream = remoteLazyInputStream->GetInternalStream();
+    if (NS_WARN_IF(!stream)) {
       return false;
     }
-
-    nsCOMPtr<nsIInputStream> dataStream;
-    if (NS_FAILED(mimeStream->GetData(getter_AddRefs(dataStream)))) {
-      return false;
-    }
-    if (dataStream) {
-      IPCStream data;
-      if (!SerializeLazyInputStream(dataStream, data)) {
-        return false;
-      }
-      params.optionalStream().emplace(std::move(data.stream()));
-    }
-
-    aValue.stream() = std::move(params);
-    return true;
   }
 
-  RefPtr<RemoteLazyInputStream> lazyStream =
-      RemoteLazyInputStream::WrapStream(aStream);
-  if (NS_WARN_IF(!lazyStream)) {
+  uint64_t childID = 0;
+  if constexpr (std::is_same_v<dom::ContentParent, M>) {
+    childID = aManager->ChildID();
+  } else if constexpr (std::is_base_of_v<PBackgroundParent, M>) {
+    childID = BackgroundParent::GetChildID(aManager);
+  }
+
+  int64_t length = -1;
+  if (!InputStreamLengthHelper::GetSyncLength(stream, &length)) {
+    length = -1;
+  }
+
+  nsresult rv = NS_OK;
+  RefPtr<RemoteLazyInputStreamParent> actor =
+      RemoteLazyInputStreamParent::Create(aStream, length, childID, &rv,
+                                          aManager);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return false;
   }
 
-  aValue.stream() = RemoteLazyInputStreamParams(lazyStream);
+  if (!aManager->SendPRemoteLazyInputStreamConstructor(actor, actor->ID(),
+                                                       actor->Size())) {
+    return false;
+  }
 
+  aValue.stream() = RemoteLazyInputStreamParams(actor);
+  aValue.optionalFds() = void_t();
+
+  return true;
+}
+
+template <typename M>
+bool SerializeInputStreamChild(nsIInputStream* aStream, M* aManager,
+                               IPCStream* aValue,
+                               Maybe<IPCStream>* aOptionalValue,
+                               bool aDelayedStart) {
+  MOZ_ASSERT(aStream);
+  MOZ_ASSERT(aManager);
+  MOZ_ASSERT(aValue || aOptionalValue);
+
+  nsCOMPtr<nsIIPCSerializableInputStream> serializable =
+      do_QueryInterface(aStream);
+
+  if (serializable) {
+    if (aValue) {
+      return SerializeInputStreamWithFdsChild(serializable, *aValue,
+                                              aDelayedStart, aManager);
+    }
+
+    return SerializeInputStreamWithFdsChild(serializable, aOptionalValue->ref(),
+                                            aDelayedStart, aManager);
+  }
+
+  if (aValue) {
+    return SerializeInputStream(aStream, *aValue, aManager, aDelayedStart);
+  }
+
+  return SerializeInputStream(aStream, aOptionalValue->ref(), aManager,
+                              aDelayedStart);
+}
+
+template <typename M>
+bool SerializeInputStreamParent(nsIInputStream* aStream, M* aManager,
+                                IPCStream* aValue,
+                                Maybe<IPCStream>* aOptionalValue,
+                                bool aDelayedStart) {
+  MOZ_ASSERT(aStream);
+  MOZ_ASSERT(aManager);
+  MOZ_ASSERT(aValue || aOptionalValue);
+
+  
+  
+  if (aDelayedStart && XRE_IsParentProcess()) {
+    if (aValue) {
+      return SerializeLazyInputStream(aStream, *aValue, aManager);
+    }
+
+    return SerializeLazyInputStream(aStream, aOptionalValue->ref(), aManager);
+  }
+
+  nsCOMPtr<nsIIPCSerializableInputStream> serializable =
+      do_QueryInterface(aStream);
+
+  if (serializable) {
+    if (aValue) {
+      return SerializeInputStreamWithFdsParent(serializable, *aValue,
+                                               aDelayedStart, aManager);
+    }
+
+    return SerializeInputStreamWithFdsParent(
+        serializable, aOptionalValue->ref(), aDelayedStart, aManager);
+  }
+
+  if (aValue) {
+    return SerializeInputStream(aStream, *aValue, aManager, aDelayedStart);
+  }
+
+  return SerializeInputStream(aStream, aOptionalValue->ref(), aManager,
+                              aDelayedStart);
+}
+
+void ActivateAndCleanupIPCStream(IPCStream& aValue, bool aConsumedByIPC,
+                                 bool aDelayedStart) {
+  
+  if (aValue.optionalFds().type() ==
+      OptionalFileDescriptorSet::TPFileDescriptorSetChild) {
+    AutoTArray<FileDescriptor, 4> fds;
+
+    auto fdSetActor = static_cast<FileDescriptorSetChild*>(
+        aValue.optionalFds().get_PFileDescriptorSetChild());
+    MOZ_ASSERT(fdSetActor);
+
+    
+    
+    
+    fdSetActor->ForgetFileDescriptors(fds);
+
+    if (!aConsumedByIPC) {
+      Unused << FileDescriptorSetChild::Send__delete__(fdSetActor);
+    }
+
+  } else if (aValue.optionalFds().type() ==
+             OptionalFileDescriptorSet::TPFileDescriptorSetParent) {
+    AutoTArray<FileDescriptor, 4> fds;
+
+    auto fdSetActor = static_cast<FileDescriptorSetParent*>(
+        aValue.optionalFds().get_PFileDescriptorSetParent());
+    MOZ_ASSERT(fdSetActor);
+
+    
+    
+    
+    fdSetActor->ForgetFileDescriptors(fds);
+
+    if (!aConsumedByIPC) {
+      Unused << FileDescriptorSetParent::Send__delete__(fdSetActor);
+    }
+  }
+
+  
+  InputStreamHelper::PostSerializationActivation(aValue.stream(),
+                                                 aConsumedByIPC, aDelayedStart);
+}
+
+void ActivateAndCleanupIPCStream(Maybe<IPCStream>& aValue, bool aConsumedByIPC,
+                                 bool aDelayedStart) {
+  if (aValue.isNothing()) {
+    return;
+  }
+
+  ActivateAndCleanupIPCStream(aValue.ref(), aConsumedByIPC, aDelayedStart);
+}
+
+
+
+bool NormalizeOptionalValue(nsIInputStream* aStream, IPCStream* aValue,
+                            Maybe<IPCStream>* aOptionalValue) {
+  if (aValue) {
+    
+    return true;
+  }
+
+  if (!aStream) {
+    aOptionalValue->reset();
+    return false;
+  }
+
+  aOptionalValue->emplace();
   return true;
 }
 
 }  
 
-bool SerializeIPCStream(already_AddRefed<nsIInputStream> aInputStream,
-                        IPCStream& aValue, bool aAllowLazy) {
-  nsCOMPtr<nsIInputStream> stream(std::move(aInputStream));
-  if (!stream) {
-    MOZ_ASSERT_UNREACHABLE(
-        "Use the Maybe<...> overload to serialize optional nsIInputStreams");
-    return false;
-  }
-
-  
-  
-  if (aAllowLazy && XRE_IsParentProcess()) {
-    return SerializeLazyInputStream(stream, aValue);
-  }
-
-  if (nsCOMPtr<nsIIPCSerializableInputStream> serializable =
-          do_QueryInterface(stream)) {
-    
-    
-    const uint64_t kTooLargeStream = 1024 * 1024;
-
-    uint32_t sizeUsed = 0;
-    serializable->Serialize(aValue.stream(), kTooLargeStream, &sizeUsed);
-
-    MOZ_ASSERT(sizeUsed <= kTooLargeStream);
-
-    if (aValue.stream().type() == InputStreamParams::T__None) {
-      MOZ_CRASH("Serialize failed!");
-    }
-    return true;
-  }
-
-  InputStreamHelper::SerializeInputStreamAsPipe(stream, aValue.stream());
-  if (aValue.stream().type() == InputStreamParams::T__None) {
-    MOZ_ASSERT_UNREACHABLE("Serializing as a pipe failed");
-    return false;
-  }
-  return true;
-}
-
-bool SerializeIPCStream(already_AddRefed<nsIInputStream> aInputStream,
-                        Maybe<IPCStream>& aValue, bool aAllowLazy) {
-  nsCOMPtr<nsIInputStream> stream(std::move(aInputStream));
-  if (!stream) {
-    aValue.reset();
-    return true;
-  }
-
-  IPCStream value;
-  if (SerializeIPCStream(stream.forget(), value, aAllowLazy)) {
-    aValue = Some(value);
-    return true;
-  }
-  return false;
-}
-
 already_AddRefed<nsIInputStream> DeserializeIPCStream(const IPCStream& aValue) {
-  return InputStreamHelper::DeserializeInputStream(aValue.stream());
+  
+  
+  
+
+  AutoTArray<FileDescriptor, 4> fds;
+  if (aValue.optionalFds().type() ==
+      OptionalFileDescriptorSet::TPFileDescriptorSetParent) {
+    auto fdSetActor = static_cast<FileDescriptorSetParent*>(
+        aValue.optionalFds().get_PFileDescriptorSetParent());
+    MOZ_ASSERT(fdSetActor);
+
+    fdSetActor->ForgetFileDescriptors(fds);
+    MOZ_ASSERT(!fds.IsEmpty());
+
+    if (!FileDescriptorSetParent::Send__delete__(fdSetActor)) {
+      
+      NS_WARNING("Failed to delete fd set actor.");
+    }
+  } else if (aValue.optionalFds().type() ==
+             OptionalFileDescriptorSet::TPFileDescriptorSetChild) {
+    auto fdSetActor = static_cast<FileDescriptorSetChild*>(
+        aValue.optionalFds().get_PFileDescriptorSetChild());
+    MOZ_ASSERT(fdSetActor);
+
+    fdSetActor->ForgetFileDescriptors(fds);
+    MOZ_ASSERT(!fds.IsEmpty());
+
+    Unused << FileDescriptorSetChild::Send__delete__(fdSetActor);
+  }
+
+  return InputStreamHelper::DeserializeInputStream(aValue.stream(), fds);
 }
 
 already_AddRefed<nsIInputStream> DeserializeIPCStream(
@@ -166,26 +367,257 @@ already_AddRefed<nsIInputStream> DeserializeIPCStream(
   return DeserializeIPCStream(aValue.ref());
 }
 
-}  
+AutoIPCStream::AutoIPCStream(bool aDelayedStart)
+    : mOptionalValue(&mInlineValue), mDelayedStart(aDelayedStart) {}
 
-void IPC::ParamTraits<nsIInputStream*>::Write(IPC::MessageWriter* aWriter,
-                                              nsIInputStream* aParam) {
-  mozilla::Maybe<mozilla::ipc::IPCStream> stream;
-  if (!mozilla::ipc::SerializeIPCStream(do_AddRef(aParam), stream,
-                                         true)) {
-    MOZ_CRASH("Failed to serialize nsIInputStream");
-  }
+AutoIPCStream::AutoIPCStream(IPCStream& aTarget, bool aDelayedStart)
+    : mValue(&aTarget), mDelayedStart(aDelayedStart) {}
 
-  WriteParam(aWriter, stream);
+AutoIPCStream::AutoIPCStream(Maybe<IPCStream>& aTarget, bool aDelayedStart)
+    : mOptionalValue(&aTarget), mDelayedStart(aDelayedStart) {
+  mOptionalValue->reset();
 }
 
-bool IPC::ParamTraits<nsIInputStream*>::Read(IPC::MessageReader* aReader,
-                                             RefPtr<nsIInputStream>* aResult) {
+AutoIPCStream::~AutoIPCStream() {
+  MOZ_ASSERT(mValue || mOptionalValue);
+  if (mValue && IsSet()) {
+    ActivateAndCleanupIPCStream(*mValue, mTaken, mDelayedStart);
+  } else {
+    ActivateAndCleanupIPCStream(*mOptionalValue, mTaken, mDelayedStart);
+  }
+}
+
+bool AutoIPCStream::Serialize(nsIInputStream* aStream,
+                              dom::ContentChild* aManager) {
+  MOZ_ASSERT(aStream || !mValue);
+  MOZ_ASSERT(aManager);
+  MOZ_ASSERT(mValue || mOptionalValue);
+  MOZ_ASSERT(!mTaken);
+  MOZ_ASSERT(!IsSet());
+
+  
+  if (!NormalizeOptionalValue(aStream, mValue, mOptionalValue)) {
+    return true;
+  }
+
+  if (!SerializeInputStreamChild(aStream, aManager, mValue, mOptionalValue,
+                                 mDelayedStart)) {
+    MOZ_CRASH("IPCStream creation failed!");
+  }
+
+  return true;
+}
+
+bool AutoIPCStream::Serialize(nsIInputStream* aStream,
+                              PBackgroundChild* aManager) {
+  MOZ_ASSERT(aStream || !mValue);
+  MOZ_ASSERT(aManager);
+  MOZ_ASSERT(mValue || mOptionalValue);
+  MOZ_ASSERT(!mTaken);
+  MOZ_ASSERT(!IsSet());
+
+  
+  if (!NormalizeOptionalValue(aStream, mValue, mOptionalValue)) {
+    return true;
+  }
+
+  BackgroundChildImpl* impl = static_cast<BackgroundChildImpl*>(aManager);
+  if (!SerializeInputStreamChild(aStream, impl, mValue, mOptionalValue,
+                                 mDelayedStart)) {
+    MOZ_CRASH("IPCStream creation failed!");
+  }
+
+  return true;
+}
+
+bool AutoIPCStream::Serialize(nsIInputStream* aStream,
+                              net::SocketProcessChild* aManager) {
+  MOZ_ASSERT(aStream || !mValue);
+  MOZ_ASSERT(aManager);
+  MOZ_ASSERT(mValue || mOptionalValue);
+  MOZ_ASSERT(!mTaken);
+  MOZ_ASSERT(!IsSet());
+
+  
+  if (!NormalizeOptionalValue(aStream, mValue, mOptionalValue)) {
+    return true;
+  }
+
+  if (!SerializeInputStreamChild(aStream, aManager, mValue, mOptionalValue,
+                                 mDelayedStart)) {
+    MOZ_CRASH("IPCStream creation failed!");
+  }
+
+  return true;
+}
+
+bool AutoIPCStream::Serialize(nsIInputStream* aStream,
+                              dom::ContentParent* aManager) {
+  MOZ_ASSERT(aStream || !mValue);
+  MOZ_ASSERT(aManager);
+  MOZ_ASSERT(mValue || mOptionalValue);
+  MOZ_ASSERT(!mTaken);
+  MOZ_ASSERT(!IsSet());
+
+  
+  if (!NormalizeOptionalValue(aStream, mValue, mOptionalValue)) {
+    return true;
+  }
+
+  if (!SerializeInputStreamParent(aStream, aManager, mValue, mOptionalValue,
+                                  mDelayedStart)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool AutoIPCStream::Serialize(nsIInputStream* aStream,
+                              PBackgroundParent* aManager) {
+  MOZ_ASSERT(aStream || !mValue);
+  MOZ_ASSERT(aManager);
+  MOZ_ASSERT(mValue || mOptionalValue);
+  MOZ_ASSERT(!mTaken);
+  MOZ_ASSERT(!IsSet());
+
+  
+  if (!NormalizeOptionalValue(aStream, mValue, mOptionalValue)) {
+    return true;
+  }
+
+  BackgroundParentImpl* impl = static_cast<BackgroundParentImpl*>(aManager);
+  if (!SerializeInputStreamParent(aStream, impl, mValue, mOptionalValue,
+                                  mDelayedStart)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool AutoIPCStream::Serialize(nsIInputStream* aStream,
+                              net::SocketProcessParent* aManager) {
+  MOZ_ASSERT(aStream || !mValue);
+  MOZ_ASSERT(aManager);
+  MOZ_ASSERT(mValue || mOptionalValue);
+  MOZ_ASSERT(!mTaken);
+  MOZ_ASSERT(!IsSet());
+
+  
+  if (!NormalizeOptionalValue(aStream, mValue, mOptionalValue)) {
+    return true;
+  }
+
+  if (!SerializeInputStreamParent(aStream, aManager, mValue, mOptionalValue,
+                                  mDelayedStart)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool AutoIPCStream::IsSet() const {
+  MOZ_ASSERT(mValue || mOptionalValue);
+  if (mValue) {
+    return mValue->stream().type() != InputStreamParams::T__None;
+  } else {
+    return mOptionalValue->isSome() &&
+           mOptionalValue->ref().stream().type() != InputStreamParams::T__None;
+  }
+}
+
+IPCStream& AutoIPCStream::TakeValue() {
+  MOZ_ASSERT(mValue || mOptionalValue);
+  MOZ_ASSERT(!mTaken);
+  MOZ_ASSERT(IsSet());
+
+  mTaken = true;
+
+  if (mValue) {
+    return *mValue;
+  }
+
+  IPCStream& value = mOptionalValue->ref();
+  return value;
+}
+
+Maybe<IPCStream>& AutoIPCStream::TakeOptionalValue() {
+  MOZ_ASSERT(!mTaken);
+  MOZ_ASSERT(!mValue);
+  MOZ_ASSERT(mOptionalValue);
+  mTaken = true;
+  return *mOptionalValue;
+}
+
+void IPDLParamTraits<nsIInputStream*>::Write(IPC::MessageWriter* aWriter,
+                                             IProtocol* aActor,
+                                             nsIInputStream* aParam) {
+  auto autoStream = MakeRefPtr<HoldIPCStream>( true);
+
+  bool ok = false;
+  bool found = false;
+
+  
+  
+  
+  IProtocol* actor = aActor;
+  while (!found && actor) {
+    switch (actor->GetProtocolId()) {
+      case PContentMsgStart:
+        if (actor->GetSide() == mozilla::ipc::ParentSide) {
+          ok = autoStream->Serialize(
+              aParam, static_cast<mozilla::dom::ContentParent*>(actor));
+        } else {
+          MOZ_RELEASE_ASSERT(actor->GetSide() == mozilla::ipc::ChildSide);
+          ok = autoStream->Serialize(
+              aParam, static_cast<mozilla::dom::ContentChild*>(actor));
+        }
+        found = true;
+        break;
+      case PBackgroundMsgStart:
+        if (actor->GetSide() == mozilla::ipc::ParentSide) {
+          ok = autoStream->Serialize(
+              aParam, static_cast<mozilla::ipc::PBackgroundParent*>(actor));
+        } else {
+          MOZ_RELEASE_ASSERT(actor->GetSide() == mozilla::ipc::ChildSide);
+          ok = autoStream->Serialize(
+              aParam, static_cast<mozilla::ipc::PBackgroundChild*>(actor));
+        }
+        found = true;
+        break;
+      default:
+        break;
+    }
+
+    
+    actor = actor->Manager();
+  }
+
+  if (!found) {
+    aActor->FatalError(
+        "Attempt to send nsIInputStream over an unsupported ipdl protocol");
+  }
+  MOZ_RELEASE_ASSERT(ok, "Failed to serialize nsIInputStream");
+
+  WriteIPDLParam(aWriter, aActor, autoStream->TakeOptionalValue());
+
+  
+  
+  
+  NS_ProxyRelease("IPDLParamTraits<nsIInputStream*>::Write::autoStream",
+                  NS_GetCurrentThread(), autoStream.forget(), true);
+}
+
+bool IPDLParamTraits<nsIInputStream*>::Read(IPC::MessageReader* aReader,
+                                            IProtocol* aActor,
+                                            RefPtr<nsIInputStream>* aResult) {
   mozilla::Maybe<mozilla::ipc::IPCStream> ipcStream;
-  if (!ReadParam(aReader, &ipcStream)) {
+  if (!ReadIPDLParam(aReader, aActor, &ipcStream)) {
     return false;
   }
 
   *aResult = mozilla::ipc::DeserializeIPCStream(ipcStream);
   return true;
 }
+
+}  
+}  
