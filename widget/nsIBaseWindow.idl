@@ -9,7 +9,9 @@
 
 
 [ptr] native nsIWidget(nsIWidget);
-%{ C++
+%{C++
+#include "Units.h"
+
 class nsIWidget;
 %}
 
@@ -21,10 +23,10 @@ typedef voidPtr nativeWindow;
 
 
 
-[scriptable, uuid(ca635529-a977-4552-9b8a-66187e54d882)]
+[scriptable, builtinclass, uuid(ca635529-a977-4552-9b8a-66187e54d882)]
 interface nsIBaseWindow : nsISupports
 {
-	
+  
 
 
 
@@ -58,101 +60,76 @@ interface nsIBaseWindow : nsISupports
 
 
 
-	[noscript]void initWindow(in nativeWindow parentNativeWindow,
-		in nsIWidget parentWidget,	in long x, in long y, in long cx, in long cy);
-
-	
-
-
-
-
-
-
-
-
-
-	void destroy();
-
-	
-
-
-
-	void setPosition(in long x, in long y);
+  [noscript]void initWindow(in nativeWindow parentNativeWindow,
+    in nsIWidget parentWidget,  in long x, in long y, in long cx, in long cy);
 
   
 
 
 
-	void setPositionDesktopPix(in long x, in long y);
-
-	
-
-
-
-	void getPosition(out long x, out long y);
-
-	
-
-
-	void setSize(in long cx, in long cy, in boolean fRepaint);
-
-	
-
-
-	void getSize(out long cx, out long cy);
-
-	
-
-
-	const unsigned long eRepaint = 1;
-	const unsigned long eDelayResize = 2;
-
-	
-
-
-
-	void setPositionAndSize(in long x, in long y, in long cx, in long cy,
-		in unsigned long flags);
-
-	
-
-
-
-	void getPositionAndSize(out long x, out long y, out long cx, out long cy);
-
-	
-
-
-
-
-	void repaint(in boolean force);
-
-	
 
 
 
 
 
 
+  void destroy();
+
+  
+
+
+
+  void setPosition(in long x, in long y);
+
+  
+
+
+
+  void setPositionDesktopPix(in long x, in long y);
+
+  
+
+
+
+  void getPosition(out long x, out long y);
+
+  
+
+
+  void setSize(in long cx, in long cy, in boolean fRepaint);
+
+  
+
+
+  void getSize(out long cx, out long cy);
+
+  
+
+
+  const unsigned long eRepaint = 1;
+  const unsigned long eDelayResize = 2;
+
+  
+
+
+
+  void setPositionAndSize(in long x, in long y, in long cx, in long cy,
+    in unsigned long flags);
+
+  
+
+
+
+  void getPositionAndSize(out long x, out long y, out long cx, out long cy);
+
+  
 
 
 
 
+  void repaint(in boolean force);
 
-	[noscript] attribute nsIWidget parentWidget;
-
-	
-
-
-
-
-
-
-
-
-	attribute nativeWindow parentNativeWindow;
-
-	
+  
 
 
 
@@ -161,14 +138,39 @@ interface nsIBaseWindow : nsISupports
 
 
 
-	readonly attribute AString nativeHandle;
-
-	
 
 
 
+  [noscript] attribute nsIWidget parentWidget;
 
-	attribute boolean visibility;
+  
+
+
+
+
+
+
+
+
+  attribute nativeWindow parentNativeWindow;
+
+  
+
+
+
+
+
+
+
+
+  readonly attribute AString nativeHandle;
+
+  
+
+
+
+
+  attribute boolean visibility;
 
     
 
@@ -176,38 +178,58 @@ interface nsIBaseWindow : nsISupports
 
     attribute boolean enabled;
 
-	
+  
 
 
 
 
-	[noscript] readonly attribute nsIWidget mainWidget;
+  [noscript] readonly attribute nsIWidget mainWidget;
 
-	
-
-
-
-
-
-
-	readonly attribute double unscaledDevicePixelsPerCSSPixel;
-
-	
+  
 
 
 
 
 
 
+  readonly attribute double unscaledDevicePixelsPerCSSPixel;
+
+%{C++
+  mozilla::CSSToLayoutDeviceScale UnscaledDevicePixelsPerCSSPixel() {
+    double s = 1.0;
+    GetUnscaledDevicePixelsPerCSSPixel(&s);
+    return mozilla::CSSToLayoutDeviceScale(s);
+  }
+%}
+
+  
 
 
 
 
 
-	readonly attribute double devicePixelsPerDesktopPixel;
-
-	
 
 
-	attribute AString title;
+
+
+
+
+  readonly attribute double devicePixelsPerDesktopPixel;
+
+%{C++
+  mozilla::DesktopToLayoutDeviceScale DevicePixelsPerDesktopPixel() {
+    double s = 1.0;
+    GetDevicePixelsPerDesktopPixel(&s);
+    return mozilla::DesktopToLayoutDeviceScale(s);
+  }
+
+  mozilla::CSSToDesktopScale GetCSSToDesktopScale() {
+    return UnscaledDevicePixelsPerCSSPixel() / DevicePixelsPerDesktopPixel();
+  }
+%}
+
+  
+
+
+  attribute AString title;
 };
