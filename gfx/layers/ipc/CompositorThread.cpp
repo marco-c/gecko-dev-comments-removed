@@ -55,8 +55,11 @@ CompositorThreadHolder::CreateCompositorThread() {
   
   
   
+  
+  
+  
   const uint32_t stackSize =
-      nsIThreadManager::DEFAULT_STACK_SIZE ? 320 << 10 : 0;
+      nsIThreadManager::DEFAULT_STACK_SIZE ? 512 << 10 : 0;
 
   nsCOMPtr<nsIThread> compositorThread;
   nsresult rv = NS_NewNamedThread(
