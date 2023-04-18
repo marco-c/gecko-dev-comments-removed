@@ -3404,7 +3404,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 122;
+    const UI_VERSION = 124;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     const PROFILE_DIR = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
@@ -4125,6 +4125,42 @@ BrowserGlue.prototype = {
 
     
     
+
+    if (currentUIVersion < 124) {
+      
+      
+      const oldFormAutofillModule = "extensions.formautofill.available";
+      const oldCreditCardsAvailable =
+        "extensions.formautofill.creditCards.available";
+      const newCreditCardsAvailable =
+        "extensions.formautofill.creditCards.supported";
+      const newAddressesAvailable =
+        "extensions.formautofill.addresses.supported";
+      if (Services.prefs.prefHasUserValue(oldFormAutofillModule)) {
+        let moduleAvailability = Services.prefs.getCharPref(
+          oldFormAutofillModule
+        );
+        if (moduleAvailability == "on") {
+          Services.prefs.setCharPref(newAddressesAvailable, moduleAvailability);
+          Services.prefs.setCharPref(
+            newCreditCardsAvailable,
+            Services.prefs.getBoolPref(oldCreditCardsAvailable) ? "on" : "off"
+          );
+        }
+
+        if (moduleAvailability == "off") {
+          Services.prefs.setCharPref(
+            newCreditCardsAvailable,
+            moduleAvailability
+          );
+          Services.prefs.setCharPref(newAddressesAvailable, moduleAvailability);
+        }
+      }
+
+      
+      Services.prefs.clearUserPref(oldFormAutofillModule);
+      Services.prefs.clearUserPref(oldCreditCardsAvailable);
+    }
 
     
     Services.prefs.setIntPref("browser.migration.version", UI_VERSION);
