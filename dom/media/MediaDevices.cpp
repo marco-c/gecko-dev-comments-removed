@@ -17,6 +17,7 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/MediaManager.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "MediaTrackConstraints.h"
 #include "nsContentUtils.h"
 #include "nsINamed.h"
@@ -166,13 +167,15 @@ void MediaDevices::MaybeResumeDeviceExposure() {
   if (!window || !window->IsFullyActive()) {
     return;
   }
-  
-  
-  
-  BrowsingContext* bc = window->GetBrowsingContext();
-  if (!bc->IsActive() ||                  
-      !bc->GetIsActiveBrowserWindow()) {  
-    return;
+  if (!StaticPrefs::media_devices_unfocused_enabled()) {
+    
+    
+    
+    BrowsingContext* bc = window->GetBrowsingContext();
+    if (!bc->IsActive() ||  
+        !bc->GetIsActiveBrowserWindow()) {  
+      return;
+    }
   }
   MediaManager::Get()->GetPhysicalDevices()->Then(
       GetCurrentSerialEventTarget(), __func__,
