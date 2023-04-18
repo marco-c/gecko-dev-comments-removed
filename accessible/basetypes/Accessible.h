@@ -453,6 +453,14 @@ class Accessible {
   virtual TableAccessibleBase* AsTableBase() { return nullptr; }
   virtual TableCellAccessibleBase* AsTableCellBase() { return nullptr; }
 
+#ifdef A11Y_LOG
+  
+
+
+
+  void DebugDescription(nsCString& aDesc);
+#endif
+
   
 
 
