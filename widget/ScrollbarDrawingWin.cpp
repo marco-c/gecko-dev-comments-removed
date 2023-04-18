@@ -33,18 +33,14 @@ LayoutDeviceIntSize ScrollbarDrawingWin::GetMinimumWidgetSize(
     case StyleAppearance::ScrollbarHorizontal:
     case StyleAppearance::ScrollbarthumbVertical:
     case StyleAppearance::ScrollbarthumbHorizontal: {
-      auto* style = nsLayoutUtils::StyleForScrollbar(aFrame);
-      auto width = style->StyleUIReset()->mScrollbarWidth;
-      auto overlay =
-          aPresContext->UseOverlayScrollbars() ? Overlay::Yes : Overlay::No;
-      auto sizes = GetScrollbarSizes(aPresContext, width, overlay);
-      if (overlay == Overlay::No &&
-          (aAppearance == StyleAppearance::ScrollbarHorizontal ||
-           aAppearance == StyleAppearance::ScrollbarVertical)) {
+      if ((aAppearance == StyleAppearance::ScrollbarHorizontal ||
+           aAppearance == StyleAppearance::ScrollbarVertical) &&
+          !aPresContext->UseOverlayScrollbars()) {
         return LayoutDeviceIntSize{};
       }
       
       
+      auto sizes = GetScrollbarSizes(aPresContext, aFrame);
       const bool isHorizontal =
           aAppearance == StyleAppearance::ScrollbarHorizontal ||
           aAppearance == StyleAppearance::ScrollbarthumbHorizontal ||
