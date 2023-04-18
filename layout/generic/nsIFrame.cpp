@@ -9838,12 +9838,24 @@ bool nsIFrame::FinishAndStoreOverflow(OverflowAreas& aOverflowAreas,
 
   
   
-  
-  
-  
-  
-  if ((aNewSize.width != 0 || !IsInlineFrame()) &&
-      !HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
+  const bool shouldIncludeBounds = [&] {
+    if (aNewSize.width == 0 && IsInlineFrame()) {
+      
+      
+      return false;
+    }
+    if (HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
+      
+      
+      
+      
+      
+      return overflowClipAxes != PhysicalAxes::None;
+    }
+    return true;
+  }();
+
+  if (shouldIncludeBounds) {
     for (const auto otype : AllOverflowTypes()) {
       nsRect& o = aOverflowAreas.Overflow(otype);
       o = o.UnionEdges(bounds);
