@@ -2547,7 +2547,7 @@ var SessionStoreInternal = {
     if (!isPrivateWindow && tabState.isPrivate) {
       return;
     }
-    if (aTab == aWindow.FirefoxViewHandler.tab) {
+    if (aTab == aWindow.gFirefoxViewTab) {
       return;
     }
 
@@ -4130,7 +4130,7 @@ var SessionStoreInternal = {
 
     
     for (let tab of tabs) {
-      if (tab == aWindow.FirefoxViewHandler.tab) {
+      if (tab == aWindow.gFirefoxViewTab) {
         continue;
       }
       let tabData = lazy.TabState.collect(tab, TAB_CUSTOM_VALUES.get(tab));

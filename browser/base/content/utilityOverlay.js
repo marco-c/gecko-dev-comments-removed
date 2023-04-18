@@ -525,7 +525,7 @@ function openLinkIn(url, where, params) {
     
     
     let tab = w.gBrowser.getTabForBrowser(targetBrowser);
-    if (tab == w.FirefoxViewHandler.tab) {
+    if (tab == w.gFirefoxViewTab) {
       where = "tab";
       targetBrowser = null;
     } else if (
