@@ -144,7 +144,7 @@ class PromiseWorkerProxy : public PromiseNativeHandler,
   
   
   
-  WorkerPrivate* GetWorkerPrivate() const NO_THREAD_SAFETY_ANALYSIS;
+  WorkerPrivate* GetWorkerPrivate() const;
 
   
   
@@ -156,9 +156,9 @@ class PromiseWorkerProxy : public PromiseNativeHandler,
   
   void CleanUp();
 
-  Mutex& Lock() RETURN_CAPABILITY(mCleanUpLock) { return mCleanUpLock; }
+  Mutex& Lock() { return mCleanUpLock; }
 
-  bool CleanedUp() const REQUIRES(mCleanUpLock) {
+  bool CleanedUp() const {
     mCleanUpLock.AssertCurrentThreadOwns();
     return mCleanedUp;
   }
@@ -207,7 +207,7 @@ class PromiseWorkerProxy : public PromiseNativeHandler,
   const PromiseWorkerProxyStructuredCloneCallbacks* mCallbacks;
 
   
-  Mutex mCleanUpLock;
+  Mutex mCleanUpLock MOZ_UNANNOTATED;
 };
 }  
 }  
