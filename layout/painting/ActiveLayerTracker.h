@@ -66,13 +66,6 @@ class ActiveLayerTracker {
 
 
 
-  static void NotifyAnimatedFromScrollHandler(nsIFrame* aFrame,
-                                              nsCSSPropertyID aProperty,
-                                              nsIFrame* aScrollFrame);
-  
-
-
-
 
 
 
@@ -150,13 +143,6 @@ class ActiveLayerTracker {
 
 
   static bool IsContentActive(nsIFrame* aFrame);
-
-  
-
-
-
-
-  static void SetCurrentScrollHandlerFrame(nsIFrame* aFrame);
 };
 
 }  
