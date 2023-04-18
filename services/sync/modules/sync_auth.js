@@ -126,7 +126,7 @@ function SyncAuthManager() {
   }
 }
 
-this.SyncAuthManager.prototype = {
+SyncAuthManager.prototype = {
   _fxaService: null,
   _tokenServerClient: null,
   
