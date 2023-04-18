@@ -1080,7 +1080,15 @@ StyleGuideOverlay.prototype = {
       style: "primary"
     }, "Primary Button"), react.createElement("br", null), react.createElement(Button_Button, {
       style: "secondary"
-    }, "Secondary Button"), react.createElement("h4", {
+    }, "Secondary Button"), react.createElement("span", {
+      className: "stp_button_wide"
+    }, react.createElement(Button_Button, {
+      style: "primary"
+    }, "Primary Wide Button")), react.createElement("span", {
+      className: "stp_button_wide"
+    }, react.createElement(Button_Button, {
+      style: "secondary"
+    }, "Secondary Wide Button")), react.createElement("h4", {
       className: "stp_styleguide_h4"
     }, "Header"), react.createElement(Header_Header, null, react.createElement(Button_Button, {
       style: "primary"
@@ -1124,7 +1132,13 @@ StyleGuideOverlay.prototype = {
         url: "https://example.org",
         alt: "Alt Text"
       }]
-    })), document.querySelector(`#stp_style_guide_components`));
+    }), react.createElement("h3", null, "Typography:"), react.createElement("h2", {
+      className: "header_large"
+    }, ".header_large"), react.createElement("h3", {
+      className: "header_medium"
+    }, ".header_medium"), react.createElement("p", null, "paragraph"), react.createElement("h3", null, "Native Elements:"), react.createElement("h4", {
+      className: "stp_styleguide_h4"
+    }, "Horizontal Rule"), react.createElement("hr", null)), document.querySelector(`#stp_style_guide_components`));
   }
 
 };
