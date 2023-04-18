@@ -2584,11 +2584,6 @@ class nsLayoutUtils {
   
 
 
-  static mozilla::StyleTouchAction GetTouchActionFromFrame(nsIFrame* aFrame);
-
-  
-
-
 
 
 

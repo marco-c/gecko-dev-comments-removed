@@ -5755,6 +5755,19 @@ StyleImageRendering nsIFrame::UsedImageRendering() const {
   return style->StyleVisibility()->mImageRendering;
 }
 
+
+
+StyleTouchAction nsIFrame::UsedTouchAction() const {
+  if (IsFrameOfType(eLineParticipant)) {
+    return StyleTouchAction::AUTO;
+  }
+  auto& disp = *StyleDisplay();
+  if (disp.IsInternalTableStyleExceptCell()) {
+    return StyleTouchAction::AUTO;
+  }
+  return disp.mTouchAction;
+}
+
 Maybe<nsIFrame::Cursor> nsIFrame::GetCursor(const nsPoint&) {
   StyleCursorKind kind = StyleUI()->Cursor().keyword;
   if (kind == StyleCursorKind::Auto) {
@@ -11408,8 +11421,7 @@ CompositorHitTestInfo nsIFrame::GetCompositorHitTestInfo(
 
     result += inheritedTouchAction;
 
-    const StyleTouchAction touchAction =
-        nsLayoutUtils::GetTouchActionFromFrame(touchActionFrame);
+    const StyleTouchAction touchAction = touchActionFrame->UsedTouchAction();
     
     
     if (touchAction == StyleTouchAction::AUTO) {

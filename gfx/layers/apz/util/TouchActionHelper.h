@@ -10,11 +10,17 @@
 #include "mozilla/layers/LayersTypes.h"  
 #include "RelativeTo.h"                  
 
-class nsIFrame;
 class nsIWidget;
-
 namespace mozilla {
-namespace layers {
+
+namespace dom {
+class Document;
+}  
+
+class WidgetTouchEvent;
+}  
+
+namespace mozilla::layers {
 
 
 
@@ -28,12 +34,11 @@ class TouchActionHelper {
 
 
 
-  static TouchBehaviorFlags GetAllowedTouchBehavior(
-      nsIWidget* aWidget, RelativeTo aRootFrame,
-      const LayoutDeviceIntPoint& aPoint);
+  static nsTArray<TouchBehaviorFlags> GetAllowedTouchBehavior(
+      nsIWidget* aWidget, dom::Document* aDocument,
+      const WidgetTouchEvent& aPoint);
 };
 
-}  
 }  
 
 #endif 
