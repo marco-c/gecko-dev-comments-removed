@@ -57,6 +57,8 @@ struct RawServoSelectorList;
 
 namespace mozilla {
 class EventListenerManager;
+template <typename T>
+class Maybe;
 class PresShell;
 class TextEditor;
 namespace dom {
@@ -615,6 +617,19 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
   nsIContent* GetChildAt_Deprecated(uint32_t aIndex) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+  mozilla::Maybe<uint32_t> ComputeIndexOf(const nsINode* aPossibleChild) const;
 
   
 
