@@ -48,20 +48,38 @@ class DOMFullscreenParent extends JSWindowActorParent {
     }
   }
 
+  
+
+
+
+
+  _cleanupFullscreenStateAndResumeChromeUI(aWindow) {
+    this.cleanupDomFullscreen(aWindow);
+    if (this.requestOrigin == this && aWindow.document.fullscreen) {
+      aWindow.windowUtils.remoteFrameFullscreenReverted();
+    }
+  }
+
   didDestroy() {
     this._didDestroy = true;
 
     let window = this._fullscreenWindow;
     if (!window) {
-      if (this.waitingForChildExitFullscreen) {
+      let topBrowsingContext = this.browsingContext.top;
+      let browser = topBrowsingContext.embedderElement;
+      if (!browser) {
+        return;
+      }
+
+      if (
+        this.waitingForChildExitFullscreen ||
+        this.waitingForChildEnterFullscreen
+      ) {
         this.waitingForChildExitFullscreen = false;
+        this.waitingForChildEnterFullscreen = false;
         
         
-        let topBrowsingContext = this.browsingContext.top;
-        let browser = topBrowsingContext.embedderElement;
-        if (browser) {
-          this.cleanupDomFullscreen(browser.ownerGlobal);
-        }
+        this._cleanupFullscreenStateAndResumeChromeUI(browser.ownerGlobal);
       }
       return;
     }
@@ -95,7 +113,7 @@ class DOMFullscreenParent extends JSWindowActorParent {
       this.waitingForChildExitFullscreen = false;
       
       
-      this.cleanupDomFullscreen(window);
+      this._cleanupFullscreenStateAndResumeChromeUI(window);
     }
     this.updateFullscreenWindowReference(window);
   }
@@ -114,7 +132,6 @@ class DOMFullscreenParent extends JSWindowActorParent {
     switch (aMessage.name) {
       case "DOMFullscreen:Request": {
         this.waitingForChildExitFullscreen = false;
-        this.nextMsgRecipient = null;
         this.requestOrigin = this;
         this.addListeners(window);
         window.windowUtils.remoteFrameFullscreenChanged(browser);

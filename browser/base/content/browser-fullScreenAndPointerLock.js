@@ -467,7 +467,12 @@ var FullScreen = {
     
     
     if (this._isRemoteBrowser(aBrowser)) {
-      let [targetActor, inProcessBC] = this._getNextMsgRecipientActor(aActor);
+      
+      
+      let [targetActor, inProcessBC] = this._getNextMsgRecipientActor(
+        aActor,
+        false 
+      );
       if (!targetActor) {
         
         
@@ -475,14 +480,14 @@ var FullScreen = {
         this._abortEnterFullscreen();
         return;
       }
+      
+      
+      targetActor.waitingForChildEnterFullscreen = true;
       targetActor.sendAsyncMessage("DOMFullscreen:Entered", {
         remoteFrameBC: inProcessBC,
       });
 
       if (inProcessBC) {
-        
-        
-        targetActor.waitingForChildEnterFullscreen = true;
         
         return;
       }
@@ -559,17 +564,21 @@ var FullScreen = {
 
   cleanupDomFullscreen(aActor) {
     let needToWaitForChildExit = false;
-    let [target, inProcessBC] = this._getNextMsgRecipientActor(aActor);
+    
+    
+    
+    let [target, inProcessBC] = this._getNextMsgRecipientActor(
+      aActor,
+      true 
+    );
     if (target) {
       needToWaitForChildExit = true;
-      if (!target.waitingForChildExitFullscreen) {
-        
-        
-        target.waitingForChildExitFullscreen = true;
-        target.sendAsyncMessage("DOMFullscreen:CleanUp", {
-          remoteFrameBC: inProcessBC,
-        });
-      }
+      
+      
+      target.waitingForChildExitFullscreen = true;
+      target.sendAsyncMessage("DOMFullscreen:CleanUp", {
+        remoteFrameBC: inProcessBC,
+      });
       if (inProcessBC) {
         return needToWaitForChildExit;
       }
@@ -623,10 +632,12 @@ var FullScreen = {
 
 
 
-  _getNextMsgRecipientActor(aActor) {
+
+
+  _getNextMsgRecipientActor(aActor, aUseCache) {
     
     
-    if (aActor.nextMsgRecipient) {
+    if (aUseCache && aActor.nextMsgRecipient) {
       let nextMsgRecipient = aActor.nextMsgRecipient;
       while (nextMsgRecipient) {
         let [actor] = nextMsgRecipient;
