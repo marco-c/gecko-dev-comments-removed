@@ -1483,7 +1483,8 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
       (didHaveHScrollbar != state.mShowHScrollbar ||
        didHaveVScrollbar != state.mShowVScrollbar ||
        didOnlyHScrollbar != mHelper.mOnlyNeedHScrollbarToScrollVVInsideLV ||
-       didOnlyVScrollbar != mHelper.mOnlyNeedVScrollbarToScrollVVInsideLV)) {
+       didOnlyVScrollbar != mHelper.mOnlyNeedVScrollbarToScrollVVInsideLV) &&
+      PresShell()->IsVisualViewportOffsetSet()) {
     
     
     
@@ -6553,7 +6554,7 @@ bool ScrollFrameHelper::ReflowFinished() {
   nsAutoScriptBlocker scriptBlocker;
 
   if (mReclampVVOffsetInReflowFinished) {
-    MOZ_ASSERT(mIsRoot);
+    MOZ_ASSERT(mIsRoot && mOuter->PresShell()->IsVisualViewportOffsetSet());
     mReclampVVOffsetInReflowFinished = false;
     AutoWeakFrame weakFrame(mOuter);
     mOuter->PresShell()->SetVisualViewportOffset(GetVisualViewportOffset(),
