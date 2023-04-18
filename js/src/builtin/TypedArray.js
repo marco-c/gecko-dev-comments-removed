@@ -1798,10 +1798,10 @@ function TypedArrayCreateSameType(exemplar, length) {
 
 
 
-function TypedArrayWithReversed() {
+function TypedArrayToReversed() {
     
     if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayWithReversed");
+        return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayToReversed");
     }
 
     
@@ -1835,11 +1835,11 @@ function isValidIntegerIndex(a, index) {
 
 
 
-function TypedArrayWithAt(index, value) {
+function TypedArrayWith(index, value) {
 
     
     if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayWithAt", index, value);
+        return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayWith", index, value);
     }
 
     
@@ -1881,10 +1881,10 @@ function TypedArrayWithAt(index, value) {
 
 
 
-function TypedArrayWithSorted(comparefn) {
+function TypedArrayToSorted(comparefn) {
     
     if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayWithSorted", comparefn);
+        return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayToSorted", comparefn);
     }
 
     
@@ -1909,10 +1909,10 @@ function TypedArrayWithSorted(comparefn) {
 
 
 
-function TypedArrayWithSpliced(start, deleteCount, ...items) {
+function TypedArrayToSpliced(start, deleteCount, ...items) {
     
     if (!IsObject(this) || !IsTypedArray(this)) {
-        return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayWithSpliced", start, deleteCount, items);
+        return callFunction(CallTypedArrayMethodIfWrapped, this, "TypedArrayToSpliced", start, deleteCount, items);
     }
 
     

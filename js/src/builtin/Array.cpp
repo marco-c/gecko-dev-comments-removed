@@ -3148,13 +3148,13 @@ static ArrayObject* NewDenseArray(JSContext* cx, const CallArgs& args,
 
 
 
-static bool array_with_spliced(JSContext* cx, unsigned argc, Value* vp) {
+static bool array_to_spliced(JSContext* cx, unsigned argc, Value* vp) {
   
 
 
 
   AutoGeckoProfilerEntry pseudoFrame(
-      cx, "Array.prototype.withSpliced", JS::ProfilingCategoryPair::JS,
+      cx, "Array.prototype.toSpliced", JS::ProfilingCategoryPair::JS,
       uint32_t(ProfilingStackFrame::Flags::RELEVANT_FOR_JS));
 
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -3267,7 +3267,7 @@ bool IsIntegralNumber(JSContext* cx, HandleValue v, bool* result) {
 
 
 
-static bool array_with_at(JSContext* cx, unsigned argc, Value* vp) {
+static bool array_with(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   
@@ -3286,7 +3286,7 @@ static bool array_with_at(JSContext* cx, unsigned argc, Value* vp) {
   double relativeIndex;
   if (!ToInteger(cx, args.get(0), &relativeIndex)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX,
-                              "Array.withAt");
+                              "Array.with");
     return false;
   }
 
@@ -3299,7 +3299,7 @@ static bool array_with_at(JSContext* cx, unsigned argc, Value* vp) {
   
   if (actualIndex < 0 || actualIndex >= double(len)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX,
-                              "Array.withAt: index out of bounds");
+                              "Array.with: index out of bounds");
     return false;
   }
   
@@ -4359,10 +4359,9 @@ static const JSFunctionSpec array_methods[] = {
     JS_SELF_HOSTED_FN("at", "ArrayAt", 1, 0),
 
 #ifdef ENABLE_CHANGE_ARRAY_BY_COPY
-    JS_SELF_HOSTED_FN("withReversed", "ArrayWithReversed", 0, 0),
-    JS_SELF_HOSTED_FN("withSorted", "ArrayWithSorted", 1, 0),
-    JS_FN("withSpliced", array_with_spliced, 2, 0),
-    JS_FN("withAt", array_with_at, 2, 0),
+    JS_SELF_HOSTED_FN("toReversed", "ArrayToReversed", 0, 0),
+    JS_SELF_HOSTED_FN("toSorted", "ArrayToSorted", 1, 0),
+    JS_FN("toSpliced", array_to_spliced, 2, 0), JS_FN("with", array_with, 2, 0),
 #endif
 
     JS_FS_END};
@@ -4627,10 +4626,12 @@ static bool array_proto_finish(JSContext* cx, JS::HandleObject ctor,
 
 #ifdef ENABLE_CHANGE_ARRAY_BY_COPY
   if (cx->options().changeArrayByCopy()) {
-    if (!DefineDataProperty(cx, unscopables, cx->names().withAt, value) ||
-        !DefineDataProperty(cx, unscopables, cx->names().withReversed, value) ||
-        !DefineDataProperty(cx, unscopables, cx->names().withSorted, value) ||
-        !DefineDataProperty(cx, unscopables, cx->names().withSpliced, value)) {
+    
+
+
+    if (!DefineDataProperty(cx, unscopables, cx->names().toReversed, value) ||
+        !DefineDataProperty(cx, unscopables, cx->names().toSorted, value) ||
+        !DefineDataProperty(cx, unscopables, cx->names().toSpliced, value)) {
       return false;
     }
   }

@@ -1226,7 +1226,7 @@ SetIsInlinableLargeFunction(ArrayAt);
 
 
 
-function ArrayWithReversed() {
+function ArrayToReversed() {
 
     
     var O = ToObject(this);
@@ -1254,12 +1254,12 @@ function ArrayWithReversed() {
 
 
 
-function ArrayWithSorted(comparefn) {
+function ArrayToSorted(comparefn) {
 
     
 
     if (comparefn !== undefined && !IsCallable(comparefn)) {
-        ThrowTypeError(JSMSG_BAD_WITHSORTED_ARG);
+        ThrowTypeError(JSMSG_BAD_TOSORTED_ARG);
     }
 
     
