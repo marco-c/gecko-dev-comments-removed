@@ -1294,6 +1294,20 @@ async function getEditorLineEl(dbg, line) {
 
 
 
+function assertTextContentOnLine(dbg, line, expectedTextContent) {
+  const lineInfo = getCM(dbg).lineInfo(line - 1);
+  const textContent = lineInfo.text.trim();
+  is(textContent, expectedTextContent, `Expected text content on line ${line}`);
+}
+
+
+
+
+
+
+
+
+
 
 async function assertNoBreakpoint(dbg, line) {
   const el = await getEditorLineEl(dbg, line);
