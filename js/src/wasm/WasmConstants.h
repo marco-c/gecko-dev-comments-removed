@@ -766,7 +766,8 @@ enum class SimdOp {
   F64x2RelaxedMin = 0x10f,
   F64x2RelaxedMax = 0x110,
   I16x8RelaxedQ15MulrS = 0x111,
-
+  I16x8DotI8x16I7x16S = 0x112,
+  I32x4DotI8x16I7x16AddS = 0x113,
 
 
 
