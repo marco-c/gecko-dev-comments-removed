@@ -158,6 +158,9 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
 
     
     RefPtr<WebGLFramebufferJS> mScratchFramebuffer;
+    
+    RefPtr<WebGLBufferJS> mZeroBuffer;
+    IntSize mZeroSize;
 
     uint32_t mMaxTextureSize = 0;
 
@@ -230,7 +233,7 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
 
     bool UploadSurface(DataSourceSurface* aData, SurfaceFormat aFormat,
                        const IntRect& aSrcRect, const IntPoint& aDstOffset,
-                       bool aInit);
+                       bool aInit, bool aZero = false);
     bool DrawRectAccel(const Rect& aRect, const Pattern& aPattern,
                        const DrawOptions& aOptions,
                        Maybe<DeviceColor> aMaskColor = Nothing(),
