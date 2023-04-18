@@ -186,6 +186,21 @@ let JSPROCESSACTORS = {
 
 
 let JSWINDOWACTORS = {
+  AboutDoHError: {
+    parent: {
+      moduleURI: "resource:///actors/AboutDoHErrorParent.jsm",
+    },
+    child: {
+      moduleURI: "resource:///actors/AboutDoHErrorChild.jsm",
+      events: {
+        DoHAllowFallback: { wantUntrusted: true },
+        DoHRetry: { wantUntrusted: true },
+      },
+    },
+    matches: ["about:doherror?*"],
+    allFrames: true,
+  },
+
   AboutLogins: {
     parent: {
       moduleURI: "resource:///actors/AboutLoginsParent.jsm",
