@@ -10,7 +10,6 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/Logging.h"
-#include "mozilla/MoveOnlyFunction.h"
 #include "mozilla/ipc/InputStreamParams.h"
 #include "nsIAsyncInputStream.h"
 #include "nsStreamUtils.h"
@@ -36,19 +35,33 @@ class SCOPED_CAPABILITY DataPipeAutoLock {
 
   template <typename F>
   void AddUnlockAction(F aAction) {
-    mActions.AppendElement(std::move(aAction));
+    mActions.AppendElement(MakeUnique<Action<F>>(std::move(aAction)));
   }
 
   ~DataPipeAutoLock() CAPABILITY_RELEASE() {
     mMutex.Unlock();
     for (auto& action : mActions) {
-      action();
+      action->Run();
     }
   }
 
  private:
+  
+  
+  
+  struct IAction {
+    virtual void Run() = 0;
+    virtual ~IAction() = default;
+  };
+  template <typename F>
+  struct Action : IAction {
+    explicit Action(F&& aAction) : mAction(std::move(aAction)) {}
+    void Run() override { mAction(); }
+    F mAction;
+  };
+
   Mutex& mMutex;
-  AutoTArray<MoveOnlyFunction<void()>, 4> mActions;
+  AutoTArray<UniquePtr<IAction>, 4> mActions;
 };
 
 static void DoNotifyOnUnlock(DataPipeAutoLock& aLock,
