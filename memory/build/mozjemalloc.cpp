@@ -2233,48 +2233,61 @@ inline void* arena_t::ArenaRunRegAlloc(arena_run_t* aRun, arena_bin_t* aBin) {
 
 
 
-static const unsigned num_divisors =
-    std::max((kMaxQuantumClass - 2 * kQuantum) / kQuantum,
-             (kMaxQuantumWideClass - 2 * kQuantumWide) / kQuantumWide);
 
-template <unsigned q>
-static unsigned divide(size_t num, unsigned div) {
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+template <unsigned Q, unsigned Max>
+struct FastDivide {
+  static_assert(IsPowerOfTwo(Q), "q must be a power-of-two");
+
   
   
 
-#define SIZE_INV_SHIFT 21
-#define SIZE_INV(s) (((1U << SIZE_INV_SHIFT) / ((s)*q)) + 1)
   
-  static const unsigned size_invs[] = {
-    SIZE_INV(3),
-    SIZE_INV(4),  SIZE_INV(5),  SIZE_INV(6),  SIZE_INV(7),
-    SIZE_INV(8),  SIZE_INV(9),  SIZE_INV(10), SIZE_INV(11),
-    SIZE_INV(12), SIZE_INV(13), SIZE_INV(14), SIZE_INV(15),
-    SIZE_INV(16), SIZE_INV(17), SIZE_INV(18), SIZE_INV(19),
-    SIZE_INV(20), SIZE_INV(21), SIZE_INV(22), SIZE_INV(23),
-    SIZE_INV(24), SIZE_INV(25), SIZE_INV(26), SIZE_INV(27),
-    SIZE_INV(28), SIZE_INV(29), SIZE_INV(30), SIZE_INV(31)
-  };
+  static const unsigned min_divisor = Q * 3;
+  static const unsigned max_divisor =
+      mozilla::IsPowerOfTwo(Max) ? Max - Q : Max;
   
-  static_assert(num_divisors == sizeof(size_invs) / sizeof(unsigned),
-                "num_divisors does not match array size");
+  static const unsigned num_divisors = (max_divisor - min_divisor) / Q + 1;
+  static_assert(max_divisor > min_divisor);
 
-  
-  static_assert(IsPowerOfTwo(q), "q must be a power-of-two");
-  MOZ_ASSERT(div / q > 2);
-  MOZ_ASSERT((div / q) - 3 < 32);
-  return (num * size_invs[(div / q) - 3]) >> SIZE_INV_SHIFT;
-#undef SIZE_INV
-#undef SIZE_INV_SHIFT
-}
+  static const unsigned inv_shift = 21;
+
+  static constexpr unsigned inv(unsigned s) {
+    return ((1U << inv_shift) / (s * Q)) + 1;
+  }
+
+  static unsigned divide(size_t num, unsigned div) {
+    
+    static const unsigned size_invs[] = {
+      inv(3),
+      inv(4),  inv(5),  inv(6),  inv(7),
+      inv(8),  inv(9),  inv(10), inv(11),
+      inv(12), inv(13), inv(14), inv(15),
+      inv(16), inv(17), inv(18), inv(19),
+      inv(20), inv(21), inv(22), inv(23),
+      inv(24), inv(25), inv(26), inv(27),
+      inv(28), inv(29), inv(30), inv(31)
+    };
+    
+    static_assert(num_divisors <= sizeof(size_invs) / sizeof(unsigned),
+                  "num_divisors does not match array size");
+
+    MOZ_ASSERT(div >= min_divisor);
+    MOZ_ASSERT(div <= max_divisor);
+    MOZ_ASSERT(div % Q == 0);
+
+    
+    
+    const unsigned idx = div / Q - 3;
+    MOZ_ASSERT(idx < sizeof(size_invs) / sizeof(unsigned));
+    return (num * size_invs[idx]) >> inv_shift;
+  }
+};
 
 static inline void arena_run_reg_dalloc(arena_run_t* run, arena_bin_t* bin,
                                         void* ptr, size_t size) {
@@ -2292,10 +2305,11 @@ static inline void arena_run_reg_dalloc(arena_run_t* run, arena_bin_t* bin,
     SizeClass sc(size);
     switch (sc.Type()) {
       case SizeClass::Quantum:
-        regind = divide<kQuantum>(diff, size);
+        regind = FastDivide<kQuantum, kMaxQuantumClass>::divide(diff, size);
         break;
       case SizeClass::QuantumWide:
-        regind = divide<kQuantumWide>(diff, size);
+        regind =
+            FastDivide<kQuantumWide, kMaxQuantumWideClass>::divide(diff, size);
         break;
       default:
         regind = diff / size;
