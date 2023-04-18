@@ -125,6 +125,13 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     uint32_t replaceableLength = textNode->TextLength() - mOffset;
     ErrorResult error;
     editorBase->DoReplaceText(textNode, mOffset, mReplaceLength,

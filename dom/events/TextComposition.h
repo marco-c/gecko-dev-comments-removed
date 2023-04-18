@@ -21,6 +21,10 @@
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/Text.h"
 
+class nsRange;
+
+struct CharacterDataChangeInfo;
+
 namespace mozilla {
 
 class EditorBase;
@@ -273,6 +277,13 @@ class TextComposition final {
     
     
   }
+
+  
+
+
+
+  void OnCharacterDataChanged(Text& aText,
+                              const CharacterDataChangeInfo& aInfo);
 
  private:
   
