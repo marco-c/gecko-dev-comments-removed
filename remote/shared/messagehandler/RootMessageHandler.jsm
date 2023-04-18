@@ -85,17 +85,23 @@ class RootMessageHandler extends MessageHandler {
 
   addSessionData(sessionData = {}) {
     const { moduleName, category, contextDescriptor, values } = sessionData;
-    this._sessionData.addSessionData(
+    const addedValues = this._sessionData.addSessionData(
       moduleName,
       category,
       contextDescriptor,
       values
     );
+
+    if (addedValues.length == 0) {
+      
+      return [];
+    }
+
     return this.handleCommand({
       moduleName,
       commandName: "_applySessionData",
       params: {
-        values,
+        values: addedValues,
         category,
       },
       destination: {

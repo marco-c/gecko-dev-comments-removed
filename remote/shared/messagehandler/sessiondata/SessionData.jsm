@@ -124,7 +124,10 @@ class SessionData {
 
 
 
+
+
   addSessionData(moduleName, category, contextDescriptor, values) {
+    const addedValues = [];
     for (const value of values) {
       const item = { moduleName, category, contextDescriptor, value };
 
@@ -132,6 +135,7 @@ class SessionData {
       if (!hasItem) {
         
         this._data.push(item);
+        addedValues.push(value);
       } else {
         logger.warn(
           `Duplicated session data item was not added: ${JSON.stringify(item)}`
@@ -141,6 +145,8 @@ class SessionData {
 
     
     this._persist();
+
+    return addedValues;
   }
 
   destroy() {
@@ -194,7 +200,10 @@ class SessionData {
 
 
 
+
+
   removeSessionData(moduleName, category, contextDescriptor, values) {
+    const removedValues = [];
     
     for (const value of values) {
       const item = { moduleName, category, contextDescriptor, value };
@@ -205,6 +214,7 @@ class SessionData {
       if (itemIndex != -1) {
         
         this._data.splice(itemIndex, 1);
+        removedValues.push(value);
       } else {
         logger.warn(
           `Missing session data item was not removed: ${JSON.stringify(item)}`
@@ -214,6 +224,8 @@ class SessionData {
 
     
     this._persist();
+
+    return removedValues;
   }
 
   _isSameItem(item1, item2) {
