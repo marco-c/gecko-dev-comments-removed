@@ -6717,6 +6717,12 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp) {
   }
 
   
+  if (!(wp->flags & SWP_NOACTIVATE) && NeedsToTrackWindowOcclusionState()) {
+    WinWindowOcclusionTracker::Get()->OnWindowVisibilityChanged(
+        this, mSizeMode != nsSizeMode_Minimized);
+  }
+
+  
   if (!(wp->flags & SWP_NOMOVE)) {
     mBounds.MoveTo(wp->x, wp->y);
     NotifyWindowMoved(wp->x, wp->y);
