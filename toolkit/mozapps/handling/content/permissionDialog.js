@@ -66,6 +66,10 @@ let dialog = {
 
 
   triggeringPrincipalIsTop() {
+    if (!this._principal) {
+      return false;
+    }
+
     let topContentPrincipal = this._browsingContext?.top.embedderElement
       ?.contentPrincipal;
     if (!topContentPrincipal) {
@@ -88,7 +92,8 @@ let dialog = {
 
     
     
-    if (this._principal?.exposablePrePath && !this.triggeringPrincipalIsTop()) {
+    
+    if (!this.triggeringPrincipalIsTop() && this.displayPrePath) {
       if (this._preferredHandlerName) {
         return "permission-dialog-description-host-app";
       }
@@ -118,6 +123,26 @@ let dialog = {
     return "permission-dialog-remember";
   },
 
+  
+
+
+
+
+
+  get displayPrePath() {
+    if (!this._principal) {
+      return null;
+    }
+
+    
+    
+    if (this._principal.isNullPrincipal) {
+      return this._principal.precursorPrincipal?.exposablePrePath;
+    }
+
+    return this._principal?.exposablePrePath;
+  },
+
   async initL10n() {
     
     
@@ -138,7 +163,7 @@ let dialog = {
     document.l10n.pauseObserving();
     let pendingElements = [description];
 
-    let host = this._principal?.exposablePrePath;
+    let host = this.displayPrePath;
     let scheme = this._handlerInfo.type;
 
     document.l10n.setAttributes(description, this.l10nDescriptionId, {
