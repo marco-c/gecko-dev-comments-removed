@@ -216,7 +216,9 @@ void nsFocusManager::Shutdown() { sInstance = nullptr; }
 
 
 void nsFocusManager::PrefChanged(const char* aPref, void* aSelf) {
-  static_cast<nsFocusManager*>(aSelf)->PrefChanged(aPref);
+  if (RefPtr<nsFocusManager> fm = static_cast<nsFocusManager*>(aSelf)) {
+    fm->PrefChanged(aPref);
+  }
 }
 
 void nsFocusManager::PrefChanged(const char* aPref) {
@@ -643,9 +645,8 @@ nsFocusManager::MoveCaretToFocus(mozIDOMWindowProxy* aWindow) {
       NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
 
       nsCOMPtr<nsPIDOMWindowOuter> window = nsPIDOMWindowOuter::From(aWindow);
-      nsCOMPtr<nsIContent> content = window->GetFocusedElement();
-      if (content) {
-        MoveCaretToFocus(presShell, content);
+      if (RefPtr<Element> focusedElement = window->GetFocusedElement()) {
+        MoveCaretToFocus(presShell, focusedElement);
       }
     }
   }
@@ -2693,9 +2694,11 @@ void nsFocusManager::Focus(
   
   
   
-  if (mFocusedElement == aElement)
+  if (mFocusedElement == aElement) {
+    RefPtr<Element> focusedElement = mFocusedElement;
     UpdateCaret(aFocusChanged && !(aFlags & FLAG_BYMOUSE), aIsNewDocument,
-                mFocusedElement);
+                focusedElement);
+  }
 }
 
 class FocusBlurEvent : public Runnable {
@@ -2995,7 +2998,8 @@ void nsFocusManager::RaiseWindow(nsPIDOMWindowOuter* aWindow,
 }
 
 void nsFocusManager::UpdateCaretForCaretBrowsingMode() {
-  UpdateCaret(false, true, mFocusedElement);
+  RefPtr<Element> focusedElement = mFocusedElement;
+  UpdateCaret(false, true, focusedElement);
 }
 
 void nsFocusManager::UpdateCaret(bool aMoveCaretToFocus, bool aUpdateVisibility,
@@ -3019,7 +3023,7 @@ void nsFocusManager::UpdateCaret(bool aMoveCaretToFocus, bool aUpdateVisibility,
 
   bool browseWithCaret = Preferences::GetBool("accessibility.browsewithcaret");
 
-  RefPtr<PresShell> presShell = focusedDocShell->GetPresShell();
+  const RefPtr<PresShell> presShell = focusedDocShell->GetPresShell();
   if (!presShell) {
     return;
   }

@@ -64,8 +64,9 @@ class nsFocusManager final : public nsIFocusManager,
   MOZ_CAN_RUN_SCRIPT static void FocusWindow(
       nsPIDOMWindowOuter* aWindow, mozilla::dom::CallerType aCallerType);
 
-  static void PrefChanged(const char* aPref, void* aSelf);
-  void PrefChanged(const char* aPref);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void PrefChanged(const char* aPref,
+                                                      void* aSelf);
+  MOZ_CAN_RUN_SCRIPT void PrefChanged(const char* aPref);
 
   
 
@@ -161,7 +162,7 @@ class nsFocusManager final : public nsIFocusManager,
   
 
 
-  void UpdateCaretForCaretBrowsingMode();
+  MOZ_CAN_RUN_SCRIPT void UpdateCaretForCaretBrowsingMode();
 
   
   uint32_t GetLastFocusMethod(nsPIDOMWindowOuter*) const;
@@ -531,14 +532,15 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
-  void UpdateCaret(bool aMoveCaretToFocus, bool aUpdateVisibility,
-                   nsIContent* aContent);
+  MOZ_CAN_RUN_SCRIPT void UpdateCaret(bool aMoveCaretToFocus,
+                                      bool aUpdateVisibility,
+                                      nsIContent* aContent);
 
   
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void MoveCaretToFocus(
-      mozilla::PresShell* aPresShell, nsIContent* aContent);
+  MOZ_CAN_RUN_SCRIPT void MoveCaretToFocus(mozilla::PresShell* aPresShell,
+                                           nsIContent* aContent);
 
   
 

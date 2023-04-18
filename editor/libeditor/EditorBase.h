@@ -292,7 +292,7 @@ class EditorBase : public nsIEditor,
   
 
 
-  nsresult FinalizeSelection();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult FinalizeSelection();
 
   
 
