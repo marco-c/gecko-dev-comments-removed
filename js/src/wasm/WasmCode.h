@@ -897,13 +897,7 @@ class Code : public ShareableBase<Code> {
   const WasmTryNote* lookupWasmTryNote(void* pc, Tier* tier) const;
 #endif
   bool containsCodePC(const void* pc) const;
-  
-  
-  
-  
-  
-  bool lookupTrap(void* pc, Trap* trap1Out, Trap* trap2Out,
-                  BytecodeOffset* bytecode) const;
+  bool lookupTrap(void* pc, Trap* trap, BytecodeOffset* bytecode) const;
 
   
   
