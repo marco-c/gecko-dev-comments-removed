@@ -329,27 +329,37 @@ function getPropsForEvent(className) {
 
 
 
-function getPropNamesFromObject(obj, rawObj) {
-  let names = [];
 
+
+function getPropNamesFromObject(obj, rawObj) {
   try {
     if (isStorage(obj)) {
       
       
       
       
-      for (let j = 0; j < rawObj.length; j++) {
-        names.push(rawObj.key(j));
-      }
-    } else {
-      names = obj.getOwnPropertyNames();
+      
+      
+      
+
+      
+      const length = rawObj.length;
+      const iterable = { length };
+      iterable[Symbol.iterator] = function*() {
+        for (let j = 0; j < length; j++) {
+          yield rawObj.key(j);
+        }
+      };
+      return iterable;
     }
+
+    return obj.getOwnPropertyNames();
   } catch (ex) {
     
     
   }
 
-  return names;
+  return [];
 }
 
 
