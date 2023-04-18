@@ -524,6 +524,30 @@ async function hideBookmarksPanel(win = window) {
   await hiddenPromise;
 }
 
+
+
+
+async function createAndRemoveDefaultFolder() {
+  let tempFolder = await PlacesUtils.bookmarks.insertTree({
+    guid: PlacesUtils.bookmarks.unfiledGuid,
+    children: [
+      {
+        title: "temp folder",
+        type: PlacesUtils.bookmarks.TYPE_FOLDER,
+      },
+    ],
+  });
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.bookmarks.defaultLocation", tempFolder[0].guid]],
+  });
+
+  let defaultGUID = await PlacesUIUtils.defaultParentGuid;
+  is(defaultGUID, tempFolder[0].guid, "check default guid");
+
+  await PlacesUtils.bookmarks.remove(tempFolder);
+}
+
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref("browser.bookmarks.defaultLocation");
 });

@@ -2143,6 +2143,21 @@ var BookmarkingUI = {
               isStarUpdateNeeded = true;
             }
           }
+
+          
+          
+          
+          PlacesUIUtils.defaultParentGuid.then(parentGuid => {
+            if (
+              ev.itemType == PlacesUtils.bookmarks.TYPE_FOLDER &&
+              ev.guid == parentGuid
+            ) {
+              Services.prefs.setCharPref(
+                "browser.bookmarks.defaultLocation",
+                PlacesUtils.bookmarks.toolbarGuid
+              );
+            }
+          });
           break;
         case "bookmark-moved":
           const hasMovedInOutOtherBookmarks =
