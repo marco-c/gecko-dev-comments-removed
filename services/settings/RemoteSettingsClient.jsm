@@ -355,7 +355,7 @@ class RemoteSettingsClient extends EventEmitter {
       filters = {},
       order = "", 
       dumpFallback = true,
-      loadDumpIfNewer = false, 
+      loadDumpIfNewer = true,
       syncIfEmpty = true,
     } = options;
     let { verifySignature = false } = options;
