@@ -80,9 +80,7 @@ class MessageHandler extends EventEmitter {
 
 
 
-
-
-  constructor(sessionId, context, sessionDataItems) {
+  constructor(sessionId, context) {
     super();
 
     this._moduleCache = new ModuleCache(this);
@@ -90,12 +88,6 @@ class MessageHandler extends EventEmitter {
     this._sessionId = sessionId;
     this._context = context;
     this._contextId = this.constructor.getIdFromContext(context);
-
-    
-    
-    if (Array.isArray(sessionDataItems)) {
-      this._applyInitialSessionDataItems(sessionDataItems);
-    }
   }
 
   get contextId() {
@@ -227,7 +219,10 @@ class MessageHandler extends EventEmitter {
 
 
 
-  async _applyInitialSessionDataItems(sessionDataItems) {}
+
+
+
+  async applyInitialSessionDataItems(sessionDataItems) {}
 
   
 
