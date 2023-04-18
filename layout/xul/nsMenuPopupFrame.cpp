@@ -1563,8 +1563,15 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
     anchorRect = nsRect(screenPoint, nsSize(0, 0));
 
     
-    screenPoint.MoveBy(margin.left + offsetForContextMenu.x,
-                       margin.top + offsetForContextMenu.y);
+    
+    if (mIsContextMenu && IsDirectionRTL()) {
+      screenPoint.x -= mRect.Width();
+      screenPoint.MoveBy(-margin.right - offsetForContextMenu.x,
+                         margin.top + offsetForContextMenu.y);
+    } else {
+      screenPoint.MoveBy(margin.left + offsetForContextMenu.x,
+                         margin.top + offsetForContextMenu.y);
+    }
 
 #ifdef XP_MACOSX
     
