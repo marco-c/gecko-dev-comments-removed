@@ -1,0 +1,9 @@
+#include <iostream>
+
+int main() {
+    bool isAdmin = false;
+    
+        std::cout << "You are an admin.\n";
+    
+    return 0;
+}
