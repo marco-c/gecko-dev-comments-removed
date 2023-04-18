@@ -222,7 +222,8 @@ void nsHttpConnectionMgr::PruneDeadConnectionsAfter(uint32_t timeInSeconds) {
 void nsHttpConnectionMgr::ConditionallyStopPruneDeadConnectionsTimer() {
   
   
-  if (mNumIdleConns || (mNumActiveConns && gHttpHandler->IsSpdyEnabled())) {
+  if (mNumIdleConns ||
+      (mNumActiveConns && StaticPrefs::network_http_http2_enabled())) {
     return;
   }
 
@@ -1233,7 +1234,7 @@ nsresult nsHttpConnectionMgr::MakeNewConnection(
   }
 
   if ((mNumIdleConns + mNumActiveConns + 1 >= mMaxConns) && mNumActiveConns &&
-      gHttpHandler->IsSpdyEnabled()) {
+      StaticPrefs::network_http_http2_enabled()) {
     
     
     
@@ -1314,10 +1315,12 @@ nsresult nsHttpConnectionMgr::TryDispatchTransaction(
   
   
 
-  RefPtr<HttpConnectionBase> conn = GetH2orH3ActiveConn(
-      ent, (!gHttpHandler->IsSpdyEnabled() || (caps & NS_HTTP_DISALLOW_SPDY)),
-      (!StaticPrefs::network_http_http3_enable() ||
-       (caps & NS_HTTP_DISALLOW_HTTP3)));
+  RefPtr<HttpConnectionBase> conn =
+      GetH2orH3ActiveConn(ent,
+                          (!StaticPrefs::network_http_http2_enabled() ||
+                           (caps & NS_HTTP_DISALLOW_SPDY)),
+                          (!StaticPrefs::network_http_http3_enable() ||
+                           (caps & NS_HTTP_DISALLOW_HTTP3)));
   if (conn) {
     if (trans->IsWebsocketUpgrade() && !conn->CanAcceptWebsocket()) {
       
@@ -2169,7 +2172,8 @@ void nsHttpConnectionMgr::OnMsgPruneDeadConnections(int32_t, ARefBase*) {
 
   
   
-  if (mNumIdleConns || (mNumActiveConns && gHttpHandler->IsSpdyEnabled())) {
+  if (mNumIdleConns ||
+      (mNumActiveConns && StaticPrefs::network_http_http2_enabled())) {
     for (auto iter = mCT.Iter(); !iter.Done(); iter.Next()) {
       RefPtr<ConnectionEntry> ent = iter.Data();
 

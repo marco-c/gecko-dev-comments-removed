@@ -13,8 +13,7 @@ function setup() {
   
   do_get_profile();
 
-  Services.prefs.setBoolPref("network.http.spdy.enabled", true);
-  Services.prefs.setBoolPref("network.http.spdy.enabled.http2", true);
+  Services.prefs.setBoolPref("network.http.http2.enabled", true);
   
   Services.prefs.setCharPref("network.trr.bootstrapAddr", "127.0.0.1");
 

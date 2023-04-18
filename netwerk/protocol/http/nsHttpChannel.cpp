@@ -661,7 +661,7 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
   if (mUpgradeProtocolCallback) {
     
     if (mUpgradeProtocol.EqualsLiteral("websocket") &&
-        gHttpHandler->IsH2WebsocketsEnabled()) {
+        StaticPrefs::network_http_http2_websockets()) {
       
       
       

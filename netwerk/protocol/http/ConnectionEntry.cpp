@@ -15,6 +15,7 @@
 #include "ConnectionEntry.h"
 #include "nsQueryObject.h"
 #include "mozilla/ChaosMode.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "nsHttpHandler.h"
 
 namespace mozilla {
@@ -242,8 +243,8 @@ bool ConnectionEntry::RestrictConnections() {
   
   
 
-  bool doRestrict = mConnInfo->FirstHopSSL() && gHttpHandler->IsSpdyEnabled() &&
-                    mUsingSpdy &&
+  bool doRestrict = mConnInfo->FirstHopSSL() &&
+                    StaticPrefs::network_http_http2_enabled() && mUsingSpdy &&
                     (mDnsAndConnectSockets.Length() || mActiveConns.Length());
 
   
