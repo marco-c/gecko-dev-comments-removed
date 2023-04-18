@@ -37,7 +37,7 @@ class Bidi final {
 
 
 
-  enum ParagraphDirection { LTR, RTL, Mixed };
+  enum class ParagraphDirection { LTR, RTL, Mixed };
 
   
 
@@ -105,6 +105,20 @@ class Bidi final {
 
   static void ReorderVisual(const BidiEmbeddingLevel* aLevels, int32_t aLength,
                             int32_t* aIndexMap);
+
+  
+
+
+
+
+
+
+  enum class BaseDirection { LTR, RTL, Neutral };
+
+  
+
+
+  static BaseDirection GetBaseDirection(Span<const char16_t> aParagraph);
 
   
 
