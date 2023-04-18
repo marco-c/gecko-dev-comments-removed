@@ -63,12 +63,6 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   void PrepareForCommit() override { mFrameInProcess = true; };
   bool CommitToScreen() override;
 
-  
-  
-  
-  
-  void PauseCompositor() override;
-
   void UpdateLayersOnMainThread();
   void AfterFrameClockAfterPaint();
   void RequestFrameCallback(CallbackFunc aCallbackFunc, void* aCallbackData);
