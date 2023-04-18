@@ -574,6 +574,17 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       ScriptLoadRequest* aRequest, nsresult aRv);
 
   
+  
+  bool IsAlreadyHandledForBytecodeEncodingPreparation(
+      ScriptLoadRequest* aRequest);
+
+  void MaybePrepareModuleForBytecodeEncodingBeforeExecute(
+      JSContext* aCx, ModuleLoadRequest* aRequest) override;
+
+  nsresult MaybePrepareModuleForBytecodeEncodingAfterExecute(
+      ModuleLoadRequest* aRequest, nsresult aRv) override;
+
+  
   nsresult EvaluateScript(nsIGlobalObject* aGlobalObject,
                           ScriptLoadRequest* aRequest);
 
@@ -590,7 +601,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
 
 
-  void MaybeTriggerBytecodeEncoding();
+  void MaybeTriggerBytecodeEncoding() override;
 
   
 
