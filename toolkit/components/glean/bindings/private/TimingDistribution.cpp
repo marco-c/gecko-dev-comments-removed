@@ -9,6 +9,7 @@
 #include "Common.h"
 #include "mozilla/Components.h"
 #include "mozilla/ResultVariant.h"
+#include "mozilla/Tuple.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/glean/bindings/HistogramGIFFTMap.h"
 #include "mozilla/glean/fog_ffi_generated.h"
@@ -24,8 +25,11 @@ extern "C" NS_EXPORT void GIFFT_TimingDistributionStart(
   auto mirrorId = mozilla::glean::HistogramIdForMetric(aMetricId);
   if (mirrorId) {
     mozilla::glean::GetTimerIdToStartsLock().apply([&](auto& lock) {
-      (void)NS_WARN_IF(lock.ref()->Remove(aTimerId));
-      lock.ref()->InsertOrUpdate(aTimerId, mozilla::TimeStamp::Now());
+      auto tuple = mozilla::MakeTuple(aMetricId, aTimerId);
+      
+      
+      (void)NS_WARN_IF(lock.ref()->Remove(tuple));
+      lock.ref()->InsertOrUpdate(tuple, mozilla::TimeStamp::Now());
     });
   }
 }
@@ -36,7 +40,10 @@ extern "C" NS_EXPORT void GIFFT_TimingDistributionStopAndAccumulate(
   auto mirrorId = mozilla::glean::HistogramIdForMetric(aMetricId);
   if (mirrorId) {
     mozilla::glean::GetTimerIdToStartsLock().apply([&](auto& lock) {
-      auto optStart = lock.ref()->Extract(aTimerId);
+      auto optStart =
+          lock.ref()->Extract(mozilla::MakeTuple(aMetricId, aTimerId));
+      
+      
       if (!NS_WARN_IF(!optStart)) {
         AccumulateTimeDelta(mirrorId.extract(), optStart.extract());
       }
@@ -58,8 +65,12 @@ extern "C" NS_EXPORT void GIFFT_TimingDistributionCancel(
     uint32_t aMetricId, mozilla::glean::TimerId aTimerId) {
   auto mirrorId = mozilla::glean::HistogramIdForMetric(aMetricId);
   if (mirrorId) {
-    mozilla::glean::GetTimerIdToStartsLock().apply(
-        [&](auto& lock) { (void)NS_WARN_IF(!lock.ref()->Remove(aTimerId)); });
+    mozilla::glean::GetTimerIdToStartsLock().apply([&](auto& lock) {
+      
+      
+      (void)NS_WARN_IF(
+          !lock.ref()->Remove(mozilla::MakeTuple(aMetricId, aTimerId)));
+    });
   }
 }
 
