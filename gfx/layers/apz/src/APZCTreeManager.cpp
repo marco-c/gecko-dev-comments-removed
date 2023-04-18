@@ -2718,7 +2718,8 @@ ParentLayerPoint APZCTreeManager::DispatchFling(
     residualVelocity += current->AttemptFling(transformedHandoffState);
 
     
-    if (IsZero(residualVelocity)) {
+    if (current->Metrics().GetZoom() == CSSToParentLayerScale(0) ||
+        IsZero(residualVelocity / current->Metrics().GetZoom())) {
       return ParentLayerPoint();
     }
 

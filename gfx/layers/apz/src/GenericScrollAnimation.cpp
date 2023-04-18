@@ -79,7 +79,7 @@ bool GenericScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
   if (finished) {
     mApzc.mX.SetVelocity(0);
     mApzc.mY.SetVelocity(0);
-  } else if (!IsZero(displacement)) {
+  } else if (!IsZero(displacement / zoom)) {
     
     nsSize velocity = mAnimationPhysics->VelocityAt(now);
     ParentLayerPoint velocityPL =
@@ -99,7 +99,7 @@ bool GenericScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
   
   
   
-  if (!IsZero(displacement) && IsZero(adjustedOffset)) {
+  if (!IsZero(displacement / zoom) && IsZero(adjustedOffset / zoom)) {
     
     return false;
   }
