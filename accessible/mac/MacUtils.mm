@@ -16,30 +16,12 @@ namespace a11y {
 namespace utils {
 
 
-NSArray<mozAccessible*>* ConvertToNSArray(nsTArray<LocalAccessible*>& aArray) {
+template <typename AccArray>
+NSArray<mozAccessible*>* ConvertToNSArray(AccArray& aArray) {
   NSMutableArray* nativeArray = [[[NSMutableArray alloc] init] autorelease];
 
   
-  size_t totalCount = aArray.Length();
-  for (size_t i = 0; i < totalCount; i++) {
-    LocalAccessible* curAccessible = aArray.ElementAt(i);
-    mozAccessible* curNative = GetNativeFromGeckoAccessible(curAccessible);
-    if (curNative)
-      [nativeArray addObject:GetObjectOrRepresentedView(curNative)];
-  }
-
-  return nativeArray;
-}
-
-
-
-NSArray<mozAccessible*>* ConvertToNSArray(nsTArray<RemoteAccessible*>& aArray) {
-  NSMutableArray* nativeArray = [[[NSMutableArray alloc] init] autorelease];
-
-  
-  size_t totalCount = aArray.Length();
-  for (size_t i = 0; i < totalCount; i++) {
-    RemoteAccessible* curAccessible = aArray.ElementAt(i);
+  for (Accessible* curAccessible : aArray) {
     mozAccessible* curNative = GetNativeFromGeckoAccessible(curAccessible);
     if (curNative)
       [nativeArray addObject:GetObjectOrRepresentedView(curNative)];
