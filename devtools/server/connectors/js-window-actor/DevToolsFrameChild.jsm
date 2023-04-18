@@ -242,14 +242,27 @@ class DevToolsFrameChild extends JSWindowActorChild {
       
       this._destroyTargetActor(watcherActorID);
       
-      this.sendAsyncMessage("DevToolsFrameChild:destroy", {
-        actors: [
-          {
-            watcherActorID,
-            form,
-          },
-        ],
-      });
+      try {
+        this.sendAsyncMessage("DevToolsFrameChild:destroy", {
+          actors: [
+            {
+              watcherActorID,
+              form,
+            },
+          ],
+        });
+      } catch (e) {
+        
+        
+        
+        
+        
+        if (
+          !e.message.includes("JSWindowActorChild cannot send at the moment")
+        ) {
+          throw e;
+        }
+      }
     });
     this._connections.set(watcherActorID, {
       connection,
