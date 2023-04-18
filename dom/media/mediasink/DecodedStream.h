@@ -50,6 +50,11 @@ class DecodedStream : public MediaSink {
     return false;
   }
 
+  media::TimeUnit UnplayedDuration(TrackType aType) const override {
+    
+    return media::TimeUnit::Zero();
+  }
+
   void SetVolume(double aVolume) override;
   void SetPlaybackRate(double aPlaybackRate) override;
   void SetPreservesPitch(bool aPreservesPitch) override;

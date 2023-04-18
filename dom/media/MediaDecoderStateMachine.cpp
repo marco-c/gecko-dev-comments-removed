@@ -2904,10 +2904,8 @@ already_AddRefed<MediaSink> MediaDecoderStateMachine::CreateMediaSink() {
 TimeUnit MediaDecoderStateMachine::GetDecodedAudioDuration() const {
   MOZ_ASSERT(OnTaskQueue());
   if (mMediaSink->IsStarted()) {
-    
-    
-    
-    return std::max(mDecodedAudioEndTime - GetClock(), TimeUnit::Zero());
+    return mMediaSink->UnplayedDuration(TrackInfo::kAudioTrack) +
+           TimeUnit::FromMicroseconds(AudioQueue().Duration());
   }
   
   return TimeUnit::FromMicroseconds(AudioQueue().Duration());

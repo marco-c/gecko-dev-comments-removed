@@ -69,6 +69,10 @@ class MediaSink {
 
   
   
+  virtual media::TimeUnit UnplayedDuration(TrackType aType) const = 0;
+
+  
+  
   
   virtual void SetVolume(double aVolume) {}
 

@@ -59,6 +59,9 @@ class AudioSink : private AudioStream::DataSource {
   bool HasUnplayedFrames();
 
   
+  media::TimeUnit UnplayedDuration() const;
+
+  
   void Shutdown();
 
   void SetVolume(double aVolume);
