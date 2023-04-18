@@ -561,30 +561,18 @@ JS_PUBLIC_API JSObject* JS_CloneObject(JSContext* cx, HandleObject obj,
 
   RootedObject clone(cx);
   if (obj->is<NativeObject>()) {
-    
-    
-    clone = NewTenuredObjectWithGivenProto(cx, obj->getClass(), proto);
+    clone = NewObjectWithGivenProto(cx, obj->getClass(), proto);
     if (!clone) {
       return nullptr;
     }
 
-    if (clone->is<JSFunction>() &&
-        (obj->compartment() != clone->compartment())) {
+    if (clone->is<JSFunction>() && obj->compartment() != clone->compartment()) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_CANT_CLONE_OBJECT);
       return nullptr;
     }
   } else {
     auto* handler = GetProxyHandler(obj);
-
-    
-    
-    if (handler->canNurseryAllocate()) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_CANT_CLONE_OBJECT);
-      return nullptr;
-    }
-
     clone = ProxyObject::New(cx, handler, JS::NullHandleValue,
                              AsTaggedProto(proto), obj->getClass());
     if (!clone) {
