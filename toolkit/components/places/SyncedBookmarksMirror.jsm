@@ -1374,8 +1374,6 @@ class SyncedBookmarksMirror {
   }
 }
 
-this.SyncedBookmarksMirror = SyncedBookmarksMirror;
-
 
 SyncedBookmarksMirror.META_KEY = {
   LAST_MODIFIED: "collection/lastModified",
