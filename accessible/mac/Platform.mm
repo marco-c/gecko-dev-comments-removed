@@ -211,7 +211,20 @@ void ProxyRoleChangedEvent(RemoteAccessible* aTarget, const a11y::role& aRole) {
                  [[NSWorkspace sharedWorkspace] isSwitchControlEnabled]) {
         client.Assign(u"SwitchControl"_ns);
       } else {
-        client.Assign(u"Unknown"_ns);
+        
+        
+        
+        
+        
+        Boolean exists;
+        int val = CFPreferencesGetAppIntegerValue(
+            CFSTR("FullKeyboardAccessEnabled"),
+            CFSTR("com.apple.Accessibility"), &exists);
+        if (exists && val == 1) {
+          client.Assign(u"FullKeyboardAccess"_ns);
+        } else {
+          client.Assign(u"Unknown"_ns);
+        }
       }
 
 #if defined(MOZ_TELEMETRY_REPORTING)
