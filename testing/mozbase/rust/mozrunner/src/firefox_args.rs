@@ -13,9 +13,9 @@
 
 
 
-use crate::runner::platform;
 use std::ffi::{OsStr, OsString};
-use std::fmt;
+
+use crate::runner::platform;
 
 
 
@@ -96,10 +96,6 @@ pub enum Arg {
 
     
     
-    Marionette,
-
-    
-    
     NoRemote,
 
     
@@ -115,33 +111,17 @@ pub enum Arg {
     Other(String),
 
     
-    
-    RemoteAllowHosts,
-
-    
-    
-    RemoteAllowOrigins,
-
-    
-    
-    RemoteDebuggingPort,
-
-    
     None,
 }
 
 impl Arg {
-    pub fn new(name: &str) -> Arg {
+    fn new(name: &str) -> Arg {
         match &*name {
-            "foreground" => Arg::Foreground,
-            "marionette" => Arg::Marionette,
-            "no-remote" => Arg::NoRemote,
             "profile" => Arg::Profile,
             "P" => Arg::NamedProfile,
             "ProfileManager" => Arg::ProfileManager,
-            "remote-allow-hosts" => Arg::RemoteAllowHosts,
-            "remote-allow-origins" => Arg::RemoteAllowOrigins,
-            "remote-debugging-port" => Arg::RemoteDebuggingPort,
+            "foreground" => Arg::Foreground,
+            "no-remote" => Arg::NoRemote,
             _ => Arg::Other(name.into()),
         }
     }
@@ -154,24 +134,6 @@ impl<'a> From<&'a OsString> for Arg {
         } else {
             Arg::None
         }
-    }
-}
-
-impl fmt::Display for Arg {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&match self {
-            Arg::Foreground => "--foreground".to_string(),
-            Arg::Marionette => "--marionette".to_string(),
-            Arg::NamedProfile => "-P".to_string(),
-            Arg::None => "".to_string(),
-            Arg::NoRemote => "--no-remote".to_string(),
-            Arg::Other(x) => format!("--{}", x),
-            Arg::Profile => "--profile".to_string(),
-            Arg::ProfileManager => "--ProfileManager".to_string(),
-            Arg::RemoteAllowHosts => "--remote-allow-hosts".to_string(),
-            Arg::RemoteAllowOrigins => "--remote-allow-origins".to_string(),
-            Arg::RemoteDebuggingPort => "--remote-debugging-port".to_string(),
-        })
     }
 }
 
@@ -272,15 +234,6 @@ mod tests {
 
     #[test]
     fn test_arg_from_osstring() {
-        assert_eq!(Arg::from(&OsString::from("--foreground")), Arg::Foreground);
-        assert_eq!(Arg::from(&OsString::from("-foreground")), Arg::Foreground);
-
-        assert_eq!(Arg::from(&OsString::from("--marionette")), Arg::Marionette);
-        assert_eq!(Arg::from(&OsString::from("-marionette")), Arg::Marionette);
-
-        assert_eq!(Arg::from(&OsString::from("--no-remote")), Arg::NoRemote);
-        assert_eq!(Arg::from(&OsString::from("-no-remote")), Arg::NoRemote);
-
         assert_eq!(Arg::from(&OsString::from("-- profile")), Arg::None);
         assert_eq!(Arg::from(&OsString::from("profile")), Arg::None);
         assert_eq!(Arg::from(&OsString::from("profile -P")), Arg::None);
@@ -310,44 +263,11 @@ mod tests {
         assert_eq!(Arg::from(&OsString::from("-P")), Arg::NamedProfile);
         assert_eq!(Arg::from(&OsString::from("-P test")), Arg::NamedProfile);
 
-        assert_eq!(
-            Arg::from(&OsString::from("--remote-debugging-port")),
-            Arg::RemoteDebuggingPort
-        );
-        assert_eq!(
-            Arg::from(&OsString::from("-remote-debugging-port")),
-            Arg::RemoteDebuggingPort
-        );
-        assert_eq!(
-            Arg::from(&OsString::from("--remote-debugging-port 9222")),
-            Arg::RemoteDebuggingPort
-        );
+        assert_eq!(Arg::from(&OsString::from("--foreground")), Arg::Foreground);
+        assert_eq!(Arg::from(&OsString::from("-foreground")), Arg::Foreground);
 
-        assert_eq!(
-            Arg::from(&OsString::from("--remote-allow-hosts")),
-            Arg::RemoteAllowHosts
-        );
-        assert_eq!(
-            Arg::from(&OsString::from("-remote-allow-hosts")),
-            Arg::RemoteAllowHosts
-        );
-        assert_eq!(
-            Arg::from(&OsString::from("--remote-allow-hosts 9222")),
-            Arg::RemoteAllowHosts
-        );
-
-        assert_eq!(
-            Arg::from(&OsString::from("--remote-allow-origins")),
-            Arg::RemoteAllowOrigins
-        );
-        assert_eq!(
-            Arg::from(&OsString::from("-remote-allow-origins")),
-            Arg::RemoteAllowOrigins
-        );
-        assert_eq!(
-            Arg::from(&OsString::from("--remote-allow-origins http://foo")),
-            Arg::RemoteAllowOrigins
-        );
+        assert_eq!(Arg::from(&OsString::from("--no-remote")), Arg::NoRemote);
+        assert_eq!(Arg::from(&OsString::from("-no-remote")), Arg::NoRemote);
     }
 
     #[test]

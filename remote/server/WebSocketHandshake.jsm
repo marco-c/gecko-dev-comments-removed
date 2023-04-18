@@ -32,6 +32,37 @@ XPCOMUtils.defineLazyGetter(this, "threadManager", () => {
   return Cc["@mozilla.org/thread-manager;1"].getService();
 });
 
+XPCOMUtils.defineLazyGetter(this, "allowedHosts", () => {
+  if (Services.prefs.prefHasUserValue("remote.hosts.allowed")) {
+    const allowedHostsPref = Services.prefs.getCharPref("remote.hosts.allowed");
+    return allowedHostsPref.split(",");
+  }
+
+  
+  
+  const hostUri = Services.io.newURI(`https://${RemoteAgent.host}`);
+
+  
+  
+  if (!isIPAddress(hostUri)) {
+    return [RemoteAgent.host];
+  }
+
+  
+  
+  
+  const loopbackAddresses = ["127.0.0.1", "[::1]"];
+
+  
+  
+  if (loopbackAddresses.includes(RemoteAgent.host)) {
+    return ["localhost"];
+  }
+
+  
+  return [];
+});
+
 
 
 
@@ -39,7 +70,7 @@ XPCOMUtils.defineLazyGetter(this, "threadManager", () => {
 
 
 XPCOMUtils.defineLazyGetter(this, "allowedOrigins", () =>
-  RemoteAgent.allowOrigins !== null ? RemoteAgent.allowOrigins : []
+  Services.prefs.getCharPref("remote.origins.allowed", "").split(",")
 );
 
 XPCOMUtils.defineLazyGetter(this, "allowedOriginURIs", () => {
@@ -128,8 +159,7 @@ function isHostValid(hostHeader) {
     
     const hostUri = Services.io.newURI(`https://${hostHeader}`);
     const { host, port } = hostUri;
-    const isHostnameValid =
-      isIPAddress(hostUri) || RemoteAgent.allowHosts.includes(host);
+    const isHostnameValid = isIPAddress(hostUri) || allowedHosts.includes(host);
     
     const isPortValid = [-1, RemoteAgent.port].includes(port);
     return isHostnameValid && isPortValid;
@@ -179,9 +209,7 @@ function processRequest({ requestLine, headers }) {
   }
 
   if (!isHostValid(headers.get("host"))) {
-    logger.debug(
-      `Incorrect Host header, allowed hosts: [${RemoteAgent.allowHosts}]`
-    );
+    logger.debug(`Incorrect Host header, allowed hosts: [${allowedHosts}]`);
     throw new Error(
       `The handshake request has incorrect Host header ${headers.get("host")}`
     );
