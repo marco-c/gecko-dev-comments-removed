@@ -1232,10 +1232,4 @@ struct DefaultHasher<js::UnsafeBarePtr<T>> : js::UnsafeBarePtrHasher<T> {};
 
 }  
 
-namespace js {
-
-using HeapPtrValue = HeapPtr<Value>;
-
-} 
-
 #endif 
