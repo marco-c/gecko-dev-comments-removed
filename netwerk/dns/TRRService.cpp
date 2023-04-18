@@ -303,7 +303,8 @@ bool TRRService::MaybeSetPrivateURI(const nsACString& aURI) {
     
     
     
-    mConfirmation.HandleEvent(ConfirmationEvent::URIChange, lock);
+    mConfirmationTriggered =
+        mConfirmation.HandleEvent(ConfirmationEvent::URIChange, lock);
   }
 
   
@@ -524,14 +525,15 @@ TRRService::Observe(nsISupports* aSubject, const char* aTopic,
   MOZ_ASSERT(NS_IsMainThread(), "wrong thread");
   LOG(("TRR::Observe() topic=%s\n", aTopic));
   if (!strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID)) {
-    auto prevConf = mConfirmation.TaskAddr();
-
+    
+    
+    mConfirmationTriggered = false;
     ReadPrefs(NS_ConvertUTF16toUTF8(aData).get());
     mConfirmation.RecordEvent("pref-change");
 
     
     
-    if (prevConf == mConfirmation.TaskAddr()) {
+    if (!mConfirmationTriggered) {
       mConfirmation.HandleEvent(ConfirmationEvent::PrefChange);
     }
   } else if (!strcmp(aTopic, kOpenCaptivePortalLoginEvent)) {
@@ -641,13 +643,14 @@ void TRRService::ConfirmationContext::SetState(
   }
 }
 
-void TRRService::ConfirmationContext::HandleEvent(ConfirmationEvent aEvent) {
+bool TRRService::ConfirmationContext::HandleEvent(ConfirmationEvent aEvent) {
   MutexAutoLock lock(OwningObject()->mLock);
-  HandleEvent(aEvent, lock);
+  return HandleEvent(aEvent, lock);
 }
 
-void TRRService::ConfirmationContext::HandleEvent(ConfirmationEvent aEvent,
+bool TRRService::ConfirmationContext::HandleEvent(ConfirmationEvent aEvent,
                                                   const MutexAutoLock&) {
+  auto prevAddr = TaskAddr();
   TRRService* service = OwningObject();
   service->mLock.AssertCurrentThreadOwns();
   nsIDNSService::ResolverMode mode = service->Mode();
@@ -805,6 +808,8 @@ void TRRService::ConfirmationContext::HandleEvent(ConfirmationEvent aEvent,
     default:
       MOZ_ASSERT_UNREACHABLE("Unexpected ConfirmationEvent");
   }
+
+  return prevAddr != TaskAddr();
 }
 
 bool TRRService::MaybeBootstrap(const nsACString& aPossible,
