@@ -20,6 +20,7 @@ XPCOMUtils.defineLazyGetter(this, "QuickSuggestTestUtils", () => {
 });
 
 const CONTAINER_ID = "firefoxSuggestContainer";
+const BEST_MATCH_OPTION_BOX_ID = "firefoxSuggestBestMatchOptionBox";
 const BEST_MATCH_CHECKBOX_ID = "firefoxSuggestBestMatchToggle";
 const NONSPONSORED_CHECKBOX_ID = "firefoxSuggestNonsponsoredToggle";
 const SPONSORED_CHECKBOX_ID = "firefoxSuggestSponsoredToggle";
@@ -500,7 +501,132 @@ add_task(async function clickLearnMore() {
 });
 
 
-add_task(async function bestMatch() {
+
+add_task(async function bestMatchVisibility_falseToTrue() {
+  await doBestMatchVisibilityTest(false, true);
+});
+
+
+
+add_task(async function bestMatchVisibility_trueToFalse() {
+  await doBestMatchVisibilityTest(true, false);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function doBestMatchVisibilityTest(initialEnabled, newEnabled) {
+  info(
+    "Running best match visibility test: " +
+      JSON.stringify({ initialEnabled, newEnabled })
+  );
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.bestMatch.enabled", initialEnabled]],
+  });
+
+  
+  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  let container = doc.getElementById(BEST_MATCH_OPTION_BOX_ID);
+  Assert.equal(
+    BrowserTestUtils.is_visible(container),
+    initialEnabled,
+    "The option box has the expected initial visibility"
+  );
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.bestMatch.enabled", newEnabled]],
+  });
+
+  
+  Assert.equal(
+    BrowserTestUtils.is_visible(container),
+    newEnabled,
+    "The option box has the expected visibility after setting enabled status"
+  );
+
+  
+  gBrowser.removeCurrentTab();
+  await SpecialPowers.popPrefEnv();
+  await SpecialPowers.popPrefEnv();
+}
+
+
+
+add_task(async function bestMatchVisibility_experiment_beforeOpen() {
+  await QuickSuggestTestUtils.withExperiment({
+    valueOverrides: {
+      bestMatchEnabled: true,
+    },
+    callback: async () => {
+      await openPreferencesViaOpenPreferencesAPI("privacy", {
+        leaveOpen: true,
+      });
+      let doc = gBrowser.selectedBrowser.contentDocument;
+      let container = doc.getElementById(BEST_MATCH_OPTION_BOX_ID);
+      Assert.ok(
+        BrowserTestUtils.is_visible(container),
+        "The option box is visible"
+      );
+      gBrowser.removeCurrentTab();
+    },
+  });
+});
+
+
+
+add_task(async function bestMatchVisibility_experiment_afterOpen() {
+  
+  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  let container = doc.getElementById(BEST_MATCH_OPTION_BOX_ID);
+  Assert.ok(
+    BrowserTestUtils.is_hidden(container),
+    "The option box is hidden initially"
+  );
+
+  
+  await QuickSuggestTestUtils.withExperiment({
+    valueOverrides: {
+      bestMatchEnabled: true,
+    },
+    callback: () => {
+      Assert.ok(
+        BrowserTestUtils.is_visible(container),
+        "The option box is visible after installing the experiment"
+      );
+    },
+  });
+
+  Assert.ok(
+    BrowserTestUtils.is_hidden(container),
+    "The option box is hidden again after the experiment is uninstalled"
+  );
+
+  gBrowser.removeCurrentTab();
+});
+
+
+add_task(async function bestMatchToggle() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.bestMatch.enabled", true]],
+  });
+
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
   const doc = gBrowser.selectedBrowser.contentDocument;
   const checkbox = doc.getElementById(BEST_MATCH_CHECKBOX_ID);
@@ -509,7 +635,7 @@ add_task(async function bestMatch() {
   info("Check if the checkbox stauts reflects the pref value");
   for (const isEnabled of [true, false]) {
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.urlbar.bestMatch.enabled", isEnabled]],
+      set: [["browser.urlbar.suggest.bestmatch", isEnabled]],
     });
     assertCheckboxes({ [BEST_MATCH_CHECKBOX_ID]: isEnabled });
     await SpecialPowers.popPrefEnv();
@@ -525,14 +651,15 @@ add_task(async function bestMatch() {
     );
     Assert.ok(initialValue !== checkbox.checked);
     Assert.equal(
-      Services.prefs.getBoolPref("browser.urlbar.bestMatch.enabled"),
+      Services.prefs.getBoolPref("browser.urlbar.suggest.bestmatch"),
       checkbox.checked
     );
   }
 
   
-  Services.prefs.clearUserPref("browser.urlbar.bestMatch.enabled");
+  Services.prefs.clearUserPref("browser.urlbar.suggest.bestmatch");
   gBrowser.removeCurrentTab();
+  await SpecialPowers.popPrefEnv();
 });
 
 

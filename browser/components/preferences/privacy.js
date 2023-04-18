@@ -104,6 +104,7 @@ Preferences.addAll([
   },
 
   
+  { id: "browser.urlbar.suggest.bestmatch", type: "bool" },
   { id: "browser.urlbar.suggest.bookmark", type: "bool" },
   { id: "browser.urlbar.suggest.history", type: "bool" },
   { id: "browser.urlbar.suggest.openpage", type: "bool" },
@@ -112,7 +113,6 @@ Preferences.addAll([
   { id: "browser.urlbar.suggest.quicksuggest.nonsponsored", type: "bool" },
   { id: "browser.urlbar.suggest.quicksuggest.sponsored", type: "bool" },
   { id: "browser.urlbar.quicksuggest.dataCollection.enabled", type: "bool" },
-  { id: "browser.urlbar.bestMatch.enabled", type: "bool" },
 
   
   { id: "places.history.enabled", type: "bool" },
@@ -1953,19 +1953,10 @@ var gPrivacyPane = {
 
   _initAddressBar() {
     
-    
-    this._urlbarPrefObserver = {
-      onPrefChanged: pref => {
-        if (pref == "quicksuggest.enabled") {
-          this._updateFirefoxSuggestSection();
-        }
-      },
-    };
-    UrlbarPrefs.addObserver(this._urlbarPrefObserver);
+    let onNimbus = () => this._updateFirefoxSuggestSection();
+    NimbusFeatures.urlbar.onUpdate(onNimbus);
     window.addEventListener("unload", () => {
-      
-      
-      this._urlbarPrefObserver = null;
+      NimbusFeatures.urlbar.off(onNimbus);
     });
 
     
@@ -2011,10 +2002,17 @@ var gPrivacyPane = {
         element.dataset.l10nIdOriginal ??= element.dataset.l10nId;
         element.dataset.l10nId = l10nId;
       }
+
       
       document
         .getElementById("openSearchEnginePreferences")
         .classList.add("extraMargin");
+
+      
+      document.getElementById(
+        "firefoxSuggestBestMatchOptionBox"
+      ).hidden = !UrlbarPrefs.get("bestMatchEnabled");
+
       
       this._updateFirefoxSuggestInfoBox();
       container.removeAttribute("hidden");
