@@ -583,6 +583,22 @@ DevTools.prototype = {
     tab,
     { toolId, hostType, startTime, raise, reason, hostOptions } = {}
   ) {
+    
+    
+    if (tab.linkedBrowser.browsingContext.opener) {
+      const openerTab = tab.ownerGlobal.gBrowser.getTabForBrowser(
+        tab.linkedBrowser.browsingContext.opener.embedderElement
+      );
+      const openerDescriptor = await TabDescriptorFactory.getDescriptorForTab(
+        openerTab
+      );
+      if (this.getToolboxForDescriptor(openerDescriptor)) {
+        console.log(
+          "Can't open a toolbox for this document as this is debugged from its opener tab"
+        );
+        return;
+      }
+    }
     const descriptor = await TabDescriptorFactory.createDescriptorForTab(tab);
     return this.showToolbox(descriptor, {
       toolId,

@@ -744,6 +744,18 @@ Toolbox.prototype = {
         ],
       });
     }
+
+    
+    
+    
+    
+    if (
+      targetFront.targetForm.isPopup &&
+      !targetFront.isTopLevel &&
+      this.descriptorFront.isLocalTab
+    ) {
+      await this.switchHostToTab(targetFront.targetForm.browsingContextID);
+    }
   },
 
   async _onTargetSelected({ targetFront }) {
@@ -1751,8 +1763,11 @@ Toolbox.prototype = {
 
   
   _onBrowserMessage: function(event) {
-    if (event.data && event.data.name === "switched-host") {
+    if (event.data?.name === "switched-host") {
       this._onSwitchedHost(event.data);
+    }
+    if (event.data?.name === "switched-host-to-tab") {
+      this._onSwitchedHostToTab(event.data.browsingContextID);
     }
   },
 
@@ -3573,6 +3588,25 @@ Toolbox.prototype = {
     return this.once("host-changed");
   },
 
+  
+
+
+
+
+
+
+
+
+
+  switchHostToTab(tabBrowsingContextID) {
+    this.postMessage({
+      name: "switch-host-to-tab",
+      tabBrowsingContextID,
+    });
+
+    return this.once("switched-host-to-tab");
+  },
+
   _onSwitchedHost: function({ hostType }) {
     this._hostType = hostType;
 
@@ -3591,6 +3625,25 @@ Toolbox.prototype = {
       .add(this._getTelemetryHostId());
 
     this.component.setCurrentHostType(hostType);
+  },
+
+  
+
+
+
+
+
+
+
+  _onSwitchedHostToTab(browsingContextID) {
+    const targets = this.commands.targetCommand.getAllTargets([
+      this.commands.targetCommand.TYPES.FRAME,
+    ]);
+    const target = targets.find(
+      target => target.browsingContextID == browsingContextID
+    );
+
+    this.commands.targetCommand.selectTarget(target);
   },
 
   

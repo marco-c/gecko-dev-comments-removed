@@ -154,7 +154,10 @@ class EvaluationContextSelector extends Component {
       }
     }
 
-    const items = [mainTarget];
+    
+    
+    
+    const items = mainTarget ? [mainTarget] : [];
 
     for (const [targetType, menuItems] of Object.entries(dict)) {
       if (menuItems.length > 0) {

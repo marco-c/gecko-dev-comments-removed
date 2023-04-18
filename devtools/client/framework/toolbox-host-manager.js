@@ -59,6 +59,16 @@ let ID_COUNTER = 1;
 function ToolboxHostManager(descriptor, hostType, hostOptions) {
   this.descriptor = descriptor;
 
+  
+  
+  this.currentTab = this.descriptor.localTab;
+
+  
+  
+  
+  
+  this.hostPerTab = new Map();
+
   this.frameId = ID_COUNTER++;
 
   if (!hostType) {
@@ -69,6 +79,7 @@ function ToolboxHostManager(descriptor, hostType, hostOptions) {
       hostType = Services.prefs.getCharPref(LAST_HOST);
     }
   }
+  this.eventController = new AbortController();
   this.host = this.createHost(hostType, hostOptions);
   this.hostType = hostType;
   this.telemetry = new Telemetry();
@@ -81,11 +92,15 @@ function ToolboxHostManager(descriptor, hostType, hostOptions) {
 ToolboxHostManager.prototype = {
   async create(toolId) {
     await this.host.create();
+    if (this.currentTab) {
+      this.hostPerTab.set(this.currentTab, this.host);
+    }
 
     this.host.frame.setAttribute("aria-label", L10N.getStr("toolbox.label"));
     this.host.frame.ownerDocument.defaultView.addEventListener(
       "message",
-      this._onMessage
+      this._onMessage,
+      { signal: this.eventController.signal }
     );
 
     const msSinceProcessStart = parseInt(
@@ -162,6 +177,9 @@ ToolboxHostManager.prototype = {
       case "switch-host":
         this.switchHost(msg.hostType);
         break;
+      case "switch-host-to-tab":
+        this.switchHostToTab(msg.tabBrowsingContextID);
+        break;
       case "raise-host":
         this.host.raise();
         break;
@@ -178,7 +196,15 @@ ToolboxHostManager.prototype = {
 
   destroy() {
     Services.prefs.removeObserver(ZOOM_VALUE_PREF, this.setMinWidthWithZoom);
+    this.eventController.abort();
+    this.eventController = null;
     this.destroyHost();
+    
+    
+    for (const host of this.hostPerTab.values()) {
+      host.destroy();
+    }
+    this.hostPerTab.clear();
     this.host = null;
     this.hostType = null;
     this.descriptor = null;
@@ -201,11 +227,27 @@ ToolboxHostManager.prototype = {
     if (!Hosts[hostType]) {
       throw new Error("Unknown hostType: " + hostType);
     }
-    const newHost = new Hosts[hostType](this.descriptor.localTab, options);
+    const newHost = new Hosts[hostType](this.currentTab, options);
     return newHost;
   },
 
-  async switchHost(hostType) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async switchHost(hostType, destroyPreviousHost = true) {
     if (hostType == "previous") {
       
       
@@ -234,8 +276,9 @@ ToolboxHostManager.prototype = {
 
     
     newIframe.swapFrameLoaders(iframe);
-
-    this.destroyHost();
+    if (destroyPreviousHost) {
+      this.destroyHost();
+    }
 
     if (
       this.hostType !== Toolbox.HostType.BROWSERTOOLBOX &&
@@ -245,11 +288,15 @@ ToolboxHostManager.prototype = {
     }
 
     this.host = newHost;
+    if (this.currentTab) {
+      this.hostPerTab.set(this.currentTab, newHost);
+    }
     this.hostType = hostType;
     this.host.setTitle(this.host.frame.contentWindow.document.title);
     this.host.frame.ownerDocument.defaultView.addEventListener(
       "message",
-      this._onMessage
+      this._onMessage,
+      { signal: this.eventController.signal }
     );
 
     this.setMinWidthWithZoom();
@@ -273,16 +320,47 @@ ToolboxHostManager.prototype = {
 
 
 
-  destroyHost() {
+
+
+
+  async switchHostToTab(tabBrowsingContextID) {
+    const { gBrowser } = this.host.frame.ownerDocument.defaultView;
+
+    const previousTab = this.currentTab;
+    const newTab = gBrowser.tabs.find(
+      tab => tab.linkedBrowser.browsingContext.id == tabBrowsingContextID
+    );
     
-    
-    if (this.host.frame.ownerDocument.defaultView) {
-      this.host.frame.ownerDocument.defaultView.removeEventListener(
-        "message",
-        this._onMessage
+    if (newTab && newTab != previousTab) {
+      this.currentTab = newTab;
+      const newHost = this.hostPerTab.get(this.currentTab);
+      if (newHost) {
+        newHost.frame.swapFrameLoaders(this.host.frame);
+        this.host = newHost;
+      } else {
+        await this.switchHost(this.hostType, false);
+      }
+      previousTab.addEventListener(
+        "TabSelect",
+        event => {
+          this.switchHostToTab(event.target.linkedBrowser.browsingContext.id);
+        },
+        { once: true, signal: this.eventController.signal }
       );
     }
 
+    this.postMessage({
+      name: "switched-host-to-tab",
+      browsingContextID: tabBrowsingContextID,
+    });
+  },
+
+  
+
+
+
+
+  destroyHost() {
     return this.host.destroy();
   },
 };
