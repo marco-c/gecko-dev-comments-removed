@@ -100,7 +100,7 @@ bool jit::InitializeJit() {
 
 #if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
   
-  js::jit::CPUInfo::GetSSEVersion();
+  js::jit::CPUInfo::ComputeFlags();
 #endif
 
 #if defined(JS_CODEGEN_ARM)
