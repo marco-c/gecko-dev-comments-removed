@@ -133,6 +133,14 @@ class HyperTextAccessibleBase {
   
 
 
+  virtual int32_t LinkIndexAtOffset(uint32_t aOffset) {
+    Accessible* child = GetChildAtOffset(aOffset);
+    return child ? LinkIndexOf(child) : -1;
+  }
+
+  
+
+
   virtual already_AddRefed<AccAttributes> TextAttributes(bool aIncludeDefAttrs,
                                                          int32_t aOffset,
                                                          int32_t* aStartOffset,
