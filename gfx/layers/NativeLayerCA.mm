@@ -352,16 +352,10 @@ void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentati
   }
 
   
-  
   AutoCATransaction transaction;
-  nsTArray<NativeLayerCA*> sublayersWithExtent;
   for (auto layer : aSublayers) {
     mustRebuild |= layer->WillUpdateAffectLayers(aRepresentation);
     layer->ApplyChanges(aRepresentation, NativeLayerCA::UpdateType::All);
-    CALayer* caLayer = layer->UnderlyingCALayer(aRepresentation);
-    if (!caLayer.masksToBounds || !NSIsEmptyRect(caLayer.bounds)) {
-      sublayersWithExtent.AppendElement(layer);
-    }
   }
 
   if (mustRebuild) {
@@ -378,13 +372,11 @@ void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentati
     
     
 
-    uint32_t sublayersCount = sublayersWithExtent.Length();
-
     
     
-    auto acceptProvidedSublayers = [&]() {
-      NSMutableArray<CALayer*>* sublayers = [NSMutableArray arrayWithCapacity:sublayersCount];
-      for (auto layer : sublayersWithExtent) {
+    void (^acceptProvidedSublayers)() = ^() {
+      NSMutableArray<CALayer*>* sublayers = [NSMutableArray arrayWithCapacity:aSublayers.Length()];
+      for (auto layer : aSublayers) {
         [sublayers addObject:layer->UnderlyingCALayer(aRepresentation)];
       }
       mRootCALayer.sublayers = sublayers;
@@ -393,9 +385,8 @@ void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentati
     
     
     bool topLayerIsRooted =
-        sublayersCount &&
-        (sublayersWithExtent.LastElement()->UnderlyingCALayer(aRepresentation).superlayer ==
-         mRootCALayer);
+        aSublayers.Length() &&
+        (aSublayers.LastElement()->UnderlyingCALayer(aRepresentation).superlayer == mRootCALayer);
 
     if (!topLayerIsRooted) {
       
@@ -408,14 +399,14 @@ void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentati
     
     
     MOZ_DIAGNOSTIC_ASSERT(
-        !sublayersCount ||
-            (sublayersWithExtent.LastElement()->UnderlyingCALayer(aRepresentation).superlayer ==
+        !aSublayers.Length() ||
+            (aSublayers.LastElement()->UnderlyingCALayer(aRepresentation).superlayer ==
              mRootCALayer),
         "The topmost layer must be a child of mRootCALayer.");
 
     bool didIsolate = false;
     if (mightIsolate && aWindowIsFullscreen && !aMouseMovedRecently) {
-      CALayer* isolatedLayer = FindVideoLayerToIsolate(aRepresentation, sublayersWithExtent);
+      CALayer* isolatedLayer = FindVideoLayerToIsolate(aRepresentation, aSublayers);
       if (isolatedLayer) {
         
         didIsolate = true;
@@ -454,7 +445,7 @@ void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentati
 }
 
 CALayer* NativeLayerRootCA::Representation::FindVideoLayerToIsolate(
-    WhichRepresentation aRepresentation, const nsTArray<NativeLayerCA*>& aSublayers) {
+    WhichRepresentation aRepresentation, const nsTArray<RefPtr<NativeLayerCA>>& aSublayers) {
   
   
   
