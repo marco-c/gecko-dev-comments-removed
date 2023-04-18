@@ -75,26 +75,6 @@ class MediaEngineSourceInterface {
   
 
 
-  virtual nsString GetName() const = 0;
-
-  
-
-
-  virtual nsCString GetUUID() const = 0;
-
-  
-
-
-  virtual nsString GetGroupId() const = 0;
-
-  
-
-
-  virtual dom::MediaSourceEnum GetMediaSource() const = 0;
-
-  
-
-
 
   virtual RefPtr<GenericNonExclusivePromise> GetFirstFramePromise() const {
     return nullptr;

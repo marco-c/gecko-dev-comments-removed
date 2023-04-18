@@ -42,6 +42,7 @@ class nsIPrefBranch;
 
 namespace mozilla {
 class MediaEngine;
+class MediaEngineSource;
 class TaskQueue;
 class MediaTimer;
 class MediaTrack;
@@ -67,6 +68,7 @@ class DeviceListener;
 
 
 
+
 class MediaDevice final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDevice)
@@ -75,12 +77,13 @@ class MediaDevice final {
 
 
   enum class IsScary { No, Yes };
-  MediaDevice(const RefPtr<MediaEngineSource>& aSource,
+  MediaDevice(MediaEngine* aEngine, dom::MediaSourceEnum aMediaSource,
               const nsString& aRawName, const nsString& aRawID,
               const nsString& aRawGroupID, IsScary aIsScary);
 
-  MediaDevice(const RefPtr<AudioDeviceInfo>& aAudioDeviceInfo,
-              const nsString& aRawID, const nsString& aRawGroupID);
+  MediaDevice(MediaEngine* aEngine,
+              const RefPtr<AudioDeviceInfo>& aAudioDeviceInfo,
+              const nsString& aRawID);
 
   static RefPtr<MediaDevice> CopyWithNewRawGroupId(
       const RefPtr<MediaDevice>& aOther, const nsString& aRawGroupID);
@@ -91,8 +94,9 @@ class MediaDevice final {
   ~MediaDevice();
 
  public:
-  const RefPtr<MediaEngineSource> mSource;
-  const RefPtr<AudioDeviceInfo> mSinkInfo;
+  const RefPtr<MediaEngine> mEngine;
+  const RefPtr<AudioDeviceInfo> mAudioDeviceInfo;
+  const dom::MediaSourceEnum mMediaSource;
   const dom::MediaDeviceKind mKind;
   const bool mScary;
   const bool mIsFake;
@@ -101,6 +105,10 @@ class MediaDevice final {
   const nsString mRawGroupID;
   const nsString mRawName;
 };
+
+
+
+
 
 
 
@@ -130,10 +138,12 @@ class LocalMediaDevice final : public nsIMediaDevice {
   nsresult Stop();
   nsresult Deallocate();
 
-  void GetSettings(dom::MediaTrackSettings& aOutSettings) const;
-  MediaEngineSource* Source() const { return mRawDevice->mSource; }
+  void GetSettings(dom::MediaTrackSettings& aOutSettings);
+  MediaEngineSource* Source();
   
-  AudioDeviceInfo* GetAudioDeviceInfo() const { return mRawDevice->mSinkInfo; }
+  AudioDeviceInfo* GetAudioDeviceInfo() const {
+    return mRawDevice->mAudioDeviceInfo;
+  }
   dom::MediaSourceEnum GetMediaSource() const {
     return mRawDevice->GetMediaSource();
   }
@@ -158,6 +168,9 @@ class LocalMediaDevice final : public nsIMediaDevice {
   const nsString mName;
   const nsString mID;
   const nsString mGroupID;
+
+ private:
+  RefPtr<MediaEngineSource> mSource;
 };
 
 typedef nsRefPtrHashtable<nsUint64HashKey, GetUserMediaWindowListener>
