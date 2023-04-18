@@ -163,6 +163,9 @@ add_task(async function test_support_ntp_colors() {
       
       
       ["layout.css.prefers-color-scheme.content-override", 2],
+      
+      
+      ["ui.systemUsesDarkTheme", 0],
     ],
   });
   NewTabPagePreloading.removePreloadedBrowser(window);
