@@ -2484,19 +2484,20 @@ nsresult HTMLEditor::PasteAsQuotationAsAction(int32_t aClipboardType,
       DeleteSelectionAndCreateElement(
           *nsGkAtoms::blockquote,
           
-          [&](Element& aBlockquoteElement) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-            DebugOnly<nsresult> rvIgnored = aBlockquoteElement.SetAttr(
-                kNameSpaceID_None, nsGkAtoms::type, u"cite"_ns,
-                aBlockquoteElement.IsInComposedDoc());
-            NS_WARNING_ASSERTION(
-                NS_SUCCEEDED(rvIgnored),
-                nsPrintfCString(
-                    "Element::SetAttr(nsGkAtoms::type, \"cite\", %s) "
-                    "failed, but ignored",
-                    aBlockquoteElement.IsInComposedDoc() ? "true" : "false")
-                    .get());
-            return NS_OK;
-          });
+          [](HTMLEditor&, Element& aBlockquoteElement, const EditorDOMPoint&)
+              MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+                DebugOnly<nsresult> rvIgnored = aBlockquoteElement.SetAttr(
+                    kNameSpaceID_None, nsGkAtoms::type, u"cite"_ns,
+                    aBlockquoteElement.IsInComposedDoc());
+                NS_WARNING_ASSERTION(
+                    NS_SUCCEEDED(rvIgnored),
+                    nsPrintfCString(
+                        "Element::SetAttr(nsGkAtoms::type, \"cite\", %s) "
+                        "failed, but ignored",
+                        aBlockquoteElement.IsInComposedDoc() ? "true" : "false")
+                        .get());
+                return NS_OK;
+              });
   if (MOZ_UNLIKELY(blockquoteElementOrError.isErr() ||
                    NS_WARN_IF(Destroyed()))) {
     NS_WARNING(
@@ -2895,7 +2896,8 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
   
   Result<RefPtr<Element>, nsresult> spanElementOrError =
       DeleteSelectionAndCreateElement(
-          *nsGkAtoms::span, [](Element& aSpanElement) {
+          *nsGkAtoms::span,
+          [](HTMLEditor&, Element& aSpanElement, const EditorDOMPoint&) {
             
             DebugOnly<nsresult> rvIgnored = aSpanElement.SetAttr(
                 kNameSpaceID_None, nsGkAtoms::mozquote, u"true"_ns,
@@ -2907,6 +2909,8 @@ nsresult HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
                     "failed",
                     aSpanElement.IsInComposedDoc() ? "true" : "false")
                     .get());
+            
+            
             
             if (aSpanElement.GetParent() &&
                 aSpanElement.GetParent()->IsHTMLElement(nsGkAtoms::body)) {
@@ -3159,7 +3163,8 @@ nsresult HTMLEditor::InsertAsCitedQuotationInternal(
       DeleteSelectionAndCreateElement(
           *nsGkAtoms::blockquote,
           
-          [&](Element& aBlockquoteElement) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+          [&aCitation](HTMLEditor&, Element& aBlockquoteElement,
+                       const EditorDOMPoint&) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
             
             DebugOnly<nsresult> rvIgnored = aBlockquoteElement.SetAttr(
                 kNameSpaceID_None, nsGkAtoms::type, u"cite"_ns,

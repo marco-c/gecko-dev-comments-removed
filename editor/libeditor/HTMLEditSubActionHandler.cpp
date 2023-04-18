@@ -3052,27 +3052,29 @@ EditActionResult HTMLEditor::ChangeSelectedHardLinesToList(
             aListElementTagName, atStartOfSelection,
             BRElementNextToSplitPoint::Keep,
             
-            [&](Element& aListElement) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-              Result<RefPtr<Element>, nsresult> listItemElementOrError =
-                  CreateAndInsertElement(aListElement.IsInComposedDoc()
-                                             ? WithTransaction::Yes
-                                             : WithTransaction::No,
-                                         aListItemElementTagName,
-                                         EditorDOMPoint(&aListElement, 0u));
-              if (listItemElementOrError.isErr()) {
-                NS_WARNING(nsPrintfCString(
-                               "HTMLEditor::CreateAndInsertElement(%s) failed",
-                               ToString(aListElement.IsInComposedDoc()
-                                            ? WithTransaction::Yes
-                                            : WithTransaction::No)
-                                   .c_str())
-                               .get());
-                return listItemElementOrError.unwrapErr();
-              }
-              MOZ_ASSERT(listItemElementOrError.inspect());
-              newListItemElement = listItemElementOrError.unwrap();
-              return NS_OK;
-            });
+            [&newListItemElement, &aListItemElementTagName](
+                HTMLEditor& aHTMLEditor, Element& aListElement,
+                const EditorDOMPoint& aPointToInsert)
+                MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+                  const auto withTransaction = aListElement.IsInComposedDoc()
+                                                   ? WithTransaction::Yes
+                                                   : WithTransaction::No;
+                  Result<RefPtr<Element>, nsresult> listItemElementOrError =
+                      aHTMLEditor.CreateAndInsertElement(
+                          withTransaction, aListItemElementTagName,
+                          EditorDOMPoint(&aListElement, 0u));
+                  if (listItemElementOrError.isErr()) {
+                    NS_WARNING(
+                        nsPrintfCString(
+                            "HTMLEditor::CreateAndInsertElement(%s) failed",
+                            ToString(withTransaction).c_str())
+                            .get());
+                    return listItemElementOrError.unwrapErr();
+                  }
+                  MOZ_ASSERT(listItemElementOrError.inspect());
+                  newListItemElement = listItemElementOrError.unwrap();
+                  return NS_OK;
+                });
     if (MOZ_UNLIKELY(newListElementOrError.isErr())) {
       NS_WARNING(
           nsPrintfCString(
@@ -5701,12 +5703,13 @@ nsresult HTMLEditor::AlignBlockContentsWithDivElement(
   Result<RefPtr<Element>, nsresult> maybeNewDivElement = CreateAndInsertElement(
       WithTransaction::Yes, *nsGkAtoms::div, EditorDOMPoint(&aBlockElement, 0u),
       
-      [&](Element& aDivElement) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+      [&aAlignType](HTMLEditor& aHTMLEditor, Element& aDivElement,
+                    const EditorDOMPoint&) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
         
         
-        nsresult rv =
-            SetAttributeOrEquivalent(&aDivElement, nsGkAtoms::align, aAlignType,
-                                     !aDivElement.IsInComposedDoc());
+        nsresult rv = aHTMLEditor.SetAttributeOrEquivalent(
+            &aDivElement, nsGkAtoms::align, aAlignType,
+            !aDivElement.IsInComposedDoc());
         NS_WARNING_ASSERTION(
             NS_SUCCEEDED(rv),
             nsPrintfCString("EditorBase::SetAttributeOrEquivalent(nsGkAtoms:: "
@@ -6949,25 +6952,24 @@ nsresult HTMLEditor::HandleInsertParagraphInHeadingElement(
                                          : MOZ_KnownLive(paraAtom),
               atHeader.NextPoint(),
               
-              [&](Element& aDivOrParagraphElement) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+              [](HTMLEditor& aHTMLEditor, Element& aDivOrParagraphElement,
+                 const EditorDOMPoint&) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
                 
                 
                 
                 
+                const auto withTransaction =
+                    aDivOrParagraphElement.IsInComposedDoc()
+                        ? WithTransaction::Yes
+                        : WithTransaction::No;
                 Result<RefPtr<Element>, nsresult> brElementOrError =
-                    InsertBRElement(
-                        aDivOrParagraphElement.IsInComposedDoc()
-                            ? WithTransaction::Yes
-                            : WithTransaction::No,
+                    aHTMLEditor.InsertBRElement(
+                        withTransaction,
                         EditorDOMPoint(&aDivOrParagraphElement, 0u));
                 if (brElementOrError.isErr()) {
                   NS_WARNING(
-                      nsPrintfCString(
-                          "HTMLEditor::InsertBRElement(%s) failed",
-                          ToString(aDivOrParagraphElement.IsInComposedDoc()
-                                       ? WithTransaction::Yes
-                                       : WithTransaction::No)
-                              .c_str())
+                      nsPrintfCString("HTMLEditor::InsertBRElement(%s) failed",
+                                      ToString(withTransaction).c_str())
                           .get());
                   return brElementOrError.unwrapErr();
                 }
@@ -7396,23 +7398,25 @@ nsresult HTMLEditor::HandleInsertParagraphInListItemElement(
                                        : MOZ_KnownLive(paraAtom),
             atNextSiblingOfLeftList,
             
-            [&](Element& aDivOrParagraphElement) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+            [](HTMLEditor& aHTMLEditor, Element& aDivOrParagraphElement,
+               const EditorDOMPoint&) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
               
               
               
+              
+              const auto withTransaction =
+                  aDivOrParagraphElement.IsInComposedDoc()
+                      ? WithTransaction::Yes
+                      : WithTransaction::No;
               Result<RefPtr<Element>, nsresult> brElementOrError =
-                  InsertBRElement(aDivOrParagraphElement.IsInComposedDoc()
-                                      ? WithTransaction::Yes
-                                      : WithTransaction::No,
-                                  EditorDOMPoint(&aDivOrParagraphElement, 0u));
+                  aHTMLEditor.InsertBRElement(
+                      withTransaction,
+                      EditorDOMPoint(&aDivOrParagraphElement, 0u));
               if (brElementOrError.isErr()) {
-                NS_WARNING(nsPrintfCString(
-                               "HTMLEditor::InsertBRElement(%s) failed",
-                               ToString(aDivOrParagraphElement.IsInComposedDoc()
-                                            ? WithTransaction::Yes
-                                            : WithTransaction::No)
-                                   .c_str())
-                               .get());
+                NS_WARNING(
+                    nsPrintfCString("HTMLEditor::InsertBRElement(%s) failed",
+                                    ToString(withTransaction).c_str())
+                        .get());
                 return brElementOrError.unwrapErr();
               }
               return NS_OK;
@@ -8072,7 +8076,7 @@ Result<RefPtr<Element>, nsresult>
 HTMLEditor::InsertElementWithSplittingAncestorsWithTransaction(
     nsAtom& aTagName, const EditorDOMPoint& aPointToInsert,
     BRElementNextToSplitPoint aBRElementNextToSplitPoint,
-    const std::function<nsresult(Element&)>& aInitializer) {
+    const InitializeInsertingElement& aInitializer) {
   MOZ_ASSERT(aPointToInsert.IsSetAndValid());
 
   SplitNodeResult splitNodeResult =
