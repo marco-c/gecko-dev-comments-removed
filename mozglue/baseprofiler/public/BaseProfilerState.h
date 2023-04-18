@@ -215,7 +215,10 @@ class MOZ_RAII AutoProfilerStats {
           "Sample the stacks of all registered threads")                       \
                                                                                \
     MACRO(22, "markersallthreads", MarkersAllThreads,                          \
-          "Record markers from all registered threads")
+          "Record markers from all registered threads")                        \
+                                                                               \
+    MACRO(23, "unregisteredthreads", UnregisteredThreads,                      \
+          "Discover and profile unregistered threads -- beware: expensive!")
 
 
 struct ProfilerFeature {

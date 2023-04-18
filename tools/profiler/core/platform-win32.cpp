@@ -232,6 +232,12 @@ static unsigned int __stdcall ThreadEntry(void* aArg) {
   return 0;
 }
 
+static unsigned int __stdcall UnregisteredThreadSpyEntry(void* aArg) {
+  auto thread = static_cast<SamplerThread*>(aArg);
+  thread->RunUnregisteredThreadSpy();
+  return 0;
+}
+
 SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
                              double aIntervalMilliseconds, uint32_t aFeatures)
     : mSampler(aLock),
@@ -249,6 +255,19 @@ SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
     ::timeBeginPeriod(mIntervalMicroseconds / 1000);
   }
 
+  if (ProfilerFeature::HasUnregisteredThreads(aFeatures)) {
+    
+    
+    mSpyingState = SpyingState::Spy_Initializing;
+    mUnregisteredThreadSpyThread = reinterpret_cast<HANDLE>(
+        _beginthreadex(nullptr,
+                        0, UnregisteredThreadSpyEntry, this,
+                        0, nullptr));
+    if (mUnregisteredThreadSpyThread == 0) {
+      MOZ_CRASH("_beginthreadex failed");
+    }
+  }
+
   
   
   
@@ -262,6 +281,32 @@ SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
 }
 
 SamplerThread::~SamplerThread() {
+  if (mUnregisteredThreadSpyThread) {
+    {
+      
+      
+      MonitorAutoLock spyingStateLock{mSpyingStateMonitor};
+      while (mSpyingState != SpyingState::Spy_Waiting &&
+             mSpyingState != SpyingState::SamplerToSpy_Start) {
+        spyingStateLock.Wait();
+      }
+
+      mSpyingState = SpyingState::MainToSpy_Shutdown;
+      spyingStateLock.NotifyAll();
+
+      do {
+        spyingStateLock.Wait();
+      } while (mSpyingState != SpyingState::SpyToMain_ShuttingDown);
+    }
+
+    WaitForSingleObject(mUnregisteredThreadSpyThread, INFINITE);
+
+    
+    if (mUnregisteredThreadSpyThread != kNoThread) {
+      CloseHandle(mUnregisteredThreadSpyThread);
+    }
+  }
+
   WaitForSingleObject(mThread, INFINITE);
 
   
@@ -273,6 +318,43 @@ SamplerThread::~SamplerThread() {
   
   InvokePostSamplingCallbacks(std::move(mPostSamplingCallbackList),
                               SamplingState::JustStopped);
+}
+
+void SamplerThread::RunUnregisteredThreadSpy() {
+  
+  
+  
+  
+  
+  PR_SetCurrentThreadName("UnregisteredThreadSpy");
+
+  while (true) {
+    {
+      MonitorAutoLock spyingStateLock{mSpyingStateMonitor};
+      
+      MOZ_ASSERT(mSpyingState == SpyingState::Spy_Initializing ||
+                 mSpyingState == SpyingState::Spy_Working);
+
+      
+      mSpyingState = SpyingState::Spy_Waiting;
+      mSpyingStateMonitor.NotifyAll();
+      do {
+        spyingStateLock.Wait();
+      } while (mSpyingState == SpyingState::Spy_Waiting);
+
+      if (mSpyingState == SpyingState::MainToSpy_Shutdown) {
+        mSpyingState = SpyingState::SpyToMain_ShuttingDown;
+        mSpyingStateMonitor.NotifyAll();
+        break;
+      }
+
+      MOZ_ASSERT(mSpyingState == SpyingState::SamplerToSpy_Start);
+      mSpyingState = SpyingState::Spy_Working;
+    }
+
+    
+    SpyOnUnregisteredThreads();
+  }
 }
 
 void SamplerThread::SleepMicro(uint32_t aMicroseconds) {
