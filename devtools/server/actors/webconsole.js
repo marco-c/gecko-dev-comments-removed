@@ -4,7 +4,6 @@
 
 "use strict";
 
-
 const { ActorClassWithSpec, Actor } = require("devtools/shared/protocol");
 const { webconsoleSpec } = require("devtools/shared/specs/webconsole");
 
@@ -375,28 +374,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
   grip: function() {
     return { actor: this.actorID };
-  },
-
-  hasNativeConsoleAPI: function(window) {
-    if (isWorker || !(window instanceof Ci.nsIDOMWindow)) {
-      
-      return true;
-    }
-
-    let isNative = false;
-    try {
-      
-      
-      const console = window.wrappedJSObject.console;
-      
-      
-      if (console) {
-        isNative = new XPCNativeWrapper(console).IS_NATIVE_CONSOLE;
-      }
-    } catch (ex) {
-      
-    }
-    return isNative;
   },
 
   _findProtoChain: ThreadActor.prototype._findProtoChain,
@@ -789,8 +766,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     startedListeners.forEach(this._listeners.add, this._listeners);
 
     return {
-      startedListeners: startedListeners,
-      nativeConsoleAPI: this.hasNativeConsoleAPI(this.global),
+      startedListeners,
     };
   },
 

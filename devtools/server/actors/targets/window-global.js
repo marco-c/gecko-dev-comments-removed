@@ -21,8 +21,6 @@
 
 
 
-
-
 var { Ci, Cu, Cr, Cc } = require("chrome");
 var Services = require("Services");
 const ChromeUtils = require("ChromeUtils");
@@ -130,9 +128,6 @@ function getInnerId(window) {
 
 const windowGlobalTargetPrototype = {
   
-
-
-
 
 
 
@@ -1535,7 +1530,6 @@ const windowGlobalTargetPrototype = {
     if (!this.followWindowGlobalLifeCycle) {
       this.emit("tabNavigated", {
         url: newURI,
-        nativeConsoleAPI: true,
         state: "start",
         isFrameSwitching,
       });
@@ -1586,32 +1580,9 @@ const windowGlobalTargetPrototype = {
     this.emit("tabNavigated", {
       url: this.url,
       title: this.title,
-      nativeConsoleAPI: this.hasNativeConsoleAPI(this.window),
       state: "stop",
       isFrameSwitching: isFrameSwitching,
     });
-  },
-
-  
-
-
-
-
-
-
-
-
-  hasNativeConsoleAPI(window) {
-    let isNative = false;
-    try {
-      
-      
-      const console = window.wrappedJSObject.console;
-      isNative = new XPCNativeWrapper(console).IS_NATIVE_CONSOLE;
-    } catch (ex) {
-      
-    }
-    return isNative;
   },
 
   
