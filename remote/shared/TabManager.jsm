@@ -14,6 +14,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
 
   AppInfo: "chrome://remote/content/marionette/appinfo.js",
+  EventPromise: "chrome://remote/content/shared/Sync.jsm",
   MobileTabBrowser: "chrome://remote/content/shared/MobileTabBrowser.jsm",
 });
 
@@ -135,7 +136,7 @@ var TabManager = {
 
 
 
-  addTab(options = {}) {
+  async addTab(options = {}) {
     const {
       focus = false,
       userContextId,
@@ -149,7 +150,7 @@ var TabManager = {
     });
 
     if (focus) {
-      this.selectTab(tab);
+      await this.selectTab(tab);
     }
 
     return tab;
@@ -263,19 +264,50 @@ var TabManager = {
     return count;
   },
 
+  
+
+
+
+
+
   removeTab(tab) {
-    const tabBrowser = this.getTabBrowser(tab.ownerGlobal);
+    const ownerWindow = this._getWindowForTab(tab);
+    const tabBrowser = this.getTabBrowser(ownerWindow);
     tabBrowser.removeTab(tab);
   },
 
+  
+
+
+
+
+
+
+
+
   selectTab(tab) {
-    const tabBrowser = this.getTabBrowser(tab.ownerGlobal);
+    const ownerWindow = this._getWindowForTab(tab);
+    const tabBrowser = this.getTabBrowser(ownerWindow);
+
+    if (tab === tabBrowser.selectedTab) {
+      return Promise.resolve();
+    }
+
+    const selected = new EventPromise(ownerWindow, "TabSelect");
     tabBrowser.selectedTab = tab;
+    return selected;
   },
 
   supportsTabs() {
     
     
     return AppInfo.name === "Firefox";
+  },
+
+  _getWindowForTab(tab) {
+    
+    
+    
+    return tab.linkedBrowser.ownerGlobal;
   },
 };
