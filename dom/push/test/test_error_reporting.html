@@ -1,12 +1,12 @@
 <!DOCTYPE HTML>
 <html>
+<!--
+Bug 1246341: Report message delivery failures to the Push server.
 
+Any copyright is dedicated to the Public Domain.
+http://creativecommons.org/licenses/publicdomain/
 
-
-
-
-
-
+-->
 <head>
   <title>Test for Bug 1246341</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -55,7 +55,7 @@
   function waitForDeliveryError(request) {
     return new Promise(resolve => {
       var data = new TextEncoder("utf-8").encode(JSON.stringify(request));
-      var principal = SpecialPowers.wrap(document).nodePrincipal;
+      var principal = SpecialPowers.wrap(window).clientPrincipal;
 
       let messageId = "message-" + (idCounter++);
       reporters.set(messageId, resolve);
@@ -88,7 +88,7 @@
         }
       });
 
-      var principal = SpecialPowers.wrap(document).nodePrincipal;
+      var principal = SpecialPowers.wrap(window).clientPrincipal;
       pushNotifier.notifyError(registration.scope, principal, "Push error",
         SpecialPowers.Ci.nsIScriptError.errorFlag);
     });
