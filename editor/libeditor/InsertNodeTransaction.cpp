@@ -5,14 +5,13 @@
 
 #include "InsertNodeTransaction.h"
 
-#include "mozilla/EditorBase.h"      
-#include "mozilla/EditorDOMPoint.h"  
-#include "mozilla/HTMLEditor.h"      
-#include "mozilla/Logging.h"
-#include "mozilla/TextEditor.h"  
-#include "mozilla/ToString.h"
+#include "EditorBase.h"      
+#include "EditorDOMPoint.h"  
+#include "HTMLEditor.h"      
+#include "TextEditor.h"      
 
-#include "mozilla/dom/Selection.h"  
+#include "mozilla/Logging.h"
+#include "mozilla/ToString.h"
 
 #include "nsAString.h"
 #include "nsDebug.h"          
@@ -139,20 +138,6 @@ NS_IMETHODIMP InsertNodeTransaction::DoTransaction() {
     return error.StealNSResult();
   }
 
-  if (!mEditorBase->AllowsTransactionsToChangeSelection()) {
-    return NS_OK;
-  }
-
-  RefPtr<Selection> selection = mEditorBase->GetSelection();
-  if (NS_WARN_IF(!selection)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  editorBase->CollapseSelectionTo(EditorRawDOMPoint::After(contentToInsert),
-                                  error);
-  NS_WARNING_ASSERTION(!error.Failed(),
-                       "EditorBase::CollapseSelectionTo() failed, but ignored");
   return NS_OK;
 }
 
@@ -179,7 +164,22 @@ NS_IMETHODIMP InsertNodeTransaction::RedoTransaction() {
   MOZ_LOG(GetLogModule(), LogLevel::Info,
           ("%p InsertNodeTransaction::%s this=%s", this, __FUNCTION__,
            ToString(*this).c_str()));
-  return DoTransaction();
+  nsresult rv = DoTransaction();
+  if (MOZ_UNLIKELY(NS_FAILED(rv))) {
+    NS_WARNING("InsertNodeTransaction::RedoTransaction() failed");
+    return rv;
+  }
+
+  if (!mEditorBase->AllowsTransactionsToChangeSelection()) {
+    return NS_OK;
+  }
+
+  OwningNonNull<EditorBase> editorBase(*mEditorBase);
+  rv = editorBase->CollapseSelectionTo(
+      SuggestPointToPutCaret<EditorRawDOMPoint>());
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "EditorBase::CollapseSelectionTo() failed, but ignored");
+  return NS_OK;
 }
 
 }  
