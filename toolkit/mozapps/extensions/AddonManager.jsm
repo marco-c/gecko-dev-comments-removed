@@ -3134,7 +3134,7 @@ var AddonManagerInternal = {
         source: install.sourceURI,
       })
     ) {
-      install.cancel();
+      install.error = AddonManager.ERROR_INVALID_DOMAIN;
       return Promise.reject();
     }
 
@@ -3804,6 +3804,8 @@ var AddonManager = {
   
   
   
+  
+  
   _errors: new Map([
     
     ["ERROR_NETWORK_FAILURE", -1],
@@ -3816,9 +3818,13 @@ var AddonManager = {
     
     ["ERROR_SIGNEDSTATE_REQUIRED", -5],
     
+    
     ["ERROR_UNEXPECTED_ADDON_TYPE", -6],
     
+    
     ["ERROR_INCORRECT_ID", -7],
+    
+    ["ERROR_INVALID_DOMAIN", -8],
   ]),
   
   ERROR_TIMEOUT: -1,

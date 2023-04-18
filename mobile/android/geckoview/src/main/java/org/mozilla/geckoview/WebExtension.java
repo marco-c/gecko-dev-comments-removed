@@ -1526,6 +1526,8 @@ public class WebExtension {
       
       public static final int ERROR_INCORRECT_ID = -7;
       
+      public static final int ERROR_INVALID_DOMAIN = -8;
+      
       public static final int ERROR_USER_CANCELED = -100;
       
       public static final int ERROR_POSTPONED = -101;
@@ -1569,6 +1571,7 @@ public class WebExtension {
           ErrorCodes.ERROR_SIGNEDSTATE_REQUIRED,
           ErrorCodes.ERROR_UNEXPECTED_ADDON_TYPE,
           ErrorCodes.ERROR_INCORRECT_ID,
+          ErrorCodes.ERROR_INVALID_DOMAIN,
           ErrorCodes.ERROR_USER_CANCELED,
           ErrorCodes.ERROR_POSTPONED,
         })
