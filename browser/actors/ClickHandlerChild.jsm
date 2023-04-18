@@ -184,9 +184,9 @@ class ClickHandlerChild extends JSWindowActorChild {
       
       
       
-      if (event.button === 1) {
-        event.preventMultipleActions();
-      }
+      
+      
+      event.preventMultipleActions();
 
       this.sendAsyncMessage("Content:Click", json);
     }
