@@ -29,6 +29,7 @@
 #include "mozilla/StaticPrefs_image.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/Tuple.h"
+#include "mozilla/Unused.h"
 #include "nsExpirationTracker.h"
 #include "nsHashKeys.h"
 #include "nsIMemoryReporter.h"
@@ -1880,8 +1881,12 @@ void SurfaceCache::ReleaseImageOnMainThread(
   }
 
   
-  
   if (gXPCOMThreadsShutDown) {
+    
+    
+    
+    image::Image* intentionalLeak = aImage.take();
+    Unused << intentionalLeak;
     return;
   }
 
