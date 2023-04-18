@@ -455,6 +455,8 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument) {
   }
 
   
+  
+  
   PresShell* presShell = aDocument->GetPresShell();
   if (!presShell || presShell->IsDestroying()) {
     return nullptr;

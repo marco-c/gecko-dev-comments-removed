@@ -104,6 +104,9 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
+
+
+
   virtual nsIFrame* GetFrame() const;
 
   
