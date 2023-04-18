@@ -833,8 +833,10 @@ class UrlbarInput {
           ),
         };
 
+        
+        let searchString = this._lastSearchString;
         this.controller.engagementEvent.record(event, {
-          searchString: this._lastSearchString,
+          searchString,
           selIndex,
           selType: "tabswitch",
           provider: result.providerName,
@@ -848,6 +850,15 @@ class UrlbarInput {
         if (switched && prevTab.isEmpty) {
           this.window.gBrowser.removeTab(prevTab);
         }
+
+        if (switched && !this.isPrivate && !result.heuristic) {
+          
+          
+          UrlbarUtils.addToInputHistory(url, searchString).catch(
+            Cu.reportError
+          );
+        }
+
         return;
       }
       case UrlbarUtils.RESULT_TYPE.SEARCH: {
@@ -1001,6 +1012,7 @@ class UrlbarInput {
     }
 
     if (!this.isPrivate && !result.heuristic) {
+      
       
       UrlbarUtils.addToInputHistory(url, this._lastSearchString).catch(
         Cu.reportError
