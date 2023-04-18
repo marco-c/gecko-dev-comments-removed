@@ -1232,6 +1232,13 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
 
       
 
+      if (currentSchemaVersion < 63) {
+        rv = MigrateV63Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
       
       
       
@@ -2405,6 +2412,22 @@ nsresult Database::MigrateV62Up() {
   rv = mMainConn->ExecuteSimpleSQL(
       CREATE_IDX_MOZ_PLACES_METADATA_SNAPSHOTS_EXTRA_TYPE);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
+}
+
+nsresult Database::MigrateV63Up() {
+  
+  nsCOMPtr<mozIStorageStatement> stmt;
+  nsresult rv = mMainConn->CreateStatement(
+      "SELECT title FROM moz_places_metadata_snapshots"_ns,
+      getter_AddRefs(stmt));
+  if (NS_FAILED(rv)) {
+    rv = mMainConn->ExecuteSimpleSQL(
+        "ALTER TABLE moz_places_metadata_snapshots "
+        "ADD COLUMN title TEXT "_ns);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   return NS_OK;
 }
