@@ -224,6 +224,7 @@ class nsContextMenu {
     this.onLink = context.onLink;
     this.onLoadedImage = context.onLoadedImage;
     this.onMailtoLink = context.onMailtoLink;
+    this.onTelLink = context.onTelLink;
     this.onMozExtLink = context.onMozExtLink;
     this.onNumeric = context.onNumeric;
     this.onPassword = context.onPassword;
@@ -712,7 +713,10 @@ class nsContextMenu {
 
     this.showItem(
       "context-bookmarklink",
-      (this.onLink && !this.onMailtoLink && !this.onMozExtLink) ||
+      (this.onLink &&
+        !this.onMailtoLink &&
+        !this.onTelLink &&
+        !this.onMozExtLink) ||
         this.onPlainTextLink
     );
     this.showItem("context-keywordfield", this.shouldShowAddKeyword());
@@ -837,13 +841,24 @@ class nsContextMenu {
     this.showItem("context-copyemail", this.onMailtoLink);
 
     
-    this.showItem("context-copylink", this.onLink && !this.onMailtoLink);
+    this.showItem("context-copyphone", this.onTelLink);
+
+    
+    this.showItem(
+      "context-copylink",
+      this.onLink && !this.onMailtoLink && !this.onTelLink
+    );
+
     let copyLinkSeparator = document.getElementById("context-sep-copylink");
     
     
     copyLinkSeparator.toggleAttribute(
       "ensureHidden",
-      this.onLink && !this.onMailtoLink && !this.onImage && this.syncItemsShown
+      this.onLink &&
+        !this.onMailtoLink &&
+        !this.onTelLink &&
+        !this.onImage &&
+        this.syncItemsShown
     );
 
     this.showItem("context-copyvideourl", this.onVideo);
@@ -1921,6 +1936,26 @@ class nsContextMenu {
       Ci.nsIClipboardHelper
     );
     clipboard.copyString(addresses);
+  }
+
+  
+  copyPhone() {
+    
+    var url = this.linkURL;
+    var phone = url.substr(4);
+
+    
+    
+    try {
+      phone = Services.textToSubURI.unEscapeURIForUI(phone);
+    } catch (ex) {
+      
+    }
+
+    var clipboard = Cc["@mozilla.org/widget/clipboardhelper;1"].getService(
+      Ci.nsIClipboardHelper
+    );
+    clipboard.copyString(phone);
   }
 
   copyLink() {
