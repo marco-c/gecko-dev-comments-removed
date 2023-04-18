@@ -46,6 +46,8 @@
 
 
 
+
+
 import os
 import random
 
@@ -122,6 +124,11 @@ def _handle_final_request(request, response):
 
     mode = request.GET.get(b"final-headers")
     headers = _get_response_headers(request.method, mode)
+
+  redirect = request.GET.get(b"redirect")
+  if redirect is not None:
+    headers.append(("Location", redirect))
+    return (301, headers, b"")
 
   mime_type = request.GET.get(b"mime-type")
   if mime_type is not None:
