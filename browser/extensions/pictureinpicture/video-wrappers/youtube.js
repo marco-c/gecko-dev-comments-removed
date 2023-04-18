@@ -23,7 +23,7 @@ class PictureInPictureVideoWrapper {
         
         for (const mutation of mutationsList) {
           let textNodeList = container
-            .querySelector(".ytp-caption-window-bottom")
+            .querySelector(".captions-text")
             ?.querySelectorAll(".caption-visual-line");
           if (!textNodeList) {
             updateCaptionsFunction("");
