@@ -36,10 +36,22 @@ inline void EmitCallIC(MacroAssembler& masm, CodeOffset* callOffset) {
 
 inline void EmitReturnFromIC(MacroAssembler& masm) { masm.ret(); }
 
-inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm) {
-  masm.mov(FramePointer, StackPointer);
-  masm.Pop(FramePointer);
+inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm,
+                                       bool calledIntoIon = false) {
+  
+  
+  
+  
+  if (calledIntoIon) {
+    Register scratch = ICStubReg;
+    masm.Pop(scratch);
+    masm.shrl(Imm32(FRAMESIZE_SHIFT), scratch);
+    masm.addl(scratch, BaselineStackReg);
+  } else {
+    masm.mov(FramePointer, BaselineStackReg);
+  }
 
+  masm.Pop(FramePointer);
   masm.Pop(ICStubReg);
 
   

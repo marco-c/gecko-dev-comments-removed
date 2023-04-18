@@ -59,7 +59,7 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph,
       pushedArgs_(0),
 #endif
       lastOsiPointOffset_(0),
-      safepoints_(graph->localSlotsSize(),
+      safepoints_(graph->totalSlotCount(),
                   (gen->outerInfo().nargs() + 1) * sizeof(Value)),
       returnLabel_(),
       nativeToBytecodeMap_(nullptr),
@@ -71,7 +71,7 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph,
 #ifdef CHECK_OSIPOINT_REGISTERS
       checkOsiPointRegisters(JitOptions.checkOsiPointRegisters),
 #endif
-      frameDepth_(0) {
+      frameDepth_(graph->paddedLocalSlotsSize() + graph->argumentsSize()) {
   if (gen->isProfilerInstrumentationEnabled()) {
     masm.enableProfilingInstrumentation();
   }
@@ -81,7 +81,6 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph,
     
     
     MOZ_ASSERT(graph->argumentSlotCount() == 0);
-    frameDepth_ = AlignBytes(graph->localSlotsSize(), sizeof(uintptr_t));
     frameDepth_ += gen->wasmMaxStackArgBytes();
 
 #ifdef ENABLE_WASM_SIMD
@@ -101,24 +100,6 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph,
       frameDepth_ += ComputeByteAlignment(sizeof(wasm::Frame) + frameDepth_,
                                           WasmStackAlignment);
     }
-  } else {
-    
-    offsetOfLocalSlots_ = JitFrameLayout::IonFirstSlotOffset;
-    frameDepth_ = offsetOfLocalSlots_;
-
-    
-    
-    
-    
-    frameDepth_ += graph->localSlotsSize();
-    frameDepth_ = AlignBytes(frameDepth_, JitStackAlignment);
-
-    
-    offsetOfPassedArgSlots_ = frameDepth_;
-    MOZ_ASSERT((offsetOfPassedArgSlots_ % sizeof(JS::Value)) == 0);
-    frameDepth_ += graph->argumentSlotCount() * sizeof(JS::Value);
-
-    MOZ_ASSERT((frameDepth_ % JitStackAlignment) == 0);
   }
 }
 
@@ -139,12 +120,7 @@ bool CodeGeneratorShared::generatePrologue() {
   masm.assertStackAlignment(JitStackAlignment, 0);
 
   
-  masm.Push(FramePointer);
-  masm.moveStackPtrTo(FramePointer);
-
-  
-  masm.reserveStack(frameSize() - sizeof(uintptr_t));
-  MOZ_ASSERT(masm.framePushed() == frameSize());
+  masm.reserveStack(frameSize());
   masm.checkStackAlignment();
 
   if (JS::TraceLoggerSupported()) {
@@ -162,10 +138,8 @@ bool CodeGeneratorShared::generateEpilogue() {
     emitTracelogIonStop();
   }
 
-  MOZ_ASSERT(masm.framePushed() == frameSize());
-  masm.moveToStackPtr(FramePointer);
-  masm.pop(FramePointer);
-  masm.setFramePushed(0);
+  masm.freeStack(frameSize());
+  MOZ_ASSERT(masm.framePushed() == 0);
 
   
   
@@ -347,7 +321,7 @@ void CodeGeneratorShared::dumpNativeToBytecodeEntry(uint32_t idx) {
 static inline int32_t ToStackIndex(LAllocation* a) {
   if (a->isStackSlot()) {
     MOZ_ASSERT(a->toStackSlot()->slot() >= 1);
-    return JitFrameLayout::IonFirstSlotOffset + a->toStackSlot()->slot();
+    return a->toStackSlot()->slot();
   }
   return -int32_t(sizeof(JitFrameLayout) + a->toArgument()->index());
 }

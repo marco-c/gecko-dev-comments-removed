@@ -1835,7 +1835,7 @@ class LIRGraph {
   uint32_t numInstructions_;
 
   
-  uint32_t localSlotsSize_;
+  uint32_t localSlotCount_;
   
   uint32_t argumentSlotCount_;
 
@@ -1867,14 +1867,30 @@ class LIRGraph {
   }
   uint32_t getInstructionId() { return numInstructions_++; }
   uint32_t numInstructions() const { return numInstructions_; }
-  void setLocalSlotsSize(uint32_t localSlotsSize) {
-    localSlotsSize_ = localSlotsSize;
+  void setLocalSlotCount(uint32_t localSlotCount) {
+    localSlotCount_ = localSlotCount;
   }
-  uint32_t localSlotsSize() const { return localSlotsSize_; }
+  uint32_t localSlotCount() const { return localSlotCount_; }
+  
+  
+  
+  uint32_t paddedLocalSlotCount() const {
+    
+    
+    
+    
+    
+    return AlignBytes(localSlotCount(), JitStackAlignment);
+  }
+  size_t paddedLocalSlotsSize() const { return paddedLocalSlotCount(); }
   void setArgumentSlotCount(uint32_t argumentSlotCount) {
     argumentSlotCount_ = argumentSlotCount;
   }
   uint32_t argumentSlotCount() const { return argumentSlotCount_; }
+  size_t argumentsSize() const { return argumentSlotCount() * sizeof(Value); }
+  uint32_t totalSlotCount() const {
+    return paddedLocalSlotCount() + argumentsSize();
+  }
   [[nodiscard]] bool addConstantToPool(const Value& v, uint32_t* index);
   size_t numConstants() const { return constantPool_.length(); }
   Value* constantPool() { return &constantPool_[0]; }

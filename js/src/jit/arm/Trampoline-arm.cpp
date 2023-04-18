@@ -583,7 +583,37 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
       break;
   }
 
-  masm.mov(FramePointer, StackPointer);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  {
+    ScratchRegisterScope scratch(masm);
+    masm.ma_dtr(IsLoad, sp, Imm32(12), r4, scratch, PostIndex);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  masm.rshift32(Imm32(FRAMESIZE_SHIFT), r4);
+  masm.sub32(Imm32(sizeof(void*)), r4);
+  masm.addPtr(r4, sp);
+
   masm.pop(FramePointer);
   masm.ret();
 }

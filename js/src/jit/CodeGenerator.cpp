@@ -3738,14 +3738,9 @@ void CodeGenerator::visitOsrEntry(LOsrEntry* lir) {
   masm.setFramePushed(0);
 
   
-  masm.Push(FramePointer);
-  masm.moveStackPtrTo(FramePointer);
-
-  masm.reserveStack(frameSize() - sizeof(uintptr_t));
-  MOZ_ASSERT(masm.framePushed() == frameSize());
-
-  
   masm.assertStackAlignment(JitStackAlignment, 0);
+
+  masm.reserveStack(frameSize());
 }
 
 void CodeGenerator::visitOsrEnvironmentChain(LOsrEnvironmentChain* lir) {
@@ -12725,7 +12720,7 @@ bool CodeGenerator::link(JSContext* cx, const WarpSnapshot* snapshot) {
   size_t numNurseryObjects = snapshot->nurseryObjects().length();
 
   IonScript* ionScript = IonScript::New(
-      cx, compilationId, graph.localSlotsSize(), argumentSlots, frameDepth_,
+      cx, compilationId, graph.totalSlotCount(), argumentSlots, frameDepth_,
       snapshots_.listSize(), snapshots_.RVATableSize(), recovers_.size(),
       graph.numConstants(), numNurseryObjects, safepointIndices_.length(),
       osiIndices_.length(), icList_.length(), runtimeData_.length(),
