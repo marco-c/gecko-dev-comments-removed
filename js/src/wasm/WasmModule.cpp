@@ -809,78 +809,25 @@ bool Module::instantiateMemory(JSContext* cx,
 }
 
 #ifdef ENABLE_WASM_EXCEPTIONS
-bool Module::instantiateImportedTag(JSContext* cx,
-                                    Handle<WasmTagObject*> tagObj,
-                                    WasmTagObjectVector& tagObjs,
-                                    SharedExceptionTagVector* tags) const {
-  MOZ_ASSERT(tagObj);
-  
-  
-
-  
-  ExceptionTag& tag = tagObj->tag();
-
-  if (!tags->append(&tag)) {
+bool Module::instantiateTags(JSContext* cx,
+                             WasmTagObjectVector& tagObjs) const {
+  size_t tagLength = metadata().tags.length();
+  size_t importedTagsLength = tagObjs.length();
+  if (tagObjs.length() <= tagLength && !tagObjs.resize(tagLength)) {
     ReportOutOfMemory(cx);
     return false;
   }
 
-  return true;
-}
-
-bool Module::instantiateLocalTag(JSContext* cx, const TagDesc& ed,
-                                 WasmTagObjectVector& tagObjs,
-                                 SharedExceptionTagVector* tags,
-                                 uint32_t tagIndex) const {
-  SharedExceptionTag tag;
-  
-  if (tagObjs.length() <= tagIndex && !tagObjs.resize(tagIndex + 1)) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  if (ed.isExport) {
-    
-    
-    RootedObject proto(cx, &cx->global()->getPrototype(JSProto_WasmTag));
-    RootedWasmTagObject tagObj(cx, WasmTagObject::create(cx, ed.type, proto));
-    if (!tagObj) {
-      return false;
-    }
-    
-    tag = &tagObj->tag();
-    
-    tagObjs[tagIndex] = tagObj;
-  } else {
-    
-    tag = SharedExceptionTag(cx->new_<ExceptionTag>());
-    if (!tag) {
-      return false;
-    }
-    
-  }
-  
-  if (!tags->emplaceBack(tag)) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  return true;
-}
-
-bool Module::instantiateTags(JSContext* cx, WasmTagObjectVector& tagObjs,
-                             SharedExceptionTagVector* tags) const {
   uint32_t tagIndex = 0;
-  for (const TagDesc& ed : metadata().tags) {
-    if (tagIndex < tagObjs.length()) {
-      Rooted<WasmTagObject*> tagObj(cx, tagObjs[tagIndex]);
-      if (!instantiateImportedTag(cx, tagObj, tagObjs, tags)) {
+  RootedObject proto(cx, &cx->global()->getPrototype(JSProto_WasmTag));
+  for (const TagDesc& desc : metadata().tags) {
+    if (tagIndex >= importedTagsLength) {
+      RootedWasmTagObject tagObj(cx,
+                                 WasmTagObject::create(cx, desc.type, proto));
+      if (!tagObj) {
         return false;
       }
-    } else {
-      if (!instantiateLocalTag(cx, ed, tagObjs, tags, tagIndex)) {
-        return false;
-      }
+      tagObjs[tagIndex] = tagObj;
     }
     tagIndex++;
   }
@@ -1274,9 +1221,8 @@ bool Module::instantiate(JSContext* cx, ImportValues& imports,
   
   
 
-  SharedExceptionTagVector tags;
 #ifdef ENABLE_WASM_EXCEPTIONS
-  if (!instantiateTags(cx, imports.tagObjs, &tags)) {
+  if (!instantiateTags(cx, imports.tagObjs)) {
     return false;
   }
 #endif
@@ -1314,9 +1260,9 @@ bool Module::instantiate(JSContext* cx, ImportValues& imports,
 
   instance.set(WasmInstanceObject::create(
       cx, code, dataSegments_, elemSegments_, metadata().globalDataLength,
-      memory, std::move(tags), std::move(tables), imports.funcs,
-      metadata().globals, imports.globalValues, imports.globalObjs,
-      instanceProto, std::move(maybeDebug)));
+      memory, std::move(tables), imports.funcs, metadata().globals,
+      imports.globalValues, imports.globalObjs, imports.tagObjs, instanceProto,
+      std::move(maybeDebug)));
   if (!instance) {
     return false;
   }
