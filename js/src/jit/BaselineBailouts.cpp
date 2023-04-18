@@ -547,10 +547,14 @@ bool BaselineStackBuilder::initFrame() {
 
   
   
-  pc_ = catchingException() ? excInfo_->resumePC()
-                            : script_->offsetToPC(iter_.pcOffset());
+  if (catchingException()) {
+    pc_ = excInfo_->resumePC();
+    resumeMode_ = mozilla::Some(ResumeMode::ResumeAt);
+  } else {
+    pc_ = script_->offsetToPC(iter_.pcOffset());
+    resumeMode_ = mozilla::Some(iter_.resumeMode());
+  }
   op_ = JSOp(*pc_);
-  resumeMode_ = mozilla::Some(iter_.resumeMode());
 
   return true;
 }
