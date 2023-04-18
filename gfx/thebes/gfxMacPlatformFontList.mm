@@ -394,6 +394,9 @@ CGFontRef MacOSFontEntry::CreateOrCopyFontRef() {
   NSString* psname = GetNSStringForString(NS_ConvertUTF8toUTF16(mName));
   CGFontRef ref = CGFontCreateWithFontName(CFStringRef(psname));
   if (!ref) {
+    CrashReporter::AutoAnnotateCrashReport autoFontName(CrashReporter::Annotation::FontName,
+                                                        psname);
+
     
     
     
@@ -1624,6 +1627,9 @@ class MacFontInfo final : public FontInfoData {
 };
 
 void MacFontInfo::LoadFontFamilyData(const nsACString& aFamilyName) {
+  CrashReporter::AutoAnnotateCrashReport autoFontName(CrashReporter::Annotation::FontName,
+                                                      aFamilyName);
+
   
   NSString* famName = GetNSStringForString(NS_ConvertUTF8toUTF16(aFamilyName));
   CFStringRef family = CFStringRef(famName);
