@@ -21,7 +21,6 @@
 #include "nsXULAppAPI.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/MediaStreamBinding.h"
 #include "mozilla/dom/MediaStreamTrackBinding.h"
@@ -392,8 +391,10 @@ class MediaManager final : public nsIMediaManagerService,
   
   RefPtr<MediaEngine> mBackend;
 
+  
+  
+  
   static StaticRefPtr<MediaManager> sSingleton;
-  static StaticMutex sSingletonMutex MOZ_UNANNOTATED;
 
   
   MediaEventListener mDeviceListChangeListener;

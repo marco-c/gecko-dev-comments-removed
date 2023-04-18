@@ -2017,12 +2017,9 @@ NS_IMPL_ISUPPORTS(MediaManager, nsIMediaManagerService, nsIMemoryReporter,
 
 StaticRefPtr<MediaManager> MediaManager::sSingleton;
 
-StaticMutex MediaManager::sSingletonMutex;
-
 #ifdef DEBUG
 
 bool MediaManager::IsInMediaThread() {
-  StaticMutexAutoLock lock(sSingletonMutex);
   return sSingleton && sSingleton->mMediaThread->IsOnCurrentThread();
 }
 #endif
@@ -2056,10 +2053,9 @@ static void ForeachObservedPref(const Function& aFunction) {
 
 
 MediaManager* MediaManager::Get() {
-  StaticMutexAutoLock lock(sSingletonMutex);
-  if (!sSingleton) {
-    MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(NS_IsMainThread());
 
+  if (!sSingleton) {
     static int timesCreated = 0;
     timesCreated++;
     MOZ_RELEASE_ASSERT(timesCreated == 1);
@@ -2122,7 +2118,7 @@ MediaManager* MediaManager::Get() {
 
 
 MediaManager* MediaManager::GetIfExists() {
-  StaticMutexAutoLock lock(sSingletonMutex);
+  MOZ_ASSERT(NS_IsMainThread() || IsInMediaThread());
   return sSingleton;
 }
 
@@ -3379,12 +3375,7 @@ void MediaManager::Shutdown() {
       })));
 
   
-#ifdef DEBUG
-  {
-    StaticMutexAutoLock lock(sSingletonMutex);
-    MOZ_ASSERT(this == sSingleton);
-  }
-#endif
+  MOZ_ASSERT(this == sSingleton);
 
   
   
@@ -3397,7 +3388,6 @@ void MediaManager::Shutdown() {
       GetMainThreadSerialEventTarget(), __func__, [] {
         LOG("MediaManager shutdown lambda running, releasing MediaManager "
             "singleton");
-        StaticMutexAutoLock lock(sSingletonMutex);
         
         media::MustGetShutdownBarrier()->RemoveBlocker(
             sSingleton->mShutdownBlocker);
