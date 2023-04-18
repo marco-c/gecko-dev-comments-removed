@@ -3383,10 +3383,17 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
 
     int j;  
     unsigned long version = nsAttsVersion;
-    int nsAttsSize = (int)1 << nsAttsPower;
+
+    
+    if (parser->m_nsAttsPower >= sizeof(unsigned int) * 8 ) {
+      return XML_ERROR_NO_MEMORY;
+    }
+
+    unsigned int nsAttsSize = 1u << nsAttsPower;
 
     if (nPrefixes) {
 
+    unsigned char oldNsAttsPower = parser->m_nsAttsPower;
     
     if ((nPrefixes << 1) >> nsAttsPower) {  
       NS_ATT *temp;
@@ -3394,7 +3401,28 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
       while (nPrefixes >> nsAttsPower++);
       if (nsAttsPower < 3)
         nsAttsPower = 3;
-      nsAttsSize = (int)1 << nsAttsPower;
+
+      
+      if (parser->m_nsAttsPower >= sizeof(nsAttsSize) * 8 ) {
+        
+        parser->m_nsAttsPower = oldNsAttsPower;
+        return XML_ERROR_NO_MEMORY;
+      }
+
+      nsAttsSize = 1u << parser->m_nsAttsPower;
+
+      
+
+
+
+#if UINT_MAX >= SIZE_MAX
+      if (nsAttsSize > (size_t)(-1) / sizeof(NS_ATT)) {
+        
+        parser->m_nsAttsPower = oldNsAttsPower;
+        return XML_ERROR_NO_MEMORY;
+      }
+#endif
+
       temp = (NS_ATT *)REALLOC(nsAtts, nsAttsSize * sizeof(NS_ATT));
       if (!temp)
         return XML_ERROR_NO_MEMORY;
