@@ -55,12 +55,12 @@ onmessage = async function(msg) {
       
       
       await IOUtils.setPermissions(destPath, 0o700);
-      if (IOUtils.removeMacXAttr) {
+      if (IOUtils.delMacXAttr) {
         
         
         
         try {
-          await IOUtils.removeMacXAttr(destPath, "com.apple.quarantine");
+          await IOUtils.delMacXAttr(destPath, "com.apple.quarantine");
         } catch (e) {
           
           
