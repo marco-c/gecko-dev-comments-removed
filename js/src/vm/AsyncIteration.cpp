@@ -770,6 +770,23 @@ class MOZ_STACK_CLASS MaybeEnterAsyncGeneratorRealm {
   }
 };
 
+[[nodiscard]] static bool AsyncGeneratorMethodSanityCheck(
+    JSContext* cx, Handle<AsyncGeneratorObject*> generator) {
+  if (generator->isCompleted() || generator->isSuspendedStart() ||
+      generator->isSuspendedYield()) {
+    
+    
+    
+    if (MOZ_UNLIKELY(!generator->isQueueEmpty())) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_SUSPENDED_QUEUE_NOT_EMPTY);
+      return false;
+    }
+  }
+
+  return true;
+}
+
 
 
 
@@ -803,9 +820,9 @@ bool js::AsyncGeneratorNext(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  MOZ_ASSERT_IF(generator->isCompleted() || generator->isSuspendedStart() ||
-                    generator->isSuspendedYield(),
-                generator->isQueueEmpty());
+  if (!AsyncGeneratorMethodSanityCheck(cx, generator)) {
+    return false;
+  }
 
   
   
@@ -891,9 +908,9 @@ bool js::AsyncGeneratorReturn(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  MOZ_ASSERT_IF(generator->isCompleted() || generator->isSuspendedStart() ||
-                    generator->isSuspendedYield(),
-                generator->isQueueEmpty());
+  if (!AsyncGeneratorMethodSanityCheck(cx, generator)) {
+    return false;
+  }
 
   
   
@@ -968,9 +985,9 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  MOZ_ASSERT_IF(generator->isCompleted() || generator->isSuspendedStart() ||
-                    generator->isSuspendedYield(),
-                generator->isQueueEmpty());
+  if (!AsyncGeneratorMethodSanityCheck(cx, generator)) {
+    return false;
+  }
 
   
   
