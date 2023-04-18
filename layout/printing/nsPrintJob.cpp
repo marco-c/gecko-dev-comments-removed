@@ -57,9 +57,6 @@ static const char sPrintSettingsServiceContractID[] =
 #include "nsThreadUtils.h"
 
 
-#include "nsIWebBrowserPrint.h"
-
-
 #include "nsIPrintingPromptService.h"
 static const char kPrintingPromptService[] =
     "@mozilla.org/embedcomp/printingprompt-service;1";
@@ -444,10 +441,6 @@ nsPrintJob::GetSeqFrameAndCountSheets() const {
   
   return {seqFrame, seqFrame->PrincipalChildList().GetLength()};
 }
-
-
-
-
 
 
 
