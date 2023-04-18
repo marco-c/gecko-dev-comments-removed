@@ -3429,8 +3429,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT already_AddRefed<Element> DeleteSelectionAndCreateElement(
-      nsAtom& aTag);
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
+  DeleteSelectionAndCreateElement(
+      nsAtom& aTag, const std::function<nsresult(Element&)>& aInitializer);
 
   
 
