@@ -87,6 +87,10 @@ using namespace mozilla;
 using namespace mozilla::gfx;
 
 
+#define USE_DEPRECATED_FONT_FAMILY_NAMES !(MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_15)
+
+#if USE_DEPRECATED_FONT_FAMILY_NAMES
+
 
 
 constexpr nsLiteralCString kDeprecatedFontFamilies[] = {
@@ -246,9 +250,7 @@ constexpr nsLiteralCString kDeprecatedFontFamilies[] = {
     "Superclarendon"_ns,
     "Times"_ns,
 };
-
-
-#define USE_DEPRECATED_FONT_FAMILY_NAMES !(MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_15)
+#endif  
 
 
 
