@@ -276,6 +276,9 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
     SharedModule module =
         CompileBuffer(*compileArgs, *bytecode, &error, &warnings);
     if (!module) {
+      
+      
+      MOZ_RELEASE_ASSERT(!gIsWasmSmith || !error);
       continue;
     }
 
