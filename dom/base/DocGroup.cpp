@@ -203,7 +203,7 @@ DocGroup::DocGroup(BrowsingContextGroup* aBrowsingContextGroup,
                    const nsACString& aKey)
     : mKey(aKey),
       mBrowsingContextGroup(aBrowsingContextGroup),
-      mAgentClusterId(nsContentUtils::GenerateUUID()) {
+      mAgentClusterId(nsID::GenerateUUID()) {
   
   
   MOZ_ASSERT(NS_IsMainThread());

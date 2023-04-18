@@ -4,7 +4,6 @@
 
 
 
-#include "nsContentUtils.h"
 #include "nsThreadUtils.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/Logging.h"
@@ -218,7 +217,7 @@ RefPtr<RequestMetricsPromise>
 PerformanceMetricsCollector::RequestMetricsInternal() {
   
   nsID uuid;
-  nsresult rv = nsContentUtils::GenerateUUIDInPlace(uuid);
+  nsresult rv = nsID::GenerateUUIDInPlace(uuid);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return RequestMetricsPromise::CreateAndReject(rv, __func__);
   }
