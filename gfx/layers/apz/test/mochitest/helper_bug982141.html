@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=982141
+-->
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=980, user-scalable=no">
@@ -66,16 +66,16 @@
       // In general they will be (50 - <scrollbarwidth>, 50 - <scrollbarheight>).
       SimpleTest.ok(subframe.clientWidth > 0, "Expected a non-zero clientWidth, got: " + subframe.clientWidth);
       SimpleTest.ok(subframe.clientHeight > 0, "Expected a non-zero clientHeight, got: " + subframe.clientHeight);
-      SimpleTest.ok(dp.w >= subframe.clientWidth && dp.h >= subframe.clientHeight,
+      SimpleTest.ok(dp.width >= subframe.clientWidth && dp.height >= subframe.clientHeight,
                     "expected a displayport at least as large as the scrollable element, got " + JSON.stringify(dp));
 
       window.opener.finishTest();
     }
   </script>
 </head>
-<body style="overflow: hidden;">
+<body style="overflow: hidden;"><!-- This combined with the user-scalable=no ensures the root frame is not scrollable -->
   <a target="_blank" href="https://bugzilla.mozilla.org/show_bug.cgi?id=982141">Mozilla Bug 982141</a>
-  
+  <!-- A scrollable subframe, with enough content to make it have a nonzero scroll range -->
   <div id="subframe" style="height: 50px; width: 50px; overflow: scroll">
     <div style="width: 100px">
       Wide content so that the vertical scrollbar for the parent div
