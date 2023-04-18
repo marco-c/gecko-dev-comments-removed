@@ -3999,11 +3999,19 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElement(
   
   MOZ_ASSERT(!rhsVal_.isMagic(JS_ELEMENTS_HOLE));
 
+  JSOp op = JSOp(*pc_);
+
+  
+  MOZ_ASSERT(!IsLockedInitOp(op));
+
+  
+  MOZ_ASSERT(!IsHiddenInitOp(op));
+
   
   
   
   
-  if (IsPropertyInitOp(JSOp(*pc_)) && !nobj->isExtensible()) {
+  if (IsPropertyInitOp(op) && !nobj->isExtensible()) {
     return AttachDecision::NoAction;
   }
 
@@ -4081,7 +4089,12 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElementHole(
   JSOp op = JSOp(*pc_);
   MOZ_ASSERT(IsPropertySetOp(op) || IsPropertyInitOp(op));
 
-  if (op == JSOp::InitHiddenElem) {
+  
+  MOZ_ASSERT(!IsLockedInitOp(op));
+
+  
+  if (IsHiddenInitOp(op)) {
+    MOZ_ASSERT(op == JSOp::InitHiddenElem);
     return AttachDecision::NoAction;
   }
 
@@ -4251,8 +4264,13 @@ AttachDecision SetPropIRGenerator::tryAttachSetTypedArrayElement(
     handleOOB = true;
   }
 
+  JSOp op = JSOp(*pc_);
+
   
-  if (handleOOB && IsPropertyInitOp(JSOp(*pc_))) {
+  MOZ_ASSERT_IF(IsPropertyInitOp(op), op == JSOp::InitElem);
+
+  
+  if (handleOOB && IsPropertyInitOp(op)) {
     return AttachDecision::NoAction;
   }
 
