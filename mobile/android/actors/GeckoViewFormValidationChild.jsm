@@ -1,0 +1,25 @@
+
+
+
+
+"use strict";
+
+const { GeckoViewActorChild } = ChromeUtils.import(
+  "resource://gre/modules/GeckoViewActorChild.jsm"
+);
+
+const EXPORTED_SYMBOLS = ["GeckoViewFormValidationChild"];
+
+class GeckoViewFormValidationChild extends GeckoViewActorChild {
+  handleEvent(aEvent) {
+    switch (aEvent.type) {
+      case "MozInvalidForm": {
+        
+        
+        aEvent.preventDefault();
+        
+        break;
+      }
+    }
+  }
+}

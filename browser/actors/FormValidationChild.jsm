@@ -51,10 +51,6 @@ class FormValidationChild extends JSWindowActorChild {
     }
   }
 
-  
-
-
-
   notifyInvalidSubmit(aFormElement, aInvalidElements) {
     
     for (let element of aInvalidElements) {

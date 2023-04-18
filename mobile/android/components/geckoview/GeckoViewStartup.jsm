@@ -38,6 +38,15 @@ const JSWINDOWACTORS = {
     },
     allFrames: true,
   },
+  GeckoViewFormValidation: {
+    child: {
+      moduleURI: "resource:///actors/GeckoViewFormValidationChild.jsm",
+      events: {
+        MozInvalidForm: {},
+      },
+    },
+    allFrames: true,
+  },
 };
 
 class GeckoViewStartup {
@@ -122,21 +131,6 @@ class GeckoViewStartup {
           {
             handler: _ => this.GeckoViewConsole,
           }
-        );
-
-        
-        
-        Services.obs.addObserver(
-          {
-            QueryInterface: ChromeUtils.generateQI([
-              "nsIObserver",
-              "nsIFormSubmitObserver",
-            ]),
-            notifyInvalidSubmit: (form, element) => {
-              
-            },
-          },
-          "invalidformsubmit"
         );
 
         if (
