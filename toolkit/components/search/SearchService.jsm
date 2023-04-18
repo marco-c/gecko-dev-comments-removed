@@ -1515,6 +1515,27 @@ SearchService.prototype = {
 
 
 
+  async updatePolicyEngine(details) {
+    let engine = this.getEngineByName(
+      details.chrome_settings_overrides.search_provider.name
+    );
+    if (engine && !engine.isAppProvided) {
+      engine._updateFromManifest(
+        "set-via-policy",
+        "",
+        details,
+        engine._locale || SearchUtils.DEFAULT_TAG
+      );
+    }
+  },
+
+  
+
+
+
+
+
+
   async addUserEngine(name, url, alias) {
     await this._createAndAddEngine({
       extensionID: "set-via-user",

@@ -1917,10 +1917,10 @@ var Policies = {
         }
         if (param.Add) {
           
-          let engineNameList = param.Add.map(engine => engine.Name);
+          let engineInfoHash = md5Hash(JSON.stringify(param.Add));
           await runOncePerModification(
             "addSearchEngines",
-            JSON.stringify(engineNameList),
+            engineInfoHash,
             async function() {
               for (let newEngine of param.Add) {
                 let manifest = {
@@ -1942,10 +1942,19 @@ var Policies = {
                     },
                   },
                 };
-                try {
-                  await Services.search.addPolicyEngine(manifest);
-                } catch (ex) {
-                  log.error("Unable to add search engine", ex);
+                let engine = Services.search.getEngineByName(newEngine.Name);
+                if (engine) {
+                  try {
+                    await Services.search.updatePolicyEngine(manifest);
+                  } catch (ex) {
+                    log.error("Unable to update the search engine", ex);
+                  }
+                } else {
+                  try {
+                    await Services.search.addPolicyEngine(manifest);
+                  } catch (ex) {
+                    log.error("Unable to add search engine", ex);
+                  }
                 }
               }
             }
@@ -2638,4 +2647,33 @@ function processMIMEInfo(mimeInfo, realMIMEInfo) {
     realMIMEInfo.alwaysAskBeforeHandling = mimeInfo.ask;
   }
   gHandlerService.store(realMIMEInfo);
+}
+
+
+
+
+let gCryptoHash = null;
+
+
+
+
+
+
+function md5Hash(data) {
+  
+  if (gCryptoHash === null) {
+    gCryptoHash = Cc["@mozilla.org/security/hash;1"].createInstance(
+      Ci.nsICryptoHash
+    );
+  }
+
+  gCryptoHash.init(gCryptoHash.MD5);
+
+  
+  gCryptoHash.update(
+    data.split("").map(c => c.charCodeAt(0)),
+    data.length
+  );
+  
+  return gCryptoHash.finish(true);
 }
