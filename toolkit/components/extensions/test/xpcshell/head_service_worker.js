@@ -4,8 +4,20 @@
 
 
 
-const { ExtensionCommon } = ChromeUtils.import(
-  "resource://gre/modules/ExtensionCommon.jsm"
+XPCOMUtils.defineLazyModuleGetters(this, {
+  ExtensionCommon: "resource://gre/modules/ExtensionCommon.jsm",
+});
+
+
+
+
+
+
+
+Services.obs.notifyObservers(
+  null,
+  "profile-after-change",
+  "force-serviceworkerrestart-init"
 );
 
 

@@ -12,13 +12,6 @@ AddonTestUtils.createAppInfo(
 
 add_task(async function setup() {
   await AddonTestUtils.promiseStartupManager();
-  
-  
-  Services.obs.notifyObservers(
-    null,
-    "profile-after-change",
-    "force-serviceworkerrestart-init"
-  );
 });
 
 add_task(async function test_ext_context_does_have_webidl_bindings() {
