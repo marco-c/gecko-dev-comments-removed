@@ -880,6 +880,8 @@ bool ContentCacheInParent::HandleQueryContentEvent(
               ("0x%p HandleQueryContentEvent(aEvent={ "
                "mMessage=eQueryEditorRect }, aWidget=0x%p)",
                this, aWidget));
+      
+      
       aEvent.EmplaceReply();
       aEvent.mReply->mFocusedWidget = aWidget;
       aEvent.mReply->mRect = mEditorRect;
@@ -970,6 +972,11 @@ bool ContentCacheInParent::GetTextRect(uint32_t aOffset,
     
     
     
+    if (mSelection.isNothing()) {
+      
+      aTextRect.SetEmpty();
+      return false;
+    }
     aTextRect = mSelection->StartCharRect();
     return !aTextRect.IsEmpty();
   }
