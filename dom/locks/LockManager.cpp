@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/dom/LockManager.h"
 #include "mozilla/dom/WorkerCommon.h"
@@ -35,7 +35,7 @@ JSObject* LockManager::WrapObject(JSContext* aCx,
 LockManager::LockManager(nsIGlobalObject* aGlobal) : mOwner(aGlobal) {
   Maybe<ClientInfo> clientInfo = aGlobal->GetClientInfo();
   if (!clientInfo) {
-    
+    // TODO: https://github.com/WICG/web-locks/issues/78
     return;
   }
 
@@ -56,10 +56,10 @@ LockManager::LockManager(nsIGlobalObject* aGlobal) : mOwner(aGlobal) {
   if (!NS_IsMainThread()) {
     mWorkerRef = WeakWorkerRef::Create(GetCurrentThreadWorkerPrivate(),
                                        [self = RefPtr(this)]() {
-                                         
-                                         
-                                         
-                                         
+                                         // Others may grab a strong reference
+                                         // and block immediate destruction.
+                                         // Shutdown early as we don't have to
+                                         // wait for them.
                                          self->Shutdown();
                                          self->mWorkerRef = nullptr;
                                        });
@@ -113,22 +113,23 @@ already_AddRefed<Promise> LockManager::Request(const nsAString& aName,
                                                const LockOptions& aOptions,
                                                LockGrantedCallback& aCallback,
                                                ErrorResult& aRv) {
-  if (!mActor) {
-    aRv.ThrowInvalidStateError(
-        "The document of the lock manager is not fully active or web locks "
-        "aren't enabled for the document.");
-    return nullptr;
-  }
-
   if (mOwner->GetStorageAccess() <= StorageAccess::eDeny) {
-    
-    
-    
-    
+    // Step 4: If origin is an opaque origin, then return a promise rejected
+    // with a "SecurityError" DOMException.
+    // But per https://wicg.github.io/web-locks/#lock-managers this really means
+    // whether it has storage access.
     aRv.ThrowSecurityError("request() is not allowed in this context");
     return nullptr;
   }
   if (!ValidateRequestArguments(aName, aOptions, aRv)) {
+    return nullptr;
+  }
+
+  if (!mActor) {
+    // TODO: https://github.com/WICG/web-locks/issues/78
+    aRv.ThrowInvalidStateError(
+        "The document of the lock manager is not fully active or web locks "
+        "aren't enabled for the document.");
     return nullptr;
   }
 
@@ -142,15 +143,16 @@ already_AddRefed<Promise> LockManager::Request(const nsAString& aName,
 };
 
 already_AddRefed<Promise> LockManager::Query(ErrorResult& aRv) {
-  if (!mActor) {
-    aRv.ThrowInvalidStateError(
-        "The document of the lock manager is not fully active or web locks "
-        "aren't enabled for the document.");
+  if (mOwner->GetStorageAccess() <= StorageAccess::eDeny) {
+    aRv.ThrowSecurityError("query() is not allowed in this context");
     return nullptr;
   }
 
-  if (mOwner->GetStorageAccess() <= StorageAccess::eDeny) {
-    aRv.ThrowSecurityError("query() is not allowed in this context");
+  if (!mActor) {
+    // TODO: https://github.com/WICG/web-locks/issues/78
+    aRv.ThrowInvalidStateError(
+        "The document of the lock manager is not fully active or web locks "
+        "aren't enabled for the document.");
     return nullptr;
   }
 
@@ -179,4 +181,4 @@ void LockManager::Shutdown() {
   }
 }
 
-}  
+}  // namespace mozilla::dom
