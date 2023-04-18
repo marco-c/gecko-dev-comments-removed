@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef mozilla_widget_HeadlessThemeGTK_h
 #define mozilla_widget_HeadlessThemeGTK_h
@@ -46,8 +46,7 @@ class HeadlessThemeGTK final : private nsNativeTheme, public nsITheme {
 
   NS_IMETHOD_(bool) WidgetIsContainer(StyleAppearance aAppearance) override;
 
-  NS_IMETHOD_(bool)
-  ThemeDrawsFocusForWidget(StyleAppearance aAppearance) override;
+  bool ThemeDrawsFocusForWidget(nsIFrame*, StyleAppearance) override;
 
   bool ThemeNeedsComboboxDropmarker() override;
 
@@ -60,7 +59,7 @@ class HeadlessThemeGTK final : private nsNativeTheme, public nsITheme {
   virtual ~HeadlessThemeGTK() = default;
 };
 
-}  // namespace widget
-}  // namespace mozilla
+}  
+}  
 
-#endif  // mozilla_widget_HeadlessThemeGTK_h
+#endif  

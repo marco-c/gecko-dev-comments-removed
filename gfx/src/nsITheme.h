@@ -237,7 +237,7 @@ class nsITheme : public nsISupports {
   
 
 
-  virtual bool ThemeDrawsFocusForWidget(StyleAppearance aWidgetType) = 0;
+  virtual bool ThemeDrawsFocusForWidget(nsIFrame*, StyleAppearance) = 0;
 
   
 
@@ -246,8 +246,9 @@ class nsITheme : public nsISupports {
 
 
 
-  virtual bool ThemeWantsButtonInnerFocusRing(StyleAppearance aAppearance) {
-    return !ThemeDrawsFocusForWidget(aAppearance);
+  virtual bool ThemeWantsButtonInnerFocusRing(nsIFrame* aFrame,
+                                              StyleAppearance aAppearance) {
+    return !ThemeDrawsFocusForWidget(aFrame, aAppearance);
   }
 
   
