@@ -1,7 +1,14 @@
+#![allow(deprecated)]
+
 
 use std::ops::BitOr;
 #[cfg(feature = "yaml")]
 use std::str::FromStr;
+
+#[allow(unused)]
+use crate::Arg;
+#[allow(unused)]
+use crate::Command;
 
 
 use bitflags::bitflags;
@@ -26,26 +33,7 @@ impl Default for AppFlags {
 #[non_exhaustive]
 pub enum AppSettings {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(since = "3.1.0", note = "Replaced with `Command::ignore_errors`")]
     IgnoreErrors,
 
     
@@ -62,641 +50,153 @@ pub enum AppSettings {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[deprecated(
+        since = "3.1.0",
+        note = "See documentation for how to hand-implement this"
+    )]
     WaitOnError,
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::allow_hyphen_values` and `Arg::is_allow_hyphen_values_set`"
+    )]
     AllowHyphenValues,
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::allow_negative_numbers` and `Command::is_allow_negative_numbers_set`"
+    )]
     AllowNegativeNumbers,
 
     
-    
-    
-    
-    
-    
+    #[deprecated(since = "3.1.0", note = "Replaced with `Command::args_override_self`")]
     AllArgsOverrideSelf,
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::allow_missing_positional` and `Command::is_allow_missing_positional_set`"
+    )]
     AllowMissingPositional,
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::trailing_var_arg` and `Command::is_trailing_var_arg_set`"
+    )]
     TrailingVarArg,
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::dont_delimit_trailing_values` and `Command::is_dont_delimit_trailing_values_set`"
+    )]
     DontDelimitTrailingValues,
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(since = "3.1.0", note = "Replaced with `Command::infer_long_args`")]
     InferLongArgs,
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(since = "3.1.0", note = "Replaced with `Command::infer_subcommands`")]
     InferSubcommands,
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::subcommand_required` and `Command::is_subcommand_required_set`"
+    )]
     SubcommandRequired,
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::subcommand_required` combined with `Command::arg_required_else_help`"
+    )]
     SubcommandRequiredElseHelp,
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::allow_external_subcommands` and `Command::is_allow_external_subcommands_set`"
+    )]
     AllowExternalSubcommands,
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::multicall` and `Command::is_multicall_set`"
+    )]
     #[cfg(feature = "unstable-multicall")]
     Multicall,
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[cfg_attr(not(unix), doc = " ```ignore")]
-    #[cfg_attr(unix, doc = " ```")]
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::allow_invalid_utf8_for_external_subcommands` and `Command::is_allow_invalid_utf8_for_external_subcommands_set`"
+    )]
     AllowInvalidUtf8ForExternalSubcommands,
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(since = "3.1.0", note = "This is now the default")]
     UseLongFormatForHelpSubcommand,
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::subcommand_negates_reqs` and `Command::is_subcommand_negates_reqs_set`"
+    )]
     SubcommandsNegateReqs,
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::args_conflicts_with_subcommands` and `Command::is_args_conflicts_with_subcommands_set`"
+    )]
     ArgsNegateSubcommands,
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::subcommand_precedence_over_arg` and `Command::is_subcommand_precedence_over_arg_set`"
+    )]
     SubcommandPrecedenceOverArg,
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::arg_required_else_help` and `Command::is_arg_required_else_help_set`"
+    )]
     ArgRequiredElseHelp,
 
     
@@ -720,191 +220,78 @@ pub enum AppSettings {
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::dont_collapse_args_in_usage` and `Command::is_dont_collapse_args_in_usage_set`"
+    )]
     DontCollapseArgsInUsage,
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::next_line_help` and `Command::is_next_line_help_set`"
+    )]
     NextLineHelp,
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::disable_colored_help` and `Command::is_disable_colored_help_set`"
+    )]
     DisableColoredHelp,
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::disable_help_flag` and `Command::is_disable_help_flag_set`"
+    )]
     DisableHelpFlag,
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::disable_help_subcommand` and `Command::is_disable_help_subcommand_set`"
+    )]
     DisableHelpSubcommand,
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::disable_version_flag` and `Command::is_disable_version_flag_set`"
+    )]
     DisableVersionFlag,
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::propagate_version` and `Command::is_propagate_version_set`"
+    )]
     PropagateVersion,
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::hide` and `Command::is_hide_set`"
+    )]
     Hidden,
 
     
     
-    
-    
-    
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Command::hide_possible_values` and `Arg::is_hide_possible_values_set`"
+    )]
     HidePossibleValues,
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(since = "3.1.0", note = "Replaced with `Command::help_expected`")]
     HelpExpected,
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    #[deprecated(since = "3.1.0", note = "Replaced with `Command::no_binary_name`")]
     NoBinaryName,
 
     
@@ -955,6 +342,7 @@ pub enum AppSettings {
         since = "3.0.0",
         note = "Replaced with `AppSettings::AllowHyphenValues`"
     )]
+    #[doc(hidden)]
     AllowLeadingHyphen,
 
     
@@ -962,30 +350,37 @@ pub enum AppSettings {
         since = "3.0.0",
         note = "This is now the default see `AppSettings::AllowInvalidUtf8ForExternalSubcommands` and `ArgSettings::AllowInvalidUtf8` for the opposite."
     )]
+    #[doc(hidden)]
     StrictUtf8,
 
     
     #[deprecated(since = "3.0.0", note = "This is now the default")]
+    #[doc(hidden)]
     UnifiedHelpMessage,
 
     
     #[deprecated(since = "3.0.0", note = "This is now the default")]
+    #[doc(hidden)]
     ColoredHelp,
 
     
-    #[deprecated(since = "3.0.0", note = "Replaced with `App::color`")]
+    #[deprecated(since = "3.0.0", note = "Replaced with `Command::color`")]
+    #[doc(hidden)]
     ColorAuto,
 
     
-    #[deprecated(since = "3.0.0", note = "Replaced with `App::color`")]
+    #[deprecated(since = "3.0.0", note = "Replaced with `Command::color`")]
+    #[doc(hidden)]
     ColorAlways,
 
     
-    #[deprecated(since = "3.0.0", note = "Replaced with `App::color`")]
+    #[deprecated(since = "3.0.0", note = "Replaced with `Command::color`")]
+    #[doc(hidden)]
     ColorNever,
 
     
     #[deprecated(since = "3.0.0", note = "Replaced with `AppSettings::DisableHelpFlag`")]
+    #[doc(hidden)]
     DisableHelpFlags,
 
     
@@ -993,6 +388,7 @@ pub enum AppSettings {
         since = "3.0.0",
         note = "Replaced with `AppSettings::DisableVersionFlag`"
     )]
+    #[doc(hidden)]
     DisableVersion,
 
     
@@ -1000,6 +396,7 @@ pub enum AppSettings {
         since = "3.0.0",
         note = "Replaced with `AppSettings::PropagateVersion`"
     )]
+    #[doc(hidden)]
     GlobalVersion,
 
     
@@ -1007,10 +404,12 @@ pub enum AppSettings {
         since = "3.0.0",
         note = "Replaced with AppSettings::HidePossibleValues"
     )]
+    #[doc(hidden)]
     HidePossibleValuesInHelp,
 
     
     #[deprecated(since = "3.0.0", note = "This is now the default")]
+    #[doc(hidden)]
     UnifiedHelp,
 
     

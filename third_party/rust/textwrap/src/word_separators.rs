@@ -38,233 +38,148 @@ use crate::core::Word;
 
 
 
-pub trait WordSeparator: WordSeparatorClone + std::fmt::Debug {
+#[derive(Clone, Copy)]
+pub enum WordSeparator {
     
     
     
     
-    fn find_words<'a>(&self, line: &'a str) -> Box<dyn Iterator<Item = Word<'a>> + 'a>;
+    
+    
+    
+    
+    
+    
+    
+    
+    AsciiSpace,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "unicode-linebreak")]
+    UnicodeBreakProperties,
+
+    
+    Custom(fn(line: &str) -> Box<dyn Iterator<Item = Word<'_>> + '_>),
 }
 
-
-
-
-
-#[doc(hidden)]
-pub trait WordSeparatorClone {
-    fn clone_box(&self) -> Box<dyn WordSeparator>;
-}
-
-impl<T: WordSeparator + Clone + 'static> WordSeparatorClone for T {
-    fn clone_box(&self) -> Box<dyn WordSeparator> {
-        Box::new(self.clone())
+impl std::fmt::Debug for WordSeparator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            WordSeparator::AsciiSpace => f.write_str("AsciiSpace"),
+            #[cfg(feature = "unicode-linebreak")]
+            WordSeparator::UnicodeBreakProperties => f.write_str("UnicodeBreakProperties"),
+            WordSeparator::Custom(_) => f.write_str("Custom(...)"),
+        }
     }
 }
 
-impl Clone for Box<dyn WordSeparator> {
-    fn clone(&self) -> Box<dyn WordSeparator> {
-        use std::ops::Deref;
-        self.deref().clone_box()
+impl WordSeparator {
+    
+    
+    
+    
+    pub fn find_words<'a>(&self, line: &'a str) -> Box<dyn Iterator<Item = Word<'a>> + 'a> {
+        match self {
+            WordSeparator::AsciiSpace => find_words_ascii_space(line),
+            #[cfg(feature = "unicode-linebreak")]
+            WordSeparator::UnicodeBreakProperties => find_words_unicode_break_properties(line),
+            WordSeparator::Custom(func) => func(line),
+        }
     }
 }
 
-impl WordSeparator for Box<dyn WordSeparator> {
-    fn find_words<'a>(&self, line: &'a str) -> Box<dyn Iterator<Item = Word<'a>> + 'a> {
-        use std::ops::Deref;
-        self.deref().find_words(line)
-    }
-}
+fn find_words_ascii_space<'a>(line: &'a str) -> Box<dyn Iterator<Item = Word<'a>> + 'a> {
+    let mut start = 0;
+    let mut in_whitespace = false;
+    let mut char_indices = line.char_indices();
 
-
-#[derive(Clone, Copy, Debug, Default)]
-pub struct AsciiSpace;
-
-
-
-
-
-
-
-
-
-
-
-
-
-impl WordSeparator for AsciiSpace {
-    fn find_words<'a>(&self, line: &'a str) -> Box<dyn Iterator<Item = Word<'a>> + 'a> {
-        let mut start = 0;
-        let mut in_whitespace = false;
-        let mut char_indices = line.char_indices();
-
-        Box::new(std::iter::from_fn(move || {
-            
-            
-            
-            
-            
-            #[allow(clippy::while_let_on_iterator)]
-            while let Some((idx, ch)) = char_indices.next() {
-                if in_whitespace && ch != ' ' {
-                    let word = Word::from(&line[start..idx]);
-                    start = idx;
-                    in_whitespace = ch == ' ';
-                    return Some(word);
-                }
-
+    Box::new(std::iter::from_fn(move || {
+        
+        
+        
+        
+        
+        #[allow(clippy::while_let_on_iterator)]
+        while let Some((idx, ch)) = char_indices.next() {
+            if in_whitespace && ch != ' ' {
+                let word = Word::from(&line[start..idx]);
+                start = idx;
                 in_whitespace = ch == ' ';
-            }
-
-            if start < line.len() {
-                let word = Word::from(&line[start..]);
-                start = line.len();
                 return Some(word);
             }
 
-            None
-        }))
-    }
+            in_whitespace = ch == ' ';
+        }
+
+        if start < line.len() {
+            let word = Word::from(&line[start..]);
+            start = line.len();
+            return Some(word);
+        }
+
+        None
+    }))
 }
-
-
-#[cfg(feature = "unicode-linebreak")]
-#[derive(Clone, Copy, Debug, Default)]
-pub struct UnicodeBreakProperties;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg(feature = "unicode-linebreak")]
-impl WordSeparator for UnicodeBreakProperties {
-    fn find_words<'a>(&self, line: &'a str) -> Box<dyn Iterator<Item = Word<'a>> + 'a> {
-        
-        
-        
-        
-        let mut last_stripped_idx = 0;
-        let mut char_indices = line.char_indices();
-        let mut idx_map = std::iter::from_fn(move || match char_indices.next() {
-            Some((orig_idx, ch)) => {
-                let stripped_idx = last_stripped_idx;
-                if !skip_ansi_escape_sequence(ch, &mut char_indices.by_ref().map(|(_, ch)| ch)) {
-                    last_stripped_idx += ch.len_utf8();
-                }
-                Some((orig_idx, stripped_idx))
-            }
-            None => None,
-        });
-
-        let stripped = strip_ansi_escape_sequences(&line);
-        let mut opportunities = unicode_linebreak::linebreaks(&stripped)
-            .filter(|(idx, _)| {
-                #[allow(clippy::match_like_matches_macro)]
-                match &stripped[..*idx].chars().next_back() {
-                    
-                    
-                    Some('-') => false,
-                    
-                    
-                    
-                    Some(SHY) => false,
-                    
-                    _ => true,
-                }
-            })
-            .collect::<Vec<_>>()
-            .into_iter();
-
-        
-        
-        
-        opportunities.next_back();
-
-        let mut start = 0;
-        Box::new(std::iter::from_fn(move || {
-            #[allow(clippy::while_let_on_iterator)]
-            while let Some((idx, _)) = opportunities.next() {
-                if let Some((orig_idx, _)) = idx_map.find(|&(_, stripped_idx)| stripped_idx == idx)
-                {
-                    let word = Word::from(&line[start..orig_idx]);
-                    start = orig_idx;
-                    return Some(word);
-                }
-            }
-
-            if start < line.len() {
-                let word = Word::from(&line[start..]);
-                start = line.len();
-                return Some(word);
-            }
-
-            None
-        }))
-    }
-}
-
-
-
-
-
-#[cfg(feature = "unicode-linebreak")]
-const SHY: char = '\u{00ad}';
 
 
 #[cfg(feature = "unicode-linebreak")]
@@ -282,8 +197,83 @@ fn strip_ansi_escape_sequences(text: &str) -> String {
     result
 }
 
+
+
+
+
+#[cfg(feature = "unicode-linebreak")]
+const SHY: char = '\u{00ad}';
+
+
+#[cfg(feature = "unicode-linebreak")]
+fn find_words_unicode_break_properties<'a>(
+    line: &'a str,
+) -> Box<dyn Iterator<Item = Word<'a>> + 'a> {
+    
+    
+    
+    
+    let mut last_stripped_idx = 0;
+    let mut char_indices = line.char_indices();
+    let mut idx_map = std::iter::from_fn(move || match char_indices.next() {
+        Some((orig_idx, ch)) => {
+            let stripped_idx = last_stripped_idx;
+            if !skip_ansi_escape_sequence(ch, &mut char_indices.by_ref().map(|(_, ch)| ch)) {
+                last_stripped_idx += ch.len_utf8();
+            }
+            Some((orig_idx, stripped_idx))
+        }
+        None => None,
+    });
+
+    let stripped = strip_ansi_escape_sequences(line);
+    let mut opportunities = unicode_linebreak::linebreaks(&stripped)
+        .filter(|(idx, _)| {
+            #[allow(clippy::match_like_matches_macro)]
+            match &stripped[..*idx].chars().next_back() {
+                
+                
+                Some('-') => false,
+                
+                
+                
+                Some(SHY) => false,
+                
+                _ => true,
+            }
+        })
+        .collect::<Vec<_>>()
+        .into_iter();
+
+    
+    
+    
+    opportunities.next_back();
+
+    let mut start = 0;
+    Box::new(std::iter::from_fn(move || {
+        #[allow(clippy::while_let_on_iterator)]
+        while let Some((idx, _)) = opportunities.next() {
+            if let Some((orig_idx, _)) = idx_map.find(|&(_, stripped_idx)| stripped_idx == idx) {
+                let word = Word::from(&line[start..orig_idx]);
+                start = orig_idx;
+                return Some(word);
+            }
+        }
+
+        if start < line.len() {
+            let word = Word::from(&line[start..]);
+            start = line.len();
+            return Some(word);
+        }
+
+        None
+    }))
+}
+
 #[cfg(test)]
 mod tests {
+    use super::WordSeparator::*;
     use super::*;
 
     
@@ -293,89 +283,121 @@ mod tests {
         };
     }
 
-    #[test]
-    fn ascii_space_empty() {
-        assert_iter_eq!(AsciiSpace.find_words(""), vec![]);
+    fn to_words<'a>(words: Vec<&'a str>) -> Vec<Word<'a>> {
+        words.into_iter().map(|w: &str| Word::from(&w)).collect()
     }
 
-    #[test]
-    fn ascii_space_single_word() {
-        assert_iter_eq!(AsciiSpace.find_words("foo"), vec![Word::from("foo")]);
+    macro_rules! test_find_words {
+        ($ascii_name:ident,
+         $unicode_name:ident,
+         $([ $line:expr, $ascii_words:expr, $unicode_words:expr ]),+) => {
+            #[test]
+            fn $ascii_name() {
+                $(
+                    let expected_words = to_words($ascii_words.to_vec());
+                    let actual_words = WordSeparator::AsciiSpace
+                        .find_words($line)
+                        .collect::<Vec<_>>();
+                    assert_eq!(actual_words, expected_words, "Line: {:?}", $line);
+                )+
+            }
+
+            #[test]
+            #[cfg(feature = "unicode-linebreak")]
+            fn $unicode_name() {
+                $(
+                    let expected_words = to_words($unicode_words.to_vec());
+                    let actual_words = WordSeparator::UnicodeBreakProperties
+                        .find_words($line)
+                        .collect::<Vec<_>>();
+                    assert_eq!(actual_words, expected_words, "Line: {:?}", $line);
+                )+
+            }
+        };
     }
 
-    #[test]
-    fn ascii_space_two_words() {
-        assert_iter_eq!(
-            AsciiSpace.find_words("foo bar"),
-            vec![Word::from("foo "), Word::from("bar")]
-        );
-    }
+    test_find_words!(ascii_space_empty, unicode_empty, ["", [], []]);
 
-    #[test]
-    fn ascii_space_multiple_words() {
-        assert_iter_eq!(
-            AsciiSpace.find_words("foo bar baz"),
-            vec![Word::from("foo "), Word::from("bar "), Word::from("baz")]
-        );
-    }
+    test_find_words!(
+        ascii_single_word,
+        unicode_single_word,
+        ["foo", ["foo"], ["foo"]]
+    );
 
-    #[test]
-    fn ascii_space_only_whitespace() {
-        assert_iter_eq!(AsciiSpace.find_words("    "), vec![Word::from("    ")]);
-    }
+    test_find_words!(
+        ascii_two_words,
+        unicode_two_words,
+        ["foo bar", ["foo ", "bar"], ["foo ", "bar"]]
+    );
 
-    #[test]
-    fn ascii_space_inter_word_whitespace() {
-        assert_iter_eq!(
-            AsciiSpace.find_words("foo   bar"),
-            vec![Word::from("foo   "), Word::from("bar")]
-        )
-    }
+    test_find_words!(
+        ascii_multiple_words,
+        unicode_multiple_words,
+        ["foo bar", ["foo ", "bar"], ["foo ", "bar"]],
+        ["x y z", ["x ", "y ", "z"], ["x ", "y ", "z"]]
+    );
 
-    #[test]
-    fn ascii_space_trailing_whitespace() {
-        assert_iter_eq!(AsciiSpace.find_words("foo   "), vec![Word::from("foo   ")]);
-    }
+    test_find_words!(
+        ascii_only_whitespace,
+        unicode_only_whitespace,
+        [" ", [" "], [" "]],
+        ["    ", ["    "], ["    "]]
+    );
 
-    #[test]
-    fn ascii_space_leading_whitespace() {
-        assert_iter_eq!(
-            AsciiSpace.find_words("   foo"),
-            vec![Word::from("   "), Word::from("foo")]
-        );
-    }
+    test_find_words!(
+        ascii_inter_word_whitespace,
+        unicode_inter_word_whitespace,
+        ["foo   bar", ["foo   ", "bar"], ["foo   ", "bar"]]
+    );
 
-    #[test]
-    fn ascii_space_multi_column_char() {
-        assert_iter_eq!(
-            AsciiSpace.find_words("\u{1f920}"), // cowboy emoji 🤠
-            vec![Word::from("\u{1f920}")]
-        );
-    }
+    test_find_words!(
+        ascii_trailing_whitespace,
+        unicode_trailing_whitespace,
+        ["foo   ", ["foo   "], ["foo   "]]
+    );
 
-    #[test]
-    fn ascii_space_hyphens() {
-        assert_iter_eq!(
-            AsciiSpace.find_words("foo-bar"),
-            vec![Word::from("foo-bar")]
-        );
-        assert_iter_eq!(
-            AsciiSpace.find_words("foo- bar"),
-            vec![Word::from("foo- "), Word::from("bar")]
-        );
-        assert_iter_eq!(
-            AsciiSpace.find_words("foo - bar"),
-            vec![Word::from("foo "), Word::from("- "), Word::from("bar")]
-        );
-        assert_iter_eq!(
-            AsciiSpace.find_words("foo -bar"),
-            vec![Word::from("foo "), Word::from("-bar")]
-        );
-    }
+    test_find_words!(
+        ascii_leading_whitespace,
+        unicode_leading_whitespace,
+        ["   foo", ["   ", "foo"], ["   ", "foo"]]
+    );
+
+    test_find_words!(
+        ascii_multi_column_char,
+        unicode_multi_column_char,
+        ["\u{1f920}", ["\u{1f920}"], ["\u{1f920}"]] // cowboy emoji 🤠
+    );
+
+    test_find_words!(
+        ascii_hyphens,
+        unicode_hyphens,
+        ["foo-bar", ["foo-bar"], ["foo-bar"]],
+        ["foo- bar", ["foo- ", "bar"], ["foo- ", "bar"]],
+        ["foo - bar", ["foo ", "- ", "bar"], ["foo ", "- ", "bar"]],
+        ["foo -bar", ["foo ", "-bar"], ["foo ", "-bar"]]
+    );
+
+    test_find_words!(
+        ascii_newline,
+        unicode_newline,
+        ["foo\nbar", ["foo\nbar"], ["foo\n", "bar"]]
+    );
+
+    test_find_words!(
+        ascii_tab,
+        unicode_tab,
+        ["foo\tbar", ["foo\tbar"], ["foo\t", "bar"]]
+    );
+
+    test_find_words!(
+        ascii_non_breaking_space,
+        unicode_non_breaking_space,
+        ["foo\u{00A0}bar", ["foo\u{00A0}bar"], ["foo\u{00A0}bar"]]
+    );
 
     #[test]
     #[cfg(unix)]
-    fn ascii_space_colored_text() {
+    fn find_words_colored_text() {
         use termion::color::{Blue, Fg, Green, Reset};
 
         let green_hello = format!("{}Hello{} ", Fg(Green), Fg(Reset));
@@ -393,7 +415,7 @@ mod tests {
     }
 
     #[test]
-    fn ascii_space_color_inside_word() {
+    fn find_words_color_inside_word() {
         let text = "foo\u{1b}[0m\u{1b}[32mbar\u{1b}[0mbaz";
         assert_iter_eq!(AsciiSpace.find_words(&text), vec![Word::from(text)]);
 

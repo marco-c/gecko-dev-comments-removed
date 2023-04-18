@@ -1,14 +1,4 @@
-#[cfg(debug_assertions)]
-pub mod debug_asserts;
-mod possible_value;
-mod settings;
-#[cfg(test)]
-mod tests;
-mod value_hint;
-
-pub use self::possible_value::PossibleValue;
-pub use self::settings::{ArgFlags, ArgSettings};
-pub use self::value_hint::ValueHint;
+#![allow(deprecated)]
 
 
 use std::{
@@ -17,7 +7,7 @@ use std::{
     error::Error,
     ffi::OsStr,
     fmt::{self, Display, Formatter},
-    iter, str,
+    str,
     sync::{Arc, Mutex},
 };
 #[cfg(feature = "env")]
@@ -27,17 +17,22 @@ use std::{env, ffi::OsString};
 use yaml_rust::Yaml;
 
 
-use crate::{
-    build::usage_parser::UsageParser,
-    util::{Id, Key},
-    INTERNAL_ERROR_MSG,
-};
+use crate::build::usage_parser::UsageParser;
+use crate::build::ArgPredicate;
+use crate::util::{Id, Key};
+use crate::PossibleValue;
+use crate::ValueHint;
+use crate::INTERNAL_ERROR_MSG;
+use crate::{ArgFlags, ArgSettings};
 
 #[cfg(feature = "regex")]
-mod regex;
+use crate::build::RegexRef;
 
-#[cfg(feature = "regex")]
-pub use self::regex::RegexRef;
+
+
+
+
+
 
 
 
@@ -72,7 +67,7 @@ pub struct Arg<'help> {
     pub(crate) settings: ArgFlags,
     pub(crate) overrides: Vec<Id>,
     pub(crate) groups: Vec<Id>,
-    pub(crate) requires: Vec<(Option<&'help str>, Id)>,
+    pub(crate) requires: Vec<(ArgPredicate<'help>, Id)>,
     pub(crate) r_ifs: Vec<(Id, &'help str)>,
     pub(crate) r_ifs_all: Vec<(Id, &'help str)>,
     pub(crate) r_unless: Vec<Id>,
@@ -81,7 +76,7 @@ pub struct Arg<'help> {
     pub(crate) long: Option<&'help str>,
     pub(crate) aliases: Vec<(&'help str, bool)>, 
     pub(crate) short_aliases: Vec<(char, bool)>, 
-    pub(crate) disp_ord: Option<usize>,
+    pub(crate) disp_ord: DisplayOrder,
     pub(crate) possible_vals: Vec<PossibleValue<'help>>,
     pub(crate) val_names: Vec<&'help str>,
     pub(crate) num_vals: Option<usize>,
@@ -92,7 +87,7 @@ pub struct Arg<'help> {
     pub(crate) validator_os: Option<Arc<Mutex<ValidatorOs<'help>>>>,
     pub(crate) val_delim: Option<char>,
     pub(crate) default_vals: Vec<&'help OsStr>,
-    pub(crate) default_vals_ifs: Vec<(Id, Option<&'help OsStr>, Option<&'help OsStr>)>,
+    pub(crate) default_vals_ifs: Vec<(Id, ArgPredicate<'help>, Option<&'help OsStr>)>,
     pub(crate) default_missing_vals: Vec<&'help OsStr>,
     #[cfg(feature = "env")]
     pub(crate) env: Option<(&'help OsStr, Option<OsString>)>,
@@ -101,6 +96,7 @@ pub struct Arg<'help> {
     pub(crate) help_heading: Option<Option<&'help str>>,
     pub(crate) value_hint: ValueHint,
 }
+
 
 impl<'help> Arg<'help> {
     
@@ -128,11 +124,17 @@ impl<'help> Arg<'help> {
     
     
     #[must_use]
-    pub fn name<S: Into<&'help str>>(mut self, n: S) -> Self {
+    pub fn id<S: Into<&'help str>>(mut self, n: S) -> Self {
         let name = n.into();
         self.id = Id::from(&*name);
         self.name = name;
         self
+    }
+
+    
+    #[deprecated(since = "3.1.0", note = "Replaced with `Arg::id`")]
+    pub fn name<S: Into<&'help str>>(self, n: S) -> Self {
+        self.id(n)
     }
 
     
@@ -198,7 +200,14 @@ impl<'help> Arg<'help> {
     #[inline]
     #[must_use]
     pub fn long(mut self, l: &'help str) -> Self {
-        self.long = Some(l.trim_start_matches(|c| c == '-'));
+        #[cfg(feature = "unstable-v4")]
+        {
+            self.long = Some(l);
+        }
+        #[cfg(not(feature = "unstable-v4"))]
+        {
+            self.long = Some(l.trim_start_matches(|c| c == '-'));
+        }
         self
     }
 
@@ -546,6 +555,7 @@ impl<'help> Arg<'help> {
     
     
     
+    
     #[inline]
     #[must_use]
     pub fn last(self, yes: bool) -> Self {
@@ -673,17 +683,12 @@ impl<'help> Arg<'help> {
     
     
     
-    
-    
-    
-    
     #[must_use]
     pub fn requires<T: Key>(mut self, arg_id: T) -> Self {
-        self.requires.push((None, arg_id.into()));
+        self.requires.push((ArgPredicate::IsPresent, arg_id.into()));
         self
     }
 
-    
     
     
     
@@ -995,9 +1000,6 @@ impl<'help> Arg<'help> {
         }
     }
 
-    
-    
-    
     
     
     
@@ -1527,8 +1529,6 @@ impl<'help> Arg<'help> {
     
     
     
-    
-    
     #[must_use]
     pub fn validator<F, O, E>(mut self, mut f: F) -> Self
     where
@@ -1571,7 +1571,6 @@ impl<'help> Arg<'help> {
     
     
     
-    
     #[must_use]
     pub fn validator_os<F, O, E>(mut self, mut f: F) -> Self
     where
@@ -1584,8 +1583,6 @@ impl<'help> Arg<'help> {
         self
     }
 
-    
-    
     
     
     
@@ -2128,7 +2125,7 @@ impl<'help> Arg<'help> {
     
     #[inline]
     #[must_use]
-    pub fn use_delimiter(mut self, yes: bool) -> Self {
+    pub fn use_value_delimiter(mut self, yes: bool) -> Self {
         if yes {
             if self.val_delim.is_none() {
                 self.val_delim = Some(',');
@@ -2139,6 +2136,14 @@ impl<'help> Arg<'help> {
             self.val_delim = None;
             self.unset_setting(ArgSettings::UseValueDelimiter)
         }
+    }
+
+    
+    #[inline]
+    #[must_use]
+    #[deprecated(since = "3.1.0", note = "Replaced with `Arg::use_value_delimiter`")]
+    pub fn use_delimiter(self, yes: bool) -> Self {
+        self.use_value_delimiter(yes)
     }
 
     
@@ -2168,7 +2173,7 @@ impl<'help> Arg<'help> {
     #[must_use]
     pub fn value_delimiter(mut self, d: char) -> Self {
         self.val_delim = Some(d);
-        self.takes_value(true).use_delimiter(true)
+        self.takes_value(true).use_value_delimiter(true)
     }
 
     
@@ -2249,12 +2254,20 @@ impl<'help> Arg<'help> {
     
     #[inline]
     #[must_use]
-    pub fn require_delimiter(self, yes: bool) -> Self {
+    pub fn require_value_delimiter(self, yes: bool) -> Self {
         if yes {
             self.setting(ArgSettings::RequireDelimiter)
         } else {
             self.unset_setting(ArgSettings::RequireDelimiter)
         }
+    }
+
+    
+    #[inline]
+    #[must_use]
+    #[deprecated(since = "3.1.0", note = "Replaced with `Arg::require_value_delimiter`")]
+    pub fn require_delimiter(self, yes: bool) -> Self {
+        self.require_value_delimiter(yes)
     }
 
     
@@ -2344,9 +2357,6 @@ impl<'help> Arg<'help> {
             .last(yes)
     }
 
-    
-    
-    
     
     
     
@@ -2890,7 +2900,7 @@ impl<'help> Arg<'help> {
     #[inline]
     #[must_use]
     pub fn display_order(mut self, ord: usize) -> Self {
-        self.disp_ord = Some(ord);
+        self.disp_ord.set_explicit(ord);
         self
     }
 
@@ -3486,7 +3496,8 @@ impl<'help> Arg<'help> {
         val: Option<&'help OsStr>,
         default: Option<&'help OsStr>,
     ) -> Self {
-        self.default_vals_ifs.push((arg_id.into(), val, default));
+        self.default_vals_ifs
+            .push((arg_id.into(), val.into(), default));
         self.takes_value(true)
     }
 
@@ -3883,8 +3894,6 @@ impl<'help> Arg<'help> {
     
     
     
-    
-    
     #[must_use]
     pub fn required_if_eq<T: Key>(mut self, arg_id: T, val: &'help str) -> Self {
         self.r_ifs.push((arg_id.into(), val));
@@ -4104,16 +4113,13 @@ impl<'help> Arg<'help> {
     
     
     
-    
-    
     #[must_use]
     pub fn requires_if<T: Key>(mut self, val: &'help str, arg_id: T) -> Self {
-        self.requires.push((Some(val), arg_id.into()));
+        self.requires
+            .push((ArgPredicate::Equals(OsStr::new(val)), arg_id.into()));
         self
     }
 
-    
-    
     
     
     
@@ -4160,17 +4166,13 @@ impl<'help> Arg<'help> {
     
     #[must_use]
     pub fn requires_ifs<T: Key>(mut self, ifs: &[(&'help str, T)]) -> Self {
-        self.requires
-            .extend(ifs.iter().map(|(val, arg)| (Some(*val), Id::from(arg))));
+        self.requires.extend(
+            ifs.iter()
+                .map(|(val, arg)| (ArgPredicate::Equals(OsStr::new(*val)), Id::from(arg))),
+        );
         self
     }
 
-    
-    
-    
-    
-    
-    
     
     
     
@@ -4231,12 +4233,11 @@ impl<'help> Arg<'help> {
     
     #[must_use]
     pub fn requires_all<T: Key>(mut self, names: &[T]) -> Self {
-        self.requires.extend(names.iter().map(|s| (None, s.into())));
+        self.requires
+            .extend(names.iter().map(|s| (ArgPredicate::IsPresent, s.into())));
         self
     }
 
-    
-    
     
     
     
@@ -4330,15 +4331,14 @@ impl<'help> Arg<'help> {
     
     
     
-    
-    
-    
     #[must_use]
     pub fn conflicts_with_all(mut self, names: &[&str]) -> Self {
-        self.blacklist.extend(names.iter().map(Id::from));
+        self.blacklist.extend(names.iter().copied().map(Id::from));
         self
     }
 
+    
+    
     
     
     
@@ -4483,6 +4483,8 @@ impl<'help> Arg<'help> {
     
     
     
+    
+    
     #[must_use]
     pub fn overrides_with_all<T: Key>(mut self, names: &[T]) -> Self {
         self.overrides.extend(names.iter().map(Id::from));
@@ -4494,8 +4496,14 @@ impl<'help> Arg<'help> {
 impl<'help> Arg<'help> {
     
     #[inline]
-    pub fn get_name(&self) -> &'help str {
+    pub fn get_id(&self) -> &'help str {
         self.name
+    }
+
+    
+    #[deprecated(since = "3.1.0", note = "Replaced with `Arg::get_id`")]
+    pub fn get_name(&self) -> &'help str {
+        self.get_id()
     }
 
     
@@ -4623,6 +4631,12 @@ impl<'help> Arg<'help> {
 
     
     #[inline]
+    pub fn get_value_delimiter(&self) -> Option<char> {
+        self.val_delim
+    }
+
+    
+    #[inline]
     pub fn get_index(&self) -> Option<usize> {
         self.index
     }
@@ -4633,8 +4647,9 @@ impl<'help> Arg<'help> {
     }
 
     
+    #[deprecated(since = "3.1.0", note = "Replaced with `Arg::is_global_set`")]
     pub fn get_global(&self) -> bool {
-        self.is_set(ArgSettings::Global)
+        self.is_global_set()
     }
 
     
@@ -4680,12 +4695,125 @@ impl<'help> Arg<'help> {
     pub fn is_positional(&self) -> bool {
         self.long.is_none() && self.short.is_none()
     }
+
+    
+    pub fn is_required_set(&self) -> bool {
+        self.is_set(ArgSettings::Required)
+    }
+
+    
+    pub fn is_multiple_values_set(&self) -> bool {
+        self.is_set(ArgSettings::MultipleValues)
+    }
+
+    
+    pub fn is_multiple_occurrences_set(&self) -> bool {
+        self.is_set(ArgSettings::MultipleOccurrences)
+    }
+
+    
+    pub fn is_takes_value_set(&self) -> bool {
+        self.is_set(ArgSettings::TakesValue)
+    }
+
+    
+    pub fn is_allow_hyphen_values_set(&self) -> bool {
+        self.is_set(ArgSettings::AllowHyphenValues)
+    }
+
+    
+    pub fn is_forbid_empty_values_set(&self) -> bool {
+        self.is_set(ArgSettings::ForbidEmptyValues)
+    }
+
+    
+    pub fn is_allow_invalid_utf8_set(&self) -> bool {
+        self.is_set(ArgSettings::AllowInvalidUtf8)
+    }
+
+    
+    pub fn is_global_set(&self) -> bool {
+        self.is_set(ArgSettings::Global)
+    }
+
+    
+    pub fn is_next_line_help_set(&self) -> bool {
+        self.is_set(ArgSettings::NextLineHelp)
+    }
+
+    
+    pub fn is_hide_set(&self) -> bool {
+        self.is_set(ArgSettings::Hidden)
+    }
+
+    
+    pub fn is_hide_default_value_set(&self) -> bool {
+        self.is_set(ArgSettings::HideDefaultValue)
+    }
+
+    
+    pub fn is_hide_possible_values_set(&self) -> bool {
+        self.is_set(ArgSettings::HidePossibleValues)
+    }
+
+    
+    #[cfg(feature = "env")]
+    pub fn is_hide_env_set(&self) -> bool {
+        self.is_set(ArgSettings::HideEnv)
+    }
+
+    
+    #[cfg(feature = "env")]
+    pub fn is_hide_env_values_set(&self) -> bool {
+        self.is_set(ArgSettings::HideEnvValues)
+    }
+
+    
+    pub fn is_hide_short_help_set(&self) -> bool {
+        self.is_set(ArgSettings::HiddenShortHelp)
+    }
+
+    
+    pub fn is_hide_long_help_set(&self) -> bool {
+        self.is_set(ArgSettings::HiddenLongHelp)
+    }
+
+    
+    pub fn is_use_value_delimiter_set(&self) -> bool {
+        self.is_set(ArgSettings::UseValueDelimiter)
+    }
+
+    
+    pub fn is_require_value_delimiter_set(&self) -> bool {
+        self.is_set(ArgSettings::RequireDelimiter)
+    }
+
+    
+    pub fn is_require_equals_set(&self) -> bool {
+        self.is_set(ArgSettings::RequireEquals)
+    }
+
+    
+    pub fn is_exclusive_set(&self) -> bool {
+        self.is_set(ArgSettings::Exclusive)
+    }
+
+    
+    pub fn is_last_set(&self) -> bool {
+        self.is_set(ArgSettings::Last)
+    }
+
+    
+    pub fn is_ignore_case_set(&self) -> bool {
+        self.is_set(ArgSettings::IgnoreCase)
+    }
 }
 
 
 impl<'help> Arg<'help> {
     
     #[deprecated(since = "3.0.0", note = "Replaced with `Arg::new`")]
+    #[doc(hidden)]
     pub fn with_name<S: Into<&'help str>>(n: S) -> Self {
         Self::new(n)
     }
@@ -4696,6 +4824,7 @@ impl<'help> Arg<'help> {
         since = "3.0.0",
         note = "Deprecated in Issue #3087, maybe clap::Parser would fit your use case?"
     )]
+    #[doc(hidden)]
     pub fn from_yaml(y: &'help Yaml) -> Self {
         #![allow(deprecated)]
         let yaml_file_hash = y.as_hash().expect("YAML file must be a hash");
@@ -4765,12 +4894,14 @@ impl<'help> Arg<'help> {
 
     
     #[deprecated(since = "3.0.0", note = "Deprecated in Issue #3086, see `clap::arg!")]
+    #[doc(hidden)]
     pub fn from_usage(u: &'help str) -> Self {
         UsageParser::from_usage(u).parse()
     }
 
     
     #[deprecated(since = "3.0.0", note = "Replaced with `Arg::required_unless_present`")]
+    #[doc(hidden)]
     #[must_use]
     pub fn required_unless<T: Key>(self, arg_id: T) -> Self {
         self.required_unless_present(arg_id)
@@ -4781,6 +4912,7 @@ impl<'help> Arg<'help> {
         since = "3.0.0",
         note = "Replaced with `Arg::required_unless_present_all`"
     )]
+    #[doc(hidden)]
     #[must_use]
     pub fn required_unless_all<T, I>(self, names: I) -> Self
     where
@@ -4795,6 +4927,7 @@ impl<'help> Arg<'help> {
         since = "3.0.0",
         note = "Replaced with `Arg::required_unless_present_any`"
     )]
+    #[doc(hidden)]
     #[must_use]
     pub fn required_unless_one<T, I>(self, names: I) -> Self
     where
@@ -4806,6 +4939,7 @@ impl<'help> Arg<'help> {
 
     
     #[deprecated(since = "3.0.0", note = "Replaced with `Arg::required_if_eq`")]
+    #[doc(hidden)]
     #[must_use]
     pub fn required_if<T: Key>(self, arg_id: T, val: &'help str) -> Self {
         self.required_if_eq(arg_id, val)
@@ -4813,6 +4947,7 @@ impl<'help> Arg<'help> {
 
     
     #[deprecated(since = "3.0.0", note = "Replaced with `Arg::required_if_eq_any`")]
+    #[doc(hidden)]
     #[must_use]
     pub fn required_ifs<T: Key>(self, ifs: &[(T, &'help str)]) -> Self {
         self.required_if_eq_any(ifs)
@@ -4820,6 +4955,7 @@ impl<'help> Arg<'help> {
 
     
     #[deprecated(since = "3.0.0", note = "Replaced with `Arg::hide`")]
+    #[doc(hidden)]
     #[inline]
     #[must_use]
     pub fn hidden(self, yes: bool) -> Self {
@@ -4828,6 +4964,7 @@ impl<'help> Arg<'help> {
 
     
     #[deprecated(since = "3.0.0", note = "Replaced with `Arg::ignore_case`")]
+    #[doc(hidden)]
     #[inline]
     #[must_use]
     pub fn case_insensitive(self, yes: bool) -> Self {
@@ -4836,6 +4973,7 @@ impl<'help> Arg<'help> {
 
     
     #[deprecated(since = "3.0.0", note = "Replaced with `Arg::forbid_empty_values`")]
+    #[doc(hidden)]
     #[must_use]
     pub fn empty_values(self, yes: bool) -> Self {
         self.forbid_empty_values(!yes)
@@ -4847,6 +4985,7 @@ impl<'help> Arg<'help> {
         since = "3.0.0",
         note = "Split into `Arg::multiple_occurrences` (most likely what you want)  and `Arg::multiple_values`"
     )]
+    #[doc(hidden)]
     #[must_use]
     pub fn multiple(self, yes: bool) -> Self {
         self.multiple_occurrences(yes).multiple_values(yes)
@@ -4854,6 +4993,7 @@ impl<'help> Arg<'help> {
 
     
     #[deprecated(since = "3.0.0", note = "Replaced with `Arg::hide_short_help`")]
+    #[doc(hidden)]
     #[inline]
     #[must_use]
     pub fn hidden_short_help(self, yes: bool) -> Self {
@@ -4862,6 +5002,7 @@ impl<'help> Arg<'help> {
 
     
     #[deprecated(since = "3.0.0", note = "Replaced with `Arg::hide_long_help`")]
+    #[doc(hidden)]
     #[inline]
     #[must_use]
     pub fn hidden_long_help(self, yes: bool) -> Self {
@@ -4870,6 +5011,7 @@ impl<'help> Arg<'help> {
 
     
     #[deprecated(since = "3.0.0", note = "Replaced with `Arg::setting`")]
+    #[doc(hidden)]
     #[must_use]
     pub fn set(self, s: ArgSettings) -> Self {
         self.setting(s)
@@ -4877,6 +5019,7 @@ impl<'help> Arg<'help> {
 
     
     #[deprecated(since = "3.0.0", note = "Replaced with `Arg::unset_setting`")]
+    #[doc(hidden)]
     #[must_use]
     pub fn unset(self, s: ArgSettings) -> Self {
         self.unset_setting(s)
@@ -4890,8 +5033,7 @@ impl<'help> Arg<'help> {
             self.settings.set(ArgSettings::TakesValue);
         }
 
-        if (self.is_set(ArgSettings::UseValueDelimiter)
-            || self.is_set(ArgSettings::RequireDelimiter))
+        if (self.is_use_value_delimiter_set() || self.is_require_value_delimiter_set())
             && self.val_delim.is_none()
         {
             self.val_delim = Some(',');
@@ -4908,7 +5050,7 @@ impl<'help> Arg<'help> {
         }
 
         let self_id = self.id.clone();
-        if self.is_positional() || self.is_set(ArgSettings::MultipleOccurrences) {
+        if self.is_positional() || self.is_multiple_occurrences_set() {
             
             
             
@@ -4924,16 +5066,13 @@ impl<'help> Arg<'help> {
     }
 
     pub(crate) fn longest_filter(&self) -> bool {
-        self.is_set(ArgSettings::TakesValue) || self.long.is_some() || self.short.is_none()
+        self.is_takes_value_set() || self.long.is_some() || self.short.is_none()
     }
 
     
     pub(crate) fn multiple_str(&self) -> &str {
         let mult_vals = self.val_names.len() > 1;
-        if (self.is_set(ArgSettings::MultipleValues)
-            || self.is_set(ArgSettings::MultipleOccurrences))
-            && !mult_vals
-        {
+        if (self.is_multiple_values_set() || self.is_multiple_occurrences_set()) && !mult_vals {
             "..."
         } else {
             ""
@@ -4943,12 +5082,12 @@ impl<'help> Arg<'help> {
     
     pub(crate) fn name_no_brackets(&self) -> Cow<str> {
         debug!("Arg::name_no_brackets:{}", self.name);
-        let mut delim = String::new();
-        delim.push(if self.is_set(ArgSettings::RequireDelimiter) {
+        let delim = if self.is_require_value_delimiter_set() {
             self.val_delim.expect(INTERNAL_ERROR_MSG)
         } else {
             ' '
-        });
+        }
+        .to_string();
         if !self.val_names.is_empty() {
             debug!("Arg::name_no_brackets: val_names={:#?}", self.val_names);
 
@@ -4971,11 +5110,11 @@ impl<'help> Arg<'help> {
 
     
     pub(crate) fn is_multiple(&self) -> bool {
-        self.is_set(ArgSettings::MultipleValues) | self.is_set(ArgSettings::MultipleOccurrences)
+        self.is_multiple_values_set() | self.is_multiple_occurrences_set()
     }
 
     pub(crate) fn get_display_order(&self) -> usize {
-        self.disp_ord.unwrap_or(999)
+        self.disp_ord.get_explicit()
     }
 }
 
@@ -5013,16 +5152,29 @@ impl<'help> Display for Arg<'help> {
         } else if let Some(s) = self.short {
             write!(f, "-{}", s)?;
         }
-        if !self.is_positional() && self.is_set(ArgSettings::TakesValue) {
-            let sep = if self.is_set(ArgSettings::RequireEquals) {
-                "="
+        let mut need_closing_bracket = false;
+        if !self.is_positional() && self.is_takes_value_set() {
+            let is_optional_val = self.min_vals == Some(0);
+            let sep = if self.is_require_equals_set() {
+                if is_optional_val {
+                    need_closing_bracket = true;
+                    "[="
+                } else {
+                    "="
+                }
+            } else if is_optional_val {
+                need_closing_bracket = true;
+                " ["
             } else {
                 " "
             };
-            write!(f, "{}", sep)?;
+            f.write_str(sep)?;
         }
-        if self.is_set(ArgSettings::TakesValue) || self.is_positional() {
-            display_arg_val(self, |s, _| write!(f, "{}", s))?;
+        if self.is_takes_value_set() || self.is_positional() {
+            display_arg_val(self, |s, _| f.write_str(s))?;
+        }
+        if need_closing_bracket {
+            f.write_str("]")?;
         }
 
         Ok(())
@@ -5104,13 +5256,14 @@ pub(crate) fn display_arg_val<F, T, E>(arg: &Arg, mut write: F) -> Result<(), E>
 where
     F: FnMut(&str, bool) -> Result<T, E>,
 {
-    let mult_val = arg.is_set(ArgSettings::MultipleValues);
-    let mult_occ = arg.is_set(ArgSettings::MultipleOccurrences);
-    let delim = if arg.is_set(ArgSettings::RequireDelimiter) {
+    let mult_val = arg.is_multiple_values_set();
+    let mult_occ = arg.is_multiple_occurrences_set();
+    let delim = if arg.is_require_value_delimiter_set() {
         arg.val_delim.expect(INTERNAL_ERROR_MSG)
     } else {
         ' '
-    };
+    }
+    .to_string();
     if !arg.val_names.is_empty() {
         
         match (arg.val_names.len(), arg.num_vals) {
@@ -5118,11 +5271,10 @@ where
                 
                 
                 let arg_name = format!("<{}>", arg.val_names.get(0).unwrap());
-                let mut it = iter::repeat(arg_name).take(num_vals).peekable();
-                while let Some(arg_name) = it.next() {
+                for n in 1..=num_vals {
                     write(&arg_name, true)?;
-                    if it.peek().is_some() {
-                        write(&delim.to_string(), false)?;
+                    if n != num_vals {
+                        write(&delim, false)?;
                     }
                 }
             }
@@ -5132,10 +5284,13 @@ where
                 while let Some(val) = it.next() {
                     write(&format!("<{}>", val), true)?;
                     if it.peek().is_some() {
-                        write(&delim.to_string(), false)?;
+                        write(&delim, false)?;
                     }
                 }
-                if (num_val_names == 1 && mult_val) || (arg.is_positional() && mult_occ) {
+                if (num_val_names == 1 && mult_val)
+                    || (arg.is_positional() && mult_occ)
+                    || num_val_names < arg.num_vals.unwrap_or(0)
+                {
                     write("...", true)?;
                 }
             }
@@ -5143,11 +5298,10 @@ where
     } else if let Some(num_vals) = arg.num_vals {
         
         let arg_name = format!("<{}>", arg.name);
-        let mut it = iter::repeat(&arg_name).take(num_vals).peekable();
-        while let Some(arg_name) = it.next() {
-            write(arg_name, true)?;
-            if it.peek().is_some() {
-                write(&delim.to_string(), false)?;
+        for n in 1..=num_vals {
+            write(&arg_name, true)?;
+            if n != num_vals {
+                write(&delim, false)?;
             }
         }
     } else if arg.is_positional() {
@@ -5167,6 +5321,43 @@ where
     Ok(())
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum DisplayOrder {
+    None,
+    Implicit(usize),
+    Explicit(usize),
+}
+
+impl DisplayOrder {
+    pub(crate) fn set_explicit(&mut self, explicit: usize) {
+        *self = Self::Explicit(explicit)
+    }
+
+    pub(crate) fn set_implicit(&mut self, implicit: usize) {
+        *self = (*self).max(Self::Implicit(implicit))
+    }
+
+    pub(crate) fn make_explicit(&mut self) {
+        match *self {
+            Self::None | Self::Explicit(_) => {}
+            Self::Implicit(disp) => self.set_explicit(disp),
+        }
+    }
+
+    pub(crate) fn get_explicit(self) -> usize {
+        match self {
+            Self::None | Self::Implicit(_) => 999,
+            Self::Explicit(disp) => disp,
+        }
+    }
+}
+
+impl Default for DisplayOrder {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
 
 #[cfg(test)]
 mod test {
@@ -5177,12 +5368,12 @@ mod test {
         let mut f = Arg::new("flg").multiple_occurrences(true);
         f.long = Some("flag");
 
-        assert_eq!(&*format!("{}", f), "--flag");
+        assert_eq!(f.to_string(), "--flag");
 
         let mut f2 = Arg::new("flg");
         f2.short = Some('f');
 
-        assert_eq!(&*format!("{}", f2), "-f");
+        assert_eq!(f2.to_string(), "-f");
     }
 
     #[test]
@@ -5191,7 +5382,7 @@ mod test {
         f.long = Some("flag");
         f.aliases = vec![("als", true)];
 
-        assert_eq!(&*format!("{}", f), "--flag")
+        assert_eq!(f.to_string(), "--flag")
     }
 
     #[test]
@@ -5204,7 +5395,7 @@ mod test {
             ("f3", true),
             ("f4", true),
         ];
-        assert_eq!(&*format!("{}", f), "-f");
+        assert_eq!(f.to_string(), "-f");
     }
 
     #[test]
@@ -5213,7 +5404,7 @@ mod test {
         f.short = Some('a');
         f.short_aliases = vec![('b', true)];
 
-        assert_eq!(&*format!("{}", f), "-a")
+        assert_eq!(f.to_string(), "-a")
     }
 
     #[test]
@@ -5221,7 +5412,7 @@ mod test {
         let mut f = Arg::new("flg");
         f.short = Some('a');
         f.short_aliases = vec![('b', false), ('c', true), ('d', true), ('e', true)];
-        assert_eq!(&*format!("{}", f), "-a");
+        assert_eq!(f.to_string(), "-a");
     }
 
     
@@ -5233,7 +5424,7 @@ mod test {
             .takes_value(true)
             .multiple_occurrences(true);
 
-        assert_eq!(&*format!("{}", o), "--option <opt>");
+        assert_eq!(o.to_string(), "--option <opt>");
     }
 
     #[test]
@@ -5243,14 +5434,14 @@ mod test {
             .takes_value(true)
             .multiple_values(true);
 
-        assert_eq!(&*format!("{}", o), "--option <opt>...");
+        assert_eq!(o.to_string(), "--option <opt>...");
     }
 
     #[test]
     fn option_display2() {
         let o2 = Arg::new("opt").short('o').value_names(&["file", "name"]);
 
-        assert_eq!(&*format!("{}", o2), "-o <file> <name>");
+        assert_eq!(o2.to_string(), "-o <file> <name>");
     }
 
     #[test]
@@ -5261,7 +5452,7 @@ mod test {
             .multiple_values(true)
             .value_names(&["file", "name"]);
 
-        assert_eq!(&*format!("{}", o2), "-o <file> <name>");
+        assert_eq!(o2.to_string(), "-o <file> <name>");
     }
 
     #[test]
@@ -5271,7 +5462,7 @@ mod test {
             .long("option")
             .visible_alias("als");
 
-        assert_eq!(&*format!("{}", o), "--option <opt>");
+        assert_eq!(o.to_string(), "--option <opt>");
     }
 
     #[test]
@@ -5282,7 +5473,7 @@ mod test {
             .visible_aliases(&["als2", "als3", "als4"])
             .alias("als_not_visible");
 
-        assert_eq!(&*format!("{}", o), "--option <opt>");
+        assert_eq!(o.to_string(), "--option <opt>");
     }
 
     #[test]
@@ -5292,7 +5483,7 @@ mod test {
             .short('a')
             .visible_short_alias('b');
 
-        assert_eq!(&*format!("{}", o), "-a <opt>");
+        assert_eq!(o.to_string(), "-a <opt>");
     }
 
     #[test]
@@ -5303,7 +5494,7 @@ mod test {
             .visible_short_aliases(&['b', 'c', 'd'])
             .short_alias('e');
 
-        assert_eq!(&*format!("{}", o), "-a <opt>");
+        assert_eq!(o.to_string(), "-a <opt>");
     }
 
     
@@ -5315,7 +5506,7 @@ mod test {
             .takes_value(true)
             .multiple_values(true);
 
-        assert_eq!(&*format!("{}", p), "<pos>...");
+        assert_eq!(p.to_string(), "<pos>...");
     }
 
     #[test]
@@ -5325,21 +5516,21 @@ mod test {
             .takes_value(true)
             .multiple_occurrences(true);
 
-        assert_eq!(&*format!("{}", p), "<pos>...");
+        assert_eq!(p.to_string(), "<pos>...");
     }
 
     #[test]
     fn positional_display_required() {
         let p2 = Arg::new("pos").index(1).required(true);
 
-        assert_eq!(&*format!("{}", p2), "<pos>");
+        assert_eq!(p2.to_string(), "<pos>");
     }
 
     #[test]
     fn positional_display_val_names() {
         let p2 = Arg::new("pos").index(1).value_names(&["file1", "file2"]);
 
-        assert_eq!(&*format!("{}", p2), "<file1> <file2>");
+        assert_eq!(p2.to_string(), "<file1> <file2>");
     }
 
     #[test]
@@ -5349,6 +5540,6 @@ mod test {
             .required(true)
             .value_names(&["file1", "file2"]);
 
-        assert_eq!(&*format!("{}", p2), "<file1> <file2>");
+        assert_eq!(p2.to_string(), "<file1> <file2>");
     }
 }

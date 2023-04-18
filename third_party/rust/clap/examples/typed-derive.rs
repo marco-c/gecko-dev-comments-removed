@@ -5,6 +5,23 @@ use std::error::Error;
 
 #[derive(Parser, Debug)]
 struct Args {
+    
+    #[clap(short = 'O')]
+    optimization: Option<usize>,
+
+    
+    #[clap(short = 'I', parse(from_os_str), value_name = "DIR", value_hint = clap::ValueHint::DirPath)]
+    include: Option<std::path::PathBuf>,
+
+    
+    #[clap(long)]
+    bind: Option<std::net::IpAddr>,
+
+    
+    #[clap(long)]
+    sleep: Option<humantime::Duration>,
+
+    
     #[clap(short = 'D', parse(try_from_str = parse_key_val), multiple_occurrences(true))]
     defines: Vec<(String, i32)>,
 }

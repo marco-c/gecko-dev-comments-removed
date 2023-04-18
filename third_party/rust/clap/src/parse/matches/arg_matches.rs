@@ -12,11 +12,10 @@ use std::{
 use indexmap::IndexMap;
 
 
-use crate::{
-    parse::MatchedArg,
-    util::{Id, Key},
-    {Error, INVALID_UTF8},
-};
+use crate::parse::MatchedArg;
+use crate::parse::ValueSource;
+use crate::util::{Id, Key};
+use crate::{Error, INVALID_UTF8};
 
 
 
@@ -99,6 +98,10 @@ impl ArgMatches {
     
     
     
+    pub fn args_present(&self) -> bool {
+        !self.args.is_empty()
+    }
+
     
     
     
@@ -116,6 +119,26 @@ impl ArgMatches {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(debug_assertions, track_caller)]
     pub fn value_of<T: Key>(&self, id: T) -> Option<&str> {
         let id = Id::from(id);
         let arg = self.get_arg(&id)?;
@@ -255,6 +278,7 @@ impl ArgMatches {
     
     
     
+    #[cfg_attr(debug_assertions, track_caller)]
     pub fn values_of<T: Key>(&self, id: T) -> Option<Values> {
         let id = Id::from(id);
         let arg = self.get_arg(&id)?;
@@ -270,7 +294,40 @@ impl ArgMatches {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "unstable-grouped")]
+    #[cfg_attr(debug_assertions, track_caller)]
     pub fn grouped_values_of<T: Key>(&self, id: T) -> Option<GroupedValues> {
         let id = Id::from(id);
         let arg = self.get_arg(&id)?;
@@ -440,7 +497,7 @@ impl ArgMatches {
                 v, name, e
             );
 
-            Error::value_validation_without_app(name.to_string(), v.to_string(), message.into())
+            Error::value_validation(name.to_string(), v.to_string(), message.into())
         })
     }
 
@@ -528,7 +585,7 @@ impl ArgMatches {
             v.parse::<R>().map_err(|e| {
                 let message = format!("The argument '{}' isn't a valid value: {}", v, e);
 
-                Error::value_validation_without_app(name.to_string(), v.to_string(), message.into())
+                Error::value_validation(name.to_string(), v.to_string(), message.into())
             })
         })
         .collect()
@@ -626,6 +683,36 @@ impl ArgMatches {
     
     
     
+    pub fn value_source<T: Key>(&self, id: T) -> Option<ValueSource> {
+        let id = Id::from(id);
+
+        let value = self.get_arg(&id);
+
+        value.and_then(MatchedArg::source)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -649,7 +736,8 @@ impl ArgMatches {
     
     
     pub fn occurrences_of<T: Key>(&self, id: T) -> u64 {
-        self.get_arg(&Id::from(id)).map_or(0, |a| a.occurs)
+        self.get_arg(&Id::from(id))
+            .map_or(0, |a| a.get_occurrences())
     }
 
     
@@ -1126,8 +1214,7 @@ pub(crate) struct SubCommand {
 
 
 
-#[derive(Clone)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Debug)]
 pub struct Values<'a> {
     #[allow(clippy::type_complexity)]
     iter: Map<Flatten<Iter<'a, Vec<OsString>>>, for<'r> fn(&'r OsString) -> &'r str>,
@@ -1221,8 +1308,7 @@ impl<'a> Default for GroupedValues<'a> {
 
 
 
-#[derive(Clone)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Debug)]
 pub struct OsValues<'a> {
     #[allow(clippy::type_complexity)]
     iter: Map<Flatten<Iter<'a, Vec<OsString>>>, fn(&OsString) -> &OsStr>,
@@ -1279,8 +1365,7 @@ impl Default for OsValues<'_> {
 
 
 
-#[derive(Clone)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Debug)]
 pub struct Indices<'a> {
     iter: Cloned<Iter<'a, usize>>,
     len: usize,
@@ -1382,7 +1467,7 @@ mod tests {
 
     #[test]
     fn values_exact_size() {
-        let l = crate::App::new("test")
+        let l = crate::Command::new("test")
             .arg(
                 crate::Arg::new("POTATO")
                     .takes_value(true)
@@ -1399,7 +1484,7 @@ mod tests {
 
     #[test]
     fn os_values_exact_size() {
-        let l = crate::App::new("test")
+        let l = crate::Command::new("test")
             .arg(
                 crate::Arg::new("POTATO")
                     .takes_value(true)
@@ -1417,7 +1502,7 @@ mod tests {
 
     #[test]
     fn indices_exact_size() {
-        let l = crate::App::new("test")
+        let l = crate::Command::new("test")
             .arg(
                 crate::Arg::new("POTATO")
                     .takes_value(true)

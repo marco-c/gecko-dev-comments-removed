@@ -24,7 +24,7 @@ use std::str::FromStr;
 
 
 
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
 #[non_exhaustive]
 pub enum ValueHint {
     

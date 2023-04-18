@@ -1,8 +1,10 @@
-use clap::{app_from_crate, arg, ArgGroup};
+
+
+use clap::{arg, command, ArgGroup};
 
 fn main() {
     
-    let matches = app_from_crate!()
+    let matches = command!()
         
         .arg(arg!(--"set-ver" <VER> "set version manually").required(false))
         .arg(arg!(--major         "auto inc major"))

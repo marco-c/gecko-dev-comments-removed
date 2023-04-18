@@ -1,3 +1,5 @@
+#![allow(deprecated)]
+
 
 use std::ops::BitOr;
 #[cfg(feature = "yaml")]
@@ -5,6 +7,9 @@ use std::str::FromStr;
 
 
 use bitflags::bitflags;
+
+#[allow(unused)]
+use crate::Arg;
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -28,10 +33,23 @@ impl Default for ArgFlags {
 #[non_exhaustive]
 pub enum ArgSettings {
     
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::required` and `Arg::is_required_set`"
+    )]
     Required,
     
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::multiple_values` and `Arg::`is_multiple_values_set`"
+    )]
     MultipleValues,
     
+    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::multiple_occurrences` and `Arg::is_multiple_occurrences_set`"
+    )]
     MultipleOccurrences,
     
     
@@ -39,59 +57,139 @@ pub enum ArgSettings {
         since = "3.0.0",
         note = "Split into `ArgSettings::MultipleOccurrences` (most likely what you want)  and `ArgSettings::MultipleValues`"
     )]
+    #[doc(hidden)]
     Multiple,
     
+    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::forbid_empty_values` and `Arg::is_forbid_empty_values_set`"
+    )]
     ForbidEmptyValues,
     
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::global` and `Arg::is_global_set`"
+    )]
     Global,
     
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::hide` and `Arg::is_hide_set`"
+    )]
     Hidden,
     
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::takes_value` and `Arg::is_takes_value_set`"
+    )]
     TakesValue,
     
     
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::use_value_delimiter` and `Arg::is_use_value_delimiter_set`"
+    )]
     UseValueDelimiter,
     
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::next_line_help` and `Arg::is_next_line_help_set`"
+    )]
     NextLineHelp,
     
+    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::require_value_delimiter` and `Arg::is_require_value_delimiter_set`"
+    )]
     RequireDelimiter,
     
+    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::hide_possible_values` and `Arg::is_hide_possible_values_set`"
+    )]
     HidePossibleValues,
     
+    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::allow_hyphen_values` and `Arg::is_allow_hyphen_values_set`"
+    )]
     AllowHyphenValues,
     
     #[deprecated(
         since = "3.0.0",
         note = "Replaced with `ArgSettings::AllowHyphenValues`"
     )]
+    #[doc(hidden)]
     AllowLeadingHyphen,
     
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::require_equals` and `Arg::is_require_equals_set`"
+    )]
     RequireEquals,
     
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::last` and `Arg::is_last_set`"
+    )]
     Last,
     
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::hide_default_value` and `Arg::is_hide_default_value_set`"
+    )]
     HideDefaultValue,
     
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::ignore_case` and `Arg::is_ignore_case_set`"
+    )]
     IgnoreCase,
     
     #[deprecated(since = "3.0.0", note = "Replaced with `ArgSettings::IgnoreCase`")]
+    #[doc(hidden)]
     CaseInsensitive,
     
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::hide_env` and `Arg::is_hide_env_set`"
+    )]
     #[cfg(feature = "env")]
     HideEnv,
     
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::hide_env_values` and `Arg::is_hide_env_values_set`"
+    )]
     #[cfg(feature = "env")]
     HideEnvValues,
     
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::hide_short_help` and `Arg::is_hide_short_help_set`"
+    )]
     HiddenShortHelp,
     
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::hide_long_help` and `Arg::is_hide_long_help_set`"
+    )]
     HiddenLongHelp,
     
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::allow_invalid_utf8` and `Arg::is_allow_invalid_utf8_set`"
+    )]
     AllowInvalidUtf8,
     
-    
+    #[deprecated(
+        since = "3.1.0",
+        note = "Replaced with `Arg::exclusive` and `Arg::is_exclusive_set`"
+    )]
     Exclusive,
 }
 
