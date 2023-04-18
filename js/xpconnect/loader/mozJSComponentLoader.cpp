@@ -564,9 +564,8 @@ mozJSComponentLoader::CollectReports(nsIHandleReportCallback* aHandleReport,
   return NS_OK;
 }
 
-void mozJSComponentLoader::CreateLoaderGlobal(JSContext* aCx,
-                                              const nsACString& aLocation,
-                                              MutableHandleObject aGlobal) {
+JSObject* mozJSComponentLoader::CreateLoaderGlobal(JSContext* aCx,
+                                              const nsACString& aLocation) {
   auto backstagePass = MakeRefPtr<BackstagePass>();
   RealmOptions options;
 
@@ -575,34 +574,33 @@ void mozJSComponentLoader::CreateLoaderGlobal(JSContext* aCx,
 
   
   
-  
   RootedObject global(aCx);
   nsresult rv = xpc::InitClassesWithNewWrappedGlobal(
       aCx, static_cast<nsIGlobalObject*>(backstagePass),
       nsContentUtils::GetSystemPrincipal(), xpc::DONT_FIRE_ONNEWGLOBALHOOK,
       options, &global);
-  NS_ENSURE_SUCCESS_VOID(rv);
-
-  NS_ENSURE_TRUE_VOID(global);
+  if (NS_FAILED(rv) || !global) {
+    return nullptr;
+  }
 
   backstagePass->SetGlobalObject(global);
 
   JSAutoRealm ar(aCx, global);
   if (!JS_DefineFunctions(aCx, global, gGlobalFun)) {
-    return;
+    return nullptr;
   }
 
   
   
   xpc::SetLocationForGlobal(global, aLocation);
 
-  aGlobal.set(global);
+  return global;
 }
 
 JSObject* mozJSComponentLoader::GetSharedGlobal(JSContext* aCx) {
   if (!mLoaderGlobal) {
     JS::RootedObject globalObj(aCx);
-    CreateLoaderGlobal(aCx, "shared JSM global"_ns, &globalObj);
+    globalObj = CreateLoaderGlobal(aCx, "shared JSM global"_ns);
 
     
     
