@@ -6,7 +6,7 @@
 
 use std::collections::HashMap;
 
-use nsstring::{nsACString, nsCString, nsCStringRepr};
+use nsstring::{nsACString, nsCString};
 use thin_vec::ThinVec;
 
 use crate::metrics::__glean_metric_maps as metric_maps;
@@ -75,27 +75,18 @@ pub extern "C" fn fog_event_test_get_error(
 }
 
 
-
-
-
 #[repr(C)]
 pub struct FfiRecordedEvent {
     timestamp: u64,
-    category: nsCStringRepr,
-    name: nsCStringRepr,
+    category: nsCString,
+    name: nsCString,
 
     
-    
-    extra_len: u32,
-
-    
-    
-    
-    extra: *mut nsCStringRepr,
+    extras: ThinVec<nsCString>,
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn fog_event_test_get_value(
+pub extern "C" fn fog_event_test_get_value(
     id: u32,
     ping_name: &nsACString,
     out_events: &mut ThinVec<FfiRecordedEvent>,
@@ -114,42 +105,19 @@ pub unsafe extern "C" fn fog_event_test_get_value(
     for event in events {
         let extra = event.extra.unwrap_or_else(HashMap::new);
         let extra_len = extra.len();
-        let mut extras = Vec::with_capacity(extra_len * 2);
+        let mut extras = ThinVec::with_capacity(extra_len * 2);
         for (k, v) in extra.into_iter() {
-            extras.push(nsCString::from(k).into_repr());
-            extras.push(nsCString::from(v).into_repr());
+            extras.push(nsCString::from(k));
+            extras.push(nsCString::from(v));
         }
-
-        
-        extras.shrink_to_fit();
-        let extra_ptr = extras.as_mut_ptr();
-
-        
-        
-        std::mem::forget(extras);
 
         let event = FfiRecordedEvent {
             timestamp: event.timestamp,
-            category: nsCString::from(event.category).into_repr(),
-            name: nsCString::from(event.name).into_repr(),
-            extra_len: extra_len as u32,
-            extra: extra_ptr,
+            category: nsCString::from(event.category),
+            name: nsCString::from(event.name),
+            extras,
         };
 
         out_events.push(event);
     }
-}
-
-
-
-
-
-
-
-
-#[no_mangle]
-pub unsafe extern "C" fn fog_event_free_event_extra(extra: *mut nsCStringRepr, len: u32) {
-    assert!(!extra.is_null());
-    let v = Vec::from_raw_parts(extra, len as usize, len as usize);
-    drop(v);
 }
