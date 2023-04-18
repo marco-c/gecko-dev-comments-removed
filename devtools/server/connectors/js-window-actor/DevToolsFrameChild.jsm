@@ -52,7 +52,6 @@ class DevToolsFrameChild extends JSWindowActorChild {
     
     this._connections = new Map();
 
-    this._onConnectionChange = this._onConnectionChange.bind(this);
     EventEmitter.decorate(this);
 
     
@@ -334,9 +333,12 @@ class DevToolsFrameChild extends JSWindowActorChild {
 
     
     
+    DevToolsServer.autoDestroy = true;
+
+    
+    
     
     DevToolsServer.registerActors({ target: true });
-    DevToolsServer.on("connectionchange", this._onConnectionChange);
 
     const connection = DevToolsServer.connectToParentWindowActor(
       this,
@@ -368,30 +370,6 @@ class DevToolsFrameChild extends JSWindowActorChild {
     targetActor.createdFromJsWindowActor = true;
 
     return { connection, targetActor };
-  }
-
-  
-
-
-
-  _onConnectionChange() {
-    const { DevToolsServer } = this.loader.require(
-      "devtools/server/devtools-server"
-    );
-
-    
-    
-    if (DevToolsServer.hasConnection() || DevToolsServer.keepAlive) {
-      return;
-    }
-
-    if (this._destroyed) {
-      return;
-    }
-    this._destroyed = true;
-
-    DevToolsServer.off("connectionchange", this._onConnectionChange);
-    DevToolsServer.destroy();
   }
 
   
@@ -706,23 +684,12 @@ class DevToolsFrameChild extends JSWindowActorChild {
       connectionInfo.connection.close();
     }
     this._connections.clear();
-    
-    
-    if (this.loader) {
-      const { DevToolsServer } = this.loader.require(
-        "devtools/server/devtools-server"
-      );
-      DevToolsServer.off("connectionchange", this._onConnectionChange);
 
-      
-      
-      
-      
-      
-      this._onConnectionChange();
-    }
-    if (this.useCustomLoader) {
-      this.loader.destroy();
+    if (this.loader) {
+      if (this.useCustomLoader) {
+        this.loader.destroy();
+      }
+      this.loader = null;
     }
   }
 }

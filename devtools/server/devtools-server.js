@@ -104,6 +104,12 @@ var DevToolsServer = {
 
 
 
+  autoDestroy: false,
+
+  
+
+
+
 
   get rootlessServer() {
     return !this.createRootActor;
@@ -159,15 +165,14 @@ var DevToolsServer = {
     if (!this._initialized) {
       return;
     }
+    this._initialized = false;
 
     for (const connection of Object.values(this._connections)) {
       connection.close();
     }
 
     ActorRegistry.destroy();
-
     this.closeAllSocketListeners();
-    this._initialized = false;
 
     
     this.off("connectionchange");
@@ -419,6 +424,14 @@ var DevToolsServer = {
   _connectionClosed(connection) {
     delete this._connections[connection.prefix];
     this.emit("connectionchange", "closed", connection);
+
+    
+    
+    if (!this.autoDestroy || this.hasConnection() || this.keepAlive) {
+      return;
+    }
+
+    this.destroy();
   },
 
   
