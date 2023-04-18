@@ -25,6 +25,8 @@ async function syncBreakpoints() {
   return Promise.all(
     breakpointValues.map(({ disabled, options, generatedLocation }) => {
       if (!disabled) {
+        
+        
         return firefox.clientCommands.setBreakpoint(generatedLocation, options);
       }
     })

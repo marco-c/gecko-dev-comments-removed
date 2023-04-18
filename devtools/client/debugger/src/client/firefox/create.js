@@ -362,7 +362,6 @@ export function createBreakpoint({
   disabled = false,
   options = {},
   location,
-  astLocation,
   generatedLocation,
   text,
   originalText,
@@ -387,9 +386,6 @@ export function createBreakpoint({
 
     
     location,
-
-    
-    astLocation,
 
     
     generatedLocation,

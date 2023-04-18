@@ -6,14 +6,11 @@ import { createBreakpoint } from "../../client/firefox/create";
 import {
   makeBreakpointLocation,
   makeBreakpointId,
-  getASTLocation,
 } from "../../utils/breakpoint";
-
 import {
   getBreakpoint,
   getBreakpointPositionsForLocation,
   getFirstBreakpointPosition,
-  getSymbols,
   getSource,
   getSourceContent,
   getBreakpointsList,
@@ -118,6 +115,8 @@ export function addBreakpoint(
       ? getBreakpointPositionsForLocation(getState(), initialLocation)
       : getFirstBreakpointPosition(getState(), initialLocation);
 
+    
+    
     if (!position) {
       return;
     }
@@ -130,9 +129,6 @@ export function addBreakpoint(
     if (!source || !generatedSource) {
       return;
     }
-
-    const symbols = getSymbols(getState(), source);
-    const astLocation = getASTLocation(source, symbols, location);
 
     const originalContent = getSourceContent(getState(), source.id);
     const originalText = getTextAtPosition(
@@ -155,7 +151,6 @@ export function addBreakpoint(
       disabled,
       options,
       location,
-      astLocation,
       generatedLocation,
       text,
       originalText,

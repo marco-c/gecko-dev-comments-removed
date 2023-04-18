@@ -128,6 +128,7 @@ export function selectLocation(cx, location, { keepContext = true } = {}) {
     }
 
     let source = getSource(getState(), location.sourceId);
+
     if (!source) {
       
       return dispatch(clearSelectedLocation(cx));

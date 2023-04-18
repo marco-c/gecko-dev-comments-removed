@@ -3,10 +3,8 @@
 
 
 import { setBreakpointPositions } from "./breakpointPositions";
-import { setSymbols } from "../sources/symbols";
 import {
   assertPendingBreakpoint,
-  findFunctionByName,
   findPosition,
   makeBreakpointLocation,
 } from "../../utils/breakpoint";
@@ -24,31 +22,7 @@ async function findBreakpointPosition(cx, { getState, dispatch }, location) {
   );
 
   const position = findPosition(positions, location);
-  return position?.generatedLocation;
-}
-
-async function findNewLocation(
-  cx,
-  { name, offset, index },
-  location,
-  source,
-  thunkArgs
-) {
-  const symbols = await thunkArgs.dispatch(setSymbols({ cx, source }));
-  const func = symbols ? findFunctionByName(symbols, name, index) : null;
-
-  
-  let { line } = location;
-  if (func) {
-    line = func.location.start.line + offset.line;
-  }
-
-  return {
-    line,
-    column: location.column,
-    sourceUrl: source.url,
-    sourceId: source.id,
-  };
+  return position;
 }
 
 
@@ -85,7 +59,7 @@ export function syncBreakpoint(cx, sourceId, pendingBreakpoint) {
       return;
     }
 
-    const { location, generatedLocation, astLocation } = pendingBreakpoint;
+    const { location, generatedLocation } = pendingBreakpoint;
     const sourceGeneratedLocation = createLocation({
       ...generatedLocation,
       sourceId: generatedSourceId,
@@ -114,22 +88,18 @@ export function syncBreakpoint(cx, sourceId, pendingBreakpoint) {
       );
     }
 
-    const previousLocation = { ...location, sourceId };
+    const originalLocation = createLocation({
+      ...location,
+      sourceId,
+    });
 
-    const newLocation = await findNewLocation(
-      cx,
-      astLocation,
-      previousLocation,
-      source,
-      thunkArgs
-    );
-
-    const newGeneratedLocation = await findBreakpointPosition(
+    const newPosition = await findBreakpointPosition(
       cx,
       thunkArgs,
-      newLocation
+      originalLocation
     );
 
+    const newGeneratedLocation = newPosition?.generatedLocation;
     if (!newGeneratedLocation) {
       
       
@@ -160,7 +130,7 @@ export function syncBreakpoint(cx, sourceId, pendingBreakpoint) {
     return dispatch(
       addBreakpoint(
         cx,
-        newLocation,
+        newGeneratedLocation,
         pendingBreakpoint.options,
         pendingBreakpoint.disabled
       )
