@@ -11,30 +11,14 @@ use crate::response::{CloseWindowResponse, WebDriverResponse};
 use crate::Parameters;
 use bytes::Bytes;
 use http::{self, Method, StatusCode};
-use once_cell::sync::Lazy;
-use regex::Regex;
 use std::marker::PhantomData;
-use std::net::{
-    IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, TcpListener as StdTcpListener, ToSocketAddrs,
-};
+use std::net::{SocketAddr, TcpListener as StdTcpListener};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use tokio::net::TcpListener;
 use url::{Host, Url};
 use warp::{self, Buf, Filter, Rejection};
-
-
-
-
-
-static HOST_REGEXP: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(concat!(
-        r"^(?P<host>(:?\[[^\]]+\])|(:?[^ :]+))",
-        r"(:?:(?P<port>[[:digit:]]+))?$"
-    ))
-    .unwrap()
-});
 
 
 #[allow(dead_code)]
@@ -218,8 +202,9 @@ impl Drop for Listener {
 }
 
 pub fn start<T, U>(
-    host: String,
     address: SocketAddr,
+    allow_hosts: Vec<Host>,
+    allow_origins: Vec<Url>,
     handler: T,
     extension_routes: Vec<(Method, &'static str, U)>,
 ) -> ::std::io::Result<Listener>
@@ -241,7 +226,13 @@ where
         let mut listener = rt
             .handle()
             .enter(|| TcpListener::from_std(listener).unwrap());
-        let wroutes = build_warp_routes(host, address, &extension_routes, msg_send.clone());
+        let wroutes = build_warp_routes(
+            address,
+            allow_hosts,
+            allow_origins,
+            &extension_routes,
+            msg_send.clone(),
+        );
         let fut = warp::serve(wroutes).run_incoming(listener.incoming());
         rt.block_on(fut);
     })?;
@@ -259,18 +250,19 @@ where
 }
 
 fn build_warp_routes<U: 'static + WebDriverExtensionRoute + Send + Sync>(
-    host: String,
     address: SocketAddr,
+    allow_hosts: Vec<Host>,
+    allow_origins: Vec<Url>,
     ext_routes: &[(Method, &'static str, U)],
     chan: Sender<DispatchMessage<U>>,
 ) -> impl Filter<Extract = impl warp::Reply, Error = Rejection> + Clone {
     let chan = Arc::new(Mutex::new(chan));
     let mut std_routes = standard_routes::<U>();
     let (method, path, res) = std_routes.pop().unwrap();
-    let server_host = Host::parse(&host).expect("Failed to parse server hostname as a host");
     let mut wroutes = build_route(
-        server_host.clone(),
         address,
+        allow_hosts.clone(),
+        allow_origins.clone(),
         method,
         path,
         res,
@@ -279,8 +271,9 @@ fn build_warp_routes<U: 'static + WebDriverExtensionRoute + Send + Sync>(
     for (method, path, res) in std_routes {
         wroutes = wroutes
             .or(build_route(
-                server_host.clone(),
                 address,
+                allow_hosts.clone(),
+                allow_origins.clone(),
                 method,
                 path,
                 res.clone(),
@@ -292,8 +285,9 @@ fn build_warp_routes<U: 'static + WebDriverExtensionRoute + Send + Sync>(
     for (method, path, res) in ext_routes {
         wroutes = wroutes
             .or(build_route(
-                server_host.clone(),
                 address,
+                allow_hosts.clone(),
+                allow_origins.clone(),
                 method.clone(),
                 path,
                 Route::Extension(res.clone()),
@@ -305,108 +299,52 @@ fn build_warp_routes<U: 'static + WebDriverExtensionRoute + Send + Sync>(
     wroutes
 }
 
-fn parse_host(host_port: &str) -> WebDriverResult<(Host, Option<u16>)> {
+fn is_host_allowed(server_address: &SocketAddr, allow_hosts: &[Host], host_header: &str) -> bool {
     
-    let make_err = || {
-        WebDriverError::new(
-            ErrorStatus::UnknownError,
-            format!("Invalid Host {}", host_port),
-        )
+    
+    let header_host_url = match Url::parse(&format!("http://{}", &host_header)) {
+        Ok(x) => x,
+        Err(_) => {
+            return false;
+        }
     };
 
-    let captures = HOST_REGEXP.captures(host_port).ok_or_else(make_err)?;
-    let host = captures
-        .name("host")
-        .map(|m| m.as_str())
-        .ok_or_else(make_err)
-        .and_then(|host| Host::parse(host).map_err(|_| make_err()))?;
-
-    let maybe_port = if let Some(port) = captures.name("port").map(|m| m.as_str()) {
-        Some(port.parse().map_err(|_| make_err())?)
-    } else {
-        None
-    };
-    Ok((host, maybe_port))
-}
-
-fn host_is_local(host: &Host) -> bool {
-    
-    
-    match host {
-        Host::Domain(ref domain) => {
+    let host = match header_host_url.host() {
+        Some(host) => host.to_owned(),
+        None => {
             
-            domain == "localhost"
-                
-                && (domain.to_string(), 80)
-                    .to_socket_addrs()
-                    .map(|addr_iter| {
-                        addr_iter.map(|addr| addr.ip()).any(|ip| match ip {
-                            IpAddr::V4(ip_v4) => ip_v4.is_loopback(),
-                            IpAddr::V6(ip_v6) => ip_v6.is_loopback(),
-                        })
-                    })
-                    .unwrap_or(false)
+            
+            
+            return false;
         }
-        Host::Ipv4(ip) => ip == &Ipv4Addr::LOCALHOST,
-        Host::Ipv6(ip) => ip == &Ipv6Addr::LOCALHOST,
-    }
-}
-
-fn host_and_port_match_server(
-    server_host: &Host,
-    server_address: &SocketAddr,
-    header_host_port: (Host, Option<u16>),
-) -> bool {
-    
-
-    
-    let host = header_host_port.0;
-    let port = header_host_port.1.unwrap_or(80);
-    let host_matches = if host_is_local(server_host) && host_is_local(&host) {
-        
-        
-        
-        true
-    } else if host == *server_host {
-        match host {
-            Host::Domain(ref domain) => {
-                
-                (domain.to_string(), port)
-                    .to_socket_addrs()
-                    .map(|addr_iter| {
-                        addr_iter
-                            .map(|addr| addr.ip())
-                            .any(|ip| ip == server_address.ip())
-                    })
-                    .unwrap_or(false)
-            }
-            Host::Ipv4(_) | Host::Ipv6(_) => true,
+    };
+    let port = match header_host_url.port_or_known_default() {
+        Some(port) => port,
+        None => {
+            
+            
+            
+            return false;
         }
-    } else {
-        false
+    };
+
+    let host_matches = match host {
+        Host::Domain(_) => allow_hosts.contains(&host),
+        Host::Ipv4(_) | Host::Ipv6(_) => true,
     };
     let port_matches = server_address.port() == port;
     host_matches && port_matches
 }
 
-fn origin_is_local(url_str: &str) -> WebDriverResult<bool> {
+fn is_origin_allowed(allow_origins: &[Url], origin_url: Url) -> bool {
     
-    let make_err = || {
-        WebDriverError::new(
-            ErrorStatus::UnknownError,
-            format!("Invalid Origin {}", url_str),
-        )
-    };
-
-    let url = Url::parse(url_str).map_err(|_| make_err())?;
-    let sockets = url.socket_addrs(|| None).map_err(|_| make_err())?;
-
-    Ok(!sockets.is_empty() && sockets.iter().all(|x| x.ip().is_loopback()))
+    allow_origins.contains(&origin_url)
 }
 
 fn build_route<U: 'static + WebDriverExtensionRoute + Send + Sync>(
-    server_host: Host,
     server_address: SocketAddr,
+    allow_hosts: Vec<Host>,
+    allow_origins: Vec<Url>,
     method: Method,
     path: &'static str,
     route: Route<U>,
@@ -470,19 +408,19 @@ fn build_route<U: 'static + WebDriverExtensionRoute + Send + Sync>(
                     return warp::reply::with_status("".into(), StatusCode::OK);
                 }
                 if let Some(host) = host_header {
-                    let host_port = match parse_host(&host) {
-                        Ok(x) => x,
-                        Err(err) => {
-                            return warp::reply::with_status(
-                                serde_json::to_string(&err).unwrap(),
-                                StatusCode::INTERNAL_SERVER_ERROR,
-                            )
-                        }
-                    };
-                    if !host_and_port_match_server(&server_host, &server_address, host_port) {
+                    if !is_host_allowed(&server_address, &allow_hosts, &host) {
+                        warn!(
+                            "Rejected request with Host header {}, allowed values are [{}]",
+                            host,
+                            allow_hosts
+                                .iter()
+                                .map(|x| format!("{}:{}", x.to_string(), server_address.port()))
+                                .collect::<Vec<_>>()
+                                .join(",")
+                        );
                         let err = WebDriverError::new(
                             ErrorStatus::UnknownError,
-                            format!("Host header doesn't match server {}", host),
+                            format!("Invalid Host header {}", host),
                         );
                         return warp::reply::with_status(
                             serde_json::to_string(&err).unwrap(),
@@ -490,6 +428,7 @@ fn build_route<U: 'static + WebDriverExtensionRoute + Send + Sync>(
                         );
                     };
                 } else {
+                    warn!("Rejected request with missing Host header");
                     let err = WebDriverError::new(
                         ErrorStatus::UnknownError,
                         "Missing Host header".to_string(),
@@ -500,17 +439,33 @@ fn build_route<U: 'static + WebDriverExtensionRoute + Send + Sync>(
                     );
                 }
                 if let Some(origin) = origin_header {
-                    let origin_match_err = match origin_is_local(&origin) {
-                        Ok(true) => None,
-                        Ok(false) => Some(WebDriverError::new(
+                    let make_err = || {
+                        warn!(
+                            "Rejected request with Origin header {}, allowed values are [{}]",
+                            origin,
+                            allow_origins
+                                .iter()
+                                .map(|x| x.to_string())
+                                .collect::<Vec<_>>()
+                                .join(",")
+                        );
+                        WebDriverError::new(
                             ErrorStatus::UnknownError,
-                            format!("Request Origin {} isn't local", origin),
-                        )),
-                        Err(err) => Some(err),
+                            format!("Invalid Origin header {}", origin),
+                        )
                     };
-                    if origin_match_err.is_some() {
+                    let origin_url = match Url::parse(&origin) {
+                        Ok(url) => url,
+                        Err(_) => {
+                            return warp::reply::with_status(
+                                serde_json::to_string(&make_err()).unwrap(),
+                                StatusCode::INTERNAL_SERVER_ERROR,
+                            );
+                        }
+                    };
+                    if !is_origin_allowed(&allow_origins, origin_url) {
                         return warp::reply::with_status(
-                            serde_json::to_string(&origin_match_err).unwrap(),
+                            serde_json::to_string(&make_err()).unwrap(),
                             StatusCode::INTERNAL_SERVER_ERROR,
                         );
                     }
@@ -527,6 +482,10 @@ fn build_route<U: 'static + WebDriverExtensionRoute + Send + Sync>(
                         Some("application/x-www-form-urlencoded")
                         | Some("multipart/form-data")
                         | Some("text/plain") => {
+                            warn!(
+                                "Rejected POST request with disallowed content type {}",
+                                content_type.unwrap_or_else(|| "".into())
+                            );
                             let err = WebDriverError::new(
                                 ErrorStatus::UnknownError,
                                 "Invalid Content-Type",
@@ -606,45 +565,11 @@ fn build_route<U: 'static + WebDriverExtensionRoute + Send + Sync>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+    use std::net::IpAddr;
     use std::str::FromStr;
 
     #[test]
-    fn test_parse_host() {
-        assert_eq!(
-            parse_host("example.org"),
-            Ok((Host::parse("example.org").unwrap(), None))
-        );
-        assert_eq!(
-            parse_host("example.org:8000"),
-            Ok((Host::parse("example.org").unwrap(), Some(8000)))
-        );
-        assert_eq!(
-            parse_host("127.0.0.1:8000"),
-            Ok((Host::parse("127.0.0.1").unwrap(), Some(8000)))
-        );
-        assert_eq!(
-            parse_host("127.0.0.1"),
-            Ok((Host::parse("127.0.0.1").unwrap(), None))
-        );
-        assert_eq!(
-            parse_host("[::1]"),
-            Ok((Host::parse("[::1]").unwrap(), None))
-        );
-        assert_eq!(
-            parse_host("[::1]:443"),
-            Ok((Host::parse("[::1]").unwrap(), Some(443)))
-        );
-        assert!(parse_host("localhost:").is_err());
-        assert!(parse_host("localhost/foo").is_err());
-        assert!(parse_host("localhost:65536").is_err());
-        assert!(parse_host("::1:8000").is_err());
-        assert!(parse_host("localhost:80:433").is_err());
-        assert!(parse_host("localhost:80:abc").is_err());
-    }
-
-    #[test]
-    fn test_host_and_port_match_server() {
+    fn test_host_allowed() {
         let addr_80 = SocketAddr::new(IpAddr::from_str("127.0.0.1").unwrap(), 80);
         let addr_8000 = SocketAddr::new(IpAddr::from_str("127.0.0.1").unwrap(), 8000);
         let addr_v6_80 = SocketAddr::new(IpAddr::from_str("::1").unwrap(), 80);
@@ -652,129 +577,103 @@ mod tests {
 
         
         let localhost_host = Host::Domain("localhost".to_string());
-        let ipv4_host = Host::Ipv4(Ipv4Addr::from_str("127.0.0.1").unwrap());
-        let ipv6_host = Host::Ipv6(Ipv6Addr::from_str("::1").unwrap());
+        let test_host = Host::Domain("example.test".to_string());
         let subdomain_localhost_host = Host::Domain("subdomain.localhost".to_string());
 
-        assert!(host_and_port_match_server(
-            &localhost_host,
+        assert!(is_host_allowed(
             &addr_80,
-            (localhost_host.clone(), Some(80))
+            &[localhost_host.clone()],
+            "localhost:80"
         ));
-        assert!(host_and_port_match_server(
-            &localhost_host,
+        assert!(is_host_allowed(
             &addr_80,
-            (localhost_host.clone(), None)
+            &[test_host.clone()],
+            "example.test:80"
         ));
-        assert!(host_and_port_match_server(
-            &ipv4_host,
+        assert!(is_host_allowed(
             &addr_80,
-            (ipv4_host.clone(), None)
+            &[test_host.clone(), localhost_host.clone()],
+            "example.test"
         ));
-        assert!(host_and_port_match_server(
-            &ipv4_host,
-            &addr_8000,
-            (ipv4_host.clone(), Some(8000))
+        assert!(is_host_allowed(
+            &addr_80,
+            &[subdomain_localhost_host.clone()],
+            "subdomain.localhost"
         ));
-        assert!(host_and_port_match_server(
-            &ipv6_host,
-            &addr_v6_80,
-            (ipv6_host.clone(), None)
+
+        
+        assert!(is_host_allowed(&addr_80, &[], "127.0.0.1:80"));
+        assert!(is_host_allowed(&addr_v6_80, &[], "127.0.0.1"));
+        assert!(is_host_allowed(&addr_80, &[], "[::1]"));
+        assert!(is_host_allowed(&addr_8000, &[], "127.0.0.1:8000"));
+        assert!(is_host_allowed(
+            &addr_80,
+            &[subdomain_localhost_host],
+            "[::1]"
         ));
-        assert!(host_and_port_match_server(
-            &ipv6_host,
+        assert!(is_host_allowed(
             &addr_v6_8000,
-            (ipv6_host.clone(), Some(8000))
-        ));
-
-        
-        assert!(host_and_port_match_server(
-            &localhost_host,
-            &addr_8000,
-            (ipv4_host.clone(), Some(8000))
-        ));
-        assert!(host_and_port_match_server(
-            &localhost_host,
-            &addr_8000,
-            (ipv6_host.clone(), Some(8000))
-        ));
-        assert!(host_and_port_match_server(
-            &ipv4_host,
-            &addr_8000,
-            (localhost_host.clone(), Some(8000))
-        ));
-        assert!(host_and_port_match_server(
-            &ipv4_host,
-            &addr_8000,
-            (ipv6_host.clone(), Some(8000))
-        ));
-        assert!(host_and_port_match_server(
-            &ipv6_host,
-            &addr_8000,
-            (localhost_host.clone(), Some(8000))
-        ));
-        assert!(host_and_port_match_server(
-            &ipv6_host,
-            &addr_8000,
-            (ipv4_host.clone(), Some(8000))
+            &[subdomain_localhost_host],
+            "[::1]:8000"
         ));
 
         
 
-        assert!(!host_and_port_match_server(
-            &subdomain_localhost_host,
-            &addr_8000,
-            (localhost_host.clone(), Some(8000))
-        ));
+        assert!(!is_host_allowed(&addr_80, &[test_host], "localhost"));
 
-        assert!(!host_and_port_match_server(
-            &subdomain_localhost_host,
-            &addr_8000,
-            (ipv4_host.clone(), Some(8000))
-        ));
-
-        assert!(!host_and_port_match_server(
-            &subdomain_localhost_host,
-            &addr_8000,
-            (ipv6_host.clone(), Some(8000))
-        ));
-
-        assert!(!host_and_port_match_server(
-            &Host::parse("127.0.0.2").unwrap(),
-            &addr_8000,
-            (localhost_host.clone(), Some(8000))
-        ));
+        assert!(!is_host_allowed(&addr_80, &[], "localhost:80"));
 
         
-        assert!(!host_and_port_match_server(
-            &localhost_host,
+
+        assert!(!is_host_allowed(
             &addr_80,
-            (localhost_host.clone(), Some(8000))
+            &[localhost_host.clone()],
+            "localhost:8000"
         ));
-        assert!(!host_and_port_match_server(
-            &localhost_host,
-            &addr_8000,
-            (localhost_host.clone(), None)
-        ));
+        assert!(!is_host_allowed(&addr_8000, &[localhost_host], "localhost"));
+        assert!(!is_host_allowed(&addr_v6_8000, &[localhost_host], "[::1]"));
     }
 
     #[test]
-    fn test_origin_is_local() {
+    fn test_origin_allowed() {
+        assert!(is_origin_allowed(
+            &[Url::parse("http://localhost").unwrap()],
+            Url::parse("http://localhost").unwrap()
+        ));
+        assert!(is_origin_allowed(
+            &[Url::parse("http://localhost").unwrap()],
+            Url::parse("http://localhost:80").unwrap()
+        ));
+        assert!(is_origin_allowed(
+            &[
+                Url::parse("https://test.example").unwrap(),
+                Url::parse("http://localhost").unwrap()
+            ],
+            Url::parse("http://localhost").unwrap()
+        ));
+        assert!(is_origin_allowed(
+            &[
+                Url::parse("https://test.example").unwrap(),
+                Url::parse("http://localhost").unwrap()
+            ],
+            Url::parse("https://test.example:443").unwrap()
+        ));
         
-        
-        assert!(origin_is_local("https://127.0.0.1").unwrap());
-        assert!(origin_is_local("http://127.0.0.1:8000").unwrap());
-        assert!(origin_is_local("http://[::1]").unwrap());
-        assert!(origin_is_local("https://[::1]:9999").unwrap());
-        assert!(origin_is_local("http://localhost").unwrap());
-        assert!(origin_is_local("https://localhost").unwrap());
-        assert!(origin_is_local("http://localhost:4444").unwrap());
-        assert!(!origin_is_local("http://example.org").unwrap());
-        assert!(!origin_is_local("https://example.org:1000").unwrap());
-        assert!(!origin_is_local("http://1.1.1.1").unwrap());
-        assert!(origin_is_local("localhost").is_err());
-        assert!(origin_is_local("localhost:443").is_err());
-        assert!(origin_is_local("127.0.0.1:443").is_err());
-        assert!(origin_is_local("[::1]").is_err());
+        assert!(!is_origin_allowed(
+            &[],
+            Url::parse("http://localhost").unwrap()
+        ));
+        assert!(!is_origin_allowed(
+            &[Url::parse("http://localhost").unwrap()],
+            Url::parse("http://localhost:8000").unwrap()
+        ));
+        assert!(!is_origin_allowed(
+            &[Url::parse("https://localhost").unwrap()],
+            Url::parse("http://localhost").unwrap()
+        ));
+        assert!(!is_origin_allowed(
+            &[Url::parse("https://example.test").unwrap()],
+            Url::parse("http://subdomain.example.test").unwrap()
+        ));
     }
 }
