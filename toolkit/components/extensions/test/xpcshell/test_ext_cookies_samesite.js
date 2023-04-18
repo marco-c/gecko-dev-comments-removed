@@ -8,6 +8,9 @@ server.registerPathHandler("/sameSiteCookiesApiTest", (request, response) => {
 });
 
 add_task(async function test_samesite_cookies() {
+  
+  Services.prefs.setBoolPref("network.cookie.sameSite.laxByDefault", false);
+
   function contentScript() {
     document.cookie = "test1=whatever";
     document.cookie = "test2=whatever; SameSite=lax";
@@ -106,4 +109,6 @@ add_task(async function test_samesite_cookies() {
   await extension.awaitFinish("cookies");
   await contentPage.close();
   await extension.unload();
+
+  Services.prefs.clearUserPref("network.cookie.sameSite.laxByDefault");
 });

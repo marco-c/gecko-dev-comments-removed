@@ -19,6 +19,9 @@ add_task(async () => {
   );
 
   
+  Services.prefs.setBoolPref("network.cookie.sameSite.laxByDefault", false);
+
+  
   
   Services.cookiemgr.sessionCookies;
 
@@ -111,4 +114,6 @@ add_task(async () => {
     let host = i.toString() + ".com";
     Assert.equal(Services.cookiemgr.countCookiesFromHost(host), 1);
   }
+
+  Services.prefs.clearUserPref("network.cookie.sameSite.laxByDefault");
 });

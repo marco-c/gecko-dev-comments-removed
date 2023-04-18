@@ -37,6 +37,9 @@ add_task(async function() {
     true
   );
 
+  
+  Services.prefs.setBoolPref("network.cookie.sameSite.laxByDefault", false);
+
   await setCookie("A", Services.io.newURI("https://example.com/A/"));
   await sleep();
 
@@ -69,4 +72,6 @@ add_task(async function() {
 
   someCookies = cm.getCookiesSince(cookies[3].creationTime + 1);
   Assert.equal(someCookies.length, 0, "We retrieve some cookies");
+
+  Services.prefs.clearUserPref("network.cookie.sameSite.laxByDefault");
 });
