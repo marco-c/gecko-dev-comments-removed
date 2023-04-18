@@ -339,9 +339,10 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
           extension.startupReason
         );
     }
+
     
     
-    if (disable && item?.enabled !== false) {
+    if (disable) {
       item = await ExtensionSettingsStore.disable(
         extension.id,
         DEFAULT_SEARCH_STORE_TYPE,
@@ -466,6 +467,37 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
         DEFAULT_SEARCH_STORE_TYPE,
         DEFAULT_SEARCH_SETTING_NAME
       );
+
+      
+      
+      if (
+        control === "controlled_by_this_extension" &&
+        Services.search.defaultEngine.name !== engineName
+      ) {
+        
+        
+        
+        
+        const allSettings = ExtensionSettingsStore.getAllSettings(
+          DEFAULT_SEARCH_STORE_TYPE,
+          DEFAULT_SEARCH_SETTING_NAME
+        );
+        for (const setting of allSettings) {
+          if (setting.value !== Services.search.defaultEngine.name) {
+            await ExtensionSettingsStore.disable(
+              setting.id,
+              DEFAULT_SEARCH_STORE_TYPE,
+              DEFAULT_SEARCH_SETTING_NAME
+            );
+          }
+        }
+        control = await ExtensionSettingsStore.getLevelOfControl(
+          extension.id,
+          DEFAULT_SEARCH_STORE_TYPE,
+          DEFAULT_SEARCH_SETTING_NAME
+        );
+      }
+
       if (control === "controlled_by_this_extension") {
         await Services.search.setDefault(
           Services.search.getEngineByName(engineName)
