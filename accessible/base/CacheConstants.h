@@ -25,6 +25,8 @@ class CacheDomain {
   static constexpr uint64_t TransformMatrix = ((uint64_t)0x1) << 10;
   static constexpr uint64_t ScrollPosition = ((uint64_t)0x1) << 11;
   static constexpr uint64_t Table = ((uint64_t)0x1) << 11;
+  static constexpr uint64_t TextBounds = ((uint64_t)0x1) << 12;
+  
   static constexpr uint64_t All = ~((uint64_t)0x0);
 };
 

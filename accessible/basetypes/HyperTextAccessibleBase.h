@@ -104,6 +104,20 @@ class HyperTextAccessibleBase {
 
 
 
+  virtual LayoutDeviceIntRect CharBounds(int32_t aOffset, uint32_t aCoordType);
+
+  
+
+
+
+  virtual LayoutDeviceIntRect TextBounds(int32_t aStartOffset,
+                                         int32_t aEndOffset,
+                                         uint32_t aCoordType);
+
+  
+
+
+
 
 
   TextLeafPoint ToTextLeafPoint(int32_t aOffset, bool aDescendToEnd = false);
