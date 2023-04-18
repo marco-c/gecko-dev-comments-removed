@@ -113,6 +113,8 @@ static const uint32_t WorkerDebuggerGlobalScope = 1u << 4;
 static const uint32_t WorkletGlobalScope = 1u << 5;
 static const uint32_t AudioWorkletGlobalScope = 1u << 6;
 static const uint32_t PaintWorkletGlobalScope = 1u << 7;
+
+static constexpr uint32_t kCount = 8;
 }  
 
 struct PrefableDisablers {
@@ -148,13 +150,14 @@ struct PrefableDisablers {
   const WebIDLPrefIndex prefIndex;
 
   
-  const bool secureContext;
+  const uint16_t nonExposedGlobals : GlobalNames::kCount;
 
+  
+  const uint16_t secureContext : 1;
+
+  
   
   const OriginTrial trial;
-
-  
-  const uint16_t nonExposedGlobals;
 
   
   
