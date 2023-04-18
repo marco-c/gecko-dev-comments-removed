@@ -56,7 +56,7 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     
     
     
-    const { resourceCommand } = this.targetFront;
+    const { resourceCommand } = this.targetFront.commands;
     if (
       resourceCommand?.hasResourceCommandSupport(
         resourceCommand.TYPES.STYLESHEET

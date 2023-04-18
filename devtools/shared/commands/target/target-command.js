@@ -129,7 +129,6 @@ class TargetCommand extends EventEmitter {
     
     
     this._gotFirstTopLevelTarget = false;
-    this.commands = commands;
     this._onResourceAvailable = this._onResourceAvailable.bind(this);
   }
 
@@ -141,6 +140,11 @@ class TargetCommand extends EventEmitter {
   
   
   async _onTargetAvailable(targetFront) {
+    
+    
+    
+    targetFront.commands = this.commands;
+
     
     
     
@@ -326,6 +330,10 @@ class TargetCommand extends EventEmitter {
       targetFront.baseFrontClassDestroy();
 
       targetFront.destroy();
+
+      
+      
+      delete targetFront.commands;
     }
   }
 
@@ -486,6 +494,10 @@ class TargetCommand extends EventEmitter {
     this.targetFront.setTargetType(this.getTargetType(this.targetFront));
     this.targetFront.setIsTopLevel(true);
     this._gotFirstTopLevelTarget = true;
+
+    
+    
+    this.targetFront.commands = this.commands;
 
     
     this._targets.add(this.targetFront);

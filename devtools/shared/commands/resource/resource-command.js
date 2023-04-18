@@ -392,12 +392,6 @@ class ResourceCommand {
 
 
   async _onTargetAvailable({ targetFront, isTargetSwitching }) {
-    
-    
-    
-    
-    targetFront.resourceCommand = this;
-
     const resources = [];
     if (isTargetSwitching) {
       
@@ -528,8 +522,6 @@ class ResourceCommand {
 
 
   _onTargetDestroyed({ targetFront }) {
-    delete targetFront.resourceCommand;
-
     
     this._existingLegacyListeners.set(targetFront, []);
     this._offTargetFrontListeners.delete(targetFront);

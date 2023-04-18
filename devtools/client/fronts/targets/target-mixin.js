@@ -39,6 +39,12 @@ function TargetMixin(parentClass) {
     constructor(client, targetFront, parentFront) {
       super(client, targetFront, parentFront);
 
+      
+      
+      
+      
+      this.commands = null;
+
       this._forceChrome = false;
 
       this.destroy = this.destroy.bind(this);
