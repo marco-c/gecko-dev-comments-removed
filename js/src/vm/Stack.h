@@ -84,7 +84,6 @@ class Instance;
 
 
 enum MaybeCheckAliasing { CHECK_ALIASING = true, DONT_CHECK_ALIASING = false };
-enum MaybeCheckTDZ { CheckTDZ = true, DontCheckTDZ = false };
 
 }  
 
