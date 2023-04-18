@@ -2223,17 +2223,11 @@ static AwaitHandling GetAwaitHandling(FunctionAsyncKind asyncKind) {
   return AwaitIsKeyword;
 }
 
-FunctionFlags InitialFunctionFlags(FunctionSyntaxKind kind,
-                                   GeneratorKind generatorKind,
-                                   FunctionAsyncKind asyncKind,
-                                   bool isSelfHosting, bool forceExtended) {
+static FunctionFlags InitialFunctionFlags(FunctionSyntaxKind kind,
+                                          GeneratorKind generatorKind,
+                                          FunctionAsyncKind asyncKind,
+                                          bool isSelfHosting) {
   FunctionFlags flags = {};
-  gc::AllocKind allocKind = gc::AllocKind::FUNCTION;
-
-  
-  
-  MOZ_ASSERT_IF(forceExtended, kind == FunctionSyntaxKind::Statement ||
-                                   kind == FunctionSyntaxKind::Expression);
 
   switch (kind) {
     case FunctionSyntaxKind::Expression:
@@ -2249,20 +2243,16 @@ FunctionFlags InitialFunctionFlags(FunctionSyntaxKind kind,
     case FunctionSyntaxKind::FieldInitializer:
     case FunctionSyntaxKind::StaticClassBlock:
       flags = FunctionFlags::INTERPRETED_METHOD;
-      allocKind = gc::AllocKind::FUNCTION_EXTENDED;
       break;
     case FunctionSyntaxKind::ClassConstructor:
     case FunctionSyntaxKind::DerivedClassConstructor:
       flags = FunctionFlags::INTERPRETED_CLASS_CTOR;
-      allocKind = gc::AllocKind::FUNCTION_EXTENDED;
       break;
     case FunctionSyntaxKind::Getter:
       flags = FunctionFlags::INTERPRETED_GETTER;
-      allocKind = gc::AllocKind::FUNCTION_EXTENDED;
       break;
     case FunctionSyntaxKind::Setter:
       flags = FunctionFlags::INTERPRETED_SETTER;
-      allocKind = gc::AllocKind::FUNCTION_EXTENDED;
       break;
     default:
       MOZ_ASSERT(kind == FunctionSyntaxKind::Statement);
@@ -2274,10 +2264,6 @@ FunctionFlags InitialFunctionFlags(FunctionSyntaxKind kind,
 
   if (isSelfHosting) {
     flags.setIsSelfHostedBuiltin();
-  }
-
-  if ((allocKind == gc::AllocKind::FUNCTION_EXTENDED) || forceExtended) {
-    flags.setIsExtended();
   }
 
   return flags;
@@ -3082,15 +3068,18 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
     return funNode;
   }
 
-  
-  
   bool isSelfHosting = options().selfHostingMode;
+  FunctionFlags flags =
+      InitialFunctionFlags(kind, generatorKind, asyncKind, isSelfHosting);
+
+  
+  
   bool forceExtended =
       isSelfHosting && funName &&
       this->parserAtoms().isExtendedUnclonedSelfHostedFunctionName(funName);
-
-  FunctionFlags flags = InitialFunctionFlags(kind, generatorKind, asyncKind,
-                                             isSelfHosting, forceExtended);
+  if (forceExtended) {
+    flags.setIsExtended();
+  }
 
   
   
