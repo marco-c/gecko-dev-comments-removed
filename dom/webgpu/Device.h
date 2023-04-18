@@ -52,6 +52,9 @@ namespace ipc {
 enum class ResponseRejectReason;
 class Shmem;
 }  
+namespace layers {
+class CompositableHandle;
+}  
 
 namespace webgpu {
 namespace ffi {
@@ -102,7 +105,7 @@ class Device final : public DOMEventTargetHelper, public SupportsWeakPtr {
                    bool aKeepShmem);
   already_AddRefed<Texture> InitSwapChain(
       const dom::GPUCanvasConfiguration& aDesc,
-      wr::ExternalImageId aExternalImageId, gfx::SurfaceFormat aFormat,
+      const layers::CompositableHandle& aHandle, gfx::SurfaceFormat aFormat,
       gfx::IntSize* aDefaultSize);
   bool CheckNewWarning(const nsACString& aMessage);
 
