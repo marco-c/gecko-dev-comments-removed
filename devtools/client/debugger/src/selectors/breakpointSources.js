@@ -3,55 +3,83 @@
 
 
 import { createSelector } from "reselect";
-import { getSelectedSource, getSourceFromId } from "./sources";
+import { getSelectedSource, getSourcesMap } from "./sources";
 import { getBreakpointsList } from "./breakpoints";
 import { getFilename } from "../utils/source";
 import { getSelectedLocation } from "../utils/selected-location";
 import { sortSelectedBreakpoints } from "../utils/breakpoint";
 
-function getBreakpointsForSource(source, selectedSource, breakpoints) {
-  return sortSelectedBreakpoints(breakpoints, selectedSource)
-    .filter(
-      bp =>
-        !bp.options.hidden &&
-        (bp.text || bp.originalText || bp.options.condition || bp.disabled)
-    )
-    .filter(
-      bp => getSelectedLocation(bp, selectedSource).sourceId == source.id
-    );
+
+
+
+function _getBreakpointsForSource(visibleBreakpoints, source, selectedSource) {
+  return visibleBreakpoints.filter(
+    bp => getSelectedLocation(bp, selectedSource).sourceId == source.id
+  );
 }
 
-const getSourcesForBreakpoints = state => {
-  const selectedSource = getSelectedSource(state);
-  const breakpointSourceIds = getBreakpointsList(state).map(
+
+
+const _getSourcesForBreakpoints = (breakpoints, sourcesMap, selectedSource) => {
+  const breakpointSourceIds = breakpoints.map(
     breakpoint => getSelectedLocation(breakpoint, selectedSource).sourceId
   );
 
-  return [...new Set(breakpointSourceIds)]
-    .map(sourceId => {
-      const source = getSourceFromId(state, sourceId);
-      const filename = getFilename(source);
-      return { source, filename };
-    })
-    .filter(({ source }) => source && !source.isBlackBoxed)
-    .sort((a, b) => a.filename - b.filename)
-    .map(({ source }) => source);
+  const sources = [];
+  
+  
+  for (const sourceId of [...new Set(breakpointSourceIds)]) {
+    const source = sourcesMap.get(sourceId);
+
+    
+    
+    if (!source || source.isBlackBoxed) {
+      continue;
+    }
+
+    const bps = _getBreakpointsForSource(breakpoints, source, selectedSource);
+
+    
+    if (bps.length === 0) {
+      continue;
+    }
+
+    sources.push({
+      source,
+      breakpoints: bps,
+      filename: getFilename(source),
+    });
+  }
+
+  return sources.sort((a, b) => a.filename.localeCompare(b.filename));
 };
+
+
+
+
+
+
 
 export const getBreakpointSources = createSelector(
   getBreakpointsList,
-  getSourcesForBreakpoints,
+  getSourcesMap,
   getSelectedSource,
-  (breakpoints, sources, selectedSource) => {
-    return sources
-      .map(source => ({
-        source,
-        breakpoints: getBreakpointsForSource(
-          source,
-          selectedSource,
-          breakpoints
-        ),
-      }))
-      .filter(({ breakpoints: bps }) => bps.length > 0);
+  (breakpoints, sourcesMap, selectedSource) => {
+    const visibleBreakpoints = breakpoints.filter(
+      bp =>
+        !bp.options.hidden &&
+        (bp.text || bp.originalText || bp.options.condition || bp.disabled)
+    );
+
+    const sortedVisibleBreakpoints = sortSelectedBreakpoints(
+      visibleBreakpoints,
+      selectedSource
+    );
+
+    return _getSourcesForBreakpoints(
+      sortedVisibleBreakpoints,
+      sourcesMap,
+      selectedSource
+    );
   }
 );
