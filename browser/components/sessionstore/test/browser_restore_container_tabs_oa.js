@@ -201,31 +201,10 @@ add_task(async function testRestore() {
       let uri = container_tab.linkedBrowser.currentURI.spec;
 
       
-      if (
-        test_page_data.uri == "about:preferences" ||
-        test_page_data.uri == "about:config" ||
-        gFissionBrowser
-      ) {
-        todo_is(
-          xulFrameLoaderCreatedCounter.numCalledSoFar,
-          1,
-          `XULFrameLoaderCreated was fired once, when restoring ${uri} in container ${userContextId} `
-        );
-      } else {
-        is(
-          xulFrameLoaderCreatedCounter.numCalledSoFar,
-          1,
-          `XULFrameLoaderCreated was fired once, when restoring ${uri} in container ${userContextId} `
-        );
-      }
-      
-      
-      info(
-        `XULFrameLoaderCreated has been fired ${xulFrameLoaderCreatedCounter.numCalledSoFar} times, when restoring ${uri} in container ${userContextId}`
-      );
-      ok(
-        xulFrameLoaderCreatedCounter.numCalledSoFar <= 2,
-        `XULFrameLoaderCreated was fired [1,2] times, when restoring ${uri} in container ${userContextId} `
+      is(
+        xulFrameLoaderCreatedCounter.numCalledSoFar,
+        1,
+        `XULFrameLoaderCreated was fired once, when restoring ${uri} in container ${userContextId} `
       );
       container_tab.ownerGlobal.gBrowser.removeEventListener(
         "XULFrameLoaderCreated",
