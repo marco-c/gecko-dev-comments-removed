@@ -1,5 +1,6 @@
 (function(global) {
   const TEST_SAMPLE_INTERVAL = 10;
+  const ENSURE_SAMPLE_SPIN_WAIT_MS = 500;
 
   function forceSample() {
     
@@ -8,7 +9,10 @@
     
     
     
-    for (const deadline = performance.now() + TEST_SAMPLE_INTERVAL + 500; performance.now() < deadline;);
+    for (const deadline = performance.now() + TEST_SAMPLE_INTERVAL +
+             ENSURE_SAMPLE_SPIN_WAIT_MS;
+         performance.now() < deadline;)
+      ;
   }
 
   
@@ -83,6 +87,24 @@
   }
 
   
+  
+  
+  function containsSample(trace, expectedSample) {
+    return trace.samples.find(sample => {
+      return sampleMatches(sample, expectedSample);
+    }) !== undefined;
+  }
+
+  
+  function sampleMatches(actual, expected) {
+    return (expected.timestamp === undefined ||
+            expected.timestamp === actual.timestamp) &&
+        (expected.stackId === undefined ||
+         expected.stackId === actual.stackId) &&
+        (expected.marker === undefined || expected.marker === actual.marker);
+  }
+
+  
   function frameMatches(actual, expected) {
     return (expected.name === undefined || expected.name === actual.name) &&
            (expected.resourceId === undefined || expected.resourceId === actual.resourceId) &&
@@ -116,6 +138,7 @@
     containsFrame,
     containsSubstack,
     containsResource,
+    containsSample,
 
     
     forceSampleFrame,
