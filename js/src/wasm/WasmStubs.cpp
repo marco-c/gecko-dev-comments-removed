@@ -942,6 +942,12 @@ static void GenerateJitEntryThrow(MacroAssembler& masm, unsigned frameSize) {
 
 
 
+
+
+
+
+
+
 static void GenerateBigIntInitialization(MacroAssembler& masm,
                                          unsigned bytesPushedByPrologue,
                                          Register64 input, Register scratch,
@@ -1776,10 +1782,9 @@ static void FillArgumentArrayForExit(
           GenPrintI64(DebugChannel::Import, masm, i->gpr64());
 
           if (toValue) {
-            GenerateBigIntInitialization(masm, offsetFromFPToCallerStackArgs,
-                                         i->gpr64(), scratch, nullptr,
-                                         throwLabel);
-            masm.storeValue(JSVAL_TYPE_BIGINT, scratch, dst);
+            
+            
+            MOZ_CRASH("Should not happen");
           } else {
             masm.store64(i->gpr64(), dst);
           }
@@ -1807,10 +1812,9 @@ static void FillArgumentArrayForExit(
           GenPrintI64(DebugChannel::Import, masm, i->gpr64());
 
           if (toValue) {
-            GenerateBigIntInitialization(masm, offsetFromFPToCallerStackArgs,
-                                         i->gpr64(), scratch, nullptr,
-                                         throwLabel);
-            masm.storeValue(JSVAL_TYPE_BIGINT, scratch, dst);
+            
+            
+            MOZ_CRASH("Should not happen");
           } else {
             masm.store64(i->gpr64(), dst);
           }
@@ -1873,16 +1877,9 @@ static void FillArgumentArrayForExit(
             GenPrintIsize(DebugChannel::Import, masm, scratch);
             masm.storeValue(JSVAL_TYPE_INT32, scratch, dst);
           } else if (type == MIRType::Int64) {
-#if JS_BITS_PER_WORD == 64
-            Register64 scratch64(scratch2);
-#else
-            Register64 scratch64(scratch2, scratch3);
-#endif
-            masm.load64(src, scratch64);
-            GenPrintI64(DebugChannel::Import, masm, scratch64);
-            GenerateBigIntInitialization(masm, sizeof(Frame), scratch64,
-                                         scratch, nullptr, throwLabel);
-            masm.storeValue(JSVAL_TYPE_BIGINT, scratch, dst);
+            
+            
+            MOZ_CRASH("Should not happen");
           } else if (type == MIRType::RefOrNull) {
             
             
