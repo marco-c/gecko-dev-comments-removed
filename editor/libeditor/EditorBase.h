@@ -1956,12 +1956,6 @@ class EditorBase : public nsIEditor,
 
 
 
-  virtual Element* GetEditorRoot() const;
-
-  
-
-
-
 
   virtual bool IsActiveInDOMWindow() const;
 
