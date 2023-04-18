@@ -57,7 +57,9 @@ function trr_test_setup() {
   addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
 
   
+  
   Services.prefs.setBoolPref("network.trr.strict_native_fallback", false);
+  Services.prefs.setBoolPref("network.trr.retry_on_recoverable_errors", false);
 
   
   

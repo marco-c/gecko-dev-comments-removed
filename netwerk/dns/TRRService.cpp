@@ -736,7 +736,7 @@ bool TRRService::ConfirmationContext::HandleEvent(
                "Should only confirm in TRR first mode");
     
     mTask = new TRR(service, service->mConfirmationNS, TRRTYPE_NS, ""_ns, false,
-                    StaticPrefs::network_trr_strict_native_fallback());
+                    StaticPrefs::network_trr_retry_on_recoverable_errors());
     mTask->SetTimeout(StaticPrefs::network_trr_confirmation_timeout_ms());
     mTask->SetPurpose(TRR::Confirmation);
 
@@ -764,10 +764,10 @@ bool TRRService::ConfirmationContext::HandleEvent(
       resetConfirmation();
       maybeConfirm("pref-change");
       break;
-    case ConfirmationEvent::Retry:
+    case ConfirmationEvent::ConfirmationRetry:
       MOZ_ASSERT(mState == CONFIRM_FAILED);
       if (mState == CONFIRM_FAILED) {
-        maybeConfirm("retry");
+        maybeConfirm("confirmation-retry");
       }
       break;
     case ConfirmationEvent::FailedLookups:
@@ -777,9 +777,9 @@ bool TRRService::ConfirmationContext::HandleEvent(
           mFailureReasons, mTRRFailures % ConfirmationContext::RESULTS_SIZE);
       maybeConfirm("failed-lookups");
       break;
-    case ConfirmationEvent::StrictMode:
+    case ConfirmationEvent::RetryTRR:
       MOZ_ASSERT(mState == CONFIRM_OK);
-      maybeConfirm("strict-mode");
+      maybeConfirm("retry-trr");
       break;
     case ConfirmationEvent::URIChange:
       resetConfirmation();
@@ -1017,7 +1017,7 @@ NS_IMETHODIMP
 TRRService::ConfirmationContext::Notify(nsITimer* aTimer) {
   MutexSingleWriterAutoLock lock(OwningObject()->mLock);
   if (aTimer == mTimer) {
-    HandleEvent(ConfirmationEvent::Retry, lock);
+    HandleEvent(ConfirmationEvent::ConfirmationRetry, lock);
   }
 
   return NS_OK;
@@ -1068,10 +1068,10 @@ static char StatusToChar(nsresult aLookupStatus, nsresult aChannelStatus) {
   return '?';
 }
 
-void TRRService::StrictModeConfirm() {
+void TRRService::RetryTRRConfirm() {
   if (mConfirmation.State() == CONFIRM_OK) {
-    LOG(("TRRService::StrictModeConfirm triggering confirmation"));
-    mConfirmation.HandleEvent(ConfirmationEvent::StrictMode);
+    LOG(("TRRService::RetryTRRConfirm triggering confirmation"));
+    mConfirmation.HandleEvent(ConfirmationEvent::RetryTRR);
   }
 }
 
@@ -1109,8 +1109,8 @@ void TRRService::ConfirmationContext::RecordTRRStatus(nsresult aChannelStatus) {
   
   
   
-  if (StaticPrefs::network_trr_strict_native_fallback()) {
-    LOG(("TRRService not counting failures in strict mode"));
+  if (StaticPrefs::network_trr_retry_on_recoverable_errors()) {
+    LOG(("TRRService not counting failures when retry is enabled"));
     return;
   }
 

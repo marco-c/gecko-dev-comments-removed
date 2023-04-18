@@ -53,7 +53,7 @@ class TRRService : public TRRServiceBase,
   void GetURI(nsACString& result) override;
   nsresult GetCredentials(nsCString& result);
   uint32_t GetRequestTimeout();
-  void StrictModeConfirm();
+  void RetryTRRConfirm();
 
   LookupStatus CompleteLookup(nsHostRecord*, nsresult, mozilla::net::AddrInfo*,
                               bool pb, const nsACString& aOriginSuffix,
@@ -148,9 +148,9 @@ class TRRService : public TRRServiceBase,
   enum class ConfirmationEvent {
     Init,
     PrefChange,
-    Retry,
+    ConfirmationRetry,
     FailedLookups,
-    StrictMode,
+    RetryTRR,
     URIChange,
     CaptivePortalConnectivity,
     NetworkUp,

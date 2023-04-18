@@ -1308,6 +1308,8 @@ void nsHostResolver::AddToEvictionQ(nsHostRecord* rec,
 
 
 
+
+
 bool nsHostResolver::MaybeRetryTRRLookup(
     AddrHostRecord* aAddrRec, nsresult aFirstAttemptStatus,
     TRRSkippedReason aFirstAttemptSkipReason, const MutexAutoLock& aLock) {
@@ -1318,7 +1320,7 @@ bool nsHostResolver::MaybeRetryTRRLookup(
   }
 
   MOZ_ASSERT(!aAddrRec->mResolving);
-  if (!StaticPrefs::network_trr_strict_native_fallback()) {
+  if (!StaticPrefs::network_trr_retry_on_recoverable_errors()) {
     LOG(("nsHostResolver::MaybeRetryTRRLookup retrying with native"));
     return NS_SUCCEEDED(NativeLookup(aAddrRec, aLock));
   }
@@ -1336,6 +1338,13 @@ bool nsHostResolver::MaybeRetryTRRLookup(
   }
 
   if (aAddrRec->mTrrAttempts > 1) {
+    if (!StaticPrefs::network_trr_strict_native_fallback()) {
+      LOG(
+          ("nsHostResolver::MaybeRetryTRRLookup retry failed. Using "
+           "native."));
+      return NS_SUCCEEDED(NativeLookup(aAddrRec, aLock));
+    }
+
     if (aFirstAttemptSkipReason == TRRSkippedReason::TRR_TIMEOUT &&
         StaticPrefs::network_trr_strict_native_fallback_allow_timeouts()) {
       LOG(
@@ -1351,7 +1360,7 @@ bool nsHostResolver::MaybeRetryTRRLookup(
       ("nsHostResolver::MaybeRetryTRRLookup triggering Confirmation and "
        "retrying with TRR, skip reason was %d",
        static_cast<uint32_t>(aFirstAttemptSkipReason)));
-  TRRService::Get()->StrictModeConfirm();
+  TRRService::Get()->RetryTRRConfirm();
 
   {
     
