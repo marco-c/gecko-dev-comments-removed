@@ -30,6 +30,7 @@ class OriginAttributes;
 namespace dom {
 class BrowsingContext;
 class ContentParent;
+class Document;
 }  
 
 class ContentBlocking final {
@@ -123,6 +124,56 @@ class ContentBlocking final {
       nsIPrincipal* aTrackingPrincipal, int aAllowMode,
       uint64_t aExpirationTime =
           StaticPrefs::privacy_restrict3rdpartystorage_expiration());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  static Maybe<bool> CheckCookiesPermittedDecidesStorageAccessAPI(
+      nsICookieJarSettings* aCookieJarSettings,
+      nsIPrincipal* aRequestingPrincipal);
+
+  
+  
+  
+  
+  
+  
+  
+  static Maybe<bool> CheckBrowserSettingsDecidesStorageAccessAPI(
+      nsICookieJarSettings* aCookieJarSettings, bool aThirdParty);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static Maybe<bool> CheckCallingContextDecidesStorageAccessAPI(
+      dom::Document* aDocument, bool aRequestingStorageAccess);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static Maybe<bool> CheckExistingPermissionDecidesStorageAccessAPI(
+      dom::Document* aDocument);
 
  private:
   friend class dom::ContentParent;

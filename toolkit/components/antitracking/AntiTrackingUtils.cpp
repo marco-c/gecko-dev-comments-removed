@@ -727,18 +727,24 @@ bool AntiTrackingUtils::IsThirdPartyWindow(nsPIDOMWindowInner* aWindow,
     return thirdParty;
   }
 
-  if (!doc->GetChannel()) {
+  return IsThirdPartyDocument(doc);
+}
+
+
+bool AntiTrackingUtils::IsThirdPartyDocument(Document* aDocument) {
+  MOZ_ASSERT(aDocument);
+  if (!aDocument->GetChannel()) {
     
     
     
     
-    RefPtr<BrowsingContext> bc = doc->GetBrowsingContext();
+    RefPtr<BrowsingContext> bc = aDocument->GetBrowsingContext();
     return bc ? IsThirdPartyContext(bc) : true;
   }
 
   
   
-  nsCOMPtr<nsILoadInfo> loadInfo = doc->GetChannel()->LoadInfo();
+  nsCOMPtr<nsILoadInfo> loadInfo = aDocument->GetChannel()->LoadInfo();
   return loadInfo->GetIsThirdPartyContextToTopWindow();
 }
 

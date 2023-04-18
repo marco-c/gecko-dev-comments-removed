@@ -25,6 +25,7 @@ namespace mozilla {
 namespace dom {
 class BrowsingContext;
 class CanonicalBrowsingContext;
+class Document;
 class WindowGlobalParent;
 }  
 
@@ -125,6 +126,12 @@ class AntiTrackingUtils final {
   
   
   static bool IsThirdPartyWindow(nsPIDOMWindowInner* aWindow, nsIURI* aURI);
+
+  
+  
+  
+  
+  static bool IsThirdPartyDocument(dom::Document* aDocument);
 
   
   
