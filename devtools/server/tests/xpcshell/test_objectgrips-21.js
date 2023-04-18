@@ -246,7 +246,7 @@ async function test_unsafe_grips(
       
       check_grip(grip, data, isUnsafe, isWorkerServer);
 
-      let objClient = threadFront.pauseGrip(grip);
+      const objClient = threadFront.pauseGrip(grip);
       let response, slice;
 
       response = await objClient.getPrototypeAndProperties();
@@ -280,30 +280,6 @@ async function test_unsafe_grips(
       response = await objClient.getPrototype();
       check_prototype(response.prototype, data, isUnsafe, isWorkerServer);
 
-      if (data.isFunction && isUnsafe) {
-        
-        
-        
-        
-        
-        
-        grip.class = "Function";
-        objClient = threadFront.pauseGrip(grip);
-        try {
-          response = await objClient.getParameterNames();
-          ok(
-            true,
-            "getParameterNames passed. DebuggerObject.class is 'Function'" +
-              "on the object actor"
-          );
-        } catch (e) {
-          ok(
-            false,
-            "getParameterNames failed. DebuggerObject.class may not be" +
-              " 'Function' on the object actor"
-          );
-        }
-      }
       await objClient.release();
     }
 

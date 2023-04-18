@@ -755,20 +755,6 @@ const proto = {
   
 
 
-  parameterNames: function() {
-    if (this.obj.class !== "Function") {
-      return this.throwError(
-        "objectNotFunction",
-        "'parameterNames' request is only valid for grips with a 'Function' class."
-      );
-    }
-
-    return { parameterNames: this.obj.parameterNames };
-  },
-
-  
-
-
   proxySlots: function() {
     
     

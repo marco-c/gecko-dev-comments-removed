@@ -56,17 +56,6 @@ class ObjectFront extends FrontClassWithSpec(objectSpec) {
   
 
 
-  getParameterNames() {
-    if (this._grip.class !== "Function") {
-      console.error("getParameterNames is only valid for function grips.");
-      return null;
-    }
-    return super.parameterNames();
-  }
-
-  
-
-
 
   getOwnPropertyNames() {
     return super.ownPropertyNames();
