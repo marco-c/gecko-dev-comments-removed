@@ -214,7 +214,8 @@ ReferrerPolicy ReferrerInfo::GetDefaultReferrerPolicy(nsIHttpChannel* aChannel,
           !ContentBlocking::ShouldAllowAccessFor(aChannel, aURI,
                                                  &rejectedReason) &&
           rejectedReason !=
-              nsIWebProgressListener::STATE_COOKIES_PARTITIONED_FOREIGN;
+              static_cast<uint32_t>(
+                  nsIWebProgressListener::STATE_COOKIES_PARTITIONED_FOREIGN);
       
       
       
