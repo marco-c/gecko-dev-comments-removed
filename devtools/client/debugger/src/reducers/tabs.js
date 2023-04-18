@@ -11,8 +11,6 @@ import { isOriginalId } from "devtools-source-map";
 
 import { isSimilarTab, persistTabs } from "../utils/tabs";
 
-import { getSource, getSpecificSourceByURL } from "../selectors/sources";
-
 export function initialTabState() {
   return { tabs: [] };
 }
@@ -56,71 +54,6 @@ function update(state = initialTabState(), action) {
     default:
       return state;
   }
-}
-
-
-
-
-
-
-
-
-
-
-export function getNewSelectedSourceId(state, tabList) {
-  const { selectedLocation } = state.sources;
-  const availableTabs = state.tabs.tabs;
-  if (!selectedLocation) {
-    return "";
-  }
-
-  const selectedTab = getSource(state, selectedLocation.sourceId);
-  if (!selectedTab) {
-    return "";
-  }
-
-  const matchingTab = availableTabs.find(tab =>
-    isSimilarTab(tab, selectedTab.url, isOriginalId(selectedLocation.sourceId))
-  );
-
-  if (matchingTab) {
-    const { sources } = state.sources;
-    if (!sources) {
-      return "";
-    }
-
-    const selectedSource = getSpecificSourceByURL(
-      state,
-      selectedTab.url,
-      selectedTab.isOriginal
-    );
-
-    if (selectedSource) {
-      return selectedSource.id;
-    }
-
-    return "";
-  }
-
-  const tabUrls = tabList.map(tab => tab.url);
-  const leftNeighborIndex = Math.max(tabUrls.indexOf(selectedTab.url) - 1, 0);
-  const lastAvailbleTabIndex = availableTabs.length - 1;
-  const newSelectedTabIndex = Math.min(leftNeighborIndex, lastAvailbleTabIndex);
-  const availableTab = availableTabs[newSelectedTabIndex];
-
-  if (availableTab) {
-    const tabSource = getSpecificSourceByURL(
-      state,
-      availableTab.url,
-      availableTab.isOriginal
-    );
-
-    if (tabSource) {
-      return tabSource.id;
-    }
-  }
-
-  return "";
 }
 
 function matchesSource(tab, source) {

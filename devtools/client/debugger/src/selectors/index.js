@@ -2,9 +2,6 @@
 
 
 
-export * from "../reducers/tabs";
-export * from "../reducers/threads";
-
 export * from "./ast";
 export * from "./breakpoints";
 export {
