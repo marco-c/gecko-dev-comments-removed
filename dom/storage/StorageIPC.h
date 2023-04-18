@@ -290,6 +290,9 @@ class SessionStorageManagerChild final
 
   
   void ActorDestroy(ActorDestroyReason aWhy) override;
+
+  mozilla::ipc::IPCResult RecvClearStoragesForOrigin(
+      const nsCString& aOriginAttrs, const nsCString& aOriginKey) override;
 };
 
 class LocalStorageCacheParent final

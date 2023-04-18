@@ -538,11 +538,7 @@ const QuotaCleaner = {
     );
 
     
-    Services.obs.notifyObservers(
-      null,
-      "browser:purge-sessionStorage",
-      aPrincipal.host
-    );
+    Services.sessionStorage.clearStoragesForOrigin(aPrincipal);
 
     
     return ServiceWorkerCleanUp.removeFromPrincipal(aPrincipal)
