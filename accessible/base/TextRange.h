@@ -9,11 +9,8 @@
 
 #include <utility>
 
-#include "nsCaseTreatment.h"
-#include "nsRect.h"
 #include "nsTArray.h"
 
-class nsIVariant;
 class nsRange;
 
 namespace mozilla {
@@ -104,98 +101,9 @@ class TextRange final {
   
 
 
-  void Bounds(nsTArray<nsIntRect> aRects) const;
-
-  enum ETextUnit { eFormat, eWord, eLine, eParagraph, ePage, eDocument };
-
-  
-
-
-  void Move(ETextUnit aUnit, int32_t aCount) {
-    MoveEnd(aUnit, aCount);
-    MoveStart(aUnit, aCount);
-  }
-  void MoveStart(ETextUnit aUnit, int32_t aCount) {
-    MoveInternal(aUnit, aCount, *mStartContainer, mStartOffset, mEndContainer,
-                 mEndOffset);
-  }
-  void MoveEnd(ETextUnit aUnit, int32_t aCount) {
-    MoveInternal(aUnit, aCount, *mEndContainer, mEndOffset);
-  }
-
-  
-
-
-  void Normalize(ETextUnit aUnit);
-
-  
-
-
 
   bool Crop(LocalAccessible* aContainer);
 
-  enum EDirection { eBackward, eForward };
-
-  
-
-
-  void FindText(const nsAString& aText, EDirection aDirection,
-                nsCaseTreatment aCaseSensitive, TextRange* aFoundRange) const;
-
-  enum EAttr {
-    eAnimationStyleAttr,
-    eAnnotationObjectsAttr,
-    eAnnotationTypesAttr,
-    eBackgroundColorAttr,
-    eBulletStyleAttr,
-    eCapStyleAttr,
-    eCaretBidiModeAttr,
-    eCaretPositionAttr,
-    eCultureAttr,
-    eFontNameAttr,
-    eFontSizeAttr,
-    eFontWeightAttr,
-    eForegroundColorAttr,
-    eHorizontalTextAlignmentAttr,
-    eIndentationFirstLineAttr,
-    eIndentationLeadingAttr,
-    eIndentationTrailingAttr,
-    eIsActiveAttr,
-    eIsHiddenAttr,
-    eIsItalicAttr,
-    eIsReadOnlyAttr,
-    eIsSubscriptAttr,
-    eIsSuperscriptAttr,
-    eLinkAttr,
-    eMarginBottomAttr,
-    eMarginLeadingAttr,
-    eMarginTopAttr,
-    eMarginTrailingAttr,
-    eOutlineStylesAttr,
-    eOverlineColorAttr,
-    eOverlineStyleAttr,
-    eSelectionActiveEndAttr,
-    eStrikethroughColorAttr,
-    eStrikethroughStyleAttr,
-    eStyleIdAttr,
-    eStyleNameAttr,
-    eTabsAttr,
-    eTextFlowDirectionsAttr,
-    eUnderlineColorAttr,
-    eUnderlineStyleAttr
-  };
-
-  
-
-
-  void FindAttr(EAttr aAttr, nsIVariant* aValue, EDirection aDirection,
-                TextRange* aFoundRange) const;
-
-  
-
-
-  void AddToSelection() const;
-  void RemoveFromSelection() const;
   MOZ_CAN_RUN_SCRIPT bool SetSelectionAt(int32_t aSelectionNum) const;
 
   
@@ -255,11 +163,6 @@ class TextRange final {
 
   bool TextInternal(nsAString& aText, LocalAccessible* aCurrent,
                     uint32_t aStartIntlOffset) const;
-
-  void MoveInternal(ETextUnit aUnit, int32_t aCount,
-                    HyperTextAccessible& aContainer, int32_t aOffset,
-                    HyperTextAccessible* aStopContainer = nullptr,
-                    int32_t aStopOffset = 0);
 
   
 
