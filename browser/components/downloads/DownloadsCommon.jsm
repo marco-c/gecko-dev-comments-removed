@@ -914,7 +914,9 @@ DownloadsDataCtor.prototype = {
 
     if (!download.newDownloadNotified) {
       download.newDownloadNotified = true;
-      this._notifyDownloadEvent("start");
+      this._notifyDownloadEvent("start", {
+        openDownloadsListOnStart: download.openDownloadsListOnStart,
+      });
     }
   },
 
@@ -973,7 +975,10 @@ DownloadsDataCtor.prototype = {
 
 
 
-  _notifyDownloadEvent(aType) {
+
+
+
+  _notifyDownloadEvent(aType, { openDownloadsListOnStart = true } = {}) {
     DownloadsCommon.log(
       "Attempting to notify that a new download has started or finished."
     );
@@ -987,6 +992,7 @@ DownloadsDataCtor.prototype = {
     }
 
     let shouldOpenDownloadsPanel =
+      openDownloadsListOnStart &&
       aType == "start" &&
       Services.prefs.getBoolPref(
         "browser.download.improvements_to_download_panel"

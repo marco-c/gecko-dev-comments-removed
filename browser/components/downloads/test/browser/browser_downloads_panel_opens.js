@@ -80,20 +80,17 @@ add_task(async function test_customizemode_doesnt_wreck_things() {
 
 
 
-add_task(async function test_downloads_panel_opening_pref() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.download.improvements_to_download_panel", true],
-      ["browser.download.always_ask_before_handling_new_types", false],
-      ["browser.download.alwaysOpenPanel", false],
-    ],
-  });
-  registerCleanupFunction(async () => {
-    await SpecialPowers.popPrefEnv();
-  });
 
+
+
+async function downloadAndCheckPanel({ openDownloadsListOnStart = true } = {}) {
   info("creating a download and setting it to in progress");
-  await task_addDownloads([{ state: DownloadsCommon.DOWNLOAD_DOWNLOADING }]);
+  await task_addDownloads([
+    {
+      state: DownloadsCommon.DOWNLOAD_DOWNLOADING,
+      openDownloadsListOnStart,
+    },
+  ]);
   let publicList = await Downloads.getList(Downloads.PUBLIC);
   let downloads = await publicList.getAll();
   downloads[0].stopped = false;
@@ -116,7 +113,9 @@ add_task(async function test_downloads_panel_opening_pref() {
     };
   });
 
-  DownloadsCommon.getData(window)._notifyDownloadEvent("start");
+  DownloadsCommon.getData(window)._notifyDownloadEvent("start", {
+    openDownloadsListOnStart,
+  });
   is(
     DownloadsPanel.isPanelShowing,
     false,
@@ -126,9 +125,48 @@ add_task(async function test_downloads_panel_opening_pref() {
   info("waiting for download to start");
   await promiseDownloadStartedNotification;
 
+  DownloadsIndicatorView.showEventNotification = oldShowEventNotification;
   is(DownloadsPanel.panel.state, "closed", "Panel should be closed");
+}
+
+
+
+
+
+add_task(async function test_downloads_panel_opening_pref() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.download.improvements_to_download_panel", true],
+      ["browser.download.always_ask_before_handling_new_types", false],
+      ["browser.download.alwaysOpenPanel", false],
+    ],
+  });
+  registerCleanupFunction(async () => {
+    await SpecialPowers.popPrefEnv();
+  });
+  await downloadAndCheckPanel();
   await SpecialPowers.popPrefEnv();
 });
+
+
+
+
+
+add_task(async function test_downloads_openDownloadsListOnStart_param() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.download.improvements_to_download_panel", true],
+      ["browser.download.always_ask_before_handling_new_types", false],
+      ["browser.download.alwaysOpenPanel", true],
+    ],
+  });
+  registerCleanupFunction(async () => {
+    await SpecialPowers.popPrefEnv();
+  });
+  await downloadAndCheckPanel({ openDownloadsListOnStart: false });
+  await SpecialPowers.popPrefEnv();
+});
+
 
 
 

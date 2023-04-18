@@ -287,6 +287,15 @@ Download.prototype = {
   
 
 
+
+
+
+
+  openDownloadsListOnStart: true,
+
+  
+
+
   contentType: null,
 
   
@@ -1334,6 +1343,7 @@ const kPlainSerializableDownloadProperties = [
   "launchWhenSucceeded",
   "contentType",
   "handleInternally",
+  "openDownloadsListOnStart",
 ];
 
 
