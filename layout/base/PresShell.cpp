@@ -2623,8 +2623,9 @@ void PresShell::LoadComplete() {
 #ifdef DEBUG
 void PresShell::VerifyHasDirtyRootAncestor(nsIFrame* aFrame) {
   
-  return;
-
+  
+  
+#  if 0
   
   
   if (!aFrame->GetParent()) {
@@ -2647,6 +2648,7 @@ void PresShell::VerifyHasDirtyRootAncestor(nsIFrame* aFrame) {
   MOZ_ASSERT_UNREACHABLE(
       "Frame has dirty bits set but isn't scheduled to be "
       "reflowed?");
+#  endif
 }
 #endif
 
