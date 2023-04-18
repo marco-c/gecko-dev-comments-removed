@@ -13,6 +13,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
   OS: "resource://gre/modules/osfile.jsm",
   PerTestCoverageUtils: "resource://testing-common/PerTestCoverageUtils.jsm",
+  SessionStore: "resource:///modules/sessionstore/SessionStore.jsm",
+  setTimeout: "resource://gre/modules/Timer.jsm",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -292,13 +294,26 @@ TalosPowersService.prototype = {
       
       
       AboutNewTab.onBrowserReady();
-      let feed = AboutNewTab.activityStream.store.feeds.get(
-        "feeds.system.topsites"
-      );
+      
+      
+      
+      let pollForFeed = async function() {
+        let foundFeed = AboutNewTab.activityStream.store.feeds.get(
+          "feeds.system.topsites"
+        );
+        if (!foundFeed) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          return pollForFeed();
+        }
+        return foundFeed;
+      };
+      let feed = await pollForFeed();
       await feed._contile.refresh();
       await feed.refresh({ broadcast: true });
       await AboutHomeStartupCache.cacheNow();
     }
+
+    await SessionStore.promiseAllWindowsRestored;
 
     
     
