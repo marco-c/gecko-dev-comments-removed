@@ -248,7 +248,7 @@ class VendorManifest(MozbuildObject):
                     "Cleaning {vendor_dir} to import changes.",
                 )
                 
-                for file in self.convert_patterns_to_paths(vendor_dir, "**"):
+                for file in self.convert_patterns_to_paths(vendor_dir, ["**"]):
                     file = mozpath.normsep(file)
                     if file not in to_keep:
                         mozfile.remove(file)
