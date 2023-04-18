@@ -190,6 +190,12 @@ class Accessible {
   
 
 
+
+  virtual uint32_t EndOffset();
+
+  
+
+
   virtual already_AddRefed<AccAttributes> Attributes() = 0;
 
   

@@ -534,11 +534,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual uint32_t EndOffset();
-
-  
-
-
   inline bool IsLinkValid() {
     MOZ_ASSERT(IsLink(), "IsLinkValid is called on not hyper link!");
 
