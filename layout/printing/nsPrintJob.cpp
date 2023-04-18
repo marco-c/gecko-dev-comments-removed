@@ -656,20 +656,8 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     
     
     
-    
-    
-    bool settingsAreComplete = false;
-    if (StaticPrefs::print_tab_modal_enabled()) {
-      printData->mPrintSettings->GetIsInitializedFromPrinter(
-          &settingsAreComplete);
-    }
-
-    
-    
-    
-    
-    
-    if (!settingsAreComplete && (!printSilently || printingViaParent)) {
+    if (!StaticPrefs::print_tab_modal_enabled() &&
+        (!printSilently || printingViaParent)) {
       nsCOMPtr<nsIPrintingPromptService> printPromptService(
           do_GetService(kPrintingPromptService));
       if (printPromptService) {
