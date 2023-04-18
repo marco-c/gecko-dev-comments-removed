@@ -4137,8 +4137,13 @@ BrowserGlue.prototype = {
       return;
     }
 
+    const win = BrowserWindowTracker.getTopWindow();
     
-    if (!SessionStore.canRestoreLastSession) {
+    
+    if (
+      !SessionStore.canRestoreLastSession ||
+      PrivateBrowsingUtils.isWindowPrivate(win)
+    ) {
       return;
     }
 
@@ -4147,7 +4152,6 @@ BrowserGlue.prototype = {
       ++count
     );
 
-    const win = BrowserWindowTracker.getTopWindow();
     const messageFragment = win.document.createDocumentFragment();
     const message = win.document.createElement("span");
     const icon = win.document.createElement("img");
