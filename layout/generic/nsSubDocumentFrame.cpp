@@ -987,18 +987,6 @@ nsIDocShell* nsSubDocumentFrame::GetDocShell() const {
 }
 
 static void DestroyDisplayItemDataForFrames(nsIFrame* aFrame) {
-  if (aFrame->IsSubDocumentFrame()) {
-    const nsSubDocumentFrame* subdoc =
-        static_cast<const nsSubDocumentFrame*>(aFrame);
-    nsFrameLoader* frameLoader = subdoc->FrameLoader();
-    if (frameLoader && frameLoader->GetRemoteBrowser()) {
-      
-      
-      frameLoader->GetRemoteBrowser()->UpdateEffects(
-          mozilla::dom::EffectsInfo::FullyHidden());
-    }
-  }
-
   
   
   
