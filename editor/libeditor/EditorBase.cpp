@@ -6539,8 +6539,9 @@ void EditorBase::TopLevelEditSubActionData::DidSplitContent(
                        "failed, but ignored");
 }
 
-void EditorBase::TopLevelEditSubActionData::DidJoinContents(
-    EditorBase& aEditorBase, const EditorRawDOMPoint& aJoinedPoint) {
+void EditorBase::TopLevelEditSubActionData::WillJoinContents(
+    EditorBase& aEditorBase, nsIContent& aLeftContent,
+    nsIContent& aRightContent) {
   MOZ_ASSERT(aEditorBase.AsHTMLEditor());
 
   if (!aEditorBase.mInitSucceeded || aEditorBase.Destroyed()) {
@@ -6551,8 +6552,29 @@ void EditorBase::TopLevelEditSubActionData::DidJoinContents(
     return;  
   }
 
-  DebugOnly<nsresult> rvIgnored =
-      AddPointToChangedRange(*aEditorBase.AsHTMLEditor(), aJoinedPoint);
+  
+  aEditorBase.EditSubActionDataRef().mJoinedLeftNodeLength =
+      aLeftContent.Length();
+}
+
+void EditorBase::TopLevelEditSubActionData::DidJoinContents(
+    EditorBase& aEditorBase, nsIContent& aLeftContent,
+    nsIContent& aRightContent) {
+  MOZ_ASSERT(aEditorBase.AsHTMLEditor());
+
+  if (!aEditorBase.mInitSucceeded || aEditorBase.Destroyed()) {
+    return;  
+  }
+
+  if (!aEditorBase.EditSubActionDataRef().mAdjustChangedRangeFromListener) {
+    return;  
+  }
+
+  DebugOnly<nsresult> rvIgnored = AddPointToChangedRange(
+      *aEditorBase.AsHTMLEditor(),
+      EditorRawDOMPoint(
+          &aRightContent,
+          aEditorBase.EditSubActionDataRef().mJoinedLeftNodeLength));
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "TopLevelEditSubActionData::AddPointToChangedRange() "
                        "failed, but ignored");

@@ -1778,8 +1778,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  JoinNodesWithTransaction(nsIContent& aLeftContent, nsIContent& aRightContent);
+  MOZ_CAN_RUN_SCRIPT nsresult JoinNodesWithTransaction(nsINode& aLeftNode,
+                                                       nsINode& aRightNode);
 
   
 
