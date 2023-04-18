@@ -37,13 +37,6 @@ class OpusDataDecoder : public MediaDataDecoder,
   
   static bool IsOpus(const nsACString& aMimeType);
 
-  
-  
-  
-  
-  
-  static void AppendCodecDelay(MediaByteBuffer* config, uint64_t codecDelayUS);
-
  private:
   nsresult DecodeHeader(const unsigned char* aData, size_t aLength);
 
