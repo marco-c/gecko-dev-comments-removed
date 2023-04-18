@@ -64,7 +64,7 @@ void RunTestsContent(SandboxTestingChild* child) {
   
   
   
-  child->ErrnoValueTest("connect_abstract_blocked"_ns, false, ENETUNREACH, [&] {
+  child->ErrnoValueTest("connect_abstract_blocked"_ns, ENETUNREACH, [&] {
     int sockfd;
     struct sockaddr_un addr;
     char str[] = "\0xyz";  
@@ -87,7 +87,7 @@ void RunTestsContent(SandboxTestingChild* child) {
   
   
   
-  child->ErrnoValueTest("connect_abstract_permit"_ns, false, ECONNREFUSED, [&] {
+  child->ErrnoValueTest("connect_abstract_permit"_ns, ECONNREFUSED, [&] {
     int sockfd;
     struct sockaddr_un addr;
     
@@ -140,7 +140,7 @@ void RunTestsContent(SandboxTestingChild* child) {
   CFDictionaryRef windowServerDict = CGSessionCopyCurrentDictionary();
   bool gotWindowServerDetails = (windowServerDict != nullptr);
   child->SendReportTestResults(
-      "CGSessionCopyCurrentDictionary"_ns, false, gotWindowServerDetails,
+      "CGSessionCopyCurrentDictionary"_ns, !gotWindowServerDetails,
       gotWindowServerDetails ? "Failed: dictionary unexpectedly returned"_ns
                              : "Succeeded: no dictionary returned"_ns);
   if (windowServerDict != nullptr) {
@@ -209,7 +209,7 @@ void RunTestsRDD(SandboxTestingChild* child) {
 
 #ifdef XP_UNIX
 #  ifdef XP_LINUX
-  child->ErrnoValueTest("ioctl_tiocsti"_ns, false, ENOSYS, [&] {
+  child->ErrnoValueTest("ioctl_tiocsti"_ns, ENOSYS, [&] {
     int rv = ioctl(1, TIOCSTI, "x");
     return rv;
   });
@@ -220,12 +220,12 @@ void RunTestsRDD(SandboxTestingChild* child) {
     return rv;
   });
 
-  child->ErrnoValueTest("unlink"_ns, false, ENOENT, [&] {
+  child->ErrnoValueTest("unlink"_ns, ENOENT, [&] {
     int rv = unlink("");
     return rv;
   });
 
-  child->ErrnoValueTest("unlinkat"_ns, false, ENOENT, [&] {
+  child->ErrnoValueTest("unlinkat"_ns, ENOENT, [&] {
     int rv = unlinkat(AT_FDCWD, "", 0);
     return rv;
   });
