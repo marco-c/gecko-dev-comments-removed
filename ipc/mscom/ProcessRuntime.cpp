@@ -59,9 +59,7 @@ ProcessRuntime::ProcessRuntime(const ProcessCategory aProcessCategory)
 #  if defined(MOZILLA_INTERNAL_API)
   
   
-  
-  if (aProcessCategory != ProcessCategory::GeckoBrowserParent &&
-      ActCtxResource::GetAccessibilityResourceId()) {
+  if (aProcessCategory != ProcessCategory::GeckoBrowserParent) {
     mActCtxRgn.emplace(ActCtxResource::GetAccessibilityResource());
   }
 #  elif defined(MOZ_HAS_MOZGLUE)

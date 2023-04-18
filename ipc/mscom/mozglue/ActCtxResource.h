@@ -20,17 +20,6 @@ struct ActCtxResource {
 
 
 
-  static MFBT_API void SetAccessibilityResourceId(uint16_t aResourceId);
-
-  
-
-
-  static MFBT_API uint16_t GetAccessibilityResourceId();
-
-  
-
-
-
   static MFBT_API ActCtxResource GetAccessibilityResource();
 };
 
