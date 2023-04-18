@@ -639,7 +639,7 @@ function findSource(
   const source = sources.find(s => {
     
     const sourceFileName = s.url
-      ? s.url.substring(s.url.lastIndexOf("/") + 1)
+      ? decodeURI(s.url.substring(s.url.lastIndexOf("/") + 1))
       : "";
     
     
