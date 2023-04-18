@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #ifndef mozilla_net_SocketProcessChild_h
 #define mozilla_net_SocketProcessChild_h
@@ -23,11 +23,9 @@ class ProxyAutoConfigChild;
 class SocketProcessBridgeParent;
 class BackgroundDataBridgeParent;
 
-// The IPC actor implements PSocketProcessChild in child process.
-// This is allocated and kept alive by SocketProcessImpl.
-class SocketProcessChild final
-    : public PSocketProcessChild,
-      public mozilla::ipc::ChildToParentStreamActorManager {
+
+
+class SocketProcessChild final : public PSocketProcessChild {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SocketProcessChild)
 
@@ -145,28 +143,28 @@ class SocketProcessChild final
   mozilla::ipc::IPCResult RecvGetUntrustedModulesData(
       GetUntrustedModulesDataResolver&& aResolver);
   mozilla::ipc::IPCResult RecvUnblockUntrustedModulesThread();
-#endif  // defined(XP_WIN)
+#endif  
 
  protected:
   friend class SocketProcessImpl;
   ~SocketProcessChild();
 
  private:
-  // Mapping of content process id and the SocketProcessBridgeParent.
-  // This table keeps SocketProcessBridgeParent alive in socket process.
+  
+  
   nsRefPtrHashtable<nsUint32HashKey, SocketProcessBridgeParent>
       mSocketProcessBridgeParentMap;
 
   RefPtr<ChildProfilerController> mProfilerController;
 
   bool mShuttingDown{false};
-  // Protect the table below.
+  
   Mutex mMutex MOZ_UNANNOTATED{"SocketProcessChild::mMutex"};
   nsTHashMap<uint64_t, RefPtr<BackgroundDataBridgeParent>>
       mBackgroundDataBridgeMap;
 };
 
-}  // namespace net
-}  // namespace mozilla
+}  
+}  
 
-#endif  // mozilla_net_SocketProcessChild_h
+#endif  
