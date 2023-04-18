@@ -130,16 +130,16 @@ struct MOZ_STACK_CLASS AutoNestedEventLoopAnnotation {
       const AutoNestedEventLoopAnnotation&) = delete;
 
   
-  static AutoNestedEventLoopAnnotation* sCurrent;
-  static StaticMutex sStackMutex MOZ_UNANNOTATED;
+  static AutoNestedEventLoopAnnotation* sCurrent GUARDED_BY(sStackMutex);
+  static StaticMutex sStackMutex;
 
   
   
   
   static void AnnotateXPCOMSpinEventLoopStack(const nsACString& aStack);
 
-  AutoNestedEventLoopAnnotation* mPrev;
-  nsCString mStack;
+  AutoNestedEventLoopAnnotation* mPrev GUARDED_BY(sStackMutex);
+  nsCString mStack GUARDED_BY(sStackMutex);
 };
 
 

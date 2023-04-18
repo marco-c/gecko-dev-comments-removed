@@ -131,7 +131,7 @@ class LazyIdleThread final : public nsIThread,
   
 
 
-  mozilla::Mutex mMutex MOZ_UNANNOTATED;
+  mozilla::Mutex mMutex;
 
   
 
@@ -176,14 +176,14 @@ class LazyIdleThread final : public nsIThread,
 
 
 
-  uint32_t mPendingEventCount;
+  uint32_t mPendingEventCount GUARDED_BY(mMutex);
 
   
 
 
 
 
-  uint32_t mIdleNotificationCount;
+  uint32_t mIdleNotificationCount GUARDED_BY(mMutex);
 
   
 
@@ -202,7 +202,7 @@ class LazyIdleThread final : public nsIThread,
 
 
 
-  bool mThreadIsShuttingDown;
+  bool mThreadIsShuttingDown GUARDED_BY(mMutex);
 
   
 
