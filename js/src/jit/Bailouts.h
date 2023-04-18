@@ -153,7 +153,6 @@ struct BaselineBailoutInfo;
 
 
 [[nodiscard]] bool InvalidationBailout(InvalidationBailoutStack* sp,
-                                       size_t* frameSizeOut,
                                        BaselineBailoutInfo** info);
 
 class ExceptionBailoutInfo {

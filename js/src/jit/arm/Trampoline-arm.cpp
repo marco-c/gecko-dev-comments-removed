@@ -416,39 +416,23 @@ void JitRuntime::generateInvalidator(MacroAssembler& masm, Label* bailoutTail) {
   masm.finishFloatTransfer();
 
   masm.ma_mov(sp, r0);
-  const int sizeOfRetval = sizeof(size_t) * 2;
-  masm.reserveStack(sizeOfRetval);
+  
+  
+  masm.reserveStack(sizeof(void*) * 2);
   masm.mov(sp, r1);
-  const int sizeOfBailoutInfo = sizeof(void*) * 2;
-  masm.reserveStack(sizeOfBailoutInfo);
-  masm.mov(sp, r2);
-  using Fn = bool (*)(InvalidationBailoutStack * sp, size_t * frameSizeOut,
-                      BaselineBailoutInfo * *info);
+  using Fn =
+      bool (*)(InvalidationBailoutStack * sp, BaselineBailoutInfo * *info);
   masm.setupAlignedABICall();
   masm.passABIArg(r0);
   masm.passABIArg(r1);
-  masm.passABIArg(r2);
   masm.callWithABI<Fn, InvalidationBailout>(
       MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckOther);
 
-  masm.ma_ldr(DTRAddr(sp, DtrOffImm(0)), r2);
-  {
-    ScratchRegisterScope scratch(masm);
-    masm.ma_ldr(Address(sp, sizeOfBailoutInfo), r1, scratch);
-  }
+  masm.pop(r2);  
+
   
-  
-  
-  {
-    ScratchRegisterScope scratch(masm);
-    masm.ma_add(sp,
-                Imm32(sizeof(InvalidationBailoutStack) + sizeOfRetval +
-                      sizeOfBailoutInfo),
-                sp, scratch);
-  }
-  
-  
-  masm.ma_add(sp, r1, sp);
+  masm.moveToStackPtr(FramePointer);
+  masm.pop(FramePointer);
 
   
   masm.jump(bailoutTail);
@@ -642,17 +626,8 @@ static void GenerateBailoutThunk(MacroAssembler& masm, Label* bailoutTail) {
   masm.pop(r2);  
 
   
-  
-  
-  
-  
-  
-  
-  static constexpr uint32_t BailoutDataSize = sizeof(RegisterDump);
-  masm.addPtr(Imm32(BailoutDataSize), StackPointer);
-  masm.pop(r4);                                     
-  masm.addPtr(Imm32(sizeof(void*)), StackPointer);  
-  masm.addPtr(r4, StackPointer);
+  masm.moveToStackPtr(FramePointer);
+  masm.pop(FramePointer);
 
   
   masm.jump(bailoutTail);

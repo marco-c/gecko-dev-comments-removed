@@ -376,28 +376,26 @@ void JitRuntime::generateInvalidator(MacroAssembler& masm, Label* bailoutTail) {
   PushRegisterDump(masm);
   masm.moveStackPtrTo(r0);
 
-  masm.Sub(x1, masm.GetStackPointer64(), Operand(sizeof(size_t)));
-  masm.Sub(x2, masm.GetStackPointer64(),
-           Operand(sizeof(size_t) + sizeof(void*)));
-  masm.moveToStackPtr(r2);
+  
+  masm.Sub(x1, masm.GetStackPointer64(), Operand(sizeof(void*)));
+  masm.moveToStackPtr(r1);
 
-  using Fn = bool (*)(InvalidationBailoutStack * sp, size_t * frameSizeOut,
-                      BaselineBailoutInfo * *info);
+  using Fn =
+      bool (*)(InvalidationBailoutStack * sp, BaselineBailoutInfo * *info);
   masm.setupUnalignedABICall(r10);
   masm.passABIArg(r0);
   masm.passABIArg(r1);
-  masm.passABIArg(r2);
 
   masm.callWithABI<Fn, InvalidationBailout>(
       MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckOther);
 
-  masm.pop(r2, r1);
+  masm.pop(r2);  
 
-  masm.Add(masm.GetStackPointer64(), masm.GetStackPointer64(), x1);
-  masm.Add(masm.GetStackPointer64(), masm.GetStackPointer64(),
-           Operand(sizeof(InvalidationBailoutStack)));
-  masm.syncStackPtr();
+  
+  masm.moveToStackPtr(FramePointer);
+  masm.pop(FramePointer);
 
+  
   masm.jump(bailoutTail);
 }
 
@@ -572,23 +570,8 @@ static void GenerateBailoutThunk(MacroAssembler& masm, Label* bailoutTail) {
   masm.pop(r2);
 
   
-  
-  
-  
-  
-  
-  
-
-  
-  static const uint32_t BailoutDataSize = sizeof(RegisterDump);
-  masm.addToStackPtr(Imm32(BailoutDataSize));
-
-  
-  vixl::UseScratchRegisterScope temps(&masm.asVIXL());
-  const ARMRegister scratch64 = temps.AcquireX();
-  masm.Ldr(scratch64, MemOperand(masm.GetStackPointer64(), 0x0));
-  masm.addPtr(Imm32(2 * sizeof(void*)), scratch64.asUnsized());
-  masm.addToStackPtr(scratch64.asUnsized());
+  masm.moveToStackPtr(FramePointer);
+  masm.pop(FramePointer);
 
   
   masm.jump(bailoutTail);

@@ -367,27 +367,22 @@ void JitRuntime::generateInvalidator(MacroAssembler& masm, Label* bailoutTail) {
   masm.movl(esp, eax);  
 
   
-  masm.reserveStack(sizeof(size_t));
+  masm.reserveStack(sizeof(void*));
   masm.movl(esp, ebx);
 
-  
-  masm.reserveStack(sizeof(void*));
-  masm.movl(esp, ecx);
-
-  using Fn = bool (*)(InvalidationBailoutStack * sp, size_t * frameSizeOut,
-                      BaselineBailoutInfo * *info);
+  using Fn =
+      bool (*)(InvalidationBailoutStack * sp, BaselineBailoutInfo * *info);
   masm.setupUnalignedABICall(edx);
   masm.passABIArg(eax);
   masm.passABIArg(ebx);
-  masm.passABIArg(ecx);
   masm.callWithABI<Fn, InvalidationBailout>(
       MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckOther);
 
   masm.pop(ecx);  
-  masm.pop(ebx);  
 
   
-  masm.lea(Operand(esp, ebx, TimesOne, sizeof(InvalidationBailoutStack)), esp);
+  masm.moveToStackPtr(FramePointer);
+  masm.pop(FramePointer);
 
   
   masm.jmp(bailoutTail);
@@ -594,16 +589,8 @@ static void GenerateBailoutThunk(MacroAssembler& masm, Label* bailoutTail) {
   masm.pop(ecx);  
 
   
-  
-  
-  
-  
-  
-  
-  static constexpr uint32_t BailoutDataSize = sizeof(RegisterDump);
-  masm.addl(Imm32(BailoutDataSize), esp);
-  masm.pop(ebx);  
-  masm.lea(Operand(esp, ebx, TimesOne, sizeof(void*)), esp);
+  masm.moveToStackPtr(FramePointer);
+  masm.pop(FramePointer);
 
   
   masm.jmp(bailoutTail);
