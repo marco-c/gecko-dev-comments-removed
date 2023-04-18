@@ -2030,7 +2030,8 @@ bool CanonicalBrowsingContext::LoadInParent(nsDocShellLoadState* aLoadState,
   
   
   if (!IsTopContent() || !GetContentParent() ||
-      !StaticPrefs::browser_tabs_documentchannel_parent_controlled()) {
+      !StaticPrefs::browser_tabs_documentchannel_parent_controlled() ||
+      !mozilla::SessionHistoryInParent()) {
     return false;
   }
 
@@ -2038,6 +2039,8 @@ bool CanonicalBrowsingContext::LoadInParent(nsDocShellLoadState* aLoadState,
   if (!SupportsLoadingInParent(aLoadState, &outerWindowId)) {
     return false;
   }
+
+  MOZ_ASSERT(!net::SchemeIsJavascript(aLoadState->URI()));
 
   
   
@@ -2054,7 +2057,8 @@ bool CanonicalBrowsingContext::AttemptSpeculativeLoadInParent(
   
   
   if (!IsTopContent() || !GetContentParent() ||
-      StaticPrefs::browser_tabs_documentchannel_parent_controlled()) {
+      (StaticPrefs::browser_tabs_documentchannel_parent_controlled() &&
+       mozilla::SessionHistoryInParent())) {
     return false;
   }
 
@@ -2074,7 +2078,7 @@ bool CanonicalBrowsingContext::StartDocumentLoad(
   
   
   if (StaticPrefs::browser_tabs_documentchannel_parent_controlled() &&
-      mCurrentLoad) {
+      mozilla::SessionHistoryInParent() && mCurrentLoad) {
     mCurrentLoad->Cancel(NS_BINDING_ABORTED);
   }
   mCurrentLoad = aLoad;
