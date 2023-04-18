@@ -723,8 +723,8 @@ class CommandSiteManager:
         elif mach_site_packages_source == SitePackagesSource.VENV:
             
             assert self._mach_virtualenv_root
-            lines.append(
-                PythonVirtualenv(self._mach_virtualenv_root).site_packages_dir()
+            lines.extend(
+                PythonVirtualenv(self._mach_virtualenv_root).site_packages_dirs()
             )
 
         
@@ -790,7 +790,7 @@ class PythonVirtualenv:
         self.prefix = prefix
 
     @functools.lru_cache(maxsize=None)
-    def site_packages_dir(self):
+    def resolve_sysconfig_packages_path(self, sysconfig_path):
         
         
         
@@ -803,17 +803,23 @@ class PythonVirtualenv:
 
         sysconfig_paths = sysconfig.get_paths(scheme)
         data_path = Path(sysconfig_paths["data"])
-        purelib_path = Path(sysconfig_paths["purelib"])
-        relative_purelib_path = purelib_path.relative_to(data_path)
+        path = Path(sysconfig_paths[sysconfig_path])
+        relative_path = path.relative_to(data_path)
 
         normalized_venv_root = os.path.normpath(self.prefix)
         
-        path = os.path.join(normalized_venv_root, relative_purelib_path)
+        path = os.path.join(normalized_venv_root, relative_path)
         local_folder = os.path.join(normalized_venv_root, "local")
         
         if path.startswith(local_folder):
             path = os.path.join(normalized_venv_root, path[len(local_folder) + 1 :])
         return path
+
+    def site_packages_dirs(self):
+        return [
+            self.resolve_sysconfig_packages_path("purelib"),
+            self.resolve_sysconfig_packages_path("platlib"),
+        ]
 
     def pip_install_with_constraints(self, pip_args):
         """Create a pip constraints file or existing packages
@@ -1083,7 +1089,10 @@ def _assert_pip_check(topsrcdir, pthfile_lines, virtualenv_name, requirements):
         )
         check_env = PythonVirtualenv(check_env_path)
         with open(
-            os.path.join(os.path.join(check_env.site_packages_dir()), PTH_FILENAME),
+            os.path.join(
+                os.path.join(check_env.resolve_sysconfig_packages_path("platlib")),
+                PTH_FILENAME,
+            ),
             "w",
         ) as f:
             f.write("\n".join(pthfile_lines))
@@ -1132,7 +1141,7 @@ def _deprioritize_venv_packages(virtualenv):
     
     implicitly_added_dirs = [
         virtualenv.prefix,
-        virtualenv.site_packages_dir(),
+        *virtualenv.site_packages_dirs(),
     ]
 
     return [
@@ -1179,9 +1188,9 @@ def _create_venv_with_pthfile(
         ]
     )
 
-    site_packages_dir = target_venv.site_packages_dir()
+    platlib_site_packages_dir = target_venv.resolve_sysconfig_packages_path("platlib")
     pthfile_contents = "\n".join(pthfile_lines)
-    with open(os.path.join(site_packages_dir, PTH_FILENAME), "w") as f:
+    with open(os.path.join(platlib_site_packages_dir, PTH_FILENAME), "w") as f:
         f.write(pthfile_contents)
 
     if site_packages_source == SitePackagesSource.VENV:
@@ -1234,9 +1243,9 @@ def _is_venv_up_to_date(
         
         return False
 
-    site_packages_dir = target_venv.site_packages_dir()
+    platlib_site_packages_dir = target_venv.resolve_sysconfig_packages_path("platlib")
     try:
-        with open(os.path.join(site_packages_dir, PTH_FILENAME)) as file:
+        with open(os.path.join(platlib_site_packages_dir, PTH_FILENAME)) as file:
             current_pthfile_contents = file.read().strip()
     except FileNotFoundError:
         return False
@@ -1254,7 +1263,7 @@ def activate_virtualenv(virtualenv: PythonVirtualenv):
     )
     os.environ["VIRTUAL_ENV"] = virtualenv.prefix
 
-    for path in (virtualenv.prefix, virtualenv.site_packages_dir()):
+    for path in (virtualenv.prefix, *virtualenv.site_packages_dirs()):
         site.addsitedir(os.path.realpath(path))
 
     sys.prefix = virtualenv.prefix
