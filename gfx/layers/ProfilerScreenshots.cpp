@@ -84,7 +84,7 @@ void ProfilerScreenshots::SubmitScreenshot(
        originalSize, scaledSize, timeStamp]() {
         
         
-        if (profiler_thread_is_being_profiled_for_markers(sourceThread)) {
+        if (profiler_thread_is_being_profiled(sourceThread)) {
           DataSourceSurface::ScopedMap scopedMap(backingSurface,
                                                  DataSourceSurface::READ);
           RefPtr<DataSourceSurface> surf =

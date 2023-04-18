@@ -5014,7 +5014,7 @@ nsresult nsHttpChannel::SetupReplacementChannel(nsIURI* newURI,
        "[this=%p newChannel=%p preserveMethod=%d]",
        this, newChannel, preserveMethod));
 
-  if (!mEndMarkerAdded && profiler_thread_is_being_profiled_for_markers()) {
+  if (!mEndMarkerAdded && profiler_thread_is_being_profiled()) {
     mEndMarkerAdded = true;
 
     nsAutoCString requestMethod;
@@ -5542,7 +5542,7 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
   mStatus = NS_FAILED(status) ? status : NS_ERROR_ABORT;
 
   if (mLastStatusReported && !mEndMarkerAdded &&
-      profiler_thread_is_being_profiled_for_markers()) {
+      profiler_thread_is_being_profiled()) {
     
     
     
@@ -5861,7 +5861,7 @@ void nsHttpChannel::AsyncOpenFinal(TimeStamp aTimeStamp) {
   
   
   mLastStatusReported = TimeStamp::Now();
-  if (profiler_thread_is_being_profiled_for_markers()) {
+  if (profiler_thread_is_being_profiled()) {
     nsAutoCString requestMethod;
     GetRequestMethod(requestMethod);
 
@@ -7485,7 +7485,7 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
 
   MaybeFlushConsoleReports();
 
-  if (!mEndMarkerAdded && profiler_thread_is_being_profiled_for_markers()) {
+  if (!mEndMarkerAdded && profiler_thread_is_being_profiled()) {
     
     mEndMarkerAdded = true;
 

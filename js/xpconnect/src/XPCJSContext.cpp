@@ -588,7 +588,7 @@ bool XPCJSContext::InterruptCallback(JSContext* cx) {
   
   PROFILER_JS_INTERRUPT_CALLBACK();
 
-  if (profiler_thread_is_being_profiled_for_markers()) {
+  if (profiler_thread_is_being_profiled()) {
     nsDependentCString filename("unknown file");
     JS::AutoFilename scriptFilename;
     

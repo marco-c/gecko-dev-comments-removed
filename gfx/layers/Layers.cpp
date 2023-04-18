@@ -98,7 +98,7 @@ void RecordCompositionPayloadsPresented(
   if (aPayloads.Length()) {
     TimeStamp presented = aCompositionEndTime;
     for (const CompositionPayload& payload : aPayloads) {
-      if (profiler_thread_is_being_profiled_for_markers()) {
+      if (profiler_thread_is_being_profiled()) {
         MOZ_RELEASE_ASSERT(payload.mType <= kHighestCompositionPayloadType);
         nsAutoCString name(
             kCompositionPayloadTypeNames[uint8_t(payload.mType)]);
