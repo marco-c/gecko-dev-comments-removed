@@ -34,13 +34,7 @@ module.exports = {
     InternalError: true,
     
     dump: true,
-    
-    
-    
-    location: true,
     openDialog: false,
-    
-    sizeToContent: false,
     
     uneval: false,
   },
