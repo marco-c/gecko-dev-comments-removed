@@ -646,6 +646,17 @@ bool gfxFT2FontBase::GetFTGlyphExtents(uint16_t aGID, int32_t* aAdvance,
   if (!aBounds) {
     flags |= FT_LOAD_ADVANCE_ONLY;
   }
+
+  
+  bool roundX = ShouldRoundXOffset(nullptr);
+
+  
+  
+  if (!roundX &&
+      GetFontEntry()->HasFontTable(TRUETYPE_TAG('S', 'V', 'G', ' '))) {
+    flags &= ~FT_LOAD_COLOR;
+  }
+
   if (Factory::LoadFTGlyph(face.get(), aGID, flags) != FT_Err_Ok) {
     
     
@@ -655,8 +666,6 @@ bool gfxFT2FontBase::GetFTGlyphExtents(uint16_t aGID, int32_t* aAdvance,
 
   
   bool hintMetrics = ShouldHintMetrics();
-  
-  bool roundX = ShouldRoundXOffset(nullptr);
   
   bool unhintedY = (mFTLoadFlags & FT_LOAD_NO_HINTING) != 0;
   bool unhintedX =

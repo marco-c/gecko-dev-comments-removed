@@ -45,6 +45,13 @@ typedef enum FT_LcdFilter_
 #    define FT_PIXEL_MODE_BGRA 7
 #endif
 
+
+#ifndef FT_FACE_FLAG_SVG
+
+
+static constexpr FT_UInt32 FT_IMAGE_TAG(FT_GLYPH_FORMAT_SVG, 'S', 'V', 'G', ' ');
+#endif
+
 #ifndef SK_CAN_USE_DLOPEN
 #define SK_CAN_USE_DLOPEN 1
 #endif
@@ -586,6 +593,10 @@ void SkScalerContext_CairoFT::generateMetrics(SkGlyph* glyph)
                                        fFTFace->glyph->bitmap.width,
                                        fFTFace->glyph->bitmap.rows);
         }
+        break;
+    case FT_GLYPH_FORMAT_SVG:
+        
+        
         break;
     default:
         SkDEBUGFAIL("unknown glyph format");
