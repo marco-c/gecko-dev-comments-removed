@@ -2368,6 +2368,10 @@ pref("devtools.netmonitor.features.requestBlocking", true);
 pref("devtools.application.enabled", true);
 
 
+
+pref("devtools.custom-formatters", false);
+
+
 pref("devtools.netmonitor.panes-network-details-width", 550);
 pref("devtools.netmonitor.panes-network-details-height", 450);
 pref("devtools.netmonitor.panes-search-width", 550);
