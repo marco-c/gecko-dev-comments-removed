@@ -39,7 +39,7 @@ class SandboxTestingChild : public PSandboxTestingChild {
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  virtual bool RecvShutDown();
+  virtual ipc::IPCResult RecvShutDown();
 
   
   
