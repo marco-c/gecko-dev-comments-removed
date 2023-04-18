@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1176968
+-->
 <head>
   <title>Test for Bug 1176968</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -38,16 +38,12 @@ function run() {
     return window.getComputedStyle(document.getElementById(divName)).visibility == "visible";
   }
 
-  function getScreenPixelsPerCSSPixel() {
-    return SpecialPowers.DOMWindowUtils.screenPixelsPerCSSPixel;
-  }
-
-  var screenPixelsPerCSSPixel = getScreenPixelsPerCSSPixel();
+  var screenPixelsPerCSSPixel = window.devicePixelRatio;
   var baseRatio = 1.0 * screenPixelsPerCSSPixel;
   var doubleRatio = 2.0 * screenPixelsPerCSSPixel;
   var halfRatio = 0.5 * screenPixelsPerCSSPixel;
   var styleElem = document.getElementsByTagName("style")[1];
-  styleElem.textContent = 
+  styleElem.textContent =
       ["@media all and (-webkit-device-pixel-ratio: " + baseRatio + ") {",
          "#zoom1 { visibility: visible; }",
        "}",

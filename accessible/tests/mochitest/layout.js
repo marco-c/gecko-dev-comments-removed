@@ -371,9 +371,7 @@ function getBoundsForDOMElm(aID) {
 }
 
 function CSSToDevicePixels(aWindow, aX, aY, aWidth, aHeight) {
-  var winUtil = aWindow.windowUtils;
-
-  var ratio = winUtil.screenPixelsPerCSSPixel;
+  var ratio = aWindow.devicePixelRatio;
 
   
   

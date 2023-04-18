@@ -1032,7 +1032,7 @@ function synthesizeNativeTap(
     return;
   }
 
-  let scale = utils.screenPixelsPerCSSPixel;
+  let scale = aWindow.devicePixelRatio;
   let rect = aTarget.getBoundingClientRect();
   let x = (aWindow.mozInnerScreenX + rect.left + aOffsetX) * scale;
   let y = (aWindow.mozInnerScreenY + rect.top + aOffsetY) * scale;
@@ -1117,7 +1117,7 @@ function synthesizeNativeMouseEvent(aParams, aCallback = null) {
       return 1.0;
     }
     if (scale === "screenPixelsPerCSSPixel") {
-      return utils.screenPixelsPerCSSPixel;
+      return win.devicePixelRatio;
     }
     if (scale === "screenPixelsPerCSSPixelNoOverride") {
       return utils.screenPixelsPerCSSPixelNoOverride;
