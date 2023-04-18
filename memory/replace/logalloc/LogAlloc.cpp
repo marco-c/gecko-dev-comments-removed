@@ -5,7 +5,6 @@
 
 
 #include <cstdlib>
-#include <cstdio>
 #include <fcntl.h>
 
 #ifdef _WIN32

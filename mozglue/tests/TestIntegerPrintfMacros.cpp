@@ -8,8 +8,6 @@
 #include "mozilla/IntegerPrintfMacros.h"  
 #include "mozilla/Sprintf.h"
 
-#include <stddef.h>
-#include <stdio.h>
 #include <string.h>
 
 

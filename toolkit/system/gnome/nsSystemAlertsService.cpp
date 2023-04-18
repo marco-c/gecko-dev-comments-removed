@@ -4,7 +4,6 @@
 
 
 #include "nsComponentManagerUtils.h"
-#include "nsXULAppAPI.h"
 #include "nsSystemAlertsService.h"
 #include "nsAlertsIconListener.h"
 

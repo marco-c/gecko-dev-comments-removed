@@ -10,11 +10,8 @@
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
 #include "js/PropertySpec.h"
-#include "mozJSComponentLoader.h"
 #include "nsIThread.h"
-#include "nsZipArchive.h"
 
-#include "mozilla/Scoped.h"
 #include "mozilla/Services.h"
 #include "nsIObserverService.h"
 #include "nsThreadUtils.h"

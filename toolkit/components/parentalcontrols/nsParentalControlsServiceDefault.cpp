@@ -4,7 +4,6 @@
 
 
 #include "nsParentalControlsService.h"
-#include "nsString.h"
 #include "nsIFile.h"
 #include "mozilla/Unused.h"
 
