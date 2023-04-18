@@ -215,13 +215,22 @@ class UnexpectedEvents {
 
 
 
-async function waitForEvents(events, message, ordered = false) {
+
+
+
+async function waitForEvents(
+  events,
+  message,
+  ordered = false,
+  invokerOrWindow = null
+) {
   let expected = events.expected || events;
-  let unexpected = events.unexpected || [];
   
   let currentIdx = 0;
 
-  let unexpectedListener = new UnexpectedEvents(unexpected);
+  let unexpectedListener = events.unexpected
+    ? new UnexpectedEvents(events.unexpected)
+    : null;
 
   let results = await Promise.all(
     expected.map((evt, idx) => {
@@ -232,7 +241,35 @@ async function waitForEvents(events, message, ordered = false) {
     })
   );
 
-  unexpectedListener.stop();
+  if (unexpectedListener) {
+    let flushQueue = async win => {
+      
+      win.windowUtils.advanceTimeAndRefresh(100);
+
+      
+      await new Promise(r => win.setTimeout(r, 0));
+
+      
+      win.windowUtils.advanceTimeAndRefresh(100);
+
+      
+      win.windowUtils.advanceTimeAndRefresh(100);
+
+      
+      win.windowUtils.restoreNormalRefresh();
+    };
+
+    if (invokerOrWindow instanceof Function) {
+      await invokerOrWindow([flushQueue.toString()], async _flushQueue => {
+        
+        await eval(_flushQueue)(content);
+      });
+    } else {
+      await flushQueue(invokerOrWindow ? invokerOrWindow : window);
+    }
+
+    unexpectedListener.stop();
+  }
 
   if (ordered) {
     ok(
