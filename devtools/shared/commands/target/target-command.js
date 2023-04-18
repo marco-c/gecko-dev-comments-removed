@@ -1006,13 +1006,6 @@ class TargetCommand extends EventEmitter {
     
     
 
-    
-    
-    
-    if (!this.watcherFront) {
-      return null;
-    }
-
     return this.watcherFront.getParentWindowGlobalTarget(
       targetFront.browsingContextID
     );
