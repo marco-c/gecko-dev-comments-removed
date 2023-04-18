@@ -299,7 +299,8 @@ class AsyncPanZoomController {
 
 
 
-  Matrix4x4 GetTransformToLastDispatchedPaint() const;
+  Matrix4x4 GetTransformToLastDispatchedPaint(
+      const AsyncTransformComponents& aComponents = LayoutAndVisual) const;
 
   
 
