@@ -12,12 +12,94 @@ var { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
+
+  MobileTabBrowser: "chrome://remote/content/shared/MobileTabBrowser.jsm",
 });
+
+
+const browserUniqueIds = new WeakMap();
 
 var TabManager = {
   get gBrowser() {
     const window = Services.wm.getMostRecentWindow("navigator:browser");
-    return window.gBrowser;
+    return this.getTabBrowser(window);
+  },
+
+  get windows() {
+    return Services.wm.getEnumerator(null);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  get allBrowserUniqueIds() {
+    const browserIds = [];
+
+    for (const win of this.windows) {
+      const tabBrowser = this.getTabBrowser(win);
+
+      
+      if (tabBrowser && tabBrowser.tabs) {
+        for (const tab of tabBrowser.tabs) {
+          const contentBrowser = this.getBrowserForTab(tab);
+          const winId = this.getIdForBrowser(contentBrowser);
+          if (winId !== null) {
+            browserIds.push(winId);
+          }
+        }
+      }
+    }
+
+    return browserIds;
+  },
+
+  
+
+
+
+
+
+
+
+
+  getBrowserForTab(tab) {
+    if (tab && "linkedBrowser" in tab) {
+      return tab.linkedBrowser;
+    }
+
+    return null;
+  },
+
+  
+
+
+
+
+
+
+
+
+  getTabBrowser(win) {
+    
+    
+    if (Services.appinfo.OS === "Android") {
+      return new MobileTabBrowser(win);
+      
+    } else if ("gBrowser" in win) {
+      return win.gBrowser;
+      
+    } else if (win.document.getElementById("tabmail")) {
+      return win.document.getElementById("tabmail");
+    }
+
+    return null;
   },
 
   addTab({ userContextId }) {
@@ -28,6 +110,84 @@ var TabManager = {
     this.selectTab(tab);
 
     return tab;
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getBrowserById(id) {
+    for (const win of this.windows) {
+      const tabBrowser = this.getTabBrowser(win);
+      if (tabBrowser && tabBrowser.tabs) {
+        for (let i = 0; i < tabBrowser.tabs.length; ++i) {
+          const contentBrowser = this.getBrowserForTab(tabBrowser.tabs[i]);
+          if (this.getIdForBrowser(contentBrowser) == id) {
+            return contentBrowser;
+          }
+        }
+      }
+    }
+    return null;
+  },
+
+  
+
+
+
+
+
+
+
+
+  getIdForBrowser(browserElement) {
+    if (browserElement === null) {
+      return null;
+    }
+
+    const key = browserElement.permanentKey;
+    if (!browserUniqueIds.has(key)) {
+      const uuid = Services.uuid.generateUUID().toString();
+      browserUniqueIds.set(key, uuid.substring(1, uuid.length - 1));
+    }
+    return browserUniqueIds.get(key);
+  },
+
+  
+
+
+
+
+
+
+
+  getBrowserIdForBrowsingContext(browsingContext) {
+    const contentBrowser = browsingContext.top.embedderElement;
+    return this.getIdForBrowser(contentBrowser);
+  },
+
+  getTabCount() {
+    let count = 0;
+    for (const win of this.windows) {
+      
+      const tabbrowser = this.getTabBrowser(win);
+      if (tabbrowser?.tabs) {
+        count += tabbrowser.tabs.length;
+      } else {
+        count += 1;
+      }
+    }
+    return count;
   },
 
   removeTab(tab) {
