@@ -1171,10 +1171,10 @@ inline void GCMarker::checkTraversedEdge(S source, T* target) {
   
   MOZ_ASSERT(!source->isPermanentAndMayBeShared());
 
+  
   if (target->isPermanentAndMayBeShared()) {
+    MOZ_ASSERT(target->isMarkedBlack());
     MOZ_ASSERT(!target->maybeCompartment());
-
-    
     return;
   }
 
