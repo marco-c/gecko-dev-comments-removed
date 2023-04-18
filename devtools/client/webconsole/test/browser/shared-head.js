@@ -50,6 +50,29 @@ async function findMessageVirtualized({ hud, text, selector, messageId }) {
 
 
 
+
+
+
+
+async function findMessageVirtualizedByType({ hud, text, typeSelector }) {
+  const elements = await findMessagesVirtualizedByType({
+    hud,
+    text,
+    typeSelector,
+    expectedCount: 1,
+  });
+  return elements.at(-1);
+}
+
+
+
+
+
+
+
+
+
+
 async function findAllMessagesVirtualized(hud) {
   return findMessagesVirtualized({ hud });
 }
@@ -67,6 +90,45 @@ let gInFindMessagesVirtualized = false;
 
 
 let gFindMessagesVirtualizedStack = null;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function findMessagesVirtualizedByType({
+  hud,
+  text,
+  typeSelector,
+  expectedCount,
+}) {
+  if (!typeSelector) {
+    throw new Error("typeSelector parameter is required");
+  }
+  if (!typeSelector.startsWith(".")) {
+    throw new Error("typeSelector should start with a dot e.g. `.result`");
+  }
+
+  return findMessagesVirtualized({
+    hud,
+    text,
+    selector: ".message" + typeSelector,
+    expectedCount,
+  });
+}
 
 
 
