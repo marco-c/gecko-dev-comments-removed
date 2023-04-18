@@ -1,8 +1,6 @@
 
 
 
-
-
 #ifndef _mozilla_dom_FetchService_h
 #define _mozilla_dom_FetchService_h
 
@@ -12,6 +10,7 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/FetchDriver.h"
+#include "mozilla/dom/PerformanceTimingTypes.h"
 #include "mozilla/dom/SafeRefPtr.h"
 
 class nsILoadGroup;
@@ -24,8 +23,12 @@ namespace mozilla::dom {
 class InternalRequest;
 class InternalResponse;
 
+using FetchServiceResponse =
+    Tuple<SafeRefPtr<InternalResponse>, IPCPerformanceTimingData, nsString,
+          nsString>;
+
 using FetchServiceResponsePromise =
-    MozPromise<SafeRefPtr<InternalResponse>, CopyableErrorResult, true>;
+    MozPromise<FetchServiceResponse, CopyableErrorResult, true>;
 
 
 
