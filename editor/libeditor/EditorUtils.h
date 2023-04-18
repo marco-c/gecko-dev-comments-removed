@@ -570,6 +570,15 @@ class MOZ_STACK_CLASS AutoRangeArray final {
     mDirection = nsDirection::eDirNext;
   }
 
+  
+
+
+
+
+  static void UpdatePointsToSelectAllChildrenIfCollapsedInEmptyBlockElement(
+      EditorDOMPoint& aStartPoint, EditorDOMPoint& aEndPoint,
+      const dom::Element& aEditingHost);
+
  private:
   AutoTArray<mozilla::OwningNonNull<nsRange>, 8> mRanges;
   RefPtr<nsRange> mAnchorFocusRange;

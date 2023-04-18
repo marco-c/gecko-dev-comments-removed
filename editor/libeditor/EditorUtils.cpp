@@ -432,6 +432,54 @@ AutoRangeArray::ShrinkRangesIfStartFromOrEndAfterAtomicContent(
 }
 
 
+void AutoRangeArray::
+    UpdatePointsToSelectAllChildrenIfCollapsedInEmptyBlockElement(
+        EditorDOMPoint& aStartPoint, EditorDOMPoint& aEndPoint,
+        const Element& aEditingHost) {
+  
+  
+
+  
+  
+  
+  
+  
+  if (aStartPoint != aEndPoint) {
+    return;
+  }
+
+  if (!aStartPoint.IsInContentNode()) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  Element* const maybeNonEditableBlockElement =
+      HTMLEditUtils::GetInclusiveAncestorElement(
+          *aStartPoint.ContainerAsContent(),
+          HTMLEditUtils::ClosestBlockElement);
+  if (!maybeNonEditableBlockElement) {
+    return;
+  }
+
+  
+  if (aEditingHost.IsInclusiveDescendantOf(maybeNonEditableBlockElement)) {
+    return;
+  }
+
+  if (HTMLEditUtils::IsEmptyNode(*maybeNonEditableBlockElement)) {
+    aStartPoint.Set(maybeNonEditableBlockElement, 0u);
+    aEndPoint.SetToEndOf(maybeNonEditableBlockElement);
+  }
+}
+
+
 
 
 

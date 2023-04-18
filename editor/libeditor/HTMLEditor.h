@@ -1297,18 +1297,6 @@ class HTMLEditor final : public EditorBase,
   
 
 
-
-
-
-
-  template <typename EditorDOMPointType1, typename EditorDOMPointType2>
-  void SelectBRElementIfCollapsedInEmptyBlock(
-      EditorDOMPointType1& aStartPoint, EditorDOMPointType2& aEndPoint,
-      const Element& aEditingHost) const;
-
-  
-
-
   static void GetChildNodesOf(
       nsINode& aParentNode,
       nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents) {
