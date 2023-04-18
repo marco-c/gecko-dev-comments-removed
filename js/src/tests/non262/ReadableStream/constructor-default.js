@@ -1,6 +1,8 @@
 
 
 
+
+
 let log = [];
 
 Object.defineProperty(Object.prototype, "size", {

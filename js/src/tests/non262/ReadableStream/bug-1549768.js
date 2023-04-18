@@ -1,5 +1,7 @@
-var otherGlobal = newGlobal({newCompartment: true});
-var obj = { start(c) {} };
+
+
+var otherGlobal = newGlobal({ newCompartment: true });
+var obj = { start(c) { } };
 var Cancel = otherGlobal.ReadableStream.prototype.tee.call(new ReadableStream(obj))[0].cancel;
 
 var stream = new ReadableStream(obj);
