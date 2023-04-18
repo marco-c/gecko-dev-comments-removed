@@ -888,7 +888,8 @@ class FirefoxWdSpecBrowser(WebDriverBrowser):
         
         
         
-        if self.is_alive():
+        
+        if self.is_alive() and not force:
             end_time = time.time() + BrowserInstance.shutdown_timeout
             while time.time() < end_time:
                 self.logger.debug("Waiting for WebDriver session to end")
