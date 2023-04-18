@@ -2819,13 +2819,6 @@ static bool GetActualDeleteCount(JSContext* cx, const CallArgs& args,
   }
   MOZ_ASSERT(actualStart + *result <= len);
 
-  if (IsArraySpecies(cx, obj)) {
-    if (*result > UINT32_MAX) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_BAD_ARRAY_LENGTH);
-      return false;
-    }
-  }
   return true;
 }
 
@@ -2865,6 +2858,18 @@ static bool array_splice_impl(JSContext* cx, unsigned argc, Value* vp,
   if (!GetActualDeleteCount(cx, args, obj, len, actualStart, itemCount,
                             &actualDeleteCount)) {
     return false;
+  }
+
+  
+
+
+
+  if (IsArraySpecies(cx, obj)) {
+    if (actualDeleteCount > UINT32_MAX) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_BAD_ARRAY_LENGTH);
+      return false;
+    }
   }
 
   RootedObject arr(cx);
@@ -3126,6 +3131,12 @@ static bool array_splice_noRetVal(JSContext* cx, unsigned argc, Value* vp) {
 
 static ArrayObject* NewDenseArray(JSContext* cx, const CallArgs& args,
                                   uint64_t len) {
+  if (len > UINT32_MAX) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BAD_ARRAY_LENGTH);
+    return nullptr;
+  }
+
   RootedObject proto(cx);
   if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_Array, &proto)) {
     return nullptr;
@@ -3170,8 +3181,10 @@ static bool array_with_spliced(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
+  
   uint32_t insertCount = GetItemCount(args);
 
+  
   
   uint64_t actualDeleteCount;
   if (!GetActualDeleteCount(cx, args, obj, len, actualStart, insertCount,
@@ -3182,6 +3195,7 @@ static bool array_with_spliced(JSContext* cx, unsigned argc, Value* vp) {
   
   uint64_t newLen = len + insertCount - actualDeleteCount;
 
+  
   
   RootedObject A(cx, NewDenseArray(cx, args, newLen));
   if (!A) {
