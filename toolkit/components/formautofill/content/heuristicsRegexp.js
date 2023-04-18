@@ -49,8 +49,8 @@ var HeuristicsRegExp = {
       "additional-name": "apellido.?materno|lastlastname",
       "cc-name":
         
-        "titulaire" + 
-        "|(name auf der karte)", 
+        "accountholdername" +
+        "|titulaire", 
       "cc-number": "(cc|kk)nr", 
       "cc-exp-month": "(cc|kk)month", 
       "cc-exp-year": "(cc|kk)year", 
