@@ -96,91 +96,6 @@ module.exports = {
 
  }),
 
- 562:
- (function(module, exports, __webpack_require__) {
-
-var freeGlobal = __webpack_require__(589);
-
-
-var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
-
-
-var root = freeGlobal || freeSelf || Function('return this')();
-
-module.exports = root;
-
-
- }),
-
- 563:
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var isArray = Array.isArray;
-
-module.exports = isArray;
-
-
- }),
-
- 565:
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isObjectLike(value) {
-  return value != null && typeof value == 'object';
-}
-
-module.exports = isObjectLike;
-
-
- }),
-
  567:
  (function(module, exports) {
 
@@ -384,165 +299,6 @@ module.exports = {
 
  }),
 
- 569:
- (function(module, exports, __webpack_require__) {
-
-var Symbol = __webpack_require__(570),
-    getRawTag = __webpack_require__(615),
-    objectToString = __webpack_require__(616);
-
-
-var nullTag = '[object Null]',
-    undefinedTag = '[object Undefined]';
-
-
-var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
-
-
-
-
-
-
-
-
-function baseGetTag(value) {
-  if (value == null) {
-    return value === undefined ? undefinedTag : nullTag;
-  }
-  return (symToStringTag && symToStringTag in Object(value))
-    ? getRawTag(value)
-    : objectToString(value);
-}
-
-module.exports = baseGetTag;
-
-
- }),
-
- 570:
- (function(module, exports, __webpack_require__) {
-
-var root = __webpack_require__(562);
-
-
-var Symbol = root.Symbol;
-
-module.exports = Symbol;
-
-
- }),
-
- 577:
- (function(module, exports, __webpack_require__) {
-
-var baseGetTag = __webpack_require__(569),
-    isObjectLike = __webpack_require__(565);
-
-
-var symbolTag = '[object Symbol]';
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isSymbol(value) {
-  return typeof value == 'symbol' ||
-    (isObjectLike(value) && baseGetTag(value) == symbolTag);
-}
-
-module.exports = isSymbol;
-
-
- }),
-
- 589:
- (function(module, exports, __webpack_require__) {
-
-(function(global) {
-var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
-
-module.exports = freeGlobal;
-
-}.call(exports, __webpack_require__(590)))
-
- }),
-
- 590:
- (function(module, exports) {
-
-var g;
-
-
-g = (function() {
-	return this;
-})();
-
-try {
-	
-	g = g || Function("return this")() || (1,eval)("this");
-} catch(e) {
-	
-	if(typeof window === "object")
-		g = window;
-}
-
-
-
-
-
-module.exports = g;
-
-
- }),
-
- 605:
- (function(module, exports, __webpack_require__) {
-
-var baseToString = __webpack_require__(639);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function toString(value) {
-  return value == null ? '' : baseToString(value);
-}
-
-module.exports = toString;
-
-
- }),
-
  607:
  (function(module, exports) {
 
@@ -734,160 +490,6 @@ process.umask = function() { return 0; };
 
  }),
 
- 615:
- (function(module, exports, __webpack_require__) {
-
-var Symbol = __webpack_require__(570);
-
-
-var objectProto = Object.prototype;
-
-
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-
-
-
-
-
-var nativeObjectToString = objectProto.toString;
-
-
-var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
-
-
-
-
-
-
-
-
-function getRawTag(value) {
-  var isOwn = hasOwnProperty.call(value, symToStringTag),
-      tag = value[symToStringTag];
-
-  try {
-    value[symToStringTag] = undefined;
-    var unmasked = true;
-  } catch (e) {}
-
-  var result = nativeObjectToString.call(value);
-  if (unmasked) {
-    if (isOwn) {
-      value[symToStringTag] = tag;
-    } else {
-      delete value[symToStringTag];
-    }
-  }
-  return result;
-}
-
-module.exports = getRawTag;
-
-
- }),
-
- 616:
- (function(module, exports) {
-
-
-var objectProto = Object.prototype;
-
-
-
-
-
-
-var nativeObjectToString = objectProto.toString;
-
-
-
-
-
-
-
-
-function objectToString(value) {
-  return nativeObjectToString.call(value);
-}
-
-module.exports = objectToString;
-
-
- }),
-
- 639:
- (function(module, exports, __webpack_require__) {
-
-var Symbol = __webpack_require__(570),
-    arrayMap = __webpack_require__(640),
-    isArray = __webpack_require__(563),
-    isSymbol = __webpack_require__(577);
-
-
-var INFINITY = 1 / 0;
-
-
-var symbolProto = Symbol ? Symbol.prototype : undefined,
-    symbolToString = symbolProto ? symbolProto.toString : undefined;
-
-
-
-
-
-
-
-
-
-function baseToString(value) {
-  
-  if (typeof value == 'string') {
-    return value;
-  }
-  if (isArray(value)) {
-    
-    return arrayMap(value, baseToString) + '';
-  }
-  if (isSymbol(value)) {
-    return symbolToString ? symbolToString.call(value) : '';
-  }
-  var result = (value + '');
-  return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
-}
-
-module.exports = baseToString;
-
-
- }),
-
- 640:
- (function(module, exports) {
-
-
-
-
-
-
-
-
-
-
-function arrayMap(array, iteratee) {
-  var index = -1,
-      length = array == null ? 0 : array.length,
-      result = Array(length);
-
-  while (++index < length) {
-    result[index] = iteratee(array[index], index, array);
-  }
-  return result;
-}
-
-module.exports = arrayMap;
-
-
- }),
-
  701:
  (function(module, exports, __webpack_require__) {
 
@@ -1018,12 +620,13 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = buildQuery;
 
-var _escapeRegExp = _interopRequireDefault(__webpack_require__(908));
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 
 
+function escapeRegExp(str) {
+  const reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
+  return str.replace(reRegExpChar, "\\$&");
+}
 
 
 
@@ -1072,14 +675,18 @@ function buildQuery(originalQuery, modifiers, {
     return new RegExp(originalQuery);
   }
 
-  let query = originalQuery;
+  let query = originalQuery; 
+  
+
+  if (!regexMatch) {
+    query = escapeRegExp(query);
+  } 
+  
+  
+
 
   if (ignoreSpaces) {
     query = ignoreWhiteSpace(query);
-  }
-
-  if (!regexMatch) {
-    query = (0, _escapeRegExp.default)(query);
   }
 
   query = wholeMatch(query, wholeWord);
@@ -1091,45 +698,6 @@ function buildQuery(originalQuery, modifiers, {
 
   return new RegExp(query);
 }
-
- }),
-
- 908:
- (function(module, exports, __webpack_require__) {
-
-var toString = __webpack_require__(605);
-
-
-
-
-
-var reRegExpChar = /[\\^$.*+?()[\]{}|]/g,
-    reHasRegExpChar = RegExp(reRegExpChar.source);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function escapeRegExp(string) {
-  string = toString(string);
-  return (string && reHasRegExpChar.test(string))
-    ? string.replace(reRegExpChar, '\\$&')
-    : string;
-}
-
-module.exports = escapeRegExp;
-
 
  }),
 
