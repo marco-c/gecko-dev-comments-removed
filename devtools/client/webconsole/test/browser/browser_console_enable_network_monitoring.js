@@ -14,8 +14,6 @@ requestLongerTimeout(10);
 
 
 add_task(async function testEnableNetworkMonitoringInBrowserConsole() {
-  await pushPref("devtools.browserconsole.contentMessages", true);
-
   const hud = await BrowserConsoleManager.toggleBrowserConsole();
   const enableNetworkMonitoringSelector =
     ".webconsole-console-settings-menu-item-enableNetworkMonitoring";
