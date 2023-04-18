@@ -9,6 +9,11 @@ function run_test() {
   Assert.equal(result, 2);
 
   
+  result = null;
+  try { result = new XPCNativeWrapper(2); } catch (e) { result = "catch"; }
+  Assert.equal(result, "catch");
+
+  
   
   var sb = new Cu.Sandbox('http://www.example.com', { wantGlobalProperties: ["XMLHttpRequest"] });
   Cu.evalInSandbox('this.xhr = new XMLHttpRequest();', sb);
