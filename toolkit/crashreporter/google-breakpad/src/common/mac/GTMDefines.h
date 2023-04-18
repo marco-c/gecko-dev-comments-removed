@@ -30,17 +30,6 @@
 #endif  
 
 
-#ifndef MAC_OS_X_VERSION_10_5
-  #define MAC_OS_X_VERSION_10_5 1050
-#endif
-#ifndef MAC_OS_X_VERSION_10_6
-  #define MAC_OS_X_VERSION_10_6 1060
-#endif
-#ifndef MAC_OS_X_VERSION_10_7
-  #define MAC_OS_X_VERSION_10_7 1070
-#endif
-
-
 #ifndef __IPHONE_3_0
   #define __IPHONE_3_0 30000
 #endif
@@ -232,41 +221,6 @@
 
 
 
-#if !(MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5)
- 
-  #ifndef NSINTEGER_DEFINED
-    #if (defined(__LP64__) && __LP64__) || NS_BUILD_32_LIKE_64
-      typedef long NSInteger;
-      typedef unsigned long NSUInteger;
-    #else
-      typedef int NSInteger;
-      typedef unsigned int NSUInteger;
-    #endif
-    #define NSIntegerMax    LONG_MAX
-    #define NSIntegerMin    LONG_MIN
-    #define NSUIntegerMax   ULONG_MAX
-    #define NSINTEGER_DEFINED 1
-  #endif  
-  
-  #ifndef CGFLOAT_DEFINED
-    #if defined(__LP64__) && __LP64__
-      
-      typedef double CGFloat;
-      #define CGFLOAT_MIN DBL_MIN
-      #define CGFLOAT_MAX DBL_MAX
-      #define CGFLOAT_IS_DOUBLE 1
-    #else 
-      typedef float CGFloat;
-      #define CGFLOAT_MIN FLT_MIN
-      #define CGFLOAT_MAX FLT_MAX
-      #define CGFLOAT_IS_DOUBLE 0
-    #endif 
-    #define CGFLOAT_DEFINED 1
-  #endif 
-#endif  
-
-
-
 #ifndef __has_feature      
   #define __has_feature(x) 0 // Compatibility with non-clang compilers.
 #endif
@@ -406,7 +360,7 @@ GTM_EXTERN void _GTMUnitTestDevLog(NSString *format, ...) NS_FORMAT_FUNCTION(1, 
 
 
 #ifndef GTM_FOREACH_OBJECT
-  #if TARGET_OS_IPHONE || !(MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5)
+  #if TARGET_OS_IPHONE
     #define GTM_FOREACH_ENUMEREE(element, enumeration) \
       for (element in enumeration)
     #define GTM_FOREACH_OBJECT(element, collection) \
@@ -425,20 +379,6 @@ GTM_EXTERN void _GTMUnitTestDevLog(NSString *format, ...) NS_FORMAT_FUNCTION(1, 
 #endif
 
 
-
-
-
-#if !defined(GTM_10_6_PROTOCOLS_DEFINED) && !(MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6)
-#define GTM_10_6_PROTOCOLS_DEFINED 1
-@protocol NSConnectionDelegate
-@end
-@protocol NSAnimationDelegate
-@end
-@protocol NSImageDelegate
-@end
-@protocol NSTabViewDelegate
-@end
-#endif  
 
 
 
