@@ -356,28 +356,51 @@ impl Connection {
     
     
     fn clear_readable(&mut self, registry: &Registry) -> Result<()> {
-        self.interest.and_then(|i| i.remove(Interest::READABLE));
-        self.update_registration(registry)
+        self.update_registration(
+            registry,
+            self.interest.and_then(|i| i.remove(Interest::READABLE)),
+        )
     }
 
     
     fn set_writable(&mut self, registry: &Registry) -> Result<()> {
-        self.interest
-            .map_or_else(|| Interest::WRITABLE, |i| i.add(Interest::WRITABLE));
-        self.update_registration(registry)
+        self.update_registration(
+            registry,
+            Some(
+                self.interest
+                    .map_or_else(|| Interest::WRITABLE, |i| i.add(Interest::WRITABLE)),
+            ),
+        )
     }
 
     fn clear_writable(&mut self, registry: &Registry) -> Result<()> {
-        self.interest.and_then(|i| i.remove(Interest::WRITABLE));
-        self.update_registration(registry)
+        self.update_registration(
+            registry,
+            self.interest.and_then(|i| i.remove(Interest::WRITABLE)),
+        )
     }
 
     
-    fn update_registration(&mut self, registry: &Registry) -> Result<()> {
-        if let Some(interest) = self.interest {
-            registry.reregister(&mut self.io, self.token, interest)?;
-        } else {
-            registry.deregister(&mut self.io)?;
+    fn update_registration(
+        &mut self,
+        registry: &Registry,
+        new_interest: Option<Interest>,
+    ) -> Result<()> {
+        
+        
+        if new_interest != self.interest {
+            trace!(
+                "{:?}: updating readiness registration old={:?} new={:?}",
+                self.token,
+                self.interest,
+                new_interest
+            );
+            self.interest = new_interest;
+            if let Some(interest) = self.interest {
+                registry.reregister(&mut self.io, self.token, interest)?;
+            } else {
+                registry.deregister(&mut self.io)?;
+            }
         }
         Ok(())
     }
@@ -405,7 +428,6 @@ impl Connection {
             self.outbound.is_empty()
         );
         let done = done && self.outbound.is_empty();
-        
         
         if done {
             trace!("{:?}: driver done, clearing read interest", self.token);
@@ -500,7 +522,11 @@ impl Connection {
                     trace!("{:?}: send bytes: {}", self.token, n);
                 }
                 Err(ref e) if would_block(e) => {
-                    trace!("{:?}: send would_block: {:?}", self.token, e);
+                    trace!(
+                        "{:?}: send would_block: {:?}, setting write interest",
+                        self.token,
+                        e
+                    );
                     
                     self.set_writable(registry)?;
                     break;
@@ -516,9 +542,6 @@ impl Connection {
             }
             trace!("{:?}: post-send: outbound {:?}", self.token, self.outbound);
         }
-        
-        
-        
         
         if self.outbound.is_empty() {
             trace!("{:?}: outbound empty, clearing write interest", self.token);
