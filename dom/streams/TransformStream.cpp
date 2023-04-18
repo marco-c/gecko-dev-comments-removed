@@ -16,7 +16,7 @@
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TransformStream, mGlobal)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(TransformStream, mGlobal, mController)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(TransformStream)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(TransformStream)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TransformStream)
@@ -112,7 +112,8 @@ already_AddRefed<TransformStream> TransformStream::Constructor(
   
   
   
-  
+  SetUpTransformStreamDefaultControllerFromTransformer(
+      aGlobal.Context(), *transformStream, transformerObj, transformerDict);
 
   
   
