@@ -482,7 +482,6 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
 
   
   masm.loadPtr(Address(rsp, RectifierFrameLayout::offsetOfNumActualArgs()), r8);
-  masm.addl(Imm32(1), r8);
 
   
   masm.loadPtr(Address(rsp, RectifierFrameLayout::offsetOfCalleeToken()), rax);
@@ -521,6 +520,7 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
 
   
   masm.subq(r8, rcx);
+  masm.subq(Imm32(1), rcx);  
 
   
   
@@ -532,8 +532,7 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   
 
   
-  
-  masm.lea(Operand(r8, -1), rdx);
+  masm.mov(r8, rdx);
 
   masm.moveValue(UndefinedValue(), ValueOperand(r10));
 
@@ -553,11 +552,11 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   static_assert(sizeof(Value) == 8, "TimesEight is used to skip arguments");
 
   
-  
-  BaseIndex b(r9, r8, TimesEight, sizeof(RectifierFrameLayout) - sizeof(Value));
+  BaseIndex b(r9, r8, TimesEight, sizeof(RectifierFrameLayout));
   masm.lea(Operand(b), rcx);
 
   
+  masm.addl(Imm32(1), r8);
   {
     Label copyLoopTop;
 
