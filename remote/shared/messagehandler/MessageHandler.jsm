@@ -4,7 +4,7 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = ["CONTEXT_DESCRIPTOR_TYPES", "MessageHandler"];
+const EXPORTED_SYMBOLS = ["ContextDescriptorType", "MessageHandler"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -43,9 +43,13 @@ XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
 
 
 
-const CONTEXT_DESCRIPTOR_TYPES = {
-  ALL: "all",
-  TOP_BROWSING_CONTEXT: "top-browsing-context",
+
+
+
+
+const ContextDescriptorType = {
+  All: "All",
+  TopBrowsingContext: "TopBrowsingContext",
 };
 
 

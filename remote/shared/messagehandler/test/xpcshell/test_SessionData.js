@@ -2,7 +2,7 @@
 
 
 
-const { CONTEXT_DESCRIPTOR_TYPES } = ChromeUtils.import(
+const { ContextDescriptorType } = ChromeUtils.import(
   "chrome://remote/content/shared/messagehandler/MessageHandler.jsm"
 );
 const { RootMessageHandler } = ChromeUtils.import(
@@ -17,7 +17,7 @@ add_task(async function test_sessionData() {
   equal(sessionData.getSessionData("mod", "event").length, 0);
 
   const globalContext = {
-    type: CONTEXT_DESCRIPTOR_TYPES.ALL,
+    type: ContextDescriptorType.All,
   };
   const otherContext = { type: "other-type", id: "some-id" };
 
