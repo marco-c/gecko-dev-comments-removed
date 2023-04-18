@@ -153,7 +153,10 @@ class ChannelEventQueue final {
   }
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-  bool IsEmpty() const { return mEventQueue.IsEmpty(); }
+  bool IsEmpty() {
+    MutexAutoLock lock(mMutex);
+    return mEventQueue.IsEmpty();
+  }
 #endif
 
  private:
@@ -198,12 +201,10 @@ class ChannelEventQueue final {
 inline void ChannelEventQueue::RunOrEnqueue(ChannelEvent* aCallback,
                                             bool aAssertionWhenNotQueued) {
   MOZ_ASSERT(aCallback);
-
   
   
   
-  nsCOMPtr<nsISupports> kungFuDeathGrip(mOwner);
-  Unused << kungFuDeathGrip;  
+  nsCOMPtr<nsISupports> kungFuDeathGrip;
 
   
   UniquePtr<ChannelEvent> event(aCallback);
@@ -211,9 +212,9 @@ inline void ChannelEventQueue::RunOrEnqueue(ChannelEvent* aCallback,
   
   
   RecursiveMutexAutoLock lock(mRunningMutex);
-
   {
     MutexAutoLock lock(mMutex);
+    kungFuDeathGrip = mOwner;  
 
     bool enqueue = !!mForcedCount || mSuspended || mFlushing ||
                    !mEventQueue.IsEmpty() ||
@@ -341,8 +342,13 @@ inline void ChannelEventQueue::MaybeFlushQueue() {
 
 class MOZ_STACK_CLASS AutoEventEnqueuer {
  public:
-  explicit AutoEventEnqueuer(ChannelEventQueue* queue)
-      : mEventQueue(queue), mOwner(queue->mOwner) {
+  explicit AutoEventEnqueuer(ChannelEventQueue* queue) : mEventQueue(queue) {
+    {
+      
+      
+      MutexAutoLock lock(queue->mMutex);
+      mOwner = queue->mOwner;
+    }
     mEventQueue->StartForcedQueueing();
   }
   ~AutoEventEnqueuer() { mEventQueue->EndForcedQueueing(); }
