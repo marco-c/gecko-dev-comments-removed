@@ -84,8 +84,18 @@ class ScriptPreloader : public nsIObserver,
   NS_DECL_NSINAMED
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
 
+ private:
+  static StaticRefPtr<ScriptPreloader> gScriptPreloader;
+  static StaticRefPtr<ScriptPreloader> gChildScriptPreloader;
+  static UniquePtr<AutoMemMap> gCacheData;
+  static UniquePtr<AutoMemMap> gChildCacheData;
+
+ public:
   static ScriptPreloader& GetSingleton();
   static ScriptPreloader& GetChildSingleton();
+
+  static void DeleteSingleton();
+  static void DeleteCacheDataSingleton();
 
   static ProcessType GetChildProcessType(const nsACString& remoteType);
 
@@ -137,7 +147,7 @@ class ScriptPreloader : public nsIObserver,
   static void InitContentChild(dom::ContentParent& parent);
 
  protected:
-  virtual ~ScriptPreloader() = default;
+  virtual ~ScriptPreloader();
 
  private:
   enum class ScriptStatus {

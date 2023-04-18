@@ -24,7 +24,6 @@ enum class ShutdownPhase {
   XPCOMShutdownLoaders,
   XPCOMShutdownFinal,
   CCPostLastCycleCollection,
-  JSPostShutDown,
   ShutdownPhase_Length,         
   First = AppShutdownConfirmed  
 };
