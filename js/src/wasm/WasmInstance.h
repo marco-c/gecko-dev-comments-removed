@@ -75,9 +75,6 @@ class alignas(16) Instance {
   uintptr_t boundsCheckLimit_;
 
   
-  Instance* instance_;
-
-  
   JS::Realm* realm_;
 
   
@@ -214,9 +211,7 @@ class alignas(16) Instance {
   static constexpr size_t offsetOfBoundsCheckLimit() {
     return offsetof(Instance, boundsCheckLimit_);
   }
-  static constexpr size_t offsetOfInstance() {
-    return offsetof(Instance, instance_);
-  }
+
   static constexpr size_t offsetOfRealm() { return offsetof(Instance, realm_); }
   static constexpr size_t offsetOfCx() { return offsetof(Instance, cx_); }
   static constexpr size_t offsetOfValueBoxClass() {
