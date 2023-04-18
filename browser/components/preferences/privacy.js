@@ -2010,7 +2010,7 @@ var gPrivacyPane = {
 
       
       document.getElementById(
-        "firefoxSuggestBestMatchOptionBox"
+        "firefoxSuggestBestMatch"
       ).hidden = !UrlbarPrefs.get("bestMatchEnabled");
 
       
