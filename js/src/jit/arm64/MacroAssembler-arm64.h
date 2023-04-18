@@ -575,7 +575,14 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
 
     
     
-    if (CPUHas(vixl::CPUFeatures::kFP, vixl::CPUFeatures::kJSCVT)) {
+    
+#if defined(JS_SIMULATOR_ARM64) && (defined(__aarch64__) || defined(_M_ARM64))
+    const bool fjscvt = false;
+#else
+    const bool fjscvt =
+        CPUHas(vixl::CPUFeatures::kFP, vixl::CPUFeatures::kJSCVT);
+#endif
+    if (fjscvt) {
       
       
       Fjcvtzs(dest32, fsrc64);
