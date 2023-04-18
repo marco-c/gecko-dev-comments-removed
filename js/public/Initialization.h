@@ -165,4 +165,13 @@ JS_PUBLIC_API bool InitSelfHostedCode(JSContext* cx,
 
 extern JS_PUBLIC_API void JS_ShutDown(void);
 
+#if defined(ENABLE_WASM_SIMD) && \
+    (defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86))
+namespace JS {
+
+
+void SetAVXEnabled();
+}  
+#endif
+
 #endif 
