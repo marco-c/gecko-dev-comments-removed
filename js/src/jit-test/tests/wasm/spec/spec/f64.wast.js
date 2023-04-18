@@ -28300,3 +28300,15 @@ assert_invalid(
   () => instantiate(`(module (func (result f64) (f64.trunc (i64.const 0))))`),
   `type mismatch`,
 );
+
+
+assert_malformed(
+  () => instantiate(`(func (result f64) (f64.const nan:arithmetic)) `),
+  `unexpected token`,
+);
+
+
+assert_malformed(
+  () => instantiate(`(func (result f64) (f64.const nan:canonical)) `),
+  `unexpected token`,
+);

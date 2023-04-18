@@ -2105,3 +2105,15 @@ assert_invalid(
     ),
   `type mismatch`,
 );
+
+
+assert_malformed(
+  () => instantiate(`(func (result i32) (i32.const nan:arithmetic)) `),
+  `unexpected token`,
+);
+
+
+assert_malformed(
+  () => instantiate(`(func (result i32) (i32.const nan:canonical)) `),
+  `unexpected token`,
+);
