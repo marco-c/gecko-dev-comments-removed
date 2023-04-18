@@ -37,14 +37,11 @@ class CParserContext {
 
   ~CParserContext();
 
-  nsresult GetTokenizer(nsIDTD* aDTD, nsIContentSink* aSink,
-                        nsITokenizer*& aTokenizer);
   void SetMimeType(const nsACString& aMimeType);
 
   nsCOMPtr<nsIRequest>
       mRequest;  
                  
-  nsCOMPtr<nsITokenizer> mTokenizer;
   nsScanner mScanner;
 
   nsCString mMimeType;
