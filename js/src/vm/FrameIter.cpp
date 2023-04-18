@@ -227,7 +227,7 @@ void JitFrameIter::operator++() {
       
       
       
-      EnsureBareExitFrame(act_, prevFrame);
+      EnsureUnwoundJitExitFrame(act_, prevFrame);
     }
   } else if (isWasm()) {
     ++asWasm();
