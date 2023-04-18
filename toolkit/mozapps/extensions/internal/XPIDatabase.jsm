@@ -113,6 +113,8 @@ const PROP_JSON_FIELDS = [
   "type",
   "loader",
   "updateURL",
+  "installOrigins",
+  "manifestVersion",
   "optionsURL",
   "optionsType",
   "optionsBrowserStyle",
@@ -328,6 +330,44 @@ class AddonInternal {
 
   get resolvedRootURI() {
     return XPIInternal.maybeResolveURI(Services.io.newURI(this.rootURI));
+  }
+
+  
+
+
+
+
+
+
+
+  validInstallOrigins(origins = {}) {
+    if (
+      !Services.prefs.getBoolPref("extensions.install_origins.enabled", true)
+    ) {
+      return true;
+    }
+
+    let { installOrigins, manifestVersion } = this;
+    if (!installOrigins) {
+      
+      
+      
+      return manifestVersion < 3;
+    }
+    
+    if (!installOrigins.length) {
+      return false;
+    }
+
+    for (const [name, source] of Object.entries(origins)) {
+      if (!installOrigins.includes(new URL(source.spec).origin)) {
+        logger.warn(
+          `Addon ${this.id} Installation not allowed, ${name} "${source.spec}" is not included in the Addon install_origins`
+        );
+        return false;
+      }
+    }
+    return true;
   }
 
   addedToDatabase() {
@@ -777,6 +817,9 @@ class AddonInternal {
     }
   }
 }
+
+
+
 
 
 
@@ -1348,6 +1391,9 @@ function defineAddonWrapperProperty(name, getter) {
   "foreignInstall",
   "strictCompatibility",
   "updateURL",
+  "installOrigins",
+  "manifestVersion",
+  "validInstallOrigins",
   "dependencies",
   "signedState",
   "isCorrectlySigned",

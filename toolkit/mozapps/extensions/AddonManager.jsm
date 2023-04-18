@@ -2354,6 +2354,8 @@ var AddonManagerInternal = {
       } else {
         
         
+        
+        logger.info(`Addon download before validation.`);
         startInstall("other");
       }
     } catch (e) {
@@ -3100,16 +3102,44 @@ var AddonManagerInternal = {
     }
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   _verifyThirdPartyInstall(browser, url, install, info, source) {
     
     
-    
+    if (!WEBEXT_POSTDOWNLOAD_THIRD_PARTY || ["AMO", "local"].includes(source)) {
+      return Promise.resolve();
+    }
+
     
     if (
-      !WEBEXT_POSTDOWNLOAD_THIRD_PARTY ||
-      ["AMO", "local"].includes(source) ||
-      info.addon.canBypassThirdParyInstallPrompt
+      !info.addon.validInstallOrigins({
+        installFrom: url,
+        source: install.sourceURI,
+      })
     ) {
+      install.cancel();
+      return Promise.reject();
+    }
+
+    
+    if (info.addon.canBypassThirdParyInstallPrompt) {
       return Promise.resolve();
     }
 
