@@ -9762,7 +9762,7 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
   
   
   
-  UnionAdditionalOverflow(presContext, aLineLayout.LineContainerRI()->mFrame,
+  UnionAdditionalOverflow(presContext, aLineLayout.LineContainerFrame(),
                           provider, &aMetrics.InkOverflow(), false, true);
 
   

@@ -4232,7 +4232,7 @@ void nsBlockFrame::ReflowInlineFrames(BlockReflowInput& aState,
         
         
         nsLineLayout lineLayout(aState.mPresContext, aState.FloatManager(),
-                                &aState.mReflowInput, &aLine, nullptr);
+                                aState.mReflowInput, &aLine, nullptr);
         lineLayout.Init(&aState, aState.mMinLineHeight, aState.mLineNumber);
         if (forceBreakInFrame) {
           lineLayout.ForceBreakAtPosition(forceBreakInFrame, forceBreakOffset);
