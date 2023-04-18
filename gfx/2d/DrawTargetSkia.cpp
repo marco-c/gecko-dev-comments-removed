@@ -1596,9 +1596,13 @@ RefPtr<DrawTarget> DrawTargetSkia::CreateClippedDrawTarget(
   if (mCanvas->getDeviceClipBounds(&clipBounds)) {
     RefPtr<DrawTarget> dt = CreateSimilarDrawTarget(
         IntSize(clipBounds.width(), clipBounds.height()), aFormat);
-    result = gfx::Factory::CreateOffsetDrawTarget(
-        dt, IntPoint(clipBounds.x(), clipBounds.y()));
-    result->SetTransform(mTransform);
+    if (dt) {
+      result = gfx::Factory::CreateOffsetDrawTarget(
+          dt, IntPoint(clipBounds.x(), clipBounds.y()));
+      if (result) {
+        result->SetTransform(mTransform);
+      }
+    }
   } else {
     
     result = CreateSimilarDrawTarget(IntSize(1, 1), aFormat);
