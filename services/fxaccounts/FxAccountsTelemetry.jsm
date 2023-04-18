@@ -13,7 +13,9 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   
   
   Observers: "resource://services-common/observers.js",
@@ -27,7 +29,7 @@ const { PREF_ACCOUNT_ROOT, log } = ChromeUtils.import(
 
 const PREF_SANITIZED_UID = PREF_ACCOUNT_ROOT + "telemetry.sanitized_uid";
 XPCOMUtils.defineLazyPreferenceGetter(
-  this,
+  lazy,
   "pref_sanitizedUid",
   PREF_SANITIZED_UID,
   ""
@@ -36,7 +38,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 class FxAccountsTelemetry {
   constructor(fxai) {
     this._fxai = fxai;
-    Services.telemetry.setEventRecordingEnabled("fxa", true);
+    lazy.Services.telemetry.setEventRecordingEnabled("fxa", true);
   }
 
   
@@ -44,11 +46,16 @@ class FxAccountsTelemetry {
     
     ChromeUtils.import("resource://services-sync/telemetry.js");
     
-    Observers.notify("fxa:telemetry:event", { object, method, value, extra });
+    lazy.Observers.notify("fxa:telemetry:event", {
+      object,
+      method,
+      value,
+      extra,
+    });
   }
 
   generateUUID() {
-    return Services.uuid
+    return lazy.Services.uuid
       .generateUUID()
       .toString()
       .slice(1, -1);
@@ -68,15 +75,15 @@ class FxAccountsTelemetry {
   
   _setHashedUID(hashedUID) {
     if (!hashedUID) {
-      Services.prefs.clearUserPref(PREF_SANITIZED_UID);
+      lazy.Services.prefs.clearUserPref(PREF_SANITIZED_UID);
     } else {
-      Services.prefs.setStringPref(PREF_SANITIZED_UID, hashedUID);
+      lazy.Services.prefs.setStringPref(PREF_SANITIZED_UID, hashedUID);
     }
   }
 
   getSanitizedUID() {
     
-    return pref_sanitizedUid || null;
+    return lazy.pref_sanitizedUid || null;
   }
 
   
@@ -92,7 +99,7 @@ class FxAccountsTelemetry {
     
     
     
-    return CryptoUtils.sha256(deviceId + uid);
+    return lazy.CryptoUtils.sha256(deviceId + uid);
   }
 
   
@@ -119,7 +126,13 @@ class FxAccountsTelemetry {
       if (services.includes("sync")) {
         extra.sync = "true";
       }
-      Services.telemetry.recordEvent("fxa", "connect", "account", how, extra);
+      lazy.Services.telemetry.recordEvent(
+        "fxa",
+        "connect",
+        "account",
+        how,
+        extra
+      );
     } catch (ex) {
       log.error("Failed to record connection telemetry", ex);
       console.error("Failed to record connection telemetry", ex);
@@ -146,7 +159,7 @@ class FxAccountsTelemetry {
         extra.fxa = "true";
         
         
-        if (Services.prefs.prefHasUserValue("services.sync.username")) {
+        if (lazy.Services.prefs.prefHasUserValue("services.sync.username")) {
           extra.sync = "true";
         }
       } else if (service == "sync") {
@@ -157,7 +170,7 @@ class FxAccountsTelemetry {
           `recordDisconnection has invalid value for service: ${service}`
         );
       }
-      Services.telemetry.recordEvent(
+      lazy.Services.telemetry.recordEvent(
         "fxa",
         "disconnect",
         "account",
