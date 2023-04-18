@@ -177,89 +177,7 @@ pub const ERRNO_TXTBSY: Errno = 74;
 pub const ERRNO_XDEV: Errno = 75;
 
 pub const ERRNO_NOTCAPABLE: Errno = 76;
-pub fn errno_name(code: u16) -> &'static str {
-    match code {
-        ERRNO_SUCCESS => "SUCCESS",
-        ERRNO_2BIG => "2BIG",
-        ERRNO_ACCES => "ACCES",
-        ERRNO_ADDRINUSE => "ADDRINUSE",
-        ERRNO_ADDRNOTAVAIL => "ADDRNOTAVAIL",
-        ERRNO_AFNOSUPPORT => "AFNOSUPPORT",
-        ERRNO_AGAIN => "AGAIN",
-        ERRNO_ALREADY => "ALREADY",
-        ERRNO_BADF => "BADF",
-        ERRNO_BADMSG => "BADMSG",
-        ERRNO_BUSY => "BUSY",
-        ERRNO_CANCELED => "CANCELED",
-        ERRNO_CHILD => "CHILD",
-        ERRNO_CONNABORTED => "CONNABORTED",
-        ERRNO_CONNREFUSED => "CONNREFUSED",
-        ERRNO_CONNRESET => "CONNRESET",
-        ERRNO_DEADLK => "DEADLK",
-        ERRNO_DESTADDRREQ => "DESTADDRREQ",
-        ERRNO_DOM => "DOM",
-        ERRNO_DQUOT => "DQUOT",
-        ERRNO_EXIST => "EXIST",
-        ERRNO_FAULT => "FAULT",
-        ERRNO_FBIG => "FBIG",
-        ERRNO_HOSTUNREACH => "HOSTUNREACH",
-        ERRNO_IDRM => "IDRM",
-        ERRNO_ILSEQ => "ILSEQ",
-        ERRNO_INPROGRESS => "INPROGRESS",
-        ERRNO_INTR => "INTR",
-        ERRNO_INVAL => "INVAL",
-        ERRNO_IO => "IO",
-        ERRNO_ISCONN => "ISCONN",
-        ERRNO_ISDIR => "ISDIR",
-        ERRNO_LOOP => "LOOP",
-        ERRNO_MFILE => "MFILE",
-        ERRNO_MLINK => "MLINK",
-        ERRNO_MSGSIZE => "MSGSIZE",
-        ERRNO_MULTIHOP => "MULTIHOP",
-        ERRNO_NAMETOOLONG => "NAMETOOLONG",
-        ERRNO_NETDOWN => "NETDOWN",
-        ERRNO_NETRESET => "NETRESET",
-        ERRNO_NETUNREACH => "NETUNREACH",
-        ERRNO_NFILE => "NFILE",
-        ERRNO_NOBUFS => "NOBUFS",
-        ERRNO_NODEV => "NODEV",
-        ERRNO_NOENT => "NOENT",
-        ERRNO_NOEXEC => "NOEXEC",
-        ERRNO_NOLCK => "NOLCK",
-        ERRNO_NOLINK => "NOLINK",
-        ERRNO_NOMEM => "NOMEM",
-        ERRNO_NOMSG => "NOMSG",
-        ERRNO_NOPROTOOPT => "NOPROTOOPT",
-        ERRNO_NOSPC => "NOSPC",
-        ERRNO_NOSYS => "NOSYS",
-        ERRNO_NOTCONN => "NOTCONN",
-        ERRNO_NOTDIR => "NOTDIR",
-        ERRNO_NOTEMPTY => "NOTEMPTY",
-        ERRNO_NOTRECOVERABLE => "NOTRECOVERABLE",
-        ERRNO_NOTSOCK => "NOTSOCK",
-        ERRNO_NOTSUP => "NOTSUP",
-        ERRNO_NOTTY => "NOTTY",
-        ERRNO_NXIO => "NXIO",
-        ERRNO_OVERFLOW => "OVERFLOW",
-        ERRNO_OWNERDEAD => "OWNERDEAD",
-        ERRNO_PERM => "PERM",
-        ERRNO_PIPE => "PIPE",
-        ERRNO_PROTO => "PROTO",
-        ERRNO_PROTONOSUPPORT => "PROTONOSUPPORT",
-        ERRNO_PROTOTYPE => "PROTOTYPE",
-        ERRNO_RANGE => "RANGE",
-        ERRNO_ROFS => "ROFS",
-        ERRNO_SPIPE => "SPIPE",
-        ERRNO_SRCH => "SRCH",
-        ERRNO_STALE => "STALE",
-        ERRNO_TIMEDOUT => "TIMEDOUT",
-        ERRNO_TXTBSY => "TXTBSY",
-        ERRNO_XDEV => "XDEV",
-        ERRNO_NOTCAPABLE => "NOTCAPABLE",
-        _ => "Unknown error.",
-    }
-}
-pub fn errno_docs(code: u16) -> &'static str {
+pub(crate) fn strerror(code: u16) -> &'static str {
     match code {
         ERRNO_SUCCESS => "No error occurred. System call completed successfully.",
         ERRNO_2BIG => "Argument list too long.",
@@ -1037,7 +955,7 @@ pub unsafe fn fd_filestat_set_times(
 
 
 
-pub unsafe fn fd_pread(fd: Fd, iovs: IovecArray<'_>, offset: Filesize) -> Result<Size> {
+pub unsafe fn fd_pread(fd: Fd, iovs: IovecArray, offset: Filesize) -> Result<Size> {
     let mut nread = MaybeUninit::uninit();
     let rc =
         wasi_snapshot_preview1::fd_pread(fd, iovs.as_ptr(), iovs.len(), offset, nread.as_mut_ptr());
@@ -1088,7 +1006,7 @@ pub unsafe fn fd_prestat_dir_name(fd: Fd, path: *mut u8, path_len: Size) -> Resu
 
 
 
-pub unsafe fn fd_pwrite(fd: Fd, iovs: CiovecArray<'_>, offset: Filesize) -> Result<Size> {
+pub unsafe fn fd_pwrite(fd: Fd, iovs: CiovecArray, offset: Filesize) -> Result<Size> {
     let mut nwritten = MaybeUninit::uninit();
     let rc = wasi_snapshot_preview1::fd_pwrite(
         fd,
@@ -1114,7 +1032,7 @@ pub unsafe fn fd_pwrite(fd: Fd, iovs: CiovecArray<'_>, offset: Filesize) -> Resu
 
 
 
-pub unsafe fn fd_read(fd: Fd, iovs: IovecArray<'_>) -> Result<Size> {
+pub unsafe fn fd_read(fd: Fd, iovs: IovecArray) -> Result<Size> {
     let mut nread = MaybeUninit::uninit();
     let rc = wasi_snapshot_preview1::fd_read(fd, iovs.as_ptr(), iovs.len(), nread.as_mut_ptr());
     if let Some(err) = Error::from_raw_error(rc) {
@@ -1231,7 +1149,7 @@ pub unsafe fn fd_tell(fd: Fd) -> Result<Filesize> {
 
 
 
-pub unsafe fn fd_write(fd: Fd, iovs: CiovecArray<'_>) -> Result<Size> {
+pub unsafe fn fd_write(fd: Fd, iovs: CiovecArray) -> Result<Size> {
     let mut nwritten = MaybeUninit::uninit();
     let rc = wasi_snapshot_preview1::fd_write(fd, iovs.as_ptr(), iovs.len(), nwritten.as_mut_ptr());
     if let Some(err) = Error::from_raw_error(rc) {
@@ -1380,7 +1298,7 @@ pub unsafe fn path_open(
     path: &str,
     oflags: Oflags,
     fs_rights_base: Rights,
-    fs_rights_inheriting: Rights,
+    fs_rights_inherting: Rights,
     fdflags: Fdflags,
 ) -> Result<Fd> {
     let mut opened_fd = MaybeUninit::uninit();
@@ -1391,7 +1309,7 @@ pub unsafe fn path_open(
         path.len(),
         oflags,
         fs_rights_base,
-        fs_rights_inheriting,
+        fs_rights_inherting,
         fdflags,
         opened_fd.as_mut_ptr(),
     );
@@ -1602,11 +1520,7 @@ pub unsafe fn random_get(buf: *mut u8, buf_len: Size) -> Result<()> {
 
 
 
-pub unsafe fn sock_recv(
-    fd: Fd,
-    ri_data: IovecArray<'_>,
-    ri_flags: Riflags,
-) -> Result<(Size, Roflags)> {
+pub unsafe fn sock_recv(fd: Fd, ri_data: IovecArray, ri_flags: Riflags) -> Result<(Size, Roflags)> {
     let mut ro_datalen = MaybeUninit::uninit();
     let mut ro_flags = MaybeUninit::uninit();
     let rc = wasi_snapshot_preview1::sock_recv(
@@ -1636,7 +1550,7 @@ pub unsafe fn sock_recv(
 
 
 
-pub unsafe fn sock_send(fd: Fd, si_data: CiovecArray<'_>, si_flags: Siflags) -> Result<Size> {
+pub unsafe fn sock_send(fd: Fd, si_data: CiovecArray, si_flags: Siflags) -> Result<Size> {
     let mut so_datalen = MaybeUninit::uninit();
     let rc = wasi_snapshot_preview1::sock_send(
         fd,
@@ -1847,7 +1761,7 @@ pub mod wasi_snapshot_preview1 {
             path_len: usize,
             oflags: Oflags,
             fs_rights_base: Rights,
-            fs_rights_inheriting: Rights,
+            fs_rights_inherting: Rights,
             fdflags: Fdflags,
             opened_fd: *mut Fd,
         ) -> Errno;
