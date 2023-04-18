@@ -30,7 +30,7 @@
 
 
 
-#define NOTIFICATION_WAIT_TIMEOUT_MS (30 * 60 * 1000)
+#define NOTIFICATION_WAIT_TIMEOUT_MS (12 * 60 * 60 * 1000)
 
 
 #define MUTEX_TIMEOUT_MS (10 * 60 * 1000)
@@ -523,6 +523,7 @@ static NotificationActivities ShowNotification(
   toastTemplate.addAction(toastStrings->action1.get());
   toastTemplate.addAction(toastStrings->action2.get());
   toastTemplate.setImagePath(absImagePath.get());
+  toastTemplate.setScenario(WinToastTemplate::Scenario::Reminder);
   ToastHandler* handler =
       new ToastHandler(whichNotification, isEnglishInstall, event.get(), aumi);
   INT64 id = WinToast::instance()->showToast(toastTemplate, handler, &error);

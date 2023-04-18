@@ -145,7 +145,10 @@ HRESULT RegisterTask(const wchar_t* uniqueToken,
   ENSURE(taskSettings->put_StopIfGoingOnBatteries(VARIANT_FALSE));
   
   
-  BStrPtr execTimeLimitBStr = BStrPtr(SysAllocString(L"PT35M"));
+  
+  
+  
+  BStrPtr execTimeLimitBStr = BStrPtr(SysAllocString(L"PT12H5M"));
   ENSURE(taskSettings->put_ExecutionTimeLimit(execTimeLimitBStr.get()));
 
   RefPtr<IRegistrationInfo> regInfo;
