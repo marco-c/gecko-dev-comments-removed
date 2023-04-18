@@ -237,12 +237,12 @@ class ProgressListener {
 
   onLocationChange(progress, request, location, flag) {
     
-    if (flag & Ci.nsIWebProgressListener.LOCATION_CHANGE_HASHCHANGE) {
+    if (flag & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT) {
       this.#targetURI = location;
 
       const messagePrefix = `[${this.browsingContext.id}] ${this.constructor.name}`;
       logger.trace(
-        truncate`${messagePrefix} location=hashChange: ${this.targetURI?.spec}`
+        truncate`${messagePrefix} location=sameDocument: ${this.targetURI?.spec}`
       );
 
       this.stop();
