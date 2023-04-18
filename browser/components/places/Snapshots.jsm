@@ -13,10 +13,13 @@ const { XPCOMUtils } = ChromeUtils.import(
 const VERSION_PREF = "browser.places.snapshots.version";
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  BackgroundPageThumbs: "resource://gre/modules/BackgroundPageThumbs.jsm",
   CommonNames: "resource:///modules/CommonNames.jsm",
   Interactions: "resource:///modules/Interactions.jsm",
   PageDataCollector: "resource:///modules/pagedata/PageDataCollector.jsm",
   PageDataService: "resource:///modules/pagedata/PageDataService.jsm",
+  PageThumbs: "resource://gre/modules/PageThumbs.jsm",
+  PageThumbsStorage: "resource://gre/modules/PageThumbs.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
 });
@@ -117,6 +120,8 @@ const Snapshots = new (class Snapshots {
     
     
     
+
+    PageThumbs.addExpirationFilter(this);
   }
 
   
@@ -141,12 +146,27 @@ const Snapshots = new (class Snapshots {
 
 
 
+
+  async filterForThumbnailExpiration(callback) {
+    let snapshots = await this.query();
+    let urls = [];
+    for (let snapshot of snapshots) {
+      urls.push(snapshot.url);
+    }
+    callback(urls);
+  }
+
+  
+
+
+
   async #addPageData(urls) {
     let index = 0;
     let values = [];
     let bindings = {};
     for (let { placeId, url } of urls) {
       let pageData = PageDataService.getCached(url);
+      let imageURL = null;
       if (pageData?.data.length) {
         for (let data of pageData.data) {
           if (Object.values(PageDataCollector.DATA_TYPE).includes(data.type)) {
@@ -158,6 +178,14 @@ const Snapshots = new (class Snapshots {
             bindings[`data${index}`] = JSON.stringify(data);
             values.push(`(:id${index}, :type${index}, :data${index})`);
             index++;
+            if (data.type === PageDataCollector.DATA_TYPE.GENERAL) {
+              let websiteData = data.data.find(
+                element => element.type === "website"
+              );
+              if (websiteData?.image) {
+                imageURL = websiteData.image;
+              }
+            }
           }
         }
       } else {
@@ -165,6 +193,7 @@ const Snapshots = new (class Snapshots {
         
         PageDataService.queueFetch(url).catch(console.error);
       }
+      this.#downloadPageImage(url, imageURL);
     }
 
     logConsole.debug(
@@ -196,6 +225,24 @@ const Snapshots = new (class Snapshots {
 
 
 
+
+
+
+  #downloadPageImage(url, metaDataImageURL = null) {
+    if (!metaDataImageURL) {
+      
+      
+      
+      BackgroundPageThumbs.captureIfMissing(url).catch(console.error);
+    }
+  }
+
+  
+
+
+
+
+
   canSnapshotUrl(url) {
     let protocol, pathname;
     if (typeof url == "string") {
@@ -215,20 +262,20 @@ const Snapshots = new (class Snapshots {
     );
   }
 
-  /**
-   * Adds a new snapshot.
-   *
-   * If the snapshot already exists, and this is a user-persisted addition,
-   * then the userPersisted flag will be set, and the removed_at flag will be
-   * cleared.
-   *
-   * @param {object} details
-   * @param {string} details.url
-   *   The url associated with the snapshot.
-   * @param {boolean} [details.userPersisted]
-   *   True if the user created or persisted the snapshot in some way, defaults to
-   *   false.
-   */
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
   async add({ url, userPersisted = false }) {
     if (!url) {
       throw new Error("Missing url parameter to Snapshots.add()");
@@ -242,12 +289,12 @@ const Snapshots = new (class Snapshots {
       async db => {
         let now = Date.now();
         await this.#maybeInsertPlace(db, new URL(url));
-        // When the user asks for a snapshot to be created, we may not yet have
-        // a corresponding interaction. We create a snapshot with 0 as the value
-        // for first_interaction_at to flag it as missing a corresponding
-        // interaction. We have a database trigger that will update this
-        // snapshot with real values from the corresponding interaction when the
-        // latter is created.
+        
+        
+        
+        
+        
+        
         let rows = await db.executeCached(
           `
             INSERT INTO moz_places_metadata_snapshots
@@ -272,8 +319,8 @@ const Snapshots = new (class Snapshots {
         );
 
         if (rows.length) {
-          // If created_at doesn't match then this url was already a snapshot,
-          // and we only overwrite it when the new request is user_persisted.
+          
+          
           if (
             rows[0].getResultByName("created_at") != now &&
             !rows[0].getResultByName("user_persisted")
@@ -484,6 +531,32 @@ const Snapshots = new (class Snapshots {
 
     snapshot.commonName = CommonNames.getName(snapshot);
     return snapshot;
+  }
+
+  
+
+
+
+
+
+
+
+
+  async getSnapshotImageURL(snapshot) {
+    const generalPageData = snapshot.pageData
+      .get(PageDataCollector.DATA_TYPE.GENERAL)
+      ?.find(element => element.type === "website");
+    if (generalPageData) {
+      return generalPageData.image;
+    }
+    const url = snapshot.url;
+    await BackgroundPageThumbs.captureIfMissing(url).catch(console.error);
+    const exists = await PageThumbsStorage.fileExistsForURL(url);
+    if (exists) {
+      return PageThumbs.getThumbnailURL(url);
+    }
+
+    return null;
   }
 
   
