@@ -43,6 +43,37 @@ const DEFAULT_CONFIG = {
   },
 };
 
+const DEFAULT_PING_PAYLOADS = {
+  [CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK]: {
+    advertiser: "testadvertiser",
+    block_id: 1,
+    context_id: () => actual => !!actual,
+    iab_category: "22 - Shopping",
+    match_type: "firefox-suggest",
+    request_id: null,
+    scenario: "offline",
+  },
+  [CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION]: {
+    advertiser: "testadvertiser",
+    block_id: 1,
+    context_id: () => actual => !!actual,
+    match_type: "firefox-suggest",
+    reporting_url: "http://example.com/click",
+    request_id: null,
+    scenario: "offline",
+  },
+  [CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION]: {
+    advertiser: "testadvertiser",
+    block_id: 1,
+    context_id: () => actual => !!actual,
+    is_clicked: false,
+    match_type: "firefox-suggest",
+    reporting_url: "http://example.com/impression",
+    request_id: null,
+    scenario: "offline",
+  },
+};
+
 const LEARN_MORE_URL =
   Services.urlFormatter.formatURLPref("app.support.baseURL") +
   "firefox-suggest";
@@ -474,121 +505,48 @@ class QSTestUtils {
 
 
 
+  assertPings(spy, pings) {
+    let calls = spy.getCalls();
+    this.Assert.equal(
+      calls.length,
+      pings.length,
+      "Expected number of ping calls"
+    );
 
+    for (let i = 0; i < pings.length; i++) {
+      let ping = pings[i];
+      this.info?.(
+        `Checking ping at index ${i}, expected is: ` + JSON.stringify(ping)
+      );
 
+      
+      
+      let { type, payload } = ping;
+      let defaultPayload = DEFAULT_PING_PAYLOADS[type];
+      this.Assert.ok(
+        defaultPayload,
+        `Sanity check: Default payload exists for type: ${type}`
+      );
+      for (let [key, value] of Object.entries(defaultPayload)) {
+        if (!(key in payload)) {
+          payload[key] = value;
+        }
+      }
 
+      
+      let call = calls[i];
+      let endpointURL = call.args[1];
+      this.Assert.ok(
+        endpointURL.includes(type),
+        `Endpoint URL corresponds to the expected ping type: ${type}`
+      );
 
-  assertImpressionPing({
-    index,
-    spy,
-    advertiser = "testadvertiser",
-    block_id = 1,
-    is_clicked = false,
-    match_type = "firefox-suggest",
-    reporting_url = "http://example.com/impression",
-    request_id = null,
-    scenario = "offline",
-  }) {
-    
-    let calls = spy.getCalls().filter(call => {
-      let endpoint = call.args[1];
-      return endpoint.includes(CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION);
-    });
-    this.Assert.equal(calls.length, 1, "Sent one impression ping");
+      
+      let actualPayload = call.args[0];
+      this._assertPingPayload(actualPayload, payload);
+    }
 
-    let payload = calls[0].args[0];
-    this._assertPingPayload(payload, {
-      advertiser,
-      block_id,
-      is_clicked,
-      match_type,
-      position: index + 1,
-      reporting_url,
-      request_id,
-      scenario,
-      context_id: actual => !!actual,
-    });
-  }
-
-  
-
-
-
-
-
-  assertNoImpressionPing(spy) {
-    
-    let calls = spy.getCalls().filter(call => {
-      let endpoint = call.args[1];
-      return endpoint.includes(CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION);
-    });
-    this.Assert.equal(calls.length, 0, "Did not send an impression ping");
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  assertClickPing({
-    index,
-    spy,
-    advertiser = "testadvertiser",
-    block_id = 1,
-    match_type = "firefox-suggest",
-    reporting_url = "http://example.com/click",
-    request_id = null,
-    scenario = "offline",
-  }) {
-    
-    let calls = spy.getCalls().filter(call => {
-      let endpoint = call.args[1];
-      return endpoint.includes(CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION);
-    });
-    this.Assert.equal(calls.length, 1, "Sent one click ping");
-
-    let payload = calls[0].args[0];
-    this._assertPingPayload(payload, {
-      advertiser,
-      block_id,
-      match_type,
-      position: index + 1,
-      reporting_url,
-      request_id,
-      scenario,
-      context_id: actual => !!actual,
-    });
-  }
-
-  
-
-
-
-
-
-  assertNoClickPing(spy) {
-    
-    let calls = spy.getCalls().filter(call => {
-      let endpoint = call.args[1];
-      return endpoint.includes(CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION);
-    });
-    this.Assert.equal(calls.length, 0, "Did not send a click ping");
+    spy.resetHistory();
   }
 
   
@@ -603,7 +561,12 @@ class QSTestUtils {
 
 
   _assertPingPayload(actualPayload, expectedPayload) {
-    this.info?.("Checking ping payload: " + JSON.stringify(actualPayload));
+    this.info?.(
+      "Checking ping payload. Actual: " +
+        JSON.stringify(actualPayload) +
+        " -- Expected (excluding function properties): " +
+        JSON.stringify(expectedPayload)
+    );
 
     this.Assert.equal(
       Object.entries(actualPayload).length,

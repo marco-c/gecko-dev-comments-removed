@@ -269,6 +269,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
       sponsoredClickUrl: suggestion.click_url,
       sponsoredBlockId: suggestion.block_id,
       sponsoredAdvertiser: suggestion.advertiser,
+      sponsoredIabCategory: suggestion.iab_category,
       isSponsored: suggestion.is_sponsored,
       helpUrl: this.helpUrl,
       helpL10nId: "firefox-suggest-urlbar-learn-more",
@@ -603,22 +604,22 @@ class ProviderQuickSuggest extends UrlbarProvider {
       
       
       let is_clicked = selType == "quicksuggest";
-      let scenario = UrlbarPrefs.get("quicksuggest.scenario");
-
-      
-      let advertiser = result.payload.sponsoredAdvertiser.toLocaleLowerCase();
+      let payload = {
+        match_type,
+        
+        advertiser: result.payload.sponsoredAdvertiser.toLocaleLowerCase(),
+        block_id: result.payload.sponsoredBlockId,
+        position: telemetryResultIndex,
+        request_id: result.payload.requestId,
+        scenario: UrlbarPrefs.get("quicksuggest.scenario"),
+      };
 
       
       PartnerLinkAttribution.sendContextualServicesPing(
         {
-          advertiser,
+          ...payload,
           is_clicked,
-          match_type,
-          scenario,
-          block_id: result.payload.sponsoredBlockId,
-          position: telemetryResultIndex,
           reporting_url: result.payload.sponsoredImpressionUrl,
-          request_id: result.payload.requestId,
         },
         CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION
       );
@@ -627,15 +628,21 @@ class ProviderQuickSuggest extends UrlbarProvider {
       if (is_clicked) {
         PartnerLinkAttribution.sendContextualServicesPing(
           {
-            advertiser,
-            match_type,
-            scenario,
-            block_id: result.payload.sponsoredBlockId,
-            position: telemetryResultIndex,
+            ...payload,
             reporting_url: result.payload.sponsoredClickUrl,
-            request_id: result.payload.requestId,
           },
           CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION
+        );
+      }
+
+      
+      if (selType == "block") {
+        PartnerLinkAttribution.sendContextualServicesPing(
+          {
+            ...payload,
+            iab_category: result.payload.sponsoredIabCategory,
+          },
+          CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK
         );
       }
     }

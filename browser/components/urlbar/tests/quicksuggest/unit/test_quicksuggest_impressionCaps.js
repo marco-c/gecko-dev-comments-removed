@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Tests impression frequency capping for quick suggest results.
+
+
+
+
 
 "use strict";
 
@@ -15,6 +15,7 @@ const SUGGESTIONS = [
     click_url: "http://example.com/click",
     impression_url: "http://example.com/impression",
     advertiser: "TestAdvertiser",
+    iab_category: "22 - Shopping",
   },
   {
     id: 2,
@@ -44,6 +45,7 @@ const EXPECTED_SPONSORED_RESULT = {
     sponsoredClickUrl: "http://example.com/click",
     sponsoredBlockId: 1,
     sponsoredAdvertiser: "TestAdvertiser",
+    sponsoredIabCategory: "22 - Shopping",
     helpUrl: UrlbarProviderQuickSuggest.helpUrl,
     helpL10nId: "firefox-suggest-urlbar-learn-more",
     source: "remote-settings",
@@ -66,6 +68,7 @@ const EXPECTED_NONSPONSORED_RESULT = {
     sponsoredClickUrl: "http://example.com/click",
     sponsoredBlockId: 2,
     sponsoredAdvertiser: "TestAdvertiser",
+    sponsoredIabCategory: "5 - Education",
     helpUrl: UrlbarProviderQuickSuggest.helpUrl,
     helpL10nId: "firefox-suggest-urlbar-learn-more",
     source: "remote-settings",
@@ -83,14 +86,14 @@ add_task(async function init() {
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
   UrlbarPrefs.set("bestMatch.enabled", false);
 
-  // Disable search suggestions so we don't hit the network.
+  
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
 
   await QuickSuggestTestUtils.ensureQuickSuggestInit(SUGGESTIONS);
 
-  // Set up a sinon stub for the `Date.now()` implementation inside of
-  // UrlbarProviderQuickSuggest. This lets us test searches performed at
-  // specific times. See `doTimedCallbacks()` for more info.
+  
+  
+  
   gSandbox = sinon.createSandbox();
   gDateNowStub = gSandbox.stub(
     Cu.getGlobalForObject(UrlbarProviderQuickSuggest).Date,
@@ -98,7 +101,7 @@ add_task(async function init() {
   );
 });
 
-// Tests a single interval.
+
 add_task(async function oneInterval() {
   await doTest({
     config: {
@@ -180,7 +183,7 @@ add_task(async function oneInterval() {
   });
 });
 
-// Tests multiple intervals.
+
 add_task(async function multipleIntervals() {
   await doTest({
     config: {
@@ -196,12 +199,12 @@ add_task(async function multipleIntervals() {
     },
     callback: async () => {
       await doTimedSearches("sponsored", {
-        // 0s: 1 new impression; 1 impression total
+        
         0: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -218,12 +221,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 1s: 1 new impression; 2 impressions total
+        
         1: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -237,7 +240,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -254,12 +257,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 2s: 1 new impression; 3 impressions total
+        
         2: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -273,7 +276,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -287,7 +290,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 5, max_count: 3
+              
               {
                 object: "hit",
                 extra: {
@@ -304,12 +307,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 3s: no new impressions; 3 impressions total
+        
         3: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -326,12 +329,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 4s: no new impressions; 3 impressions total
+        
         4: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -348,12 +351,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 5s: 1 new impression; 4 impressions total
+        
         5: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -367,7 +370,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // reset: interval_s: 5, max_count: 3
+              
               {
                 object: "reset",
                 extra: {
@@ -381,7 +384,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -398,12 +401,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 6s: 1 new impression; 5 impressions total
+        
         6: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -417,7 +420,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -431,7 +434,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 10, max_count: 5
+              
               {
                 object: "hit",
                 extra: {
@@ -448,12 +451,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 7s: no new impressions; 5 impressions total
+        
         7: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -470,12 +473,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 8s: no new impressions; 5 impressions total
+        
         8: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -492,12 +495,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 9s: no new impressions; 5 impressions total
+        
         9: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -514,12 +517,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 10s: 1 new impression; 6 impressions total
+        
         10: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -533,7 +536,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // reset: interval_s: 5, max_count: 3
+              
               {
                 object: "reset",
                 extra: {
@@ -547,7 +550,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // reset: interval_s: 10, max_count: 5
+              
               {
                 object: "reset",
                 extra: {
@@ -561,7 +564,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -578,12 +581,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 11s: 1 new impression; 7 impressions total
+        
         11: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -597,7 +600,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -614,12 +617,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 12s: 1 new impression; 8 impressions total
+        
         12: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -633,7 +636,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -647,7 +650,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 5, max_count: 3
+              
               {
                 object: "hit",
                 extra: {
@@ -664,12 +667,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 13s: no new impressions; 8 impressions total
+        
         13: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -686,12 +689,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 14s: no new impressions; 8 impressions total
+        
         14: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -708,12 +711,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 15s: 1 new impression; 9 impressions total
+        
         15: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -727,7 +730,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // reset: interval_s: 5, max_count: 3
+              
               {
                 object: "reset",
                 extra: {
@@ -741,7 +744,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -758,12 +761,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 16s: 1 new impression; 10 impressions total
+        
         16: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -777,7 +780,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -791,7 +794,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 10, max_count: 5
+              
               {
                 object: "hit",
                 extra: {
@@ -808,12 +811,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 17s: no new impressions; 10 impressions total
+        
         17: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -830,12 +833,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 18s: no new impressions; 10 impressions total
+        
         18: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -852,12 +855,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 19s: no new impressions; 10 impressions total
+        
         19: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -874,12 +877,12 @@ add_task(async function multipleIntervals() {
             ],
           },
         },
-        // 20s: 1 new impression; 11 impressions total
+        
         20: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -893,7 +896,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // reset: interval_s: 5, max_count: 3
+              
               {
                 object: "reset",
                 extra: {
@@ -907,7 +910,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // reset: interval_s: 10, max_count: 5
+              
               {
                 object: "reset",
                 extra: {
@@ -921,7 +924,7 @@ add_task(async function multipleIntervals() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -943,7 +946,7 @@ add_task(async function multipleIntervals() {
   });
 });
 
-// Tests a lifetime cap.
+
 add_task(async function lifetime() {
   await doTest({
     config: {
@@ -988,7 +991,7 @@ add_task(async function lifetime() {
   });
 });
 
-// Tests one interval and a lifetime cap together.
+
 add_task(async function intervalAndLifetime() {
   await doTest({
     config: {
@@ -1001,12 +1004,12 @@ add_task(async function intervalAndLifetime() {
     },
     callback: async () => {
       await doTimedSearches("sponsored", {
-        // 0s: 1 new impression; 1 impression total
+        
         0: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -1023,12 +1026,12 @@ add_task(async function intervalAndLifetime() {
             ],
           },
         },
-        // 1s: 1 new impression; 2 impressions total
+        
         1: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1042,7 +1045,7 @@ add_task(async function intervalAndLifetime() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -1059,12 +1062,12 @@ add_task(async function intervalAndLifetime() {
             ],
           },
         },
-        // 2s: 1 new impression; 3 impressions total
+        
         2: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1078,7 +1081,7 @@ add_task(async function intervalAndLifetime() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -1092,7 +1095,7 @@ add_task(async function intervalAndLifetime() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: Infinity, max_count: 3
+              
               {
                 object: "hit",
                 extra: {
@@ -1113,7 +1116,7 @@ add_task(async function intervalAndLifetime() {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1135,7 +1138,7 @@ add_task(async function intervalAndLifetime() {
   });
 });
 
-// Tests multiple intervals and a lifetime cap together.
+
 add_task(async function multipleIntervalsAndLifetime() {
   await doTest({
     config: {
@@ -1151,12 +1154,12 @@ add_task(async function multipleIntervalsAndLifetime() {
     },
     callback: async () => {
       await doTimedSearches("sponsored", {
-        // 0s: 1 new impression; 1 impression total
+        
         0: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -1173,12 +1176,12 @@ add_task(async function multipleIntervalsAndLifetime() {
             ],
           },
         },
-        // 1s: 1 new impression; 2 impressions total
+        
         1: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1192,7 +1195,7 @@ add_task(async function multipleIntervalsAndLifetime() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -1209,12 +1212,12 @@ add_task(async function multipleIntervalsAndLifetime() {
             ],
           },
         },
-        // 2s: 1 new impression; 3 impressions total
+        
         2: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1228,7 +1231,7 @@ add_task(async function multipleIntervalsAndLifetime() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -1242,7 +1245,7 @@ add_task(async function multipleIntervalsAndLifetime() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 5, max_count: 3
+              
               {
                 object: "hit",
                 extra: {
@@ -1259,12 +1262,12 @@ add_task(async function multipleIntervalsAndLifetime() {
             ],
           },
         },
-        // 3s: no new impressions; 3 impressions total
+        
         3: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1281,12 +1284,12 @@ add_task(async function multipleIntervalsAndLifetime() {
             ],
           },
         },
-        // 4s: no new impressions; 3 impressions total
+        
         4: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1303,12 +1306,12 @@ add_task(async function multipleIntervalsAndLifetime() {
             ],
           },
         },
-        // 5s: 1 new impression; 4 impressions total
+        
         5: {
           results: [[EXPECTED_SPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1322,7 +1325,7 @@ add_task(async function multipleIntervalsAndLifetime() {
                   type: "sponsored",
                 },
               },
-              // reset: interval_s: 5, max_count: 3
+              
               {
                 object: "reset",
                 extra: {
@@ -1336,7 +1339,7 @@ add_task(async function multipleIntervalsAndLifetime() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -1350,7 +1353,7 @@ add_task(async function multipleIntervalsAndLifetime() {
                   type: "sponsored",
                 },
               },
-              // hit: interval_s: Infinity, max_count: 4
+              
               {
                 object: "hit",
                 extra: {
@@ -1367,12 +1370,12 @@ add_task(async function multipleIntervalsAndLifetime() {
             ],
           },
         },
-        // 6s: no new impressions; 4 impressions total
+        
         6: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1389,12 +1392,12 @@ add_task(async function multipleIntervalsAndLifetime() {
             ],
           },
         },
-        // 7s: no new impressions; 4 impressions total
+        
         7: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1416,9 +1419,9 @@ add_task(async function multipleIntervalsAndLifetime() {
   });
 });
 
-// Smoke test for non-sponsored caps. Most tasks use sponsored results and caps,
-// but sponsored and non-sponsored should behave the same since they use the
-// same code paths.
+
+
+
 add_task(async function nonsponsored() {
   await doTest({
     config: {
@@ -1434,12 +1437,12 @@ add_task(async function nonsponsored() {
     },
     callback: async () => {
       await doTimedSearches("nonsponsored", {
-        // 0s: 1 new impression; 1 impression total
+        
         0: {
           results: [[EXPECTED_NONSPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -1456,12 +1459,12 @@ add_task(async function nonsponsored() {
             ],
           },
         },
-        // 1s: 1 new impression; 2 impressions total
+        
         1: {
           results: [[EXPECTED_NONSPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1475,7 +1478,7 @@ add_task(async function nonsponsored() {
                   type: "nonsponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -1492,12 +1495,12 @@ add_task(async function nonsponsored() {
             ],
           },
         },
-        // 2s: 1 new impression; 3 impressions total
+        
         2: {
           results: [[EXPECTED_NONSPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1511,7 +1514,7 @@ add_task(async function nonsponsored() {
                   type: "nonsponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -1525,7 +1528,7 @@ add_task(async function nonsponsored() {
                   type: "nonsponsored",
                 },
               },
-              // hit: interval_s: 5, max_count: 3
+              
               {
                 object: "hit",
                 extra: {
@@ -1542,12 +1545,12 @@ add_task(async function nonsponsored() {
             ],
           },
         },
-        // 3s: no new impressions; 3 impressions total
+        
         3: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1564,12 +1567,12 @@ add_task(async function nonsponsored() {
             ],
           },
         },
-        // 4s: no new impressions; 3 impressions total
+        
         4: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1586,12 +1589,12 @@ add_task(async function nonsponsored() {
             ],
           },
         },
-        // 5s: 1 new impression; 4 impressions total
+        
         5: {
           results: [[EXPECTED_NONSPONSORED_RESULT], []],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1605,7 +1608,7 @@ add_task(async function nonsponsored() {
                   type: "nonsponsored",
                 },
               },
-              // reset: interval_s: 5, max_count: 3
+              
               {
                 object: "reset",
                 extra: {
@@ -1619,7 +1622,7 @@ add_task(async function nonsponsored() {
                   type: "nonsponsored",
                 },
               },
-              // hit: interval_s: 1, max_count: 1
+              
               {
                 object: "hit",
                 extra: {
@@ -1633,7 +1636,7 @@ add_task(async function nonsponsored() {
                   type: "nonsponsored",
                 },
               },
-              // hit: interval_s: Infinity, max_count: 4
+              
               {
                 object: "hit",
                 extra: {
@@ -1650,12 +1653,12 @@ add_task(async function nonsponsored() {
             ],
           },
         },
-        // 6s: no new impressions; 4 impressions total
+        
         6: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1672,12 +1675,12 @@ add_task(async function nonsponsored() {
             ],
           },
         },
-        // 7s: no new impressions; 4 impressions total
+        
         7: {
           results: [[]],
           telemetry: {
             events: [
-              // reset: interval_s: 1, max_count: 1
+              
               {
                 object: "reset",
                 extra: {
@@ -1699,9 +1702,9 @@ add_task(async function nonsponsored() {
   });
 });
 
-// Smoke test for sponsored and non-sponsored caps together. Most tasks use only
-// sponsored results and caps, but sponsored and non-sponsored should behave the
-// same since they use the same code paths.
+
+
+
 add_task(async function sponsoredAndNonsponsored() {
   await doTest({
     config: {
@@ -1715,7 +1718,7 @@ add_task(async function sponsoredAndNonsponsored() {
       },
     },
     callback: async () => {
-      // 1st searches
+      
       await checkSearch({
         name: "sponsored 1",
         searchString: "sponsored",
@@ -1728,7 +1731,7 @@ add_task(async function sponsoredAndNonsponsored() {
       });
       await checkTelemetryEvents([]);
 
-      // 2nd searches
+      
       await checkSearch({
         name: "sponsored 2",
         searchString: "sponsored",
@@ -1755,7 +1758,7 @@ add_task(async function sponsoredAndNonsponsored() {
         },
       ]);
 
-      // 3rd searches
+      
       await checkSearch({
         name: "sponsored 3",
         searchString: "sponsored",
@@ -1782,7 +1785,7 @@ add_task(async function sponsoredAndNonsponsored() {
         },
       ]);
 
-      // 4th searches
+      
       await checkSearch({
         name: "sponsored 4",
         searchString: "sponsored",
@@ -1798,7 +1801,7 @@ add_task(async function sponsoredAndNonsponsored() {
   });
 });
 
-// Tests with an empty config to make sure results are not capped.
+
 add_task(async function emptyConfig() {
   await doTest({
     config: {},
@@ -1820,7 +1823,7 @@ add_task(async function emptyConfig() {
   });
 });
 
-// Tests with sponsored caps disabled. Non-sponsored should still be capped.
+
 add_task(async function sponsoredCapsDisabled() {
   UrlbarPrefs.set("quicksuggest.impressionCaps.sponsoredEnabled", false);
   await doTest({
@@ -1879,7 +1882,7 @@ add_task(async function sponsoredCapsDisabled() {
   UrlbarPrefs.set("quicksuggest.impressionCaps.sponsoredEnabled", true);
 });
 
-// Tests with non-sponsored caps disabled. Sponsored should still be capped.
+
 add_task(async function nonsponsoredCapsDisabled() {
   UrlbarPrefs.set("quicksuggest.impressionCaps.nonSponsoredEnabled", false);
   await doTest({
@@ -1938,8 +1941,8 @@ add_task(async function nonsponsoredCapsDisabled() {
   UrlbarPrefs.set("quicksuggest.impressionCaps.nonSponsoredEnabled", true);
 });
 
-// Tests a config change: 1 interval -> same interval with lower cap, with the
-// old cap already reached
+
+
 add_task(async function configChange_sameIntervalLowerCap_1() {
   await doTest({
     config: {
@@ -2040,8 +2043,8 @@ add_task(async function configChange_sameIntervalLowerCap_1() {
   });
 });
 
-// Tests a config change: 1 interval -> same interval with lower cap, with the
-// old cap not reached
+
+
 add_task(async function configChange_sameIntervalLowerCap_2() {
   await doTest({
     config: {
@@ -2122,7 +2125,7 @@ add_task(async function configChange_sameIntervalLowerCap_2() {
   });
 });
 
-// Tests a config change: 1 interval -> same interval with higher cap
+
 add_task(async function configChange_sameIntervalHigherCap() {
   await doTest({
     config: {
@@ -2246,9 +2249,9 @@ add_task(async function configChange_sameIntervalHigherCap() {
   });
 });
 
-// Tests a config change: 1 interval -> 2 new intervals with higher timeouts.
-// Impression counts for the old interval should contribute to the new
-// intervals.
+
+
+
 add_task(async function configChange_1IntervalTo2NewIntervalsHigher() {
   await doTest({
     config: {
@@ -2357,9 +2360,9 @@ add_task(async function configChange_1IntervalTo2NewIntervalsHigher() {
   });
 });
 
-// Tests a config change: 2 intervals -> 1 new interval with higher timeout.
-// Impression counts for the old intervals should contribute to the new
-// interval.
+
+
+
 add_task(async function configChange_2IntervalsTo1NewIntervalHigher() {
   await doTest({
     config: {
@@ -2537,9 +2540,9 @@ add_task(async function configChange_2IntervalsTo1NewIntervalHigher() {
   });
 });
 
-// Tests a config change: 1 interval -> 1 new interval with lower timeout.
-// Impression counts for the old interval should not contribute to the new
-// interval since the new interval has a lower timeout.
+
+
+
 add_task(async function configChange_1IntervalTo1NewIntervalLower() {
   await doTest({
     config: {
@@ -2616,9 +2619,9 @@ add_task(async function configChange_1IntervalTo1NewIntervalLower() {
   });
 });
 
-// Tests a config change: 1 interval -> lifetime.
-// Impression counts for the old interval should contribute to the new lifetime
-// cap.
+
+
+
 add_task(async function configChange_1IntervalToLifetime() {
   await doTest({
     config: {
@@ -2674,7 +2677,7 @@ add_task(async function configChange_1IntervalToLifetime() {
   });
 });
 
-// Tests a config change: lifetime cap -> higher lifetime cap
+
 add_task(async function configChange_lifetimeCapHigher() {
   await doTest({
     config: {
@@ -2756,7 +2759,7 @@ add_task(async function configChange_lifetimeCapHigher() {
   });
 });
 
-// Tests a config change: lifetime cap -> lower lifetime cap
+
 add_task(async function configChange_lifetimeCapLower() {
   await doTest({
     config: {
@@ -2817,7 +2820,7 @@ add_task(async function configChange_lifetimeCapLower() {
   });
 });
 
-// Makes sure stats are serialized to and from the pref correctly.
+
 add_task(async function prefSync() {
   await doTest({
     config: {
@@ -2907,7 +2910,7 @@ add_task(async function prefSync() {
   });
 });
 
-// Tests direct changes to the stats pref.
+
 add_task(async function prefDirectlyChanged() {
   await doTest({
     config: {
@@ -3054,8 +3057,8 @@ add_task(async function prefDirectlyChanged() {
   });
 });
 
-// Tests multiple interval periods where the cap is not hit. Telemetry should be
-// recorded for these periods.
+
+
 add_task(async function intervalsElapsedButCapNotHit() {
   await doTest({
     config: {
@@ -3067,7 +3070,7 @@ add_task(async function intervalsElapsedButCapNotHit() {
     },
     callback: async () => {
       await doTimedCallbacks({
-        // 1s
+        
         1: async () => {
           await checkSearch({
             name: "1s",
@@ -3075,10 +3078,10 @@ add_task(async function intervalsElapsedButCapNotHit() {
             expectedResults: [EXPECTED_SPONSORED_RESULT],
           });
         },
-        // 10s
+        
         10: async () => {
-          // Impression counter resets are only triggered by `startQuery()` in
-          // the provider, so we need to do a search to trigger the events.
+          
+          
           await checkSearch({
             name: "reset trigger",
             searchString: "this shouldn't match any suggestion",
@@ -3086,7 +3089,7 @@ add_task(async function intervalsElapsedButCapNotHit() {
           });
 
           let expectedEvents = [
-            // 1s: reset with count = 0
+            
             {
               object: "reset",
               extra: {
@@ -3100,7 +3103,7 @@ add_task(async function intervalsElapsedButCapNotHit() {
                 type: "sponsored",
               },
             },
-            // 2s: reset with count = 1
+            
             {
               object: "reset",
               extra: {
@@ -3115,7 +3118,7 @@ add_task(async function intervalsElapsedButCapNotHit() {
               },
             },
           ];
-          // 3s to 10s: reset with count = 0
+          
           for (let i = 3; i <= 10; i++) {
             expectedEvents.push({
               object: "reset",
@@ -3138,77 +3141,77 @@ add_task(async function intervalsElapsedButCapNotHit() {
   });
 });
 
-/**
- * Main test helper. Sets up state, calls your callback, and resets state.
- *
- * @param {object} config
- *   The quick suggest config to use during the test.
- * @param {function} callback
- */
+
+
+
+
+
+
+
 async function doTest({ config, callback }) {
   Services.telemetry.clearEvents();
 
-  // Make `Date.now()` return 0 to start with. It's necessary to do this before
-  // calling `withConfig()` because when a new config is set, the provider
-  // validates its impression stats, whose `startDateMs` values depend on
-  // `Date.now()`.
+  
+  
+  
+  
   gDateNowStub.returns(0);
 
   await QuickSuggestTestUtils.withConfig({ config, callback });
   UrlbarPrefs.clear("quicksuggest.impressionCaps.stats");
 }
 
-/**
- * Does a series of timed searches and checks their results and telemetry. This
- * function relies on `doTimedCallbacks()`, so it may be helpful to look at it
- * too.
- *
- * @param {string} searchString
- * @param {object} expectedBySecond
 
- *   An object that maps from seconds to objects that describe the searches to
- *   perform, their expected results, and the expected telemetry. For a given
- *   entry `S -> E` in this object, searches are performed S seconds after this
- *   function is called. `E` is an object that looks like this:
- *
- *     { results, telemetry }
- *
- *     {array} results
- *       An array of arrays. A search is performed for each sub-array in
- *       `results`, and the contents of the sub-array are the expected results
- *       for that search.
- *     {object} telemetry
- *       An object like this: { events }
- *       {array} events
- *         An array of expected telemetry events after all searches are done.
- *         Telemetry events are cleared after checking these. If not present,
- *         then it will be asserted that no events were recorded.
- *
- *   Example:
- *
- *     {
- *       0: {
- *         results: [[R1], []],
- *         telemetry: {
- *           events: [
- *             someExpectedEvent,
- *           ],
- *         },
- *       }
- *       1: {
- *         results: [[]],
- *       },
- *     }
- *
- *     0 seconds after `doTimedSearches()` is called, two searches are
- *     performed. The first one is expected to return a single result R1, and
- *     the second search is expected to return no results. After the searches
- *     are done, one telemetry event is expected to be recorded.
- *
- *     1 second after `doTimedSearches()` is called, one search is performed.
- *     It's expected to return no results, and no telemetry is expected to be
- *     recorded.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function doTimedSearches(searchString, expectedBySecond) {
   await doTimedCallbacks(
     Object.entries(expectedBySecond).reduce(
@@ -3232,24 +3235,24 @@ async function doTimedSearches(searchString, expectedBySecond) {
   );
 }
 
-/**
- * Takes a series a callbacks and times at which they should be called, and
- * calls them accordingly. This function is specifically designed for
- * UrlbarProviderQuickSuggest and its impression capping implementation because
- * it works by stubbing `Date.now()` within UrlbarProviderQuickSuggest. The
- * callbacks are not actually called at the given times but instead `Date.now()`
- * is stubbed so that UrlbarProviderQuickSuggest will think they are being
- * called at the given times.
- *
- * A more general implementation of this helper function that isn't tailored to
- * UrlbarProviderQuickSuggest is commented out below, and unfortunately it
- * doesn't work properly on macOS.
- *
- * @param {object} callbacksBySecond
- *   An object that maps from seconds to callback functions. For a given entry
- *   `S -> F` in this object, the callback F is called S seconds after
- *   `doTimedCallbacks()` is called.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function doTimedCallbacks(callbacksBySecond) {
   let entries = Object.entries(callbacksBySecond).sort(([t1], [t2]) => t1 - t2);
   for (let [timeoutSeconds, callback] of entries) {
@@ -3258,47 +3261,47 @@ async function doTimedCallbacks(callbacksBySecond) {
   }
 }
 
-/*
-// This is the original implementation of `doTimedCallbacks()`, left here for
-// reference or in case the macOS problem described below is fixed. Instead of
-// stubbing `Date.now()` within UrlbarProviderQuickSuggest, it starts parallel
-// timers so that the callbacks are actually called at appropriate times. This
-// version of `doTimedCallbacks()` is therefore more generally useful, but it
-// has the drawback that your test has to run in real time. e.g., if one of your
-// callbacks needs to run 10s from now, the test must actually wait 10s.
-//
-// Unfortunately macOS seems to have some kind of limit of ~33 total 1-second
-// timers during any xpcshell test -- not 33 simultaneous timers but 33 total
-// timers. After that, timers fire randomly and with huge timeout periods that
-// are often exactly 10s greater than the specified period, as if some 10s
-// timeout internal to macOS is being hit. This problem does not seem to happen
-// when running the full browser, only during xpcshell tests. In fact the
-// problem can be reproduced in an xpcshell test that simply creates an interval
-// timer whose period is 1s (e.g., using `setInterval()` from Timer.jsm). After
-// ~33 ticks, the timer's period jumps to ~10s.
-async function doTimedCallbacks(callbacksBySecond) {
-  await Promise.all(
-    Object.entries(callbacksBySecond).map(
-      ([timeoutSeconds, callback]) => new Promise(
-        resolve => setTimeout(
-          () => callback().then(resolve),
-          1000 * parseInt(timeoutSeconds)
-        )
-      )
-    )
-  );
-}
-*/
 
-/**
- * Does a search, triggers an engagement, and checks the results.
- *
- * @param {string} name
- *   This value is the name of the search and will be logged in messages to make
- *   debugging easier.
- * @param {string} searchString
- * @param {array} expectedResults
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function checkSearch({ name, searchString, expectedResults }) {
   info(`Preparing search "${name}" with search string "${searchString}"`);
   let context = createContext(searchString, {
@@ -3312,12 +3315,12 @@ async function checkSearch({ name, searchString, expectedResults }) {
   });
   info(`Finished search: ${name}`);
 
-  // Impression stats are updated only on engagement, so force one now.
-  // `selIndex` doesn't really matter but since we're not trying to simulate a
-  // click on the suggestion, pass in -1 to ensure we don't record a click. Pass
-  // in true for `isPrivate` so we don't attempt to record the impression ping
-  // because otherwise the following PingCentre error is logged:
-  // "Structured Ingestion ping failure with error: undefined"
+  
+  
+  
+  
+  
+  
   let isPrivate = true;
   UrlbarProviderQuickSuggest.onEngagement(isPrivate, "engagement", context, {
     selIndex: -1,
@@ -3331,7 +3334,7 @@ async function checkTelemetryEvents(expectedEvents) {
       category: QuickSuggestTestUtils.TELEMETRY_EVENT_CATEGORY,
       method: "impression_cap",
     })),
-    // Filter in only impression_cap events.
+    
     { method: "impression_cap" }
   );
 }
