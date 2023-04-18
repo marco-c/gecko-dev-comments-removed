@@ -19,7 +19,7 @@
 #include "frontend/ParserAtom.h"  
 #include "frontend/SharedContext.h"
 #include "js/TypeDecls.h"
-#include "vm/BytecodeUtil.h"   
+#include "vm/Opcodes.h"        
 #include "vm/SharedStencil.h"  
 
 namespace js {

@@ -19,7 +19,6 @@
 #include "frontend/SharedContext.h"       
 #include "frontend/TDZCheckCache.h"       
 #include "gc/Rooting.h"                   
-#include "vm/BytecodeUtil.h"              
 #include "vm/JSAtom.h"                    
 #include "vm/JSFunction.h"                
 #include "vm/SharedStencil.h"             

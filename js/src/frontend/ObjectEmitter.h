@@ -19,8 +19,8 @@
 #include "frontend/ParseNode.h"       
 #include "frontend/ParserAtom.h"      
 #include "frontend/TDZCheckCache.h"   
-#include "vm/BytecodeUtil.h"          
 #include "vm/NativeObject.h"          
+#include "vm/Opcodes.h"               
 #include "vm/Scope.h"                 
 
 namespace js {
