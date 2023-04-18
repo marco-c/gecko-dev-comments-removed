@@ -45,10 +45,17 @@ const isEveryFrameTargetEnabled = Services.prefs.getBoolPref(
 
 
 
+
+
+
 function isBrowsingContextPartOfContext(
   browsingContext,
   sessionContext,
-  { forceAcceptTopLevelTarget = false, windowGlobal } = {}
+  {
+    forceAcceptTopLevelTarget = false,
+    acceptInitialDocument = false,
+    windowGlobal,
+  } = {}
 ) {
   
   
@@ -84,77 +91,8 @@ function isBrowsingContextPartOfContext(
     );
   }
 
-  if (sessionContext.type == "all") {
-    
-    if (!isEveryFrameTargetEnabled && !windowGlobal.isProcessRoot) {
-      return false;
-    }
-    return true;
-  }
-  if (sessionContext.type == "browser-element") {
-    if (browsingContext.browserId != sessionContext.browserId) {
-      return false;
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const isClientSideTargetSwitching = !sessionContext.isServerTargetSwitchingEnabled;
-    const isTopLevelBrowsingContext = !browsingContext.parent;
-    if (
-      isClientSideTargetSwitching &&
-      !forceAcceptTopLevelTarget &&
-      isTopLevelBrowsingContext
-    ) {
-      return false;
-    }
-    
-    
-    
-    
-    
-    
-    
-    if (!isEveryFrameTargetEnabled && !windowGlobal.isProcessRoot) {
-      return false;
-    }
-    return true;
-  }
-  if (sessionContext.type == "webextension") {
-    
-    
-    const principal =
-      windowGlobal.documentPrincipal ||
-      browsingContext.window.document.nodePrincipal;
-    return principal.addonId == sessionContext.addonId;
-  }
-  throw new Error("Unsupported session context type: " + sessionContext.type);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function isWindowGlobalPartOfContext(
-  windowGlobal,
-  sessionContext,
-  { forceAcceptTopLevelTarget = false, acceptInitialDocument = false } = {}
-) {
+  
+  
   const window = Services.wm.getCurrentInnerWindowWithId(
     windowGlobal.innerWindowId
   );
@@ -198,11 +136,74 @@ function isWindowGlobalPartOfContext(
   ) {
     return false;
   }
+
+  
+  if (sessionContext.type == "all") {
+    
+    return windowGlobal.isProcessRoot || isEveryFrameTargetEnabled;
+  }
+  if (sessionContext.type == "browser-element") {
+    if (browsingContext.browserId != sessionContext.browserId) {
+      return false;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const isClientSideTargetSwitching = !sessionContext.isServerTargetSwitchingEnabled;
+    const isTopLevelBrowsingContext = !browsingContext.parent;
+    if (
+      isClientSideTargetSwitching &&
+      !forceAcceptTopLevelTarget &&
+      isTopLevelBrowsingContext
+    ) {
+      return false;
+    }
+    
+    
+    
+    
+    
+    
+    
+    return windowGlobal.isProcessRoot || isEveryFrameTargetEnabled;
+  }
+  if (sessionContext.type == "webextension") {
+    
+    
+    const principal =
+      windowGlobal.documentPrincipal ||
+      browsingContext.window.document.nodePrincipal;
+    return principal.addonId == sessionContext.addonId;
+  }
+  throw new Error("Unsupported session context type: " + sessionContext.type);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function isWindowGlobalPartOfContext(windowGlobal, sessionContext, options) {
   return isBrowsingContextPartOfContext(
     windowGlobal.browsingContext,
     sessionContext,
     {
-      forceAcceptTopLevelTarget,
+      ...options,
       windowGlobal,
     }
   );
