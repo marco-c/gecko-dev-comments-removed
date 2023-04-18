@@ -192,7 +192,7 @@ ComputedTiming AnimationEffect::GetComputedTimingAt(
               overallProgress >= double(UINT64_MAX)
           ? UINT64_MAX  
                         
-          : static_cast<uint64_t>(overallProgress);
+          : static_cast<uint64_t>(std::max(overallProgress, 0.0));
 
   
   
