@@ -8,6 +8,7 @@
 #define mozilla_SandboxTestingChild_h
 
 #include "mozilla/PSandboxTestingChild.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/UniquePtr.h"
 
@@ -46,7 +47,11 @@ class SandboxTestingChild : public PSandboxTestingChild {
   inline void ReportNoTests();
 
   
-  void PosixTest(const nsCString& aName, bool aExpectSuccess, int aStatus);
+  
+  
+  
+  void PosixTest(const nsCString& aName, bool aExpectSuccess, int aStatus,
+                 Maybe<int> aExpectedError = Nothing());
 
   
   
@@ -57,8 +62,8 @@ class SandboxTestingChild : public PSandboxTestingChild {
   
   
   template <typename F>
-  void ErrnoValueTest(const nsCString& aName, bool aExpectEquals,
-                      int aExpectedErrno, F&& aFunction);
+  void ErrnoValueTest(const nsCString& aName, int aExpectedErrno,
+                      F&& aFunction);
 
  private:
   explicit SandboxTestingChild(SandboxTestingThread* aThread,
