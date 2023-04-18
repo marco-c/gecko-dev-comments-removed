@@ -305,17 +305,16 @@ async function openPopupAndEnsureCloses(window, callback) {
 
 
 
-function setProfilerFrontendUrl(url) {
-  info(
-    "Setting the profiler URL to the fake frontend. Note that this doesn't currently " +
-      "support the WebChannels, so expect a few error messages about the WebChannel " +
-      "URLs not being correct."
-  );
+
+
+
+
+function setProfilerFrontendUrl(origin, pathname) {
   return SpecialPowers.pushPrefEnv({
     set: [
       
-      ["devtools.performance.recording.ui-base-url", url],
-      ["devtools.performance.recording.ui-base-url-path", ""],
+      ["devtools.performance.recording.ui-base-url", origin],
+      ["devtools.performance.recording.ui-base-url-path", pathname],
     ],
   });
 }
