@@ -12,10 +12,13 @@
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Unused.h"
 
-#include "jsapi.h"
 #include "js/Array.h"  
 #include "js/ArrayBuffer.h"
 #include "js/PropertyAndElement.h"  
+#include "js/RootingAPI.h"
+#include "js/String.h"
+#include "js/TypeDecls.h"
+#include "js/Value.h"
 
 
 
