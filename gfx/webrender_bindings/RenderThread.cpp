@@ -35,6 +35,7 @@
 #  include "GLLibraryEGL.h"
 #  include "mozilla/widget/WinCompositorWindowThread.h"
 #  include "mozilla/gfx/DeviceManagerDx.h"
+#  include "mozilla/webrender/DCLayerTree.h"
 
 
 #endif
@@ -172,6 +173,10 @@ void RenderThread::ShutDownTask(layers::SynchronousTask* aTask) {
   
   
   layers::SharedSurfacesParent::ShutdownRenderThread();
+
+#ifdef XP_WIN
+  DCLayerTree::Shutdown();
+#endif
 
   ClearAllBlobImageResources();
   ClearSingletonGL();
