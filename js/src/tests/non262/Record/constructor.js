@@ -6,14 +6,32 @@ assertThrowsInstanceOf(
   "Record is not a constructor"
 );
 
-assertEq(typeof Record(), "record");
-assertEq(typeof Object(Record()), "object");
-assertEq(Record() instanceof Record, false);
+assertEq(typeof Record({}), "record");
+assertEq(typeof Object(Record({})), "object");
+assertEq(Record({}) instanceof Record, false);
 
 
 
 
 
 
+
+assertThrowsInstanceOf(
+  () => Record(),
+  TypeError,
+  "can't convert undefined to object"
+);
+
+assertThrowsInstanceOf(
+  () => Record(undefined),
+  TypeError,
+  "can't convert undefined to object"
+);
+
+assertThrowsInstanceOf(
+  () => Record(null),
+  TypeError,
+  "can't convert null to object"
+);
 
 if (typeof reportCompare === "function") reportCompare(0, 0);
