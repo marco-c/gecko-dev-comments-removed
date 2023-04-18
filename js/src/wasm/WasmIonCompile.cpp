@@ -2483,6 +2483,22 @@ class FunctionCompiler {
     }
 
     
+    
+    
+    for (uint32_t depth = 0; depth < iter().controlStackDepth(); depth++) {
+      if (iter().controlKind(depth) != LabelKind::Try) {
+        continue;
+      }
+      Control& control = iter().controlItem(depth);
+      for (MControlInstruction* patch : control.tryPadPatches) {
+        MBasicBlock* block = patch->block();
+        if (block->loopDepth() >= loopEntry->loopDepth()) {
+          fixupRedundantPhis(block);
+        }
+      }
+    }
+
+    
     for (MPhiIterator phi = loopEntry->phisBegin();
          phi != loopEntry->phisEnd();) {
       MPhi* entryDef = *phi++;

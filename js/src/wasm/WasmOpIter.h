@@ -722,6 +722,9 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   bool controlStackEmpty() const { return controlStack_.empty(); }
 
   
+  size_t controlStackDepth() const { return controlStack_.length(); }
+
+  
   
   
   bool controlFindInnermostFrom(LabelKind kind, uint32_t fromRelativeDepth,
