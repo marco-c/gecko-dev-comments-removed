@@ -82,7 +82,17 @@ class SnapshotSelector extends EventEmitter {
 
 
 
+    selectCommonReferrer: false,
+    
+
+
+
     url: undefined,
+    
+
+
+
+    referrerUrl: undefined,
     
 
 
@@ -114,10 +124,13 @@ class SnapshotSelector extends EventEmitter {
 
 
 
+
+
   constructor({
     count = 5,
     filterAdult = false,
     selectOverlappingVisits = false,
+    selectCommonReferrer = false,
     getCurrentSessionUrls = () => new Set(),
   }) {
     super();
@@ -128,6 +141,7 @@ class SnapshotSelector extends EventEmitter {
     this.#context.count = count;
     this.#context.filterAdult = filterAdult;
     this.#context.selectOverlappingVisits = selectOverlappingVisits;
+    this.#context.selectCommonReferrer = selectCommonReferrer;
     this.#context.getCurrentSessionUrls = getCurrentSessionUrls;
     SnapshotSelector.#selectors.add(this);
   }
@@ -173,8 +187,11 @@ class SnapshotSelector extends EventEmitter {
 
 
   async #buildSnapshots() {
-    if (this.#context.selectOverlappingVisits) {
-      await this.#buildOverlappingSnapshots();
+    if (
+      this.#context.selectOverlappingVisits ||
+      this.#context.selectCommonReferrer
+    ) {
+      await this.#buildRelevancySnapshots();
       return;
     }
 
@@ -214,8 +231,7 @@ class SnapshotSelector extends EventEmitter {
 
 
 
-
-  async #buildOverlappingSnapshots() {
+  async #buildRelevancySnapshots() {
     
     if (!this.#task) {
       return;
@@ -226,15 +242,40 @@ class SnapshotSelector extends EventEmitter {
     let context = { ...this.#context };
     logConsole.debug("Building overlapping snapshots", context);
 
-    let snapshots = await Snapshots.queryOverlapping(context.url);
-    snapshots = snapshots.filter(snapshot => {
-      return !context.filterAdult || !FilterAdult.isAdultUrl(snapshot.url);
-    });
+    let snapshots = [];
 
-    logConsole.debug(
-      "Found overlapping snapshots:",
-      snapshots.map(s => s.url)
-    );
+    if (context.selectOverlappingVisits) {
+      snapshots = await Snapshots.queryOverlapping(context.url);
+
+      logConsole.debug(
+        "Found overlapping snapshots:",
+        snapshots.map(s => s.url)
+      );
+    }
+
+    if (
+      context.selectCommonReferrer &&
+      context.referrerUrl &&
+      context.referrerUrl != ""
+    ) {
+      let commonReferrerSnapshots = await Snapshots.queryCommonReferrer(
+        context.url,
+        context.referrerUrl
+      );
+
+      logConsole.debug(
+        "Found common referrer snapshots:",
+        commonReferrerSnapshots.map(s => s.url)
+      );
+
+      snapshots = snapshots.concat(commonReferrerSnapshots);
+    }
+
+    if (context.filterAdult) {
+      snapshots = snapshots.filter(snapshot => {
+        return !FilterAdult.isAdultUrl(snapshot.url);
+      });
+    }
 
     snapshots = SnapshotScorer.combineAndScore(
       this.#context.getCurrentSessionUrls(),
@@ -256,12 +297,16 @@ class SnapshotSelector extends EventEmitter {
 
 
 
-  setUrl(url) {
-    if (this.#context.url == url) {
+
+
+
+  setUrl(url, referrerUrl) {
+    if (this.#context.url == url && this.#context.referrerUrl == referrerUrl) {
       return;
     }
 
     this.#context.url = url;
+    this.#context.referrerUrl = referrerUrl;
     this.rebuild();
   }
 
@@ -271,12 +316,16 @@ class SnapshotSelector extends EventEmitter {
 
 
 
-  setUrlAndRebuildNow(url) {
-    if (this.#context.url == url) {
+
+
+
+  setUrlAndRebuildNow(url, referrerUrl) {
+    if (this.#context.url == url && this.#context.referrerUrl == referrerUrl) {
       return;
     }
 
     this.#context.url = url;
+    this.#context.referrerUrl = referrerUrl;
     this.#buildSnapshots();
   }
 

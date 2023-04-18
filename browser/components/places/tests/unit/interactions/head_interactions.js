@@ -47,6 +47,7 @@ async function addInteractions(interactions) {
       scrollingDistance: interaction.scrollingDistance ?? 0,
       created_at: interaction.created_at || Date.now(),
       updated_at: interaction.updated_at || Date.now(),
+      referrer: interaction.referrer || "",
     });
   }
   await Interactions.store.flush();
@@ -242,6 +243,13 @@ function assertSnapshot(actual, expected) {
       "Should not have a removed at time"
     );
   }
+  if (expected.commonReferrerScoreEqualTo != null) {
+    Assert.equal(
+      actual.commonReferrerScore,
+      expected.commonReferrerScoreEqualTo,
+      "Should have a commonReferrerScore equal to the expected score"
+    );
+  }
 }
 
 
@@ -286,11 +294,29 @@ async function assertSnapshots(expected, options) {
 
 
 
-async function assertSnapshotsWithContext(expected, context) {
+async function assertOverlappingSnapshots(expected, context) {
   let snapshots = await Snapshots.queryOverlapping(context.url);
 
   await assertSnapshotList(snapshots, expected);
 }
+
+
+
+
+
+
+
+
+
+async function assertCommonReferrerSnapshots(expected, context) {
+  let snapshots = await Snapshots.queryCommonReferrer(
+    context.url,
+    context.referrerUrl
+  );
+
+  await assertSnapshotList(snapshots, expected);
+}
+
 
 
 

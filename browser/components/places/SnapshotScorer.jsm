@@ -176,8 +176,7 @@ const SnapshotScorer = new (class SnapshotScorer {
 
 
   _scoreInNavigation(snapshot) {
-    
-    return 0;
+    return snapshot.commonReferrerScore ?? 0;
   }
 
   
