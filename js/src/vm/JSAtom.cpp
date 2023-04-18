@@ -20,6 +20,7 @@
 
 #include "jstypes.h"
 
+#include "frontend/CompilationStencil.h"
 #include "gc/GC.h"
 #include "gc/Marking.h"
 #include "gc/MaybeRooted.h"
@@ -253,6 +254,13 @@ bool JSRuntime::initializeAtoms(JSContext* cx) {
   MOZ_ASSERT(uintptr_t(names) == uintptr_t(commonNames + 1));
 
   emptyString = commonNames->empty;
+
+  
+  
+  if (!cx->runtime()->selfHostStencil_->instantiateSelfHostedAtoms(
+          cx, cx->runtime()->selfHostStencilInput_->atomCache)) {
+    return false;
+  }
 
   
   auto wks = js_new<WellKnownSymbols>();
