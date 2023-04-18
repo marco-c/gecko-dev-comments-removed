@@ -607,6 +607,59 @@ class LoginFormState {
 
     return result;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _isLoginAlreadyFilled(aUsernameField) {
+    let formLikeRoot = lazy.FormLikeFactory.findRootForField(aUsernameField);
+    
+    let existingLoginForm = lazy.LoginFormFactory.getForRootElement(
+      formLikeRoot
+    );
+    if (!existingLoginForm) {
+      throw new Error(
+        "_isLoginAlreadyFilled called with a username field with " +
+          "no rootElement LoginForm"
+      );
+    }
+
+    lazy.log("_isLoginAlreadyFilled: existingLoginForm", existingLoginForm);
+    let { login: filledLogin } =
+      this.fillsByRootElement.get(formLikeRoot) || {};
+    if (!filledLogin) {
+      return false;
+    }
+
+    
+    let autoFilledUsernameField = filledLogin.usernameField?.get();
+    let autoFilledPasswordField = filledLogin.passwordField?.get();
+
+    
+    if (
+      !autoFilledUsernameField ||
+      autoFilledUsernameField != aUsernameField ||
+      autoFilledUsernameField.value != filledLogin.username ||
+      (autoFilledPasswordField &&
+        autoFilledPasswordField.value != filledLogin.password)
+    ) {
+      return false;
+    }
+
+    return true;
+  }
 }
 
 
@@ -1395,7 +1448,8 @@ class LoginManagerChild extends JSWindowActorChild {
       return;
     }
 
-    if (this._isLoginAlreadyFilled(focusedField)) {
+    const docState = this.stateForDocument(focusedField.ownerDocument);
+    if (docState._isLoginAlreadyFilled(focusedField)) {
       lazy.log("_onUsernameFocus: Already filled");
       return;
     }
@@ -2992,61 +3046,6 @@ class LoginManagerChild extends JSWindowActorChild {
       );
     }
     return fieldsModified;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _isLoginAlreadyFilled(aUsernameField) {
-    let formLikeRoot = lazy.FormLikeFactory.findRootForField(aUsernameField);
-    
-    let existingLoginForm = lazy.LoginFormFactory.getForRootElement(
-      formLikeRoot
-    );
-    if (!existingLoginForm) {
-      throw new Error(
-        "_isLoginAlreadyFilled called with a username field with " +
-          "no rootElement LoginForm"
-      );
-    }
-
-    lazy.log("_isLoginAlreadyFilled: existingLoginForm", existingLoginForm);
-    let { login: filledLogin } =
-      this.stateForDocument(
-        aUsernameField.ownerDocument
-      ).fillsByRootElement.get(formLikeRoot) || {};
-    if (!filledLogin) {
-      return false;
-    }
-
-    
-    let autoFilledUsernameField = filledLogin.usernameField?.get();
-    let autoFilledPasswordField = filledLogin.passwordField?.get();
-
-    
-    if (
-      !autoFilledUsernameField ||
-      autoFilledUsernameField != aUsernameField ||
-      autoFilledUsernameField.value != filledLogin.username ||
-      (autoFilledPasswordField &&
-        autoFilledPasswordField.value != filledLogin.password)
-    ) {
-      return false;
-    }
-
-    return true;
   }
 
   
