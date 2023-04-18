@@ -319,7 +319,7 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
     return;
   }
 
-  JSFreeOp* fop = TlsContext.get()->defaultFreeOp();
+  JSFreeOp* fop = TlsFreeOp.get();
 
   
   
@@ -456,7 +456,7 @@ void GCRuntime::freeFromBackgroundThread(AutoLockHelperThreadState& lock) {
 
     lifoBlocks.freeAll();
 
-    JSFreeOp* fop = TlsContext.get()->defaultFreeOp();
+    JSFreeOp* fop = TlsFreeOp.get();
     for (Nursery::BufferSet::Range r = buffers.all(); !r.empty();
          r.popFront()) {
       

@@ -14,6 +14,7 @@
 
 #include "gc/ArenaList.h"
 #include "gc/AtomMarking.h"
+#include "gc/FreeOp.h"
 #include "gc/GCMarker.h"
 #include "gc/IteratorUtils.h"
 #include "gc/Nursery.h"
@@ -919,6 +920,8 @@ class GCRuntime {
 
   
   MainThreadData<JS::Zone*> systemZone;
+
+  MainThreadData<JSFreeOp> mainThreadFreeOp;
 
  private:
   
