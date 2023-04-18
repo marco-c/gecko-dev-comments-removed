@@ -54,6 +54,7 @@ enum Type {
   
 
 
+
   MaxTypedArrayViewType,
 
   Int64,
