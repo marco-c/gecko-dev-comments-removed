@@ -54,10 +54,10 @@ static VisitedURLSet* NewVisitedSetForTopLevelImport(nsIURI* aURI) {
 ModuleLoadRequest* ModuleLoadRequest::CreateTopLevel(
     nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
     const SRIMetadata& aIntegrity, nsIURI* aReferrer, ScriptLoader* aLoader) {
-  return new ModuleLoadRequest(
-      aURI, aFetchOptions, aIntegrity, aReferrer, true, 
-      false,                                            
-      aLoader->GetModuleLoader(), NewVisitedSetForTopLevelImport(aURI));
+  return new ModuleLoadRequest(aURI, aFetchOptions, aIntegrity, aReferrer,
+                               true,  
+                               false, 
+                               aLoader, NewVisitedSetForTopLevelImport(aURI));
 }
 
 
@@ -86,7 +86,7 @@ ModuleLoadRequest* ModuleLoadRequest::CreateDynamicImport(
   auto request = new ModuleLoadRequest(
       aURI, aFetchOptions, SRIMetadata(), aBaseURL, true, 
       true, 
-      aLoader->GetModuleLoader(), NewVisitedSetForTopLevelImport(aURI));
+      aLoader, NewVisitedSetForTopLevelImport(aURI));
 
   request->mIsInline = false;
   request->mScriptMode = ScriptMode::eAsync;
@@ -102,7 +102,7 @@ ModuleLoadRequest* ModuleLoadRequest::CreateDynamicImport(
 ModuleLoadRequest::ModuleLoadRequest(
     nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
     const SRIMetadata& aIntegrity, nsIURI* aReferrer, bool aIsTopLevel,
-    bool aIsDynamicImport, ModuleLoader* aLoader, VisitedURLSet* aVisitedSet)
+    bool aIsDynamicImport, ScriptLoader* aLoader, VisitedURLSet* aVisitedSet)
     : ScriptLoadRequest(ScriptKind::eModule, aURI, aFetchOptions, aIntegrity,
                         aReferrer),
       mIsTopLevel(aIsTopLevel),
@@ -165,7 +165,7 @@ void ModuleLoadRequest::ModuleErrored() {
 
   LOG(("ScriptLoadRequest (%p): Module errored", this));
 
-  CheckModuleDependenciesLoaded();
+  mLoader->CheckModuleDependenciesLoaded(this);
   MOZ_ASSERT(!mModuleScript || mModuleScript->HasParseError());
 
   CancelImports();
@@ -185,28 +185,9 @@ void ModuleLoadRequest::DependenciesLoaded() {
 
   MOZ_ASSERT(mModuleScript);
 
-  CheckModuleDependenciesLoaded();
+  mLoader->CheckModuleDependenciesLoaded(this);
   SetReady();
   LoadFinished();
-}
-
-void ModuleLoadRequest::CheckModuleDependenciesLoaded() {
-  LOG(("ScriptLoadRequest (%p): Check dependencies loaded", this));
-
-  if (!mModuleScript || mModuleScript->HasParseError()) {
-    return;
-  }
-  for (const auto& childRequest : mImports) {
-    ModuleScript* childScript = childRequest->mModuleScript;
-    if (!childScript) {
-      mModuleScript = nullptr;
-      LOG(("ScriptLoadRequest (%p):   %p failed (load error)", this,
-           childRequest.get()));
-      return;
-    }
-  }
-
-  LOG(("ScriptLoadRequest (%p):   all ok", this));
 }
 
 void ModuleLoadRequest::LoadFailed() {
