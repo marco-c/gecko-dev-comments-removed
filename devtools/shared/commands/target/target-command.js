@@ -954,6 +954,44 @@ class TargetCommand extends EventEmitter {
     return this._targets.has(targetFront);
   }
 
+  getParentTarget(targetFront) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const { parentInnerWindowId } = targetFront.targetForm;
+    if (parentInnerWindowId) {
+      const targets = this.getAllTargets([TargetCommand.TYPES.FRAME]);
+      const parent = targets.find(
+        target => target.innerWindowId == parentInnerWindowId
+      );
+      
+      
+      if (parent) {
+        return parent;
+      }
+    }
+
+    
+    
+    
+    
+    
+    return this.watcherFront.getParentWindowGlobalTarget(
+      targetFront.browsingContextID
+    );
+  }
+
   isDestroyed() {
     return this._isDestroyed;
   }

@@ -206,28 +206,7 @@ function TargetMixin(parentClass) {
 
 
     async getParentTarget() {
-      
-      const watcherFront = await this.getWatcherFront();
-      if (watcherFront) {
-        
-        
-        if (watcherFront.traits.frame) {
-          
-          
-          return watcherFront.getParentWindowGlobalTarget(
-            this.browsingContextID
-          );
-        }
-        return null;
-      }
-
-      if (this.parentFront.getParentTarget) {
-        return this.parentFront.getParentTarget();
-      }
-
-      
-      
-      return null;
+      return this.commands.targetCommand.getParentTarget(this);
     }
 
     
