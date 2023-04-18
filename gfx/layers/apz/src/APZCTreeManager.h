@@ -33,6 +33,7 @@
 #include "mozilla/TimeStamp.h"       
 #include "mozilla/UniquePtr.h"       
 #include "nsCOMPtr.h"                
+#include "nsTArray.h"
 
 namespace mozilla {
 class MultiTouchInput;
@@ -509,6 +510,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
  private:
   mutable DataMutex<Maybe<TimeStamp>> mTestSampleTime;
+  CopyableTArray<MatrixMessage> mLastMessages;
 
  public:
   
