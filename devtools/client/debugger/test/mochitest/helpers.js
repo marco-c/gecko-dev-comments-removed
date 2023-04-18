@@ -262,11 +262,13 @@ function assertEmptyLines(dbg, lines) {
 }
 
 function getVisibleSelectedFrameLine(dbg) {
-  const {
-    selectors: { getVisibleSelectedFrame },
-  } = dbg;
-  const frame = getVisibleSelectedFrame();
-  return frame && frame.location.line;
+  const frame = dbg.selectors.getVisibleSelectedFrame();
+  return frame?.location.line;
+}
+
+function getVisibleSelectedFrameColumn(dbg) {
+  const frame = dbg.selectors.getVisibleSelectedFrame();
+  return frame?.location.column;
 }
 
 
@@ -281,7 +283,8 @@ function assertPausedLocation(dbg) {
 
   
   const pauseLine = getVisibleSelectedFrameLine(dbg);
-  assertDebugLine(dbg, pauseLine);
+  const pauseColumn = getVisibleSelectedFrameColumn(dbg);
+  assertDebugLine(dbg, pauseLine, pauseColumn);
 
   ok(isVisibleInEditor(dbg, getCM(dbg).display.gutters), "gutter is visible");
 }
@@ -396,7 +399,8 @@ function isPaused(dbg) {
 
 
 
-function assertPausedAtSourceAndLine(dbg, expectedSourceId, expectedLine) {
+
+function assertPausedAtSourceAndLine(dbg, expectedSourceId, expectedLine, expectedColumn) {
   
   assertPaused(dbg);
 
@@ -407,12 +411,19 @@ function assertPausedAtSourceAndLine(dbg, expectedSourceId, expectedLine) {
   ok(frames.length >= 1, "Got at least one frame");
 
   
-  const { sourceId, line } =  isGeneratedId(expectedSourceId) ? frames[0].generatedLocation : frames[0].location;
+  const { sourceId, line, column } =  isGeneratedId(expectedSourceId) ? frames[0].generatedLocation : frames[0].location;
   is(sourceId, expectedSourceId, "Frame has correct source");
   ok(
     line == expectedLine,
-    `Frame paused at ${line}, but expected ${expectedLine}`
+    `Frame paused at line ${line}, but expected line ${expectedLine}`
   );
+
+  if (expectedColumn) {
+    ok(
+      column == expectedColumn,
+      `Frame paused at column ${column}, but expected column ${expectedColumn}`
+    );
+  }
 }
 
 async function waitForThreadCount(dbg, count) {
