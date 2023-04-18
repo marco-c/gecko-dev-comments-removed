@@ -19,6 +19,8 @@ AddonTestUtils.createAppInfo(
 
 Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
 
+Services.prefs.setBoolPref("extensions.postDownloadThirdPartyPrompt", true);
+
 let server = AddonTestUtils.createHttpServer({
   hosts: ["example.com", "example.org", "amo.example.com"],
 });
