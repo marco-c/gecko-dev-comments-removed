@@ -24,14 +24,12 @@ namespace dom {
 
 void FuzzingFunctions::GarbageCollect(const GlobalObject&) {
   nsJSContext::GarbageCollectNow(JS::GCReason::COMPONENT_UTILS,
-                                 nsJSContext::NonIncrementalGC,
                                  nsJSContext::NonShrinkingGC);
 }
 
 
 void FuzzingFunctions::GarbageCollectCompacting(const GlobalObject&) {
   nsJSContext::GarbageCollectNow(JS::GCReason::COMPONENT_UTILS,
-                                 nsJSContext::NonIncrementalGC,
                                  nsJSContext::ShrinkingGC);
 }
 

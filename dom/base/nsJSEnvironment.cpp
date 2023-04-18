@@ -1026,15 +1026,13 @@ void nsJSContext::SetLowMemoryState(bool aState) {
   JS::SetLowMemoryState(cx, aState);
 }
 
-
-void nsJSContext::GarbageCollectNow(JS::GCReason aReason,
-                                    IsIncremental aIncremental,
-                                    IsShrinking aShrinking,
-                                    int64_t aSliceMillis) {
+static void GarbageCollectImpl(JS::GCReason aReason,
+                               nsJSContext::IsShrinking aShrinking,
+                               bool aIncremental, int64_t aSliceMillis) {
   AUTO_PROFILER_LABEL_DYNAMIC_CSTR_NONSENSITIVE(
       "nsJSContext::GarbageCollectNow", GCCC, JS::ExplainGCReason(aReason));
 
-  MOZ_ASSERT_IF(aSliceMillis, aIncremental == IncrementalGC);
+  MOZ_ASSERT_IF(aSliceMillis, aIncremental);
 
   
   
@@ -1044,18 +1042,18 @@ void nsJSContext::GarbageCollectNow(JS::GCReason aReason,
     return;
   }
 
-  if (sScheduler.InIncrementalGC() && aIncremental == IncrementalGC) {
+  if (sScheduler.InIncrementalGC() && aIncremental) {
     
     JS::PrepareForIncrementalGC(cx);
     JS::IncrementalGCSlice(cx, aReason, aSliceMillis);
     return;
   }
 
-  JS::GCOptions options =
-      aShrinking == ShrinkingGC ? JS::GCOptions::Shrink : JS::GCOptions::Normal;
+  JS::GCOptions options = aShrinking == nsJSContext::ShrinkingGC
+                              ? JS::GCOptions::Shrink
+                              : JS::GCOptions::Normal;
 
-  if (aIncremental == NonIncrementalGC ||
-      aReason == JS::GCReason::FULL_GC_TIMER) {
+  if (!aIncremental || aReason == JS::GCReason::FULL_GC_TIMER) {
     sScheduler.SetNeedsFullGC();
   }
 
@@ -1063,7 +1061,7 @@ void nsJSContext::GarbageCollectNow(JS::GCReason aReason,
     JS::PrepareForFullGC(cx);
   }
 
-  if (aIncremental == IncrementalGC) {
+  if (aIncremental) {
     
     
     
@@ -1071,6 +1069,20 @@ void nsJSContext::GarbageCollectNow(JS::GCReason aReason,
   } else {
     JS::NonIncrementalGC(cx, options, aReason);
   }
+}
+
+
+void nsJSContext::GarbageCollectNow(JS::GCReason aReason,
+                                    IsShrinking aShrinking) {
+  GarbageCollectImpl(aReason, aShrinking,  false, 0);
+}
+
+
+void nsJSContext::RunIncrementalGCSlice(JS::GCReason aReason,
+                                        IsShrinking aShrinking,
+                                        TimeDuration aBudget) {
+  GarbageCollectImpl(aReason, aShrinking,  true,
+                     static_cast<int64_t>(aBudget.ToMilliseconds()));
 }
 
 static void FinishAnyIncrementalGC() {
@@ -1644,12 +1656,10 @@ void nsJSContext::DoLowMemoryGC() {
     return;
   }
   nsJSContext::GarbageCollectNow(JS::GCReason::MEM_PRESSURE,
-                                 nsJSContext::NonIncrementalGC,
                                  nsJSContext::ShrinkingGC);
   nsJSContext::CycleCollectNow(CCReason::MEM_PRESSURE);
   if (sScheduler.NeedsGCAfterCC()) {
     nsJSContext::GarbageCollectNow(JS::GCReason::MEM_PRESSURE,
-                                   nsJSContext::NonIncrementalGC,
                                    nsJSContext::ShrinkingGC);
   }
 }
