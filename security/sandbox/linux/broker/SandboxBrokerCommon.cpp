@@ -11,7 +11,7 @@
 
 
 #ifdef MOZILLA_INTERNAL_API
-#  include "GeckoProfiler.h"
+#  include "mozilla/ProfilerThreadSleep.h"
 #else
 #  define AUTO_PROFILER_THREAD_SLEEP
 #endif
