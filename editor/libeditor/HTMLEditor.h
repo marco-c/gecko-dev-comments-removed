@@ -1262,10 +1262,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  template <typename PT, typename RT>
+  template <typename EditorDOMPointType>
   EditorDOMPoint GetCurrentHardLineStartPoint(
-      const RangeBoundaryBase<PT, RT>& aPoint,
-      EditSubAction aEditSubAction) const;
+      const EditorDOMPointType& aPoint, EditSubAction aEditSubAction,
+      const Element& aEditingHost) const;
 
   
 
@@ -1275,21 +1275,22 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  template <typename PT, typename RT>
-  EditorDOMPoint GetCurrentHardLineEndPoint(
-      const RangeBoundaryBase<PT, RT>& aPoint) const;
+  template <typename EditorDOMPointType>
+  EditorDOMPoint GetCurrentHardLineEndPoint(const EditorDOMPointType& aPoint,
+                                            const Element& aEditingHost) const;
 
   
 
 
 
 
+  template <typename EditorDOMRangeType>
   already_AddRefed<nsRange> CreateRangeIncludingAdjuscentWhiteSpaces(
-      const dom::AbstractRange& aAbstractRange);
-  template <typename SPT, typename SRT, typename EPT, typename ERT>
+      const EditorDOMRangeType& aRange);
+  template <typename EditorDOMPointType1, typename EditorDOMPointType2>
   already_AddRefed<nsRange> CreateRangeIncludingAdjuscentWhiteSpaces(
-      const RangeBoundaryBase<SPT, SRT>& aStartRef,
-      const RangeBoundaryBase<EPT, ERT>& aEndRef);
+      const EditorDOMPointType1& aStartPoint,
+      const EditorDOMPointType2& aEndPoint);
 
   
 
@@ -1308,14 +1309,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
+  template <typename EditorDOMRangeType>
   already_AddRefed<nsRange> CreateRangeExtendedToHardLineStartAndEnd(
-      const dom::AbstractRange& aAbstractRange,
-      EditSubAction aEditSubAction) const;
-  template <typename SPT, typename SRT, typename EPT, typename ERT>
+      const EditorDOMRangeType& aRange, EditSubAction aEditSubAction) const;
+  template <typename EditorDOMPointType1, typename EditorDOMPointType2>
   already_AddRefed<nsRange> CreateRangeExtendedToHardLineStartAndEnd(
-      const RangeBoundaryBase<SPT, SRT>& aStartRef,
-      const RangeBoundaryBase<EPT, ERT>& aEndRef,
-      EditSubAction aEditSubAction) const;
+      const EditorDOMPointType1& aStartPoint,
+      const EditorDOMPointType2& aEndPoint, EditSubAction aEditSubAction) const;
 
   
 
@@ -1370,8 +1370,7 @@ class HTMLEditor final : public EditorBase,
       return NS_ERROR_INVALID_ARG;
     }
     RefPtr<nsRange> oneLineRange = CreateRangeExtendedToHardLineStartAndEnd(
-        aPointInOneHardLine.ToRawRangeBoundary(),
-        aPointInOneHardLine.ToRawRangeBoundary(), aEditSubAction);
+        aPointInOneHardLine, aPointInOneHardLine, aEditSubAction);
     if (!oneLineRange) {
       
       ErrorResult error;
@@ -1419,10 +1418,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  template <typename SPT, typename SRT, typename EPT, typename ERT>
+  template <typename EditorDOMPointType1, typename EditorDOMPointType2>
   void SelectBRElementIfCollapsedInEmptyBlock(
-      RangeBoundaryBase<SPT, SRT>& aStartRef,
-      RangeBoundaryBase<EPT, ERT>& aEndRef) const;
+      EditorDOMPointType1& aStartPoint, EditorDOMPointType2& aEndPoint,
+      const Element& aEditingHost) const;
 
   
 
