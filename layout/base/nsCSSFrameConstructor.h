@@ -297,7 +297,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
 
-  bool DestroyFramesFor(Element* aElement);
+  bool DestroyFramesFor(nsIContent* aContent);
 
   
   nsIFrame* CreateContinuingFrame(nsIFrame* aFrame,

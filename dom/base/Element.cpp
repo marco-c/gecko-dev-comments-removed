@@ -1223,13 +1223,10 @@ already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
   
   
   
-  if (HasChildren()) {
-    if (Document* doc = GetComposedDoc()) {
-      if (PresShell* presShell = doc->GetPresShell()) {
-        presShell->DestroyFramesForAndRestyle(this);
-      }
+  if (Document* doc = GetComposedDoc()) {
+    if (PresShell* presShell = doc->GetPresShell()) {
+      presShell->ShadowRootWillBeAttached(*this);
     }
-    MOZ_ASSERT(!GetPrimaryFrame());
   }
 
   

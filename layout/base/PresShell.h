@@ -487,7 +487,14 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
+
   void DestroyFramesForAndRestyle(Element* aElement);
+
+  
+
+
+
+  void ShadowRootWillBeAttached(Element& aElement);
 
   
 
