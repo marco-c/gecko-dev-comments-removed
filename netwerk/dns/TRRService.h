@@ -235,6 +235,8 @@ class TRRService : public TRRServiceBase,
     
     nsCString mFailedLookups;
 
+    void SetState(enum ConfirmationState aNewState);
+
    public:
     
     
