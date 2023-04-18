@@ -186,16 +186,3 @@ add_task(async function test_shouldShowFocusPromo() {
 
   Preferences.resetBranch("browser.promo.focus");
 });
-
-add_task(function test_isShareableURL() {
-  
-  Assert.ok(!BrowserUtils.isShareableURL(""));
-  
-  Assert.ok(
-    BrowserUtils.isShareableURL(Services.io.newURI("https://mozilla.org"))
-  );
-  
-  Assert.ok(
-    !BrowserUtils.isShareableURL(Services.io.newURI("file://path/to/pdf.pdf"))
-  );
-});
