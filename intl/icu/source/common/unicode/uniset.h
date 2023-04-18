@@ -1229,6 +1229,7 @@ public:
 
     UnicodeSet& retain(UChar32 c);
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1240,6 +1241,7 @@ public:
 
 
     UnicodeSet& retain(const UnicodeString &s);
+#endif  
 
     
 

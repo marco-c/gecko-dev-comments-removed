@@ -183,7 +183,7 @@ MaybeStackVector<Measure> ComplexUnitsConverter::convert(double quantity,
             } else {
                 quantity = remainder;
             }
-        }
+        }   
     }
 
     applyRounder(intValues, quantity, rounder, status);
@@ -210,6 +210,7 @@ MaybeStackVector<Measure> ComplexUnitsConverter::convert(double quantity,
         }
     }
 
+
     
     for(int32_t i = 0, n = unitsConverters_.length(); i < n; ++i) {
         U_ASSERT(tmpResult[i] != nullptr);
@@ -223,12 +224,6 @@ MaybeStackVector<Measure> ComplexUnitsConverter::convert(double quantity,
 void ComplexUnitsConverter::applyRounder(MaybeStackArray<int64_t, 5> &intValues, double &quantity,
                                          icu::number::impl::RoundingImpl *rounder,
                                          UErrorCode &status) const {
-    if (uprv_isInfinite(quantity) || uprv_isNaN(quantity)) {
-        
-        
-        return;
-    }
-
     if (rounder == nullptr) {
         
         return;

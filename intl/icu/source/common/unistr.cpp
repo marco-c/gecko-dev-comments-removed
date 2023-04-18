@@ -334,8 +334,7 @@ Replaceable::clone() const {
 
 UnicodeString *
 UnicodeString::clone() const {
-  LocalPointer<UnicodeString> clonedString(new UnicodeString(*this));
-  return clonedString.isValid() && !clonedString->isBogus() ? clonedString.orphan() : nullptr;
+  return new UnicodeString(*this);
 }
 
 
@@ -1977,12 +1976,7 @@ uhash_compareUnicodeString(const UElement key1, const UElement key2) {
 
 
 
-#if defined(__clang__) || U_GCC_MAJOR_MINOR >= 1100
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
 static void uprv_UnicodeStringDummy(void) {
     delete [] (new UnicodeString[2]);
 }
-#pragma GCC diagnostic pop
-#endif
 #endif

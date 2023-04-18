@@ -84,12 +84,8 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
 
 
-
-    void roundToIncrement(
-        uint64_t increment,
-        digits_t magnitude,
-        RoundingMode roundingMode,
-        UErrorCode& status);
+    void roundToIncrement(double roundingIncrement, RoundingMode roundingMode,
+                          UErrorCode& status);
 
     
     void truncate();
@@ -143,13 +139,6 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
 
     bool adjustMagnitude(int32_t delta);
-
-    
-
-
-
-
-    int32_t adjustToZeroScale();
 
     
 
@@ -246,9 +235,6 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
     DecimalQuantity &setToDecNum(const DecNum& n, UErrorCode& status);
 
     
-    static DecimalQuantity fromExponentString(UnicodeString n, UErrorCode& status);
-
-    
 
 
 
@@ -328,10 +314,6 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
 
     
     UnicodeString toPlainString() const;
-
-    
-
-    UnicodeString toExponentString() const;
 
     
     inline bool isUsingBytes() { return usingBytes; }
@@ -535,8 +517,6 @@ class U_I18N_API DecimalQuantity : public IFixedDecimal, public UMemory {
     void _setToDoubleFast(double n);
 
     void _setToDecNum(const DecNum& dn, UErrorCode& status);
-
-    static int32_t getVisibleFractionCount(UnicodeString value);
 
     void convertToAccurateDouble();
 

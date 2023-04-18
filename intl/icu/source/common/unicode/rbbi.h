@@ -148,11 +148,6 @@ private:
     int32_t *fLookAheadMatches;
 
     
-
-
-    UBool fIsPhraseBreaking;
-
-    
     
     
 
@@ -167,21 +162,6 @@ private:
 
 
     RuleBasedBreakIterator(RBBIDataHeader* data, UErrorCode &status);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    RuleBasedBreakIterator(UDataMemory* image, UBool isPhraseBreaking, UErrorCode &status);
 
     
     friend class RBBIRuleBuilder;

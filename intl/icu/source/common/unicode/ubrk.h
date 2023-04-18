@@ -316,8 +316,7 @@ ubrk_openBinaryRules(const uint8_t *binaryRules, int32_t rulesLength,
 
 
 
-
-U_DEPRECATED UBreakIterator * U_EXPORT2
+U_CAPI UBreakIterator * U_EXPORT2
 ubrk_safeClone(
           const UBreakIterator *bi,
           void *stackBuffer,
@@ -325,6 +324,8 @@ ubrk_safeClone(
           UErrorCode *status);
 
 #endif 
+
+#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -336,6 +337,8 @@ ubrk_safeClone(
 U_CAPI UBreakIterator * U_EXPORT2
 ubrk_clone(const UBreakIterator *bi,
            UErrorCode *status);
+
+#endif  
 
 #ifndef U_HIDE_DEPRECATED_API
 

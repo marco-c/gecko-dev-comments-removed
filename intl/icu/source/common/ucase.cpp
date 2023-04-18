@@ -22,12 +22,25 @@
 #include "unicode/utypes.h"
 #include "unicode/unistr.h"
 #include "unicode/uset.h"
+#include "unicode/udata.h" 
 #include "unicode/utf16.h"
-#include "cmemory.h"
-#include "uassert.h"
-#include "ucase.h"
+#include "ucmndata.h" 
+#include "udatamem.h"
 #include "umutex.h"
+#include "uassert.h"
+#include "cmemory.h"
 #include "utrie2.h"
+#include "ucase.h"
+
+struct UCaseProps {
+    UDataMemory *mem;
+    const int32_t *indexes;
+    const uint16_t *exceptions;
+    const uint16_t *unfold;
+
+    UTrie2 trie;
+    uint8_t formatVersion[4];
+};
 
 
 #define INCLUDED_FROM_UCASE_CPP
@@ -63,13 +76,6 @@ ucase_addPropertyStarts(const USetAdder *sa, UErrorCode *pErrorCode) {
 }
 
 
-
-U_CAPI const struct UCaseProps * U_EXPORT2
-ucase_getSingleton(int32_t *pExceptionsLength, int32_t *pUnfoldLength) {
-    *pExceptionsLength = UPRV_LENGTHOF(ucase_props_exceptions);
-    *pUnfoldLength = UPRV_LENGTHOF(ucase_props_unfold);
-    return &ucase_props_singleton;
-}
 
 U_CFUNC const UTrie2 * U_EXPORT2
 ucase_getTrie() {
@@ -1058,8 +1064,6 @@ ucase_toFullLower(UChar32 c,
     
     U_ASSERT(c >= 0);
     UChar32 result=c;
-    
-    *pString=nullptr;
     uint16_t props=UTRIE2_GET16(&ucase_props_singleton.trie, c);
     if(!UCASE_HAS_EXCEPTION(props)) {
         if(UCASE_IS_UPPER_OR_TITLE(props)) {
@@ -1144,6 +1148,7 @@ ucase_toFullLower(UChar32 c,
 
 
 
+                *pString=nullptr;
                 return 0; 
             } else if(loc==UCASE_LOC_TURKISH && c==0x49 && !isFollowedByDotAbove(iter, context)) {
                 
@@ -1210,8 +1215,6 @@ toUpperOrTitle(UChar32 c,
     
     U_ASSERT(c >= 0);
     UChar32 result=c;
-    
-    *pString=nullptr;
     uint16_t props=UTRIE2_GET16(&ucase_props_singleton.trie, c);
     if(!UCASE_HAS_EXCEPTION(props)) {
         if(UCASE_GET_TYPE(props)==UCASE_LOWER) {
@@ -1249,6 +1252,7 @@ toUpperOrTitle(UChar32 c,
 
 
 
+                *pString=nullptr;
                 return 0; 
             } else if(c==0x0587) {
                 
@@ -1445,8 +1449,6 @@ ucase_toFullFolding(UChar32 c,
     
     U_ASSERT(c >= 0);
     UChar32 result=c;
-    
-    *pString=nullptr;
     uint16_t props=UTRIE2_GET16(&ucase_props_singleton.trie, c);
     if(!UCASE_HAS_EXCEPTION(props)) {
         if(UCASE_IS_UPPER_OR_TITLE(props)) {
@@ -1540,7 +1542,7 @@ U_CAPI UChar32 U_EXPORT2
 u_tolower(UChar32 c) {
     return ucase_tolower(c);
 }
-
+    
 
 U_CAPI UChar32 U_EXPORT2
 u_toupper(UChar32 c) {

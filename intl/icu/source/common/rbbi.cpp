@@ -86,19 +86,6 @@ RuleBasedBreakIterator::RuleBasedBreakIterator(RBBIDataHeader* data, UErrorCode 
 
 
 
-
-
-
-RuleBasedBreakIterator::RuleBasedBreakIterator(UDataMemory* udm, UBool isPhraseBreaking,
-        UErrorCode &status) : RuleBasedBreakIterator(udm, status)
-{
-    fIsPhraseBreaking = isPhraseBreaking;
-}
-
-
-
-
-
 RuleBasedBreakIterator::RuleBasedBreakIterator(const uint8_t *compiledRules,
                        uint32_t       ruleLength,
                        UErrorCode     &status)
@@ -335,7 +322,6 @@ void RuleBasedBreakIterator::init(UErrorCode &status) {
     fBreakCache           = nullptr;
     fDictionaryCache      = nullptr;
     fLookAheadMatches     = nullptr;
-    fIsPhraseBreaking     = false;
 
     
     

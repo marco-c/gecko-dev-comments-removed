@@ -628,6 +628,7 @@ uset_removeRange(USet* set, UChar32 start, UChar32 end);
 U_CAPI void U_EXPORT2
 uset_removeString(USet* set, const UChar* str, int32_t strLen);
 
+#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -639,6 +640,7 @@ uset_removeString(USet* set, const UChar* str, int32_t strLen);
 
 U_CAPI void U_EXPORT2
 uset_removeAllCodePoints(USet *set, const UChar *str, int32_t length);
+#endif  
 
 
 
@@ -669,6 +671,7 @@ uset_removeAll(USet* set, const USet* removeSet);
 U_CAPI void U_EXPORT2
 uset_retain(USet* set, UChar32 start, UChar32 end);
 
+#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -694,6 +697,7 @@ uset_retainString(USet *set, const UChar *str, int32_t length);
 
 U_CAPI void U_EXPORT2
 uset_retainAllCodePoints(USet *set, const UChar *str, int32_t length);
+#endif  
 
 
 
@@ -737,6 +741,7 @@ uset_compact(USet* set);
 U_CAPI void U_EXPORT2
 uset_complement(USet* set);
 
+#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -777,6 +782,7 @@ uset_complementString(USet *set, const UChar *str, int32_t length);
 
 U_CAPI void U_EXPORT2
 uset_complementAllCodePoints(USet *set, const UChar *str, int32_t length);
+#endif  
 
 
 
