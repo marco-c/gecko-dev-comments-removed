@@ -89,7 +89,7 @@ class nsHTMLDocument : public mozilla::dom::Document {
 
   
   
-  int32_t GetNumFormsSynchronous();
+  int32_t GetNumFormsSynchronous() const;
   void SetIsXHTML(bool aXHTML) { mType = (aXHTML ? eXHTML : eHTML); }
 
   virtual nsresult Clone(mozilla::dom::NodeInfo*,

@@ -419,7 +419,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-  uint32_t GetCurrentLoadID() { return mCurrentLoadID; }
+  uint32_t GetCurrentLoadID() const { return mCurrentLoadID; }
 
   
 
@@ -700,7 +700,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   bool IsEventAttributeNameInternal(nsAtom* aName) override;
 
-  bool ContainsRestrictedContent();
+  bool ContainsRestrictedContent() const;
 
   void NotifyWaitingForKey() override;
 
@@ -812,7 +812,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
                                       ErrorResult& aRv);
   
   
-  void GetSinkId(nsString& aSinkId) {
+  void GetSinkId(nsString& aSinkId) const {
     MOZ_ASSERT(NS_IsMainThread());
     aSinkId = mSink.first;
   }

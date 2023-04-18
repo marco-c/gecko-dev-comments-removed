@@ -370,7 +370,7 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
   RefPtr<nsIPrincipal> mExpandedReader;
 
   
-  bool CallerCanRead(JSContext* aCx);
+  bool CallerCanRead(JSContext* aCx) const;
 
   bool IsPrintCallbackDone();
 

@@ -70,7 +70,7 @@ class nsIConstraintValidation : public nsISupports {
 
 
   bool CheckValidity(nsIContent& aEventTarget,
-                     bool* aEventDefaultAction = nullptr);
+                     bool* aEventDefaultAction = nullptr) const;
 
   
   bool WillValidate() const { return IsCandidateForConstraintValidation(); }
