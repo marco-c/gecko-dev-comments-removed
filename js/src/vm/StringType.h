@@ -799,6 +799,7 @@ static_assert(sizeof(JSRope) == sizeof(JSString),
 
 
 
+
 class JSLinearString : public JSString {
   friend class JSString;
   friend class JS::AutoStableStringChars;
@@ -830,6 +831,11 @@ class JSLinearString : public JSString {
 
   template <js::AllowGC allowGC, typename CharT>
   static inline JSLinearString* new_(
+      JSContext* cx, js::UniquePtr<CharT[], JS::FreePolicy> chars,
+      size_t length, js::gc::InitialHeap heap);
+
+  template <js::AllowGC allowGC, typename CharT>
+  static inline JSLinearString* newValidLength(
       JSContext* cx, js::UniquePtr<CharT[], JS::FreePolicy> chars,
       size_t length, js::gc::InitialHeap heap);
 
@@ -1415,6 +1421,11 @@ inline JSLinearString* NewStringCopy(
 
 template <js::AllowGC allowGC, typename CharT>
 extern JSLinearString* NewStringCopyNDontDeflate(
+    JSContext* cx, const CharT* s, size_t n,
+    js::gc::InitialHeap heap = js::gc::DefaultHeap);
+
+template <js::AllowGC allowGC, typename CharT>
+extern JSLinearString* NewStringCopyNDontDeflateNonStaticValidLength(
     JSContext* cx, const CharT* s, size_t n,
     js::gc::InitialHeap heap = js::gc::DefaultHeap);
 
