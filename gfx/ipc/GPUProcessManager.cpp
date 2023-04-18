@@ -146,12 +146,12 @@ void GPUProcessManager::OnXPCOMShutdown() {
 
 void GPUProcessManager::OnPreferenceChange(const char16_t* aData) {
   
-  if (!dom::ContentParent::ShouldSyncPreference(aData)) {
-    return;
-  }
+  NS_LossyConvertUTF16toASCII strData(aData);
 
   
-  NS_LossyConvertUTF16toASCII strData(aData);
+  if (!dom::ContentParent::ShouldSyncPreference(strData.Data())) {
+    return;
+  }
 
   mozilla::dom::Pref pref(strData,  false, Nothing(), Nothing());
   Preferences::GetPreference(&pref);

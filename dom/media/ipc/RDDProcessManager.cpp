@@ -92,13 +92,14 @@ void RDDProcessManager::OnPreferenceChange(const char16_t* aData) {
     
     return;
   }
-  
-  if (!dom::ContentParent::ShouldSyncPreference(aData)) {
-    return;
-  }
 
   
   NS_LossyConvertUTF16toASCII strData(aData);
+
+  
+  if (!dom::ContentParent::ShouldSyncPreference(strData.Data())) {
+    return;
+  }
 
   mozilla::dom::Pref pref(strData,  false, Nothing(), Nothing());
   Preferences::GetPreference(&pref);

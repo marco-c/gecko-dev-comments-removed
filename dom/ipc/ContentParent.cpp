@@ -2507,7 +2507,8 @@ bool ContentParent::BeginSubprocessLaunch(ProcessPriority aPriority) {
 
   
   
-  mPrefSerializer = MakeUnique<mozilla::ipc::SharedPreferenceSerializer>();
+  mPrefSerializer = MakeUnique<mozilla::ipc::SharedPreferenceSerializer>(
+      ShouldSyncPreference);
   if (!mPrefSerializer->SerializeToSharedMemory()) {
     NS_WARNING("SharedPreferenceSerializer::SerializeToSharedMemory failed");
     MarkAsDead();
@@ -3523,12 +3524,12 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
 
   if (!strcmp(aTopic, "nsPref:changed")) {
     
-    if (!ShouldSyncPreference(aData)) {
-      return NS_OK;
-    }
+    NS_LossyConvertUTF16toASCII strData(aData);
 
     
-    NS_LossyConvertUTF16toASCII strData(aData);
+    if (!ShouldSyncPreference(strData.Data())) {
+      return NS_OK;
+    }
 
     Pref pref(strData,  false, Nothing(), Nothing());
     Preferences::GetPreference(&pref);
@@ -3677,30 +3678,30 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
 }
 
 
-bool ContentParent::ShouldSyncPreference(const char16_t* aData) {
+bool ContentParent::ShouldSyncPreference(const char* aPref) {
 #define PARENT_ONLY_PREF_LIST_ENTRY(s) \
-  { s, (sizeof(s) / sizeof(char16_t)) - 1 }
+  { s, (sizeof(s) / sizeof(char)) - 1 }
   struct ParentOnlyPrefListEntry {
-    const char16_t* mPrefBranch;
+    const char* mPrefBranch;
     size_t mLen;
   };
   
   static const ParentOnlyPrefListEntry sParentOnlyPrefBranchList[] = {
-      PARENT_ONLY_PREF_LIST_ENTRY(u"app.update.lastUpdateTime."),
-      PARENT_ONLY_PREF_LIST_ENTRY(u"datareporting.policy."),
-      PARENT_ONLY_PREF_LIST_ENTRY(u"browser.safebrowsing.provider."),
-      PARENT_ONLY_PREF_LIST_ENTRY(u"browser.shell."),
-      PARENT_ONLY_PREF_LIST_ENTRY(u"browser.slowStartup."),
-      PARENT_ONLY_PREF_LIST_ENTRY(u"browser.startup."),
-      PARENT_ONLY_PREF_LIST_ENTRY(u"extensions.getAddons.cache."),
-      PARENT_ONLY_PREF_LIST_ENTRY(u"media.gmp-manager."),
-      PARENT_ONLY_PREF_LIST_ENTRY(u"media.gmp-gmpopenh264."),
-      PARENT_ONLY_PREF_LIST_ENTRY(u"privacy.sanitize."),
+      PARENT_ONLY_PREF_LIST_ENTRY("app.update.lastUpdateTime."),
+      PARENT_ONLY_PREF_LIST_ENTRY("datareporting.policy."),
+      PARENT_ONLY_PREF_LIST_ENTRY("browser.safebrowsing.provider."),
+      PARENT_ONLY_PREF_LIST_ENTRY("browser.shell."),
+      PARENT_ONLY_PREF_LIST_ENTRY("browser.slowStartup."),
+      PARENT_ONLY_PREF_LIST_ENTRY("browser.startup."),
+      PARENT_ONLY_PREF_LIST_ENTRY("extensions.getAddons.cache."),
+      PARENT_ONLY_PREF_LIST_ENTRY("media.gmp-manager."),
+      PARENT_ONLY_PREF_LIST_ENTRY("media.gmp-gmpopenh264."),
+      PARENT_ONLY_PREF_LIST_ENTRY("privacy.sanitize."),
   };
 #undef PARENT_ONLY_PREF_LIST_ENTRY
 
   for (const auto& entry : sParentOnlyPrefBranchList) {
-    if (NS_strncmp(entry.mPrefBranch, aData, entry.mLen) == 0) {
+    if (strncmp(entry.mPrefBranch, aPref, entry.mLen) == 0) {
       return false;
     }
   }
