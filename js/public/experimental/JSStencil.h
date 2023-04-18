@@ -123,9 +123,6 @@ namespace JS {
 
 extern JS_PUBLIC_API bool StencilIsBorrowed(Stencil* stencil);
 
-
-extern JS_PUBLIC_API bool StencilCanLazilyParse(Stencil* stencil);
-
 extern JS_PUBLIC_API size_t SizeOfStencil(Stencil* stencil,
                                           mozilla::MallocSizeOf mallocSizeOf);
 
