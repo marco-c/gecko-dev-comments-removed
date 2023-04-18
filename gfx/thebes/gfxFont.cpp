@@ -578,24 +578,26 @@ void gfxFontShaper::MergeFontFeatures(
 void gfxShapedText::SetupClusterBoundaries(uint32_t aOffset,
                                            const char16_t* aString,
                                            uint32_t aLength) {
-  CompressedGlyph* glyphs = GetCharacterGlyphs() + aOffset;
+  if (aLength == 0) {
+    return;
+  }
 
+  CompressedGlyph* const glyphs = GetCharacterGlyphs() + aOffset;
   CompressedGlyph extendCluster = CompressedGlyph::MakeComplex(false, true);
 
-  const char16_t* const stringStart = aString;
-  intl::GraphemeClusterBreakIteratorUtf16 iter(aString, aLength);
-
   
   
-  if (aLength) {
-    uint32_t ch = *aString;
-    if (aLength > 1 && NS_IS_SURROGATE_PAIR(ch, aString[1])) {
-      ch = SURROGATE_TO_UCS4(ch, aString[1]);
-    }
-    if (IsClusterExtender(ch)) {
-      *glyphs = extendCluster;
-    }
+  uint32_t ch = aString[0];
+  if (aLength > 1 && NS_IS_SURROGATE_PAIR(ch, aString[1])) {
+    ch = SURROGATE_TO_UCS4(ch, aString[1]);
   }
+  if (IsClusterExtender(ch)) {
+    glyphs[0] = extendCluster;
+  }
+
+  intl::GraphemeClusterBreakIteratorUtf16 iter(
+      Span<const char16_t>(aString, aLength));
+  uint32_t pos = 0;
 
   const char16_t kIdeographicSpace = 0x3000;
   
@@ -604,25 +606,23 @@ void gfxShapedText::SetupClusterBoundaries(uint32_t aOffset,
   
   const char16_t kBengaliVirama = 0x09CD;
   const char16_t kBengaliYa = 0x09AF;
-  while (!iter.AtEnd()) {
-    if (*iter == char16_t(' ') || *iter == kIdeographicSpace) {
-      glyphs->SetIsSpace();
-    } else if (*iter == kBengaliYa) {
+  while (pos < aLength) {
+    const char16_t ch = aString[pos];
+    if (ch == char16_t(' ') || ch == kIdeographicSpace) {
+      glyphs[pos].SetIsSpace();
+    } else if (ch == kBengaliYa) {
       
-      if (aString > stringStart && *(aString - 1) == kBengaliVirama) {
-        *glyphs = extendCluster;
+      if (pos > 0 && aString[pos - 1] == kBengaliVirama) {
+        glyphs[pos] = extendCluster;
       }
     }
     
-    iter.Next();
+    const uint32_t nextPos = *iter.Next();
     
-    aString++;
-    glyphs++;
+    ++pos;
     
-    while (aString < iter) {
-      *glyphs = extendCluster;
-      glyphs++;
-      aString++;
+    for (; pos < nextPos; ++pos) {
+      glyphs[pos] = extendCluster;
     }
   }
 }
