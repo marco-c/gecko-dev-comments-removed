@@ -1241,7 +1241,6 @@ namespace jit {
 class JitCode;
 }  
 
-using PreBarrieredId = PreBarriered<jsid>;
 using PreBarrieredValue = PreBarriered<Value>;
 
 using GCPtrAtom = GCPtr<JSAtom*>;
