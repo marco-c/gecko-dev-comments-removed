@@ -85,8 +85,7 @@ class ScriptLoadContext : public PreloaderBase {
   virtual ~ScriptLoadContext();
 
  public:
-  explicit ScriptLoadContext(Element* aElement,
-                             nsIGlobalObject* aWebExtGlobal = nullptr);
+  explicit ScriptLoadContext(Element* aElement);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ScriptLoadContext)
@@ -195,12 +194,6 @@ class ScriptLoadContext : public PreloaderBase {
   
   bool mIsPreload;
   nsCOMPtr<Element> mElement;
-
-  
-
-
-
-  nsCOMPtr<nsIGlobalObject> mWebExtGlobal;
 
   RefPtr<JS::loader::ScriptLoadRequest> mRequest;
 
