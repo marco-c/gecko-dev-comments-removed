@@ -166,39 +166,10 @@ void DocumentTimeline::MostRecentRefreshTimeUpdated() {
   MOZ_ASSERT(GetRefreshDriver(),
              "Should be able to reach refresh driver from within WillRefresh");
 
-  bool needsTicks = false;
-  nsTArray<Animation*> animationsToRemove(mAnimations.Count());
-
   nsAutoAnimationMutationBatch mb(mDocument);
 
-  for (Animation* animation = mAnimationOrder.getFirst(); animation;
-       animation =
-           static_cast<LinkedListElement<Animation>*>(animation)->getNext()) {
-    
-    if (animation->GetTimeline() != this) {
-      
-      
-      MOZ_ASSERT(!animation->GetTimeline());
-      animationsToRemove.AppendElement(animation);
-      continue;
-    }
-
-    needsTicks |= animation->NeedsTicks();
-    
-    
-    
-    animation->Tick();
-
-    if (!animation->NeedsTicks()) {
-      animationsToRemove.AppendElement(animation);
-    }
-  }
-
-  for (Animation* animation : animationsToRemove) {
-    RemoveAnimation(animation);
-  }
-
-  if (!needsTicks) {
+  bool ticked = Tick();
+  if (!ticked) {
     
     
     

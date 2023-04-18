@@ -2134,6 +2134,7 @@ STATIC_ATOMS = [
     Atom("docLevelNativeAnonymousContent", "docLevelNativeAnonymousContent"),  
     Atom("paintRequestTime", "PaintRequestTime"),
     Atom("pseudoProperty", "PseudoProperty"),  
+    Atom("scrollTimelinesProperty", "SrollTimelinesProperty"),  
     Atom("manualNACProperty", "ManualNACProperty"),  
     Atom("markerPseudoProperty", "markerPseudoProperty"),  
     

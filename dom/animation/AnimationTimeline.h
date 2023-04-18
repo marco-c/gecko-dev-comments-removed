@@ -32,6 +32,10 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
  protected:
   virtual ~AnimationTimeline();
 
+  
+  
+  bool Tick();
+
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(AnimationTimeline)

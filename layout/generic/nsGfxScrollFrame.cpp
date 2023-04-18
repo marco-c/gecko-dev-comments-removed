@@ -59,6 +59,7 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/HTMLMarqueeElement.h"
+#include "mozilla/dom/ScrollTimeline.h"
 #include <stdint.h>
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Telemetry.h"
@@ -2269,6 +2270,7 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
       mProcessingScrollEvent(false),
       mApzAnimationRequested(false),
       mReclampVVOffsetInReflowFinished(false),
+      mMayScheduleScrollAnimations(false),
       mVelocityQueue(aOuter->PresContext()) {
   AppendScrollUpdate(ScrollPositionUpdate::NewScrollframe(nsPoint()));
 
@@ -3238,6 +3240,11 @@ void ScrollFrameHelper::ScrollToImpl(
           presContext->PresShell()->GetVisualViewportOffset(), curPos);
     }
   }
+
+  
+  
+  
+  ScheduleScrollAnimations();
 
   
   for (uint32_t i = 0; i < mListeners.Length(); i++) {
@@ -6411,6 +6418,8 @@ void ScrollFrameHelper::UpdateMinimumScaleSize(
 bool ScrollFrameHelper::ReflowFinished() {
   mPostedReflowCallback = false;
 
+  TryScheduleScrollAnimations();
+
   if (mIsRoot) {
     if (mMinimumScaleSizeChanged &&
         mOuter->PresShell()->UsesMobileViewportSizing() &&
@@ -6659,7 +6668,14 @@ void ScrollFrameHelper::UpdateSticky() {
 }
 
 void ScrollFrameHelper::UpdatePrevScrolledRect() {
-  mPrevScrolledRect = GetScrolledRect();
+  
+  
+  
+  nsRect currScrolledRect = GetScrolledRect();
+  if (!currScrolledRect.IsEqualEdges(mPrevScrolledRect)) {
+    mMayScheduleScrollAnimations = true;
+  }
+  mPrevScrolledRect = currScrolledRect;
 }
 
 void ScrollFrameHelper::AdjustScrollbarRectForResizer(
@@ -7958,4 +7974,20 @@ void ScrollFrameHelper::AppendScrollUpdate(
     const ScrollPositionUpdate& aUpdate) {
   mScrollGeneration = aUpdate.GetGeneration();
   mScrollUpdates.AppendElement(aUpdate);
+}
+
+void ScrollFrameHelper::ScheduleScrollAnimations() {
+  MOZ_ASSERT(mOuter);
+  nsIContent* content = mOuter->GetContent();
+  MOZ_ASSERT(content && content->IsElement(),
+             "The nsIScrollableFrame should have the element.");
+
+  const auto* set =
+      ScrollTimelineSet::GetScrollTimelineSet(content->AsElement());
+  if (!set) {
+    
+    return;
+  }
+
+  set->ScheduleAnimations();
 }

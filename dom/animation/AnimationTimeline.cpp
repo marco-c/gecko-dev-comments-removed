@@ -34,6 +34,41 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(AnimationTimeline)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
+bool AnimationTimeline::Tick() {
+  bool needsTicks = false;
+
+  nsTArray<Animation*> animationsToRemove;
+
+  for (Animation* animation = mAnimationOrder.getFirst(); animation;
+       animation =
+           static_cast<LinkedListElement<Animation>*>(animation)->getNext()) {
+    
+    if (animation->GetTimeline() != this) {
+      
+      
+      MOZ_ASSERT(!animation->GetTimeline());
+      animationsToRemove.AppendElement(animation);
+      continue;
+    }
+
+    needsTicks |= animation->NeedsTicks();
+    
+    
+    
+    animation->Tick();
+
+    if (!animation->NeedsTicks()) {
+      animationsToRemove.AppendElement(animation);
+    }
+  }
+
+  for (Animation* animation : animationsToRemove) {
+    RemoveAnimation(animation);
+  }
+
+  return needsTicks;
+}
+
 void AnimationTimeline::NotifyAnimationUpdated(Animation& aAnimation) {
   if (mAnimations.EnsureInserted(&aAnimation)) {
     if (aAnimation.GetTimeline() && aAnimation.GetTimeline() != this) {

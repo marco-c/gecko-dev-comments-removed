@@ -11,9 +11,14 @@
 
 namespace mozilla::dom {
 
+
+
+
+
 NS_IMPL_CYCLE_COLLECTION_CLASS(ScrollTimeline)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(ScrollTimeline,
                                                 AnimationTimeline)
+  tmp->Teardown();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocument)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSource)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -33,9 +38,81 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(ScrollTimeline,
 ScrollTimeline::ScrollTimeline(Document* aDocument, Element* aScroller)
     : AnimationTimeline(aDocument->GetParentObject()),
       mDocument(aDocument),
+      
+      
+      
+      
+      
+      
+      
+      
+      
       mSource(aScroller),
       mDirection(StyleScrollDirection::Auto) {
-  
+  MOZ_ASSERT(aDocument);
+
+  RegisterWithScrollSource();
+}
+
+void ScrollTimeline::RegisterWithScrollSource() {
+  if (!mSource) {
+    return;
+  }
+
+  if (ScrollTimelineSet* scrollTimelineSet =
+          ScrollTimelineSet::GetOrCreateScrollTimelineSet(mSource)) {
+    scrollTimelineSet->AddScrollTimeline(*this);
+  }
+}
+
+void ScrollTimeline::UnregisterFromScrollSource() {
+  if (!mSource) {
+    return;
+  }
+
+  if (ScrollTimelineSet* scrollTimelineSet =
+          ScrollTimelineSet::GetScrollTimelineSet(mSource)) {
+    scrollTimelineSet->RemoveScrollTimeline(*this);
+    if (scrollTimelineSet->IsEmpty()) {
+      ScrollTimelineSet::DestroyScrollTimelineSet(mSource);
+    }
+  }
+}
+
+
+
+
+
+ ScrollTimelineSet* ScrollTimelineSet::GetScrollTimelineSet(
+    Element* aElement) {
+  MOZ_ASSERT(aElement);
+  return static_cast<ScrollTimelineSet*>(
+      aElement->GetProperty(nsGkAtoms::scrollTimelinesProperty));
+}
+
+ ScrollTimelineSet* ScrollTimelineSet::GetOrCreateScrollTimelineSet(
+    Element* aElement) {
+  MOZ_ASSERT(aElement);
+  ScrollTimelineSet* scrollTimelineSet = GetScrollTimelineSet(aElement);
+  if (scrollTimelineSet) {
+    return scrollTimelineSet;
+  }
+
+  scrollTimelineSet = new ScrollTimelineSet();
+  nsresult rv = aElement->SetProperty(
+      nsGkAtoms::scrollTimelinesProperty, scrollTimelineSet,
+      nsINode::DeleteProperty<ScrollTimelineSet>, true);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("SetProperty failed");
+    delete scrollTimelineSet;
+    return nullptr;
+  }
+  return scrollTimelineSet;
+}
+
+ void ScrollTimelineSet::DestroyScrollTimelineSet(
+    Element* aElement) {
+  aElement->RemoveProperty(nsGkAtoms::scrollTimelinesProperty);
 }
 
 }  

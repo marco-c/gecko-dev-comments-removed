@@ -8,10 +8,52 @@
 #define mozilla_dom_ScrollTimeline_h
 
 #include "mozilla/dom/AnimationTimeline.h"
+#include "mozilla/HashTable.h"
 #include "mozilla/ServoStyleConsts.h"
 
 namespace mozilla {
 namespace dom {
+
+class Document;
+class Element;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class ScrollTimeline final : public AnimationTimeline {
  public:
@@ -47,15 +89,83 @@ class ScrollTimeline final : public AnimationTimeline {
   }
   Document* GetDocument() const override { return mDocument; }
 
+  void ScheduleAnimations() {
+    
+    
+    
+
+    Tick();
+  }
+
  protected:
-  virtual ~ScrollTimeline() = default;
+  virtual ~ScrollTimeline() { Teardown(); }
 
  private:
-  RefPtr<Document> mDocument;
+  
+  
+  
+  void Teardown() { UnregisterFromScrollSource(); }
 
   
+  void RegisterWithScrollSource();
+  void UnregisterFromScrollSource();
+
+  RefPtr<Document> mDocument;
   RefPtr<Element> mSource;
   StyleScrollDirection mDirection;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ScrollTimelineSet {
+ public:
+  using NonOwningScrollTimelineSet = HashSet<ScrollTimeline*>;
+
+  ~ScrollTimelineSet() = default;
+
+  static ScrollTimelineSet* GetScrollTimelineSet(Element* aElement);
+  static ScrollTimelineSet* GetOrCreateScrollTimelineSet(Element* aElement);
+  static void DestroyScrollTimelineSet(Element* aElement);
+
+  void AddScrollTimeline(ScrollTimeline& aScrollTimeline) {
+    Unused << mScrollTimelines.put(&aScrollTimeline);
+  }
+  void RemoveScrollTimeline(ScrollTimeline& aScrollTimeline) {
+    mScrollTimelines.remove(&aScrollTimeline);
+  }
+
+  bool IsEmpty() const { return mScrollTimelines.empty(); }
+
+  void ScheduleAnimations() const {
+    for (auto iter = mScrollTimelines.iter(); !iter.done(); iter.next()) {
+      iter.get()->ScheduleAnimations();
+    }
+  }
+
+ private:
+  ScrollTimelineSet() = default;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  NonOwningScrollTimelineSet mScrollTimelines;
 };
 
 }  
