@@ -567,7 +567,10 @@ impl<'a> SceneBuilder<'a> {
             iframe_size: Vec::new(),
             root_iframe_clip: None,
             quality_settings: view.quality_settings,
-            tile_cache_builder: TileCacheBuilder::new(root_reference_frame_index),
+            tile_cache_builder: TileCacheBuilder::new(
+                root_reference_frame_index,
+                frame_builder_config.background_color,
+            ),
             snap_to_device,
             picture_graph: PictureGraph::new(),
             plane_splitters: Vec::new(),
@@ -584,6 +587,8 @@ impl<'a> SceneBuilder<'a> {
             &mut builder.clip_store,
             &mut builder.prim_store,
             builder.interners,
+            &builder.spatial_tree,
+            &builder.prim_instances,
         );
 
         
@@ -1126,9 +1131,9 @@ impl<'a> SceneBuilder<'a> {
         
         
         if self.iframe_size.is_empty() {
-            self.add_tile_cache_barrier_if_needed(SliceFlags::empty());
             assert!(self.root_iframe_clip.is_none());
             self.root_iframe_clip = Some(clip_chain_id);
+            self.add_tile_cache_barrier_if_needed(SliceFlags::empty());
         }
         self.iframe_size.push(info.bounds.size());
         self.rf_mapper.push_scope();
@@ -1871,9 +1876,7 @@ impl<'a> SceneBuilder<'a> {
                     self.spatial_tree,
                     &self.clip_store,
                     self.interners,
-                    &self.config,
                     &self.quality_settings,
-                    self.root_iframe_clip,
                     &mut self.prim_instances,
                 );
             }
@@ -1977,6 +1980,15 @@ impl<'a> SceneBuilder<'a> {
         );
     }
 
+    fn make_current_slice_atomic_if_required(&mut self) {
+        if self.sc_stack.is_empty() {
+            
+            assert!(self.pending_shadow_items.is_empty());
+
+            self.tile_cache_builder.make_current_slice_atomic();
+        }
+    }
+
     
     
     fn add_tile_cache_barrier_if_needed(
@@ -1987,7 +1999,10 @@ impl<'a> SceneBuilder<'a> {
             
             assert!(self.pending_shadow_items.is_empty());
 
-            self.tile_cache_builder.add_tile_cache_barrier(slice_flags);
+            self.tile_cache_builder.add_tile_cache_barrier(
+                slice_flags,
+                self.root_iframe_clip,
+            );
         }
     }
 
@@ -2236,21 +2251,14 @@ impl<'a> SceneBuilder<'a> {
         
         
         
-        if stacking_context.flags.intersects(StackingContextFlags::IS_BLEND_CONTAINER | StackingContextFlags::IS_BACKDROP_ROOT) &&
+        if stacking_context.flags.intersects(StackingContextFlags::IS_BLEND_CONTAINER) &&
            self.sc_stack.is_empty() &&
-           self.tile_cache_builder.can_add_container_tile_cache() &&
            self.spatial_tree.is_root_coord_system(stacking_context.spatial_node_index)
         {
             self.tile_cache_builder.add_tile_cache(
                 stacking_context.prim_list,
                 stacking_context.clip_chain_id,
-                self.spatial_tree,
-                &self.clip_store,
-                self.interners,
-                &self.config,
                 self.root_iframe_clip,
-                SliceFlags::IS_ATOMIC,
-                &self.prim_instances,
             );
 
             return;
@@ -3584,6 +3592,8 @@ impl<'a> SceneBuilder<'a> {
         
         let filter_spatial_node_index = SpatialNodeIndex::UNKNOWN;
 
+        self.make_current_slice_atomic_if_required();
+
         
         
         let backdrop_instance = self.create_primitive(
@@ -3865,7 +3875,7 @@ impl FlattenedStackingContext {
         prim_flags: PrimitiveFlags,
     ) -> bool {
         
-        if sc_flags.intersects(StackingContextFlags::IS_BACKDROP_ROOT | StackingContextFlags::IS_BLEND_CONTAINER) {
+        if sc_flags.intersects(StackingContextFlags::IS_BLEND_CONTAINER) {
             return false;
         }
 
