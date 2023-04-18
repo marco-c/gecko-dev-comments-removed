@@ -433,6 +433,17 @@ class TimeStamp {
 
 
 
+
+
+
+
+  static MFBT_API TimeStamp FirstTimeStamp();
+
+  
+
+
+
+
   static MFBT_API void RecordProcessRestart();
 
   
