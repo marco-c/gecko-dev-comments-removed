@@ -375,7 +375,7 @@ MediaResult WMFVideoMFTManager::InitInternal() {
   if (!mDXVAFailureReason.IsEmpty()) {
     
     
-    LOG(nsPrintfCString("DXVA failure: %s", mDXVAFailureReason.get()).get());
+    LOG("DXVA failure: %s", mDXVAFailureReason.get());
   }
 
   if (!mUseHwAccel) {
