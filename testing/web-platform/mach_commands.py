@@ -510,6 +510,10 @@ def run_web_platform_tests(command_context, **params):
     wpt_runner = WebPlatformTestsRunner(wpt_setup)
 
     logger = wpt_runner.setup_logging(**params)
+    
+    
+    if "log" in params:
+        del params["log"]
 
     if (
         conditions.is_android(command_context)
