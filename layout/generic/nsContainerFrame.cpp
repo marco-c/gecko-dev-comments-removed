@@ -777,6 +777,11 @@ void nsContainerFrame::SyncWindowProperties(nsPresContext* aPresContext,
     nsCOMPtr<nsIWidget> viewWidget = aView->GetWidget();
     viewWidget->SetTransparencyMode(mode);
     windowWidget->SetWindowShadowStyle(shadow);
+
+    
+    if (auto scheme = aPresContext->GetOverriddenColorScheme()) {
+      windowWidget->SetColorScheme(scheme);
+    }
   }
 
   if (!aRC) return;
