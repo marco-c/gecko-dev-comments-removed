@@ -5037,11 +5037,26 @@ doProlog(XML_Parser parser,
     case XML_ROLE_GROUP_OPEN:
       if (prologState.level >= groupSize) {
         if (groupSize) {
+          
+          if (parser->m_groupSize > (unsigned int)(-1) / 2u) {
+            return XML_ERROR_NO_MEMORY;
+          }
+
           char *temp = (char *)REALLOC(groupConnector, groupSize *= 2);
           if (temp == NULL)
             return XML_ERROR_NO_MEMORY;
           groupConnector = temp;
           if (dtd->scaffIndex) {
+            
+
+
+
+#if UINT_MAX >= SIZE_MAX
+            if (parser->m_groupSize > (size_t)(-1) / sizeof(int)) {
+              return XML_ERROR_NO_MEMORY;
+            }
+#endif
+
             int *temp = (int *)REALLOC(dtd->scaffIndex,
                           groupSize * sizeof(int));
             if (temp == NULL)
