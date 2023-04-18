@@ -1873,15 +1873,47 @@ public class GeckoSession {
   }
 
   
+
+
+
+
   @AnyThread
   public void goBack() {
-    mEventDispatcher.dispatch("GeckoView:GoBack", null);
+    goBack(true);
   }
 
   
+
+
+
+
+  @AnyThread
+  public void goBack(final boolean userInteraction) {
+    final GeckoBundle msg = new GeckoBundle(1);
+    msg.putBoolean("userInteraction", userInteraction);
+    mEventDispatcher.dispatch("GeckoView:GoBack", msg);
+  }
+
+  
+
+
+
+
   @AnyThread
   public void goForward() {
-    mEventDispatcher.dispatch("GeckoView:GoForward", null);
+    goForward(true);
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public void goForward(final boolean userInteraction) {
+    final GeckoBundle msg = new GeckoBundle(1);
+    msg.putBoolean("userInteraction", userInteraction);
+    mEventDispatcher.dispatch("GeckoView:GoForward", msg);
   }
 
   
