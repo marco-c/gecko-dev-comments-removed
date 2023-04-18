@@ -62,6 +62,68 @@ add_task(async function() {
 
   let inRange = (val, min, max) => min <= val && val <= max;
 
+  let inTabStrip = function(r) {
+    return (
+      r.y1 >= tabStripRect.top &&
+      r.y2 <= tabStripRect.bottom &&
+      r.x1 >= tabStripRect.left &&
+      r.x2 <= tabStripRect.right
+    );
+  };
+
+  let isExpectedChange = function(r) {
+    
+    if (!inTabStrip(r)) {
+      return false;
+    }
+
+    
+    
+    
+    if (
+      inRange(r.w, minTabWidth, maxTabWidth * 2) &&
+      inRange(r.x1, firstTabRect.x, firstTabRect.x + tabPaddingStart)
+    ) {
+      return true;
+    }
+
+    
+    let isSecondTabRect =
+      inRange(
+        r.x1,
+        firstTabRect.right - 1, 
+        firstTabRect.right + firstTabRect.width
+      ) &&
+      r.x2 <
+        firstTabRect.right +
+          firstTabRect.width +
+          
+          newTabButtonRect.width;
+
+    if (isSecondTabRect) {
+      return true;
+    }
+    
+    
+    
+    if (r.h == 13 && r.w <= 2 * 13 + kMaxEmptyPixels) {
+      return true;
+    }
+
+    
+    if (r.h == 2 && r.w == 2) {
+      return true;
+    }
+
+    
+    if (r.h == 10 && r.w <= 2 * 10) {
+      return true;
+    }
+
+    
+    return false;
+  };
+
   
   await withPerfObserver(
     async function() {
@@ -76,46 +138,7 @@ add_task(async function() {
     {
       expectedReflows: EXPECTED_REFLOWS,
       frames: {
-        filter: rects =>
-          rects.filter(
-            r =>
-              !(
-                
-                (
-                  r.y1 >= tabStripRect.top &&
-                  r.y2 <= tabStripRect.bottom &&
-                  r.x1 >= tabStripRect.left &&
-                  r.x2 <= tabStripRect.right &&
-                  
-                  
-                  
-                  ((inRange(r.w, minTabWidth, maxTabWidth * 2) &&
-                    inRange(
-                      r.x1,
-                      firstTabRect.x,
-                      firstTabRect.x + tabPaddingStart
-                    )) ||
-                  
-                  (inRange(
-                    r.x1,
-                    firstTabRect.right - 1, 
-                    firstTabRect.right + firstTabRect.width
-                  ) &&
-                    r.x2 <
-                      firstTabRect.right +
-                        firstTabRect.width +
-                        newTabButtonRect.width) || 
-                    
-                    
-                    
-                    (r.h == 13 && r.w <= 2 * 13 + kMaxEmptyPixels) ||
-                    
-                    (r.h == 2 && r.w == 2) ||
-                    
-                    (r.h == 10 && r.w <= 2 * 10))
-                )
-              )
-          ),
+        filter: rects => rects.filter(r => !isExpectedChange(r)),
         exceptions: [
           {
             name:
