@@ -562,24 +562,6 @@ onload = function() {
   }, 'WebSocket#url');
 
   
-  function test_cache_manifest(mode) {
-    subsetTestByKey('appcache', async_test, function() {
-      var iframe = document.createElement('iframe');
-      var uuid = token();
-      iframe.src = 'resources/page-using-manifest.py?id='+uuid+'&encoding='+encoding+'&mode='+mode;
-      document.body.appendChild(iframe);
-      this.add_cleanup(function() {
-        document.body.removeChild(iframe);
-      });
-      poll_for_stash(this, uuid, expected_utf8);
-    }, 'Parsing cache manifest (' + mode + ')');
-  }
-
-  'CACHE, FALLBACK, NETWORK'.split(', ').forEach(function(str) {
-    test_cache_manifest(str);
-  });
-
-  
   function test_css(tmpl, expected_cssom, encoding, use_style_element) {
     var desc = ['CSS', (use_style_element ? '<style>' : '<link> (' + encoding + ')'),  tmpl].join(' ');
     subsetTestByKey('css', async_test, function(){
