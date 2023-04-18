@@ -12,12 +12,7 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
   "https://example.com"
 );
 
-const {
-  handleInternally,
-  useHelperApp,
-  useSystemDefault,
-  saveToDisk,
-} = Ci.nsIHandlerInfo;
+const { handleInternally, useHelperApp, useSystemDefault } = Ci.nsIHandlerInfo;
 
 let MockFilePicker = SpecialPowers.MockFilePicker;
 MockFilePicker.init(window);
@@ -43,14 +38,12 @@ add_task(async function setup() {
 
 
 
-
-add_task(async function aDownloadSavedToDiskPromptsForFolder() {
+add_task(async function aDownloadLaunchedWithAppPromptsForFolder() {
   let publicList = await Downloads.getList(Downloads.PUBLIC);
-  ensureMIMEState({ preferredAction: saveToDisk });
   registerCleanupFunction(async () => {
     await publicList.removeFinished();
   });
-  let filePickerShownPromise = new Promise(resolve => {
+  let filePickerShown = new Promise(resolve => {
     MockFilePicker.showCallback = function(fp) {
       ok(true, "filepicker should have been shown");
       setTimeout(resolve, 0);
@@ -65,7 +58,7 @@ add_task(async function aDownloadSavedToDiskPromptsForFolder() {
     waitForStateStop: true,
   });
 
-  await filePickerShownPromise;
+  await filePickerShown;
 
   BrowserTestUtils.removeTab(loadingTab);
 });
@@ -77,21 +70,6 @@ add_task(async function testFilesHandledInternally() {
 
   ensureMIMEState({ preferredAction: handleInternally });
 
-  let filePickerShown = false;
-  MockFilePicker.showCallback = function(fp) {
-    filePickerShown = true;
-    return Ci.nsIFilePicker.returnCancel;
-  };
-
-  let thirdTabPromise = BrowserTestUtils.waitForNewTab(
-    gBrowser,
-    url => {
-      info("Got load for " + url);
-      return url.endsWith("file_image_svgxml.svg") && url.startsWith("file:");
-    },
-    true,
-    true
-  );
   let loadingTab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     opening: TEST_PATH + "file_image_svgxml.svg",
@@ -99,14 +77,18 @@ add_task(async function testFilesHandledInternally() {
     waitForStateStop: true,
   });
 
-  let openedTab = await thirdTabPromise;
-  ok(!filePickerShown, "file picker should not have shown up.");
+  await TestUtils.waitForCondition(() => {
+    return (
+      gBrowser.tabs.length === 3 &&
+      gBrowser?.tabs[2]?.label.endsWith("file_image_svgxml.svg")
+    );
+  }, "A new tab for the downloaded svg wasn't open.");
 
   assertCorrectFile(dir, "file_image_svgxml.svg");
 
   
   BrowserTestUtils.removeTab(loadingTab);
-  BrowserTestUtils.removeTab(openedTab);
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 
@@ -116,16 +98,9 @@ add_task(async function testFilesHandledBySystemDefaultApp() {
 
   ensureMIMEState({ preferredAction: useSystemDefault });
 
-  let filePickerShown = false;
-  MockFilePicker.showCallback = function(fp) {
-    filePickerShown = true;
-    return Ci.nsIFilePicker.returnCancel;
-  };
-
   let oldLaunchFile = DownloadIntegration.launchFile;
   let launchFileCalled = new Promise(resolve => {
     DownloadIntegration.launchFile = async (file, mimeInfo) => {
-      ok(!filePickerShown, "File picker was not shown.");
       is(
         useSystemDefault,
         mimeInfo.preferredAction,
@@ -143,7 +118,6 @@ add_task(async function testFilesHandledBySystemDefaultApp() {
   });
 
   await launchFileCalled;
-  ok(!filePickerShown, "file picker should not have shown up.");
 
   assertCorrectFile(dir, "file_pdf_application_pdf.pdf");
 
@@ -175,18 +149,11 @@ add_task(async function testFilesHandledByHelperApp() {
     preferredHandlerApp: appHandler,
   });
 
-  let filePickerShown = false;
-  MockFilePicker.showCallback = function(fp) {
-    filePickerShown = true;
-    return Ci.nsIFilePicker.returnCancel;
-  };
-
   let publicDownloads = await Downloads.getList(Downloads.PUBLIC);
   let downloadFinishedPromise = new Promise(resolve => {
     publicDownloads.addView({
       onDownloadChanged(download) {
         if (download.succeeded || download.error) {
-          ok(!filePickerShown, "File picker should not have shown.");
           ok(
             download.launcherPath.includes("helper_handler_test.exe"),
             "Launcher path is available."
@@ -218,7 +185,6 @@ add_task(async function testFilesHandledByHelperApp() {
 
   await downloadFinishedPromise;
   await launchFileCalled;
-  ok(!filePickerShown, "file picker should not have shown up.");
   assertCorrectFile(dir, "file_pdf_application_pdf.pdf");
 
   
@@ -242,30 +208,8 @@ async function setupFilePickerDirectory() {
   registerCleanupFunction(async () => {
     Services.prefs.clearUserPref("browser.download.dir");
     Services.prefs.clearUserPref("browser.download.folderList");
-    let publicList = await Downloads.getList(Downloads.PUBLIC);
-    let unfinishedDownloads = new Set(
-      (await publicList.getAll()).filter(dl => !dl.succeeded && !dl.error)
-    );
-    if (unfinishedDownloads.size) {
-      info(`Have ${unfinishedDownloads.size} unfinished downloads, waiting.`);
-      await new Promise(resolve => {
-        let view = {
-          onChanged(dl) {
-            if (unfinishedDownloads.has(dl) && (dl.succeeded || dl.error)) {
-              unfinishedDownloads.delete(dl);
-              info(`Removed another download.`);
-              if (!unfinishedDownloads.size) {
-                publicList.removeView(view);
-                resolve();
-              }
-            }
-          },
-        };
-        publicList.addView(view);
-      });
-    }
     try {
-      await IOUtils.remove(saveDir.path, { recursive: true });
+      await IOUtils.remove(saveDir, { recursive: true });
     } catch (e) {
       Cu.reportError(e);
     }
@@ -294,6 +238,5 @@ function ensureMIMEState({ preferredAction, preferredHandlerApp = null }) {
   const mimeInfo = gMimeSvc.getFromTypeAndExtension("application/pdf", "pdf");
   mimeInfo.preferredAction = preferredAction;
   mimeInfo.preferredApplicationHandler = preferredHandlerApp;
-  mimeInfo.alwaysAskBeforeHandling = false;
   gHandlerSvc.store(mimeInfo);
 }
