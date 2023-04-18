@@ -1298,6 +1298,7 @@ nsresult HTMLEditor::RemoveStyleInside(Element& aElement, nsAtom* aProperty,
     removeHTMLStyle = HTMLEditUtils::IsRemovableInlineStyleElement(aElement);
   }
 
+  EditorDOMPoint pointToPutCaret;
   if (removeHTMLStyle) {
     
     
@@ -1344,26 +1345,30 @@ nsresult HTMLEditor::RemoveStyleInside(Element& aElement, nsAtom* aProperty,
           return rv;
         }
       }
-      nsresult rv = RemoveContainerWithTransaction(aElement);
-      if (NS_WARN_IF(Destroyed())) {
-        return NS_ERROR_EDITOR_DESTROYED;
-      }
-      if (NS_FAILED(rv)) {
+      Result<EditorDOMPoint, nsresult> unwrapElementResult =
+          RemoveContainerWithTransaction(aElement);
+      if (MOZ_UNLIKELY(unwrapElementResult.isErr())) {
         NS_WARNING("HTMLEditor::RemoveContainerWithTransaction() failed");
-        return rv;
+        return unwrapElementResult.unwrapErr();
+      }
+      if (AllowsTransactionsToChangeSelection() &&
+          unwrapElementResult.inspect().IsSet()) {
+        pointToPutCaret = unwrapElementResult.unwrap();
       }
     }
     
     
     else if (aElement.HasAttr(kNameSpaceID_None, aAttribute)) {
       if (IsOnlyAttribute(&aElement, aAttribute)) {
-        nsresult rv = RemoveContainerWithTransaction(aElement);
-        if (NS_WARN_IF(Destroyed())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
-        if (NS_FAILED(rv)) {
+        Result<EditorDOMPoint, nsresult> unwrapElementResult =
+            RemoveContainerWithTransaction(aElement);
+        if (MOZ_UNLIKELY(unwrapElementResult.isErr())) {
           NS_WARNING("HTMLEditor::RemoveContainerWithTransaction() failed");
-          return rv;
+          return unwrapElementResult.unwrapErr();
+        }
+        if (AllowsTransactionsToChangeSelection() &&
+            unwrapElementResult.inspect().IsSet()) {
+          pointToPutCaret = unwrapElementResult.unwrap();
         }
       } else {
         nsresult rv = RemoveAttributeWithTransaction(aElement, *aAttribute);
@@ -1375,6 +1380,14 @@ nsresult HTMLEditor::RemoveStyleInside(Element& aElement, nsAtom* aProperty,
           return rv;
         }
       }
+    }
+  }
+
+  if (pointToPutCaret.IsSet()) {
+    nsresult rv = CollapseSelectionTo(pointToPutCaret);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::CollapseSelectionTo() failed");
+      return rv;
     }
   }
 
@@ -1413,32 +1426,57 @@ nsresult HTMLEditor::RemoveStyleInside(Element& aElement, nsAtom* aProperty,
       
       if (aElement.IsAnyOfHTMLElements(nsGkAtoms::span, nsGkAtoms::font) &&
           !HTMLEditor::HasStyleOrIdOrClassAttribute(aElement)) {
-        DebugOnly<nsresult> rvIgnored =
+        Result<EditorDOMPoint, nsresult> unwrapSpanOrFontElementResult =
             RemoveContainerWithTransaction(aElement);
-        if (NS_WARN_IF(Destroyed())) {
+        if (MOZ_UNLIKELY(unwrapSpanOrFontElementResult.isErr() &&
+                         unwrapSpanOrFontElementResult.inspectErr() ==
+                             NS_ERROR_EDITOR_DESTROYED)) {
+          NS_WARNING("HTMLEditor::RemoveContainerWithTransaction() failed");
           return NS_ERROR_EDITOR_DESTROYED;
         }
         NS_WARNING_ASSERTION(
-            NS_SUCCEEDED(rvIgnored),
+            unwrapSpanOrFontElementResult.isOk(),
             "HTMLEditor::RemoveContainerWithTransaction() failed, but ignored");
+        if (MOZ_LIKELY(unwrapSpanOrFontElementResult.isOk())) {
+          pointToPutCaret = unwrapSpanOrFontElementResult.unwrap();
+          if (AllowsTransactionsToChangeSelection() &&
+              pointToPutCaret.IsSet()) {
+            nsresult rv = CollapseSelectionTo(pointToPutCaret);
+            if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
+              NS_WARNING("EditorBase::CollapseSelectionTo() failed");
+              return NS_ERROR_EDITOR_DESTROYED;
+            }
+            NS_WARNING_ASSERTION(
+                NS_SUCCEEDED(rv),
+                "EditorBase::CollapseSelectionTo() failed, but ignored");
+          }
+        }
       }
     }
   }
 
-  
-  
-  if (aProperty == nsGkAtoms::font && aAttribute == nsGkAtoms::size &&
-      aElement.IsAnyOfHTMLElements(nsGkAtoms::big, nsGkAtoms::small)) {
-    nsresult rv = RemoveContainerWithTransaction(aElement);
-    if (NS_WARN_IF(Destroyed())) {
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "HTMLEditor::RemoveContainerWithTransaction() failed");
-    return rv;
+  if (aProperty != nsGkAtoms::font || aAttribute != nsGkAtoms::size ||
+      !aElement.IsAnyOfHTMLElements(nsGkAtoms::big, nsGkAtoms::small)) {
+    return NS_OK;
   }
 
-  return NS_OK;
+  
+  
+  Result<EditorDOMPoint, nsresult> unwrapBigOrSmallElementResult =
+      RemoveContainerWithTransaction(aElement);
+  if (MOZ_UNLIKELY(unwrapBigOrSmallElementResult.isErr())) {
+    NS_WARNING("HTMLEditor::RemoveContainerWithTransaction() failed");
+    return unwrapBigOrSmallElementResult.unwrapErr();
+  }
+  pointToPutCaret = unwrapBigOrSmallElementResult.unwrap();
+  if (!AllowsTransactionsToChangeSelection() || !pointToPutCaret.IsSet()) {
+    return NS_OK;
+  }
+  nsresult rv = CollapseSelectionTo(pointToPutCaret);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "EditorBase::CollapseSelectionTo() failed");
+
+  return rv;
 }
 
 bool HTMLEditor::IsOnlyAttribute(const Element* aElement, nsAtom* aAttribute) {
@@ -2785,9 +2823,20 @@ nsresult HTMLEditor::RelativeFontChangeOnNode(int32_t aSizeChange,
       return rv;
     }
     
-    rv = RemoveContainerWithTransaction(MOZ_KnownLive(*aNode->AsElement()));
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "HTMLEditor::RemoveContainerWithTransaction() failed");
+    const Result<EditorDOMPoint, nsresult> unwrapBigOrSmallElementResult =
+        RemoveContainerWithTransaction(MOZ_KnownLive(*aNode->AsElement()));
+    if (MOZ_UNLIKELY(unwrapBigOrSmallElementResult.isErr())) {
+      NS_WARNING("HTMLEditor::RemoveContainerWithTransaction() failed");
+      return unwrapBigOrSmallElementResult.inspectErr();
+    }
+    const EditorDOMPoint& pointToPutCaret =
+        unwrapBigOrSmallElementResult.inspect();
+    if (!AllowsTransactionsToChangeSelection() || !pointToPutCaret.IsSet()) {
+      return NS_OK;
+    }
+    rv = CollapseSelectionTo(pointToPutCaret);
+    NS_WARNING_ASSERTION(NS_FAILED(rv),
+                         "EditorBase::CollapseSelectionTo() failed");
     return rv;
   }
 
