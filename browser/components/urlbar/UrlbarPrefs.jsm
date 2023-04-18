@@ -51,6 +51,8 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["autoFill.adaptiveHistory.enabled", false],
 
   
+  
+  
   ["autoFill.adaptiveHistory.minCharsThreshold", 0],
 
   
@@ -1209,6 +1211,9 @@ class Preferences {
 
     
     switch (pref) {
+      case "autoFill.adaptiveHistory.useCountThreshold":
+        this._map.delete("autoFillAdaptiveHistoryUseCountThreshold");
+        return;
       case "showSearchSuggestionsFirst":
         this.set(
           "resultGroups",
@@ -1343,6 +1348,12 @@ class Preferences {
         return this.shouldHandOffToSearchModePrefs.some(
           prefName => !this.get(prefName)
         );
+      case "autoFillAdaptiveHistoryUseCountThreshold":
+        const nimbusValue = this._nimbus
+          .autoFillAdaptiveHistoryUseCountThreshold;
+        return nimbusValue === undefined
+          ? this.get("autoFill.adaptiveHistory.useCountThreshold")
+          : parseFloat(nimbusValue);
     }
     return this._readPref(pref);
   }
