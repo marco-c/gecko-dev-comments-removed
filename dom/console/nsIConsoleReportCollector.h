@@ -20,10 +20,8 @@
     }                                                \
   }
 
-namespace mozilla {
-namespace net {
+namespace mozilla::net {
 class ConsoleReportCollected;
-}
 }  
 
 

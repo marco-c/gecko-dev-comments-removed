@@ -10,9 +10,7 @@
 #include "jsapi.h"
 #include "nsString.h"
 
-namespace mozilla {
-namespace dom {
-namespace ConsoleCommon {
+namespace mozilla::dom::ConsoleCommon {
 
 
 class MOZ_RAII ClearException {
@@ -25,8 +23,6 @@ class MOZ_RAII ClearException {
   JSContext* mCx;
 };
 
-}  
-}  
 }  
 
 #endif 

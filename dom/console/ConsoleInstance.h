@@ -9,8 +9,7 @@
 
 #include "mozilla/dom/Console.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ConsoleInstance final : public nsISupports, public nsWrapperCache {
  public:
@@ -110,7 +109,6 @@ class ConsoleInstance final : public nsISupports, public nsWrapperCache {
   RefPtr<Console> mConsole;
 };
 
-}  
 }  
 
 #endif  

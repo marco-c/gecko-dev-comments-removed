@@ -14,8 +14,7 @@
 #include "mozilla/dom/SubtleCryptoBinding.h"
 #include "nsIGlobalObject.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ThreadSafeWorkerRef;
 
@@ -201,7 +200,6 @@ class GenerateAsymmetricKeyTask : public WebCryptoTask {
   UniqueSECKEYPrivateKey mPrivateKey;
 };
 
-}  
 }  
 
 #endif  

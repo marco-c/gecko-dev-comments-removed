@@ -9,8 +9,7 @@
 #include "mozilla/dom/ClientOpPromise.h"
 #include "mozilla/dom/PClientNavigateOpParent.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ClientNavigateOpParent final : public PClientNavigateOpParent {
   RefPtr<ClientOpPromise::Private> mPromise;
@@ -28,7 +27,6 @@ class ClientNavigateOpParent final : public PClientNavigateOpParent {
   ~ClientNavigateOpParent();
 };
 
-}  
 }  
 
 #endif  

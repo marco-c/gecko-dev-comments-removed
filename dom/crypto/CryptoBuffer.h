@@ -11,8 +11,7 @@
 #include "seccomon.h"
 #include "mozilla/dom/TypedArray.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ArrayBufferViewOrArrayBuffer;
 class OwningArrayBufferViewOrArrayBuffer;
@@ -41,9 +40,16 @@ class CryptoBuffer : public FallibleTArray<uint8_t> {
   bool ToNewUnsignedBuffer(uint8_t** aBuf, uint32_t* aBufLen) const;
 
   bool GetBigIntValue(unsigned long& aRetVal);
+
+  CryptoBuffer InfallibleClone() const {
+    CryptoBuffer result;
+    if (!result.Assign(*this)) {
+      MOZ_CRASH("Out of memory");
+    }
+    return result;
+  }
 };
 
-}  
 }  
 
 #endif  

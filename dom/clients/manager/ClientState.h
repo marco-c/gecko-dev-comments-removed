@@ -15,8 +15,7 @@
 #include "mozilla/Variant.h"
 #include "nsContentUtils.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class IPCClientState;
 class IPCClientWindowState;
@@ -121,7 +120,6 @@ class ClientState final {
   const IPCClientState ToIPC() const;
 };
 
-}  
 }  
 
 #endif  

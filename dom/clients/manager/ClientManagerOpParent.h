@@ -9,8 +9,7 @@
 #include "mozilla/dom/PClientManagerOpParent.h"
 #include "ClientOpPromise.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ClientManagerService;
 
@@ -31,7 +30,6 @@ class ClientManagerOpParent final : public PClientManagerOpParent {
   void Init(const ClientOpConstructorArgs& aArgs);
 };
 
-}  
 }  
 
 #endif  

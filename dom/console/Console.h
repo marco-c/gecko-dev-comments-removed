@@ -21,8 +21,7 @@ class nsIGlobalObject;
 class nsPIDOMWindowInner;
 class nsIStackFrame;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class AnyCallback;
 class ConsoleCallData;
@@ -444,7 +443,6 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
   friend class MainThreadConsoleData;
 };
 
-}  
 }  
 
 #endif 

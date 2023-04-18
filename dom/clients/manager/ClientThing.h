@@ -8,8 +8,7 @@
 
 #include "nsTArray.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -134,7 +133,6 @@ class ClientThing {
   }
 };
 
-}  
 }  
 
 #endif  

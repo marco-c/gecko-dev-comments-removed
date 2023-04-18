@@ -10,8 +10,7 @@
 #include "mozilla/dom/PClientManagerOpChild.h"
 #include "mozilla/MozPromise.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ClientManager;
 
@@ -33,7 +32,6 @@ class ClientManagerOpChild final : public PClientManagerOpChild {
   ~ClientManagerOpChild();
 };
 
-}  
 }  
 
 #endif  
