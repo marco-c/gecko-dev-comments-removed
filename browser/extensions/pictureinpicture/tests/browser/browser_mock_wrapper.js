@@ -91,6 +91,45 @@ add_task(async function test_mock_play_pause_button() {
   });
 });
 
+
+
+
+
+add_task(async function test_volume_change_with_keyboard() {
+  await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
+    await ensureVideosReady(browser);
+    await setupVideoListeners(browser);
+
+    
+    let videoID = "mock-video-controls";
+    let pipWin = await triggerPictureInPicture(browser, videoID);
+    ok(pipWin, "Got Picture-in-Picture window.");
+
+    
+    await toggleMute(browser, pipWin);
+    ok(await isVideoMuted(browser, videoID), "The audio is not playing.");
+
+    
+    EventUtils.synthesizeKey("KEY_ArrowDown", {}, pipWin);
+    ok(!(await isVideoMuted(browser, videoID)), "The audio is playing.");
+
+    
+    EventUtils.synthesizeKey("KEY_ArrowUp", {}, pipWin);
+    ok(!(await isVideoMuted(browser, videoID)), "The audio is still playing.");
+
+    await SpecialPowers.spawn(browser, [], async function() {
+      let video = content.document.querySelector("video");
+      ok(!video.muted, "Video should be unmuted.");
+    });
+
+    
+    let pipClosed = BrowserTestUtils.domWindowClosed(pipWin);
+    let closeButton = pipWin.document.getElementById("close");
+    EventUtils.synthesizeMouseAtCenter(closeButton, {}, pipWin);
+    await pipClosed;
+  });
+});
+
 function waitForVideoEvent(browser, eventType) {
   return BrowserTestUtils.waitForContentEvent(browser, eventType, true);
 }
