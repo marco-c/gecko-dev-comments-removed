@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/UnderlyingSinkCallbackHelpers.h"
+#include "xpcpublic.h"
 
 using namespace mozilla::dom;
 

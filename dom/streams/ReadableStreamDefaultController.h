@@ -156,9 +156,6 @@ void ReadableStreamDefaultControllerError(
 void ReadableStreamDefaultControllerClearAlgorithms(
     ReadableStreamDefaultController* aController);
 
-Nullable<double> ReadableStreamDefaultControllerGetDesiredSize(
-    ReadableStreamDefaultController* aController);
-
 }  
 
 #endif  
