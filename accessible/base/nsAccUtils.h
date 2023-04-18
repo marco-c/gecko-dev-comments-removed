@@ -225,6 +225,23 @@ class nsAccUtils {
 
 
   static bool IsARIALive(const LocalAccessible* aAccessible);
+
+  
+
+
+
+
+
+  static Accessible* DocumentFor(Accessible* aAcc);
+
+  
+
+
+
+
+
+
+  static Accessible* GetAccessibleByID(Accessible* aDoc, uint64_t aID);
 };
 
 }  
