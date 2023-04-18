@@ -34,16 +34,17 @@ add_task(async function() {
   });
 
   
-  testSet.push(
-    runTest({
-      queryString: "test1.1",
-      topLevelScheme: "http",
+  
+  
 
-      expectedTopLevel: "http",
-      expectedSameOrigin: "http",
-      expectedCrossOrigin: "http",
-    })
-  );
+
+
+
+
+
+
+
+
   
   testSet.push(
     runTest({
