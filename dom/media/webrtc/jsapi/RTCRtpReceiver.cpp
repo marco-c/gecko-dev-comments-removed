@@ -293,6 +293,13 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal() {
                 return;
               }
 
+              if (!audioStats->last_packet_received_timestamp_ms) {
+                
+                
+                
+                return;
+              }
+
               
               if (audioStats->last_sender_report_timestamp_ms) {
                 RTCRemoteOutboundRtpStreamStats remote;
@@ -378,6 +385,13 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal() {
               Maybe<webrtc::VideoReceiveStream::Stats> videoStats =
                   aConduit->GetReceiverStats();
               if (videoStats.isNothing()) {
+                return;
+              }
+
+              if (!videoStats->rtp_stats.last_packet_received_timestamp_ms) {
+                
+                
+                
                 return;
               }
 

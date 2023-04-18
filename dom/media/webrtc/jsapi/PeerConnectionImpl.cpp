@@ -2664,6 +2664,13 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> PeerConnectionImpl::GetSenderStats(
               return;
             }
 
+            if (audioStats->packets_sent == 0) {
+              
+              
+              
+              return;
+            }
+
             
             
             
@@ -2744,10 +2751,18 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> PeerConnectionImpl::GetSenderStats(
               streamStats = Some(kv->second);
             }
 
+            if (!streamStats ||
+                streamStats->rtp_stats.first_packet_time_ms == -1) {
+              
+              
+              
+              return;
+            }
+
             
             
             
-            if (streamStats && streamStats->report_block_data) {
+            if (streamStats->report_block_data) {
               const webrtc::ReportBlockData& rtcpReportData =
                   *streamStats->report_block_data;
               RTCRemoteInboundRtpStreamStats remote;
@@ -2781,22 +2796,20 @@ nsTArray<RefPtr<dom::RTCStatsPromise>> PeerConnectionImpl::GetSenderStats(
             
             RTCOutboundRtpStreamStats local;
             constructCommonOutboundRtpStats(local);
-            streamStats.apply([&](auto& aStreamStats) {
-              local.mPacketsSent.Construct(
-                  aStreamStats.rtp_stats.transmitted.packets);
-              local.mBytesSent.Construct(
-                  aStreamStats.rtp_stats.transmitted.payload_bytes);
-              local.mNackCount.Construct(
-                  aStreamStats.rtcp_packet_type_counts.nack_packets);
-              local.mFirCount.Construct(
-                  aStreamStats.rtcp_packet_type_counts.fir_packets);
-              local.mPliCount.Construct(
-                  aStreamStats.rtcp_packet_type_counts.pli_packets);
-              local.mFramesEncoded.Construct(aStreamStats.frames_encoded);
-              if (aStreamStats.qp_sum) {
-                local.mQpSum.Construct(*aStreamStats.qp_sum);
-              }
-            });
+            local.mPacketsSent.Construct(
+                streamStats->rtp_stats.transmitted.packets);
+            local.mBytesSent.Construct(
+                streamStats->rtp_stats.transmitted.payload_bytes);
+            local.mNackCount.Construct(
+                streamStats->rtcp_packet_type_counts.nack_packets);
+            local.mFirCount.Construct(
+                streamStats->rtcp_packet_type_counts.fir_packets);
+            local.mPliCount.Construct(
+                streamStats->rtcp_packet_type_counts.pli_packets);
+            local.mFramesEncoded.Construct(streamStats->frames_encoded);
+            if (streamStats->qp_sum) {
+              local.mQpSum.Construct(*streamStats->qp_sum);
+            }
             
 
 
