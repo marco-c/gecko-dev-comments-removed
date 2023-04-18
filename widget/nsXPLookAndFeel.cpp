@@ -1159,6 +1159,17 @@ auto LookAndFeel::ColorSchemeSettingForChrome() -> ChromeColorSchemeSetting {
   }
 }
 
+ColorScheme LookAndFeel::ThemeDerivedColorSchemeForContent() {
+  switch (StaticPrefs::browser_theme_content_theme()) {
+    case 0:  
+      return ColorScheme::Dark;
+    case 1:  
+      return ColorScheme::Light;
+    default:
+      return ColorSchemeForChrome();
+  }
+}
+
 void LookAndFeel::RecomputeColorSchemes() {
   sColorSchemeInitialized = true;
 
@@ -1186,14 +1197,7 @@ void LookAndFeel::RecomputeColorSchemes() {
         break;  
     }
 
-    switch (StaticPrefs::browser_theme_content_theme()) {
-      case 0:  
-        return ColorScheme::Dark;
-      case 1:  
-        return ColorScheme::Light;
-      default:
-        return ColorSchemeForChrome();
-    }
+    return ThemeDerivedColorSchemeForContent();
   }();
 }
 
