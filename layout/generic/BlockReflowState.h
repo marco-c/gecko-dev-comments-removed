@@ -150,7 +150,7 @@ class BlockReflowState {
     FloatsPushedOrSplit,
   };
   std::tuple<nscoord, ClearFloatsResult> ClearFloats(
-      nscoord aBCoord, mozilla::StyleClear aBreakType,
+      nscoord aBCoord, StyleClear aBreakType,
       nsIFrame* aFloatAvoidingBlock = nullptr);
 
   nsFloatManager* FloatManager() const {
@@ -165,9 +165,9 @@ class BlockReflowState {
   
   
   
-  bool AdvanceToNextBand(const mozilla::LogicalRect& aFloatAvailableSpace,
+  bool AdvanceToNextBand(const LogicalRect& aFloatAvailableSpace,
                          nscoord* aBCoord) const {
-    mozilla::WritingMode wm = mReflowInput.GetWritingMode();
+    WritingMode wm = mReflowInput.GetWritingMode();
     if (aFloatAvailableSpace.BSize(wm) > 0) {
       
       *aBCoord += aFloatAvailableSpace.BSize(wm);
@@ -194,24 +194,24 @@ class BlockReflowState {
   
 
 
-  const mozilla::LogicalMargin& BorderPadding() const { return mBorderPadding; }
+  const LogicalMargin& BorderPadding() const { return mBorderPadding; }
 
   
   void ReconstructMarginBefore(nsLineList::iterator aLine);
 
   
   
-  void ComputeFloatAvoidingOffsets(
-      nsIFrame* aFloatAvoidingBlock,
-      const mozilla::LogicalRect& aFloatAvailableSpace, nscoord& aIStartResult,
-      nscoord& aIEndResult) const;
+  void ComputeFloatAvoidingOffsets(nsIFrame* aFloatAvoidingBlock,
+                                   const LogicalRect& aFloatAvailableSpace,
+                                   nscoord& aIStartResult,
+                                   nscoord& aIEndResult) const;
 
   
   
   
-  mozilla::LogicalRect ComputeBlockAvailSpace(
-      nsIFrame* aFrame, const nsFlowAreaRect& aFloatAvailableSpace,
-      bool aBlockAvoidsFloats);
+  LogicalRect ComputeBlockAvailSpace(nsIFrame* aFrame,
+                                     const nsFlowAreaRect& aFloatAvailableSpace,
+                                     bool aBlockAvoidsFloats);
 
   void RecoverStateFrom(nsLineList::iterator aLine, nscoord aDeltaBCoord);
 
@@ -260,7 +260,7 @@ class BlockReflowState {
   
   
   
-  mozilla::LogicalRect mContentArea;
+  LogicalRect mContentArea;
   nscoord ContentIStart() const {
     return mContentArea.IStart(mReflowInput.GetWritingMode());
   }
@@ -282,8 +282,8 @@ class BlockReflowState {
         "ContentBSize() is unconstrained, so ContentBEnd() may overflow.");
     return mContentArea.BEnd(mReflowInput.GetWritingMode());
   }
-  mozilla::LogicalSize ContentSize(mozilla::WritingMode aWM) const {
-    mozilla::WritingMode wm = mReflowInput.GetWritingMode();
+  LogicalSize ContentSize(WritingMode aWM) const {
+    WritingMode wm = mReflowInput.GetWritingMode();
     return mContentArea.Size(wm).ConvertTo(aWM, wm);
   }
 
@@ -330,10 +330,10 @@ class BlockReflowState {
   nscoord mBCoord;
 
   
-  mozilla::LogicalMargin mBorderPadding;
+  LogicalMargin mBorderPadding;
 
   
-  mozilla::OverflowAreas mFloatOverflowAreas;
+  OverflowAreas mFloatOverflowAreas;
 
   nsFloatCacheFreeList mFloatCacheFreeList;
 
@@ -386,7 +386,7 @@ class BlockReflowState {
   
   
   
-  mozilla::Maybe<nscoord> mLineBSize;
+  Maybe<nscoord> mLineBSize;
 
  private:
   bool CanPlaceFloat(nscoord aFloatISize,
