@@ -77,20 +77,41 @@ pub trait Element: Sized + Clone + Debug {
         operation: &AttrSelectorOperation<&<Self::Impl as SelectorImpl>::AttrValue>,
     ) -> bool;
 
-    fn match_non_ts_pseudo_class<F>(
+    fn match_non_ts_pseudo_class(
         &self,
         pc: &<Self::Impl as SelectorImpl>::NonTSPseudoClass,
         context: &mut MatchingContext<Self::Impl>,
-        flags_setter: &mut F,
-    ) -> bool
-    where
-        F: FnMut(&Self, ElementSelectorFlags);
+    ) -> bool;
 
     fn match_pseudo_element(
         &self,
         pe: &<Self::Impl as SelectorImpl>::PseudoElement,
         context: &mut MatchingContext<Self::Impl>,
     ) -> bool;
+
+    
+    
+    
+    
+    
+    
+    fn set_selector_flags(&self, flags: ElementSelectorFlags);
+
+    fn apply_selector_flags(&self, flags: ElementSelectorFlags) {
+        
+        let self_flags = flags.for_self();
+        if !self_flags.is_empty() {
+            self.set_selector_flags(self_flags);
+        }
+
+        
+        let parent_flags = flags.for_parent();
+        if !parent_flags.is_empty() {
+            if let Some(p) = self.parent_element() {
+                p.set_selector_flags(parent_flags);
+            }
+        }
+    }
 
     
     fn is_link(&self) -> bool;

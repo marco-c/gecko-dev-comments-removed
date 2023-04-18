@@ -23,7 +23,7 @@ use crate::traversal_flags::TraversalFlags;
 use crate::values::AtomIdent;
 use crate::{LocalName, Namespace, WeakAtom};
 use atomic_refcell::{AtomicRef, AtomicRefMut};
-use selectors::matching::{ElementSelectorFlags, QuirksMode, VisitedHandlingMode};
+use selectors::matching::{QuirksMode, VisitedHandlingMode};
 use selectors::sink::Push;
 use selectors::Element as SelectorsElement;
 use servo_arc::{Arc, ArcBorrow};
@@ -740,31 +740,6 @@ pub trait TElement:
     
     
     fn skip_item_display_fixup(&self) -> bool;
-
-    
-    
-    
-    
-    
-    
-    fn set_selector_flags(&self, flags: ElementSelectorFlags);
-
-    
-    fn apply_selector_flags(&self, flags: ElementSelectorFlags) {
-        
-        let self_flags = flags.for_self();
-        if !self_flags.is_empty() {
-            self.set_selector_flags(self_flags);
-        }
-
-        
-        let parent_flags = flags.for_parent();
-        if !parent_flags.is_empty() {
-            if let Some(p) = self.parent_element() {
-                p.set_selector_flags(parent_flags);
-            }
-        }
-    }
 
     
     

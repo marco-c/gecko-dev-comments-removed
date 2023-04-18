@@ -75,7 +75,7 @@ use crate::stylist::Stylist;
 use crate::values::AtomIdent;
 use atomic_refcell::{AtomicRefCell, AtomicRefMut};
 use owning_ref::OwningHandle;
-use selectors::matching::{ElementSelectorFlags, VisitedHandlingMode};
+use selectors::matching::{VisitedHandlingMode, NeedsSelectorFlags};
 use selectors::NthIndexCache;
 use servo_arc::Arc;
 use smallbitvec::SmallBitVec;
@@ -222,18 +222,17 @@ impl ValidationData {
     
     
     #[inline]
-    fn revalidation_match_results<E, F>(
+    fn revalidation_match_results<E>(
         &mut self,
         element: E,
         stylist: &Stylist,
         bloom: &StyleBloom<E>,
         nth_index_cache: &mut NthIndexCache,
         bloom_known_valid: bool,
-        flags_setter: &mut F,
+        needs_selector_flags: NeedsSelectorFlags,
     ) -> &SmallBitVec
     where
         E: TElement,
-        F: FnMut(&E, ElementSelectorFlags),
     {
         self.revalidation_match_results.get_or_insert_with(|| {
             
@@ -256,7 +255,7 @@ impl ValidationData {
                 element,
                 bloom_to_use,
                 nth_index_cache,
-                flags_setter,
+                needs_selector_flags,
             )
         })
     }
@@ -326,7 +325,9 @@ impl<E: TElement> StyleSharingCandidate<E> {
             bloom,
             nth_index_cache,
              false,
-            &mut |_, _| {},
+            
+            
+            NeedsSelectorFlags::No,
         )
     }
 }
@@ -399,17 +400,13 @@ impl<E: TElement> StyleSharingTarget<E> {
         
         
         
-        let mut set_selector_flags = |el: &E, flags: ElementSelectorFlags| {
-            el.apply_selector_flags(flags);
-        };
-
         self.validation_data.revalidation_match_results(
             self.element,
             stylist,
             bloom,
             nth_index_cache,
              true,
-            &mut set_selector_flags,
+            NeedsSelectorFlags::Yes,
         )
     }
 
