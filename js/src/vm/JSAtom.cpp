@@ -187,6 +187,8 @@ MOZ_ALWAYS_INLINE AtomSet::Ptr js::FrozenAtomSet::readonlyThreadsafeLookup(
 }
 
 bool JSRuntime::initializeAtoms(JSContext* cx) {
+  JS::AutoAssertNoGC nogc;
+
   MOZ_ASSERT(!atoms_);
   MOZ_ASSERT(!permanentAtomsDuringInit_);
   MOZ_ASSERT(!permanentAtoms_);
@@ -202,6 +204,10 @@ bool JSRuntime::initializeAtoms(JSContext* cx) {
     atoms_ = js_new<AtomsTable>();
     return bool(atoms_);
   }
+
+#ifdef DEBUG
+  gc.assertNoPermanentSharedThings();
+#endif
 
   permanentAtomsDuringInit_ = js_new<AtomSet>(JS_PERMANENT_ATOM_SIZE);
   if (!permanentAtomsDuringInit_) {
@@ -268,24 +274,43 @@ bool JSRuntime::initializeAtoms(JSContext* cx) {
     return false;
   }
 
-  
-  
-  gc::AutoSuppressGC nogc(cx);
+  {
+    
+    
+    gc::AutoSuppressGC nogc(cx);
 
-  ImmutablePropertyNamePtr* descriptions =
-      commonNames->wellKnownSymbolDescriptions();
-  ImmutableSymbolPtr* symbols = reinterpret_cast<ImmutableSymbolPtr*>(wks);
-  for (size_t i = 0; i < JS::WellKnownSymbolLimit; i++) {
-    HandlePropertyName description = descriptions[i];
-    JS::Symbol* symbol = JS::Symbol::new_(cx, JS::SymbolCode(i), description);
-    if (!symbol) {
-      ReportOutOfMemory(cx);
-      return false;
+    ImmutablePropertyNamePtr* descriptions =
+        commonNames->wellKnownSymbolDescriptions();
+    ImmutableSymbolPtr* symbols = reinterpret_cast<ImmutableSymbolPtr*>(wks);
+    for (size_t i = 0; i < JS::WellKnownSymbolLimit; i++) {
+      HandlePropertyName description = descriptions[i];
+      JS::Symbol* symbol = JS::Symbol::new_(cx, JS::SymbolCode(i), description);
+      if (!symbol) {
+        ReportOutOfMemory(cx);
+        return false;
+      }
+      symbols[i].init(symbol);
     }
-    symbols[i].init(symbol);
+
+    wellKnownSymbols = wks;
   }
 
-  wellKnownSymbols = wks;
+  gc.freezePermanentSharedThings();
+
+  
+  permanentAtoms_ =
+      js_new<FrozenAtomSet>(permanentAtomsDuringInit_);  
+  if (!permanentAtoms_) {
+    return false;
+  }
+  permanentAtomsDuringInit_ = nullptr;
+
+  
+  atoms_ = js_new<AtomsTable>();
+  if (!atoms_) {
+    return false;
+  }
+
   return true;
 }
 
@@ -439,23 +464,6 @@ size_t AtomsTable::sizeOfIncludingThis(
   }
   size += pinnedAtoms.sizeOfExcludingThis(mallocSizeOf);
   return size;
-}
-
-bool JSRuntime::initMainAtomsTables(JSContext* cx) {
-  MOZ_ASSERT(!parentRuntime);
-  MOZ_ASSERT(!permanentAtomsPopulated());
-
-  gc.freezePermanentSharedThings();
-
-  
-  permanentAtoms_ =
-      js_new<FrozenAtomSet>(permanentAtomsDuringInit_);  
-  permanentAtomsDuringInit_ = nullptr;
-
-  
-  MOZ_ASSERT(!atoms_);
-  atoms_ = js_new<AtomsTable>();
-  return atoms_;
 }
 
 template <typename CharT>
