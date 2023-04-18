@@ -1120,7 +1120,7 @@ void SerializeString(const nsCString& aInput, nsAString& aValue) {
 
 }  
 
-void URLParams::Serialize(nsAString& aValue) const {
+void URLParams::Serialize(nsAString& aValue, bool aEncode) const {
   aValue.Truncate();
   bool first = true;
 
@@ -1133,9 +1133,15 @@ void URLParams::Serialize(nsAString& aValue) const {
 
     
     
-    SerializeString(NS_ConvertUTF16toUTF8(mParams[i].mKey), aValue);
-    aValue.Append('=');
-    SerializeString(NS_ConvertUTF16toUTF8(mParams[i].mValue), aValue);
+    if (aEncode) {
+      SerializeString(NS_ConvertUTF16toUTF8(mParams[i].mKey), aValue);
+      aValue.Append('=');
+      SerializeString(NS_ConvertUTF16toUTF8(mParams[i].mValue), aValue);
+    } else {
+      aValue.Append(mParams[i].mKey);
+      aValue.Append('=');
+      aValue.Append(mParams[i].mValue);
+    }
   }
 }
 

@@ -296,7 +296,10 @@ class URLParams final {
   
 
 
-  void Serialize(nsAString& aValue) const;
+
+
+
+  void Serialize(nsAString& aValue, bool aEncode) const;
 
   void Get(const nsAString& aName, nsString& aRetval);
 
