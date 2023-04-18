@@ -6,7 +6,7 @@
 
 #include "js/friend/XrayJitInfo.h"
 
-#include "jit/CacheIR.h"  
+#include "jit/CacheIRGenerator.h"  
 
 using JS::XrayJitInfo;
 
