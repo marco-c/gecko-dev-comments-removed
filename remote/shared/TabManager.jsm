@@ -27,7 +27,7 @@ var TabManager = {
 
 
 
-  browsers() {
+  get browsers() {
     const browsers = [];
 
     for (const win of this.windows) {

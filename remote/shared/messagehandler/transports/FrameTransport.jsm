@@ -144,7 +144,7 @@ class FrameTransport {
     let browsingContexts = [];
 
     
-    for (const { browsingContext } of TabManager.browsers()) {
+    for (const { browsingContext } of TabManager.browsers) {
       if (isBrowsingContextCompatible(browsingContext, { browserId })) {
         browsingContexts = browsingContexts.concat(
           browsingContext.getAllBrowsingContextsInSubtree()
