@@ -985,6 +985,7 @@ ucol_getShortDefinitionString(const UCollator *coll,
 
 
 
+
 U_DEPRECATED int32_t U_EXPORT2
 ucol_normalizeShortDefinitionString(const char *source,
                                     char *destination,
@@ -1319,9 +1320,6 @@ ucol_restoreVariableTop(UCollator *coll, const uint32_t varTop, UErrorCode *stat
 
 
 
-U_CAPI UCollator* U_EXPORT2 ucol_clone(const UCollator *coll, UErrorCode *status);
-
-#ifndef U_HIDE_DEPRECATED_API
 
 
 
@@ -1335,23 +1333,13 @@ U_CAPI UCollator* U_EXPORT2 ucol_clone(const UCollator *coll, UErrorCode *status
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-U_DEPRECATED UCollator* U_EXPORT2
+U_CAPI UCollator* U_EXPORT2 
 ucol_safeClone(const UCollator *coll,
                void            *stackBuffer,
                int32_t         *pBufferSize,
                UErrorCode      *status);
 
+#ifndef U_HIDE_DEPRECATED_API
 
 
 

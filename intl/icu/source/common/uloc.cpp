@@ -186,10 +186,10 @@ NULL
 };
 
 static const char* const DEPRECATED_LANGUAGES[]={
-    "in", "iw", "ji", "jw", "mo", NULL, NULL
+    "in", "iw", "ji", "jw", NULL, NULL
 };
 static const char* const REPLACEMENT_LANGUAGES[]={
-    "id", "he", "yi", "jv", "ro", NULL, NULL
+    "id", "he", "yi", "jv", NULL, NULL
 };
 
 
@@ -444,7 +444,7 @@ static const char * const COUNTRIES_3[] = {
 
     "VAT", "VCT", "VEN", "VGB", "VIR", "VNM", "VUT", "WLF",
 
-    "WSM", "XKK", "YEM", "MYT", "ZAF", "ZMB", "ZWE",
+    "WSM", "XXK", "YEM", "MYT", "ZAF", "ZMB", "ZWE",
 NULL,
 
     "ANT", "BUR", "SCG", "FXX", "ROM", "SUN", "TMP", "YMD", "YUG", "ZAR",

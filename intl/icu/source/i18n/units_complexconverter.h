@@ -108,15 +108,13 @@ class U_I18N_API ComplexUnitsConverter : public UMemory {
     MaybeStackVector<Measure>
     convert(double quantity, icu::number::impl::RoundingImpl *rounder, UErrorCode &status) const;
 
-    
+  private:
     MaybeStackVector<UnitsConverter> unitsConverters_;
 
     
     
-    
     MaybeStackVector<MeasureUnitImplWithIndex> units_;
 
-  private:
     
     
     void init(const MeasureUnitImpl &inputUnit, const ConversionRates &ratesInfo, UErrorCode &status);

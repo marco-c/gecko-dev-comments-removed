@@ -1112,17 +1112,8 @@ const char* mozilla::intl::Locale::ReplaceTransformExtensionType(
     }
   }
   else if (IsTransformKey(key, "m0")) {
-    if (IsTransformType(type, "beta-metsehaf")) {
-      return "betamets";
-    }
-    if (IsTransformType(type, "ies-jes")) {
-      return "iesjes";
-    }
     if (IsTransformType(type, "names")) {
       return "prprname";
-    }
-    if (IsTransformType(type, "tekie-alibekit")) {
-      return "tekieali";
     }
   }
   return nullptr;

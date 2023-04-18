@@ -77,6 +77,7 @@ enum UMeasureUnitComplexity {
 };
 
 
+#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -358,6 +359,8 @@ U_CAPI int32_t U_EXPORT2 umeas_getPrefixBase(UMeasurePrefix unitPrefix);
 
 U_CAPI int32_t U_EXPORT2 umeas_getPrefixPower(UMeasurePrefix unitPrefix);
 
+#endif 
+
 
 
 
@@ -478,6 +481,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
     UMeasureUnitComplexity getComplexity(UErrorCode& status) const;
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -509,6 +513,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     UMeasurePrefix getPrefix(UErrorCode& status) const;
+#endif 
 
     
 
@@ -984,6 +989,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getKarat();
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -999,6 +1005,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getMilligramOfglucosePerDeciliter();
+#endif 
 
     
 

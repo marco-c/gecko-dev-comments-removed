@@ -26,11 +26,7 @@ U_NAMESPACE_BEGIN
 
 class RegionNameEnumeration : public StringEnumeration {
 public:
-    
-
-
-
-    RegionNameEnumeration(UVector *nameList, UErrorCode& status);
+    RegionNameEnumeration(UVector *fNameList, UErrorCode& status);
     virtual ~RegionNameEnumeration();
     static UClassID U_EXPORT2 getStaticClassID(void);
     virtual UClassID getDynamicClassID(void) const override;

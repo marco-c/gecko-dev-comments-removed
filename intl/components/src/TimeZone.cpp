@@ -169,8 +169,13 @@ Result<int32_t, ICUError> TimeZone::GetUTCOffsetMs(int64_t aLocalMilliseconds) {
   
   
   
+#ifndef U_HIDE_DRAFT_API
   constexpr UTimeZoneLocalOption skippedTime = UCAL_TZ_LOCAL_FORMER;
   constexpr UTimeZoneLocalOption repeatedTime = UCAL_TZ_LOCAL_FORMER;
+#else
+  constexpr UTimeZoneLocalOption skippedTime = UTimeZoneLocalOption(0x4);
+  constexpr UTimeZoneLocalOption repeatedTime = UTimeZoneLocalOption(0x4);
+#endif
 
   UDate date = UDate(aLocalMilliseconds);
 

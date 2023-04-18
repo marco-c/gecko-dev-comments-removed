@@ -510,9 +510,6 @@ ucnv_openPackage(const char *packageName, const char *converterName, UErrorCode 
 
 
 
-U_CAPI UConverter* U_EXPORT2 ucnv_clone(const UConverter *cnv, UErrorCode *status);
-
-#ifndef U_HIDE_DEPRECATED_API
 
 
 
@@ -542,22 +539,13 @@ U_CAPI UConverter* U_EXPORT2 ucnv_clone(const UConverter *cnv, UErrorCode *statu
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-U_DEPRECATED UConverter * U_EXPORT2
+U_CAPI UConverter * U_EXPORT2
 ucnv_safeClone(const UConverter *cnv,
                void             *stackBuffer,
                int32_t          *pBufferSize,
                UErrorCode       *status);
+
+#ifndef U_HIDE_DEPRECATED_API
 
 
 
