@@ -104,6 +104,10 @@ bool gfxDWriteFont::InitDWriteSupport() {
 
   if (XRE_IsParentProcess()) {
     UpdateSystemTextVars();
+  } else {
+    
+    
+    UpdateClearTypeVars();
   }
   DWriteSettings::Initialize();
 
