@@ -11,10 +11,12 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  assert: "chrome://remote/content/shared/webdriver/Assert.jsm",
   BrowsingContextListener:
     "chrome://remote/content/shared/listeners/BrowsingContextListener.jsm",
   ContextDescriptorType:
     "chrome://remote/content/shared/messagehandler/MessageHandler.jsm",
+  error: "chrome://remote/content/shared/webdriver/Errors.jsm",
   Module: "chrome://remote/content/shared/messagehandler/Module.jsm",
   TabManager: "chrome://remote/content/shared/TabManager.jsm",
   waitForInitialNavigationCompleted:
@@ -43,20 +45,151 @@ class BrowsingContextModule extends Module {
     this.#contextListener.destroy();
   }
 
-  #getBrowsingContextInfo(browsingContext, options = {}) {
-    const { depth } = options;
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getTree(options = {}) {
+    const { maxDepth = null, parent: parentId = null } = options;
+
+    if (maxDepth !== null) {
+      assert.positiveInteger(
+        maxDepth,
+        `Expected "maxDepth" to be a positive integer, got ${maxDepth}`
+      );
+    }
+
+    let contexts;
+    if (parentId !== null) {
+      
+      
+
+      assert.string(
+        parentId,
+        `Expected "parent" to be a string, got ${parentId}`
+      );
+
+      
+      
+      const browser = TabManager.getBrowserById(parentId);
+      contexts =
+        browser !== null
+          ? [browser.browsingContext]
+          : [this.#getBrowsingContext(parentId)];
+    } else {
+      
+      contexts = TabManager.browsers.map(browser => browser.browsingContext);
+    }
+
+    const contextsInfo = contexts.map(context => {
+      return this.#getBrowsingContextInfo(context, { maxDepth });
+    });
+
+    return { contexts: contextsInfo };
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  #getBrowsingContext(contextId) {
+    
+    
+    if (contextId === null) {
+      return null;
+    }
+
+    const context = BrowsingContext.get(contextId);
+    if (context === null) {
+      throw new error.NoSuchFrameError(
+        `Browsing Context with id ${contextId} not found`
+      );
+    }
+
+    return context;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  #getBrowsingContextInfo(context, options = {}) {
+    const { isRoot = true, maxDepth = null } = options;
+
+    let children = null;
+    if (maxDepth === null || maxDepth > 0) {
+      children = context.children.map(context =>
+        this.#getBrowsingContextInfo(context, {
+          maxDepth: maxDepth === null ? maxDepth : maxDepth - 1,
+          isRoot: false,
+        })
+      );
+    }
 
     const contextInfo = {
-      context: TabManager.getIdForBrowsingContext(browsingContext),
-      url: browsingContext.currentURI.spec,
-      children: null,
+      context: TabManager.getIdForBrowsingContext(context),
+      url: context.currentURI.spec,
+      children,
     };
 
-    if (depth == 0) {
+    if (isRoot) {
       
-      const parentId = TabManager.getIdForBrowsingContext(
-        browsingContext.parent
-      );
+      const parentId = TabManager.getIdForBrowsingContext(context.parent);
       contextInfo.parent = parentId;
     }
 
@@ -84,8 +217,7 @@ class BrowsingContextModule extends Module {
     });
 
     const contextInfo = this.#getBrowsingContextInfo(browsingContext, {
-      depth: 0,
-      maxDepth: 1,
+      maxDepth: 0,
     });
     this.emitProtocolEvent("browsingContext.contextCreated", contextInfo);
   };
