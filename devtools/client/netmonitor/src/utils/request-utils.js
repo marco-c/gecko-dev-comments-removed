@@ -628,11 +628,17 @@ function isBase64(payload) {
 
 
 
+
+
+
+
+
 function parseJSON(payloadUnclean) {
-  let json, error;
+  let json;
   const jsonpRegex = /^\s*([\w$]+)\s*\(\s*([^]*)\s*\)\s*;?\s*$/;
   const [, jsonpCallback, jsonp] = payloadUnclean.match(jsonpRegex) || [];
   if (jsonpCallback && jsonp) {
+    let error;
     try {
       json = parseJSON(jsonp).json;
     } catch (err) {
@@ -640,32 +646,9 @@ function parseJSON(payloadUnclean) {
     }
     return { json, error, jsonpCallback };
   }
-  
-  
-  const firstSquare = payloadUnclean.indexOf("[");
-  const firstCurly = payloadUnclean.indexOf("{");
-  
-  
-  
-  
-  
-  const minFirst = Math.min(firstSquare, firstCurly);
-  let first;
-  if (minFirst === -1) {
-    first = Math.max(firstCurly, firstSquare);
-  } else {
-    first = minFirst;
-  }
-  let payload = "";
-  if (first !== -1) {
-    try {
-      payload = payloadUnclean.substring(first);
-    } catch (err) {
-      error = err;
-    }
-  } else {
-    payload = payloadUnclean;
-  }
+
+  let { payload, strippedChars, error } = removeXSSIString(payloadUnclean);
+
   try {
     json = JSON.parse(payload);
   } catch (err) {
@@ -689,6 +672,46 @@ function parseJSON(payloadUnclean) {
   }
   return {
     json,
+    error,
+    strippedChars,
+  };
+}
+
+
+
+
+
+
+
+
+
+
+
+function removeXSSIString(payloadUnclean) {
+  
+  const xssiRegex = /(^\)\]\}',?\n)|(^for ?\(;;\);?)|(^while ?\(1\);?)/;
+  let payload, strippedChars, error;
+  const xssiRegexMatch = payloadUnclean.match(xssiRegex);
+
+  
+  if (xssiRegexMatch?.length > 0) {
+    const xssiLen = xssiRegexMatch[0].length;
+    try {
+      
+      
+      payload = payloadUnclean.substring(xssiLen);
+      strippedChars = xssiRegexMatch[0];
+    } catch (err) {
+      error = err;
+      payload = payloadUnclean;
+    }
+  } else {
+    
+    payload = payloadUnclean;
+  }
+  return {
+    payload,
+    strippedChars,
     error,
   };
 }
