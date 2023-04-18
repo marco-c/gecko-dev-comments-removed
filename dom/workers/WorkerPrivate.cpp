@@ -4585,7 +4585,7 @@ void WorkerPrivate::ReportError(JSContext* aCx,
   } else {
     
     
-    MOZ_ASSERT(aReport->isWarning());
+    MOZ_ASSERT(aReport && aReport->isWarning());
   }
 
   if (report->mMessage.IsEmpty() && aToStringResult) {
