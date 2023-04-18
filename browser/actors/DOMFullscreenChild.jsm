@@ -11,26 +11,24 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 class DOMFullscreenChild extends JSWindowActorChild {
   receiveMessage(aMessage) {
     let window = this.contentWindow;
-    if (!window) {
-      if (!aMessage.data.remoteFrameBC) {
-        this.sendAsyncMessage("DOMFullscreen:Exit", {});
-      }
-      return;
-    }
-
-    let windowUtils = window.windowUtils;
-    if (!windowUtils) {
-      return;
-    }
+    let windowUtils = window?.windowUtils;
 
     switch (aMessage.name) {
       case "DOMFullscreen:Entered": {
+        if (!windowUtils) {
+          
+          
+          this.sendAsyncMessage("DOMFullscreen:Exit", {});
+          break;
+        }
+
         let remoteFrameBC = aMessage.data.remoteFrameBC;
         if (remoteFrameBC) {
           let remoteFrame = remoteFrameBC.embedderElement;
           this._isNotTheRequestSource = true;
           windowUtils.remoteFrameFullscreenChanged(remoteFrame);
         } else {
+          this._waitForMozAfterPaint = true;
           this._lastTransactionId = windowUtils.lastTransactionId;
           if (
             !windowUtils.handleFullscreenRequests() &&
@@ -45,23 +43,39 @@ class DOMFullscreenChild extends JSWindowActorChild {
         break;
       }
       case "DOMFullscreen:CleanUp": {
-        let remoteFrameBC = aMessage.data.remoteFrameBC;
-        if (remoteFrameBC) {
-          this._isNotTheRequestSource = true;
-        }
-
+        let isNotTheRequestSource = !!aMessage.data.remoteFrameBC; 
         
         
         
         
         if (this.document.fullscreenElement) {
-          this._lastTransactionId = windowUtils.lastTransactionId;
-          windowUtils.exitFullscreen();
+          this._isNotTheRequestSource = isNotTheRequestSource;
+          
+          
+          this._waitForMozAfterPaint = !this._isNotTheRequestSource;
+          
+          
+          
+          if (windowUtils) {
+            this._lastTransactionId = windowUtils.lastTransactionId;
+            windowUtils.exitFullscreen();
+          }
+        } else if (isNotTheRequestSource) {
+          
+          
+          this.sendAsyncMessage("DOMFullscreen:Exited", {});
+        } else {
+          
+          
+          
+          
+          
+          this.sendAsyncMessage("DOMFullscreen:Painted", {});
         }
         break;
       }
       case "DOMFullscreen:Painted": {
-        Services.obs.notifyObservers(this.contentWindow, "fullscreen-painted");
+        Services.obs.notifyObservers(window, "fullscreen-painted");
         break;
       }
     }
@@ -99,15 +113,20 @@ class DOMFullscreenChild extends JSWindowActorChild {
 
           delete this._isNotTheRequestSource;
           this.sendAsyncMessage(aEvent.type.replace("Moz", ""), {});
-        } else {
-          let rootWindow = this.contentWindow.windowRoot;
-          rootWindow.addEventListener("MozAfterPaint", this);
-          if (!this.document || !this.document.fullscreenElement) {
-            
-            
-            
-            this.sendAsyncMessage("DOMFullscreen:Exit", {});
-          }
+          break;
+        }
+
+        if (this._waitForMozAfterPaint) {
+          delete this._waitForMozAfterPaint;
+          this._listeningWindow = this.contentWindow.windowRoot;
+          this._listeningWindow.addEventListener("MozAfterPaint", this);
+        }
+
+        if (!this.document || !this.document.fullscreenElement) {
+          
+          
+          
+          this.sendAsyncMessage("DOMFullscreen:Exit", {});
         }
         break;
       }
@@ -120,8 +139,8 @@ class DOMFullscreenChild extends JSWindowActorChild {
           !this._lastTransactionId ||
           aEvent.transactionId > this._lastTransactionId
         ) {
-          let rootWindow = this.contentWindow.windowRoot;
-          rootWindow.removeEventListener("MozAfterPaint", this);
+          this._listeningWindow.removeEventListener("MozAfterPaint", this);
+          delete this._listeningWindow;
           this.sendAsyncMessage("DOMFullscreen:Painted", {});
         }
         break;
