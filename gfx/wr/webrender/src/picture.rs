@@ -2171,7 +2171,6 @@ impl TileCacheInstance {
                 &frame_context.global_screen_world_rect,
                 &mut frame_state.data_stores.clip,
                 true,
-                false,
             );
 
             
