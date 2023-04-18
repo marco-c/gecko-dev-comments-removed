@@ -559,7 +559,7 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
         MOZ_ASSERT(iter.instance() == iter.instance());
         iter.instance()->setPendingException(ref);
 
-        rfe->kind = ResumeFromException::RESUME_WASM_CATCH;
+        rfe->kind = ExceptionResumeKind::WasmCatch;
         rfe->framePointer = (uint8_t*)iter.frame();
         rfe->tlsData = iter.instance();
 
@@ -614,7 +614,7 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
 
   
   
-  rfe->kind = ResumeFromException::RESUME_WASM;
+  rfe->kind = ExceptionResumeKind::Wasm;
   rfe->framePointer = (uint8_t*)wasm::FailFP;
   rfe->stackPointer = (uint8_t*)iter.unwoundAddressOfReturnAddress();
   rfe->target = nullptr;

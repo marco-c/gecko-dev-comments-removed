@@ -153,20 +153,44 @@ class FrameSizeClass {
 
 struct BaselineBailoutInfo;
 
+enum class ExceptionResumeKind : int32_t {
+  
+  
+  EntryFrame,
+
+  
+  
+  Catch,
+
+  
+  
+  Finally,
+
+  
+  
+  
+  ForcedReturn,
+
+  
+  
+  
+  Bailout,
+
+  
+  
+  Wasm,
+
+  
+  
+  WasmCatch
+};
+
 
 struct ResumeFromException {
-  static const uint32_t RESUME_ENTRY_FRAME = 0;
-  static const uint32_t RESUME_CATCH = 1;
-  static const uint32_t RESUME_FINALLY = 2;
-  static const uint32_t RESUME_FORCED_RETURN = 3;
-  static const uint32_t RESUME_BAILOUT = 4;
-  static const uint32_t RESUME_WASM = 5;
-  static const uint32_t RESUME_WASM_CATCH = 6;
-
   uint8_t* framePointer;
   uint8_t* stackPointer;
   uint8_t* target;
-  uint32_t kind;
+  ExceptionResumeKind kind;
   wasm::Instance* tlsData;
 
   

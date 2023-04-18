@@ -303,7 +303,7 @@ static void OnLeaveBaselineFrame(JSContext* cx, const JSJitFrameIter& frame,
                                  bool frameOk) {
   BaselineFrame* baselineFrame = frame.baselineFrame();
   if (jit::DebugEpilogue(cx, baselineFrame, pc, frameOk)) {
-    rfe->kind = ResumeFromException::RESUME_FORCED_RETURN;
+    rfe->kind = ExceptionResumeKind::ForcedReturn;
     rfe->framePointer = frame.fp() - BaselineFrame::FramePointerOffset;
     rfe->stackPointer = reinterpret_cast<uint8_t*>(baselineFrame);
   }
@@ -414,7 +414,7 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
         const BaselineInterpreter& interp =
             cx->runtime()->jitRuntime()->baselineInterpreter();
         frame.baselineFrame()->setInterpreterFields(*pc);
-        rfe->kind = ResumeFromException::RESUME_CATCH;
+        rfe->kind = ExceptionResumeKind::Catch;
         rfe->target = interp.interpretOpAddr().value;
         return true;
       }
@@ -425,7 +425,7 @@ static bool ProcessTryNotesBaseline(JSContext* cx, const JSJitFrameIter& frame,
         const BaselineInterpreter& interp =
             cx->runtime()->jitRuntime()->baselineInterpreter();
         frame.baselineFrame()->setInterpreterFields(*pc);
-        rfe->kind = ResumeFromException::RESUME_FINALLY;
+        rfe->kind = ExceptionResumeKind::Finally;
         rfe->target = interp.interpretOpAddr().value;
 
         
@@ -547,7 +547,7 @@ again:
       if (!ProcessTryNotesBaseline(cx, frame, ei, rfe, &pc)) {
         goto again;
       }
-      if (rfe->kind != ResumeFromException::RESUME_ENTRY_FRAME) {
+      if (rfe->kind != ExceptionResumeKind::EntryFrame) {
         
         
         MOZ_ASSERT_IF(script->hasScriptCounts(), script->maybeGetPCCounts(pc));
@@ -573,19 +573,20 @@ again:
 
 static void* GetLastProfilingFrame(ResumeFromException* rfe) {
   switch (rfe->kind) {
-    case ResumeFromException::RESUME_ENTRY_FRAME:
-    case ResumeFromException::RESUME_WASM:
+    case ExceptionResumeKind::EntryFrame:
+    case ExceptionResumeKind::Wasm:
+    case ExceptionResumeKind::WasmCatch:
       return nullptr;
 
     
-    case ResumeFromException::RESUME_CATCH:
-    case ResumeFromException::RESUME_FINALLY:
-    case ResumeFromException::RESUME_FORCED_RETURN:
+    case ExceptionResumeKind::Catch:
+    case ExceptionResumeKind::Finally:
+    case ExceptionResumeKind::ForcedReturn:
       return rfe->framePointer + BaselineFrame::FramePointerOffset;
 
     
     
-    case ResumeFromException::RESUME_BAILOUT:
+    case ExceptionResumeKind::Bailout:
       return rfe->bailoutInfo->incomingStack;
   }
 
@@ -620,7 +621,7 @@ void HandleException(ResumeFromException* rfe) {
     cx->jitActivation->setLastProfilingFrame(lastProfilingFrame);
   });
 
-  rfe->kind = ResumeFromException::RESUME_ENTRY_FRAME;
+  rfe->kind = ExceptionResumeKind::EntryFrame;
 
   JitSpew(JitSpew_IonInvalidate, "handling exception");
 
@@ -641,7 +642,7 @@ void HandleException(ResumeFromException* rfe) {
       HandleExceptionWasm(cx, &iter.asWasm(), rfe);
       
       
-      if (rfe->kind == ResumeFromException::RESUME_WASM_CATCH) {
+      if (rfe->kind == ExceptionResumeKind::WasmCatch) {
         return;
       }
       if (!iter.done()) {
@@ -684,14 +685,14 @@ void HandleException(ResumeFromException* rfe) {
       for (;;) {
         HandleExceptionIon(cx, frames, rfe, &hitBailoutException);
 
-        if (rfe->kind == ResumeFromException::RESUME_BAILOUT) {
+        if (rfe->kind == ExceptionResumeKind::Bailout) {
           if (invalidated) {
             ionScript->decrementInvalidationCount(cx->gcContext());
           }
           return;
         }
 
-        MOZ_ASSERT(rfe->kind == ResumeFromException::RESUME_ENTRY_FRAME);
+        MOZ_ASSERT(rfe->kind == ExceptionResumeKind::EntryFrame);
 
         
         
@@ -721,8 +722,8 @@ void HandleException(ResumeFromException* rfe) {
     } else if (frame.isBaselineJS()) {
       HandleExceptionBaseline(cx, frame, prevJitFrame, rfe);
 
-      if (rfe->kind != ResumeFromException::RESUME_ENTRY_FRAME &&
-          rfe->kind != ResumeFromException::RESUME_FORCED_RETURN) {
+      if (rfe->kind != ExceptionResumeKind::EntryFrame &&
+          rfe->kind != ExceptionResumeKind::ForcedReturn) {
         return;
       }
 
@@ -734,7 +735,7 @@ void HandleException(ResumeFromException* rfe) {
       probes::ExitScript(cx, script, script->function(),
                           false);
 
-      if (rfe->kind == ResumeFromException::RESUME_FORCED_RETURN) {
+      if (rfe->kind == ExceptionResumeKind::ForcedReturn) {
         return;
       }
     }
