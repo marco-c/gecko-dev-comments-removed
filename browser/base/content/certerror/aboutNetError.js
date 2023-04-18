@@ -109,18 +109,9 @@ function retryThis(buttonEl) {
   buttonEl.disabled = true;
 }
 
-function toggleDisplay(node) {
-  const toggle = {
-    "": "block",
-    none: "block",
-    block: "none",
-  };
-  return (node.style.display = toggle[node.style.display]);
-}
-
 function showBlockingErrorReporting() {
   
-  document.getElementById("blockingErrorReporting").style.display = "block";
+  document.getElementById("blockingErrorReporting").hidden = false;
 }
 
 function showPrefChangeContainer() {
@@ -154,12 +145,10 @@ function toggleCertErrorDebugInfoVisibility(shouldShow) {
   if (shouldShow === undefined) {
     shouldShow = debugInfo.hidden;
   }
+  debugInfo.hidden = !shouldShow;
   if (shouldShow) {
-    debugInfo.hidden = false;
     copyButton.scrollIntoView({ block: "start", behavior: "smooth" });
     copyButton.focus();
-  } else {
-    debugInfo.hidden = true;
   }
 }
 
@@ -176,7 +165,7 @@ function setupAdvancedButton() {
     .addEventListener("click", togglePanelVisibility);
 
   function togglePanelVisibility() {
-    toggleDisplay(panel);
+    panel.hidden = !panel.hidden;
     if (gIsCertError) {
       
       
@@ -196,11 +185,7 @@ function setupAdvancedButton() {
   }
 
   if (getCSSClass() == "expertBadCert") {
-    toggleDisplay(document.getElementById("badCertAdvancedPanel"));
-    
-    
-    
-    toggleCertErrorDebugInfoVisibility(false);
+    panel.hidden = false;
   }
 
   disallowCertOverridesIfNeeded();
