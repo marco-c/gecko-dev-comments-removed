@@ -10486,30 +10486,34 @@ ScreenIntMargin nsContentUtils::GetWindowSafeAreaInsets(
     return windowSafeAreaInsets;
   }
 
-  
-  LayoutDeviceIntRect safeAreaRect(
-      screenLeft + aSafeAreaInsets.left, screenTop + aSafeAreaInsets.top,
-      screenWidth - aSafeAreaInsets.right - aSafeAreaInsets.left,
-      screenHeight - aSafeAreaInsets.bottom - aSafeAreaInsets.top);
-  
-  safeAreaRect = safeAreaRect.Intersect(aWindowRect);
+  const ScreenIntRect screenRect(screenLeft, screenTop, screenWidth,
+                                 screenHeight);
 
-  windowSafeAreaInsets.top =
-      aSafeAreaInsets.top ? std::max(safeAreaRect.y - aWindowRect.y, 0) : 0;
-  windowSafeAreaInsets.left =
-      aSafeAreaInsets.left ? std::max(safeAreaRect.x - aWindowRect.x, 0) : 0;
+  ScreenIntRect safeAreaRect = screenRect;
+  safeAreaRect.Deflate(aSafeAreaInsets);
+
+  ScreenIntRect windowRect = ViewAs<ScreenPixel>(
+      aWindowRect, PixelCastJustification::LayoutDeviceIsScreenForTabDims);
+
+  
+  
+  
+  
+
+  
+  safeAreaRect = safeAreaRect.Intersect(windowRect);
+
+  windowSafeAreaInsets.top = safeAreaRect.y - aWindowRect.y;
+  windowSafeAreaInsets.left = safeAreaRect.x - aWindowRect.x;
   windowSafeAreaInsets.right =
-      aSafeAreaInsets.right
-          ? std::max((aWindowRect.x + aWindowRect.width) -
-                         (safeAreaRect.x + safeAreaRect.width),
-                     0)
-          : 0;
-  windowSafeAreaInsets.bottom =
-      aSafeAreaInsets.bottom
-          ? std::max(aWindowRect.y + aWindowRect.height -
-                         (safeAreaRect.y + safeAreaRect.height),
-                     0)
-          : 0;
+      aWindowRect.x + aWindowRect.width - (safeAreaRect.x + safeAreaRect.width);
+  windowSafeAreaInsets.bottom = aWindowRect.y + aWindowRect.height -
+                                (safeAreaRect.y + safeAreaRect.height);
+
+  windowSafeAreaInsets.EnsureAtLeast(ScreenIntMargin());
+  
+  
+  windowSafeAreaInsets.EnsureAtMost(aSafeAreaInsets);
 
   return windowSafeAreaInsets;
 }
