@@ -1507,7 +1507,7 @@ class HTMLEditor final : public EditorBase,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
   CreateAndInsertElement(WithTransaction aWithTransaction, nsAtom& aTagName,
                          const EditorDOMPoint& aPointToInsert,
-                         std::function<nsresult(Element&)>&& aInitializer);
+                         const std::function<nsresult(Element&)>& aInitializer);
 
   
 
@@ -1545,11 +1545,17 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+
+
+
   enum class BRElementNextToSplitPoint { Keep, Delete };
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
   InsertElementWithSplittingAncestorsWithTransaction(
       nsAtom& aTagName, const EditorDOMPoint& aPointToInsert,
-      BRElementNextToSplitPoint aBRElementNextToSplitPoint);
+      BRElementNextToSplitPoint aBRElementNextToSplitPoint,
+      const std::function<nsresult(Element&)>& aInitializer);
 
   
 
