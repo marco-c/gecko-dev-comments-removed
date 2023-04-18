@@ -193,7 +193,7 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
 
 
 
-  virtual void MarkAsNotScriptCreated(const char* aCommand) override;
+  void MarkAsNotScriptCreated(const char* aCommand);
 
   
 

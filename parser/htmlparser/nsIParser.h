@@ -220,11 +220,6 @@ class nsIParser : public nsParserBase {
   
 
 
-  virtual void MarkAsNotScriptCreated(const char* aCommand) = 0;
-
-  
-
-
   virtual bool IsScriptCreated() = 0;
 };
 
