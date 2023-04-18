@@ -226,8 +226,6 @@ var interfaceNamesInGlobalScope = [
   
   { name: "NetworkInformation", android: true },
   
-  "NavigationPreloadManager",
-  
   "Notification",
   
   "NotificationEvent",
