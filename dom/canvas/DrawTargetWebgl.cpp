@@ -425,7 +425,7 @@ void DrawTargetWebgl::SharedContext::SetBlendState(
 
 
 bool DrawTargetWebgl::SharedContext::SetTarget(DrawTargetWebgl* aDT) {
-  if (mWebgl->IsContextLost()) {
+  if (!mWebgl || mWebgl->IsContextLost()) {
     return false;
   }
   if (aDT != mCurrentTarget) {
@@ -481,7 +481,7 @@ bool DrawTargetWebgl::PrepareContext(bool aClipped) {
 }
 
 bool DrawTargetWebgl::SharedContext::IsContextLost() const {
-  return mWebgl->IsContextLost();
+  return !mWebgl || mWebgl->IsContextLost();
 }
 
 
