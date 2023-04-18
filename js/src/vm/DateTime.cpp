@@ -37,9 +37,15 @@
 #include "vm/MutexIDs.h"
 
 static bool ComputeLocalTime(time_t local, struct tm* ptm) {
+  
+  
+  
+
 #if defined(_WIN32)
+  _tzset();
   return localtime_s(ptm, &local) == 0;
 #elif defined(HAVE_LOCALTIME_R)
+  tzset();
   return localtime_r(&local, ptm);
 #else
   struct tm* otm = localtime(&local);
