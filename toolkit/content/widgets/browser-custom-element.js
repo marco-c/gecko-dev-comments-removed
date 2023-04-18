@@ -1288,12 +1288,16 @@
         this._autoScrollPopup.style.margin = -POPUP_SIZE / 2 + "px";
       }
 
+      
+      let screenXDesktopPx = screenXDevPx / window.desktopToDeviceScale;
+      let screenYDesktopPx = screenYDevPx / window.desktopToDeviceScale;
+
       let screenManager = Cc["@mozilla.org/gfx/screenmanager;1"].getService(
         Ci.nsIScreenManager
       );
       let screen = screenManager.screenForRect(
-        screenXDevPx / window.desktopToDeviceScale,
-        screenYDevPx / window.desktopToDeviceScale,
+        screenXDesktopPx,
+        screenYDesktopPx,
         1,
         1
       );
@@ -1317,31 +1321,38 @@
       this._autoScrollPopup.addEventListener("popuphidden", this, true);
 
       
-      
-      
-      
-      let left = {},
-        top = {},
-        width = {},
-        height = {};
-      screen.GetAvailRect(left, top, width, height);
+      let popupX;
+      let popupY;
+      {
+        let cssToDesktopScale =
+          window.devicePixelRatio / window.desktopToDeviceScale;
+
+        
+        
+        
+        
+        let left = {},
+          top = {},
+          width = {},
+          height = {};
+        screen.GetAvailRectDisplayPix(left, top, width, height);
+
+        let popupSizeDesktopPx = POPUP_SIZE * cssToDesktopScale;
+        let minX = left.value + 0.5 * popupSizeDesktopPx;
+        let maxX = left.value + width.value - 0.5 * popupSizeDesktopPx;
+        let minY = top.value + 0.5 * popupSizeDesktopPx;
+        let maxY = top.value + height.value - 0.5 * popupSizeDesktopPx;
+
+        popupX =
+          Math.max(minX, Math.min(maxX, screenXDesktopPx)) / cssToDesktopScale;
+        popupY =
+          Math.max(minY, Math.min(maxY, screenYDesktopPx)) / cssToDesktopScale;
+      }
 
       
-      
-      
-      
-      
-      
-      
-      const scaleFactor = 60 / Math.round(60 / screen.defaultCSSScaleFactor);
-      let minX = left.value / scaleFactor + 0.5 * POPUP_SIZE;
-      let maxX = (left.value + width.value) / scaleFactor - 0.5 * POPUP_SIZE;
-      let minY = top.value / scaleFactor + 0.5 * POPUP_SIZE;
-      let maxY = (top.value + height.value) / scaleFactor - 0.5 * POPUP_SIZE;
       let screenX = screenXDevPx / window.devicePixelRatio;
       let screenY = screenYDevPx / window.devicePixelRatio;
-      let popupX = Math.max(minX, Math.min(maxX, screenX));
-      let popupY = Math.max(minY, Math.min(maxY, screenY));
+
       this._autoScrollPopup.openPopupAtScreen(popupX, popupY);
       this._ignoreMouseEvents = true;
       this._startX = screenX;
