@@ -1,11 +1,11 @@
 
 
 
-add_task(async function about_myfirefox_smoke_test() {
+add_task(async function about_firefoxview_smoke_test() {
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
-      url: "about:myfirefox",
+      url: "about:firefoxview",
     },
     async browser => {
       const { document } = browser.contentWindow;
