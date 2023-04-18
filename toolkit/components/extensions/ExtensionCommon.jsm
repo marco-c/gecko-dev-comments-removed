@@ -369,6 +369,72 @@ class ExtensionAPI extends EventEmitter {
 
 
 
+class ExtensionAPIPersistent extends ExtensionAPI {
+  
+
+
+
+
+
+  hasEventRegistrar(event) {
+    return (
+      this.PERSISTENT_EVENTS && Object.hasOwn(this.PERSISTENT_EVENTS, event)
+    );
+  }
+
+  
+
+
+
+
+
+
+
+  getEventRegistrar(event) {
+    if (this.hasEventRegistrar(event)) {
+      return this.PERSISTENT_EVENTS[event].bind(this);
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  registerEventListener(options) {
+    let register = this.getEventRegistrar(options.event);
+    if (register) {
+      return register(options).unregister;
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  primeListener(event, fire, params, isInStartup) {
+    let register = this.getEventRegistrar(event);
+    if (register) {
+      return register({ fire, isInStartup }, ...params);
+    }
+  }
+}
+
+
+
+
+
+
+
 class InnerWindowReference {
   constructor(contentWindow, innerWindowID) {
     this.contentWindow = contentWindow;
@@ -1743,6 +1809,7 @@ class SchemaAPIManager extends EventEmitter {
       Cr,
       Cu,
       ExtensionAPI,
+      ExtensionAPIPersistent,
       ExtensionCommon,
       MatchGlob,
       MatchPattern,
@@ -2153,6 +2220,9 @@ class EventManager {
 
 
 
+
+
+
   constructor(params) {
     let {
       context,
@@ -2160,6 +2230,7 @@ class EventManager {
       event,
       name,
       register,
+      extensionApi,
       inputHandling = false,
     } = params;
     this.context = context;
@@ -2168,9 +2239,19 @@ class EventManager {
     this.name = name;
     this.register = register;
     this.inputHandling = inputHandling;
-
     if (!name) {
       this.name = `${module}.${event}`;
+    }
+
+    if (!this.register && extensionApi instanceof ExtensionAPIPersistent) {
+      this.register = fire => {
+        return extensionApi.registerEventListener({ context, event, fire });
+      };
+    }
+    if (!this.register) {
+      throw new Error(
+        `EventManager requires register method for ${this.name}.`
+      );
     }
 
     this.canPersistEvents =
@@ -2328,7 +2409,6 @@ class EventManager {
 
           try {
             let handler = api.primeListener(
-              extension,
               event,
               fire,
               listener.params,

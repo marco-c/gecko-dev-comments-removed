@@ -11,7 +11,7 @@ const { ExtensionAPI } = ExtensionCommon;
 
 const API = class extends ExtensionAPI {
   static namespace = undefined;
-  primeListener(extension, event, fire, params) {
+  primeListener(event, fire, params) {
     
     let { eventName, throwError, ignoreListener } =
       this.constructor.testOptions || {};
