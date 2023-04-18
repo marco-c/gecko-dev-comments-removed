@@ -28,9 +28,6 @@ const {
 const {
   WatchpointMap,
 } = require("devtools/server/actors/utils/watchpoint-map");
-const {
-  getDebuggerSourceURL,
-} = require("devtools/server/actors/utils/source-url");
 
 const { logEvent } = require("devtools/server/actors/utils/logEvent");
 
@@ -1440,9 +1437,16 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
     for (const source of sources) {
       this._addSource(source);
 
-      const url = getDebuggerSourceURL(source);
-      if (url) {
-        urlMap[url]--;
+      
+      
+      
+      
+      
+      
+      
+      
+      if (!source.introductionScript) {
+        urlMap[source.url]--;
       }
     }
 
