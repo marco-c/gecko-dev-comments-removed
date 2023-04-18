@@ -63,6 +63,18 @@ const known_scripts = {
   ]),
 };
 
+if (AppConstants.NIGHTLY_BUILD) {
+  
+  
+  
+  
+  
+
+  known_scripts.modules.add(
+    "resource://gre/modules/URLQueryStrippingListService.jsm"
+  );
+}
+
 
 
 const intermittently_loaded_scripts = {
