@@ -86,6 +86,10 @@ class DataTransferItem final : public nsISupports, public nsWrapperCache {
   nsIPrincipal* Principal() const { return mPrincipal; }
   void SetPrincipal(nsIPrincipal* aPrincipal) { mPrincipal = aPrincipal; }
 
+  
+  
+  
+  
   already_AddRefed<nsIVariant> DataNoSecurityCheck();
   
   

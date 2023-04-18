@@ -1186,6 +1186,10 @@ parent:
     sync GetExternalClipboardFormats(int32_t aWhichClipboard, bool aPlainTextOnly) returns (nsCString[] aTypes);
 
     
+    
+    async GetClipboardAsync(nsCString[] aTypes, int32_t aWhichClipboard) returns (IPCDataTransfer dataTransfer);
+
+    
     async EmptyClipboard(int32_t aWhichClipboard);
 
     

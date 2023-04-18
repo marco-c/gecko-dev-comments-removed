@@ -21,6 +21,7 @@ enum ClipboardReadType {
 };
 
 class Promise;
+class ClipboardItem;
 
 
 class Clipboard : public DOMEventTargetHelper {
@@ -36,9 +37,9 @@ class Clipboard : public DOMEventTargetHelper {
                                  ErrorResult& aRv);
   already_AddRefed<Promise> ReadText(nsIPrincipal& aSubjectPrincipal,
                                      ErrorResult& aRv);
-  already_AddRefed<Promise> Write(DataTransfer& aData,
-                                  nsIPrincipal& aSubjectPrincipal,
-                                  ErrorResult& aRv);
+  already_AddRefed<Promise> Write(
+      const Sequence<OwningNonNull<ClipboardItem>>& aData,
+      nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv);
   already_AddRefed<Promise> WriteText(const nsAString& aData,
                                       nsIPrincipal& aSubjectPrincipal,
                                       ErrorResult& aRv);
@@ -65,6 +66,15 @@ class Clipboard : public DOMEventTargetHelper {
   already_AddRefed<Promise> ReadHelper(nsIPrincipal& aSubjectPrincipal,
                                        ClipboardReadType aClipboardReadType,
                                        ErrorResult& aRv);
+
+  
+  
+  static void ProcessDataTransfer(DataTransfer& aDataTransfer,
+                                  Promise& aPromise,
+                                  ClipboardReadType aClipboardReadType,
+                                  nsPIDOMWindowInner& aOwner,
+                                  nsIPrincipal& aSubjectPrincipal,
+                                  bool aNeedToFill);
 
   ~Clipboard();
 };

@@ -33,6 +33,7 @@ class EventStateManager;
 
 namespace dom {
 
+class IPCDataTransfer;
 class DataTransferItem;
 class DataTransferItemList;
 class DOMStringList;
@@ -400,6 +401,14 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
                                              nsTArray<nsCString>* aResult);
 
  protected:
+  
+  
+  
+  
+  static void IPCDataTransferTextItemsToDataTransfer(
+      const IPCDataTransfer& aIpcDataTransfer, bool aHidden,
+      DataTransfer& aDataTransfer);
+
   
   
   nsresult CacheExternalData(const char* aFormat, uint32_t aIndex,
