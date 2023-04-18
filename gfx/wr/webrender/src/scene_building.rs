@@ -2225,21 +2225,7 @@ impl<'a> SceneBuilder<'a> {
             return;
         }
 
-        let mut stacking_context = self.sc_stack.pop().unwrap();
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if stacking_context.flags.contains(StackingContextFlags::APPLY_CLIPS_TO_ITEMS) {
-            stacking_context.blit_reason = BlitReason::empty();
-        }
+        let stacking_context = self.sc_stack.pop().unwrap();
 
         
         
