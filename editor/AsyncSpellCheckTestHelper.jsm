@@ -2,7 +2,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["onSpellCheck"];
+var EXPORTED_SYMBOLS = ["maybeOnSpellCheck", "onSpellCheck"];
 
 const SPELL_CHECK_ENDED_TOPIC = "inlineSpellChecker-spellCheck-ended";
 const SPELL_CHECK_STARTED_TOPIC = "inlineSpellChecker-spellCheck-started";
@@ -24,7 +24,7 @@ const SPELL_CHECK_STARTED_TOPIC = "inlineSpellChecker-spellCheck-started";
 
 
 
-function onSpellCheck(editableElement, callback) {
+function maybeOnSpellCheck(editableElement, callback) {
   let editor = editableElement.editor;
   if (!editor) {
     let win = editableElement.ownerGlobal;
@@ -74,7 +74,7 @@ function onSpellCheck(editableElement, callback) {
     function tick() {
       
       
-      if (waitingForEnded || ++count < 50) {
+      if (waitingForEnded || ++count < 100) {
         return;
       }
       timer.cancel();
@@ -84,5 +84,24 @@ function onSpellCheck(editableElement, callback) {
     },
     0,
     Ci.nsITimer.TYPE_REPEATING_SLACK
+  );
+}
+
+
+
+
+
+
+
+
+
+function onSpellCheck(editableElement, callback) {
+  const { TestUtils } = ChromeUtils.import(
+    "resource://testing-common/TestUtils.jsm"
+  );
+
+  let editor = editableElement.editor;
+  TestUtils.topicObserved(SPELL_CHECK_ENDED_TOPIC, s => s == editor).then(
+    callback
   );
 }
