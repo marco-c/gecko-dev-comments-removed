@@ -5802,8 +5802,8 @@ nsDocShell::OnStateChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
           if (WindowContext* windowContext =
                   mBrowsingContext->GetCurrentWindowContext()) {
             SessionStoreChild::From(windowContext->GetWindowGlobalChild())
-                ->ResetSessionStore(mBrowsingContext,
-                                    mBrowsingContext->GetSessionStoreEpoch());
+                ->SendResetSessionStore(
+                    mBrowsingContext, mBrowsingContext->GetSessionStoreEpoch());
           }
         }
       }
@@ -6544,14 +6544,11 @@ nsresult nsDocShell::EndPageLoad(nsIWebProgress* aProgress,
   if constexpr (SessionStoreUtils::NATIVE_LISTENER) {
     if (WindowContext* windowContext =
             mBrowsingContext->GetCurrentWindowContext()) {
-      using Change = SessionStoreChangeListener::Change;
-
       
       
-      SessionStoreChangeListener::CollectSessionStoreData(
-          windowContext,
-          EnumSet<Change>(Change::Input, Change::Scroll, Change::SessionHistory,
-                          Change::WireFrame));
+      
+      
+      SessionStoreChangeListener::FlushAllSessionStoreData(windowContext);
     }
   }
 
