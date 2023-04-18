@@ -6279,7 +6279,7 @@ void MacroAssemblerARM::wasmStoreImpl(const wasm::MemoryAccessDesc& access,
 
   
   
-  asMasm().memoryBarrierAfter(access.sync());
+  asMasm().memoryBarrierBefore(access.sync());
 
   BufferOffset store;
   if (type == Scalar::Int64) {
