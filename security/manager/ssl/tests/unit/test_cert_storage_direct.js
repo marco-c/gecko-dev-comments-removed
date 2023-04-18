@@ -242,17 +242,6 @@ add_task(async function test_batched_removal() {
   Assert.equal(storedCerts.length, 0, "shouldn't have any certificates now");
 });
 
-class CRLiteState {
-  constructor(subject, spkiHash, state) {
-    this.subject = btoa(subject);
-    this.spkiHash = spkiHash;
-    this.state = state;
-  }
-}
-CRLiteState.prototype.QueryInterface = ChromeUtils.generateQI([
-  "nsICRLiteState",
-]);
-
 class CRLiteCoverage {
   constructor(ctLogID, minTimestamp, maxTimestamp) {
     this.b64LogID = ctLogID;
@@ -264,133 +253,6 @@ CRLiteCoverage.prototype.QueryInterface = ChromeUtils.generateQI([
   "nsICRLiteCoverage",
 ]);
 
-async function addCRLiteState(state) {
-  let result = await new Promise(resolve => {
-    certStorage.setCRLiteState(state, resolve);
-  });
-  Assert.equal(result, Cr.NS_OK, "setCRLiteState should succeed");
-}
-
-add_task(async function test_crlite_state() {
-  
-  let crliteState1 = new CRLiteState(
-    "some subject 1",
-    "bDlKlhR5ptlvuxclnZ3RQHznG8/3pgIybrRJ/Zvn9L8=",
-    Ci.nsICertStorage.STATE_ENFORCE
-  );
-  
-  let crliteState2 = new CRLiteState(
-    "some subject 2",
-    "ZlXvlHhtdx4yKwkhZqg7Opv5T1ofwzorlsCoLf0wnlY=",
-    Ci.nsICertStorage.STATE_UNSET
-  );
-  
-  let crliteState3 = new CRLiteState(
-    "some subject 3",
-    "pp1SRn6njaHX/c+b2uf82JPeBkWhPfTBp/Mxb3xkjRM=",
-    Ci.nsICertStorage.STATE_ENFORCE
-  );
-  await addCRLiteState([crliteState1, crliteState2, crliteState3]);
-
-  let state1 = certStorage.getCRLiteState(
-    stringToArray("some subject 1"),
-    stringToArray("some spki 1")
-  );
-  Assert.equal(state1, Ci.nsICertStorage.STATE_ENFORCE);
-  let state2 = certStorage.getCRLiteState(
-    stringToArray("some subject 2"),
-    stringToArray("some spki 2")
-  );
-  Assert.equal(state2, Ci.nsICertStorage.STATE_UNSET);
-  let state3 = certStorage.getCRLiteState(
-    stringToArray("some subject 3"),
-    stringToArray("some spki 3")
-  );
-  Assert.equal(state3, Ci.nsICertStorage.STATE_ENFORCE);
-
-  
-  
-  let stateNeverSet = certStorage.getCRLiteState(
-    stringToArray("some unknown subject"),
-    stringToArray("some unknown spki")
-  );
-  Assert.equal(stateNeverSet, Ci.nsICertStorage.STATE_UNSET);
-
-  
-  
-  let stateDifferentSubjectSPKI = certStorage.getCRLiteState(
-    stringToArray("some subject 3"),
-    stringToArray("some spki 1")
-  );
-  Assert.equal(stateDifferentSubjectSPKI, Ci.nsICertStorage.STATE_UNSET);
-
-  let anotherStateDifferentSubjectSPKI = certStorage.getCRLiteState(
-    stringToArray("some subject 1"),
-    stringToArray("some spki 2")
-  );
-  Assert.equal(anotherStateDifferentSubjectSPKI, Ci.nsICertStorage.STATE_UNSET);
-  let yetAnotherStateDifferentSubjectSPKI = certStorage.getCRLiteState(
-    stringToArray("some subject 2"),
-    stringToArray("some spki 1")
-  );
-  Assert.equal(
-    yetAnotherStateDifferentSubjectSPKI,
-    Ci.nsICertStorage.STATE_UNSET
-  );
-
-  crliteState3 = new CRLiteState(
-    "some subject 3",
-    "pp1SRn6njaHX/c+b2uf82JPeBkWhPfTBp/Mxb3xkjRM=",
-    Ci.nsICertStorage.STATE_UNSET
-  );
-  await addCRLiteState([crliteState3]);
-  state3 = certStorage.getCRLiteState(
-    stringToArray("some subject 3"),
-    stringToArray("some spki 3")
-  );
-  Assert.equal(state3, Ci.nsICertStorage.STATE_UNSET);
-
-  crliteState2 = new CRLiteState(
-    "some subject 2",
-    "ZlXvlHhtdx4yKwkhZqg7Opv5T1ofwzorlsCoLf0wnlY=",
-    Ci.nsICertStorage.STATE_ENFORCE
-  );
-  await addCRLiteState([crliteState2]);
-  state2 = certStorage.getCRLiteState(
-    stringToArray("some subject 2"),
-    stringToArray("some spki 2")
-  );
-  Assert.equal(state2, Ci.nsICertStorage.STATE_ENFORCE);
-
-  
-  
-  
-  
-  
-  
-  let bogusValueState = new CRLiteState(
-    "some subject 4",
-    "1eA0++hCqzt8vpzREYSqHAqpEOLchZca1Gx8viCVYzc=",
-    2013003773
-  );
-  await addCRLiteState([bogusValueState]);
-  let bogusValueStateValue = certStorage.getCRLiteState(
-    stringToArray("some subject 4"),
-    stringToArray("some spki 4")
-  );
-  Assert.equal(bogusValueStateValue, -3);
-});
-
-async function enrollCertForCRLite(nsCert) {
-  let { subjectString, spkiHashString } = getSubjectAndSPKIHash(nsCert);
-  let crliteState = new CRLiteState(
-    subjectString,
-    spkiHashString,
-    Ci.nsICertStorage.STATE_ENFORCE
-  );
-  await addCRLiteState([crliteState]);
-}
-
 add_task(async function test_crlite_filter() {
   let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
     Ci.nsIX509CertDB
@@ -398,29 +260,27 @@ add_task(async function test_crlite_filter() {
   let validCertIssuer = constructCertFromFile(
     "test_cert_storage_direct/valid-cert-issuer.pem"
   );
-  await enrollCertForCRLite(validCertIssuer);
   let validCert = constructCertFromFile(
     "test_cert_storage_direct/valid-cert.pem"
   );
   let revokedCertIssuer = constructCertFromFile(
     "test_cert_storage_direct/revoked-cert-issuer.pem"
   );
-  await enrollCertForCRLite(revokedCertIssuer);
   let revokedCert = constructCertFromFile(
     "test_cert_storage_direct/revoked-cert.pem"
   );
-
   let filterFile = do_get_file(
     "test_cert_storage_direct/test-filter.crlite",
     false
   );
   ok(filterFile.exists(), "test filter file should exist");
+  let enrollment = [];
   let coverage = [];
   let filterBytes = stringToArray(readFile(filterFile));
   
   
   let setFullCRLiteFilterResult = await new Promise(resolve => {
-    certStorage.setFullCRLiteFilter(filterBytes, coverage, resolve);
+    certStorage.setFullCRLiteFilter(filterBytes, enrollment, coverage, resolve);
   });
   Assert.equal(
     setFullCRLiteFilterResult,
@@ -463,8 +323,15 @@ add_task(async function test_crlite_filter() {
     )
   );
 
+  
+  enrollment.push("UbH9/ZAnjuqf79Xhah1mFOWo6ZvgQCgsdheWfjvVUM8=");
+  
+  enrollment.push("Myn7EasO1QikOtNmo/UZdh6snCAw0BOY6wgU8OsUeeY=");
+  
+  enrollment.push("HTvSp2263dqBYtgYA2fldKAoTYcEVLPVTlRia9XaoCQ=");
+
   setFullCRLiteFilterResult = await new Promise(resolve => {
-    certStorage.setFullCRLiteFilter(filterBytes, coverage, resolve);
+    certStorage.setFullCRLiteFilter(filterBytes, enrollment, coverage, resolve);
   });
   Assert.equal(
     setFullCRLiteFilterResult,

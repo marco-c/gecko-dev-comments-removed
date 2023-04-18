@@ -40,7 +40,7 @@ add_task(async function test_crlite_corrupted() {
     coverage.copyTo(securityStateDirectory, "crlite.coverage");
   }
   if (enrollment != undefined) {
-    enrollment.copyTo(securityStateDirectory, "data.safe.bin");
+    enrollment.copyTo(securityStateDirectory, "crlite.enrollment");
   }
   if (filter != undefined) {
     filter.copyTo(securityStateDirectory, "crlite.filter");
@@ -79,19 +79,6 @@ add_task(async function test_crlite_corrupted() {
   );
 
   
-  
-  
-  let hasDB = await new Promise(resolve => {
-    certStorage.hasPriorData(
-      Ci.nsICertStorage.DATA_TYPE_CRLITE,
-      (rv, result) => {
-        Assert.equal(rv, Cr.NS_OK, "hasPriorData should succeed");
-        resolve(result);
-      }
-    );
-  });
-  Assert.equal(hasDB, true, "CRLite should have a database");
-
   let hasFilter = await new Promise(resolve => {
     certStorage.hasPriorData(
       Ci.nsICertStorage.DATA_TYPE_CRLITE_FILTER_FULL,

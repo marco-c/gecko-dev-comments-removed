@@ -20,8 +20,8 @@ add_task(async function test_crlite_stash_corrupted() {
   let coverage = do_get_file("test_crlite_preexisting/crlite.coverage");
   coverage.copyTo(securityStateDirectory, "crlite.coverage");
 
-  let enrollment = do_get_file("test_crlite_preexisting/data.safe.bin");
-  enrollment.copyTo(securityStateDirectory, "data.safe.bin");
+  let enrollment = do_get_file("test_crlite_preexisting/crlite.enrollment");
+  enrollment.copyTo(securityStateDirectory, "crlite.enrollment");
 
   let filter = do_get_file("test_crlite_filters/20201017-0-filter");
   filter.copyTo(securityStateDirectory, "crlite.filter");
@@ -39,10 +39,13 @@ add_task(async function test_crlite_stash_corrupted() {
 
   
   await new Promise(resolve => {
-    certStorage.hasPriorData(Ci.nsICertStorage.DATA_TYPE_CRLITE, (rv, _) => {
-      Assert.equal(rv, Cr.NS_OK, "hasPriorData should succeed");
-      resolve();
-    });
+    certStorage.hasPriorData(
+      Ci.nsICertStorage.DATA_TYPE_CRLITE_FILTER_INCREMENTAL,
+      (rv, _) => {
+        Assert.equal(rv, Cr.NS_OK, "hasPriorData should succeed");
+        resolve();
+      }
+    );
   });
 
   
@@ -66,17 +69,6 @@ add_task(async function test_crlite_stash_corrupted() {
     "us-datarecovery.com",
     0
   );
-
-  let hasDB = await new Promise(resolve => {
-    certStorage.hasPriorData(
-      Ci.nsICertStorage.DATA_TYPE_CRLITE,
-      (rv, result) => {
-        Assert.equal(rv, Cr.NS_OK, "hasPriorData should succeed");
-        resolve(result);
-      }
-    );
-  });
-  Assert.equal(hasDB, true, "CRLite should have a database");
 
   let hasFilter = await new Promise(resolve => {
     certStorage.hasPriorData(

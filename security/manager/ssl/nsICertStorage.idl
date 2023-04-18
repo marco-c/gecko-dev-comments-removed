@@ -63,21 +63,6 @@ interface nsISubjectAndPubKeyRevocationState : nsIRevocationState {
 
 
 
-[scriptable, uuid(5d0d22be-185f-4cf0-b73b-c5a911273e77)]
-interface nsICRLiteState : nsISupports {
-    readonly attribute ACString subject;
-    readonly attribute ACString spkiHash;
-    readonly attribute short state;
-};
-
-
-
-
-
-
-
-
-
 
 
 [scriptable, uuid(416453f7-29bd-4820-a039-9c2e055d3715)]
@@ -178,26 +163,11 @@ interface nsICertStorage : nsISupports {
 
 
 
-  [must_use]
-  void setCRLiteState(in Array<nsICRLiteState> crliteState,
-                      in nsICertStorageCallback callback);
-
-  
-
-
-
-
-
-  [must_use]
-  short getCRLiteState(in Array<octet> subject, in Array<octet> spki);
-
-  
-
-
 
 
   [must_use]
   void setFullCRLiteFilter(in Array<octet> filter,
+                           in Array<ACString> enrolledIssuers,
                            in Array<nsICRLiteCoverage> coverage,
                            in nsICertStorageCallback callback);
 
