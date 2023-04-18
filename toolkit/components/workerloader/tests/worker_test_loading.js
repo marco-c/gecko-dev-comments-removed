@@ -8,6 +8,7 @@
 importScripts("utils_worker.js"); 
 info("Test suite configured");
 
+
 importScripts("resource://gre/modules/workers/require.js");
 info("Loader imported");
 
