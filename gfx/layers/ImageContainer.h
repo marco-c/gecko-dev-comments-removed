@@ -661,12 +661,6 @@ struct PlanarYCbCrData {
   }
 
   static Maybe<PlanarYCbCrData> From(const SurfaceDescriptorBuffer&);
-
-  
-  
-  
-  Maybe<gfx::IntSize> mCroppedYSize;
-  Maybe<gfx::IntSize> mCroppedCbCrSize;
 };
 
 
@@ -732,11 +726,6 @@ class PlanarYCbCrImage : public Image {
 
 
   virtual bool AdoptData(const Data& aData);
-
-  
-
-
-  virtual bool CreateEmptyBuffer(const Data& aData) { return false; }
 
   
 
