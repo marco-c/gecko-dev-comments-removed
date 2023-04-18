@@ -1,12 +1,9 @@
-<!DOCTYPE html>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="/resources/testdriver.js"></script>
-<script src="/resources/testdriver-vendor.js"></script>
-<script src="/bluetooth/resources/bluetooth-test.js"></script>
-<script src="/bluetooth/resources/bluetooth-fake-devices.js"></script>
-<body>
-<script>
+
+
+
+
+
+
 'use strict';
 const test_desc = 'Request device from a unique origin. ' +
     'Should reject with SecurityError.';
@@ -17,7 +14,7 @@ let iframe = document.createElement('iframe');
 
 bluetooth_test(
     () => getConnectedHealthThermometerDevice()
-              // 1. Load the iframe.
+              
               .then(() => new Promise(resolve => {
                       iframe.sandbox.add('allow-scripts');
                       iframe.src =
@@ -25,7 +22,7 @@ bluetooth_test(
                       document.body.appendChild(iframe);
                       iframe.addEventListener('load', resolve);
                     }))
-              // 2. Request the device from the iframe.
+              
               .then(() => new Promise(resolve => {
                       iframe.contentWindow.postMessage(
                           {type: 'RequestDevice'}, '*');
@@ -36,5 +33,3 @@ bluetooth_test(
                       }
                     })),
     test_desc);
-</script>
-</body>

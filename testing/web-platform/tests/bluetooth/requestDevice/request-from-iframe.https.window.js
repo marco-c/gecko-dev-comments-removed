@@ -1,11 +1,9 @@
-<!DOCTYPE html>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="/resources/testdriver.js"></script>
-<script src="/resources/testdriver-vendor.js"></script>
-<script src="/bluetooth/resources/bluetooth-test.js"></script>
-<script src="/bluetooth/resources/bluetooth-fake-devices.js"></script>
-<script>
+
+
+
+
+
+
 'use strict';
 const test_desc = 'Concurrent requestDevice calls in iframes work.';
 const iframes = [];
@@ -15,7 +13,7 @@ for (let i = 0; i < 5; i++) {
 
 bluetooth_test(
     () => setUpHealthThermometerAndHeartRateDevices()
-              // 1. Load the iframes.
+              
               .then(() => {
                 let promises = [];
                 for (let iframe of iframes) {
@@ -27,7 +25,7 @@ bluetooth_test(
                 }
                 return Promise.all(promises);
               })
-              // 2. Request the device from the iframes.
+              
               .then(() => new Promise(async (resolve) => {
                       let numMessages = 0;
                       window.onmessage =
@@ -45,4 +43,3 @@ bluetooth_test(
                       }
                     })),
     test_desc);
-</script>

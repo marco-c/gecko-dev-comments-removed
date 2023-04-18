@@ -1,0 +1,30 @@
+
+
+
+
+
+
+'use strict';
+const test_desc = 'Request device from a unique origin. ' +
+    'Should reject with SecurityError.';
+const cross_origin_src = 'https://{{domains[www]}}:{{ports[https][0]}}' +
+    '/bluetooth/resources/health-thermometer-iframe.html'
+let iframe = document.createElement('iframe');
+
+bluetooth_test(async (t) => {
+  await setUpHealthThermometerDevice();
+
+  
+  const iframeWatcher = new EventWatcher(t, iframe, ['load']);
+  iframe.src = cross_origin_src;
+  document.body.appendChild(iframe);
+  await iframeWatcher.wait_for('load');
+
+  
+  const windowWatcher = new EventWatcher(t, window, ['message']);
+  iframe.contentWindow.postMessage({type: 'RequestDevice'}, '*');
+  const messageEvent = await windowWatcher.wait_for('message');
+  assert_equals(
+      messageEvent.data,
+      'SecurityError: requestDevice() called from cross-origin iframe.');
+}, test_desc);
