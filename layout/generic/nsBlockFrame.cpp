@@ -1051,61 +1051,62 @@ static LogicalSize CalculateContainingBlockSizeForAbsolutes(
   cbSize.ISize(aWM) -= border.IStartEnd(aWM);
   cbSize.BSize(aWM) -= border.BStartEnd(aWM);
 
-  if (frame->GetParent()->GetContent() != frame->GetContent() ||
-      frame->GetParent()->IsCanvasFrame()) {
-    return cbSize;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  const ReflowInput* lastRI = &aReflowInput;
-  DebugOnly<const ReflowInput*> lastButOneRI = &aReflowInput;
-  while (lastRI->mParentReflowInput &&
-         lastRI->mParentReflowInput->mFrame->GetContent() ==
-             frame->GetContent()) {
-    lastButOneRI = lastRI;
-    lastRI = lastRI->mParentReflowInput;
-  }
-
-  if (lastRI == &aReflowInput) {
-    return cbSize;
-  }
-
-  
-  
-  if (nsIScrollableFrame* scrollFrame = do_QueryFrame(lastRI->mFrame)) {
+  if (frame->GetParent()->GetContent() == frame->GetContent() &&
+      !frame->GetParent()->IsCanvasFrame()) {
     
     
     
-    MOZ_ASSERT(lastButOneRI == &aReflowInput);
-    return cbSize;
-  }
+    
+    
+    
+    
+    
 
-  
-  
-  if (lastRI->mFrame->IsFieldSetFrame()) {
-    return cbSize;
-  }
-
-  
-  
-  const LogicalSize lastRISize = lastRI->ComputedSize(aWM);
-  const LogicalMargin lastRIPadding = lastRI->ComputedLogicalPadding(aWM);
-  if (lastRISize.ISize(aWM) != NS_UNCONSTRAINEDSIZE) {
-    cbSize.ISize(aWM) =
-        std::max(0, lastRISize.ISize(aWM) + lastRIPadding.IStartEnd(aWM));
-  }
-  if (lastRISize.BSize(aWM) != NS_UNCONSTRAINEDSIZE) {
-    cbSize.BSize(aWM) =
-        std::max(0, lastRISize.BSize(aWM) + lastRIPadding.BStartEnd(aWM));
+    
+    
+    
+    const ReflowInput* aLastRI = &aReflowInput;
+    const ReflowInput* lastButOneRI = &aReflowInput;
+    while (aLastRI->mParentReflowInput &&
+           aLastRI->mParentReflowInput->mFrame->GetContent() ==
+               frame->GetContent() &&
+           !aLastRI->mParentReflowInput->mFrame->IsFieldSetFrame()) {
+      lastButOneRI = aLastRI;
+      aLastRI = aLastRI->mParentReflowInput;
+    }
+    if (aLastRI != &aReflowInput) {
+      
+      
+      
+      nsIScrollableFrame* scrollFrame = do_QueryFrame(aLastRI->mFrame);
+      nsMargin scrollbars(0, 0, 0, 0);
+      if (scrollFrame) {
+        scrollbars = scrollFrame->GetDesiredScrollbarSizes(
+            aLastRI->mFrame->PresContext(), aLastRI->mRenderingContext);
+        if (!lastButOneRI->mFlags.mAssumingHScrollbar) {
+          scrollbars.top = scrollbars.bottom = 0;
+        }
+        if (!lastButOneRI->mFlags.mAssumingVScrollbar) {
+          scrollbars.left = scrollbars.right = 0;
+        }
+      }
+      
+      
+      WritingMode lastWM = aLastRI->GetWritingMode();
+      LogicalSize lastRISize = aLastRI->ComputedSize().ConvertTo(aWM, lastWM);
+      LogicalMargin lastRIPadding = aLastRI->ComputedLogicalPadding(aWM);
+      LogicalMargin logicalScrollbars(aWM, scrollbars);
+      if (lastRISize.ISize(aWM) != NS_UNCONSTRAINEDSIZE) {
+        cbSize.ISize(aWM) =
+            std::max(0, lastRISize.ISize(aWM) + lastRIPadding.IStartEnd(aWM) -
+                            logicalScrollbars.IStartEnd(aWM));
+      }
+      if (lastRISize.BSize(aWM) != NS_UNCONSTRAINEDSIZE) {
+        cbSize.BSize(aWM) =
+            std::max(0, lastRISize.BSize(aWM) + lastRIPadding.BStartEnd(aWM) -
+                            logicalScrollbars.BStartEnd(aWM));
+      }
+    }
   }
 
   return cbSize;
