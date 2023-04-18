@@ -1003,8 +1003,11 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint32_t z,
       {
         
         
-        Interpolants step =
-            (right.interp - left.interp) * (1.0f / (right.x - left.x));
+        
+        
+        float stepScale = 1.0f / (right.x - left.x);
+        if (!isfinite(stepScale)) stepScale = 0.0f;
+        Interpolants step = (right.interp - left.interp) * stepScale;
         
         Interpolants o = left.interp + step * (span.start + 0.5f - left.x);
         fragment_shader->init_span(&o, &step);
@@ -1229,8 +1232,11 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
       fragment_shader->gl_FragCoord.y = y;
       {
         
-        vec2_scalar stepZW =
-            (right.zw() - left.zw()) * (1.0f / (right.x() - left.x()));
+        
+        
+        float stepScale = 1.0f / (right.x() - left.x());
+        if (!isfinite(stepScale)) stepScale = 0.0f;
+        vec2_scalar stepZW = (right.zw() - left.zw()) * stepScale;
         
         vec2_scalar zw = left.zw() + stepZW * (span.start + 0.5f - left.x());
         
@@ -1242,8 +1248,7 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
         
         
         
-        Interpolants step =
-            (right.interp - left.interp) * (1.0f / (right.x() - left.x()));
+        Interpolants step = (right.interp - left.interp) * stepScale;
         
         Interpolants o = left.interp + step * (span.start + 0.5f - left.x());
         fragment_shader->init_span<true>(&o, &step);
