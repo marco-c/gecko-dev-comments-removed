@@ -55,25 +55,21 @@
 
 
 
+
+
+
+
+
+
+
 #![forbid(unsafe_code)]
 
-#![cfg_attr(feature="flame_it", feature(plugin, custom_attribute))]
-#![cfg_attr(feature="flame_it", plugin(flamer))]
+#![no_std]
 
-
+#[cfg(feature = "std")]
+extern crate std;
 #[macro_use]
-extern crate matches;
-
-#[cfg(feature = "serde")]
-#[macro_use]
-extern crate serde;
-
-#[cfg(all(feature = "serde", test))]
-extern crate serde_test;
-
-#[cfg(feature = "flame_it")]
-extern crate flame;
-
+extern crate alloc;
 
 pub mod deprecated;
 pub mod format_chars;
@@ -84,18 +80,19 @@ mod explicit;
 mod implicit;
 mod prepare;
 
-pub use char_data::{BidiClass, bidi_class, UNICODE_VERSION};
-pub use level::{Level, LTR_LEVEL, RTL_LEVEL};
-pub use prepare::LevelRun;
+pub use crate::char_data::{BidiClass, bidi_class, UNICODE_VERSION};
+pub use crate::level::{Level, LTR_LEVEL, RTL_LEVEL};
+pub use crate::prepare::LevelRun;
 
-use std::borrow::Cow;
-use std::cmp::{max, min};
-use std::iter::repeat;
-use std::ops::Range;
+use alloc::borrow::Cow;
+use alloc::vec::Vec;
+use alloc::string::String;
+use core::cmp::{max, min};
+use core::iter::repeat;
+use core::ops::Range;
 
-use BidiClass::*;
-use format_chars as chars;
-
+use crate::BidiClass::*;
+use crate::format_chars as chars;
 
 
 #[derive(Debug, PartialEq)]
@@ -135,8 +132,8 @@ impl<'text> InitialInfo<'text> {
     
     
     
-    #[cfg_attr(feature = "flame_it", flame)]
-    pub fn new(text: &str, default_para_level: Option<Level>) -> InitialInfo {
+    #[cfg_attr(feature = "flame_it", flamer::flame)]
+    pub fn new(text: &str, default_para_level: Option<Level>) -> InitialInfo<'_> {
         let mut original_classes = Vec::with_capacity(text.len());
 
         
@@ -261,8 +258,8 @@ impl<'text> BidiInfo<'text> {
     
     
     
-    #[cfg_attr(feature = "flame_it", flame)]
-    pub fn new(text: &str, default_para_level: Option<Level>) -> BidiInfo {
+    #[cfg_attr(feature = "flame_it", flamer::flame)]
+    pub fn new(text: &str, default_para_level: Option<Level>) -> BidiInfo<'_> {
         let InitialInfo {
             original_classes,
             paragraphs,
@@ -309,15 +306,15 @@ impl<'text> BidiInfo<'text> {
 
     
     
-    #[cfg_attr(feature = "flame_it", flame)]
+    #[cfg_attr(feature = "flame_it", flamer::flame)]
     pub fn reordered_levels(&self, para: &ParagraphInfo, line: Range<usize>) -> Vec<Level> {
-        let (levels, _) = self.visual_runs(para, line.clone());
+        let (levels, _) = self.visual_runs(para, line);
         levels
     }
 
     
     
-    #[cfg_attr(feature = "flame_it", flame)]
+    #[cfg_attr(feature = "flame_it", flamer::flame)]
     pub fn reordered_levels_per_char(
         &self,
         para: &ParagraphInfo,
@@ -329,13 +326,13 @@ impl<'text> BidiInfo<'text> {
 
 
     
-    #[cfg_attr(feature = "flame_it", flame)]
+    #[cfg_attr(feature = "flame_it", flamer::flame)]
     pub fn reorder_line(&self, para: &ParagraphInfo, line: Range<usize>) -> Cow<'text, str> {
         let (levels, runs) = self.visual_runs(para, line.clone());
 
         
         if runs.iter().all(|run| levels[run.start].is_ltr()) {
-            return self.text[line.clone()].into();
+            return self.text[line].into();
         }
 
         let mut result = String::with_capacity(line.len());
@@ -354,7 +351,7 @@ impl<'text> BidiInfo<'text> {
     
     
     
-    #[cfg_attr(feature = "flame_it", flame)]
+    #[cfg_attr(feature = "flame_it", flamer::flame)]
     pub fn visual_runs(
         &self,
         para: &ParagraphInfo,
@@ -364,6 +361,8 @@ impl<'text> BidiInfo<'text> {
         assert!(line.end <= self.levels.len());
 
         let mut levels = self.levels.clone();
+        let line_classes = &self.original_classes[line.clone()];
+        let line_levels = &mut levels[line.clone()];
 
         
         
@@ -371,7 +370,7 @@ impl<'text> BidiInfo<'text> {
         let mut reset_from: Option<usize> = Some(0);
         let mut reset_to: Option<usize> = None;
         for (i, c) in line_str.char_indices() {
-            match self.original_classes[i] {
+            match line_classes[i] {
                 
                 RLE | LRE | RLO | LRO | PDF | BN => {}
                 
@@ -393,18 +392,16 @@ impl<'text> BidiInfo<'text> {
                 }
             }
             if let (Some(from), Some(to)) = (reset_from, reset_to) {
-                #[cfg_attr(feature = "cargo-clippy", allow(needless_range_loop))]
-                for j in from..to {
-                    levels[j] = para.level;
+                for level in &mut line_levels[from..to] {
+                    *level = para.level;
                 }
                 reset_from = None;
                 reset_to = None;
             }
         }
         if let Some(from) = reset_from {
-            #[cfg_attr(feature = "cargo-clippy", allow(needless_range_loop))]
-            for j in from..line_str.len() {
-                levels[j] = para.level;
+            for level in &mut line_levels[from..] {
+                *level = para.level;
             }
         }
 
@@ -479,7 +476,7 @@ impl<'text> BidiInfo<'text> {
 
 
 
-#[cfg_attr(feature = "flame_it", flame)]
+#[cfg_attr(feature = "flame_it", flamer::flame)]
 fn assign_levels_to_removed_chars(para_level: Level, classes: &[BidiClass], levels: &mut [Level]) {
     for i in 0..levels.len() {
         if prepare::removed_by_x9(classes[i]) {
@@ -703,7 +700,7 @@ mod tests {
         assert_eq!(BidiInfo::new("אבּג\n123", None).has_rtl(), true);
     }
 
-    fn reorder_paras(text: &str) -> Vec<Cow<str>> {
+    fn reorder_paras(text: &str) -> Vec<Cow<'_, str>> {
         let bidi_info = BidiInfo::new(text, None);
         bidi_info
             .paragraphs
@@ -822,6 +819,13 @@ mod tests {
             reordered_levels_per_char_for_paras(text),
             vec![Level::vec(&[0, 0])]
         );
+
+        let text = "aa טֶ";
+        let bidi_info = BidiInfo::new(text, None);
+        assert_eq!(
+            bidi_info.reordered_levels(&bidi_info.paragraphs[0], 3..7),
+            Level::vec(&[0, 0, 0, 1, 1, 1, 1]),
+        )
 
         
 

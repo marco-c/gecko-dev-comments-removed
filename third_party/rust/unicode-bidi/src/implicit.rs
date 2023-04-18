@@ -9,18 +9,17 @@
 
 
 
-use std::cmp::max;
+use core::cmp::max;
+use alloc::vec::Vec;
 
-use super::char_data::BidiClass;
+use super::char_data::BidiClass::{self, *};
 use super::prepare::{IsolatingRunSequence, LevelRun, not_removed_by_x9, removed_by_x9};
 use super::level::Level;
 
-use BidiClass::*;
 
 
 
-
-#[cfg_attr(feature = "flame_it", flame)]
+#[cfg_attr(feature = "flame_it", flamer::flame)]
 pub fn resolve_weak(sequence: &IsolatingRunSequence, processing_classes: &mut [BidiClass]) {
     
     
@@ -135,7 +134,7 @@ pub fn resolve_weak(sequence: &IsolatingRunSequence, processing_classes: &mut [B
 
 
 
-#[cfg_attr(feature = "flame_it", flame)]
+#[cfg_attr(feature = "flame_it", flamer::flame)]
 pub fn resolve_neutral(
     sequence: &IsolatingRunSequence,
     levels: &[Level],
@@ -200,7 +199,7 @@ pub fn resolve_neutral(
 
 
 
-#[cfg_attr(feature = "flame_it", flame)]
+#[cfg_attr(feature = "flame_it", flamer::flame)]
 pub fn resolve_levels(original_classes: &[BidiClass], levels: &mut [Level]) -> Level {
     let mut max_level = Level::ltr();
 
@@ -224,5 +223,8 @@ pub fn resolve_levels(original_classes: &[BidiClass], levels: &mut [Level]) -> L
 
 #[allow(non_snake_case)]
 fn is_NI(class: BidiClass) -> bool {
-    matches!(class, B | S | WS | ON | FSI | LRI | RLI | PDI)
+    match class {
+        B | S | WS | ON | FSI | LRI | RLI | PDI => true,
+        _ => false,
+    }
 }

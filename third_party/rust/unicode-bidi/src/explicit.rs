@@ -11,16 +11,16 @@
 
 
 
-use super::char_data::{BidiClass, is_rtl};
+use alloc::vec::Vec;
+
+use super::char_data::{BidiClass::{self, *}, is_rtl};
 use super::level::Level;
 
-use BidiClass::*;
 
 
 
 
-
-#[cfg_attr(feature = "flame_it", flame)]
+#[cfg_attr(feature = "flame_it", flamer::flame)]
 pub fn compute(
     text: &str,
     para_level: Level,
@@ -46,7 +46,10 @@ pub fn compute(
                 let last_level = stack.last().level;
 
                 
-                let is_isolate = matches!(original_classes[i], RLI | LRI | FSI);
+                let is_isolate = match original_classes[i] {
+                    RLI | LRI | FSI => true,
+                    _ => false,
+                };
                 if is_isolate {
                     levels[i] = last_level;
                     match stack.last().status {

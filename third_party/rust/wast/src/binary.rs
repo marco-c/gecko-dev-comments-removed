@@ -644,29 +644,7 @@ impl Encode for ExportKind {
 
 impl Encode for Elem<'_> {
     fn encode(&self, e: &mut Vec<u8>) {
-        
-        
-        
-        
-        
-        let indices;
-        let mut to_encode = &self.payload;
-        if let ElemPayload::Exprs {
-            ty:
-                RefType {
-                    nullable: true,
-                    heap: HeapType::Func,
-                },
-            exprs,
-        } = &to_encode
-        {
-            if let Some(list) = extract_indices(exprs) {
-                indices = ElemPayload::Indices(list);
-                to_encode = &indices;
-            }
-        }
-
-        match (&self.kind, &to_encode) {
+        match (&self.kind, &self.payload) {
             (
                 ElemKind::Active {
                     table:
@@ -732,22 +710,7 @@ impl Encode for Elem<'_> {
             }
         }
 
-        to_encode.encode(e);
-
-        fn extract_indices<'a>(indices: &[Expression<'a>]) -> Option<Vec<ItemRef<'a, kw::func>>> {
-            indices
-                .iter()
-                .map(|expr| {
-                    if expr.instrs.len() != 1 {
-                        return None;
-                    }
-                    match &expr.instrs[0] {
-                        Instruction::RefFunc(f) => Some(f.0.clone()),
-                        _ => None,
-                    }
-                })
-                .collect()
-        }
+        self.payload.encode(e);
     }
 }
 

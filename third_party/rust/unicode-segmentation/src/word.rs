@@ -11,7 +11,13 @@
 use core::cmp;
 use core::iter::Filter;
 
-use tables::word::WordCat;
+use crate::tables::word::WordCat;
+
+
+
+
+
+
 
 
 
@@ -36,12 +42,52 @@ impl<'a> DoubleEndedIterator for UnicodeWords<'a> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+pub struct UnicodeWordIndices<'a> {
+    inner: Filter<UWordBoundIndices<'a>, fn(&(usize, &str)) -> bool>,
+}
+
+impl<'a> Iterator for UnicodeWordIndices<'a> {
+    type Item = (usize, &'a str);
+
+    #[inline]
+    fn next(&mut self) -> Option<(usize, &'a str)> { self.inner.next() }
+}
+impl<'a> DoubleEndedIterator for UnicodeWordIndices<'a> {
+    #[inline]
+    fn next_back(&mut self) -> Option<(usize, &'a str)> { self.inner.next_back() }
+}
+
+
+
+
+
+
+
+
+
 #[derive(Clone)]
 pub struct UWordBounds<'a> {
     string: &'a str,
     cat: Option<WordCat>,
     catb: Option<WordCat>,
 }
+
+
+
+
+
+
 
 
 #[derive(Clone)]
@@ -102,6 +148,7 @@ enum UWordBoundsState {
     FormatExtend(FormatExtendType),
     Zwj,
     Emoji,
+    WSegSpace,
 }
 
 
@@ -122,6 +169,11 @@ enum RegionalState {
     Unknown,
 }
 
+fn is_emoji(ch: char) -> bool {
+    use crate::tables::emoji;
+    emoji::emoji_category(ch).2 == emoji::EmojiCat::EC_Extended_Pictographic
+}
+
 impl<'a> Iterator for UWordBounds<'a> {
     type Item = &'a str;
 
@@ -135,7 +187,7 @@ impl<'a> Iterator for UWordBounds<'a> {
     fn next(&mut self) -> Option<&'a str> {
         use self::UWordBoundsState::*;
         use self::FormatExtendType::*;
-        use tables::word as wd;
+        use crate::tables::word as wd;
         if self.string.len() == 0 {
             return None;
         }
@@ -149,14 +201,15 @@ impl<'a> Iterator for UWordBounds<'a> {
         let mut savecat = wd::WC_Any;
 
         
-        
-        let mut prev_zwj;
+        let mut skipped_format_extend = false;
         for (curr, ch) in self.string.char_indices() {
             idx = curr;
-            prev_zwj = cat == wd::WC_ZWJ;
+            
+            
+            let prev_zwj = cat == wd::WC_ZWJ;
             
             cat = match self.cat {
-                None => wd::word_category(ch),
+                None => wd::word_category(ch).2,
                 _ => self.cat.take().unwrap()
             };
             take_cat = true;
@@ -172,6 +225,7 @@ impl<'a> Iterator for UWordBounds<'a> {
             if state != Start {
                 match cat {
                     wd::WC_Extend | wd::WC_Format | wd::WC_ZWJ => {
+                        skipped_format_extend = true;
                         continue
                     }
                     _ => {}
@@ -190,18 +244,10 @@ impl<'a> Iterator for UWordBounds<'a> {
             
             
             
-            
-            
-            
-            
             if prev_zwj {
-                match cat { 
-                    wd::WC_Glue_After_Zwj => continue,
-                    wd::WC_E_Base_GAZ => {
-                        state = Emoji;
-                        continue;
-                    },
-                    _ => ()
+                if is_emoji(ch) {
+                    state = Emoji;
+                    continue;
                 }
             }
             
@@ -222,7 +268,7 @@ impl<'a> Iterator for UWordBounds<'a> {
                     wd::WC_Regional_Indicator => Regional(RegionalState::Half),  
                     wd::WC_LF | wd::WC_Newline => break,    
                     wd::WC_ZWJ => Zwj,                      
-                    wd::WC_E_Base | wd::WC_E_Base_GAZ => Emoji, 
+                    wd::WC_WSegSpace => WSegSpace,          
                     _ => {
                         if let Some(ncat) = self.get_next_cat(idx) {                
                             if ncat == wd::WC_Format || ncat == wd::WC_Extend || ncat == wd::WC_ZWJ {
@@ -234,9 +280,14 @@ impl<'a> Iterator for UWordBounds<'a> {
                         break;                                                      
                     }
                 },
+                WSegSpace => match cat {
+                    wd::WC_WSegSpace if !skipped_format_extend => WSegSpace,
+                    _ => {
+                        take_curr = false;
+                        break;
+                    }
+                },
                 Zwj => {
-                    
-                    
                     
                     take_curr = false;
                     break;
@@ -313,12 +364,10 @@ impl<'a> Iterator for UWordBounds<'a> {
                     }
                 },
                 Regional(_) => unreachable!("RegionalState::Unknown should not occur on forward iteration"),
-                Emoji => match cat {                            
-                    wd::WC_E_Modifier => state,
-                    _ => {
-                        take_curr = false;
-                        break;
-                    }
+                Emoji => {
+                    
+                    take_curr = false;
+                    break;
                 },
                 FormatExtend(t) => match t {    
                     RequireNumeric if cat == wd::WC_Numeric => Numeric,     
@@ -364,7 +413,7 @@ impl<'a> DoubleEndedIterator for UWordBounds<'a> {
     fn next_back(&mut self) -> Option<&'a str> {
         use self::UWordBoundsState::*;
         use self::FormatExtendType::*;
-        use tables::word as wd;
+        use crate::tables::word as wd;
         if self.string.len() == 0 {
             return None;
         }
@@ -379,13 +428,15 @@ impl<'a> DoubleEndedIterator for UWordBounds<'a> {
         let mut savestate = Start;
         let mut cat = wd::WC_Any;
 
+        let mut skipped_format_extend = false;
+
         for (curr, ch) in self.string.char_indices().rev() {
             previdx = idx;
             idx = curr;
 
             
             cat = match self.catb {
-                None => wd::word_category(ch),
+                None => wd::word_category(ch).2,
                 _ => self.catb.take().unwrap()
             };
             take_cat = true;
@@ -417,25 +468,26 @@ impl<'a> DoubleEndedIterator for UWordBounds<'a> {
                 state = savestate;
                 previdx = saveidx;
                 take_cat = false;
+                skipped_format_extend = true;
             }
 
             
             state = match state {
                 Start | FormatExtend(AcceptAny) => match cat {
+                    _ if is_emoji(ch) => Zwj,
                     wd::WC_ALetter => Letter,           
                     wd::WC_Hebrew_Letter => HLetter,    
                     wd::WC_Numeric => Numeric,          
                     wd::WC_Katakana => Katakana,                    
                     wd::WC_ExtendNumLet => ExtendNumLet,                    
                     wd::WC_Regional_Indicator => Regional(RegionalState::Unknown), 
-                    wd::WC_Glue_After_Zwj | wd::WC_E_Base_GAZ => Zwj,       
                     
                     wd::WC_Extend | wd::WC_Format | wd::WC_ZWJ => FormatExtend(AcceptAny),
                     wd::WC_Single_Quote => {
                         saveidx = idx;
                         FormatExtend(AcceptQLetter)                         
                     },
-                    wd::WC_E_Modifier => Emoji,                             
+                    wd::WC_WSegSpace => WSegSpace,
                     wd::WC_CR | wd::WC_LF | wd::WC_Newline => {
                         if state == Start {
                             if cat == wd::WC_LF {
@@ -454,6 +506,15 @@ impl<'a> DoubleEndedIterator for UWordBounds<'a> {
                 Zwj => match cat {                          
                     wd::WC_ZWJ => {
                         FormatExtend(AcceptAny)
+                    }
+                    _ => {
+                        take_curr = false;
+                        break;
+                    }
+                },
+                WSegSpace => match cat {                          
+                    wd::WC_WSegSpace if !skipped_format_extend => {
+                        WSegSpace
                     }
                     _ => {
                         take_curr = false;
@@ -517,7 +578,7 @@ impl<'a> DoubleEndedIterator for UWordBounds<'a> {
                         if regional_state == RegionalState::Unknown {
                             let count = self.string[..previdx]
                                             .chars().rev()
-                                            .map(|c| wd::word_category(c))
+                                            .map(|c| wd::word_category(c).2)
                                             .filter(|&c| ! (c == wd::WC_ZWJ || c == wd::WC_Extend || c == wd::WC_Format))
                                             .take_while(|&c| c == wd::WC_Regional_Indicator)
                                             .count();
@@ -539,11 +600,10 @@ impl<'a> DoubleEndedIterator for UWordBounds<'a> {
                         break;
                     }
                 },
-                Emoji => match cat {                            
-                    wd::WC_E_Base | wd::WC_E_Base_GAZ => {
+                Emoji => {
+                    if is_emoji(ch) {           
                         Zwj
-                    },
-                    _ => {
+                    } else {
                         take_curr = false;
                         break;
                     }
@@ -605,11 +665,11 @@ impl<'a> UWordBounds<'a> {
 
     #[inline]
     fn get_next_cat(&self, idx: usize) -> Option<WordCat> {
-        use tables::word as wd;
+        use crate::tables::word as wd;
         let nidx = idx + self.string[idx..].chars().next().unwrap().len_utf8();
         if nidx < self.string.len() {
             let nch = self.string[nidx..].chars().next().unwrap();
-            Some(wd::word_category(nch))
+            Some(wd::word_category(nch).2)
         } else {
             None
         }
@@ -617,10 +677,10 @@ impl<'a> UWordBounds<'a> {
 
     #[inline]
     fn get_prev_cat(&self, idx: usize) -> Option<WordCat> {
-        use tables::word as wd;
+        use crate::tables::word as wd;
         if idx > 0 {
             let nch = self.string[..idx].chars().next_back().unwrap();
-            Some(wd::word_category(nch))
+            Some(wd::word_category(nch).2)
         } else {
             None
         }
@@ -638,12 +698,22 @@ pub fn new_word_bound_indices<'b>(s: &'b str) -> UWordBoundIndices<'b> {
 }
 
 #[inline]
+fn has_alphanumeric(s: &&str) -> bool {
+    use crate::tables::util::is_alphanumeric;
+
+    s.chars().any(|c| is_alphanumeric(c))
+}
+
+#[inline]
 pub fn new_unicode_words<'b>(s: &'b str) -> UnicodeWords<'b> {
     use super::UnicodeSegmentation;
-    use tables::util::is_alphanumeric;
-
-    fn has_alphanumeric(s: &&str) -> bool { s.chars().any(|c| is_alphanumeric(c)) }
-    let has_alphanumeric: fn(&&str) -> bool = has_alphanumeric; 
 
     UnicodeWords { inner: s.split_word_bounds().filter(has_alphanumeric) }
+}
+
+#[inline]
+pub fn new_unicode_word_indices<'b>(s: &'b str) -> UnicodeWordIndices<'b> {
+    use super::UnicodeSegmentation;
+
+    UnicodeWordIndices { inner: s.split_word_bound_indices().filter(|(_, c)| has_alphanumeric(c)) }
 }

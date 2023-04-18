@@ -66,11 +66,13 @@ extern crate quickcheck;
 pub use grapheme::{Graphemes, GraphemeIndices};
 pub use grapheme::{GraphemeCursor, GraphemeIncomplete};
 pub use tables::UNICODE_VERSION;
-pub use word::{UWordBounds, UWordBoundIndices, UnicodeWords};
+pub use word::{UWordBounds, UWordBoundIndices, UnicodeWords, UnicodeWordIndices};
+pub use sentence::{USentenceBounds, USentenceBoundIndices, UnicodeSentences};
 
 mod grapheme;
 mod tables;
 mod word;
+mod sentence;
 
 #[cfg(test)]
 mod test;
@@ -158,6 +160,30 @@ pub trait UnicodeSegmentation {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    fn unicode_word_indices<'a>(&'a self) -> UnicodeWordIndices<'a>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn split_word_bounds<'a>(&'a self) -> UWordBounds<'a>;
 
     
@@ -174,6 +200,61 @@ pub trait UnicodeSegmentation {
     
     
     fn split_word_bound_indices<'a>(&'a self) -> UWordBoundIndices<'a>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn unicode_sentences<'a>(&'a self) -> UnicodeSentences<'a>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn split_sentence_bounds<'a>(&'a self) -> USentenceBounds<'a>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn split_sentence_bound_indices<'a>(&'a self) -> USentenceBoundIndices<'a>;
 }
 
 impl UnicodeSegmentation for str {
@@ -193,6 +274,11 @@ impl UnicodeSegmentation for str {
     }
 
     #[inline]
+    fn unicode_word_indices(&self) -> UnicodeWordIndices {
+        word::new_unicode_word_indices(self)
+    }
+
+    #[inline]
     fn split_word_bounds(&self) -> UWordBounds {
         word::new_word_bounds(self)
     }
@@ -200,5 +286,20 @@ impl UnicodeSegmentation for str {
     #[inline]
     fn split_word_bound_indices(&self) -> UWordBoundIndices {
         word::new_word_bound_indices(self)
+    }
+
+    #[inline]
+    fn unicode_sentences(&self) -> UnicodeSentences {
+        sentence::new_unicode_sentences(self)
+    }
+
+    #[inline]
+    fn split_sentence_bounds(&self) -> USentenceBounds {
+        sentence::new_sentence_bounds(self)
+    }
+
+    #[inline]
+    fn split_sentence_bound_indices(&self) -> USentenceBoundIndices {
+        sentence::new_sentence_bound_indices(self)
     }
 }

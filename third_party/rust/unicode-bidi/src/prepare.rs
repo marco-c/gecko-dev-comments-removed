@@ -11,13 +11,12 @@
 
 
 
-use std::cmp::max;
-use std::ops::Range;
+use core::cmp::max;
+use core::ops::Range;
+use alloc::vec::Vec;
 
-use super::char_data::BidiClass;
+use super::BidiClass::{self, *};
 use super::level::Level;
-
-use BidiClass::*;
 
 
 
@@ -41,7 +40,7 @@ pub struct IsolatingRunSequence {
 
 
 
-#[cfg_attr(feature = "flame_it", flame)]
+#[cfg_attr(feature = "flame_it", flamer::flame)]
 pub fn isolating_run_sequences(
     para_level: Level,
     original_classes: &[BidiClass],
@@ -74,7 +73,7 @@ pub fn isolating_run_sequences(
 
         sequence.push(run);
 
-        if matches!(end_class, RLI | LRI | FSI) {
+        if let RLI | LRI | FSI = end_class {
             
             stack.push(sequence);
         } else {
@@ -114,7 +113,7 @@ pub fn isolating_run_sequences(
             };
 
             
-            let succ_level = if matches!(original_classes[end_of_seq - 1], RLI | LRI | FSI) {
+            let succ_level = if let RLI | LRI | FSI = original_classes[end_of_seq - 1] {
                 para_level
             } else {
                 match original_classes[end_of_seq..].iter().position(
@@ -164,7 +163,10 @@ fn level_runs(levels: &[Level], original_classes: &[BidiClass]) -> Vec<LevelRun>
 
 
 pub fn removed_by_x9(class: BidiClass) -> bool {
-    matches!(class, RLE | LRE | RLO | LRO | PDF | BN)
+    match class {
+        RLE | LRE | RLO | LRO | PDF | BN => true,
+        _ => false,
+    }
 }
 
 
@@ -186,7 +188,7 @@ mod tests {
     }
 
     
-    #[cfg_attr(rustfmt, rustfmt_skip)]
+    #[rustfmt::skip]
     #[test]
     fn test_isolating_run_sequences() {
 
@@ -231,7 +233,7 @@ mod tests {
     }
 
     
-    #[cfg_attr(rustfmt, rustfmt_skip)]
+    #[rustfmt::skip]
     #[test]
     fn test_isolating_run_sequences_sos_and_eos() {
 
