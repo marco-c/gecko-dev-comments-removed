@@ -102,8 +102,31 @@ inline bool IsTranscodingBytecodeAligned(const void* offset) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 extern JS_PUBLIC_API bool FinishIncrementalEncoding(JSContext* cx,
                                                     Handle<JSScript*> script,
+                                                    TranscodeBuffer& buffer);
+
+
+
+
+
+
+extern JS_PUBLIC_API bool FinishIncrementalEncoding(JSContext* cx,
+                                                    Handle<JSObject*> module,
                                                     TranscodeBuffer& buffer);
 
 
