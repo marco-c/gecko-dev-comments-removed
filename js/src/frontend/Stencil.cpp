@@ -22,6 +22,7 @@
 #include "frontend/CompilationStencil.h"  
 #include "frontend/NameAnalysisTypes.h"   
 #include "frontend/SharedContext.h"
+#include "frontend/StencilXdr.h"        
 #include "gc/AllocKind.h"               
 #include "gc/Rooting.h"                 
 #include "gc/Tracer.h"                  
@@ -52,7 +53,6 @@
 #include "vm/StaticStrings.h"
 #include "vm/StencilEnums.h"  
 #include "vm/StringType.h"    
-#include "vm/Xdr.h"           
 #include "wasm/AsmJS.h"       
 #include "wasm/WasmModule.h"  
 

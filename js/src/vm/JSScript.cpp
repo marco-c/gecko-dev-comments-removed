@@ -35,6 +35,7 @@
 #include "frontend/CompilationStencil.h"  
 #include "frontend/ParseContext.h"
 #include "frontend/SourceNotes.h"  
+#include "frontend/StencilXdr.h"   
 #include "gc/AllocKind.h"          
 #include "gc/FreeOp.h"
 #include "jit/BaselineJIT.h"
@@ -75,7 +76,6 @@
 #include "vm/Shape.h"
 #include "vm/SharedImmutableStringsCache.h"
 #include "vm/Warnings.h"  
-#include "vm/Xdr.h"       
 #ifdef MOZ_VTUNE
 #  include "vtune/VTuneWrapper.h"
 #endif

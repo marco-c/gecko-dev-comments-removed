@@ -45,7 +45,7 @@
 #include "vm/Shape.h"
 #include "vm/SharedImmutableStringsCache.h"
 #include "vm/SharedStencil.h"  
-#include "vm/StencilEnums.h"  
+#include "vm/StencilEnums.h"   
 #include "vm/Time.h"
 
 namespace JS {
