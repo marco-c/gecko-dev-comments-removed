@@ -26,11 +26,6 @@ class AudioConverter;
 
 class AudioSink : private AudioStream::DataSource {
  public:
-  enum class InitializationType {
-    
-    INITIAL,
-    UNMUTING
-  };
   struct PlaybackParams {
     PlaybackParams(double aVolume, double aPlaybackRate, bool aPreservesPitch)
         : mVolume(aVolume),
@@ -42,17 +37,15 @@ class AudioSink : private AudioStream::DataSource {
   };
 
   AudioSink(AbstractThread* aThread, MediaQueue<AudioData>& aAudioQueue,
-            const AudioInfo& aInfo, AudioDeviceInfo* aAudioDevice);
+            const media::TimeUnit& aStartTime, const AudioInfo& aInfo,
+            AudioDeviceInfo* aAudioDevice);
 
   ~AudioSink();
 
   
-  nsresult InitializeAudioStream(const PlaybackParams& aParams,
-                                 InitializationType aInitializationType);
-
   
-  nsresult Start(const media::TimeUnit& aStartTime,
-                 MozPromiseHolder<MediaSink::EndedPromise>& aEndedPromise);
+  Result<already_AddRefed<MediaSink::EndedPromise>, nsresult> Start(
+      const PlaybackParams& aParams);
 
   
 
@@ -69,9 +62,7 @@ class AudioSink : private AudioStream::DataSource {
   media::TimeUnit UnplayedDuration() const;
 
   
-  
-  Maybe<MozPromiseHolder<MediaSink::EndedPromise>> Shutdown(
-      ShutdownCause aShutdownCause = ShutdownCause::Regular);
+  void Shutdown();
 
   void SetVolume(double aVolume);
   void SetStreamName(const nsAString& aStreamName);
@@ -85,32 +76,16 @@ class AudioSink : private AudioStream::DataSource {
 
   const RefPtr<AudioDeviceInfo>& AudioDevice() { return mAudioDevice; }
 
-  
-  
-  bool AudioStreamCallbackStarted() {
-    return mAudioStream && mAudioStream->CallbackStarted();
-  }
-
-  void UpdateStartTime(const media::TimeUnit& aStartTime) {
-    mStartTime = aStartTime;
-  }
-
  private:
+  
+  nsresult InitializeAudioStream(const PlaybackParams& aParams);
+
   
   
   
   uint32_t PopFrames(AudioDataValue* aBuffer, uint32_t aFrames,
                      bool aAudioThreadChanged) override;
   bool Ended() const override;
-
-  
-  
-  
-  
-  
-  
-  
-  void ReenqueueUnplayedAudioDataIfNeeded();
 
   void CheckIsAudible(const Span<AudioDataValue>& aInterleaved,
                       size_t aChannel);
@@ -121,7 +96,7 @@ class AudioSink : private AudioStream::DataSource {
   
   
   
-  media::TimeUnit mStartTime;
+  const media::TimeUnit mStartTime;
 
   
   

@@ -34,9 +34,11 @@ static const int64_t AUDIO_FUZZ_FRAMES = 1;
 using media::TimeUnit;
 
 AudioSink::AudioSink(AbstractThread* aThread,
-                     MediaQueue<AudioData>& aAudioQueue, const AudioInfo& aInfo,
+                     MediaQueue<AudioData>& aAudioQueue,
+                     const TimeUnit& aStartTime, const AudioInfo& aInfo,
                      AudioDeviceInfo* aAudioDevice)
-    : mInfo(aInfo),
+    : mStartTime(aStartTime),
+      mInfo(aInfo),
       mAudioDevice(aAudioDevice),
       mPlaying(true),
       mWritten(0),
@@ -60,62 +62,12 @@ AudioSink::AudioSink(AbstractThread* aThread,
           capacitySeconds * static_cast<float>(mOutputChannels * mOutputRate)));
   SINK_LOG("Ringbuffer has space for %u elements (%lf seconds)",
            mProcessedSPSCQueue->Capacity(), capacitySeconds);
-  
-  
-  RefPtr<AudioData> frontPacket = mAudioQueue.PeekFront();
-  if (frontPacket) {
-    mAudibilityMonitor.ProcessInterleaved(frontPacket->Data(), frontPacket->mChannels);
-    mIsAudioDataAudible = mAudibilityMonitor.RecentlyAudible();
-  }
 }
 
 AudioSink::~AudioSink() = default;
 
-nsresult AudioSink::InitializeAudioStream(
-    const PlaybackParams& aParams,
-    AudioSink::InitializationType aInitializationType) {
-  if (aInitializationType == AudioSink::InitializationType::UNMUTING) {
-    
-    
-    
-    mAudibleEvent.Notify(mIsAudioDataAudible);
-  } else {
-    
-    
-    
-    mIsAudioDataAudible = false;
-  }
-
-  
-  
-  AudioConfig::ChannelLayout::ChannelMap channelMap =
-      AudioConfig::ChannelLayout(mOutputChannels).Map();
-  
-  
-  
-  
-  MOZ_ASSERT(!mAudioStream);
-  mAudioStream =
-      new AudioStream(*this, mOutputRate, mOutputChannels, channelMap);
-  nsresult rv = mAudioStream->Init(mAudioDevice);
-  if (NS_FAILED(rv)) {
-    mAudioStream->Shutdown();
-    mAudioStream = nullptr;
-    return rv;
-  }
-
-  
-  
-  mAudioStream->SetVolume(aParams.mVolume);
-  mAudioStream->SetPlaybackRate(aParams.mPlaybackRate);
-  mAudioStream->SetPreservesPitch(aParams.mPreservesPitch);
-
-  return NS_OK;
-}
-
-nsresult AudioSink::Start(
-    const media::TimeUnit& aStartTime,
-    MozPromiseHolder<MediaSink::EndedPromise>& aEndedPromise) {
+Result<already_AddRefed<MediaSink::EndedPromise>, nsresult> AudioSink::Start(
+    const PlaybackParams& aParams) {
   MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
 
   mAudioQueueListener = mAudioQueue.PushEvent().Connect(
@@ -125,13 +77,15 @@ nsresult AudioSink::Start(
   mProcessedQueueListener =
       mAudioPopped.Connect(mOwnerThread, this, &AudioSink::OnAudioPopped);
 
-  mStartTime = aStartTime;
-
   
   
   NotifyAudioNeeded();
+  nsresult rv = InitializeAudioStream(aParams);
+  if (NS_FAILED(rv)) {
+    return Err(rv);
+  }
 
-  return mAudioStream->Start(aEndedPromise);
+  return mAudioStream->Start();
 }
 
 TimeUnit AudioSink::GetPosition() {
@@ -165,86 +119,18 @@ TimeUnit AudioSink::UnplayedDuration() const {
   return TimeUnit::FromMicroseconds(AudioQueuedInRingBufferMS());
 }
 
-void AudioSink::ReenqueueUnplayedAudioDataIfNeeded() {
-  
-  
-  mProcessedSPSCQueue->ResetThreadIds();
-
-  
-  int sampleCount = mProcessedSPSCQueue->AvailableRead();
-
-  if (!sampleCount) {
-    return;
-  }
-
-  uint32_t channelCount;
-  uint32_t rate;
-  if (mConverter) {
-    channelCount = mConverter->OutputConfig().Channels();
-    rate = mConverter->OutputConfig().Rate();
-  } else {
-    channelCount = mOutputChannels;
-    rate = mOutputRate;
-  }
-
-  uint32_t frameCount = sampleCount / channelCount;
-  auto duration = FramesToTimeUnit(frameCount, rate);
-  if (!duration.IsValid()) {
-    NS_WARNING("Int overflow in AudioSink");
-    mErrored = true;
-    return;
-  }
-
-  AlignedAudioBuffer queuedAudio(sampleCount);
-  DebugOnly<int> samplesRead =
-      mProcessedSPSCQueue->Dequeue(queuedAudio.Data(), sampleCount);
-  MOZ_ASSERT(samplesRead == sampleCount);
-
-  
-  
-  
-  
-  RefPtr<AudioData> frontPacket = mAudioQueue.PeekFront();
-  uint32_t offset;
-  TimeUnit time;
-  if (!frontPacket) {
-    
-    offset = 0;
-    time = std::max(GetPosition() - duration, TimeUnit::Zero());
-  } else {
-    offset = frontPacket->mOffset;
-    time = frontPacket->mTime - duration;
-  }
-  RefPtr<AudioData> data =
-      new AudioData(offset, time, std::move(queuedAudio), channelCount, rate);
-  MOZ_DIAGNOSTIC_ASSERT(duration == data->mDuration, "must be equal");
-
-  SINK_LOG(
-      "Muting: Pushing back %u frames (%lfms) from the ring buffer back into "
-      "the audio queue",
-      frameCount, static_cast<float>(frameCount) / rate);
-
-  mAudioQueue.PushFront(data);
-}
-
-Maybe<MozPromiseHolder<MediaSink::EndedPromise>> AudioSink::Shutdown(
-    ShutdownCause aShutdownCause) {
+void AudioSink::Shutdown() {
   MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
 
-  mAudioQueueListener.DisconnectIfExists();
-  mAudioQueueFinishListener.DisconnectIfExists();
-  mProcessedQueueListener.DisconnectIfExists();
-
-  Maybe<MozPromiseHolder<MediaSink::EndedPromise>> rv;
+  mAudioQueueListener.Disconnect();
+  mAudioQueueFinishListener.Disconnect();
+  mProcessedQueueListener.Disconnect();
 
   if (mAudioStream) {
-    rv = mAudioStream->Shutdown(aShutdownCause);
+    mAudioStream->Shutdown();
     mAudioStream = nullptr;
-    ReenqueueUnplayedAudioDataIfNeeded();
   }
   mProcessedQueueFinished = true;
-
-  return rv;
 }
 
 void AudioSink::SetVolume(double aVolume) {
@@ -285,6 +171,33 @@ void AudioSink::SetPlaying(bool aPlaying) {
     mAudioStream->Resume();
   }
   mPlaying = aPlaying;
+}
+
+nsresult AudioSink::InitializeAudioStream(const PlaybackParams& aParams) {
+  
+  
+  AudioConfig::ChannelLayout::ChannelMap channelMap =
+      mConverter ? mConverter->OutputConfig().Layout().Map()
+                 : AudioConfig::ChannelLayout(mOutputChannels).Map();
+  
+  
+  
+  
+  mAudioStream =
+      new AudioStream(*this, mOutputRate, mOutputChannels, channelMap);
+  nsresult rv = mAudioStream->Init(mAudioDevice);
+  if (NS_FAILED(rv)) {
+    mAudioStream->Shutdown();
+    mAudioStream = nullptr;
+    return rv;
+  }
+
+  
+  
+  mAudioStream->SetVolume(aParams.mVolume);
+  mAudioStream->SetPlaybackRate(aParams.mPlaybackRate);
+  mAudioStream->SetPreservesPitch(aParams.mPreservesPitch);
+  return NS_OK;
 }
 
 TimeUnit AudioSink::GetEndTime() const {
@@ -381,8 +294,7 @@ void AudioSink::NotifyAudioNeeded() {
              "Not called from the owner's thread");
 
   while (mAudioQueue.GetSize() &&
-         AudioQueuedInRingBufferMS() <
-             static_cast<uint32_t>(mProcessedQueueThresholdMS)) {
+         AudioQueuedInRingBufferMS() < mProcessedQueueThresholdMS) {
     
     if (mAudioQueue.PeekFront()->Frames() >
         SampleToFrame(mProcessedSPSCQueue->AvailableWrite())) {

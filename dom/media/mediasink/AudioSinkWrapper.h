@@ -30,7 +30,7 @@ class AudioSinkWrapper : public MediaSink {
   class Creator {
    public:
     virtual ~Creator() = default;
-    virtual AudioSink* Create() = 0;
+    virtual AudioSink* Create(const media::TimeUnit& aStartTime) = 0;
   };
 
   
@@ -38,7 +38,9 @@ class AudioSinkWrapper : public MediaSink {
   class CreatorImpl : public Creator {
    public:
     explicit CreatorImpl(const Function& aFunc) : mFunction(aFunc) {}
-    AudioSink* Create() override { return mFunction(); }
+    AudioSink* Create(const media::TimeUnit& aStartTime) override {
+      return mFunction(aStartTime);
+    }
 
    private:
     Function mFunction;
@@ -47,8 +49,9 @@ class AudioSinkWrapper : public MediaSink {
  public:
   template <typename Function>
   AudioSinkWrapper(AbstractThread* aOwnerThread,
-                   MediaQueue<AudioData>& aAudioQueue, const Function& aFunc,
-                   double aVolume, double aPlaybackRate, bool aPreservesPitch)
+                   const MediaQueue<AudioData>& aAudioQueue,
+                   const Function& aFunc, double aVolume, double aPlaybackRate,
+                   bool aPreservesPitch)
       : mOwnerThread(aOwnerThread),
         mCreator(new CreatorImpl<Function>(aFunc)),
         mIsStarted(false),
@@ -61,10 +64,9 @@ class AudioSinkWrapper : public MediaSink {
 
   RefPtr<EndedPromise> OnEnded(TrackType aType) override;
   media::TimeUnit GetEndTime(TrackType aType) const override;
-  media::TimeUnit GetPosition(TimeStamp* aTimeStamp = nullptr) override;
+  media::TimeUnit GetPosition(TimeStamp* aTimeStamp = nullptr) const override;
   bool HasUnplayedFrames(TrackType aType) const override;
   media::TimeUnit UnplayedDuration(TrackType aType) const override;
-  void DropAudioPacketsIfNeeded(const media::TimeUnit& aMediaPosition);
 
   void SetVolume(double aVolume) override;
   void SetStreamName(const nsAString& aStreamName) override;
@@ -85,41 +87,13 @@ class AudioSinkWrapper : public MediaSink {
   void GetDebugInfo(dom::MediaSinkDebugInfo& aInfo) override;
 
  private:
-  
-  
-  enum class ClockSource {
-    
-    AudioStream,
-    
-    SystemClock,
-    
-    Paused
-  } mLastClockSource = ClockSource::Paused;
-  bool IsMuted() const;
-  void OnMuted(bool aMuted);
   virtual ~AudioSinkWrapper();
 
   void AssertOwnerThread() const {
     MOZ_ASSERT(mOwnerThread->IsCurrentThreadIn());
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  enum class AudioSinkStartPolicy { SYNC, ASYNC };
-  nsresult StartAudioSink(const media::TimeUnit& aStartTime,
-                          AudioSinkStartPolicy aPolicy);
-
-  
-  
-  
-  media::TimeUnit GetSystemClockPosition(TimeStamp aNow) const;
-  bool CheckIfEnded() const;
+  media::TimeUnit GetVideoPosition(TimeStamp aNow) const;
 
   void OnAudioEnded();
 
@@ -130,7 +104,6 @@ class AudioSinkWrapper : public MediaSink {
   UniquePtr<AudioSink> mAudioSink;
   
   RefPtr<EndedPromise> mEndedPromise;
-  MozPromiseHolder<EndedPromise> mEndedPromiseHolder;
 
   bool mIsStarted;
   PlaybackParams mParams;
@@ -140,7 +113,7 @@ class AudioSinkWrapper : public MediaSink {
 
   bool mAudioEnded;
   MozPromiseRequestHolder<EndedPromise> mAudioSinkEndedPromise;
-  MediaQueue<AudioData>& mAudioQueue;
+  const MediaQueue<AudioData>& mAudioQueue;
 };
 
 }  
