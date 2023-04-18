@@ -262,7 +262,6 @@ void RenderThread::RemoveRenderer(wr::WindowId aWindowId) {
   mRenderers.erase(aWindowId);
 
   if (mRenderers.empty()) {
-    ClearSingletonGL();
     mHandlingDeviceReset = false;
     mHandlingWebRenderError = false;
   }
@@ -862,7 +861,6 @@ void RenderThread::HandleDeviceReset(const char* aWhere, GLenum aReason) {
 
   mHandlingDeviceReset = aReason != LOCAL_GL_NO_ERROR;
   if (mHandlingDeviceReset) {
-    
     
     
     
