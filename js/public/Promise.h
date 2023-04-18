@@ -362,8 +362,15 @@ extern JS_PUBLIC_API bool GetPromiseIsHandled(JS::HandleObject promise);
 
 
 
-extern JS_PUBLIC_API void SetSettledPromiseIsHandled(JSContext* cx,
+extern JS_PUBLIC_API bool SetSettledPromiseIsHandled(JSContext* cx,
                                                      JS::HandleObject promise);
+
+
+
+
+
+[[nodiscard]] extern JS_PUBLIC_API bool SetAnyPromiseIsHandled(
+    JSContext* cx, JS::HandleObject promise);
 
 
 

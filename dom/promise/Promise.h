@@ -182,7 +182,12 @@ class Promise : public SupportsWeakPtr {
 
   
   
-  void SetSettledPromiseIsHandled();
+  bool SetSettledPromiseIsHandled();
+
+  
+  
+  
+  [[nodiscard]] bool SetAnyPromiseIsHandled();
 
   
 
