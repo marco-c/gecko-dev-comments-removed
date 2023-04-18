@@ -1648,9 +1648,6 @@ pub enum Appearance {
     ButtonArrowUp,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    ButtonFocus,
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Dualbutton,
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
