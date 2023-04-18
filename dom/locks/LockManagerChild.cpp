@@ -26,6 +26,8 @@ void LockManagerChild::NotifyBFCacheOnMainThread(nsPIDOMWindowInner* aInner,
   }
 
   uint32_t count = aInner->UpdateLockCount(aCreated);
+  
+  
   if (WindowGlobalChild* child = aInner->GetWindowGlobalChild()) {
     if (aCreated && count == 1) {
       
@@ -34,9 +36,6 @@ void LockManagerChild::NotifyBFCacheOnMainThread(nsPIDOMWindowInner* aInner,
       child->UnblockBFCacheFor(BFCacheStatus::ACTIVE_LOCK);
     }
   }
-  
-  
-  MOZ_ASSERT_IF(!aInner->GetWindowGlobalChild(), !aCreated);
 }
 
 class BFCacheNotifyLockRunnable final : public WorkerProxyToMainThreadRunnable {
