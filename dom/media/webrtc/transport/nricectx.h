@@ -343,10 +343,6 @@ class NrIceCtx {
   
   void UpdateNetworkState(bool online);
 
-  
-  
-  nsresult Finalize();
-
   void AccumulateStats(const NrIceStats& stats);
   NrIceStats Destroy();
 
