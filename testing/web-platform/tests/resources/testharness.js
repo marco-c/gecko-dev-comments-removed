@@ -541,7 +541,7 @@
 
 
 
-        if (global_scope.GLOBAL.isShadowRealm()) {
+        if (global_scope.GLOBAL && global_scope.GLOBAL.isShadowRealm()) {
             return new ShadowRealmTestEnvironment();
         }
 
