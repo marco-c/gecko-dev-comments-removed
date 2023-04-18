@@ -189,7 +189,7 @@ extern const nsNavigationDirection DirectionFromKeyCodeTable[2][6];
 struct PendingPopup {
   PendingPopup(nsIContent* aPopup, mozilla::dom::Event* aEvent);
 
-  const nsCOMPtr<nsIContent> mPopup;
+  const RefPtr<nsIContent> mPopup;
   const RefPtr<mozilla::dom::Event> mEvent;
 
   
@@ -521,9 +521,10 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  bool ShowPopupAsNativeMenu(nsIContent* aPopup, int32_t aXPos, int32_t aYPos,
-                             bool aIsContextMenu,
-                             mozilla::dom::Event* aTriggerEvent);
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ShowPopupAsNativeMenu(
+      nsIContent* aPopup, int32_t aXPos, int32_t aYPos, bool aIsContextMenu,
+      mozilla::dom::Event* aTriggerEvent);
 
   
 
@@ -786,8 +787,10 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  void BeginShowingPopup(const PendingPopup& aPendingPopup, bool aIsContextMenu,
-                         bool aSelectFirstItem);
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void BeginShowingPopup(
+      const PendingPopup& aPendingPopup, bool aIsContextMenu,
+      bool aSelectFirstItem);
 
   
 
@@ -842,8 +845,8 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
 
 
-  nsEventStatus FirePopupShowingEvent(const PendingPopup& aPendingPopup,
-                                      nsPresContext* aPresContext);
+  MOZ_CAN_RUN_SCRIPT nsEventStatus FirePopupShowingEvent(
+      const PendingPopup& aPendingPopup, nsPresContext* aPresContext);
 
   
 
