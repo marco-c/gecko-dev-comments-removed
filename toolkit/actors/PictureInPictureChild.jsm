@@ -1630,7 +1630,7 @@ class PictureInPictureChild extends JSWindowActorChild {
           return;
         }
 
-        if (video.muted) {
+        if (this.constructor.videoIsMuted(video)) {
           this.sendAsyncMessage("PictureInPicture:Muting");
         } else {
           this.sendAsyncMessage("PictureInPicture:Unmuting");
@@ -2380,7 +2380,9 @@ class PictureInPictureChildVideoWrapper {
     
     
     
-    this.#siteWrapper = new sandbox.PictureInPictureVideoWrapper().wrappedJSObject;
+    this.#siteWrapper = new sandbox.PictureInPictureVideoWrapper(
+      video
+    ).wrappedJSObject;
 
     return sandbox;
   }
