@@ -67,6 +67,10 @@ class RemoteWorkerControllerParent final : public PRemoteWorkerControllerParent,
 
   void ErrorReceived(const ErrorValue& aValue) override;
 
+  void LockNotified(bool aCreated) final {
+    
+  }
+
   void Terminated() override;
 
   RefPtr<RemoteWorkerController> mRemoteWorkerController;

@@ -107,6 +107,10 @@ class ServiceWorkerPrivateImpl final : public ServiceWorkerPrivate::Inner,
 
   void ErrorReceived(const ErrorValue& aError) override;
 
+  void LockNotified(bool aCreated) final {
+    
+  }
+
   void Terminated() override;
 
   

@@ -115,6 +115,10 @@ void SharedWorkerManager::AddActor(SharedWorkerParent* aParent) {
 
   mActors.AppendElement(aParent);
 
+  if (mLockCount) {
+    Unused << aParent->SendNotifyLock(true);
+  }
+
   
   
   
@@ -228,6 +232,22 @@ void SharedWorkerManager::ErrorReceived(const ErrorValue& aValue) {
     Unused << actor->SendError(aValue);
   }
 }
+
+void SharedWorkerManager::LockNotified(bool aCreated) {
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
+  MOZ_ASSERT_IF(!aCreated, mLockCount > 0);
+
+  mLockCount += aCreated ? 1 : -1;
+
+  
+  
+  
+  if ((aCreated && mLockCount == 1) || !mLockCount) {
+    for (SharedWorkerParent* actor : mActors) {
+      Unused << actor->SendNotifyLock(aCreated);
+    }
+  }
+};
 
 void SharedWorkerManager::Terminated() {
   ::mozilla::ipc::AssertIsOnBackgroundThread();
