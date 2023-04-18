@@ -1482,6 +1482,42 @@ GeckoDriver.prototype.findElements = async function(cmd) {
 
 
 
+
+
+
+
+GeckoDriver.prototype.getShadowRoot = async function(cmd) {
+  
+  assert.content(this.context);
+  assert.open(this.getBrowsingContext());
+  await this._handleUserPrompts();
+
+  let id = assert.string(
+    cmd.parameters.id,
+    pprint`Expected "id" to be a string, got ${cmd.parameters.id}`
+  );
+  let webEl = WebElement.fromUUID(id, this.context);
+
+  return this.getActor().getShadowRoot(webEl);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 GeckoDriver.prototype.getActiveElement = async function() {
   assert.content(this.context);
   assert.open(this.getBrowsingContext());
@@ -3015,6 +3051,7 @@ GeckoDriver.prototype.commands = {
   "WebDriver:GetElementTagName": GeckoDriver.prototype.getElementTagName,
   "WebDriver:GetElementText": GeckoDriver.prototype.getElementText,
   "WebDriver:GetPageSource": GeckoDriver.prototype.getPageSource,
+  "WebDriver:GetShadowRoot": GeckoDriver.prototype.getShadowRoot,
   "WebDriver:GetTimeouts": GeckoDriver.prototype.getTimeouts,
   "WebDriver:GetTitle": GeckoDriver.prototype.getTitle,
   "WebDriver:GetWindowHandle": GeckoDriver.prototype.getWindowHandle,

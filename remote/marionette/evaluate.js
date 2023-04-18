@@ -334,7 +334,7 @@ evaluate.toJSON = function(obj, seenEls) {
     return obj;
 
     
-  } else if (element.isElement(obj)) {
+  } else if (element.isElement(obj) || element.isShadowRoot(obj)) {
     
     if (seenEls instanceof element.ReferenceStore) {
       throw new TypeError(`ReferenceStore can't be used with Element`);

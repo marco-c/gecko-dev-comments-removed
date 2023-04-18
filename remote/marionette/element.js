@@ -7,6 +7,7 @@
 const EXPORTED_SYMBOLS = [
   "ChromeWebElement",
   "ContentWebElement",
+  "ContentShadowRoot",
   "ContentWebFrame",
   "ContentWebWindow",
   "element",
@@ -1272,6 +1273,37 @@ element.isElement = function(node) {
 
 
 
+element.getShadowRoot = function(node) {
+  const shadowRoot = node.openOrClosedShadowRoot;
+  if (!shadowRoot) {
+    throw new error.NoSuchShadowRootError();
+  }
+  return shadowRoot;
+};
+
+
+
+
+
+
+
+
+element.isShadowRoot = function(node) {
+  return (
+    node !== null &&
+    typeof node == "object" &&
+    node.containingShadowRoot == node
+  );
+};
+
+
+
+
+
+
+
+
+
 
 element.isDOMElement = function(node) {
   return (
@@ -1456,7 +1488,12 @@ class WebElement {
   static from(node) {
     const uuid = WebElement.generateUUID();
 
-    if (element.isElement(node)) {
+    if (element.isShadowRoot(node) && !element.isInXULDocument(node)) {
+      
+      
+      
+      return new ContentShadowRoot(uuid);
+    } else if (element.isElement(node)) {
       if (element.isInXULDocument(node)) {
         
         return new ChromeWebElement(uuid);
@@ -1499,6 +1536,9 @@ class WebElement {
 
     for (let key of keys) {
       switch (key) {
+        case ContentShadowRoot.Identifier:
+          return ContentShadowRoot.fromJSON(json);
+
         case ContentWebElement.Identifier:
           return ContentWebElement.fromJSON(json);
 
@@ -1573,6 +1613,7 @@ class WebElement {
     }
 
     if (
+      ContentShadowRoot.Identifier in obj ||
       ContentWebElement.Identifier in obj ||
       ContentWebWindow.Identifier in obj ||
       ContentWebFrame.Identifier in obj ||
@@ -1620,6 +1661,31 @@ class ContentWebElement extends WebElement {
 }
 ContentWebElement.Identifier = "element-6066-11e4-a52e-4f735466cecf";
 this.ContentWebElement = ContentWebElement;
+
+
+
+
+
+class ContentShadowRoot extends WebElement {
+  toJSON() {
+    return { [ContentShadowRoot.Identifier]: this.uuid };
+  }
+
+  static fromJSON(json) {
+    const { Identifier } = ContentShadowRoot;
+
+    if (!(Identifier in json)) {
+      throw new error.InvalidArgumentError(
+        pprint`Expected shadow root reference, got: ${json}`
+      );
+    }
+
+    let uuid = json[Identifier];
+    return new ContentShadowRoot(uuid);
+  }
+}
+ContentShadowRoot.Identifier = "shadow-6066-11e4-a52e-4f735466cecf";
+this.ContentShadowRoot = ContentShadowRoot;
 
 
 

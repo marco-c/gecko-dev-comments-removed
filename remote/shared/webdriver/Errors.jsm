@@ -15,6 +15,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 const ERRORS = new Set([
+  "DetachedShadowRootError",
   "ElementClickInterceptedError",
   "ElementNotAccessibleError",
   "ElementNotInteractableError",
@@ -29,6 +30,7 @@ const ERRORS = new Set([
   "NoSuchAlertError",
   "NoSuchElementError",
   "NoSuchFrameError",
+  "NoSuchShadowRootError",
   "NoSuchWindowError",
   "ScriptTimeoutError",
   "SessionNotCreatedError",
@@ -398,6 +400,26 @@ class NoSuchElementError extends WebDriverError {
 
 
 
+class NoSuchShadowRootError extends WebDriverError {
+  constructor(message) {
+    super(message);
+    this.status = "no such shadow root";
+  }
+}
+
+
+
+
+class DetachedShadowRootError extends WebDriverError {
+  constructor(message) {
+    super(message);
+    this.status = "detached shadow root";
+  }
+}
+
+
+
+
 
 class NoSuchFrameError extends WebDriverError {
   constructor(message) {
@@ -502,6 +524,7 @@ class UnsupportedOperationError extends WebDriverError {
 }
 
 const STATUSES = new Map([
+  ["detached shadow root", DetachedShadowRootError],
   ["element click intercepted", ElementClickInterceptedError],
   ["element not accessible", ElementNotAccessibleError],
   ["element not interactable", ElementNotInteractableError],
@@ -516,6 +539,7 @@ const STATUSES = new Map([
   ["no such alert", NoSuchAlertError],
   ["no such element", NoSuchElementError],
   ["no such frame", NoSuchFrameError],
+  ["no such shadow root", NoSuchShadowRootError],
   ["no such window", NoSuchWindowError],
   ["script timeout", ScriptTimeoutError],
   ["session not created", SessionNotCreatedError],
