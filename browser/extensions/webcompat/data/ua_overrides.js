@@ -717,16 +717,16 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://*.commerzbank.de/*", 
         "*://*.edf.com/*", 
         "*://*.wordpress.org/*", 
+        "*://as.eservice.asus.com/*", 
         "*://bethesda.net/*", 
         "*://cdn-vzn.yottaa.net/*", 
-        "*://citoyens.telerecours.fr/*", 
-        "*://www.connexus.com/*", 
         "*://dsae.co.za/*", 
-        "*://genehmigung.ahs-vwa.at/*", 
+        "*://fpt.dfp.microsoft.com/*", 
         "*://moje.pzu.pl/*", 
         "*://mon.allianzbanque.fr/*", 
         "*://online.citi.com/*", 
         "*://simperium.com/*", 
+        "*://ubank.com.au/*", 
         "*://wifi.sncf/*", 
         "*://www.accringtonobserver.co.uk/*", 
         "*://www.bathchronicle.co.uk/*", 
@@ -785,6 +785,7 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://www.irishmirror.ie/*", 
         "*://www.kentlive.news/*", 
         "*://www.lancs.live/*", 
+        "*://www.learningants.com/*", 
         "*://www.leeds-live.co.uk/*", 
         "*://www.leicestermercury.co.uk/*", 
         "*://www.lincolnshirelive.co.uk/*", 
@@ -794,12 +795,10 @@ const AVAILABLE_UA_OVERRIDES = [
         "*://www.macclesfield-express.co.uk/*", 
         "*://www.macclesfield-live.co.uk/*", 
         "*://www.manchestereveningnews.co.uk/*", 
-        "*://www.mirror.co.uk/*", 
         "*://www.mylondon.news/*", 
         "*://www.northantslive.news/*", 
         "*://www.nottinghampost.com/*", 
         "*://www.ok.co.uk/*", 
-        "*://www.petalmail.com/*", 
         "*://www.plymouthherald.co.uk/*", 
         "*://www.rossendalefreepress.co.uk/*", 
         "*://www.rsvplive.ie/*", 
@@ -820,38 +819,6 @@ const AVAILABLE_UA_OVERRIDES = [
       ],
       uaTransformer: originalUA => {
         return UAHelpers.capVersionTo99(originalUA);
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-    id: "bug1751232",
-    platform: "android",
-    domain: "Sites with desktop layout for Android 12",
-    bug: "1751232",
-    config: {
-      matches: [
-        "*://*.dw.com/*",
-        "*://*.abc10.com/*",
-        "*://*.wnep.com/*",
-        "*://*.dn.se/*",
-        "*://*.dailymail.co.uk/*",
-        "*://*.kohls.com/*",
-        "*://*.expressen.se/*",
-        "*://*.walmart.com/*",
-      ],
-      uaTransformer: originalUA => {
-        if (!originalUA.includes("Android 12;")) {
-          return originalUA;
-        }
-
-        return originalUA.replace("Android 12;", "Android 12.0;");
       },
     },
   },
@@ -926,6 +893,25 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://www.otsuka.co.jp/fib/*"],
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA("97.0.4692.9");
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1771200",
+    platform: "android",
+    domain: "animalplanet.com",
+    bug: "1771200",
+    config: {
+      matches: ["*://*.animalplanet.com/video/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },
