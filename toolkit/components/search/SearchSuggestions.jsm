@@ -21,31 +21,10 @@ ChromeUtils.defineModuleGetter(
 
 
 
-function SuggestAutoComplete() {
-  this._init();
-}
-SuggestAutoComplete.prototype = {
-  _init() {
-    this._suggestionController = new lazy.SearchSuggestionController(obj =>
-      this.onResultsReturned(obj)
-    );
-    this._suggestionController.maxLocalResults = this._historyLimit;
-  },
-
-  
-
-
-
-
-  _listener: null,
-
-  
-
-
-
-
-
-  _historyLimit: 7,
+class SuggestAutoComplete {
+  constructor() {
+    this.#init();
+  }
 
   
 
@@ -74,7 +53,7 @@ SuggestAutoComplete.prototype = {
 
     
     this.onResultsReady(results.term, finalResults, results.formHistoryResult);
-  },
+  }
 
   
 
@@ -88,7 +67,7 @@ SuggestAutoComplete.prototype = {
 
 
   onResultsReady(searchString, results, formHistoryResult) {
-    if (this._listener) {
+    if (this.#listener) {
       let result = new FormAutoCompleteResult(
         searchString,
         Ci.nsIAutoCompleteResult.RESULT_SUCCESS,
@@ -106,12 +85,12 @@ SuggestAutoComplete.prototype = {
         formHistoryResult
       );
 
-      this._listener.onSearchResult(this, result);
+      this.#listener.onSearchResult(this, result);
 
       
-      this._listener = null;
+      this.#listener = null;
     }
-  },
+  }
 
   
 
@@ -133,7 +112,7 @@ SuggestAutoComplete.prototype = {
   startSearch(searchString, searchParam, previousResult, listener) {
     
     if (!previousResult) {
-      this._formHistoryResult = null;
+      this.#formHistoryResult = null;
     }
 
     var formHistorySearchParam = searchParam.split("|")[0];
@@ -150,7 +129,7 @@ SuggestAutoComplete.prototype = {
     
     
     if (Services.search.isInitialized) {
-      this._triggerSearch(
+      this.#triggerSearch(
         searchString,
         formHistorySearchParam,
         listener,
@@ -162,7 +141,7 @@ SuggestAutoComplete.prototype = {
     Services.search
       .init()
       .then(() => {
-        this._triggerSearch(
+        this.#triggerSearch(
           searchString,
           formHistorySearchParam,
           listener,
@@ -174,59 +153,80 @@ SuggestAutoComplete.prototype = {
           "Could not initialize search service, bailing out: " + result
         )
       );
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  _triggerSearch(searchString, searchParam, listener, privacyMode) {
-    this._listener = listener;
-    this._suggestionController.fetch(
-      searchString,
-      privacyMode,
-      Services.search.defaultEngine
-    );
-  },
+  }
 
   
 
 
 
   stopSearch() {
-    this._suggestionController.stop();
-  },
+    this.#suggestionController.stop();
+  }
+
+  #suggestionController;
+  #formHistoryResult;
 
   
-  QueryInterface: ChromeUtils.generateQI([
+
+
+
+
+
+
+
+  #historyLimit = 7;
+
+  
+
+
+
+
+
+  #listener = null;
+
+  #init() {
+    this.#suggestionController = new lazy.SearchSuggestionController(obj =>
+      this.onResultsReturned(obj)
+    );
+    this.#suggestionController.maxLocalResults = this.#historyLimit;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  #triggerSearch(searchString, searchParam, listener, privacyMode) {
+    this.#listener = listener;
+    this.#suggestionController.fetch(
+      searchString,
+      privacyMode,
+      Services.search.defaultEngine
+    );
+  }
+
+  QueryInterface = ChromeUtils.generateQI([
     "nsIAutoCompleteSearch",
     "nsIAutoCompleteObserver",
-  ]),
-};
-
-
-
-
-
-
-function SearchSuggestAutoComplete() {
-  
-  
-  this._init();
+  ]);
 }
-SearchSuggestAutoComplete.prototype = {
-  classID: Components.ID("{aa892eb4-ffbf-477d-9f9a-06c995ae9f27}"),
-  __proto__: SuggestAutoComplete.prototype,
-  serviceURL: "",
-};
+
+
+
+
+
+
+class SearchSuggestAutoComplete extends SuggestAutoComplete {
+  classID = Components.ID("{aa892eb4-ffbf-477d-9f9a-06c995ae9f27}");
+  serviceURL = "";
+}
 
 var EXPORTED_SYMBOLS = ["SearchSuggestAutoComplete"];

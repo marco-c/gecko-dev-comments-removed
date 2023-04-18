@@ -61,9 +61,42 @@ class SearchSuggestionEntry {
 
 
   constructor(value, { matchPrefix, tail } = {}) {
-    this._value = value;
-    this._matchPrefix = matchPrefix;
-    this._tail = tail;
+    this.#value = value;
+    this.#matchPrefix = matchPrefix;
+    this.#tail = tail;
+  }
+
+  get value() {
+    return this.#value;
+  }
+
+  get matchPrefix() {
+    return this.#matchPrefix;
+  }
+
+  get tail() {
+    return this.#tail;
+  }
+
+  get tailOffsetIndex() {
+    if (!this.#tail) {
+      return -1;
+    }
+
+    let offsetIndex = this.#value.lastIndexOf(this.#tail);
+    if (offsetIndex + this.#tail.length < this.#value.length) {
+      
+      
+      let lastWordIndex = this.#value.lastIndexOf(" ");
+      if (this.#tail.startsWith(this.#value.substring(lastWordIndex))) {
+        offsetIndex = lastWordIndex;
+      } else {
+        
+        offsetIndex = -1;
+      }
+    }
+
+    return offsetIndex;
   }
 
   
@@ -76,38 +109,9 @@ class SearchSuggestionEntry {
     return otherEntry.value == this.value;
   }
 
-  get value() {
-    return this._value;
-  }
-
-  get matchPrefix() {
-    return this._matchPrefix;
-  }
-
-  get tail() {
-    return this._tail;
-  }
-
-  get tailOffsetIndex() {
-    if (!this._tail) {
-      return -1;
-    }
-
-    let offsetIndex = this._value.lastIndexOf(this._tail);
-    if (offsetIndex + this._tail.length < this._value.length) {
-      
-      
-      let lastWordIndex = this._value.lastIndexOf(" ");
-      if (this._tail.startsWith(this._value.substring(lastWordIndex))) {
-        offsetIndex = lastWordIndex;
-      } else {
-        
-        offsetIndex = -1;
-      }
-    }
-
-    return offsetIndex;
-  }
+  #value;
+  #matchPrefix;
+  #tail;
 }
 
 
@@ -128,58 +132,91 @@ var gFirstPartyDomains = new Map();
 
 
 
-function SearchSuggestionController(callback = null) {
-  this._callback = callback;
-}
-
-SearchSuggestionController.prototype = {
+class SearchSuggestionController {
   
 
 
 
-  maxLocalResults: 5,
-
-  
-
-
-
-
-  maxRemoteResults: 10,
-
-  
-
-
-  formHistoryParam: DEFAULT_FORM_HISTORY_PARAM,
-
-  
-  
-
-
-
-  _formHistoryResult: null,
+  static SEARCH_HISTORY_MAX_VALUE_LENGTH = 255;
 
   
 
 
 
-  _remoteResultTimer: null,
+  static REMOTE_TIMEOUT_DEFAULT = REMOTE_TIMEOUT_DEFAULT;
 
   
 
 
-  _deferredRemoteResult: null,
+
+
+
+  static engineOffersSuggestions(engine) {
+    return engine.supportsResponseType(lazy.SearchUtils.URL_TYPE.SUGGEST_JSON);
+  }
 
   
 
 
-  _callback: null,
+
+
+
+  constructor(callback = null) {
+    this.#callback = callback;
+  }
 
   
 
 
-  _request: null,
+
+
+
+  maxLocalResults = 5;
 
   
+
+
+
+
+
+
+  maxRemoteResults = 10;
+
+  
+
+
+
+
+  formHistoryParam = DEFAULT_FORM_HISTORY_PARAM;
+
+  
+
+
+
+
+
+
+  formHistoryResult = null;
+
+  
+
+
+
+
+
+  remoteResultTimer = null;
+
+  
+
+
+
+
+  deferredRemoteResult = null;
+
+  
+
+
+  request = null;
 
   
 
@@ -187,9 +224,10 @@ SearchSuggestionController.prototype = {
 
   get firstPartyDomains() {
     return gFirstPartyDomains;
-  },
+  }
 
   
+
 
 
 
@@ -219,6 +257,7 @@ SearchSuggestionController.prototype = {
     
     
     
+    
 
     this.stop();
 
@@ -242,7 +281,7 @@ SearchSuggestionController.prototype = {
 
     
     let promises = [];
-    this._searchString = searchTerm;
+    this.#searchString = searchTerm;
 
     
     if (
@@ -252,19 +291,19 @@ SearchSuggestionController.prototype = {
       this.maxRemoteResults &&
       engine.supportsResponseType(lazy.SearchUtils.URL_TYPE.SUGGEST_JSON)
     ) {
-      this._deferredRemoteResult = this._fetchRemote(
+      this.#deferredRemoteResult = this.#fetchRemote(
         searchTerm,
         engine,
         privateMode,
         userContextId
       );
-      promises.push(this._deferredRemoteResult.promise);
+      promises.push(this.#deferredRemoteResult.promise);
     }
 
     
     if (this.maxLocalResults) {
       promises.push(
-        this._fetchFormHistory(
+        this.#fetchFormHistory(
           searchTerm,
           restrictToEngine ? engine.name : null
         )
@@ -280,10 +319,10 @@ SearchSuggestionController.prototype = {
       return null;
     }
     return Promise.all(promises).then(
-      results => this._dedupeAndReturnResults(results, dedupeRemoteAndLocal),
+      results => this.#dedupeAndReturnResults(results, dedupeRemoteAndLocal),
       handleRejection
     );
-  },
+  }
 
   
 
@@ -293,27 +332,33 @@ SearchSuggestionController.prototype = {
 
 
   stop() {
-    if (this._request) {
-      this._request.abort();
+    if (this.#request) {
+      this.#request.abort();
     }
-    this._reset();
-  },
+    this.#reset();
+  }
 
-  
+  #callback;
+  #searchString;
+  #deferredRemoteResult;
+  #request;
+  #formHistoryResult;
+  #remoteResultTimer;
+  #requestStopwatchToken;
 
-  _fetchFormHistory(searchTerm, source) {
+  #fetchFormHistory(searchTerm, source) {
     return new Promise(resolve => {
       let acSearchObserver = {
         
         onSearchResult: (search, result) => {
-          this._formHistoryResult = result;
+          this.#formHistoryResult = result;
 
-          if (this._request) {
-            this._remoteResultTimer = Cc["@mozilla.org/timer;1"].createInstance(
+          if (this.#request) {
+            this.#remoteResultTimer = Cc["@mozilla.org/timer;1"].createInstance(
               Ci.nsITimer
             );
-            this._remoteResultTimer.initWithCallback(
-              this._onRemoteTimeout.bind(this),
+            this.#remoteResultTimer.initWithCallback(
+              this.#onRemoteTimeout.bind(this),
               this.remoteTimeout,
               Ci.nsITimer.TYPE_ONE_SHOT
             );
@@ -322,9 +367,9 @@ SearchSuggestionController.prototype = {
           switch (result.searchResult) {
             case Ci.nsIAutoCompleteResult.RESULT_SUCCESS:
             case Ci.nsIAutoCompleteResult.RESULT_NOMATCH:
-              if (result.searchString !== this._searchString) {
+              if (result.searchString !== this.#searchString) {
                 resolve(
-                  "Unexpected response, this._searchString does not match form history response"
+                  "Unexpected response, this.#searchString does not match form history response"
                 );
                 return;
               }
@@ -359,12 +404,12 @@ SearchSuggestionController.prototype = {
       formHistory.startSearch(
         searchTerm,
         params,
-        this._formHistoryResult,
+        this.#formHistoryResult,
         acSearchObserver,
         options
       );
     });
-  },
+  }
 
   
 
@@ -375,27 +420,27 @@ SearchSuggestionController.prototype = {
 
 
 
-  _reportTelemetryForEngine(engineId, privateMode, aborted = false) {
-    this._reportBandwidthForEngine(engineId, privateMode);
+  #reportTelemetryForEngine(engineId, privateMode, aborted = false) {
+    this.#reportBandwidthForEngine(engineId, privateMode);
 
     
-    if (this._requestStopwatchToken) {
+    if (this.#requestStopwatchToken) {
       if (aborted) {
         TelemetryStopwatch.cancelKeyed(
           SEARCH_TELEMETRY_LATENCY,
           engineId,
-          this._requestStopwatchToken
+          this.#requestStopwatchToken
         );
       } else {
         TelemetryStopwatch.finishKeyed(
           SEARCH_TELEMETRY_LATENCY,
           engineId,
-          this._requestStopwatchToken
+          this.#requestStopwatchToken
         );
       }
-      this._requestStopwatchToken = null;
+      this.#requestStopwatchToken = null;
     }
-  },
+  }
 
   
 
@@ -404,12 +449,13 @@ SearchSuggestionController.prototype = {
 
 
 
-  _reportBandwidthForEngine(engineId, privateMode) {
-    if (!this._request || !this._request.channel) {
+
+  #reportBandwidthForEngine(engineId, privateMode) {
+    if (!this.#request || !this.#request.channel) {
       return;
     }
 
-    let channel = ChannelWrapper.get(this._request.channel);
+    let channel = ChannelWrapper.get(this.#request.channel);
     let bytesTransferred = channel.requestSize + channel.responseSize;
     if (bytesTransferred == 0) {
       return;
@@ -425,7 +471,7 @@ SearchSuggestionController.prototype = {
       telemetryKey,
       bytesTransferred
     );
-  },
+  }
 
   
 
@@ -442,17 +488,17 @@ SearchSuggestionController.prototype = {
 
 
 
-  _fetchRemote(searchTerm, engine, privateMode, userContextId) {
+  #fetchRemote(searchTerm, engine, privateMode, userContextId) {
     let deferredResponse = lazy.PromiseUtils.defer();
-    this._request = new XMLHttpRequest();
+    this.#request = new XMLHttpRequest();
     let submission = engine.getSubmission(
       searchTerm,
       lazy.SearchUtils.URL_TYPE.SUGGEST_JSON
     );
     let method = submission.postData ? "POST" : "GET";
-    this._request.open(method, submission.uri.spec, true);
+    this.#request.open(method, submission.uri.spec, true);
     
-    this._request.channel.loadFlags =
+    this.#request.channel.loadFlags =
       Ci.nsIChannel.LOAD_ANONYMOUS | Ci.nsIChannel.INHIBIT_PERSISTENT_CACHING;
     
     
@@ -469,57 +515,57 @@ SearchSuggestionController.prototype = {
     }
     let firstPartyDomain = gFirstPartyDomains.get(engine.name);
 
-    this._request.setOriginAttributes({
+    this.#request.setOriginAttributes({
       userContextId,
       privateBrowsingId: privateMode ? 1 : 0,
       firstPartyDomain,
     });
 
-    this._request.mozBackgroundRequest = true; 
+    this.#request.mozBackgroundRequest = true; // suppress dialogs and fail silently
 
     let engineId = engine.identifier || "other";
 
-    this._request.addEventListener(
+    this.#request.addEventListener(
       "load",
-      this._onRemoteLoaded.bind(this, deferredResponse, engineId, privateMode)
+      this.#onRemoteLoaded.bind(this, deferredResponse, engineId, privateMode)
     );
-    this._request.addEventListener("error", evt => {
-      this._reportTelemetryForEngine(engineId, privateMode);
+    this.#request.addEventListener("error", evt => {
+      this.#reportTelemetryForEngine(engineId, privateMode);
       deferredResponse.resolve("HTTP error");
     });
     
     
-    this._request.addEventListener("abort", evt => {
-      this._reportTelemetryForEngine(engineId, privateMode, true);
+    this.#request.addEventListener("abort", evt => {
+      this.#reportTelemetryForEngine(engineId, privateMode, true);
       deferredResponse.reject("HTTP request aborted");
     });
 
     if (submission.postData) {
-      this._request.sendInputStream(submission.postData);
+      this.#request.sendInputStream(submission.postData);
     } else {
-      this._request.send();
+      this.#request.send();
     }
 
     
     
     
     
-    if (this._requestStopwatchToken) {
+    if (this.#requestStopwatchToken) {
       TelemetryStopwatch.cancelKeyed(
         SEARCH_TELEMETRY_LATENCY,
-        this._requestStopwatchToken.engineId,
-        this._requestStopwatchToken
+        this.#requestStopwatchToken.engineId,
+        this.#requestStopwatchToken
       );
     }
-    this._requestStopwatchToken = { engineId };
+    this.#requestStopwatchToken = { engineId };
     TelemetryStopwatch.startKeyed(
       SEARCH_TELEMETRY_LATENCY,
       engineId,
-      this._requestStopwatchToken
+      this.#requestStopwatchToken
     );
 
     return deferredResponse;
-  },
+  }
 
   
 
@@ -533,10 +579,10 @@ SearchSuggestionController.prototype = {
 
 
 
-  _onRemoteLoaded(deferredResponse, engineId, privateMode) {
-    this._reportTelemetryForEngine(engineId, privateMode);
+  #onRemoteLoaded(deferredResponse, engineId, privateMode) {
+    this.#reportTelemetryForEngine(engineId, privateMode);
 
-    if (!this._request) {
+    if (!this.#request) {
       deferredResponse.resolve(
         "Got HTTP response after the request was cancelled"
       );
@@ -545,14 +591,14 @@ SearchSuggestionController.prototype = {
 
     let status, serverResults;
     try {
-      status = this._request.status;
+      status = this.#request.status;
     } catch (e) {
       
       deferredResponse.resolve("Unknown HTTP status: " + e);
       return;
     }
 
-    if (status != HTTP_OK || this._request.responseText == "") {
+    if (status != HTTP_OK || this.#request.responseText == "") {
       deferredResponse.resolve(
         "Non-200 status or empty HTTP response: " + status
       );
@@ -560,7 +606,7 @@ SearchSuggestionController.prototype = {
     }
 
     try {
-      serverResults = JSON.parse(this._request.responseText);
+      serverResults = JSON.parse(this.#request.responseText);
     } catch (ex) {
       deferredResponse.resolve("Failed to parse suggestion JSON: " + ex);
       return;
@@ -570,13 +616,13 @@ SearchSuggestionController.prototype = {
       if (
         !Array.isArray(serverResults) ||
         !serverResults[0] ||
-        (this._searchString.localeCompare(serverResults[0], undefined, {
+        (this.#searchString.localeCompare(serverResults[0], undefined, {
           sensitivity: "base",
         }) &&
           
           
           
-          this._searchString.localeCompare(
+          this.#searchString.localeCompare(
             decodeURIComponent(
               JSON.parse('"' + serverResults[0].replace(/\"/g, '\\"') + '"')
             ),
@@ -588,7 +634,7 @@ SearchSuggestionController.prototype = {
       ) {
         
         deferredResponse.resolve(
-          "Unexpected response, this._searchString does not match remote response"
+          "Unexpected response, this.#searchString does not match remote response"
         );
         return;
       }
@@ -603,25 +649,26 @@ SearchSuggestionController.prototype = {
     
     let results = serverResults.slice(1) || [];
     deferredResponse.resolve({ result: results });
-  },
+  }
 
   
 
 
-  _onRemoteTimeout() {
-    this._request = null;
+
+  #onRemoteTimeout() {
+    this.#request = null;
 
     
     
-    this._remoteResultTimer = null;
+    this.#remoteResultTimer = null;
 
     
     
-    if (this._deferredRemoteResult) {
-      this._deferredRemoteResult.resolve("HTTP Timeout");
-      this._deferredRemoteResult = null;
+    if (this.#deferredRemoteResult) {
+      this.#deferredRemoteResult.resolve("HTTP Timeout");
+      this.#deferredRemoteResult = null;
     }
-  },
+  }
 
   
 
@@ -629,8 +676,9 @@ SearchSuggestionController.prototype = {
 
 
 
-  _dedupeAndReturnResults(suggestResults, dedupeRemoteAndLocal) {
-    if (this._searchString === null) {
+
+  #dedupeAndReturnResults(suggestResults, dedupeRemoteAndLocal) {
+    if (this.#searchString === null) {
       
       
       
@@ -638,7 +686,7 @@ SearchSuggestionController.prototype = {
     }
 
     let results = {
-      term: this._searchString,
+      term: this.#searchString,
       remote: [],
       local: [],
       formHistoryResult: null,
@@ -661,11 +709,11 @@ SearchSuggestionController.prototype = {
         }
       } else if (resultData.result) {
         
-        let richSuggestionData = this._getRichSuggestionData(resultData.result);
+        let richSuggestionData = this.#getRichSuggestionData(resultData.result);
         let fullTextSuggestions = resultData.result[0];
         for (let i = 0; i < fullTextSuggestions.length; ++i) {
           results.remote.push(
-            this._newSearchSuggestionEntry(
+            this.#newSearchSuggestionEntry(
               fullTextSuggestions[i],
               richSuggestionData?.[i]
             )
@@ -699,13 +747,13 @@ SearchSuggestionController.prototype = {
     }
     results.remote = results.remote.slice(0, maxRemoteCount);
 
-    if (this._callback) {
-      this._callback(results);
+    if (this.#callback) {
+      this.#callback(results);
     }
-    this._reset();
+    this.#reset();
 
     return results;
-  },
+  }
 
   
 
@@ -715,7 +763,7 @@ SearchSuggestionController.prototype = {
 
 
 
-  _getRichSuggestionData(remoteResultData) {
+  #getRichSuggestionData(remoteResultData) {
     if (!remoteResultData || !Array.isArray(remoteResultData)) {
       return undefined;
     }
@@ -735,7 +783,7 @@ SearchSuggestionController.prototype = {
       }
     }
     return undefined;
-  },
+  }
 
   
 
@@ -747,7 +795,7 @@ SearchSuggestionController.prototype = {
 
 
 
-  _newSearchSuggestionEntry(suggestion, richSuggestionData) {
+  #newSearchSuggestionEntry(suggestion, richSuggestionData) {
     if (richSuggestionData) {
       
       return new SearchSuggestionEntry(suggestion, {
@@ -757,35 +805,18 @@ SearchSuggestionController.prototype = {
     }
     
     return new SearchSuggestionEntry(suggestion);
-  },
+  }
 
-  _reset() {
-    this._request = null;
-    if (this._remoteResultTimer) {
-      this._remoteResultTimer.cancel();
-      this._remoteResultTimer = null;
+  #reset() {
+    this.#request = null;
+    if (this.#remoteResultTimer) {
+      this.#remoteResultTimer.cancel();
+      this.#remoteResultTimer = null;
     }
-    this._deferredRemoteResult = null;
-    this._searchString = null;
-  },
-};
-
-
-
-
-
-
-
-SearchSuggestionController.engineOffersSuggestions = function(engine) {
-  return engine.supportsResponseType(lazy.SearchUtils.URL_TYPE.SUGGEST_JSON);
-};
-
-
-
-
-SearchSuggestionController.SEARCH_HISTORY_MAX_VALUE_LENGTH = 255;
-
-SearchSuggestionController.REMOTE_TIMEOUT_DEFAULT = REMOTE_TIMEOUT_DEFAULT;
+    this.#deferredRemoteResult = null;
+    this.#searchString = null;
+  }
+}
 
 
 
