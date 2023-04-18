@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
-
-
-
-
+<!--
+     Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <html><head>
   <meta charset="utf-8">
   <title>Reference: Fragmentation edge cases</title>
@@ -21,7 +21,7 @@ body { overflow:hidden; }
       -ms-column-fill: auto;
   -webkit-column-fill: auto;
           column-fill: auto;
-  border: 2px dashed;
+  border: 2px solid salmon;
   margin-bottom: 5px;
 }
 
@@ -42,7 +42,7 @@ x { display:block; height:20px; }
 </head>
 <body>
 
-
+<!-- grid wrapped in inline -->
 <div class="columns" style="height: 40px">
 <div style="padding-top:2px; background:grey">
 <div class="grid">
@@ -51,7 +51,7 @@ x { display:block; height:20px; }
 <span><x></x></span>
 </div></div></div>
 
-
+<!-- grid wrapped in inline with orthogonal writing-mode -->
 <div class="columns" style="width: 40px; height:40px;">
 <div style="padding-top:2px; background:grey">
 <div class="grid" style="overflow:hidden; writing-mode:vertical-lr">
@@ -60,7 +60,7 @@ x { display:block; height:20px; }
 <span><x></x></span>
 </div></div></div>
 
-
+<!-- grid wrapped in overflow:hidden block -->
 <div class="columns" style="height: 40px; margin-top:70px">
 <div style="padding-top:2px; background:grey">
 <div class="grid" style="overflow:hidden">
@@ -69,7 +69,7 @@ x { display:block; height:20px; }
 <span><x></x></span>
 </div></div></div>
 
-
+<!-- grid wrapped in FIELDSET block -->
 <div class="columns" style="height: 40px; margin-top:70px">
 <div style="padding-top:2px; background:grey">
 <div style="border:none; padding:0; margin:0">
@@ -79,7 +79,7 @@ x { display:block; height:20px; }
 <span><x></x></span>
 </div></div></div></div>
 
-
+<!-- grid wrapped in FIELDSET inline -->
 <div class="columns" style="height: 40px; margin-left:200px">
 <div style="padding-top:2px; background:grey">
 <div style="display:inline-block; border:none; padding:0; margin:0">
@@ -89,7 +89,7 @@ x { display:block; height:20px; }
 <span><x></x></span>
 </div></div></div></div>
 
-
+<!-- grid wrapped in FIELDSET overflow:hidden block -->
 <div class="columns" style="height: 40px; margin-left:400px">
 <div style="padding-top:2px; background:grey">
 <div style="display:block; overflow:hidden; border:none; padding:0; margin:0; width:min-content">
@@ -99,7 +99,7 @@ x { display:block; height:20px; }
 <span><x></x></span>
 </div></div></div></div>
 
-
+<!-- grid with orthogonal writing-mode to fragmentainer -->
 <div class="columns" style="height: 40px; margin-top:70px">
 <div style="padding-top:2px; background:grey">
 <y>
@@ -109,8 +109,8 @@ x { display:block; height:20px; }
 <span><x></x></span>
 </div></y></div></div>
 
-
-
+<!-- vertical grid and fragmentainer with intermediary horizontal writing-mode inline -->
+<!-- XXX bug 1242660: remove the visibility:hidden DIV when we know what the rendering should be -->
 <div style="visibility:hidden">
 <div class="columns" style="width: 50px; writing-mode:vertical-lr; margin-top:70px">
 <div style="padding-top:2px; background:grey">
