@@ -15,7 +15,9 @@ const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
   IgnoreLists: "resource://gre/modules/IgnoreLists.jsm",
   OpenSearchEngine: "resource://gre/modules/OpenSearchEngine.jsm",
@@ -29,10 +31,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
 });
 
-XPCOMUtils.defineLazyGetter(this, "logConsole", () => {
+XPCOMUtils.defineLazyGetter(lazy, "logConsole", () => {
   return console.createInstance({
     prefix: "SearchService",
-    maxLogLevel: SearchUtils.loggingEnabled ? "Debug" : "Warn",
+    maxLogLevel: lazy.SearchUtils.loggingEnabled ? "Debug" : "Warn",
   });
 });
 
@@ -93,7 +95,7 @@ const gEmptyParseSubmissionResult = Object.freeze(
 function SearchService() {
   this._initObservers = PromiseUtils.defer();
   this._engines = new Map();
-  this._settings = new SearchSettings(this);
+  this._settings = new lazy.SearchSettings(this);
 }
 
 SearchService.prototype = {
@@ -194,7 +196,7 @@ SearchService.prototype = {
   _ensureInitialized() {
     if (this._initialized) {
       if (!Components.isSuccessCode(this._initRV)) {
-        logConsole.debug("_ensureInitialized: failure");
+        lazy.logConsole.debug("_ensureInitialized: failure");
         throw Components.Exception(
           "SearchService previously failed to initialize",
           this._initRV
@@ -222,7 +224,7 @@ SearchService.prototype = {
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "_separatePrivateDefaultPrefValue",
-      SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+      lazy.SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
       false,
       this._onSeparateDefaultPrefChanged.bind(this)
     );
@@ -230,7 +232,8 @@ SearchService.prototype = {
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "_separatePrivateDefaultEnabledPrefValue",
-      SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault.ui.enabled",
+      lazy.SearchUtils.BROWSER_SEARCH_PREF +
+        "separatePrivateDefault.ui.enabled",
       false,
       this._onSeparateDefaultPrefChanged.bind(this)
     );
@@ -238,11 +241,11 @@ SearchService.prototype = {
     
     
     
-    Services.obs.addObserver(this, Region.REGION_TOPIC);
+    Services.obs.addObserver(this, lazy.Region.REGION_TOPIC);
 
     try {
       
-      this._engineSelector = new SearchEngineSelector(
+      this._engineSelector = new lazy.SearchEngineSelector(
         this._handleConfigurationUpdated.bind(this)
       );
 
@@ -263,18 +266,18 @@ SearchService.prototype = {
       
       
       if (Services.startup.shuttingDown) {
-        logConsole.warn("_init: abandoning init due to shutting down");
+        lazy.logConsole.warn("_init: abandoning init due to shutting down");
         this._initRV = Cr.NS_ERROR_ABORT;
         this._initObservers.reject(this._initRV);
         return this._initRV;
       }
 
       
-      logConsole.debug("_init: engines loaded, writing settings");
+      lazy.logConsole.debug("_init: engines loaded, writing settings");
       this._addObservers();
     } catch (ex) {
       this._initRV = ex.result !== undefined ? ex.result : Cr.NS_ERROR_FAILURE;
-      logConsole.error("_init: failure initializing search:", ex);
+      lazy.logConsole.error("_init: failure initializing search:", ex);
     }
 
     this._initialized = true;
@@ -288,11 +291,11 @@ SearchService.prototype = {
 
     Services.obs.notifyObservers(
       null,
-      SearchUtils.TOPIC_SEARCH_SERVICE,
+      lazy.SearchUtils.TOPIC_SEARCH_SERVICE,
       "init-complete"
     );
 
-    logConsole.debug("Completed _init");
+    lazy.logConsole.debug("Completed _init");
     return this._initRV;
   },
 
@@ -311,7 +314,7 @@ SearchService.prototype = {
     
     let listener = this._handleIgnoreListUpdated.bind(this);
 
-    const current = await IgnoreLists.getAndSubscribe(listener);
+    const current = await lazy.IgnoreLists.getAndSubscribe(listener);
     
     
     this._ignoreListListener = listener;
@@ -319,7 +322,7 @@ SearchService.prototype = {
     await this._handleIgnoreListUpdated({ data: { current } });
     Services.obs.notifyObservers(
       null,
-      SearchUtils.TOPIC_SEARCH_SERVICE,
+      lazy.SearchUtils.TOPIC_SEARCH_SERVICE,
       "settings-update-complete"
     );
   },
@@ -332,7 +335,7 @@ SearchService.prototype = {
 
 
   async _handleIgnoreListUpdated(eventData) {
-    logConsole.debug("_handleIgnoreListUpdated");
+    lazy.logConsole.debug("_handleIgnoreListUpdated");
     const {
       data: { current },
     } = eventData;
@@ -429,7 +432,7 @@ SearchService.prototype = {
           engine._extensionID
         ))
       ) {
-        logConsole.debug(
+        lazy.logConsole.debug(
           "Allowing default engine to be set to app-provided.",
           extension.id
         );
@@ -442,7 +445,7 @@ SearchService.prototype = {
       }
       
       engine.overrideWithExtension(extension.id, extension.manifest);
-      logConsole.debug(
+      lazy.logConsole.debug(
         "Allowing default engine to be set to app-provided and overridden.",
         extension.id
       );
@@ -460,7 +463,7 @@ SearchService.prototype = {
       ))
     ) {
       engine.overrideWithExtension(extension.id, extension.manifest);
-      logConsole.debug(
+      lazy.logConsole.debug(
         "Re-enabling overriding of core extension by",
         extension.id
       );
@@ -568,20 +571,20 @@ SearchService.prototype = {
     let prevCurrentEngine = prevMetaData.current;
     let prevAppDefaultEngine = prevMetaData?.appDefaultEngine;
 
-    logConsole.debug("_loadEngines: start");
+    lazy.logConsole.debug("_loadEngines: start");
     let { engines, privateDefault } = await this._fetchEngineSelectorEngines();
     this._setDefaultAndOrdersFromSelector(engines, privateDefault);
 
     
     
-    await AddonManager.readyPromise;
+    await lazy.AddonManager.readyPromise;
 
     let newEngines = await this._loadEnginesFromConfig(engines);
     for (let engine of newEngines) {
       this._addEngineToStore(engine);
     }
 
-    logConsole.debug(
+    lazy.logConsole.debug(
       "_loadEngines: loading",
       this._startupExtensions.size,
       "engines reported by AddonManager startup"
@@ -589,7 +592,7 @@ SearchService.prototype = {
     for (let extension of this._startupExtensions) {
       await this._installExtensionEngine(
         extension,
-        [SearchUtils.DEFAULT_TAG],
+        [lazy.SearchUtils.DEFAULT_TAG],
         true
       );
     }
@@ -599,7 +602,7 @@ SearchService.prototype = {
 
     this._loadEnginesMetadataFromSettings(settings.engines);
 
-    logConsole.debug("_loadEngines: done");
+    lazy.logConsole.debug("_loadEngines: done");
 
     let newCurrentEngine = this._getEngineDefault(false)?.name;
     this._settings.setAttribute(
@@ -691,7 +694,7 @@ SearchService.prototype = {
 
 
   async _loadEnginesFromConfig(engineConfigs) {
-    logConsole.debug("_loadEnginesFromConfig");
+    lazy.logConsole.debug("_loadEnginesFromConfig");
     let engines = [];
     for (let config of engineConfigs) {
       try {
@@ -714,7 +717,7 @@ SearchService.prototype = {
 
   async _maybeReloadEngines() {
     if (this._maybeReloadDebounce) {
-      logConsole.debug("We're already waiting to reload engines.");
+      lazy.logConsole.debug("We're already waiting to reload engines.");
       return;
     }
 
@@ -728,7 +731,7 @@ SearchService.prototype = {
         this._maybeReloadDebounce = false;
         this._maybeReloadEngines().catch(Cu.reportError);
       }, 10000);
-      logConsole.debug(
+      lazy.logConsole.debug(
         "Post-poning maybeReloadEngines() as we're currently initializing."
       );
       return;
@@ -739,16 +742,16 @@ SearchService.prototype = {
     
     let settings = await this._settings.get();
 
-    logConsole.debug("Running maybeReloadEngines");
+    lazy.logConsole.debug("Running maybeReloadEngines");
     this._reloadingEngines = true;
 
     try {
       await this._reloadEngines(settings);
     } catch (ex) {
-      logConsole.error("maybeReloadEngines failed", ex);
+      lazy.logConsole.error("maybeReloadEngines failed", ex);
     }
     this._reloadingEngines = false;
-    logConsole.debug("maybeReloadEngines complete");
+    lazy.logConsole.debug("maybeReloadEngines complete");
   },
 
   async _reloadEngines(settings) {
@@ -808,7 +811,8 @@ SearchService.prototype = {
 
         policy = await this._getExtensionPolicy(engine._extensionID);
         locale =
-          replacementEngines[0].webExtension.locale || SearchUtils.DEFAULT_TAG;
+          replacementEngines[0].webExtension.locale ||
+          lazy.SearchUtils.DEFAULT_TAG;
         manifest = await this._getManifestForLocale(policy.extension, locale);
 
         
@@ -853,7 +857,7 @@ SearchService.prototype = {
         let newEngine = await this.makeEngineFromConfig(engine);
         this._addEngineToStore(newEngine, true);
       } catch (ex) {
-        logConsole.warn(
+        lazy.logConsole.warn(
           `Could not load engine ${
             "webExtension" in engine ? engine.webExtension.id : "unknown"
           }: ${ex}`
@@ -889,16 +893,16 @@ SearchService.prototype = {
     
     
     if (prevCurrentEngine && this.defaultEngine !== prevCurrentEngine) {
-      SearchUtils.notifyAction(
+      lazy.SearchUtils.notifyAction(
         this._currentEngine,
-        SearchUtils.MODIFIED_TYPE.DEFAULT
+        lazy.SearchUtils.MODIFIED_TYPE.DEFAULT
       );
       
       
       if (!this._separatePrivateDefault) {
-        SearchUtils.notifyAction(
+        lazy.SearchUtils.notifyAction(
           this._currentEngine,
-          SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
+          lazy.SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
         );
       }
 
@@ -920,9 +924,9 @@ SearchService.prototype = {
       prevPrivateEngine &&
       this.defaultPrivateEngine !== prevPrivateEngine
     ) {
-      SearchUtils.notifyAction(
+      lazy.SearchUtils.notifyAction(
         this._currentPrivateEngine,
-        SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
+        lazy.SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
       );
     }
 
@@ -943,7 +947,7 @@ SearchService.prototype = {
           
           this._internalRemoveEngine(engine);
 
-          let addon = await AddonManager.getAddonByID(engine._extensionID);
+          let addon = await lazy.AddonManager.getAddonByID(engine._extensionID);
           if (addon) {
             
             
@@ -965,7 +969,10 @@ SearchService.prototype = {
         
         this._internalRemoveEngine(engine);
       }
-      SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.REMOVED);
+      lazy.SearchUtils.notifyAction(
+        engine,
+        lazy.SearchUtils.MODIFIED_TYPE.REMOVED
+      );
     }
 
     
@@ -980,7 +987,7 @@ SearchService.prototype = {
     this.__sortedEngines = null;
     Services.obs.notifyObservers(
       null,
-      SearchUtils.TOPIC_SEARCH_SERVICE,
+      lazy.SearchUtils.TOPIC_SEARCH_SERVICE,
       "engines-reloaded"
     );
   },
@@ -1005,11 +1012,11 @@ SearchService.prototype = {
 
   _addEngineToStore(engine, skipDuplicateCheck = false) {
     if (this._engineMatchesIgnoreLists(engine)) {
-      logConsole.debug("_addEngineToStore: Ignoring engine");
+      lazy.logConsole.debug("_addEngineToStore: Ignoring engine");
       return;
     }
 
-    logConsole.debug("_addEngineToStore: Adding engine:", engine.name);
+    lazy.logConsole.debug("_addEngineToStore: Adding engine:", engine.name);
 
     
     
@@ -1020,7 +1027,9 @@ SearchService.prototype = {
       this._engines.has(engine.name) &&
       !hasSameNameAsUpdate
     ) {
-      logConsole.debug("_addEngineToStore: Duplicate engine found, aborting!");
+      lazy.logConsole.debug(
+        "_addEngineToStore: Duplicate engine found, aborting!"
+      );
       return;
     }
 
@@ -1046,7 +1055,10 @@ SearchService.prototype = {
 
       
       this._engines.set(engine.name, engine);
-      SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.CHANGED);
+      lazy.SearchUtils.notifyAction(
+        engine,
+        lazy.SearchUtils.MODIFIED_TYPE.CHANGED
+      );
     } else {
       
       this._engines.set(engine.name, engine);
@@ -1058,7 +1070,10 @@ SearchService.prototype = {
         this.__sortedEngines.push(engine);
         this._saveSortedEngineList();
       }
-      SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.ADDED);
+      lazy.SearchUtils.notifyAction(
+        engine,
+        lazy.SearchUtils.MODIFIED_TYPE.ADDED
+      );
     }
 
     
@@ -1080,7 +1095,7 @@ SearchService.prototype = {
     for (let engine of engines) {
       let name = engine._name;
       if (this._engines.has(name)) {
-        logConsole.debug(
+        lazy.logConsole.debug(
           "_loadEnginesMetadataFromSettings, transfering metadata for",
           name,
           engine._metaData
@@ -1102,7 +1117,7 @@ SearchService.prototype = {
       return;
     }
 
-    logConsole.debug(
+    lazy.logConsole.debug(
       "_loadEnginesFromSettings: Loading",
       enginesCache.length,
       "engines from settings"
@@ -1141,14 +1156,14 @@ SearchService.prototype = {
       }
 
       try {
-        let engine = new SearchEngine({
+        let engine = new lazy.SearchEngine({
           isAppProvided: false,
           loadPath: engineJSON._loadPath,
         });
         engine._initWithJSON(engineJSON);
         this._addEngineToStore(engine);
       } catch (ex) {
-        logConsole.error(
+        lazy.logConsole.error(
           "Failed to load",
           engineJSON._name,
           "from settings:",
@@ -1159,7 +1174,7 @@ SearchService.prototype = {
     }
 
     if (skippedEngines) {
-      logConsole.debug(
+      lazy.logConsole.debug(
         "_loadEnginesFromSettings: skipped",
         skippedEngines,
         "built-in engines."
@@ -1170,12 +1185,12 @@ SearchService.prototype = {
   async _fetchEngineSelectorEngines() {
     let searchEngineSelectorProperties = {
       locale: Services.locale.appLocaleAsBCP47,
-      region: Region.home || "default",
+      region: lazy.Region.home || "default",
       channel: AppConstants.MOZ_APP_VERSION_DISPLAY.endsWith("esr")
         ? "esr"
         : AppConstants.MOZ_UPDATE_CHANNEL,
-      experiment: NimbusFeatures.search.getVariable("experiment") ?? "",
-      distroID: SearchUtils.distroID ?? "",
+      experiment: lazy.NimbusFeatures.search.getVariable("experiment") ?? "",
+      distroID: lazy.SearchUtils.distroID ?? "",
     };
 
     for (let [key, value] of Object.entries(searchEngineSelectorProperties)) {
@@ -1193,7 +1208,8 @@ SearchService.prototype = {
       if (!e.webExtension) {
         e.webExtension = {};
       }
-      e.webExtension.locale = e.webExtension?.locale ?? SearchUtils.DEFAULT_TAG;
+      e.webExtension.locale =
+        e.webExtension?.locale ?? lazy.SearchUtils.DEFAULT_TAG;
     }
 
     return { engines, privateDefault };
@@ -1214,7 +1230,7 @@ SearchService.prototype = {
   },
 
   _saveSortedEngineList() {
-    logConsole.debug("_saveSortedEngineList");
+    lazy.logConsole.debug("_saveSortedEngineList");
 
     
     
@@ -1237,7 +1253,7 @@ SearchService.prototype = {
     
     
     if (this._settings.getAttribute("useSavedOrder")) {
-      logConsole.debug("_buildSortedEngineList: using saved order");
+      lazy.logConsole.debug("_buildSortedEngineList: using saved order");
       let addedEngines = {};
 
       
@@ -1287,7 +1303,7 @@ SearchService.prototype = {
       });
       return (this.__sortedEngines = this.__sortedEngines.concat(alphaEngines));
     }
-    logConsole.debug("_buildSortedEngineList: using default orders");
+    lazy.logConsole.debug("_buildSortedEngineList: using default orders");
 
     return (this.__sortedEngines = this._sortEnginesByDefaults(
       Array.from(this._engines.values())
@@ -1366,7 +1382,7 @@ SearchService.prototype = {
 
   
   async init() {
-    logConsole.debug("init");
+    lazy.logConsole.debug("init");
     if (this._initStarted) {
       return this._initObservers.promise;
     }
@@ -1396,7 +1412,7 @@ SearchService.prototype = {
         
         
         
-        logConsole.debug("Removing delayed extension engines");
+        lazy.logConsole.debug("Removing delayed extension engines");
         for (let id of this._startupRemovedExtensions) {
           for (let engine of this._getEnginesByExtensionID(id)) {
             
@@ -1434,7 +1450,7 @@ SearchService.prototype = {
 
 
   async _migrateLegacyEngines() {
-    logConsole.debug("Running migrate legacy engines");
+    lazy.logConsole.debug("Running migrate legacy engines");
 
     const matchRegExp = /extensions\/(.*?)\.xpi!/i;
     for (let engine of this._engines.values()) {
@@ -1450,7 +1466,7 @@ SearchService.prototype = {
           
           let engines = await this.getEnginesByExtensionID(match[1]);
           if (engines.length) {
-            logConsole.debug(
+            lazy.logConsole.debug(
               `Migrating ${engine.name} to WebExtension install`
             );
 
@@ -1463,7 +1479,7 @@ SearchService.prototype = {
       }
     }
 
-    logConsole.debug("Migrate legacy engines complete");
+    lazy.logConsole.debug("Migrate legacy engines complete");
   },
 
   
@@ -1473,7 +1489,7 @@ SearchService.prototype = {
 
 
   async _checkWebExtensionEngines() {
-    logConsole.debug("Running check on WebExtension engines");
+    lazy.logConsole.debug("Running check on WebExtension engines");
 
     for (let engine of this._engines.values()) {
       if (
@@ -1485,10 +1501,10 @@ SearchService.prototype = {
         continue;
       }
 
-      let addon = await AddonManager.getAddonByID(engine._extensionID);
+      let addon = await lazy.AddonManager.getAddonByID(engine._extensionID);
 
       if (!addon) {
-        logConsole.debug(
+        lazy.logConsole.debug(
           `Add-on ${engine._extensionID} for search engine ${engine.name} is not installed!`
         );
         Services.telemetry.keyedScalarSet(
@@ -1497,7 +1513,7 @@ SearchService.prototype = {
           1
         );
       } else if (!addon.isActive) {
-        logConsole.debug(
+        lazy.logConsole.debug(
           `Add-on ${engine._extensionID} for search engine ${engine.name} is not active!`
         );
         Services.telemetry.keyedScalarSet(
@@ -1511,7 +1527,7 @@ SearchService.prototype = {
           policy.extension.manifest?.chrome_settings_overrides?.search_provider;
 
         if (!providerSettings) {
-          logConsole.debug(
+          lazy.logConsole.debug(
             `Add-on ${engine._extensionID} for search engine ${engine.name} no longer has an engine defined`
           );
           Services.telemetry.keyedScalarSet(
@@ -1520,7 +1536,7 @@ SearchService.prototype = {
             4
           );
         } else if (engine.name != providerSettings.name) {
-          logConsole.debug(
+          lazy.logConsole.debug(
             `Add-on ${engine._extensionID} for search engine ${engine.name} has a different name!`
           );
           Services.telemetry.keyedScalarSet(
@@ -1529,7 +1545,7 @@ SearchService.prototype = {
             5
           );
         } else if (!engine.checkSearchUrlMatchesManifest(providerSettings)) {
-          logConsole.debug(
+          lazy.logConsole.debug(
             `Add-on ${engine._extensionID} for search engine ${engine.name} has out-of-date manifest!`
           );
           Services.telemetry.keyedScalarSet(
@@ -1540,18 +1556,18 @@ SearchService.prototype = {
         }
       }
     }
-    logConsole.debug("WebExtension engine check complete");
+    lazy.logConsole.debug("WebExtension engine check complete");
   },
 
   async getEngines() {
     await this.init();
-    logConsole.debug("getEngines: getting all engines");
+    lazy.logConsole.debug("getEngines: getting all engines");
     return this._sortedEngines;
   },
 
   async getVisibleEngines() {
     await this.init(true);
-    logConsole.debug("getVisibleEngines: getting all visible engines");
+    lazy.logConsole.debug("getVisibleEngines: getting all visible engines");
     return this._sortedVisibleEngines;
   },
 
@@ -1569,7 +1585,7 @@ SearchService.prototype = {
   },
 
   _getEnginesByExtensionID(extensionID) {
-    logConsole.debug("getEngines: getting all engines for", extensionID);
+    lazy.logConsole.debug("getEngines: getting all engines for", extensionID);
     var engines = this._sortedEngines.filter(function(engine) {
       return engine._extensionID == extensionID;
     });
@@ -1654,7 +1670,7 @@ SearchService.prototype = {
         "set-via-policy",
         "",
         details,
-        engine._locale || SearchUtils.DEFAULT_TAG
+        engine._locale || lazy.SearchUtils.DEFAULT_TAG
       );
     }
   },
@@ -1707,7 +1723,7 @@ SearchService.prototype = {
     extensionBaseURI,
     isAppProvided,
     manifest,
-    locale = SearchUtils.DEFAULT_TAG,
+    locale = lazy.SearchUtils.DEFAULT_TAG,
     initEngine = false,
   }) {
     if (!extensionID) {
@@ -1718,7 +1734,7 @@ SearchService.prototype = {
     }
     let searchProvider = manifest.chrome_settings_overrides.search_provider;
     let name = searchProvider.name.trim();
-    logConsole.debug("_createAndAddEngine: Adding", name);
+    lazy.logConsole.debug("_createAndAddEngine: Adding", name);
     let isCurrent = false;
 
     
@@ -1736,7 +1752,7 @@ SearchService.prototype = {
           engine._loadPath.startsWith(`jar:[profile]/extensions/${extensionID}`)
         ) {
           
-          logConsole.debug("Migrating existing engine");
+          lazy.logConsole.debug("Migrating existing engine");
           isCurrent = isCurrent || this.defaultEngine == engine;
           await this.removeEngine(engine);
         }
@@ -1751,7 +1767,7 @@ SearchService.prototype = {
       );
     }
 
-    let newEngine = new SearchEngine({
+    let newEngine = new lazy.SearchEngine({
       name,
       isAppProvided,
       loadPath: `[other]addEngineWithDetails:${extensionID}`,
@@ -1779,7 +1795,7 @@ SearchService.prototype = {
 
 
   async addEnginesFromExtension(extension) {
-    logConsole.debug("addEnginesFromExtension: " + extension.id);
+    lazy.logConsole.debug("addEnginesFromExtension: " + extension.id);
     
     
     
@@ -1811,7 +1827,9 @@ SearchService.prototype = {
           );
         }
       }
-      logConsole.debug("addEnginesFromExtension: Ignoring builtIn engine.");
+      lazy.logConsole.debug(
+        "addEnginesFromExtension: Ignoring builtIn engine."
+      );
       return [];
     }
 
@@ -1822,7 +1840,9 @@ SearchService.prototype = {
       return [];
     }
 
-    return this._installExtensionEngine(extension, [SearchUtils.DEFAULT_TAG]);
+    return this._installExtensionEngine(extension, [
+      lazy.SearchUtils.DEFAULT_TAG,
+    ]);
   },
 
   
@@ -1836,7 +1856,7 @@ SearchService.prototype = {
     let extensionEngines = await this.getEnginesByExtensionID(extension.id);
 
     for (let engine of extensionEngines) {
-      let locale = engine._locale || SearchUtils.DEFAULT_TAG;
+      let locale = engine._locale || lazy.SearchUtils.DEFAULT_TAG;
       let manifest = await this._getManifestForLocale(extension, locale);
       let configuration =
         engines.find(
@@ -1886,16 +1906,16 @@ SearchService.prototype = {
 
 
   async makeEngineFromConfig(config) {
-    logConsole.debug("makeEngineFromConfig:", config);
+    lazy.logConsole.debug("makeEngineFromConfig:", config);
     let policy = await this._getExtensionPolicy(config.webExtension.id);
     let locale =
       "locale" in config.webExtension
         ? config.webExtension.locale
-        : SearchUtils.DEFAULT_TAG;
+        : lazy.SearchUtils.DEFAULT_TAG;
 
     let manifest = await this._getManifestForLocale(policy.extension, locale);
 
-    let engine = new SearchEngine({
+    let engine = new lazy.SearchEngine({
       name: manifest.chrome_settings_overrides.search_provider.name.trim(),
       isAppProvided: policy.extension.isAppProvided,
       loadPath: `[other]addEngineWithDetails:${policy.extension.id}`,
@@ -1911,7 +1931,7 @@ SearchService.prototype = {
   },
 
   async _installExtensionEngine(extension, locales, initEngine = false) {
-    logConsole.debug("installExtensionEngine:", extension.id);
+    lazy.logConsole.debug("installExtensionEngine:", extension.id);
 
     let installLocale = async locale => {
       let manifest = await this._getManifestForLocale(extension, locale);
@@ -1925,7 +1945,7 @@ SearchService.prototype = {
 
     let engines = [];
     for (let locale of locales) {
-      logConsole.debug(
+      lazy.logConsole.debug(
         "addEnginesFromExtension: installing:",
         extension.id,
         ":",
@@ -1939,7 +1959,7 @@ SearchService.prototype = {
   async _addEngineForManifest(
     extension,
     manifest,
-    locale = SearchUtils.DEFAULT_TAG,
+    locale = lazy.SearchUtils.DEFAULT_TAG,
     initEngine = false
   ) {
     
@@ -1951,7 +1971,7 @@ SearchService.prototype = {
         locale,
       });
       if (engine) {
-        logConsole.debug(
+        lazy.logConsole.debug(
           "Engine already loaded via settings, skipping due to APP_STARTUP:",
           extension.id
         );
@@ -1970,11 +1990,11 @@ SearchService.prototype = {
   },
 
   async addOpenSearchEngine(engineURL, iconURL) {
-    logConsole.debug("addEngine: Adding", engineURL);
+    lazy.logConsole.debug("addEngine: Adding", engineURL);
     await this.init();
     let errCode;
     try {
-      var engine = new OpenSearchEngine();
+      var engine = new lazy.OpenSearchEngine();
       engine._setIcon(iconURL, false);
       errCode = await new Promise(resolve => {
         engine._install(engineURL, errorCode => {
@@ -1995,12 +2015,15 @@ SearchService.prototype = {
 
   async removeWebExtensionEngine(id) {
     if (!this.isInitialized) {
-      logConsole.debug("Delaying removing extension engine on startup:", id);
+      lazy.logConsole.debug(
+        "Delaying removing extension engine on startup:",
+        id
+      );
       this._startupRemovedExtensions.add(id);
       return;
     }
 
-    logConsole.debug("removeWebExtensionEngine:", id);
+    lazy.logConsole.debug("removeWebExtensionEngine:", id);
     for (let engine of this._getEnginesByExtensionID(id)) {
       await this.removeEngine(engine);
     }
@@ -2073,7 +2096,10 @@ SearchService.prototype = {
         this._saveSortedEngineList();
       }
     }
-    SearchUtils.notifyAction(engineToRemove, SearchUtils.MODIFIED_TYPE.REMOVED);
+    lazy.SearchUtils.notifyAction(
+      engineToRemove,
+      lazy.SearchUtils.MODIFIED_TYPE.REMOVED
+    );
   },
 
   _internalRemoveEngine(engine) {
@@ -2100,7 +2126,7 @@ SearchService.prototype = {
     }
     if (
       !(engine instanceof Ci.nsISearchEngine) &&
-      !(engine instanceof SearchEngine)
+      !(engine instanceof lazy.SearchEngine)
     ) {
       throw Components.Exception(
         "moveEngine: Invalid engine passed to moveEngine!",
@@ -2160,7 +2186,10 @@ SearchService.prototype = {
     var movedEngine = this.__sortedEngines.splice(currentIndex, 1)[0];
     this.__sortedEngines.splice(newIndex, 0, movedEngine);
 
-    SearchUtils.notifyAction(engine, SearchUtils.MODIFIED_TYPE.CHANGED);
+    lazy.SearchUtils.notifyAction(
+      engine,
+      lazy.SearchUtils.MODIFIED_TYPE.CHANGED
+    );
 
     
     this._saveSortedEngineList();
@@ -2253,7 +2282,7 @@ SearchService.prototype = {
     }
     
     if (!newDefault) {
-      logConsole.error("Could not find a replacement default engine.");
+      lazy.logConsole.error("Could not find a replacement default engine.");
       return null;
     }
 
@@ -2328,7 +2357,7 @@ SearchService.prototype = {
     
     if (
       !(newEngine instanceof Ci.nsISearchEngine) &&
-      !(newEngine instanceof SearchEngine)
+      !(newEngine instanceof lazy.SearchEngine)
     ) {
       throw Components.Exception(
         "Invalid argument passed to defaultEngine setter",
@@ -2350,15 +2379,15 @@ SearchService.prototype = {
       if (!newCurrentEngine._loadPath) {
         newCurrentEngine._loadPath = "[other]unknown";
       }
-      let loadPathHash = SearchUtils.getVerificationHash(
+      let loadPathHash = lazy.SearchUtils.getVerificationHash(
         newCurrentEngine._loadPath
       );
       let currentHash = newCurrentEngine.getAttr("loadPathHash");
       if (!currentHash || currentHash != loadPathHash) {
         newCurrentEngine.setAttr("loadPathHash", loadPathHash);
-        SearchUtils.notifyAction(
+        lazy.SearchUtils.notifyAction(
           newCurrentEngine,
-          SearchUtils.MODIFIED_TYPE.CHANGED
+          lazy.SearchUtils.MODIFIED_TYPE.CHANGED
         );
       }
     }
@@ -2398,16 +2427,18 @@ SearchService.prototype = {
       this._recordTelemetryData();
     }
 
-    SearchUtils.notifyAction(
+    lazy.SearchUtils.notifyAction(
       this[currentEngine],
-      SearchUtils.MODIFIED_TYPE[privateMode ? "DEFAULT_PRIVATE" : "DEFAULT"]
+      lazy.SearchUtils.MODIFIED_TYPE[
+        privateMode ? "DEFAULT_PRIVATE" : "DEFAULT"
+      ]
     );
     
     
     if (!privateMode && !this._separatePrivateDefault) {
-      SearchUtils.notifyAction(
+      lazy.SearchUtils.notifyAction(
         this[currentEngine],
-        SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
+        lazy.SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
       );
     }
   },
@@ -2431,7 +2462,7 @@ SearchService.prototype = {
     this._ensureInitialized();
     if (!this._separatePrivateDefaultPrefValue) {
       Services.prefs.setBoolPref(
-        SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
+        lazy.SearchUtils.BROWSER_SEARCH_PREF + "separatePrivateDefault",
         true
       );
     }
@@ -2464,11 +2495,11 @@ SearchService.prototype = {
     
     
     if (this.defaultEngine != this._getEngineDefault(true)) {
-      SearchUtils.notifyAction(
+      lazy.SearchUtils.notifyAction(
         
         
         this.defaultPrivateEngine,
-        SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
+        lazy.SearchUtils.MODIFIED_TYPE.DEFAULT_PRIVATE
       );
       
       this._recordTelemetryData();
@@ -2496,7 +2527,9 @@ SearchService.prototype = {
       if (!currentHash) {
         engineData.origin = "unverified";
       } else {
-        let loadPathHash = SearchUtils.getVerificationHash(engine._loadPath);
+        let loadPathHash = lazy.SearchUtils.getVerificationHash(
+          engine._loadPath
+        );
         engineData.origin =
           currentHash == loadPathHash ? "verified" : "invalid";
       }
@@ -2507,7 +2540,7 @@ SearchService.prototype = {
 
     if (!sendSubmissionURL) {
       
-      let engineHost = engine._getURLOfType(SearchUtils.URL_TYPE.SEARCH)
+      let engineHost = engine._getURLOfType(lazy.SearchUtils.URL_TYPE.SEARCH)
         .templateHost;
       for (let innerEngine of this._engines.values()) {
         if (!innerEngine.isAppProvided) {
@@ -2515,7 +2548,7 @@ SearchService.prototype = {
         }
 
         let innerEngineURL = innerEngine._getURLOfType(
-          SearchUtils.URL_TYPE.SEARCH
+          lazy.SearchUtils.URL_TYPE.SEARCH
         );
         if (innerEngineURL.templateHost == engineHost) {
           sendSubmissionURL = true;
@@ -2674,7 +2707,7 @@ SearchService.prototype = {
       };
 
       processDomain(urlParsingInfo.mainDomain, false);
-      SearchStaticData.getAlternateDomains(
+      lazy.SearchStaticData.getAlternateDomains(
         urlParsingInfo.mainDomain
       ).forEach(d => processDomain(d, true));
     }
@@ -2787,7 +2820,7 @@ SearchService.prototype = {
     if (!policy) {
       let idPrefix = id.split("@")[0];
       let path = `resource://search-extensions/${idPrefix}/`;
-      await AddonManager.installBuiltinAddon(path);
+      await lazy.AddonManager.installBuiltinAddon(path);
       policy = WebExtensionPolicy.getByID(id);
     }
     
@@ -2799,18 +2832,21 @@ SearchService.prototype = {
   
   observe(engine, topic, verb) {
     switch (topic) {
-      case SearchUtils.TOPIC_ENGINE_MODIFIED:
+      case lazy.SearchUtils.TOPIC_ENGINE_MODIFIED:
         switch (verb) {
-          case SearchUtils.MODIFIED_TYPE.LOADED:
+          case lazy.SearchUtils.MODIFIED_TYPE.LOADED:
             engine = engine.QueryInterface(Ci.nsISearchEngine);
-            logConsole.debug("observe: Done installation of ", engine.name);
+            lazy.logConsole.debug(
+              "observe: Done installation of ",
+              engine.name
+            );
             this._addEngineToStore(engine.wrappedJSObject);
             
             
             break;
-          case SearchUtils.MODIFIED_TYPE.ADDED:
-          case SearchUtils.MODIFIED_TYPE.CHANGED:
-          case SearchUtils.MODIFIED_TYPE.REMOVED:
+          case lazy.SearchUtils.MODIFIED_TYPE.ADDED:
+          case lazy.SearchUtils.MODIFIED_TYPE.CHANGED:
+          case lazy.SearchUtils.MODIFIED_TYPE.REMOVED:
             
             this._parseSubmissionMap = null;
             break;
@@ -2820,7 +2856,7 @@ SearchService.prototype = {
       case "idle": {
         this.idleService.removeIdleObserver(this, RECONFIG_IDLE_TIME_SEC);
         this._queuedIdle = false;
-        logConsole.debug(
+        lazy.logConsole.debug(
           "Reloading engines after idle due to configuration change"
         );
         this._maybeReloadEngines().catch(Cu.reportError);
@@ -2848,8 +2884,8 @@ SearchService.prototype = {
           }
         });
         break;
-      case Region.REGION_TOPIC:
-        logConsole.debug("Region updated:", Region.home);
+      case lazy.Region.REGION_TOPIC:
+        lazy.logConsole.debug("Region updated:", lazy.Region.home);
         this._maybeReloadEngines().catch(Cu.reportError);
         break;
     }
@@ -2857,11 +2893,11 @@ SearchService.prototype = {
 
   
   notify(timer) {
-    logConsole.debug("_notify: checking for updates");
+    lazy.logConsole.debug("_notify: checking for updates");
 
     if (
       !Services.prefs.getBoolPref(
-        SearchUtils.BROWSER_SEARCH_PREF + "update",
+        lazy.SearchUtils.BROWSER_SEARCH_PREF + "update",
         true
       )
     ) {
@@ -2871,7 +2907,7 @@ SearchService.prototype = {
     
     
     var currentTime = Date.now();
-    logConsole.debug("currentTime:" + currentTime);
+    lazy.logConsole.debug("currentTime:" + currentTime);
     for (let e of this._engines.values()) {
       let engine = e.wrappedJSObject;
       if (!engine._hasUpdates) {
@@ -2879,7 +2915,7 @@ SearchService.prototype = {
       }
 
       var expirTime = engine.getAttr("updateexpir");
-      logConsole.debug(
+      lazy.logConsole.debug(
         engine.name,
         "expirTime:",
         expirTime,
@@ -2892,11 +2928,11 @@ SearchService.prototype = {
       var engineExpired = expirTime <= currentTime;
 
       if (!expirTime || !engineExpired) {
-        logConsole.debug("skipping engine");
+        lazy.logConsole.debug("skipping engine");
         continue;
       }
 
-      logConsole.debug(engine.name, "has expired");
+      lazy.logConsole.debug(engine.name, "has expired");
 
       engineUpdateService.update(engine);
 
@@ -2913,11 +2949,11 @@ SearchService.prototype = {
     }
     this._observersAdded = true;
 
-    NimbusFeatures.search.onUpdate(() =>
+    lazy.NimbusFeatures.search.onUpdate(() =>
       Services.search.wrappedJSObject._maybeReloadEngines()
     );
 
-    Services.obs.addObserver(this, SearchUtils.TOPIC_ENGINE_MODIFIED);
+    Services.obs.addObserver(this, lazy.SearchUtils.TOPIC_ENGINE_MODIFIED);
     Services.obs.addObserver(this, QUIT_APPLICATION_TOPIC);
     Services.obs.addObserver(this, TOPIC_LOCALES_CHANGE);
 
@@ -2945,7 +2981,7 @@ SearchService.prototype = {
           
           
           if (!this._initialized) {
-            logConsole.warn(
+            lazy.logConsole.warn(
               "not saving settings on shutdown due to initializing."
             );
             return;
@@ -2967,7 +3003,7 @@ SearchService.prototype = {
 
   _removeObservers() {
     if (this._ignoreListListener) {
-      IgnoreLists.unsubscribe(this._ignoreListListener);
+      lazy.IgnoreLists.unsubscribe(this._ignoreListListener);
       delete this._ignoreListListener;
     }
     if (this._queuedIdle) {
@@ -2977,14 +3013,14 @@ SearchService.prototype = {
 
     this._settings.removeObservers();
 
-    NimbusFeatures.search.off(() =>
+    lazy.NimbusFeatures.search.off(() =>
       Services.search.wrappedJSObject._maybeReloadEngines()
     );
 
-    Services.obs.removeObserver(this, SearchUtils.TOPIC_ENGINE_MODIFIED);
+    Services.obs.removeObserver(this, lazy.SearchUtils.TOPIC_ENGINE_MODIFIED);
     Services.obs.removeObserver(this, QUIT_APPLICATION_TOPIC);
     Services.obs.removeObserver(this, TOPIC_LOCALES_CHANGE);
-    Services.obs.removeObserver(this, Region.REGION_TOPIC);
+    Services.obs.removeObserver(this, lazy.Region.REGION_TOPIC);
   },
 
   QueryInterface: ChromeUtils.generateQI([
@@ -3059,7 +3095,7 @@ SearchService.prototype = {
     
     
     let localeToLoad =
-      locale == SearchUtils.DEFAULT_TAG ? manifest.default_locale : locale;
+      locale == lazy.SearchUtils.DEFAULT_TAG ? manifest.default_locale : locale;
 
     if (localeToLoad) {
       manifest = await extension.getLocalizedManifest(localeToLoad);
@@ -3077,10 +3113,10 @@ var engineUpdateService = {
 
   update(engine) {
     engine = engine.wrappedJSObject;
-    logConsole.debug("update called for", engine._name);
+    lazy.logConsole.debug("update called for", engine._name);
     if (
       !Services.prefs.getBoolPref(
-        SearchUtils.BROWSER_SEARCH_PREF + "update",
+        lazy.SearchUtils.BROWSER_SEARCH_PREF + "update",
         true
       ) ||
       !engine._hasUpdates
@@ -3089,27 +3125,27 @@ var engineUpdateService = {
     }
 
     let testEngine = null;
-    let updateURL = engine._getURLOfType(SearchUtils.URL_TYPE.OPENSEARCH);
+    let updateURL = engine._getURLOfType(lazy.SearchUtils.URL_TYPE.OPENSEARCH);
     let updateURI =
       updateURL && updateURL._hasRelation("self")
         ? updateURL.getSubmission("", engine).uri
-        : SearchUtils.makeURI(engine._updateURL);
+        : lazy.SearchUtils.makeURI(engine._updateURL);
     if (updateURI) {
       if (engine.isAppProvided && !updateURI.schemeIs("https")) {
-        logConsole.debug("Invalid scheme for default engine update");
+        lazy.logConsole.debug("Invalid scheme for default engine update");
         return;
       }
 
-      logConsole.debug("updating", engine.name, updateURI.spec);
-      testEngine = new OpenSearchEngine();
+      lazy.logConsole.debug("updating", engine.name, updateURI.spec);
+      testEngine = new lazy.OpenSearchEngine();
       testEngine._engineToUpdate = engine;
       try {
         testEngine._install(updateURI);
       } catch (ex) {
-        logConsole.error("Failed to update", engine.name, ex);
+        lazy.logConsole.error("Failed to update", engine.name, ex);
       }
     } else {
-      logConsole.debug("invalid updateURI");
+      lazy.logConsole.debug("invalid updateURI");
     }
 
     if (engine._iconUpdateURL) {
@@ -3136,7 +3172,9 @@ class SearchDefaultOverrideAllowlistHandler {
 
 
   constructor(listener) {
-    this._remoteConfig = RemoteSettings(SearchUtils.SETTINGS_ALLOWLIST_KEY);
+    this._remoteConfig = lazy.RemoteSettings(
+      lazy.SearchUtils.SETTINGS_ALLOWLIST_KEY
+    );
   }
 
   
@@ -3199,7 +3237,7 @@ class SearchDefaultOverrideAllowlistHandler {
       
       Cu.reportError(ex);
     }
-    logConsole.debug("Allow list is:", result);
+    lazy.logConsole.debug("Allow list is:", result);
     return result;
   }
 }
