@@ -37,3 +37,7 @@ let restartButton = document.getElementById("restart");
 restartButton.onclick = function() {
   AboutRestartRequired.restart();
 };
+
+
+let event = new CustomEvent("AboutRestartRequiredLoad", { bubbles: true });
+document.dispatchEvent(event);

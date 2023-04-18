@@ -5,16 +5,7 @@ const PAGE =
 
 async function assertIsAtRestartRequiredPage(browser) {
   let doc = browser.contentDocument;
-  
-  
-  
-  
-  if (doc.readyState == "loading") {
-    await BrowserTestUtils.waitForEvent(
-      browser.contentWindow,
-      "DOMContentLoaded"
-    );
-  }
+
   
   
   let title = doc.getElementById("title");
@@ -46,7 +37,15 @@ function crashTabTestHelper() {
       
       TabCrashHandler.testBuildIDMismatch = true;
 
+      let restartRequiredLoaded = BrowserTestUtils.waitForContentEvent(
+        browser,
+        "AboutRestartRequiredLoad",
+        false,
+        null,
+        true
+      );
       await BrowserTestUtils.crashFrame(browser, false);
+      await restartRequiredLoaded;
       await assertIsAtRestartRequiredPage(browser);
 
       
@@ -105,7 +104,13 @@ add_task(async function test_launchfail_background() {
       TabCrashHandler.queuedCrashedBrowsers,
       "No crashed browsers should be queued."
     );
-    let loaded = BrowserTestUtils.browserLoaded(browser, false, null, true);
+    let loaded = BrowserTestUtils.waitForContentEvent(
+      browser,
+      "AboutRestartRequiredLoad",
+      false,
+      null,
+      true
+    );
     await BrowserTestUtils.switchTab(gBrowser, tab);
     await loaded;
 
