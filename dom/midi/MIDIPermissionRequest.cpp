@@ -8,6 +8,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/MIDIAccessManager.h"
 #include "mozilla/dom/MIDIOptionsBinding.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "nsIGlobalObject.h"
 #include "mozilla/Preferences.h"
 #include "nsContentUtils.h"
@@ -86,6 +87,20 @@ MIDIPermissionRequest::Run() {
   
   if (nsContentUtils::IsExactSitePermAllow(mPrincipal, "midi-sysex"_ns)) {
     Allow(JS::UndefinedHandleValue);
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  if (
+#ifndef RELEASE_OR_BETA
+      StaticPrefs::dom_webmidi_gated() &&
+#endif
+      !nsContentUtils::HasExactSitePerm(mPrincipal, "midi"_ns) &&
+      !nsContentUtils::HasExactSitePerm(mPrincipal, "midi-sysex"_ns)) {
+    Cancel();
     return NS_OK;
   }
 
