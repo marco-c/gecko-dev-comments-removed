@@ -315,7 +315,10 @@ bool CCGCScheduler::GCRunnerFiredDoGC(TimeStamp aDeadline,
     if (!aDeadline.IsNull()) {
       if (aDeadline < now) {
         
-        idleDuration = aDeadline - startTimeStamp;
+        if (aDeadline > startTimeStamp) {
+          idleDuration = aDeadline - startTimeStamp;
+        }
+        
       } else {
         
         
