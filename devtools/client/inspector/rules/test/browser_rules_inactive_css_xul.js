@@ -29,6 +29,10 @@ const TEST_DATA = [
 ];
 
 add_task(async () => {
+  await SpecialPowers.pushPermissions([
+    { type: "allowXULXBL", allow: true, context: URL_ROOT },
+  ]);
+
   info("Open a url to a XUL document");
   await addTab(TEST_URI);
 
