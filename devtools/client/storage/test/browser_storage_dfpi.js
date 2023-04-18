@@ -92,8 +92,6 @@ async function testPartitionedStorage(
     "network.cookie.cookieBehavior",
     Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
   );
-  
-  await pushPref("network.cookie.sameSite.laxByDefault", false);
 
   info(
     "Open the test url in a new tab and add storage entries *before* opening the storage panel."

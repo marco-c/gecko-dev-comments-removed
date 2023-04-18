@@ -28,7 +28,6 @@ const EXCEPTION_LIST_PREF_NAME = "privacy.restrict3rdpartystorage.skip_list";
 
 async function cleanup() {
   Services.prefs.clearUserPref(EXCEPTION_LIST_PREF_NAME);
-  Services.prefs.clearUserPref("network.cookie.sameSite.laxByDefault");
   await new Promise(resolve => {
     Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
       resolve()
@@ -52,8 +51,6 @@ add_task(async function setup() {
       ["privacy.trackingprotection.enabled", false],
       ["privacy.trackingprotection.pbmode.enabled", false],
       ["privacy.trackingprotection.annotate_channels", true],
-      
-      ["network.cookie.sameSite.laxByDefault", false],
     ],
   });
   registerCleanupFunction(cleanup);

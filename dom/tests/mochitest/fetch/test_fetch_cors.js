@@ -1857,15 +1857,8 @@ function testReferrer() {
 
 function runTest() {
   testNoCorsCtor();
-  let promise = Promise.resolve();
-  if (typeof SpecialPowers === "object") {
-    promise = SpecialPowers.pushPrefEnv({
-      
-      set: [["network.cookie.sameSite.laxByDefault", false]],
-    });
-  }
 
-  return promise
+  return Promise.resolve()
     .then(testModeSameOrigin)
     .then(testModeNoCors)
     .then(testModeCors)

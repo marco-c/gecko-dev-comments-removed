@@ -2,12 +2,6 @@
 
 requestLongerTimeout(4);
 
-
-Services.prefs.setBoolPref("network.cookie.sameSite.laxByDefault", false);
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("network.cookie.sameSite.laxByDefault");
-});
-
 AntiTracking.runTestInNormalAndPrivateMode(
   "Set/Get Cookies",
   

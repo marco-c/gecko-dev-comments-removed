@@ -48,8 +48,7 @@ AntiTracking._createTask({
       });
     SpecialPowers.wrap(document).clearUserGestureActivation();
   },
-  
-  extraPrefs: [["network.cookie.sameSite.laxByDefault", false]],
+  extraPrefs: null,
   expectedBlockingNotifications: 0,
   runInPrivateWindow: false,
   iframeSandbox: null,

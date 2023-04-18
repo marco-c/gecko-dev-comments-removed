@@ -3,6 +3,9 @@
 
 
 
+user_pref("network.cookie.sameSite.laxByDefault", false);
+
+
 
 user_pref("network.cookie.cookieBehavior", 4);
 
