@@ -360,6 +360,8 @@ class DocAccessibleParent : public RemoteAccessible,
   [[nodiscard]] bool CheckDocTree() const;
   xpcAccessibleGeneric* GetXPCAccessible(RemoteAccessible* aProxy);
 
+  void FireEvent(RemoteAccessible* aAcc, const uint32_t& aType);
+
   
 
 
