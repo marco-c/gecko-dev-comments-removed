@@ -118,6 +118,35 @@ class WindowManager {
 
 
 
+  getBrowserById(id) {
+    for (const win of this.windows) {
+      const tabBrowser = browser.getTabBrowser(win);
+      if (tabBrowser && tabBrowser.tabs) {
+        for (let i = 0; i < tabBrowser.tabs.length; ++i) {
+          const contentBrowser = browser.getBrowserForTab(tabBrowser.tabs[i]);
+          if (this.getIdForBrowser(contentBrowser) == id) {
+            return contentBrowser;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   
 
@@ -162,6 +191,19 @@ class WindowManager {
       this._windowHandles.set(key, uuid.substring(1, uuid.length - 1));
     }
     return this._windowHandles.get(key);
+  }
+
+  
+
+
+
+
+
+
+
+  getBrowserIdForBrowsingContext(browsingContext) {
+    const contentBrowser = browsingContext.top.embedderElement;
+    return this.getIdForBrowser(contentBrowser);
   }
 
   
