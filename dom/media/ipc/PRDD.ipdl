@@ -30,6 +30,7 @@ namespace mozilla {
 
 
 
+[NeedsOtherPid]
 protocol PRDD
 {
 parent:

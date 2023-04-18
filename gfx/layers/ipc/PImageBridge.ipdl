@@ -26,6 +26,7 @@ namespace layers {
 
 
 
+[NeedsOtherPid]
 sync protocol PImageBridge
 {
   manages PTexture;

@@ -2659,7 +2659,8 @@ void MessageChannel::AddProfilerMarker(const IPC::Message& aMessage,
     
     
     
-    if (pid != kInvalidProcessId && !profiler_is_locked_on_current_thread()) {
+    if (pid != base::kInvalidProcessId &&
+        !profiler_is_locked_on_current_thread()) {
       
       [[maybe_unused]] const TimeStamp now = TimeStamp::Now();
       PROFILER_MARKER("IPC", IPC, MarkerTiming::InstantAt(now), IPCMarker, now,

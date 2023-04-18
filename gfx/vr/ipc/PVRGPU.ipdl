@@ -8,6 +8,7 @@ namespace gfx {
 
 
 
+[NeedsOtherPid]
 async protocol PVRGPU
 {
 parent:

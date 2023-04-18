@@ -20,7 +20,7 @@ namespace dom {
 
 
 
- [RefCounted] async protocol PInProcess
+[RefCounted] async protocol PInProcess
 {
   manages PExtensions;
   manages PWindowGlobal;

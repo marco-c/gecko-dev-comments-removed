@@ -103,29 +103,14 @@ namespace ipc {
 class ProtocolFuzzerHelper;
 #endif
 
-#ifdef XP_WIN
-const base::ProcessHandle kInvalidProcessHandle = INVALID_HANDLE_VALUE;
-
-
-
-
-
-
-
-const base::ProcessId kInvalidProcessId = kuint32max;
-#else
-const base::ProcessHandle kInvalidProcessHandle = -1;
-const base::ProcessId kInvalidProcessId = -1;
-#endif
-
 
 struct ScopedProcessHandleTraits {
   typedef base::ProcessHandle type;
 
-  static type empty() { return kInvalidProcessHandle; }
+  static type empty() { return base::kInvalidProcessHandle; }
 
   static void release(type aProcessHandle) {
-    if (aProcessHandle && aProcessHandle != kInvalidProcessHandle) {
+    if (aProcessHandle && aProcessHandle != base::kInvalidProcessHandle) {
       base::CloseProcessHandle(aProcessHandle);
     }
   }
@@ -204,6 +189,7 @@ class IProtocol : public HasResultCodes {
         mToplevel(nullptr) {}
 
   IToplevelProtocol* ToplevelProtocol() { return mToplevel; }
+  const IToplevelProtocol* ToplevelProtocol() const { return mToplevel; }
 
   
   
@@ -239,8 +225,6 @@ class IProtocol : public HasResultCodes {
 
   nsISerialEventTarget* GetActorEventTarget();
   already_AddRefed<nsISerialEventTarget> GetActorEventTarget(IProtocol* aActor);
-
-  ProcessId OtherPid() const;
 
   
   ProtocolId GetProtocolId() const { return mProtocolId; }
@@ -448,7 +432,6 @@ class IToplevelProtocol : public IProtocol {
   nsISerialEventTarget* GetActorEventTarget();
   already_AddRefed<nsISerialEventTarget> GetActorEventTarget(IProtocol* aActor);
 
-  ProcessId OtherPid() const;
   void SetOtherProcessId(base::ProcessId aOtherPid);
 
   virtual void OnChannelClose() = 0;
