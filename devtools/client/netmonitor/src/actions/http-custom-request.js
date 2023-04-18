@@ -13,6 +13,16 @@ const {
 
 
 
+
+function openHTTPCustomRequest() {
+  return ({ dispatch, getState }) => {
+    dispatch({ type: OPEN_ACTION_BAR, open: true });
+  };
+}
+
+
+
+
 function toggleHTTPCustomRequestPanel() {
   return ({ dispatch, getState }) => {
     const state = getState();
@@ -30,5 +40,6 @@ function toggleHTTPCustomRequestPanel() {
 }
 
 module.exports = {
+  openHTTPCustomRequest,
   toggleHTTPCustomRequestPanel,
 };
