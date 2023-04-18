@@ -78,26 +78,34 @@ class WebDriverBiDi {
 
 
 
-  createSession(capabilities, sessionlessConnection) {
+  async createSession(capabilities, sessionlessConnection) {
     if (this.session) {
       throw new error.SessionNotCreatedError(
         "Maximum number of active sessions"
       );
     }
 
-    this._session = new WebDriverSession(capabilities, sessionlessConnection);
+    const session = new WebDriverSession(capabilities, sessionlessConnection);
 
     
     
     let webSocketUrl = null;
     if (
       this.agent.running &&
-      (this.session.capabilities.get("webSocketUrl") || sessionlessConnection)
+      (session.capabilities.get("webSocketUrl") || sessionlessConnection)
     ) {
-      this.agent.server.registerPathHandler(this.session.path, this.session);
-      webSocketUrl = `${this.address}${this.session.path}`;
+      
+      
+      
+      
+      
+      logger.debug(`Waiting for initial application window to be loaded`);
+      await this.agent.browserStartupFinished;
 
-      logger.debug(`Registered session handler: ${this.session.path}`);
+      this.agent.server.registerPathHandler(session.path, session);
+      webSocketUrl = `${this.address}${session.path}`;
+
+      logger.debug(`Registered session handler: ${session.path}`);
 
       if (sessionlessConnection) {
         
@@ -107,7 +115,9 @@ class WebDriverBiDi {
 
     
     
-    this.session.capabilities.set("webSocketUrl", webSocketUrl);
+    session.capabilities.set("webSocketUrl", webSocketUrl);
+
+    this._session = session;
 
     return {
       sessionId: this.session.id,
@@ -165,14 +175,6 @@ class WebDriverBiDi {
     if (this._running) {
       return;
     }
-
-    
-    
-    
-    
-    
-    logger.debug(`Waiting for initial application window to be loaded`);
-    await this.agent.browserStartupFinished;
 
     this._running = true;
 
