@@ -44,14 +44,17 @@ static NS_DEFINE_CID(kZipReaderCID, NS_ZIPREADER_CID);
 
 
 
+
+static LazyLogModule gJarProtocolLog("nsJarProtocol");
+
+
+
 #ifdef LOG
 #  undef LOG
 #endif
-
-
-
-
-static LazyLogModule gJarProtocolLog("nsJarProtocol");
+#ifdef LOG_ENABLED
+#  undef LOG_ENABLED
+#endif
 
 #define LOG(args) MOZ_LOG(gJarProtocolLog, mozilla::LogLevel::Debug, args)
 #define LOG_ENABLED() MOZ_LOG_TEST(gJarProtocolLog, mozilla::LogLevel::Debug)
