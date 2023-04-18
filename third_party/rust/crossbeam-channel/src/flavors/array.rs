@@ -10,7 +10,7 @@
 
 use std::cell::UnsafeCell;
 use std::marker::PhantomData;
-use std::mem::{self, MaybeUninit};
+use std::mem::MaybeUninit;
 use std::ptr;
 use std::sync::atomic::{self, AtomicUsize, Ordering};
 use std::time::Instant;
@@ -110,7 +110,7 @@ impl<T> Channel<T> {
         
         
         let buffer = {
-            let mut boxed: Box<[Slot<T>]> = (0..cap)
+            let boxed: Box<[Slot<T>]> = (0..cap)
                 .map(|i| {
                     
                     Slot {
@@ -119,9 +119,7 @@ impl<T> Channel<T> {
                     }
                 })
                 .collect();
-            let ptr = boxed.as_mut_ptr();
-            mem::forget(boxed);
-            ptr
+            Box::into_raw(boxed) as *mut Slot<T>
         };
 
         Channel {

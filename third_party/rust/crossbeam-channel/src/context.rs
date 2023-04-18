@@ -1,7 +1,8 @@
 
 
 use std::cell::Cell;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::ptr;
+use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread::{self, Thread, ThreadId};
 use std::time::Instant;
@@ -9,6 +10,7 @@ use std::time::Instant;
 use crossbeam_utils::Backoff;
 
 use crate::select::Selected;
+
 
 
 #[derive(Debug, Clone)]
@@ -23,7 +25,7 @@ struct Inner {
     select: AtomicUsize,
 
     
-    packet: AtomicUsize,
+    packet: AtomicPtr<()>,
 
     
     thread: Thread,
@@ -45,7 +47,7 @@ impl Context {
         }
 
         let mut f = Some(f);
-        let mut f = move |cx: &Context| -> R {
+        let mut f = |cx: &Context| -> R {
             let f = f.take().unwrap();
             f(cx)
         };
@@ -69,7 +71,7 @@ impl Context {
         Context {
             inner: Arc::new(Inner {
                 select: AtomicUsize::new(Selected::Waiting.into()),
-                packet: AtomicUsize::new(0),
+                packet: AtomicPtr::new(ptr::null_mut()),
                 thread: thread::current(),
                 thread_id: thread::current().id(),
             }),
@@ -82,7 +84,7 @@ impl Context {
         self.inner
             .select
             .store(Selected::Waiting.into(), Ordering::Release);
-        self.inner.packet.store(0, Ordering::Release);
+        self.inner.packet.store(ptr::null_mut(), Ordering::Release);
     }
 
     
@@ -112,19 +114,19 @@ impl Context {
     
     
     #[inline]
-    pub fn store_packet(&self, packet: usize) {
-        if packet != 0 {
+    pub fn store_packet(&self, packet: *mut ()) {
+        if !packet.is_null() {
             self.inner.packet.store(packet, Ordering::Release);
         }
     }
 
     
     #[inline]
-    pub fn wait_packet(&self) -> usize {
+    pub fn wait_packet(&self) -> *mut () {
         let backoff = Backoff::new();
         loop {
             let packet = self.inner.packet.load(Ordering::Acquire);
-            if packet != 0 {
+            if !packet.is_null() {
                 return packet;
             }
             backoff.snooze();

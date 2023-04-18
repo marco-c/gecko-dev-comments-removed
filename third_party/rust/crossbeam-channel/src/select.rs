@@ -19,6 +19,7 @@ use crate::utils;
 
 
 
+
 #[derive(Debug, Default)]
 pub struct Token {
     pub at: flavors::at::AtToken,
@@ -88,6 +89,7 @@ impl Into<usize> for Selected {
         }
     }
 }
+
 
 
 
@@ -442,6 +444,7 @@ fn run_ready(
 }
 
 
+
 #[inline]
 pub fn try_select<'a>(
     handles: &mut [(&'a dyn SelectHandle, usize, *const u8)],
@@ -456,6 +459,7 @@ pub fn try_select<'a>(
         }),
     }
 }
+
 
 
 #[inline]
@@ -474,6 +478,7 @@ pub fn select<'a>(
         _marker: PhantomData,
     }
 }
+
 
 
 #[inline]

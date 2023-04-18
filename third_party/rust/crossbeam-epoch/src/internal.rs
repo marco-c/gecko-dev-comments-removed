@@ -101,7 +101,7 @@ impl Bag {
 
     
     fn seal(self, epoch: Epoch) -> SealedBag {
-        SealedBag { epoch, bag: self }
+        SealedBag { epoch, _bag: self }
     }
 }
 
@@ -216,7 +216,7 @@ fn no_op_func() {}
 #[derive(Default, Debug)]
 struct SealedBag {
     epoch: Epoch,
-    bag: Bag,
+    _bag: Bag,
 }
 
 
@@ -311,7 +311,7 @@ impl Global {
         
         
         
-        for local in self.locals.iter(&guard) {
+        for local in self.locals.iter(guard) {
             match local {
                 Err(IterError::Stalled) => {
                     

@@ -264,3 +264,22 @@ fn const_atomic_cell_new() {
     CELL.store(1);
     assert_eq!(CELL.load(), 1);
 }
+
+
+#[cfg_attr(miri, ignore)] 
+#[rustversion::since(1.37)] 
+#[test]
+fn issue_748() {
+    #[allow(dead_code)]
+    #[repr(align(8))]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    enum Test {
+        Field(u32),
+        FieldLess,
+    }
+
+    assert_eq!(mem::size_of::<Test>(), 8);
+    assert!(AtomicCell::<Test>::is_lock_free());
+    let x = AtomicCell::new(Test::FieldLess);
+    assert_eq!(x.load(), Test::FieldLess);
+}

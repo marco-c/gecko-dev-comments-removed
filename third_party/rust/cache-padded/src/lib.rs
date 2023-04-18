@@ -52,6 +52,7 @@
 
 
 
+
 #![no_std]
 #![forbid(unsafe_code)]
 #![warn(missing_docs, missing_debug_implementations, rust_2018_idioms)]
@@ -72,9 +73,58 @@ use core::ops::{Deref, DerefMut};
 
 
 
-#[cfg_attr(any(target_arch = "x86_64", target_arch = "aarch64"), repr(align(128)))]
+
+
+
+
 #[cfg_attr(
-    not(any(target_arch = "x86_64", target_arch = "aarch64")),
+    any(
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "powerpc64",
+    ),
+    repr(align(128))
+)]
+
+
+
+
+
+
+
+
+#[cfg_attr(
+    any(
+        target_arch = "arm",
+        target_arch = "mips",
+        target_arch = "mips64",
+        target_arch = "riscv64",
+    ),
+    repr(align(32))
+)]
+
+
+
+
+#[cfg_attr(target_arch = "s390x", repr(align(256)))]
+
+
+
+
+
+
+
+#[cfg_attr(
+    not(any(
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "powerpc64",
+        target_arch = "arm",
+        target_arch = "mips",
+        target_arch = "mips64",
+        target_arch = "riscv64",
+        target_arch = "s390x",
+    )),
     repr(align(64))
 )]
 #[derive(Clone, Copy, Default, Hash, PartialEq, Eq)]

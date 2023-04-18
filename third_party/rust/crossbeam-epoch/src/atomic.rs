@@ -601,6 +601,65 @@ impl<T: ?Sized + Pointable> Atomic<T> {
     
     
     
+    pub fn fetch_update<'g, F>(
+        &self,
+        set_order: Ordering,
+        fail_order: Ordering,
+        guard: &'g Guard,
+        mut func: F,
+    ) -> Result<Shared<'g, T>, Shared<'g, T>>
+    where
+        F: FnMut(Shared<'g, T>) -> Option<Shared<'g, T>>,
+    {
+        let mut prev = self.load(fail_order, guard);
+        while let Some(next) = func(prev) {
+            match self.compare_exchange_weak(prev, next, set_order, fail_order, guard) {
+                Ok(shared) => return Ok(shared),
+                Err(next_prev) => prev = next_prev.current,
+            }
+        }
+        Err(prev)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[allow(deprecated)]
     #[deprecated(note = "Use `compare_exchange` instead")]
     pub fn compare_and_set<'g, O, P>(

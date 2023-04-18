@@ -1,5 +1,6 @@
 
 
+use std::ptr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::{self, ThreadId};
 
@@ -13,7 +14,7 @@ pub(crate) struct Entry {
     pub(crate) oper: Operation,
 
     
-    pub(crate) packet: usize,
+    pub(crate) packet: *mut (),
 
     
     pub(crate) cx: Context,
@@ -44,12 +45,12 @@ impl Waker {
     
     #[inline]
     pub(crate) fn register(&mut self, oper: Operation, cx: &Context) {
-        self.register_with_packet(oper, 0, cx);
+        self.register_with_packet(oper, ptr::null_mut(), cx);
     }
 
     
     #[inline]
-    pub(crate) fn register_with_packet(&mut self, oper: Operation, packet: usize, cx: &Context) {
+    pub(crate) fn register_with_packet(&mut self, oper: Operation, packet: *mut (), cx: &Context) {
         self.selectors.push(Entry {
             oper,
             packet,
@@ -76,34 +77,26 @@ impl Waker {
     
     #[inline]
     pub(crate) fn try_select(&mut self) -> Option<Entry> {
-        let mut entry = None;
-
-        if !self.selectors.is_empty() {
-            let thread_id = current_thread_id();
-
-            for i in 0..self.selectors.len() {
+        self.selectors
+            .iter()
+            .position(|selector| {
                 
-                if self.selectors[i].cx.thread_id() != thread_id {
-                    
-                    let sel = Selected::Operation(self.selectors[i].oper);
-                    let res = self.selectors[i].cx.try_select(sel);
-
-                    if res.is_ok() {
+                selector.cx.thread_id() != current_thread_id()
+                    && selector 
+                        .cx
+                        .try_select(Selected::Operation(selector.oper))
+                        .is_ok()
+                    && {
                         
-                        self.selectors[i].cx.store_packet(self.selectors[i].packet);
+                        selector.cx.store_packet(selector.packet);
                         
-                        self.selectors[i].cx.unpark();
-
-                        
-                        
-                        entry = Some(self.selectors.remove(i));
-                        break;
+                        selector.cx.unpark();
+                        true
                     }
-                }
-            }
-        }
-
-        entry
+            })
+            
+            
+            .map(|pos| self.selectors.remove(pos))
     }
 
     
@@ -125,7 +118,7 @@ impl Waker {
     pub(crate) fn watch(&mut self, oper: Operation, cx: &Context) {
         self.observers.push(Entry {
             oper,
-            packet: 0,
+            packet: ptr::null_mut(),
             cx: cx.clone(),
         });
     }
@@ -269,7 +262,7 @@ impl SyncWaker {
 impl Drop for SyncWaker {
     #[inline]
     fn drop(&mut self) {
-        debug_assert_eq!(self.is_empty.load(Ordering::SeqCst), true);
+        debug_assert!(self.is_empty.load(Ordering::SeqCst));
     }
 }
 
