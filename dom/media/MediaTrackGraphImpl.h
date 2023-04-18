@@ -36,6 +36,28 @@ template <typename T>
 class LinkedList;
 class GraphRunner;
 
+class DeviceInputTrackManager {
+ public:
+  DeviceInputTrackManager() = default;
+
+  
+  NativeInputTrack* GetNativeInputTrack();
+  
+  
+  DeviceInputTrack* GetDeviceInputTrack(CubebUtils::AudioDeviceID aID);
+  
+  
+  NonNativeInputTrack* GetFirstNonNativeInputTrack();
+  
+  void Add(DeviceInputTrack* aTrack);
+  
+  void Remove(DeviceInputTrack* aTrack);
+
+ private:
+  RefPtr<NativeInputTrack> mNativeInputTrack;
+  nsTArray<RefPtr<NonNativeInputTrack>> mNonNativeInputTracks;
+};
+
 
 
 
@@ -734,13 +756,10 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
+  
+  
   CubebUtils::AudioDeviceID mInputDeviceID;
   CubebUtils::AudioDeviceID mOutputDeviceID;
-
-  
-  
-  RefPtr<NativeInputTrack> mNativeInputTrackGraphThread;
-  nsTArray<RefPtr<NonNativeInputTrack>> mNonNativeInputTracksGraphThread;
 
   
 
@@ -953,11 +972,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   
   
-  DeviceInputTrack* GetDeviceInputTrackGraphThread(
-      CubebUtils::AudioDeviceID aID);
-
-  
-  
   void SetNewNativeInput();
 
   
@@ -1025,8 +1039,12 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
 
 
-  RefPtr<NativeInputTrack> mNativeInputTrackMainThread;
-  nsTArray<RefPtr<NonNativeInputTrack>> mNonNativeInputTracksMainThread;
+  DeviceInputTrackManager mDeviceInputTrackManagerMainThread;
+
+  
+
+
+  DeviceInputTrackManager mDeviceInputTrackManagerGraphThread;
 };
 
 }  
