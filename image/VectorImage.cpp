@@ -1264,6 +1264,11 @@ bool VectorImage::StartDecodingWithResult(uint32_t aFlags,
   return mIsFullyLoaded;
 }
 
+bool VectorImage::HasDecodedPixels() {
+  MOZ_ASSERT_UNREACHABLE("calling VectorImage::HasDecodedPixels");
+  return mIsFullyLoaded;
+}
+
 imgIContainer::DecodeResult VectorImage::RequestDecodeWithResult(
     uint32_t aFlags, uint32_t aWhichFrame) {
   

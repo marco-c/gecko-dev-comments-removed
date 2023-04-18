@@ -185,6 +185,11 @@ interface imgIRequest : nsIRequest
 
 
 
+  
+
+
+
+  [noscript, notxpcom] boolean hasDecodedPixels();
 
   
 
