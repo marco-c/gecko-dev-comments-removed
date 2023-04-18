@@ -18,7 +18,7 @@ use crate::shared_lock::SharedRwLockReadGuard;
 use crate::stylesheets::{CssRule, StylesheetInDocument};
 use crate::stylesheets::{EffectiveRules, EffectiveRulesIterator};
 use crate::values::AtomIdent;
-use crate::Atom;
+use crate::{Atom, ShrinkIfNeeded};
 use crate::LocalName as SelectorLocalName;
 use selectors::parser::{Component, LocalName, Selector};
 
@@ -119,6 +119,15 @@ impl StylesheetInvalidationSet {
         self.fully_invalid = true;
     }
 
+    fn shrink_if_needed(&mut self) {
+        if self.fully_invalid {
+            return;
+        }
+        self.classes.shrink_if_needed();
+        self.ids.shrink_if_needed();
+        self.local_names.shrink_if_needed();
+    }
+
     
     
     
@@ -148,6 +157,8 @@ impl StylesheetInvalidationSet {
                 break;
             }
         }
+
+        self.shrink_if_needed();
 
         debug!(" > resulting class invalidations: {:?}", self.classes);
         debug!(" > resulting id invalidations: {:?}", self.ids);
