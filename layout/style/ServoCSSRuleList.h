@@ -48,7 +48,13 @@ class ServoCSSRuleList final : public dom::CSSRuleList {
   nsresult InsertRule(const nsACString& aRule, uint32_t aIndex);
   nsresult DeleteRule(uint32_t aIndex);
 
-  void SetRawAfterClone(RefPtr<ServoCssRules>);
+  
+  
+  
+  void SetRawContents(RefPtr<ServoCssRules>, bool aFromClone);
+  void SetRawAfterClone(RefPtr<ServoCssRules> aRules) {
+    SetRawContents(std::move(aRules),  true);
+  }
 
  private:
   virtual ~ServoCSSRuleList();
@@ -69,6 +75,7 @@ class ServoCSSRuleList final : public dom::CSSRuleList {
   void EnumerateInstantiatedRules(Func aCallback);
 
   void DropAllRules();
+  void ResetRules();
 
   bool IsReadOnly() const;
 
