@@ -189,14 +189,15 @@ var PageThumbs = {
 
 
 
-  captureToBlob: function PageThumbs_captureToBlob(aBrowser) {
+
+  captureToBlob: function PageThumbs_captureToBlob(aBrowser, aArgs) {
     if (!this._prefEnabled()) {
       return null;
     }
 
     return new Promise(resolve => {
       let canvas = this.createCanvas(aBrowser.ownerGlobal);
-      this.captureToCanvas(aBrowser, canvas)
+      this.captureToCanvas(aBrowser, canvas, aArgs)
         .then(() => {
           canvas.toBlob(blob => {
             resolve(blob, this.contentType);
@@ -223,6 +224,9 @@ var PageThumbs = {
 
 
 
+
+
+
   async captureToCanvas(aBrowser, aCanvas, aArgs, aSkipTelemetry = false) {
     let telemetryCaptureTime = new Date();
     let args = {
@@ -232,6 +236,7 @@ var PageThumbs = {
         aArgs?.backgroundColor ?? PageThumbUtils.THUMBNAIL_BG_COLOR,
       targetWidth: aArgs?.targetWidth ?? PageThumbUtils.THUMBNAIL_DEFAULT_SIZE,
       isBackgroundThumb: aArgs ? aArgs.isBackgroundThumb : false,
+      fullViewport: aArgs?.fullViewport ?? false,
     };
 
     return this._captureToCanvas(aBrowser, aCanvas, args).then(() => {
@@ -319,6 +324,9 @@ var PageThumbs = {
 
 
 
+
+
+
   async _captureRemoteThumbnail(aBrowser, aWidth, aHeight, aArgs) {
     if (!aBrowser.browsingContext || !aBrowser.parentElement) {
       return null;
@@ -370,7 +378,8 @@ var PageThumbs = {
         contentWidth,
         contentHeight,
         scale,
-        aArgs.backgroundColor
+        aArgs.backgroundColor,
+        aArgs.fullViewport
       );
 
       thumbnail.width = fullScale ? contentWidth : aWidth;
