@@ -38,15 +38,6 @@ class Sprinter;
 
 
 
-
-enum class JSOp : uint8_t {
-#define ENUMERATE_OPCODE(op, ...) op,
-  FOR_EACH_OPCODE(ENUMERATE_OPCODE)
-#undef ENUMERATE_OPCODE
-};
-
-
-
 static inline uint32_t JOF_TYPE(uint32_t fmt) { return fmt & JOF_TYPEMASK; }
 
 

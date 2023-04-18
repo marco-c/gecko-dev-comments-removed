@@ -9,6 +9,7 @@
 #define vm_Opcodes_h
 
 #include <stddef.h>
+#include <stdint.h>
 
 
 
@@ -3568,5 +3569,14 @@ FOR_EACH_OPCODE(DEFINE_LENGTH_CONSTANT)
 #undef DEFINE_LENGTH_CONSTANT
 
 }  
+
+
+
+
+enum class JSOp : uint8_t {
+#define ENUMERATE_OPCODE(op, ...) op,
+  FOR_EACH_OPCODE(ENUMERATE_OPCODE)
+#undef ENUMERATE_OPCODE
+};
 
 #endif  
