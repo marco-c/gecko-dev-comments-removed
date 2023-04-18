@@ -1554,6 +1554,9 @@ class PictureInPictureChild extends JSWindowActorChild {
       case this.contentWindow.KeyEvent.DOM_VK_SPACE:
         keystroke += "space";
         break;
+      case this.contentWindow.KeyEvent.DOM_VK_W:
+        keystroke += "w";
+        break;
     }
 
     const isVideoStreaming = video.duration == +Infinity;
@@ -1570,6 +1573,13 @@ class PictureInPictureChild extends JSWindowActorChild {
           } else {
             video.pause();
           }
+          break;
+        case "accel-w" :
+          if (!this.isKeyEnabled(KEYBOARD_CONTROLS.CLOSE)) {
+            return;
+          }
+          this.pause();
+          this.closePictureInPicture({ reason: "close-player-shortcut" });
           break;
         case "downArrow" :
           if (!this.isKeyEnabled(KEYBOARD_CONTROLS.VOLUME)) {
