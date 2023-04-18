@@ -27,6 +27,16 @@ const SUGGESTIONS = [1, 2, 3].map(i => ({
   _test_is_best_match: true,
 }));
 
+const NON_BEST_MATCH_SUGGESTION = {
+  id: 99,
+  title: "Non-best match",
+  url: "http://example.com/nonbestmatch",
+  keywords: ["non"],
+  click_url: "http://example.com/click",
+  impression_url: "http://example.com/impression",
+  advertiser: "TestAdvertiser",
+};
+
 add_task(async function init() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -42,7 +52,9 @@ add_task(async function init() {
   await UrlbarProviderQuickSuggest._blockTaskQueue.emptyPromise;
   await UrlbarProviderQuickSuggest.clearBlockedSuggestions();
 
-  await QuickSuggestTestUtils.ensureQuickSuggestInit(SUGGESTIONS);
+  await QuickSuggestTestUtils.ensureQuickSuggestInit(
+    SUGGESTIONS.concat(NON_BEST_MATCH_SUGGESTION)
+  );
 });
 
 
@@ -214,3 +226,109 @@ add_task(async function blockingDisabled() {
   await UrlbarTestUtils.promisePopupClose(window);
   await SpecialPowers.popPrefEnv();
 });
+
+
+
+
+add_task(async function nimbusExposure_featureEnabled() {
+  await doNimbusExposureTest({
+    bestMatchEnabled: true,
+    bestMatchExpected: true,
+    exposureEventExpected: true,
+  });
+});
+
+
+
+
+add_task(async function nimbusExposure_featureEnabled_userDisabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.suggest.bestmatch", false]],
+  });
+  await doNimbusExposureTest({
+    bestMatchEnabled: true,
+    bestMatchExpected: false,
+    exposureEventExpected: false,
+  });
+  await SpecialPowers.popPrefEnv();
+});
+
+
+
+
+add_task(async function nimbusExposure_featureDisabled() {
+  await doNimbusExposureTest({
+    bestMatchEnabled: false,
+    bestMatchExpected: false,
+    exposureEventExpected: true,
+  });
+});
+
+
+
+
+
+
+
+
+
+
+
+
+async function doNimbusExposureTest({
+  bestMatchEnabled,
+  bestMatchExpected,
+  exposureEventExpected,
+}) {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.bestMatch.enabled", false]],
+  });
+  await QuickSuggestTestUtils.clearExposureEvent();
+  await QuickSuggestTestUtils.withExperiment({
+    valueOverrides: {
+      bestMatchEnabled,
+      isBestMatchExperiment: true,
+    },
+    callback: async () => {
+      
+      await QuickSuggestTestUtils.assertExposureEvent(false);
+
+      
+      
+      info("Doing first search");
+      await UrlbarTestUtils.promiseAutocompleteResultPopup({
+        window,
+        value: NON_BEST_MATCH_SUGGESTION.keywords[0],
+        fireInputEvent: true,
+      });
+      await QuickSuggestTestUtils.assertIsQuickSuggest({
+        window,
+        url: NON_BEST_MATCH_SUGGESTION.url,
+      });
+      await UrlbarTestUtils.promisePopupClose(window);
+      await QuickSuggestTestUtils.assertExposureEvent(false);
+
+      
+      
+      info("Doing second search");
+      await UrlbarTestUtils.promiseAutocompleteResultPopup({
+        window,
+        value: SUGGESTIONS[0].keywords[0],
+        fireInputEvent: true,
+      });
+      await QuickSuggestTestUtils.assertIsQuickSuggest({
+        window,
+        originalUrl: SUGGESTIONS[0].url,
+        isBestMatch: bestMatchExpected,
+      });
+      await QuickSuggestTestUtils.assertExposureEvent(
+        exposureEventExpected,
+        "control"
+      );
+
+      await UrlbarTestUtils.promisePopupClose(window);
+    },
+  });
+
+  await SpecialPowers.popPrefEnv();
+}

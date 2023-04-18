@@ -272,6 +272,33 @@ class ProviderQuickSuggest extends UrlbarProvider {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    if (
+      !UrlbarPrefs.get("isBestMatchExperiment") ||
+      (suggestion.is_best_match &&
+        (!UrlbarPrefs.get("bestMatchEnabled") ||
+          UrlbarPrefs.get("suggest.bestmatch")))
+    ) {
+      this._ensureExposureEventRecorded();
+    }
+  }
+
+  
+
+
+
+
+  _ensureExposureEventRecorded() {
+    
+    
+    
     if (!this._recordedExposureEvent) {
       this._recordedExposureEvent = true;
       Services.tm.idleDispatchToMainThread(() =>

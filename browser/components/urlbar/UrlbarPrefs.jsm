@@ -329,6 +329,13 @@ const PREF_OTHER_DEFAULTS = new Map([
 
 
 
+
+const NIMBUS_DEFAULTS = {
+  isBestMatchExperiment: false,
+};
+
+
+
 const SUGGEST_PREF_TO_BEHAVIOR = {
   history: "history",
   bookmark: "bookmark",
@@ -1177,7 +1184,9 @@ class Preferences {
 
   get _nimbus() {
     if (!this.__nimbus) {
-      this.__nimbus = NimbusFeatures.urlbar.getAllVariables();
+      this.__nimbus = NimbusFeatures.urlbar.getAllVariables({
+        defaultValues: NIMBUS_DEFAULTS,
+      });
     }
     return this.__nimbus;
   }

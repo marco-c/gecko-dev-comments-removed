@@ -771,92 +771,45 @@ add_task(async function bestmatchLearnMore() {
 
 
 add_task(async function nimbusExposure() {
-  
-  
-  
-  await new Promise(resolve => Services.tm.idleDispatchToMainThread(resolve));
+  await QuickSuggestTestUtils.clearExposureEvent();
 
-  Services.telemetry.clearEvents();
-  NimbusFeatures.urlbar._didSendExposureEvent = false;
-  UrlbarProviderQuickSuggest._recordedExposureEvent = false;
-  let doExperimentCleanup = await QuickSuggestTestUtils.enrollExperiment({
+  await QuickSuggestTestUtils.withExperiment({
     valueOverrides: {
       quickSuggestEnabled: true,
       quickSuggestShouldShowOnboardingDialog: false,
     },
+    callback: async () => {
+      
+      await QuickSuggestTestUtils.assertExposureEvent(false);
+
+      
+      
+      await UrlbarTestUtils.promiseAutocompleteResultPopup({
+        window,
+        value: "nimbusExposure no result",
+        fireInputEvent: true,
+      });
+      await QuickSuggestTestUtils.assertNoQuickSuggestResults(window);
+      await UrlbarTestUtils.promisePopupClose(window);
+      QuickSuggestTestUtils.assertExposureEvent(false);
+
+      
+      
+      await UrlbarTestUtils.promiseAutocompleteResultPopup({
+        window,
+        value: TEST_SEARCH_STRING,
+        fireInputEvent: true,
+      });
+      await QuickSuggestTestUtils.assertIsQuickSuggest({
+        window,
+        index: 1,
+        url: TEST_URL,
+      });
+      await QuickSuggestTestUtils.assertExposureEvent(true, "control");
+
+      await UrlbarTestUtils.promisePopupClose(window);
+    },
   });
-
-  
-  let filter = {
-    category: "normandy",
-    method: "expose",
-    object: "nimbus_experiment",
-  };
-
-  
-  Assert.ok(
-    !UrlbarProviderQuickSuggest._recordedExposureEvent,
-    "_recordedExposureEvent remains false after enrolling"
-  );
-  TelemetryTestUtils.assertEvents([], filter);
-
-  
-  
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "nimbusExposure no result",
-    fireInputEvent: true,
-  });
-  await QuickSuggestTestUtils.assertNoQuickSuggestResults(window);
-  await UrlbarTestUtils.promisePopupClose(window);
-  Assert.ok(
-    !UrlbarProviderQuickSuggest._recordedExposureEvent,
-    "_recordedExposureEvent remains false after no quick suggest result"
-  );
-  TelemetryTestUtils.assertEvents([], filter);
-
-  
-  
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: TEST_SEARCH_STRING,
-    fireInputEvent: true,
-  });
-  await QuickSuggestTestUtils.assertIsQuickSuggest({
-    window,
-    index: 1,
-    url: TEST_URL,
-  });
-  Assert.ok(
-    UrlbarProviderQuickSuggest._recordedExposureEvent,
-    "_recordedExposureEvent is true after showing quick suggest result"
-  );
-
-  
-  
-  await new Promise(resolve => {
-    Services.tm.idleDispatchToMainThread(() => {
-      TelemetryTestUtils.assertEvents(
-        [
-          {
-            category: "normandy",
-            method: "expose",
-            object: "nimbus_experiment",
-            extra: {
-              branchSlug: "control",
-              featureId: "urlbar",
-            },
-          },
-        ],
-        filter
-      );
-      resolve();
-    });
-  });
-
-  await UrlbarTestUtils.promisePopupClose(window);
-
-  await doExperimentCleanup();
 });
 
 
