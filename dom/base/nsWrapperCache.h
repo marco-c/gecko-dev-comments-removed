@@ -9,6 +9,8 @@
 
 #include "nsCycleCollectionParticipant.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/ServoUtils.h"
+#include "mozilla/RustCell.h"
 #include "js/HeapAPI.h"
 #include "js/TracingAPI.h"
 #include "js/TypeDecls.h"
@@ -89,15 +91,7 @@ class JS_HAZ_ROOTED nsWrapperCache {
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_WRAPPERCACHE_IID)
 
-  nsWrapperCache()
-      : mWrapper(nullptr),
-        mFlags(0)
-#ifdef BOOL_FLAGS_ON_WRAPPER_CACHE
-        ,
-        mBoolFlags(0)
-#endif
-  {
-  }
+  nsWrapperCache() = default;
   ~nsWrapperCache() {
     
     
@@ -256,33 +250,43 @@ class JS_HAZ_ROOTED nsWrapperCache {
 
   using FlagsType = uint32_t;
 
-  FlagsType GetFlags() const { return mFlags & ~kWrapperFlagsMask; }
+  FlagsType GetFlags() const {
+    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(!mozilla::IsInServoTraversal());
+    return mFlags.Get() & ~kWrapperFlagsMask;
+  }
 
+  
+  
+  
   bool HasFlag(FlagsType aFlag) const {
     MOZ_ASSERT((aFlag & kWrapperFlagsMask) == 0, "Bad flag mask");
-    return !!(mFlags & aFlag);
+    return __atomic_load_n(mFlags.AsPtr(), __ATOMIC_RELAXED) & aFlag;
   }
 
   
   
-  bool HasAnyOfFlags(FlagsType aFlags) const {
-    MOZ_ASSERT((aFlags & kWrapperFlagsMask) == 0, "Bad flag mask");
-    return !!(mFlags & aFlags);
-  }
+  bool HasAnyOfFlags(FlagsType aFlags) const { return HasFlag(aFlags); }
 
+  
+  
+  
   bool HasAllFlags(FlagsType aFlags) const {
     MOZ_ASSERT((aFlags & kWrapperFlagsMask) == 0, "Bad flag mask");
-    return (mFlags & aFlags) == aFlags;
+    return (__atomic_load_n(mFlags.AsPtr(), __ATOMIC_RELAXED) & aFlags) ==
+           aFlags;
   }
 
   void SetFlags(FlagsType aFlagsToSet) {
+    MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT((aFlagsToSet & kWrapperFlagsMask) == 0, "Bad flag mask");
-    mFlags |= aFlagsToSet;
+    mFlags.Set(mFlags.Get() | aFlagsToSet);
   }
 
   void UnsetFlags(FlagsType aFlagsToUnset) {
+    MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT((aFlagsToUnset & kWrapperFlagsMask) == 0, "Bad flag mask");
-    mFlags &= ~aFlagsToUnset;
+    mFlags.Set(mFlags.Get() & ~aFlagsToUnset);
   }
 
   void PreserveWrapper(nsISupports* aScriptObjectHolder) {
@@ -335,23 +339,31 @@ class JS_HAZ_ROOTED nsWrapperCache {
  private:
   void SetWrapperJSObject(JSObject* aWrapper);
 
-  FlagsType GetWrapperFlags() const { return mFlags & kWrapperFlagsMask; }
+  FlagsType GetWrapperFlags() const {
+    
+    
+    MOZ_ASSERT(!NS_IsMainThread() || !mozilla::IsInServoTraversal());
+    return mFlags.Get() & kWrapperFlagsMask;
+  }
 
   bool HasWrapperFlag(FlagsType aFlag) const {
+    MOZ_ASSERT(!NS_IsMainThread() || !mozilla::IsInServoTraversal());
     MOZ_ASSERT((aFlag & ~kWrapperFlagsMask) == 0, "Bad wrapper flag bits");
-    return !!(mFlags & aFlag);
+    return !!(mFlags.Get() & aFlag);
   }
 
   void SetWrapperFlags(FlagsType aFlagsToSet) {
+    MOZ_ASSERT(!NS_IsMainThread() || !mozilla::IsInServoTraversal());
     MOZ_ASSERT((aFlagsToSet & ~kWrapperFlagsMask) == 0,
                "Bad wrapper flag bits");
-    mFlags |= aFlagsToSet;
+    mFlags.Set(mFlags.Get() | aFlagsToSet);
   }
 
   void UnsetWrapperFlags(FlagsType aFlagsToUnset) {
+    MOZ_ASSERT(!NS_IsMainThread() || !mozilla::IsInServoTraversal());
     MOZ_ASSERT((aFlagsToUnset & ~kWrapperFlagsMask) == 0,
                "Bad wrapper flag bits");
-    mFlags &= ~aFlagsToUnset;
+    mFlags.Set(mFlags.Get() & ~aFlagsToUnset);
   }
 
   void HoldJSObjects(void* aScriptObjectHolder, nsScriptObjectTracer* aTracer,
@@ -379,12 +391,22 @@ class JS_HAZ_ROOTED nsWrapperCache {
 
   enum { kWrapperFlagsMask = WRAPPER_BIT_PRESERVED };
 
-  JSObject* mWrapper;
-  FlagsType mFlags;
+  JSObject* mWrapper = nullptr;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::RustCell<FlagsType> mFlags{0};
 
  protected:
 #ifdef BOOL_FLAGS_ON_WRAPPER_CACHE
-  uint32_t mBoolFlags;
+  uint32_t mBoolFlags = 0;
 #endif
 };
 
