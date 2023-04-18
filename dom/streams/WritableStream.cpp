@@ -483,7 +483,7 @@ already_AddRefed<WritableStream> WritableStream::Constructor(
 
   
   
-  UnderlyingSink underlyingSinkDict;
+  RootedDictionary<UnderlyingSink> underlyingSinkDict(aGlobal.Context());
   if (underlyingSinkObj) {
     JS::Rooted<JS::Value> objValue(aGlobal.Context(),
                                    JS::ObjectValue(*underlyingSinkObj));

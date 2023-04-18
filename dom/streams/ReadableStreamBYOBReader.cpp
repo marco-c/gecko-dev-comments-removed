@@ -11,6 +11,7 @@
 #include "mozilla/dom/ReadableStreamBYOBReaderBinding.h"
 #include "mozilla/dom/ReadableStreamGenericReader.h"
 #include "mozilla/dom/ReadIntoRequest.h"
+#include "mozilla/dom/RootedDictionary.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
 
@@ -122,7 +123,7 @@ struct Read_ReadIntoRequest final : public ReadIntoRequest {
     
     
     
-    ReadableStreamBYOBReadResult result;
+    RootedDictionary<ReadableStreamBYOBReadResult> result(aCx);
     if (aChunk.isObject()) {
       
       
