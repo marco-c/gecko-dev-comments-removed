@@ -64,9 +64,10 @@ typedef struct FrameDecodeData {
 
 int ff_decode_get_packet(AVCodecContext *avctx, AVPacket *pkt);
 
-int ff_decode_bsfs_init(AVCodecContext *avctx);
 
-void ff_decode_bsfs_uninit(AVCodecContext *avctx);
+
+
+int ff_decode_frame_props(AVCodecContext *avctx, AVFrame *frame);
 
 
 
@@ -77,5 +78,11 @@ int ff_decode_get_hw_frames_ctx(AVCodecContext *avctx,
                                 enum AVHWDeviceType dev_type);
 
 int ff_attach_decode_data(AVFrame *frame);
+
+
+
+
+
+int ff_decode_preinit(AVCodecContext *avctx);
 
 #endif 

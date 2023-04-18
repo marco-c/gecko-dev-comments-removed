@@ -28,6 +28,7 @@
 
 #include "libavutil/buffer.h"
 #include "libavutil/channel_layout.h"
+#include "libavutil/fifo.h"
 #include "libavutil/mathematics.h"
 #include "libavutil/pixfmt.h"
 #include "avcodec.h"
@@ -69,6 +70,26 @@
 
 #define FF_CODEC_CAP_SLICE_THREAD_HAS_MF    (1 << 5)
 
+
+
+
+#define FF_CODEC_CAP_ALLOCATE_PROGRESS      (1 << 6)
+
+
+
+#define FF_CODEC_CAP_AUTO_THREADS           (1 << 7)
+
+
+
+
+#define FF_CODEC_CAP_SETS_FRAME_PROPS       (1 << 8)
+
+
+
+
+#define FF_CODEC_TAGS_END -1
+
+
 #ifdef TRACE
 #   define ff_tlog(ctx, ...) av_log(ctx, AV_LOG_TRACE, __VA_ARGS__)
 #else
@@ -83,7 +104,7 @@
 #define FF_QSCALE_TYPE_H264  2
 #define FF_QSCALE_TYPE_VP56  3
 
-#define FF_SANE_NB_CHANNELS 256U
+#define FF_SANE_NB_CHANNELS 512U
 
 #define FF_SIGNBIT(x) ((x) >> CHAR_BIT * sizeof(x) - 1)
 
@@ -97,34 +118,13 @@
 #   define STRIDE_ALIGN 8
 #endif
 
-typedef struct FramePool {
-    
-
-
-
-    AVBufferPool *pools[4];
-
-    
-
-
-    int format;
-    int width, height;
-    int stride_align[AV_NUM_DATA_POINTERS];
-    int linesize[4];
-    int planes;
-    int channels;
-    int samples;
-} FramePool;
-
 typedef struct DecodeSimpleContext {
     AVPacket *in_pkt;
-    AVFrame  *out_frame;
 } DecodeSimpleContext;
 
-typedef struct DecodeFilterContext {
-    AVBSFContext **bsfs;
-    int         nb_bsfs;
-} DecodeFilterContext;
+typedef struct EncodeSimpleContext {
+    AVFrame *in_frame;
+} EncodeSimpleContext;
 
 typedef struct AVCodecInternal {
     
@@ -139,37 +139,25 @@ typedef struct AVCodecInternal {
 
 
 
-
-
-
-
-
-
-
-
-
-    int allocate_progress;
-
-    
-
-
-
     int last_audio_frame;
 
+#if FF_API_OLD_ENCDEC
     AVFrame *to_free;
+#endif
 
-    FramePool *pool;
+    AVBufferRef *pool;
 
     void *thread_ctx;
 
     DecodeSimpleContext ds;
-    DecodeFilterContext filter;
+    AVBSFContext *bsf;
 
     
 
 
 
     AVPacket *last_pkt_props;
+    AVFifoBuffer *pkt_props;
 
     
 
@@ -178,6 +166,8 @@ typedef struct AVCodecInternal {
     unsigned int byte_buffer_size;
 
     void *frame_thread_encoder;
+
+    EncodeSimpleContext es;
 
     
 
@@ -198,11 +188,10 @@ typedef struct AVCodecInternal {
 
 
     AVPacket *buffer_pkt;
-    int buffer_pkt_valid; 
     AVFrame *buffer_frame;
     int draining_done;
-    
-    int compat_decode;
+
+#if FF_API_OLD_ENCDEC
     int compat_decode_warned;
     
 
@@ -211,6 +200,8 @@ typedef struct AVCodecInternal {
 
     size_t compat_decode_partial_size;
     AVFrame *compat_decode_frame;
+    AVPacket *compat_encode_packet;
+#endif
 
     int showed_multi_packet_warning;
 
@@ -280,8 +271,6 @@ void ff_color_frame(AVFrame *frame, const int color[4]);
 
 int ff_alloc_packet2(AVCodecContext *avctx, AVPacket *avpkt, int64_t size, int64_t min_size);
 
-attribute_deprecated int ff_alloc_packet(AVPacket *avpkt, int size);
-
 
 
 
@@ -320,27 +309,16 @@ static av_always_inline float ff_exp2fi(int x) {
 
 int ff_get_buffer(AVCodecContext *avctx, AVFrame *frame, int flags);
 
+#define FF_REGET_BUFFER_FLAG_READONLY 1 ///< the returned buffer does not need to be writable
 
 
 
 
-int ff_reget_buffer(AVCodecContext *avctx, AVFrame *frame);
+int ff_reget_buffer(AVCodecContext *avctx, AVFrame *frame, int flags);
 
 int ff_thread_can_start_frame(AVCodecContext *avctx);
 
 int avpriv_h264_has_num_reorder_frames(AVCodecContext *avctx);
-
-
-
-
-
-
-int ff_codec_open2_recursive(AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options);
-
-
-
-
-int avpriv_bprint_to_extradata(AVCodecContext *avctx, struct AVBPrint *buf);
 
 const uint8_t *avpriv_find_start_code(const uint8_t *p,
                                       const uint8_t *end,
@@ -382,14 +360,8 @@ int ff_get_format(AVCodecContext *avctx, const enum AVPixelFormat *fmt);
 
 
 
-int ff_decode_frame_props(AVCodecContext *avctx, AVFrame *frame);
-
-
-
-
 AVCPBProperties *ff_add_cpb_side_data(AVCodecContext *avctx);
 
-int ff_side_data_set_encoder_stats(AVPacket *pkt, int quality, int64_t *error, int error_count, int pict_type);
 
 
 
@@ -403,7 +375,7 @@ int ff_side_data_set_encoder_stats(AVPacket *pkt, int quality, int64_t *error, i
 
 
 
-int ff_alloc_a53_sei(const AVFrame *frame, size_t prefix_len,
+int ff_alloc_timecode_sei(const AVFrame *frame, AVRational rate, size_t prefix_len,
                      void **data, size_t *sei_size);
 
 
@@ -423,6 +395,8 @@ int64_t ff_guess_coded_bitrate(AVCodecContext *avctx);
 
 int ff_int_from_list_or_default(void *ctx, const char * val_name, int val,
                                 const int * array_valid_values, int default_value);
+
+void ff_dvdsub_parse_palette(uint32_t *palette, const char *p);
 
 #if defined(_WIN32) && CONFIG_SHARED && !defined(BUILDING_avcodec)
 #    define av_export_avcodec __declspec(dllimport)
