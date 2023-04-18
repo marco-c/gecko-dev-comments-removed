@@ -633,14 +633,24 @@ class gfxUserFontEntry : public gfxFontEntry {
 
   
   
+  
   bool CharacterInUnicodeRange(uint32_t ch) const {
-    if (mCharacterMap) {
-      return mCharacterMap->test(ch);
+    if (const auto* map = GetUnicodeRangeMap()) {
+      return map->test(ch);
     }
     return true;
   }
 
-  gfxCharacterMap* GetUnicodeRangeMap() const { return mCharacterMap.get(); }
+  gfxCharacterMap* GetUnicodeRangeMap() const { return GetCharacterMap(); }
+  void SetUnicodeRangeMap(gfxCharacterMap* aCharMap) {
+    auto* oldCmap = GetUnicodeRangeMap();
+    if (oldCmap != aCharMap) {
+      if (mCharacterMap.compareExchange(oldCmap, aCharMap)) {
+        NS_IF_RELEASE(oldCmap);
+        NS_IF_ADDREF(aCharMap);
+      }
+    }
+  }
 
   mozilla::StyleFontDisplay GetFontDisplay() const { return mFontDisplay; }
 

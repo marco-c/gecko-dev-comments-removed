@@ -20,7 +20,9 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/FontPropertyTypes.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/RWLock.h"
 #include "mozilla/TypedEnumBits.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/intl/UnicodeScriptCodes.h"
@@ -144,6 +146,10 @@ class gfxFontEntry {
 
   explicit gfxFontEntry(const nsACString& aName, bool aIsStandardFace = false);
 
+  gfxFontEntry() = delete;
+  gfxFontEntry(const gfxFontEntry&) = delete;
+  gfxFontEntry& operator=(const gfxFontEntry&) = delete;
+
   
   
   
@@ -224,15 +230,16 @@ class gfxFontEntry {
 
   inline bool HasCharacter(uint32_t ch) {
     if (mShmemCharacterMap) {
-      return mShmemCharacterMap->test(ch);
+      return GetShmemCharacterMap()->test(ch);
     }
     if (mCharacterMap) {
       if (mShmemFace && TrySetShmemCharacterMap()) {
         
-        mCharacterMap = nullptr;
-        return mShmemCharacterMap->test(ch);
+        auto* oldCmap = mCharacterMap.exchange(nullptr);
+        NS_IF_RELEASE(oldCmap);
+        return GetShmemCharacterMap()->test(ch);
       }
-      if (mCharacterMap->test(ch)) {
+      if (GetCharacterMap()->test(ch)) {
         return true;
       }
     }
@@ -240,7 +247,7 @@ class gfxFontEntry {
   }
 
   virtual bool SkipDuringSystemFallback() { return false; }
-  nsresult InitializeUVSMap();
+  void EnsureUVSMapInitialized();
   uint16_t GetUVSGlyph(uint32_t aCh, uint32_t aVS);
 
   
@@ -267,8 +274,8 @@ class gfxFontEntry {
                           nsTArray<uint16_t>& layerGlyphs,
                           nsTArray<mozilla::gfx::DeviceColor>& layerColors);
   bool HasColorLayersForGlyph(uint32_t aGlyphId) {
-    MOZ_ASSERT(mCOLR);
-    return gfxFontUtils::HasColorLayersForGlyph(mCOLR, aGlyphId);
+    MOZ_ASSERT(GetCOLR());
+    return gfxFontUtils::HasColorLayersForGlyph(GetCOLR(), aGlyphId);
   }
 
   bool HasColorBitmapTable() {
@@ -463,24 +470,44 @@ class gfxFontEntry {
   nsCString mName;
   nsCString mFamilyName;
 
-  RefPtr<gfxCharacterMap> mCharacterMap;
+  
+  mutable mozilla::RWLock mLock;
+  mutable mozilla::Mutex mFeatureInfoLock;
+
+  mozilla::Atomic<gfxCharacterMap*> mCharacterMap;  
+  gfxCharacterMap* GetCharacterMap() const { return mCharacterMap; }
 
   mozilla::fontlist::Face* mShmemFace = nullptr;
-  const SharedBitSet* mShmemCharacterMap = nullptr;
 
-  mozilla::UniquePtr<uint8_t[]> mUVSData;
+  mozilla::Atomic<const SharedBitSet*> mShmemCharacterMap;
+  const SharedBitSet* GetShmemCharacterMap() const {
+    return mShmemCharacterMap;
+  }
+
+  mozilla::Atomic<const uint8_t*> mUVSData;
+  const uint8_t* GetUVSData() const { return mUVSData; }
+
   mozilla::UniquePtr<gfxUserFontData> mUserFontData;
-  mozilla::UniquePtr<gfxSVGGlyphs> mSVGGlyphs;
+
+  mozilla::Atomic<gfxSVGGlyphs*> mSVGGlyphs;
+  gfxSVGGlyphs* GetSVGGlyphs() const { return mSVGGlyphs; }
+
   
-  nsTArray<const gfxFont*> mFontsUsingSVGGlyphs;
+  nsTArray<const gfxFont*> mFontsUsingSVGGlyphs GUARDED_BY(mLock);
   nsTArray<gfxFontFeature> mFeatureSettings;
   nsTArray<gfxFontVariation> mVariationSettings;
-  mozilla::UniquePtr<nsTHashMap<nsUint32HashKey, bool>> mSupportedFeatures;
-  mozilla::UniquePtr<nsTHashMap<nsUint32HashKey, hb_set_t*>> mFeatureInputs;
+
+  mozilla::UniquePtr<nsTHashMap<nsUint32HashKey, bool>> mSupportedFeatures
+      GUARDED_BY(mFeatureInfoLock);
+  mozilla::UniquePtr<nsTHashMap<nsUint32HashKey, hb_set_t*>> mFeatureInputs
+      GUARDED_BY(mFeatureInfoLock);
 
   
-  hb_blob_t* mCOLR = nullptr;
-  hb_blob_t* mCPAL = nullptr;
+  
+  mozilla::Atomic<hb_blob_t*> mCOLR;
+  mozilla::Atomic<hb_blob_t*> mCPAL;
+  hb_blob_t* GetCOLR() const { return mCOLR; }
+  hb_blob_t* GetCPAL() const { return mCPAL; }
 
   
   
@@ -488,7 +515,7 @@ class gfxFontEntry {
   uint32_t
       mNonDefaultSubSpaceFeatures[(int(Script::NUM_SCRIPT_CODES) + 31) / 32];
 
-  uint32_t mUVSOffset = 0;
+  mozilla::Atomic<uint32_t> mUVSOffset;
 
   uint32_t mLanguageOverride = NO_FONT_LANGUAGE_OVERRIDE;
 
@@ -544,31 +571,30 @@ class gfxFontEntry {
   bool mStandardFace : 1;
   bool mIgnoreGDEF : 1;
   bool mIgnoreGSUB : 1;
-  bool mSVGInitialized : 1;
-  bool mHasSpaceFeaturesInitialized : 1;
-  bool mHasSpaceFeatures : 1;
-  bool mHasSpaceFeaturesKerning : 1;
-  bool mHasSpaceFeaturesNonKerning : 1;
   bool mSkipDefaultFeatureSpaceCheck : 1;
-  bool mGraphiteSpaceContextualsInitialized : 1;
-  bool mHasGraphiteSpaceContextuals : 1;
-  bool mSpaceGlyphIsInvisible : 1;
-  bool mSpaceGlyphIsInvisibleInitialized : 1;
-  bool mHasGraphiteTables : 1;
-  bool mCheckedForGraphiteTables : 1;
-  bool mHasCmapTable : 1;
-  bool mGrFaceInitialized : 1;
-  bool mCheckedForColorGlyph : 1;
-  bool mCheckedForVariationAxes : 1;
-  bool mHasColorBitmapTable : 1;
-  bool mCheckedForColorBitmapTables : 1;
+
+  mozilla::Atomic<bool> mSVGInitialized;
+  mozilla::Atomic<bool> mHasSpaceFeaturesInitialized;
+  mozilla::Atomic<bool> mHasSpaceFeatures;
+  mozilla::Atomic<bool> mHasSpaceFeaturesKerning;
+  mozilla::Atomic<bool> mHasSpaceFeaturesNonKerning;
+  mozilla::Atomic<bool> mGraphiteSpaceContextualsInitialized;
+  mozilla::Atomic<bool> mHasGraphiteSpaceContextuals;
+  mozilla::Atomic<bool> mSpaceGlyphIsInvisible;
+  mozilla::Atomic<bool> mSpaceGlyphIsInvisibleInitialized;
+  mozilla::Atomic<bool> mHasGraphiteTables;
+  mozilla::Atomic<bool> mCheckedForGraphiteTables;
+  mozilla::Atomic<bool> mHasCmapTable;
+  mozilla::Atomic<bool> mGrFaceInitialized;
+  mozilla::Atomic<bool> mCheckedForColorGlyph;
+  mozilla::Atomic<bool> mCheckedForVariationAxes;
+  mozilla::Atomic<bool> mHasColorBitmapTable;
+  mozilla::Atomic<bool> mCheckedForColorBitmapTables;
 
  protected:
   friend class gfxPlatformFontList;
   friend class gfxFontFamily;
   friend class gfxUserFontEntry;
-
-  gfxFontEntry();
 
   
   virtual ~gfxFontEntry();
@@ -590,7 +616,7 @@ class gfxFontEntry {
   
   
   
-  bool ParseTrakTable();
+  bool ParseTrakTable() REQUIRES(mLock);
 
   
   virtual already_AddRefed<gfxCharacterMap> GetCMAPFromFontInfo(
@@ -619,13 +645,14 @@ class gfxFontEntry {
   
   
   
-  hb_face_t* mHBFace = nullptr;
+  mozilla::Atomic<hb_face_t*> mHBFace;
 
   static hb_blob_t* HBGetTable(hb_face_t* face, uint32_t aTag, void* aUserData);
 
   
   static void HBFaceDeletedCallback(void* aUserData);
 
+  
   
   
   struct GrSandboxData;
@@ -639,14 +666,16 @@ class gfxFontEntry {
 
   
   hb_blob_t* const kTrakTableUninitialized = (hb_blob_t*)(intptr_t(-1));
-  hb_blob_t* mTrakTable = kTrakTableUninitialized;
+  mozilla::Atomic<hb_blob_t*> mTrakTable;
+  hb_blob_t* GetTrakTable() const { return mTrakTable; }
   bool TrakTableInitialized() const {
     return mTrakTable != kTrakTableUninitialized;
   }
 
   
-  const mozilla::AutoSwap_PRInt16* mTrakValues;
-  const mozilla::AutoSwap_PRInt32* mTrakSizeTable;
+  
+  const mozilla::AutoSwap_PRInt16* mTrakValues = nullptr;
+  const mozilla::AutoSwap_PRInt32* mTrakSizeTable = nullptr;
 
   
   nsrefcnt mGrFaceRefCnt = 0;
@@ -669,7 +698,7 @@ class gfxFontEntry {
   
   uint16_t mUnitsPerEm = 0;
 
-  uint16_t mNumTrakSizes;
+  uint16_t mNumTrakSizes = 0;
 
  private:
   
@@ -760,10 +789,11 @@ class gfxFontEntry {
     hb_blob_t* mBlob;
   };
 
-  mozilla::UniquePtr<nsTHashtable<FontTableHashEntry>> mFontTableCache;
-
-  gfxFontEntry(const gfxFontEntry&);
-  gfxFontEntry& operator=(const gfxFontEntry&);
+  using FontTableCache = nsTHashtable<FontTableHashEntry>;
+  mozilla::Atomic<FontTableCache*> mFontTableCache GUARDED_BY(mLock);
+  FontTableCache* GetFontTableCache() const NO_THREAD_SAFETY_ANALYSIS {
+    return mFontTableCache;
+  }
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxFontEntry::RangeFlags)
