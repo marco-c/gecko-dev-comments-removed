@@ -1625,6 +1625,13 @@ bool nsGlobalWindowInner::ShouldResistFingerprinting() const {
   return nsIScriptGlobalObject::ShouldResistFingerprinting();
 }
 
+uint32_t nsGlobalWindowInner::GetPrincipalHashValue() const {
+  if (mDoc) {
+    return mDoc->NodePrincipal()->GetHashValue();
+  }
+  return 0;
+}
+
 nsresult nsGlobalWindowInner::EnsureScriptEnvironment() {
   
   
