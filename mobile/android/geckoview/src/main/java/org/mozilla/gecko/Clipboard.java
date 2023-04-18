@@ -8,6 +8,7 @@ import android.content.ClipData;
 import android.content.ClipDescription;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
 import org.mozilla.gecko.annotation.WrapForJNI;
@@ -120,17 +121,61 @@ public final class Clipboard {
   }
 
   
+
+
+
+
+
+
   @WrapForJNI(calledFrom = "gecko")
   public static boolean hasData(final Context context, final String mimeType) {
-    if (HTML_MIME.equals(mimeType) || UNICODE_MIME.equals(mimeType)) {
-      return !TextUtils.isEmpty(getData(context, mimeType));
+    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+      if (HTML_MIME.equals(mimeType) || UNICODE_MIME.equals(mimeType)) {
+        return !TextUtils.isEmpty(getData(context, mimeType));
+      }
+      return false;
     }
+
+    
+    
+
+    final ClipboardManager cm =
+        (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+
+    if (!cm.hasPrimaryClip()) {
+      return false;
+    }
+
+    final ClipDescription description = cm.getPrimaryClipDescription();
+    if (description == null) {
+      return false;
+    }
+
+    if (HTML_MIME.equals(mimeType)) {
+      return description.hasMimeType(ClipDescription.MIMETYPE_TEXT_HTML);
+    }
+
+    if (UNICODE_MIME.equals(mimeType)) {
+      
+      return description.hasMimeType(ClipDescription.MIMETYPE_TEXT_HTML)
+          || description.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN);
+    }
+
     return false;
   }
 
   
   @WrapForJNI(calledFrom = "gecko")
   public static void clearText(final Context context) {
-    setText(context, null);
+    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+      setText(context, null);
+      return;
+    }
+    
+    
+    
+    final ClipboardManager cm =
+        (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+    cm.clearPrimaryClip();
   }
 }
