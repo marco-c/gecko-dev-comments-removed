@@ -1034,6 +1034,11 @@ void DXGITextureHostD3D11::PushDisplayItems(
     case gfx::SurfaceFormat::P010:
     case gfx::SurfaceFormat::P016:
     case gfx::SurfaceFormat::NV12: {
+      
+      
+      
+      
+      
       MOZ_ASSERT(aImageKeys.length() == 2);
       aBuilder.PushNV12Image(
           aBounds, aClip, true, aImageKeys[0], aImageKeys[1],
