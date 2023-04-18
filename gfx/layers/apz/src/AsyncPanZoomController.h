@@ -1483,7 +1483,8 @@ class AsyncPanZoomController {
 
   
   
-  void SmoothMsdScrollTo(const CSSPoint& aDestination);
+  void SmoothMsdScrollTo(const CSSPoint& aDestination,
+                         ScrollTriggeredByScript aTriggeredByScript);
 
   
   bool AllowScrollHandoffInCurrentBlock() const;

@@ -81,6 +81,8 @@ class AsyncPanZoomAnimation {
 
   virtual void Cancel(CancelAnimationFlags aFlags) {}
 
+  virtual bool WasTriggeredByScript() const { return false; }
+
  protected:
   
   virtual ~AsyncPanZoomAnimation() = default;
