@@ -816,9 +816,8 @@ CookiePersistentStorage::OpenDBResult CookiePersistentStorage::TryInitDB(
     
     
     
-    rv = mStorageService->OpenUnsharedDatabase(
-        mCookieFile, mozIStorageService::CONNECTION_DEFAULT,
-        getter_AddRefs(mSyncConn));
+    rv = mStorageService->OpenUnsharedDatabase(mCookieFile,
+                                               getter_AddRefs(mSyncConn));
     NS_ENSURE_SUCCESS(rv, RESULT_RETRY);
   }
 
@@ -1786,9 +1785,8 @@ void CookiePersistentStorage::InitDBConn() {
 nsresult CookiePersistentStorage::InitDBConnInternal() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  nsresult rv = mStorageService->OpenUnsharedDatabase(
-      mCookieFile, mozIStorageService::CONNECTION_DEFAULT,
-      getter_AddRefs(mDBConn));
+  nsresult rv = mStorageService->OpenUnsharedDatabase(mCookieFile,
+                                                      getter_AddRefs(mDBConn));
   NS_ENSURE_SUCCESS(rv, rv);
 
   

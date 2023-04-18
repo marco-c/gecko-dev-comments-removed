@@ -572,8 +572,7 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateWebAppsStoreConnection(
                      
                      MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
                          nsCOMPtr<mozIStorageConnection>, aStorageService,
-                         OpenUnsharedDatabase, &aWebAppsStoreFile,
-                         mozIStorageService::CONNECTION_DEFAULT),
+                         OpenUnsharedDatabase, &aWebAppsStoreFile),
                      
                      IsDatabaseCorruptionError,
                      
@@ -5670,11 +5669,10 @@ Result<Ok, nsresult> QuotaManager::CopyLocalStorageArchiveFromWebAppsStore(
                    GetLocalStorageArchiveTmpFile(*mStoragePath));
 
     if (journalMode.EqualsLiteral("wal")) {
-      QM_TRY_INSPECT(
-          const auto& lsArchiveTmpConnection,
-          MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
-              nsCOMPtr<mozIStorageConnection>, ss, OpenUnsharedDatabase,
-              lsArchiveTmpFile, mozIStorageService::CONNECTION_DEFAULT));
+      QM_TRY_INSPECT(const auto& lsArchiveTmpConnection,
+                     MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
+                         nsCOMPtr<mozIStorageConnection>, ss,
+                         OpenUnsharedDatabase, lsArchiveTmpFile));
 
       
       
@@ -5717,10 +5715,10 @@ Result<Ok, nsresult> QuotaManager::CopyLocalStorageArchiveFromWebAppsStore(
 
   Unused << created;
 
-  QM_TRY_UNWRAP(auto lsArchiveConnection,
-                MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
-                    nsCOMPtr<mozIStorageConnection>, ss, OpenUnsharedDatabase,
-                    &aLsArchiveFile, mozIStorageService::CONNECTION_DEFAULT));
+  QM_TRY_UNWRAP(
+      auto lsArchiveConnection,
+      MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsCOMPtr<mozIStorageConnection>, ss,
+                                        OpenUnsharedDatabase, &aLsArchiveFile));
 
   QM_TRY(MOZ_TO_RESULT(
       StorageDBUpdater::CreateCurrentSchema(lsArchiveConnection)));
@@ -5755,10 +5753,9 @@ QuotaManager::CreateLocalStorageArchiveConnection(
                                          MOZ_STORAGE_SERVICE_CONTRACTID));
 
   
-  QM_TRY_UNWRAP(auto connection,
-                MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
-                    nsCOMPtr<mozIStorageConnection>, ss, OpenUnsharedDatabase,
-                    &aLsArchiveFile, mozIStorageService::CONNECTION_DEFAULT));
+  QM_TRY_UNWRAP(auto connection, MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
+                                     nsCOMPtr<mozIStorageConnection>, ss,
+                                     OpenUnsharedDatabase, &aLsArchiveFile));
 
   
   
@@ -6125,10 +6122,10 @@ Result<Ok, nsresult> QuotaManager::CreateEmptyLocalStorageArchive(
                                          MOZ_SELECT_OVERLOAD(do_GetService),
                                          MOZ_STORAGE_SERVICE_CONTRACTID));
 
-  QM_TRY_UNWRAP(const auto connection,
-                MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
-                    nsCOMPtr<mozIStorageConnection>, ss, OpenUnsharedDatabase,
-                    &aLsArchiveFile, mozIStorageService::CONNECTION_DEFAULT));
+  QM_TRY_UNWRAP(
+      const auto connection,
+      MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsCOMPtr<mozIStorageConnection>, ss,
+                                        OpenUnsharedDatabase, &aLsArchiveFile));
 
   QM_TRY(MOZ_TO_RESULT(StorageDBUpdater::CreateCurrentSchema(connection)));
 
@@ -6160,17 +6157,16 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
                                            MOZ_SELECT_OVERLOAD(do_GetService),
                                            MOZ_STORAGE_SERVICE_CONTRACTID));
 
-    QM_TRY_UNWRAP(
-        auto connection,
-        QM_OR_ELSE_WARN_IF(
-            
-            MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
-                nsCOMPtr<mozIStorageConnection>, ss, OpenUnsharedDatabase,
-                storageFile, mozIStorageService::CONNECTION_DEFAULT),
-            
-            IsDatabaseCorruptionError,
-            
-            ErrToDefaultOk<nsCOMPtr<mozIStorageConnection>>));
+    QM_TRY_UNWRAP(auto connection,
+                  QM_OR_ELSE_WARN_IF(
+                      
+                      MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
+                          nsCOMPtr<mozIStorageConnection>, ss,
+                          OpenUnsharedDatabase, storageFile),
+                      
+                      IsDatabaseCorruptionError,
+                      
+                      ErrToDefaultOk<nsCOMPtr<mozIStorageConnection>>));
 
     if (!connection) {
       
@@ -6178,8 +6174,7 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
 
       QM_TRY_UNWRAP(connection, MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
                                     nsCOMPtr<mozIStorageConnection>, ss,
-                                    OpenUnsharedDatabase, storageFile,
-                                    mozIStorageService::CONNECTION_DEFAULT));
+                                    OpenUnsharedDatabase, storageFile));
     }
 
     
