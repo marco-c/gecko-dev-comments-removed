@@ -983,9 +983,6 @@ child:
   async DispatchBeforeUnloadToSubtree(MaybeDiscardedBrowsingContext aStartingAt)
       returns (PermitUnloadResult result);
 
-  async CanSavePresentation(MaybeDiscardedBrowsingContext aTopLevelContext,
-      uint64_t? aDocumentChannelId) returns (bool success);
-
   
   async UpdateMediaCodecsSupported(RemoteDecodeIn aLocation, MediaCodecsSupported aSupported);
 
