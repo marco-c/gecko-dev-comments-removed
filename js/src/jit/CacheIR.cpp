@@ -5331,14 +5331,18 @@ void InlinableNativeIRGenerator::emitNativeCalleeGuard() {
   
   MOZ_ASSERT(callee_->isNativeWithoutJitEntry());
 
-  
+  ObjOperandId calleeObjId;
   if (flags_.getArgFormat() == CallFlags::FunCall) {
-    return;
+    MOZ_ASSERT(generator_.writer.numOperandIds() > 0, "argcId is initialized");
+
+    Int32OperandId argcId(0);
+    calleeObjId = generator_.emitFunCallGuard(argcId);
+  } else {
+    ValOperandId calleeValId =
+        writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_, flags_);
+    calleeObjId = writer.guardToObject(calleeValId);
   }
 
-  ValOperandId calleeValId =
-      writer.loadArgumentFixedSlot(ArgumentKind::Callee, argc_, flags_);
-  ObjOperandId calleeObjId = writer.guardToObject(calleeValId);
   writer.guardSpecificFunction(calleeObjId, callee_);
 
   
@@ -5364,6 +5368,22 @@ void CallIRGenerator::emitCalleeGuard(ObjOperandId calleeId,
     writer.guardClass(calleeId, GuardClassKind::JSFunction);
     writer.guardFunctionScript(calleeId, callee->baseScript());
   }
+}
+
+ObjOperandId CallIRGenerator::emitFunCallGuard(Int32OperandId argcId) {
+  JSFunction* callee = &callee_.toObject().as<JSFunction>();
+  MOZ_ASSERT(callee->native() == fun_call);
+
+  
+  ValOperandId calleeValId =
+      writer.loadArgumentDynamicSlot(ArgumentKind::Callee, argcId);
+  ObjOperandId calleeObjId = writer.guardToObject(calleeValId);
+  writer.guardSpecificFunction(calleeObjId, callee);
+
+  
+  ValOperandId thisValId =
+      writer.loadArgumentDynamicSlot(ArgumentKind::This, argcId);
+  return writer.guardToObject(thisValId);
 }
 
 AttachDecision InlinableNativeIRGenerator::tryAttachArrayPush() {
@@ -8368,71 +8388,64 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
   }
   Int32OperandId argcId(writer.setInputOperandId(0));
 
-  
-  ValOperandId calleeValId =
-      writer.loadArgumentDynamicSlot(ArgumentKind::Callee, argcId);
-  ObjOperandId calleeObjId = writer.guardToObject(calleeValId);
-  writer.guardSpecificFunction(calleeObjId, callee);
-
-  
-  ValOperandId thisValId =
-      writer.loadArgumentDynamicSlot(ArgumentKind::This, argcId);
-  ObjOperandId thisObjId = writer.guardToObject(thisValId);
-
   CallFlags targetFlags(CallFlags::FunCall);
+  if (mode_ == ICState::Mode::Specialized) {
+    if (cx_->realm() == target->realm()) {
+      targetFlags.setIsSameRealm();
+    }
+  }
+
+  if (mode_ == ICState::Mode::Specialized && !isScripted && argc_ > 0) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    HandleValue newTarget = NullHandleValue;
+    HandleValue thisValue = args_[0];
+    HandleValueArray args =
+        HandleValueArray::subarray(args_, 1, args_.length() - 1);
+
+    
+    InlinableNativeIRGenerator nativeGen(*this, target, newTarget, thisValue,
+                                         args, targetFlags);
+    TRY_ATTACH(nativeGen.tryAttachStub());
+  }
+
+  ObjOperandId thisObjId = emitFunCallGuard(argcId);
+
   if (mode_ == ICState::Mode::Specialized) {
     
     emitCalleeGuard(thisObjId, target);
 
-    if (cx_->realm() == target->realm()) {
-      targetFlags.setIsSameRealm();
-    }
-
     if (isScripted) {
       writer.callScriptedFunction(thisObjId, argcId, targetFlags);
     } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (argc_ > 0) {
-        HandleValue newTarget = NullHandleValue;
-        HandleValue thisValue = args_[0];
-        HandleValueArray args =
-            HandleValueArray::subarray(args_, 1, args_.length() - 1);
-
-        
-        InlinableNativeIRGenerator nativeGen(*this, target, newTarget,
-                                             thisValue, args, targetFlags);
-        TRY_ATTACH(nativeGen.tryAttachStub());
-      }
-
       writer.callNativeFunction(thisObjId, argcId, op_, target, targetFlags);
     }
   } else {
