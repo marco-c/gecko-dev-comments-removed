@@ -1244,9 +1244,15 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
     
     RefPtr<SessionHistoryEntry> currentSHEntry =
         aBrowsingContext->GetActiveSessionHistoryEntry();
-    if (aCanSave && currentSHEntry) {
-      currentSHEntry->SetFrameLoader(currentFrameLoader);
-      Unused << aBrowsingContext->SetIsInBFCache(true);
+    if (currentSHEntry) {
+      
+      
+      aBrowsingContext->SynchronizeLayoutHistoryState();
+
+      if (aCanSave) {
+        currentSHEntry->SetFrameLoader(currentFrameLoader);
+        Unused << aBrowsingContext->SetIsInBFCache(true);
+      }
     }
 
     if (aBrowsingContext->IsActive()) {
@@ -1279,10 +1285,6 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
     
     
     if (!aCanSave && currentFrameLoader) {
-      
-      
-      
-      aBrowsingContext->SetActiveSessionHistoryEntry(currentSHEntry);
       currentFrameLoader->Destroy();
     }
 

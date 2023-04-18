@@ -1016,24 +1016,27 @@ child:
                                       uint32_t aIndex, uint32_t aLength,
                                       nsID aChangeID);
 
-   async DispatchLocationChangeEvent(MaybeDiscardedBrowsingContext aContext);
+    async GetLayoutHistoryState(MaybeDiscardedBrowsingContext aContext)
+        returns (nsILayoutHistoryState aState);
 
-  
-  
-  
-  async DispatchBeforeUnloadToSubtree(MaybeDiscardedBrowsingContext aStartingAt)
-      returns (PermitUnloadResult result);
+    async DispatchLocationChangeEvent(MaybeDiscardedBrowsingContext aContext);
 
-  
-  async UpdateMediaCodecsSupported(RemoteDecodeIn aLocation, MediaCodecsSupported aSupported);
+    
+    
+    
+    async DispatchBeforeUnloadToSubtree(MaybeDiscardedBrowsingContext aStartingAt)
+        returns (PermitUnloadResult result);
 
-  
-  async DecoderSupportedMimeTypes(nsCString[] supportedTypes);
+    
+    async UpdateMediaCodecsSupported(RemoteDecodeIn aLocation, MediaCodecsSupported aSupported);
 
-  
-  
-  
-  async InitNextGenLocalStorageEnabled(bool enabled);
+    
+    async DecoderSupportedMimeTypes(nsCString[] supportedTypes);
+
+    
+    
+    
+    async InitNextGenLocalStorageEnabled(bool enabled);
 
   async PRemotePrintJob();
 
