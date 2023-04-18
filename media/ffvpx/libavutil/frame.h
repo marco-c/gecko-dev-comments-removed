@@ -179,6 +179,25 @@ enum AVFrameSideDataType {
 
 
     AV_FRAME_DATA_REGIONS_OF_INTEREST,
+
+    
+
+
+    AV_FRAME_DATA_VIDEO_ENC_PARAMS,
+
+    
+
+
+
+
+
+    AV_FRAME_DATA_SEI_UNREGISTERED,
+
+    
+
+
+
+    AV_FRAME_DATA_FILM_GRAIN_PARAMS,
 };
 
 enum AVActiveFormatDescription {
@@ -201,7 +220,11 @@ enum AVActiveFormatDescription {
 typedef struct AVFrameSideData {
     enum AVFrameSideDataType type;
     uint8_t *data;
+#if FF_API_BUFFER_SIZE_T
     int      size;
+#else
+    size_t   size;
+#endif
     AVDictionary *metadata;
     AVBufferRef *buf;
 } AVFrameSideData;
@@ -894,7 +917,11 @@ AVBufferRef *av_frame_get_plane_buffer(AVFrame *frame, int plane);
 
 AVFrameSideData *av_frame_new_side_data(AVFrame *frame,
                                         enum AVFrameSideDataType type,
+#if FF_API_BUFFER_SIZE_T
                                         int size);
+#else
+                                        size_t size);
+#endif
 
 
 
@@ -918,7 +945,6 @@ AVFrameSideData *av_frame_new_side_data_from_buf(AVFrame *frame,
 
 AVFrameSideData *av_frame_get_side_data(const AVFrame *frame,
                                         enum AVFrameSideDataType type);
-
 
 
 
@@ -968,4 +994,4 @@ const char *av_frame_side_data_name(enum AVFrameSideDataType type);
 
 
 
-#endif 
+#endif

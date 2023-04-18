@@ -89,6 +89,30 @@ double av_expr_eval(AVExpr *e, const double *const_values, void *opaque);
 
 
 
+
+
+
+
+
+int av_expr_count_vars(AVExpr *e, unsigned *counter, int size);
+
+
+
+
+
+
+
+
+
+
+
+
+
+int av_expr_count_func(AVExpr *e, unsigned *counter, int size, int arg);
+
+
+
+
 void av_expr_free(AVExpr *e);
 
 

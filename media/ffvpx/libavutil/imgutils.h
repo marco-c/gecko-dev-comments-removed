@@ -78,6 +78,20 @@ int av_image_fill_linesizes(int linesizes[4], enum AVPixelFormat pix_fmt, int wi
 
 
 
+int av_image_fill_plane_sizes(size_t size[4], enum AVPixelFormat pix_fmt,
+                              int height, const ptrdiff_t linesizes[4]);
+
+
+
+
+
+
+
+
+
+
+
+
 int av_image_fill_pointers(uint8_t *data[4], enum AVPixelFormat pix_fmt, int height,
                            uint8_t *ptr, const int linesizes[4]);
 
