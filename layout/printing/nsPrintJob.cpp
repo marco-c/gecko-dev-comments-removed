@@ -1561,15 +1561,15 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
   
   
   
-  if (const Maybe<StyleOrientation> maybeOrientation =
+  if (const Maybe<StylePageOrientation> maybeOrientation =
           aPO->mDocument->GetPresShell()
               ->StyleSet()
               ->GetDefaultPageOrientation()) {
-    if (maybeOrientation.value() == StyleOrientation::Landscape &&
+    if (maybeOrientation.value() == StylePageOrientation::Landscape &&
         pageSize.width < pageSize.height) {
       
       std::swap(pageSize.width, pageSize.height);
-    } else if (maybeOrientation.value() == StyleOrientation::Portrait &&
+    } else if (maybeOrientation.value() == StylePageOrientation::Portrait &&
                pageSize.width > pageSize.height) {
       
       std::swap(pageSize.width, pageSize.height);
@@ -2296,8 +2296,8 @@ nsresult nsPrintJob::FinishPrintPreview() {
     const Maybe<bool> maybeLandscape =
         printData->mPrintObject->mPresShell->StyleSet()
             ->GetDefaultPageOrientation()
-            .map([](StyleOrientation o) -> bool {
-              return o == StyleOrientation::Landscape;
+            .map([](StylePageOrientation o) -> bool {
+              return o == StylePageOrientation::Landscape;
             });
     mPrintPreviewCallback(PrintPreviewResultInfo(
         GetPrintPreviewNumSheets(), GetRawNumPages(), GetIsEmpty(),

@@ -87,7 +87,7 @@ impl PaperSize {
     ToShmem,
 )]
 #[repr(u8)]
-pub enum Orientation {
+pub enum PageOrientation {
     
     Portrait,
     
@@ -95,8 +95,8 @@ pub enum Orientation {
 }
 
 #[inline]
-fn is_portrait(orientation: &Orientation) -> bool {
-    *orientation == Orientation::Portrait
+fn is_portrait(orientation: &PageOrientation) -> bool {
+    *orientation == PageOrientation::Portrait
 }
 
 
@@ -110,9 +110,9 @@ pub enum GenericPageSize<S> {
     
     Size(S),
     
-    Orientation(Orientation),
+    Orientation(PageOrientation),
     
-    PaperSize(PaperSize, #[css(skip_if = "is_portrait")] Orientation),
+    PaperSize(PaperSize, #[css(skip_if = "is_portrait")] PageOrientation),
 }
 
 pub use self::GenericPageSize as PageSize;

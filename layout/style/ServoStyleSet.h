@@ -28,7 +28,7 @@
 
 namespace mozilla {
 enum class MediaFeatureChangeReason : uint16_t;
-enum class StyleOrientation : uint8_t;
+enum class StylePageOrientation : uint8_t;
 enum class StyleRuleChangeKind : uint32_t;
 namespace css {
 class Rule;
@@ -238,7 +238,7 @@ class ServoStyleSet {
   
   
   
-  Maybe<StyleOrientation> GetDefaultPageOrientation();
+  Maybe<StylePageOrientation> GetDefaultPageOrientation();
 
   void AppendAllNonDocumentAuthorSheets(nsTArray<StyleSheet*>& aArray) const;
 
