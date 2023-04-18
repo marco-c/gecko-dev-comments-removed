@@ -274,10 +274,7 @@ class nsHtml5StreamParser final : public nsISupports {
 
   void ContinueAfterFailedCharsetSwitch();
 
-  void Terminate() {
-    mozilla::MutexAutoLock autoLock(mTerminatedMutex);
-    mTerminated = true;
-  }
+  void Terminate() { mTerminated = true; }
 
   void DropTimer();
 
@@ -304,15 +301,13 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
   void Interrupt() {
-    mozilla::MutexAutoLock autoLock(mTerminatedMutex);
+    MOZ_ASSERT(NS_IsMainThread(), "Wrong thread!");
     mInterrupted = true;
   }
 
   void Uninterrupt() {
-    NS_ASSERTION(IsParserThread(), "Wrong thread!");
+    MOZ_ASSERT(IsParserThread(), "Wrong thread!");
     mTokenizerMutex.AssertCurrentThreadOwns();
-    
-    
     mInterrupted = false;
   }
 
@@ -343,15 +338,9 @@ class nsHtml5StreamParser final : public nsISupports {
                                        uint32_t aToOffset, uint32_t aCount,
                                        uint32_t* aWriteCount);
 
-  bool IsTerminatedOrInterrupted() {
-    mozilla::MutexAutoLock autoLock(mTerminatedMutex);
-    return mTerminated || mInterrupted;
-  }
+  bool IsTerminatedOrInterrupted() { return mTerminated || mInterrupted; }
 
-  bool IsTerminated() {
-    mozilla::MutexAutoLock autoLock(mTerminatedMutex);
-    return mTerminated;
-  }
+  bool IsTerminated() { return mTerminated; }
 
   
 
@@ -666,9 +655,12 @@ class nsHtml5StreamParser final : public nsISupports {
   
 
 
-  bool mTerminated;
-  bool mInterrupted;
-  mozilla::Mutex mTerminatedMutex;
+  mozilla::Atomic<bool> mTerminated;
+
+  
+
+
+  mozilla::Atomic<bool> mInterrupted;
 
   
 

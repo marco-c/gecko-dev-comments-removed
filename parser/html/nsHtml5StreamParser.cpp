@@ -251,7 +251,6 @@ nsHtml5StreamParser::nsHtml5StreamParser(nsHtml5TreeOpExecutor* aExecutor,
       mNumBytesBuffered(0),
       mTerminated(false),
       mInterrupted(false),
-      mTerminatedMutex("nsHtml5StreamParser mTerminatedMutex"),
       mEventTarget(nsHtml5Module::GetStreamParserThread()->SerialEventTarget()),
       mExecutorFlusher(new nsHtml5ExecutorFlusher(aExecutor)),
       mLoadFlusher(new nsHtml5LoadFlusher(aExecutor)),
@@ -2448,6 +2447,12 @@ void nsHtml5StreamParser::ContinueAfterScriptsOrEncodingCommitment(
       Interrupt();  
       
       
+      
+      
+      
+
+      
+      
     } else {
       
       if (mSpeculations.Length() > 1) {
@@ -2466,6 +2471,11 @@ void nsHtml5StreamParser::ContinueAfterScriptsOrEncodingCommitment(
       }
       
       Interrupt();  
+      
+      
+      
+      
+      
 
       
       
