@@ -340,6 +340,11 @@ impl Device {
     }
 
     
+    pub fn visited_styles_enabled(&self) -> bool {
+        unsafe { bindings::Gecko_VisitedStylesEnabled(self.document()) }
+    }
+
+    
     pub fn device_pixel_ratio(&self) -> Scale<f32, CSSPixel, DevicePixel> {
         let pc = match self.pres_context() {
             Some(pc) => pc,
