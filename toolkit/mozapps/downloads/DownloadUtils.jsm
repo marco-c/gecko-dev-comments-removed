@@ -428,6 +428,10 @@ var DownloadUtils = {
       uri = uri.innermostURI;
     }
 
+    if (uri.scheme == "blob") {
+      uri = Services.io.newURI(new URL(uri.spec).origin);
+    }
+
     let fullHost;
     try {
       
