@@ -3880,25 +3880,11 @@ CodeOffset MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
   Register scratch = WasmTableCallScratchReg0;
   Register index = WasmTableCallIndexReg;
 
-  
-  
-  
-
-  static_assert(sizeof(wasm::FunctionTableElem) == 8 ||
-                    sizeof(wasm::FunctionTableElem) == 16,
-                "elements of function tables are two words");
-
   if (callee.which() == wasm::CalleeDesc::AsmJSTable) {
     
     
     loadWasmGlobalPtr(callee.tableFunctionBaseGlobalDataOffset(), scratch);
-    if (sizeof(wasm::FunctionTableElem) == 8) {
-      computeEffectiveAddress(BaseIndex(scratch, index, TimesEight), scratch);
-    } else {
-      lshift32(Imm32(4), index);
-      addPtr(index, scratch);
-    }
-    loadPtr(Address(scratch, offsetof(wasm::FunctionTableElem, code)), scratch);
+    loadPtr(BaseIndex(scratch, index, ScalePointer), scratch);
     storePtr(WasmTlsReg,
              Address(getStackPointer(), WasmCallerTLSOffsetBeforeCall));
     storePtr(WasmTlsReg,
@@ -3907,19 +3893,6 @@ CodeOffset MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
   }
 
   MOZ_ASSERT(callee.which() == wasm::CalleeDesc::WasmTable);
-
-  
-  wasm::TypeIdDesc funcTypeId = callee.wasmTableSigId();
-  switch (funcTypeId.kind()) {
-    case wasm::TypeIdDescKind::Global:
-      loadWasmGlobalPtr(funcTypeId.globalDataOffset(), WasmTableCallSigReg);
-      break;
-    case wasm::TypeIdDescKind::Immediate:
-      move32(Imm32(funcTypeId.immediate()), WasmTableCallSigReg);
-      break;
-    case wasm::TypeIdDescKind::None:
-      break;
-  }
 
   wasm::BytecodeOffset trapOffset(desc.lineOrBytecode());
 
@@ -3934,17 +3907,24 @@ CodeOffset MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
   }
 
   
+  
   loadWasmGlobalPtr(callee.tableFunctionBaseGlobalDataOffset(), scratch);
 
   
-  if (sizeof(wasm::FunctionTableElem) == 8) {
-    computeEffectiveAddress(BaseIndex(scratch, index, TimesEight), scratch);
-  } else {
-    lshift32(Imm32(4), index);
-    addPtr(index, scratch);
+  wasm::TypeIdDesc funcTypeId = callee.wasmTableSigId();
+  switch (funcTypeId.kind()) {
+    case wasm::TypeIdDescKind::Global:
+      loadWasmGlobalPtr(funcTypeId.globalDataOffset(), WasmTableCallSigReg);
+      break;
+    case wasm::TypeIdDescKind::Immediate:
+      move32(Imm32(funcTypeId.immediate()), WasmTableCallSigReg);
+      break;
+    case wasm::TypeIdDescKind::None:
+      break;
   }
 
-  loadPtr(Address(scratch, offsetof(wasm::FunctionTableElem, code)), scratch);
+  
+  loadPtr(BaseIndex(scratch, index, ScalePointer), scratch);
 
 #ifdef ENABLE_WASM_CALL_INDIRECT_NULL
   CodeOffset callOffset = call(desc, scratch);
