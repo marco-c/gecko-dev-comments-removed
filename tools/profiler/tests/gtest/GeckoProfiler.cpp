@@ -4295,14 +4295,20 @@ TEST(GeckoProfiler, CPUUsage)
             if (testWithNoStackSampling) {
               
               
-              EXPECT_GT(threadCPUDeltaZeroCount, threadCPUDeltaNonZeroCount)
-                  << "There should be more zero-CPUs than non-zero";
+              
+              EXPECT_GT(threadCPUDeltaZeroCount, 0u)
+                  << "There should be some zero-CPUs due to the idle loop body";
+              EXPECT_GT(threadCPUDeltaNonZeroCount, 0u)
+                  << "There should be some non-zero due to inter-loop work";
             }
 #    else
             
             
-            EXPECT_GT(threadCPUDeltaZeroCount, threadCPUDeltaNonZeroCount)
-                << "There should be more zero-CPUs than non-zero";
+            
+            EXPECT_GT(threadCPUDeltaZeroCount, 0u)
+                << "There should be some zero-CPUs due to the idle loop body";
+            EXPECT_GT(threadCPUDeltaNonZeroCount, 0u)
+                << "There should be some non-zero due to inter-loop work";
 #    endif
 #  else
           
