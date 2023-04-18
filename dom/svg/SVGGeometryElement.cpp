@@ -178,27 +178,31 @@ static Point GetPointFrom(const DOMPointInit& aPoint) {
 }
 
 bool SVGGeometryElement::IsPointInFill(const DOMPointInit& aPoint) {
-  auto point = GetPointFrom(aPoint);
+  
+  FlushStyleIfNeeded();
 
   RefPtr<Path> path = GetOrBuildPathForHitTest();
   if (!path) {
     return false;
   }
 
+  auto point = GetPointFrom(aPoint);
   return path->ContainsPoint(point, {});
 }
 
 bool SVGGeometryElement::IsPointInStroke(const DOMPointInit& aPoint) {
-  auto point = GetPointFrom(aPoint);
+  
+  
+  if (nsCOMPtr<Document> doc = GetComposedDoc()) {
+    doc->FlushPendingNotifications(FlushType::Layout);
+  }
 
   RefPtr<Path> path = GetOrBuildPathForHitTest();
   if (!path) {
     return false;
   }
-  if (nsCOMPtr<Document> doc = GetComposedDoc()) {
-    doc->FlushPendingNotifications(FlushType::Layout);
-  }
 
+  auto point = GetPointFrom(aPoint);
   bool res = false;
   SVGGeometryProperty::DoForComputedStyle(this, [&](const ComputedStyle* s) {
     
@@ -224,13 +228,16 @@ bool SVGGeometryElement::IsPointInStroke(const DOMPointInit& aPoint) {
   return res;
 }
 
-float SVGGeometryElement::GetTotalLength() {
-  RefPtr<Path> flat = GetOrBuildPathForMeasuring();
-  return flat ? flat->ComputeLength() : 0.f;
+float SVGGeometryElement::GetTotalLengthForBinding() {
+  
+  FlushStyleIfNeeded();
+  return GetTotalLength();
 }
 
 already_AddRefed<DOMSVGPoint> SVGGeometryElement::GetPointAtLength(
     float distance, ErrorResult& rv) {
+  
+  FlushStyleIfNeeded();
   RefPtr<Path> path = GetOrBuildPathForMeasuring();
   if (!path) {
     rv.ThrowInvalidStateError("No path available for measuring");
@@ -272,6 +279,28 @@ float SVGGeometryElement::GetPathLengthScale(PathLengthScaleForType aFor) {
 
 already_AddRefed<DOMSVGAnimatedNumber> SVGGeometryElement::PathLength() {
   return mPathLength.ToDOMAnimatedNumber(this);
+}
+
+float SVGGeometryElement::GetTotalLength() {
+  RefPtr<Path> flat = GetOrBuildPathForMeasuring();
+  return flat ? flat->ComputeLength() : 0.f;
+}
+
+void SVGGeometryElement::FlushStyleIfNeeded() {
+  
+  
+  
+  if (GetPathDataAttrName() != nsGkAtoms::d ||
+      !StaticPrefs::layout_css_d_property_enabled()) {
+    return;
+  }
+
+  RefPtr<Document> doc = GetComposedDoc();
+  if (!doc) {
+    return;
+  }
+
+  doc->FlushPendingNotifications(FlushType::Style);
 }
 
 }  

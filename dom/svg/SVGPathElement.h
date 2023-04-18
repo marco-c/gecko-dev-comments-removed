@@ -46,9 +46,20 @@ class SVGPathElement final : public SVGPathElementBase {
   virtual bool AttributeDefinesGeometry(const nsAtom* aName) override;
   virtual bool IsMarkable() override;
   virtual void GetMarkPoints(nsTArray<SVGMark>* aMarks) override;
+  
+
+
+
+
+
   virtual already_AddRefed<Path> BuildPath(PathBuilder* aBuilder) override;
 
   
+
+
+
+
+
 
 
 
@@ -68,7 +79,7 @@ class SVGPathElement final : public SVGPathElementBase {
   }
 
   
-  uint32_t GetPathSegAtLength(float distance);
+  MOZ_CAN_RUN_SCRIPT uint32_t GetPathSegAtLength(float distance);
   already_AddRefed<DOMSVGPathSegClosePath> CreateSVGPathSegClosePath();
   already_AddRefed<DOMSVGPathSegMovetoAbs> CreateSVGPathSegMovetoAbs(float x,
                                                                      float y);
