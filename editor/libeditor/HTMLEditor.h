@@ -1587,8 +1587,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MoveNodesIntoNewBlockquoteElement(
-      nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents);
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  WrapContentsInBlockquoteElementsWithTransaction(
+      const nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
+      const Element& aEditingHost);
 
   
 
@@ -1629,7 +1634,6 @@ class HTMLEditor final : public EditorBase,
       const Element& aEditingHost);
 
   
-
 
 
 
