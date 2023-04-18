@@ -5,8 +5,9 @@
 
 #include "SplitNodeTransaction.h"
 
-#include "EditorDOMPoint.h"  
-#include "HTMLEditor.h"      
+#include "EditorDOMPoint.h"   
+#include "HTMLEditHelpers.h"  
+#include "HTMLEditor.h"       
 #include "HTMLEditUtils.h"
 #include "SelectionState.h"  
 
@@ -112,25 +113,12 @@ NS_IMETHODIMP SplitNodeTransaction::DoTransaction() {
 
   const OwningNonNull<HTMLEditor> htmlEditor = *mHTMLEditor;
   const OwningNonNull<nsIContent> splittingContent = *mSplitContent;
-  if (Element* const splittingElement = Element::FromNode(splittingContent)) {
-    
-    nsresult rv =
-        htmlEditor->MarkElementDirty(MOZ_KnownLive(*splittingElement));
-    if (MOZ_UNLIKELY(NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED))) {
-      return EditorBase::ToGenericNSResult(rv);
-    }
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "EditorBase::MarkElementDirty() failed, but ignored");
-  }
-
   
-  SplitNodeResult splitNodeResult = htmlEditor->DoSplitNode(
-      EditorDOMPoint(splittingContent,
-                     std::min(mSplitOffset, splittingContent->Length())),
-      MOZ_KnownLive(*mNewContent));
+  SplitNodeResult splitNodeResult = DoTransactionInternal(
+      htmlEditor, splittingContent, MOZ_KnownLive(*mNewContent), mSplitOffset);
   if (MOZ_UNLIKELY(splitNodeResult.Failed())) {
-    NS_WARNING("HTMLEditor::DoSplitNode() failed");
-    return splitNodeResult.Rv();
+    NS_WARNING("SplitNodeTransaction::DoTransactionInternal() failed");
+    return EditorBase::ToGenericNSResult(splitNodeResult.Rv());
   }
 
   if (!htmlEditor->AllowsTransactionsToChangeSelection()) {
@@ -147,6 +135,30 @@ NS_IMETHODIMP SplitNodeTransaction::DoTransaction() {
   NS_WARNING_ASSERTION(!error.Failed(),
                        "Selection::CollapseInLimiter() failed");
   return error.StealNSResult();
+}
+
+SplitNodeResult SplitNodeTransaction::DoTransactionInternal(
+    HTMLEditor& aHTMLEditor, nsIContent& aSplittingContent,
+    nsIContent& aNewContent, uint32_t aSplitOffset) {
+  if (Element* const splittingElement = Element::FromNode(aSplittingContent)) {
+    
+    
+    nsresult rv =
+        aHTMLEditor.MarkElementDirty(MOZ_KnownLive(*splittingElement));
+    if (MOZ_UNLIKELY(NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED))) {
+      return SplitNodeResult(NS_ERROR_EDITOR_DESTROYED);
+    }
+    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                         "EditorBase::MarkElementDirty() failed, but ignored");
+  }
+
+  SplitNodeResult splitNodeResult = aHTMLEditor.DoSplitNode(
+      EditorDOMPoint(&aSplittingContent,
+                     std::min(aSplitOffset, aSplittingContent.Length())),
+      aNewContent);
+  NS_WARNING_ASSERTION(splitNodeResult.Succeeded(),
+                       "HTMLEditor::DoSplitNode() failed");
+  return splitNodeResult;
 }
 
 NS_IMETHODIMP SplitNodeTransaction::UndoTransaction() {
@@ -196,24 +208,11 @@ NS_IMETHODIMP SplitNodeTransaction::RedoTransaction() {
   const OwningNonNull<HTMLEditor> htmlEditor = *mHTMLEditor;
   const OwningNonNull<nsIContent> newContent = *mNewContent;
   const OwningNonNull<nsIContent> splittingContent = *mSplitContent;
-  if (Element* const splittingElement = Element::FromNode(splittingContent)) {
-    
-    nsresult rv =
-        htmlEditor->MarkElementDirty(MOZ_KnownLive(*splittingElement));
-    if (MOZ_UNLIKELY(NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED))) {
-      return EditorBase::ToGenericNSResult(rv);
-    }
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "EditorBase::MarkElementDirty() failed, but ignored");
-  }
-
-  SplitNodeResult splitNodeResult = htmlEditor->DoSplitNode(
-      EditorDOMPoint(splittingContent,
-                     std::min(mSplitOffset, splittingContent->Length())),
-      newContent);
+  SplitNodeResult splitNodeResult = DoTransactionInternal(
+      htmlEditor, splittingContent, newContent, mSplitOffset);
   NS_WARNING_ASSERTION(splitNodeResult.Succeeded(),
-                       "HTMLEditor::DoSplitNode() failed");
-  return splitNodeResult.Rv();
+                       "SplitNodeTransaction::DoTransactionInternal() failed");
+  return EditorBase::ToGenericNSResult(splitNodeResult.Rv());
 }
 
 }  
