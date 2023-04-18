@@ -2659,15 +2659,15 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
 
   
   
-  bool wantFakes = c.mFake.WasPassed()
-                       ? c.mFake.Value()
-                       : Preferences::GetBool("media.navigator.streams.fake");
+  bool forceFakes = c.mFake.WasPassed() && c.mFake.Value();
+  bool wantFakes =
+      forceFakes || Preferences::GetBool("media.navigator.streams.fake");
   nsAutoCString videoLoopDev, audioLoopDev;
   
   if (videoType == MediaSourceEnum::Camera) {
     Preferences::GetCString("media.video_loopback_dev", videoLoopDev);
     
-    if (!videoLoopDev.IsEmpty()) {
+    if (!videoLoopDev.IsEmpty() && !forceFakes) {
       videoEnumerationType = DeviceEnumerationType::Loopback;
     } else if (wantFakes) {
       videoEnumerationType = DeviceEnumerationType::Fake;
@@ -2677,7 +2677,7 @@ RefPtr<MediaManager::StreamPromise> MediaManager::GetUserMedia(
   if (audioType == MediaSourceEnum::Microphone) {
     Preferences::GetCString("media.audio_loopback_dev", audioLoopDev);
     
-    if (!audioLoopDev.IsEmpty()) {
+    if (!audioLoopDev.IsEmpty() && !forceFakes) {
       audioEnumerationType = DeviceEnumerationType::Loopback;
     } else if (wantFakes) {
       audioEnumerationType = DeviceEnumerationType::Fake;
