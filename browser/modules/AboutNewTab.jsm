@@ -40,6 +40,7 @@ const AboutNewTab = {
   _activityStreamEnabled: false,
   activityStream: null,
   activityStreamDebug: false,
+  browserReady: false,
 
   _newTabURL: ABOUT_URL,
   _newTabURLOverridden: false,
@@ -77,8 +78,21 @@ const AboutNewTab = {
       }
     );
 
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "newTabPageEnabled",
+      "browser.newtabpage.enabled",
+      false,
+      (preference, previousValue, newValue) => {
+        if (newValue && this.browserReady) {
+          this.initializeActivityStream();
+        }
+        this.toggleActivityStream(newValue);
+      }
+    );
+
     
-    this.toggleActivityStream(true);
+    this.toggleActivityStream(this.newTabPageEnabled);
     this.initialized = true;
 
     if (this.isPageListenerOverridden) {
@@ -169,6 +183,15 @@ const AboutNewTab = {
 
 
   onBrowserReady() {
+    this.browserReady = true;
+    if (!this.newTabPageEnabled) {
+      
+      return;
+    }
+    this.initializeActivityStream();
+  },
+
+  initializeActivityStream() {
     if (this.activityStream && this.activityStream.initialized) {
       return;
     }
