@@ -5,7 +5,6 @@
 
 
 
-
 const TEST_URI = URL_ROOT + "doc_media_queries.html";
 
 add_task(async function() {
@@ -19,10 +18,12 @@ add_task(async function() {
 
   is(elementStyle.rules.length, 3, "Should have 3 rules.");
   is(elementStyle.rules[0].title, inline, "check rule 0 title");
-  is(
-    elementStyle.rules[1].title,
-    inline + ":9 @media screen and (min-width: 1px)",
-    "check rule 1 title"
-  );
+  is(elementStyle.rules[1].title, inline + ":9", "check rule 1 title");
   is(elementStyle.rules[2].title, inline + ":2", "check rule 2 title");
+
+  is(
+    getRuleViewAncestorRulesDataTextByIndex(view, 1),
+    "@media screen and (min-width: 1px)",
+    "Media queries information are displayed"
+  );
 });

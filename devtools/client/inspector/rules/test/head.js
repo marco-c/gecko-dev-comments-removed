@@ -1176,3 +1176,31 @@ function checkCSSVariableOutput(
   ok(target, "The target element should exist");
   is(target.dataset.variable, expectedDatasetValue);
 }
+
+
+
+
+
+
+
+
+
+
+function getRuleViewAncestorRulesDataElementByIndex(view, ruleIndex) {
+  return view.styleDocument.querySelector(
+    `.ruleview-rule:nth-of-type(${ruleIndex + 1}) .ruleview-rule-ancestor-data`
+  );
+}
+
+
+
+
+
+
+
+
+
+
+function getRuleViewAncestorRulesDataTextByIndex(view, ruleIndex) {
+  return getRuleViewAncestorRulesDataElementByIndex(view, ruleIndex)?.innerText;
+}

@@ -135,41 +135,36 @@ RuleEditor.prototype = {
 
     this.updateSourceLink();
 
-    const hasMediaText = this.rule.mediaText;
-    const hasLayer = typeof this.rule.domRule.layerName !== "undefined";
-    if (hasMediaText || hasLayer) {
-      const parts = [];
-
-      if (hasLayer) {
+    if (this.rule.domRule.ancestorData.length > 0) {
+      const parts = this.rule.domRule.ancestorData.map(ancestorData => {
+        if (ancestorData.type == "layer") {
+          return `@layer${ancestorData.value ? " " + ancestorData.value : ""}`;
+        }
+        if (ancestorData.type == "media") {
+          return `@media ${ancestorData.value}`;
+        }
         
-        parts.push(
-          `@layer${
-            this.rule.domRule.layerName ? " " + this.rule.domRule.layerName : ""
-          }`
-        );
-      }
-      if (hasMediaText) {
-        parts.push(`@media ${this.rule.mediaText}`);
-      }
-
-      
-      
-      
-      
-      const text = parts.join(" ");
-
-      
-      
-      
-      
-      
-      const title = `${text.replaceAll("@", "\u202A@")}`;
-
-      createChild(this.element, "span", {
-        class: "ruleview-rule-parent-data theme-link",
-        title,
-        textContent: text,
+        
+        console.warn("Unknown ancestor data type:", ancestorData.type);
+        return ``;
       });
+
+      
+      
+      
+      
+      
+      const title = `${parts.join("\n").replaceAll("@", "\u202A@")}`;
+
+      const ancestorDataEl = createChild(this.element, "ul", {
+        class: "ruleview-rule-ancestor-data theme-link",
+        title,
+      });
+      for (const part of parts) {
+        createChild(ancestorDataEl, "li", {
+          textContent: part,
+        });
+      }
     }
 
     const code = createChild(this.element, "div", {
