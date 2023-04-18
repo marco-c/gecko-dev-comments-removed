@@ -570,7 +570,12 @@ var gSearchResultsPane = {
 
       
       
-      if (child instanceof Element && child.classList.contains("featureGate")) {
+      
+      if (
+        child instanceof Element &&
+        (child.classList.contains("featureGate") ||
+          child.classList.contains("mozilla-product-item"))
+      ) {
         this.subItems.set(child, result);
       }
     }
