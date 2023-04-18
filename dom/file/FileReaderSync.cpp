@@ -334,7 +334,7 @@ class ReadReadyRunnable final : public WorkerSyncRunnable {
   }
 
  private:
-  ~ReadReadyRunnable() = default;
+  ~ReadReadyRunnable() override = default;
 };
 
 

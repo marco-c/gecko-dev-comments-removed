@@ -70,7 +70,7 @@ class RemoteLazyInputStreamChild final : public PRemoteLazyInputStreamChild {
   void Migrated();
 
  private:
-  ~RemoteLazyInputStreamChild();
+  ~RemoteLazyInputStreamChild() override;
 
   
   

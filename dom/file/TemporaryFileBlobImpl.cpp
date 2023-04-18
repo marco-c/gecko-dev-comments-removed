@@ -75,7 +75,7 @@ class TemporaryFileInputStream final : public nsFileInputStream {
     MOZ_ASSERT(XRE_IsParentProcess());
   }
 
-  ~TemporaryFileInputStream() {
+  ~TemporaryFileInputStream() override {
     
     RefPtr<RemoteLazyInputStreamThread> thread =
         RemoteLazyInputStreamThread::GetOrCreate();
