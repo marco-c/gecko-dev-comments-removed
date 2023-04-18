@@ -814,6 +814,7 @@ PresShell::PresShell(Document* aDocument)
       mShouldUnsuppressPainting(false),
       mIgnoreFrameDestruction(false),
       mIsActive(true),
+      mIsInActiveTab(true),
       mFrozen(false),
       mIsFirstPaint(true),
       mObservesMutationsForPrint(false),
@@ -10841,16 +10842,30 @@ void PresShell::ActivenessMaybeChanged() {
   if (!mDocument) {
     return;
   }
-  SetIsActive(ShouldBeActive());
+  auto activeness = ComputeActiveness();
+  SetIsActive(activeness.mShouldBeActive, activeness.mIsInActiveTab);
 }
 
-bool PresShell::ShouldBeActive() const {
+
+
+
+
+
+
+
+
+
+
+
+
+
+auto PresShell::ComputeActiveness() const -> Activeness {
   MOZ_LOG(gLog, LogLevel::Debug,
-          ("PresShell::ShouldBeActive(%s, %d)\n",
+          ("PresShell::ShouldBeActive(%s, %d, %d)\n",
            mDocument->GetDocumentURI()
                ? mDocument->GetDocumentURI()->GetSpecOrDefault().get()
                : "(no uri)",
-           mIsActive));
+           mIsActive, mIsInActiveTab));
 
   Document* doc = mDocument;
 
@@ -10858,7 +10873,10 @@ bool PresShell::ShouldBeActive() const {
     
     
     
-    return true;
+    
+    
+    
+    return {true, false};
   }
 
   if (Document* displayDoc = doc->GetDisplayDocument()) {
@@ -10869,6 +10887,12 @@ bool PresShell::ShouldBeActive() const {
                "external resource doc shouldn't have its own BC");
     doc = displayDoc;
   }
+
+  BrowsingContext* bc = doc->GetBrowsingContext();
+  const bool inActiveTab = bc && bc->IsActive();
+
+  MOZ_LOG(gLog, LogLevel::Debug,
+          (" > BrowsingContext %p  active: %d", bc, inActiveTab));
 
   Document* root = nsContentUtils::GetInProcessSubtreeRootDocument(doc);
   if (auto* browserChild = BrowserChild::GetFrom(root->GetDocShell())) {
@@ -10889,7 +10913,7 @@ bool PresShell::ShouldBeActive() const {
     if (!browserChild->IsVisible()) {
       MOZ_LOG(gLog, LogLevel::Debug,
               (" > BrowserChild %p is not visible", browserChild));
-      return false;
+      return {false, inActiveTab};
     }
 
     
@@ -10899,42 +10923,40 @@ bool PresShell::ShouldBeActive() const {
       MOZ_LOG(gLog, LogLevel::Debug,
               (" > BrowserChild %p is visible and not preserving layers",
                browserChild));
-      return true;
+      return {true, inActiveTab};
     }
     MOZ_LOG(
         gLog, LogLevel::Debug,
         (" > BrowserChild %p is visible and preserving layers", browserChild));
   }
-
-  BrowsingContext* bc = doc->GetBrowsingContext();
-  MOZ_LOG(gLog, LogLevel::Debug,
-          (" > BrowsingContext %p  active: %d", bc, bc && bc->IsActive()));
-  return bc && bc->IsActive();
+  return {inActiveTab, inActiveTab};
 }
 
-void PresShell::SetIsActive(bool aIsActive) {
+void PresShell::SetIsActive(bool aIsActive, bool aIsInActiveTab) {
   MOZ_ASSERT(mDocument, "should only be called with a document");
 
-  const bool changed = mIsActive != aIsActive;
+  const bool activityChanged = mIsActive != aIsActive;
+  const bool inActiveTabChanged = mIsInActiveTab != aIsInActiveTab;
 
   mIsActive = aIsActive;
+  mIsInActiveTab = aIsInActiveTab;
 
   nsPresContext* presContext = GetPresContext();
   if (presContext &&
       presContext->RefreshDriver()->GetPresContext() == presContext) {
-    presContext->RefreshDriver()->SetThrottled(!mIsActive);
+    presContext->RefreshDriver()->SetActivity(aIsActive, aIsInActiveTab);
   }
 
-  if (changed) {
+  if (activityChanged || inActiveTabChanged) {
     
     
     
     
     
     
-    auto recurse = [aIsActive](Document& aSubDoc) {
+    auto recurse = [aIsActive, aIsInActiveTab](Document& aSubDoc) {
       if (PresShell* presShell = aSubDoc.GetPresShell()) {
-        presShell->SetIsActive(aIsActive);
+        presShell->SetIsActive(aIsActive, aIsInActiveTab);
       }
       return CallState::Continue;
     };
@@ -10942,27 +10964,26 @@ void PresShell::SetIsActive(bool aIsActive) {
     mDocument->EnumerateSubDocuments(recurse);
   }
 
-  UpdateImageLockingState();
-#ifdef ACCESSIBILITY
-  if (aIsActive) {
-    if (nsAccessibilityService* accService =
-            PresShell::GetAccessibilityService()) {
-      accService->PresShellActivated(this);
-    }
-  }
-#endif  
+  if (activityChanged) {
+    UpdateImageLockingState();
 
 #if defined(MOZ_WIDGET_ANDROID)
-  if (changed && !aIsActive && presContext &&
-      presContext->IsRootContentDocumentCrossProcess()) {
-    if (BrowserChild* browserChild = BrowserChild::GetFrom(this)) {
-      
-      presContext->UpdateDynamicToolbarOffset(0);
+    if (!aIsActive && presContext &&
+        presContext->IsRootContentDocumentCrossProcess()) {
+      if (BrowserChild* browserChild = BrowserChild::GetFrom(this)) {
+        
+        presContext->UpdateDynamicToolbarOffset(0);
+      }
     }
-  }
 #endif
+  }
 
   if (aIsActive) {
+#ifdef ACCESSIBILITY
+    if (nsAccessibilityService* accService = GetAccessibilityService()) {
+      accService->PresShellActivated(this);
+    }
+#endif
     if (nsIFrame* rootFrame = GetRootFrame()) {
       rootFrame->SchedulePaint();
     }
