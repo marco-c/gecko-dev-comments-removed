@@ -2829,42 +2829,30 @@ gfxShapedWord* gfxFont::GetShapedWord(
     Script aRunScript, nsAtom* aLanguage, bool aVertical,
     int32_t aAppUnitsPerDevUnit, gfx::ShapedTextFlags aFlags,
     RoundingFlags aRounding, gfxTextPerfMetrics* aTextPerf GFX_MAYBE_UNUSED) {
-  
-  uint32_t wordCacheMaxEntries =
-      gfxPlatform::GetPlatform()->WordCacheMaxEntries();
-  mLock.ReadLock();
-  if (mWordCache->Count() > wordCacheMaxEntries) {
-    
-    
-    
-    
-    
-    mLock.ReadUnlock();
-    NS_WARNING("flushing shaped-word cache");
-    ClearCachedWords();
-    mLock.ReadLock();
-    
-    
-  }
-
-  
   CacheHashKey key(aText, aLength, aHash, aRunScript, aLanguage,
                    aAppUnitsPerDevUnit, aFlags, aRounding);
-
-  CacheHashEntry* entry = mWordCache->GetEntry(key);
-  if (entry) {
-    gfxShapedWord* sw = entry->mShapedWord.get();
-    sw->ResetAge();
-#ifndef RELEASE_OR_BETA
-    if (aTextPerf) {
+  {
+    
+    AutoReadLock lock(mLock);
+    if (mWordCache) {
       
-      aTextPerf->current.wordCacheHit++;
-    }
+      if (CacheHashEntry* entry = mWordCache->GetEntry(key)) {
+        gfxShapedWord* sw = entry->mShapedWord.get();
+        sw->ResetAge();
+#ifndef RELEASE_OR_BETA
+        if (aTextPerf) {
+          
+          aTextPerf->current.wordCacheHit++;
+        }
 #endif
-    mLock.ReadUnlock();
-    return sw;
+        return sw;
+      }
+    }
   }
-  mLock.ReadUnlock();
+
+  
+  
+  
 
   gfxShapedWord* sw =
       gfxShapedWord::Create(aText, aLength, aRunScript, aLanguage,
@@ -2880,7 +2868,19 @@ gfxShapedWord* gfxFont::GetShapedWord(
   {
     
     AutoWriteLock lock(mLock);
-    entry = mWordCache->PutEntry(key, fallible);
+    if (!mWordCache) {
+      mWordCache = MakeUnique<nsTHashtable<CacheHashEntry>>();
+    } else {
+      
+      uint32_t wordCacheMaxEntries =
+          gfxPlatform::GetPlatform()->WordCacheMaxEntries();
+      if (mWordCache->Count() > wordCacheMaxEntries) {
+        
+        NS_WARNING("flushing shaped-word cache");
+        ClearCachedWordsLocked();
+      }
+    }
+    CacheHashEntry* entry = mWordCache->PutEntry(key, fallible);
     if (!entry) {
       NS_WARNING("failed to create word cache entry - expect missing text");
       delete sw;
@@ -3239,8 +3239,6 @@ bool gfxFont::SplitAndInitTextRun(
                                        vertical, rounding, aTextRun);
     }
   }
-
-  InitWordCache();
 
   
   gfx::ShapedTextFlags flags = aTextRun->GetFlags();

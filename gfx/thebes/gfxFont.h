@@ -1879,21 +1879,6 @@ class gfxFont {
 
   
   
-  void InitWordCache() {
-    mLock.ReadLock();
-    if (!mWordCache) {
-      mLock.ReadUnlock();
-      mozilla::AutoWriteLock lock(mLock);
-      if (!mWordCache) {
-        mWordCache = mozilla::MakeUnique<nsTHashtable<CacheHashEntry>>();
-      }
-    } else {
-      mLock.ReadUnlock();
-    }
-  }
-
-  
-  
   
   bool AgeCachedWords();
 
@@ -1901,8 +1886,12 @@ class gfxFont {
   void ClearCachedWords() {
     mozilla::AutoWriteLock lock(mLock);
     if (mWordCache) {
-      mWordCache->Clear();
+      ClearCachedWordsLocked();
     }
+  }
+  void ClearCachedWordsLocked() REQUIRES(mLock) {
+    MOZ_ASSERT(mWordCache);
+    mWordCache->Clear();
   }
 
   
