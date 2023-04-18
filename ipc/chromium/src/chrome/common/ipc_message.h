@@ -94,8 +94,7 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   };
 
   
-  
-  enum { MAX_DESCRIPTORS_PER_MESSAGE = 200 };
+  static constexpr size_t MAX_DESCRIPTORS_PER_MESSAGE = 32767;
 
   class HeaderFlags {
     friend class Message;
