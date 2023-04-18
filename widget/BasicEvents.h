@@ -1013,50 +1013,6 @@ class WidgetEvent : public WidgetEventTime {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class NativeEventData final {
-  CopyableTArray<uint8_t> mBuffer;
-
-  friend struct IPC::ParamTraits<mozilla::NativeEventData>;
-
- public:
-  explicit operator bool() const { return !mBuffer.IsEmpty(); }
-
-  template <typename T>
-  explicit operator const T*() const {
-    return mBuffer.IsEmpty() ? nullptr
-                             : reinterpret_cast<const T*>(mBuffer.Elements());
-  }
-
-  template <typename T>
-  void Copy(const T& other) {
-    static_assert(!std::is_pointer_v<T>, "Don't want a pointer!");
-    mBuffer.SetLength(sizeof(T));
-    memcpy(mBuffer.Elements(), &other, mBuffer.Length());
-  }
-
-  void Clear() { mBuffer.Clear(); }
-};
-
-
-
-
-
 class WidgetGUIEvent : public WidgetEvent {
  protected:
   WidgetGUIEvent(bool aIsTrusted, EventMessage aMessage, nsIWidget* aWidget,
@@ -1084,25 +1040,9 @@ class WidgetGUIEvent : public WidgetEvent {
   
   nsCOMPtr<nsIWidget> mWidget;
 
-  
-
-
-
-
-
-
-
-  typedef NativeEventData PluginEvent;
-
-  
-  PluginEvent mPluginEvent;
-
   void AssignGUIEventData(const WidgetGUIEvent& aEvent, bool aCopyTargets) {
     AssignEventData(aEvent, aCopyTargets);
-
     
-
-    mPluginEvent = aEvent.mPluginEvent;
   }
 };
 

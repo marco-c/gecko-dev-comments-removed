@@ -1861,7 +1861,6 @@ void KeymapWrapper::InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
   
   
   
-  aKeyEvent.mPluginEvent.Copy(*aGdkKeyEvent);
   aKeyEvent.mTime = aGdkKeyEvent->time;
   aKeyEvent.mNativeKeyEvent = static_cast<void*>(aGdkKeyEvent);
   aKeyEvent.mIsRepeat =

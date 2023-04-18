@@ -646,7 +646,6 @@ bool TextEventDispatcher::DispatchKeyboardEventInternal(
     
     
     keyEvent.mNativeKeyEvent = nullptr;
-    keyEvent.mPluginEvent.Clear();
   }
   
 
