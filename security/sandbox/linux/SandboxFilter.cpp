@@ -1806,9 +1806,13 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         auto shifted_type = request & kIoctlTypeMask;
         static constexpr unsigned long kDrmType =
             static_cast<unsigned long>('d') << _IOC_TYPESHIFT;
+        
+        static constexpr unsigned long kDmaBufType =
+            static_cast<unsigned long>('b') << _IOC_TYPESHIFT;
 
         
         return If(shifted_type == kDrmType, Allow())
+            .ElseIf(shifted_type == kDmaBufType, Allow())
             .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
       }
 

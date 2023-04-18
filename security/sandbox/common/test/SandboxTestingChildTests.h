@@ -258,6 +258,12 @@ void RunTestsRDD(SandboxTestingChild* child) {
     return uname(&uts);
   });
 
+  child->ErrnoValueTest("ioctl_dma_buf"_ns, false, ENOTTY, [] {
+    
+    
+    return ioctl(0, _IOW('b', 0, uint64_t), nullptr);
+  });
+
 #  endif  
 #else     
   child->ReportNoTests();
