@@ -5,6 +5,7 @@
 
 #include "TextEventDispatcher.h"
 
+#include "IMEData.h"
 #include "PuppetWidget.h"
 #include "TextEvents.h"
 
@@ -692,6 +693,14 @@ bool TextEventDispatcher::DispatchKeyboardEventInternal(
     
     
     keyEvent.mFlags.mOnlySystemGroupDispatchInContent = true;
+  }
+
+  
+  
+  
+  if (XRE_IsParentProcess() && mHasFocus &&
+      (aMessage == eKeyDown || aMessage == eKeyPress)) {
+    keyEvent.InitAllEditCommands(mWritingMode);
   }
 
   DispatchInputEvent(mWidget, keyEvent, aStatus);

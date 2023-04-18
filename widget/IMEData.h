@@ -8,6 +8,7 @@
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/NativeKeyBindingsType.h"
 #include "mozilla/ToString.h"
 
 #include "nsPoint.h"
@@ -418,6 +419,17 @@ struct InputContext final {
 
   bool IsPasswordEditor() const {
     return mHTMLInputType.LowerCaseEqualsLiteral("password");
+  }
+
+  NativeKeyBindingsType GetNativeKeyBindingsType() const {
+    MOZ_DIAGNOSTIC_ASSERT(mIMEState.IsEditable());
+    
+    if (mHTMLInputType.IsEmpty()) {
+      return NativeKeyBindingsType::RichTextEditor;
+    }
+    return mHTMLInputType.EqualsLiteral("textarea")
+               ? NativeKeyBindingsType::MultiLineEditor
+               : NativeKeyBindingsType::SingleLineEditor;
   }
 
   

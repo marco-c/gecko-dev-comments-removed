@@ -2013,14 +2013,22 @@ void BrowserParent::SendRealKeyEvent(WidgetKeyboardEvent& aEvent) {
   if (aEvent.mMessage == eKeyPress) {
     
     
-    Maybe<WritingMode> writingMode;
-    if (aEvent.mWidget) {
-      if (RefPtr<widget::TextEventDispatcher> dispatcher =
-              aEvent.mWidget->GetTextEventDispatcher()) {
-        writingMode = dispatcher->MaybeQueryWritingModeAtSelection();
+    
+    
+    if (!aEvent.AreAllEditCommandsInitialized()) {
+      
+      
+      
+      
+      Maybe<WritingMode> writingMode;
+      if (aEvent.mWidget) {
+        if (RefPtr<widget::TextEventDispatcher> dispatcher =
+                aEvent.mWidget->GetTextEventDispatcher()) {
+          writingMode = dispatcher->MaybeQueryWritingModeAtSelection();
+        }
       }
+      aEvent.InitAllEditCommands(writingMode);
     }
-    aEvent.InitAllEditCommands(writingMode);
   } else {
     aEvent.PreventNativeKeyBindings();
   }
