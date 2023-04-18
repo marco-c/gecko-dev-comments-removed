@@ -83,6 +83,11 @@ impl UploadPrefObserver {
 
         let upload_enabled = static_prefs::pref!("datareporting.healthreport.uploadEnabled");
         let recording_enabled = static_prefs::pref!("telemetry.fog.test.localhost_port") < 0;
+        log::info!(
+            "New upload_enabled {}, recording_enabled {}",
+            upload_enabled,
+            recording_enabled
+        );
         if RECORDING_ENABLED.load(Ordering::SeqCst) && !recording_enabled {
             
             
