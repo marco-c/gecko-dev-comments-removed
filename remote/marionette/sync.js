@@ -414,7 +414,6 @@ class DebounceCallback {
     );
   }
 }
-this.DebounceCallback = DebounceCallback;
 
 
 

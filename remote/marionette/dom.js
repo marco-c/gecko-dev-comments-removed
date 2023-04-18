@@ -138,7 +138,6 @@ class WebElementEventTarget {
     this.dispatchEvent(ev);
   }
 }
-this.WebElementEventTarget = WebElementEventTarget;
 
 
 
@@ -214,4 +213,3 @@ class ContentEventObserverService {
     this.sendAsyncMessage("Marionette:DOM:OnEvent", { type });
   }
 }
-this.ContentEventObserverService = ContentEventObserverService;

@@ -191,9 +191,6 @@ class EnvironmentPrefs {
   }
 }
 
-this.Branch = Branch;
-this.EnvironmentPrefs = EnvironmentPrefs;
-
 
 
 const MarionettePrefs = new MarionetteBranch();
