@@ -277,13 +277,13 @@ nsresult nsIOService::Init() {
                                        gCallbackPrefs, this);
   PrefsChanged();
 
-  mSocketProcessTopicBlackList.Insert(
+  mSocketProcessTopicBlockedList.Insert(
       nsLiteralCString(NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID));
-  mSocketProcessTopicBlackList.Insert(
+  mSocketProcessTopicBlockedList.Insert(
       nsLiteralCString(NS_XPCOM_SHUTDOWN_OBSERVER_ID));
-  mSocketProcessTopicBlackList.Insert("xpcom-shutdown-threads"_ns);
-  mSocketProcessTopicBlackList.Insert("profile-do-change"_ns);
-  mSocketProcessTopicBlackList.Insert("network:socket-process-crashed"_ns);
+  mSocketProcessTopicBlockedList.Insert("xpcom-shutdown-threads"_ns);
+  mSocketProcessTopicBlockedList.Insert("profile-do-change"_ns);
+  mSocketProcessTopicBlockedList.Insert("network:socket-process-crashed"_ns);
 
   
   mObserverService = services::GetObserverService();
@@ -333,12 +333,19 @@ nsIOService::AddObserver(nsIObserver* aObserver, const char* aTopic,
     return NS_OK;
   }
 
+  nsAutoCString topic(aTopic);
+  
+  
+  if (SameCOMIdentity(aObserver, static_cast<nsIObserver*>(this))) {
+    mIOServiceTopicList.Insert(topic);
+    return NS_OK;
+  }
+
   if (!UseSocketProcess()) {
     return NS_OK;
   }
 
-  nsAutoCString topic(aTopic);
-  if (mSocketProcessTopicBlackList.Contains(topic)) {
+  if (mSocketProcessTopicBlockedList.Contains(topic)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -350,9 +357,8 @@ nsIOService::AddObserver(nsIObserver* aObserver, const char* aTopic,
   mObserverTopicForSocketProcess.Insert(topic);
 
   
-  
-  if (SameCOMIdentity(aObserver, static_cast<nsIObserver*>(this))) {
-    return NS_OK;
+  if (mIOServiceTopicList.Contains(topic)) {
+    return NS_ERROR_FAILURE;
   }
 
   return mObserverService->AddObserver(this, aTopic, true);
