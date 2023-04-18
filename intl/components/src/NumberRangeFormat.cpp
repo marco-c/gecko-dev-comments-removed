@@ -38,17 +38,7 @@ NumberRangeFormat::~NumberRangeFormat() {
 Result<Ok, ICUError> NumberRangeFormat::initialize(
     std::string_view aLocale, const NumberRangeFormatOptions& aOptions) {
   mFormatForUnit = aOptions.mUnit.isSome();
-  switch (aOptions.mRangeIdentityFallback) {
-    case NumberRangeFormatOptions::RangeIdentityFallback::
-        ApproximatelyOrSingleValue:
-    case NumberRangeFormatOptions::RangeIdentityFallback::Approximately:
-      mFormatWithApprox = true;
-      break;
-    case NumberRangeFormatOptions::RangeIdentityFallback::SingleValue:
-    case NumberRangeFormatOptions::RangeIdentityFallback::Range:
-      mFormatWithApprox = false;
-      break;
-  }
+
   NumberFormatterSkeleton skeleton(aOptions);
   mNumberRangeFormatter = skeleton.toRangeFormatter(
       aLocale, aOptions.mRangeCollapse, aOptions.mRangeIdentityFallback);
@@ -239,53 +229,6 @@ Result<std::u16string_view, ICUError> NumberRangeFormat::formatResultToParts(
 
   if (!fields.toPartsVector(utf16Length, sourceMap, parts)) {
     return Err(ToICUError(status));
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mFormatWithApprox && isIdenticalNumber) {
-    bool foundSign = false;
-    for (size_t i = 1; !foundSign && i < parts.length(); i++) {
-      switch (parts[i].type) {
-        
-        case NumberPartType::Compact:
-        case NumberPartType::Currency:
-        case NumberPartType::Infinity:
-        case NumberPartType::Integer:
-        case NumberPartType::MinusSign:
-        case NumberPartType::Nan:
-        case NumberPartType::Percent:
-        case NumberPartType::PlusSign:
-        case NumberPartType::Unit: {
-          auto& part = parts[i - 1];
-          if (part.type == NumberPartType::Literal) {
-            part.type = NumberPartType::ApproximatelySign;
-            foundSign = true;
-          }
-          break;
-        }
-
-        
-        
-        case NumberPartType::ApproximatelySign:
-        case NumberPartType::Decimal:
-        case NumberPartType::ExponentInteger:
-        case NumberPartType::ExponentMinusSign:
-        case NumberPartType::ExponentSeparator:
-        case NumberPartType::Fraction:
-        case NumberPartType::Group:
-        case NumberPartType::Literal:
-          break;
-      }
-    }
   }
 
   return std::u16string_view(utf16Str, static_cast<size_t>(utf16Length));
