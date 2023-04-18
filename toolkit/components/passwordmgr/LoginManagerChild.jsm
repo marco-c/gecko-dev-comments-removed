@@ -1031,6 +1031,76 @@ class LoginFormState {
     );
     return false;
   }
+
+  fillConfirmFieldWithGeneratedPassword(passwordField) {
+    
+    let form = lazy.LoginFormFactory.createFromField(passwordField);
+    let confirmPasswordInput = null;
+    
+    let MAX_CONFIRM_PASSWORD_DISTANCE = 3;
+
+    let startIndex = form.elements.indexOf(passwordField);
+    if (startIndex == -1) {
+      throw new Error(
+        "Password field is not in the form's elements collection"
+      );
+    }
+
+    
+    
+    let previousGeneratedPasswordField = form.elements.some(
+      inp => inp !== passwordField && this.generatedPasswordFields.has(inp)
+    );
+    if (previousGeneratedPasswordField) {
+      lazy.log(
+        "fillConfirmFieldWithGeneratedPassword, previously-filled generated password input found"
+      );
+      return;
+    }
+
+    
+    
+    let afterFields = form.elements
+      .slice(startIndex + 1)
+      .filter(elem => elem.type !== "hidden");
+
+    let acFieldName = passwordField.getAutocompleteInfo()?.fieldName;
+
+    
+    if (acFieldName == "new-password") {
+      let matchIndex = afterFields.findIndex(
+        elem =>
+          lazy.LoginHelper.isPasswordFieldType(elem) &&
+          elem.getAutocompleteInfo().fieldName == acFieldName &&
+          !elem.disabled &&
+          !elem.readOnly
+      );
+      if (matchIndex >= 0 && matchIndex < MAX_CONFIRM_PASSWORD_DISTANCE) {
+        confirmPasswordInput = afterFields[matchIndex];
+      }
+    }
+    if (!confirmPasswordInput) {
+      for (
+        let idx = 0;
+        idx < Math.min(MAX_CONFIRM_PASSWORD_DISTANCE, afterFields.length);
+        idx++
+      ) {
+        if (
+          lazy.LoginHelper.isPasswordFieldType(afterFields[idx]) &&
+          !afterFields[idx].disabled &&
+          !afterFields[idx].readOnly
+        ) {
+          confirmPasswordInput = afterFields[idx];
+          break;
+        }
+      }
+    }
+    if (confirmPasswordInput && !confirmPasswordInput.value) {
+      this._treatAsGeneratedPasswordField(confirmPasswordInput);
+      confirmPasswordInput.setUserInput(passwordField.value);
+      LoginFormState._highlightFilledField(confirmPasswordInput);
+    }
+  }
 }
 
 
@@ -2515,7 +2585,8 @@ class LoginManagerChild extends JSWindowActorChild {
     this._passwordEditedOrGenerated(passwordField, {
       triggeredByFillingGenerated: true,
     });
-    this._fillConfirmFieldWithGeneratedPassword(passwordField);
+    let docState = this.stateForDocument(passwordField.ownerDocument);
+    docState.fillConfirmFieldWithGeneratedPassword(passwordField);
   }
 
   
@@ -2567,77 +2638,6 @@ class LoginManagerChild extends JSWindowActorChild {
         triggeredByFillingGenerated,
       }
     );
-  }
-
-  _fillConfirmFieldWithGeneratedPassword(passwordField) {
-    
-    let form = lazy.LoginFormFactory.createFromField(passwordField);
-    let confirmPasswordInput = null;
-    let docState = this.stateForDocument(passwordField.ownerDocument);
-    
-    let MAX_CONFIRM_PASSWORD_DISTANCE = 3;
-
-    let startIndex = form.elements.indexOf(passwordField);
-    if (startIndex == -1) {
-      throw new Error(
-        "Password field is not in the form's elements collection"
-      );
-    }
-
-    
-    
-    let previousGeneratedPasswordField = form.elements.some(
-      inp => inp !== passwordField && docState.generatedPasswordFields.has(inp)
-    );
-    if (previousGeneratedPasswordField) {
-      lazy.log(
-        "_fillConfirmFieldWithGeneratedPassword, previously-filled generated password input found"
-      );
-      return;
-    }
-
-    
-    
-    let afterFields = form.elements
-      .slice(startIndex + 1)
-      .filter(elem => elem.type !== "hidden");
-
-    let acFieldName = passwordField.getAutocompleteInfo()?.fieldName;
-
-    
-    if (acFieldName == "new-password") {
-      let matchIndex = afterFields.findIndex(
-        elem =>
-          lazy.LoginHelper.isPasswordFieldType(elem) &&
-          elem.getAutocompleteInfo().fieldName == acFieldName &&
-          !elem.disabled &&
-          !elem.readOnly
-      );
-      if (matchIndex >= 0 && matchIndex < MAX_CONFIRM_PASSWORD_DISTANCE) {
-        confirmPasswordInput = afterFields[matchIndex];
-      }
-    }
-    if (!confirmPasswordInput) {
-      for (
-        let idx = 0;
-        idx < Math.min(MAX_CONFIRM_PASSWORD_DISTANCE, afterFields.length);
-        idx++
-      ) {
-        if (
-          lazy.LoginHelper.isPasswordFieldType(afterFields[idx]) &&
-          !afterFields[idx].disabled &&
-          !afterFields[idx].readOnly
-        ) {
-          confirmPasswordInput = afterFields[idx];
-          break;
-        }
-      }
-    }
-    if (confirmPasswordInput && !confirmPasswordInput.value) {
-      docState._treatAsGeneratedPasswordField(confirmPasswordInput);
-      confirmPasswordInput.setUserInput(passwordField.value);
-      LoginFormState._highlightFilledField(confirmPasswordInput);
-    }
   }
 
   
