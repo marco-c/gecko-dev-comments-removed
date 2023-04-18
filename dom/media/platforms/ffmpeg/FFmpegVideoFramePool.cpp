@@ -22,7 +22,7 @@ RefPtr<layers::Image> VideoFrameSurfaceVAAPI::GetAsImage() {
 VideoFrameSurfaceVAAPI::VideoFrameSurfaceVAAPI(DMABufSurface* aSurface)
     : mSurface(aSurface),
       mLib(nullptr),
-      mAVHWFramesContext(nullptr),
+      mAVHWDeviceContext(nullptr),
       mHWAVBuffer(nullptr) {
   
   
@@ -40,7 +40,7 @@ void VideoFrameSurfaceVAAPI::LockVAAPIData(AVCodecContext* aAVCodecContext,
   FFMPEG_LOG("VideoFrameSurfaceVAAPI: VAAPI locking dmabuf surface UID = %d",
              mSurface->GetUID());
   mLib = aLib;
-  mAVHWFramesContext = aLib->av_buffer_ref(aAVCodecContext->hw_frames_ctx);
+  mAVHWDeviceContext = aLib->av_buffer_ref(aAVCodecContext->hw_device_ctx);
   mHWAVBuffer = aLib->av_buffer_ref(aAVFrame->buf[0]);
 }
 
@@ -56,7 +56,7 @@ void VideoFrameSurfaceVAAPI::ReleaseVAAPIData(bool aForFrameRecycle) {
   
   if (mLib) {
     mLib->av_buffer_unref(&mHWAVBuffer);
-    mLib->av_buffer_unref(&mAVHWFramesContext);
+    mLib->av_buffer_unref(&mAVHWDeviceContext);
   }
 
   
