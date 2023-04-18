@@ -759,6 +759,22 @@ async function testDialog(url, testFn, arg = undefined) {
   return unloadPromise;
 }
 
+
+
+
+
+
+async function setStorage(...items) {
+  await removeAllRecords();
+  for (let item of items) {
+    if (item["cc-number"]) {
+      await saveCreditCard(item);
+    } else {
+      await saveAddress(item);
+    }
+  }
+}
+
 add_setup(function() {
   OSKeyStoreTestUtils.setup();
 });
