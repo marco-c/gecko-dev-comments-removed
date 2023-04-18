@@ -90,6 +90,39 @@ AntialiasMode ScaledFontFontconfig::GetDefaultAAMode() {
   return mInstanceData.mAntialias;
 }
 
+bool FcPatternAllowsBitmaps(FcPattern* aPattern, bool aAntialias,
+                            bool aHinting) {
+  if (!aAntialias) {
+    
+    return true;
+  }
+  FcBool bitmap;
+  if (FcPatternGetBool(aPattern, FC_EMBEDDED_BITMAP, 0, &bitmap) !=
+          FcResultMatch ||
+      !bitmap) {
+    
+    return false;
+  }
+  if (aHinting) {
+    
+    return true;
+  }
+  
+  
+  
+  FcBool outline;
+  if (FcPatternGetBool(aPattern, FC_OUTLINE, 0, &outline) == FcResultMatch &&
+      outline) {
+    return false;
+  }
+  FcBool scalable;
+  if (FcPatternGetBool(aPattern, FC_SCALABLE, 0, &scalable) != FcResultMatch ||
+      !scalable) {
+    return false;
+  }
+  return true;
+}
+
 ScaledFontFontconfig::InstanceData::InstanceData(FcPattern* aPattern)
     : mFlags(0),
       mAntialias(AntialiasMode::NONE),
@@ -151,11 +184,7 @@ ScaledFontFontconfig::InstanceData::InstanceData(FcPattern* aPattern)
 
     
     
-    FcBool bitmap;
-    if (mHinting != FontHinting::NONE &&
-        FcPatternGetBool(aPattern, FC_EMBEDDED_BITMAP, 0, &bitmap) ==
-            FcResultMatch &&
-        bitmap) {
+    if (FcPatternAllowsBitmaps(aPattern, true, mHinting != FontHinting::NONE)) {
       mFlags |= EMBEDDED_BITMAP;
     }
 
