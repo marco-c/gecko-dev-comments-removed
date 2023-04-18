@@ -779,6 +779,19 @@ void nsHTMLScrollFrame::ReflowScrolledFrame(ScrollReflowInput* aState,
       LogicalPoint(wm), dummyContainerSize,
       ReflowChildFlags::NoMoveFrame | ReflowChildFlags::NoSizeView);
 
+  if (mHelper.mScrolledFrame->HasAnyStateBits(
+          NS_FRAME_CONTAINS_RELATIVE_BSIZE)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
+  }
+
   
   
   
