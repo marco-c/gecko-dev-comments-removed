@@ -1104,7 +1104,10 @@ void DocumentLoadListener::Disconnect(bool aContinueNavigating) {
     httpChannelImpl->SetEarlyHintObserver(nullptr);
   }
 
-  if (GetLoadingBrowsingContext()) {
+  
+  
+  
+  if (GetLoadingBrowsingContext() && !aContinueNavigating) {
     GetLoadingBrowsingContext()->mEarlyHintsService.Cancel();
   }
 
