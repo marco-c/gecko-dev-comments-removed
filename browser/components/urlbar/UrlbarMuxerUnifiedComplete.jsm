@@ -82,13 +82,9 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       suggestions: new Set(),
       canAddTabToSearch: true,
       hasUnitConversionResult: false,
+      maxHeuristicResultSpan: 0,
       
     };
-
-    
-    if (UrlbarPrefs.get("experimental.hideHeuristic")) {
-      state.availableResultSpan++;
-    }
 
     
     for (let result of context.results) {
@@ -110,6 +106,23 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     }
 
     
+    if (state.maxHeuristicResultSpan) {
+      if (UrlbarPrefs.get("experimental.hideHeuristic")) {
+        
+        
+        
+        state.availableResultSpan += state.maxHeuristicResultSpan;
+      } else if (context.maxResults > 0) {
+        
+        
+        state.availableResultSpan = Math.max(
+          state.availableResultSpan,
+          state.maxHeuristicResultSpan
+        );
+      }
+    }
+
+    
     
     let rootGroup = context.searchMode?.engineName
       ? UrlbarPrefs.makeResultGroups({ showSearchSuggestionsFirst: true })
@@ -124,15 +137,22 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     );
 
     
-    let suggestedIndexResults = state.resultsByGroup.get(
-      UrlbarUtils.RESULT_GROUP.SUGGESTED_INDEX
-    );
-    if (suggestedIndexResults) {
-      this._addSuggestedIndexResults(
-        suggestedIndexResults,
-        sortedResults,
-        state
+    
+    
+    
+    
+    
+    if (context.maxResults > 0) {
+      let suggestedIndexResults = state.resultsByGroup.get(
+        UrlbarUtils.RESULT_GROUP.SUGGESTED_INDEX
       );
+      if (suggestedIndexResults) {
+        this._addSuggestedIndexResults(
+          suggestedIndexResults,
+          sortedResults,
+          state
+        );
+      }
     }
 
     context.results = sortedResults;
@@ -884,6 +904,14 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
 
   _updateStatePreAdd(result, state) {
+    
+    if (result.heuristic && this._canAddResult(result, state)) {
+      state.maxHeuristicResultSpan = Math.max(
+        state.maxHeuristicResultSpan,
+        UrlbarUtils.getSpanForResult(result)
+      );
+    }
+
     
     
     if (
