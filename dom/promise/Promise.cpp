@@ -689,21 +689,21 @@ already_AddRefed<PromiseWorkerProxy> PromiseWorkerProxy::Create(
 
   
   
+  proxy.get()->AddRef();
+
+  
+  
   RefPtr<StrongWorkerRef> workerRef = StrongWorkerRef::Create(
       aWorkerPrivate, "PromiseWorkerProxy", [proxy]() { proxy->CleanUp(); });
 
   if (NS_WARN_IF(!workerRef)) {
     
     
-    proxy->CleanProperties();
+    proxy->CleanUp();
     return nullptr;
   }
 
   proxy->mWorkerRef = new ThreadSafeWorkerRef(workerRef);
-
-  
-  
-  proxy.get()->AddRef();
 
   return proxy.forget();
 }
@@ -722,19 +722,6 @@ PromiseWorkerProxy::~PromiseWorkerProxy() {
   MOZ_ASSERT(mCleanedUp);
   MOZ_ASSERT(!mWorkerPromise);
   MOZ_ASSERT(!mWorkerRef);
-}
-
-void PromiseWorkerProxy::CleanProperties() {
-  MOZ_ASSERT(IsCurrentThreadRunningWorker());
-
-  
-  
-  mCleanedUp = true;
-  mWorkerPromise = nullptr;
-  mWorkerRef = nullptr;
-
-  
-  Clear();
 }
 
 WorkerPrivate* PromiseWorkerProxy::GetWorkerPrivate() const {
@@ -806,7 +793,12 @@ void PromiseWorkerProxy::CleanUp() {
     
     
     
-    CleanProperties();
+    mCleanedUp = true;
+    mWorkerPromise = nullptr;
+    mWorkerRef = nullptr;
+
+    
+    Clear();
   }
   Release();
 }

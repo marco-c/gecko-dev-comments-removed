@@ -188,9 +188,6 @@ class PromiseWorkerProxy : public PromiseNativeHandler,
   virtual ~PromiseWorkerProxy();
 
   
-  void CleanProperties();
-
-  
   typedef void (Promise::*RunCallbackFunc)(JSContext*, JS::Handle<JS::Value>);
 
   void RunCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
