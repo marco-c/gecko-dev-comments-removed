@@ -17,20 +17,22 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 const { Assert } = ChromeUtils.import("resource://testing-common/Assert.jsm");
 
+const lazy = {};
+
 XPCOMUtils.defineLazyServiceGetter(
-  this,
+  lazy,
   "gExternalProtocolService",
   "@mozilla.org/uriloader/external-protocol-service;1",
   "nsIExternalProtocolService"
 );
 XPCOMUtils.defineLazyServiceGetter(
-  this,
+  lazy,
   "gMIMEService",
   "@mozilla.org/mime;1",
   "nsIMIMEService"
 );
 XPCOMUtils.defineLazyServiceGetter(
-  this,
+  lazy,
   "gHandlerService",
   "@mozilla.org/uriloader/handler-service;1",
   "nsIHandlerService"
@@ -47,7 +49,10 @@ var HandlerServiceTestUtils = {
 
 
   getAllHandlerInfoTypes() {
-    return Array.from(gHandlerService.enumerate(), info => info.type).sort();
+    return Array.from(
+      lazy.gHandlerService.enumerate(),
+      info => info.type
+    ).sort();
   },
 
   
@@ -86,7 +91,7 @@ var HandlerServiceTestUtils = {
       
       
       
-      let handlerInfo = gMIMEService.getFromTypeAndExtension(type, null);
+      let handlerInfo = lazy.gMIMEService.getFromTypeAndExtension(type, null);
       if (AppConstants.platform == "android") {
         
         while (handlerInfo.possibleApplicationHandlers.length > 1) {
@@ -97,8 +102,8 @@ var HandlerServiceTestUtils = {
       }
       handlerInfo.setFileExtensions("");
       
-      if (gHandlerService.exists(handlerInfo)) {
-        gHandlerService.fillHandlerInfo(handlerInfo, "");
+      if (lazy.gHandlerService.exists(handlerInfo)) {
+        lazy.gHandlerService.fillHandlerInfo(handlerInfo, "");
       }
       return handlerInfo;
     }
@@ -107,14 +112,14 @@ var HandlerServiceTestUtils = {
     
     
     let osDefaultHandlerFound = {};
-    let handlerInfo = gExternalProtocolService.getProtocolHandlerInfoFromOS(
+    let handlerInfo = lazy.gExternalProtocolService.getProtocolHandlerInfoFromOS(
       type,
       osDefaultHandlerFound
     );
-    if (gHandlerService.exists(handlerInfo)) {
-      gHandlerService.fillHandlerInfo(handlerInfo, "");
+    if (lazy.gHandlerService.exists(handlerInfo)) {
+      lazy.gHandlerService.fillHandlerInfo(handlerInfo, "");
     } else {
-      gExternalProtocolService.setProtocolHandlerDefaults(
+      lazy.gExternalProtocolService.setProtocolHandlerDefaults(
         handlerInfo,
         osDefaultHandlerFound.value
       );
