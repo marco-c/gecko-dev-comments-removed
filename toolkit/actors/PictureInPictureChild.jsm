@@ -1406,7 +1406,7 @@ class PictureInPictureChild extends JSWindowActorChild {
     
     
     let wrapperPath =
-      AppConstants.NIGHTLY_BUILD && !AppConstants.DEBUG && overrides
+      AppConstants.NIGHTLY_BUILD && overrides
         ? overrides[1].videoWrapperScriptPath
         : null;
     this.videoWrapper = new PictureInPictureChildVideoWrapper(
