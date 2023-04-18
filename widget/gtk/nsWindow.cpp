@@ -3581,8 +3581,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   }
 
   
-  if (renderer->GetBackendType() == LayersBackend::LAYERS_CLIENT ||
-      renderer->GetBackendType() == LayersBackend::LAYERS_WR) {
+  if (renderer->GetBackendType() == LayersBackend::LAYERS_WR) {
     listener->PaintWindow(this, region);
 
     
