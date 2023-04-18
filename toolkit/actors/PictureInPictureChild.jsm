@@ -77,6 +77,9 @@ const TOGGLE_HIDING_TIMEOUT_MS = 2000;
 const SEEK_TIME_SECS = 5;
 
 
+const TEXT_TRACKS_STYLE_BOTTOM_MULTIPLIER = 0.066;
+
+
 
 
 var gPlayerContents = new WeakSet();
@@ -1303,6 +1306,51 @@ class PictureInPictureChild extends JSWindowActorChild {
 
 
 
+
+
+
+
+
+  moveTextTracks(data) {
+    const {
+      isFullscreen,
+      isVideoControlsShowing,
+      playerBottomControlsDOMRect,
+    } = data;
+    let textTracks = this.document.getElementById("texttracks");
+    const originatingWindow = this.getWeakVideo().ownerGlobal;
+    const isReducedMotionEnabled = originatingWindow.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    if (isFullscreen || isReducedMotionEnabled) {
+      textTracks.removeAttribute("overlap-video-controls");
+      return;
+    }
+
+    if (isVideoControlsShowing) {
+      let playerVideoRect = textTracks.parentElement.getBoundingClientRect();
+      let isOverlap =
+        playerVideoRect.bottom -
+          TEXT_TRACKS_STYLE_BOTTOM_MULTIPLIER * playerVideoRect.height >
+        playerBottomControlsDOMRect.top;
+
+      if (isOverlap) {
+        textTracks.setAttribute("overlap-video-controls", true);
+      } else {
+        textTracks.removeAttribute("overlap-video-controls");
+      }
+    } else {
+      textTracks.removeAttribute("overlap-video-controls");
+    }
+  }
+
+  
+
+
+
+
+
   updateWebVTTTextTracksDisplay(textTrackCues) {
     let pipWindowTracksContainer = this.document.getElementById("texttracks");
     let playerVideo = this.document.getElementById("playervideo");
@@ -1588,6 +1636,22 @@ class PictureInPictureChild extends JSWindowActorChild {
         this.keyDown(message.data);
         break;
       }
+      case "PictureInPicture:EnterFullscreen":
+      case "PictureInPicture:ExitFullscreen": {
+        let textTracks = this.document.getElementById("texttracks");
+        if (textTracks) {
+          this.moveTextTracks(message.data);
+        }
+        break;
+      }
+      case "PictureInPicture:ShowVideoControls":
+      case "PictureInPicture:HideVideoControls": {
+        let textTracks = this.document.getElementById("texttracks");
+        if (textTracks) {
+          this.moveTextTracks(message.data);
+        }
+        break;
+      }
     }
   }
 
@@ -1789,6 +1853,8 @@ class PictureInPictureChild extends JSWindowActorChild {
     
     
     textTracks.id = "texttracks";
+    
+    textTracks.setAttribute("overlap-video-controls", true);
     doc.body.appendChild(playerVideo);
     doc.body.appendChild(textTracks);
     
