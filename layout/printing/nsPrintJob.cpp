@@ -731,7 +731,7 @@ void nsPrintJob::FirePrintingErrorEvent(nsresult aPrintError) {
 
 
 
-nsresult nsPrintJob::ReconstructAndReflow() {
+nsresult nsPrintJob::ReconstructAndReflow(bool doSetPixelScale) {
   if (NS_WARN_IF(!mPrt)) {
     return NS_ERROR_FAILURE;
   }
@@ -767,7 +767,7 @@ nsresult nsPrintJob::ReconstructAndReflow() {
                "print object "
                "has been marked as \"print the document\"");
 
-    UpdateZoomRatio(po);
+    UpdateZoomRatio(po, doSetPixelScale);
 
     po->mPresContext->SetPageScale(po->mZoomRatio);
 
@@ -866,7 +866,7 @@ nsresult nsPrintJob::SetupToPrintContent() {
   
   
   if (mDidLoadDataForPrinting) {
-    nsresult rv = ReconstructAndReflow();
+    nsresult rv = ReconstructAndReflow(DoSetPixelScale());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -886,7 +886,7 @@ nsresult nsPrintJob::SetupToPrintContent() {
     printData->mShrinkRatio = printData->mPrintObject->mShrinkRatio;
 
     if (printData->mShrinkRatio < 0.998f) {
-      nsresult rv = ReconstructAndReflow();
+      nsresult rv = ReconstructAndReflow(true);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -1011,7 +1011,8 @@ nsresult nsPrintJob::SetupToPrintContent() {
 
 
 
-nsresult nsPrintJob::ReflowDocList(const UniquePtr<nsPrintObject>& aPO) {
+nsresult nsPrintJob::ReflowDocList(const UniquePtr<nsPrintObject>& aPO,
+                                   bool aSetPixelScale) {
   NS_ENSURE_ARG_POINTER(aPO);
 
   
@@ -1026,13 +1027,13 @@ nsresult nsPrintJob::ReflowDocList(const UniquePtr<nsPrintObject>& aPO) {
     }
   }
 
-  UpdateZoomRatio(aPO.get());
+  UpdateZoomRatio(aPO.get(), aSetPixelScale);
 
   
   MOZ_TRY(ReflowPrintObject(aPO));
 
   for (const UniquePtr<nsPrintObject>& kid : aPO->mKids) {
-    MOZ_TRY(ReflowDocList(kid));
+    MOZ_TRY(ReflowDocList(kid, aSetPixelScale));
   }
   return NS_OK;
 }
@@ -1069,7 +1070,7 @@ nsresult nsPrintJob::InitPrintDocConstruction(bool aHandleError) {
     webProgress->AddProgressListener(static_cast<nsIWebProgressListener*>(this),
                                      nsIWebProgress::NOTIFY_STATE_REQUEST);
 
-    MOZ_TRY(ReflowDocList(printData->mPrintObject));
+    MOZ_TRY(ReflowDocList(printData->mPrintObject, DoSetPixelScale()));
 
     FirePrintPreviewUpdateEvent();
   }
@@ -1185,16 +1186,18 @@ nsPrintJob::OnContentBlockingEvent(nsIWebProgress* aWebProgress,
 
 
 
-void nsPrintJob::UpdateZoomRatio(nsPrintObject* aPO) {
-  if (!aPO->mParent) {
-    if (mPrt->mShrinkToFit) {
-      
-      aPO->mZoomRatio = mPrt->mShrinkRatio - 0.005f;
-    } else {
-      double scaling;
-      mPrt->mPrintSettings->GetScaling(&scaling);
-      aPO->mZoomRatio = float(scaling);
-    }
+void nsPrintJob::UpdateZoomRatio(nsPrintObject* aPO, bool aSetPixelScale) {
+  
+  
+  if (aSetPixelScale && aPO->mFrameType != eIFrame) {
+    
+    aPO->mZoomRatio = mPrt->mPrintSettings->GetPrintSelectionOnly()
+                          ? aPO->mShrinkRatio - 0.005f
+                          : mPrt->mShrinkRatio - 0.005f;
+  } else if (!mPrt->mShrinkToFit) {
+    double scaling;
+    mPrt->mPrintSettings->GetScaling(&scaling);
+    aPO->mZoomRatio = float(scaling);
   }
 }
 
@@ -1247,6 +1250,23 @@ nsresult nsPrintJob::UpdateSelectionAndShrinkPrintObject(
     }
   }
   return NS_OK;
+}
+
+bool nsPrintJob::DoSetPixelScale() {
+  
+  
+  
+  
+  
+  
+  
+  bool doSetPixelScale = false;
+  bool ppIsShrinkToFit = mPrtPreview && mPrtPreview->mShrinkToFit;
+  if (ppIsShrinkToFit) {
+    mPrt->mShrinkRatio = mPrtPreview->mShrinkRatio;
+    doSetPixelScale = true;
+  }
+  return doSetPixelScale;
 }
 
 nsView* nsPrintJob::GetParentViewForRoot() {

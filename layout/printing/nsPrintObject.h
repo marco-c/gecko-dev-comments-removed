@@ -72,17 +72,8 @@ class nsPrintObject {
   nsPrintObject* mParent;  
   bool mHasBeenPrinted;
   bool mInvisible;  
-
-  
-  
-  
-  
-  float mZoomRatio = 1.0;
-
-  
-  
-  
-  float mShrinkRatio = 1.0;
+  float mShrinkRatio;
+  float mZoomRatio;
 
  private:
   nsPrintObject& operator=(const nsPrintObject& aOther) = delete;
