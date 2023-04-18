@@ -276,13 +276,15 @@ class JitFrameLayout : public CommonFrameLayout {
   }
   uintptr_t numActualArgs() const { return numActualArgs_; }
 
+  
+  
+  static constexpr size_t FramePointerOffset = sizeof(void*);
+
   uint8_t* callerFramePtr() const {
-    
     auto* p = reinterpret_cast<const uintptr_t*>(this) - 1;
     return reinterpret_cast<uint8_t*>(*p);
   }
 
-  
   
   
   static constexpr size_t IonFirstSlotOffset = 8;
