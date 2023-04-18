@@ -1232,8 +1232,15 @@ ComputedStyle* nsCSSRendering::FindRootFrameBackground(nsIFrame* aForFrame) {
   return FindBackgroundStyleFrame(aForFrame)->Style();
 }
 
-inline bool FindElementBackground(const nsIFrame* aForFrame,
-                                  nsIFrame* aRootElementFrame) {
+
+
+
+inline bool FrameHasMeaningfulBackground(const nsIFrame* aForFrame,
+                                         nsIFrame* aRootElementFrame) {
+  MOZ_ASSERT(!nsCSSRendering::IsCanvasFrame(aForFrame),
+             "FindBackgroundFrame handles canvas frames before calling us, "
+             "so we don't need to consider them here");
+
   if (aForFrame == aRootElementFrame) {
     
     return false;
@@ -1280,9 +1287,7 @@ nsIFrame* nsCSSRendering::FindBackgroundFrame(const nsIFrame* aForFrame) {
     return FindCanvasBackgroundFrame(aForFrame, rootElementFrame);
   }
 
-  
-  
-  if (FindElementBackground(aForFrame, rootElementFrame)) {
+  if (FrameHasMeaningfulBackground(aForFrame, rootElementFrame)) {
     return const_cast<nsIFrame*>(aForFrame);
   }
 
