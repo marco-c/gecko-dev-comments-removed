@@ -130,9 +130,6 @@ exports.RootActor = protocol.ActorClassWithSpec(rootSpec, {
 
     this.traits = {
       networkMonitor: true,
-
-      
-      
       resources: supportedResources,
 
       
