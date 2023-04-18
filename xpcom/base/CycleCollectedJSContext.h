@@ -46,6 +46,7 @@ struct CycleCollectorResults {
 
   void Init() {
     mForcedGC = false;
+    mSuspectedAtCCStart = 0;
     mMergedZones = false;
     mAnyManual = false;
     mVisitedRefCounted = 0;
@@ -62,6 +63,7 @@ struct CycleCollectorResults {
   bool mMergedZones;
   
   bool mAnyManual;
+  uint32_t mSuspectedAtCCStart;
   uint32_t mVisitedRefCounted;
   uint32_t mVisitedGCed;
   uint32_t mFreedRefCounted;
