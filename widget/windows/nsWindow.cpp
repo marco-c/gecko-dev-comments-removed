@@ -663,14 +663,9 @@ static bool IsMouseVanishKey(WPARAM aVirtKey) {
     case VK_PRIOR:  
     case VK_NEXT:   
       return false;
-    case 'A':
-    case 'C':
-    case 'V':
-    case 'X':
+    default:
       
       return (GetKeyState(VK_CONTROL) & 0x8000) != 0x8000;
-    default:
-      return true;
   }
 }
 
