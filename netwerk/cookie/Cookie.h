@@ -46,7 +46,7 @@ class Cookie final : public nsICookie {
 
  public:
   
-  static bool ValidateSameSite(const CookieStruct& aCookieData);
+  static bool ValidateRawSame(const CookieStruct& aCookieData);
 
   
   
