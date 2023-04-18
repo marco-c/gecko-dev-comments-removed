@@ -498,11 +498,9 @@ void nsContainerFrame::DisplaySelectionOverlay(nsDisplayListBuilder* aBuilder,
   nsIContent* newContent = mContent->GetParent();
 
   
-  int32_t offset = 0;
-  if (newContent) {
-    
-    offset = newContent->ComputeIndexOf(mContent);
-  }
+  
+  uint32_t offset =
+      newContent ? newContent->ComputeIndexOf_Deprecated(mContent) : 0;
 
   
   UniquePtr<SelectionDetails> details =

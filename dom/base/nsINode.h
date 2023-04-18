@@ -627,7 +627,7 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  virtual int32_t ComputeIndexOf(const nsINode* aPossibleChild) const;
+  int32_t ComputeIndexOf_Deprecated(const nsINode* aPossibleChild) const;
 
   
 
