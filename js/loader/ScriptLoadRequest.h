@@ -184,25 +184,22 @@ class ScriptLoadRequest
 
   virtual void SetReady();
 
-  enum class Progress : uint8_t {
-    eLoading,         
-    eLoading_Source,  
-    eCompiling,
-    eFetchingImports,
-    eReady
+  enum class State : uint8_t {
+    Fetching,        
+    FetchingSource,  
+    Compiling,
+    LoadingImports,
+    Ready
   };
 
-  bool IsReadyToRun() const { return mProgress == Progress::eReady; }
+  bool IsReadyToRun() const { return mState == State::Ready; }
   bool IsLoading() const {
-    return mProgress == Progress::eLoading ||
-           mProgress == Progress::eLoading_Source;
+    return mState == State::Fetching || mState == State::FetchingSource;
   }
 
-  bool IsLoadingSource() const {
-    return mProgress == Progress::eLoading_Source;
-  }
+  bool IsLoadingSource() const { return mState == State::FetchingSource; }
 
-  bool InCompilingStage() const { return mProgress == Progress::eCompiling; }
+  bool InCompilingStage() const { return mState == State::Compiling; }
 
   
   enum class DataType : uint8_t { eUnknown, eTextSource, eBytecode };
@@ -299,7 +296,7 @@ class ScriptLoadRequest
                            
 
   bool mIsCanceled;    
-  Progress mProgress;  
+  State mState;        
   DataType mDataType;  
   RefPtr<ScriptFetchOptions> mFetchOptions;
   const SRIMetadata mIntegrity;
