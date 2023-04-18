@@ -16,14 +16,6 @@
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
-);
-
-XPCOMUtils.defineLazyModuleGetters(this, {
-  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
-});
-
 ChromeUtils.defineModuleGetter(
   this,
   "Downloads",
@@ -426,26 +418,7 @@ DownloadLegacyTransfer.prototype = {
         }
 
         
-        let aboutReaderCb = () => {};
-
-        if (aDownload.source.url.includes("about:reader")) {
-          let browserWin = BrowserWindowTracker.getTopWindow();
-          let actor = browserWin.gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
-            "AboutReader"
-          );
-          actor.sendQuery("Reader:HideToolbar");
-          aboutReaderCb = () => {
-            actor.sendQuery("Reader:ShowToolbar");
-          };
-        }
-
-        
-        aDownload
-          .start()
-          .then(() => {
-            aboutReaderCb();
-          })
-          .catch(() => {});
+        aDownload.start().catch(() => {});
 
         
         this._download = aDownload;
