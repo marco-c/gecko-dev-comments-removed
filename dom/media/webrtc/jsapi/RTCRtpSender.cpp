@@ -549,34 +549,12 @@ RefPtr<dom::Promise> ReplaceTrackOperation::CallImpl() {
   
   RefPtr<dom::Promise> p = sender->MakePromise();
 
-  
-  
-  bool sending = mTransceiver->IsSending();
-
-  
-
-  
-  if (sending && !mNewTrack) {
-    sender->Stop();
-    sender->SeamlessTrackSwitch(mNewTrack);
-  }
-
-  
-  
-  
-  
-
-  
-  
-  
-  if (sending && mNewTrack) {
-    if (!sender->SeamlessTrackSwitch(mNewTrack)) {
-      MOZ_LOG(gSenderLog, LogLevel::Info,
-              ("%s Could not seamlessly replace track", __FUNCTION__));
-      p->MaybeRejectWithInvalidModificationError(
-          "Could not seamlessly replace track");
-      return p;
-    }
+  if (!sender->SeamlessTrackSwitch(mNewTrack)) {
+    MOZ_LOG(gSenderLog, LogLevel::Info,
+            ("%s Could not seamlessly replace track", __FUNCTION__));
+    p->MaybeRejectWithInvalidModificationError(
+        "Could not seamlessly replace track");
+    return p;
   }
 
   
@@ -613,8 +591,8 @@ already_AddRefed<dom::Promise> RTCRtpSender::ReplaceTrack(
   }
 
   MOZ_LOG(gSenderLog, LogLevel::Debug,
-          ("%s[%s]: %s (%p)", mPc->GetHandle().c_str(), GetMid().c_str(),
-           __FUNCTION__, aWithTrack));
+          ("%s[%s]: %s (%p to %p)", mPc->GetHandle().c_str(), GetMid().c_str(),
+           __FUNCTION__, mSenderTrack.get(), aWithTrack));
 
   
   
@@ -637,24 +615,40 @@ bool RTCRtpSender::SeamlessTrackSwitch(
   
   
 
+  
+  
+  bool sending = mTransceiverImpl->IsSending();
+  if (sending && !aWithTrack) {
+    
+    Stop();
+  }
+
   mPipeline->SetTrack(aWithTrack);
 
-  if (mTransceiverImpl->IsVideo()) {
+  if (sending && aWithTrack) {
     
     
-    Maybe<MediaSourceEnum> oldType;
-    Maybe<MediaSourceEnum> newType;
-    if (mSenderTrack) {
-      oldType = Some(mSenderTrack->GetSource().GetMediaSource());
-    }
-    if (aWithTrack) {
-      newType = Some(aWithTrack->GetSource().GetMediaSource());
-    }
-    if (oldType != newType) {
+    
+    
+
+    if (mTransceiverImpl->IsVideo()) {
+      
+      
+      
+      Maybe<MediaSourceEnum> oldType;
+      Maybe<MediaSourceEnum> newType;
+      if (mSenderTrack) {
+        oldType = Some(mSenderTrack->GetSource().GetMediaSource());
+      }
+      if (aWithTrack) {
+        newType = Some(aWithTrack->GetSource().GetMediaSource());
+      }
+      if (oldType != newType) {
+        UpdateConduit();
+      }
+    } else if (!mSenderTrack != !aWithTrack) {
       UpdateConduit();
     }
-  } else if (!mSenderTrack != !aWithTrack) {
-    UpdateConduit();
   }
 
   
