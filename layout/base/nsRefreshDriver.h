@@ -279,6 +279,8 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
   bool IsFrozen() const { return mFreezeCount > 0; }
 
+  bool IsThrottled() const { return mThrottled; }
+
   
 
 
