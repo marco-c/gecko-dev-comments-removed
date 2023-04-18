@@ -15,7 +15,6 @@
 #include "jstypes.h"  
 
 struct JS_PUBLIC_API JSContext;
-class JS_PUBLIC_API JSFreeOp;
 class JS_PUBLIC_API JSObject;
 struct JS_PUBLIC_API JSRuntime;
 
@@ -41,12 +40,6 @@ extern JS_PUBLIC_API void* JS_string_realloc(JSContext* cx, void* p,
                                              size_t oldBytes, size_t newBytes);
 
 extern JS_PUBLIC_API void JS_string_free(JSContext* cx, void* p);
-
-
-
-
-
-extern JS_PUBLIC_API void JS_freeop(JSFreeOp* fop, void* p);
 
 namespace JS {
 
