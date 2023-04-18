@@ -18,7 +18,6 @@ import {
 import { makeBreakpointId } from "../../utils/breakpoint";
 import { memoizeableAction } from "../../utils/memoizableAction";
 import { fulfilled } from "../../utils/async-value";
-import { loadSourceActorBreakpointColumns } from "../source-actors";
 
 async function mapLocations(generatedLocations, { sourceMaps }) {
   if (generatedLocations.length == 0) {
@@ -112,8 +111,6 @@ async function _setBreakpointPositions(cx, sourceId, line, thunkArgs) {
 
   const results = {};
   if (isOriginalId(sourceId)) {
-    
-    
     const ranges = await sourceMaps.getGeneratedRangesForOriginal(
       sourceId,
       true
@@ -159,8 +156,17 @@ async function _setBreakpointPositions(cx, sourceId, line, thunkArgs) {
     }
 
     const actorColumns = await Promise.all(
-      getSourceActorsForSource(getState(), generatedSource.id).map(actor =>
-        dispatch(loadSourceActorBreakpointColumns({ id: actor.id, line, cx }))
+      getSourceActorsForSource(getState(), generatedSource.id).map(
+        async actor => {
+          const positions = await client.getSourceActorBreakpointPositions(
+            actor,
+            {
+              start: { line, column: 0 },
+              end: { line: line + 1, column: 0 },
+            }
+          );
+          return positions[line] || [];
+        }
       )
     );
 
@@ -202,6 +208,29 @@ function generatedSourceActorKey(state, sourceId) {
     : [];
   return [sourceId, ...actors].join(":");
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export const setBreakpointPositions = memoizeableAction(
   "setBreakpointPositions",
