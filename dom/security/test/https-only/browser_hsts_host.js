@@ -104,6 +104,13 @@ function onNewMessage(msgObj) {
   if (message.includes("Upgrading insecure request")) {
     ok(false, "Top-Level upgrade shouldn't get logged");
     testFinished = true;
+  } else if (
+    message.includes("Upgrading insecure speculative TCP connection")
+  ) {
+    
+    
+    ok(true, "Top-Level upgrade shouldn't get logged");
+    testFinished = true;
   } else if (gBrowser.selectedBrowser.currentURI.scheme === "https") {
     ok(true, "Top-Level upgrade shouldn't get logged");
     testFinished = true;
