@@ -995,10 +995,13 @@ bool CycleCollectedJSRuntime::TraceGrayJS(JSTracer* aTracer,
 
   
 
-  JSHolderMap::WhichHolders which = JSHolderMap::HoldersRequiredForGrayMarking;
-  if (JS::AtomsZoneIsCollecting(self->Runtime())) {
-    
-    which = JSHolderMap::AllHolders;
+  JSHolderMap::WhichHolders which = JSHolderMap::AllHolders;
+
+  
+  
+  if (aTracer->isMarkingTracer() &&
+      !JS::AtomsZoneIsCollecting(self->Runtime())) {
+    which = JSHolderMap::HoldersRequiredForGrayMarking;
   }
 
   return self->TraceNativeGrayRoots(aTracer, which, budget);
