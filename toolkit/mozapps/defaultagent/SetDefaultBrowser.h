@@ -26,7 +26,12 @@
 
 
 
-HRESULT SetDefaultBrowserUserChoice(const wchar_t* aAumi);
+
+
+
+
+HRESULT SetDefaultBrowserUserChoice(
+    const wchar_t* aAumi, const wchar_t* const* aExtraFileExtensions = nullptr);
 
 
 
