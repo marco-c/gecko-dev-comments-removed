@@ -87,7 +87,8 @@ class DatabaseFileManager final
 
   
   
-  [[nodiscard]] nsresult SyncDeleteFile(nsIFile& aFile, nsIFile& aJournalFile);
+  [[nodiscard]] nsresult SyncDeleteFile(nsIFile& aFile,
+                                        nsIFile& aJournalFile) const;
 
   [[nodiscard]] nsresult AsyncDeleteFile(int64_t aFileId);
 
