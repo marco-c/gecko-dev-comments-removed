@@ -27,7 +27,10 @@ const EXPECTED_REQUEST_COL_2 = 3;
 
 
 const FETCH_URI = "https://example.com/document-builder.sjs?html=foo";
-const IMAGE_URI = URL_ROOT_SSL + "test_image.png";
+
+
+const uuid = `${Date.now()}-${Math.random()}`;
+const IMAGE_URI = URL_ROOT_SSL + "test_image.png?" + uuid;
 
 add_task(async function testParentProcessRequests() {
   
