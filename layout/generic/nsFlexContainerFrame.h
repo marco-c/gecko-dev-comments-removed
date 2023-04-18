@@ -460,8 +460,7 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
-  void GenerateFlexLines(const SharedFlexData& aData,
-                         nsTArray<FlexLine>& aLines);
+  FlexLayoutResult GenerateFlexLayoutResult();
 
   
 
