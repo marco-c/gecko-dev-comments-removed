@@ -30,12 +30,15 @@ class NativeInputTrack : public ProcessedMediaTrack {
   
   void NotifyOutputData(MediaTrackGraphImpl* aGraph, AudioDataValue* aBuffer,
                         size_t aFrames, TrackRate aRate, uint32_t aChannels);
+  void DeviceChanged(MediaTrackGraphImpl* aGraph);
+
+  
   void NotifyInputStopped(MediaTrackGraphImpl* aGraph);
   void NotifyInputData(MediaTrackGraphImpl* aGraph,
                        const AudioDataValue* aBuffer, size_t aFrames,
                        TrackRate aRate, uint32_t aChannels,
                        uint32_t aAlreadyBuffered);
-  void DeviceChanged(MediaTrackGraphImpl* aGraph);
+
 
   
   NativeInputTrack* AsNativeInputTrack() override { return this; }
