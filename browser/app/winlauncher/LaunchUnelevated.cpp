@@ -140,12 +140,26 @@ LauncherVoidResult LaunchUnelevated(int aArgc, wchar_t* aArgv[]) {
     return LAUNCHER_ERROR_GENERIC();
   }
 
-  _bstr_t exe(aArgv[0]);
+  _bstr_t cmd;
+
+  UniquePtr<wchar_t[]> packageFamilyName = mozilla::GetPackageFamilyName();
+  if (packageFamilyName) {
+    int cmdLen =
+        
+        26 + wcslen(packageFamilyName.get());
+    wchar_t appCmd[cmdLen];
+    swprintf(appCmd, cmdLen, L"shell:appsFolder\\%s!FIREFOX",
+             packageFamilyName.get());
+    cmd = appCmd;
+  } else {
+    cmd = aArgv[0];
+  }
+
   _variant_t args(cmdLine.get());
   _variant_t operation(L"open");
   _variant_t directory;
   _variant_t showCmd(SW_SHOWNORMAL);
-  return ShellExecuteByExplorer(exe, args, operation, directory, showCmd);
+  return ShellExecuteByExplorer(cmd, args, operation, directory, showCmd);
 }
 
 LauncherResult<ElevationState> GetElevationState(
