@@ -2048,11 +2048,6 @@ NS_IMETHODIMP
 nsHttpHandler::NewProxiedChannel(nsIURI* uri, nsIProxyInfo* givenProxyInfo,
                                  uint32_t proxyResolveFlags, nsIURI* proxyURI,
                                  nsILoadInfo* aLoadInfo, nsIChannel** result) {
-  
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownNetTeardown)) {
-    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
-  }
-
   HttpBaseChannel* httpChannel;
 
   LOG(("nsHttpHandler::NewProxiedChannel [proxyInfo=%p]\n", givenProxyInfo));
@@ -2063,6 +2058,11 @@ nsHttpHandler::NewProxiedChannel(nsIURI* uri, nsIProxyInfo* givenProxyInfo,
     
     net_EnsurePSMInit();
     httpChannel = new nsHttpChannel();
+  }
+
+  
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownNetTeardown)) {
+    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
   }
 
   return SetupChannelInternal(httpChannel, uri, givenProxyInfo,
