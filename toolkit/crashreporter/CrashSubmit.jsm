@@ -230,11 +230,10 @@ Submitter.prototype = {
     let formData = new FormData();
 
     
+    this.extraKeyVals.Throttleable = this.noThrottle ? "0" : "1";
+
+    
     let payload = Object.assign({}, this.extraKeyVals);
-    if (this.noThrottle) {
-      
-      payload.Throttleable = "0";
-    }
     let json = new Blob([JSON.stringify(payload)], {
       type: "application/json",
     });
