@@ -780,12 +780,12 @@ void nsCocoaWindow::Show(bool bState) {
 
   if (!mWindow) return;
 
-  
-  
-  if (!mSheetNeedsShow && !bState && ![mWindow isVisible]) return;
-
-  
-  if (bState && [mWindow isBeingShown]) return;
+  if (!mSheetNeedsShow) {
+    
+    if (bState == ([mWindow isVisible] || [mWindow isBeingShown])) {
+      return;
+    }
+  }
 
   [mWindow setBeingShown:bState];
   if (bState && !mWasShown) {
