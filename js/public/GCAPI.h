@@ -1136,6 +1136,10 @@ extern JS_PUBLIC_API void JS_RemoveFinalizeCallback(JSContext* cx,
 
 
 
+
+
+
+
 extern JS_PUBLIC_API bool JS_AddWeakPointerZonesCallback(
     JSContext* cx, JSWeakPointerZonesCallback cb, void* data);
 
@@ -1153,11 +1157,11 @@ template <typename T>
 class Heap;
 }
 
-extern JS_PUBLIC_API void JS_UpdateWeakPointerAfterGC(
-    JS::Heap<JSObject*>* objp);
+extern JS_PUBLIC_API bool JS_UpdateWeakPointerAfterGC(
+    JSTracer* trc, JS::Heap<JSObject*>* objp);
 
-extern JS_PUBLIC_API void JS_UpdateWeakPointerAfterGCUnbarriered(
-    JSObject** objp);
+extern JS_PUBLIC_API bool JS_UpdateWeakPointerAfterGCUnbarriered(
+    JSTracer* trc, JSObject** objp);
 
 extern JS_PUBLIC_API void JS_SetGCParameter(JSContext* cx, JSGCParamKey key,
                                             uint32_t value);
