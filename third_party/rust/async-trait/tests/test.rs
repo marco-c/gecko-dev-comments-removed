@@ -1038,9 +1038,9 @@ pub mod issue106 {
     }
 
     #[async_trait]
-    impl<P: ?Sized> ProcessPool for &P
+    impl<P> ProcessPool for &P
     where
-        P: ProcessPool,
+        P: ?Sized + ProcessPool,
     {
         type ThreadPool = P::ThreadPool;
 
@@ -1056,8 +1056,6 @@ pub mod issue106 {
 
 
 pub mod issue110 {
-    #![deny(clippy::all)]
-
     use async_trait::async_trait;
     use std::marker::PhantomData;
 
@@ -1113,8 +1111,6 @@ pub mod issue123 {
 
 
 pub mod issue129 {
-    #![deny(clippy::pedantic)]
-
     use async_trait::async_trait;
 
     #[async_trait]
@@ -1379,6 +1375,23 @@ pub mod issue169 {
 }
 
 
+pub mod issue177 {
+    use async_trait::async_trait;
+
+    #[async_trait]
+    pub trait Trait {
+        async fn foo(&self, _callback: impl FnMut(&str) + Send) {}
+    }
+
+    pub struct Struct;
+
+    #[async_trait]
+    impl Trait for Struct {
+        async fn foo(&self, _callback: impl FnMut(&str) + Send) {}
+    }
+}
+
+
 pub mod issue183 {
     #![deny(clippy::shadow_same)]
 
@@ -1387,5 +1400,53 @@ pub mod issue183 {
     #[async_trait]
     trait Foo {
         async fn foo(_n: i32) {}
+    }
+}
+
+
+pub mod issue199 {
+    use async_trait::async_trait;
+    use std::cell::Cell;
+
+    struct IncrementOnDrop<'a>(&'a Cell<usize>);
+
+    impl<'a> Drop for IncrementOnDrop<'a> {
+        fn drop(&mut self) {
+            self.0.set(self.0.get() + 1);
+        }
+    }
+
+    #[async_trait(?Send)]
+    trait Trait {
+        async fn f(counter: &Cell<usize>, arg: IncrementOnDrop<'_>);
+    }
+
+    struct Struct;
+
+    #[async_trait(?Send)]
+    impl Trait for Struct {
+        async fn f(counter: &Cell<usize>, _: IncrementOnDrop<'_>) {
+            assert_eq!(counter.get(), 0); 
+        }
+    }
+
+    #[test]
+    fn test() {
+        let counter = Cell::new(0);
+        let future = Struct::f(&counter, IncrementOnDrop(&counter));
+        assert_eq!(counter.get(), 0);
+        drop(future);
+        assert_eq!(counter.get(), 1);
+    }
+}
+
+
+pub mod issue204 {
+    use async_trait::async_trait;
+
+    #[async_trait]
+    pub trait Trait {
+        async fn f(arg: &impl Trait);
+        async fn g(arg: *const impl Trait);
     }
 }

@@ -1,0 +1,22 @@
+use async_trait::async_trait;
+
+pub struct Struct;
+
+#[async_trait]
+pub trait Trait {
+    async fn f((_a, _b): (Struct, Struct)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let _ = __arg0;
+    }
+}
+
+fn main() {}
