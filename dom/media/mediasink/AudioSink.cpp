@@ -420,7 +420,7 @@ void AudioSink::NotifyAudioNeeded() {
     }
   }
 
-  if (mAudioQueue.IsFinished()) {
+  if (mAudioQueue.IsFinished() && mAudioQueue.GetSize() == 0) {
     
     DrainConverter(SampleToFrame(mProcessedSPSCQueue->AvailableWrite()));
     mProcessedQueueFinished = true;
