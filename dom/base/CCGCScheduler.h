@@ -111,13 +111,23 @@ struct CCRunnerStep {
   
   CCRunnerYield mYield;
 
-  
-  
-  
-  CCRunnerForgetSkippableRemoveChildless mRemoveChildless;
+  union ActionData {
+    
+    
+    CCRunnerForgetSkippableRemoveChildless mRemoveChildless;
 
-  
-  CCReason mCCReason;
+    
+    CCReason mCCReason;
+
+    
+    JS::GCReason mReason;
+
+    MOZ_IMPLICIT ActionData(CCRunnerForgetSkippableRemoveChildless v)
+        : mRemoveChildless(v) {}
+    MOZ_IMPLICIT ActionData(CCReason v) : mCCReason(v) {}
+    MOZ_IMPLICIT ActionData(JS::GCReason v) : mReason(v) {}
+    ActionData() = default;
+  } mParam;
 };
 
 class CCGCScheduler {
