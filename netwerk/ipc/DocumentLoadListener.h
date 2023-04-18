@@ -505,9 +505,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   
   
-  
-  
-  nsCOMPtr<nsIURI> mChannelCreationURI;
+  nsIURI* GetChannelCreationURI() const;
 
   
   

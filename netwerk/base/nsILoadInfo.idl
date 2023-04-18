@@ -1036,6 +1036,16 @@ interface nsILoadInfo : nsISupports
 
 
 
+
+
+  attribute nsIURI channelCreationOriginalURI;
+
+  
+
+
+
+
+
   [noscript, nostdcall, notxpcom]
   nsIDRef GetSandboxedNullPrincipalID();
 

@@ -748,8 +748,10 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   
   nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(this);
 
+  nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+  loadInfo->SetChannelCreationOriginalURI(aLoadState->URI());
+
   mContentParent = aContentParent;
-  mChannelCreationURI = aLoadState->URI();
   mLoadStateExternalLoadFlags = aLoadState->LoadFlags();
   mLoadStateInternalLoadFlags = aLoadState->InternalLoadFlags();
   mLoadStateLoadType = aLoadState->LoadType();
@@ -1385,13 +1387,7 @@ void DocumentLoadListener::SerializeRedirectData(
     RedirectToRealChannelArgs& aArgs, bool aIsCrossProcess,
     uint32_t aRedirectFlags, uint32_t aLoadFlags,
     ContentParent* aParent) const {
-  
-  
-  aArgs.uri() = mChannelCreationURI;
-  if (!aArgs.uri()) {
-    mChannel->GetOriginalURI(getter_AddRefs(aArgs.uri()));
-  }
-
+  aArgs.uri() = GetChannelCreationURI();
   aArgs.loadIdentifier() = mLoadIdentifier;
 
   
@@ -1581,9 +1577,9 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
   MOZ_DIAGNOSTIC_ASSERT(aWillSwitchToRemote);
 
   MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
-          ("DocumentLoadListener MaybeTriggerProcessSwitch [this=%p, uri=%s, "
+          ("DocumentLoadListener MaybeTriggerProcessSwitch [this=%p, uri=%s"
            "browserid=%" PRIx64 "]",
-           this, mChannelCreationURI->GetSpecOrDefault().get(),
+           this, GetChannelCreationURI()->GetSpecOrDefault().get(),
            GetLoadingBrowsingContext()->Top()->BrowserId()));
 
   
@@ -1638,7 +1634,7 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
   }
 
   auto optionsResult = IsolationOptionsForNavigation(
-      browsingContext->Top(), parentWindow, mChannelCreationURI, mChannel,
+      browsingContext->Top(), parentWindow, GetChannelCreationURI(), mChannel,
       currentRemoteType, HasCrossOriginOpenerPolicyMismatch(),
       mLoadStateLoadType, mDocumentChannelId, mRemoteTypeOverride);
   if (optionsResult.isErr()) {
@@ -2056,7 +2052,7 @@ bool DocumentLoadListener::DocShellWillDisplayContent(nsresult aStatus) {
             ("Skipping process switch, as DocShell will not display content "
              "(status: %s) %s",
              GetStaticErrorName(aStatus),
-             mChannelCreationURI->GetSpecOrDefault().get()));
+             GetChannelCreationURI()->GetSpecOrDefault().get()));
   }
 
   
@@ -2480,6 +2476,17 @@ DocumentLoadListener::AsyncOnChannelRedirect(
   
   
   
+  
+  
+  nsCOMPtr<nsILoadInfo> loadInfoFromChannel = mChannel->LoadInfo();
+  MOZ_ASSERT(loadInfoFromChannel);
+  nsCOMPtr<nsIURI> uri;
+  mChannel->GetOriginalURI(getter_AddRefs(uri));
+  loadInfoFromChannel->SetChannelCreationOriginalURI(uri);
+
+  
+  
+  
   nsCOMPtr<nsIHttpChannelInternal> httpChannel = do_QueryInterface(aOldChannel);
   if (httpChannel) {
     bool isCOOPMismatch = false;
@@ -2529,12 +2536,6 @@ DocumentLoadListener::AsyncOnChannelRedirect(
   
   
   
-  aNewChannel->GetOriginalURI(getter_AddRefs(mChannelCreationURI));
-
-  
-  
-  
-  
   mIParentChannelFunctions.Clear();
 
   
@@ -2579,6 +2580,23 @@ DocumentLoadListener::AsyncOnChannelRedirect(
     aCallback->OnRedirectVerifyCallback(NS_OK);
   }
   return NS_OK;
+}
+
+nsIURI* DocumentLoadListener::GetChannelCreationURI() const {
+  nsCOMPtr<nsILoadInfo> channelLoadInfo = mChannel->LoadInfo();
+
+  nsCOMPtr<nsIURI> uri;
+  channelLoadInfo->GetChannelCreationOriginalURI(getter_AddRefs(uri));
+  if (uri) {
+    
+    
+    
+    return uri;
+  }
+
+  
+  mChannel->GetOriginalURI(getter_AddRefs(uri));
+  return uri;
 }
 
 
