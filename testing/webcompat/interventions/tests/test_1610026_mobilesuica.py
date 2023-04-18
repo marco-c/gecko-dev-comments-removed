@@ -2,25 +2,31 @@ import pytest
 from helpers import Css, Text, find_element
 
 
+ADDRESS_CSS = Css("input[name=MailAddress]")
+PASSWORD_CSS = Css("input[name=Password]")
+CLOSE_BUTTON_CSS = Css("input[name=winclosebutton]")
+UNAVAILABLE_TEXT = Text("時間をお確かめの上、再度実行してください。")
+UNSUPPORTED_TEXT = Text("ご利用のブラウザでは正しく")
+
+
 def load_site(session):
     session.get("https://www.mobilesuica.com/")
 
-    address = find_element(session, Css("input[name=MailAddress]"), default=None)
-    password = find_element(session, Css("input[name=Password]"), default=None)
-    error = find_element(session, Css("input[name=winclosebutton]"), default=None)
+    address = find_element(session, ADDRESS_CSS, default=None)
+    password = find_element(session, PASSWORD_CSS, default=None)
+    error1 = find_element(session, CLOSE_BUTTON_CSS, default=None)
+    error2 = find_element(session, UNSUPPORTED_TEXT, default=None)
 
     
     
     
     
     
-    site_is_down = None is not find_element(
-        session, Text("時間をお確かめの上、再度実行してください。"), default=None
-    )
-    if site_is_down:
+    site_is_down = find_element(session, UNAVAILABLE_TEXT, default=None)
+    if site_is_down is not None:
         pytest.xfail("Site is currently down")
 
-    return address, password, error, site_is_down
+    return address, password, error1 or error2, site_is_down
 
 
 @pytest.mark.with_interventions
