@@ -20,7 +20,6 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
   };
   return new ConsoleAPI(consoleOptions);
 });
-ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 ChromeUtils.defineModuleGetter(
   this,
   "Services",
@@ -54,8 +53,7 @@ function getQuarantineDatabasePath() {
 
 
 async function getQuarantineAttributes(path) {
-  
-  let bytes = await OS.File.macGetXAttr(path, "com.apple.quarantine");
+  let bytes = await IOUtils.getMacXAttr(path, "com.apple.quarantine");
   if (!bytes) {
     throw new Components.Exception(
       `No macOS quarantine xattrs found for ${path}`,
