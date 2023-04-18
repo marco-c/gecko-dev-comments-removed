@@ -5,7 +5,7 @@
 
 #include "mozilla/BaseProfilerMarkers.h"
 
-#include "mozilla/Likely.h"
+#include "mozilla/BaseProfilerUtils.h"
 
 #include <limits>
 
@@ -72,6 +72,51 @@ static Streaming::MarkerTypeFunctions
  Span<const Streaming::MarkerTypeFunctions>
 Streaming::MarkerTypeFunctionsArray() {
   return {sMarkerTypeFunctions1Based, sDeserializerCount};
+}
+
+
+
+
+static int sBufferForMainThreadAddMarkerRefCount = 0;
+static ProfileChunkedBuffer* sBufferForMainThreadAddMarker = nullptr;
+
+ProfileChunkedBuffer* GetClearedBufferForMainThreadAddMarker() {
+  if (!mozilla::baseprofiler::profiler_is_main_thread()) {
+    return nullptr;
+  }
+
+  if (sBufferForMainThreadAddMarker) {
+    sBufferForMainThreadAddMarker->Clear();
+  }
+
+  return sBufferForMainThreadAddMarker;
+}
+
+MFBT_API void EnsureBufferForMainThreadAddMarker() {
+  if (!mozilla::baseprofiler::profiler_is_main_thread()) {
+    return;
+  }
+
+  if (sBufferForMainThreadAddMarkerRefCount++ == 0) {
+    MOZ_ASSERT(!sBufferForMainThreadAddMarker);
+    sBufferForMainThreadAddMarker = new ProfileChunkedBuffer(
+        ProfileChunkedBuffer::ThreadSafety::WithoutMutex,
+        MakeUnique<ProfileBufferChunkManagerSingle>(
+            ProfileBufferChunkManager::scExpectedMaximumStackSize));
+  }
+}
+
+MFBT_API void ReleaseBufferForMainThreadAddMarker() {
+  if (!mozilla::baseprofiler::profiler_is_main_thread()) {
+    return;
+  }
+
+  MOZ_ASSERT(sBufferForMainThreadAddMarkerRefCount > 0);
+  MOZ_ASSERT(sBufferForMainThreadAddMarker);
+  if (--sBufferForMainThreadAddMarkerRefCount == 0) {
+    delete sBufferForMainThreadAddMarker;
+    sBufferForMainThreadAddMarker = nullptr;
+  }
 }
 
 }  
