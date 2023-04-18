@@ -112,6 +112,9 @@ const getGAParams = (panelId = "netmonitor") => {
 };
 
 
+const USER_DOC_URL = "https://firefox-source-docs.mozilla.org/devtools-user/";
+
+
 
 
 
@@ -149,7 +152,7 @@ function getHTTPStatusCodeURL(statusCode, panelId) {
 
 
 function getNetMonitorTimingsURL() {
-  return `${MDN_URL}Tools/Network_Monitor/request_details${getGAParams()}#Timings`;
+  return `${USER_DOC_URL}network_monitor/request_details/#network-monitor-request-details-timings-tab`;
 }
 
 
@@ -158,7 +161,7 @@ function getNetMonitorTimingsURL() {
 
 
 function getPerformanceAnalysisURL() {
-  return `${MDN_URL}Tools/Network_Monitor/Performance_analysis${getGAParams()}`;
+  return `${USER_DOC_URL}network_monitor/performance_analysis/`;
 }
 
 
@@ -167,10 +170,7 @@ function getPerformanceAnalysisURL() {
 
 
 function getFilterBoxURL() {
-  return (
-    `${MDN_URL}Tools/Network_Monitor/request_list${getGAParams()}` +
-    `#Filtering_by_properties`
-  );
+  return `${USER_DOC_URL}network_monitor/request_list/#filtering-by-properties`;
 }
 
 
