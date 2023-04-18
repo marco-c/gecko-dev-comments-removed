@@ -11,15 +11,6 @@
 #include "nsIContentInlines.h"
 #include <stdint.h>
 
-
-
-
-
-
-
-
-
-
 class nsIContent;
 
 namespace mozilla::dom {
@@ -30,102 +21,50 @@ namespace mozilla::dom {
 
 
 
-class ExplicitChildIterator {
+class FlattenedChildIterator {
  public:
-  explicit ExplicitChildIterator(const nsIContent* aParent,
-                                 bool aStartAtBeginning = true);
+  explicit FlattenedChildIterator(const nsIContent* aParent,
+                                  bool aStartAtBeginning = true);
 
   nsIContent* GetNextChild();
 
-  
-  
   
   
   bool Seek(const nsIContent* aChildToFind);
 
   
   
-  
-  
-  bool Seek(const nsIContent* aChildToFind, nsIContent* aBound) {
-    
-    
-    
-
-    
-    
-    nsIContent* child;
-    do {
-      child = GetNextChild();
-    } while (child && child != aChildToFind && child != aBound);
-
-    return child == aChildToFind;
-  }
+  nsIContent* Get() const { return mChild; }
 
   
-  
-  
-  nsIContent* Get() const;
+  const nsIContent* Parent() const { return mOriginalParent; }
 
   
   
   nsIContent* GetPreviousChild();
 
+  bool ShadowDOMInvolved() const { return mShadowDOMInvolved; }
+
  protected:
-  
   
   
   const nsIContent* mParent;
 
   
   
-  const HTMLSlotElement* mParentAsSlot;
+  const HTMLSlotElement* mParentAsSlot = nullptr;
+
+  const nsIContent* mOriginalParent = nullptr;
+
+  
+  nsIContent* mChild = nullptr;
+
+  
+  bool mIsFirst = false;
 
   
   
-  
-  
-  nsIContent* mChild;
-
-  
-  
-  
-  
-  nsIContent* mDefaultChild;
-
-  
-  bool mIsFirst;
-
-  
-  
-  
-  
-  uint32_t mIndexInInserted;
-};
-
-
-
-
-
-
-class FlattenedChildIterator : public ExplicitChildIterator {
- public:
-  explicit FlattenedChildIterator(const nsIContent* aParent,
-                                  bool aStartAtBeginning = true)
-      : ExplicitChildIterator(aParent, aStartAtBeginning),
-        mOriginalContent(aParent) {
-    Init();
-  }
-
-  bool ShadowDOMInvolved() { return mShadowDOMInvolved; }
-
-  const nsIContent* Parent() const { return mOriginalContent; }
-
- protected:
-  const nsIContent* mOriginalContent;
-
- private:
-  void Init();
+  uint32_t mIndexInInserted = 0u;
 
   
   
@@ -180,7 +119,7 @@ class AllChildrenIterator : private FlattenedChildIterator {
     eAtBegin,
     eAtMarkerKid,
     eAtBeforeKid,
-    eAtExplicitKids,
+    eAtFlatTreeKids,
     eAtAnonKids,
     eAtAfterKid,
     eAtEnd
