@@ -1096,9 +1096,6 @@ class Raptor(
         metrics tests.
         """
 
-        
-        
-
         if "ffmpeg" in os.environ["PATH"]:
             return
 

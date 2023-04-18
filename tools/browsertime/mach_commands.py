@@ -383,9 +383,6 @@ def append_env(command_context, append_path=True):
     fetches = host_fetches[host_platform()]
 
     
-    
-    
-    
     path = os.environ.get("PATH", "").split(os.pathsep) if append_path else []
     path_to_ffmpeg = mozpath.join(
         state_path(command_context), fetches["ffmpeg"]["path"]
@@ -404,20 +401,6 @@ def append_env(command_context, append_path=True):
     
     node_dir = os.path.dirname(node_path(command_context))
     path = [node_dir] + path
-
-    
-    
-    
-    
-    
-    
-    
-    if host_platform() == "darwin":
-        for p in os.environ["PATH"].split(os.pathsep):
-            p = p.strip()
-            if not p or p in path:
-                continue
-            path.append(p)
 
     append_env = {
         "PATH": os.pathsep.join(path),
@@ -456,7 +439,6 @@ def activate_browsertime_virtualenv(command_context, *args, **kwargs):
     It will raise an error in case the install failed.
     """
     
-    
     MachCommandBase.activate_virtualenv(command_context, *args, **kwargs)
 
     
@@ -486,8 +468,6 @@ def check(command_context):
     args = ["--check"]
     status = command_context.run_process(
         [command_context.virtualenv_manager.python_path, visualmetrics_path()] + args,
-        
-        
         
         append_env=append_env(
             command_context, append_path=host_platform().startswith("linux")
