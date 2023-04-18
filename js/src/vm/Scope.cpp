@@ -597,7 +597,8 @@ uint32_t ClassBodyScope::nextFrameSlot(Scope* scope) {
   return NextFrameSlot(scope);
 }
 
-bool LexicalScope::prepareForScopeCreation(JSContext* cx, ScopeKind kind,
+
+void LexicalScope::prepareForScopeCreation(ScopeKind kind,
                                            uint32_t firstFrameSlot,
                                            LexicalScope::ParserData* data,
                                            mozilla::Maybe<uint32_t>* envShape) {
@@ -609,7 +610,6 @@ bool LexicalScope::prepareForScopeCreation(JSContext* cx, ScopeKind kind,
   ParserBindingIter bi(*data, firstFrameSlot, isNamedLambda);
   PrepareScopeData<LexicalScope, BlockLexicalEnvironmentObject>(
       bi, data, firstFrameSlot, envShape);
-  return true;
 }
 
 
@@ -618,22 +618,21 @@ Shape* LexicalScope::getEmptyExtensibleEnvironmentShape(JSContext* cx) {
   return EmptyEnvironmentShape(cx, cls, JSSLOT_FREE(cls), ObjectFlags());
 }
 
-bool ClassBodyScope::prepareForScopeCreation(
-    JSContext* cx, ScopeKind kind, uint32_t firstFrameSlot,
-    ClassBodyScope::ParserData* data, mozilla::Maybe<uint32_t>* envShape) {
+
+void ClassBodyScope::prepareForScopeCreation(
+    ScopeKind kind, uint32_t firstFrameSlot, ClassBodyScope::ParserData* data,
+    mozilla::Maybe<uint32_t>* envShape) {
   MOZ_ASSERT(kind == ScopeKind::ClassBody);
 
   ParserBindingIter bi(*data, firstFrameSlot);
   PrepareScopeData<ClassBodyScope, BlockLexicalEnvironmentObject>(
       bi, data, firstFrameSlot, envShape);
-
-  return true;
 }
 
-bool FunctionScope::prepareForScopeCreation(
-    JSContext* cx, FunctionScope::ParserData* data, bool hasParameterExprs,
-    bool needsEnvironment, HandleFunction fun,
-    mozilla::Maybe<uint32_t>* envShape) {
+
+void FunctionScope::prepareForScopeCreation(
+    FunctionScope::ParserData* data, bool hasParameterExprs,
+    bool needsEnvironment, mozilla::Maybe<uint32_t>* envShape) {
   uint32_t firstFrameSlot = 0;
   ParserBindingIter bi(*data, hasParameterExprs);
   PrepareScopeData<FunctionScope, CallObject>(bi, data, firstFrameSlot,
@@ -651,8 +650,6 @@ bool FunctionScope::prepareForScopeCreation(
   
   
   updateEnvShapeIfRequired(envShape, needsEnvironment);
-
-  return true;
 }
 
 JSScript* FunctionScope::script() const {
@@ -673,7 +670,8 @@ bool FunctionScope::isSpecialName(JSContext* cx,
          name == frontend::TaggedParserAtomIndex::WellKnown::dotGenerator();
 }
 
-bool VarScope::prepareForScopeCreation(JSContext* cx, ScopeKind kind,
+
+void VarScope::prepareForScopeCreation(ScopeKind kind,
                                        VarScope::ParserData* data,
                                        uint32_t firstFrameSlot,
                                        bool needsEnvironment,
@@ -687,8 +685,6 @@ bool VarScope::prepareForScopeCreation(JSContext* cx, ScopeKind kind,
   
   
   updateEnvShapeIfRequired(envShape, needsEnvironment);
-
-  return true;
 }
 
 
@@ -724,7 +720,8 @@ WithScope* WithScope::create(JSContext* cx, HandleScope enclosing) {
   return static_cast<WithScope*>(scope);
 }
 
-bool EvalScope::prepareForScopeCreation(JSContext* cx, ScopeKind scopeKind,
+
+void EvalScope::prepareForScopeCreation(ScopeKind scopeKind,
                                         EvalScope::ParserData* data,
                                         mozilla::Maybe<uint32_t>* envShape) {
   if (scopeKind == ScopeKind::StrictEval) {
@@ -733,8 +730,6 @@ bool EvalScope::prepareForScopeCreation(JSContext* cx, ScopeKind scopeKind,
     PrepareScopeData<EvalScope, VarEnvironmentObject>(bi, data, firstFrameSlot,
                                                       envShape);
   }
-
-  return true;
 }
 
 
@@ -758,9 +753,7 @@ ModuleScope::RuntimeData::RuntimeData(size_t length) {
 }
 
 
-bool ModuleScope::prepareForScopeCreation(JSContext* cx,
-                                          ModuleScope::ParserData* data,
-                                          HandleModuleObject module,
+void ModuleScope::prepareForScopeCreation(ModuleScope::ParserData* data,
                                           mozilla::Maybe<uint32_t>* envShape) {
   uint32_t firstFrameSlot = 0;
   ParserBindingIter bi(*data);
@@ -770,8 +763,6 @@ bool ModuleScope::prepareForScopeCreation(JSContext* cx,
   
   bool needsEnvironment = true;
   updateEnvShapeIfRequired(envShape, needsEnvironment);
-
-  return true;
 }
 
 template <size_t ArrayLength>
@@ -1491,16 +1482,10 @@ bool ScopeStencil::createForFunctionScope(
     }
   }
 
-  
-  
-  RootedFunction fun(cx, nullptr);
-
   uint32_t firstFrameSlot = 0;
   mozilla::Maybe<uint32_t> envShape;
-  if (!FunctionScope::prepareForScopeCreation(
-          cx, data, hasParameterExprs, needsEnvironment, fun, &envShape)) {
-    return false;
-  }
+  FunctionScope::prepareForScopeCreation(data, hasParameterExprs,
+                                         needsEnvironment, &envShape);
 
   return appendScopeStencilAndData(cx, compilationState, data, index, kind,
                                    enclosing, firstFrameSlot, envShape,
@@ -1525,10 +1510,7 @@ bool ScopeStencil::createForLexicalScope(
   }
 
   mozilla::Maybe<uint32_t> envShape;
-  if (!ScopeType::prepareForScopeCreation(cx, kind, firstFrameSlot, data,
-                                          &envShape)) {
-    return false;
-  }
+  ScopeType::prepareForScopeCreation(kind, firstFrameSlot, data, &envShape);
 
   return appendScopeStencilAndData(cx, compilationState, data, index, kind,
                                    enclosing, firstFrameSlot, envShape);
@@ -1552,10 +1534,7 @@ bool ScopeStencil::createForClassBodyScope(
   }
 
   mozilla::Maybe<uint32_t> envShape;
-  if (!ScopeType::prepareForScopeCreation(cx, kind, firstFrameSlot, data,
-                                          &envShape)) {
-    return false;
-  }
+  ScopeType::prepareForScopeCreation(kind, firstFrameSlot, data, &envShape);
 
   return appendScopeStencilAndData(cx, compilationState, data, index, kind,
                                    enclosing, firstFrameSlot, envShape);
@@ -1578,10 +1557,8 @@ bool ScopeStencil::createForVarScope(
   }
 
   mozilla::Maybe<uint32_t> envShape;
-  if (!VarScope::prepareForScopeCreation(cx, kind, data, firstFrameSlot,
-                                         needsEnvironment, &envShape)) {
-    return false;
-  }
+  VarScope::prepareForScopeCreation(kind, data, firstFrameSlot,
+                                    needsEnvironment, &envShape);
 
   return appendScopeStencilAndData(cx, compilationState, data, index, kind,
                                    enclosing, firstFrameSlot, envShape);
@@ -1635,9 +1612,7 @@ bool ScopeStencil::createForEvalScope(
 
   uint32_t firstFrameSlot = 0;
   mozilla::Maybe<uint32_t> envShape;
-  if (!EvalScope::prepareForScopeCreation(cx, kind, data, &envShape)) {
-    return false;
-  }
+  EvalScope::prepareForScopeCreation(kind, data, &envShape);
 
   return appendScopeStencilAndData(cx, compilationState, data, index, kind,
                                    enclosing, firstFrameSlot, envShape);
@@ -1665,15 +1640,9 @@ bool ScopeStencil::createForModuleScope(
 
   
   
-  RootedModuleObject module(cx, nullptr);
-
-  
-  
   uint32_t firstFrameSlot = 0;
   mozilla::Maybe<uint32_t> envShape;
-  if (!ModuleScope::prepareForScopeCreation(cx, data, module, &envShape)) {
-    return false;
-  }
+  ModuleScope::prepareForScopeCreation(data, &envShape);
 
   return appendScopeStencilAndData(cx, compilationState, data, index, kind,
                                    enclosing, firstFrameSlot, envShape);
