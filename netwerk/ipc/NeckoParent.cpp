@@ -765,7 +765,12 @@ mozilla::ipc::IPCResult NeckoParent::RecvInitSocketProcessBridge(
 
   
   
-  auto task = [self = this, resolver = std::move(aResolver)]() {
+  auto task = [self = RefPtr{this}, resolver = std::move(aResolver)]() {
+    
+    if (!self->CanSend()) {
+      return;
+    }
+
     Endpoint<PSocketProcessBridgeChild> invalidEndpoint;
     if (NS_WARN_IF(self->mSocketProcessBridgeInited)) {
       resolver(std::move(invalidEndpoint));
