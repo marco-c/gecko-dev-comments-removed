@@ -119,9 +119,6 @@ var EXPORTED_SYMBOLS = [
 
 const CATEGORY_PROVIDER_MODULE = "addon-provider-module";
 
-
-const DEFAULT_PROVIDERS = ["resource://gre/modules/addons/XPIProvider.jsm"];
-
 const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
 
 
@@ -152,6 +149,10 @@ const UNNAMED_PROVIDER = "<unnamed-provider>";
 function providerName(aProvider) {
   return aProvider.name || UNNAMED_PROVIDER;
 }
+
+
+
+var gXPIProvider;
 
 
 
@@ -698,36 +699,9 @@ var AddonManagerInternal = {
       Services.obs.addObserver(this, INTL_LOCALES_CHANGED);
 
       
-      for (let url of DEFAULT_PROVIDERS) {
-        try {
-          let scope = {};
-          ChromeUtils.import(url, scope);
-          
-          
-          let syms = Object.keys(scope);
-          if (syms.length < 1 || typeof scope[syms[0]].startup != "function") {
-            logger.warn("Provider " + url + " has no startup()");
-            AddonManagerPrivate.recordException(
-              "AMI",
-              "provider " + url,
-              "no startup()"
-            );
-          }
-          logger.debug(
-            "Loaded provider scope for " +
-              url +
-              ": " +
-              Object.keys(scope).toSource()
-          );
-        } catch (e) {
-          AddonManagerPrivate.recordException(
-            "AMI",
-            "provider " + url + " load failed",
-            e
-          );
-          logger.error('Exception loading default provider "' + url + '"', e);
-        }
-      }
+      ({ XPIProvider: gXPIProvider } = ChromeUtils.import(
+        "resource://gre/modules/addons/XPIProvider.jsm"
+      ));
 
       
       for (let { entry, value: url } of Services.catMan.enumerateCategory(
@@ -1009,6 +983,7 @@ var AddonManagerInternal = {
         );
       }
     }
+    gXPIProvider = null;
 
     
     try {
@@ -3586,8 +3561,34 @@ var AddonManagerPrivate = {
   AddonScreenshot,
 
   get BOOTSTRAP_REASONS() {
-    return AddonManagerInternal._getProviderByName("XPIProvider")
-      .BOOTSTRAP_REASONS;
+    
+    
+    
+    return gXPIProvider.BOOTSTRAP_REASONS;
+  },
+
+  setAddonStartupData(addonId, startupData) {
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
+
+    
+    gXPIProvider.setStartupData(addonId, startupData);
+  },
+
+  unregisterDictionaries(aDicts) {
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
+
+    
+    gXPIProvider.unregisterDictionaries(aDicts);
   },
 
   recordTimestamp(name, value) {
