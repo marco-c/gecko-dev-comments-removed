@@ -1325,7 +1325,10 @@ void nsDocShell::FirePageHideShowNonRecursive(bool aShow) {
           
           
           
-          inner->GetPerformance()->GetDOMTiming()->NotifyRestoreStart();
+          Performance* performance = inner->GetPerformance();
+          if (performance) {
+            performance->GetDOMTiming()->NotifyRestoreStart();
+          }
         }
       }
 
@@ -7755,7 +7758,10 @@ nsresult nsDocShell::RestoreFromHistory() {
   
   
   
-  privWinInner->GetPerformance()->GetDOMTiming()->NotifyRestoreStart();
+  Performance* performance = privWinInner->GetPerformance();
+  if (performance) {
+    performance->GetDOMTiming()->NotifyRestoreStart();
+  }
 
   
   
