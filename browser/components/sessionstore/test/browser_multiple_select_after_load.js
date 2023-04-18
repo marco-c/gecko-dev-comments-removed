@@ -22,12 +22,16 @@ add_task(async function() {
 
   
   
-  await SpecialPowers.spawn(tab.linkedBrowser, [VALUES], values => {
-    content.document.querySelector("select").multiple = true;
-    for (let v of values) {
-      content.document.querySelector(`option[value="${v}"]`).selected = true;
-    }
-  });
+  await setPropertyOfFormField(tab.linkedBrowser, "select", "multiple", true);
+
+  for (let v of VALUES) {
+    await setPropertyOfFormField(
+      tab.linkedBrowser,
+      `option[value="${v}"]`,
+      "selected",
+      true
+    );
+  }
 
   
   await promiseRemoveTabAndSessionState(tab);

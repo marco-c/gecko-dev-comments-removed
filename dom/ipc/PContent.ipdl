@@ -1027,9 +1027,6 @@ child:
   
   async UpdateMediaCodecsSupported(RemoteDecodeIn aLocation, MediaCodecsSupported aSupported);
 
-  async FlushTabState(MaybeDiscardedBrowsingContext aBrowsingContext)
-      returns(bool aHadContext);
-
   
   async DecoderSupportedMimeTypes(nsCString[] supportedTypes);
 

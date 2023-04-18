@@ -180,11 +180,6 @@ parent:
 
   async RequestRestoreTabContent();
 
-  async UpdateSessionStore(FormData? aFormData, nsPoint? aScrollPosition,
-                           uint32_t aEpoch);
-
-  async ResetSessionStore(uint32_t aEpoch);
-
   
   
   

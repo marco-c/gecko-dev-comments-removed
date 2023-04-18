@@ -1376,8 +1376,11 @@ var SessionStoreInternal = {
 
         this.onTabStateUpdate(browser.permanentKey, browser.ownerGlobal, data);
 
+        
         if (data.isFinal) {
-          this.onFinalTabStateUpdateComplete(browser);
+          if (!Services.appinfo.sessionHistoryInParent) {
+            this.onFinalTabStateUpdateComplete(browser);
+          }
         } else if (data.flushID) {
           
           

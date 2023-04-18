@@ -1,7 +1,7 @@
 
 
 
-function test() {
+async function test() {
   let assertNumberOfTabs = function(num, msg) {
     is(gBrowser.tabs.length, num, msg);
   };
@@ -18,38 +18,26 @@ function test() {
   
   let tab = BrowserTestUtils.addTab(gBrowser, "about:mozilla");
 
-  whenTabIsLoaded(tab, function() {
-    
-    assertNumberOfVisibleTabs(2, "there are two visible tabs");
-    gBrowser.showOnlyTheseTabs([gBrowser.tabs[0]]);
-    assertNumberOfVisibleTabs(1, "there is one visible tab");
-    ok(tab.hidden, "newly created tab is now hidden");
+  await promiseBrowserLoaded(tab.linkedBrowser);
 
-    
-    promiseRemoveTabAndSessionState(tab).then(() => {
-      tab = ss.undoCloseTab(window, 0);
+  
+  assertNumberOfVisibleTabs(2, "there are two visible tabs");
+  gBrowser.showOnlyTheseTabs([gBrowser.tabs[0]]);
+  assertNumberOfVisibleTabs(1, "there is one visible tab");
+  ok(tab.hidden, "newly created tab is now hidden");
 
-      
-      whenTabIsLoaded(tab, function() {
-        is(
-          tab.linkedBrowser.currentURI.spec,
-          "about:mozilla",
-          "restored tab has correct url"
-        );
+  
+  await promiseRemoveTabAndSessionState(tab);
+  tab = ss.undoCloseTab(window, 0);
 
-        gBrowser.removeTab(tab);
-        finish();
-      });
-    });
-  });
-}
-
-function whenTabIsLoaded(tab, callback) {
-  tab.linkedBrowser.addEventListener(
-    "load",
-    function() {
-      callback();
-    },
-    { capture: true, once: true }
+  
+  await promiseBrowserLoaded(tab.linkedBrowser);
+  is(
+    tab.linkedBrowser.currentURI.spec,
+    "about:mozilla",
+    "restored tab has correct url"
   );
+
+  gBrowser.removeTab(tab);
+  finish();
 }
