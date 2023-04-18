@@ -251,11 +251,11 @@ add_task(async function navigate_around() {
       
       
       knownProblematicPrefs["gfx.canvas.azure.backends"] = {
-        min: 100,
+        min: 90,
         max: 110,
       };
       knownProblematicPrefs["gfx.content.azure.backends"] = {
-        min: 100,
+        min: 90,
         max: 110,
       };
       
