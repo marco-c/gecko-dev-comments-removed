@@ -71,6 +71,8 @@
 #include "mozilla/net/HttpBackgroundChannelParent.h"
 #include "mozilla/net/HttpConnectionMgrParent.h"
 #include "mozilla/net/WebSocketConnectionParent.h"
+#include "mozilla/psm/IPCClientCertsChild.h"
+#include "mozilla/psm/IPCClientCertsParent.h"
 #include "mozilla/psm/VerifySSLServerCertParent.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIPrincipal.h"
@@ -718,26 +720,14 @@ bool BackgroundParentImpl::DeallocPParentToChildStreamParent(
   return true;
 }
 
-BackgroundParentImpl::PVsyncParent* BackgroundParentImpl::AllocPVsyncParent() {
+already_AddRefed<BackgroundParentImpl::PVsyncParent>
+BackgroundParentImpl::AllocPVsyncParent() {
   AssertIsInMainOrSocketProcess();
   AssertIsOnBackgroundThread();
 
   RefPtr<mozilla::dom::VsyncParent> actor = new mozilla::dom::VsyncParent();
   actor->UpdateVsyncSource(nullptr);
-  
-  
-  return actor.forget().take();
-}
-
-bool BackgroundParentImpl::DeallocPVsyncParent(PVsyncParent* aActor) {
-  AssertIsInMainOrSocketProcess();
-  AssertIsOnBackgroundThread();
-  MOZ_ASSERT(aActor);
-
-  
-  RefPtr<mozilla::dom::VsyncParent> actor =
-      dont_AddRef(static_cast<mozilla::dom::VsyncParent*>(aActor));
-  return true;
+  return actor.forget();
 }
 
 camera::PCamerasParent* BackgroundParentImpl::AllocPCamerasParent() {
@@ -1045,6 +1035,21 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPMessagePortConstructor(
     return IPC_FAIL_NO_REASON(this);
   }
   return IPC_OK();
+}
+
+already_AddRefed<psm::PIPCClientCertsParent>
+BackgroundParentImpl::AllocPIPCClientCertsParent() {
+  
+  
+  
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(mozilla::ipc::BackgroundParent::GetChildID(this) == 0);
+  if (!XRE_IsParentProcess() ||
+      mozilla::ipc::BackgroundParent::GetChildID(this) != 0) {
+    return nullptr;
+  }
+  RefPtr<psm::IPCClientCertsParent> result = new psm::IPCClientCertsParent();
+  return result.forget();
 }
 
 bool BackgroundParentImpl::DeallocPMessagePortParent(
