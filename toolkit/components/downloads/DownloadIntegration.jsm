@@ -629,7 +629,7 @@ var DownloadIntegration = {
           );
         } catch (ex) {
           
-          if (!DOMException.isInstance(ex)) {
+          if (!(ex instanceof DOMException)) {
             Cu.reportError(ex);
           }
         }
@@ -669,7 +669,7 @@ var DownloadIntegration = {
       
       
       
-      if (!DOMException.isInstance(ex)) {
+      if (!(ex instanceof DOMException)) {
         Cu.reportError(ex);
       }
     }

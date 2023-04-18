@@ -162,7 +162,7 @@ class DeletionHandler {
         PlacesPreviews.onDelete(filePath);
         deleted.push(hash);
       } catch (ex) {
-        if (DOMException.isInstance(ex) && ex.name == "NotFoundError") {
+        if (ex instanceof DOMException && ex.name == "NotFoundError") {
           deleted.push(hash);
         } else {
           logConsole.error("Unable to delete file: " + filePath);
@@ -172,7 +172,7 @@ class DeletionHandler {
         return;
       }
     }
-    
+    // Delete hashes from tombstones.
     let params = deleted.reduce((p, c, i) => {
       p["hash" + i] = c;
       return p;
@@ -196,17 +196,17 @@ class DeletionHandler {
   }
 }
 
-
-
-
-
-
-
+/**
+ * Handles previews for Places urls.
+ * Previews are stored in WebP format, using MD5 hash of the page url in hex
+ * format. All the previews are saved into a "places-previews" folder under
+ * the roaming profile folder.
+ */
 const PlacesPreviews = new (class extends EventEmitter {
   #placesObserver = null;
   #deletionHandler = null;
-  
-  
+  // This is used as a cache to avoid fetching the same preview multiple
+  // times in a short timeframe.
   #recentlyUpdatedPreviews = new LimitedSet();
 
   fileExtension = ".webp";
@@ -335,7 +335,7 @@ const PlacesPreviews = new (class extends EventEmitter {
         }
       } catch (ex) {
         
-        if (!DOMException.isInstance(ex) || ex.name != "NotFoundError") {
+        if (!(ex instanceof DOMException) || ex.name != "NotFoundError") {
           logConsole.error("Error while trying to stat() preview" + ex);
           return false;
         }

@@ -90,7 +90,7 @@ function isBrowsingContextPartOfContext(
   
   
   if (
-    CanonicalBrowsingContext.isInstance(browsingContext) &&
+    browsingContext instanceof CanonicalBrowsingContext &&
     !browsingContext.isContent
   ) {
     return false;
@@ -99,7 +99,7 @@ function isBrowsingContextPartOfContext(
   if (!windowGlobal) {
     
     
-    if (CanonicalBrowsingContext.isInstance(browsingContext)) {
+    if (browsingContext instanceof CanonicalBrowsingContext) {
       windowGlobal = browsingContext.currentWindowGlobal;
     } else if (!windowGlobal && !acceptNoWindowGlobal) {
       throw new Error(

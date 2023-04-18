@@ -59,7 +59,7 @@ class ExtensionError extends DOMException {
   }
   
   static [Symbol.hasInstance](e) {
-    return DOMException.isInstance(e) && e.name === "ExtensionError";
+    return e instanceof DOMException && e.name === "ExtensionError";
   }
 }
 
