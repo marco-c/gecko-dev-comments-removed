@@ -52,7 +52,7 @@ void JS::SetPendingExceptionStack(JSContext* cx,
   
   
 
-  RootedSavedFrame nstack(cx);
+  Rooted<SavedFrame*> nstack(cx);
   if (exceptionStack.stack()) {
     nstack = &UncheckedUnwrap(exceptionStack.stack())->as<SavedFrame>();
   }

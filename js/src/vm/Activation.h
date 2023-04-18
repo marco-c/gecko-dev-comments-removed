@@ -376,13 +376,13 @@ class LiveSavedFrameCache {
   
   
   void find(JSContext* cx, FramePtr& framePtr, const jsbytecode* pc,
-            MutableHandleSavedFrame frame) const;
+            MutableHandle<SavedFrame*> frame) const;
 
   
   
   
   void findWithoutInvalidation(const FramePtr& framePtr,
-                               MutableHandleSavedFrame frame) const;
+                               MutableHandle<SavedFrame*> frame) const;
 
   
   
@@ -390,7 +390,7 @@ class LiveSavedFrameCache {
   
   
   bool insert(JSContext* cx, FramePtr&& framePtr, const jsbytecode* pc,
-              HandleSavedFrame savedFrame);
+              Handle<SavedFrame*> savedFrame);
 
   
   void clear() {

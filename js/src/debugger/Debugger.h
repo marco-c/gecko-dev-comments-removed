@@ -269,7 +269,7 @@ class Completion {
 
 
   void toResumeMode(ResumeMode& resumeMode, MutableHandleValue value,
-                    MutableHandleSavedFrame exnStack) const;
+                    MutableHandle<SavedFrame*> exnStack) const;
   
 
 
@@ -650,7 +650,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   static const size_t DEFAULT_MAX_LOG_LENGTH = 5000;
 
   [[nodiscard]] bool appendAllocationSite(JSContext* cx, HandleObject obj,
-                                          HandleSavedFrame frame,
+                                          Handle<SavedFrame*> frame,
                                           mozilla::TimeStamp when);
 
   

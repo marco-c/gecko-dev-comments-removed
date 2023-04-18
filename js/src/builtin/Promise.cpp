@@ -475,7 +475,7 @@ class PromiseDebugInfo : public NativeObject {
   
   
   static void setResolutionInfo(JSContext* cx, Handle<PromiseObject*> promise,
-                                HandleSavedFrame unwrappedRejectionStack) {
+                                Handle<SavedFrame*> unwrappedRejectionStack) {
     MOZ_ASSERT_IF(unwrappedRejectionStack,
                   promise->state() == JS::PromiseState::Rejected);
 
@@ -579,9 +579,8 @@ JSObject* PromiseObject::resolutionSite() {
 
 
 
-static bool MaybeGetAndClearExceptionAndStack(JSContext* cx,
-                                              MutableHandleValue rval,
-                                              MutableHandleSavedFrame stack) {
+static bool MaybeGetAndClearExceptionAndStack(
+    JSContext* cx, MutableHandleValue rval, MutableHandle<SavedFrame*> stack) {
   if (!cx->isExceptionPending()) {
     return false;
   }
@@ -591,7 +590,7 @@ static bool MaybeGetAndClearExceptionAndStack(JSContext* cx,
 
 [[nodiscard]] static bool CallPromiseRejectFunction(
     JSContext* cx, HandleObject rejectFun, HandleValue reason,
-    HandleObject promiseObj, HandleSavedFrame unwrappedRejectionStack,
+    HandleObject promiseObj, Handle<SavedFrame*> unwrappedRejectionStack,
     UnhandledRejectionBehavior behavior);
 
 
@@ -611,7 +610,7 @@ static bool AbruptRejectPromise(JSContext* cx, CallArgs& args,
   
   
   RootedValue reason(cx);
-  RootedSavedFrame stack(cx);
+  Rooted<SavedFrame*> stack(cx);
   if (!MaybeGetAndClearExceptionAndStack(cx, &reason, &stack)) {
     return false;
   }
@@ -1140,7 +1139,7 @@ static bool IsSettledMaybeWrappedPromise(JSObject* promise) {
 
 [[nodiscard]] static bool RejectMaybeWrappedPromise(
     JSContext* cx, HandleObject promiseObj, HandleValue reason,
-    HandleSavedFrame unwrappedRejectionStack);
+    Handle<SavedFrame*> unwrappedRejectionStack);
 
 
 
@@ -1239,7 +1238,7 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_CANNOT_RESOLVE_PROMISE_WITH_ITSELF);
     RootedValue selfResolutionError(cx);
-    RootedSavedFrame stack(cx);
+    Rooted<SavedFrame*> stack(cx);
     if (!MaybeGetAndClearExceptionAndStack(cx, &selfResolutionError, &stack)) {
       return false;
     }
@@ -1254,7 +1253,7 @@ static bool Promise_then_impl(JSContext* cx, HandleValue promiseVal,
       GetProperty(cx, resolution, resolution, cx->names().then, &thenVal);
 
   RootedValue error(cx);
-  RootedSavedFrame errorStack(cx);
+  Rooted<SavedFrame*> errorStack(cx);
 
   
   if (!status) {
@@ -1585,7 +1584,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
 [[nodiscard]] static bool ResolvePromise(
     JSContext* cx, Handle<PromiseObject*> promise, HandleValue valueOrReason,
     JS::PromiseState state,
-    HandleSavedFrame unwrappedRejectionStack = nullptr) {
+    Handle<SavedFrame*> unwrappedRejectionStack = nullptr) {
   
   MOZ_ASSERT(promise->state() == JS::PromiseState::Pending);
   MOZ_ASSERT(state == JS::PromiseState::Fulfilled ||
@@ -1898,7 +1897,7 @@ static bool GetCapabilitiesExecutor(JSContext* cx, unsigned argc, Value* vp) {
 
 [[nodiscard]] static bool RejectMaybeWrappedPromise(
     JSContext* cx, HandleObject promiseObj, HandleValue reason_,
-    HandleSavedFrame unwrappedRejectionStack) {
+    Handle<SavedFrame*> unwrappedRejectionStack) {
   Rooted<PromiseObject*> promise(cx);
   RootedValue reason(cx, reason_);
 
@@ -2047,7 +2046,7 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
   
   ResolutionMode resolutionMode = ResolveMode;
   RootedValue handlerResult(cx, UndefinedValue());
-  RootedSavedFrame unwrappedRejectionStack(cx);
+  Rooted<SavedFrame*> unwrappedRejectionStack(cx);
   if (promiseToResolve->state() == JS::PromiseState::Pending) {
     RootedValue argument(cx, reaction->handlerArg());
 
@@ -2196,7 +2195,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp) {
   RootedValue handlerResult(cx);
   ResolutionMode resolutionMode = ResolveMode;
 
-  RootedSavedFrame unwrappedRejectionStack(cx);
+  Rooted<SavedFrame*> unwrappedRejectionStack(cx);
 
   
   if (handlerVal.isInt32()) {
@@ -2320,7 +2319,7 @@ static bool PromiseResolveThenableJob(JSContext* cx, unsigned argc, Value* vp) {
 
   
 
-  RootedSavedFrame stack(cx);
+  Rooted<SavedFrame*> stack(cx);
   if (!MaybeGetAndClearExceptionAndStack(cx, &rval, &stack)) {
     return false;
   }
@@ -2388,7 +2387,7 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
 
   
   RootedValue exception(cx);
-  RootedSavedFrame stack(cx);
+  Rooted<SavedFrame*> stack(cx);
   if (!MaybeGetAndClearExceptionAndStack(cx, &exception, &stack)) {
     return false;
   }
@@ -2872,7 +2871,7 @@ PromiseObject* PromiseObject::create(JSContext* cx, HandleObject executor,
   
   if (!success) {
     RootedValue exceptionVal(cx);
-    RootedSavedFrame stack(cx);
+    Rooted<SavedFrame*> stack(cx);
     if (!MaybeGetAndClearExceptionAndStack(cx, &exceptionVal, &stack)) {
       return nullptr;
     }
@@ -3378,7 +3377,7 @@ static bool CallDefaultPromiseRejectFunction(
 
 [[nodiscard]] static bool CallPromiseRejectFunction(
     JSContext* cx, HandleObject rejectFun, HandleValue reason,
-    HandleObject promiseObj, HandleSavedFrame unwrappedRejectionStack,
+    HandleObject promiseObj, Handle<SavedFrame*> unwrappedRejectionStack,
     UnhandledRejectionBehavior behavior) {
   cx->check(rejectFun);
   cx->check(reason);
@@ -4543,7 +4542,7 @@ static bool PromiseAnyRejectElementFunction(JSContext* cx, unsigned argc,
     ThrowAggregateError(cx, errors, promiseObj);
 
     RootedValue reason(cx);
-    RootedSavedFrame stack(cx);
+    Rooted<SavedFrame*> stack(cx);
     if (!MaybeGetAndClearExceptionAndStack(cx, &reason, &stack)) {
       return false;
     }
@@ -4611,7 +4610,7 @@ static void ThrowAggregateError(JSContext* cx,
   
   
   
-  RootedSavedFrame stack(cx);
+  Rooted<SavedFrame*> stack(cx);
   if (error.isObject() && error.toObject().is<ErrorObject>()) {
     Rooted<ErrorObject*> errorObj(cx, &error.toObject().as<ErrorObject>());
     if (errorObj->type() == JSEXN_AGGREGATEERR) {
@@ -6372,7 +6371,7 @@ bool PromiseObject::reject(JSContext* cx, Handle<PromiseObject*> promise,
 
 
 void PromiseObject::onSettled(JSContext* cx, Handle<PromiseObject*> promise,
-                              HandleSavedFrame unwrappedRejectionStack) {
+                              Handle<SavedFrame*> unwrappedRejectionStack) {
   PromiseDebugInfo::setResolutionInfo(cx, promise, unwrappedRejectionStack);
 
   
