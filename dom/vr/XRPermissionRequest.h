@@ -11,8 +11,7 @@
 #include "nsContentPermissionHelper.h"
 #include "nsISupports.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -35,7 +34,6 @@ class XRPermissionRequest final : public ContentPermissionRequestBase {
   uint64_t mWindowId;
 };
 
-}  
 }  
 
 #endif  

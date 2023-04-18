@@ -10,8 +10,7 @@
 #include "mozilla/Preferences.h"
 #include "nsContentUtils.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -73,5 +72,4 @@ nsresult XRPermissionRequest::Start() {
   return nsContentPermissionUtils::AskPermission(this, mWindow);
 }
 
-}  
 }  

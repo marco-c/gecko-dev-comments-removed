@@ -12,8 +12,7 @@
 
 #include "gfxVR.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class XRFrameOfReference;
 class XRInputPose;
@@ -59,7 +58,6 @@ class XRFrame final : public nsWrapperCache {
   bool mAnimationFrame;
 };
 
-}  
 }  
 
 #endif  
