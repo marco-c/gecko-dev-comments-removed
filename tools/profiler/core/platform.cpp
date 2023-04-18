@@ -2963,6 +2963,35 @@ static void locked_profiler_stream_json_for_this_process(
     mozilla::ProgressLogger aProgressLogger) {
   LOG("locked_profiler_stream_json_for_this_process");
 
+#ifdef DEBUG
+  PRIntervalTime slowWithSleeps = 0;
+  if (!XRE_IsParentProcess()) {
+    for (const auto& filter : ActivePS::Filters(aLock)) {
+      if (filter == "test-debug-child-slow-json") {
+        LOG("test-debug-child-slow-json");
+        
+        
+        
+        
+        slowWithSleeps = PR_MillisecondsToInterval(250);
+      } else if (filter == "test-debug-child-very-slow-json") {
+        LOG("test-debug-child-very-slow-json");
+        
+        
+        PR_Sleep(PR_SecondsToInterval(5));
+      }
+    }
+  }
+#  define SLOW_DOWN_FOR_TESTING()                                        \
+    if (slowWithSleeps != 0) {                                           \
+      DEBUG_LOG("progress=%.0f%%, sleep...",                             \
+                aProgressLogger.GetGlobalProgress().ToDouble() * 100.0); \
+      PR_Sleep(slowWithSleeps);                                          \
+    }
+#else                             
+#  define SLOW_DOWN_FOR_TESTING()
+#endif                            
+
   MOZ_RELEASE_ASSERT(CorePS::Exists() && ActivePS::Exists(aLock));
 
   AUTO_PROFILER_STATS(locked_profiler_stream_json_for_this_process);
@@ -2973,6 +3002,8 @@ static void locked_profiler_stream_json_for_this_process(
 
   aProgressLogger.SetLocalProgress(1_pc, "Locked profile buffer");
 
+  SLOW_DOWN_FOR_TESTING();
+
   
   Maybe<double> durationS = ActivePS::Duration(aLock);
   if (durationS.isSome()) {
@@ -2980,6 +3011,8 @@ static void locked_profiler_stream_json_for_this_process(
     buffer.DiscardSamplesBeforeTime(durationStartMs);
   }
   aProgressLogger.SetLocalProgress(2_pc, "Discarded old data");
+
+  SLOW_DOWN_FOR_TESTING();
 
 #if defined(GP_OS_android)
   
@@ -3010,6 +3043,8 @@ static void locked_profiler_stream_json_for_this_process(
   aWriter.EndArray();
   aProgressLogger.SetLocalProgress(4_pc, "Wrote library information");
 
+  SLOW_DOWN_FOR_TESTING();
+
   
   aWriter.StartObjectProperty("meta");
   {
@@ -3018,6 +3053,8 @@ static void locked_profiler_stream_json_for_this_process(
   }
   aWriter.EndObject();
   aProgressLogger.SetLocalProgress(5_pc, "Wrote profile metadata");
+
+  SLOW_DOWN_FOR_TESTING();
 
   
   aWriter.StartArrayProperty("pages");
@@ -3033,6 +3070,8 @@ static void locked_profiler_stream_json_for_this_process(
       aWriter, CorePS::ProcessStartTime(), aSinceTime,
       aProgressLogger.CreateSubLoggerTo(14_pc, "Wrote counters"));
 
+  SLOW_DOWN_FOR_TESTING();
+
   
   aWriter.StartArrayProperty("threads");
   {
@@ -3044,6 +3083,8 @@ static void locked_profiler_stream_json_for_this_process(
         ActivePS::ProfiledThreads(lockedRegistry, aLock);
 
     const uint32_t threadCount = uint32_t(threads.length());
+
+    SLOW_DOWN_FOR_TESTING();
 
     
     ProcessStreamingContext processStreamingContext(
@@ -3057,12 +3098,16 @@ static void locked_profiler_stream_json_for_this_process(
           std::move(progressLogger));
     }
 
+    SLOW_DOWN_FOR_TESTING();
+
     
     
     buffer.StreamSamplesAndMarkersToJSON(
         processStreamingContext, aProgressLogger.CreateSubLoggerTo(
                                      "Processing samples and markers...", 80_pc,
                                      "Processed samples and markers"));
+
+    SLOW_DOWN_FOR_TESTING();
 
     
     ThreadStreamingContext* const contextListBegin =
@@ -3116,6 +3161,8 @@ static void locked_profiler_stream_json_for_this_process(
   }
   aWriter.EndArray();
 
+  SLOW_DOWN_FOR_TESTING();
+
   if (ActivePS::FeatureJSTracer(aLock)) {
     aWriter.StartArrayProperty("jsTracerDictionary");
     {
@@ -3130,6 +3177,8 @@ static void locked_profiler_stream_json_for_this_process(
     aWriter.EndArray();
   }
   aProgressLogger.SetLocalProgress(98_pc, "Handled JS Tracer dictionary");
+
+  SLOW_DOWN_FOR_TESTING();
 
   aWriter.StartArrayProperty("pausedRanges");
   {
@@ -3149,6 +3198,12 @@ static void locked_profiler_stream_json_for_this_process(
   
   buffer.AddEntry(ProfileBufferEntry::CollectionStart(collectionStartMs));
   buffer.AddEntry(ProfileBufferEntry::CollectionEnd(collectionEndMs));
+
+#ifdef DEBUG
+  if (slowWithSleeps != 0) {
+    LOG("locked_profiler_stream_json_for_this_process done");
+  }
+#endif  
 }
 
 
