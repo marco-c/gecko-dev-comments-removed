@@ -1982,15 +1982,7 @@ nsresult nsDataObj ::ExtractShortcutTitle(nsString& outTitle) {
 nsresult nsDataObj ::BuildPlatformHTML(const char* inOurHTML,
                                        char** outPlatformHTML) {
   *outPlatformHTML = nullptr;
-
   nsDependentCString inHTMLString(inOurHTML);
-  const char* const numPlaceholder = "00000000";
-  const char* const startHTMLPrefix = "Version:0.9\r\nStartHTML:";
-  const char* const endHTMLPrefix = "\r\nEndHTML:";
-  const char* const startFragPrefix = "\r\nStartFragment:";
-  const char* const endFragPrefix = "\r\nEndFragment:";
-  const char* const startSourceURLPrefix = "\r\nSourceURL:";
-  const char* const endFragTrailer = "\r\n";
 
   
   if (mSourceURL.IsEmpty()) {
@@ -2000,60 +1992,84 @@ nsresult nsDataObj ::BuildPlatformHTML(const char* inOurHTML,
     AppendUTF16toUTF8(url, mSourceURL);
   }
 
-  const int32_t kSourceURLLength = mSourceURL.Length();
-  const int32_t kNumberLength = strlen(numPlaceholder);
-
-  const int32_t kTotalHeaderLen =
-      strlen(startHTMLPrefix) + strlen(endHTMLPrefix) +
-      strlen(startFragPrefix) + strlen(endFragPrefix) + strlen(endFragTrailer) +
-      (kSourceURLLength > 0 ? strlen(startSourceURLPrefix) : 0) +
-      kSourceURLLength + (4 * kNumberLength);
-
-  constexpr auto htmlHeaderString = "<html><body>\r\n"_ns;
-
-  constexpr auto fragmentHeaderString = "<!--StartFragment-->"_ns;
-
-  nsDependentCString trailingString(
-      "<!--EndFragment-->\r\n"
-      "</body>\r\n"
-      "</html>");
+  constexpr auto kStartHTMLPrefix = "Version:0.9\r\nStartHTML:"_ns;
+  constexpr auto kEndHTMLPrefix = "\r\nEndHTML:"_ns;
+  constexpr auto kStartFragPrefix = "\r\nStartFragment:"_ns;
+  constexpr auto kEndFragPrefix = "\r\nEndFragment:"_ns;
+  constexpr auto kStartSourceURLPrefix = "\r\nSourceURL:"_ns;
+  constexpr auto kEndFragTrailer = "\r\n"_ns;
 
   
-  int32_t startHTMLOffset = kTotalHeaderLen;
-  int32_t startFragOffset = startHTMLOffset + htmlHeaderString.Length() +
-                            fragmentHeaderString.Length();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  constexpr size_t kNumberLength = 8;
 
-  int32_t endFragOffset = startFragOffset + inHTMLString.Length();
+  const size_t sourceURLLength = mSourceURL.Length();
 
-  int32_t endHTMLOffset = endFragOffset + trailingString.Length();
+  constexpr size_t kFixedHeaderLen =
+      kStartHTMLPrefix.Length() + kEndHTMLPrefix.Length() +
+      kStartFragPrefix.Length() + kEndFragPrefix.Length() +
+      kEndFragTrailer.Length() + (4 * kNumberLength);
+
+  const size_t totalHeaderLen =
+      kFixedHeaderLen + (sourceURLLength > 0
+                             ? kStartSourceURLPrefix.Length() + sourceURLLength
+                             : 0);
+
+  constexpr auto kHeaderString = "<html><body>\r\n<!--StartFragment-->"_ns;
+  constexpr auto kTrailingString =
+      "<!--EndFragment-->\r\n"
+      "</body>\r\n"
+      "</html>"_ns;
+
+  
+  size_t startHTMLOffset = totalHeaderLen;
+  size_t startFragOffset = startHTMLOffset + kHeaderString.Length();
+
+  size_t endFragOffset = startFragOffset + inHTMLString.Length();
+  size_t endHTMLOffset = endFragOffset + kTrailingString.Length();
 
   
   nsCString clipboardString;
   clipboardString.SetCapacity(endHTMLOffset);
 
-  clipboardString.Append(startHTMLPrefix);
-  clipboardString.Append(nsPrintfCString("%08u", startHTMLOffset));
+  
+  clipboardString.Append(kStartHTMLPrefix);
+  clipboardString.AppendPrintf("%08u", startHTMLOffset);
 
-  clipboardString.Append(endHTMLPrefix);
-  clipboardString.Append(nsPrintfCString("%08u", endHTMLOffset));
+  clipboardString.Append(kEndHTMLPrefix);
+  clipboardString.AppendPrintf("%08u", endHTMLOffset);
 
-  clipboardString.Append(startFragPrefix);
-  clipboardString.Append(nsPrintfCString("%08u", startFragOffset));
+  clipboardString.Append(kStartFragPrefix);
+  clipboardString.AppendPrintf("%08u", startFragOffset);
 
-  clipboardString.Append(endFragPrefix);
-  clipboardString.Append(nsPrintfCString("%08u", endFragOffset));
+  clipboardString.Append(kEndFragPrefix);
+  clipboardString.AppendPrintf("%08u", endFragOffset);
 
-  if (kSourceURLLength > 0) {
-    clipboardString.Append(startSourceURLPrefix);
+  if (sourceURLLength > 0) {
+    clipboardString.Append(kStartSourceURLPrefix);
     clipboardString.Append(mSourceURL);
   }
 
-  clipboardString.Append(endFragTrailer);
+  clipboardString.Append(kEndFragTrailer);
 
-  clipboardString.Append(htmlHeaderString);
-  clipboardString.Append(fragmentHeaderString);
+  
+  
+  MOZ_ASSERT(clipboardString.Length() == startHTMLOffset);
+  clipboardString.Append(kHeaderString);
+  MOZ_ASSERT(clipboardString.Length() == startFragOffset);
   clipboardString.Append(inHTMLString);
-  clipboardString.Append(trailingString);
+  MOZ_ASSERT(clipboardString.Length() == endFragOffset);
+  clipboardString.Append(kTrailingString);
+  MOZ_ASSERT(clipboardString.Length() == endHTMLOffset);
 
   *outPlatformHTML = ToNewCString(clipboardString, mozilla::fallible);
   if (!*outPlatformHTML) return NS_ERROR_OUT_OF_MEMORY;
