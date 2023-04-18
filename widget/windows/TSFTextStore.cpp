@@ -6398,10 +6398,21 @@ void TSFTextStore::CreateNativeCaret() {
            ToString(mComposition).c_str()));
 
   Maybe<Selection>& selectionForTSF = SelectionForTSF();
-  if (selectionForTSF.isNothing()) {
+  if (MOZ_UNLIKELY(selectionForTSF.isNothing())) {
     MOZ_LOG(gIMELog, LogLevel::Error,
             ("0x%p   TSFTextStore::CreateNativeCaret() FAILED due to "
              "SelectionForTSF() failure",
+             this));
+    return;
+  }
+  if (!selectionForTSF->HasRange() && mComposition.isNothing()) {
+    
+    
+    
+    
+    MOZ_LOG(gIMELog, LogLevel::Warning,
+            ("0x%p   TSFTextStore::CreateNativeCaret() couludn't create native "
+             "caret due to no selection range",
              this));
     return;
   }
@@ -6412,18 +6423,17 @@ void TSFTextStore::CreateNativeCaret() {
   WidgetQueryContentEvent::Options options;
   
   
-  int64_t caretOffset = selectionForTSF->MaxOffset();
+  int64_t caretOffset = selectionForTSF->HasRange()
+                            ? selectionForTSF->MaxOffset()
+                            : mComposition->StartOffset();
   if (mComposition.isSome()) {
     
     
     
     options.mRelativeToInsertionPoint = true;
     caretOffset -= mComposition->StartOffset();
-  } else if (!selectionForTSF->HasRange()) {
-    
-    
-    return;
   } else if (!CanAccessActualContentDirectly()) {
+    
     
     
     
