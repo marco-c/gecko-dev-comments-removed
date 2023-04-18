@@ -93,7 +93,6 @@ auto ScrollbarDrawing::GetScrollbarSizes(nsPresContext* aPresContext,
   return {(CSSCoord(w) * dpi).Rounded(), (CSSCoord(h) * dpi).Rounded()};
 }
 
-
 bool ScrollbarDrawing::IsScrollbarTrackOpaque(nsIFrame* aFrame) {
   auto trackColor = ComputeScrollbarTrackColor(
       aFrame, *nsLayoutUtils::StyleForScrollbar(aFrame),
@@ -101,17 +100,16 @@ bool ScrollbarDrawing::IsScrollbarTrackOpaque(nsIFrame* aFrame) {
   return trackColor.a == 1.0f;
 }
 
-
 sRGBColor ScrollbarDrawing::ComputeScrollbarTrackColor(
     nsIFrame* aFrame, const ComputedStyle& aStyle,
     const EventStates& aDocumentState, const Colors& aColors) {
-  const nsStyleUI* ui = aStyle.StyleUI();
   if (aColors.HighContrast()) {
     return aColors.System(StyleSystemColor::Window);
   }
   if (ShouldUseDarkScrollbar(aFrame, aStyle)) {
     return sRGBColor::FromU8(20, 20, 25, 77);
   }
+  const nsStyleUI* ui = aStyle.StyleUI();
   if (ui->mScrollbarColor.IsColors()) {
     return sRGBColor::FromABGR(
         ui->mScrollbarColor.AsColors().track.CalcColor(aStyle));
@@ -134,7 +132,6 @@ static bool ShouldUseColorForActiveDarkScrollbarThumb(nscolor aColor) {
   return IsDifferentEnough(NS_GET_R(aColor), NS_GET_G(aColor)) ||
          IsDifferentEnough(NS_GET_R(aColor), NS_GET_B(aColor));
 }
-
 
 sRGBColor ScrollbarDrawing::ComputeScrollbarThumbColor(
     nsIFrame* aFrame, const ComputedStyle& aStyle,
@@ -296,7 +293,6 @@ bool ScrollbarDrawing::ShouldUseDarkScrollbar(nsIFrame* aFrame,
   return nsNativeTheme::IsDarkBackground(aFrame);
 }
 
-
 nscolor ScrollbarDrawing::GetScrollbarButtonColor(nscolor aTrackColor,
                                                   EventStates aStates) {
   
@@ -324,7 +320,6 @@ nscolor ScrollbarDrawing::GetScrollbarButtonColor(nscolor aTrackColor,
   }
   return RelativeLuminanceUtils::Adjust(aTrackColor, luminance);
 }
-
 
 Maybe<nscolor> ScrollbarDrawing::GetScrollbarArrowColor(nscolor aButtonColor) {
   
@@ -403,8 +398,7 @@ bool ScrollbarDrawing::PaintScrollbarButton(
     DrawTarget& aDrawTarget, StyleAppearance aAppearance,
     const LayoutDeviceRect& aRect, nsIFrame* aFrame,
     const ComputedStyle& aStyle, const EventStates& aElementState,
-    const EventStates& aDocumentState, const Colors& aColors,
-    const DPIRatio& aDpiRatio) {
+    const EventStates& aDocumentState, const Colors& aColors) {
   auto [buttonColor, arrowColor] = ComputeScrollbarButtonColors(
       aFrame, aAppearance, aStyle, aElementState, aDocumentState, aColors);
   aDrawTarget.FillRect(aRect.ToUnknownRect(),
