@@ -31,8 +31,9 @@
 
 
 
-#ifndef GTEST_INCLUDE_GTEST_INTERNAL_GTEST_PARAM_UTIL_H_
-#define GTEST_INCLUDE_GTEST_INTERNAL_GTEST_PARAM_UTIL_H_
+
+#ifndef GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_PARAM_UTIL_H_
+#define GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_PARAM_UTIL_H_
 
 #include <ctype.h>
 
@@ -41,20 +42,23 @@
 #include <memory>
 #include <set>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 #include "gtest/internal/gtest-internal.h"
 #include "gtest/internal/gtest-port.h"
 #include "gtest/gtest-printers.h"
+#include "gtest/gtest-test-part.h"
 
 namespace testing {
 
 
 template <class ParamType>
 struct TestParamInfo {
-  TestParamInfo(const ParamType& a_param, size_t an_index)
-      : param(a_param), index(an_index) {}
+  TestParamInfo(const ParamType& a_param, size_t an_index) :
+    param(a_param),
+    index(an_index) {}
   ParamType param;
   size_t index;
 };
@@ -80,10 +84,8 @@ namespace internal {
 GTEST_API_ void ReportInvalidTestSuiteType(const char* test_suite_name,
                                            CodeLocation code_location);
 
-template <typename>
-class ParamGeneratorInterface;
-template <typename>
-class ParamGenerator;
+template <typename> class ParamGeneratorInterface;
+template <typename> class ParamGenerator;
 
 
 
@@ -127,7 +129,8 @@ class ParamIterator {
   
   ParamIterator(const ParamIterator& other) : impl_(other.impl_->Clone()) {}
   ParamIterator& operator=(const ParamIterator& other) {
-    if (this != &other) impl_.reset(other.impl_->Clone());
+    if (this != &other)
+      impl_.reset(other.impl_->Clone());
     return *this;
   }
 
@@ -154,7 +157,7 @@ class ParamIterator {
  private:
   friend class ParamGenerator<T>;
   explicit ParamIterator(ParamIteratorInterface<T>* impl) : impl_(impl) {}
-  std::unique_ptr<ParamIteratorInterface<T>> impl_;
+  std::unique_ptr<ParamIteratorInterface<T> > impl_;
 };
 
 
@@ -176,7 +179,7 @@ class ParamGeneratorInterface {
 
 
 
-template <typename T>
+template<typename T>
 class ParamGenerator {
  public:
   typedef ParamIterator<T> iterator;
@@ -193,7 +196,7 @@ class ParamGenerator {
   iterator end() const { return iterator(impl_->End()); }
 
  private:
-  std::shared_ptr<const ParamGeneratorInterface<T>> impl_;
+  std::shared_ptr<const ParamGeneratorInterface<T> > impl_;
 };
 
 
@@ -204,10 +207,8 @@ template <typename T, typename IncrementT>
 class RangeGenerator : public ParamGeneratorInterface<T> {
  public:
   RangeGenerator(T begin, T end, IncrementT step)
-      : begin_(begin),
-        end_(end),
-        step_(step),
-        end_index_(CalculateEndIndex(begin, end, step)) {}
+      : begin_(begin), end_(end),
+        step_(step), end_index_(CalculateEndIndex(begin, end, step)) {}
   ~RangeGenerator() override {}
 
   ParamIteratorInterface<T>* Begin() const override {
@@ -250,9 +251,7 @@ class RangeGenerator : public ParamGeneratorInterface<T> {
    private:
     Iterator(const Iterator& other)
         : ParamIteratorInterface<T>(),
-          base_(other.base_),
-          value_(other.value_),
-          index_(other.index_),
+          base_(other.base_), value_(other.value_), index_(other.index_),
           step_(other.step_) {}
 
     
@@ -264,10 +263,12 @@ class RangeGenerator : public ParamGeneratorInterface<T> {
     const IncrementT step_;
   };  
 
-  static int CalculateEndIndex(const T& begin, const T& end,
+  static int CalculateEndIndex(const T& begin,
+                               const T& end,
                                const IncrementT& step) {
     int end_index = 0;
-    for (T i = begin; i < end; i = static_cast<T>(i + step)) end_index++;
+    for (T i = begin; i < end; i = static_cast<T>(i + step))
+      end_index++;
     return end_index;
   }
 
@@ -281,6 +282,7 @@ class RangeGenerator : public ParamGeneratorInterface<T> {
   
   const int end_index_;
 };  
+
 
 
 
@@ -339,13 +341,13 @@ class ValuesInIteratorRangeGenerator : public ParamGeneratorInterface<T> {
           << "The program attempted to compare iterators "
           << "from different generators." << std::endl;
       return iterator_ ==
-             CheckedDowncastToActualType<const Iterator>(&other)->iterator_;
+          CheckedDowncastToActualType<const Iterator>(&other)->iterator_;
     }
 
    private:
     Iterator(const Iterator& other)
-        
-        
+          
+          
         : ParamIteratorInterface<T>(),
           base_(other.base_),
           iterator_(other.iterator_) {}
@@ -392,8 +394,8 @@ template <class TestClass>
 class ParameterizedTestFactory : public TestFactoryBase {
  public:
   typedef typename TestClass::ParamType ParamType;
-  explicit ParameterizedTestFactory(ParamType parameter)
-      : parameter_(parameter) {}
+  explicit ParameterizedTestFactory(ParamType parameter) :
+      parameter_(parameter) {}
   Test* CreateTest() override {
     TestClass::SetParam(&parameter_);
     return new TestClass();
@@ -476,6 +478,17 @@ class ParameterizedTestSuiteInfoBase {
 
 
 
+struct GTEST_API_ MarkAsIgnored {
+  explicit MarkAsIgnored(const char* test_suite);
+};
+
+GTEST_API_ void InsertSyntheticTestCase(const std::string& name,
+                                        CodeLocation location, bool has_test_p);
+
+
+
+
+
 
 
 
@@ -507,9 +520,10 @@ class ParameterizedTestSuiteInfo : public ParameterizedTestSuiteInfoBase {
   
   
   void AddTestPattern(const char* test_suite_name, const char* test_base_name,
-                      TestMetaFactoryBase<ParamType>* meta_factory) {
-    tests_.push_back(std::shared_ptr<TestInfo>(
-        new TestInfo(test_suite_name, test_base_name, meta_factory)));
+                      TestMetaFactoryBase<ParamType>* meta_factory,
+                      CodeLocation code_location) {
+    tests_.push_back(std::shared_ptr<TestInfo>(new TestInfo(
+        test_suite_name, test_base_name, meta_factory, code_location)));
   }
   
   
@@ -527,12 +541,14 @@ class ParameterizedTestSuiteInfo : public ParameterizedTestSuiteInfoBase {
   
   
   void RegisterTests() override {
+    bool generated_instantiations = false;
+
     for (typename TestInfoContainer::iterator test_it = tests_.begin();
          test_it != tests_.end(); ++test_it) {
       std::shared_ptr<TestInfo> test_info = *test_it;
       for (typename InstantiationContainer::iterator gen_it =
-               instantiations_.begin();
-           gen_it != instantiations_.end(); ++gen_it) {
+               instantiations_.begin(); gen_it != instantiations_.end();
+               ++gen_it) {
         const std::string& instantiation_name = gen_it->name;
         ParamGenerator<ParamType> generator((*gen_it->generator)());
         ParamNameGeneratorFunc* name_func = gen_it->name_func;
@@ -540,27 +556,30 @@ class ParameterizedTestSuiteInfo : public ParameterizedTestSuiteInfoBase {
         int line = gen_it->line;
 
         std::string test_suite_name;
-        if (!instantiation_name.empty())
+        if ( !instantiation_name.empty() )
           test_suite_name = instantiation_name + "/";
         test_suite_name += test_info->test_suite_base_name;
 
         size_t i = 0;
         std::set<std::string> test_param_names;
-        for (typename ParamGenerator<ParamType>::iterator
-                 param_it = generator.begin();
+        for (typename ParamGenerator<ParamType>::iterator param_it =
+                 generator.begin();
              param_it != generator.end(); ++param_it, ++i) {
+          generated_instantiations = true;
+
           Message test_name_stream;
 
-          std::string param_name =
-              name_func(TestParamInfo<ParamType>(*param_it, i));
+          std::string param_name = name_func(
+              TestParamInfo<ParamType>(*param_it, i));
 
           GTEST_CHECK_(IsValidParamName(param_name))
               << "Parameterized test name '" << param_name
-              << "' is invalid, in " << file << " line " << line << std::endl;
+              << "' is invalid, in " << file
+              << " line " << line << std::endl;
 
           GTEST_CHECK_(test_param_names.count(param_name) == 0)
-              << "Duplicate parameterized test name '" << param_name << "', in "
-              << file << " line " << line << std::endl;
+              << "Duplicate parameterized test name '" << param_name
+              << "', in " << file << " line " << line << std::endl;
 
           test_param_names.insert(param_name);
 
@@ -571,60 +590,72 @@ class ParameterizedTestSuiteInfo : public ParameterizedTestSuiteInfoBase {
           MakeAndRegisterTestInfo(
               test_suite_name.c_str(), test_name_stream.GetString().c_str(),
               nullptr,  
-              PrintToString(*param_it).c_str(), code_location_,
+              PrintToString(*param_it).c_str(), test_info->code_location,
               GetTestSuiteTypeId(),
               SuiteApiResolver<TestSuite>::GetSetUpCaseOrSuite(file, line),
               SuiteApiResolver<TestSuite>::GetTearDownCaseOrSuite(file, line),
               test_info->test_meta_factory->CreateTestFactory(*param_it));
         }  
-      }    
-    }      
-  }        
+      }  
+    }  
+
+    if (!generated_instantiations) {
+      
+      InsertSyntheticTestCase(GetTestSuiteName(), code_location_,
+                              !tests_.empty());
+    }
+  }    
 
  private:
   
   
   struct TestInfo {
     TestInfo(const char* a_test_suite_base_name, const char* a_test_base_name,
-             TestMetaFactoryBase<ParamType>* a_test_meta_factory)
+             TestMetaFactoryBase<ParamType>* a_test_meta_factory,
+             CodeLocation a_code_location)
         : test_suite_base_name(a_test_suite_base_name),
           test_base_name(a_test_base_name),
-          test_meta_factory(a_test_meta_factory) {}
+          test_meta_factory(a_test_meta_factory),
+          code_location(a_code_location) {}
 
     const std::string test_suite_base_name;
     const std::string test_base_name;
-    const std::unique_ptr<TestMetaFactoryBase<ParamType>> test_meta_factory;
+    const std::unique_ptr<TestMetaFactoryBase<ParamType> > test_meta_factory;
+    const CodeLocation code_location;
   };
-  using TestInfoContainer = ::std::vector<std::shared_ptr<TestInfo>>;
+  using TestInfoContainer = ::std::vector<std::shared_ptr<TestInfo> >;
   
   
   
   struct InstantiationInfo {
-    InstantiationInfo(const std::string& name_in,
-                      GeneratorCreationFunc* generator_in,
-                      ParamNameGeneratorFunc* name_func_in, const char* file_in,
-                      int line_in)
-        : name(name_in),
-          generator(generator_in),
-          name_func(name_func_in),
-          file(file_in),
-          line(line_in) {}
+      InstantiationInfo(const std::string &name_in,
+                        GeneratorCreationFunc* generator_in,
+                        ParamNameGeneratorFunc* name_func_in,
+                        const char* file_in,
+                        int line_in)
+          : name(name_in),
+            generator(generator_in),
+            name_func(name_func_in),
+            file(file_in),
+            line(line_in) {}
 
-    std::string name;
-    GeneratorCreationFunc* generator;
-    ParamNameGeneratorFunc* name_func;
-    const char* file;
-    int line;
+      std::string name;
+      GeneratorCreationFunc* generator;
+      ParamNameGeneratorFunc* name_func;
+      const char* file;
+      int line;
   };
   typedef ::std::vector<InstantiationInfo> InstantiationContainer;
 
   static bool IsValidParamName(const std::string& name) {
     
-    if (name.empty()) return false;
+    if (name.empty())
+      return false;
 
     
     for (std::string::size_type index = 0; index < name.size(); ++index) {
-      if (!isalnum(name[index]) && name[index] != '_') return false;
+      if (!IsAlNum(name[index]) && name[index] != '_')
+        return false;
     }
 
     return true;
@@ -678,7 +709,7 @@ class ParameterizedTestSuiteRegistry {
           
           
           typed_test_info = CheckedDowncastToActualType<
-              ParameterizedTestSuiteInfo<TestSuite>>(test_suite_info);
+              ParameterizedTestSuiteInfo<TestSuite> >(test_suite_info);
         }
         break;
       }
@@ -713,6 +744,34 @@ class ParameterizedTestSuiteRegistry {
   GTEST_DISALLOW_COPY_AND_ASSIGN_(ParameterizedTestSuiteRegistry);
 };
 
+
+
+
+class TypeParameterizedTestSuiteRegistry {
+ public:
+  
+  void RegisterTestSuite(const char* test_suite_name,
+                         CodeLocation code_location);
+
+  
+  void RegisterInstantiation(const char* test_suite_name);
+
+  
+  
+  void CheckForInstantiations();
+
+ private:
+  struct TypeParameterizedTestSuiteInfo {
+    explicit TypeParameterizedTestSuiteInfo(CodeLocation c)
+        : code_location(c), instantiated(false) {}
+
+    CodeLocation code_location;
+    bool instantiated;
+  };
+
+  std::map<std::string, TypeParameterizedTestSuiteInfo> suites_;
+};
+
 }  
 
 
@@ -724,10 +783,15 @@ internal::ParamGenerator<typename Container::value_type> ValuesIn(
 namespace internal {
 
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4100)
+#endif
+
 template <typename... Ts>
 class ValueArray {
  public:
-  ValueArray(Ts... v) : v_{std::move(v)...} {}
+  explicit ValueArray(Ts... v) : v_(FlatTupleConstructTag{}, std::move(v)...) {}
 
   template <typename T>
   operator ParamGenerator<T>() const {  
@@ -742,6 +806,10 @@ class ValueArray {
 
   FlatTuple<Ts...> v_;
 };
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 template <typename... T>
 class CartesianProductGenerator
@@ -768,8 +836,7 @@ class CartesianProductGenerator
       : public ParamIteratorInterface<ParamType> {
    public:
     IteratorImpl(const ParamGeneratorInterface<ParamType>* base,
-                 const std::tuple<ParamGenerator<T>...>& generators,
-                 bool is_end)
+             const std::tuple<ParamGenerator<T>...>& generators, bool is_end)
         : base_(base),
           begin_(std::get<I>(generators).begin()...),
           end_(std::get<I>(generators).end()...),
@@ -812,9 +879,9 @@ class CartesianProductGenerator
       if (AtEnd() && typed_other->AtEnd()) return true;
 
       bool same = true;
-      bool dummy[] = {(same = same &&
-                              std::get<I>(current_) ==
-                                  std::get<I>(typed_other->current_))...};
+      bool dummy[] = {
+          (same = same && std::get<I>(current_) ==
+                              std::get<I>(typed_other->current_))...};
       (void)dummy;
       return same;
     }

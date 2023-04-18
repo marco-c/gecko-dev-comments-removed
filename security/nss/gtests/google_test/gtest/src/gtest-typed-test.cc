@@ -27,6 +27,7 @@
 
 
 
+
 #include "gtest/gtest-typed-test.h"
 
 #include "gtest/gtest.h"
@@ -34,12 +35,11 @@
 namespace testing {
 namespace internal {
 
-#if GTEST_HAS_TYPED_TEST_P
-
 
 
 static const char* SkipSpaces(const char* str) {
-  while (IsSpace(*str)) str++;
+  while (IsSpace(*str))
+    str++;
   return str;
 }
 
@@ -56,7 +56,10 @@ static std::vector<std::string> SplitIntoTestNames(const char* src) {
 
 
 const char* TypedTestSuitePState::VerifyRegisteredTestNames(
-    const char* file, int line, const char* registered_tests) {
+    const char* test_suite_name, const char* file, int line,
+    const char* registered_tests) {
+  RegisterTypeParameterizedTestSuite(test_suite_name, CodeLocation(file, line));
+
   typedef RegisteredTestsMap::const_iterator RegisteredTestIter;
   registered_ = true;
 
@@ -73,16 +76,7 @@ const char* TypedTestSuitePState::VerifyRegisteredTestNames(
       continue;
     }
 
-    bool found = false;
-    for (RegisteredTestIter it = registered_tests_.begin();
-         it != registered_tests_.end(); ++it) {
-      if (name == it->first) {
-        found = true;
-        break;
-      }
-    }
-
-    if (found) {
+    if (registered_tests_.count(name) != 0) {
       tests.insert(name);
     } else {
       errors << "No test named " << name
@@ -91,7 +85,8 @@ const char* TypedTestSuitePState::VerifyRegisteredTestNames(
   }
 
   for (RegisteredTestIter it = registered_tests_.begin();
-       it != registered_tests_.end(); ++it) {
+       it != registered_tests_.end();
+       ++it) {
     if (tests.count(it->first) == 0) {
       errors << "You forgot to list test " << it->first << ".\n";
     }
@@ -107,8 +102,6 @@ const char* TypedTestSuitePState::VerifyRegisteredTestNames(
 
   return registered_tests;
 }
-
-#endif  
 
 }  
 }  

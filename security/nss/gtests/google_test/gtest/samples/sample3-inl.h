@@ -29,10 +29,11 @@
 
 
 
-#ifndef GTEST_SAMPLES_SAMPLE3_INL_H_
-#define GTEST_SAMPLES_SAMPLE3_INL_H_
+#ifndef GOOGLETEST_SAMPLES_SAMPLE3_INL_H_
+#define GOOGLETEST_SAMPLES_SAMPLE3_INL_H_
 
 #include <stddef.h>
+
 
 
 
@@ -61,7 +62,7 @@ class QueueNode {
       : element_(an_element), next_(nullptr) {}
 
   
-  const QueueNode& operator=(const QueueNode&);
+  const QueueNode& operator = (const QueueNode&);
   QueueNode(const QueueNode&);
 
   E element_;
@@ -83,7 +84,7 @@ class Queue {
       
       QueueNode<E>* node = head_;
       QueueNode<E>* next = node->next();
-      for (;;) {
+      for (; ;) {
         delete node;
         node = next;
         if (node == nullptr) break;
@@ -161,11 +162,11 @@ class Queue {
  private:
   QueueNode<E>* head_;  
   QueueNode<E>* last_;  
-  size_t size_;         
+  size_t size_;  
 
   
   Queue(const Queue&);
-  const Queue& operator=(const Queue&);
+  const Queue& operator = (const Queue&);
 };
 
 #endif  

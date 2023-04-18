@@ -30,6 +30,7 @@
 
 
 
+
 #include "gtest/gtest.h"
 
 #include <vector>
@@ -65,12 +66,13 @@ std::string IdToString(int id) {
 }
 
 void ExpectKeyAndValueWereRecordedForId(
-    const std::vector<TestProperty>& properties, int id, const char* suffix) {
+    const std::vector<TestProperty>& properties,
+    int id, const char* suffix) {
   TestPropertyKeyIs matches_key(IdToKey(id, suffix).c_str());
   const std::vector<TestProperty>::const_iterator property =
       std::find_if(properties.begin(), properties.end(), matches_key);
-  ASSERT_TRUE(property != properties.end()) << "expecting " << suffix
-                                            << " value for id " << id;
+  ASSERT_TRUE(property != properties.end())
+      << "expecting " << suffix << " value for id " << id;
   EXPECT_STREQ(IdToString(id).c_str(), property->value());
 }
 
@@ -119,13 +121,15 @@ TEST(StressTest, CanUseScopedTraceAndAssertionsInManyThreads) {
     std::unique_ptr<ThreadWithParam<int> > threads[kThreadCount];
     Notification threads_can_start;
     for (int i = 0; i != kThreadCount; i++)
-      threads[i].reset(
-          new ThreadWithParam<int>(&ManyAsserts, i, &threads_can_start));
+      threads[i].reset(new ThreadWithParam<int>(&ManyAsserts,
+                                                i,
+                                                &threads_can_start));
 
     threads_can_start.Notify();
 
     
-    for (int i = 0; i != kThreadCount; i++) threads[i]->Join();
+    for (int i = 0; i != kThreadCount; i++)
+      threads[i]->Join();
   }
 
   
@@ -145,7 +149,7 @@ TEST(StressTest, CanUseScopedTraceAndAssertionsInManyThreads) {
     ExpectKeyAndValueWereRecordedForId(properties, i, "string");
     ExpectKeyAndValueWereRecordedForId(properties, i, "int");
   }
-  CheckTestFailureCount(kThreadCount * kThreadCount);
+  CheckTestFailureCount(kThreadCount*kThreadCount);
 }
 
 void FailingThread(bool is_fatal) {
@@ -192,8 +196,8 @@ TEST(FatalFailureTest, ExpectFatalFailureIgnoresFailuresInOtherThreads) {
 TEST(FatalFailureOnAllThreadsTest, ExpectFatalFailureOnAllThreads) {
   
   
-  EXPECT_FATAL_FAILURE_ON_ALL_THREADS(GenerateFatalFailureInAnotherThread(true),
-                                      "expected");
+  EXPECT_FATAL_FAILURE_ON_ALL_THREADS(
+      GenerateFatalFailureInAnotherThread(true), "expected");
   CheckTestFailureCount(0);
   
   
@@ -222,7 +226,7 @@ TEST(NonFatalFailureOnAllThreadsTest, ExpectNonFatalFailureOnAllThreads) {
 }  
 }  
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
 
   const int result = RUN_ALL_TESTS();  
@@ -234,7 +238,8 @@ int main(int argc, char** argv) {
 
 #else
 TEST(StressTest,
-     DISABLED_ThreadSafetyTestsAreSkippedWhenGoogleTestIsNotThreadSafe) {}
+     DISABLED_ThreadSafetyTestsAreSkippedWhenGoogleTestIsNotThreadSafe) {
+}
 
 int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);

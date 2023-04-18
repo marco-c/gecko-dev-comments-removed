@@ -37,13 +37,13 @@
 
 
 
-#ifndef GTEST_INCLUDE_GTEST_INTERNAL_GTEST_FILEPATH_H_
-#define GTEST_INCLUDE_GTEST_INTERNAL_GTEST_FILEPATH_H_
+#ifndef GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_FILEPATH_H_
+#define GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_FILEPATH_H_
 
 #include "gtest/internal/gtest-string.h"
 
-GTEST_DISABLE_MSC_WARNINGS_PUSH_(
-    4251 )
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
+)
 
 namespace testing {
 namespace internal {
@@ -61,8 +61,8 @@ namespace internal {
 
 class GTEST_API_ FilePath {
  public:
-  FilePath() : pathname_("") {}
-  FilePath(const FilePath& rhs) : pathname_(rhs.pathname_) {}
+  FilePath() : pathname_("") { }
+  FilePath(const FilePath& rhs) : pathname_(rhs.pathname_) { }
 
   explicit FilePath(const std::string& pathname) : pathname_(pathname) {
     Normalize();
@@ -73,7 +73,9 @@ class GTEST_API_ FilePath {
     return *this;
   }
 
-  void Set(const FilePath& rhs) { pathname_ = rhs.pathname_; }
+  void Set(const FilePath& rhs) {
+    pathname_ = rhs.pathname_;
+  }
 
   const std::string& string() const { return pathname_; }
   const char* c_str() const { return pathname_.c_str(); }
@@ -86,7 +88,8 @@ class GTEST_API_ FilePath {
   
   
   static FilePath MakeFileName(const FilePath& directory,
-                               const FilePath& base_name, int number,
+                               const FilePath& base_name,
+                               int number,
                                const char* extension);
 
   

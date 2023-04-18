@@ -41,7 +41,9 @@ GTEST_DECLARE_string_(filter);
 
 namespace {
 
-enum FailureType { NO_FAILURE, NON_FATAL_FAILURE, FATAL_FAILURE };
+enum FailureType {
+  NO_FAILURE, NON_FATAL_FAILURE, FATAL_FAILURE
+};
 
 
 class MyEnvironment : public testing::Environment {
@@ -81,7 +83,9 @@ class MyEnvironment : public testing::Environment {
 
   
   
-  void set_failure_in_set_up(FailureType type) { failure_in_set_up_ = type; }
+  void set_failure_in_set_up(FailureType type) {
+    failure_in_set_up_ = type;
+  }
 
   
   bool set_up_was_run() const { return set_up_was_run_; }
@@ -100,7 +104,9 @@ bool test_was_run;
 
 
 
-TEST(FooTest, Bar) { test_was_run = true; }
+TEST(FooTest, Bar) {
+  test_was_run = true;
+}
 
 
 void Check(bool condition, const char* msg) {
@@ -124,7 +130,7 @@ int RunAllTests(MyEnvironment* env, FailureType failure) {
 
 }  
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
 
   

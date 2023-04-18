@@ -81,17 +81,15 @@ TEST_F(PrematureExitDeathTest, FileExistsDuringExecutionOfDeathTest) {
     return;
   }
 
-  EXPECT_DEATH_IF_SUPPORTED(
-      {
-        
-        
-        
-        
-        if (PrematureExitFileExists()) {
-          exit(1);
-        }
-      },
-      "");
+  EXPECT_DEATH_IF_SUPPORTED({
+      
+      
+      
+      
+      if (PrematureExitFileExists()) {
+        exit(1);
+      }
+    }, "");
 }
 
 
@@ -108,7 +106,7 @@ TEST_F(PrematureExitTest, PrematureExitFileExistsDuringTestExecution) {
 
 }  
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   InitGoogleTest(&argc, argv);
   const int exit_code = RUN_ALL_TESTS();
 

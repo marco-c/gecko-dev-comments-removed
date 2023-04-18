@@ -65,8 +65,8 @@ class EventRecordingListener : public TestEventListener {
   void OnTestIterationStart(const UnitTest& ,
                             int iteration) override {
     Message message;
-    message << GetFullMethodName("OnTestIterationStart") << "(" << iteration
-            << ")";
+    message << GetFullMethodName("OnTestIterationStart")
+            << "(" << iteration << ")";
     g_events->push_back(message.GetString());
   }
 
@@ -112,8 +112,8 @@ class EventRecordingListener : public TestEventListener {
   void OnTestIterationEnd(const UnitTest& ,
                           int iteration) override {
     Message message;
-    message << GetFullMethodName("OnTestIterationEnd") << "(" << iteration
-            << ")";
+    message << GetFullMethodName("OnTestIterationEnd")
+            << "("  << iteration << ")";
     g_events->push_back(message.GetString());
   }
 
@@ -122,7 +122,9 @@ class EventRecordingListener : public TestEventListener {
   }
 
  private:
-  std::string GetFullMethodName(const char* name) { return name_ + "." + name; }
+  std::string GetFullMethodName(const char* name) {
+    return name_ + "." + name;
+  }
 
   std::string name_;
 };
@@ -250,21 +252,22 @@ void VerifyResults(const std::vector<std::string>& data,
   EXPECT_EQ(expected_data_size, actual_size);
 
   
-  const size_t shorter_size =
-      expected_data_size <= actual_size ? expected_data_size : actual_size;
+  const size_t shorter_size = expected_data_size <= actual_size ?
+      expected_data_size : actual_size;
   size_t i = 0;
   for (; i < shorter_size; ++i) {
-    ASSERT_STREQ(expected_data[i], data[i].c_str()) << "at position " << i;
+    ASSERT_STREQ(expected_data[i], data[i].c_str())
+        << "at position " << i;
   }
 
   
   for (; i < actual_size; ++i) {
-    printf("  Actual event #%lu: %s\n", static_cast<unsigned long>(i),
-           data[i].c_str());
+    printf("  Actual event #%lu: %s\n",
+        static_cast<unsigned long>(i), data[i].c_str());
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   std::vector<std::string> events;
   g_events = &events;
   InitGoogleTest(&argc, argv);
@@ -502,12 +505,14 @@ int main(int argc, char** argv) {
                                          "1st.OnTestProgramEnd"};
 #endif  
 
-  VerifyResults(events, expected_events,
-                sizeof(expected_events) / sizeof(expected_events[0]));
+  VerifyResults(events,
+                expected_events,
+                sizeof(expected_events)/sizeof(expected_events[0]));
 
   
   
-  if (UnitTest::GetInstance()->Failed()) ret_val = 1;
+  if (UnitTest::GetInstance()->Failed())
+    ret_val = 1;
 
   return ret_val;
 }

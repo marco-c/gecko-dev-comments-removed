@@ -32,6 +32,7 @@
 
 
 
+
 #include "prime_tables.h"
 
 #include "gtest/gtest.h"
@@ -48,8 +49,9 @@ class HybridPrimeTable : public PrimeTable {
  public:
   HybridPrimeTable(bool force_on_the_fly, int max_precalculated)
       : on_the_fly_impl_(new OnTheFlyPrimeTable),
-        precalc_impl_(force_on_the_fly ? nullptr : new PreCalculatedPrimeTable(
-                                                       max_precalculated)),
+        precalc_impl_(force_on_the_fly
+                          ? nullptr
+                          : new PreCalculatedPrimeTable(max_precalculated)),
         max_precalculated_(max_precalculated) {}
   ~HybridPrimeTable() override {
     delete on_the_fly_impl_;
