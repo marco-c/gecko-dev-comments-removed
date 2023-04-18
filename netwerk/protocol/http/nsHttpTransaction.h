@@ -172,6 +172,8 @@ class nsHttpTransaction final : public nsAHttpTransaction,
       nsIDNSHTTPSSVCRecord* aHTTPSSVCRecord,
       nsISVCBRecord* aHighestPriorityRecord) override;
 
+  void GetHashKeyOfConnectionEntry(nsACString& aResult);
+
  private:
   friend class DeleteHttpTransaction;
   virtual ~nsHttpTransaction();
@@ -501,7 +503,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   ASpdySession* TunnelProvider() { return mTunnelProvider; }
   nsIInterfaceRequestor* SecurityCallbacks() { return mCallbacks; }
   
-  void OnPendingQueueInserted();
+  void OnPendingQueueInserted(const nsACString& aConnectionHashKey);
 
  private:
   RefPtr<ASpdySession> mTunnelProvider;
@@ -553,6 +555,12 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   bool ShouldRestartOn0RttError(nsresult reason);
 
   nsCOMPtr<nsIEarlyHintObserver> mEarlyHintObserver;
+  
+  
+  
+  
+  
+  nsCString mHashKeyOfConnectionEntry;
 };
 
 }  

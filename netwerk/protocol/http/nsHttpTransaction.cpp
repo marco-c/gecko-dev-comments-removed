@@ -418,8 +418,14 @@ static inline void CreateAndStartTimer(nsCOMPtr<nsITimer>& aTimer,
                           nsITimer::TYPE_ONE_SHOT);
 }
 
-void nsHttpTransaction::OnPendingQueueInserted() {
+void nsHttpTransaction::OnPendingQueueInserted(
+    const nsACString& aConnectionHashKey) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
+  {
+    MutexAutoLock lock(mLock);
+    mHashKeyOfConnectionEntry.Assign(aConnectionHashKey);
+  }
 
   
   if (mConnInfo->IsHttp3() && !mOrigConnInfo) {
@@ -521,6 +527,9 @@ void nsHttpTransaction::SetConnection(nsAHttpConnection* conn) {
     mConnection = conn;
     if (mConnection) {
       mIsHttp3Used = mConnection->Version() == HttpVersion::v3_0;
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+      mConnection->SanityCheck();
+#endif
     }
   }
 }
@@ -3170,8 +3179,8 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
   RefPtr<nsHttpConnectionInfo> newInfo =
       mConnInfo->CloneAndAdoptHTTPSSVCRecord(svcbRecord);
   bool needFastFallback = newInfo->IsHttp3();
-  bool foundInPendingQ =
-      gHttpHandler->ConnMgr()->RemoveTransFromConnEntry(this);
+  bool foundInPendingQ = gHttpHandler->ConnMgr()->RemoveTransFromConnEntry(
+      this, mHashKeyOfConnectionEntry);
 
   
   
@@ -3378,8 +3387,8 @@ void nsHttpTransaction::HandleFallback(
   LOG(("nsHttpTransaction %p HandleFallback to connInfo[%s]", this,
        aFallbackConnInfo->HashKey().get()));
 
-  bool foundInPendingQ =
-      gHttpHandler->ConnMgr()->RemoveTransFromConnEntry(this);
+  bool foundInPendingQ = gHttpHandler->ConnMgr()->RemoveTransFromConnEntry(
+      this, mHashKeyOfConnectionEntry);
   if (!foundInPendingQ) {
     MOZ_ASSERT(false, "transaction not in entry");
     return;
@@ -3446,6 +3455,11 @@ void nsHttpTransaction::CollectTelemetryForUploads() {
 
   Telemetry::AccumulateTimeDelta(hist, key, mTimings.requestStart,
                                  mTimings.responseStart);
+}
+
+void nsHttpTransaction::GetHashKeyOfConnectionEntry(nsACString& aResult) {
+  MutexAutoLock lock(mLock);
+  aResult.Assign(mHashKeyOfConnectionEntry);
 }
 
 }  

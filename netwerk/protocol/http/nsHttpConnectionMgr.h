@@ -73,7 +73,8 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
 
   
   
-  bool RemoveTransFromConnEntry(nsHttpTransaction* aTrans);
+  bool RemoveTransFromConnEntry(nsHttpTransaction* aTrans,
+                                const nsACString& aHashKey);
 
   
   [[nodiscard]] nsresult ProcessNewTransaction(nsHttpTransaction* aTrans);
@@ -449,6 +450,8 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
   void NotifyConnectionOfBrowsingContextIdChange(uint64_t previousId);
+
+  void CheckTransInPendingQueue(nsHttpTransaction* aTrans);
 };
 
 }  
