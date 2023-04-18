@@ -18,6 +18,7 @@
 
 
 #include "nsRefreshDriver.h"
+#include "mozilla/DataMutex.h"
 #include "nsThreadUtils.h"
 
 #ifdef XP_WIN
@@ -486,8 +487,8 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     explicit RefreshDriverVsyncObserver(
         VsyncRefreshDriverTimer* aVsyncRefreshDriverTimer)
         : mVsyncRefreshDriverTimer(aVsyncRefreshDriverTimer),
-          mParentProcessRefreshTickLock("RefreshTickLock"),
-          mPendingParentProcessVsync(false),
+          mLastPendingVsyncNotification(
+              "RefreshDriverVsyncObserver::mLastPendingVsyncNotification"),
           mRecentVsync(TimeStamp::Now()),
           mLastTick(TimeStamp::Now()),
           mVsyncRate(TimeDuration::Forever()),
@@ -500,12 +501,12 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       
       
       {  
-        MonitorAutoLock lock(mParentProcessRefreshTickLock);
-        mRecentParentProcessVsync = aVsync;
-        if (mPendingParentProcessVsync) {
+        auto pendingVsync = mLastPendingVsyncNotification.Lock();
+        bool hadPendingVsync = pendingVsync->isSome();
+        *pendingVsync = Some(aVsync);
+        if (hadPendingVsync) {
           return true;
         }
-        mPendingParentProcessVsync = true;
       }
 
       if (XRE_IsContentProcess()) {
@@ -539,16 +540,19 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       
       InputTaskManager::Get()->SetInputHandlingStartTime(TimeStamp());
 
-      VsyncEvent aVsync;
+      VsyncEvent vsyncEvent;
       {
-        MonitorAutoLock lock(mParentProcessRefreshTickLock);
-        aVsync = mRecentParentProcessVsync;
-        mPendingParentProcessVsync = false;
+        
+        auto pendingVsync = mLastPendingVsyncNotification.Lock();
+        MOZ_RELEASE_ASSERT(
+            pendingVsync->isSome(),
+            "We should always have a pending vsync notification here.");
+        vsyncEvent = pendingVsync->extract();
       }
 
-      mRecentVsync = aVsync.mTime;
-      mRecentVsyncId = aVsync.mId;
-      if (!mBlockUntil.IsNull() && mBlockUntil > aVsync.mTime) {
+      mRecentVsync = vsyncEvent.mTime;
+      mRecentVsyncId = vsyncEvent.mId;
+      if (!mBlockUntil.IsNull() && mBlockUntil > vsyncEvent.mTime) {
         if (mProcessedVsync) {
           
           
@@ -601,7 +605,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       }
 
       RefPtr<RefreshDriverVsyncObserver> kungFuDeathGrip(this);
-      TickRefreshDriver(aVsync.mId, aVsync.mTime);
+      TickRefreshDriver(vsyncEvent.mId, vsyncEvent.mTime);
     }
 
     void Shutdown() {
@@ -697,9 +701,16 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     
     VsyncRefreshDriverTimer* mVsyncRefreshDriverTimer;
 
-    Monitor mParentProcessRefreshTickLock;
-    VsyncEvent mRecentParentProcessVsync;
-    bool mPendingParentProcessVsync;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    DataMutex<Maybe<VsyncEvent>> mLastPendingVsyncNotification;
 
     TimeStamp mRecentVsync;
     VsyncId mRecentVsyncId;
