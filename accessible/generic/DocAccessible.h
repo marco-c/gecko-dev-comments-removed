@@ -766,6 +766,14 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
   void TrackMovedAccessible(LocalAccessible* aAcc);
 
+  
+
+
+
+
+
+  void MaybeHandleChangeToHiddenNameOrDescription(nsIContent* aChild);
+
   PresShell* mPresShell;
 
   
