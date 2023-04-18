@@ -4435,8 +4435,7 @@ pref("extensions.formautofill.creditCards.hideui", false);
 
 
 
-
-pref("extensions.formautofill.creditCards.heuristics.mode", 2);
+pref("extensions.formautofill.creditCards.heuristics.mode", 0);
 pref("extensions.formautofill.creditCards.heuristics.confidenceThreshold", "0.5");
 
 

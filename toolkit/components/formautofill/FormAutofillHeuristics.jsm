@@ -881,10 +881,7 @@ this.FormAutofillHeuristics = {
 
     
     
-    if (
-      FormAutofillUtils.isFathomCreditCardsEnabled() &&
-      creditCardRulesets.types.includes(detail.fieldName)
-    ) {
+    if (FormAutofillUtils.isFathomCreditCardsEnabled()) {
       fieldScanner.parsingIndex++;
       return true;
     }
@@ -1154,10 +1151,10 @@ this.FormAutofillHeuristics = {
       let fathomFields = fields.filter(r =>
         creditCardRulesets.types.includes(r)
       );
-      let matchedFieldName = scanner.getFathomField(element, fathomFields);
+      let fathomField = scanner.getFathomField(element, fathomFields);
       
-      if (matchedFieldName) {
-        return infoRecordWithFieldName(matchedFieldName);
+      if (fathomField) {
+        return infoRecordWithFieldName(fathomField);
       }
 
       

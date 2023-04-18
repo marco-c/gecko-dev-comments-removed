@@ -101,23 +101,14 @@ async function run_test(path, dirs) {
             );
           }
 
-          
-          
-          const EXPECTED_NUM_OF_CONFIDENCE = 1;
           for (let i = 0; i < eligibleFields.length; i++) {
-            if (
-              Object.keys(nativeConfidencesKeyedByType[i]).length !=
-              EXPECTED_NUM_OF_CONFIDENCE
-            ) {
+            if (Object.keys(nativeConfidencesKeyedByType[i]).length != 6) {
               ok(
                 false,
                 `Native CC model doesn't get confidence value for all types`
               );
             }
-            if (
-              Object.keys(jsConfidencesKeyedByType[i]).length !=
-              EXPECTED_NUM_OF_CONFIDENCE
-            ) {
+            if (Object.keys(jsConfidencesKeyedByType[i]).length != 6) {
               ok(
                 false,
                 `JS CC model doesn't get confidence value for all types`
