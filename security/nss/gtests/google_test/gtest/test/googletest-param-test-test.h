@@ -32,20 +32,18 @@
 
 
 
-#ifndef GOOGLETEST_TEST_GOOGLETEST_PARAM_TEST_TEST_H_
-#define GOOGLETEST_TEST_GOOGLETEST_PARAM_TEST_TEST_H_
+#ifndef GTEST_TEST_GTEST_PARAM_TEST_TEST_H_
+#define GTEST_TEST_GTEST_PARAM_TEST_TEST_H_
 
 #include "gtest/gtest.h"
 
 
 
-class ExternalInstantiationTest : public ::testing::TestWithParam<int> {
-};
+class ExternalInstantiationTest : public ::testing::TestWithParam<int> {};
 
 
 
 class InstantiationInMultipleTranslationUnitsTest
-    : public ::testing::TestWithParam<int> {
-};
+    : public ::testing::TestWithParam<int> {};
 
 #endif  

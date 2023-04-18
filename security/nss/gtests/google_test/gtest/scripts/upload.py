@@ -14,21 +14,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 """Tool for uploading diffs from a version control system to the codereview app.
 
 Usage summary: upload.py [options] [-- diff_options]

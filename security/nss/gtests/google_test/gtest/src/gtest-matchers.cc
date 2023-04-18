@@ -58,38 +58,38 @@ Matcher<std::string>::Matcher(const std::string& s) { *this = Eq(s); }
 
 Matcher<std::string>::Matcher(const char* s) { *this = Eq(std::string(s)); }
 
-#if GTEST_INTERNAL_HAS_STRING_VIEW
+#if GTEST_HAS_ABSL
 
 
-Matcher<const internal::StringView&>::Matcher(const std::string& s) {
+Matcher<const absl::string_view&>::Matcher(const std::string& s) {
   *this = Eq(s);
 }
 
 
 
-Matcher<const internal::StringView&>::Matcher(const char* s) {
+Matcher<const absl::string_view&>::Matcher(const char* s) {
   *this = Eq(std::string(s));
 }
 
 
 
-Matcher<const internal::StringView&>::Matcher(internal::StringView s) {
+Matcher<const absl::string_view&>::Matcher(absl::string_view s) {
   *this = Eq(std::string(s));
 }
 
 
 
-Matcher<internal::StringView>::Matcher(const std::string& s) { *this = Eq(s); }
+Matcher<absl::string_view>::Matcher(const std::string& s) { *this = Eq(s); }
 
 
 
-Matcher<internal::StringView>::Matcher(const char* s) {
+Matcher<absl::string_view>::Matcher(const char* s) {
   *this = Eq(std::string(s));
 }
 
 
 
-Matcher<internal::StringView>::Matcher(internal::StringView s) {
+Matcher<absl::string_view>::Matcher(absl::string_view s) {
   *this = Eq(std::string(s));
 }
 #endif  
