@@ -35,7 +35,7 @@ NS_IMPL_ISUPPORTS(nsMacUtilsImpl, nsIMacUtils)
 using mozilla::StaticMutexAutoLock;
 using mozilla::Unused;
 
-#if defined(MOZ_SANDBOX)
+#if defined(MOZ_SANDBOX) || defined(__aarch64__)
 StaticAutoPtr<nsCString> nsMacUtilsImpl::sCachedAppPath;
 StaticMutex nsMacUtilsImpl::sCachedAppPathMutex;
 #endif
@@ -139,7 +139,7 @@ nsMacUtilsImpl::GetIsTranslated(bool* aIsTranslated) {
   return NS_OK;
 }
 
-#if defined(MOZ_SANDBOX)
+#if defined(MOZ_SANDBOX) || defined(__aarch64__)
 
 
 
@@ -217,8 +217,9 @@ nsresult nsMacUtilsImpl::ClearCachedAppPathOnShutdown() {
   ClearOnShutdown(&sCachedAppPath);
   return NS_OK;
 }
+#endif 
 
-#  if defined(DEBUG)
+#if defined(MOZ_SANDBOX) && defined(DEBUG)
 
 
 
@@ -255,8 +256,7 @@ nsresult nsMacUtilsImpl::GetDirectoryPath(const char* aPath,
   }
   return NS_OK;
 }
-#  endif 
-#endif   
+#endif 
 
 
 bool nsMacUtilsImpl::IsTCSMAvailable() {
