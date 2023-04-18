@@ -23,6 +23,8 @@ let types = {
   js: "application/x-javascript",
   binary: "application/octet-stream",
   gook: "application/x-gook",
+  zip: "application/zip",
+  json: "application/json",
 };
 
 const PNG_DATA = atob(
@@ -572,12 +574,17 @@ add_task(async function save_links() {
     let filename = PathUtils.filename(download.target.path);
 
     let expectedFilename = expectedItems[idx].filename;
-    if (AppConstants.platform == "win" && idx == 54) {
+    if (AppConstants.platform == "win") {
       
       
       
       
-      expectedFilename += ".txt";
+      if (idx == 54) {
+        expectedFilename += ".txt";
+      } else if (idx == 68) {
+        
+        expectedFilename += ".zip";
+      }
     }
 
     

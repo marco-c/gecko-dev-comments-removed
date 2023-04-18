@@ -579,13 +579,22 @@ static const nsDefaultMimeTypeEntry nonDecodableExtensions[] = {
 
 
 
+
+
+
 static const char* forcedExtensionMimetypes[] = {
-    
-    
-    
-    
     APPLICATION_PDF, APPLICATION_OGG, APPLICATION_WASM,
     TEXT_CALENDAR,   TEXT_CSS,        TEXT_VCARD};
+
+
+
+
+
+
+
+
+static const char* anyExtensionMimetypes[] = {APPLICATION_ZIP, APPLICATION_JSON,
+                                              TEXT_XML};
 
 
 
@@ -3648,6 +3657,16 @@ nsExternalHelperAppService::ShouldModifyExtension(nsIMIMEInfo* aMimeInfo,
   nsAutoCString MIMEType;
   if (!aMimeInfo || NS_FAILED(aMimeInfo->GetMIMEType(MIMEType))) {
     return ModifyExtension_Append;
+  }
+
+  
+  
+  if (!aFileExt.IsEmpty()) {
+    for (const char* mime : anyExtensionMimetypes) {
+      if (MIMEType.Equals(mime)) {
+        return ModifyExtension_Ignore;
+      }
+    }
   }
 
   
