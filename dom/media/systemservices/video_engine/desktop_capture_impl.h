@@ -29,8 +29,10 @@
 #include "rtc_base/deprecated/recursive_critical_section.h"
 
 #include "desktop_device_info.h"
+#include "VideoEngine.h"
 
 using namespace webrtc::videocapturemodule;
+using namespace mozilla::camera;  
 
 namespace rtc {
 #if defined(_WIN32)
