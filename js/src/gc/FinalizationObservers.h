@@ -67,7 +67,7 @@ class FinalizationObservers {
   
   
   using WrapperWeakSet = ObjectValueWeakMap;
-  WrapperWeakSet crossZoneWrappers;
+  WrapperWeakSet crossZoneRecords;
 
   
   
@@ -98,8 +98,8 @@ class FinalizationObservers {
 #endif
 
  private:
-  bool addCrossZoneWrapper(JSObject* wrapper);
-  void removeCrossZoneWrapper(JSObject* wrapper);
+  bool addCrossZoneWrapper(WrapperWeakSet& weakSet, JSObject* wrapper);
+  void removeCrossZoneWrapper(WrapperWeakSet& weakSet, JSObject* wrapper);
 
   static bool shouldRemoveRecord(FinalizationRecordObject* record);
 };
