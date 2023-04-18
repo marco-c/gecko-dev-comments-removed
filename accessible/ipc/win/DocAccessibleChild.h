@@ -14,10 +14,6 @@
 #include "mozilla/mscom/Ptr.h"
 
 namespace mozilla {
-namespace dom {
-class BrowsingContext;
-}
-
 namespace a11y {
 
 
@@ -334,7 +330,11 @@ class DocAccessibleChild : public DocAccessibleChildBase {
 
     DocAccessibleChild* mIPCDoc;
     uint64_t mUniqueID;
-    dom::BrowsingContext* mBrowsingContext;
+    
+    
+    
+    
+    dom::MaybeDiscardedBrowsingContext mBrowsingContext;
     uint32_t mMsaaID;
   };
 
