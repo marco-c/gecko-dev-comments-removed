@@ -96,22 +96,34 @@ function assert_frame_lists_equal(actual, expected) {
 
 
 
-function addDiv(t, attrs) {
-  var div = document.createElement('div');
+
+
+function addElement(t, name, attrs) {
+  var element = document.createElement(name);
   if (attrs) {
     for (var attrName in attrs) {
-      div.setAttribute(attrName, attrs[attrName]);
+      element.setAttribute(attrName, attrs[attrName]);
     }
   }
-  document.body.appendChild(div);
+  document.body.appendChild(element);
   if (t && typeof t.add_cleanup === 'function') {
-    t.add_cleanup(function() {
-      if (div.parentNode) {
-        div.remove();
-      }
-    });
+      t.add_cleanup(() => element.remove());
   }
-  return div;
+  return element;
+}
+
+
+
+
+
+
+
+
+
+
+
+function addDiv(t, attrs) {
+  return addElement(t, "div", attrs);
 }
 
 
