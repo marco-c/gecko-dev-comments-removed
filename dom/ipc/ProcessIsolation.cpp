@@ -546,6 +546,16 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
       resultOrPrecursor = readerURIPrincipal;
     }
     behavior = IsolationBehavior::WebContent;
+    
+    
+    
+    
+    
+    
+    if (mozilla::SessionHistoryInParent() ||
+        aTopBC->Group()->Toplevels().Length() > 1) {
+      options.mReplaceBrowsingContext = true;
+    }
   }
 
   
