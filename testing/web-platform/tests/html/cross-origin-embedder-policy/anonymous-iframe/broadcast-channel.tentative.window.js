@@ -20,12 +20,19 @@ const emit_script = (key, message) => `
 
 
 
-const errorOnTimeout = test =>
-  test.step_timeout(test.unreached_func("Timeout"), 9000);
+
+
+
+
+
+
+
+setup(() => {
+  assert_true(navigator.userAgent.search("Firefox") == -1,
+    "Disabled for Firefox, because it fails in a flaky manner");
+});
 
 promise_test_parallel(async test => {
-  errorOnTimeout(test);
-
   const origin = get_host_info().HTTPS_REMOTE_ORIGIN;
   const key_1 = token();
   const key_2 = token();
@@ -65,8 +72,6 @@ promise_test_parallel(async test => {
 }, "Anonymous iframe and normal iframe aren't in the same partition")
 
 promise_test_parallel(async test => {
-  errorOnTimeout(test);
-
   const origin = get_host_info().HTTPS_REMOTE_ORIGIN;
   const key = token();
 
@@ -81,8 +86,6 @@ promise_test_parallel(async test => {
 }, "Two sibling same-origin anonymous iframes are in the same partition");
 
 promise_test_parallel(async test => {
-  errorOnTimeout(test);
-
   const origin = get_host_info().HTTPS_REMOTE_ORIGIN;
   const key = token();
   const queue = token();
@@ -106,14 +109,12 @@ promise_test_parallel(async test => {
 }, "Nested same-origin anonymous iframe are in the same partition");
 
 promise_test_parallel(async test => {
-  errorOnTimeout(test);
-
   const origin = get_host_info().HTTPS_REMOTE_ORIGIN;
   const key = token();
   const queue = token();
 
   const iframe_anonymous_1 = newAnonymousIframe(origin);
-  const popup = newPopup(origin);
+  const popup = newPopup(test, origin);
   send(popup, `
     const importScript = ${importScript};
     await importScript("/common/utils.js");

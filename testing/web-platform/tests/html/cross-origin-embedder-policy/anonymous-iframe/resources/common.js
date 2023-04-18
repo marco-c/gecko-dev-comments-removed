@@ -22,9 +22,10 @@ const newIframe = (child_origin) => {
 
 
 
-const newPopup = (origin) => {
+const newPopup = (test, origin) => {
   const popup_token = token();
   const popup = window.open(origin + executor_path + `&uuid=${popup_token}`);
+  test.add_cleanup(() => popup.close());
   return popup_token;
 };
 
