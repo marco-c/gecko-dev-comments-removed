@@ -531,11 +531,9 @@ continue_loading:
   return ret;
 }
 
-#if defined(EARLY_BETA_OR_EARLIER)
 
 
 static void* gStartAddressesToBlock[4];
-#endif  
 
 static bool ShouldBlockThread(void* aStartAddress) {
   
@@ -544,13 +542,11 @@ static bool ShouldBlockThread(void* aStartAddress) {
     return false;
   }
 
-#if defined(EARLY_BETA_OR_EARLIER)
   for (auto p : gStartAddressesToBlock) {
     if (p == aStartAddress) {
       return true;
     }
   }
-#endif
 
   bool shouldBlock = false;
   MEMORY_BASIC_INFORMATION startAddressInfo = {0};
@@ -618,7 +614,6 @@ MFBT_API void DllBlocklist_Initialize(uint32_t aInitFlags) {
     }
   }
 
-#if defined(EARLY_BETA_OR_EARLIER)
   
   HMODULE hKernel = GetModuleHandleW(L"kernel32.dll");
   if (hKernel) {
@@ -636,7 +631,6 @@ MFBT_API void DllBlocklist_Initialize(uint32_t aInitFlags) {
     pProc = (void*)GetProcAddress(hKernel, "LoadLibraryExW");
     gStartAddressesToBlock[3] = pProc;
   }
-#endif
 
   if (aInitFlags & eDllBlocklistInitFlagWasBootstrapped) {
     GetNativeNtBlockSetWriter();
