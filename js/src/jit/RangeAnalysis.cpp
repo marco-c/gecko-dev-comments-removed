@@ -2971,6 +2971,7 @@ static TruncateKind ComputeRequestedTruncateKind(MDefinition* candidate,
       false;  
   bool isRecoverableResult = true;  
   bool isImplicitlyUsed = candidate->isImplicitlyUsed();
+  bool hasTryBlock = candidate->block()->graph().hasTryBlock();
 
   TruncateKind kind = TruncateKind::Truncate;
   for (MUseIterator use(candidate->usesBegin()); use != candidate->usesEnd();
@@ -3023,8 +3024,10 @@ static TruncateKind ComputeRequestedTruncateKind(MDefinition* candidate,
   
   
   
+  
+  
   bool safeToConvert = kind == TruncateKind::Truncate && !isImplicitlyUsed &&
-                       !isObservableResult;
+                       !isObservableResult && !hasTryBlock;
 
   
   
