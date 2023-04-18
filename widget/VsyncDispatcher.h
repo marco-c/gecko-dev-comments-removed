@@ -6,7 +6,7 @@
 #ifndef mozilla_widget_VsyncDispatcher_h
 #define mozilla_widget_VsyncDispatcher_h
 
-#include "mozilla/Mutex.h"
+#include "mozilla/DataMutex.h"
 #include "mozilla/TimeStamp.h"
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
@@ -70,6 +70,11 @@ class CompositorVsyncDispatcher final {
 };
 
 
+
+
+
+
+
 class RefreshTimerVsyncDispatcher final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RefreshTimerVsyncDispatcher)
 
@@ -83,10 +88,11 @@ class RefreshTimerVsyncDispatcher final {
 
   
   
+  void AddVsyncObserver(VsyncObserver* aVsyncObserver);
+
   
   
-  void AddChildRefreshTimer(VsyncObserver* aVsyncObserver);
-  void RemoveChildRefreshTimer(VsyncObserver* aVsyncObserver);
+  void RemoveVsyncObserver(VsyncObserver* aVsyncObserver);
 
  private:
   virtual ~RefreshTimerVsyncDispatcher();
@@ -97,8 +103,7 @@ class RefreshTimerVsyncDispatcher final {
   
   
   gfx::VsyncSource::Display* mDisplay;
-  Mutex mRefreshTimersLock;
-  nsTArray<RefPtr<VsyncObserver>> mChildRefreshTimers;
+  DataMutex<nsTArray<RefPtr<VsyncObserver>>> mVsyncObservers;
 };
 
 }  
