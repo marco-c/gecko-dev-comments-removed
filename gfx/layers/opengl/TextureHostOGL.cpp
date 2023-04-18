@@ -20,7 +20,6 @@
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "nsRegion.h"             
 #include "GfxTexturesReporter.h"  
-#include "GLBlitTextureImageHelper.h"
 #include "GeckoProfiler.h"
 
 #ifdef XP_MACOSX

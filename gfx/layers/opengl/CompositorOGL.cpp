@@ -51,7 +51,6 @@
 #include "OGLShaderProgram.h"       
 #include "ScopedGLHelpers.h"
 #include "GLReadTexImageHelper.h"
-#include "GLBlitTextureImageHelper.h"
 #include "HeapCopyOfStackArray.h"
 #include "GLBlitHelper.h"
 #include "mozilla/gfx/Swizzle.h"
@@ -324,8 +323,6 @@ void CompositorOGL::CleanupResources() {
     mGLContext->fDeleteSync(mThisFrameDoneSync);
     mThisFrameDoneSync = nullptr;
   }
-
-  mBlitTextureImageHelper = nullptr;
 
   if (mOwnsGLContext) {
     
@@ -1739,14 +1736,6 @@ void CompositorOGL::MakeCurrent(MakeCurrentFlags aFlags) {
     return;
   }
   mGLContext->MakeCurrent(aFlags & ForceMakeCurrent);
-}
-
-GLBlitTextureImageHelper* CompositorOGL::BlitTextureImageHelper() {
-  if (!mBlitTextureImageHelper) {
-    mBlitTextureImageHelper = MakeUnique<GLBlitTextureImageHelper>(this);
-  }
-
-  return mBlitTextureImageHelper.get();
 }
 
 GLuint CompositorOGL::GetTemporaryTexture(GLenum aTarget, GLenum aUnit) {

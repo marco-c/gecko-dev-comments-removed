@@ -54,7 +54,6 @@ class TextureSourceOGL;
 class BufferTextureHost;
 struct Effect;
 struct EffectChain;
-class GLBlitTextureImageHelper;
 
 
 
@@ -211,8 +210,6 @@ class CompositorOGL final : public Compositor {
     return gfx::SurfaceFormat::R8G8B8A8;
   }
 
-  GLBlitTextureImageHelper* BlitTextureImageHelper();
-
   
 
 
@@ -259,7 +256,6 @@ class CompositorOGL final : public Compositor {
   RefPtr<GLContext> mGLContext;
   bool mOwnsGLContext = true;
   RefPtr<SurfacePoolHandle> mSurfacePoolHandle;
-  UniquePtr<GLBlitTextureImageHelper> mBlitTextureImageHelper;
   gfx::Matrix4x4 mProjMatrix;
   bool mCanRenderToDefaultFramebuffer = true;
 
