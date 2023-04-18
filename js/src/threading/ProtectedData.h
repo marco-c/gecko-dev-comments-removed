@@ -255,7 +255,13 @@ using ContextData = ProtectedDataContextArg<CheckContextLocal, T>;
 
 
 
-enum class AllowedHelperThread { None, GCTask, IonCompile, GCTaskOrIonCompile };
+enum class AllowedHelperThread {
+  None,
+  GCTask,
+  ParseTask,
+  IonCompile,
+  GCTaskOrIonCompile
+};
 
 template <AllowedHelperThread Helper>
 class CheckMainThread {
@@ -276,6 +282,10 @@ using MainThreadOrGCTaskData =
 template <typename T>
 using MainThreadOrIonCompileData =
     ProtectedDataNoCheckArgs<CheckMainThread<AllowedHelperThread::IonCompile>,
+                             T>;
+template <typename T>
+using MainThreadOrParseData =
+    ProtectedDataNoCheckArgs<CheckMainThread<AllowedHelperThread::ParseTask>,
                              T>;
 
 template <AllowedHelperThread Helper>
