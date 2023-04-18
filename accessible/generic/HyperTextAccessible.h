@@ -173,20 +173,13 @@ class HyperTextAccessible : public AccessibleWrap,
 
   int32_t OffsetAtPoint(int32_t aX, int32_t aY, uint32_t aCoordType);
 
-  
-
-
-
   LayoutDeviceIntRect TextBounds(
       int32_t aStartOffset, int32_t aEndOffset,
       uint32_t aCoordType =
-          nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE);
+          nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE) override;
 
-  
-
-
-
-  LayoutDeviceIntRect CharBounds(int32_t aOffset, uint32_t aCoordType) {
+  LayoutDeviceIntRect CharBounds(int32_t aOffset,
+                                 uint32_t aCoordType) override {
     int32_t endOffset = aOffset == static_cast<int32_t>(CharacterCount())
                             ? aOffset
                             : aOffset + 1;

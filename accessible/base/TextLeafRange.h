@@ -58,6 +58,8 @@ class TextLeafPoint final {
 
   bool operator<(const TextLeafPoint& aPoint) const;
 
+  bool operator<=(const TextLeafPoint& aPoint) const;
+
   
 
 
@@ -145,6 +147,14 @@ class TextLeafPoint final {
                                    bool aIncludeOrigin = false,
                                    const AccAttributes* aOriginAttrs = nullptr,
                                    bool aIncludeDefaults = true) const;
+
+  
+
+
+
+
+
+  LayoutDeviceIntRect CharBounds();
 
   bool IsLineFeedChar() const { return GetChar() == '\n'; }
 
