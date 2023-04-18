@@ -1022,10 +1022,7 @@ static bool ToIntlMathematicalValue(JSContext* cx, MutableHandleValue value,
   }
 
   
-  double number;
-  if (!StringToNumber(cx, str, &number)) {
-    return false;
-  }
+  double number = LinearStringToNumber(str);
   if (numberApproximation) {
     *numberApproximation = number;
   }

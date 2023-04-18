@@ -199,12 +199,7 @@ double CharsToNumber(const CharT* chars, size_t length);
                                              double* result);
 
 
-
-
-
-
-[[nodiscard]] extern bool MaybeStringToNumber(JSLinearString* str,
-                                              double* result);
+extern double LinearStringToNumber(JSLinearString* str);
 
 
 [[nodiscard]] MOZ_ALWAYS_INLINE bool ToNumber(JSContext* cx,
