@@ -1017,7 +1017,6 @@
     get allTabs() {
       let children = Array.from(this.arrowScrollbox.children);
       children.pop();
-      children.pop();
       return children;
     }
 
@@ -1033,7 +1032,7 @@
       let { arrowScrollbox } = this;
       if (node == null) {
         
-        node = arrowScrollbox.lastChild.previousSibling;
+        node = arrowScrollbox.lastChild;
       }
       return arrowScrollbox.insertBefore(tab, node);
     }
