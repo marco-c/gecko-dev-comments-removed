@@ -258,6 +258,9 @@ class ScriptLoadRequest
   nsresult GetScriptSource(JSContext* aCx, MaybeSourceText* aMaybeSource);
 
   
+  void GetProfilerLabel(nsACString& aOutString);
+
+  
   void SetIsPreloadRequest() {
     MOZ_ASSERT(!GetScriptElement());
     MOZ_ASSERT(!IsPreload());
