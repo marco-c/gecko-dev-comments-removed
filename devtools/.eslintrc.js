@@ -393,4 +393,9 @@ module.exports = {
     
     "operator-assignment": "off",
   },
+  settings: {
+    react: {
+      version: "16.8",
+    },
+  },
 };
