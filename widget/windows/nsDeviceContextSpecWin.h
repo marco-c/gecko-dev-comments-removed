@@ -67,7 +67,6 @@ class nsDeviceContextSpecWin : public nsIDeviceContextSpec {
   nsString mDeviceName;
   LPDEVMODEW mDevMode = nullptr;
 
-  nsCOMPtr<nsIPrintSettings> mPrintSettings;
   int16_t mOutputFormat = nsIPrintSettings::kOutputFormatNative;
 
   

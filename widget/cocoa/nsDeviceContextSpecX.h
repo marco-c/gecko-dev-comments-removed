@@ -37,10 +37,10 @@ class nsDeviceContextSpecX : public nsIDeviceContextSpec {
   virtual ~nsDeviceContextSpecX();
 
  protected:
-  PMPrintSession mPrintSession = nullptr;    
-  PMPageFormat mPageFormat = nullptr;        
-  PMPrintSettings mPrintSettings = nullptr;  
-  nsCOMPtr<nsIOutputStream> mOutputStream;   
+  PMPrintSession mPrintSession = nullptr;
+  PMPageFormat mPageFormat = nullptr;
+  PMPrintSettings mPMPrintSettings = nullptr;
+  nsCOMPtr<nsIOutputStream> mOutputStream;  
 #ifdef MOZ_ENABLE_SKIA_PDF
   
   nsCOMPtr<nsIFile> mTempFile;
