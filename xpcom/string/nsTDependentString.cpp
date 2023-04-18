@@ -4,6 +4,8 @@
 
 
 
+#include "nsTDependentString.h"
+
 template <typename T>
 nsTDependentString<T>::nsTDependentString(const char_type* aStart,
                                           const char_type* aEnd)
