@@ -585,6 +585,8 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
     return nullptr;
   }
 
+  virtual bool IsWrappingBufferTextureHost() { return false; }
+
   
   
   virtual void CreateRenderTexture(
@@ -770,6 +772,8 @@ class BufferTextureHost : public TextureHost {
   }
 
   BufferTextureHost* AsBufferTextureHost() override { return this; }
+
+  bool IsWrappingBufferTextureHost() override { return true; }
 
   const BufferDescriptor& GetBufferDescriptor() const { return mDescriptor; }
 

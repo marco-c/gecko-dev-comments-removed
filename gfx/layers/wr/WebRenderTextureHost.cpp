@@ -68,7 +68,7 @@ wr::ExternalImageId WebRenderTextureHost::GetExternalImageKey() {
 bool WebRenderTextureHost::IsValid() { return mWrappedTextureHost->IsValid(); }
 
 void WebRenderTextureHost::UnbindTextureSource() {
-  if (mWrappedTextureHost->AsBufferTextureHost()) {
+  if (mWrappedTextureHost->IsWrappingBufferTextureHost()) {
     mWrappedTextureHost->UnbindTextureSource();
   }
   
@@ -114,9 +114,13 @@ void WebRenderTextureHost::MaybeNotifyForUse(wr::TransactionBuilder& aTxn) {
 #endif
 }
 
+bool WebRenderTextureHost::IsWrappingBufferTextureHost() {
+  return mWrappedTextureHost->IsWrappingBufferTextureHost();
+}
+
 void WebRenderTextureHost::PrepareForUse() {
   if (mWrappedTextureHost->AsSurfaceTextureHost() ||
-      mWrappedTextureHost->AsBufferTextureHost()) {
+      mWrappedTextureHost->IsWrappingBufferTextureHost()) {
     
     
     wr::RenderThread::Get()->PrepareForUse(GetExternalImageKey());

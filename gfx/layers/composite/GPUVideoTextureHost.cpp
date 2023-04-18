@@ -55,14 +55,6 @@ TextureHost* GPUVideoTextureHost::EnsureWrappedTextureHost() {
     return nullptr;
   }
 
-  if (mWrappedTextureHost->AsBufferTextureHost()) {
-    
-    
-    
-    
-    mWrappedTextureHost->AsBufferTextureHost()->DisableExternalTextures();
-  }
-
   if (mExternalImageId.isSome()) {
     
     mWrappedTextureHost->EnsureRenderTexture(Nothing());
@@ -205,6 +197,13 @@ void GPUVideoTextureHost::NotifyNotUsed() {
     EnsureWrappedTextureHost()->NotifyNotUsed();
   }
   TextureHost::NotifyNotUsed();
+}
+
+bool GPUVideoTextureHost::IsWrappingBufferTextureHost() {
+  if (EnsureWrappedTextureHost()) {
+    return EnsureWrappedTextureHost()->IsWrappingBufferTextureHost();
+  }
+  return false;
 }
 
 }  
