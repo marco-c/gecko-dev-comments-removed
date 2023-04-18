@@ -3,9 +3,11 @@
 
 import copy
 
+from taskgraph.util.attributes import keymatch
+
 import gecko_taskgraph
 from gecko_taskgraph.transforms.base import TransformSequence
-from gecko_taskgraph.util.attributes import keymatch, is_try
+from gecko_taskgraph.util.attributes import is_try
 from gecko_taskgraph.util.chunking import (
     chunk_manifests,
     get_manifest_loader,

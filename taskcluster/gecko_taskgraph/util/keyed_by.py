@@ -3,7 +3,7 @@
 
 
 
-from .attributes import keymatch
+from taskgraph.util.attributes import keymatch
 
 
 def evaluate_keyed_by(

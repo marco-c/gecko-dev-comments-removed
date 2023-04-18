@@ -5,7 +5,7 @@
 
 import re
 
-from .attributes import keymatch
+from taskgraph.util.attributes import keymatch
 
 
 
