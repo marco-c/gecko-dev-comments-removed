@@ -7,9 +7,7 @@
 
 const { WorkersListener } = require("devtools/client/shared/workers-listener");
 
-const {
-  LegacyWorkersWatcher,
-} = require("devtools/shared/commands/target/legacy-target-watchers/legacy-workers-watcher");
+const LegacyWorkersWatcher = require("devtools/shared/commands/target/legacy-target-watchers/legacy-workers-watcher");
 
 class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
   
@@ -317,4 +315,4 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
   }
 }
 
-module.exports = { LegacyServiceWorkersWatcher };
+module.exports = LegacyServiceWorkersWatcher;

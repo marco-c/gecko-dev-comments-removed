@@ -4,9 +4,7 @@
 
 "use strict";
 
-const {
-  LegacyWorkersWatcher,
-} = require("devtools/shared/commands/target/legacy-target-watchers/legacy-workers-watcher");
+const LegacyWorkersWatcher = require("devtools/shared/commands/target/legacy-target-watchers/legacy-workers-watcher");
 
 class LegacySharedWorkersWatcher extends LegacyWorkersWatcher {
   
@@ -18,4 +16,4 @@ class LegacySharedWorkersWatcher extends LegacyWorkersWatcher {
   }
 }
 
-module.exports = { LegacySharedWorkersWatcher };
+module.exports = LegacySharedWorkersWatcher;
