@@ -220,8 +220,8 @@ void NotifyWakeLockChange(const hal::WakeLockInformation& aWakeLockInfo);
 
 
 
-[[nodiscard]] RefPtr<mozilla::MozPromise<bool, bool, false>>
-LockScreenOrientation(const hal::ScreenOrientation& aOrientation);
+[[nodiscard]] RefPtr<GenericNonExclusivePromise> LockScreenOrientation(
+    const hal::ScreenOrientation& aOrientation);
 
 
 

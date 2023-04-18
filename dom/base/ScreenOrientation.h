@@ -74,7 +74,7 @@ class ScreenOrientation final : public DOMEventTargetHelper {
 
   
   
-  RefPtr<MozPromise<bool, bool, false>> LockDeviceOrientation(
+  RefPtr<GenericNonExclusivePromise> LockDeviceOrientation(
       hal::ScreenOrientation aOrientation, bool aIsFullscreen);
 
   
