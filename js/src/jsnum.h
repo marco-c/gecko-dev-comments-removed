@@ -190,8 +190,7 @@ template <typename CharT>
                                      const CharT* end, double* dp);
 
 template <typename CharT>
-bool CharsToNumber(JSContext* cx, const CharT* chars, size_t length,
-                   double* result);
+double CharsToNumber(const CharT* chars, size_t length);
 
 [[nodiscard]] extern bool StringToNumber(JSContext* cx, JSString* str,
                                          double* result);
@@ -256,13 +255,9 @@ bool ToInt32OrBigIntSlow(JSContext* cx, JS::MutableHandleValue vp);
 
 
 
-
-
-
 template <typename CharT>
-[[nodiscard]] extern bool js_strtod(JSContext* cx, const CharT* begin,
-                                    const CharT* end, const CharT** dEnd,
-                                    double* d);
+[[nodiscard]] extern double js_strtod(const CharT* begin, const CharT* end,
+                                      const CharT** dEnd);
 
 namespace js {
 
@@ -271,14 +266,12 @@ namespace js {
 
 
 template <typename CharT>
-[[nodiscard]] extern bool FullStringToDouble(JSContext* cx, const CharT* begin,
-                                             const CharT* end, double* d) {
+[[nodiscard]] extern double FullStringToDouble(const CharT* begin,
+                                               const CharT* end) {
   decltype(ToRawChars(begin)) realEnd;
-  if (js_strtod(cx, ToRawChars(begin), ToRawChars(end), &realEnd, d)) {
-    MOZ_ASSERT(end == static_cast<const void*>(realEnd));
-    return true;
-  }
-  return false;
+  double d = js_strtod(ToRawChars(begin), ToRawChars(end), &realEnd);
+  MOZ_ASSERT(end == static_cast<const void*>(realEnd));
+  return d;
 }
 
 [[nodiscard]] extern bool ThisNumberValueForToLocaleString(JSContext* cx,
