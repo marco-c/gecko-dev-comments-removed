@@ -1284,7 +1284,7 @@ const gCSSProperties2 = {
   'text-emphasis-position': {
     
     types: [
-      { type: 'discrete', options: [ [ 'over right', 'under left' ] ] }
+      { type: 'discrete', options: [ [ 'over', 'under left' ] ] }
     ]
   },
   'text-emphasis-style': {
