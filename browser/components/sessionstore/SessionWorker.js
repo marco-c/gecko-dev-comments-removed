@@ -10,13 +10,9 @@
 
 "use strict";
 
-importScripts("resource://gre/modules/osfile.jsm");
+importScripts("resource://gre/modules/workers/require.js");
 
 var PromiseWorker = require("resource://gre/modules/workers/PromiseWorker.js");
-
-var File = OS.File;
-var Encoder = new TextEncoder();
-var Decoder = new TextDecoder();
 
 var worker = new PromiseWorker.AbstractWorker();
 worker.dispatch = function(method, args = []) {
@@ -67,7 +63,50 @@ const STATE_UPGRADE_BACKUP = "upgradeBackup";
 
 const STATE_EMPTY = "empty";
 
+var sessionFileIOMutex = Promise.resolve();
+
+
+
+
+
+
+function lockIOWithMutex() {
+  
+  return new Promise(unlock => {
+    
+    
+    
+    sessionFileIOMutex = sessionFileIOMutex.then(() => {
+      return new Promise(unlock);
+    });
+  });
+}
+
 var Agent = {
+  init(origin, useOldExtension, paths, prefs = {}) {
+    return SessionWorkerInternal.init(origin, useOldExtension, paths, prefs);
+  },
+
+  async write(state, options = {}) {
+    const unlock = await lockIOWithMutex();
+    try {
+      return await SessionWorkerInternal.write(state, options);
+    } finally {
+      unlock();
+    }
+  },
+
+  async wipe() {
+    const unlock = await lockIOWithMutex();
+    try {
+      return await SessionWorkerInternal.wipe();
+    } finally {
+      unlock();
+    }
+  },
+};
+
+var SessionWorkerInternal = {
   
   Paths: null,
 
@@ -101,7 +140,7 @@ var Agent = {
 
 
 
-  init(origin, useOldExtension, paths, prefs = {}) {
+  init(origin, useOldExtension, paths, prefs) {
     if (!(origin in paths || origin == STATE_EMPTY)) {
       throw new TypeError("Invalid origin: " + origin);
     }
@@ -140,7 +179,7 @@ var Agent = {
 
 
 
-  write(state, options = {}) {
+  async write(state, options) {
     let exn;
     let telemetry = {};
 
@@ -164,29 +203,26 @@ var Agent = {
       }
     }
 
-    let stateString = JSON.stringify(state);
-    let data = Encoder.encode(stateString);
-
     try {
       if (this.state == STATE_CLEAN || this.state == STATE_EMPTY) {
         
         
         
-        File.makeDir(this.Paths.backups);
+        await IOUtils.makeDirectory(this.Paths.backups);
       }
 
       if (this.state == STATE_CLEAN) {
         
         
         if (!this.useOldExtension) {
-          File.move(this.Paths.clean, this.Paths.cleanBackup);
+          await IOUtils.move(this.Paths.clean, this.Paths.cleanBackup);
         } else {
           
           
           
           let oldCleanPath = this.Paths.clean.replace("jsonlz4", "js");
-          let d = File.read(oldCleanPath);
-          File.writeAtomic(this.Paths.cleanBackup, d, { compression: "lz4" });
+          let d = await IOUtils.read(oldCleanPath);
+          await IOUtils.write(this.Paths.cleanBackup, d, { compress: true });
         }
       }
 
@@ -199,11 +235,11 @@ var Agent = {
         
         
         
-        File.writeAtomic(this.Paths.clean, data, {
+        await IOUtils.writeJSON(this.Paths.clean, state, {
           tmpPath: this.Paths.clean + ".tmp",
-          compression: "lz4",
+          compress: true,
         });
-        fileStat = File.stat(this.Paths.clean);
+        fileStat = await IOUtils.stat(this.Paths.clean);
       } else if (this.state == STATE_RECOVERY) {
         
         
@@ -211,21 +247,21 @@ var Agent = {
         
         
         
-        File.writeAtomic(this.Paths.recovery, data, {
+        await IOUtils.writeJSON(this.Paths.recovery, state, {
           tmpPath: this.Paths.recovery + ".tmp",
-          backupTo: this.Paths.recoveryBackup,
-          compression: "lz4",
+          backupFile: this.Paths.recoveryBackup,
+          compress: true,
         });
-        fileStat = File.stat(this.Paths.recovery);
+        fileStat = await IOUtils.stat(this.Paths.recovery);
       } else {
         
         
         
-        File.writeAtomic(this.Paths.recovery, data, {
+        await IOUtils.writeJSON(this.Paths.recovery, state, {
           tmpPath: this.Paths.recovery + ".tmp",
-          compression: "lz4",
+          compress: true,
         });
-        fileStat = File.stat(this.Paths.recovery);
+        fileStat = await IOUtils.stat(this.Paths.recovery);
       }
 
       telemetry.FX_SESSION_RESTORE_WRITE_FILE_MS = Date.now() - startWriteMs;
@@ -247,7 +283,7 @@ var Agent = {
           this.state == STATE_CLEAN
             ? this.Paths.cleanBackup
             : this.Paths.upgradeBackup;
-        File.copy(path, this.Paths.nextUpgradeBackup);
+        await IOUtils.copy(path, this.Paths.nextUpgradeBackup);
         this.upgradeBackupNeeded = false;
         upgradeBackupComplete = true;
       } catch (ex) {
@@ -256,35 +292,30 @@ var Agent = {
       }
 
       
-      let iterator;
-      let backups = []; 
-      let upgradeBackupPrefix = this.Paths.upgradeBackupPrefix; 
+      let backups = [];
 
       try {
-        iterator = new File.DirectoryIterator(this.Paths.backups);
-        iterator.forEach(function(file) {
-          if (file.path.startsWith(upgradeBackupPrefix)) {
-            backups.push(file.path);
-          }
-        }, this);
+        let children = await IOUtils.getChildren(this.Paths.backups);
+        backups = children.filter(path =>
+          path.startsWith(this.Paths.upgradeBackupPrefix)
+        );
       } catch (ex) {
         
         exn = exn || ex;
-      } finally {
-        if (iterator) {
-          iterator.close();
-        }
       }
 
       
       if (backups.length > this.maxUpgradeBackups) {
         
-        backups.sort().forEach((file, i) => {
-          
-          if (i < backups.length - this.maxUpgradeBackups) {
-            File.remove(file);
+        backups.sort();
+        
+        for (let i = 0; i < backups.length - this.maxUpgradeBackups; i++) {
+          try {
+            await IOUtils.remove(backups[i]);
+          } catch (ex) {
+            exn = exn || ex;
           }
-        });
+        }
       }
     }
 
@@ -296,8 +327,8 @@ var Agent = {
 
       
       
-      File.remove(this.Paths.recoveryBackup);
-      File.remove(this.Paths.recovery);
+      await IOUtils.remove(this.Paths.recoveryBackup);
+      await IOUtils.remove(this.Paths.recovery);
     }
 
     this.state = STATE_RECOVERY;
@@ -317,15 +348,16 @@ var Agent = {
   
 
 
-  wipe() {
+  async wipe() {
     
     let exn = null;
 
     
     try {
-      File.remove(this.Paths.clean);
+      await IOUtils.remove(this.Paths.clean);
       
-      File.remove(this.Paths.clean.replace("jsonlz4", "js"), {
+      let oldCleanPath = this.Paths.clean.replace("jsonlz4", "js");
+      await IOUtils.remove(oldCleanPath, {
         ignoreAbsent: true,
       });
     } catch (ex) {
@@ -335,20 +367,15 @@ var Agent = {
 
     
     try {
-      this._wipeFromDir(this.Paths.backups, null);
-    } catch (ex) {
-      exn = exn || ex;
-    }
-
-    try {
-      File.removeDir(this.Paths.backups);
+      await IOUtils.remove(this.Paths.backups, { recursive: true });
     } catch (ex) {
       exn = exn || ex;
     }
 
     
     try {
-      this._wipeFromDir(OS.Constants.Path.profileDir, "sessionstore.bak");
+      let profileDir = await PathUtils.getProfileDir();
+      await this._wipeFromDir(profileDir, "sessionstore.bak");
     } catch (ex) {
       exn = exn || ex;
     }
@@ -368,50 +395,35 @@ var Agent = {
 
 
 
-  _wipeFromDir(path, prefix) {
+  async _wipeFromDir(path, prefix) {
     
-    if (typeof prefix == "undefined" || prefix == "") {
-      throw new TypeError();
+    if (!prefix) {
+      throw new TypeError("Must supply prefix");
     }
 
     let exn = null;
 
-    let iterator = new File.DirectoryIterator(path);
-    try {
-      if (!iterator.exists()) {
-        return;
+    let children = await IOUtils.getChildren(path, {
+      ignoreAbsent: true,
+    });
+    for (let entryPath of children) {
+      if (!PathUtils.filename(entryPath).startsWith(prefix)) {
+        continue;
       }
-      for (let entry of iterator) {
-        if (entry.isDir) {
+      try {
+        let { type } = await IOUtils.stat(entryPath);
+        if (type == "directory") {
           continue;
         }
-        if (!prefix || entry.name.startsWith(prefix)) {
-          try {
-            File.remove(entry.path);
-          } catch (ex) {
-            
-            exn = exn || ex;
-          }
-        }
+        await IOUtils.remove(entryPath);
+      } catch (ex) {
+        
+        exn = exn || ex;
       }
+    }
 
-      if (exn) {
-        throw exn;
-      }
-    } finally {
-      iterator.close();
+    if (exn) {
+      throw exn;
     }
   },
 };
-
-function isNoSuchFileEx(aReason) {
-  return aReason instanceof OS.File.Error && aReason.becauseNoSuchFile;
-}
-
-
-
-
-
-function getByteLength(str) {
-  return Encoder.encode(JSON.stringify(str)).byteLength;
-}
