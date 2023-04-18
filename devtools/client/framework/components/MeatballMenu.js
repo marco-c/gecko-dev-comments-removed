@@ -81,6 +81,8 @@ class MeatballMenu extends PureComponent {
       toggleNoAutohide: PropTypes.func,
 
       
+      
+      
       L10N: PropTypes.object.isRequired,
 
       
@@ -122,22 +124,22 @@ class MeatballMenu extends PureComponent {
     for (const hostType of this.props.hostTypes) {
       
       
-      let l10nkey;
+      let l10nID;
       switch (hostType.position) {
         case "window":
-          l10nkey = "toolbox.meatballMenu.dock.separateWindow.label";
+          l10nID = "toolbox-meatball-menu-dock-separate-window-label";
           break;
 
         case "bottom":
-          l10nkey = "toolbox.meatballMenu.dock.bottom.label";
+          l10nID = "toolbox-meatball-menu-dock-bottom-label";
           break;
 
         case "left":
-          l10nkey = "toolbox.meatballMenu.dock.left.label";
+          l10nID = "toolbox-meatball-menu-dock-left-label";
           break;
 
         case "right":
-          l10nkey = "toolbox.meatballMenu.dock.right.label";
+          l10nID = "toolbox-meatball-menu-dock-right-label";
           break;
 
         default:
@@ -149,7 +151,7 @@ class MeatballMenu extends PureComponent {
         MenuItem({
           id: `toolbox-meatball-menu-dock-${hostType.position}`,
           key: `dock-${hostType.position}`,
-          label: this.props.L10N.getStr(l10nkey),
+          l10nID,
           onClick: hostType.switchHost,
           checked: hostType.position === this.props.currentHostType,
           className: "iconic",
@@ -163,14 +165,14 @@ class MeatballMenu extends PureComponent {
 
     
     if (this.props.currentToolId !== "webconsole") {
-      const l10nkey = this.props.isSplitConsoleActive
-        ? "toolbox.meatballMenu.hideconsole.label"
-        : "toolbox.meatballMenu.splitconsole.label";
+      const l10nID = this.props.isSplitConsoleActive
+        ? "toolbox-meatball-menu-hideconsole-label"
+        : "toolbox-meatball-menu-splitconsole-label";
       items.push(
         MenuItem({
           id: "toolbox-meatball-menu-splitconsole",
           key: "splitconsole",
-          label: this.props.L10N.getStr(l10nkey),
+          l10nID,
           accelerator: "Esc",
           onClick: this.props.toggleSplitConsole,
           className: "iconic",
@@ -187,9 +189,7 @@ class MeatballMenu extends PureComponent {
         MenuItem({
           id: "toolbox-meatball-menu-noautohide",
           key: "noautohide",
-          label: this.props.L10N.getStr(
-            "toolbox.meatballMenu.noautohide.label"
-          ),
+          l10nID: "toolbox-meatball-menu-noautohide-label",
           type: "checkbox",
           checked: this.props.disableAutohide,
           onClick: this.props.toggleNoAutohide,
@@ -203,7 +203,9 @@ class MeatballMenu extends PureComponent {
       MenuItem({
         id: "toolbox-meatball-menu-settings",
         key: "settings",
-        label: this.props.L10N.getStr("toolbox.meatballMenu.settings.label"),
+        l10nID: "toolbox-meatball-menu-settings-label",
+        
+        
         accelerator: this.props.L10N.getStr("toolbox.help.key"),
         onClick: this.props.toggleOptions,
         className: "iconic",
@@ -217,9 +219,7 @@ class MeatballMenu extends PureComponent {
       MenuItem({
         id: "toolbox-meatball-menu-documentation",
         key: "documentation",
-        label: this.props.L10N.getStr(
-          "toolbox.meatballMenu.documentation.label"
-        ),
+        l10nID: "toolbox-meatball-menu-documentation-label",
         onClick: openDevToolsDocsLink,
       })
     );
@@ -229,7 +229,7 @@ class MeatballMenu extends PureComponent {
       MenuItem({
         id: "toolbox-meatball-menu-community",
         key: "community",
-        label: this.props.L10N.getStr("toolbox.meatballMenu.community.label"),
+        l10nID: "toolbox-meatball-menu-community-label",
         onClick: openCommunityLink,
       })
     );
