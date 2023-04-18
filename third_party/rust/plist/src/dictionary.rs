@@ -72,6 +72,27 @@ impl Dictionary {
 
     
     
+    #[inline]
+    pub fn retain<F>(&mut self, keep: F)
+    where
+        F: FnMut(&String, &mut Value) -> bool,
+    {
+        self.map.retain(keep)
+    }
+
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn sort_keys(&mut self) {
+        self.map.sort_keys()
+    }
+
+    
+    
     
     #[cfg(any(
         test,
