@@ -33,18 +33,6 @@ using DTSC = DoubleToStringConverter;
 
 
 
-
-#ifdef HAVE_VA_COPY
-#  define VARARGS_ASSIGN(foo, bar) VA_COPY(foo, bar)
-#elif defined(HAVE_VA_LIST_AS_ARRAY)
-#  define VARARGS_ASSIGN(foo, bar) foo[0] = bar[0]
-#else
-#  define VARARGS_ASSIGN(foo, bar) (foo) = (bar)
-#endif
-
-
-
-
 struct NumArgState {
   int type;    
   va_list ap;  
@@ -654,7 +642,7 @@ static bool BuildArgArray(const char* fmt, va_list ap, NumArgStateVector& nas) {
     
     MOZ_ASSERT(nas[cn].type != TYPE_UNKNOWN);
 
-    VARARGS_ASSIGN(nas[cn].ap, ap);
+    va_copy(nas[cn].ap, ap);
 
     switch (nas[cn].type) {
       case TYPE_SCHAR:
