@@ -54,8 +54,6 @@ var PREF_EM_CHECK_COMPATIBILITY = MOZ_COMPATIBILITY_NIGHTLY
   ? PREF_EM_CHECK_COMPATIBILITY_BASE + ".nightly"
   : undefined;
 
-const VALID_TYPES_REGEXP = /^[\w\-]+$/;
-
 const WEBAPI_INSTALL_HOSTS = ["addons.mozilla.org"];
 const WEBAPI_TEST_INSTALL_HOSTS = [
   "addons.allizom.org",
@@ -467,59 +465,6 @@ AddonScreenshot.prototype = {
   },
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function AddonType(aID, aLocaleURI, aLocaleKey, aViewType, aUIPriority) {
-  if (!aID) {
-    throw Components.Exception(
-      "An AddonType must have an ID",
-      Cr.NS_ERROR_INVALID_ARG
-    );
-  }
-
-  if (aViewType && aUIPriority === undefined) {
-    throw Components.Exception(
-      "An AddonType with a defined view must have a set UI priority",
-      Cr.NS_ERROR_INVALID_ARG
-    );
-  }
-
-  if (!aLocaleKey) {
-    throw Components.Exception(
-      "An AddonType must have a displayable name",
-      Cr.NS_ERROR_INVALID_ARG
-    );
-  }
-
-  this.id = aID;
-  this.uiPriority = aUIPriority;
-  this.viewType = aViewType;
-
-  if (aLocaleURI) {
-    XPCOMUtils.defineLazyGetter(this, "name", () => {
-      let bundle = Services.strings.createBundle(aLocaleURI);
-      return bundle.GetStringFromName(aLocaleKey);
-    });
-  } else {
-    this.name = aLocaleKey;
-  }
-}
-
 var gStarted = false;
 var gStartupComplete = false;
 var gCheckCompatibility = true;
@@ -550,7 +495,7 @@ var AddonManagerInternal = {
   pendingProviders: new Set(),
   providers: new Set(),
   providerShutdowns: new Map(),
-  types: {},
+  typesByProvider: new Map(),
   startupChanges: {},
   
   telemetryDetails: {},
@@ -857,21 +802,7 @@ var AddonManagerInternal = {
     this.pendingProviders.add(aProvider);
 
     if (aTypes) {
-      for (let type of aTypes) {
-        if (!(type.id in this.types)) {
-          if (!VALID_TYPES_REGEXP.test(type.id)) {
-            logger.warn("Ignoring invalid type " + type.id);
-            return;
-          }
-
-          this.types[type.id] = {
-            type,
-            providers: [aProvider],
-          };
-        } else {
-          this.types[type.id].providers.push(aProvider);
-        }
-      }
+      this.typesByProvider.set(aProvider, new Set(aTypes));
     }
 
     
@@ -903,14 +834,7 @@ var AddonManagerInternal = {
     
     this.pendingProviders.delete(aProvider);
 
-    for (let type in this.types) {
-      this.types[type].providers = this.types[type].providers.filter(
-        p => p != aProvider
-      );
-      if (!this.types[type].providers.length) {
-        delete this.types[type];
-      }
-    }
+    this.typesByProvider.delete(aProvider);
 
     
     
@@ -2933,56 +2857,25 @@ var AddonManagerInternal = {
     this.addonListeners.delete(aListener);
   },
 
-  get addonTypes() {
-    
-    return new Proxy(this.types, {
-      defineProperty(target, property, descriptor) {
-        
-        return false;
-      },
+  
 
-      deleteProperty(target, property) {
-        
-        return false;
-      },
 
-      get(target, property, receiver) {
-        if (!target.hasOwnProperty(property)) {
-          return undefined;
-        }
 
-        return target[property].type;
-      },
 
-      getOwnPropertyDescriptor(target, property) {
-        if (!target.hasOwnProperty(property)) {
-          return undefined;
-        }
+  hasAddonType(addonType) {
+    if (!gStarted) {
+      throw Components.Exception(
+        "AddonManager is not initialized",
+        Cr.NS_ERROR_NOT_INITIALIZED
+      );
+    }
 
-        return {
-          value: target[property].type,
-          writable: false,
-          
-          configurable: true,
-          enumerable: true,
-        };
-      },
-
-      preventExtensions(target) {
-        
-        return false;
-      },
-
-      set(target, property, value, receiver) {
-        
-        return false;
-      },
-
-      setPrototypeOf(target, prototype) {
-        
-        return false;
-      },
-    });
+    for (let addonTypes of this.typesByProvider.values()) {
+      if (addonTypes.has(addonType)) {
+        return true;
+      }
+    }
+    return false;
   },
 
   get autoUpdateDefault() {
@@ -3578,8 +3471,6 @@ var AddonManagerPrivate = {
 
   AddonScreenshot,
 
-  AddonType,
-
   get BOOTSTRAP_REASONS() {
     return AddonManagerInternal._getProviderByName("XPIProvider")
       .BOOTSTRAP_REASONS;
@@ -3888,9 +3779,6 @@ var AddonManager = {
   SCOPE_ALL: 31,
 
   
-  VIEW_TYPE_LIST: "list",
-
-  
   
   AUTOUPDATE_DISABLE: 0,
   
@@ -4131,8 +4019,8 @@ var AddonManager = {
     return AddonManagerInternal.removeUpgradeListener(aInstanceID);
   },
 
-  addExternalExtensionLoader(types, loader) {
-    return AddonManagerInternal.addExternalExtensionLoader(types, loader);
+  addExternalExtensionLoader(loader) {
+    return AddonManagerInternal.addExternalExtensionLoader(loader);
   },
 
   addAddonListener(aListener) {
@@ -4143,8 +4031,8 @@ var AddonManager = {
     AddonManagerInternal.removeAddonListener(aListener);
   },
 
-  get addonTypes() {
-    return AddonManagerInternal.addonTypes;
+  hasAddonType(addonType) {
+    return AddonManagerInternal.hasAddonType(addonType);
   },
 
   

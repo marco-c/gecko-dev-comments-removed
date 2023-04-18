@@ -87,9 +87,6 @@ const PREF_EM_LAST_APP_BUILD_ID = "extensions.lastAppBuildId";
 
 const BUILT_IN_ADDONS_URI = "chrome://browser/content/built_in_addons.json";
 
-const URI_EXTENSION_STRINGS =
-  "chrome://mozapps/locale/extensions/extensions.properties";
-
 const DIR_EXTENSIONS = "extensions";
 const DIR_SYSTEM_ADDONS = "features";
 const DIR_APP_SYSTEM_PROFILE = "system-extensions";
@@ -170,7 +167,12 @@ const BOOTSTRAP_REASONS = {
 
 
 
-const ALL_EXTERNAL_TYPES = new Set([
+
+
+
+
+
+const ALL_XPI_TYPES = new Set([
   "dictionary",
   "extension",
   "locale",
@@ -3173,7 +3175,7 @@ var XPIProvider = {
   },
 
   async getAddonsByTypes(aTypes) {
-    if (aTypes && !aTypes.some(type => ALL_EXTERNAL_TYPES.has(type))) {
+    if (aTypes && !aTypes.some(type => ALL_XPI_TYPES.has(type))) {
       return [];
     }
     return XPIDatabase.getAddonsByTypes(aTypes);
@@ -3301,42 +3303,4 @@ var XPIInternal = {
   resolveDBReady,
 };
 
-var addonTypes = [
-  new AddonManagerPrivate.AddonType(
-    "extension",
-    URI_EXTENSION_STRINGS,
-    "type.extension.name",
-    AddonManager.VIEW_TYPE_LIST,
-    4000
-  ),
-  new AddonManagerPrivate.AddonType(
-    "theme",
-    URI_EXTENSION_STRINGS,
-    "type.themes.name",
-    AddonManager.VIEW_TYPE_LIST,
-    5000
-  ),
-  new AddonManagerPrivate.AddonType(
-    "dictionary",
-    URI_EXTENSION_STRINGS,
-    "type.dictionary.name",
-    AddonManager.VIEW_TYPE_LIST,
-    7000
-  ),
-  new AddonManagerPrivate.AddonType(
-    "locale",
-    URI_EXTENSION_STRINGS,
-    "type.locale.name",
-    AddonManager.VIEW_TYPE_LIST,
-    8000
-  ),
-  new AddonManagerPrivate.AddonType(
-    "sitepermission",
-    URI_EXTENSION_STRINGS,
-    "type.sitepermission.name",
-    AddonManager.VIEW_TYPE_LIST,
-    9000
-  ),
-];
-
-AddonManagerPrivate.registerProvider(XPIProvider, addonTypes);
+AddonManagerPrivate.registerProvider(XPIProvider, Array.from(ALL_XPI_TYPES));

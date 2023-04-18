@@ -660,13 +660,7 @@ function addCertOverrides() {
 function MockProvider() {
   this.addons = [];
   this.installs = [];
-  this.types = [
-    {
-      id: "extension",
-      name: "Extensions",
-      uiPriority: 4000,
-    },
-  ];
+  this.addonTypes = ["extension"];
 
   var self = this;
   registerCleanupFunction(function() {
@@ -681,8 +675,8 @@ function MockProvider() {
 MockProvider.prototype = {
   addons: null,
   installs: null,
+  addonTypes: null,
   started: null,
-  types: null,
   queryDelayPromise: Promise.resolve(),
 
   blockQueryResponses() {
@@ -707,7 +701,12 @@ MockProvider.prototype = {
 
   register: function MP_register() {
     info("Registering mock add-on provider");
-    AddonManagerPrivate.registerProvider(this, this.types);
+    
+    
+    
+    
+    
+    AddonManagerPrivate.registerProvider(this, this.addonTypes);
   },
 
   
