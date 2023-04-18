@@ -58,11 +58,7 @@ class MPRISServiceHandler final : public dom::MediaControlKeySource {
   
   
 
-  
-  
-  
-  
-  MPRISServiceHandler() : mMimeType(IMAGE_PNG){};
+  MPRISServiceHandler();
   bool Open() override;
   void Close() override;
   bool IsOpened() const override;
@@ -97,13 +93,17 @@ class MPRISServiceHandler final : public dom::MediaControlKeySource {
   guint mRootRegistrationId = 0;
   
   guint mPlayerRegistrationId = 0;
-  GDBusNodeInfo* mIntrospectionData = nullptr;
+  RefPtr<GDBusNodeInfo> mIntrospectionData;
   GDBusConnection* mConnection = nullptr;
   bool mInitialized = false;
   nsAutoCString mIdentity;
   nsAutoCString mDesktopEntry;
 
-  nsCString mMimeType;
+  
+  
+  
+  
+  nsCString mMimeType{IMAGE_PNG};
 
   
   uint32_t mSupportedKeys = 0;
@@ -132,9 +132,8 @@ class MPRISServiceHandler final : public dom::MediaControlKeySource {
   nsCOMPtr<nsIFile> mLocalImageFile;
   nsCOMPtr<nsIFile> mLocalImageFolder;
 
-  mozilla::UniquePtr<mozilla::dom::FetchImageHelper> mImageFetcher;
-  mozilla::MozPromiseRequestHolder<mozilla::dom::ImagePromise>
-      mImageFetchRequest;
+  UniquePtr<dom::FetchImageHelper> mImageFetcher;
+  MozPromiseRequestHolder<dom::ImagePromise> mImageFetchRequest;
 
   nsString mFetchingUrl;
   nsString mCurrentImageUrl;
@@ -174,7 +173,7 @@ class MPRISServiceHandler final : public dom::MediaControlKeySource {
   void SetMediaMetadataInternal(const dom::MediaMetadataBase& aMetadata,
                                 bool aClearArtUrl = true);
 
-  bool EmitSupportedKeyChanged(mozilla::dom::MediaControlKey aKey,
+  bool EmitSupportedKeyChanged(dom::MediaControlKey aKey,
                                bool aSupported) const;
 
   bool EmitPropertiesChangedSignal(GVariant* aParameters) const;
