@@ -9,6 +9,7 @@
 #include <iosfwd>
 
 #include "nsPoint.h"
+#include "mozilla/ScrollGeneration.h"
 #include "mozilla/ScrollOrigin.h"
 #include "mozilla/ScrollTypes.h"
 #include "Units.h"
@@ -30,30 +31,6 @@ enum class ScrollUpdateType {
 };
 
 enum class ScrollTriggeredByScript : bool { No, Yes };
-
-struct ScrollGeneration {
- private:
-  
-  explicit ScrollGeneration(uint64_t aValue);
-
- public:
-  
-  ScrollGeneration();
-
-  
-  static ScrollGeneration New();
-
-  bool operator<(const ScrollGeneration& aOther) const;
-  bool operator==(const ScrollGeneration& aOther) const;
-  bool operator!=(const ScrollGeneration& aOther) const;
-
-  friend std::ostream& operator<<(std::ostream& aStream,
-                                  const ScrollGeneration& aGen);
-
- private:
-  static uint64_t sCounter;
-  uint64_t mValue;
-};
 
 
 
