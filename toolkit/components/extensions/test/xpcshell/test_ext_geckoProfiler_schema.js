@@ -40,12 +40,14 @@ add_task(async function() {
   
   
   for (const feature of allFeaturesAcceptedByProfiler) {
+    
     ok(
       acceptedFeatures.includes(feature),
       `The schema of the geckoProfiler.start() method should accept the "${feature}" feature.`
     );
   }
   for (const feature of acceptedFeatures) {
+    
     ok(
       
       allFeaturesAcceptedByProfiler.includes(feature) ||

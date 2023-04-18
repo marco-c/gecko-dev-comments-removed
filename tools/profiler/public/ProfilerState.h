@@ -27,6 +27,7 @@
 
 
 
+
 #define PROFILER_FOR_EACH_FEATURE(MACRO)                                     \
   MACRO(0, "java", Java, "Profile Java code, Android only")                  \
                                                                              \
@@ -85,6 +86,7 @@
   MACRO(19, "notimerresolutionchange", NoTimerResolutionChange,              \
         "Do not adjust the timer resolution for sampling, so that other "    \
         "Firefox timers do not get affected")
+
 
 struct ProfilerFeature {
 #define DECLARE(n_, str_, Name_, desc_)                                \
