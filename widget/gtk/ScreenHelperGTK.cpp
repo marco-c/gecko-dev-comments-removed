@@ -145,11 +145,7 @@ static already_AddRefed<Screen> MakeScreenGtk(GdkScreen* aScreen,
   
   
   
-  
-  gint geometryScaleFactor = 1;
-  if (GdkIsX11Display() || (GdkIsWaylandDisplay() && !IsGNOMECompositor())) {
-    geometryScaleFactor = gdkScaleFactor;
-  }
+  gint geometryScaleFactor = gdkScaleFactor;
 
   LayoutDeviceIntRect rect;
 
