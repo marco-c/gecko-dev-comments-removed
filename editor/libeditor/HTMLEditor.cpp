@@ -24,6 +24,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Encoding.h"  
 #include "mozilla/EventStates.h"
+#include "mozilla/IntegerRange.h"  
 #include "mozilla/InternalMutationEvent.h"
 #include "mozilla/mozInlineSpellChecker.h"
 #include "mozilla/Preferences.h"
@@ -4466,17 +4467,12 @@ SplitNodeResult HTMLEditor::SplitNodeDeepWithTransaction(
   
 }
 
-void HTMLEditor::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
-                             nsIContent& aNewLeftNode, ErrorResult& aError) {
-  if (NS_WARN_IF(aError.Failed())) {
-    return;
-  }
-
+SplitNodeResult HTMLEditor::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
+                                        nsIContent& aNewLeftNode) {
   
   
-  if (NS_WARN_IF(!aStartOfRightNode.IsSet())) {
-    aError.Throw(NS_ERROR_INVALID_ARG);
-    return;
+  if (MOZ_UNLIKELY(NS_WARN_IF(!aStartOfRightNode.IsInContentNode()))) {
+    return SplitNodeResult(NS_ERROR_INVALID_ARG);
   }
   MOZ_ASSERT(aStartOfRightNode.IsSetAndValid());
 
@@ -4485,18 +4481,17 @@ void HTMLEditor::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
   for (SelectionType selectionType : kPresentSelectionTypes) {
     SavedRange range;
     range.mSelection = GetSelection(selectionType);
-    if (NS_WARN_IF(!range.mSelection &&
-                   selectionType == SelectionType::eNormal)) {
-      aError.Throw(NS_ERROR_FAILURE);
-      return;
+    if (MOZ_UNLIKELY(NS_WARN_IF(!range.mSelection &&
+                                selectionType == SelectionType::eNormal))) {
+      return SplitNodeResult(NS_ERROR_FAILURE);
     }
     if (!range.mSelection) {
       
       continue;
     }
 
-    for (uint32_t j = 0; j < range.mSelection->RangeCount(); ++j) {
-      RefPtr<const nsRange> r = range.mSelection->GetRangeAt(j);
+    for (uint32_t j : IntegerRange(range.mSelection->RangeCount())) {
+      const nsRange* r = range.mSelection->GetRangeAt(j);
       MOZ_ASSERT(r->IsPositioned());
       
       
@@ -4510,17 +4505,20 @@ void HTMLEditor::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
   }
 
   nsCOMPtr<nsINode> parent = aStartOfRightNode.GetContainerParent();
-  if (NS_WARN_IF(!parent)) {
-    aError.Throw(NS_ERROR_FAILURE);
-    return;
+  if (MOZ_UNLIKELY(NS_WARN_IF(!parent))) {
+    return SplitNodeResult(NS_ERROR_FAILURE);
   }
 
   
   nsIContent* firstChildOfRightNode = aStartOfRightNode.GetChild();
-  parent->InsertBefore(aNewLeftNode, aStartOfRightNode.GetContainer(), aError);
-  if (aError.Failed()) {
+  ErrorResult error;
+  parent->InsertBefore(aNewLeftNode, aStartOfRightNode.GetContainer(), error);
+  
+  
+  error.WouldReportJSException();
+  if (MOZ_UNLIKELY(error.Failed())) {
     NS_WARNING("nsINode::InsertBefore() failed");
-    return;
+    return SplitNodeResult(error.StealNSResult());
   }
 
   
@@ -4556,29 +4554,33 @@ void HTMLEditor::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
       
       
       if (!firstChildOfRightNode) {
+        
+        
+        IgnoredErrorResult ignoredError;
         MoveAllChildren(*aStartOfRightNode.GetContainer(),
-                        EditorRawDOMPoint(&aNewLeftNode, 0), aError);
-        NS_WARNING_ASSERTION(!aError.Failed(),
-                             "HTMLEditor::MoveAllChildren() failed");
+                        EditorRawDOMPoint(&aNewLeftNode, 0), ignoredError);
+        NS_WARNING_ASSERTION(
+            !ignoredError.Failed(),
+            "HTMLEditor::MoveAllChildren() failed, but ignored");
       } else if (NS_WARN_IF(aStartOfRightNode.GetContainer() !=
                             firstChildOfRightNode->GetParentNode())) {
         
         
         
       } else {
+        
+        
+        IgnoredErrorResult ignoredError;
         MovePreviousSiblings(*firstChildOfRightNode,
-                             EditorRawDOMPoint(&aNewLeftNode, 0), aError);
-        NS_WARNING_ASSERTION(!aError.Failed(),
-                             "HTMLEditor::MovePreviousSiblings() failed");
+                             EditorRawDOMPoint(&aNewLeftNode, 0), ignoredError);
+        NS_WARNING_ASSERTION(
+            !ignoredError.Failed(),
+            "HTMLEditor::MovePreviousSiblings() failed, but ignored");
       }
     }
   }
 
   
-  
-  NS_WARNING_ASSERTION(!aError.Failed(), "The previous error is ignored");
-  aError.SuppressException();
-
   
   if (RefPtr<PresShell> presShell = GetPresShell()) {
     presShell->FlushPendingNotifications(FlushType::Frames);
@@ -4596,10 +4598,10 @@ void HTMLEditor::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
 
     
     if (range.mSelection != previousSelection) {
-      MOZ_KnownLive(range.mSelection)->RemoveAllRanges(aError);
-      if (aError.Failed()) {
+      MOZ_KnownLive(range.mSelection)->RemoveAllRanges(error);
+      if (MOZ_UNLIKELY(error.Failed())) {
         NS_WARNING("Selection::RemoveAllRanges() failed");
-        return;
+        return SplitNodeResult(error.StealNSResult());
       }
       previousSelection = range.mSelection;
     }
@@ -4641,20 +4643,20 @@ void HTMLEditor::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
 
     RefPtr<nsRange> newRange =
         nsRange::Create(range.mStartContainer, range.mStartOffset,
-                        range.mEndContainer, range.mEndOffset, aError);
-    if (aError.Failed()) {
+                        range.mEndContainer, range.mEndOffset, error);
+    if (MOZ_UNLIKELY(error.Failed())) {
       NS_WARNING("nsRange::Create() failed");
-      return;
+      return SplitNodeResult(error.StealNSResult());
     }
     
     
     
     MOZ_KnownLive(range.mSelection)
-        ->AddRangeAndSelectFramesAndNotifyListeners(*newRange, aError);
-    if (aError.Failed()) {
+        ->AddRangeAndSelectFramesAndNotifyListeners(*newRange, error);
+    if (MOZ_UNLIKELY(error.Failed())) {
       NS_WARNING(
           "Selection::AddRangeAndSelectFramesAndNotifyListeners() failed");
-      return;
+      return SplitNodeResult(error.StealNSResult());
     }
   }
 
@@ -4670,12 +4672,17 @@ void HTMLEditor::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
   
   
   
-  if (NS_WARN_IF(parent != aStartOfRightNode.GetContainer()->GetParentNode()) ||
-      NS_WARN_IF(parent != aNewLeftNode.GetParentNode()) ||
-      NS_WARN_IF(aNewLeftNode.GetNextSibling() !=
-                 aStartOfRightNode.GetContainer())) {
-    aError.Throw(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+  if (MOZ_UNLIKELY(
+          NS_WARN_IF(parent !=
+                     aStartOfRightNode.GetContainer()->GetParentNode()) ||
+          NS_WARN_IF(parent != aNewLeftNode.GetParentNode()) ||
+          NS_WARN_IF(aNewLeftNode.GetNextSibling() !=
+                     aStartOfRightNode.GetContainer()))) {
+    return SplitNodeResult(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
+
+  return SplitNodeResult(&aNewLeftNode, aStartOfRightNode.ContainerAsContent(),
+                         SplitNodeDirection::LeftNodeIsNewOne);
 }
 
 JoinNodesResult HTMLEditor::JoinNodesWithTransaction(
