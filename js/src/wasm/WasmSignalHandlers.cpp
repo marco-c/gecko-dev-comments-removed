@@ -471,6 +471,103 @@ struct AutoHandlingTrap {
   MOZ_ASSERT(sAlreadyHandlingTrap.get());
 
   uint8_t* pc = ContextToPC(context);
+
+#  ifdef ENABLE_WASM_CALL_INDIRECT_NULL
+  
+  
+  
+  
+
+  bool indirectCallToNull = false;
+  if (pc == nullptr) {
+#    if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+
+    
+    
+
+    uint8_t* sp = ContextToSP(context);
+
+    
+
+    if (uintptr_t(sp) & (sizeof(uintptr_t) - 1)) {
+      return false;
+    }
+
+    
+    
+    
+
+    static_assert(jit::WasmStackAlignment >= jit::JitStackAlignment,
+                  "subsumes");
+    if (uintptr_t(sp + sizeof(uintptr_t)) & (jit::JitStackAlignment - 1)) {
+      return false;
+    }
+
+    
+
+    if (sp >= ContextToFP(context)) {
+      return false;
+    }
+
+    
+
+    if (assertCx) {
+      if (uintptr_t(sp) >= assertCx->nativeStackBase() ||
+          uintptr_t(sp) < assertCx->jitStackLimitNoInterrupt) {
+        return false;
+      }
+    } else {
+      
+      
+      
+      
+      
+      
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    pc = *reinterpret_cast<uint8_t**>(sp);
+    indirectCallToNull = true;
+
+#    elif defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
+        defined(JS_CODEGEN_MIPS64)
+
+    uint8_t* lr = ContextToLR(context);
+
+    
+    
+
+    if (uintptr_t(lr) & 3) {
+      return false;
+    }
+
+    pc = lr;
+    indirectCallToNull = true;
+
+#    else
+
+#      error "Platform code needed"
+
+#    endif
+  }
+#  endif  
+
   const CodeSegment* codeSegment = LookupCodeSegment(pc);
   if (!codeSegment || !codeSegment->isModule()) {
     return false;
@@ -484,6 +581,21 @@ struct AutoHandlingTrap {
     return false;
   }
 
+#  ifdef ENABLE_WASM_CALL_INDIRECT_NULL
+  if (indirectCallToNull) {
+    
+    if (trap != Trap::IndirectCallToNull) {
+      return false;
+    }
+
+    
+    SetContextPC(context, pc);
+  }
+#  endif
+
+  
+  
+  
   
   
   
