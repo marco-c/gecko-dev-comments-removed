@@ -78,7 +78,7 @@ class PostMessageEvent final : public Runnable {
     mHolder.construct<ipc::StructuredCloneData>();
     
     
-    mHolder.ref<ipc::StructuredCloneData>().CopyFromClonedMessageDataForChild(
+    mHolder.ref<ipc::StructuredCloneData>().CopyFromClonedMessageData(
         aMessageData);
   }
 

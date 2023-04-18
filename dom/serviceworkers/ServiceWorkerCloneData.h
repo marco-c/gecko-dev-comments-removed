@@ -54,20 +54,16 @@ class ServiceWorkerCloneData final : public ipc::StructuredCloneData {
  public:
   ServiceWorkerCloneData();
 
-  bool StealFromAndBuildClonedMessageDataForBackgroundParent(
+  
+  
+  
+  bool StealFromAndBuildClonedMessageData(
       ClonedOrErrorMessageData& aFromClonedData,
-      mozilla::ipc::PBackgroundParent* aParent,
       ClonedOrErrorMessageData& aToClonedData);
 
-  bool BuildClonedMessageDataForBackgroundChild(
-      mozilla::ipc::PBackgroundChild* aChild,
-      ClonedOrErrorMessageData& aClonedData);
+  bool BuildClonedMessageData(ClonedOrErrorMessageData& aClonedData);
 
-  void CopyFromClonedMessageDataForBackgroundParent(
-      const ClonedOrErrorMessageData& aClonedData);
-
-  void CopyFromClonedMessageDataForBackgroundChild(
-      const ClonedOrErrorMessageData& aClonedData);
+  void CopyFromClonedMessageData(const ClonedOrErrorMessageData& aClonedData);
 
   void SetAsErrorMessageData();
 

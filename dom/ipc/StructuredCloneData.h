@@ -194,42 +194,16 @@ class StructuredCloneData : public StructuredCloneHolder {
 
   
   
-  
-  
-  bool BuildClonedMessageDataForParent(ContentParent* aParent,
-                                       ClonedMessageData& aClonedData);
-  bool BuildClonedMessageDataForChild(ContentChild* aChild,
-                                      ClonedMessageData& aClonedData);
-  bool BuildClonedMessageDataForBackgroundParent(
-      mozilla::ipc::PBackgroundParent* aParent, ClonedMessageData& aClonedData);
-  bool BuildClonedMessageDataForBackgroundChild(
-      mozilla::ipc::PBackgroundChild* aChild, ClonedMessageData& aClonedData);
+  bool BuildClonedMessageData(ClonedMessageData& aClonedData);
 
   
   
-  void BorrowFromClonedMessageDataForParent(
-      const ClonedMessageData& aClonedData);
-  void BorrowFromClonedMessageDataForChild(
-      const ClonedMessageData& aClonedData);
-  void BorrowFromClonedMessageDataForBackgroundParent(
-      const ClonedMessageData& aClonedData);
-  void BorrowFromClonedMessageDataForBackgroundChild(
-      const ClonedMessageData& aClonedData);
+  void BorrowFromClonedMessageData(const ClonedMessageData& aClonedData);
 
-  void CopyFromClonedMessageDataForParent(const ClonedMessageData& aClonedData);
-  void CopyFromClonedMessageDataForChild(const ClonedMessageData& aClonedData);
-  void CopyFromClonedMessageDataForBackgroundParent(
-      const ClonedMessageData& aClonedData);
-  void CopyFromClonedMessageDataForBackgroundChild(
-      const ClonedMessageData& aClonedData);
+  void CopyFromClonedMessageData(const ClonedMessageData& aClonedData);
 
   
-  void StealFromClonedMessageDataForParent(ClonedMessageData& aClonedData);
-  void StealFromClonedMessageDataForChild(ClonedMessageData& aClonedData);
-  void StealFromClonedMessageDataForBackgroundParent(
-      ClonedMessageData& aClonedData);
-  void StealFromClonedMessageDataForBackgroundChild(
-      ClonedMessageData& aClonedData);
+  void StealFromClonedMessageData(ClonedMessageData& aClonedData);
 
   
   
