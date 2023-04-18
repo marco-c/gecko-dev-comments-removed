@@ -7,6 +7,10 @@
 
 namespace mozilla::intl {
 
+
+static_assert(std::is_same_v<UChar, char16_t>,
+              "Gecko doesn't support redefining UChar to a different type");
+
 ICUError ToICUError(UErrorCode status) {
   MOZ_ASSERT(!U_SUCCESS(status));
   switch (status) {
