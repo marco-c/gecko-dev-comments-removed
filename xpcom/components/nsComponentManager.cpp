@@ -116,6 +116,12 @@ bool ProcessSelectorMatches(ProcessSelector aSelector) {
     return !!(aSelector & Module::ALLOW_IN_UTILITY_PROCESS);
   }
 
+  
+  
+  if (type == GeckoProcessType_IPDLUnitTest) {
+    return size_t(aSelector) == Module::kMaxProcessSelector;
+  }
+
   if (aSelector & Module::MAIN_PROCESS_ONLY) {
     return type == GeckoProcessType_Default;
   }
@@ -408,7 +414,6 @@ nsresult nsComponentManagerImpl::Init() {
     
     case GeckoProcessType_Default:
     case GeckoProcessType_Content:
-    case GeckoProcessType_IPDLUnitTest:
     case GeckoProcessType_GMPlugin:
       loadChromeManifests = true;
       break;

@@ -50,6 +50,9 @@ struct Module {
 
 
 
+
+
+
     ALLOW_IN_GPU_PROCESS = 0x4,
     ALLOW_IN_VR_PROCESS = 0x8,
     ALLOW_IN_SOCKET_PROCESS = 0x10,
