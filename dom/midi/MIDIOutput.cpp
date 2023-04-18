@@ -71,9 +71,12 @@ void MIDIOutput::Send(const Sequence<uint8_t>& aData,
   }
 
   nsTArray<MIDIMessage> msgArray;
-  MIDIUtils::ParseMessages(aData, timestamp, msgArray);
-  
-  
+  bool ret = MIDIUtils::ParseMessages(aData, timestamp, msgArray);
+  if (!ret) {
+    aRv.ThrowTypeError("Invalid MIDI message");
+    return;
+  }
+
   if (msgArray.IsEmpty()) {
     aRv.ThrowTypeError("Empty message array");
     return;

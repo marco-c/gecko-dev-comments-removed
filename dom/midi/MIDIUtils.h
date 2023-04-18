@@ -18,9 +18,9 @@ namespace MIDIUtils {
 
 
 
-uint32_t ParseMessages(const nsTArray<uint8_t>& aByteBuffer,
-                       const TimeStamp& aTimestamp,
-                       nsTArray<MIDIMessage>& aMsgArray);
+bool ParseMessages(const nsTArray<uint8_t>& aByteBuffer,
+                   const TimeStamp& aTimestamp,
+                   nsTArray<MIDIMessage>& aMsgArray);
 
 bool IsSysexMessage(const MIDIMessage& a);
 }  
