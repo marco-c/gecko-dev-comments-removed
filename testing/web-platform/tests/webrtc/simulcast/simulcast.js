@@ -93,13 +93,24 @@ async function negotiateSimulcastAndWaitForVideo(t, rids, pc1, pc2, codec) {
     }));
   };
 
+  const sendEncodings = rids.map(rid => ({rid}));
+  
+  
+  
+  
+  let scaleResolutionDownBy = 2;
+  for (let i = sendEncodings.length - 1; i >= 0; --i) {
+    sendEncodings[i].scaleResolutionDownBy = scaleResolutionDownBy;
+    scaleResolutionDownBy *= 2;
+  }
+
   
   await setMediaPermission();
   const stream = await navigator.mediaDevices.getUserMedia({video: {width: 1280, height: 720}});
   t.add_cleanup(() => stream.getTracks().forEach(track => track.stop()));
   const transceiver = pc1.addTransceiver(stream.getVideoTracks()[0], {
     streams: [stream],
-    sendEncodings: rids.map(rid => ({rid})),
+    sendEncodings: sendEncodings,
   });
   if (codec) {
     preferCodec(transceiver, codec.mimeType, codec.sdpFmtpLine);
