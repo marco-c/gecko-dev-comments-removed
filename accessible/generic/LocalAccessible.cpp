@@ -3338,7 +3338,14 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
   }
 
   if (aCacheDomain & CacheDomain::Table) {
-    if (TableCellAccessible* cell = AsTableCell()) {
+    if (IsTable()) {
+      TableAccessible* table = AsTable();
+      if (table->IsProbablyLayoutTable()) {
+        fields->SetAttribute(nsGkAtoms::layout_guess, true);
+      } else if (aUpdateType == CacheUpdateType::Update) {
+        fields->SetAttribute(nsGkAtoms::layout_guess, DeleteEntry());
+      }
+    } else if (TableCellAccessible* cell = AsTableCell()) {
       
       
       
