@@ -33,6 +33,9 @@
   
   var ObjectGetOwnPropertyDescriptor = global.Object.getOwnPropertyDescriptor;
 
+  var {get: ArrayBufferByteLength} =
+    ObjectGetOwnPropertyDescriptor(global.ArrayBuffer.prototype, "byteLength");
+
   var Worker = global.Worker;
   var Blob = global.Blob;
   var URL = global.URL;
@@ -190,7 +193,15 @@
       if (worker === null) {
         worker = CreateWorker("/* black hole */");
       }
-      ReflectApply(WorkerPrototypePostMessage, worker, ["detach", [arrayBuffer]]);
+      try {
+        ReflectApply(WorkerPrototypePostMessage, worker, ["detach", [arrayBuffer]]);
+      } catch (e) {
+        
+        
+        if (ReflectApply(ArrayBufferByteLength, arrayBuffer, []) !== 0) {
+          throw e;
+        }
+      }
     };
 
     global.detachArrayBuffer = detachArrayBuffer;
