@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 h2 {
   margin-top: 2em;
@@ -10,13 +10,10 @@ table {
   table-layout: fixed;
   width: 100%;
   margin-bottom: 1em;
-  padding: 0.5em 0;
-  border-radius: 10px;
 }
 
 #disk,
-#memory,
-#offline {
+#memory {
   background-color: rgba(0, 0, 0, .1);
 }
 
