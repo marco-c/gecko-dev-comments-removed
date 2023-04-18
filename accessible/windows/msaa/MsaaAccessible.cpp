@@ -1624,21 +1624,24 @@ MsaaAccessible::accHitTest(
   if (!mAcc) {
     return CO_E_OBJNOTCONNECTED;
   }
-  LocalAccessible* localAcc = LocalAcc();
-  if (!localAcc) {
-    return E_NOTIMPL;  
-  }
 
   Accessible* accessible = mAcc->ChildAtPoint(
-      xLeft, yTop, Accessible::EWhichChildAtPoint::DirectChild);
+      xLeft, yTop,
+      
+      
+      
+      
+      
+      StaticPrefs::accessibility_cache_enabled_AtStartup()
+          ? Accessible::EWhichChildAtPoint::DeepestChild
+          : Accessible::EWhichChildAtPoint::DirectChild);
 
   
   if (accessible) {
-    
     if (accessible == mAcc) {
       pvarChild->vt = VT_I4;
       pvarChild->lVal = CHILDID_SELF;
-    } else {  
+    } else {
       pvarChild->vt = VT_DISPATCH;
       pvarChild->pdispVal = NativeAccessible(accessible);
     }
