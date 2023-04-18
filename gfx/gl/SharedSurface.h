@@ -136,6 +136,10 @@ class SharedSurface {
 
   virtual bool NeedsIndirectReads() const { return false; }
 
+  
+  
+  virtual bool IsValid() const { return true; };
+
   virtual Maybe<layers::SurfaceDescriptor> ToSurfaceDescriptor() = 0;
 };
 

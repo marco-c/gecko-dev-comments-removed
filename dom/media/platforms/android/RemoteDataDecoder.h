@@ -93,6 +93,12 @@ class RemoteDataDecoder : public MediaDataDecoder,
   }
 
   
+  
+  
+  
+  virtual bool NeedsNewDecoder() const { return false; }
+
+  
   MozPromiseHolder<DecodePromise> mDecodePromise;
   MozPromiseHolder<DecodePromise> mDrainPromise;
   DecodedData mDecodedData;

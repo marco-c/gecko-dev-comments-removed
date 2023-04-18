@@ -183,6 +183,11 @@ class RemoteVideoDecoder : public RemoteDataDecoder {
       MediaRawData* aSample) override {
     AssertOnThread();
 
+    if (NeedsNewDecoder()) {
+      return DecodePromise::CreateAndReject(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER,
+                                            __func__);
+    }
+
     const VideoInfo* config =
         aSample->mTrackInfo ? aSample->mTrackInfo->GetAsVideoInfo() : &mConfig;
     MOZ_ASSERT(config);
@@ -265,6 +270,17 @@ class RemoteVideoDecoder : public RemoteDataDecoder {
     UniquePtr<layers::SurfaceTextureImage::SetCurrentCallback> releaseSample(
         new CompositeListener(mJavaDecoder, aSample));
 
+    
+    
+    
+    
+    
+    if (NeedsNewDecoder()) {
+      Error(MediaResult(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER,
+                        RESULT_DETAIL("VideoCallBack::HandleOutput")));
+      return;
+    }
+
     java::sdk::BufferInfo::LocalRef info = aSample->Info();
     MOZ_ASSERT(info);
 
@@ -314,6 +330,10 @@ class RemoteVideoDecoder : public RemoteDataDecoder {
     if (isEOS) {
       DrainComplete();
     }
+  }
+
+  bool NeedsNewDecoder() const override {
+    return !mSurface || mSurface->IsReleased();
   }
 
   const VideoInfo mConfig;
@@ -863,8 +883,17 @@ void RemoteDataDecoder::Error(const MediaResult& aError) {
   if (GetState() == State::SHUTDOWN) {
     return;
   }
-  mDecodePromise.RejectIfExists(aError, __func__);
-  mDrainPromise.RejectIfExists(aError, __func__);
+
+  
+  
+  
+  const MediaResult& error =
+      NeedsNewDecoder()
+          ? MediaResult(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER, __func__)
+          : aError;
+
+  mDecodePromise.RejectIfExists(error, __func__);
+  mDrainPromise.RejectIfExists(error, __func__);
 }
 
 }  
