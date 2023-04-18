@@ -169,8 +169,7 @@ MOZ_CAN_RUN_SCRIPT bool ExtensionTest::AssertMatchInternal(
       
       
       NS_ENSURE_TRUE(
-          JS::InstanceofOperator(aCx, expectedMatchObj, aActualValue, &matched),
-          false);
+          JS_HasInstance(aCx, expectedMatchObj, aActualValue, &matched), false);
     } else {
       
       NS_ENSURE_TRUE(

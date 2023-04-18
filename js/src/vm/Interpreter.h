@@ -296,8 +296,10 @@ extern JSType TypeOfObject(JSObject* obj);
 
 extern JSType TypeOfValue(const Value& v);
 
-extern bool HasInstance(JSContext* cx, HandleObject obj, HandleValue v,
-                        bool* bp);
+
+
+extern bool InstanceofOperator(JSContext* cx, HandleObject obj, HandleValue v,
+                               bool* bp);
 
 
 
