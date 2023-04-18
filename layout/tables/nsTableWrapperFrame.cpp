@@ -1010,7 +1010,7 @@ void nsTableWrapperFrame::Reflow(nsPresContext* aPresContext,
                      captionMargin, captionOrigin, wm);
     FinishReflowChild(mCaptionFrames.FirstChild(), aPresContext, *captionMet,
                       captionRI.ptr(), wm, captionOrigin, containerSize,
-                      ReflowChildFlags::ApplyRelativePositioning);
+                      ReflowChildFlags::Default);
     captionRI.reset();
   }
   
@@ -1019,7 +1019,6 @@ void nsTableWrapperFrame::Reflow(nsPresContext* aPresContext,
   LogicalPoint innerOrigin(wm);
   GetInnerOrigin(captionSide, containSize, captionSize, captionMargin,
                  innerSize, innerOrigin, wm);
-  
   FinishReflowChild(InnerTableFrame(), aPresContext, innerMet, innerRI.ptr(),
                     wm, innerOrigin, containerSize, ReflowChildFlags::Default);
   innerRI.reset();
