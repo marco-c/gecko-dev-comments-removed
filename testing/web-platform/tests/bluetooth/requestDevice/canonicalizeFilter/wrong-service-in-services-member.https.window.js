@@ -1,11 +1,9 @@
-<!DOCTYPE html>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="/resources/testdriver.js"></script>
-<script src="/resources/testdriver-vendor.js"></script>
-<script src="/bluetooth/resources/bluetooth-test.js"></script>
-<script src="/bluetooth/resources/bluetooth-fake-devices.js"></script>
-<script>
+
+
+
+
+
+
 'use strict';
 const test_desc = 'Invalid service must reject the promise.';
 const expected = new TypeError();
@@ -19,4 +17,3 @@ bluetooth_test(() => {
   });
   return test_promises;
 }, test_desc);
-</script>
