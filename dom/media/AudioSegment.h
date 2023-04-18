@@ -424,6 +424,12 @@ class AudioSegment : public MediaSegmentBase<AudioSegment, AudioChunk> {
   }
   
   
+  
+  
+  size_t WriteToInterleavedBuffer(nsTArray<AudioDataValue>& aBuffer,
+                                  uint32_t aChannels) const;
+  
+  
   AudioChunk* AppendAndConsumeChunk(AudioChunk&& aChunk) {
     AudioChunk* chunk = AppendChunk(aChunk.mDuration);
     chunk->mBuffer = std::move(aChunk.mBuffer);
@@ -486,8 +492,8 @@ class AudioSegment : public MediaSegmentBase<AudioSegment, AudioChunk> {
 };
 
 template <typename SrcT>
-void WriteChunk(AudioChunk& aChunk, uint32_t aOutputChannels, float aVolume,
-                AudioDataValue* aOutputBuffer) {
+void WriteChunk(const AudioChunk& aChunk, uint32_t aOutputChannels,
+                float aVolume, AudioDataValue* aOutputBuffer) {
   AutoTArray<const SrcT*, GUESS_AUDIO_CHANNELS> channelData;
 
   channelData = aChunk.ChannelData<SrcT>().Clone();

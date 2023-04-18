@@ -17,7 +17,8 @@ class NativeInputTrack : public ProcessedMediaTrack {
   ~NativeInputTrack() = default;
   explicit NativeInputTrack(TrackRate aSampleRate)
       : ProcessedMediaTrack(aSampleRate, MediaSegment::AUDIO,
-                            new AudioSegment()) {}
+                            new AudioSegment()),
+        mIsBufferingAppended(false) {}
 
  public:
   
@@ -51,7 +52,11 @@ class NativeInputTrack : public ProcessedMediaTrack {
  private:
   
   
-  AudioInputSamples mInputData;
+  bool mIsBufferingAppended;
+
+  
+  
+  AudioSegment mPendingData;
 
   
   uint32_t mInputChannels = 0;

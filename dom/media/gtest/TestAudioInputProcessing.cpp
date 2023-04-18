@@ -37,133 +37,78 @@ class MockGraph : public MediaTrackGraphImpl {
   ~MockGraph() = default;
 };
 
-TEST(TestAudioInputProcessing, UnaccountedPacketizerBuffering)
+
+
+
+
+TEST(TestAudioInputProcessing, Buffering)
 {
-  const TrackRate rate = 48000;
-  const uint32_t channels = 2;
-  auto graph = MakeRefPtr<NiceMock<MockGraph>>(48000, 2);
-  auto aip = MakeRefPtr<AudioInputProcessing>(channels, PRINCIPAL_HANDLE_NONE);
-  AudioGenerator<AudioDataValue> generator(channels, rate);
-
-  
-  
-  
-
-  const size_t nrFrames = 440;
-  const size_t bufferSize = nrFrames * channels;
-  GraphTime processedTime;
-  GraphTime nextTime;
-  nsTArray<AudioDataValue> buffer(bufferSize);
-  buffer.AppendElements(bufferSize);
-  AudioSegment segment;
-  bool ended;
-
-  aip->Start();
-
-  {
-    
-    
-    
-    
-    
-    
-    
-    processedTime = 0;
-    nextTime = MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(nrFrames);
-    generator.GenerateInterleaved(buffer.Elements(), nrFrames);
-    aip->NotifyInputData(graph, buffer.Elements(), nrFrames, rate, channels,
-                         nextTime - nrFrames);
-    aip->ProcessInput(graph, nullptr);
-    aip->Pull(graph, processedTime, nextTime, segment.GetDuration(), &segment,
-              true, &ended);
-    EXPECT_EQ(aip->NumBufferedFrames(graph), 24U);
-  }
-
-  {
-    
-    
-    
-    
-    
-    
-    processedTime = nextTime;
-    nextTime = MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(2 * nrFrames);
-    generator.GenerateInterleaved(buffer.Elements(), nrFrames);
-    aip->NotifyInputData(graph, buffer.Elements(), nrFrames, rate, channels,
-                         nextTime - (2 * nrFrames));
-    aip->ProcessInput(graph, nullptr);
-    aip->Pull(graph, processedTime, nextTime, segment.GetDuration(), &segment,
-              true, &ended);
-    EXPECT_EQ(aip->NumBufferedFrames(graph), 120U);
-  }
-
-  graph->Destroy();
-}
-
-TEST(TestAudioInputProcessing, InputDataCapture)
-{
-  
-  
-  
-
   const TrackRate rate = 8000;  
   const uint32_t channels = 1;
   auto graph = MakeRefPtr<NiceMock<MockGraph>>(rate, channels);
   auto aip = MakeRefPtr<AudioInputProcessing>(channels, PRINCIPAL_HANDLE_NONE);
-  AudioGenerator<AudioDataValue> generator(channels, rate);
 
   const size_t frames = 72;
-  const size_t bufferSize = frames * channels;
-  nsTArray<AudioDataValue> buffer(bufferSize);
-  buffer.AppendElements(bufferSize);
 
+  AudioGenerator<AudioDataValue> generator(channels, rate);
   GraphTime processedTime;
   GraphTime nextTime;
-  AudioSegment segment;
-  bool ended;
+  AudioSegment output;
 
-  aip->Start();
+  
+  {
+    EXPECT_EQ(aip->PassThrough(graph), false);
+    EXPECT_EQ(aip->NumBufferedFrames(graph), 0);
+
+    aip->SetPassThrough(graph, true);
+    EXPECT_EQ(aip->NumBufferedFrames(graph), 0);
+
+    aip->SetPassThrough(graph, false);
+    EXPECT_EQ(aip->NumBufferedFrames(graph), 0);
+
+    aip->SetPassThrough(graph, true);
+    EXPECT_EQ(aip->NumBufferedFrames(graph), 0);
+  }
 
   {
     
     
     
-    
-    
-    const TrackTime bufferedFrames = 80U;
     processedTime = 0;
     nextTime = MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(frames);
 
-    generator.GenerateInterleaved(buffer.Elements(), frames);
-    aip->NotifyInputData(graph, buffer.Elements(), frames, rate, channels, 0);
-    buffer.ClearAndRetainStorage();
-    aip->ProcessInput(graph, nullptr);
-    aip->Pull(graph, processedTime, nextTime, segment.GetDuration(), &segment,
-              true, &ended);
-    EXPECT_EQ(aip->NumBufferedFrames(graph), bufferedFrames);
+    AudioSegment input;
+    generator.Generate(input, nextTime - processedTime);
+
+    aip->Process(graph, processedTime, nextTime, &input, &output);
+    EXPECT_EQ(input.GetDuration(), nextTime - processedTime);
+    EXPECT_EQ(output.GetDuration(), nextTime);
+    EXPECT_EQ(aip->NumBufferedFrames(graph), 0);
   }
 
+  
+  aip->SetPassThrough(graph, false);
   {
     
     
     
-    
-    
-    const TrackTime bufferedFrames = 32U;
     processedTime = nextTime;
     nextTime = MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(2 * frames);
 
-    generator.GenerateInterleaved(buffer.Elements(), frames);
-    aip->NotifyInputData(graph, buffer.Elements(), frames, rate, channels,
-                         0 );
-    buffer.ClearAndRetainStorage();
-    aip->ProcessInput(graph, nullptr);
-    aip->Pull(graph, processedTime, nextTime, segment.GetDuration(), &segment,
-              true, &ended);
-    EXPECT_EQ(aip->NumBufferedFrames(graph), bufferedFrames);
+    AudioSegment input;
+    generator.Generate(input, nextTime - processedTime);
+
+    aip->Process(graph, processedTime, nextTime, &input, &output);
+    EXPECT_EQ(input.GetDuration(), nextTime - processedTime);
+    EXPECT_EQ(output.GetDuration(), nextTime);
+    EXPECT_EQ(aip->NumBufferedFrames(graph), 0);
   }
 
+  
+  
+  aip->Start(graph);
   {
+    
     
     
     
@@ -171,14 +116,14 @@ TEST(TestAudioInputProcessing, InputDataCapture)
     
     processedTime = nextTime;
     nextTime = MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(3 * frames);
-    
-    
 
-    generator.GenerateInterleaved(buffer.Elements(), frames);
-    aip->NotifyInputData(graph, buffer.Elements(), frames, rate, channels,
-                         0 );
-    Unused << processedTime;
-    buffer.ClearAndRetainStorage();
+    AudioSegment input;
+    generator.Generate(input, nextTime - processedTime);
+
+    aip->Process(graph, processedTime, nextTime, &input, &output);
+    EXPECT_EQ(input.GetDuration(), nextTime - processedTime);
+    EXPECT_EQ(output.GetDuration(), nextTime);
+    EXPECT_EQ(aip->NumBufferedFrames(graph), 80);
   }
 
   {
@@ -188,135 +133,67 @@ TEST(TestAudioInputProcessing, InputDataCapture)
     
     
     
-    const TrackTime bufferedFrames = 64U;
     processedTime = nextTime;
     nextTime = MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(4 * frames);
-    generator.GenerateInterleaved(buffer.Elements(), frames);
-    aip->NotifyInputData(graph, buffer.Elements(), frames, rate, channels,
-                         0 );
-    buffer.ClearAndRetainStorage();
-    aip->ProcessInput(graph, nullptr);
-    aip->Pull(graph, processedTime, nextTime, segment.GetDuration(), &segment,
-              true, &ended);
-    EXPECT_EQ(aip->NumBufferedFrames(graph), bufferedFrames);
+
+    AudioSegment input;
+    generator.Generate(input, nextTime - processedTime);
+
+    aip->Process(graph, processedTime, nextTime, &input, &output);
+    EXPECT_EQ(input.GetDuration(), nextTime - processedTime);
+    EXPECT_EQ(output.GetDuration(), nextTime);
+    EXPECT_EQ(aip->NumBufferedFrames(graph), 32);
   }
 
-  graph->Destroy();
-}
+  {
+    
+    processedTime = nextTime;
+    nextTime = MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(5 * frames);
 
-TEST(TestAudioInputProcessing, InputDataCapturePassThrough)
-{
-  
-  
-  
+    AudioSegment input;
+    generator.Generate(input, nextTime - processedTime);
 
-  const TrackRate rate = 8000;  
-  const uint32_t channels = 1;
-  auto graph = MakeRefPtr<NiceMock<MockGraph>>(rate, channels);
-  auto aip = MakeRefPtr<AudioInputProcessing>(channels, PRINCIPAL_HANDLE_NONE);
-  AudioGenerator<AudioDataValue> generator(channels, rate);
+    aip->Process(graph, processedTime, nextTime, &input, &output);
+    EXPECT_EQ(input.GetDuration(), nextTime - processedTime);
+    EXPECT_EQ(output.GetDuration(), nextTime);
+    EXPECT_EQ(aip->NumBufferedFrames(graph), 32);
+  }
 
-  const size_t frames = 72;
-  const size_t bufferSize = frames * channels;
-  nsTArray<AudioDataValue> buffer(bufferSize);
-  buffer.AppendElements(bufferSize);
+  {
+    
+    
+    
+    
+    
+    
+    processedTime = nextTime;
+    nextTime = MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(6 * frames);
 
-  GraphTime processedTime;
-  GraphTime nextTime;
-  AudioSegment segment;
-  AudioSegment source;
-  bool ended;
+    AudioSegment input;
+    generator.Generate(input, nextTime - processedTime);
+
+    aip->Process(graph, processedTime, nextTime, &input, &output);
+    EXPECT_EQ(input.GetDuration(), nextTime - processedTime);
+    EXPECT_EQ(output.GetDuration(), nextTime);
+    EXPECT_EQ(aip->NumBufferedFrames(graph), 64);
+  }
 
   aip->SetPassThrough(graph, true);
-  aip->Start();
-
   {
-    
-    
-    
-    
-    
-    const TrackTime bufferedFrames = 72U;
-    processedTime = 0;
-    nextTime = MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(frames);
-
-    generator.GenerateInterleaved(buffer.Elements(), frames);
-    source.AppendFromInterleavedBuffer(buffer.Elements(), frames, channels,
-                                       PRINCIPAL_HANDLE_NONE);
-    aip->NotifyInputData(graph, buffer.Elements(), frames, rate, channels, 0);
-    buffer.ClearAndRetainStorage();
-    aip->ProcessInput(graph, &source);
-    aip->Pull(graph, processedTime, nextTime, segment.GetDuration(), &segment,
-              true, &ended);
-    EXPECT_EQ(aip->NumBufferedFrames(graph), bufferedFrames);
-    source.Clear();
-  }
-
-  {
-    
-    
-    
-    
-    
-    const TrackTime bufferedFrames = 16U;
-    processedTime = nextTime;
-    nextTime = MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(2 * frames);
-
-    generator.GenerateInterleaved(buffer.Elements(), frames);
-    source.AppendFromInterleavedBuffer(buffer.Elements(), frames, channels,
-                                       PRINCIPAL_HANDLE_NONE);
-    aip->NotifyInputData(graph, buffer.Elements(), frames, rate, channels,
-                         0 );
-    buffer.ClearAndRetainStorage();
-    aip->ProcessInput(graph, &source);
-    aip->Pull(graph, processedTime, nextTime, segment.GetDuration(), &segment,
-              true, &ended);
-    EXPECT_EQ(aip->NumBufferedFrames(graph), bufferedFrames);
-    source.Clear();
-  }
-
-  {
-    
-    
-    
     
     
     processedTime = nextTime;
-    nextTime = MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(3 * frames);
-    
-    
+    nextTime = MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(7 * frames);
 
-    generator.GenerateInterleaved(buffer.Elements(), frames);
-    source.AppendFromInterleavedBuffer(buffer.Elements(), frames, channels,
-                                       PRINCIPAL_HANDLE_NONE);
-    aip->NotifyInputData(graph, buffer.Elements(), frames, rate, channels,
-                         0 );
-    Unused << processedTime;
-    buffer.ClearAndRetainStorage();
+    AudioSegment input;
+    generator.Generate(input, nextTime - processedTime);
+
+    aip->Process(graph, processedTime, nextTime, &input, &output);
+    EXPECT_EQ(input.GetDuration(), nextTime - processedTime);
+    EXPECT_EQ(output.GetDuration(), processedTime);
+    EXPECT_EQ(aip->NumBufferedFrames(graph), 0);
   }
 
-  {
-    
-    
-    
-    
-    
-    
-    const TrackTime bufferedFrames = 32U;
-    processedTime = nextTime;
-    nextTime = MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(4 * frames);
-    generator.GenerateInterleaved(buffer.Elements(), frames);
-    source.AppendFromInterleavedBuffer(buffer.Elements(), frames, channels,
-                                       PRINCIPAL_HANDLE_NONE);
-    aip->NotifyInputData(graph, buffer.Elements(), frames, rate, channels,
-                         0 );
-    buffer.ClearAndRetainStorage();
-    aip->ProcessInput(graph, &source);
-    aip->Pull(graph, processedTime, nextTime, segment.GetDuration(), &segment,
-              true, &ended);
-    EXPECT_EQ(aip->NumBufferedFrames(graph), bufferedFrames);
-    source.Clear();
-  }
-
+  aip->Stop(graph);
   graph->Destroy();
 }

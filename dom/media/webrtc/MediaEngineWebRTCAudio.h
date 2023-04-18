@@ -126,10 +126,8 @@ class AudioInputProcessing : public AudioDataListener {
  public:
   AudioInputProcessing(uint32_t aMaxChannelCount,
                        const PrincipalHandle& aPrincipalHandle);
-
-  void Pull(MediaTrackGraphImpl* aGraph, GraphTime aFrom, GraphTime aTo,
-            GraphTime aTrackEnd, AudioSegment* aSegment,
-            bool aLastPullThisIteration, bool* aEnded);
+  void Process(MediaTrackGraphImpl* aGraph, GraphTime aFrom, GraphTime aTo,
+               AudioSegment* aInput, AudioSegment* aOutput);
 
   void NotifyOutputData(MediaTrackGraphImpl* aGraph, AudioDataValue* aBuffer,
                         size_t aFrames, TrackRate aRate,
@@ -146,8 +144,8 @@ class AudioInputProcessing : public AudioDataListener {
     return !PassThrough(aGraph);
   }
 
-  void Start();
-  void Stop();
+  void Start(MediaTrackGraphImpl* aGraph);
+  void Stop(MediaTrackGraphImpl* aGraph);
 
   void DeviceChanged(MediaTrackGraphImpl* aGraph) override;
 
@@ -157,12 +155,8 @@ class AudioInputProcessing : public AudioDataListener {
 
   void Disconnect(MediaTrackGraphImpl* aGraph) override;
 
-  
-  void ProcessInput(MediaTrackGraphImpl* aGraph, const AudioSegment* aSegment);
-
   void PacketizeAndProcess(MediaTrackGraphImpl* aGraph,
-                           const AudioDataValue* aBuffer, size_t aFrames,
-                           TrackRate aRate, uint32_t aChannels);
+                           const AudioSegment& aSegment);
 
   void SetPassThrough(MediaTrackGraphImpl* aGraph, bool aPassThrough);
   uint32_t GetRequestedInputChannelCount();
@@ -182,8 +176,19 @@ class AudioInputProcessing : public AudioDataListener {
 
   TrackTime NumBufferedFrames(MediaTrackGraphImpl* aGraph) const;
 
+  
+  constexpr static uint32_t GetPacketSize(TrackRate aRate) {
+    return static_cast<uint32_t>(aRate) / 100u;
+  }
+
+  bool IsEnded() const { return mEnded; }
+
+  const PrincipalHandle& GetPrincipalHandle() const { return mPrincipal; }
+
  private:
   ~AudioInputProcessing() = default;
+  void EnsureAudioProcessing(MediaTrackGraphImpl* aGraph, uint32_t aChannels);
+  void ResetAudioProcessing(MediaTrackGraphImpl* aGraph);
   
   
   
@@ -216,13 +221,6 @@ class AudioInputProcessing : public AudioDataListener {
   
   AudioSegment mSegment;
   
-  
-  
-  
-  
-  
-  Maybe<TrackTime> mLiveBufferingAppended;
-  
   const PrincipalHandle mPrincipal;
   
   
@@ -231,10 +229,14 @@ class AudioInputProcessing : public AudioDataListener {
   
   bool mEnded;
   
-  AudioInputSamples mPendingData;
-  
   
   uint64_t mPacketCount;
+  
+  
+  
+  AutoTArray<AudioDataValue,
+             SilentChannel::AUDIO_PROCESSING_FRAMES * GUESS_AUDIO_CHANNELS>
+      mInterleavedBuffer;
 };
 
 
@@ -283,6 +285,12 @@ class AudioInputTrack : public ProcessedMediaTrack {
         "Must set mInputProcessing before exposing to content");
     return mInputProcessing->GetRequestedInputChannelCount();
   }
+  
+  
+  void GetInputSourceData(AudioSegment& aOutput,
+                          const PrincipalHandle& aPrincipal,
+                          const MediaInputPort* aPort, GraphTime aFrom,
+                          GraphTime aTo) const;
 
   
   AudioInputTrack* AsAudioInputTrack() override { return this; }

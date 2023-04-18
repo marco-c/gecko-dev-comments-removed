@@ -48,15 +48,16 @@ struct StartInputProcessing : public ControlMessage {
       : ControlMessage(aTrack),
         mInputTrack(aTrack),
         mInputProcessing(aInputProcessing) {}
-  void Run() override { mInputProcessing->Start(); }
+  void Run() override { mInputProcessing->Start(mTrack->GraphImpl()); }
 };
 
 struct StopInputProcessing : public ControlMessage {
   const RefPtr<AudioInputProcessing> mInputProcessing;
 
-  explicit StopInputProcessing(AudioInputProcessing* aInputProcessing)
-      : ControlMessage(nullptr), mInputProcessing(aInputProcessing) {}
-  void Run() override { mInputProcessing->Stop(); }
+  explicit StopInputProcessing(AudioInputTrack* aTrack,
+                               AudioInputProcessing* aInputProcessing)
+      : ControlMessage(aTrack), mInputProcessing(aInputProcessing) {}
+  void Run() override { mInputProcessing->Stop(mTrack->GraphImpl()); }
 };
 
 struct SetPassThrough : public ControlMessage {
@@ -279,7 +280,7 @@ TEST(TestAudioTrackGraph, ErrorCallback)
   
   DispatchFunction([&] {
     inputTrack->GraphImpl()->AppendMessage(
-        MakeUnique<StopInputProcessing>(listener));
+        MakeUnique<StopInputProcessing>(inputTrack, listener));
     inputTrack->CloseAudioInput();
     inputTrack->Destroy();
   });
@@ -348,7 +349,7 @@ TEST(TestAudioTrackGraph, AudioInputTrack)
     outputTrack->Destroy();
     port->Destroy();
     inputTrack->GraphImpl()->AppendMessage(
-        MakeUnique<StopInputProcessing>(listener));
+        MakeUnique<StopInputProcessing>(inputTrack, listener));
     inputTrack->CloseAudioInput();
     inputTrack->Destroy();
   });
@@ -485,7 +486,7 @@ TEST(TestAudioTrackGraph, ReOpenAudioInput)
     outputTrack->Destroy();
     port->Destroy();
     inputTrack->GraphImpl()->AppendMessage(
-        MakeUnique<StopInputProcessing>(listener));
+        MakeUnique<StopInputProcessing>(inputTrack, listener));
     inputTrack->CloseAudioInput();
     inputTrack->Destroy();
   });
@@ -500,6 +501,7 @@ TEST(TestAudioTrackGraph, ReOpenAudioInput)
 
   EXPECT_EQ(estimatedFreq, inputFrequency);
   std::cerr << "PreSilence: " << preSilenceSamples << std::endl;
+  
   
   
   EXPECT_GE(preSilenceSamples, 128U + inputRate / 100);
@@ -605,7 +607,7 @@ TEST(TestAudioTrackGraph, AudioInputTrackDisabling)
     outputTrack->Destroy();
     port->Destroy();
     inputTrack->GraphImpl()->AppendMessage(
-        MakeUnique<StopInputProcessing>(listener));
+        MakeUnique<StopInputProcessing>(inputTrack, listener));
     inputTrack->CloseAudioInput();
     inputTrack->Destroy();
   });
@@ -686,7 +688,7 @@ struct AudioTrackSet {
     mOutputTrack->Destroy();
     mPort->Destroy();
     mInputTrack->GraphImpl()->AppendMessage(
-        MakeUnique<StopInputProcessing>(mListener));
+        MakeUnique<StopInputProcessing>(mInputTrack, mListener));
     mInputTrack->CloseAudioInput();
     mInputTrack->Destroy();
 
@@ -1028,7 +1030,7 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
     transmitter->Destroy();
     port->Destroy();
     inputTrack->GraphImpl()->AppendMessage(
-        MakeUnique<StopInputProcessing>(listener));
+        MakeUnique<StopInputProcessing>(inputTrack, listener));
     inputTrack->CloseAudioInput();
     inputTrack->Destroy();
   });
