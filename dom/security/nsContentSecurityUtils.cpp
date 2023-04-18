@@ -599,8 +599,6 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
       
       "resource://testing-common/sinon-7.2.7.js"_ns,
       
-      "resource://testing-common/ajv-6.12.6.js"_ns,
-      
       "resource://testing-common/content-task.js"_ns,
 
       
