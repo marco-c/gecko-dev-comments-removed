@@ -103,34 +103,6 @@ nsresult nsStructuredCloneContainer::DeserializeToJsval(
 }
 
 NS_IMETHODIMP
-nsStructuredCloneContainer::DeserializeToVariant(JSContext* aCx,
-                                                 nsIVariant** aData) {
-  NS_ENSURE_ARG_POINTER(aData);
-  *aData = nullptr;
-
-  if (!DataLength()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  JS::Rooted<JS::Value> jsStateObj(aCx);
-  nsresult rv = DeserializeToJsval(aCx, &jsStateObj);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  
-  nsCOMPtr<nsIVariant> varStateObj;
-  nsCOMPtr<nsIXPConnect> xpconnect = nsIXPConnect::XPConnect();
-  NS_ENSURE_STATE(xpconnect);
-  xpconnect->JSValToVariant(aCx, jsStateObj, getter_AddRefs(varStateObj));
-  NS_ENSURE_STATE(varStateObj);
-
-  varStateObj.forget(aData);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsStructuredCloneContainer::GetDataAsBase64(nsAString& aOut) {
   aOut.Truncate();
 
