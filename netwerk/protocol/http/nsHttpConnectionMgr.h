@@ -207,11 +207,10 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
 
-  ReentrantMonitor mReentrantMonitor MOZ_UNANNOTATED{
-      "nsHttpConnectionMgr.mReentrantMonitor"};
+  ReentrantMonitor mReentrantMonitor{"nsHttpConnectionMgr.mReentrantMonitor"};
   
   
-  nsCOMPtr<nsIEventTarget> mSocketThreadTarget;
+  nsCOMPtr<nsIEventTarget> mSocketThreadTarget GUARDED_BY(mReentrantMonitor);
 
   Atomic<bool, mozilla::Relaxed> mIsShuttingDown{false};
 
