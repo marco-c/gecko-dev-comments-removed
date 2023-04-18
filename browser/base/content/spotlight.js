@@ -2,13 +2,13 @@
 
 
 
-const {
-  document: gDoc,
-  ChromeUtils,
-} = window.docShell.chromeEventHandler.ownerGlobal;
-const { RemoteL10n } = ChromeUtils.import(
-  "resource://activity-stream/lib/RemoteL10n.jsm"
-);
+const browser = window.docShell.chromeEventHandler;
+const { document: gDoc, XPCOMUtils } = browser.ownerGlobal;
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  AboutWelcomeParent: "resource:///actors/AboutWelcomeParent.jsm",
+  RemoteL10n: "resource://activity-stream/lib/RemoteL10n.jsm",
+});
 
 const [CONFIG, PARAMS] = window.arguments[0];
 
@@ -106,15 +106,22 @@ async function renderSpotlight(ready) {
 
 
 function renderMultistage(ready) {
+  const AWParent = new AboutWelcomeParent();
+  const receive = name => data =>
+    AWParent.onContentMessage(`AWPage:${name}`, data, browser);
+
   
   window.AWGetDefaultSites = () => {};
   window.AWGetFeatureConfig = () => CONFIG;
   window.AWGetFxAMetricsFlowURI = () => {};
   window.AWGetImportableSites = () => "[]";
-  window.AWGetRegion = () => {};
-  window.AWGetSelectedTheme = () => {};
-  window.AWSendEventTelemetry = () => {};
-  window.AWSendToParent = () => {};
+  window.AWGetRegion = receive("GET_REGION");
+  window.AWGetSelectedTheme = receive("GET_SELECTED_THEME");
+  window.AWSendEventTelemetry = receive("TELEMETRY_EVENT");
+  window.AWSendToParent = (name, data) => receive(name)(data);
+  window.AWFinish = () => {
+    window.close();
+  };
 
   
   const link = document.head.appendChild(document.createElement("link"));
