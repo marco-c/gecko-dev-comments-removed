@@ -2,7 +2,7 @@
  	"use strict";
  	var __webpack_modules__ = ({
 
- 707:
+ 861:
  ((__unused_webpack_module, __unused_webpack___webpack_exports__, __webpack_require__) => {
 
 
@@ -1050,12 +1050,39 @@ SavedOverlay.prototype = {
 
 
 
+function Button(props) {
+  return react.createElement("a", {
+    href: props.url,
+    className: `stp_button${props?.style && ` stp_button_${props.style}`}`
+  }, props.label);
+}
+
+ const Button_Button = (Button);
+;
+
+
+
+
+
+
 var StyleGuideOverlay = function (options) {};
 
 StyleGuideOverlay.prototype = {
   create() {
     
     react_dom.render( react.createElement("div", null, react.createElement("h3", null, "JSX Components:"), react.createElement("h4", {
+      className: "stp_styleguide_h4"
+    }, "Button"), react.createElement(Button_Button, {
+      label: "Text Button",
+      style: "text",
+      url: "https://example.org"
+    }), react.createElement("br", null), react.createElement(Button_Button, {
+      label: "Primary Button",
+      style: "primary"
+    }), react.createElement("br", null), react.createElement(Button_Button, {
+      label: "Secondary Button",
+      style: "secondary"
+    }), react.createElement("h4", {
       className: "stp_styleguide_h4"
     }, "PopularTopics"), react.createElement(PopularTopics_PopularTopics, {
       pockethost: `getpocket.com`,
@@ -1347,7 +1374,7 @@ window.pktPanelMessaging = messages;
  	
  	
  	
- 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(707)))
+ 	var __webpack_exports__ = __webpack_require__.O(undefined, [736], () => (__webpack_require__(861)))
  	__webpack_exports__ = __webpack_require__.O(__webpack_exports__);
  	
  })()
