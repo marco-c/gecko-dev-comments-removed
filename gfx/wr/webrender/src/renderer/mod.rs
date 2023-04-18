@@ -653,6 +653,7 @@ pub enum BlendMode {
     MultiplyDualSource,
     Screen,
     Exclusion,
+    PlusLighter,
 }
 
 impl BlendMode {
@@ -675,6 +676,8 @@ impl BlendMode {
             MixBlendMode::Screen => BlendMode::Screen,
             
             MixBlendMode::Exclusion => BlendMode::Exclusion,
+            
+            MixBlendMode::PlusLighter => BlendMode::PlusLighter,
             
             MixBlendMode::Multiply if dual_source => BlendMode::MultiplyDualSource,
             
@@ -2958,6 +2961,9 @@ impl Renderer {
                         }
                         BlendMode::Exclusion => {
                             self.device.set_blend_mode_exclusion();
+                        }
+                        BlendMode::PlusLighter => {
+                            self.device.set_blend_mode_plus_lighter();
                         }
                     }
                     prev_blend_mode = batch.key.blend_mode;
