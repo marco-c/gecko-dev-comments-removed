@@ -175,8 +175,7 @@ class MochitestRunner(MozbuildObject):
             print("using e10s=False for non-geckoview app")
 
         
-        
-        options.fission = False
+        options["disable_fission"] = True
 
         return runtestsremote.run_test_harness(parser, options)
 
@@ -188,6 +187,10 @@ class MochitestRunner(MozbuildObject):
         import runjunit
 
         options = Namespace(**kwargs)
+
+        
+        options["disable_fission"] = True
+
         return runjunit.run_test_harness(parser, options)
 
 
