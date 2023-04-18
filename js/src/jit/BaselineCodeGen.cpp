@@ -6016,25 +6016,7 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
     return false;
   }
 
-  Label afterFrameRestore;
-  masm.jump(&afterFrameRestore);
   masm.bind(&returnTarget);
-
-  
-  
-  
-
-  
-  masm.loadPtr(Address(masm.getStackPointer(), 0), FramePointer);
-  
-  masm.rshiftPtr(Imm32(FRAMESIZE_SHIFT), FramePointer);
-  
-  masm.addStackPtrTo(FramePointer);
-
-  
-  
-  masm.addPtr(Imm32(2 * sizeof(void*)), FramePointer);
-  masm.bind(&afterFrameRestore);
 
   
   masm.computeEffectiveAddress(frame.addressOfStackValue(-1),

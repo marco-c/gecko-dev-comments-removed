@@ -645,16 +645,7 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
       break;
   }
 
-  
-  masm.pop(r9);  
-  masm.shrq(Imm32(FRAMESIZE_SHIFT), r9);
-  masm.pop(r11);  
-  masm.pop(r11);  
-
-  
-  BaseIndex unwind(rsp, r9, TimesOne, -int32_t(sizeof(void*)));
-  masm.lea(Operand(unwind), rsp);
-
+  masm.mov(FramePointer, StackPointer);
   masm.pop(FramePointer);
   masm.ret();
 }
