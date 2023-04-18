@@ -208,39 +208,36 @@ static void UpdateOldAnimationPropertiesWithNew(
 static already_AddRefed<dom::AnimationTimeline> GetTimeline(
     const StyleAnimationTimeline& aStyleTimeline, nsPresContext* aPresContext,
     const NonOwningAnimationTarget& aTarget) {
-  RefPtr<dom::AnimationTimeline> timeline;
   switch (aStyleTimeline.tag) {
     case StyleAnimationTimeline::Tag::Timeline: {
       nsAtom* name = aStyleTimeline.AsTimeline().AsAtom();
+      if (name == nsGkAtoms::_empty) {
+        
+        return nullptr;
+      }
       const auto* rule =
           aPresContext->StyleSet()->ScrollTimelineRuleForName(name);
-      if (rule) {
+      if (!rule) {
         
-        
-        
-        RefPtr<ScrollTimeline> scrollTimeline =
-            ScrollTimeline::FromRule(*rule, aPresContext->Document(), aTarget);
-        timeline = scrollTimeline;
-      } else {
-        
-        
+        return nullptr;
       }
-      break;
+      
+      
+      
+      return ScrollTimeline::FromRule(*rule, aPresContext->Document(),
+                                      aTarget);
     }
     case StyleAnimationTimeline::Tag::Scroll: {
       const auto& scroll = aStyleTimeline.AsScroll();
-      timeline = ScrollTimeline::FromAnonymousScroll(
+      return ScrollTimeline::FromAnonymousScroll(
           aPresContext->Document(), aTarget, scroll._0, scroll._1);
       break;
     }
-    case StyleAnimationTimeline::Tag::None:
-      
-      break;
     case StyleAnimationTimeline::Tag::Auto:
-      timeline = aTarget.mElement->OwnerDoc()->Timeline();
-      break;
+      return do_AddRef(aTarget.mElement->OwnerDoc()->Timeline());
   }
-  return timeline.forget();
+  MOZ_ASSERT_UNREACHABLE("Unknown animation-timeline value?");
+  return nullptr;
 }
 
 
