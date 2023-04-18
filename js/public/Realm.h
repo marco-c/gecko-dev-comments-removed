@@ -92,6 +92,12 @@ extern JS_PUBLIC_API bool InitRealmStandardClasses(JSContext* cx);
 
 
 
+extern JS_PUBLIC_API bool MaybeFreezeCtorAndPrototype(JSContext* cx,
+                                                      HandleObject ctor,
+                                                      HandleObject maybeProto);
+
+
+
 
 
 
