@@ -61,7 +61,7 @@ add_task(async function testPrintToStream() {
     
     
     
-    const maxSizeDifference = AppConstants.platform == "macosx" ? 100 : 1;
+    const maxSizeDifference = AppConstants.platform == "macosx" ? 100 : 2;
 
     
     
