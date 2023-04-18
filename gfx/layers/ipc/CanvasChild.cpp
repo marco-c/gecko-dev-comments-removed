@@ -286,7 +286,13 @@ already_AddRefed<gfx::DataSourceSurface> CanvasChild::GetDataSurface(
     return nullptr;
   }
 
-  mTransactionsSinceGetDataSurface = 0;
+  
+  
+  
+  
+  if (!mIsInTransaction) {
+    mTransactionsSinceGetDataSurface = 0;
+  }
   EnsureBeginTransaction();
   mRecorder->RecordEvent(RecordedPrepareDataForSurface(aSurface));
   uint32_t checkpoint = mRecorder->CreateCheckpoint();
