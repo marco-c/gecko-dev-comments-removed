@@ -5377,8 +5377,28 @@ void PresShell::AddCanvasBackgroundColorItem(
   }
 }
 
-static bool IsTransparentContainerElement(nsPresContext* aPresContext) {
-  nsIDocShell* docShell = aPresContext->GetDocShell();
+bool PresShell::IsTransparentContainerElement() const {
+  nsPresContext* pc = GetPresContext();
+  if (!pc->IsRootContentDocumentCrossProcess()) {
+    
+    
+    
+    
+    if (BrowsingContext* bc = pc->Document()->GetBrowsingContext()) {
+      switch (bc->GetEmbedderColorScheme()) {
+        case dom::PrefersColorSchemeOverride::Light:
+          return DefaultBackgroundColorScheme() == ColorScheme::Light;
+        case dom::PrefersColorSchemeOverride::Dark:
+          return DefaultBackgroundColorScheme() == ColorScheme::Dark;
+        case dom::PrefersColorSchemeOverride::None:
+        case dom::PrefersColorSchemeOverride::EndGuard_:
+          break;
+      }
+    }
+    return true;
+  }
+
+  nsIDocShell* docShell = pc->GetDocShell();
   if (!docShell) {
     return false;
   }
@@ -5392,10 +5412,29 @@ static bool IsTransparentContainerElement(nsPresContext* aPresContext) {
   if (BrowserChild* tab = BrowserChild::GetFrom(docShell)) {
     
     
-    return aPresContext->GetPresShell() == tab->GetTopLevelPresShell() &&
-           tab->IsTransparent();
+    return this == tab->GetTopLevelPresShell() && tab->IsTransparent();
   }
   return false;
+}
+
+ColorScheme PresShell::DefaultBackgroundColorScheme() const {
+  Document* doc = GetDocument();
+  
+  
+  {
+    BrowsingContext* bc = doc->GetBrowsingContext();
+    if (bc && bc->IsTop() && !bc->HasOpener() && doc->GetDocumentURI() &&
+        NS_IsAboutBlank(doc->GetDocumentURI())) {
+      return doc->PreferredColorScheme(Document::IgnoreRFP::Yes);
+    }
+  }
+  
+  
+  
+  if (auto* frame = mFrameConstructor->GetRootElementStyleFrame()) {
+    return LookAndFeel::ColorSchemeForFrame(frame);
+  }
+  return doc->DefaultColorScheme();
 }
 
 nscolor PresShell::GetDefaultBackgroundColorToDraw() const {
@@ -5403,28 +5442,8 @@ nscolor PresShell::GetDefaultBackgroundColorToDraw() const {
     return NS_RGB(255, 255, 255);
   }
 
-  Document* doc = GetDocument();
-  auto colorScheme = [&] {
-    
-    
-    {
-      BrowsingContext* bc = doc->GetBrowsingContext();
-      if (bc && bc->IsTop() && !bc->HasOpener() && doc->GetDocumentURI() &&
-          NS_IsAboutBlank(doc->GetDocumentURI())) {
-        return doc->PreferredColorScheme(Document::IgnoreRFP::Yes);
-      }
-    }
-    
-    
-    
-    if (auto* frame = mFrameConstructor->GetRootElementStyleFrame()) {
-      return LookAndFeel::ColorSchemeForFrame(frame);
-    }
-    return doc->DefaultColorScheme();
-  }();
-
   return mPresContext->PrefSheetPrefs()
-      .ColorsFor(colorScheme)
+      .ColorsFor(DefaultBackgroundColorScheme())
       .mDefaultBackground;
 }
 
@@ -5468,8 +5487,7 @@ PresShell::CanvasBackground PresShell::ComputeCanvasBackground() const {
         mPresContext, bgStyle, rootStyleFrame, drawBackgroundImage,
         drawBackgroundColor);
   }
-  if (mPresContext->IsRootContentDocumentCrossProcess() &&
-      !IsTransparentContainerElement(mPresContext)) {
+  if (!IsTransparentContainerElement()) {
     color = NS_ComposeColors(GetDefaultBackgroundColorToDraw(), color);
   }
   return {color, drawBackgroundColor};

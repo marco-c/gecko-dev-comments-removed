@@ -927,13 +927,10 @@ void nsPresContext::RecomputeBrowsingContextDependentData() {
     if (overriden != PrefersColorSchemeOverride::None) {
       return overriden;
     }
-    for (auto* cur = browsingContext; cur; cur = cur->GetParent()) {
-      auto embedder = cur->GetEmbedderColorScheme();
-      if (embedder != PrefersColorSchemeOverride::None) {
-        return embedder;
-      }
-    }
-    return PrefersColorSchemeOverride::None;
+    
+    
+    
+    return top->GetEmbedderColorScheme();
   }());
 
   if (doc == mDocument) {
