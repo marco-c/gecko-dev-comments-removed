@@ -172,12 +172,12 @@ class nsMenuPopupFrame final : public nsBoxFrame,
 
   ConsumeOutsideClicksResult ConsumeOutsideClicks();
 
-  bool IsContextMenu() override { return mIsContextMenu; }
+  virtual bool IsContextMenu() override { return mIsContextMenu; }
 
-  bool MenuClosed() override { return true; }
+  virtual bool MenuClosed() override { return true; }
 
-  void LockMenuUntilClosed(bool aLock) override;
-  bool IsMenuLocked() override { return mIsMenuLocked; }
+  virtual void LockMenuUntilClosed(bool aLock) override;
+  virtual bool IsMenuLocked() override { return mIsMenuLocked; }
 
   nsIWidget* GetWidget();
 
@@ -246,7 +246,7 @@ class nsMenuPopupFrame final : public nsBoxFrame,
     return IsOpen() || mPopupState == ePopupPositioning ||
            mPopupState == ePopupShowing;
   }
-  bool IsNativeMenu() const { return mIsNativeMenu; }
+  bool IsNativeMenu() { return mIsNativeMenu; }
 
   
   bool IsMenuList();
@@ -447,11 +447,13 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   
   
+  
   nscoord FlipOrResize(nscoord& aScreenPoint, nscoord aSize,
                        nscoord aScreenBegin, nscoord aScreenEnd,
                        nscoord aAnchorBegin, nscoord aAnchorEnd,
                        nscoord aMarginBegin, nscoord aMarginEnd,
-                       FlipStyle aFlip, bool aIsOnEnd, bool* aFlipSide);
+                       nscoord aOffsetForContextMenu, FlipStyle aFlip,
+                       bool aIsOnEnd, bool* aFlipSide);
 
   
   
@@ -519,16 +521,10 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   nsIWidget* GetParentMenuWidget();
 
   
-  
-  nsMargin GetMargin() const;
-
-  
-  const nsRect& GetUntransformedAnchorRect() const {
-    return mUntransformedAnchorRect;
-  }
-  int GetPopupAlignment() const { return mPopupAlignment; }
-  int GetPopupAnchor() const { return mPopupAnchor; }
-  FlipType GetFlipType() const { return mFlip; }
+  nsRect GetAnchorRect() { return mAnchorRect; }
+  int GetPopupAlignment() { return mPopupAlignment; }
+  int GetPopupAnchor() { return mPopupAnchor; }
+  FlipType GetFlipType() { return mFlip; }
 
   void WidgetPositionOrSizeDidChange();
 
@@ -565,9 +561,7 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   nsRect mScreenRect;
   
   
-  
-  
-  nsRect mUntransformedAnchorRect;
+  nsRect mAnchorRect;
   
   
   bool mSizedToPopup = false;
@@ -612,8 +606,9 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   ReflowCallbackData mReflowCallbackData;
 
   bool mIsOpenChanged;  
-  bool mIsContextMenu = false;  
-  bool mIsTopLevelContextMenu = false;  
+  bool mIsContextMenu;  
+  
+  bool mAdjustOffsetForContextMenu;
 
   bool mMenuCanOverlapOSBar;  
   bool mShouldAutoPosition;   
