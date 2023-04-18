@@ -49,8 +49,11 @@ add_task(async function() {
   );
 
   
-  const backgroundPropertySpan = getRuleViewProperty(view, "#target", "background")
-    .valueSpan;
+  const backgroundPropertySpan = getRuleViewProperty(
+    view,
+    "#target",
+    "background"
+  ).valueSpan;
   const backgroundUrlElement = backgroundPropertySpan.querySelector(
     ".theme-link"
   );
