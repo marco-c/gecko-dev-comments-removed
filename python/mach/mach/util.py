@@ -60,6 +60,10 @@ def get_state_dir(specific_to_topsrcdir=False, topsrcdir=None):
         topsrcdir = os.path.abspath(
             MozbuildObject.from_environment(cwd=os.path.dirname(__file__)).topsrcdir
         )
+
+    
+    topsrcdir = os.path.normcase(os.path.normpath(topsrcdir))
+
     
     
     srcdir_hash = hashlib.sha256(topsrcdir.encode("utf-8")).hexdigest()[:12]
