@@ -48,10 +48,8 @@ class ServiceWorkerRegistrationDescriptor;
 }  
 }  
 
-namespace JS {
-namespace loader {
+namespace JS::loader {
 class ModuleLoaderBase;
-}  
 }  
 
 

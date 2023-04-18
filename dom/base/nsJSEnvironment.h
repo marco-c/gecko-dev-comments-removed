@@ -154,8 +154,7 @@ class nsJSContext : public nsIScriptContext {
   static bool DOMOperationCallback(JSContext* cx);
 };
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class SerializedStackHolder;
 
@@ -188,7 +187,6 @@ class AsyncErrorReporter final : public mozilla::Runnable {
   UniquePtr<SerializedStackHolder> mStackHolder;
 };
 
-}  
 }  
 
 

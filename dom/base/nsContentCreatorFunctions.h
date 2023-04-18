@@ -22,12 +22,10 @@ class nsIContent;
 class imgRequestProxy;
 class nsGenericHTMLElement;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class Element;
 class NodeInfo;
 struct CustomElementDefinition;
-}  
 }  
 
 nsresult NS_NewElement(mozilla::dom::Element** aResult,

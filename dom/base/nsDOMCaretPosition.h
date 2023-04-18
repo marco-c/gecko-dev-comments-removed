@@ -12,10 +12,8 @@
 #include "nsINode.h"
 #include "nsWrapperCache.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class DOMRect;
-}  
 }  
 
 

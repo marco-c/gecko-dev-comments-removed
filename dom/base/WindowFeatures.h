@@ -14,8 +14,7 @@
 #include "nsStringFwd.h"  
 #include "nsTStringHasher.h"  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -126,7 +125,6 @@ class WindowFeatures {
   mozilla::HashMap<nsCString, nsCString> tokenizedFeatures_;
 };
 
-}  
 }  
 
 #endif  

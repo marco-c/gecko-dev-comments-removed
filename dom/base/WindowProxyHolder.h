@@ -17,8 +17,7 @@ template <typename T>
 class MutableHandle;
 }  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -73,7 +72,6 @@ extern bool GetRemoteOuterWindowProxy(JSContext* aCx, BrowsingContext* aContext,
                                       JS::Handle<JSObject*> aTransplantTo,
                                       JS::MutableHandle<JSObject*> aValue);
 
-}  
 }  
 
 #endif 

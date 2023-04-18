@@ -26,12 +26,10 @@ class Message;
 class MessageReader;
 class MessageWriter;
 }  
-namespace mozilla {
-namespace ipc {
+namespace mozilla::ipc {
 class IProtocol;
 template <typename>
 struct IPDLParamTraits;
-}  
 }  
 
 class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
@@ -257,8 +255,7 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
 
 
 
-namespace mozilla {
-namespace ipc {
+namespace mozilla::ipc {
 template <>
 struct IPDLParamTraits<nsDOMNavigationTiming*> {
   static void Write(IPC::MessageWriter* aWriter, IProtocol* aActor,
@@ -267,7 +264,6 @@ struct IPDLParamTraits<nsDOMNavigationTiming*> {
                    RefPtr<nsDOMNavigationTiming>* aResult);
 };
 
-}  
 }  
 
 #endif 

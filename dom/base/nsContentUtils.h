@@ -3536,8 +3536,7 @@ class MOZ_STACK_CLASS nsAutoScriptBlockerSuppressNodeRemoved
   }
 };
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class TreeOrderComparator {
  public:
@@ -3549,7 +3548,6 @@ class TreeOrderComparator {
   }
 };
 
-}  
 }  
 
 #define NS_INTERFACE_MAP_ENTRY_TEAROFF(_interface, _allocator) \

@@ -15,10 +15,8 @@
 class nsIScriptContext;
 class nsIScriptGlobalObject;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 struct ErrorEventInit;
-}  
 }  
 
 

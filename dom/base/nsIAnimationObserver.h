@@ -8,10 +8,8 @@
 
 #include "nsIMutationObserver.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class Animation;
-}  
 }  
 
 #define NS_IANIMATION_OBSERVER_IID                   \

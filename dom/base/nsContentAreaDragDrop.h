@@ -18,11 +18,9 @@ class nsITransferable;
 class nsIContent;
 class nsIFile;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class DataTransfer;
 class Selection;
-}  
 }  
 
 

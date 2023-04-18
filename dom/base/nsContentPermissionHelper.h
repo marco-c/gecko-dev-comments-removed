@@ -32,8 +32,7 @@ namespace IPC {
 class Principal;
 }  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class Element;
 class PermissionRequest;
@@ -169,7 +168,6 @@ class ContentPermissionRequestBase : public nsIContentPermissionRequest {
   bool mIsRequestDelegatedToUnsafeThirdParty;
 };
 
-}  
 }  
 
 using mozilla::dom::ContentPermissionRequestParent;

@@ -15,8 +15,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/FunctionBinding.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -100,7 +99,6 @@ class CallbackTimeoutHandler final : public TimeoutHandler {
   nsTArray<JS::Heap<JS::Value>> mArgs;
 };
 
-}  
 }  
 
 #endif  
