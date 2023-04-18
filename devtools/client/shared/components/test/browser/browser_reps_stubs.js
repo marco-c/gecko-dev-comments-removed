@@ -39,7 +39,7 @@ const EXPRESSIONS_BY_FILE = {
     ["NegZeroGrip", `1 / -Infinity`],
   ]),
   "undefined.js": new Map([["Undefined", `undefined`]]),
-  
+  "window.js": new Map([["Window", `window`]]),
   
   
   
@@ -164,6 +164,16 @@ function getCleanedPacket(stubFile, key, packet) {
     existingPacket._grip?.contentDomReference?.id
   ) {
     packet._grip.contentDomReference = existingPacket._grip.contentDomReference;
+  }
+
+  
+  if (
+    existingPacket &&
+    packet._grip?.class === "Window" &&
+    typeof packet._grip.ownPropertyLength ==
+      typeof existingPacket._grip.ownPropertyLength
+  ) {
+    packet._grip.ownPropertyLength = existingPacket._grip.ownPropertyLength;
   }
 
   return packet;

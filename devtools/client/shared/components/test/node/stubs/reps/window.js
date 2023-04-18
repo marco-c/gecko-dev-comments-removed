@@ -4,19 +4,26 @@
 
 "use strict";
 
+
+
+
 const stubs = new Map();
-stubs.set("Window", {
-  type: "object",
-  class: "Window",
-  actor: "server1.conn3.obj198",
-  extensible: true,
-  frozen: false,
-  sealed: false,
-  ownPropertyLength: 887,
-  preview: {
-    kind: "ObjectWithURL",
-    url: "about:newtab",
+stubs.set(`Window`, {
+  "_grip": {
+    "type": "object",
+    "actor": "server0.conn0.windowGlobal2147483651/obj35",
+    "class": "Window",
+    "ownPropertyLength": 806,
+    "extensible": true,
+    "frozen": false,
+    "sealed": false,
+    "isError": false,
+    "preview": {
+      "kind": "ObjectWithURL",
+      "url": "data:text/html;charset=utf-8,stub generation"
+    }
   },
+  "actorID": "server0.conn0.windowGlobal2147483651/obj35"
 });
 
 module.exports = stubs;
