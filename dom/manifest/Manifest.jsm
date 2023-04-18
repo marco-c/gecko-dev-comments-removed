@@ -24,7 +24,6 @@ const { ManifestIcons } = ChromeUtils.import(
 
 const lazy = {};
 
-ChromeUtils.defineModuleGetter(lazy, "OS", "resource://gre/modules/osfile.jsm");
 ChromeUtils.defineModuleGetter(
   lazy,
   "JSONFile",
@@ -59,10 +58,7 @@ function stripQuery(url) {
 }
 
 
-const MANIFESTS_DIR = lazy.OS.Path.join(
-  lazy.OS.Constants.Path.profileDir,
-  "manifests"
-);
+const MANIFESTS_DIR = PathUtils.join(PathUtils.profileDir, "manifests");
 
 
 
@@ -78,7 +74,7 @@ class Manifest {
     
     
     const fileName = generateHash(manifestUrl) + ".json";
-    this._path = lazy.OS.Path.join(MANIFESTS_DIR, fileName);
+    this._path = PathUtils.join(MANIFESTS_DIR, fileName);
     this.browser = browser;
   }
 
@@ -180,13 +176,10 @@ var Manifests = {
     
     this._readyPromise = (async () => {
       
-      await lazy.OS.File.makeDir(MANIFESTS_DIR, { ignoreExisting: true });
+      await IOUtils.makeDirectory(MANIFESTS_DIR, { ignoreExisting: true });
 
       
-      this._path = lazy.OS.Path.join(
-        lazy.OS.Constants.Path.profileDir,
-        MANIFESTS_FILE
-      );
+      this._path = PathUtils.join(PathUtils.profileDir, MANIFESTS_FILE);
       this._store = new lazy.JSONFile({ path: this._path });
       await this._store.load();
 

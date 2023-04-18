@@ -4,7 +4,6 @@
 
 "use strict";
 
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -297,10 +296,12 @@ var BroadcastService = class {
 function initializeBroadcastService() {
   
   let path = "broadcast-listeners.json";
-  if (OS.Constants.Path.profileDir) {
-    
-    path = OS.Path.join(OS.Constants.Path.profileDir, path);
-  }
+  try {
+    if (PathUtils.profileDir) {
+      
+      path = PathUtils.join(PathUtils.profileDir, path);
+    }
+  } catch (e) {}
   return new BroadcastService(lazy.PushService, path);
 }
 

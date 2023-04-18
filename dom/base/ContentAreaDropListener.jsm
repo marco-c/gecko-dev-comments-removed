@@ -3,7 +3,6 @@
 
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 
 
@@ -103,7 +102,7 @@ ContentAreaDropListener.prototype = {
     if (files && i < files.length) {
       this._addLink(
         links,
-        OS.Path.toFileURI(files[i].mozFullPath),
+        PathUtils.toFileURI(files[i].mozFullPath),
         files[i].name,
         "application/x-moz-file"
       );
