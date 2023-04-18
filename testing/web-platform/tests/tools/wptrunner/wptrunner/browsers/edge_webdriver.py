@@ -1,6 +1,5 @@
 from .base import NullBrowser  
 from .edge import (EdgeBrowser,  
-                   EdgeDriverWdspecExecutor,  
                    check_args,  
                    browser_kwargs,  
                    executor_kwargs,  
@@ -9,17 +8,17 @@ from .edge import (EdgeBrowser,
                    run_info_extras,  
                    get_timeout_multiplier)  
 
+from ..executors.base import WdspecExecutor  
 from ..executors.executorwebdriver import (WebDriverTestharnessExecutor,  
                                            WebDriverRefTestExecutor)  
 
 
 __wptrunner__ = {"product": "edge_webdriver",
                  "check_args": "check_args",
-                 "browser": {None: "EdgeBrowser",
-                             "wdspec": "NullBrowser"},
+                 "browser": "EdgeBrowser",
                  "executor": {"testharness": "WebDriverTestharnessExecutor",
                               "reftest": "WebDriverRefTestExecutor",
-                              "wdspec": "EdgeDriverWdspecExecutor"},
+                              "wdspec": "WdspecExecutor"},
                  "browser_kwargs": "browser_kwargs",
                  "executor_kwargs": "executor_kwargs",
                  "env_extras": "env_extras",

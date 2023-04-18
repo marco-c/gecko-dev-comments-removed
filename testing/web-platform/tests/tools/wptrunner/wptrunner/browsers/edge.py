@@ -1,20 +1,18 @@
 import time
 import subprocess
-from .base import Browser, ExecutorBrowser, require_arg
-from .base import NullBrowser  
-from ..webdriver_server import EdgeDriverServer
+from .base import require_arg
+from .base import WebDriverBrowser
 from ..executors import executor_kwargs as base_executor_kwargs
+from ..executors.base import WdspecExecutor  
 from ..executors.executorselenium import (SeleniumTestharnessExecutor,  
                                           SeleniumRefTestExecutor)  
-from ..executors.executoredge import EdgeDriverWdspecExecutor  
 
 __wptrunner__ = {"product": "edge",
                  "check_args": "check_args",
-                 "browser": {None: "EdgeBrowser",
-                             "wdspec": "NullBrowser"},
+                 "browser": "EdgeBrowser",
                  "executor": {"testharness": "SeleniumTestharnessExecutor",
                               "reftest": "SeleniumRefTestExecutor",
-                              "wdspec": "EdgeDriverWdspecExecutor"},
+                              "wdspec": "WdspecExecutor"},
                  "browser_kwargs": "browser_kwargs",
                  "executor_kwargs": "executor_kwargs",
                  "env_extras": "env_extras",
@@ -64,30 +62,20 @@ def env_options():
     return {"supports_debugger": False}
 
 
-class EdgeBrowser(Browser):
+class EdgeBrowser(WebDriverBrowser):
     init_timeout = 60
 
-    def __init__(self, logger, webdriver_binary,
-            timeout_multiplier=None, webdriver_args=None, **kwargs):
-        Browser.__init__(self, logger)
-        self.server = EdgeDriverServer(self.logger,
-                                       binary=webdriver_binary,
-                                       args=webdriver_args)
-        self.webdriver_host = "localhost"
-        self.webdriver_port = self.server.port
-        if timeout_multiplier:
-            self.init_timeout = self.init_timeout * timeout_multiplier
-
-
-    def start(self, **kwargs):
-        print(self.server.url)
-        self.server.start()
+    def __init__(self, logger, binary, webdriver_binary, webdriver_args=None,
+                 host="localhost", port=None, base_path="/", env=None, **kwargs):
+        super().__init__(logger, binary, webdriver_binary, webdriver_args=webdriver_args,
+                         host=host, port=port, base_path=base_path, env=env, **kwargs)
+        self.host = "localhost"
 
     def stop(self, force=False):
-        self.server.stop(force=force)
+        super(self).stop(force)
         
         edge_proc_name = 'MicrosoftEdge.exe'
-        for i in range(0,5):
+        for i in range(0, 5):
             procs = subprocess.check_output(['tasklist', '/fi', 'ImageName eq ' + edge_proc_name])
             if b'MicrosoftWebDriver.exe' not in procs:
                 
@@ -101,20 +89,8 @@ class EdgeBrowser(Browser):
             
             subprocess.call(['taskkill.exe', '/f', '/im', 'microsoftedge*'])
 
-    def pid(self):
-        return self.server.pid
-
-    def is_alive(self):
-        
-        
-        
-        return self.server.is_alive()
-
-    def cleanup(self):
-        self.stop()
-
-    def executor_browser(self):
-        return ExecutorBrowser, {"webdriver_url": self.server.url}
+    def make_command(self):
+        return [self.webdriver_binary, f"--port={self.port}"] + self.webdriver_args
 
 
 def run_info_extras(**kwargs):
