@@ -1432,14 +1432,12 @@ class _ASRouter {
     }
     
     this._storage.set("groupImpressions", newGroupImpressions);
-    
     return this.setState(({ groups }) => ({
       groupImpressions: newGroupImpressions,
     }));
   }
 
-  
-  _resetMessageState() {
+  resetMessageState() {
     const newMessageImpressions = {};
     for (let { id } of this.state.messages) {
       newMessageImpressions[id] = [];
