@@ -15,6 +15,8 @@
 
 #  include "mozilla/rlbox/rlbox.hpp"
 
+#  include "nsExceptionHandler.h"
+
 
 
 
@@ -26,6 +28,16 @@ extern "C" {
 
 void moz_wasm2c_trap_handler(const char* msg) {
   MOZ_CRASH_UNSAFE_PRINTF("wasm2c crash: %s", msg);
+}
+
+
+
+void moz_wasm2c_malloc_failed(uint32_t size) {
+  
+  (void) size;
+
+  CrashReporter::AnnotateCrashReport(
+      CrashReporter::Annotation::WasmLibrarySandboxMallocFailed, true);
 }
 }
 
