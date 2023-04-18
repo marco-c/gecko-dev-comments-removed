@@ -276,6 +276,7 @@ enum class ViewportFitType : uint8_t;
 class WindowContext;
 class WindowGlobalChild;
 class WindowProxyHolder;
+class WorkerDocumentListener;
 class XPathEvaluator;
 class XPathExpression;
 class XPathNSResolver;
@@ -2126,6 +2127,9 @@ class Document : public nsINode,
 
 
   void FlushExternalResources(FlushType aType);
+
+  void AddWorkerDocumentListener(WorkerDocumentListener* aListener);
+  void RemoveWorkerDocumentListener(WorkerDocumentListener* aListener);
 
   
   void UpdateSVGUseElementShadowTrees() {
@@ -5250,6 +5254,8 @@ class Document : public nsINode,
   RefPtr<ChromeObserver> mChromeObserver;
 
   RefPtr<HTMLAllCollection> mAll;
+
+  nsTHashSet<RefPtr<WorkerDocumentListener>> mWorkerListeners;
 
   
   float mSavedResolution;
