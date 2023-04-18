@@ -7,8 +7,13 @@ const { BrowserUtils } = ChromeUtils.import(
 
 const { Region } = ChromeUtils.import("resource://gre/modules/Region.jsm");
 
-const initialHomeRegion = Region._home;
-const initialCurrentRegion = Region._current;
+const { EnterprisePolicyTesting } = ChromeUtils.import(
+  "resource://testing-common/EnterprisePolicyTesting.jsm"
+);
+
+const { updateAppInfo } = ChromeUtils.import(
+  "resource://testing-common/AppInfo.jsm"
+);
 
 
 function setupRegions(home, current) {
@@ -59,11 +64,26 @@ add_task(async function test_shouldShowVPNPromo() {
   setupRegions(unsupportedRegion, allowedRegion); 
   Assert.ok(BrowserUtils.shouldShowVPNPromo());
 
-  setupRegions(initialHomeRegion, initialCurrentRegion); 
+  
+  setupRegions(allowedRegion, allowedRegion);
+  
+  updateAppInfo({
+    name: "XPCShell",
+  });
+  
+  await EnterprisePolicyTesting.setupPolicyEngineWithJson({
+    policies: {
+      EnableTrackingProtection: {
+        Value: true,
+      },
+    },
+  });
+  Assert.ok(!BrowserUtils.shouldShowVPNPromo());
+
+  await EnterprisePolicyTesting.setupPolicyEngineWithJson(""); 
 });
 
 add_task(async function test_shouldShowRallyPromo() {
-  const initialLanguage = Services.locale.appLocaleAsBCP47;
   const allowedRegion = "US";
   const disallowedRegion = "CN";
   const allowedLanguage = "en-US";
@@ -95,7 +115,4 @@ add_task(async function test_shouldShowRallyPromo() {
   
   setupRegions(allowedRegion, disallowedRegion);
   Assert.ok(!BrowserUtils.shouldShowRallyPromo());
-
-  setupRegions(initialHomeRegion, initialCurrentRegion); 
-  setLanguage(initialLanguage); 
 });
