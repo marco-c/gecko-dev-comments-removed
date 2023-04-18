@@ -33,6 +33,10 @@ use std::sync::Arc;
 use dwrote;
 
 #[cfg(target_os = "macos")]
+use core_foundation::string::CFString;
+#[cfg(target_os = "macos")]
+use core_graphics::font::CGFont;
+#[cfg(target_os = "macos")]
 use foreign_types::ForeignType;
 
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
@@ -782,7 +786,19 @@ impl Moz2dBlobImageHandler {
 
         #[cfg(target_os = "macos")]
         fn process_native_font_handle(key: FontKey, handle: &NativeFontHandle) {
-            unsafe { AddNativeFontHandle(key, handle.0.as_ptr() as *mut c_void, 0) };
+            let font = match CGFont::from_name(&CFString::new(&handle.name)) {
+                Ok(font) => font,
+                Err(_) => {
+                    
+                    
+                    
+                    
+                    
+                    CGFont::from_name(&CFString::from_static_string("Lucida Grande"))
+                        .expect("Failed reading font descriptor and could not load fallback font")
+                },
+            };
+            unsafe { AddNativeFontHandle(key, font.as_ptr() as *mut c_void, 0) };
         }
 
         #[cfg(not(any(target_os = "macos", target_os = "windows")))]
