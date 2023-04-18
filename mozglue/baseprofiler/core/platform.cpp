@@ -231,8 +231,7 @@ static uint32_t AvailableFeatures() {
 
 static constexpr uint32_t DefaultFeatures() {
   return ProfilerFeature::Java | ProfilerFeature::JS | ProfilerFeature::Leaf |
-         ProfilerFeature::StackWalk | ProfilerFeature::Threads |
-         ProfilerFeature::CPUUtilization;
+         ProfilerFeature::StackWalk | ProfilerFeature::CPUUtilization;
 }
 
 
@@ -605,13 +604,6 @@ class ActivePS {
     aFeatures &= AvailableFeatures();
 
     
-    
-    
-    if (aFilterCount > 0) {
-      aFeatures |= ProfilerFeature::Threads;
-    }
-
-    
     if (aFeatures & ProfilerFeature::FileIOAll) {
       aFeatures |= ProfilerFeature::MainThreadIO | ProfilerFeature::FileIO;
     } else if (aFeatures & ProfilerFeature::FileIO) {
@@ -751,8 +743,7 @@ class ActivePS {
 
   static bool ShouldProfileThread(PSLockRef aLock, ThreadInfo* aInfo) {
     MOZ_ASSERT(sInstance);
-    return ((aInfo->IsMainThread() || FeatureThreads(aLock)) &&
-            sInstance->ThreadSelected(aInfo->Name()));
+    return sInstance->ThreadSelected(aInfo->Name());
   }
 
   PS_GET(uint32_t, Generation)
