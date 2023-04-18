@@ -56,7 +56,7 @@ nsresult CredentialManagerSecret::StoreSecret(const nsACString& aSecret,
     
     
     MOZ_LOG(gCredentialManagerSecretLog, LogLevel::Debug,
-            ("StoreSecret secret must not be larger than 512 bytes (got %d)",
+            ("StoreSecret secret must not be larger than 512 bytes (got %zd)",
              aSecret.Length()));
     return NS_ERROR_FAILURE;
   }
