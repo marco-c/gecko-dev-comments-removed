@@ -5706,15 +5706,43 @@ static const PrefListEntry sParentOnlyPrefBranchList[] = {
     
 };
 
+static const PrefListEntry sDynamicPrefOverrideList[]{
+    PREF_LIST_ENTRY("print.printer_")};
+
 #undef PREF_LIST_ENTRY
 
-  for (const auto& entry : sParentOnlyPrefBranchList) {
-    if (strncmp(entry.mPrefBranch, aPref, entry.mLen) == 0) {
+  
+  
+  if (XRE_IsParentProcess()) {
+    
+    
+    for (const auto& entry : sParentOnlyPrefBranchList) {
+      if (strncmp(entry.mPrefBranch, aPref, entry.mLen) == 0) {
+        return true;
+      }
+    }
+
+    if (!aIsDestWebContentProcess) {
+      return false;
+    }
+
+    
+    
+    if (Preferences::GetType(aPref) == nsIPrefBranch::PREF_STRING &&
+        !Preferences::HasDefaultValue(aPref)) {
+      for (const auto& entry : sDynamicPrefOverrideList) {
+        if (strncmp(entry.mPrefBranch, aPref, entry.mLen) == 0) {
+          return false;
+        }
+      }
       return true;
     }
+
+    return false;
   }
 
-  return false;
+  
+  return Preferences::IsSanitized(aPref);
 }
 
 }  
