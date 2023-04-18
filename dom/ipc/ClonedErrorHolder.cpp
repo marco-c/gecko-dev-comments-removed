@@ -311,7 +311,7 @@ bool ClonedErrorHolder::ToErrorValue(JSContext* aCx,
         if (mTokenOffset >= sourceLine.Length()) {
           
         } else if (JS::UniqueTwoByteChars buffer =
-                ToNullTerminatedJSStringBuffer(aCx, sourceLine)) {
+                       ToNullTerminatedJSStringBuffer(aCx, sourceLine)) {
           err->initOwnedLinebuf(buffer.release(), sourceLine.Length(),
                                 mTokenOffset);
         } else {
