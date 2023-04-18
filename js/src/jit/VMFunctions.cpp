@@ -191,6 +191,36 @@ struct OutParamToDataType {
   static const DataType result = Type_Void;
 };
 template <>
+struct OutParamToDataType<uint8_t*> {
+  
+  static const DataType result = Type_Void;
+};
+template <>
+struct OutParamToDataType<uint64_t*> {
+  
+  static const DataType result = Type_Void;
+};
+template <>
+struct OutParamToDataType<JSObject*> {
+  
+  static const DataType result = Type_Void;
+};
+template <>
+struct OutParamToDataType<BigInt*> {
+  
+  static const DataType result = Type_Void;
+};
+template <>
+struct OutParamToDataType<BaselineFrame*> {
+  
+  static const DataType result = Type_Void;
+};
+template <>
+struct OutParamToDataType<gc::AllocSite*> {
+  
+  static const DataType result = Type_Void;
+};
+template <>
 struct OutParamToDataType<Value*> {
   static const DataType result = Type_Value;
 };
@@ -209,6 +239,10 @@ struct OutParamToDataType<bool*> {
 template <>
 struct OutParamToDataType<double*> {
   static const DataType result = Type_Double;
+};
+template <class T>
+struct OutParamToDataType<T*> {
+  
 };
 template <class T>
 struct OutParamToDataType<T**> {
