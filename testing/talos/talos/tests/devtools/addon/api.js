@@ -7,8 +7,6 @@ this.damp = class extends ExtensionAPI {
     return {
       damp: {
         startTest() {
-          let { rootURI } = context.extension;
-
           
           
           
@@ -16,34 +14,25 @@ this.damp = class extends ExtensionAPI {
           
           
           
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-
-          dump("[damp-api] Expose damp test path as a char preference\n");
-          
-          
-          const dampTestPath = rootURI.resolve("content");
-          Services.prefs.setCharPref("devtools.damp.test-path", dampTestPath);
 
           dump("[damp-api] Retrieve the main DevTools loader\n");
           const { loader, require } = ChromeUtils.import(
             "resource://devtools/shared/loader/Loader.jsm"
           );
 
+          const { rootURI } = context.extension;
+          const dampRootDir = rootURI.QueryInterface(Ci.nsIFileURL);
+
+          const protocolHandler = Services.io
+            .getProtocolHandler("resource")
+            .QueryInterface(Ci.nsIResProtocolHandler);
+
           
           
-          loader.loader.globals.rootURI = rootURI;
+          
+          protocolHandler.setSubstitution("damp-test", dampRootDir);
+
+          
           loader.loader.globals.dampWindow = context.appWindow;
 
           dump("[damp-api] Retrieve the DAMP runner and start the test\n");

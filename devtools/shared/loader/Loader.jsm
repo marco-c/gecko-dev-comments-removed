@@ -51,6 +51,9 @@ function DevToolsLoader({
 } = {}) {
   const paths = {
     
+    
+    "damp-test": "resource://damp-test/content",
+    
     devtools: "resource://devtools",
     
     
@@ -64,19 +67,6 @@ function DevToolsLoader({
     "devtools/startup/locales": "chrome://devtools-startup/locale",
     "toolkit/locales": "chrome://global/locale",
   };
-
-  
-  
-  
-  const dampTestPath = Services.prefs.getCharPref(
-    "devtools.damp.test-path",
-    ""
-  );
-  if (dampTestPath) {
-    
-    
-    paths["damp-test"] = dampTestPath;
-  }
 
   this.loader = new Loader({
     paths,
