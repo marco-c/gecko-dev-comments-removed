@@ -3,10 +3,11 @@
 
 
 
-
 "use strict";
 
+
 importScripts("chrome://mochikit/content/tests/SimpleTest/WorkerSimpleTest.js");
+
 importScripts("resource://gre/modules/ObjectUtils.jsm");
 
 importScripts("file_ioutils_test_fixtures.js");
