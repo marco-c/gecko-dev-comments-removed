@@ -7,10 +7,20 @@
 #ifndef mozilla_dom_ModuleLoader_h
 #define mozilla_dom_ModuleLoader_h
 
-#include "mozilla/dom/ScriptLoadContext.h"
-#include "js/loader/ModuleLoaderBase.h"
-#include "js/loader/ScriptLoadRequest.h"
-#include "ScriptLoader.h"
+#include "js/TypeDecls.h"  
+#include "nsRefPtrHashtable.h"
+#include "nsCOMArray.h"
+#include "nsCOMPtr.h"
+#include "nsILoadInfo.h"  
+#include "nsINode.h"      
+#include "nsURIHashKey.h"
+#include "mozilla/CORSMode.h"
+#include "mozilla/dom/LoadedScript.h"
+#include "mozilla/dom/JSExecutionContext.h"
+#include "mozilla/dom/ScriptLoadRequest.h"
+#include "mozilla/MaybeOneOf.h"
+#include "mozilla/MozPromise.h"
+#include "ModuleMapKey.h"
 
 class nsIURI;
 
@@ -18,65 +28,156 @@ namespace JS {
 
 class CompileOptions;
 
-namespace loader {
+template <typename UnitT>
+class SourceText;
 
-class ModuleLoadRequest;
-
-}  
 }  
 
 namespace mozilla {
+
+class LazyLogModule;
+union Utf8Unit;
+
 namespace dom {
 
-class ScriptLoader;
-class SRIMetadata;
+class ModuleLoader;
+class ModuleLoadRequest;
+class ModuleScript;
 
+class ScriptLoaderInterface : public nsISupports {
+ public:
+  
+  virtual nsIURI* GetBaseURI() const = 0;
 
+  
+  virtual already_AddRefed<nsIGlobalObject> GetGlobalForRequest(
+      ScriptLoadRequest* aRequest) = 0;
 
+  virtual void ReportErrorToConsole(ScriptLoadRequest* aRequest,
+                                    nsresult aResult) const = 0;
 
+  
+  
+  virtual nsresult FillCompileOptionsForRequest(
+      JSContext* cx, ScriptLoadRequest* aRequest,
+      JS::Handle<JSObject*> aScopeChain, JS::CompileOptions* aOptions,
+      JS::MutableHandle<JSScript*> aIntroductionScript) = 0;
 
-class ModuleLoader final : public JS::loader::ModuleLoaderBase {
+  virtual nsresult ProcessRequest(ScriptLoadRequest* aRequest) = 0;
+
+  virtual void RunScriptWhenSafe(ScriptLoadRequest* aRequest) = 0;
+
+  virtual void EnsureModuleHooksInitialized() = 0;
+  virtual nsresult StartModuleLoad(ScriptLoadRequest* aRequest) = 0;
+  virtual void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest) = 0;
+};
+
+class ModuleLoader : public nsISupports {
  private:
   virtual ~ModuleLoader();
 
+  
+  nsRefPtrHashtable<ModuleMapKey, mozilla::GenericNonExclusivePromise::Private>
+      mFetchingModules;
+  nsRefPtrHashtable<ModuleMapKey, ModuleScript> mFetchedModules;
+  RefPtr<ScriptLoaderInterface> mLoader;
+
  public:
-  explicit ModuleLoader(ScriptLoader* aLoader);
+  ScriptLoadRequestList mDynamicImportRequests;
 
-  ScriptLoader* GetScriptLoader();
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS(ModuleLoader)
+  explicit ModuleLoader(ScriptLoaderInterface* aLoader);
 
-  
-  void EnsureModuleHooksInitialized() override;
-
-  
-
-
-
-
-  nsresult StartModuleLoad(ScriptLoadRequest* aRequest) override;
-
-  void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest) override;
-
-  nsresult CompileOrFinishModuleScript(
-      JSContext* aCx, JS::Handle<JSObject*> aGlobal,
-      JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
-      JS::MutableHandle<JSObject*> aModuleScript) override;
+  using MaybeSourceText =
+      mozilla::MaybeOneOf<JS::SourceText<char16_t>, JS::SourceText<Utf8Unit>>;
 
   
-  static already_AddRefed<ModuleLoadRequest> CreateTopLevel(
-      nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
-      const SRIMetadata& aIntegrity, nsIURI* aReferrer, ScriptLoader* aLoader,
-      ScriptLoadContext* aContext);
+  nsresult EvaluateModule(ScriptLoadRequest* aRequest);
 
   
-  already_AddRefed<ModuleLoadRequest> CreateStaticImport(
-      nsIURI* aURI, ModuleLoadRequest* aParent) override;
+  nsresult EvaluateModule(nsIGlobalObject* aGlobalObject,
+                          ScriptLoadRequest* aRequest);
+
+  void SetModuleFetchStarted(ModuleLoadRequest* aRequest);
+  void SetModuleFetchFinishedAndResumeWaitingRequests(
+      ModuleLoadRequest* aRequest, nsresult aResult);
+
+  bool ModuleMapContainsURL(nsIURI* aURL, nsIGlobalObject* aGlobal) const;
+  RefPtr<mozilla::GenericNonExclusivePromise> WaitForModuleFetch(
+      nsIURI* aURL, nsIGlobalObject* aGlobal);
+  ModuleScript* GetFetchedModule(nsIURI* aURL, nsIGlobalObject* aGlobal) const;
+
+  JS::Value FindFirstParseError(ModuleLoadRequest* aRequest);
+  bool InstantiateModuleTree(ModuleLoadRequest* aRequest);
+  static nsresult InitDebuggerDataForModuleTree(JSContext* aCx,
+                                                ModuleLoadRequest* aRequest);
+  static nsresult ResolveRequestedModules(ModuleLoadRequest* aRequest,
+                                          nsCOMArray<nsIURI>* aUrlsOut);
+  static nsresult HandleResolveFailure(JSContext* aCx, LoadedScript* aScript,
+                                       const nsAString& aSpecifier,
+                                       uint32_t aLineNumber,
+                                       uint32_t aColumnNumber,
+                                       JS::MutableHandle<JS::Value> errorOut);
+
+  static already_AddRefed<nsIURI> ResolveModuleSpecifier(
+      ScriptLoaderInterface* loader, LoadedScript* aScript,
+      const nsAString& aSpecifier);
+
+  void StartFetchingModuleDependencies(ModuleLoadRequest* aRequest);
+
+  RefPtr<mozilla::GenericPromise> StartFetchingModuleAndDependencies(
+      ModuleLoadRequest* aParent, nsIURI* aURI);
+
+  void StartDynamicImport(ModuleLoadRequest* aRequest);
 
   
-  static already_AddRefed<ModuleLoadRequest> CreateDynamicImport(
-      nsIURI* aURI, ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL,
-      ScriptLoadContext* aContext, ScriptLoader* aLoader,
-      JS::Handle<JS::Value> aReferencingPrivate,
-      JS::Handle<JSString*> aSpecifier, JS::Handle<JSObject*> aPromise);
+
+
+
+
+
+
+
+
+
+
+  static void FinishDynamicImportAndReject(ModuleLoadRequest* aRequest,
+                                           nsresult aResult);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static void FinishDynamicImport(JSContext* aCx, ModuleLoadRequest* aRequest,
+                                  nsresult aResult,
+                                  JS::Handle<JSObject*> aEvaluationPromise);
+
+  void ProcessLoadedModuleTree(ModuleLoadRequest* aRequest);
+
+  nsresult CreateModuleScript(ModuleLoadRequest* aRequest);
+  nsresult ProcessFetchedModuleSource(ModuleLoadRequest* aRequest);
+  void ProcessDynamicImport(ModuleLoadRequest* aRequest);
+  void CancelAndClearDynamicImports();
+
+ public:
+  static LazyLogModule gCspPRLog;
+  static LazyLogModule gModuleLoaderLog;
 };
 
 }  

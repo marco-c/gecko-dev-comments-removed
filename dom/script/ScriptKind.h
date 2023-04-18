@@ -1,0 +1,18 @@
+
+
+
+
+
+
+#ifndef mozilla_dom_ScriptKind_h
+#define mozilla_dom_ScriptKind_h
+
+namespace mozilla {
+namespace dom {
+
+enum class ScriptKind { eClassic, eModule, eEvent };
+
+}  
+}  
+
+#endif

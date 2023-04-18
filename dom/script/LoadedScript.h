@@ -4,8 +4,8 @@
 
 
 
-#ifndef js_loader_LoadedScript_h
-#define js_loader_LoadedScript_h
+#ifndef mozilla_dom_LoadedScript_h
+#define mozilla_dom_LoadedScript_h
 
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
@@ -14,7 +14,10 @@
 
 class nsIURI;
 
-namespace JS::loader {
+namespace mozilla {
+namespace dom {
+
+class ScriptLoader;
 
 void HostAddRefTopLevelScript(const JS::Value& aPrivate);
 void HostReleaseTopLevelScript(const JS::Value& aPrivate);
@@ -27,11 +30,10 @@ class LoadedScript : public nsISupports {
   ScriptKind mKind;
   RefPtr<ScriptFetchOptions> mFetchOptions;
   nsCOMPtr<nsIURI> mBaseURL;
-  nsCOMPtr<mozilla::dom::Element> mElement;
 
  protected:
   LoadedScript(ScriptKind aKind, ScriptFetchOptions* aFetchOptions,
-               nsIURI* aBaseURL, mozilla::dom::Element* aElement);
+               nsIURI* aBaseURL);
 
   virtual ~LoadedScript();
 
@@ -46,12 +48,7 @@ class LoadedScript : public nsISupports {
   inline ModuleScript* AsModuleScript();
   inline EventScript* AsEventScript();
 
-  
   ScriptFetchOptions* GetFetchOptions() const { return mFetchOptions; }
-
-  
-  mozilla::dom::Element* GetScriptElement() const { return mElement; }
-
   nsIURI* BaseURL() const { return mBaseURL; }
 
   void AssociateWithScript(JSScript* aScript);
@@ -61,16 +58,14 @@ class ClassicScript final : public LoadedScript {
   ~ClassicScript() = default;
 
  public:
-  ClassicScript(ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL,
-                mozilla::dom::Element* aElement);
+  ClassicScript(ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL);
 };
 
 class EventScript final : public LoadedScript {
   ~EventScript() = default;
 
  public:
-  EventScript(ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL,
-              mozilla::dom::Element* aElement);
+  EventScript(ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL);
 };
 
 
@@ -88,8 +83,7 @@ class ModuleScript final : public LoadedScript {
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(ModuleScript,
                                                          LoadedScript)
 
-  ModuleScript(ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL,
-               mozilla::dom::Element* aElement);
+  ModuleScript(ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL);
 
   void SetModuleRecord(JS::Handle<JSObject*> aModuleRecord);
   void SetParseError(const JS::Value& aError);
@@ -119,6 +113,7 @@ ModuleScript* LoadedScript::AsModuleScript() {
   return static_cast<ModuleScript*>(this);
 }
 
+}  
 }  
 
 #endif  

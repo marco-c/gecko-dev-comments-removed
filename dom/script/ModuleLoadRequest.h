@@ -4,8 +4,8 @@
 
 
 
-#ifndef js_loader_ModuleLoadRequest_h
-#define js_loader_ModuleLoadRequest_h
+#ifndef mozilla_dom_ModuleLoadRequest_h
+#define mozilla_dom_ModuleLoadRequest_h
 
 #include "ScriptLoadRequest.h"
 #include "mozilla/MozPromise.h"
@@ -14,10 +14,12 @@
 #include "nsURIHashKey.h"
 #include "nsTHashtable.h"
 
-namespace JS::loader {
+namespace mozilla {
+namespace dom {
 
 class ModuleScript;
-class ModuleLoaderBase;
+class ModuleLoader;
+class ScriptLoader;
 
 
 
@@ -38,23 +40,32 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   ModuleLoadRequest(const ModuleLoadRequest& aOther) = delete;
   ModuleLoadRequest(ModuleLoadRequest&& aOther) = delete;
 
+  ModuleLoadRequest(nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
+                    const SRIMetadata& aIntegrity, nsIURI* aReferrer,
+                    bool aIsTopLevel, bool aIsDynamicImport,
+                    ModuleLoader* aLoader, VisitedURLSet* aVisitedSet);
+
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(ModuleLoadRequest,
                                                          ScriptLoadRequest)
-  using SRIMetadata = mozilla::dom::SRIMetadata;
 
-  template <typename T>
-  using MozPromiseHolder = mozilla::MozPromiseHolder<T>;
-  using GenericPromise = mozilla::GenericPromise;
+  
+  static ModuleLoadRequest* CreateTopLevel(nsIURI* aURI,
+                                           ScriptFetchOptions* aFetchOptions,
+                                           const SRIMetadata& aIntegrity,
+                                           nsIURI* aReferrer,
+                                           ScriptLoader* aLoader);
 
-  ModuleLoadRequest(nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
-                    const SRIMetadata& aIntegrity, nsIURI* aReferrer,
-                    mozilla::dom::ScriptLoadContext* aContext, bool aIsTopLevel,
-                    bool aIsDynamicImport, ModuleLoaderBase* aLoader,
-                    VisitedURLSet* aVisitedSet, ModuleLoadRequest* aRootModule);
+  
+  static ModuleLoadRequest* CreateStaticImport(nsIURI* aURI,
+                                               ModuleLoadRequest* aParent);
 
-  static VisitedURLSet* NewVisitedSetForTopLevelImport(nsIURI* aURI);
+  
+  static ModuleLoadRequest* CreateDynamicImport(
+      nsIURI* aURI, ScriptFetchOptions* aFetchOptions, nsIURI* aBaseURL,
+      ScriptLoader* aLoader, JS::Handle<JS::Value> aReferencingPrivate,
+      JS::Handle<JSString*> aSpecifier, JS::Handle<JSObject*> aPromise);
 
   bool IsTopLevel() const override { return mIsTopLevel; }
 
@@ -68,13 +79,6 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   void ModuleErrored();
   void DependenciesLoaded();
   void LoadFailed();
-
-  ModuleLoadRequest* GetRootModule() {
-    if (!mRootModule) {
-      return this;
-    }
-    return mRootModule;
-  }
 
  private:
   void LoadFinished();
@@ -90,11 +94,7 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
 
   
   
-  RefPtr<ModuleLoaderBase> mLoader;
-
-  
-  
-  RefPtr<ModuleLoadRequest> mRootModule;
+  RefPtr<ModuleLoader> mLoader;
 
   
   
@@ -118,6 +118,7 @@ class ModuleLoadRequest final : public ScriptLoadRequest {
   JS::Heap<JSObject*> mDynamicPromise;
 };
 
+}  
 }  
 
 #endif  
