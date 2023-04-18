@@ -472,6 +472,7 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(RemoteWorkerData&& aData) {
   {
     MOZ_ASSERT(workerPrivate);
     auto lock = mState.Lock();
+    
     lock->as<Pending>().mWorkerPrivate = std::move(workerPrivate);
   }
 
@@ -523,6 +524,12 @@ void RemoteWorkerChild::InitializeOnWorker() {
       return;
     }
 
+    
+    
+    
+    
+    
+    
     workerPrivate = std::move(lock->as<Pending>().mWorkerPrivate);
   }
 
@@ -608,9 +615,11 @@ void RemoteWorkerChild::CreationFailedOnAnyThread() {
 void RemoteWorkerChild::CreationSucceededOrFailedOnAnyThread(
     bool aDidCreationSucceed) {
 #ifdef DEBUG
-  auto lock = mState.Lock();
-  MOZ_ASSERT_IF(aDidCreationSucceed, lock->is<Running>());
-  MOZ_ASSERT_IF(!aDidCreationSucceed, lock->is<Terminated>());
+  {
+    auto lock = mState.Lock();
+    MOZ_ASSERT_IF(aDidCreationSucceed, lock->is<Running>());
+    MOZ_ASSERT_IF(!aDidCreationSucceed, lock->is<Terminated>());
+  }
 #endif
 
   RefPtr<RemoteWorkerChild> self = this;
@@ -803,8 +812,8 @@ void RemoteWorkerChild::TransitionStateToRunning(
 
   auto lock = mState.Lock();
 
-  MOZ_ASSERT(lock->is<Pending>());
-
+  
+  
   auto pendingOps = std::move(lock->as<Pending>().mPendingOps);
 
   
@@ -821,6 +830,7 @@ void RemoteWorkerChild::TransitionStateToRunning(
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
       __func__, [pendingOps = std::move(pendingOps), self = std::move(self)]() {
         for (auto& op : pendingOps) {
+          
           auto lock = self->mState.Lock();
 
           DebugOnly<bool> started = op->MaybeStart(self.get(), lock.ref());
@@ -910,6 +920,7 @@ class RemoteWorkerChild::SharedWorkerOp : public RemoteWorkerChild::Op {
               self->Cancel();
               return;
             }
+            
           }
 
           self->Exec(owner);
@@ -1019,6 +1030,7 @@ void RemoteWorkerChild::MaybeStartOp(RefPtr<Op>&& aOp) {
   auto lock = mState.Lock();
 
   if (!aOp->MaybeStart(this, lock.ref())) {
+    
     lock->as<Pending>().mPendingOps.AppendElement(std::move(aOp));
   }
 }
