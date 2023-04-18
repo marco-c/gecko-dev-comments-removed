@@ -45,6 +45,7 @@
 #include "mozilla/Unused.h"
 #include "prenv.h"
 #include "base/posix/eintr_wrapper.h"
+#include "sandbox/linux/bpf_dsl/bpf_dsl.h"
 #include "sandbox/linux/bpf_dsl/codegen.h"
 #include "sandbox/linux/bpf_dsl/dump_bpf.h"
 #include "sandbox/linux/bpf_dsl/policy.h"
@@ -549,6 +550,24 @@ static void SetCurrentProcessSandbox(
   
   sandbox::bpf_dsl::PolicyCompiler compiler(aPolicy.get(),
                                             sandbox::Trap::Registry());
+
+  
+  
+  
+  compiler.SetPanicFunc([](const char* error) -> sandbox::bpf_dsl::ResultExpr {
+    
+    
+    
+    return sandbox::bpf_dsl::Trap(
+        [](const sandbox::arch_seccomp_data&, void* aux) -> intptr_t {
+          auto error = reinterpret_cast<const char*>(aux);
+          SANDBOX_LOG_ERROR("Panic: %s", error);
+          MOZ_CRASH("Sandbox Panic");
+          
+        },
+        (void*)error);
+  });
+
   sandbox::CodeGen::Program program = compiler.Compile();
   if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
     sandbox::bpf_dsl::DumpBPF::PrintProgram(program);
