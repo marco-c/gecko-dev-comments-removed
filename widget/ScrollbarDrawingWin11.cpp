@@ -16,11 +16,57 @@ using mozilla::gfx::sRGBColor;
 
 namespace mozilla::widget {
 
+
+
+
+
+
+
+
+
+enum class Style {
+  Overlay,
+  ThinThumb,
+  ThickThumb,
+};
+
+static Style ScrollbarStyle(nsPresContext* aPresContext) {
+  if (aPresContext->UseOverlayScrollbars()) {
+    return Style::Overlay;
+  }
+  if (StaticPrefs::
+          widget_non_native_theme_win11_scrollbar_force_overlay_style()) {
+    return Style::ThinThumb;
+  }
+  return Style::ThickThumb;
+}
+
+static constexpr CSSIntCoord kDefaultWinOverlayScrollbarSize = CSSIntCoord(12);
+static constexpr CSSIntCoord kDefaultWinOverlayThinScrollbarSize =
+    CSSIntCoord(10);
+
+auto ScrollbarDrawingWin11::GetScrollbarSizes(nsPresContext* aPresContext,
+                                              StyleScrollbarWidth aWidth,
+                                              Overlay aOverlay)
+    -> ScrollbarSizes {
+  if (aOverlay == Overlay::Yes) {
+    
+    
+    
+    CSSCoord cssSize(aWidth == StyleScrollbarWidth::Thin
+                         ? kDefaultWinOverlayThinScrollbarSize
+                         : kDefaultWinOverlayScrollbarSize);
+    auto size = (cssSize * GetDPIRatioForScrollbarPart(aPresContext)).Rounded();
+    return {size, size};
+  }
+  return ScrollbarDrawingWin::GetScrollbarSizes(aPresContext, aWidth, aOverlay);
+}
+
 LayoutDeviceIntSize ScrollbarDrawingWin11::GetMinimumWidgetSize(
     nsPresContext* aPresContext, StyleAppearance aAppearance,
     nsIFrame* aFrame) {
   MOZ_ASSERT(nsNativeTheme::IsWidgetScrollbarPart(aAppearance));
-  if (!UseOverlayStyle(aPresContext)) {
+  if (ScrollbarStyle(aPresContext) != Style::ThinThumb) {
     return ScrollbarDrawingWin::GetMinimumWidgetSize(aPresContext, aAppearance,
                                                      aFrame);
   }
@@ -32,7 +78,7 @@ LayoutDeviceIntSize ScrollbarDrawingWin11::GetMinimumWidgetSize(
         return {};
       }
       const LayoutDeviceIntCoord size =
-          GetScrollbarSizes(aPresContext, aFrame).mVertical;
+          ScrollbarDrawing::GetScrollbarSizes(aPresContext, aFrame).mVertical;
       return LayoutDeviceIntSize{
           size, (kArrowRatio * LayoutDeviceCoord(size)).Rounded()};
     }
@@ -42,7 +88,7 @@ LayoutDeviceIntSize ScrollbarDrawingWin11::GetMinimumWidgetSize(
         return {};
       }
       const LayoutDeviceIntCoord size =
-          GetScrollbarSizes(aPresContext, aFrame).mHorizontal;
+          ScrollbarDrawing::GetScrollbarSizes(aPresContext, aFrame).mHorizontal;
       return LayoutDeviceIntSize{
           (kArrowRatio * LayoutDeviceCoord(size)).Rounded(), size};
     }
@@ -108,12 +154,11 @@ ScrollbarDrawingWin11::ComputeScrollbarButtonColors(
     return ScrollbarDrawingWin::ComputeScrollbarButtonColors(
         aFrame, aAppearance, aStyle, aElementState, aDocumentState, aColors);
   }
-
-  auto buttonColor =
-      ComputeScrollbarTrackColor(aFrame, aStyle, aDocumentState, aColors);
+  
+  
   sRGBColor arrowColor = ComputeScrollbarThumbColor(
       aFrame, aStyle, aElementState, aDocumentState, aColors);
-  return {buttonColor, arrowColor};
+  return {sRGBColor::White(0.0f), arrowColor};
 }
 
 bool ScrollbarDrawingWin11::PaintScrollbarButton(
@@ -126,11 +171,13 @@ bool ScrollbarDrawingWin11::PaintScrollbarButton(
     return true;
   }
 
-  const bool overlay = UseOverlayStyle(aFrame->PresContext());
+  const auto style = ScrollbarStyle(aFrame->PresContext());
   auto [buttonColor, arrowColor] = ComputeScrollbarButtonColors(
       aFrame, aAppearance, aStyle, aElementState, aDocumentState, aColors);
-  aDrawTarget.FillRect(aRect.ToUnknownRect(),
-                       gfx::ColorPattern(ToDeviceColor(buttonColor)));
+  if (style != Style::Overlay) {
+    aDrawTarget.FillRect(aRect.ToUnknownRect(),
+                         gfx::ColorPattern(ToDeviceColor(buttonColor)));
+  }
 
   
   float arrowPolygonX[] = {-4.5f, 4.5f, 4.5f, 0.5f, -0.5f, -4.5f, -4.5f};
@@ -146,8 +193,16 @@ bool ScrollbarDrawingWin11::PaintScrollbarButton(
       aAppearance == StyleAppearance::ScrollbarbuttonRight ||
       aAppearance == StyleAppearance::ScrollbarbuttonLeft;
 
-  const float offset = [&] {
-    if (!overlay) {
+  const float verticalOffset = [&] {
+    if (style != Style::Overlay) {
+      return 0.0f;
+    }
+    
+    
+    return 1.0f;
+  }();
+  const float horizontalOffset = [&] {
+    if (style != Style::ThinThumb) {
       return 0.0f;  
     }
     
@@ -157,7 +212,9 @@ bool ScrollbarDrawingWin11::PaintScrollbarButton(
     }
     return aFrame->GetWritingMode().IsPhysicalLTR() ? 0.5f : -0.5f;
   }();
-  const float kPolygonSize = kDefaultWinScrollbarSize;
+  const float polygonSize = style == Style::Overlay
+                                ? float(kDefaultWinOverlayScrollbarSize)
+                                : float(kDefaultWinScrollbarSize);
   const int32_t arrowNumPoints = ArrayLength(arrowPolygonX);
 
   if (aElementState.HasState(NS_EVENT_STATE_ACTIVE)) {
@@ -172,14 +229,15 @@ bool ScrollbarDrawingWin11::PaintScrollbarButton(
     case StyleAppearance::ScrollbarbuttonDown:
     case StyleAppearance::ScrollbarbuttonRight:
       for (int32_t i = 0; i < arrowNumPoints; i++) {
+        arrowY[i] += verticalOffset;
         arrowY[i] *= -1;
       }
       [[fallthrough]];
     case StyleAppearance::ScrollbarbuttonUp:
     case StyleAppearance::ScrollbarbuttonLeft:
-      if (offset != 0.0f) {
+      if (horizontalOffset != 0.0f) {
         for (int32_t i = 0; i < arrowNumPoints; i++) {
-          arrowX[i] += offset;
+          arrowX[i] += horizontalOffset;
         }
       }
       break;
@@ -192,20 +250,14 @@ bool ScrollbarDrawingWin11::PaintScrollbarButton(
   }
 
   LayoutDeviceRect arrowRect(aRect);
-  if (!overlay) {
-    auto margin = CSSCoord(2) * aDpiRatio;
+  if (style != Style::ThinThumb) {
+    auto margin = CSSCoord(style == Style::Overlay ? 1 : 2) * aDpiRatio;
     arrowRect.Deflate(margin, margin);
   }
 
-  ThemeDrawing::PaintArrow(aDrawTarget, arrowRect, arrowX, arrowY, kPolygonSize,
+  ThemeDrawing::PaintArrow(aDrawTarget, arrowRect, arrowX, arrowY, polygonSize,
                            arrowNumPoints, arrowColor);
   return true;
-}
-
-bool ScrollbarDrawingWin11::UseOverlayStyle(nsPresContext* aPresContext) {
-  return StaticPrefs::
-             widget_non_native_theme_win11_scrollbar_force_overlay_style() ||
-         aPresContext->UseOverlayScrollbars();
 }
 
 template <typename PaintBackendData>
@@ -219,11 +271,11 @@ bool ScrollbarDrawingWin11::DoPaintScrollbarThumb(
 
   LayoutDeviceRect thumbRect(aRect);
 
-  const bool overlay = UseOverlayStyle(aFrame->PresContext());
+  const auto style = ScrollbarStyle(aFrame->PresContext());
   const bool hovered =
       ScrollbarDrawing::IsParentScrollbarHoveredOrActive(aFrame) ||
-      IsScrollbarWidthThin(aStyle);
-  if (!overlay) {
+      (style != Style::Overlay && IsScrollbarWidthThin(aStyle));
+  if (style == Style::ThickThumb) {
     constexpr float kHoveredThumbRatio =
         (1.0f - (11.0f / kDefaultWinScrollbarSize)) / 2.0f;
     constexpr float kUnhoveredThumbRatio =
@@ -241,60 +293,65 @@ bool ScrollbarDrawingWin11::DoPaintScrollbarThumb(
     return true;
   }
 
-  if (hovered) {
-    constexpr float kHoverThumbSize = 6.0f / kDefaultWinScrollbarSize;
-    if (aHorizontal) {
-      
-      
-      
-      
-      constexpr float kShift = 5.0f / kDefaultWinScrollbarSize;
+  const float defaultTrackSize = style == Style::Overlay
+                                     ? float(kDefaultWinOverlayScrollbarSize)
+                                     : float(kDefaultWinScrollbarSize);
+  const float trackSize = aHorizontal ? thumbRect.height : thumbRect.width;
+  const float thumbSizeInPixels = hovered ? 6.0f : 2.0f;
 
-      thumbRect.y += thumbRect.height * kShift;
-      thumbRect.height *= kHoverThumbSize;
-    } else {
-      
-      
-      
-      
-      
-      constexpr float kLtrShift = 6.0f / kDefaultWinScrollbarSize;
-      constexpr float kRtlShift = 5.0f / kDefaultWinScrollbarSize;
-
-      if (aFrame->GetWritingMode().IsPhysicalLTR()) {
-        thumbRect.x += thumbRect.width * kLtrShift;
-      } else {
-        thumbRect.x += thumbRect.width * kRtlShift;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const float shiftInPixels = [&] {
+    if (style == Style::Overlay) {
+      if (hovered) {
+        
+        return (defaultTrackSize - thumbSizeInPixels) / 2.0f;
       }
-      thumbRect.width *= kHoverThumbSize;
+      
+      
+      
+      constexpr float kSpaceToEdge = 3.0f;
+      if (aHorizontal || aFrame->GetWritingMode().IsPhysicalLTR()) {
+        return defaultTrackSize - thumbSizeInPixels - kSpaceToEdge;
+      }
+      
+      return kSpaceToEdge;
     }
+    if (aHorizontal) {
+      return hovered ? 5.0f : 7.0f;
+    }
+    const bool ltr = aFrame->GetWritingMode().IsPhysicalLTR();
+    return ltr ? (hovered ? 6.0f : 8.0f) : (hovered ? 5.0f : 7.0f);
+  }();
+
+  if (aHorizontal) {
+    thumbRect.y += shiftInPixels * trackSize / defaultTrackSize;
+    thumbRect.height *= thumbSizeInPixels / defaultTrackSize;
+  } else {
+    thumbRect.x += shiftInPixels * trackSize / defaultTrackSize;
+    thumbRect.width *= thumbSizeInPixels / defaultTrackSize;
+  }
+
+  if (style == Style::Overlay || hovered) {
     LayoutDeviceCoord radius =
         (aHorizontal ? thumbRect.height : thumbRect.width) / 2.0f;
 
     MOZ_ASSERT(aRect.Contains(thumbRect));
-
     ThemeDrawing::PaintRoundedRectWithRadius(aPaintData, thumbRect, thumbColor,
                                              sRGBColor(), 0, radius / aDpiRatio,
                                              aDpiRatio);
     return true;
   }
 
-  constexpr float kThumbSize = 2.0f / kDefaultWinScrollbarSize;
-  if (aHorizontal) {
-    constexpr float kShift = 7.0f / kDefaultWinScrollbarSize;
-    thumbRect.y += thumbRect.height * kShift;
-    thumbRect.height *= kThumbSize;
-  } else {
-    constexpr float kLtrShift = 8.0f / kDefaultWinScrollbarSize;
-    constexpr float kRtlShift = 7.0f / kDefaultWinScrollbarSize;
-
-    if (aFrame->GetWritingMode().IsPhysicalLTR()) {
-      thumbRect.x += thumbRect.width * kLtrShift;
-    } else {
-      thumbRect.x += thumbRect.width * kRtlShift;
-    }
-    thumbRect.width *= kThumbSize;
-  }
   ThemeDrawing::FillRect(aPaintData, thumbRect, thumbColor);
   return true;
 }
