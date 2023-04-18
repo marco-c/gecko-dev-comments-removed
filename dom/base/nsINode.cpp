@@ -2867,7 +2867,15 @@ const RawServoSelectorList* nsINode::ParseSelectorList(
   RawServoSelectorList* list = cache.GetListOrInsertFrom(aSelectorString, [&] {
     
     
-    return Servo_SelectorList_Parse(&aSelectorString).Consume();
+    
+    
+    
+    
+    
+    
+    return Servo_SelectorList_Parse(&aSelectorString,
+                                    doc->IsDocumentURISchemeChrome())
+        .Consume();
   });
 
   if (!list) {
