@@ -274,8 +274,8 @@ static uint32_t AvailableFeatures() {
 
 static constexpr uint32_t DefaultFeatures() {
   return ProfilerFeature::Java | ProfilerFeature::JS | ProfilerFeature::Leaf |
-         ProfilerFeature::StackWalk | ProfilerFeature::CPUUtilization |
-         ProfilerFeature::Screenshots;
+         ProfilerFeature::StackWalk | ProfilerFeature::Threads |
+         ProfilerFeature::CPUUtilization | ProfilerFeature::Screenshots;
 }
 
 
@@ -649,6 +649,13 @@ class ActivePS {
     aFeatures &= AvailableFeatures();
 
     
+    
+    
+    if (aFilterCount > 0) {
+      aFeatures |= ProfilerFeature::Threads;
+    }
+
+    
     if (aFeatures & ProfilerFeature::FileIOAll) {
       aFeatures |= ProfilerFeature::MainThreadIO | ProfilerFeature::FileIO;
     } else if (aFeatures & ProfilerFeature::FileIO) {
@@ -839,7 +846,8 @@ class ActivePS {
   static ThreadProfilingFeatures ProfilingFeaturesForThread(
       PSLockRef aLock, const ThreadRegistrationInfo& aInfo) {
     MOZ_ASSERT(sInstance);
-    if (sInstance->ThreadSelected(aInfo.Name())) {
+    if ((aInfo.IsMainThread() || FeatureThreads(aLock)) &&
+        sInstance->ThreadSelected(aInfo.Name())) {
       
       return ThreadProfilingFeatures::Any;
     }
