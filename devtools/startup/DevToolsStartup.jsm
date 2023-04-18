@@ -908,8 +908,6 @@ DevToolsStartup.prototype = {
       k.setAttribute("modifiers", mod);
     }
 
-    
-    k.setAttribute("oncommand", ";");
     k.addEventListener("command", oncommand);
 
     return k;
