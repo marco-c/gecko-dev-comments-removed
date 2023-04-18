@@ -10,6 +10,7 @@
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/NotificationBinding.h"
+#include "mozilla/dom/WorkerPrivate.h"
 
 #include "nsIObserver.h"
 #include "nsISupports.h"
@@ -29,7 +30,6 @@ class NotificationRef;
 class WorkerNotificationObserver;
 class Promise;
 class StrongWorkerRef;
-class WorkerPrivate;
 
 
 
@@ -207,7 +207,7 @@ class Notification : public DOMEventTargetHelper,
 
   
   
-  WorkerPrivate* mWorkerPrivate;
+  CheckedUnsafePtr<WorkerPrivate> mWorkerPrivate;
 
   
   WorkerNotificationObserver* mObserver;
