@@ -254,7 +254,7 @@ function enumObjectProperties(objectActor, options) {
   };
 }
 
-function getMapEntries(obj, forPreview) {
+function getMapEntries(obj) {
   
   
   
@@ -272,14 +272,14 @@ function getMapEntries(obj, forPreview) {
     waiveXrays(Map.prototype.keys.call(raw))
   );
   return [...DevToolsUtils.makeDebuggeeIterator(iterator)].map(k => {
-    const key = waiveXrays(ObjectUtils.unwrapDebuggeeValue(k))
+    const key = waiveXrays(ObjectUtils.unwrapDebuggeeValue(k));
     const value = Map.prototype.get.call(raw, key);
     return [key, value];
   });
 }
 
-function enumMapEntries(objectActor, forPreview = false) {
-  const entries = getMapEntries(objectActor.obj, forPreview);
+function enumMapEntries(objectActor) {
+  const entries = getMapEntries(objectActor.obj);
 
   return {
     [Symbol.iterator]: function*() {
@@ -345,7 +345,7 @@ function enumStorageEntries(objectActor) {
   };
 }
 
-function getWeakMapEntries(obj, forPreview) {
+function getWeakMapEntries(obj) {
   
   
   
@@ -362,8 +362,8 @@ function getWeakMapEntries(obj, forPreview) {
   return keys.map(k => [k, WeakMap.prototype.get.call(raw, k)]);
 }
 
-function enumWeakMapEntries(objectActor, forPreview = false) {
-  const entries = getWeakMapEntries(objectActor.obj, forPreview);
+function enumWeakMapEntries(objectActor) {
+  const entries = getWeakMapEntries(objectActor.obj);
 
   return {
     [Symbol.iterator]: function*() {
@@ -391,7 +391,7 @@ function enumWeakMapEntries(objectActor, forPreview = false) {
   };
 }
 
-function getSetValues(obj, forPreview) {
+function getSetValues(obj) {
   
   
   
@@ -409,8 +409,8 @@ function getSetValues(obj, forPreview) {
   return [...DevToolsUtils.makeDebuggeeIterator(iterator)];
 }
 
-function enumSetEntries(objectActor, forPreview = false) {
-  const values = getSetValues(objectActor.obj, forPreview).map(v =>
+function enumSetEntries(objectActor) {
+  const values = getSetValues(objectActor.obj).map(v =>
     waiveXrays(ObjectUtils.unwrapDebuggeeValue(v))
   );
 
@@ -434,7 +434,7 @@ function enumSetEntries(objectActor, forPreview = false) {
   };
 }
 
-function getWeakSetEntries(obj, forPreview) {
+function getWeakSetEntries(obj) {
   
   
   
@@ -449,8 +449,8 @@ function getWeakSetEntries(obj, forPreview) {
   return waiveXrays(ChromeUtils.nondeterministicGetWeakSetKeys(raw));
 }
 
-function enumWeakSetEntries(objectActor, forPreview = false) {
-  const keys = getWeakSetEntries(objectActor.obj, forPreview);
+function enumWeakSetEntries(objectActor) {
+  const keys = getWeakSetEntries(objectActor.obj);
 
   return {
     [Symbol.iterator]: function*() {
