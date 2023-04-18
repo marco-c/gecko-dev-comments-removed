@@ -2074,6 +2074,10 @@ void nsCSSBorderRenderer::DrawDottedSideSlow(mozilla::Side aSide) {
   
   const Float AA_MARGIN = 2.0f;
 
+  
+  
+  MOZ_ASSERT(mDirtyRect.Intersects(mOuterRect));
+
   if (aSide == eSideTop) {
     
     
@@ -2971,6 +2975,10 @@ void nsCSSBorderRenderer::DrawSolidBorder() {
 }
 
 void nsCSSBorderRenderer::DrawBorders() {
+  if (MOZ_UNLIKELY(!mDirtyRect.Intersects(mOuterRect))) {
+    return;
+  }
+
   if (mAllBordersSameStyle && (mBorderStyles[0] == StyleBorderStyle::None ||
                                mBorderStyles[0] == StyleBorderStyle::Hidden ||
                                mBorderColors[0] == NS_RGBA(0, 0, 0, 0))) {
