@@ -41,13 +41,13 @@ struct NativeIterator {
   
   
   
-  GCPtrLinearString* propertyCursor_;  
+  GCPtr<JSLinearString*>* propertyCursor_;  
 
   
   
   
   
-  GCPtrLinearString* propertiesEnd_;  
+  GCPtr<JSLinearString*>* propertiesEnd_;  
 
   HashNumber shapesHash_;  
 
@@ -151,15 +151,15 @@ struct NativeIterator {
     return mozilla::PointerRangeSize(shapesBegin(), shapesEnd());
   }
 
-  GCPtrLinearString* propertiesBegin() const {
+  GCPtr<JSLinearString*>* propertiesBegin() const {
     static_assert(
-        alignof(GCPtr<Shape*>) >= alignof(GCPtrLinearString),
-        "GCPtrLinearStrings for properties must be able to appear "
+        alignof(GCPtr<Shape*>) >= alignof(GCPtr<JSLinearString*>),
+        "GCPtr<JSLinearString*>s for properties must be able to appear "
         "directly after any GCPtr<Shape*>s after this NativeIterator, "
         "with no padding space required for correct alignment");
     static_assert(
-        alignof(NativeIterator) >= alignof(GCPtrLinearString),
-        "GCPtrLinearStrings for properties must be able to appear "
+        alignof(NativeIterator) >= alignof(GCPtr<JSLinearString*>),
+        "GCPtr<JSLinearString*>s for properties must be able to appear "
         "directly after this NativeIterator when no GCPtr<Shape*>s are "
         "present, with no padding space required for correct "
         "alignment");
@@ -173,12 +173,12 @@ struct NativeIterator {
                "isn't necessarily the start of properties and instead "
                "|propertyCursor_| is");
 
-    return reinterpret_cast<GCPtrLinearString*>(shapesEnd_);
+    return reinterpret_cast<GCPtr<JSLinearString*>*>(shapesEnd_);
   }
 
-  GCPtrLinearString* propertiesEnd() const { return propertiesEnd_; }
+  GCPtr<JSLinearString*>* propertiesEnd() const { return propertiesEnd_; }
 
-  GCPtrLinearString* nextProperty() const { return propertyCursor_; }
+  GCPtr<JSLinearString*>* nextProperty() const { return propertyCursor_; }
 
   MOZ_ALWAYS_INLINE JS::Value nextIteratedValueAndAdvance() {
     if (propertyCursor_ >= propertiesEnd_) {
@@ -225,7 +225,7 @@ struct NativeIterator {
   }
 
   JSObject* iterObj() const { return iterObj_; }
-  GCPtrLinearString* currentProperty() const {
+  GCPtr<JSLinearString*>* currentProperty() const {
     MOZ_ASSERT(propertyCursor_ < propertiesEnd());
     return propertyCursor_;
   }
