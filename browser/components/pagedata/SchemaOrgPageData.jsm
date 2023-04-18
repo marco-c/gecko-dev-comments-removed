@@ -19,12 +19,128 @@ const { PageDataSchema } = ChromeUtils.import(
 
 
 
+class Item {
+  
+  type;
+
+  
+  properties = new Map();
+
+  
 
 
 
 
 
-function getProp(element, prop) {
+  constructor(type) {
+    this.type = type;
+  }
+
+  
+
+
+
+
+
+
+  has(prop) {
+    return this.properties.has(prop);
+  }
+
+  
+
+
+
+
+
+
+
+  all(prop) {
+    return this.properties.get(prop) ?? [];
+  }
+
+  
+
+
+
+
+
+
+  get(prop) {
+    return this.properties.get(prop)?.[0];
+  }
+
+  
+
+
+
+
+
+
+
+  set(prop, value) {
+    let props = this.properties.get(prop);
+    if (props === undefined) {
+      props = [];
+      this.properties.set(prop, props);
+    }
+
+    props.push(value);
+  }
+
+  
+
+
+
+
+
+
+  toJsonLD() {
+    
+
+
+
+
+
+
+    function toLD(val) {
+      if (val instanceof Item) {
+        return val.toJsonLD();
+      }
+      return val;
+    }
+
+    let props = Array.from(this.properties, ([key, value]) => {
+      if (value.length == 1) {
+        return [key, toLD(value[0])];
+      }
+
+      return [key, value.map(toLD)];
+    });
+
+    return {
+      "@type": this.type,
+      ...Object.fromEntries(props),
+    };
+  }
+}
+
+
+
+
+
+
+
+
+
+
+function parseMicrodataProp(propElement) {
+  if (propElement.hasAttribute("itemscope")) {
+    throw new Error(
+      "Cannot parse a simple property value from an itemscope element."
+    );
+  }
+
   const parseUrl = (urlElement, attr) => {
     if (!urlElement.hasAttribute(attr)) {
       return "";
@@ -41,44 +157,38 @@ function getProp(element, prop) {
     }
   };
 
-  return Array.from(
-    
-    element.querySelectorAll(`[itemprop~='${prop}']:not([itemscope])`),
-    propElement => {
-      switch (propElement.localName) {
-        case "meta":
-          return propElement.getAttribute("content") ?? "";
-        case "audio":
-        case "embed":
-        case "iframe":
-        case "img":
-        case "source":
-        case "track":
-        case "video":
-          return parseUrl(propElement, "src");
-        case "object":
-          return parseUrl(propElement, "data");
-        case "a":
-        case "area":
-        case "link":
-          return parseUrl(propElement, "href");
-        case "data":
-        case "meter":
-          return propElement.getAttribute("value");
-        case "time":
-          if (propElement.hasAtribute("datetime")) {
-            return propElement.getAttribute("datetime");
-          }
-          return propElement.textContent;
-        default:
-          
-          if (propElement.hasAttribute("content")) {
-            return propElement.getAttribute("content");
-          }
-          return propElement.textContent;
+  switch (propElement.localName) {
+    case "meta":
+      return propElement.getAttribute("content") ?? "";
+    case "audio":
+    case "embed":
+    case "iframe":
+    case "img":
+    case "source":
+    case "track":
+    case "video":
+      return parseUrl(propElement, "src");
+    case "object":
+      return parseUrl(propElement, "data");
+    case "a":
+    case "area":
+    case "link":
+      return parseUrl(propElement, "href");
+    case "data":
+    case "meter":
+      return propElement.getAttribute("value");
+    case "time":
+      if (propElement.hasAtribute("datetime")) {
+        return propElement.getAttribute("datetime");
       }
-    }
-  );
+      return propElement.textContent;
+    default:
+      
+      if (propElement.hasAttribute("content")) {
+        return propElement.getAttribute("content");
+      }
+      return propElement.textContent;
+  }
 }
 
 
@@ -89,36 +199,115 @@ function getProp(element, prop) {
 
 
 
-function collectProduct(pageData, element) {
-  
-  
-
-  let images = getProp(element, "image");
-  if (images.length) {
-    pageData.image = images[0];
+function collectProduct(pageData, item) {
+  if (item.has("image")) {
+    pageData.image = item.get("image");
   }
 
-  let descriptions = getProp(element, "description");
-  if (descriptions.length) {
-    pageData.description = descriptions[0];
+  if (item.has("description")) {
+    pageData.description = item.get("description");
   }
 
   pageData.data[PageDataSchema.DATA_TYPE.PRODUCT] = {
-    name: getProp(element, "name")[0],
+    name: item.get("name"),
   };
 
-  let prices = getProp(element, "price");
-  if (prices.length) {
-    let price = parseFloat(prices[0]);
+  for (let offer of item.all("offers")) {
+    if (!(offer instanceof Item) || offer.type != "Offer") {
+      continue;
+    }
+
+    let price = parseFloat(offer.get("price"));
     if (!isNaN(price)) {
       pageData.data[PageDataSchema.DATA_TYPE.PRODUCT].price = {
         value: price,
-        currency: getProp(element, "priceCurrency")[0],
+        currency: offer.get("priceCurrency"),
       };
+
+      break;
     }
   }
 }
 
+
+
+
+
+
+
+
+function collectMicrodataItems(document) {
+  
+  let itemElements = document.querySelectorAll(
+    "[itemscope][itemtype^='https://schema.org/'], [itemscope][itemtype^='http://schema.org/']"
+  );
+
+  
+
+
+
+
+  let items = new Map();
+
+  
+
+
+
+
+
+
+
+  function itemFor(element) {
+    let item = items.get(element);
+    if (item) {
+      return item;
+    }
+
+    if (!element.parentElement) {
+      throw new Error("Element has no parent item.");
+    }
+
+    item = itemFor(element.parentElement);
+    items.set(element, item);
+    return item;
+  }
+
+  for (let element of itemElements) {
+    let itemType = element.getAttribute("itemtype");
+    
+    if (itemType.startsWith("https://")) {
+      itemType = itemType.substring(19);
+    } else {
+      itemType = itemType.substring(18);
+    }
+
+    items.set(element, new Item(itemType));
+  }
+
+  
+  let roots = new Set(items.values());
+
+  
+  let itemProps = document.querySelectorAll(
+    "[itemscope][itemtype^='https://schema.org/'] [itemprop], [itemscope][itemtype^='http://schema.org/'] [itemprop]"
+  );
+
+  for (let element of itemProps) {
+    
+    let item = itemFor(element.parentElement);
+
+    
+    let propValue = items.get(element) ?? parseMicrodataProp(element);
+    item.set(element.getAttribute("itemprop"), propValue);
+
+    if (propValue instanceof Item) {
+      
+      roots.delete(propValue);
+    }
+  }
+
+  return [...roots];
+}
 
 
 
@@ -126,30 +315,40 @@ function collectProduct(pageData, element) {
 
 
 const SchemaOrgPageData = {
+  
+
+
+
+
+
+
+
+
+  collectItems(document) {
+    return collectMicrodataItems(document);
+  },
+
+  
+
+
+
+
+
+
   collect(document) {
     let pageData = { data: {} };
 
-    let scopes = document.querySelectorAll(
-      "[itemscope][itemtype^='https://schema.org/'], [itemscope][itemtype^='http://schema.org/']"
-    );
+    let items = this.collectItems(document);
 
-    for (let scope of scopes) {
-      let itemType = scope.getAttribute("itemtype");
-      
-      if (itemType.startsWith("https://")) {
-        itemType = itemType.substring(8);
-      } else {
-        itemType = itemType.substring(7);
-      }
-
-      switch (itemType) {
-        case "schema.org/Product":
+    for (let item of items) {
+      switch (item.type) {
+        case "Product":
           if (!(PageDataSchema.DATA_TYPE.PRODUCT in pageData.data)) {
-            collectProduct(pageData, scope);
+            collectProduct(pageData, item);
           }
           break;
-        case "schema.org/Organization":
-          pageData.siteName = getProp(scope, "name")[0];
+        case "Organization":
+          pageData.siteName = item.get("name");
           break;
       }
     }
