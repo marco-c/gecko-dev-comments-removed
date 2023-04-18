@@ -543,6 +543,12 @@ void BaseCompiler::load(MemoryAccessDesc* access, AccessCheck* check,
   
   return executeLoad(access, check, tls, RegI32(ptr.reg), dest,
                      maybeFromI64(temp));
+#  elif defined(JS_CODEGEN_MIPS64)
+  
+  
+  
+  return executeLoad(access, check, tls, RegI32(ptr.reg), dest,
+                     maybeFromI64(temp));
 #  else
   MOZ_CRASH("Missing platform hook");
 #  endif
@@ -646,7 +652,8 @@ void BaseCompiler::store(MemoryAccessDesc* access, AccessCheck* check,
 #  if !defined(JS_64BIT)
   return executeStore(access, check, tls, RegI32(ptr.low), src,
                       maybeFromI64(temp));
-#  elif defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64)
+#  elif defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM64) || \
+      defined(JS_CODEGEN_MIPS64)
   return executeStore(access, check, tls, RegI32(ptr.reg), src,
                       maybeFromI64(temp));
 #  else
