@@ -97,7 +97,7 @@ impl Namer {
                 *count += 1;
                 
                 let mut suffixed = base.into_owned();
-                write!(suffixed, "{}{}", SEPARATOR, *count).unwrap();
+                write!(&mut suffixed, "{}{}", SEPARATOR, *count).unwrap();
                 suffixed
             }
             None => {

@@ -66,9 +66,6 @@ pub enum Backend {
 }
 
 
-
-
-
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -128,9 +125,6 @@ impl From<Backend> for Backends {
 }
 
 
-
-
-
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -167,9 +161,6 @@ bitflags::bitflags! {
     /// If you want to use a feature, you need to first verify that the adapter supports
     /// the feature. If the adapter does not support the feature, requesting a device with it enabled
     /// will panic.
-    ///
-    /// Corresponds to [WebGPU `GPUFeatureName`](
-    /// https://gpuweb.github.io/gpuweb/#enumdef-gpufeaturename).
     #[repr(transparent)]
     #[derive(Default)]
     pub struct Features: u64 {
@@ -241,16 +232,6 @@ bitflags::bitflags! {
         ///
         /// This is a web and native feature.
         const PIPELINE_STATISTICS_QUERY = 1 << 4;
-        /// Allows shaders to acquire the FP16 ability
-        ///
-        /// Note: this is not supported in naga yet，only through spir-v passthrough right now.
-        ///
-        /// Supported Platforms:
-        /// - Vulkan
-        /// - Metal
-        ///
-        /// This is a web and native feature.
-        const SHADER_FLOAT16 = 1 << 5;
         /// Webgpu only allows the MAP_READ and MAP_WRITE buffer usage to be matched with
         /// COPY_DST and COPY_SRC respectively. This removes this requirement.
         ///
@@ -367,6 +348,16 @@ bitflags::bitflags! {
         ///
         /// This is a native only feature.
         const PARTIALLY_BOUND_BINDING_ARRAY = 1 << 22;
+        /// Allows the user to create unsized uniform arrays of bindings:
+        ///
+        /// eg. `uniform texture2D textures[]`.
+        ///
+        /// Supported platforms:
+        /// - DX12
+        /// - Vulkan 1.2+ (or VK_EXT_descriptor_indexing)'s runtimeDescriptorArray feature
+        ///
+        /// This is a native only feature.
+        const UNSIZED_BINDING_ARRAY = 1 << 23;
         /// Allows the user to call [`RenderPass::multi_draw_indirect`] and [`RenderPass::multi_draw_indexed_indirect`].
         ///
         /// Allows multiple indirect calls to be dispatched from a single buffer.
@@ -376,7 +367,7 @@ bitflags::bitflags! {
         /// - Vulkan
         ///
         /// This is a native only feature.
-        const MULTI_DRAW_INDIRECT = 1 << 23;
+        const MULTI_DRAW_INDIRECT = 1 << 24;
         /// Allows the user to call [`RenderPass::multi_draw_indirect_count`] and [`RenderPass::multi_draw_indexed_indirect_count`].
         ///
         /// This allows the use of a buffer containing the actual number of draw calls.
@@ -386,7 +377,7 @@ bitflags::bitflags! {
         /// - Vulkan 1.2+ (or VK_KHR_draw_indirect_count)
         ///
         /// This is a native only feature.
-        const MULTI_DRAW_INDIRECT_COUNT = 1 << 24;
+        const MULTI_DRAW_INDIRECT_COUNT = 1 << 25;
         /// Allows the use of push constants: small, fast bits of memory that can be updated
         /// inside a [`RenderPass`].
         ///
@@ -403,7 +394,7 @@ bitflags::bitflags! {
         /// - OpenGL (emulated with uniforms)
         ///
         /// This is a native only feature.
-        const PUSH_CONSTANTS = 1 << 25;
+        const PUSH_CONSTANTS = 1 << 26;
         /// Allows the use of [`AddressMode::ClampToBorder`] with a border color
         /// other than [`SamplerBorderColor::Zero`].
         ///
@@ -415,7 +406,7 @@ bitflags::bitflags! {
         /// - OpenGL
         ///
         /// This is a web and native feature.
-        const ADDRESS_MODE_CLAMP_TO_BORDER = 1 << 26;
+        const ADDRESS_MODE_CLAMP_TO_BORDER = 1 << 27;
         /// Allows the user to set [`PolygonMode::Line`] in [`PrimitiveState::polygon_mode`]
         ///
         /// This allows drawing polygons/triangles as lines (wireframe) instead of filled
@@ -426,7 +417,7 @@ bitflags::bitflags! {
         /// - Metal
         ///
         /// This is a native only feature.
-        const POLYGON_MODE_LINE = 1 << 27;
+        const POLYGON_MODE_LINE = 1 << 28;
         /// Allows the user to set [`PolygonMode::Point`] in [`PrimitiveState::polygon_mode`]
         ///
         /// This allows only drawing the vertices of polygons/triangles instead of filled
@@ -436,7 +427,7 @@ bitflags::bitflags! {
         /// - Vulkan
         ///
         /// This is a native only feature.
-        const POLYGON_MODE_POINT = 1 << 28;
+        const POLYGON_MODE_POINT = 1 << 29;
         /// Enables ETC family of compressed textures. All ETC textures use 4x4 pixel blocks.
         /// ETC2 RGB and RGBA1 are 8 bytes per block. RTC2 RGBA8 and EAC are 16 bytes per block.
         ///
@@ -451,7 +442,7 @@ bitflags::bitflags! {
         /// - Mobile (some)
         ///
         /// This is a native-only feature.
-        const TEXTURE_COMPRESSION_ETC2 = 1 << 29;
+        const TEXTURE_COMPRESSION_ETC2 = 1 << 30;
         /// Enables ASTC family of compressed textures. ASTC textures use pixel blocks varying from 4x4 to 12x12.
         /// Blocks are always 16 bytes.
         ///
@@ -466,7 +457,7 @@ bitflags::bitflags! {
         /// - Mobile (some)
         ///
         /// This is a native-only feature.
-        const TEXTURE_COMPRESSION_ASTC_LDR = 1 << 30;
+        const TEXTURE_COMPRESSION_ASTC_LDR = 1 << 31;
         /// Enables device specific texture format features.
         ///
         /// See `TextureFormatFeatures` for a listing of the features in question.
@@ -478,7 +469,7 @@ bitflags::bitflags! {
         /// This extension does not enable additional formats.
         ///
         /// This is a native-only feature.
-        const TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES = 1 << 31;
+        const TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES = 1 << 32;
         /// Enables 64-bit floating point types in SPIR-V shaders.
         ///
         /// Note: even when supported by GPU hardware, 64-bit floating point operations are
@@ -488,7 +479,7 @@ bitflags::bitflags! {
         /// - Vulkan
         ///
         /// This is a native-only feature.
-        const SHADER_FLOAT64 = 1 << 32;
+        const SHADER_FLOAT64 = 1 << 33;
         /// Enables using 64-bit types for vertex attributes.
         ///
         /// Requires SHADER_FLOAT64.
@@ -496,7 +487,7 @@ bitflags::bitflags! {
         /// Supported Platforms: N/A
         ///
         /// This is a native-only feature.
-        const VERTEX_ATTRIBUTE_64BIT = 1 << 33;
+        const VERTEX_ATTRIBUTE_64BIT = 1 << 34;
         /// Allows the user to set a overestimation-conservative-rasterization in [`PrimitiveState::conservative`]
         ///
         /// Processing of degenerate triangles/lines is hardware specific.
@@ -506,7 +497,7 @@ bitflags::bitflags! {
         /// - Vulkan
         ///
         /// This is a native only feature.
-        const CONSERVATIVE_RASTERIZATION = 1 << 34;
+        const CONSERVATIVE_RASTERIZATION = 1 << 35;
         /// Enables bindings of writable storage buffers and textures visible to vertex shaders.
         ///
         /// Note: some (tiled-based) platforms do not support vertex shaders with any side-effects.
@@ -515,14 +506,14 @@ bitflags::bitflags! {
         /// - All
         ///
         /// This is a native-only feature.
-        const VERTEX_WRITABLE_STORAGE = 1 << 35;
+        const VERTEX_WRITABLE_STORAGE = 1 << 36;
         /// Enables clear to zero for textures.
         ///
         /// Supported platforms:
         /// - All
         ///
         /// This is a native only feature.
-        const CLEAR_TEXTURE = 1 << 36;
+        const CLEAR_TEXTURE = 1 << 37;
         /// Enables creating shader modules from SPIR-V binary data (unsafe).
         ///
         /// SPIR-V data is not parsed or interpreted in any way; you can use
@@ -534,7 +525,7 @@ bitflags::bitflags! {
         /// Vulkan implementation.
         ///
         /// This is a native only feature.
-        const SPIRV_SHADER_PASSTHROUGH = 1 << 37;
+        const SPIRV_SHADER_PASSTHROUGH = 1 << 38;
         /// Enables `builtin(primitive_index)` in fragment shaders.
         ///
         /// Note: enables geometry processing for pipelines using the builtin.
@@ -545,14 +536,14 @@ bitflags::bitflags! {
         /// - Vulkan
         ///
         /// This is a native only feature.
-        const SHADER_PRIMITIVE_INDEX = 1 << 38;
+        const SHADER_PRIMITIVE_INDEX = 1 << 39;
         /// Enables multiview render passes and `builtin(view_index)` in vertex shaders.
         ///
         /// Supported platforms:
         /// - Vulkan
         ///
         /// This is a native only feature.
-        const MULTIVIEW = 1 << 39;
+        const MULTIVIEW = 1 << 40;
         /// Enables normalized `16-bit` texture formats.
         ///
         /// Supported platforms:
@@ -561,7 +552,7 @@ bitflags::bitflags! {
         /// - Metal
         ///
         /// This is a native only feature.
-        const TEXTURE_FORMAT_16BIT_NORM = 1 << 40;
+        const TEXTURE_FORMAT_16BIT_NORM = 1 << 41;
         /// Allows the use of [`AddressMode::ClampToBorder`] with a border color
         /// of [`SamplerBorderColor::Zero`].
         ///
@@ -573,12 +564,12 @@ bitflags::bitflags! {
         /// - OpenGL
         ///
         /// This is a native only feature.
-        const ADDRESS_MODE_CLAMP_TO_ZERO = 1 << 41;
+        const ADDRESS_MODE_CLAMP_TO_ZERO = 1 << 42;
         /// Supported Platforms:
         /// - Metal
         ///
         /// This is a native-only feature.
-        const TEXTURE_COMPRESSION_ASTC_HDR = 1 << 42;
+        const TEXTURE_COMPRESSION_ASTC_HDR = 1 << 43;
     }
 }
 
@@ -596,7 +587,6 @@ impl Features {
         Self::from_bits_truncate(0xFFFF_FFFF_FFFF_0000)
     }
 }
-
 
 
 
@@ -1074,9 +1064,6 @@ pub struct AdapterInfo {
 }
 
 
-
-
-
 #[repr(C)]
 #[derive(Clone, Debug, Default)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -1109,9 +1096,6 @@ bitflags::bitflags! {
     /// These can be combined so something that is visible from both vertex and fragment shaders can be defined as:
     ///
     /// `ShaderStages::VERTEX | ShaderStages::FRAGMENT`
-    
-    
-    
     #[repr(transparent)]
     pub struct ShaderStages: u32 {
         /// Binding is not visible from any shader stage.
@@ -1129,9 +1113,6 @@ bitflags::bitflags! {
 
 #[cfg(feature = "bitflags_serde_shim")]
 bitflags_serde_shim::impl_serde_for_bitflags!(ShaderStages);
-
-
-
 
 
 #[repr(C)]
@@ -1179,9 +1160,6 @@ impl TextureViewDimension {
 
 
 
-
-
-
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -1219,9 +1197,6 @@ pub enum BlendFactor {
 
 
 
-
-
-
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -1245,9 +1220,6 @@ impl Default for BlendOperation {
         Self::Add
     }
 }
-
-
-
 
 
 #[repr(C)]
@@ -1302,10 +1274,6 @@ impl Default for BlendComponent {
 
 
 
-
-
-
-
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -1343,9 +1311,6 @@ impl BlendState {
 }
 
 
-
-
-
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -1374,9 +1339,6 @@ impl From<TextureFormat> for ColorTargetState {
         }
     }
 }
-
-
-
 
 
 #[repr(C)]
@@ -1422,9 +1384,6 @@ impl PrimitiveTopology {
 }
 
 
-
-
-
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -1446,10 +1405,6 @@ impl Default for FrontFace {
         Self::Ccw
     }
 }
-
-
-
-
 
 
 #[repr(C)]
@@ -1484,9 +1439,6 @@ impl Default for PolygonMode {
         Self::Fill
     }
 }
-
-
-
 
 
 #[repr(C)]
@@ -1525,9 +1477,6 @@ pub struct PrimitiveState {
     
     pub conservative: bool,
 }
-
-
-
 
 
 #[repr(C)]
@@ -1675,9 +1624,6 @@ pub enum AstcChannel {
     
     Hdr,
 }
-
-
-
 
 
 
@@ -2230,9 +2176,6 @@ impl TextureFormat {
 
 bitflags::bitflags! {
     /// Color write mask. Disabled color channels will not be written to.
-    ///
-    /// Corresponds to [WebGPU `GPUColorWriteFlags`](
-    /// https://gpuweb.github.io/gpuweb/#typedefdef-gpucolorwriteflags).
     #[repr(transparent)]
     pub struct ColorWrites: u32 {
         /// Enable red channel writes
@@ -2258,11 +2201,6 @@ impl Default for ColorWrites {
         Self::ALL
     }
 }
-
-
-
-
-
 
 
 #[repr(C)]
@@ -2297,11 +2235,6 @@ impl StencilState {
 }
 
 
-
-
-
-
-
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -2321,9 +2254,6 @@ impl DepthBiasState {
         self.constant != 0 || self.slope_scale != 0.0
     }
 }
-
-
-
 
 
 #[repr(C)]
@@ -2360,9 +2290,6 @@ impl DepthStencilState {
 }
 
 
-
-
-
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
@@ -2379,9 +2306,6 @@ impl Default for IndexFormat {
         Self::Uint32
     }
 }
-
-
-
 
 
 #[repr(C)]
@@ -2416,9 +2340,6 @@ impl Default for StencilOperation {
         Self::Keep
     }
 }
-
-
-
 
 
 
@@ -2464,9 +2385,6 @@ impl Default for StencilFaceState {
 }
 
 
-
-
-
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -2502,9 +2420,6 @@ impl CompareFunction {
 }
 
 
-
-
-
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -2529,9 +2444,6 @@ impl Default for VertexStepMode {
 
 
 
-
-
-
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -2545,9 +2457,6 @@ pub struct VertexAttribute {
     
     pub shader_location: ShaderLocation,
 }
-
-
-
 
 
 #[repr(C)]
@@ -2665,9 +2574,6 @@ bitflags::bitflags! {
     ///
     /// The usages determine what kind of memory the buffer is allocated from and what
     /// actions the buffer can partake in.
-    ///
-    /// Corresponds to [WebGPU `GPUBufferUsageFlags`](
-    /// https://gpuweb.github.io/gpuweb/#typedefdef-gpubufferusageflags).
     #[repr(transparent)]
     pub struct BufferUsages: u32 {
         /// Allow a buffer to be mapped for reading using [`Buffer::map_async`] + [`Buffer::get_mapped_range`].
@@ -2705,9 +2611,6 @@ bitflags::bitflags! {
 bitflags_serde_shim::impl_serde_for_bitflags!(BufferUsages);
 
 
-
-
-
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -2736,9 +2639,6 @@ impl<L> BufferDescriptor<L> {
         }
     }
 }
-
-
-
 
 
 #[repr(C)]
@@ -2792,9 +2692,6 @@ bitflags::bitflags! {
     ///
     /// The usages determine what kind of memory the texture is allocated from and what
     /// actions the texture can partake in.
-    ///
-    /// Corresponds to [WebGPU `GPUTextureUsageFlags`](
-    /// https://gpuweb.github.io/gpuweb/#typedefdef-gputextureusageflags).
     #[repr(transparent)]
     pub struct TextureUsages: u32 {
         /// Allows a texture to be the source in a [`CommandEncoder::copy_texture_to_buffer`] or
@@ -2913,9 +2810,6 @@ impl Color {
 }
 
 
-
-
-
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -2931,9 +2825,6 @@ pub enum TextureDimension {
     #[cfg_attr(feature = "serde", serde(rename = "3d"))]
     D3,
 }
-
-
-
 
 
 #[repr(C)]
@@ -2960,9 +2851,6 @@ impl Default for Origin3d {
         Self::ZERO
     }
 }
-
-
-
 
 
 #[repr(C)]
@@ -2996,7 +2884,6 @@ impl Default for Extent3d {
 }
 
 impl Extent3d {
-    
     
     
     
@@ -3152,9 +3039,6 @@ fn test_max_mips() {
 }
 
 
-
-
-
 #[repr(C)]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -3234,14 +3118,11 @@ impl<L> TextureDescriptor<L> {
     
     pub fn array_layer_count(&self) -> u32 {
         match self.dimension {
-            TextureDimension::D1 | TextureDimension::D3 => 1,
-            TextureDimension::D2 => self.size.depth_or_array_layers,
+            TextureDimension::D1 | TextureDimension::D2 => self.size.depth_or_array_layers,
+            TextureDimension::D3 => 1,
         }
     }
 }
-
-
-
 
 
 #[repr(C)]
@@ -3263,9 +3144,6 @@ impl Default for TextureAspect {
         Self::All
     }
 }
-
-
-
 
 
 #[repr(C)]
@@ -3304,9 +3182,6 @@ impl Default for AddressMode {
 }
 
 
-
-
-
 #[repr(C)]
 #[derive(Copy, Clone, Debug, Hash, Eq, PartialEq)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -3343,9 +3218,6 @@ pub struct PushConstantRange {
 }
 
 
-
-
-
 #[repr(C)]
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -3365,9 +3237,6 @@ impl<L> CommandBufferDescriptor<L> {
 }
 
 
-
-
-
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(serde::Serialize))]
@@ -3380,9 +3249,6 @@ pub struct RenderBundleDepthStencil {
     
     pub stencil_read_only: bool,
 }
-
-
-
 
 
 #[repr(C)]
@@ -3408,9 +3274,6 @@ impl<T> Default for RenderBundleDescriptor<Option<T>> {
         Self { label: None }
     }
 }
-
-
-
 
 
 
@@ -3463,7 +3326,6 @@ pub struct ImageDataLayout {
 
 
 
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -3506,7 +3368,6 @@ impl Default for BufferBindingType {
         Self::Uniform
     }
 }
-
 
 
 
@@ -3562,9 +3423,6 @@ impl Default for TextureSampleType {
 
 
 
-
-
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -3598,9 +3456,6 @@ pub enum StorageTextureAccess {
 
 
 
-
-
-
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
@@ -3623,13 +3478,11 @@ pub enum SamplerBindingType {
 
 
 
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum BindingType {
-    
-    
-    
     
     Buffer {
         
@@ -3656,13 +3509,7 @@ pub enum BindingType {
     
     
     
-    
-    
-    
     Sampler(SamplerBindingType),
-    
-    
-    
     
     
     
@@ -3680,9 +3527,6 @@ pub enum BindingType {
         
         multisampled: bool,
     },
-    
-    
-    
     
     
     
@@ -3714,9 +3558,6 @@ impl BindingType {
 }
 
 
-
-
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -3738,9 +3579,6 @@ pub struct BindGroupLayoutEntry {
 }
 
 
-
-
-
 #[repr(C)]
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "trace", derive(serde::Serialize))]
@@ -3751,9 +3589,6 @@ pub struct ImageCopyBuffer<B> {
     
     pub layout: ImageDataLayout,
 }
-
-
-
 
 
 #[repr(C)]
@@ -3843,9 +3678,6 @@ pub enum SamplerBorderColor {
 }
 
 
-
-
-
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "trace", derive(serde::Serialize))]
 #[cfg_attr(feature = "replay", derive(serde::Deserialize))]
@@ -3869,9 +3701,6 @@ impl<L> QuerySetDescriptor<L> {
         }
     }
 }
-
-
-
 
 
 #[derive(Copy, Clone, Debug)]

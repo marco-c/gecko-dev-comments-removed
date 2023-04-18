@@ -698,8 +698,6 @@ pub enum TypeInner {
     },
     
     Sampler { comparison: bool },
-    
-    BindingArray { base: Handle<Type>, size: ArraySize },
 }
 
 
