@@ -117,9 +117,18 @@ add_task(async () => {
   );
 
   info("Check that timeout does work");
+  
+  
+  
+  const onNewTargetProcessed = commands.targetCommand.once(
+    "processed-available-target"
+  );
+  await reloadBrowser({ waitForLoad: false });
+  await onNewTargetProcessed;
   nodeFront = await commands.inspectorCommand.findNodeFrontFromSelectors(
     ["#iframe-org", "#in-iframe"],
-    0
+    
+    100
   );
   is(
     nodeFront,
