@@ -78,7 +78,7 @@ struct TlsData {
   
   GCPtrObject pendingException;
   
-  uint32_t pendingExceptionTagIndex;
+  GCPtrObject pendingExceptionTag;
 #endif
 
   

@@ -605,6 +605,7 @@ struct BaseCompiler final {
   inline void pushI32(int32_t v);
   inline void pushI64(int64_t v);
   inline void pushRef(intptr_t v);
+  inline void pushPtr(intptr_t v);
   inline void pushF64(double v);
   inline void pushF32(float v);
 #ifdef ENABLE_WASM_SIMD
@@ -1223,7 +1224,10 @@ struct BaseCompiler final {
   [[nodiscard]] bool throwFrom(RegRef exn, uint32_t lineOrBytecode);
 
   
-  void consumePendingException(RegRef* exnDst, RegI32* tagDst);
+  void loadTag(RegPtr tlsData, uint32_t tagIndex, RegRef tagDst);
+
+  
+  void consumePendingException(RegRef* exnDst, RegRef* tagDst);
 #endif
 
   

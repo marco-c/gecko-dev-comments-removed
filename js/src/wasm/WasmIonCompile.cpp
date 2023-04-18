@@ -2691,6 +2691,14 @@ class FunctionCompiler {
     return inTryBlock(&relativeDepth);
   }
 
+  MDefinition* loadTag(uint32_t tagIndex) {
+    MWasmLoadGlobalVar* tag = MWasmLoadGlobalVar::New(
+        alloc(), MIRType::RefOrNull, moduleEnv_.tags[tagIndex].globalDataOffset,
+        true, tlsPointer_);
+    curBlock_->add(tag);
+    return tag;
+  }
+
   MDefinition* loadPendingException() {
     MWasmLoadTls* exn = MWasmLoadTls::New(
         alloc(), tlsPointer_, offsetof(wasm::TlsData, pendingException),
@@ -2699,33 +2707,35 @@ class FunctionCompiler {
     return exn;
   }
 
-  MDefinition* loadPendingExceptionTagIndex() {
-    MWasmLoadTls* tagIndex = MWasmLoadTls::New(
-        alloc(), tlsPointer_, offsetof(wasm::TlsData, pendingExceptionTagIndex),
-        MIRType::Int32, AliasSet::Load(AliasSet::WasmPendingException));
-    curBlock_->add(tagIndex);
-    return tagIndex;
+  MDefinition* loadPendingExceptionTag() {
+    MWasmLoadTls* tag = MWasmLoadTls::New(
+        alloc(), tlsPointer_, offsetof(wasm::TlsData, pendingExceptionTag),
+        MIRType::RefOrNull, AliasSet::Load(AliasSet::WasmPendingException));
+    curBlock_->add(tag);
+    return tag;
   }
 
   void clearPendingExceptionState() {
     
-    auto* pendingExceptionLoc = MWasmDerivedPointer::New(
+    auto* exceptionLoc = MWasmDerivedPointer::New(
         alloc(), tlsPointer_, offsetof(TlsData, pendingException));
-    curBlock_->add(pendingExceptionLoc);
+    curBlock_->add(exceptionLoc);
     auto* null = nullRefConstant();
-    auto* clearObject =
-        MWasmStoreRef::New(alloc(), tlsPointer_, pendingExceptionLoc, null,
+    auto* clearException =
+        MWasmStoreRef::New(alloc(), tlsPointer_, exceptionLoc, null,
                            AliasSet::WasmPendingException);
-    curBlock_->add(clearObject);
+    curBlock_->add(clearException);
     
 
     
-    auto* nullTagIndex = constant(Int32Value(-1), MIRType::Int32);
-    auto* clearTagIndex = MWasmStoreTls::New(
-        alloc(), tlsPointer_, nullTagIndex,
-        offsetof(TlsData, pendingExceptionTagIndex), MIRType::Int32,
-        AliasSet::Store(AliasSet::WasmPendingException));
-    curBlock_->add(clearTagIndex);
+    auto* exceptionTagLoc = MWasmDerivedPointer::New(
+        alloc(), tlsPointer_, offsetof(TlsData, pendingExceptionTag));
+    curBlock_->add(exceptionTagLoc);
+    auto* clearExceptionTag =
+        MWasmStoreRef::New(alloc(), tlsPointer_, exceptionTagLoc, null,
+                           AliasSet::WasmPendingException);
+    curBlock_->add(clearExceptionTag);
+    
   }
 
   bool addPadPatch(MControlInstruction* ins, size_t relativeTryDepth) {
@@ -2734,12 +2744,12 @@ class FunctionCompiler {
     return padPatches.emplaceBack(ins);
   }
 
-  bool endWithPadPatch(MBasicBlock* block, MDefinition* exn,
-                       MDefinition* tagIndex, uint32_t relativeTryDepth) {
+  bool endWithPadPatch(MBasicBlock* block, MDefinition* exn, MDefinition* tag,
+                       uint32_t relativeTryDepth) {
     MOZ_ASSERT(iter().controlKind(relativeTryDepth) == LabelKind::Try);
     MOZ_ASSERT(exn);
     MOZ_ASSERT(exn->type() == MIRType::RefOrNull);
-    MOZ_ASSERT(tagIndex && tagIndex->type() == MIRType::Int32);
+    MOZ_ASSERT(tag && tag->type() == MIRType::RefOrNull);
     MOZ_ASSERT(numPushed(block) == 0);
 
     
@@ -2748,7 +2758,7 @@ class FunctionCompiler {
       return false;
     }
     block->push(exn);
-    block->push(tagIndex);
+    block->push(tag);
 
     MGoto* insToPatch = MGoto::New(alloc());
     block->end(insToPatch);
@@ -2805,11 +2815,11 @@ class FunctionCompiler {
     
     curBlock_ = prePadBlock;
     
-    MDefinition* tagIndex = loadPendingExceptionTagIndex();
+    MDefinition* pendingTag = loadPendingExceptionTag();
     
     clearPendingExceptionState();
     
-    if (!endWithPadPatch(prePadBlock, pendingException, tagIndex,
+    if (!endWithPadPatch(prePadBlock, pendingException, pendingTag,
                          relativeTryDepth)) {
       return false;
     }
@@ -2971,14 +2981,14 @@ class FunctionCompiler {
 
     
     
-    MDefinition* exceptionTagIndex = curBlock_->pop();
+    MDefinition* exceptionTag = curBlock_->pop();
     MDefinition* exception = curBlock_->pop();
 
     
     
-    MDefinition* catchTagIndex = constant(Int32Value(tagIndex), MIRType::Int32);
-    MDefinition* matchesCatchTag = compare(exceptionTagIndex, catchTagIndex,
-                                           JSOp::Eq, MCompare::Compare_Int32);
+    MDefinition* catchTag = loadTag(tagIndex);
+    MDefinition* matchesCatchTag =
+        compare(exceptionTag, catchTag, JSOp::Eq, MCompare::Compare_RefOrNull);
     curBlock_->end(
         MTest::New(alloc(), matchesCatchTag, catchBlock, fallthroughBlock));
 
@@ -3070,9 +3080,9 @@ class FunctionCompiler {
         if (padBlock) {
           MBasicBlock* prevBlock = curBlock_;
           curBlock_ = padBlock;
-          MDefinition* tagIndex = curBlock_->pop();
+          MDefinition* tag = curBlock_->pop();
           MDefinition* exception = curBlock_->pop();
-          if (!throwFrom(exception, tagIndex)) {
+          if (!throwFrom(exception, tag)) {
             return false;
           }
           curBlock_ = prevBlock;
@@ -3105,9 +3115,9 @@ class FunctionCompiler {
     
     MBasicBlock* prevBlock = curBlock_;
     curBlock_ = padBlock;
-    MDefinition* tagIndex = curBlock_->pop();
+    MDefinition* tag = curBlock_->pop();
     MDefinition* exception = curBlock_->pop();
-    if (!throwFrom(exception, tagIndex)) {
+    if (!throwFrom(exception, tag)) {
       return false;
     }
     curBlock_ = prevBlock;
@@ -3124,8 +3134,7 @@ class FunctionCompiler {
     const ResultType& tagParams = tagType.resultType();
 
     
-    MDefinition* tagIndexDef =
-        constant(Int32Value(int32_t(tagIndex)), MIRType::Int32);
+    MDefinition* tagDef = loadTag(tagIndex);
     MDefinition* exnSize =
         constant(Int32Value(tagType.bufferSize), MIRType::Int32);
     MDefinition* exn = nullptr;
@@ -3134,7 +3143,7 @@ class FunctionCompiler {
     if (!passInstance(callee.argTypes[0], &args)) {
       return false;
     }
-    if (!passArg(tagIndexDef, callee.argTypes[1], &args)) {
+    if (!passArg(tagDef, callee.argTypes[1], &args)) {
       return false;
     }
     if (!passArg(exnSize, callee.argTypes[2], &args)) {
@@ -3185,10 +3194,10 @@ class FunctionCompiler {
     }
 
     
-    return throwFrom(exn, tagIndexDef);
+    return throwFrom(exn, tagDef);
   }
 
-  bool throwFrom(MDefinition* exn, MDefinition* tagIndex) {
+  bool throwFrom(MDefinition* exn, MDefinition* tag) {
     if (inDeadCode()) {
       return true;
     }
@@ -3204,7 +3213,7 @@ class FunctionCompiler {
       MGoto* ins = MGoto::New(alloc(), prePadBlock);
 
       
-      if (!endWithPadPatch(prePadBlock, exn, tagIndex, relativeTryDepth)) {
+      if (!endWithPadPatch(prePadBlock, exn, tag, relativeTryDepth)) {
         return false;
       }
       curBlock_->end(ins);
@@ -3249,11 +3258,11 @@ class FunctionCompiler {
 
     
     size_t exnSlotPosition = pad->nslots() - 2;
-    MDefinition* tagIndex = pad->getSlot(exnSlotPosition + 1);
+    MDefinition* tag = pad->getSlot(exnSlotPosition + 1);
     MDefinition* exception = pad->getSlot(exnSlotPosition);
     MOZ_ASSERT(exception->type() == MIRType::RefOrNull &&
-               tagIndex->type() == MIRType::Int32);
-    return throwFrom(exception, tagIndex);
+               tag->type() == MIRType::RefOrNull);
+    return throwFrom(exception, tag);
   }
 #endif
 

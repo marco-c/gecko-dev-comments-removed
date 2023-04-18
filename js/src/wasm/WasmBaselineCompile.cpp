@@ -1421,22 +1421,27 @@ bool BaseCompiler::throwFrom(RegRef exn, uint32_t lineOrBytecode) {
   return emitInstanceCall(lineOrBytecode, SASigThrowException);
 }
 
-void BaseCompiler::consumePendingException(RegRef* exnDst, RegI32* tagDst) {
-  RegPtr pendingExceptionAddr = RegPtr(PreBarrierReg);
-  needPtr(pendingExceptionAddr);
-  masm.computeEffectiveAddress(
-      Address(WasmTlsReg, offsetof(TlsData, pendingException)),
-      pendingExceptionAddr);
-  *exnDst = needRef();
-  masm.loadPtr(Address(pendingExceptionAddr, 0), *exnDst);
-  emitBarrieredClear(pendingExceptionAddr);
-  freePtr(pendingExceptionAddr);
+void BaseCompiler::loadTag(RegPtr tlsData, uint32_t tagIndex, RegRef tagDst) {
+  const TagDesc& tagDesc = moduleEnv_.tags[tagIndex];
+  size_t offset = offsetof(TlsData, globalArea) + tagDesc.globalDataOffset;
+  masm.loadPtr(Address(tlsData, offset), tagDst);
+}
 
-  *tagDst = needI32();
-  masm.load32(Address(WasmTlsReg, offsetof(TlsData, pendingExceptionTagIndex)),
-              *tagDst);
-  masm.store32(Imm32(-1), Address(WasmTlsReg,
-                                  offsetof(TlsData, pendingExceptionTagIndex)));
+void BaseCompiler::consumePendingException(RegRef* exnDst, RegRef* tagDst) {
+  RegPtr pendingAddr = RegPtr(PreBarrierReg);
+  needPtr(pendingAddr);
+  masm.computeEffectiveAddress(
+      Address(WasmTlsReg, offsetof(TlsData, pendingException)), pendingAddr);
+  *exnDst = needRef();
+  masm.loadPtr(Address(pendingAddr, 0), *exnDst);
+  emitBarrieredClear(pendingAddr);
+
+  *tagDst = needRef();
+  masm.computeEffectiveAddress(
+      Address(WasmTlsReg, offsetof(TlsData, pendingExceptionTag)), pendingAddr);
+  masm.loadPtr(Address(pendingAddr, 0), *tagDst);
+  emitBarrieredClear(pendingAddr);
+  freePtr(pendingAddr);
 }
 #endif
 
@@ -3784,9 +3789,9 @@ bool BaseCompiler::emitBodyDelegateThrowPad() {
     
     
     RegRef exn;
-    RegI32 tagIndex;
-    consumePendingException(&exn, &tagIndex);
-    freeI32(tagIndex);
+    RegRef tag;
+    consumePendingException(&exn, &tag);
+    freeRef(tag);
     if (!throwFrom(exn, lineOrBytecode)) {
       return false;
     }
@@ -3935,8 +3940,11 @@ bool BaseCompiler::endTryCatch(ResultType type) {
   
   
   RegRef exn;
-  RegI32 index;
-  consumePendingException(&exn, &index);
+  RegRef tag;
+  consumePendingException(&exn, &tag);
+
+  
+  RegRef catchTag = needRef();
 
   
   
@@ -3949,13 +3957,15 @@ bool BaseCompiler::endTryCatch(ResultType type) {
   for (CatchInfo& info : tryCatch.catchInfos) {
     if (info.tagIndex != CatchAllIndex) {
       MOZ_ASSERT(!hasCatchAll);
-      masm.branch32(Assembler::Equal, index, Imm32(info.tagIndex), &info.label);
+      loadTag(RegPtr(WasmTlsReg), info.tagIndex, catchTag);
+      masm.branchPtr(Assembler::Equal, tag, catchTag, &info.label);
     } else {
       masm.jump(&info.label);
       hasCatchAll = true;
     }
   }
-  freeI32(index);
+  freeRef(catchTag);
+  freeRef(tag);
 
   
   
@@ -3983,10 +3993,10 @@ bool BaseCompiler::endTryCatch(ResultType type) {
 
 bool BaseCompiler::emitThrow() {
   uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
-  uint32_t exnIndex;
+  uint32_t tagIndex;
   BaseNothingVector unused_argValues{};
 
-  if (!iter_.readThrow(&exnIndex, &unused_argValues)) {
+  if (!iter_.readThrow(&tagIndex, &unused_argValues)) {
     return false;
   }
 
@@ -3994,13 +4004,20 @@ bool BaseCompiler::emitThrow() {
     return true;
   }
 
-  const TagDesc& tagDesc = moduleEnv_.tags[exnIndex];
+  const TagDesc& tagDesc = moduleEnv_.tags[tagIndex];
   const ResultType& params = tagDesc.type.resultType();
   const TagOffsetVector& offsets = tagDesc.type.argOffsets;
 
   
-  pushI32(exnIndex);
-  pushI32(tagDesc.type.bufferSize);
+  RegPtr tls = needPtr();
+  fr.loadTlsPtr(tls);
+  RegRef tag = needRef();
+  loadTag(tls, tagIndex, tag);
+  freePtr(tls);
+
+  
+  pushRef(tag);
+  pushPtr(tagDesc.type.bufferSize);
   if (!emitInstanceCall(lineOrBytecode, SASigExceptionNew)) {
     return false;
   }
