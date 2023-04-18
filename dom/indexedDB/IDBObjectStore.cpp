@@ -777,13 +777,24 @@ RefPtr<IDBRequest> IDBObjectStore::AddOrPut(JSContext* aCx,
   
   
   mTransaction->TransitionToInactive();
+
+#ifdef DEBUG
+  const uint32_t previousPendingRequestCount{
+      mTransaction->GetPendingRequestCount()};
+#endif
   GetAddInfo(aCx, aValueWrapper, aKey, cloneWriteInfo, key, updateInfos, aRv);
-  if (mTransaction
-          ->IsAborted()) {  
-    return nullptr;
+  
+  
+  
+  MOZ_ASSERT(mTransaction->GetPendingRequestCount() ==
+             previousPendingRequestCount);
+
+  if (!mTransaction->IsAborted()) {
+    mTransaction->TransitionToActive();
+  } else if (!aRv.Failed()) {
+    aRv.Throw(NS_ERROR_DOM_INDEXEDDB_ABORT_ERR);
+    return nullptr;  
   }
-  MOZ_ASSERT(mTransaction->IsInactive());
-  mTransaction->TransitionToActive();
 
   if (aRv.Failed()) {
     return nullptr;
