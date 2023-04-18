@@ -281,16 +281,7 @@ const CUSTOM_NAMES = new Map([
 
 
 
-
-
-XPCOMUtils.defineLazyGetter(this, "CUSTOM_NAMES_REGEX", () => {
-  let regexMap = new Map();
-  for (let suffix of CUSTOM_NAMES.keys()) {
-    let reg = new RegExp(`^(.+\.)?${suffix}$`);
-    regexMap.set(suffix, reg);
-  }
-  return regexMap;
-});
+const MAX_HOSTNAME_PARTS = 2;
 
 
 
@@ -313,14 +304,28 @@ class CommonNames {
   }
 
   static getURLName(url) {
-    let longest = null;
-    for (let suffix of CUSTOM_NAMES.keys()) {
-      let reg = CUSTOM_NAMES_REGEX.get(suffix);
-      if (reg.test(url.hostname)) {
-        longest = !longest || longest.length < suffix.length ? suffix : longest;
+    
+    
+    const hostname = url.hostname;
+    
+    
+    let dot = hostname.lastIndexOf(".");
+    if (dot === -1) {
+      return shortURL({ url });
+    }
+    let bestName = null;
+    for (let i = 0; i < MAX_HOSTNAME_PARTS; i++) {
+      dot = hostname.lastIndexOf(".", dot - 1);
+      const partialHostname = hostname.substring(dot + 1);
+      const name = CUSTOM_NAMES.get(partialHostname);
+      if (name) {
+        bestName = name;
+      }
+      if (dot === -1) {
+        break;
       }
     }
 
-    return longest ? CUSTOM_NAMES.get(longest) : shortURL({ url });
+    return bestName ?? shortURL({ url });
   }
 }
