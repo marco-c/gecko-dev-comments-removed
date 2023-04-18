@@ -232,6 +232,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
   
   
   
+  
   ["quicksuggest.migrationVersion", 0],
 
   
@@ -599,7 +600,8 @@ class Preferences {
 
 
 
-  async updateFirefoxSuggestScenario(isStartup, scenarioOverride = undefined) {
+
+  async updateFirefoxSuggestScenario(isStartup, testOverrides = null) {
     
     
     
@@ -619,13 +621,13 @@ class Preferences {
       await Region.init();
       await NimbusFeatures.urlbar.ready();
 
-      this._updateFirefoxSuggestScenarioHelper(isStartup, scenarioOverride);
+      this._updateFirefoxSuggestScenarioHelper(isStartup, testOverrides);
     } finally {
       this._updatingFirefoxSuggestScenario = false;
     }
   }
 
-  _updateFirefoxSuggestScenarioHelper(isStartup, scenarioOverride) {
+  _updateFirefoxSuggestScenarioHelper(isStartup, testOverrides) {
     
     
     
@@ -701,13 +703,8 @@ class Preferences {
     
     
 
-    let nonSponsoredInitiallyEnabled = this.get(
-      "suggest.quicksuggest.nonsponsored"
-    );
-    let sponsoredInitiallyEnabled = this.get("suggest.quicksuggest.sponsored");
-
     
-    let scenario = scenarioOverride || this._nimbus.quickSuggestScenario;
+    let scenario = testOverrides?.scenario || this._nimbus.quickSuggestScenario;
     if (!scenario) {
       if (
         Region.home == "US" &&
@@ -720,13 +717,15 @@ class Preferences {
         scenario = "history";
       }
     }
-    if (!this.FIREFOX_SUGGEST_DEFAULT_PREFS.hasOwnProperty(scenario)) {
+    let defaultPrefs =
+      testOverrides?.defaultPrefs || this.FIREFOX_SUGGEST_DEFAULT_PREFS;
+    if (!defaultPrefs.hasOwnProperty(scenario)) {
       scenario = "history";
       Cu.reportError(`Unrecognized Firefox Suggest scenario "${scenario}"`);
     }
 
     
-    let prefs = this.FIREFOX_SUGGEST_DEFAULT_PREFS[scenario];
+    let prefs = { ...defaultPrefs[scenario] };
 
     
     
@@ -748,29 +747,8 @@ class Preferences {
     }
 
     
-    
-    
-    
-    
-    
-    if (
-      scenario == "online" &&
-      this.get("quicksuggest.dataCollection.enabled") &&
-      Services.prefs.prefHasUserValue(
-        "browser.urlbar.quicksuggest.dataCollection.enabled"
-      )
-    ) {
-      if (nonSponsoredInitiallyEnabled) {
-        this.set("suggest.quicksuggest.nonsponsored", true);
-      }
-      if (sponsoredInitiallyEnabled) {
-        this.set("suggest.quicksuggest.sponsored", true);
-      }
-    }
-
-    
     if (isStartup) {
-      this._ensureFirefoxSuggestPrefsMigrated(scenario);
+      this._ensureFirefoxSuggestPrefsMigrated(scenario, testOverrides);
     }
 
     
@@ -793,11 +771,7 @@ class Preferences {
   
 
 
-
-
   get FIREFOX_SUGGEST_DEFAULT_PREFS() {
-    
-    
     
     
     
@@ -826,10 +800,17 @@ class Preferences {
         "quicksuggest.enabled": true,
         "quicksuggest.dataCollection.enabled": false,
         "quicksuggest.shouldShowOnboardingDialog": true,
-        "suggest.quicksuggest.nonsponsored": false,
-        "suggest.quicksuggest.sponsored": false,
+        "suggest.quicksuggest.nonsponsored": true,
+        "suggest.quicksuggest.sponsored": true,
       },
     };
+  }
+
+  
+
+
+  get FIREFOX_SUGGEST_MIGRATION_VERSION() {
+    return 2;
   }
 
   
@@ -838,12 +819,155 @@ class Preferences {
 
 
 
-  _ensureFirefoxSuggestPrefsMigrated(scenario) {
-    if (this.get("quicksuggest.migrationVersion")) {
+
+
+
+
+  _ensureFirefoxSuggestPrefsMigrated(scenario, testOverrides) {
+    let currentVersion =
+      testOverrides?.migrationVersion !== undefined
+        ? testOverrides.migrationVersion
+        : this.FIREFOX_SUGGEST_MIGRATION_VERSION;
+    let lastSeenVersion = Math.max(
+      0,
+      this.get("quicksuggest.migrationVersion")
+    );
+    if (currentVersion <= lastSeenVersion) {
       
       return;
     }
 
+    let version = lastSeenVersion;
+
+    
+    
+    if (!version && scenario == "online" && 2 <= currentVersion) {
+      this._migrateFirefoxSuggestPrefsUnversionedTo2Online();
+      version = 2;
+    }
+
+    
+    for (; version < currentVersion; version++) {
+      let nextVersion = version + 1;
+      let methodName = "_migrateFirefoxSuggestPrefsTo_" + nextVersion;
+      try {
+        this[methodName](scenario);
+      } catch (error) {
+        Cu.reportError(
+          `Error migrating Firefox Suggest prefs to version ${nextVersion}: ` +
+            error
+        );
+        break;
+      }
+    }
+
+    
+    this.set("quicksuggest.migrationVersion", version);
+  }
+
+  
+
+
+
+
+  _migrateFirefoxSuggestPrefsUnversionedTo2Online() {
+    
+    
+    let mainPref = "browser.urlbar.suggest.quicksuggest";
+    let mainPrefHasUserValue = Services.prefs.prefHasUserValue(mainPref);
+    if (mainPrefHasUserValue) {
+      this.set(
+        "suggest.quicksuggest.nonsponsored",
+        Services.prefs.getBoolPref(mainPref)
+      );
+      Services.prefs.clearUserPref(mainPref);
+    }
+
+    if (!this.get("quicksuggest.showedOnboardingDialog")) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      if (
+        mainPrefHasUserValue &&
+        !this.get("suggest.quicksuggest.nonsponsored")
+      ) {
+        
+        
+        
+        this.set("suggest.quicksuggest.sponsored", false);
+      }
+      return;
+    }
+
+    
+    
+    
+    
+
+    if (mainPrefHasUserValue && this.get("suggest.quicksuggest.nonsponsored")) {
+      
+      
+      
+      
+      this.set("quicksuggest.dataCollection.enabled", true);
+      if (
+        !Services.prefs.prefHasUserValue(
+          "browser.urlbar.suggest.quicksuggest.sponsored"
+        )
+      ) {
+        
+        
+        
+        
+        this.set("suggest.quicksuggest.sponsored", false);
+      }
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      this.set("suggest.quicksuggest.nonsponsored", false);
+      this.set("suggest.quicksuggest.sponsored", false);
+      this.set("quicksuggest.dataCollection.enabled", false);
+    }
+  }
+
+  _migrateFirefoxSuggestPrefsTo_1(scenario) {
     
     
     let suggestQuicksuggest = "browser.urlbar.suggest.quicksuggest";
@@ -882,8 +1006,31 @@ class Preferences {
     if (scenario == "online" && this.get("suggest.quicksuggest.nonsponsored")) {
       this.set("quicksuggest.dataCollection.enabled", true);
     }
+  }
 
-    this.set("quicksuggest.migrationVersion", 1);
+  _migrateFirefoxSuggestPrefsTo_2(scenario) {
+    
+    
+    
+    
+    
+    
+    if (this.get("quicksuggest.scenario") == "online") {
+      if (
+        !Services.prefs.prefHasUserValue(
+          "browser.urlbar.suggest.quicksuggest.nonsponsored"
+        )
+      ) {
+        this.set("suggest.quicksuggest.nonsponsored", false);
+      }
+      if (
+        !Services.prefs.prefHasUserValue(
+          "browser.urlbar.suggest.quicksuggest.sponsored"
+        )
+      ) {
+        this.set("suggest.quicksuggest.sponsored", false);
+      }
+    }
   }
 
   
