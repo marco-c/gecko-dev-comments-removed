@@ -135,7 +135,7 @@ var ReaderMode = {
     });
 
     let url = win.document.location.href;
-    let originalURL = ReaderMode.getOriginalUrl(url);
+    let originalURL = this.getOriginalUrl(url);
     let webNav = docShell.QueryInterface(Ci.nsIWebNavigation);
 
     if (!Services.appinfo.sessionHistoryInParent) {
@@ -219,7 +219,7 @@ var ReaderMode = {
   },
 
   getOriginalUrlObjectForDisplay(url) {
-    let originalUrl = ReaderMode.getOriginalUrl(url);
+    let originalUrl = this.getOriginalUrl(url);
     if (originalUrl) {
       let uriObj;
       try {
@@ -264,10 +264,12 @@ var ReaderMode = {
 
 
   async downloadAndParseDocument(url, docContentType = "document") {
-    let doc = await this._downloadDocument(url, docContentType);
-    if (!doc) {
+    let result = await this._downloadDocument(url, docContentType);
+    if (!result?.doc) {
       return null;
-    } else if (
+    }
+    let { doc, newURL } = result;
+    if (
       !Readerable.shouldCheckUri(doc.documentURIObject) ||
       !Readerable.shouldCheckUri(doc.baseURIObject, true)
     ) {
@@ -275,7 +277,14 @@ var ReaderMode = {
       return null;
     }
 
-    return this._readerParse(doc);
+    let article = await this._readerParse(doc);
+    
+    
+    if (newURL) {
+      throw { newURL, article };
+    }
+    
+    return article;
   },
 
   _downloadDocument(url, docContentType = "document") {
@@ -312,78 +321,37 @@ var ReaderMode = {
           return;
         }
 
-        if (xhr.responseType === "document") {
+        let responseURL = xhr.responseURL;
+        let givenURL = url;
+        
+        
+        try {
+          responseURL = Services.io.newURI(responseURL).specIgnoringRef;
+        } catch (ex) {
           
-          let meta = doc.querySelector("meta[http-equiv=refresh]");
-          if (meta) {
-            let content = meta.getAttribute("content");
-            if (content) {
-              let urlIndex = content.toUpperCase().indexOf("URL=");
-              if (urlIndex > -1) {
-                let baseURI = Services.io.newURI(url);
-                let newURI = Services.io.newURI(
-                  content.substring(urlIndex + 4),
-                  null,
-                  baseURI
-                );
-                let newURL = newURI.spec;
-                let ssm = Services.scriptSecurityManager;
-                let flags =
-                  ssm.LOAD_IS_AUTOMATIC_DOCUMENT_REPLACEMENT |
-                  ssm.DISALLOW_INHERIT_PRINCIPAL;
-                try {
-                  ssm.checkLoadURIStrWithPrincipal(
-                    doc.nodePrincipal,
-                    newURL,
-                    flags
-                  );
-                } catch (ex) {
-                  let errorMsg =
-                    "Reader mode disallowed meta refresh (reason: " + ex + ").";
-
-                  if (Services.prefs.getBoolPref("reader.errors.includeURLs")) {
-                    errorMsg += " Refresh target URI: '" + newURL + "'.";
-                  }
-                  reject(errorMsg);
-                  return;
-                }
-                
-                if (!baseURI.equalsExceptRef(newURI)) {
-                  reject({ newURL });
-                  return;
-                }
-              }
-            }
-          }
-          let responseURL = xhr.responseURL;
-          let givenURL = url;
+        }
+        try {
+          givenURL = Services.io.newURI(givenURL).specIgnoringRef;
+        } catch (ex) {
           
-          
-          try {
-            responseURL = Services.io.newURI(responseURL).specIgnoringRef;
-          } catch (ex) {
-            
-          }
-          try {
-            givenURL = Services.io.newURI(givenURL).specIgnoringRef;
-          } catch (ex) {
-            
-          }
-
-          if (responseURL != givenURL) {
-            
-            
-            reject({ newURL: xhr.responseURL });
-            return;
-          }
-        } else {
-          let parser = new DOMParser();
-          let htmlString = `<pre>${doc}</pre>`;
-          doc = parser.parseFromString(htmlString, "text/html");
         }
 
-        resolve(doc);
+        if (xhr.responseType != "document") {
+          let initialText = doc;
+          let parser = new DOMParser();
+          doc = parser.parseFromString(`<pre></pre>`, "text/html");
+          doc.querySelector("pre").textContent = initialText;
+        }
+
+        
         histogram.add(DOWNLOAD_SUCCESS);
+
+        let result = { doc };
+        if (responseURL != givenURL) {
+          result.newURL = xhr.responseURL;
+        }
+
+        resolve(result);
       };
       xhr.send();
     });
