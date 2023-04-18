@@ -3523,9 +3523,7 @@ bool BaseCompiler::emitTry() {
     
     controlItem().bceSafeOnExit = 0;
     
-    if (!masm.wasmStartTry(&controlItem().tryNoteIndex)) {
-      return false;
-    }
+    controlItem().tryNoteIndex = masm.wasmStartTry();
   }
 
   return true;

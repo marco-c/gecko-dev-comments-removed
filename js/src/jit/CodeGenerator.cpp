@@ -8017,13 +8017,11 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
 #ifdef ENABLE_WASM_EXCEPTIONS
   
   
-  bool inTry = mir->inTry();
+  bool inTry_ = mir->inTry();
   size_t tryNoteIndex = 0;
-  if (inTry && !masm.wasmStartTry(&tryNoteIndex)) {
-    
-    
-    
-    inTry = false;
+
+  if (inTry_) {
+    tryNoteIndex = masm.wasmStartTry();
   }
 #endif
 
@@ -8098,7 +8096,7 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
   }
 
 #ifdef ENABLE_WASM_EXCEPTIONS
-  if (inTry) {
+  if (inTry_) {
     
     
     
