@@ -19,41 +19,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 const RESIZE_TIMEOUT = 100;
 
-
-
-
-
-
-
-
-const isOpaque = function(color) {
-  try {
-    if (/(rgba|hsla)/i.test(color)) {
-      
-      let numberRe = /(\.\d+|\d+\.?\d*)%?/g;
-      
-      let opacity = color.match(numberRe)[3];
-
-      
-      if (opacity.includes("%")) {
-        opacity = opacity.slice(0, -1);
-        opacity = opacity / 100;
-      }
-
-      return opacity * 1 >= 1;
-    } else if (/^#[a-f0-9]{4}$/i.test(color)) {
-      
-      return color.toUpperCase().endsWith("F");
-    } else if (/^#[a-f0-9]{8}$/i.test(color)) {
-      
-      return color.toUpperCase().endsWith("FF");
-    }
-  } catch (e) {
-    
-  }
-  return true;
-};
-
 const BrowserListener = {
   init({
     allowScriptsToClose,
@@ -278,13 +243,8 @@ const BrowserListener = {
 
       result = { height, detail };
     } else {
-      let background = doc.defaultView.getComputedStyle(body).backgroundColor;
-      if (!isOpaque(background)) {
-        
-        background = null;
-      }
-
-      if (background === null || background !== this.oldBackground) {
+      let background = content.windowUtils.canvasBackgroundColor;
+      if (background !== this.oldBackground) {
         sendAsyncMessage("Extension:BrowserBackgroundChanged", { background });
       }
       this.oldBackground = background;
