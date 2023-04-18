@@ -871,41 +871,62 @@
       
       
       var screen = event.screen;
-      var fullX = {},
-        fullY = {},
-        fullWidth = {},
-        fullHeight = {};
       var availX = {},
         availY = {},
         availWidth = {},
         availHeight = {};
       
-      screen.GetRectDisplayPix(fullX, fullY, fullWidth, fullHeight);
       screen.GetAvailRectDisplayPix(availX, availY, availWidth, availHeight);
+      availX = availX.value;
+      availY = availY.value;
+      availWidth = availWidth.value;
+      availHeight = availHeight.value;
 
       
-      var scaleFactor =
-        screen.contentsScaleFactor / screen.defaultCSSScaleFactor;
       
-      
-      
-      
-      availX.value = (availX.value - fullX.value) * scaleFactor + fullX.value;
-      availY.value = (availY.value - fullY.value) * scaleFactor + fullY.value;
-      availWidth.value *= scaleFactor;
-      availHeight.value *= scaleFactor;
+      let ourCssToDesktopScale =
+        window.devicePixelRatio / window.desktopToDeviceScale;
+      let screenCssToDesktopScale =
+        screen.defaultCSSScaleFactor / screen.contentsScaleFactor;
 
       
-      var winWidth = Math.min(window.outerWidth, availWidth.value);
-      var winHeight = Math.min(window.outerHeight, availHeight.value);
+      
+      
+      
+      
+      var winWidth = Math.min(
+        window.outerWidth * screenCssToDesktopScale,
+        availWidth
+      );
+      var winHeight = Math.min(
+        window.outerHeight * screenCssToDesktopScale,
+        availHeight
+      );
+
+      
+      
+      
+      
       var left = Math.min(
-        Math.max(eX - draggedTab._dragData.offsetX, availX.value),
-        availX.value + availWidth.value - winWidth
+        Math.max(
+          eX * ourCssToDesktopScale -
+            draggedTab._dragData.offsetX * screenCssToDesktopScale,
+          availX
+        ),
+        availX + availWidth - winWidth
       );
       var top = Math.min(
-        Math.max(eY - draggedTab._dragData.offsetY, availY.value),
-        availY.value + availHeight.value - winHeight
+        Math.max(
+          eY * ourCssToDesktopScale -
+            draggedTab._dragData.offsetY * screenCssToDesktopScale,
+          availY
+        ),
+        availY + availHeight - winHeight
       );
+
+      
+      left /= ourCssToDesktopScale;
+      top /= ourCssToDesktopScale;
 
       delete draggedTab._dragData;
 
@@ -913,10 +934,23 @@
         
         
         
+        
+        
+        
+        
+        
+        winWidth /= ourCssToDesktopScale;
+        winHeight /= ourCssToDesktopScale;
+
         window.resizeTo(winWidth, winHeight);
         window.moveTo(left, top);
         window.focus();
       } else {
+        
+        
+        winWidth /= screenCssToDesktopScale;
+        winHeight /= screenCssToDesktopScale;
+
         let props = { screenX: left, screenY: top, suppressanimation: 1 };
         if (AppConstants.platform != "win") {
           props.outerWidth = winWidth;
