@@ -56,7 +56,9 @@ NS_INTERFACE_MAP_END
 
 WritableStreamDefaultController::WritableStreamDefaultController(
     nsISupports* aGlobal, WritableStream& aStream)
-    : mGlobal(do_QueryInterface(aGlobal)), mStream(&aStream) {}
+    : mGlobal(do_QueryInterface(aGlobal)), mStream(&aStream) {
+  mozilla::HoldJSObjects(this);
+}
 
 WritableStreamDefaultController::~WritableStreamDefaultController() {
   
@@ -65,6 +67,7 @@ WritableStreamDefaultController::~WritableStreamDefaultController() {
   
   
   mQueue.clear();
+  mozilla::DropJSObjects(this);
 }
 
 JSObject* WritableStreamDefaultController::WrapObject(
