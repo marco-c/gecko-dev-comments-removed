@@ -25,6 +25,17 @@
 #endif  
 
 
+#ifdef HAVE_64BIT_BUILD
+#  define PRIdLPTR "lld"
+#  define PRIxLPTR "llx"
+#  define PRIXLPTR "llX"
+#else
+#  define PRIdLPTR "ld"
+#  define PRIxLPTR "lx"
+#  define PRIXLPTR "lX"
+#endif
+
+
 
 
 
