@@ -137,9 +137,16 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
 
 
 
+  static bool ShouldCreateImageFrameForContent(const mozilla::dom::Element&,
+                                               const ComputedStyle&);
+
+  
+
+
+
 
   static bool ShouldCreateImageFrameFor(const mozilla::dom::Element&,
-                                        ComputedStyle&);
+                                        const ComputedStyle&);
 
   ImgDrawResult DisplayAltFeedback(gfxContext& aRenderingContext,
                                    const nsRect& aDirtyRect, nsPoint aPt,

@@ -830,11 +830,29 @@ static bool HasAltText(const Element& aElement) {
   return aElement.HasNonEmptyAttr(nsGkAtoms::alt);
 }
 
+bool nsImageFrame::ShouldCreateImageFrameForContent(
+    const Element& aElement, const ComputedStyle& aStyle) {
+  if (aElement.IsRootOfNativeAnonymousSubtree()) {
+    return false;
+  }
+  const auto& content = aStyle.StyleContent()->mContent;
+  if (!content.IsItems()) {
+    return false;
+  }
+  Span<const StyleContentItem> items = content.AsItems().AsSpan();
+  return items.Length() == 1 && items[0].IsImage();
+}
+
 
 
 
 bool nsImageFrame::ShouldCreateImageFrameFor(const Element& aElement,
-                                             ComputedStyle& aStyle) {
+                                             const ComputedStyle& aStyle) {
+  if (ShouldCreateImageFrameForContent(aElement, aStyle)) {
+    
+    return false;
+  }
+
   if (ImageOk(aElement.State())) {
     
     return true;
