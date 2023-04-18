@@ -286,6 +286,9 @@ class ResponsiveUI {
     
     this.resizeToolbarObserver.unobserve(this.browserStackEl);
 
+    
+    this.rdmFrame.contentWindow.destroy();
+
     this.rdmFrame.remove();
 
     

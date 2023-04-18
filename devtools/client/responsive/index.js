@@ -60,11 +60,17 @@ const bootstrap = {
 
     const store = (this.store = Store());
     const provider = createElement(Provider, { store }, App());
-    ReactDOM.render(provider, document.querySelector("#root"));
+    this._root = document.querySelector("#root");
+    ReactDOM.render(provider, this._root);
     message.post(window, "init:done");
+
+    this.destroy = this.destroy.bind(this);
+    window.addEventListener("unload", this.destroy, { once: true });
   },
 
   destroy() {
+    window.removeEventListener("unload", this.destroy, { once: true });
+
     this.store = null;
 
     
@@ -83,9 +89,9 @@ const bootstrap = {
       
       
       
-      return;
+      return Promise.resolve();
     }
-    this.store.dispatch(action);
+    return this.store.dispatch(action);
   },
 };
 
@@ -95,19 +101,12 @@ message.wait(window, "init").then(() => bootstrap.init());
 
 
 message.wait(window, "post-init").then(() => {
-  bootstrap.store.dispatch(loadDevices()).then(() => {
+  bootstrap.dispatch(loadDevices()).then(() => {
     bootstrap.dispatch(restoreDeviceState());
   });
 });
 
-window.addEventListener(
-  "unload",
-  function() {
-    bootstrap.destroy();
-  },
-  { once: true }
-);
-
+window.destroy = () => bootstrap.destroy();
 
 window.dispatch = action => bootstrap.dispatch(action);
 
